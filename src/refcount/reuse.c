@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/11/15 12:30:36  ktr
+ * Reuse inference now works with dataflowmasks
+ *
  * Revision 1.5  2004/08/12 12:10:10  ktr
  * now only args with ARG_STATUS == ST_artificial are not treated as
  * potential reuse candidates.
@@ -18,7 +21,22 @@
  * Initial revision
  *
  */
+/**
+ *
+ * @defgroup ri Reuse Inference
+ * @ingroup emm
+ *
+ * <pre>
+ * </pre>
+ * @{
+ */
 
+/**
+ *
+ * @file reuse inference
+ *
+ *
+ */
 #define NEW_INFO
 
 #include "types.h"
@@ -44,11 +62,11 @@ typedef enum { ri_default, ri_annotate } ri_mode;
  * INFO structure
  */
 struct INFO {
-    node *candidates;
+    DFMmask_t candidates;
+    node *rhscand;
     ids *lhs;
     node *fundef;
     bool addlhs;
-    node *rhscand;
     ri_mode travmode;
 };
 
@@ -75,11 +93,11 @@ MakeInfo ()
     result = Malloc (sizeof (info));
 
     INFO_RI_CANDIDATES (result) = NULL;
+    INFO_RI_RHSCAND (result) = NULL;
     INFO_RI_LHS (result) = NULL;
     INFO_RI_FUNDEF (result) = NULL;
     INFO_RI_ADDLHS (result) = FALSE;
     INFO_RI_TRAVMODE (result) = ri_default;
-    INFO_RI_RHSCAND (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -107,24 +125,14 @@ FreeInfo (info *info)
  *
  *****************************************************************************/
 static node *
-CutExprs (node *ref, node *list)
+CutExprs (DFMmask_t candidates, node *list)
 {
-    node *tmp;
-
     DBUG_ENTER ("CutExprs");
 
     if (list != NULL) {
-        EXPRS_NEXT (list) = CutExprs (ref, EXPRS_NEXT (list));
+        EXPRS_NEXT (list) = CutExprs (candidates, EXPRS_NEXT (list));
 
-        tmp = ref;
-        while (tmp != NULL) {
-            if (ID_AVIS (EXPRS_EXPR (tmp)) != ID_AVIS (EXPRS_EXPR (list))) {
-                tmp = EXPRS_NEXT (tmp);
-            } else {
-                break;
-            }
-        }
-        if (tmp == NULL) {
+        if (!DFMTestMaskEntry (candidates, NULL, ID_VARDEC (EXPRS_EXPR (list)))) {
             list = FreeNode (list);
         }
     }
@@ -194,14 +202,7 @@ RIarg (node *arg_node, info *arg_info)
     }
 
     if (ARG_STATUS (arg_node) != ST_artificial) {
-        node *id;
-
-        id = MakeId (StringCopy (ARG_NAME (arg_node)), NULL, ST_regular);
-
-        ID_VARDEC (id) = arg_node;
-        ID_AVIS (id) = ARG_AVIS (arg_node);
-
-        INFO_RI_CANDIDATES (arg_info) = MakeExprs (id, INFO_RI_CANDIDATES (arg_info));
+        DFMSetMaskEntrySet (INFO_RI_CANDIDATES (arg_info), NULL, arg_node);
     }
 
     DBUG_RETURN (arg_node);
@@ -254,15 +255,16 @@ RIassign (node *arg_node, info *arg_info)
 node *
 RIcode (node *arg_node, info *arg_info)
 {
-    node *candidates;
+    DFMmask_t oldcands;
 
     DBUG_ENTER ("RIcode");
 
     /*
      * Inside a code block a new candidate list is needed
      */
-    candidates = INFO_RI_CANDIDATES (arg_info);
-    INFO_RI_CANDIDATES (arg_info) = NULL;
+    oldcands = INFO_RI_CANDIDATES (arg_info);
+    INFO_RI_CANDIDATES (arg_info)
+      = DFMGenMaskClear (FUNDEF_DFM_BASE (INFO_RI_FUNDEF (arg_info)));
 
     /*
      * Traverse CBLOCK
@@ -272,10 +274,8 @@ RIcode (node *arg_node, info *arg_info)
     /*
      * Erase the code block's candidate list before traversing on
      */
-    if (INFO_RI_CANDIDATES (arg_info) != NULL) {
-        INFO_RI_CANDIDATES (arg_info) = FreeTree (INFO_RI_CANDIDATES (arg_info));
-    }
-    INFO_RI_CANDIDATES (arg_info) = candidates;
+    INFO_RI_CANDIDATES (arg_info) = DFMRemoveMask (INFO_RI_CANDIDATES (arg_info));
+    INFO_RI_CANDIDATES (arg_info) = oldcands;
 
     if (NCODE_NEXT (arg_node) != NULL) {
         NCODE_NEXT (arg_node) = Trav (NCODE_NEXT (arg_node), arg_info);
@@ -297,31 +297,26 @@ RIcode (node *arg_node, info *arg_info)
 node *
 RIcond (node *arg_node, info *arg_info)
 {
-    node *candidates;
+    node *oldcands;
     DBUG_ENTER ("RIcond");
 
     /*
      * Rescue reuse candidates
      */
-    candidates = DupTree (INFO_RI_CANDIDATES (arg_info));
+    oldcands = DFMGenMaskCopy (INFO_RI_CANDIDATES (arg_info));
     COND_THEN (arg_node) = Trav (COND_THEN (arg_node), arg_info);
 
     /*
      * Restore reuse candidates for traversal of else-Branch
      */
-    if (INFO_RI_CANDIDATES (arg_info) != NULL) {
-        INFO_RI_CANDIDATES (arg_info) = FreeTree (INFO_RI_CANDIDATES (arg_info));
-    }
-    INFO_RI_CANDIDATES (arg_info) = DupTree (candidates);
+    INFO_RI_CANDIDATES (arg_info) = DFMRemoveMask (INFO_RI_CANDIDATES (arg_info));
+    INFO_RI_CANDIDATES (arg_info) = oldcands;
     COND_ELSE (arg_node) = Trav (COND_ELSE (arg_node), arg_info);
 
     /*
-     * Restore original reuse candidates for further traversal
+     * After a conditional, nothing can be reused
      */
-    if (INFO_RI_CANDIDATES (arg_info) != NULL) {
-        INFO_RI_CANDIDATES (arg_info) = FreeTree (INFO_RI_CANDIDATES (arg_info));
-    }
-    INFO_RI_CANDIDATES (arg_info) = candidates;
+    DFMSetMaskClear (INFO_RI_CANDIDATES (arg_info));
 
     DBUG_RETURN (arg_node);
 }
@@ -351,6 +346,8 @@ RIfundef (node *arg_node, info *arg_info)
         FUNDEF_DFM_BASE (arg_node)
           = DFMGenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
 
+        INFO_RI_CANDIDATES (arg_info) = DFMGenMaskClear (FUNDEF_DFM_BASE (arg_node));
+
         /*
          * FUNDEF args are the initial reuse candidates
          */
@@ -364,11 +361,9 @@ RIfundef (node *arg_node, info *arg_info)
         FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
 
         /*
-         * Free reuse candidates list
+         * Remove reuse candidates mask
          */
-        if (INFO_RI_CANDIDATES (arg_info) != NULL) {
-            INFO_RI_CANDIDATES (arg_info) = FreeTree (INFO_RI_CANDIDATES (arg_info));
-        }
+        INFO_RI_CANDIDATES (arg_info) = DFMRemoveMask (INFO_RI_CANDIDATES (arg_info));
 
         /*
          * Remove DFM-base
@@ -408,8 +403,8 @@ RIicm (node *arg_node, info *arg_info)
     if ((strstr (name, "USE_GENVAR_OFFSET") != NULL)
         || (strstr (name, "VECT2OFFSET") != NULL)
         || (strstr (name, "IDXS2OFFSET") != NULL)) {
-        INFO_RI_CANDIDATES (arg_info)
-          = MakeExprs (DupNode (ICM_ARG1 (arg_node)), INFO_RI_CANDIDATES (arg_info));
+        DFMSetMaskEntrySet (INFO_RI_CANDIDATES (arg_info), NULL,
+                            ID_VARDEC (ICM_ARG1 (arg_node)));
     } else {
         DBUG_ASSERT ((0), "Unknown ICM found during EMRI");
     }
@@ -440,8 +435,11 @@ RIlet (node *arg_node, info *arg_info)
     }
 
     if (INFO_RI_ADDLHS (arg_info)) {
-        INFO_RI_CANDIDATES (arg_info)
-          = AppendExprs (Ids2Exprs (LET_IDS (arg_node)), INFO_RI_CANDIDATES (arg_info));
+        ids *_ids = LET_IDS (arg_node);
+        while (_ids != NULL) {
+            DFMSetMaskEntrySet (INFO_RI_CANDIDATES (arg_info), NULL, IDS_VARDEC (_ids));
+            _ids = IDS_NEXT (_ids);
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -501,6 +499,16 @@ RIprf (node *arg_node, info *arg_info)
             INFO_RI_TRAVMODE (arg_info) = ri_default;
         }
         INFO_RI_ADDLHS (arg_info) = TRUE;
+        break;
+
+    case F_reshape:
+        /*
+         * reshape( shp, A)
+         *
+         * A is a reuse candidate for the reshape Operation as it has
+         * the same number of elements as the resulting array.
+         */
+        INFO_RI_RHSCAND (arg_info) = MakeExprs (DupNode (PRF_ARG2 (arg_node)), NULL);
         break;
 
     default:
@@ -604,3 +612,5 @@ ReuseInference (node *arg_node)
 
     DBUG_RETURN (arg_node);
 }
+
+/*@}*/
