@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2004/11/26 19:54:47  skt
+ * IDX -> IVE
+ *
  * Revision 3.7  2004/11/26 16:39:02  sbs
  * done
  *
@@ -42,27 +45,27 @@
 
 #include "types.h"
 
-extern node *IDXdoIndexVectorElimination (node *syntax_tree);
+extern node *IVEdoIndexVectorElimination (node *syntax_tree);
 
-extern char *IDXchangeId (char *varname, shape *shp);
-extern char *IDXchangeIdOld (char *varname, types *shp);
+extern char *IVEchangeId (char *varname, shape *shp);
+extern char *IVEchangeIdOld (char *varname, types *shp);
 
-extern node *IDXmodule (node *arg_node, info *arg_info);
-extern node *IDXfundef (node *arg_node, info *arg_info);
-extern node *IDXblock (node *arg_node, info *arg_info);
-extern node *IDXvardec (node *arg_node, info *arg_info);
-extern node *IDXarg (node *arg_node, info *arg_info);
-extern node *IDXassign (node *arg_node, info *arg_info);
-extern node *IDXreturn (node *arg_node, info *arg_info);
-extern node *IDXlet (node *arg_node, info *arg_info);
-extern node *IDXprf (node *arg_node, info *arg_info);
-extern node *IDXid (node *arg_node, info *arg_info);
-extern node *IDXnum (node *arg_node, info *arg_info);
-extern node *IDXarray (node *arg_node, info *arg_info);
-extern node *IDXwith (node *arg_node, info *arg_info);
-extern node *IDXpart (node *arg_node, info *arg_info);
-extern node *IDXcode (node *arg_node, info *arg_info);
-extern node *IDXcond (node *arg_node, info *arg_info);
-extern node *IDXdo (node *arg_node, info *arg_info);
+extern node *IVEmodule (node *arg_node, info *arg_info);
+extern node *IVEfundef (node *arg_node, info *arg_info);
+extern node *IVEblock (node *arg_node, info *arg_info);
+extern node *IVEvardec (node *arg_node, info *arg_info);
+extern node *IVEarg (node *arg_node, info *arg_info);
+extern node *IVEassign (node *arg_node, info *arg_info);
+extern node *IVEreturn (node *arg_node, info *arg_info);
+extern node *IVElet (node *arg_node, info *arg_info);
+extern node *IVEprf (node *arg_node, info *arg_info);
+extern node *IVEid (node *arg_node, info *arg_info);
+extern node *IVEnum (node *arg_node, info *arg_info);
+extern node *IVEarray (node *arg_node, info *arg_info);
+extern node *IVEwith (node *arg_node, info *arg_info);
+extern node *IVEpart (node *arg_node, info *arg_info);
+extern node *IVEcode (node *arg_node, info *arg_info);
+extern node *IVEcond (node *arg_node, info *arg_info);
+extern node *IVEdo (node *arg_node, info *arg_info);
 
 #endif /* _SAC_INDEX_H_ */
