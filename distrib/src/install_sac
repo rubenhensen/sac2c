@@ -136,17 +136,6 @@ add_search_path $bin
 
 
 ######################################################################
-# demo.tar
-######################################################################
-
-# ask_for_dir "Intended location for the SAC - demo programs?" $demo
-# demo=$ask_res
-
-# mv demo.tar $demo.demo.tar
-# (cd $demo; tar xvf demo.tar; rm demo.tar)
-
-
-######################################################################
 # runtime.tar + stdlib.tar
 ######################################################################
 
@@ -159,6 +148,7 @@ then
   export SACBASE
 fi
 
+insert_component f libsac.a $base/runtime
 insert_component d runtime.tar $base/runtime
 if [ -f $SACBASE/runtime/runtime.tar ] ; then
   (cd $SACBASE/runtime; tar xvf runtime.tar; rm runtime.tar)
@@ -166,6 +156,7 @@ if [ -f $SACBASE/runtime/runtime.tar ] ; then
 else
   warn "runtime.tar NOT UNPACKED !!"
 fi
+
 
 insert_component d stdlib.tar $base/stdlib
 if [ -f $SACBASE/stdlib/stdlib.tar ] ; then
@@ -185,6 +176,25 @@ if [ -f $SACBASE/stdlib/stdlib.tar ] ; then
 else
   warn "stdlib.tar NOT UNPACKED !!"
 fi
+
+
+
+######################################################################
+# demo.tar
+######################################################################
+
+ask_for_dir "Intended location for the SAC - demo programs?" $demo
+demo=$ask_res
+
+insert_component d demo.tar $demo/
+if [ -f $demo/demo.tar ] ; then
+  (cd $demo; tar xvf demo.tar; rm demo.tar)
+  mess "demo.tar UNPACKED !!"
+else
+  warn "demo.tar NOT UNPACKED !!"
+fi
+
+
 
 
 ######################################################################
