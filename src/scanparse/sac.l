@@ -12,9 +12,11 @@
                          return(token); }
 #define FILTER3(token) if (commlevel) ECHO;                            \
                        else {                                          \
-  			 yylval.nums=(nums *)malloc(sizeof(nums));     \
-                         yylval.nums->num=atoi(yytext);		       \
-                         yylval.nums->next=NULL; 	               \
+                         yylval.cint=atoi(yytext);		       \
+                         return(token); }
+#define FILTER4(token) if (commlevel) ECHO;                            \
+                       else {                                          \
+                         yylval.cfloat=atof(yytext);		       \
                          return(token); }
 
 extern int indent;
@@ -85,9 +87,9 @@ int commlevel=0;
 
 
 [_A-Za-z][_A-Za-z0-9]*		{FILTER2( ID );}
-(0?|([1-9][0-9]*))	{FILTER ( NUM);}
+(0?|([1-9][0-9]*))	{FILTER3 ( NUM);}
 (0?|([1-9][0-9]*))[.][0-9]*(e([+]?|[-]?)[1-9][0-9]*)? \
-				{FILTER( FLOAT);}
+				{FILTER4 ( FLOAT);}
 
 "/*"	{ if (commlevel++ == 1)
             fprintf(stderr,"Warning: recursive comment eleminated! \n");
