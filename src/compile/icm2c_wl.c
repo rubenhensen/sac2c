@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.7  2000/03/20 19:29:26  dkr
+ * some comments added
+ *
  * Revision 2.6  2000/03/10 10:33:41  dkr
  * output format of ICM WL_INIT_OFFSET changed
  *
@@ -138,8 +141,7 @@
  *   void ICMCompileWL_NONFOLD_BEGIN( char *target, char *idx_vec, int dims)
  *
  * description:
- *
- *   implements the compilation of the following ICM:
+ *   Implements the compilation of the following ICM:
  *
  *   WL_NONFOLD_BEGIN(target, idx_vec, dims)
  *
@@ -182,8 +184,7 @@ ICMCompileWL_NONFOLD_BEGIN (char *target, char *idx_vec, int dims)
  *   void ICMCompileWL_FOLD_BEGIN( char *target, char *idx_vec, int dims)
  *
  * description:
- *
- *   implements the compilation of the following ICM:
+ *   Implements the compilation of the following ICM:
  *
  *   WL_FOLD_BEGIN(target, idx_vec, dims)
  *
@@ -223,8 +224,7 @@ ICMCompileWL_FOLD_BEGIN (char *target, char *idx_vec, int dims)
  *   void ICMCompileWL_NONFOLD_END( char *target, char *idx_vec, int dims)
  *
  * description:
- *
- *   implements the compilation of the following ICM:
+ *   Implements the compilation of the following ICM:
  *
  *   WL_NONFOLD_END(target, idx_vec, dims)
  *
@@ -253,8 +253,7 @@ ICMCompileWL_NONFOLD_END (char *target, char *idx_vec, int dims)
  *   void ICMCompileWL_FOLD_END( char *target, char *idx_vec, int dims)
  *
  * description:
- *
- *   implements the compilation of the following ICM:
+ *   Implements the compilation of the following ICM:
  *
  *   WL_FOLD_END(target, idx_vec, dims)
  *
@@ -286,7 +285,7 @@ ICMCompileWL_FOLD_END (char *target, char *idx_vec, int dims)
  *                             int dims, char **idx_scalars)
  *
  * description:
- *   implements the compilation of the following ICM:
+ *   Implements the compilation of the following ICM:
  *
  *   WL_ASSIGN( target, dims_expr, expr, idx_vec, dims, [ idx_scalars ]* )
  *
@@ -370,7 +369,7 @@ ICMCompileWL_ASSIGN (int dims_expr, char *expr, int dims_target, char *target,
  *                                  int dims, char **idx_scalars)
  *
  * description:
- *   implements the compilation of the following ICM:
+ *   Implements the compilation of the following ICM:
  *
  *   WL_ASSIGN_INIT( dims_target, target, idx_vec, dims, [ idx_scalars ]* )
  *
@@ -441,7 +440,7 @@ ICMCompileWL_ASSIGN_INIT (int dims_target, char *target, char *idx_vec, int dims
  *                                  int dims, char **idx_scalars)
  *
  * description:
- *   implements the compilation of the following ICM:
+ *   Implements the compilation of the following ICM:
  *
  *   WL_ASSIGN_COPY( source,
  *                   dims_target, target, idx_vec, dims, [ idx_scalars ]* )
@@ -516,7 +515,7 @@ ICMCompileWL_ASSIGN_COPY (char *source, int dims_target, char *target, char *idx
  *                                int cnt_bounds, char **bounds)
  *
  * description:
- *   implements the compilation of the following ICM:
+ *   Implements the compilation of the following ICM:
  *
  *   WL_FOLD_NOOP( dims_target, target, idx_vec, dims, [ idx_scalars ]* )
  *
@@ -546,9 +545,19 @@ ICMCompileWL_FOLD_NOOP (int dims_target, char *target, char *idx_vec, int dims,
  *                                  char *idx_vec, int dims_wl)
  *
  * description:
- *   implements the compilation of the following ICM:
+ *   Implements the compilation of the following ICM:
  *
- *   WL_INIT_OFFSET( dims_target, target, idx_vec, dims_wl)
+ *     WL_INIT_OFFSET( dims_target, target, idx_vec, dims_wl)
+ *
+ *   The __destptr of the WL-array is initialized, i.e. set to the index
+ *   of the first WL element.
+ *
+ * remark:
+ *   The names of the variables WL_MT_SCHEDULE_START, WL_MT_SCHEDULE_STOP
+ *   are a bit misleading. These variables are not only used in MT-mode but
+ *   in ST-mode, too!
+ *   In ST-mode WL_MT_SCHEDULE_START(i) and WL_MT_SCHEDULE_STOP(i) contain the
+ *   smallest and greatest WL-index, respectively, of the i-th dimension.
  *
  ******************************************************************************/
 
@@ -620,7 +629,13 @@ ICMCompileWL_INIT_OFFSET (int dims_target, char *target, char *idx_vec, int dims
  *   If the C compiler reports an undeclared 'SAC__start...' there is probably
  *   an error in compile.c:
  *   Either an WL_(U)BLOCK_LOOP_BEGIN ICM is missing, or the WL_ADJUST_OFFSET
- *   ICM is obsolete (bug in the inference in COMPWLgrid...?)
+ *   ICM is obsolete (bug in the inference in function COMPWLgrid...?)
+ *
+ *   The names of the variables WL_MT_SCHEDULE_START, WL_MT_SCHEDULE_STOP
+ *   are a bit misleading. These variables are not only used in MT-mode but
+ *   in ST-mode, too!
+ *   In ST-mode WL_MT_SCHEDULE_START(i) and WL_MT_SCHEDULE_STOP(i) contain the
+ *   smallest and greatest WL-index, respectively, of the i-th dimension.
  *
  ******************************************************************************/
 
