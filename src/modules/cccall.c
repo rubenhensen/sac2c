@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/11/29 13:31:13  sbs
+ * config.ldflags inserted.
+ *
  * Revision 3.4  2001/11/14 18:42:13  sbs
  * bug when calling runlib eliminated (prefix lib was missing).
  * Error happened to occur on MACOSX
@@ -721,9 +724,9 @@ InvokeCC ()
             if (gen_cccall) {
                 shellscript = WriteOpen (".sac2c");
                 fprintf (shellscript, "#!/bin/sh -v\n\n");
-                fprintf (shellscript, "%s %s %s -L%s %s -o %s %s %s %s -lsac_mt %s %s",
-                         config.cc, config.ccflags, config.ccdir, tmp_dirname, opt_buffer,
-                         outfilename, cfilename, linklist,
+                fprintf (shellscript, "%s %s %s %s -L%s %s -o %s %s %s %s -lsac_mt %s %s",
+                         config.cc, config.ccflags, config.ldflags, config.ccdir,
+                         tmp_dirname, opt_buffer, outfilename, cfilename, linklist,
                          (optimize & OPT_PHM
                             ? (runtimecheck & RUNTIMECHECK_HEAP ? "-lsac_heapmgr_mt_diag"
                                                                 : "-lsac_heapmgr_mt")
@@ -733,9 +736,9 @@ InvokeCC ()
                 SystemCall ("chmod a+x .sac2c");
             }
 
-            SystemCall ("%s %s %s -L%s %s -o %s %s %s %s -lsac_mt %s %s", config.cc,
-                        config.ccflags, config.ccdir, tmp_dirname, opt_buffer,
-                        outfilename, cfilename, linklist,
+            SystemCall ("%s %s %s %s -L%s %s -o %s %s %s %s -lsac_mt %s %s", config.cc,
+                        config.ccflags, config.ldflags, config.ccdir, tmp_dirname,
+                        opt_buffer, outfilename, cfilename, linklist,
                         (optimize & OPT_PHM
                            ? (runtimecheck & RUNTIMECHECK_HEAP ? "-lsac_heapmgr_mt_diag"
                                                                : "-lsac_heapmgr_mt")
@@ -745,9 +748,9 @@ InvokeCC ()
             if (gen_cccall) {
                 shellscript = WriteOpen (".sac2c");
                 fprintf (shellscript, "#!/bin/sh -v\n\n");
-                fprintf (shellscript, "%s %s %s -L%s %s -o %s %s %s %s -lsac %s %s",
-                         config.cc, config.ccflags, config.ccdir, tmp_dirname, opt_buffer,
-                         outfilename, cfilename, linklist,
+                fprintf (shellscript, "%s %s %s %s -L%s %s -o %s %s %s %s -lsac %s %s",
+                         config.cc, config.ccflags, config.ldflags, config.ccdir,
+                         tmp_dirname, opt_buffer, outfilename, cfilename, linklist,
                          (optimize & OPT_PHM
                             ? (runtimecheck & RUNTIMECHECK_HEAP ? "-lsac_heapmgr_diag"
                                                                 : "-lsac_heapmgr")
@@ -757,9 +760,9 @@ InvokeCC ()
                 SystemCall ("chmod a+x .sac2c");
             }
 
-            SystemCall ("%s %s %s -L%s %s -o %s %s %s %s -lsac %s %s", config.cc,
-                        config.ccflags, config.ccdir, tmp_dirname, opt_buffer,
-                        outfilename, cfilename, linklist,
+            SystemCall ("%s %s %s %s -L%s %s -o %s %s %s %s -lsac %s %s", config.cc,
+                        config.ccflags, config.ldflags, config.ccdir, tmp_dirname,
+                        opt_buffer, outfilename, cfilename, linklist,
                         (optimize & OPT_PHM
                            ? (runtimecheck & RUNTIMECHECK_HEAP ? "-lsac_heapmgr_diag"
                                                                : "-lsac_heapmgr")
