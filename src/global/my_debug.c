@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.13  1995/06/23 12:18:07  hw
+ * Revision 1.14  1995/07/07 14:27:54  hw
+ * enlarged macro PRF_IF( there are 4 args now)
+ *
+ * Revision 1.13  1995/06/23  12:18:07  hw
  * enlarged macro TYP_IF
  *
  * Revision 1.12  1995/06/02  12:13:08  sbs
@@ -59,7 +62,7 @@ char *mdb_nodetype[] = {
 
 #undef NIF
 
-#define PRF_IF(n, s, x) s
+#define PRF_IF(n, s, x, y) s
 
 char *mdb_prf[] = {
 #include "prf_node_info.mac"

@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.76  1995/07/04 08:36:53  hw
+ * Revision 1.77  1995/07/07 14:30:33  hw
+ * enlarged macro PRF_IF( there are 4 args now)
+ *
+ * Revision 1.76  1995/07/04  08:36:53  hw
  * - changed PrintPrf( ftod, itod, dtof, dtoi inserted)
  * - PrintDouble inserted.
  *
@@ -266,7 +269,7 @@ int indent = 0;
 #undef ICM_END
 #undef ICM_ALL
 
-#define PRF_IF(n, s, x) x
+#define PRF_IF(n, s, x, y) x
 
 char *prf_string[] = {
 #include "prf_node_info.mac"

@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.47  1995/07/06 17:29:12  cg
+ * Revision 1.48  1995/07/07 14:28:53  hw
+ * enlarged macro PRF_IF( there are 4 args now)
+ *
+ * Revision 1.47  1995/07/06  17:29:12  cg
  * statustype modified.
  *
  * Revision 1.46  1995/07/04  08:34:59  hw
@@ -249,7 +252,7 @@ typedef enum {
 
 #undef NIF
 
-#define PRF_IF(n, s, x) n
+#define PRF_IF(n, s, x, y) n
 
 typedef enum {
 #include "prf_node_info.mac"
