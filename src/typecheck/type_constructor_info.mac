@@ -1,0 +1,45 @@
+/*
+ * $Log$
+ * Revision 1.1  1999/10/12 16:24:36  sbs
+ * Initial revision
+ *
+ *
+ */
+
+/*
+ * This file keeps all type constructors and related info.
+ * Similar to all other .mac-files it is included several times!
+ * The idea is to include this file with one of the "selector macros"
+ * e.g. "TCITypeConstr" being defined as:
+ *
+ *  #define TCITypeConstr( typeconstr) typeconstr
+ *
+ * this will extract the desired column of the table down below!
+ * For the given example, including this file yields:
+ *
+ *   TC_simple, TC_symbol, TC_user, TC_aks, TC_akd, ...
+ */
+
+#ifndef TCITypeConstr
+#define TCITypeConstr(typeconstr)
+#endif
+
+#ifndef TCIArity
+#define TCIArity(arity)
+#endif
+
+#ifndef TCIDbugString
+#define TCIDbugString(dbug_str)
+#endif
+
+#define TCI(typeconstr, default_arity, dbug_str)                                         \
+    TCITypeConstr (typeconstr) TCIArity (default_arity) TCIDbugString (dbug_str)
+
+TCI (TC_simple, 0, "Simple"), TCI (TC_symbol, 0, "Symbol"), TCI (TC_user, 0, "User"),
+  TCI (TC_aks, 1, "AKS"), TCI (TC_akd, 1, "AKD"), TCI (TC_aud, 1, "AUD"),
+  TCI (TC_prod, 1, "PROD"), TCI (TC_union, 2, "UNION"), TCI (TC_fun, 2, "FUN"),
+  TCI (TC_dummy, 0, "LastTCI")
+
+#undef TCITypeConstr
+#undef TCIArity
+#undef TCIDbugString
