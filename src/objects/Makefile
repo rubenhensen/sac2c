@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.12  2000/07/24 14:47:30  dkr
+# suffix rule for .c.o added
+#
 # Revision 2.11  2000/07/11 15:56:30  dkr
 # make deps done
 #
@@ -105,19 +108,8 @@ INCS= -I../global -I../tree -I../../inc -I../typecheck -I../modules
 
 all: objinit.o objects.o uniquecheck.o rmvoidfun.o
 
-
-objinit.o: objinit.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o objinit.o -c objinit.c $(INCS)
-
-objects.o: objects.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o objects.o -c objects.c $(INCS)
-
-uniquecheck.o: uniquecheck.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o uniquecheck.o -c uniquecheck.c $(INCS)
-
-rmvoidfun.o: rmvoidfun.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o rmvoidfun.o -c rmvoidfun.c $(INCS)
-
+%.o: %.c
+	$(CC) $(CCFLAGS) $(CFLAGS) -o $@ -c $< $(INCS)
 
 deps:
 	makedepend $(INCS) *.c

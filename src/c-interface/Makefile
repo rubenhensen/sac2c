@@ -21,15 +21,8 @@ INCS=-I../global -I../tree -I../../inc -I../compile -I../modules \
 
 all: print_interface.o map_cwrapper.o import_specialization.o
 
-print_interface.o: print_interface.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o print_interface.o -c print_interface.c $(INCS)
-
-map_cwrapper.o: map_cwrapper.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o map_cwrapper.o -c map_cwrapper.c $(INCS)
-
-import_specialization.o: import_specialization.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o import_specialization.o \
-        -c import_specialization.c $(INCS)
+%.o: %.c
+	$(CC) $(CCFLAGS) $(CFLAGS) -o $@ -c $< $(INCS)
 
 deps:
 	makedepend $(INCS) *.c

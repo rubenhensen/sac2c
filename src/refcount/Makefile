@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.13  2000/07/24 14:46:34  dkr
+# suffix rule for .c.o added
+#
 # Revision 2.12  2000/07/11 15:56:27  dkr
 # make deps done
 #
@@ -106,8 +109,8 @@ INCS=-I../global -I../tree -I../../inc -I../typecheck -I../optimize
 
 all: refcount.o
 
-refcount.o: refcount.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o refcount.o -c refcount.c $(INCS)
+%.o: %.c
+	$(CC) $(CCFLAGS) $(CFLAGS) -o $@ -c $< $(INCS)
 
 deps:
 	makedepend $(INCS) *.c

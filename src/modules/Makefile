@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.15  2000/07/24 14:44:33  dkr
+# suffix rule for .c.o added
+#
 # Revision 2.14  2000/07/11 15:56:25  dkr
 # make deps done
 #
@@ -179,30 +182,8 @@ INCS=-I../global -I../tree -I../../inc -I../scanparse -I../print -I../typecheck 
 all: filemgr.o import.o readsib.o writesib.o implicittypes.o analysis.o \
      checkdec.o cccall.o
 
-filemgr.o: filemgr.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o filemgr.o -c filemgr.c $(INCS)
-
-import.o: import.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o import.o -c import.c $(INCS)
-
-writesib.o: writesib.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o writesib.o -c writesib.c $(INCS)
-
-readsib.o: readsib.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o readsib.o -c readsib.c $(INCS)
-
-implicittypes.o: implicittypes.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o implicittypes.o -c implicittypes.c $(INCS)
-
-analysis.o: analysis.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o analysis.o -c analysis.c $(INCS)
-
-checkdec.o: checkdec.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o checkdec.o -c checkdec.c $(INCS)
-
-cccall.o: cccall.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o cccall.o -c cccall.c $(INCS)
-
+%.o: %.c
+	$(CC) $(CCFLAGS) $(CFLAGS) -o $@ -c $< $(INCS)
 
 deps:
 	makedepend $(INCS) *.c

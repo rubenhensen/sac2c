@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.20  2000/07/24 14:46:21  dkr
+# suffix rule for .c.o added
+#
 # Revision 2.19  2000/07/11 15:56:20  dkr
 # make deps done
 #
@@ -130,11 +133,8 @@ INCS=-I../global -I../tree -I../../inc -I../compile -I../modules -I../concurrent
 
 all: print.o convert.o
 
-print.o: print.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o print.o -c print.c $(INCS)
-
-convert.o: convert.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o convert.o -c convert.c $(INCS)
+%.o: %.c
+	$(CC) $(CCFLAGS) $(CFLAGS) -o $@ -c $< $(INCS)
 
 deps:
 	makedepend $(INCS) *.c

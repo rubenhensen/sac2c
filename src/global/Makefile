@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.28  2000/07/24 14:46:52  dkr
+# suffix rule for .c.o added
+#
 # Revision 2.27  2000/07/11 15:56:19  dkr
 # make deps done
 #
@@ -136,43 +139,15 @@ all: main.o Error.o usage.o my_debug.o internal_lib.o globals.o resource.o types
 types.h: ../global/nt_info.mac ../global/phase_info.mac ../global/status_info.mac ../tree/node_info.mac ../tree/prf_node_info.mac ../tree/type_info.mac
 	touch types.h
 
-interrupt.o: interrupt.c 
-	$(CC) $(CCFLAGS) $(CFLAGS) -o interrupt.o -c interrupt.c $(INCS)
-
-main.o: main.c 
-	$(CC) $(CCFLAGS) $(CFLAGS) -o main.o -c main.c $(INCS)
-
-Error.o: Error.c 
-	$(CC) $(CCFLAGS) $(CFLAGS) -o Error.o -c Error.c $(INCS) 
-
-usage.o: usage.c usage.h 
-	$(CC) $(CCFLAGS) $(CFLAGS) -o usage.o -c usage.c $(INCS)
-
-my_debug.o: my_debug.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o my_debug.o -c my_debug.c $(INCS)
-
-internal_lib.o: internal_lib.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o internal_lib.o -c internal_lib.c  $(INCS)
-
-globals.o: globals.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o globals.o -c globals.c $(INCS)
-
-resource.o: resource.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o resource.o -c resource.c $(INCS)
-
-options.o: options.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o options.o -c options.c $(INCS)
-
-build.o: build.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o build.o -c build.c $(INCS)
-	$(RM) build.c
-
 build.c: 
 	echo "char build_date[] = \"`date`\";"  >  build.c
 	echo "char build_user[] = \"$(USER)\";" >> build.c
 	echo "char build_host[] = \"$(HOST)\";" >> build.c
 	echo "char build_os[]   = \"$(OS)\";"   >> build.c
 	cat build.c
+
+%.o: %.c
+	$(CC) $(CCFLAGS) $(CFLAGS) -o $@ -c $< $(INCS)
 
 deps:
 	makedepend $(INCS) *.c

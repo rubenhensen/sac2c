@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.22  2000/07/24 14:46:00  dkr
+# suffix rule for .c.o added
+#
 # Revision 2.21  2000/07/21 14:44:16  nmw
 # include path c-interface added
 #
@@ -101,38 +104,8 @@ all: typecheck.o prim_fun.o typecheck_WL.o gen_pseudo_fun.o \
 typecheck.h: cmp_type.mac
 	touch typecheck.h
 
-new_typecheck.o: new_typecheck.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o new_typecheck.o -c new_typecheck.c $(INCS)
-
-new_types.o: new_types.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o new_types.o -c new_types.c $(INCS)
-
-constants.o: constants.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o constants.o -c constants.c $(INCS)
-
-cv2cv.o: cv2cv.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o cv2cv.o -c cv2cv.c $(INCS)
-
-cv2scalar.o: cv2scalar.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o cv2scalar.o -c cv2scalar.c $(INCS)
-
-shape.o: shape.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o shape.o -c shape.c $(INCS)
-
-user_types.o: user_types.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o user_types.o -c user_types.c $(INCS)
-
-typecheck.o: typecheck.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o typecheck.o -c typecheck.c $(INCS)
-
-prim_fun.o: prim_fun.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o prim_fun.o -c prim_fun.c $(INCS)
-
-gen_pseudo_fun.o: gen_pseudo_fun.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o gen_pseudo_fun.o -c gen_pseudo_fun.c $(INCS)
-
-typecheck_WL.o: typecheck_WL.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o typecheck_WL.o -c typecheck_WL.c $(INCS)
+%.o: %.c
+	$(CC) $(CCFLAGS) $(CFLAGS) -o $@ -c $< $(INCS)
 
 deps:
 	makedepend $(INCS) *.c
