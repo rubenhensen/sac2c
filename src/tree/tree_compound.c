@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.110  2004/11/25 15:43:26  skt
+ * some brushing, incl. removing of node_compat.h
+ *
  * Revision 3.109  2004/11/25 12:13:08  mwe
  * *** empty log message ***
  *
@@ -3674,10 +3677,6 @@ MakeId_Num (int val)
     DBUG_RETURN (result);
 }
 
-#ifdef NEW_AST
-#define AST_NO_COMPAT
-#include "node_compat.h"
-
 node *
 MakeIdFromIds (ids *idss)
 {
@@ -3689,11 +3688,6 @@ MakeIdFromIds (ids *idss)
 
     DBUG_RETURN (result);
 }
-
-#undef AST_NO_COMPAT
-#include "node_compat.h"
-
-#endif /* NEW_AST */
 
 /***************************************************************************
  *
