@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2002/07/19 13:24:49  sah
+ * added functions for traversal.
+ *
  * Revision 1.1  2002/07/09 12:54:26  sbs
  * Initial revision
  *
@@ -16,7 +19,7 @@
 #include "internal_lib.h"
 
 extern node *EliminateSelDots (node *arg_node);
-
+extern node *HDdot (node *arg_node, node *arg_info);
 extern node *HDprf (node *arg_node, node *arg_info);
 
 #endif /* _handle_dots_h */
