@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.151  2004/11/27 03:19:10  sbs
+# AEAETSCH!!!!!
+#
 # Revision 3.150  2004/11/27 02:37:33  sbs
 # typeconversions renamed .
 #
@@ -101,7 +104,8 @@ FLATTEN= src/flatten/flatten.o src/flatten/lac2fun.o \
          src/flatten/handle_mops.o src/flatten/UndoSSATransform.o \
          src/flatten/ToNewTypes.o src/flatten/SSATransform.o \
          src/flatten/ssa.o src/flatten/WLPartitionGeneration.o \
-	 src/flatten/WLEnhancement.o src/flatten/ExplicitAccumulate.o
+	 src/flatten/WLEnhancement.o src/flatten/ExplicitAccumulate.o \
+         src/flatten/ToOldTypes.o
 
 CONSTANTS= src/constants/shape.o src/constants/constants_basic.o \
            src/constants/constants_struc_ops.o \
