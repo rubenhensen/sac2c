@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.195  1998/04/19 13:17:02  dkr
+ * changed output for N_icm in PrintNodeTree
+ *
  * Revision 1.194  1998/04/17 19:15:29  dkr
  * removed trigraph
  *
@@ -698,32 +701,28 @@ char *prf_string[] = {
 
 /******************************************************************************/
 
-/*
- * prints ids-information to outfile
- *
- */
 void
 PrintIds (ids *arg)
 {
     DBUG_ENTER ("PrintIds");
 
     do {
-        DBUG_PRINT ("PRINT", ("%s", arg->id));
+        DBUG_PRINT ("PRINT", ("%s", IDS_NAME (arg)));
 
-        if (arg->mod != NULL) {
-            fprintf (outfile, "%s:", arg->mod);
+        if (IDS_MOD (arg) != NULL) {
+            fprintf (outfile, "%s:", IDS_MOD (arg));
         }
-        fprintf (outfile, "%s", arg->id);
-        if ((arg->refcnt != -1) && show_refcnt) {
-            fprintf (outfile, ":%d", arg->refcnt);
+        fprintf (outfile, "%s", IDS_NAME (arg));
+        if ((IDS_REFCNT (arg) != -1) && show_refcnt) {
+            fprintf (outfile, ":%d", IDS_REFCNT (arg));
         }
-        if (show_idx && arg->use) {
-            Trav (arg->use, NULL);
+        if (show_idx && IDS_USE (arg)) {
+            Trav (IDS_USE (arg), NULL);
         }
-        if (NULL != arg->next) {
+        if (NULL != IDS_NEXT (arg)) {
             fprintf (outfile, ", ");
         }
-        arg = arg->next;
+        arg = IDS_NEXT (arg);
     } while (NULL != arg);
 
     DBUG_VOID_RETURN;
@@ -1543,15 +1542,15 @@ PrintVardec (node *arg_node, node *arg_info)
 
     INDENT;
 
-    DBUG_EXECUTE ("MASK", fprintf (outfile, "**Number %d -> ", arg_node->varno););
+    DBUG_EXECUTE ("MASK", fprintf (outfile, "**Number %d -> ", VARDEC_VARNO (arg_node)););
 
-    fprintf (outfile, "%s", Type2String (arg_node->info.types, 1));
+    fprintf (outfile, "%s", Type2String (VARDEC_TYPE (arg_node), 1));
     if (VARDEC_COLCHN (arg_node) && show_idx) {
         Trav (VARDEC_COLCHN (arg_node), arg_info);
     }
     fprintf (outfile, ";\n");
-    if (arg_node->node[0]) {
-        Trav (arg_node->node[0], arg_info);
+    if (VARDEC_NEXT (arg_node)) {
+        Trav (VARDEC_NEXT (arg_node), arg_info);
     } else {
         fprintf (outfile, "\n");
     }
@@ -1567,22 +1566,22 @@ PrintDo (node *arg_node, node *arg_info)
     DBUG_ENTER ("PrintDo");
 
     DBUG_EXECUTE ("MASK", fprintf (outfile, "\n**MASKS - do body\n");
-                  PrintMasks (arg_node->node[1], arg_info););
+                  PrintMasks (DO_BODY (arg_node), arg_info););
 
     fprintf (outfile, "do\n");
-    if (NULL != arg_node->node[1]) {
+    if (NULL != DO_BODY (arg_node)) {
         indent++;
-        Trav (arg_node->node[1], arg_info); /* traverse body of loop */
+        Trav (DO_BODY (arg_node), arg_info); /* traverse body of loop */
         indent--;
     }
 
-    DBUG_EXECUTE ("MASK", char *text; text = PrintMask (arg_node->mask[1], VARNO);
+    DBUG_EXECUTE ("MASK", char *text; text = PrintMask (DO_MASK (arg_node, 1), VARNO);
                   fprintf (outfile, "**Used Variables (do-cnd) : %s\n", text);
                   FREE (text););
 
     INDENT;
     fprintf (outfile, "while( ");
-    Trav (arg_node->node[0], arg_info);
+    Trav (DO_COND (arg_node), arg_info);
     fprintf (outfile, " );\n");
 
     DBUG_RETURN (arg_node);
@@ -1608,18 +1607,18 @@ PrintWhile (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintWhile");
 
-    DBUG_EXECUTE ("MASK", char *text; text = PrintMask (arg_node->mask[1], VARNO);
+    DBUG_EXECUTE ("MASK", char *text; text = PrintMask (WHILE_MASK (arg_node, 1), VARNO);
                   fprintf (outfile, "**Used Variables (while-cnd) : %s\n", text);
                   FREE (text););
 
     fprintf (outfile, "while( ");
-    Trav (arg_node->node[0], arg_info);
+    Trav (WHILE_COND (arg_node), arg_info);
     fprintf (outfile, " )\n");
 
     DBUG_EXECUTE ("MASK", fprintf (outfile, "\n**MASKS - while body\n");
-                  PrintMasks (arg_node->node[1], arg_info););
+                  PrintMasks (WHILE_BODY (arg_node), arg_info););
 
-    Trav (arg_node->node[1], arg_info); /* traverse body of loop */
+    Trav (WHILE_BODY (arg_node), arg_info); /* traverse body of loop */
 
     DBUG_RETURN (arg_node);
 }
@@ -1848,7 +1847,7 @@ PrintArray (node *arg_node, node *arg_info)
     DBUG_ENTER ("PrintArray");
 
     fprintf (outfile, "[ ");
-    Trav (arg_node->node[0], arg_info);
+    Trav (ARRAY_AELEMS (arg_node), arg_info);
     fprintf (outfile, " ]");
 
     DBUG_RETURN (arg_node);
@@ -1933,14 +1932,14 @@ PrintIcm (node *arg_node, node *arg_info)
 {
     int compiled_icm = 0;
     DBUG_ENTER ("PrintIcm");
-    DBUG_PRINT ("PRINT", ("icm-node %s\n", arg_node->info.fun_name.id));
+    DBUG_PRINT ("PRINT", ("icm-node %s\n", ICM_NAME (arg_node)));
 
     INDENT
     if (show_icm == 0)
 #define ICM_ALL
 #define ICM_DEF(prf, trf)                                                                \
-    if (strcmp (arg_node->info.fun_name.id, #prf) == 0) {                                \
-        Print##prf (arg_node->node[0], arg_info);                                        \
+    if (strcmp (ICM_NAME (arg_node), #prf) == 0) {                                       \
+        Print##prf (ICM_ARGS (arg_node), arg_info);                                      \
         compiled_icm = 1;                                                                \
     } else
 #define ICM_STR(name)
@@ -1967,13 +1966,13 @@ PrintIcm (node *arg_node, node *arg_info)
         }
 
         fprintf (outfile, "%s(", ICM_NAME (arg_node));
-        if (NULL != arg_node->node[0]) {
-            Trav (arg_node->node[0], arg_info);
+        if (NULL != ICM_ARGS (arg_node)) {
+            Trav (ICM_ARGS (arg_node), arg_info);
         }
         fprintf (outfile, ")");
     }
 
-    if (NULL != arg_node->node[1]) {
+    if (NULL != ICM_NEXT (arg_node)) {
         if ((1 == show_icm) || (0 == compiled_icm)) {
             if (0 == strcmp (ICM_NAME (arg_node), "ND_TYPEDEF_ARRAY")) {
                 fprintf (outfile, "\n");
@@ -1982,7 +1981,7 @@ PrintIcm (node *arg_node, node *arg_info)
                 fprintf (outfile, ", ");
             }
 
-            Trav (arg_node->node[1], arg_info);
+            Trav (ICM_NEXT (arg_node), arg_info);
         }
     }
 
@@ -2863,7 +2862,7 @@ PrintNodeTree (node *node)
             fprintf (outfile, "(%s)\n", mdb_prf[PRF_PRF (node)]);
             break;
         case N_vardec:
-            fprintf (outfile, "(%s %s)\n", mdb_type[VARDEC_TYPE (node)->simpletype],
+            fprintf (outfile, "(%s %s)\n", mdb_type[TYPES_BASETYPE (VARDEC_TYPE (node))],
                      VARDEC_NAME (node));
             break;
         case N_fundef:
@@ -2913,6 +2912,9 @@ PrintNodeTree (node *node)
             fprintf (outfile, "->");
             PrintWLvar (WLGRIDVAR_BOUND2 (node), WLGRIDVAR_DIM (node));
             fprintf (outfile, " [%d])\n", WLGRIDVAR_DIM (node));
+            break;
+        case N_icm:
+            fprintf (outfile, "(%s)\n", ICM_NAME (node));
             break;
         default:
             fprintf (outfile, "\n");
