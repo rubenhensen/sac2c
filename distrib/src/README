@@ -1,0 +1,27 @@
+############################################################
+#  SAC v0.7 - README
+############################################################
+
+Thanks for downloading SAC v0.7.
+
+This binary distribution of SAC contains the SAC compiler sac2c
+and the SAC runtime library libsac.a ready to be used for the specific 
+system you selected. Moreover, the distribution comes with the
+complete sources of the SAC standard library and a set of SAC demo
+programs.
+
+In order to complete your SAC installation, please run the installation
+script install_sac. This will guide you through the entire installation
+process and prompt you interactively where necessary. If anything goes
+wrong, you may run install_sac repeatedly. If you encounter any problems
+during installation, you may find useful information on the SAC web pages
+at http://www.informatik.uni-kiel.de/~sacbase. If this still does not
+solve your problems, you may drop an e-mail at sacbase@informatik.uni-kiel.de.
+
+Once your installation has been completed successfully, you may find out
+how the SAC compiler sac2c works by typing sac2c -h. To find out more about
+programming in SAC, have a look into the demo programs and maybe also into
+those parts of the standard library that are implemented in SAC.
+
+Enjoy yourself with SAC.
+
