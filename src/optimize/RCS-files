@@ -23,6 +23,8 @@ WLI.c
 WLI.h
 WLT.c
 WLT.h
+WLUnroll.c
+WLUnroll.h
 WithloopFolding.c
 WithloopFolding.h
 WorkReduction.c
