@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.132  2004/03/02 09:17:07  khf
+ * WLPGlet added
+ *
  * Revision 3.131  2004/02/26 13:06:03  khf
  * wlpg_tab added
  *
@@ -1526,7 +1529,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        ADJCA2let, PREC3let, APClet, APTlet,
 
        TravSons, TravSons, TravSons, TravSons, TCCPlet, SSAlet, CAVlet, USSAlet,
-       SSADCRlet, SSACSElet, CMPTlet, TravSons, SSACFlet, SSALIRlet, LIRMOVlet, TravSons,
+       SSADCRlet, SSACSElet, CMPTlet, TravSons, SSACFlet, SSALIRlet, LIRMOVlet, WLPGlet,
        TravSons, SSAWLTlet, SSAWLIlet, SSAWLFlet,
 
        TravSons, COMP2Let, PREC2let, INSVDlet, CRTWRPlet, TravSons, PREC4let, ALlet,

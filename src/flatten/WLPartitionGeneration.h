@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/03/02 09:21:43  khf
+ * WLPGlet added
+ *
  * Revision 1.2  2004/02/26 13:11:01  khf
  * WLPartitionGeneration implemented in parts (but not tested)
  *
@@ -18,6 +21,7 @@ extern node *WLPartitionGeneration (node *arg_node);
 extern node *WLPGmodul (node *, node *);
 extern node *WLPGfundef (node *, node *);
 extern node *WLPGassign (node *, node *);
+extern node *WLPGlet (node *, node *);
 
 extern node *WLPGNwith (node *, node *);
 extern node *WLPGNwithop (node *, node *);
