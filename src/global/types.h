@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.40  1998/05/28 23:53:44  dkr
+ * added ST_foldfun
+ *
  * Revision 1.39  1998/05/28 07:48:53  cg
  * added entry ST_spmd_inout for enum statustype.
  *
@@ -261,6 +264,7 @@ typedef enum {
     ST_external,           /* external module/class                  */
     ST_system,             /* external system library                */
     ST_own,                /* own declaration of module impl.        */
+    ST_foldfun,            /* dummy function containing the fold-op  */
     ST_spmdfun             /* function generated from a spmd-region  */
 } statustype;
 
