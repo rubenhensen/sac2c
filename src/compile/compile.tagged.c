@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.18  2002/07/03 15:56:55  dkr
+ * major modifications done
+ *
  * Revision 1.17  2002/07/02 14:03:09  dkr
  * DupExprs_NT() moved to DupTree.[ch]
  *
@@ -212,7 +215,8 @@ MakeBasetypeArg_NT (types *type)
  *
  * Function:
  *   node *MakeTypeArgs( char *name, types *type,
- *                       bool add_type, bool add_dim, bool add_shape)
+ *                       bool add_type, bool add_dim, bool add_shape,
+ *                       node *exprs)
  *
  * Description:
  *   Creates a chain of N_exprs nodes containing name, type, dimensionality
@@ -221,10 +225,10 @@ MakeBasetypeArg_NT (types *type)
  ******************************************************************************/
 
 static node *
-MakeTypeArgs (char *name, types *type, bool add_type, bool add_dim, bool add_shape)
+MakeTypeArgs (char *name, types *type, bool add_type, bool add_dim, bool add_shape,
+              node *exprs)
 {
     int dim;
-    node *ret_node = NULL;
 
     DBUG_ENTER ("MakeTypeArgs");
 
@@ -239,30 +243,27 @@ MakeTypeArgs (char *name, types *type, bool add_type, bool add_dim, bool add_sha
     if (add_shape) {
         if (dim == 0) {
             /* SCL */
-            ret_node = NULL;
         } else if (dim > 0) {
             /* AKS */
-            ret_node = Type2Exprs (type);
+            exprs = AppendExprs (Type2Exprs (type), exprs);
         } else if (dim < KNOWN_DIM_OFFSET) {
             /* AKD */
-            ret_node = NULL;
         } else {
             /* AUD */
-            ret_node = NULL;
         }
     }
 
     if (add_dim) {
-        ret_node = MakeExprs (MakeNum (dim), ret_node);
+        exprs = MakeExprs (MakeNum (dim), exprs);
     }
 
     if (add_type) {
-        ret_node = MakeExprs (MakeBasetypeArg (type), ret_node);
+        exprs = MakeExprs (MakeBasetypeArg (type), exprs);
     }
 
-    ret_node = MakeExprs (MakeId_Copy_NT (name, type), ret_node);
+    exprs = MakeExprs (MakeId_Copy_NT (name, type), exprs);
 
-    DBUG_RETURN (ret_node);
+    DBUG_RETURN (exprs);
 }
 
 /******************************************************************************
@@ -669,25 +670,24 @@ MakeAllocIcm (char *name, types *type, int rc, node *set_shape_icm, node *pragma
         if (pragma == NULL) {
 #if 1
             assigns = MakeAssignIcm0 (
-              "ND_BLOCK_BEGIN",
+              "BLOCK_BEGIN",
               MakeAssignIcm1 (
                 "ND_ALLOC__DESC", MakeId_Copy_NT (name, type),
-                MakeAssignIcm2 (
-                  "ND_SET__RC", MakeId_Copy_NT (name, type), MakeNum (rc),
-                  MakeAssign (set_shape_icm,
-                              MakeAssignIcm1 ("ND_ALLOC__DATA",
-                                              MakeId_Copy_NT (name, type),
-                                              MakeAssignIcm0 ("ND_BLOCK_END",
-                                                              assigns))))));
+                MakeAssignIcm2 ("ND_SET__RC", MakeId_Copy_NT (name, type), MakeNum (rc),
+                                MakeAssign (set_shape_icm,
+                                            MakeAssignIcm1 ("ND_ALLOC__DATA",
+                                                            MakeId_Copy_NT (name, type),
+                                                            MakeAssignIcm0 ("BLOCK_END",
+                                                                            assigns))))));
 #else
-            assigns
-              = MakeAssignIcm3 ("ND_ALLOC", MakeTypeArgs (name, type, FALSE, TRUE, FALSE),
-                                MakeNum (rc), set_shape_icm, assigns);
+            assigns = MakeAssignIcm3 ("ND_ALLOC",
+                                      MakeTypeArgs (name, type, FALSE, TRUE, FALSE, NULL),
+                                      MakeNum (rc), set_shape_icm, assigns);
 #endif
         } else {
             assigns
               = MakeAssignIcm5 ("ND_ALLOC_PLACE",
-                                MakeTypeArgs (name, type, FALSE, TRUE, FALSE),
+                                MakeTypeArgs (name, type, FALSE, TRUE, FALSE, NULL),
                                 MakeNum (rc), DupNode (AP_ARG1 (PRAGMA_APL (pragma))),
                                 DupNode (AP_ARG2 (PRAGMA_APL (pragma))),
                                 DupNode (AP_ARG3 (PRAGMA_APL (pragma))), assigns);
@@ -774,15 +774,23 @@ MakeAllocIcm_CheckReuse (char *name, types *type, int rc, node *set_shape_icm,
             assigns = MakeAllocIcm_IncRc (name, type, rc, set_shape_icm, pragma, assigns);
 
             if (reuse2) {
-                assigns = MakeAssignIcm2 ("ND_CHECK_REUSE",
-                                          MakeTypeArgs (name, type, FALSE, TRUE, FALSE),
-                                          DupId_NT (reuse_id2), assigns);
+                assigns = MakeAssignIcm1 ("ND_CHECK_REUSE",
+                                          MakeTypeArgs (name, type, FALSE, TRUE, FALSE,
+                                                        MakeTypeArgs (ID_NAME (reuse_id2),
+                                                                      ID_TYPE (reuse_id2),
+                                                                      FALSE, TRUE, FALSE,
+                                                                      NULL)),
+                                          assigns);
             }
 
             if (reuse1) {
-                assigns = MakeAssignIcm2 ("ND_CHECK_REUSE",
-                                          MakeTypeArgs (name, type, FALSE, TRUE, FALSE),
-                                          DupId_NT (reuse_id1), assigns);
+                assigns = MakeAssignIcm1 ("ND_CHECK_REUSE",
+                                          MakeTypeArgs (name, type, FALSE, TRUE, FALSE,
+                                                        MakeTypeArgs (ID_NAME (reuse_id1),
+                                                                      ID_TYPE (reuse_id1),
+                                                                      FALSE, TRUE, FALSE,
+                                                                      NULL)),
+                                          assigns);
             }
         } else {
             assigns = MakeAllocIcm (name, type, rc, set_shape_icm, pragma, assigns);
@@ -829,10 +837,14 @@ DFM2AllocIcm_CheckReuse (char *name, types *type, int rc, node *pragma,
             assigns = MakeAllocIcm_IncRc (name, type, rc, set_shape_icm, pragma, assigns);
 
             while (vardec != NULL) {
-                assigns = MakeAssignIcm2 ("ND_CHECK_REUSE",
-                                          MakeTypeArgs (name, type, FALSE, TRUE, FALSE),
-                                          MakeId_Copy_NT (VARDEC_OR_ARG_NAME (vardec),
-                                                          VARDEC_OR_ARG_TYPE (vardec)),
+                assigns = MakeAssignIcm1 ("ND_CHECK_REUSE",
+                                          MakeTypeArgs (name, type, FALSE, TRUE, FALSE,
+                                                        MakeTypeArgs (VARDEC_OR_ARG_NAME (
+                                                                        vardec),
+                                                                      VARDEC_OR_ARG_TYPE (
+                                                                        vardec),
+                                                                      FALSE, TRUE, FALSE,
+                                                                      NULL)),
                                           assigns);
 
                 vardec = DFMGetMaskEntryDeclSet (NULL);
@@ -1687,7 +1699,7 @@ COMP2Typedef (node *arg_node, node *arg_info)
 
     icm = MakeIcm1 ("ND_TYPEDEF",
                     MakeTypeArgs (TYPEDEF_NAME (arg_node), TYPEDEF_TYPE (arg_node), TRUE,
-                                  FALSE, FALSE));
+                                  FALSE, FALSE, NULL));
 
     TYPEDEF_ICM (arg_node) = icm;
 
@@ -1720,11 +1732,11 @@ COMP2Objdef (node *arg_node, node *arg_info)
         || (OBJDEF_STATUS (arg_node) == ST_imported_class)) {
         icm = MakeIcm1 ("ND_OBJDEF_EXTERN",
                         MakeTypeArgs (OBJDEF_NAME (arg_node), OBJDEF_TYPE (arg_node),
-                                      TRUE, TRUE, FALSE));
+                                      TRUE, TRUE, FALSE, NULL));
     } else {
         icm = MakeIcm1 ("ND_OBJDEF",
                         MakeTypeArgs (OBJDEF_NAME (arg_node), OBJDEF_TYPE (arg_node),
-                                      TRUE, TRUE, TRUE));
+                                      TRUE, TRUE, TRUE, NULL));
     }
 
     OBJDEF_ICM (arg_node) = icm;
@@ -1808,7 +1820,7 @@ COMPFundefArgs (node *fundef, node *arg_info)
                     assigns
                       = MakeAssignIcm1 ("ND_DECL__MIRROR_PARAM",
                                         MakeTypeArgs (ARG_NAME (arg), ARG_TYPE (arg),
-                                                      FALSE, TRUE, TRUE),
+                                                      FALSE, TRUE, TRUE, NULL),
                                         assigns);
 
                     /*
@@ -1820,7 +1832,7 @@ COMPFundefArgs (node *fundef, node *arg_info)
                         assigns
                           = MakeAssignIcm1 ("ND_DECL_PARAM_inout",
                                             MakeTypeArgs (ARG_NAME (arg), ARG_TYPE (arg),
-                                                          TRUE, FALSE, FALSE),
+                                                          TRUE, FALSE, FALSE, NULL),
                                             assigns);
                     }
                 }
@@ -1995,7 +2007,7 @@ COMP2Vardec (node *arg_node, node *arg_info)
 
     VARDEC_ICM (arg_node)
       = MakeIcm1 ("ND_DECL", MakeTypeArgs (VARDEC_NAME (arg_node), VARDEC_TYPE (arg_node),
-                                           TRUE, TRUE, TRUE));
+                                           TRUE, TRUE, TRUE, NULL));
 
     if (VARDEC_NEXT (arg_node) != NULL) {
         VARDEC_NEXT (arg_node) = Trav (VARDEC_NEXT (arg_node), arg_info);
@@ -2456,7 +2468,7 @@ COMPApIds (node *ap, node *arg_info)
             ret_node
               = MakeAssignIcm1 ("ND_REFRESH_MIRROR",
                                 MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                                              FALSE, TRUE, FALSE),
+                                              FALSE, TRUE, FALSE, NULL),
                                 ret_node);
 
             if (ATG_has_rc[tag]) {
@@ -2483,7 +2495,7 @@ COMPApIds (node *ap, node *arg_info)
                 ret_node
                   = MakeAssignIcm1 ("ND_SET_SHAPE",
                                     MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                                                  FALSE, TRUE, TRUE),
+                                                  FALSE, TRUE, TRUE, NULL),
                                     ret_node);
 #endif
             }
@@ -2645,10 +2657,14 @@ COMPPrfDim (node *arg_node, node *arg_info, node **set_shape_icm)
 
     DBUG_ASSERT ((NODE_TYPE (arg) == N_id), "N_id as arg of F_dim expected!");
 
-    (*set_shape_icm) = MakeIcm2 ("SET__SHAPE", DupIds_Id_NT (let_ids), MakeNum (0));
+    (*set_shape_icm) = MakeIcm2 ("ND_SET__SHAPE", DupIds_Id_NT (let_ids), MakeNum (0));
 
-    ret_node
-      = MakeAssignIcm2 ("ND_PRF_DIM__DATA", DupIds_Id_NT (let_ids), DupId_NT (arg), NULL);
+    ret_node = MakeAssignIcm1 ("ND_PRF_DIM__DATA",
+                               MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                             FALSE, TRUE, FALSE,
+                                             MakeTypeArgs (ID_NAME (arg), ID_TYPE (arg),
+                                                           FALSE, TRUE, FALSE, NULL)),
+                               NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -2683,9 +2699,9 @@ COMPPrfShape (node *arg_node, node *arg_info, node **set_shape_icm)
 
     DBUG_ASSERT ((NODE_TYPE (arg) == N_id), "N_id as arg of F_shape expected!");
 
-    icm_args
-      = MakeExprs (DupIds_Id_NT (let_ids),
-                   MakeTypeArgs (ID_NAME (arg), ID_TYPE (arg), FALSE, TRUE, FALSE));
+    icm_args = MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE, TRUE, FALSE,
+                             MakeTypeArgs (ID_NAME (arg), ID_TYPE (arg), FALSE, TRUE,
+                                           FALSE, NULL));
 
     (*set_shape_icm) = MakeIcm1 ("ND_PRF_SHAPE__SHAPE", icm_args);
 
@@ -2723,11 +2739,11 @@ COMPPrfReshape (node *arg_node, node *arg_info, node **set_shape_icm)
     arg1 = PRF_ARG1 (arg_node);
     arg2 = PRF_ARG2 (arg_node);
 
-    icm_args = MakeExprs (DupIds_Id_NT (let_ids),
-                          CombineExprs (MakeTypeArgs (ID_NAME (arg1), ID_TYPE (arg1),
-                                                      FALSE, TRUE, FALSE),
-                                        MakeTypeArgs (ID_NAME (arg2), ID_TYPE (arg2),
-                                                      FALSE, TRUE, FALSE)));
+    icm_args
+      = MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE, TRUE, FALSE,
+                      MakeTypeArgs (ID_NAME (arg1), ID_TYPE (arg1), FALSE, TRUE, FALSE,
+                                    MakeTypeArgs (ID_NAME (arg2), ID_TYPE (arg2), FALSE,
+                                                  TRUE, FALSE, NULL)));
 
     (*set_shape_icm) = MakeIcm1 ("ND_PRF_RESHAPE__SHAPE", icm_args);
 
@@ -2775,11 +2791,11 @@ COMPPrfIdxSel (node *arg_node, node *arg_info, node **set_shape_icm)
     }
     DBUG_ASSERT ((NODE_TYPE (arg2) == N_id), "N_id as 2nd arg of F_idx_sel expected!");
 
-    icm_args = MakeExprs (DupIds_Id_NT (let_ids),
-                          CombineExprs (MakeTypeArgs (ID_NAME (arg1), ID_TYPE (arg1),
-                                                      FALSE, TRUE, FALSE),
-                                        MakeTypeArgs (ID_NAME (arg2), ID_TYPE (arg2),
-                                                      FALSE, TRUE, FALSE)));
+    icm_args
+      = MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE, TRUE, FALSE,
+                      MakeTypeArgs (ID_NAME (arg1), ID_TYPE (arg1), FALSE, TRUE, FALSE,
+                                    MakeTypeArgs (ID_NAME (arg2), ID_TYPE (arg2), FALSE,
+                                                  TRUE, FALSE, NULL)));
 
     (*set_shape_icm) = MakeIcm1 ("ND_PRF_IDX_SEL__SHAPE", icm_args);
 
@@ -2831,15 +2847,14 @@ COMPPrfIdxModarray (node *arg_node, node *arg_info, node **set_shape_icm)
     DBUG_ASSERT ((NODE_TYPE (arg3) != N_array),
                  "No N_array as 3rd arg of F_idx_modarray expected!");
 
-    icm_args = MakeExprs (DupIds_Id_NT (let_ids),
-                          CombineExprs (MakeTypeArgs (ID_NAME (arg1), ID_TYPE (arg1),
-                                                      FALSE, TRUE, FALSE),
-                                        CombineExprs (MakeTypeArgs (ID_NAME (arg2),
-                                                                    ID_TYPE (arg2), FALSE,
-                                                                    TRUE, FALSE),
-                                                      MakeTypeArgs (ID_NAME (arg3),
-                                                                    ID_TYPE (arg3), FALSE,
-                                                                    TRUE, FALSE))));
+    icm_args
+      = MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE, TRUE, FALSE,
+                      MakeTypeArgs (ID_NAME (arg1), ID_TYPE (arg1), FALSE, TRUE, FALSE,
+                                    MakeTypeArgs (ID_NAME (arg2), ID_TYPE (arg2), FALSE,
+                                                  TRUE, FALSE,
+                                                  MakeTypeArgs (ID_NAME (arg3),
+                                                                ID_TYPE (arg3), FALSE,
+                                                                TRUE, FALSE, NULL))));
 
     (*set_shape_icm) = MakeIcm1 ("ND_PRF_IDX_MODARRAY__SHAPE", icm_args);
 
@@ -2881,15 +2896,68 @@ COMPPrfSel (node *arg_node, node *arg_info, node **set_shape_icm)
                  "N_id or N_array as 1st arg of F_sel expected!");
     DBUG_ASSERT ((NODE_TYPE (arg2) == N_id), "N_id as 2nd arg of F_sel expected!");
 
-    icm_args = MakeExprs (DupIds_Id_NT (let_ids),
-                          CombineExprs (MakeTypeArgs (ID_NAME (arg1), ID_TYPE (arg1),
-                                                      FALSE, TRUE, FALSE),
-                                        MakeTypeArgs (ID_NAME (arg2), ID_TYPE (arg2),
-                                                      FALSE, TRUE, FALSE)));
+    icm_args
+      = MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE, TRUE, FALSE,
+                      MakeTypeArgs (ID_NAME (arg1), ID_TYPE (arg1), FALSE, TRUE, FALSE,
+                                    MakeTypeArgs (ID_NAME (arg2), ID_TYPE (arg2), FALSE,
+                                                  TRUE, FALSE, NULL)));
 
     (*set_shape_icm) = MakeIcm1 ("ND_PRF_SEL__SHAPE", icm_args);
 
     ret_node = MakeAssignIcm1 ("ND_PRF_SEL__DATA", DupTree (icm_args), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *COMPPrfModarray( node *arg_node, node *arg_info,
+ *                          node **set_shape_icm)
+ *
+ * Description:
+ *   Compiles N_prf node of type F_modarray.
+ *   The return value is a N_assign chain of ICMs.
+ *   Note, that the old 'arg_node' is removed by COMPLet.
+ *
+ * Remarks:
+ *   INFO_COMP_LASTIDS contains name of assigned variable.
+ *
+ ******************************************************************************/
+
+static node *
+COMPPrfModarray (node *arg_node, node *arg_info, node **set_shape_icm)
+{
+    node *ret_node;
+    node *arg1, *arg2, *arg3;
+    ids *let_ids;
+    node *icm_args;
+
+    DBUG_ENTER ("COMPPrfModarray");
+
+    let_ids = INFO_COMP_LASTIDS (arg_info);
+    arg1 = PRF_ARG1 (arg_node);
+    arg2 = PRF_ARG2 (arg_node);
+    arg3 = PRF_ARG3 (arg_node);
+
+    DBUG_ASSERT ((NODE_TYPE (arg1) == N_id), "N_id as 1st arg of F_modarray expected!");
+    DBUG_ASSERT (((NODE_TYPE (arg2) == N_id) || (NODE_TYPE (arg2) == N_array)),
+                 "N_id or N_array as 2nd arg of F_modarray expected!");
+    DBUG_ASSERT ((NODE_TYPE (arg3) != N_array),
+                 "No N_array as 3rd arg of F_modarray expected!");
+
+    icm_args
+      = MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE, TRUE, FALSE,
+                      MakeTypeArgs (ID_NAME (arg1), ID_TYPE (arg1), FALSE, TRUE, FALSE,
+                                    MakeTypeArgs (ID_NAME (arg2), ID_TYPE (arg2), FALSE,
+                                                  TRUE, FALSE,
+                                                  MakeTypeArgs (ID_NAME (arg3),
+                                                                ID_TYPE (arg3), FALSE,
+                                                                TRUE, FALSE, NULL))));
+
+    (*set_shape_icm) = MakeIcm1 ("ND_PRF_MODARRAY__SHAPE", icm_args);
+
+    ret_node = MakeAssignIcm1 ("ND_PRF_MODARRAY__DATA", DupTree (icm_args), NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -2918,7 +2986,8 @@ COMPPrfIcm1 (char *icm_name, node *arg_node, node *arg_info, node **set_shape_ic
     DBUG_ENTER ("COMPPrfIcm1");
 
     (*set_shape_icm)
-      = MakeIcm2 ("SET__SHAPE", DupIds_Id_NT (INFO_COMP_LASTIDS (arg_info)), MakeNum (0));
+      = MakeIcm2 ("ND_SET__SHAPE", DupIds_Id_NT (INFO_COMP_LASTIDS (arg_info)),
+                  MakeNum (0));
 
     ret_node = MakeAssignIcm1 (icm_name, DupNode_NT (PRF_ARG1 (arg_node)), NULL);
 
@@ -2949,7 +3018,8 @@ COMPPrfIcm2 (char *icm_name, node *arg_node, node *arg_info, node **set_shape_ic
     DBUG_ENTER ("COMPPrfIcm2");
 
     (*set_shape_icm)
-      = MakeIcm2 ("SET__SHAPE", DupIds_Id_NT (INFO_COMP_LASTIDS (arg_info)), MakeNum (0));
+      = MakeIcm2 ("ND_SET__SHAPE", DupIds_Id_NT (INFO_COMP_LASTIDS (arg_info)),
+                  MakeNum (0));
 
     ret_node = MakeAssignIcm2 (icm_name, DupNode_NT (PRF_ARG1 (arg_node)),
                                DupNode_NT (PRF_ARG2 (arg_node)), NULL);
@@ -2978,7 +3048,8 @@ COMPPrfConvertScalar (node *arg_node, node *arg_info, node **set_shape_icm)
     DBUG_ENTER ("COMPPrfConvertScalar");
 
     (*set_shape_icm)
-      = MakeIcm2 ("SET__SHAPE", DupIds_Id_NT (INFO_COMP_LASTIDS (arg_info)), MakeNum (0));
+      = MakeIcm2 ("ND_SET__SHAPE", DupIds_Id_NT (INFO_COMP_LASTIDS (arg_info)),
+                  MakeNum (0));
 
     /* return argument, free the remaining parts */
     tmp = arg_node;
@@ -3064,7 +3135,7 @@ COMP2Prf (node *arg_node, node *arg_info)
         check_reuse1 = PRF_ARG1 (arg_node);
         check_reuse2 = PRF_ARG2 (arg_node);
         ret_node = arg_node;
-        ret_node2 = MakeIcm2 ("SET__SHAPE", DupIds_Id_NT (let_ids), MakeNum (0));
+        ret_node2 = MakeIcm2 ("ND_SET__SHAPE", DupIds_Id_NT (let_ids), MakeNum (0));
         break;
 
         /*
@@ -3097,6 +3168,11 @@ COMP2Prf (node *arg_node, node *arg_info)
 
     case F_sel:
         ret_node = COMPPrfSel (arg_node, arg_info, &ret_node2);
+        break;
+
+    case F_modarray:
+        check_reuse1 = PRF_ARG1 (arg_node);
+        ret_node = COMPPrfModarray (arg_node, arg_info, &ret_node2);
         break;
 
         /*
@@ -3178,10 +3254,13 @@ COMPIdLet (node *arg_node, node *arg_info)
     }
 
     if (!strcmp (IDS_NAME (let_ids), ID_NAME (arg_node))) {
-        ret_node = MakeAssignIcm2 ("ND_ASSIGN",
+        ret_node = MakeAssignIcm1 ("ND_ASSIGN",
                                    MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                                                 FALSE, TRUE, FALSE),
-                                   DupId_NT (arg_node), ret_node);
+                                                 FALSE, TRUE, FALSE,
+                                                 MakeTypeArgs (ID_NAME (arg_node),
+                                                               ID_TYPE (arg_node), FALSE,
+                                                               TRUE, FALSE, NULL)),
+                                   ret_node);
     } else {
         /*
          * We are dealing with an assignment of the kind:
@@ -3226,10 +3305,13 @@ COMPIdFromUnique (node *arg_node, node *arg_info)
       = MakeSetRcIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids), IDS_REFCNT (let_ids), NULL);
 
     if (strcmp (IDS_NAME (let_ids), ID_NAME (arg_node))) {
-        ret_node = MakeAssignIcm2 ("ND_ASSIGN",
+        ret_node = MakeAssignIcm1 ("ND_ASSIGN",
                                    MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                                                 FALSE, TRUE, FALSE),
-                                   DupId_NT (arg_node), ret_node);
+                                                 FALSE, TRUE, FALSE,
+                                                 MakeTypeArgs (ID_NAME (arg_node),
+                                                               ID_TYPE (arg_node), FALSE,
+                                                               TRUE, FALSE, NULL)),
+                                   ret_node);
     } else {
         ret_node = MakeAssignIcm0 ("NOOP", ret_node);
     }
@@ -3275,15 +3357,17 @@ COMPIdToUnique (node *arg_node, node *arg_info)
             ret_node
               = MakeAssignIcm3 ("ND_MAKE_UNIQUE",
                                 MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                                              FALSE, TRUE, FALSE),
-                                DupId_NT (arg_node),
+                                              FALSE, TRUE, FALSE, NULL),
+                                MakeTypeArgs (ID_NAME (arg_node), ID_TYPE (arg_node),
+                                              FALSE, TRUE, FALSE, NULL),
                                 MakeId_Copy (GenericFun (0, rhs_type)), NULL);
         } else {
             ret_node
               = MakeAssignIcm3 ("ND_COPY",
                                 MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                                              FALSE, TRUE, FALSE),
-                                DupId_NT (arg_node),
+                                              FALSE, TRUE, FALSE, NULL),
+                                MakeTypeArgs (ID_NAME (arg_node), ID_TYPE (arg_node),
+                                              FALSE, TRUE, FALSE, NULL),
                                 MakeId_Copy (GenericFun (0, rhs_type)),
                                 MakeDecRcIcm (ID_NAME (arg_node), rhs_type,
                                               ID_REFCNT (arg_node), 1, NULL));
@@ -3291,8 +3375,9 @@ COMPIdToUnique (node *arg_node, node *arg_info)
     } else {
         ret_node = MakeAssignIcm3 ("ND_MAKE_UNIQUE",
                                    MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                                                 FALSE, TRUE, FALSE),
-                                   DupId_NT (arg_node),
+                                                 FALSE, TRUE, FALSE, NULL),
+                                   MakeTypeArgs (ID_NAME (arg_node), ID_TYPE (arg_node),
+                                                 FALSE, TRUE, FALSE, NULL),
                                    MakeId_Copy (GenericFun (0, rhs_type)), NULL);
     }
 
@@ -3419,14 +3504,16 @@ COMP2Array (node *arg_node, node *arg_info)
 
     if (ARRAY_STRING (arg_node) != NULL) {
         /* array is a string */
-        ret_node = MakeAllocIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                                 RC_INIT (IDS_REFCNT (let_ids)),
-                                 MakeIcm3 ("ND_SET__SHAPE", DupIds_Id_NT (let_ids),
-                                           MakeNum (1), MakeNum (num_elems)),
-                                 NULL,
-                                 MakeAssignIcm2 ("ND_ASSIGN__STRING__DATA",
-                                                 DupIds_Id_NT (let_ids),
-                                                 DupNode (arg_node), ret_node));
+        ret_node
+          = MakeAllocIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                          RC_INIT (IDS_REFCNT (let_ids)),
+                          MakeIcm3 ("ND_SET__SHAPE", DupIds_Id_NT (let_ids), MakeNum (1),
+                                    MakeNum (num_elems)),
+                          NULL,
+                          MakeAssignIcm2 ("ND_ASSIGN__STRING__DATA",
+                                          DupIds_Id_NT (let_ids),
+                                          MakeStr (StringCopy (ARRAY_STRING (arg_node))),
+                                          ret_node));
     } else {
         node *icm_args;
 
@@ -3447,7 +3534,7 @@ COMP2Array (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *COMPLoop(node *arg_node, node *arg_info)
+ *   node *COMPLoop( node *arg_node, node *arg_info)
  *
  * Description:
  *   I brushed the whole function and named the variables ingenious, but I
@@ -3677,7 +3764,7 @@ COMP2Loop (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *COMPCond(node *arg_node, node *arg_info)
+ *   node *COMPCond( node *arg_node, node *arg_info)
  *
  * Description:
  *   Compiling a conditional, that should be easy, except for the fact
@@ -3812,8 +3899,9 @@ COMP2Cast (node *arg_node, node *arg_info)
     arg_node = Trav (CAST_EXPR (arg_node), arg_info);
     CAST_EXPR (tmp) = NULL;
 
-    /* do not free tmp here - LET will remove it again !
-       tmp = FreeTree( tmp); */
+    /*
+     * do not free 'tmp' here - LET will remove it!
+     */
 
     DBUG_RETURN (arg_node);
 }
