@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/10/22 13:40:55  sah
+ * the use chain is freed during the
+ * tarversal as it is no more needed
+ * afterwards
+ *
  * Revision 1.3  2004/10/22 13:23:51  sah
  * working implementation for fundefs
  *
@@ -20,6 +25,7 @@
 #include "traverse.h"
 #include "tree_basic.h"
 #include "symboltable.h"
+#include "free.h"
 #include "Error.h"
 
 /*
@@ -137,6 +143,8 @@ ANSSymbol (node *arg_node, info *arg_info)
 node *
 ANSUse (node *arg_node, info *arg_info)
 {
+    node *result;
+
     DBUG_ENTER ("ANSUse");
 
     INFO_ANS_CURRENT (arg_info) = USE_MOD (arg_node);
@@ -149,7 +157,14 @@ ANSUse (node *arg_node, info *arg_info)
         USE_NEXT (arg_node) = Trav (USE_NEXT (arg_node), arg_info);
     }
 
-    DBUG_RETURN (arg_node);
+    /* the use information is no more needed from
+     * this point on, so we can free this use
+     */
+
+    result = USE_NEXT (arg_node);
+    arg_node = FreeNode (arg_node);
+
+    DBUG_RETURN (result);
 }
 
 node *
