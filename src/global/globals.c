@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.58  2004/08/09 13:15:14  khf
+ * OPT_WLPG enabled
+ *
  * Revision 3.57  2004/08/06 10:47:56  skt
  * executionmodes_available added
  *
@@ -515,11 +518,13 @@ unsigned int optimize = OPT_ALL & (~OPT_LIR) & (~OPT_MTO) & (~OPT_SBE) & (~OPT_M
                         & (~OPT_APL) & (~OPT_DL) & (~OPT_SP) & (~OPT_TSI) & (~OPT_WLFS)
                         & (~OPT_CVP) & (~OPT_WLPG) & (~OPT_WLS);
 #else /* PRODUCTION */
-/* as long as OPT_SBE is shared with OPT_CVP OPT_SBE should be not used here
- * to allow to work with OPT_CVP
+/**
+ * as long as OPT_SBE is shared with OPT_CVP and OPT_MTO is shared
+ * with OPT_WLPG OPT_SBE and OPT_MTO should be not used here
+ * to allow to work with OPT_CVP and OPT_WLPG
  */
-unsigned int optimize = OPT_ALL & (~OPT_MTO) /*& (~OPT_SBE)*/ & (~OPT_MTI) & (~OPT_APL)
-                        & (~OPT_WLFS) & (~OPT_TSI) & (~OPT_WLPG) & (~OPT_WLS);
+unsigned int optimize = OPT_ALL /*& (~OPT_MTO) & (~OPT_SBE)*/ & (~OPT_MTI) & (~OPT_APL)
+                        & (~OPT_WLFS) & (~OPT_TSI) & (~OPT_WLS);
 
 #endif /* PRODUCTION */
 
