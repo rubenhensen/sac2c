@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.5  1999/10/29 16:44:55  dkr
+ * ExpandMRDL() added
+ *
  * Revision 2.4  1999/10/28 17:08:05  dkr
  * signature of functions Print...Mask() changed
  *
@@ -74,7 +77,7 @@ extern int CheckScope (long *act_mrdl, node *assign_node, int varno, int checkde
 extern void PushMRDL (long NumVar);
 extern void PushDupMRDL ();
 extern void PopMRDL ();
-extern void PopMRDL2 ();
+extern void ExpandMRDL (int num);
 
 #define INC_VAR(mask, var) mask[var] += 1
 #define DEC_VAR(mask, var) mask[var] -= 1
@@ -96,6 +99,7 @@ extern long *GenMask (int varno);
 extern long *ReGenMask (long *mask, int varno);
 extern void MinusMask (long *mask1, long *mask2, int varno);
 extern long *DupMask (long *oldmask, int varno);
+extern long *CopyMask (long *mask1, int varno1, long *mask2, int varno2);
 extern void OrMask (long *mask1, long *mask2, int varno);
 extern void AndMask (long *mask1, long *mask2, int varno);
 extern short CheckMask (long *mask1, long *mask2, int varno);

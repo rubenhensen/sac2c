@@ -1,8 +1,8 @@
 /*
  *
  * $Log$
- * Revision 2.11  1999/10/28 19:39:50  dkr
- * *** empty log message ***
+ * Revision 2.12  1999/10/29 16:44:44  dkr
+ * ExpandMRDL() added
  *
  * Revision 2.10  1999/10/28 18:06:39  dkr
  * output of PrintMrdMask() changed
@@ -89,10 +89,6 @@
   In OPTassign arg_info->node[2] is set, don't know why.
   In OPTfundef the NODE_TYPE of arg_info is changed, don't know why.
  */
-
-#ifndef DUPMRD
-#define DUPMRD 1
-#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -262,16 +258,38 @@ PopMRDL ()
     DBUG_VOID_RETURN;
 }
 
+/******************************************************************************
+ *
+ * function:
+ *   void ExpandMRDL(int num)
+ *
+ * description:
+ *   expands the top-most MRD-mask by 'num' entries.
+ *   (the old MRD-mask is copied into the expanded one und removed from memory.)
+ *
+ ******************************************************************************/
+
 void
-PopMRDL2 ()
+ExpandMRDL (int num)
 {
-    DBUG_ENTER ("PopMRDL2");
+    node **varlist;
+    int NumVar, i;
+
+    DBUG_ENTER ("ExpandMRDL");
     DBUG_PRINT ("STACK",
-                ("Pop second TOS = %d -> %d", mrdl_stack->tos, (mrdl_stack->tos) - 1));
-    FREE (mrdl_stack->stack[(mrdl_stack->tos) - 1].varlist);
-    mrdl_stack->stack[(mrdl_stack->tos) - 1].varlist
-      = mrdl_stack->stack[mrdl_stack->tos].varlist;
-    mrdl_stack->tos--;
+                ("Dup Stack TOS = %d -> %d", mrdl_stack->tos, (mrdl_stack->tos) + 1));
+    NumVar = mrdl_stack->stack[mrdl_stack->tos].vl_len;
+    varlist = (node **)MRD_LIST;
+    MRD_LIST = (node **)Malloc (sizeof (node *) * (NumVar + num + 1));
+    for (i = 0; i < NumVar; i++) {
+        MRD (i) = varlist[i];
+    }
+    FREE (varlist);
+    for (i = NumVar; i < NumVar + num; i++) {
+        MRD (i) = NULL;
+    }
+    mrdl_stack->stack[mrdl_stack->tos].vl_len = NumVar + num;
+
     DBUG_VOID_RETURN;
 }
 
@@ -554,6 +572,21 @@ DupMask (long *oldmask, int varno)
     DBUG_RETURN (mask);
 }
 
+long *
+CopyMask (long *mask1, int varno1, long *mask2, int varno2)
+{
+    int i;
+
+    DBUG_ENTER ("CopyMask");
+    DBUG_ASSERT ((mask2 != NULL), "CopyMask without mask2.");
+
+    for (i = 0; i < MIN (varno1, varno2); i++) {
+        mask2[i] = mask1[i];
+    }
+
+    DBUG_RETURN (mask2);
+}
+
 /*
  *
  *  functionname  : ReadMask
@@ -598,7 +631,7 @@ PrintDefUseMask (FILE *handle, long *mask, int varno)
     DBUG_ENTER ("PrintDefUseMask");
 
     if (handle == NULL) {
-        handle = stdout;
+        handle = stderr;
     }
 
     if (mask) {
@@ -667,7 +700,7 @@ PrintMrdMask (FILE *handle, long *mrdmask, int varno)
     DBUG_ENTER ("PrintMRD");
 
     if (handle == NULL) {
-        handle = stdout;
+        handle = stderr;
     }
 
     fprintf (handle, "**MRD list: ");
@@ -1046,7 +1079,7 @@ node *
 OPTTrav (node *trav_node, node *arg_info, node *arg_node)
 {
     long *old_mask[2];
-    int i;
+    int i, do_pop;
     ids *_ids;
 
     DBUG_ENTER ("OPTTrav");
@@ -1155,22 +1188,29 @@ OPTTrav (node *trav_node, node *arg_info, node *arg_node)
                            Outside of the new WL this has the same effect as the old WL.
                            But inside we have the index variables defined.
                            See comment below at N_Nwith. */
-#if DUPMRD
+
                         if (comp_node
                             && (N_Nwith == NODE_TYPE (comp_node)
-                                || N_with == NODE_TYPE (comp_node)))
+                                || N_with == NODE_TYPE (comp_node))) {
+                            /*
+                             * For the current assignment a new MRD mask must be
+                             * generated. For now we can simply duplicate the one for the
+                             * previous assignment. This new MRD mask will be expanded
+                             * during the following Trav(). Therefore this PushDupMRDL()
+                             * and the following PopMRDL() are *not* redundant!!
+                             */
                             PushDupMRDL ();
-#endif
+                            do_pop = 1;
+                        } else {
+                            do_pop = 0;
+                        }
 
                         /* traverse into the N_let node */
                         trav_node = Trav (trav_node, arg_info);
 
-#if DUPMRD
-                        if (comp_node
-                            && (N_Nwith == NODE_TYPE (comp_node)
-                                || N_with == NODE_TYPE (comp_node)))
+                        if (do_pop) {
                             PopMRDL ();
-#endif
+                        }
 
                         /* add new defines to MRD list */
                         ids_node = LET_IDS (trav_node);
@@ -1297,14 +1337,19 @@ OPTTrav (node *trav_node, node *arg_info, node *arg_node)
                 INFO_DEF = GenMask (INFO_CF_VARNO (arg_info));
                 INFO_USE = GenMask (INFO_CF_VARNO (arg_info));
 
-#if DUPMRD
                 if (MRD_TAB) {
+                    /*
+                     * This PushDupMRDL() and the following PopMRDL() are *not*
+                     * redundant!! (see remark at first occurence of PushDupMRDL)
+                     */
                     PushDupMRDL ();
-                    trav_node = Trav (trav_node, arg_info);
+                }
+
+                trav_node = Trav (trav_node, arg_info);
+
+                if (MRD_TAB) {
                     PopMRDL ();
-                } else
-#endif
-                    trav_node = Trav (trav_node, arg_info);
+                }
 
                 if (!trav_node)
                     trav_node = MakeEmpty ();
@@ -1387,16 +1432,21 @@ OPTTrav (node *trav_node, node *arg_info, node *arg_node)
                 INFO_DEF = GenMask (INFO_CF_VARNO (arg_info));
                 INFO_USE = GenMask (INFO_CF_VARNO (arg_info));
 
-#if DUPMRD
                 if (MRD_TAB) {
+                    /*
+                     * This PushDupMRDL() and the following PopMRDL() are *not*
+                     * redundant!! (see remark at first occurence of PushDupMRDL)
+                     */
                     PushDupMRDL ();
-                    trav_node = Trav (trav_node, arg_info);
+                }
+
+                trav_node = Trav (trav_node, arg_info);
+
+                if (MRD_TAB) {
                     PopMRDL ();
                 } else
-#endif
-                    trav_node = Trav (trav_node, arg_info);
 
-                if (!trav_node)
+                  if (!trav_node)
                     trav_node = MakeEmpty ();
 
                 PlusMask (WHILE_DEFMASK (arg_node), INFO_DEF, INFO_CF_VARNO (arg_info));
@@ -1467,15 +1517,21 @@ OPTTrav (node *trav_node, node *arg_info, node *arg_node)
                 INFO_USE = GenMask (INFO_CF_VARNO (arg_info));
                 /* defines within this code must not appear as MRDs while traversing
                    other N_Ncode nodes. So the MRDL has to be saved. */
-#if DUPMRD
-                if (MRD_TAB)
+
+                if (MRD_TAB) {
+                    /*
+                     * This PushDupMRDL() and the following PopMRDL() are *not*
+                     * redundant!! (see remark at first occurence of PushDupMRDL)
+                     */
                     PushDupMRDL ();
-#endif
+                }
+
                 trav_node = Trav (trav_node, arg_info);
-#if DUPMRD
-                if (MRD_TAB)
+
+                if (MRD_TAB) {
                     PopMRDL ();
-#endif
+                }
+
                 PlusMask (trav_node->mask[0], INFO_DEF, INFO_CF_VARNO (arg_info));
                 PlusMask (trav_node->mask[1], INFO_USE, INFO_CF_VARNO (arg_info));
                 PlusMask (INFO_DEF, old_mask[0], INFO_CF_VARNO (arg_info));
