@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2004/10/07 15:35:31  khf
+ * added support for multioperator WLs
+ *
  * Revision 3.6  2004/09/28 16:33:12  ktr
  * cleaned up concurrent (removed everything not working / not working with emm)
  *
@@ -100,9 +103,10 @@
 node *
 SYNCIassign (node *arg_node, node *arg_info)
 {
-    node *with, *sync_let, *sync;
+    node *with, *sync_let, *sync, *withop;
     ids *with_ids;
     DFMmask_base_t maskbase;
+    int foldcount;
 
     DBUG_ENTER ("SYNCIassign");
 
@@ -123,7 +127,6 @@ SYNCIassign (node *arg_node, node *arg_info)
         && (NODE_TYPE (LET_EXPR (sync_let)) == N_Nwith2)) {
         DBUG_PRINT ("SYNCI", ("build sync-block around with-loop"));
 
-        with_ids = LET_IDS (sync_let);
         with = LET_EXPR (sync_let);
 
         /*
@@ -135,12 +138,17 @@ SYNCIassign (node *arg_node, node *arg_info)
         SYNC_FIRST (sync) = INFO_SYNCI_FIRST (arg_info);
         ASSIGN_INSTR (arg_node) = sync;
 
-        if (NWITH2_TYPE (with) == WO_foldfun) {
-            SYNC_FOLDCOUNT (sync) = 1;
-            needed_sync_fold = MAX (needed_sync_fold, 1);
-        } else {
-            SYNC_FOLDCOUNT (sync) = 0;
+        withop = NWITH2_WITHOP (with);
+        foldcount = 0;
+        while (withop != NULL) {
+            if (NWITHOP_TYPE (withop) == WO_foldfun) {
+                foldcount++;
+            }
+            withop = NWITHOP_NEXT (withop);
         }
+
+        SYNC_FOLDCOUNT (sync) = foldcount;
+        needed_sync_fold = MAX (needed_sync_fold, foldcount);
 
         /*
          * get IN/INOUT/OUT/LOCAL from the N_Nwith2 node.
@@ -151,17 +159,23 @@ SYNCIassign (node *arg_node, node *arg_info)
         SYNC_LOCAL (sync) = DFMGenMaskCopy (NWITH2_LOCAL_MASK (with));
         SYNC_OUTREP (sync) = DFMGenMaskClear (maskbase);
 
-        DBUG_ASSERT ((IDS_NEXT (LET_IDS (sync_let)) == NULL),
-                     "more than one ids on LHS of with-loop found");
-
-        /*
-         * add vars from LHS of with-loop assignment
-         */
-        if ((NWITH2_TYPE (with) == WO_genarray) || (NWITH2_TYPE (with) == WO_modarray)) {
-            DFMSetMaskEntrySet (SYNC_INOUT (sync), NULL, ID_VARDEC (NWITH2_MEM (with)));
-            DFMSetMaskEntryClear (SYNC_IN (sync), NULL, ID_VARDEC (NWITH2_MEM (with)));
-        } else {
-            DFMSetMaskEntrySet (SYNC_OUT (sync), NULL, LET_VARDEC (sync_let));
+        withop = NWITH2_WITHOP (with);
+        with_ids = LET_IDS (sync_let);
+        while (withop != NULL) {
+            /*
+             * add vars from LHS of with-loop assignment
+             */
+            if ((NWITHOP_TYPE (withop) == WO_genarray)
+                || (NWITHOP_TYPE (withop) == WO_modarray)) {
+                DFMSetMaskEntrySet (SYNC_INOUT (sync), NULL,
+                                    ID_VARDEC (NWITHOP_MEM (withop)));
+                DFMSetMaskEntryClear (SYNC_IN (sync), NULL,
+                                      ID_VARDEC (NWITHOP_MEM (withop)));
+            } else {
+                DFMSetMaskEntrySet (SYNC_OUT (sync), NULL, IDS_VARDEC (with_ids));
+            }
+            withop = NWITHOP_NEXT (withop);
+            with_ids = IDS_NEXT (with_ids);
         }
 
         /*
