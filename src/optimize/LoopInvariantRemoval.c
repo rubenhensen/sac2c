@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.7  2000/01/26 23:21:53  dkr
+ * macro DUP_UNS removed
+ *
  * Revision 2.6  2000/01/26 17:29:54  dkr
  * type of traverse-function-table changed.
  *
@@ -1294,10 +1297,9 @@ InvarUnswitch (node *arg_node, node *loop_node, node *arg_info)
                 ("Moving nodetype %s up", mdb_nodetype[arg_node->node[0]->nodetype]));
     if (NONE != MOVE) {
         INFO_DUP_TYPE (arg_info) = DUP_INVARIANT; /* arg_info->flag = 2 */
-        UNS_NODES
-          = arg_node->node[0]->node[1]->node[0]; /* UNS_NODES: arg_info->node[0] */
+        arg_info->node[0] = arg_node->node[0]->node[1]->node[0];
         arg_node->node[0]->node[1]->node[0] = DupTree (loop_node, arg_info);
-        UNS_NODES = arg_node->node[0]->node[2]->node[0];
+        arg_info->node[0] = arg_node->node[0]->node[2]->node[0];
         arg_node->node[0]->node[2]->node[0] = DupTree (loop_node, arg_info);
         MOVE = NONE;
     } else {
