@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.12  1995/10/31 08:56:18  cg
+ * Revision 1.13  1995/11/06 18:44:45  cg
+ * bug fixed in writing reference parameters.
+ *
+ * Revision 1.12  1995/10/31  08:56:18  cg
  * Parameters with attribute ST_reference will be printed with "&",
  * parameters with attribute ST_readonly_reference will be
  * printed with "(&)".
@@ -139,7 +142,8 @@ Type2String (types *type, int flag)
                     }
             }
 
-        if ((type->attrib != ST_regular) || (1 == flag)) {
+        if ((type->attrib == ST_reference) || (type->attrib == ST_readonly_reference)
+            || (1 == flag)) {
             strcat (tmp_string, " ");
         }
 
