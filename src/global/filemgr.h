@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2004/11/25 22:25:11  cg
+ * Added FMGRsetFileNames()
+ *
  * Revision 1.6  2004/11/24 18:53:00  cg
  * *** empty log message ***
  *
@@ -106,5 +109,6 @@ extern FILE *FMGRwriteOpen (char *format, ...);
 extern bool FMGRcheckExistFile (char *dir, char *name);
 extern locationtype FMGRfindLocationOfFile (char *file);
 extern bool FMGRcheckSystemLibrary (char *name);
+extern void FMGRsetFileNames (node *module);
 
 #endif /* _SAC_FILEMGR_H_ */
