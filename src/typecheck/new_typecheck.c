@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.51  2004/11/11 15:20:30  sah
+ * in new ast mode a typedef now has a ntype after parsing
+ * changed NTCtypedef accordingly
+ *
  * Revision 3.50  2004/10/28 16:10:23  sah
  * added deserialisation support needed for
  * specialising functions
@@ -820,7 +824,9 @@ NTCtypedef (node *arg_node, info *arg_info)
 {
     char *name, *mod;
     ntype *nt, *base;
+#ifndef NEW_AST
     types *potential_hidden_definition;
+#endif
     usertype udt;
 #ifndef DBUG_OFF
     char *tmp_str;
@@ -829,7 +835,11 @@ NTCtypedef (node *arg_node, info *arg_info)
     DBUG_ENTER ("NTCtypedef");
     name = TYPEDEF_NAME (arg_node);
     mod = (TYPEDEF_MOD (arg_node) ? TYPEDEF_MOD (arg_node) : StringCopy (""));
+#ifndef NEW_AST
     nt = TYOldType2Type (TYPEDEF_TYPE (arg_node));
+#else
+    nt = TYPEDEF_NTYPE (arg_node);
+#endif
     if (TYPEDEF_ATTRIB (arg_node) == ST_unique) {
         DBUG_ASSERT ((TYIsSimple (TYGetScalar (nt))
                       && (TYGetSimpleType (TYGetScalar (nt)) == T_hidden)),
@@ -854,6 +864,7 @@ NTCtypedef (node *arg_node, info *arg_info)
 
     base = CheckUdtAndSetBaseType (udt, NULL);
 
+#ifndef NEW_AST
     /*
      * Now, we insert the computed base type into the typedef.
      * However, we have to make sure that a potentially hidden definition
@@ -864,6 +875,9 @@ NTCtypedef (node *arg_node, info *arg_info)
     TYPEDEF_TYPE (arg_node) = FreeOneTypes (TYPEDEF_TYPE (arg_node));
     TYPEDEF_TYPE (arg_node) = TYType2OldType (base);
     TYPES_NEXT (TYPEDEF_TYPE (arg_node)) = potential_hidden_definition;
+#else
+    TYPEDEF_TYPE (arg_node) = TYType2OldType (base);
+#endif
 
     DBUG_RETURN (arg_node);
 }
