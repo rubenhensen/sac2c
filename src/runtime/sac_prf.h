@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.21  2004/09/21 17:31:01  ktr
+ * Added ND_PRF_IDX_SHAPE_SEL, ND_PRF_SHAPE_SEL
+ *
  * Revision 3.20  2004/03/09 23:56:15  dkrHH
  * old backend removed
  *
@@ -176,6 +179,9 @@
  * ND_PRF_AxS__DATA( to_NT, op, from_NT,  scl)
  * ND_PRF_AxA__DATA( to_NT, op, from1_NT, from2_NT)
  *
+ * ND_PRF_SHAPE_IDX_SEL__DATA( to_NT, to_sdim, from_NT, from_sdim, scl)
+ * ND_PRF_SHAPE_SEL__DATA( to_NT, to_sdim, from_NT, from_sdim, from2_NT)
+ *
  ******************************************************************************/
 
 #define SAC_ND_PRF_DIM__DATA(to_NT, to_sdim, from_NT, from_sdim)                         \
@@ -281,5 +287,16 @@
                                          SAC_ND_READ (from2_NT, SAC_i)), );              \
         }                                                                                \
     }
+
+#define SAC_ND_PRF_IDX_SHAPE_SEL__DATA(to_NT, to_sdim, from_NT, from_sdim, scl)          \
+    SAC_TR_PRF_PRINT (("ND_PRF_IDX_SHAPE_SEL__...( %s, %d, %s, %d, %s)\n",               \
+                       NT_STR (to_NT), to_sdim, NT_STR (from_NT), from_sdim, #scl))      \
+    SAC_ND_CREATE__SCALAR__DATA (to_NT, SAC_ND_A_SHAPE (from_NT, scl))
+
+#define SAC_ND_PRF_SHAPE_SEL__DATA(to_NT, to_sdim, from_NT, from_sdim, from2_NT)         \
+    SAC_TR_PRF_PRINT (("ND_PRF_IDX_SHAPE_SEL__...( %s, %d, %s, %d, %s)\n",               \
+                       NT_STR (to_NT), to_sdim, NT_STR (from_NT), from_sdim, from2_NT))  \
+    SAC_ND_CREATE__SCALAR__DATA (to_NT,                                                  \
+                                 SAC_ND_A_SHAPE (from_NT, SAC_ND_READ (from2_NT, 0)))
 
 #endif /* _SAC_PRF_H_ */
