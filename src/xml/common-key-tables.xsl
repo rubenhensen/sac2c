@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.3  2004/11/29 13:35:39  sah
+  added nodes key
+
   Revision 1.2  2004/11/24 00:25:04  sah
   added another key
   ,
@@ -19,5 +22,8 @@
 
 <!-- the same for traversal defaults -->
 <xsl:key name="traversals" match="//phases//traversal" use="@id" />
+
+<!-- and one for all nodes -->
+<xsl:key name="nodes" match="/definition/syntaxtree/node" use="@name" />
 
 </xsl:stylesheet>
