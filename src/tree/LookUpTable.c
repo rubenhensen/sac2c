@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2001/11/22 08:48:56  sbs
+ * ComputeHashDiff compiled only if DBUG is active
+ *
  * Revision 3.16  2001/05/18 11:40:11  dkr
  * function IsEmptyLUT() added
  *
@@ -330,6 +333,12 @@ IsEqual_String (void *data1, void *data2)
  *
  ******************************************************************************/
 
+#ifndef DBUG_OFF
+
+/*
+ * This function is used from DBUG_EXECUTE only!
+ */
+
 static int
 ComputeHashDiff (lut_t *lut, char *note, int min_key, int max_key)
 {
@@ -366,6 +375,8 @@ ComputeHashDiff (lut_t *lut, char *note, int min_key, int max_key)
 
     DBUG_RETURN (diff);
 }
+
+#endif /* !DBUG_OFF */
 
 /******************************************************************************
  *
