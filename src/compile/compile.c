@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.40  2001/04/05 14:52:36  dkr
+ * COMPAp() brushed
+ *
  * Revision 3.39  2001/04/05 01:45:41  dkr
  * bug in COMPAp fixed:
  * mapping of a return value and an argument to the same argument position
@@ -789,80 +792,106 @@ Ids2DecRcICMs (ids *ids_chain, node *next)
 /******************************************************************************
  *
  * Function:
- *   void AdjustAddedAssigns( node *before, node *after)
+ *   node *AdjustAddedAssigns( node *after_ass, node *before_ass)
  *
  * Description:
+ *   Removes icms from 'after' that are obsolete because of the merging
+ *   assignments/icms found in 'before':
  *
+ *      r = fun( a);         ->          // 'before' assignments
+ *                         (comp)        ND_FUN_AP( fun, r, a)
+ *                                       // 'after' assignments
+ *
+ *   Example:
+ *
+ *      before:  ND_KS_MAKE_UNIQUE_ARRAY( a, b, 4)  // b = a;
+ *
+ *      after:   SAC_ND_ALLOC_RC( b)                   <-- obsolete
+ *               SAC_ND_SET_RC( b, 1)
+ *               SAC_ND_DEC_RC_FREE_ARRAY( a, 1)       <-- obsolete
  *
  ******************************************************************************/
 
-static void
-AdjustAddedAssigns (node *before, node *after)
+static node *
+AdjustAddedAssigns (node *after_ass, node *before_ass)
 {
-    node *new_id, *old_id;
-    node *tmp, *last;
+    node *after, *before;
 
     DBUG_ENTER ("AdjustAddedAssigns");
 
-    while (before != NULL) {
-        if (NODE_TYPE (ASSIGN_INSTR (before)) == N_icm) {
-            if ((!strcmp (ICM_NAME (ASSIGN_INSTR (before)), "ND_KS_MAKE_UNIQUE_ARRAY"))
-                || (!strcmp (ICM_NAME (ASSIGN_INSTR (before)),
-                             "ND_MAKE_UNIQUE_HIDDEN"))) {
-                tmp = ASSIGN_NEXT (after);
-                last = after;
-                old_id = ICM_ARG1 (ASSIGN_INSTR (before));
-                new_id = ICM_ARG2 (ASSIGN_INSTR (before));
+    /* create dummy head */
+    after_ass = MakeAssign (NULL, after_ass);
 
-                while (tmp != NULL) {
-                    if (NODE_TYPE (ASSIGN_INSTR (tmp)) == N_icm) {
-                        if (((!strcmp (ICM_NAME (ASSIGN_INSTR (tmp)),
-                                       "ND_DEC_RC_FREE_HIDDEN"))
-                             && (!strcmp (ID_NAME (ICM_ARG1 (ASSIGN_INSTR (tmp))),
-                                          ID_NAME (old_id))))
-                            || ((!strcmp (ICM_NAME (ASSIGN_INSTR (tmp)),
-                                          "ND_DEC_RC_FREE_ARRAY"))
-                                && (!strcmp (ID_NAME (ICM_ARG1 (ASSIGN_INSTR (tmp))),
-                                             ID_NAME (old_id))))
-                            || ((!strcmp (ICM_NAME (ASSIGN_INSTR (tmp)), "ND_ALLOC_RC"))
-                                && (!strcmp (ID_NAME (ICM_ARG1 (ASSIGN_INSTR (tmp))),
-                                             ID_NAME (new_id))))) {
-                            ASSIGN_NEXT (last) = ASSIGN_NEXT (tmp);
-                        } else if ((!strcmp (ICM_NAME (ASSIGN_INSTR (tmp)),
-                                             "ND_NO_RC_FREE_ARRAY"))
-                                   && (!strcmp (ID_NAME (ICM_ARG1 (ASSIGN_INSTR (tmp))),
-                                                ID_NAME (new_id)))) {
-                            ICM_NAME (ASSIGN_INSTR (before))
-                              = "ND_KS_NO_RC_MAKE_UNIQUE_ARRAY";
-                        } else if ((!strcmp (ICM_NAME (ASSIGN_INSTR (tmp)),
-                                             "ND_NO_RC_FREE_HIDDEN"))
-                                   && (!strcmp (ID_NAME (ICM_ARG1 (ASSIGN_INSTR (tmp))),
-                                                ID_NAME (new_id)))) {
-                            ICM_NAME (ASSIGN_INSTR (before))
-                              = "ND_NO_RC_MAKE_UNIQUE_HIDDEN";
-                        } else if (((!strcmp (ICM_NAME (ASSIGN_INSTR (tmp)),
-                                              "ND_NO_RC_ASSIGN_HIDDEN"))
-                                    || (!strcmp (ICM_NAME (ASSIGN_INSTR (tmp)),
-                                                 "ND_KS_NO_RC_ASSIGN_ARRAY")))
-                                   && (!strcmp (ID_NAME (ICM_ARG1 (ASSIGN_INSTR (tmp))),
-                                                ID_NAME (new_id)))
-                                   && (!strcmp (ID_NAME (ICM_ARG2 (ASSIGN_INSTR (tmp))),
-                                                ID_NAME (old_id)))) {
-                            new_id = FreeTree (new_id);
-                            new_id = DupNode (old_id);
+    while (before_ass != NULL) {
+        before = ASSIGN_INSTR (before_ass);
+
+        if (NODE_TYPE (before) == N_icm) {
+            if ((!strcmp (ICM_NAME (before), "ND_KS_MAKE_UNIQUE_ARRAY"))
+                || (!strcmp (ICM_NAME (before), "ND_MAKE_UNIQUE_HIDDEN"))) {
+                node *curr_after_ass = ASSIGN_NEXT (after_ass);
+                node *last_after_ass = after_ass;
+                char *old_name = ID_NAME (ICM_ARG1 (before));
+                char *new_name = ID_NAME (ICM_ARG2 (before));
+
+                while (curr_after_ass != NULL) {
+                    after = ASSIGN_INSTR (curr_after_ass);
+
+                    if (NODE_TYPE (after) == N_icm) {
+                        char *after_name = ICM_NAME (after);
+
+                        if (((!strcmp (after_name, "ND_DEC_RC_FREE_HIDDEN"))
+                             && (!strcmp (ID_NAME (ICM_ARG1 (after)), old_name)))
+                            || ((!strcmp (after_name, "ND_DEC_RC_FREE_ARRAY"))
+                                && (!strcmp (ID_NAME (ICM_ARG1 (after)), old_name)))
+                            || ((!strcmp (after_name, "ND_ALLOC_RC"))
+                                && (!strcmp (ID_NAME (ICM_ARG1 (after)), new_name)))) {
+                            ASSIGN_NEXT (last_after_ass)
+                              = FreeNode (ASSIGN_NEXT (last_after_ass));
+                        } else {
+                            if ((!strcmp (after_name, "ND_NO_RC_FREE_ARRAY"))
+                                && (!strcmp (ID_NAME (ICM_ARG1 (after)), new_name))) {
+                                /*
+                                 * icm names are static!
+                                 *
+                                 * FREE( ICM_NAME( before));
+                                 */
+                                ICM_NAME (before) = "ND_KS_NO_RC_MAKE_UNIQUE_ARRAY";
+                            } else if ((!strcmp (after_name, "ND_NO_RC_FREE_HIDDEN"))
+                                       && (!strcmp (ID_NAME (ICM_ARG1 (after)),
+                                                    new_name))) {
+                                /*
+                                 * icm names are static!
+                                 *
+                                 * FREE( ICM_NAME( before));
+                                 */
+                                ICM_NAME (before) = "ND_NO_RC_MAKE_UNIQUE_HIDDEN";
+                            } else if (((!strcmp (after_name, "ND_NO_RC_ASSIGN_HIDDEN"))
+                                        || (!strcmp (after_name,
+                                                     "ND_KS_NO_RC_ASSIGN_ARRAY")))
+                                       && (!strcmp (ID_NAME (ICM_ARG1 (after)), new_name))
+                                       && (!strcmp (ID_NAME (ICM_ARG2 (after)),
+                                                    old_name))) {
+                                FREE (ID_NAME (ICM_ARG2 (before)));
+                                ID_NAME (ICM_ARG2 (before)) = StringCopy (old_name);
+                            }
+                            last_after_ass = curr_after_ass;
                         }
+                    } else {
+                        last_after_ass = curr_after_ass;
                     }
 
-                    last = tmp;
-                    tmp = ASSIGN_NEXT (tmp);
+                    curr_after_ass = ASSIGN_NEXT (last_after_ass);
                 }
             }
         }
 
-        before = ASSIGN_NEXT (before);
+        before_ass = ASSIGN_NEXT (before_ass);
     }
 
-    DBUG_VOID_RETURN;
+    /* remove dummy head */
+    after_ass = FreeNode (after_ass);
+
+    DBUG_RETURN (after_ass);
 }
 
 /******************************************************************************
@@ -1870,6 +1899,48 @@ ReorganizeReturnIcm (node *ret_icm)
     }
 
     DBUG_RETURN (ret_icm);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   bool CheckAp( ids *let_ids, node *ap, node *arg_info)
+ *
+ * Description:
+ *   Checks whether no one of the refcounted arguments occurs on LHS of the
+ *   given application.
+ *
+ ******************************************************************************/
+
+static bool
+CheckAp (ids *let_ids, node *ap, node *arg_info)
+{
+    node *args, *arg_id;
+    int arg_idx;
+    bool ok = TRUE;
+
+    DBUG_ENTER ("CheckAp");
+
+    DBUG_ASSERT ((NODE_TYPE (ap) == N_ap), "no N_ap node found!");
+
+    while (let_ids != NULL) {
+        args = AP_ARGS (ap);
+        arg_idx = INFO_COMP_CNTPARAM (arg_info);
+        while (args != NULL) {
+            arg_id = EXPRS_EXPR (args);
+            if ((NODE_TYPE (arg_id) == N_id) && IS_REFCOUNTED (ID, arg_id)
+                && (!FUNDEF_DOES_REFCOUNT (AP_FUNDEF (ap), arg_idx))) {
+                if (!strcmp (IDS_NAME (let_ids), ID_NAME (arg_id))) {
+                    ok = FALSE;
+                }
+            }
+            args = EXPRS_NEXT (args);
+            arg_idx++;
+        }
+        let_ids = IDS_NEXT (let_ids);
+    }
+
+    DBUG_RETURN (ok);
 }
 
 /******************************************************************************
@@ -3176,25 +3247,7 @@ COMPLet (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   ids *COMPApIds( ids *arg_ids, node *arg_info)
- *
- * Description:
- *
- *
- ******************************************************************************/
-
-static ids *
-COMPApIds (ids *arg_ids, node *arg_info)
-{
-    DBUG_ENTER ("COMPApIds");
-
-    DBUG_RETURN (arg_ids);
-}
-
-/******************************************************************************
- *
- * Function:
- *   node *COMPApArgs( node *arg_node, node *arg_info)
+ *   ids *COMPApIds( ids *let_ids, node *fundef, node *arg_info)
  *
  * Description:
  *
@@ -3202,11 +3255,227 @@ COMPApIds (ids *arg_ids, node *arg_info)
  ******************************************************************************/
 
 static node *
-COMPApArgs (node *arg_node, node *arg_info)
+COMPApIds (ids *let_ids, node *fundef, node *arg_info)
 {
+    node *ret_node, *last_node;
+    types *fundef_types;
+    bool ids_for_dots;
+    node *ret_entry, *last_entry;
+    node *icm_node;
+    char *tag;
+
+    DBUG_ENTER ("COMPApIds");
+
+    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef), "no fundef found!");
+
+    /* create dummy node to append ICMs to */
+    ret_node = last_node = MakeAssign (NULL, NULL);
+
+    /*
+     * traverse LHS of let-clause
+     */
+    fundef_types = FUNDEF_TYPES (fundef);
+    ids_for_dots = FALSE;
+    ret_entry = last_entry = NULL;
+    while (let_ids != NULL) {
+        DBUG_PRINT ("COMP", ("Handling return value bound to %s", IDS_NAME (let_ids)));
+
+        /* choose the right tag for the argument and generate ICMs for RC */
+        if (IS_REFCOUNTED (IDS, let_ids)) {
+            if (FUNDEF_DOES_REFCOUNT (fundef, INFO_COMP_CNTPARAM (arg_info))) {
+                tag = "out_rc";
+
+                icm_node
+                  = MakeAdjustRcIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                     IDS_REFCNT (let_ids), IDS_REFCNT (let_ids) - 1);
+                if (icm_node != NULL) {
+                    last_node = ASSIGN_NEXT (last_node) = icm_node;
+                }
+            } else {
+                /* function does no refcounting */
+                tag = "out";
+
+                if (IDS_REFCNT (let_ids) > 0) {
+                    icm_node = MakeAssignIcm1 ("ND_ALLOC_RC", DupIds_Id (let_ids));
+                    last_node = ASSIGN_NEXT (last_node) = icm_node;
+
+                    icm_node = MakeAssignIcm2 ("ND_SET_RC", DupIds_Id (let_ids),
+                                               MakeNum (IDS_REFCNT (let_ids)));
+                    last_node = ASSIGN_NEXT (last_node) = icm_node;
+                } else if (IsNonUniqueHidden (IDS_TYPE (let_ids))) {
+                    icm_node
+                      = MakeAssignIcm2 ("ND_NO_RC_FREE_HIDDEN", DupIds_Id (let_ids),
+                                        MakeId_Copy (GenericFun (1, IDS_TYPE (let_ids))));
+                    last_node = ASSIGN_NEXT (last_node) = icm_node;
+                } else {
+                    icm_node
+                      = MakeAssignIcm1 ("ND_NO_RC_FREE_ARRAY", DupIds_Id (let_ids));
+                }
+            }
+        } else {
+            /* let_ids is not refcounted */
+            tag = "out";
+        }
+
+        if (!ids_for_dots) {
+            last_entry = ret_entry = MakeExprs (MakeId_Copy (tag), NULL);
+
+            last_entry = EXPRS_NEXT (last_entry) = MakeExprs (DupIds_Id (let_ids), NULL);
+
+            if (TYPES_BASETYPE (fundef_types) == T_dots) {
+                ids_for_dots = TRUE;
+            } else {
+                InsertApReturnParam (INFO_COMP_ICMTAB (arg_info), ret_entry,
+                                     (FUNDEF_PRAGMA (fundef) == NULL)
+                                       ? NULL
+                                       : FUNDEF_LINKSIGN (fundef),
+                                     INFO_COMP_CNTPARAM (arg_info));
+
+                fundef_types = TYPES_NEXT (fundef_types);
+            }
+
+            (INFO_COMP_CNTPARAM (arg_info))++;
+        } else {
+            /* ids_for_dots == TRUE */
+
+            last_entry = EXPRS_NEXT (last_entry) = MakeExprs (MakeId_Copy (tag), NULL);
+
+            last_entry = EXPRS_NEXT (last_entry) = MakeExprs (DupIds_Id (let_ids), NULL);
+        }
+
+        let_ids = IDS_NEXT (let_ids);
+
+        if (ids_for_dots && (let_ids == NULL)) {
+            InsertApDotsParam (INFO_COMP_ICMTAB (arg_info), ret_entry);
+        }
+    }
+
+    /* free dummy node (head of chain) */
+    ret_node = FreeNode (ret_node);
+
+    DBUG_RETURN (ret_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *COMPApArgs( node *args, node *fundef, int line, node *arg_info)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+static node *
+COMPApArgs (node *args, node *fundef, int line, node *arg_info)
+{
+    node *ret_node, *last_node;
+    node *fundef_args;
+    node *arg;
+    bool ids_for_dots;
+    node *ret_entry, *last_entry;
+    node *icm_node;
+    char *tag;
+
     DBUG_ENTER ("COMPApArgs");
 
-    DBUG_RETURN (arg_node);
+    /* create dummy node to append ICMs to */
+    ret_node = last_node = MakeAssign (NULL, NULL);
+
+    /*
+     * traverse arguments of application
+     */
+    fundef_args = FUNDEF_ARGS (fundef);
+    ids_for_dots = FALSE;
+    ret_entry = last_entry = NULL;
+    INFO_COMP_MERGE (arg_info) = NULL;
+
+    while (args != NULL) {
+        DBUG_PRINT ("COMP", ("Handling argument #%d", INFO_COMP_CNTPARAM (arg_info)));
+
+        arg = EXPRS_EXPR (args);
+
+        /* choose the right tag for the argument and generate ICMs for RC */
+        if (NODE_TYPE (arg) == N_id) {
+            if (IS_REFCOUNTED (ID, arg)
+                && FUNDEF_DOES_REFCOUNT (fundef, INFO_COMP_CNTPARAM (arg_info))) {
+                if (ID_ATTRIB (arg) == ST_reference) {
+                    tag = "inout_rc";
+                } else {
+                    tag = "in_rc";
+                }
+            } else {
+                /* argument is not refcounted or function does no refcounting */
+                if (ID_ATTRIB (arg) == ST_reference) {
+                    if (FUNDEF_STATUS (fundef) == ST_Cfun) {
+                        if (IsBoxed (ARG_TYPE (fundef_args))) {
+                            tag = "upd_bx";
+                        } else {
+                            tag = "upd";
+                        }
+                    } else {
+                        tag = "inout";
+                    }
+                } else {
+                    tag = "in";
+                }
+
+                icm_node
+                  = MakeAdjustRcIcm (ID_NAME (arg), ID_TYPE (arg), ID_REFCNT (arg), -1);
+                if (icm_node != NULL) {
+                    last_node = ASSIGN_NEXT (last_node) = icm_node;
+                }
+            }
+        } else {
+            /* argument is not a N_id node */
+            tag = "in";
+        }
+
+        if (!ids_for_dots) {
+            last_entry = ret_entry = MakeExprs (MakeId_Copy (tag), NULL);
+
+            last_entry = EXPRS_NEXT (last_entry) = DupNode (args);
+
+            if (ARG_BASETYPE (fundef_args) == T_dots) {
+                ids_for_dots = TRUE;
+            } else {
+                node *merge_node;
+
+                merge_node
+                  = InsertApArgParam (INFO_COMP_ICMTAB (arg_info), ret_entry,
+                                      ARG_TYPE (fundef_args),
+                                      (NODE_TYPE (arg) == N_id) ? ID_REFCNT (arg) : (-1),
+                                      FUNDEF_PRAGMA (fundef) == NULL
+                                        ? NULL
+                                        : FUNDEF_LINKSIGN (fundef),
+                                      INFO_COMP_CNTPARAM (arg_info), line);
+
+                if (merge_node != NULL) {
+                    DBUG_ASSERT ((INFO_COMP_MERGE (arg_info) == NULL),
+                                 "multiple merge nodes found!");
+                    INFO_COMP_MERGE (arg_info) = merge_node;
+                }
+
+                fundef_args = ARG_NEXT (fundef_args);
+            }
+        } else {
+            last_entry = EXPRS_NEXT (last_entry) = MakeExprs (MakeId_Copy (tag), NULL);
+
+            last_entry = EXPRS_NEXT (last_entry) = DupNode (args);
+        }
+
+        args = EXPRS_NEXT (args);
+        (INFO_COMP_CNTPARAM (arg_info))++;
+
+        if (ids_for_dots && (args == NULL)) {
+            InsertApDotsParam (INFO_COMP_ICMTAB (arg_info), ret_entry);
+        }
+    }
+
+    /* free dummy node (head of chain) */
+    ret_node = FreeNode (ret_node);
+
+    DBUG_RETURN (ret_node);
 }
 
 /******************************************************************************
@@ -3226,18 +3495,14 @@ COMPApArgs (node *arg_node, node *arg_info)
  *
  *   INFO_COMP_LASTIDS( arg_info) contains pointer to previous let-ids.
  *
- *
- * ### CODE NOT BRUSHED YET ###
- *
  ******************************************************************************/
 
 node *
 COMPAp (node *arg_node, node *arg_info)
 {
-    node *fundef;
-
-    node *last_node;
     node *ret_node;
+    node *fundef;
+    node *assigns1, *assigns2;
 
     DBUG_ENTER ("COMPAp");
 
@@ -3248,274 +3513,32 @@ COMPAp (node *arg_node, node *arg_info)
     arg_info = GenerateIcmTypeTables (arg_info, fundef, TRUE, FALSE);
 
     /*
-     * create dummy node to append ICMs to
+     * traverse ids on LHS of let-clause
      */
-    ret_node = last_node = MakeAssign (NULL, NULL);
+    assigns1 = COMPApIds (INFO_COMP_LASTIDS (arg_info), fundef, arg_info);
 
-    INFO_COMP_LASTIDS (arg_info) = COMPApIds (INFO_COMP_LASTIDS (arg_info), arg_info);
+    DBUG_ASSERT ((CheckAp (INFO_COMP_LASTIDS (arg_info), arg_node, arg_info)),
+                 "application of a user-defined function without own refcounting:"
+                 " refcounted argument occurs also on LHS!");
 
-    {
-        types *fundef_types;
-        ids *let_ids;
-        bool ids_for_dots;
-        char *tag;
-        node *last_entry;
-        node *ret_entry;
-        node *icm_node;
-
-        /*
-         * traverse LHS of let-clause
-         */
-        let_ids = INFO_COMP_LASTIDS (arg_info);
-        fundef_types = FUNDEF_TYPES (fundef);
-        ids_for_dots = FALSE;
-        last_entry = NULL;
-        ret_entry = NULL;
-
-        while (let_ids != NULL) {
-            DBUG_PRINT ("COMP",
-                        ("Handling return value bound to %s", IDS_NAME (let_ids)));
-
-            /* choose the right tag for the argument and generate ICMs for RC */
-            if (IS_REFCOUNTED (IDS, let_ids)) {
-                if (FUNDEF_DOES_REFCOUNT (fundef, INFO_COMP_CNTPARAM (arg_info))) {
-                    tag = "out_rc";
-
-                    icm_node
-                      = MakeAdjustRcIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                                         IDS_REFCNT (let_ids), IDS_REFCNT (let_ids) - 1);
-                    if (icm_node != NULL) {
-                        last_node = ASSIGN_NEXT (last_node) = icm_node;
-                    }
-                } else {
-                    /* function does no refcounting */
-                    tag = "out";
-
-                    if (IDS_REFCNT (let_ids) > 0) {
-                        icm_node = MakeAssignIcm1 ("ND_ALLOC_RC", DupIds_Id (let_ids));
-                        last_node = ASSIGN_NEXT (last_node) = icm_node;
-
-                        icm_node = MakeAssignIcm2 ("ND_SET_RC", DupIds_Id (let_ids),
-                                                   MakeNum (IDS_REFCNT (let_ids)));
-                        last_node = ASSIGN_NEXT (last_node) = icm_node;
-                    } else if (IsNonUniqueHidden (IDS_TYPE (let_ids))) {
-                        icm_node
-                          = MakeAssignIcm2 ("ND_NO_RC_FREE_HIDDEN", DupIds_Id (let_ids),
-                                            MakeId_Copy (
-                                              GenericFun (1, IDS_TYPE (let_ids))));
-                        last_node = ASSIGN_NEXT (last_node) = icm_node;
-                    } else {
-                        icm_node
-                          = MakeAssignIcm1 ("ND_NO_RC_FREE_ARRAY", DupIds_Id (let_ids));
-                    }
-                }
-            } else {
-                /* let_ids is not refcounted */
-                tag = "out";
-            }
-
-            if (!ids_for_dots) {
-                last_entry = ret_entry = MakeExprs (MakeId_Copy (tag), NULL);
-
-                last_entry = EXPRS_NEXT (last_entry)
-                  = MakeExprs (DupIds_Id (let_ids), NULL);
-
-                if (TYPES_BASETYPE (fundef_types) == T_dots) {
-                    ids_for_dots = TRUE;
-                } else {
-                    InsertApReturnParam (INFO_COMP_ICMTAB (arg_info), ret_entry,
-                                         (FUNDEF_PRAGMA (fundef) == NULL)
-                                           ? NULL
-                                           : FUNDEF_LINKSIGN (fundef),
-                                         INFO_COMP_CNTPARAM (arg_info));
-
-                    fundef_types = TYPES_NEXT (fundef_types);
-                }
-
-                (INFO_COMP_CNTPARAM (arg_info))++;
-            } else {
-                /* ids_for_dots == TRUE */
-
-                last_entry = EXPRS_NEXT (last_entry)
-                  = MakeExprs (MakeId_Copy (tag), NULL);
-
-                last_entry = EXPRS_NEXT (last_entry)
-                  = MakeExprs (DupIds_Id (let_ids), NULL);
-            }
-
-            let_ids = IDS_NEXT (let_ids);
-
-            if (ids_for_dots && (let_ids == NULL)) {
-                InsertApDotsParam (INFO_COMP_ICMTAB (arg_info), ret_entry);
-            }
-        } /* while( let_ids) */
-    }
-
-#ifndef DBUG_OFF
     /*
-     * assure that no one of the array-arguments occurs on LHS
+     * traverse arguments of application
      */
-    {
-        ids *let_ids;
+    assigns2 = COMPApArgs (AP_ARGS (arg_node), fundef, NODE_LINE (arg_node), arg_info);
 
-        let_ids = INFO_COMP_LASTIDS (arg_info);
-        while (let_ids != NULL) {
-            {
-                node *args, *arg_id;
-                int arg_idx;
-                args = AP_ARGS (arg_node);
-                arg_idx = INFO_COMP_CNTPARAM (arg_info);
-                while (args != NULL) {
-                    arg_id = EXPRS_EXPR (args);
-                    if ((NODE_TYPE (arg_id) == N_id) && IS_REFCOUNTED (ID, arg_id)
-                        && (!FUNDEF_DOES_REFCOUNT (fundef, arg_idx))) {
-                        if (!strcmp (IDS_NAME (let_ids), ID_NAME (arg_id))) {
-                            DBUG_ASSERT ((0),
-                                         "application of a user-defined function without "
-                                         "own refcouting: "
-                                         "refcounted argument occurs also on LHS!");
-                        }
-                    }
-                    args = EXPRS_NEXT (args);
-                    arg_idx++;
-                }
-            }
-            let_ids = IDS_NEXT (let_ids);
-        }
-    }
-#endif
+    ret_node = AppendAssign (assigns1, assigns2);
 
-    AP_ARGS (arg_node) = COMPApArgs (AP_ARGS (arg_node), arg_info);
+    ret_node = AdjustAddedAssigns (ret_node, INFO_COMP_MERGE (arg_info));
 
-    {
-        node *fundef_args;
-        node *args, *arg;
-        bool ids_for_dots;
-        char *tag;
-        node *last_entry;
-        node *ret_entry;
-        node *icm_node;
+    /* insert ND_FUN_AP icm at head of assignment chain */
+    ret_node = AppendAssign (CreateIcmND_FUN_AP (fundef, INFO_COMP_ICMTAB (arg_info),
+                                                 INFO_COMP_TABSIZE (arg_info)),
+                             ret_node);
 
-        /*
-         * traverse arguments of application
-         */
-        args = AP_ARGS (arg_node);
-        fundef_args = FUNDEF_ARGS (fundef);
-        ids_for_dots = FALSE;
-        last_entry = NULL;
-        ret_entry = NULL;
-        INFO_COMP_MERGE (arg_info) = NULL;
+    /* insert 'merge_node' at head of assignment chain */
+    ret_node = AppendAssign (INFO_COMP_MERGE (arg_info), ret_node);
 
-        while (args != NULL) {
-            DBUG_PRINT ("COMP", ("Handling argument #%d", INFO_COMP_CNTPARAM (arg_info)));
-
-            arg = EXPRS_EXPR (args);
-
-            /* choose the right tag for the argument and generate ICMs for RC */
-            if (NODE_TYPE (arg) == N_id) {
-                if (IS_REFCOUNTED (ID, arg)
-                    && FUNDEF_DOES_REFCOUNT (fundef, INFO_COMP_CNTPARAM (arg_info))) {
-                    if (ID_ATTRIB (arg) == ST_reference) {
-                        tag = "inout_rc";
-                    } else {
-                        tag = "in_rc";
-                    }
-                } else {
-                    /* argument is not refcounted or function does no refcounting */
-                    if (ID_ATTRIB (arg) == ST_reference) {
-                        if (FUNDEF_STATUS (fundef) == ST_Cfun) {
-                            if (IsBoxed (ARG_TYPE (fundef_args))) {
-                                tag = "upd_bx";
-                            } else {
-                                tag = "upd";
-                            }
-                        } else {
-                            tag = "inout";
-                        }
-                    } else {
-                        tag = "in";
-                    }
-
-                    icm_node = MakeAdjustRcIcm (ID_NAME (arg), ID_TYPE (arg),
-                                                ID_REFCNT (arg), -1);
-                    if (icm_node != NULL) {
-                        last_node = ASSIGN_NEXT (last_node) = icm_node;
-                    }
-                }
-            } else {
-                /* argument is not a N_id node */
-                tag = "in";
-            }
-
-            if (!ids_for_dots) {
-                last_entry = ret_entry = MakeExprs (MakeId_Copy (tag), NULL);
-
-                last_entry = EXPRS_NEXT (last_entry) = DupNode (args);
-
-                if (ARG_BASETYPE (fundef_args) == T_dots) {
-                    ids_for_dots = TRUE;
-                } else {
-                    node *merge_node;
-
-                    merge_node
-                      = InsertApArgParam (INFO_COMP_ICMTAB (arg_info), ret_entry,
-                                          ARG_TYPE (fundef_args),
-                                          (NODE_TYPE (arg) == N_id) ? ID_REFCNT (arg)
-                                                                    : (-1),
-                                          FUNDEF_PRAGMA (fundef) == NULL
-                                            ? NULL
-                                            : FUNDEF_LINKSIGN (fundef),
-                                          INFO_COMP_CNTPARAM (arg_info),
-                                          NODE_LINE (arg_node));
-
-                    if (merge_node != NULL) {
-                        DBUG_ASSERT ((INFO_COMP_MERGE (arg_info) == NULL),
-                                     "multiple merge nodes found!");
-                        INFO_COMP_MERGE (arg_info) = merge_node;
-                    }
-
-                    fundef_args = ARG_NEXT (fundef_args);
-                }
-            } else {
-                last_entry = EXPRS_NEXT (last_entry)
-                  = MakeExprs (MakeId_Copy (tag), NULL);
-
-                last_entry = EXPRS_NEXT (last_entry) = DupNode (args);
-            }
-
-            args = EXPRS_NEXT (args);
-            (INFO_COMP_CNTPARAM (arg_info))++;
-
-            if (ids_for_dots && (args == NULL)) {
-                InsertApDotsParam (INFO_COMP_ICMTAB (arg_info), ret_entry);
-            }
-        }
-    }
-
-    {
-        node *icm_node;
-
-        AdjustAddedAssigns (INFO_COMP_MERGE (arg_info), ret_node);
-
-        /* create ND_FUN_AP icm */
-        icm_node = CreateIcmND_FUN_AP (fundef, INFO_COMP_ICMTAB (arg_info),
-                                       INFO_COMP_TABSIZE (arg_info));
-
-        /* insert ND_FUN_AP icm at head of assignment chain */
-        ASSIGN_NEXT (icm_node) = ASSIGN_NEXT (ret_node);
-        ASSIGN_NEXT (ret_node) = icm_node;
-
-        if (INFO_COMP_MERGE (arg_info) != NULL) {
-            /* insert 'merge_node' at head of assignment chain */
-            ASSIGN_NEXT (INFO_COMP_MERGE (arg_info)) = ASSIGN_NEXT (ret_node);
-            ASSIGN_NEXT (ret_node) = INFO_COMP_MERGE (arg_info);
-        }
-
-        /* free dummy node (head of chain) */
-        ret_node = FreeNode (ret_node);
-
-        arg_info = RemoveIcmTypeTables (arg_info);
-    }
+    arg_info = RemoveIcmTypeTables (arg_info);
 
     DBUG_RETURN (ret_node);
 }
