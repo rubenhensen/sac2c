@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.41  1999/01/26 14:24:46  cg
+ * Added INTRINSIC_PSI
+ *
  * Revision 1.40  1999/01/15 15:14:32  cg
  * added opt_tile, modified value constants for intrinsics.
  *
@@ -273,6 +276,8 @@ extern int intrinsics;
 #define INTRINSIC_DROP 0x0040
 #define INTRINSIC_ROT 0x0080
 #define INTRINSIC_CAT 0x0100
+#define INTRINSIC_PSI 0x0200
+#define INTRINSIC_MODA 0x0400
 #define INTRINSIC_ALL 0xffff
 /*
  * Allowed values of intrinsics
