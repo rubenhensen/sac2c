@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.7  1999/07/02 10:05:51  cg
+ * Result presentation beautified.
+ *
  * Revision 1.6  1999/06/11 12:56:58  cg
  * Analyser made compatible to substantial improvements in
  * cache simulation library.
@@ -86,8 +89,8 @@ AnalyserSetup (int argc, char *argv[])
 
     fprintf (stderr,
              "%s"
-             "Running external SAC cache simulation analyser:\n"
-             "  %s\n",
+             "# Running external SAC cache simulation analyser:\n"
+             "#   %s\n",
              SAC_CS_separator, argv[0]);
 
     SAC_CS_Initialize (1, profilinglevel, cs_global, cshost, csfile, csdir, cachesize1,

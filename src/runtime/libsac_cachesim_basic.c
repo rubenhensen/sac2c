@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.14  1999/07/02 10:05:51  cg
+ * Result presentation beautified.
+ *
  * Revision 2.13  1999/06/11 12:57:59  cg
  * Cache simulation via memory access trace file implemented.
  * Added help screen for CacheSimAnalyser as well as application
@@ -85,7 +88,7 @@ int SAC_CS_level = 1;
 FILE *SAC_CS_pipehandle;
 
 char SAC_CS_separator[]
-  = "==============================================================\n";
+  = "#=============================================================================\n";
 
 void (*SAC_CS_Finalize) (void);
 void (*SAC_CS_RegisterArray) (void * /*baseaddress*/, int /*size*/);
@@ -905,9 +908,9 @@ SAC_CS_Initialize (int nr_of_cpu, tProfilingLevel profilinglevel, int cs_global,
 
             fprintf (stderr,
                      "%s"
-                     "SAC program running with memory access tracing for post mortem\n"
-                     "cache simulation enabled.\n"
-                     "This might delay program execution significantly !!\n"
+                     "# SAC program running with memory access tracing for post mortem\n"
+                     "# cache simulation enabled.\n"
+                     "# This might delay program execution significantly !!\n"
                      "%s",
                      SAC_CS_separator, SAC_CS_separator);
         } else {
@@ -940,13 +943,13 @@ SAC_CS_Initialize (int nr_of_cpu, tProfilingLevel profilinglevel, int cs_global,
 
             fprintf (stderr,
                      "%s"
-                     "SAC program running with %s cache simulation enabled.\n"
-                     "This might delay program execution significantly !!\n"
+                     "# SAC program running with %s cache simulation enabled.\n"
+                     "# This might delay program execution significantly !!\n"
                      "%s"
-                     "L1 cache:  cache size        : %lu KByte\n"
-                     "           cache line size   : %d Byte\n"
-                     "           associativity     : %d\n"
-                     "           write miss policy : %s\n",
+                     "# L1 cache:  cache size        : %lu KByte\n"
+                     "#            cache line size   : %d Byte\n"
+                     "#            associativity     : %d\n"
+                     "#            write miss policy : %s\n",
                      SAC_CS_separator, ProfilingLevelName (profiling_level),
                      SAC_CS_separator, cachesize1, cachelinesize1, associativity1,
                      WritePolicyName (writepolicy1));
@@ -954,10 +957,10 @@ SAC_CS_Initialize (int nr_of_cpu, tProfilingLevel profilinglevel, int cs_global,
             if (cachesize2 > 0) {
                 fprintf (stderr,
                          "%s\n"
-                         "L2 cache:  cache size        : %lu KByte\n"
-                         "           cache line size   : %d Byte\n"
-                         "           associativity     : %d\n"
-                         "           write miss policy : %s\n",
+                         "# L2 cache:  cache size        : %lu KByte\n"
+                         "#            cache line size   : %d Byte\n"
+                         "#            associativity     : %d\n"
+                         "#            write miss policy : %s\n",
                          SAC_CS_separator, cachesize2, cachelinesize2, associativity2,
                          WritePolicyName (writepolicy2));
             }
@@ -965,10 +968,10 @@ SAC_CS_Initialize (int nr_of_cpu, tProfilingLevel profilinglevel, int cs_global,
             if (cachesize3 > 0) {
                 fprintf (stderr,
                          "%s"
-                         "L3 cache:  cache size        : %lu KByte\n"
-                         "           cache line size   : %d Byte\n"
-                         "           associativity     : %d\n"
-                         "           write miss policy : %s\n",
+                         "# L3 cache:  cache size        : %lu KByte\n"
+                         "#            cache line size   : %d Byte\n"
+                         "#            associativity     : %d\n"
+                         "#            write miss policy : %s\n",
                          SAC_CS_separator, cachesize3, cachelinesize3, associativity3,
                          WritePolicyName (writepolicy3));
             }
@@ -1114,11 +1117,11 @@ SAC_CS_ShowResults (void)
     fprintf (stderr,
              "\n"
              "%s"
-             "SAC cache simulation results:\n",
+             "# SAC cache simulation results:\n",
              SAC_CS_separator);
 
     if (starttag[0] != '#') {
-        fprintf (stderr, "Block: %s\n", starttag);
+        fprintf (stderr, "# Block: %s\n", starttag);
     }
 
     fprintf (stderr, "%s", SAC_CS_separator);
@@ -1131,9 +1134,9 @@ SAC_CS_ShowResults (void)
             hit_ratio = ((float)SAC_CS_hit[i] / (float)accesses) * 100.0;
 
             fprintf (stderr,
-                     "L%d cache:  accesses:  %*lu\n"
-                     "           hits:      %*lu  (%5.1f%%)\n"
-                     "           misses:    %*lu  (%5.1f%%)\n",
+                     "# L%d cache:  accesses:  %*lu\n"
+                     "#            hits:      %*lu  (%5.1f%%)\n"
+                     "#            misses:    %*lu  (%5.1f%%)\n",
                      i, digits, accesses, digits, SAC_CS_hit[i], hit_ratio, digits,
                      SAC_CS_miss[i], 100.0 - hit_ratio);
 
@@ -1150,25 +1153,37 @@ SAC_CS_ShowResults (void)
                  * in SAC_CS_self and also in SAC_CS_cross! The following computations
                  * correct this!
                  */
-                both = SAC_CS_self[i] + SAC_CS_cross[i] + SAC_CS_cold[i] - SAC_CS_miss[i];
+                both = SAC_CS_self[i] + SAC_CS_cross[i]
+                       + SAC_CS_cold[i] /* + SAC_CS_invalid[i] */
+                       - SAC_CS_miss[i];
                 SAC_CS_self[i] -= both;
                 SAC_CS_cross[i] -= both;
 
                 fprintf (stderr,
-                         "  misses:  cold start:                  %*lu  (%5.1f%%)\n"
-                         "           cross interference:          %*lu  (%5.1f%%)\n"
-                         "           self interference:           %*lu  (%5.1f%%)\n"
-                         "           self & cross interference:   %*lu  (%5.1f%%)\n"
-                         "           invalidation:                %*lu  (%5.1f%%)\n",
+                         "#              cold start:                 %*lu  ( %5.1f %%)  "
+                         "( %5.1f %%)\n"
+                         "#              cross interference:         %*lu  ( %5.1f %%)  "
+                         "( %5.1f %%)\n"
+                         "#              self interference:          %*lu  ( %5.1f %%)  "
+                         "( %5.1f %%)\n"
+                         "#              self & cross interference:  %*lu  ( %5.1f %%)  "
+                         "( %5.1f %%)\n"
+                         "#              invalidation:               %*lu  ( %5.1f %%)  "
+                         "( %5.1f %%)\n",
                          digits, SAC_CS_cold[i],
-                         ((float)SAC_CS_cold[i] / (float)SAC_CS_miss[i]) * 100.0, digits,
+                         ((float)SAC_CS_cold[i] / (float)SAC_CS_miss[i]) * 100.0,
+                         ((float)SAC_CS_cold[i] / (float)accesses) * 100.0, digits,
                          SAC_CS_cross[i],
-                         ((float)SAC_CS_cross[i] / (float)SAC_CS_miss[i]) * 100.0, digits,
+                         ((float)SAC_CS_cross[i] / (float)SAC_CS_miss[i]) * 100.0,
+                         ((float)SAC_CS_cross[i] / (float)accesses) * 100.0, digits,
                          SAC_CS_self[i],
-                         ((float)SAC_CS_self[i] / (float)SAC_CS_miss[i]) * 100.0, digits,
-                         both, ((float)both / (float)SAC_CS_miss[i]) * 100.0, digits,
+                         ((float)SAC_CS_self[i] / (float)SAC_CS_miss[i]) * 100.0,
+                         ((float)SAC_CS_self[i] / (float)accesses) * 100.0, digits, both,
+                         ((float)both / (float)SAC_CS_miss[i]) * 100.0,
+                         ((float)both / (float)accesses) * 100.0, digits,
                          SAC_CS_invalid[i],
-                         ((float)SAC_CS_invalid[i] / (float)SAC_CS_miss[i]) * 100.0);
+                         ((float)SAC_CS_invalid[i] / (float)SAC_CS_miss[i]) * 100.0,
+                         ((float)SAC_CS_invalid[i] / (float)accesses) * 100.0);
             } /* if */
             fprintf (stderr, "%s", SAC_CS_separator);
         } /* if */
