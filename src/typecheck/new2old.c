@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2002/09/04 16:19:01  dkr
+ * NT2OTfundef: DBUG_ASSERT added
+ *
  * Revision 1.4  2002/09/02 12:38:55  dkr
  * new_typecheck.h included
  *
@@ -85,7 +88,9 @@ NT2OTfundef (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("NT2OTfundef");
 
-    type = TYFixAndEliminateAlpha (FUNDEF_RET_TYPE (arg_node));
+    type = FUNDEF_RET_TYPE (arg_node);
+    DBUG_ASSERT ((type != NULL), "FUNDEF_RET_TYPE not found!");
+    type = TYFixAndEliminateAlpha (type);
 
     if (TYIsProdOfArray (type)) {
         FUNDEF_TYPES (arg_node) = FreeAllTypes (FUNDEF_TYPES (arg_node));
@@ -133,12 +138,14 @@ NT2OTarg (node *arg_node, node *arg_info)
     } else {
         ABORT (linenum, ("could not infer proper type for arg %s", ARG_NAME (arg_node)));
     }
+
     if (TYIsArray (type)) {
         ARG_TYPE (arg_node) = FreeAllTypes (ARG_TYPE (arg_node));
         ARG_TYPE (arg_node) = TYType2OldType (type);
     } else {
         ABORT (linenum, ("could not infer proper type for arg %s", ARG_NAME (arg_node)));
     }
+
     if (ARG_NEXT (arg_node) != NULL) {
         ARG_NEXT (arg_node) = Trav (ARG_NEXT (arg_node), arg_info);
     }
@@ -170,6 +177,7 @@ NT2OTvardec (node *arg_node, node *arg_info)
         ABORT (linenum,
                ("could not infer proper type for var %s", VARDEC_NAME (arg_node)));
     }
+
     if (TYIsArray (type)) {
         VARDEC_TYPE (arg_node) = FreeAllTypes (VARDEC_TYPE (arg_node));
         VARDEC_TYPE (arg_node) = TYType2OldType (type);
@@ -177,6 +185,7 @@ NT2OTvardec (node *arg_node, node *arg_info)
         ABORT (linenum,
                ("could not infer proper type for var %s", VARDEC_NAME (arg_node)));
     }
+
     if (VARDEC_NEXT (arg_node) != NULL) {
         VARDEC_NEXT (arg_node) = Trav (VARDEC_NEXT (arg_node), arg_info);
     }
