@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  1998/05/16 16:38:59  dkr
+ * WL_END is a h-icm now
+ *
  * Revision 1.6  1998/05/15 23:55:40  dkr
  * added SAC_WL_GRIDVAR_LOOP_... macros
  * fixed some minor bugs
@@ -156,5 +159,7 @@
                                 bound2)                                                  \
     }                                                                                    \
     }
+
+#define SAC_WL_END }
 
 #endif /* _sac_wl_h */
