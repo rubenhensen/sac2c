@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.105  1997/12/06 17:16:35  srs
+ * added call of compute_malloc_align_step()
+ *
  * Revision 1.104  1997/11/23 15:18:26  dkr
  * CC-flag: show_malloc -> SHOW_MALLOC
  *
@@ -379,6 +382,7 @@
 #include "precompile.h"
 #include "cccall.h"
 #include "Old2NewWith.h"
+#include "internal_lib.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -504,6 +508,11 @@ MAIN
 
     int i;
 
+#ifdef SHOW_MALLOC
+    compute_malloc_align_step ();
+#endif
+
+    /* initializations */
     InitPaths ();
 
     /*
