@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.7  1995/02/28 18:27:34  asi
+# Revision 1.8  1995/04/03 14:02:12  sbs
+# ../compile inserted for icm.data-access
+#
+# Revision 1.7  1995/02/28  18:27:34  asi
 # added optimize-dir to include-path
 #
 # Revision 1.6  1995/01/11  17:45:12  hw
@@ -16,7 +19,7 @@
 
 CC=gcc -ansi -g
 
-INCS=-I../global -I../../inc -I../optimize
+INCS=-I../global -I../../inc -I../optimize -I../compile
 
 all: print.o convert.o
 
