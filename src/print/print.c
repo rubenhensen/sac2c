@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.69  2000/03/27 14:53:12  dkr
+ * indentation of ICM-assigns via ICM_INDENT works correctly now
+ *
  * Revision 2.68  2000/03/23 14:05:55  jhs
  * Added printing of all attributes of N_MTsync.
  *
@@ -625,9 +628,15 @@ PrintAssign (node *arg_node, node *arg_info)
                            DbugIndexInfo (ASSIGN_INDEX (arg_node)););
 
     if (N_icm == NODE_TYPE (ASSIGN_INSTR (arg_node))) {
+        if (ICM_INDENT (ASSIGN_INSTR (arg_node)) < 0) {
+            indent += ICM_INDENT (ASSIGN_INSTR (arg_node));
+        }
         INDENT;
         PrintIcm (ASSIGN_INSTR (arg_node), arg_info);
         fprintf (outfile, "\n");
+        if (ICM_INDENT (ASSIGN_INSTR (arg_node)) > 0) {
+            indent += ICM_INDENT (ASSIGN_INSTR (arg_node));
+        }
         if (ASSIGN_NEXT (arg_node) != NULL) {
             PRINT_CONT (Trav (ASSIGN_NEXT (arg_node), arg_info), );
         }
@@ -1820,10 +1829,6 @@ PrintIcm (node *arg_node, node *arg_info)
 
     DBUG_PRINT ("PRINT", ("icm-node %s\n", ICM_NAME (arg_node)));
 
-    if (ICM_INDENT (arg_node) < 0) {
-        indent += ICM_INDENT (arg_node);
-    }
-
     if (compiler_phase == PH_genccode) {
 #define ICM_ALL
 #define ICM_DEF(prf, trf)                                                                \
@@ -1880,10 +1885,6 @@ PrintIcm (node *arg_node, node *arg_info)
 
             PRINT_CONT (Trav (ICM_NEXT (arg_node), arg_info), );
         }
-    }
-
-    if (ICM_INDENT (arg_node) > 0) {
-        indent += ICM_INDENT (arg_node);
     }
 
     DBUG_RETURN (arg_node);
