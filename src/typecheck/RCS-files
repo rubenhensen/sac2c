@@ -1,5 +1,7 @@
 Makefile
 cmp_type.mac
+create_wrapper_code.c
+create_wrapper_code.h
 create_wrappers.c
 create_wrappers.h
 ct_basic.c
