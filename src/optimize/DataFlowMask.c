@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  1998/06/05 18:45:53  dkr
+ * fixed a bug in DFMUpdateMaskBaseAfterCompiling
+ *
  * Revision 1.10  1998/06/05 16:15:41  cg
  * This module is now able to deal with compiled variable declarations (ICMs)
  *
@@ -453,8 +456,9 @@ DFMUpdateMaskBaseAfterCompiling (mask_base_t *mask_base, node *arguments, node *
 
     while (tmp != NULL) {
         for (i = 0; i < mask_base->num_ids; i++) {
-            if ((tmp == mask_base->decls[i])
-                || (0 == strcmp (VARDEC_OR_ICM_NAME (tmp), mask_base->ids[i]))) {
+            if ((mask_base->ids[i] != NULL)
+                && ((tmp == mask_base->decls[i])
+                    || (0 == strcmp (VARDEC_OR_ICM_NAME (tmp), mask_base->ids[i])))) {
                 mask_base->decls[i] = tmp;
                 goto vardec_found;
             }
