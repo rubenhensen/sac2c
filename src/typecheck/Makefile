@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.7  1999/10/20 13:02:06  sbs
+# new lines for constants / new-Types added.
+#
 # Revision 2.6  1999/10/04 08:35:14  sbs
 # ilne for new_typecheck.o added.
 #
@@ -18,100 +21,7 @@
 # Revision 2.1  1999/02/23 12:40:41  sacbase
 # new release made
 #
-# Revision 1.31  1999/02/09 20:04:21  dkr
-# make deps done
-#
-# Revision 1.30  1998/11/04 18:22:33  dkr
-# make deps done
-#
-# Revision 1.29  1998/06/23 11:42:09  cg
-# make deps done
-#
-# Revision 1.28  1998/06/04 17:21:59  dkr
-# changed target 'clean'
-#
-# Revision 1.27  1998/05/28 14:51:50  sbs
-# line for gen_pseudo_fun.c inserted.
-# -DNEWTREE flag inserted!
-#
-# Revision 1.26  1998/05/03 14:04:27  dkr
-# make deps done
-#
-# Revision 1.25  1998/04/28 15:21:02  srs
-# made deps
-#
-# Revision 1.24  1998/03/24 14:41:47  dkr
-# make deps done
-#
-# Revision 1.23  1998/03/04 00:10:01  dkr
-# 'clean' now deletes the subdir .sb, too
-#
-# Revision 1.22  1998/02/16 21:43:58  dkr
-# make deps done
-#
-# Revision 1.21  1997/11/20 15:02:06  dkr
-# make deps done
-#
-# Revision 1.20  1997/11/12 15:59:49  sbs
-# CC+CCFLAGS handling changed.
-# Now, it suffices to preset CC=cc if the SUN-compiler isdesired
-# Otherwise, gcc is set with -Wall and -ansi
-#
-# Revision 1.19  1997/11/11 16:49:25  sbs
-# make deps done
-#
-# Revision 1.18  1997/08/05 11:32:26  sbs
-# make deps done
-#
-# Revision 1.17  1997/05/28 12:48:29  sbs
-# make deps done
-#
-# Revision 1.16  1997/05/14  12:20:00  sbs
-# make deps
-#
-# Revision 1.15  1997/05/14  06:51:54  sbs
-# -I../compile included
-#
-# Revision 1.14  1996/07/18  12:22:58  sbs
-# prim_fun.o included in clean-line
-#
-# Revision 1.13  1996/02/16  09:46:49  sbs
-# make deps done
-#
-# Revision 1.12  1996/01/04  18:11:08  cg
-# make deps done
-#
-# Revision 1.11  1995/12/15  10:41:09  cg
-# make deps done
-#
-# Revision 1.10  1995/10/08  11:29:50  sbs
-# make deps done
-#
-# Revision 1.9  1995/07/07  15:47:48  asi
-# make deps done
-#
-# Revision 1.8  1995/06/23  13:06:58  hw
-# -I../optimize added
-#
-# Revision 1.7  1995/03/28  12:08:53  hw
-# make deps done
-#
-# Revision 1.6  1995/03/17  15:50:48  hw
-# make deps done
-#
-# Revision 1.5  1995/02/02  14:59:05  hw
-# added rule prim_fun.o
-# make deps done
-#
-# Revision 1.4  1995/01/04  16:04:37  hw
-# added -I../modules to INCS
-# make deps done
-#
-# Revision 1.3  1994/12/09  10:44:24  sbs
-# make deps done
-#
-# Revision 1.2  1994/12/06  16:31:12  hw
-# added dependencies
+# ... [ eliminated ]
 #
 # Revision 1.1  1994/12/02  10:13:42  hw
 # Initial revision
@@ -126,13 +36,24 @@ CFLAGS    := -D__EXTENSIONS__
 RM=rm -f
 INCS=-I../global -I../../inc -I../print -I../modules -I../optimize -I../compile
 
-all: typecheck.o prim_fun.o typecheck_WL.o gen_pseudo_fun.o
+all: typecheck.o prim_fun.o typecheck_WL.o gen_pseudo_fun.o \
+     new_typecheck.o new_types.o shape.o user_types.o \
+     constants.o cv2scalar.o cv2cv.o
 
 new_typecheck.o: new_typecheck.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o new_typecheck.o -c new_typecheck.c $(INCS)
 
 new_types.o: new_types.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o new_types.o -c new_types.c $(INCS)
+
+constants.o: constants.c
+	$(CC) $(CCFLAGS) $(CFLAGS) -o constants.o -c constants.c $(INCS)
+
+cv2cv.o: cv2cv.c
+	$(CC) $(CCFLAGS) $(CFLAGS) -o cv2cv.o -c cv2cv.c $(INCS)
+
+cv2scalar.o: cv2scalar.c
+	$(CC) $(CCFLAGS) $(CFLAGS) -o cv2scalar.o -c cv2scalar.c $(INCS)
 
 shape.o: shape.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o shape.o -c shape.c $(INCS)
@@ -161,6 +82,29 @@ clean:
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
+constants.o: ../global/free.h ../../inc/dbug.h /usr/include/stdio.h
+constants.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
+constants.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
+constants.o: /usr/include/stdio_impl.h ../global/my_debug.h
+constants.o: /usr/include/malloc.h /usr/include/sys/types.h
+constants.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
+constants.o: ../global/globals.h ../global/types.h ../global/internal_lib.h
+constants.o: shape.h cv2scalar.h cv2cv.h ../global/tree_compound.h
+constants.o: ../global/tree_basic.h ../global/Error.h /usr/include/string.h
+constants.o: /usr/include/stdlib.h constants.h
+cv2cv.o: ../global/tree_basic.h ../global/types.h ../../inc/dbug.h
+cv2cv.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
+cv2cv.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
+cv2cv.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h ../global/free.h
+cv2cv.o: ../global/my_debug.h /usr/include/malloc.h /usr/include/sys/types.h
+cv2cv.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
+cv2cv.o: ../global/globals.h ../global/internal_lib.h cv2cv.h
+cv2cv.o: ../global/type_info.mac
+cv2scalar.o: ../global/tree_basic.h ../global/types.h ../../inc/dbug.h
+cv2scalar.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
+cv2scalar.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
+cv2scalar.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h cv2scalar.h
+cv2scalar.o: ../global/type_info.mac
 gen_pseudo_fun.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 gen_pseudo_fun.o: /usr/include/sys/isa_defs.h ../../inc/dbug.h
 gen_pseudo_fun.o: /usr/include/stdio.h /usr/include/sys/va_list.h
@@ -175,15 +119,26 @@ gen_pseudo_fun.o: /usr/include/sys/int_types.h typecheck.h gen_pseudo_fun.h
 new_typecheck.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 new_typecheck.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 new_typecheck.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-new_typecheck.o: /usr/include/string.h ../../inc/dbug.h
+new_typecheck.o: /usr/include/string.h ../../inc/dbug.h ../global/tree.h
+new_typecheck.o: ../global/types.h ../global/tree_basic.h
+new_typecheck.o: ../global/tree_compound.h ../global/Error.h
+new_typecheck.o: /usr/include/stdlib.h ../global/globals.h
+new_typecheck.o: ../global/internal_lib.h ../global/traverse.h user_types.h
+new_typecheck.o: new_types.h ../global/free.h ../global/my_debug.h
+new_typecheck.o: /usr/include/malloc.h /usr/include/sys/types.h
+new_typecheck.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
+new_typecheck.o: shape.h new_typecheck.h
 new_types.o: ../../inc/dbug.h /usr/include/stdio.h
 new_types.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 new_types.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
 new_types.o: /usr/include/stdio_impl.h ../global/free.h ../global/my_debug.h
 new_types.o: /usr/include/malloc.h /usr/include/sys/types.h
 new_types.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-new_types.o: ../global/internal_lib.h ../global/types.h shape.h
-new_types.o: type_constructor_info.mac new_types.h user_types.h
+new_types.o: ../global/globals.h ../global/types.h ../global/internal_lib.h
+new_types.o: ../global/tree.h ../global/tree_basic.h
+new_types.o: ../global/tree_compound.h ../global/Error.h
+new_types.o: /usr/include/string.h /usr/include/stdlib.h ../print/convert.h
+new_types.o: shape.h type_constructor_info.mac new_types.h user_types.h
 prim_fun.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 prim_fun.o: /usr/include/sys/isa_defs.h ../global/globals.h ../global/types.h
 prim_fun.o: /usr/include/stdio.h /usr/include/sys/va_list.h
@@ -201,7 +156,8 @@ shape.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
 shape.o: /usr/include/stdio_impl.h ../global/tree_basic.h ../global/types.h
 shape.o: ../global/free.h ../global/my_debug.h /usr/include/malloc.h
 shape.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-shape.o: /usr/include/sys/int_types.h ../global/internal_lib.h shape.h
+shape.o: /usr/include/sys/int_types.h ../global/globals.h
+shape.o: ../global/internal_lib.h shape.h
 typecheck.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 typecheck.o: /usr/include/sys/isa_defs.h /usr/include/stddef.h
 typecheck.o: /usr/include/string.h /usr/include/limits.h
@@ -216,7 +172,7 @@ typecheck.o: ../print/convert.h ../modules/import.h prim_fun.h
 typecheck.o: ../global/free.h /usr/include/malloc.h /usr/include/sys/types.h
 typecheck.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
 typecheck.o: ../global/access_macros.h ../optimize/DupTree.h typecheck_WL.h
-typecheck.o: gen_pseudo_fun.h prim_fun_tt.mac
+typecheck.o: gen_pseudo_fun.h new_typecheck.h prim_fun_tt.mac
 typecheck_WL.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 typecheck_WL.o: /usr/include/sys/isa_defs.h /usr/include/stddef.h
 typecheck_WL.o: /usr/include/string.h ../global/tree.h ../global/types.h
@@ -229,11 +185,13 @@ typecheck_WL.o: ../global/my_debug.h ../../inc/dbug.h ../global/traverse.h
 typecheck_WL.o: ../global/free.h /usr/include/malloc.h
 typecheck_WL.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
 typecheck_WL.o: /usr/include/sys/int_types.h ../optimize/ConstantFolding.h
+typecheck_WL.o: constants.h shape.h
 user_types.o: /usr/include/string.h /usr/include/sys/feature_tests.h
-user_types.o: /usr/include/sys/isa_defs.h ../../inc/dbug.h
+user_types.o: /usr/include/sys/isa_defs.h ../global/Error.h
 user_types.o: /usr/include/stdio.h /usr/include/sys/va_list.h
 user_types.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-user_types.o: ../global/free.h ../global/my_debug.h /usr/include/malloc.h
-user_types.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-user_types.o: /usr/include/sys/int_types.h ../global/internal_lib.h
-user_types.o: ../global/types.h user_types.h new_types.h shape.h
+user_types.o: /usr/include/stdlib.h ../global/types.h ../global/globals.h
+user_types.o: ../../inc/dbug.h ../global/free.h ../global/my_debug.h
+user_types.o: /usr/include/malloc.h /usr/include/sys/types.h
+user_types.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
+user_types.o: ../global/internal_lib.h user_types.h new_types.h shape.h
