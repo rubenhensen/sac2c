@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/10/28 17:18:33  sah
+ * now deserialisation has an internal state
+ *
  * Revision 1.5  2004/10/26 09:33:09  sah
  * uses deserialize.h now
  *
@@ -45,25 +48,29 @@ static void
 PrintLibStatCodeAddBodies (module_t *module, node *modnode, node *fundef)
 {
     DBUG_ENTER ("PrintLibStatCodeAddBodies");
-
+#ifndef DBUG_OFF
     if (fundef != NULL) {
+
         if (FUNDEF_BODY (fundef) == NULL) {
-            AddFunctionBodyToHead (fundef, modnode);
+            InitDeserialize (modnode);
+
+            AddFunctionBodyToHead (fundef);
+
+            FinishDeserialize (modnode);
         }
 
         PrintLibStatCodeAddBodies (module, modnode, FUNDEF_NEXT (fundef));
     }
-
+#endif
     DBUG_VOID_RETURN;
 }
 
 static void
-PrintLibStatCodeReadSymbols (module_t *module, node *modnode, const char *symbol,
-                             STtable_t *table)
+PrintLibStatCodeReadSymbols (module_t *module, const char *symbol, STtable_t *table)
 {
     DBUG_ENTER ("PrintLibStatCodeReadSymbols");
 
-    AddSymbolToAst (symbol, module, modnode);
+    AddSymbolToAst (symbol, module);
 
     DBUG_VOID_RETURN;
 }
@@ -81,10 +88,13 @@ PrintLibStatCode (module_t *module, STtable_t *table)
 
     iterator = STSymbolIteratorGet (table);
 
+    InitDeserialize (syntax_tree);
+
     while (STSymbolIteratorHasMore (iterator)) {
-        PrintLibStatCodeReadSymbols (module, syntax_tree, STSymbolIteratorNext (iterator),
-                                     table);
+        PrintLibStatCodeReadSymbols (module, STSymbolIteratorNext (iterator), table);
     }
+
+    FinishDeserialize (syntax_tree);
 
     iterator = STSymbolIteratorRelease (iterator);
 
@@ -122,9 +132,9 @@ PrintLibStat (char *libname)
     PrintLibStatHeader (module);
 
     DBUG_PRINT ("LIBSTAT", ("Printing table information"));
-
+#ifndef DBUG_OFF
     STPrint (table);
-
+#endif
     DBUG_PRINT ("LIBSTAT", ("Printing code"));
 
     PrintLibStatCode (module, table);
