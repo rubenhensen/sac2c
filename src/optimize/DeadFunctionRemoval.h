@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  2000/10/31 18:08:09  cg
+ * Dead function removal completely re-implemented.
+ *
  * Revision 2.2  2000/07/14 11:51:18  dkr
  * DFRblock added
  *
@@ -21,5 +24,6 @@ extern node *DFRmodul (node *arg_node, node *arg_info);
 extern node *DFRfundef (node *arg_node, node *arg_info);
 extern node *DFRblock (node *arg_node, node *arg_info);
 extern node *DFRap (node *arg_node, node *arg_info);
+extern node *DFRwithop (node *arg_node, node *arg_info);
 
 #endif /* _DeadFunctionRemoval_h */

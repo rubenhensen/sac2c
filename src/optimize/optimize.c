@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.24  2000/10/31 18:08:09  cg
+ * Dead function removal completely re-implemented.
+ *
  * Revision 2.23  2000/10/27 11:39:09  cg
  * Slightly modified layout of status messages during optimization.
  *
@@ -497,6 +500,10 @@ OPTmodul (node *arg_node, node *arg_info)
      */
     if (optimize & OPT_DFR) {
         arg_node = DeadFunctionRemoval (arg_node, arg_info);
+    }
+
+    if ((break_after == PH_sacopt) && (0 == strcmp (break_specifier, "dfr2"))) {
+        goto DONE;
     }
 
     NOTE ((""));

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.5  2000/10/31 18:08:09  cg
+ * Dead function removal completely re-implemented.
+ *
  * Revision 2.4  2000/07/14 12:59:25  dkr
  * DFRfundef: body of function is always traversed now
  *
@@ -36,13 +39,14 @@
 #include "globals.h"
 #include "my_debug.h"
 #include "traverse.h"
+#include "internal_lib.h"
 
 #include "optimize.h"
 
 /******************************************************************************
  *
  * Function:
- *   node *DeadFunctionRemoval( node *arg_node, node *info_node)
+ *   node *DeadFunctionRemoval( node *arg_node, node *arg_info)
  *
  * Description:
  *
@@ -50,7 +54,7 @@
  ******************************************************************************/
 
 node *
-DeadFunctionRemoval (node *arg_node, node *info_node)
+DeadFunctionRemoval (node *arg_node, node *arg_info)
 {
     funtab *tmp_tab;
     int mem_dead_fun = dead_fun;
@@ -62,9 +66,9 @@ DeadFunctionRemoval (node *arg_node, node *info_node)
     tmp_tab = act_tab;
     act_tab = dfr_tab;
 
-    info_node = MakeInfo ();
-    arg_node = Trav (arg_node, info_node);
-    info_node = FreeTree (info_node);
+    arg_info = MakeInfo ();
+    arg_node = Trav (arg_node, arg_info);
+    arg_info = FreeTree (arg_info);
 
     DBUG_PRINT ("OPT", ("                        result: %d", dead_fun - mem_dead_fun));
     DBUG_PRINT ("OPTMEM", ("mem currently allocated: %d bytes", current_allocated_mem));
@@ -77,7 +81,7 @@ DeadFunctionRemoval (node *arg_node, node *info_node)
 /******************************************************************************
  *
  * Function:
- *   node *DFRmodul(node *arg_node,node *info_node)
+ *   node *DFRmodul(node *arg_node,node *arg_info)
  *
  * Description:
  *   Prevents DFR in modules
@@ -85,12 +89,13 @@ DeadFunctionRemoval (node *arg_node, node *info_node)
  ******************************************************************************/
 
 node *
-DFRmodul (node *arg_node, node *info_node)
+DFRmodul (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("DFRmodul");
 
-    if ((F_prog == MODUL_FILETYPE (arg_node)) && (MODUL_FUNS (arg_node) != NULL)) {
-        MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), info_node);
+    if (MODUL_FUNS (arg_node) != NULL) {
+        INFO_DFR_SPINE (arg_info) = TRUE;
+        MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -109,26 +114,41 @@ DFRmodul (node *arg_node, node *info_node)
 node *
 DFRfundef (node *arg_node, node *arg_info)
 {
-    node *nextfun;
-
     DBUG_ENTER ("DFRfundef");
 
-    DBUG_PRINT ("DFR", ("Dead Function Removal in function: %s", FUNDEF_NAME (arg_node)));
+    if (INFO_DFR_SPINE (arg_info)) {
 
-    if (FUNDEF_BODY (arg_node) != NULL) {
-        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
-    }
+        DBUG_PRINT ("DFR",
+                    ("Dead Function Removal in function: %s", FUNDEF_NAME (arg_node)));
 
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
-    }
+        if ((FUNDEF_STATUS (arg_node) == ST_exported)
+            || (FUNDEF_STATUS (arg_node) == ST_objinitfun)) {
+            FUNDEF_EXPORT (arg_node) = TRUE;
 
-    if (FUNDEF_INLINE (arg_node)) {
-        dead_fun++;
-        nextfun = FUNDEF_NEXT (arg_node);
-        FUNDEF_NEXT (arg_node) = NULL;
-        arg_node = FreeTree (arg_node);
-        arg_node = nextfun;
+            if (FUNDEF_BODY (arg_node) != NULL) {
+                INFO_DFR_SPINE (arg_info) = FALSE;
+                FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+                INFO_DFR_SPINE (arg_info) = TRUE;
+            }
+        }
+
+        if (FUNDEF_NEXT (arg_node) != NULL) {
+            FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+        }
+
+        if (FUNDEF_EXPORT (arg_node)) {
+            FUNDEF_EXPORT (arg_node) = FALSE;
+        } else {
+            dead_fun++;
+            arg_node = FreeNode (arg_node);
+        }
+    } else {
+        if (!FUNDEF_EXPORT (arg_node)) {
+            FUNDEF_EXPORT (arg_node) = TRUE;
+            if (FUNDEF_BODY (arg_node) != NULL) {
+                FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+            }
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -151,10 +171,6 @@ DFRblock (node *arg_node, node *arg_info)
 
     if (BLOCK_INSTR (arg_node) != NULL) {
         BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
-    }
-
-    if (BLOCK_VARDEC (arg_node) != NULL) {
-        BLOCK_VARDEC (arg_node) = Trav (BLOCK_VARDEC (arg_node), arg_info);
     }
 
     /*
@@ -181,15 +197,30 @@ DFRblock (node *arg_node, node *arg_info)
 node *
 DFRap (node *arg_node, node *arg_info)
 {
-    node *fundef;
-
     DBUG_ENTER ("DFRap");
 
-    fundef = AP_FUNDEF (arg_node);
+    AP_FUNDEF (arg_node) = Trav (AP_FUNDEF (arg_node), arg_info);
 
-    if (FUNDEF_INLINE (fundef) && (FUNDEF_INSTR (fundef) != NULL)) {
-        FUNDEF_INLINE (fundef) = FALSE;
-        FUNDEF_INSTR (fundef) = Trav (FUNDEF_INSTR (fundef), arg_info);
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *DFRwithop( node *arg_node, node *arg_info)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+DFRwithop (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("DFRwithop");
+
+    if (NWITHOP_TYPE (arg_node) == WO_foldfun) {
+        NWITHOP_FUNDEF (arg_node) = Trav (NWITHOP_FUNDEF (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
