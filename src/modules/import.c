@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2002/02/21 17:27:24  dkr
+ * error in ImportSymbol() corrected
+ *
  * Revision 3.11  2002/02/21 15:45:40  dkr
  * TOFDEF_..., ..._TOF access macros added
  *
@@ -1568,12 +1571,6 @@ ImportAll (mod *mod, node *modul)
  *                  into the syntax tree for the whole program.
  *                  In the case of functions, all functions with the given name
  *                  are moved in the presence of function overloading.
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : ---
- *  macros        : DBUG...
- *
- *  remarks       :
  *
  */
 
@@ -1584,6 +1581,7 @@ ImportSymbol (int symbtype, char *name, mod *mod, node *modul)
     node *tmpdef, *last;
 
     DBUG_ENTER ("ImportSymbol");
+
     DBUG_PRINT ("IMPORT", ("importing symbol %s of kind %d (0=imp/1=exp/2=fun/3=obj)"
                            "from modul %s",
                            name, symbtype, mod->name));
@@ -1612,12 +1610,12 @@ ImportSymbol (int symbtype, char *name, mod *mod, node *modul)
 
         while (tmpdef != NULL) {
             if (strcmp (TOFDEF_NAME (tmpdef), name) == 0) {
-                TOFDEF_NEXT_L (last, TYPEDEF_NEXT (tmpdef));
+                TOFDEF_NEXT_L (last, TOFDEF_NEXT (tmpdef));
 
                 AppendModnameToSymbol (tmpdef, mod->name);
 
-                TOFDEF_NEXT_L (tmpdef, MODUL_TYPES (modul));
-                MODUL_TYPES (modul) = tmpdef;
+                TOFDEF_NEXT_L (tmpdef, MODUL_TOF (modul, symbtype));
+                MODUL_TOF_L (modul, symbtype, tmpdef);
 
                 tmpdef = TOFDEF_NEXT (last);
             } else {
@@ -1640,12 +1638,6 @@ ImportSymbol (int symbtype, char *name, mod *mod, node *modul)
  *  description   : imports all symbols from the given implist into the
  *                  given modul. If a specified symbol can not be found
  *                  an Error message is made.
- *  global vars   : ---
- *  internal funs : FindModul, FindSymbolInModul, ImportAll, ImportSymbol
- *  external funs : MakeIds
- *  macros        : DBUG...
- *
- *  remarks       :
  *
  */
 
