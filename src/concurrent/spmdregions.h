@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  1998/04/24 12:13:12  dkr
+ * removed SpmdInitNcode, SpmdInitNpart
+ *
  * Revision 1.3  1998/04/24 01:17:39  dkr
  * added second phase
  * Spmd..() renamed to SpmdInit..()
@@ -22,8 +25,6 @@
 /* init SPMD/sync-regions */
 extern node *SpmdInitFundef (node *arg_node, node *arg_info);
 extern node *SpmdInitAssign (node *arg_node, node *arg_info);
-extern node *SpmdInitNpart (node *arg_node, node *arg_info);
-extern node *SpmdInitNcode (node *arg_node, node *arg_info);
 
 /* optimize SPMD/sync-regions */
 /* not yet implemented */

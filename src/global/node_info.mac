@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.188  1998/04/24 12:11:58  dkr
+ * removed SpmdInitNcode, SpmdInitNpart
+ *
  * Revision 1.187  1998/04/23 22:02:23  dkr
  * removed SpmdOpt...
  *
@@ -956,8 +959,8 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, FreeNPart, CFNpart, RCNpart, TravSons, TravSons, DupNpart, TravSons,
        TravSons, TravSons, TravSons, TravSons, WLINpart, TravSons, PrintNpart, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       ACTNpart, TravSons, WLTNpart, TravSons, TravSons, TravSons, SpmdInitNpart,
-       TravSons, TravSons, TravSons, O2Nnpart, 3),
+       ACTNpart, TravSons, WLTNpart, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, O2Nnpart, 3),
 
   NIF (N_Nwithid, "N_Nwithid", TravSons, NoTrav, PrintNwithid, TravSons, TravSons,
        TravSons, TravSons, FreeNWithID, TravSons, RCNwithid, TravSons, TravSons,
@@ -984,8 +987,8 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        WLFNcode, FreeNCode, CFNcode, RCNcode, CompNcode, TravSons, DupNcode, TravSons,
        TravSons, TravSons, TravSons, TravSons, WLINcode, TravSons, PrintNcode, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, PrecNcode,
-       ACTNcode, TravSons, WLTNcode, CSENcode, TravSons, TravSons, SpmdInitNcode,
-       TravSons, TravSons, TravSons, TravSons, 3),
+       ACTNcode, TravSons, WLTNcode, CSENcode, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, 3),
 
   /*
    * here is the node information for the transformed (precompile) new with-loop
