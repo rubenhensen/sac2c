@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.8  1995/01/06 14:56:09  asi
+ * Revision 1.9  1995/01/12 13:15:00  asi
+ * inserted OPT2fundef OPT2block OPT2assign OPT2while OPT2cond
+ * for dead code removal in loops and in conditionals
+ *
+ * Revision 1.8  1995/01/06  14:56:09  asi
  * Dead-Vardec-Removal implemented
  *
  * Revision 1.7  1995/01/05  15:30:02  asi
@@ -35,6 +39,8 @@
 
 #define _optimize_h
 
+long deadcode;
+
 extern node *Optimize (node *);
 extern char *PrintMask (long *);
 
@@ -47,10 +53,13 @@ extern node *OPT1id (node *, node *);
 extern node *OPT1assign (node *, node *);
 extern node *OPT1pp (node *, node *);
 extern node *OPT1block (node *, node *);
+extern node *OPT1cond (node *, node *);
 
 extern node *OPT2fundef (node *, node *);
 extern node *OPT2assign (node *, node *);
 extern node *OPT2block (node *, node *);
 extern node *OPT2vardec (node *, node *);
+extern node *OPT2cond (node *, node *);
+extern node *OPT2while (node *, node *);
 
 #endif /* _optimize_h */
