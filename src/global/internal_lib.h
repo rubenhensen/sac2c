@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2002/09/03 13:18:06  sbs
+ * StrBuf support added
+ *
  * Revision 3.18  2002/03/01 13:37:31  dkr
  * minor changes done
  *
@@ -116,12 +119,22 @@
 
 #include "types.h"
 
+typedef struct STR_BUF str_buf;
+
 /*********************************
  * function prototypes
  *********************************/
 
 extern void *Malloc (int size);
 extern void *Free (void *address);
+
+extern str_buf *StrBufCreate (int size);
+extern str_buf *StrBufprint (str_buf *s, const char *string);
+extern str_buf *StrBufprintf (str_buf *s, const char *format, ...);
+extern char *StrBuf2String (str_buf *s);
+extern void StrBufFlush (str_buf *s);
+extern bool StrBufIsEmpty (str_buf *s);
+extern void *StrBufFree (str_buf *s);
 
 extern char *StringCopy (char *source);
 extern char *StringConcat (char *first, char *second);

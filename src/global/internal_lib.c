@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.25  2002/09/03 13:18:06  sbs
+ * StrBuf support added
+ *
  * Revision 3.24  2002/08/25 14:21:46  mwe
  * AssociativeLaw.h added
  *
@@ -267,6 +270,178 @@ Free (void *address)
 #endif /* NOFREE */
 
 #endif /* SHOW_MALLOC */
+
+struct STR_BUF {
+    char *buf;
+    int pos;
+    int size;
+};
+
+/******************************************************************************
+ *
+ * Function:
+ *   str_buf *StrBufCreate(  int size);
+ *
+ * Description:
+ *
+ ******************************************************************************/
+
+str_buf *
+StrBufCreate (int size)
+{
+    str_buf *res;
+
+    DBUG_ENTER ("StrBufCreate");
+
+    res = (str_buf *)Malloc (sizeof (str_buf));
+    res->buf = (char *)Malloc (size * sizeof (char));
+    res->pos = 0;
+    res->size = size;
+
+    DBUG_PRINT ("STRBUF", ("allocating buffer size %d : %p", size, res));
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   str_buf *StrBufprint(  str_buf *s, const char *string);
+ *
+ * Description:
+ *
+ ******************************************************************************/
+
+str_buf *
+StrBufprint (str_buf *s, const char *string)
+{
+    int len;
+    int new_size;
+    char *new_buf;
+
+    DBUG_ENTER ("StrBufprint");
+
+    len = strlen (string);
+
+    if ((len + 1) > (s->size - s->pos)) {
+
+        new_size = (len >= s->size ? s->size + 2 * len : 2 * s->size);
+
+        DBUG_PRINT ("STRBUF", ("increasing buffer %p from size %d to size %d", s, s->size,
+                               new_size));
+
+        new_buf = (char *)Malloc (new_size * sizeof (char));
+        s->pos = sprintf (new_buf, "%s", s->buf);
+        s->buf = new_buf;
+        s->size = new_size;
+    }
+
+    s->pos += sprintf (&s->buf[s->pos], "%s", string);
+    DBUG_PRINT ("STRBUF", ("pos of buffer %p now is %d", s, s->pos));
+
+    DBUG_RETURN (s);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   str_buf *StrBufprintf(  str_buf *s, const char *format, ...);
+ *
+ * Description:
+ *
+ ******************************************************************************/
+
+str_buf *
+StrBufprintf (str_buf *s, const char *format, ...)
+{
+    va_list arg_p;
+    static char string[512];
+
+    DBUG_ENTER ("StrBufprintf");
+
+    va_start (arg_p, format);
+    vsprintf (string, format, arg_p);
+    va_end (arg_p);
+
+    DBUG_ASSERT (strlen (string) < 512, "string buffer in StrBufprintf too small!");
+
+    s = StrBufprint (s, string);
+
+    DBUG_RETURN (s);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   char *StrBuf2String(  str_buf *s);
+ *
+ * Description:
+ *
+ ******************************************************************************/
+
+char *
+StrBuf2String (str_buf *s)
+{
+    DBUG_ENTER ("StrBuf2String");
+    DBUG_RETURN (StringCopy (s->buf));
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   void StrBufFlush(  str_buf *s)
+ *
+ * Description:
+ *
+ ******************************************************************************/
+
+void
+StrBufFlush (str_buf *s)
+{
+    DBUG_ENTER ("StrBufFlush");
+
+    s->pos = 0;
+    DBUG_PRINT ("STRBUF", ("pos of buffer %p reset to %d", s, s->pos));
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   bool     StrBufIsEmpty( str_buf *s)
+ *
+ * Description:
+ *
+ ******************************************************************************/
+
+bool
+StrBufIsEmpty (str_buf *s)
+{
+    DBUG_ENTER ("StrBufIsEmpty");
+
+    DBUG_RETURN (s->pos == 0);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   void *StrBufFree(  str_buf *s);
+ *
+ * Description:
+ *
+ ******************************************************************************/
+
+void *
+StrBufFree (str_buf *s)
+{
+    DBUG_ENTER ("StrBufFree");
+
+    s->buf = Free (s->buf);
+    s = Free (s);
+
+    DBUG_RETURN (s);
+}
 
 /******************************************************************************
  *
