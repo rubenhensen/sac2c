@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.26  1998/03/20 21:57:48  dkr
+ * first version of PRECnwith:
+ *   rectangle-building implemented
+ *   choice of segments implemented (rudimental)
+ *   hierarchical blocking implemented
+ *
  * Revision 1.25  1998/03/20 20:52:29  dkr
  * changed usage of MakeWLseg
  *
@@ -2229,6 +2235,17 @@ SetSegAttribs (node *seg)
         }
     }
 
+#if 1
+    (WLSEG_BV (seg, 0))[0] = 180; /* 1 or 180 */
+    (WLSEG_BV (seg, 0))[1] = 156;
+
+    (WLSEG_BV (seg, 1))[0] = 1;
+    (WLSEG_BV (seg, 1))[1] = 6;
+
+    (WLSEG_UBV (seg))[0] = 1;
+    (WLSEG_UBV (seg))[1] = 6;
+#endif
+
     FREE (sv);
 
     DBUG_RETURN (seg);
@@ -2296,7 +2313,7 @@ SetSegs (node *rects, int dims)
 /******************************************************************************
  *
  * function:
- *   node *BlockProj(node *proj)
+ *   node *BlockProj(node *proj, long *bv)
  *
  * description:
  *
@@ -2304,7 +2321,7 @@ SetSegs (node *rects, int dims)
  ******************************************************************************/
 
 node *
-BlockProj (node *proj, int dim, long *bv)
+BlockProj (node *proj, long *bv)
 {
     node *curr_proj, *curr_grid;
 
@@ -2319,11 +2336,11 @@ BlockProj (node *proj, int dim, long *bv)
 
             /* fit bounds of proj to blocking step */
             WLPROJ_BOUND1 (curr_proj) = 0;
-            WLPROJ_BOUND2 (curr_proj) = bv[dim];
+            WLPROJ_BOUND2 (curr_proj) = bv[WLPROJ_DIM (curr_proj)];
 
             curr_grid = WLPROJ_CONTENTS (curr_proj);
             do {
-                BlockProj (WLGRID_NEXTDIM (curr_grid), dim + 1, bv);
+                BlockProj (WLGRID_NEXTDIM (curr_grid), bv);
 
                 curr_grid = WLGRID_NEXT (curr_grid);
             } while (curr_grid != NULL);
@@ -2348,7 +2365,8 @@ BlockProj (node *proj, int dim, long *bv)
 node *
 BlockWL (node *proj, int dims, long *bv, int level)
 {
-    node *curr_block, *curr_proj, *curr_grid, *contents, *lastdim, *last_block, *block;
+    node *curr_block, *curr_dim, *curr_proj, *curr_grid, *contents, *lastdim, *last_block,
+      *block;
     int d;
 
     DBUG_ENTER ("BlockWL");
@@ -2359,19 +2377,22 @@ BlockWL (node *proj, int dims, long *bv, int level)
 
         case N_WLblock: /* block found */
 
-            curr_proj = proj;
-            while (curr_proj != NULL) {
+            curr_block = proj;
+            while (curr_block != NULL) {
 
                 /* go to contents of block -> skip all found block nodes */
-                curr_block = curr_proj;
-                while (WLBLOCK_NEXTDIM (curr_block) != NULL) {
-                    curr_block = WLBLOCK_NEXTDIM (curr_block);
+                curr_dim = curr_block;
+                DBUG_ASSERT ((NODE_TYPE (curr_dim) == N_WLblock), "no block found");
+                while (WLBLOCK_NEXTDIM (curr_dim) != NULL) {
+                    curr_dim = WLBLOCK_NEXTDIM (curr_dim);
+                    DBUG_ASSERT ((NODE_TYPE (curr_dim) == N_WLblock), "no block found");
                 }
 
                 /* block contents of found block (with next blocking-level) */
-                BlockWL (WLBLOCK_CONTENTS (curr_block), dims, bv, level + 1);
+                WLBLOCK_CONTENTS (curr_dim)
+                  = BlockWL (WLBLOCK_CONTENTS (curr_dim), dims, bv, level + 1);
 
-                curr_proj = WLPROJ_NEXT (curr_proj);
+                curr_block = WLBLOCK_NEXT (curr_block);
             }
             break;
 
@@ -2431,10 +2452,13 @@ BlockWL (node *proj, int dims, long *bv, int level)
 
                     /* now the block nodes are complete -> append contents of block */
                     DBUG_ASSERT ((lastdim != NULL), "block node of last dim not found");
-                    WLBLOCK_CONTENTS (lastdim) = BlockProj (curr_proj, 0, bv);
+                    WLBLOCK_CONTENTS (lastdim) = curr_proj;
                     curr_proj = WLPROJ_NEXT (curr_proj);
                     WLPROJ_NEXT (WLBLOCK_CONTENTS (lastdim))
                       = NULL; /* successor is in next block */
+                    /* correct the bounds in contents of block */
+                    WLBLOCK_CONTENTS (lastdim)
+                      = BlockProj (WLBLOCK_CONTENTS (lastdim), bv);
                 }
             }
 
@@ -2553,7 +2577,7 @@ node *
 PRECnwith (node *arg_node, node *arg_info)
 {
     node *new_node, *rects, *segs, *seg, *shape;
-    int dims;
+    int dims, b;
 
     DBUG_ENTER ("PRECnwith");
 
@@ -2591,9 +2615,13 @@ PRECnwith (node *arg_node, node *arg_info)
 
     seg = segs;
     while (seg != NULL) {
-        WLSEG_CONTENTS (seg) = BlockWL (WLSEG_CONTENTS (seg), dims, WLSEG_BV (seg, 0), 0);
-
-        WLSEG_CONTENTS (seg) = BlockWL (WLSEG_CONTENTS (seg), dims, WLSEG_BV (seg, 1), 0);
+        for (b = 0; b < WLSEG_BLOCKS (seg); b++) {
+            WLSEG_CONTENTS (seg)
+              = BlockWL (WLSEG_CONTENTS (seg), dims, WLSEG_BV (seg, b), 0);
+#if 1
+            Print (segs);
+#endif
+        }
 
         WLSEG_CONTENTS (seg)
           = UnrollBlockWL (WLSEG_CONTENTS (seg), dims, WLSEG_UBV (seg));
