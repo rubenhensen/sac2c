@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.26  2004/09/27 19:05:42  sbs
+ * when creating new vars, new types will be created as well!
+ *
  * Revision 3.25  2004/07/29 12:06:23  ktr
  * DO_SKIP is always built in EMM now, even if it only contains N_empty
  *
@@ -409,6 +412,8 @@ BuildRenamingAssignsForDo (node **vardecs, node **ass1, node **ass2, node **ass3
                 new_name = TmpVarName (ARG_NAME (ext_args));
                 (*vardecs)
                   = MakeVardec (new_name, DupAllTypes (ARG_TYPE (ext_args)), *vardecs);
+                AVIS_TYPE (VARDEC_AVIS ((*vardecs)))
+                  = TYCopyType (AVIS_TYPE (ARG_AVIS (ext_args)));
 
                 /*
                  * tmp_a_i = a_i;
