@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2002/07/10 19:44:47  dkr
+ * bugs in GetNextNt() and GetNextAny() fixed
+ *
  * Revision 3.9  2002/07/10 19:24:14  dkr
  * several ICM_... types added and renamed
  *
@@ -156,8 +159,13 @@ GetNextNt (char **ret, node *exprs)
     expr = EXPRS_EXPR (exprs);
 
     DBUG_ASSERT ((NODE_TYPE (expr) == N_id), "wrong icm-arg: N_id expected");
-    DBUG_ASSERT ((ID_NT_TAG (expr) != NULL), "wrong icm-arg: no tag found");
-    (*ret) = StringCopy (ID_NT_TAG (expr));
+
+    if ((ID_NAME (expr))[0] != '\0') {
+        DBUG_ASSERT ((ID_NT_TAG (expr) != NULL), "wrong icm-arg: no tag found");
+        (*ret) = StringCopy (ID_NT_TAG (expr));
+    } else {
+        (*ret) = StringCopy ("");
+    }
 
     DBUG_PRINT ("PRINT", ("icm-arg found: %s", (*ret)));
 
