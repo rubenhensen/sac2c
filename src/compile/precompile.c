@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2001/04/04 17:10:01  dkr
+ * include of refcount.h removed
+ *
  * Revision 3.18  2001/03/29 14:46:54  dkr
  * NWITH2_SCHEDULING removed
  *
@@ -141,22 +144,20 @@
 
 #include <string.h>
 
+#include "dbug.h"
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "internal_lib.h"
-#include "dbug.h"
-#include "DupTree.h"
-#include "free.h"
 #include "prf.h"
+#include "free.h"
+#include "DupTree.h"
 #include "traverse.h"
 #include "convert.h"
 #include "DataFlowMask.h"
-#include "typecheck.h"
-#include "scheduling.h"
 #include "adjust_ids.h"
 #include "map_cwrapper.h"
-#include "refcount.h"
+#include "scheduling.h"
 #include "compile.h"
 #include "precompile.h"
 
@@ -526,7 +527,7 @@ PREC1let (node *arg_node, node *arg_info)
                     /* 2nd argument of F_reshape need not to be flattened! */
                     ((is_prf && ((prf != F_reshape) || (arg_idx != 1)))
                      || ((!is_prf)
-                         && (!FUN_DOES_REFCOUNT (AP_FUNDEF (let_expr), arg_idx))))) {
+                         && (!FUNDEF_DOES_REFCOUNT (AP_FUNDEF (let_expr), arg_idx))))) {
                     /*
                      * dkr:
                      * Here, the interpretation of the refcouting-pragma is not correct
