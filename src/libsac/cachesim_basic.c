@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.21  2000/07/31 14:43:43  cg
+ * Bug fixed in invocation of cache simulation tool.
+ *
  * Revision 2.20  2000/02/04 16:50:20  cg
  * Changed setting of cache sizes from a KB representation to bytes.
  *
@@ -507,7 +510,7 @@ ResetCacheParms (char *spec, unsigned long int *cachesize, int *cachelinesize,
         SAC_RuntimeError ("Invalid cache parameter specification: '%s`.", full_spec);
     }
 
-    *cachesize = atoi (field) * 1024;
+    *cachesize = atoi (field);
 
     field = strtok (NULL, "/");
 
@@ -760,29 +763,31 @@ InitializeOneCacheLevel (int L, int nr_of_cpu, tProfilingLevel profilinglevel,
 
     act_cl = (tCacheLevel *)calloc (1, sizeof (tCacheLevel));
     SAC_CS_cachelevel[L] = act_cl;
+
     if ((cachesize > 0) && (act_cl != NULL)) {
         /* init main-structure */
-        act_cl->cachesize = cachesize;
+        act_cl->cachesize = cachesize * 1024;
         act_cl->cachelinesize = cachelinesize;
         act_cl->associativity = associativity;
         act_cl->data = (ULINT *)calloc (1, act_cl->cachesize * sizeof (ULINT));
 
         /* integrety checks && evaluate some vars */
         integretyError = 0;
-        if (associativity == 0) {
+        if (act_cl->associativity == 0) {
             integretyError = 1;
         } else {
-            integretyError = integretyError || (act_cl->cachesize % associativity != 0);
-            act_cl->internsize = act_cl->cachesize / associativity;
+            integretyError
+              = integretyError || (act_cl->cachesize % act_cl->associativity != 0);
+            act_cl->internsize = act_cl->cachesize / act_cl->associativity;
         }
 
-        if (cachelinesize == 0) {
+        if (act_cl->cachelinesize == 0) {
             integretyError = 1;
         } else {
             integretyError
               = integretyError
-                || (fastlog2 (act_cl->internsize) <= fastlog2 (cachelinesize))
-                || (fastlog2 (cachelinesize) == -1);
+                || (fastlog2 (act_cl->internsize) <= fastlog2 (act_cl->cachelinesize))
+                || (fastlog2 (act_cl->cachelinesize) == -1);
             act_cl->cls_bits = fastlog2 (act_cl->cachelinesize);
             act_cl->cls_mask = ~(0ul) << act_cl->cls_bits;
             act_cl->is_bits = fastlog2 (act_cl->internsize);
@@ -791,17 +796,14 @@ InitializeOneCacheLevel (int L, int nr_of_cpu, tProfilingLevel profilinglevel,
         }
 
         if (integretyError) {
-            SAC_CS_read_access_table[L] = &SAC_CS_Access_MM;
-            free (act_cl);
-            act_cl = NULL;
-            SAC_CS_cachelevel[L] = NULL;
             SAC_RuntimeError ("Invalid cache parameters for L1 cache:\n"
-                              "cache size        : %ul KByte\n"
-                              "cache line size   : %d Byte\n"
+                              "cache size        : %lu Bytes\n"
+                              "cache line size   : %d Bytes\n"
                               "associativity     : %d\n"
                               "write miss policy : %s\n",
-                              cachesize, cachelinesize, associativity,
-                              WritePolicyName (writepolicy));
+                              act_cl->cachesize, act_cl->cachelinesize,
+                              act_cl->associativity,
+                              WritePolicyName (act_cl->writepolicy));
         }
     } else {
         SAC_CS_read_access_table[L] = &SAC_CS_Access_MM;

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.25  2000/07/31 14:43:43  cg
+ * Bug fixed in invocation of cache simulation tool.
+ *
  * Revision 2.24  2000/07/25 10:04:54  nmw
  * calling SAC_ObjectInit fucntion with arg, argv from main
  *
@@ -501,8 +504,7 @@ PrintGlobalSettings (node *syntax_tree)
         fprintf (outfile, "#define SAC_SET_MAX_SYNC_FOLD        %d\n\n", max_sync_fold);
     }
 
-    fprintf (outfile, "#define SAC_SET_CACHE_1_SIZE         %d\n",
-             config.cache1_size * 1024);
+    fprintf (outfile, "#define SAC_SET_CACHE_1_SIZE         %d\n", config.cache1_size);
     fprintf (outfile, "#define SAC_SET_CACHE_1_LINE         %d\n",
              config.cache1_line == 0 ? 4 : config.cache1_line);
     fprintf (outfile, "#define SAC_SET_CACHE_1_ASSOC        %d\n",
@@ -512,8 +514,7 @@ PrintGlobalSettings (node *syntax_tree)
     fprintf (outfile, "#define SAC_SET_CACHE_1_MSCA_FACTOR  %.2f\n\n",
              ((float)config.cache1_msca_factor) / 100);
 
-    fprintf (outfile, "#define SAC_SET_CACHE_2_SIZE         %d\n",
-             config.cache2_size * 1024);
+    fprintf (outfile, "#define SAC_SET_CACHE_2_SIZE         %d\n", config.cache2_size);
     fprintf (outfile, "#define SAC_SET_CACHE_2_LINE         %d\n",
              config.cache2_line == 0 ? 4 : config.cache2_line);
     fprintf (outfile, "#define SAC_SET_CACHE_2_ASSOC        %d\n",
@@ -523,8 +524,7 @@ PrintGlobalSettings (node *syntax_tree)
     fprintf (outfile, "#define SAC_SET_CACHE_2_MSCA_FACTOR  %.2f\n\n",
              ((float)config.cache2_msca_factor) / 100);
 
-    fprintf (outfile, "#define SAC_SET_CACHE_3_SIZE         %d\n",
-             config.cache3_size * 1024);
+    fprintf (outfile, "#define SAC_SET_CACHE_3_SIZE         %d\n", config.cache3_size);
     fprintf (outfile, "#define SAC_SET_CACHE_3_LINE         %d\n",
              config.cache3_line == 0 ? 4 : config.cache3_line);
     fprintf (outfile, "#define SAC_SET_CACHE_3_ASSOC        %d\n",
