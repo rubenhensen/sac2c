@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/07/21 09:42:53  sbs
+ * SAC_ND_READ_ARRAY changed into SAC_ND_WRITE_ARRAY in def of SAC_WL_GRID_SET_IDX!
+ *
  * Revision 2.2  1999/04/12 09:37:48  cg
  * All accesses to C arrays are now performed through the new ICMs
  * ND_WRITE_ARRAY and ND_READ_ARRAY. This allows for an integration
@@ -425,7 +428,7 @@
  ***/
 
 #define SAC_WL_GRID_SET_IDX(dim, idx_vec, idx_scalar, bound1, bound2)                    \
-    SAC_ND_READ_ARRAY (idx_vec, dim) = idx_scalar;
+    SAC_ND_WRITE_ARRAY (idx_vec, dim) = idx_scalar;
 
 /*****************************************************************************/
 
