@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.93  2004/08/13 14:20:32  khf
+ * ConvertWith(): added setting of NWITHOP_OFFSET_NEEDED,
+ *                modified setting of NWITH2_OFFSET_NEEDED
+ *
  * Revision 3.92  2004/07/18 15:11:39  sah
  * initialised some pointers to NULL
  * to please the compiler
@@ -7665,7 +7669,7 @@ ProcessSegments (node *segs, int iter_dims, shpseg *iter_shp, bool do_naive_comp
 static node *
 ConvertWith (node *wl, int iter_dims)
 {
-    node *new_node;
+    node *new_node, *withop;
 
     DBUG_ENTER ("ConvertWith");
 
@@ -7686,8 +7690,24 @@ ConvertWith (node *wl, int iter_dims)
   }
 #endif
 
-    NWITH2_OFFSET_NEEDED (new_node)
-      = ((NWITH_TYPE (wl) == WO_genarray) || (NWITH_TYPE (wl) == WO_modarray));
+    NWITH2_OFFSET_NEEDED (new_node) = FALSE;
+    withop = NWITH_WITHOP (wl);
+    while (withop != NULL) {
+
+        if ((NWITHOP_TYPE (withop) == WO_genarray)
+            || (NWITHOP_TYPE (withop) == WO_modarray)) {
+            /*
+             * if at least one operator is from type genarray/modarray
+             * needed for compilation of whole withloop
+             */
+            NWITH2_OFFSET_NEEDED (new_node) = TRUE;
+        }
+
+        NWITHOP_OFFSET_NEEDED (withop) = ((NWITHOP_TYPE (withop) == WO_genarray)
+                                          || (NWITHOP_TYPE (withop) == WO_modarray));
+
+        withop = NWITHOP_NEXT (withop);
+    }
 
     NWITH2_DEC_RC_IDS (new_node) = NWITH_DEC_RC_IDS (wl);
     NWITH2_IN_MASK (new_node) = NWITH_IN_MASK (wl);
