@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.6  1995/04/05 15:26:33  hw
+ * Revision 1.7  1995/04/06 08:48:58  hw
+ * compilation of F_dim and F_shape added
+ *
+ * Revision 1.6  1995/04/05  15:26:33  hw
  * F_..AxA_A will be compiled now
  *
  * Revision 1.5  1995/04/04  08:31:30  hw
@@ -251,6 +254,77 @@ extern int malloc_debug (int level);
 
 /*
  *
+ *  functionname  : ShapeToArray
+ *  arguments     : 1) N_vardec node
+ *  description   : computes the shape of corresponding type and stores it
+ *                  as N_exprs - chain
+ *
+ *  global vars   :
+ *  internal funs :
+ *  external funs : LookupType, MakeNode
+ *  macros        : DBUG..., NULL, SIMPLETYPE, DIM, SHP, MAKENODE_NUM, NAME,
+ *                  NAME_MOD
+ *  remarks       : ----
+ *
+ */
+node *
+ShapeToArray (node *vardec_node)
+{
+    node *ret_node = NULL, *tmp, *basic_type_node;
+    int i;
+
+    DBUG_ENTER ("ShapeToArray");
+    if (T_user != vardec_node->SIMPLETYPE) {
+        ret_node = MakeNode (N_exprs);
+        MAKENODE_NUM (ret_node->node[0], vardec_node->SHP[0]);
+        tmp = ret_node;
+        for (i = 1; i < vardec_node->DIM; i++) {
+            tmp->nnode = 2;
+            tmp->node[1] = MakeNode (N_exprs);
+            MAKENODE_NUM (tmp->node[1]->node[0], vardec_node->SHP[i]);
+            tmp->node[1]->nnode = 1;
+            tmp = tmp->node[1];
+        }
+    } else {
+        basic_type_node = LookupType (vardec_node->NAME, vardec_node->NAME_MOD,
+                                      042); /* 042 is dummy argument */
+        if (1 <= vardec_node->DIM) {
+            ret_node = MakeNode (N_exprs);
+            MAKENODE_NUM (ret_node->node[0], vardec_node->SHP[0]);
+            tmp = ret_node;
+            for (i = 1; i < vardec_node->DIM; i++) {
+                tmp->nnode = 2;
+                tmp->node[1] = MakeNode (N_exprs);
+                MAKENODE_NUM (tmp->node[1]->node[0], vardec_node->SHP[i]);
+                tmp->node[1]->nnode = 1;
+                tmp = tmp->node[1];
+            }
+            for (i = 0; i < basic_type_node->DIM; i++) {
+                tmp->nnode = 2;
+                tmp->node[1] = MakeNode (N_exprs);
+                MAKENODE_NUM (tmp->node[1]->node[0], basic_type_node->SHP[i]);
+                tmp->node[1]->nnode = 1;
+                tmp = tmp->node[1];
+            }
+        } else {
+            ret_node = MakeNode (N_exprs);
+            MAKENODE_NUM (ret_node->node[0], basic_type_node->SHP[0]);
+            tmp = ret_node;
+            for (i = 1; i < basic_type_node->DIM; i++) {
+                tmp->nnode = 2;
+                tmp->node[1] = MakeNode (N_exprs);
+                MAKENODE_NUM (tmp->node[1]->node[0], basic_type_node->SHP[i]);
+                tmp->node[1]->nnode = 1;
+                tmp = tmp->node[1];
+            }
+        }
+    }
+
+    DBUG_RETURN (ret_node);
+}
+
+/*
+ *
  *  functionname  : Compile
  *  arguments     : 1) syntax tree
  *  description   : starts compilation  and initializes act_tab
@@ -361,7 +435,7 @@ CompVardec (node *arg_node, node *arg_info)
         if (T_user == arg_node->SIMPLETYPE)
             for (i = 0; i < type_node->DIM; i++) {
                 MAKE_NEXT_ICM_ARG (exprs, MakeNode (N_num));
-                tmp->node[0]->info.cint = arg_node->SHP[i];
+                tmp->node[0]->info.cint = type_node->SHP[i];
             }
 
         /* now transform current node to one of type N_icm */
@@ -827,6 +901,51 @@ CompPrf (node *arg_node, node *arg_info)
             }
             break;
         }
+        case F_dim: {
+            arg1 = arg_node->node[0]->node[0];
+            arg_node->nodetype = N_num;
+            if (N_array == arg1->nodetype) {
+                arg_node->info.cint = 1;
+            } else {
+                GET_DIM (arg_node->info.cint, arg1->IDS_NODE);
+            }
+            arg_node->nnode = 1;
+            FREE_TREE (arg_node->node[0]);
+            break;
+        }
+        case F_shape: {
+            int dim;
+            arg1 = arg_node->node[0]->node[0];
+            MAKENODE_ID (type_id_node, "int");          /* store type of new array */
+            MAKENODE_ID_REUSE_IDS (res, arg_info->IDS); /* store name of new array */
+            /* store refcount of res as N_num */
+            MAKENODE_NUM (res_ref, arg_info->IDS_REFCNT);
+            last_assign = arg_info->node[0]->node[1];
+            BIN_ICM_REUSE (arg_info->node[1], "ND_ALLOC_ARRAY", type_id_node, res);
+            SET_VARS_FOR_MORE_ICMS;
+            if (N_id == arg1->nodetype) {
+                GET_DIM (dim, arg1->IDS_NODE);
+                tmp_array1 = ShapeToArray (arg1->IDS_NODE);
+            } else {
+                DBUG_ASSERT ((N_array == arg1->nodetype), "wrong nodetype");
+                COUNT_ELEMS (n_elems, arg1->node[0]);
+                tmp_array1 = MakeNode (N_exprs);
+                MAKENODE_NUM (tmp_array1->node[0], n_elems);
+                tmp_array1->nnode = 1;
+                dim = 1;
+            }
+            MAKENODE_NUM (length_node, dim); /* store length of shape_vector */
+            CREATE_3_ARY_ICM (next_assign, "ND_CREATE_CONST_ARRAY", type_id_node, res,
+                              length_node);
+            icm_arg->node[1] = tmp_array1; /* append shape_vector */
+            icm_arg->nnode = 2;
+            APPEND_ASSIGNS (first_assign, next_assign);
+            INC_RC_ND (res, res_ref);
+            INSERT_ASSIGN;
+            FREE_TREE (old_arg_node);
+            break;
+        }
+
         default:
             /*   DBUG_ASSERT(0,"wrong prf"); */
             break;
