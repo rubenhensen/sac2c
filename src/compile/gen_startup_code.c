@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.21  2000/07/14 14:44:38  nmw
+ * during startup the initfunction for global objects is called
+ *
  * Revision 2.20  2000/06/30 13:04:34  nmw
  * conditional define for NULL added
  *
@@ -165,6 +168,7 @@
 #include "types.h"
 #include "tree_basic.h"
 #include "traverse.h"
+#include "free.h"
 
 /******************************************************************************
  *
@@ -794,13 +798,17 @@ GSCPrintFileHeader (node *syntax_tree)
 void
 GSCPrintMainBegin ()
 {
+    char *funname;
     DBUG_ENTER ("GSCPrintMainBegin");
 
+    funname = PRECObjInitFunctionName ();
     fprintf (outfile, "  SAC_MT_SETUP_INITIAL();\n");
     fprintf (outfile, "  SAC_PF_SETUP();\n");
     fprintf (outfile, "  SAC_HM_SETUP();\n");
     fprintf (outfile, "  SAC_MT_SETUP();\n");
-    fprintf (outfile, "  SAC_CS_SETUP();\n\n");
+    fprintf (outfile, "  SAC_CS_SETUP();\n");
+    fprintf (outfile, "  %s();\n\n;", funname);
+    FREE (funname);
 
     DBUG_VOID_RETURN;
 }
