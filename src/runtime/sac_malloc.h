@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  1998/05/07 08:17:51  cg
+ * SAC header files converted to new naming conventions.
+ *
  * Revision 1.1  1998/03/19 16:53:00  cg
  * Initial revision
  *
@@ -20,7 +23,7 @@
  *
  *   Currently, the standard functions malloc() and free() are used for
  *   heap management. By the global switch MALLOCCHECK the libsac function
- *   _SAC_MallocCheck() may be used instead of malloc(). This function
+ *   SAC_MallocCheck() may be used instead of malloc(). This function
  *   in turn uses malloc() for storage allocation, but additionally checks
  *   for success and terminates program execution with an error message
  *   in the case of insufficient memory available.
@@ -31,22 +34,22 @@
 
 #define SAC_MALLOC_H
 
-#if MALLOCCHECK
+#if SAC_DO_MALLOCCHECK
 
-extern void *_SAC_MallocCheck (unsigned int);
+extern void *SAC_MallocCheck (unsigned int);
 
-#define RT_MALLOC(size) _SAC_MallocCheck (size)
+#define SAC_MALLOC(size) SAC_MallocCheck (size)
 
-#else /* MALLOCCHECK */
+#else /* SAC_DO_MALLOCCHECK */
 
 extern void *malloc (unsigned int);
 
-#define RT_MALLOC(size) malloc (size)
+#define SAC_MALLOC(size) malloc (size)
 
-#endif /* MALLOCCHECK */
+#endif /* SAC_DO_MALLOCCHECK */
 
 extern void free (void *);
 
-#define RT_FREE(pointer) free (pointer)
+#define SAC_FREE(pointer) free (pointer)
 
 #endif /* SAC_MALLOC_H */

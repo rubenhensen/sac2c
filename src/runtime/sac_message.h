@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  1998/05/07 08:17:51  cg
+ * SAC header files converted to new naming conventions.
+ *
  * Revision 1.2  1998/03/24 13:52:49  cg
  * function declaration _SAC_PrintHeader moved to sac_profile.h
  *
@@ -26,7 +29,7 @@
 
 #define SAC_MESSAGE_H
 
-extern void _SAC_RuntimeError (char *format, ...);
-extern void _SAC_Print (char *format, ...);
+extern void SAC_RuntimeError (char *format, ...);
+extern void SAC_Print (char *format, ...);
 
 #endif /* SAC_MESSAGE_H */

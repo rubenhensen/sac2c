@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  1998/05/07 08:17:51  cg
+ * SAC header files converted to new naming conventions.
+ *
  * Revision 1.1  1998/03/19 16:54:34  cg
  * Initial revision
  *
@@ -24,6 +27,20 @@
 
 #define SAC_MISC_H
 
-extern void _SAC_String2Array (char *array, const char *string);
+extern void SAC_String2Array (char *array, const char *string);
+
+/*
+ * Macros used for compilation of do-loop:
+ */
+
+#define SAC_ND_GOTO(label) goto label;
+#define SAC_ND_LABEL(label)                                                              \
+    label:
+
+/*
+ * Macro for typedefs of arrays:
+ */
+
+#define SAC_ND_TYPEDEF_ARRAY(basetype, name) typedef basetype name;
 
 #endif /* SAC_MISC_H */

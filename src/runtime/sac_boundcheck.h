@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  1998/05/07 08:17:51  cg
+ * SAC header files converted to new naming conventions.
+ *
  * Revision 1.1  1998/03/19 16:37:58  cg
  * Initial revision
  *
@@ -39,19 +42,19 @@
 
 #define SAC_BOUNDCHECK_H
 
-#if BOUNDCHECK
+#if SAC_DO_BOUNDCHECK
 
-#define OUT_OF_BOUND(line, prf, size, idx)                                               \
+#define SAC_OUT_OF_BOUND(line, prf, size, idx)                                           \
     {                                                                                    \
-        _SAC_RuntimeError ("%d: access in function %s is out"                            \
-                           " of range (size: %d, index:%d)",                             \
-                           line, prf, size, idx);                                        \
+        SAC_RuntimeError ("%d: access in function %s is out"                             \
+                          " of range (size: %d, index:%d)",                              \
+                          line, prf, size, idx);                                         \
     }
 
-#else /* BOUNDCHECK */
+#else /* SAC_DO_BOUNDCHECK */
 
-#define OUT_OF_BOUND(line, prf, size, idx)
+#define SAC_OUT_OF_BOUND(line, prf, size, idx)
 
-#endif /* BOUNDCHECK */
+#endif /* SAC_DO_BOUNDCHECK */
 
 #endif /* SAC_BOUNDCHECK_H */

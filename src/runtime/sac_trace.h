@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  1998/05/07 08:17:51  cg
+ * SAC header files converted to new naming conventions.
+ *
  * Revision 1.2  1998/03/24 13:56:21  cg
  * *** empty log message ***
  *
@@ -36,102 +39,103 @@
  *  as part of libsac.
  */
 
-#if TRACE
+#if SAC_DO_TRACE
 
-extern int _SAC_hidden_memcnt;
-extern int _SAC_array_memcnt;
+extern int SAC_TR_hidden_memcnt;
+extern int SAC_TR_array_memcnt;
 
-extern void _SAC_PrintTraceHeader (char *format, ...);
-extern void _SAC_PrintTraceInfo (char *format, ...);
+extern void SAC_TR_PrintTraceHeader (char *format, ...);
+extern void SAC_TR_PrintTraceInfo (char *format, ...);
 
-#endif /* TRACE */
+#endif /* SAC_DO_TRACE */
 
 /*
  *  Macros for tracing memory and/or refcount operations
  */
 
-#if (TRACE_MEM || TRACE_REF || TRACE)
+#if (SAC_DO_TRACE_MEM || SAC_DO_TRACE_REF || SAC_DO_TRACE)
 
-#define PRINT_TRACEHEADER_ALL(text) _SAC_PrintTraceHeader text
+#define SAC_TR_PRINT_TRACEHEADER_ALL(text) SAC_TR_PrintTraceHeader text
 
-#define PRINT_ARRAY_FREE(name)                                                           \
-    _SAC_PrintTraceInfo ("freeing array %s (adr: %p)", #name, ND_A_FIELD (name))
+#define SAC_TR_PRINT_ARRAY_FREE(name)                                                    \
+    SAC_TR_PrintTraceInfo ("freeing array %s (adr: %p)", #name, SAC_ND_A_FIELD (name))
 
-#define PRINT_HIDDEN_FREE(name)                                                          \
-    _SAC_PrintTraceInfo ("freeing hidden %s (adr: %p)", #name, name)
+#define SAC_TR_PRINT_HIDDEN_FREE(name)                                                   \
+    SAC_TR_PrintTraceInfo ("freeing hidden %s (adr: %p)", #name, name)
 
-#else /* TRACE_MEM || TRACE_REF */
+#else /* SAC_DO_TRACE_MEM || SAC_DO_TRACE_REF */
 
-#define PRINT_TRACEHEADER_ALL(text)
-#define PRINT_ARRAY_FREE(name)
-#define PRINT_HIDDEN_FREE(name)
+#define SAC_TR_PRINT_TRACEHEADER_ALL(text)
+#define SAC_TR_PRINT_ARRAY_FREE(name)
+#define SAC_TR_PRINT_HIDDEN_FREE(name)
 
-#endif /* TRACE_MEM || TRACE_REF */
+#endif /* SAC_DO_TRACE_MEM || SAC_DO_TRACE_REF */
 
 /*
  *  Macros for tracing refcount operations
  */
 
-#if (TRACE_REF || TRACE)
+#if (SAC_DO_TRACE_REF || SAC_DO_TRACE)
 
-#define PRINT_TRACEHEADER_REF(text) _SAC_PrintTraceHeader text
+#define SAC_TR_PRINT_TRACEHEADER_REF(text) SAC_TR_PrintTraceHeader text
 
-#define PRINT_REF(name) _SAC_PrintTraceInfo ("refcnt of %s: %d", #name, ND_A_RC (name))
+#define SAC_TR_PRINT_REF(name)                                                           \
+    SAC_TR_PrintTraceInfo ("refcnt of %s: %d", #name, SAC_ND_A_RC (name))
 
-#else /* TRACE_REF */
+#else /* SAC_DO_TRACE_REF */
 
-#define PRINT_TRACEHEADER_REF(text)
-#define PRINT_REF(name)
+#define SAC_TR_PRINT_TRACEHEADER_REF(text)
+#define SAC_TR_PRINT_REF(name)
 
-#endif /* TRACE_REF */
+#endif /* SAC_DO_TRACE_REF */
 
 /*
  *  Macros for tracing memory operations
  */
 
-#if (TRACE_MEM || TRACE)
+#if (SAC_DO_TRACE_MEM || SAC_DO_TRACE)
 
-#define PRINT_TRACEHEADER_MEM(text) _SAC_PrintTraceHeader text
+#define SAC_TR_PRINT_TRACEHEADER_MEM(text) SAC_TR_PrintTraceHeader text
 
-#define PRINT_ARRAY_MEM(name)                                                            \
-    _SAC_PrintTraceInfo ("adr: %p, size: %d elements", ND_A_FIELD (name),                \
-                         ND_A_SIZE (name));                                              \
-    _SAC_PrintTraceInfo ("total # of array elements: %d", _SAC_array_memcnt)
+#define SAC_TR_PRINT_ARRAY_MEM(name)                                                     \
+    SAC_TR_PrintTraceInfo ("adr: %p, size: %d elements", SAC_ND_A_FIELD (name),          \
+                           SAC_ND_A_SIZE (name));                                        \
+    SAC_TR_PrintTraceInfo ("total # of array elements: %d", SAC_TR_array_memcnt)
 
-#define PRINT_HIDDEN_MEM(name)                                                           \
-    _SAC_PrintTraceInfo ("adr: %p", name);                                               \
-    _SAC_PrintTraceInfo ("total # of hidden objects: %d", _SAC_hidden_memcnt)
+#define SAC_TR_PRINT_HIDDEN_MEM(name)                                                    \
+    SAC_TR_PrintTraceInfo ("adr: %p", name);                                             \
+    SAC_TR_PrintTraceInfo ("total # of hidden objects: %d", SAC_TR_hidden_memcnt)
 
-#define INC_ARRAY_MEMCNT(size) _SAC_array_memcnt += size
-#define DEC_ARRAY_MEMCNT(size) _SAC_array_memcnt -= size
+#define SAC_TR_INC_ARRAY_MEMCNT(size) SAC_TR_array_memcnt += size
+#define SAC_TR_DEC_ARRAY_MEMCNT(size) SAC_TR_array_memcnt -= size
 
-#define INC_HIDDEN_MEMCNT(size) _SAC_hidden_memcnt += size
-#define DEC_HIDDEN_MEMCNT(size) _SAC_hidden_memcnt -= size
+#define SAC_TR_INC_HIDDEN_MEMCNT(size) SAC_TR_hidden_memcnt += size
+#define SAC_TR_DEC_HIDDEN_MEMCNT(size) SAC_TR_hidden_memcnt -= size
 
-#else /* TRACE_MEM */
+#else /* SAC_DO_TRACE_MEM */
 
-#define PRINT_TRACEHEADER_MEM(text)
-#define PRINT_ARRAY_MEM(name)
-#define PRINT_HIDDEN_MEM(name)
-#define INC_ARRAY_MEMCNT(size)
-#define DEC_ARRAY_MEMCNT(size)
-#define INC_HIDDEN_MEMCNT(size)
-#define DEC_HIDDEN_MEMCNT(size)
+#define SAC_TR_PRINT_TRACEHEADER_MEM(text)
+#define SAC_TR_PRINT_ARRAY_MEM(name)
+#define SAC_TR_PRINT_HIDDEN_MEM(name)
+#define SAC_TR_INC_ARRAY_MEMCNT(size)
+#define SAC_TR_DEC_ARRAY_MEMCNT(size)
+#define SAC_TR_INC_HIDDEN_MEMCNT(size)
+#define SAC_TR_DEC_HIDDEN_MEMCNT(size)
 
-#endif /* TRACE_MEM */
+#endif /* SAC_DO_TRACE_MEM */
 
 /*
  *  Macros for tracing primitive functions calls
  */
 
-#if TRACE_PRF
+#if SAC_DO_TRACE_PRF
 
-#define PRINT_PRF(text) _SAC_Print text
+#define SAC_TR_PRINT_PRF(text) SAC_Print text
 
-#else /* TRACE_PRF */
+#else /* SAC_DO_TRACE_PRF */
 
-#define PRINT_PRF(text)
+#define SAC_TR_PRINT_PRF(text)
 
-#endif /* TRACE_PRF */
+#endif /* SAC_DO_TRACE_PRF */
 
 #endif /* SAC_TRACE_H */
