@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/07/23 13:58:18  ktr
+ * Added CVPNwithop to prevent CVP to propagate the neutral element.
+ *
  * Revision 1.5  2004/07/22 14:17:20  ktr
  * - Special functions are now traversed when they are used
  * - Constants are no longer propagated into funaps as this can introduce
@@ -107,7 +110,7 @@
  *   withloop:        is set when traversing in a nwith node
  *   withloop_cexprs: is set when traversing in the cexprs chain of a withloop
  *   cond:            is set when traversing in the conditional of a condition
- *
+ *   neutral:         is set when traversing in the neutral element of fold-wl
  *
  */
 typedef enum {
@@ -120,6 +123,7 @@ typedef enum {
     CON_primfun,
     CON_specialfun,
     CON_cond,
+    CON_neutral,
     CON_undef
 } context_t;
 
@@ -261,6 +265,7 @@ AskPropagationOracle (node *let, info *arg_info)
     case CON_return:
     case CON_withloop_cexprs:
     case CON_specialfun:
+    case CON_neutral:
     case CON_ap:
         /* TRUE iff behind let node is an id node */
         answer = IsVariable (LET_EXPR (let));
@@ -554,6 +559,47 @@ CVPNwith (node *arg_node, info *arg_info)
         NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
     }
 
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *CVPNwithop(node *arg_node, info *arg_info)
+ *
+ * description:
+ *   don't propagate constants into neutral element
+ *
+ *
+ *****************************************************************************/
+node *
+CVPNwithop (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("CVPNwithop");
+
+    switch (NWITHOP_TYPE (arg_node)) {
+    case WO_genarray:
+        NWITHOP_SHAPE (arg_node) = Trav (NWITHOP_SHAPE (arg_node), arg_info);
+        if (NWITHOP_DEFAULT (arg_node) != NULL) {
+            NWITHOP_DEFAULT (arg_node) = Trav (NWITHOP_DEFAULT (arg_node), arg_info);
+        }
+        break;
+
+    case WO_modarray:
+        NWITHOP_ARRAY (arg_node) = Trav (NWITHOP_ARRAY (arg_node), arg_info);
+        break;
+
+    case WO_foldfun:
+    case WO_foldprf:
+        INFO_CVP_CONTEXT (arg_info) = CON_neutral;
+        NWITHOP_NEUTRAL (arg_node) = Trav (NWITHOP_NEUTRAL (arg_node), arg_info);
+        INFO_CVP_CONTEXT (arg_info) = CON_withloop;
+        break;
+
+    case WO_unknown:
+        DBUG_ASSERT ((0), "Unknown withop type found");
+        break;
+    }
     DBUG_RETURN (arg_node);
 }
 

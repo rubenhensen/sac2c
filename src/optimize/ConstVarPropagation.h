@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/07/23 13:58:18  ktr
+ * Added CVPNwithop to prevent CVP to propagate the neutral element.
+ *
  * Revision 1.3  2004/07/18 19:54:54  sah
  * switch to new INFO structure
  * PHASE I
@@ -26,6 +29,7 @@ extern node *CVPlet (node *arg_node, info *arg_info);
 extern node *CVPNcode (node *arg_node, info *arg_info);
 extern node *CVPcond (node *arg_node, info *arg_info);
 extern node *CVPNwith (node *arg_node, info *arg_info);
+extern node *CVPNwithop (node *arg_node, info *arg_info);
 extern node *CVPap (node *arg_node, info *arg_info);
 extern node *CVPprf (node *arg_node, info *arg_info);
 extern node *CVPexprs (node *arg_node, info *arg_info);
