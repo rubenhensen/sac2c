@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/03/15 14:25:46  bs
+ * Access macros renamed (take a look at tree_basic.h).
+ * Function ArrayPrf modified.
+ *
  * Revision 2.2  1999/03/09 11:30:45  bs
  * Now the compact propagation of constant integer vectors will remain after constant
  * folding.
@@ -283,9 +287,9 @@ CompareNumArrayElts (node *array1, node *array2)
 
     /* compare elements */
 
-    if (ARRAY_LENGTH (array1) == ARRAY_LENGTH (array2))
-        for (i = 0; i < ARRAY_LENGTH (array1); i++)
-            ok = (ARRAY_INTARRAY (array1)[i] == ARRAY_INTARRAY (array2)[i]);
+    if (ARRAY_VECLEN (array1) == ARRAY_VECLEN (array2))
+        for (i = 0; i < ARRAY_VECLEN (array1); i++)
+            ok = (ARRAY_INTVEC (array1)[i] == ARRAY_INTVEC (array2)[i]);
     else
         ok = 0;
 
@@ -339,7 +343,10 @@ IsConst (node *arg_node)
             break;
         case N_array:
             isit = TRUE;
-            if (ARRAY_INTARRAY (arg_node) == NULL) {
+            if (ARRAY_VECTYPE (arg_node) == T_unknown)
+                isit = FALSE;
+#ifdef 0
+            if (ARRAY_INTVEC (arg_node) == NULL) {
                 expr = ARRAY_AELEMS (arg_node);
                 while ((expr != NULL) && (isit == TRUE)) {
                     if (NODE_TYPE (EXPRS_EXPR (expr)) == N_id)
@@ -347,6 +354,7 @@ IsConst (node *arg_node)
                     expr = EXPRS_NEXT (expr);
                 }
             } /* else : isit == TRUE */
+#endif
             break;
         default:
             isit = FALSE;
@@ -1081,7 +1089,7 @@ GetShapeVector (node *array, int *vec_shape)
 
     DBUG_ENTER ("GetShapeVector");
 
-    if (ARRAY_INTARRAY (array) == NULL) {
+    if (ARRAY_INTVEC (array) == NULL) {
         expr = ARRAY_AELEMS (array);
         for (i = 0; i < SHP_SEG_SIZE; i++) {
             if (expr != NULL) {
@@ -1095,9 +1103,9 @@ GetShapeVector (node *array, int *vec_shape)
                 vec_shape[i] = 0;
         }
     } else {
-        vec_dim = ARRAY_LENGTH (array);
+        vec_dim = ARRAY_VECLEN (array);
         for (i = 0; i < vec_dim; i++)
-            vec_shape[i] = ARRAY_INTARRAY (array)[i];
+            vec_shape[i] = ARRAY_INTVEC (array)[i];
         for (i = vec_dim; i < SHP_SEG_SIZE; i++)
             vec_shape[i] = 0;
     }
@@ -1126,7 +1134,7 @@ ArraySize (node *array)
 
     DBUG_ENTER ("ArraySize");
 
-    size = ARRAY_LENGTH (array);
+    size = ARRAY_VECLEN (array);
     if (size == SCALAR) {
         size = 1;
         array = ARRAY_AELEMS (array);
@@ -1172,7 +1180,6 @@ DupPartialArray (int start, int length, node *array, node *arg_info)
     if (length > 0) {
         new_node = DupArray (array, arg_info);
         expr0 = ARRAY_AELEMS (new_node);
-        FREE (ARRAY_INTARRAY (new_node));
         /*
          * Goto start position and erase the elements which were not wanted.
          */
@@ -1186,7 +1193,6 @@ DupPartialArray (int start, int length, node *array, node *arg_info)
                 FreeTree (expr0);
             expr0 = expr1;
         }
-
         /*
          * Duplicate array till length reached
          */
@@ -1197,16 +1203,13 @@ DupPartialArray (int start, int length, node *array, node *arg_info)
 
             DBUG_ASSERT ((array != NULL), ("not a constant vector or vector too small"));
 
-            if (NODE_TYPE (EXPRS_EXPR (expr0)) != N_num) {
-                isconst = 0;
-                if (NODE_TYPE (EXPRS_EXPR (expr0)) == N_id)
-                    DEC_VAR (arg_info->mask[1],
-                             VARDEC_VARNO (ID_VARDEC (EXPRS_EXPR (expr0))));
-            }
+            if (NODE_TYPE (EXPRS_EXPR (expr0)) == N_id)
+                DEC_VAR (arg_info->mask[1],
+                         VARDEC_VARNO (ID_VARDEC (EXPRS_EXPR (expr0))));
+
             expr1 = expr0;
             expr0 = EXPRS_NEXT (expr0);
         }
-
         /*
          * Erase rest of array.
          */
@@ -1214,12 +1217,29 @@ DupPartialArray (int start, int length, node *array, node *arg_info)
             FreeTree (expr0);
         EXPRS_NEXT (expr1) = NULL;
 
-        if (isconst == 1) {
+        switch (ARRAY_VECTYPE (array)) {
+        case T_int:
+            FREE (ARRAY_INTVEC (new_node));
             tmp_vec = Array2IntVec (ARRAY_AELEMS (new_node), NULL);
-            ARRAY_INTARRAY (new_node) = tmp_vec;
-            ARRAY_LENGTH (new_node) = length;
-        } else
-            ARRAY_LENGTH (new_node) = 0;
+            ARRAY_INTVEC (new_node) = tmp_vec;
+            ARRAY_VECLEN (new_node) = length;
+            break;
+        case T_float:
+            FREE (ARRAY_FLOATVEC (new_node));
+            tmp_vec = Array2FloatVec (ARRAY_AELEMS (new_node), NULL);
+            ARRAY_FLOATVEC (new_node) = tmp_vec;
+            ARRAY_VECLEN (new_node) = length;
+            break;
+        case T_double:
+            FREE (ARRAY_DOUBLEVEC (new_node));
+            tmp_vec = Array2DblVec (ARRAY_AELEMS (new_node), NULL);
+            ARRAY_DOUBLEVEC (new_node) = tmp_vec;
+            ARRAY_VECLEN (new_node) = length;
+            break;
+        default:
+            ARRAY_VECLEN (new_node) = 0;
+        }
+
     } else {
         new_node = MakeArray (NULL);
     }
@@ -1586,7 +1606,7 @@ FetchNum (int pos, node *array)
 
     DBUG_ENTER ("FetchNum");
 
-    if (ARRAY_INTARRAY (array) == NULL) {
+    if (ARRAY_INTVEC (array) == NULL) {
         tmp = ARRAY_AELEMS (array);
 
         for (i = 0; i < pos; i++)
@@ -1594,7 +1614,7 @@ FetchNum (int pos, node *array)
 
         tmp = DupTree (EXPRS_EXPR (tmp), NULL);
     } else {
-        i = ARRAY_INTARRAY (array)[pos];
+        i = ARRAY_INTVEC (array)[pos];
         tmp = MakeNum (i);
     }
 
@@ -2302,11 +2322,27 @@ ArrayPrf (node *arg_node, node *arg_info)
     default:
         break;
     }
-    if ((NODE_TYPE (arg_node) == N_array)
-        && (NODE_TYPE (EXPRS_EXPR (ARRAY_AELEMS (arg_node))) == N_num)) {
-        FREE (ARRAY_INTARRAY (arg_node));
-        ARRAY_INTARRAY (arg_node) = Array2IntVec (ARRAY_AELEMS (arg_node), &tmp_len);
-        ARRAY_LENGTH (arg_node) = tmp_len;
+    if (NODE_TYPE (arg_node) == N_array) {
+        switch (ARRAY_VECTYPE (arg_node)) {
+        case T_int:
+            FREE (ARRAY_INTVEC (arg_node));
+            ARRAY_INTVEC (arg_node) = Array2IntVec (ARRAY_AELEMS (arg_node), &tmp_len);
+            ARRAY_VECLEN (arg_node) = tmp_len;
+            break;
+        case T_float:
+            FREE (ARRAY_FLOATVEC (arg_node));
+            ARRAY_FLOATVEC (arg_node)
+              = Array2FloatVec (ARRAY_AELEMS (arg_node), &tmp_len);
+            ARRAY_VECLEN (arg_node) = tmp_len;
+            break;
+        case T_double:
+            FREE (ARRAY_DOUBLEVEC (arg_node));
+            ARRAY_DOUBLEVEC (arg_node) = Array2DblVec (ARRAY_AELEMS (arg_node), &tmp_len);
+            ARRAY_VECLEN (arg_node) = tmp_len;
+            break;
+        default:
+            /* Nothing to do ! */
+        }
     }
 
     DBUG_RETURN (arg_node);
