@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2000/03/22 17:30:46  jhs
+ * Added assertion.
+ *
  * Revision 1.12  2000/03/21 13:10:57  jhs
  * DBUG_PRINT used instaed of NOTE.
  * Annotates first N_mt, N_st for further traversals.
@@ -462,6 +465,9 @@ BLKINassign (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("BLKINassign");
 
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_assign), "assign-node is not a N_assign");
+
+    DBUG_PRINT ("BLKIN", ("assign, instr is %s", NODE_TEXT (ASSIGN_INSTR (arg_node))));
     if (MustExecuteSingleThreaded (arg_node, arg_info)) {
         /*
          *  Insert ST-Block
