@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.95  2005/03/04 21:21:42  cg
+ * Locale set to en_US to avoid strange effects on German or
+ * other internationized installations.
+ *
  * Revision 3.94  2004/12/19 19:55:42  sbs
  * TNT called prior refconting now
  *
@@ -88,6 +92,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <locale.h>
 
 /*
  *  And now, the main function which triggers the whole compilation.
@@ -105,6 +110,8 @@ main (int argc, char *argv[])
 
     global.argc = argc;
     global.argv = argv;
+
+    setlocale (LC_ALL, "en_US");
 
 #ifdef SHOW_MALLOC
     ILIBcomputeMallocAlignStep ();
