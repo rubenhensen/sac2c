@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/04/26 17:07:18  dkr
+ * bug in PIWarg() detected but unfortunately not fixed yet :-(
+ *
  * Revision 3.5  2001/03/22 18:54:50  dkr
  * include of tree.h eliminated
  *
@@ -329,7 +332,8 @@ PIWarg (node *arg_node, node *arg_info)
         /* print macro for arg in SAC-function call */
         DBUG_ASSERT ((TYPES_DIM (argtype) >= 0), "PIWarg: unknown shape dimension!\n");
 
-        if (ARG_ATTRIB (arg_node) == ST_regular) {
+        switch (ARG_ATTRIB (arg_node)) {
+        case ST_regular:
             if ((TYPES_DIM (argtype) == 0) && (TYPES_BASETYPE (argtype) != T_hidden)) {
                 /* macro for simple type without refcounting */
                 fprintf (outfile, "SAC_ARGCALL_SIMPLE");
@@ -337,7 +341,9 @@ PIWarg (node *arg_node, node *arg_info)
                 /* macro for arraytype with refcounting */
                 fprintf (outfile, "SAC_ARGCALL_REFCNT");
             }
-        } else if (ARG_ATTRIB (arg_node) == ST_reference) {
+            break;
+
+        case ST_reference:
             /* these args are handled like out parameters */
             if (TYPES_DIM (argtype) == 0) {
                 /* macro for simple type without refcounting */
@@ -346,8 +352,17 @@ PIWarg (node *arg_node, node *arg_info)
                 /* macro for arraytype with refcounting */
                 fprintf (outfile, "SAC_ARGCALL_INOUT_REFCNT");
             }
-        } else {
-            DBUG_ASSERT ((1 == 0), "PIWarg: unable to handle types attribute!");
+            break;
+
+        case ST_unique:
+            /*
+             * dkr: this case is missing ?!?
+             */
+            DBUG_ASSERT ((0), "PIWarg: unable to handle types attribute!");
+            break;
+
+        default:
+            DBUG_ASSERT ((0), "PIWarg: unable to handle types attribute!");
         }
 
         fprintf (outfile, "( in%d , %s )", INFO_PIW_COUNTER (arg_info),
