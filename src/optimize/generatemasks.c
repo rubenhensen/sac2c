@@ -1,6 +1,8 @@
 /*
- *
  * $Log$
+ * Revision 2.20  2000/06/23 14:09:47  dkr
+ * nodes for old with-loop removed
+ *
  * Revision 2.19  2000/05/30 12:35:16  dkr
  * functions for old with-loop removed
  *
@@ -73,9 +75,6 @@
  *
  * Revision 1.1  1999/01/07 17:37:18  sbs
  * Initial revision
- *
- *
- *
  */
 
 /* General information:
@@ -448,7 +447,9 @@ MrdGet (int i, int varno, int what)
                     }
                     break;
                 case N_array:
-                case N_with:
+#if 0
+        case N_with:
+#endif
                 case N_Nwith:
                     if (0 == what)
                         new = old;
@@ -1195,7 +1196,11 @@ OPTTrav (node *trav_node, node *arg_info, node *arg_node)
                            change the behavior of the old WL to inside_wl because I
                            do not know if this trick is abused elsewhere. */
                         comp_node = GetCompoundNode (arg_node);
-                        if (comp_node && (N_with == comp_node->nodetype)) {
+                        if (comp_node
+#if 0
+                && (N_with  == comp_node->nodetype)
+#endif
+                        ) {
                             ids_node = LET_IDS (trav_node);
                             while (ids_node) {
                                 MRD (IDS_VARNO (ids_node)) = arg_node;
@@ -1209,8 +1214,11 @@ OPTTrav (node *trav_node, node *arg_info, node *arg_node)
                            See comment below at N_Nwith. */
 
                         if (comp_node
-                            && (N_Nwith == NODE_TYPE (comp_node)
-                                || N_with == NODE_TYPE (comp_node))) {
+                            && ((N_Nwith == NODE_TYPE (comp_node))
+#if 0
+                              || (N_with  == NODE_TYPE(comp_node))
+#endif
+                                  )) {
                             /*
                              * For the current assignment a new MRD mask must be
                              * generated. For now we can simply duplicate the one for the
@@ -1578,48 +1586,50 @@ OPTTrav (node *trav_node, node *arg_info, node *arg_node)
             break;
             /*************************************************************************************/
 
-        case N_with:
-            switch (NODE_TYPE (trav_node)) {
-            case N_assign:
-                DBUG_PRINT ("TRAV", ("Travers with-body START"));
-                old_mask[0] = INFO_DEF;
-                old_mask[1] = INFO_USE;
-                INFO_DEF = GenMask (INFO_VARNO (arg_info));
-                INFO_USE = GenMask (INFO_VARNO (arg_info));
+#if 0
+    case N_with:
+      switch(NODE_TYPE(trav_node)) {
+      case N_assign:
+        DBUG_PRINT("TRAV",("Travers with-body START"));
+        old_mask[0]=INFO_DEF; 
+        old_mask[1]=INFO_USE;
+        INFO_DEF=GenMask(INFO_VARNO( arg_info) );
+        INFO_USE=GenMask(INFO_VARNO( arg_info) );
+            
+        trav_node=Trav(trav_node, arg_info);
+            
+        PlusMask(WITH_BODYDEFMASK(arg_node), INFO_DEF, INFO_VARNO( arg_info) ); 
+        PlusMask(WITH_BODYUSEMASK(arg_node), INFO_USE, INFO_VARNO( arg_info) );
+        PlusMask(INFO_DEF, old_mask[0], INFO_VARNO( arg_info) );
+        PlusMask(INFO_USE, old_mask[1], INFO_VARNO( arg_info) );
+        FREE(old_mask[0]);
+        FREE(old_mask[1]);
+        DBUG_PRINT("TRAV",("Travers with-body END"));
+        break;
+      case N_generator:
+        DBUG_PRINT("TRAV",("Travers with-genarator START"));
+        old_mask[1]=INFO_USE;
+        INFO_USE=GenMask(INFO_VARNO( arg_info) );
 
-                trav_node = Trav (trav_node, arg_info);
+        /* Inserted MRD entry for index vector. This is only available
+           inside the WL body (PushMRD in assign node). 
+           It points to the N_with node. */
+        MRD(IDS_VARNO(GEN_IDS(trav_node))) = arg_node;
 
-                PlusMask (WITH_BODYDEFMASK (arg_node), INFO_DEF, INFO_VARNO (arg_info));
-                PlusMask (WITH_BODYUSEMASK (arg_node), INFO_USE, INFO_VARNO (arg_info));
-                PlusMask (INFO_DEF, old_mask[0], INFO_VARNO (arg_info));
-                PlusMask (INFO_USE, old_mask[1], INFO_VARNO (arg_info));
-                FREE (old_mask[0]);
-                FREE (old_mask[1]);
-                DBUG_PRINT ("TRAV", ("Travers with-body END"));
-                break;
-            case N_generator:
-                DBUG_PRINT ("TRAV", ("Travers with-genarator START"));
-                old_mask[1] = INFO_USE;
-                INFO_USE = GenMask (INFO_VARNO (arg_info));
-
-                /* Inserted MRD entry for index vector. This is only available
-                   inside the WL body (PushMRD in assign node).
-                   It points to the N_with node. */
-                MRD (IDS_VARNO (GEN_IDS (trav_node))) = arg_node;
-
-                trav_node = Trav (trav_node, arg_info);
-
-                PlusMask (WITH_GENUSEMASK (arg_node), INFO_USE, INFO_VARNO (arg_info));
-                PlusMask (INFO_USE, old_mask[1], INFO_VARNO (arg_info));
-                FREE (old_mask[1]);
-                DBUG_PRINT ("TRAV", ("Travers with-generator END"));
-                break;
-            default:
-                DBUG_ASSERT ((FALSE), "Subtree not implemented for OPTTrav with_node");
-                break;
-            }
-            break;
-            /*************************************************************************************/
+        trav_node=Trav(trav_node, arg_info);
+            
+        PlusMask(WITH_GENUSEMASK(arg_node), INFO_USE, INFO_VARNO( arg_info) );
+        PlusMask(INFO_USE, old_mask[1], INFO_VARNO( arg_info) );
+        FREE(old_mask[1]);
+        DBUG_PRINT("TRAV",("Travers with-generator END"));
+        break;
+      default:
+        DBUG_ASSERT((FALSE),"Subtree not implemented for OPTTrav with_node");
+        break;
+      }
+      break;
+      /*************************************************************************************/
+#endif
 
         default:
             DBUG_ASSERT ((FALSE), "Nodetype not implemented for OPTTrav");
@@ -1821,82 +1831,87 @@ OptTrav (node *arg_node, node *arg_info, int node_no)
 
         break;
 
+#if 0
     case N_with:
-        switch (node_no) {
+      switch(node_no)
+        {
         case 0: /* Trav generator */
-
-            DBUG_PRINT ("TRAV", ("Travers with - generator"));
-            oldmask[1] = arg_info->mask[1];
-            arg_info->mask[1] = GenMask (INFO_VARNO (arg_info));
-
-            arg_node->node[0] = Trav (arg_node->node[0], arg_info);
-
-            PlusMask (arg_node->node[0]->mask[1], arg_info->mask[1],
-                      INFO_VARNO (arg_info));
-            PlusMask (arg_info->mask[1], oldmask[1], INFO_VARNO (arg_info));
-            FREE (oldmask[1]);
-            break;
+          
+          DBUG_PRINT("TRAV",("Travers with - generator"));
+          oldmask[1]=arg_info->mask[1];
+          arg_info->mask[1]=GenMask(INFO_VARNO(arg_info));
+          
+          arg_node->node[0]=Trav(arg_node->node[0], arg_info);
+          
+          PlusMask(arg_node->node[0]->mask[1], arg_info->mask[1], INFO_VARNO(arg_info));
+          PlusMask(arg_info->mask[1], oldmask[1], INFO_VARNO(arg_info));
+          FREE(oldmask[1]);
+          break;
 
         case 1: /* Trav genarray, modarray or foldfun */
-
-            if ((N_genarray == arg_node->node[1]->nodetype)
-                || (N_modarray == arg_node->node[1]->nodetype)) {
-                DBUG_PRINT ("TRAV", ("Travers with - genarray or modarray"));
-                oldmask[1] = arg_info->mask[1];
-                arg_info->mask[1] = GenMask (INFO_VARNO (arg_info));
-                DBUG_ASSERT ((NULL != arg_node->node[1]->node[0]),
-                             "genarray or modarray without array");
-                arg_node->node[1]->node[0] = Trav (arg_node->node[1]->node[0], arg_info);
-                PlusMask (arg_node->node[1]->mask[1], arg_info->mask[1],
-                          INFO_VARNO (arg_info));
-                PlusMask (arg_info->mask[1], oldmask[1], INFO_VARNO (arg_info));
-                FREE (oldmask[1]);
+          
+          if ((N_genarray==arg_node->node[1]->nodetype) ||
+              (N_modarray==arg_node->node[1]->nodetype))
+            {
+              DBUG_PRINT("TRAV",("Travers with - genarray or modarray"));
+              oldmask[1]=arg_info->mask[1];
+              arg_info->mask[1]=GenMask(INFO_VARNO(arg_info));
+              DBUG_ASSERT((NULL!=arg_node->node[1]->node[0]),
+                          "genarray or modarray without array");
+              arg_node->node[1]->node[0]=Trav(arg_node->node[1]->node[0], arg_info);
+              PlusMask(arg_node->node[1]->mask[1], arg_info->mask[1], INFO_VARNO(arg_info));
+              PlusMask(arg_info->mask[1], oldmask[1], INFO_VARNO(arg_info));
+              FREE(oldmask[1]);
             }
-            if (N_foldfun == arg_node->node[1]->nodetype) {
-                DBUG_PRINT ("TRAV", ("Travers with - genarray or modarray"));
-                oldmask[1] = arg_info->mask[1];
-                arg_info->mask[1] = GenMask (INFO_VARNO (arg_info));
-                DBUG_ASSERT ((NULL != arg_node->node[1]->node[1]),
-                             "N_foldfun without expression to compute neutral element");
-                arg_node->node[1]->node[1] = Trav (arg_node->node[1]->node[1], arg_info);
-                PlusMask (arg_node->node[1]->mask[1], arg_info->mask[1],
-                          INFO_VARNO (arg_info));
-                PlusMask (arg_info->mask[1], oldmask[1], INFO_VARNO (arg_info));
-                FREE (oldmask[1]);
+          if (N_foldfun==arg_node->node[1]->nodetype)
+            {
+              DBUG_PRINT("TRAV",("Travers with - genarray or modarray"));
+              oldmask[1]=arg_info->mask[1];
+              arg_info->mask[1]=GenMask(INFO_VARNO(arg_info));
+              DBUG_ASSERT((NULL!=arg_node->node[1]->node[1]),
+                          "N_foldfun without expression to compute neutral element");
+              arg_node->node[1]->node[1]=Trav(arg_node->node[1]->node[1], arg_info);
+              PlusMask(arg_node->node[1]->mask[1], arg_info->mask[1], INFO_VARNO(arg_info));
+              PlusMask(arg_info->mask[1], oldmask[1], INFO_VARNO(arg_info));
+              FREE(oldmask[1]);
             }
-            break;
-
+          break;
+        
         case 2: /* Trav with body */
-
-            DBUG_PRINT ("TRAV", ("Travers with - body"));
-            oldmask[0] = arg_info->mask[0];
-            oldmask[1] = arg_info->mask[1];
-            arg_info->mask[0] = GenMask (INFO_VARNO (arg_info));
-            arg_info->mask[1] = GenMask (INFO_VARNO (arg_info));
-
-            if ((N_genarray == arg_node->node[1]->nodetype)
-                || (N_modarray == arg_node->node[1]->nodetype)) {
-                DBUG_ASSERT ((NULL != arg_node->node[1]->node[1]),
-                             "with expr. without body");
-                arg_node->node[1]->node[1] = Trav (arg_node->node[1]->node[1], arg_info);
-            } else {
-                DBUG_ASSERT ((NULL != arg_node->node[1]->node[0]),
-                             "with expr. without body");
-                arg_node->node[1]->node[0] = Trav (arg_node->node[1]->node[0], arg_info);
+         
+          DBUG_PRINT("TRAV",("Travers with - body"));
+          oldmask[0]=arg_info->mask[0];
+          oldmask[1]=arg_info->mask[1];
+          arg_info->mask[0]=GenMask(INFO_VARNO(arg_info));
+          arg_info->mask[1]=GenMask(INFO_VARNO(arg_info));
+          
+          if ((N_genarray==arg_node->node[1]->nodetype) ||
+              (N_modarray==arg_node->node[1]->nodetype))
+            {
+              DBUG_ASSERT((NULL!=arg_node->node[1]->node[1]),
+                          "with expr. without body");
+              arg_node->node[1]->node[1]=Trav(arg_node->node[1]->node[1], arg_info);
             }
-            PlusMask (arg_node->mask[0], arg_info->mask[0], INFO_VARNO (arg_info));
-            PlusMask (arg_node->mask[1], arg_info->mask[1], INFO_VARNO (arg_info));
-            PlusMask (arg_info->mask[0], oldmask[0], INFO_VARNO (arg_info));
-            PlusMask (arg_info->mask[1], oldmask[1], INFO_VARNO (arg_info));
-            FREE (oldmask[0]);
-            FREE (oldmask[1]);
-            DBUG_PRINT ("TRAV", ("Travers with - body END"));
-            break;
-
+          else
+            {
+              DBUG_ASSERT((NULL!=arg_node->node[1]->node[0]),
+                          "with expr. without body");
+              arg_node->node[1]->node[0]=Trav(arg_node->node[1]->node[0], arg_info);
+            }
+          PlusMask(arg_node->mask[0], arg_info->mask[0], INFO_VARNO(arg_info));
+          PlusMask(arg_node->mask[1], arg_info->mask[1], INFO_VARNO(arg_info));
+          PlusMask(arg_info->mask[0], oldmask[0], INFO_VARNO(arg_info));
+          PlusMask(arg_info->mask[1], oldmask[1], INFO_VARNO(arg_info));
+          FREE(oldmask[0]);
+          FREE(oldmask[1]);
+          DBUG_PRINT("TRAV",("Travers with - body END"));
+          break;
+        
         default:
-            break;
+          break;
         }
-        break;
+      break;
+#endif
 
     case N_Nwithop: /* Trav withop */
         DBUG_PRINT ("TRAV", ("Travers with - withop"));

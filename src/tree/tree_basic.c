@@ -1,6 +1,8 @@
 /*
- *
  * $Log$
+ * Revision 1.16  2000/06/23 14:10:01  dkr
+ * nodes for old with-loop removed
+ *
  * Revision 1.15  2000/06/14 12:05:37  jhs
  * Added ST_IDENTIFIER and MT_IDENTIFIER.
  * Each new N_mt and N_st will be provided with an unique id.
@@ -31,22 +33,7 @@
  * Revision 1.7  2000/02/22 11:58:36  jhs
  * Added and adapted NODE_TEXT.
  *
- * Revision 1.6  2000/02/10 15:48:13  jhs
- * Added NWITH2_ISSCHEDULED.
- *
- * Revision 1.5  2000/02/09 14:14:07  dkr
- * WLSEGVAR_MAXHOMDIM removed
- *
- * Revision 1.4  2000/02/03 15:19:31  jhs
- * Fixed Bugs in MakeMt, MakeST.
- *
- * Revision 1.3  2000/02/02 12:29:09  jhs
- * Added INFO_MUTH_FUNDEF.
- * Added N_mt and N_st.
- * Added ST_xxx-macros, added MT_OR_ST_xxx-macros.
- *
- * Revision 1.2  2000/01/28 12:41:15  dkr
- * NCODE_CODE removed
+ * [...]
  *
  * Revision 1.1  2000/01/21 15:38:37  dkr
  * Initial revision
@@ -54,40 +41,7 @@
  * Revision 2.12  2000/01/21 12:42:43  dkr
  * function MakeIds1 added
  *
- * Revision 2.11  1999/09/10 14:22:52  jhs
- * Added COND_NAIVE_(THEN|ELSE)VARS.
- * Added MakeId1 und MakeId3 for those ugly macros i killed in tree.[ch].
- *
- * Revision 2.10  1999/08/25 15:30:44  bs
- * MakeNCode modified.
- *
- * Revision 2.9  1999/07/20 16:39:19  jhs
- * Added SYNC_FOLDCOUNT.
- *
- * Revision 2.8  1999/07/19 14:44:31  jhs
- * Changed signature of MakeSync.
- *
- * Revision 2.7  1999/07/07 06:00:19  sbs
- * added VINFO_DOLLAR and adjusted MakeVinfo
- *
- * Revision 2.6  1999/06/15 12:29:09  jhs
- * Added initilization of IDS_NAIVE_REFCNT in routine MakeIds.
- *
- * Revision 2.5  1999/06/08 08:31:02  cg
- * Bug fixed: node structure entry int_data is now initialized.
- * Macro INIT_NODE replaced by function CreateCleanNode()
- * -> resulting object code file much smaller now.
- *
- * Revision 2.4  1999/05/06 15:39:29  sbs
- * Now, the src_file will be set in INIT_NODE as well.
- *
- * Revision 2.3  1999/05/05 13:04:39  jhs
- * MakeNGenerator now sets also the values of the original
- * withloop operators, which are equivalent to the operators
- * delivered to the routine.
- *
- * Revision 2.2  1999/04/29 07:32:26  bs
- * Definition of MakeAccess modified
+ * [...]
  *
  * Revision 2.1  1999/02/23 12:39:53  sacbase
  * new release made
@@ -1563,7 +1517,6 @@ MakeNWith (node *part, node *code, node *withop)
     NWITH_PARTS (tmp) = -1;
     NWITH_REFERENCED (tmp) = 0;
     NWITH_REFERENCED_FOLD (tmp) = 0;
-    NWITH_COMPLEX (tmp) = 0;
     NWITH_FOLDABLE (tmp) = 0;
 
     DBUG_RETURN (tmp);
@@ -1770,7 +1723,7 @@ MakeWLublock (int level, int dim, int bound1, int bound2, int step, node *nextdi
 /*--------------------------------------------------------------------------*/
 
 node *
-MakeWLstride (int level, int dim, int bound1, int bound2, int step, int unrolling,
+MakeWLstride (int level, int dim, int bound1, int bound2, int step, bool unrolling,
               node *contents, node *next)
 {
     node *new_node;
@@ -1797,7 +1750,7 @@ MakeWLstride (int level, int dim, int bound1, int bound2, int step, int unrollin
 /*--------------------------------------------------------------------------*/
 
 node *
-MakeWLgrid (int level, int dim, int bound1, int bound2, int unrolling, node *nextdim,
+MakeWLgrid (int level, int dim, int bound1, int bound2, bool unrolling, node *nextdim,
             node *next, node *code)
 {
     node *new_node;
