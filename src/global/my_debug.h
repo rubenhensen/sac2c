@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2004/11/22 15:42:55  ktr
+ * SACDevCamp 04 Ismop
+ *
  * Revision 3.4  2002/06/07 13:47:44  dkr
  * 'mdb_argtag' renamed into 'ATG_string' and move to argtag.[ch]
  *
@@ -48,12 +51,12 @@
  *
  */
 
-#ifndef _SAC_my_debug_h_
-#define _SAC_my_debug_h_
+#ifndef _SAC_MY_DEBUG_H_
+#define _SAC_MY_DEBUG_H_
 
 extern char *mdb_nodetype[];
 extern char *mdb_prf[];
 extern char *mdb_type[];
 extern char *mdb_statustype[];
 
-#endif /* _SAC_my_debug_h_ */
+#endif /* _SAC_MY_DEBUG_H_ */

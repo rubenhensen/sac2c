@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2004/11/22 15:42:55  ktr
+ * SACDevCamp 04 Ismop
+ *
  * Revision 3.5  2004/10/17 17:48:42  sah
  * added LD_DYNAMIC
  *
@@ -66,6 +69,8 @@
  *
  * file: resource.h
  *
+ * Prefix: RSC
+ *
  * description:
  *
  *  This file contains type definitions, global variable declarations,
@@ -76,101 +81,10 @@
  *
  ******************************************************************************/
 
-#ifndef SAC_RESOURCE_H
+#ifndef _SAC_RESOURCE_H_
+#define _SAC_RESOURCE_H_
 
-#define SAC_RESOURCE_H
-
-/*****************************************************************************
- *
- * type: resource_list_t
- * type: target_list_t
- *
- * description:
- *
- *  These types are used to build up a tree-like structure for temporaily
- *  storing all information read in from sac2crc files.
- *
- ******************************************************************************/
-
-typedef struct resource_list_t {
-    char *name;
-    char *value_str;
-    int value_num;
-    int add_flag;
-    struct resource_list_t *next;
-} resource_list_t;
-
-typedef struct target_list_t {
-    char *name;
-    ids *super_targets;
-    resource_list_t *resource_list;
-    struct target_list_t *next;
-} target_list_t;
-
-/*****************************************************************************
- *
- * type: resource_t
- *
- * description:
- *
- *  This structure is used to permanently store all relevant resource
- *  information for the selected target.
- *
- ******************************************************************************/
-
-typedef struct {
-    char *cc;
-    char *ccflags;
-    char *ccdir;
-    char *ldflags;
-    char *cclink;
-    char *ccmtlink;
-    char *opt_O0;
-    char *opt_O1;
-    char *opt_O2;
-    char *opt_O3;
-    char *opt_g;
-    char *opt_D;
-    char *opt_I;
-
-    char *cpp_stdin;
-    char *cpp_file;
-    char *tar_create;
-    char *tar_extract;
-    char *ar_create;
-    char *ld_dynamic;
-    char *ranlib;
-    char *mkdir;
-    char *rmdir;
-    char *chdir;
-    char *cat;
-    char *move;
-    char *rsh;
-    char *dump_output;
-
-    char *stdlib_decpath;
-    char *stdlib_libpath;
-    char *system_libpath;
-    char *tmpdir;
-
-    int cache1_size;
-    int cache1_line;
-    int cache1_assoc;
-    char *cache1_writepol;
-    int cache1_msca_factor;
-
-    int cache2_size;
-    int cache2_line;
-    int cache2_assoc;
-    char *cache2_writepol;
-    int cache2_msca_factor;
-
-    int cache3_size;
-    int cache3_line;
-    int cache3_assoc;
-    char *cache3_writepol;
-    int cache3_msca_factor;
-} configuration_t;
+#include "types.h"
 
 /*****************************************************************************
  *
@@ -188,20 +102,20 @@ extern configuration_t config;
  *
  ******************************************************************************/
 
-extern bool RSCParseResourceFile (char *file);
+extern bool RSCparseResourceFile (char *file);
 
-extern resource_list_t *RSCMakeResourceListEntry (char *resource, char *value_str,
+extern resource_list_t *RSCmakeResourceListEntry (char *resource, char *value_str,
                                                   int value_num, int add_flag,
                                                   resource_list_t *next);
 
-extern target_list_t *RSCMakeTargetListEntry (char *target, ids *super_targets,
+extern target_list_t *RSCmakeTargetListEntry (char *target, node *super_targets,
                                               resource_list_t *resource_list,
                                               target_list_t *next);
 
-extern target_list_t *RSCAddTargetList (target_list_t *list1, target_list_t *list2);
+extern target_list_t *RSCaddTargetList (target_list_t *list1, target_list_t *list2);
 
-extern void RSCShowResources ();
+extern void RSCshowResources ();
 
-extern void RSCEvaluateConfiguration (char *target);
+extern void RSCevaluateConfiguration (char *target);
 
-#endif /* SAC_RESOURCE_H */
+#endif /* _SAC_RESOURCE_H_ */

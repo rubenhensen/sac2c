@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2004/11/22 15:42:55  ktr
+ * SACDevCamp 04 Ismop
+ *
  * Revision 3.1  2000/11/20 17:59:32  sacbase
  * new release made
  *
@@ -14,10 +17,16 @@
  *
  */
 
-#ifndef _interrupt_h
+#ifndef _SAC_INTERRUPT_H_
+#define _SAC_INTERRUPT_H_
 
-#define _interrupt_h
+/******************************************************************************
+ *
+ * Interrupt handling
+ *
+ * Prefix: IRQ
+ *
+ *****************************************************************************/
+extern void IRQsetupInterruptHandlers ();
 
-extern void SetupInterruptHandlers ();
-
-#endif /* _interrupt_h */
+#endif /* _SAC_INTERRUPT_H_ */

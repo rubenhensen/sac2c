@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2004/11/22 15:42:55  ktr
+ * SACDevCamp 04 Ismop
+ *
  * Revision 3.5  2003/03/13 14:39:11  dkr
  * local variable of PRINT_MESSAGE renamed in order to prevent name
  * clashes
@@ -100,8 +103,8 @@
  *
  */
 
-#ifndef _sac_Error_h
-#define _sac_Error_h
+#ifndef _SAC_ERROR_H_
+#define _SAC_ERROR_H_
 
 #include <stdio.h>
 #include <string.h>
@@ -241,10 +244,10 @@
 #define ABORT_MESSAGE                                                                    \
     {                                                                                    \
         fprintf (stderr, "\n*** Compilation failed ***\n");                              \
-        fprintf (stderr, "*** Exit code %d (%s)\n", compiler_phase,                      \
-                 compiler_phase_name[(int)compiler_phase]);                              \
-        fprintf (stderr, "*** %d Error(s), %d Warning(s)\n\n", errors_cnt,               \
-                 warnings_cnt);                                                          \
+        fprintf (stderr, "*** Exit code %d (%s)\n", global.compiler_phase,               \
+                 global.compiler_phase_name[(int)global.compiler_phase]);                \
+        fprintf (stderr, "*** %d Error(s), %d Warning(s)\n\n", global.errors_cnt,        \
+                 global.warnings_cnt);                                                   \
     }
 
 #define ERROR_INDENT(n)                                                                  \
@@ -264,13 +267,13 @@
     {                                                                                    \
         char *SAC__line;                                                                 \
                                                                                          \
-        current_line_length                                                              \
+        global.current_line_length                                                       \
           = MAX_LINE_LENGTH - ind1 - ind2 - ((header == NULL) ? 0 : strlen (header));    \
         ProcessErrorMessage message;                                                     \
                                                                                          \
         if (excl)                                                                        \
-            strcat (error_message_buffer, " !");                                         \
-        SAC__line = strtok (error_message_buffer, "@");                                  \
+            strcat (global.error_message_buffer, " !");                                  \
+        SAC__line = strtok (global.error_message_buffer, "@");                           \
         if (first_line_ind)                                                              \
             ERROR_INDENT (ind1);                                                         \
                                                                                          \
@@ -299,7 +302,7 @@
  */
 
 #define NEWLINE(verbose)                                                                 \
-    if (verbose_level >= verbose)                                                        \
+    if (global.verbose_level >= verbose)                                                 \
         fprintf (stderr, "\n");
 
 /*
@@ -364,20 +367,21 @@
 
 #define ERROR(line, message)                                                             \
     {                                                                                    \
-        ERROR_INDENT (((verbose_level > 1) ? 2 : 0));                                    \
-        fprintf (stderr, "%s:%d", filename, line);                                       \
-        last_indent = ((verbose_level > 1) ? 2 : 0) + strlen (filename)                  \
-                      + NumberOfDigits (line) + 1;                                       \
-        PRINT_MESSAGE (message, ":ERROR: ", last_indent, message_indent, 0, 1);          \
+        ERROR_INDENT (((global.verbose_level > 1) ? 2 : 0));                             \
+        fprintf (stderr, "%s:%d", global.filename, line);                                \
+        global.last_indent = ((global.verbose_level > 1) ? 2 : 0)                        \
+                             + strlen (global.filename) + NumberOfDigits (line) + 1;     \
+        PRINT_MESSAGE (message, ":ERROR: ", global.last_indent, global.message_indent,   \
+                       0, 1);                                                            \
         errors_cnt++;                                                                    \
     }
 
 #define SYSERROR(message)                                                                \
     {                                                                                    \
-        ERROR_INDENT (((verbose_level > 1) ? 2 : 0));                                    \
+        ERROR_INDENT (((global.verbose_level > 1) ? 2 : 0));                             \
         fprintf (stderr, "SYSTEM:");                                                     \
-        last_indent = ((verbose_level > 1) ? 2 : 0) + 7;                                 \
-        PRINT_MESSAGE (message, ":ERROR: ", last_indent, message_indent, 0, 1);          \
+        global.last_indent = ((global.verbose_level > 1) ? 2 : 0) + 7;                   \
+        PRINT_MESSAGE (message, ":ERROR: ", global.last_indent, message_indent, 0, 1);   \
         errors_cnt++;                                                                    \
     }
 
@@ -385,24 +389,24 @@
     {                                                                                    \
         ERROR (line, message);                                                           \
         ABORT_MESSAGE;                                                                   \
-        EXIT ((int)compiler_phase);                                                      \
+        EXIT ((int)global.compiler_phase);                                               \
     }
 
 #define SYSABORT(message)                                                                \
     {                                                                                    \
         SYSERROR (message);                                                              \
         ABORT_MESSAGE;                                                                   \
-        EXIT ((int)compiler_phase);                                                      \
+        EXIT ((int)global.compiler_phase);                                               \
     }
 
 #define CONT_ERROR(message)                                                              \
-    PRINT_MESSAGE (message, ":ERROR: ", last_indent, message_indent, 1, 0);
+    PRINT_MESSAGE (message, ":ERROR: ", global.last_indent, message_indent, 1, 0);
 
 #define ABORT_ON_ERROR                                                                   \
     {                                                                                    \
         if (errors_cnt > 0) {                                                            \
             ABORT_MESSAGE;                                                               \
-            EXIT ((int)compiler_phase);                                                  \
+            EXIT ((int)global.compiler_phase);                                           \
         }                                                                                \
     }
 
@@ -437,31 +441,34 @@
 
 #define WARN(line, message)                                                              \
     {                                                                                    \
-        if (verbose_level > 0) {                                                         \
-            ERROR_INDENT (((verbose_level > 1) ? 2 : 0));                                \
-            fprintf (stderr, "%s:%d", filename, line);                                   \
-            last_indent = ((verbose_level > 1) ? 2 : 0) + strlen (filename)              \
-                          + NumberOfDigits (line) + 1;                                   \
-            PRINT_MESSAGE (message, ":WARNING: ", last_indent, message_indent, 0, 1);    \
-            warnings_cnt++;                                                              \
+        if (global.verbose_level > 0) {                                                  \
+            ERROR_INDENT (((global.verbose_level > 1) ? 2 : 0));                         \
+            fprintf (stderr, "%s:%d", global.filename, line);                            \
+            global.last_indent = ((global.verbose_level > 1) ? 2 : 0)                    \
+                                 + strlen (global.filename) + NumberOfDigits (line) + 1; \
+            PRINT_MESSAGE (message, ":WARNING: ", global.last_indent,                    \
+                           global.message_indent, 0, 1);                                 \
+            global.warnings_cnt++;                                                       \
         }                                                                                \
     }
 
 #define SYSWARN(message)                                                                 \
     {                                                                                    \
-        if (verbose_level > 0) {                                                         \
-            ERROR_INDENT (((verbose_level > 1) ? 2 : 0));                                \
+        if (global.verbose_level > 0) {                                                  \
+            ERROR_INDENT (((global.verbose_level > 1) ? 2 : 0));                         \
             fprintf (stderr, "SYSTEM:");                                                 \
-            last_indent = ((verbose_level > 1) ? 2 : 0) + 7;                             \
-            PRINT_MESSAGE (message, ":WARNING: ", last_indent, message_indent, 0, 1);    \
-            warnings_cnt++;                                                              \
+            global.last_indent = ((global.verbose_level > 1) ? 2 : 0) + 7;               \
+            PRINT_MESSAGE (message, ":WARNING: ", global.last_indent,                    \
+                           global.message_indent, 0, 1);                                 \
+            global.warnings_cnt++;                                                       \
         }                                                                                \
     }
 
 #define CONT_WARN(message)                                                               \
     {                                                                                    \
-        if (verbose_level > 0) {                                                         \
-            PRINT_MESSAGE (message, ":WARNING: ", last_indent, message_indent, 1, 0);    \
+        if (global.verbose_level > 0) {                                                  \
+            PRINT_MESSAGE (message, ":WARNING: ", global.last_indent, message_indent, 1, \
+                           0);                                                           \
         }                                                                                \
     }
 
@@ -470,7 +477,7 @@
  *  SAC2C compile time information system
  ********************************************
  *
- *  7. Basic compile time information (verbose_level 2)
+ *  7. Basic compile time information (global.verbose_level 2)
  *
  *
  *  7.1  NOTE_COMPILER_PHASE
@@ -488,16 +495,16 @@
 
 #define NOTE_COMPILER_PHASE                                                              \
     {                                                                                    \
-        if (verbose_level > 1) {                                                         \
-            fprintf (stderr, "\n** %d: %s: ...\n", compiler_phase,                       \
-                     compiler_phase_name[compiler_phase]);                               \
+        if (global.verbose_level > 1) {                                                  \
+            fprintf (stderr, "\n** %d: %s: ...\n", global.compiler_phase,                \
+                     global.compiler_phase_name[global.compiler_phase]);                 \
         }                                                                                \
     }
 
 #define NOTE2(message)                                                                   \
     {                                                                                    \
-        if (verbose_level > 1) {                                                         \
-            PRINT_MESSAGE (message, "", 0, message_indent, 1, 0);                        \
+        if (global.verbose_level > 1) {                                                  \
+            PRINT_MESSAGE (message, "", 0, global.message_indent, 1, 0);                 \
         }                                                                                \
     }
 
@@ -519,14 +526,14 @@
 
 #define NOTE(message)                                                                    \
     {                                                                                    \
-        if (verbose_level > 2) {                                                         \
-            PRINT_MESSAGE (message, "", 2, message_indent, 1, 0);                        \
+        if (global.verbose_level > 2) {                                                  \
+            PRINT_MESSAGE (message, "", 2, global.message_indent, 1, 0);                 \
         }                                                                                \
     }
 
 #define NOTEDOT                                                                          \
     {                                                                                    \
-        if (verbose_level > 2) {                                                         \
+        if (global.verbose_level > 2) {                                                  \
             fprintf (stderr, "*");                                                       \
             fflush (stderr);                                                             \
         }                                                                                \
@@ -581,8 +588,8 @@ extern void CleanUp ();
  */
 
 #define WARN1(s)                                                                         \
-    if (verbose_level > 0) {                                                             \
-        warnings_cnt++;                                                                  \
+    if (global.verbose_level > 0) {                                                      \
+        global.warnings_cnt++;                                                           \
         fprintf (stderr, "\n");                                                          \
         DoPrint s;                                                                       \
     }
@@ -591,7 +598,7 @@ extern void CleanUp ();
     {                                                                                    \
         fprintf (stderr, "\n");                                                          \
         DoPrint s;                                                                       \
-        errors_cnt++;                                                                    \
+        global.errors_cnt++;                                                             \
     }
 
 #define ERROR2(n, s)                                                                     \
@@ -606,4 +613,4 @@ extern void Error (char *string, int status);
 
 extern void DoPrint (char *format, ...);
 
-#endif /* _sac_Error_h */
+#endif /* _SAC_ERROR_H_ */

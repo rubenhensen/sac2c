@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2004/11/22 15:42:55  ktr
+ * SACDevCamp 04 Ismop
+ *
  * Revision 3.2  2003/07/28 15:35:06  cg
  * Added short version identification option (-V).
  * Full version information is now available with -VV
@@ -27,12 +30,19 @@
  *
  */
 
-#ifndef _usage_h
-#define _usage_h
+#ifndef _SAC_USAGE_H_
+#define _SAC_USAGE_H_
 
-extern void Usage ();
-extern void Copyright ();
-extern void Version ();
-extern void VersionVerbose ();
+/******************************************************************************
+ *
+ * Usage
+ *
+ * Prefix: USAGE
+ *
+ *****************************************************************************/
+extern void USAGEusage ();
+extern void USAGEcopyright ();
+extern void USAGEversion ();
+extern void USAGEversionVerbose ();
 
-#endif /* _usage_h */
+#endif /* _SAC_USAGE_H_ */

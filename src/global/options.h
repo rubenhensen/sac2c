@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2004/11/22 15:42:55  ktr
+ * SACDevCamp 04 Ismop
+ *
  * Revision 3.1  2000/11/20 17:59:36  sacbase
  * new release made
  *
@@ -13,19 +16,21 @@
  *
  */
 
-/*
- * File: options.h
+#ifndef _SAC_OPTIONS_H_
+#define _SAC_OPTIONS_H_
+
+/******************************************************************************
+ *
+ * Options
+ *
+ * Prefix: OPT
  *
  * Description:
  *
  * This file provides external declarations for symbols defined in options.c.
  *
- */
+ *****************************************************************************/
+extern void OPTanalyseCommandline (int argc, char *argv[]);
+extern void OPTcheckOptionConsistency ();
 
-#ifndef _options_h
-#define _options_h
-
-extern void AnalyseCommandline (int argc, char *argv[]);
-extern void CheckOptionConsistency ();
-
-#endif /* _options_h */
+#endif /* _SAC_OPTIONS_H_ */

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/11/22 15:42:55  ktr
+ * SACDevCamp 04 Ismop
+ *
  * Revision 1.4  2002/07/31 15:35:08  dkr
  * new hidden tag added
  *
@@ -15,16 +18,23 @@
  *
  */
 
-#ifndef _NameTuplesUtils_h_
-#define _NameTuplesUtils_h_
+#ifndef _SAC_NAMETUPLESUTILS_H_
+#define _SAC_NAMETUPLESUTILS_H_
 
-#include "NameTuples.h"
+#include "types.h"
 
-extern char *CreateNtTag (char *name, types *type);
-extern node *AddNtTag (node *id);
+/******************************************************************************
+ *
+ * Name Tuples Utils
+ *
+ * Prefix: NTU
+ *
+ *****************************************************************************/
+extern char *NTUcreateNtTag (char *name, types *type);
+extern node *NTUaddNtTag (node *id);
 
-extern shape_class_t GetShapeClassFromTypes (types *type);
-extern hidden_class_t GetHiddenClassFromTypes (types *type);
-extern unique_class_t GetUniqueClassFromTypes (types *type);
+extern shape_class_t NTUgetShapeClassFromTypes (types *type);
+extern hidden_class_t NTUgetHiddenClassFromTypes (types *type);
+extern unique_class_t NTUgetUniqueClassFromTypes (types *type);
 
-#endif /* _NameTuplesUtils_h_ */
+#endif /* _SAC_NAMETUPLESUTILS_H_ */

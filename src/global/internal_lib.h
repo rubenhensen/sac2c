@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.28  2004/11/22 15:42:55  ktr
+ * SACDevCamp 04 Ismop
+ *
  * Revision 3.27  2004/11/07 14:31:34  ktr
  * CreateCppCallString now needs a third parameter for the temporary file
  * created in /tmp that is used for CPP's output.
@@ -140,62 +143,66 @@
  *
  */
 
-#ifndef _internal_lib_h
-#define _internal_lib_h
+#ifndef _SAC_INTERNAL_LIB_H_
+#define _SAC_INTERNAL_LIB_H_
 
+#include <stdio.h>
 #include "config.h"
 #include "types.h"
-
-typedef struct STR_BUF str_buf;
-typedef struct PTR_BUF ptr_buf;
+#include "dbug.h"
+#include "global.h"
 
 /*********************************
- * function prototypes
+ *
+ * Internal lib
+ *
+ * Prefix: ILIB
+ *
  *********************************/
 
-extern void *Malloc (int size);
-extern void *Free (void *address);
+extern void *ILIBmalloc (int size);
+extern void *ILIBfree (void *address);
 
-extern ptr_buf *PtrBufCreate (int size);
-extern ptr_buf *PtrBufAdd (ptr_buf *s, void *ptr);
-extern int PtrBufGetSize (ptr_buf *s);
-extern void *PtrBufGetPtr (ptr_buf *s, int pos);
-extern void PtrBufFlush (ptr_buf *s);
-extern void *PtrBufFree (ptr_buf *s);
+extern ptr_buf *ILIBptrBufCreate (int size);
+extern ptr_buf *ILIBptrBufAdd (ptr_buf *s, void *ptr);
+extern int ILIBptrBufGetSize (ptr_buf *s);
+extern void *ILIBptrBufGetPtr (ptr_buf *s, int pos);
+extern void ILIBptrBufFlush (ptr_buf *s);
+extern void *ILIBptrBufFree (ptr_buf *s);
 
-extern str_buf *StrBufCreate (int size);
-extern str_buf *StrBufprint (str_buf *s, const char *string);
-extern str_buf *StrBufprintf (str_buf *s, const char *format, ...);
-extern char *StrBuf2String (str_buf *s);
-extern void StrBufFlush (str_buf *s);
-extern bool StrBufIsEmpty (str_buf *s);
-extern void *StrBufFree (str_buf *s);
+extern str_buf *ILIBstrBufCreate (int size);
+extern str_buf *ILIBstrBufPrint (str_buf *s, const char *string);
+extern str_buf *ILIBstrBufPrintf (str_buf *s, const char *format, ...);
+extern char *ILIBstrBuf2String (str_buf *s);
+extern void ILIBstrBufFlush (str_buf *s);
+extern bool ILIBstrBufIsEmpty (str_buf *s);
+extern void *ILIBstrBufFree (str_buf *s);
 
-extern char *StringCopy (const char *source);
-extern char *StringConcat (char *first, char *second);
-extern char *StrTok (char *first, char *sep);
+extern char *ILIBstringCopy (const char *source);
+extern char *ILIBstringConcat (char *first, char *second);
+extern char *ILIBstrTok (char *first, char *sep);
 
-extern void *MemCopy (int size, void *mem);
+extern void *ILIBmemCopy (int size, void *mem);
 
-extern int lcm (int x, int y);
-extern char *itoa (long number);
+extern int ILIBlcm (int x, int y);
+extern char *ILIBitoa (long number);
 
-extern void SystemCall (char *format, ...);
-extern int SystemCall2 (char *format, ...);
-extern int SystemTest (char *format, ...);
+extern void ILIBsystemCall (char *format, ...);
+extern int ILIBsystemCall2 (char *format, ...);
+extern int ILIBSystemTest (char *format, ...);
 
-extern void CreateCppCallString (char *file, char *cccallstr, char *cppfile);
+extern void ILIBcreateCppCallString (char *file, char *cccallstr, char *cppfile);
 
-extern char *PrefixForTmpVar (void);
-extern char *TmpVar (void);
-extern char *TmpVarName (char *postfix);
+extern char *ILIBprefixForTmpVar (void);
+extern char *ILIBtmpVar (void);
+extern char *ILIBtmpVarName (char *postfix);
 
 #ifdef SHOW_MALLOC
-extern void ComputeMallocAlignStep (void);
+extern void ILIBcomputeMallocAlignStep (void);
 #endif
 
 #ifndef DBUG_OFF
-extern void DbugMemoryLeakCheck (void);
+extern void ILIBdbugMemoryLeakCheck (void);
 #endif
 
 /*********************************
@@ -247,12 +254,12 @@ extern void DbugMemoryLeakCheck (void);
 
 #define FREE_VECT(vect)                                                                  \
     if (vect != NULL) {                                                                  \
-        Free (vect);                                                                     \
+        ILIBfree (vect);                                                                 \
     }
 
 #define MALLOC_VECT(vect, dims, type)                                                    \
     if (vect == NULL) {                                                                  \
-        (vect) = (type *)Malloc ((dims) * sizeof (type));                                \
+        (vect) = (type *)ILIBmalloc ((dims) * sizeof (type));                            \
     }
 
 /* caution: 'val' should occur in the macro implementation only once! */
@@ -305,15 +312,15 @@ extern void DbugMemoryLeakCheck (void);
 
 #define PHASE_DONE_EPILOG                                                                \
     ABORT_ON_ERROR;                                                                      \
-    DBUG_EXECUTE ("MEM_LEAK", DbugMemoryLeakCheck ();)
+    DBUG_EXECUTE ("MEM_LEAK", ILIBdbugMemoryLeakCheck ();)
 
 #define PHASE_EPILOG                                                                     \
-    if (do_fun2lac[compiler_phase]) {                                                    \
-        syntax_tree = Fun2Lac (syntax_tree);                                             \
+    if (global.do_fun2lac[global.compiler_phase]) {                                      \
+        global.syntax_tree = F2LdoFun2Lac (global.syntax_tree);                          \
         ABORT_ON_ERROR;                                                                  \
     }                                                                                    \
-    if (do_lac2fun[compiler_phase + 1]) {                                                \
-        syntax_tree = Lac2Fun (syntax_tree);                                             \
+    if (global.do_lac2fun[global.compiler_phase + 1]) {                                  \
+        global.syntax_tree = L2FdoLac2Fun (global.syntax_tree);                          \
         ABORT_ON_ERROR;                                                                  \
     }                                                                                    \
     CHECK_DBUG_STOP;
@@ -325,17 +332,19 @@ extern void DbugMemoryLeakCheck (void);
 #ifndef DBUG_OFF
 #define CHECK_DBUG_START                                                                 \
     {                                                                                    \
-        if ((my_dbug) && (!my_dbug_active) && (compiler_phase >= my_dbug_from)           \
-            && (compiler_phase <= my_dbug_to)) {                                         \
-            DBUG_PUSH (my_dbug_str);                                                     \
-            my_dbug_active = 1;                                                          \
+        if ((global.my_dbug) && (!global.my_dbug_active)                                 \
+            && (global.compiler_phase >= global.my_dbug_from)                            \
+            && (global.compiler_phase <= global.my_dbug_to)) {                           \
+            DBUG_PUSH (global.my_dbug_str);                                              \
+            global.my_dbug_active = 1;                                                   \
         }                                                                                \
     }
 #define CHECK_DBUG_STOP                                                                  \
     {                                                                                    \
-        if ((my_dbug) && (my_dbug_active) && (compiler_phase >= my_dbug_to)) {           \
+        if ((global.my_dbug) && (global.my_dbug_active)                                  \
+            && (global.compiler_phase >= global.my_dbug_to)) {                           \
             DBUG_POP ();                                                                 \
-            my_dbug_active = 0;                                                          \
+            global.my_dbug_active = 0;                                                   \
         }                                                                                \
     }
 #else /* DBUG_OFF */
@@ -343,4 +352,4 @@ extern void DbugMemoryLeakCheck (void);
 #define CHECK_DBUG_STOP
 #endif /* DBUG_OFF */
 
-#endif /* _internal_lib_h */
+#endif /* _SAC_INTERNAL_LIB_H_ */
