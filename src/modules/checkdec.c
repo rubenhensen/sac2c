@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.2  1995/10/22 15:56:31  cg
+ * Revision 1.3  1995/10/22 17:37:59  cg
+ * first compilable revision
+ *
+ * Revision 1.2  1995/10/22  15:56:31  cg
  * Now, declaration files will be generated automatically if not
  * present at compile time of module/class implementation.
  *
@@ -11,6 +14,8 @@
  *
  *
  */
+
+#include <string.h>
 
 #include "types.h"
 #include "tree_basic.h"
@@ -24,6 +29,7 @@
 #include "import.h"
 #include "convert.h"
 #include "filemgr.h"
+#include "scnprs.h"
 
 static FILE *decfile;
 
@@ -354,19 +360,20 @@ CDECobjdef (node *arg_node, node *arg_info)
         if (TYPEDEF_STATUS (odef) == ST_imported) {
             ERROR (NODE_LINE (arg_node), ("Implementation of global object '%s` missing",
                                           OBJDEF_NAME (arg_node)));
-        } else if (CMP_TYPE_USER (OBJDEF_TYPE (arg_node), OBJDEF_TYPE (tdef)) == 0) {
-            ERROR (NODE_LINE (arg_node),
-                   ("Type mismatch in declaration of global object '%s`" OBJDEF_NAME (
-                     arg_node)));
+        } else {
+            if (CMP_TYPE_USER (OBJDEF_TYPE (arg_node), OBJDEF_TYPE (odef)) == 0) {
+                ERROR (NODE_LINE (arg_node),
+                       ("Type mismatch in declaration of global object '%s`",
+                        OBJDEF_NAME (arg_node)));
+            }
         }
     }
-}
 
-if (OBJDEF_NEXT (arg_node) != NULL) {
-    OBJDEF_NEXT (arg_node) = Trav (OBJDEF_NEXT (arg_node), arg_info);
-}
+    if (OBJDEF_NEXT (arg_node) != NULL) {
+        OBJDEF_NEXT (arg_node) = Trav (OBJDEF_NEXT (arg_node), arg_info);
+    }
 
-DBUG_RETURN (arg_node);
+    DBUG_RETURN (arg_node);
 }
 
 /*

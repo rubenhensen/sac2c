@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.2  1995/10/22 15:56:31  cg
+ * Revision 1.3  1995/10/22 17:37:59  cg
+ * first compilable revision
+ *
+ * Revision 1.2  1995/10/22  15:56:31  cg
  * Now, declaration files will be generated automatically if not
  * present at compile time of module/class implementation.
  *
@@ -11,6 +14,9 @@
  *
  *
  */
+
+#ifndef _sac_checkdec_h
+#define _sac_checkdec_h
 
 extern node *CheckDec (node *syntax_tree);
 
@@ -25,3 +31,5 @@ extern node *WDECtypedef (node *arg_node, node *arg_info);
 extern node *WDECobjdef (node *arg_node, node *arg_info);
 extern node *WDECfundef (node *arg_node, node *arg_info);
 extern node *WDECarg (node *arg_node, node *arg_info);
+
+#endif /* _sac_checkdec_h */
