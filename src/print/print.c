@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.101  2002/07/04 11:15:43  dkr
+ * PrintId: DBUG-string PRINT_NT added
+ *
  * Revision 3.100  2002/07/03 17:11:58  dkr
  * ID_UNQCONV added again ...
  *
@@ -2313,14 +2316,19 @@ PrintExprs (node *arg_node, node *arg_info)
 node *
 PrintId (node *arg_node, node *arg_info)
 {
+    bool print_nt = FALSE;
+
     DBUG_ENTER ("PrintId");
 
     if ((ID_ATTRIB (arg_node) == ST_global) && (ID_MOD (arg_node) != NULL)) {
         fprintf (outfile, "%s:", ID_MOD (arg_node));
     }
 
+    DBUG_EXECUTE ("PRINT_NT", print_nt = TRUE;);
+
     fprintf (outfile, "%s",
-             ((compiler_phase == PH_genccode) && (ID_NT_TAG (arg_node) != NULL))
+             (((compiler_phase == PH_genccode) || print_nt)
+              && (ID_NT_TAG (arg_node) != NULL))
                ? ID_NT_TAG (arg_node)
                : ID_NAME (arg_node));
 
