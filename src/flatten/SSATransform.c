@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.7  2004/06/08 14:30:46  ktr
+ * WithIDs are treated as RHS-expressions iff the Index vector has been
+ * allocated using F_alloc_or_reuse before.
+ *
  * Revision 1.6  2004/05/12 12:59:40  ktr
  * Code for NCODE_EPILOGUE added
  *
@@ -1120,12 +1124,29 @@ SSANwithid (node *arg_node, node *arg_info)
     INFO_SSA_ASSIGN (arg_info) = NULL;
     INFO_SSA_WITHID (arg_info) = arg_node;
 
-    if (NWITHID_VEC (arg_node) != NULL) {
-        NWITHID_VEC (arg_node) = TravLeftIDS (NWITHID_VEC (arg_node), arg_info);
-    }
+    /* The WITH must be treated like a RHS iff
+       the index vector has been allocated explicitly */
+    if ((IDS_AVIS (NWITHID_VEC (arg_node)) != NULL)
+        && (AVIS_SSAASSIGN (IDS_AVIS (NWITHID_VEC (arg_node))) != NULL)
+        && (NODE_TYPE (ASSIGN_RHS (AVIS_SSAASSIGN (IDS_AVIS (NWITHID_VEC (arg_node)))))
+            == N_prf)
+        && (PRF_PRF (ASSIGN_RHS (AVIS_SSAASSIGN (IDS_AVIS (NWITHID_VEC (arg_node)))))
+            == F_alloc_or_reuse)) {
+        if (NWITHID_VEC (arg_node) != NULL) {
+            NWITHID_VEC (arg_node) = TravRightIDS (NWITHID_VEC (arg_node), arg_info);
+        }
 
-    if (NWITHID_IDS (arg_node) != NULL) {
-        NWITHID_IDS (arg_node) = TravLeftIDS (NWITHID_IDS (arg_node), arg_info);
+        if (NWITHID_IDS (arg_node) != NULL) {
+            NWITHID_IDS (arg_node) = TravRightIDS (NWITHID_IDS (arg_node), arg_info);
+        }
+    } else {
+        if (NWITHID_VEC (arg_node) != NULL) {
+            NWITHID_VEC (arg_node) = TravLeftIDS (NWITHID_VEC (arg_node), arg_info);
+        }
+
+        if (NWITHID_IDS (arg_node) != NULL) {
+            NWITHID_IDS (arg_node) = TravLeftIDS (NWITHID_IDS (arg_node), arg_info);
+        }
     }
 
     /* restore currect assign for further processing */
@@ -1377,6 +1398,10 @@ SSArightids (ids *arg_ids, node *arg_info)
     Free (IDS_NAME (arg_ids));
     IDS_NAME (arg_ids) = StringCopy (VARDEC_OR_ARG_NAME (IDS_VARDEC (arg_ids)));
 #endif
+
+    if (INFO_SSA_WITHID (arg_info) != NULL) {
+        AVIS_WITHID (IDS_AVIS (arg_ids)) = INFO_SSA_WITHID (arg_info);
+    }
 
     /* traverese next ids */
     if (IDS_NEXT (arg_ids) != NULL) {
