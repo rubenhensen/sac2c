@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.88  2004/08/03 11:11:19  khf
+ * CreateSel(): setting of avis added
+ *
  * Revision 3.87  2004/08/03 09:22:32  ktr
  * CreateScalarWith used to call MakeNCode without wrapping CEXPR in an
  * EXPRS-chain.
@@ -4435,6 +4438,7 @@ CreateSel (ids *sel_vec, ids *sel_ids, node *sel_array, bool no_wl, node *fundef
         vardec = MakeVardec (StringCopy (ID_NAME (id)),
                              DupOneTypes (ARRAY_TYPE (new_index)), NULL);
         ID_VARDEC (id) = vardec;
+        ID_AVIS (id) = VARDEC_AVIS (vardec);
         fundef = AddVardecs (fundef, vardec);
 
         /*
