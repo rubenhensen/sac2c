@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.82  2005/02/01 17:40:26  mwe
+ * evaluations of primitive operations done by typechecker via typeupgrade removed from
+ * CFfoldPrfExpr
+ *
  * Revision 1.81  2005/01/31 15:28:04  mwe
  * reimplement folding of conditionals
  *
@@ -2948,53 +2952,26 @@ CFfoldPrfExpr (prf op, node **arg_expr)
         /* one-argument functions */
     case F_toi_S:
     case F_toi_A:
-        if
-            ONE_CONST_ARG (arg_co)
-            {
-                new_co = COtoi (arg_co[0]);
-            }
         break;
 
     case F_tof_S:
     case F_tof_A:
-        if
-            ONE_CONST_ARG (arg_co)
-            {
-                new_co = COtof (arg_co[0]);
-            }
         break;
 
     case F_tod_S:
     case F_tod_A:
-        if
-            ONE_CONST_ARG (arg_co)
-            {
-                new_co = COtod (arg_co[0]);
-            }
         break;
 
     case F_abs:
-        if
-            ONE_CONST_ARG (arg_co)
-            {
-                new_co = COabs (arg_co[0]);
-            }
         break;
 
     case F_not:
-        if
-            ONE_CONST_ARG (arg_co)
-            {
-                new_co = COnot (arg_co[0]);
-            }
         break;
 
     case F_dim:
         if
             ONE_CONST_ARG (arg_co)
             {
-                /* for pure constant arg */
-                new_co = COdim (arg_co[0]);
             }
         else if
             ONE_ARG (arg_expr)
@@ -3008,8 +2985,6 @@ CFfoldPrfExpr (prf op, node **arg_expr)
         if
             ONE_CONST_ARG (arg_co)
             {
-                /* for pure constant arg */
-                new_co = COshape (arg_co[0]);
             }
         else if
             ONE_ARG (arg_expr)
@@ -3021,30 +2996,15 @@ CFfoldPrfExpr (prf op, node **arg_expr)
 
         /* two-argument functions */
     case F_min:
-        if
-            TWO_CONST_ARG (arg_co)
-            {
-                new_co = COmin (arg_co[0], arg_co[1]);
-            }
         break;
 
     case F_max:
-        if
-            TWO_CONST_ARG (arg_co)
-            {
-                new_co = COmax (arg_co[0], arg_co[1]);
-            }
         break;
 
     case F_add_SxS:
     case F_add_AxS:
     case F_add_SxA:
     case F_add_AxA:
-        if
-            TWO_CONST_ARG (arg_co)
-            {
-                new_co = COadd (arg_co[0], arg_co[1]);
-            }
         if
             ONE_CONST_ARG_OF_TWO (arg_co, arg_expr)
             {
@@ -3057,11 +3017,6 @@ CFfoldPrfExpr (prf op, node **arg_expr)
     case F_sub_SxA:
     case F_sub_AxA:
         if
-            TWO_CONST_ARG (arg_co)
-            {
-                new_co = COsub (arg_co[0], arg_co[1]);
-            }
-        else if
             ONE_CONST_ARG_OF_TWO (arg_co, arg_expr)
             {
                 new_node = ArithmOpWrapper (F_sub_SxS, arg_co, arg_expr);
@@ -3078,11 +3033,6 @@ CFfoldPrfExpr (prf op, node **arg_expr)
     case F_mul_SxA:
     case F_mul_AxA:
         if
-            TWO_CONST_ARG (arg_co)
-            {
-                new_co = COmul (arg_co[0], arg_co[1]);
-            }
-        if
             ONE_CONST_ARG_OF_TWO (arg_co, arg_expr)
             {
                 new_node = ArithmOpWrapper (F_mul_SxS, arg_co, arg_expr);
@@ -3098,8 +3048,6 @@ CFfoldPrfExpr (prf op, node **arg_expr)
             {
                 if (COisZero (arg_co[1], FALSE)) { /* any 0 in divisor, x/0 -> err */
                     CTIabortLine (NODE_LINE (arg_expr[1]), "Division by zero expected");
-                } else {
-                    new_co = COdiv (arg_co[0], arg_co[1]);
                 }
             }
         if
@@ -3115,18 +3063,11 @@ CFfoldPrfExpr (prf op, node **arg_expr)
             {
                 if (COisZero (arg_co[1], FALSE)) { /* any 0 in divisor, x/0 -> err */
                     CTIabortLine (NODE_LINE (arg_expr[1]), "Division by zero expected");
-                } else {
-                    new_co = COmod (arg_co[0], arg_co[1]);
                 }
             }
         break;
 
     case F_and:
-        if
-            TWO_CONST_ARG (arg_co)
-            {
-                new_co = COand (arg_co[0], arg_co[1]);
-            }
         if
             ONE_CONST_ARG_OF_TWO (arg_co, arg_expr)
             {
@@ -3136,11 +3077,6 @@ CFfoldPrfExpr (prf op, node **arg_expr)
 
     case F_or:
         if
-            TWO_CONST_ARG (arg_co)
-            {
-                new_co = COor (arg_co[0], arg_co[1]);
-            }
-        if
             ONE_CONST_ARG_OF_TWO (arg_co, arg_expr)
             {
                 new_node = ArithmOpWrapper (F_or, arg_co, arg_expr);
@@ -3148,29 +3084,13 @@ CFfoldPrfExpr (prf op, node **arg_expr)
         break;
 
     case F_le:
-        if
-            TWO_CONST_ARG (arg_co)
-            {
-                new_co = COle (arg_co[0], arg_co[1]);
-            }
         break;
 
     case F_lt:
-        if
-            TWO_CONST_ARG (arg_co)
-            {
-                new_co = COlt (arg_co[0], arg_co[1]);
-            }
         break;
 
     case F_eq:
         if
-            TWO_CONST_ARG (arg_co)
-            {
-                /* for pure constant arg */
-                new_co = COeq (arg_co[0], arg_co[1]);
-            }
-        else if
             TWO_ARG (arg_expr)
             {
                 /* for two expressions (does a treecmp) */
@@ -3179,35 +3099,18 @@ CFfoldPrfExpr (prf op, node **arg_expr)
         break;
 
     case F_ge:
-        if
-            TWO_CONST_ARG (arg_co)
-            {
-                new_co = COge (arg_co[0], arg_co[1]);
-            }
         break;
 
     case F_gt:
-        if
-            TWO_CONST_ARG (arg_co)
-            {
-                new_co = COgt (arg_co[0], arg_co[1]);
-            }
         break;
 
     case F_neq:
-        if
-            TWO_CONST_ARG (arg_co)
-            {
-                new_co = COneq (arg_co[0], arg_co[1]);
-            }
         break;
 
     case F_reshape:
         if
             TWO_CONST_ARG (arg_co)
             {
-                /* for pure constant arg */
-                new_co = COreshape (arg_co[0], arg_co[1]);
             }
         else if ((arg_co[0] != NULL) && (arg_expr[1] != NULL)) {
             /* for some non constant expression and constant index vector */
@@ -3238,12 +3141,6 @@ CFfoldPrfExpr (prf op, node **arg_expr)
 
     case F_sel:
         if
-            TWO_CONST_ARG (arg_co)
-            {
-                /* for pure constant args */
-                new_co = COsel (arg_co[0], arg_co[1]);
-            }
-        else if
             FIRST_CONST_ARG_OF_TWO (arg_co, arg_expr)
             {
                 /* for some non constant expression and constant index vector */
@@ -3306,13 +3203,7 @@ CFfoldPrfExpr (prf op, node **arg_expr)
 
         /* three-argument functions */
     case F_modarray:
-        if
-            THREE_CONST_ARG (arg_co)
-            {
-                /* for pure constant args */
-                new_co = COmodarray (arg_co[0], arg_co[1], arg_co[2]);
-            }
-        else if (SECOND_CONST_ARG_OF_THREE (arg_co, arg_expr)) {
+        if (SECOND_CONST_ARG_OF_THREE (arg_co, arg_expr)) {
             new_node = Modarray (arg_expr[0], arg_co[1], arg_expr[2]);
         }
         break;
@@ -3321,7 +3212,6 @@ CFfoldPrfExpr (prf op, node **arg_expr)
         if
             TWO_CONST_ARG (arg_co)
             {
-                new_co = COcat (arg_co[0], arg_co[1]);
             }
         else {
             new_node = CatVxV (arg_expr[0], arg_expr[1]);
