@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.5  2004/10/01 08:40:13  sah
+  added ( ) in macro definitions
+
   Revision 1.4  2004/08/07 16:19:05  sah
   most xsl files use key-tables for type lookups
   now which increases speed significantly.
@@ -39,7 +42,7 @@ version="1.0">
       <xsl:value-of select="@name" />
     </xsl:with-param>
   </xsl:call-template>
-  <xsl:value-of select="' n->node['"/>
+  <xsl:value-of select="' (n)->node['"/>
   <xsl:value-of select="position() - 1"/>
   <xsl:value-of select="']'"/>
   <xsl:call-template name="newline"/>
@@ -65,7 +68,7 @@ version="1.0">
     </xsl:with-param>
   </xsl:call-template>
   <!-- generate right side of macro -->
-  <xsl:value-of select="'n->attribs.N_'"/> 
+  <xsl:value-of select="'(n)->attribs.N_'"/> 
   <xsl:value-of select="../../@name"/>
   <xsl:value-of select="'->'"/>
   <xsl:value-of select="@name"/>
