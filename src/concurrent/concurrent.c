@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2004/03/02 16:51:22  mwe
+ * OPT_SBE deactivated
+ *
  * Revision 3.6  2001/05/17 11:41:33  dkr
  * FREE replaced by FreeTree
  *
@@ -329,7 +332,12 @@ CONCfundef (node *arg_node, node *arg_info)
              * Executed only if optimisation SBE is set.
              */
             act_tab = syncopt_tab;
-            if (optimize & OPT_SBE) {
+            /* as long as the OPT_SBE bit is overloaded with OPT_CVP (see globals.h for
+             * details) the following conditional has always to be FALSE. if the problem
+             * with globals.h is fixed and there is no overlaoading anymore only the ' &
+             * FALSE' inside the condition has to be removed
+             */
+            if (optimize & OPT_SBE & FALSE) {
                 DBUG_PRINT ("CONC", ("--- begin a SYNCO traversal ---"));
                 DBUG_PRINT ("SYNCO", ("--- begin a SYNCO traversal ---"));
                 FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
