@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2000/01/24 18:21:51  jhs
+ * Added new traversal and functions for schedule_init.[ch].
+ *
  * Revision 1.1  2000/01/21 15:38:53  dkr
  * Initial revision
  *
@@ -275,6 +278,7 @@ extern funptr spmdco_tab[];
 extern funptr ntc_tab[];
 extern funptr lac2fun_tab[];
 extern funptr muth_tab[];
+extern funptr schin_tab[];
 
 extern int nnode[];
 

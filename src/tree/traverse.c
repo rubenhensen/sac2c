@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2000/01/24 18:21:51  jhs
+ * Added new traversal and functions for schedule_init.[ch].
+ *
  * Revision 1.1  2000/01/21 15:38:52  dkr
  * Initial revision
  *
@@ -161,6 +164,7 @@
 #include "new_typecheck.h"
 #include "multithread.h"
 #include "lac2fun.h"
+#include "schedule_init.h"
 
 #include "traverse.h"
 
@@ -655,6 +659,14 @@ funptr lac2fun_tab[] = {
  */
 #define NIFmuth(it_muth) it_muth
 funptr muth_tab[] = {
+#include "node_info.mac"
+};
+
+/*
+ *  (62) schin_tab
+ */
+#define NIFschin(it_schin) it_schin
+funptr schin_tab[] = {
 #include "node_info.mac"
 };
 
