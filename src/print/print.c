@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.54  2001/04/26 01:39:51  dkr
+ * some minor changes done
+ *
  * Revision 3.53  2001/04/25 13:55:40  dkr
  * PrintFundef: ST_zombiefun added
  *
@@ -794,7 +797,8 @@ PrintModul (node *arg_node, node *arg_info)
 
         if (NULL != MODUL_TYPES (arg_node)) {
             fprintf (outfile, "\n\n");
-            Trav (MODUL_TYPES (arg_node), arg_info); /* print typedefs */
+            /* print typedefs */
+            Trav (MODUL_TYPES (arg_node), arg_info);
         }
 
         GSCPrintDefines ();
@@ -802,14 +806,16 @@ PrintModul (node *arg_node, node *arg_info)
         if (NULL != MODUL_FUNS (arg_node)) {
             fprintf (outfile, "\n\n");
             INFO_PRINT_PROTOTYPE (arg_info) = TRUE;
-            Trav (MODUL_FUNS (arg_node), arg_info); /* print function declarations */
+            /* print function declarations */
+            Trav (MODUL_FUNS (arg_node), arg_info);
             INFO_PRINT_PROTOTYPE (arg_info) = FALSE;
         }
 
         if (NULL != MODUL_OBJS (arg_node)) {
             fprintf (outfile, "\n\n");
             print_objdef_for_header_file = TRUE;
-            Trav (MODUL_OBJS (arg_node), arg_info); /* print object declarations */
+            /* print object declarations */
+            Trav (MODUL_OBJS (arg_node), arg_info);
         }
 
         fclose (outfile);
@@ -824,7 +830,8 @@ PrintModul (node *arg_node, node *arg_info)
         if (NULL != MODUL_OBJS (arg_node)) {
             fprintf (outfile, "\n\n");
             print_objdef_for_header_file = FALSE;
-            Trav (MODUL_OBJS (arg_node), arg_info); /* print object definitions */
+            /* print object definitions */
+            Trav (MODUL_OBJS (arg_node), arg_info);
         }
 
         /*
@@ -886,7 +893,8 @@ PrintModul (node *arg_node, node *arg_info)
 
         if (MODUL_IMPORTS (arg_node) != NULL) {
             fprintf (outfile, "\n");
-            Trav (MODUL_IMPORTS (arg_node), arg_info); /* print import-list */
+            /* print import-list */
+            Trav (MODUL_IMPORTS (arg_node), arg_info);
         }
 
         if (MODUL_TYPES (arg_node) != NULL) {
@@ -894,7 +902,8 @@ PrintModul (node *arg_node, node *arg_info)
                               "/*\n"
                               " *  type definitions\n"
                               " */\n\n");
-            Trav (MODUL_TYPES (arg_node), arg_info); /* print typedefs */
+            /* print typedefs */
+            Trav (MODUL_TYPES (arg_node), arg_info);
         }
 
         GSCPrintDefines ();
@@ -905,7 +914,8 @@ PrintModul (node *arg_node, node *arg_info)
                               " *  function declarations\n"
                               " */\n\n");
             INFO_PRINT_PROTOTYPE (arg_info) = TRUE;
-            Trav (MODUL_FUNS (arg_node), arg_info); /* print function declarations */
+            /* print function declarations */
+            Trav (MODUL_FUNS (arg_node), arg_info);
             INFO_PRINT_PROTOTYPE (arg_info) = FALSE;
         }
 
@@ -914,23 +924,26 @@ PrintModul (node *arg_node, node *arg_info)
                               "/*\n"
                               " *  global objects\n"
                               " */\n\n");
-            Trav (MODUL_OBJS (arg_node), arg_info); /* print objdefs */
+            /* print objdefs */
+            Trav (MODUL_OBJS (arg_node), arg_info);
         }
 
         if (MODUL_FUNS (arg_node) != NULL) {
             fprintf (outfile, "\n\n"
                               "/*\n"
                               " *  function definitions\n"
-                              " */\n");
-            Trav (MODUL_FUNS (arg_node), arg_info); /* print function definitions */
+                              " */\n\n");
+            /* print function definitions */
+            Trav (MODUL_FUNS (arg_node), arg_info);
         }
 
         DBUG_EXECUTE ("PRINT_CWRAPPER", if (MODUL_CWRAPPER (arg_node) != NULL) {
             fprintf (outfile, "\n\n"
                               "/*\n"
                               " *  c wrapper functions\n"
-                              " */\n");
-            Trav (MODUL_CWRAPPER (arg_node), arg_info); /* print wrapper mappings */
+                              " */\n\n");
+            /* print wrapper mappings */
+            Trav (MODUL_CWRAPPER (arg_node), arg_info);
         });
     }
 
@@ -1212,63 +1225,61 @@ PrintFundef (node *arg_node, node *arg_info)
      */
     INFO_PRINT_FUNDEF (arg_info) = arg_node;
 
-    if (INFO_PRINT_PROTOTYPE (arg_info)) {
-        /*
-         * print function declaration
-         */
-
-        if (FUNDEF_STATUS (arg_node) != ST_spmdfun) {
-            if ((FUNDEF_BODY (arg_node) == NULL)
-                || ((FUNDEF_RETURN (arg_node) != NULL)
-                    && (NODE_TYPE (FUNDEF_RETURN (arg_node)) == N_icm)
-                    && (strcmp (FUNDEF_NAME (arg_node), "main") != 0))) {
-                fprintf (outfile, "extern ");
-
-                if ((FUNDEF_ICM (arg_node) == NULL)
-                    || (NODE_TYPE (FUNDEF_ICM (arg_node)) != N_icm)) {
-                    PrintFunctionHeader (arg_node, arg_info);
-                } else {
-                    Trav (FUNDEF_ICM (arg_node), arg_info); /* print N_icm ND_FUN_DEC */
-                }
-
-                fprintf (outfile, ";\n");
-                DBUG_EXECUTE ("PRINT_FUNATR",
-                              fprintf (outfile, "/* ATTRIB = %s */\n",
-                                       mdb_statustype[FUNDEF_ATTRIB (arg_node)]););
-
-                if (FUNDEF_PRAGMA (arg_node) != NULL) {
-                    Trav (FUNDEF_PRAGMA (arg_node), arg_info);
-                }
-
-                fprintf (outfile, "\n");
-            }
-        }
+    if (FUNDEF_STATUS (arg_node) == ST_zombiefun) {
+        fprintf (outfile, "/*\n");
+        INDENT;
+        fprintf (outfile, " * zombie function:\n");
+        INDENT
+        fprintf (outfile, " *   ");
+        PrintFunctionHeader (arg_node, arg_info);
+        fprintf (outfile, "\n");
+        INDENT;
+        fprintf (outfile, " */\n\n");
     } else {
-        /*
-         * print function definition
-         */
 
-        if (FUNDEF_STATUS (arg_node) == ST_zombiefun) {
-            fprintf (outfile, "\n");
-            fprintf (outfile, "/*\n");
-            INDENT;
-            fprintf (outfile, " * zombie function:\n");
-            INDENT
-            fprintf (outfile, " *   ");
-            PrintFunctionHeader (arg_node, arg_info);
-            fprintf (outfile, "\n");
-            INDENT;
-            fprintf (outfile, " */\n");
+        if (INFO_PRINT_PROTOTYPE (arg_info)) {
+            /*
+             * print function declaration
+             */
+
+            if (FUNDEF_STATUS (arg_node) != ST_spmdfun) {
+                if ((FUNDEF_BODY (arg_node) == NULL)
+                    || ((FUNDEF_RETURN (arg_node) != NULL)
+                        && (NODE_TYPE (FUNDEF_RETURN (arg_node)) == N_icm)
+                        && (strcmp (FUNDEF_NAME (arg_node), "main") != 0))) {
+                    fprintf (outfile, "extern ");
+
+                    if ((FUNDEF_ICM (arg_node) == NULL)
+                        || (NODE_TYPE (FUNDEF_ICM (arg_node)) != N_icm)) {
+                        PrintFunctionHeader (arg_node, arg_info);
+                    } else {
+                        /* print N_icm ND_FUN_DEC */
+                        Trav (FUNDEF_ICM (arg_node), arg_info);
+                    }
+
+                    fprintf (outfile, ";\n");
+                    DBUG_EXECUTE ("PRINT_FUNATR",
+                                  fprintf (outfile, "/* ATTRIB = %s */\n",
+                                           mdb_statustype[FUNDEF_ATTRIB (arg_node)]););
+
+                    if (FUNDEF_PRAGMA (arg_node) != NULL) {
+                        Trav (FUNDEF_PRAGMA (arg_node), arg_info);
+                    }
+
+                    fprintf (outfile, "\n");
+                }
+            }
         } else {
+            /*
+             * print function definition
+             */
 
             if (FUNDEF_BODY (arg_node) != NULL) {
 
                 if (INFO_PRINT_SEPARATE (arg_info)) {
                     outfile = WriteOpen ("%s/fun%d.c", tmp_dirname, function_counter);
-                    fprintf (outfile, "#include \"header.h\"\n");
+                    fprintf (outfile, "#include \"header.h\"\n\n");
                 }
-
-                fprintf (outfile, "\n");
 
                 if ((FUNDEF_STATUS (arg_node) == ST_spmdfun)
                     && (compiler_phase == PH_genccode)) {
@@ -1286,7 +1297,8 @@ PrintFundef (node *arg_node, node *arg_info)
                     || (NODE_TYPE (FUNDEF_ICM (arg_node)) != N_icm)) {
                     PrintFunctionHeader (arg_node, arg_info);
                 } else {
-                    Trav (FUNDEF_ICM (arg_node), arg_info); /* print N_icm ND_FUN_DEC */
+                    /* print N_icm ND_FUN_DEC */
+                    Trav (FUNDEF_ICM (arg_node), arg_info);
                 }
 
                 fprintf (outfile, "\n");
@@ -1294,7 +1306,8 @@ PrintFundef (node *arg_node, node *arg_info)
                               fprintf (outfile, "/* ATTRIB = %s */\n",
                                        mdb_statustype[FUNDEF_ATTRIB (arg_node)]););
 
-                Trav (FUNDEF_BODY (arg_node), arg_info); /* traverse function body */
+                /* traverse function body */
+                Trav (FUNDEF_BODY (arg_node), arg_info);
 
                 if (FUNDEF_PRAGMA (arg_node) != NULL) {
                     Trav (FUNDEF_PRAGMA (arg_node), arg_info);
@@ -1304,7 +1317,7 @@ PrintFundef (node *arg_node, node *arg_info)
                     && (compiler_phase == PH_genccode)) {
                     fprintf (outfile, "\n#endif  /* SAC_DO_MULTITHREAD */\n\n");
                 } else {
-                    fprintf (outfile, "\n");
+                    fprintf (outfile, "\n\n");
                 }
 
                 if (INFO_PRINT_SEPARATE (arg_info)) {
@@ -4249,8 +4262,8 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
 
             PRINT_STRING (outfile, FUNDEF_NAME (arg_node));
 
-            PrintStatus (OBJDEF_ATTRIB (arg_node), TRUE);
-            PrintStatus (OBJDEF_STATUS (arg_node), TRUE);
+            PrintStatus (FUNDEF_ATTRIB (arg_node), TRUE);
+            PrintStatus (FUNDEF_STATUS (arg_node), TRUE);
 
             fprintf (outfile, ", ");
             fprintf (outfile, "used: %d", FUNDEF_USED (arg_node));
