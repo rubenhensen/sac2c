@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2004/11/24 19:16:24  mwe
+ * changing function names according to naming conventions
+ *
  * Revision 1.4  2004/11/22 12:37:33  ktr
  * Ismop SacDevCamp 04
  * ,.
@@ -31,10 +34,10 @@
  * Prefix: SSA
  *
  *****************************************************************************/
-extern node *SSAdoSSA (node *syntax_tree);
-extern node *SSAundoSSA (node *syntax_tree);
-extern node *SSArestoreSSAExplicitAllocs (node *syntax_tree);
-extern node *SSArestoreSSAOneFunction (node *fundef);
-extern node *SSArestoreSSAOneFundef (node *fundef);
+extern node *SSAdoSsa (node *syntax_tree);
+extern node *SSAundoSsa (node *syntax_tree);
+extern node *SSArestoreSsaExplicitAllocs (node *syntax_tree);
+extern node *SSArestoreSsaOneFunction (node *fundef);
+extern node *SSArestoreSsaOneFundef (node *fundef);
 
 #endif /* _SAC_SSA_H_ */

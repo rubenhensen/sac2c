@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2004/11/24 19:16:24  mwe
+ * changing function names according to naming conventions
+ *
  * Revision 1.3  2004/11/22 12:37:33  ktr
  * Ismop SacDevCamp 04
  * ,.
@@ -46,7 +49,7 @@
  *
  *
  *****************************************************************************/
-extern node *USSATdoUndoSSATransform (node *syntax_tree);
+extern node *USSATdoUndoSsaTransform (node *syntax_tree);
 
 extern node *USSATarg (node *arg_node, info *arg_info);
 extern node *USSATvardec (node *arg_node, info *arg_info);

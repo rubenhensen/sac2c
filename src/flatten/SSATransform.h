@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.9  2004/11/24 19:16:24  mwe
+ * changing function names according to naming conventions
+ *
  * Revision 1.8  2004/11/22 12:37:33  ktr
  * Ismop SacDevCamp 04
  * ,.
@@ -79,7 +82,7 @@
  *
  *****************************************************************************/
 extern node *SSATdoTransform (node *ast);
-extern node *SSATdoTransformAllowGOs (node *ast);
+extern node *SSATdoTransformAllowGos (node *ast);
 extern node *SSATdoTransformExplicitAllocs (node *ast);
 extern node *SSATdoTransformOneFunction (node *fundef);
 extern node *SSATdoTransformOneFundef (node *fundef);
