@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2002/06/07 16:10:49  dkr
+ * some new ICMs for TAGGED_ARRAYS added
+ *
  * Revision 3.9  2002/06/06 18:22:31  dkr
  * some signatures modified
  *
@@ -77,7 +80,13 @@ extern void ICMCompileND_OBJDEF_EXTERN (char *nt, char *basetype, int sdim);
 
 extern void ICMCompileND_DECL (char *nt, char *basetype, int sdim, int *shp);
 
-extern void ICMCompileND_DECL_ARG (char *nt, int sdim, int *shp);
+extern void ICMCompileND_DECL_EXTERN (char *nt, char *basetype, int sdim);
+
+extern void ICMCompileND_DECL_MIRROR (char *nt, int sdim, int *shp);
+
+extern void ICMCompileND_DECL_MIRROR_PARAM (char *nt, int sdim, int *shp);
+
+extern void ICMCompileND_DECL_MIRROR_EXTERN (char *nt, int sdim);
 
 extern void ICMCompileND_SET_SHP (char *nt, int sdim, int *shp);
 
@@ -91,6 +100,10 @@ extern void ICMCompileND_ALLOC_PLACE (char *nt, char *basetype, int sdim, int *s
                                       int rc);
 
 extern void ICMCompileND_ASSIGN (char *to_nt, int to_sdim, char *from_nt);
+
+extern void ICMCompileND_ASSIGN_DATA (char *to_nt, int to_sdim, char *from_nt);
+
+extern void ICMCompileND_ASSIGN_MIRROR (char *to_nt, int to_sdim, char *from_nt);
 
 extern void ICMCompileND_COPY (char *to_nt, char *from_nt);
 
