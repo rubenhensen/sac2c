@@ -3,6 +3,11 @@
 /*
  *
  * $Log$
+ * Revision 1.152  1998/03/17 12:19:52  cg
+ * Now, character arrays defined as strings keep the original string
+ * throughout the compilation process. This string is reused when
+ * generating C code to initialize the constant character array.
+ *
  * Revision 1.151  1998/03/15 11:01:51  srs
  * fixed bug in letassign-rule. Abbreviation id[expr] of modarray did
  * not duplicate string so that the flatten phase freed a still used
@@ -1966,7 +1971,7 @@ expr_main: id  { $$=MakeId( $1, NULL, ST_regular); }
          | PLUS DOUBLE %prec UMINUS  { $$=MakeDouble( $2);         }
          | TRUE                      { $$=MakeBool( 1);            }
          | FALSE                     { $$=MakeBool( 0);            }
-         | string                       { $$=string2array2string($1); }
+         | string                       { $$=string2array($1); }
          | NWITH {$<cint>$=linenum;} BRACKET_L Ngenerator BRACKET_R
            optassignblock Nwithop 
            { /*
@@ -2855,15 +2860,15 @@ int yyerror(char *errname)
  ***  string2array
  ***/
 
-node *string2array2string(char *str)
+node *string2array(char *str)
 {
   node *new_exprs;
   int i, cnt;
   char *funname;
-  char *funmod;
+  node *array;
   node *len_exprs;
   
-  DBUG_ENTER("string2array2string");
+  DBUG_ENTER("string2array");
   
   new_exprs=MakeExprs(MakeChar('\0'), NULL);
 
@@ -2920,20 +2925,14 @@ node *string2array2string(char *str)
     cnt+=1;
   }
 
-  FREE(str);
-
-  
-  funname=(char*)Malloc(10);
-  funmod=(char*)Malloc(11);
-  len_exprs;
-          
-  strcpy(funname, "to_string");
-  strcpy(funmod, "StringBase");
-          
   len_exprs=MakeExprs(MakeNum(cnt), NULL);
-          
-  DBUG_RETURN(MakeAp(funname, NULL, 
-                     MakeExprs(MakeArray(new_exprs), len_exprs))); 
+  array=MakeArray(new_exprs);
+
+#ifndef CHAR_ARRAY_AS_STRING
+  ARRAY_STRING(array)=str;
+#endif  /*  CHAR_ARRAY_AS_STRING  */
+
+  DBUG_RETURN(MakeAp(StringCopy("to_string"), NULL, MakeExprs(array, len_exprs))); 
 }
 
 
