@@ -59,8 +59,9 @@ STDLIB_LIBPATH :=  "$SACBASE/stdlib/modules/structures/lib:"
                    "$SACBASE/stdlib/world/system/lib:"
                    "$SACBASE/stdlib/world/x-window/lib:"
                    "$SACBASE/stdlib/hidden/lib"
- 
-SYSTEM_LIBPATH :=  "/usr/lib:/lib:/usr/local/lib"
+
+SYSTEM_LIBPATH :=  "/usr/lib:/lib:/usr/local/lib:"
+                   "/home/sac/lib/efence"
  
 CACHE1_SIZE    :=  0
 CACHE1_LINE    :=  0

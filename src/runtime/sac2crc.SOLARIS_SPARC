@@ -74,8 +74,9 @@ SYSTEM_LIBPATH :=  "/opt/gnu/lib/gcc-lib/sparc-sun-solaris2.5.1/2.7.2.1:"
                    "/lib/sparc-sun-solaris2.5.1/2.7.2.1:"
                    "/lib:"
                    "/usr/lib/sparc-sun-solaris2.5.1/2.7.2.1:"
-                   "/usr/lib"
- 
+                   "/usr/lib:"
+                   "/home/sacbase/efence"
+
 CACHE1_SIZE    :=  0
 CACHE1_LINE    :=  0
 CACHE1_ASSOC   :=  0
