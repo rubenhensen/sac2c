@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.15  2001/03/09 11:48:23  sbs
+# -I../profile added.
+#
 # Revision 3.14  2001/03/06 13:17:29  nmw
 # compare_tree added
 #
@@ -43,26 +46,8 @@
 # Revision 3.1  2000/11/20 18:03:22  sacbase
 # new release made
 #
-# Revision 1.23  2000/11/02 14:42:26  dkr
-# explicit .mac dependencies added
-#
-# Revision 1.17  2000/07/05 11:42:23  nmw
-# moved cinterface files from print to c-interface
-#
-# Revision 1.16  2000/06/13 13:38:34  dkr
-# path -I../Old2NewWith removed
-#
-# Revision 1.8  2000/01/28 13:52:41  jhs
-# Added LookUpTable.o, gmake deps done.
-#
-# Revision 1.7  2000/01/28 12:46:27  dkr
-# LookUpTable.o added
-#
-# Revision 1.4  2000/01/24 11:49:49  jhs
-# Added scheduling.o (moved here from concurrent).
-#
-# Revision 1.2  2000/01/21 16:45:49  dkr
-# tree related stuff moved from directory 'global' into 'tree'
+# 
+#  [ eliminated ] .....
 #
 # Revision 1.1  2000/01/21 12:46:00  dkr
 # Initial revision
@@ -89,7 +74,7 @@ CFLAGS    := -D__EXTENSIONS__
 INCS=-I../../inc -I../tree -I../print -I../flatten -I../scanparse -I../typecheck \
      -I../optimize -I../modules -I../global -I../refcount -I../compile \
      -I../psi-opt -I../objects -I../concurrent -I../multithread \
-     -I../c-interface -I../constants
+     -I../c-interface -I../constants -I../profile
 
 all: tree.o tree_basic.o tree_compound.o free.o DupTree.o traverse.o \
      DataFlowMask.o DataFlowMaskUtils.o InferDFMs.o CheckAvis.o \
