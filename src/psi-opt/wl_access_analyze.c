@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.19  2000/08/03 19:29:39  bs
+ * Bug fixed in WLAAprf, case F_sub_AxS
+ *
  * Revision 2.18  2000/07/07 15:30:59  bs
  *  DBUG_PRINT in WLAAid modified.
  *
@@ -127,7 +130,7 @@
  *   Just as the other optimization schemes, WL access analyzing is performed
  *   on single function definitions rather than on the entire syntax tree.
  *
- ******************************************************************************/
+ *****************************************************************************/
 
 node *
 WLAccessAnalyze (node *arg_node)
@@ -174,7 +177,7 @@ WLAccessAnalyze (node *arg_node)
  *   easier than an iterative one and this function is only used for index
  *   vectors, i.e. the lists are quite short.
  *
- ******************************************************************************/
+ *****************************************************************************/
 static nums *
 NumVect2NumsList (int coeff, node *exprs)
 {
@@ -245,7 +248,7 @@ Shpseg2Shpseg (int coeff, shpseg *shp_seg)
  *   This functions convert a vector of constant integers into a shape vector.
  *   During the format conversion each element is multiplied by <coeff>.
  *
- ******************************************************************************/
+ *****************************************************************************/
 
 static shpseg *
 IntVec2Shpseg (int coeff, int length, int *intvec, shpseg *next)
@@ -281,7 +284,7 @@ IntVec2Shpseg (int coeff, int length, int *intvec, shpseg *next)
  *   During the format conversion each element is multiplied by <coeff>.
  *   The result will be added to the shape vector <next> if not NULL.
  *
- ******************************************************************************/
+ *****************************************************************************/
 
 static shpseg *
 AddIntVec2Shpseg (int coeff, int length, int *intvec, shpseg *next)
@@ -317,7 +320,7 @@ AddIntVec2Shpseg (int coeff, int length, int *intvec, shpseg *next)
  *   integer vectors on which primitive arithmetic operations shall not harm
  *   tile size inference.
  *
- ******************************************************************************/
+ *****************************************************************************/
 
 static int
 IsIndexVect (types *type)
@@ -383,10 +386,11 @@ AccessInAccesslist (access_t *access, access_t *access_list)
  *
  * description:
  *
- *   This function results the access_list containing not the same entrie twice.
+ *   This function results the access_list containing not the same
+ *   entrie twice.
  *
  *
- ******************************************************************************/
+ *****************************************************************************/
 #if 0
 /*
  *   not needed at this time
@@ -417,7 +421,7 @@ static access_t* KillDoubleAccesses(access_t* access_list)
  *   This function results the concatenation of a_list_1 and a_list_2.
  *
  *
- ******************************************************************************/
+ *****************************************************************************/
 
 static access_t *
 CatAccesslists (access_t *a_list_1, access_t *a_list_2)
@@ -483,7 +487,7 @@ SearchAccess (access_t *access, node *arg_info)
  *   The traversal is limited to the function body, arguments and remaining
  *   functions are not traversed.
  *
- ******************************************************************************/
+ *****************************************************************************/
 
 node *
 WLAAfundef (node *arg_node, node *arg_info)
@@ -520,7 +524,7 @@ WLAAfundef (node *arg_node, node *arg_info)
  *   are not traversed.
  *
  *
- ******************************************************************************/
+ *****************************************************************************/
 
 node *
 WLAAblock (node *arg_node, node *arg_info)
@@ -550,7 +554,7 @@ WLAAblock (node *arg_node, node *arg_info)
  *
  *   This function just realizes a post-order traversal of the code.
  *
- ******************************************************************************/
+ *****************************************************************************/
 
 node *
 WLAAassign (node *arg_node, node *arg_info)
@@ -587,7 +591,7 @@ WLAAassign (node *arg_node, node *arg_info)
  *   whole game is restarted. Afterwards, the outer with-loops features bit
  *   mask is set accordingly.
  *
- ******************************************************************************/
+ *****************************************************************************/
 
 node *
 WLAAnwith (node *arg_node, node *arg_info)
@@ -621,7 +625,7 @@ WLAAnwith (node *arg_node, node *arg_info)
  *   gathered is stored in this node, and the traversal continues with the
  *   following operator.
  *
- ******************************************************************************/
+ *****************************************************************************/
 
 node *
 WLAAncode (node *arg_node, node *arg_info)
@@ -691,7 +695,7 @@ WLAAncode (node *arg_node, node *arg_info)
  *   loop does not contain any array operations. The function detects exactly
  *   this and sets the features bit mask accordingly.
  *
- ******************************************************************************/
+ *****************************************************************************/
 
 node *
 WLAAwhile (node *arg_node, node *arg_info)
@@ -746,7 +750,7 @@ WLAAwhile (node *arg_node, node *arg_info)
  *   This function is equivalent to WLAAwhile for while loops. The kind of loop
  *   makes no difference for the purpose of tile size inference.
  *
- ******************************************************************************/
+ *****************************************************************************/
 
 node *
 WLAAdo (node *arg_node, node *arg_info)
@@ -800,7 +804,7 @@ WLAAdo (node *arg_node, node *arg_info)
  *
  *
  *
- ******************************************************************************/
+ *****************************************************************************/
 
 node *
 WLAAcond (node *arg_node, node *arg_info)
@@ -903,7 +907,7 @@ WLAAcond (node *arg_node, node *arg_info)
  *   re-classified as ACL_irregular. Any "regular" access would have already
  *   been handled during the traversal of the left hand side.
  *
- ******************************************************************************/
+ *****************************************************************************/
 
 node *
 WLAAlet (node *arg_node, node *arg_info)
@@ -964,7 +968,7 @@ WLAAlet (node *arg_node, node *arg_info)
  *   This function does most of the code analysis. See specific functions
  *   for more information.
  *
- ******************************************************************************/
+ *****************************************************************************/
 
 node *
 WLAAprf (node *arg_node, node *arg_info)
@@ -1027,8 +1031,8 @@ WLAAprf (node *arg_node, node *arg_info)
                         if (ACCESS_IV (INFO_WLAA_ACCESS (arg_info))
                             == INFO_WLAA_INDEXVAR (arg_info)) {
                             /*
-                             * The array is accessed by the index vector of the
-                             * surrounding with-loop.
+                             *  The array is accessed by the index vector of the
+                             *  surrounding with-loop.
                              */
                             ACCESS_CLASS (INFO_WLAA_ACCESS (arg_info)) = ACL_offset;
 
@@ -1234,8 +1238,8 @@ WLAAprf (node *arg_node, node *arg_info)
                                 if (ID_VARDEC (arg_node_arg2)
                                     == INFO_WLAA_INDEXVAR (arg_info)) {
                                     ACCESS_IV (access) = INFO_WLAA_INDEXVAR (arg_info);
-                                    if (ID_CONSTVEC (arg_node_arg1)
-                                        != NULL) { /* arg1 is constant */
+                                    if (ID_CONSTVEC (arg_node_arg1) != NULL) {
+                                        /* arg1 is constant */
                                         ACCESS_CLASS (access) = ACL_offset;
                                         ACCESS_OFFSET (access)
                                           = AddIntVec2Shpseg (1,
@@ -1252,12 +1256,12 @@ WLAAprf (node *arg_node, node *arg_info)
                   if ((ID_VECLEN(arg_node_arg1) < 0)
                       && (ID_VECLEN(arg_node_arg2) < 0)) {
                     
-                    SYSWARN(("WLAA only works correctly with constant folding,"
-                             " variable exspected !"));
+                    SYSWARN(("WLAA only works correctly with constant"
+                             " folding, variable exspected !"));
                   }
 #endif
-                                    if (ID_CONSTVEC (arg_node_arg1)
-                                        != NULL) { /* arg1 is constant */
+                                    if (ID_CONSTVEC (arg_node_arg1) != NULL) {
+                                        /* arg1 is constant */
                                         ACCESS_OFFSET (access)
                                           = AddIntVec2Shpseg (1,
                                                               ID_VECLEN (arg_node_arg1),
@@ -1265,8 +1269,8 @@ WLAAprf (node *arg_node, node *arg_info)
                                                                 arg_node_arg1)),
                                                               ACCESS_OFFSET (access));
                                         /* offset = offset + arg1 */
-                                        if (ID_CONSTVEC (arg_node_arg2)
-                                            != NULL) { /* arg2 is constant */
+                                        if (ID_CONSTVEC (arg_node_arg2) != NULL) {
+                                            /* arg2 is constant */
                                             ACCESS_CLASS (access) = ACL_const;
                                             ACCESS_OFFSET (access)
                                               = AddIntVec2Shpseg (1,
@@ -1281,8 +1285,8 @@ WLAAprf (node *arg_node, node *arg_info)
                                               = ID_VARDEC (arg_node_arg2);
                                         }
                                     } else { /* arg1 is not constant */
-                                        if (ID_CONSTVEC (arg_node_arg2)
-                                            != NULL) { /* arg2 is constant */
+                                        if (ID_CONSTVEC (arg_node_arg2) != NULL) {
+                                            /* arg2 is constant */
                                             ACCESS_IV (access)
                                               = ID_VARDEC (arg_node_arg1);
                                             ACCESS_OFFSET (access)
@@ -1318,9 +1322,14 @@ WLAAprf (node *arg_node, node *arg_info)
                     if (ID_VARDEC (arg_node_arg1) == INFO_WLAA_INDEXVAR (arg_info)) {
                         if (NODE_TYPE (arg_node_arg2) == N_num) {
                             ACCESS_CLASS (access) = ACL_offset;
+                            offset = Malloc (VARDEC_OR_ARG_DIM (ACCESS_ARRAY (access))
+                                             * sizeof (int));
+                            for (i = 0; i < VARDEC_OR_ARG_DIM (ACCESS_ARRAY (access));
+                                 i++) {
+                                offset[i] = NUM_VAL (arg_node_arg2);
+                            }
                             ACCESS_OFFSET (access)
-                              = IntVec2Shpseg (-1, ID_VECLEN (arg_node_arg2),
-                                               ((int *)ID_CONSTVEC (arg_node_arg2)),
+                              = IntVec2Shpseg (-1, ID_VECLEN (arg_node_arg2), offset,
                                                ACCESS_OFFSET (access));
                             ACCESS_IV (access) = INFO_WLAA_INDEXVAR (arg_info);
                         } else {
@@ -1358,8 +1367,8 @@ WLAAprf (node *arg_node, node *arg_info)
                     if (access == NULL) {
                         if (!IsIndexVect (IDS_TYPE (INFO_WLAA_LASTLETIDS (arg_info)))) {
                             DBUG_PRINT ("WLAA_INFO",
-                                        ("primitive arithmetic operation on arrays "
-                                         "(not index vector access)"));
+                                        ("primitive arithmetic operation on "
+                                         "arrays (not index vector access)"));
                             INFO_WLAA_FEATURE (arg_info)
                               = INFO_WLAA_FEATURE (arg_info) | FEATURE_AARI;
                         }
@@ -1371,8 +1380,8 @@ WLAAprf (node *arg_node, node *arg_info)
                                  *  arg1 is the wl-indexvector
                                  */
                                 ACCESS_IV (access) = INFO_WLAA_INDEXVAR (arg_info);
-                                if (ID_CONSTVEC (arg_node_arg2)
-                                    != NULL) { /* arg2 is constant */
+                                if (ID_CONSTVEC (arg_node_arg2) != NULL) {
+                                    /* arg2 is constant */
                                     ACCESS_CLASS (access) = ACL_offset;
                                     ACCESS_OFFSET (access)
                                       = AddIntVec2Shpseg (-1, ID_VECLEN (arg_node_arg2),
@@ -1399,8 +1408,8 @@ WLAAprf (node *arg_node, node *arg_info)
                              " variable exspected !"));
                   }
 #endif
-                                    if (ID_CONSTVEC (arg_node_arg1)
-                                        != NULL) { /* arg1 is constant */
+                                    if (ID_CONSTVEC (arg_node_arg1) != NULL) {
+                                        /* arg1 is constant */
                                         ACCESS_OFFSET (access)
                                           = AddIntVec2Shpseg (1,
                                                               ID_VECLEN (arg_node_arg1),
@@ -1408,8 +1417,8 @@ WLAAprf (node *arg_node, node *arg_info)
                                                                 arg_node_arg1)),
                                                               ACCESS_OFFSET (access));
                                         /* offset = offset + arg1 */
-                                        if (ID_CONSTVEC (arg_node_arg2)
-                                            != NULL) { /* arg2 is constant */
+                                        if (ID_CONSTVEC (arg_node_arg2) != NULL) {
+                                            /* arg2 is constant */
                                             ACCESS_CLASS (access) = ACL_const;
                                             ACCESS_OFFSET (access)
                                               = AddIntVec2Shpseg (-1,
@@ -1423,8 +1432,8 @@ WLAAprf (node *arg_node, node *arg_info)
                                             ACCESS_CLASS (access) = ACL_irregular;
                                         }
                                     } else { /* arg1 is not constant */
-                                        if (ID_CONSTVEC (arg_node_arg2)
-                                            != NULL) { /* arg2 is constant */
+                                        if (ID_CONSTVEC (arg_node_arg2) != NULL) {
+                                            /* arg2 is constant */
                                             ACCESS_IV (access)
                                               = ID_VARDEC (arg_node_arg1);
                                             ACCESS_OFFSET (access)
@@ -1470,8 +1479,8 @@ WLAAprf (node *arg_node, node *arg_info)
                  */
                 DBUG_PRINT ("WLAA_INFO",
                             ("primitive function F_idx_psi | F_idx_modarray"));
-                DBUG_ASSERT (1, "primitive function idx_psi or idx_modarray found during "
-                                "tile size selection");
+                DBUG_ASSERT (1, "primitive function idx_psi or idx_modarray found "
+                                "during tile size selection");
                 break;
 
             default:
@@ -1508,7 +1517,7 @@ WLAAprf (node *arg_node, node *arg_info)
  *   check whether one of the arguments or one of the return values is of an
  *   array type.
  *
- ******************************************************************************/
+ *****************************************************************************/
 
 node *
 WLAAap (node *arg_node, node *arg_info)
@@ -1562,7 +1571,7 @@ WLAAap (node *arg_node, node *arg_info)
  *   of the features bit mask is set.
  *
  *
- ******************************************************************************/
+ *****************************************************************************/
 
 node *
 WLAAid (node *arg_node, node *arg_info)
