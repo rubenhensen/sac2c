@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2000/01/17 19:48:01  cg
+ * Removed debug code.
+ *
  * Revision 1.2  2000/01/17 16:25:58  cg
  * Added multi-threading capabilities to the heap manager.
  *
@@ -85,7 +88,7 @@ SAC_HM_SetupMaster ()
     SAC_HM_size_byte_t offset, initial_heap_size;
     SAC_HM_size_byte_t initial_top_arena_size, pagesize;
     SAC_HM_header_t *freep;
-    char *mem, *tutu;
+    char *mem;
 
     /*
      * Prepare initial request for memory from operating system.
@@ -116,7 +119,6 @@ SAC_HM_SetupMaster ()
     if (mem == (char *)-1) {
         SAC_HM_OutOfMemory (initial_heap_size);
     }
-    tutu = (char *)SBRK (0);
 
     mem += offset;
 
