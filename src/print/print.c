@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.23  1994/12/31 14:07:01  sbs
+ * Revision 1.24  1995/01/02 19:45:20  sbs
+ * PrintTypedef extended for types->id_mod!
+ *
+ * Revision 1.23  1994/12/31  14:07:01  sbs
  * types->id_mod prepanded at function declarations.
  * This is needed for external functions only!
  *
@@ -238,8 +241,10 @@ PrintTypedef (node *arg_node, node *arg_info)
 
     DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[arg_node->nodetype], arg_node));
 
-    fprintf (outfile, "typedef %s %s;\n", Type2String (arg_node->info.types, 0),
-             arg_node->info.types->id);
+    fprintf (outfile, "typedef %s ", Type2String (arg_node->info.types, 0));
+    if (arg_node->info.types->id_mod != NULL)
+        fprintf (outfile, "%s__", arg_node->info.types->id_mod);
+    fprintf (outfile, "%s;\n", arg_node->info.types->id);
 
     if (1 == arg_node->nnode)
         Trav (arg_node->node[0], arg_info); /* traverse next typedef/fundef */
