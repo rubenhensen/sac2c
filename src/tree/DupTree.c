@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.35  2001/04/02 15:17:53  dkr
+ * macros FUNDEF_IS_... used
+ *
  * Revision 3.34  2001/04/02 11:59:18  nmw
  * set AP_FUNDEF link according to AP_NAME attribute
  *
@@ -836,16 +839,16 @@ DupFundef (node *arg_node, node *arg_info)
     DBUG_PRINT ("DUP", ("start dubbing of fundef %s", FUNDEF_NAME (arg_node)));
 
     /*
-     *  We can't copy the FUNDEF_DFM_BASE and DFMmasks belonging to this base
-     *  directly!
-     *  Such DFMmasks are attached to N_with, N_with2, N_sync and N_spmd.
-     *  All of them can be found in the body of the function.
-     *  But when we copy the body we must already know the base to create the
-     *  new masks. On the other hand to create the base we must already have
-     *  the new FUNDEF_ARGS and FUNDEF_VARDECS available.
-     *  Therefore we first create the raw function without the body via
-     *  MakeFundef(), then we create the base while duplicating the body
-     *  and finally we attach the body to the fundef.
+     * We can't copy the FUNDEF_DFM_BASE and DFMmasks belonging to this base
+     * directly!
+     * Such DFMmasks are attached to N_with, N_with2, N_sync and N_spmd.
+     * All of them can be found in the body of the function.
+     * But when we copy the body we must already know the base to create the
+     * new masks. On the other hand to create the base we must already have
+     * the new FUNDEF_ARGS and FUNDEF_VARDECS available.
+     * Therefore we first create the raw function without the body via
+     * MakeFundef(), then we create the base while duplicating the body
+     * and finally we attach the body to the fundef.
      */
 
     /*
@@ -883,22 +886,20 @@ DupFundef (node *arg_node, node *arg_info)
       = SearchInLUT_P (INFO_DUP_LUT (arg_info), FUNDEF_RETURN (arg_node));
     FUNDEF_NEEDOBJS (new_node) = DupNodelist_ (FUNDEF_NEEDOBJS (arg_node), arg_info);
     FUNDEF_VARNO (new_node) = FUNDEF_VARNO (arg_node);
-    FUNDEF_INLREC (new_node) = FUNDEF_INLREC (arg_node);
-    /* ##nmw## */
-    /* FUNDEF_EXT_ASSIGNS( new_node) = SearchInLUT_P( INFO_DUP_LUT( arg_info),
-       FUNDEF_EXT_ASSIGNS( arg_node)); */
-    FUNDEF_EXT_ASSIGNS (new_node) = NULL;
 
-    /* caution: has the body been already traversed?? */
-    FUNDEF_INT_ASSIGN (new_node)
-      = SearchInLUT_P (INFO_DUP_LUT (arg_info), FUNDEF_INT_ASSIGN (arg_node));
+    if (FUNDEF_IS_LACFUN (new_node)) {
+        FUNDEF_USED (new_node) = 0;
+        FUNDEF_EXT_ASSIGNS (new_node) = NULL;
+        /* caution: has the body been already traversed?? */
+        FUNDEF_INT_ASSIGN (new_node)
+          = SearchInLUT_P (INFO_DUP_LUT (arg_info), FUNDEF_INT_ASSIGN (arg_node));
+    }
 
 #if 0
   FUNDEF_SIB( new_node) = ???;
   FUNDEF_ICM( new_node) = ???;
-  FUNDEF_MASK( new_node, ?) = ???;
-  FUNDEF_LIFTEDFROM( new_node) = ???;
   FUNDEC_DEF( new_node) = ???;
+  FUNDEF_MASK( new_node, ?) = ???;
 #endif
 
     CopyCommonNodeData (new_node, arg_node);
@@ -1322,9 +1323,8 @@ DupAp (node *arg_node, node *arg_info)
      * non-recursive application of do/while fundef
      */
     if ((AP_FUNDEF (arg_node) != NULL)
-        && ((FUNDEF_STATUS (AP_FUNDEF (arg_node)) == ST_condfun)
-            || (((FUNDEF_STATUS (AP_FUNDEF (arg_node)) == ST_dofun)
-                 || (FUNDEF_STATUS (AP_FUNDEF (arg_node)) == ST_whilefun))
+        && (FUNDEF_IS_CONDFUN (AP_FUNDEF (arg_node))
+            || (FUNDEF_IS_LOOPFUN (AP_FUNDEF (arg_node))
                 && (arg_node
                     != LET_EXPR (
                          ASSIGN_INSTR (FUNDEF_INT_ASSIGN (AP_FUNDEF (arg_node)))))))) {
@@ -1344,7 +1344,7 @@ DupAp (node *arg_node, node *arg_info)
         AP_FUNDEF (new_node) = AP_FUNDEF (arg_node);
 
         /* increment reference counter */
-        FUNDEF_USED (AP_FUNDEF (new_node)) = FUNDEF_USED (AP_FUNDEF (new_node)) + 1;
+        (FUNDEF_USED (AP_FUNDEF (new_node)))++;
 
         /* add new application to external assignment chain */
         DBUG_ASSERT ((FUNDEF_EXT_ASSIGNS (AP_FUNDEF (new_node)) != NULL),
@@ -2532,6 +2532,7 @@ DupId_Ids (node *old_id)
  *   attribute in the bottom-up traversal!!!
  *
  *****************************************************************************/
+
 node *
 CheckAndDupSpecialFundef (node *module, node *fundef, node *assign)
 {
@@ -2544,10 +2545,7 @@ CheckAndDupSpecialFundef (node *module, node *fundef, node *assign)
     DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef), "given fundef node is not a fundef");
     DBUG_ASSERT ((NODE_TYPE (assign) == N_assign),
                  "given assign node is not an assignment");
-    DBUG_ASSERT (((FUNDEF_STATUS (fundef) == ST_condfun)
-                  || (FUNDEF_STATUS (fundef) == ST_dofun)
-                  || (FUNDEF_STATUS (fundef) == ST_whilefun)),
-                 "given fundef is not a special fundef");
+    DBUG_ASSERT ((FUNDEF_IS_LAC (fundef)), "given fundef is not a special fundef");
     DBUG_ASSERT ((FUNDEF_USED (fundef) > 0), "fundef is not used anymore");
     DBUG_ASSERT ((FUNDEF_EXT_ASSIGNS (fundef) != NULL),
                  "fundef has no external assignments");
