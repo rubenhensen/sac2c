@@ -1,7 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.6  1996/01/22 18:38:56  cg
+ * Revision 1.7  1996/01/25 18:46:09  cg
+ * In class implementations, the typedef node for the class type
+ * is generated here as well as the fundef nodes of the generic
+ * conversion functions.
+ *
+ * Revision 1.6  1996/01/22  18:38:56  cg
  * Now, an object initialization expression is always generated
  * with respect to pragma initfun.
  *
@@ -39,15 +44,22 @@
 #include "internal_lib.h"
 #include "free.h"
 
+#include "typecheck.h"
+#include "filemgr.h"
+
 /*
  *
  *  functionname  : OImodul
  *  arguments     : 1) pointer to N_modul node
  *                  2) arg_info unused
  *  description   : traverses all global object definitions
+ *                  In class implementations, a typedef node for the
+ *                  class type is generated as well as generic conversion
+ *                  functions.
  *  global vars   : ---
  *  internal funs : ---
- *  external funs : Trav
+ *  external funs : Trav, strcpy, strcat, MakeTypedef, MakeFundef,
+ *                  Malloc
  *  macros        : ---
  *
  *  remarks       :
@@ -61,6 +73,63 @@ OImodul (node *arg_node, node *arg_info)
 
     if (MODUL_OBJS (arg_node) != NULL) {
         MODUL_OBJS (arg_node) = Trav (MODUL_OBJS (arg_node), arg_node);
+    }
+
+    if (MODUL_FILETYPE (arg_node) == F_classimp) {
+        char *toclass;
+        char *fromclass;
+
+        MODUL_TYPES (arg_node)
+          = MakeTypedef (StringCopy (MODUL_NAME (arg_node)), MODUL_NAME (arg_node),
+                         MODUL_CLASSTYPE (arg_node), ST_unique, MODUL_TYPES (arg_node));
+
+        toclass = (char *)Malloc (MAX_FILE_NAME);
+        fromclass = (char *)Malloc (MAX_FILE_NAME);
+
+        strcpy (toclass, "to_");
+        strcpy (fromclass, "from_");
+
+        strcat (toclass, MODUL_NAME (arg_node));
+        strcat (fromclass, MODUL_NAME (arg_node));
+
+        MODUL_FUNS (arg_node)
+          = MakeFundef (toclass, MODUL_NAME (arg_node),
+                        MakeType (T_user, 0, NULL, StringCopy (MODUL_NAME (arg_node)),
+                                  MODUL_NAME (arg_node)),
+                        MakeArg (NULL, DuplicateTypes (MODUL_CLASSTYPE (arg_node), 1),
+                                 ST_regular, ST_regular, NULL),
+                        NULL, MODUL_FUNS (arg_node));
+
+        FUNDEF_STATUS (MODUL_FUNS (arg_node)) = ST_generic;
+
+        MODUL_FUNS (arg_node)
+          = MakeFundef (fromclass, MODUL_NAME (arg_node),
+                        DuplicateTypes (MODUL_CLASSTYPE (arg_node), 1),
+                        MakeArg (NULL,
+                                 MakeType (T_user, 0, NULL,
+                                           StringCopy (MODUL_NAME (arg_node)),
+                                           MODUL_NAME (arg_node)),
+                                 ST_regular, ST_regular, NULL),
+                        NULL, MODUL_FUNS (arg_node));
+
+        FUNDEF_STATUS (MODUL_FUNS (arg_node)) = ST_generic;
+
+        MODUL_CLASSTYPE (arg_node) = NULL;
+
+        /*************************************************************/
+#ifndef NEWTREE
+        if (TYPEDEF_NEXT (MODUL_TYPES (arg_node)) == NULL) {
+            MODUL_TYPES (arg_node)->nnode -= 1;
+        }
+
+        if (FUNDEF_NEXT (FUNDEF_NEXT (MODUL_FUNS (arg_node))) == NULL) {
+            FUNDEF_NEXT (MODUL_FUNS (arg_node))->nnode = 0;
+        }
+
+        FUNDEF_ARGS (MODUL_FUNS (arg_node))->nnode -= 1;
+        FUNDEF_ARGS (FUNDEF_NEXT (MODUL_FUNS (arg_node)))->nnode -= 1;
+#endif
+        /*************************************************************/
     }
 
     DBUG_RETURN (arg_node);
