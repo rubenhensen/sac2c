@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2001/05/09 15:51:07  nmw
+ * psi-modarray-chain optimization implemented
+ *
  * Revision 1.13  2001/05/09 12:28:25  nmw
  * build only structural constants from arrays with scalar elements
  *
@@ -1029,6 +1032,8 @@ SSACFPsi (node *idx_expr, node *array_expr)
     node *mod_arr_expr;
     node *mod_idx_expr;
     node *mod_elem_expr;
+    constant *idx_co;
+    constant *mod_idx_co;
 
     DBUG_ENTER ("SSACFPsi");
 
@@ -1055,7 +1060,13 @@ SSACFPsi (node *idx_expr, node *array_expr)
                      "missing 3. arg for modarray");
         mod_elem_expr = EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (PRF_ARGS (prf_mod))));
 
-        if ((CompareTree (idx_expr, mod_idx_expr) == CMPT_EQ) || (FALSE)) {
+        /* try to build up constants from index vectors */
+        idx_co = COAST2Constant (idx_expr);
+        mod_idx_co = COAST2Constant (mod_idx_expr);
+
+        if ((CompareTree (idx_expr, mod_idx_expr) == CMPT_EQ)
+            || ((idx_co != NULL) && (mod_idx_co != NULL)
+                && (COCompareConstants (idx_co, mod_idx_co)))) {
             /* idx vectors in psi and modarray are equal - replace psi with element */
             result = DupTree (mod_elem_expr);
 
@@ -1066,12 +1077,20 @@ SSACFPsi (node *idx_expr, node *array_expr)
              * to avoid wrong decisions we need constant vectors in both idx
              * expressions
              */
-            if (COIsConstant (idx_expr) && COIsConstant (mod_idx_expr)) {
+            if ((idx_co != NULL) && (mod_idx_co != NULL)) {
                 result = SSACFPsi (idx_expr, mod_arr_expr);
             } else {
-                /* no further analysis posiible */
+                /* no further analysis possible */
                 result = NULL;
             }
+        }
+
+        /* free local constants */
+        if (idx_co != NULL) {
+            idx_co = COFreeConstant (idx_co);
+        }
+        if (mod_idx_co != NULL) {
+            mod_idx_co = COFreeConstant (mod_idx_co);
         }
     }
 
