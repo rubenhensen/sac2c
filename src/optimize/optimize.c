@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2001/03/26 15:56:18  nmw
+ * SSALoopInvarinatRemoval added
+ *
  * Revision 3.11  2001/03/22 21:06:47  dkr
  * include of tree.h eliminated
  *
@@ -229,6 +232,7 @@
 #include "SSADeadCodeRemoval.h"
 #include "SSACSE.h"
 #include "SSAConstantFolding.h"
+#include "SSALIR.h"
 
 /*
  * global variables to keep track of optimization's success
@@ -915,8 +919,14 @@ OPTfundef (node *arg_node, node *arg_info)
             }
 
             if (optimize & OPT_LIR) {
-                arg_node = LoopInvariantRemoval (arg_node,
-                                                 arg_info); /* lir_tab and lir_mov_tab */
+                if (use_ssaform) {
+                    arg_node = CheckAvis (arg_node);
+                    arg_node = SSATransform (arg_node);
+                    arg_node = SSALoopInvariantRemoval (arg_node);
+                } else {
+                    arg_node = LoopInvariantRemoval (arg_node, arg_info);
+                    /* lir_tab and lir_mov_tab */
+                }
             }
 
             if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
