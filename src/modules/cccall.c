@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.9  2000/01/21 13:20:57  jhs
+ * Adapted to new mt ...
+ *
  * Revision 2.8  2000/01/17 17:23:05  cg
  * Wrapper functions for option -noPHM are now integrated into libsac.
  * So, there is no longer s special version of the heap manager library
@@ -623,7 +626,7 @@ InvokeCC ()
             }
         }
 
-        if (gen_mt_code) {
+        if ((gen_mt_code == GEN_MT_OLD) || (gen_mt_code == GEN_MT_NEW)) {
             if (gen_cccall) {
                 shellscript = WriteOpen (".sac2c");
                 fprintf (shellscript, "#!/bin/sh -v\n\n");

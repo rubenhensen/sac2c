@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.16  2000/01/21 13:22:05  jhs
+ * Adapted to new mt ...
+ *
  * Revision 2.15  2000/01/17 17:58:45  cg
  * Added new heap manager optimization options
  * APS (arena preselection) and
@@ -506,7 +509,7 @@ PrintGlobalSettings (node *syntax_tree)
 
     PrintProfileData ();
 
-    if (gen_mt_code) {
+    if ((gen_mt_code == GEN_MT_OLD) || (gen_mt_code == GEN_MT_NEW)) {
         PrintSpmdData (syntax_tree);
     }
 
