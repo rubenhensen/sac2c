@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2002/01/18 16:53:17  sacbase
+ * PHM disabled for OSX_MAC
+ *
  * Revision 3.18  2001/12/10 15:31:55  dkr
  * flag 'xxx' (dkr) removed
  *
@@ -854,6 +857,15 @@ CheckOptionConsistency ()
         SYSWARN (("Code generation for multi-threaded program execution not"
                   " yet available for DEC-alpha.\n"
                   "Code for sequential execution generated instead"));
+    }
+#endif
+
+#ifdef SAC_FOR_OSX_MAC
+    if (optimize & OPT_PHM) {
+        SYSWARN (("Private heap management is not (yet) available for"
+                  " Mac OSX.\n"
+                  "Conventional heap management is used instead"));
+        optimize &= ~OPT_PHM;
     }
 #endif
 
