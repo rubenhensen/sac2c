@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.12  2004/08/27 15:42:03  skt
+ * fixed bug of with-loops wong executionmode assignment
+ *
  * Revision 1.11  2004/08/26 17:34:24  skt
  * case MUTH_MULTI_SPECIALIZED added to all corresponding switchs
  *
@@ -81,6 +84,7 @@ struct INFO {
     node *lastconditionalassignment;
     node *lastwithloopassignment;
     node *lastvisitedassign;
+    node *myreturn;
 };
 
 /*
@@ -91,10 +95,6 @@ struct INFO {
  *                             traversal (=>1) or not (=>0)
  *   node*      MYASSIGN      (the current assignment, the traversal.mechanism
  *                             is in)
- *   node*      LASTVISETEDASSIGN (the last assignment visited - used to set
- *                                 the executionmode of the return-assignment
- *                                 to the same as the executionmode of its
- *                                 function)
  */
 #define INFO_PEM_ANYCHANGE(n) (n->changeflag)
 #define INFO_PEM_FIRSTTRAV(n) (n->firstflag)
@@ -102,7 +102,7 @@ struct INFO {
 #define INFO_PEM_MYASSIGN(n) (n->myassign)
 #define INFO_PEM_LASTCONDASSIGN(n) (n->lastconditionalassignment)
 #define INFO_PEM_LASTWITHASSIGN(n) (n->lastwithloopassignment)
-#define INFO_PEM_LASTVISTEDASSIGN(n) (n->lastvisitedassign)
+#define INFO_PEM_RETURN(n) (n->myreturn)
 
 /*
  * INFO functions
@@ -122,6 +122,7 @@ MakeInfo ()
     INFO_PEM_MYASSIGN (result) = NULL;
     INFO_PEM_LASTCONDASSIGN (result) = NULL;
     INFO_PEM_LASTWITHASSIGN (result) = NULL;
+    INFO_PEM_RETURN (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -225,10 +226,9 @@ PEMfundef (node *arg_node, info *arg_info)
     }
 
     /* set the execmode of the return statement */
-    DBUG_ASSERT ((NODE_TYPE (ASSIGN_INSTR (INFO_PEM_LASTWITHASSIGN (arg_info)))
-                  == N_return),
+    DBUG_ASSERT ((NODE_TYPE (ASSIGN_INSTR (INFO_PEM_RETURN (arg_info))) == N_return),
                  "N_return as last assignment expected");
-    ASSIGN_EXECMODE (INFO_PEM_LASTWITHASSIGN (arg_info)) = FUNDEF_EXECMODE (arg_node);
+    ASSIGN_EXECMODE (INFO_PEM_RETURN (arg_info)) = FUNDEF_EXECMODE (arg_node);
 
     INFO_PEM_ACTFUNDEF (arg_info) = NULL;
 
@@ -288,14 +288,18 @@ PEMassign (node *arg_node, info *arg_info)
     /* pop_info */
     INFO_PEM_MYASSIGN (arg_info) = old_assign;
 
-    /* store this assignment - if it's the last of a function's N_block,
-     * PEMfundef will set its executionmode */
-    INFO_PEM_LASTWITHASSIGN (arg_info) = arg_node;
-
     if (ASSIGN_NEXT (arg_node) != NULL) {
         DBUG_PRINT ("PEM", ("trav into next"));
         ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
         DBUG_PRINT ("PEM", ("trav from next"));
+    } else {
+        if (NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_return) {
+            /* store this assignment - it's the last of a function's N_block,
+             * PEMfundef will set its executionmode */
+            INFO_PEM_RETURN (arg_info) = arg_node;
+        } else {
+            INFO_PEM_RETURN (arg_info) = NULL;
+        }
     }
 
     DBUG_RETURN (arg_node);
