@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.92  2004/10/17 14:52:06  sah
+ * added export traversal
+ *
  * Revision 3.91  2004/10/15 10:03:58  sah
  * removed old module system nodes in
  * new ast mode
@@ -408,6 +411,7 @@
 #include "serialize.h"
 #include "deserialize.h"
 #include "serialize_buildstack.h"
+#include "export.h"
 #include "filterrc.h"
 #include "aliasanalysis.h"
 
@@ -1915,15 +1919,20 @@ static funtab emaa_tab_rec = {{
 funtab *emaa_tab = &emaa_tab_rec;
 
 /*
- *  (133) unused_tab13
+ *  (133) exp_tab
  */
-static funtab unused_tab13_rec = {{
-#define NIFunused_13(it_unused_13) it_unused_13
+static funtab exp_tab_rec = {{
+#ifdef NEW_AST
+#define NIFexp(it_exp) it_exp
 #include "node_info.mac"
-                                  },
-                                  NULL,
-                                  NULL};
-funtab *unused_tab13 = &unused_tab13_rec;
+#else
+#define NIFunused_14(it_unused_14) it_unused_14
+#include "node_info.mac"
+#endif /* NEW_AST */
+                             },
+                             NULL,
+                             NULL};
+funtab *exp_tab = &exp_tab_rec;
 
 /*
  *  (134) unused_tab14

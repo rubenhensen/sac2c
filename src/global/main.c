@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.64  2004/10/17 14:52:06  sah
+ * added export traversal
+ *
  * Revision 3.63  2004/10/15 15:01:18  sah
  * Serialize is now called for modules only
  *
@@ -268,7 +271,7 @@
 #include "options.h"
 #include "multithread.h"
 #include "WLEnhancement.h"
-#include "serialize.h"
+#include "export.h"
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -563,7 +566,7 @@ main (int argc, char *argv[])
 #ifndef NEW_AST
         syntax_tree = WriteSib (syntax_tree); /* writesib_tab */
 #else                                         /* NEW_AST */
-        SerializeModule (syntax_tree);
+        DoExport (syntax_tree);
 #endif                                        /* NEW_AST */
         PHASE_DONE_EPILOG;
     }

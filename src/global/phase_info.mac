@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2004/10/17 14:52:06  sah
+ * added export traversal
+ *
  * Revision 3.11  2004/10/11 16:48:10  sah
  * added serialize phase (aka writesib)
  *
@@ -95,7 +98,7 @@ PH_SEL (PH_initial, "", 0, 0),
 #ifndef NEW_AST
   PH_SEL (PH_writesib, "Generating SAC-Information-Block", 0, 0),
 #else
-  PH_SEL (PH_writesib, "Serializing syntax tree", 0, 0),
+  PH_SEL (PH_writesib, "Processing exports", 0, 0),
 #endif /* NEW_AST */
 
   PH_SEL (PH_objects, "Resolving global objects and reference parameters", 0, 0),

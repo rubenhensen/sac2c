@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.118  2004/10/17 14:52:06  sah
+# added export traversal
+#
 # Revision 3.117  2004/10/15 09:09:41  ktr
 # added src/refcount/aliasanalysis.o
 #
@@ -280,7 +283,8 @@ ifeq ($(NEWAST),yes)
                src/tree/free_attribs.o src/tree/serialize_node.o \
                src/tree/serialize_attribs.o src/modules/libstat.o \
                src/modules/modulemanager.o src/modules/libmanager.o \
-               src/tree/deserialize.o src/tree/serialize_buildstack.o
+               src/tree/deserialize.o src/tree/serialize_buildstack.o \
+               src/modules/export.o
   NEWASTFLAGS = -ldl --export-dynamic
 endif
 

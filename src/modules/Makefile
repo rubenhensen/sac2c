@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.17  2004/10/17 14:52:06  sah
+# added export traversal
+#
 # Revision 3.16  2004/10/04 17:18:29  sah
 # a different subset of files is compiled, depending
 # on the compiler version to create
@@ -76,14 +79,14 @@ include $(PROJECT_ROOT)/Makefile.Config
 #
 
 INCS = -I../global -I../tree -I../../inc -I../scanparse -I../print  \
-       -I../typecheck -I../compile -I../constants -I.
+       -I../typecheck -I../compile -I../constants -I../optimize -I.
 OBJS := filemgr.o symboltable.o cccall.o implicittypes.o
 
 ifeq ($(NEWAST),no)
   OBJS := import.o readsib.o writesib.o analysis.o \
           checkdec.o $(OBJS)
 else
-  OBJS := libmanager.o modulemanager.o libstat.o $(OBJS)
+  OBJS := libmanager.o modulemanager.o libstat.o export.o $(OBJS)
 endif
 
 all: $(OBJS)

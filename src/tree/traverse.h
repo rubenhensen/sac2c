@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.70  2004/10/17 14:52:06  sah
+ * added export traversal
+ *
  * Revision 3.69  2004/10/15 09:08:32  ktr
  * added emaa_tab
  *
@@ -453,7 +456,7 @@ extern funtab *wlsw_tab;
 extern funtab *emrco_tab;
 extern funtab *emfrc_tab;
 extern funtab *emaa_tab;
-extern funtab *unused_tab13;
+extern funtab *exp_tab;
 extern funtab *unused_tab14;
 extern funtab *unused_tab15;
 extern funtab *unused_tab16;
