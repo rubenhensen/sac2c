@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.42  1996/04/02 19:35:10  cg
+ * Revision 1.43  1996/05/28 11:30:51  sbs
+ * BLOCK_INSTR_OR_ASSIGN_NEXT inserted.
+ *
+ * Revision 1.42  1996/04/02  19:35:10  cg
  * function string2array moved to sac.y
  *
  * Revision 1.41  1996/03/21  18:00:20  cg
@@ -564,6 +567,10 @@ extern nodelist *CopyNodelist (nodelist *nl);
                                      ? ASSIGN_NEXT (n)                                   \
                                      : (NODE_TYPE (n) == N_exprs ? EXPRS_NEXT (n)        \
                                                                  : NULL))))))))
+
+#define BLOCK_INSTR_OR_ASSIGN_NEXT(n)                                                    \
+    (NODE_TYPE (n) == N_assign ? ASSIGN_NEXT (n)                                         \
+                               : (NODE_TYPE (n) == N_block ? BLOCK_INSTR (n) : NULL))
 
 /*--------------------------------------------------------------------------*/
 
