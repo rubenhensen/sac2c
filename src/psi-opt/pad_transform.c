@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2004/10/07 12:14:03  sah
+ * added NCODE_INC_USED macro
+ *
  * Revision 3.19  2004/10/04 17:15:42  sah
  * fixed a small bug. NCODE_WLAA_INFO is a access_info_t structure,
  * not an info structure
@@ -424,6 +427,7 @@ AddDummyPart (node *wl, shpseg *old_shape, shpseg *new_shape, int dims)
              */
             withid = DupNode (NPART_WITHID (NWITH_PART (wl)));
             part = MakeNPart (withid, generator, code);
+            NCODE_INC_USED (code);
             NPART_NEXT (part) = NWITH_PART (wl);
             NWITH_PART (wl) = part;
         }

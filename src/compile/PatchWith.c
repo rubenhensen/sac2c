@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2004/10/07 12:12:45  sah
+ * added NCODE_INC_USED macro
+ *
  * Revision 3.8  2004/07/31 13:44:44  sah
  * removed function MakeNCodeExprs. Instead, MakeNCode now expects
  * an exprs node as its second argument!
@@ -239,6 +242,8 @@ BuildNpart (FILE *infile, node *arg_node)
         }
 
         new_part = MakeNPart (withid, gen, code);
+        NCODE_INC_USED (code);
+
         if (new_parts == NULL) {
             new_parts = new_part;
         } else {

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.17  2004/10/07 12:12:45  sah
+ * added NCODE_INC_USED macro
+ *
  * Revision 1.16  2004/10/05 13:50:58  sah
  * lifted start of WLI/WLT traversal to the
  * defining source files to allow for local
@@ -686,6 +689,7 @@ SSAInternGen2Tree (node *wln, intern_gen *ig)
         /* create tree structures */
         genn = MakeNGenerator (b1n, b2n, F_le, F_lt, stepn, widthn);
         *part = MakeNPart (DupTree (withidn), genn, ig->code);
+        NCODE_INC_USED (ig->code);
 
         ig = ig->next;
         part = &(NPART_NEXT ((*part)));

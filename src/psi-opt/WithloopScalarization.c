@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.45  2004/10/07 12:14:03  sah
+ * added NCODE_INC_USED macro
+ *
  * Revision 1.44  2004/09/27 11:55:35  ktr
  * Some more code brushing done.
  *
@@ -974,6 +977,7 @@ CreateExprsPart (node *exprs, int *partcount, node *withid, shpseg *shppos,
                                              F_le, F_lt, NULL, NULL),
                              MakeNCode (MakeBlock (MakeEmpty (), NULL),
                                         MakeExprs (expr, NULL)));
+            NCODE_INC_USED (NPART_CODE (res));
         } else {
             assid = MakeId (TmpVar (), NULL, ST_regular);
 
@@ -994,6 +998,7 @@ CreateExprsPart (node *exprs, int *partcount, node *withid, shpseg *shppos,
                                                                   vardec, expr),
                                                    NULL),
                                         MakeExprs (DupNode (assid), NULL)));
+            NCODE_INC_USED (NPART_CODE (res));
         }
 
         shppos = IncreaseShpseg (shppos, shpmax, dim);
@@ -1735,6 +1740,7 @@ scalarizePart (node *outerpart, info *arg_info)
 
         /* Now we can build a new part */
         newpart = MakeNPart (withid, generator, code);
+        NCODE_INC_USED (code);
 
         /* Enter in the part in the new chain of parts */
         NPART_NEXT (newpart) = INFO_WLS_NEWPARTS (arg_info);

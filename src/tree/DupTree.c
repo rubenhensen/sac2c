@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.104  2004/10/07 12:12:45  sah
+ * added NCODE_INC_USED macro
+ *
  * Revision 3.103  2004/10/04 15:36:04  skt
  * xT_IDENTIFIER erased
  *
@@ -2073,6 +2076,7 @@ DupNpart (node *arg_node, info *arg_info)
       = MakeNPart (DUPTRAV (NPART_WITHID (arg_node)), DUPTRAV (NPART_GEN (arg_node)),
                    SearchInLUT_PP (INFO_DUP_LUT (arg_info), NPART_CODE (arg_node)));
 
+    NCODE_INC_USED (NPART_CODE (new_node));
     NPART_NEXT (new_node) = DUPCONT (NPART_NEXT (arg_node));
 
     CopyCommonNodeData (new_node, arg_node);

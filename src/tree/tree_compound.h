@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.93  2004/10/07 12:12:45  sah
+ * added NCODE_INC_USED macro
+ *
  * Revision 3.92  2004/10/05 09:09:35  sah
  * replaced some NULL by 0 in macros on int
  *
@@ -2179,6 +2182,12 @@ extern node *CreateSel (ids *sel_vec, ids *sel_ids, node *sel_array, bool no_wl,
 #define NCODE_WLAA_ARRAYSHP(n) VARDEC_SHPSEG (NCODE_WLAA_WLARRAY (n))
 #define NCODE_WLAA_INDEXDIM(n) VARDEC_SHAPE (NCODE_WLAA_INDEXVAR (n), 0)
 #define NCODE_WLAA_ARRAYDIM(n) VARDEC_DIM (NCODE_WLAA_WLARRAY (n))
+
+#ifndef NEW_AST
+#define NCODE_INC_USED(n)
+#else
+#define NCODE_INC_USED(n) NCODE_USED (n) = NCODE_USED (n) + 1
+#endif /* NEW_AST */
 
 /*--------------------------------------------------------------------------*/
 

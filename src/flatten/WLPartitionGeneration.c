@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.21  2004/10/07 12:12:45  sah
+ * added NCODE_INC_USED macro
+ *
  * Revision 1.20  2004/09/30 10:56:25  khf
  * generate a scalar WL instead of a vector of zeros
  * to fill a genarray WL
@@ -522,6 +525,7 @@ CreateNewPart (node *lb, node *ub, node *step, node *width, node *withid, node *
     genn = MakeNGenerator (DupTree (lb), DupTree (ub), F_le, F_lt, DupTree (step),
                            DupTree (width));
     partn = MakeNPart (DupTree (withid), genn, coden);
+    NCODE_INC_USED (coden);
 
     DBUG_RETURN (partn);
 }
