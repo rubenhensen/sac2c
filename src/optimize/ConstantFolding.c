@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.70  1998/07/23 10:02:46  srs
+ * fixed bug from version 1.69 again
+ *
  * Revision 1.69  1998/07/20 19:40:13  srs
  * fixed a bug in ArrayPrf(), case F_modarray.
  *
@@ -2221,18 +2224,29 @@ ArrayPrf (node *arg_node, node *arg_info)
         else
             break;
 
-        while (N_array != NODE_TYPE (base_array)) {
-            base_array = MRD (ID_VARNO (base_array));
-            base_array = ASSIGN_INSTR (base_array);
-            if (N_let == NODE_TYPE (base_array))
-                base_array = LET_EXPR (base_array);
-            if (N_prf == NODE_TYPE (base_array) && F_modarray == PRF_PRF (base_array)
-                && N_id == NODE_TYPE (PRF_ARG1 (base_array)))
-                base_array = PRF_ARG1 (base_array);
-            else
-                break;
+        /* search for mrd constant array */
+        tmpn = NULL;
+        while (base_array && N_id == NODE_TYPE (base_array)) {
+            if (!tmpn)
+                base_array = MRD (ID_VARNO (base_array));
+            else {
+                DBUG_ASSERT (ASSIGN_MRDMASK (tmpn),
+                             ("MRDMASKs are NULL, ArrayPrf, modarray"));
+                base_array = (node *)ASSIGN_MRDMASK (tmpn)[ID_VARNO (base_array)];
+            }
+
+            tmpn = base_array;
+
+            if (base_array && /* mrd exists */
+                N_assign == NODE_TYPE (base_array)
+                && N_let == NODE_TYPE (ASSIGN_INSTR (base_array))) {
+                base_array = LET_EXPR (ASSIGN_INSTR (base_array));
+                if (N_prf == NODE_TYPE (base_array) && F_modarray == PRF_PRF (base_array))
+                    base_array = PRF_ARG1 (base_array);
+            }
         }
 
+        /* search for mrd index vector and val */
         if (N_id == NODE_TYPE (vectorn))
             MRD_GETDATA (vectorn, ID_VARNO (vectorn), INFO_VARNO);
         if (N_id == NODE_TYPE (valn))
