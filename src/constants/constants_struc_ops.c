@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2004/07/29 15:36:41  khf
+ * IdxSel: free on shape removed (caused pointer sharing)
+ *
  * Revision 1.11  2004/05/30 13:03:43  khf
  * COIdxSel added
  *
@@ -388,7 +391,6 @@ COIdxSel (constant *idx, constant *a)
     index = ((int *)COGetDataVec (idx))[0];
     DBUG_ASSERT ((SHGetUnrLen (res_shp)) > index,
                  "idx-scalar exceeds number of elements of array in COIdxSel!");
-    res_shp = SHFreeShape (res_shp);
 
     /*
      * Pick the desired element from a:
