@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.30  2003/09/13 13:43:56  dkr
+ * GSCicm(): NT-tags added for TAGGED_ARRAYS
+ *
  * Revision 3.29  2003/08/05 16:16:18  dkr
  * fixed a bug in  GSCPrintMain()
  *
@@ -584,7 +587,7 @@ GSCicm (node *arg_node, node *arg_info)
             DBUG_ASSERT ((EXPRS_EXPR1 (icm_arg) != NULL),
                          "ICM MT_SPMD_SETUP has wrong format (tag missing)");
             DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR1 (icm_arg)) == N_id),
-                         "ICM MT_SPMD_SETUP has wrong format (tag missing)");
+                         "ICM MT_SPMD_SETUP has wrong format (tag no N_id)");
 
             tag = ID_NAME (EXPRS_EXPR1 (icm_arg));
 
@@ -593,7 +596,7 @@ GSCicm (node *arg_node, node *arg_info)
             DBUG_ASSERT ((EXPRS_EXPR2 (icm_arg) != NULL),
                          "ICM MT_SPMD_SETUP has wrong format (type missing)");
             DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR2 (icm_arg)) == N_id),
-                         "ICM MT_SPMD_SETUP has wrong format (type missing)");
+                         "ICM MT_SPMD_SETUP has wrong format (type no N_id)");
 
             type = ID_NAME (EXPRS_EXPR2 (icm_arg));
 
@@ -602,9 +605,15 @@ GSCicm (node *arg_node, node *arg_info)
             DBUG_ASSERT ((EXPRS_EXPR3 (icm_arg) != NULL),
                          "ICM MT_SPMD_SETUP has wrong format (parameter missing)");
             DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR3 (icm_arg)) == N_id),
-                         "ICM MT_SPMD_SETUP has wrong format (parameter missing)");
+                         "ICM MT_SPMD_SETUP has wrong format (parameter no N_id)");
+#ifdef TAGGED_ARRAYS
+            DBUG_ASSERT ((ID_NT_TAG (EXPRS_EXPR3 (icm_arg)) != NULL),
+                         "ICM MT_SPMD_SETUP has wrong format (parameter has no NT-tag)");
 
+            name = ID_NT_TAG (EXPRS_EXPR3 (icm_arg));
+#else
             name = ID_NAME (EXPRS_EXPR3 (icm_arg));
+#endif
 
             fprintf (outfile, "        SAC_MT_SPMD_ARG_%s( %s, %s)    \\\n", tag, type,
                      name);
@@ -872,7 +881,7 @@ GSCPrintMain ()
     GSCPrintMainBegin ();
 
 #ifdef TAGGED_ARRAYS
-    fprintf (outfile, "  SACf_main( ", res_nt);
+    fprintf (outfile, "  SACf_main( ");
     if (print_thread_id) {
         fprintf (outfile, "SAC_ND_ARG_in( %s), ", mythread_nt);
     }
