@@ -1,5 +1,9 @@
 #
 # $Log$
+# Revision 1.90  1998/08/26 12:57:01  sbs
+# -pedantic for product-line eliminated!
+# reason: illegal cast in lvalue!
+#
 # Revision 1.89  1998/08/14 22:21:15  dkr
 # path to efence changed
 #
@@ -289,7 +293,7 @@ override CFLAGS :=-D__EXTENSIONS__ -DNEWTREE -DSHOW_MALLOC $(CFLAGS)
 
 CCPROD       :=gcc
 
-gcc_PROD_FLAGS := -ansi -Wall -pedantic -O3
+gcc_PROD_FLAGS := -ansi -Wall -O3
 cc_PROD_FLAGS  := 
 
 CCPROD_FLAGS := $($(CC)_PROD_FLAGS)
