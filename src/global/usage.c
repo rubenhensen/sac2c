@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.25  1995/10/16 17:56:25  cg
+ * Revision 1.26  1995/10/20 09:23:32  cg
+ * added new break parameter to -by to break after analysis
+ *
+ * Revision 1.25  1995/10/16  17:56:25  cg
  * new break option '-bj' to stop after object init transformation
  *
  * Revision 1.24  1995/10/05  16:04:03  cg
@@ -106,6 +109,7 @@ usage (char *prg_name)
     printf ("\t -bf \t\t\tstop after flatten\n");
     printf ("\t -bt \t\t\tstop after typecheck\n");
     printf ("\t -bm \t\t\tstop after resolving implicit types\n");
+    printf ("\t -by \t\t\tstop after analysing functions\n");
     printf ("\t -bb \t\t\tstop after writing SIB-file\n");
     printf ("\t -bo \t\t\tstop after sac-optimizations\n");
     printf ("\t -bs \t\t\tstop after psi-optimizations\n");
