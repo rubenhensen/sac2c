@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.199  2004/12/09 21:04:57  ktr
+ * Argtab2Let corrected.
+ *
  * Revision 3.198  2004/12/08 11:20:43  sah
  * fixed printing of Id nodes
  *
@@ -692,9 +695,7 @@ Argtab2Let (node *ap)
 
     for (i = argtab->size - 1; i >= 1; i--) {
         if (argtab->ptr_out[i] != NULL) {
-            expr = DUPdoDupNode (argtab->ptr_out[i]);
-            EXPRS_NEXT (expr) = exprs;
-            exprs = expr;
+            exprs = TBmakeExprs (TBmakeId (IDS_AVIS (argtab->ptr_out[i])), exprs);
         } else if (argtab->ptr_in[i] != NULL) {
             expr = DUPdoDupNode (argtab->ptr_in[i]);
             EXPRS_NEXT (expr) = exprs;
