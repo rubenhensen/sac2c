@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  1998/04/03 21:07:33  dkr
+ * changed ConcAssign
+ *
  * Revision 1.2  1998/04/03 11:59:40  dkr
  * include order is now correct :)
  *
@@ -38,19 +41,15 @@
 node *
 ConcAssign (node *arg_node, node *arg_info)
 {
-    node *next;
-
     DBUG_ENTER ("ConcAssign");
 
     if ((NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_let)
         && (NODE_TYPE (LET_EXPR (ASSIGN_INSTR (arg_node))) == N_Nwith)) {
         /*
-         * create a concurrent region containing the current assignment only
+         * current assignment contains a with-loop
+         *  -> create a concurrent region containing the current assignment only
          */
-        next = ASSIGN_NEXT (arg_node);
-        ASSIGN_NEXT (arg_node) = NULL;
-        arg_node = MakeConc (arg_node);
-        ASSIGN_NEXT (arg_node) = next;
+        ASSIGN_INSTR (arg_node) = MakeConc (MakeAssign (ASSIGN_INSTR (arg_node), NULL));
         /*
          * we only traverse the following assignments to prevent nested
          *  concurrent regions
