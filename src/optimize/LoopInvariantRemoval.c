@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.9  1995/06/20 16:41:02  asi
+ * Revision 1.10  1995/06/21 09:15:41  asi
+ * Bug fixed: DupDecleration modified -  don't frees memory for variable name
+ *            after DuplicateTypes !!
+ *
+ * Revision 1.9  1995/06/20  16:41:02  asi
  * bug fixed : now creating special mask for used variables, when
  * a while loop is modified to if ... then { ... ) do ... else { } within a loop
  *
@@ -331,9 +335,10 @@ DupDecleration (node *var_node, char *var_name, node *arg_info)
     DBUG_ASSERT ((0 != optvar_counter), "Not enough variables for LIR");
     optvar_counter--;
     new_node = MakeNode (N_vardec);
-    new_node->info.types = DuplicateTypes (var_node->info.types);
+    new_node->info.types
+      = DuplicateTypes (var_node->info.types); /* do not dulicate name */
     new_node->varno = VARNO++;
-    FREE (new_node->info.types->id);
+    /* FREE(new_node->info.types->id); */
     new_node->info.types->id = var_name;
 
     DBUG_RETURN (new_node);
