@@ -1,17 +1,14 @@
 /*
  *
  * $Log$
+ * Revision 1.17  1998/05/02 18:14:50  dkr
+ * lifting of SPMD-funs temporary deactivated
+ *
  * Revision 1.16  1998/05/02 17:46:27  dkr
  * added new attributes to N_spmd, N_sync
  *
  * Revision 1.15  1998/04/30 13:56:47  dkr
  * fixed a bug in SPMDLift...
- *
- * Revision 1.14  1998/04/30 13:26:51  dkr
- * fixed a bug in SPMDLift...
- *
- * Revision 1.13  1998/04/30 13:00:15  dkr
- * fixed a bug in SPMDLift
  *
  * Revision 1.11  1998/04/26 21:54:21  dkr
  * fixed a bug in SPMDInitAssign
@@ -384,12 +381,15 @@ SPMDLiftSpmd (node *arg_node, node *arg_info)
      * insert SPMD-function into fundef-chain of modul
      */
 
-    if (FUNDEF_NEXT (fundef) != NULL) {
-        FUNDEF_NEXT (new_fundef) = FUNDEF_NEXT (fundef);
-        FUNDEF_NEXT (fundef) = new_fundef;
-    } else {
-        FUNDEF_NEXT (fundef) = new_fundef;
-    }
+#if 0
+  if (FUNDEF_NEXT( fundef) != NULL) {
+    FUNDEF_NEXT( new_fundef) = FUNDEF_NEXT( fundef);
+    FUNDEF_NEXT( fundef) = new_fundef;
+  }
+  else {
+    FUNDEF_NEXT( fundef) = new_fundef;
+  }
+#endif
 
     /*
      * build fundef for this spmd region
