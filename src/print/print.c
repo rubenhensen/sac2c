@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.170  2004/10/14 13:39:11  sbs
+ * adjusted printing of Vinfo to new shape structures instead of types
+ *
  * Revision 3.169  2004/10/08 17:38:46  cg
  * Removed various bugs in scanning and printing of character constants.
  *
@@ -3079,7 +3082,7 @@ PrintVectInfo (node *arg_node, info *arg_info)
             fprintf (outfile, ":VECT");
             break;
         case IDX:
-            type_str = Type2String (VINFO_TYPE (arg_node), 0, TRUE);
+            type_str = SHShape2String (0, VINFO_SHAPE (arg_node));
             fprintf (outfile, ":IDX(%s)", type_str);
             type_str = Free (type_str);
             break;
