@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.216  2004/08/18 12:53:20  skt
+ * changed type of executionmodes from int into mtexecmode_t
+ * added ASSIGN_DATAFLOWNODE
+ *
  * Revision 3.215  2004/08/13 14:02:56  khf
  * new flag NWITHOP_OFFSET_NEEDED added
  *
@@ -1410,7 +1414,7 @@ extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *
 #define FUNDEF_COMPANION(n) ((node *)(n->dfmask[3]))
 
 /* multithreading: */
-#define FUNDEF_EXECMODE(n) (n->lineno)
+#define FUNDEF_EXECMODE(n) ((mtexecmode_t) (n->lineno))
 /* multithreading: ST_spmdfun */
 #define FUNDEF_IDENTIFIER(n) (n->lineno)
 #define FUNDEF_MT2USE(n) (n->dfmask[1])
@@ -1534,7 +1538,6 @@ extern node *MakeArg (char *name, types *type, statustype status, statustype att
  ***
  ***    node*      SSACOUNTER        (N_ssacnt)  (ssaform -> optimize !!)
  ***
- ***    node*      EXECMODE          (propagate_executionmode ->)
  ***    node*      DATAFLOWGRAPH     (N_dataflowgraph)
  ***                           (create_dataflowgraph -> delete_dataflowgraph!!)
  ***/
@@ -1560,7 +1563,6 @@ extern node *MakeBlock (node *instr, node *vardec);
 #define BLOCK_CACHESIM(n) (n->info.id)
 #define BLOCK_SSACOUNTER(n) (n->node[5])
 #define BLOCK_DATAFLOWGRAPH(n) ((node *)(n->dfmask[2]))
-#define BLOCK_EXECMODE(n) (n->refcount)
 
 /*--------------------------------------------------------------------------*/
 
@@ -1645,8 +1647,10 @@ extern node *MakeVardec (char *name, types *type, node *next);
  ***    node*  CF                         (CF !!)
  ***    void*  INDEX    (O)               (wli -> wlf -> )
  ***    int    LEVEL                      (wli !!)
- ***    int    EXECMODE                   (TagExecutionmode -> CreateCells)
+ ***    int    EXECMODE                   (TagExecutionmode -> CellGrowth)
  ***    int    CELLID                     (AssignmentsRearrange -> CreateCells)
+ ***    node*  DATAFLOWNODE  (N_dataflownode) (CreateDataflowgraph
+ ***                                                    -> DeleteDataflowgraph)
  ***
  ***  remarks:
  ***
@@ -1670,8 +1674,9 @@ extern node *MakeAssign (node *instr, node *next);
 #define ASSIGN_STATUS(n) (n->flag)
 #define ASSIGN_INDEX(n) (n->info2)
 #define ASSIGN_LEVEL(n) (n->info.cint)
-#define ASSIGN_EXECMODE(n) (n->info.cint)
+#define ASSIGN_EXECMODE(n) ((mtexecmode_t) (n->info.cint))
 #define ASSIGN_CELLID(n) (n->refcnt)
+#define ASSIGN_DATAFLOWNODE(n) ((node *)(n->info3))
 
 /*--------------------------------------------------------------------------*/
 
@@ -4578,19 +4583,14 @@ extern node *MakeModspec (char *name, node *exports);
  ***
  ***  permanent attributes:
  ***
- ***    nodelist*  DEPENDENT    (all dataflownodes that depend on this node)
- ***    char*      NAME         (the name of the node - very helpful for
- ***                             debugging)
- ***    int        REFCOUNT     (number of references of this node within
- ***                             the corresponding dataflowgraph)
- ***    node*      ASSIGN       (the corresponding assignment)
- ***    int        EXECMODE     (the executionmode of the corresponding assign)
- ***    node*      GRAPH        (the graph that includes this dataflownode)
- ***    node*      DFGTHEN      (some dataflownodes (conditionals) include
- ***                             other dataflowgraps
- ***                             this enables not only the rearrangement on
- ***                             toplevel but also within conditionals)
- ***    node*      DFGELSE      (see above)
+ ***    nodelist*     DEPENDENT (O)
+ ***    char*         NAME      (O)
+ ***    int           REFCOUNT
+ ***    node*         ASSIGN    (O)  (N_assign)
+ ***    mtexecmode_t* EXECMODE
+ ***    node*         GRAPH          (N_dataflowgraph)
+ ***    node*         DFGTHEN   (O)  (N_block)
+ ***    node*         DFGELSE   (O)  (N_block)
  ***
  ***  temporary attributes:
  ***
@@ -4598,15 +4598,23 @@ extern node *MakeModspec (char *name, node *exports);
  ***                             (AssignmentsRearrange!!)
  ***    bool       USED         (flag if node is used for rearranging yet)
  ***                             (AssignmentsRearrange!!)
+ ***
+ ***  remarks:
+ ***           DEPENDENT could only be NULL if it's the sink
+ ***           ASSIGN is only optional for the source (always) and the sink (if
+ ***                  the belonging N_block is empty) of a dataflowgraph
+ ***           DFGTHEN in case of an conditional-assignment in ASSIGN, DGFTHEN
+ ***                   holds the then-block; in case of an withloop-assignment,
+ ***                   it holds the code-block of the withloop
  ***/
 
 extern node *MakeDataflownode (node *graph, node *assignment, char *name);
 
-#define DATAFLOWNODE_DEPENDENT(n) ((nodelist *)(n->dfmask[0]))
-#define DATAFLOWNODE_NAME(n) ((char *)(n->dfmask[1]))
+#define DATAFLOWNODE_DEPENDENT(n) ((nodelist *)(n->info2))
+#define DATAFLOWNODE_NAME(n) (n->info.id)
 #define DATAFLOWNODE_REFCOUNT(n) (n->refcnt)
 #define DATAFLOWNODE_ASSIGN(n) (n->node[0])
-#define DATAFLOWNODE_EXECMODE(n) (n->flag)
+#define DATAFLOWNODE_EXECMODE(n) ((mtexecmode_t) (n->flag))
 #define DATAFLOWNODE_GRAPH(n) (n->node[1])
 #define DATAFLOWNODE_DFGTHEN(n) (n->node[2])
 #define DATAFLOWNODE_DFGELSE(n) (n->node[3])
