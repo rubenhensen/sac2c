@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.11  2000/07/19 08:32:33  nmw
+ * link order in comment adjusted
+ *
  * Revision 1.10  2000/07/13 15:34:09  nmw
  * add comments in generated headerfile
  *
@@ -144,7 +147,7 @@ PIHmodul (node *arg_node, node *arg_info)
     fprintf (outfile, " * use this %s.h file with lib%s.a\n", MODUL_NAME (arg_node),
              MODUL_NAME (arg_node));
 
-    /*Generate fixed manual and usage hints in headerfile*/
+    /*Generate list of modules to link with */
     fprintf (outfile,
              " * For compiling with this module you need to set up\n"
              " * your c compiler with searchpaths to:\n"
@@ -153,13 +156,15 @@ PIHmodul (node *arg_node, node *arg_info)
              " *\n"
              " * -I$SACBASE/runtime (for include of 'sac_cinterface.h')\n"
              " *\n"
-             " * when compiling your code add the following files to link with:\n"
-             " * -lsac\n"
-             " * -l%s\n",
-             MODUL_NAME (arg_node), MODUL_NAME (arg_node));
+             " * when compiling your code add the following files to link with:\n",
+             MODUL_NAME (arg_node));
     done = PrintDepEntry (dependencies, ST_external, NULL);
     done = PrintDepEntry (dependencies, ST_system, NULL);
-    fprintf (outfile, " *\n */\n\n");
+    fprintf (outfile,
+             " * -l%s\n"
+             " * -lsac\n"
+             " *\n */\n\n",
+             MODUL_NAME (arg_node));
 
     fprintf (outfile, "#include \"sac_cinterface.h\"\n");
 
