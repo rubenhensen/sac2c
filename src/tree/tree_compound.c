@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.86  2004/08/02 20:46:54  sah
+ * added lots if ifdefs for mini sac compiler
+ * using the new ast...
+ *
  * Revision 3.85  2004/08/02 19:30:43  sah
  * moved MakeStr_Copy to tree_compound
  *
@@ -650,7 +654,11 @@ GetTypes_Line (types *type, int line)
         tdef = TYPES_TDEF (type);
 
         if ((tdef == NULL) && (compiler_phase <= PH_typecheck)) {
+#ifndef NEW_AST
             tdef = LookupType (TYPES_NAME (type), TYPES_MOD (type), line);
+#else
+            tdef = NULL;
+#endif
         }
 
         if (line > 0) {

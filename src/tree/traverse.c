@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.64  2004/08/02 20:46:54  sah
+ * added lots if ifdefs for mini sac compiler
+ * using the new ast...
+ *
  * Revision 3.63  2004/07/29 00:40:54  skt
  * added support for creation of dataflowgraph (mtmode 3)
  *
@@ -330,7 +334,7 @@ funtab *act_tab = NULL;
 /*
  * global definitions of all funtabs needed for Trav
  */
-
+#ifndef NEW_AST
 /*
  *  (1) imp_tab
  */
@@ -341,7 +345,7 @@ static funtab imp_tab_rec = {{
                              NULL,
                              NULL};
 funtab *imp_tab = &imp_tab_rec;
-
+#endif /* NEW_AST */
 /*
  *  (2) flat_tab
  */
@@ -363,7 +367,7 @@ static funtab print_tab_rec = {{
                                PrintTravPre,
                                PrintTravPost};
 funtab *print_tab = &print_tab_rec;
-
+#ifndef NEW_AST
 /*
  *  (4) type_tab
  */
@@ -407,7 +411,7 @@ static funtab cdfg_tab_rec = {{
                               NULL,
                               NULL};
 funtab *cdfg_tab = &cdfg_tab_rec;
-
+#endif /* NEW_AST */
 /*
  *  (8) free_tab
  */
@@ -429,7 +433,7 @@ static funtab unused_tab2_rec = {{
                                  NULL,
                                  NULL};
 funtab *unused_tab2 = &unused_tab2_rec;
-
+#ifndef NEW_AST
 /*
  *  (10) refcnt_tab
  */
@@ -462,7 +466,7 @@ static funtab unused_tab4_rec = {{
                                  NULL,
                                  NULL};
 funtab *unused_tab4 = &unused_tab4_rec;
-
+#endif /* NEW_AST */
 /*
  *  (13) dup_tab
  */
@@ -484,7 +488,7 @@ static funtab inline_tab_rec = {{
                                 NULL,
                                 NULL};
 funtab *inline_tab = &inline_tab_rec;
-
+#ifndef NEW_AST
 /*
  *  (15) unused_tab23
  */
@@ -517,7 +521,7 @@ static funtab idx_tab_rec = {{
                              NULL,
                              NULL};
 funtab *idx_tab = &idx_tab_rec;
-
+#endif /* NEW_AST */
 /*
  *  (18) unused_tab24
  */
@@ -539,7 +543,7 @@ static funtab unused_tab26_rec = {{
                                   NULL,
                                   NULL};
 funtab *unused_tab26 = &unused_tab26_rec;
-
+#ifndef NEW_AST
 /*
  *  (20) ae_tab
  */
@@ -968,7 +972,7 @@ static funtab spmdco_tab_rec = {{
                                 NULL,
                                 NULL};
 funtab *spmdco_tab = &spmdco_tab_rec;
-
+#endif /* NEW_AST */
 /*
  *  (59) ntc_tab
  */
@@ -979,7 +983,7 @@ static funtab ntc_tab_rec = {{
                              NULL,
                              NULL};
 funtab *ntc_tab = &ntc_tab_rec;
-
+#ifndef NEW_AST
 /*
  *  (60) muth_tab
  */
@@ -1023,7 +1027,7 @@ static funtab rfin_tab_rec = {{
                               NULL,
                               NULL};
 funtab *rfin_tab = &rfin_tab_rec;
-
+#endif /* NEW_AST */
 /*
  *  (64) fun2lac_tab
  */
@@ -1045,7 +1049,7 @@ static funtab ai_tab_rec = {{
                             NULL,
                             NULL};
 funtab *ai_tab = &ai_tab_rec;
-
+#ifndef NEW_AST
 /*
  *  (66) blkex_tab
  */
@@ -1078,7 +1082,7 @@ static funtab infdfms_tab_rec = {{
                                  NULL,
                                  NULL};
 funtab *infdfms_tab = &infdfms_tab_rec;
-
+#endif /* NEW_AST */
 /*
  *  (69) l2f_tab
  */
@@ -1089,7 +1093,7 @@ static funtab l2f_tab_rec = {{
                              NULL,
                              NULL};
 funtab *l2f_tab = &l2f_tab_rec;
-
+#ifndef NEW_AST
 /*
  *  (70) blkco_tab
  */
@@ -1265,7 +1269,7 @@ static funtab tccp_tab_rec = {{
                               NULL,
                               NULL};
 funtab *tccp_tab = &tccp_tab_rec;
-
+#endif /* NEW_AST */
 /*
  *  (86) ssafrm_tab
  */
@@ -1298,7 +1302,7 @@ static funtab undossa_tab_rec = {{
                                  NULL,
                                  NULL};
 funtab *undossa_tab = &undossa_tab_rec;
-
+#ifndef NEW_AST
 /*
  *  (89) ssadcr_tab
  */
@@ -1463,7 +1467,7 @@ static funtab precomp3_tab_rec = {{
                                   NULL,
                                   NULL};
 funtab *precomp3_tab = &precomp3_tab_rec;
-
+#endif /* NEW_AST */
 /*
  *  (104) insvd_tab
  */
@@ -1486,6 +1490,7 @@ static funtab crtwrp_tab_rec = {{
                                 NULL};
 funtab *crtwrp_tab = &crtwrp_tab_rec;
 
+#ifndef NEW_AST
 /*
  *  (106) wls_tab
  */
@@ -1518,6 +1523,7 @@ static funtab al_tab_rec = {{
                             NULL,
                             NULL};
 funtab *al_tab = &al_tab_rec;
+#endif /* NEW_AST */
 
 /*
  *  (109) hd_tab
@@ -1563,6 +1569,7 @@ static funtab hm_tab_rec = {{
                             NULL};
 funtab *hm_tab = &hm_tab_rec;
 
+#ifndef NEW_AST
 /*
  *  (113) dl_tab
  */
@@ -1617,7 +1624,7 @@ static funtab sp_tab_rec = {{
                             NULL,
                             NULL};
 funtab *sp_tab = &sp_tab_rec;
-
+#endif /* NEW_AST */
 /*
  *  (118) ts_tab
  */
@@ -1629,6 +1636,7 @@ static funtab ts_tab_rec = {{
                             NULL};
 funtab *ts_tab = &ts_tab_rec;
 
+#ifndef NEW_AST
 /*
  *  (119) cvp_tab
  */
@@ -1870,6 +1878,7 @@ static funtab unused_tab20_rec = {{
                                   NULL,
                                   NULL};
 funtab *unused_tab20 = &unused_tab20_rec;
+#endif /* NEW_AST */
 
 /*
  *  nnode

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.158  2004/08/02 20:46:54  sah
+ * added lots if ifdefs for mini sac compiler
+ * using the new ast...
+ *
  * Revision 3.157  2004/07/28 17:27:02  skt
  * PrintEX added
  *
@@ -382,6 +386,7 @@ static node *last_assignment_icm = NULL;
  * First, we generate the external declarations for all functions that
  * expand ICMs to C.
  */
+#ifndef NEW_AST
 
 #define ICM_ALL
 #define ICM_DEF(prf, trf) extern void Print##prf (node *exprs, info *arg_info);
@@ -410,6 +415,8 @@ static node *last_assignment_icm = NULL;
 #undef ICM_VARINT
 #undef ICM_END
 #undef ICM_ALL
+
+#endif /* NEW_AST */
 
 char *prf_symbol[] = {
 #define PRF_IF(a, b, c, d, e, f, g, h) d
@@ -3096,6 +3103,8 @@ PrintIcm (node *arg_node, info *arg_info)
 
     DBUG_PRINT ("PRINT", ("icm-node %s\n", ICM_NAME (arg_node)));
 
+#ifndef NEW_AST
+
     if (compiler_phase == PH_genccode) {
 #define ICM_ALL
 #define ICM_DEF(prf, trf)                                                                \
@@ -3148,6 +3157,8 @@ PrintIcm (node *arg_node, info *arg_info)
             indent += ICM_INDENT_AFTER (arg_node);
         }
     }
+
+#endif /* NEW_AST */
 
     DBUG_RETURN (arg_node);
 }
