@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.2  1994/11/10 15:44:34  sbs
+ * Revision 1.3  1994/12/01 17:41:09  hw
+ * added extern funptr type_tab[];
+ *
+ * Revision 1.2  1994/11/10  15:44:34  sbs
  * RCS-header inserted
  *
  *
@@ -22,5 +25,7 @@ extern funptr *act_tab;
 extern funptr flat_tab[];
 
 extern funptr prnt_tab[];
+
+extern funptr type_tab[];
 
 #endif /* _sac_traverse_h */
