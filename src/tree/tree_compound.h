@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.75  2003/04/20 20:25:11  dkr
+ * L_AP_OR_PRF_ARG added
+ *
  * Revision 3.74  2003/03/10 09:22:05  sbs
  * MAKE_OPON_LET and MAKE_INCDEC_LET adjusted to the new
  * prf convention reqiuired by the TC
@@ -1834,6 +1837,13 @@ extern node *MakeAp3 (char *name, char *mod, node *arg1, node *arg2, node *arg3)
  ***  watch simple macros for N_ap and N_prf
  ***  (search for "N_ap :" or "N_prf :").
  ***/
+
+#define L_AP_OR_PRF_ARGS(n, rhs)                                                         \
+    if (NODE_TYPE (n) == N_ap) {                                                         \
+        AP_ARGS (n) = (rhs);                                                             \
+    } else {                                                                             \
+        PRF_ARGS (n) = (rhs);                                                            \
+    }
 
 #define AP_OR_PRF_ARGS(n) ((NODE_TYPE (n) == N_ap) ? AP_ARGS (n) : PRF_ARGS (n))
 
