@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.31  2002/07/24 13:22:02  dkr
+ * GenericFun: DBUG_ASSERT added
+ *
  * Revision 1.30  2002/07/16 11:57:27  dkr
  * MT_ADJUST_SCHEDULER__OFFSET(): first argument is NT now
  *
@@ -316,6 +319,8 @@ GenericFun (int which, types *type)
     DBUG_ENTER ("GenericFun");
 
     DBUG_PRINT ("COMP", ("Looking for generic fun %d (0==copy/1==free)"));
+
+    DBUG_ASSERT ((type != NULL), "no type found!");
 
     if (TYPES_BASETYPE (type) == T_user) {
         tdef = TYPES_TDEF (type);
