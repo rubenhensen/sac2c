@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2003/09/17 20:11:29  dkr
+ * APS and DAO not implemented correctly yet :(
+ *
  * Revision 1.2  2003/09/17 18:12:49  dkr
  * RCAO renamed into DAO for TAGGED_ARRAYS
  *
@@ -72,14 +75,6 @@ extern void free (void *addr);
 /*
  * Type definitions of internal heap management data structures.
  */
-
-#ifndef SAC_MIN
-#define SAC_MIN(a, b) ((a) < (b) ? (a) : (b))
-#endif
-
-#ifndef SAC_MAX
-#define SAC_MAX(a, b) ((a) < (b) ? (b) : (a))
-#endif
 
 typedef union header_t {
     struct header_data1_t {
@@ -413,37 +408,6 @@ extern void *SAC_HM_PlaceArray (void *alloc, void *base, long int offset,
         }                                                                                \
     }
 
-#if 0
-/*
- * Although for small examples the following allocator code in expression
- * position yields the same assembler code results as the current version
- * in command position, the new form has proved to be more efficient in
- * large applications for a still unknown reason.
- * 
- * The new form, however, is also more handy for introducing combined 
- * allocation facilities for data structures and their associated descriptors.
- */
-
-#define SAC_HM_MALLOC_FIXED_SIZE(size)                                                   \
-    (((size) <= ARENA_4_MAXCS_BYTES)                                                     \
-       ? (((size) <= ARENA_2_MAXCS_BYTES)                                                \
-            ? (((size) <= ARENA_1_MAXCS_BYTES)                                           \
-                 ? (SAC_HM_MallocSmallChunkPresplit (2, &(SAC_HM_arenas[1]), 16))        \
-                 : (SAC_HM_MallocSmallChunkPresplit (4, &(SAC_HM_arenas[2]), 16)))       \
-            : (((size) <= ARENA_3_MAXCS_BYTES)                                           \
-                 ? (SAC_HM_MallocSmallChunk (8, &(SAC_HM_arenas[3])))                    \
-                 : (SAC_HM_MallocSmallChunk (16, &(SAC_HM_arenas[4])))))                 \
-       : ((SAC_HM_UNITS (size) < ARENA_7_MINCS)                                          \
-            ? ((SAC_HM_UNITS (size) < ARENA_6_MINCS)                                     \
-                 ? (SAC_HM_MallocLargeChunk (SAC_HM_UNITS (size), &(SAC_HM_arenas[5])))  \
-                 : (SAC_HM_MallocLargeChunk (SAC_HM_UNITS (size), &(SAC_HM_arenas[6])))) \
-            : ((SAC_HM_UNITS (size) < ARENA_8_MINCS)                                     \
-                 ? (SAC_HM_MallocLargeChunk (SAC_HM_UNITS (size), &(SAC_HM_arenas[7])))  \
-                 : (SAC_HM_MallocLargeChunk (SAC_HM_UNITS (size),                        \
-                                             &(SAC_HM_arenas[8]))))))
-
-#endif /*  0  */
-
 #if SAC_DO_MULTITHREAD
 
 #define SAC_HM_MALLOC_SMALL_CHUNK(var, units, arena_num)                                 \
@@ -514,6 +478,37 @@ extern void *SAC_HM_PlaceArray (void *alloc, void *base, long int offset,
     var = SAC_HM_MallocLargeChunk (units, &(SAC_HM_arenas[0][SAC_HM_TOP_ARENA]));
 
 #endif /* SAC_DO_MULTITHREAD */
+
+#if 0
+/*
+ * Although for small examples the following allocator code in expression
+ * position yields the same assembler code results as the current version
+ * in command position, the new form has proved to be more efficient in
+ * large applications for a still unknown reason.
+ * 
+ * The new form, however, is also more handy for introducing combined 
+ * allocation facilities for data structures and their associated descriptors.
+ */
+
+#define SAC_HM_MALLOC_FIXED_SIZE(size)                                                   \
+    (((size) <= ARENA_4_MAXCS_BYTES)                                                     \
+       ? (((size) <= ARENA_2_MAXCS_BYTES)                                                \
+            ? (((size) <= ARENA_1_MAXCS_BYTES)                                           \
+                 ? (SAC_HM_MallocSmallChunkPresplit (2, &(SAC_HM_arenas[1]), 16))        \
+                 : (SAC_HM_MallocSmallChunkPresplit (4, &(SAC_HM_arenas[2]), 16)))       \
+            : (((size) <= ARENA_3_MAXCS_BYTES)                                           \
+                 ? (SAC_HM_MallocSmallChunk (8, &(SAC_HM_arenas[3])))                    \
+                 : (SAC_HM_MallocSmallChunk (16, &(SAC_HM_arenas[4])))))                 \
+       : ((SAC_HM_UNITS (size) < ARENA_7_MINCS)                                          \
+            ? ((SAC_HM_UNITS (size) < ARENA_6_MINCS)                                     \
+                 ? (SAC_HM_MallocLargeChunk (SAC_HM_UNITS (size), &(SAC_HM_arenas[5])))  \
+                 : (SAC_HM_MallocLargeChunk (SAC_HM_UNITS (size), &(SAC_HM_arenas[6])))) \
+            : ((SAC_HM_UNITS (size) < ARENA_8_MINCS)                                     \
+                 ? (SAC_HM_MallocLargeChunk (SAC_HM_UNITS (size), &(SAC_HM_arenas[7])))  \
+                 : (SAC_HM_MallocLargeChunk (SAC_HM_UNITS (size),                        \
+                                             &(SAC_HM_arenas[8]))))))
+
+#endif /*  0  */
 
 #if SAC_DO_APS
 
@@ -612,32 +607,40 @@ extern void *SAC_HM_PlaceArray (void *alloc, void *base, long int offset,
 
 #if SAC_DO_DAO
 
-#define SAC_HM_MALLOC_FIXED_SIZE_WITH_RC(var, var_rc, size)                              \
-    {                                                                                    \
-        SAC_HM_MALLOC_FIXED_SIZE (var, ((size) + (2 * SAC_HM_UNIT_SIZE)));               \
-        var_rc = (int *)(((SAC_HM_header_t *)var) + (SAC_HM_BYTES_2_UNITS (size) + 1));  \
-        SAC_HM_ADDR_ARENA (var_rc) = NULL;                                               \
-    }
-
-#define SAC_HM_MALLOC_WITH_RC(var, var_rc, size)                                         \
+/*
+ * dkr: how must this macro be defined???
+ */
+#define SAC_HM_MALLOC_WITH_DESC(var, var_desc, size, dim)                                \
     {                                                                                    \
         SAC_HM_MALLOC (var, ((size) + (2 * SAC_HM_UNIT_SIZE)));                          \
-        var_rc = (int *)(((SAC_HM_header_t *)var) + (SAC_HM_BYTES_2_UNITS (size) + 1));  \
-        SAC_HM_ADDR_ARENA (var_rc) = NULL;                                               \
+        var_desc                                                                         \
+          = (int *)(((SAC_HM_header_t *)var) + (SAC_HM_BYTES_2_UNITS (size) + 1));       \
+        SAC_HM_ADDR_ARENA (var_desc) = NULL;                                             \
+    }
+
+/*
+ * dkr: how must this macro be defined???
+ */
+#define SAC_HM_MALLOC_FIXED_SIZE_WITH_DESC(var, var_desc, size, dim)                     \
+    {                                                                                    \
+        SAC_HM_MALLOC_FIXED_SIZE (var, ((size) + (2 * SAC_HM_UNIT_SIZE)));               \
+        var_desc                                                                         \
+          = (int *)(((SAC_HM_header_t *)var) + (SAC_HM_BYTES_2_UNITS (size) + 1));       \
+        SAC_HM_ADDR_ARENA (var_desc) = NULL;                                             \
     }
 
 #else /* SAC_DO_DAO */
 
-#define SAC_HM_MALLOC_FIXED_SIZE_WITH_RC(var, var_rc, size)                              \
-    {                                                                                    \
-        SAC_HM_MALLOC_FIXED_SIZE (var, (size));                                          \
-        SAC_HM_MALLOC_FIXED_SIZE (var_rc, sizeof (int));                                 \
-    }
-
-#define SAC_HM_MALLOC_WITH_RC(var, var_rc, size)                                         \
+#define SAC_HM_MALLOC_WITH_DESC(var, var_desc, size, dim)                                \
     {                                                                                    \
         SAC_HM_MALLOC (var, size);                                                       \
-        SAC_HM_MALLOC_FIXED_SIZE (var_rc, sizeof (int));                                 \
+        SAC_HM_MALLOC_FIXED_SIZE (var_desc, SIZE_OF_DESC (dim) * sizeof (*var_desc))     \
+    }
+
+#define SAC_HM_MALLOC_FIXED_SIZE_WITH_DESC(var, var_desc, size, dim)                     \
+    {                                                                                    \
+        SAC_HM_MALLOC_FIXED_SIZE (var, (size));                                          \
+        SAC_HM_MALLOC_FIXED_SIZE (var_desc, SIZE_OF_DESC (dim) * sizeof (*var_desc))     \
     }
 
 #endif /* SAC_DO_DAO */
@@ -651,8 +654,10 @@ extern void *SAC_HM_PlaceArray (void *alloc, void *base, long int offset,
 #if SAC_DO_APS
 
 /*
- * Note, that due to DAO the size of the allocated chunk might be 2 untits
+ * Note, that due to DAO the size of the allocated chunk might be 2 units
  * larger than actually required by the size of the data object to be stored.
+ *
+ * dkr: how must this macro be defined???
  */
 #define SAC_HM_FREE_FIXED_SIZE(addr, size)                                               \
     {                                                                                    \
@@ -779,38 +784,34 @@ extern void *SAC_HM_PlaceArray (void *alloc, void *base, long int offset,
 #define SAC_HM_PRINT()
 #define SAC_HM_DEFINE()
 
-#define SAC_HM_MALLOC_FIXED_SIZE_WITH_RC(var, var_rc, size)                              \
-    {                                                                                    \
-        SAC_HM_MALLOC (var, (size));                                                     \
-        SAC_HM_MALLOC (var_rc, sizeof (int));                                            \
-    }
-
-#define SAC_HM_MALLOC_WITH_RC(var, var_rc, size)                                         \
-    {                                                                                    \
-        SAC_HM_MALLOC (var, size);                                                       \
-        SAC_HM_MALLOC (var_rc, sizeof (int));                                            \
-    }
+#if SAC_DO_CHECK_MALLOC
+extern void *SAC_HM_MallocCheck (unsigned int);
+#define SAC_HM_MALLOC(var, size) var = SAC_HM_MallocCheck (size);
+#else /* SAC_DO_CHECK_MALLOC */
+#define SAC_HM_MALLOC(var, size) var = malloc (size);
+#endif /* SAC_DO_CHECK_MALLOC */
 
 #define SAC_HM_MALLOC_FIXED_SIZE(var, size) SAC_HM_MALLOC (var, size)
+
+#define SAC_HM_FREE(addr) free (addr);
+
 #define SAC_HM_FREE_FIXED_SIZE(addr, size) SAC_HM_FREE (addr)
+
+#define SAC_HM_MALLOC_WITH_DESC(var, var_desc, size, dim)                                \
+    {                                                                                    \
+        SAC_HM_MALLOC (var, size);                                                       \
+        SAC_HM_MALLOC_FIXED_SIZE (var_desc, SIZE_OF_DESC (dim) * sizeof (*var_desc))     \
+    }
+
+#define SAC_HM_MALLOC_FIXED_SIZE_WITH_DESC(var, var_desc, size, dim)                     \
+    {                                                                                    \
+        SAC_HM_MALLOC_FIXED_SIZE (var, (size));                                          \
+        SAC_HM_MALLOC_FIXED_SIZE (var_desc, SIZE_OF_DESC (dim) * sizeof (*var_desc))     \
+    }
 
 #define SAC_HM_DEFINE_THREAD_STATUS(status)
 
 extern void SAC_HM_ShowDiagnostics ();
-
-#if SAC_DO_CHECK_MALLOC
-
-extern void *SAC_HM_MallocCheck (unsigned int);
-
-#define SAC_HM_MALLOC(var, size) var = SAC_HM_MallocCheck (size);
-#define SAC_HM_FREE(addr) free (addr);
-
-#else /* SAC_DO_CHECK_MALLOC */
-
-#define SAC_HM_MALLOC(var, size) var = malloc (size);
-#define SAC_HM_FREE(addr) free (addr);
-
-#endif /* SAC_DO_CHECK_MALLOC */
 
 #endif /* SAC_DO_PHM */
 
