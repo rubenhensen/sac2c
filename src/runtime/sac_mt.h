@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.48  2003/09/15 13:00:34  dkr
+ * SAC_MT_MIN, SAC_MT_MAX replaced by SAC_MIN, SAC_MAX
+ *
  * Revision 3.47  2003/04/14 17:38:34  sbs
  * in SAC_MT_SCHEDULER_Block_DIM0: casted iterations_rest into unsigned int
  * for compatibility with SAC_MT_MYTHREAD() in comparison.
@@ -194,11 +197,9 @@ typedef union {
     } b[SAC_SET_MAX_SYNC_FOLD + 1];
 } SAC_MT_barrier_dummy_t;
 
-#define SAC_MT_MAX(a, b) ((a) > (b) ? (a) : (b))
-
 #define SAC_MT_CACHE_LINE_MAX()                                                          \
-    SAC_MT_MAX (SAC_SET_CACHE_1_LINE,                                                    \
-                SAC_MT_MAX (SAC_SET_CACHE_2_LINE, SAC_MT_MAX (SAC_SET_CACHE_3_LINE, 1)))
+    SAC_MAX (SAC_SET_CACHE_1_LINE,                                                       \
+             SAC_MAX (SAC_SET_CACHE_2_LINE, SAC_MAX (SAC_SET_CACHE_3_LINE, 1)))
 
 #define SAC_MT_BARRIER_OFFSET()                                                          \
     ((SAC_MT_CACHE_LINE_MAX () >= sizeof (SAC_MT_barrier_dummy_t))                       \
