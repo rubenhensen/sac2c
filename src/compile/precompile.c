@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.63  2002/10/18 15:52:20  dkr
+ * support for (..._MOD == EXTERN_MOD_NAME) added
+ *
  * Revision 3.62  2002/10/18 13:30:04  sbs
  * ID_ATTRIB replaced by accesses to the FLAGS of N_id
  *
@@ -2482,9 +2485,10 @@ RenameTypes (types *type)
     DBUG_ENTER ("RenameTypes");
 
     if (TYPES_BASETYPE (type) == T_user) {
-        if (TYPES_MOD (type) != NULL) {
+        if (((sbs == 1) && (strcmp (TYPES_MOD (type), EXTERN_MOD_NAME) != 0))
+            || ((sbs == 0) && (TYPES_MOD (type) != NULL))) {
             /*
-             * This is a SAC data type.
+             * SAC data type
              */
             if (!strcmp (TYPES_MOD (type), MAIN_MOD_NAME)) {
                 tmp = (char *)Malloc (sizeof (char) * (strlen (TYPES_NAME (type)) + 6));
@@ -2504,7 +2508,7 @@ RenameTypes (types *type)
             TYPES_MOD (type) = NULL;
         } else {
             /*
-             * This is an imported C data type.
+             * imported C data type
              */
             tmp = (char *)Malloc (sizeof (char) * (strlen (TYPES_NAME (type)) + 6));
             sprintf (tmp, "SACe_%s", TYPES_NAME (type));
@@ -2858,9 +2862,10 @@ PREC4typedef (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("PREC4typedef");
 
-    if (TYPEDEF_MOD (arg_node) != NULL) {
+    if (((sbs == 1) && (strcmp (TYPEDEF_MOD (arg_node), EXTERN_MOD_NAME) != 0))
+        || ((sbs == 0) && (TYPEDEF_MOD (arg_node) != NULL))) {
         /*
-         * This is a SAC typedef.
+         * SAC typedef
          */
         if (!strcmp (TYPEDEF_MOD (arg_node), MAIN_MOD_NAME)) {
             tmp = (char *)Malloc (sizeof (char) * (strlen (TYPEDEF_NAME (arg_node)) + 6));
@@ -2879,7 +2884,7 @@ PREC4typedef (node *arg_node, node *arg_info)
         TYPEDEF_TYPE (arg_node) = RenameTypes (TYPEDEF_TYPE (arg_node));
     } else {
         /*
-         * This is an imported C typedef.
+         * imported C typedef
          */
         tmp = (char *)Malloc (sizeof (char) * (strlen (TYPEDEF_NAME (arg_node)) + 6));
         sprintf (tmp, "SACe_%s", TYPEDEF_NAME (arg_node));
@@ -2925,13 +2930,11 @@ PREC4objdef (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("PREC4objdef");
 
-    if (OBJDEF_MOD (arg_node) == NULL) {
-        if (OBJDEF_LINKNAME (arg_node) != NULL) {
-            OBJDEF_NAME (arg_node) = Free (OBJDEF_NAME (arg_node));
-            OBJDEF_NAME (arg_node) = OBJDEF_LINKNAME (arg_node);
-            OBJDEF_PRAGMA (arg_node) = Free (OBJDEF_PRAGMA (arg_node));
-        }
-    } else {
+    if (((sbs == 1) && (strcmp (OBJDEF_MOD (arg_node), EXTERN_MOD_NAME) != 0))
+        || ((sbs == 0) && (OBJDEF_MOD (arg_node) != NULL))) {
+        /*
+         * SAC objdef
+         */
         OBJDEF_VARNAME (arg_node) = Free (OBJDEF_VARNAME (arg_node));
         /*
          * OBJDEF_VARNAME is no longer used for the generation of the final C code
@@ -2955,6 +2958,15 @@ PREC4objdef (node *arg_node, node *arg_info)
         OBJDEF_NAME (arg_node) = Free (OBJDEF_NAME (arg_node));
         OBJDEF_NAME (arg_node) = new_name;
         OBJDEF_MOD (arg_node) = NULL;
+    } else {
+        /*
+         * imported C objdef
+         */
+        if (OBJDEF_LINKNAME (arg_node) != NULL) {
+            OBJDEF_NAME (arg_node) = Free (OBJDEF_NAME (arg_node));
+            OBJDEF_NAME (arg_node) = OBJDEF_LINKNAME (arg_node);
+            OBJDEF_PRAGMA (arg_node) = Free (OBJDEF_PRAGMA (arg_node));
+        }
     }
 
     OBJDEF_TYPE (arg_node) = RenameTypes (OBJDEF_TYPE (arg_node));
