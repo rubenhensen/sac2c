@@ -1,3 +1,12 @@
+/*
+ *
+ * $Log$
+ * Revision 1.2  1994/11/10 15:35:18  sbs
+ * RCS-header inserted
+ *
+ *
+ */
+
 #ifndef _sac_print_h
 
 #define _sac_print_h

@@ -1,3 +1,12 @@
+/*
+ *
+ * $Log$
+ * Revision 1.6  1994/11/10 15:34:26  sbs
+ * RCS-header inserted
+ *
+ *
+ */
+
 #include <stdio.h>
 
 #include "tree.h"

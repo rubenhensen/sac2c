@@ -1,3 +1,12 @@
+/*
+ *
+ * $Log$
+ * Revision 1.2  1994/11/10 15:44:34  sbs
+ * RCS-header inserted
+ *
+ *
+ */
+
 #ifndef DBUG_OFF /* All this stuff is only used in connection with DBUG */
 
 #ifndef _my_debug_h

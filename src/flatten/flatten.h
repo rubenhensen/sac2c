@@ -1,3 +1,12 @@
+/*
+ *
+ * $Log$
+ * Revision 1.2  1994/11/10 15:39:42  sbs
+ * RCS-header inserted
+ *
+ *
+ */
+
 #ifndef _flatten_h
 
 #define _flatten_h

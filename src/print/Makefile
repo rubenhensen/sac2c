@@ -1,3 +1,10 @@
+#
+# $Log$
+# Revision 1.4  1994/11/10 15:35:50  sbs
+# RCS-header inserted
+#
+#
+
 CC=gcc -ansi -g
 
 INCS=-I../global -I../../inc

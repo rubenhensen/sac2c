@@ -1,3 +1,10 @@
+#
+# $Log$
+# Revision 1.3  1994/11/10 15:45:55  sbs
+# RCS-header inserted
+#
+#
+
 MAKE=make
 CC=gcc -ansi -g 
 LEX=lex

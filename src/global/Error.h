@@ -1,3 +1,12 @@
+/*
+ *
+ * $Log$
+ * Revision 1.2  1994/11/10 15:44:34  sbs
+ * RCS-header inserted
+ *
+ *
+ */
+
 #ifndef _Error_h
 #define _Error_h
 

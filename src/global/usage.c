@@ -1,3 +1,12 @@
+/*
+ *
+ * $Log$
+ * Revision 1.2  1994/11/10 15:44:34  sbs
+ * RCS-header inserted
+ *
+ *
+ */
+
 #include "usage.h"
 #include <stdio.h>
 #include "dbug.h"
