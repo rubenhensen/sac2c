@@ -1,8 +1,11 @@
 /*
  * $Log$
- * Revision 1.4  1995/04/12 15:13:23  sbs
- * cat & rot inserted.
+ * Revision 1.5  1995/04/18 11:24:51  sbs
+ * ND_KD_ROT_SxSxA_A eliminated
  *
+# Revision 1.4  1995/04/12  15:13:23  sbs
+# cat & rot inserted.
+#
 # Revision 1.3  1995/03/31  13:26:08  sbs
 # includes take drop psi binop & const
 #
@@ -112,4 +115,4 @@ Macros for PSI-primitves:
 
  ND_KD_CAT_SxAxA_A( dima, a, b, res, catdim)	: 
  ND_KD_ROT_CxSxA_A( rotdim, numstr, dima, a, res):
- ND_KD_ROT_SxSxA_A( rotdimstr, numstr, dima, a, res):
+ < ND_KD_ROT_SxSxA_A( rotdimstr, numstr, dima, a, res): >
