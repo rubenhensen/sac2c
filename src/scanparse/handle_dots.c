@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.33  2003/12/10 23:00:07  sah
+ * lots of code cleanup and modularization and
+ * default values for set notation.
+ *
+ * NOTE for sbs: thats my part of the deal;)
+ *
  * Revision 1.32  2003/12/10 16:00:15  sah
  * disabled support for vectors and added HDid.
  * intermediate version just to please node_info.mac
@@ -163,7 +169,7 @@
  * set this to defined in order to create explanatory ids. use this only
  * for debugging as it might create very long identifier names.
  */
-#undef HD_USE_EXPLANATORY_NAMES
+#define HD_USE_EXPLANATORY_NAMES
 
 /**
  * set this to use build in take/drop instead of withloops.
@@ -701,13 +707,12 @@ BuildConcat (node *a, node *b)
  * of the current array is inserted. The shape at non-dot positions
  * is ignored.
  *
- * @param args selection vector that the selection operates on
  * @param array the id of the array on that the selection operates
  * @param info the dotinfo structure
  * @return sac code representing the shape vector
  */
 node *
-BuildLeftShape (node *args, node *array, dotinfo *info)
+BuildLeftShape (node *array, dotinfo *info)
 {
     int cnt;
     int maxdot;
@@ -743,13 +748,12 @@ BuildLeftShape (node *args, node *array, dotinfo *info)
  * selection vector occuring prior to the triple dot from the left and
  * removing those entries occuring past the triple dot from the right.
  *
- * @param args selection vector that the selection operates on
  * @param array array that the selection operates on
  * @param info dotinfo structure
  * @return sac code representing the middle shape vector
  */
 node *
-BuildMiddleShape (node *args, node *array, dotinfo *info)
+BuildMiddleShape (node *array, dotinfo *info)
 {
     node *result = NULL;
     node *shape = NULL;
@@ -775,13 +779,12 @@ BuildMiddleShape (node *args, node *array, dotinfo *info)
  * array the selection operartes on, is inserted. The shape information
  * corresponding to non dot entries is ignored.
  *
- * @param args selection vector the selection operates on
  * @param array array the selection operates on
  * @param info dotinfo structure
  * @return sac representation of the right result shape vector
  */
 node *
-BuildRightShape (node *args, node *array, dotinfo *info)
+BuildRightShape (node *array, dotinfo *info)
 {
     int cnt;
     int maxdot;
@@ -826,16 +829,14 @@ BuildRightShape (node *args, node *array, dotinfo *info)
  * temporary identifiers and concatenated by runtime code. See
  * BuildConcat for details.
  * In order to insert the new identifiers, they are added to the
- * assigns chain and inserted by HDAp in front of the selection.
+ * assigns chain and inserted by HDap in front of the selection.
  *
- * @param args selection vector the selection operates on
  * @param array array the selection operates on
- * @param assigns root of the assigns chain
  * @param info dotinfo structure
  * @result sac representation of the result shape vector
  */
 node *
-BuildShape (node *args, node *array, node **assigns, dotinfo *info)
+BuildShape (node *array, dotinfo *info)
 {
     node *leftshape = NULL;
     node *middleshape = NULL;
@@ -844,27 +845,19 @@ BuildShape (node *args, node *array, node **assigns, dotinfo *info)
     DBUG_ENTER ("BuildShape");
 
     if (info->triplepos != 1) {
-        leftshape = BuildLeftShape (args, array, info);
+        leftshape = BuildLeftShape (array, info);
     }
 
     if (info->triplepos != 0) {
-        middleshape = BuildMiddleShape (args, array, info);
+        middleshape = BuildMiddleShape (array, info);
     }
 
     if ((info->triplepos != 0) && (info->triplepos != info->selcnt)) {
-        rightshape = BuildRightShape (args, array, info);
+        rightshape = BuildRightShape (array, info);
     }
 
     if (rightshape != NULL) {
-        node *tmpid = NULL;
-
-        tmpid = MakeTmpId ("middle_and_right_shape");
-
-        *assigns = AppendAssign (*assigns,
-                                 MakeAssignLetNV (StringCopy (ID_NAME (tmpid)),
-                                                  BuildConcat (middleshape, rightshape)));
-
-        middleshape = tmpid;
+        middleshape = BuildConcat (middleshape, rightshape);
         rightshape = NULL;
     }
 
@@ -873,16 +866,7 @@ BuildShape (node *args, node *array, node **assigns, dotinfo *info)
             leftshape = middleshape;
             middleshape = NULL;
         } else {
-            node *tmpid = NULL;
-
-            tmpid = MakeTmpId ("complete_shape");
-
-            *assigns
-              = AppendAssign (*assigns,
-                              MakeAssignLetNV (StringCopy (ID_NAME (tmpid)),
-                                               BuildConcat (leftshape, middleshape)));
-
-            leftshape = tmpid;
+            leftshape = BuildConcat (leftshape, middleshape);
             middleshape = NULL;
         }
     }
@@ -1105,6 +1089,60 @@ BuildIndex (node *args, node *iv, node *block, dotinfo *info)
 }
 
 /**
+ * builds a withloop generating an array containing
+ * zeroes with given shape
+ *
+ * @param array AST node of the array
+ * @param shape AST node of shape, is consumed
+ */
+
+node *
+BuildDefaultWithloop (node *array, node *shape)
+{
+    node *result = NULL;
+
+    DBUG_ENTER ("BuildDefaultWithloop");
+
+    result
+      = MakeNWith (MakeNPart (MakeNWithid (MakeIds (TmpVar (), NULL, ST_regular), NULL),
+                              MakeNGenerator (MakeDot (1), MakeDot (1), F_le, F_le, NULL,
+                                              NULL),
+                              NULL),
+                   MakeNCode (MAKE_EMPTY_BLOCK (),
+                              MakeAp1 (StringCopy ("zero"), NULL, DupTree (array))),
+                   MakeNWithOp (WO_genarray, shape));
+
+    NCODE_USED (NWITH_CODE (result))++;
+    NPART_CODE (NWITH_PART (result)) = NWITH_CODE (result);
+    NWITHOP_DEFAULT (NWITH_WITHOP (result))
+      = MakeAp1 (StringCopy ("zero"), NULL, DupTree (array));
+
+    DBUG_RETURN (result);
+}
+
+/**
+ * builds the shape of an selected element. There is no expansion
+ * of dot shapes.
+ *
+ * @param array AST of the array the selection takes place on
+ * @param info corresponding dotinfo structure
+ * @return AST of the shape
+ */
+
+node *
+BuildSelectionElementShape (node *array, dotinfo *info)
+{
+    node *shape = NULL;
+
+    DBUG_ENTER ("BuildSelectionElementShape");
+
+    shape = MAKE_BIN_PRF (F_drop_SxV, MakeNum (info->selcnt),
+                          MakePrf (F_shape, MakeExprs (DupTree (array), NULL)));
+
+    DBUG_RETURN (shape);
+}
+
+/**
  * builds a default value for the selection.
  * @param array AST node of the array
  * @param info dotinfo structure of the array
@@ -1120,24 +1158,9 @@ BuildSelectionDefault (node *array, dotinfo *info)
     if (info->triplepos == 0) {
         /* no tripledot, build default */
 
-        node *shape = MAKE_BIN_PRF (F_drop_SxV, MakeNum (info->selcnt),
-                                    MakePrf (F_shape, MakeExprs (DupTree (array), NULL)));
+        node *shape = BuildSelectionElementShape (array, info);
 
-        result
-          = MakeNWith (MakeNPart (MakeNWithid (MakeIds (TmpVar (), NULL, ST_regular),
-                                               NULL),
-                                  MakeNGenerator (MakeDot (1), MakeDot (1), F_le, F_le,
-                                                  NULL, NULL),
-                                  NULL),
-                       MakeNCode (MAKE_EMPTY_BLOCK (),
-                                  MakeAp1 (StringCopy ("zero"), NULL, DupTree (array))),
-                       MakeNWithOp (WO_genarray, shape));
-
-        NCODE_USED (NWITH_CODE (result))++;
-        NPART_CODE (NWITH_PART (result)) = NWITH_CODE (result);
-        NWITHOP_DEFAULT (NWITH_WITHOP (result))
-          = MakeAp1 (StringCopy ("zero"), NULL, DupTree (array));
-
+        result = BuildDefaultWithloop (array, shape);
     } else {
         /* default is just a scalar */
 
@@ -1236,6 +1259,32 @@ BuildIdTable (node *ids, idtable *appendto)
 #endif
     else {
         ABORT (linenum, ("malformed index vector in WL set notation"));
+    }
+
+    DBUG_RETURN (result);
+}
+
+/**
+ * checks for id in idtable.
+ *
+ * @param id the id
+ * @param ids the table
+ * @return 1 if found, 0 otherwise
+ */
+
+int
+IdTableContains (char *id, idtable *ids)
+{
+    int result = 0;
+
+    DBUG_ENTER ("IdTableContains");
+
+    while (ids != NULL) {
+        if (strcmp (id, ids->id) == 0) {
+            result = 1;
+            break;
+        }
+        ids = ids->next;
     }
 
     DBUG_RETURN (result);
@@ -1614,6 +1663,14 @@ RemoveDotsFromVector (node *ids)
     DBUG_RETURN (result);
 }
 
+/** <!--********************************************************************-->
+ * constructs the permutaed index vector to map the results of a set
+ * notation to the set notation with dots.
+ *
+ * @param ids the indexvector of the set notation
+ * @param vect the indexvector of the withloop used for permutation
+ ****************************************************************************/
+
 node *
 BuildPermutatedVector (node *ids, node *vect)
 {
@@ -1670,6 +1727,51 @@ BuildPermutatedVector (node *ids, node *vect)
     }
 
     result = MakeFlatArray (result);
+
+    DBUG_RETURN (result);
+}
+
+/** <!--********************************************************************-->
+ * constructs the default value of a selection within a setnotation.
+ * A default is built for any selection as for the default value, the real
+ * value is of no importance and the generated withloops should be removed
+ * by the optimizations for all static arrays.
+ *
+ * @param array AST of the array the selection occurs on
+ * @param info dotinfo strcuture of the selection
+ * @return AST of a default value
+ *****************************************************************************/
+
+node *
+BuildSetNotationDefault (node *array, dotinfo *info)
+{
+    node *result = NULL;
+    node *shape = NULL;
+
+    DBUG_ENTER ("BuildSetNotationDefault");
+
+    if (info->dotcnt == 0) {
+        /* no dots at all */
+
+        shape = MAKE_BIN_PRF (F_drop_SxV, MakeNum (info->selcnt),
+                              MakePrf (F_shape, MakeExprs (DupTree (array), NULL)));
+    } else if (info->triplepos == 0) {
+        /* no tripledot but dots, build default */
+
+        node *leftshape = BuildLeftShape (array, info);
+        shape = BuildSelectionElementShape (array, info);
+
+        /* concatenate if not empty */
+        if (leftshape != NULL) {
+            shape = BuildConcat (leftshape, shape);
+        }
+    } else {
+        /* contains tripledot, so build the full shape */
+
+        shape = BuildShape (array, info);
+    }
+
+    result = BuildDefaultWithloop (array, shape);
 
     DBUG_RETURN (result);
 }
@@ -1793,6 +1895,9 @@ HDwithop (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/**
+ * someone (sbs?) wrote this code but left no comment...
+ */
 node *
 HDpart (node *arg_node, node *arg_info)
 {
@@ -1939,21 +2044,10 @@ HDap (node *arg_node, node *arg_info)
             node *iv;
             node *index;
             node *block;
-            node *assigns = MakeEmpty ();
 
             iv = MakeTmpId ("index");
             block = MAKE_EMPTY_BLOCK ();
-            shape = BuildShape (ARRAY_AELEMS (AP_ARG1 (arg_node)), AP_ARG2 (arg_node),
-                                &assigns, info);
-
-            if (INFO_HD_ASSIGNS (arg_info) == NULL) {
-                INFO_HD_ASSIGNS (arg_info) = assigns;
-            } else if (assigns != NULL && NODE_TYPE (assigns) == N_empty) {
-                assigns = FreeTree (assigns);
-            } else {
-                INFO_HD_ASSIGNS (arg_info)
-                  = AppendAssign (INFO_HD_ASSIGNS (arg_info), assigns);
-            }
+            shape = BuildShape (AP_ARG2 (arg_node), info);
 
             index = BuildIndex (ARRAY_AELEMS (AP_ARG1 (arg_node)), iv, block, info);
 
@@ -1988,11 +2082,13 @@ HDap (node *arg_node, node *arg_info)
 
     {
         dotinfo *info = MakeDotInfo (ARRAY_AELEMS (AP_ARG1 (arg_node)));
-        node *tmp = BuildSelectionDefault (AP_ARG2 (arg_node), info);
+
+        node *defexpr = BuildSetNotationDefault (AP_ARG2 (arg_node), info);
 
         FreeTree (result);
+        FreeDotInfo (info);
 
-        result = tmp;
+        result = defexpr;
     }
 
     /* Now we traverse our result in order to handle any */
@@ -2038,10 +2134,12 @@ HDprf (node *arg_node, node *arg_info)
     if ((INFO_HD_TRAVSTATE (arg_info) == HD_default) && (PRF_PRF (arg_node) == F_sel)) {
         dotinfo *info = MakeDotInfo (ARRAY_AELEMS (PRF_ARG1 (arg_node)));
 
-        node *tmp = BuildSelectionDefault (PRF_ARG2 (arg_node), info);
+        node *defexpr = BuildSetNotationDefault (PRF_ARG2 (arg_node), info);
 
         FreeTree (arg_node);
-        arg_node = tmp;
+        FreeDotInfo (info);
+
+        arg_node = defexpr;
     }
 
     arg_node = TravSons (arg_node, arg_info);
@@ -2145,7 +2243,8 @@ HDsetwl (node *arg_node, node *arg_info)
     travstate oldstate = INFO_HD_TRAVSTATE (arg_info);
     idtable *oldtable = INFO_HD_IDTABLE (arg_info);
     node *shape = NULL;
-    node *ids;
+    node *defexpr = NULL;
+    node *ids = NULL;
     int dotcnt;
 
     DBUG_ENTER ("HDsetwl");
@@ -2190,8 +2289,15 @@ HDsetwl (node *arg_node, node *arg_info)
     }
 #endif
 
+    /* build a default value for the withloop */
+    defexpr = DupTree (SETWL_EXPR (arg_node));
+    INFO_HD_TRAVSTATE (arg_info) = HD_default;
+    defexpr = Trav (defexpr, arg_info);
+    INFO_HD_TRAVSTATE (arg_info) = HD_scan;
+
     NCODE_USED (NWITH_CODE (result))++;
     NPART_CODE (NWITH_PART (result)) = NWITH_CODE (result);
+    NWITHOP_DEFAULT (NWITH_WITHOP (result)) = defexpr;
 
     /* check whether we had some dots in order to create */
     /* code to handle the permutation                    */
@@ -2239,5 +2345,15 @@ HDsetwl (node *arg_node, node *arg_info)
 node *
 HDid (node *arg_node, node *arg_info)
 {
+    if (INFO_HD_TRAVSTATE (arg_info) == HD_default) {
+        if (IdTableContains (ID_NAME (arg_node), INFO_HD_IDTABLE (arg_info))) {
+            WARN (linenum, ("cannot infer default value for %s in set notation, using 0",
+                            ID_NAME (arg_node)));
+
+            FreeTree (arg_node);
+            arg_node = MakeNum (0);
+        }
+    }
+
     return (TravSons (arg_node, arg_info));
 }
