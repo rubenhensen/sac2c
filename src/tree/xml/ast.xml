@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.48  2004/11/22 13:23:48  sah
+  added even more
+
   Revision 1.47  2004/11/22 12:54:55  sah
   more more more
 
@@ -1146,7 +1149,7 @@
       </sons>
       <attributes>
         <attribute name="In_Mask" mandatory="yes">
-          <type name="DFMMask" />
+          <type name="DFMask" />
           <phases>
             <range from="infer_dfms" to="lac2fun" />
             <range from="lac2fun" to="refcnt" />
@@ -1154,7 +1157,7 @@
           </phases>
         </attribute>
         <attribute name="Out_Mask" mandatory="yes">
-          <type name="DFMMask" />
+          <type name="DFMask" />
           <phases>
             <range from="infer_dfms" to="lac2fun" />
             <range from="lac2fun" to="refcnt" />
@@ -1162,22 +1165,10 @@
           </phases>
         </attribute>
         <attribute name="Local_Mask" mandatory="yes">
-          <type name="DFMMask" />
+          <type name="DFMask" />
           <phases>
             <range from="infer_dfms" to="lac2fun" />
             <range from="lac2fun" to="refcnt" />
-            <range from="refcnt" to="final" />
-          </phases>
-        </attribute>
-        <attribute name="ThenVars" mandatory="yes">
-          <type name="Ids" />
-          <phases>
-            <range from="refcnt" to="final" />
-          </phases>
-        </attribute>
-        <attribute name="ElseVars" mandatory="yes">
-          <type name="Ids" />
-          <phases>
             <range from="refcnt" to="final" />
           </phases>
         </attribute>
@@ -1214,34 +1205,22 @@
             <range from="fun2lac" to="final" />
           </phases>
         </attribute>
-        <attribute name="UseVars" mandatory="yes">
-          <type name="Ids" />
-          <phases>
-            <range from="refcount" to="final" />
-          </phases>
-        </attribute>
-        <attribute name="DefVars" mandatory="yes">
-          <type name="Ids" />
-          <phases>
-            <range from="refcount" to="final" />
-          </phases>
-        </attribute>
         <attribute name="In_Mask" mandatory="yes">
-          <type name="DFMMask" />
+          <type name="DFMask" />
           <phases>
             <range from="infer_dfms" to="final" />
           </phases>
         </attribute>
         <attribute name="Out_Mask" mandatory="yes">
-          <type name="DFMMask" />
+          <type name="DFMask" />
           <phases>
             <range from="infer_dfms" to="final" />
           </phases>
         </attribute>
         <attribute name="Local_Mask" mandatory="yes">
-          <type name="DFMMask" />
+          <type name="DFMask" />
           <phases>
-            <range from="inger_dfms" to="final" />
+            <range from="infer_dfms" to="final" />
           </phases>
         </attribute>
       </attributes>
@@ -1261,32 +1240,20 @@
         </son>
       </sons>
       <attributes>
-        <attribute name="UseVars" mandatory="yes">
-          <type name="Ids" />
-          <phases>
-            <range from="refcount" to="final" />
-          </phases>
-        </attribute>
-        <attribute name="DefVars" mandatory="yes">
-          <type name="Ids" />
-          <phases>
-            <range from="refcount" to="final" />
-          </phases>
-        </attribute>
         <attribute name="In_Mask" mandatory="yes">
-          <type name="DFMMask" />
+          <type name="DFMask" />
           <phases>
             <range from="infer_dfms" to="final" />
           </phases>
         </attribute>
         <attribute name="Out_Mask" mandatory="yes">
-          <type name="DFMMask" />
+          <type name="DFMask" />
           <phases>
             <range from="infer_dfms" to="final" />
           </phases>
         </attribute>
         <attribute name="Local_Mask" mandatory="yes">
-          <type name="DFMMask" />
+          <type name="DFMask" />
           <phases>
             <range from="inger_dfms" to="final" />
           </phases>
@@ -1340,19 +1307,13 @@
         <attribute name="Name" mandatory="yes">
           <type name="String" />
           <phases>
-            <all />
+            <range from="scanparse" to="cwr" />
           </phases>
         </attribute>
         <attribute name="Mod" mandatory="no">
-          <type name="SharedString" />
+          <type name="String" />
           <phases>
-            <all />
-          </phases>
-        </attribute>
-        <attribute name="ATFlag" default="0" mandatory="no">
-          <type name="Integer" />
-          <phases>
-            <all />
+            <range from="scanparse" to="cwr" />
           </phases>
         </attribute>
         <attribute name="Fundef" mandatory="yes">
@@ -1362,7 +1323,7 @@
             </target>
           </type>
           <phases>
-            <range from="typecheck" to="final" />
+            <all />
           </phases>
         </attribute>
         <attribute name="ArgTab" mandatory="yes">
@@ -1376,27 +1337,21 @@
     </node>
     <node name="Mop">
       <sons>
+        <son name="Ops" mandatory="yes" >
+	  <target>
+	    <son name="Ids" />
+	  </target>
+	</son>
         <son name="Exprs" mandatory="no">
           <target>
             <node name="Exprs" />
           </target>
         </son>
       </sons>
-      <attributes>
-        <attribute name="Ops" mandatory="no">
-          <type name="Ids" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
-        <attribute name="Fix" mandatory="yes">
-          <type name="Bool" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
-      </attributes>
-      <flags></flags>
+      <attributes> </attributes>
+      <flags>
+        <flag name="IsFixed" />
+      </flags>
     </node>
     <node name="Exprs">
       <sons>
@@ -1471,12 +1426,6 @@
             <range from="typecheck" to="final" />
           </phases>
         </attribute>
-        <attribute name="IsConst" mandatory="no">
-          <type name="Bool" />
-          <phases>
-            <range from="flatten" to="final" />
-          </phases>
-        </attribute>
         <attribute name="VecType" mandatory="no">
           <type name="SimpleType" />
           <phases>
@@ -1496,7 +1445,9 @@
           </phases>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags>
+        <flag name="IsConst" />
+      </flags>
     </node>
     <node name="Vinfo">
       <sons>
@@ -1545,12 +1496,18 @@
     <node name="Id">
       <sons></sons>
       <attributes>
-        <attribute name="Ids" mandatory="yes">
-          <type name="Ids" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
+        <attribute name="Name" mandatory="no">
+	  <type name="String" />
+	  <phases>
+	    <range from="scanparse" to="typecheck" />
+	  </phases>
+	</attribute>
+        <attribute name="Mod" mandatory="no">
+	  <type name="String" />
+	  <phases>
+	    <range from="scanparse" to="typecheck" />
+	  </phases>
+	</attribute>
         <attribute name="WL" mandatory="yes">
           <type name="Link">
             <target>
@@ -1579,18 +1536,6 @@
             <range from="flatten" to="final" />
           </phases>
         </attribute>
-        <attribute name="IsConst" mandatory="no">
-          <type name="Integer" />
-          <phases>
-            <range from="flatten" to="final" />
-          </phases>
-        </attribute>
-        <attribute name="Num" mandatory="no">
-          <type name="Integer" />
-          <phases>
-            <range from="flatten" to="final" />
-          </phases>
-        </attribute>
         <attribute name="NT_Tag" mandatory="yes">
           <type name="String" />
           <phases>
@@ -1599,9 +1544,10 @@
         </attribute>
       </attributes>
       <flags>
-	<flag name="Global" />
-	<flag name="Reference" />
-	<flag name="Read_Only" />
+	<flag name="IsGlobal" />
+	<flag name="IsReference" />
+	<flag name="IsReadOnly" />
+	<flag name="IsConst" />
       </flags>
     </node>
     <node name="Num">
