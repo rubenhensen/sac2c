@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.2  2004/11/26 21:18:50  sah
+ * pour Bodo *<8-)
+ *
  * Revision 1.1  2004/11/23 22:41:02  sah
  * Initial revision
  *
@@ -19,7 +22,7 @@
 struct INFO {
     FILE *file;
     serstack_t *stack;
-    STtable_t *table;
+    sttable_t *table;
     node *ast;
 };
 

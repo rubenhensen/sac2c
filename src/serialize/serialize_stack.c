@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.2  2004/11/26 21:18:50  sah
+ * pour Bodo *<8-)
+ *
  * Revision 1.1  2004/11/23 22:41:06  sah
  * Initial revision
  *
@@ -11,6 +14,7 @@
 #include "dbug.h"
 #include "internal_lib.h"
 #include "tree_basic.h"
+#include "globals.h"
 
 typedef struct SERENTRY_T serentry_t;
 
@@ -24,13 +28,13 @@ struct SERSTACK_T {
 };
 
 serstack_t *
-SerStackInit ()
+SSinit ()
 {
     serstack_t *result;
 
-    DBUG_ENTER ("SerStackInit");
+    DBUG_ENTER ("SSinit");
 
-    result = Malloc (sizeof (serstack_t));
+    result = ILIBmalloc (sizeof (serstack_t));
 
     result->head = NULL;
 
@@ -38,30 +42,30 @@ SerStackInit ()
 }
 
 serstack_t *
-SerStackDestroy (serstack_t *stack)
+SSdestroy (serstack_t *stack)
 {
-    DBUG_ENTER ("SerStackDestroy");
+    DBUG_ENTER ("SSdestroy");
 
     while (stack->head != NULL) {
         serentry_t *tmp = stack->head;
         stack->head = stack->head->next;
 
-        tmp = Free (tmp);
+        tmp = ILIBfree (tmp);
     }
 
-    stack = Free (stack);
+    stack = ILIBfree (stack);
 
     DBUG_RETURN (stack);
 }
 
 void
-SerStackPush (node *val, serstack_t *stack)
+SSpush (node *val, serstack_t *stack)
 {
     serentry_t *tmp;
 
-    DBUG_ENTER ("SerStackPush");
+    DBUG_ENTER ("SSpush");
 
-    tmp = Malloc (sizeof (serentry_t));
+    tmp = ILIBmalloc (sizeof (serentry_t));
 
     tmp->val = val;
     tmp->next = stack->head;
@@ -71,12 +75,12 @@ SerStackPush (node *val, serstack_t *stack)
 }
 
 node *
-SerStackPop (serstack_t *stack)
+SSpop (serstack_t *stack)
 {
     serentry_t *tmp;
     node *result;
 
-    DBUG_ENTER ("SerStackPop");
+    DBUG_ENTER ("SSpop");
 
     DBUG_ASSERT ((stack->head != NULL), "cannot pop element from empty stack");
 
@@ -84,18 +88,18 @@ SerStackPop (serstack_t *stack)
     stack->head = stack->head->next;
 
     result = tmp->val;
-    tmp = Free (tmp);
+    tmp = ILIBfree (tmp);
 
     DBUG_RETURN (result);
 }
 
 int
-SerStackFindPos (node *val, serstack_t *stack)
+SSfindPos (node *val, serstack_t *stack)
 {
     int pos = 0;
     serentry_t *ptr;
 
-    DBUG_ENTER ("SerStackFindPos");
+    DBUG_ENTER ("SSfindPos");
 
     ptr = stack->head;
 
@@ -114,13 +118,13 @@ SerStackFindPos (node *val, serstack_t *stack)
 }
 
 node *
-SerStackLookup (int pos, serstack_t *stack)
+SSlookup (int pos, serstack_t *stack)
 {
     int cnt = 0;
     serentry_t *ptr = stack->head;
     node *result;
 
-    DBUG_ENTER ("SerStackLookup");
+    DBUG_ENTER ("SSlookup");
 
     while ((cnt < pos) && (ptr != NULL)) {
         ptr = ptr->next;
@@ -139,11 +143,11 @@ SerStackLookup (int pos, serstack_t *stack)
 }
 
 void
-SerStackDump (serstack_t *stack)
+SSdump (serstack_t *stack)
 {
     serentry_t *ptr = stack->head;
 
-    DBUG_ENTER ("SerStackDump");
+    DBUG_ENTER ("SSdump");
 
     printf ("StackDump:\n\n");
 

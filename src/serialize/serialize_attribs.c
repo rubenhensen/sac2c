@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/11/26 21:18:50  sah
+ * pour Bodo *<8-)
+ *
  * Revision 1.1  2004/11/23 22:40:58  sah
  * Initial revision
  *
@@ -33,11 +36,15 @@
 #include "tree_basic.h"
 #include "traverse.h"
 #include "tree_compound.h"
+#include "new_types.h"
+#include "shape.h"
+#include "globals.h"
+#include "constants.h"
 #include "dbug.h"
 
 /** <!--******************************************************************-->
  *
- * @fn SerializeStringAttrib
+ * @fn SATserializeString
  *
  * @brief generates code to de-serialize the given attribute
  *
@@ -48,9 +55,9 @@
  ***************************************************************************/
 
 void
-SerializeStringAttrib (info *info, char *attr, node *parent)
+SATserializeString (info *info, char *attr, node *parent)
 {
-    DBUG_ENTER ("SerializeStringAttrib");
+    DBUG_ENTER ("SATserializeString");
 
     if (attr == NULL) {
         DBUG_PRINT ("SET", ("Processing String (null)"));
@@ -67,7 +74,7 @@ SerializeStringAttrib (info *info, char *attr, node *parent)
 
 /** <!--******************************************************************-->
  *
- * @fn SerializeSharedStringAttrib
+ * @fn SATserializeSharedString
  *
  * @brief generates code to de-serialize the given attribute
  *
@@ -78,9 +85,9 @@ SerializeStringAttrib (info *info, char *attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeSharedStringAttrib (info *info, char *attr, node *parent)
+SATserializeSharedString (info *info, char *attr, node *parent)
 {
-    DBUG_ENTER ("SerializeSharedStringAttrib");
+    DBUG_ENTER ("SATserializeSharedString");
 
     if (attr == NULL) {
         DBUG_PRINT ("SET", ("Processing String (null)"));
@@ -97,7 +104,7 @@ SerializeSharedStringAttrib (info *info, char *attr, node *parent)
 
 /** <!--******************************************************************-->
  *
- * @fn SerializeIntegerAttrib
+ * @fn SATserializeInteger
  *
  * @brief generates code to de-serialize the given attribute
  *
@@ -108,9 +115,9 @@ SerializeSharedStringAttrib (info *info, char *attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeIntegerAttrib (info *info, int attr, node *parent)
+SATserializeInteger (info *info, int attr, node *parent)
 {
-    DBUG_ENTER ("SerializeIntegerAttrib");
+    DBUG_ENTER ("SATserializeInteger");
 
     fprintf (INFO_SER_FILE (info), "%d", attr);
 
@@ -119,7 +126,7 @@ SerializeIntegerAttrib (info *info, int attr, node *parent)
 
 /** <!--******************************************************************-->
  *
- * @fn SerializeLongAttrib
+ * @fn SATserializeLong
  *
  * @brief generates code to de-serialize the given attribute
  *
@@ -130,9 +137,9 @@ SerializeIntegerAttrib (info *info, int attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeLongAttrib (info *info, long attr, node *parent)
+SATserializeLong (info *info, long attr, node *parent)
 {
-    DBUG_ENTER ("SerializeLongAttrib");
+    DBUG_ENTER ("SATserializeLong");
 
     fprintf (INFO_SER_FILE (info), "%ld", attr);
 
@@ -141,7 +148,7 @@ SerializeLongAttrib (info *info, long attr, node *parent)
 
 /** <!--******************************************************************-->
  *
- * @fn SerializeBoolAttrib
+ * @fn SATserializeBool
  *
  * @brief generates code to de-serialize the given attribute
  *
@@ -152,9 +159,9 @@ SerializeLongAttrib (info *info, long attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeBoolAttrib (info *info, bool attr, node *parent)
+SATserializeBool (info *info, bool attr, node *parent)
 {
-    DBUG_ENTER ("SerializeBoolAttrib");
+    DBUG_ENTER ("SATserializeBool");
 
     fprintf (INFO_SER_FILE (info), "%d", attr);
 
@@ -163,7 +170,7 @@ SerializeBoolAttrib (info *info, bool attr, node *parent)
 
 /** <!--******************************************************************-->
  *
- * @fn SerializeFloatAttrib
+ * @fn SATserializeFloat
  *
  * @brief generates code to de-serialize the given attribute
  *
@@ -174,9 +181,9 @@ SerializeBoolAttrib (info *info, bool attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeFloatAttrib (info *info, float attr, node *parent)
+SATserializeFloat (info *info, float attr, node *parent)
 {
-    DBUG_ENTER ("SerializeFloatAttrib");
+    DBUG_ENTER ("SATserializeFloat");
 
     fprintf (INFO_SER_FILE (info), "%f", attr);
 
@@ -185,7 +192,7 @@ SerializeFloatAttrib (info *info, float attr, node *parent)
 
 /** <!--******************************************************************-->
  *
- * @fn SerializeDoubleAttrib
+ * @fn SATserializeDouble
  *
  * @brief generates code to de-serialize the given attribute
  *
@@ -196,9 +203,9 @@ SerializeFloatAttrib (info *info, float attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeDoubleAttrib (info *info, double attr, node *parent)
+SATserializeDouble (info *info, double attr, node *parent)
 {
-    DBUG_ENTER ("SerializeDoubleAttrib");
+    DBUG_ENTER ("SATserializeDouble");
 
     fprintf (INFO_SER_FILE (info), "%f", attr);
 
@@ -207,7 +214,7 @@ SerializeDoubleAttrib (info *info, double attr, node *parent)
 
 /** <!--******************************************************************-->
  *
- * @fn SerializeCharAttrib
+ * @fn SATserializeChar
  *
  * @brief generates code to de-serialize the given attribute
  *
@@ -218,9 +225,9 @@ SerializeDoubleAttrib (info *info, double attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeCharAttrib (info *info, char attr, node *parent)
+SATserializeChar (info *info, char attr, node *parent)
 {
-    DBUG_ENTER ("SerializeCharAttrib");
+    DBUG_ENTER ("SATserializeChar");
 
     fprintf (INFO_SER_FILE (info), "'%c'", attr);
 
@@ -229,7 +236,7 @@ SerializeCharAttrib (info *info, char attr, node *parent)
 
 /** <!--******************************************************************-->
  *
- * @fn SerializeOldTypeAttrib
+ * @fn SATserializeOldType
  *
  * @brief generates code to de-serialize the given attribute
  *
@@ -240,9 +247,9 @@ SerializeCharAttrib (info *info, char attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeOldTypeAttrib (info *info, types *attr, node *parent)
+SATserializeOldType (info *info, types *attr, node *parent)
 {
-    DBUG_ENTER ("SerializeOldTypeAttrib");
+    DBUG_ENTER ("SATserializeOldType");
 
     if (attr == NULL) {
         fprintf (INFO_SER_FILE (info), "NULL");
@@ -255,7 +262,7 @@ SerializeOldTypeAttrib (info *info, types *attr, node *parent)
 
 /** <!--******************************************************************-->
  *
- * @fn SerializeNodeAttrib
+ * @fn SATserializeNode
  *
  * @brief generates code to de-serialize the given attribute
  *
@@ -266,16 +273,16 @@ SerializeOldTypeAttrib (info *info, types *attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeNodeAttrib (info *info, node *attr, node *parent)
+SATserializeNode (info *info, node *attr, node *parent)
 {
-    DBUG_ENTER ("SerializeNodeAttrib");
+    DBUG_ENTER ("SATserializeNode");
 
     if (attr == NULL) {
         fprintf (INFO_SER_FILE (info), "NULL");
     } else {
         /* we have to eat the additional , created by SET traversal */
         fprintf (INFO_SER_FILE (info), "DROP( x");
-        Trav (attr, info);
+        TRAVdo (attr, info);
         fprintf (INFO_SER_FILE (info), ")");
     }
 
@@ -284,7 +291,7 @@ SerializeNodeAttrib (info *info, node *attr, node *parent)
 
 /** <!--******************************************************************-->
  *
- * @fn SerializeLinkAttrib
+ * @fn SATserializeLink
  *
  * @brief generates code to de-serialize the given attribute
  *
@@ -295,9 +302,9 @@ SerializeNodeAttrib (info *info, node *attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeLinkAttrib (info *info, node *attr, node *parent)
+SATserializeLink (info *info, node *attr, node *parent)
 {
-    DBUG_ENTER ("SerializeLinkAttrib");
+    DBUG_ENTER ("SATserializeLink");
 
     fprintf (INFO_SER_FILE (info), "NULL");
 
@@ -306,7 +313,7 @@ SerializeLinkAttrib (info *info, node *attr, node *parent)
 
 /** <!--******************************************************************-->
  *
- * @fn SerializeExtLinkAttrib
+ * @fn SATserializeExtLink
  *
  * @brief generates code to de-serialize the given attribute
  *
@@ -317,13 +324,13 @@ SerializeLinkAttrib (info *info, node *attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeExtLinkAttrib (info *info, node *attr, node *parent)
+SATserializeExtLink (info *info, node *attr, node *parent)
 {
-    DBUG_ENTER ("SerializeExtinkAttrib");
+    DBUG_ENTER ("SATserializeExtink");
 
     if (attr != NULL) {
         if (NODE_TYPE (attr) == N_fundef) {
-            SerializeFundefLink (attr, INFO_SER_FILE (info));
+            SERserializeFundefLink (attr, INFO_SER_FILE (info));
         }
     } else {
         fprintf (INFO_SER_FILE (info), "NULL");
@@ -334,7 +341,7 @@ SerializeExtLinkAttrib (info *info, node *attr, node *parent)
 
 /** <!--******************************************************************-->
  *
- * @fn SerializeDownLinkAttrib
+ * @fn SATserializeDownLink
  *
  * @brief generates code to de-serialize the given attribute
  *
@@ -345,16 +352,16 @@ SerializeExtLinkAttrib (info *info, node *attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeDownLinkAttrib (info *info, node *attr, node *parent)
+SATserializeDownLink (info *info, node *attr, node *parent)
 {
-    DBUG_ENTER ("SerializeDownLinkAttrib");
+    DBUG_ENTER ("SATserializeDownLink");
 
     DBUG_VOID_RETURN;
 }
 
 /** <!--******************************************************************-->
  *
- * @fn SerializeIntegerArrayAttrib
+ * @fn SATserializeIntegerArray
  *
  * @brief generates code to de-serialize the given attribute
  *
@@ -365,9 +372,9 @@ SerializeDownLinkAttrib (info *info, node *attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeIntegerArrayAttrib (info *info, int *attr, node *parent)
+SATserializeIntegerArray (info *info, int *attr, node *parent)
 {
-    DBUG_ENTER ("SerializeIntegerArrayAttrib");
+    DBUG_ENTER ("SATserializeIntegerArray");
 
     if (attr == NULL) {
         fprintf (INFO_SER_FILE (info), "NULL");
@@ -375,7 +382,7 @@ SerializeIntegerArrayAttrib (info *info, int *attr, node *parent)
         int cnt;
 
         DBUG_ASSERT ((NODE_TYPE (parent) == N_pragma),
-                     ("Found an IntegerArrayAttribute attached to a node different from "
+                     ("Found an IntegerArrayute attached to a node different from "
                       "N_pragma! "));
 
         fprintf (INFO_SER_FILE (info), "CreateIntegerArray( %d",
@@ -393,51 +400,7 @@ SerializeIntegerArrayAttrib (info *info, int *attr, node *parent)
 
 /** <!--******************************************************************-->
  *
- * @fn SerializeNumsAttrib
- *
- * @brief generates code to de-serialize the given attribute
- *
- * @param info   info structure of serialize traversal
- * @param attr   the attribute itself
- * @param parent the parent node
- *
- ***************************************************************************/
-
-static void
-SerializeNumsAttribRec (info *info, nums *attr)
-{
-    DBUG_ENTER ("SerializeNumsAttribRec");
-
-    if (attr != NULL) {
-        SerializeNumsAttribRec (info, NUMS_NEXT (attr));
-
-        fprintf (INFO_SER_FILE (info), ", %d", NUMS_NUM (attr));
-    }
-
-    DBUG_VOID_RETURN;
-}
-
-void
-SerializeNumsAttrib (info *info, nums *attr, node *parent)
-{
-    DBUG_ENTER ("SerializeNumsAttrib");
-
-    if (attr == NULL) {
-        fprintf (INFO_SER_FILE (info), "NULL");
-    } else {
-        fprintf (INFO_SER_FILE (info), "CreateNums( %d ", CountNums (attr));
-
-        SerializeNumsAttribRec (info, attr);
-
-        fprintf (INFO_SER_FILE (info), ")");
-    }
-
-    DBUG_VOID_RETURN;
-}
-
-/** <!--******************************************************************-->
- *
- * @fn SerializeFileTypeAttrib
+ * @fn SATserializeFileType
  *
  * @brief generates code to de-serialize the given attribute
  *
@@ -448,9 +411,9 @@ SerializeNumsAttrib (info *info, nums *attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeFileTypeAttrib (info *info, file_type attr, node *parent)
+SATserializeFileType (info *info, file_type attr, node *parent)
 {
-    DBUG_ENTER ("SerializeFileTypeAttrib");
+    DBUG_ENTER ("SATserializeFileType");
 
     fprintf (INFO_SER_FILE (info), "%d", attr);
 
@@ -459,7 +422,7 @@ SerializeFileTypeAttrib (info *info, file_type attr, node *parent)
 
 /** <!--******************************************************************-->
  *
- * @fn SerializeLUTAttrib
+ * @fn SATserializeLUT
  *
  * @brief generates code to de-serialize the given attribute
  *
@@ -470,9 +433,9 @@ SerializeFileTypeAttrib (info *info, file_type attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeLUTAttrib (info *info, LUT_t attr, node *parent)
+SATserializeLUT (info *info, lut_t *attr, node *parent)
 {
-    DBUG_ENTER ("SerializeLUTAttrib");
+    DBUG_ENTER ("SATserializeLUT");
 
     fprintf (INFO_SER_FILE (info), "NULL");
 
@@ -481,7 +444,7 @@ SerializeLUTAttrib (info *info, LUT_t attr, node *parent)
 
 /** <!--******************************************************************-->
  *
- * @fn SerializeWithOpTypeAttrib
+ * @fn SATserializePrf
  *
  * @brief generates code to de-serialize the given attribute
  *
@@ -492,9 +455,9 @@ SerializeLUTAttrib (info *info, LUT_t attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeWithOpTypeAttrib (info *info, WithOpType attr, node *parent)
+SATserializePrf (info *info, prf attr, node *parent)
 {
-    DBUG_ENTER ("SerializeWithOpTypeAttrib");
+    DBUG_ENTER ("SATserializePrf");
 
     fprintf (INFO_SER_FILE (info), "%d", attr);
 
@@ -503,29 +466,7 @@ SerializeWithOpTypeAttrib (info *info, WithOpType attr, node *parent)
 
 /** <!--******************************************************************-->
  *
- * @fn SerializePrfAttrib
- *
- * @brief generates code to de-serialize the given attribute
- *
- * @param info   info structure of serialize traversal
- * @param attr   the attribute itself
- * @param parent the parent node
- *
- ***************************************************************************/
-
-void
-SerializePrfAttrib (info *info, prf attr, node *parent)
-{
-    DBUG_ENTER ("SerializePrfAttrib");
-
-    fprintf (INFO_SER_FILE (info), "%d", attr);
-
-    DBUG_VOID_RETURN;
-}
-
-/** <!--******************************************************************-->
- *
- * @fn SerializeMaskAttrib
+ * @fn SATserializeMask
  *
  * @brief generates code to de-serialize the given attribute
  *
@@ -537,9 +478,9 @@ SerializePrfAttrib (info *info, prf attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeMaskAttrib (info *info, int pos, long *attr, node *parent)
+SATserializeMask (info *info, int pos, long *attr, node *parent)
 {
-    DBUG_ENTER ("SerializeMaskAttrib");
+    DBUG_ENTER ("SATserializeMask");
 
     fprintf (INFO_SER_FILE (info), "NULL");
 
@@ -548,7 +489,7 @@ SerializeMaskAttrib (info *info, int pos, long *attr, node *parent)
 
 /** <!--******************************************************************-->
  *
- * @fn SerializeDepsAttrib
+ * @fn SATserializeDeps
  *
  * @brief generates code to de-serialize the given attribute
  *
@@ -559,9 +500,9 @@ SerializeMaskAttrib (info *info, int pos, long *attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeDepsAttrib (info *info, deps *attr, node *parent)
+SATserializeDeps (info *info, deps *attr, node *parent)
 {
-    DBUG_ENTER ("SerializeDepsAttrib");
+    DBUG_ENTER ("SATserializeDeps");
 
     fprintf (INFO_SER_FILE (info), "NULL");
 
@@ -570,7 +511,7 @@ SerializeDepsAttrib (info *info, deps *attr, node *parent)
 
 /** <!--******************************************************************-->
  *
- * @fn SerializeIdsAttrib
+ * @fn SATserializeStatusType
  *
  * @brief generates code to de-serialize the given attribute
  *
@@ -581,50 +522,9 @@ SerializeDepsAttrib (info *info, deps *attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeIdsAttrib (info *info, ids *attr, node *parent)
+SATserializeStatusType (info *info, statustype attr, node *parent)
 {
-    DBUG_ENTER ("SerializeIdsAttrib");
-
-    if (attr == NULL) {
-        fprintf (INFO_SER_FILE (info), "NULL ");
-    } else {
-        fprintf (INFO_SER_FILE (info), "CreateIds( \"%s\", ", IDS_NAME (attr));
-
-        if (IDS_MOD (attr) != NULL) {
-            fprintf (INFO_SER_FILE (info), "\"%s\", ", IDS_MOD (attr));
-        } else {
-            fprintf (INFO_SER_FILE (info), "NULL, ");
-        }
-
-        fprintf (INFO_SER_FILE (info), "%d, %d, ", IDS_STATUS (attr), IDS_ATTRIB (attr));
-
-        fprintf (INFO_SER_FILE (info), "%d, %d, ", IDS_REFCNT (attr),
-                 IDS_NAIVE_REFCNT (attr));
-
-        SerializeIdsAttrib (info, IDS_NEXT (attr), parent);
-
-        fprintf (INFO_SER_FILE (info), ")");
-    }
-
-    DBUG_VOID_RETURN;
-}
-
-/** <!--******************************************************************-->
- *
- * @fn SerializeStatusTypeAttrib
- *
- * @brief generates code to de-serialize the given attribute
- *
- * @param info   info structure of serialize traversal
- * @param attr   the attribute itself
- * @param parent the parent node
- *
- ***************************************************************************/
-
-void
-SerializeStatusTypeAttrib (info *info, statustype attr, node *parent)
-{
-    DBUG_ENTER ("SerializeStatusTypeAttrib");
+    DBUG_ENTER ("SATserializeStatusType");
 
     fprintf (INFO_SER_FILE (info), "%d", attr);
 
@@ -633,7 +533,7 @@ SerializeStatusTypeAttrib (info *info, statustype attr, node *parent)
 
 /** <!--******************************************************************-->
  *
- * @fn SerializeNodeListAttrib
+ * @fn SATserializeNodeList
  *
  * @brief generates code to de-serialize the given attribute
  *
@@ -644,9 +544,9 @@ SerializeStatusTypeAttrib (info *info, statustype attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeNodeListAttrib (info *info, nodelist *attr, node *parent)
+SATserializeNodeList (info *info, nodelist *attr, node *parent)
 {
-    DBUG_ENTER ("SerializeNodeListAttrib");
+    DBUG_ENTER ("SATserializeNodeList");
 
     fprintf (INFO_SER_FILE (info), "NULL");
 
@@ -655,7 +555,7 @@ SerializeNodeListAttrib (info *info, nodelist *attr, node *parent)
 
 /** <!--******************************************************************-->
  *
- * @fn SerializeSharedNodeListAttrib
+ * @fn SATserializeSharedNodeList
  *
  * @brief generates code to de-serialize the given attribute
  *
@@ -666,9 +566,9 @@ SerializeNodeListAttrib (info *info, nodelist *attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeSharedNodeListAttrib (info *info, nodelist *attr, node *parent)
+SATserializeSharedNodeList (info *info, nodelist *attr, node *parent)
 {
-    DBUG_ENTER ("SerializeSharedNodeListAttrib");
+    DBUG_ENTER ("SATserializeSharedNodeList");
 
     fprintf (INFO_SER_FILE (info), "NULL");
 
@@ -677,7 +577,7 @@ SerializeSharedNodeListAttrib (info *info, nodelist *attr, node *parent)
 
 /** <!--******************************************************************-->
  *
- * @fn SerializePragmaLinkAttrib
+ * @fn SATserializePragmaLink
  *
  * @brief generates code to de-serialize the given attribute
  *
@@ -688,9 +588,9 @@ SerializeSharedNodeListAttrib (info *info, nodelist *attr, node *parent)
  ***************************************************************************/
 
 void
-SerializePragmaLinkAttrib (info *info, node *attr, node *parent)
+SATserializePragmaLink (info *info, node *attr, node *parent)
 {
-    DBUG_ENTER ("SerializePragmaLinkAttrib");
+    DBUG_ENTER ("SATserializePragmaLink");
 
     fprintf (INFO_SER_FILE (info), "NULL");
 
@@ -699,7 +599,7 @@ SerializePragmaLinkAttrib (info *info, node *attr, node *parent)
 
 /** <!--******************************************************************-->
  *
- * @fn SerializeDFMMaskAttrib
+ * @fn SATserializeDFMask
  *
  * @brief generates code to de-serialize the given attribute
  *
@@ -710,9 +610,9 @@ SerializePragmaLinkAttrib (info *info, node *attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeDFMMaskAttrib (info *info, DFMmask_t attr, node *parent)
+SATserializeDFMask (info *info, dfmask_t *attr, node *parent)
 {
-    DBUG_ENTER ("SerializeDFMMaskAttrib");
+    DBUG_ENTER ("SATserializeDFMask");
 
     fprintf (INFO_SER_FILE (info), "NULL");
 
@@ -721,7 +621,7 @@ SerializeDFMMaskAttrib (info *info, DFMmask_t attr, node *parent)
 
 /** <!--******************************************************************-->
  *
- * @fn SerializeDFMMaskBaseAttrib
+ * @fn SATserializeDFMaskBase
  *
  * @brief generates code to de-serialize the given attribute
  *
@@ -732,9 +632,9 @@ SerializeDFMMaskAttrib (info *info, DFMmask_t attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeDFMMaskBaseAttrib (info *info, DFMmask_base_t attr, node *parent)
+SATserializeDFMaskBase (info *info, dfmask_base_t *attr, node *parent)
 {
-    DBUG_ENTER ("SerializeDFMMaskBaseAttrib");
+    DBUG_ENTER ("SATserializeDFMaskBase");
 
     fprintf (INFO_SER_FILE (info), "NULL");
 
@@ -743,7 +643,7 @@ SerializeDFMMaskBaseAttrib (info *info, DFMmask_base_t attr, node *parent)
 
 /** <!--******************************************************************-->
  *
- * @fn SerializeDFMFoldMaskAttrib
+ * @fn SATserializeNewType
  *
  * @brief generates code to de-serialize the given attribute
  *
@@ -754,35 +654,13 @@ SerializeDFMMaskBaseAttrib (info *info, DFMmask_base_t attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeDFMFoldMaskAttrib (info *info, DFMfoldmask_t *attr, node *parent)
+SATserializeNewType (info *info, ntype *attr, node *parent)
 {
-    DBUG_ENTER ("SerializeDFMFoldMaskAttrib");
-
-    fprintf (INFO_SER_FILE (info), "NULL");
-
-    DBUG_VOID_RETURN;
-}
-
-/** <!--******************************************************************-->
- *
- * @fn SerializeNewTypeAttrib
- *
- * @brief generates code to de-serialize the given attribute
- *
- * @param info   info structure of serialize traversal
- * @param attr   the attribute itself
- * @param parent the parent node
- *
- ***************************************************************************/
-
-void
-SerializeNewTypeAttrib (info *info, ntype *attr, node *parent)
-{
-    DBUG_ENTER ("SerializeNewTypeAttrib");
+    DBUG_ENTER ("SATserializeNewType");
 
     DBUG_PRINT ("SET", ("Starting traversal for ntype attribute"));
 
-    TYSerializeType (INFO_SER_FILE (info), attr);
+    TYserializeType (INFO_SER_FILE (info), attr);
 
     DBUG_PRINT ("SET", ("Finished traversal for ntype attribute"));
 
@@ -791,7 +669,7 @@ SerializeNewTypeAttrib (info *info, ntype *attr, node *parent)
 
 /** <!--******************************************************************-->
  *
- * @fn SerializeArgTabAttrib
+ * @fn SATserializeArgTab
  *
  * @brief generates code to de-serialize the given attribute
  *
@@ -802,9 +680,9 @@ SerializeNewTypeAttrib (info *info, ntype *attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeArgTabAttrib (info *info, argtab_t *attr, node *parent)
+SATserializeArgTab (info *info, argtab_t *attr, node *parent)
 {
-    DBUG_ENTER ("SerializeArgTabAttrib");
+    DBUG_ENTER ("SATserializeArgTab");
 
     fprintf (INFO_SER_FILE (info), "NULL");
 
@@ -813,7 +691,7 @@ SerializeArgTabAttrib (info *info, argtab_t *attr, node *parent)
 
 /** <!--******************************************************************-->
  *
- * @fn SerializeIndexPointerAttrib
+ * @fn SATserializeIndexPointer
  *
  * @brief generates code to de-serialize the given attribute
  *
@@ -824,9 +702,9 @@ SerializeArgTabAttrib (info *info, argtab_t *attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeIndexPointerAttrib (info *info, index_info *attr, node *parent)
+SATserializeIndexPointer (info *info, index_info *attr, node *parent)
 {
-    DBUG_ENTER ("SerializeIndexPointerAttrib");
+    DBUG_ENTER ("SATserializeIndexPointer");
 
     fprintf (INFO_SER_FILE (info), "NULL");
 
@@ -835,7 +713,7 @@ SerializeIndexPointerAttrib (info *info, index_info *attr, node *parent)
 
 /** <!--******************************************************************-->
  *
- * @fn SerializeShapeAttrib
+ * @fn SATserializeShape
  *
  * @brief generates code to de-serialize the given attribute
  *
@@ -846,18 +724,18 @@ SerializeIndexPointerAttrib (info *info, index_info *attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeShapeAttrib (info *info, shape *attr, node *parent)
+SATserializeShape (info *info, shape *attr, node *parent)
 {
-    DBUG_ENTER ("SerializeShapeAttrib");
+    DBUG_ENTER ("SATserializeShape");
 
-    SHSerializeShape (INFO_SER_FILE (info), attr);
+    SHserializeShape (INFO_SER_FILE (info), attr);
 
     DBUG_VOID_RETURN;
 }
 
 /** <!--******************************************************************-->
  *
- * @fn SerializeSimpleTypeAttrib
+ * @fn SATserializeSimpleType
  *
  * @brief generates code to de-serialize the given attribute
  *
@@ -868,9 +746,9 @@ SerializeShapeAttrib (info *info, shape *attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeSimpleTypeAttrib (info *info, simpletype attr, node *parent)
+SATserializeSimpleType (info *info, simpletype attr, node *parent)
 {
-    DBUG_ENTER ("SerializeSimpleTypeAttrib");
+    DBUG_ENTER ("SATserializeSimpleType");
 
     fprintf (INFO_SER_FILE (info), "%d", attr);
 
@@ -879,7 +757,7 @@ SerializeSimpleTypeAttrib (info *info, simpletype attr, node *parent)
 
 /** <!--******************************************************************-->
  *
- * @fn SerializeConstVecPointerAttrib
+ * @fn SATserializeConstVecPointer
  *
  * @brief generates code to de-serialize the given attribute
  *
@@ -890,9 +768,9 @@ SerializeSimpleTypeAttrib (info *info, simpletype attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeConstVecPointerAttrib (info *info, void *attr, node *parent)
+SATserializeConstVecPointer (info *info, void *attr, node *parent)
 {
-    DBUG_ENTER ("SerializeConstVecPointerAttrib");
+    DBUG_ENTER ("SATserializeConstVecPointer");
 
     DBUG_ASSERT (((NODE_TYPE (parent) == N_array) || (NODE_TYPE (parent) == N_id)),
                  "Found ConstVecPointer as attribute of a node different to N_array"
@@ -917,7 +795,7 @@ SerializeConstVecPointerAttrib (info *info, void *attr, node *parent)
 
         vect = (char *)attr;
 
-        size = basetype_size[vectype] * veclen;
+        size = global.basetype_size[vectype] * veclen;
 
         fprintf (INFO_SER_FILE (info), "MemCopy( %d, \"", size);
 
@@ -933,7 +811,7 @@ SerializeConstVecPointerAttrib (info *info, void *attr, node *parent)
 
 /** <!--******************************************************************-->
  *
- * @fn SerializeUseFlagAttrib
+ * @fn SATserializeUseFlag
  *
  * @brief generates code to de-serialize the given attribute
  *
@@ -944,9 +822,9 @@ SerializeConstVecPointerAttrib (info *info, void *attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeUseFlagAttrib (info *info, useflag attr, node *parent)
+SATserializeUseFlag (info *info, useflag attr, node *parent)
 {
-    DBUG_ENTER ("SerializeUseFlagAttrib");
+    DBUG_ENTER ("SATserializeUseFlag");
 
     fprintf (INFO_SER_FILE (info), "%d", attr);
 
@@ -955,7 +833,7 @@ SerializeUseFlagAttrib (info *info, useflag attr, node *parent)
 
 /** <!--******************************************************************-->
  *
- * @fn SerializeAccessInfoAttrib
+ * @fn SATserializeAccessInfo
  *
  * @brief generates code to de-serialize the given attribute
  *
@@ -966,9 +844,9 @@ SerializeUseFlagAttrib (info *info, useflag attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeAccessInfoAttrib (info *info, access_info_t *attr, node *parent)
+SATserializeAccessInfo (info *info, access_info_t *attr, node *parent)
 {
-    DBUG_ENTER ("SerializeAccessInfoAttrib");
+    DBUG_ENTER ("SATserializeAccessInfo");
 
     fprintf (INFO_SER_FILE (info), "NULL");
 
@@ -977,7 +855,7 @@ SerializeAccessInfoAttrib (info *info, access_info_t *attr, node *parent)
 
 /** <!--******************************************************************-->
  *
- * @fn SerializeShpSegAttrib
+ * @fn SATserializeShpSeg
  *
  * @brief generates code to de-serialize the given attribute
  *
@@ -988,9 +866,9 @@ SerializeAccessInfoAttrib (info *info, access_info_t *attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeShpSegAttrib (info *info, shpseg *attr, node *parent)
+SATserializeShpSeg (info *info, shpseg *attr, node *parent)
 {
-    DBUG_ENTER ("SerializeShpSegAttrib");
+    DBUG_ENTER ("SATserializeShpSeg");
 
     fprintf (INFO_SER_FILE (info), "NULL");
 
@@ -999,7 +877,7 @@ SerializeShpSegAttrib (info *info, shpseg *attr, node *parent)
 
 /** <!--******************************************************************-->
  *
- * @fn SerializeIntegerPointerAttrib
+ * @fn SATserializeIntegerPointer
  *
  * @brief generates code to de-serialize the given attribute
  *
@@ -1010,9 +888,9 @@ SerializeShpSegAttrib (info *info, shpseg *attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeIntegerPointerAttrib (info *info, int *attr, node *parent)
+SATserializeIntegerPointer (info *info, int *attr, node *parent)
 {
-    DBUG_ENTER ("SerializeIntegerPointerAttrib");
+    DBUG_ENTER ("SATserializeIntegerPointer");
 
     fprintf (INFO_SER_FILE (info), "NULL");
 
@@ -1021,7 +899,7 @@ SerializeIntegerPointerAttrib (info *info, int *attr, node *parent)
 
 /** <!--******************************************************************-->
  *
- * @fn SerializeIntegerPointerArrayAttrib
+ * @fn SATserializeIntegerPointerArray
  *
  * @brief generates code to de-serialize the given attribute
  *
@@ -1033,9 +911,9 @@ SerializeIntegerPointerAttrib (info *info, int *attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeIntegerPointerArrayAttrib (info *info, int pos, int *attr, node *parent)
+SATserializeIntegerPointerArray (info *info, int pos, int *attr, node *parent)
 {
-    DBUG_ENTER ("SerializeIntegerPointerArrayAttrib");
+    DBUG_ENTER ("SATserializeIntegerPointerArray");
 
     fprintf (INFO_SER_FILE (info), "NULL");
 
@@ -1044,7 +922,7 @@ SerializeIntegerPointerArrayAttrib (info *info, int pos, int *attr, node *parent
 
 /** <!--******************************************************************-->
  *
- * @fn SerializeSchedulingAttrib
+ * @fn SATserializeScheduling
  *
  * @brief generates code to de-serialize the given attribute
  *
@@ -1055,9 +933,9 @@ SerializeIntegerPointerArrayAttrib (info *info, int pos, int *attr, node *parent
  ***************************************************************************/
 
 void
-SerializeSchedulingAttrib (info *info, SCHsched_t attr, node *parent)
+SATserializeScheduling (info *info, sched_t *attr, node *parent)
 {
-    DBUG_ENTER ("SerializeSchedulingAttrib");
+    DBUG_ENTER ("SATserializeScheduling");
 
     fprintf (INFO_SER_FILE (info), "NULL");
 
@@ -1066,7 +944,7 @@ SerializeSchedulingAttrib (info *info, SCHsched_t attr, node *parent)
 
 /** <!--******************************************************************-->
  *
- * @fn SerializeTaskSelAttrib
+ * @fn SATserializeTaskSel
  *
  * @brief generates code to de-serialize the given attribute
  *
@@ -1077,9 +955,9 @@ SerializeSchedulingAttrib (info *info, SCHsched_t attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeTaskSelAttrib (info *info, SCHtasksel_t attr, node *parent)
+SATserializeTaskSel (info *info, tasksel_t *attr, node *parent)
 {
-    DBUG_ENTER ("SerializeTaskSelAttrib");
+    DBUG_ENTER ("SATserializeTaskSel");
 
     fprintf (INFO_SER_FILE (info), "NULL");
 
@@ -1088,7 +966,7 @@ SerializeTaskSelAttrib (info *info, SCHtasksel_t attr, node *parent)
 
 /** <!--******************************************************************-->
  *
- * @fn SerializeNodePointerAttrib
+ * @fn SATserializeNodePointer
  *
  * @brief generates code to de-serialize the given attribute
  *
@@ -1099,9 +977,9 @@ SerializeTaskSelAttrib (info *info, SCHtasksel_t attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeNodePointerAttrib (info *info, node **attr, node *parent)
+SATserializeNodePointer (info *info, node **attr, node *parent)
 {
-    DBUG_ENTER ("SerializeNodePointerAttrib");
+    DBUG_ENTER ("SATserializeNodePointer");
 
     fprintf (INFO_SER_FILE (info), "NULL");
 
@@ -1110,7 +988,7 @@ SerializeNodePointerAttrib (info *info, node **attr, node *parent)
 
 /** <!--******************************************************************-->
  *
- * @fn SerializeSSAPhiAttrib
+ * @fn SATserializeSSAPhi
  *
  * @brief generates code to de-serialize the given attribute
  *
@@ -1121,9 +999,9 @@ SerializeNodePointerAttrib (info *info, node **attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeSSAPhiAttrib (info *info, ssaphit_t attr, node *parent)
+SATserializeSSAPhi (info *info, ssaphit_t attr, node *parent)
 {
-    DBUG_ENTER ("SerializeSSAPhiAttrib");
+    DBUG_ENTER ("SATserializeSSAPhi");
 
     fprintf (INFO_SER_FILE (info), "%d", attr);
 
@@ -1132,7 +1010,7 @@ SerializeSSAPhiAttrib (info *info, ssaphit_t attr, node *parent)
 
 /** <!--******************************************************************-->
  *
- * @fn SerializeBitFieldAttrib
+ * @fn SATserializeBitField
  *
  * @brief generates code to de-serialize the given attribute
  *
@@ -1143,9 +1021,9 @@ SerializeSSAPhiAttrib (info *info, ssaphit_t attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeBitFieldAttrib (info *info, int attr, node *parent)
+SATserializeBitField (info *info, int attr, node *parent)
 {
-    DBUG_ENTER ("SerializeBitFieldAttrib");
+    DBUG_ENTER ("SATserializeBitField");
 
     fprintf (INFO_SER_FILE (info), "%d", attr);
 
@@ -1154,7 +1032,7 @@ SerializeBitFieldAttrib (info *info, int attr, node *parent)
 
 /** <!--******************************************************************-->
  *
- * @fn SerializeConstantAttrib
+ * @fn SATserializeConstant
  *
  * @brief generates code to de-serialize the given attribute
  *
@@ -1165,18 +1043,18 @@ SerializeBitFieldAttrib (info *info, int attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeConstantAttrib (info *info, constant *attr, node *parent)
+SATserializeConstant (info *info, constant *attr, node *parent)
 {
-    DBUG_ENTER ("SerializeConstantAttrib");
+    DBUG_ENTER ("SATserializeConstant");
 
-    COSerializeConstant (INFO_SER_FILE (info), attr);
+    COserializeConstant (INFO_SER_FILE (info), attr);
 
     DBUG_VOID_RETURN;
 }
 
 /** <!--******************************************************************-->
  *
- * @fn SerializeMTExecModeAttrib
+ * @fn SATserializeMTExecMode
  *
  * @brief generates code to de-serialize the given attribute
  *
@@ -1187,9 +1065,9 @@ SerializeConstantAttrib (info *info, constant *attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeMTExecModeAttrib (info *info, mtexecmode_t attr, node *parent)
+SATserializeMTExecMode (info *info, mtexecmode_t attr, node *parent)
 {
-    DBUG_ENTER ("SerializeMTExecModeAttrib");
+    DBUG_ENTER ("SATserializeMTExecMode");
 
     fprintf (INFO_SER_FILE (info), "%d", attr);
 
@@ -1198,7 +1076,7 @@ SerializeMTExecModeAttrib (info *info, mtexecmode_t attr, node *parent)
 
 /** <!--******************************************************************-->
  *
- * @fn SerializeRCCounterAttrib
+ * @fn SATserializeRCCounter
  *
  * @brief generates code to de-serialize the given attribute
  *
@@ -1209,9 +1087,9 @@ SerializeMTExecModeAttrib (info *info, mtexecmode_t attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeRCCounterAttrib (info *info, rc_counter *attr, node *parent)
+SATserializeRCCounter (info *info, rc_counter *attr, node *parent)
 {
-    DBUG_ENTER ("SerializeMTExecModeAttrib");
+    DBUG_ENTER ("SATserializeMTExecMode");
 
     fprintf (INFO_SER_FILE (info), "NULL");
 

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2004/11/26 21:18:50  sah
+ * pour Bodo *<8-)
+ *
  * Revision 1.2  2004/11/24 00:11:56  sah
  * COMPILES
  *
@@ -343,7 +346,7 @@ GenerateSerFunName (stentrytype_t type, node *node)
         break;
     case SET_objdef:
         snprintf (result, MAX_FUN_NAME_LEN, "SOD_%s_%s_", OBJDEF_MOD (node),
-                  AVIS_NAME (OBJDEF_AVIS (node)));
+                  OBJDEF_NAME (node));
         break;
     default:
         DBUG_ASSERT (0, "Unexpected symboltype found!");
@@ -526,7 +529,7 @@ SerializeObjdef (node *objdef, info *info)
         vis = SVT_local;
     }
 
-    STadd (AVIS_NAME (OBJDEF_AVIS (objdef)), vis, OBJDEF_SYMBOLNAME (objdef), SET_objdef,
+    STadd (OBJDEF_NAME (objdef), vis, OBJDEF_SYMBOLNAME (objdef), SET_objdef,
            INFO_SER_TABLE (info));
 
     GenerateSerFunHead (objdef, SET_objdef, info);
@@ -647,7 +650,7 @@ SERObjdef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SERObjdef");
 
-    DBUG_PRINT ("SER", ("Serializing objdef %s", AVIS_NAME (OBJDEF_AVIS (arg_node))));
+    DBUG_PRINT ("SER", ("Serializing objdef %s", OBJDEF_NAME (arg_node)));
 
     /*
      * only serialize objdefs that are not available in another

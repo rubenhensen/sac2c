@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.35  2004/11/26 21:16:09  sah
+# pour Bodo *<8-)
+#
 # Revision 3.34  2004/11/25 19:30:50  ktr
 # removed ReuseWithArrays.o, PatchWith.o
 #
@@ -105,7 +108,7 @@ SAC2C_OBJS := wlpragma_funs.o precompile.o compile.o wltransform.o \
               gen_startup_code.o icm2c.o \
               icm2c_std.o icm2c_prf.o icm2c_wl.o icm2c_mt.o icm2c_sched.o \
               icm2c_error.o icm2c_basic.o icm2c_utils.o markmemvals.o \
-              objectprecompile.o
+              objectprecompile.o functionprecompile.o
 
 
 all: $(SAC2C_OBJS) BEtest

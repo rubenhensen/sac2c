@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/11/26 21:18:50  sah
+ * pour Bodo *<8-)
+ *
  * Revision 1.2  2004/11/25 22:16:31  sah
  * COMPILES
  *
@@ -551,20 +554,19 @@ DSids (node *arg_node, info *arg_info)
      * if there is no vardec for this node, it must have been
      * linked to an arg prior to deserialization!
      */
-    if (IDS_VARDEC (arg_node) == NULL) {
-        IDS_VARDEC (arg_node) = LookUpArg (IDS_NAME (arg_node), INFO_DS_ARGS (arg_info));
+    if (IDS_DECL (arg_node) == NULL) {
+        IDS_DECL (arg_node) = LookUpArg (IDS_NAME (arg_node), INFO_DS_ARGS (arg_info));
 
-        DBUG_ASSERT ((IDS_VARDEC (arg_node) != NULL),
-                     "Cannot find vardec or arg for ids!");
+        DBUG_ASSERT ((IDS_DECL (arg_node) != NULL), "Cannot find vardec or arg for ids!");
 
         /* now update the avis link of the ids node to the args avis */
         if (IDS_AVIS (arg_node) == NULL) {
-            IDS_AVIS (arg_node) = ARG_AVIS (IDS_VARDEC (arg_node));
+            IDS_AVIS (arg_node) = ARG_AVIS (IDS_DECL (arg_node));
         }
     }
 
     /* Finally make sure, that the backref avis->vardec is correct */
-    DBUG_ASSERT ((AVIS_DECL (DECL_AVIS (IDS_VARDEC (arg_node))) == IDS_VARDEC (arg_node)),
+    DBUG_ASSERT ((AVIS_DECL (DECL_AVIS (IDS_DECL (arg_node))) == IDS_DECL (arg_node)),
                  "backref from avis to vardec is wrong!");
 
     DBUG_RETURN (arg_node);
