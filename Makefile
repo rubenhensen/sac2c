@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.77  1998/04/29 17:12:43  dkr
+# added compile/wltransform.o
+#
 # Revision 1.76  1998/04/28 15:43:07  srs
 # added typecheck_WL.o to TYPECHECK
 #
@@ -294,9 +297,11 @@ OBJECTS= src/objects/objinit.o src/objects/objects.o \
          src/objects/uniquecheck.o src/objects/rmvoidfun.o
 REFCOUNT= src/refcount/refcount.o
 CONCURRENT= src/concurrent/spmdregions.o
-COMPILE= src/compile/compile.o src/compile/icm2c.o src/compile/precompile.o \
-         src/compile/gen_startup_code.o src/compile/wlpragma_funs.o \
-         src/compile/Old2NewWith.o src/compile/icm2c_std.o
+COMPILE=  src/compile/wltransform.o src/compile/wlpragma_funs.o \
+          src/compile/precompile.o \
+          src/compile/compile.o src/compile/gen_startup_code.o \
+          src/compile/icm2c.o src/compile/icm2c_std.o \
+          src/compile/Old2NewWith.o
 
 OBJ=$(GLOBAL) $(SCANP) $(PRINT) $(FLATTEN) $(TYPECHECK) $(OPTIMIZE) \
     $(MODULES) $(OBJECTS) $(REFCOUNT) $(COMPILE) $(PSIOPT) $(CONCURRENT)
