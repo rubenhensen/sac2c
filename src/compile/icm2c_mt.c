@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  1998/05/15 09:20:20  cg
+ * first complete version
+ *
  * Revision 1.2  1998/05/13 14:48:03  cg
  * added ICM MT_SYNC_ONEFOLD
  *
@@ -27,6 +30,7 @@
 
 #include <malloc.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "icm2c_basic.h"
 
@@ -35,6 +39,55 @@
 #include "convert.h"
 #include "globals.h"
 #include "print.h"
+#include "scnprs.h" /* for big magic access to syntax tree */
+#include "traverse.h"
+
+/******************************************************************************
+ *
+ * global variable:  int barrier_id
+ *
+ * description:
+ *
+ *   An unambigious barrier identification is required because of the use of
+ *   labels in the barrier implementation and the fact that several
+ *   synchronisation blocks may be found within a single spmd block which
+ *   means that several synchronisation barriers are situated in one function.
+ *
+ ******************************************************************************/
+
+static int barrier_id = 0;
+
+/******************************************************************************
+ *
+ * function:
+ *   node *SearchFoldImplementation(char *foldop)
+ *
+ * description:
+ *
+ *   This function traverses the fundef chain of the syntax tree in order to
+ *   find the implementation of the given fold operation. A pointer to the
+ *   respective code block is returned.
+ *
+ ******************************************************************************/
+
+static node *
+SearchFoldImplementation (char *foldop)
+{
+    node *fundef;
+
+    DBUG_ENTER ("SearchFoldImplementation");
+
+    fundef = MODUL_FUNS (syntax_tree);
+
+    while ((fundef != NULL) && (0 != strcmp (FUNDEF_NAME (fundef), foldop))) {
+        fundef = FUNDEF_NEXT (fundef);
+    }
+
+    DBUG_ASSERT ((fundef != NULL),
+                 ("Unknown fold operation specified in sunchronisation ICM"));
+
+    DBUG_RETURN (FUNDEF_BODY (fundef));
+}
 
 /******************************************************************************
  *
@@ -50,7 +103,7 @@
  *   This ICM implements the protoype of an spmd function. The first parameter
  *   specifies the name of this function while the seconf one specifies the
  *   function where the respective piece of code originally has been situated.
- *   Tags may be from the set in | out | in_rc | out_rc | inout.
+ *   Tags may be from the set in | out | in_rc | out_rc | inout_rc.
  *
  ******************************************************************************/
 
@@ -66,16 +119,29 @@ ICMCompileMT_SPMD_FUN_DEC (char *name, char *from, int narg, char **vararg)
 #include "icm_trace.c"
 #undef MT_SPMD_FUN_DEC
 
+    fprintf (outfile, "#if SAC_DO_MULTITHREADED\n\n");
+
     fprintf (outfile, "#undef SAC_MT_CURRENT_FUN()\n");
     fprintf (outfile, "#define SAC_MT_CURRENT_FUN() %s\n", from);
+
+    fprintf (outfile, "\n");
+
+    fprintf (outfile, "#undef SAC_MT_CURRENT_SPMD()\n");
+    fprintf (outfile, "#define SAC_MT_CURRENT_SPMD() %s\n", name);
 
     fprintf (outfile, "\n");
 
     fprintf (outfile, "unsigned int %s SAC_MT_SPMD_FUN_REAL_PARAM_LIST()\n", name);
     fprintf (outfile, "{\n");
 
-    for (i = 0; i < narg; i += 3) {
-        fprintf (outfile, " SAC_MT_SPMD_PARAM_%s( %s, %s)\n", vararg[i], vararg[i + 1],
+    indent++;
+
+    INDENT;
+    fprintf (outfile, "int SAC_dummy_refcount=10;\n");
+
+    for (i = 0; i < 3 * narg; i += 3) {
+        INDENT;
+        fprintf (outfile, "SAC_MT_SPMD_PARAM_%s( %s, %s)\n", vararg[i], vararg[i + 1],
                  vararg[i + 2]);
     }
 
@@ -109,6 +175,41 @@ ICMCompileMT_SPMD_FUN_RET (int narg, char **vararg)
 #include "icm_comment.c"
 #include "icm_trace.c"
 #undef MT_SPMD_FUN_RET
+
+    for (i = 0; i < 2 * narg; i += 2) {
+        INDENT;
+        fprintf (outfile, "SAC_MT_SPMD_RET_%s(%s);\n", vararg[i], vararg[i + 1]);
+    }
+
+    INDENT;
+    fprintf (outfile, "SAC_MT_SPMD_FUN_REAL_RETURN();\n"),
+
+      indent--;
+    INDENT;
+    fprintf (outfile, "}\n");
+
+    INDENT;
+    fprintf (outfile, "{\n");
+
+    indent++;
+
+    INDENT;
+    fprintf (outfile, "label_worker_continue_%d:\n", barrier_id);
+
+    INDENT;
+    fprintf (outfile, "return(SAC_MT_worker_flag);\n");
+
+    indent--;
+    INDENT;
+    fprintf (outfile, "}\n");
+
+    indent--;
+    INDENT;
+    fprintf (outfile, "}\n");
+
+    fprintf (outfile, "\n");
+
+    fprintf (outfile, "#endif  /* SAC_DO_MULTITHREADED */\n\n");
 
     DBUG_VOID_RETURN;
 }
@@ -147,6 +248,20 @@ ICMCompileMT_START_SYNCBLOCK (int narg, char **vararg)
 #include "icm_trace.c"
 #undef MT_START_SYNCBLOCK
 
+    barrier_id++;
+
+    INDENT;
+    fprintf (outfile, "{\n");
+    indent++;
+
+    for (i = 0; i < 3 * narg; i += 3) {
+        if (0 == strcmp (vararg[i], "in_rc")) {
+            INDENT;
+            fprintf (outfile, "int SAC_ND_A_RC(%s) = &SAC_dummy_refcount;\n",
+                     vararg[i + 2]);
+        }
+    }
+
     DBUG_VOID_RETURN;
 }
 
@@ -175,8 +290,6 @@ ICMCompileMT_START_SYNCBLOCK (int narg, char **vararg)
 void
 ICMCompileMT_SYNC_FOLD (int narg, char **vararg)
 {
-    int i;
-
     DBUG_ENTER ("ICMCompileMT_SYNC_FOLD");
 
 #define MT_SYNC_FOLD
@@ -190,7 +303,8 @@ ICMCompileMT_SYNC_FOLD (int narg, char **vararg)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileMT_SYNC_ONEFOLD(int narg, char **vararg)
+ *   void ICMCompileMT_SYNC_ONEFOLD(char *foldtype, char *accu_var,
+ *                                  char *tmp_var, char *foldop)
  *
  * description:
  *   implements the compilation of the following ICM:
@@ -211,12 +325,93 @@ ICMCompileMT_SYNC_FOLD (int narg, char **vararg)
 void
 ICMCompileMT_SYNC_ONEFOLD (char *foldtype, char *accu_var, char *tmp_var, char *foldop)
 {
+    node *fold_code;
+
     DBUG_ENTER ("ICMCompileMT_SYNC_ONEFOLD");
 
 #define MT_SYNC_ONEFOLD
 #include "icm_comment.c"
 #include "icm_trace.c"
 #undef MT_SYNC_ONEFOLD
+
+    fold_code = SearchFoldImplementation (foldop);
+
+    INDENT;
+    fprintf (outfile, "MT_SYNC_ONEFOLD_1( %s, %s, %s, %d)\n", foldtype, accu_var, tmp_var,
+             barrier_id);
+
+    Trav (fold_code, NULL);
+
+    INDENT;
+    fprintf (outfile, "MT_SYNC_ONEFOLD_2( %s, %s, %s, %d)\n", foldtype, accu_var, tmp_var,
+             barrier_id);
+
+    Trav (fold_code, NULL);
+
+    INDENT;
+    fprintf (outfile, "MT_SYNC_ONEFOLD_3( %s, %s, %s, %d)\n", foldtype, accu_var, tmp_var,
+             barrier_id);
+
+    indent--;
+
+    INDENT;
+    fprintf (outfile, "}\n");
+
+    fprintf (outfile, "\n");
+
+    INDENT;
+    fprintf (outfile, "{\n");
+
+    indent++;
+
+    INDENT;
+    fprintf (outfile, "label_master_continue_%d:\n", barrier_id);
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileMT_SYNC_NONFOLD( )
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   MT_SYNC_NONFOLD( )
+ *
+ *   This ICM implements barrier synchronisation for synchronisation blocks
+ *   that contain exclusively modarray/genarray with-loops.
+ *
+ ******************************************************************************/
+
+void
+ICMCompileMT_SYNC_NONFOLD ()
+{
+    DBUG_ENTER ("ICMCompileMT_SYNC_NONFOLD");
+
+#define MT_SYNC_NONFOLD
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef MT_SYNC_NONFOLD
+
+    INDENT;
+    fprintf (outfile, "MT_SYNC_NONFOLD_1(%d)\n", barrier_id);
+
+    indent--;
+
+    INDENT;
+    fprintf (outfile, "}\n");
+
+    fprintf (outfile, "\n");
+
+    INDENT;
+    fprintf (outfile, "{\n");
+
+    indent++;
+
+    INDENT;
+    fprintf (outfile, "label_master_continue_%d:\n", barrier_id);
 
     DBUG_VOID_RETURN;
 }
@@ -246,14 +441,49 @@ ICMCompileMT_SYNC_ONEFOLD (char *foldtype, char *accu_var, char *tmp_var, char *
 void
 ICMCompileMT_SYNC_FOLD_NONFOLD (int narg, char **vararg)
 {
-    int i;
-
     DBUG_ENTER ("ICMCompileMT_SYNC_FOLD_NONFOLD");
 
 #define MT_SYNC_FOLD_NONFOLD
 #include "icm_comment.c"
 #include "icm_trace.c"
 #undef MT_SYNC_FOLD_NONFOLD
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileMT_SYNC_ONEFOLD_NONFOLD(char *foldtype, char *accu_var,
+ *                                          char *tmp_var, char *foldop)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   MT_SYNC_ONEFOLD_NONFOLD( foldtype, accu_var, tmp_var, foldop)
+ *
+ *   This ICM implements barrier synchronisation for synchronisation blocks
+ *   that contain exactly one fold with-loop and additionally an arbitrary
+ *   number of modarray/genarray with-loops.
+ *
+ *   The fold with-loop is described by 4 ICM arguments,
+ *   specifying the type of the fold result, the name of the accumulator
+ *   variable, the name of the accumulated variable, and the fold operation
+ *   itself. The type may be either one of the scalar data types provided
+ *   by SAC or one of the specifiers 'array' or 'hidden'.
+ *
+ ******************************************************************************/
+
+void
+ICMCompileMT_SYNC_ONEFOLD_NONFOLD (char *foldtype, char *accu_var, char *tmp_var,
+                                   char *foldop)
+{
+    DBUG_ENTER ("ICMCompileMT_SYNC_ONEFOLD_NONFOLD");
+
+#define MT_SYNC_ONEFOLD_NONFOLD
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef MT_SYNC_ONEFOLD_NONFOLD
 
     DBUG_VOID_RETURN;
 }
@@ -279,7 +509,7 @@ ICMCompileMT_SYNC_FOLD_NONFOLD (int narg, char **vararg)
 void
 ICMCompileMT_CONTINUE (int narg, char **vararg)
 {
-    int i;
+    int i, j;
 
     DBUG_ENTER ("ICMCompileMT_CONTINUE");
 
@@ -287,6 +517,42 @@ ICMCompileMT_CONTINUE (int narg, char **vararg)
 #include "icm_comment.c"
 #include "icm_trace.c"
 #undef MT_CONTINUE
+
+    INDENT;
+    fprintf (outfile, "SAC_MT_START_WORKERS()\n");
+
+    INDENT;
+    fprintf (outfile, "goto label_continue_%d;\n", barrier_id);
+
+    indent--;
+    INDENT;
+    fprintf (outfile, "}\n");
+
+    INDENT;
+    fprintf (outfile, "{\n");
+
+    indent++;
+
+    INDENT;
+    fprintf (outfile, "label_worker_continue_%d:\n", barrier_id);
+
+    INDENT;
+    fprintf (outfile, "SAC_MT_WORKER_WAIT()\n");
+
+    for (i = 0, j = 1; i < 2 * narg; i += 2, j++) {
+        INDENT;
+        fprintf (outfile, "%s = SAC_MT_GET_BARRIER_RESULT(0, %d, %s);\n", vararg[i + 1],
+                 j, vararg[i]);
+    }
+
+    indent--;
+    INDENT;
+    fprintf (outfile, "}\n");
+
+    fprintf (outfile, "\n");
+
+    INDENT;
+    fprintf (outfile, "label_continue_%d:\n", barrier_id);
 
     DBUG_VOID_RETURN;
 }
@@ -308,7 +574,7 @@ ICMCompileMT_CONTINUE (int narg, char **vararg)
  *     - it calls the spmd function on behalf of the master thread.
  *     - finally, it resumes and returns to sequential execution order.
  *
- *   Tags may be from the set in | out | in_rc | out_rc | inout<n> | pre.
+ *   Tags may be from the set in | out | in_rc | out_rc | inout_rc<n> | pre.
  *   'pre' specifies an spmd argument that is preset by using the ICM
  *   MT_SPMD_PRESET().
  *
@@ -318,6 +584,7 @@ void
 ICMCompileMT_SPMD_BLOCK (char *name, int narg, char **vararg)
 {
     int i;
+    static char basetype[32];
 
     DBUG_ENTER ("ICMCompileMT_SPMD_BLOCK");
 
@@ -325,6 +592,57 @@ ICMCompileMT_SPMD_BLOCK (char *name, int narg, char **vararg)
 #include "icm_comment.c"
 #include "icm_trace.c"
 #undef MT_SPMD_BLOCK
+
+    fprintf (outfile, "\n");
+
+    fprintf (outfile, "#if SAC_DO_MULTITHREADED\n\n");
+
+    INDENT;
+    fprintf (outfile, "if (SAC_MT_not_yet_parallel)\n");
+
+    INDENT;
+    fprintf (outfile, "{\n");
+    indent++;
+
+    INDENT;
+    fprintf (outfile, "SAC_MT_not_yet_parallel=0\n");
+
+    for (i = 0; i < 3 * narg; i += 3) {
+        if (0 == strncmp (vararg[i], "inout_rc", 8)) {
+
+            strncpy (basetype, vararg[i + 1],
+                     strchr (vararg[i + 1], '*') - vararg[i + 1]);
+
+            INDENT;
+            fprintf (outfile, "SAC_ND_ALLOC_ARRAY(%s, %s, %s);\n", basetype,
+                     vararg[i + 2], vararg[i] + 5);
+
+            INDENT;
+            fprintf (outfile, "SAC_MT_SPMD_ARG_inout_rc(%s, %s);\n", name, vararg[i + 2]);
+        } else {
+            INDENT;
+            fprintf (outfile, "SAC_MT_SPMD_ARG_%s(%s, %s);\n", vararg[i], name,
+                     vararg[i + 2]);
+        }
+    }
+
+    INDENT;
+    fprintf (outfile, "\n");
+
+    INDENT;
+    fprintf (outfile, "SAC_MT_START_SPMD(%s);\n", name);
+
+    INDENT;
+    fprintf (outfile, "SAC_MT_not_yet_parallel=1\n");
+
+    indent--;
+    INDENT;
+    fprintf (outfile, "}\n");
+
+    INDENT;
+    fprintf (outfile, "else\n");
+
+    fprintf (outfile, "\n#endif  /* SAC_DO_MULTITHREADED */\n\n");
 
     DBUG_VOID_RETURN;
 }
@@ -353,8 +671,6 @@ ICMCompileMT_SPMD_BLOCK (char *name, int narg, char **vararg)
 void
 ICMCompileMT_SPMD_PRESET (char *name, int narg, char **vararg)
 {
-    int i;
-
     DBUG_ENTER ("ICMCompileMT_SPMD_PRESET");
 
 #define MT_SPMD_PRESET
