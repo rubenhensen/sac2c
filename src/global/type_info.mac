@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.7  1995/07/07 13:08:55  cg
- * new type T_void added, old type T_unique removed.
+ * Revision 1.8  1995/12/20 08:17:15  cg
+ * added new primitive type char.
  *
+;; Revision 1.7  1995/07/07  13:08:55  cg
+;; new type T_void added, old type T_unique removed.
+;;
 ;; Revision 1.6  1995/06/23  12:20:41  hw
 ;; enlarged macro TYP_IF( string to use for renameing of functions added)
 ;;
@@ -46,6 +49,7 @@ TYP_IF (T_int, "int", "int", "int"), TYP_IF (T_short, "short", "short", "short")
   TYP_IF (T_double, "double", "double", "double"),
   TYP_IF (T_longdbl, "long double", "long double", "ldouble"),
   TYP_IF (T_bool, "bool", "bool", "bool"), TYP_IF (T_str, "string", "char *", "string"),
-  TYP_IF (T_hidden, "hidden", "void *", "void"), TYP_IF (T_void, "void", "void", "void"),
-  TYP_IF (T_dots, "...", "...", "___"), TYP_IF (T_user, "user", "_user_", "_user_"),
+  TYP_IF (T_char, "char", "char", "char"), TYP_IF (T_hidden, "hidden", "void *", "void"),
+  TYP_IF (T_void, "void", "void", "void"), TYP_IF (T_dots, "...", "...", "___"),
+  TYP_IF (T_user, "user", "_user_", "_user_"),
   TYP_IF (T_unknown, "unknown", "_unknown_", "_unknown_")
