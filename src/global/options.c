@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2001/12/10 15:31:55  dkr
+ * flag 'xxx' (dkr) removed
+ *
  * Revision 3.17  2001/11/21 19:28:28  sbs
  * mt generation on MACs enabled again 8-))
  *
@@ -744,7 +747,6 @@ AnalyseCommandline (int argc, char *argv[])
     });
 
     ARGS_FLAG ("sbs", sbs = TRUE);
-    ARGS_FLAG ("xxx", dkr = TRUE);
 
     ARGS_OPTION ("target", target_name = ARG);
 
