@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.161  1998/03/16 00:23:34  dkr
+ * added DupTree- und Free-support for WL...-nodes
+ *
  * Revision 1.160  1998/03/13 16:21:02  dkr
  * new nodes added:
  *   N_WLblock, N_WLublock
@@ -850,37 +853,37 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        ACTNcode, TravSons, TravSons, TravSons, TravSons, TravSons, 3),
 
   NIF (N_Nwith2, "N_Nwith2", TravSons, TravSons, PrintNwith2, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, CompNwith2, TravSons, TravSons,
+       TravSons, TravSons, FreeNwith2, TravSons, TravSons, CompNwith2, TravSons, DupChain,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 4),
 
   NIF (N_WLseg, "N_WLseg", TravSons, TravSons, PrintWLseg, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, FreeWLseg, TravSons, TravSons, TravSons, TravSons, DupWLseg, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 2),
 
   NIF (N_WLblock, "N_WLblock", TravSons, TravSons, PrintWLblock, TravSons, TravSons,
+       TravSons, TravSons, FreeWLblock, TravSons, TravSons, TravSons, TravSons,
+       DupWLblock, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 3),
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 3),
 
   NIF (N_WLublock, "N_WLublock", TravSons, TravSons, PrintWLublock, TravSons, TravSons,
+       TravSons, TravSons, FreeWLublock, TravSons, TravSons, TravSons, TravSons,
+       DupWLublock, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 3),
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 3),
 
   NIF (N_WLproj, "N_WLproj", TravSons, TravSons, PrintWLproj, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, FreeWLproj, TravSons, TravSons, TravSons, TravSons, DupWLproj,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 2),
 
   NIF (N_WLgrid, "N_WLgrid", TravSons, TravSons, PrintWLgrid, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, FreeWLgrid, TravSons, TravSons, TravSons, TravSons, DupWLgrid,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 3),
