@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2003/03/03 13:56:18  ktr
+ * SSAWLFassign now only applies its "DCR" if the withloop's basetype is not a
+ * Usertype.
+ *
  * Revision 1.14  2002/10/09 02:12:48  dkr
  * code for ID/ARRAY_CONSTVEC removed
  *
@@ -1383,7 +1387,8 @@ SSAWLFassign (node *arg_node, node *arg_info)
            */
         if (optimize & OPT_DCR) {
             tmpn = ASSIGN_INSTR (arg_node);
-            if (N_let == NODE_TYPE (tmpn)) {
+            if ((N_let == NODE_TYPE (tmpn))
+                && (TYPES_BASETYPE (IDS_TYPE (LET_IDS (tmpn))) != T_user)) {
                 if (N_Nwith == NODE_TYPE (LET_EXPR (tmpn))
                     && NWITH_REFERENCED (LET_EXPR (tmpn)) > 0
                     && NWITH_REFERENCED (LET_EXPR (tmpn))
