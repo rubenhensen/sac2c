@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.2  2002/10/08 10:42:26  dkr
+ * comment added
+ *
  * Revision 3.1  2000/11/20 17:59:13  sacbase
  * new release made
  *
@@ -11,44 +14,51 @@
  * - ND_CREATE_CONST_ARRAY_A, ND_BEGIN_FOLDPRF, ND_BEGIN_FOLDFUN
  *   ND_END_FOLD, ND_LABEL, ND_GOTO, ND_TYPEDEF_ARRAY inserted
  *
-# Revision 1.11  1995/04/27  12:58:40  sbs
-# WITH-LOOP ICM s changed again!
-#
-# Revision 1.10  1995/04/26  16:58:47  sbs
-# WITH-icms modified
-#
-# Revision 1.9  1995/04/26  14:59:40  sbs
-# dim_res inserted in END_WITH macros
-#
-# Revision 1.8  1995/04/26  14:02:13  hw
-# Macros for with-loop inserted
-#
-# Revision 1.7  1995/04/19  13:39:22  sbs
-# ND_KD_PSI_VxA_S & ND_KD_PSI_CxA_S updated
-#
-# Revision 1.6  1995/04/18  14:49:34  sbs
-# ND_ALLOC_ARRAY modified; initial rc parameter;
-# ND_CREATE_CONST_ARRAY modified; initial basic_type parameter eliminated;
-#
-# Revision 1.5  1995/04/18  11:24:51  sbs
-# ND_KD_ROT_SxSxA_A eliminated
-#
-# Revision 1.4  1995/04/12  15:13:23  sbs
-# cat & rot inserted.
-#
-# Revision 1.3  1995/03/31  13:26:08  sbs
-# includes take drop psi binop & const
-#
-# Revision 1.2  1995/03/07  18:03:37  sbs
-# PSI-macros done.
-#
-# Revision 1.1  1995/03/03  14:40:13  sbs
-# Initial revision
-#
+ * Revision 1.11  1995/04/27  12:58:40  sbs
+ * WITH-LOOP ICM s changed again!
+ *
+ * Revision 1.10  1995/04/26  16:58:47  sbs
+ * WITH-icms modified
+ *
+ * Revision 1.9  1995/04/26  14:59:40  sbs
+ * dim_res inserted in END_WITH macros
+ *
+ * Revision 1.8  1995/04/26  14:02:13  hw
+ * Macros for with-loop inserted
+ *
+ * Revision 1.7  1995/04/19  13:39:22  sbs
+ * ND_KD_PSI_VxA_S & ND_KD_PSI_CxA_S updated
+ *
+ * Revision 1.6  1995/04/18  14:49:34  sbs
+ * ND_ALLOC_ARRAY modified; initial rc parameter;
+ * ND_CREATE_CONST_ARRAY modified; initial basic_type parameter eliminated;
+ *
+ * Revision 1.5  1995/04/18  11:24:51  sbs
+ * ND_KD_ROT_SxSxA_A eliminated
+ *
+ * Revision 1.4  1995/04/12  15:13:23  sbs
+ * cat & rot inserted.
+ *
+ * Revision 1.3  1995/03/31  13:26:08  sbs
+ * includes take drop psi binop & const
+ *
+ * Revision 1.2  1995/03/07  18:03:37  sbs
+ * PSI-macros done.
+ *
+ * Revision 1.1  1995/03/03  14:40:13  sbs
+ * Initial revision
  *
  */
 
-This file contains information about the SAC Intermediate-Code_Macros.
+
+/**
+ **
+ **  UNFORTUNATELY, THE CONTENT OF THIS FILE IS TOTALLY OUTDATED...
+ **
+ **/
+
+
+This file contains information about the SAC Intermediate Code Macros (ICMs).
 
 SAC-ICM is used as an intermediate level of code generation. It explicitly
 integrates informations about type and memory usage into the code.
@@ -70,12 +80,14 @@ used.
 E.g. a "KD" array may be accessed by ND_A_DIM but not with ND_A_SHAPE!!!
 <<<< IMPORTANT NOTE !! <<<<
 
+
 Macros for declaring arrays:
 ============================
 
  ND_KS_DECL_ARRAY( basic_type, name, dim, s0,..., sn)	: declares an array
 *ND_KD_DECL_ARRAY( basic_type, name, dim)		: declares an array
 +ND_DECL_ARRAY( basic_type, name)			: declares an array
+
 
 Macros for array access:
 ========================
@@ -86,6 +98,7 @@ Macros for array access:
 +ND_A_DIM( name)		: accesses the dimension of the array
 +ND_KD_A_SHAPE( name, dim)	: accesses one shape component of an array
 +ND_A_SHAPE( name, dim)		: accesses one shape component of an array
+
 
 Macros for arrays as arguments:
 ===============================
@@ -101,6 +114,7 @@ Macros for arrays as arguments:
 				  macro for generating a function application
  ND_FUN_RET( n, [ { out, out_a, inout, inout_a}, arg ] )			:
 				  macro for returning resuluts of a function
+
 
 Macros for initializing an array:
 =================================
@@ -133,6 +147,7 @@ Macros for primitve arithmetic operations:
 +ND_BINOP_AxS_A( op, s, a2, res)	: realizes res=(a2 op s)
 +ND_BINOP_AxA_A( op, a1, a2, res)	: realizes res=(a1 op a2)
 
+
 Macros for PSI-primitves:
 =========================
 
@@ -147,6 +162,7 @@ Macros for PSI-primitves:
  ND_KD_CAT_SxAxA_A( dima, a, b, res, catdim)	: 
  ND_KD_ROT_CxSxA_A( rotdim, numstr, dima, a, res):
  < ND_KD_ROT_SxSxA_A( rotdimstr, numstr, dima, a, res): >
+
 
 Macros for WITH-loop:
 =====================
@@ -165,10 +181,8 @@ Macros for WITH-loop:
 
 other Macros :
 ==============
+
  ND_LABEL(label)               : used for compilation of do-loop (creates label)
  ND_GOTO(label)                : used for compilation of do-loop (goto label)
 
  ND_TYPEDEF_ARRAY(type, newtype) : typedef of an array
-
-
-
