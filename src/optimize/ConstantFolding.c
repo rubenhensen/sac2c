@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.58  1998/03/04 15:36:12  srs
+ * added N_Npart node to switch in CFid
+ *
  * Revision 1.57  1998/02/23 13:08:32  srs
  * changed CFid to support new WLs,
  * added comments
@@ -574,6 +577,7 @@ CFid (node *arg_node, node *arg_info)
         case N_ap:
         case N_with:
         case N_Nwith:
+        case N_Npart: /* index vars point to this node. */
             break;
         default:
             DBUG_ASSERT ((FALSE), "Substitution not implemented for constant folding");
