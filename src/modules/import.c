@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.49  1997/11/07 12:28:12  srs
+ * NEWTREE: nnode is ignored
+ *
  * Revision 1.48  1997/10/29 14:30:44  srs
  * free -> FREE
  *
@@ -418,7 +421,9 @@ InsertClassType (node *classdec)
         explist->node[0] = tmp;
     } else {
         tmp->node[0] = explist->node[0];
+#ifndef NEWTREE
         tmp->nnode++;
+#endif
         explist->node[0] = tmp;
     }
 
@@ -1726,8 +1731,10 @@ ImportSymbol (int symbtype, char *name, mod *mod, node *modul)
 
     AppendModnameToSymbol (tmpdef, mod->name);
 
+#ifndef NEWTREE
     if (tmpdef->node[next] == NULL)
         tmpdef->nnode++;
+#endif
 
     /* Now, we do know, that nnode in tmpdef is set for having a successor! */
 
@@ -1738,8 +1745,10 @@ ImportSymbol (int symbtype, char *name, mod *mod, node *modul)
 
     tmpdef->node[next] = modul->node[son];
     modul->node[son] = tmpdef;
+#ifndef NEWTREE
     if (tmpdef->node[next] == NULL)
         tmpdef->nnode--;
+#endif
 
     DBUG_VOID_RETURN;
 }
