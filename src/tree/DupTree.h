@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2002/02/20 15:59:36  dkr
+ * fundef DupOneTypesOnly_Inplace() added
+ *
  * Revision 3.17  2002/02/20 15:01:55  dkr
  * fundef DupTypes() renamed into DupAllTypes()
  * fundef DupTypesOnly() renamed into DupAllTypesOnly()
@@ -123,11 +126,19 @@ extern node *DupNodeLUT_Type (node *arg_node, LUT_t lut, int type);
  */
 extern ids *DupOneIds (ids *arg_ids);
 extern ids *DupAllIds (ids *arg_ids);
+
 extern shpseg *DupShpseg (shpseg *arg_shpseg);
+
+/*
+ * PLEASE DO NOT USE DupOneTypes(), DupAllTypes() IN NEW CODE!!!!
+ * USE ...Only...() instead!!!
+ */
 extern types *DupOneTypes (types *arg_types);
 extern types *DupAllTypes (types *arg_types);
 extern types *DupOneTypesOnly (types *arg_types);
 extern types *DupAllTypesOnly (types *arg_types);
+void DupOneTypesOnly_Inplace (types **target, types *source);
+
 extern nodelist *DupNodelist (nodelist *arg_nl);
 
 /*
