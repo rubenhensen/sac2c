@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.9  1999/06/02 16:51:53  dkr
+# src/lib/*.o are now builded first
+#
 # Revision 2.8  1999/05/18 17:08:30  dkr
 # added project clean_sb for removing all .sb directories (cc)
 #
@@ -275,6 +278,7 @@ check_os:
 	  fi
 
 dummy:
+	(cd lib/src; $(MAKE_NORM) )
 	(cd src/scanparse; $(MAKE_NORM) )
 	(cd src/global; $(MAKE_NORM) )
 	(cd src/print; $(MAKE_NORM) )
@@ -288,9 +292,9 @@ dummy:
 	(cd src/compile; $(MAKE_NORM) )
 	(cd src/psi-opt; $(MAKE_NORM) )
 	(cd src/runtime; $(MAKE_NORM) )
-	(cd lib/src; $(MAKE_NORM) )
 
 prod:
+	(cd lib/src; $(MAKE_PROD) )
 	(cd src/scanparse; $(MAKE_PROD) )
 	(cd src/global; $(MAKE_PROD) )
 	(cd src/print; $(MAKE_PROD) )
@@ -304,7 +308,6 @@ prod:
 	(cd src/compile; $(MAKE_PROD) )
 	(cd src/psi-opt; $(MAKE_PROD) )
 	(cd src/runtime; $(MAKE_PROD) )
-	(cd lib/src; $(MAKE_PROD) )
 
 sac2c: $(OBJ) $(LIB)
 	$(CC) $(CCFLAGS) $(CFLAGS) -o sac2c $(OBJ) $(LIB) $(LIBS)
@@ -316,6 +319,7 @@ sac2c.prod:  $(OBJ) $(LIB)
 	$(CCPROD) $(CCPROD_FLAGS) $(CPROD_FLAGS) -o sac2c $(OBJ) $(LIB) $(LIBS)
 
 deps:
+	(cd lib/src; $(MAKE) deps)
 	(cd src/scanparse; $(MAKE) deps)
 	(cd src/global; $(MAKE) deps)
 	(cd src/print; $(MAKE) deps)
@@ -329,9 +333,9 @@ deps:
 	(cd src/compile; $(MAKE) deps)
 	(cd src/psi-opt; $(MAKE) deps)
 	(cd src/runtime; $(MAKE) deps)
-	(cd lib/src; $(MAKE) deps)
 
 clean:
+	(cd lib/src; $(MAKE) clean)
 	(cd src/scanparse; $(MAKE) clean)
 	(cd src/global; $(MAKE) clean)
 	(cd src/print; $(MAKE) clean)
@@ -345,7 +349,6 @@ clean:
 	(cd src/compile; $(MAKE) clean )
 	(cd src/psi-opt; $(MAKE) clean)
 	(cd src/runtime; $(MAKE) clean)
-	(cd lib/src; $(MAKE) clean)
 	$(RM) sac2c
 	$(RM) sac2c.efence
 	$(RM) -r .sb
