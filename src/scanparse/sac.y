@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.27  1994/12/14 13:57:26  sbs
+ * Revision 1.28  1994/12/14 16:52:46  sbs
+ * user defined types integrated :->>>>
+ *
+ * Revision 1.27  1994/12/14  13:57:26  sbs
  * bug in expressionblock2 fixed (superflouus SEMIC BRACE_R)
  *
  * Revision 1.26  1994/12/14  12:42:08  hw
@@ -128,7 +131,7 @@ node *syntax_tree;
 %type <ids> ids,
 %type <nums> nums;
 %type <types> type, types, simpletype, complextype;
-%type <node> vardec, vardecs, arg, args, fundefs, fundef, main, prg, modimp,
+%type <node> arg, args, fundefs, fundef, main, prg, modimp,
              typedefs, typedef, defs, def2, def3, fundef2, exprblock, exprblock2,
              exprblock3, assign, assigns, assignblock, letassign, retassign,
              selassign, forassign, retassignblock, let, 
@@ -379,21 +382,25 @@ main: TYPE_INT MAIN BRACKET_L BRACKET_R {$$=MakeNode(N_fundef);} exprblock
 exprblock: BRACE_L exprblock2 {$$=$2;}
 	;
 
-exprblock2:vardecs exprblock3
-            { 
-               $$=MakeNode(N_block);
-               $$->node[0]=$2;  /* assignments */
-               $$->node[1]=$1;  /* declarations of variables */
+exprblock2: type ids SEMIC exprblock2 
+            {node *tmp, *tmp2;
+
+             $$=$4;
+             tmp=GenVardec($1,$2);
+	     if($$->nnode == 2)	{	 /* we have already vardecs here */
+               tmp2=tmp;
+               while(tmp2->node[0]!=NULL)
+                 tmp2=tmp2->node[0];
+               tmp2->node[0]=$$->node[1];
+               tmp2->nnode=1;
+             }
+             else {			 /* this is the first vardec! */
                $$->nnode=2;              /* set number of child nodes */
-                                 
-               DBUG_PRINT("GENTREE",
-                          ("%s "P_FORMAT", %s "P_FORMAT,
-                           mdb_nodetype[$$->nodetype], $$,
-                           mdb_nodetype[$$->node[0]->nodetype], $$->node[0],
-                           mdb_nodetype[$$->node[1]->nodetype], $$->node[1]));
+             }
+             $$->node[1]=tmp;		 /* insert new decs */
             }
-         | exprblock3
-            { 
+           | exprblock3
+            {
               $$=MakeNode(N_block);
               $$->node[0]=$1;
               $$->nnode=1;
@@ -504,19 +511,6 @@ retassignblock: BRACE_L {$$=MakeNode(N_block);} assigns retassign SEMIC BRACE_R
                                   $$->node[0]));
                     }
                 ;
-
-vardecs:   vardec vardecs     
-            { $$=$1;
-              $$->nnode=1;
-              while($1->node[0]!=NULL)
-                $1=$1->node[0];
-              $1->node[0]=$2;  /* na"chster N_vardec Knoten */
-              $1->nnode=1;
-            }
-         | vardec {$$=$1;}
-         ;
-
-vardec: type ids SEMIC {$$=GenVardec($1,$2);};
 
 assigns: /* empty */ 
          { $$=NULL; 
@@ -1057,49 +1051,12 @@ type:   complextype {$$=$1;}
       | simpletype {$$=$1;}
        ;
 
-complextype:  TYPE_INT SQBR_L nums SQBR_R  
-               { $$=GEN_NODE(types); 
-                 $$->simpletype=T_int; 
-                 $$->dim=0;
-                 $$->next=NULL;
-                 $$->id=NULL;   /* not needed in this case */
-                 $$=GenComplexType($$,$3);
+complextype:  simpletype SQBR_L nums SQBR_R  
+               { $$=GenComplexType($1,$3);
                }
-            | TYPE_FLOAT  SQBR_L nums SQBR_R  
-               { $$=GEN_NODE(types);
-                 $$->simpletype=T_float; 
-                 $$->dim=0;
-                 $$->next=NULL; 
-                 $$->id=NULL;     /* not used in this case */
-                 $$=GenComplexType($$,$3);
-               }
-            | TYPE_BOOL  SQBR_L nums SQBR_R  
-               { $$=GEN_NODE(types);
-                 $$->simpletype=T_bool; 
-                 $$->dim=0;
-                 $$->next=NULL; 
-                 $$->id=NULL;     /* not used in this case */
-                 $$=GenComplexType($$,$3);
-               }
-            | TYPE_INT  SQBR_L SQBR_R  
-               { $$=GEN_NODE(types);
-                 $$->simpletype=T_int; 
+            | simpletype  SQBR_L SQBR_R  
+               { $$=$1;
                  $$->dim=-1;
-                 $$->next=NULL; 
-                 $$->id=NULL;     /* not used in this case */
-               }
-            | TYPE_FLOAT  SQBR_L SQBR_R  
-               { $$=GEN_NODE(types);
-                 $$->simpletype=T_float; 
-                 $$->dim=-1;
-                 $$->next=NULL; 
-                 $$->id=NULL;     /* not used in this case */
-               }
-            | TYPE_BOOL  SQBR_L SQBR_R  
-               { $$=GEN_NODE(types);
-                 $$->simpletype=T_bool; 
-                 $$->dim=-1;
-                 $$->next=NULL; 
                  $$->id=NULL;     /* not used in this case */
                }
              ;
@@ -1110,6 +1067,7 @@ simpletype: TYPE_INT
                $$->dim=0;
                $$->id=NULL;     /* not used in this case */
                $$->next=NULL;
+               $$->name=NULL;
              }
             | TYPE_FLOAT 
                { $$=GEN_NODE(types); 
@@ -1117,6 +1075,7 @@ simpletype: TYPE_INT
                  $$->dim=0;
                  $$->next=NULL;
                  $$->id=NULL;     /* not used in this case */
+                 $$->name=NULL;
                }
             | TYPE_BOOL 
                { $$=GEN_NODE(types);
@@ -1124,16 +1083,16 @@ simpletype: TYPE_INT
                  $$->dim=0;
                  $$->next=NULL;
                  $$->id=NULL;     /* not used in this case */
+                 $$->name=NULL;
                }
-/*
             | ID
                { $$=GEN_NODE(types);
-                 $$->simpletype=T_unknown;
+                 $$->simpletype=T_user;
                  $$->dim=0;
+                 $$->id=NULL;   /* not used in this case */
+                 $$->name=$1;
                  $$->next=NULL;
-                 $$->id=$1;
                }
-*/
             ;
 
 %%
