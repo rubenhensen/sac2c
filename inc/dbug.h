@@ -165,8 +165,8 @@ extern void _db_longjmp_ (); /* Restore debugger environment */
 
 #define DBUG_ASSERT(expr, text)                                                          \
     if (!(expr)) {                                                                       \
-        printf ("Assertion 'expr' failed: file '%s', line %d\n** %s\n", __FILE__,        \
-                __LINE__, text);                                                         \
+        fprintf (stderr, "Assertion 'expr' failed: file '%s', line %d\n** %s\n",         \
+                 __FILE__, __LINE__, text);                                              \
         exit (1);                                                                        \
     } else                                                                               \
         NOOP
