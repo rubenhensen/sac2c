@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.105  1998/08/11 00:11:21  dkr
+ * minor bug in DupFundef fixed
+ * changed DupWLsegVar
+ *
  * Revision 1.104  1998/08/07 14:36:57  dkr
  * DupWLsegVar added
  *
@@ -863,6 +867,25 @@ DupFun (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
+GetReturn (node *instr)
+{
+    node *ret_node;
+
+    DBUG_ENTER ("GetReturn");
+
+    ret_node = instr;
+    while ((ret_node != NULL) && (ASSIGN_NEXT (ret_node) != NULL)) {
+        ret_node = ASSIGN_NEXT (ret_node);
+    }
+    DBUG_ASSERT ((NODE_TYPE (ASSIGN_INSTR (ret_node)) == N_return),
+                 "return node not found");
+
+    DBUG_RETURN (ASSIGN_INSTR (ret_node));
+}
+
+/******************************************************************************/
+
+node *
 DupFundef (node *arg_node, node *arg_info)
 {
     node *new_node;
@@ -885,6 +908,8 @@ DupFundef (node *arg_node, node *arg_info)
     FUNDEF_ARGS (new_node) = DUPTRAV (FUNDEF_ARGS (arg_node));
     FUNDEF_PRAGMA (new_node) = DUPTRAV (FUNDEF_PRAGMA (arg_node));
     FUNDEF_NEEDOBJS (new_node) = CopyNodelist (FUNDEF_NEEDOBJS (arg_node));
+
+    FUNDEF_RETURN (new_node) = GetReturn (BLOCK_INSTR (FUNDEF_BODY (new_node)));
 
     FUNDEF_NEXT (new_node) = DUPCONT (FUNDEF_NEXT (arg_node));
 
@@ -1144,12 +1169,13 @@ DupNwithop (node *arg_node, node *arg_info)
         break;
     case WO_foldfun:
         NWITHOP_NEUTRAL (new_node) = DUPTRAV (NWITHOP_NEUTRAL (arg_node));
-        NWITHOP_FUN (new_node) = StringCopy (NWITHOP_FUN (arg_node));
         NWITHOP_MOD (new_node) = StringCopy (NWITHOP_MOD (arg_node));
         NWITHOP_FUNDEF (new_node) = NWITHOP_FUNDEF (arg_node);
+        NWITHOP_FUN (new_node) = StringCopy (NWITHOP_FUN (arg_node));
         break;
     case WO_foldprf:
         NWITHOP_NEUTRAL (new_node) = DUPTRAV (NWITHOP_NEUTRAL (arg_node));
+        NWITHOP_FUNDEF (new_node) = NWITHOP_FUNDEF (arg_node);
         NWITHOP_PRF (new_node) = NWITHOP_PRF (arg_node);
         break;
     default:
@@ -1319,6 +1345,19 @@ DupWLseg (node *arg_node, node *arg_info)
     new_node = MakeWLseg (WLSEG_DIMS (arg_node), DUPTRAV (WLSEG_CONTENTS (arg_node)),
                           DUPCONT (WLSEG_NEXT (arg_node)));
 
+    if (WLSEG_IDX_MIN (arg_node) != NULL) {
+        WLSEG_IDX_MIN (new_node) = (int *)MALLOC (WLSEG_DIMS (new_node) * sizeof (int));
+        for (d = 0; d < WLSEG_DIMS (new_node); d++) {
+            (WLSEG_IDX_MIN (new_node))[d] = (WLSEG_IDX_MIN (arg_node))[d];
+        }
+    }
+    if (WLSEG_IDX_MAX (arg_node) != NULL) {
+        WLSEG_IDX_MAX (new_node) = (int *)MALLOC (WLSEG_DIMS (new_node) * sizeof (int));
+        for (d = 0; d < WLSEG_DIMS (new_node); d++) {
+            (WLSEG_IDX_MAX (new_node))[d] = (WLSEG_IDX_MAX (arg_node))[d];
+        }
+    }
+
     if (WLSEG_SV (arg_node) != NULL) {
         WLSEG_SV (new_node) = (long *)MALLOC (WLSEG_DIMS (new_node) * sizeof (int));
         for (d = 0; d < WLSEG_DIMS (new_node); d++) {
@@ -1342,19 +1381,6 @@ DupWLseg (node *arg_node, node *arg_info)
         WLSEG_UBV (new_node) = (long *)MALLOC (WLSEG_DIMS (new_node) * sizeof (int));
         for (d = 0; d < WLSEG_DIMS (new_node); d++) {
             (WLSEG_UBV (new_node))[d] = (WLSEG_UBV (arg_node))[d];
-        }
-    }
-
-    if (WLSEG_IDX_MIN (arg_node) != NULL) {
-        WLSEG_IDX_MIN (new_node) = (int *)MALLOC (WLSEG_DIMS (new_node) * sizeof (int));
-        for (d = 0; d < WLSEG_DIMS (new_node); d++) {
-            (WLSEG_IDX_MIN (new_node))[d] = (WLSEG_IDX_MIN (arg_node))[d];
-        }
-    }
-    if (WLSEG_IDX_MAX (arg_node) != NULL) {
-        WLSEG_IDX_MAX (new_node) = (int *)MALLOC (WLSEG_DIMS (new_node) * sizeof (int));
-        for (d = 0; d < WLSEG_DIMS (new_node); d++) {
-            (WLSEG_IDX_MAX (new_node))[d] = (WLSEG_IDX_MAX (arg_node))[d];
         }
     }
 
@@ -1472,6 +1498,41 @@ DupWLsegVar (node *arg_node, node *arg_info)
     new_node
       = MakeWLsegVar (WLSEGVAR_DIMS (arg_node), DUPTRAV (WLSEGVAR_CONTENTS (arg_node)),
                       DUPCONT (WLSEGVAR_NEXT (arg_node)));
+
+    if (WLSEGVAR_IDX_MIN (arg_node) != NULL) {
+        WLSEGVAR_IDX_MIN (new_node)
+          = (int *)MALLOC (WLSEGVAR_DIMS (new_node) * sizeof (int));
+        for (d = 0; d < WLSEGVAR_DIMS (new_node); d++) {
+            (WLSEGVAR_IDX_MIN (new_node))[d] = (WLSEGVAR_IDX_MIN (arg_node))[d];
+        }
+    }
+    if (WLSEGVAR_IDX_MAX (arg_node) != NULL) {
+        WLSEGVAR_IDX_MAX (new_node)
+          = (int *)MALLOC (WLSEGVAR_DIMS (new_node) * sizeof (int));
+        for (d = 0; d < WLSEGVAR_DIMS (new_node); d++) {
+            (WLSEGVAR_IDX_MAX (new_node))[d] = (WLSEGVAR_IDX_MAX (arg_node))[d];
+        }
+    }
+
+    WLSEGVAR_BLOCKS (new_node) = WLSEGVAR_BLOCKS (arg_node);
+
+    for (i = 0; i < WLSEGVAR_BLOCKS (new_node); i++) {
+        if (WLSEGVAR_BV (arg_node, i) != NULL) {
+            WLSEGVAR_BV (new_node, i)
+              = (long *)MALLOC (WLSEGVAR_DIMS (new_node) * sizeof (int));
+            for (d = 0; d < WLSEGVAR_DIMS (new_node); d++) {
+                (WLSEGVAR_BV (new_node, i))[d] = (WLSEGVAR_BV (arg_node, i))[d];
+            }
+        }
+    }
+
+    if (WLSEGVAR_UBV (arg_node) != NULL) {
+        WLSEGVAR_UBV (new_node)
+          = (long *)MALLOC (WLSEGVAR_DIMS (new_node) * sizeof (int));
+        for (d = 0; d < WLSEGVAR_DIMS (new_node); d++) {
+            (WLSEGVAR_UBV (new_node))[d] = (WLSEGVAR_UBV (arg_node))[d];
+        }
+    }
 
     if (WLSEGVAR_SCHEDULING (arg_node) != NULL) {
         WLSEGVAR_SCHEDULING (new_node)
