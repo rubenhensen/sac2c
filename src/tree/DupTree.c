@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.82  2003/09/19 11:54:05  dkr
+ * definition of DupNode_NT() simplified
+ *
  * Revision 3.81  2003/09/16 18:19:11  ktr
  * Added support for AVIS_WITHID
  *
@@ -2870,11 +2873,10 @@ DupNode_NT (node *arg_node)
 
     DBUG_ENTER ("DupNode_NT");
 
-    new_node = DupNode (arg_node);
-
     if (NODE_TYPE (arg_node) == N_id) {
-        DBUG_ASSERT ((ID_TYPE (arg_node) != NULL), "NT_TAG: no type found!");
-        ID_NT_TAG (new_node) = CreateNtTag (ID_NAME (arg_node), ID_TYPE (arg_node));
+        new_node = DupId_NT (arg_node);
+    } else {
+        new_node = DupNode (arg_node);
     }
 
     DBUG_RETURN (new_node);
