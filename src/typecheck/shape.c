@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.6  2000/06/23 09:52:08  nmw
+ * Compare and Create functions with varargs added
+ *
  * Revision 1.5  2000/05/03 16:49:05  dkr
  * SHFreeShape returns NULL now
  *
@@ -35,9 +38,8 @@
  * - If the result is a shape structure, it has been freshly allocated!
  *
  */
-
+#include <stdarg.h>
 #include "dbug.h"
-
 #include "tree_basic.h"
 #include "free.h"
 
@@ -96,6 +98,41 @@ SHMakeShape (int dim)
     }
     SHAPE_DIM (res) = dim;
     DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    shape *SHCreateShape( int dim, ...)
+ *
+ * description:
+ *    creates a new shape-structure of size dim which is initialized by
+ *    the given argument values
+ *
+ * return:
+ *    new allocated and initialized shape
+ ******************************************************************************/
+
+shape *
+SHCreateShape (int dim, ...)
+{
+    va_list Argp;
+    int i;
+    shape *result;
+
+    DBUG_ENTER ("SHCreateShape");
+    result = SHMakeShape (dim);
+
+    DBUG_ASSERT (result != NULL, ("CreateShape: Get NULL shape from MakeShape!"));
+
+    if (dim > 0) {
+        va_start (Argp, dim);
+        for (i = 0; i < dim; i++) {
+            result = SHSetExtent (result, i, va_arg (Argp, int));
+        }
+    }
+
+    DBUG_RETURN (result);
 }
 
 /******************************************************************************
@@ -386,4 +423,75 @@ SHShape2OldShpseg (shape *shp)
     }
 
     DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    bool SHCompareWithCArray(shape *shp, int* shpdata, int dim)
+ *
+ * description:
+ *    compares given shape with a shape specified as a c integer array
+ * returns true is shapes are equal in dim and shape vector
+ *         false otherwise
+ *
+ ******************************************************************************/
+bool
+SHCompareWithCArray (shape *shp, int *shpdata, int dim)
+{
+    bool flag;
+    int i;
+
+    DBUG_ENTER ("SHCompareWithCArray");
+
+    flag = TRUE;
+    DBUG_ASSERT ((shp != NULL && shpdata != NULL),
+                 ("SHCompareWithCArray called with NULL pointer(s)!\n"));
+    if (dim == SHAPE_DIM (shp)) {
+        for (i = 0; i < dim; i++)
+            if (SHAPE_EXT (shp, i) != shpdata[i])
+                flag = FALSE;
+    } else {
+        flag = FALSE;
+    }
+
+    DBUG_RETURN (flag);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    bool SHCompareWithArguments(shape *shp, int dim, ...)
+ *
+ * description:
+ *    compares given shape with a shape specified as an list of arguments
+ *    usage: e.g. SHCompareWithArguments(shp, 3, 4,4,5)
+ *
+ * return:
+ *    true  if shapes are equal in dim and shape vector
+ *    false otherwise
+ *
+ ******************************************************************************/
+
+bool
+SHCompareWithArguments (shape *shp, int dim, ...)
+{
+    va_list Argp;
+    bool flag;
+    int i;
+
+    DBUG_ENTER ("SHCompareWithArguments");
+
+    flag = TRUE;
+    DBUG_ASSERT ((shp != NULL), ("SHCompareWithCArray called with NULL pointer(s)!\n"));
+    if (dim == SHAPE_DIM (shp)) {
+        va_start (Argp, dim);
+        for (i = 0; i < dim; i++)
+            if (SHAPE_EXT (shp, i) != va_arg (Argp, int))
+                flag = FALSE;
+    } else {
+        flag = FALSE;
+    }
+
+    return (flag);
 }

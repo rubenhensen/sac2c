@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2000/06/23 09:51:37  nmw
+ * Compare and Create functions with varargs added
+ *
  * Revision 1.4  2000/05/03 16:48:55  dkr
  * SHFreeShape returns NULL now
  *
@@ -41,6 +44,7 @@ typedef void shape;
 #include "types.h"
 
 extern shape *SHMakeShape (int dim);
+extern shape *SHCreateShape (int dim, ...);
 extern shape *SHCopyShape (shape *shp);
 extern shape *SHFreeShape (shape *shp);
 
@@ -56,4 +60,6 @@ extern char *SHShape2String (int dots, shape *shp);
 extern shape *SHOldTypes2Shape (types *shpseg);
 extern shpseg *SHShape2OldShpseg (shape *shp);
 
+extern bool SHCompareWithCArray (shape *shp, int *shpdata, int dim);
+extern bool SHCompareWithArguments (shape *shp, int dim, ...);
 #endif /* _shape_h */
