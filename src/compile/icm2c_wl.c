@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2001/01/25 09:42:54  dkr
+ * PrintShapeFactor() used wherever possible
+ *
  * Revision 3.7  2001/01/22 15:55:24  dkr
  * PrintTraceICM modified
  *
@@ -439,8 +442,6 @@ void
 ICMCompileWL_ASSIGN__INIT (int dims_target, char *target, char *idx_vec, int dims,
                            char **idx_scalars)
 {
-    int i;
-
     DBUG_ENTER ("ICMCompileWL_ASSIGN__INIT");
 
 #define WL_ASSIGN__INIT
@@ -461,9 +462,7 @@ ICMCompileWL_ASSIGN__INIT (int dims_target, char *target, char *idx_vec, int dim
         INDENT;
         fprintf (outfile, "for (SAC_i = 0; SAC_i < SAC_ND_A_SHAPE( %s, %d)", target,
                  dims);
-        for (i = dims + 1; i < dims_target; i++) {
-            fprintf (outfile, " * SAC_ND_A_SHAPE( %s, %d)", target, i);
-        }
+        PrintShapeFactor (dims, dims_target, target);
         fprintf (outfile, "; SAC_i++) {\n");
         indent++;
     }
@@ -508,8 +507,6 @@ void
 ICMCompileWL_ASSIGN__COPY (char *source, int dims_target, char *target, char *idx_vec,
                            int dims, char **idx_scalars)
 {
-    int i;
-
     DBUG_ENTER ("ICMCompileWL_ASSIGN__COPY");
 
 #define WL_ASSIGN__COPY
@@ -530,9 +527,7 @@ ICMCompileWL_ASSIGN__COPY (char *source, int dims_target, char *target, char *id
         INDENT;
         fprintf (outfile, "for (SAC_i = 0; SAC_i < SAC_ND_A_SHAPE( %s, %d)", target,
                  dims);
-        for (i = dims + 1; i < dims_target; i++) {
-            fprintf (outfile, " * SAC_ND_A_SHAPE( %s, %d)", target, i);
-        }
+        PrintShapeFactor (dims, dims_target, target);
         fprintf (outfile, "; SAC_i++) {\n");
         indent++;
     }
@@ -820,10 +815,7 @@ ICMCompileWL_SET_OFFSET (int dim, int first_block_dim, int dims_target, char *ta
             }
         }
     }
-
-    for (; i < dims_target; i++) {
-        fprintf (outfile, " * SAC_ND_A_SHAPE( %s, %d)", target, i);
-    }
+    PrintShapeFactor (dims - 1, dims_target, target);
     fprintf (outfile, ";\n");
 
     DBUG_VOID_RETURN;
