@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2000/12/12 12:15:40  dkr
+ * internal flag 'dkr' added
+ *
  * Revision 3.3  2000/12/06 10:06:45  dkr
  * version incremented to 0.91
  *
@@ -370,6 +373,7 @@ int initial_unified_heapsize = 0;
 /*
  * special hidden options!
  */
+int dkr = 0;
 int sbs = 0;
 
 /*

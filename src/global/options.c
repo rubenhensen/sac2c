@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2000/12/12 12:15:57  dkr
+ * internal flag 'dkr' added
+ *
  * Revision 3.4  2000/12/01 12:32:03  cg
  * Added option -noAPL to disable array placement (default).
  *
@@ -701,6 +704,8 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_FLAGMASK ('w', profileflag |= PROFILE_WITH);
         ARG_FLAGMASK_END ();
     });
+
+    ARGS_FLAG ("dkr", dkr = 1);
 
     ARGS_FLAG ("sbs", sbs = 1);
 

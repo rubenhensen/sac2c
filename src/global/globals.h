@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2000/12/12 12:15:22  dkr
+ * internal flag 'dkr' added
+ *
  * Revision 3.3  2000/11/27 21:04:38  cg
  * Added general support for new optimization APL,
  * "array placement"
@@ -89,12 +92,11 @@
  * which are all defined and initialized in globals.c
  */
 
-#ifndef _sac_globals_h
-#define _sac_globals_h
-
-#include "types.h"
+#ifndef _sac_globals_h_
+#define _sac_globals_h_
 
 #include <stdio.h>
+#include "types.h"
 
 #define MAIN_MOD_NAME "_MAIN"
 
@@ -104,6 +106,7 @@
 #define PF_MAXFUNAP 100
 #define PF_MAXFUNNAMELEN 100
 
+extern int dkr;
 extern int sbs;
 
 extern char version_id[];
@@ -333,4 +336,4 @@ extern int indent;
 
 extern int basetype_size[];
 
-#endif /* _sac_globals_h */
+#endif /* _sac_globals_h_ */
