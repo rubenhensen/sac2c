@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.2  2004/11/23 22:24:47  sah
+  removed .h files
+
   Revision 1.1  2004/11/23 11:31:45  sah
   Initial revision
 
@@ -66,7 +69,6 @@ version="1.0">
   <xsl:text>
 
 #include "types.h"
-#include "serialize_helper.h"
 #include "serialize.h"
 #include "stdarg.h"
 
