@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.5  2004/12/06 21:43:12  sah
+  added entirely useless favicon
+
   Revision 1.4  2004/12/05 20:11:38  sah
   made QuickNav less annoying
 
@@ -37,6 +40,7 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
   <xsl:template match="/">
     <html>
       <head>
+        <link rel="SHORTCUT ICON" href="http://www.sac-home.org/images/icons/favicon.ico" />
         <title>SaC Syntax Tree</title>
         <style type="text/css">
           body { font-family: sans-serif } 
