@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.42  2002/09/13 21:23:06  dkr
+ * FreeMop(): DBUG_PRINT corrected
+ *
  * Revision 3.41  2002/09/06 12:17:19  sah
  * handling of N_setwl nodes modified.
  *
@@ -1404,16 +1407,16 @@ FreeMop (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("FreeMop");
 
-    DBUG_PRINT ("FREE", ("Removing contents of N_mop node %s ...", AP_NAME (arg_node)));
+  DBUG_PRINT( "FREE", ("Removing contents of N_mop node ...");
 
-    MOP_EXPRS (arg_node) = FREETRAV (MOP_EXPRS (arg_node));
-    MOP_OPS (arg_node) = FreeAllIds (MOP_OPS (arg_node));
+  MOP_EXPRS( arg_node) = FREETRAV( MOP_EXPRS( arg_node));
+  MOP_OPS( arg_node) = FreeAllIds( MOP_OPS( arg_node));
 
-    DBUG_PRINT ("FREE", ("Removing N_mop node ..."));
+  DBUG_PRINT( "FREE", ("Removing N_mop node ..."));
 
-    arg_node = Free (arg_node);
+  arg_node = Free( arg_node);
 
-    DBUG_RETURN (arg_node);
+  DBUG_RETURN( arg_node);
 }
 
 /*--------------------------------------------------------------------------*/
