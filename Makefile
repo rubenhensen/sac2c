@@ -1,6 +1,13 @@
 #
 # $Log$
-# Revision 1.38  1995/12/01 16:07:59  cg
+# Revision 1.39  1995/12/29 10:20:15  cg
+# added linking of readsib.o,
+# switched -pedantic off to avoid cast warnings
+#
+# Revision 1.38  1995/12/01  16:07:59  cg
+# added linking of precompile.o
+#
+# Revision 1.38  1995/12/01  16:07:59  cg
 # added linking of precompile.o
 #
 # Revision 1.37  1995/11/16  19:32:03  cg
@@ -113,8 +120,12 @@
 #
 #
 
-SACGCC=sac_gcc -ansi -Wall -pedantic -g 
-CC=gcc -ansi -Wall -pedantic -g 
+# CC=gcc -ansi -Wall -pedantic -g 
+#
+# -pedantic switched off to avoid those disgusting warnings about
+# casts in lvalues.
+ 
+CC=gcc -ansi -Wall -g 
 CCPROD=gcc -ansi -Wall -pedantic -DDBUG_OFF -O3
 MAKE=make CC="$(CC)"
 MAKEPROD=make CC="$(CCPROD)"
@@ -139,9 +150,9 @@ OPTIMIZE= src/optimize/optimize.o src/optimize/ConstantFolding.o \
           src/optimize/Unswitch.o \
 	  src/psi-opt/ArrayElimination.o
 PSIOPT= src/psi-opt/index.o src/psi-opt/psi-opt.o
-MODULES= src/modules/filemgr.o src/modules/import.o src/modules/sib.o  \
+MODULES= src/modules/filemgr.o src/modules/import.o src/modules/writesib.o  \
          src/modules/implicittypes.o src/modules/analysis.o \
-         src/modules/checkdec.o
+         src/modules/checkdec.o src/modules/readsib.o
 OBJECTS= src/objects/objinit.o src/objects/objects.o \
          src/objects/uniquecheck.o src/objects/rmvoidfun.o
 REFCOUNT= src/refcount/refcount.o
