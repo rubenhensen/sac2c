@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.31  1999/09/10 14:26:03  jhs
+ * Added printing of NAIVE_VARS of loops and conds.
+ *
  * Revision 2.30  1999/09/01 17:10:03  jhs
  * SYNC_SCHEDULING
  *
@@ -497,7 +500,8 @@ PrintIds (ids *arg)
 {
     DBUG_ENTER ("PrintIds");
 
-    do {
+    while (arg != NULL) {
+        /*  do {   */
         DBUG_PRINT ("PRINT", ("%s", IDS_NAME (arg)));
 
         if (IDS_MOD (arg) != NULL) {
@@ -510,7 +514,7 @@ PrintIds (ids *arg)
         if ((IDS_NAIVE_REFCNT (arg) != -1) && show_refcnt) {
             fprintf (outfile, "::%d", IDS_NAIVE_REFCNT (arg));
         }
-        if ((!(optimize & OPT_RCO)) && show_refcnt
+        if ((!(optimize & OPT_RCO)) && show_refcnt && (IDS_REFCNT (arg) != -1)
             && (IDS_REFCNT (arg) != IDS_NAIVE_REFCNT (arg))) {
             fprintf (outfile, "**");
         }
@@ -521,7 +525,8 @@ PrintIds (ids *arg)
             fprintf (outfile, ", ");
         }
         arg = IDS_NEXT (arg);
-    } while (NULL != arg);
+    }
+    /*   while(NULL != arg);  */
 
     DBUG_VOID_RETURN;
 }
@@ -1181,7 +1186,7 @@ PrintId (node *arg_node, node *arg_info)
     if ((ID_NAIVE_REFCNT (arg_node) != -1) && show_refcnt) {
         fprintf (outfile, "::%d", ID_NAIVE_REFCNT (arg_node));
     }
-    if ((!(optimize & OPT_RCO)) && show_refcnt
+    if ((!(optimize & OPT_RCO)) && show_refcnt && (ID_REFCNT (arg_node) != -1)
         && (ID_REFCNT (arg_node) != ID_NAIVE_REFCNT (arg_node))) {
         fprintf (outfile, "**");
     }
@@ -1386,7 +1391,7 @@ PrintArg (node *arg_node, node *arg_info)
     if ((1 == show_refcnt) && (-1 != ARG_NAIVE_REFCNT (arg_node))) {
         fprintf (outfile, "::%d", ARG_NAIVE_REFCNT (arg_node));
     }
-    if ((!(optimize & OPT_RCO)) && show_refcnt
+    if ((!(optimize & OPT_RCO)) && show_refcnt && (ARG_REFCNT (arg_node) != -1)
         && (ARG_REFCNT (arg_node) != ARG_NAIVE_REFCNT (arg_node))) {
         fprintf (outfile, "**");
     }
@@ -1485,8 +1490,15 @@ PrintWhile (node *arg_node, node *arg_info)
     Trav (WHILE_COND (arg_node), arg_info);
     fprintf (outfile, " )\n");
 
-    DBUG_EXECUTE ("MASK", fprintf (outfile, "\n**MASKS - while body\n");
+    DBUG_EXECUTE ("MASK", fprintf (outfile, "**MASKS - while body\n");
                   PrintMasks (WHILE_BODY (arg_node), arg_info););
+
+    DBUG_EXECUTE ("VARS", fprintf (outfile, "**(NAIVE)DEFVARS\n");
+                  PrintIds (WHILE_DEFVARS (arg_node)); fprintf (outfile, "\n");
+                  PrintIds (WHILE_NAIVE_DEFVARS (arg_node));
+                  fprintf (outfile, "\n**(NAIVE)USEVARS\n");
+                  PrintIds (WHILE_USEVARS (arg_node)); fprintf (outfile, "\n");
+                  PrintIds (WHILE_NAIVE_USEVARS (arg_node)); fprintf (outfile, "\n"););
 
     Trav (WHILE_BODY (arg_node), arg_info); /* traverse body of loop */
 
@@ -1511,14 +1523,21 @@ PrintCond (node *arg_node, node *arg_info)
 
     DBUG_EXECUTE ("MASK", fprintf (outfile, "\n**MASKS - then\n");
                   PrintMasks (COND_THEN (arg_node), arg_info););
+    DBUG_EXECUTE ("VARS", fprintf (outfile, "\n**(NAIVE)VARS - then\n");
+                  PrintIds (COND_THENVARS (arg_node)); fprintf (outfile, "\n");
+                  PrintIds (COND_NAIVE_THENVARS (arg_node)); fprintf (outfile, "\n"););
 
     Trav (COND_THEN (arg_node), arg_info);
 
-    DBUG_EXECUTE ("MASK", fprintf (outfile, "\n**MASKS - else\n");
-                  PrintMasks (COND_ELSE (arg_node), arg_info););
-
     INDENT;
     fprintf (outfile, "else\n");
+
+    DBUG_EXECUTE ("MASK", fprintf (outfile, "\n**MASKS - else\n");
+                  PrintMasks (COND_ELSE (arg_node), arg_info););
+    DBUG_EXECUTE ("VARS", fprintf (outfile, "\n**(NAIVE)VARS - else\n");
+                  PrintIds (COND_ELSEVARS (arg_node)); fprintf (outfile, "\n");
+                  PrintIds (COND_NAIVE_ELSEVARS (arg_node)); fprintf (outfile, "\n"););
+
     Trav (COND_ELSE (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -3045,7 +3064,7 @@ PrintNodeTreeIds (ids *vars)
     while (vars != NULL) {
         fprintf (outfile, "%s:%d::%d ", IDS_NAME (vars), IDS_REFCNT (vars),
                  IDS_NAIVE_REFCNT (vars));
-        if ((!(optimize & OPT_RCO)) && show_refcnt
+        if ((!(optimize & OPT_RCO)) && show_refcnt && (IDS_REFCNT (vars) != -1)
             && (IDS_REFCNT (vars) != IDS_NAIVE_REFCNT (vars))) {
             fprintf (outfile, "**");
         }
@@ -3101,7 +3120,7 @@ PrintNodeTree (node *node)
         case N_id:
             fprintf (outfile, "(%s:%d::%d)\n", ID_NAME (node), ID_REFCNT (node),
                      ID_NAIVE_REFCNT (node));
-            if ((!(optimize & OPT_RCO)) && show_refcnt
+            if ((!(optimize & OPT_RCO)) && show_refcnt && (ID_REFCNT (node) != -1)
                 && (ID_REFCNT (node) != ID_NAIVE_REFCNT (node))) {
                 fprintf (outfile, "**");
             }
@@ -3120,7 +3139,7 @@ PrintNodeTree (node *node)
                      mdb_type[TYPES_BASETYPE (ARG_TYPE (node))],
                      (ARG_NAME (node) != NULL) ? ARG_NAME (node) : "?", ARG_REFCNT (node),
                      ARG_NAIVE_REFCNT (node));
-            if ((!(optimize & OPT_RCO)) && show_refcnt
+            if ((!(optimize & OPT_RCO)) && show_refcnt && (ARG_REFCNT (node) != -1)
                 && (ARG_REFCNT (node) != ARG_NAIVE_REFCNT (node))) {
                 fprintf (outfile, "**");
             }
@@ -3129,7 +3148,7 @@ PrintNodeTree (node *node)
             fprintf (outfile, "(%s %s:%d::%d)\n",
                      mdb_type[TYPES_BASETYPE (VARDEC_TYPE (node))], VARDEC_NAME (node),
                      VARDEC_REFCNT (node), VARDEC_NAIVE_REFCNT (node));
-            if ((!(optimize & OPT_RCO)) && show_refcnt
+            if ((!(optimize & OPT_RCO)) && show_refcnt && (VARDEC_REFCNT (node) != -1)
                 && (VARDEC_REFCNT (node) != VARDEC_NAIVE_REFCNT (node))) {
                 fprintf (outfile, "**");
             }
@@ -3152,6 +3171,7 @@ PrintNodeTree (node *node)
                          IDS_REFCNT (NWITHID_VEC (node)),
                          IDS_NAIVE_REFCNT (NWITHID_VEC (node)));
                 if ((!(optimize & OPT_RCO)) && show_refcnt
+                    && (IDS_REFCNT (NWITHID_VEC (node)) != -1)
                     && (IDS_REFCNT (NWITHID_VEC (node))
                         != IDS_NAIVE_REFCNT (NWITHID_VEC (node)))) {
                     fprintf (outfile, "**");
