@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 1.48  1997/10/12 19:50:56  dkr
+ * fixed a problem with illegal side-effects:
+ *   in ND_FUN_DEC, ND_FUN_AP, ND_FUN_RET:
+ *     ... fprintf("...", tyarg[i++], tyarg[i++]) ...
+ *     is replaced by
+ *     ... fprintf("...", tyarg[i], tyarg[i+1]); i+=2 ...
+ *
  * Revision 1.47  1997/05/28 12:35:25  sbs
  * Profiling integrated
  *
@@ -694,55 +701,54 @@ extern int check_boundary; /* defined in main.c */
         fprintf (outfile, "%s( int __argc, char **__argv)", name);
     } else {
         fprintf (outfile, "%s( ", name);
-        ScanArglist (
-          tyarg, 3 * narg, fprintf (outfile, " %s %s", tyarg[i++], tyarg[i++]);
-          sep = 1,
+        ScanArglist (tyarg, 3 * narg, fprintf (outfile, " %s %s", tyarg[i], tyarg[i + 1]);
+                     i += 2; sep = 1,
 
-          if (0 != (tyarg[i + 1])[0]) {
-              fprintf (outfile, " %s *%s__p", tyarg[i++], tyarg[i++]);
-              sep = 1;
-          } else {
-              fprintf (outfile, " %s *%s", tyarg[i++], tyarg[i++]);
-              sep = 1;
-          },
+                             if (0 != (tyarg[i + 1])[0]) {
+                                 fprintf (outfile, " %s *%s__p", tyarg[i], tyarg[i + 1]);
+                                 i += 2;
+                                 sep = 1;
+                             } else {
+                                 fprintf (outfile, " %s *%s", tyarg[i], tyarg[i + 1]);
+                                 i += 2;
+                                 sep = 1;
+                             },
 
-          if (0 != (tyarg[i + 1])[0]) {
-              fprintf (outfile, " %s *%s__p", tyarg[i++], tyarg[i++]);
-              sep = 1;
-          } else {
-              fprintf (outfile, " %s *%s", tyarg[i++], tyarg[i++]);
-              sep = 1;
-          },
+                             if (0 != (tyarg[i + 1])[0]) {
+                                 fprintf (outfile, " %s *%s__p", tyarg[i], tyarg[i + 1]);
+                                 i += 2;
+                                 sep = 1;
+                             } else {
+                                 fprintf (outfile, " %s *%s", tyarg[i], tyarg[i + 1]);
+                                 i += 2;
+                                 sep = 1;
+                             },
 
-          fprintf (outfile, " %s *%s", tyarg[i++], tyarg[i++]);
-          sep = 1, fprintf (outfile, " %s %s", tyarg[i++], tyarg[i++]);
-          sep = 1,
+                             fprintf (outfile, " %s *%s", tyarg[i], tyarg[i + 1]);
+                     i += 2; sep = 1,
 
-          if (0 != (tyarg[i + 1])[0])
-            fprintf (outfile, " ND_KS_DEC_IN_RC(%s, %s)", tyarg[i++], tyarg[i++]);
-          else {
-              fprintf (outfile, "ND_KS_DEC_IMPORT_IN_RC(%s)", tyarg[i++]);
-              i++;
-          };
-          sep = 1,
+                             fprintf (outfile, " %s %s", tyarg[i], tyarg[i + 1]);
+                     i += 2; sep = 1,
 
-          if (0 != (tyarg[i + 1])[0])
-            fprintf (outfile, " ND_KS_DEC_OUT_RC(%s, %s)", tyarg[i++], tyarg[i++]);
-          else {
-              fprintf (outfile, "ND_KS_DEC_IMPORT_OUT_RC(%s)", tyarg[i++]);
-              i++;
-          };
-          sep = 1,
+                             if (0 != (tyarg[i + 1])[0])
+                               fprintf (outfile, " ND_KS_DEC_IN_RC(%s, %s)", tyarg[i],
+                                        tyarg[i + 1]);
+                     else fprintf (outfile, "ND_KS_DEC_IMPORT_IN_RC(%s)", tyarg[i]);
+                     i += 2; sep = 1,
 
-          if (0 != (tyarg[i + 1])[0])
-            fprintf (outfile, " ND_KS_DEC_INOUT_RC(%s, %s)", tyarg[i++], tyarg[i++]);
-          else {
-              fprintf (outfile, "ND_KS_DEC_IMPORT_INOUT_RC(%s)", tyarg[i++]);
-              i++;
-          };
-          sep = 1,
+                             if (0 != (tyarg[i + 1])[0])
+                               fprintf (outfile, " ND_KS_DEC_OUT_RC(%s, %s)", tyarg[i],
+                                        tyarg[i + 1]);
+                     else fprintf (outfile, "ND_KS_DEC_IMPORT_OUT_RC(%s)", tyarg[i]);
+                     i += 2; sep = 1,
 
-          ",");
+                             if (0 != (tyarg[i + 1])[0])
+                               fprintf (outfile, " ND_KS_DEC_INOUT_RC(%s, %s)", tyarg[i],
+                                        tyarg[i + 1]);
+                     else fprintf (outfile, "ND_KS_DEC_IMPORT_INOUT_RC(%s)", tyarg[i]);
+                     i += 2; sep = 1,
+
+                             ",");
         fprintf (outfile, ")");
     }
 
@@ -780,14 +786,14 @@ if (strcmp (name, "create_TheCommandLine") == 0) {
     fprintf (outfile, "%s( __argc, __argv);", name);
 } else {
     fprintf (outfile, "%s( ", name);
-    ScanArglist (arg, 2 * narg, fprintf (outfile, " %s", arg[i++]);
-                 sep = 1, fprintf (outfile, " &%s", arg[i++]);
-                 sep = 1, fprintf (outfile, " &%s", arg[i++]);
-                 sep = 1, fprintf (outfile, " &%s", arg[i++]);
-                 sep = 1, fprintf (outfile, " %s", arg[i++]);
-                 sep = 1, fprintf (outfile, " ND_KS_AP_IN_RC(%s)", arg[i++]);
-                 sep = 1, fprintf (outfile, " ND_KS_AP_OUT_RC(%s)", arg[i++]);
-                 sep = 1, fprintf (outfile, " ND_KS_AP_INOUT_RC(%s)", arg[i++]);
+    ScanArglist (arg, 2 * narg, fprintf (outfile, " %s", arg[i]); i++;
+                 sep = 1, fprintf (outfile, " &%s", arg[i]); i++;
+                 sep = 1, fprintf (outfile, " &%s", arg[i]); i++;
+                 sep = 1, fprintf (outfile, " &%s", arg[i]); i++;
+                 sep = 1, fprintf (outfile, " %s", arg[i]); i++;
+                 sep = 1, fprintf (outfile, " ND_KS_AP_IN_RC(%s)", arg[i]); i++;
+                 sep = 1, fprintf (outfile, " ND_KS_AP_OUT_RC(%s)", arg[i]); i++;
+                 sep = 1, fprintf (outfile, " ND_KS_AP_INOUT_RC(%s)", arg[i]); i++;
                  sep = 1, ",");
     fprintf (outfile, ");");
 }
@@ -819,11 +825,11 @@ DBUG_VOID_RETURN;
 
 INDENT;
 ScanArglist (arg, 2 * narg, i++;
-             sep = 0, fprintf (outfile, "*%s__p = %s;\n", arg[i], arg[i++]); INDENT;
-             sep = 1, fprintf (outfile, "*%s__p = %s;\n", arg[i], arg[i++]); INDENT;
+             sep = 0, fprintf (outfile, "*%s__p = %s;\n", arg[i], arg[i]); i++; INDENT;
+             sep = 1, fprintf (outfile, "*%s__p = %s;\n", arg[i], arg[i]); i++; INDENT;
              sep = 1, i++; sep = 0, i++; sep = 0, i++;
-             sep = 0, fprintf (outfile, "ND_KS_RET_OUT_RC(%s);\n", arg[i++]); INDENT;
-             sep = 1, fprintf (outfile, "ND_KS_RET_INOUT_RC(%s);\n", arg[i++]); INDENT;
+             sep = 0, fprintf (outfile, "ND_KS_RET_OUT_RC(%s);\n", arg[i]); i++; INDENT;
+             sep = 1, fprintf (outfile, "ND_KS_RET_INOUT_RC(%s);\n", arg[i]); i++; INDENT;
              sep = 1, "");
 if ((strcmp (FUNDEF_NAME (INFO_FUNDEF (arg_info)), "main") == 0)) {
     fprintf (outfile, "PROFILE_PRINT();\n");
