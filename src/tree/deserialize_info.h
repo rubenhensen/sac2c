@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/11/07 18:11:21  sah
+ * added FUNDECS
+ *
  * Revision 1.2  2004/10/28 17:20:46  sah
  * now deserialize as an internal state
  *
@@ -21,6 +24,7 @@ struct INFO {
     node *ssacounter;
     node *module;
     node *fundefs;
+    node *fundecs;
     node *vardecs;
     node *args;
 };
@@ -32,6 +36,7 @@ struct INFO {
 #define INFO_DS_SSACOUNTER(n) (n->ssacounter)
 #define INFO_DS_MODULE(n) (n->module)
 #define INFO_DS_FUNDEFS(n) (n->fundefs)
+#define INFO_DS_FUNDECS(n) (n->fundecs)
 #define INFO_DS_VARDECS(n) (n->vardecs)
 #define INFO_DS_ARGS(n) (n->args)
 
