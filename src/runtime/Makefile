@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.9  1998/10/28 20:35:18  sbs
+# Now, sac2crc will be part of runtime.tar as well 8-))
+#
 # Revision 1.8  1998/10/28 19:32:10  sbs
 # runtime.tar rule inserted
 #
@@ -53,7 +56,7 @@ libsac_trace_mt.o: libsac_mt.c
 	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) -o $@ -c $<
 
 runtime.tar: libsac.a $(RTINCS)
-	tar cvf runtime.tar libsac.a $(RTINCS)
+	tar cvf runtime.tar libsac.a $(RTINCS) sac2crc
 
 deps:
 	makedepend $(INCS) *.c
