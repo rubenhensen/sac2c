@@ -1,6 +1,9 @@
 
 /*
  * $Log$
+ * Revision 1.20  1998/05/18 08:16:10  srs
+ * fixed bug in IdxPrf(), F_modarray
+ *
  * Revision 1.19  1998/05/07 16:19:44  dkr
  * added support for new with-loop
  *
@@ -861,7 +864,7 @@ IdxPrf (node *arg_node, node *arg_info)
         arg3 = PRF_ARG3 (arg_node);
         DBUG_ASSERT (((arg1->nodetype == N_id) || (arg1->nodetype == N_array)),
                      "wrong arg in F_modarray application");
-        if (NODE_TYPE (arg2) == N_id)
+        if (NODE_TYPE (arg1) == N_id)
             type = ID_TYPE (arg1);
         else
             type = ARRAY_TYPE (arg1);
