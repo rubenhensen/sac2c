@@ -1,5 +1,9 @@
 #
 # $Log$
+# Revision 1.36  1998/03/24 13:44:52  cg
+# libsac as well as profile.[ch] removed
+# gen_startup_code.[ch] added
+#
 # Revision 1.35  1998/03/19 17:08:39  dkr
 # make deps done
 #
@@ -118,7 +122,7 @@ CFLAGS    := -D__EXTENSIONS__
 INCS=-I../global -I../../inc -I../print -I../typecheck -I../refcount -I../optimize
 MACS=icm.data icm_decl.c icm_args.c icm_comment.c icm_trace.c
 
-all: compile.o icm2c.o precompile.o libsac.a profile.o Old2NewWith.o
+all: compile.o icm2c.o precompile.o libsac.a profile.o Old2NewWith.o gen_startup_code.o
 
 BEtest: icm2c.c $(MACS)
 	$(CC) $(CCFLAGS) $(CFLAGS) -o BEtest icm2c.c -DTEST_BACKEND $(INCS) ../../lib/dbug.o
@@ -135,12 +139,8 @@ profile.o: profile.c
 precompile.o: precompile.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o precompile.o -c precompile.c $(INCS)
 
-libsac.a: libsac.o
-	ar rc libsac.a libsac.o
-	ranlib libsac.a
-
-libsac.o: libsac.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o libsac.o -c libsac.c $(INCS)
+gen_startup_code.o: gen_startup_code.c
+	$(CC) $(CCFLAGS) $(CFLAGS) -o gen_startup_code.o -c gen_startup_code.c $(INCS)
 
 Old2NewWith.o: Old2NewWith.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o Old2NewWith.o -c Old2NewWith.c $(INCS)
@@ -150,8 +150,7 @@ deps:
 	makedepend $(INCS) *.c
 
 clean:
-	$(RM) profile.o compile.o icm2c.o precompile.o libsac.a libsac.o Old2NewWith.o \
-              *.bak BEtest *.sib *.sac
+	$(RM) *.o *.bak BEtest *.sib *.sac
 	$(RM) -r .sb
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
