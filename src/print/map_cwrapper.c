@@ -15,6 +15,11 @@
 #include "resource.h"
 #include "shape.h"
 
+/* only local used utility functions */
+static int CountFunResults (node *fundef);
+static int CountFunArgs (node *fundef);
+char *stringcopy (char *str);
+
 /******************************************************************************
  *
  * function:
@@ -31,8 +36,8 @@ MCWmodul (node *arg_node, node *arg_info)
     DBUG_ENTER ("MCWmodul");
 
     if (MODUL_FUNS (arg_node) != NULL) {
-        /* if there are some fundefs traverse them */
-
+        /* if there are some fundefs, traverse them */
+        NOTE (("build up mapper...\n"));
         INFO_MCW_MODUL (arg_info) = arg_node;
 
         /* the modul node is needed to hang the wrapperchain in N_module */
@@ -55,7 +60,40 @@ MCWmodul (node *arg_node, node *arg_info)
 node *
 MCWfundef (node *arg_node, node *arg_info)
 {
+    node *result;
+    node *cwrapper;
+
     DBUG_ENTER ("MCWfundef");
+
+    if (FUNDEF_STATUS (arg_node) == ST_regular) {
+        /* export only functions defined in this module */
+        DBUG_ASSERT ((FUNDEF_BODY (arg_node) != NULL),
+                     ("MapFunctionToWrapper: Found fundef ST_regular with empty body!"));
+
+        /* start traversal of cwrapper nodes, searching a mapping wrapper */
+        if (MODUL_CWRAPPER (INFO_MCW_MODUL (arg_info)) != NULL) {
+            INFO_MCW_FUNDEF (arg_info) = arg_node; /* map this fundef */
+            result = Trav (MODUL_CWRAPPER (INFO_MCW_MODUL (arg_info)), arg_info);
+        } else {
+            /* no existing wrapper */
+            result = NULL;
+        }
+
+        if (result == NULL) {
+            /* new wrapper needed - setup node with data for new wrapper */
+            cwrapper = MakeCWrapper (MODUL_CWRAPPER (INFO_MCW_MODUL (arg_info)),
+                                     stringcopy (FUNDEF_NAME (arg_node)), modulename,
+                                     CountFunArgs (arg_node), CountFunResults (arg_node));
+            CWRAPPER_FUNS (cwrapper)
+              = NodeListAppend (CWRAPPER_FUNS (cwrapper), arg_node, NULL);
+            MODUL_CWRAPPER (INFO_MCW_MODUL (arg_info)) = cwrapper;
+        }
+    }
+
+    /* step to next fundef */
+    if (FUNDEF_NEXT (arg_node) != NULL) {
+        Trav (FUNDEF_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -81,6 +119,58 @@ MCWarg (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
+ *   node *MCWcwrapper(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   searches cwarppers for wrapper matching specified function
+ *   if    match: include fundef in wrappers function nodelist, return arg_node
+ *   if no match: return NULL
+ *
+ ******************************************************************************/
+
+node *
+MCWcwrapper (node *arg_node, node *arg_info)
+{
+    node *result;
+    bool isfound;
+    DBUG_ENTER ("MCWcwrapper");
+
+    result = NULL;
+    isfound = FALSE;
+
+    if (strcmp (CWRAPPER_NAME (arg_node), FUNDEF_NAME (INFO_MCW_FUNDEF (arg_info)))
+        == 0) {
+        /* same name, now check number of args and results */
+        if ((CWRAPPER_ARGCOUNT (arg_node) == CountFunArgs (INFO_MCW_FUNDEF (arg_info)))
+            && (CWRAPPER_RESCOUNT (arg_node)
+                == CountFunResults (INFO_MCW_FUNDEF (arg_info)))) {
+            /* fundef matches this wrapper,
+             * so add fundef to funs nodelist */
+            CWRAPPER_FUNS (arg_node) = NodeListAppend (CWRAPPER_FUNS (arg_node),
+                                                       INFO_MCW_FUNDEF (arg_info), NULL);
+            isfound = TRUE;
+        }
+    }
+
+    if ((!isfound) && (CWRAPPER_NEXT (arg_node) != NULL)) {
+        /* traverse to next wrapper, and continue search */
+        result = Trav (CWRAPPER_NEXT (arg_node), arg_info);
+        if (result != NULL) {
+            isfound = TRUE;
+        }
+    }
+
+    if (isfound) {
+        result = arg_node;
+    } else {
+        result = NULL;
+    }
+    DBUG_RETURN (result);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *MapCWrapper(node *syntaxtree)
  *
  * description:
@@ -94,16 +184,94 @@ node *
 MapCWrapper (node *syntax_tree)
 {
     node *arg_info;
+    funtab *old_tab;
 
     DBUG_ENTER ("MapCWrapper");
 
     if (generatelibrary & GENERATELIBRARY_C) {
         arg_info = MakeInfo ();
 
+        old_tab = act_tab;
+        act_tab = mapcw_tab;
+
         syntax_tree = Trav (syntax_tree, arg_info);
+
+        act_tab = old_tab;
 
         FREE (arg_info);
     }
 
     DBUG_RETURN (syntax_tree);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   int CountFunArgs( node *fundef)
+ *
+ * description:
+ *   counts the number of arguments of this function
+ *
+ * return:
+ *   number of args
+ *
+ ******************************************************************************/
+
+static int
+CountFunArgs (node *fundef)
+{
+
+    int count = 0;
+    node *args;
+
+    DBUG_ENTER ("CountFunArgs");
+
+    args = FUNDEF_ARGS (fundef);
+
+    while (args != NULL) {
+        count++;
+        args = ARG_NEXT (args);
+    }
+
+    DBUG_RETURN (count);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   int CountFunResults( node *fundef)
+ *
+ * description:
+ *   counts the number of results of this function
+ *
+ * return:
+ *   number of results
+ *
+ ******************************************************************************/
+
+static int
+CountFunResults (node *fundef)
+{
+    int count = 0;
+    types *rettypes;
+
+    DBUG_ENTER ("CountFunResults");
+
+    rettypes = FUNDEF_TYPES (fundef);
+
+    while (rettypes != NULL) {
+        count++;
+        rettypes = TYPES_NEXT (rettypes);
+    }
+    DBUG_RETURN (count);
+}
+
+/* already existing ? */
+char *
+stringcopy (char *str)
+{
+    char *tmp;
+    tmp = (char *)MALLOC (sizeof (char) * (strlen (str) + 1));
+    strcpy (tmp, str);
+    return (tmp);
 }

@@ -4,6 +4,7 @@
 #include "tree.h"
 #include "globals.h"
 
+extern node *MCWcwrapper (node *arg_node, node *arg_info);
 extern node *MCWmodul (node *arg_node, node *arg_info);
 extern node *MCWfundef (node *arg_node, node *arg_info);
 extern node *MCWarg (node *arg_node, node *arg_info);
