@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.38  1996/08/04 14:40:12  sbs
+ * Revision 1.39  1996/09/09 12:32:05  cg
+ * ICMs for global objects modified in order allow construction of header files.
+ *
+ * Revision 1.38  1996/08/04  14:40:12  sbs
  * modarray_AxVxA with and without reuse check inserted.
  *
  * Revision 1.37  1996/04/28  12:45:49  sbs
@@ -140,6 +143,7 @@
 #include "main.h"
 #include "trace.h"
 #include "convert.h"
+#include "globals.h"
 
 #define RetWithScal(res, val)                                                            \
     INDENT;                                                                              \
@@ -945,26 +949,45 @@ DBUG_VOID_RETURN;
 #include "icm_comment.c"
 #include "icm_trace.c"
 
-INDENT;
-fprintf (outfile, "%s *%s;\n", type, name);
-INDENT;
-fprintf (outfile, "int *__%s_rc;\n", name);
-INDENT;
-fprintf (outfile, "int __%s_sz=", name);
-fprintf (outfile, "%s", s[0]);
-{
-    int i;
-    for (i = 1; i < dim; i++)
-        fprintf (outfile, "*%s", s[i]);
-    fprintf (outfile, ";\n");
+if (print_objdef_for_header_file) {
     INDENT;
-    fprintf (outfile, "int __%s_d=%d;\n", name, dim);
-    for (i = 0; i < dim; i++) {
+    fprintf (outfile, "extern %s *%s;\n", type, name);
+    INDENT;
+    fprintf (outfile, "extern int *__%s_rc;\n", name);
+    INDENT;
+    fprintf (outfile, "extern int __%s_sz;\n", name);
+    {
+        int i;
         INDENT;
-        fprintf (outfile, "int __%s_s%d=%s;\n", name, i, s[i]);
+        fprintf (outfile, "extern int __%s_d;\n", name);
+        for (i = 0; i < dim; i++) {
+            INDENT;
+            fprintf (outfile, "extern int __%s_s%d;\n", name, i);
+        }
     }
+    fprintf (outfile, "\n");
+} else {
+    INDENT;
+    fprintf (outfile, "%s *%s;\n", type, name);
+    INDENT;
+    fprintf (outfile, "int *__%s_rc;\n", name);
+    INDENT;
+    fprintf (outfile, "int __%s_sz=", name);
+    fprintf (outfile, "%s", s[0]);
+    {
+        int i;
+        for (i = 1; i < dim; i++)
+            fprintf (outfile, "*%s", s[i]);
+        fprintf (outfile, ";\n");
+        INDENT;
+        fprintf (outfile, "int __%s_d=%d;\n", name, dim);
+        for (i = 0; i < dim; i++) {
+            INDENT;
+            fprintf (outfile, "int __%s_s%d=%s;\n", name, i, s[i]);
+        }
+    }
+    fprintf (outfile, "\n");
 }
-fprintf (outfile, "\n");
 
 #undef ND_KS_DECL_GLOBAL_ARRAY
 
