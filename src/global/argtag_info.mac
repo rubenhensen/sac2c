@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2003/03/28 15:25:45  dkr
+ * trailing comma removed for TAGGED_ARRAYS
+ *
  * Revision 1.6  2002/09/25 14:25:44  sbs
  * trailing comma eliminated as to please OSF_ALPHA cc
  *
@@ -98,7 +101,7 @@ SELECT (ATG_notag, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, ""),
   SELECT (ATG_out_noshp, FALSE, TRUE, TRUE, FALSE, TRUE, FALSE,
           "out_noshp"), /* not fully implemented yet */
 
-  SELECT (ATG_out_nodesc, FALSE, FALSE, FALSE, FALSE, TRUE, FALSE, "out_nodesc"),
+  SELECT (ATG_out_nodesc, FALSE, FALSE, FALSE, FALSE, TRUE, FALSE, "out_nodesc")
 
 #else
 
