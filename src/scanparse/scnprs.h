@@ -1,9 +1,10 @@
-#ifndef _scnprs_h
-
-#define _scnprs_h
 /*
  *
  * $Log$
+ * Revision 2.2  1999/05/12 14:37:48  cg
+ * MAX_CPP_VARS moved to globals.h
+ * added external declaration of  My_yyparse()
+ *
  * Revision 2.1  1999/02/23 12:40:38  sacbase
  * new release made
  *
@@ -40,11 +41,13 @@
  *
  */
 
+#ifndef _scnprs_h
+
+#define _scnprs_h
+
 #include "resource.h"
 #include "types.h"
 #include "y.tab.h"
-
-#define MAX_CPP_VARS 32
 
 extern int linenum;
 extern int yyparse ();
@@ -56,5 +59,6 @@ extern node *decl_tree;
 extern node *sib_tree;
 
 extern node *ScanParse ();
+extern int My_yyparse ();
 
 #endif /* _scnprs_h */
