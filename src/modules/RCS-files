@@ -1,7 +1,8 @@
 Makefile
-compare_macros.h
 filemgr.c
 filemgr.h
+implicittypes.c
+implicittypes.h
 import.c
 import.h
 sib.c
