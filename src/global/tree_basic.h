@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.45  1996/01/22 17:24:40  cg
+ * Revision 1.46  1996/01/25 18:39:05  cg
+ * added macro MODUL_CLASSTYPE(n)
+ *
+ * Revision 1.45  1996/01/22  17:24:40  cg
  * added macro OBJDEC_DEF(n)
  *
  * Revision 1.44  1996/01/22  14:44:44  asi
@@ -453,6 +456,7 @@ extern nodelist *MakeNodelist (node *node, statustype status, nodelist *next);
  ***
  ***    char*      NAME      (O)
  ***    file_type  FILETYPE
+ ***    types*     CLASSTYPE (O)
  ***
  ***  temporary attributes:
  ***
@@ -463,6 +467,7 @@ extern nodelist *MakeNodelist (node *node, statustype status, nodelist *next);
  ***/
 
 /*
+ *  CLASSTYPE points to the type of a class implementation.
  *
  *  The temporary attributes DECL and STORE_IMPORTS are mapped
  *  to the same real node because they are never used in the same
@@ -480,6 +485,7 @@ extern node *MakeModul (char *name, file_type filetype, node *imports, node *typ
 #define MODUL_FUNS(n) (n->node[2])
 #define MODUL_DECL(n) (n->node[4])
 #define MODUL_STORE_IMPORTS(n) (n->node[4])
+#define MODUL_CLASSTYPE(n) ((types *)n->node[5])
 
 /*--------------------------------------------------------------------------*/
 
@@ -789,6 +795,7 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  *  STATUS: ST_regular      function defined in this module
  *          ST_objinitfun   generic function for object initialization
  *          ST_imported     imported function (maybe declaration only)
+ *          ST_generic      class conversion function
  *
  *  ATTRIB: ST_regular      dimension-dependent or non-array function
  *          ST_independent  dimension-independent array function
