@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.23  2003/03/09 17:13:54  ktr
+ * added basic support for BLIR.
+ *
  * Revision 3.22  2002/11/08 13:29:45  cg
  * Removed TRACE_OWL macro since old with-loops left sac2c several
  * years ago.  :-))))
@@ -236,6 +239,7 @@ extern unsigned int optimize;
 #define OPT_APL 0x04000000  /* array placement                             */
 #define OPT_WLS 0x08000000  /* with-loop scalarization                     */
 #define OPT_AL 0x10000000   /* associative law                             */
+#define OPT_BLIR 0x20000000 /* backend loop invariant removal              */
 
 /* use ssa-form based optimizations instead of old opts */
 extern bool use_ssaform;

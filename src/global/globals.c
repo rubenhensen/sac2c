@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.30  2003/03/09 17:13:54  ktr
+ * added basic support for BLIR.
+ *
  * Revision 3.29  2003/02/19 16:16:25  mwe
  * DistributiveLaw activated in non-product-version by default
  *
@@ -423,9 +426,10 @@ bool patch_with = FALSE;
 
 #ifdef PRODUCTION
 unsigned int optimize = OPT_ALL & (~OPT_LIR) & (~OPT_MTO) & (~OPT_SBE) & (~OPT_MTI)
-                        & (~OPT_APL) & (~OPT_WLS) & (~OPT_DL);
+                        & (~OPT_APL) & (~OPT_DL) & (~OPT_BLIR);
 #else /* PRODUCTION */
-unsigned int optimize = OPT_ALL & (~OPT_MTO) & (~OPT_SBE) & (~OPT_MTI) & (~OPT_APL);
+unsigned int optimize
+  = OPT_ALL & (~OPT_MTO) & (~OPT_SBE) & (~OPT_MTI) & (~OPT_APL) & (~OPT_BLIR);
 
 #endif /* PRODUCTION */
 

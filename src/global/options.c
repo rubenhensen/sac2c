@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.33  2003/03/09 17:13:54  ktr
+ * added basic support for BLIR.
+ *
  * Revision 3.32  2002/11/08 13:29:45  cg
  * Removed TRACE_OWL macro since old with-loops left sac2c several
  * years ago.  :-))))
@@ -529,6 +532,9 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_CHOICE ("msca", optimize |= OPT_MSCA);
         ARG_CHOICE ("MSCA", optimize |= OPT_MSCA);
 
+        ARG_CHOICE ("blir", optimize |= OPT_BLIR);
+        ARG_CHOICE ("BLIR", optimize |= OPT_BLIR);
+
         ARG_CHOICE ("pab", print_after_break = TRUE);
         ARG_CHOICE ("PAB", print_after_break = TRUE);
 
@@ -793,6 +799,9 @@ AnalyseCommandline (int argc, char *argv[])
 
         ARG_CHOICE ("msca", optimize &= ~OPT_MSCA);
         ARG_CHOICE ("MSCA", optimize &= ~OPT_MSCA);
+
+        ARG_CHOICE ("blir", optimize &= ~OPT_BLIR);
+        ARG_CHOICE ("BLIR", optimize &= ~OPT_BLIR);
 
         ARG_CHOICE ("pab", print_after_break = FALSE);
         ARG_CHOICE ("PAB", print_after_break = FALSE);

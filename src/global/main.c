@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2003/03/09 17:13:54  ktr
+ * added basic support for BLIR.
+ *
  * Revision 3.18  2002/04/30 09:02:06  dkr
  * no changes done
  *
@@ -112,6 +115,7 @@
 #include "interrupt.h"
 #include "options.h"
 #include "multithread.h"
+#include "blir.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -422,6 +426,12 @@ main (int argc, char *argv[])
     if (break_after == PH_wltrans)
         goto BREAK;
     compiler_phase++;
+
+    if ((use_ssaform) && (optimize & OPT_BLIR)) {
+        /* Perform Backend Withloop Invariant Removal */
+        syntax_tree = Blir (syntax_tree);
+        goto BREAK;
+    }
 
     PHASE_PROLOG;
     /*
