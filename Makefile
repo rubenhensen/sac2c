@@ -1,6 +1,11 @@
 #
 #
 # $Log$
+# Revision 3.64  2003/02/11 17:33:14  sbs
+# call of make tagged changed to a simple touch operation
+# pattern rule for .tagged eliminated (depreciated due to
+# implicit mechanism in Makefile.Config).
+#
 # Revision 3.63  2003/02/08 16:01:26  mwe
 # DistributiveLaw.o for linker added
 #
@@ -209,7 +214,7 @@ distrib_product: check_os tools/bin/cse prod sac2c.prod
 twice: check_os tools/bin/cse dummy sac2c sac2c.twice
 
 tagged:
-	$(MAKE) all.tagged
+	touch _TAGGED_ARRAYS
 
 tools/bin/cse:
 	$(MAKE) -C tools
@@ -371,5 +376,3 @@ linux: src.tar.gz
             'chmod 644 $(SOURCE_FILES);'   \
             'make OS=LINUX_X86'
 
-%.tagged:
-	$(MAKE) "CFLAGS=$(CFLAGS) -DTAGGED_ARRAYS" $*
