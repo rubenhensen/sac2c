@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2004/11/25 22:49:49  khf
+ * corrected application of TCmakeAp2
+ *
  * Revision 1.6  2004/11/24 12:47:20  khf
  * replaced WITH_CEXPR
  *
@@ -192,8 +195,8 @@ MakeFoldFunAssign (node *fundef, node *withop, node *accu_ids, node *cexpr)
 
     fundef = TCaddVardecs (fundef, vardec);
 
-    funap = TCmakeAp2 (ILIBstringCopy (FOLD_FUN (withop)), FOLD_MOD (withop),
-                       DUPdupIdsId (accu_ids), DUPdoDupNode (cexpr));
+    funap
+      = TCmakeAp2 (FOLD_FUNDEF (withop), DUPdupIdsId (accu_ids), DUPdoDupNode (cexpr));
 
     AP_FUNDEF (funap) = FOLD_FUNDEF (withop);
 
