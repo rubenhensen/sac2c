@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.178  2004/11/27 02:03:25  jhb
+ * MakeWlSegX changed to TCmakeWlSegX
+ *
  * Revision 3.177  2004/11/27 01:35:28  sah
  * fixed it all, yeah!
  *
@@ -1984,7 +1987,7 @@ extern int TCcountParts (node *parts);
         WLSEGVAR_TASKSEL (n) = (rhs);                                                    \
     }
 
-extern node *MakeWlSegX (int dims, node *contents, node *next);
+extern node *TCmakeWlSegX (int dims, node *contents, node *next);
 
 /*--------------------------------------------------------------------------*/
 
