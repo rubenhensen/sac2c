@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.36  1996/01/09 12:04:59  cg
+ * Revision 1.37  1996/01/12 14:56:36  cg
+ * added some new macros for N_info node, corrected ID_REFCNT.
+ *
+ * Revision 1.36  1996/01/09  12:04:59  cg
  * added macro ARG_REFCNT
  *
  * Revision 1.35  1996/01/07  16:54:49  cg
@@ -1367,7 +1370,7 @@ extern node *MakeId (char *name, char *mod, statustype status);
 
 #define ID_NAME(n) (n->info.ids->id)
 #define ID_VARDEC(n) (n->info.ids->node)
-#define ID_REFCNT(n) (n->info.ids->refcnt)
+#define ID_REFCNT(n) (n->refcnt)
 #define ID_MOD(n) (n->info.ids->mod)
 #define ID_ATTRIB(n) (n->info.ids->attrib)
 #define ID_STATUS(n) (n->info.ids->status)
@@ -1642,6 +1645,13 @@ extern node *MakePragma ();
  ***    nodelist*  EXPORTOBJS    (O)
  ***    nodelist*  EXPORTFUNS    (O)
  ***
+ ***  when used in compile.c :
+ ***
+ ***    ids*       LASTIDS       (O)
+ ***    node*      LASTLET       (O)  (N_let)
+ ***    node*      LASTASSIGN    (O)  (N_assign)
+ ***    node*      VARDECS       (O)  (N_vardec)
+ ***    node*      WITHBEGIN     (O)  (N_icm)
  ***/
 
 /*
@@ -1654,6 +1664,12 @@ extern node *MakeInfo ();
 #define INFO_EXPORTTYPES(n) ((nodelist *)n->node[0])
 #define INFO_EXPORTOBJS(n) ((nodelist *)n->node[1])
 #define INFO_EXPORTFUNS(n) ((nodelist *)n->node[2])
+
+#define INFO_LASTIDS(n) (n->info.ids)
+#define INFO_LASTLET(n) (n->node[0])
+#define INFO_LASTASSIGN(n) (n->node[1])
+#define INFO_VARDECS(n) (n->node[3])
+#define INFO_WITHBEGIN(n) (n->node[2])
 
 /*--------------------------------------------------------------------------*/
 
