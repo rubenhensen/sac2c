@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.44  2000/02/09 11:47:57  dkr
+ * superfluous \n after the last vardec removed from output
+ *
  * Revision 2.43  2000/02/03 15:20:31  jhs
  * Added PrintMT and PrintSt.
  *
@@ -1556,8 +1559,6 @@ PrintVardec (node *arg_node, node *arg_info)
     fprintf (outfile, ";\n");
     if (VARDEC_NEXT (arg_node)) {
         Trav (VARDEC_NEXT (arg_node), arg_info);
-    } else {
-        fprintf (outfile, "\n");
     }
 
     DBUG_RETURN (arg_node);
