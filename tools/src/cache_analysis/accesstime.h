@@ -3,6 +3,7 @@
 #ifndef _accesstime_h
 #define _accesstime_h
 
+#include <sys/time.h>
 #include <sys/resource.h>
 
 typedef struct rusage stimer_t;
