@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.73  2004/11/24 20:23:57  sah
+ * COMPILES.
+ *
  * Revision 3.72  2004/11/23 10:04:04  sah
  * SaC DevCamp 04
  *
@@ -13,9 +16,13 @@
  *
  */
 
-#define NEW_INFO
-
 #include "free.h"
+#include "dbug.h"
+#include "traverse.h"
+#include "internal_lib.h"
+#include "free_info.h"
+#include "tree_basic.h"
+#include "new_types.h"
 
 /*
  * INFO functions
@@ -124,7 +131,7 @@ FREEfreeOneTypes (types *fr)
     DBUG_ENTER ("FREEfreeOneTypes");
 
     if (fr != NULL) {
-        DBUG_PRINT ("FREE", ("Removing types: %s", mdb_type[TYPES_BASETYPE (fr)]));
+        DBUG_PRINT ("FREE", ("Removing types: %s", TYPES_NAME (fr)));
         tmp = fr;
         fr = TYPES_NEXT (fr);
 
@@ -151,43 +158,6 @@ FREEfreeAllTypes (types *fr)
 
     while (fr != NULL) {
         fr = FREEfreeOneTypes (fr);
-    }
-
-    DBUG_RETURN (fr);
-}
-
-/*--------------------------------------------------------------------------*/
-
-ids *
-FREEfreeOneIds (ids *fr)
-{
-    ids *tmp;
-
-    DBUG_ENTER ("FREEfreeOneIds");
-
-    if (fr != NULL) {
-        DBUG_PRINT ("FREE", ("Removing ids: %s", IDS_NAME (fr)));
-
-        tmp = fr;
-        fr = IDS_NEXT (fr);
-
-        IDS_NAME (tmp) = ILIBfree (IDS_NAME (tmp));
-
-        tmp = ILIBfree (tmp);
-    }
-
-    DBUG_RETURN (fr);
-}
-
-/*--------------------------------------------------------------------------*/
-
-ids *
-FREEfreeAllIds (ids *fr)
-{
-    DBUG_ENTER ("FREEfreeAllIds");
-
-    while (fr != NULL) {
-        fr = FREEfreeOneIds (fr);
     }
 
     DBUG_RETURN (fr);
@@ -301,12 +271,12 @@ FREEfreeArgtab (argtab_t *argtab)
 
     DBUG_ASSERT ((argtab != NULL), "argument is NULL");
 
-    argtab->ptr_in = FREEfree (argtab->ptr_in);
-    argtab->ptr_out = FREEfree (argtab->ptr_out);
-    argtab->tag = FREEfree (argtab->tag);
+    argtab->ptr_in = ILIBfree (argtab->ptr_in);
+    argtab->ptr_out = ILIBfree (argtab->ptr_out);
+    argtab->tag = ILIBfree (argtab->tag);
     argtab->size = 0;
 
-    argtab = FREEfree (argtab);
+    argtab = ILIBfree (argtab);
 
     DBUG_RETURN (argtab);
 }
@@ -328,22 +298,18 @@ FREEfreeArgtab (argtab_t *argtab)
 node *
 FREEdoFreeNode (node *free_node)
 {
-    funtab *store_tab;
     info *arg_info;
 
     DBUG_ENTER ("FREEfreeNode");
 
-    store_tab = act_tab;
-    act_tab = free_tab;
-
     arg_info = MakeInfo ();
     INFO_FREE_FLAG (arg_info) = free_node;
 
-    free_node = Trav (free_node, arg_info);
+    TRAVpush (TR_free);
 
-    arg_info = FreeInfo (arg_info);
+    free_node = TRAVdo (free_node, arg_info);
 
-    act_tab = store_tab;
+    TRAVpop ();
 
     DBUG_RETURN (free_node);
 }
@@ -364,22 +330,20 @@ FREEdoFreeNode (node *free_node)
 node *
 FREEdoFreeTree (node *free_node)
 {
-    funtab *store_tab;
     info *arg_info;
 
     DBUG_ENTER ("FREEfreeTree");
 
-    store_tab = act_tab;
-    act_tab = free_tab;
-
     arg_info = MakeInfo ();
     INFO_FREE_FLAG (arg_info) = NULL;
 
-    free_node = Trav (free_node, arg_info);
+    TRAVpush (TR_free);
+
+    free_node = TRAVdo (free_node, arg_info);
+
+    TRAVpop (TR_free);
 
     arg_info = FreeInfo (arg_info);
-
-    act_tab = store_tab;
 
     DBUG_RETURN (free_node);
 }
@@ -407,7 +371,7 @@ FREEfreeZombie (node *fundef)
     DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
                  "FREEfreeZombie() is suitable for N_fundef nodes only!");
 
-    if (FUNDEF_STATUS (fundef) == ST_zombiefun) {
+    if (FUNDEF_ISZOMBIE (fundef)) {
         if (FUNDEF_USED (fundef) == USED_INACTIVE) {
             DBUG_PRINT ("FREE", ("Removing N_fundef zombie"
                                  " (FUNDEF_USED inactive) ..."));
@@ -423,24 +387,22 @@ FREEfreeZombie (node *fundef)
          * remove all the zombie data
          */
         FUNDEF_NAME (fundef) = ILIBfree (FUNDEF_NAME (fundef));
-#if FREE_MODNAMES
         FUNDEF_MOD (fundef) = ILIBfree (FUNDEF_MOD (fundef));
-        FUNDEF_LINKMOD (fundef) = ILIBfree (FUNDEF_LINKMOD (fundef));
-#endif
         FUNDEF_IMPL (fundef) = NULL;
 
-        FUNDEF_TYPES (fundef) = FREEfreeOneTypes (FUNDEF_TYPES (fundef));
-        if (FUNDEF_RET_TYPE (fundef) != NULL) {
-            FUNDEF_RET_TYPE (fundef) = TYfreeType (FUNDEF_RET_TYPE (fundef));
+        if (FUNDEF_TYPES (fundef) != NULL) {
+            FUNDEF_TYPES (fundef) = FREEfreeOneTypes (FUNDEF_TYPES (fundef));
         }
-        if (FUNDEF_TYPE (fundef) != NULL) {
-            FUNDEF_TYPE (fundef) = TYfreeType (FUNDEF_TYPE (fundef));
+
+        if (FUNDEF_WRAPPERTYPE (fundef) != NULL) {
+            FUNDEF_WRAPPERTYPE (fundef) = TYfreeType (FUNDEF_WRAPPERTYPE (fundef));
         }
 
         tmp = fundef;
         fundef = FUNDEF_NEXT (fundef);
 
         /* free entire structure */
+        tmp->sons.any = ILIBfree (tmp->sons.any);
         tmp->attribs.any = ILIBfree (tmp->attribs.any);
         tmp = ILIBfree (tmp);
     }
@@ -466,12 +428,12 @@ FREEremoveAllZombies (node *arg_node)
     DBUG_ASSERT ((arg_node != NULL), "FREEremoveAllZombies called with argument NULL");
 
     switch (NODE_TYPE (arg_node)) {
-    case N_modul:
-        if (MODUL_FUNS (arg_node) != NULL) {
-            MODUL_FUNS (arg_node) = FREEremoveAllZombies (MODUL_FUNS (arg_node));
+    case N_module:
+        if (MODULE_FUNS (arg_node) != NULL) {
+            MODULE_FUNS (arg_node) = FREEremoveAllZombies (MODULE_FUNS (arg_node));
         }
-        if (MODUL_FUNDECS (arg_node) != NULL) {
-            MODUL_FUNDECS (arg_node) = FREEremoveAllZombies (MODUL_FUNDECS (arg_node));
+        if (MODULE_FUNDECS (arg_node) != NULL) {
+            MODULE_FUNDECS (arg_node) = FREEremoveAllZombies (MODULE_FUNDECS (arg_node));
         }
 
         break;
