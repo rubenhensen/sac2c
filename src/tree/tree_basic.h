@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.78  2001/04/10 15:19:20  nmw
+ * INFO_SSALIR_TOPBLOCK and INFO_SSALIR_FLAG separated
+ *
  * Revision 3.77  2001/04/09 15:55:28  nmw
  * macros INFO_SSALIR added, LET_LIRFLAG added
  *
@@ -2961,7 +2964,7 @@ extern node *MakeInfo ();
 #define INFO_SSALIR_NONLIRUSE(n) (n->int_data)
 #define INFO_SSALIR_CONDSTATUS(n) (n->info.cint)
 #define INFO_SSALIR_WITHDEPTH(n) (n->varno)
-#define INFO_SSALIR_TOPBLOCK(n) ((bool)(n->varno))
+#define INFO_SSALIR_TOPBLOCK(n) ((bool)(n->counter))
 #define INFO_SSALIR_FLAG(n) (n->flag)
 #define INFO_SSALIR_EXTPREASSIGN(n) ((node *)(n->dfmask[0]))
 #define INFO_SSALIR_EXTPOSTASSIGN(n) ((node *)(n->dfmask[1]))
