@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.20  1995/01/09 13:58:04  hw
+ * Revision 1.21  1995/01/12 13:11:01  asi
+ * output for dead code removal added
+ *
+ * Revision 1.20  1995/01/09  13:58:04  hw
  * call typecheck only if there are no errors before
  *
  * Revision 1.19  1995/01/05  09:55:17  asi
@@ -175,6 +178,7 @@ MAIN
                 if ((!breaktype) && (errors == 0)) {
                     NOTE (("Optimizing: ...\n"));
                     syntax_tree = Optimize (syntax_tree);
+                    NOTE (("%d dead codes removed\n", deadcode));
                     /*  GenCCode(); */
                 }
             } else
