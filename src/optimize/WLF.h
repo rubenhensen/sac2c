@@ -1,5 +1,8 @@
 /* $Id$
  * $Log$
+ * Revision 1.5  1998/04/20 09:00:30  srs
+ * new function WLFblock()
+ *
  * Revision 1.4  1998/04/08 20:34:06  srs
  * new WLF functions
  *
@@ -18,6 +21,7 @@
 #define _WLF_h
 
 extern node *WLFfundef (node *arg_node, node *arg_info);
+extern node *WLFblock (node *arg_node, node *arg_info);
 extern node *WLFassign (node *arg_node, node *arg_info);
 extern node *WLFid (node *arg_node, node *arg_info);
 extern node *WLFNwith (node *arg_node, node *arg_info);
