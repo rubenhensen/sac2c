@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.21  2003/09/29 23:38:54  dkr
+# target icm_test modified: more GREPs added
+#
 # Revision 3.20  2003/09/22 16:03:06  dkr
 # target icm_tester modified
 #
@@ -148,6 +151,14 @@ icm_test: icm_test.C
 	-grep CAT[0-9] icm_test.log
 	-grep NT icm_test.log
 	-grep Item icm_test.log
+	-grep __SCL icm_test.log
+	-grep __AKS icm_test.log
+	-grep __AKD icm_test.log
+	-grep __AUD icm_test.log
+	-grep __HID icm_test.log
+	-grep __NHD icm_test.log
+	-grep __UNQ icm_test.log
+	-grep __NUQ icm_test.log
 	@echo '!!! CPP output can be found in file >>icm_test.log<< !!!'
 
 icm_tester:
