@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.16  1995/04/19 14:13:18  hw
+ * Revision 1.17  1995/04/19 14:30:32  hw
+ * bug fixed in compilation of 'rotate'
+ *
+ * Revision 1.16  1995/04/19  14:13:18  hw
  * changed compilation of primitive function 'rotate'
  *  ( 3. argument of `rotate' will not be reused )
  *
@@ -1180,6 +1183,7 @@ CompPrf (node *arg_node, node *arg_info)
             MAKENODE_NUM (n_node, 1);
 
             if (N_id == arg3->nodetype) {
+                GET_DIM (dim, arg3->IDS_NODE->TYPES); /* dim will be used later */
                 BIN_ICM_REUSE (arg_info->node[1], "ND_ALLOC_ARRAY", type_id_node, res);
                 MAKE_NEXT_ICM_ARG (icm_arg, res_ref);
                 SET_VARS_FOR_MORE_ICMS;
@@ -1187,7 +1191,7 @@ CompPrf (node *arg_node, node *arg_info)
                 array_is_const = 1;
                 arg_info->node[1]->nodetype = N_block; /*  reuse previous N_let*/
                 old_arg_node = arg_node;
-                GET_DIM (dim, arg3->TYPES);
+                GET_DIM (dim, arg3->TYPES); /* dim will be used later */
                 DECL_ARRAY (first_assign, arg3->node[0], "__TMP1", tmp_array1);
                 arg_node = first_assign;
                 CREATE_CONST_ARRAY (arg3, tmp_array1, type_id_node, res_ref);
