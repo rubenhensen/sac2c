@@ -1,8 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 3.33  2001/04/24 14:16:21  dkr
+ * comment about revision 3.32 corrected :-/
+ *
  * Revision 3.32  2001/04/24 14:14:33  dkr
- * MakeFundef: works correctly even with 'types == NULL' now
+ * - MakeFundef: works correctly even with 'types == NULL' now
+ * - Some DBUG_ASSERTs about FUNDEF_USED added
+ * - macro FUNDEF_UNUSED renamed into USED_INACTIVE
  *
  * Revision 3.31  2001/04/24 13:28:08  dkr
  * MakeFundef: FUNDEF_USED initialized correctly
