@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.80  1999/01/19 13:18:59  sbs
+ * several BUGs eliminated [GRGRGRGR]
+ *
  * Revision 1.79  1999/01/18 15:46:02  sbs
  * DBUG_PRINT( "OPTMEM",...) inserted for mem-info during optimization
  *
@@ -354,7 +357,9 @@ node *
 ConstantFolding (node *arg_node, node *info_node)
 {
     funptr *tmp_tab;
+#ifndef DBUG_OFF
     int mem_cf_expr = cf_expr;
+#endif
 
     DBUG_ENTER ("ConstantFolding");
     DBUG_PRINT ("OPT", ("CONSTANT FOLDING"));
@@ -1057,7 +1062,7 @@ GetShapeVector (node *array, int *vec_shape)
 
     expr = array->node[0];
 
-    for (i = 0; i <= SHP_SEG_SIZE; i++) {
+    for (i = 0; i < SHP_SEG_SIZE; i++) {
 
         if (NULL != expr) {
             vec_dim++;
@@ -1246,6 +1251,7 @@ FoldPrfScalars (prf prf_name, node **arg, types *res_type, int swap)
         res = MakeBool (expr);                                                           \
         break;                                                                           \
     default:                                                                             \
+        res = NULL;                                                                      \
         break;                                                                           \
     }
 
@@ -1565,13 +1571,14 @@ CalcPsi (node *shape, node *array, types *array_type, node *arg_info)
     array_dim = TYPES_DIM (array_type);
     array_shape = TYPES_SHPSEG (array_type);
     result_dim = TYPES_DIM (INFO_CF_TYPE (arg_info));
-    if (0 < result_dim)
-        result_shape = TYPES_SHPSEG (INFO_CF_TYPE (arg_info));
 
     /* Calculate length of result array */
     length = 1;
-    for (i = 0; i < result_dim; i++)
-        length *= SHPSEG_SHAPE (result_shape, i);
+    if (0 < result_dim) {
+        result_shape = TYPES_SHPSEG (INFO_CF_TYPE (arg_info));
+        for (i = 0; i < result_dim; i++)
+            length *= SHPSEG_SHAPE (result_shape, i);
+    }
 
     /* Calculate startposition of result array in argument array */
     start = 0;
@@ -1867,14 +1874,16 @@ ArrayPrf (node *arg_node, node *arg_info)
                  * during typechecking. Especially, in module implementations the concrete
                  * shape of formal function parameters can often not be determined.
                  */
-                FreeTree (arg_node);
-                arg_node = tmp;
-                cf_expr++;
                 /*
-                 * TC uses folding of shape() and has no masks present.
+                 * update masks!
+                 * When called from TC no masks present!
                  */
                 if (arg_info->mask[1])
                     DEC_VAR (arg_info->mask[1], arg[0]->info.ids->node->varno);
+
+                FreeTree (arg_node);
+                arg_node = tmp;
+                cf_expr++;
             }
             break;
 
@@ -1963,11 +1972,11 @@ ArrayPrf (node *arg_node, node *arg_info)
             NODE_TYPE (arg_node) = N_num;
             GET_DIM (arg_node->info.cint, arg[0]->info.ids->node->info.types);
 
+            DEC_VAR (arg_info->mask[1], arg[0]->info.ids->node->varno);
             /*
              * Free argument of prim function
              */
             FreeTree (arg_node->node[0]);
-            DEC_VAR (arg_info->mask[1], arg[0]->info.ids->node->varno);
             cf_expr++;
             break;
         default:
