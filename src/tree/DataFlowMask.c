@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2003/04/14 15:09:35  sbs
+ * since sizeof returns size_t rather than int comparisons to int values
+ * require casting!
+ *
  * Revision 3.5  2001/05/17 11:37:30  dkr
  * FREE/MALLOC eliminated
  *
@@ -203,7 +207,7 @@ DFMGenMaskBase (node *arguments, node *vardecs)
           = (unsigned int *)Malloc (8 * sizeof (unsigned int) * sizeof (unsigned int));
         access_mask = 1;
 
-        for (cnt = 0; cnt < 8 * sizeof (unsigned int); cnt++) {
+        for (cnt = 0; (size_t)cnt < 8 * sizeof (unsigned int); cnt++) {
             DBUG_PRINT ("DFM", ("i %i mask %i", cnt, access_mask));
             access_mask_table[cnt] = access_mask;
             access_mask <<= 1;
@@ -904,7 +908,7 @@ DFMTestMask (mask_t *mask)
 #endif
 
     for (i = 0; i < mask->num_bitfields; i++) {
-        for (j = 0; j < (8 * sizeof (unsigned int)); j++) {
+        for (j = 0; (size_t)j < (8 * sizeof (unsigned int)); j++) {
             if ((mask->bitfield[i] & access_mask_table[j]) > 0) {
                 res++;
             }
@@ -944,7 +948,7 @@ DFMTest2Masks (mask_t *mask1, mask_t *mask2)
 #endif
 
     for (i = 0; i < mask1->num_bitfields; i++) {
-        for (j = 0; j < (8 * sizeof (unsigned int)); j++) {
+        for (j = 0; (size_t)j < (8 * sizeof (unsigned int)); j++) {
             if (((mask1->bitfield[i] & access_mask_table[j]) > 0)
                 && ((mask2->bitfield[i] & access_mask_table[j]) > 0)) {
                 res++;
@@ -988,7 +992,7 @@ DFMTest3Masks (mask_t *mask1, mask_t *mask2, mask_t *mask3)
 #endif
 
     for (i = 0; i < mask1->num_bitfields; i++) {
-        for (j = 0; j < (8 * sizeof (unsigned int)); j++) {
+        for (j = 0; (size_t)j < (8 * sizeof (unsigned int)); j++) {
             if (((mask1->bitfield[i] & access_mask_table[j]) > 0)
                 && ((mask2->bitfield[i] & access_mask_table[j]) > 0)
                 && ((mask3->bitfield[i] & access_mask_table[j]) > 0)) {
