@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.17  2002/03/12 15:12:59  sbs
+# ssi.o added
+#
 # Revision 3.16  2002/03/05 15:52:56  sbs
 # create_wrappers.o added
 #
@@ -80,7 +83,8 @@ INCS=-I../global -I../tree -I../../inc -I../print -I../modules -I../optimize \
      -I../compile -I../c-interface -I../constants -I../flatten
 
 all: typecheck.o prim_fun.o typecheck_WL.o gen_pseudo_fun.o \
-     new_typecheck.o new_types.o user_types.o create_wrappers.o
+     new_typecheck.o new_types.o user_types.o create_wrappers.o \
+     ssi.o
 
 
 #
