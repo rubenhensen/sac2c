@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.52  1995/06/26 12:01:37  hw
+ * Revision 1.53  1995/06/26 14:05:51  hw
+ * moved some macros to compile.h and tree.h
+ *
+ * Revision 1.52  1995/06/26  12:01:37  hw
  * compilation of idx_psi added
  *
  * Revision 1.51  1995/06/26  09:27:07  sbs
@@ -260,86 +263,13 @@ extern int malloc_debug (int level);
 
 #endif /* DBUG_OFF */
 
-/* the following macros are used to generate N_icms */
-#define MAKE_ICM_ARG(var, new_node)                                                      \
-    var = MakeNode (N_exprs);                                                            \
-    var->node[0] = new_node;                                                             \
-    var->nnode = 1
-
-#define MAKE_NEXT_ICM_ARG(prev, new_node)                                                \
-    MAKE_ICM_ARG (tmp, new_node);                                                        \
-    prev->node[1] = tmp;                                                                 \
-    prev->nnode = 2;                                                                     \
-    prev = tmp
-
-#define MAKE_ICM_NAME(var, name)                                                         \
-    var->info.fun_name.id = name;                                                        \
-    var->info.fun_name.id_mod = NULL
-
-#define MAKE_ICM(assign)                                                                 \
-    assign = MakeNode (N_assign);                                                        \
-    assign->node[0] = MakeNode (N_icm);                                                  \
-    assign->nnode = 1
-
-#define MAKE_PREV_ICM(assign, new_assign)                                                \
-    new_assign = MakeNode (N_assign);                                                    \
-    new_assign->node[0] = MakeNode (N_icm);                                              \
-    new_assign->nnode = 1;                                                               \
-    new_assign->node[1] = assign;                                                        \
-    new_assign->nnode = 2;                                                               \
-    assign = new_assign
-
-#define CREATE_1_ARY_ICM(assign, str, arg)                                               \
-    MAKE_ICM (assign);                                                                   \
-    MAKE_ICM_NAME (assign->node[0], str);                                                \
-    MAKE_ICM_ARG (assign->node[0]->node[0], arg);                                        \
-    icm_arg = assign->node[0]->node[0];                                                  \
-    assign->node[0]->nnode = 1
-
-#define CREATE_2_ARY_ICM(assign, str, arg1, arg2)                                        \
-    CREATE_1_ARY_ICM (assign, str, arg1);                                                \
-    MAKE_NEXT_ICM_ARG (icm_arg, arg2)
-
-#define CREATE_3_ARY_ICM(assign, str, arg1, arg2, arg3)                                  \
-    CREATE_1_ARY_ICM (assign, str, arg1);                                                \
-    MAKE_NEXT_ICM_ARG (icm_arg, arg2);                                                   \
-    MAKE_NEXT_ICM_ARG (icm_arg, arg3)
-
-#define CREATE_4_ARY_ICM(assign, str, arg1, arg2, arg3, arg4)                            \
-    CREATE_1_ARY_ICM (assign, str, arg1);                                                \
-    MAKE_NEXT_ICM_ARG (icm_arg, arg2);                                                   \
-    MAKE_NEXT_ICM_ARG (icm_arg, arg3);                                                   \
-    MAKE_NEXT_ICM_ARG (icm_arg, arg4)
-
-#define CREATE_5_ARY_ICM(assign, str, arg1, arg2, arg3, arg4, arg5)                      \
-    CREATE_4_ARY_ICM (assign, str, arg1, arg2, arg3, arg4);                              \
-    MAKE_NEXT_ICM_ARG (icm_arg, arg5)
-
-#define CREATE_6_ARY_ICM(assign, str, arg1, arg2, arg3, arg4, arg5, arg6)                \
-    CREATE_5_ARY_ICM (assign, str, arg1, arg2, arg3, arg4, arg5);                        \
-    MAKE_NEXT_ICM_ARG (icm_arg, arg6)
-
-#define CREATE_7_ARY_ICM(assign, str, arg1, arg2, arg3, arg4, arg5, arg6, arg7)          \
-    CREATE_6_ARY_ICM (assign, str, arg1, arg2, arg3, arg4, arg5, arg6);                  \
-    MAKE_NEXT_ICM_ARG (icm_arg, arg7)
-
-#define BIN_ICM_REUSE(reuse, str, arg1, arg2)                                            \
-    reuse->nodetype = N_icm;                                                             \
-    MAKE_ICM_NAME (reuse, str);                                                          \
-    MAKE_ICM_ARG (reuse->node[0], arg1);                                                 \
-    icm_arg = reuse->node[0];                                                            \
-    MAKE_NEXT_ICM_ARG (icm_arg, arg2)
+/* the following macros are while generation of N_icms */
 
 #define SET_VARS_FOR_MORE_ICMS                                                           \
     first_assign = LAST_ASSIGN (arg_info);                                               \
     old_arg_node = arg_node;                                                             \
     last_assign = NEXT_ASSIGN (arg_info);                                                \
     arg_node = arg_info->node[1]->node[0]
-
-#define APPEND_ASSIGNS(first, next)                                                      \
-    first->node[1] = next;                                                               \
-    first->nnode = 2;                                                                    \
-    first = next
 
 #define INSERT_ASSIGN                                                                    \
     if (NULL != last_assign) {                                                           \
@@ -435,51 +365,6 @@ extern int malloc_debug (int level);
     MAKENODE_ID (var_str_node, var_str);                                                 \
     CREATE_4_ARY_ICM (assign, "ND_KS_DECL_ARRAY", type_id_node, var_str_node, n_node1,   \
                       n_elems_node)
-
-#define GET_DIM(result, type)                                                            \
-    if (T_user == type->simpletype) {                                                    \
-        result = LookupType (type->name, type->name_mod, 042)->DIM;                      \
-        result += type->dim;                                                             \
-    } else                                                                               \
-        result = type->dim
-
-#define GET_BASIC_TYPE(res, type)                                                        \
-    if (T_user == type->simpletype)                                                      \
-        res = LookupType (type->name, type->name_mod, 042)->SIMPLETYPE;                  \
-    else                                                                                 \
-        res = type->simpletype
-
-#define GET_LENGTH(length, vardec_node)                                                  \
-    {                                                                                    \
-        types *type;                                                                     \
-        int i;                                                                           \
-        if (T_user == vardec_node->SIMPLETYPE)                                           \
-            type = LookupType (vardec_node->NAME, vardec_node->NAME_MOD, 042)->TYPES;    \
-        else                                                                             \
-            type = vardec_node->TYPES;                                                   \
-        for (i = 0, length = 1; i < type->dim; i++)                                      \
-            length *= type->shpseg->shp[i];                                              \
-    }
-
-#define COUNT_ELEMS(n, exprs)                                                            \
-    n = 0;                                                                               \
-    tmp = exprs;                                                                         \
-    do {                                                                                 \
-        n += 1;                                                                          \
-        tmp = tmp->node[1];                                                              \
-    } while (NULL != tmp)
-
-#define MAKENODE_NUM(no, nr)                                                             \
-    no = MakeNode (N_num);                                                               \
-    no->info.cint = nr
-
-#define MAKENODE_ID(no, str)                                                             \
-    no = MakeNode (N_id);                                                                \
-    no->IDS = MakeIds (str)
-
-#define MAKENODE_ID_REUSE_IDS(no, Ids)                                                   \
-    no = MakeNode (N_id);                                                                \
-    no->IDS = Ids
 
 #define INSERT_ID_NODE(no, last, str)                                                    \
     tmp = MakeNode (N_exprs);                                                            \
@@ -963,7 +848,7 @@ Compile (node *arg_node)
 node *
 CompVardec (node *arg_node, node *arg_info)
 {
-    node *exprs, *tmp, *type_node, *assign;
+    node *exprs, *tmp, *type_node, *assign, *id_node, *n_node;
     int i, dim;
 
     DBUG_ENTER ("CompVardec");
@@ -998,22 +883,38 @@ CompVardec (node *arg_node, node *arg_info)
         }
 
         /* store name of variable */
-        MAKE_NEXT_ICM_ARG (exprs, MakeNode (N_id));
-        tmp->node[0]->info.ids = MakeIds (arg_node->ID);
+        MAKENODE_ID (id_node, arg_node->ID);
+        MAKE_NEXT_ICM_ARG (exprs, id_node);
+#if 0
+      MAKE_NEXT_ICM_ARG(exprs, MakeNode(N_id));
+      tmp->node[0]->info.ids=MakeIds(arg_node->ID);
+#endif
 
         /* store dimension */
-        MAKE_NEXT_ICM_ARG (exprs, MakeNode (N_num));
-        tmp->node[0]->info.cint = dim;
+        MAKENODE_NUM (n_node, dim);
+        MAKE_NEXT_ICM_ARG (exprs, n_node);
+#if 0
+      MAKE_NEXT_ICM_ARG(exprs, MakeNode(N_num));
+      tmp->node[0]->info.cint=dim;
+#endif
 
         /* store shape infomation */
         for (i = 0; i < arg_node->DIM; i++) {
-            MAKE_NEXT_ICM_ARG (exprs, MakeNode (N_num));
-            tmp->node[0]->info.cint = arg_node->SHP[i];
+            MAKENODE_NUM (n_node, dim);
+            MAKE_NEXT_ICM_ARG (exprs, n_node);
+#if 0
+         MAKE_NEXT_ICM_ARG(exprs, MakeNode(N_num));
+         tmp->node[0]->info.cint=arg_node->SHP[i];
+#endif
         }
         if (T_user == arg_node->SIMPLETYPE)
             for (i = 0; i < type_node->DIM; i++) {
-                MAKE_NEXT_ICM_ARG (exprs, MakeNode (N_num));
-                tmp->node[0]->info.cint = type_node->SHP[i];
+                MAKENODE_NUM (n_node, dim);
+                MAKE_NEXT_ICM_ARG (exprs, n_node);
+#if 0
+            MAKE_NEXT_ICM_ARG(exprs, MakeNode(N_num));
+            tmp->node[0]->info.cint=type_node->SHP[i];
+#endif
             }
 
         /* now transform current node to one of type N_icm */
@@ -2517,6 +2418,7 @@ CompWith (node *arg_node, node *arg_info)
 
     if (N_modarray == old_arg_node->node[1]->nodetype) {
         arg = old_arg_node->node[1]->node[0];
+        DBUG_ASSERT (N_id == arg->nodetype, "wrong nodetype != N_id");
         CREATE_7_ARY_ICM (next_assign, "ND_BEGIN_MODARRAY", res, res_dim_node, arg, from,
                           to, index, indexlen);
         /* store pointer to N_icm ND_BEGIN.. in arg_info->node[2] */
