@@ -1,5 +1,8 @@
 dnl
 dnl $Log$
+dnl Revision 1.2  2003/03/20 22:28:07  sah
+dnl os solaris* os now matched to SOLARIS
+dnl
 dnl Revision 1.1  2003/03/20 22:19:39  sah
 dnl Initial revision
 dnl
@@ -29,6 +32,13 @@ AC_CANONICAL_HOST()
 AC_CANONICAL_TARGET()
 
 dnl set OS and ARCH flags
+
+dnl match autoconf os names to 
+dnl the ususal sac ones
+case $target_os in
+ *solaris*) target_os=SOLARIS;;
+esac
+
 AC_DEFINE_UNQUOTED(OS,"$target_os",set to the os type)
 AC_SUBST(OS,$target_os)
 AC_DEFINE_UNQUOTED(ARCH,"$target_cpu",set to the architecture)
