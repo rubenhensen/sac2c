@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.7  2000/06/29 10:23:38  mab
+ * added dummy functions for APTpart, APTwithid, APTgenerator, APTcode, APTwithop
+ * renamed APTNwith to APTwith
+ *
  * Revision 1.6  2000/06/28 10:41:35  mab
  * completed padding functions except with node
  * some code modifications according to code review
@@ -46,7 +50,12 @@ extern void APtransform ();
 extern node *APTarg (node *arg_node, node *arg_info);
 extern node *APTvardec (node *arg_node, node *arg_info);
 extern node *APTarray (node *arg_node, node *arg_info);
-extern node *APTNwith (node *arg_node, node *arg_info);
+extern node *APTwith (node *arg_node, node *arg_info);
+extern node *APTpart (node *arg_node, node *arg_info);
+extern node *APTwithid (node *arg_node, node *arg_info);
+extern node *APTgenerator (node *arg_node, node *arg_info);
+extern node *APTcode (node *arg_node, node *arg_info);
+extern node *APTwithop (node *arg_node, node *arg_info);
 extern node *APTap (node *arg_node, node *arg_info);
 extern node *APTexprs (node *arg_node, node *arg_info);
 extern node *APTid (node *arg_node, node *arg_info);

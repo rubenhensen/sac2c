@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.7  2000/06/29 10:23:38  mab
+ * added dummy functions for APTpart, APTwithid, APTgenerator, APTcode, APTwithop
+ * renamed APTNwith to APTwith
+ *
  * Revision 1.6  2000/06/28 10:41:35  mab
  * completed padding functions except with node
  * some code modifications according to code review
@@ -285,7 +289,7 @@ APTarray (node *arg_node, node *arg_info)
 /*****************************************************************************
  *
  * function:
- *   node *APTNwith(node *arg_node, node *arg_info)
+ *   node *APTwith(node *arg_node, node *arg_info)
  *
  * description:
  *   only a dummy for now
@@ -293,14 +297,128 @@ APTarray (node *arg_node, node *arg_info)
  *****************************************************************************/
 
 node *
-APTNwith (node *arg_node, node *arg_info)
+APTwith (node *arg_node, node *arg_info)
 {
 
-    DBUG_ENTER ("APTNwith");
+    DBUG_ENTER ("APTwith");
 
-    DBUG_PRINT ("APT", ("Nwith-node detected"));
+    DBUG_PRINT ("APT", ("with-node detected"));
 
-    /* INFO_APT_EXPRESSION_PADDED(arg_info)=???; */
+    INFO_APT_EXPRESSION_PADDED (arg_info) = FALSE;
+    /* check withop, if with-loop needs to be padded */
+    NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
+
+    /* arg_info passes check result to part- and code-nodes */
+    NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
+
+    NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
+
+    /* EXPRESSION_PADDED is returned to upper function */
+
+    DBUG_RETURN (arg_node);
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   node *APTpart(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   only a dummy for now
+ *
+ *****************************************************************************/
+
+node *
+APTpart (node *arg_node, node *arg_info)
+{
+
+    DBUG_ENTER ("APTpart");
+
+    DBUG_PRINT ("APT", ("part-node detected"));
+
+    DBUG_RETURN (arg_node);
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   node *APTwithid(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   only a dummy for now
+ *
+ *****************************************************************************/
+
+node *
+APTwithid (node *arg_node, node *arg_info)
+{
+
+    DBUG_ENTER ("APTwithid");
+
+    DBUG_PRINT ("APT", ("withid-node detected"));
+
+    DBUG_RETURN (arg_node);
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   node *APTgenerator(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   only a dummy for now
+ *
+ *****************************************************************************/
+
+node *
+APTgenerator (node *arg_node, node *arg_info)
+{
+
+    DBUG_ENTER ("APTgenerator");
+
+    DBUG_PRINT ("APT", ("generator-node detected"));
+
+    DBUG_RETURN (arg_node);
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   node *APTcode(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   only a dummy for now
+ *
+ *****************************************************************************/
+
+node *
+APTcode (node *arg_node, node *arg_info)
+{
+
+    DBUG_ENTER ("APTcode");
+
+    DBUG_PRINT ("APT", ("code-node detected"));
+
+    DBUG_RETURN (arg_node);
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   node *APTwithop(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   only a dummy for now
+ *
+ *****************************************************************************/
+
+node *
+APTwithop (node *arg_node, node *arg_info)
+{
+
+    DBUG_ENTER ("APTwithop");
+
+    DBUG_PRINT ("APT", ("withop-node detected"));
 
     DBUG_RETURN (arg_node);
 }
@@ -532,7 +650,7 @@ APTlet (node *arg_node, node *arg_info)
 {
 
     ids *ids_ptr;
-    int rhs_padded;
+    bool rhs_padded;
 
     DBUG_ENTER ("APTlet");
 
@@ -561,8 +679,13 @@ APTlet (node *arg_node, node *arg_info)
         ids_ptr = IDS_NEXT (ids_ptr);
     }
 
-    DBUG_ASSERT ((!rhs_padded && INFO_APT_EXPRESSION_PADDED (arg_info)),
-                 " padded lvalue does not match unpadded rvalue!");
+    /*
+     * enable for consistency checking
+     * requires shape information from pad_infer!
+     *
+     * DBUG_ASSERT((!rhs_padded&&INFO_APT_EXPRESSION_PADDED(arg_info))," padded lvalue
+     * does not match unpadded rvalue!");
+     */
 
     DBUG_RETURN (arg_node);
 }
