@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2000/03/22 17:31:16  jhs
+ * Added BarriersInit.
+ *
  * Revision 1.14  2000/03/21 16:11:19  jhs
  * Comments.
  *
@@ -115,6 +118,7 @@
 #include "mtfuns_init.h"
 #include "blocks_cons.h"
 #include "dataflow_analysis.h"
+#include "barriers_init.h"
 
 /******************************************************************************
  *
@@ -442,6 +446,14 @@ MUTHmodul (node *arg_node, node *arg_info)
     DBUG_PRINT ("MUTH", ("end DataflowAnalysis"));
 
     if ((break_after == PH_spmdregions) && (strcmp ("dfa", break_specifier) == 0)) {
+        goto cont;
+    }
+
+    DBUG_PRINT ("MUTH", ("begin BarriersInit"));
+    MUTHdriver (MODUL_FUNS (arg_node), arg_info, BarriersInit, MUTHignore);
+    DBUG_PRINT ("MUTH", ("end BarriersInit"));
+
+    if ((break_after == PH_spmdregions) && (strcmp ("barin", break_specifier) == 0)) {
         goto cont;
     }
 
