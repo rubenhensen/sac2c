@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.67  2001/12/11 17:29:18  dkr
+ * Compile: traverse tab is stacked now
+ *
  * Revision 3.66  2001/12/11 16:04:55  dkr
  * GetDim() renamed to GetShapeDim()
  * GetDim() added
@@ -2283,16 +2286,19 @@ DoSomeReallyUglyTransformations_MT2 (node *fundef)
 node *
 Compile (node *arg_node)
 {
+    funtab *old_tab;
     node *info;
 
     DBUG_ENTER ("Compile");
 
+    old_tab = act_tab;
     act_tab = comp_tab;
     info = MakeInfo ();
 
     arg_node = Trav (arg_node, info);
 
     info = FreeTree (info);
+    act_tab = old_tab;
 
     DBUG_RETURN (arg_node);
 }
