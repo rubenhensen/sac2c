@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  1998/05/12 12:35:58  dkr
+ * SPMD_ICM can now be NULL (temporary ?!? needed for non-MT-version)
+ *
  * Revision 1.5  1998/05/12 12:27:04  dkr
  * assert in GSCicm changed into if-statement:
  *     if (0==strcmp(ICM_NAME(arg_node), MT_SPMD_BLOCK)) {
@@ -417,7 +420,9 @@ GSCspmd (node *arg_node, node *arg_info)
 
     fprintf (outfile, "      SAC_MT_BLOCK_FRAME( %s,  {  \\\n", SPMD_FUNNAME (arg_node));
 
-    Trav (SPMD_ICM (arg_node), arg_info);
+    if (SPMD_ICM (arg_node) != NULL) {
+        Trav (SPMD_ICM (arg_node), arg_info);
+    }
 
     fprintf (outfile, "      })     \\\n");
 
