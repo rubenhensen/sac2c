@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2002/10/24 20:49:09  dkr
+ * signature of ND_WL_GENARRAY__SHAPE_... modified
+ *
  * Revision 3.12  2002/10/24 20:37:35  dkr
  * WL icms redesigned for dynamic shapes
  *
@@ -42,9 +45,10 @@
 #define _icm2c_wl_h
 
 extern void ICMCompileND_WL_GENARRAY__SHAPE_id (char *to_nt, int to_sdim, char *shp_nt,
-                                                char *val_nt);
+                                                char *val_nt, int val_sdim);
 extern void ICMCompileND_WL_GENARRAY__SHAPE_arr (char *to_nt, int to_sdim, int shp_size,
-                                                 char **shpa_any, char *val_nt);
+                                                 char **shpa_any, char *val_nt,
+                                                 int val_sdim);
 
 extern void ICMCompileWL_BEGIN__OFFSET (char *to_nt, int to_sdim, char *idx_vec_nt,
                                         int dims);
