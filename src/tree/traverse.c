@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.39  2003/02/08 15:56:07  mwe
+ * support for DistributiveLaw added
+ *
  * Revision 3.38  2002/08/25 14:17:58  mwe
  * al_tab added.
  *
@@ -179,6 +182,7 @@
 #include "WLF.h"
 #include "WithloopScalarization.h"
 #include "AssociativeLaw.h"
+#include "DistributiveLaw.h"
 #include "gen_startup_code.h"
 #include "scheduling.h"
 #include "concurrent.h"
@@ -1478,6 +1482,17 @@ static funtab hm_tab_rec = {{
                             NULL,
                             NULL};
 funtab *hm_tab = &hm_tab_rec;
+
+/*
+ *  (112) dl_tab
+ */
+static funtab dl_tab_rec = {{
+#define NIFal(it_dl) it_dl
+#include "node_info.mac"
+                            },
+                            NULL,
+                            NULL};
+funtab *dl_tab = &dl_tab_rec;
 
 /*
  *  nnode

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.31  2003/02/08 15:56:07  mwe
+ * support for DistributiveLaw added
+ *
  * Revision 3.30  2002/08/13 10:23:32  sbs
  * hm_tab for handle_mops added.
  *
@@ -310,6 +313,7 @@ extern funtab *hd_tab;
 extern funtab *nt2ot_tab;
 extern funtab *cwc_tab;
 extern funtab *hm_tab;
+extern funtab *dl_tab;
 
 extern int nnode[];
 
