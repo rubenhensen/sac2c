@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.6  2004/07/06 18:06:41  skt
+ * Parameter of IsGeneratorBigEnough changed from node* to ids*
+ *
  * Revision 1.5  2004/07/06 12:37:54  skt
  * TEMreturn removed
  * several functions new implemented
@@ -406,38 +409,35 @@ IsMTAllowed (node *withloop)
 
 /** <!--********************************************************************-->
  *
- * @fn int *IsGeneratorBigEnough(node *exprs)
+ * @fn int *IsGeneratorBigEnough(ids *test_variables)
  *
  *   @brief This function decides whether the generator of a with-loop big
  *          enough to be partitioned into max_threads segments
  *
  *
- *   @param exprs expecs N_exprs-chain, the parameter 2..n of the primitive
- *                function fill(), added by SSARefCount
- *   @return int interpretated as boolean - whether the generator is big enough
- *           or not
+ *   @param test_variables this variables are tested for parallel execution
+ *   @return int interpretated as boolean - whether all variables are big
+ *           enough or not
  *
  *****************************************************************************/
 int
-IsGeneratorBigEnough (node *exprs)
+IsGeneratorBigEnough (ids *test_variables)
 {
+    ids *iterator;
     int is_bigenough;
     int var_dim, var_size; /* dimension and size of an actual variable */
     int i;
     node *vardec;
     DBUG_ENTER ("IsGeneratorBigEnough");
-    DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs),
-                 "IsGeneratorBigEnough expects a N_exprs as argument");
 
-    /* some initialization */
+    /* some initializations */
     is_bigenough = FALSE;
+    iterator = test_variables;
 
     /* TODO perhaps some adaptions for multigenerator-with-loop needed */
-    while ((exprs != NULL)) {
+    while (iterator != NULL) {
 
-        DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (exprs)) == N_id), "N_id expected");
-
-        vardec = ID_VARDEC (EXPRS_EXPR (exprs));
+        vardec = IDS_VARDEC (iterator);
         var_dim = VARDEC_DIM (vardec);
         var_size = 1;
         for (i = 0; i < var_dim; i++) {
@@ -446,14 +446,14 @@ IsGeneratorBigEnough (node *exprs)
 
         if (var_size >= max_threads) {
             is_bigenough = TRUE;
-            exprs = EXPRS_NEXT (exprs);
+            iterator = IDS_NEXT (iterator);
         }
         /* If one variable on the left-hand-side is not big enough to be
          * partitioned into max_threads threads, the whole generator ist to small
          */
         else {
             is_bigenough = FALSE;
-            exprs = NULL;
+            iterator = NULL;
         }
     }
 
