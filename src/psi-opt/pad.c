@@ -1,17 +1,15 @@
 /*
+ *
  * $Log$
+ * Revision 1.11  2000/08/08 11:49:33  dkr
+ * DBUG_PRINT added
+ *
  * Revision 1.10  2000/08/03 15:29:49  mab
  * added apdiag_file, APprintDiag
  * removed all dummies
  *
- * Revision 1.9  2000/07/21 14:39:20  mab
- * *** empty log message ***
- *
  * Revision 1.8  2000/07/19 12:39:28  mab
  * added dummy values for testing purposes
- *
- * Revision 1.7  2000/07/07 12:07:51  mab
- * *** empty log message ***
  *
  * Revision 1.6  2000/07/05 09:12:34  mab
  * fixed memory problem
@@ -31,7 +29,6 @@
  * Revision 1.1  2000/05/26 13:41:35  sbs
  * Initial revision
  *
- *
  */
 
 /*****************************************************************************
@@ -44,7 +41,6 @@
  *
  *   This compiler module infers new array shapes and applies array padding
  *   to improve cache performance.
- *
  *
  *****************************************************************************/
 
@@ -71,7 +67,7 @@ FILE *apdiag_file;
 /*****************************************************************************
  *
  * function:
- *   void APprintDiag(char *format, ...)
+ *   void APprintDiag( char *format, ...)
  *
  * description:
  *   print diagnostic info from array padding to apdiag_file,
@@ -82,7 +78,6 @@ FILE *apdiag_file;
 void
 APprintDiag (char *format, ...)
 {
-
     va_list arg_p;
     static char buffer[1024];
 
@@ -102,7 +97,7 @@ APprintDiag (char *format, ...)
 /*****************************************************************************
  *
  * function:
- *   node *ArrayPadding( node * arg_node)
+ *   node *ArrayPadding( node *arg_node)
  *
  * description:
  *   main function for array padding,
@@ -113,9 +108,11 @@ APprintDiag (char *format, ...)
 node *
 ArrayPadding (node *arg_node)
 {
-
     DBUG_ENTER ("ArrayPadding");
 
+    DBUG_PRINT ("OPT", ("ARRAY PADDING"));
+
+    /* init pad_info structure */
     PIinit ();
 
     DBUG_PRINT ("AP", ("Entering Array Padding"));
@@ -126,15 +123,12 @@ ArrayPadding (node *arg_node)
     }
 
     /* collect information for inference phase */
-
     APcollect (arg_node);
 
     /* apply array padding */
-
     APinfer ();
 
     /* apply array padding */
-
     APtransform (arg_node);
 
     /* close apdiag_file */
