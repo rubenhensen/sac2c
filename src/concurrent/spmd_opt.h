@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/05/28 15:31:45  jhs
+ * Implemented first steps of spmd-optimisation.
+ *
  * Revision 2.1  1999/02/23 12:44:18  sacbase
  * new release made
  *
@@ -27,5 +30,8 @@
 #define SPMD_OPT_H
 
 #include "types.h"
+
+extern node *SPMDOspmd (node *arg_node, node *arg_info);
+extern node *SPMDOassign (node *arg_node, node *arg_info);
 
 #endif /* SPMD_OPT_H */
