@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.69  2004/10/22 15:16:51  sah
+ * added DoUseSymbol
+ *
  * Revision 3.68  2004/10/22 13:22:59  sah
  * added DoAnnotateNamespace
  *
@@ -279,6 +282,7 @@
 #include "libstat.h"
 #include "resolveall.h"
 #include "annotatenamespace.h"
+#include "usesymbols.h"
 #endif /* NEW_AST */
 #include "PatchWith.h"
 #include "resource.h"
@@ -443,8 +447,11 @@ main (int argc, char *argv[])
 #ifndef NEW_AST
         syntax_tree = Import (syntax_tree); /* imp_tab */
 #else
+        NOTE (("Processing use and import statements..."));
         ResolveAll (syntax_tree);
         DoAnnotateNamespace (syntax_tree);
+        NOTE (("Getting used symbols..."));
+        DoUseSymbols (syntax_tree);
 
         ABORT_ON_ERROR;
 #endif /* NEW_AST */
