@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.184  1998/06/03 15:39:00  cg
+ * *** empty log message ***
+ *
  * Revision 1.183  1998/06/03 14:29:04  cg
  * Attribute WITH_USEDVARS renamed to WITH_USEVARS analogously to the
  * loop nodes.
@@ -1584,7 +1587,7 @@ extern node *MakeReturn (node *exprs);
  ***    long*  MASK[x]                  (optimize -> )
  ***/
 
-extern node *MakeCond (node *cond, node *then, node *else);
+extern node *MakeCond (node *cond, node *thenpart, node *elsepart);
 
 #define COND_COND(n) (n->node[0])
 #define COND_THEN(n) (n->node[1])
