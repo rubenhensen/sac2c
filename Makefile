@@ -1,6 +1,13 @@
 #
 #
 # $Log$
+# Revision 3.62  2002/10/28 06:35:56  sbs
+# new target "tagged" added and new pattern rule for suffix ".tagged"
+# added. You make use  make tagged  or make twice.tagged now; but make sure
+# you do not mix with the ordinary one and make sure you make clean before
+# doing it the first time since the object files have identical names
+# with the ordinary ones!!!!
+#
 # Revision 3.61  2002/10/18 13:36:48  sbs
 # new targets   twice    and sac2c.twice   added
 #
@@ -197,6 +204,9 @@ distrib_product: check_os tools/bin/cse prod sac2c.prod
 
 twice: check_os tools/bin/cse dummy sac2c sac2c.twice
 
+tagged:
+	$(MAKE) all.tagged
+
 tools/bin/cse:
 	$(MAKE) -C tools
 
@@ -356,3 +366,6 @@ linux: src.tar.gz
             'tar xvf src.tar;'             \
             'chmod 644 $(SOURCE_FILES);'   \
             'make OS=LINUX_X86'
+
+%.tagged:
+	$(MAKE) "CFLAGS=$(CFLAGS) -DTAGGED_ARRAYS" $*
