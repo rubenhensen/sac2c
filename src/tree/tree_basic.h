@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.85  2001/04/24 18:36:50  dkr
+ * comment about FUNDEF_USED modified
+ *
  * Revision 3.84  2001/04/20 11:52:45  dkr
  * INFO_INFDFMS_DEFINED removed
  *
@@ -1052,6 +1055,10 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  * in order to make the code of this function available. If LINKMOD is
  * NULL, then link with the module given by MOD.
  *
+ * If USED contains an other value than USED_INACTIVE reference counting
+ * for functions is activated.
+ * For the time being reference counting is used for special LaC functions
+ * only.
  * If the fundef is a definition of a special LaC function, USED counts
  * the number of times this function is referenced outside its own body.
  */
