@@ -1,7 +1,13 @@
 /*
  *
  * $Log$
- * Revision 1.66  1995/10/20 09:22:51  cg
+ * Revision 1.67  1995/10/22 17:34:40  cg
+ * new break parameter -bd to stop after checkdec
+ * new compiler phase checkdec inserted between parse and
+ * import
+ * some bugs fixed.
+ *
+ * Revision 1.66  1995/10/20  09:22:51  cg
  * added compiler phase 'analysis`
  *
  * Revision 1.65  1995/10/18  16:47:58  cg
@@ -234,6 +240,7 @@
 #include "implicittypes.h"
 #include "objinit.h"
 #include "analysis.h"
+#include "checkdec.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -274,7 +281,7 @@ MAIN
     int Ccodeonly = 0;
     int breakparse = 0, breakimport = 0, breakflatten = 0, breaktype = 0, breakopt = 0,
         breakpsiopt = 0, breakref = 0, breaksib = 0, breakimpltype = 0, breakobjinit = 0,
-        breakanalysis = 0;
+        breakanalysis = 0, breakcheckdec = 0;
     int write_sib = 1;
     char prgname[MAX_FILE_NAME];
     char outfilename[MAX_FILE_NAME];
@@ -361,6 +368,9 @@ MAIN
         case 'b':
             breaksib = 1;
             break;
+        case 'd':
+            breakcheckdec = 1;
+            break;
         case 'm':
             breakimpltype = 1;
             break;
@@ -431,10 +441,18 @@ MAIN
             sac_optimize = 0;
         if (!strncmp (*argv, "osacopt", 7))
             sac_optimize = 0;
-        if (!strncmp (*argv, "oOPT", 4))
+        if (!strncmp (*argv, "oOPT", 4)) {
             optimize = 0;
-        if (!strncmp (*argv, "oopt", 4))
+            sac_optimize = 0;
+            psi_optimize = 0;
+        }
+
+        if (!strncmp (*argv, "oopt", 4)) {
             optimize = 0;
+            sac_optimize = 0;
+            psi_optimize = 0;
+        }
+
         if (!strncmp (*argv, "oLIR", 4))
             opt_lir = 0;
         if (!strncmp (*argv, "oloop_invariant_removal", 23))
@@ -595,70 +613,102 @@ MAIN
     ABORT_ON_ERROR;
 
     if (!breakparse) {
-        NOTE (("\nResolving global object initializations: ..."));
-        compiler_phase++;
-        syntax_tree = objinit (syntax_tree);
-        ABORT_ON_ERROR;
-
-        if (!breakobjinit) {
-            NOTE (("\nResolving Imports: ..."));
-            compiler_phase++;
-            syntax_tree = Import (syntax_tree);
+        switch (MODUL_FILETYPE (syntax_tree)) {
+        case F_modimp:
+            NOTE (("\nChecking module declaration: ..."));
+            syntax_tree = CheckDec (syntax_tree);
             ABORT_ON_ERROR;
+            break;
 
-            if (!breakimport) {
-                NOTE (("\nFlattening: ..."));
-                compiler_phase++;
-                syntax_tree = Flatten (syntax_tree);
+        case F_classimp:
+            NOTE (("\nChecking class declaration: ..."));
+            syntax_tree = CheckDec (syntax_tree);
+            ABORT_ON_ERROR;
+            break;
+
+        default:
+            break;
+        }
+        compiler_phase++;
+
+        if (!breakcheckdec) {
+            if (MODUL_OBJS (syntax_tree) != NULL) {
+                NOTE (("\nResolving global object initializations: ..."));
+                syntax_tree = objinit (syntax_tree);
                 ABORT_ON_ERROR;
+            }
+            compiler_phase++;
 
-                if (!breakflatten) {
-                    NOTE (("\nTypechecking: ..."));
+            if (!breakobjinit) {
+                if (MODUL_IMPORTS (syntax_tree) != NULL) {
+                    NOTE (("\nResolving Imports: ..."));
+                    syntax_tree = Import (syntax_tree);
+                    ABORT_ON_ERROR;
+                }
+                compiler_phase++;
+
+                if (!breakimport) {
+                    NOTE (("\nFlattening: ..."));
                     compiler_phase++;
-                    syntax_tree = Typecheck (syntax_tree);
+                    syntax_tree = Flatten (syntax_tree);
                     ABORT_ON_ERROR;
 
-                    if (!breaktype) {
-                        NOTE (("\nResolving implicit types: ..."));
+                    if (!breakflatten) {
+                        NOTE (("\nTypechecking: ..."));
                         compiler_phase++;
-                        syntax_tree = RetrieveImplicitTypeInfo (syntax_tree);
+                        syntax_tree = Typecheck (syntax_tree);
                         ABORT_ON_ERROR;
 
-                        if (!breakimpltype) {
-                            NOTE (("\nAnalysing functions: ..."));
+                        if (!breaktype) {
+                            if (MODUL_IMPORTS (syntax_tree) != NULL) {
+                                NOTE (("\nResolving implicit types: ..."));
+                                syntax_tree = RetrieveImplicitTypeInfo (syntax_tree);
+                                ABORT_ON_ERROR;
+                            }
                             compiler_phase++;
-                            syntax_tree = Analysis (syntax_tree);
-                            ABORT_ON_ERROR;
 
-                            if (!breakanalysis) {
-                                NOTE (("\nWriting SIB: ..."));
+                            if (!breakimpltype) {
+                                NOTE (("\nAnalysing functions: ..."));
                                 compiler_phase++;
-                                syntax_tree = WriteSib (syntax_tree);
+                                syntax_tree = Analysis (syntax_tree);
                                 ABORT_ON_ERROR;
 
-                                if (!breaksib) {
-                                    NOTE (("\nOptimizing: ..."));
-                                    compiler_phase++;
-                                    syntax_tree = Optimize (syntax_tree);
-                                    ABORT_ON_ERROR;
-
-                                    if (!breakopt) {
-                                        NOTE (("\nPsi-Optimizing: ..."));
-                                        compiler_phase++;
-                                        syntax_tree = PsiOpt (syntax_tree);
+                                if (!breakanalysis) {
+                                    if (MODUL_FILETYPE (syntax_tree) != F_prog) {
+                                        NOTE (("\nWriting SIB: ..."));
+                                        syntax_tree = WriteSib (syntax_tree);
                                         ABORT_ON_ERROR;
+                                    }
+                                    compiler_phase++;
 
-                                        if (!breakpsiopt) {
-                                            NOTE (("\nRefcounting: ..."));
-                                            compiler_phase++;
-                                            syntax_tree = Refcount (syntax_tree);
+                                    if (!breaksib) {
+                                        if (sac_optimize) {
+                                            NOTE (("\nSAC-Optimizing: ..."));
+                                            syntax_tree = Optimize (syntax_tree);
                                             ABORT_ON_ERROR;
+                                        }
+                                        compiler_phase++;
 
-                                            if (!breakref) {
-                                                NOTE (("\nCompiling: ..."));
-                                                compiler_phase++;
-                                                syntax_tree = Compile (syntax_tree);
+                                        if (!breakopt) {
+                                            if (sac_optimize) {
+                                                NOTE (("\nPsi-Optimizing: ..."));
+                                                syntax_tree = PsiOpt (syntax_tree);
                                                 ABORT_ON_ERROR;
+                                            }
+                                            compiler_phase++;
+
+                                            if (!breakpsiopt) {
+                                                NOTE (("\nRefcounting: ..."));
+                                                compiler_phase++;
+                                                syntax_tree = Refcount (syntax_tree);
+                                                ABORT_ON_ERROR;
+
+                                                if (!breakref) {
+                                                    NOTE (("\nCompiling: ..."));
+                                                    compiler_phase++;
+                                                    syntax_tree = Compile (syntax_tree);
+                                                    ABORT_ON_ERROR;
+                                                }
                                             }
                                         }
                                     }
