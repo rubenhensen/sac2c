@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.16  2001/05/08 20:12:59  dkr
+ * - fixed a bug in inference strategy for while-loops
+ * - code re-organized and brushed
+ *
  * Revision 1.15  2001/05/08 15:51:15  dkr
  * more debug output added
  *
@@ -207,7 +211,7 @@ DbugPrintMasks (node *arg_info)
 {
     DBUG_ENTER ("DbugPrintMasks");
 
-    fprintf (stderr, " ->\n");
+    fprintf (stderr, "  ->\n");
 
     DbugPrintMask ("   in    ", INFO_INFDFMS_IN (arg_info));
     DbugPrintMask ("   out   ", INFO_INFDFMS_OUT (arg_info));
@@ -221,19 +225,16 @@ DbugPrintMasks (node *arg_info)
 /******************************************************************************
  *
  * function:
- *   void DefinedVar( node *decl,
- *                    DFMmask_t needed,
- *                    DFMmask_t in, DFMmask_t out, DFMmask_t local)
+ *   node *DefinedVar( node *arg_info, node *decl)
  *
  * description:
- *   Updates the given in-, out-, local-masks according to a defining occurence
- *   of a variable. The variable can either be specified directly (id) or as
- *   a pointer to the declaration (decl). The unused parameter has to be NULL.
+ *   Updates the masks of 'arg_info' according to a defining occurence of a
+ *   variable. The variable is specified as a pointer to the declaration.
  *
  ******************************************************************************/
 
-static void
-DefinedVar (node *decl, DFMmask_t needed, DFMmask_t in, DFMmask_t out, DFMmask_t local)
+static node *
+DefinedVar (node *arg_info, node *decl)
 {
     DBUG_ENTER ("DefinedVar");
 
@@ -247,77 +248,73 @@ DefinedVar (node *decl, DFMmask_t needed, DFMmask_t in, DFMmask_t out, DFMmask_t
                      "Declaration is neither a N_arg/N_vardec node nor a N_objdef"
                      " node");
     } else {
-        DFMSetMaskEntryClear (in, NULL, decl);
-        if (DFMTestMaskEntry (needed, NULL, decl)) {
-            DFMSetMaskEntrySet (out, NULL, decl);
+        DFMSetMaskEntryClear (INFO_INFDFMS_IN (arg_info), NULL, decl);
+        if (DFMTestMaskEntry (INFO_INFDFMS_NEEDED (arg_info), NULL, decl)) {
+            DFMSetMaskEntrySet (INFO_INFDFMS_OUT (arg_info), NULL, decl);
         }
-        DFMSetMaskEntrySet (local, NULL, decl);
+        DFMSetMaskEntrySet (INFO_INFDFMS_LOCAL (arg_info), NULL, decl);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN (arg_info);
 }
 
 /******************************************************************************
  *
  * function:
- *   void DefinedIds( ids *_ids, node *arg_info)
+ *   node *DefinedIds( node *arg_info, ids *arg_ids)
  *
  * description:
  *   Calls 'DefinedVar()' for each ids of the given ids-chain.
  *
  ******************************************************************************/
 
-static void
-DefinedIds (ids *_ids, node *arg_info)
+static node *
+DefinedIds (node *arg_info, ids *arg_ids)
 {
     DBUG_ENTER ("DefinedIds");
 
-    while (_ids != NULL) {
-        DefinedVar (IDS_VARDEC (_ids), INFO_INFDFMS_NEEDED (arg_info),
-                    INFO_INFDFMS_IN (arg_info), INFO_INFDFMS_OUT (arg_info),
-                    INFO_INFDFMS_LOCAL (arg_info));
-        _ids = IDS_NEXT (_ids);
+    while (arg_ids != NULL) {
+        arg_info = DefinedVar (arg_info, IDS_VARDEC (arg_ids));
+        arg_ids = IDS_NEXT (arg_ids);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN (arg_info);
 }
 
 /******************************************************************************
  *
  * function:
- *   void DefinedId( node *id, node *arg_info)
+ *   node *DefinedId( node *arg_info, node *arg_id)
  *
  * description:
  *   Calls 'DefinedVar()' for the given id-node.
  *
  ******************************************************************************/
 
-static void
-DefinedId (node *id, node *arg_info)
+static node *
+DefinedId (node *arg_info, node *arg_id)
 {
     DBUG_ENTER ("DefinedId");
 
-    DBUG_ASSERT ((NODE_TYPE (id) == N_id), "no N_id node found!");
+    DBUG_ASSERT ((NODE_TYPE (arg_id) == N_id), "no N_id node found!");
 
-    DefinedVar (ID_VARDEC (id), INFO_INFDFMS_NEEDED (arg_info),
-                INFO_INFDFMS_IN (arg_info), INFO_INFDFMS_OUT (arg_info),
-                INFO_INFDFMS_LOCAL (arg_info));
+    arg_info = DefinedVar (arg_info, ID_VARDEC (arg_id));
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN (arg_info);
 }
 
 /******************************************************************************
  *
  * function:
- *   void DefinedMask( DFMmask_t mask, node *arg_info)
+ *   node *DefinedMask( node *arg_info, DFMmask_t mask)
  *
  * description:
  *   Calls 'DefinedVar()' for each variable set in the given mask.
  *
  ******************************************************************************/
 
-static void
-DefinedMask (DFMmask_t mask, node *arg_info)
+static node *
+DefinedMask (node *arg_info, DFMmask_t mask)
 {
     node *decl;
 
@@ -325,30 +322,26 @@ DefinedMask (DFMmask_t mask, node *arg_info)
 
     decl = DFMGetMaskEntryDeclSet (mask);
     while (decl != NULL) {
-        DefinedVar (decl, INFO_INFDFMS_NEEDED (arg_info), INFO_INFDFMS_IN (arg_info),
-                    INFO_INFDFMS_OUT (arg_info), INFO_INFDFMS_LOCAL (arg_info));
+        arg_info = DefinedVar (arg_info, decl);
         decl = DFMGetMaskEntryDeclSet (NULL);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN (arg_info);
 }
 
 /******************************************************************************
  *
  * function:
- *   void UsedVar( node *decl,
- *                 DFMmask_t in, DFMmask_t local)
+ *   node *UsedVar( node *arg_info, node *decl)
  *
  * description:
- *   Updates the given in-, out-, local-masks according to a non-defining
- *   occurence of a variable. The variable can either be specified directly (id)
- *   or as a pointer to the declaration (decl). The unused parameter has to be
- *   NULL.
+ *   Updates the masks of 'arg_info' according to a non-defining occurence of
+ *   a variable. The variable is specified as a pointer to the declaration.
  *
  ******************************************************************************/
 
-static void
-UsedVar (node *decl, DFMmask_t in, DFMmask_t local)
+static node *
+UsedVar (node *arg_info, node *decl)
 {
     DBUG_ENTER ("UsedVar");
 
@@ -362,47 +355,47 @@ UsedVar (node *decl, DFMmask_t in, DFMmask_t local)
                      "declaration is neither a N_arg/N_vardec node nor a N_objdef"
                      " node");
     } else {
-        DFMSetMaskEntrySet (in, NULL, decl);
-        DFMSetMaskEntryClear (local, NULL, decl);
+        DFMSetMaskEntrySet (INFO_INFDFMS_IN (arg_info), NULL, decl);
+        DFMSetMaskEntryClear (INFO_INFDFMS_LOCAL (arg_info), NULL, decl);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN (arg_info);
 }
 
 /******************************************************************************
  *
  * function:
- *   void UsedId( node *id, node *arg_info)
+ *   node *UsedId( node *arg_info, node *arg_id)
  *
  * description:
  *   Calls 'UsedVar()' for the given id-node.
  *
  ******************************************************************************/
 
-static void
-UsedId (node *id, node *arg_info)
+static node *
+UsedId (node *arg_info, node *arg_id)
 {
     DBUG_ENTER ("UsedId");
 
-    DBUG_ASSERT ((NODE_TYPE (id) == N_id), "no N_id node found!");
+    DBUG_ASSERT ((NODE_TYPE (arg_id) == N_id), "no N_id node found!");
 
-    UsedVar (ID_VARDEC (id), INFO_INFDFMS_IN (arg_info), INFO_INFDFMS_LOCAL (arg_info));
+    arg_info = UsedVar (arg_info, ID_VARDEC (arg_id));
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN (arg_info);
 }
 
 /******************************************************************************
  *
  * function:
- *   void UsedMask( DFMmask_t mask, node *arg_info)
+ *   node *UsedMask( node *arg_info, DFMmask_t mask)
  *
  * description:
  *   Calls 'UsedVar()' for each variable set in the given mask.
  *
  ******************************************************************************/
 
-static void
-UsedMask (DFMmask_t mask, node *arg_info)
+static node *
+UsedMask (node *arg_info, DFMmask_t mask)
 {
     node *decl;
 
@@ -410,31 +403,31 @@ UsedMask (DFMmask_t mask, node *arg_info)
 
     decl = DFMGetMaskEntryDeclSet (mask);
     while (decl != NULL) {
-        UsedVar (decl, INFO_INFDFMS_IN (arg_info), INFO_INFDFMS_LOCAL (arg_info));
+        arg_info = UsedVar (arg_info, decl);
         decl = DFMGetMaskEntryDeclSet (NULL);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN (arg_info);
 }
 
 /******************************************************************************
  *
  * function:
- *   DFMmask_t AdjustNeeded( DFMmask_t needed,
- *                           DFMmask_t in, DFMmask_t out)
+ *   DFMmask_t AdjustNeededMasks( DFMmask_t needed,
+ *                                DFMmask_t in, DFMmask_t out)
  *
  * description:
- *   Updates the needed-mask (contains all vars, that are needed in outer
- *   blocks) according to the in- and out-mask of the current block.
+ *   Updates the given needed-mask (contains all vars, that are needed in
+ *   outer blocks) according to the in- and out-mask of the current block.
  *   This function is needed to calculate the new needed-mask before entering
  *   a new block.
  *
  ******************************************************************************/
 
 static DFMmask_t
-AdjustNeeded (DFMmask_t needed, DFMmask_t in, DFMmask_t out)
+AdjustNeededMasks (DFMmask_t needed, DFMmask_t in, DFMmask_t out)
 {
-    DBUG_ENTER ("AdjustNeeded");
+    DBUG_ENTER ("AdjustNeededMasks");
 
     DFMSetMaskMinus (needed, out);
     DFMSetMaskOr (needed, in);
@@ -444,16 +437,49 @@ AdjustNeeded (DFMmask_t needed, DFMmask_t in, DFMmask_t out)
 
 /******************************************************************************
  *
+ * Function:
+ *   node *GenerateMasks( node *arg_info,
+ *                        DFMmask_t in, DFMmask_t out, DFMmask_t needed)
+ *
+ * Description:
+ *   Generates fresh masks in 'arg_info' for a newly entered block
+ *   according to the given masks of the outer block:
+ *     in' = empty
+ *     out' = empty
+ *     local' = empty
+ *     needed' = (needed \ out) u in   .
+ *
+ ******************************************************************************/
+
+static node *
+GenerateMasks (node *arg_info, DFMmask_t in, DFMmask_t out, DFMmask_t needed)
+{
+    DBUG_ENTER ("GenerateMasks");
+
+    INFO_INFDFMS_IN (arg_info) = DFMGenMaskClear (INFO_DFMBASE (arg_info));
+    INFO_INFDFMS_OUT (arg_info) = DFMGenMaskClear (INFO_DFMBASE (arg_info));
+    INFO_INFDFMS_LOCAL (arg_info) = DFMGenMaskClear (INFO_DFMBASE (arg_info));
+    INFO_INFDFMS_NEEDED (arg_info) = DFMGenMaskCopy (needed);
+
+    INFO_INFDFMS_NEEDED (arg_info)
+      = AdjustNeededMasks (INFO_INFDFMS_NEEDED (arg_info), in, out);
+
+    DBUG_RETURN (arg_info);
+}
+
+/******************************************************************************
+ *
  * function:
- *   DFMmask_t AdjustNeededWith( DFMmask_t needed,
- *                               DFMmask_t in, DFMmask_t out)
+ *   node *AdjustMasksWith_Pre( node *arg_info, node *arg_node)
  *
  * description:
- *   Updates the needed-mask (contains all vars, that are needed in outer
- *   blocks) according to the in- and out-mask of the current block.
- *   This function is needed to calculate the new needed-mask before entering
- *   a with-loop.
+ *   Adjusts the masks for a newly entered with-loop according to the old
+ *   masks (the masks that have been infered during the previous iteration).
  *
+ *   *** in-, out-, local- mask ***
+ *   left as is
+ *
+ *   *** needed-mask ***
  *   Stricly speaking, the scope of all vars defined within a with-loop
  *   is restricted to the with-loop itself:
  *
@@ -464,7 +490,7 @@ AdjustNeeded (DFMmask_t needed, DFMmask_t in, DFMmask_t out)
  *     genarray( ...)
  *     ... val ...         <---  here, 'val' still contains the value 1
  *
- *   That means, we have to clear the INFO_INFDFMS_NEEDED mask here!
+ *   That means, we have to clear the needed-mask!
  *
  *   BUT, in case of global objects this behaviour is NOT wanted.
  *   Therefore, during the flattening phase all non-global vars defined
@@ -478,33 +504,264 @@ AdjustNeeded (DFMmask_t needed, DFMmask_t in, DFMmask_t out)
  *     genarray( ...)
  *     ... val ...         <---  here, 'val' still contains the value 1
  *
- *   Because of that, we can leave all global objects in the
- *   INFO_INFDFMS_NEEDED mask here in order to detect OUT-global-vars :-)
+ *   Because of that, we can leave all global objects in the needed-mask
+ *   in order to detect OUT-global-vars :-)
  *
  ******************************************************************************/
 
-static DFMmask_t
-AdjustNeededWith (DFMmask_t needed, DFMmask_t in, DFMmask_t out)
+static node *
+AdjustMasksWith_Pre (node *arg_info, node *arg_node)
 {
     node *decl;
 
-    DBUG_ENTER ("AdjustNeededWith");
+    DBUG_ENTER ("AdjustMasksWith_Pre");
 
-    needed = AdjustNeeded (needed, in, out);
+    DBUG_ASSERT (((NODE_TYPE (arg_node) == N_Nwith)
+                  || (NODE_TYPE (arg_node) == N_Nwith2)),
+                 "wrong node type found!");
 
-    decl = DFMGetMaskEntryDeclSet (needed);
+    decl = DFMGetMaskEntryDeclSet (INFO_INFDFMS_NEEDED (arg_info));
     while (decl != NULL) {
         /*
          * no unique object -> clear entry in mask
          */
         if (!IsUnique (VARDEC_OR_ARG_TYPE (decl))) {
-            DFMSetMaskEntryClear (needed, NULL, decl);
+            DFMSetMaskEntryClear (INFO_INFDFMS_NEEDED (arg_info), NULL, decl);
         }
 
         decl = DFMGetMaskEntryDeclSet (NULL);
     }
 
-    DBUG_RETURN (needed);
+    DBUG_RETURN (arg_info);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *AdjustMasksWith_Post( node *arg_info)
+ *
+ * description:
+ *   Adjusts the masks after traversal of a with-loop:
+ *
+ *   All masks are left as is.
+ *
+ ******************************************************************************/
+
+static node *
+AdjustMasksWith_Post (node *arg_info)
+{
+    DBUG_ENTER ("AdjustMasksWith_Post");
+
+    DBUG_RETURN (arg_info);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *AdjustMasksCond_Pre( node *arg_info, node *arg_node)
+ *
+ * Description:
+ *   Adjusts the masks for a newly entered conditional according to the old
+ *   masks (the masks that have been infered during the previous iteration):
+ *
+ *   All masks are left as is.
+ *
+ ******************************************************************************/
+
+node *
+AdjustMasksCond_Pre (node *arg_info, node *arg_node)
+{
+    DBUG_ENTER ("AdjustMasksCond_Pre");
+
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_cond), "wrong node type found!");
+
+    DBUG_RETURN (arg_info);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *AdjustMasksCond_Post( node *arg_info,
+ *                DFMmask_t in_then, DFMmask_t out_then, DFMmask_t local_then,
+ *                DFMmask_t in_else, DFMmask_t out_else, DFMmask_t local_else)
+ *
+ * Description:
+ *   Adjusts the masks after traversal of a conditional:
+ *
+ *   All masks are left as is.
+ *
+ ******************************************************************************/
+
+node *
+AdjustMasksCond_Post (node *arg_info, DFMmask_t in_then, DFMmask_t out_then,
+                      DFMmask_t local_then, DFMmask_t in_else, DFMmask_t out_else,
+                      DFMmask_t local_else)
+{
+    DFMmask_t tmp;
+
+    DBUG_ENTER ("AdjustMasksCond_Post");
+
+    /*
+     * calculate new in-, out-, local-masks
+     */
+    /* in = in_then u in_else u (out_then \ out_else) u (out_else \ out_then) */
+    INFO_INFDFMS_IN (arg_info) = DFMGenMaskMinus (out_then, out_else);
+    tmp = DFMGenMaskMinus (out_else, out_then);
+    DFMSetMaskOr (INFO_INFDFMS_IN (arg_info), tmp);
+    DFMSetMaskOr (INFO_INFDFMS_IN (arg_info), in_then);
+    DFMSetMaskOr (INFO_INFDFMS_IN (arg_info), in_else);
+    /* out = out_then u out_else */
+    INFO_INFDFMS_OUT (arg_info) = DFMGenMaskOr (out_then, out_else);
+    /* local = (local_then u local_else) \ in */
+    INFO_INFDFMS_LOCAL (arg_info) = DFMGenMaskOr (local_then, local_else);
+    DFMSetMaskMinus (INFO_INFDFMS_LOCAL (arg_info), INFO_INFDFMS_IN (arg_info));
+
+    tmp = DFMRemoveMask (tmp);
+    in_then = DFMRemoveMask (in_then);
+    out_then = DFMRemoveMask (out_then);
+    local_then = DFMRemoveMask (local_then);
+    in_else = DFMRemoveMask (in_else);
+    out_else = DFMRemoveMask (out_else);
+    local_else = DFMRemoveMask (local_else);
+
+    DBUG_RETURN (arg_info);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *AdjustMasksWhile_Pre( node *arg_info, node *arg_node)
+ *
+ * Description:
+ *   Adjusts the masks for a newly entered while-loop according to the old
+ *   masks (the masks that have been infered during the previous iteration):
+ *
+ *   The recursive call of the while-function must be taken into account:
+ *     if (...) {
+ *       <assignments>
+ *       out = WhileFun( in);
+ *     }
+ *     return( out);
+ *
+ *   Note, that the conditional is handle *after*  <assignments>  has been
+ *   traversed (see AdjustMaskWhile_Post()).
+ *
+ ******************************************************************************/
+
+node *
+AdjustMasksWhile_Pre (node *arg_info, node *arg_node)
+{
+    DBUG_ENTER ("AdjustMasksWhile_Pre");
+
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_while), "wrong node type found!");
+
+    /*
+     * out = WhileFun( in);
+     */
+    arg_info = DefinedMask (arg_info, WHILE_OUT_MASK (arg_node));
+    arg_info = UsedMask (arg_info, WHILE_IN_MASK (arg_node));
+
+    DBUG_RETURN (arg_info);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *AdjustMasksWhile_Post( node *arg_info)
+ *
+ * Description:
+ *   Adjusts the masks after traversal of a while-loop:
+ *
+ *   The conditional of the while-function must be taken into account:
+ *     if (...) {
+ *       <assignments>
+ *       out = WhileFun( in);
+ *     }
+ *     return( out);
+ *
+ ******************************************************************************/
+
+node *
+AdjustMasksWhile_Post (node *arg_info)
+{
+    DBUG_ENTER ("AdjustMasksWhile_Post");
+
+    /*
+     * Note, that we have a conditional here:
+     *   in  = in_t u in_e u (out_t \ out_e) u (out_e \ out_t) = in_t u out_t
+     *   out = out_t u out_e = out_t
+     *   local = (local_t u local_e) \ in = local_t \ out_t
+     */
+    DFMSetMaskOr (INFO_INFDFMS_IN (arg_info), INFO_INFDFMS_OUT (arg_info));
+    DFMSetMaskMinus (INFO_INFDFMS_LOCAL (arg_info), INFO_INFDFMS_OUT (arg_info));
+
+    DBUG_RETURN (arg_info);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *AdjustMasksDo_Pre( node *arg_info, node *arg_node)
+ *
+ * Description:
+ *   Adjusts the masks for a newly entered do-loop according to the old
+ *   masks (the masks that have been infered during the previous iteration):
+ *
+ *   The conditional containing the recursive call of the do-function must
+ *   be taken into account:
+ *     <assignments>
+ *     if (...) {
+ *       out = DoFun( in);
+ *     }
+ *     return( out);
+ *
+ ******************************************************************************/
+
+node *
+AdjustMasksDo_Pre (node *arg_info, node *arg_node)
+{
+    DBUG_ENTER ("AdjustMasksDo_Pre");
+
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_do), "wrong node type found!");
+
+    /*
+     * out = DoFun( in);
+     */
+    arg_info = DefinedMask (arg_info, DO_OUT_MASK (arg_node));
+    arg_info = UsedMask (arg_info, DO_IN_MASK (arg_node));
+
+    /*
+     * if (...) { out = DoFun( in); }
+     *
+     * Note, that we have a conditional here:
+     *   in  = in_t u in_e u (out_t \ out_e) u (out_e \ out_t) = in_t u out_t
+     *   out = out_t u out_e = out_t
+     *   local = (local_t u local_e) \ in = local_t \ out_t
+     */
+    DFMSetMaskOr (INFO_INFDFMS_IN (arg_info), DO_OUT_MASK (arg_node));
+    DFMSetMaskMinus (INFO_INFDFMS_LOCAL (arg_info), DO_OUT_MASK (arg_node));
+
+    DBUG_RETURN (arg_info);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *AdjustMasksDo_Post( node *arg_info)
+ *
+ * Description:
+ *   Adjusts the masks after traversal of a do-loop:
+ *
+ *   All masks are left as is.
+ *
+ ******************************************************************************/
+
+node *
+AdjustMasksDo_Post (node *arg_info)
+{
+    DBUG_ENTER ("AdjustMasksDo_Post");
+
+    DBUG_RETURN (arg_info);
 }
 
 /******************************************************************************
@@ -523,14 +780,37 @@ InferMasksWith (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("InferMasksWith");
 
+    /*
+     * setup masks
+     */
+    arg_info
+      = GenerateMasks (arg_info, INFO_INFDFMS_IN (arg_info), INFO_INFDFMS_OUT (arg_info),
+                       INFO_INFDFMS_NEEDED (arg_info));
+
+    /*
+     * adjust masks (part 1)
+     */
+    arg_info = AdjustMasksWith_Pre (arg_info, arg_node);
+
+    /*
+     * traverse sons
+     */
+
+    DBUG_EXECUTE ("INFDFMS",
+                  fprintf (stderr, ">>>  %s entered", mdb_nodetype[NODE_TYPE (arg_node)]);
+                  DbugPrintMasks (arg_info););
+
     NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
     NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
     NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
 
+    DBUG_EXECUTE ("INFDFMS", fprintf (stderr, "<<<  %s finished",
+                                      mdb_nodetype[NODE_TYPE (arg_node)]););
+
     /*
-     * calculate new in-, out-, local-masks
+     * adjust masks (part 2)
      */
-    /* there is no need to adjust the in-, out-, local-masks ... */
+    arg_info = AdjustMasksWith_Post (arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -551,6 +831,26 @@ InferMasksWith2 (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("InferMasksWith2");
 
+    /*
+     * setup masks
+     */
+    arg_info
+      = GenerateMasks (arg_info, INFO_INFDFMS_IN (arg_info), INFO_INFDFMS_OUT (arg_info),
+                       INFO_INFDFMS_NEEDED (arg_info));
+
+    /*
+     * adjust masks (part 1)
+     */
+    arg_info = AdjustMasksWith_Pre (arg_info, arg_node);
+
+    /*
+     * traverse sons
+     */
+
+    DBUG_EXECUTE ("INFDFMS",
+                  fprintf (stderr, ">>>  %s entered", mdb_nodetype[NODE_TYPE (arg_node)]);
+                  DbugPrintMasks (arg_info););
+
     NWITH2_WITHOP (arg_node) = Trav (NWITH2_WITHOP (arg_node), arg_info);
     NWITH2_SEGS (arg_node) = Trav (NWITH2_SEGS (arg_node), arg_info);
 
@@ -560,10 +860,13 @@ InferMasksWith2 (node *arg_node, node *arg_info)
 
     NWITH2_WITHID (arg_node) = Trav (NWITH2_WITHID (arg_node), arg_info);
 
+    DBUG_EXECUTE ("INFDFMS", fprintf (stderr, "<<<  %s finished",
+                                      mdb_nodetype[NODE_TYPE (arg_node)]););
+
     /*
-     * calculate new in-, out-, local-masks
+     * adjust masks (part 2)
      */
-    /* there is no need to adjust the in-, out-, local-masks ... */
+    arg_info = AdjustMasksWith_Post (arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -581,61 +884,80 @@ InferMasksWith2 (node *arg_node, node *arg_info)
 static node *
 InferMasksCond (node *arg_node, node *arg_info)
 {
+    DFMmask_t old_in, old_out, old_needed;
     DFMmask_t in_then, out_then, local_then;
     DFMmask_t in_else, out_else, local_else;
-    DFMmask_t tmp;
 
     DBUG_ENTER ("InferMasksCond");
+
+    old_in = INFO_INFDFMS_IN (arg_info);
+    old_out = INFO_INFDFMS_OUT (arg_info);
+    old_needed = INFO_INFDFMS_NEEDED (arg_info);
+
+    /*
+     * setup masks for then-block
+     */
+    arg_info = GenerateMasks (arg_info, old_in, old_out, old_needed);
+
+    /*
+     * adjust masks (part 1) for then-block
+     */
+    arg_info = AdjustMasksCond_Pre (arg_info, arg_node);
 
     /*
      * traverse then-block
      */
+
+    DBUG_EXECUTE ("INFDFMS", fprintf (stderr, ">>>  then-block of %s entered",
+                                      mdb_nodetype[NODE_TYPE (arg_node)]);
+                  DbugPrintMasks (arg_info););
+
     COND_THEN (arg_node) = Trav (COND_THEN (arg_node), arg_info);
+
+    DBUG_EXECUTE ("INFDFMS", fprintf (stderr, "<<<  then-block of %s finished",
+                                      mdb_nodetype[NODE_TYPE (arg_node)]););
 
     in_then = INFO_INFDFMS_IN (arg_info);
     out_then = INFO_INFDFMS_OUT (arg_info);
     local_then = INFO_INFDFMS_LOCAL (arg_info);
 
     /*
-     * setup in-, out-, local-masks for else-block
+     * setup masks for else-block
      */
-    INFO_INFDFMS_IN (arg_info) = DFMGenMaskClear (INFO_DFMBASE (arg_info));
-    INFO_INFDFMS_OUT (arg_info) = DFMGenMaskClear (INFO_DFMBASE (arg_info));
-    INFO_INFDFMS_LOCAL (arg_info) = DFMGenMaskClear (INFO_DFMBASE (arg_info));
+    arg_info = GenerateMasks (arg_info, old_in, old_out, old_needed);
+
+    /*
+     * adjust masks (part 1) for else-block
+     */
+    arg_info = AdjustMasksCond_Pre (arg_info, arg_node);
+
+    /*
+     * traverse else-block
+     */
+
+    DBUG_EXECUTE ("INFDFMS", fprintf (stderr, ">>>  else-block of %s entered",
+                                      mdb_nodetype[NODE_TYPE (arg_node)]);
+                  DbugPrintMasks (arg_info););
 
     COND_ELSE (arg_node) = Trav (COND_ELSE (arg_node), arg_info);
+
+    DBUG_EXECUTE ("INFDFMS", fprintf (stderr, "<<<  else-block of %s finished",
+                                      mdb_nodetype[NODE_TYPE (arg_node)]););
 
     in_else = INFO_INFDFMS_IN (arg_info);
     out_else = INFO_INFDFMS_OUT (arg_info);
     local_else = INFO_INFDFMS_LOCAL (arg_info);
 
     /*
-     * calculate new in-, out-, local-masks
+     * adjust masks (part 2)
      */
-    /* in = in_then u in_else u (out_then \ out_else) u (out_else \ out_then) */
-    INFO_INFDFMS_IN (arg_info) = DFMGenMaskMinus (out_then, out_else);
-    tmp = DFMGenMaskMinus (out_else, out_then);
-    DFMSetMaskOr (INFO_INFDFMS_IN (arg_info), tmp);
-    DFMSetMaskOr (INFO_INFDFMS_IN (arg_info), in_then);
-    DFMSetMaskOr (INFO_INFDFMS_IN (arg_info), in_else);
-    /* out = out_then u out_else */
-    INFO_INFDFMS_OUT (arg_info) = DFMGenMaskOr (out_then, out_else);
-    /* local = (local_then u local_else) \ in */
-    INFO_INFDFMS_LOCAL (arg_info) = DFMGenMaskOr (local_then, local_else);
-    DFMSetMaskMinus (INFO_INFDFMS_LOCAL (arg_info), INFO_INFDFMS_IN (arg_info));
+    arg_info = AdjustMasksCond_Post (arg_info, in_then, out_then, local_then, in_else,
+                                     out_else, local_else);
 
     /*
      * traverse condition
      */
     COND_COND (arg_node) = Trav (COND_COND (arg_node), arg_info);
-
-    tmp = DFMRemoveMask (tmp);
-    in_then = DFMRemoveMask (in_then);
-    out_then = DFMRemoveMask (out_then);
-    local_then = DFMRemoveMask (local_then);
-    in_else = DFMRemoveMask (in_else);
-    out_else = DFMRemoveMask (out_else);
-    local_else = DFMRemoveMask (local_else);
 
     DBUG_RETURN (arg_node);
 }
@@ -646,7 +968,7 @@ InferMasksCond (node *arg_node, node *arg_info)
  *   node *InferMasksWhile( node *arg_node, node *arg_info)
  *
  * Description:
- *
+ *   BODY must be traversed before COND!
  *
  ******************************************************************************/
 
@@ -656,40 +978,35 @@ InferMasksWhile (node *arg_node, node *arg_info)
     DBUG_ENTER ("InferMasksWhile");
 
     /*
-     * Example:
-     * --------
-     *
-     * a = 1;
-     * b = 1;
-     * c = 1;
-     * while (...)     <--   in: a,b   out: b   local: c,d
-     * {               <--   in: a     out: b   local: b,c,d   needed: b
-     *   ... a ...
-     *   a = 2;
-     *   b = 2;
-     *   c = 2;
-     *   ... c ...
-     *   d = 1;
-     * }
-     * ... b ...
+     * setup masks
      */
+    arg_info
+      = GenerateMasks (arg_info, INFO_INFDFMS_IN (arg_info), INFO_INFDFMS_OUT (arg_info),
+                       INFO_INFDFMS_NEEDED (arg_info));
+
+    /*
+     * adjust masks (part 1)
+     */
+    arg_info = AdjustMasksWhile_Pre (arg_info, arg_node);
+
+    /*
+     * traverse sons
+     */
+
+    DBUG_EXECUTE ("INFDFMS",
+                  fprintf (stderr, ">>>  %s entered", mdb_nodetype[NODE_TYPE (arg_node)]);
+                  DbugPrintMasks (arg_info););
 
     WHILE_BODY (arg_node) = Trav (WHILE_BODY (arg_node), arg_info);
     WHILE_COND (arg_node) = Trav (WHILE_COND (arg_node), arg_info);
 
+    DBUG_EXECUTE ("INFDFMS", fprintf (stderr, "<<<  %s finished",
+                                      mdb_nodetype[NODE_TYPE (arg_node)]););
+
     /*
-     * calculate new in-, out-, local-masks
+     * adjust masks (part 2)
      */
-    /*
-     * All vars that are out-vars of the loop body have to be arguments of the
-     * loop-dummy-function as well. (Even if they are local-vars!)
-     * This is important in the case that the loop body is not executed at all.
-     *   -> 'b' in the example
-     */
-    /* in' = in u out */
-    DFMSetMaskOr (INFO_INFDFMS_IN (arg_info), INFO_INFDFMS_OUT (arg_info));
-    /* local' = local \ in' */
-    DFMSetMaskMinus (INFO_INFDFMS_LOCAL (arg_info), INFO_INFDFMS_IN (arg_info));
+    arg_info = AdjustMasksWhile_Post (arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -700,7 +1017,7 @@ InferMasksWhile (node *arg_node, node *arg_info)
  *   node *InferMasksDo( node *arg_node, node *arg_info)
  *
  * Description:
- *
+ *   BODY must be traversed after COND!
  *
  ******************************************************************************/
 
@@ -710,31 +1027,35 @@ InferMasksDo (node *arg_node, node *arg_info)
     DBUG_ENTER ("InferMasksDo");
 
     /*
-     * Example:
-     * --------
-     *
-     * a = 1;
-     * b = 1;
-     * c = 1;
-     * do              <--   in: a   out: b   local: b,c,d
-     * {               <--   in: a   out: b   local: b,c,d   needed: b
-     *   ... a ...
-     *   a = 2;
-     *   b = 2;
-     *   c = 2;
-     *   ... c ...
-     *   d = 1;
-     * } while (...)
-     * ... b ...
+     * setup masks
      */
+    arg_info
+      = GenerateMasks (arg_info, INFO_INFDFMS_IN (arg_info), INFO_INFDFMS_OUT (arg_info),
+                       INFO_INFDFMS_NEEDED (arg_info));
+
+    /*
+     * adjust masks (part 1)
+     */
+    arg_info = AdjustMasksDo_Pre (arg_info, arg_node);
+
+    /*
+     * traverse sons
+     */
+
+    DBUG_EXECUTE ("INFDFMS",
+                  fprintf (stderr, ">>>  %s entered", mdb_nodetype[NODE_TYPE (arg_node)]);
+                  DbugPrintMasks (arg_info););
 
     DO_COND (arg_node) = Trav (DO_COND (arg_node), arg_info);
     DO_BODY (arg_node) = Trav (DO_BODY (arg_node), arg_info);
 
+    DBUG_EXECUTE ("INFDFMS", fprintf (stderr, "<<<  %s finished",
+                                      mdb_nodetype[NODE_TYPE (arg_node)]););
+
     /*
-     * calculate new in-, out-, local-masks
+     * adjust masks (part 2)
      */
-    /* there is no need to adjust the in-, out-, local-masks ... */
+    arg_info = AdjustMasksDo_Post (arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -744,9 +1065,7 @@ InferMasksDo (node *arg_node, node *arg_info)
  * function:
  *   node *InferMasks( DFMmask_t *in, DFMmask_t *out, DFMmask_t *local,
  *                     node *arg_node, node *arg_info,
- *                     DFMmask_t (AdjustNeededFunction)( DFMmask_t,
- *                                                       DFMmask_t, DFMmask_t),
- *                     node *(InferMasksFunction)( node *, node *),
+ *                     node *(InferMasksFun)( node *, node *),
  *                     bool do_fixpoint_iter)
  *
  * description:
@@ -756,9 +1075,7 @@ InferMasksDo (node *arg_node, node *arg_info)
 
 static node *
 InferMasks (DFMmask_t *in, DFMmask_t *out, DFMmask_t *local, node *arg_node,
-            node *arg_info,
-            DFMmask_t (AdjustNeededFunction) (DFMmask_t, DFMmask_t, DFMmask_t),
-            node *(InferMasksFunction) (node *, node *), bool do_fixpoint_iter)
+            node *arg_info, node *(InferMasksFun) (node *, node *), bool do_fixpoint_iter)
 {
     DFMmask_t old_needed, old_in, old_out, old_local;
 
@@ -783,24 +1100,9 @@ InferMasks (DFMmask_t *in, DFMmask_t *out, DFMmask_t *local, node *arg_node,
     old_local = INFO_INFDFMS_LOCAL (arg_info);
 
     /*
-     * setup needed-mask
+     * infer new masks
      */
-    INFO_INFDFMS_NEEDED (arg_info) = DFMGenMaskCopy (old_needed);
-    INFO_INFDFMS_NEEDED (arg_info)
-      = AdjustNeededFunction (INFO_INFDFMS_NEEDED (arg_info), old_in, old_out);
-
-    /*
-     * setup in-, out-, local-masks
-     */
-    INFO_INFDFMS_IN (arg_info) = DFMGenMaskCopy (*in);
-    INFO_INFDFMS_OUT (arg_info) = DFMGenMaskCopy (*out);
-    INFO_INFDFMS_LOCAL (arg_info) = DFMGenMaskClear (INFO_DFMBASE (arg_info));
-
-    DBUG_EXECUTE ("INFDFMS",
-                  fprintf (stderr, ">>>  %s entered", mdb_nodetype[NODE_TYPE (arg_node)]);
-                  DbugPrintMasks (arg_info););
-
-    arg_node = InferMasksFunction (arg_node, arg_info);
+    arg_node = InferMasksFun (arg_node, arg_info);
 
     /*
      * store the infered in-, out-, local-masks and
@@ -857,8 +1159,8 @@ InferMasks (DFMmask_t *in, DFMmask_t *out, DFMmask_t *local, node *arg_node,
      *
      * Note, that the local-mask must has been updated already!!!!
      */
-    DefinedMask (*out, arg_info);
-    UsedMask (*in, arg_info);
+    arg_info = DefinedMask (arg_info, *out);
+    arg_info = UsedMask (arg_info, *in);
 
     DBUG_RETURN (arg_node);
 }
@@ -958,7 +1260,7 @@ INFDFMSfundef (node *arg_node, node *arg_info)
         } while (!INFO_INFDFMS_ISFIX (arg_info));
 
         DBUG_EXECUTE ("INFDFMS",
-                      fprintf (stderr, "<< %s(): finished after %i iterations\n",
+                      fprintf (stderr, "<<<<<<<  %s(): finished after %i iterations\n",
                                FUNDEF_NAME (arg_node), cnt););
 
         INFO_INFDFMS_IN (arg_info) = DFMRemoveMask (INFO_INFDFMS_IN (arg_info));
@@ -1048,11 +1350,11 @@ INFDFMSlet (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("INFDFMSlet");
 
-    DefinedIds (LET_IDS (arg_node), arg_info);
+    arg_info = DefinedIds (arg_info, LET_IDS (arg_node));
 
     LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
 
-    DBUG_EXECUTE ("INFDFMS",
+    DBUG_EXECUTE ("INFDFMS_ALL",
                   fprintf (stderr, "%s traversed (", mdb_nodetype[NODE_TYPE (arg_node)]);
                   {
                       ids *let_ids = LET_IDS (arg_node);
@@ -1113,9 +1415,7 @@ INFDFMSap (node *arg_node, node *arg_info)
                          FUNDEF_NAME (INFO_INFDFMS_FUNDEF (arg_info)),
                          FUNDEF_NAME (AP_FUNDEF (arg_node)), EXPRS_EXPR (ap_args)));
 
-            DefinedVar (ID_VARDEC (EXPRS_EXPR (ap_args)), INFO_INFDFMS_NEEDED (arg_info),
-                        INFO_INFDFMS_IN (arg_info), INFO_INFDFMS_OUT (arg_info),
-                        INFO_INFDFMS_LOCAL (arg_info));
+            arg_info = DefinedVar (arg_info, ID_VARDEC (EXPRS_EXPR (ap_args)));
         }
 
         if (ARG_BASETYPE (fundef_args) != T_dots) {
@@ -1160,8 +1460,7 @@ INFDFMSid (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("INFDFMSid");
 
-    UsedVar (ID_VARDEC (arg_node), INFO_INFDFMS_IN (arg_info),
-             INFO_INFDFMS_LOCAL (arg_info));
+    arg_info = UsedVar (arg_info, ID_VARDEC (arg_node));
 
     DBUG_RETURN (arg_node);
 }
@@ -1187,7 +1486,6 @@ INFDFMSwithx (node *arg_node, node *arg_info)
       = InferMasks (&(NWITH_OR_NWITH2_IN_MASK (arg_node)),
                     &(NWITH_OR_NWITH2_OUT_MASK (arg_node)),
                     &(NWITH_OR_NWITH2_LOCAL_MASK (arg_node)), arg_node, arg_info,
-                    AdjustNeededWith,
                     (NODE_TYPE (arg_node) == N_Nwith) ? InferMasksWith : InferMasksWith2,
                     FALSE);
 
@@ -1225,8 +1523,8 @@ INFDFMSwithid (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("INFDFMSwithid");
 
-    DefinedIds (NWITHID_VEC (arg_node), arg_info);
-    DefinedIds (NWITHID_IDS (arg_node), arg_info);
+    arg_info = DefinedIds (arg_info, NWITHID_VEC (arg_node));
+    arg_info = DefinedIds (arg_info, NWITHID_IDS (arg_node));
 
     DBUG_RETURN (arg_node);
 }
@@ -1273,7 +1571,7 @@ INFDFMScond (node *arg_node, node *arg_info)
 
     arg_node = InferMasks (&(COND_IN_MASK (arg_node)), &(COND_OUT_MASK (arg_node)),
                            &(COND_LOCAL_MASK (arg_node)), arg_node, arg_info,
-                           AdjustNeeded, InferMasksCond, FALSE);
+                           InferMasksCond, FALSE);
 
     DBUG_RETURN (arg_node);
 }
@@ -1295,7 +1593,7 @@ INFDFMSwhile (node *arg_node, node *arg_info)
 
     arg_node = InferMasks (&(WHILE_IN_MASK (arg_node)), &(WHILE_OUT_MASK (arg_node)),
                            &(WHILE_LOCAL_MASK (arg_node)), arg_node, arg_info,
-                           AdjustNeeded, InferMasksWhile, TRUE);
+                           InferMasksWhile, TRUE);
 
     DBUG_RETURN (arg_node);
 }
@@ -1315,9 +1613,9 @@ INFDFMSdo (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("INFDFMSdo");
 
-    arg_node = InferMasks (&(DO_IN_MASK (arg_node)), &(DO_OUT_MASK (arg_node)),
-                           &(DO_LOCAL_MASK (arg_node)), arg_node, arg_info, AdjustNeeded,
-                           InferMasksDo, TRUE);
+    arg_node
+      = InferMasks (&(DO_IN_MASK (arg_node)), &(DO_OUT_MASK (arg_node)),
+                    &(DO_LOCAL_MASK (arg_node)), arg_node, arg_info, InferMasksDo, TRUE);
 
     DBUG_RETURN (arg_node);
 }
@@ -1351,7 +1649,7 @@ INFDFMSicm (node *arg_node, node *arg_info)
          * def: 1st arg
          * use: ---
          */
-        DefinedId (ICM_ARG1 (arg_node), arg_info);
+        arg_info = DefinedId (arg_info, ICM_ARG1 (arg_node));
     } else if (!strcmp (name, "ND_KS_VECT2OFFSET")) {
         /*
          * ND_KS_VECT2OFFSET( off_name, arr_name, ...):
@@ -1360,8 +1658,8 @@ INFDFMSicm (node *arg_node, node *arg_info)
          * def: 1st arg
          * use: 2nd arg
          */
-        DefinedId (ICM_ARG1 (arg_node), arg_info);
-        UsedId (ICM_ARG2 (arg_node), arg_info);
+        arg_info = DefinedId (arg_info, ICM_ARG1 (arg_node));
+        arg_info = UsedId (arg_info, ICM_ARG2 (arg_node));
     } else {
         DBUG_ASSERT ((0), "unknown ICM found!");
     }
