@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  1998/05/06 17:19:34  dkr
+ * added DFMGenMaskMinus(), DFMSetMaskMinus()
+ *
  * Revision 1.2  1998/05/05 15:54:00  cg
  * first running revision
  *
@@ -96,6 +99,7 @@ extern DFMmask_t DFMGenMaskSet (DFMmask_base_t mask_base);
 extern DFMmask_t DFMGenMaskCopy (DFMmask_t mask);
 extern DFMmask_t DFMGenMaskAnd (DFMmask_t mask1, DFMmask_t mask2);
 extern DFMmask_t DFMGenMaskOr (DFMmask_t mask1, DFMmask_t mask2);
+extern DFMmask_t DFMGenMaskMinus (DFMmask_t mask1, DFMmask_t mask2);
 extern DFMmask_t DFMGenMaskInv (DFMmask_t mask);
 
 extern void DFMSetMaskClear (DFMmask_t mask);
@@ -103,6 +107,7 @@ extern void DFMSetMaskSet (DFMmask_t mask);
 extern void DFMSetMaskCopy (DFMmask_t mask);
 extern void DFMSetMaskAnd (DFMmask_t mask, DFMmask_t mask2);
 extern void DFMSetMaskOr (DFMmask_t mask, DFMmask_t mask2);
+extern void DFMSetMaskMinus (DFMmask_t mask, DFMmask_t mask2);
 extern void DFMSetMaskInv (DFMmask_t mask);
 
 extern int DFMTestMask (DFMmask_t mask);

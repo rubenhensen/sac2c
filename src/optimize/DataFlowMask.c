@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  1998/05/06 17:19:11  dkr
+ * added DFMGenMaskMinus(), DFMSetMaskMinus()
+ *
  * Revision 1.2  1998/05/06 09:57:04  cg
  * added include of globals.h
  *
@@ -413,6 +416,32 @@ DFMGenMaskOr (mask_t *mask1, mask_t *mask2)
     DBUG_RETURN (new_mask);
 }
 
+mask_t *
+DFMGenMaskMinus (mask_t *mask1, mask_t *mask2)
+{
+    mask_t *new_mask;
+    int i;
+
+    DBUG_ENTER ("DFMGenMaskMinus");
+
+    DBUG_ASSERT ((mask1->mask_base == mask2->mask_base), "Combining incompatible masks");
+
+    new_mask = Malloc (sizeof (mask_t));
+
+    new_mask->num_bitfields = mask1->num_bitfields;
+
+    new_mask->mask_base = mask1->mask_base;
+
+    new_mask->bitfield
+      = (unsigned int *)Malloc (new_mask->num_bitfields * sizeof (unsigned int));
+
+    for (i = 0; i < new_mask->num_bitfields; i++) {
+        new_mask->bitfield[i] = mask1->bitfield[i] & ~(mask2->bitfield[i]);
+    }
+
+    DBUG_RETURN (new_mask);
+}
+
 /*
  * functions for updating an existing data flow mask
  */
@@ -502,6 +531,22 @@ DFMSetMaskOr (mask_t *mask, mask_t *mask2)
 
     for (i = 0; i < mask->num_bitfields; i++) {
         mask->bitfield[i] = mask->bitfield[i] | mask2->bitfield[i];
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+void
+DFMSetMaskMinus (mask_t *mask, mask_t *mask2)
+{
+    int i;
+
+    DBUG_ENTER ("DFMSetMaskMinus");
+
+    DBUG_ASSERT ((mask->mask_base == mask2->mask_base), "Combining incompatible masks");
+
+    for (i = 0; i < mask->num_bitfields; i++) {
+        mask->bitfield[i] = mask->bitfield[i] & ~(mask2->bitfield[i]);
     }
 
     DBUG_VOID_RETURN;
