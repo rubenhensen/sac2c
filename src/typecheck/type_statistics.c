@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2003/09/17 13:06:26  sbs
+ * output reniced.
+ *
  * Revision 1.1  2003/09/17 12:36:46  sbs
  * Initial revision
  *
@@ -77,7 +80,7 @@ PrintStatistics (node *fundef, node *info)
     DBUG_ENTER ("PrintStatistics");
 
     buf = StrBufCreate (80);
-    buf = StrBufprintf (buf, "%s( ", FUNDEF_NAME (fundef));
+    buf = StrBufprintf (buf, "  %s( ", FUNDEF_NAME (fundef));
 
     arg = FUNDEF_ARGS (fundef);
     while (arg != NULL) {
@@ -92,13 +95,13 @@ PrintStatistics (node *fundef, node *info)
     switch (spec_mode) {
     case (SS_aks):
         if (INFO_TS_AKD (info) > 0) {
-            buf = StrBufprintf (buf, "AKD variables left: %d\n", INFO_TS_AKD (info));
+            buf = StrBufprintf (buf, "    AKD variables left: %d\n", INFO_TS_AKD (info));
             flag = TRUE;
         }
         /* here no break is missing! */
     case (SS_akd):
         if (INFO_TS_AUD (info) > 0) {
-            buf = StrBufprintf (buf, "AUD variables left: %d\n", INFO_TS_AUD (info));
+            buf = StrBufprintf (buf, "    AUD variables left: %d\n", INFO_TS_AUD (info));
             flag = TRUE;
         }
         break;
@@ -137,6 +140,9 @@ PrintTypeStatistics (node *arg_node)
 
     tmp_tab = act_tab;
     act_tab = ts_tab;
+
+    NOTE ((""));
+    NOTE (("type statistics:"));
 
     arg_info = MakeInfo ();
     arg_node = Trav (arg_node, arg_info);
