@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2001/11/19 15:30:53  sbs
+ * fixed a bug in WLAAncode where wrong info concerning WLARRAY and
+ * INDEXVAR were inserted whenever nested WLs were used...
+ *
  * Revision 3.6  2001/06/28 07:46:51  cg
  * Primitive function psi() renamed to sel().
  *
@@ -699,10 +703,17 @@ WLAAncode (node *arg_node, node *arg_info)
     NCODE_WLAA_ACCESS (arg_node) = INFO_WLAA_ACCESS (arg_info);
     NCODE_WLAA_FEATURE (arg_node) = INFO_WLAA_FEATURE (arg_info);
     NCODE_WLAA_ACCESSCNT (arg_node) = INFO_WLAA_COUNT (arg_info);
-    NCODE_WLAA_WLARRAY (arg_node) = INFO_WLAA_WLARRAY (arg_info);
-    NCODE_WLAA_INDEXVAR (arg_node) = INFO_WLAA_INDEXVAR (arg_info);
     FreeInfo (arg_info, NULL);
     arg_info = old_arg_info;
+
+    /*
+     * WLARRAY and INDEXVAR have to be taken from old_arg_info, since
+     * they are set from OUTSIDE rather than being inferred during
+     * the traversal of the code block!
+     */
+
+    NCODE_WLAA_WLARRAY (arg_node) = INFO_WLAA_WLARRAY (arg_info);
+    NCODE_WLAA_INDEXVAR (arg_node) = INFO_WLAA_INDEXVAR (arg_info);
 
     DBUG_RETURN (arg_node);
 }
