@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.11  1999/05/27 14:58:50  jhs
+ * Fixed counting of fold loops in COMPSync.
+ *
  * Revision 2.10  1999/05/20 14:11:27  cg
  * ICMs CS_START_PRAGMA and CS_STOP_PRAGMA renamed to CS_START/CS_STOP
  *
@@ -6244,9 +6247,9 @@ COMPSync (node *arg_node, node *arg_info)
     while (SYNC_WITH_PTRS (arg_node) != NULL) {
         with_ids = LET_IDS (EXPRS_EXPR (SYNC_WITH_PTRS (arg_node)));
         with = LET_EXPR (EXPRS_EXPR (SYNC_WITH_PTRS (arg_node)));
-        num_folds++;
 
         if ((NWITH2_TYPE (with) == WO_foldprf) || (NWITH2_TYPE (with) == WO_foldfun)) {
+            num_folds++;
 
             /*
              * create fold_type-tag
