@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.53  2000/04/27 13:16:31  dkr
+ * Bug in COMPArg fixed:
+ * In SPMD-functions no DEC_RC_... and INC_RC_... ICMs are added anymore!
+ * This bug causes the memory leak in the NAS-MG benchmark :-(
+ *
  * Revision 2.52  2000/04/20 11:35:20  jhs
  * Comments at CreateIcmND_FUN_DEC added.
  * Made static: RenameVar, RenameReturn, ShapeToArray.
@@ -4701,6 +4706,7 @@ COMPArg (node *arg_node, node *arg_info)
     if ((MUST_REFCOUNT (ARG, arg_node))
         && (FUN_DOES_REFCOUNT (INFO_COMP_FUNDEF (arg_info),
                                INFO_COMP_CNTPARAM (arg_info)))) {
+
         if ((ARG_ATTRIB (arg_node) == ST_inout)
             || (ARG_ATTRIB (arg_node) == ST_spmd_inout)) {
             tag = "inout_rc";
@@ -4708,26 +4714,31 @@ COMPArg (node *arg_node, node *arg_info)
             tag = "in_rc";
         }
 
-        /* put ND_INC_RC at beginning of function block */
+        /*
+         * put "ND_INC_RC" ICMs at beginning of function block
+         * if the function is *not* a SPMD-function
+         */
 
-        if (1 < ARG_REFCNT (arg_node)) {
-            CREATE_2_ARY_ICM (new_assign, "ND_INC_RC", MakeId1 (id_name),
-                              MakeNum (ARG_REFCNT (arg_node) - 1));
+        if (FUNDEF_STATUS (INFO_COMP_FUNDEF (arg_info)) != ST_spmdfun) {
+            if (1 < ARG_REFCNT (arg_node)) {
+                CREATE_2_ARY_ICM (new_assign, "ND_INC_RC", MakeId1 (id_name),
+                                  MakeNum (ARG_REFCNT (arg_node) - 1));
 
-            ASSIGN_NEXT (new_assign) = INFO_COMP_FIRSTASSIGN (arg_info);
-            INFO_COMP_FIRSTASSIGN (arg_info) = new_assign;
-        } else {
-            if (0 == ARG_REFCNT (arg_node)) {
-                if (IsNonUniqueHidden (ARG_TYPE (arg_node))) {
-                    CREATE_3_ARY_ICM (new_assign, "ND_DEC_RC_FREE_HIDDEN",
-                                      MakeId1 (id_name), MakeNum (1),
-                                      MakeId1 (GenericFun (1, ARG_TYPE (arg_node))));
-                } else {
-                    CREATE_2_ARY_ICM (new_assign, "ND_DEC_RC_FREE_ARRAY",
-                                      MakeId1 (id_name), MakeNum (1));
-                }
                 ASSIGN_NEXT (new_assign) = INFO_COMP_FIRSTASSIGN (arg_info);
                 INFO_COMP_FIRSTASSIGN (arg_info) = new_assign;
+            } else {
+                if (0 == ARG_REFCNT (arg_node)) {
+                    if (IsNonUniqueHidden (ARG_TYPE (arg_node))) {
+                        CREATE_3_ARY_ICM (new_assign, "ND_DEC_RC_FREE_HIDDEN",
+                                          MakeId1 (id_name), MakeNum (1),
+                                          MakeId1 (GenericFun (1, ARG_TYPE (arg_node))));
+                    } else {
+                        CREATE_2_ARY_ICM (new_assign, "ND_DEC_RC_FREE_ARRAY",
+                                          MakeId1 (id_name), MakeNum (1));
+                    }
+                    ASSIGN_NEXT (new_assign) = INFO_COMP_FIRSTASSIGN (arg_info);
+                    INFO_COMP_FIRSTASSIGN (arg_info) = new_assign;
+                }
             }
         }
     } else {
@@ -4759,10 +4770,12 @@ COMPArg (node *arg_node, node *arg_info)
 
     icm_arg = MakeExprs (MakeId1 (tag), NULL);
     icm_tab_entry = icm_arg;
-
     MAKE_NEXT_ICM_ARG (icm_arg, type_id_node);
-
     MAKE_NEXT_ICM_ARG (icm_arg, MakeId1 (id_name));
+
+    /*
+     * store args in 'icm_tab'
+     */
 
     if (ARG_BASETYPE (arg_node) == T_dots) {
         InsertDefDotsParam (INFO_COMP_ICMTAB (arg_info), icm_tab_entry);
@@ -4778,7 +4791,7 @@ COMPArg (node *arg_node, node *arg_info)
     INFO_COMP_CNTPARAM (arg_info)++;
 
     if (NULL != ARG_NEXT (arg_node)) {
-        Trav (ARG_NEXT (arg_node), arg_info);
+        ARG_NEXT (arg_node) = Trav (ARG_NEXT (arg_node), arg_info);
     }
 
     /*
@@ -4787,9 +4800,11 @@ COMPArg (node *arg_node, node *arg_info)
      * block already exists.
      */
 
-    if (TYPES_DIM (fulltype) > 0) {
-        /* put N_icm "ND_KS_DECL_ARRAY_ARG" at beginning of function block */
+    /*
+     * put "ND_KS_DECL_ARRAY_ARG" ICMs at beginning of function block
+     */
 
+    if (TYPES_DIM (fulltype) > 0) {
         node *dim_node, *shape;
         int i;
 
@@ -4803,17 +4818,20 @@ COMPArg (node *arg_node, node *arg_info)
             MAKE_NEXT_ICM_ARG (icm_arg, shape);
         }
 
-        /* now put node at beginning of block of function */
+        /*
+         * now put node at beginning of function block
+         */
+
         ASSIGN_NEXT (new_assign) = INFO_COMP_FIRSTASSIGN (arg_info);
         INFO_COMP_FIRSTASSIGN (arg_info) = new_assign;
     }
 
-    if (ARG_ATTRIB (arg_node) == ST_inout) {
-        /*
-         * put N_icm "ND_DECL_INOUT_PARAM" or "ND_DECL_INOUT_PARAM_RC"
-         * respectively at beginning of function block
-         */
+    /*
+     * put "ND_DECL_INOUT_PARAM" or "ND_DECL_INOUT_PARAM_RC" ICMs respectively
+     * at beginning of function block
+     */
 
+    if (ARG_ATTRIB (arg_node) == ST_inout) {
         if (MUST_REFCOUNT (ARG, arg_node)) {
             CREATE_2_ARY_ICM (new_assign, "ND_DECL_INOUT_PARAM_RC", type_id_node,
                               MakeId1 (id_name));
@@ -4823,7 +4841,7 @@ COMPArg (node *arg_node, node *arg_info)
         }
 
         /*
-         * now put node at beginning of block of function
+         * now put node at beginning of function block
          */
 
         ASSIGN_NEXT (new_assign) = INFO_COMP_FIRSTASSIGN (arg_info);
