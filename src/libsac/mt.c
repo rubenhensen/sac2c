@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2003/09/15 15:03:48  dkr
+ * sac_misc.h included
+ *
  * Revision 3.12  2003/04/29 11:55:05  cg
  * If the detach state or the scope of threads cannot be set correctly,
  * a warning is now issued instead of raiing an error and terminating
@@ -127,6 +130,7 @@
 #include <pthread.h>
 #include <stdio.h>
 
+#include "sac_misc.h"
 #include "sac_message.h"
 
 #ifdef TRACE
