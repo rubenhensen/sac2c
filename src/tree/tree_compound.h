@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.51  2001/12/13 15:15:44  dkr
+ * signature of MakeAssignIcm?() modified
+ *
  * Revision 3.50  2001/12/12 14:33:14  dkr
  * function CombineExprs() added
  *
@@ -1194,8 +1197,8 @@ extern node *MakeAssigns9 (node *part1, node *part2, node *part3, node *part4,
 /******************************************************************************
  *
  * function:
- *   node *MakeAssignIcm0( char *name)
- *   node *MakeAssignIcm?( char *name, node *arg?, ...)
+ *   node *MakeAssignIcm0( char *name, node *next)
+ *   node *MakeAssignIcm?( char *name, node *arg?, ..., node *next)
  *
  * description:
  *   These functions generate an N_assign node with a complete ICM
@@ -1206,17 +1209,18 @@ extern node *MakeAssigns9 (node *part1, node *part2, node *part3, node *part4,
  *
  ******************************************************************************/
 
-extern node *MakeAssignIcm0 (char *name);
-extern node *MakeAssignIcm1 (char *name, node *arg1);
-extern node *MakeAssignIcm2 (char *name, node *arg1, node *arg2);
-extern node *MakeAssignIcm3 (char *name, node *arg1, node *arg2, node *arg3);
-extern node *MakeAssignIcm4 (char *name, node *arg1, node *arg2, node *arg3, node *arg4);
+extern node *MakeAssignIcm0 (char *name, node *next);
+extern node *MakeAssignIcm1 (char *name, node *arg1, node *next);
+extern node *MakeAssignIcm2 (char *name, node *arg1, node *arg2, node *next);
+extern node *MakeAssignIcm3 (char *name, node *arg1, node *arg2, node *arg3, node *next);
+extern node *MakeAssignIcm4 (char *name, node *arg1, node *arg2, node *arg3, node *arg4,
+                             node *next);
 extern node *MakeAssignIcm5 (char *name, node *arg1, node *arg2, node *arg3, node *arg4,
-                             node *arg5);
+                             node *arg5, node *next);
 extern node *MakeAssignIcm6 (char *name, node *arg1, node *arg2, node *arg3, node *arg4,
-                             node *arg5, node *arg6);
+                             node *arg5, node *arg6, node *next);
 extern node *MakeAssignIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg4,
-                             node *arg5, node *arg6, node *arg7);
+                             node *arg5, node *arg6, node *arg7, node *next);
 
 /******************************************************************************
  *
@@ -1236,7 +1240,6 @@ extern node *GetCompoundNode (node *arg_node);
  *   AppendAssign( node *assign_chain, node *assign)
  *
  * description:
- *
  *   This function concatenates two chains of N_assign nodes.
  *   However, the first one may simply be a single N_empty node.
  *
@@ -1251,7 +1254,7 @@ extern node *AppendAssign (node *assign_chain, node *assign);
  *
  * description:
  *   Appends a new ICM with name and args given as an assign to the given
- *   chain of assignments assign.
+ *   chain of assignments.
  *
  ******************************************************************************/
 
@@ -1746,15 +1749,7 @@ extern node *MakePrf3 (prf prf, node *arg1, node *arg2, node *arg3);
  *
  * function:
  *   node *MakeIcm0(char *name)
- *   node *MakeIcm1(char *name, node *arg1)
- *   node *MakeIcm3(char *name, node *arg1, node *arg2)
- *   node *MakeIcm4(char *name, node *arg1, node *arg2, node *arg3, node *arg4)
- *   node *MakeIcm5(char *name, node *arg1, node *arg2, node *arg3, node *arg4,
- *                              node *arg5)
- *   node *MakeIcm6(char *name, node *arg1, node *arg2, node *arg3, node *arg4,
- *                              node *arg5, node *arg6)
- *   node *MakeIcm7(char *name, node *arg1, node *arg2, node *arg3, node *arg4,
- *                              node *arg5, node *arg6, node *arg7)
+ *   node *MakeIcm?(char *name, node *arg1, ...)
  *
  * description:
  *   These functions generate complete ICM representations including arguments.

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.49  2001/12/13 15:15:52  dkr
+ * signature of MakeAssignIcm?() modified
+ *
  * Revision 3.48  2001/12/12 14:40:25  dkr
  * function CombineExprs() added
  *
@@ -2409,69 +2412,123 @@ MakeAssignInstr (node *instr, node *next)
 node *
 MakeAssigns1 (node *part1)
 {
-    return (MakeAssignInstr (part1, NULL));
+    node *assigns;
+
+    DBUG_ENTER ("MakeAssigns1");
+
+    assigns = MakeAssignInstr (part1, NULL);
+
+    DBUG_RETURN (assigns);
 }
 
 node *
 MakeAssigns2 (node *part1, node *part2)
 {
-    return (MakeAssignInstr (part1, MakeAssigns1 (part2)));
+    node *assigns;
+
+    DBUG_ENTER ("MakeAssigns2");
+
+    assigns = MakeAssignInstr (part1, MakeAssigns1 (part2));
+
+    DBUG_RETURN (assigns);
 }
 
 node *
 MakeAssigns3 (node *part1, node *part2, node *part3)
 {
-    return (MakeAssignInstr (part1, MakeAssigns2 (part2, part3)));
+    node *assigns;
+
+    DBUG_ENTER ("MakeAssigns3");
+
+    assigns = MakeAssignInstr (part1, MakeAssigns2 (part2, part3));
+
+    DBUG_RETURN (assigns);
 }
 
 node *
 MakeAssigns4 (node *part1, node *part2, node *part3, node *part4)
 {
-    return (MakeAssignInstr (part1, MakeAssigns3 (part2, part3, part4)));
+    node *assigns;
+
+    DBUG_ENTER ("MakeAssigns4");
+
+    assigns = MakeAssignInstr (part1, MakeAssigns3 (part2, part3, part4));
+
+    DBUG_RETURN (assigns);
 }
 
 node *
 MakeAssigns5 (node *part1, node *part2, node *part3, node *part4, node *part5)
 {
-    return (MakeAssignInstr (part1, MakeAssigns4 (part2, part3, part4, part5)));
+    node *assigns;
+
+    DBUG_ENTER ("MakeAssigns5");
+
+    assigns = MakeAssignInstr (part1, MakeAssigns4 (part2, part3, part4, part5));
+
+    DBUG_RETURN (assigns);
 }
 
 node *
 MakeAssigns6 (node *part1, node *part2, node *part3, node *part4, node *part5,
               node *part6)
 {
-    return (MakeAssignInstr (part1, MakeAssigns5 (part2, part3, part4, part5, part6)));
+    node *assigns;
+
+    DBUG_ENTER ("MakeAssigns6");
+
+    assigns = MakeAssignInstr (part1, MakeAssigns5 (part2, part3, part4, part5, part6));
+
+    DBUG_RETURN (assigns);
 }
 
 node *
 MakeAssigns7 (node *part1, node *part2, node *part3, node *part4, node *part5,
               node *part6, node *part7)
 {
-    return (
-      MakeAssignInstr (part1, MakeAssigns6 (part2, part3, part4, part5, part6, part7)));
+    node *assigns;
+
+    DBUG_ENTER ("MakeAssigns7");
+
+    assigns
+      = MakeAssignInstr (part1, MakeAssigns6 (part2, part3, part4, part5, part6, part7));
+
+    DBUG_RETURN (assigns);
 }
 
 node *
 MakeAssigns8 (node *part1, node *part2, node *part3, node *part4, node *part5,
               node *part6, node *part7, node *part8)
 {
-    return (MakeAssignInstr (part1, MakeAssigns7 (part2, part3, part4, part5, part6,
-                                                  part7, part8)));
+    node *assigns;
+
+    DBUG_ENTER ("MakeAssigns8");
+
+    assigns = MakeAssignInstr (part1, MakeAssigns7 (part2, part3, part4, part5, part6,
+                                                    part7, part8));
+
+    DBUG_RETURN (assigns);
 }
 
 node *
 MakeAssigns9 (node *part1, node *part2, node *part3, node *part4, node *part5,
               node *part6, node *part7, node *part8, node *part9)
 {
-    return (MakeAssignInstr (part1, MakeAssigns8 (part2, part3, part4, part5, part6,
-                                                  part7, part8, part9)));
+    node *assigns;
+
+    DBUG_ENTER ("MakeAssigns9");
+
+    assigns = MakeAssignInstr (part1, MakeAssigns8 (part2, part3, part4, part5, part6,
+                                                    part7, part8, part9));
+
+    DBUG_RETURN (assigns);
 }
 
 /******************************************************************************
  *
  * function:
- *   node *MakeAssignIcm0( char *name)
- *   node *MakeAssignIcm?( char *name, node *arg?, ...)
+ *   node *MakeAssignIcm0( char *name, node *next)
+ *   node *MakeAssignIcm?( char *name, node *arg?, ..., node *next)
  *
  * description:
  *   These functions generate an N_assign node with a complete ICM
@@ -2483,53 +2540,103 @@ MakeAssigns9 (node *part1, node *part2, node *part3, node *part4, node *part5,
  ******************************************************************************/
 
 node *
-MakeAssignIcm0 (char *name)
+MakeAssignIcm0 (char *name, node *next)
 {
-    return (MakeAssign (MakeIcm0 (name), NULL));
+    node *assigns;
+
+    DBUG_ENTER ("MakeAssignIcm0");
+
+    assigns = MakeAssign (MakeIcm0 (name), next);
+
+    DBUG_RETURN (assigns);
 }
 
 node *
-MakeAssignIcm1 (char *name, node *arg1)
+MakeAssignIcm1 (char *name, node *arg1, node *next)
 {
-    return (MakeAssign (MakeIcm1 (name, arg1), NULL));
+    node *assigns;
+
+    DBUG_ENTER ("MakeAssignIcm1");
+
+    assigns = MakeAssign (MakeIcm1 (name, arg1), next);
+
+    DBUG_RETURN (assigns);
 }
 
 node *
-MakeAssignIcm2 (char *name, node *arg1, node *arg2)
+MakeAssignIcm2 (char *name, node *arg1, node *arg2, node *next)
 {
-    return (MakeAssign (MakeIcm2 (name, arg1, arg2), NULL));
+    node *assigns;
+
+    DBUG_ENTER ("MakeAssignIcm2");
+
+    assigns = MakeAssign (MakeIcm2 (name, arg1, arg2), next);
+
+    DBUG_RETURN (assigns);
 }
 
 node *
-MakeAssignIcm3 (char *name, node *arg1, node *arg2, node *arg3)
+MakeAssignIcm3 (char *name, node *arg1, node *arg2, node *arg3, node *next)
 {
-    return (MakeAssign (MakeIcm3 (name, arg1, arg2, arg3), NULL));
+    node *assigns;
+
+    DBUG_ENTER ("MakeAssignIcm3");
+
+    assigns = MakeAssign (MakeIcm3 (name, arg1, arg2, arg3), next);
+
+    DBUG_RETURN (assigns);
 }
 
 node *
-MakeAssignIcm4 (char *name, node *arg1, node *arg2, node *arg3, node *arg4)
+MakeAssignIcm4 (char *name, node *arg1, node *arg2, node *arg3, node *arg4, node *next)
 {
-    return (MakeAssign (MakeIcm4 (name, arg1, arg2, arg3, arg4), NULL));
+    node *assigns;
+
+    DBUG_ENTER ("MakeAssignIcm4");
+
+    assigns = MakeAssign (MakeIcm4 (name, arg1, arg2, arg3, arg4), next);
+
+    DBUG_RETURN (assigns);
 }
 
 node *
-MakeAssignIcm5 (char *name, node *arg1, node *arg2, node *arg3, node *arg4, node *arg5)
+MakeAssignIcm5 (char *name, node *arg1, node *arg2, node *arg3, node *arg4, node *arg5,
+                node *next)
 {
-    return (MakeAssign (MakeIcm5 (name, arg1, arg2, arg3, arg4, arg5), NULL));
+    node *assigns;
+
+    DBUG_ENTER ("MakeAssignIcm5");
+
+    assigns = MakeAssign (MakeIcm5 (name, arg1, arg2, arg3, arg4, arg5), next);
+
+    DBUG_RETURN (assigns);
 }
 
 node *
 MakeAssignIcm6 (char *name, node *arg1, node *arg2, node *arg3, node *arg4, node *arg5,
-                node *arg6)
+                node *arg6, node *next)
 {
-    return (MakeAssign (MakeIcm6 (name, arg1, arg2, arg3, arg4, arg5, arg6), NULL));
+    node *assigns;
+
+    DBUG_ENTER ("MakeAssignIcm6");
+
+    assigns = MakeAssign (MakeIcm6 (name, arg1, arg2, arg3, arg4, arg5, arg6), next);
+
+    DBUG_RETURN (assigns);
 }
 
 node *
 MakeAssignIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg4, node *arg5,
-                node *arg6, node *arg7)
+                node *arg6, node *arg7, node *next)
 {
-    return (MakeAssign (MakeIcm7 (name, arg1, arg2, arg3, arg4, arg5, arg6, arg7), NULL));
+    node *assigns;
+
+    DBUG_ENTER ("MakeAssignIcm7");
+
+    assigns
+      = MakeAssign (MakeIcm7 (name, arg1, arg2, arg3, arg4, arg5, arg6, arg7), next);
+
+    DBUG_RETURN (assigns);
 }
 
 /******************************************************************************
@@ -2621,7 +2728,7 @@ AppendAssign (node *assign_chain, node *assign)
  *
  * description:
  *   Appends an new ICM with name and args given as an assign to the given
- *   chain of assignments assign.
+ *   chain of assignments.
  *
  ******************************************************************************/
 
@@ -2632,7 +2739,7 @@ AppendAssignIcm (node *assign, char *name, node *args)
 
     DBUG_ENTER ("AppendAssignIcm");
 
-    result = AppendAssign (assign, MakeAssignIcm1 (name, args));
+    result = AppendAssign (assign, MakeAssignIcm1 (name, args, NULL));
 
     DBUG_RETURN (result);
 }
@@ -3294,15 +3401,8 @@ MakePrf3 (prf prf, node *arg1, node *arg2, node *arg3)
 /******************************************************************************
  *
  * function:
- *   node *MakeIcm0(char *name)
- *   node *MakeIcm1(char *name,
- *                  node *arg1)
- *   node *MakeIcm3(char *name,
- *                  node *arg1, node *arg2)
- *   node *MakeIcm4(char *name,
- *                  node *arg1, node *arg2, node *arg3, node *arg4)
- *   node *MakeIcm5(char *name,
- *                  node *arg1, node *arg2, node *arg3, node *arg4, node *arg5)
+ *   node *MakeIcm0( char *name)
+ *   node *MakeIcm?( char *name, node *arg1, ...)
  *
  * description:
  *   These functions generate complete ICM representations including arguments.
