@@ -1,7 +1,6 @@
 Makefile
 blocks_init.c
 blocks_init.h
-blocks_lift.h
 multithread.c
 multithread.h
 multithread_lib.c
