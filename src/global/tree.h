@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.66  1999/01/06 13:04:14  cg
+ * extern declaration of prf_name_str moved from tree.h to tree_basic.h
+ *
  * Revision 1.65  1997/11/26 11:01:05  srs
  * removed use of old macros from acssass_macros.h
  *
@@ -254,8 +257,6 @@
     no = MakeNode (N_id);                                                                \
     no->info.ids = Ids;                                                                  \
     no->refcnt = Ids->refcnt
-
-extern char *prf_name_str[];
 
 extern types *MakeTypes (simpletype simple);
 extern node *MakeNode (nodetype nodetype);

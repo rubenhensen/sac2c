@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.205  1999/01/06 13:03:33  cg
+ * extern declaration of prf_name_str moved from tree.h to tree_basic.h
+ *
  * Revision 1.204  1998/12/09 08:52:29  sbs
  * INFO_CF_VARNO added
  *
@@ -189,10 +192,17 @@ file can be found in tree_basic.c
 
 #include "types.h"
 
-/* Uncomment the #define statement to use new virtual syntaxtree
- *
- * #define NEWTREE
+/*
+ * Uncomment the #define statement to use new virtual syntaxtree
  */
+
+#define NEWTREE
+
+/*
+ *   Decalarations of global variables exported by tree_basic.c
+ */
+
+extern char *prf_name_str[];
 
 /*
  *   Global Access-Macros
