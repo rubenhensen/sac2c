@@ -1,6 +1,10 @@
 #
 # $Log$
-# Revision 1.9  1994/12/16 14:33:25  sbs
+# Revision 1.10  1994/12/16 14:41:26  sbs
+# Put the invokation of make in scanparse in front, since
+# some other files include y.tab.h (via scnprs.h)
+#
+# Revision 1.9  1994/12/16  14:33:25  sbs
 # import.o inserted
 #
 # Revision 1.8  1994/12/11  17:30:35  sbs
@@ -44,8 +48,8 @@ OBJ=$(GLOBAL) $(SCANP) $(PRINT) $(FLATTEN) $(TYPECHECK) $(OPTIMIZE) $(MODULES)
 all: dummy sac2c
 
 dummy:
-	(cd src/global; $(MAKE) )
 	(cd src/scanparse; $(MAKE) )
+	(cd src/global; $(MAKE) )
 	(cd src/print; $(MAKE) )
 	(cd src/flatten; $(MAKE) )
 	(cd src/typecheck; $(MAKE) )
@@ -56,8 +60,8 @@ sac2c: $(OBJ) $(LIB)
 	$(CC) -o sac2c $(OBJ) $(LIB) $(LIBS)
 
 deps:
-	(cd src/global; $(MAKE) deps)
 	(cd src/scanparse; $(MAKE) deps)
+	(cd src/global; $(MAKE) deps)
 	(cd src/print; $(MAKE) deps)
 	(cd src/flatten; $(MAKE) deps)
 	(cd src/typecheck; $(MAKE) deps)
@@ -65,8 +69,8 @@ deps:
 	(cd src/modules; $(MAKE) deps)
         
 clean:
-	(cd src/global; $(MAKE) clean)
 	(cd src/scanparse; $(MAKE) clean)
+	(cd src/global; $(MAKE) clean)
 	(cd src/print; $(MAKE) clean)
 	(cd src/flatten; $(MAKE) clean)
 	(cd src/typecheck; $(MAKE) clean)
