@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.26  1998/06/05 15:23:25  cg
+ * functions ModName() and ItemName() now use an internal static buffer
+ * in order to avoid memory leaks.
+ *
  * Revision 1.25  1998/03/04 16:18:12  cg
  * removed functions postmortem(), Error(), and polished cleanup()
  *
@@ -239,10 +243,10 @@ NumberOfDigits (int number)
  *  external funs : Malloc, strcpy, strcat, strlen
  *  macros        :
  *
- *  remarks       : Malloc is used instead of Malloc because ModName
- *                  and ItemName should be used in DBUG_PRINTs as well.
- *                  Unfortunately, the usage of DBUG_PRINT in Malloc
- *                  conflicts with other DBUG_PRINTs in nested expressions.
+ *  remarks       : Since an internal buffer is used for the generation of
+ *                  a combined name, this function should exclusively be
+ *                  employed for immediately subsequent print operations.
+ *
  *
  */
 
@@ -250,16 +254,17 @@ char *
 ModName (char *mod, char *name)
 {
     char *tmp;
+    static char buffer[128];
 
     DBUG_ENTER ("ModName");
 
     if (mod == NULL) {
         tmp = name;
     } else {
-        tmp = Malloc (strlen (mod) + strlen (name) + 2);
-        tmp = strcpy (tmp, mod);
-        tmp = strcat (tmp, ":");
-        tmp = strcat (tmp, name);
+        strncpy (buffer, mod, 63);
+        strcat (buffer, ":");
+        strncat (buffer, name, 63);
+        tmp = buffer;
     }
 
     DBUG_RETURN (tmp);

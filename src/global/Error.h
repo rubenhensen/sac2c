@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.22  1998/06/05 15:23:25  cg
+ * functions ModName() and ItemName() now use an internal static buffer
+ * in order to avoid memory leaks.
+ *
  * Revision 1.21  1998/02/25 09:05:55  cg
  * All global variables moved to globals.[ch]
  *
@@ -526,7 +530,10 @@
  *  generates the combined (with module name) name of the given
  *  function, object, type, ...
  *
- *
+ *  CAUTION:
+ *  Since an internal buffer is used for the generation of
+ *  a combined name, this function should exclusively be
+ *  employed for immediately subsequent print operations.
  */
 
 extern char *ModName (char *, char *);
