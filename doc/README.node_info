@@ -1,8 +1,12 @@
 /*
  * $Log$
- * Revision 1.10  1994/12/31 15:14:17  sbs
- * N_explist updated
+ * Revision 1.11  1995/01/16 11:11:21  hw
+ * added information about N_ap
+ * changed information about struct types
  *
+# Revision 1.10  1994/12/31  15:14:17  sbs
+# N_explist updated
+#
 # Revision 1.9  1994/12/21  13:22:34  hw
 # removed N_addon etc
 # changed information about N_typedef
@@ -98,15 +102,17 @@ info.types : first types structure contains the functions name and
 	     more than one return value, the types of these return 
 	     values are strored in following types structures.
 	     types looks like:
-		typedef struct TYPES{
-                  simpletype   simpletype;   
-                  char         *name;     /* only used for T_user !! */
-                  int          dim;       /* if (dim == 0) => simpletype */
-                  shpseg       *shpseg;
-                  struct TYPES *next;     
-                  id           *id;    /* identifiere  */  
-                 } types;
-
+             typedef struct TYPES{
+                simpletype   simpletype;
+                char         *name;     /* only used for T_user !! */
+                char         *name_mod; /* name of modul belonging to 'name' */
+                int          dim;       /* if (dim == 0) => simpletype */
+                shpseg       *shpseg;
+                struct TYPES *next;     /* only needed for fun-results */
+                id           *id;    /* Bezeichner  */
+                char         *id_mod;  /* name of modul belonging to 'id' */
+                } types;
+        
 N_arg:
 =====
 node[0]    : next argument (N_arg), if any
@@ -169,7 +175,11 @@ node[1]    : body of the loop
 N_ap:
 =====
 node[0]    : arguments of function application (N_exprs)
-info_node  : name of function to apply
+node[1]    : pointer to the belonging functiondeclaration
+             this pointer will be set while typechecking
+             !!! nnode will not be increased !!!
+info_node  : name of function to apply ( info.fun_name.id, 
+                                         info.fun_name.id_mod)
 /* the application node is only used for userdefined functions */
 
 N_with:
