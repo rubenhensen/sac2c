@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.90  2000/09/27 16:48:31  dkr
+ * a = fun( a) is flattened now during flattening phase and not during
+ * compilation phase :-)
+ *
  * Revision 2.89  2000/09/25 15:19:03  dkr
  * Compilation of hidden types streamlined and simplified.
  * MakeTypeString() modified:
@@ -321,15 +325,10 @@ int basetype_size[] = {
 #define TYPE_REFCNT(type) (IsArray (type) + IsNonUniqueHidden (type) - 1)
 
 #define FUN_DOES_REFCOUNT(fundef, i)                                                     \
-    (FUNDEF_STATUS (fundef) != ST_Cfun)                                                  \
-      ? 1                                                                                \
-      : (FUNDEF_PRAGMA (fundef) == NULL)                                                 \
-          ? 0                                                                            \
-          : (FUNDEF_REFCOUNTING (fundef) == NULL)                                        \
-              ? 0                                                                        \
-              : (i >= PRAGMA_NUMPARAMS (FUNDEF_PRAGMA (fundef)))                         \
-                  ? 0                                                                    \
-                  : FUNDEF_REFCOUNTING (fundef)[i]
+    ((FUNDEF_STATUS (fundef) != ST_Cfun)                                                 \
+     || ((FUNDEF_PRAGMA (fundef) != NULL) && (FUNDEF_REFCOUNTING (fundef) != NULL)       \
+         && (PRAGMA_NUMPARAMS (FUNDEF_PRAGMA (fundef)) > i)                              \
+         && FUNDEF_REFCOUNTING (fundef)[i]))
 
 #define ICMPARAM_TAG(expr) ID_NAME (EXPRS_EXPR (expr))
 #define ICMPARAM_ARG1(expr) EXPRS_EXPR (EXPRS_NEXT (expr))
@@ -338,7 +337,7 @@ int basetype_size[] = {
  * This macro indicates whether there are multiple segments present or not.
  * It uses the global variable 'wl_seg'.
  */
-#define MULTIPLE_SEGS                                                                    \
+#define MULTIPLE_SEGS(wl_seg)                                                            \
     ((wl_seg != NULL)                                                                    \
      && ((NODE_TYPE (wl_seg) == N_WLseg) ? (WLSEG_NEXT (wl_seg) != NULL)                 \
                                          : (WLSEGVAR_NEXT (wl_seg) != NULL)))
@@ -669,7 +668,8 @@ GenericFun (int which, types *type)
  *   This function simply extract the assignments of the fundef-body.
  *   It is assumed that the names of the variables are the same is in the
  *   context of the corresponding with-loop!
- *   This property is *not* hold before the compilation has been started!
+ *   This property is *not* hold before the compilation process has been
+ *   started!
  *   (Note that Precompile() calls the function AdjustFoldFundef() for each
  *   fold-fundef)
  *
@@ -4419,26 +4419,30 @@ COMPId (node *arg_node, node *arg_info)
     DBUG_RETURN (ret_ass);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : COMPAp
- *  arguments     : 1) N_Ap node
- *                  2) info node
- *  description   : - creates N_icm for function application
- *                  - insert N_icm to decrement the refcount of functions
- *                    arguments
- *  remarks       : INFO_COMP_LASTIDS(arg_info) contains name of assigned variable.
- *                  INFO_COMP_LASTASSIGN(arg_info) contains pointer to node before
- *                    last assign_node.
- *                  INFO_COMP_LASTLET(arg_info) contains pointer to previous N_let.
- *                  INFO_COMP_VARDECS(arg_info) contains pointer to vardecs.
+ * Function:
+ *   node *COMPAp(node *arg_node, node *arg_info)
  *
- */
+ * Description:
+ *   Creates an ICM for function application and insert ICMs to decrement the
+ *   RC of function arguments.
+ *
+ * Remarks:
+ *   The flattening phase assures that no one of the arguments occurs on the LHS
+ *   of the application (a = fun(a) is impossible).
+ *
+ *   INFO_COMP_LASTIDS(arg_info) contains name of assigned var.
+ *   INFO_COMP_LASTASSIGN(arg_info) contains pointer to node before last assign.
+ *   INFO_COMP_LASTLET(arg_info) contains pointer to previous let.
+ *   INFO_COMP_VARDECS(arg_info) contains pointer to vardecs.
+ *
+ ******************************************************************************/
 
 node *
 COMPAp (node *arg_node, node *arg_info)
 {
-    node *tmp, *next, *exprs, *icm_arg, *save_icm_arg, *id_node, *tag_node, *next_assign,
+    node *next, *exprs, *icm_arg, *save_icm_arg, *id_node, *tag_node, *next_assign,
       *first_assign, *add_assigns_before, *fundef_args, *add_assigns_after, *last_assign,
       **icm_tab, *icm_tab_entry;
     ids *ids;
@@ -4478,23 +4482,7 @@ COMPAp (node *arg_node, node *arg_info)
                          ItemName (AP_FUNDEF (arg_node))));
 
     while (ids != NULL) {
-        /*
-         * First, we check if this variable is used as function argument
-         * as well.
-         */
-
         DBUG_PRINT ("COMP", ("Handling return value bound to %s", IDS_NAME (ids)));
-
-        tmp = AP_ARGS (arg_node);
-
-        while (tmp != NULL) {
-            if ((NODE_TYPE (EXPRS_EXPR (tmp)) == N_id)
-                && (0 == strcmp (ID_NAME (EXPRS_EXPR (tmp)), IDS_NAME (ids)))) {
-                break;
-            }
-
-            tmp = EXPRS_NEXT (tmp);
-        }
 
         if (IS_REFCOUNTED (IDS, ids)) {
             if (FUN_DOES_REFCOUNT (AP_FUNDEF (arg_node), cnt_param)) {
@@ -4508,28 +4496,7 @@ COMPAp (node *arg_node, node *arg_info)
                     APPEND_ASSIGNS (first_assign, next_assign);
                 }
             } else { /* FUN_DOES_REFCOUNT */
-                if ((tmp == NULL) || (IsUnique (VARDEC_TYPE (IDS_VARDEC (ids))))) {
-                    id_node = MakeId3 (ids);
-                } else {
-                    id_node = MakeId1 (TmpVar ());
-
-                    INFO_COMP_VARDECS (arg_info)
-                      = AddVardec (INFO_COMP_VARDECS (arg_info),
-                                   VARDEC_TYPE (IDS_VARDEC (ids)), id_node,
-                                   INFO_COMP_FUNDEF (arg_info));
-
-                    if (IsArray (VARDEC_TYPE (IDS_VARDEC (ids)))) {
-                        CREATE_2_ARY_ICM (next_assign, "ND_KS_NO_RC_ASSIGN_ARRAY",
-                                          MakeId1 (ID_NAME (id_node)),
-                                          MakeId1 (IDS_NAME (ids)));
-                    } else {
-                        CREATE_2_ARY_ICM (next_assign, "ND_NO_RC_ASSIGN_HIDDEN",
-                                          MakeId1 (ID_NAME (id_node)),
-                                          MakeId1 (IDS_NAME (ids)));
-                    }
-
-                    APPEND_ASSIGNS (first_assign, next_assign);
-                }
+                id_node = MakeId3 (ids);
 
                 if (IDS_REFCNT (ids) > 0) {
                     CREATE_1_ARY_ICM (next_assign, "ND_ALLOC_RC",
@@ -7029,8 +6996,7 @@ GetDim_WL_ADJUST_OFFSET (node *grid, node *wl, node *seg)
         /*
          * check whether 'WL_ADJUST_OFFSET' is needed or not
          */
-        if (MULTIPLE_SEGS == 0) {
-
+        if (MULTIPLE_SEGS (wl_seg) == 0) {
             /*
              * is the next dim the last one and blocking activ?
              */
@@ -7038,9 +7004,7 @@ GetDim_WL_ADJUST_OFFSET (node *grid, node *wl, node *seg)
                 && (first_block_dim < WLSEG_DIMS (seg))) {
                 icm_dim = first_block_dim;
             }
-        } else {
-            /* MULTIPLE_SEGS == 1 */
-
+        } else { /* MULTIPLE_SEGS( wl_seg) != 0 */
             /*
              * is the next dim the last one?
              */
