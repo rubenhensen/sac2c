@@ -1,13 +1,14 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2002/10/28 19:04:06  dkr
+ * CreateWrapperFor(): wrapper functions are never external now
+ *
  * Revision 1.10  2002/10/18 14:32:04  sbs
  * create wrappers now is responsible for setting IS_REFERENCE flags
- * appropriately ! This information will be used by the object/ reference parameter
+ * appropriately ! This information will be used by the object/reference
+ * parameter
  * resolution in objects.c
- *
- * Revision 1.9  2002/09/06 17:29:44  sbs
- * *** empty log message ***
  *
  * Revision 1.8  2002/09/06 15:16:40  sbs
  * FUNDEF_RETURN now set properly?!
@@ -196,6 +197,14 @@ CreateWrapperFor (node *fundef)
      * marking the wrapper function:
      */
     FUNDEF_STATUS (wrapper) = ST_wrapperfun;
+
+    /*
+     * wrappers of external function are not external
+     *   -> remove external module name!!!
+     */
+    if (!strcmp (FUNDEF_MOD (wrapper), EXTERN_MOD_NAME)) {
+        FUNDEF_MOD (wrapper) = MAIN_MOD_NAME;
+    }
 
     /*
      * setting the wrapper function's return types to _unknown_[*]
