@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.205  2005/03/01 13:21:13  jhb
+ * fix bug in PRTerror
+ *
  * Revision 3.204  2005/02/16 22:29:13  sah
  * pragmas are not printed when generating c code
  *
@@ -4380,6 +4383,9 @@ node *
 PRTerror (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PRTerror");
+
+    if (arg_node != NULL) {
+    }
 
     DBUG_RETURN (arg_node);
 }
