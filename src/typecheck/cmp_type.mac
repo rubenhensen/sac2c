@@ -1,0 +1,21 @@
+/*
+ * $Log$
+ * Revision 1.1  1996/01/25 16:18:48  hw
+ * Initial revision
+ * $
+ *
+ */
+
+/*
+**
+** Some macro definitions used for the automatic creation
+** of tables which depend on the correct order of the tags
+** for the cmp_type Type
+**
+*/
+
+CMP_T (CMP_incompatible, "incompatible"), CMP_T (CMP_equal, "equal"),
+  CMP_T (CMP_one_unknown_shape, "one_unknown_shape"),
+  CMP_T (CMP_both_unknown_shape, "both_unknown_shapes"),
+  CMP_T (CMP_different_shapes, "different_shapes"),
+  CMP_T (CMP_different_dimensions, "different_dimensions")
