@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2000/02/09 16:38:00  dkr
+ * Workaround for main function: For the time being the main function
+ * has an empty module name. Therefore the module name for LAC functions
+ * must be set by hand if the function is lifted from main().
+ *
  * Revision 1.7  2000/02/09 15:06:05  dkr
  * the parts of a with-loop are traversed in the correct order now
  * the modul name of the lifted fundef is set correctly now
@@ -34,6 +39,8 @@
 #include "DupTree.h"
 #include "DataFlowMask.h"
 #include "DataFlowMaskUtils.h"
+
+#define MAIN_HAS_NO_MODNAME
 
 #define DEFINED_VARS(ids, arg_info)                                                      \
     while (ids != NULL) {                                                                \
@@ -587,6 +594,13 @@ LAC2FUNcond (node *arg_node, node *arg_info)
      */
     funname = GetDummyFunName ("Cond");
     modname = FUNDEF_MOD (INFO_LAC2FUN_FUNDEF (arg_info));
+#ifdef MAIN_HAS_NO_MODNAME
+    if (modname == NULL) {
+        /* okay, we are in the main() function ... */
+        modname = "_MAIN";
+    }
+#endif
+    DBUG_ASSERT ((modname != NULL), "modul name for LAC function is NULL!");
     fundef = MakeDummyFundef (funname, modname, ST_condfun, arg_node,
                               INFO_LAC2FUN_IN (arg_info), INFO_LAC2FUN_OUT (arg_info),
                               INFO_LAC2FUN_LOCAL (arg_info));
