@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.137  2002/08/01 13:56:30  cg
+ * Added INFO_PREC1_MODUL.
+ *
  * Revision 3.136  2002/07/15 17:25:21  dkr
  * INFO_IVE_PRE_ASSIGNS added
  *
@@ -2824,6 +2827,7 @@ extern node *MakeInfo ();
 /* precompile */
 #define INFO_PREC_FUNDEF(n) (n->node[0])
 #define INFO_PREC1_OBJINITFUNDEF(n) (n->node[1])
+#define INFO_PREC1_MODUL(n) (n->node[2])
 #define INFO_PREC2_PRE_ASSIGNS(n) (n->node[1])
 #define INFO_PREC2_POST_ASSIGNS(n) (n->node[2])
 #define INFO_PREC3_LET(n) (n->node[1])
