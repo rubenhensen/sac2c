@@ -1,6 +1,10 @@
 #
 #
 # $Log$
+# Revision 3.13  2003/04/15 16:54:01  sbs
+# strange ranlib requirement for macos adjusted to new mac
+# should be part of configure though....
+#
 # Revision 3.12  2003/04/01 10:44:03  sbs
 # wrong directory for the configure mechanism 8-(
 #
@@ -90,7 +94,7 @@ all:  CacheSimAnalyser CacheSimTest
 
 
 CacheSimAnalyser: CacheSimAnalyser.o $(LIBDIR)/libsac.a
-ifeq ($(OS),OSX_MAC)
+ifeq ($(OS),darwin6.4)
 	ranlib ../libsac/libsac.a
 endif
 	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) $(LIBS) -o $@ $< -lsac $(LIBM)
