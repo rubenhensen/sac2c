@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.26  2001/02/14 14:40:44  dkr
+ * INFO_PREC_CNT_ARTIFICIAL removed
+ *
  * Revision 3.25  2001/02/12 21:23:19  dkr
  * some macros for lac2fun() and InferDFMs() added
  *
@@ -703,9 +706,9 @@ extern node *MakeExplist (node *itypes, node *etypes, node *objs, node *funs);
 extern node *MakeTypedef (char *name, char *mod, types *type, statustype attrib,
                           node *next);
 
+#define TYPEDEF_TYPE(n) (n->info.types)
 #define TYPEDEF_NAME(n) (n->info.types->id)
 #define TYPEDEF_MOD(n) (n->info.types->id_mod)
-#define TYPEDEF_TYPE(n) (n->info.types)
 #define TYPEDEF_ATTRIB(n) (n->info.types->attrib)
 #define TYPEDEF_STATUS(n) (n->info.types->status)
 #define TYPEDEF_IMPL(n) (n->info.types->next)
@@ -781,10 +784,10 @@ extern node *MakeTypedef (char *name, char *mod, types *type, statustype attrib,
 
 extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *next);
 
+#define OBJDEF_TYPE(n) (n->info.types)
 #define OBJDEF_NAME(n) (n->info.types->id)
 #define OBJDEF_MOD(n) (n->info.types->id_mod)
 #define OBJDEF_LINKMOD(n) (n->info.types->id_cmod)
-#define OBJDEF_TYPE(n) (n->info.types)
 #define OBJDEF_STATUS(n) (n->info.types->status)
 #define OBJDEF_ATTRIB(n) (n->info.types->attrib)
 #define OBJDEF_VARNAME(n) ((char *)(n->info2))
@@ -902,16 +905,17 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
 extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *body,
                          node *next);
 
-#define FUNDEF_FUNNO(n) (n->counter)
+#define FUNDEF_TYPES(n) (n->info.types)
 #define FUNDEF_NAME(n) (n->info.types->id)
 #define FUNDEF_MOD(n) (n->info.types->id_mod)
 #define FUNDEF_LINKMOD(n) (n->info.types->id_cmod)
 #define FUNDEF_STATUS(n) (n->info.types->status)
 #define FUNDEF_ATTRIB(n) (n->info.types->attrib)
-#define FUNDEF_TYPES(n) (n->info.types)
 #define FUNDEF_BODY(n) (n->node[0])
 #define FUNDEF_ARGS(n) (n->node[2])
 #define FUNDEF_NEXT(n) (n->node[1])
+#define FUNDEF_FUNNO(n) (n->counter)
+#define FUNDEF_INLINE(n) (n->flag)
 #define FUNDEF_PRAGMA(n) (n->node[4])
 #define FUNDEF_RETURN(n) (n->node[3])
 #define FUNDEF_SIB(n) (n->node[3])
@@ -920,7 +924,6 @@ extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *
 #define FUNDEF_NEEDOBJS(n) ((nodelist *)(n->dfmask[6]))
 #define FUNDEF_VARNO(n) (n->varno)
 #define FUNDEF_MASK(n, x) (n->mask[x])
-#define FUNDEF_INLINE(n) (n->flag)
 #define FUNDEF_INLREC(n) (n->refcnt)
 #define FUNDEF_EXPORT(n) (n->int_data)
 #define FUNDEF_DFM_BASE(n) ((DFMmask_base_t) (n->dfmask[0]))
@@ -984,8 +987,8 @@ extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *
 extern node *MakeArg (char *name, types *type, statustype status, statustype attrib,
                       node *next);
 
-#define ARG_NAME(n) (n->info.types->id)
 #define ARG_TYPE(n) (n->info.types)
+#define ARG_NAME(n) (n->info.types->id)
 #define ARG_STATUS(n) (n->info.types->status)
 #define ARG_ATTRIB(n) (n->info.types->attrib)
 #define ARG_VARNO(n) (n->varno)
@@ -1100,8 +1103,8 @@ extern node *MakeBlock (node *instr, node *vardec);
 
 extern node *MakeVardec (char *name, types *type, node *next);
 
-#define VARDEC_NAME(n) (n->info.types->id)
 #define VARDEC_TYPE(n) (n->info.types)
+#define VARDEC_NAME(n) (n->info.types->id)
 #define VARDEC_STATUS(n) (n->info.types->status)
 #define VARDEC_ATTRIB(n) (n->info.types->attrib)
 #define VARDEC_VARNO(n) (n->varno)
@@ -2446,7 +2449,6 @@ extern node *MakeInfo ();
 /* precompile */
 #define INFO_PREC_MODUL(n) (n->node[0])
 #define INFO_PREC_FUNDEF(n) (n->node[1])
-#define INFO_PREC_CNT_ARTIFICIAL(n) (n->lineno)
 #define INFO_PREC_OBJINITFUNDEF(n) (n->node[2])
 #define INFO_PREC_LASTASSIGN(n) (n->node[3])
 
