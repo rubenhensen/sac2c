@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.13  1994/12/20 11:40:33  sbs
+ * Revision 1.14  1994/12/20 11:41:52  sbs
+ * bug fixed in previously inserted NOTE
+ *
+ * Revision 1.13  1994/12/20  11:40:33  sbs
  * NOTE for import inserted.
  *
  * Revision 1.12  1994/12/16  14:23:10  sbs
@@ -142,8 +145,8 @@ MAIN
     yyparse ();
 
     if (!breakparse) {
-        syntax_tree = Import (syntax_tree);
         NOTE (("Resolving Imports: ..."));
+        syntax_tree = Import (syntax_tree);
         if (!breakimport) {
             syntax_tree = Flatten (syntax_tree);
             if (!breakflatten) {
