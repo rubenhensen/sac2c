@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/10/12 12:18:01  ktr
+ * moved declaration of local variables in EMFRCfundef in order to
+ * please Stephan's compiler.
+ *
  * Revision 1.1  2004/10/12 10:07:52  ktr
  * Initial revision
  *
@@ -173,15 +177,19 @@ FilterRCs (node *arg_node, info *arg_info)
 
     DBUG_ASSERT ((NODE_TYPE (alloc) == N_prf)
                    && ((PRF_PRF (alloc) == F_alloc)
-                       || (PRF_PRF (alloc) == F_alloc_or_reuse)),
+                       || (PRF_PRF (alloc) == F_alloc_or_reuse)
+                       || (PRF_PRF (alloc) == F_suballoc)),
                  "Illegal node type!");
 
-    if (PRF_EXPRS3 (alloc) != NULL) {
-        PRF_EXPRS3 (alloc) = FilterTrav (PRF_EXPRS3 (alloc), arg_info);
-    }
+    if (PRF_PRF (alloc) != F_suballoc) {
 
-    if (PRF_EXPRS3 (alloc) == NULL) {
-        PRF_PRF (alloc) = F_alloc;
+        if (PRF_EXPRS3 (alloc) != NULL) {
+            PRF_EXPRS3 (alloc) = FilterTrav (PRF_EXPRS3 (alloc), arg_info);
+        }
+
+        if (PRF_EXPRS3 (alloc) == NULL) {
+            PRF_PRF (alloc) = F_alloc;
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -347,11 +355,11 @@ EMFRCfundef (node *arg_node, info *arg_info)
     if (FUNDEF_BODY (arg_node) != NULL) {
         if ((!FUNDEF_IS_CONDFUN (arg_node)) || (INFO_FRC_USEMASK (arg_info) != NULL)) {
 
-            DBUG_PRINT ("EMFRC", ("Filtering reuse candidates in function %s",
-                                  FUNDEF_NAME (arg_node)));
-
             DFMmask_base_t maskbase;
             DFMmask_t oldmask;
+
+            DBUG_PRINT ("EMFRC", ("Filtering reuse candidates in function %s",
+                                  FUNDEF_NAME (arg_node)));
 
             oldmask = INFO_FRC_USEMASK (arg_info);
 
