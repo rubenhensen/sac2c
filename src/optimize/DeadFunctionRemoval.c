@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2003/11/18 17:41:30  dkr
+ * no changes done
+ *
  * Revision 3.5  2001/05/02 11:13:57  nmw
  * missing initialization added
  *
@@ -234,6 +237,10 @@ DFRap (node *arg_node, node *arg_info)
 
     AP_FUNDEF (arg_node) = Trav (AP_FUNDEF (arg_node), arg_info);
 
+#if 0
+  arg_node = TravSons( arg_node, arg_info);
+#endif
+
     DBUG_RETURN (arg_node);
 }
 
@@ -255,6 +262,10 @@ DFRwithop (node *arg_node, node *arg_info)
     if (NWITHOP_TYPE (arg_node) == WO_foldfun) {
         NWITHOP_FUNDEF (arg_node) = Trav (NWITHOP_FUNDEF (arg_node), arg_info);
     }
+
+#if 0
+  arg_node = TravSons( arg_node, arg_info);
+#endif
 
     DBUG_RETURN (arg_node);
 }
