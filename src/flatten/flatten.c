@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2002/08/07 12:14:46  dkr
+ * FltnPrf: dirty hack for TAGGED_ARRAYS no longer needed
+ *
  * Revision 3.16  2002/08/06 15:53:47  sbs
  * in case sbs == 1 , i.e., the new TS, shape exprs of genarray WLS are
  * flattened as well now
@@ -1205,15 +1208,7 @@ FltnPrf (node *arg_node, node *arg_info)
 
     if (PRF_ARGS (arg_node) != NULL) {
         old_ctxt = INFO_FLTN_CONTEXT (arg_info);
-#ifdef TAGGED_ARRAYS
-        if (PRF_PRF (arg_node) == F_reshape) {
-            INFO_FLTN_CONTEXT (arg_info) = CT_normal;
-        } else {
-            INFO_FLTN_CONTEXT (arg_info) = CT_ap;
-        }
-#else
         INFO_FLTN_CONTEXT (arg_info) = CT_ap;
-#endif
         PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
         INFO_FLTN_CONTEXT (arg_info) = old_ctxt;
     }
