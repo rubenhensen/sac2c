@@ -2,6 +2,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2001/04/20 11:34:55  nmw
+ * warning removed
+ *
  * Revision 1.12  2001/04/20 08:50:42  nmw
  * additional assert for undefined identifiers added
  *
@@ -187,6 +190,7 @@ CreateNewResult (node *avis, node *arg_info)
     } else if (NODE_TYPE (AVIS_VARDECORARG (avis)) == N_arg) {
         new_ext_vardec = MakeVardecFromArg (AVIS_VARDECORARG (avis));
     } else {
+        new_ext_vardec = NULL;
         DBUG_ASSERT ((FALSE), "unsupported nodetype");
     }
 
