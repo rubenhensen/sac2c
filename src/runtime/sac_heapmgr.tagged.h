@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2003/09/17 18:12:49  dkr
+ * RCAO renamed into DAO for TAGGED_ARRAYS
+ *
  * Revision 1.1  2003/08/04 12:31:31  dkr
  * Initial revision
  *
@@ -418,8 +421,7 @@ extern void *SAC_HM_PlaceArray (void *alloc, void *base, long int offset,
  * large applications for a still unknown reason.
  * 
  * The new form, however, is also more handy for introducing combined 
- * allocation facilities for data structures and their associated 
- * reference counters.
+ * allocation facilities for data structures and their associated descriptors.
  */
 
 #define SAC_HM_MALLOC_FIXED_SIZE(size)                                                   \
@@ -608,7 +610,7 @@ extern void *SAC_HM_PlaceArray (void *alloc, void *base, long int offset,
 
 #endif /* SAC_DO_APS */
 
-#if SAC_DO_RCAO
+#if SAC_DO_DAO
 
 #define SAC_HM_MALLOC_FIXED_SIZE_WITH_RC(var, var_rc, size)                              \
     {                                                                                    \
@@ -624,7 +626,7 @@ extern void *SAC_HM_PlaceArray (void *alloc, void *base, long int offset,
         SAC_HM_ADDR_ARENA (var_rc) = NULL;                                               \
     }
 
-#else /* SAC_DO_RCAO */
+#else /* SAC_DO_DAO */
 
 #define SAC_HM_MALLOC_FIXED_SIZE_WITH_RC(var, var_rc, size)                              \
     {                                                                                    \
@@ -638,7 +640,7 @@ extern void *SAC_HM_PlaceArray (void *alloc, void *base, long int offset,
         SAC_HM_MALLOC_FIXED_SIZE (var_rc, sizeof (int));                                 \
     }
 
-#endif /* SAC_DO_RCAO */
+#endif /* SAC_DO_DAO */
 
 /*
  * Definition of memory de-allocation macros.
@@ -649,7 +651,7 @@ extern void *SAC_HM_PlaceArray (void *alloc, void *base, long int offset,
 #if SAC_DO_APS
 
 /*
- * Note, that due to RCAO the size of the allocated chunk might be 2 untits
+ * Note, that due to DAO the size of the allocated chunk might be 2 untits
  * larger than actually required by the size of the data object to be stored.
  */
 #define SAC_HM_FREE_FIXED_SIZE(addr, size)                                               \

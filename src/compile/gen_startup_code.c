@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.31  2003/09/17 18:12:42  dkr
+ * RCAO renamed into DAO for TAGGED_ARRAYS
+ *
  * Revision 3.30  2003/09/13 13:43:56  dkr
  * GSCicm(): NT-tags added for TAGGED_ARRAYS
  *
@@ -215,8 +218,13 @@ PrintGlobalSwitches ()
              (optimize & OPT_PHM) ? 1 : 0);
     fprintf (outfile, "#define SAC_DO_APS             %d\n",
              (optimize & OPT_APS) ? 1 : 0);
+#ifdef TAGGED_ARRAYS
     fprintf (outfile, "#define SAC_DO_RCAO            %d\n",
              (optimize & OPT_RCAO) ? 1 : 0);
+#else  /* TAGGED_ARRAYS */
+    fprintf (outfile, "#define SAC_DO_DAO             %d\n",
+             (optimize & OPT_DAO) ? 1 : 0);
+#endif /* TAGGED_ARRAYS */
     fprintf (outfile, "#define SAC_DO_MSCA            %d\n",
              (optimize & OPT_MSCA) ? 1 : 0);
     fprintf (outfile, "\n");

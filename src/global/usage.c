@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.51  2003/09/17 18:12:29  dkr
+ * RCAO renamed into DAO for TAGGED_ARRAYS
+ *
  * Revision 3.50  2003/09/16 16:10:11  sbs
  * type inference options separated
  * specmode option added.
@@ -482,7 +485,11 @@ Usage ()
       "        SBE     syncronisation barrier elimination\n"
       "        PHM     private heap management\n"
       "        APS     arena preselection           (in conjunction with PHM)\n"
-      "        RCAO    refcount allocation optimiz. (in conjunction with PHM)\n"
+#ifdef TAGGED_ARRAYS
+      "        DAO     descriptor allocation opt.   (in conjunction with PHM)\n"
+#else  /* TAGGED_ARRAYS */
+      "        RCAO    refcount allocation opt.     (in conjunction with PHM)\n"
+#endif /* TAGGED_ARRAYS */
       "        MSCA    memory size cache adjustment (in conjunction with PHM)\n"
       "\n"
       "        OPT     enables/disables all optimizations at once.\n"

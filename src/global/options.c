@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.49  2003/09/17 18:12:39  dkr
+ * RCAO renamed into DAO for TAGGED_ARRAYS
+ *
  * Revision 3.48  2003/09/16 16:10:49  sbs
  * specmode option added.
  *
@@ -447,7 +450,7 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_FLAGMASK ('h', runtimecheck |= RUNTIMECHECK_HEAP);
         ARG_FLAGMASK_END ();
     });
-#else
+#else  /* TAGGED_ARRAYS */
     ARGS_OPTION ("check", {
         ARG_FLAGMASK_BEGIN ();
         ARG_FLAGMASK ('a', runtimecheck = RUNTIMECHECK_ALL);
@@ -457,7 +460,7 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_FLAGMASK ('h', runtimecheck |= RUNTIMECHECK_HEAP);
         ARG_FLAGMASK_END ();
     });
-#endif
+#endif /* TAGGED_ARRAYS */
 
     ARGS_FLAG ("copyright", Copyright (); exit (0));
 
@@ -577,8 +580,13 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_CHOICE ("aps", optimize |= OPT_APS);
         ARG_CHOICE ("APS", optimize |= OPT_APS);
 
-        ARG_CHOICE ("rcao", optimize |= OPT_RCAO);
-        ARG_CHOICE ("RCAO", optimize |= OPT_RCAO);
+#ifdef TAGGED_ARRAYS
+        ARG_CHOICE ("dao", optimize |= OPT_DAO);
+        ARG_CHOICE ("DAO", optimize |= OPT_DAO);
+#else  /* TAGGED_ARRAYS */
+    ARG_CHOICE( "rcao", optimize |= OPT_RCAO);
+    ARG_CHOICE( "RCAO", optimize |= OPT_RCAO);
+#endif /* TAGGED_ARRAYS */
 
         ARG_CHOICE ("msca", optimize |= OPT_MSCA);
         ARG_CHOICE ("MSCA", optimize |= OPT_MSCA);
@@ -636,7 +644,7 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_FLAGMASK ('o', intrinsics |= INTRINSIC_TO);
         ARG_FLAGMASK_END ();
     });
-#else
+#else  /* TAGGED_ARRAYS */
     ARGS_OPTION ("intrinsic", {
         ARG_FLAGMASK_BEGIN ();
         ARG_FLAGMASK ('a', intrinsics = INTRINSIC_ALL);
@@ -652,13 +660,13 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_FLAGMASK ('o', intrinsics |= INTRINSIC_TO);
         ARG_FLAGMASK_END ();
     });
-#endif
+#endif /* TAGGED_ARRAYS */
 
 #ifdef TAGGED_ARRAYS
     ARGS_FLAG ("has_tagged_backend", printf ("yes\n"); exit (0));
-#else
+#else  /* TAGGED_ARRAYS */
     ARGS_FLAG ("has_tagged_backend", printf ("no\n"); exit (0));
-#endif
+#endif /* TAGGED_ARRAYS */
 
     ARGS_OPTION ("I", AppendPath (MODDEC_PATH, AbsolutePathname (ARG)));
 
@@ -763,7 +771,7 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_CHOICE ("*", min_array_rep = MIN_ARRAY_REP_AUD);
         ARG_CHOICE_END ();
     });
-#endif
+#endif /* TAGGED_ARRAYS */
 
     ARGS_FLAG ("MMlib", makedeps = 4);
     ARGS_FLAG ("MM", makedeps = 3);
@@ -1003,7 +1011,7 @@ AnalyseCommandline (int argc, char *argv[])
 
 #ifdef TAGGED_ARRAYS
     cppvars[num_cpp_vars++] = "TAGGED_ARRAYS";
-#endif
+#endif /* TAGGED_ARRAYS */
 
     DBUG_VOID_RETURN;
 }
@@ -1056,22 +1064,24 @@ CheckOptionConsistency ()
 #endif
 
 #ifdef TAGGED_ARRAYS
-#if 0
-  if ((gen_mt_code == GEN_MT_OLD) || (gen_mt_code == GEN_MT_NEW)) {
-    gen_mt_code = GEN_MT_NONE;
-    num_threads = 1;
-    SYSWARN( ("Code generation for multi-threaded program execution not"
-              " yet available for TAGGED_ARRAYS.\n"
-              "Code for sequential execution generated instead"));
-  }
-#endif
-    if (optimize & OPT_RCAO) {
-        SYSWARN (("Refcount allocation optimization (RCAO) of private heap"
-                  " management is not yet available for TAGGED_ARRAYS.\n"
-                  "RCAO disabled"));
-        optimize &= ~OPT_RCAO;
+#if 1
+    if ((gen_mt_code == GEN_MT_OLD) || (gen_mt_code == GEN_MT_NEW)) {
+        gen_mt_code = GEN_MT_NONE;
+        num_threads = 1;
+        SYSWARN (("Code generation for multi-threaded program execution not"
+                  " yet available for TAGGED_ARRAYS.\n"
+                  "Code for sequential execution generated instead"));
     }
 #endif
+#if 1
+    if (optimize & OPT_DAO) {
+        SYSWARN (("Descriptor allocation optimization (DAO/RCAO) of private heap"
+                  " management is not yet available for TAGGED_ARRAYS.\n"
+                  "DAO/RCAO disabled"));
+        optimize &= ~OPT_DAO;
+    }
+#endif
+#endif /* TAGGED_ARRAYS */
 
     if ((gen_mt_code == GEN_MT_OLD) || (gen_mt_code == GEN_MT_NEW)) {
         if (cachesim & CACHESIM_YES) {

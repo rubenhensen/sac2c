@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.32  2003/09/17 18:12:34  dkr
+ * RCAO renamed into DAO for TAGGED_ARRAYS
+ *
  * Revision 3.31  2003/09/16 16:09:35  sbs
  * spec_mode and spec_mode_str added.
  *
@@ -263,7 +266,11 @@ extern unsigned int optimize;
 #define OPT_MTI 0x00100000  /* ??                                          */
 #define OPT_PHM 0x00200000  /* private heap management                     */
 #define OPT_APS 0x00400000  /* arena preselection (for PHM)                */
-#define OPT_RCAO 0x00800000 /* ref count allocation optimization (for PHM) */
+#ifdef TAGGED_ARRAYS
+#define OPT_DAO 0x00800000  /* descriptor allocation opt. (for PHM)        */
+#else                       /* TAGGED_ARRAYS */
+#define OPT_RCAO 0x00800000 /* reference counter allocation opt. (for PHM) */
+#endif                      /* TAGGED_ARRAYS */
 #define OPT_MSCA 0x01000000 /* memory size cache adjustment (for PHM)      */
 #define OPT_AP 0x02000000   /* array padding                               */
 #define OPT_APL 0x04000000  /* array placement                             */
