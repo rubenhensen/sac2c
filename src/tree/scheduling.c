@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.22  2001/04/03 22:31:05  dkr
+ * Signature of MT_SCHEDULER_..._BEGIN, MT_SCHEDULER_..._END icms
+ * modified: Blocking-vector is now longer given as an argument because
+ * it is completely useless!!
+ *
  * Revision 3.21  2001/04/03 13:49:37  dkr
  * MAX( WLSEG_SV, WLSEG_UBV) replaced by WLSEG_SV:
  * WLSEG_UBV is already allowed for calculation of WLSEG_SV.
@@ -877,8 +882,7 @@ CompileSchedulingArgs (sched_t *sched, node *args)
  *   In addition to their individual arguments, scheduling ICMs have addtional
  *   arguments depending on their position. Schedulings for constant segments
  *   are equipped with detailed segment information. These are the segment's
- *   dimensionality, its bounds, its outermost blocking vector, and its
- *   unrolling blocking vector.
+ *   dimensionality, its bounds and its outermost unrolling vector.
  *
  ******************************************************************************/
 
@@ -901,10 +905,6 @@ CompileConstSegSchedulingArgs (char *wl_name, node *wlseg, sched_t *sched)
             } else {
                 args = MakeExprs (MakeNum (WLSEG_SV (wlseg)[d]), args);
             }
-        }
-
-        for (d = WLSEG_DIMS (wlseg) - 1; d >= 0; d--) {
-            args = MakeExprs (MakeNum (WLSEG_BV (wlseg, 0)[d]), args);
         }
     }
 
@@ -955,10 +955,6 @@ CompileVarSegSchedulingArgs (char *wl_name, node *wlseg, sched_t *sched)
     args = NULL;
 
     if (sched != NULL) {
-        for (d = WLSEGVAR_DIMS (wlseg) - 1; d >= 0; d--) {
-            args = MakeExprs (MakeNum (1), args);
-        }
-
         for (d = WLSEGVAR_DIMS (wlseg) - 1; d >= 0; d--) {
             args = MakeExprs (MakeNum (1), args);
         }
