@@ -1,8 +1,7 @@
 /*
  *
  * $Log$
- * Revision 1.87  1998/03/18 10:48:16  dkr
- * changed MakeWLproj
+ * Revision 1.88  1998/03/18 11:04:12  dkr
  * added WLPROJ_MODIFIED
  *
  * Revision 1.86  1998/03/17 10:36:25  dkr
@@ -77,9 +76,6 @@
  * Revision 1.64  1997/12/20 17:33:24  srs
  * changed comment for N_vardec
  *
- * Revision 1.63  1997/12/10 18:45:33  srs
- * *** empty log message ***
- *
  * Revision 1.62  1997/12/02 18:47:10  srs
  * changed comments
  *
@@ -93,9 +89,6 @@
  *
  * Revision 1.59  1997/11/22 23:26:03  dkr
  * "N_NCode :" -> "N_Ncode :"
- *
- * Revision 1.58  1997/11/21 09:45:15  srs
- * *** empty log message ***
  *
  * Revision 1.57  1997/11/18 18:05:43  srs
  * changed new WL-macros
@@ -255,9 +248,6 @@
  * new macros FUNDEC_DEF and TYPEDEC_DEF
  * new slot DECL of N_modul node to store declaration when compiling
  * a module/class implementation
- *
- * Revision 1.9  1995/10/20  11:29:43  cg
- * *** empty log message ***
  *
  * Revision 1.8  1995/10/19  11:16:00  cg
  * bug in macro AP_FUNDEF fixed.
@@ -2397,7 +2387,7 @@ extern node *MakeWLublock (int level, int dim, int bound1, int bound2, int block
  ***
  ***  permanent attributes:
  ***
- ***    int      LEVEL     (!)
+ ***    int      LEVEL     (0)
  ***    int      DIM       (0)
  ***    int      BOUND1    (0)
  ***    int      BOUND2    (0)
@@ -2410,19 +2400,19 @@ extern node *MakeWLublock (int level, int dim, int bound1, int bound2, int block
  ***
  ***/
 
-extern node *MakeWLproj (int dim, int bound1, int bound2, int step, int unrolling,
-                         node *inner, node *next);
+extern node *MakeWLproj (int level, int dim, int bound1, int bound2, int step,
+                         int unrolling, node *inner, node *next);
 
 #define WLPROJ_LEVEL(n) (n->refcnt)
 #define WLPROJ_DIM(n) (n->flag)
 #define WLPROJ_BOUND1(n) (n->counter)
 #define WLPROJ_BOUND2(n) (n->varno)
 #define WLPROJ_STEP(n) (n->lineno)
-#define WLPROJ_UNROLLING(n) (n->info.cint)
+#define WLPROJ_UNROLLING(n) (n->info.prf_dec.tag)
 #define WLPROJ_INNER(n) (n->node[0])
 #define WLPROJ_NEXT(n) (n->node[1])
 
-#define WLPROJ_MODIFIED(n) (n->refcnt)
+#define WLPROJ_MODIFIED(n) (n->info.prf_dec.tc)
 
 /*--------------------------------------------------------------------------*/
 
