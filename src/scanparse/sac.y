@@ -3,7 +3,11 @@
 /*
  *
  * $Log$
- * Revision 1.120  1996/09/11 06:18:31  cg
+ * Revision 1.121  1997/03/19 13:45:17  cg
+ * new pragma linkwith added in module/class declarations as well as
+ * special version for sib files
+ *
+ * Revision 1.120  1996/09/11  06:18:31  cg
  * Added a short cut notation for applications of modarray:
  * A[i]=t is equivalent to A=modarray(A,i,t)
  *
@@ -473,6 +477,7 @@ static file_type file_kind = F_prog;
          float           cfloat;
          double          cdbl;
          nums            *nums;
+         deps            *deps;
          prf             prf;
          statustype      statustype;
          strings         *strings;
@@ -488,7 +493,7 @@ static file_type file_kind = F_prog;
        OWN, CONSTANTS, GLOBAL, OBJECTS, CLASSIMP,
        ARRAY,SC, TRUE, FALSE, EXTERN, C_KEYWORD,
        PRAGMA, LINKNAME, LINKSIGN, EFFECT, READONLY, REFCOUNTING,
-       TOUCH, COPYFUN, FREEFUN, INITFUN, SIBLIMIT
+       TOUCH, COPYFUN, FREEFUN, INITFUN, LINKWITH, SIBLIMIT
 %token <id> ID, STR,AND, OR, EQ, NEQ, NOT, LE, LT, GE, GT, MUL, DIV, PLUS,
             F2I, F2D, I2F,I2D, D2I, D2F,
             TOI, TOF, TOD, 
@@ -505,9 +510,10 @@ static file_type file_kind = F_prog;
 %type <nodetype> modclass
 %type <cint> evextern, sibheader, evmarker, dots
 %type <ids> ids, modnames, modname
+%type <deps> linkwith, linklist, siblinkwith, siblinklist, sibsublinklist
 %type <id> fun_name, prf_name, sibparam, id
 %type <nums> nums
-%type <statustype> sibreference, evclass
+%type <statustype> sibreference, evclass, siblinkliststatus
 %type <types> localtype, type, types, simpletype, complextype, returntypes,
               varreturntypes, vartypes;
 %type <node> arg, args, fundefs, fundef, main, prg, modimp, module, class, 
@@ -605,7 +611,7 @@ moddec: modheader evimport OWN COLON expdesc
 	}
       ;
 
-modheader: modclass evextern id COLON
+modheader: modclass evextern id COLON linkwith
            {
              $$=MakeNode($1);
              link_mod_name=$3;
@@ -619,15 +625,15 @@ modheader: modclass evextern id COLON
                mod_name=link_mod_name;
              }
 
-             
-             $$->info.fun_name.id=$3;
-             $$->info.fun_name.id_mod=mod_name;
+             MODDEC_NAME($$)=$3;
+             MODDEC_LINKWITH($$)=$5;
+             MODDEC_ISEXTERNAL($$)=$2;
            }
          ;                 
 
 modclass: MODDEC {$$=N_moddec; file_kind=F_moddec;}
-	  | CLASSDEC {$$=N_classdec; file_kind=F_classdec;}
-	  ;
+	     | CLASSDEC {$$=N_classdec; file_kind=F_classdec;}
+	     ;
 
 evextern: EXTERN 
           {
@@ -639,6 +645,20 @@ evextern: EXTERN
             $$=0;
           }
 	;
+
+linkwith: PRAGMA LINKWITH linklist {$$=$3;}
+        | {$$=NULL;}
+        ;
+
+linklist: STR COMMA linklist 
+           {
+             $$=MakeDeps($1, NULL, NULL, ST_system, NULL, $3);
+           }
+       | STR
+           {
+             $$=MakeDeps($1, NULL, NULL, ST_system, NULL, NULL);
+           }
+       ;
 
 evimport: imports {$$=$1;}
 	  | {$$=NULL;}
@@ -2766,9 +2786,9 @@ simpletype: TYPE_INT
  */
 
 
-sib: sibheader sibtypes sibobjs sibfuns siblimit
+sib: sibheader siblinkwith sibtypes sibobjs sibfuns siblimit
        {
-         $$=MakeSib(mod_name, $1, $2, $3, $4);
+         $$=MakeSib(mod_name, $1, $2, $3, $4, $5);
 
          DBUG_PRINT("GENSIB",("%s"P_FORMAT,
                              mdb_nodetype[$$->nodetype],$$));
@@ -2788,6 +2808,44 @@ sibheader: LT id GT
                $$=1;
              }
          ;
+
+siblinkwith: PRAGMA LINKWITH siblinklist {$$=$3;}
+             | {$$=NULL;}
+	          ;
+
+siblinklist: siblinkliststatus STR sibsublinklist COMMA siblinklist
+             {
+               $$=MakeDeps($2, NULL, NULL, $1, $3, $5);
+             }
+           | siblinkliststatus STR sibsublinklist 
+             {
+               $$=MakeDeps($2, NULL, NULL, $1, $3, NULL);
+             }
+           ;
+
+siblinkliststatus: EXTERN 
+             {
+               $$=ST_external;
+             }
+	        | LINKWITH
+             {
+               $$=ST_system;
+             }
+	        |
+             {
+               $$=ST_sac;
+             }
+	        ;
+
+sibsublinklist: BRACE_L siblinklist BRACE_R
+             {
+               $$=$2;
+             }
+           | 
+             {
+               $$=NULL;
+             }
+           ;
 
 siblimit: SIBLIMIT
           {
