@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.183  2004/11/27 00:14:38  cg
+ * New types are printed whenever available.
+ *
  * Revision 3.182  2004/11/26 23:23:31  khf
  * SacDevCamp04: COMPILES!!
  *
@@ -1174,6 +1177,39 @@ PRTobjdef (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * Function:
+ *   node *PRTret( node *arg_node, info *arg_info)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+PRTret (node *arg_node, info *arg_info)
+{
+    char *type_str;
+
+    DBUG_ENTER ("PRTret");
+
+    DBUG_PRINT ("PRINT", ("%s " F_PTR, NODE_TEXT (arg_node), arg_node));
+
+    if (RET_TYPE (arg_node) != NULL) {
+        type_str = TYtype2String (RET_TYPE (arg_node), FALSE, 0);
+        fprintf (global.outfile, "%s", type_str);
+        type_str = ILIBfree (type_str);
+
+        if (RET_NEXT (arg_node) != NULL) {
+            fprintf (global.outfile, ", ");
+            RET_NEXT (arg_node) = TRAVdo (RET_NEXT (arg_node), arg_info);
+        }
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
  *   void PrintFunctionHeader( node *arg_node, info *arg_info, bool in_comment)
  *
  * Description:
@@ -1228,15 +1264,29 @@ PrintFunctionHeader (node *arg_node, info *arg_info, bool in_comment)
             fprintf (global.outfile, "/*  ");
         }
 
-        ret_types = FUNDEF_TYPES (arg_node);
-        while (ret_types != NULL) {
-            type_str = CVtype2String (ret_types, 0, FALSE);
-            fprintf (global.outfile, "%s", type_str);
-            type_str = ILIBfree (type_str);
+        if (FUNDEF_RETS (arg_node) == NULL) {
+            fprintf (global.outfile, "void ");
+        } else {
+            if (RET_TYPE (FUNDEF_RETS (arg_node)) != NULL) {
+                /*
+                 * We do have new types !
+                 */
+                TRAVdo (FUNDEF_RETS (arg_node), arg_info);
+            } else {
+                /*
+                 *  Print old types.
+                 */
+                ret_types = FUNDEF_TYPES (arg_node);
+                while (ret_types != NULL) {
+                    type_str = CVtype2String (ret_types, 0, FALSE);
+                    fprintf (global.outfile, "%s", type_str);
+                    type_str = ILIBfree (type_str);
 
-            ret_types = TYPES_NEXT (ret_types);
-            if (ret_types != NULL) {
-                fprintf (global.outfile, ", ");
+                    ret_types = TYPES_NEXT (ret_types);
+                    if (ret_types != NULL) {
+                        fprintf (global.outfile, ", ");
+                    }
+                }
             }
         }
 
@@ -1545,7 +1595,11 @@ PRTarg (node *arg_node, info *arg_info)
     DBUG_EXECUTE ("PRINT_MASKS",
                   fprintf (global.outfile, " **%d:", ARG_VARNO (arg_node)););
 
-    type_str = CVtype2String (ARG_TYPE (arg_node), 0, TRUE);
+    if (ARG_NTYPE (arg_node) != NULL) {
+        type_str = TYtype2String (ARG_NTYPE (arg_node), FALSE, 0);
+    } else {
+        type_str = CVtype2String (ARG_TYPE (arg_node), 0, TRUE);
+    }
     fprintf (global.outfile, " %s", type_str);
     type_str = ILIBfree (type_str);
 
@@ -1594,7 +1648,11 @@ PRTvardec (node *arg_node, info *arg_info)
                   fprintf (global.outfile, "**%d: ", VARDEC_VARNO (arg_node)););
 
     if ((VARDEC_ICM (arg_node) == NULL) || (NODE_TYPE (VARDEC_ICM (arg_node)) != N_icm)) {
-        type_str = CVtype2String (VARDEC_TYPE (arg_node), 0, TRUE);
+        if (ARG_NTYPE (arg_node) != NULL) {
+            type_str = TYtype2String (VARDEC_NTYPE (arg_node), FALSE, 0);
+        } else {
+            type_str = CVtype2String (VARDEC_TYPE (arg_node), 0, TRUE);
+        }
         fprintf (global.outfile, "%s ", type_str);
         type_str = ILIBfree (type_str);
 

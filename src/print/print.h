@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.34  2004/11/27 00:14:38  cg
+ * New types are printed whenever available.
+ *
  * Revision 3.33  2004/11/26 22:31:33  sbs
  * *** empty log message ***
  *
@@ -57,6 +60,7 @@ extern node *PRTtypedef (node *arg_node, info *arg_info);
 extern node *PRTobjdef (node *arg_node, info *arg_info);
 extern node *PRTfundef (node *arg_node, info *arg_info);
 extern node *PRTannotate (node *arg_node, info *arg_info);
+extern node *PRTret (node *arg_node, info *arg_info);
 extern node *PRTarg (node *arg_node, info *arg_info);
 extern node *PRTvardec (node *arg_node, info *arg_info);
 extern node *PRTblock (node *arg_node, info *arg_info);
