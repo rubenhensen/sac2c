@@ -1,6 +1,9 @@
 /*
  * $Log$
- * Revision 1.21  1995/08/09 15:55:07  cg
+ * Revision 1.22  1995/10/17 08:29:12  cg
+ * new function declaration 'TCobjdef' added
+ *
+ * Revision 1.21  1995/08/09  15:55:07  cg
  * extern declaration of CmpFunParam deleted.
  *
  * Revision 1.20  1995/08/08  09:54:12  cg
@@ -78,21 +81,20 @@ extern node *TCassign (node *arg_node, node *arg_info);
 extern node *TCdo (node *arg_node, node *arg_info);
 extern node *TCwhile (node *arg_node, node *arg_info);
 extern node *TCunaryOp (node *arg_node, node *arg_info);
+extern node *TCobjdef (node *arg_node, node *arg_info);
 
 extern node *LookupType (char *type_name, char *mod_name, int line);
 extern types *DuplicateTypes (types *source, int share);
 
-/* extern int CmpFunParams(node *arg1, node *arg2); */
-
-/* some gloabel variables */
+/* some global variables */
 extern file_type kind_of_file; /* to distinguish between compilation of a
-                                * SAC-program or a SAC-module implenetation
+                                * SAC-program or a SAC-module implementation
                                 */
 extern char *module_name;      /* name of module to typecheck;
                                 * is set in function Typecheck
                                 */
 
-/* and now some usefull macros to get some information */
+/* and now some useful macros to get some information */
 
 #define GET_DIM(result, type)                                                            \
     if (T_user == type->simpletype) {                                                    \
