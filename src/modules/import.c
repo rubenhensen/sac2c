@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.14  1995/07/31 07:10:12  cg
+ * Revision 1.15  1995/08/08 09:57:28  cg
+ * SIB information about hidden type implementations are now retrieved.
+ *
+ * Revision 1.14  1995/07/31  07:10:12  cg
  * sibs will be read and stored in modtab.
  *
  * Revision 1.13  1995/07/25  07:37:10  cg
@@ -69,6 +72,7 @@
 
 #include "scnprs.h"
 #include "traverse.h"
+#include "typecheck.h"
 
 #include "filemgr.h"
 #include "import.h"
@@ -76,6 +80,37 @@
 extern void DoImport (node *modul, node *implist, char *mastermod);
 
 static mod *mod_tab = NULL;
+
+/* Some macros for comparing types, names, modules, etc. */
+
+#define MOD(a) (NULL == a) ? "" : a
+
+#define CMP_TYPE_ID(a, b)                                                                \
+    ((NULL == a->id_mod)                                                                 \
+       ? ((!strcmp (a->id, b->id)) && (NULL == b->id_mod))                               \
+       : ((NULL == b->id_mod)                                                            \
+            ? (!strcmp (a->id, b->id))                                                   \
+            : ((!strcmp (a->id, b->id)) && (!strcmp (a->id_mod, b->id_mod)))))
+
+#define CMP_TYPE_HIDDEN(a, b)                                                            \
+    ((NULL == a->name)                                                                   \
+       ? ((NULL == b->name)                                                              \
+            ? 0                                                                          \
+            : (!(strcmp (a->id, b->name) && CMP_MOD (a->id_mod, b->name_mod))))          \
+       : ((NULL == b->name)                                                              \
+            ? (!(strcmp (a->name, b->id) && CMP_MOD (a->name_mod, b->id_mod)))           \
+            : (!(strcmp (a->name, b->name) && CMP_MOD (a->name_mod, b->name_mod)))))
+
+#define CMP_FUN_ID(a, b) CMP_TYPE_ID (a, b)
+
+#define CMP_MOD(a, b) ((NULL == a) ? (NULL == b) : ((NULL == b) ? 0 : (!strcmp (a, b))))
+
+#define CMP_TYPEDEF(a, b) CMP_TYPE_ID (a->info.types, b->info.types)
+
+#define CMP_FUNDEF(a, b)                                                                 \
+    ((CMP_FUN_ID (a->info.types, b->info.types))                                         \
+       ? (CmpFunParams (a->node[2], b->node[2]))                                         \
+       : 0)
 
 /*
  *
@@ -853,10 +888,14 @@ DoImport (node *modul, node *implist, char *mastermod)
 
 /*
  *
- *  functionname  :
- *  arguments     :
- *  description   :
- *  global vars   :
+ *  functionname  : IMmodul
+ *  arguments     : 1) pointer to N_modul node
+ *                  2) NULL-pointer
+ *  description   : Main function for import of classes/objects,
+ *                  which imports all items needed. Further traversals
+ *                  of typedefs and fundefs necessary to retrieve
+ *                  information from SIBs.
+ *  global vars   : mod_tab
  *  internal funs :
  *  external funs :
  *  macros        :
@@ -890,7 +929,149 @@ IMmodul (node *arg_node, node *arg_info)
         FreeImplist (arg_node->node[0]);
         arg_node->node[0] = NULL;
 
+        if (arg_node->node[1] != NULL) {
+            Trav (arg_node->node[1], NULL);
+        }
+
+        /*
+            Trav(arg_node->node[2], arg_node);
+        */
+
         NOTE (("\n"));
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/*
+ *
+ *  functionname  : FindSibEntry
+ *  arguments     : 1) pointer to N_fundef or N_typedef node
+ *  description   : finds the respective N_fundef or N_typedef node in the
+ *                  sib-tree that provides additional information about
+ *                  the given node.
+ *  global vars   : ---
+ *  internal funs : FindModul
+ *  external funs : ---
+ *  macros        : CMP_FUNDEF, CMP_TYPEDEF
+ *
+ *  remarks       :
+ *
+ */
+
+node *
+FindSibEntry (node *orig)
+{
+    char *mod_name;
+    node *sib_entry = NULL;
+    mod *mod;
+
+    DBUG_ENTER ("FindSibEntry");
+
+    mod_name = orig->info.types->id_mod;
+    if (mod_name != NULL) {
+        mod = FindModul (mod_name);
+        if (mod != NULL) {
+            sib_entry = mod->sib;
+            if (sib_entry != NULL) {
+                if (orig->nodetype == N_typedef) {
+                    sib_entry = sib_entry->node[0];
+                    while ((sib_entry != NULL) && (!CMP_TYPEDEF (sib_entry, orig))) {
+                        sib_entry = sib_entry->node[0];
+                    }
+                } else {
+                    sib_entry = sib_entry->node[1];
+                    while ((sib_entry != NULL) && (!CMP_FUNDEF (sib_entry, orig))) {
+                        sib_entry = sib_entry->node[1];
+                    }
+                }
+            }
+        }
+    }
+
+    DBUG_RETURN (sib_entry);
+}
+
+/*
+ *
+ *  functionname  :
+ *  arguments     :
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+
+/*
+ *
+ *  functionname  :
+ *  arguments     :
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+
+/*
+ *
+ *  functionname  :
+ *  arguments     :
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+
+/*
+ *
+ *  functionname  : IMtypedef
+ *  arguments     : 1) pointer to N_typedef node
+ *                  2) unused, necessary for traversal mechanism
+ *  description   : retrieves information from sib for specific type
+ *                  definition. The additional types-structure containing
+ *                  the implementation of a T_hidden type is added as a
+ *                  second types-structure reusing the "next" entry.
+ *  global vars   : ---
+ *  internal funs : FindSibEntry
+ *  external funs :
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+
+node *
+IMtypedef (node *arg_node, node *arg_info)
+{
+    node *sib_entry;
+
+    DBUG_ENTER ("IMtypedef");
+
+    if (arg_node->info.types->simpletype == T_hidden) {
+        sib_entry = FindSibEntry (arg_node);
+        if (sib_entry != NULL) {
+            arg_node->info.types->next = sib_entry->info.types;
+
+            DBUG_PRINT ("MODUL",
+                        ("adding implementation of hidden type %s:%s",
+                         MOD (arg_node->info.types->id_mod), arg_node->info.types->id));
+        }
+
+        if (arg_node->node[0] != NULL) {
+            Trav (arg_node->node[0], NULL);
+        }
     }
 
     DBUG_RETURN (arg_node);
