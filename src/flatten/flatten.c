@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.60  1998/02/15 21:15:02  srs
+ * fixed bug in flattening of neutral element of WL-fold
+ *
  * Revision 1.59  1998/02/11 17:14:14  srs
  * changed NPART_IDX to NPART_WITHID.
  * fixed bug in FltnNwithop.
@@ -665,7 +668,7 @@ FltnExprs (node *arg_node, node *arg_info)
         arg_info->info.cint = NORMAL;
         arg_node->node[0] = Trav (arg_node->node[0], arg_info);
         arg_info->info.cint = old_tag;
-    } else if (N_id == tmp_arg->nodetype)
+    } else if (N_id == NODE_TYPE (tmp_arg))
         arg_node->node[0] = Trav (arg_node->node[0], arg_info);
 
     /* Last, but not least remaining exprs have to be done */
@@ -1271,7 +1274,6 @@ FltnReturn (node *arg_node, node *arg_info)
  *
  *  remarks       :- this function is only used for renaming of variables
  *                   of a with_loop
-
  *
  */
 node *
@@ -1287,7 +1289,6 @@ FltnId (node *arg_node, node *arg_info)
         if (tmp) {
             DBUG_PRINT ("RENAME", ("arg_node:" P_FORMAT " ids:" P_FORMAT, arg_node,
                                    arg_node->info.ids));
-
             DBUG_PRINT ("RENAME",
                         ("found:" P_FORMAT "old: %s, new: %s, id_level: %d ,"
                          " with_level: %d",
@@ -1298,9 +1299,8 @@ FltnId (node *arg_node, node *arg_info)
                 ID_NAME (arg_node) = StringCopy (tmp->id_new);
                 FREE (old_name);
             }
-        } else {
+        } else
             DBUG_PRINT ("RENAME", ("not found: %s", ID_NAME (arg_node)));
-        }
     }
 
     DBUG_RETURN (arg_node);
@@ -1556,10 +1556,17 @@ FltnNwith (node *arg_node, node *arg_info)
     with_level++;
     tmp_tos = tos; /* store tos */
 
-    arg_node = TravSons (arg_node, arg_info);
+    /* The N_Ncode has to be flattened after the N_Npart node. */
+    NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
+    NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
 
     with_level--;
     tos = tmp_tos;
+
+    /* the modarray array and the neutral elt must not be affected
+       by the renaming of WL variables. They are always bound to
+       variables outside the WL.*/
+    NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -1649,7 +1656,7 @@ FltnNgenerator (node *arg_node, node *arg_info)
     }
 
     /* extract bound1/2, step or width if not id. Even arrays are removed and
-     reinserted later if constant. */
+     reinserted later (CF) if constant. */
     for (i = 0; i < 4; i++) {
         switch (i) {
         case 0:
