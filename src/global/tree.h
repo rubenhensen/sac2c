@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.35  1995/04/21 15:17:06  asi
+ * Revision 1.36  1995/04/24 15:13:46  asi
+ * added AppendIdsChain
+ *
+ * Revision 1.35  1995/04/21  15:17:06  asi
  * added 'flag' to struct 'ids'
  *
  * Revision 1.34  1995/04/11  15:57:47  asi
@@ -244,5 +247,6 @@ extern types *MakeTypes (simpletype simple);
 extern node *MakeNode (nodetype nodetype);
 extern node *AppendNodeChain (int pos, node *first, node *second);
 extern ids *MakeIds (char *id);
+extern ids *AppendIdsChain (ids *first, ids *second);
 
 #endif /* _sac_tree_h */

@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.14  1995/04/11 11:34:45  asi
+ * Revision 1.15  1995/04/24 15:13:46  asi
+ * added AppendIdsChain
+ *
+ * Revision 1.14  1995/04/11  11:34:45  asi
  * added 'flag' to struct 'node'
  *
  * Revision 1.13  1995/03/15  16:59:01  asi
@@ -167,6 +170,42 @@ AppendNodeChain (int pos, node *first, node *second)
         tmp->node[pos] = second;
         if (second != NULL)
             tmp->nnode++;
+    }
+
+    DBUG_RETURN (first);
+}
+
+/*
+ *
+ *  functionname  : AppendIdsChain
+ *  arguments     : node *first: first ids chain
+ *                  node *second: ids chain to be appended
+ *  description   : follows first chain to it's end and
+ *                  appends second.
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        : DBUG...
+ *
+ *  remarks       :
+ *
+ */
+
+ids *
+AppendIdsChain (ids *first, ids *second)
+
+{
+    ids *tmp;
+
+    DBUG_ENTER ("AppendIdsChain");
+
+    if (first == NULL)
+        first = second;
+    else {
+        tmp = first;
+        while (tmp->next != NULL)
+            tmp = tmp->next;
+        tmp->next = second;
     }
 
     DBUG_RETURN (first);
