@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.43  2001/11/20 12:24:54  sbs
+# cse moved 8-)
+#
 # Revision 3.42  2001/11/15 15:37:34  sacbase
 # *** empty log message ***
 #
@@ -216,16 +219,16 @@ OBJ=$(GLOBAL) $(TREE) $(SCANP) $(PRINT) $(FLATTEN) $(TYPECHECK) $(OPTIMIZE) \
 
 .PHONY: all efence product check_os dummy prod clean tar floppy distrib distrib_product linux
 
-all: check_os tools/clock_skew_detection/cse dummy sac2c
+all: check_os tools/bin/cse dummy sac2c
 
-efence: check_os tools/clock_skew_detection/cse dummy sac2c.efence
+efence: check_os tools/bin/cse dummy sac2c.efence
 
-product: check_os tools/clock_skew_detection/cse clean prod sac2c.prod
+product: check_os tools/bin/cse clean prod sac2c.prod
 
 distrib_product: prod sac2c.prod
 
-tools/clock_skew_detection/cse:
-	$(MAKE) -C tools/clock_skew_detection/src 
+tools/bin/cse:
+	$(MAKE) -C tools
 
 
 check_os:
