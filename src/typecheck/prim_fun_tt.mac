@@ -1,9 +1,14 @@
 
 /* $Log$
- * Revision 1.12  1996/01/25 16:33:11  hw
- * -changed calls of typechecking-functions, to use them while
- *  checking primitive functions in modules
+ * Revision 1.13  1996/02/06 16:14:05  hw
+ * - added type-class CxC_B
+ * - added CHAR and CHAR_A to type-classes for primitive functions
+ *   psi, take, drop, cat, rotate, genarray, modarray, dim, shape
  *
+;; Revision 1.12  1996/01/25  16:33:11  hw
+;; -changed calls of typechecking-functions, to use them while
+;;  checking primitive functions in modules
+;;
 ;; Revision 1.11  1995/12/06  17:04:34  hw
 ;; added typecheck of primitive function 'genarray'
 ;;
@@ -150,6 +155,8 @@ TT2 (182, VxA_Ar, INT_A, DOUBLE_A,
      Reshp (arg_node->node[0]->node[0], arg_type[1], arg_type[0]))
 TT2 (183, VxA_Ar, INT_A, BOOL_A,
      Reshp (arg_node->node[0]->node[0], arg_type[1], arg_type[0]))
+TT2 (184, VxA_Ar, INT_A, CHAR_A,
+     Reshp (arg_node->node[0]->node[0], arg_type[1], arg_type[0]))
 
 TT2 (190, VxA_At, INT_A, INT_A,
      TakeV (arg_node->node[0]->node[0], arg_type[0], arg_type[1]))
@@ -158,6 +165,8 @@ TT2 (191, VxA_At, INT_A, FLOAT_A,
 TT2 (192, VxA_At, INT_A, BOOL_A,
      TakeV (arg_node->node[0]->node[0], arg_type[0], arg_type[1]))
 TT2 (193, VxA_At, INT_A, DOUBLE_A,
+     TakeV (arg_node->node[0]->node[0], arg_type[0], arg_type[1]))
+TT2 (194, VxA_At, INT_A, CHAR_A,
      TakeV (arg_node->node[0]->node[0], arg_type[0], arg_type[1]))
 
 TT2 (200, VxA_Ad, INT_A, INT_A,
@@ -168,21 +177,26 @@ TT2 (202, VxA_Ad, INT_A, BOOL_A,
      DropV (arg_node->node[0]->node[0], arg_type[0], arg_type[1]))
 TT2 (203, VxA_Ad, INT_A, DOUBLE_A,
      DropV (arg_node->node[0]->node[0], arg_type[0], arg_type[1]))
+TT2 (204, VxA_Ad, INT_A, CHAR_A,
+     DropV (arg_node->node[0]->node[0], arg_type[0], arg_type[1]))
 
 TT2 (210, VxA_Ap, INT_A, INT_A, Psi (arg_type[0], arg_type[1]))
 TT2 (211, VxA_Ap, INT_A, FLOAT_A, Psi (arg_type[0], arg_type[1]))
 TT2 (212, VxA_Ap, INT_A, BOOL_A, Psi (arg_type[0], arg_type[1]))
 TT2 (213, VxA_Ap, INT_A, DOUBLE_A, Psi (arg_type[0], arg_type[1]))
+TT2 (214, VxA_Ap, INT_A, CHAR_A, Psi (arg_type[0], arg_type[1]))
 
 TT2 (220, SxA_At, INT, INT_A, TakeDropS (arg_node->node[0]->node[0], arg_type[1], 0))
 TT2 (221, SxA_At, INT, FLOAT_A, TakeDropS (arg_node->node[0]->node[0], arg_type[1], 0))
 TT2 (222, SxA_At, INT, BOOL_A, TakeDropS (arg_node->node[0]->node[0], arg_type[1], 0))
 TT2 (223, SxA_At, INT, DOUBLE_A, TakeDropS (arg_node->node[0]->node[0], arg_type[1], 0))
+TT2 (224, SxA_At, INT, CHAR_A, TakeDropS (arg_node->node[0]->node[0], arg_type[1], 0))
 
 TT2 (230, SxA_Ad, INT, INT_A, TakeDropS (arg_node->node[0]->node[0], arg_type[1], 1))
 TT2 (231, SxA_Ad, INT, FLOAT_A, TakeDropS (arg_node->node[0]->node[0], arg_type[1], 1))
 TT2 (232, SxA_Ad, INT, BOOL_A, TakeDropS (arg_node->node[0]->node[0], arg_type[1], 1))
 TT2 (233, SxA_Ad, INT, DOUBLE_A, TakeDropS (arg_node->node[0]->node[0], arg_type[1], 1))
+TT2 (234, SxA_Ad, INT, CHAR_A, TakeDropS (arg_node->node[0]->node[0], arg_type[1], 1))
 
 TT2 (240, VxA_Ag, INT_A, INT_A,
      Genarray_A (arg_node->node[0]->node[0], arg_type[0], arg_type[1]))
@@ -191,6 +205,8 @@ TT2 (241, VxA_Ag, INT_A, FLOAT_A,
 TT2 (242, VxA_Ag, INT_A, BOOL_A,
      Genarray_A (arg_node->node[0]->node[0], arg_type[0], arg_type[1]))
 TT2 (243, VxA_Ag, INT_A, DOUBLE_A,
+     Genarray_A (arg_node->node[0]->node[0], arg_type[0], arg_type[1]))
+TT2 (244, VxA_Ag, INT_A, CHAR_A,
      Genarray_A (arg_node->node[0]->node[0], arg_type[0], arg_type[1]))
 
 TT2 (250, VxS_Ag, INT_A, INT,
@@ -201,6 +217,10 @@ TT2 (252, VxS_Ag, INT_A, BOOL,
      Genarray_S (arg_node->node[0]->node[0], arg_type[0], arg_type[1]))
 TT2 (253, VxS_Ag, INT_A, DOUBLE,
      Genarray_S (arg_node->node[0]->node[0], arg_type[0], arg_type[1]))
+TT2 (254, VxS_Ag, INT_A, CHAR,
+     Genarray_S (arg_node->node[0]->node[0], arg_type[0], arg_type[1]))
+
+TT2 (260, CxC_B, CHAR, CHAR, MakeTypes (T_bool))
 
 TT3 (300, SxAxA_A, INT, INT_A, INT_A,
      Cat (arg_node->node[0]->node[0], arg_type[1], arg_type[2]))
@@ -210,11 +230,14 @@ TT3 (302, SxAxA_A, INT, BOOL_A, BOOL_A,
      Cat (arg_node->node[0]->node[0], arg_type[1], arg_type[2]))
 TT3 (303, SxAxA_A, INT, DOUBLE_A, DOUBLE_A,
      Cat (arg_node->node[0]->node[0], arg_type[1], arg_type[2]))
+TT3 (304, SxAxA_A, INT, CHAR_A, CHAR_A,
+     Cat (arg_node->node[0]->node[0], arg_type[1], arg_type[2]))
 
 TT3 (310, SxSxA_A, INT, INT, INT_A, Rot (arg_node->node[0]->node[0], arg_type[2]))
 TT3 (311, SxSxA_A, INT, INT, FLOAT_A, Rot (arg_node->node[0]->node[0], arg_type[2]))
 TT3 (312, SxSxA_A, INT, INT, BOOL_A, Rot (arg_node->node[0]->node[0], arg_type[2]))
 TT3 (313, SxSxA_A, INT, INT, DOUBLE_A, Rot (arg_node->node[0]->node[0], arg_type[2]))
+TT3 (314, SxSxA_A, INT, INT, CHAR_A, Rot (arg_node->node[0]->node[0], arg_type[2]))
 
 TT3 (320, AxAxS_A, INT_A, INT_A, INT,
      Modarray (arg_type[0], arg_type[1], arg_type[2], arg_node->lineno))
@@ -223,6 +246,8 @@ TT3 (321, AxAxS_A, FLOAT_A, INT_A, FLOAT,
 TT3 (322, AxAxS_A, BOOL_A, INT_A, BOOL,
      Modarray (arg_type[0], arg_type[1], arg_type[2], arg_node->lineno))
 TT3 (323, AxAxS_A, DOUBLE_A, INT_A, DOUBLE,
+     Modarray (arg_type[0], arg_type[1], arg_type[2], arg_node->lineno))
+TT3 (324, AxAxS_A, CHAR_A, INT_A, CHAR,
      Modarray (arg_type[0], arg_type[1], arg_type[2], arg_node->lineno))
 
 TT3 (330, AxAxA_A, INT_A, INT_A, INT_A,
@@ -233,16 +258,20 @@ TT3 (332, AxAxA_A, BOOL_A, INT_A, BOOL_A,
      Modarray (arg_type[0], arg_type[1], arg_type[2], arg_node->lineno))
 TT3 (333, AxAxA_A, DOUBLE_A, INT_A, DOUBLE_A,
      Modarray (arg_type[0], arg_type[1], arg_type[2], arg_node->lineno))
+TT3 (334, AxAxA_A, CHAR_A, INT_A, CHAR_A,
+     Modarray (arg_type[0], arg_type[1], arg_type[2], arg_node->lineno))
 
 TT1 (500, V_As, INT_A, Shp (arg_type[0]))
 TT1 (501, V_As, FLOAT_A, Shp (arg_type[0]))
 TT1 (502, V_As, BOOL_A, Shp (arg_type[0]))
 TT1 (503, V_As, DOUBLE_A, Shp (arg_type[0]))
+TT1 (504, V_As, CHAR_A, Shp (arg_type[0]))
 
 TT1 (510, A_S, INT_A, MakeTypes (T_int))
 TT1 (511, A_S, FLOAT_A, MakeTypes (T_int))
 TT1 (512, A_S, BOOL_A, MakeTypes (T_int))
 TT1 (513, A_S, DOUBLE_A, MakeTypes (T_int))
+TT1 (514, A_S, CHAR_A, MakeTypes (T_int))
 
 TT1 (520, B_B, BOOL, MakeTypes (T_bool))
 TT1 (530, f_i, FLOAT, MakeTypes (T_int))
