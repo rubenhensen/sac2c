@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.27  2003/06/24 21:23:40  dkr
+ * revision 3.25 restored:
+ * current implementation of RC uses GenerateMasks which is not implemented
+ * for Nwith2 nodes. Therefore, RC should be performed before WLtrans!
+ *
  * Revision 3.26  2003/06/23 15:15:02  dkr
  * refcounting phase is moved for oldMT only (instead of oldMT and noMT)
  * now
@@ -446,7 +451,7 @@ main (int argc, char *argv[])
         goto BREAK;
     compiler_phase++;
 
-    if (gen_mt_code == GEN_MT_OLD) {
+    if (gen_mt_code != GEN_MT_NEW) {
         compiler_phase += 2;
         PHASE_PROLOG;
         NOTE_COMPILER_PHASE;
@@ -502,7 +507,7 @@ main (int argc, char *argv[])
         goto BREAK;
     compiler_phase++;
 
-    if (gen_mt_code != GEN_MT_OLD) {
+    if (gen_mt_code == GEN_MT_NEW) {
         PHASE_PROLOG;
         NOTE_COMPILER_PHASE;
         syntax_tree = Refcount (syntax_tree); /* refcnt_tab */
