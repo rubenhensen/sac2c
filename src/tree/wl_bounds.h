@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2001/06/28 08:50:03  sbs
+ * _sac_wl_bounds_h_ after endif preproc directive put into
+ * comment. gcc 3.0 was complaining.
+ *
  * Revision 1.3  2001/04/02 16:02:16  dkr
  * NodeOrInt_MakeIndex modified
  * NameOrVal_MakeIndex removed
@@ -81,4 +85,4 @@ extern bool NodeOrInt_Le (nodetype nt1, void *node_or_int1, nodetype nt2,
 
 extern void NodeOrInt_Print (FILE *handle, nodetype nt, void *node_or_int, int dim);
 
-#endif _sac_wl_bounds_h_
+#endif /* _sac_wl_bounds_h_ */
