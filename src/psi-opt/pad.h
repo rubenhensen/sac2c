@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2000/06/08 11:14:49  mab
+ * pad_info added
+ *
  * Revision 1.2  2000/05/26 14:24:29  sbs
  * dummy function ArrayPadding added.
  *
