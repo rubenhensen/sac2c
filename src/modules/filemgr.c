@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 1.15  1998/03/17 12:14:24  cg
+ * added resource SYSTEM_LIBPATH.
+ * This makes the gcc special feature '--print-file-name' obsolete.
+ * A fourth search path is used instead for system libraries.
+ * This additional path may only be set via the sac2crc file,
+ * but not by environment variables or command line parameters.
+ *
  * Revision 1.14  1998/03/05 16:41:08  srs
  * compile error. AppendPath() made none-static
  *
@@ -68,8 +75,8 @@
 #include "filemgr.h"
 #include "resource.h"
 
-static char path_bufs[3][MAX_PATH_LEN];
-static int bufsize[3];
+static char path_bufs[4][MAX_PATH_LEN];
+static int bufsize[4];
 
 /*
  *
@@ -142,7 +149,7 @@ InitPaths ()
 
     DBUG_ENTER ("InitPaths");
 
-    for (i = 0; i < 3; i++) {
+    for (i = 0; i < 4; i++) {
         bufsize[i] = 1;
         strcpy (path_bufs[i], ".");
     }
@@ -224,7 +231,7 @@ AppendEnvVar (pathkind p, char *var)
 /******************************************************************************
  *
  * function:
- *   void AppendStdlibPaths(int pathkind, char *path
+ *   void AppendConfigPaths(int pathkind, char *path
  *
  * description:
  *   This function adds the paths for module/class declarations and
@@ -235,7 +242,7 @@ AppendEnvVar (pathkind p, char *var)
  ******************************************************************************/
 
 static void
-AppendStdlibPaths (int pathkind, char *path)
+AppendConfigPaths (int pathkind, char *path)
 {
     char *pathentry;
     char buffer[MAX_PATH_LEN];
@@ -243,7 +250,7 @@ AppendStdlibPaths (int pathkind, char *path)
     char *envvar;
     int envvar_length;
 
-    DBUG_ENTER ("AppendStdlibPaths");
+    DBUG_ENTER ("AppendConfigPaths");
 
     pathentry = strtok (path, ":");
 
@@ -320,8 +327,9 @@ RearrangePaths ()
     AppendEnvVar (MODIMP_PATH, "SAC_LIBRARY_PATH");
     AppendEnvVar (PATH, "SAC_PATH");
 
-    AppendStdlibPaths (MODDEC_PATH, config.stdlib_decpath);
-    AppendStdlibPaths (MODIMP_PATH, config.stdlib_libpath);
+    AppendConfigPaths (MODDEC_PATH, config.stdlib_decpath);
+    AppendConfigPaths (MODIMP_PATH, config.stdlib_libpath);
+    AppendConfigPaths (SYSTEMLIB_PATH, config.system_libpath);
 
 #if 0
     for (i=0; i<NUMDECPATHS; i++)
@@ -344,6 +352,7 @@ RearrangePaths ()
     DBUG_PRINT ("PATH", ("PATH is %s", path_bufs[PATH]));
     DBUG_PRINT ("PATH", ("MODDEC_PATH is %s", path_bufs[MODDEC_PATH]));
     DBUG_PRINT ("PATH", ("MODIMP_PATH is %s", path_bufs[MODIMP_PATH]));
+    DBUG_PRINT ("PATH", ("SYSTEMLIB_PATH is %s", path_bufs[SYSTEMLIB_PATH]));
 
     DBUG_VOID_RETURN;
 }

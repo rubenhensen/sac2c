@@ -1,8 +1,13 @@
-#ifndef _filemgr_h
-
 /*
  *
  * $Log$
+ * Revision 1.9  1998/03/17 12:14:24  cg
+ * added resource SYSTEM_LIBPATH.
+ * This makes the gcc special feature '--print-file-name' obsolete.
+ * A fourth search path is used instead for system libraries.
+ * This additional path may only be set via the sac2crc file,
+ * but not by environment variables or command line parameters.
+ *
  * Revision 1.8  1998/03/04 16:23:27  cg
  *  C compiler invocations and file handling converted to new
  * to usage of new  configuration files.
@@ -36,19 +41,20 @@
  *
  */
 
-#include <stdio.h>
+#ifndef _filemgr_h
 
 #define _filemgr_h
+
+#include <stdio.h>
 
 #define MAX_PATH_LEN 1024
 #define MAX_FILE_NAME 256
 
-typedef enum { PATH, MODDEC_PATH, MODIMP_PATH } pathkind;
+typedef enum { PATH, MODDEC_PATH, MODIMP_PATH, SYSTEMLIB_PATH } pathkind;
 
 extern char *FindFile (pathkind p, char *name);
 extern void InitPaths ();
 extern void AppendPath (pathkind p, char *path);
-extern void AppendEnvVar (pathkind p, char *var);
 extern void RearrangePaths ();
 extern char *AbsolutePathname (char *path);
 extern FILE *WriteOpen (char *format, ...);

@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 1.18  1998/03/17 12:14:24  cg
+ * added resource SYSTEM_LIBPATH.
+ * This makes the gcc special feature '--print-file-name' obsolete.
+ * A fourth search path is used instead for system libraries.
+ * This additional path may only be set via the sac2crc file,
+ * but not by environment variables or command line parameters.
+ *
  * Revision 1.17  1998/03/04 16:23:27  cg
  *  C compiler invocations and file handling converted to new
  * to usage of new  configuration files.
@@ -204,11 +211,10 @@ strings *
 CheckLibraries (deps *depends, strings *done, char *required_by, int level)
 {
     deps *tmp;
-    static char buffer[MAX_PATH_LEN], libpath_buffer[MAX_PATH_LEN];
+    static char buffer[MAX_PATH_LEN];
     char *pathname, *abspathname, *libtype;
     int success;
     strings *tmp_done;
-    FILE *libpath;
 
     DBUG_ENTER ("CheckLibraries");
 
@@ -250,36 +256,52 @@ CheckLibraries (deps *depends, strings *done, char *required_by, int level)
                 NOTE (("  Required by module/class '%s` !", required_by));
             }
 
-            if ((DEPS_STATUS (tmp) == ST_system)
-                && (0 == strncmp (DEPS_NAME (tmp), "lib", 3))) {
-                /*
-                 *  Here, we exploit the gcc command line option '-print-file-name=...'
-                 *  This causes gcc to write the path name of the file it would use
-                 *  to link to stdout from where it is redirected to the file
-                 *  'libpath' in the temporary directory. This file is read afterwards.
-                 *  If gcc does not find an appropriate file, it returns simply the
-                 *  file name. This is checked and either this path name is taken
-                 *  for further processing or the standard path MODIMP_PATH is searched
-                 *  using FindFile().
-                 *
-                 *  This feature allows to use implicit gcc search paths for system
-                 *  libraries without explicitly specifying them as MODIMP_PATH.
-                 */
+#if 0
+      if ((DEPS_STATUS(tmp)==ST_system)
+          && (0==strncmp(DEPS_NAME(tmp), "lib", 3)))
+      {
+        /*
+         *  Here, we exploit the gcc command line option '-print-file-name=...'
+         *  This causes gcc to write the path name of the file it would use
+         *  to link to stdout from where it is redirected to the file
+         *  'libpath' in the temporary directory. This file is read afterwards.
+         *  If gcc does not find an appropriate file, it returns simply the 
+         *  file name. This is checked and either this path name is taken
+         *  for further processing or the standard path MODIMP_PATH is searched
+         *  using FindFile().
+         *
+         *  This feature allows to use implicit gcc search paths for system
+         *  libraries without explicitly specifying them as MODIMP_PATH.
+         */
 
-                sprintf (libpath_buffer, "%s/libpath", tmp_dirname);
+        sprintf(libpath_buffer, "%s/libpath", tmp_dirname);
+        
+        SystemCall("gcc -print-file-name=%s > %s", 
+                    buffer, libpath_buffer);
+        libpath=fopen(libpath_buffer, "r");
+        DBUG_ASSERT(libpath!=NULL, "Unable to open libpath file");
+        fscanf(libpath, "%s", libpath_buffer);
+        fclose(libpath);
+        
+        if (libpath_buffer[0]=='/')
+        {
+          pathname=libpath_buffer;
+        }
+        else
+        {
+          pathname=FindFile(MODIMP_PATH, buffer);
+        }
+      }
 
-                SystemCall ("gcc -print-file-name=%s > %s", buffer, libpath_buffer);
-                libpath = fopen (libpath_buffer, "r");
-                DBUG_ASSERT (libpath != NULL, "Unable to open libpath file");
-                fscanf (libpath, "%s", libpath_buffer);
-                fclose (libpath);
+#else
 
-                if (libpath_buffer[0] == '/') {
-                    pathname = libpath_buffer;
-                } else {
-                    pathname = FindFile (MODIMP_PATH, buffer);
-                }
-            } else {
+            if (DEPS_STATUS (tmp) == ST_system) {
+                pathname = FindFile (SYSTEMLIB_PATH, buffer);
+            }
+
+#endif /*  0  */
+
+            else {
                 pathname = FindFile (MODIMP_PATH, buffer);
             }
 
@@ -295,10 +317,10 @@ CheckLibraries (deps *depends, strings *done, char *required_by, int level)
                 if (DEPS_STATUS (tmp) == ST_sac) {
                     if (level == 1) {
                         success
-                          = SystemCall2 ("%s %s; %s %s %s.a %s.sib "
-                                         ">/dev/null 2>&1",
-                                         config.chdir, tmp_dirname, config.tar_extract,
-                                         abspathname, DEPS_NAME (tmp), DEPS_NAME (tmp));
+                          = SystemCall2 ("%s %s; %s %s %s.a %s.sib %s", config.chdir,
+                                         tmp_dirname, config.tar_extract, abspathname,
+                                         DEPS_NAME (tmp), DEPS_NAME (tmp),
+                                         config.dump_output);
 
                         if (success != 0) {
                             SYSERROR (

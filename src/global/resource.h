@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 1.3  1998/03/17 12:14:24  cg
+ * added resource SYSTEM_LIBPATH.
+ * This makes the gcc special feature '--print-file-name' obsolete.
+ * A fourth search path is used instead for system libraries.
+ * This additional path may only be set via the sac2crc file,
+ * but not by environment variables or command line parameters.
+ *
  * Revision 1.2  1998/03/04 16:23:27  cg
  *  C compiler invocations and file handling converted to new
  * to usage of new  configuration files.
@@ -89,6 +96,7 @@ typedef struct {
 
     char *stdlib_decpath;
     char *stdlib_libpath;
+    char *system_libpath;
 
     int cache1_size;
     int cache1_line;
