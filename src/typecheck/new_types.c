@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2002/08/06 08:41:48  sbs
+ * just to please gcc...
+ *
  * Revision 3.9  2002/08/06 08:26:49  sbs
  * some vars initialized to please gcc for the product version.
  *
@@ -1601,7 +1604,8 @@ DFT_res *
 TYDispatchFunType (ntype *fun, ntype *args)
 {
     int lower;
-    int i, j, k, n;
+    int i, j, n;
+    int k = 0;
     int max_funs = 0;
     ntype *arg, *ires;
     node *fundef;
