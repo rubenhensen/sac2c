@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2002/06/28 13:25:20  dkr
+ * major changes done
+ *
  * Revision 3.6  2002/06/07 16:09:59  dkr
  * - some new ICMs added
  * - some bugs fixed
@@ -160,19 +163,19 @@ typedef int SAC_hidden_descriptor; /* reference count */
  * SCL
  */
 
-#define SAC_ND_A_DESC__SCL_NUQ(nt) ICM_UNDEF
+#define SAC_ND_A_DESC__SCL_NUQ(nt) SAC_ICM_UNDEF ()
 #define SAC_ND_A_DESC__SCL_UNQ(nt) SAC_ND_A_DESC__SCL_NUQ (nt)
 
 #define SAC_ND_A_FIELD__SCL(nt) NT_NAME (nt)
 
-#define SAC_ND_A_RC__SCL_NUQ(nt) ICM_UNDEF
-#define SAC_ND_A_RC__SCL_UNQ(nt) ICM_UNDEF
+#define SAC_ND_A_RC__SCL_NUQ(nt) SAC_ICM_UNDEF ()
+#define SAC_ND_A_RC__SCL_UNQ(nt) SAC_ICM_UNDEF ()
 
 #define SAC_ND_A_DIM__SCL(nt) 0
 
 #define SAC_ND_A_SIZE__SCL(nt) 1
 
-#define SAC_ND_A_SHAPE__SCL(nt, dim) ICM_UNDEF
+#define SAC_ND_A_SHAPE__SCL(nt, dim) SAC_ICM_UNDEF ()
 
 /*
  * AKS
@@ -184,7 +187,7 @@ typedef int SAC_hidden_descriptor; /* reference count */
 #define SAC_ND_A_FIELD__AKS(nt) NT_NAME (nt)
 
 #define SAC_ND_A_RC__AKS_NUQ(nt) CAT2 (SAC_ND_A_DESC (nt), ->rc)
-#define SAC_ND_A_RC__AKS_UNQ(nt) ICM_UNDEF
+#define SAC_ND_A_RC__AKS_UNQ(nt) SAC_ICM_UNDEF ()
 
 #define SAC_ND_A_DIM__AKS(nt) CAT2 (NT_NAME (nt), __dim)
 
@@ -233,77 +236,18 @@ typedef int SAC_hidden_descriptor; /* reference count */
  */
 
 #define SAC_ND_A_DESC__HID_NUQ(nt) CAT2 (NT_NAME (nt), __rc)
-#define SAC_ND_A_DESC__HID_UNQ(nt) ICM_UNDEF
+#define SAC_ND_A_DESC__HID_UNQ(nt) SAC_ICM_UNDEF ()
 
 #define SAC_ND_A_FIELD__HID(nt) NT_NAME (nt)
 
 #define SAC_ND_A_RC__HID_NUQ(nt) *SAC_ND_A_DESC (nt)
-#define SAC_ND_A_RC__HID_UNQ(nt) ICM_UNDEF
+#define SAC_ND_A_RC__HID_UNQ(nt) SAC_ICM_UNDEF ()
 
-#define SAC_ND_A_DIM__HID(nt) ICM_UNDEF
+#define SAC_ND_A_DIM__HID(nt) SAC_ICM_UNDEF ()
 
-#define SAC_ND_A_SIZE__HID(nt) ICM_UNDEF
+#define SAC_ND_A_SIZE__HID(nt) SAC_ICM_UNDEF ()
 
-#define SAC_ND_A_SHAPE__HID(nt, dim) ICM_UNDEF
-
-/******************************************************************************
- *
- * ICMs for descriptor handling
- * ============================
- *
- * ND_ALLOC_DESC( nt) :
- *   allocates memory for descriptor (no initialization!)
- *
- * ND_SET_SHP( nt, dim, ...shp...) :
- *   sets the shape information (in the descriptor) of a data object
- * ND_SET_RC( nt, rc) :
- *   sets the refcount (in the descriptor) of a data object
- *
- ******************************************************************************/
-
-#define SAC_ND_ALLOC_DESC(nt)                                                            \
-    CAT3 (SAC_ND_ALLOC_DESC__, CAT3 (NT_DATA (nt), CAT3 (_, CAT3 (NT_UNQ (nt), (nt)))))
-
-/* ND_SET_SHP( ...) is a C-ICM */
-
-/* ND_SET_RC( ...) is defined in one of the other sections below */
-
-/*
- * SCL
- */
-
-#define SAC_ND_ALLOC_DESC__SCL_NUQ(nt)
-#define SAC_ND_ALLOC_DESC__SCL_UNQ(nt)
-
-/*
- * AKS
- */
-
-#define SAC_ND_ALLOC_DESC__AKS_NUQ(nt)                                                   \
-    SAC_HM_MALLOC_FIXED_SIZE (SAC_ND_A_DESC (nt), sizeof (*SAC_ND_A_DESC (nt)));
-#define SAC_ND_ALLOC_DESC__AKS_UNQ(nt)
-
-/*
- * AKD
- */
-
-#define SAC_ND_ALLOC_DESC__AKD_NUQ(nt) SAC_ND_ALLOC_DESC__AKS_NUQ (nt)
-#define SAC_ND_ALLOC_DESC__AKD_UNQ(nt) SAC_ND_ALLOC_DESC__AKS_UNQ (nt)
-
-/*
- * AUD
- */
-
-#define SAC_ND_ALLOC_DESC__AUD_NUQ(nt) SAC_ND_ALLOC_DESC__AKS_NUQ (nt)
-#define SAC_ND_ALLOC_DESC__AUD_UNQ(nt) SAC_ND_ALLOC_DESC__AKS_UNQ (nt)
-
-/*
- * HID
- */
-
-#define SAC_ND_ALLOC_DESC__HID_NUQ(nt) SAC_ND_ALLOC_DESC__AKS_NUQ (nt)
-#define SAC_ND_ALLOC_DESC__HID_UNQ(nt)
-SAC_ND_ALLOC_DESC__AKS_UNQ (nt)
+#define SAC_ND_A_SHAPE__HID(nt, dim) SAC_ICM_UNDEF ()
 
 /******************************************************************************
  *
@@ -364,9 +308,9 @@ SAC_ND_ALLOC_DESC__AKS_UNQ (nt)
  * HID
  */
 
-#define SAC_ND_READ__HID(nt, pos) ICM_UNDEF
+#define SAC_ND_READ__HID(nt, pos) SAC_ICM_UNDEF ()
 
-#define SAC_ND_WRITE__HID(nt, pos) ICM_UNDEF
+#define SAC_ND_WRITE__HID(nt, pos) SAC_ICM_UNDEF ()
 
 /******************************************************************************
  *
@@ -377,7 +321,7 @@ SAC_ND_ALLOC_DESC__AKS_UNQ (nt)
  *
  * ND_TYPE_NT( basetype_nt)    : type implementation
  *     (basetype must be tagged)
- * ND_TYPE( basetype, nt)      : type implementation
+ * ND_TYPE( nt, basetype)      : type implementation
  *     (basetype not tagged, separate tagged identifier at hand instead)
  * ND_TYPE__<CLASS>( basetype) : type implementation
  *
@@ -388,13 +332,13 @@ SAC_ND_ALLOC_DESC__AKS_UNQ (nt)
 #define SAC_ND_TYPE_NT(basetype_nt)                                                      \
     CAT2 (SAC_ND_TYPE__, CAT2 (NT_DATA (basetype_nt), (NT_NAME (basetype_nt))))
 
-#define SAC_ND_TYPE(basetype, nt) CAT2 (SAC_ND_TYPE__, CAT2 (NT_DATA (nt), (basetype)))
+#define SAC_ND_TYPE(nt, basetype) CAT2 (SAC_ND_TYPE__, CAT2 (NT_DATA (nt), (basetype)))
 
 /*
  * SCL
  */
 
-#define SAC_ND_DESC_TYPE__SCL(nt) ICM_UNDEF
+#define SAC_ND_DESC_TYPE__SCL(nt) SAC_ICM_UNDEF ()
 
 #define SAC_ND_TYPE__SCL(basetype) basetype
 
@@ -439,16 +383,16 @@ SAC_ND_ALLOC_DESC__AKS_UNQ (nt)
  *
  ******************************************************************************/
 
-#define SAC_ND_TYPEDEF(nt, basetype) typedef SAC_ND_TYPE (basetype, nt) NT_NAME (nt);
+#define SAC_ND_TYPEDEF(nt, basetype) typedef SAC_ND_TYPE (nt, basetype) NT_NAME (nt);
 
 /******************************************************************************
  *
  * ICMs for objdefs
  * ================
  *
- * ND_OBJDEF( nt, basetype, dim, ...shp...) :
+ * ND_OBJDEF( nt, basetype, sdim, ...shp...) :
  *   declaration of an internal object
- * ND_OBJDEF_EXTERN( nt, basetype, dim) :
+ * ND_OBJDEF_EXTERN( nt, basetype, sdim) :
  *   declaration of an external object
  *
  ******************************************************************************/
@@ -462,19 +406,21 @@ SAC_ND_ALLOC_DESC__AKS_UNQ (nt)
  * ICMs for declaration of data objects
  * ====================================
  *
- * ND_DECL( nt, basetype, dim, ...shp...) :
+ * ND_DECL( nt, basetype, sdim, ...shp...) :
  *   declares a data object
- * ND_DECL_EXTERN( nt, basetype, dim) :
+ * ND_DECL_EXTERN( nt, basetype, sdim) :
  *   declares an external data object
  *
- * ND_DECL_DATA( nt, basetype, decoration) :
- *   declares a data object (without mirror)
+ * ND_DECL__DATA( nt, basetype, decoration) :
+ *   declares a data object (without mirror and descriptor)
+ * ND_DECL__DESC( nt, decoration) :
+ *   declares descriptor of a data object
  *
- * ND_DECL_MIRROR( nt, dim, ...shp...) :
+ * ND_DECL__MIRROR( nt, sdim, ...shp...) :
  *   declares mirror of a data object
- * ND_DECL_MIRROR_PARAM( nt, dim, ...shp...) :
+ * ND_DECL__MIRROR_PARAM( nt, sdim, ...shp...) :
  *   declares mirror of a function parameter
- * ND_DECL_MIRROR_EXTERN( nt, dim) :
+ * ND_DECL__MIRROR_EXTERN( nt, sdim) :
  *   declares mirror of an external data object
  *
  ******************************************************************************/
@@ -483,214 +429,261 @@ SAC_ND_ALLOC_DESC__AKS_UNQ (nt)
 
 /* ND_DECL_EXTERN( ...)  is a C-ICM */
 
-#define SAC_ND_DECL_DATA(nt, basetype, decoration)                                       \
-    CAT3 (SAC_ND_DECL_DATA__,                                                            \
+#define SAC_ND_DECL__DATA(nt, basetype, decoration)                                      \
+    decoration SAC_ND_TYPE (nt, basetype) SAC_ND_A_FIELD (nt);
+
+#define SAC_ND_DECL__DESC(nt, decoration)                                                \
+    CAT3 (SAC_ND_DECL__DESC__,                                                           \
           CAT3 (NT_DATA (nt),                                                            \
-                CAT3 (_, CAT3 (NT_UNQ (nt), BuildArgs3 (nt, basetype, decoration)))))
+                CAT3 (_, CAT3 (NT_UNQ (nt), BuildArgs2 (nt, decoration)))))
 
-/* ND_DECL_MIRROR( ...)  is a C-ICM */
+/* ND_DECL__MIRROR( ...)  is a C-ICM */
 
-/* ND_DECL_MIRROR_PARAM( ...)  is a C-ICM */
+/* ND_DECL__MIRROR_PARAM( ...)  is a C-ICM */
 
-/* ND_DECL_MIRROR_EXTERN( ...)  is a C-ICM */
+/* ND_DECL__MIRROR_EXTERN( ...)  is a C-ICM */
 
 /*
  * SCL
  */
 
-#define SAC_ND_DECL_DATA__SCL_NUQ(nt, basetype, decoration)                              \
-    decoration SAC_ND_TYPE (basetype, nt) SAC_ND_A_FIELD (nt)
-#define SAC_ND_DECL_DATA__SCL_UNQ(nt, basetype, decoration)                              \
-    SAC_ND_DECL_DATA__SCL_NUQ (nt, basetype, decoration)
+#define SAC_ND_DECL__DESC__SCL_NUQ(nt, decoration) SAC_NOTHING ()
+#define SAC_ND_DECL__DESC__SCL_UNQ(nt, decoration) SAC_NOTHING ()
 
 /*
  * AKS
  */
 
-#define SAC_ND_DECL_DATA__AKS_NUQ(nt, basetype, decoration)                              \
-    SAC_ND_DECL_DATA__SCL_NUQ (nt, basetype, decoration);                                \
-    decoration SAC_ND_DESC_TYPE (nt) SAC_ND_A_DESC (nt)
-#define SAC_ND_DECL_DATA__AKS_UNQ(nt, basetype, decoration)                              \
-    SAC_ND_DECL_DATA__AKS_NUQ (nt, basetype, decoration)
+#define SAC_ND_DECL__DESC__AKS_NUQ(nt, decoration)                                       \
+    decoration SAC_ND_DESC_TYPE (nt) SAC_ND_A_DESC (nt);
+#define SAC_ND_DECL__DESC__AKS_UNQ(nt, decoration)                                       \
+    SAC_ND_DECL__DESC__AKS_NUQ (nt, decoration)
 
 /*
  * AKD
  */
 
-#define SAC_ND_DECL_DATA__AKD_NUQ(nt, basetype, decoration)                              \
-    SAC_ND_DECL_DATA__AKS_NUQ (nt, basetype, decoration)
-#define SAC_ND_DECL_DATA__AKD_UNQ(nt, basetype, decoration)                              \
-    SAC_ND_DECL_DATA__AKS_UNQ (nt, basetype, decoration)
+#define SAC_ND_DECL__DESC__AKD_NUQ(nt, decoration)                                       \
+    SAC_ND_DECL__DESC__AKS_NUQ (nt, decoration)
+#define SAC_ND_DECL__DESC__AKD_UNQ(nt, decoration)                                       \
+    SAC_ND_DECL__DESC__AKS_UNQ (nt, decoration)
 
 /*
  * AUD
  */
 
-#define SAC_ND_DECL_DATA__AUD_NUQ(nt, basetype, decoration)                              \
-    SAC_ND_DECL_DATA__AKS_NUQ (nt, basetype, decoration)
-#define SAC_ND_DECL_DATA__AUD_UNQ(nt, basetype, decoration)                              \
-    SAC_ND_DECL_DATA__AKS_UNQ (nt, basetype, decoration)
+#define SAC_ND_DECL__DESC__AUD_NUQ(nt, decoration)                                       \
+    SAC_ND_DECL__DESC__AKS_NUQ (nt, decoration)
+#define SAC_ND_DECL__DESC__AUD_UNQ(nt, decoration)                                       \
+    SAC_ND_DECL__DESC__AKS_UNQ (nt, decoration)
 
 /*
  * HID
  */
 
-#define SAC_ND_DECL_DATA__HID_NUQ(nt, basetype, decoration)                              \
-    SAC_ND_DECL_DATA__AKS_NUQ (nt, basetype, decoration)
-#define SAC_ND_DECL_DATA__HID_UNQ(nt, basetype, decoration)                              \
-    SAC_ND_DECL_DATA__SCL_UNQ (nt, basetype, decoration)
+#define SAC_ND_DECL__DESC__HID_NUQ(nt, decoration)                                       \
+    SAC_ND_DECL__DESC__AKS_NUQ (nt, decoration)
+#define SAC_ND_DECL__DESC__HID_UNQ(nt, decoration) SAC_NOTHING ()
 
 /******************************************************************************
  *
  * ICMs for allocation of data objects
  * ===================================
  *
- * ND_ALLOC( nt, basetype, dim, ...shp..., rc) :
- *   allocates a data object (no initialization!)
- *
- * ND_FREE_DESC( nt) :
- *   frees memory for descriptor
+ * ND_ALLOC( nt, dim, ...shp..., rc) :
+ *   allocates a data object (no initialization but descriptor!)
  * ND_FREE( nt, freefun) :
  *   frees a data object
  *
- *************
+ * ND_ALLOC__DATA( nt) :
+ *   allocates memory for a data object (without descriptor, no initialization)
+ * ND_FREE__DATA( nt, freefun) :
+ *   frees memory for a data object (without descriptor)
  *
- * NOTE:
- * SECURE_ALLOC_FREE defined -> an extra check whether the requested size is 0
- * is inserted into the code. In that case no call for malloc(0) is executed,
- * but the variable is directly set to NULL.
+ * ND_ALLOC__DESC( nt) :
+ *   allocates memory for descriptor (no initialization!)
+ * ND_FREE__DESC( nt) :
+ *   frees memory for descriptor
+ *
+ * ND_CHECK_REUSE( to_nt, to_sdim, from_nt, copyfun) :
+ *   tries to reuse old data object for new, copies if impossible
  *
  ******************************************************************************/
 
 /* ND_ALLOC( ...)  is a C-ICM */
 
-#define SAC_ND_FREE_DESC(nt)                                                             \
-    CAT3 (SAC_ND_FREE_DESC__, CAT3 (NT_DATA (nt), CAT3 (_, CAT3 (NT_UNQ (nt), (nt)))))
-
 #define SAC_ND_FREE(nt, freefun)                                                         \
-    CAT4 (SAC_ND_FREE__,                                                                 \
-          CAT4 (NT_DATA (nt), CAT4 (_, CAT4 (NT_UNQ (nt), BuildArgs2 (nt, freefun)))))
-
-/*
- * misc
- */
-
-#ifdef SECURE_ALLOC_FREE
-#define _SAC_ND_FREE_1_(nt)                                                              \
-    if (SAC_ND_A_SIZE (nt) != 0) {                                                       \
-        SAC_HM_FREE_FIXED_SIZE (SAC_ND_A_FIELD (nt),                                     \
-                                SAC_ND_A_SIZE (nt) * sizeof (*SAC_ND_A_FIELD (nt)));     \
+    {                                                                                    \
+        SAC_ND_FREE__DATA (nt, freefun)                                                  \
+        SAC_ND_FREE__DESC (nt)                                                           \
     }
-#else
-#define _SAC_ND_FREE_1_(nt)                                                              \
-    SAC_HM_FREE_FIXED_SIZE (SAC_ND_A_FIELD (nt),                                         \
-                            SAC_ND_A_SIZE (nt) * sizeof (*SAC_ND_A_FIELD (nt)))
-#endif
 
-#define _SAC_ND_FREE_2_(nt)                                                              \
-    SAC_TR_MEM_PRINT (("ND_FREE_ARRAY( %s) at addr: %p", #nt, NT_NAME (nt)));            \
-    SAC_TR_DEC_ARRAY_MEMCNT (SAC_ND_A_SIZE (nt));                                        \
-    SAC_CS_UNREGISTER_ARRAY (nt);
+#define SAC_ND_ALLOC__DATA(nt) CAT4 (SAC_ND_ALLOC__DATA__, CAT4 (NT_DATA (nt), (nt)))
+
+#define SAC_ND_FREE__DATA(nt, freefun)                                                   \
+    CAT4 (SAC_ND_FREE__DATA__, CAT4 (NT_DATA (nt), BuildArgs2 (nt, freefun)))
+
+#define SAC_ND_ALLOC__DESC(nt)                                                           \
+    CAT3 (SAC_ND_ALLOC__DESC__, CAT3 (NT_DATA (nt), CAT3 (_, CAT3 (NT_UNQ (nt), (nt)))))
+
+#define SAC_ND_FREE__DESC(nt)                                                            \
+    CAT3 (SAC_ND_FREE__DESC__, CAT3 (NT_DATA (nt), CAT3 (_, CAT3 (NT_UNQ (nt), (nt)))))
+
+/* ND_CHECK_REUSE( ...)  is a C-ICM */
 
 /*
  * SCL
  */
 
-#define SAC_ND_FREE_DESC__SCL_NUQ(nt)
-#define SAC_ND_FREE_DESC__SCL_UNQ(nt)
+#define SAC_ND_ALLOC__DATA__SCL(nt) SAC_NOOP ()
 
-#define SAC_ND_FREE__SCL_NUQ(nt, freefun)
-#define SAC_ND_FREE__SCL_UNQ(nt, freefun)
+#define SAC_ND_FREE__DATA__SCL(nt, freefun) SAC_NOOP ()
+
+#define SAC_ND_ALLOC__DESC__SCL_NUQ(nt) SAC_NOOP ()
+#define SAC_ND_ALLOC__DESC__SCL_UNQ(nt) SAC_NOOP ()
+
+#define SAC_ND_FREE__DESC__SCL_NUQ(nt) SAC_NOOP ()
+#define SAC_ND_FREE__DESC__SCL_UNQ(nt) SAC_NOOP ()
 
 /*
  * AKS
  */
 
-#define SAC_ND_FREE_DESC__AKS_NUQ(nt)                                                    \
-    SAC_HM_FREE_FIXED_SIZE (SAC_ND_A_DESC (nt), sizeof (*SAC_ND_A_DESC (nt)));
-#define SAC_ND_FREE_DESC__AKS_UNQ(nt)
+#define SAC_ND_ALLOC__DATA__AKS(nt)                                                      \
+    {                                                                                    \
+        if (SAC_ND_A_SIZE (nt) != 0) {                                                   \
+            SAC_HM_MALLOC_FIXED_SIZE (SAC_ND_A_FIELD (nt),                               \
+                                      SAC_ND_A_SIZE (nt)                                 \
+                                        * sizeof (*SAC_ND_A_FIELD (nt)));                \
+        } else {                                                                         \
+            SAC_ND_A_FIELD (nt) = NULL;                                                  \
+        }                                                                                \
+        SAC_TR_MEM_PRINT (                                                               \
+          ("ND_ALLOC__DATA( %s) at addr: %p", #nt, SAC_ND_A_FIELD (nt)));                \
+        SAC_TR_INC_ARRAY_MEMCNT (SAC_ND_A_SIZE (nt));                                    \
+        SAC_TR_REF_PRINT_RC (nt);                                                        \
+        SAC_CS_REGISTER_ARRAY (nt);                                                      \
+    }
 
-#define SAC_ND_FREE__AKS_NUQ(nt, freefun)                                                \
+#define SAC_ND_FREE__DATA__AKS(nt, freefun)                                              \
     {                                                                                    \
-        _SAC_ND_FREE_1_ (nt);                                                            \
-        SAC_ND_FREE_DESC (nt);                                                           \
-        SAC_TR_MEM_PRINT (("ND_FREE( %s, ) at addr: %p", #nt, NT_NAME (nt)));            \
-        _SAC_ND_FREE_2_ (nt);                                                            \
+        if (SAC_ND_A_SIZE (nt) != 0) {                                                   \
+            SAC_HM_FREE_FIXED_SIZE (SAC_ND_A_FIELD (nt),                                 \
+                                    SAC_ND_A_SIZE (nt) * sizeof (*SAC_ND_A_FIELD (nt))); \
+        }                                                                                \
+        SAC_TR_MEM_PRINT (                                                               \
+          ("ND_FREE__DATA( %s, %s) at addr: %p", #nt, #freefun, SAC_ND_A_FIELD (nt)));   \
+        SAC_TR_DEC_ARRAY_MEMCNT (SAC_ND_A_SIZE (nt));                                    \
+        SAC_CS_UNREGISTER_ARRAY (nt);                                                    \
     }
-#define SAC_ND_FREE__AKS_UNQ(nt, freefun)                                                \
+
+#define SAC_ND_ALLOC__DESC__AKS_NUQ(nt)                                                  \
     {                                                                                    \
-        _SAC_ND_FREE_1_ (nt);                                                            \
-        SAC_TR_MEM_PRINT (("ND_FREE( %s, ) at addr: %p", #nt, NT_NAME (nt)));            \
-        _SAC_ND_FREE_2_ (nt);                                                            \
+        SAC_HM_MALLOC_FIXED_SIZE (SAC_ND_A_DESC (nt), sizeof (*SAC_ND_A_DESC (nt)));     \
+        SAC_TR_MEM_PRINT (("ND_ALLOC__DESC( %s) at addr: %p", #nt, SAC_ND_A_DESC (nt))); \
     }
+#define SAC_ND_ALLOC__DESC__AKS_UNQ(nt) SAC_ND_ALLOC__DESC__AKS_NUQ (nt)
+
+#define SAC_ND_FREE__DESC__AKS_NUQ(nt)                                                   \
+    {                                                                                    \
+        SAC_HM_FREE_FIXED_SIZE (SAC_ND_A_DESC (nt), sizeof (*SAC_ND_A_DESC (nt)));       \
+        SAC_TR_MEM_PRINT (("ND_FREE__DESC( %s) at addr: %p", #nt, SAC_ND_A_DESC (nt)));  \
+    }
+#define SAC_ND_FREE__DESC__AKS_UNQ(nt) SAC_ND_FREE__DESC__AKS_NUQ (nt)
 
 /*
  * AKD
  */
 
-#define SAC_ND_FREE_DESC__AKD_NUQ(nt) SAC_ND_FREE_DESC__AKS_NUQ (nt)
-#define SAC_ND_FREE_DESC__AKD_UNQ(nt) SAC_ND_FREE_DESC__AKS_UNQ (nt)
+#define SAC_ND_ALLOC__DATA__AKD(nt) SAC_ND_ALLOC__DATA__AKS (nt)
 
-#define SAC_ND_FREE__AKD_NUQ(nt, freefun) SAC_ND_FREE__AKS_NUQ (nt, freefun)
-#define SAC_ND_FREE__AKD_UNQ(nt, freefun) SAC_ND_FREE__AKS_UNQ (nt, freefun)
+#define SAC_ND_FREE__DATA__AKD(nt, freefun) SAC_ND_FREE__DATA__AKS (nt, freefun)
+
+#define SAC_ND_ALLOC__DESC__AKD_NUQ(nt) SAC_ND_ALLOC__DESC__AKS_NUQ (nt)
+#define SAC_ND_ALLOC__DESC__AKD_UNQ(nt) SAC_ND_ALLOC__DESC__AKS_UNQ (nt)
+
+#define SAC_ND_FREE__DESC__AKD_NUQ(nt) SAC_ND_FREE__DESC__AKS_NUQ (nt)
+#define SAC_ND_FREE__DESC__AKD_UNQ(nt) SAC_ND_FREE__DESC__AKS_UNQ (nt)
 
 /*
  * AUD
  */
 
-#define SAC_ND_FREE_DESC__AUD_NUQ(nt) SAC_ND_FREE_DESC__AKS_NUQ (nt)
-#define SAC_ND_FREE_DESC__AUD_UNQ(nt) SAC_ND_FREE_DESC__AKS_UNQ (nt)
+#define SAC_ND_ALLOC__DATA__AUD(nt) SAC_ND_ALLOC__DATA__AKS (nt)
 
-#define SAC_ND_FREE__AUD_NUQ(nt, freefun) SAC_ND_FREE__AKS_NUQ (nt, freefun)
-#define SAC_ND_FREE__AUD_UNQ(nt, freefun) SAC_ND_FREE__AKS_UNQ (nt, freefun)
+#define SAC_ND_FREE__DATA__AUD(nt, freefun) SAC_ND_FREE__DATA__AKS (nt, freefun)
+
+#define SAC_ND_ALLOC__DESC__AUD_NUQ(nt) SAC_ND_ALLOC__DESC__AKS_NUQ (nt)
+#define SAC_ND_ALLOC__DESC__AUD_UNQ(nt) SAC_ND_ALLOC__DESC__AKS_UNQ (nt)
+
+#define SAC_ND_FREE__DESC__AUD_NUQ(nt) SAC_ND_FREE__DESC__AKS_NUQ (nt)
+#define SAC_ND_FREE__DESC__AUD_UNQ(nt) SAC_ND_FREE__DESC__AKS_UNQ (nt)
 
 /*
  * HID
  */
 
-#define SAC_ND_FREE_DESC__HID_NUQ(nt) SAC_ND_FREE_DESC__AKS_NUQ (nt)
-#define SAC_ND_FREE_DESC__HID_UNQ(nt) SAC_ND_FREE_DESC__AKS_UNQ (nt)
+#define SAC_ND_ALLOC__DATA__HID(nt) SAC_ICM_UNDEF ();
 
-#define SAC_ND_FREE__HID_NUQ(nt, freefun)                                                \
+#define SAC_ND_FREE__DATA__HID(nt, freefun)                                              \
     {                                                                                    \
-        freefun (NT_NAME (nt));                                                          \
-        SAC_ND_FREE_DESC (nt);                                                           \
+        freefun (SAC_ND_A_FIELD (nt));                                                   \
         SAC_TR_MEM_PRINT (                                                               \
-          ("ND_FREE( %s, %s) at addr: %p", #nt, #freefun, NT_NAME (nt)));                \
+          ("ND_FREE__DATA( %s, %s) at addr: %p", #nt, #freefun, SAC_ND_A_FIELD (nt)));   \
         SAC_TR_DEC_HIDDEN_MEMCNT (1);                                                    \
     }
-#define SAC_ND_FREE__HID_UNQ(nt, freefun)                                                \
-    {                                                                                    \
-        freefun (NT_NAME (nt));                                                          \
-        SAC_TR_MEM_PRINT (                                                               \
-          ("ND_FREE( %s, %s) at addr: %p", #nt, #freefun, NT_NAME (nt)));                \
-        SAC_TR_DEC_HIDDEN_MEMCNT (1);                                                    \
-    }
+
+#define SAC_ND_ALLOC__DESC__HID_NUQ(nt) SAC_ND_ALLOC__DESC__AKS_NUQ (nt)
+#define SAC_ND_ALLOC__DESC__HID_UNQ(nt) SAC_NOOP ()
+
+#define SAC_ND_FREE__DESC__HID_NUQ(nt) SAC_ND_FREE__DESC__AKS_NUQ (nt)
+#define SAC_ND_FREE__DESC__HID_UNQ(nt) SAC_NOOP ()
+
+/******************************************************************************
+ *
+ * ICMs for descriptor initializing
+ * ================================
+ *
+ * ND_SET_RC( nt, rc) :
+ *   sets the refcount (in the descriptor) of a data object
+ * ND_SET_SHAPE( nt, dim, ...shp...) :
+ *   sets the shape information (in the descriptor) of a data object
+ *
+ * ND_SET_DESC( nt, dim, ...shp..., rc) :
+ *   sets the descriptor of a data object
+ *
+ ******************************************************************************/
+
+/* ND_SET_RC( ...) is defined in one of the other sections below */
+
+/* ND_SET_SHAPE( ...) is a C-ICM */
+
+/* ND_SET_DESC( ...) is a C-ICM */
 
 /******************************************************************************
  *
  * ICMs for passing data objects to functions
  * ==========================================
  *
- * ND_PARAM_in( basetype, nt)
+ * ND_PARAM_in( nt, basetype)
  *   macro for prototyping data as "in" parameter
  *
- * ND_PARAM_in_nodesc( basetype, nt)
+ * ND_PARAM_in_nodesc( nt, basetype)
  *   macro for prototyping data as "in" parameter without descriptor
  *
- * ND_PARAM_out( basetype, nt)
+ * ND_PARAM_out( nt, basetype)
  *   macro for prototyping data as "out" parameter
  *
- * ND_PARAM_out_nodesc( basetype, nt)
+ * ND_PARAM_out_nodesc( nt, basetype)
  *   macro for prototyping data as "out" parameter without descriptor
  *
- * ND_PARAM_inout( basetype, nt)
+ * ND_PARAM_inout( nt, basetype)
  *   macro for prototyping data as "inout" parameter
  *
- * ND_PARAM_inout_nodesc( basetype, nt)
+ * ND_PARAM_inout_nodesc( nt, basetype)
  *   macro for prototyping data as "inout" parameter without descriptor
  *
- * ND_PARAM_inout_nodesc_bx( basetype, nt)
+ * ND_PARAM_inout_nodesc_bx( nt, basetype)
  *   macro for prototyping boxed data as "inout" parameter without descriptor
  *
  * ND_ARG_in( nt)
@@ -720,7 +713,7 @@ SAC_ND_ALLOC_DESC__AKS_UNQ (nt)
  * ND_RET_inout( nt, ntp)
  *   macro for returning "inout" data
  *
- * ND_DECL_PARAM_inout( basetype, nt)
+ * ND_DECL_PARAM_inout( nt, basetype)
  *   macro for declaration of "inout" parameter
  *
  ******************************************************************************/
@@ -728,25 +721,25 @@ SAC_ND_ALLOC_DESC__AKS_UNQ (nt)
 /* creates name for formal function parameter */
 #define SAC_NAMEP(name) CAT0 (name, __p)
 
-#define SAC_ND_PARAM_in(basetype, nt)                                                    \
-    CAT3 (SAC_ND_PARAM_in__, CAT3 (NT_DATA (nt), BuildArgs2 (basetype, nt)))
+#define SAC_ND_PARAM_in(nt, basetype)                                                    \
+    CAT3 (SAC_ND_PARAM_in__, CAT3 (NT_DATA (nt), BuildArgs2 (nt, basetype)))
 
-#define SAC_ND_PARAM_in_nodesc(basetype, nt)                                             \
-    SAC_ND_TYPE (basetype, nt)                                                           \
+#define SAC_ND_PARAM_in_nodesc(nt, basetype)                                             \
+    SAC_ND_TYPE (nt, basetype)                                                           \
     SAC_ND_A_FIELD (nt)
 
-#define SAC_ND_PARAM_out(basetype, nt)                                                   \
-    CAT3 (SAC_ND_PARAM_out__, CAT3 (NT_DATA (nt), BuildArgs2 (basetype, nt)))
+#define SAC_ND_PARAM_out(nt, basetype)                                                   \
+    CAT3 (SAC_ND_PARAM_out__, CAT3 (NT_DATA (nt), BuildArgs2 (nt, basetype)))
 
-#define SAC_ND_PARAM_out_nodesc(basetype, nt)                                            \
-    SAC_ND_TYPE (basetype, nt)                                                           \
+#define SAC_ND_PARAM_out_nodesc(nt, basetype)                                            \
+    SAC_ND_TYPE (nt, basetype)                                                           \
     *SAC_NAMEP (SAC_ND_A_FIELD (nt))
 
-#define SAC_ND_PARAM_inout(basetype, nt) SAC_ND_PARAM_out (basetype, nt)
+#define SAC_ND_PARAM_inout(nt, basetype) SAC_ND_PARAM_out (nt, basetype)
 
-#define SAC_ND_PARAM_inout_nodesc(basetype, nt) SAC_ND_PARAM_out_nodesc (basetype, nt)
+#define SAC_ND_PARAM_inout_nodesc(nt, basetype) SAC_ND_PARAM_out_nodesc (nt, basetype)
 
-#define SAC_ND_PARAM_inout_nodesc_bx(basetype, nt) SAC_ND_PARAM_in_nodesc (basetype, nt)
+#define SAC_ND_PARAM_inout_nodesc_bx(nt, basetype) SAC_ND_PARAM_in_nodesc (nt, basetype)
 
 #define SAC_ND_ARG_in(nt) CAT3 (SAC_ND_ARG_in__, CAT3 (NT_DATA (nt), (nt)))
 
@@ -767,37 +760,39 @@ SAC_ND_ALLOC_DESC__AKS_UNQ (nt)
 
 #define SAC_ND_RET_inout(nt, ntp) SAC_ND_RET_out (nt, ntp)
 
-#define SAC_ND_DECL_PARAM_inout(basetype, nt)                                            \
-    CAT3 (SAC_ND_DECL_PARAM_inout__, CAT3 (NT_DATA (nt), BuildArgs2 (basetype, nt)))
+#define SAC_ND_DECL_PARAM_inout(nt, basetype)                                            \
+    CAT3 (SAC_ND_DECL_PARAM_inout__, CAT3 (NT_DATA (nt), BuildArgs2 (nt, basetype)))
 
 /*
  * SCL
  */
 
-#define SAC_ND_PARAM_in__SCL(basetype, nt) SAC_ND_PARAM_in_nodesc (basetype, nt)
+#define SAC_ND_PARAM_in__SCL(nt, basetype) SAC_ND_PARAM_in_nodesc (nt, basetype)
 
-#define SAC_ND_PARAM_out__SCL(basetype, nt) SAC_ND_PARAM_out_nodesc (basetype, nt)
+#define SAC_ND_PARAM_out__SCL(nt, basetype) SAC_ND_PARAM_out_nodesc (nt, basetype)
 
 #define SAC_ND_ARG_in__SCL(nt) SAC_ND_ARG_in_nodesc (nt)
 
 #define SAC_ND_ARG_out__SCL(nt) SAC_ND_ARG_out_nodesc (nt)
 
 #define SAC_ND_RET_out__SCL(nt, ntp)                                                     \
-    *SAC_NAMEP (SAC_ND_A_FIELD (ntp)) = SAC_ND_A_FIELD (nt);
+    {                                                                                    \
+        *SAC_NAMEP (SAC_ND_A_FIELD (ntp)) = SAC_ND_A_FIELD (nt);                         \
+    }
 
-#define SAC_ND_DECL_PARAM_inout__SCL(basetype, nt)                                       \
-    SAC_ND_TYPE (basetype, nt)                                                           \
+#define SAC_ND_DECL_PARAM_inout__SCL(nt, basetype)                                       \
+    SAC_ND_TYPE (nt, basetype)                                                           \
     SAC_ND_A_FIELD (nt) = *SAC_NAMEP (SAC_ND_A_FIELD (nt));
 
 /*
  * AKS
  */
 
-#define SAC_ND_PARAM_in__AKS(basetype, nt)                                               \
-    SAC_ND_PARAM_in_nodesc (basetype, nt), SAC_ND_DESC_TYPE (nt) SAC_ND_A_DESC (nt)
+#define SAC_ND_PARAM_in__AKS(nt, basetype)                                               \
+    SAC_ND_PARAM_in_nodesc (nt, basetype), SAC_ND_DESC_TYPE (nt) SAC_ND_A_DESC (nt)
 
-#define SAC_ND_PARAM_out__AKS(basetype, nt)                                              \
-    SAC_ND_PARAM_out_nodesc (basetype, nt),                                              \
+#define SAC_ND_PARAM_out__AKS(nt, basetype)                                              \
+    SAC_ND_PARAM_out_nodesc (nt, basetype),                                              \
       SAC_ND_DESC_TYPE (nt) * SAC_NAMEP (SAC_ND_A_DESC (nt))
 
 #define SAC_ND_ARG_in__AKS(nt) SAC_ND_ARG_in_nodesc (nt), SAC_ND_A_DESC (nt)
@@ -810,8 +805,8 @@ SAC_ND_ALLOC_DESC__AKS_UNQ (nt)
         *SAC_NAMEP (SAC_ND_A_DESC (ntp)) = SAC_ND_A_DESC (nt);                           \
     }
 
-#define SAC_ND_DECL_PARAM_inout__AKS(basetype, nt)                                       \
-    SAC_ND_TYPE (basetype, nt)                                                           \
+#define SAC_ND_DECL_PARAM_inout__AKS(nt, basetype)                                       \
+    SAC_ND_TYPE (nt, basetype)                                                           \
     SAC_ND_A_FIELD (nt) = *SAC_NAMEP (SAC_ND_A_FIELD (nt));                              \
     SAC_ND_DESC_TYPE (nt)                                                                \
     SAC_ND_A_DESC (nt) = *SAC_NAMEP (SAC_ND_A_DESC (nt));
@@ -820,9 +815,9 @@ SAC_ND_ALLOC_DESC__AKS_UNQ (nt)
  * AKD
  */
 
-#define SAC_ND_PARAM_in__AKD(basetype, nt) SAC_ND_PARAM_in__AKS (basetype, nt)
+#define SAC_ND_PARAM_in__AKD(nt, basetype) SAC_ND_PARAM_in__AKS (nt, basetype)
 
-#define SAC_ND_PARAM_out__AKD(basetype, nt) SAC_ND_PARAM_out__AKS (basetype, nt)
+#define SAC_ND_PARAM_out__AKD(nt, basetype) SAC_ND_PARAM_out__AKS (nt, basetype)
 
 #define SAC_ND_ARG_in__AKD(nt) SAC_ND_ARG_in__AKS (nt)
 
@@ -830,16 +825,16 @@ SAC_ND_ALLOC_DESC__AKS_UNQ (nt)
 
 #define SAC_ND_RET_out__AKD(nt, ntp) SAC_ND_RET_out__AKS (nt, ntp)
 
-#define SAC_ND_DECL_PARAM_inout__AKD(basetype, nt)                                       \
-    SAC_ND_DECL_PARAM_inout__AKS (basetype, nt)
+#define SAC_ND_DECL_PARAM_inout__AKD(nt, basetype)                                       \
+    SAC_ND_DECL_PARAM_inout__AKS (nt, basetype)
 
 /*
  * AUD
  */
 
-#define SAC_ND_PARAM_in__AUD(basetype, nt) SAC_ND_PARAM_in__AKS (basetype, nt)
+#define SAC_ND_PARAM_in__AUD(nt, basetype) SAC_ND_PARAM_in__AKS (nt, basetype)
 
-#define SAC_ND_PARAM_out__AUD(basetype, nt) SAC_ND_PARAM_out__AKS (basetype, nt)
+#define SAC_ND_PARAM_out__AUD(nt, basetype) SAC_ND_PARAM_out__AKS (nt, basetype)
 
 #define SAC_ND_ARG_in__AUD(nt) SAC_ND_ARG_in__AKS (nt)
 
@@ -847,16 +842,16 @@ SAC_ND_ALLOC_DESC__AKS_UNQ (nt)
 
 #define SAC_ND_RET_out__AUD(nt, ntp) SAC_ND_RET_out__AKS (nt, ntp)
 
-#define SAC_ND_DECL_PARAM_inout__AUD(basetype, nt)                                       \
-    SAC_ND_DECL_PARAM_inout__AKS (basetype, nt)
+#define SAC_ND_DECL_PARAM_inout__AUD(nt, basetype)                                       \
+    SAC_ND_DECL_PARAM_inout__AKS (nt, basetype)
 
 /*
  * HID
  */
 
-#define SAC_ND_PARAM_in__HID(basetype, nt) SAC_ND_PARAM_in__AKS (basetype, nt)
+#define SAC_ND_PARAM_in__HID(nt, basetype) SAC_ND_PARAM_in__AKS (nt, basetype)
 
-#define SAC_ND_PARAM_out__HID(basetype, nt) SAC_ND_PARAM_out__AKS (basetype, nt)
+#define SAC_ND_PARAM_out__HID(nt, basetype) SAC_ND_PARAM_out__AKS (nt, basetype)
 
 #define SAC_ND_ARG_in__HID(nt) SAC_ND_ARG_in__AKS (nt)
 
@@ -864,8 +859,8 @@ SAC_ND_ALLOC_DESC__AKS_UNQ (nt)
 
 #define SAC_ND_RET_out__HID(nt, ntp) SAC_ND_RET_out__AKS (nt, ntp)
 
-#define SAC_ND_DECL_PARAM_inout__HID(basetype, nt)                                       \
-    SAC_ND_DECL_PARAM_inout__AKS (basetype, nt)
+#define SAC_ND_DECL_PARAM_inout__HID(nt, basetype)                                       \
+    SAC_ND_DECL_PARAM_inout__AKS (nt, basetype)
 
 /******************************************************************************
  *
@@ -874,32 +869,28 @@ SAC_ND_ALLOC_DESC__AKS_UNQ (nt)
  *
  * ND_ASSIGN( to_nt, to_sdim, from_nt) :
  *   assigns a data object to another one
- * ND_ASSIGN_DATA( to_nt, to_sdim, from_nt) :
+ * ND_ASSIGN__DATA( to_nt, from_nt) :
  *   assigns a data object to another one (without mirror)
- * ND_ASSIGN_MIRROR( to_nt, to_sdim, from_nt) :
+ * ND_ASSIGN__DESC( to_nt, to_sdim, from_nt) :
+ *   assigns a descriptor to another one
+ * ND_ASSIGN__MIRROR( to_nt, to_sdim, from_nt) :
  *   assigns a mirror to another one
  *
- * ND_COPY( to_nt, from_nt, copyfun/basetype) :
+ * ND_COPY( to_nt, to_sdim, from_nt, copyfun) :
  *   copies a data object to another one
  *
- * ND_CHECK_REUSE( to_nt, from_nt, copyfun) :
- *   tries to reuse old data object for new, copies if impossible
- *
- * ND_MAKE_UNIQUE( new_nt, old_nt, basetypesize) :
+ * ND_MAKE_UNIQUE( to_nt, to_sdim, from_nt, copyfun) :
  *   assigns a data object to another one iff RC is zero, copies it otherwise.
- *   A new refcount is allocated if necessary.
  *
  ******************************************************************************/
 
 /* ND_ASSIGN( ...)  is a C-ICM */
 
-/* ND_ASSIGN_DATA( ...)  is a C-ICM */
+/* ND_ASSIGN__DATA( ...)  is a C-ICM */
 
-/* ND_ASSIGN_MIRROR( ...)  is a C-ICM */
+/* ND_ASSIGN__MIRROR( ...)  is a C-ICM */
 
 /* ND_COPY( ...)  is a C-ICM */
-
-/* ND_CHECK_REUSE( ...)  is a C-ICM */
 
 /* ND_MAKE_UNIQUE( ...)  is a C-ICM */
 
@@ -908,22 +899,28 @@ SAC_ND_ALLOC_DESC__AKS_UNQ (nt)
  * ICMs for creating refcounted objects:
  * ====================================
  *
- * ND_ASSIGN_CONST_STR( nt, str) :
+ * ND_ASSIGN__CONST_STR( nt, str) :
  *   creates a constant character array (string)
  *
- * ND_ASSIGN_CONST_SCALAR( nt, val) :
+ * ND_ASSIGN__CONST_SCALAR( nt, val) :
  *   creates a constant scalar
  *
- * ND_ASSIGN_CONST_VECT( nt, copyfun, len, ...elem...) :
+ * ND_ASSIGN__CONST_VECT( nt, copyfun, len, ...elem...) :
  *   creates a constant vector
  *
  ******************************************************************************/
 
-#define SAC_ND_ASSIGN_CONST_STR(nt, str) SAC_String2Array (NT_NAME (nt), str);
+#define SAC_ND_ASSIGN__CONST_STR(nt, str)                                                \
+    {                                                                                    \
+        SAC_String2Array (ND_A_FIELD (nt), str);                                         \
+    }
 
-#define SAC_ND_ASSIGN_CONST_SCALAR(nt, val) SAC_ND_WRITE (nt, 0) = val;
+#define SAC_ND_ASSIGN__CONST_SCALAR(nt, val)                                             \
+    {                                                                                    \
+        SAC_ND_WRITE (nt, 0) = val;                                                      \
+    }
 
-/* ND_ASSIGN_CONST_VECT( ...) is a C-ICM */
+/* ND_ASSIGN__CONST_VECT( ...) is a C-ICM */
 
 /******************************************************************************
  *
@@ -962,17 +959,17 @@ SAC_ND_ALLOC_DESC__AKS_UNQ (nt)
  * SCL
  */
 
-#define SAC_ND_SET_RC__SCL_NUQ(nt, rc)
-#define SAC_ND_SET_RC__SCL_UNQ(nt, rc)
+#define SAC_ND_SET_RC__SCL_NUQ(nt, rc) SAC_NOOP ()
+#define SAC_ND_SET_RC__SCL_UNQ(nt, rc) SAC_NOOP ()
 
-#define SAC_ND_INC_RC__SCL_NUQ(nt, rc)
-#define SAC_ND_INC_RC__SCL_UNQ(nt, rc)
+#define SAC_ND_INC_RC__SCL_NUQ(nt, rc) SAC_NOOP ()
+#define SAC_ND_INC_RC__SCL_UNQ(nt, rc) SAC_NOOP ()
 
-#define SAC_ND_DEC_RC__SCL_NUQ(nt, rc)
-#define SAC_ND_DEC_RC__SCL_UNQ(nt, rc)
+#define SAC_ND_DEC_RC__SCL_NUQ(nt, rc) SAC_NOOP ()
+#define SAC_ND_DEC_RC__SCL_UNQ(nt, rc) SAC_NOOP ()
 
-#define SAC_ND_DEC_RC_FREE__SCL_NUQ(nt, rc, freefun)
-#define SAC_ND_DEC_RC_FREE__SCL_UNQ(nt, rc, freefun)
+#define SAC_ND_DEC_RC_FREE__SCL_NUQ(nt, rc, freefun) SAC_NOOP ()
+#define SAC_ND_DEC_RC_FREE__SCL_UNQ(nt, rc, freefun) SAC_NOOP ()
 
 /*
  * AKS
@@ -984,7 +981,7 @@ SAC_ND_ALLOC_DESC__AKS_UNQ (nt)
         SAC_TR_REF_PRINT (("ND_SET_RC( %s, %d)", #nt, rc));                              \
         SAC_TR_REF_PRINT_RC (nt)                                                         \
     }
-#define SAC_ND_SET_RC__AKS_UNQ(nt, rc)
+#define SAC_ND_SET_RC__AKS_UNQ(nt, rc) SAC_NOOP ()
 
 #define SAC_ND_INC_RC__AKS_NUQ(nt, rc)                                                   \
     {                                                                                    \
@@ -992,7 +989,7 @@ SAC_ND_ALLOC_DESC__AKS_UNQ (nt)
         SAC_TR_REF_PRINT (("ND_INC_RC( %s, %d)", #nt, rc));                              \
         SAC_TR_REF_PRINT_RC (nt)                                                         \
     }
-#define SAC_ND_INC_RC__AKS_UNQ(nt, rc)
+#define SAC_ND_INC_RC__AKS_UNQ(nt, rc) SAC_NOOP ()
 
 #define SAC_ND_DEC_RC__AKS_NUQ(nt, rc)                                                   \
     {                                                                                    \
@@ -1000,7 +997,7 @@ SAC_ND_ALLOC_DESC__AKS_UNQ (nt)
         SAC_TR_REF_PRINT (("ND_DEC_RC( %s, %d)", #nt, rc));                              \
         SAC_TR_REF_PRINT_RC (nt)                                                         \
     }
-#define SAC_ND_DEC_RC__AKS_UNQ(nt, rc)
+#define SAC_ND_DEC_RC__AKS_UNQ(nt, rc) SAC_NOOP ()
 
 #define SAC_ND_DEC_RC_FREE__AKS_NUQ(nt, rc, freefun)                                     \
     {                                                                                    \
@@ -1012,7 +1009,7 @@ SAC_ND_ALLOC_DESC__AKS_UNQ (nt)
             SAC_TR_REF_PRINT_RC (nt);                                                    \
         }                                                                                \
     }
-#define SAC_ND_DEC_RC_FREE__AKS_UNQ(nt, rc, freefun)
+#define SAC_ND_DEC_RC_FREE__AKS_UNQ(nt, rc, freefun) SAC_NOOP ()
 
 /*
  * AKD
@@ -1075,12 +1072,13 @@ SAC_ND_ALLOC_DESC__AKS_UNQ (nt)
  *
  * ND_PRF_DIM( to_nt, from_nt)
  * ND_PRF_SHAPE( to_nt, from_nt)
+ * ND_PRF_RESHAPE( to_nt, ...shape..., from_nt)
  * ....
  *
  ******************************************************************************/
 
 #define SAC_ND_PRF_DIM(to_nt, from_nt)                                                   \
-    SAC_ND_ASSIGN_CONST_SCALAR (to_nt, SAC_ND_A_DIM (from_nt))
+    SAC_ND_ASSIGN__CONST_SCALAR (to_nt, SAC_ND_A_DIM (from_nt))
 
 /* ND_PRF_SHAPE( ...) is a C-ICM */
 
@@ -1105,10 +1103,28 @@ SAC_ND_ALLOC_DESC__AKS_UNQ (nt)
 #define SAC_INITGLOBALOBJECT_END() }
 #else
 /*
- * without check -> NOP
+ * without check -> nothing
  */
-#define SAC_INITGLOBALOBJECT_BEGIN(varname)
-#define SAC_INITGLOBALOBJECT_END()
+#define SAC_INITGLOBALOBJECT_BEGIN(varname) SAC_NOTHING ()
+#define SAC_INITGLOBALOBJECT_END() SAC_NOTHING ()
+#endif
+
+/******************************************************************************
+ *
+ * ICMs for runtime checks
+ * =======================
+ *
+ * ASSURE( cond)
+ *
+ ******************************************************************************/
+
+#if 1
+#define SAC_ASSURE(cond)                                                                 \
+    if (!(cond)) {                                                                       \
+        SAC_RuntimeError ("Illegal type conversion found!");                             \
+    }
+#else
+#define SAC_ASSURE(cond) SAC_NOOP ()
 #endif
 
 #endif /* _SAC_STD_H */
