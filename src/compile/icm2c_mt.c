@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.41  2003/10/20 14:28:52  dkr
+ * no warnings about unsed variables anymore
+ *
  * Revision 3.40  2003/10/19 21:42:37  dkrHH
  * no more warnings about unused vars anymore
  *
@@ -555,7 +558,9 @@ void
 ICMCompileMT_SYNCBLOCK_END
 (int barrier_id, int vararg_cnt, char **vararg)
 {
+#ifdef TAGGED_ARRAYS
     int i;
+#endif
 
     DBUG_ENTER ("ICMCompileMT_SYNCBLOCK_END");
 
