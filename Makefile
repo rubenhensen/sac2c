@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.99  1999/01/07 13:59:23  sbs
+# NEWTREE turned off + generatemasks.o, DeadFunctionRemoval added
+#
 # Revision 1.98  1998/12/17 09:48:39  cg
 # added new targets tar, distrib, and fafnir.
 # improved targets src.tar.gz and floppy
@@ -135,8 +138,8 @@ LINUX_X86_LIBS      := -lfl
 CCFLAGS :=$($(CC)_FLAGS) -g $($(OS)_FLAGS)
 CCPROD_FLAGS := $($(CC)_PROD_FLAGS) $($(OS)_FLAGS) 
 
-CFLAGS := -DNEWTREE -DSHOW_MALLOC -D$(OS) 
-CPROD_FLAGS  :=-DDBUG_OFF -DNEWTREE -DPRODUCTION -D$(OS)
+CFLAGS := -DSHOW_MALLOC -D$(OS) 
+CPROD_FLAGS  :=-DDBUG_OFF -DPRODUCTION -D$(OS)
 
 MAKE_NORM    :=$(MAKE) CC="$(CC)" CCFLAGS="$(CCFLAGS)" CFLAGS="$(CFLAGS)"
 MAKE_PROD    :=$(MAKE) CC="$(CCPROD)" CCFLAGS="$(CCPROD_FLAGS)" CFLAGS="$(CPROD_FLAGS)"
@@ -179,7 +182,8 @@ FLATTEN= src/flatten/flatten.o
 TYPECHECK= src/typecheck/typecheck.o src/typecheck/prim_fun.o \
            src/typecheck/typecheck_WL.o src/typecheck/gen_pseudo_fun.o
 OPTIMIZE= src/optimize/optimize.o src/optimize/ConstantFolding.o \
-          src/optimize/DeadCodeRemoval.o \
+          src/optimize/generatemasks.o src/optimize/DeadCodeRemoval.o \
+          src/optimize/DeadFunctionRemoval.o \
 	  src/optimize/LoopInvariantRemoval.o src/optimize/DupTree.o \
 	  src/optimize/Inline.o src/optimize/Unroll.o src/optimize/WLUnroll.o \
           src/optimize/Unswitch.o src/optimize/CSE.o \
