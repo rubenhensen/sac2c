@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2001/01/24 23:36:22  dkr
+ * signature of MakeWLgridVar, MakeWLgrid, MakeWLseg, MakeWLsegVar
+ * modified.
+ * GenerateCompleteDomain() brushed.
+ * WLGRIDX_FITTED used.
+ *
  * Revision 3.16  2001/01/22 13:47:06  dkr
  * DBUG string WLprec renamed into WLtrans
  *
@@ -1991,7 +1997,7 @@ GenerateShapeStrides (int dim, int dims, shpseg *shape)
     DBUG_ENTER ("GenerateShapeStrides");
 
     if (dim < dims) {
-        new_grid = MakeWLgrid (0, dim, 0, 1, FALSE,
+        new_grid = MakeWLgrid (0, dim, 0, 1, FALSE, FALSE,
                                GenerateShapeStrides (dim + 1, dims, shape), NULL, NULL);
 
         strides = MakeWLstride (0, dim, 0, GET_SHAPE_IDX (shape, dim), 1, FALSE, new_grid,
@@ -2317,7 +2323,7 @@ Parts2Strides (node *parts, int dims, types *type, bool is_fold)
                                              : GetCurrentComponent_Int (bound2),
                                   GetCurrentComponent_Int (step), FALSE,
                                   MakeWLgrid (0, dim, 0, GetCurrentComponent_Int (width),
-                                              FALSE, NULL, NULL, NULL),
+                                              FALSE, FALSE, NULL, NULL, NULL),
                                   NULL);
 
                 /* the PART-information is needed by 'IntersectStrideWithOutline' */
@@ -2342,35 +2348,8 @@ Parts2Strides (node *parts, int dims, types *type, bool is_fold)
                  * not all generator parameters are constant
                  */
 
-                if (GetCurrentComponent_Int (width) == 1) {
-                    /*
-                     * If we have found a (0 -> 1) grid, we can build a N_WLgrid- instead
-                     * of a N_WLgridVar-node.
-                     *
-                     * CAUTION:
-                     * We must *not* build a N_WLgrid-node for constant grids in general!!
-                     * An example:
-                     *
-                     *   0 -> b step 4
-                     *          0 -> 3: op0
-                     *          3 -> 4: op1
-                     *
-                     * For N_WLgrid-nodes we create code, that executes unconditionally
-                     * the whole grid. If the grid is not a (0 -> 1) grid, this can be
-                     * dangerous:
-                     * Let b=10, then we must cut off the grids in the last loop-pass,
-                     * because the step (4) is not a divisor of the stride-width (b=10).
-                     * For constant strides this is done statically in 'wltransform: fit'.
-                     * But for grids != (0 -> 1), belonging to a WLstrideVar-node, we must
-                     * do this at runtime.
-                     * Therefore these grids *must* be N_WLgridVar-nodes.
-                     */
-                    new_grid = MakeWLgrid (0, dim, 0, 1, FALSE, NULL, NULL, NULL);
-                } else {
-                    new_grid = MakeWLgridVar (0, dim, MakeNum (0),
-                                              GetCurrentComponent_Node (width), NULL,
-                                              NULL, NULL);
-                }
+                new_grid = MakeWLgrid (0, dim, 0, GetCurrentComponent_Int (width), FALSE,
+                                       FALSE, NULL, NULL, NULL);
 
                 /* build N_WLstrideVar-node of current dimension */
                 new_stride
@@ -4153,6 +4132,8 @@ FitWL (node *nodes)
                      */
                     while (grids != NULL) {
                         WLGRID_NEXTDIM (grids) = FitWL (WLGRID_NEXTDIM (grids));
+                        /* set FITTED flag of the grid */
+                        WLGRID_FITTED (grids) = TRUE;
                         grids = WLGRID_NEXT (grids);
                     }
 
@@ -4181,10 +4162,8 @@ FitWL (node *nodes)
                          * with a block-node whose blocking factor had been
                          * adjusted -> we must fathom this adjustment here!
                          */
-#if 0
-            DBUG_ASSERT( (WLNODE_BOUND1( node) == 0),
-                         "lower bound of inner node is != 0");
-#endif
+                        DBUG_ASSERT ((WLNODE_BOUND1 (node) == 0),
+                                     "lower bound of inner node is != 0");
                         WLNODE_BOUND2 (node) = AdjustBlockingFactor (WLNODE_BOUND2 (node),
                                                                      WLNODE_STEP (node));
                     }
@@ -4477,10 +4456,6 @@ GenerateCompleteDomain (node *strides, int dims, types *type)
         WLGRID_BOUND2 (comp_grid) = 1;
         comp_stride = WLGRID_NEXTDIM (comp_grid);
     }
-    /*
-     * this chain is base for complements.
-     *  -> we must remove the code.
-     */
     WLGRID_CODE (comp_grid) = NULL;
 
     new_strides = NULL;
@@ -4526,7 +4501,7 @@ GenerateCompleteDomain (node *strides, int dims, types *type)
              * generate new stride/grid
              */
             new_grid
-              = MakeWLgrid (0, WLGRID_DIM (grid), 0, 1, FALSE,
+              = MakeWLgrid (0, WLGRID_DIM (grid), 0, 1, FALSE, FALSE,
                             GenerateShapeStrides (WLGRID_DIM (grid) + 1, dims, shape),
                             NULL, NULL);
             new_stride = MakeWLstride (0, WLSTRIDE_DIM (stride), WLSTRIDE_BOUND2 (stride),
@@ -4573,7 +4548,7 @@ GenerateCompleteDomain (node *strides, int dims, types *type)
              * generate new stride/grid
              */
             new_grid
-              = MakeWLgrid (0, WLGRID_DIM (grid), 0, 1, FALSE,
+              = MakeWLgrid (0, WLGRID_DIM (grid), 0, 1, FALSE, FALSE,
                             GenerateShapeStrides (WLGRID_DIM (grid) + 1, dims, shape),
                             NULL, NULL);
             new_stride
@@ -4601,7 +4576,7 @@ GenerateCompleteDomain (node *strides, int dims, types *type)
         if (WLGRID_BOUND2 (grid) - WLGRID_BOUND1 (grid) < WLSTRIDE_STEP (stride)) {
             WLGRID_NEXT (grid)
               = MakeWLgrid (0, WLGRID_DIM (grid), WLGRID_BOUND2 (grid),
-                            WLSTRIDE_STEP (stride), FALSE,
+                            WLSTRIDE_STEP (stride), FALSE, FALSE,
                             DupNode (WLGRID_NEXTDIM (comp_grid)), NULL, NULL);
         }
 
@@ -4663,140 +4638,117 @@ GenerateCompleteDomain (node *strides, int dims, types *type)
  ******************************************************************************/
 
 static node *
-GenerateCompleteDomainVar (node *stride_var, int dims, types *type)
+GenerateCompleteDomainVar (node *stride, int dims, types *type)
 {
-    node *grid_var, *new_grid;
+    node *grid, *new_grid;
     shpseg *shape;
+    void *pnode1, *pnode2;
+    char *name1, *name2;
+    int val1, val2;
+    int shp_idx;
 
     DBUG_ENTER ("GenerateCompleteDomainVar");
 
     DBUG_ASSERT ((type != NULL), "no type information found");
     shape = TYPES_SHPSEG (type);
 
-    if (stride_var != NULL) {
-        DBUG_ASSERT ((NODE_TYPE (stride_var) == N_WLstrideVar),
-                     "no variable stride found");
+    if (stride != NULL) {
+        DBUG_ASSERT ((NODE_TYPE (stride) == N_WLstrideVar), "no variable stride found");
 
-        grid_var = WLSTRIDEVAR_CONTENTS (stride_var);
+        grid = WLSTRIDEVAR_CONTENTS (stride);
         /*
-         * CAUTION: the grid can be a N_WLgrid node!!!
+         * CAUTION: the grid can be a N_WLgrid *or* N_WLgridVar node!!
          */
 
-        if (NODE_TYPE (grid_var) == N_WLgrid) {
-            /*
-             * is the grid incomplete?
-             */
-            if ((NODE_TYPE (WLSTRIDEVAR_STEP (stride_var)) != N_num)
-                || (WLGRID_BOUND2 (grid_var) < NUM_VAL (WLSTRIDEVAR_STEP (stride_var)))) {
-                WLGRID_NEXT (grid_var)
-                  = MakeWLgridVar (WLGRID_LEVEL (grid_var), WLGRID_DIM (grid_var),
-                                   MakeNum (WLGRID_BOUND2 (grid_var)),
-                                   DupNode (WLSTRIDEVAR_STEP (stride_var)),
-                                   GenerateShapeStrides (WLGRID_DIM (grid_var) + 1, dims,
-                                                         shape),
-                                   NULL, NULL);
+        pnode1 = WL_GET_ADDRESS (grid, N_WLgrid, WLGRID, BOUND2);
+        NodeOrInt_GetNameOrVal (&name1, &val1, NODE_TYPE (grid), pnode1);
+
+        pnode2 = WL_GET_ADDRESS (stride, N_WLstride, WLSTRIDE, STEP);
+        NodeOrInt_GetNameOrVal (&name2, &val2, NODE_TYPE (stride), pnode2);
+
+        /*
+         * is the grid incomplete?
+         */
+        if ((val1 != IDX_OTHER) && (val2 != IDX_OTHER)) {
+            if (val1 < val2) {
+                WLGRIDX_NEXT (grid)
+                  = MakeWLgrid (WLGRIDX_LEVEL (grid), WLGRIDX_DIM (grid), val1, val2,
+                                FALSE, FALSE,
+                                GenerateShapeStrides (WLGRID_DIM (grid) + 1, dims, shape),
+                                NULL, NULL);
             }
+        } else {
+            WLGRIDX_NEXT (grid)
+              = MakeWLgridVar (WLGRID_LEVEL (grid), WLGRID_DIM (grid),
+                               NameOrVal_MakeNode (name1, val1, pnode1),
+                               DupNode (WLSTRIDEVAR_STEP (stride)), FALSE,
+                               GenerateShapeStrides (WLGRID_DIM (grid) + 1, dims, shape),
+                               NULL, NULL);
+        }
 
-            /*
-             * next dim
-             */
-            WLGRID_NEXTDIM (grid_var)
-              = GenerateCompleteDomainVar (WLGRID_NEXTDIM (grid_var), dims, type);
+        /*
+         * next dim
+         */
+        WLGRIDX_NEXTDIM (grid)
+          = GenerateCompleteDomainVar (WLGRIDX_NEXTDIM (grid), dims, type);
 
-            /*
-             * append lower part of complement
-             */
-            if ((NODE_TYPE (WLSTRIDEVAR_BOUND2 (stride_var)) != N_num)
-                || (NUM_VAL (WLSTRIDEVAR_BOUND2 (stride_var))
-                    != GET_SHAPE_IDX (shape, WLSTRIDEVAR_DIM (stride_var)))) {
-                new_grid = MakeWLgrid (0, WLGRID_DIM (grid_var), 0, 1, FALSE,
-                                       GenerateShapeStrides (WLGRID_DIM (grid_var) + 1,
-                                                             dims, shape),
+        pnode1 = WL_GET_ADDRESS (stride, N_WLstride, WLSTRIDE, BOUND1);
+        NodeOrInt_GetNameOrVal (&name1, &val1, NODE_TYPE (stride), pnode1);
+
+        pnode2 = WL_GET_ADDRESS (stride, N_WLstride, WLSTRIDE, BOUND2);
+        NodeOrInt_GetNameOrVal (&name2, &val2, NODE_TYPE (stride), pnode2);
+
+        /*
+         * append lower part of complement
+         */
+        shp_idx = GET_SHAPE_IDX (shape, WLSTRIDEVAR_DIM (stride));
+        if (val2 != IDX_OTHER) {
+            if (val2 < shp_idx) {
+                new_grid = MakeWLgrid (0, WLGRIDX_DIM (grid), 0, 1, FALSE, FALSE,
+                                       GenerateShapeStrides (WLGRIDX_DIM (grid) + 1, dims,
+                                                             shape),
                                        NULL, NULL);
-                WLSTRIDEVAR_NEXT (stride_var)
-                  = MakeWLstrideVar (WLSTRIDEVAR_LEVEL (stride_var),
-                                     WLSTRIDEVAR_DIM (stride_var),
-                                     DupNode (WLSTRIDEVAR_BOUND2 (stride_var)),
-                                     MakeNum (GET_SHAPE_IDX (shape, WLSTRIDEVAR_DIM (
-                                                                      stride_var))),
-                                     MakeNum (1), new_grid, NULL);
+                WLSTRIDEVAR_NEXT (stride)
+                  = MakeWLstride (WLSTRIDEVAR_LEVEL (stride), WLSTRIDEVAR_DIM (stride),
+                                  val2, shp_idx, 1, FALSE, new_grid, NULL);
             }
+        } else {
+            new_grid
+              = MakeWLgrid (0, WLGRIDX_DIM (grid), 0, 1, FALSE, FALSE,
+                            GenerateShapeStrides (WLGRIDX_DIM (grid) + 1, dims, shape),
+                            NULL, NULL);
+            WLSTRIDEVAR_NEXT (stride)
+              = MakeWLstrideVar (WLSTRIDEVAR_LEVEL (stride), WLSTRIDEVAR_DIM (stride),
+                                 DupNode (WLSTRIDEVAR_BOUND2 (stride)), MakeNum (shp_idx),
+                                 MakeNum (1), new_grid, NULL);
+        }
 
-            /*
-             * insert upper part of complement
-             */
-            if ((NODE_TYPE (WLSTRIDEVAR_BOUND1 (stride_var)) != N_num)
-                || (NUM_VAL (WLSTRIDEVAR_BOUND1 (stride_var)) > 0)) {
-                new_grid = MakeWLgrid (0, WLGRID_DIM (grid_var), 0, 1, FALSE,
-                                       GenerateShapeStrides (WLGRID_DIM (grid_var) + 1,
-                                                             dims, shape),
+        /*
+         * insert upper part of complement
+         */
+        if (val1 != IDX_OTHER) {
+            if (val1 > 0) {
+                new_grid = MakeWLgrid (0, WLGRIDX_DIM (grid), 0, 1, FALSE, FALSE,
+                                       GenerateShapeStrides (WLGRIDX_DIM (grid) + 1, dims,
+                                                             shape),
                                        NULL, NULL);
-                stride_var = MakeWLstrideVar (WLSTRIDEVAR_LEVEL (stride_var),
-                                              WLSTRIDEVAR_DIM (stride_var), MakeNum (0),
-                                              DupNode (WLSTRIDEVAR_BOUND1 (stride_var)),
-                                              MakeNum (1), new_grid, stride_var);
+                stride
+                  = MakeWLstride (WLSTRIDEVAR_LEVEL (stride), WLSTRIDEVAR_DIM (stride), 0,
+                                  val1, 1, FALSE, new_grid, stride);
             }
-
-        } else { /* NODE_TYPE( grid_var) == N_WLgridVar */
-            /*
-             * is the grid incomplete?
-             */
-            if ((NODE_TYPE (WLGRIDVAR_BOUND2 (grid_var)) != N_num)
-                || (NODE_TYPE (WLSTRIDEVAR_STEP (stride_var)) != N_num)
-                || (NUM_VAL (WLGRIDVAR_BOUND2 (grid_var))
-                    < NUM_VAL (WLSTRIDEVAR_STEP (stride_var)))) {
-                WLGRIDVAR_NEXT (grid_var)
-                  = MakeWLgridVar (WLGRIDVAR_LEVEL (grid_var), WLGRIDVAR_DIM (grid_var),
-                                   DupNode (WLGRIDVAR_BOUND2 (grid_var)),
-                                   DupNode (WLSTRIDEVAR_STEP (stride_var)),
-                                   GenerateShapeStrides (WLGRIDVAR_DIM (grid_var) + 1,
-                                                         dims, shape),
-                                   NULL, NULL);
-            }
-
-            /*
-             * next dim
-             */
-            WLGRIDVAR_NEXTDIM (grid_var)
-              = GenerateCompleteDomainVar (WLGRIDVAR_NEXTDIM (grid_var), dims, type);
-
-            /*
-             * append lower part of complement
-             */
-            if ((NODE_TYPE (WLSTRIDEVAR_BOUND2 (stride_var)) != N_num)
-                || (NUM_VAL (WLSTRIDEVAR_BOUND2 (stride_var))
-                    != GET_SHAPE_IDX (shape, WLSTRIDEVAR_DIM (stride_var)))) {
-                new_grid = MakeWLgrid (0, WLGRIDVAR_DIM (grid_var), 0, 1, FALSE,
-                                       GenerateShapeStrides (WLGRIDVAR_DIM (grid_var) + 1,
-                                                             dims, shape),
-                                       NULL, NULL);
-                WLSTRIDEVAR_NEXT (stride_var)
-                  = MakeWLstrideVar (WLSTRIDEVAR_LEVEL (stride_var),
-                                     WLSTRIDEVAR_DIM (stride_var),
-                                     DupNode (WLSTRIDEVAR_BOUND2 (stride_var)),
-                                     MakeNum (GET_SHAPE_IDX (shape, WLSTRIDEVAR_DIM (
-                                                                      stride_var))),
-                                     MakeNum (1), new_grid, NULL);
-            }
-
-            /*
-             * insert upper part of complement
-             */
-            if ((NODE_TYPE (WLSTRIDEVAR_BOUND1 (stride_var)) != N_num)
-                || (NUM_VAL (WLSTRIDEVAR_BOUND1 (stride_var)) > 0)) {
-                new_grid = MakeWLgrid (0, WLGRIDVAR_DIM (grid_var), 0, 1, FALSE,
-                                       GenerateShapeStrides (WLGRIDVAR_DIM (grid_var) + 1,
-                                                             dims, shape),
-                                       NULL, NULL);
-                stride_var = MakeWLstrideVar (WLSTRIDEVAR_LEVEL (stride_var),
-                                              WLSTRIDEVAR_DIM (stride_var), MakeNum (0),
-                                              DupNode (WLSTRIDEVAR_BOUND1 (stride_var)),
-                                              MakeNum (1), new_grid, stride_var);
-            }
+        } else {
+            new_grid
+              = MakeWLgrid (0, WLGRIDX_DIM (grid), 0, 1, FALSE, FALSE,
+                            GenerateShapeStrides (WLGRIDX_DIM (grid) + 1, dims, shape),
+                            NULL, NULL);
+            stride
+              = MakeWLstrideVar (WLSTRIDEVAR_LEVEL (stride), WLSTRIDEVAR_DIM (stride),
+                                 MakeNum (0), DupNode (WLSTRIDEVAR_BOUND1 (stride)),
+                                 MakeNum (1), new_grid, stride);
         }
     }
 
-    DBUG_RETURN (stride_var);
+    DBUG_RETURN (stride);
 }
 
 /******************************************************************************
@@ -5845,23 +5797,16 @@ GenerateCompleteGrids (node *stride)
             NodeOrInt_GetNameOrVal (&name2, &val2, NODE_TYPE (grid_next), pnode2);
 
             if (!NameOrVal_Eq (name1, val1, name2, val2)) {
-                if ((NODE_TYPE (stride) == N_WLstride) || (val2 - val1 == 1)) {
-                    /*
-                     * stride is constant or gap has width 1
-                     *   -> build a constant grid for the gap
-                     */
+                if ((val1 != IDX_OTHER) && (val2 != IDX_OTHER)) {
                     WLGRIDX_NEXT (grid)
                       = MakeWLgrid (WLGRIDX_LEVEL (grid), WLGRIDX_DIM (grid), val1, val2,
-                                    FALSE, NULL, grid_next, NULL);
+                                    FALSE, FALSE, NULL, grid_next, NULL);
                 } else {
-                    /*
-                     * build a var. grid for the gap
-                     */
                     WLGRIDX_NEXT (grid)
                       = MakeWLgridVar (WLGRIDX_LEVEL (grid), WLGRIDX_DIM (grid),
                                        NameOrVal_MakeNode (name1, val1, pnode1),
-                                       NameOrVal_MakeNode (name2, val2, pnode2), NULL,
-                                       grid_next, NULL);
+                                       NameOrVal_MakeNode (name2, val2, pnode2), FALSE,
+                                       NULL, grid_next, NULL);
                 }
             }
 
@@ -5883,22 +5828,15 @@ GenerateCompleteGrids (node *stride)
         NodeOrInt_GetNameOrVal (&name2, &val2, NODE_TYPE (stride), pnode2);
 
         if (!NameOrVal_Eq (name1, val1, name2, val2)) {
-            if ((NODE_TYPE (stride) == N_WLstride) || (val2 - val1 == 1)) {
-                /*
-                 * stride is constant or gap has width 1
-                 *   -> build a constant grid for the gap
-                 */
+            if ((val1 != IDX_OTHER) && (val2 != IDX_OTHER)) {
                 WLGRIDX_NEXT (grid)
                   = MakeWLgrid (WLGRIDX_LEVEL (grid), WLGRIDX_DIM (grid), val1, val2,
-                                FALSE, NULL, WLGRIDX_NEXT (grid), NULL);
+                                FALSE, FALSE, NULL, WLGRIDX_NEXT (grid), NULL);
             } else {
-                /*
-                 * build a var. grid for the gap
-                 */
                 WLGRIDX_NEXT (grid)
                   = MakeWLgridVar (WLGRIDX_LEVEL (grid), WLGRIDX_DIM (grid),
                                    NameOrVal_MakeNode (name1, val1, pnode1),
-                                   NameOrVal_MakeNode (name2, val2, pnode2), NULL,
+                                   NameOrVal_MakeNode (name2, val2, pnode2), FALSE, NULL,
                                    WLGRIDX_NEXT (grid), NULL);
             }
         }
@@ -5927,105 +5865,60 @@ GenerateCompleteGrids (node *stride)
 /******************************************************************************
  *
  * function:
- *   void ComputeIndexMinMax( int *idx_min, int *idx_max,
- *                            int dims, node *strides)
+ *   void ComputeIndexMinMax( int *idx_min, int *idx_max, node *wlnode)
  *
  * description:
- *   Computes the minimum and maximum of the index-vector found in 'strides'.
- *
- * remark:
- *   if 'strides' is a N_WLstride-node, this must be a sequence of cubes.
- *   if 'strides' is a N_WLstrideVar-node, this must be a fully optimized
- *     nested stride/grid-tree.
- *   (see wltransform.c)
+ *   Computes the minimum and maximum of the index-vector found in 'wlnode'.
  *
  ******************************************************************************/
 
 static void
-ComputeIndexMinMax (int *idx_min, int *idx_max, int dims, node *strides)
+ComputeIndexMinMax (int *idx_min, int *idx_max, node *wlnode)
 {
-    node *stride;
-    int min, max, d;
+    int d, min, max;
 
     DBUG_ENTER ("ComputeIndexMinMax");
 
-    switch (NODE_TYPE (strides)) {
-    case N_WLstride:
-        /*
-         * initialize 'idx_min', 'idx_max'.
-         */
-        for (d = 0; d < dims; d++) {
-            idx_min[d] = INT_MAX; /* *** caution!! type dependent!! *** */
-            idx_max[d] = 0;
+    if (wlnode != NULL) {
+        switch (NODE_TYPE (wlnode)) {
+        case N_WLstride:
+            /* here is no break missing! */
+        case N_WLstrideVar:
+            d = WLSTRIDEX_DIM (wlnode);
+            NodeOrInt_GetNameOrVal (NULL, &min, NODE_TYPE (wlnode),
+                                    WL_GET_ADDRESS (wlnode, N_WLstride, WLSTRIDE,
+                                                    BOUND1));
+            NodeOrInt_GetNameOrVal (NULL, &max, NODE_TYPE (wlnode),
+                                    WL_GET_ADDRESS (wlnode, N_WLstride, WLSTRIDE,
+                                                    BOUND2));
+
+            if ((idx_min[d] == IDX_SHAPE) || (min == 0)
+                || ((idx_min[d] > 0) && (min > 0) && (min < idx_min[d]))
+                || ((idx_min[d] != 0) && (min == IDX_OTHER))) {
+                idx_min[d] = min;
+            }
+
+            if ((idx_max[d] == 0) || (max == IDX_SHAPE)
+                || ((idx_max[d] > 0) && (max > 0) && (max > idx_max[d]))
+                || ((idx_max[d] != IDX_SHAPE) && (max == IDX_OTHER))) {
+                idx_max[d] = max;
+            }
+
+            ComputeIndexMinMax (idx_min, idx_max, WLSTRIDEX_CONTENTS (wlnode));
+            ComputeIndexMinMax (idx_min, idx_max, WLSTRIDEX_NEXT (wlnode));
+            break;
+
+        case N_WLgrid:
+            /* here is no break missing! */
+        case N_WLgridVar:
+            ComputeIndexMinMax (idx_min, idx_max, WLGRIDX_NEXTDIM (wlnode));
+            ComputeIndexMinMax (idx_min, idx_max, WLGRIDX_NEXT (wlnode));
+            break;
+
+        default:
+            DBUG_ASSERT ((0), "illegal node type found!");
+            break;
         }
-
-        /*
-         * we must visit every dim in every stride.
-         */
-        while (strides != NULL) {
-            stride = strides;
-            for (d = 0; d < dims; d++) {
-                DBUG_ASSERT ((stride != NULL), "no stride found");
-
-                min = WLSTRIDE_BOUND1 (stride);
-                max = WLSTRIDE_BOUND2 (stride);
-                stride = WLGRID_NEXTDIM (WLSTRIDE_CONTENTS (stride));
-
-                if (min < idx_min[d]) {
-                    idx_min[d] = min;
-                }
-                if (max > idx_max[d]) {
-                    idx_max[d] = max;
-                }
-            }
-            strides = WLSTRIDE_NEXT (strides);
-        }
-        break;
-
-    case N_WLstrideVar:
-        /*
-         * we have not a cube, but a fully optimized stride/grid-tree.
-         *  -> we need to traverse the first stride only.
-         */
-        for (d = 0; d < dims; d++) {
-            DBUG_ASSERT ((strides != NULL), "no stride found");
-
-            if (NODE_TYPE (strides) == N_WLstride) {
-                idx_min[d] = WLSTRIDE_BOUND1 (strides);
-            } else { /* N_WLstrideVar */
-                if (NODE_TYPE (WLSTRIDEVAR_BOUND1 (strides)) == N_num) {
-                    idx_min[d] = NUM_VAL (WLSTRIDEVAR_BOUND1 (strides));
-                } else {
-                    idx_min[d] = IDX_OTHER;
-                }
-            }
-
-            /*
-             * we will find the maximum in the last stride of current dim
-             */
-            stride = strides;
-            while (WLSTRIDEVAR_NEXT (stride) != NULL) {
-                stride = WLSTRIDEVAR_NEXT (stride);
-            }
-
-            if (NODE_TYPE (stride) == N_WLstride) {
-                idx_max[d] = WLSTRIDE_BOUND2 (stride);
-            } else { /* N_WLstrideVar */
-                if (NODE_TYPE (WLSTRIDEVAR_BOUND2 (stride)) == N_num) {
-                    idx_max[d] = NUM_VAL (WLSTRIDEVAR_BOUND2 (stride));
-                } else {
-                    idx_max[d] = IDX_OTHER;
-                }
-            }
-
-            strides = (NODE_TYPE (WLSTRIDEVAR_CONTENTS (strides)) == N_WLgridVar)
-                        ? WLGRIDVAR_NEXTDIM (WLSTRIDEVAR_CONTENTS (strides))
-                        : WLGRID_NEXTDIM (WLSTRIDEVAR_CONTENTS (strides));
-        }
-        break;
-
-    default:
-        DBUG_ASSERT ((0), "wrong node type found");
     }
 
     DBUG_VOID_RETURN;
@@ -6054,21 +5947,28 @@ InferSegsParams (node *segs)
                      "no segment found!");
 
         WLSEGX_SV (segs) = (int *)MALLOC (WLSEGX_DIMS (segs) * sizeof (int));
+        WLSEGX_IDX_MIN (segs) = (int *)MALLOC (WLSEGX_DIMS (segs) * sizeof (int));
+        WLSEGX_IDX_MAX (segs) = (int *)MALLOC (WLSEGX_DIMS (segs) * sizeof (int));
+
         for (d = 0; d < WLSEGX_DIMS (segs); d++) {
             if (NODE_TYPE (segs) == N_WLseg) {
                 (WLSEG_SV (segs))[d] = GetLcmUnroll (WLSEG_CONTENTS (segs), d);
             } else {
                 (WLSEGVAR_SV (segs))[d] = 0;
             }
+
+            /*
+             *** caution!! type dependent!! ***
+             */
+            (WLSEGX_IDX_MIN (segs))[d] = INT_MAX;
+            (WLSEGX_IDX_MAX (segs))[d] = 0;
         }
 
         /*
          * compute the infimum and supremum of the index-vector.
          */
-        WLSEGX_IDX_MIN (segs) = (int *)MALLOC (WLSEGX_DIMS (segs) * sizeof (int));
-        WLSEGX_IDX_MAX (segs) = (int *)MALLOC (WLSEGX_DIMS (segs) * sizeof (int));
         ComputeIndexMinMax (WLSEGX_IDX_MIN (segs), WLSEGX_IDX_MAX (segs),
-                            WLSEGX_DIMS (segs), WLSEGX_CONTENTS (segs));
+                            WLSEGX_CONTENTS (segs));
 
         DBUG_EXECUTE ("WLtrans", fprintf (stderr, "InferSegsParams: ");
                       fprintf (stderr, "WLSEGX_SV = ");
