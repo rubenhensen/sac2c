@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2000/02/14 14:48:54  dkr
+ * The Macro IDS_IS_UNIQUE is already defined in uniquecheck.c and designed
+ * specificly for this compiler phase. Therefore it is removed from
+ * tree_compound.h
+ *
  * Revision 1.4  2000/02/02 12:29:09  jhs
  * Added INFO_MUTH_FUNDEF.
  * Added N_mt and N_st.
@@ -319,19 +324,6 @@ extern shpseg *MergeShpseg (shpseg *first, int dim1, shpseg *second, int dim2);
 #define IDS_DIM(n) VARDEC_OR_ARG_DIM (IDS_VARDEC (n))
 #define IDS_SHAPE(n, x)                                                                  \
     SHPSEG_SHAPE (TYPES_SHPSEG (VARDEC_OR_ARG_TYPE (IDS_VARDEC (n))), x)
-
-/*
- *  macro name    : IDS_IS_UNIQUE
- *  arg types     : 1) ids*
- *  result type   : int (bool)
- *  description   : checks if the given ids is unique or not
- *  remarks       : This macro will only work properly with the VARNO
- *                  settings done in uniquecheck.c
- */
-
-#define IDS_IS_UNIQUE(i)                                                                 \
-    ((NODE_TYPE (IDS_VARDEC (i)) == N_vardec) ? (VARDEC_VARNO (IDS_VARDEC (i)) >= 0)     \
-                                              : (ARG_VARNO (IDS_VARDEC (i)) >= 0))
 
 /*
  *  functionname  : AppendIdsChain
