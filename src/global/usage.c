@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.9  1999/06/10 09:49:03  cg
+ * Added usage of option -cshost.
+ *
  * Revision 2.8  1999/05/26 14:32:23  jhs
  * Added options MTO and SBE for multi-thread optimsation and
  * synchronisation barrier elimination, both options are by
@@ -516,6 +519,18 @@ usage ()
       "\t\tf: fetch on write\n"
       "\t\tv: write validate\n"
       "\t\ta: write around\n"
+      "\n"
+      "\t-cshost <name> \tallows the specification of a specific host to\n"
+      "\t\t\trun the additional analyser process on when doing piped cache\n"
+      "\t\t\tsimulation. This is very useful for single processor machines\n"
+      "\t\t\tbecause the rather limited buffer size of the pipe determines\n"
+      "\t\t\tthe synchronisation distance of the two processes, i.e. the\n"
+      "\t\t\tapplication process and the analysis process. This results in\n"
+      "\t\t\tvery frequent context switches when both processes are run on the\n"
+      "\t\t\tsame processor, and consequently, degrades the performance by\n"
+      "\t\t\torders of magnitude. So, when doing piped cache simulation always\n"
+      "\t\t\tbe sure to do so either on a multiprocessor or specify a different\n"
+      "\t\t\tmachine to run the analyser process on.\n"
 
       "\n\nINTRINSIC ARRAY OPERATIONS OPTIONS:\n\n"
 
