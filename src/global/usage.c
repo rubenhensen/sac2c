@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.19  2000/01/24 12:23:08  jhs
+ * Added options to activate/dactivate printing after a break
+ * (-noPAB, -doPAB).
+ *
  * Revision 2.18  2000/01/17 17:58:45  cg
  * Added new heap manager optimization options
  * APS (arena preselection) and
@@ -305,6 +309,12 @@ usage ()
             verbose_level);
 
     printf ("\n\nBREAK OPTIONS:\n\n");
+
+    printf ("\tBreak options allow you to stop the compilation process\n"
+            "\tafter a particular phase.\n"
+            "\tPer default the programm will then be printed out, but\n"
+            "\t\t-noPAB\tdeactivates print\n"
+            "\t\t-doPAB\tactivates print\n\n");
 
     printf ("\t -b1\tstop after: %s\n", compiler_phase_name[1]);
     printf ("\t -b2\tstop after: %s\n", compiler_phase_name[2]);

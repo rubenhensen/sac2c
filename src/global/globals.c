@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.23  2000/01/24 12:23:08  jhs
+ * Added options to activate/dactivate printing after a break
+ * (-noPAB, -doPAB).
+ *
  * Revision 2.22  2000/01/21 13:19:53  jhs
  * Added new mt ... infrastructure expanded ...
  *
@@ -327,6 +331,7 @@ int show_idx = 0;
  * implementations of some array operations.
  */
 
+int print_after_break = PAB_YES;
 unsigned int traceflag = TRACE_NONE;
 unsigned int profileflag = PROFILE_NONE;
 unsigned int runtimecheck = RUNTIMECHECK_NONE;

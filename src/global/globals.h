@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.24  2000/01/24 12:23:08  jhs
+ * Added options to activate/dactivate printing after a break
+ * (-noPAB, -doPAB).
+ *
  * Revision 2.23  2000/01/21 13:19:53  jhs
  * Added new mt ... infrastructure expanded ...
  *
@@ -38,6 +42,10 @@
  * Added global variable malloc_align_step.
  *
  * $Log$
+ * Revision 2.24  2000/01/24 12:23:08  jhs
+ * Added options to activate/dactivate printing after a break
+ * (-noPAB, -doPAB).
+ *
  * Revision 2.23  2000/01/21 13:19:53  jhs
  * Added new mt ... infrastructure expanded ...
  *
@@ -248,6 +256,11 @@ extern int initial_unified_heapsize;
 
 extern int show_refcnt;
 extern int show_idx;
+
+#define PAB_NO 0
+#define PAB_YES 1
+
+extern int print_after_break;
 
 extern unsigned int traceflag;
 

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.12  2000/01/24 12:23:08  jhs
+ * Added options to activate/dactivate printing after a break
+ * (-noPAB, -doPAB).
+ *
  * Revision 2.11  2000/01/21 18:04:44  dkr
  * include of lac2fun.h added
  *
@@ -611,7 +615,7 @@ main (int argc, char *argv[])
 BREAK:
 
     if (compiler_phase >= PH_scanparse) {
-        if (compiler_phase < PH_genccode) {
+        if ((print_after_break == PAB_YES) && (compiler_phase < PH_genccode)) {
             CHECK_DBUG_START; /* needed for DBUG-infos during print, i.e. PRINT_xxx */
             Print (syntax_tree);
             CHECK_DBUG_STOP;
