@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.68  2004/09/25 14:35:52  ktr
+ * Whenever a generator is known to cover just one index, the withid is assumed
+ * to be constant inside thate corresponding code.
+ *
  * Revision 1.67  2004/09/24 17:05:46  ktr
  * Bug #60: Deactivated propagation of constant PRF-Arguments as this was not
  * always allowed.
@@ -246,6 +250,7 @@ struct INFO {
     node *modul;
     node *assign;
     bool inlfundef;
+    node *withid;
 };
 
 /*
@@ -261,6 +266,7 @@ struct INFO {
 #define INFO_SSACF_MODUL(n) (n->modul)
 #define INFO_SSACF_ASSIGN(n) (n->assign)
 #define INFO_SSACF_INLFUNDEF(n) (n->inlfundef)
+#define INFO_SSACF_WITHID(n) (n->withid)
 
 /*
  * INFO functions
@@ -284,6 +290,7 @@ MakeInfo ()
     INFO_SSACF_MODUL (result) = NULL;
     INFO_SSACF_ASSIGN (result) = NULL;
     INFO_SSACF_INLFUNDEF (result) = FALSE;
+    INFO_SSACF_WITHID (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -2836,6 +2843,93 @@ TravIDS (ids *arg_ids, info *arg_info)
 /******************************************************************************
  *
  * function:
+ *   node *SSACFNwith( node *arg_node, info *arg_info)
+ *
+ * description:
+ *   traverses parts and withops
+ *
+ *****************************************************************************/
+
+node *
+SSACFNwith (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("SSACFNwith");
+
+    if (NWITH_PART (arg_node) != NULL) {
+        NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
+    }
+
+    if (NWITH_WITHOP (arg_node) != NULL) {
+        NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *SSACFNpart( node *arg_node, info *arg_info)
+ *
+ * description:
+ *   traverses withid, generators and code
+ *   if the current generator covers only one element and the current
+ *   code is only used once, withid can become constant in the code
+ *
+ *****************************************************************************/
+
+node *
+SSACFNpart (node *arg_node, info *arg_info)
+{
+    ids *_ids;
+
+    DBUG_ENTER ("SSACFNpart");
+
+    NPART_WITHID (arg_node) = Trav (NPART_WITHID (arg_node), arg_info);
+
+    /*
+     * If this part's code is only used by this part,
+     * withid may become constant
+     */
+    if (NCODE_USED (NPART_CODE (arg_node)) == 1) {
+        INFO_SSACF_WITHID (arg_info) = NPART_WITHID (arg_node);
+    }
+    NPART_GEN (arg_node) = Trav (NPART_GEN (arg_node), arg_info);
+
+    NPART_CODE (arg_node) = Trav (NPART_CODE (arg_node), arg_info);
+
+    /*
+     * Constants must be removed again
+     */
+    if (NCODE_USED (NPART_CODE (arg_node)) == 1) {
+        _ids = NWITHID_VEC (NPART_WITHID (arg_node));
+        if (_ids != NULL) {
+            if (AVIS_SSACONST (IDS_AVIS (_ids)) != NULL) {
+                AVIS_SSACONST (IDS_AVIS (_ids))
+                  = COFreeConstant (AVIS_SSACONST (IDS_AVIS (_ids)));
+            }
+        }
+
+        _ids = NWITHID_VEC (NPART_WITHID (arg_node));
+        while (_ids != NULL) {
+            if (AVIS_SSACONST (IDS_AVIS (_ids)) != NULL) {
+                AVIS_SSACONST (IDS_AVIS (_ids))
+                  = COFreeConstant (AVIS_SSACONST (IDS_AVIS (_ids)));
+            }
+            _ids = IDS_NEXT (_ids);
+        }
+    }
+
+    if (NPART_NEXT (arg_node) != NULL) {
+        NPART_NEXT (arg_node) = Trav (NPART_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node* SSACFNgen(node *arg_node, info *arg_info)
  *
  * description:
@@ -2865,7 +2959,64 @@ SSACFNgen (node *arg_node, info *arg_info)
     if (NGEN_WIDTH (arg_node) != NULL) {
         NGEN_WIDTH (arg_node) = Trav (NGEN_WIDTH (arg_node), arg_info);
     }
+
+    if (INFO_SSACF_WITHID (arg_info) != NULL) {
+        if ((NGEN_BOUND1 (arg_node) != NULL) && (NGEN_BOUND2 (arg_node) != NULL)) {
+            constant *lower, *upper, *diff, *idx;
+            shape *shp;
+            ids *_ids;
+            int i;
+
+            lower = COAST2Constant (NGEN_BOUND1 (arg_node));
+            upper = COAST2Constant (NGEN_BOUND2 (arg_node));
+
+            if ((lower != NULL) && (upper != NULL)) {
+                diff = COSub (upper, lower);
+                shp = COConstant2Shape (diff);
+                if (SHGetUnrLen (shp) == 1) {
+                    _ids = NWITHID_VEC (INFO_SSACF_WITHID (arg_info));
+                    if (_ids != NULL) {
+                        AVIS_SSACONST (IDS_AVIS (_ids)) = COCopyConstant (lower);
+                    }
+                    i = 0;
+                    _ids = NWITHID_IDS (INFO_SSACF_WITHID (arg_info));
+                    while (_ids != NULL) {
+                        idx = COMakeConstantFromInt (i);
+                        AVIS_SSACONST (IDS_AVIS (_ids)) = COIdxSel (idx, lower);
+                        idx = COFreeConstant (idx);
+                        _ids = IDS_NEXT (_ids);
+                        i += 1;
+                    }
+                }
+                diff = COFreeConstant (diff);
+                shp = SHFreeShape (shp);
+            }
+            lower = COFreeConstant (lower);
+            upper = COFreeConstant (upper);
+        }
+        INFO_SSACF_WITHID (arg_info) = NULL;
+    }
+
     INFO_SSACF_INSCONST (arg_info) = SUBST_NONE;
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node* SSACFNcode(node *arg_node, info *arg_info)
+ *
+ * description:
+ *   traverses NCODE_CBLOCK
+ *
+ *****************************************************************************/
+node *
+SSACFNcode (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("SSACFNcode");
+
+    NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

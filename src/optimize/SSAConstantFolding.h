@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.10  2004/09/25 14:35:52  ktr
+ * Whenever a generator is known to cover just one index, the withid is assumed
+ * to be constant inside thate corresponding code.
+ *
  * Revision 1.9  2004/07/18 19:54:54  sah
  * switch to new INFO structure
  * PHASE I
@@ -75,6 +79,9 @@ extern node *SSACFap (node *arg_node, info *arg_info);
 extern node *SSACFid (node *arg_node, info *arg_info);
 extern node *SSACFarray (node *arg_node, info *arg_info);
 extern node *SSACFprf (node *arg_node, info *arg_info);
+extern node *SSACFNwith (node *arg_node, info *arg_info);
+extern node *SSACFNpart (node *arg_node, info *arg_info);
+extern node *SSACFNcode (node *arg_node, info *arg_info);
 extern node *SSACFNgen (node *arg_node, info *arg_info);
 extern node *SSACFfuncond (node *arg_node, info *arg_info);
 
