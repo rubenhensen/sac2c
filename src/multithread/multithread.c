@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2004/07/06 12:50:54  skt
+ * support for propagate_executionmode added
+ *
  * Revision 3.4  2004/06/08 14:51:39  skt
  * tag_executionmode added
  *
@@ -152,6 +155,7 @@
 #include "blocks_lift.h"
 #include "adjust_calls.h"
 #include "tag_executionmode.h"
+#include "propagate_executionmode.h"
 #include "assignments_rearrange.h"
 
 /** <!--*********************************************************************->
@@ -593,14 +597,34 @@ MUTHmodul (node *arg_node, node *arg_info)
     }
 
     /*
-     *  --- ScheduleInit (schin) ---
+     *  --- TagExecutionmode (tem) ---
      */
-    DBUG_PRINT ("MUTH", ("begin ScheduleInit"));
-    MODUL_FUNS (arg_node)
-      = MUTHdriver (MODUL_FUNS (arg_node), arg_info, FALSE, ScheduleInit, MUTHignore);
-    DBUG_PRINT ("MUTH", ("end ScheduleInit"));
+    DBUG_PRINT ("MUTH", ("begin TagExecutionmode"));
 
-    if ((break_after == PH_multithread) && (strcmp ("schin", break_specifier) == 0)) {
+    old_arg_info = arg_info;
+    arg_info = MakeInfo ();
+
+    arg_node = TagExecutionmode (arg_node, arg_info);
+
+    DBUG_PRINT ("MUTH", ("end TagExecutionmode"));
+
+    if ((break_after == PH_multithread) && (strcmp ("tem", break_specifier) == 0)) {
+        goto cont;
+    }
+
+    /*
+     *  --- PropagateExecutionmode (pem) ---
+     */
+    DBUG_PRINT ("MUTH", ("begin PropagateExecutionmode"));
+
+    arg_node = PropagateExecutionmode (arg_node, arg_info);
+
+    arg_info = FreeTree (arg_info);
+    arg_info = old_arg_info;
+
+    DBUG_PRINT ("MUTH", ("end PropagateExecutionmode"));
+
+    if ((break_after == PH_multithread) && (strcmp ("pem", break_specifier) == 0)) {
         goto cont;
     }
 
