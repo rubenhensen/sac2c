@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.56  1998/03/13 12:55:25  dkr
+# make deps done
+#
 # Revision 1.55  1998/03/04 00:10:09  dkr
 # 'clean' now deletes the subdir .sb, too
 #
@@ -244,7 +247,7 @@ Error.o: /usr/include/stdarg.h /usr/include/varargs.h
 Error.o: /usr/include/sys/va_list.h /usr/include/stdio.h
 Error.o: /usr/include/sys/feature_tests.h /usr/include/string.h Error.h
 Error.o: /usr/include/stdlib.h types.h globals.h tree_basic.h
-Error.o: ../../inc/dbug.h internal_lib.h ../modules/filemgr.h
+Error.o: ../../inc/dbug.h internal_lib.h ../modules/filemgr.h resource.h
 free.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 free.o: /usr/include/stdio.h /usr/include/sys/va_list.h ../../inc/dbug.h
 free.o: my_debug.h types.h tree_basic.h tree_compound.h Error.h

@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.29  1998/03/13 12:55:30  dkr
+# make deps done
+#
 # Revision 1.28  1998/03/04 00:10:55  dkr
 # 'clean' now deletes the subdir .sb, too
 #
@@ -161,6 +164,7 @@ filemgr.o: /usr/include/sys/types.h /usr/include/sys/isa_defs.h
 filemgr.o: /usr/include/sys/machtypes.h /usr/include/sys/unistd.h
 filemgr.o: ../../inc/dbug.h /usr/include/stdio.h ../global/internal_lib.h
 filemgr.o: ../global/Error.h ../global/types.h ../global/globals.h filemgr.h
+filemgr.o: ../global/resource.h
 implicittypes.o: ../global/types.h ../global/tree_basic.h
 implicittypes.o: ../global/tree_compound.h ../global/Error.h
 implicittypes.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
