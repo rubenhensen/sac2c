@@ -1,5 +1,8 @@
 <!--
   $Log$
+  Revision 1.83  2004/11/25 21:02:30  sbs
+  SPEXPRs added in withops
+
   Revision 1.82  2004/11/25 20:54:51  sah
   added another traversal. POOP!
 
@@ -3870,7 +3873,15 @@
           </target>
         </son>
       </sons>
-      <attributes></attributes>
+      <attributes>
+        <attribute name="SPEXPR" mandatory="yes">
+          <type name="Link">
+          </type>
+          <phases>
+            <range from="scanparse" to="scanparse" />
+          </phases>
+        </attribute>
+      </attributes>
       <flags></flags>
     </node>
 <!--
@@ -3897,7 +3908,15 @@
           </target>
         </son>
       </sons>
-      <attributes></attributes>
+      <attributes>
+        <attribute name="SPEXPR" mandatory="yes">
+          <type name="Link">
+          </type>
+          <phases>
+            <range from="scanparse" to="scanparse" />
+          </phases>
+        </attribute>
+      </attributes>
       <flags></flags>
     </node>
 <!--
@@ -3948,6 +3967,13 @@
             <range from="typecheck" to="precompile" />
             <range from="precompile" to="compile" />
             <range from="compile" to="final" />
+          </phases>
+        </attribute>
+        <attribute name="SPEXPR" mandatory="yes">
+          <type name="Link">
+          </type>
+          <phases>
+            <range from="scanparse" to="scanparse" />
           </phases>
         </attribute>
       </attributes>
