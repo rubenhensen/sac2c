@@ -1,5 +1,8 @@
 dnl
 dnl $Log$
+dnl Revision 1.37  2004/11/09 15:44:10  sah
+dnl added bsd support
+dnl
 dnl Revision 1.36  2004/11/09 12:58:52  sah
 dnl added some flags for new module system
 dnl
@@ -366,7 +369,7 @@ mkdir .ar_magic_file_test
 cd .ar_magic_file_test
 touch testfile
 ar -rc test.ar testfile
-rm testfile
+rm testfile >& /dev/null
 ar -x test.ar
 [if [ -f ________64ELEL_ ]; then]
   AC_DEFINE(MUST_KILL_AR_MAGIC_FILE,1,set to 1 if ar generates a magic file)
@@ -375,7 +378,7 @@ ar -x test.ar
 else
   AC_MSG_RESULT(not found);
 fi
-rm testfile test.ar
+rm testfile test.ar >& /dev/null
 cd ..
 rmdir .ar_magic_file_test
 
@@ -507,6 +510,11 @@ case "$target_os" in
     OSFLAGS=["-no-cpp-precomp -Wno-long-double"]
     LD_DYNAMIC=["ld -undefined suppress -flat_namespace -bundle /usr/lib/bundle1.o"]
     AC_MSG_RESULT([OS X settings])
+    ;;
+  *bsd*)
+    OSFLAGS=["-fpic"]
+    LD_DYNAMIC=["ld -dy -shared -symbolic"]
+    AC_MSG_RESULT([BSD settings])
     ;;
   *)
     AC_MSG_RESULT([unknown])
