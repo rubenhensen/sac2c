@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/11/21 22:45:20  sbs
+ * SacDevCamp04
+ *
  * Revision 1.2  2004/11/08 14:20:38  sah
  * moved some code
  *
@@ -14,13 +17,7 @@
 #define NEW_INFO
 
 #include "resolvepragma.h"
-#include "tree_basic.h"
-#include "tree_compound.h"
-#include "stringset.h"
-#include "traverse.h"
-#include "free.h"
 #include "dbug.h"
-#include "Error.h"
 
 /*
  * INFO structure
@@ -44,7 +41,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = Malloc (sizeof (info));
+    result = ILIBmalloc (sizeof (info));
 
     INFO_RSP_MODULE (result) = NULL;
 
@@ -56,26 +53,18 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = Free (info);
+    info = ILIBfree (info);
 
     DBUG_RETURN (info);
 }
 
-static int *
-Nums2BoolArray (int line, int size, nums *numsp)
+static void
+CheckRefReadNums (int line, int size, node *numsp)
 {
-    int *ret, i;
-    nums *tmp;
+    int i;
+    node *tmp;
 
-    DBUG_ENTER ("Nums2BoolArray");
-
-    ret = (int *)Malloc (size * sizeof (int));
-
-    DBUG_PRINT ("PRAGMA", ("Converting nums to bool[%d]", size));
-
-    for (i = 0; i < size; i++) {
-        ret[i] = 0;
-    }
+    DBUG_ENTER ("CheckRefReadNums");
 
     tmp = numsp;
     i = 1;
@@ -87,30 +76,22 @@ Nums2BoolArray (int line, int size, nums *numsp)
             ERROR (line, ("Invalid argument of pragma 'readonly` or 'refcounting`:"));
             CONT_ERROR (
               ("Entry no.%d does not match a function parameter !", i, NUMS_NUM (tmp)));
-        } else {
-            ret[NUMS_NUM (tmp)] = 1;
         }
 
         tmp = NUMS_NEXT (tmp);
         i++;
     }
 
-    FreeAllNums (numsp);
-
-    DBUG_RETURN (ret);
+    DBUG_VOID_RETURN;
 }
 
-static int *
-Nums2IntArray (int line, int size, nums *numsp)
+static void
+CheckLinkSignNums (int line, int size, node *numsp)
 {
-    int *ret, i;
-    nums *tmp;
+    int i;
+    node *tmp;
 
-    DBUG_ENTER ("Nums2IntArray");
-
-    ret = (int *)Malloc (size * sizeof (int));
-
-    DBUG_PRINT ("PRAGMA", ("Converting nums to int[%d]", size));
+    DBUG_ENTER ("CheckLinkSignNums");
 
     for (i = 0, tmp = numsp; (i < size) && (tmp != NULL); i++, tmp = NUMS_NEXT (tmp)) {
         DBUG_PRINT ("PRAGMA", ("Nums value is %d", NUMS_NUM (tmp)));
@@ -120,8 +101,6 @@ Nums2IntArray (int line, int size, nums *numsp)
             CONT_ERROR (
               ("Entry no.%d does not match a valid parameter position !", i + 1));
         }
-
-        ret[i] = NUMS_NUM (tmp);
     }
 
     if (i < size) {
@@ -142,60 +121,61 @@ Nums2IntArray (int line, int size, nums *numsp)
         CONT_ERROR (("More entries (%d) than function parameters (%d) !", i, size));
     }
 
-    FreeAllNums (numsp);
-
-    DBUG_RETURN (ret);
+    DBUG_VOID_RETURN;
 }
 
-static node *
-ResolvePragmaReadonly (node *arg_node, node *pragma)
+/**
+ *
+ * The following code is pre SacDevCamp04. Due to its limited effect, we
+ * decided to (at least temporarily) disable these pragmas.
+ * In case a later re-activtion is desired, the code still resides here....
+
+static
+node *ResolvePragmaReadonly(node *arg_node, node *pragma)
 {
-    int cnt;
-    node *tmp_args;
-    types *tmp_types;
+  int cnt;
+  node *tmp_args;
+  types *tmp_types;
 
-    DBUG_ENTER ("ResolvePragmaReadonly");
+  DBUG_ENTER("ResolvePragmaReadonly");
 
-    DBUG_PRINT ("PRAGMA",
-                ("Resolving pragma readonly for function %s", ItemName (arg_node)));
+  DBUG_PRINT("PRAGMA",("Resolving pragma readonly for function %s",
+                       ItemName(arg_node)));
 
-    PRAGMA_READONLY (pragma)
-      = Nums2BoolArray (NODE_LINE (arg_node), PRAGMA_NUMPARAMS (pragma),
-                        PRAGMA_READONLYNUMS (pragma));
+  CheckRefReadNums(NODE_LINE(arg_node), PRAGMA_NUMPARAMS(pragma),
+PRAGMA_READONLY(pragma));
 
-    cnt = 0;
-    tmp_types = FUNDEF_TYPES (arg_node);
+  tmp_types=FUNDEF_TYPES(arg_node);
+  cnt=CountTypes(tmp_types);
 
-    while (tmp_types != NULL) {
-        cnt++;
-        tmp_types = TYPES_NEXT (tmp_types);
+  tmp_args=FUNDEF_ARGS(arg_node);
+
+  while (tmp_args!=NULL) {
+    if (PRAGMA_READONLY(pragma)[cnt]) {
+      if (ARG_ATTRIB(tmp_args)==ST_reference) {
+        ARG_ATTRIB(tmp_args)=ST_readonly_reference;
+      }
+      else {
+        WARN(NODE_LINE(arg_node),
+             ("Parameter no. %d of function '%s` is not a reference "
+              "parameter, so pragma 'readonly` has no effect on it",
+              cnt, ItemName(arg_node)));
+      }
     }
 
-    tmp_args = FUNDEF_ARGS (arg_node);
+    tmp_args=ARG_NEXT(tmp_args);
+    cnt++;
+  }
 
-    while (tmp_args != NULL) {
-        if (PRAGMA_READONLY (pragma)[cnt]) {
-            if (ARG_ATTRIB (tmp_args) == ST_reference) {
-                ARG_ATTRIB (tmp_args) = ST_readonly_reference;
-            } else {
-                WARN (NODE_LINE (arg_node),
-                      ("Parameter no. %d of function '%s` is not a reference "
-                       "parameter, so pragma 'readonly` has no effect on it",
-                       cnt, ItemName (arg_node)));
-            }
-        }
+  PRAGMA_READONLY(pragma) = ILIBfree(PRAGMA_READONLY(pragma));
 
-        tmp_args = ARG_NEXT (tmp_args);
-        cnt++;
-    }
-
-    PRAGMA_READONLY (pragma) = Free (PRAGMA_READONLY (pragma));
-
-    DBUG_RETURN (arg_node);
+  DBUG_RETURN(arg_node);
 }
+ *
+ */
 
 node *
-RSPFundef (node *arg_node, info *arg_info)
+RSPfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("RSPFundef");
 
@@ -211,35 +191,27 @@ RSPFundef (node *arg_node, info *arg_info)
 
         if (PRAGMA_FREEFUN (pragma) != NULL) {
             WARN (NODE_LINE (arg_node), ("Pragma 'freefun` has no effect on function"));
-            PRAGMA_FREEFUN (pragma) = Free (PRAGMA_FREEFUN (pragma));
+            PRAGMA_FREEFUN (pragma) = ILIBfree (PRAGMA_FREEFUN (pragma));
         }
 
         if (PRAGMA_INITFUN (pragma) != NULL) {
             WARN (NODE_LINE (arg_node), ("Pragma 'initfun` has no effect on function"));
-            PRAGMA_INITFUN (pragma) = Free (PRAGMA_INITFUN (pragma));
+            PRAGMA_INITFUN (pragma) = ILIBfree (PRAGMA_INITFUN (pragma));
         }
 
-        if (PRAGMA_LINKSIGNNUMS (pragma) != NULL) {
-            PRAGMA_LINKSIGN (pragma)
-              = Nums2IntArray (NODE_LINE (arg_node), PRAGMA_NUMPARAMS (pragma),
-                               PRAGMA_LINKSIGNNUMS (pragma));
-
-            PRAGMA_LINKSIGNNUMS (pragma) = FreeAllNums (PRAGMA_LINKSIGNNUMS (pragma));
+        if (PRAGMA_LINKSIGN (pragma) != NULL) {
+            CheckLinkSignNums (NODE_LINE (arg_node), PRAGMA_NUMPARAMS (pragma),
+                               PRAGMA_LINKSIGN (pragma));
         }
 
-        if (PRAGMA_REFCOUNTINGNUMS (pragma) != NULL) {
-            PRAGMA_REFCOUNTING (pragma)
-              = Nums2BoolArray (NODE_LINE (arg_node), PRAGMA_NUMPARAMS (pragma),
-                                PRAGMA_REFCOUNTINGNUMS (pragma));
-
-            PRAGMA_REFCOUNTINGNUMS (pragma)
-              = FreeAllNums (PRAGMA_REFCOUNTINGNUMS (pragma));
+        if (PRAGMA_REFCOUNTING (pragma) != NULL) {
+            CheckRefReadNums (NODE_LINE (arg_node), PRAGMA_NUMPARAMS (pragma),
+                              PRAGMA_REFCOUNTING (pragma));
         }
 
-        if (PRAGMA_READONLYNUMS (pragma) != NULL) {
-            arg_node = ResolvePragmaReadonly (arg_node, pragma);
-
-            PRAGMA_READONLYNUMS (pragma) = FreeAllNums (PRAGMA_READONLYNUMS (pragma));
+        if (PRAGMA_READONLY (pragma) != NULL) {
+            WARN (NODE_LINE (arg_node), ("Pragma 'readonly` has been disabled"));
+            PRAGMA_INITFUN (pragma) = ILIBfree (PRAGMA_INITFUN (pragma));
         }
 
         /*
@@ -247,11 +219,11 @@ RSPFundef (node *arg_node, info *arg_info)
          * the external dependencies of this module.
          */
         if (PRAGMA_LINKMOD (pragma) != NULL) {
-            MODUL_DEPENDENCIES (INFO_RSP_MODULE (arg_info))
+            MODULE_DEPENDENCIES (INFO_RSP_MODULE (arg_info))
               = SSAdd (PRAGMA_LINKMOD (pragma), SS_extlib,
-                       MODUL_DEPENDENCIES (INFO_RSP_MODULE (arg_info)));
+                       MODULE_DEPENDENCIES (INFO_RSP_MODULE (arg_info)));
 
-            PRAGMA_LINKMOD (pragma) = Free (PRAGMA_LINKMOD (pragma));
+            PRAGMA_LINKMOD (pragma) = ILIBfree (PRAGMA_LINKMOD (pragma));
         }
 
         /*
@@ -259,11 +231,11 @@ RSPFundef (node *arg_node, info *arg_info)
          * add it to the dependencies
          */
         if (PRAGMA_LINKOBJ (pragma) != NULL) {
-            MODUL_DEPENDENCIES (INFO_RSP_MODULE (arg_info))
-              = SSAdd (PRAGMA_LINKOBJ (pragma), SS_objfile,
-                       MODUL_DEPENDENCIES (INFO_RSP_MODULE (arg_info)));
+            MODULE_DEPENDENCIES (INFO_RSP_MODULE (arg_info))
+              = SSadd (PRAGMA_LINKOBJ (pragma), SS_objfile,
+                       MODULE_DEPENDENCIES (INFO_RSP_MODULE (arg_info)));
 
-            PRAGMA_LINKOBJ (pragma) = Free (PRAGMA_LINKOBJ (pragma));
+            PRAGMA_LINKOBJ (pragma) = ILIBfree (PRAGMA_LINKOBJ (pragma));
         }
 
         /*
@@ -274,7 +246,7 @@ RSPFundef (node *arg_node, info *arg_info)
             && (PRAGMA_LINKNAME (pragma) == NULL) && (PRAGMA_LINKMOD (pragma) == NULL)
             && (PRAGMA_LINKSIGN (pragma) == NULL)
             && (PRAGMA_REFCOUNTING (pragma) == NULL)) {
-            FUNDEF_PRAGMA (arg_node) = FreeNode (pragma);
+            FUNDEF_PRAGMA (arg_node) = FREEfreeNode (pragma);
         }
     }
 
@@ -286,26 +258,26 @@ RSPFundef (node *arg_node, info *arg_info)
 }
 
 node *
-RSPModul (node *arg_node, info *arg_info)
+RSPmodul (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("RSPModul");
 
     INFO_RSP_MODULE (arg_info) = arg_node;
 
-    if (MODUL_FUNDECS (arg_node) != NULL) {
-        MODUL_FUNDECS (arg_node) = Trav (MODUL_FUNDECS (arg_node), arg_info);
+    if (MODULE_FUNDECS (arg_node) != NULL) {
+        MODULE_FUNDECS (arg_node) = Trav (MODULE_FUNDECS (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
 }
 
 void
-DoResolvePragmas (node *syntax_tree)
+RSPdoResolvePragmas (node *syntax_tree)
 {
     funtab *store_tab;
     info *info;
 
-    DBUG_ENTER ("DoResolvePragmas");
+    DBUG_ENTER ("RSPdoResolvePragmas");
 
     store_tab = act_tab;
     act_tab = rsp_tab;
