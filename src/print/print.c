@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.150  1998/03/03 23:53:19  dkr
+ * added PrintNwithid, PrintNwithop, PrintNcode, ...
+ * added print-routines for N_Nwith2-nodes
+ *
  * Revision 1.149  1998/03/03 17:30:09  cg
  * The C file resulting from a module/class implementation compiled with
  * link style 1 (one large object code file) is now printed to the temporary
@@ -1882,7 +1886,7 @@ PrintPragma (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PrintNWith(node *arg_node, node *arg_info)
+ *   node *PrintNwith(node *arg_node, node *arg_info)
  *
  * description:
  *   prints Nwith node.
@@ -1900,11 +1904,11 @@ PrintPragma (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PrintNWith (node *arg_node, node *arg_info)
+PrintNwith (node *arg_node, node *arg_info)
 {
     node *buffer;
 
-    DBUG_ENTER ("PrintNWith");
+    DBUG_ENTER ("PrintNwith");
 
     DBUG_ASSERT (arg_info, "arg_info is NULL");
     buffer = arg_info->node[2];
@@ -1926,36 +1930,7 @@ PrintNWith (node *arg_node, node *arg_info)
         Trav (NWITH_PART (arg_node), arg_info);
     }
 
-    INDENT;
-    switch (NWITHOP_TYPE (NWITH_WITHOP (arg_node))) {
-    case WO_genarray:
-        fprintf (outfile, "genarray( ");
-        Trav (NWITHOP_SHAPE (NWITH_WITHOP (arg_node)), arg_info);
-        break;
-    case WO_modarray:
-        fprintf (outfile, "modarray( ");
-        Trav (NWITHOP_ARRAY (NWITH_WITHOP (arg_node)), arg_info);
-        if (!NPART_NEXT (NWITH_PART (arg_node))) /* output format 2 */
-            fprintf (outfile, ", dummy");
-        break;
-    case WO_foldfun:
-        if (NWITHOP_MOD (NWITH_WITHOP (arg_node)) == NULL)
-            fprintf (outfile, "fold/*fun*/( %s, ", NWITHOP_FUN (NWITH_WITHOP (arg_node)));
-        else
-            fprintf (outfile, "fold/*fun*/( %s:%s, ",
-                     NWITHOP_MOD (NWITH_WITHOP (arg_node)),
-                     NWITHOP_FUN (NWITH_WITHOP (arg_node)));
-        Trav (NWITHOP_NEUTRAL (NWITH_WITHOP (arg_node)), arg_info);
-        break;
-    case WO_foldprf:
-        fprintf (outfile, "fold/*prf*/( %s",
-                 prf_string[NWITHOP_PRF (NWITH_WITHOP (arg_node))]);
-        if (NWITHOP_NEUTRAL (NWITH_WITHOP (arg_node))) {
-            fprintf (outfile, ", ");
-            Trav (NWITHOP_NEUTRAL (NWITH_WITHOP (arg_node)), arg_info);
-        }
-        break;
-    }
+    NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
 
     if (!NPART_NEXT (NWITH_PART (arg_node))) {
         /* output format 2: now we have in
@@ -1963,7 +1938,6 @@ PrintNWith (node *arg_node, node *arg_info)
         fprintf (outfile, ", ");
         Trav (arg_info->node[2], arg_info);
     }
-
     fprintf (outfile, ")");
 
     arg_info->node[2] = buffer;
@@ -1973,7 +1947,38 @@ PrintNWith (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PrintNGenerator(node *gen, node *idx, node *arg_info)
+ *   node *PrintNwithid(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   prints N_Nwithid-nodes
+ *
+ ******************************************************************************/
+
+node *
+PrintNwithid (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintNwithid");
+
+    if (NWITHID_VEC (arg_node)) {
+        PrintIds (NWITHID_VEC (arg_node));
+        if (NWITHID_IDS (arg_node)) {
+            fprintf (outfile, "=");
+        }
+    }
+
+    if (NWITHID_IDS (arg_node)) {
+        fprintf (outfile, "[");
+        PrintIds (NWITHID_IDS (arg_node));
+        fprintf (outfile, "]");
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *PrintNgenerator(node *gen, node *idx, node *arg_info)
  *
  * description:
  *   prints a generator
@@ -1984,9 +1989,9 @@ PrintNWith (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PrintNGenerator (node *gen, node *idx, node *arg_info)
+PrintNgenerator (node *gen, node *idx, node *arg_info)
 {
-    DBUG_ENTER ("PrintNGenerator");
+    DBUG_ENTER ("PrintNgenerator");
 
     fprintf (outfile, "(");
 
@@ -1998,15 +2003,7 @@ PrintNGenerator (node *gen, node *idx, node *arg_info)
     fprintf (outfile, " %s ", prf_string[NGEN_OP1 (gen)]);
 
     /* print indices */
-    if (NWITHID_VEC (idx))
-        PrintIds (NWITHID_VEC (idx));
-    if (NWITHID_VEC (idx) && NWITHID_IDS (idx))
-        fprintf (outfile, "=");
-    if (NWITHID_IDS (idx)) {
-        fprintf (outfile, "[");
-        PrintIds (NWITHID_IDS (idx));
-        fprintf (outfile, "]");
-    }
+    idx = Trav (idx, arg_info);
 
     /* print second operator and lower bound */
     fprintf (outfile, " %s ", prf_string[NGEN_OP2 (gen)]);
@@ -2033,40 +2030,34 @@ PrintNGenerator (node *gen, node *idx, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PrintNPart(node *arg_node, node *arg_info)
+ *   node *PrintNcode(node *arg_node, node *arg_info)
  *
  * description:
- *   prints N_Npart nodes
- *
+ *   prints N_Ncode-nodes
  *
  ******************************************************************************/
 
 node *
-PrintNPart (node *arg_node, node *arg_info)
+PrintNcode (node *arg_node, node *arg_info)
 {
-    node *code;
+    node *block;
 
-    DBUG_ENTER ("PrintNPart");
-
-    /* print generator */
-    if (!arg_info->node[2])
-        INDENT; /* each gen in a new line. */
-    PrintNGenerator (NPART_GEN (arg_node), NPART_WITHID (arg_node), arg_info);
+    DBUG_ENTER ("PrintNcode");
 
     /* print the code section; first the body */
-    code = NPART_CODE (arg_node);
-    DBUG_ASSERT (code, "part within WL without pointer to N_Ncode");
-    if (NCODE_CBLOCK (code)) {
+    block = NCODE_CBLOCK (arg_node);
+    if (block != NULL) {
         fprintf (outfile, " {\n");
         indent++;
 
-        if (BLOCK_VARDEC (NCODE_CBLOCK (code))) {
-            Trav (BLOCK_VARDEC (NCODE_CBLOCK (code)), arg_info);
+        if (BLOCK_VARDEC (block) != NULL) {
+            BLOCK_VARDEC (block) = Trav (BLOCK_VARDEC (block), arg_info);
             fprintf (outfile, "\n");
         }
 
-        if (BLOCK_INSTR (NCODE_CBLOCK (code)))
-            Trav (BLOCK_INSTR (NCODE_CBLOCK (code)), arg_info);
+        if (BLOCK_INSTR (block) != NULL) {
+            BLOCK_INSTR (block) = Trav (BLOCK_INSTR (block), arg_info);
+        }
 
         indent--;
         INDENT;
@@ -2074,20 +2065,242 @@ PrintNPart (node *arg_node, node *arg_info)
     }
 
     /* print the expression if internal syntax should be used. Else
-     return expr in arg_info->node[2] */
-    DBUG_ASSERT (NCODE_CEXPR (code), "No expression at N_Ncode");
-    if (arg_info->node[2])
-        arg_info->node[2] = NCODE_CEXPR (code);
-    else {
+       return expr in arg_info->node[2] */
+    DBUG_ASSERT (NCODE_CEXPR (arg_node), "no expression at N_Ncode");
+    if (arg_info->node[2] != NULL) {
+        arg_info->node[2] = NCODE_CEXPR (arg_node);
+    } else {
         fprintf (outfile, " : ");
-        Trav (NCODE_CEXPR (code), arg_info);
+        NCODE_CEXPR (arg_node) = Trav (NCODE_CEXPR (arg_node), arg_info);
     }
 
-    if (NPART_NEXT (arg_node)) {
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *PrintNpart(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   prints N_Npart nodes
+ *
+ ******************************************************************************/
+
+node *
+PrintNpart (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintNpart");
+
+    /* print generator */
+    if (!arg_info->node[2])
+        INDENT; /* each gen in a new line. */
+    PrintNgenerator (NPART_GEN (arg_node), NPART_WITHID (arg_node), arg_info);
+
+    DBUG_ASSERT ((NPART_CODE (arg_node) != NULL),
+                 "part within WL without pointer to N_Ncode");
+    NPART_CODE (arg_node) = Trav (NPART_CODE (arg_node), arg_info);
+
+    if (NPART_NEXT (arg_node) != NULL) {
         fprintf (outfile, ",\n");
-        Trav (NPART_NEXT (arg_node), arg_info); /* continue with other parts */
-    } else
+        NPART_NEXT (arg_node)
+          = Trav (NPART_NEXT (arg_node), arg_info); /* continue with other parts */
+    } else {
         fprintf (outfile, "\n");
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *PrintNwithop(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   prints N_Nwithop-nodes
+ *
+ *   ATTENTION: the closed bracket ) is not printed,
+ *              because PrintNwith must append the last expr.
+ *
+ ******************************************************************************/
+
+node *
+PrintNwithop (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintNwithop");
+    INDENT;
+    switch (NWITHOP_TYPE (arg_node)) {
+    case WO_genarray:
+        fprintf (outfile, "genarray( ");
+        Trav (NWITHOP_SHAPE (arg_node), arg_info);
+        break;
+    case WO_modarray:
+        fprintf (outfile, "modarray( ");
+        Trav (NWITHOP_ARRAY (arg_node), arg_info);
+        break;
+    case WO_foldfun:
+        if (NWITHOP_MOD (arg_node) == NULL) {
+            fprintf (outfile, "fold/*fun*/( %s, ", NWITHOP_FUN (arg_node));
+        } else {
+            fprintf (outfile, "fold/*fun*/( %s:%s, ", NWITHOP_MOD (arg_node),
+                     NWITHOP_FUN (arg_node));
+        }
+        Trav (NWITHOP_NEUTRAL (arg_node), arg_info);
+        break;
+    case WO_foldprf:
+        fprintf (outfile, "fold/*prf*/( %s", prf_string[NWITHOP_PRF (arg_node)]);
+        if (NWITHOP_NEUTRAL (arg_node)) {
+            fprintf (outfile, ", ");
+            Trav (NWITHOP_NEUTRAL (arg_node), arg_info);
+        }
+        break;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *PrintNwith2(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   prints N_Nwith2-nodes
+ *
+ ******************************************************************************/
+
+node *
+PrintNwith2 (node *arg_node, node *arg_info)
+{
+    node *code;
+
+    DBUG_ENTER ("PrintNwith2");
+
+    fprintf (outfile, "new_with2 (");
+    NWITH2_WITHID (arg_node) = Trav (NWITH2_WITHID (arg_node), arg_info);
+    fprintf (outfile, ")\n");
+
+    indent++;
+    INDENT
+    fprintf (outfile, "/* operators: */\n");
+    code = NWITH2_CODE (arg_node);
+    do {
+        INDENT
+        fprintf (outfile, "op_%d =", NCODE_NO (code));
+        code = Trav (code, arg_info);
+        code = NCODE_NEXT (code);
+
+        if (code != NULL) {
+            fprintf (outfile, ",\n");
+        } else {
+            fprintf (outfile, "\n");
+        }
+    } while (code != NULL);
+    indent--;
+
+    indent++;
+    NWITH2_SEG (arg_node) = Trav (NWITH2_SEG (arg_node), arg_info);
+    indent--;
+    fprintf (outfile, "\n");
+
+    NWITH2_WITHOP (arg_node) = Trav (NWITH2_WITHOP (arg_node), arg_info);
+    fprintf (outfile, ")");
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *PrintWLseg(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   prints N_WLseg-nodes
+ *
+ ******************************************************************************/
+
+node *
+PrintWLseg (node *arg_node, node *arg_info)
+{
+    node *seg;
+    int i = 0;
+
+    DBUG_ENTER ("PrintWLseg");
+
+    seg = arg_node;
+    do {
+        INDENT
+        fprintf (outfile, "/* segment %d: */", i++);
+        WLSEG_PROJ (arg_node) = Trav (WLSEG_PROJ (arg_node), arg_info);
+        seg = WLSEG_NEXT (seg);
+    } while (seg != NULL);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *PrintWLproj(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   prints N_WLproj-nodes
+ *
+ ******************************************************************************/
+
+node *
+PrintWLproj (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintWLproj");
+
+    fprintf (outfile, "\n");
+    INDENT
+    fprintf (outfile, "(%d -> %d), step %d\n", WLPROJ_BOUND1 (arg_node),
+             WLPROJ_BOUND2 (arg_node), WLPROJ_STEP (arg_node));
+
+    indent++;
+    WLPROJ_GRID (arg_node) = Trav (WLPROJ_GRID (arg_node), arg_info);
+    indent--;
+
+    if (WLPROJ_NEXT (arg_node) != NULL) {
+        WLPROJ_NEXT (arg_node) = Trav (WLPROJ_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *PrintWLgrid(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   prints N_WLgrid-nodes
+ *
+ ******************************************************************************/
+
+node *
+PrintWLgrid (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintWLgrid");
+
+    INDENT
+    fprintf (outfile, "(%d -> %d): ", WLGRID_OFFSET (arg_node),
+             WLGRID_OFFSET (arg_node) + WLGRID_WIDTH (arg_node));
+
+    indent += 2;
+    if (WLGRID_NEXTDIM (arg_node) != NULL) {
+        WLGRID_NEXTDIM (arg_node) = Trav (WLGRID_NEXTDIM (arg_node), arg_info);
+    } else {
+        DBUG_ASSERT ((WLGRID_CODE (arg_node) != NULL), "WLGRID_CODE not found");
+        fprintf (outfile, "op_%d", NCODE_NO (WLGRID_CODE (arg_node)));
+    }
+    indent -= 2;
+
+    if (WLGRID_NEXT (arg_node) != NULL) {
+        WLGRID_NEXT (arg_node) = Trav (WLGRID_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
