@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2002/08/05 18:08:15  dkr
+ * comment corrected
+ *
  * Revision 1.9  2002/07/31 15:36:29  dkr
  * types for NT tags reorganized
  *
@@ -245,7 +248,7 @@ ShapeId (void *nt, char *idx_str, int idx)
 /******************************************************************************
  *
  * Function:
- *   void SizeId( void *nt, char *idx_str, int idx)
+ *   void SizeId( void *nt)
  *
  * Description:
  *
