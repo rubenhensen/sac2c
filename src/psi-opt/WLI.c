@@ -1,6 +1,10 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 2.5  1999/04/29 07:37:46  bs
+ * Function CreateIndexInfoA modified: N_id nodes made by flattening
+ * arrays will be used like arrays.
+ *
  * Revision 2.4  1999/03/31 15:09:19  bs
  * I did some code cosmetics with the MRD_GET... macros.
  *
@@ -413,7 +417,7 @@ CreateIndexInfoSxS (node *prfn, node *arg_info)
 void
 CreateIndexInfoA (node *prfn, node *arg_info)
 {
-    int id_no = 0, elts, i, index, val;
+    int id_no = 0, elts, i, index, val, *tmpiv;
     node *idn, *constn, *tmpn, *cf_node, *args[2], *assignn, *wln;
     index_info *iinfo, *tmpinfo;
     types *type;
@@ -454,7 +458,7 @@ CreateIndexInfoA (node *prfn, node *arg_info)
     }
 
     /* Is idn an Id of an index vector (or transformation)? */
-    if (id_no && N_id == NODE_TYPE (idn)) {
+    if (id_no && NODE_TYPE (idn) == N_id) {
         tmpinfo = ValidLocalId (idn);
         index = LocateIndexVar (idn, wln);
 
@@ -467,18 +471,29 @@ CreateIndexInfoA (node *prfn, node *arg_info)
             iinfo = CreateIndex (elts);
             INDEX (assignn) = iinfo; /* make this N_assign valid */
 
-            iinfo->arg_no = 1 == id_no ? 2 : 1;
+            iinfo->arg_no = (1 == id_no) ? (2) : (1);
             iinfo->prf = SimplifyFun (PRF_PRF (prfn));
 
-            if (N_num == NODE_TYPE (constn))
-                val = NUM_VAL (constn);
-            else
+            if (NODE_TYPE (constn) == N_array)
                 tmpn = ARRAY_AELEMS (constn);
+
             for (i = 0; i < elts; i++) {
-                if (N_num != NODE_TYPE (constn)) {
+                switch (NODE_TYPE (constn)) {
+                case N_num:
+                    val = NUM_VAL (constn);
+                    break;
+                case N_array:
                     DBUG_ASSERT (tmpn, ("Too few elements in array"));
                     val = NUM_VAL (EXPRS_EXPR (tmpn));
                     tmpn = EXPRS_NEXT (tmpn);
+                    break;
+                case N_id:
+                    if (!IsConstantArray (constn, N_num))
+                        break;
+                    val = ID_INTVEC (constn)[i];
+                    break;
+                default:
+                    break;
                 }
 
                 if (-1 == index) { /* index vector */
@@ -510,7 +525,7 @@ CreateIndexInfoA (node *prfn, node *arg_info)
     }     /* this is an Id. */
 
     /* Is it a contruction based on index scalars ([i,i,c])? */
-    if (id_no && N_array == NODE_TYPE (idn)) {
+    if (id_no && NODE_TYPE (idn) == N_array) {
         iinfo = Scalar2ArrayIndex (idn, wln);
         if (iinfo) {
             /* This is a valid vector. Permutation and last of index_info are
@@ -518,7 +533,7 @@ CreateIndexInfoA (node *prfn, node *arg_info)
             elts = iinfo->vector;
             INDEX (assignn) = iinfo;
 
-            iinfo->arg_no = 1 == id_no ? 2 : 1;
+            iinfo->arg_no = (1 == id_no) ? (2) : (1);
             iinfo->prf = SimplifyFun (PRF_PRF (prfn));
 
             if (N_num == NODE_TYPE (constn))
@@ -527,7 +542,9 @@ CreateIndexInfoA (node *prfn, node *arg_info)
                 tmpn = ARRAY_AELEMS (constn);
             for (i = 0; i < elts; i++) {
                 if (N_num != NODE_TYPE (constn)) {
+
                     DBUG_ASSERT (tmpn, ("Too few elements in array"));
+
                     val = NUM_VAL (EXPRS_EXPR (tmpn));
                     tmpn = EXPRS_NEXT (tmpn);
                 }
