@@ -1,7 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.4  1996/01/02 17:48:07  cg
+ * Revision 1.5  1996/01/05 12:39:26  cg
+ * Now, SIB information is retrieved from SAC library files.
+ * The existence of all necessary module/class implementations
+ * is checked and archive files are extracted from library files.
+ *
+ * Revision 1.4  1996/01/02  17:48:07  cg
  * Typedefs in SIBs which are again based on user-defined types are now resolved.
  *
  * Revision 1.3  1996/01/02  16:09:21  cg
@@ -38,6 +43,8 @@
 
 static node *sibs = NULL; /* start of list of N_sib nodes storing parsed
                              SAC Information Blocks    */
+
+static strings *extmods = NULL; /* list of imported external modules */
 
 /*
  *  forward declarations
@@ -100,6 +107,123 @@ ReadSib (node *syntax_tree)
 
 /*
  *
+ *  functionname  : CreateArchive
+ *  arguments     : 1) module/class name
+ *  description   : opens archive file in storedir and copies yyin to it.
+ *  global vars   : yyin, storedirname
+ *  internal funs : ---
+ *  external funs : WriteOpen, fscanf, fprintf, fclose, feof, SystemCall
+ *  macros        :
+ *
+ *  remarks       : is called in sac.y when parsing end of SIB
+ *
+ */
+
+void
+CreateArchive (char *name)
+{
+    char tmp;
+    FILE *archive;
+
+    DBUG_ENTER ("CreateArchive");
+
+    archive = WriteOpen ("%s%s.a", store_dirname, name);
+
+    while (!feof (yyin)) {
+        fscanf (yyin, "%c", &tmp);
+        fprintf (archive, "%c", tmp);
+    }
+
+    fclose (archive);
+
+    SystemCall ("ranlib %s%s.a", store_dirname, name);
+
+    /*
+     *  ranlib must be rerun here because otherwise the date of the
+     *  archive's symbol table is older than the archive file itself
+     *  which causes error messages by the C-compiler.
+     */
+
+    DBUG_VOID_RETURN;
+}
+
+/*
+ *
+ *  functionname  : CheckExternalImplementation
+ *  arguments     : 1) name of external module/class
+ *  description   : looks for implementation of module/class
+ *                  and copies it to store_dirname
+ *  global vars   : store_dirname, ext_mods, sibs
+ *  internal funs : ---
+ *  external funs : SystemCall, strcpy, strcat, FindFile
+ *  macros        : MODIMP_PATH
+ *
+ *  remarks       :
+ *
+ */
+
+void
+CheckExternalImplementation (char *name)
+{
+    strings *tmp;
+    static char buffer[MAX_FILE_NAME];
+    char *pathname;
+    node *tmpsibs;
+
+    DBUG_ENTER ("CheckExternalImplementation");
+
+    DBUG_ASSERT (name != NULL, "called CheckExternalImplementation with name==NULL");
+
+    /*
+     *  First, we look among sibs because even external items can be imported
+     *  through sibs rather than directly.
+     */
+
+    tmpsibs = sibs;
+
+    while ((tmpsibs != NULL) && (0 != strcmp (name, SIB_NAME (tmpsibs)))) {
+        tmpsibs = SIB_NEXT (tmpsibs);
+    }
+
+    tmp = extmods;
+
+    while ((tmp != NULL) && (0 != strcmp (STRINGS_STRING (tmp), name))) {
+        tmp = STRINGS_NEXT (tmp);
+    }
+
+    if ((tmp == NULL) && (tmpsibs == NULL)) {
+        strcpy (buffer, name);
+        strcat (buffer, ".o");
+
+        NOTE (("Searching for implementation of module/class '%s` ...", name));
+
+        pathname = FindFile (MODIMP_PATH, buffer);
+
+        if (pathname == NULL) {
+            strcpy (buffer, name);
+            strcat (buffer, ".a");
+
+            pathname = FindFile (MODIMP_PATH, buffer);
+
+            if (pathname == NULL) {
+                SYSABORT (("Unable to find implementation of module/class '%s`", name));
+            } else {
+                NOTE (("  Found archive file \"%s\" !", pathname));
+                SystemCall ("cp %s %s", pathname, store_dirname);
+            }
+        } else {
+            NOTE (("  Found object file \"%s\"", pathname));
+            SystemCall ("cp %s %s", pathname, store_dirname);
+        }
+
+        extmods = MakeStrings (name, extmods);
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/*
+ *
  *  functionname  : FindSib
  *  arguments     : 1) name of module/class
  *  description   : checks in the list of sibs if this sib has already been
@@ -125,6 +249,8 @@ FindSib (char *name)
 
     DBUG_ENTER ("FindSib");
 
+    DBUG_ASSERT (name != NULL, "called FindSib with name==NULL");
+
     tmp = sibs;
 
     while ((tmp != NULL) && (0 != strcmp (name, SIB_NAME (tmp)))) {
@@ -132,30 +258,29 @@ FindSib (char *name)
     }
 
     if (tmp == NULL) {
-        NOTE (("\nEvaluating SAC-Information-Block '%s`!", name));
-
         strcpy (buffer, name);
-        strcat (buffer, ".sib");
+        strcat (buffer, ".lib");
+
+        NOTE (("Searching for implementation of module/class '%s` ...", name));
 
         pathname = FindFile (MODIMP_PATH, buffer);
-        yyin = fopen (pathname, "r");
 
-        if (yyin == NULL) {
-            DBUG_PRINT ("IMPORT", ("Module %s has no SIB-file", name));
-            SYSABORT (("SAC-module/class '%s` has no SIB-file", name));
-        } else {
-            DBUG_PRINT ("READSIB", ("...parsing %s.sib", name));
-            NOTE (("  Parsing file \"%s\" ...", pathname));
-
-            linenum = 1;
-            start_token = PARSE_SIB;
-
-            yyparse ();
-
-            SIB_NEXT (sib_tree) = sibs;
-            sibs = sib_tree;
-            fclose (yyin);
+        if (pathname == NULL) {
+            SYSABORT (("Unable to find implementation of module/class '%s`", name));
         }
+
+        NOTE (("  Evaluating SAC library \"%s\" !", pathname));
+
+        yyin = fopen (pathname, "r");
+        linenum = 1;
+        start_token = PARSE_SIB;
+
+        yyparse ();
+
+        fclose (yyin);
+
+        SIB_NEXT (sib_tree) = sibs;
+        sibs = sib_tree;
 
         tmp = sibs;
     }
@@ -660,8 +785,10 @@ EnsureExistFuns (node *fundef, node *modul, node *sib)
  *                  N_objdef nodes.
  *  global vars   : ---
  *  internal funs : FindSib, FindSibEntry, MakeArgList, EnsureExistObjects,
- *                  EnsureExistTypes, EnsureExistFuns, CheckExistObjects
- *  external funs : Trav, ConcatNodelist
+ *                  EnsureExistTypes, EnsureExistFuns, CheckExistObjects,
+ *                  CheckExternalImplementation
+ *  external funs : Trav, ConcatNodelist, CountFunctionParams
+ *                  Nums2BoolArray, Nums2IntArray
  *  macros        :
  *
  *  remarks       :
@@ -671,7 +798,8 @@ EnsureExistFuns (node *fundef, node *modul, node *sib)
 node *
 RSIBfundef (node *arg_node, node *arg_info)
 {
-    node *sib_entry, *sib = NULL;
+    node *sib_entry, *sib = NULL, *pragma;
+    int count_params;
 
     DBUG_ENTER ("RSIBfundef");
 
@@ -699,37 +827,62 @@ RSIBfundef (node *arg_node, node *arg_info)
             FUNDEF_ARGS (arg_node) = FUNDEF_ARGS (sib_entry);
             FUNDEF_TYPES (arg_node) = FUNDEF_TYPES (sib_entry);
             FUNDEF_LINKMOD (arg_node) = SIB_NAME (sib);
-            FUNDEF_PRAGMA (arg_node) = FUNDEF_PRAGMA (sib_entry);
 
             if (FUNDEF_PRAGMA (sib_entry) != NULL) {
+                pragma = FUNDEF_PRAGMA (sib_entry);
+
+                FUNDEF_PRAGMA (arg_node) = pragma;
+
+                count_params = CountFunctionParams (arg_node);
+
+                if (PRAGMA_LINKSIGNNUMS (pragma) != NULL) {
+                    DBUG_PRINT ("READSIB", ("Converting pragma linksign"));
+
+                    PRAGMA_LINKSIGN (pragma)
+                      = Nums2IntArray (NODE_LINE (arg_node), count_params,
+                                       PRAGMA_LINKSIGNNUMS (pragma));
+                }
+
+                if (PRAGMA_REFCOUNTINGNUMS (pragma) != NULL) {
+                    DBUG_PRINT ("READSIB", ("Converting pragma refcounting"));
+
+                    PRAGMA_REFCOUNTING (pragma)
+                      = Nums2BoolArray (NODE_LINE (arg_node), count_params,
+                                        PRAGMA_REFCOUNTINGNUMS (pragma));
+                }
+
+                PRAGMA_NUMPARAMS (pragma) = count_params;
+
                 DBUG_PRINT ("READSIB", ("Resolving touched objects of function %s",
                                         ItemName (arg_node)));
 
                 FUNDEF_NEEDOBJS (arg_node)
-                  = EnsureExistObjects (FUNDEF_TOUCH (sib_entry), arg_info, sib,
+                  = EnsureExistObjects (PRAGMA_TOUCH (pragma), arg_info, sib,
                                         ST_readonly_reference);
+                PRAGMA_TOUCH (pragma) = NULL;
 
                 DBUG_PRINT ("READSIB", ("Resolving effected objects of function %s",
                                         ItemName (arg_node)));
 
                 FUNDEF_NEEDOBJS (arg_node)
-                  = ConcatNodelist (EnsureExistObjects (FUNDEF_EFFECT (sib_entry),
-                                                        arg_info, sib, ST_reference),
+                  = ConcatNodelist (EnsureExistObjects (PRAGMA_EFFECT (pragma), arg_info,
+                                                        sib, ST_reference),
                                     FUNDEF_NEEDOBJS (arg_node));
+                PRAGMA_EFFECT (pragma) = NULL;
 
                 DBUG_PRINT ("READSIB", ("Resolving needed types of function %s",
                                         ItemName (arg_node)));
 
                 FUNDEF_NEEDTYPES (arg_node)
-                  = EnsureExistTypes (FUNDEF_PRATYPES (sib_entry), arg_info, sib);
-                FUNDEF_PRATYPES (sib_entry) = NULL;
+                  = EnsureExistTypes (PRAGMA_NEEDTYPES (pragma), arg_info, sib);
+                PRAGMA_NEEDTYPES (pragma) = NULL;
 
                 DBUG_PRINT ("READSIB", ("Resolving needed functions of function %s",
                                         ItemName (arg_node)));
 
                 FUNDEF_NEEDFUNS (arg_node)
-                  = EnsureExistFuns (FUNDEF_PRAFUNS (sib_entry), arg_info, sib);
-                FUNDEF_PRAFUNS (sib_entry) = NULL;
+                  = EnsureExistFuns (PRAGMA_NEEDFUNS (pragma), arg_info, sib);
+                PRAGMA_NEEDFUNS (pragma) = NULL;
             }
         }
     } else {
@@ -740,21 +893,65 @@ RSIBfundef (node *arg_node, node *arg_info)
          *  generate a node list of the respective N_objdef nodes.
          */
 
-        if (FUNDEF_PRAGMA (arg_node) != NULL) {
-            FUNDEF_NEEDOBJS (arg_node)
-              = CheckExistObjects (FUNDEF_EFFECT (arg_node), arg_info, ST_reference,
-                                   NODE_LINE (arg_node));
+        if (FUNDEF_MOD (arg_node) == NULL) {
+            if (FUNDEF_PRAGMA (arg_node) != NULL) {
+                FUNDEF_NEEDOBJS (arg_node)
+                  = CheckExistObjects (FUNDEF_EFFECT (arg_node), arg_info, ST_reference,
+                                       NODE_LINE (arg_node));
 
-            FUNDEF_NEEDOBJS (arg_node)
-              = ConcatNodelist (FUNDEF_NEEDOBJS (arg_node),
-                                CheckExistObjects (FUNDEF_EFFECT (arg_node), arg_info,
-                                                   ST_readonly_reference,
-                                                   NODE_LINE (arg_node)));
+                FUNDEF_NEEDOBJS (arg_node)
+                  = ConcatNodelist (FUNDEF_NEEDOBJS (arg_node),
+                                    CheckExistObjects (FUNDEF_EFFECT (arg_node), arg_info,
+                                                       ST_readonly_reference,
+                                                       NODE_LINE (arg_node)));
+            }
+
+            if (NULL != FUNDEF_LINKMOD (arg_node)) {
+                CheckExternalImplementation (FUNDEF_LINKMOD (arg_node));
+            }
+            /*
+             *  The existence of an implementation is checked for all external
+             *  functions. The above if only excludes the main function.
+             */
         }
     }
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/*
+ *
+ *  functionname  : RSIBobjdef
+ *  arguments     :
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+
+node *
+RSIBobjdef (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("RSIBobjdef");
+
+    if (OBJDEF_STATUS (arg_node) == ST_imported) {
+        if (OBJDEF_MOD (arg_node) == NULL) {
+            CheckExternalImplementation (OBJDEF_LINKMOD (arg_node));
+        } else {
+            FindSib (OBJDEF_MOD (arg_node));
+        }
+    }
+
+    if (OBJDEF_NEXT (arg_node) != NULL) {
+        OBJDEF_NEXT (arg_node) = Trav (OBJDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -808,7 +1005,7 @@ RSIBtypedef (node *arg_node, node *arg_info)
  *  functionname  : RSIBmodul
  *  arguments     : 1) N_modul node of current program
  *                  2) arg_info unused
- *  description   : starts traversals of the functions and types
+ *  description   : starts traversals of the functions, objects and types
  *  global vars   : ---
  *  internal funs : ---
  *  external funs : Trav
@@ -837,6 +1034,15 @@ RSIBmodul (node *arg_node, node *arg_info)
 
     if (MODUL_TYPES (arg_node) != NULL) {
         MODUL_TYPES (arg_node) = Trav (MODUL_TYPES (arg_node), arg_info);
+    }
+
+    /*
+     *  The objects must be traversed in order to guarantee that all
+     *  relevant module/class implementations are copied to store_dirname.
+     */
+
+    if (MODUL_OBJS (arg_node) != NULL) {
+        MODUL_OBJS (arg_node) = Trav (MODUL_OBJS (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
