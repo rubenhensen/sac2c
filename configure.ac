@@ -1,5 +1,12 @@
 dnl
 dnl $Log$
+dnl Revision 1.34  2004/08/09 15:52:06  sah
+dnl well, we set __STDC__=0 again. This
+dnl will only work with gcc 2.xx as the
+dnl new gcc 3.xx will generate lots of warning
+dnl but who cares. As nobody uses gcc 3.xx
+dnl on solaris, forget about it.
+dnl
 dnl Revision 1.33  2004/08/09 15:37:13  sah
 dnl removved __STDC__=0 define and added
 dnl STDC_0_IN_SYSTEM_HEADERS instead
@@ -472,7 +479,7 @@ dnl generate specific flags for known os
 OSFLAGS=""
 case "$target_os" in
   solaris*)     
-     OSFLAGS=["-D__EXTENSIONS__ -DSTDC_0_IN_SYSTEM_HEADERS -DMUST_INIT_YY"]
+     OSFLAGS=["-D__EXTENSIONS__ -D__STDC__=0 -DMUST_INIT_YY"]
     ;;
   *linux*)      
     OSFLAGS=["-D_POSIX_SOURCE -D_SVID_SOURCE -D_BSD_SOURCE -Dlint"]
