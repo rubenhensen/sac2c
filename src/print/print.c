@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.27  2001/03/08 12:26:53  dkr
+ * DBUG-string PRINT_PROFILE added:
+ * prints profiling instructions in *all* phases
+ *
  * Revision 3.26  2001/03/07 14:24:19  dkr
  * PrintAssign modified:
  * N_annotate nodes are printed after phase 20 only
@@ -1472,6 +1476,9 @@ PrintAssign (node *arg_node, node *arg_info)
             INDENT;
             Trav (instr, arg_info);
             fprintf (outfile, "\n");
+        } else {
+            DBUG_EXECUTE ("PRINT_PROFILE", INDENT; Trav (instr, arg_info);
+                          fprintf (outfile, "\n"););
         }
 
         if (ASSIGN_NEXT (arg_node) != NULL) {
