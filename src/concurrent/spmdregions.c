@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.23  1998/05/15 15:44:38  cg
+ * minor bugs removed in the construction of the spmd-function
+ *
  * Revision 1.22  1998/05/12 22:40:36  dkr
  * removed attributes for N_sync
  *
@@ -96,7 +99,7 @@
  *
  ******************************************************************************/
 
-char *
+static char *
 SpmdFunName (char *name)
 {
     static no;
@@ -326,7 +329,7 @@ SPMDLiftSpmd (node *arg_node, node *arg_info)
                                 }
                                 if (DFMTestMaskEntry (SPMD_IN (arg_node),
                                                       VARDEC_NAME (vardec))) {
-                                    ARG_ATTRIB (new_farg) = ST_reference; /* ??? */
+                                    ARG_ATTRIB (new_farg) = ST_inout;
                                 }
 
                                 if (fargs == NULL) {
@@ -394,7 +397,7 @@ SPMDLiftSpmd (node *arg_node, node *arg_info)
      *          That's why we must build a void-type, when ('rettypes' == NULL).
      */
     if (rettypes == NULL) {
-        rettypes = MakeType (T_void, 0, NULL, StringCopy (type_string[T_void]), "");
+        rettypes = MakeType (T_void, 0, NULL, NULL, NULL);
     }
 
     new_fundef = MakeFundef (SpmdFunName (FUNDEF_NAME (fundef)), NULL, rettypes, fargs,
@@ -417,7 +420,6 @@ SPMDLiftSpmd (node *arg_node, node *arg_info)
     body = Trav (body, arg_info);
     INFO_SPMD_FUNDEF (arg_info) = fundef;
 
-#if 00
     /*
      * insert SPMD-function into fundef-chain of modul
      */
@@ -427,7 +429,6 @@ SPMDLiftSpmd (node *arg_node, node *arg_info)
     } else {
         FUNDEF_NEXT (fundef) = new_fundef;
     }
-#endif
 
     /*
      * build fundef for this spmd region
