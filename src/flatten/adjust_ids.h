@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2000/06/05 12:34:36  dkr
+ * Prototypes for functions AIwith, AIwith2, AIcode added
+ *
  * Revision 1.2  2000/05/29 14:29:11  dkr
  * prototype of AIwithid added
  *
@@ -35,7 +38,10 @@ extern node *AIap (node *arg_node, node *arg_info);
 extern node *AIreturn (node *arg_node, node *arg_info);
 extern node *AIexprs (node *arg_node, node *arg_info);
 extern node *AIid (node *arg_node, node *arg_info);
-extern node *AIwithid (node *arg_node, node *arg_info);
 extern node *AIids (node *arg_node, node *arg_info);
+extern node *AIwith (node *arg_node, node *arg_info);
+extern node *AIwith2 (node *arg_node, node *arg_info);
+extern node *AIwithid (node *arg_node, node *arg_info);
+extern node *AIcode (node *arg_node, node *arg_info);
 
 #endif /* ADJUST_IDS_H */
