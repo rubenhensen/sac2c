@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.22  2000/09/27 16:47:08  dkr
+ * __p replaced by SAC_NAMEP
+ *
  * Revision 2.21  2000/08/18 23:03:12  dkr
  * signature of ND_FUN_RET changed (renaming of out-args in case of name
  * conflicts is now supported)
@@ -302,19 +305,19 @@ ICMCompileND_FUN_DEC (char *name, char *rettype, int narg, char **tyarg)
       "%s %s",
       "%s %s", /* bin */
       "%s *%s",
-      "%s *%s__p", /* bout */
+      "%s *SAC_NAMEP( %s)", /* bout */
       "%s *%s",
-      "%s *%s__p", /* binout */
+      "%s *SAC_NAMEP( %s)", /* binout */
       "%s *%s",
       "%s *%s", /* bupd */
-      "%s SAC_ND_A_FIELD(%s)",
-      "%s SAC_ND_A_FIELD(%s)", /* bupdbox */
-      "SAC_ND_DEC_IMPORT_IN_RC(%s)",
-      "SAC_ND_DEC_IN_RC(%s, %s)", /* binrc */
-      "SAC_ND_DEC_IMPORT_OUT_RC(%s)",
-      "SAC_ND_DEC_OUT_RC(%s, %s)", /* boutrc */
-      "SAC_ND_DEC_IMPORT_INOUT_RC(%s)",
-      "SAC_ND_DEC_INOUT_RC(%s, %s)", /* binoutrc */
+      "%s SAC_ND_A_FIELD( %s)",
+      "%s SAC_ND_A_FIELD( %s)", /* bupdbox */
+      "SAC_ND_DEC_IMPORT_IN_RC( %s)",
+      "SAC_ND_DEC_IN_RC( %s, %s)", /* binrc */
+      "SAC_ND_DEC_IMPORT_OUT_RC( %s)",
+      "SAC_ND_DEC_OUT_RC( %s, %s)", /* boutrc */
+      "SAC_ND_DEC_IMPORT_INOUT_RC( %s)",
+      "SAC_ND_DEC_INOUT_RC( %s, %s)", /* binoutrc */
       ",",
       "," /* sepstr */
     };
@@ -367,29 +370,30 @@ ICMCompileND_FUN_DEC (char *name, char *rettype, int narg, char **tyarg)
 
 #else  /* TAGGED_ARRAYS */
         ScanArglist (tyarg, 3 * narg, fprintf (outfile, " %s %s", tyarg[i], tyarg[i + 1]);
-                     i += 2; sep = 1,
+                     i += 2;
+                     sep = 1,
 
-                             if (0 != (tyarg[i + 1])[0]) {
-                                 fprintf (outfile, " %s *%s__p", tyarg[i], tyarg[i + 1]);
-                                 i += 2;
-                                 sep = 1;
-                             } else {
-                                 fprintf (outfile, " %s *%s", tyarg[i], tyarg[i + 1]);
-                                 i += 2;
-                                 sep = 1;
-                             },
+                     if (0 != (tyarg[i + 1])[0]) {
+                         fprintf (outfile, " %s *SAC_NAMEP( %s)", tyarg[i], tyarg[i + 1]);
+                         i += 2;
+                         sep = 1;
+                     } else {
+                         fprintf (outfile, " %s *%s", tyarg[i], tyarg[i + 1]);
+                         i += 2;
+                         sep = 1;
+                     },
 
-                             if (0 != (tyarg[i + 1])[0]) {
-                                 fprintf (outfile, " %s *%s__p", tyarg[i], tyarg[i + 1]);
-                                 i += 2;
-                                 sep = 1;
-                             } else {
-                                 fprintf (outfile, " %s *%s", tyarg[i], tyarg[i + 1]);
-                                 i += 2;
-                                 sep = 1;
-                             },
+                     if (0 != (tyarg[i + 1])[0]) {
+                         fprintf (outfile, " %s *SAC_NAMEP( %s)", tyarg[i], tyarg[i + 1]);
+                         i += 2;
+                         sep = 1;
+                     } else {
+                         fprintf (outfile, " %s *%s", tyarg[i], tyarg[i + 1]);
+                         i += 2;
+                         sep = 1;
+                     },
 
-                             fprintf (outfile, " %s *%s", tyarg[i], tyarg[i + 1]);
+                     fprintf (outfile, " %s *%s", tyarg[i], tyarg[i + 1]);
                      i += 2; sep = 1,
 
                              fprintf (outfile, " %s %s", tyarg[i], tyarg[i + 1]);
@@ -397,10 +401,10 @@ ICMCompileND_FUN_DEC (char *name, char *rettype, int narg, char **tyarg)
                      sep = 1,
 
                      if (0 != (tyarg[i + 1])[0]) {
-                         fprintf (outfile, " SAC_ND_KS_DEC_IN_RC(%s, %s)", tyarg[i],
+                         fprintf (outfile, " SAC_ND_KS_DEC_IN_RC( %s, %s)", tyarg[i],
                                   tyarg[i + 1]);
                      } else {
-                         fprintf (outfile, "SAC_ND_KS_DEC_IMPORT_IN_RC(%s)", tyarg[i]);
+                         fprintf (outfile, "SAC_ND_KS_DEC_IMPORT_IN_RC( %s)", tyarg[i]);
                      } i
                      += 2;
                      sep = 1,
@@ -457,11 +461,11 @@ ICMCompileND_FUN_AP (char *name, char *retname, int narg, char **arg)
 
     INDENT;
     if (0 != strcmp (retname, ""))
-        fprintf (outfile, "%s =", retname);
+        fprintf (outfile, "%s = ", retname);
     if (strcmp (name, "create_TheCommandLine") == 0) {
         fprintf (outfile, "%s( __argc, __argv);", name);
     } else {
-        fprintf (outfile, "%s( ", name);
+        fprintf (outfile, "%s(", name);
 #ifdef TAGGED_ARRAYS
         /*
          * Arguments to ScanArglist are: arg, n, bin, bout, binout, bupd, bupdbox,
@@ -525,8 +529,10 @@ ICMCompileND_FUN_RET (char *retname, int narg, char **arg, node *arg_info)
 
     INDENT;
     ScanArglist (arg, 3 * narg, i += 2;
-                 sep = 0, fprintf (outfile, "*%s__p = %s;\n", arg[i], arg[i + 1]); i += 2;
-                 INDENT; sep = 1, fprintf (outfile, "*%s__p = %s;\n", arg[i], arg[i + 1]);
+                 sep = 0,
+                 fprintf (outfile, "*SAC_NAMEP( %s) = %s;\n", arg[i], arg[i + 1]);
+                 i += 2; INDENT; sep = 1, fprintf (outfile, "*SAC_NAMEP( %s) = %s;\n",
+                                                   arg[i], arg[i + 1]);
                  i += 2; INDENT; sep = 1, i += 2; sep = 0, i += 2; sep = 0, i += 2;
                  sep = 0, fprintf (outfile, "SAC_ND_KS_RET_OUT_RC( %s, %s);\n", arg[i],
                                    arg[i + 1]);
