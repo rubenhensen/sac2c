@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.11  1995/04/05 15:23:20  sbs
+ * Revision 1.12  1995/04/05 17:24:16  sbs
+ * GenLinkList inserted
+ *
+ * Revision 1.11  1995/04/05  15:23:20  sbs
  * GenLinkerList added
  *
  * Revision 1.10  1995/01/16  15:34:06  hw
@@ -183,7 +186,7 @@ GenMod (char *name)
 
     strcpy (buffer, name);
     strcat (buffer, ".dec");
-    yyin = FindFile (MODDEC_PATH, buffer);
+    yyin = fopen (FindFile (MODDEC_PATH, buffer), "r");
     if (yyin == NULL) {
         ERROR2 (1, ("Couldn't open file \"%s\"!\n", buffer));
     }
@@ -758,6 +761,23 @@ IMmodul (node *arg_node, node *arg_info)
 char *
 GenLinkerList ()
 {
+    mod *modp = mod_tab;
+    static char buffer[MAX_FILE_NAME];
+    static char list[MAX_PATH_LEN];
+    char *file;
+
     DBUG_ENTER ("GenLinkerList");
-    DBUG_RETURN ("");
+    while (modp) {
+        strcpy (buffer, modp->name);
+        strcat (buffer, ".o");
+        file = FindFile (MODIMP_PATH, buffer);
+        if (file) {
+            strcat (list, " ");
+            strcat (list, file);
+        } else
+            ERROR1 (("Couldn't find file \"%s\"!\n", buffer));
+        modp = modp->next;
+    }
+
+    DBUG_RETURN (list);
 }

@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.2  1995/02/22 14:14:36  hw
+ * Revision 1.3  1995/04/05 17:24:16  sbs
+ * GenLinkList inserted
+ *
+ * Revision 1.2  1995/02/22  14:14:36  hw
  * changed FindFile (now look first for name and later have a look at path )
  *
  * Revision 1.1  1994/12/11  17:33:27  sbs
@@ -34,13 +37,14 @@ static int bufsize[3];
  *
  */
 
-FILE *
+char *
 FindFile (pathkind p, char *name)
 {
     FILE *file = NULL;
     static char buffer[MAX_FILE_NAME];
     static char buffer2[MAX_PATH_LEN];
     char *path;
+    char *result = NULL;
 
     DBUG_ENTER ("FindFile");
 
@@ -57,7 +61,12 @@ FindFile (pathkind p, char *name)
             path = strtok (NULL, ":");
         }
     }
-    DBUG_RETURN (file);
+    if (file) {
+        fclose (file);
+        result = buffer;
+    }
+
+    DBUG_RETURN (result);
 }
 
 /*
