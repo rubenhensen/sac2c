@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.8  2000/10/31 23:20:16  dkr
+ * Trav: NWITH2_CODE might be NULL
+ *
  * Revision 1.7  2000/06/05 12:34:03  dkr
  * functions AIwith, AIwith2, AIcode added
  *
@@ -699,7 +702,11 @@ AIwith2 (node *arg_node, node *arg_info)
 
     NWITH2_WITHID (arg_node) = Trav (NWITH2_WITHID (arg_node), arg_info);
     NWITH2_SEGS (arg_node) = Trav (NWITH2_SEGS (arg_node), arg_info);
-    NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
+
+    if (NWITH2_CODE (arg_node) != NULL) {
+        NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
+    }
+
     NWITH2_WITHOP (arg_node) = Trav (NWITH2_WITHOP (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);

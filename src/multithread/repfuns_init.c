@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2000/10/31 23:21:41  dkr
+ * Trav: NWITH2_CODE might be NULL
+ *
  * Revision 1.7  2000/04/18 14:02:24  jhs
  * Added assertion to be aware of functions with NULL-body.
  *
@@ -204,7 +207,9 @@ RFINnwith2 (node *arg_node, node *arg_info)
     DBUG_PRINT ("RFIN", ("withinwith while %i", INFO_RFIN_WITHINWITH (arg_info)));
 
     DBUG_PRINT ("RFIN", ("traverse into code"));
-    NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
+    if (NWITH2_CODE (arg_node) != NULL) {
+        NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
+    }
     DBUG_PRINT ("RFIN", ("traverse from code"));
 
     INFO_RFIN_WITHINWITH (arg_info) = old_withinwith;

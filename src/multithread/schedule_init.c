@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2000/10/31 23:22:10  dkr
+ * Trav: NWITH2_CODE might be NULL
+ *
  * Revision 1.9  2000/03/21 13:09:35  jhs
  * Comments.
  *
@@ -404,7 +407,9 @@ SCHINnwith2 (node *arg_node, node *arg_info)
     old_innerwls = INFO_SCHIN_INNERWLS (arg_info);
     INFO_SCHIN_INNERWLS (arg_info) = TRUE;
 
-    NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
+    if (NWITH2_CODE (arg_node) != NULL) {
+        NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
+    }
 
     INFO_SCHIN_INNERWLS (arg_info) = old_innerwls;
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.96  2000/10/31 23:18:05  dkr
+ * Trav: NWITH2_CODE might be NULL
+ *
  * Revision 2.95  2000/10/27 00:08:43  dkr
  * some code brushing done
  * COMPAp revisited (not finished yet, some known bugs still left)
@@ -5642,7 +5645,9 @@ COMPNwith2 (node *arg_node, node *arg_info)
     /*
      * compile all code blocks
      */
-    NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
+    if (NWITH2_CODE (arg_node) != NULL) {
+        NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
+    }
 
     /*
      * build arguments for  'WL_..._BEGIN'-ICM and 'WL_..._END'-ICM

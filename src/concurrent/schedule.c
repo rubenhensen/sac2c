@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.6  2000/10/31 23:18:50  dkr
+ * Trav: NWITH2_CODE might be NULL
+ *
  * Revision 2.5  1999/09/01 17:14:23  jhs
  * Remove SYNC_SCHEDULING.
  *
@@ -381,7 +384,9 @@ SCHEDnwith2 (node *arg_node, node *arg_info)
 
     NWITH2_SEGS (arg_node) = Trav (NWITH2_SEGS (arg_node), arg_info);
 
-    NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), NULL);
+    if (NWITH2_CODE (arg_node) != NULL) {
+        NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), NULL);
+    }
     /*
      * Here, arg_info is not propagated because all scheduling specifications must
      * be removed from nested with-loops. The NULL pointer is used to mark this

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.10  2000/10/31 23:19:34  dkr
+ * Trav: NWITH2_CODE might be NULL
+ *
  * Revision 2.9  2000/10/24 11:51:31  dkr
  * MakeTypes renamed into MakeTypes1
  *
@@ -35,7 +38,6 @@
  *
  * Revision 1.1  1998/06/18 14:35:53  cg
  * Initial revision
- *
  *
  */
 
@@ -436,7 +438,11 @@ SPMDLnwith2 (node *arg_node, node *arg_info)
     NWITH2_WITHID (arg_node) = Trav (NWITH2_WITHID (arg_node), arg_info);
     NWITH2_SEGS (arg_node) = Trav (NWITH2_SEGS (arg_node), arg_info);
     INFO_SPMDL_MT (arg_info) = 0;
-    NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
+
+    if (NWITH2_CODE (arg_node) != NULL) {
+        NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
+    }
+
     INFO_SPMDL_MT (arg_info) = NWITH2_MT (arg_node);
     NWITH2_WITHOP (arg_node) = Trav (NWITH2_WITHOP (arg_node), arg_info);
 

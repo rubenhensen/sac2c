@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.4  2000/10/31 23:17:58  dkr
+ * Trav: NWITH2_CODE might be NULL
+ *
  * Revision 2.3  2000/02/04 10:23:59  dkr
  * comment changed
  *
@@ -225,7 +228,10 @@ ReuseNwith2 (node *arg_node, node *arg_info)
     NWITH2_WITHOP (arg_node) = Trav (NWITH2_WITHOP (arg_node), arg_info);
     NWITH2_WITHID (arg_node) = Trav (NWITH2_WITHID (arg_node), arg_info);
     NWITH2_SEGS (arg_node) = Trav (NWITH2_SEGS (arg_node), arg_info);
-    NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
+
+    if (NWITH2_CODE (arg_node) != NULL) {
+        NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }

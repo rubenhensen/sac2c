@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.24  2000/10/31 23:23:02  dkr
+ * Trav: NWITH2_CODE might be NULL
+ *
  * Revision 2.23  2000/07/31 10:45:52  cg
  * Eventually, the son ICM_NEXT is removed from the N_icm node.
  * The creation function MakeIcm is adjusted accordingly.
@@ -2375,7 +2378,10 @@ RCNwith2 (node *arg_node, node *arg_info)
     DBUG_PRINT ("RC", ("Entering: count references in with-loop."));
     NWITH2_WITHID (arg_node) = Trav (NWITH2_WITHID (arg_node), arg_info);
     NWITH2_SEGS (arg_node) = Trav (NWITH2_SEGS (arg_node), arg_info);
-    NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
+
+    if (NWITH2_CODE (arg_node) != NULL) {
+        NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
+    }
     DBUG_PRINT ("RC", ("Leaving: count references in with-loop."));
 
     /*

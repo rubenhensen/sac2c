@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.35  2000/10/31 23:17:51  dkr
+ * Trav: NWITH2_CODE might be NULL
+ *
  * Revision 2.34  2000/10/31 13:47:52  dkr
  * bug in PREC1let fixed:
  * dummy fold-funs have unique names now
@@ -1708,7 +1711,11 @@ PREC2Nwith2 (node *arg_node, node *arg_info)
 
     NWITH2_WITHID (arg_node) = Trav (NWITH2_WITHID (arg_node), arg_info);
     NWITH2_SEGS (arg_node) = Trav (NWITH2_SEGS (arg_node), arg_info);
-    NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
+
+    if (NWITH2_CODE (arg_node) != NULL) {
+        NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
+    }
+
     NWITH2_WITHOP (arg_node) = Trav (NWITH2_WITHOP (arg_node), arg_info);
 
     NWITH2_DEC_RC_IDS (arg_node) = PrecompileIds (NWITH2_DEC_RC_IDS (arg_node));

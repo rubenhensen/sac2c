@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.25  2000/10/31 23:20:48  dkr
+ * Trav: NWITH2_CODE might be NULL
+ *
  * Revision 1.24  2000/10/17 17:03:43  dkr
  * define-flag MAIN_HAS_NO_MODNAME inverted
  *
@@ -894,7 +897,11 @@ L2F_INFERwith2 (node *arg_node, node *arg_info)
 
     NWITH2_WITHOP (arg_node) = Trav (NWITH2_WITHOP (arg_node), arg_info);
     NWITH2_SEGS (arg_node) = Trav (NWITH2_SEGS (arg_node), arg_info);
-    NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
+
+    if (NWITH2_CODE (arg_node) != NULL) {
+        NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
+    }
+
     NWITH2_WITHID (arg_node) = Trav (NWITH2_WITHID (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
