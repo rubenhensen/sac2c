@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/02/25 10:59:39  bs
+ * N_Array: DupTypes changed to DupArray.
+ *
  * Revision 2.1  1999/02/23 12:39:34  sacbase
  * new release made
  *
@@ -432,7 +435,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 2),
 
   NIF (N_array, "N_array", TravSons, FltnArray, PrintArray, TravSons, TravSons, TravSons,
-       TravSons, FreeArray, TravSons, TravSons, COMPArray, TravSons, DupTypes, TravSons,
+       TravSons, FreeArray, TravSons, TravSons, COMPArray, TravSons, DupArray, TravSons,
        TravSons, TravSons, IdxArray, TravSons, TravSons, TravSons,
 
        PrintArray, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
