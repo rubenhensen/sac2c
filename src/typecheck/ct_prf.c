@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2003/04/11 17:56:37  sbs
+ * implementation of NTCPRF_reshape extended for akv types.
+ *
  * Revision 1.14  2003/04/09 15:35:57  sbs
  * NTCPRF_toiS, NTCPRF_toiA, NTCPRF_tofS, NTCPRF_tofA, NTCPRF_todS, NTCPRF_todA,
  * NTCPRF_ari_op_A, NTCPRF_log_op_A added.
@@ -416,10 +419,20 @@ NTCPRF_reshape (te_info *info, ntype *args)
 
     TEAssureIntVect (TEPrfArg2Obj (TEGetNameStr (info), 1), new_shp);
     TEAssureSimpleType (TEPrfArg2Obj (TEGetNameStr (info), 2), array);
+    TEAssureProdValMatchesProdShape (TEPrfArg2Obj (TEGetNameStr (info), 1), new_shp,
+                                     TEPrfArg2Obj (TEGetNameStr (info), 2), array);
 
     scalar = TYGetScalar (array);
 
     switch (TYGetConstr (new_shp)) {
+    case TC_akv:
+        if (TYGetConstr (array) == TC_akv) {
+            res = TYMakeAKV (TYCopyType (TYGetScalar (array)), ApplyCF (info, args));
+        } else {
+            res
+              = TYMakeAKS (TYCopyType (scalar), COConstant2Shape (TYGetValue (new_shp)));
+        }
+        break;
     case TC_aks:
         res = TYMakeAKD (TYCopyType (scalar), SHGetExtent (TYGetShape (new_shp), 0),
                          SHMakeShape (0));
