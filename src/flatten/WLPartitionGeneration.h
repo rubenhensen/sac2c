@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/04/08 08:13:25  khf
+ * some corrections and new startfunction WLPartitionGenerationOPT
+ * added
+ *
  * Revision 1.3  2004/03/02 09:21:43  khf
  * WLPGlet added
  *
@@ -17,6 +21,7 @@
 #define _WLPartitionGeneration_h
 
 extern node *WLPartitionGeneration (node *arg_node);
+extern node *WLPartitionGenerationOPT (node *arg_node);
 
 extern node *WLPGmodul (node *, node *);
 extern node *WLPGfundef (node *, node *);
