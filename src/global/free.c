@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.13  1995/12/07 14:16:18  cg
+ * Revision 1.14  1995/12/18 16:12:44  cg
+ * last free() changed to macro FREE().
+ * types->id no longer freed by FreeOneTypes and FreeAllTypes
+ *
+ * Revision 1.13  1995/12/07  14:16:18  cg
  * Now, the free functions traverse chained lists onlyn with
  * respect to the current setting of nnode, which may be different
  * to the original setting in the respective Make function due to
@@ -166,11 +170,8 @@ FreeOneTypes (types *fr)
 
         FREE (TYPES_NAME (tmp));
 
-        FREE (tmp->id);
-
         /*
-         *  Last FREE is necessary due to the real data structure behind the
-         *  virtual syntax tree.
+         *  fr->id is not freed by purpose !!
          */
 
         FREE (tmp);
@@ -301,7 +302,7 @@ FreeNodelist (nodelist *list)
     while (list != NULL) {
         tmp = list;
         list = NODELIST_NEXT (list);
-        free (tmp);
+        FREE (tmp);
     }
 
     tmp = NULL;
