@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.164  1998/03/18 09:56:07  dkr
+ * added O2Nnwith
+ *
  * Revision 1.163  1998/03/18 08:33:40  srs
  * added WLIid to N_id node
  *
@@ -827,13 +830,13 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        WLFNwith, FreeNWith, CFNwith, RCNwith, TravSons, TravSons, DupChain, TravSons,
        UNRNwith, TravSons, TravSons, TravSons, WLINwith, TravSons, PrintNwith, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, UNQNwith, TravSons, PRECnwith,
-       ACTNwith, TravSons, TravSons, CSENwith, TravSons, TravSons, 3),
+       ACTNwith, TravSons, TravSons, CSENwith, TravSons, O2Nnwith, 3),
 
   NIF (N_Npart, "N_Npart", TravSons, FltnNpart, PrintNpart, TravSons, TravSons, TravSons,
        TravSons, FreeNPart, CFNpart, RCNpart, TravSons, TravSons, DupNpart, TravSons,
        TravSons, TravSons, TravSons, TravSons, WLINpart, TravSons, PrintNpart, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       ACTNpart, TravSons, TravSons, TravSons, TravSons, O2NNpart, 3),
+       ACTNpart, TravSons, TravSons, TravSons, TravSons, O2Nnpart, 3),
 
   NIF (N_Nwithid, "N_Nwithid", TravSons, NoTrav, PrintNwithid, TravSons, TravSons,
        TravSons, TravSons, FreeNWithID, TravSons, RCNwithid, TravSons, TravSons,
