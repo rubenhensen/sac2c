@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.4  1999/05/12 08:57:55  jhs
+# -DNEWTREE eliminated from CFLAGS.
+#
 # Revision 2.3  1999/03/11 18:18:21  dkr
 # make deps done
 #
@@ -112,7 +115,7 @@
 
 CC        := gcc
 CCFLAGS   := -ansi -Wall -g
-CFLAGS    := -D__EXTENSIONS__ -DNEWTREE
+CFLAGS    := -D__EXTENSIONS__ 
 
 RM=rm -f
 INCS=-I../global -I../../inc -I../print -I../modules -I../optimize -I../compile
