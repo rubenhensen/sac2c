@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.18  1999/05/12 08:51:52  jhs
+ * Changed attribute names to access constatnt vectors.
+ *
  * Revision 2.17  1999/05/11 08:57:43  sbs
  * PRINT_LINE_PRAGMA_IN_SIB added. It allows for identifying errorneous
  * code from modules that is imported via the sib!.
@@ -211,7 +214,7 @@ DbugPrintArray (node *arg_node)
             fprintf (outfile, ":[");
             break;
         case T_int:
-            intptr = ARRAY_INTVEC (arg_node);
+            intptr = ARRAY_CONSTVEC (arg_node);
             if ((intptr == NULL) || (length < 1))
                 return;
             else {
@@ -221,7 +224,7 @@ DbugPrintArray (node *arg_node)
             }
             break;
         case T_float:
-            fltptr = ARRAY_FLOATVEC (arg_node);
+            fltptr = ARRAY_CONSTVEC (arg_node);
             if ((fltptr == NULL) || (length < 1))
                 return;
             else {
@@ -231,7 +234,7 @@ DbugPrintArray (node *arg_node)
             }
             break;
         case T_double:
-            dblptr = ARRAY_DOUBLEVEC (arg_node);
+            dblptr = ARRAY_CONSTVEC (arg_node);
             if ((dblptr == NULL) || (length < 1))
                 return;
             else {
@@ -241,7 +244,7 @@ DbugPrintArray (node *arg_node)
             }
             break;
         case T_bool:
-            intptr = ARRAY_INTVEC (arg_node);
+            intptr = ARRAY_CONSTVEC (arg_node);
             if ((intptr == NULL) || (length < 1))
                 return;
             else {
@@ -251,7 +254,7 @@ DbugPrintArray (node *arg_node)
             }
             break;
         case T_char:
-            chrptr = ARRAY_CHARVEC (arg_node);
+            chrptr = ARRAY_CONSTVEC (arg_node);
             if ((chrptr == NULL) || (length < 1))
                 return;
             else {
@@ -274,12 +277,8 @@ DbugPrintArray (node *arg_node)
         }
     } else /* (NODE_TYPE(arg_node) == N_id) */ {
         length = ID_VECLEN (arg_node);
-        intptr = ID_INTVEC (arg_node);
-        /*    if ((intptr == NULL) || (length < 0))
-          return;
-        else {
-        */
-        if (ID_CONSTARRAY (arg_node)) {
+        intptr = ID_CONSTVEC (arg_node);
+        if (ID_ISCONST (arg_node)) {
             fprintf (outfile, ":[");
 
             if (0 < length)
