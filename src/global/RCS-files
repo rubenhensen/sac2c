@@ -24,3 +24,5 @@ status_info.mac
 types.h
 usage.c
 usage.h
+NameTuplesUtils.c
+NameTuplesUtils.h
