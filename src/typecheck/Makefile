@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.20  2002/08/07 20:14:10  dkr
+# some .mac dependencies added
+#
 # Revision 3.19  2002/08/05 17:00:38  sbs
 # first alpha version of the new type checker !!
 #
@@ -71,16 +74,21 @@ all: typecheck.o prim_fun.o typecheck_WL.o gen_pseudo_fun.o \
 #
 typecheck.h: cmp_type.mac
 	touch $@
+	$(CLOCK_SKEW_ELIMINATION) $@
 
 typecheck.c: prim_fun_tt.mac cmp_type.mac
 	touch $@
 	$(CLOCK_SKEW_ELIMINATION) $@
 
-prim_fun.c: prim_fun_ft.mac
+prim_fun.c: prim_fun_ft.mac prim_fun_tt.mac
 	touch $@
 	$(CLOCK_SKEW_ELIMINATION) $@
 
 new_types.c: type_constructor_info.mac
+	touch $@
+	$(CLOCK_SKEW_ELIMINATION) $@
+
+ct_prf.c: ../tree/prf_node_info.mac
 	touch $@
 	$(CLOCK_SKEW_ELIMINATION) $@
 
