@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.56  2002/10/29 20:42:35  dkr
+ * bug in COMP2Array() fixed
+ *
  * Revision 1.55  2002/10/29 19:09:11  dkr
  * signature of some ICMs modified
  *
@@ -3305,10 +3308,15 @@ COMP2Array (node *arg_node, node *arg_info)
         icm_args = MakeExprs (MakeSizeArg (arg_node, TRUE),
                               DupExprs_NT (ARRAY_AELEMS (arg_node)));
 
-        if (NODE_TYPE (EXPRS_EXPR (ARRAY_AELEMS (arg_node))) == N_id) {
-            val0_sdim = GetShapeDim (ID_TYPE (EXPRS_EXPR (ARRAY_AELEMS (arg_node))));
+        if (ARRAY_AELEMS (arg_node) != NULL) {
+            node *val0 = EXPRS_EXPR (ARRAY_AELEMS (arg_node));
+            if (NODE_TYPE (val0) == N_id) {
+                val0_sdim = GetShapeDim (ID_TYPE (val0));
+            } else {
+                val0_sdim = 0; /* scalar */
+            }
         } else {
-            val0_sdim = 0; /* scalar */
+            val0_sdim = -815; /* array is empty */
         }
 
         ret_node
