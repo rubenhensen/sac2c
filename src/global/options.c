@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.70  2004/08/30 13:02:12  skt
+ * enabled emm for MT_mtstblock
+ *
  * Revision 3.69  2004/08/26 14:02:36  cg
  * Enabled emm (new refcounting) by default.
  *
@@ -1112,7 +1115,7 @@ CheckOptionConsistency ()
                        "program execution"));
         }
 
-        if (emm) {
+        if (emm && (mtmode != MT_mtstblock)) {
             SYSWARN (("Explicit memory management is not available for multi-threaded "
                       "program execution.\n"
                       "EMM disabled"));
