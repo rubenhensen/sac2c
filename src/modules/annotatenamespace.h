@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/10/22 09:02:16  sah
+ * added ANSSymbol
+ *
  * Revision 1.1  2004/10/22 08:50:04  sah
  * Initial revision
  *
@@ -13,6 +16,7 @@
 
 #include "types.h"
 
+extern node *ANSSymbol (node *arg_node, info *arg_info);
 extern node *ANSUse (node *arg_node, info *arg_info);
 extern node *ANSImport (node *arg_node, info *arg_info);
 extern node *ANSExport (node *arg_node, info *arg_info);

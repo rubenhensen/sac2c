@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/10/22 09:02:16  sah
+ * added ANSSymbol
+ *
  * Revision 1.1  2004/10/22 08:49:55  sah
  * Initial revision
  *
@@ -13,6 +16,18 @@
 #include "annotatenamespace.h"
 #include "traverse.h"
 #include "tree_basic.h"
+
+node *
+ANSSymbol (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("ANSSymbol");
+
+    if (SYMBOL_NEXT (arg_node) != NULL) {
+        SYMBOL_NEXT (arg_node) = Trav (SYMBOL_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
 
 node *
 ANSUse (node *arg_node, info *arg_info)
