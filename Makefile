@@ -1,5 +1,9 @@
 #
 # $Log$
+# Revision 1.73  1998/04/09 23:43:44  dkr
+# in 'compile':
+#   added wlpragma_funs.o
+#
 # Revision 1.72  1998/04/03 12:12:21  dkr
 # added dir concurrent in prod, clean, ...
 #
@@ -281,7 +285,7 @@ OBJECTS= src/objects/objinit.o src/objects/objects.o \
 REFCOUNT= src/refcount/refcount.o
 CONCURRENT= src/concurrent/concregions.o
 COMPILE= src/compile/compile.o src/compile/icm2c.o src/compile/precompile.o \
-         src/compile/gen_startup_code.o \
+         src/compile/gen_startup_code.o src/compile/wlpragma_funs.o \
          src/compile/Old2NewWith.o
 
 OBJ=$(GLOBAL) $(SCANP) $(PRINT) $(FLATTEN) $(TYPECHECK) $(OPTIMIZE) \
