@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.32  2004/11/27 03:08:15  sbs
+# *** empty log message ***
+#
 # Revision 3.31  2004/11/26 16:18:58  sbs
 # INCS eliminated
 #
@@ -100,7 +103,8 @@ include $(PROJECT_ROOT)/Makefile.Config
 
 all: flatten.o lac2fun.o fun2lac.o insert_vardec.o handle_mops.o \
      ToNewTypes.o SSATransform.o UndoSSATransform.o ssa.o \
-     WLPartitionGeneration.o WLEnhancement.o ExplicitAccumulate.o
+     WLPartitionGeneration.o WLEnhancement.o ExplicitAccumulate.o \
+     ToOldTypes.o
 
 
 %.o: %.c
