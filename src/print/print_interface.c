@@ -1,3 +1,4 @@
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -20,12 +21,34 @@
 #define SACARGTYPE "SAC_arg"
 #define SACPREFIX "SAC_"
 #define NO_SIMPLE_RETURN -1
+
 #define PIH_PRINT_COMMENT 1
 #define PIH_PRINT_PROTOTYPE 2
 
+#define PIW_CREATE_RETTYPES 1
+#define PIW_SWITCH_ARGS 2
+#define PIW_CALL_ARGS 3
+#define PIW_CALL_RESULTS 4
+#define PIW_CALL_RETPOS 5
+#define PIW_REFCOUNT_ARGS 6
+#define PIW_REFCOUNT_RESULTS 7
+
+/* basic c-type-strings for sac types */
+#define TYP_IFpr_str(str) str
+char *ctype_string[] = {
+#include "type_info.mac"
+};
+
 /* function for only local usage */
-static types *TravT (types *type, node *arg_info);
+static types *TravTH (types *arg_type, node *arg_info);
+static types *TravTW (types *arg_type, node *arg_info);
+static types *PIHtypes (types *arg_type, node *arg_info);
+static types *PIWtypes (types *arg_type, node *arg_info);
 static node *PIHcwrapperPrototype (node *wrapper, node *arg_info);
+static node *PIHfundefSwitch (node *arg_node, node *arg_info);
+static node *PIHfundefCall (node *arg_node, node *arg_info);
+static node *PIHfundefRefcounting (node *arg_node, node *arg_info);
+static int GetReturnPos (node *fundef);
 
 /******************************************************************************
  *
@@ -150,7 +173,7 @@ PIHfundef (node *arg_node, node *arg_info)
 
         /* then print resulting types */
         if (FUNDEF_TYPES (arg_node) != NULL) {
-            FUNDEF_TYPES (arg_node) = TravT (FUNDEF_TYPES (arg_node), arg_info);
+            FUNDEF_TYPES (arg_node) = TravTH (FUNDEF_TYPES (arg_node), arg_info);
         } else {
             fprintf (outfile, "void");
         }
@@ -208,7 +231,7 @@ PIHarg (node *arg_node, node *arg_info)
  *
  ******************************************************************************/
 
-types *
+static types *
 PIHtypes (types *arg_type, node *arg_info)
 {
     char *typestring;
@@ -224,7 +247,7 @@ PIHtypes (types *arg_type, node *arg_info)
 
         if (TYPES_NEXT (arg_type) != NULL) {
             fprintf (outfile, ", ");
-            TYPES_NEXT (arg_type) = TravT (TYPES_NEXT (arg_type), arg_info);
+            TYPES_NEXT (arg_type) = TravTH (TYPES_NEXT (arg_type), arg_info);
         }
     }
     DBUG_RETURN (arg_type);
@@ -248,8 +271,9 @@ PIHcwrapperPrototype (node *arg_node, node *arg_info)
     DBUG_ENTER ("PIHcwrapperPrototype");
 
     /* print declaration */
-    fprintf (outfile, "int %s%s_%s(", SACPREFIX, CWRAPPER_MOD (arg_node),
-             CWRAPPER_NAME (arg_node));
+    fprintf (outfile, "int %s%s_%s_%d_%d(", SACPREFIX, CWRAPPER_MOD (arg_node),
+             CWRAPPER_NAME (arg_node), CWRAPPER_ARGCOUNT (arg_node),
+             CWRAPPER_RESCOUNT (arg_node));
 
     /* print return reference parameters */
     for (i = 1; i <= CWRAPPER_RESCOUNT (arg_node); i++) {
@@ -278,16 +302,41 @@ PIHcwrapperPrototype (node *arg_node, node *arg_info)
  *   node *PIWmodul(node *arg_node, node *arg_info)
  *
  * description:
- *   Traverses only in functions of module
+ *   generated wrapper implementation file, traverses all wrappers
  *
  ******************************************************************************/
 
 node *
 PIWmodul (node *arg_node, node *arg_info)
 {
+    FILE *old_outfile;
     DBUG_ENTER ("PIWmodul");
 
-    NOTE (("PIWmodul reached...\n"));
+    old_outfile = outfile; /* save, might be in use */
+
+    /* open <module>_wrapper.c in tmpdir for writing*/
+    outfile = WriteOpen ("%s/%s_wrapper.c", tmp_dirname, MODUL_NAME (arg_node));
+    fprintf (outfile, "/* Interface SAC <-> C for %s\n", MODUL_NAME (arg_node));
+    fprintf (outfile,
+             " * this file is only used when compiling the c-library lib%s.a */\n",
+             modulename);
+    fprintf (outfile, "#include <stdio.h>\n");
+    fprintf (outfile, "#include \"SAC_interface.h\"\n");
+    fprintf (outfile, "#include \"SAC_arg.h\"\n");
+    fprintf (outfile, "#include \"SAC_interface_makrodefs.h\"\n");
+    fprintf (outfile, "\n");
+
+    /* general preload for codefile */
+    fprintf (outfile, "/* <insert some useful things here...> */\n");
+
+    if (MODUL_CWRAPPER (arg_node) != NULL) {
+        /* traverse list of wrappers */
+        MODUL_CWRAPPER (arg_node) = Trav (MODUL_CWRAPPER (arg_node), arg_info);
+    }
+
+    fprintf (outfile, "/* generated codefile, please do not modify */\n");
+    fclose (outfile);
+    outfile = old_outfile; /* restore old filehandle */
 
     DBUG_RETURN (arg_node);
 }
@@ -305,9 +354,43 @@ PIWmodul (node *arg_node, node *arg_info)
 node *
 PIWcwrapper (node *arg_node, node *arg_info)
 {
+    nodelist *funlist;
+    int i;
+
     DBUG_ENTER ("PIWcwrapper");
 
-    NOTE (("PIWcwrapper reached...\n"));
+    fprintf (outfile, "\n\n");
+    /* print standard function prototype for wrapper */
+    arg_node = PIHcwrapperPrototype (arg_node, arg_info);
+    fprintf (outfile, "\n{\n");
+
+    /* print checks for refcounts */
+    fprintf (outfile, "/* refcount checks for arguments */\n");
+    for (i = 1; i <= CWRAPPER_ARGCOUNT (arg_node); i++) {
+        fprintf (outfile, "SAC_IW_CHECK_RC( in%d );\n", i);
+    }
+
+    /* print case switch for specialized functions */
+    fprintf (outfile, "/* case switch for specialized functions */\n");
+    funlist = CWRAPPER_FUNS (arg_node);
+    DBUG_ASSERT (funlist != NULL, "PIWcwrapper: wrapper without fundef\n");
+
+    while (funlist != NULL) {
+        /* go for all fundefs in nodelist */
+        NODELIST_NODE (funlist) = Trav (NODELIST_NODE (funlist), arg_info);
+
+        funlist = NODELIST_NEXT (funlist);
+    }
+
+    /* no speacialized function found matching the args -> error */
+    fprintf (outfile,
+             "fprintf(stderr, \"ERROR - no matching specialized function!\\n\");\n");
+    fprintf (outfile, "return(1); /* error - no matching specialized function */\n");
+    fprintf (outfile, "\n}\n\n");
+
+    if (CWRAPPER_NEXT (arg_node) != NULL) {
+        CWRAPPER_NEXT (arg_node) = Trav (CWRAPPER_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -329,6 +412,34 @@ PIWfundef (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PIWfundef");
 
+    fprintf (outfile, "/* function: %s */\n", FUNDEF_NAME (arg_node));
+
+    /* print code for functions switch */
+    arg_node = PIHfundefSwitch (arg_node, arg_info);
+    fprintf (outfile, " {\n");
+
+    /* print code creating all return SAC_args */
+    fprintf (outfile, "  /* create return type structs */\n");
+    INFO_PIW_FLAG (arg_info) = PIW_CREATE_RETTYPES;
+    INFO_PIW_COUNTER (arg_info) = 0;
+    if (FUNDEF_TYPES (arg_node) != NULL) {
+        FUNDEF_TYPES (arg_node) = TravTW (FUNDEF_TYPES (arg_node), arg_info);
+    }
+
+    /* print makros creating function call to specialized function */
+    fprintf (outfile, "\n  /* call native SAC-function %s */\n", FUNDEF_NAME (arg_node));
+    arg_node = PIHfundefCall (arg_node, arg_info);
+
+    /* print makros for dec local refcounters and maybe free SAC_arg */
+    fprintf (outfile, "\n  /* modify local refcounters */\n");
+    arg_node = PIHfundefRefcounting (arg_node, arg_info);
+
+    /* print code  successful return from call */
+    fprintf (outfile, "\n  return(0); /*call successful */\n");
+
+    /* print code end of switch */
+    fprintf (outfile, "}\n");
+
     DBUG_RETURN (arg_node);
 }
 
@@ -342,11 +453,281 @@ PIWfundef (node *arg_node, node *arg_info)
  *
  *
  ******************************************************************************/
+
 node *
 PIWarg (node *arg_node, node *arg_info)
 {
+    types *argtype;
+    int i;
+
     DBUG_ENTER ("PIWArg");
 
+    INFO_PIW_COUNTER (arg_info) = INFO_PIW_COUNTER (arg_info) + 1;
+
+    switch (INFO_PIW_FLAG (arg_info)) {
+    case PIW_SWITCH_ARGS:
+        /* print check statement for argument */
+        argtype = ARG_TYPE (arg_node);
+
+        if (TYPES_DIM (argtype) < 0) {
+            SYSERROR (("Unknown shapes cannot be exported!\n"));
+        }
+
+        fprintf (outfile, "SAC_CmpSACArgType(in%d, %d, %d", INFO_PIW_COUNTER (arg_info),
+                 TYPES_BASETYPE (argtype), TYPES_DIM (argtype));
+
+        if (TYPES_DIM (argtype) > 0) {
+            /* arraytype with fixed shape */
+            for (i = 0; i < TYPES_DIM (argtype); i++) {
+                fprintf (outfile, ", %d", TYPES_SHAPE (argtype, i));
+            }
+        }
+        fprintf (outfile, ")");
+
+        if (ARG_NEXT (arg_node) != NULL) {
+            fprintf (outfile, " && ");
+        }
+        break;
+
+    case PIW_CALL_ARGS:
+        /* print macro for arg in SAC-function call */
+        argtype = ARG_TYPE (arg_node);
+        DBUG_ASSERT ((TYPES_DIM (argtype) >= 0), "PIWarg: unknown shape dimension!\n");
+
+        if (TYPES_DIM (argtype) == 0) {
+            /* macro for simple type without refcounting */
+            fprintf (outfile, "SAC_ARGCALL_SIMPLE");
+        } else {
+            /* macro for arraytype with refcounting */
+            fprintf (outfile, "SAC_ARGCALL_REFCNT");
+        }
+        fprintf (outfile, "( in%d , %s )", INFO_PIW_COUNTER (arg_info),
+                 ctype_string[TYPES_BASETYPE (argtype)]);
+
+        if (ARG_NEXT (arg_node) != NULL) {
+            fprintf (outfile, ", ");
+        }
+        break;
+
+    case PIW_REFCOUNT_ARGS:
+        /* create macro, dec-and-free SAC_arg */
+        fprintf (outfile, "  SAC_DECANDFREERC( in%d );\n", INFO_PIW_COUNTER (arg_info));
+        break;
+
+    default:
+        SYSERROR (("undefined case in PIWarg!\n"));
+    }
+
+    /*traverse to next argument */
+    if (ARG_NEXT (arg_node) != NULL) {
+        ARG_NEXT (arg_node) = Trav (ARG_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   types *PIWtypes(types *arg_type, node *arg_info)
+ *
+ * description:
+ *   Prints results of functions in different formats
+ *
+ * remark: simulation of the syntax of the Trav technology
+ *
+ ******************************************************************************/
+
+static types *
+PIWtypes (types *arg_type, node *arg_info)
+{
+    int i;
+
+    DBUG_ENTER ("PIWtypes");
+
+    INFO_PIW_COUNTER (arg_info) = INFO_PIW_COUNTER (arg_info) + 1;
+
+    switch (INFO_PIW_FLAG (arg_info)) {
+    case PIW_CREATE_RETTYPES:
+        /* create vars for reference parameters */
+        fprintf (outfile, "  *out%d=SAC_CreateSACArg(%d, %d", INFO_PIW_COUNTER (arg_info),
+                 TYPES_BASETYPE (arg_type), TYPES_DIM (arg_type));
+
+        /* write shape data*/
+        for (i = 0; i < TYPES_DIM (arg_type); i++) {
+            fprintf (outfile, "%d", TYPES_SHAPE (arg_type, i));
+            if (i < (TYPES_DIM (arg_type)) - 1) {
+                fprintf (outfile, ", ");
+            }
+        }
+        fprintf (outfile, ");\n");
+        break;
+
+    case PIW_CALL_RESULTS:
+        /* create macros for reference result types */
+        if (INFO_PIW_RETPOS (arg_info) != INFO_PIW_COUNTER (arg_info)) {
+            if (TYPES_DIM (arg_type) == 0) {
+                /* macro for simple type without refcounting */
+                fprintf (outfile, "SAC_ARGCALL_SIMPLE");
+            } else {
+                /* macro for arraytype with refcounting */
+                fprintf (outfile, "SAC_ARGCALL_REFCNT");
+            }
+            fprintf (outfile, "( out%d , %s* )", INFO_PIW_COUNTER (arg_info),
+                     ctype_string[TYPES_BASETYPE (arg_type)]);
+
+            INFO_PIW_COMMA (arg_info) = TRUE;
+        }
+
+        /* is there at least one more result?
+         * check, if there is a comma needef */
+        if ((TYPES_NEXT (arg_type) != NULL)
+            && (INFO_PIW_RETPOS (arg_info) != INFO_PIW_COUNTER (arg_info))) {
+            if (!((INFO_PIW_RETPOS (arg_info) == INFO_PIW_COUNTER (arg_info) + 1)
+                  && (TYPES_NEXT (TYPES_NEXT (arg_type)) == NULL))) {
+                fprintf (outfile, ", ");
+            }
+        }
+        break;
+
+    case PIW_CALL_RETPOS:
+        /* create macro for simple direct return value */
+        if (INFO_PIW_RETPOS (arg_info) == INFO_PIW_COUNTER (arg_info)) {
+            fprintf (outfile, "SAC_ASSIGN_RESULT( out%d, %s)",
+                     INFO_PIW_COUNTER (arg_info),
+                     ctype_string[TYPES_BASETYPE (arg_type)]);
+        }
+        break;
+
+    case PIW_REFCOUNT_RESULTS:
+        /* create macro, setting result refcount to 1 */
+        fprintf (outfile, "  SAC_SETREFCOUNT(out%d , 1 );\n",
+                 INFO_PIW_COUNTER (arg_info));
+        break;
+
+    default:
+        SYSERROR (("undefined case in PIWtypes!\n"));
+    }
+
+    /* traverse to next returntype */
+    if (TYPES_NEXT (arg_type) != NULL) {
+        TYPES_NEXT (arg_type) = TravTW (TYPES_NEXT (arg_type), arg_info);
+    }
+
+    DBUG_RETURN (arg_type);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *PIHfundefSwitch(node *wrapper, node *arg_info)
+ *
+ * description:
+ *   Prints one fundef switch in a cwrapper function
+ *
+ ******************************************************************************/
+
+static node *
+PIHfundefSwitch (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PIHfundefSwitch");
+
+    fprintf (outfile, "if(");
+
+    if (FUNDEF_ARGS (arg_node) != NULL) {
+        /*traverse all arguments */
+        INFO_PIW_FLAG (arg_info) = PIW_SWITCH_ARGS;
+        INFO_PIW_COUNTER (arg_info) = 0;
+        FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
+    } else {
+        /* no args -> always true */
+        fprintf (outfile, " 1 ");
+    }
+
+    fprintf (outfile, ")");
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *PIHfundefCall(node *wrapper, node *arg_info)
+ *
+ * description:
+ *   Prints one fundef call in a cwrapper function
+ *
+ ******************************************************************************/
+
+static node *
+PIHfundefCall (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PIHfundefCall");
+
+    INFO_PIW_RETPOS (arg_info) = GetReturnPos (arg_node);
+
+    if (INFO_PIW_RETPOS (arg_info) != NO_SIMPLE_RETURN) {
+        /* print direct return parameter */
+        INFO_PIW_FLAG (arg_info) = PIW_CALL_RETPOS;
+        INFO_PIW_COUNTER (arg_info) = 0;
+        FUNDEF_TYPES (arg_node) = TravTW (FUNDEF_TYPES (arg_node), arg_info);
+        fprintf (outfile, "=");
+    }
+    fprintf (outfile, "  %s(", FUNDEF_NAME (arg_node));
+
+    INFO_PIW_COMMA (arg_info) = FALSE;
+
+    /* print reference return parameters */
+    if (FUNDEF_TYPES (arg_node) != NULL) {
+        INFO_PIW_FLAG (arg_info) = PIW_CALL_RESULTS;
+        INFO_PIW_COUNTER (arg_info) = 0;
+        FUNDEF_TYPES (arg_node) = TravTW (FUNDEF_TYPES (arg_node), arg_info);
+    }
+
+    /* print args */
+    if (FUNDEF_ARGS (arg_node) != NULL) {
+        if (INFO_PIW_COMMA (arg_info) == TRUE) {
+            fprintf (outfile, ", ");
+        }
+        INFO_PIW_FLAG (arg_info) = PIW_CALL_ARGS;
+        INFO_PIW_COUNTER (arg_info) = 0;
+        FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
+    }
+
+    fprintf (outfile, ");\n");
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *PIHfundefRefcounting(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   Prints refcounter modifications in a cwrapper function
+ *
+ ******************************************************************************/
+
+static node *
+PIHfundefRefcounting (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PIHfundefRefcounting");
+
+    /* print refcount modifications for results */
+    if (FUNDEF_TYPES (arg_node) != NULL) {
+        INFO_PIW_FLAG (arg_info) = PIW_REFCOUNT_RESULTS;
+        INFO_PIW_COUNTER (arg_info) = 0;
+        FUNDEF_TYPES (arg_node) = TravTW (FUNDEF_TYPES (arg_node), arg_info);
+    }
+
+    /*  print refcount modifications for arguments */
+    if (FUNDEF_ARGS (arg_node) != NULL) {
+        INFO_PIW_FLAG (arg_info) = PIW_REFCOUNT_ARGS;
+        INFO_PIW_COUNTER (arg_info) = 0;
+        FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
+    }
+
+    fprintf (outfile, "\n");
     DBUG_RETURN (arg_node);
 }
 
@@ -394,40 +775,6 @@ GetReturnPos (node *fundef)
 /******************************************************************************
  *
  * function:
- *   char *TruncArgName( char *argname)
- *
- * description:
- *   truncates the actual argument name after some renaming by removing
- *   SAC-prefix. returns the offset-pointer in the funname string
- *
- * return:
- *   Pointer to string in old string, NOT a new copy of that string!
- *
- * remark:
- *   this implementation depends on the current renaming shama
- *   SACl_argname
- *
- ******************************************************************************/
-
-static char *
-TruncArgName (char *argname)
-{
-    int offset;
-    char *result;
-
-    DBUG_ENTER ("truncArgName");
-
-    /* skip additional inserted "SACl_" */
-    offset = strlen ("SACl_");
-
-    result = argname + offset;
-
-    DBUG_RETURN (result);
-}
-
-/******************************************************************************
- *
- * function:
  *   node *PrintInterface( node *syntax_tree)
  *
  * description:
@@ -465,21 +812,44 @@ PrintInterface (node *syntax_tree)
 /******************************************************************************
  *
  * function:
- *   types *TravT(types *arg_type, node *arg_info)
+ *   types *TravTH(types *arg_type, node *arg_info)
  *
  * description:
  *   similar implementation of trav mechanism as used for nodes
+ *   here used for PIH
  *
  *
  ******************************************************************************/
 
 static types *
-TravT (types *arg_type, node *arg_info)
+TravTH (types *arg_type, node *arg_info)
 {
-    DBUG_ENTER ("TravT");
+    DBUG_ENTER ("TravTH");
 
-    DBUG_ASSERT (arg_type != NULL, "TravT: traversal in NULL type\n");
+    DBUG_ASSERT (arg_type != NULL, "TravTH: traversal in NULL type\n");
     arg_type = PIHtypes (arg_type, arg_info);
+
+    DBUG_RETURN (arg_type);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   types *TravTW(types *arg_type, node *arg_info)
+ *
+ * description:
+ *   similar implementation of trav mechanism as used for nodes
+ *   here used dor PIW
+ *
+ ******************************************************************************/
+
+static types *
+TravTW (types *arg_type, node *arg_info)
+{
+    DBUG_ENTER ("TravTW");
+
+    DBUG_ASSERT (arg_type != NULL, "TravTW: traversal in NULL type\n");
+    arg_type = PIWtypes (arg_type, arg_info);
 
     DBUG_RETURN (arg_type);
 }
