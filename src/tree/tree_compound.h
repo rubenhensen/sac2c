@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.58  2002/06/20 15:24:56  dkr
+ * CreateZeroFromType(), CreateZero() added
+ * AddVardecs() added
+ *
  * Revision 3.57  2002/04/29 15:59:34  sbs
  * function HasDotTypes added.
  *
@@ -267,6 +271,7 @@ extern int GetTypesLength (types *type);
 extern bool CompareTypesImplementation (types *t1, types *t2);
 extern shpseg *Type2Shpseg (types *type, int *ret_dim);
 extern node *Type2Exprs (types *type);
+extern node *CreateZeroFromType (types *type, bool unroll, node *fundef);
 
 /******************************************************************************
  *
@@ -932,6 +937,19 @@ extern node *AppendFundef (node *fundef_chain, node *fundef);
 
 /******************************************************************************
  *
+ * Function:
+ *   node *AddVardecs( node *fundef, node *vardecs)
+ *
+ * Description:
+ *   Inserts new declarations into the AST, updates the DFMbase and returns
+ *   the modified N_fundef node.
+ *
+ ******************************************************************************/
+
+extern node *AddVardecs (node *fundef, node *vardecs);
+
+/******************************************************************************
+ *
  * function:
  *   node *AppendVardec( node *vardec_chain, node *vardec)
  *
@@ -1569,6 +1587,8 @@ extern int CountExprs (node *exprs);
  *  function declarations
  */
 
+extern node *CreateZero (int dim, shpseg *shape, simpletype btype, bool unroll,
+                         node *fundef);
 extern node *CreateZeroScalar (simpletype btype);
 extern node *CreateZeroVector (int length, simpletype btype);
 
