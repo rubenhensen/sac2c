@@ -1,7 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.9  1996/09/11 16:00:11  cg
+ * Revision 1.10  1997/03/11 16:29:10  cg
+ * new list of standard modules
+ * old compiler option -deps ((updating makefile) no longer supported
+ * use absolute pathnames for libstat
+ *
+ * Revision 1.9  1996/09/11  16:00:11  cg
  * small layout change and new standard modules added
  *
  * Revision 1.8  1996/09/11  06:21:34  cg
@@ -60,7 +65,6 @@ static strings *required_libs = NULL;
 static strings *required_stdlibs = NULL;
 
 strings *imported_decs = NULL; /* set by import.c */
-strings *dependencies = NULL;  /* set by import.c */
 
 static int link_archives = 0;
 
@@ -92,68 +96,85 @@ static int link_archives = 0;
  *
  */
 
-void
-UpdateMakefile ()
+/*
+void UpdateMakefile()
 {
-    FILE *makefile, *new;
-    char buffer[255], *newname, makefilename[30];
-    int depflag = 0;
-    strings *deps;
+  FILE *makefile, *new;
+  char buffer[255], *newname, makefilename[30];
+  int depflag=0;
+  strings *deps;
 
-    DBUG_ENTER ("UpdateMakefile");
+  DBUG_ENTER("UpdateMakefile");
 
-    makefile = fopen ("Makefile", "r");
+  makefile=fopen("Makefile", "r");
 
-    if (makefile == NULL) {
-        makefile = fopen ("makefile", "r");
+  if (makefile==NULL)
+  {
+    makefile=fopen("makefile", "r");
 
-        if (makefile == NULL) {
-            SYSWARN (("Unable to update makefile in current directory"));
-        } else {
-            strcpy (makefilename, "makefile");
-        }
-
-    } else {
-        strcpy (makefilename, "Makefile");
+    if (makefile==NULL)
+    {
+      SYSWARN(("Unable to update makefile in current directory"));
+    }
+    else
+    {
+      strcpy(makefilename, "makefile");
     }
 
-    if (makefile != NULL) {
-        newname = tmpnam (NULL);
-        new = WriteOpen (newname);
+  }
+  else
+  {
+    strcpy(makefilename, "Makefile");
+  }
 
-        while (!feof (makefile)) {
-            fgets (buffer, 255, makefile);
+  if (makefile!=NULL)
+  {
+    newname = tmpnam(NULL);
+    new = WriteOpen(newname);
 
-            if (strncmp (buffer, "# DO NOT DELETE", 15) == 0) {
-                depflag = 1;
-            }
+    while (!feof(makefile))
+    {
+      fgets(buffer, 255, makefile);
 
-            if ((!depflag)
-                || (strncmp (outfilename, buffer, strlen (outfilename)) != 0)) {
-                fprintf (new, "%s", buffer);
-            }
-        }
+      if (strncmp(buffer, "# DO NOT DELETE", 15)==0)
+      {
+        depflag=1;
+      }
 
-        if (!depflag) {
-            fprintf (new, "\n# DO NOT DELETE THIS LINE"
-                          "-- make depend depends on it.\n\n");
-        }
-
-        deps = dependencies;
-
-        while (deps != NULL) {
-            fprintf (new, "%s: %s\n", outfilename, STRINGS_STRING (deps));
-            deps = STRINGS_NEXT (deps);
-        }
-
-        fclose (makefile);
-        fclose (new);
-
-        SystemCall ("mv %s %s", newname, makefilename);
+      if ((!depflag) || (strncmp(outfilename, buffer, strlen(outfilename))!=0))
+      {
+        fprintf(new, "%s", buffer);
+      }
     }
 
-    DBUG_VOID_RETURN;
+    if (!depflag)
+    {
+      fprintf(new, "\n# DO NOT DELETE THIS LINE"
+              "-- make depend depends on it.\n\n");
+    }
+
+    deps=dependencies;
+
+    while (deps!=NULL)
+    {
+      fprintf(new, "%s: %s\n", outfilename, STRINGS_STRING(deps));
+      deps=STRINGS_NEXT(deps);
+    }
+
+    fclose(makefile);
+    fclose(new);
+
+    SystemCall("mv %s %s", newname, makefilename);
+
+  }
+
+  DBUG_VOID_RETURN;
 }
+
+UpdateMakefile() is no longer used with the new -M compiler option.
+All dependencies are now written directly to stdout to be conform
+with gcc and other C compilers.
+*/
 
 /*
  *
@@ -341,30 +362,28 @@ GenLibStat ()
 int
 IsStandardMod (char *name)
 {
-    static char *standard_modules[] = {"String",
-                                       "StringBase",
-                                       "World",
-                                       "File",
-                                       "TermFile",
-                                       "StdIO",
-                                       "CType",
-                                       "PrintArray",
-                                       "SysErr",
-                                       "ArrayIO",
-                                       "Complex",
-                                       "Env",
-                                       "GetEnv",
-                                       "FibreScan",
-                                       "FibrePrint",
-                                       "MathD",
-                                       "MathDBase",
-                                       "MathF",
-                                       "MathFBase",
-                                       "Time",
-                                       "Random",
-                                       "Rand",
-                                       "Rand48"
-                                       ""};
+    static char *standard_modules[]
+      = {/* standard modules */
+
+         /* structures */
+         "String", "StringC", "StringSAC", "Char", "List", "Complex",
+
+         /* numerical */
+         "Math", "MathC", "MathSAC",
+
+         /* standard classes */
+
+         /* world */
+         "World",
+
+         /* stdio */
+         "File", "TermFile", "ScalarIO", "ArrayIO", "PrintArray", "FibreIO", "FibrePrint",
+         "FibreScan", "ComplexIO", "ListIO", "StdIO",
+
+         /* system */
+         "CommandLine", "Env", "EnvVar", "Rand", "Random", "Rand48", "SysErr", "Time",
+
+         ""};
 
     int i, res;
 
@@ -541,9 +560,9 @@ SearchLinkFile (char *name)
             SYSERROR (("Unable to find SAC %slibrary '%s`", standard, name));
         }
     } else {
-        NOTE (("  Found \"%s\" !", pathname));
-
         abspathname = AbsolutePathname (pathname);
+
+        NOTE (("  Found \"%s\" !", abspathname));
 
         if ((linkstyle == 0) || ((linkstyle == 3) && !stdmod)) {
             SystemCall ("cd %s; tar xf %s %s.a", build_dirname, abspathname, name);

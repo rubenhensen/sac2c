@@ -1,7 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.4  1996/09/11 06:21:34  cg
+ * Revision 1.5  1997/03/11 16:29:10  cg
+ * new list of standard modules
+ * old compiler option -deps ((updating makefile) no longer supported
+ * use absolute pathnames for libstat
+ *
+ * Revision 1.4  1996/09/11  06:21:34  cg
  * Converted to new lib-file format.
  * Added facilities for updating makefiles with dependencies
  * and creating libstat information.
@@ -26,7 +31,6 @@
 extern void InvokeCC (node *modul);
 extern void CreateLibrary (node *syntax_tree);
 extern void PrintLibStat ();
-extern void UpdateMakefile ();
 
 extern node *PrepareLinking (node *syntax_tree);
 
@@ -35,6 +39,5 @@ extern node *LINKobjdef (node *arg_node, node *arg_info);
 extern node *LINKmodul (node *arg_node, node *arg_info);
 
 extern strings *imported_decs;
-extern strings *dependencies;
 
 #endif /* _sac_cccall_h */
