@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.61  2004/09/21 16:33:08  sah
+ * added traversal functions for SER traversal
+ *
  * Revision 3.60  2004/09/21 11:09:07  sah
  * added SET (serialize traverse) traversal
  *
@@ -313,7 +316,7 @@ extern funtab *cegro_tab;
 extern funtab *dup_tab;
 extern funtab *inline_tab;
 extern funtab *set_tab;
-extern funtab *unused_tab24;
+extern funtab *ser_tab;
 extern funtab *idx_tab;
 extern funtab *unused_tab26;
 extern funtab *ae_tab;

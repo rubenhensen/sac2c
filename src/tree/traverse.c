@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.77  2004/09/21 16:33:08  sah
+ * added traversal functions for SER traversal
+ *
  * Revision 3.76  2004/09/21 12:39:48  sah
  * spmdemm traversal disabled in NEW_AST mode
  *
@@ -372,6 +375,7 @@
 #include "tagdependencies.h"
 #include "spmd_emm.h"
 #include "serialize_node.h"
+#include "serialize.h"
 
 #include "traverse.h"
 
@@ -543,7 +547,7 @@ static funtab set_tab_rec = {{
 #define NIFset(it_set) it_set
 #include "node_info.mac"
 #else
-#define NIFunused_24(it_unused24) it_unused24
+#define NIFunused_26(it_unused26) it_unused26
 #include "node_info.mac"
 #endif
                              },
@@ -577,13 +581,18 @@ funtab *idx_tab = &idx_tab_rec;
 /*
  *  (18) unused_tab24
  */
-static funtab unused_tab24_rec = {{
-#define NIFunused_24(it_unused_24) it_unused_24
+static funtab ser_tab_rec = {{
+#ifdef NEW_AST
+#define NIFser(it_ser) it_ser
 #include "node_info.mac"
-                                  },
-                                  NULL,
-                                  NULL};
-funtab *unused_tab24 = &unused_tab24_rec;
+#else
+#define NIFunused_26(it_unused26) it_unused26
+#include "node_info.mac"
+#endif
+                             },
+                             NULL,
+                             NULL};
+funtab *ser_tab = &ser_tab_rec;
 
 /*
  *  (19) unused_tab26

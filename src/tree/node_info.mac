@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.201  2004/09/21 16:33:08  sah
+ * added traversal functions for SER traversal
+ *
  * Revision 3.200  2004/09/21 11:09:07  sah
  * added SET (serialize traverse) traversal
  *
@@ -388,7 +391,7 @@
  *   genmask_tab     crece_tab       cdfg_tab        free_tab
  *   spmdemm_tab     refcnt_tab      emrefcnt_tab    emri_tab
  *   dup_tab         inline_tab      set_tab         cegro_tab
- *   idx_tab         unused_tab24    unused_tab26    ae_tab
+ *   idx_tab         ser_tab         unused_tab26    ae_tab
  *
  *   writesib_tab    obj_tab         impltype_tab    objinit_tab
  *   analy_tab       checkdec_tab    writedec_tab    unique_tab
@@ -529,8 +532,8 @@
 #ifndef NIFidx
 #define NIFidx(it_idx)
 #endif
-#ifndef NIFunused_24
-#define NIFunused_24(it_unused_24)
+#ifndef NIFser
+#define NIFser(it_ser)
 #endif
 #ifndef NIFunused_26
 #define NIFunused_26(it_unused_26)
@@ -947,7 +950,7 @@
                                                                                                                  \
   Node_name, mdb_nodetype, it_imp, it_flat, it_print, it_type, it_genmask, it_crece,                             \
   it_cdfg, it_free, it_spmdemm, it_refcnt, it_emrefcnt, it_emri, it_dup, it_inline,                              \
-  it_set, it_cegro, it_idx, it_unused_24, it_unused_26, it_ae,                                                   \
+  it_set, it_cegro, it_idx, it_ser, it_unused_26, it_ae,                                                         \
                                                                                                                  \
   it_writesib, it_obj, it_impltype, it_objinit, it_analy, it_checkdec, it_writedec,                              \
   it_unique, it_rmcasts, it_precomp1, it_unused_22, it_readsib, it_unused_39, it_ea,                             \
@@ -982,8 +985,8 @@
         it_type) NIFgenmask (it_genmask) NIFcrece (it_crece) NIFcdfg (it_cdfg)                                   \
         NIFfree (it_free) NIFspmdemm (it_spmdemm) NIFrefcnt (it_refcnt) NIFemrefcnt (                            \
           it_emrefcnt) NIFemri (it_emri) NIFdup (it_dup) NIFinline (it_inline)                                   \
-          NIFset (it_set) NIFcegro (it_cegro) NIFidx (it_idx) NIFunused_24 (                                     \
-            it_unused_24) NIFunused_26 (it_unused_26) NIFae (it_ae)                                              \
+          NIFset (it_set) NIFcegro (it_cegro) NIFidx (it_idx) NIFser (                                           \
+            it_ser) NIFunused_26 (it_unused_26) NIFae (it_ae)                                                    \
                                                                                                                  \
             NIFwritesib (it_writesib) NIFobj (it_obj) NIFimpltype (                                              \
               it_impltype) NIFobjinit (it_objinit) NIFanaly (it_analy)                                           \
@@ -1472,7 +1475,8 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
   NIF (N_fundef, "N_fundef", IMfundef, FltnFundef, PrintFundef, TCfundef, GNMfundef,
        TravSons, TravSons, FreeFundef, TravSons, RCfundef, EMRCfundef, RIfundef,
-       DupFundef, INLfundef, SETFundef, TravSons, IdxFundef, TravSons, TravSons, AEfundef,
+       DupFundef, INLfundef, SETFundef, TravSons, IdxFundef, SERFundef, TravSons,
+       AEfundef,
 
        WSIBfundef, OBJfundef, TravSons, TravSons, ANAfundef, CDECfundef, WDECfundef,
        UNQfundef, TravSons, PREC1fundef, TravSons, RSIBfundef, TravSons, EAfundef,
@@ -3212,7 +3216,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 #undef NIFcegro
 
 #undef NIFidx
-#undef NIFunused_24
+#undef NIFser
 #undef NIFunused_26
 #undef NIFae
 
