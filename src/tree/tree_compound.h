@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.128  2004/11/24 11:45:14  sah
+ * added TCgetNthExpr
+ *
  * Revision 3.127  2004/11/24 11:35:14  skt
  * N_WLseg -> N_wlseg
  *
@@ -1119,6 +1122,8 @@ extern node *TCmakeExprsNum (int num);
  ******************************************************************************/
 
 extern int TCcountExprs (node *exprs);
+
+extern node *TCgetNthExpr (int n, node *exprs);
 
 #define EXPRS_EXPRS1(n) (n)
 #define EXPRS_EXPRS2(n) EXPRS_NEXT (n)

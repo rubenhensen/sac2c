@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.104  2004/11/24 11:45:14  sah
+ * added TCgetNthExpr
+ *
  * Revision 3.103  2004/11/24 10:56:11  sah
  * *** empty log message ***
  *
@@ -2964,6 +2967,29 @@ CountExprs (node *exprs)
     }
 
     DBUG_RETURN (count);
+}
+
+node *
+TCgetNthExpr (int n, node *exprs)
+{
+    int cnt;
+    node *result = NULL;
+
+    DBUG_ENTER ("TCgetNthExpr");
+
+    for (cnt = 1; cnt < n; cnt++) {
+        if (exprs == NULL) {
+            break;
+        }
+
+        exprs = EXPRS_NEXT (exprs);
+    }
+
+    if (exprs != NULL) {
+        result = EXPRS_EXPR (exprs);
+    }
+
+    DBUG_RETURN (result);
 }
 
 /*--------------------------------------------------------------------------*/
