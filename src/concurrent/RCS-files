@@ -19,3 +19,4 @@ sync_init.c
 sync_init.h
 sync_opt.c
 sync_opt.h
+spmd_emm.c
