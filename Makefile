@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.11  1994/12/20 17:33:45  hw
+# Revision 1.12  1995/02/03 07:57:47  hw
+# added  TYPECHECK
+#
+# Revision 1.11  1994/12/20  17:33:45  hw
 # added free.o & tree.o
 #
 # Revision 1.10  1994/12/16  14:41:26  sbs
@@ -44,7 +47,7 @@ GLOBAL= src/global/main.o src/global/Error.o src/global/usage.o \
 SCANP= src/scanparse/y.tab.o src/scanparse/lex.yy.o
 PRINT= src/print/print.o src/print/convert.o
 FLATTEN= src/flatten/flatten.o
-TYPECHECK= src/typecheck/typecheck.o 
+TYPECHECK= src/typecheck/typecheck.o src/typecheck/prim_fun.o
 OPTIMIZE= src/optimize/optimize.o
 MODULES= src/modules/filemgr.o src/modules/import.o
 OBJ=$(GLOBAL) $(SCANP) $(PRINT) $(FLATTEN) $(TYPECHECK) $(OPTIMIZE) $(MODULES)
