@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.169  1998/06/09 16:45:22  dkr
+ * *** empty log message ***
+ *
  * Revision 1.168  1998/06/08 14:17:59  dkr
  * CHECK_REUSE for new with-loop finished
  *
@@ -6504,6 +6507,7 @@ COMPNwith2 (node *arg_node, node *arg_info)
      */
 
     icm_args = NULL;
+#if 00
     num_args = 0;
     withid_ids = NWITHID_IDS (NWITH2_WITHID (wl_node));
     while (withid_ids != NULL) {
@@ -6527,6 +6531,8 @@ COMPNwith2 (node *arg_node, node *arg_info)
         withid_ids = IDS_NEXT (withid_ids);
     }
     icm_args = MakeExprs (MakeNum (num_args), icm_args);
+#endif
+
     icm_args
       = MakeExprs (MakeId2 (DupOneIds (NWITHID_VEC (NWITH2_WITHID (wl_node)), NULL)),
                    icm_args);
