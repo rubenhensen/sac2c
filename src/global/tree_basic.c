@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.76  1998/06/23 12:40:57  cg
+ * added indentation information for mt-ICMs
+ *
  * Revision 1.75  1998/06/08 08:57:34  cg
  * handling of attribute ARRAY_TYPE corrected.
  *
@@ -286,6 +289,7 @@ char *prf_name_str[] = {
         v->refcnt = 0;                                                                   \
         v->flag = 0;                                                                     \
         v->varno = 0;                                                                    \
+        v->counter = 0;                                                                  \
         v->lineno = linenum;                                                             \
         v->info2 = NULL;                                                                 \
         for (i = 0; i < MAX_SONS; i++) {                                                 \
@@ -1414,7 +1418,11 @@ MakeIcm (char *name, node *args, node *next)
     ICM_ARGS (tmp) = args;
     ICM_NEXT (tmp) = next;
 
-    if (strcmp (name, "WL_NONFOLD_BEGIN") == 0)
+    if (strcmp (name, "MT_START_SYNCBLOCK") == 0)
+        ICM_INDENT (tmp) = 1;
+    else if (strncmp (name, "MT_SYNC_", 8) == 0)
+        ICM_INDENT (tmp) = -1;
+    else if (strcmp (name, "WL_NONFOLD_BEGIN") == 0)
         ICM_INDENT (tmp) = 1;
     else if (strcmp (name, "WL_FOLD_BEGIN") == 0)
         ICM_INDENT (tmp) = 1;
@@ -1448,9 +1456,50 @@ MakeIcm (char *name, node *args, node *next)
         ICM_INDENT (tmp) = -1;
     else if (strcmp (name, "WL_GRID_UNROLL_END") == 0)
         ICM_INDENT (tmp) = -1;
+    else if (strcmp (name, "WL_MT_BLOCK_LOOP0_BEGIN") == 0)
+        ICM_INDENT (tmp) = 1;
+    else if (strcmp (name, "WL_MT_BLOCK_LOOP_BEGIN") == 0)
+        ICM_INDENT (tmp) = 1;
+    else if (strcmp (name, "WL_MT_UBLOCK_LOOP0_BEGIN") == 0)
+        ICM_INDENT (tmp) = 1;
+    else if (strcmp (name, "WL_MT_UBLOCK_LOOP_BEGIN") == 0)
+        ICM_INDENT (tmp) = 1;
+    else if (strcmp (name, "WL_MT_STRIDE_LOOP0_BEGIN") == 0)
+        ICM_INDENT (tmp) = 1;
+    else if (strcmp (name, "WL_MT_STRIDE_LOOP_BEGIN") == 0)
+        ICM_INDENT (tmp) = 1;
+    else if (strcmp (name, "WL_MT_STRIDE_UNROLL_BEGIN") == 0)
+        ICM_INDENT (tmp) = 1;
+    else if (strcmp (name, "WL_MT_GRID_LOOP_BEGIN") == 0)
+        ICM_INDENT (tmp) = 1;
+    else if (strcmp (name, "WL_MT_GRID_UNROLL_BEGIN") == 0)
+        ICM_INDENT (tmp) = 1;
+    else if (strcmp (name, "WL_MT_BLOCK_LOOP_END") == 0)
+        ICM_INDENT (tmp) = -1;
+    else if (strcmp (name, "WL_MT_UBLOCK_LOOP_END") == 0)
+        ICM_INDENT (tmp) = -1;
+    else if (strcmp (name, "WL_MT_STRIDE_LOOP_END") == 0)
+        ICM_INDENT (tmp) = -1;
+    else if (strcmp (name, "WL_MT_STRIDE_UNROLL_END") == 0)
+        ICM_INDENT (tmp) = -1;
+    else if (strcmp (name, "WL_MT_GRID_LOOP_END") == 0)
+        ICM_INDENT (tmp) = -1;
+    else if (strcmp (name, "WL_MT_GRID_UNROLL_END") == 0)
+        ICM_INDENT (tmp) = -1;
+    else if (strcmp (name, "WL_NONFOLD_END") == 0)
+        ICM_INDENT (tmp) = -1;
+    else if (strcmp (name, "WL_FOLD_END") == 0)
+        ICM_INDENT (tmp) = -1;
     else if (strcmp (name, "WL_END") == 0)
         ICM_INDENT (tmp) = -1;
-    else
+    else if (strncmp (name, "MT_SCHEDULER_", 13) == 0) {
+        if (strcmp (name + strlen (name) - 6, "_BEGIN") == 0)
+            ICM_INDENT (tmp) = 1;
+        else if (strcmp (name + strlen (name) - 4, "_END") == 0)
+            ICM_INDENT (tmp) = -1;
+        else
+            ICM_INDENT (tmp) = 0;
+    } else
         ICM_INDENT (tmp) = 0;
 
     DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
