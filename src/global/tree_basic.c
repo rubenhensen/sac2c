@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.5  1999/06/08 08:31:02  cg
+ * Bug fixed: node structure entry int_data is now initialized.
+ * Macro INIT_NODE replaced by function CreateCleanNode()
+ * -> resulting object code file much smaller now.
+ *
  * Revision 2.4  1999/05/06 15:39:29  sbs
  * Now, the src_file will be set in INIT_NODE as well.
  *
@@ -52,227 +57,6 @@
  * in MakeIcm:
  *   added some ICM_INDENTs
  *
- * Revision 1.72  1998/05/28 16:30:47  dkr
- * added an indent-machanismus for H-ICMs
- *
- * Revision 1.71  1998/05/24 00:39:30  dkr
- * removed WLGRID_CODE_TEMPLATE
- *
- * Revision 1.70  1998/05/17 00:08:39  dkr
- * WLGRID_CEXPR_TEMPLATE is now WLGRID_CODE_TEMPLATE
- *
- * Revision 1.69  1998/05/15 23:04:22  dkr
- * changed MakeNwith2: NWITH2_IDX_MIN, NWITH2_IDX_MAX are no longer
- * preallocated
- *
- * Revision 1.68  1998/05/12 22:43:55  dkr
- * changed MakeNwith2:
- *   added NWITH2_DIM, NWITH2_IDX_MIN, NWITH2_IDX_MAX
- *
- * Revision 1.67  1998/05/12 15:51:18  dkr
- * removed ???_VARINFO
- *
- * Revision 1.66  1998/05/06 14:32:02  dkr
- * added support for DataFlowMasks
- *
- * Revision 1.65  1998/04/26 21:51:43  dkr
- * MakeSPMD renamed to MakeSpmd
- *
- * Revision 1.64  1998/04/25 12:36:03  dkr
- * NCODE_COPY is now initialized in MakeNCode
- *
- * Revision 1.63  1998/04/24 01:14:59  dkr
- * added N_sync
- *
- * Revision 1.62  1998/04/21 13:31:00  dkr
- * NWITH2_SEG renamed to NWITH2_SEGS
- *
- * Revision 1.61  1998/04/17 17:26:22  dkr
- * 'concurrent regions' are now called 'SPMD regions'
- *
- * Revision 1.60  1998/04/17 16:22:20  dkr
- * MakeWLgrid, MakeWLgridvar now adjust NCODE_USED
- *
- * Revision 1.59  1998/04/10 02:24:52  dkr
- * changed MakeWLseg
- *
- * Revision 1.58  1998/04/02 17:39:23  dkr
- * added MakeConc
- *
- * Revision 1.57  1998/04/02 12:11:09  srs
- * fixed bug in MakeShpseg
- *
- * Revision 1.56  1998/04/01 23:58:04  dkr
- * added MakeWLstriVar, MakeWLgridVar
- *
- * Revision 1.55  1998/03/30 23:42:15  dkr
- * added attribute LEVEL for N_WLgrid
- *
- * Revision 1.54  1998/03/29 23:27:21  dkr
- * added temp. attribute WLGRID_MODIFIED
- *
- * Revision 1.53  1998/03/27 18:37:02  dkr
- * WLPROJ... renamed in WLSTRIDE
- *
- * Revision 1.52  1998/03/26 14:00:07  dkr
- * changed usage of MakeWLgrid
- *
- * Revision 1.51  1998/03/24 21:09:17  dkr
- * changed MakeWLproj
- *
- * Revision 1.50  1998/03/24 10:18:14  srs
- * Changed MakeNPart
- *
- * Revision 1.49  1998/03/22 15:32:31  dkr
- * N_WLproj: OFFSET, WIDTH -> BOUND1, BOUND2.
- *
- * Revision 1.48  1998/03/22 14:21:45  dkr
- * WLBLOCK_BLOCKING -> WLBLOCK_STEP
- *
- * Revision 1.47  1998/03/21 19:33:27  dkr
- * removed unused var in MakeWLseg
- *
- * Revision 1.46  1998/03/21 18:54:34  srs
- * MakeNWith initializes NWITH_PARTS with -1 instead of 0
- *
- * Revision 1.45  1998/03/21 14:05:50  dkr
- * changed MakeWLublock
- *
- * Revision 1.44  1998/03/20 20:51:07  dkr
- * changed usage of MakeWLseg
- *
- * Revision 1.43  1998/03/20 17:24:47  dkr
- * in N_WL... nodes: INNER is now called CONTENTS
- *
- * Revision 1.41  1998/03/18 10:48:38  dkr
- * changed MakeWLproj
- *
- * Revision 1.40  1998/03/17 10:36:06  dkr
- * changed MakeWLseg()
- *
- * Revision 1.39  1998/03/13 16:21:33  dkr
- * new nodes added:
- *   N_WLblock, N_WLublock
- *
- * Revision 1.38  1998/03/06 13:22:29  srs
- * modified MakeAssign and MakeNwith
- *
- * Revision 1.37  1998/03/03 19:39:34  dkr
- * renamed N_WLindex to N_WLproj
- *
- * Revision 1.36  1998/03/03 17:50:18  dkr
- * changed MakeWLgrid(), MakeWLindex()
- *
- * Revision 1.35  1998/03/03 16:13:03  dkr
- * changed something in WLindex, WLgrid
- *
- * Revision 1.34  1998/03/02 22:28:23  dkr
- * added nodes for precompilation of new with-loop
- *
- * Revision 1.33  1998/02/28 23:37:16  dkr
- * MakeCond() uses now MakeInfo instead of INIT_NODE(tmp->node[3])
- *
- * Revision 1.32  1998/02/27 13:20:09  dkr
- * change in MakeDo(), MakeWhile():
- *   ->node[2] initialized with MakeInfo()
- *
- * Revision 1.31  1998/02/16 16:34:57  srs
- * Changed MakeNwith
- *
- * Revision 1.30  1998/02/11 17:14:37  srs
- * changed NPART_IDX to NPART_WITHID
- *
- * Revision 1.29  1998/02/10 14:56:19  dkr
- * changed MakeWith (node[2] not allocated anymore)
- *
- * Revision 1.28  1998/02/09 16:06:45  srs
- * changed MakeNWithid
- *
- * Revision 1.27  1998/02/09 15:41:40  sbs
- * forced check in 8-(((
- *  not yet cleaned up!
- *
- * Revision 1.26  1997/12/10 14:24:37  sbs
- * a couple of NEWTREE's killed 8-)
- *
- * Revision 1.25  1997/11/18 18:05:23  srs
- * changed new WL-functions
- *
- * Revision 1.24  1997/11/18 17:33:19  dkr
- * modified MakeNWith()
- *
- * Revision 1.23  1997/11/13 16:17:09  srs
- * added functions for creation of WL-nodes (new syntaxtree)
- *
- * Revision 1.22  1997/10/30 19:09:14  dkr
- * with defined NEWTREE, node->nnode is not used anymore
- *
- * Revision 1.21  1997/10/29 14:32:47  srs
- * free -> FREE
- *
- * Revision 1.20  1997/05/16 09:54:01  sbs
- * ANALSE-TOOL extended to function-application specific timing
- *
- * Revision 1.19  1997/05/14  08:16:43  sbs
- * N_annotate added
- *
- * Revision 1.18  1997/04/25  09:12:13  sbs
- * DBUG_ASSERT in MakeNodelist adjusted (no varargs)
- *
- * Revision 1.17  1997/03/19  13:38:16  cg
- * Added new data type 'deps' with respective access macros and
- * creation function
- *
- * Revision 1.16  1996/02/11  20:19:01  sbs
- * some minor corrections on stuff concerning N_vinfo,
- * VARDEC_ACTCHN, VARDEC_COLCHN, ARG_ACTCHN, and ARG_COLCHN added.
- *
- * Revision 1.15  1996/01/22  14:04:50  asi
- * added MakeId2
- *
- * Revision 1.14  1996/01/05  14:14:10  asi
- * added While2Do: This function converts a while-loop into a do-loop
- *
- * Revision 1.13  1996/01/02  15:51:33  cg
- * function MakeType now initializes new struct entries tdef and id_cmod
- * of struct types
- *
- * Revision 1.12  1995/12/29  10:29:45  cg
- * modified MakeNodelist and MakeSib, added MakeInfo
- *
- * Revision 1.11  1995/12/21  10:07:33  cg
- * now MakePragma has no argument at all, new macros PRAGMA_LINKSIGNNUMS etc.
- * for temporary storage of pragma as list of nums instead of array.
- *
- * Revision 1.10  1995/12/20  08:16:22  cg
- * added MakeChar, modified MakePragma.
- *
- * Revision 1.9  1995/12/01  17:09:20  cg
- * added new node type N_pragma
- * removed macro FUNDEF_ALIAS
- *
- * Revision 1.8  1995/11/16  19:40:20  cg
- * new function MakeStr for generating N_str node
- *
- * Revision 1.7  1995/11/02  13:13:31  cg
- * added new macros OBJDEF_ARG(n) and renamed IDS_DECL(i)
- * to IDS_VARDEC(i).
- *
- * Revision 1.6  1995/11/01  07:08:46  sbs
- * neutral addded to N_foldprf;
- * some DBUG_PRINTS inserted
- *
- * Revision 1.5  1995/10/20  13:45:58  cg
- * added DBUG_PRINT in MakeNodelist
- *
- * Revision 1.4  1995/10/19  10:05:54  cg
- * memory allocation now via function 'Malloc` from internal_lib
- *
- * Revision 1.3  1995/10/06  17:16:50  cg
- * basic access facilities for new type nodelist added
- * IDS structure modified to store global objects.
- * MakeIds extended to 3 parameters
- * basic facilities for compiler steps obj-analysis and fun-analysis added.
  *
  * Revision 1.2  1995/09/29  17:50:51  cg
  * new access structures for strings, nums, shpseg.
@@ -312,33 +96,48 @@ char *prf_name_str[] = {
 #define ALLOCATE(var, type) var = (type *)Malloc (sizeof (type))
 
 /*--------------------------------------------------------------------------*/
-/* local macros for node initialization                                     */
+/* local functions for node initialization                                  */
 /*--------------------------------------------------------------------------*/
 
-#define INIT_NODE(v)                                                                     \
-    {                                                                                    \
-        int i;                                                                           \
-        ALLOCATE (v, node);                                                              \
-        v->info.id = NULL;                                                               \
-        v->info.ids = NULL;                                                              \
-        v->info.types = NULL;                                                            \
-        v->info.fun_name.id = NULL;                                                      \
-        v->info.fun_name.id_mod = NULL;                                                  \
-        v->refcnt = 0;                                                                   \
-        v->flag = 0;                                                                     \
-        v->varno = 0;                                                                    \
-        v->counter = 0;                                                                  \
-        v->lineno = linenum;                                                             \
-        v->src_file = filename;                                                          \
-        v->info2 = NULL;                                                                 \
-        for (i = 0; i < MAX_SONS; i++) {                                                 \
-            v->node[i] = NULL;                                                           \
-        }                                                                                \
-        for (i = 0; i < MAX_MASK; i++) {                                                 \
-            v->mask[i] = NULL;                                                           \
-            v->dfmask[i] = NULL;                                                         \
-        }                                                                                \
+static node *
+CreateCleanNode (nodetype nt)
+{
+    int i;
+    node *new_node;
+
+    DBUG_ENTER ("CreateCleanNode");
+
+    ALLOCATE (new_node, node);
+
+    new_node->nodetype = nt;
+
+    new_node->info.id = NULL;
+    new_node->info.ids = NULL;
+    new_node->info.types = NULL;
+    new_node->info.fun_name.id = NULL;
+    new_node->info.fun_name.id_mod = NULL;
+    new_node->info2 = NULL;
+
+    new_node->refcnt = 0;
+    new_node->flag = 0;
+    new_node->varno = 0;
+    new_node->counter = 0;
+    new_node->int_data = 0;
+
+    new_node->lineno = linenum;
+    new_node->src_file = filename;
+
+    for (i = 0; i < MAX_SONS; i++) {
+        new_node->node[i] = NULL;
     }
+
+    for (i = 0; i < MAX_MASK; i++) {
+        new_node->mask[i] = NULL;
+        new_node->dfmask[i] = NULL;
+    }
+
+    DBUG_RETURN (new_node);
+}
 
 /*--------------------------------------------------------------------------*/
 /*  Make-functions for non-node structures                                  */
@@ -560,10 +359,10 @@ MakeModul (char *name, file_type filetype, node *imports, node *types, node *obj
            node *funs)
 {
     node *tmp;
-    DBUG_ENTER ("MakeModul");
-    INIT_NODE (tmp);
 
-    NODE_TYPE (tmp) = N_modul;
+    DBUG_ENTER ("MakeModul");
+
+    tmp = CreateCleanNode (N_modul);
 
     MODUL_FILETYPE (tmp) = filetype;
     MODUL_IMPORTS (tmp) = imports;
@@ -584,10 +383,10 @@ node *
 MakeModdec (char *name, deps *linkwith, int isexternal, node *imports, node *exports)
 {
     node *tmp;
-    DBUG_ENTER ("MakeModdec");
-    INIT_NODE (tmp);
 
-    NODE_TYPE (tmp) = N_moddec;
+    DBUG_ENTER ("MakeModdec");
+
+    tmp = CreateCleanNode (N_moddec);
 
     MODDEC_NAME (tmp) = name;
     MODDEC_LINKWITH (tmp) = linkwith;
@@ -607,10 +406,10 @@ node *
 MakeClassdec (char *name, deps *linkwith, int isexternal, node *imports, node *exports)
 {
     node *tmp;
-    DBUG_ENTER ("MakeClassdec");
-    INIT_NODE (tmp);
 
-    NODE_TYPE (tmp) = N_classdec;
+    DBUG_ENTER ("MakeClassdec");
+
+    tmp = CreateCleanNode (N_classdec);
 
     CLASSDEC_NAME (tmp) = name;
     CLASSDEC_LINKWITH (tmp) = linkwith;
@@ -630,10 +429,10 @@ node *
 MakeSib (char *name, int linkstyle, deps *linkwith, node *types, node *objs, node *funs)
 {
     node *tmp;
-    DBUG_ENTER ("MakeSib");
-    INIT_NODE (tmp);
 
-    NODE_TYPE (tmp) = N_sib;
+    DBUG_ENTER ("MakeSib");
+
+    tmp = CreateCleanNode (N_sib);
 
     SIB_TYPES (tmp) = types;
     SIB_FUNS (tmp) = funs;
@@ -654,10 +453,10 @@ node *
 MakeImplist (char *name, ids *itypes, ids *etypes, ids *objs, ids *funs, node *next)
 {
     node *tmp;
-    DBUG_ENTER ("MakeImplist");
-    INIT_NODE (tmp);
 
-    NODE_TYPE (tmp) = N_implist;
+    DBUG_ENTER ("MakeImplist");
+
+    tmp = CreateCleanNode (N_implist);
 
     IMPLIST_NAME (tmp) = name;
     IMPLIST_ITYPES (tmp) = itypes;
@@ -678,10 +477,10 @@ node *
 MakeExplist (node *itypes, node *etypes, node *objs, node *funs)
 {
     node *tmp;
-    DBUG_ENTER ("MakeExplist");
-    INIT_NODE (tmp);
 
-    NODE_TYPE (tmp) = N_explist;
+    DBUG_ENTER ("MakeExplist");
+
+    tmp = CreateCleanNode (N_explist);
 
     EXPLIST_ITYPES (tmp) = itypes;
     EXPLIST_ETYPES (tmp) = etypes;
@@ -700,10 +499,10 @@ node *
 MakeTypedef (char *name, char *mod, types *type, statustype attrib, node *next)
 {
     node *tmp;
-    DBUG_ENTER ("MakeTypedef");
-    INIT_NODE (tmp);
 
-    NODE_TYPE (tmp) = N_typedef;
+    DBUG_ENTER ("MakeTypedef");
+
+    tmp = CreateCleanNode (N_typedef);
 
     TYPEDEF_TYPE (tmp) = type;
     TYPEDEF_NAME (tmp) = name;
@@ -723,10 +522,10 @@ node *
 MakeObjdef (char *name, char *mod, types *type, node *expr, node *next)
 {
     node *tmp;
-    DBUG_ENTER ("MakeObjdef");
-    INIT_NODE (tmp);
 
-    NODE_TYPE (tmp) = N_objdef;
+    DBUG_ENTER ("MakeObjdef");
+
+    tmp = CreateCleanNode (N_objdef);
 
     OBJDEF_TYPE (tmp) = type;
     OBJDEF_NAME (tmp) = name;
@@ -746,10 +545,10 @@ node *
 MakeFundef (char *name, char *mod, types *types, node *args, node *body, node *next)
 {
     node *tmp;
-    DBUG_ENTER ("MakeFundef");
-    INIT_NODE (tmp);
 
-    NODE_TYPE (tmp) = N_fundef;
+    DBUG_ENTER ("MakeFundef");
+
+    tmp = CreateCleanNode (N_fundef);
 
     FUNDEF_TYPES (tmp) = types;
     FUNDEF_NAME (tmp) = name;
@@ -771,10 +570,10 @@ node *
 MakeArg (char *name, types *type, statustype status, statustype attrib, node *next)
 {
     node *tmp;
-    DBUG_ENTER ("MakeArg");
-    INIT_NODE (tmp);
 
-    NODE_TYPE (tmp) = N_arg;
+    DBUG_ENTER ("MakeArg");
+
+    tmp = CreateCleanNode (N_arg);
 
     ARG_TYPE (tmp) = type;
     ARG_NAME (tmp) = name;
@@ -796,10 +595,10 @@ node *
 MakeBlock (node *instr, node *vardec)
 {
     node *tmp;
-    DBUG_ENTER ("MakeBlock");
-    INIT_NODE (tmp);
 
-    NODE_TYPE (tmp) = N_block;
+    DBUG_ENTER ("MakeBlock");
+
+    tmp = CreateCleanNode (N_block);
 
     BLOCK_INSTR (tmp) = instr;
     BLOCK_VARDEC (tmp) = vardec;
@@ -818,10 +617,10 @@ node *
 MakeVardec (char *name, types *type, node *next)
 {
     node *tmp;
-    DBUG_ENTER ("MakeVardec");
-    INIT_NODE (tmp);
 
-    NODE_TYPE (tmp) = N_vardec;
+    DBUG_ENTER ("MakeVardec");
+
+    tmp = CreateCleanNode (N_vardec);
 
     VARDEC_TYPE (tmp) = type;
     VARDEC_NAME (tmp) = name;
@@ -839,10 +638,10 @@ node *
 MakeAssign (node *instr, node *next)
 {
     node *tmp;
-    DBUG_ENTER ("MakeAssign");
-    INIT_NODE (tmp);
 
-    NODE_TYPE (tmp) = N_assign;
+    DBUG_ENTER ("MakeAssign");
+
+    tmp = CreateCleanNode (N_assign);
 
     ASSIGN_INSTR (tmp) = instr;
     ASSIGN_NEXT (tmp) = next;
@@ -862,10 +661,10 @@ node *
 MakeLet (node *expr, ids *ids)
 {
     node *tmp;
-    DBUG_ENTER ("MakeLet");
-    INIT_NODE (tmp);
 
-    NODE_TYPE (tmp) = N_let;
+    DBUG_ENTER ("MakeLet");
+
+    tmp = CreateCleanNode (N_let);
 
     LET_EXPR (tmp) = expr;
     LET_IDS (tmp) = ids;
@@ -882,10 +681,10 @@ node *
 MakeCast (node *expr, types *type)
 {
     node *tmp;
-    DBUG_ENTER ("MakeCast");
-    INIT_NODE (tmp);
 
-    NODE_TYPE (tmp) = N_cast;
+    DBUG_ENTER ("MakeCast");
+
+    tmp = CreateCleanNode (N_cast);
 
     CAST_TYPE (tmp) = type;
     CAST_EXPR (tmp) = expr;
@@ -902,10 +701,10 @@ node *
 MakeReturn (node *exprs)
 {
     node *tmp;
-    DBUG_ENTER ("MakeReturn");
-    INIT_NODE (tmp);
 
-    NODE_TYPE (tmp) = N_return;
+    DBUG_ENTER ("MakeReturn");
+
+    tmp = CreateCleanNode (N_return);
 
     RETURN_EXPRS (tmp) = exprs;
 
@@ -921,10 +720,10 @@ node *
 MakeCond (node *cond, node *Then, node *Else)
 {
     node *tmp;
-    DBUG_ENTER ("MakeCond");
-    INIT_NODE (tmp);
 
-    NODE_TYPE (tmp) = N_cond;
+    DBUG_ENTER ("MakeCond");
+
+    tmp = CreateCleanNode (N_cond);
 
     COND_COND (tmp) = cond;
     COND_THEN (tmp) = Then;
@@ -942,10 +741,10 @@ node *
 MakeDo (node *cond, node *body)
 {
     node *tmp;
-    DBUG_ENTER ("MakeDo");
-    INIT_NODE (tmp);
 
-    NODE_TYPE (tmp) = N_do;
+    DBUG_ENTER ("MakeDo");
+
+    tmp = CreateCleanNode (N_do);
 
     DO_COND (tmp) = cond;
     DO_BODY (tmp) = body;
@@ -962,10 +761,10 @@ node *
 MakeWhile (node *cond, node *body)
 {
     node *tmp;
-    DBUG_ENTER ("MakeWhile");
-    INIT_NODE (tmp);
 
-    NODE_TYPE (tmp) = N_while;
+    DBUG_ENTER ("MakeWhile");
+
+    tmp = CreateCleanNode (N_while);
 
     WHILE_COND (tmp) = cond;
     WHILE_BODY (tmp) = body;
@@ -992,10 +791,10 @@ node *
 MakeAnnotate (int tag, int funno, int funapno)
 {
     node *tmp;
-    DBUG_ENTER ("MakeAnnotate");
-    INIT_NODE (tmp);
 
-    NODE_TYPE (tmp) = N_annotate;
+    DBUG_ENTER ("MakeAnnotate");
+
+    tmp = CreateCleanNode (N_annotate);
 
     ANNOTATE_TAG (tmp) = tag;
     ANNOTATE_FUNNUMBER (tmp) = funno;
@@ -1013,10 +812,10 @@ node *
 MakeAp (char *name, char *mod, node *args)
 {
     node *tmp;
-    DBUG_ENTER ("MakeAp");
-    INIT_NODE (tmp);
 
-    NODE_TYPE (tmp) = N_ap;
+    DBUG_ENTER ("MakeAp");
+
+    tmp = CreateCleanNode (N_ap);
 
     AP_NAME (tmp) = name;
     AP_MOD (tmp) = mod;
@@ -1035,10 +834,10 @@ node *
 MakeWith (node *gen, node *operator)
 {
     node *tmp;
-    DBUG_ENTER ("MakeWith");
-    INIT_NODE (tmp);
 
-    NODE_TYPE (tmp) = N_with;
+    DBUG_ENTER ("MakeWith");
+
+    tmp = CreateCleanNode (N_with);
 
     WITH_GEN (tmp) = gen;
     WITH_OPERATOR (tmp) = operator;
@@ -1055,10 +854,10 @@ node *
 MakeGenerator (node *left, node *right, char *id)
 {
     node *tmp;
-    DBUG_ENTER ("MakeGenerator");
-    INIT_NODE (tmp);
 
-    NODE_TYPE (tmp) = N_generator;
+    DBUG_ENTER ("MakeGenerator");
+
+    tmp = CreateCleanNode (N_generator);
 
     GEN_LEFT (tmp) = left;
     GEN_RIGHT (tmp) = right;
@@ -1076,10 +875,10 @@ node *
 MakeGenarray (node *array, node *body)
 {
     node *tmp;
-    DBUG_ENTER ("MakeGenarray");
-    INIT_NODE (tmp);
 
-    NODE_TYPE (tmp) = N_genarray;
+    DBUG_ENTER ("MakeGenarray");
+
+    tmp = CreateCleanNode (N_genarray);
 
     GENARRAY_ARRAY (tmp) = array;
     GENARRAY_BODY (tmp) = body;
@@ -1096,10 +895,10 @@ node *
 MakeModarray (node *array, node *body)
 {
     node *tmp;
-    DBUG_ENTER ("MakeModarray");
-    INIT_NODE (tmp);
 
-    NODE_TYPE (tmp) = N_modarray;
+    DBUG_ENTER ("MakeModarray");
+
+    tmp = CreateCleanNode (N_modarray);
 
     MODARRAY_ARRAY (tmp) = array;
     MODARRAY_BODY (tmp) = body;
@@ -1116,10 +915,10 @@ node *
 MakeFoldprf (prf prf, node *body, node *neutral)
 {
     node *tmp;
-    DBUG_ENTER ("MakeFoldprf");
-    INIT_NODE (tmp);
 
-    NODE_TYPE (tmp) = N_foldprf;
+    DBUG_ENTER ("MakeFoldprf");
+
+    tmp = CreateCleanNode (N_foldprf);
 
     FOLDPRF_PRF (tmp) = prf;
     FOLDPRF_BODY (tmp) = body;
@@ -1139,10 +938,10 @@ node *
 MakeFoldfun (char *name, char *mod, node *body, node *neutral)
 {
     node *tmp;
-    DBUG_ENTER ("MakeFoldfun");
-    INIT_NODE (tmp);
 
-    NODE_TYPE (tmp) = N_foldfun;
+    DBUG_ENTER ("MakeFoldfun");
+
+    tmp = CreateCleanNode (N_foldfun);
 
     FOLDFUN_NAME (tmp) = name;
     FOLDFUN_MOD (tmp) = mod;
@@ -1161,10 +960,10 @@ node *
 MakeExprs (node *expr, node *next)
 {
     node *tmp;
-    DBUG_ENTER ("MakeExprs");
-    INIT_NODE (tmp);
 
-    NODE_TYPE (tmp) = N_exprs;
+    DBUG_ENTER ("MakeExprs");
+
+    tmp = CreateCleanNode (N_exprs);
 
     EXPRS_EXPR (tmp) = expr;
     EXPRS_NEXT (tmp) = next;
@@ -1181,10 +980,10 @@ node *
 MakeArray (node *aelems)
 {
     node *tmp;
-    DBUG_ENTER ("MakeArray");
-    INIT_NODE (tmp);
 
-    NODE_TYPE (tmp) = N_array;
+    DBUG_ENTER ("MakeArray");
+
+    tmp = CreateCleanNode (N_array);
 
     ARRAY_AELEMS (tmp) = aelems;
 
@@ -1202,10 +1001,10 @@ node *
 MakeVinfo (useflag flag, types *type, node *next)
 {
     node *tmp;
-    DBUG_ENTER ("MakeVinfo");
-    INIT_NODE (tmp);
 
-    NODE_TYPE (tmp) = N_vinfo;
+    DBUG_ENTER ("MakeVinfo");
+
+    tmp = CreateCleanNode (N_vinfo);
 
     VINFO_FLAG (tmp) = flag;
     VINFO_TYPE (tmp) = type;
@@ -1224,10 +1023,10 @@ node *
 MakeId (char *name, char *mod, statustype status)
 {
     node *tmp;
-    DBUG_ENTER ("MakeId");
-    INIT_NODE (tmp);
 
-    NODE_TYPE (tmp) = N_id;
+    DBUG_ENTER ("MakeId");
+
+    tmp = CreateCleanNode (N_id);
 
     tmp->info.ids = MakeIds (name, mod, status);
 
@@ -1243,10 +1042,10 @@ node *
 MakeId2 (ids *ids_node)
 {
     node *tmp;
-    DBUG_ENTER ("MakeId2");
-    INIT_NODE (tmp);
 
-    NODE_TYPE (tmp) = N_id;
+    DBUG_ENTER ("MakeId2");
+
+    tmp = CreateCleanNode (N_id);
 
     tmp->info.ids = ids_node;
 
@@ -1262,10 +1061,10 @@ node *
 MakeNum (int val)
 {
     node *tmp;
-    DBUG_ENTER ("MakeNum");
-    INIT_NODE (tmp);
 
-    NODE_TYPE (tmp) = N_num;
+    DBUG_ENTER ("MakeNum");
+
+    tmp = CreateCleanNode (N_num);
 
     NUM_VAL (tmp) = val;
 
@@ -1281,10 +1080,10 @@ node *
 MakeChar (char val)
 {
     node *tmp;
-    DBUG_ENTER ("MakeChar");
-    INIT_NODE (tmp);
 
-    NODE_TYPE (tmp) = N_char;
+    DBUG_ENTER ("MakeChar");
+
+    tmp = CreateCleanNode (N_char);
 
     CHAR_VAL (tmp) = val;
 
@@ -1300,10 +1099,10 @@ node *
 MakeFloat (float val)
 {
     node *tmp;
-    DBUG_ENTER ("MakeFloat");
-    INIT_NODE (tmp);
 
-    NODE_TYPE (tmp) = N_float;
+    DBUG_ENTER ("MakeFloat");
+
+    tmp = CreateCleanNode (N_float);
 
     FLOAT_VAL (tmp) = val;
 
@@ -1319,10 +1118,10 @@ node *
 MakeDouble (double val)
 {
     node *tmp;
-    DBUG_ENTER ("MakeDouble");
-    INIT_NODE (tmp);
 
-    NODE_TYPE (tmp) = N_double;
+    DBUG_ENTER ("MakeDouble");
+
+    tmp = CreateCleanNode (N_double);
 
     DOUBLE_VAL (tmp) = val;
 
@@ -1338,10 +1137,10 @@ node *
 MakeBool (int val)
 {
     node *tmp;
-    DBUG_ENTER ("MakeBool");
-    INIT_NODE (tmp);
 
-    NODE_TYPE (tmp) = N_bool;
+    DBUG_ENTER ("MakeBool");
+
+    tmp = CreateCleanNode (N_bool);
 
     BOOL_VAL (tmp) = val;
 
@@ -1357,10 +1156,10 @@ node *
 MakeStr (char *str)
 {
     node *tmp;
-    DBUG_ENTER ("MakeStr");
-    INIT_NODE (tmp);
 
-    NODE_TYPE (tmp) = N_str;
+    DBUG_ENTER ("MakeStr");
+
+    tmp = CreateCleanNode (N_str);
 
     STR_STRING (tmp) = str;
 
@@ -1376,10 +1175,10 @@ node *
 MakePrf (prf prf, node *args)
 {
     node *tmp;
-    DBUG_ENTER ("MakePrf");
-    INIT_NODE (tmp);
 
-    NODE_TYPE (tmp) = N_prf;
+    DBUG_ENTER ("MakePrf");
+
+    tmp = CreateCleanNode (N_prf);
 
     PRF_PRF (tmp) = prf;
     PRF_ARGS (tmp) = args;
@@ -1396,10 +1195,10 @@ node *
 MakeEmpty ()
 {
     node *tmp;
-    DBUG_ENTER ("MakeEmpty");
-    INIT_NODE (tmp);
 
-    NODE_TYPE (tmp) = N_empty;
+    DBUG_ENTER ("MakeEmpty");
+
+    tmp = CreateCleanNode (N_empty);
 
     DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
                              mdb_nodetype[NODE_TYPE (tmp)], tmp));
@@ -1413,10 +1212,10 @@ node *
 MakePost (int incdec, char *id)
 {
     node *tmp;
-    DBUG_ENTER ("MakePost");
-    INIT_NODE (tmp);
 
-    NODE_TYPE (tmp) = N_post;
+    DBUG_ENTER ("MakePost");
+
+    tmp = CreateCleanNode (N_post);
 
     POST_ID (tmp) = id;
 
@@ -1434,8 +1233,7 @@ MakePost (int incdec, char *id)
      *  This is needed until all files are converted to the new representation.
      */
 
-    INIT_NODE (tmp->node[0]);
-    tmp->node[0]->nodetype = (0 == incdec ? N_dec : N_inc);
+    tmp->node[0] = CreateCleanNode (0 == incdec ? N_dec : N_inc);
 
     DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
                              mdb_nodetype[NODE_TYPE (tmp)], tmp));
@@ -1449,10 +1247,10 @@ node *
 MakePre (nodetype incdec, char *id)
 {
     node *tmp;
-    DBUG_ENTER ("MakePre");
-    INIT_NODE (tmp);
 
-    NODE_TYPE (tmp) = N_pre;
+    DBUG_ENTER ("MakePre");
+
+    tmp = CreateCleanNode (N_pre);
 
     PRE_ID (tmp) = id;
 
@@ -1470,8 +1268,7 @@ MakePre (nodetype incdec, char *id)
      *  This is needed until all files are converted to the new representation.
      */
 
-    INIT_NODE (tmp->node[0]);
-    tmp->node[0]->nodetype = (0 == incdec ? N_dec : N_inc);
+    tmp->node[0] = CreateCleanNode (0 == incdec ? N_dec : N_inc);
 
     DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
                              mdb_nodetype[NODE_TYPE (tmp)], tmp));
@@ -1485,10 +1282,10 @@ node *
 MakeIcm (char *name, node *args, node *next)
 {
     node *tmp;
-    DBUG_ENTER ("MakeIcm");
-    INIT_NODE (tmp);
 
-    NODE_TYPE (tmp) = N_icm;
+    DBUG_ENTER ("MakeIcm");
+
+    tmp = CreateCleanNode (N_icm);
 
     ICM_NAME (tmp) = name;
     ICM_ARGS (tmp) = args;
@@ -1590,9 +1387,8 @@ MakePragma ()
     node *tmp;
 
     DBUG_ENTER ("MakePragma");
-    INIT_NODE (tmp);
 
-    NODE_TYPE (tmp) = N_pragma;
+    tmp = CreateCleanNode (N_pragma);
 
     PRAGMA_NUMPARAMS (tmp) = 0;
 
@@ -1610,9 +1406,8 @@ MakeInfo ()
     node *tmp;
 
     DBUG_ENTER ("MakeInfo");
-    INIT_NODE (tmp);
 
-    NODE_TYPE (tmp) = N_info;
+    tmp = CreateCleanNode (N_info);
 
     DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
                              mdb_nodetype[NODE_TYPE (tmp)], tmp));
@@ -1628,9 +1423,9 @@ MakeSpmd (node *region)
     node *tmp;
 
     DBUG_ENTER ("MakeSpmd");
-    INIT_NODE (tmp);
 
-    NODE_TYPE (tmp) = N_spmd;
+    tmp = CreateCleanNode (N_spmd);
+
     SPMD_REGION (tmp) = region;
 
     DBUG_RETURN (tmp);
@@ -1644,9 +1439,9 @@ MakeSync (node *region, int first)
     node *tmp;
 
     DBUG_ENTER ("MakeSync");
-    INIT_NODE (tmp);
 
-    NODE_TYPE (tmp) = N_sync;
+    tmp = CreateCleanNode (N_sync);
+
     SYNC_REGION (tmp) = region;
     SYNC_FIRST (tmp) = first;
 
@@ -1661,9 +1456,9 @@ MakeNWith (node *part, node *code, node *withop)
     node *tmp;
 
     DBUG_ENTER ("MakeNWith");
-    INIT_NODE (tmp);
 
-    NODE_TYPE (tmp) = N_Nwith;
+    tmp = CreateCleanNode (N_Nwith);
+
     NWITH_PART (tmp) = part;
     NWITH_CODE (tmp) = code;
     NWITH_WITHOP (tmp) = withop;
@@ -1686,9 +1481,9 @@ MakeNPart (node *withid, node *generator, node *code)
     node *tmp;
 
     DBUG_ENTER ("MakeNPart");
-    INIT_NODE (tmp);
 
-    NODE_TYPE (tmp) = N_Npart;
+    tmp = CreateCleanNode (N_Npart);
+
     NPART_GEN (tmp) = generator;
     NPART_WITHID (tmp) = withid;
     NPART_CODE (tmp) = code;
@@ -1707,9 +1502,9 @@ MakeNWithid (ids *vec, ids *scalars)
     node *tmp;
 
     DBUG_ENTER ("MakeNWithid");
-    INIT_NODE (tmp);
 
-    NODE_TYPE (tmp) = N_Nwithid;
+    tmp = CreateCleanNode (N_Nwithid);
+
     NWITHID_VEC (tmp) = vec;
     NWITHID_IDS (tmp) = scalars;
 
@@ -1724,9 +1519,9 @@ MakeNGenerator (node *bound1, node *bound2, prf op1, prf op2, node *step, node *
     node *tmp;
 
     DBUG_ENTER ("MakeNGenerator");
-    INIT_NODE (tmp);
 
-    NODE_TYPE (tmp) = N_Ngenerator;
+    tmp = CreateCleanNode (N_Ngenerator);
+
     NGEN_BOUND1 (tmp) = bound1;
     NGEN_BOUND2 (tmp) = bound2;
     NGEN_OP1 (tmp) = op1;
@@ -1747,9 +1542,8 @@ MakeNWithOp (WithOpType WithOp)
     node *tmp;
 
     DBUG_ENTER ("MakeNWithOp");
-    INIT_NODE (tmp);
 
-    NODE_TYPE (tmp) = N_Nwithop;
+    tmp = CreateCleanNode (N_Nwithop);
 
     /* allocate mem to store WithOpType in. */
     tmp->info2 = MALLOC (sizeof (WithOpType));
@@ -1766,9 +1560,9 @@ MakeNCode (node *block, node *expr)
     node *tmp;
 
     DBUG_ENTER ("MakeNCODE");
-    INIT_NODE (tmp);
 
-    NODE_TYPE (tmp) = N_Ncode;
+    tmp = CreateCleanNode (N_Ncode);
+
     NCODE_CBLOCK (tmp) = block;
     NCODE_CEXPR (tmp) = expr;
     NCODE_USED (tmp) = 0;
@@ -1785,9 +1579,9 @@ MakeNWith2 (node *withid, node *seg, node *code, node *withop, int dims)
     node *tmp;
 
     DBUG_ENTER ("MakeNWith2");
-    INIT_NODE (tmp);
 
-    NODE_TYPE (tmp) = N_Nwith2;
+    tmp = CreateCleanNode (N_Nwith2);
+
     NWITH2_WITHID (tmp) = withid;
     NWITH2_SEGS (tmp) = seg;
     NWITH2_CODE (tmp) = code;
@@ -1806,9 +1600,9 @@ MakeWLseg (int dims, node *contents, node *next)
     int b, d;
 
     DBUG_ENTER ("MakeWLseg");
-    INIT_NODE (new_node);
 
-    NODE_TYPE (new_node) = N_WLseg;
+    new_node = CreateCleanNode (N_WLseg);
+
     WLSEG_DIMS (new_node) = dims;
 
     WLSEG_CONTENTS (new_node) = contents;
@@ -1847,9 +1641,8 @@ MakeWLblock (int level, int dim, int bound1, int bound2, int step, node *nextdim
     node *new_node;
 
     DBUG_ENTER ("MakeWLblock");
-    INIT_NODE (new_node);
 
-    NODE_TYPE (new_node) = N_WLblock;
+    new_node = CreateCleanNode (N_WLblock);
 
     WLBLOCK_LEVEL (new_node) = level;
     WLBLOCK_DIM (new_node) = dim;
@@ -1891,9 +1684,8 @@ MakeWLstride (int level, int dim, int bound1, int bound2, int step, int unrollin
     node *new_node;
 
     DBUG_ENTER ("MakeWLstride");
-    INIT_NODE (new_node);
 
-    NODE_TYPE (new_node) = N_WLstride;
+    new_node = CreateCleanNode (N_WLstride);
 
     WLSTRIDE_LEVEL (new_node) = level;
     WLSTRIDE_DIM (new_node) = dim;
@@ -1921,9 +1713,8 @@ MakeWLgrid (int level, int dim, int bound1, int bound2, int unrolling, node *nex
     node *new_node;
 
     DBUG_ENTER ("MakeWLgrid");
-    INIT_NODE (new_node);
 
-    NODE_TYPE (new_node) = N_WLgrid;
+    new_node = CreateCleanNode (N_WLgrid);
 
     WLGRID_LEVEL (new_node) = level;
     WLGRID_DIM (new_node) = dim;
@@ -1952,9 +1743,9 @@ MakeWLsegVar (int dims, node *contents, node *next)
     int b, d;
 
     DBUG_ENTER ("MakeWLsegVar");
-    INIT_NODE (new_node);
 
-    NODE_TYPE (new_node) = N_WLsegVar;
+    new_node = CreateCleanNode (N_WLsegVar);
+
     WLSEGVAR_DIMS (new_node) = dims;
 
     WLSEGVAR_CONTENTS (new_node) = contents;
@@ -1993,9 +1784,8 @@ MakeWLstriVar (int level, int dim, node *bound1, node *bound2, node *step, node 
     node *new_node;
 
     DBUG_ENTER ("MakeWLstriVar");
-    INIT_NODE (new_node);
 
-    NODE_TYPE (new_node) = N_WLstriVar;
+    new_node = CreateCleanNode (N_WLstriVar);
 
     WLSTRIVAR_LEVEL (new_node) = level;
     WLSTRIVAR_DIM (new_node) = dim;
@@ -2019,9 +1809,8 @@ MakeWLgridVar (int level, int dim, node *bound1, node *bound2, node *nextdim, no
     node *new_node;
 
     DBUG_ENTER ("MakeWLgridVar");
-    INIT_NODE (new_node);
 
-    NODE_TYPE (new_node) = N_WLgridVar;
+    new_node = CreateCleanNode (N_WLgridVar);
 
     WLGRIDVAR_LEVEL (new_node) = level;
     WLGRIDVAR_DIM (new_node) = dim;
