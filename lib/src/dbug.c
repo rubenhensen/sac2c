@@ -48,11 +48,35 @@
 #ifndef DBUG_OFF
 
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <malloc.h>
 
 #include "dbug.h"
+
+/*
+ * some platform specific settings:
+ */
+
+#ifdef SAC_FOR_SOLARIS_SPARC
+#define STRTOK_EXISTS
+#define STRRCHR_EXISTS
+
+#else
+#ifdef SAC_FOR_LINUX_X86
+#define C370
+#define STRTOK_EXISTS
+#define STRRCHR_EXISTS
+
+#else
+#ifdef SAC_FOR_OSF_ALPHA
+#define STRTOK_EXISTS
+#define STRRCHR_EXISTS
+
+#endif
+#endif
+#endif
 
 /*
  *     Manifest constants that should not require any changes.
@@ -216,8 +240,12 @@ LOCAL char *DbugMalloc (); /* Allocate memory for runtime support */
 LOCAL char *BaseName ();   /* Remove leading pathname components */
 
 /* Supplied in Sys V runtime environ */
-LOCAL char *strtok ();  /* Break string into tokens */
+#ifndef STRTOK_EXISTS
+LOCAL char *strtok (); /* Break string into tokens */
+#endif
+#ifndef STRRCHR_EXISTS
 LOCAL char *strrchr (); /* Find last occurance of char */
+#endif
 
 /*
  *     The following local variables are used to hold the state information
@@ -1339,6 +1367,7 @@ LOCAL char *DbugMalloc (size) int size;
  *     in the runtime environment (missing from BSD4.1).
  */
 
+#ifndef STRTOK_EXISTS
 LOCAL char *strtok (s1, s2) char *s1, *s2;
 {
     static char *end = NULL;
@@ -1363,6 +1392,7 @@ LOCAL char *strtok (s1, s2) char *s1, *s2;
     }
     return (rtnval);
 }
+#endif
 
 /*
  *  FUNCTION
@@ -1455,6 +1485,7 @@ LOCAL BOOLEAN Writable (pathname) char *pathname;
  *     Alternately, you can use rindex() on BSD systems.
  */
 
+#ifndef STRRCHR_EXISTS
 LOCAL char *strrchr (s, c) char *s;
 char c;
 {
@@ -1471,6 +1502,7 @@ char c;
     }
     return (scan);
 }
+#endif
 
 #if 0
 /*
