@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.54  1998/05/04 15:41:03  dkr
+# make deps done
+#
 # Revision 1.53  1998/05/03 14:04:32  dkr
 # make deps done
 #
@@ -233,6 +236,15 @@ Old2NewWith.o: ../global/internal_lib.h ../global/traverse.h
 Old2NewWith.o: ../typecheck/typecheck.h ../global/free.h ../../inc/dbug.h
 Old2NewWith.o: ../global/my_debug.h /usr/include/malloc.h
 Old2NewWith.o: ../optimize/DupTree.h
+compile.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
+compile.o: /usr/include/string.h ../global/tree.h ../global/types.h
+compile.o: ../global/tree_basic.h ../global/tree_compound.h ../global/Error.h
+compile.o: /usr/include/stdio.h /usr/include/sys/va_list.h
+compile.o: ../global/globals.h ../global/internal_lib.h ../print/print.h
+compile.o: ../../inc/dbug.h ../global/my_debug.h ../global/traverse.h
+compile.o: compile.h ../print/convert.h ../optimize/DupTree.h
+compile.o: ../refcount/refcount.h ../typecheck/typecheck.h ../global/free.h
+compile.o: /usr/include/malloc.h
 gen_startup_code.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 gen_startup_code.o: /usr/include/sys/va_list.h ../../inc/dbug.h
 gen_startup_code.o: ../global/globals.h ../global/types.h
