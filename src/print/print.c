@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.139  1997/11/29 15:49:53  srs
+ * the print routine for the new WLs prints the 'user-syntax'
+ * if only one Npart node is present. Else an internal syntax
+ * (with many Npart nodes) is used.
+ *
  * Revision 1.138  1997/11/25 11:05:04  srs
  * modifies output for new WLs
  *
@@ -441,6 +446,19 @@
  * RCS-header inserted
  *
  *
+ */
+
+/*
+ * use of arg_info in this file:
+ * - node[0] is used while printing the old WLs to return the main
+ *   expr from the block.
+ * - arg_info is not NULL if only function definitions (without bodies) should
+ *   be printed.
+ * - node[1]: profile macros
+ * - node[2] determines which syntax of the new WLs is printed. If it's
+ *   NULL then the intermal syntax is uses which allows to state more than
+ *   one Npart. Else the last (and hopefully only) Npart returns the
+ *   last expr in node[2].
  */
 
 #include <stdio.h>
@@ -1514,7 +1532,7 @@ PrintGenarray (node *arg_node, node *arg_info)
     INDENT;
 
     if (NODE_TYPE (ASSIGN_INSTR (BLOCK_INSTR (GENARRAY_BODY (arg_node)))) != N_return) {
-        /* srs: right now arg_info->node[0] is NULL, but in PrintReturn it
+        /* right now arg_info->node[0] is NULL, but in PrintReturn it
            will be replaced by a pointer to an N_return node instead of
            printing it. */
         fprintf (outfile, "\n");
@@ -1856,15 +1874,41 @@ PrintPragma (node *arg_node, node *arg_info)
 }
 /* ----------------------------------------------------------------------- */
 
+/* -------------------------------------------------------------------------- *
+ * task: prints Nwith node.
+ *
+ * remarks: there are syntactic alternatives to print the new WLs.
+ * If only one Npart node exists the WL is printed in the way the
+ * scanner can handle it. This is essential because the SIBs (which are
+ * written with this code) have to be scanned again.
+ * If a complete partition exists (more than one Npart) an internal
+ * syntax is used.
+ *
+ * node[2] of arg_info is NULL for the internal syntax or != NULL if
+ * PrintNpart shall return the last expr.
+ * -------------------------------------------------------------------------- */
 node *
 PrintNWith (node *arg_node, node *arg_info)
 {
+    node *buffer;
+
     DBUG_ENTER ("PrintNWith");
 
-    fprintf (outfile, "new_with\n");
-    indent++;
-    Trav (NWITH_PART (arg_node), arg_info);
-    indent--;
+    DBUG_ASSERT (arg_info, "arg_info is NULL");
+    buffer = arg_info->node[2];
+
+    if (NPART_NEXT (NWITH_PART (arg_node))) {
+        /* more than one Npart */
+        arg_info->node[2] = NULL;
+        fprintf (outfile, "new_with\n");
+        indent++;
+        Trav (NWITH_PART (arg_node), arg_info);
+        indent--;
+    } else {
+        arg_info->node[2] = (node *)!NULL; /* set != NULL */
+        fprintf (outfile, "new_with ");
+        Trav (NWITH_PART (arg_node), arg_info);
+    }
 
     INDENT;
     switch (NWITHOP_TYPE (NWITH_WITHOP (arg_node))) {
@@ -1893,8 +1937,15 @@ PrintNWith (node *arg_node, node *arg_info)
         break;
     }
 
+    if (!NPART_NEXT (NWITH_PART (arg_node))) {
+        /* now we have in arg_info->node[2] the last expr. */
+        fprintf (outfile, ", ");
+        Trav (arg_info->node[2], arg_info);
+    }
+
     fprintf (outfile, ")");
 
+    arg_info->node[2] = buffer;
     DBUG_RETURN (arg_node);
 }
 /* ----------------------------------------------------------------------- */
@@ -1905,7 +1956,6 @@ PrintNGenerator (node *gen, node *idx, node *arg_info)
 {
     DBUG_ENTER ("PrintNGenerator");
 
-    INDENT;
     fprintf (outfile, "(");
 
     /* print upper bound and first operator*/
@@ -1953,6 +2003,8 @@ PrintNPart (node *arg_node, node *arg_info)
     DBUG_ENTER ("PrintNPart");
 
     /* print generator */
+    if (!arg_info->node[2])
+        INDENT; /* each gen in a new line. */
     PrintNGenerator (NPART_GEN (arg_node), NPART_IDX (arg_node), arg_info);
 
     /* print the code section; first the body */
@@ -1961,7 +2013,6 @@ PrintNPart (node *arg_node, node *arg_info)
     if (NCODE_CBLOCK (code)) {
         fprintf (outfile, " {\n");
         indent++;
-        INDENT;
 
         if (BLOCK_VARDEC (NCODE_CBLOCK (code))) {
             Trav (BLOCK_VARDEC (NCODE_CBLOCK (code)), arg_info);
@@ -1976,10 +2027,15 @@ PrintNPart (node *arg_node, node *arg_info)
         fprintf (outfile, "}");
     }
 
-    /* print the expression */
+    /* print the expression if internal syntax should be used. Else
+     return expr in arg_info->node[2] */
     DBUG_ASSERT (NCODE_CEXPR (code), "No expression at N_Ncode");
-    fprintf (outfile, " : ");
-    Trav (NCODE_CEXPR (code), arg_info);
+    if (arg_info->node[2])
+        arg_info->node[2] = NCODE_CEXPR (code);
+    else {
+        fprintf (outfile, " : ");
+        Trav (NCODE_CEXPR (code), arg_info);
+    }
 
     if (NPART_NEXT (arg_node)) {
         fprintf (outfile, ",\n");
