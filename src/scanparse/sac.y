@@ -2,7 +2,6 @@
 
 /*
  *
- * $Log$
  * Revision 1.131  1997/10/01 12:32:31  dkr
  * added % and %=
  *
@@ -522,11 +521,11 @@ static file_type file_kind = F_prog;
        ARRAY,SC, TRUE, FALSE, EXTERN, C_KEYWORD,
        PRAGMA, LINKNAME, LINKSIGN, EFFECT, READONLY, REFCOUNTING,
        TOUCH, COPYFUN, FREEFUN, INITFUN, LINKWITH
-%token <id> ID, STR,AND, OR, EQ, NEQ, NOT, LE, LT, GE, GT, MUL, DIV, PRF_MOD, PLUS,
+%token <id> ID, STR, AND, OR, EQ, NEQ, NOT, LE, LT, GE, GT, MUL, DIV, PRF_MOD, PLUS,
             F2I, F2D, I2F,I2D, D2I, D2F,
             TOI, TOF, TOD, 
-            MINUS, PRIVATEID,
-            RESHAPE, SHAPE, TAKE, DROP, DIM, ROTATE,CAT,PSI,GENARRAY, MODARRAY
+            MINUS, PRIVATEID, ABS,
+            RESHAPE, SHAPE, TAKE, DROP, DIM, ROTATE, CAT, PSI, GENARRAY, MODARRAY
 %token <types> TYPE_INT, TYPE_FLOAT, TYPE_BOOL, TYPE_UNS, TYPE_SHORT,
                TYPE_LONG, TYPE_CHAR, TYPE_DBL, TYPE_VOID, TYPE_DOTS
 %token <cint> NUM
@@ -1480,6 +1479,7 @@ prf_name : AND { $$=$1; }
          | LT { $$=$1; }
          | GE { $$=$1; }
          | GT { $$=$1; }
+         | ABS { $$=$1; }
          | PLUS { $$=$1; }
          | MINUS { $$=$1; }
          | DIV { $$=$1; }
@@ -2578,7 +2578,7 @@ foldfun:  id COMMA
     ;
      
  
-foldop: PLUS {$$=F_add; }
+foldop:   PLUS {$$=F_add; }
 	| MINUS {$$=F_sub;}
 	| DIV {$$=F_div;}
 	| MUL {$$=F_mul;}
@@ -2589,7 +2589,12 @@ foldop: PLUS {$$=F_add; }
 	| NEQ {$$=F_neq;}
 	;
 
-monop: DIM
+monop:   ABS
+         {
+            $$=MakeNode(N_prf);
+            $$->info.prf=F_abs;
+         }
+       | DIM
          { 
             $$=MakeNode(N_prf);
             $$->info.prf=F_dim;

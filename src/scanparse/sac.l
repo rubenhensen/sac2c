@@ -2,7 +2,6 @@
 
 /*
  *
- * $Log$
  * Revision 1.44  1997/10/01 12:32:02  dkr
  * added % and %=
  *
@@ -274,6 +273,7 @@ int start_token;
 "/="				{FILTER( DIVON );}
 "%="				{FILTER( MODON );}
 
+"abs"				{FILTER7( ABS,prf_name_str[F_abs] );}
 "reshape"			{FILTER7( RESHAPE, prf_name_str[F_reshape] );}
 "shape"				{FILTER7( SHAPE,prf_name_str[F_shape] );}
 "take"				{FILTER7( TAKE,prf_name_str[F_take] );}
