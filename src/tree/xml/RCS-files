@@ -12,3 +12,4 @@ common-make-head.xsl
 common-flag-defines.xsl
 common-name-to-nodeenum.xsl
 common-node-access.xsl
+common-make-assertion.xsl
