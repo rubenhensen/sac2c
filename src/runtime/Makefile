@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.6  1999/04/26 11:42:05  her
+# modifications for the piped-cachesimulation
+#
 # Revision 2.5  1999/04/09 09:40:53  her
 # added libsac_message.o to the CacheSimTest target
 #
@@ -74,13 +77,13 @@ CCFLAGS   := -ansi -Wall -D__EXTENSIONS__ -g -O3
 
 INCS := -I../global -I../../inc
 OBJS := $(patsubst %.c,%.o,$(wildcard libsac_*.c)) libsac_trace_mt.o\
-        libsac_cachesim_access_detailed.o
+        libsac_cachesim_access_advanced.o
 
 
 .PHONY: all tar
 
 
-all:  libsac.a
+all:  libsac.a CacheSimAnalyser
 
 tar: runtime.tar
 
@@ -91,7 +94,7 @@ libsac.a: $(OBJS)
 libsac_trace_mt.o: libsac_mt.c 
 	$(CC) -DTRACE $(CCFLAGS) $(CFLAGS) $(INCS) -o $@ -c $<
 
-libsac_cachesim_access_detailed.o: libsac_cachesim_access.c 
+libsac_cachesim_access_advanced.o: libsac_cachesim_access.c 
 	$(CC) -D TYPE=D -D DETAILED $(CCFLAGS) $(CFLAGS) $(INCS) -o $@ -c $<
 
 %.o: %.c 
@@ -109,12 +112,13 @@ clean:
 	$(RM) runtime.tar
 	$(RM) sac2crc CacheSimTest
 
-CacheSimTest.o: CacheSimTest.c
-	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) -o $@ -c $<
+CacheSimAnalyser: CacheSimAnalyser.o libsac_cachesim_basic.o libsac_message.o\
+                  libsac_cachesim_access.o libsac_cachesim_access_advanced.o
+	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) -lm -o $@ $^ 
 
-CacheSimTest: CacheSimTest.o libsac_cachesim_basic.o libsac_cachesim_access.o\
-              libsac_cachesim_access_detailed.o libsac_message.o
-	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) -o $@ $^
+CacheSimTest: CacheSimTest.o libsac_cachesim_basic.o libsac_message.o\
+              libsac_cachesim_access.o libsac_cachesim_access_advanced.o
+	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) -lm -o $@ $^
 
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.

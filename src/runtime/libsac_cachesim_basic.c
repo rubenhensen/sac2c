@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.6  1999/04/26 11:42:50  her
+ * modifications for the piped-cachesimulation
+ *
  * Revision 2.5  1999/04/14 09:23:15  cg
  * Cache simulation may now be triggered by pragmas.
  *
@@ -42,6 +45,13 @@ ULINT SAC_CS_hit[MAX_CACHELEVEL + 1], SAC_CS_invalid[MAX_CACHELEVEL + 1],
 /* SAC_CS_XXX[0] is unused */
 
 int SAC_CS_level = 1;
+FILE *SAC_CS_pipehandle;
+
+void (*SAC_CS_Finalize) (void);
+void (*SAC_CS_RegisterArray) (void * /*baseaddress*/, int /*size*/);
+void (*SAC_CS_UnregisterArray) (void * /*baseaddress*/);
+void (*SAC_CS_Start) (char * /*tag*/);
+void (*SAC_CS_Stop) (void);
 
 tFunRWAccess SAC_CS_ReadAccess, SAC_CS_WriteAccess,
   SAC_CS_read_access_table[MAX_CACHELEVEL + 2],
@@ -54,6 +64,20 @@ static char *starttag;
 static tProfilingLevel profiling_level;
 
 /* forward declarations */
+static void Finalize (void);
+static void RegisterArray (void *baseaddress, int size /* in byte */);
+static void UnregisterArray (void *baseaddress);
+static void Start (char *tag);
+static void Stop (void);
+
+static void Piped_Finalize (void);
+static void Piped_RegisterArray (void *baseaddress, int size /* in byte */);
+static void Piped_UnregisterArray (void *baseaddress);
+static void Piped_ReadAccess (void *baseaddress, void *elemaddress);
+static void Piped_WriteAccess (void *baseaddress, void *elemaddress);
+static void Piped_Start (char *tag);
+static void Piped_Stop (void);
+
 void SAC_CS_Access_MM (void *baseaddress, void *elemaddress);
 
 void SAC_CS_Access_DMRead_S (void *baseaddress, void *elemaddress);
@@ -406,7 +430,10 @@ SAC_CS_Initialize (int nr_of_cpu, tProfilingLevel profilinglevel, ULINT cachesiz
                    tWritePolicy writepolicy2, ULINT cachesize3, int cachelinesize3,
                    int associativity3, tWritePolicy writepolicy3)
 {
+    tProfilingLevel transmitted_plevel;
+
     profiling_level = profilinglevel;
+    transmitted_plevel = profilinglevel;
 
     if (nr_of_cpu > 1) {
         SAC_RuntimeError ("Cache simulation does not support multi-threaded execution");
@@ -439,25 +466,67 @@ SAC_CS_Initialize (int nr_of_cpu, tProfilingLevel profilinglevel, ULINT cachesiz
         writepolicy3 = SAC_CS_fetch_on_write;
     }
 
-    InitializeOneCacheLevel (1, nr_of_cpu, profilinglevel, cachesize1, cachelinesize1,
-                             associativity1, writepolicy1);
+    if ((profilinglevel == SAC_CS_piped_simple)
+        || (profilinglevel == SAC_CS_piped_advanced)) {
+        switch (profilinglevel) {
+        case SAC_CS_piped_simple:
+            transmitted_plevel = SAC_CS_simple;
+            break;
+        case SAC_CS_piped_advanced:
+            transmitted_plevel = SAC_CS_advanced;
+            break;
+        default:
+            break;
+        }
+        SAC_CS_pipehandle = stdout;
+        SAC_CS_pipehandle = popen ("$SACBASE/runtime/CacheSimAnalyser", "w");
+        fprintf (SAC_CS_pipehandle,
+                 "I %d %d "
+                 "%lu %d %d %d "
+                 "%lu %d %d %d "
+                 "%lu %d %d %d\n",
+                 nr_of_cpu, transmitted_plevel, cachesize1, cachelinesize1,
+                 associativity1, writepolicy1, cachesize2, cachelinesize2, associativity2,
+                 writepolicy2, cachesize3, cachelinesize3, associativity3, writepolicy3);
 
-    InitializeOneCacheLevel (2, nr_of_cpu, profilinglevel, cachesize2, cachelinesize2,
-                             associativity2, writepolicy2);
+        /* set all other function-variables to the piped version
+         */
+        SAC_CS_Finalize = &Piped_Finalize;
+        SAC_CS_RegisterArray = &Piped_RegisterArray;
+        SAC_CS_UnregisterArray = &Piped_UnregisterArray;
+        SAC_CS_ReadAccess = &Piped_ReadAccess;
+        SAC_CS_WriteAccess = &Piped_WriteAccess;
+        SAC_CS_Start = &Piped_Start;
+        SAC_CS_Stop = &Piped_Stop;
+    } else { /* if (piped) */
 
-    InitializeOneCacheLevel (3, nr_of_cpu, profilinglevel, cachesize3, cachelinesize3,
-                             associativity3, writepolicy3);
+        InitializeOneCacheLevel (1, nr_of_cpu, profilinglevel, cachesize1, cachelinesize1,
+                                 associativity1, writepolicy1);
 
-    /* the 4th level in memory hierachy is the MainMemory
-     */
-    SAC_CS_read_access_table[4] = &SAC_CS_Access_MM;
-    SAC_CS_write_access_table[4] = &SAC_CS_Access_MM;
+        InitializeOneCacheLevel (2, nr_of_cpu, profilinglevel, cachesize2, cachelinesize2,
+                                 associativity2, writepolicy2);
 
-    /* set the userfunctions ReadAccess and WriteAccess to the right
-     * tableentry (1st cachelevel)
-     */
-    SAC_CS_ReadAccess = SAC_CS_read_access_table[1];
-    SAC_CS_WriteAccess = SAC_CS_write_access_table[1];
+        InitializeOneCacheLevel (3, nr_of_cpu, profilinglevel, cachesize3, cachelinesize3,
+                                 associativity3, writepolicy3);
+
+        /* the 4th level in memory hierachy is the MainMemory
+         */
+        SAC_CS_read_access_table[4] = &SAC_CS_Access_MM;
+        SAC_CS_write_access_table[4] = &SAC_CS_Access_MM;
+
+        /* set the userfunctions ReadAccess and WriteAccess to the right
+         * tableentry (1st cachelevel)
+         */
+        SAC_CS_ReadAccess = SAC_CS_read_access_table[1];
+        SAC_CS_WriteAccess = SAC_CS_write_access_table[1];
+        /* set all other function-variables to the unpiped/direct version
+         */
+        SAC_CS_Finalize = &Finalize;
+        SAC_CS_RegisterArray = &RegisterArray;
+        SAC_CS_UnregisterArray = &UnregisterArray;
+        SAC_CS_Start = &Start;
+        SAC_CS_Stop = &Stop;
+    } /* if-else (piped) */
 
     fprintf (stderr,
              "====================================================\n"
@@ -496,8 +565,8 @@ SAC_CS_Initialize (int nr_of_cpu, tProfilingLevel profilinglevel, ULINT cachesiz
 
 } /* SAC_CS_Initialize */
 
-void
-SAC_CS_Finalize (void)
+static void
+Finalize (void)
 {
     unsigned level, j;
 
@@ -513,10 +582,10 @@ SAC_CS_Finalize (void)
             SAC_CS_cachelevel[level] = NULL;
         } /* if */
     }     /* for: level*/
-} /* SAC_CS_Finalize */
+} /* Finalize */
 
-void
-SAC_CS_RegisterArray (void *baseaddress, int size /* in byte */)
+static void
+RegisterArray (void *baseaddress, int size /* in byte */)
 {
     int i = 0, level /* index for actual cachelevel */,
         nr_blocks /* the size of a block is the cachelinesize.
@@ -567,10 +636,10 @@ SAC_CS_RegisterArray (void *baseaddress, int size /* in byte */)
             }     /* if-else: i<MAX_SHADOWARRAYS */
         }         /* if: cl != NULL */
     }             /* for: a */
-} /* SAC_CS_RegisterArray */
+} /* RegisterArray */
 
-void
-SAC_CS_UnregisterArray (void *baseaddress)
+static void
+UnregisterArray (void *baseaddress)
 {
     int i, j, lastused;
     tCacheLevel *cl;
@@ -612,7 +681,7 @@ SAC_CS_UnregisterArray (void *baseaddress)
             } /* if */
         }     /* if */
     }         /*for: i*/
-} /* SAC_CS_UnregisterArray */
+} /* UnregisterArray */
 
 void
 SAC_CS_Access_MM (void *baseaddress, void *elemaddress)
@@ -678,8 +747,8 @@ SAC_CS_ShowResults (void)
     }     /* for: i */
 } /* SAC_CS_ShowResults */
 
-void
-SAC_CS_Start (char *tag)
+static void
+Start (char *tag)
 {
     int i;
 
@@ -704,10 +773,10 @@ SAC_CS_Start (char *tag)
 
     sim_incarnation++;
 
-} /* SAC_CS_Start */
+} /* Start */
 
-void
-SAC_CS_Stop (void)
+static void
+Stop (void)
 {
     sim_incarnation--;
 
@@ -715,4 +784,53 @@ SAC_CS_Stop (void)
         SAC_CS_ShowResults ();
         starttag = NULL;
     }
-} /* SAC_CS_Stop  */
+} /* Stop  */
+
+/* The following functions are the piped versions of the static functions
+ * above
+ */
+
+static void
+Piped_Finalize (void)
+{
+    fprintf (SAC_CS_pipehandle, "F\n");
+    pclose (SAC_CS_pipehandle);
+} /* Piped_Finalize */
+
+static void
+Piped_RegisterArray (void *baseaddress, int size)
+{
+    fprintf (SAC_CS_pipehandle, "G %.8lx %u\n", (ULINT)baseaddress, size);
+} /* Piped_RegisterArray */
+
+static void
+Piped_UnregisterArray (void *baseaddress)
+{
+    fprintf (SAC_CS_pipehandle, "U %.8lx\n", (ULINT)baseaddress);
+} /* Piped_RegisterArray */
+
+static void
+Piped_ReadAccess (void *baseaddress, void *elemaddress)
+{
+    fprintf (SAC_CS_pipehandle, "R %.8lx %.8lx\n", (ULINT)baseaddress,
+             (ULINT)elemaddress);
+} /* Piped_ReadAccessFun */
+
+static void
+Piped_WriteAccess (void *baseaddress, void *elemaddress)
+{
+    fprintf (SAC_CS_pipehandle, "W %.8lx %.8lx\n", (ULINT)baseaddress,
+             (ULINT)elemaddress);
+} /* Piped_WriteAccessFun */
+
+static void
+Piped_Start (char *tag)
+{
+    fprintf (SAC_CS_pipehandle, "B %s\n", tag);
+} /* Piped_Start */
+
+static void
+Piped_Stop (void)
+{
+    fprintf (SAC_CS_pipehandle, "E\n");
+} /* Piped_Stop */

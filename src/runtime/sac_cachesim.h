@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.7  1999/04/26 11:44:08  her
+ * modifications for the piped-cachesimulation
+ *
  * Revision 2.6  1999/04/15 15:00:56  cg
  * ';' added behind the definitions of several ICMs.
  *
@@ -66,7 +69,9 @@ typedef enum eProfilingLevel {
     SAC_CS_none,
     SAC_CS_file,
     SAC_CS_simple,
-    SAC_CS_advanced
+    SAC_CS_advanced,
+    SAC_CS_piped_simple,
+    SAC_CS_piped_advanced
 } tProfilingLevel;
 
 /******************************************************************************
@@ -125,7 +130,7 @@ extern void SAC_CS_Initialize (int nr_of_cpu, tProfilingLevel profilinglevel,
  *   Frees all the memory which has been allocated during the run.
  *
  *****************************************************************************/
-extern void SAC_CS_Finalize (void);
+extern void (*SAC_CS_Finalize) (void);
 
 /******************************************************************************
  *
@@ -138,7 +143,7 @@ extern void SAC_CS_Finalize (void);
  *   byte.
  *
  *****************************************************************************/
-extern void SAC_CS_RegisterArray (void *baseaddress, int size);
+extern void (*SAC_CS_RegisterArray) (void * /*baseaddress*/, int /*size*/);
 
 /******************************************************************************
  *
@@ -150,7 +155,7 @@ extern void SAC_CS_RegisterArray (void *baseaddress, int size);
  *   detailed profilinglevel analysis.
  *
  *****************************************************************************/
-extern void SAC_CS_UnregisterArray (void *baseaddress);
+extern void (*SAC_CS_UnregisterArray) (void * /*baseaddress*/);
 
 /******************************************************************************
  *
@@ -190,7 +195,7 @@ extern void (*SAC_CS_WriteAccess) (void * /*baseaddress*/, void * /*elemaddress*
  *   userdefined tag.
  *
  *****************************************************************************/
-extern void SAC_CS_Start (char *tag);
+extern void (*SAC_CS_Start) (char * /*tag*/);
 
 /******************************************************************************
  *
@@ -206,7 +211,7 @@ extern void SAC_CS_Start (char *tag);
  *     classification of misses as coldstart, self- or crossinterference
  *
  *****************************************************************************/
-extern void SAC_CS_Stop (void);
+extern void (*SAC_CS_Stop) (void);
 
 /*****************************************************************************
  *

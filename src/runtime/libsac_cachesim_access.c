@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.4  1999/04/26 11:43:43  her
+ * modifications for the piped-cachesimulation
+ *
  * Revision 2.3  1999/04/06 13:45:19  cg
  * added #include "libsac_cachesim.h"
  *
