@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.5  1999/05/20 14:06:40  cg
+ * bug fixed in -check option
+ * ccachesim bit mask macros reorganized.
+ *
  * Revision 2.4  1999/05/18 13:43:16  cg
  * bug fixed in analysing multi-threaded options.
  *
@@ -111,9 +115,9 @@ AnalyseCommandline (int argc, char *argv[])
     ARGS_OPTION ("check", {
         ARG_FLAGMASK_BEGIN ();
         ARG_FLAGMASK ('a', runtimecheck = RUNTIMECHECK_ALL);
-        ARG_FLAGMASK ('m', runtimecheck = RUNTIMECHECK_MALLOC);
-        ARG_FLAGMASK ('b', runtimecheck = RUNTIMECHECK_BOUNDARY);
-        ARG_FLAGMASK ('e', runtimecheck = RUNTIMECHECK_ERRNO);
+        ARG_FLAGMASK ('m', runtimecheck |= RUNTIMECHECK_MALLOC);
+        ARG_FLAGMASK ('b', runtimecheck |= RUNTIMECHECK_BOUNDARY);
+        ARG_FLAGMASK ('e', runtimecheck |= RUNTIMECHECK_ERRNO);
         ARG_FLAGMASK_END ();
     });
 
@@ -123,11 +127,14 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_FLAGMASK_BEGIN ();
         ARG_FLAGMASK ('s', cachesim &= ~CACHESIM_ADVANCED);
         ARG_FLAGMASK ('a', cachesim |= CACHESIM_ADVANCED);
-        ARG_FLAGMASK ('g', cachesim &= ~CACHESIM_PRAGMA);
-        ARG_FLAGMASK ('b', cachesim |= CACHESIM_PRAGMA);
-        ARG_FLAGMASK ('i', cachesim &= ~CACHESIM_FILE; cachesim &= ~CACHESIM_PIPE);
-        ARG_FLAGMASK ('f', cachesim |= CACHESIM_FILE; cachesim &= ~CACHESIM_PIPE);
-        ARG_FLAGMASK ('p', cachesim |= CACHESIM_PIPE; cachesim &= ~CACHESIM_FILE);
+        ARG_FLAGMASK ('g', cachesim &= ~CACHESIM_BLOCK);
+        ARG_FLAGMASK ('b', cachesim |= CACHESIM_BLOCK);
+        ARG_FLAGMASK ('f', cachesim |= CACHESIM_FILE; cachesim &= ~CACHESIM_PIPE;
+                      cachesim &= ~CACHESIM_IMMEDIATE);
+        ARG_FLAGMASK ('p', cachesim |= CACHESIM_PIPE; cachesim &= ~CACHESIM_FILE;
+                      cachesim &= ~CACHESIM_IMMEDIATE);
+        ARG_FLAGMASK ('i', cachesim |= CACHESIM_IMMEDIATE; cachesim &= ~CACHESIM_PIPE;
+                      cachesim &= ~CACHESIM_FILE);
         ARG_FLAGMASK_END ();
     });
 
