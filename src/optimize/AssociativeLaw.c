@@ -103,9 +103,13 @@ ALassign (node *arg_node, node *arg_info)
              * delete arg_info nodes
              */
 
+            /* store next N_assign node */
             old_succ = ASSIGN_NEXT (arg_node);
+
+            /* pointer on the last included N_assign node */
             akt_nassign = arg_node;
 
+            /* include N_assign-nodes created from constant nodes */
             nodelist1 = (nodelist *)(arg_info->info2);
 
             while (NODELIST_NEXT (nodelist1) != NULL) {
@@ -117,6 +121,7 @@ ALassign (node *arg_node, node *arg_info)
             ASSIGN_NEXT (akt_nassign) = NODELIST_NODE (nodelist1);
             akt_nassign = ASSIGN_NEXT (akt_nassign);
 
+            /* include N_assign-nodes created from 'variable' nodes */
             nodelist1 = (nodelist *)(arg_info->info3);
 
             while (NODELIST_NEXT (nodelist1) != NULL) {
@@ -128,8 +133,16 @@ ALassign (node *arg_node, node *arg_info)
             ASSIGN_NEXT (akt_nassign) = NODELIST_NODE (nodelist1);
             akt_nassign = ASSIGN_NEXT (akt_nassign);
 
+            /* connect last included element with stored N_assign node */
             ASSIGN_NEXT (akt_nassign) = old_succ;
         }
+    }
+
+    /* traverse in N_let-node */
+
+    if (ASSIGN_INSTR (arg_node) != NULL) {
+
+        ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -145,29 +158,30 @@ ALassign (node *arg_node, node *arg_info)
  *
  ****************************************************************************/
 
-node *
-ALinstr (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("ALinstr");
-    if (ASSIGN_INSTR (arg_node) != NULL) {
-        ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (arg_info);
-}
+/*node *ALinstr(node *arg_node, node* arg_info)
+ *{
+ * DBUG_ENTER("ALinstr");
+ * if (ASSIGN_INSTR(arg_node) != NULL)
+ *   {
+ *     ASSIGN_INSTR(arg_node)=Trav(ASSIGN_INSTR(arg_node),arg_info);
+ *   }
+ *
+ * DBUG_RETURN(arg_info);
+ *}
+ */
 
 /*****************************************************************************
  *
  * function:
- *   ALprf(node *arg_node, node *arg_info)
+ *   ALlet(node *arg_node, node *arg_info)
  *
  * description:
- *   traverse N_prf-nodes
+ *   traverse N_let-nodes
  *
  ****************************************************************************/
 
 node *
-ALprf (node *arg_node, node *arg_info)
+ALlet (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("ALprf");
     if (LET_EXPR (arg_node) != NULL) {
@@ -210,6 +224,7 @@ AssociativeLawOptimize (node *arg_node, node *arg_info)
 
         if ((anz_const > 1) && (anz_all > 2)) {
 
+            /* start optimize */
             SortList (arg_info);
             CreateNAssignNodes (arg_info);
             CommitNAssignNodes (arg_info);
@@ -686,6 +701,7 @@ CommitNAssignNodes (node *arg_info)
 
     /* variable nodes ready  */
 
+    /* connect last N_assign nodes of both lists */
     lastListElem = (nodelist *)(arg_info->info2);
 
     while (NODELIST_NEXT (lastListElem) != NULL) {

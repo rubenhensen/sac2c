@@ -4,8 +4,8 @@
 extern node *AssociativeLaw (node *arg_node, node *);
 extern node *ALblock (node *, node *);
 extern node *ALassign (node *, node *);
-extern node *ALinstr (node *, node *);
-extern node *ALprf (node *, node *);
+/* extern node *ALinstr(node*, node* );*/
+extern node *ALlet (node *, node *);
 extern node *AssociativeLawOptimize (node *, node *);
 extern node *TravElems (node *, node *);
 extern int ContainOptInformation (node *);
