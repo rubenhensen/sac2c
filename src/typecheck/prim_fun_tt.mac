@@ -1,5 +1,9 @@
 
 /* $Log$
+ * Revision 1.14  1997/10/03 16:05:40  dkr
+ * added new type-class ixi_i for prf %
+ * added new type-class i_i for prf abs
+ *
  * Revision 1.13  1996/02/06 16:14:05  hw
  * - added type-class CxC_B
  * - added CHAR and CHAR_A to type-classes for primitive functions
@@ -286,3 +290,6 @@ TT1 (550, d_f, DOUBLE, MakeTypes (T_float))
 TT1 (551, D_F, DOUBLE_A, ConvertType (arg_type[0], T_float))
 TT1 (552, d_i, DOUBLE, MakeTypes (T_int))
 TT1 (553, D_I, DOUBLE_A, ConvertType (arg_type[0], T_int))
+
+TT2 (600, ixi_i, INT, INT, MakeTypes (T_int))
+TT1 (601, i_i, INT, MakeTypes (T_int))
