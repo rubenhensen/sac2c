@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.8  2004/10/19 14:38:52  sah
+ * Added support for T_bool types...
+ *
  * Revision 1.7  2004/07/18 19:54:54  sah
  * switch to new INFO structure
  * PHASE I
@@ -231,6 +234,8 @@ CreateNegOne (info *arg_info)
 
         newnode = MakeFloat (-1.0f);
 
+    } else if (TYPES_BASETYPE (INFO_ESD_TYPE (arg_info)) == T_bool) {
+        newnode = MakeBool (FALSE);
     } else {
         DBUG_ASSERT (FALSE, "Unexpected BASETYPE!");
     }
@@ -286,6 +291,10 @@ CreateOne (info *arg_info)
     } else if (TYPES_BASETYPE (INFO_ESD_TYPE (arg_info)) == T_float) {
 
         newnode = MakeFloat (1.0f);
+
+    } else if (TYPES_BASETYPE (INFO_ESD_TYPE (arg_info)) == T_bool) {
+
+        newnode = MakeBool (TRUE);
 
     } else {
         DBUG_ASSERT (FALSE, "Unexpected BASETYPE!");
