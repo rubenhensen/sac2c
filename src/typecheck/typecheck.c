@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.24  1999/06/24 15:40:28  sbs
+ * non-scalar predicate-types for conditionals will no longer be accepted!
+ *
  * Revision 2.23  1999/06/24 15:14:42  sbs
  * eliminated an error in BuildPsiWithLoop
  *
@@ -6027,7 +6030,7 @@ TCcond (node *arg_node, node *arg_info)
     DBUG_PRINT ("STOP",
                 ("arg_info->node[0]: %s", mdb_nodetype[arg_info->node[0]->nodetype]));
 
-    if (T_bool != TYPES_BASETYPE (expr_type)) {
+    if ((T_bool != TYPES_BASETYPE (expr_type)) || (TYPES_DIM (expr_type) != SCALAR)) {
         ERROR (NODE_LINE (arg_node),
                ("Type of condition (%s) is not bool", Type2String (expr_type, 0)));
     }
