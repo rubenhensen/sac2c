@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 1.13  1998/04/20 09:01:24  srs
+ * new function WithloopFoldingWLT()
+ *
  * Revision 1.12  1998/04/08 20:44:29  srs
  * exported new functions
  *
@@ -100,6 +103,7 @@ typedef struct INTERN_GEN {
 
 /* general functions */
 extern node *WithloopFolding (node *, node *);
+extern node *WithloopFoldingWLT (node *, node *);
 extern int LocateIndexVar (node *idn, node *wln);
 extern node *CreateVardec (char *name, types *type, node **vardecs);
 extern node *StartSearchWL (node *idn, node *assignn, int mode);
@@ -112,6 +116,7 @@ extern index_info *DuplicateIndexInfo (index_info *iinfo);
 extern index_info *ValidLocalId (node *idn);
 
 /* intern_gen related functions */
+extern void DbugInternGen (intern_gen *ig);
 extern intern_gen *Tree2InternGen (node *wln, node *filter);
 extern node *InternGen2Tree (node *wln, intern_gen *ig);
 extern int NormalizeInternGen (intern_gen *ig);
