@@ -1,6 +1,8 @@
 Makefile
 adjust_ids.c
 adjust_ids.h
+cleanup_decls.c
+cleanup_decls.h
 flatten.c
 flatten.h
 fun2lac.c
