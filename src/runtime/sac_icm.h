@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  1999/06/24 14:18:20  rob
+ * Add this to standard set of sac2c files.
+ *
  * Revision 1.1  1999/06/10 14:46:45  rob
  * Initial revision
  *
