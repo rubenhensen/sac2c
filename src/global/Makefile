@@ -1,5 +1,9 @@
 #
 # $Log$
+# Revision 1.41  1997/09/23 13:23:50  dkr
+# forced make to recognize the dependency between types.h and
+# type_info.mac, node_info.mac, prf_node_info.mac
+#
 # Revision 1.40  1997/09/23 12:59:31  dkr
 # make deps done
 #
@@ -135,7 +139,15 @@ INCS=-I../../inc -I../print -I../flatten -I../scanparse -I../typecheck \
      -I/usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include
 
 all: main.o Error.o traverse.o usage.o my_debug.o tree.o free.o  \
-     internal_lib.o tree_basic.o tree_compound.o
+     internal_lib.o tree_basic.o tree_compound.o types.h
+
+#
+# the types.h object is to fool makedepend which does not
+# recognize the dependency between types.h and the .mac files!
+#
+
+types.h: type_info.mac node_info.mac prf_node_info.mac
+	touch types.h
 
 main.o: main.c 
 	$(CC) -c main.c $(INCS)
