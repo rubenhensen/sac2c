@@ -1,4 +1,5 @@
 Makefile
+compare_macros.h
 filemgr.c
 filemgr.h
 import.c
