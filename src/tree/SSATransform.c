@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.19  2001/05/09 12:30:43  nmw
+ * when creating ssaform set global valid_ssaform flag
+ *
  * Revision 1.18  2001/05/04 11:55:50  nmw
  * added support for correct handling of AVIS_SSAASSIGN for withids
  *
@@ -1257,7 +1260,7 @@ SSADummy (node *arg_node, node *arg_info)
  * description:
  *   Starts traversal of AST to transform code in SSA form. Every variable
  *   has exaclty one definition. This code transformtion relies on the
- *   lac2fun transformation!
+ *   lac2fun transformation! After all the valid_ssaform flag is set to TRUE.
  *
  ******************************************************************************/
 node *
@@ -1284,6 +1287,8 @@ SSATransform (node *syntax_tree)
     act_tab = old_tab;
 
     FREE (arg_info);
+
+    valid_ssaform = TRUE;
 
     DBUG_RETURN (syntax_tree);
 }
