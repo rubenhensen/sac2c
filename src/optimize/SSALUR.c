@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2002/09/09 19:16:20  dkr
+ * prf_string removed (mdb_prf used instead)
+ *
  * Revision 1.12  2002/09/09 17:53:04  dkr
  * F_{add,sub,mul,div} replaced by F_{add,sub,mul,div}_SxS
  *
@@ -79,13 +82,6 @@
 #include "WLUnroll.h"
 
 #define UNR_NONE -1
-
-#ifndef DBUG_OFF
-#define PRF_IF(n, s, x, y, z) x
-static char *prf_string[] = {
-#include "prf_node_info.mac"
-};
-#endif
 
 /* type to perform loop unrolling operations on */
 typedef long loopc_t;
@@ -459,7 +455,7 @@ SSALURAnalyseLURPredicate (node *expr, prf loop_prf, loopc_t init_counter,
 
 #ifndef DBUG_OFF
     if (result) {
-        DBUG_PRINT ("SSALUR", ("predicate: id %s %d", prf_string[pred], term));
+        DBUG_PRINT ("SSALUR", ("predicate: id %s %d", mdb_prf[pred], term));
     }
 #endif
 
@@ -655,7 +651,7 @@ SSALURAnalyseLURModifier (node *modifier, node **id, prf *loop_prf, loopc_t *inc
 
     DBUG_PRINT ("SSALUR", ("LUR modifier: %s %s %d",
                            VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (ID_AVIS ((*id)))),
-                           prf_string[(*loop_prf)], (*inc)));
+                           mdb_prf[(*loop_prf)], (*inc)));
 
     DBUG_RETURN (FALSE);
 }

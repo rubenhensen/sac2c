@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.8  2002/09/09 19:15:29  dkr
+ * prf_string removed (mdb_prf used instead)
+ *
  * Revision 3.7  2002/09/09 17:48:33  dkr
  * F_{add,sub,mul,div} replaced by F_{add,sub,mul,div}_SxS
  *
@@ -92,14 +95,6 @@
 
 #include "pad_info.h"
 #include "pad_collect.h"
-
-#ifndef DBUG_OFF
-#define PRF_IF(n, s, x, y, z) x
-static char *prf_string[] = {
-#include "prf_node_info.mac"
-};
-#undef PRF_IF
-#endif
 
 typedef struct COLLECTION_T {
     node *array_vardec;
@@ -483,7 +478,7 @@ APCprf (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("APCprf");
 
-    DBUG_PRINT ("APC", ("prf-node detected: '%s'", prf_string[PRF_PRF (arg_node)]));
+    DBUG_PRINT ("APC", ("prf-node detected: '%s'", mdb_prf[PRF_PRF (arg_node)]));
 
     switch (PRF_PRF (arg_node)) {
 

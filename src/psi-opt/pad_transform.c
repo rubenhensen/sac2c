@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2002/09/09 19:15:20  dkr
+ * prf_string removed (mdb_prf used instead)
+ *
  * Revision 3.10  2002/09/09 17:49:04  dkr
  * F_{add,sub,mul,div} replaced by F_{add,sub,mul,div}_SxS
  *
@@ -105,15 +108,6 @@
 #include "pad_transform.h"
 
 #include "my_debug.h"
-
-#ifndef DBUG_OFF
-#define PRF_IF(n, s, x, y, z) x
-static char *prf_string[] = {
-#include "prf_node_info.mac"
-};
-#endif
-
-#undef PRF_IF
 
 /*****************************************************************************
  *
@@ -1013,7 +1007,7 @@ APTprf (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("APTprf");
 
-    DBUG_PRINT ("APT", ("prf-node detected: '%s'", prf_string[PRF_PRF (arg_node)]));
+    DBUG_PRINT ("APT", ("prf-node detected: '%s'", mdb_prf[PRF_PRF (arg_node)]));
 
     /* only some PRFs may be padded successfully (without conversion) */
 
@@ -1115,7 +1109,7 @@ APTprf (node *arg_node, node *arg_info)
          */
 
         /* do not traverse sons */
-        DBUG_PRINT ("APT", (" unsupported PRF '%s'!", prf_string[PRF_PRF (arg_node)]));
+        DBUG_PRINT ("APT", (" unsupported PRF '%s'!", mdb_prf[PRF_PRF (arg_node)]));
 
         INFO_APT_EXPRESSION_PADDED (arg_info) = FALSE;
 

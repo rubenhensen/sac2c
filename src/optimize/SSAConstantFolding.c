@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.34  2002/09/09 19:16:09  dkr
+ * prf_string removed (mdb_prf used instead)
+ *
  * Revision 1.33  2002/09/09 17:47:07  dkr
  * F_{add,sub,mul,div} replaced by F_{add,sub,mul,div}_SxS
  *
@@ -124,15 +127,6 @@
 #define SUBST_NONE 0
 #define SUBST_SCALAR 1
 #define SUBST_SCALAR_AND_ARRAY 2
-
-/* prf-function name for debug output */
-#ifndef DBUG_OFF
-#define PRF_IF(n, s, x, y, z) x
-static char *prf_string[] = {
-#include "prf_node_info.mac"
-};
-#undef PRF_IF
-#endif
 
 /* maximum of supported args for primitive functions */
 #define PRF_MAX_ARGS 3
@@ -493,7 +487,7 @@ SSACFStructOpWrapper (prf op, constant *idx, node *expr)
         /* return modified array */
         result = SSACFDupStructConstant2Expr (struc_co);
 
-        DBUG_PRINT ("SSACF", ("op %s computed on structural constant", prf_string[op]));
+        DBUG_PRINT ("SSACF", ("op %s computed on structural constant", mdb_prf[op]));
 
         /* free tmp. struct constant */
         struc_co = SCOFreeStructConstant (struc_co);
@@ -884,12 +878,9 @@ SSACFArithmOpWrapper (prf op, constant **arg_co, node **arg_expr)
         tmp_co = COFreeConstant (tmp_co);
     }
 
-#ifndef DBUG_OFF
     if (result != NULL) {
-        DBUG_PRINT ("SSACF",
-                    ("arithmetic constant folding done for %s.", prf_string[op]));
+        DBUG_PRINT ("SSACF", ("arithmetic constant folding done for %s.", mdb_prf[op]));
     }
-#endif
 
     DBUG_RETURN (result);
 }
@@ -1824,7 +1815,7 @@ SSACFprf (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("SSACFprf");
 
-    DBUG_PRINT ("SSACF", ("evaluating prf %s", prf_string[PRF_PRF (arg_node)]));
+    DBUG_PRINT ("SSACF", ("evaluating prf %s", mdb_prf[PRF_PRF (arg_node)]));
 
     /* substitute constant identifiers in prf. arguments */
     INFO_SSACF_INSCONST (arg_info) = SUBST_ID_WITH_CONSTANT_IN_AP_ARGS;
@@ -2362,8 +2353,8 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
         break;
 
     default:
-        DBUG_PRINT ("SSACF", ("no implementation in SSAConstantFolding for  prf %s",
-                              prf_string[op]));
+        DBUG_PRINT ("SSACF",
+                    ("no implementation in SSAConstantFolding for prf %s", mdb_prf[op]));
     }
 
     /* free used constant data */
