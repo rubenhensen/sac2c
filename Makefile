@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.14  1995/03/10 10:52:39  hw
+# Revision 1.15  1995/03/17 17:39:11  asi
+# WorkReduction.o added
+#
+# Revision 1.14  1995/03/10  10:52:39  hw
 # refcount inserted
 #
 # Revision 1.13  1995/02/13  17:25:14  asi
@@ -55,7 +58,7 @@ PRINT= src/print/print.o src/print/convert.o
 FLATTEN= src/flatten/flatten.o
 TYPECHECK= src/typecheck/typecheck.o src/typecheck/prim_fun.o
 OPTIMIZE= src/optimize/optimize.o src/optimize/ConstantFolding.o \
-          src/optimize/DeadCodeRemoval.o
+          src/optimize/DeadCodeRemoval.o src/optimize/WorkReduction.o
 MODULES= src/modules/filemgr.o src/modules/import.o
 REFCOUNT= src/refcount/refcount.o
 OBJ=$(GLOBAL) $(SCANP) $(PRINT) $(FLATTEN) $(TYPECHECK) $(OPTIMIZE) $(MODULES) \
