@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  1998/06/07 18:38:00  dkr
+ * ChgId renamed in IdxChangeId and exported (for ReuseWithArrays.[ch])
+ *
  * Revision 1.7  1998/05/07 16:18:59  dkr
  * added IdxNwith, IdxNcode
  *
@@ -29,17 +32,19 @@
 
 #define sac_index_h
 
-extern node *IdxModul (node *, node *);
-extern node *IdxFundef (node *, node *);
-extern node *IdxArg (node *, node *);
-extern node *IdxAssign (node *, node *);
-extern node *IdxWith (node *, node *);
-extern node *IdxGenerator (node *, node *);
-extern node *IdxLet (node *, node *);
-extern node *IdxPrf (node *, node *);
-extern node *IdxId (node *, node *);
-extern node *IdxNum (node *, node *);
-extern node *IdxArray (node *, node *);
+extern char *IdxChangeId (char *varname, types *type);
+
+extern node *IdxModul (node *arg_node, node *arg_info);
+extern node *IdxFundef (node *arg_node, node *arg_info);
+extern node *IdxArg (node *arg_node, node *arg_info);
+extern node *IdxAssign (node *arg_node, node *arg_info);
+extern node *IdxWith (node *arg_node, node *arg_info);
+extern node *IdxGenerator (node *arg_node, node *arg_info);
+extern node *IdxLet (node *arg_node, node *arg_info);
+extern node *IdxPrf (node *arg_node, node *arg_info);
+extern node *IdxId (node *arg_node, node *arg_info);
+extern node *IdxNum (node *arg_node, node *arg_info);
+extern node *IdxArray (node *arg_node, node *arg_info);
 extern node *IdxNwith (node *arg_node, node *arg_info);
 extern node *IdxNcode (node *arg_node, node *arg_info);
 
