@@ -2,6 +2,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  2004/09/24 12:53:41  ktr
+ * Mask Base is now also updated after renaming args of SPMD-Functions.
+ *
  * Revision 1.16  2004/09/23 21:54:13  ktr
  * MaskBase is now updated after inserting the subarray variable for A_sub.
  *
@@ -279,10 +282,10 @@ MMVfundef (node *arg_node, info *arg_info)
 
     if (FUNDEF_STATUS (arg_node) == ST_spmdfun) {
         if (arg_info != NULL) {
+
             /*
              * SPMD-Functions: Arguments must be renamed
              */
-
             info = MakeInfo ();
             INFO_MMV_FUNDEF (info) = arg_node;
 
@@ -301,6 +304,17 @@ MMVfundef (node *arg_node, info *arg_info)
                 arg = ARG_NEXT (arg);
             }
 
+            /*
+             * After renaming, DFM mask base must be updated
+             */
+            FUNDEF_DFM_BASE (arg_node)
+              = DFMUpdateMaskBaseAfterRenaming (FUNDEF_DFM_BASE (arg_node),
+                                                FUNDEF_ARGS (arg_node),
+                                                FUNDEF_VARDEC (arg_node));
+
+            /*
+             * Traverse function body
+             */
             if (FUNDEF_BODY (arg_node) != NULL) {
                 FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), info);
             }
@@ -314,7 +328,7 @@ MMVfundef (node *arg_node, info *arg_info)
         }
     } else {
         /*
-         * Regular function
+         * Regular functions are simply traversed
          */
         info = MakeInfo ();
         INFO_MMV_FUNDEF (info) = arg_node;
@@ -494,7 +508,8 @@ MMVprfAccu (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("MMVprfAccu");
 
-    /* A,B = with(iv)
+    /*
+     * A,B = with(iv)
      *        gen:{
      *             a = accu( iv);
      *             ...
