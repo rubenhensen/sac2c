@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.11  2000/08/01 13:26:11  nmw
+ * calling for internal init function for HM
+ *
  * Revision 1.10  2000/07/28 14:43:42  nmw
  * Refcounting bug for simple types fixed
  * changes to handle T_user types internally
@@ -43,6 +46,10 @@
 #include "sac.h"
 #include "sac_cinterface.h"
 
+/* declarion of global internal init/exit function, exported by all modules */
+extern void SAC_InternalRuntimeInit (int __argc, char **__argv);
+extern void SAC_InternalRuntimeExit ();
+
 /* Typenames used internally */
 typedef enum {
 #define TYP_IFname(name) name
@@ -71,8 +78,10 @@ void
 SAC_InitRuntimeSystem ()
 {
     if (!SAC_CI_runtime_system_active) {
-        /* init directory of used SAC_args */
+        /* init internal data structures of heap management and multthreading */
+        SAC_InternalRuntimeInit (0, NULL);
 
+        /* init directory of used SAC_args */
         SAC_CI_InitSACArgDirectory ();
 
         printf ("SAC-runtimesystem ready...\n");
@@ -98,6 +107,7 @@ SAC_FreeRuntimeSystem ()
         /* free all used SAC_args */
         SAC_CI_FreeSACArgDirectory ();
         SAC_FIH_FreeAllModules ();
+        SAC_InternalRuntimeExit ();
         printf ("SAC-Runtime-System cleaned up!\n");
     }
 }
