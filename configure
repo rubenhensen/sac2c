@@ -3664,7 +3664,7 @@ elif  test "$SUNC" = yes ; then
 
   OPT_O2=-xO4
 
-  OPT_O3=-x05
+  OPT_O3=-xO5
 
   OPT_g=-g
 
@@ -3687,7 +3687,7 @@ elif  test "$DECC" = yes ; then
 
   OPT_O2=-O2
 
-  OPT_O3=-03
+  OPT_O3=-O3
 
   OPT_g=-g
 
