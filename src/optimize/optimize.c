@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.60  2004/05/04 15:47:20  khf
+ * appliance of SSACSE and SSADCR after WLFS added
+ *
  * Revision 3.59  2004/04/08 08:09:55  khf
  * support for wlfs and wlpg added but are currently
  * deactivated in global.c
@@ -907,7 +910,6 @@ OPTfundef (node *arg_node, node *arg_info)
     int old_sp_expr = sp_expr;
     int old_cvp_expr = cvp_expr;
     int old_wlpg_expr = wlpg_expr;
-    int old_wlfs_expr = wlfs_expr;
 
     int loop1 = 0;
     int loop2 = 0;
@@ -1516,17 +1518,28 @@ OPTfundef (node *arg_node, node *arg_info)
         }
 
         /*
-         * Finally, we apply WLFS, first without a loop:
+         * Finally, we apply WLFS followed by CSE and DCR, first without a loop:
          */
         if (use_ssaform) {
             if (optimize & OPT_WLFS) {
                 arg_node = WithloopFusion (arg_node);
             }
-        }
 
-        if ((break_after == PH_sacopt) && (break_cycle_specifier == 0)
-            && (0 == strcmp (break_specifier, "wlfs"))) {
-            goto INFO;
+            if (wlfs_expr != mem_wlfs_expr) {
+
+                if (optimize & OPT_CSE) {
+                    arg_node = SSACSE (arg_node, INFO_OPT_MODUL (arg_info));
+                }
+
+                if (optimize & OPT_DCR) {
+                    arg_node = SSADeadCodeRemoval (arg_node, INFO_OPT_MODUL (arg_info));
+                }
+            }
+
+            if ((break_after == PH_sacopt) && (break_cycle_specifier == 0)
+                && (0 == strcmp (break_specifier, "wlfs"))) {
+                goto INFO;
+            }
         }
 
         /*
