@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.36  1995/08/07 10:10:51  asi
+ * Revision 1.37  1995/12/01 17:19:13  cg
+ * All warnings converted to new Error macros
+ *
+ * Revision 1.36  1995/08/07  10:10:51  asi
  * now using macros defined in typecheck.h for folding of shape and dim
  *
  * Revision 1.35  1995/07/24  09:04:47  asi
@@ -1297,8 +1300,7 @@ NoConstSkalarPrf (node *arg_node, types *res_type, node *arg_info)
         case F_div:
         case F_div_SxA:
             if (TRUE == FoundZero (arg_node->node[0]->node[1]->node[0])) {
-                WARNO (("%s, %d:WARNING: Devision by zero expected.", filename,
-                        arg_node->lineno));
+                WARN (arg_node->lineno, ("Division by zero expected"));
             }
             arg_node = FoldExpr (arg_node, 0, 0, 0, arg_info); /* 0 / x = 0 */
             break;
@@ -1444,8 +1446,7 @@ ArrayPrf (node *arg_node, types *res_type, node *arg_info)
                 INC_VAR (arg_info->mask[1], old_arg[1]->info.ids->node->varno);
                 FreeTree (arg[1]);
             }
-            WARNO (
-              ("%s, %d:WARNING: Devision by zero expected.", filename, arg_node->lineno));
+            WARN (arg_node->lineno, ("Division by zero expected"));
             break;
         }
 
@@ -1679,8 +1680,7 @@ ArrayPrf (node *arg_node, types *res_type, node *arg_info)
                 FreeTree (arg_node);
                 arg_node = tmp;
             } else {
-                WARNO (("%s, %d:WARNING: Illegal vector for primitive function psi.",
-                        filename, arg_node->lineno));
+                WARN (arg_node->lineno, ("Illegal vector for primitive function psi"));
             }
         } break;
         case N_id: {
@@ -1769,8 +1769,7 @@ ArrayPrf (node *arg_node, types *res_type, node *arg_info)
             } else {
                 if (old_arg_0 != arg[0])
                     FreeTree (arg[0]);
-                WARNO (("%s, %d:WARNING: Illegal vector for primitive function psi.",
-                        filename, arg_node->lineno));
+                WARN (arg_node->lineno, ("Illegal vector for primitive function psi"));
             }
         } break;
         default:
