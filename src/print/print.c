@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.53  2001/04/25 13:55:40  dkr
+ * PrintFundef: ST_zombiefun added
+ *
  * Revision 3.52  2001/04/25 01:21:24  dkr
  * - bug in DoPrintDFMaskAST() fixed
  * - PrintAST: FUNDEF_INT_ASSIGN, FUNDEF_EXT_ASSIGNS added
@@ -1245,55 +1248,69 @@ PrintFundef (node *arg_node, node *arg_info)
          * print function definition
          */
 
-        if (FUNDEF_BODY (arg_node) != NULL) {
-
-            if (INFO_PRINT_SEPARATE (arg_info)) {
-                outfile = WriteOpen ("%s/fun%d.c", tmp_dirname, function_counter);
-
-                fprintf (outfile, "#include \"header.h\"\n");
-            }
-
+        if (FUNDEF_STATUS (arg_node) == ST_zombiefun) {
             fprintf (outfile, "\n");
-
-            if ((FUNDEF_STATUS (arg_node) == ST_spmdfun)
-                && (compiler_phase == PH_genccode)) {
-                fprintf (outfile, "#if SAC_DO_MULTITHREAD\n\n");
-            }
-
-            DBUG_EXECUTE ("PRINT_MASKS", fprintf (outfile, "\n**MASKS - function: \n");
-                          PrintDefMask (outfile, FUNDEF_DEFMASK (arg_node),
-                                        INFO_PRINT_VARNO (arg_info));
-                          PrintUseMask (outfile, FUNDEF_USEMASK (arg_node),
-                                        INFO_PRINT_VARNO (arg_info)););
-
-            if ((FUNDEF_ICM (arg_node) == NULL)
-                || (NODE_TYPE (FUNDEF_ICM (arg_node)) != N_icm)) {
-                PrintFunctionHeader (arg_node, arg_info);
-            } else {
-                Trav (FUNDEF_ICM (arg_node), arg_info); /* print N_icm ND_FUN_DEC */
-            }
-
+            fprintf (outfile, "/*\n");
+            INDENT;
+            fprintf (outfile, " * zombie function:\n");
+            INDENT
+            fprintf (outfile, " *   ");
+            PrintFunctionHeader (arg_node, arg_info);
             fprintf (outfile, "\n");
-            DBUG_EXECUTE ("PRINT_FUNATR",
-                          fprintf (outfile, "/* ATTRIB = %s */\n",
-                                   mdb_statustype[FUNDEF_ATTRIB (arg_node)]););
+            INDENT;
+            fprintf (outfile, " */\n");
+        } else {
 
-            Trav (FUNDEF_BODY (arg_node), arg_info); /* traverse function body */
+            if (FUNDEF_BODY (arg_node) != NULL) {
 
-            if (FUNDEF_PRAGMA (arg_node) != NULL) {
-                Trav (FUNDEF_PRAGMA (arg_node), arg_info);
-            }
+                if (INFO_PRINT_SEPARATE (arg_info)) {
+                    outfile = WriteOpen ("%s/fun%d.c", tmp_dirname, function_counter);
+                    fprintf (outfile, "#include \"header.h\"\n");
+                }
 
-            if ((FUNDEF_STATUS (arg_node) == ST_spmdfun)
-                && (compiler_phase == PH_genccode)) {
-                fprintf (outfile, "\n#endif  /* SAC_DO_MULTITHREAD */\n\n");
-            } else {
                 fprintf (outfile, "\n");
-            }
 
-            if (INFO_PRINT_SEPARATE (arg_info)) {
-                fclose (outfile);
-                function_counter++;
+                if ((FUNDEF_STATUS (arg_node) == ST_spmdfun)
+                    && (compiler_phase == PH_genccode)) {
+                    fprintf (outfile, "#if SAC_DO_MULTITHREAD\n\n");
+                }
+
+                DBUG_EXECUTE ("PRINT_MASKS",
+                              fprintf (outfile, "\n**MASKS - function: \n");
+                              PrintDefMask (outfile, FUNDEF_DEFMASK (arg_node),
+                                            INFO_PRINT_VARNO (arg_info));
+                              PrintUseMask (outfile, FUNDEF_USEMASK (arg_node),
+                                            INFO_PRINT_VARNO (arg_info)););
+
+                if ((FUNDEF_ICM (arg_node) == NULL)
+                    || (NODE_TYPE (FUNDEF_ICM (arg_node)) != N_icm)) {
+                    PrintFunctionHeader (arg_node, arg_info);
+                } else {
+                    Trav (FUNDEF_ICM (arg_node), arg_info); /* print N_icm ND_FUN_DEC */
+                }
+
+                fprintf (outfile, "\n");
+                DBUG_EXECUTE ("PRINT_FUNATR",
+                              fprintf (outfile, "/* ATTRIB = %s */\n",
+                                       mdb_statustype[FUNDEF_ATTRIB (arg_node)]););
+
+                Trav (FUNDEF_BODY (arg_node), arg_info); /* traverse function body */
+
+                if (FUNDEF_PRAGMA (arg_node) != NULL) {
+                    Trav (FUNDEF_PRAGMA (arg_node), arg_info);
+                }
+
+                if ((FUNDEF_STATUS (arg_node) == ST_spmdfun)
+                    && (compiler_phase == PH_genccode)) {
+                    fprintf (outfile, "\n#endif  /* SAC_DO_MULTITHREAD */\n\n");
+                } else {
+                    fprintf (outfile, "\n");
+                }
+
+                if (INFO_PRINT_SEPARATE (arg_info)) {
+                    fclose (outfile);
+                    function_counter++;
+                }
             }
         }
     }
