@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.85  2000/07/14 11:35:31  dkr
+ * minor changes in DoPrintTypesAST() done
+ *
  * Revision 2.84  2000/07/13 11:59:42  jhs
  * Splited ICM_INDENT into ICM_INDENT_BEFORE and ICM_INDENT_AFTER.
  * So indentation can be done before and after an icm now,
@@ -1096,7 +1099,7 @@ PrintFunctionHeader (node *arg_node, node *arg_info)
 
     PRINT_LINE_PRAGMA_IN_SIB (outfile, arg_node);
 
-    if (0 != FUNDEF_INLINE (arg_node)) {
+    if (FUNDEF_INLINE (arg_node)) {
         fprintf (outfile, "inline ");
     }
 
@@ -3382,13 +3385,17 @@ DoPrintTypesAST (types *type)
 {
     DBUG_ENTER ("DoPrintTypesAST");
 
-    fprintf (outfile, "%s", mdb_type[TYPES_BASETYPE (type)]);
-    if (TYPES_BASETYPE (type) == T_user) {
-        if (TYPES_TDEF (type) != NULL) {
-            fprintf (outfile, "[%p]", TYPES_TDEF (type));
-        } else {
-            fprintf (outfile, "[NULL]");
+    if (type != NULL) {
+        fprintf (outfile, "%s", mdb_type[TYPES_BASETYPE (type)]);
+        if (TYPES_BASETYPE (type) == T_user) {
+            if (TYPES_TDEF (type) != NULL) {
+                fprintf (outfile, "[%p]", TYPES_TDEF (type));
+            } else {
+                fprintf (outfile, "[NULL]");
+            }
         }
+    } else {
+        fprintf (outfile, "NULL");
     }
 
     DBUG_VOID_RETURN;
