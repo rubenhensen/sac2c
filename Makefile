@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.84  1998/06/07 18:38:33  dkr
+# added src/compile/ReuseWithArrays.o
+#
 # Revision 1.83  1998/05/28 14:57:10  sbs
 # gen_pseudo_fun.o in typecheck added!
 #
@@ -319,7 +322,8 @@ COMPILE=  src/compile/wltransform.o src/compile/wlpragma_funs.o \
           src/compile/precompile.o \
           src/compile/compile.o src/compile/gen_startup_code.o \
           src/compile/icm2c.o src/compile/icm2c_std.o src/compile/icm2c_mt.o \
-          src/compile/icm2c_wl.o src/compile/Old2NewWith.o
+          src/compile/icm2c_wl.o src/compile/ReuseWithArrays.o \
+          src/compile/Old2NewWith.o
 
 OBJ=$(GLOBAL) $(SCANP) $(PRINT) $(FLATTEN) $(TYPECHECK) $(OPTIMIZE) \
     $(MODULES) $(OBJECTS) $(REFCOUNT) $(COMPILE) $(PSIOPT) $(CONCURRENT)
