@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.7  1995/11/06 14:20:20  cg
+ * Revision 1.8  1995/11/16 19:45:50  cg
+ * Some bug fixes
+ *
+ * Revision 1.7  1995/11/06  14:20:20  cg
  * bug fixed in generating correct references of identifiers
  * to their respective vardec or arg nodes
  *
@@ -118,7 +121,22 @@ OBJmodul (node *arg_node, node *arg_info)
  *  external funs : MakeType, MakeArg, Trav
  *  macros        : TREE, DBUG
  *
- *  remarks       :
+ *  remarks       : The function body is traversed twice, because for
+ *                  adding additional parameters to function applications
+ *                  or making global arguments local a reference to the
+ *                  new argument node of the function is needed.
+ *                  This is cannot be obtained easily in direct way.
+ *                  Therefore, this reference is stored in the respective
+ *                  objdef node when the new arg node is generated.
+ *                  For this reason, the body must be traversed right
+ *                  after the arguments of the same function to avoid
+ *                  the overwriting of this information.
+ *
+ *                  Unfortunately, for resolving reference parameters it
+ *                  is necessary that all function definitions have been
+ *                  traversed before, because new reference parameters
+ *                  are added for global objects.
+ *
  *
  */
 
@@ -186,12 +204,26 @@ OBJfundef (node *arg_node, node *arg_info)
 
     DBUG_PRINT ("OBJ", ("Traversing body of function %s", ItemName (arg_node)));
 
+    /*
+     *  In a first traversal of the function body, additional arguments
+     *  for function applications are inserted.
+     */
+
     if (FUNDEF_BODY (arg_node) != NULL) {
-        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), NULL);
     }
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+    }
+
+    /*
+     *  In a second traversal of the function body, additional return values
+     *  caused by reference parameters are bound to the respective variables.
+     */
+
+    if (FUNDEF_BODY (arg_node) != NULL) {
+        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_node);
     }
 
     DBUG_RETURN (arg_node);
@@ -225,7 +257,7 @@ OBJobjdef (node *arg_node, node *arg_info)
     buffer = Malloc (strlen (OBJDEF_NAME (arg_node)) + strlen (OBJDEF_MOD (arg_node))
                      + strlen (mod_name_con) + 1);
 
-    strcat (buffer, MOD (OBJDEF_MOD (arg_node)));
+    strcpy (buffer, MOD (OBJDEF_MOD (arg_node)));
     strcat (buffer, mod_name_con);
     strcat (buffer, OBJDEF_NAME (arg_node));
 
@@ -417,17 +449,21 @@ OBJid (node *arg_node, node *arg_info)
  *
  *  functionname  : OBJlet
  *  arguments     : 1) pointer to N_let node
- *                  2) arg_info unused
+ *                  2) arg_info used as flag:
+ *                     ==NULL traverse right side of '='
+ *                     !=NULL resolve reference parameters
  *  description   : First, the right hand side of the let is traversed.
  *                  If this is a function application, then the additional
  *                  return values of this function are considered and bound
  *                  to the current arguments by extending the ids-chain.
  *  global vars   : ---
  *  internal funs :
- *  external funs : MakeIds, AppendIdsChain
+ *  external funs : MakeIds, AppendIdsChain, Malloc, strlen, strcpy
  *  macros        : TREE, DBUG
  *
- *  remarks       :
+ *  remarks       : The arg_info flag is necessary, because OBJlet is used
+ *                  in different ways in the two traversals of the function
+ *                  body.
  *
  */
 
@@ -436,48 +472,56 @@ OBJlet (node *arg_node, node *arg_info)
 {
     node *args, *params;
     ids *new_ids = NULL, *last_ids, *old_ids;
+    char *new_ids_name;
 
     DBUG_ENTER ("OBJlet");
 
-    if (LET_EXPR (arg_node) != NULL) {
-        LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
-    }
+    if (arg_info == NULL) {
+        if (LET_EXPR (arg_node) != NULL) {
+            LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
+        }
+    } else {
 
-    if (NODE_TYPE (LET_EXPR (arg_node)) == N_ap) {
-        args = AP_ARGS (LET_EXPR (arg_node));
-        params = FUNDEF_ARGS (AP_FUNDEF (LET_EXPR (arg_node)));
+        if (NODE_TYPE (LET_EXPR (arg_node)) == N_ap) {
+            args = AP_ARGS (LET_EXPR (arg_node));
+            params = FUNDEF_ARGS (AP_FUNDEF (LET_EXPR (arg_node)));
 
-        while (params != NULL) {
-            if (ARG_ATTRIB (params) == ST_was_reference) {
-                if (new_ids == NULL) {
-                    new_ids = MakeIds (ID_NAME (EXPRS_EXPR (args)), NULL, ST_artificial);
-                    last_ids = new_ids;
-                } else {
-                    IDS_NEXT (last_ids)
-                      = MakeIds (ID_NAME (EXPRS_EXPR (args)), NULL, ST_artificial);
-                    last_ids = IDS_NEXT (last_ids);
-                }
+            while (params != NULL) {
+                if (ARG_ATTRIB (params) == ST_was_reference) {
+                    new_ids_name
+                      = (char *)Malloc (strlen (ID_NAME (EXPRS_EXPR (args))) + 1);
+                    strcpy (new_ids_name, ID_NAME (EXPRS_EXPR (args)));
 
-                old_ids = LET_IDS (arg_node);
-
-                while (old_ids != NULL) {
-                    if (strcmp (IDS_NAME (old_ids), IDS_NAME (last_ids)) == 0) {
-                        ERROR (NODE_LINE (arg_node),
-                               ("Object '%s` already existing", IDS_NAME (old_ids)));
+                    if (new_ids == NULL) {
+                        new_ids = MakeIds (new_ids_name, NULL, ST_artificial);
+                        last_ids = new_ids;
+                    } else {
+                        IDS_NEXT (last_ids) = MakeIds (new_ids_name, NULL, ST_artificial);
+                        last_ids = IDS_NEXT (last_ids);
                     }
 
-                    old_ids = IDS_NEXT (old_ids);
+                    old_ids = LET_IDS (arg_node);
+
+                    while (old_ids != NULL) {
+                        if (strcmp (IDS_NAME (old_ids), IDS_NAME (last_ids)) == 0) {
+                            ERROR (NODE_LINE (arg_node),
+                                   ("Object '%s` already existing", IDS_NAME (old_ids)));
+                        }
+
+                        old_ids = IDS_NEXT (old_ids);
+                    }
+
+                    IDS_VARDEC (last_ids) = ID_VARDEC (EXPRS_EXPR (args));
+
+                    DBUG_PRINT ("OBJ",
+                                ("New return value bound to %s", IDS_NAME (last_ids)));
                 }
-
-                IDS_VARDEC (last_ids) = ID_VARDEC (EXPRS_EXPR (args));
-
-                DBUG_PRINT ("OBJ", ("New return value bound to %s", IDS_NAME (last_ids)));
+                args = EXPRS_NEXT (args);
+                params = ARG_NEXT (params);
             }
-            args = EXPRS_NEXT (args);
-            params = ARG_NEXT (params);
-        }
 
-        LET_IDS (arg_node) = AppendIdsChain (new_ids, LET_IDS (arg_node));
+            LET_IDS (arg_node) = AppendIdsChain (new_ids, LET_IDS (arg_node));
+        }
     }
 
     DBUG_RETURN (arg_node);
