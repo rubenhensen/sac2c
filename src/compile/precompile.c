@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.67  2002/10/29 19:49:30  dkr
+ * PREC1fundef() modified for TAGGED_ARRAYS
+ *
  * Revision 3.66  2002/10/28 19:05:01  dkr
  * type conversion for applications of external functions added
  *
@@ -595,12 +598,15 @@ PREC1fundef (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("PREC1fundef");
 
+#ifndef TAGGED_ARRAYS
     /*
      * The body of an imported inline function is removed.
      */
     if (((FUNDEF_STATUS (arg_node) == ST_imported_mod)
          || (FUNDEF_STATUS (arg_node) == ST_imported_class))
         && (FUNDEF_ATTRIB (arg_node) != ST_generic) && (FUNDEF_BODY (arg_node) != NULL)) {
+        DBUG_PRINT ("PREC", ("body of imported function %s:%s() removed",
+                             FUNDEF_MOD (arg_node), FUNDEF_NAME (arg_node)));
         FUNDEF_BODY (arg_node) = FreeTree (FUNDEF_BODY (arg_node));
         FUNDEF_RETURN (arg_node) = NULL;
 
@@ -609,6 +615,7 @@ PREC1fundef (node *arg_node, node *arg_info)
          */
         FUNDEF_DFM_BASE (arg_node) = DFMRemoveMaskBase (FUNDEF_DFM_BASE (arg_node));
     }
+#endif
 
     /*
      * unset inline flag
