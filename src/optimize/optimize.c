@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.73  2004/12/09 13:08:54  mwe
+ * type_upgrade now running before constant folding
+ *
  * Revision 3.72  2004/12/09 10:59:30  mwe
  * support for type_upgrade added
  *
@@ -1096,6 +1099,16 @@ OPTfundef (node *arg_node, info *arg_info)
             /* infere loop invariant arguments */
             arg_node = ILIdoInferLoopInvariants (arg_node);
 
+            if (global.optimize.dotup) {
+                arg_node = TUPdoTypeUpgrade (arg_node);
+            }
+
+            if ((global.break_after == PH_sacopt)
+                && (global.break_cycle_specifier == loop1)
+                && (0 == strcmp (global.break_specifier, "tup"))) {
+                goto INFO;
+            }
+
             if (global.optimize.docf) {
                 arg_node
                   = CFdoConstantFolding (arg_node,
@@ -1236,16 +1249,6 @@ OPTfundef (node *arg_node, info *arg_info)
             if ((global.break_after == PH_sacopt)
                 && (global.break_cycle_specifier == loop1)
                 && (0 == strcmp (global.break_specifier, "lir"))) {
-                goto INFO;
-            }
-
-            if (global.optimize.dotup) {
-                arg_node = TUPdoTypeUpgrade (arg_node);
-            }
-
-            if ((global.break_after == PH_sacopt)
-                && (global.break_cycle_specifier == loop1)
-                && (0 == strcmp (global.break_specifier, "tup"))) {
                 goto INFO;
             }
 
