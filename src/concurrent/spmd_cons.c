@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.6  1999/11/11 10:31:30  jhs
+ * Inferring of first sync blocks begins at spmdfun-block not at the spmdfun
+ * itself, preventing neverending recursions.
+ *
  * Revision 1.5  1999/08/03 11:43:37  jhs
  * Expanded comments.
  *
@@ -79,7 +83,7 @@ SPMDCspmd (node *arg_node, node *arg_info)
     DBUG_ASSERT (NODE_TYPE (arg_node) == N_spmd, "Wrong NODE_TYPE");
 
     /*
-     *  build nwe arg_info or secure values
+     *  build new arg_info or secure to be changed values of prepared one
      */
     if (arg_info == NULL) {
         own_arg_info = TRUE;
@@ -90,11 +94,14 @@ SPMDCspmd (node *arg_node, node *arg_info)
     }
 
     /*
-     *  evaluate the first sync-block of this spmd-block
-     *  (the sync is contained in the lifted function).
+     *  Evaluate the first sync-block of this spmd-block
+     *  (the sync-block is contained in the lifted function).
+     *
+     *  Same traversal-tab is used here!
      */
     INFO_SPMDC_FIRSTSYNC (arg_info) = NULL;
-    SPMD_FUNDEF (arg_node) = Trav (SPMD_FUNDEF (arg_node), arg_info);
+    FUNDEF_BODY (SPMD_FUNDEF (arg_node))
+      = Trav (FUNDEF_BODY (SPMD_FUNDEF (arg_node)), arg_info);
     first_sync = INFO_SPMDC_FIRSTSYNC (arg_info);
 
     DBUG_ASSERT (first_sync != NULL, "no first sync-block found");
@@ -107,7 +114,7 @@ SPMDCspmd (node *arg_node, node *arg_info)
      *  add the inout-variables of the first sync-block of a spmd-block
      *  to the in-variables of this spmd-block.
      *
-     *  This includes to move the vardecs (in the spmd-function), blonging
+     *  This includes to move the vardecs (in the spmd-function), belonging
      *  to these inout-variables to the args (of the spmd-function).
      */
     fundef = SPMD_FUNDEF (arg_node);
@@ -116,8 +123,8 @@ SPMDCspmd (node *arg_node, node *arg_info)
     new_args = FUNDEF_ARGS (fundef);
     while (old_vardec != NULL) {
         /*
-         *  node is modified, so that next will be not available after
-         *  these changes, so get catch it here.
+         *  the old_vardec-node is modified, so the actual next-pointer will be not
+         *  available after the following changes, so get catch it here.
          */
         next_vardec = VARDEC_NEXT (old_vardec);
         if (DFMTestMaskEntry (SYNC_INOUT (first_sync), NULL, old_vardec)) {
@@ -180,7 +187,7 @@ SPMDCspmd (node *arg_node, node *arg_info)
 node *
 SPMDCsync (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("SPMDsync");
+    DBUG_ENTER ("SPMDCsync");
 
     DBUG_ASSERT (NODE_TYPE (arg_node) == N_sync, "Wrong NODE_TYPE");
     DBUG_ASSERT (arg_info != NULL, "arg_info == NULL");
@@ -189,6 +196,7 @@ SPMDCsync (node *arg_node, node *arg_info)
      *  First sync-block reached annotates itself to the arg_info node.
      */
     if (INFO_SPMDC_FIRSTSYNC (arg_info) == NULL) {
+        DBUG_PRINT ("SPMDC", ("First sync-block found"));
         INFO_SPMDC_FIRSTSYNC (arg_info) = arg_node;
     }
 
