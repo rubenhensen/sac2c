@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2004/10/25 11:58:47  sah
+ * major code cleanup
+ *
  * Revision 1.3  2004/09/23 21:12:25  sah
  * ongoing implementation
  *
@@ -28,7 +31,7 @@
 struct INFO {
     FILE *file;
     serstack_t *stack;
-    symboltable_t *table;
+    STtable_t *table;
 };
 
 /*

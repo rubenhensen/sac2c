@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/10/25 11:58:47  sah
+ * major code cleanup
+ *
  * Revision 1.2  2004/09/23 21:14:23  sah
  * ongoing implementation
  *
@@ -25,7 +28,7 @@ extern module_t *UnLoadModule (module_t *module);
 
 extern const char *GetModuleName (module_t *module);
 
-extern symboltable_t *GetSymbolTable (module_t *module);
+extern STtable_t *GetSymbolTable (module_t *module);
 extern serfun_p GetDeSerializeFunction (const char *symbol, module_t *module);
 
 #endif /* _MODULEMANAGER_H */

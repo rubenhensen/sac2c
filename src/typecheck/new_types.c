@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.61  2004/10/25 11:58:47  sah
+ * major code cleanup
+ *
  * Revision 3.60  2004/10/01 08:14:36  sah
  * initialised var to avoid compiler warning
  *
@@ -5975,8 +5978,7 @@ SerializeIResType (FILE *file, ntype *type)
     fprintf (file, "TYDeserializeType( %d, %d", NTYPE_CON (type), IRES_NUMFUNS (type));
 
     for (cnt = 0; cnt < IRES_NUMFUNS (type); cnt++) {
-        fprintf (file, ", SHLPLookupFunction( \"%s\")",
-                 GenerateSerFunName (STE_funhead, IRES_FUNDEF (type, cnt)));
+        SerializeFundefLink (IRES_FUNDEF (type, cnt), file);
     }
 
     for (cnt = 0; cnt < IRES_NUMFUNS (type); cnt++) {

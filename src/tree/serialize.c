@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.14  2004/10/25 11:58:47  sah
+ * major code cleanup
+ *
  * Revision 1.13  2004/10/22 15:24:29  sah
  * added STE_wrapperxxx
  *
@@ -77,7 +80,7 @@ MakeInfo ()
 
     INFO_SER_FILE (result) = NULL;
     INFO_SER_STACK (result) = NULL;
-    INFO_SER_TABLE (result) = SymbolTableInit ();
+    INFO_SER_TABLE (result) = STInit ();
 
     DBUG_RETURN (result);
 }
@@ -87,7 +90,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    INFO_SER_TABLE (info) = SymbolTableDestroy (INFO_SER_TABLE (info));
+    INFO_SER_TABLE (info) = STDestroy (INFO_SER_TABLE (info));
 
     info = Free (info);
 
@@ -146,12 +149,12 @@ StartSerializeTraversal (node *node, info *info)
 }
 
 static void
-GenerateSerSymbolTableAdd (const char *symbol, symbolentry_t *entry, FILE *file)
+GenerateSerSymbolTableAdd (const char *symbol, STentry_t *entry, FILE *file)
 {
     DBUG_ENTER ("GenerateSerSymbolTableAdd");
 
-    fprintf (file, "SymbolTableAdd( \"%s\", \"%s\", %d, result);\n", symbol,
-             SymbolTableEntryName (entry), SymbolTableEntryType (entry));
+    fprintf (file, "STAdd( \"%s\", \"%s\", %d, result);\n", symbol, STEntryName (entry),
+             STEntryType (entry));
 
     DBUG_VOID_RETURN;
 }
@@ -167,7 +170,7 @@ GenerateSerSymbolTableHead (node *module, FILE *file)
     fprintf (file, "void *__%s__SYMTAB()\n", MODUL_NAME (module));
 
     fprintf (file, "{\nvoid *result;\n");
-    fprintf (file, "result = SymbolTableInit();\n");
+    fprintf (file, "result = STInit();\n");
 
     DBUG_VOID_RETURN;
 }
@@ -184,27 +187,27 @@ GenerateSerSymbolTableTail (node *module, FILE *file)
 }
 
 static void
-SerializeSymbolTableSymbol (const char *symbol, symboltable_t *table, FILE *file)
+SerializeSymbolTableSymbol (const char *symbol, STtable_t *table, FILE *file)
 {
-    symbolentrychain_t *chain;
+    STentryiterator_t *iterator;
 
     DBUG_ENTER ("SerializeSymbolTableSymbol");
 
-    chain = SymbolTableEntryChainGet (symbol, table);
+    iterator = STEntryIteratorGet (symbol, table);
 
-    while (SymbolTableEntryChainHasMore (chain)) {
-        GenerateSerSymbolTableAdd (symbol, SymbolTableEntryChainNext (chain), file);
+    while (STEntryIteratorHasMore (iterator)) {
+        GenerateSerSymbolTableAdd (symbol, STEntryIteratorNext (iterator), file);
     }
 
-    chain = SymbolTableEntryChainRelease (chain);
+    iterator = STEntryIteratorRelease (iterator);
 
     DBUG_VOID_RETURN;
 }
 
 static void
-SerializeSymbolTable (node *module, symboltable_t *table)
+SerializeSymbolTable (node *module, STtable_t *table)
 {
-    symbolchain_t *chain;
+    STsymboliterator_t *iterator;
     FILE *file;
 
     DBUG_ENTER ("SerializeSymbolTable");
@@ -213,13 +216,13 @@ SerializeSymbolTable (node *module, symboltable_t *table)
 
     GenerateSerSymbolTableHead (module, file);
 
-    chain = SymbolTableSymbolChainGet (table);
+    iterator = STSymbolIteratorGet (table);
 
-    while (SymbolTableSymbolChainHasMore (chain)) {
-        SerializeSymbolTableSymbol (SymbolTableSymbolChainNext (chain), table, file);
+    while (STSymbolIteratorHasMore (iterator)) {
+        SerializeSymbolTableSymbol (STSymbolIteratorNext (iterator), table, file);
     }
 
-    chain = SymbolTableSymbolChainRelease (chain);
+    iterator = STSymbolIteratorRelease (iterator);
 
     GenerateSerSymbolTableTail (module, file);
 
@@ -258,7 +261,7 @@ GenerateSerFunTypeSignature (char *funname, node *args)
 }
 
 const char *
-GenerateSerFunName (symbolentrytype_t type, node *node)
+GenerateSerFunName (STentrytype_t type, node *node)
 {
     static char result[MAX_FUN_NAME_LEN];
     char *tmp;
@@ -266,26 +269,26 @@ GenerateSerFunName (symbolentrytype_t type, node *node)
     DBUG_ENTER ("GenerateSerFunName");
 
     switch (type) {
-    case STE_funbody:
-    case STE_wrapperbody:
+    case SET_funbody:
+    case SET_wrapperbody:
         snprintf (result, MAX_FUN_NAME_LEN, "SBDY_%s_%s_%d_", FUNDEF_MOD (node),
                   FUNDEF_NAME (node), FUNDEF_STATUS (node));
 
         GenerateSerFunTypeSignature (result, FUNDEF_ARGS (node));
 
         break;
-    case STE_funhead:
-    case STE_wrapperhead:
+    case SET_funhead:
+    case SET_wrapperhead:
         snprintf (result, MAX_FUN_NAME_LEN, "SHD_%s_%s_%d_", FUNDEF_MOD (node),
                   FUNDEF_NAME (node), FUNDEF_STATUS (node));
 
         GenerateSerFunTypeSignature (result, FUNDEF_ARGS (node));
 
         break;
-    case STE_typedef:
+    case SET_typedef:
         result[0] = '\0';
         break;
-    case STE_objdef:
+    case SET_objdef:
         result[0] = '\0';
         break;
     default:
@@ -306,7 +309,7 @@ GenerateSerFunName (symbolentrytype_t type, node *node)
 }
 
 static void
-GenerateSerFunHead (node *fundef, symbolentrytype_t type, info *info)
+GenerateSerFunHead (node *fundef, STentrytype_t type, info *info)
 {
     DBUG_ENTER ("GenerateSerFunBodyHead");
 
@@ -319,7 +322,7 @@ GenerateSerFunHead (node *fundef, symbolentrytype_t type, info *info)
 }
 
 static void
-GenerateSerFunTail (node *fundef, symbolentrytype_t type, info *info)
+GenerateSerFunTail (node *fundef, STentrytype_t type, info *info)
 {
     DBUG_ENTER ("GenerateSerFunBodyTail");
 
@@ -337,16 +340,15 @@ SerializeFundefBody (node *fundef, info *info)
 
     INFO_SER_STACK (info) = SerializeBuildSerStack (FUNDEF_BODY (fundef));
 
-    SymbolTableAdd (FUNDEF_NAME (fundef), GenerateSerFunName (STE_funbody, fundef),
-                    (FUNDEF_STATUS (fundef) == ST_wrapperfun) ? STE_wrapperbody
-                                                              : STE_funbody,
-                    INFO_SER_TABLE (info));
+    STAdd (FUNDEF_NAME (fundef), GenerateSerFunName (SET_funbody, fundef),
+           (FUNDEF_STATUS (fundef) == ST_wrapperfun) ? SET_wrapperbody : SET_funbody,
+           INFO_SER_TABLE (info));
 
-    GenerateSerFunHead (fundef, STE_funbody, info);
+    GenerateSerFunHead (fundef, SET_funbody, info);
 
     FUNDEF_BODY (fundef) = StartSerializeTraversal (FUNDEF_BODY (fundef), info);
 
-    GenerateSerFunTail (fundef, STE_funbody, info);
+    GenerateSerFunTail (fundef, SET_funbody, info);
 
     INFO_SER_STACK (info) = SerStackDestroy (INFO_SER_STACK (info));
 
@@ -360,16 +362,15 @@ SerializeFundefHead (node *fundef, info *info)
 
     INFO_SER_STACK (info) = SerializeBuildSerStack (fundef);
 
-    SymbolTableAdd (FUNDEF_NAME (fundef), GenerateSerFunName (STE_funhead, fundef),
-                    (FUNDEF_STATUS (fundef) == ST_wrapperfun) ? STE_wrapperhead
-                                                              : STE_funhead,
-                    INFO_SER_TABLE (info));
+    STAdd (FUNDEF_NAME (fundef), GenerateSerFunName (SET_funhead, fundef),
+           (FUNDEF_STATUS (fundef) == ST_wrapperfun) ? SET_wrapperhead : SET_funhead,
+           INFO_SER_TABLE (info));
 
-    GenerateSerFunHead (fundef, STE_funhead, info);
+    GenerateSerFunHead (fundef, SET_funhead, info);
 
     fundef = StartSerializeTraversal (fundef, info);
 
-    GenerateSerFunTail (fundef, STE_funhead, info);
+    GenerateSerFunTail (fundef, SET_funhead, info);
 
     INFO_SER_STACK (info) = SerStackDestroy (INFO_SER_STACK (info));
 
@@ -405,6 +406,17 @@ SerializeModule (node *module)
     INFO_SER_FILE (info) = NULL;
 
     info = FreeInfo (info);
+
+    DBUG_VOID_RETURN;
+}
+
+void
+SerializeFundefLink (node *fundef, FILE *file)
+{
+    DBUG_ENTER ("SerializeFundefLink");
+
+    fprintf (file, "SHLPLookupFunction( \"%s\")",
+             GenerateSerFunName (SET_funhead, fundef));
 
     DBUG_VOID_RETURN;
 }

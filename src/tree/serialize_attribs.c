@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2004/10/25 11:58:47  sah
+ * major code cleanup
+ *
  * Revision 1.9  2004/10/19 14:04:49  sah
  * implemented SerializeIdsAttrib
  *
@@ -81,7 +84,7 @@ SerializeStringAttrib (info *info, char *attr, node *parent)
     } else {
         DBUG_PRINT ("SET", ("Processing String `%s'", attr));
 
-        fprintf (INFO_SER_FILE (info), "\"%s\"", attr);
+        fprintf (INFO_SER_FILE (info), "StringCopy(\"%s\")", attr);
     }
 
     DBUG_VOID_RETURN;
@@ -111,7 +114,7 @@ SerializeSharedStringAttrib (info *info, char *attr, node *parent)
     } else {
         DBUG_PRINT ("SET", ("Processing String `%s'", attr));
 
-        fprintf (INFO_SER_FILE (info), "\"%s\"", attr);
+        fprintf (INFO_SER_FILE (info), "StringCopy(\"%s\")", attr);
     }
 
     DBUG_VOID_RETURN;

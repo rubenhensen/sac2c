@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/10/25 11:58:47  sah
+ * major code cleanup
+ *
  * Revision 1.4  2004/10/22 13:40:55  sah
  * the use chain is freed during the
  * tarversal as it is no more needed
@@ -32,7 +35,7 @@
  * INFO structure
  */
 struct INFO {
-    symboltable_t *symbols;
+    STtable_t *symbols;
     const char *current;
     node *module;
 };
@@ -56,7 +59,7 @@ MakeInfo ()
 
     result = Malloc (sizeof (info));
 
-    INFO_ANS_SYMBOLS (result) = SymbolTableInit ();
+    INFO_ANS_SYMBOLS (result) = STInit ();
     INFO_ANS_CURRENT (result) = NULL;
     INFO_ANS_MODULE (result) = NULL;
 
@@ -68,7 +71,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    INFO_ANS_SYMBOLS (info) = SymbolTableDestroy (INFO_ANS_SYMBOLS (info));
+    INFO_ANS_SYMBOLS (info) = STDestroy (INFO_ANS_SYMBOLS (info));
 
     info = Free (info);
 
@@ -79,42 +82,46 @@ FreeInfo (info *info)
  * local helper functions
  */
 static void
-CheckUseUnique (symboltable_t *table)
+CheckUseUnique (STtable_t *table)
 {
-    symbolchain_t *chain;
+    STsymboliterator_t *iterator;
 
     DBUG_ENTER ("CheckUseUnique");
 
-    chain = SymbolTableSymbolChainGet (table);
+    iterator = STSymbolIteratorGet (table);
 
-    while (SymbolTableSymbolChainHasMore (chain)) {
-        const char *symbol = SymbolTableSymbolChainNext (chain);
-        symbolentrychain_t *entries = SymbolTableEntryChainGet (symbol, table);
+    while (STSymbolIteratorHasMore (iterator)) {
+        const char *symbol = STSymbolIteratorNext (iterator);
+        STentryiterator_t *entries = STEntryIteratorGet (symbol, table);
 
-        if (SymbolTableEntryChainHasMore (entries)) {
-            symbolentry_t *entry = SymbolTableEntryChainNext (entries);
+        if (STEntryIteratorHasMore (entries)) {
+            STentry_t *entry = STEntryIteratorNext (entries);
 
-            if (SymbolTableEntryChainHasMore (entries)) {
+            if (STEntryIteratorHasMore (entries)) {
                 ERROR (0, ("Symbol `%s' used more than once", symbol));
-                CONT_ERROR (("... from module `%s'", SymbolTableEntryName (entry)));
+                CONT_ERROR (("... from module `%s'", STEntryName (entry)));
 
-                while (SymbolTableEntryChainHasMore (entries)) {
-                    entry = SymbolTableEntryChainNext (entries);
-                    CONT_ERROR (("... from module `%s'", SymbolTableEntryName (entry)));
+                while (STEntryIteratorHasMore (entries)) {
+                    entry = STEntryIteratorNext (entries);
+                    CONT_ERROR (("... from module `%s'", STEntryName (entry)));
                 }
             }
         }
+
+        entries = STEntryIteratorRelease (entries);
     }
+
+    iterator = STSymbolIteratorRelease (iterator);
 
     DBUG_VOID_RETURN;
 }
 
 static void
-CheckLocalNameClash (const char *symbol, symboltable_t *table, int lineno)
+CheckLocalNameClash (const char *symbol, STtable_t *table, int lineno)
 {
     DBUG_ENTER ("CheckLocalNameClash");
 
-    if (SymbolTableContains (symbol, table)) {
+    if (STContains (symbol, table)) {
         ERROR (lineno, ("Symbol `%s' used and locally defined", symbol));
     }
 
@@ -130,8 +137,8 @@ ANSSymbol (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ANSSymbol");
 
-    SymbolTableAdd (SYMBOL_ID (arg_node), INFO_ANS_CURRENT (arg_info), STE_namespace,
-                    INFO_ANS_SYMBOLS (arg_info));
+    STAdd (SYMBOL_ID (arg_node), INFO_ANS_CURRENT (arg_info), SET_namespace,
+           INFO_ANS_SYMBOLS (arg_info));
 
     if (SYMBOL_NEXT (arg_node) != NULL) {
         SYMBOL_NEXT (arg_node) = Trav (SYMBOL_NEXT (arg_node), arg_info);
@@ -268,13 +275,10 @@ ANSAp (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ANSAp");
 
-    if (SymbolTableContains (AP_NAME (arg_node), INFO_ANS_SYMBOLS (arg_info))) {
-        symbolentrychain_t *entries
-          = SymbolTableEntryChainGet (AP_NAME (arg_node), INFO_ANS_SYMBOLS (arg_info));
-        symbolentry_t *entry = SymbolTableEntryChainNext (entries);
-        AP_MOD (arg_node) = StringCopy (SymbolTableEntryName (entry));
-
-        entries = SymbolTableEntryChainRelease (entries);
+    if (STContains (AP_NAME (arg_node), INFO_ANS_SYMBOLS (arg_info))) {
+        STentry_t *entry
+          = STGetFirstEntry (AP_NAME (arg_node), INFO_ANS_SYMBOLS (arg_info));
+        AP_MOD (arg_node) = StringCopy (STEntryName (entry));
     } else {
         AP_MOD (arg_node) = StringCopy (MODUL_NAME (INFO_ANS_MODULE (arg_info)));
     }

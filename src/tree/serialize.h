@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2004/10/25 11:58:47  sah
+ * major code cleanup
+ *
  * Revision 1.4  2004/10/11 17:00:28  sah
  * added SerializeBuildStack
  *
@@ -22,14 +25,15 @@
 
 #include "symboltable.h"
 #include "serialize_stack.h"
+#include <stdio.h>
 
 extern void SerializeModule (node *module);
+extern void SerializeFundefLink (node *fundef, FILE *file);
+extern const char *GenerateSerFunName (STentrytype_t type, node *node);
+
 extern serstack_t *SerializeBuildSerStack (node *arg_node);
 
-extern const char *GenerateSerFunName (symbolentrytype_t type, node *node);
 extern node *SerializeLookupFunction (const char *module, const char *name);
-extern void SerializeFundefHead (node *fundef);
-extern void SerializeFundefBody (node *fundef);
 
 extern node *SERFundef (node *arg_node, info *arg_info);
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/10/25 11:58:47  sah
+ * major code cleanup
+ *
  * Revision 1.4  2004/10/22 13:23:14  sah
  * added some functions
  * this entire things needs a
@@ -25,42 +28,46 @@
 #include "types.h"
 #include <string.h>
 
-typedef struct SYMBOLTABLESYMBOL_T symboltablesymbol_t;
+typedef struct ST_SYMBOL_T STsymbol_t;
 
-struct SYMBOLCHAIN_T {
-    symboltablesymbol_t *head;
-    symboltablesymbol_t *pos;
+struct ST_SYMBOLITERATOR_T {
+    STsymbol_t *head;
+    STsymbol_t *pos;
 };
 
-struct SYMBOLENTRY_T {
+struct ST_ENTRY_T {
     char *name;
-    symbolentrytype_t type;
-    symbolentry_t *next;
+    STentrytype_t type;
+    STentry_t *next;
 };
 
-struct SYMBOLENTRYCHAIN_T {
-    symbolentry_t *head;
-    symbolentry_t *pos;
+struct ST_ENTRYITERATOR_T {
+    STentry_t *head;
+    STentry_t *pos;
 };
 
-struct SYMBOLTABLESYMBOL_T {
+struct ST_SYMBOL_T {
     char *name;
-    symbolentry_t *head;
-    symboltablesymbol_t *next;
+    STentry_t *head;
+    STsymbol_t *next;
 };
 
-struct SYMBOLTABLE_T {
-    symboltablesymbol_t *head;
+struct ST_SYMBOLTABLE_T {
+    STsymbol_t *head;
 };
 
-static symbolentry_t *
-SymbolTableEntryInit (const char *name, symbolentrytype_t type)
+/*
+ * Functions for handling STentry_t types
+ */
+
+static STentry_t *
+STEntryInit (const char *name, STentrytype_t type)
 {
-    symbolentry_t *result;
+    STentry_t *result;
 
-    DBUG_ENTER ("SymbolTableEntryInit");
+    DBUG_ENTER ("STEntryInit");
 
-    result = (symbolentry_t *)Malloc (sizeof (symbolentry_t));
+    result = (STentry_t *)Malloc (sizeof (STentry_t));
 
     result->name = StringCopy (name);
     result->type = type;
@@ -69,12 +76,12 @@ SymbolTableEntryInit (const char *name, symbolentrytype_t type)
     DBUG_RETURN (result);
 }
 
-static symbolentry_t *
-SymbolTableEntryDestroy (symbolentry_t *entry)
+static STentry_t *
+STEntryDestroy (STentry_t *entry)
 {
-    symbolentry_t *result;
+    STentry_t *result;
 
-    DBUG_ENTER ("SymbolTableEntryDestroy");
+    DBUG_ENTER ("STEntryDestroy");
 
     entry->name = Free (entry->name);
 
@@ -85,14 +92,30 @@ SymbolTableEntryDestroy (symbolentry_t *entry)
     DBUG_RETURN (result);
 }
 
-static symboltablesymbol_t *
-SymbolTableSymbolInit (const char *symbol)
+static bool
+STEntryEqual (STentry_t *one, STentry_t *two)
 {
-    symboltablesymbol_t *result;
+    bool result = TRUE;
 
-    DBUG_ENTER ("SymbolTableSymbolInit");
+    DBUG_ENTER ("STEntryEqual");
 
-    result = (symboltablesymbol_t *)Malloc (sizeof (symboltablesymbol_t));
+    result = result && (!strcmp (one->name, two->name));
+    result = result && (one->type == two->type);
+
+    DBUG_RETURN (result);
+}
+
+/*
+ * Functions for handling STsymbol_t
+ */
+static STsymbol_t *
+STSymbolInit (const char *symbol)
+{
+    STsymbol_t *result;
+
+    DBUG_ENTER ("STSymbolInit");
+
+    result = (STsymbol_t *)Malloc (sizeof (STsymbol_t));
 
     result->name = StringCopy (symbol);
     result->head = NULL;
@@ -101,15 +124,15 @@ SymbolTableSymbolInit (const char *symbol)
     DBUG_RETURN (result);
 }
 
-static symboltablesymbol_t *
-SymbolTableSymbolDestroy (symboltablesymbol_t *symbol)
+static STsymbol_t *
+STSymbolDestroy (STsymbol_t *symbol)
 {
-    symboltablesymbol_t *result;
+    STsymbol_t *result;
 
-    DBUG_ENTER ("SymbolTableSymbolDestroy");
+    DBUG_ENTER ("STSymbolDestroy");
 
     while (symbol->head != NULL)
-        symbol->head = SymbolTableEntryDestroy (symbol->head);
+        symbol->head = STEntryDestroy (symbol->head);
 
     symbol->name = Free (symbol->name);
 
@@ -121,9 +144,38 @@ SymbolTableSymbolDestroy (symboltablesymbol_t *symbol)
 }
 
 static void
-SymbolTableSymbolAdd (symboltablesymbol_t *symbol, symboltable_t *table)
+STEntryAdd (STentry_t *entry, STsymbol_t *symbol)
 {
-    DBUG_ENTER ("SymbolTableSymbolAdd");
+    STentry_t *pos;
+    bool found = FALSE;
+
+    DBUG_ENTER ("STSymbolAdd");
+
+    /* check whether entry already exists */
+    pos = symbol->head;
+
+    while ((pos != NULL) && (!found)) {
+        found = STEntryEqual (pos, entry);
+        pos = pos->next;
+    }
+
+    if (found) {
+        entry = STEntryDestroy (entry);
+    } else {
+        entry->next = symbol->head;
+        symbol->head = entry;
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/*
+ * Functions for handling STtable_t
+ */
+static void
+STSymbolAdd (STsymbol_t *symbol, STtable_t *table)
+{
+    DBUG_ENTER ("STSymbolAdd");
 
     symbol->next = table->head;
     table->head = symbol;
@@ -131,12 +183,12 @@ SymbolTableSymbolAdd (symboltablesymbol_t *symbol, symboltable_t *table)
     DBUG_VOID_RETURN;
 }
 
-static symboltablesymbol_t *
-SymbolTableSymbolLookup (const char *symbol, symboltable_t *table)
+static STsymbol_t *
+STLookupSymbol (const char *symbol, STtable_t *table)
 {
-    symboltablesymbol_t *result;
+    STsymbol_t *result;
 
-    DBUG_ENTER ("SymbolTableLookupSymbol");
+    DBUG_ENTER ("STLookupSymbol");
 
     result = table->head;
 
@@ -147,66 +199,27 @@ SymbolTableSymbolLookup (const char *symbol, symboltable_t *table)
     DBUG_RETURN (result);
 }
 
-static bool
-SymbolTableSymbolEntryEqual (symbolentry_t *one, symbolentry_t *two)
+STtable_t *
+STInit ()
 {
-    bool result = TRUE;
+    STtable_t *result;
 
-    DBUG_ENTER ("SymbolTableSymbolEntryEqual");
+    DBUG_ENTER ("STInit");
 
-    result = result && (!strcmp (one->name, two->name));
-    result = result && (one->type == two->type);
-
-    DBUG_RETURN (result);
-}
-
-static void
-SymbolTableSymbolEntryAdd (symbolentry_t *entry, symboltablesymbol_t *symbol)
-{
-    symbolentry_t *pos;
-    bool found = FALSE;
-
-    DBUG_ENTER ("SymbolTableSymbolEntryAdd");
-
-    /* check whether entry already exists */
-    pos = symbol->head;
-
-    while ((pos != NULL) && (!found)) {
-        found = SymbolTableSymbolEntryEqual (pos, entry);
-        pos = pos->next;
-    }
-
-    if (found) {
-        entry = SymbolTableEntryDestroy (entry);
-    } else {
-        entry->next = symbol->head;
-        symbol->head = entry;
-    }
-
-    DBUG_VOID_RETURN;
-}
-
-symboltable_t *
-SymbolTableInit ()
-{
-    symboltable_t *result;
-
-    DBUG_ENTER ("SymbolTableInit");
-
-    result = (symboltable_t *)Malloc (sizeof (symboltable_t));
+    result = (STtable_t *)Malloc (sizeof (STtable_t));
 
     result->head = NULL;
 
     DBUG_RETURN (result);
 }
 
-symboltable_t *
-SymbolTableDestroy (symboltable_t *table)
+STtable_t *
+STDestroy (STtable_t *table)
 {
-    DBUG_ENTER ("SymbolTableDestroy");
+    DBUG_ENTER ("STDestroy");
 
     while (table->head != NULL) {
-        table->head = SymbolTableSymbolDestroy (table->head);
+        table->head = STSymbolDestroy (table->head);
     }
 
     table = Free (table);
@@ -215,52 +228,51 @@ SymbolTableDestroy (symboltable_t *table)
 }
 
 static void
-SymbolTableEntryAdd (const char *symbolname, symbolentry_t *entry, symboltable_t *table)
+STEntryInsert (const char *symbolname, STentry_t *entry, STtable_t *table)
 {
-    symboltablesymbol_t *symbol;
+    STsymbol_t *symbol;
 
-    DBUG_ENTER ("SymbolTableAdd");
+    DBUG_ENTER ("STEntryInsert");
 
-    symbol = SymbolTableSymbolLookup (symbolname, table);
+    symbol = STLookupSymbol (symbolname, table);
 
     if (symbol == NULL) {
-        symbol = SymbolTableSymbolInit (symbolname);
-        SymbolTableSymbolAdd (symbol, table);
+        symbol = STSymbolInit (symbolname);
+        STSymbolAdd (symbol, table);
     }
 
-    SymbolTableSymbolEntryAdd (entry, symbol);
+    STEntryAdd (entry, symbol);
 
     DBUG_VOID_RETURN;
 }
 
 void
-SymbolTableAdd (const char *symbol, const char *name, symbolentrytype_t type,
-                symboltable_t *table)
+STAdd (const char *symbol, const char *name, STentrytype_t type, STtable_t *table)
 {
-    symbolentry_t *entry;
+    STentry_t *entry;
 
-    DBUG_ENTER ("SymbolTableAdd");
+    DBUG_ENTER ("STAdd");
 
-    entry = SymbolTableEntryInit (name, type);
-    SymbolTableEntryAdd (symbol, entry, table);
+    entry = STEntryInit (name, type);
+    STEntryInsert (symbol, entry, table);
 
     DBUG_VOID_RETURN;
 }
 
 void
-SymbolTableRemove (const char *symbol, symboltable_t *table)
+STRemove (const char *symbol, STtable_t *table)
 {
-    symboltablesymbol_t *symp;
+    STsymbol_t *symp;
 
-    DBUG_ENTER ("SymbolTableRemove");
+    DBUG_ENTER ("STRemove");
 
-    symp = SymbolTableSymbolLookup (symbol, table);
+    symp = STLookupSymbol (symbol, table);
 
     if (symp != NULL) {
         if (table->head == symp) {
             table->head = symp->next;
         } else {
-            symboltablesymbol_t *pos = table->head;
+            STsymbol_t *pos = table->head;
 
             while (pos->next != symp) {
                 pos = pos->next;
@@ -269,32 +281,49 @@ SymbolTableRemove (const char *symbol, symboltable_t *table)
             pos->next = symp->next;
         }
 
-        symp = SymbolTableSymbolDestroy (symp);
+        symp = STSymbolDestroy (symp);
     }
 
     DBUG_VOID_RETURN;
 }
 
 bool
-SymbolTableContains (const char *symbol, symboltable_t *table)
+STContains (const char *symbol, STtable_t *table)
 {
     bool result;
 
-    DBUG_ENTER ("SymbolTableContains");
+    DBUG_ENTER ("STContains");
 
-    result = (SymbolTableSymbolLookup (symbol, table) != NULL);
+    result = (STLookupSymbol (symbol, table) != NULL);
 
     DBUG_RETURN (result);
 }
 
-symbolchain_t *
-SymbolTableSymbolChainGet (symboltable_t *table)
+STentry_t *
+STGetFirstEntry (const char *symbol, STtable_t *table)
 {
-    symbolchain_t *result;
+    STentry_t *result;
+    STsymbol_t *symbolp;
 
-    DBUG_ENTER ("SymbolTableSymbolChainGet");
+    DBUG_ENTER ("STGetFirstEntry");
 
-    result = (symbolchain_t *)Malloc (sizeof (symbolchain_t));
+    symbolp = STLookupSymbol (symbol, table);
+    result = symbolp->head;
+
+    DBUG_RETURN (result);
+}
+
+/*
+ * Functions for STsymboliterator_t
+ */
+STsymboliterator_t *
+STSymbolIteratorGet (STtable_t *table)
+{
+    STsymboliterator_t *result;
+
+    DBUG_ENTER ("STSymbolIteratorGet");
+
+    result = (STsymboliterator_t *)Malloc (sizeof (STsymboliterator_t));
 
     result->head = table->head;
     result->pos = table->head;
@@ -302,59 +331,62 @@ SymbolTableSymbolChainGet (symboltable_t *table)
     DBUG_RETURN (result);
 }
 
-symbolchain_t *
-SymbolTableSymbolChainRelease (symbolchain_t *chain)
+STsymboliterator_t *
+STSymbolIteratorRelease (STsymboliterator_t *iterator)
 {
-    DBUG_ENTER ("SymbolTableSymbolChainRelease");
+    DBUG_ENTER ("STSymbolIteratorRelease");
 
-    chain = Free (chain);
+    iterator = Free (iterator);
 
-    DBUG_RETURN (chain);
+    DBUG_RETURN (iterator);
 }
 
 const char *
-SymbolTableSymbolChainNext (symbolchain_t *chain)
+STSymbolIteratorNext (STsymboliterator_t *iterator)
 {
     char *result;
 
-    DBUG_ENTER ("SymbolTableSymbolChainNext");
+    DBUG_ENTER ("STSymbolIteratorNext");
 
-    if (chain->pos == NULL) {
+    if (iterator->pos == NULL) {
         result = NULL;
     } else {
-        result = chain->pos->name;
-        chain->pos = chain->pos->next;
+        result = iterator->pos->name;
+        iterator->pos = iterator->pos->next;
     }
 
     DBUG_RETURN (result);
 }
 
 void
-SymbolTableSymbolChainReset (symbolchain_t *chain)
+STSymbolIteratorReset (STsymboliterator_t *iterator)
 {
-    DBUG_ENTER ("SymbolTableEntryChainReset");
+    DBUG_ENTER ("STSymbolIteratorReset");
 
-    chain->head = chain->pos;
+    iterator->head = iterator->pos;
 
     DBUG_VOID_RETURN;
 }
 
 int
-SymbolTableSymbolChainHasMore (symbolchain_t *chain)
+STSymbolIteratorHasMore (STsymboliterator_t *iterator)
 {
-    DBUG_ENTER ("SymbolTableSymbolChainHasMore");
+    DBUG_ENTER ("STSymbolIteratorHasMore");
 
-    DBUG_RETURN (chain->pos != NULL);
+    DBUG_RETURN (iterator->pos != NULL);
 }
 
-static symbolentrychain_t *
-SymbolTableEntryChainInit (symboltablesymbol_t *symbol)
+/*
+ * Functions for STentryiterator_t
+ */
+static STentryiterator_t *
+STEntryIteratorInit (STsymbol_t *symbol)
 {
-    symbolentrychain_t *result;
+    STentryiterator_t *result;
 
-    DBUG_ENTER ("SymbolTableEntryChainInit");
+    DBUG_ENTER ("STEntryIteratorInit");
 
-    result = (symbolentrychain_t *)Malloc (sizeof (symbolentrychain_t));
+    result = (STentryiterator_t *)Malloc (sizeof (STentryiterator_t));
 
     result->head = symbol->head;
     result->pos = symbol->head;
@@ -362,107 +394,114 @@ SymbolTableEntryChainInit (symboltablesymbol_t *symbol)
     DBUG_RETURN (result);
 }
 
-symbolentrychain_t *
-SymbolTableEntryChainGet (const char *symbolname, symboltable_t *table)
+STentryiterator_t *
+STEntryIteratorGet (const char *symbolname, STtable_t *table)
 {
-    symbolentrychain_t *result;
-    symboltablesymbol_t *symbol;
+    STentryiterator_t *result;
+    STsymbol_t *symbol;
 
-    DBUG_ENTER ("SymbolTableEntryChainGet");
+    DBUG_ENTER ("STEntryIteratorGet");
 
-    symbol = SymbolTableSymbolLookup (symbolname, table);
+    symbol = STLookupSymbol (symbolname, table);
 
-    result = SymbolTableEntryChainInit (symbol);
+    result = STEntryIteratorInit (symbol);
 
     DBUG_RETURN (result);
 }
 
-symbolentrychain_t *
-SymbolTableEntryChainRelease (symbolentrychain_t *chain)
+STentryiterator_t *
+STEntryIteratorRelease (STentryiterator_t *iterator)
 {
-    DBUG_ENTER ("SymbolTableEntryChainRelease");
+    DBUG_ENTER ("STEntryIteratorRelease");
 
-    chain = Free (chain);
+    iterator = Free (iterator);
 
-    DBUG_RETURN (chain);
+    DBUG_RETURN (iterator);
 }
 
-symbolentry_t *
-SymbolTableEntryChainNext (symbolentrychain_t *chain)
+STentry_t *
+STEntryIteratorNext (STentryiterator_t *iterator)
 {
-    symbolentry_t *result;
+    STentry_t *result;
 
-    DBUG_ENTER ("SymbolTableEntryChainNext");
+    DBUG_ENTER ("STEntryIteratorNext");
 
-    result = chain->pos;
+    result = iterator->pos;
 
-    if (chain->pos != NULL)
-        chain->pos = chain->pos->next;
+    if (iterator->pos != NULL)
+        iterator->pos = iterator->pos->next;
 
     DBUG_RETURN (result);
 }
 
 void
-SymbolTableEntryChainReset (symbolentrychain_t *chain)
+STEntryIteratorReset (STentryiterator_t *iterator)
 {
-    DBUG_ENTER ("SymbolTableEntryChainReset");
+    DBUG_ENTER ("STEntryIteratorReset");
 
-    chain->pos = chain->head;
+    iterator->pos = iterator->head;
 
     DBUG_VOID_RETURN;
 }
 
 int
-SymbolTableEntryChainHasMore (symbolentrychain_t *chain)
+STEntryIteratorHasMore (STentryiterator_t *iterator)
 {
-    DBUG_ENTER ("SymbolTableSymbolChainHasMore");
+    DBUG_ENTER ("STEntryIteratorHasMore");
 
-    DBUG_RETURN (chain->pos != NULL);
+    DBUG_RETURN (iterator->pos != NULL);
 }
 
-const char *
-SymbolTableEntryName (symbolentry_t *entry)
-{
-    DBUG_ENTER ("SymbolTableEntryName");
+/*
+ * Functions to access STentry_t
+ */
 
-    DBUG_ASSERT ((entry != NULL), "SymbolTableEntryName called with NULL argument");
+const char *
+STEntryName (STentry_t *entry)
+{
+    DBUG_ENTER ("STEntryName");
+
+    DBUG_ASSERT ((entry != NULL), "STEntryName called with NULL argument");
 
     DBUG_RETURN (entry->name);
 }
 
-symbolentrytype_t
-SymbolTableEntryType (symbolentry_t *entry)
+STentrytype_t
+STEntryType (STentry_t *entry)
 {
-    DBUG_ENTER ("SymbolTableEntryType");
+    DBUG_ENTER ("STEntryType");
 
-    DBUG_ASSERT ((entry != NULL), "SymbolTableEntryType called with NULL argument");
+    DBUG_ASSERT ((entry != NULL), "STEntryType called with NULL argument");
 
     DBUG_RETURN (entry->type);
 }
 
-void
-SymbolTableEntryPrint (symbolentry_t *entry)
+/*
+ * functions for printing
+ */
+static void
+STEntryPrint (STentry_t *entry)
 {
-    DBUG_ENTER ("SymbolTableEntryPrint");
+    DBUG_ENTER ("STEntryPrint");
 
     printf ("    %s\n", entry->name);
 
     DBUG_VOID_RETURN;
 }
 
-void
-SymbolTableSymbolPrint (symboltablesymbol_t *symbol)
+static void
+STSymbolPrint (STsymbol_t *symbol)
 {
-    symbolentry_t *entry;
+    STentry_t *entry;
 
-    DBUG_ENTER ("SymbolTableSymbolPrint");
+    DBUG_ENTER ("STSymbolPrint");
 
     printf ("Symbol: %s\n", symbol->name);
 
     entry = symbol->head;
 
     while (entry != NULL) {
-        SymbolTableEntryPrint (entry);
+        STEntryPrint (entry);
         entry = entry->next;
     }
 
@@ -472,16 +511,16 @@ SymbolTableSymbolPrint (symboltablesymbol_t *symbol)
 }
 
 void
-SymbolTablePrint (symboltable_t *table)
+STPrint (STtable_t *table)
 {
-    symboltablesymbol_t *symbol;
+    STsymbol_t *symbol;
 
-    DBUG_ENTER ("SymbolTablePrint");
+    DBUG_ENTER ("STPrint");
 
     symbol = table->head;
 
     while (symbol != NULL) {
-        SymbolTableSymbolPrint (symbol);
+        STSymbolPrint (symbol);
         symbol = symbol->next;
     }
 

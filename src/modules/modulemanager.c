@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/10/25 11:58:47  sah
+ * major code cleanup
+ *
  * Revision 1.3  2004/10/21 17:20:24  sah
  * modules are now pooled internally
  *
@@ -30,7 +33,7 @@ struct MODULE_T {
 
 static module_t *modulepool = NULL;
 
-typedef symboltable_t *(*symtabfun_p) ();
+typedef STtable_t *(*symtabfun_p) ();
 
 static module_t *
 LookupModuleInPool (const char *name)
@@ -43,6 +46,7 @@ LookupModuleInPool (const char *name)
     while ((result == NULL) && (pos != NULL)) {
         if (!strcmp (pos->name, name)) {
             result = pos;
+            result->usecount++;
         }
         pos = pos->next;
     }
@@ -159,11 +163,11 @@ GetSymbolTableFunction (module_t *module)
     DBUG_RETURN (result);
 }
 
-symboltable_t *
+STtable_t *
 GetSymbolTable (module_t *module)
 {
     symtabfun_p symtabfun;
-    symboltable_t *result;
+    STtable_t *result;
 
     DBUG_ENTER ("GetSymbolTable");
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/10/25 11:58:47  sah
+ * major code cleanup
+ *
  * Revision 1.1  2004/09/23 21:12:03  sah
  * Initial revision
  *
@@ -17,6 +20,8 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
+#include "modulemanager.h"
+#include "serialize.h"
 
 /*
  * INFO structure
@@ -61,14 +66,38 @@ FreeInfo (info *info)
 }
 
 node *
-CombineFunctionHeadAndBody (node *fundef, node *body)
+LoadFunctionBody (node *fundef, node *modnode)
+{
+    node *result;
+    module_t *module;
+    serfun_p serfun;
+
+    DBUG_ENTER ("LoadFunctionBody");
+
+    module = LoadModule (FUNDEF_MOD (fundef));
+
+    serfun = GetDeSerializeFunction (GenerateSerFunName (SET_funbody, fundef), module);
+
+    result = serfun ();
+
+    module = UnLoadModule (module);
+
+    DBUG_RETURN (result);
+}
+
+node *
+AddFunctionBodyToHead (node *fundef, node *module)
 {
     funtab *store_tab;
     info *info;
+    node *body;
 
     DBUG_ENTER ("CombineFunctionHeadAndBody");
 
     info = MakeInfo ();
+    body = LoadFunctionBody (fundef, module);
+
+    FUNDEF_BODY (fundef) = body;
 
     store_tab = act_tab;
     act_tab = ds_tab;
@@ -79,24 +108,24 @@ CombineFunctionHeadAndBody (node *fundef, node *body)
 
     info = FreeInfo (info);
 
-    FUNDEF_BODY (fundef) = body;
-
     DBUG_RETURN (fundef);
 }
 
 static node *
-LookUpSSACounter (node *cntchain, node *avis)
+LookUpSSACounter (node *cntchain, node *arg)
 {
+    node *result = NULL;
     DBUG_ENTER ("LookUpSSACounter");
 
-    while ((cntchain != NULL) && (AVIS_SSACOUNT (avis) == NULL)) {
-        if (!strcmp (SSACNT_BASEID (cntchain),
-                     VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (avis)))) {
-            AVIS_SSACOUNT (avis) = cntchain;
+    while ((cntchain != NULL) && (result == NULL)) {
+        if (!strcmp (SSACNT_BASEID (cntchain), ARG_NAME (arg))) {
+            result = cntchain;
         }
+
+        cntchain = SSACNT_NEXT (cntchain);
     }
 
-    DBUG_RETURN (avis);
+    DBUG_RETURN (result);
 }
 
 node *
@@ -131,8 +160,8 @@ DSArg (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("DSArg");
 
-    ARG_AVIS (arg_node)
-      = LookUpSSACounter (INFO_DS_SSACOUNTER (arg_info), ARG_AVIS (arg_node));
+    AVIS_SSACOUNT (ARG_AVIS (arg_node))
+      = LookUpSSACounter (INFO_DS_SSACOUNTER (arg_info), arg_node);
 
     arg_node = TravSons (arg_node, arg_info);
 

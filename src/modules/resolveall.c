@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/10/25 11:58:47  sah
+ * major code cleanup
+ *
  * Revision 1.1  2004/10/21 17:18:55  sah
  * Initial revision
  *
@@ -19,12 +22,12 @@
 #include "free.h"
 
 static void
-SubSymbols (symboltable_t *table, node *symbols)
+SubSymbols (STtable_t *table, node *symbols)
 {
     DBUG_ENTER ("SubSymbols");
 
     while (symbols != NULL) {
-        SymbolTableRemove (SYMBOL_ID (symbols), table);
+        STRemove (SYMBOL_ID (symbols), table);
         symbols = SYMBOL_NEXT (symbols);
     }
 
@@ -32,15 +35,15 @@ SubSymbols (symboltable_t *table, node *symbols)
 }
 
 static node *
-Symboltable2Symbols (symbolchain_t *chain, bool exportedonly)
+Symboltable2Symbols (STsymboliterator_t *iterator, bool exportedonly)
 {
     node *result;
 
     DBUG_ENTER ("Symboltable2Symbols");
 
-    if (SymbolTableSymbolChainHasMore (chain)) {
-        char *id = StringCopy (SymbolTableSymbolChainNext (chain));
-        node *next = Symboltable2Symbols (chain, exportedonly);
+    if (STSymbolIteratorHasMore (iterator)) {
+        char *id = StringCopy (STSymbolIteratorNext (iterator));
+        node *next = Symboltable2Symbols (iterator, exportedonly);
         result = MakeSymbol (id, next);
     } else {
         result = NULL;
@@ -53,8 +56,8 @@ static node *
 ResolveAllFlag (char *module, node *symbols, bool exportedonly)
 {
     module_t *mod;
-    symboltable_t *symtab;
-    symbolchain_t *chain;
+    STtable_t *symtab;
+    STsymboliterator_t *iterator;
     node *result;
 
     DBUG_ENTER ("ResolveAllFlag");
@@ -66,12 +69,12 @@ ResolveAllFlag (char *module, node *symbols, bool exportedonly)
 
     SubSymbols (symtab, symbols);
 
-    chain = SymbolTableSymbolChainGet (symtab);
+    iterator = STSymbolIteratorGet (symtab);
 
-    result = Symboltable2Symbols (chain, exportedonly);
-    chain = SymbolTableSymbolChainRelease (chain);
+    result = Symboltable2Symbols (iterator, exportedonly);
+    iterator = STSymbolIteratorRelease (iterator);
 
-    symtab = SymbolTableDestroy (symtab);
+    symtab = STDestroy (symtab);
     mod = UnLoadModule (mod);
 
     if (symbols != NULL) {

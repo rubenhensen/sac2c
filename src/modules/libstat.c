@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/10/25 11:58:47  sah
+ * major code cleanup
+ *
  * Revision 1.3  2004/10/22 13:24:09  sah
  * added a default case
  *
@@ -36,52 +39,47 @@ PrintLibStatHeader (module_t *module)
 }
 
 static void
-PrintLibStatCodeAddBodies (module_t *module, node *fundef)
+PrintLibStatCodeAddBodies (module_t *module, node *modnode, node *fundef)
 {
     DBUG_ENTER ("PrintLibStatCodeAddBodies");
 
     if (fundef != NULL) {
         if (FUNDEF_BODY (fundef) == NULL) {
-            serfun_p serfun;
-
-            serfun
-              = GetDeSerializeFunction (GenerateSerFunName (STE_funbody, fundef), module);
-
-            CombineFunctionHeadAndBody (fundef, serfun ());
+            AddFunctionBodyToHead (fundef, modnode);
         }
 
-        PrintLibStatCodeAddBodies (module, FUNDEF_NEXT (fundef));
+        PrintLibStatCodeAddBodies (module, modnode, FUNDEF_NEXT (fundef));
     }
 
     DBUG_VOID_RETURN;
 }
 
 static void
-PrintLibStatCodeReadEntry (module_t *module, node *modnode, symbolentry_t *entry,
-                           symboltable_t *table)
+PrintLibStatCodeReadEntry (module_t *module, node *modnode, STentry_t *entry,
+                           STtable_t *table)
 {
     serfun_p serfun;
     node *tmp;
 
     DBUG_ENTER ("PrintLibStatCodeReadEntry");
 
-    switch (SymbolTableEntryType (entry)) {
-    case STE_funbody:
+    switch (STEntryType (entry)) {
+    case SET_funbody:
         /* these are ignored right now, they will
          * be added as soon as all others have been
          * read in
          */
         break;
-    case STE_funhead:
-        serfun = GetDeSerializeFunction (SymbolTableEntryName (entry), module);
+    case SET_funhead:
+        serfun = GetDeSerializeFunction (STEntryName (entry), module);
 
         tmp = serfun ();
 
         MODUL_FUNS (modnode) = AppendFundef (MODUL_FUNS (modnode), tmp);
 
         break;
-    case STE_typedef:
-    case STE_objdef:
+    case SET_typedef:
+    case SET_objdef:
         break;
     default:
         DBUG_ASSERT (0, "unsupported symbol within a modules symboltable!");
@@ -93,28 +91,28 @@ PrintLibStatCodeReadEntry (module_t *module, node *modnode, symbolentry_t *entry
 
 static void
 PrintLibStatCodeReadSymbols (module_t *module, node *modnode, const char *symbol,
-                             symboltable_t *table)
+                             STtable_t *table)
 {
-    symbolentrychain_t *chain;
+    STentryiterator_t *iterator;
 
-    DBUG_ENTER ("PrintLibStatSymbolsCodbStatCodeReadSymbolsi");
+    DBUG_ENTER ("PrintLibStatCodeReadSymbols");
 
-    chain = SymbolTableEntryChainGet (symbol, table);
+    iterator = STEntryIteratorGet (symbol, table);
 
-    while (SymbolTableEntryChainHasMore (chain)) {
-        PrintLibStatCodeReadEntry (module, modnode, SymbolTableEntryChainNext (chain),
+    while (STEntryIteratorHasMore (iterator)) {
+        PrintLibStatCodeReadEntry (module, modnode, STEntryIteratorNext (iterator),
                                    table);
     }
 
-    chain = SymbolTableEntryChainRelease (chain);
+    iterator = STEntryIteratorRelease (iterator);
 
     DBUG_VOID_RETURN;
 }
 
 static void
-PrintLibStatCode (module_t *module, symboltable_t *table)
+PrintLibStatCode (module_t *module, STtable_t *table)
 {
-    symbolchain_t *chain;
+    STsymboliterator_t *iterator;
     node *syntax_tree;
 
     DBUG_ENTER ("PrintLibStatPrintCode");
@@ -122,18 +120,20 @@ PrintLibStatCode (module_t *module, symboltable_t *table)
     syntax_tree = MakeModul (StringCopy (GetModuleName (module)), F_prog, NULL, NULL,
                              NULL, NULL, NULL);
 
-    chain = SymbolTableSymbolChainGet (table);
+    iterator = STSymbolIteratorGet (table);
 
-    while (SymbolTableSymbolChainHasMore (chain)) {
-        PrintLibStatCodeReadSymbols (module, syntax_tree,
-                                     SymbolTableSymbolChainNext (chain), table);
+    while (STSymbolIteratorHasMore (iterator)) {
+        PrintLibStatCodeReadSymbols (module, syntax_tree, STSymbolIteratorNext (iterator),
+                                     table);
     }
 
-    chain = SymbolTableSymbolChainRelease (chain);
+    iterator = STSymbolIteratorRelease (iterator);
+
+    /* Add Old Types */
 
     syntax_tree = NT2OTTransform (syntax_tree);
 
-    PrintLibStatCodeAddBodies (module, MODUL_FUNS (syntax_tree));
+    PrintLibStatCodeAddBodies (module, syntax_tree, MODUL_FUNS (syntax_tree));
 
     Print (syntax_tree);
 
@@ -150,7 +150,7 @@ void
 PrintLibStat (char *libname)
 {
     module_t *module;
-    symboltable_t *table;
+    STtable_t *table;
 
     DBUG_ENTER ("PrintLibStat");
 
@@ -168,7 +168,7 @@ PrintLibStat (char *libname)
 
     DBUG_PRINT ("LIBSTAT", ("Printing table information"));
 
-    SymbolTablePrint (table);
+    STPrint (table);
 
     DBUG_PRINT ("LIBSTAT", ("Printing code"));
 
@@ -176,7 +176,7 @@ PrintLibStat (char *libname)
 
     DBUG_PRINT ("LIBSTAT", ("Destroying table"));
 
-    table = SymbolTableDestroy (table);
+    table = STDestroy (table);
 
     DBUG_PRINT ("LIBSTAT", ("Unloading module `%s'", libname));
 

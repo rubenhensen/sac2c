@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/10/25 11:58:47  sah
+ * major code cleanup
+ *
  * Revision 1.5  2004/10/22 15:17:20  sah
  * added STE_wrapperbody, STE_wrapperhead
  *
@@ -28,43 +31,58 @@
 #include "types.h"
 
 typedef enum {
-    STE_funbody,
-    STE_funhead,
-    STE_typedef,
-    STE_objdef,
-    STE_wrapperbody,
-    STE_wrapperhead,
-    STE_namespace
-} symbolentrytype_t;
+    SET_funbody,
+    SET_funhead,
+    SET_typedef,
+    SET_objdef,
+    SET_wrapperbody,
+    SET_wrapperhead,
+    SET_namespace
+} STentrytype_t;
 
-typedef struct SYMBOLENTRY_T symbolentry_t;
-typedef struct SYMBOLCHAIN_T symbolchain_t;
-typedef struct SYMBOLENTRYCHAIN_T symbolentrychain_t;
-typedef struct SYMBOLTABLE_T symboltable_t;
+typedef struct ST_ENTRY_T STentry_t;
+typedef struct ST_SYMBOLITERATOR_T STsymboliterator_t;
+typedef struct ST_ENTRYITERATOR_T STentryiterator_t;
+typedef struct ST_SYMBOLTABLE_T STtable_t;
 
-extern symboltable_t *SymbolTableInit ();
-extern symboltable_t *SymbolTableDestroy (symboltable_t *table);
-extern void SymbolTableAdd (const char *symbol, const char *name, symbolentrytype_t type,
-                            symboltable_t *table);
-extern void SymbolTableRemove (const char *symbol, symboltable_t *table);
-extern bool SymbolTableContains (const char *symbol, symboltable_t *table);
+/*
+ * Functions for handling symbol tables
+ */
+extern STtable_t *STInit ();
+extern STtable_t *STDestroy (STtable_t *table);
+extern void STAdd (const char *symbol, const char *name, STentrytype_t type,
+                   STtable_t *table);
+extern void STRemove (const char *symbol, STtable_t *table);
+extern bool STContains (const char *symbol, STtable_t *table);
+extern STentry_t *STGetFirstEntry (const char *symbol, STtable_t *table);
 
-extern symbolchain_t *SymbolTableSymbolChainGet (symboltable_t *table);
-extern symbolchain_t *SymbolTableSymbolChainRelease (symbolchain_t *chain);
-extern const char *SymbolTableSymbolChainNext (symbolchain_t *chain);
-extern void SymbolTableSymbolChainReset (symbolchain_t *chain);
-extern int SymbolTableSymbolChainHasMore (symbolchain_t *chain);
+/*
+ * Symbol iterator functions
+ */
+extern STsymboliterator_t *STSymbolIteratorGet (STtable_t *table);
+extern STsymboliterator_t *STSymbolIteratorRelease (STsymboliterator_t *iterator);
+extern const char *STSymbolIteratorNext (STsymboliterator_t *iterator);
+extern void STSymbolIteratorReset (STsymboliterator_t *iterator);
+extern int STSymbolIteratorHasMore (STsymboliterator_t *iterator);
 
-extern symbolentrychain_t *SymbolTableEntryChainGet (const char *symbol,
-                                                     symboltable_t *table);
-extern symbolentrychain_t *SymbolTableEntryChainRelease (symbolentrychain_t *chain);
-extern symbolentry_t *SymbolTableEntryChainNext (symbolentrychain_t *chain);
-extern void SymbolTableEntryChainReset (symbolentrychain_t *chain);
-extern int SymbolTableEntryChainHasMore (symbolentrychain_t *chain);
+/*
+ * Entry iterator functions
+ */
+extern STentryiterator_t *STEntryIteratorGet (const char *symbol, STtable_t *table);
+extern STentryiterator_t *STEntryIteratorRelease (STentryiterator_t *iterator);
+extern STentry_t *STEntryIteratorNext (STentryiterator_t *iterator);
+extern void STEntryIteratorReset (STentryiterator_t *iterator);
+extern int STEntryIteratorHasMore (STentryiterator_t *iterator);
 
-extern const char *SymbolTableEntryName (symbolentry_t *entry);
-extern symbolentrytype_t SymbolTableEntryType (symbolentry_t *entry);
+/*
+ * Functions to access table entries
+ */
+extern const char *STEntryName (STentry_t *entry);
+extern STentrytype_t STEntryType (STentry_t *entry);
 
-extern void SymbolTablePrint (symboltable_t *table);
+/*
+ * Functions to print symbol tables
+ */
+extern void STPrint (STtable_t *table);
 
 #endif /* _SYMBOLTABLE_H */
