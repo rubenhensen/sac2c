@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.164  1998/05/13 13:45:56  srs
+ * added comment to N_id
+ *
  * Revision 1.163  1998/05/12 22:45:28  dkr
  * added NWITH2_DIM, NWITH2_IDX_MIN, NWITH2_IDX_MAX
  * removed SYNC_DEC_RC_IDS, SYNC_INOUT_IDS
@@ -1891,6 +1894,8 @@ extern node *MakeVinfo (useflag flag, types *type, node *next);
  ***    SearchWL() can define ID_WL in another way (pointer to N_assign node
  ***    of WL which is referenced by this Id).
  ***
+ ***    Unroll uses ->flag without a macro :(
+ ***    Even worse: Unroll uses ->flag of *every* LET_EXPR node :(((
  ***/
 
 /*
