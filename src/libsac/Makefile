@@ -1,8 +1,9 @@
 #
 #
 # $Log$
-# Revision 1.22  2000/11/02 14:21:10  dkr
-# header compressed
+# Revision 1.23  2000/11/02 14:51:45  dkr
+# INC path -I../tree added
+# explicit .mac dependencies added
 #
 # Revision 1.19  2000/08/01 15:05:17  nmw
 # c-interface in libsab_mt.a, too
@@ -58,7 +59,7 @@ CCFLAGS   := -ansi -Wall -D__EXTENSIONS__ -g -DSAC_FOR_$(OS)
 
 MTFLAGS   := -DMT -D_REENTRANT -D_POSIX_C_SOURCE=199506L
 
-INCS := -I../runtime -I../../inc
+INCS := -I../tree -I../runtime -I../../inc
 LIBS := -L.
 
 OBJS_LIBSAC := boundcheck.o message.o misc.o profile.o trace.o nophm.o \
@@ -73,6 +74,14 @@ OBJS_LIBSAC_MT := boundcheck_mt.o message_mt.o misc_mt.o trace_mt.o mt.o  \
 
 
 all: libsac.a libsac_mt.a 
+
+
+#
+# the *.[ch] objects are to fool makedepend which does not
+# recognize the dependency between *.[ch] and the .mac files!
+#
+cinterface.c: ../tree/type_info.mac
+	touch cinterface.c
 
 
 libsac.a: $(OBJS_LIBSAC)
