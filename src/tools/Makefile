@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.8  2001/11/21 18:38:20  sbs
+# strange requirement on MACOS to re-run ranlib on libsac.a 8-(
+#
 # Revision 3.7  2001/11/20 13:37:42  sbs
 # definition of LIBM moved to Makefile.Config as it is platform specific.
 #
@@ -75,6 +78,9 @@ all:  CacheSimAnalyser CacheSimTest
 
 
 CacheSimAnalyser: CacheSimAnalyser.o $(LIBDIR)/libsac.a
+ifeq ($(OS),OSX_MAC)
+	ranlib ../libsac/libsac.a
+endif
 	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) $(LIBS) -o $@ $< -lsac $(LIBM)
 	$(CLOCK_SKEW_ELIMINATION) $@
 
