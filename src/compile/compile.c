@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.73  1996/01/22 17:33:22  cg
+ * Revision 1.74  1996/01/23 09:02:25  cg
+ * Now, the init expressions of object definitions are always removed.
+ *
+ * Revision 1.73  1996/01/22  17:33:22  cg
  * IsBoxed and IsUnique moved to refcount.c
  *
  * Revision 1.72  1996/01/21  14:01:03  cg
@@ -5531,6 +5534,12 @@ CompObjdef (node *arg_node, node *arg_info)
     } else {
         OBJDEF_ICM (arg_node) = NULL;
     }
+
+    OBJDEF_EXPR (arg_node) = NULL;
+    /*
+     *  The initialization expression is not freed because it may be used
+     *  in the main function.
+     */
 
     if (OBJDEF_NEXT (arg_node) != NULL) {
         OBJDEF_NEXT (arg_node) = Trav (OBJDEF_NEXT (arg_node), arg_info);
