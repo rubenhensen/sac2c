@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.112  2002/03/01 02:34:51  dkr
+ * - type ARGTAB added
+ * - INFO_PREC3_... macros added
+ *
  * Revision 3.111  2002/02/22 14:08:24  sbs
  * INFO_INSVD_VARDECS and INFO_INSVD_ARGS added.
  *
@@ -455,6 +459,21 @@ extern nodelist *MakeNodelistNode (node *node, nodelist *next);
 /*--------------------------------------------------------------------------*/
 
 /***
+ ***  ARGTAB :
+ ***
+ ***  permanent attributes:
+ ***
+ ***    int*       SIZE
+ ***    node*      PTR_IN[]     (N_arg, N_exprs)
+ ***    void*      PTR_OUT[]    (TYPES, IDS)
+ ***    argtag_t   TAG[]
+ ***/
+
+extern argtab_t *MakeArgtab (int size);
+
+/*--------------------------------------------------------------------------*/
+
+/***
  ***  ACCESS_T :
  ***
  ***  permanent attributes:
@@ -736,11 +755,11 @@ extern node *MakeTypedef (char *name, char *mod, types *type, statustype attrib,
                           node *next);
 
 #define TYPEDEF_TYPE(n) (n->info.types)
-#define TYPEDEF_NAME(n) (*((char **)(&(n->mask[4]))))        /* needed for cc */
-#define TYPEDEF_MOD(n) (*((char **)(&(n->mask[5]))))         /* needed for cc */
-#define TYPEDEF_LINKMOD(n) (*((char **)(&(n->mask[6]))))     /* needed for cc */
-#define TYPEDEF_STATUS(n) (*((statustype *)(&(n->info2))))   /* needed for cc */
-#define TYPEDEF_ATTRIB(n) (*((statustype *)(&(n->mask[3])))) /* needed for cc */
+#define TYPEDEF_NAME(n) (*((char **)(&(n->mask[4]))))        /* for cc */
+#define TYPEDEF_MOD(n) (*((char **)(&(n->mask[5]))))         /* for cc */
+#define TYPEDEF_LINKMOD(n) (*((char **)(&(n->mask[6]))))     /* for cc */
+#define TYPEDEF_STATUS(n) (*((statustype *)(&(n->info2))))   /* for cc */
+#define TYPEDEF_ATTRIB(n) (*((statustype *)(&(n->mask[3])))) /* for cc */
 #define TYPEDEF_IMPL(n) ((types *)(n->dfmask[0]))
 #define TYPEDEF_NEXT(n) (n->node[0])
 #define TYPEDEC_DEF(n) (n->node[1])
@@ -819,12 +838,12 @@ extern node *MakeTypedef (char *name, char *mod, types *type, statustype attrib,
 extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *next);
 
 #define OBJDEF_TYPE(n) (n->info.types)
-#define OBJDEF_NAME(n) (*((char **)(&(n->mask[4]))))        /* needed for cc */
-#define OBJDEF_MOD(n) (*((char **)(&(n->mask[5]))))         /* needed for cc */
-#define OBJDEF_LINKMOD(n) (*((char **)(&(n->mask[6]))))     /* needed for cc */
-#define OBJDEF_STATUS(n) (*((statustype *)(&(n->info2))))   /* needed for cc */
-#define OBJDEF_ATTRIB(n) (*((statustype *)(&(n->mask[3])))) /* needed for cc */
-#define OBJDEF_VARNAME(n) (*((char **)(&(n->int_data))))    /* needed for cc */
+#define OBJDEF_NAME(n) (*((char **)(&(n->mask[4]))))        /* for cc */
+#define OBJDEF_MOD(n) (*((char **)(&(n->mask[5]))))         /* for cc */
+#define OBJDEF_LINKMOD(n) (*((char **)(&(n->mask[6]))))     /* for cc */
+#define OBJDEF_STATUS(n) (*((statustype *)(&(n->info2))))   /* for cc */
+#define OBJDEF_ATTRIB(n) (*((statustype *)(&(n->mask[3])))) /* for cc */
+#define OBJDEF_VARNAME(n) (*((char **)(&(n->int_data))))    /* for cc */
 #define OBJDEF_NEXT(n) (n->node[0])
 #define OBJDEF_EXPR(n) (n->node[1])
 #define OBJDEC_DEF(n) (n->node[2])
@@ -868,10 +887,10 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  ***    node*           SIB         (N_sib)       (readsib !!)
  ***    node*           RETURN      (N_return)    (typecheck -> compile !!)
  ***    nodelist*       NEEDOBJS                  (import -> )
- ***                                               ( -> analysis -> )
- ***                                               ( -> write-SIB -> )
- ***                                               ( -> obj-handling -> )
- ***                                               ( -> liftspmd !!)
+ ***                                                ( -> analysis -> )
+ ***                                                ( -> write-SIB -> )
+ ***                                                ( -> obj-handling -> )
+ ***                                                ( -> liftspmd !!)
  ***    node*           ICM         (N_icm)       (compile -> print )
  ***    int             VARNO                     (optimize -> )
  ***    long*           MASK[x]                   (optimize -> )
@@ -881,6 +900,8 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  ***    DFMmask_base_t  DFM_BASE             (lac2fun/rc -> spmd -> compile -> )
  ***
  ***    node*           FUNDEC_DEF  (N_fundef)    (checkdec -> writesib !!)
+ ***
+ ***    argtab_t*       ARGTAB                    (precompile -> compile !!)
  ***
  ***  temporary attributes for ST_spmdfun fundefs only:
  ***
@@ -952,12 +973,12 @@ extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *
 #define FUNDEF_BODY(n) (n->node[0])
 #define FUNDEF_ARGS(n) (n->node[2])
 #define FUNDEF_NEXT(n) (n->node[1])
-#define FUNDEF_NAME(n) (*((char **)(&(n->mask[4]))))    /* needed for cc */
-#define FUNDEF_MOD(n) (*((char **)(&(n->mask[5]))))     /* needed for cc */
-#define FUNDEF_LINKMOD(n) (*((char **)(&(n->mask[6])))) /* needed for cc */
+#define FUNDEF_NAME(n) (*((char **)(&(n->mask[4]))))    /* for cc */
+#define FUNDEF_MOD(n) (*((char **)(&(n->mask[5]))))     /* for cc */
+#define FUNDEF_LINKMOD(n) (*((char **)(&(n->mask[6])))) /* for cc */
 #define FUNDEF_TYPES(n) (n->info.types)
-#define FUNDEF_STATUS(n) (*((statustype *)(&(n->info2))))   /* needed for cc */
-#define FUNDEF_ATTRIB(n) (*((statustype *)(&(n->mask[3])))) /* needed for cc */
+#define FUNDEF_STATUS(n) (*((statustype *)(&(n->info2))))   /* for cc */
+#define FUNDEF_ATTRIB(n) (*((statustype *)(&(n->mask[3])))) /* for cc */
 #define FUNDEF_INLINE(n) (n->flag)
 #define FUNDEF_FUNNO(n) (n->counter)
 #define FUNDEF_PRAGMA(n) (n->node[4])
@@ -971,6 +992,7 @@ extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *
 #define FUNDEF_EXPORT(n) (n->refcnt)
 #define FUNDEF_MASK(n, x) (n->mask[x])
 #define FUNDEF_DFM_BASE(n) ((DFMmask_base_t) (n->dfmask[0]))
+#define FUNDEF_ARGTAB(n) ((argtab_t *)(n->dfmask[4]))
 #define FUNDEF_ICM(n) (n->node[5])
 
 /* LaC functions */
@@ -1160,9 +1182,9 @@ extern node *MakeBlock (node *instr, node *vardec);
 extern node *MakeVardec (char *name, types *type, node *next);
 
 #define VARDEC_TYPE(n) (n->info.types)
-#define VARDEC_NAME(n) (*((char **)(&(n->mask[4]))))        /* needed for cc */
-#define VARDEC_STATUS(n) (*((statustype *)(&(n->info2))))   /* needed for cc */
-#define VARDEC_ATTRIB(n) (*((statustype *)(&(n->mask[3])))) /* needed for cc */
+#define VARDEC_NAME(n) (*((char **)(&(n->mask[4]))))        /* for cc */
+#define VARDEC_STATUS(n) (*((statustype *)(&(n->info2))))   /* for cc */
+#define VARDEC_ATTRIB(n) (*((statustype *)(&(n->mask[3])))) /* for cc */
 #define VARDEC_AVIS(n) (n->node[1])
 #define VARDEC_VARNO(n) (n->varno)
 #define VARDEC_REFCNT(n) (n->refcnt)
@@ -1276,6 +1298,7 @@ extern node *MakeCast (node *expr, types *type);
  ***  temporary attributes:
  ***
  ***    node*     REFERENCE  (N_exprs)  (O)  (precompile -> compile !!)
+ ***    node*     CRET                       (precompile -> compile -> )
  ***    DFMmask_t USEMASK                    (multithread -> )
  ***    DFMmask_t DEFMASK                    (multithread -> )
  ***/
@@ -1284,6 +1307,9 @@ extern node *MakeCast (node *expr, types *type);
  *  REFERENCE: List of artificial return values which correspond to
  *             reference parameters.
  *
+ *  CRET: Points to the argument in EXPRS which is used as C return value
+ *        in the compiled code.
+ *
  *  ATTENTION: node[1] of N_return node already used by compile.c
  */
 
@@ -1291,6 +1317,7 @@ extern node *MakeReturn (node *exprs);
 
 #define RETURN_EXPRS(n) (n->node[0])
 #define RETURN_REFERENCE(n) (n->node[2])
+#define RETURN_CRET(n) (n->node[3])
 #define RETURN_USEMASK(n) (n->dfmask[0])
 #define RETURN_DEFMASK(n) (n->dfmask[1])
 
@@ -1458,18 +1485,19 @@ extern node *MakeAnnotate (int tag, int funnumber, int funapnumber);
  ***
  ***  sons:
  ***
- ***    node*  ARGS    (O)  (N_exprs)
+ ***    node*      ARGS    (O)  (N_exprs)
  ***
  ***  permanent attributes:
  ***
- ***    char*  NAME
- ***    char*  MOD     (O)
- ***    int    ATFLAG  (O)
+ ***    char*      NAME
+ ***    char*      MOD     (O)
+ ***    int        ATFLAG  (O)
  ***
  ***  temporary attributes:
  ***
- ***    node*  FUNDEF       (N_fundef)  (typecheck -> analysis -> )
- ***                                    ( -> obj-handling -> compile -> )
+ ***    node*      FUNDEF       (N_fundef)  (typecheck -> analysis -> )
+ ***                                          ( -> obj-handling -> compile -> )
+ ***    argtab_t*  ARGTAB                   (precompile -> compile !!)
  ***/
 
 extern node *MakeAp (char *name, char *mod, node *args);
@@ -1479,6 +1507,7 @@ extern node *MakeAp (char *name, char *mod, node *args);
 #define AP_ATFLAG(n) (n->counter)
 #define AP_ARGS(n) (n->node[0])
 #define AP_FUNDEF(n) (n->node[1])
+#define AP_ARGTAB(n) ((argtab_t *)(n->dfmask[4]))
 
 /*--------------------------------------------------------------------------*/
 
@@ -1675,7 +1704,7 @@ extern node *MakeId_Num (int val);
 #define ID_DEF(n) (IDS_DEF (ID_IDS (n)))
 #define ID_REFCNT(n) (IDS_REFCNT (ID_IDS (n)))
 #define ID_NAIVE_REFCNT(n) (IDS_NAIVE_REFCNT (ID_IDS (n)))
-#define ID_CLSCONV(n) ((clsconv_t) (n->flag))
+#define ID_UNQCONV(n) ((unqconv_t) (n->flag))
 #define ID_WL(n) (n->node[0])
 #define ID_NT_TAG(n) (n->node[5])
 
@@ -1864,28 +1893,28 @@ extern node *MakeIcm (char *name, node *args);
  ***  permanent attributes:
  ***
  ***    char*  LINKNAME         (O)
- ***    int[]  LINKSIGN         (O)
- ***    int[]  REFCOUNTING      (O)
+ ***    int[]  LINKSIGN         (O)               (import -> )
+ ***    int[]  REFCOUNTING      (O)               (import -> )
  ***    char*  INITFUN          (O)
  ***
- ***    node*  WLCOMP_APS       (0)      (N_exprs)
- ***    node*  APL              (0)      (N_ap)
+ ***    node*  WLCOMP_APS       (0)   (N_exprs)
+ ***    node*  APL              (0)   (N_ap)
  ***
  ***  temporary attributes:
  ***
- ***    int[]  READONLY         (O)   (import -> readsib !!)
- ***    ids*   EFFECT           (O)   (import -> readsib !!)
- ***    ids*   TOUCH            (O)   (import -> readsib !!)
- ***    char*  COPYFUN          (O)   (import -> readsib !!)
- ***    char*  FREEFUN          (O)   (import -> readsib !!)
- ***    ids*   NEEDTYPES        (O)   (import -> readsib !!)
- ***    node*  NEEDFUNS         (O)   (import -> readsib !!)
- ***    char*  LINKMOD          (O)   (import -> readsib !!)
- ***    int    NUMPARAMS        (O)   (import -> readsib !!)
+ ***    int[]  READONLY         (O)               (import -> readsib !!)
+ ***    ids*   EFFECT           (O)               (import -> readsib !!)
+ ***    ids*   TOUCH            (O)               (import -> readsib !!)
+ ***    char*  COPYFUN          (O)               (import -> readsib !!)
+ ***    char*  FREEFUN          (O)               (import -> readsib !!)
+ ***    ids*   NEEDTYPES        (O)               (import -> readsib !!)
+ ***    node*  NEEDFUNS         (O)               (import -> readsib !!)
+ ***    char*  LINKMOD          (O)               (import -> readsib !!)
+ ***    int    NUMPARAMS        (O)               (import -> readsib !!)
  ***
- ***    nums*  LINKSIGNNUMS     (O)   (scanparse -> import !!)
- ***    nums*  REFCOUNTINGNUMS  (O)   (scanparse -> import !!)
- ***    nums*  READONLYNUMS     (O)   (scanparse -> import !!)
+ ***    nums*  LINKSIGNNUMS     (O)               (scanparse -> import !!)
+ ***    nums*  REFCOUNTINGNUMS  (O)               (scanparse -> import !!)
+ ***    nums*  READONLYNUMS     (O)               (scanparse -> import !!)
  ***/
 
 /*
@@ -2669,6 +2698,8 @@ extern node *MakeInfo ();
 #define INFO_PREC1_LASTASSIGN(n) (n->node[2])
 #define INFO_PREC1_CEXPR(n) (n->node[3])
 #define INFO_PREC2_OBJINITFUNDEF(n) (n->node[0])
+#define INFO_PREC3_PRE_ASSIGNS(n) (n->node[0])
+#define INFO_PREC3_POST_ASSIGNS(n) (n->node[1])
 
 /* ArrayElemination */
 #define INFO_AE_TYPES(n) (n->node[1])
@@ -2681,11 +2712,6 @@ extern node *MakeInfo ();
 #define INFO_COMP_LASTSYNC(n) (n->node[3])
 #define INFO_COMP_LASTIDS(n) (n->info.ids)
 #define INFO_COMP_FOLDFUNS(n) ((bool)(n->varno))
-#define INFO_COMP_MERGE(n) (n->node[4])
-#define INFO_COMP_CNTPARAM(n) (n->lineno)
-#define INFO_COMP_TYPETAB(n) ((types **)(n->dfmask[0]))
-#define INFO_COMP_ICMTAB(n) ((node **)(n->dfmask[1]))
-#define INFO_COMP_TABSIZE(n) (n->flag)
 #define INFO_COMP_ASSIGN(n) (n->node[5])
 #define INFO_COMP_SCHEDULERID(n) (n->counter)
 #define INFO_COMP_SCHEDULERINIT(n) (n->info2)
