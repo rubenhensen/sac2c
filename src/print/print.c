@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.192  2004/12/01 19:18:08  sbs
+ * moved PRTvectinfo into index.c
+ * some further brushing
+ *
  * Revision 3.191  2004/11/29 19:13:33  ktr
  * Better support for named tuples. In the long run, we need a node N_nt which
  * could directly be printed as a named tuple.
@@ -261,117 +265,6 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
-#ifndef DBUG_OFF
-
-/******************************************************************************
- *
- * function:
- *   void DbugPrintArray( node *arg_node)
- *
- * description:
- *   This function is only used for printing of debugging informations in
- *   PrintArray and PrintId.
- *
- ******************************************************************************/
-
-static void
-DbugPrintArray (node *arg_node)
-{
-    int *intptr, veclen, i;
-    simpletype vectype;
-    void *constvec;
-    char *chrptr;
-    float *fltptr;
-    double *dblptr;
-
-    DBUG_ENTER ("DbugPrintArray");
-
-    if (NODE_TYPE (arg_node) == N_array) {
-        veclen = ARRAY_VECLEN (arg_node);
-        vectype = ARRAY_VECTYPE (arg_node);
-        constvec = ARRAY_CONSTVEC (arg_node);
-    } else {
-        DBUG_ASSERT ((NODE_TYPE (arg_node) == N_id),
-                     "argument is neither a N_array nor a N_id node");
-        veclen = ID_VECLEN (arg_node);
-        vectype = ID_VECTYPE (arg_node);
-        constvec = ID_CONSTVEC (arg_node);
-    }
-
-    if (constvec != NULL) {
-        fprintf (global.outfile, ":[");
-    }
-
-    if ((constvec != NULL) && (veclen >= 1)) {
-        switch (vectype) {
-        case T_nothing:
-            break;
-
-        case T_int:
-            intptr = (int *)constvec;
-            fprintf (global.outfile, "%d", intptr[0]);
-            for (i = 1; i < ((veclen < 10) ? (veclen) : (10)); i++) {
-                fprintf (global.outfile, ",%d", intptr[i]);
-            }
-            break;
-
-        case T_float:
-            fltptr = (float *)constvec;
-            fprintf (global.outfile, "%f", fltptr[0]);
-            for (i = 1; i < ((veclen < 10) ? (veclen) : (10)); i++) {
-                fprintf (global.outfile, ",%f", fltptr[i]);
-            }
-            break;
-
-        case T_double:
-            dblptr = (double *)constvec;
-            fprintf (global.outfile, "%f", dblptr[0]);
-            for (i = 1; i < ((veclen < 10) ? (veclen) : (10)); i++) {
-                fprintf (global.outfile, ",%f", dblptr[i]);
-            }
-            break;
-
-        case T_bool:
-            intptr = (int *)constvec;
-            fprintf (global.outfile, "%s", ((intptr[0] == 0) ? ("false") : ("true")));
-            for (i = 1; i < ((veclen < 10) ? (veclen) : (10)); i++) {
-                fprintf (global.outfile, ",%s",
-                         ((intptr[i] == 0) ? ("false") : ("true")));
-            }
-            break;
-
-        case T_char:
-            chrptr = (char *)constvec;
-            if ((chrptr[0] >= ' ') && (chrptr[0] <= '~') && (chrptr[0] != '\'')) {
-                fprintf (global.outfile, ",'%c'", chrptr[0]);
-            } else {
-                fprintf (global.outfile, ",'\\%o'", chrptr[0]);
-            }
-            for (i = 1; i < ((veclen < 10) ? (veclen) : (10)); i++) {
-                if ((chrptr[i] >= ' ') && (chrptr[i] <= '~') && (chrptr[i] != '\'')) {
-                    fprintf (global.outfile, ",'%c'", chrptr[i]);
-                } else {
-                    fprintf (global.outfile, ",'\\%o'", chrptr[i]);
-                }
-            }
-            break;
-
-        default:
-            DBUG_ASSERT ((0), "illegal type found!");
-            break;
-        }
-    }
-
-    if (constvec != NULL) {
-        if (veclen > 10) {
-            fprintf (global.outfile, ",..");
-        }
-        fprintf (global.outfile, "]");
-    }
-
-    DBUG_VOID_RETURN;
-}
-
 #ifndef WLAA_DEACTIVATED
 
 /******************************************************************************
@@ -627,8 +520,6 @@ TSIprintInfo (node *arg_node, info *arg_info)
 }
 #endif /* ! TSI_DEACTIVATED */
 
-#endif /* ! DBUG_OFF */
-
 /******************************************************************************
  *
  * Function:
@@ -838,13 +729,13 @@ PrintArgtags (argtab_t *argtab)
     DBUG_VOID_RETURN;
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * Function:
- *   node *PRTids( node *arg_node, info *arg_info)
+ * @fn node *PRTids( node *arg_node, info *arg_info)
  *
- * Description:
- *
+ *   @brief print N_ids node
+ *   @param
+ *   @return
  *
  ******************************************************************************/
 
@@ -1670,9 +1561,6 @@ PRTvardec (node *arg_node, info *arg_info)
 
     INDENT;
 
-    DBUG_EXECUTE ("PRINT_MASKS",
-                  fprintf (global.outfile, "**%d: ", VARDEC_VARNO (arg_node)););
-
     if ((VARDEC_ICM (arg_node) == NULL) || (NODE_TYPE (VARDEC_ICM (arg_node)) != N_icm)) {
         type_str = TYtype2String (VARDEC_NTYPE (arg_node), FALSE, 0);
         fprintf (global.outfile, "%s ", type_str);
@@ -2209,10 +2097,10 @@ PRTap (node *arg_node, info *arg_info)
         /*
          * print name of 'arg_node'
          */
-        if (AP_MOD (arg_node) != NULL) {
-            fprintf (global.outfile, "%s:", AP_MOD (arg_node));
+        if (AP_SPMOD (arg_node) != NULL) {
+            fprintf (global.outfile, "%s:", AP_SPMOD (arg_node));
         }
-        fprintf (global.outfile, "%s", AP_NAME (arg_node));
+        fprintf (global.outfile, "%s", AP_SPNAME (arg_node));
     }
 
     fprintf (global.outfile, "(");
@@ -2344,10 +2232,6 @@ PRTarray (node *arg_node, info *arg_info)
     INFO_PRINT_SHAPE (arg_info) = old_print_shape;
     INFO_PRINT_SHAPE_COUNTER (arg_info) = old_print_shape_counter;
 
-    if (global.compiler_phase != PH_genccode) {
-        DBUG_EXECUTE ("PRINT_CAR", DbugPrintArray (arg_node););
-    }
-
     DBUG_RETURN (arg_node);
 }
 
@@ -2394,13 +2278,13 @@ PRTexprs (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * Function:
- *   node *PRTid( node *arg_node, info *arg_info)
+ * @fn node *PRTid( node *arg_node, info *arg_info)
  *
- * Description:
- *
+ *   @brief print N_id node
+ *   @param
+ *   @return
  *
  ******************************************************************************/
 
@@ -2416,23 +2300,24 @@ PRTid (node *arg_node, info *arg_info)
                    ? ID_NT_TAG (arg_node)
                    : ID_NAME (arg_node));
     } else {
-        fprintf (global.outfile, "%s",
-                 ((global.compiler_phase == PH_genccode)
-                  && (ID_NT_TAG (arg_node) != NULL))
-                   ? ID_NT_TAG (arg_node)
-                   : ID_SPNAME (arg_node));
+        DBUG_ASSERT ((global.compiler_phase != PH_genccode),
+                     "missing vardec-avis link in PH_genccode");
+        if (ID_SPMOD (arg_node) != NULL) {
+            fprintf (global.outfile, "%s", ID_SPMOD (arg_node));
+        }
+        fprintf (global.outfile, "%s", ID_SPNAME (arg_node));
     }
 
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * Function:
- *   node *PRTnum( node *arg_node, info *arg_info)
+ * @fn node *PRTnum( node *arg_node, info *arg_info)
  *
- * Description:
- *
+ *   @brief print N_num node
+ *   @param
+ *   @return
  *
  ******************************************************************************/
 
@@ -2446,13 +2331,13 @@ PRTnum (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * Function:
- *   node *PRTfloat( node *arg_node, info *arg_info)
+ * @fn node *PRTfloat( node *arg_node, info *arg_info)
  *
- * Description:
- *
+ *   @brief print N_float node
+ *   @param
+ *   @return
  *
  ******************************************************************************/
 
@@ -2470,13 +2355,13 @@ PRTfloat (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * Function:
- *   node *PRTdouble( node *arg_node, info *arg_info)
+ * @fn node *PRTdouble( node *arg_node, info *arg_info)
  *
- * Description:
- *
+ *   @brief print N_double node
+ *   @param
+ *   @return
  *
  ******************************************************************************/
 
@@ -2494,13 +2379,13 @@ PRTdouble (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * Function:
- *   node *PRTbool( node *arg_node, info *arg_info)
+ * @fn node *PRTbool( node *arg_node, info *arg_info)
  *
- * Description:
- *
+ *   @brief print N_bool node
+ *   @param
+ *   @return
  *
  ******************************************************************************/
 
@@ -2518,13 +2403,13 @@ PRTbool (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * Function:
- *   node *PRTstr( node *arg_node, info *arg_info)
+ * @fn node *PRTstr( node *arg_node, info *arg_info)
  *
- * Description:
- *
+ *   @brief print N_str node
+ *   @param
+ *   @return
  *
  ******************************************************************************/
 
@@ -2639,47 +2524,6 @@ PRTchar (node *arg_node, info *arg_info)
         default:
             fprintf (global.outfile, "'\\%o'", CHAR_VAL (arg_node));
         }
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * Function:
- *   node *PRTvectinfo( node *arg_node, info *arg_info)
- *
- * Description:
- *
- *
- ******************************************************************************/
-
-node *
-PRTvectinfo (node *arg_node, info *arg_info)
-{
-    char *type_str;
-
-    DBUG_ENTER ("PRTvectinfo");
-
-    switch (VINFO_FLAG (arg_node)) {
-    case DOLLAR:
-        fprintf (global.outfile, ":$");
-        break;
-    case VECT:
-        fprintf (global.outfile, ":VECT");
-        break;
-    case IDX:
-        type_str = SHshape2String (0, VINFO_SHAPE (arg_node));
-        fprintf (global.outfile, ":IDX(%s)", type_str);
-        type_str = ILIBfree (type_str);
-        break;
-    default:
-        DBUG_ASSERT (0, "illegal N_vinfo-flag!");
-        break;
-    }
-
-    if (VINFO_NEXT (arg_node) != NULL) {
-        PRINT_CONT (TRAVdo (VINFO_NEXT (arg_node), arg_info), ;);
     }
 
     DBUG_RETURN (arg_node);
@@ -4131,10 +3975,6 @@ PrintTRAVdo (node *syntax_tree, info *arg_info)
 {
     DBUG_ENTER ("PrintTrav");
 
-    /*
-     * Save act_tab to restore it afterwards.
-     * This could be useful if Print() is called from inside a debugger.
-     */
     TRAVpush (TR_prt);
     global.indent = 0;
 
@@ -4146,9 +3986,11 @@ PrintTRAVdo (node *syntax_tree, info *arg_info)
              */
             global.outfile = FMGRwriteOpen ("%s%s", global.targetdir, global.cfilename);
             NOTE (("Writing file \"%s%s\"", global.targetdir, global.cfilename));
+
             GSCprintFileHeader (syntax_tree);
-            TRAVdo (syntax_tree, arg_info);
+            syntax_tree = TRAVdo (syntax_tree, arg_info);
             GSCprintMain ();
+
             fclose (global.outfile);
         } else {
             /*
