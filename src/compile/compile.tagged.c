@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.70  2003/06/17 09:37:49  dkr
+ * bug in COMP2Array() fixed
+ *
  * Revision 1.69  2003/06/12 17:22:54  dkr
  * support for multi-dimensional constant arrays added:
  * COMPArray() modified.
@@ -3278,8 +3281,8 @@ COMP2Array (node *arg_node, node *arg_info)
         icm_args2 = NULL;
         for (i = dim - 1; i >= 0; i--) {
             icm_args2 = MakeExprs (MakeNum (SHGetExtent (shp, i)), icm_args2);
-            icm_args2 = MakeExprs (MakeNum (dim), icm_args2);
         }
+        icm_args2 = MakeExprs (MakeNum (dim), icm_args2);
 
         ret_node
           = MakeAllocIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
