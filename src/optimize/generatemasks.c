@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  1999/02/16 21:55:42  sbs
+ * made PrintMRD more robust..
+ *
  * Revision 1.4  1999/02/11 12:54:52  srs
  * fixed bug in GNMassign()
  *
@@ -588,6 +591,7 @@ PrintMRD (long *mask, int varno)
     char *text, *temp;
     node *nodeptr;
     int i;
+    nodetype n_type;
 
     DBUG_ENTER ("PrintMRD");
     text = (char *)Malloc (sizeof (char) * 39 * varno);
@@ -595,7 +599,8 @@ PrintMRD (long *mask, int varno)
         temp = text;
         for (i = 0; i < varno; i++)
             if (mask[i]) {
-                switch (NODE_TYPE ((node *)mask[i])) {
+                n_type = NODE_TYPE ((node *)mask[i]);
+                switch (n_type) {
                 case N_assign: {
                     nodeptr = ASSIGN_INSTR (((node *)mask[i]));
                     sprintf (temp, "(%3d,%-5.5s(%6p))\n%19s", i,
@@ -604,15 +609,16 @@ PrintMRD (long *mask, int varno)
                     break;
                 }
                 case N_Npart: {
-                    sprintf (temp, "(%3d,%-8.8s)\n   ", i,
-                             mdb_nodetype[NODE_TYPE ((node *)mask[i])]);
-                    temp = temp + (sizeof (char) * 18);
+                    sprintf (temp, "(%3d,%-8.8s)\n%19s", i, mdb_nodetype[N_Npart], "");
+                    temp = temp + (sizeof (char) * 34);
                     break;
                 }
                 default: {
-                    sprintf (temp, "(%3d,%-8.8s)\n   ", i,
-                             mdb_nodetype[NODE_TYPE ((node *)mask[i])]);
-                    temp = temp + (sizeof (char) * 18);
+                    if ((N_num <= n_type) && (n_type <= N_ok))
+                        sprintf (temp, "(%3d,%-8.8s)\n%19s", i, mdb_nodetype[n_type], "");
+                    else
+                        sprintf (temp, "(%3d,%-8p)\n%19s", i, (node *)mask[i], "");
+                    temp = temp + (sizeof (char) * 34);
                     break;
                 }
                 }
