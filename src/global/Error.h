@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/03/28 14:52:19  dkr
+ * CHECK_NULL used
+ *
  * Revision 3.1  2000/11/20 17:59:25  sacbase
  * new release made
  *
@@ -261,7 +264,7 @@
         do {                                                                             \
             fprintf (stderr, "%s", header);                                              \
             ERROR_INDENT (ind2);                                                         \
-            fprintf (stderr, "%s\n", (line == NULL) ? "" : line);                        \
+            fprintf (stderr, "%s\n", CHECK_NULL (line));                                 \
             line = strtok (NULL, "@");                                                   \
             if (line != NULL)                                                            \
                 ERROR_INDENT (ind1);                                                     \

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2001/03/28 14:50:02  dkr
+ * CHECK_NULL used
+ *
  * Revision 3.8  2001/02/09 14:40:09  nmw
  * ssa switch documentation added
  *
@@ -64,11 +67,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "usage.h"
 #include "globals.h"
 #include "build.h"
-
+#include "internal_lib.h"
 #include "dbug.h"
+#include "usage.h"
 
 /*
  * This variable contains the build information of sac2c, i.e. build date
@@ -82,6 +85,7 @@ void
 usage ()
 {
     int ph;
+    char *env;
 
     DBUG_ENTER ("usage");
 
@@ -452,6 +456,7 @@ usage ()
             "\t\t\t\t  l: analyse time spent in library functions.\n"
             "\t\t\t\t  w: analyse time spent in with-loops.\n");
 
+    env = getenv ("SACBASE");
     printf ("\n\nCACHE SIMULATION OPTIONS:\n\n"
 
             "\t -cs\t\tenable runtime cache simulation\n"
@@ -547,12 +552,8 @@ usage ()
             "\t\t\tprogram.\n"
             "\t\t\tThe general default directory is the tmp directory\n"
             "\t\t\tspecified in your sac2crc file.\n",
-            (NULL == getenv ("SACBASE")) ? "" : getenv ("SACBASE"),
-            ((NULL != getenv ("SACBASE")
-              && getenv ("SACBASE")[strlen (getenv ("SACBASE")) - 1] != '/'))
-              ? "/"
-              : "",
-            version_id);
+            CHECK_NULL (env),
+            ((NULL != env) && (env[strlen (env) - 1] != '/')) ? "/" : "", version_id);
 
     printf ("\n\nINTRINSIC ARRAY OPERATIONS OPTIONS:\n\n"
 

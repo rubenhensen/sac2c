@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2001/03/28 14:51:45  dkr
+ * CHECK_NULL used
+ *
  * Revision 3.8  2001/02/09 14:39:46  nmw
  * ssa switch added
  *
@@ -224,8 +227,8 @@
 
 #define ARGS_ERROR(msg)                                                                  \
     {                                                                                    \
-        SYSERROR (("%s: %s %s %s", msg, ARGS_argv[0], NULL == OPT ? "" : OPT,            \
-                   NULL == ARG ? "" : ARG));                                             \
+        SYSERROR (                                                                       \
+          ("%s: %s %s %s", msg, ARGS_argv[0], CHECK_NULL (OPT), CHECK_NULL (ARG)));      \
     }
 
 #include "main_args.h"
