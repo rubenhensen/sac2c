@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2001/01/09 16:17:23  dkr
+ * All() and Cubes() use function AllStridesAreConstant() now
+ *
  * Revision 3.6  2001/01/08 16:12:22  dkr
  * support for naive compilation of with-loops added
  *
@@ -493,7 +496,7 @@ All (node *segs, node *parms, node *cubes, int dims, int line)
         segs = FreeTree (segs);
     }
 
-    if (NODE_TYPE (cubes) == N_WLstride) {
+    if (AllStridesAreConstant (cubes)) {
         segs = MakeWLseg (dims, DupTree (cubes), NULL);
     } else {
         segs = MakeWLsegVar (dims, DupTree (cubes), NULL);
@@ -536,7 +539,7 @@ Cubes (node *segs, node *parms, node *cubes, int dims, int line)
         /*
          * build new segment
          */
-        if (NODE_TYPE (cubes) == N_WLstride) {
+        if (AllStridesAreConstant (cubes)) {
             new_seg = MakeWLseg (dims, DupNode (cubes), NULL);
         } else {
             new_seg = MakeWLsegVar (dims, DupNode (cubes), NULL);
@@ -581,7 +584,6 @@ ConstSegs (node *segs, node *parms, node *cubes, int dims, int line)
     DBUG_ENTER ("ConstSegs");
 
     if (NODE_TYPE (cubes) == N_WLstride) {
-
         if (segs != NULL) {
             segs = FreeTree (segs);
         }
