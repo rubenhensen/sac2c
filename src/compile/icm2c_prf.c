@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2004/09/27 07:56:34  ktr
+ * replaced ICMCompileND_SET__SHAPE_arr( to_NT, 1, shp);
+ * with     ICMCompileND_SET__SHAPE_arr( to_NT, to_dim, shp);
+ * in ND_PRF_SEL__SHAPE_id, ND_PRF_SEL__SHAPE_arr, ND_PRF_IDX_SEL__SHAPE
+ * This should fix bug #62, but it would be interesting to know why there
+ * was 1 instead of to_dim in the first place.
+ *
  * Revision 1.13  2004/03/10 00:10:17  dkrHH
  * old backend removed
  *
@@ -294,7 +301,7 @@ ICMCompileND_PRF_SEL__SHAPE_id (char *to_NT, int to_sdim, char *from_NT, int fro
                          from_NT, to_dim - i);
             }
         }
-        ICMCompileND_SET__SHAPE_arr (to_NT, 1, shp);
+        ICMCompileND_SET__SHAPE_arr (to_NT, to_dim, shp);
         for (i = 0; i < to_dim; i++) {
             shp[i] = Free (shp[i]);
         }
@@ -393,7 +400,7 @@ ICMCompileND_PRF_SEL__SHAPE_arr (char *to_NT, int to_sdim, char *from_NT, int fr
                          from_NT, to_dim - i);
             }
         }
-        ICMCompileND_SET__SHAPE_arr (to_NT, 1, shp);
+        ICMCompileND_SET__SHAPE_arr (to_NT, to_dim, shp);
         for (i = 0; i < to_dim; i++) {
             shp[i] = Free (shp[i]);
         }
@@ -895,7 +902,7 @@ ICMCompileND_PRF_IDX_SEL__SHAPE (char *to_NT, int to_sdim, char *from_NT, int fr
                          from_NT, to_dim - i);
             }
         }
-        ICMCompileND_SET__SHAPE_arr (to_NT, 1, shp);
+        ICMCompileND_SET__SHAPE_arr (to_NT, to_dim, shp);
         for (i = 0; i < to_dim; i++) {
             shp[i] = Free (shp[i]);
         }
