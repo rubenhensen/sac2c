@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2001/04/19 16:34:14  nmw
+ * statistics for wlir added
+ *
  * Revision 3.17  2001/04/19 11:45:36  nmw
  * calling while2do when using ssa form opts
  *
@@ -261,6 +264,7 @@ int dead_var;
 int dead_fun;
 int cf_expr;
 int lir_expr;
+int wlir_expr;
 int lunr_expr;
 int wlunr_expr;
 int uns_expr;
@@ -323,6 +327,7 @@ ResetCounters ()
     dead_var = 0;
     dead_fun = 0;
     lir_expr = 0;
+    wlir_expr = 0;
     cf_expr = 0;
     lunr_expr = 0;
     wlunr_expr = 0;
@@ -342,10 +347,12 @@ ResetCounters ()
  *
  * function:
  *  void PrintStatistics(int off_inl_fun, int off_dead_expr, int off_dead_var,
- *                       int off_dead_fun, int off_lir_expr, int off_cf_expr,
+ *                       int off_dead_fun, int off_lir_expr,
+ *                       int off_wlir_expr, int off_cf_expr,
  *                       int off_lunr_expr, int off_wlunr_expr, int off_uns_expr,
  *                       int off_elim_arrays, int off_wlf_expr, int off_wlt_expr,
- *                       int off_cse_expr, int off_ap_padded, int off_ap_unsupported,
+ *                       int off_cse_expr, int off_ap_padded,
+ *                       int off_ap_unsupported,
  *                       int flag)
  *
  * description:
@@ -359,9 +366,9 @@ ResetCounters ()
 
 void
 PrintStatistics (int off_inl_fun, int off_dead_expr, int off_dead_var, int off_dead_fun,
-                 int off_lir_expr, int off_cf_expr, int off_lunr_expr, int off_wlunr_expr,
-                 int off_uns_expr, int off_elim_arrays, int off_wlf_expr,
-                 int off_wlt_expr, int off_cse_expr, int off_ap_padded,
+                 int off_lir_expr, int off_wlir_expr, int off_cf_expr, int off_lunr_expr,
+                 int off_wlunr_expr, int off_uns_expr, int off_elim_arrays,
+                 int off_wlf_expr, int off_wlt_expr, int off_cse_expr, int off_ap_padded,
                  int off_ap_unsupported, int flag)
 {
     int diff;
@@ -399,6 +406,10 @@ PrintStatistics (int off_inl_fun, int off_dead_expr, int off_dead_var, int off_d
     diff = lir_expr - off_lir_expr;
     if ((optimize & OPT_LIR) && ((ALL == flag) || (diff > 0)))
         NOTE (("  %d loop invariant expression(s) moved", diff));
+
+    diff = wlir_expr - off_wlir_expr;
+    if ((optimize & OPT_LIR) && ((ALL == flag) || (diff > 0)))
+        NOTE (("  %d with-loop invariant expression(s) moved", diff));
 
     diff = uns_expr - off_uns_expr;
     if ((optimize & OPT_LUS) && ((ALL == flag) || (diff > 0)))
@@ -642,7 +653,7 @@ OPTmodul (node *arg_node, node *arg_info)
 
     NOTE ((""));
     NOTE (("overall optimization statistics:"));
-    PrintStatistics (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ALL);
+    PrintStatistics (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ALL);
 
     /*
      * index vector elimination
@@ -704,6 +715,7 @@ OPTfundef (node *arg_node, node *arg_info)
     int mem_dead_var = dead_var;
     int mem_dead_fun = dead_fun;
     int mem_lir_expr = lir_expr;
+    int mem_wlir_expr = wlir_expr;
     int mem_cf_expr = cf_expr;
     int mem_lunr_expr = lunr_expr;
     int mem_wlunr_expr = wlunr_expr;
@@ -722,6 +734,7 @@ OPTfundef (node *arg_node, node *arg_info)
     int old_wlunr_expr = wlunr_expr;
     int old_uns_expr = uns_expr;
     int old_lir_expr = lir_expr;
+    int old_wlir_expr = wlir_expr;
 
     int loop1 = 0;
     int loop2 = 0;
@@ -827,6 +840,7 @@ OPTfundef (node *arg_node, node *arg_info)
             old_wlunr_expr = wlunr_expr;
             old_uns_expr = uns_expr;
             old_lir_expr = lir_expr;
+            old_wlir_expr = wlir_expr;
 
             if (optimize & OPT_CSE) {
                 if (use_ssaform) {
@@ -989,7 +1003,8 @@ OPTfundef (node *arg_node, node *arg_info)
                   || (wlt_expr != old_wlt_expr) || (wlf_expr != old_wlf_expr)
                   || (dead_fun + dead_var + dead_expr != old_dcr_expr)
                   || (lunr_expr != old_lunr_expr) || (wlunr_expr != old_wlunr_expr)
-                  || (uns_expr != old_uns_expr) || (lir_expr != old_lir_expr))
+                  || (uns_expr != old_uns_expr) || (lir_expr != old_lir_expr)
+                  || (wlir_expr != old_wlir_expr))
                  && (loop1 < max_optcycles));
         /* dkr:
          * How about  cf_expr, wlt_expr, dcr_expr  ??
@@ -1068,13 +1083,14 @@ OPTfundef (node *arg_node, node *arg_info)
                 || (wlt_expr != old_wlt_expr) || (wlf_expr != old_wlf_expr)
                 || (dead_fun + dead_var + dead_expr != old_dcr_expr)
                 || (lunr_expr != old_lunr_expr) || (wlunr_expr != old_wlunr_expr)
-                || (uns_expr != old_uns_expr) || (lir_expr != old_lir_expr))) {
+                || (uns_expr != old_uns_expr) || (lir_expr != old_lir_expr)
+                || (wlir_expr != old_wlir_expr))) {
             SYSWARN (("maximal number of optimization cycles reached"));
         }
         PrintStatistics (mem_inl_fun, mem_dead_expr, mem_dead_var, mem_dead_fun,
-                         mem_lir_expr, mem_cf_expr, mem_lunr_expr, mem_wlunr_expr,
-                         mem_uns_expr, mem_elim_arrays, mem_wlf_expr, mem_wlt_expr,
-                         mem_cse_expr, 0, 0, NON_ZERO_ONLY);
+                         mem_lir_expr, mem_wlir_expr, mem_cf_expr, mem_lunr_expr,
+                         mem_wlunr_expr, mem_uns_expr, mem_elim_arrays, mem_wlf_expr,
+                         mem_wlt_expr, mem_cse_expr, 0, 0, NON_ZERO_ONLY);
 
         DBUG_DO_NOT_EXECUTE ("PRINT_MASKS", arg_node = FreeMasks (arg_node););
     }

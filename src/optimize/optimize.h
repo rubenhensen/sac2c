@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/04/19 16:34:14  nmw
+ * statistics for wlir added
+ *
  * Revision 3.1  2000/11/20 18:00:45  sacbase
  * new release made
  *
@@ -126,6 +129,7 @@ extern int dead_var;
 extern int dead_fun;
 extern int cf_expr;
 extern int lir_expr;
+extern int wlir_expr;
 extern int inl_fun;
 extern int lunr_expr;
 extern int wlunr_expr;
