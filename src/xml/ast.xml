@@ -1,5 +1,8 @@
 <!--
   $Log$
+  Revision 1.90  2004/11/26 11:05:12  sbs
+  IDS_USE added.
+
   Revision 1.89  2004/11/26 11:03:01  sah
   *** empty log message ***
 
@@ -5048,6 +5051,16 @@
 	    <all />
 	  </phases>
 	</attribute>
+        <attribute name="Use" mandatory="yes" >
+          <type name="Link">
+            <target>
+              <node name="Vinfo" />
+            </target>
+          </type>
+          <phases>
+            <range from="IVE" to="IVE"  />
+          </phases>
+        </attribute>
       </attributes>
       <flags></flags>
     </node>
