@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.2  2001/04/30 12:21:12  nmw
+ * WLTap added
+ *
  * Revision 3.1  2000/11/20 18:01:43  sacbase
  * new release made
  *
@@ -26,6 +29,7 @@ extern node *WLTdo (node *, node *);
 extern node *WLTwhile (node *, node *);
 extern node *WLTNwith (node *, node *);
 extern node *WLTlet (node *, node *);
+extern node *WLTap (node *, node *);
 
 extern node *WLTNpart (node *, node *);
 extern node *WLTNgenerator (node *, node *);
