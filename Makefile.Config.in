@@ -1,6 +1,10 @@
 #
 #
 # $Log$
+# Revision 1.3  2003/03/20 23:21:39  sah
+# now architecture and os
+# are seperated again ;)
+#
 # Revision 1.2  2003/03/20 23:12:14  sah
 # OS now includes architecture
 #
@@ -24,7 +28,8 @@
 # do not delete os lines, but "comment" all not used lines
 #
 
-OS=@OS@_@ARCH@
+OS=@OS@
+ARCH=@ARCH@
 
 #
 # SOLARIS_SPARC specific flags and libraries:
