@@ -1,0 +1,36 @@
+#
+# $Log$
+# Revision 1.1  2001/11/14 13:02:58  sbs
+# Initial revision
+#
+#
+
+
+#######################################################################################
+#
+# automatic dependency updating mechanism:
+#   gmake implicitly remakes all files that are included!
+#
+
+DEPS = $(patsubst %.c,.%.d, $(wildcard *.c))
+
+ifneq ($(DEPS),)
+include $(DEPS)
+endif
+
+
+YACC_H_FILES   := $(patsubst %.y, y.tab.h, $(wildcard *.y))
+#
+# $(YACC_H_FILES) might be included by any .c files.
+# Therefore, bison has to be run before any dependency
+# is generated!
+#
+.%.d: %.c $(YACC_H_FILES)
+	@$(ECHO) "$(CC) -M $(CCFLAGS) $(INCS) $<  > $@"
+	@if $(CC) -M $(CCFLAGS) $(INCS) $<  > $@d ; \
+	 then sed 's/\($*\)\.o[ :]*/$*\.o $@\: /'  <$@d >$@; \
+	      $(RM) $@d ; \
+	 else $(RM) $@d ; \
+	      exit 1 ;  \
+	 fi
+
