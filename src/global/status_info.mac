@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/03/15 11:59:01  dkr
+ * superfluous ST_spmd_inout removed
+ * ST_inout removed: ST_reference can be used instead
+ *
  * Revision 3.3  2001/02/13 13:38:45  dkr
  * ST_undef added
  *
@@ -100,19 +104,13 @@ SELECT (ST_undef, "ST_undef",
           /* type: real return type of compiled C function                   */),
 
   SELECT (ST_reference, "ST_reference",
-          /* arg, id: reference parameter (unique)                           */),
+          /* arg, id: (unique) reference parameter                           */),
 
   SELECT (ST_readonly_reference, "ST_readonly_refernce",
-          /* arg, id: read-only reference parameter (unique)                 */),
+          /* arg, id: (unique) read-only reference parameter                 */),
 
   SELECT (ST_was_reference, "ST_was_reference",
-          /* arg, id: eliminated reference parameter                         */),
-
-  SELECT (ST_inout, "ST_inout",
-          /* arg, id: for compilation of reference parameters                */),
-
-  SELECT (ST_spmd_inout, "ST_spmd_inout",
-          /* arg: for compilation of spmd-fun inout parameters               */),
+          /* arg, id: eliminated (unique) reference parameter                */),
 
   SELECT (ST_global, "ST_global",
           /* id: identifier is global object                                 */),
