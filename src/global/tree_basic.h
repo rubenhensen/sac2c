@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.17  1999/05/12 08:39:24  sbs
+ * attribute names for handling constant vectors at N_id, N_array, and N_info
+ * nodes adjusted to each other...
+ *
  * Revision 2.16  1999/05/11 16:12:21  jhs
  * Added some missing comments.
  *
@@ -1603,12 +1607,10 @@ extern node *MakeExprs (node *expr, node *next);
  ***
  ***    types*     TYPE               (typecheck -> )
  ***
- ***    int*       INTVEC       (O)   (flatten -> )
- ***    float*     FLOATVEC     (O)   (flatten -> )
- ***    double*    DOUBLEVEC    (O)   (flatten -> )
- ***    char*      CHARVEC      (O)   (flatten -> )
- ***    int        VECLEN       (O)   (flatten -> )
+ ***    int        ISCONST      (O)   (flatten -> )
  ***    simpletype VECTYPE      (O)   (flatten -> )
+ ***    int        VECLEN       (O)   (flatten -> )
+ ***    void*      CONSTVEC     (O)   (flatten -> )
  ***/
 
 /*
@@ -1616,13 +1618,11 @@ extern node *MakeExprs (node *expr, node *next);
  * optional permanent attribute STRING holds the original definition.
  * This may be retrieved for C code generation.
  *
- * In the case of constant arrays, the optional permanent
- * attribute INTVEC holds the original definition. In that case
- * VECLEN holds the number of array elements.
- * This may be retrieved for tiling.
- * For the reasen of consistancy there are also compact propagations
- * float-, double-, boolean- and character-arrays.
- * Boolean-arrays will be stored in INTVEC too.
+ * In the case of constant arrays, ISCONST is set to true, VECTYPE
+ * indicates the element-type, VECLEN the number of elements, and
+ * CONSTVEC holds a compact C-representation of the values.
+ * In particular, constant arrays with VECTYPE T_int are of interest
+ * for TSI (tile size inference).
  */
 
 extern node *MakeArray (node *aelems);
@@ -1630,12 +1630,11 @@ extern node *MakeArray (node *aelems);
 #define ARRAY_TYPE(n) (n->info.types)
 #define ARRAY_AELEMS(n) (n->node[0])
 #define ARRAY_STRING(n) ((char *)(n->node[1]))
-#define ARRAY_INTVEC(n) ((int *)(n->node[2]))
-#define ARRAY_FLOATVEC(n) ((float *)(n->node[3]))
-#define ARRAY_DOUBLEVEC(n) ((double *)(n->node[4]))
-#define ARRAY_CHARVEC(n) ((char *)(n->node[5]))
-#define ARRAY_VECLEN(n) (n->refcnt)
-#define ARRAY_VECTYPE(n) ((simpletype) (n->info2))
+
+#define ARRAY_ISCONST(n) ((simpletype) (n->refcnt))
+#define ARRAY_VECTYPE(n) (n->varno)
+#define ARRAY_VECLEN(n) (n->counter)
+#define ARRAY_CONSTVEC(n) (n->info2)
 
 /*--------------------------------------------------------------------------*/
 
@@ -1683,9 +1682,11 @@ extern node *MakeVinfo (useflag flag, types *type, node *next);
  ***    int         MAKEUNIQUE                  (precompile -> compile -> )
  ***    node*       DEF                         (Unroll !, Unswitch !)
  ***    node*       WL          (O)             (wli -> wlf !!)
- ***    node*       INTVEC      (O) (N_array)   (flatten -> )
- ***    int         VECLEN      (O) (N_array)   (flatten -> )
- ***    int         CONSTARRAY  (O) (N_array)   (flatten -> )
+ ***
+ ***    void*       CONSTVEC    (O)             (flatten -> )
+ ***    int         VECLEN      (O)             (flatten -> )
+ ***    simpletype  VECTYPE     (O)             (flatten -> )
+ ***    int         ISCONST     (O)             (flatten -> )
  ***
  ***  remark:
  ***    ID_WL is only used in wli, wlf. But every call of DupTree() initializes
@@ -1703,7 +1704,7 @@ extern node *MakeVinfo (useflag flag, types *type, node *next);
  ***    node->info.types->id
  ***
  ***  remark:
- ***    INTVEC, VECTYPE and VECLEN now are used for propagation of constant
+ ***    ISCONST, VECTYPE, VECLEN, and CONSTVEC are used for propagation of constant
  ***    integer arrays.
  ***    Usually, there is no constant propagation for arrays since this
  ***    normally slows down the code due to memory allocation/de-allocation
@@ -1744,10 +1745,12 @@ extern node *MakeId2 (ids *ids_node);
 #define ID_STATUS(n) (n->info.ids->status)
 #define ID_REFCNT(n) (n->refcnt)
 #define ID_MAKEUNIQUE(n) (n->flag)
-#define ID_VECLEN(n) (n->counter)
 #define ID_WL(n) (n->node[0])
-#define ID_INTVEC(n) ((int *)(n->node[1]))
-#define ID_CONSTARRAY(n) (n->varno)
+
+#define ID_VECLEN(n) (n->counter)
+#define ID_VECTYPE(n) ((simpletype) (n->refcnt))
+#define ID_CONSTVEC(n) (n->info2)
+#define ID_ISCONST(n) (n->varno)
 
 /*--------------------------------------------------------------------------*/
 
@@ -2066,6 +2069,7 @@ extern node *MakePragma ();
  ***    void *      CONSTVEC      (O)  (compact c array)
  ***    int         VECLEN        (O)
  ***    int         VECTYPE       (O)
+ ***    int         ISCONST       (O)
  ***
  ***  when used in readsib.c :
  ***
@@ -2180,9 +2184,11 @@ extern node *MakeInfo ();
 #define INFO_FLTN_LASTASSIGN(n) (n->node[0])
 #define INFO_FLTN_LASTWLBLOCK(n) (n->node[1])
 #define INFO_FLTN_FINALASSIGN(n) (n->node[2])
-#define INFO_FLTN_CONSTVEC(n) (n->node[3])
+
+#define INFO_FLTN_CONSTVEC(n) (n->info2)
 #define INFO_FLTN_VECLEN(n) (n->counter)
 #define INFO_FLTN_VECTYPE(n) ((simpletype)n->varno)
+#define INFO_FLTN_ISCONST(n) (n->refcnt)
 
 /* readsib */
 #define INFO_RSIB_FOLDFUNS(n) (n->node[0])
