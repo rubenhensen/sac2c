@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/05/17 13:50:34  nmw
+ * MALLOC/FREE replaced by Malloc/Free, using result of Free()
+ *
  * Revision 3.4  2001/04/30 12:14:15  nmw
  * GNMap added
  *
@@ -75,8 +78,8 @@ extern stack *mrdl_stack;
     mrdl_stack->stack = (stelm *)Malloc (sizeof (stelm) * MIN_STACK_SIZE);
 
 #define FREE_MRDL_STACK                                                                  \
-    FREE (mrdl_stack->stack);                                                            \
-    FREE (mrdl_stack);
+    mrdl_stack->stack = Free (mrdl_stack->stack);                                        \
+    mrdl_stack = Free (mrdl_stack);
 
 #define MRD_TOS mrdl_stack->stack[mrdl_stack->tos]
 #define MRD_TAB                                                                          \
