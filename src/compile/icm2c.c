@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.3  1995/03/10 17:24:37  sbs
+ * Revision 1.4  1995/03/15 07:55:11  sbs
+ * bug in VectToOffset fixed
+ *
+ * Revision 1.3  1995/03/10  17:24:37  sbs
  * New macros develloped; psi, take & drop integrated
  *
  * Revision 1.2  1995/03/08  17:13:08  sbs
@@ -25,7 +28,7 @@
     {                                                                                    \
         int i;                                                                           \
         for (i = dim - 1; i > 0; i--)                                                    \
-            fprintf (outfile, "ND_KD_A_SHAPE(%s, %d)* (", a, i);                         \
+            fprintf (outfile, "( ND_KD_A_SHAPE(%s, %d)* ", a, i);                        \
         v_i_str;                                                                         \
         for (i = 1; i < dim; i++) {                                                      \
             fprintf (outfile, "+");                                                      \
