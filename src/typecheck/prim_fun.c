@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/02/02 10:29:53  dkr
+ * superfluous include of access_macros.h removed
+ *
  * Revision 3.2  2000/11/27 13:14:43  sbs
  * warning eliminated
  *
@@ -101,7 +104,6 @@
 #include "my_debug.h"
 #include "internal_lib.h"
 #include "DupTree.h"
-#include "access_macros.h"
 #include "convert.h"
 #include "free.h"
 #include "typecheck.h"
