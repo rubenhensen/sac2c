@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.26  2004/11/26 14:07:08  jhb
+ * deactdeactiveted unless macro AE_ACTIVETED is defined
+ *
  * Revision 3.25  2004/11/25 18:16:56  jhb
  * on the way to compile
  *
@@ -174,9 +177,15 @@ AEdoArrayElimination (node *arg_node)
         /*tmp_tab = act_tab;
           act_tab=ae_tab;*/
         info = MakeInfo ();
+
+#ifdef AE_ACTIVETED
+
         TRAVpush (TR_ae);
         arg_node = TRAVdo (arg_node, info);
         TRAVpop ();
+
+#endif
+
         info = FreeInfo (info);
         /*act_tab=tmp_tab;*/
         DBUG_PRINT ("OPT", ("                        result: %d",
@@ -186,6 +195,7 @@ AEdoArrayElimination (node *arg_node)
     DBUG_RETURN (arg_node);
 }
 
+#ifdef AE_ACTIVETED
 /*
  *
  *  functionname  : CorrectArraySize
@@ -218,7 +228,7 @@ CorrectArraySize (node *ids_node)
 
     if ((length <= global.minarray) && (0 != length) && (1 == dim)) {
         DBUG_PRINT ("AE", ("array %s with length %d to eliminated found",
-                           VARDEC_NAME (IDS_VARDEC (ids_node)), length));
+                           VARDEC_NAME (IDS_DECL (ids_node)), length));
         answer = TRUE;
     }
     DBUG_RETURN (answer);
@@ -246,7 +256,7 @@ GetNumber (node *vector)
     DBUG_ENTER ("GetNumber");
     number = (char *)ILIBmalloc (sizeof (char) * ((global.minarray / 10) + 2));
     number[0] = atoi ("\0");
-    expr_node = vector->node[0];
+    expr_node = ARRAY_AELEMS (vector);
     do {
         tmp = ILIBitoa (NUM_VAL (EXPRS_EXPR (expr_node)));
         strcat (number, tmp);
@@ -274,7 +284,7 @@ GetNumber (node *vector)
  *  remarks       :
  *
  */
-node *
+static char *
 GenIds (node *arg[2])
 {
     char *number, *new_name, *old_name;
@@ -285,7 +295,7 @@ GenIds (node *arg[2])
     new_name = (char *)ILIBmalloc (
       sizeof (char) * (strlen (old_name) + strlen (number) + AE_PREFIX_LENGTH + 1));
     sprintf (new_name, AE_PREFIX "%s%s", number, old_name);
-    DBUG_RETURN (TBmakeIds (new_name, NULL, ST_regular));
+    DBUG_RETURN (new_name);
 }
 
 /*
@@ -345,16 +355,16 @@ GenSel (node *ids_node, info *arg_info)
     arg[1]->info.ids = DUPdupAllIds( ids_node);
 #else
         arg[1] = TBmakeId (ILIBstringCopy (IDS_NAME (ids_node)), NULL, ST_regular);
-        ID_VARDEC (arg[1]) = IDS_VARDEC (ids_node);
+        ID_VARDEC (arg[1]) = IDS_DECL (ids_node);
         ID_AVIS (arg[1]) = VARDEC_OR_ARG_AVIS (ID_VARDEC (arg[1]));
 #endif
         new_let = TBmakeLet (GenIds (arg), NULL);
 
         DBUG_PRINT ("AE", ("Generating new value for %s", IDS_NAME (LET_IDS (new_let))));
-        IDS_VARDEC (LET_IDS (new_let))
+        IDS_DECL (LET_IDS (new_let))
           = TCsearchDecl (IDS_NAME (LET_IDS (new_let)), INFO_AE_TYPES (arg_info));
 
-        if (IDS_VARDEC (LET_IDS (new_let)) == NULL) {
+        if (IDS_DECL (LET_IDS (new_let)) == NULL) {
             DBUG_PRINT ("AE",
                         ("Generating new vardec for %s", IDS_NAME (LET_IDS (new_let))));
 #ifdef MWE_NTYPE_READY
@@ -368,7 +378,7 @@ GenSel (node *ids_node, info *arg_info)
 #endif
             INFO_AE_TYPES (arg_info)
               = TCappendVardec (new_vardec, INFO_AE_TYPES (arg_info));
-            IDS_VARDEC (LET_IDS (new_let)) = new_vardec;
+            IDS_DECL (LET_IDS (new_let)) = new_vardec;
         }
         LET_EXPR (new_let)
           = TBmakePrf (F_sel, TBmakeExprs (arg[0], TBmakeExprs (arg[1], NULL)));
@@ -487,10 +497,10 @@ AEassign (node *arg_node, info *arg_info)
         _ids = LET_IDS (ASSIGN_INSTR (arg_node));
         if ((_ids != NULL) && (IDS_NEXT (_ids) == NULL)) {
             if (CorrectArraySize (_ids)) {
-                VARDEC_FLAG (IDS_VARDEC (_ids)) = TRUE;
+                VARDEC_FLAG (IDS_DECL (_ids)) = TRUE;
                 new_nodes = GenSel (_ids, arg_info);
             } else
-                VARDEC_FLAG (IDS_VARDEC (_ids)) = FALSE;
+                VARDEC_FLAG (IDS_DECL (_ids)) = FALSE;
         }
     }
 
@@ -609,3 +619,5 @@ AEap (node *arg_node, info *arg_info)
     }
     DBUG_RETURN (arg_node);
 }
+
+#endif
