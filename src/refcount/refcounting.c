@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2004/07/31 21:27:06  ktr
+ * corrected artificial argument inference
+ *
  * Revision 1.9  2004/07/29 12:12:41  ktr
  * Refcounting of external functions now even works with global objects.
  *
@@ -1065,6 +1068,8 @@ EMRCap (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("EMRCap");
 
+    DBUG_EXECUTE ("EMRC", Print (arg_node););
+
     args = AP_ARGS (arg_node);
     argc = 0;
     let_ids = INFO_EMRC_LHS (arg_info);
@@ -1073,7 +1078,7 @@ EMRCap (node *arg_node, info *arg_info)
      * Find out the number of NON-ARTIFICIAL argumuments in the LHS
      */
     while (let_ids != NULL) {
-        if (IDS_STATUS (let_ids) == ST_regular) {
+        if (VARDEC_STATUS (IDS_VARDEC (let_ids)) != ST_artificial) {
             argc += 1;
         }
         let_ids = IDS_NEXT (let_ids);
@@ -1085,7 +1090,7 @@ EMRCap (node *arg_node, info *arg_info)
         DBUG_ASSERT (NODE_TYPE (EXPRS_EXPR (args)) == N_id,
                      "Function arguments must be N_id nodes");
 
-        if ((ID_STATUS (EXPRS_EXPR (args)) == ST_regular)
+        if ((VARDEC_OR_ARG_STATUS (ID_VARDEC (EXPRS_EXPR (args))) != ST_artificial)
             && (FUNDEF_EXT_NOT_REFCOUNTED (AP_FUNDEF (arg_node), argc))) {
             INFO_EMRC_COUNTMODE (arg_info) = rc_prfuse;
         } else {
@@ -1096,7 +1101,7 @@ EMRCap (node *arg_node, info *arg_info)
             EXPRS_EXPR (args) = Trav (EXPRS_EXPR (args), arg_info);
         }
 
-        if (ID_STATUS (EXPRS_EXPR (args)) == ST_regular) {
+        if (VARDEC_OR_ARG_STATUS (ID_VARDEC (EXPRS_EXPR (args))) != ST_artificial) {
             argc += 1;
         }
 
@@ -1252,6 +1257,8 @@ EMRCassign (node *arg_node, info *arg_info)
      * Insert ADJUST_RC prfs from DEFLIST
      */
     ASSIGN_NEXT (arg_node) = MakeDefAssignments (arg_info, ASSIGN_NEXT (arg_node));
+
+    INFO_EMRC_LHS (arg_info) = NULL;
 
     DBUG_RETURN (arg_node);
 }
@@ -1498,6 +1505,7 @@ EMRCfundef (node *fundef, info *arg_info)
     INFO_EMRC_DEPTH (arg_info) = 0;
     INFO_EMRC_MODE (arg_info) = rc_default;
 
+    DBUG_PRINT ("EMRC", ("Refcounting %s.", FUNDEF_NAME (fundef)));
     /*
      * Traverse args in order to initialize refcounting environment
      */
