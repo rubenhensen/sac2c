@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2002/07/10 20:06:34  dkr
+ * some bugs modified
+ *
  * Revision 3.12  2002/07/10 19:26:32  dkr
  * F_modarray for TAGGED_ARRAYS added
  *
@@ -60,7 +63,7 @@
 
 #include "types.h"
 
-extern void ICMCompileND_FUN_DEC (char *name, char *rettype, int narg, char **arg_any);
+extern void ICMCompileND_FUN_DEC (char *name, char *rettype_nt, int narg, char **arg_any);
 
 extern void ICMCompileND_FUN_AP (char *name, char *retname, int narg, char **arg_any);
 
@@ -85,7 +88,7 @@ extern void ICMCompileND_DECL__MIRROR_EXTERN (char *nt, int sdim);
 extern void ICMCompileND_CHECK_REUSE (char *to_nt, int to_sdim, char *from_nt,
                                       int from_sdim);
 
-extern void ICMCompileND_SET__SHAPE (char *to_nt, int to_sdim, int dim, int *shp);
+extern void ICMCompileND_SET__SHAPE (char *to_nt, int to_sdim, int dim, char **shp_any);
 
 extern void ICMCompileND_REFRESH_MIRROR (char *nt, int sdim);
 

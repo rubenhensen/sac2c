@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.38  2002/07/10 20:06:43  dkr
+ * some bugs modified
+ *
  * Revision 3.37  2002/07/10 19:24:21  dkr
  * several ICM_... types added and renamed
  *
@@ -93,22 +96,21 @@
 
 
 /*
- * ATTENTION!! same variable names within different ICM-argument
- *   specifications should be of the same type even if they are in
- *   different ICM-specifications!!!!
- *   The reason for this restriction lies in the usage of
- *   static variables for them in icm2c.c and BEtest.c
- *   which has to be made in order to spare a second traversal
- *   of icm.data (-> icm2c.c!).
+ * ATTENTION!!
+ * Same variable names within different ICM-argument specifications should be
+ * of the same type even if they are in different ICM-specifications!!!!
+ * The reason for this restriction lies in the usage of static variables for
+ * them in icm2c.c and BEtest.c which has to be made in order to spare a second
+ * traversal of icm.data (-> icm2c.c!).
  */
 
 #if defined(ND_FUN_DEC) || defined(ICM_ALL)
 ICM_DEF( ND_FUN_DEC, TRACE_NONE)
   ICM_ID( name)
-  ICM_ID( rettype)
+  ICM_NT( rettype_nt)
   ICM_INT( narg)
   ICM_VARANY( (3*narg), arg_any)
-ICM_END( ND_FUN_DEC, (name, rettype, narg, arg_any))
+ICM_END( ND_FUN_DEC, (name, rettype_nt, narg, arg_any))
 #endif
 
 #if defined(ND_FUN_AP) || defined(ICM_ALL)
@@ -134,24 +136,24 @@ ICM_END( ND_FUN_RET, (retname, narg, arg_any))
 
 #if defined(ND_OBJDEF) || defined(ICM_ALL)
 ICM_DEF( ND_OBJDEF, TRACE_NONE)
+  ICM_NT( nt)
   ICM_ID( basetype)
-  ICM_ID( nt)
   ICM_INT( sdim)
   ICM_VARINT( sdim, shp)
-ICM_END( ND_OBJDEF, (basetype, nt, sdim, shp))
+ICM_END( ND_OBJDEF, (nt, basetype, sdim, shp))
 #endif
 
 #if defined(ND_OBJDEF_EXTERN) || defined(ICM_ALL)
 ICM_DEF( ND_OBJDEF_EXTERN, TRACE_NONE)
+  ICM_NT( nt)
   ICM_ID( basetype)
-  ICM_ID( nt)
   ICM_INT( sdim)
-ICM_END( ND_OBJDEF_EXTERN, (basetype, nt, sdim))
+ICM_END( ND_OBJDEF_EXTERN, (nt, basetype, sdim))
 #endif
 
 #if defined(ND_DECL) || defined(ICM_ALL)
 ICM_DEF( ND_DECL, TRACE_NONE)
-  ICM_ID( nt)
+  ICM_NT( nt)
   ICM_ID( basetype)
   ICM_INT( sdim)
   ICM_VARINT( sdim, shp)
@@ -160,10 +162,10 @@ ICM_END( ND_DECL, (nt, basetype, sdim, shp))
 
 #if defined(ND_DECL_EXTERN) || defined(ICM_ALL)
 ICM_DEF( ND_DECL_EXTERN, TRACE_NONE)
+  ICM_NT( nt)
   ICM_ID( basetype)
-  ICM_ID( nt)
   ICM_INT( sdim)
-ICM_END( ND_DECL_EXTERN, (basetype, nt, sdim))
+ICM_END( ND_DECL_EXTERN, (nt, basetype, sdim))
 #endif
 
 /* ND_DECL__DATA( ...) is a H-ICM */
@@ -172,7 +174,7 @@ ICM_END( ND_DECL_EXTERN, (basetype, nt, sdim))
 
 #if defined(ND_DECL__MIRROR) || defined(ICM_ALL)
 ICM_DEF( ND_DECL__MIRROR, TRACE_NONE)
-  ICM_ID( nt)
+  ICM_NT( nt)
   ICM_INT( sdim)
   ICM_VARINT( sdim, shp)
 ICM_END( ND_DECL__MIRROR, (nt, sdim, shp))
@@ -180,7 +182,7 @@ ICM_END( ND_DECL__MIRROR, (nt, sdim, shp))
 
 #if defined(ND_DECL__MIRROR_PARAM) || defined(ICM_ALL)
 ICM_DEF( ND_DECL__MIRROR_PARAM, TRACE_NONE)
-  ICM_ID( nt)
+  ICM_NT( nt)
   ICM_INT( sdim)
   ICM_VARINT( sdim, shp)
 ICM_END( ND_DECL__MIRROR_PARAM, (nt, sdim, shp))
@@ -188,7 +190,7 @@ ICM_END( ND_DECL__MIRROR_PARAM, (nt, sdim, shp))
 
 #if defined(ND_DECL__MIRROR_EXTERN) || defined(ICM_ALL)
 ICM_DEF( ND_DECL__MIRROR_EXTERN, TRACE_NONE)
-  ICM_ID( nt)
+  ICM_NT( nt)
   ICM_INT( sdim)
 ICM_END( ND_DECL__MIRROR_EXTERN, (nt, sdim))
 #endif
@@ -217,14 +219,14 @@ ICM_DEF( ND_SET__SHAPE, TRACE_NONE)
   ICM_NT( to_nt)
   ICM_INT( to_sdim)
   ICM_INT( dim)
-  ICM_VARINT( dim, shp)
-ICM_END( ND_SET__SHAPE, (to_nt, to_sdim, dim, shp))
+  ICM_VARANY( dim, shp_any)
+ICM_END( ND_SET__SHAPE, (to_nt, to_sdim, dim, shp_any))
 #endif
 
 
 #if defined(ND_REFRESH_MIRROR) || defined(ICM_ALL)
 ICM_DEF( ND_REFRESH_MIRROR, TRACE_NONE)
-  ICM_ID( nt)
+  ICM_NT( nt)
   ICM_INT( sdim)
 ICM_END( ND_REFRESH_MIRROR, (nt, sdim))
 #endif
@@ -301,7 +303,7 @@ ICM_END( ND_MAKE_UNIQUE, (to_nt, to_sdim, from_nt, from_sdim, copyfun))
 
 #if defined(ND_CREATE__VECT__SHAPE) || defined(ICM_ALL)
 ICM_DEF( ND_CREATE__VECT__SHAPE, TRACE_NONE)
-  ICM_ID( nt)
+  ICM_NT( nt)
   ICM_INT( sdim)
   ICM_INT( len)
   ICM_VARANY( len, vala_any)
@@ -310,7 +312,7 @@ ICM_END( ND_CREATE__VECT__SHAPE, (nt, sdim, len, vala_any))
 
 #if defined(ND_CREATE__VECT__DATA) || defined(ICM_ALL)
 ICM_DEF( ND_CREATE__VECT__DATA, TRACE_NONE)
-  ICM_ID( nt)
+  ICM_NT( nt)
   ICM_INT( sdim)
   ICM_INT( len)
   ICM_VARANY( len, vala_any)

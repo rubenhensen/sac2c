@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2002/07/10 20:06:29  dkr
+ * some bugs modified
+ *
  * Revision 3.9  2002/07/10 19:27:44  dkr
  * some macros added
  *
@@ -1307,8 +1310,8 @@ typedef int SAC_hidden_descriptor; /* reference count */
  *
  * ND_PRF_SHAPE__DATA( to_nt, to_sdim, from_nt, from_sdim)
  *
- * ND_PRF_RESHAPE__SHAPE_C( to_nt, to_sdim, dim, ...shp...)
- * ND_PRF_RESHAPE__SHAPE_V( to_nt, to_sdim, shp)
+ * ND_PRF_RESHAPE__SHAPE_id( to_nt, to_sdim, shp)
+ * ND_PRF_RESHAPE__SHAPE_arr( to_nt, to_sdim, dim, ...shp...)
  *
  * ND_PRF_IDX_SEL__SHAPE( to_nt, to_sdim, from_nt, from_sdim)
  * ND_PRF_IDX_SEL__DATA( to_nt, to_sdim, from_nt, from_sdim)
@@ -1327,7 +1330,7 @@ typedef int SAC_hidden_descriptor; /* reference count */
 
 /* ND_PRF_SHAPE__DATA( ...) is a C-ICM */
 
-#define SAC_ND_PRF_RESHAPE__SHAPE(to_nt, to_sdim, a_nt, a_sdim, from_nt, from_sdim)
+#define SAC_ND_PRF_RESHAPE__SHAPE_id(to_nt, to_sdim, shp)
 
 #define SAC_ND_PRF_IDX_SEL__SHAPE(to_nt, to_sdim, from_nt, from_sdim)
 #define SAC_ND_PRF_IDX_SEL__DATA(to_nt, to_sdim, from_nt, from_sdim)

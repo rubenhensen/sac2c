@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2002/07/10 20:06:39  dkr
+ * some bugs modified
+ *
  * Revision 3.19  2002/07/10 19:26:21  dkr
  * F_modarray for TAGGED_ARRAYS added
  *
@@ -249,20 +252,20 @@
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_FUN_DEC( char *name, char *rettype,
+ *   void ICMCompileND_FUN_DEC( char *name, char *rettype_nt,
  *                              int narg, char **arg_any)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_FUN_DEC( name, rettype, narg, [ TAG, basetype, arg_nt ]* )
+ *   ND_FUN_DEC( name, rettype_nt, narg, [ TAG, basetype, arg_nt ]* )
  *
  *   where TAG is element in { in, in_..., out, out_..., inout, inout_... }.
  *
  ******************************************************************************/
 
 void
-ICMCompileND_FUN_DEC (char *name, char *rettype, int narg, char **arg_any)
+ICMCompileND_FUN_DEC (char *name, char *rettype_nt, int narg, char **arg_any)
 {
     DBUG_ENTER ("ICMCompileND_FUN_DEC");
 
@@ -273,13 +276,13 @@ ICMCompileND_FUN_DEC (char *name, char *rettype, int narg, char **arg_any)
 
     INDENT;
 #ifdef TAGGED_ARRAYS
-    if (rettype[0] != '\0') {
-        fprintf (outfile, "SAC_ND_TYPE_NT( %s) ", rettype);
+    if (rettype_nt[0] != '\0') {
+        fprintf (outfile, "SAC_ND_TYPE_NT( %s) ", rettype_nt);
     } else {
         fprintf (outfile, "void ");
     }
 #else
-    fprintf (outfile, "%s ", rettype);
+    fprintf (outfile, "%s ", rettype_nt);
 #endif
     if (strcmp (name, "create_TheCommandLine") == 0) {
         fprintf (outfile, "%s( int __argc, char *__argv[])", name);
@@ -829,7 +832,8 @@ ICMCompileND_CHECK_REUSE (char *to_nt, int to_sdim, char *from_nt, int from_sdim
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_SET__SHAPE( char *to_nt, int to_sdim, int dim, int *shp)
+ *   void ICMCompileND_SET__SHAPE( char *to_nt, int to_sdim,
+ *                                 int dim, char **shp_any)
  *
  * description:
  *   implements the compilation of the following ICM:
@@ -839,7 +843,7 @@ ICMCompileND_CHECK_REUSE (char *to_nt, int to_sdim, char *from_nt, int from_sdim
  ******************************************************************************/
 
 void
-ICMCompileND_SET__SHAPE (char *to_nt, int to_sdim, int dim, int *shp)
+ICMCompileND_SET__SHAPE (char *to_nt, int to_sdim, int dim, char **shp_any)
 {
     int i;
     data_class_t to_dc = ICUGetDataClass (to_nt);
@@ -873,8 +877,8 @@ ICMCompileND_SET__SHAPE (char *to_nt, int to_sdim, int dim, int *shp)
             INDENT;
             fprintf (outfile,
                      "SAC__size *= SAC_ND_A_DESC_SHAPE( %s, %d) ="
-                     " SAC_ND_A_SHAPE( %s, %d) = %d;\n",
-                     to_nt, i, to_nt, i, shp[i]);
+                     " SAC_ND_A_SHAPE( %s, %d) = %s;\n",
+                     to_nt, i, to_nt, i, shp_any[i]);
         }
         INDENT;
         fprintf (outfile,
@@ -924,9 +928,9 @@ ICMCompileND_SET__SHAPE (char *to_nt, int to_sdim, int dim, int *shp)
         for (i = 0; i < to_dim; i++) {
             INDENT;
             fprintf (outfile,
-                     "SAC_ASSURE_TYPE( (SAC_ND_A_SHAPE( %s, %d) == %d),"
+                     "SAC_ASSURE_TYPE( (SAC_ND_A_SHAPE( %s, %d) == %s),"
                      " (\"Assignment with incompatible types found!\"))\n",
-                     to_nt, i, shp[i]);
+                     to_nt, i, shp_any[i]);
         }
         /* here is no break missing */
 
@@ -1174,8 +1178,7 @@ ICMCompileND_ASSIGN (char *to_nt, int to_sdim, char *from_nt, int from_sdim)
     ICMCompileND_ASSIGN__SHAPE (to_nt, to_sdim, from_nt, from_sdim);
 
     INDENT;
-    fprintf (outfile, "SAC_ND_ASSIGN__DATA( %s, %d, %s, %d)\n", to_nt, to_sdim, from_nt,
-             from_sdim);
+    fprintf (outfile, "SAC_ND_ASSIGN__DATA( %s, %s)\n", to_nt, from_nt);
 
     DBUG_VOID_RETURN;
 }
@@ -1619,6 +1622,7 @@ ICMCompileND_MAKE_UNIQUE (char *to_nt, int to_sdim, char *from_nt, int from_sdim
 void
 ICMCompileND_CREATE__VECT__SHAPE (char *nt, int sdim, int len, char **vala_any)
 {
+    char *len_str;
     bool entries_are_scalars;
     int i;
 
@@ -1644,7 +1648,10 @@ ICMCompileND_CREATE__VECT__SHAPE (char *nt, int sdim, int len, char **vala_any)
     }
 
     if (entries_are_scalars) {
-        ICMCompileND_SET__SHAPE (nt, sdim, 1, &len);
+        len_str = Malloc (20 * sizeof (char));
+        sprintf (len_str, "%d", len);
+        ICMCompileND_SET__SHAPE (nt, sdim, 1, &len_str);
+        len_str = Free (len_str);
     } else {
         DBUG_ASSERT ((0), "not yet implemented!");
     }
