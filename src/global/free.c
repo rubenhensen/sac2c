@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.49  1998/04/14 19:01:46  srs
+ * changed FreeAssign()
+ *
  * Revision 1.48  1998/04/13 19:01:47  dkr
  * support for wlcomp-pragmas added in FreePragma
  *
@@ -871,6 +874,8 @@ FreeAssign (node *arg_node, node *arg_info)
 
     FREETRAV (ASSIGN_INSTR (arg_node));
     FREEMASK (ASSIGN_MASK);
+    if (ASSIGN_INDEX (arg_node))
+        FREE (ASSIGN_INDEX (arg_node));
 
     DBUG_PRINT ("FREE", ("Removing N_assign node ..."));
 
