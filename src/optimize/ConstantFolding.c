@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.46  1996/07/16 15:24:43  asi
+ * Revision 1.47  1996/08/08 13:51:42  asi
+ * Bug Fixed in NoConstSkalarPrf
+ *
+ * Revision 1.46  1996/07/16  15:24:43  asi
  * Psi-expessions with user defined typed second argument will now be folded
  *
  * Revision 1.45  1996/05/31  13:51:24  asi
@@ -1077,7 +1080,7 @@ SkalarPrf (node **arg, prf prf_type, types *res_type, int swap)
  *  global vars   : syntax_tree, N_num, N_bool, N_float, N_id
  *  internal funs : --
  *  external funs : FreePrf2
- *  macros        : DBUG..., DEC_VAR, SELARG, NULL
+ *  macros        : DEC_VAR, SELARG, NULL, PRF_ARG1, PRF_ARG2, NODE_TYPE
  *
  *  remarks       :
  *
@@ -1090,19 +1093,19 @@ FoldExpr (node *arg_node, int test_arg, int res_arg, int test_pattern, node *arg
 
     DBUG_ENTER ("FoldExpr");
 
-    arg[0] = arg_node->node[0]->node[0];
-    arg[1] = arg_node->node[0]->node[1]->node[0];
+    arg[0] = PRF_ARG1 (arg_node);
+    arg[1] = PRF_ARG2 (arg_node);
     tmp = arg_node;
-    node_t = arg[test_arg]->nodetype;
+    node_t = NODE_TYPE (arg[test_arg]);
     if (((N_num == node_t) || (N_bool == node_t) || (N_float == node_t)
          || (N_double == node_t))
         && (test_pattern == SELARG (arg[test_arg]))) {
         arg_node = arg[res_arg];
-        if ((N_id == arg[!res_arg]->nodetype) && (NULL != arg_info)) {
-            DEC_VAR (arg_info->mask[1], arg[!res_arg]->info.ids->node->varno);
+        if ((N_id == NODE_TYPE (arg[!res_arg])) && (NULL != arg_info)) {
+            DEC_VAR (INFO_USE, VARDEC_VARNO (ID_VARDEC (arg[!res_arg])));
         }
         cf_expr++;
-        DBUG_PRINT ("CF", ("primitive function %s folded", prf_string[tmp->info.prf]));
+        DBUG_PRINT ("CF", ("primitive function %s folded", prf_string[PRF_PRF (tmp)]));
         FreePrf2 (tmp, res_arg);
         arg_node = arg[res_arg];
     }
@@ -1158,8 +1161,6 @@ NoConstSkalarPrf (node *arg_node, node *arg_info)
                   = FoldExpr (arg_node, 1, 0, FALSE, arg_info); /* FALSE || x = x */
             break;
         case F_mul:
-        case F_mul_AxS:
-        case F_mul_SxA:
             arg_node = FoldExpr (arg_node, 0, 0, 0, arg_info); /* 0 * x = 0 */
             if (N_prf == arg_node->nodetype)
                 arg_node = FoldExpr (arg_node, 1, 1, 0, arg_info); /* x * 0 = 0 */
@@ -1168,12 +1169,26 @@ NoConstSkalarPrf (node *arg_node, node *arg_info)
             if (N_prf == arg_node->nodetype)
                 arg_node = FoldExpr (arg_node, 1, 0, 1, arg_info); /* x * 1 = x */
             break;
+        case F_mul_AxS:
+        case F_mul_SxA:
+            if (N_prf == arg_node->nodetype)
+                arg_node = FoldExpr (arg_node, 0, 1, 1, arg_info); /* 1 * x = x */
+            if (N_prf == arg_node->nodetype)
+                arg_node = FoldExpr (arg_node, 1, 0, 1, arg_info); /* x * 1 = x */
+
+            break;
         case F_div:
-        case F_div_SxA:
             if (TRUE == FoundZero (arg_node->node[0]->node[1]->node[0])) {
                 WARN (arg_node->lineno, ("Division by zero expected"));
             }
             arg_node = FoldExpr (arg_node, 0, 0, 0, arg_info); /* 0 / x = 0 */
+            if (N_prf == arg_node->nodetype)
+                arg_node = FoldExpr (arg_node, 1, 0, 1, arg_info); /* x / 1 = x */
+            break;
+        case F_div_SxA:
+            if (TRUE == FoundZero (arg_node->node[0]->node[1]->node[0])) {
+                WARN (arg_node->lineno, ("Division by zero expected"));
+            }
             if (N_prf == arg_node->nodetype)
                 arg_node = FoldExpr (arg_node, 1, 0, 1, arg_info); /* x / 1 = x */
             break;
@@ -1606,7 +1621,6 @@ ArrayPrf (node *arg_node, node *arg_info)
     /***********************/
     case F_psi: {
         int dim;
-        int i;
         node *shape, *array, *res_array = NULL, *first_elem;
         types *array_type;
 
@@ -1615,11 +1629,14 @@ ArrayPrf (node *arg_node, node *arg_info)
          */
         if (N_id == NODE_TYPE (arg[0])) {
             MRD_GETDATA (shape, ID_VARNO (arg[0]), INFO_VARNO);
-        } else
+        } else {
             shape = arg[0];
+        }
 
         if (!IsConst (shape))
             break;
+        DBUG_ASSERT ((N_array == NODE_TYPE (arg[0])),
+                     "Shape-vector for psi not an array");
 
         /*
          * Substitute array
