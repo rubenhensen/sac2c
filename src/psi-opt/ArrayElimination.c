@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2001/12/11 15:55:31  dkr
+ * GetDim() renamed into GetShapeDim()
+ *
  * Revision 3.13  2001/07/18 12:57:45  cg
  * Applications of old tree construction function
  * AppendNodeChain eliminated.
@@ -29,114 +32,7 @@
  * Revision 3.5  2001/04/18 13:42:30  dkr
  * bug in AEassign fixed: LHS might be void!
  *
- * Revision 3.4  2001/03/22 19:40:34  dkr
- * no changes done
- *
- * Revision 3.3  2001/02/13 17:48:11  dkr
- * some MakeNode() eliminated
- *
- * Revision 3.2  2000/11/27 13:06:49  sbs
- * warning eliminated
- *
- * Revision 3.1  2000/11/20 18:01:37  sacbase
- * new release made
- *
- * Revision 2.16  2000/10/26 12:53:18  dkr
- * DupIds renamed into DupAllIds
- *
- * Revision 2.15  2000/10/24 11:53:55  dkr
- * MakeType renamed into MakeTypes
- *
- * Revision 2.14  2000/10/23 18:39:47  dkr
- * AEfundef:
- * superfluous assignment to arg_node->refcnt removed
- *
- * Revision 2.13  2000/10/20 15:37:07  dkr
- * macro GET_DIM and GET_LENGTH replaced by functions GetDim and
- * GetTypesLength
- *
- * Revision 2.12  2000/07/14 11:34:41  dkr
- * FUNDEF_INLINE==0 replaced by !FUNDEF_INLINE
- *
- * Revision 2.11  2000/07/14 09:35:17  dkr
- * DupIds called with (arg_info = NULL) now
- *
- * Revision 2.10  2000/07/12 15:10:19  dkr
- * function DuplicateTypes renamed into DupTypes
- *
- * Revision 2.9  2000/06/13 12:32:14  dkr
- * function for old with-loop removed
- *
- * Revision 2.8  2000/01/26 17:25:46  dkr
- * type of traverse-function-table changed.
- *
- * Revision 2.7  1999/11/15 18:06:13  dkr
- * VARNO replaced, INFO_VARNO with changed signature
- *
- * Revision 2.6  1999/11/11 20:05:11  dkr
- * signature and name of function IsConstantArray changed
- *
- * Revision 2.5  1999/05/12 11:39:24  jhs
- * Adjusted macros to new access on constant vectors.
- *
- * Revision 2.4  1999/04/19 11:29:18  jhs
- * TRUE and FALSE from internal_lib.h ared used from now on.
- *
- * Revision 2.3  1999/03/31 15:09:00  bs
- * I did some code cosmetics with the MRD_GET... macros.
- *
- * Revision 2.2  1999/03/17 20:37:13  bs
- * Function GenPsi modified: arrays with compact vector propagation will
- * be generated.
- *
- * Revision 2.1  1999/02/23 12:43:08  sacbase
- * new release made
- *
- * Revision 1.14  1999/01/07 13:56:58  sbs
- * optimization process restructured for a function-wise optimization!
- *
- * Revision 1.13  1998/08/20 12:06:14  srs
- * Fixed bug in AEPrf():
- * Too many psi-functions were replaced.
- *
- * Revision 1.12  1998/05/26 13:13:24  srs
- * fixed bug in GenPsi(): ARRAY_TYPE was not initialized
- *
- * Revision 1.11  1998/05/12 19:55:53  srs
- * fixed bug in GenPsi()
- *
- * Revision 1.10  1998/05/12 16:11:43  dkr
- * fixed a typo in GenPsi: MakeExpr -> MakeExprs
- *
- * Revision 1.9  1998/05/12 15:43:37  srs
- * added MRD support to enable substitution of
- *   i = [0];
- *   a = psi(i, A);
- *
- * Revision 1.8  1998/03/25 17:53:11  srs
- * added comment to a location of a possible bug
- *
- * Revision 1.7  1997/11/23 17:18:06  dkr
- * removed a bug in GenIds():
- * - malloc-size for new string corrected
- *
- * Revision 1.6  1997/11/04 13:25:20  dkr
- * with defined NEWTREE, node->nnode is not used anymore
- *
- * Revision 1.5  1997/04/25 12:13:00  sbs
- * MAlloc replaced by Malloc from internal.lib
- *
- * Revision 1.4  1996/07/16  15:26:40  asi
- * macros from access_macros.h no longer used
- *
- * Revision 1.3  1996/01/17  14:17:52  asi
- * added globals.h
- *
- * Revision 1.2  1995/10/06  17:07:47  cg
- * adjusted calls to function MakeIds (now 3 parameters)
- *
- * Revision 1.1  1995/07/24  10:00:19  asi
- * Initial revision
+ * [...]
  *
  */
 
@@ -235,7 +131,7 @@ CorrectArraySize (ids *ids_node)
 
     type = IDS_TYPE (ids_node);
     length = GetTypesLength (type);
-    dim = GetDim (type);
+    dim = GetShapeDim (type);
 
     if ((length <= minarray) && (0 != length) && (1 == dim)) {
         DBUG_PRINT ("AE", ("array %s with length %d to eliminated found",

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2001/12/11 15:56:04  dkr
+ * GetDim() renamed into GetShapeDim()
+ *
  * Revision 3.14  2001/06/28 07:46:51  cg
  * Primitive function psi() renamed to sel().
  *
@@ -53,7 +56,6 @@
  *
  * Revision 3.1  2000/11/20 18:01:46  sacbase
  * new release made
- *
  *
  * ... [eliminated] ...
  *
@@ -987,7 +989,7 @@ IdxChangeId (char *varname, types *type)
 
     sprintf (buffer, "%s", varname);
     tmp_shpseg = Type2Shpseg (type, NULL);
-    for (i = 0; i < GetDim (type); i++) {
+    for (i = 0; i < GetShapeDim (type); i++) {
         sprintf (buffer2, "_%d", SHPSEG_SHAPE (tmp_shpseg, i));
         strcat (buffer, buffer2);
     }
@@ -1100,8 +1102,8 @@ CreateVect2OffsetIcm (node *vardec, types *type)
      * Now, we create the desired icm:
      */
     icm = MakeIcm5 ("ND_KS_VECT2OFFSET", iv_off_id, iv_vect_id,
-                    MakeNum (VARDEC_OR_ARG_SHAPE (vardec, 0)), MakeNum (GetDim (type)),
-                    exprs);
+                    MakeNum (VARDEC_OR_ARG_SHAPE (vardec, 0)),
+                    MakeNum (GetShapeDim (type)), exprs);
 
     /*
      * Finally, we mark vardec as VECT!
@@ -1940,7 +1942,7 @@ IdxArray (node *arg_node, node *arg_info)
             tmp_shpseg = Type2Shpseg (type, NULL);
             idx = EXPRS_EXPR (expr);
             expr = EXPRS_NEXT (expr);
-            for (i = 1; i < GetDim (type); i++) {
+            for (i = 1; i < GetShapeDim (type); i++) {
                 if (expr != NULL) {
                     DBUG_ASSERT ((NODE_TYPE (expr) == N_exprs),
                                  "corrupted syntax tree at N_array(N_exprs expected)!");
@@ -1996,7 +1998,7 @@ IdxNum (node *arg_node, node *arg_info)
         type = VINFO_TYPE (INFO_IVE_TRANSFORM_VINFO (arg_info));
         tmp_shpseg = Type2Shpseg (type, NULL);
         val = NUM_VAL (arg_node);
-        dim_array = GetDim (type);
+        dim_array = GetShapeDim (type);
         len_iv = INFO_IVE_NON_SCAL_LEN (arg_info);
 
         sum = val;
