@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.11  1994/12/20 11:23:48  sbs
+ * Revision 1.12  1994/12/20 15:42:17  sbs
+ * externals for Makenode and AppandChain added
+ *
+ * Revision 1.11  1994/12/20  11:23:48  sbs
  * extern decl of syntax_tree moved to scnpars.h
  *
  * Revision 1.10  1994/12/16  14:20:59  sbs
@@ -124,5 +127,8 @@ typedef struct NODE {
  */
 
 #define GEN_NODE(type) (type *)malloc (sizeof (type))
+
+extern node *MakeNode (nodetype nodetype);
+extern node *AppendNodeChain (int pos, node *first, node *second);
 
 #endif /* _sac_tree_h */
