@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2001/05/09 14:22:30  dkr
+ * bug in BuildRenamingAssigns() fixed:
+ * variables are swap correctly now if needed
+ *
  * Revision 3.8  2001/05/07 14:22:41  nmw
  * BuildRenamingAssigns processes all args now :-)
  *
@@ -111,19 +115,101 @@ IsRecursiveCall (node *assign, node *fundef)
 /******************************************************************************
  *
  * Function:
- *   node *BuildRenamingAssigns( node *ext_args, node *int_args)
+ *   node *GetRenamingExpr( node **vardecs, node **assigns,
+ *                          node *ext_args, node *int_args)
  *
  * Description:
  *
  *
  ******************************************************************************/
 
-static node *
-BuildRenamingAssigns (node *ext_args, node *int_args)
+node *
+GetRenamingExpr (node **vardecs, node **assigns, node *ext_args, node *int_args)
 {
+    char *tmp_name;
     node *int_expr;
+    node *tmp_ext_args, *tmp_int_args;
+    node *assign;
+    node *expr_node = NULL;
+
+    DBUG_ENTER ("GetRenamingId");
+
+    int_expr = EXPRS_EXPR (int_args);
+    tmp_ext_args = ext_args;
+    tmp_int_args = int_args;
+    while (tmp_ext_args != NULL) {
+        if (((NODE_TYPE (EXPRS_EXPR (tmp_int_args)) != N_id)
+             || (strcmp (ARG_NAME (tmp_ext_args), ID_NAME (EXPRS_EXPR (tmp_int_args)))))
+            && (NODE_TYPE (int_expr) == N_id)
+            && (!strcmp (ARG_NAME (tmp_ext_args), ID_NAME (int_expr)))) {
+            tmp_name = TmpVarName (ID_NAME (int_expr));
+            (*vardecs) = MakeVardec (tmp_name, DupTypes (ID_TYPE (int_expr)), *vardecs);
+
+            expr_node = MakeId_Copy (tmp_name);
+            ID_VARDEC (expr_node) = (*vardecs);
+
+            assign = MakeAssignLet (StringCopy (tmp_name), *vardecs,
+                                    DupNode (EXPRS_EXPR (int_args)));
+            ASSIGN_NEXT (assign) = (*assigns);
+            (*assigns) = assign;
+            break;
+        }
+
+        tmp_ext_args = ARG_NEXT (tmp_ext_args);
+        tmp_int_args = EXPRS_NEXT (tmp_int_args);
+    }
+
+    if (expr_node == NULL) {
+        expr_node = DupNode (EXPRS_EXPR (int_args));
+    }
+
+    DBUG_RETURN (expr_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *BuildRenamingAssigns( node *vardecs, node *ext_args, node *int_args)
+ *
+ * Description:
+ *   This function returns a N_assign node chain.
+ *   If the names of the actual parameters found in the recursive call of a
+ *   loop-function ('int_args') differ from the names of the formal parameters
+ *   ('ext_args') appropriate renaming assignments are build:
+ *
+ *     ... LoopFun( a_1, a_2, ...)
+ *     {
+ *       ... = LoopFun( A_1, A_2, ...); ...
+ *     }
+ *
+ *   --->  (the assignments are ordered with descending i)
+ *
+ *     a_i = A_i;   for each 'i', iff (A_i != a_i).
+ *
+ *   *** CAUTION ***
+ *   If a 'j' exists for which ((j > i) && (A_j != a_j) && (A_i == a_j)) is
+ *   hold (note, that the a_j are pairwise distinct therefore such a 'j' is
+ *   always unique!), we must not assign (a_i = A_i) directly:
+ *
+ *     ... LoopFun( a, b, c)
+ *     {
+ *       ... LoopFun( b, a, C); ...
+ *     }
+ *
+ *   --->
+ *                                   tmp_b = b;
+ *     c = C;                        c = C;
+ *     b = a;                        b = a;
+ *     a = b;  // oops!              a = tmp_b;
+ *
+ ******************************************************************************/
+
+static node *
+BuildRenamingAssigns (node *vardecs, node *ext_args, node *int_args)
+{
     node *assign;
     node *assigns = NULL;
+    node *tmp_assigns = NULL;
 
     DBUG_ENTER ("BuildRenamingAssigns");
 
@@ -132,11 +218,11 @@ BuildRenamingAssigns (node *ext_args, node *int_args)
 
     while (ext_args != NULL) {
         DBUG_ASSERT ((int_args != NULL), "inconsistent LAC-signature found");
-        int_expr = EXPRS_EXPR (int_args);
-        if ((NODE_TYPE (int_expr) != N_id)
-            || (strcmp (ARG_NAME (ext_args), ID_NAME (int_expr)))) {
+        if ((NODE_TYPE (EXPRS_EXPR (int_args)) != N_id)
+            || (strcmp (ARG_NAME (ext_args), ID_NAME (EXPRS_EXPR (int_args))))) {
             assign = MakeAssignLet (StringCopy (ARG_NAME (ext_args)), ext_args,
-                                    DupNode (int_expr));
+                                    GetRenamingExpr (&vardecs, &tmp_assigns, ext_args,
+                                                     int_args));
             ASSIGN_NEXT (assign) = assigns;
             assigns = assign;
         }
@@ -146,6 +232,8 @@ BuildRenamingAssigns (node *ext_args, node *int_args)
     }
 
     DBUG_ASSERT ((int_args == NULL), "inconsistent LAC-signature found");
+
+    assigns = AppendAssign (tmp_assigns, assigns);
 
     DBUG_RETURN (assigns);
 }
@@ -309,7 +397,8 @@ TransformIntoWhileLoop (node *fundef)
 
             loop_body
               = AppendAssign (loop_body,
-                              BuildRenamingAssigns (FUNDEF_ARGS (fundef),
+                              BuildRenamingAssigns (FUNDEF_VARDEC (fundef),
+                                                    FUNDEF_ARGS (fundef),
                                                     AP_ARGS (ASSIGN_RHS (int_call))));
 
             if (loop_body == NULL) {
@@ -476,7 +565,8 @@ TransformIntoDoLoop (node *fundef)
 
             loop_body
               = AppendAssign (loop_body,
-                              BuildRenamingAssigns (FUNDEF_ARGS (fundef),
+                              BuildRenamingAssigns (FUNDEF_VARDEC (fundef),
+                                                    FUNDEF_ARGS (fundef),
                                                     AP_ARGS (ASSIGN_RHS (int_call))));
 
             if (loop_body == NULL) {
