@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.7  2004/12/08 11:20:06  sah
+ * bugfix
+ *
  * Revision 1.6  2004/12/07 18:01:15  sah
  * fixed stupid bug
  *
@@ -591,7 +594,7 @@ GetArgtabIndexIn (node *arg, argtab_t *argtab)
         idx++;
     }
 
-    DBUG_ASSERT ((argtab->ptr_in[idx] != arg), "no index for in-parameter found!");
+    DBUG_ASSERT ((argtab->ptr_in[idx] == arg), "no index for in-parameter found!");
 
     DBUG_RETURN (idx);
 }
