@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.76  2004/10/28 17:50:22  khf
+ * splitted WL_OFFSET into WL_OFFSET and WL_OFFSET_SHAPE_FACR
+ * to avoid mixed declarations and code
+ *
  * Revision 3.75  2004/10/05 17:36:41  khf
  * MT_ADJUST_SCHEDULER__OFFSET removed
  *
@@ -705,6 +709,15 @@ ICM_DEF( WL_OFFSET, TRACE_NONE)
   ICM_NT( idx_vec_NT)
   ICM_INT( dims)
 ICM_END( WL_OFFSET, (to_NT, to_sdim, idx_vec_NT, dims))
+#endif
+
+#if defined(WL_OFFSET_SHAPE_FACTOR) || defined(ICM_ALL)
+ICM_DEF( WL_OFFSET_SHAPE_FACTOR, TRACE_NONE)
+  ICM_NT( to_NT)
+  ICM_INT( to_sdim)
+  ICM_NT( idx_vec_NT)
+  ICM_INT( dims)
+ICM_END( WL_OFFSET_SHAPE_FACTOR, (to_NT, to_sdim, idx_vec_NT, dims))
 #endif
 
 #if defined(WL_SCHEDULE__END) || defined(ICM_ALL)

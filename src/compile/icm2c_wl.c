@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.41  2004/10/28 17:50:22  khf
+ * splitted WL_OFFSET into WL_OFFSET and WL_OFFSET_SHAPE_FACR
+ * to avoid mixed declarations and code
+ *
  * Revision 3.40  2004/10/05 17:26:53  khf
  * added INDENT in WL_OFFSET
  *
@@ -432,6 +436,34 @@ ICMCompileWL_OFFSET (char *to_NT, int to_sdim, char *idx_vec_NT, int dims)
         INDENT;
         fprintf (outfile, "int SAC_WL_SHAPE_FACTOR( %s, %d);\n", to_NT, i);
     }
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileWL_OFFSET_SHAPE_FACTOR( char *to_NT, int to_sdim,
+ *                                          char *idx_vec_NT, int dims)
+ *
+ * description:
+ *   Implements the compilation of the following ICM:
+ *
+ *   WL_OFFSET_SHAPE_FACTOR( to_NT, to_sdim, idx_vec_NT, dims)
+ *
+ ******************************************************************************/
+
+void
+ICMCompileWL_OFFSET_SHAPE_FACTOR (char *to_NT, int to_sdim, char *idx_vec_NT, int dims)
+{
+    int i;
+
+    DBUG_ENTER ("ICMCompileWL_OFFSET_SHAPE_FACTOR");
+
+#define WL_OFFSET_SHAPE_FACTOR
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef WL_OFFSET_SHAPE_FACTOR
 
     INDENT;
     fprintf (outfile, "{\n");

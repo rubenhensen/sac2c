@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.23  2004/10/28 17:50:22  khf
+ * splitted WL_OFFSET into WL_OFFSET and WL_OFFSET_SHAPE_FACR
+ * to avoid mixed declarations and code
+ *
  * Revision 3.22  2004/08/13 16:38:37  khf
  * splitted WL_BEGIN_OFFSET into WL_SCHEDULE__BEGIN and
  * WL_OFFSET, added WL_SCHEDULE__END, removed WL_BEGIN_OFFSET,
@@ -90,6 +94,9 @@ extern void ICMCompileND_WL_GENARRAY__SHAPE_arr_id (char *to_NT, int to_sdim,
 extern void ICMCompileWL_SCHEDULE__BEGIN (int dims);
 
 extern void ICMCompileWL_OFFSET (char *to_NT, int to_sdim, char *idx_vec_NT, int dims);
+
+extern void ICMCompileWL_OFFSET_SHAPE_FACTOR (char *to_NT, int to_sdim, char *idx_vec_NT,
+                                              int dims);
 
 extern void ICMCompileWL_SCHEDULE__END (int dims);
 
