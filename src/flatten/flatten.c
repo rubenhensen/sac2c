@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.6  1999/03/09 10:44:07  bs
+ * DbugPrintArray removed. This debugging-information will be printed from print.c .
+ *
  * Revision 2.5  1999/03/05 17:35:13  bs
  * Another bug fixed in DbugPrintArray.
  *
@@ -401,36 +404,6 @@ static local_stack *tos, *stack, *stack_limit;
 /******************************************************************************
  *
  * function:
- *  void DbugPrintArray(int len, int *intptr)
- *
- * description:
- *   - this function is only used for printing of debugging informations in
- *     FltnArray.
- *
- ******************************************************************************/
-
-void
-DbugPrintArray (int len, int *intptr)
-{
-    int i;
-
-    if ((intptr == NULL) || (len <= 1))
-        return;
-    else {
-        fprintf (stderr, "/* [%d", intptr[0]);
-        for (i = 1; i < ((len < 10) ? (len) : (10)); i++)
-            fprintf (stderr, ",%d", intptr[i]);
-        if (len > 10)
-            fprintf (stderr, ",..] */\n");
-        else
-            fprintf (stderr, "] */\n");
-        return;
-    }
-}
-
-/******************************************************************************
- *
- * function:
  *  int *IntArray(int len, int* array)
  *
  * description:
@@ -443,7 +416,7 @@ DbugPrintArray (int len, int *intptr)
  *
  ******************************************************************************/
 
-int *
+static int *
 IntArray (int len, int *array)
 {
     if ((array == NULL) || (len <= 0))
@@ -463,7 +436,7 @@ IntArray (int len, int *array)
  *
  ******************************************************************************/
 
-void
+static void
 DbugPrintStack (void)
 {
     local_stack *tmp;
@@ -1110,8 +1083,7 @@ FltnArray (node *arg_node, node *arg_info)
       = IntArray (INFO_FLTN_ARRAYLENGTH (arg_info), INFO_FLTN_INTARRAY (arg_info));
     INFO_FLTN_INTARRAY (arg_info) = NULL;
     INFO_FLTN_CONTEXT (arg_info) = old_ctxt;
-    DBUG_EXECUTE ("ARRAY_FLAT",
-                  DbugPrintArray (ARRAY_LENGTH (arg_node), ARRAY_INTARRAY (arg_node)););
+
     DBUG_RETURN (arg_node);
 }
 
