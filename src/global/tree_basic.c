@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.6  1999/06/15 12:29:09  jhs
+ * Added initilization of IDS_NAIVE_REFCNT in routine MakeIds.
+ *
  * Revision 2.5  1999/06/08 08:31:02  cg
  * Bug fixed: node structure entry int_data is now initialized.
  * Macro INIT_NODE replaced by function CreateCleanNode()
@@ -220,6 +223,7 @@ MakeIds (char *name, char *mod, statustype status)
     IDS_NAME (tmp) = name;
     IDS_MOD (tmp) = mod;
     IDS_REFCNT (tmp) = 0;
+    IDS_NAIVE_REFCNT (tmp) = 0;
     IDS_NEXT (tmp) = NULL;
     IDS_VARDEC (tmp) = NULL;
     IDS_DEF (tmp) = NULL;
