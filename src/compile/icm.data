@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.47  2002/08/05 18:22:27  dkr
+ * ND_ASSIGN__SHAPE renamed into ND_ASSIGN__DIMSHP
+ *
  * Revision 3.46  2002/08/03 03:16:48  dkr
  * ND_PRF_SEL__DIM icms removed
  *
@@ -264,13 +267,13 @@ ICM_DEF( ND_ASSIGN__DESC, TRACE_NONE)
 ICM_END( ND_ASSIGN__DESC, (to_nt, from_nt))
 #endif
 
-#if defined(ND_ASSIGN__SHAPE) || defined(ICM_ALL)
-ICM_DEF( ND_ASSIGN__SHAPE, TRACE_NONE)
+#if defined(ND_ASSIGN__DIMSHP) || defined(ICM_ALL)
+ICM_DEF( ND_ASSIGN__DIMSHP, TRACE_NONE)
   ICM_NT( to_nt)
   ICM_INT( to_sdim)
   ICM_NT( from_nt)
   ICM_INT( from_sdim)
-ICM_END( ND_ASSIGN__SHAPE, (to_nt, to_sdim, from_nt, from_sdim))
+ICM_END( ND_ASSIGN__DIMSHP, (to_nt, to_sdim, from_nt, from_sdim))
 #endif
 
 
@@ -315,21 +318,21 @@ ICM_END( ND_CREATE__VECT__DIM, (val_size, vala_any))
 
 #if defined(ND_CREATE__VECT__SHAPE) || defined(ICM_ALL)
 ICM_DEF( ND_CREATE__VECT__SHAPE, TRACE_NONE)
-  ICM_NT( nt)
-  ICM_INT( sdim)
+  ICM_NT( to_nt)
+  ICM_INT( to_sdim)
   ICM_INT( val_size)
   ICM_VARANY( val_size, vala_any)
-ICM_END( ND_CREATE__VECT__SHAPE, (nt, sdim, val_size, vala_any))
+ICM_END( ND_CREATE__VECT__SHAPE, (to_nt, to_sdim, val_size, vala_any))
 #endif
 
 #if defined(ND_CREATE__VECT__DATA) || defined(ICM_ALL)
 ICM_DEF( ND_CREATE__VECT__DATA, TRACE_NONE)
-  ICM_NT( nt)
-  ICM_INT( sdim)
+  ICM_NT( to_nt)
+  ICM_INT( to_sdim)
   ICM_INT( val_size)
   ICM_VARANY( val_size, vala_any)
   ICM_ID( copyfun)
-ICM_END( ND_CREATE__VECT__DATA, (nt, sdim, val_size, vala_any, copyfun))
+ICM_END( ND_CREATE__VECT__DATA, (to_nt, to_sdim, val_size, vala_any, copyfun))
 #endif
 
 
@@ -648,7 +651,7 @@ ICM_DEF( ND_PRF_MODARRAY_AxVxS, TRACE_PRF)
   ICM_VARANY( 1, value)
   ICM_INT(dim)
   ICM_ID(v)
-ICM_END( ND_PRF_MODARRAY_AxVxS, (res_btype,dimres,res,old,value,dim,v))
+ICM_END( ND_PRF_MODARRAY_AxVxS, (res_btype, dimres, res, old, value, dim, v))
 #endif
 
 #if defined(ND_PRF_MODARRAY_AxCxA) || defined(ICM_ALL)
@@ -660,7 +663,7 @@ ICM_DEF( ND_PRF_MODARRAY_AxCxA, TRACE_PRF)
   ICM_ID(val)
   ICM_INT(dimv)
   ICM_VARANY( dimv, vi)
-ICM_END( ND_PRF_MODARRAY_AxCxA, (res_btype,dimres,res,old,val,dimv,vi))
+ICM_END( ND_PRF_MODARRAY_AxCxA, (res_btype, dimres, res, old, val, dimv, vi))
 #endif
 
 #if defined(ND_PRF_MODARRAY_AxVxA) || defined(ICM_ALL)
@@ -672,7 +675,7 @@ ICM_DEF( ND_PRF_MODARRAY_AxVxA, TRACE_PRF)
   ICM_ID(val)
   ICM_INT(dim)
   ICM_ID( v)
-ICM_END( ND_PRF_MODARRAY_AxVxA, (res_btype,dimres,res,old,val,dim,v))
+ICM_END( ND_PRF_MODARRAY_AxVxA, (res_btype, dimres, res, old, val, dim, v))
 #endif
 
 

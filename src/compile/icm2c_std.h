@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2002/08/05 18:22:02  dkr
+ * ND_ASSIGN__SHAPE renamed into ND_ASSIGN__DIMSHP
+ *
  * Revision 3.19  2002/08/03 03:16:30  dkr
  * ND_PRF_SEL__DIM icms removed
  *
@@ -120,8 +123,8 @@ extern void ICMCompileND_ASSIGN (char *to_nt, int to_sdim, char *from_nt, int fr
 
 extern void ICMCompileND_ASSIGN__DESC (char *to_nt, char *from_nt);
 
-extern void ICMCompileND_ASSIGN__SHAPE (char *to_nt, int to_sdim, char *from_nt,
-                                        int from_sdim);
+extern void ICMCompileND_ASSIGN__DIMSHP (char *to_nt, int to_sdim, char *from_nt,
+                                         int from_sdim);
 
 extern void ICMCompileND_COPY (char *to_nt, int to_sdim, char *from_nt, int from_sdim,
                                char *copyfun);
@@ -134,10 +137,10 @@ extern void ICMCompileND_MAKE_UNIQUE (char *to_nt, int to_sdim, char *from_nt,
 
 extern void ICMCompileND_CREATE__VECT__DIM (int val_size, char **vala_any);
 
-extern void ICMCompileND_CREATE__VECT__SHAPE (char *name, int sdim, int val_size,
+extern void ICMCompileND_CREATE__VECT__SHAPE (char *to_nt, int to_sdim, int val_size,
                                               char **vala_any);
 
-extern void ICMCompileND_CREATE__VECT__DATA (char *name, int sdim, int val_size,
+extern void ICMCompileND_CREATE__VECT__DATA (char *to_nt, int to_sdim, int val_size,
                                              char **vala_any, char *copyfun);
 
 extern void ICMCompileND_PRF_SHAPE__DATA (char *to_nt, int to_sdim, char *from_nt,
