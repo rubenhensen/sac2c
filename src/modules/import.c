@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.38  1996/01/22 18:34:18  cg
+ * Revision 1.39  1996/01/23 09:01:39  cg
+ * bug fixed in function ImportOwnDeclaration
+ *
+ * Revision 1.38  1996/01/22  18:34:18  cg
  * added new pragmas for global objects: effect, initfun
  *
  * Revision 1.37  1996/01/07  16:59:29  cg
@@ -1864,13 +1867,15 @@ IMmodul (node *arg_node, node *arg_info)
 node *
 ImportOwnDeclaration (char *name, file_type modtype)
 {
-    mod *modptr, *old_mod_tab = mod_tab;
+    mod *modptr, *old_mod_tab;
     int i;
     char buffer[MAX_FILE_NAME];
     node *decl = NULL, *symbol;
     char *pathname;
 
     DBUG_ENTER ("ImportOwnDeclaration");
+
+    old_mod_tab = mod_tab;
 
     mod_tab = (mod *)Malloc (sizeof (mod));
     mod_tab->name = name;
@@ -1884,8 +1889,7 @@ ImportOwnDeclaration (char *name, file_type modtype)
     yyin = fopen (pathname, "r");
 
     if (yyin == NULL) {
-        free (mod_tab);
-        mod_tab = NULL;
+        FREE (mod_tab);
     } else {
         NOTE (("Loading own declaration !"));
         NOTE (("  Parsing file \"%s\" ...", pathname));
@@ -1920,8 +1924,10 @@ ImportOwnDeclaration (char *name, file_type modtype)
         mod_tab->moddec = decl_tree;
         mod_tab->prefix = decl_tree->info.fun_name.id_mod;
         mod_tab->next = NULL;
-        for (i = 0; i < 4; i++)
+
+        for (i = 0; i < 4; i++) {
             mod_tab->syms[i] = NULL;
+        }
 
         if (mod_tab->moddec->nodetype == N_classdec) {
             InsertClassType (mod_tab->moddec);
@@ -1930,8 +1936,8 @@ ImportOwnDeclaration (char *name, file_type modtype)
         modptr = mod_tab;
 
         while (modptr != NULL) {
-            if (mod_tab->moddec->node[1] != NULL) {
-                FindOrAppend (mod_tab->moddec->node[1], 1);
+            if (modptr->moddec->node[1] != NULL) {
+                FindOrAppend (modptr->moddec->node[1], 1);
             }
             GenSyms (modptr);
             modptr = modptr->next;
