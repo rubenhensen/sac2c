@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.35  2001/04/06 16:05:10  dkr
+ * CountTypes(), CountArgs() added
+ *
  * Revision 3.34  2001/04/04 19:41:45  dkr
  * FUNDEF_DOES_REFCOUNT and FUNDEF_WANTS_REFCOUNT added
  *
@@ -158,7 +161,7 @@ extern node *Shpseg2Array (shpseg *shape, int dim);
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  TTYPES :
+ ***  TYPES :
  ***/
 
 /*
@@ -181,6 +184,7 @@ extern node *Shpseg2Array (shpseg *shape, int dim);
     ((!strcmp (TYPES_NAME (a), TYPES_NAME (b)))                                          \
      && (!strcmp (CHECK_NULL (TYPES_MOD (a)), CHECK_NULL (TYPES_MOD (b)))))
 
+extern int CountTypes (types *type);
 extern types *GetTypes_Line (types *type, int line);
 extern types *GetTypes (types *type);
 extern int GetDim (types *type);
@@ -214,7 +218,7 @@ extern bool IsNonUniqueHidden (types *type);
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  Ids :
+ ***  IDS :
  ***/
 
 #define IDS_VARNO(n) VARDEC_OR_ARG_VARNO (IDS_VARDEC (n))
@@ -244,7 +248,7 @@ extern ids *LookupIds (char *name, ids *ids_chain);
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  Nums :
+ ***  NUMS :
  ***/
 
 /*
@@ -842,9 +846,6 @@ extern node *MakeVardecFromArg (node *arg_node);
  * function:
  *   node *AdjustAvisData( node *new_vardec, node *fundef)
  *
- * returns:
- *   adjusted avis node
- *
  * description:
  *   when a vardec is duplicated via DupTree all dependend infomation in the
  *   corresponding avis node is duplicated, too. when this vardec is used in
@@ -887,17 +888,7 @@ extern node *AdjustAvisData (node *new_vardec, node *fundef);
 #define ARG_TMOD(n) (TYPES_MOD (ARG_TYPE (n)))
 #define ARG_TDEF(n) (TYPES_TDEF (ARG_TYPE (n)))
 
-/*
- *  functionname  : CmpDomain
- *  arguments     : 1) N_arg node of one function
- *                  2) N_arg node of another function
- *  description   : checks whether the functions have equal domain
- *                  returns 1 if domain is equal, 0 else
- *  remarks       : similar to function CmpFunParams of typechecker.
- *                  some minor changes to fix appearing segmentation
- *                  faults.
- */
-
+extern int CountArgs (node *args);
 extern int CmpDomain (node *args1, node *args2);
 
 /*--------------------------------------------------------------------------*/
