@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2002/10/08 10:39:51  dkr
+ * function CreateFoldFun() for new type system added
+ *
  * Revision 3.8  2002/09/11 23:15:35  dkr
  * prf_node_info.mac modified
  *
@@ -75,6 +78,12 @@
 #include "print.h"
 #include "gen_pseudo_fun.h"
 #include "typecheck.h"
+
+/**
+ **
+ ** used for old typechecker:
+ **
+ **/
 
 /******************************************************************************
  *
@@ -160,6 +169,110 @@ CreatePseudoFoldFun (types *elem_type, char *fold_fun, prf fold_prf, char *res_v
                  NULL),
       NULL);
     FUNDEF_STATUS (new_fundef) = ST_foldfun;
+
+    DBUG_RETURN (new_fundef);
+}
+
+/**
+ **
+ ** used for new typechecker:
+ **
+ **/
+
+/******************************************************************************
+ *
+ * function:
+ *   node *CreateFoldFun( types *elem_type,
+ *                        node  *fold_fundef,
+ *                        prf    fold_prf,
+ *                        char  *res_name,
+ *                        char  *cexpr_name)
+ *
+ * description:
+ *  - generates an N_fundef node of the following kind:
+ *
+ *      <elem_type> _FOLD:_type_<n>_<mod>__<fold_fun>( <elem_type> <res_name>,
+ *                                                     <elem_type> <cexpr_name>)
+ *      {
+ *        tmp__<res_name> = <fold_fun>( <res_name>, <cexpr_name>)
+ *        <res_name> = tmp__<res_name>;
+ *        return( <res_name>);
+ *      }
+ *    NOTE, that all(!) arguments are NOT inserted in the new AST!
+ *    Instead, copied versions are used only!
+ *    Hence, the calling function has to take care of the memory allocated
+ *    for the arguments!
+ *    NOTE as well, that fold_prf is valid iff (fold_fun == NULL).
+ *
+ ******************************************************************************/
+
+node *
+CreateFoldFun (types *elem_type, node *fold_fundef, prf fold_prf, char *res_name,
+               char *cexpr_name)
+{
+    char *pseudo_fold_fun_name, *tmp_res_name;
+    char *buffer;
+    node *new_fundef, *formal_args, *application, *args, *ret_ass;
+    node *res_id, *tmp_res_id, *cexpr_id;
+    node *tmp_res_vardec;
+
+    DBUG_ENTER ("CreateFoldFun");
+
+    formal_args
+      = MakeArg (StringCopy (res_name), DupAllTypes (elem_type), ST_regular, ST_regular,
+                 MakeArg (StringCopy (cexpr_name), DupAllTypes (elem_type), ST_regular,
+                          ST_regular, NULL));
+
+    res_id = MakeId_Copy (res_name);
+    ID_VARDEC (res_id) = formal_args;
+
+    cexpr_id = MakeId_Copy (cexpr_name);
+    ID_VARDEC (cexpr_id) = ARG_NEXT (formal_args);
+
+    args = MakeExprs (DupNode (res_id), MakeExprs (cexpr_id, NULL));
+
+    if (fold_fundef != NULL) {
+        application = MakeAp (StringCopy (FUNDEF_NAME (fold_fundef)), NULL, args);
+        AP_FUNDEF (application) = fold_fundef;
+        pseudo_fold_fun_name = FUNDEF_NAME (fold_fundef);
+    } else {
+        DBUG_ASSERT (LEGAL_PRF (fold_prf), "fold_prf is out of range!");
+        application = MakePrf (fold_prf, args);
+        pseudo_fold_fun_name = prf_string[fold_prf];
+    }
+
+    /*
+     * Since the module name of the fold function is always '_FOLD', the
+     * actual module name must be encoded within the name in order to guarantee
+     * that no two fold functions from different modules may have the same
+     * internal name.
+     */
+    buffer = (char *)Malloc (strlen (pseudo_fold_fun_name) + strlen (modulename) + 3);
+    strcpy (buffer, modulename);
+    strcat (buffer, "__");
+    strcat (buffer, pseudo_fold_fun_name);
+    pseudo_fold_fun_name = TmpVarName (buffer);
+    buffer = Free (buffer);
+
+    tmp_res_name = TmpVarName (res_name);
+    tmp_res_vardec
+      = MakeVardec (StringCopy (tmp_res_name), DupAllTypes (elem_type), NULL);
+    tmp_res_id = MakeId_Copy (tmp_res_name);
+    ID_VARDEC (tmp_res_id) = tmp_res_vardec;
+
+    ret_ass = MakeReturn (MakeExprs (res_id, NULL));
+
+    new_fundef
+      = MakeFundef (pseudo_fold_fun_name, PSEUDO_MOD_FOLD, DupAllTypes (elem_type),
+                    formal_args,
+                    MakeBlock (MakeAssign (MakeLet (application, DupId_Ids (tmp_res_id)),
+                                           MakeAssign (MakeLet (tmp_res_id,
+                                                                DupId_Ids (res_id)),
+                                                       MakeAssign (ret_ass, NULL))),
+                               tmp_res_vardec),
+                    NULL);
+    FUNDEF_STATUS (new_fundef) = ST_foldfun;
+    FUNDEF_RETURN (new_fundef) = ret_ass;
 
     DBUG_RETURN (new_fundef);
 }

@@ -1,5 +1,9 @@
 /*
+ *
  * $Log$
+ * Revision 3.2  2002/10/08 10:39:47  dkr
+ * function CreateFoldFun() for new type system added
+ *
  * Revision 3.1  2000/11/20 18:00:07  sacbase
  * new release made
  *
@@ -11,13 +15,19 @@
  *
  */
 
-#ifndef _gen_pseudo_fun_h
-
-#define _gen_pseudo_fun_h
+#ifndef _gen_pseudo_fun_h_
+#define _gen_pseudo_fun_h_
 
 #define PSEUDO_MOD_FOLD "_FOLD"
 
-extern node *CreatePseudoFoldFun (types *elem_type, char *fold_fun, prf fold_prf,
-                                  char *res_var, char *body_expr);
+extern /* for old typechecker */
+  node *
+  CreatePseudoFoldFun (types *elem_type, char *fold_fun, prf fold_prf, char *res_var,
+                       char *body_expr);
 
-#endif /* _gen_pseudo_fun_h */
+extern /* for new typechecker */
+  node *
+  CreateFoldFun (types *elem_type, node *fold_fundef, prf fold_prf, char *res_name,
+                 char *cexpr_name);
+
+#endif /* _gen_pseudo_fun_h_ */
