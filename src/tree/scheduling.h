@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/03/29 14:13:38  dkr
+ * SCHMakeCompatibleSyncblockScheduling moved
+ *
  * Revision 3.3  2001/03/14 14:11:13  ben
  * return value of SCHAdjustmentRequired is bool
  *
@@ -60,8 +63,8 @@
 
 typedef void *SCHsched_t;
 
-extern SCHsched_t SCHMakeSchedulingByPragma (node *ap_node, int line);
 extern SCHsched_t SCHMakeScheduling (char *discipline, ...);
+extern SCHsched_t SCHMakeSchedulingByPragma (node *ap_node, int line);
 
 extern SCHsched_t SCHRemoveScheduling (SCHsched_t sched);
 extern SCHsched_t SCHCopyScheduling (SCHsched_t sched);
@@ -72,9 +75,6 @@ extern void SCHCheckSuitabilityConstSeg (SCHsched_t *sched);
 extern void SCHCheckSuitabilityVarSeg (SCHsched_t *sched);
 extern void SCHCheckSuitabilityWithloop (SCHsched_t *sched);
 extern bool SCHAdjustmentRequired (int dim, node *wlseg);
-
-extern SCHsched_t *SCHMakeCompatibleSyncblockScheduling (SCHsched_t *old_sched,
-                                                         SCHsched_t *new_sched);
 
 extern node *SCHCompileSchedulingEnd (char *wl_name, SCHsched_t sched, node *arg_node);
 extern node *SCHCompileSchedulingBegin (char *wl_name, SCHsched_t sched, node *arg_node);
