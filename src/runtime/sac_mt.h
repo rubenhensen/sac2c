@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.50  2003/09/19 12:25:17  dkr
+ * postfix _nt removed from varnames
+ *
  * Revision 3.49  2003/09/15 14:35:49  dkr
  * SAC_MT_GET_BARRIER_RESULT defined only once now
  *
@@ -754,8 +757,7 @@ typedef union {
         }                                                                                \
     }
 
-#define SAC_MT_ADJUST_SCHEDULER__OFFSET(to_nt, dims, dim, lower, upper, unrolling,       \
-                                        offset)                                          \
+#define SAC_MT_ADJUST_SCHEDULER__OFFSET(to, dims, dim, lower, upper, unrolling, offset)  \
     {                                                                                    \
         int diff_start, diff_stop;                                                       \
                                                                                          \
@@ -764,13 +766,13 @@ typedef union {
         SAC_MT_ADJUST_SCHEDULER_BOUND (diff_stop, SAC_WL_MT_SCHEDULE_STOP (dim), lower,  \
                                        upper, unrolling)                                 \
                                                                                          \
-        SAC_WL_OFFSET (to_nt) += diff_start * (offset);                                  \
+        SAC_WL_OFFSET (to) += diff_start * (offset);                                     \
         SAC_TR_MT_PRINT (("Scheduler Adjustment: dim %d: %d -> %d", dim,                 \
                           SAC_WL_MT_SCHEDULE_START (dim),                                \
                           SAC_WL_MT_SCHEDULE_STOP (dim)));                               \
     }
 
-#define SAC_MT_ADJUST_SCHEDULER(to_nt, dims, dim, lower, upper, unrolling)               \
+#define SAC_MT_ADJUST_SCHEDULER(to, dims, dim, lower, upper, unrolling)                  \
     {                                                                                    \
         int diff_start, diff_stop;                                                       \
                                                                                          \
