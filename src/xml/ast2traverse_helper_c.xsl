@@ -1,0 +1,104 @@
+<?xml version="1.0"?>
+<!--
+  $Log$
+  Revision 1.1  2004/11/24 17:55:56  sah
+  Initial revision
+
+
+
+-->
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+  
+  <xsl:import href="common-travfun.xsl"/>
+  <xsl:import href="common-key-tables.xsl"/>
+  <xsl:import href="common-name-to-nodeenum.xsl"/>
+  <xsl:import href="common-node-access.xsl"/>
+
+  <xsl:output method="text" indent="no"/>
+  <xsl:strip-space elements="*"/>
+
+  <!-- starting template -->
+  <xsl:template match="/">
+    <xsl:call-template name="travfun-file">
+      <xsl:with-param name="file">
+        <xsl:value-of select="'traverse_helper.c'"/>
+      </xsl:with-param>
+      <xsl:with-param name="desc">
+        <xsl:value-of select="'Defines the helper function needed by the traversal system'" />
+      </xsl:with-param>
+      <xsl:with-param name="xslt">
+        <xsl:value-of select="'$Id$'"/>
+      </xsl:with-param>
+    </xsl:call-template>
+    <xsl:text>
+
+#include "traverse_helper.h"
+#include "dbug.h"
+#include "tree_basic.h"
+#include "traverse.h"
+
+#define TRAV( son, info)    if (son != NULL) { son = TRAVdo( son, info); }
+
+node *TRAVNone(node *arg_node, info *arg_info)
+{
+   DBUG_ENTER("TRAV");
+   DBUG_RETURN(arg_node);
+}
+
+node *TRAVError(node *arg_node, info *arg_info)
+{
+  DBUG_ENTER("TRAVError");
+
+  DBUG_ASSERT( (FALSE), "Illegal node type found.");
+
+  DBUG_RETURN( arg_node);
+}
+
+node *TRAVsons(node *arg_node, info *arg_info)
+{ 
+  DBUG_ENTER("TRAVsons");
+
+  switch (NODE_TYPE( arg_node)) {
+  </xsl:text>
+  <xsl:apply-templates select="/definition/syntaxtree" />
+  <xsl:text>
+    default:
+      DBUG_ASSERT( (FALSE), 
+         "Illegal nodetype found!" );
+      break;
+  }
+
+  DBUG_RETURN( arg_node);
+}
+
+    </xsl:text>
+  </xsl:template>
+
+  <xsl:template match="node" >
+    <xsl:value-of select="'case '" />
+    <xsl:call-template name="name-to-nodeenum">
+      <xsl:with-param name="name" select="@name" />
+    </xsl:call-template>
+    <xsl:value-of select="': '" />
+      <xsl:apply-templates select="sons/son" />
+    <xsl:value-of select="'break;'" />
+  </xsl:template>
+
+  <xsl:template match="sons/son" >
+    <xsl:value-of select="'TRAV( '" />
+    <xsl:call-template name="node-access">
+      <xsl:with-param name="node">
+        <xsl:value-of select="'arg_node'" />
+      </xsl:with-param>
+      <xsl:with-param name="nodetype">
+        <xsl:value-of select="../../@name" />
+      </xsl:with-param>
+      <xsl:with-param name="field">
+        <xsl:value-of select="@name" />
+      </xsl:with-param>
+    </xsl:call-template>
+    <xsl:value-of select="', arg_info);'" />
+  </xsl:template>
+
+    
+</xsl:stylesheet>
