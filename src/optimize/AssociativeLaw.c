@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.15  2002/11/13 16:36:18  mwe
+ * unused variable removed
+ *
  * Revision 1.14  2002/11/04 09:41:55  mwe
  * completed comments
  *
@@ -1464,7 +1467,7 @@ node *
 MakeAssignNodeFromExprsNode (node *newnode, node *arg_info)
 {
 
-    node *newvardec, *ssa_node;
+    node *newvardec;
     types *type;
     char *newname1, *newname2;
 
