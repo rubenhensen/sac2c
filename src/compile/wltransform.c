@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.83  2003/11/12 00:02:12  dkrHH
+ * genarray-WLs with empty parts and empty result are transformed
+ * correctly now (however, the generated code is not flattened yet :-((
+ *
  * Revision 3.82  2003/11/11 19:27:27  dkr
  * error message for missing default expression modified
  *
@@ -2919,7 +2923,9 @@ Parts2Strides (node *parts, int dims, shpseg *shape)
 /******************************************************************************
  *
  * Function:
- *   node *EmptyParts2StridesOrExpr( node **wl, int dims, shpseg *shape)
+ *   node *EmptyParts2StridesOrExpr( node **wl,
+ *                                   int dims, shpseg *shape,
+ *                                   types *lhs_type)
  *
  * Description:
  *   This function handles the case in which all parts are empty.
@@ -2927,10 +2933,13 @@ Parts2Strides (node *parts, int dims, shpseg *shape)
  ******************************************************************************/
 
 static node *
-EmptyParts2StridesOrExpr (node **wl, int dims, shpseg *shape)
+EmptyParts2StridesOrExpr (node **wl, int dims, shpseg *shape, types *lhs_type)
 {
     node *strides;
-    node *tmp;
+    node *cexpr, *def;
+    node *tmp_wl, *tmp;
+    shpseg *shp;
+    int sdim;
 
     DBUG_ENTER ("EmptyParts2StridesOrExpr");
 
@@ -2938,13 +2947,7 @@ EmptyParts2StridesOrExpr (node **wl, int dims, shpseg *shape)
 
     switch (NWITH2_TYPE ((*wl))) {
     case WO_genarray:
-        if (
-#if 0 /* with-loop is never replaced! */
-          GetShpsegLength( dims, shape) > 0
-#else
-          TRUE
-#endif
-        ) {
+        if (GetShpsegLength (dims, shape) > 0) {
             /*
              * result array of genarray-with-loop is non-empty
              *  -> generate a single stride over the whole domain
@@ -2953,51 +2956,105 @@ EmptyParts2StridesOrExpr (node **wl, int dims, shpseg *shape)
         } else {
             /*
              * result array of genarray-with-loop is empty
-             *  -> replace with-loop by empty array
+             *  -> replace '*wl' by empty array
              */
-            node *cexpr;
-            simpletype btype;
+            tmp_wl = *wl;
 
-            tmp = *wl;
-
-            cexpr = NWITH2_CEXPR ((*wl));
+            cexpr = NWITH2_CEXPR (tmp_wl);
             DBUG_ASSERT ((NODE_TYPE (cexpr) == N_id), "CEXPR must be a N_id node!");
-            btype = TYPES_BASETYPE (ID_TYPE (cexpr));
-            DBUG_ASSERT ((btype != T_user), "Array elements of genarray-with-loop have a "
-                                            "user-defined type!");
-            *wl = CreateZeroVector (0, btype);
+            sdim = GetShapeDim (lhs_type);
+            if (KNOWN_SHAPE (sdim)) {
+                /*
+                 * shape of result is statically known already:
+                 *   lhs = [];
+                 */
+                *wl = CreateZeroVector (0, TYPES_BASETYPE (ID_TYPE (cexpr)));
+            } else {
+#if 1 /* !!! the following code must be flattened !!! */
+                /*
+                 * shape of result must be computed:
+                 *   lhs = reshape( ..., []);
+                 */
+                sdim = GetShapeDim (ID_TYPE (cexpr));
+                if (KNOWN_SHAPE (sdim)) {
+                    /*
+                     * shape of 'cexpr' is statically known:
+                     *   lhs = reshape( sv ++ cexpr__shp, []);
+                     */
+                    *wl = Shpseg2Array (ID_SHPSEG (cexpr), DIM_NO_OFFSET (sdim));
+                } else {
+                    /*
+                     * The shape of 'cexpr' is unknown and 'cexpr' can not be computed
+                     * since we have no legal index vector (generator is empty!).
+                     * Hence, we have to use the default expression here:
+                     *   lhs = reshape( sv ++ shape( def), []);
+                     */
+                    def = NWITH2_DEFAULT (tmp_wl);
+                    DBUG_ASSERT (((def != NULL) && (NODE_TYPE (def) == N_id)),
+                                 "NWITH2_DEFAULT not found or no N_id!");
+                    sdim = GetShapeDim (ID_TYPE (def));
+                    if (KNOWN_SHAPE (sdim)) {
+                        *wl = Shpseg2Array (ID_SHPSEG (def), DIM_NO_OFFSET (sdim));
+                    } else {
+                        *wl = MakePrf (F_shape, MakeExprs (DupNode (def), NULL));
+                    }
+                }
+                if ((NODE_TYPE (NWITH2_SHAPE (tmp_wl)) == N_array)
+                    && (NODE_TYPE (*wl) == N_array)) {
+                    tmp = *wl;
+                    *wl = MakeFlatArray (
+                      AppendExprs (DupTree (ARRAY_AELEMS (NWITH2_SHAPE (tmp_wl))),
+                                   ARRAY_AELEMS (tmp)));
+                    shp = MakeShpseg (NULL);
+                    SHPSEG_SHAPE (shp, 0) = CountExprs (ARRAY_AELEMS ((*wl)));
+                    ARRAY_TYPE ((*wl)) = MakeTypes (T_int, 1, shp, NULL, NULL);
+                    ARRAY_AELEMS (tmp) = NULL;
+                    tmp = FreeTree (tmp);
+                } else {
+                    *wl = MakePrf (F_cat_VxV, MakeExprs (DupNode (NWITH2_SHAPE (tmp_wl)),
+                                                         MakeExprs (*wl, NULL)));
+                }
+                *wl
+                  = MakePrf (F_reshape,
+                             MakeExprs (*wl,
+                                        MakeExprs (CreateZeroVector (0,
+                                                                     TYPES_BASETYPE (
+                                                                       ID_TYPE (cexpr))),
+                                                   NULL)));
+#endif
+            }
             strides = NULL;
 
-            tmp = FreeNode (tmp);
+            tmp_wl = FreeNode (tmp_wl);
         }
         break;
 
     case WO_modarray:
-        tmp = *wl;
-
         /*
          * replace '*wl'
          */
+        tmp_wl = *wl;
+
         *wl = NWITH2_ARRAY ((*wl));
         strides = NULL;
 
-        NWITH2_ARRAY (tmp) = NULL;
-        tmp = FreeNode (tmp);
+        NWITH2_ARRAY (tmp_wl) = NULL;
+        tmp_wl = FreeNode (tmp_wl);
         break;
 
     case WO_foldfun:
         /* here is no break missing! */
     case WO_foldprf:
-        tmp = *wl;
-
         /*
          * replace '*wl'
          */
+        tmp_wl = *wl;
+
         *wl = NWITH2_NEUTRAL ((*wl));
         strides = NULL;
 
-        NWITH2_NEUTRAL (tmp) = NULL;
-        tmp = FreeNode (tmp);
+        NWITH2_NEUTRAL (tmp_wl) = NULL;
+        tmp_wl = FreeNode (tmp_wl);
         break;
 
     default:
@@ -7133,9 +7190,16 @@ CheckWith (node *arg_node, node *arg_info)
 
         if ((!KNOWN_SHAPE (wlids_sdim)) && (!KNOWN_SHAPE (cexpr_sdim))
             && (NWITH_DEFAULT (arg_node) == NULL)) {
-            ERROR (linenum, ("genarray with-loop with missing default expression found."
+#if 1
+            ABORT (linenum, ("genarray with-loop with missing default expression found."
                              " Unfortunately, a default expression is necessary here"
                              " to compute the shape of the result"));
+#else
+            /*
+             * for test purpose only (to smuggle in a dummy value for NWITH_DEFAULT)
+             */
+            NWITH_DEFAULT (arg_node) = DupIds_Id (NWITH_IDS (arg_node));
+#endif
         }
         break;
 
@@ -7242,7 +7306,8 @@ WLTRAwith (node *arg_node, node *arg_info)
 
             if (strides == NULL) {
                 /* all parts are empty  ->  set 'strides' or 'new_node' */
-                strides = EmptyParts2StridesOrExpr (&new_node, idx_size, wl_shp);
+                strides = EmptyParts2StridesOrExpr (&new_node, idx_size, wl_shp,
+                                                    INFO_WL_TYPES (arg_info));
             }
 
             if (strides != NULL) {
