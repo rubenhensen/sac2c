@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.21  2004/11/25 14:51:22  sbs
+ * compiles
+ *
  * Revision 1.20  2004/11/08 14:39:41  sah
  * some new module system extensions
  *
@@ -65,24 +68,25 @@
  *
  */
 
-#define NEW_INFO
-
 #include <stdio.h>
 #include <string.h>
+#include "create_wrappers.h"
 #include "dbug.h"
+#include "Error.h"
+#include "free.h"
 
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "DupTree.h"
+#include "LookUpTable.h"
 #include "internal_lib.h"
 #include "traverse.h"
 #include "globals.h"
 
 #include "user_types.h"
 #include "new_types.h"
-
-#include "create_wrappers.h"
+#include "type_utils.h"
 
 /*******************************************************************************
  *
@@ -92,7 +96,7 @@
  * INFO structure
  */
 struct INFO {
-    LUT_t wrapperfuns;
+    lut_t *wrapperfuns;
     int exprets;
     node *module;
 };
@@ -115,7 +119,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = Malloc (sizeof (info));
+    result = ILIBmalloc (sizeof (info));
 
     INFO_CRTWRP_WRAPPERFUNS (result) = NULL;
     INFO_CRTWRP_EXPRETS (result) = 0;
@@ -129,7 +133,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = Free (info);
+    info = ILIBfree (info);
 
     DBUG_RETURN (info);
 }
@@ -137,48 +141,45 @@ FreeInfo (info *info)
 /******************************************************************************
  *
  * function:
- *   node *CreateWrappers( node *arg_node)
+ *   node *CRWRPdoCreateWrappers( node *arg_node)
  *
  * description:
  *   Creates wrapper functions for all functions found. These wrapper functions
- *     - obtain generic argument / result types (old types): _unknown_[*]
- *     - obtain overloaded function types (new types) that include all
+ *     - obtain generic argument (ARG_TYPE)/ result types(RET_TYPE) : _unknown_[*]
+ *     - obtain overloaded function types (FUNDEF_WRAPPERTYPE) that include all
  *       function definitions found
- *     - get a STATUS ST_wrapperfun
+ *     - have FUNDEF_ISWRAPPERFUN set
  *     - have a NULL BODY
  *     - are inserted into the N_fundef chain
  *   Furthermore,
- *     - all fundefs obtain a non-overloaded function type (new type)
- *     - all fundefs obtain a copy of their return type (product type) attached
- *       to the fundef node directly.
- *       (Redundant but convenient in new_typecheck.c!)
  *     - all function applications obtain a backref to the wrapper function
  *       responsible for the function dspatch
+ *
+ *  NB: due to use's / import's there may be wrapper funs already! However, these
+ *      may have to be combined (symmetric to split-wrapers!).
  *
  ******************************************************************************/
 
 node *
-CreateWrappers (node *arg_node)
+CRWRPdoCreateWrappers (node *arg_node)
 {
-    funtab *tmp_tab;
     info *info_node;
 
-    DBUG_ENTER ("CreateWrappers");
+    DBUG_ENTER ("CRWRPdoCreateWrappers");
 
-    tmp_tab = act_tab;
-    act_tab = crtwrp_tab;
+    TRAVpush (TR_crtwrp);
 
     info_node = MakeInfo ();
-    arg_node = Trav (arg_node, info_node);
+    arg_node = TRAVdo (arg_node, info_node);
     info_node = FreeInfo (info_node);
 
-    act_tab = tmp_tab;
+    TRAVpop ();
 
     /* as we have deleted some used wrappers, we now have
      * to remove the zombies
      */
 
-    arg_node = RemoveAllZombies (arg_node);
+    arg_node = FREEremoveAllZombies (arg_node);
 
     DBUG_RETURN (arg_node);
 }
@@ -186,15 +187,16 @@ CreateWrappers (node *arg_node)
 /******************************************************************************
  *
  * function:
- *   node *FindWrapper( char *name, char *mod, int num_args,
- *                      int num_rets, LUT_t lut)
+ *   node *FindWrapper( char *mod, char *name, int num_args,
+ *                      int num_rets, lut_t *lut)
  *
  * description:
  *   Searches for a wrapper function in the given look-up-table (lut) that
- *   matches the given name (name), the given number of arguments (num_args),
- *   and the given number of return values (num_rets). This matching mechanism
- *   does allow for dots to be used "on both sides", i.e., for non-fixed numbers
- *   of arguments and non-fixed numbers of return values.
+ *   matches the given module name (mod), name (name), the given number of
+ *   arguments (num_args), and the given number of return values (num_rets).
+ *   This matching mechanism does allow for dots to be used "on both sides",
+ *   i.e., for non-fixed numbers of arguments and non-fixed numbers of
+ *   return values.
  *   Once a matching wrapper function is found, its N_fundef is returned.
  *   Otherwise, FindWrapper returns NULL.
  *
@@ -208,10 +210,10 @@ CreateWrappers (node *arg_node)
  ******************************************************************************/
 
 static node *
-FindWrapper (char *name, char *mod, int num_args, int num_rets, LUT_t lut)
+FindWrapper (char *mod, char *name, int num_args, int num_rets, lut_t *lut)
 {
-    int last_parm_is_dots;
-    int last_res_is_dots;
+    bool last_parm_is_dots;
+    bool last_res_is_dots;
     int num_parms, num_res;
     node **wrapper_p;
     node *wrapper = NULL;
@@ -222,28 +224,23 @@ FindWrapper (char *name, char *mod, int num_args, int num_rets, LUT_t lut)
     DBUG_PRINT ("CRTWRP", ("Searching for %s %d args %d rets", name, num_args, num_rets));
 
     /* initial search for wrapper in LUT */
-    wrapper_p = (node **)SearchInLUT_S (lut, name);
+    wrapper_p = (node **)LUTsearchInLutS (lut, name);
     while ((wrapper_p != NULL) && (!found)) {
         wrapper = *wrapper_p;
-        last_parm_is_dots = HasDotArgs (FUNDEF_ARGS (wrapper));
-        last_res_is_dots = HasDotTypes (FUNDEF_TYPES (wrapper));
-        num_parms = (last_parm_is_dots ? CountArgs (FUNDEF_ARGS (wrapper)) - 1
-                                       : CountArgs (FUNDEF_ARGS (wrapper)));
-        num_res = (last_res_is_dots ? CountTypes (FUNDEF_TYPES (wrapper)) - 1
-                                    : CountTypes (FUNDEF_TYPES (wrapper)));
+        last_parm_is_dots = FUNDEF_HASDOTARGS (wrapper);
+        last_res_is_dots = FUNDEF_HASDOTRETS (wrapper);
+        num_parms = TCcountArgs (FUNDEF_ARGS (wrapper));
+        num_res = TCcountRets (FUNDEF_RETS (wrapper));
         DBUG_PRINT ("CRTWRP", (" ... checking %s %s%d args %s%d rets",
                                FUNDEF_NAME (wrapper), (last_parm_is_dots ? ">=" : ""),
                                num_parms, (last_res_is_dots ? ">=" : ""), num_res));
         if (((num_res == num_rets) || (last_res_is_dots && (num_res <= num_rets)))
             && ((num_parms == num_args) || (last_parm_is_dots && (num_parms <= num_args)))
-#ifdef NEW_AST
-            && (!strcmp (FUNDEF_MOD (wrapper), mod))
-#endif
-        ) {
+            && ILIBstringCompare (FUNDEF_MOD (wrapper), mod)) {
             found = TRUE;
         } else {
             /* search for next wrapper in LUT */
-            wrapper_p = (node **)SearchInLUT_NextS ();
+            wrapper_p = (node **)LUTsearchInLutNextS ();
         }
     }
 
@@ -262,28 +259,24 @@ FindWrapper (char *name, char *mod, int num_args, int num_rets, LUT_t lut)
  * description:
  *   using a given fundef (fundef) as a template, a wrapper function is
  *   created. It consists of a duplicate of the function header given
- *   whose types (old types!!) have been modified to "_unknown_[*]"
- *   unless they are "void" or "...".
- *   The STATUS of the function returned is set to ST_wrapperfun and its
- *   body is NULL!
+ *   whose types have been modified to "_unknown_[*]"
+ *   FUNDEF_ISWRAPPERFUN is set TRUE and its body is NULL!
  *
  ******************************************************************************/
 
 static node *
 CreateWrapperFor (node *fundef, info *info)
 {
-    node *body, *wrapper, *args;
-    types *rettypes;
+    node *body, *wrapper;
 
     DBUG_ENTER ("CreateWrapperFor");
     DBUG_PRINT ("CRTWRP",
                 ("Creating wrapper for %s:%s %s%d args %d rets", FUNDEF_MOD (fundef),
-                 FUNDEF_NAME (fundef), (HasDotArgs (FUNDEF_ARGS (fundef)) ? ">=" : ""),
-                 (HasDotArgs (FUNDEF_ARGS (fundef)) ? CountArgs (FUNDEF_ARGS (fundef)) - 1
-                                                    : CountArgs (FUNDEF_ARGS (fundef))),
-                 CountTypes (FUNDEF_TYPES (fundef))));
+                 FUNDEF_NAME (fundef), (FUNDEF_HASDOTARGS (fundef) ? ">=" : ""),
+                 (FUNDEF_HASDOTARGS (fundef) ? TCcountArgs (FUNDEF_ARGS (fundef)) - 1
+                                             : TCcountArgs (FUNDEF_ARGS (fundef))),
+                 TCcountRets (FUNDEF_RETS (fundef))));
 
-#ifdef NEW_AST
     /*
      * if we have a wrapper function of a used function
      * we can just reuse it here as the new combined
@@ -291,68 +284,21 @@ CreateWrapperFor (node *fundef, info *info)
      * instances. The old wrapper itself is then removed
      * by the function calling this function
      */
-    if ((FUNDEF_STATUS (fundef) == ST_wrapperfun)
-        && (strcmp (FUNDEF_MOD (fundef), MODUL_NAME (INFO_CRTWRP_MODULE (info))))) {
-        wrapper = DupNode (fundef);
-
-        /*
-         * For the time beeing, DupTree does not copy ntypes,
-         * so we do it by hand
-         */
-        DBUG_ASSERT ((FUNDEF_TYPE (wrapper) == NULL),
-                     "DupTree seems to copy ntypes now, please fix CreateWrappers.");
-
-        FUNDEF_TYPE (wrapper) = TYCopyType (FUNDEF_TYPE (fundef));
-    } else
-#endif
-    {
+    if (FUNDEF_ISWRAPPERFUN (fundef)) {
+        wrapper = fundef;
+    } else {
         body = FUNDEF_BODY (fundef);
         FUNDEF_BODY (fundef) = NULL;
-        wrapper = DupNode (fundef);
+        wrapper = DUPdoDupNode (fundef);
         FUNDEF_BODY (fundef) = body;
+        FUNDEF_ISWRAPPERFUN (wrapper) = TRUE;
     }
 
     /*
-     * marking the wrapper function:
+     * setting the wrapper function's arg and return types to _unknown_[*]
      */
-    FUNDEF_STATUS (wrapper) = ST_wrapperfun;
-#ifndef NEW_AST
-    /*
-     * wrappers of external function are not external
-     *   -> remove external module name!!!
-     */
-    if (!strcmp (FUNDEF_MOD (wrapper), EXTERN_MOD_NAME)) {
-        FUNDEF_MOD (wrapper) = MAIN_MOD_NAME;
-    }
-#endif
-    /*
-     * setting the wrapper function's return types to _unknown_[*]
-     * unless the function turns out to be void, or their basetype
-     * turns out to be T_dots:
-     */
-    if (TYPES_BASETYPE (FUNDEF_TYPES (wrapper)) != T_void) {
-        rettypes = FUNDEF_TYPES (wrapper);
-        while (rettypes) {
-            if (TYPES_BASETYPE (rettypes) != T_dots) {
-                TYPES_DIM (rettypes) = ARRAY_OR_SCALAR;
-                TYPES_BASETYPE (rettypes) = T_unknown;
-            }
-            rettypes = TYPES_NEXT (rettypes);
-        }
-    }
-
-    /*
-     * setting the wrapper function's parameter types to _unknown_[*]
-     * unless their basetype turns out to be T_dots :
-     */
-    args = FUNDEF_ARGS (wrapper);
-    while (args) {
-        if (TYPES_BASETYPE (ARG_TYPE (args)) != T_dots) {
-            TYPES_DIM (ARG_TYPE (args)) = ARRAY_OR_SCALAR;
-            TYPES_BASETYPE (ARG_TYPE (args)) = T_unknown;
-        }
-        args = ARG_NEXT (args);
-    }
+    FUNDEF_ARGS (wrapper) = TUargtypes2unknownAUD (FUNDEF_ARGS (wrapper));
+    FUNDEF_RETS (wrapper) = TUrettypes2unknownAUD (FUNDEF_RETS (wrapper));
 
     /*
      * Now, we implement a dirty trick for 0 ary functions.
@@ -362,17 +308,11 @@ CreateWrapperFor (node *fundef, info *info)
      * of course wo do not do so if we are copying an imported
      * wrapper! In that case, we just copy the FUNDEF_IMPL of the
      * imported wrapper.
+     * However, for used or imported wrappers this is redundant as they
+     * do come along with appropriately set FUNDEF_IMPL.
      */
-    if (FUNDEF_ARGS (wrapper) == NULL) {
-#ifdef NEW_AST
-        if (FUNDEF_STATUS (fundef) == ST_wrapperfun) {
-            FUNDEF_IMPL (wrapper) = FUNDEF_IMPL (fundef);
-        } else {
-            FUNDEF_IMPL (wrapper) = fundef;
-        }
-#else
+    if ((FUNDEF_ARGS (wrapper) == NULL) && !FUNDEF_ISWRAPPERFUN (fundef)) {
         FUNDEF_IMPL (wrapper) = fundef;
-#endif
     }
 
     DBUG_RETURN (wrapper);
@@ -397,40 +337,15 @@ FuntypeFromArgs (ntype *res, node *args, node *fundef)
 {
     DBUG_ENTER ("FuntypeFromArgs");
 
-    if ((args != NULL) && (TYPES_BASETYPE (ARG_TYPE (args)) != T_dots)) {
+    if (args != NULL) {
         res = FuntypeFromArgs (res, ARG_NEXT (args), fundef);
-        res = TYMakeFunType (TYOldType2Type (ARG_TYPE (args)), res, fundef);
+        res = TYmakeFunType (ARG_NTYPE (args), res, fundef);
     }
 
     DBUG_RETURN (res);
 }
 
-ntype *
-CreateFunRettype (types *old_ret)
-{
-    int num_rets;
-    ntype *res, *maxtype;
-    int i;
-
-    DBUG_ENTER ("CreateFunRettype");
-
-    num_rets = (HasDotTypes (old_ret) ? CountTypes (old_ret) - 1 : CountTypes (old_ret));
-
-    res = TYMakeEmptyProductType (num_rets);
-
-    for (i = 0; i < num_rets; i++) {
-        maxtype = TYOldType2ScalarType (old_ret);
-        if (maxtype != NULL) {
-            maxtype = TYMakeAUD (maxtype);
-        }
-        res = TYSetProductMember (res, i, TYMakeAlphaType (maxtype));
-        old_ret = TYPES_NEXT (old_ret);
-    }
-
-    DBUG_RETURN (res);
-}
-
-ntype *
+static ntype *
 CreateFuntype (node *fundef)
 {
     ntype *res;
@@ -439,11 +354,9 @@ CreateFuntype (node *fundef)
 
     DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
                  "CreateFuntype applied to non-fundef node!");
-    DBUG_ASSERT ((FUNDEF_RET_TYPE (fundef) != NULL),
-                 "CreateFuntype called without FUNDEF_RET_TYPE!");
 
-    res = FuntypeFromArgs (TYCopyType (FUNDEF_RET_TYPE (fundef)), FUNDEF_ARGS (fundef),
-                           fundef);
+    res = FuntypeFromArgs (TUmakeProductTypeFromRets (FUNDEF_RETS (fundef)),
+                           FUNDEF_ARGS (fundef), fundef);
 
     DBUG_RETURN (res);
 }
@@ -457,10 +370,10 @@ CreateFuntype (node *fundef)
  *    Assumes act_args to be an N_exprs chain of actual arguments and args to
  *    be an N_args chain of formal parameters of the same or less (...) length.
  *    For each param that is tagged as ST_reference, the according N_id expr
- *      is flagged as IS_REFERENCE TRUE and IS_READ_ONLY FALSE;
- *    a ST_readonly_reference param is flagged IS_REFERENCE TRUE and
- *      IS_READ_ONLY TRUE;
- *    all others are flagged IS_REFERENCE FALSE !
+ *      is flagged as ISREFERENCE TRUE and ISREADONLY FALSE;
+ *    a ST_readonly_reference param is flagged ISREFERENCE TRUE and
+ *      ISREADONLY TRUE;
+ *    all others are flagged ISREFERENCE FALSE !
  *
  ******************************************************************************/
 
@@ -472,31 +385,18 @@ TagReferenceArgs (node *act_args, node *args)
     DBUG_ENTER ("TagReferenceArgs");
 
     exprs = act_args;
-    while ((args != NULL) && (TYPES_BASETYPE (ARG_TYPE (args)) != T_dots)) {
+    while (args != NULL) {
         DBUG_ASSERT ((exprs != NULL), "TagReferenceArgs called with act_args and args of "
                                       "different length");
         if (NODE_TYPE (EXPRS_EXPR (exprs)) == N_id) {
-            if (ARG_ATTRIB (args) == ST_reference) {
-                SET_FLAG (ID, EXPRS_EXPR (exprs), IS_REFERENCE, TRUE);
-                SET_FLAG (ID, EXPRS_EXPR (exprs), IS_READ_ONLY, FALSE);
-            } else if (ARG_ATTRIB (args) == ST_readonly_reference) {
-                SET_FLAG (ID, EXPRS_EXPR (exprs), IS_REFERENCE, TRUE);
-                SET_FLAG (ID, EXPRS_EXPR (exprs), IS_READ_ONLY, TRUE);
-            } else {
-                SET_FLAG (ID, EXPRS_EXPR (exprs), IS_REFERENCE, FALSE);
+            if (ARG_ISREFERENCE (args)) {
+                ID_ISREFERENCE (EXPRS_EXPR (exprs)) = TRUE;
+                if (ARG_ISREADONLY (args)) {
+                    ID_ISREADONLY (EXPRS_EXPR (exprs)) = TRUE;
+                }
             }
         }
         args = ARG_NEXT (args);
-        exprs = EXPRS_NEXT (exprs);
-    }
-    /*
-     * Finally, all surplus arguments ( in case of '...')
-     * have to be tagged IS_REFERENCE = FALSE
-     */
-    while (exprs != NULL) {
-        if (NODE_TYPE (EXPRS_EXPR (exprs)) == N_id) {
-            SET_FLAG (ID, EXPRS_EXPR (exprs), IS_REFERENCE, FALSE);
-        }
         exprs = EXPRS_NEXT (exprs);
     }
 
@@ -528,9 +428,10 @@ CRTWRPmodul (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CRTWRPmodul");
 
-    DBUG_ASSERT ((MODUL_WRAPPERFUNS (arg_node) == NULL),
-                 "MODUL_WRAPPERFUNS is not NULL!");
-    INFO_CRTWRP_WRAPPERFUNS (arg_info) = MODUL_WRAPPERFUNS (arg_node) = GenerateLUT ();
+    DBUG_ASSERT ((MODULE_WRAPPERFUNS (arg_node) == NULL),
+                 "MODULE_WRAPPERFUNS is not NULL!");
+    INFO_CRTWRP_WRAPPERFUNS (arg_info) = MODULE_WRAPPERFUNS (arg_node)
+      = LUTgenerateLut ();
     INFO_CRTWRP_MODULE (arg_info) = arg_node;
 
     /**
@@ -538,22 +439,22 @@ CRTWRPmodul (node *arg_node, info *arg_info)
      * DO NOT have bodies, it does not matter that not all functions have
      * been seen prior to our way back up!
      */
-    if (MODUL_FUNDECS (arg_node) != NULL) {
-        MODUL_FUNDECS (arg_node) = Trav (MODUL_FUNDECS (arg_node), arg_info);
+    if (MODULE_FUNDECS (arg_node) != NULL) {
+        MODULE_FUNDECS (arg_node) = TRAVdo (MODULE_FUNDECS (arg_node), arg_info);
     }
     /**
      * Now, we traverse the local fundefs. Once we reach the last fundef,
      * we know for sure, that we have seen ALL functions (including the externals)!
      */
-    if (MODUL_FUNS (arg_node) != NULL) {
-        MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
+    if (MODULE_FUNS (arg_node) != NULL) {
+        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
     }
     /**
      * Finally, we insert the wrapper functions into the fundef chain:
      */
-    MODUL_FUNS (arg_node)
-      = FoldLUT_S (INFO_CRTWRP_WRAPPERFUNS (arg_info), MODUL_FUNS (arg_node),
-                   (void *(*)(void *, void *))ConsFundefs);
+    MODULE_FUNS (arg_node)
+      = LUTfoldLutS (INFO_CRTWRP_WRAPPERFUNS (arg_info), MODULE_FUNS (arg_node),
+                     (void *(*)(void *, void *))ConsFundefs);
 
     DBUG_RETURN (arg_node);
 }
@@ -574,101 +475,84 @@ CRTWRPfundef (node *arg_node, info *arg_info)
     node *wrapper;
     int num_args, num_rets;
     bool dot_args, dot_rets;
-    int num_wr_args, num_wr_rets;
 
     DBUG_ENTER ("CRTWRPfundef");
 
-    dot_args = HasDotArgs (FUNDEF_ARGS (arg_node));
-    dot_rets = HasDotTypes (FUNDEF_TYPES (arg_node));
-    num_args = (dot_args ? CountArgs (FUNDEF_ARGS (arg_node)) - 1
-                         : CountArgs (FUNDEF_ARGS (arg_node)));
-    num_rets = (dot_rets ? CountTypes (FUNDEF_TYPES (arg_node)) - 1
-                         : CountTypes (FUNDEF_TYPES (arg_node)));
+    dot_args = FUNDEF_HASDOTARGS (arg_node);
+    dot_rets = FUNDEF_HASDOTRETS (arg_node);
+    num_args = TCcountArgs (FUNDEF_ARGS (arg_node));
+    num_rets = TCcountRets (FUNDEF_RETS (arg_node));
+
     DBUG_PRINT ("CRTWRP", ("----- Processing function %s:%s: -----",
                            FUNDEF_MOD (arg_node), FUNDEF_NAME (arg_node)));
 
-#ifdef NEW_AST
     /*
-     * the function has a different namespace than the current one
-     * it has been used. In that case, there already is a wrapper
-     * or the function itself is a wrapper
+     * Check whether the function has a different namespace than the current one.
      */
-    if (strcmp (FUNDEF_MOD (arg_node), MODUL_NAME (INFO_CRTWRP_MODULE (arg_info)))) {
-        /*
-         * used functions are just ignored, only wrappers are processed.
+    if (FUNDEF_ISLOCAL (arg_node)) {
+        /**
+         * The function has been imported or used.
+         * Used functions are just ignored, used wrappers are processed.
          */
-
-        if (FUNDEF_STATUS (arg_node) == ST_wrapperfun) {
+        if (FUNDEF_ISWRAPPERFUN (arg_node)) {
             wrapper
-              = FindWrapper (FUNDEF_NAME (arg_node), FUNDEF_MOD (arg_node), num_args,
+              = FindWrapper (FUNDEF_MOD (arg_node), FUNDEF_NAME (arg_node), num_args,
                              num_rets, INFO_CRTWRP_WRAPPERFUNS (arg_info));
             if (wrapper == NULL) {
-                /* create a new wrapper */
-
+                /**
+                 * There is no wrapper that would match this one yet!
+                 * Therefore, CreateWrapperFor will reuse this one and generalize
+                 * its arg / return types.
+                 */
                 wrapper = CreateWrapperFor (arg_node, arg_info);
                 INFO_CRTWRP_WRAPPERFUNS (arg_info)
-                  = InsertIntoLUT_S (INFO_CRTWRP_WRAPPERFUNS (arg_info),
-                                     FUNDEF_NAME (arg_node), wrapper);
+                  = LUTinsertIntoLutS (INFO_CRTWRP_WRAPPERFUNS (arg_info),
+                                       FUNDEF_NAME (arg_node), wrapper);
             } else {
-                /* overload the existing wrapper with the fundefs funtype */
+                /* overload the existing wrapper with existing wrappers */
 
-                FUNDEF_TYPE (wrapper)
-                  = TYMakeOverloadedFunType (TYCopyType (FUNDEF_TYPE (arg_node)),
-                                             FUNDEF_TYPE (wrapper));
+                FUNDEF_WRAPPERTYPE (wrapper)
+                  = TYmakeOverloadedFunType (TYcopyType (FUNDEF_WRAPPERTYPE (arg_node)),
+                                             FUNDEF_WRAPPERTYPE (wrapper));
+                arg_node = FREEdoFreeNode (arg_node);
             }
         }
-    } else
-#endif
-    {
-        wrapper = FindWrapper (FUNDEF_NAME (arg_node), FUNDEF_MOD (arg_node), num_args,
+    } else {
+        /**
+         * ISLOCAL fundef !
+         */
+        wrapper = FindWrapper (FUNDEF_MOD (arg_node), FUNDEF_NAME (arg_node), num_args,
                                num_rets, INFO_CRTWRP_WRAPPERFUNS (arg_info));
         if (wrapper == NULL) {
             wrapper = CreateWrapperFor (arg_node, arg_info);
             INFO_CRTWRP_WRAPPERFUNS (arg_info)
-              = InsertIntoLUT_S (INFO_CRTWRP_WRAPPERFUNS (arg_info),
-                                 FUNDEF_NAME (arg_node), wrapper);
+              = LUTinsertIntoLutS (INFO_CRTWRP_WRAPPERFUNS (arg_info),
+                                   FUNDEF_NAME (arg_node), wrapper);
         } else {
-            if (dot_args || HasDotArgs (FUNDEF_ARGS (wrapper)) || dot_rets
-                || HasDotTypes (FUNDEF_TYPES (wrapper))) {
-                num_wr_args = (HasDotArgs (FUNDEF_ARGS (wrapper))
-                                 ? CountArgs (FUNDEF_ARGS (wrapper)) - 1
-                                 : CountArgs (FUNDEF_ARGS (wrapper)));
-                num_wr_rets = (HasDotTypes (FUNDEF_TYPES (wrapper))
-                                 ? CountTypes (FUNDEF_TYPES (wrapper)) - 1
-                                 : CountTypes (FUNDEF_TYPES (wrapper)));
-                if ((num_args != num_wr_args) || (num_rets != num_wr_rets)) {
-                    ABORT (linenum,
-                           ("trying to overload function \"%s\" that expects %s %d "
-                            "argument(s) "
-                            "and %s %d return value(s) with a version that expects %s %d "
-                            "argument(s) "
-                            "and %s %d return value(s)",
-                            FUNDEF_NAME (arg_node),
-                            (HasDotArgs (FUNDEF_ARGS (wrapper)) ? ">=" : ""), num_wr_args,
-                            (HasDotTypes (FUNDEF_TYPES (wrapper)) ? ">=" : ""),
-                            num_wr_rets, (dot_args ? ">=" : ""), num_args,
-                            (dot_rets ? ">=" : ""), num_rets));
-                }
+            if ((dot_args != FUNDEF_HASDOTARGS (wrapper))
+                || (dot_rets != FUNDEF_HASDOTRETS (wrapper))) {
+                ABORT (
+                  global.linenum,
+                  ("trying to overload function \"%s:%s\" that expects %s %d argument(s) "
+                   "and %s %d return value(s) with a version that expects %s %d "
+                   "argument(s) "
+                   "and %s %d return value(s)",
+                   FUNDEF_MOD (arg_node), FUNDEF_NAME (arg_node),
+                   (FUNDEF_HASDOTARGS (wrapper) ? ">=" : ""), TCcountArgs (wrapper),
+                   (FUNDEF_HASDOTRETS (wrapper) ? ">=" : ""), TCcountRets (wrapper),
+                   (dot_args ? ">=" : ""), num_args, (dot_rets ? ">=" : ""), num_rets));
             }
         }
 
-        FUNDEF_RET_TYPE (arg_node) = CreateFunRettype (FUNDEF_TYPES (arg_node));
-        FUNDEF_TYPE (wrapper)
-          = TYMakeOverloadedFunType (CreateFuntype (arg_node), FUNDEF_TYPE (wrapper));
+        FUNDEF_RETS (arg_node) = TUrettypes2alphaAUD (FUNDEF_RETS (arg_node));
+        FUNDEF_WRAPPERTYPE (wrapper)
+          = TYmakeOverloadedFunType (CreateFuntype (arg_node),
+                                     FUNDEF_WRAPPERTYPE (wrapper));
     }
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
     }
-
-#ifdef NEW_AST
-    /*
-     * If the current function was a used wrapper, we free it now
-     */
-    if (FUNDEF_STATUS (arg_node) == ST_wrapperfun) {
-        arg_node = FreeNode (arg_node);
-    }
-#endif
 
     /*
      * Now, we do have wrappers for all fundefs!
@@ -687,7 +571,7 @@ CRTWRPfundef (node *arg_node, info *arg_info)
     if (FUNDEF_BODY (arg_node) != NULL) {
         DBUG_PRINT ("CRTWRP", ("----- Processing body of %s:%s: -----",
                                FUNDEF_MOD (arg_node), FUNDEF_NAME (arg_node)));
-        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -711,10 +595,10 @@ CRTWRPlet (node *arg_node, info *arg_info)
     DBUG_ENTER ("CRTWRPlet");
 
     old_exprets = INFO_CRTWRP_EXPRETS (arg_info);
-    INFO_CRTWRP_EXPRETS (arg_info) = CountIds (LET_IDS (arg_node));
+    INFO_CRTWRP_EXPRETS (arg_info) = TCcountIds (LET_IDS (arg_node));
 
     if (LET_EXPR (arg_node) != NULL) {
-        LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
+        LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
     }
     INFO_CRTWRP_EXPRETS (arg_info) = old_exprets;
 
@@ -739,7 +623,7 @@ CRTWRPap (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("CRTWRPap");
 
-    num_args = CountExprs (AP_ARGS (arg_node));
+    num_args = TCcountExprs (AP_ARGS (arg_node));
     wrapper
       = FindWrapper (AP_NAME (arg_node), AP_MOD (arg_node), num_args,
                      INFO_CRTWRP_EXPRETS (arg_info), INFO_CRTWRP_WRAPPERFUNS (arg_info));
@@ -775,67 +659,72 @@ CRTWRPid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CRTWRPid");
 
-    SET_FLAG (ID, arg_node, IS_REFERENCE, FALSE);
+    ID_ISREFERENCE (arg_node) = FALSE;
 
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *    node *CRTWRPNwithop( node *arg_node, info *arg_info)
+ * @fn node  *CRTWRPgenarray( node *arg_node, info *arg_info)
  *
- * description:
- *
+ *   @brief
+ *   @param
+ *   @return
  *
  ******************************************************************************/
 
 node *
-CRTWRPNwithop (node *arg_node, info *arg_info)
+CRTWRPgenarray (node *arg_node, info *arg_info)
+{
+
+    DBUG_ENTER ("CRTWRPgenarray");
+
+    GENARRAY_SHAPE (arg_node) = TRAVdo (GENARRAY_SHAPE (arg_node), arg_info);
+    if (GENARRAY_DEFAULT (arg_node) != NULL) {
+        GENARRAY_DEFAULT (arg_node) = TRAVdo (GENARRAY_DEFAULT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node  *CRTWRPfold( node *arg_node, info *arg_info)
+ *
+ *   @brief
+ *   @param
+ *   @return
+ *
+ ******************************************************************************/
+
+node *
+CRTWRPfold (node *arg_node, info *arg_info)
 {
     int num_args;
     node *wrapper;
 
-    DBUG_ENTER ("CRTWRPNwithop");
+    DBUG_ENTER ("CRTWRPfold");
 
-    switch (NWITHOP_TYPE (arg_node)) {
-    case WO_genarray:
-        NWITHOP_SHAPE (arg_node) = Trav (NWITHOP_SHAPE (arg_node), arg_info);
-        if (NWITHOP_DEFAULT (arg_node) != NULL) {
-            NWITHOP_DEFAULT (arg_node) = Trav (NWITHOP_DEFAULT (arg_node), arg_info);
-        }
-        break;
-
-    case WO_modarray:
-        NWITHOP_ARRAY (arg_node) = Trav (NWITHOP_ARRAY (arg_node), arg_info);
-        break;
-
-    case WO_foldfun:
-        NWITHOP_NEUTRAL (arg_node) = Trav (NWITHOP_NEUTRAL (arg_node), arg_info);
+    if (FOLD_FUN (arg_node) != NULL) {
+        FOLD_NEUTRAL (arg_node) = TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
 
         num_args = 2;
-        wrapper = FindWrapper (NWITHOP_FUN (arg_node), NWITHOP_MOD (arg_node), 2, 1,
+        wrapper = FindWrapper (FOLD_FUN (arg_node), FOLD_MOD (arg_node), 2, 1,
                                INFO_CRTWRP_WRAPPERFUNS (arg_info));
 
         if (wrapper == NULL) {
             ABORT (NODE_LINE (arg_node),
                    ("No definition found for a function \"%s\" that expects"
                     " 2 arguments and yields 1 return value",
-                    NWITHOP_FUN (arg_node)));
+                    FOLD_FUN (arg_node)));
         } else {
-            NWITHOP_FUNDEF (arg_node) = wrapper;
+            FOLD_FUNDEF (arg_node) = wrapper;
         }
-        break;
-
-    case WO_foldprf:
-        if (NWITHOP_NEUTRAL (arg_node) != NULL) {
-            NWITHOP_NEUTRAL (arg_node) = Trav (NWITHOP_NEUTRAL (arg_node), arg_info);
+    } else {
+        if (FOLD_NEUTRAL (arg_node) != NULL) {
+            FOLD_NEUTRAL (arg_node) = TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
         }
-        break;
-
-    default:
-        DBUG_ASSERT (FALSE, "corrupted WL tag found");
-        break;
     }
 
     DBUG_RETURN (arg_node);
