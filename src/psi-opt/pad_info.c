@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.14  2000/10/31 18:13:27  cg
+ * Function PIpaddingOverhead() made more robust against
+ * numerical problems.
+ *
  * Revision 1.13  2000/10/27 13:24:56  cg
  * Added functions PInoteResults() and PIpaddingOverhead().
  * Improved layout of diagnostic output.
@@ -1568,11 +1572,11 @@ PIpaddingOverhead (int dim, shpseg *orig_shape, shpseg *padding)
         padding_size *= (SHPSEG_SHAPE (orig_shape, i) + SHPSEG_SHAPE (padding, i));
     }
 
-    if (padding_size < orig_size) {
+    if ((padding_size < orig_size) || (orig_size == 0)) {
         /*
          * Probably, a numerical overflow has occurred.
          */
-        overhead = 200;
+        overhead = padding_overhead_limit + 1;
     } else {
         overhead = (int)((padding_size - orig_size) * 100) / orig_size;
         if (overhead * orig_size < (padding_size - orig_size) * 100) {
