@@ -4,6 +4,9 @@
 /*
 *
 * $Log$
+* Revision 1.14  2004/11/19 10:14:30  sah
+* updated objdefs
+*
 * Revision 1.13  2004/11/18 10:28:20  sah
 * corrected handling of simple types
 *
@@ -493,7 +496,7 @@ typedef: TYPEDEF ntype id SEMIC
 
 objdefs: objdef objdefs
          { $$ = $1;
-           $$->node[0] = $2;
+           OBJDEF_NEXT( $$) = $1;
          }
        | objdef
          { $$ = $1;
@@ -501,7 +504,7 @@ objdefs: objdef objdefs
        ;
 
 objdef: OBJDEF type id LET expr SEMIC 
-        { $$ = MakeObjdef( $3, mod_name, $2, $5, NULL);
+        { $$ = MakeObjdef( $3, NULL, $2, $5, NULL);
 
           DBUG_PRINT( "PARSE",
                       ("%s:"F_PTR","F_PTR", Id: %s",
@@ -1764,7 +1767,7 @@ module: MODULE { file_kind = F_modimp; } id { mod_name = $3; } SEMIC defs
         ;
 
 class: CLASS { file_kind = F_classimp; } id { mod_name = $3; } SEMIC
-       CLASSTYPE type SEMIC defs
+       CLASSTYPE ntype SEMIC defs
        { $$ = $9;
          MODUL_NAME( $$) = mod_name;
          MODUL_FILETYPE( $$) = file_kind;
