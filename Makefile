@@ -1,6 +1,11 @@
 #
 #
 # $Log$
+# Revision 3.77  2004/01/28 18:02:41  skt
+# some adaptions, because of moving from CheckAvis.[hc]
+# SSATransform.[hc] and UndoSSATransform.[hs] from
+# src/tree to src/flatten
+#
 # Revision 3.76  2003/11/07 15:17:35  sbs
 # CLOCK_SKEW_ELIMINATION run on config.h as well now...
 #
@@ -151,14 +156,17 @@ TREE= src/tree/traverse.o src/tree/tree_basic.o src/tree/free.o \
       src/tree/tree_compound.o src/tree/DupTree.o src/tree/LookUpTable.o \
       src/tree/DataFlowMask.o src/tree/DataFlowMaskUtils.o \
       src/tree/InferDFMs.o src/tree/cleanup_decls.o src/tree/adjust_ids.o \
-      src/tree/scheduling.o src/tree/CheckAvis.o src/tree/SSATransform.o \
-      src/tree/UndoSSATransform.o src/tree/change_signature.o \
-      src/tree/compare_tree.o src/tree/wl_bounds.o
+      src/tree/change_signature.o src/tree/compare_tree.o \
+      src/tree/scheduling.o src/tree/wl_bounds.o
+
 SCANP= src/scanparse/y.tab.o src/scanparse/lex.yy.o \
        src/scanparse/scnprs.o src/scanparse/handle_dots.o
 PRINT= src/print/print.o src/print/convert.o
 FLATTEN= src/flatten/flatten.o src/flatten/lac2fun.o src/flatten/fun2lac.o \
-         src/flatten/while2do.o src/flatten/insert_vardec.o src/flatten/handle_mops.o
+         src/flatten/while2do.o src/flatten/insert_vardec.o \
+         src/flatten/handle_mops.o src/flatten/UndoSSATransform.o \
+         src/flatten/CheckAvis.o src/flatten/SSATransform.o \
+
 CONSTANTS= src/constants/shape.o src/constants/constants_basic.o \
            src/constants/constants_struc_ops.o \
            src/constants/constants_ari_ops.o  src/constants/cv2cv.o \
