@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.32  1995/10/20 09:25:35  cg
+ * Revision 1.33  1995/10/22 17:26:20  cg
+ * added checkdec_tab and writedec_tab
+ *  renamed sib_tab to writesib_tab
+ *
+ * Revision 1.32  1995/10/20  09:25:35  cg
  * added 'analy_tab`.
  * DummyFun now traverses only sub nodes != NULL
  *
@@ -134,6 +138,7 @@
 #include "implicittypes.h"
 #include "objinit.h"
 #include "analysis.h"
+#include "checkdec.h"
 
 #include "traverse.h"
 
@@ -424,14 +429,14 @@ funptr ae_tab[] = {
 #undef NIF
 
 /*
- * 21) sib_tab
+ * 21) writesib_tab
  */
 
 #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
             ac, ad, ae, af, ag, ah)                                                      \
     aa
 
-funptr sib_tab[] = {
+funptr writesib_tab[] = {
 #include "node_info.mac"
 };
 
@@ -488,6 +493,34 @@ funptr objinit_tab[] = {
     ae
 
 funptr analy_tab[] = {
+#include "node_info.mac"
+};
+
+#undef NIF
+
+/*
+ * 25) checkdec_tab
+ */
+
+#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
+            ac, ad, ae, af, ag, ah)                                                      \
+    af
+
+funptr checkdec_tab[] = {
+#include "node_info.mac"
+};
+
+#undef NIF
+
+/*
+ * 24) writedec_tab
+ */
+
+#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
+            ac, ad, ae, af, ag, ah)                                                      \
+    ag
+
+funptr writedec_tab[] = {
 #include "node_info.mac"
 };
 

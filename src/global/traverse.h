@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.24  1995/10/20 09:26:21  cg
+ * Revision 1.25  1995/10/22 17:26:20  cg
+ * added checkdec_tab and writedec_tab
+ *  renamed sib_tab to writesib_tab
+ *
+ * Revision 1.24  1995/10/20  09:26:21  cg
  * added 'analy_tab`.
  *
  * Revision 1.23  1995/10/16  12:03:24  cg
@@ -133,7 +137,7 @@ extern funptr fusion_tab[];
 
 extern funptr ae_tab[];
 
-extern funptr sib_tab[];
+extern funptr writesib_tab[];
 
 extern funptr obj_tab[];
 
@@ -142,5 +146,9 @@ extern funptr impltype_tab[];
 extern funptr objinit_tab[];
 
 extern funptr analy_tab[];
+
+extern funptr checkdec_tab[];
+
+extern funptr writedec_tab[];
 
 #endif /* _sac_traverse_h */
