@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  2002/10/18 17:14:11  ktr
+ * Fixed a bug which made probePart crash when a part's CEXPR is the index vector.
+ *
  * Revision 1.16  2002/10/18 14:18:57  ktr
  * Rewrote probePart
  *
@@ -496,55 +499,61 @@ probePart (node *arg_node, node *arg_info)
     DBUG_ENTER ("probePart");
 
     /* Inner CEXPR must be a nonscalar */
-    if (!VARDEC_DIM (AVIS_VARDECORARG (ID_AVIS (NPART_CEXPR (arg_node)))) > 0) {
+    if ((VARDEC_DIM (AVIS_VARDECORARG (ID_AVIS (NPART_CEXPR (arg_node)))) == 0) ||
+
+        /* CEXPR of the withloop me be assigned in a known place */
+        (NPART_SSAASSIGN (arg_node) == NULL)) {
         INFO_WLS_POSSIBLE (arg_info) = FALSE;
-    } else
-      /* Check whether inner CEXPR is computer by an INNER withloop */
-      if ((NODE_TYPE (NPART_LETEXPR (arg_node)) == N_Nwith)
-          && (isAssignInsideBlock (NPART_SSAASSIGN (arg_node),
-                                   BLOCK_INSTR (NPART_CBLOCK (arg_node))))) {
-
-        if (INFO_WLS_DIMS (arg_info) == -1)
-            INFO_WLS_DIMS (arg_info)
-              = VARDEC_SHAPE (IDS_VARDEC (NWITH_VEC (NPART_LETEXPR (arg_node))), 0);
-
-        INFO_WLS_POSSIBLE (arg_info) =
-          /* Inner withloop must be MG-WL */
-          ((NWITH_PARTS (NPART_LETEXPR (arg_node)) > 0) &&
-
-           /* Inner generators must be independent from the outer */
-           (checkGeneratorDependencies (arg_node, NWITH_PART (NPART_LETEXPR (arg_node))))
-           &&
-
-           /* Both WLs must have compatible types */
-           (compatWLTypes (INFO_WLS_WITHOP (arg_info),
-                           NWITH_WITHOP (NPART_LETEXPR (arg_node))))
-           &&
-
-           /* In non aggressive mode, the nesting must be perfect */
-           ((wls_aggressive == 2)
-            || (BLOCK_INSTR (NPART_CBLOCK (arg_node)) == NPART_SSAASSIGN (arg_node)))
-           &&
-
-           /* In non aggressive mode, all the inner WLs must iterate over the same
-              dimensions */
-           ((wls_aggressive == 2)
-            || (INFO_WLS_DIMS (arg_info)
-                == VARDEC_SHAPE (IDS_VARDEC (NWITH_VEC (NPART_LETEXPR (arg_node))), 0))));
-
     } else {
-        INFO_WLS_POSSIBLE (arg_info) =
-          /* In non aggressive mode, assignment of CEXPR must not be inside the WL */
-          (((wls_aggressive == 2)
-            || (!isAssignInsideBlock (NPART_SSAASSIGN (arg_node),
-                                      BLOCK_INSTR (NPART_CBLOCK (arg_node)))))
-           &&
+        /* Check whether inner CEXPR is computer by an INNER withloop */
+        if ((NODE_TYPE (NPART_LETEXPR (arg_node)) == N_Nwith)
+            && (isAssignInsideBlock (NPART_SSAASSIGN (arg_node),
+                                     BLOCK_INSTR (NPART_CBLOCK (arg_node))))) {
 
-           /* In non aggressive mode, CBLOCK must be empty */
-           ((wls_aggressive == 2)
-            || (NODE_TYPE (BLOCK_INSTR (NPART_CBLOCK (arg_node))) == N_empty)));
+            /* initialize INFO_WLS_DIMS */
+            if (INFO_WLS_DIMS (arg_info) == -1)
+                INFO_WLS_DIMS (arg_info)
+                  = VARDEC_SHAPE (IDS_VARDEC (NWITH_VEC (NPART_LETEXPR (arg_node))), 0);
+
+            INFO_WLS_POSSIBLE (arg_info) =
+              /* Inner withloop must be MG-WL */
+              ((NWITH_PARTS (NPART_LETEXPR (arg_node)) > 0) &&
+
+               /* Inner generators must be independent from the outer */
+               (checkGeneratorDependencies (arg_node,
+                                            NWITH_PART (NPART_LETEXPR (arg_node))))
+               &&
+
+               /* Both WLs must have compatible types */
+               (compatWLTypes (INFO_WLS_WITHOP (arg_info),
+                               NWITH_WITHOP (NPART_LETEXPR (arg_node))))
+               &&
+
+               /* In non aggressive mode, the nesting must be perfect */
+               ((wls_aggressive == 2)
+                || (BLOCK_INSTR (NPART_CBLOCK (arg_node)) == NPART_SSAASSIGN (arg_node)))
+               &&
+
+               /* In non aggressive mode, all the inner WLs must iterate over the same
+                  dimensions */
+               ((wls_aggressive == 2)
+                || (INFO_WLS_DIMS (arg_info)
+                    == VARDEC_SHAPE (IDS_VARDEC (NWITH_VEC (NPART_LETEXPR (arg_node))),
+                                     0))));
+
+        } else {
+            INFO_WLS_POSSIBLE (arg_info) =
+              /* In non aggressive mode, assignment of CEXPR must not be inside the WL */
+              (((wls_aggressive == 2)
+                || (!isAssignInsideBlock (NPART_SSAASSIGN (arg_node),
+                                          BLOCK_INSTR (NPART_CBLOCK (arg_node)))))
+               &&
+
+               /* In non aggressive mode, CBLOCK must be empty */
+               ((wls_aggressive == 2)
+                || (NODE_TYPE (BLOCK_INSTR (NPART_CBLOCK (arg_node))) == N_empty)));
+        }
     }
-
     DBUG_RETURN (arg_node);
 }
 
