@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.10  1999/06/11 12:55:17  cg
+ * Added options -cshost, -csfile, -csdir.
+ * Explanation of cache simulation improved in general.
+ *
  * Revision 2.9  1999/06/10 09:49:03  cg
  * Added usage of option -cshost.
  *
@@ -177,6 +181,7 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "usage.h"
 #include "globals.h"
@@ -469,7 +474,7 @@ usage ()
       "\t -cs\t\tenable runtime cache simulation\n"
       "\n"
       "\t -csdefaults [sagbifp]+ \n\n"
-      "\t\tset default parameters for cache simulation.\n"
+      "\t\tThis option sets default parameters for cache simulation.\n"
       "\t\tThese settings may be overridden when starting the analysis of\n"
       "\t\tan application program.\n"
       "\t\t  s: simple cache simulation.\n"
@@ -480,7 +485,7 @@ usage ()
       "\t\t  f: storage of memory accesses in file.\n"
       "\t\t  p: piping of memory accesses to concurrently running analyser.\n"
       "\n"
-      "\tThe default simulation parameters are 'sgp'.\n"
+      "\t\tThe default simulation parameters are 'sgp'.\n"
       "\n"
       "\tSimple cache simulation only counts cache hits and cache misses while\n"
       "\tadvanced cache simulation additionally classifies cache misses into\n"
@@ -494,18 +499,24 @@ usage ()
       "\tfor various code blocks. The tag must be a string.\n"
       "\n"
       "\tMemory accesses may be evaluated with respect to their cache behavior\n"
-      "\teither immediately withing the application process, stored in a file\n"
-      "\tnamed <file>.cs where <file> means the name of the application program\n"
-      "\tanalysed, or they may be piped to a concurrently running analyser\n"
-      "\tprocess. While immediate analysis usually is the fastest alternative,\n"
-      "\tresults, inparticular for advanced analysis, are often inaccurate due to\n"
+      "\teither immediately within the application process, stored in a file,\n"
+      "\tor they may be piped to a concurrently running analyser process.\n"
+      "\tWhile immediate analysis usually is the fastest alternative,\n"
+      "\tresults, in particular for advanced analysis, are often inaccurate due to\n"
       "\tchanges in the memory layout caused by the analyser. If you choose to\n"
       "\twrite memory accesses to a file, beware that even for small programs to\n"
-      "\tbe analysed the amount of data may be quite large.\n"
+      "\tbe analysed the amount of data may be quite large. However, once a\n"
+      "\tmemory trace file exists, it can be used to simulate different cache\n"
+      "\tconfigurations without repeatedly running the application program\n"
+      "\titself. The simulation tool for memory access trace files is called\n"
+      "\t\tCacheSimAnalyser\n"
+      "\tand may be found in the directory\n"
+      "\t\t%s%sruntime\n"
+      "\tas part of your SAC %s installation.\n"
       "\n"
       "\tThese default cache simulation parameters may be overridden when\n"
-      "\tinvoking the application program to be analysed by using the command\n"
-      "\tline option\n"
+      "\tinvoking the application program to be analysed by using the generic\n"
+      "\tcommand line option\n"
       "\t\t-cs [sagbifp]+\n"
       "\n"
       "\tCache parameters for up to 3 levels of caches may be provided as target\n"
@@ -514,6 +525,9 @@ usage ()
       "\tcompiled SAC program with cache simulation enabled. This can be done\n"
       "\tusing the following command line options:\n"
       "\t\t-cs[123] <size>[/<line size>[/<assoc>[/<write miss policy>]]].\n"
+      "\tThe cache size must be given in KBytes, the cache line size in\n"
+      "\tBytes. A cache size of 0 KB disables the corresponding cache level\n"
+      "\tcompletely regardless of any other setting.\n"
       "\tWrite miss policies are specified by a single letter:\n"
       "\t\td: default (fetch on write)\n"
       "\t\tf: fetch on write\n"
@@ -531,6 +545,22 @@ usage ()
       "\t\t\torders of magnitude. So, when doing piped cache simulation always\n"
       "\t\t\tbe sure to do so either on a multiprocessor or specify a different\n"
       "\t\t\tmachine to run the analyser process on.\n"
+      "\t\t\tHowever, this only defines a default which may be overridden\n"
+      "\t\t\tby using this option when starting the compiled application\n"
+      "\t\t\tprogram.\n"
+      "\n"
+      "\t-csfile <name> \tallows the specification of a default file where to\n"
+      "\t\t\twrite the memory access trace when performing cache simulation\n"
+      "\t\t\tvia a file. This default may be overridden by using this option\n"
+      "\t\t\twhen starting the compiled application program.\n"
+      "\t\t\tThe general default name is <exec file name>.cs.\n"
+      "\n"
+      "\t-csdir <name> \tallows the specification of a default directory where to\n"
+      "\t\t\twrite the memory access trace file when performing cache simulation\n"
+      "\t\t\tvia a file. This default may be overridden by using this option\n"
+      "\t\t\twhen starting the compiled application program.\n"
+      "\t\t\tThe general default directory is the tmp directory specified in\n"
+      "\t\t\tyour sac2crc file.\n"
 
       "\n\nINTRINSIC ARRAY OPERATIONS OPTIONS:\n\n"
 
@@ -619,7 +649,12 @@ usage ()
       "\tcompiler release!\n"
 
       "\n",
-      linkstyle, cc_optimize);
+      NULL == getenv ("SACBASE") ? "" : getenv ("SACBASE"),
+      (NULL != getenv ("SACBASE")
+       && getenv ("SACBASE")[strlen (getenv ("SACBASE")) - 1] != '/')
+        ? "/"
+        : "",
+      version_id, linkstyle, cc_optimize);
 
     DBUG_VOID_RETURN;
 }
