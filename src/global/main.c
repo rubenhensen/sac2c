@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.69  1995/10/26 15:57:39  cg
+ * Revision 1.70  1995/10/31 14:46:36  sbs
+ * gcc invocation printed;
+ *
+ * Revision 1.69  1995/10/26  15:57:39  cg
  * compiler phase 'checkdec` moved in between 'typecheck`
  * and 'impltypes`.
  *
@@ -728,16 +731,11 @@ MAIN
         }
     }
 
-    NOTE ((""));
-    NOTE (("*** Compilation successful *** Exit code 0"));
-    NOTE (("*** 0 error(s), %d warning(s)", warnings));
-    NOTE ((""));
-
     Print (syntax_tree);
 
     /*  FreeTree(syntax_tree);  */
 
-    if (!Ccodeonly && (0 == errors)) {
+    if (!Ccodeonly) {
         fclose (outfile);
 
         if (F_prog == kind_of_file)
@@ -753,8 +751,17 @@ MAIN
                      cfilename);
         else
             DBUG_ASSERT (0, "wrong value of kind_of_file ");
+    }
 
-        /*    NOTE(("\nC call string '%s`", cccallstr));  */
+    ABORT_ON_ERROR;
+
+    NOTE ((""));
+    NOTE (("*** Compilation successful *** Exit code 0"));
+    NOTE (("*** 0 error(s), %d warning(s)", warnings));
+    NOTE ((""));
+
+    if (!Ccodeonly) {
+        NOTE (("\n%s", cccallstr));
         system (cccallstr);
     }
 
