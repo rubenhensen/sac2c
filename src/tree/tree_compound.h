@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.54  2002/02/22 13:56:09  dkr
+ * L_NWITH_OR_NWITH2_DEC_RC_IDS added
+ *
  * Revision 3.53  2002/02/21 14:38:00  dkr
  * some VARDEC_OR_ARG_... macros added
  *
@@ -1956,6 +1959,13 @@ extern node *MakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg
     ((NODE_TYPE (n) == N_Nwith) ? NWITH_OUT_MASK (n) : NWITH2_OUT_MASK (n))
 #define NWITH_OR_NWITH2_LOCAL_MASK(n)                                                    \
     ((NODE_TYPE (n) == N_Nwith) ? NWITH_LOCAL_MASK (n) : NWITH2_LOCAL_MASK (n))
+
+#define L_NWITH_OR_NWITH2_DEC_RC_IDS(n, rhs)                                             \
+    if (NODE_TYPE (n) == N_Nwith) {                                                      \
+        NWITH_DEC_RC_IDS (n) = (rhs);                                                    \
+    } else {                                                                             \
+        NWITH2_DEC_RC_IDS (n) = (rhs);                                                   \
+    }
 
 #define L_NWITH_OR_NWITH2_IN_MASK(n, rhs)                                                \
     if (NODE_TYPE (n) == N_Nwith) {                                                      \
