@@ -1,8 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.2  1995/10/01 13:04:32  cg
- * added external declarations for SearchTypedef, CountNums, CopyShpseg, MergeShpseg
+ * Revision 1.3  1995/10/01 16:40:31  cg
+ * function SearchFundef added.
+ *
+ * Revision 1.2  1995/10/01  13:04:32  cg
+ * added external declarations for SearchTypedef, CountNums, CopyShpseg,
+ *  MergeShpseg
  * added new compound macros for Shape-Access.
  *
  * Revision 1.1  1995/09/27  15:13:12  cg
@@ -407,7 +411,7 @@ extern node *SearchTypedef (char *name, char *mod, node *implementations);
  *  global vars   : ----
  *  internal funs : ----
  *  external funs : ----
- *  macros        : DBUG..., NULL, DIM, TYPES, CMP_TYPE_ID, SIMPLETYPE
+ *  macros        : CMP_TYPE_ID
  *
  *  remarks       : similar to function CmpFunParams of typechecker.
  *                  some minor changes to fix appearing segmentation
@@ -416,6 +420,26 @@ extern node *SearchTypedef (char *name, char *mod, node *implementations);
  */
 
 extern int CmpDomain (node *args1, node *args2);
+
+/*
+ *
+ *  functionname  : SearchFundef
+ *  arguments     : 1) fundef node of function to search for
+ *                  2) ptr to head of fundef chain
+ *  description   : returns a ptr to the respective fundef node
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : ---
+ *  macros        : CMP_FUNDEF
+ *
+ *  remarks       : This function is used to find the implementation of
+ *                  a function which is declared in a module/class
+ *                  implementation. For the representation of function
+ *                  declarations the fundef node is reused.
+ *
+ */
+
+extern node *SearchFundef (node *fun, node *allfuns);
 
 /*
  *

@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.2  1995/10/01 13:04:32  cg
+ * Revision 1.3  1995/10/01 16:40:31  cg
+ * function SearchFundef added.
+ *
+ * Revision 1.2  1995/10/01  13:04:32  cg
  * added functions SearchTypedef, CountNums, CopyShpseg, MergeShpseg
  *
  * Revision 1.1  1995/09/27  15:13:12  cg
@@ -58,6 +61,21 @@ CmpDomain (node *arg1, node *arg2)
     }
 
     DBUG_RETURN (is_equal);
+}
+
+node *
+SearchFundef (node *fun, node *allfuns)
+{
+    node *tmp;
+
+    DBUG_ENTER ("SearchFundef");
+
+    tmp = allfuns;
+    while ((tmp != NULL) && (CMP_FUNDEF (tmp, fun) == 0)) {
+        tmp = FUNDEF_NEXT (tmp);
+    }
+
+    DBUG_RETURN (tmp);
 }
 
 /*
