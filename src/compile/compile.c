@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.79  1996/02/27 15:22:04  hw
+ * Revision 1.80  1996/03/05 09:27:42  cg
+ * bug fixed in CompAp
+ *
+ * Revision 1.79  1996/02/27  15:22:04  hw
  * bug fixed in adding new vardecs
  *
  * Revision 1.78  1996/02/12  16:37:44  cg
@@ -4303,8 +4306,9 @@ CompAp (node *arg_node, node *arg_info)
      *  First, new assign-nodes are inserted behind the current one.
      */
 
+    last_assign = LAST_ASSIGN (arg_info);
+
     if (NULL != ASSIGN_NEXT (add_assigns_after)) {
-        last_assign = LAST_ASSIGN (arg_info);
         ASSIGN_NEXT (first_assign) = NEXT_ASSIGN (arg_info);
 
         if (NULL != ASSIGN_NEXT (first_assign)) {
