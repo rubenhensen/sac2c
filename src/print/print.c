@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.165  1998/03/21 13:23:07  dkr
+ * changed output in PrintWLproj:
+ *   show WLPROJ_LEVEL
+ *
  * Revision 1.164  1998/03/20 17:38:45  srs
  * added DBUG information to PrintNwith()
  *
@@ -2351,9 +2355,9 @@ PrintWLublock (node *arg_node, node *arg_info)
     DBUG_ENTER ("PrintWLublock");
 
     INDENT
-    fprintf (outfile, "(%d -> %d), ublock[%d] %d\n", WLUBLOCK_BOUND1 (arg_node),
-             WLUBLOCK_BOUND2 (arg_node), WLUBLOCK_DIM (arg_node),
-             WLUBLOCK_BLOCKING (arg_node));
+    fprintf (outfile, "(%d -> %d), ublock%d[%d] %d\n", WLUBLOCK_BOUND1 (arg_node),
+             WLUBLOCK_BOUND2 (arg_node), WLUBLOCK_LEVEL (arg_node),
+             WLUBLOCK_DIM (arg_node), WLUBLOCK_BLOCKING (arg_node));
 
     if (WLUBLOCK_NEXTDIM (arg_node) != NULL) {
         fprintf (outfile, "\n");
@@ -2392,8 +2396,9 @@ PrintWLproj (node *arg_node, node *arg_info)
     DBUG_ENTER ("PrintWLproj");
 
     INDENT
-    fprintf (outfile, "(%d -> %d), step[%d] %d\n", WLPROJ_BOUND1 (arg_node),
-             WLPROJ_BOUND2 (arg_node), WLPROJ_DIM (arg_node), WLPROJ_STEP (arg_node));
+    fprintf (outfile, "(%d -> %d), step%d[%d] %d\n", WLPROJ_BOUND1 (arg_node),
+             WLPROJ_BOUND2 (arg_node), WLPROJ_LEVEL (arg_node), WLPROJ_DIM (arg_node),
+             WLPROJ_STEP (arg_node));
 
     indent++;
     WLPROJ_CONTENTS (arg_node) = Trav (WLPROJ_CONTENTS (arg_node), arg_info);
