@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2001/05/02 06:56:25  nmw
+ * init of constant arrays completed
+ *
  * Revision 3.6  2001/04/30 12:16:59  nmw
  * integrate traversal of special fundefs in ArrayElimination traversal
  *
@@ -154,7 +157,6 @@
  *  global vars   : syntax_tree, act_tab, ae_tab
  *
  */
-/* ##nmw## */
 node *
 ArrayElimination (node *arg_node, node *info_node)
 {
@@ -315,7 +317,6 @@ GenPsi (ids *ids_node, node *arg_info)
         ((int *)ARRAY_CONSTVEC (arg[0])) = Array2IntVec (exprn, NULL);
         /* srs: AE only works on arrays which have 1 dimension.
            type attribut was missing here. */
-        /* ##nmw## */
         ARRAY_ISCONST (arg[0]) = TRUE;
         ARRAY_VECTYPE (arg[0]) = T_int;
         ARRAY_VECLEN (arg[0]) = 1;
