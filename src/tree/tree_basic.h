@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.100  2000/10/27 00:05:10  dkr
+ * INFO_COMP_VARDECS removed
+ *
  * Revision 1.99  2000/10/24 14:30:05  dkr
  * MakeTypes1 added
  * MakeType renamed to MakeTypes
@@ -2567,7 +2570,6 @@ extern node *MakeInfo ();
 #define INFO_COMP_LASTLET(n) (n->node[1])
 #define INFO_COMP_ICMTAB(n) ((node **)(n->node[1]))
 #define INFO_COMP_FUNDEF(n) (n->node[2])
-#define INFO_COMP_VARDECS(n) (n->node[3])
 #define INFO_COMP_WITHBEGIN(n) (n->node[4])
 #define INFO_COMP_MODUL(n) (n->node[5])
 #define INFO_COMP_LAST_SYNC(n) (*((node **)(&(n->int_data))))
