@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.62  2000/06/29 16:05:28  mab
+ * added INFO_APT_CODE_ID
+ *
  * Revision 1.61  2000/06/29 14:56:47  mab
  * added INFO_APT_WITHOP_TYPE and INFO_APT_WITH_PARTS
  *
@@ -2572,6 +2575,7 @@ extern node *MakeInfo ();
 #define INFO_APT_EXPRESSION_PADDED(n) ((bool)(n->flag))
 #define INFO_APT_WITHOP_TYPE(n) (n->int_data)
 #define INFO_APT_WITH_PARTS(n) (n->counter)
+#define INFO_APT_CODE_ID(n) (n->node[0])
 
 /*--------------------------------------------------------------------------*/
 
