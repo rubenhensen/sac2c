@@ -1,7 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.59  1995/09/01 07:45:58  cg
+ * Revision 1.60  1995/09/01 11:54:49  sbs
+ * cpp exchanged by gcc -E -x c!
+ * unfortunately not possible to use gcc -E from stdin
+ * to be fixed later!!
+ *
+ * Revision 1.59  1995/09/01  07:45:58  cg
  * writing of SIB-files integrated.
  * new options -bb and -noSIB added.
  *
@@ -516,7 +521,7 @@ MAIN
 #else /* NO_CPP */
 
     if (argc == 1) {
-        sprintf (cccallstr, "cpp -P -C %s", FindFile (PATH, *argv));
+        sprintf (cccallstr, "gcc -E -P -C -x c %s", FindFile (PATH, *argv));
         strcpy (filename, *argv);
     } else {
         sprintf (cccallstr, "cpp -P -C ");
