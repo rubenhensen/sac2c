@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.4  1999/09/01 17:12:39  jhs
+ * Expanded COMPSync to refcounters in barriers.
+ *
  * Revision 2.3  1999/06/25 15:19:43  rob
  * Avoid genning GetUniFromTypes if not TAGGED_ARRAYS
  *
@@ -1612,6 +1615,16 @@ PRECNwith2 (node *arg_node, node *arg_info)
 
     NWITH2_DEC_RC_IDS (arg_node) = PrecompileIds (NWITH2_DEC_RC_IDS (arg_node));
 
+    /*
+     *  Since the scheduling specification may contain the names of local
+     *  identifiers, these have to be renamed according to the general renaming
+     *  scheme implemented by this compiler phase.
+     */
+    if (NWITH2_SCHEDULING (arg_node) != NULL) {
+        NWITH2_SCHEDULING (arg_node)
+          = SCHPrecompileScheduling (NWITH2_SCHEDULING (arg_node));
+    }
+
     DBUG_RETURN (arg_node);
 }
 
@@ -1653,10 +1666,9 @@ PRECNcode (node *arg_node, node *arg_info)
  *   node *PRECsync(node *arg_node, node *arg_info)
  *
  * description:
- *
- *   Since the scheduling specification may contain the names of local
- *   identifiers, these have to be renamed according to the general renaming
- *   scheme implemented by this compiler phase.
+ *   Was used for renaming SYNC_SCHEDULE, since this has move to the
+ *   with-loops it's not done here anymore, but i kept the function, not
+ *   knowing if there would be any problems if if i killed it. (jhs)
  *
  ******************************************************************************/
 
@@ -1664,10 +1676,6 @@ node *
 PRECsync (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PRECsync");
-
-    if (SYNC_SCHEDULING (arg_node) != NULL) {
-        SYNC_SCHEDULING (arg_node) = SCHPrecompileScheduling (SYNC_SCHEDULING (arg_node));
-    }
 
     SYNC_REGION (arg_node) = Trav (SYNC_REGION (arg_node), arg_info);
 

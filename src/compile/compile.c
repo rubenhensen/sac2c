@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.30  1999/09/01 17:11:53  jhs
+ * Expanded COMPSync to refcounters in barriers.
+ *
  * Revision 2.29  1999/08/30 16:33:06  cg
  * Bug fixed in handling of foldfuns:
  * Their local vardecs are no longer compiled! This will be done
@@ -892,6 +895,7 @@ int basetype_size[] = {
         DEC_RC_ND_IDS (ids, num_node);                                                   \
     } else {                                                                             \
         if (ids->refcnt > 0) {                                                           \
+            DBUG_PRINT ("xxx", ("1"));                                                   \
             DEC_RC_FREE_ND_IDS (ids, num_node);                                          \
         }                                                                                \
     }
@@ -901,6 +905,8 @@ int basetype_size[] = {
     CREATE_2_ARY_ICM (next_assign, "ND_DEC_RC", MakeId2 (DupOneIds (ids, NULL)),         \
                       num_node);                                                         \
     APPEND_ASSIGNS (first_assign, next_assign)
+
+/* #### next */
 
 #define DEC_RC_FREE_ND_IDS(ids, num_node)                                                \
     /* create ND_DEC_RC_FREE_ARRAY */                                                    \
@@ -5362,6 +5368,7 @@ COMPWithReturn (node *arg_node, node *arg_info)
         if ((0 != strcmp (ID_NAME (index_node), IDS_NAME (dec_rc)))
             && ((NULL == mod_array)
                 || (0 != strcmp (ID_NAME (mod_array), IDS_NAME (dec_rc))))) {
+            DBUG_PRINT ("xxx", ("2"));
             DEC_RC_FREE_ND_IDS (dec_rc, n_node);
         }
         dec_rc = IDS_NEXT (dec_rc);
@@ -5792,6 +5799,7 @@ COMPLoop (node *arg_node, node *arg_info)
              * we don`t know the refcount of v2 in the current context,
              * so we use DEC_RC_FREE_ND
              */
+            DBUG_PRINT ("xxx", ("3"));
             DEC_RC_FREE_ND_IDS (v2, n_node);
 
             v2 = IDS_NEXT (v2);
@@ -5812,6 +5820,7 @@ COMPLoop (node *arg_node, node *arg_info)
                     }
 
                 if (0 == found) {
+                    DBUG_PRINT ("xxx", ("4"));
                     DEC_RC_FREE_ND_IDS (v2, n_node);
                 }
 
@@ -5869,6 +5878,7 @@ COMPLoop (node *arg_node, node *arg_info)
                 }
 
                 if (0 == found) {
+                    DBUG_PRINT ("xxx", ("5"));
                     DEC_RC_FREE_ND_IDS (v1, n_node);
                 }
 
@@ -6642,7 +6652,8 @@ COMPSync (node *arg_node, node *arg_info)
                                                       NULL, ST_regular),
                                               fold_args));
 
-                    DBUG_PRINT ("COMPi", ("last's folds %s", IDS_NAME (with_ids)));
+                    DBUG_PRINT ("COMPi", ("last's folds %s is %s", IDS_NAME (with_ids),
+                                          fold_type));
                 }
             }
             assign = ASSIGN_NEXT (assign);
@@ -6689,7 +6700,11 @@ COMPSync (node *arg_node, node *arg_info)
              */
             type = IDS_TYPE (with_ids);
             if (TYPES_DIM (type) > 0) {
-                fold_type = StringCopy ("array");
+                if (MUST_REFCOUNT (IDS, with_ids)) {
+                    fold_type = StringCopy ("array_rc");
+                } else {
+                    fold_type = StringCopy ("array");
+                }
             } else {
                 GET_BASIC_SIMPLETYPE (s_type, type);
                 fold_type = StringCopy (type_string[s_type]);
@@ -6825,9 +6840,15 @@ COMPSync (node *arg_node, node *arg_info)
             }
 
             if (var_name != NULL) {
+                /*
+                 *  the assignment (icm) is moved before/behind the the sync-block
+                 *  if it is necessary to do it before the sync-block.
+                 *  That copes icm's working on in(out)-variables with memory to be
+                 *  reserved before of gen- or modarray with-loops, but *not* fold-results
+                 *  (out-variables). Also outrep-varibale-icm's are not touched.
+                 */
                 if (DFMTestMaskEntry (SYNC_IN (arg_node), var_name, NULL)
-                    || DFMTestMaskEntry (SYNC_INOUT (arg_node), var_name, NULL)
-                    || DFMTestMaskEntry (SYNC_OUT (arg_node), var_name, NULL)) {
+                    || DFMTestMaskEntry (SYNC_INOUT (arg_node), var_name, NULL)) {
                     new_icm = DupNode (assign);
 
                     if (last_assign == NULL) {
@@ -6836,6 +6857,7 @@ COMPSync (node *arg_node, node *arg_info)
                         assign = ASSIGN_NEXT (last_assign) = FreeNode (assign);
                     }
 
+                    DBUG_ASSERT ((prolog || epilog), ("icm has to be prolog or epilog"));
                     DBUG_ASSERT ((!(prolog && epilog)),
                                  ("icm cannot be in prolog and epilog at the same time"));
                     if (prolog) {
@@ -6913,15 +6935,13 @@ COMPSync (node *arg_node, node *arg_info)
      * insert ICM 'MT_START_SYNCBLOCK',
      * ICM 'MT_SCHEDULER_BEGIN', and contents of modified sync-region-block
      */
-    assigns
-      = AppendAssign (assigns,
-                      MakeAssign (MakeIcm ("MT_START_SYNCBLOCK",
-                                           MakeExprs (MakeNum (barrier_id), icm_args3),
-                                           NULL),
-                                  MakeAssign (SCHCompileSchedulingBegin (SYNC_SCHEDULING (
-                                                                           arg_node),
-                                                                         arg_node),
-                                              BLOCK_INSTR (SYNC_REGION (arg_node)))));
+    assigns = AppendAssign (
+      assigns,
+      MakeAssign (MakeIcm ("MT_START_SYNCBLOCK",
+                           MakeExprs (MakeNum (barrier_id), icm_args3), NULL),
+                  /*                        MakeAssign(
+                     SCHCompileSchedulingBegin(SYNC_SCHEDULING(arg_node), arg_node), */
+                  BLOCK_INSTR (SYNC_REGION (arg_node)) /*  )*/));
 
     /*
      *  see comment on setting backup!
@@ -6933,11 +6953,9 @@ COMPSync (node *arg_node, node *arg_info)
      * insert ICM 'MT_SCHEDULER_END'
      */
 
-    assigns
-      = AppendAssign (assigns,
-                      MakeAssign (SCHCompileSchedulingEnd (SYNC_SCHEDULING (arg_node),
-                                                           arg_node),
-                                  NULL));
+    /*  assigns = AppendAssign(assigns,
+                             MakeAssign(
+       SCHCompileSchedulingEnd(SYNC_SCHEDULING(arg_node), arg_node), NULL));  */
     /*
      * insert ICM 'MT_SYNC_...'
      *
@@ -6984,8 +7002,9 @@ COMPSync (node *arg_node, node *arg_info)
             DBUG_PRINT ("COMPi", (" MT_SYNC_FOLD"));
         } else {
             /* DFMTestMask( SYNC_OUT( arg_node)) == 1 */
+            barrier_args = MakeExprs (MakeNum (num_barrier_args), barrier_args);
             barrier_args = MakeExprs (MakeNum (barrier_id), barrier_args);
-            icm_name = "MT_SYNC_ONEFOLD";
+            icm_name = "MT_SYNC_FOLD";
 
             DBUG_PRINT ("COMPi", (" MT_SYNC_ONEFOLD"));
         }
