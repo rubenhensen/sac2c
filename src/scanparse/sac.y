@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.79  2003/03/19 13:34:26  sbs
+ * added missing colons!!!
+ *
  * Revision 3.78  2003/03/18 16:30:34  sah
  * added new prf cat_VxV, take_SxV, drop_SxV
  *
@@ -1503,9 +1506,9 @@ prf: foldop        { $$ = $1;        }
    | PRF_TOF_A     { $$ = F_tof_A;   }
    | PRF_TOD_S     { $$ = F_tod_S;   }
    | PRF_TOD_A     { $$ = F_tod_A;   }
-   | PRF_CAT_VxV   { $$ = F_cat_VxV  }
-   | PRF_TAKE_SxV  { $$ = F_take_SxV }
-   | PRF_DROP_SxV  { $$ = F_drop_SxV }
+   | PRF_CAT_VxV   { $$ = F_cat_VxV; }
+   | PRF_TAKE_SxV  { $$ = F_take_SxV;}
+   | PRF_DROP_SxV  { $$ = F_drop_SxV;}
    ;
 
 fun_ids: fun_id COMMA fun_ids 
