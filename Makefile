@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.114  2004/10/11 14:45:54  ktr
+# added src/refcount/rcphase.o
+#
 # Revision 3.113  2004/10/10 09:53:36  ktr
 # added src/refcount/rcopt.o
 #
@@ -360,6 +363,7 @@ OBJECTS= src/objects/objinit.o src/objects/objects.o src/objects/uniquecheck.o
 OBJECTS_OLD=
 
 REFCOUNT= src/refcount/allocation.o src/refcount/rcopt.o \
+          src/refcount/rcphase.o \
           src/refcount/alloc.o src/refcount/refcounting.o src/refcount/reuse.o
 REFCOUNT_OLD=
 
