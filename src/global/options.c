@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.48  2003/09/16 16:10:49  sbs
+ * specmode option added.
+ *
  * Revision 3.47  2003/08/21 17:01:31  cg
  * Detection of tagged arrays backend now uses the dedicated
  * compiler option -has_tagged_backend.
@@ -906,6 +909,21 @@ AnalyseCommandline (int argc, char *argv[])
     ARGS_FLAG ("sbs", sbs = TRUE);
 
     ARGS_FLAG ("ktr", ktr = TRUE);
+
+    ARGS_OPTION ("specmode", {
+        ARG_CHOICE_BEGIN ();
+
+        ARG_CHOICE ("aks", spec_mode = SS_aks);
+        ARG_CHOICE ("AKS", spec_mode = SS_aks);
+
+        ARG_CHOICE ("akd", spec_mode = SS_akd);
+        ARG_CHOICE ("AKD", spec_mode = SS_akd);
+
+        ARG_CHOICE ("aud", spec_mode = SS_aud);
+        ARG_CHOICE ("AUD", spec_mode = SS_aud);
+
+        ARG_CHOICE_END ();
+    });
 
     ARGS_FLAG ("ssa", use_ssaform = TRUE);
 
