@@ -1,6 +1,18 @@
 /*
  *
  * $Log$
+ * Revision 1.73  1998/05/20 20:17:23  sbs
+ * completely revised version of flatten.c!!
+ * All functions have been adjusted to the new macros,
+ * new functions InsertRenaming, Abstract, FltnArray, and FltnBlock!
+ * the pushes made for conds and loops have been changed so that
+ * renamings that leed to typing errors are avoided ( references
+ * to vars that have been defined in one branch of a cond only!)
+ * Furthermore, the renaming of the LHS of WLs has been changed.
+ * Instead of renaming the referenced vars on the RHS of the WL,
+ * the WL is assigned to a tmp-var and AFTER the WL, the tmp-var
+ * is renamed!
+ *
  * Revision 1.72  1998/05/05 13:19:07  srs
  * new WL: constant array bounds are not flattened anymore.
  *
@@ -257,19 +269,6 @@
  *
  */
 
-/*
- * arg_info in this file:
- * info.cint : context of this arg_node, e.g. within a condition. FltnExprs
- *             decides to abstract or not abstract the node.
- * node[0]: every FltnAssign replaces node[0] with arg_node so that other
- *          functions may place instructions IN FRONT of that assignment.
- *          FltnAssign returns this node[0]
- * node[1]: this node is only used in the context of WLs. It is necessary
- *          to put assignments (var initialisations) at the beginning of
- *          the WL-body. These assignments are stored here. See comment in
- *          FltnNcode.
- */
-
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -279,41 +278,56 @@
 #include "my_debug.h"
 #include "traverse.h"
 #include "internal_lib.h"
-#include "access_macros.h"
 #include "free.h"
+#include "DupTree.h"
 #include "flatten.h"
 #include "globals.h"
 
-/* temporary local macro */
-#undef ID_MOD
-#undef IDS_NEXT
-#define ID_MOD(n) (n->info.ids->mod) /* identical to tree_basic.h */
-#define IDS_NEXT(i) (i->next)        /* identical to tree_basic.h */
+/*
+ * OPEN PROBLEMS:
+ *
+ * I) not yet solved:
+ *
+ * II) to be fixed here:
+ *
+ * III) to be fixed somewhere else:
+ */
+
+/*
+ * arg_info in this file:
+ * CONTEXT    : context of this arg_node, e.g. within a condition. FltnExprs
+ *              decides to abstract or not abstract the node.
+ *              legal values are (enum type contextflag):
+ *                CT_normal,
+ *                CT_ap,
+ *                CT_return,
+ *
+ * LASTASSIGN : every FltnAssign replaces node[0] with arg_node so that other
+ * (node[0])    functions may place instructions IN FRONT of that assignment.
+ *              FltnAssign returns this node[0]
+ * node[1]: this node is only used in the context of WLs. It is necessary
+ *          to put assignments (var initialisations) at the beginning of
+ *          the WL-body. These assignments are stored here. See comment in
+ *          FltnNcode.
+ */
 
 #define P_FORMAT "(%06x)" /* formatstring for pointer address */
 #define WITH_PREFIX "__w" /* name of new variable in with-statement */
 #define WITH_PREFIX_LENGTH 3
 
-/* macros are used as tag in  arg_info->info.cint for flatten of N_exprs
- */
-#define NORMAL 0
-#define AP 1
-#define RET 2
-#define LOOP 3
-#define COND 4
-#define MODARRAY 5
-
 #define STACK_SIZE 1000
+
 #define PUSH(old, new, n)                                                                \
     if (tos < stack_limit) {                                                             \
         tos->id_old = old;                                                               \
         tos->id_new = new;                                                               \
         tos->w_level = n;                                                                \
         tos++;                                                                           \
+        DBUG_EXECUTE ("RENAME", DbugPrintStack (););                                     \
     } else                                                                               \
         ERROR2 (1, (" stack overflow (local)"))
 
-extern node *MakeNode (nodetype); /* defined in sac.y or y.tab.c respectively */
+#define PUSH_ENTRY(ptr) PUSH (ptr.id_old, ptr.id_new, ptr.w_level)
 
 typedef struct LOCAL_STACK {
     char *id_old;
@@ -321,7 +335,6 @@ typedef struct LOCAL_STACK {
     int w_level;
 } local_stack;
 
-static int var_counter = 0;
 static int with_level = 0;
 static local_stack *tos, *stack, *stack_limit;
 
@@ -343,197 +356,263 @@ DbugPrintStack (void)
 
     tmp = tos;
     while (tmp-- > stack)
-        printf ("%s -> %s\n", tmp->id_old, tmp->id_new);
+        printf ("%p : %s -> %s on level %d\n", tmp, tmp->id_old, tmp->id_new,
+                tmp->w_level);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : DuplicateNode
- *  arguments     :  1) source node
- *  description   : returns a duplicate of arg1
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : MakeNode
- *  macros        : ---
+ * function:
+ *  char *RenameWithVar(char *name, int level)
  *
- *  remarks       :
+ * description:
+ *   - creates a new string with a prefix:
+ *     name == a , level == 7      =>    result == <WITH_PREFIX>7_a
  *
- */
-node *
-DuplicateNode (node *source_node)
-{
-    int i;
-    node *dest_node;
-
-    DBUG_ENTER ("DuplicateNode");
-    DBUG_PRINT ("DUPLICATE",
-                ("%s" P_FORMAT, mdb_nodetype[source_node->nodetype], source_node));
-
-    if (N_id == source_node->nodetype) {
-        dest_node = MakeId (StringCopy (ID_NAME (source_node)), ID_MOD (source_node),
-                            ID_STATUS (source_node));
-        ID_ATTRIB (dest_node) = ID_ATTRIB (dest_node);
-    } else if (N_let == source_node->nodetype) {
-        ids *dest_ids = MakeIds (StringCopy (LET_NAME (source_node)),
-                                 LET_MOD (source_node), LET_STATUS (source_node));
-        ids *source_ids = LET_IDS (source_node);
-        node *exprs = DuplicateNode (LET_EXPR (source_node));
-
-        dest_node = MakeLet (exprs, dest_ids);
-        while (NULL != IDS_NEXT (source_ids)) {
-            source_ids = IDS_NEXT (source_ids);
-            IDS_NEXT (dest_ids) = MakeIds (StringCopy (IDS_NAME (source_ids)),
-                                           IDS_MOD (source_ids), IDS_STATUS (source_ids));
-            dest_ids = IDS_NEXT (dest_ids);
-            IDS_ATTRIB (dest_ids) = IDS_ATTRIB (source_ids);
-        }
-    } else {
-        dest_node = MakeNode (source_node->nodetype);
-        for (i = 0; i < nnode[NODE_TYPE (source_node)]; i++)
-            if (source_node->node[i])
-                dest_node->node[i] = DuplicateNode (source_node->node[i]);
-            else
-                dest_node->node[i] = NULL;
-        dest_node->info = source_node->info;
-        dest_node->info2 = source_node->info2;
-    }
-    NODE_LINE (dest_node) = NODE_LINE (source_node);
-
-    DBUG_PRINT ("DUPLICATE",
-                ("return :%s" P_FORMAT, mdb_nodetype[dest_node->nodetype], dest_node));
-
-    DBUG_RETURN (dest_node);
-}
-
-/*
- *
- *  functionname  : RenameWithVar
- *  arguments     : 1) old name
- *                  2) number of nested with_loops
- *  description   : allocate string for temporary variable
- *  global vars   :
- *  internal funs : ---
- *  external funs : Malloc, sizeof, strlen
- *  macros        : ---
- *
- *  remarks       :
- *
- */
+ ******************************************************************************/
 
 char *
 RenameWithVar (char *name, int level)
 {
     char *string;
     DBUG_ENTER ("RenameWithVar");
-    if (0 <= level) {
-        string
-          = (char *)Malloc (sizeof (char) * (strlen (name) + WITH_PREFIX_LENGTH + 5));
-        /* 5 will be added, because 'with_level' and `_` will be part of
-         * new name
-         */
-        sprintf (string, WITH_PREFIX "%d_%s", level, name);
-    } else {
-        string
-          = (char *)Malloc (sizeof (char) * (strlen (name) + WITH_PREFIX_LENGTH + 6));
-        /* 6 will be added, because 'with_level' and '__' will be part of
-         * new name
-         */
-        sprintf (string, WITH_PREFIX "%d__%s", -level, name);
-    }
+
+    string = (char *)Malloc (sizeof (char) * (strlen (name) + WITH_PREFIX_LENGTH + 6));
+    /*
+     * 6 will be added, because 'level' and `_` will be part of
+     * new name
+     */
+    sprintf (string, WITH_PREFIX "%d_%s", level, name);
+
     DBUG_RETURN (string);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : InsertIdentity
- *  arguments     : 1) last assign
- *                  2) assigned variable name
- *                  3) assigned to variable name
- *  description   :
- *  global vars   :
- *  internal funs : ---
- *  external funs :
- *  macros        : ---
+ * function:
+ *  void InsertRenaming(node *block_or_assign, char *new_name, char *old_name)
  *
- *  remarks       : memory for names is allocated here.
+ * description:
+ *   - inserts an assigment of the kind:
+ *       new_name = old_name;
+ *     after the node pointed at by block_or_assign.
+ *     As the parameter name suggests, this node may either be a block
+ *     node (needed for the renamings at the beginning of the WL bodies)
+ *     or an assign node (needed for renaming the LHS of a WL).
+ *   - returns a pointer to the freshly generated N_assign node.
  *
- */
+ ******************************************************************************/
+
 node *
-AppendIdentity (node *last_assign, char *old_name, char *new_name)
+InsertRenaming (node *block_or_assign, char *new_name, char *old_name)
 {
-    node *assign_node, *let_node;
-    char *name;
+    node **insert_at;
 
-    DBUG_ENTER ("AppendIdentity");
+    DBUG_ENTER ("InsertRenaming");
 
-    assign_node = MakeNode (N_assign);
-    let_node = MakeNode (N_let);
-    name = (char *)Malloc (sizeof (char) * (strlen (new_name) + 1));
-    name = strcpy (name, new_name);
-    LET_IDS (let_node) = MakeIds (name, NULL, ST_regular);
-    name = (char *)Malloc (sizeof (char) * (strlen (old_name) + 1));
-    name = strcpy (name, old_name);
-    LET_EXPR (let_node) = MakeId (name, NULL, ST_regular);
+    DBUG_ASSERT ((block_or_assign != NULL), "1st arg of InsertRenaming is NULL!");
+    DBUG_ASSERT (((NODE_TYPE (block_or_assign) == N_block)
+                  || (NODE_TYPE (block_or_assign) == N_assign)),
+                 "1st arg of InsertRenaming is neither an N_block nor"
+                 "an N_assign node!!");
 
-    ASSIGN_INSTR (assign_node) = let_node;
-    ASSIGN_NEXT (assign_node) = last_assign;
+    /*
+     * First insert_at is set to the address of the son node of block_or_assign
+     * where the new assignment will be inserted. This has to be done since
+     * we otherwise would have to use differen Access-Macros for creating and
+     * inserting the new assignment!
+     */
+    if (NODE_TYPE (block_or_assign) == N_block)
+        insert_at = &BLOCK_INSTR (block_or_assign);
+    else
+        insert_at = &ASSIGN_NEXT (block_or_assign);
 
-    DBUG_RETURN (assign_node);
+    *insert_at = MakeAssign (MakeLet (MakeId (StringCopy (old_name), NULL, ST_regular),
+                                      MakeIds (StringCopy (new_name), NULL, ST_regular)),
+                             *insert_at);
+    DBUG_PRINT ("RENAME", ("inserted %0x between %0x and %0x", *insert_at,
+                           block_or_assign, ASSIGN_NEXT ((*insert_at))));
+
+    DBUG_RETURN (*insert_at);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : FindId
- *  arguments     : 1) name
- *  description   : looks for 10 on local stack, returns pointer to stack entry
- *                  if found, NULL otherwise
- *  global vars   :
- *  internal funs : ---
- *  external funs :
- *  macros        : ---
+ * function:
+ *  local_stack *FindId(char *name)
  *
- *  remarks       :
+ * description:
+ *   - searches name on the stack
+ *   - returns the repective pointer iff succesfull otherwise it returns NULL
  *
- */
+ ******************************************************************************/
+
 local_stack *
 FindId (char *name)
 {
     local_stack *tmp;
-    int found = 0;
 
     DBUG_ENTER ("FindId");
-    if (tos == stack)
-        tmp = NULL;
-    else {
-        tmp = tos - 1;
 
-        while ((tmp > stack) && !found)
-            if (0 == strcmp (tmp->id_old, name))
-                found = 1;
-            else
-                tmp--;
-        if (!found)
-            if (0 != strcmp (tmp->id_old, name))
-                tmp = NULL;
+    tmp = tos - 1;
+    while ((tmp >= stack) && (strcmp (tmp->id_old, name) != 0))
+        tmp--;
+
+    if (tmp < stack) {
+        tmp = NULL;
+        DBUG_PRINT ("RENAME", ("var %s not found!", name));
+    } else {
+        DBUG_PRINT ("RENAME", ("found:" P_FORMAT "old: %s, new: %s, id_level: %d ,"
+                               " with_level: %d",
+                               tmp, tmp->id_old, tmp->id_new, tmp->w_level, with_level));
     }
 
     DBUG_RETURN (tmp);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : Flatten
- *  arguments     : 1) syntax tree
- *  description   : eliminates nested function applications
- *                  allocates memory for local stack and sets tos
- *  global vars   : syntax_tree, act_tab, flat_tab, with_level
- *  internal funs : ---
- *  external funs : Trav, MakeNode
- *  macros        : ---
+ * function:
+ *  local_stack *FindIdInSeg(char *name, int seg_sz, local_stack *seg)
  *
- *  remarks       :
+ * description:
+ *   - searches name in the given stack segment
+ *   - returns the repective pointer iff succesfull otherwise it returns NULL
  *
- */
+ ******************************************************************************/
+
+local_stack *
+FindIdInSeg (char *name, int seg_sz, local_stack *seg)
+{
+    local_stack *tmp;
+
+    DBUG_ENTER ("FindIdInSeg");
+
+    tmp = &seg[seg_sz - 1];
+    while ((tmp >= seg) && (strcmp (tmp->id_old, name) != 0))
+        tmp--;
+
+    if (tmp < seg) {
+        tmp = NULL;
+        DBUG_PRINT ("RENAME", ("var %s not found!", name));
+    } else {
+        DBUG_PRINT ("RENAME", ("found:" P_FORMAT "old: %s, new: %s, id_level: %d ,"
+                               " with_level: %d",
+                               tmp, tmp->id_old, tmp->id_new, tmp->w_level, with_level));
+    }
+
+    DBUG_RETURN (tmp);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *  local_stack *CopyStackSeg( local_stack *first_elem, local_stack *last_elem)
+ *
+ * description:
+ *   - allocates a local_stack of size (last_elem-first_elem) and copies
+ *     all entries from first_elem to (last_elem-1) into that segment.
+ *   - returns a pointer to the allocated segment.
+ *
+ ******************************************************************************/
+
+local_stack *
+CopyStackSeg (local_stack *first_elem, local_stack *last_elem)
+{
+    local_stack *seg;
+    int i, sz;
+
+    DBUG_ENTER ("CopyStackSeg");
+
+    sz = last_elem - first_elem;
+    seg = (local_stack *)Malloc (sizeof (local_stack) * sz);
+
+    for (i = 0; i < sz; i++) {
+        seg[i].id_old = first_elem[i].id_old;
+        seg[i].id_new = first_elem[i].id_new;
+        seg[i].w_level = first_elem[i].w_level;
+    }
+
+    DBUG_RETURN (seg);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *  node *Abstract(node *arg_node, *arg_info)
+ *
+ * description:
+ *   - gets an expression <expr> to be abstracted out as argument
+ *   - creates an assignment of the form:
+ *        __flat_<n> = <expr>;
+ *     end prepands it to LASTASSIGN from arg_info
+ *   - returns a freshly created N_id node holding  __flat_<n>
+ *
+ ******************************************************************************/
+
+node *
+Abstract (node *arg_node, node *arg_info)
+{
+    char *tmp;
+    node *res;
+
+    DBUG_ENTER ("Abstract");
+
+    tmp = TmpVar ();
+    INFO_FLTN_LASTASSIGN (arg_info)
+      = MakeAssign (MakeLet (arg_node, MakeIds (tmp, NULL, ST_regular)),
+                    INFO_FLTN_LASTASSIGN (arg_info));
+    DBUG_PRINT ("FLATTEN",
+                ("node %08x inserted before %08x", INFO_FLTN_LASTASSIGN (arg_info),
+                 ASSIGN_NEXT (INFO_FLTN_LASTASSIGN (arg_info))));
+
+    res = MakeId (StringCopy (tmp), NULL, ST_regular);
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *  node *Flatten(node *arg_node)
+ *
+ * description:
+ *   eliminates nested function applications:
+ *
+ *     a = f( a+b, c)            =>   __flat_<n> = a+b;
+ *                                    a          = f( __flat_<n>, c);
+ *
+ *   renames vars that are defined by a with-loop AND have been defined before
+ *   that with-loop:
+ *     ...                            ...
+ *     a = ...                        a = ...
+ *     ...                       =>   ...
+ *     a = with ... a ...             __flat_<n> = with ... a ...
+ *                                    a = __flat_<n>;
+ *
+ *   and renames vars that have been defined before a with-loop AND
+ *   are redefined in the with-loop:
+ *     ...                            ...
+ *     a = ...                        a = ...
+ *     ...                            ...
+ *     b = with(...) {                b = with(...) {
+ *                                          __w<i>a = a;
+ *           ... a ...           =>         ... __w<i>a ...
+ *           a = ...                        __w<i>a = ...
+ *           ... a ...                      ... __w<i>a ...
+ *         } ...                          } ...
+ *
+ *   and gives the generator-variables of WLs unique names:
+ *
+ *     iv = ...                        iv = ...
+ *     ...                             ...
+ *     a = with(... iv ...)      =>    a = with(... __flat<n>iv ...)
+ *           v = ... iv ...                  __w<i>iv = ... __flat<n>iv ...
+ *
+ *  NOTE: For the old WL, this renaming only occurs, if iv has been previously
+ *  defined. In the new WL, this is done always!
+ *
+ ******************************************************************************/
 
 node *
 Flatten (node *arg_node)
@@ -542,540 +621,70 @@ Flatten (node *arg_node)
 
     DBUG_ENTER ("Flatten");
 
+    /*
+     * initialize the static variables :
+     */
     stack = (local_stack *)Malloc (sizeof (local_stack) * STACK_SIZE);
     stack_limit = STACK_SIZE + stack;
     tos = stack;
 
-    var_counter = 0;
-    act_tab = flat_tab;
-    info_node = MakeNode (N_info);
-    info_node->info.cint = NORMAL;
-    info_node->node[0] = NULL;
     with_level = 0;
 
-    filename = sacfilename;
     /*
-     * for correct error messages only
+     * traverse the syntax tree:
      */
+    act_tab = flat_tab;
+    info_node = MakeInfo ();
+    INFO_FLTN_CONTEXT (info_node) = CT_normal;
 
     arg_node = Trav (arg_node, info_node);
-    FREE (info_node);
+
+    FreeInfo (info_node, NULL);
+
+    /*
+     * de-initialize the static variables :
+     */
     FREE (stack);
 
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : FltnAssign
- *  arguments     : 1) argument node
- *                  2) info node
- *  description   : Insert reference to actual assign node into info node
- *                  call recursively and return adress from the info node
- *                  obtained back.
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : ---
- *  macros        : ---
+ * function:
+ *  node *FltnModul(node *arg_node, node *arg_info)
  *
- *  remarks       :
+ * description:
+ *   this function is needed to limit the traversal to the FUNS-son of
+ *   N_modul!
  *
- */
+ ******************************************************************************/
 
-node *
-FltnAssign (node *arg_node, node *arg_info)
-{
-    node *return_node;
-
-    DBUG_ENTER ("FltnAssign");
-
-    arg_info->node[0] = arg_node;
-    DBUG_PRINT ("FLATTEN", ("arg_info->node[0] set to %08x!", arg_node));
-    ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
-    return_node = arg_info->node[0];
-    DBUG_PRINT ("FLATTEN", ("node %08x inserted before %08x", return_node, arg_node));
-    if (ASSIGN_NEXT (arg_node))
-        ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
-    DBUG_RETURN (return_node);
-}
-
-/*
- *
- *  functionname  : FltnExprs
- *  arguments     : 1) argument node
- *                  2) last assignment in arg_info->node[0]
- *  description   : Flatten each argument of the given node if neccessary
- *  external funs : MakeNode
- *  macros        : GEN_NODE
- *
- *  remarks       : arg_info->info.cint contains a tag that gives the
- *                  context of this N_exprs
- *
- */
-node *
-FltnExprs (node *arg_node, node *arg_info)
-{
-    node *tmp_node1, *id_node, *let_node, *assign_node, *tmp_arg;
-    int abstract, old_tag;
-    char *tmp_var_name;
-
-    DBUG_ENTER ("FltnExprs");
-
-    tmp_arg = EXPRS_EXPR (arg_node);
-
-    /* ignore leading casts */
-    while (N_cast == tmp_arg->nodetype)
-        tmp_arg = EXPRS_EXPR (tmp_arg);
-
-    /* compute whether to abstract an expression or not , depending on the
-     * context of the expression, given by arg_info->info.cint
-     */
-    switch (arg_info->info.cint) {
-    case LOOP:
-    case COND:
-        abstract = ((tmp_arg->nodetype == N_ap) || (tmp_arg->nodetype == N_prf));
-        break;
-    case RET:
-        abstract = ((tmp_arg->nodetype == N_num) || (tmp_arg->nodetype == N_float)
-                    || (tmp_arg->nodetype == N_double) || (tmp_arg->nodetype == N_bool)
-                    || (tmp_arg->nodetype == N_str) || (tmp_arg->nodetype == N_array)
-                    || (tmp_arg->nodetype == N_ap) || (tmp_arg->nodetype == N_prf)
-                    || (tmp_arg->nodetype == N_Nwith) || (tmp_arg->nodetype == N_with));
-        break;
-    case AP:
-    case MODARRAY:
-        abstract = ((tmp_arg->nodetype == N_array) || (tmp_arg->nodetype == N_prf)
-                    || (tmp_arg->nodetype == N_ap) || (tmp_arg->nodetype == N_Nwith)
-                    || (tmp_arg->nodetype == N_with));
-        break;
-    case NORMAL:
-        abstract = ((tmp_arg->nodetype == N_ap) || (tmp_arg->nodetype == N_prf)
-                    || (tmp_arg->nodetype == N_Nwith) || (tmp_arg->nodetype == N_with));
-        break;
-    default:
-        DBUG_ASSERT (0, "wrong tag ");
-    }
-
-    DBUG_PRINT ("FLATTEN", ("tag: %d, abstract: %d, node[0]: %s", arg_info->info.cint,
-                            abstract, mdb_nodetype[tmp_arg->nodetype]));
-
-    if (abstract) {
-        tmp_node1 = EXPRS_EXPR (arg_node);
-
-        tmp_var_name = TmpVar ();
-        id_node = MakeNode (N_id);
-        id_node->info.ids = MakeIds (tmp_var_name, NULL, ST_regular);
-        EXPRS_EXPR (arg_node) = id_node;
-
-        let_node = MakeNode (N_let);
-        let_node->info.ids = MakeIds (StringCopy (tmp_var_name), NULL, ST_regular);
-        LET_EXPR (let_node) = tmp_node1;
-
-        assign_node = MakeNode (N_assign);
-        ASSIGN_INSTR (assign_node) = let_node;
-        ASSIGN_NEXT (assign_node) = arg_info->node[0]; /* a new node is put in front! */
-        arg_info->node[0] = assign_node;
-
-        /* we use tmp_arg , because tmp_node1 may be a N_cast, but tmp_arg
-         * cant't be
-         */
-        if (tmp_arg) {
-            /* Now, we have to flatten the child "tmp_arg" recursively! */
-            old_tag = arg_info->info.cint;
-
-            if (tmp_arg->nodetype == N_ap)
-                arg_info->info.cint = AP; /* set new tag */
-            else if ((tmp_arg->nodetype == N_array) || (tmp_arg->nodetype == N_prf))
-                arg_info->info.cint = NORMAL; /*set new tag */
-            tmp_arg = Trav (tmp_arg, arg_info);
-            arg_info->info.cint = old_tag;
-        }
-
-    } else if ((tmp_arg->nodetype == N_array) || (tmp_arg->nodetype == N_prf)
-               || (tmp_arg->nodetype == N_ap)) {
-        /* components of an array and arguments of a function have
-         * to be flattend anyway.
-         */
-        old_tag = arg_info->info.cint;
-        arg_info->info.cint = NORMAL;
-        arg_node->node[0] = Trav (arg_node->node[0], arg_info);
-        arg_info->info.cint = old_tag;
-    } else if (N_id == NODE_TYPE (tmp_arg))
-        arg_node->node[0] = Trav (arg_node->node[0], arg_info);
-
-    /* Last, but not least remaining exprs have to be done */
-    if (EXPRS_NEXT (arg_node))
-        EXPRS_NEXT (arg_node) = Trav (EXPRS_NEXT (arg_node), arg_info);
-    DBUG_RETURN (arg_node);
-}
-
-/*
- *
- *  functionname  : FltnCond
- *  arguments     : 1) argument node
- *                  2) last assignment in arg_info->node[0]
- *  description   : Flatten each argument of the given node if neccessary
- *  global vars   :
- *  internal funs : Flatten
- *  external funs : Trav, MakeNode
- *  macros        :
- *
- *  remarks       : arg_info->node[1] contains list of assigns that have to
- *                  be put in front of a with_loop, if conditional is part
- *                  of a with_loop and there are variables to 'copy'
- *
- */
-
-node *
-FltnCond (node *arg_node, node *arg_info)
-{
-    int i, old_tag;
-    node *info_node, *tmp_exprs;
-
-    DBUG_ENTER ("FltnCond");
-
-    old_tag = arg_info->info.cint; /* store tag (used in FltnExprs) */
-    arg_info->info.cint = COND;
-
-    /* create a temporary N_exprs node to flatten the condition with FltnExprs
-     */
-    tmp_exprs = MakeNode (N_exprs);
-    EXPRS_EXPR (tmp_exprs) = COND_COND (arg_node);
-
-    tmp_exprs = Trav (tmp_exprs, arg_info);
-    COND_COND (arg_node) = EXPRS_EXPR (tmp_exprs); /* set node of termination condition
-                                                    * correctly
-                                                    */
-    arg_info->info.cint = old_tag;                 /* restore tag */
-
-    info_node = MakeNode (N_info);
-    for (i = 1; i < nnode[NODE_TYPE (arg_node)]; i++)
-        if (arg_node->node[i]) {
-            info_node->node[0] = NULL;
-            info_node->node[1] = arg_info->node[1]; /* list of assigns that have to be
-                                                     * put infront of a with_loop
-                                                     */
-            arg_node->node[i] = Trav (arg_node->node[i], info_node);
-            arg_info->node[1] = info_node->node[1]; /* list of assigns that have to be
-                                                     * put infront of a with_loop
-                                                     */
-        }
-    FREE (info_node);
-
-    DBUG_RETURN (arg_node);
-}
-
-/*
- *
- *  functionname  : FltnWhile
- *  arguments     : 1) argument node
- *                  2) last assignment in arg_info->node[0]
- *  description   : Flatten each argument of the given node if neccessary
- *  global vars   :
- *  internal funs :
- *  external funs : Trav, MakeNode
- *  macros        :
- *
- *  remarks       : arg_info->node[1] contains list of assigns that have to
- *                   be put infront of a with_loop, if conditional is part
- *                   of a with_loop and there are variables to 'copy'
- *
- */
-node *
-FltnWhile (node *arg_node, node *arg_info)
-{
-    node *info_node, *tmp, *dest_node, *tmp_exprs, *last_assign;
-    int old_tag;
-
-    DBUG_ENTER ("FltnWhile");
-
-    info_node = MakeNode (N_info);
-    info_node->node[1] = arg_info->node[1]; /* list of assigns that have to be
-                                             * put infront of a with_loop
-                                             */
-    /* traverse body of while-loop */
-    WHILE_BODY (arg_node) = Trav (WHILE_BODY (arg_node), info_node);
-
-    arg_info->node[1] = info_node->node[1]; /* list of assigns that have to be
-                                             * put infront of a with_loop
-                                             */
-    DBUG_PRINT ("FLATTEN",
-                ("info_node: %s" P_FORMAT ": %s" P_FORMAT,
-                 mdb_nodetype[info_node->node[0]->nodetype], info_node->node[0],
-                 mdb_nodetype[info_node->node[0]->node[0]->nodetype],
-                 info_node->node[0]->node[0]));
-
-    /* create a temporary N_exprs node to flatten the termination condition
-     * in FltnExprs
-     */
-    tmp_exprs = MakeNode (N_exprs);
-    EXPRS_EXPR (tmp_exprs) = WHILE_COND (arg_node);
-
-    old_tag = arg_info->info.cint;
-    arg_info->info.cint = LOOP; /* set tag for FltnExprs */
-    tmp_exprs = Trav (tmp_exprs, arg_info);
-    WHILE_COND (arg_node) = tmp_exprs->node[0]; /* set node of termination condition
-                                                 * correctly
-                                                 */
-    FREE (tmp_exprs);
-    arg_info->info.cint = old_tag; /* restore tag */
-
-    DBUG_PRINT ("FLATTEN", ("arg_info: %s" P_FORMAT ": %s" P_FORMAT,
-                            mdb_nodetype[arg_info->node[0]->nodetype], arg_info->node[0],
-                            mdb_nodetype[arg_info->node[0]->node[0]->nodetype],
-                            arg_info->node[0]->node[0]));
-
-    /*
-     *  now we're looking for the last N_assign node in the pointer chain
-     *  of info_node to copy the flattend condition to it.
-     *  This has to be done, because we must "update" (compute) the termination
-     *  condition of the while loop at the end of the while-loop body
-     *
-     */
-
-    tmp = info_node; /* tmp ist used to free info_node  */
-    if (info_node->node[0]) {
-        /*  looking for last N_assign node.
-         *  info_node stores the pointer to the last N_assign nodes, because
-         *  we used info_node as arg_info while traversing the body.
-         *  So we look at this pointer chain instead of going through
-         *  the chain behind  arg_node->node[1]
-         */
-        info_node = info_node->node[0];
-        while (ASSIGN_NEXT (info_node)) {
-            DBUG_ASSERT ((N_assign == info_node->nodetype),
-                         "wrong nodetype: != N_assign");
-            info_node = ASSIGN_NEXT (info_node);
-        }
-        last_assign = info_node;
-    } else
-        last_assign = NULL;
-
-    if (arg_info->node[0]) {
-        dest_node = arg_info->node[0];
-
-        /*  now we create new N_assign nodes and  dublicate the flattened
-         *  break condition of the while loop.
-         */
-        if ((NULL == last_assign) && (N_while != dest_node->node[0]->nodetype)) {
-            /* the body of the while-loop is empty, so insert flattened termination
-             * condition
-             */
-            last_assign = MakeNode (N_assign);
-            last_assign->node[0] = DuplicateNode (dest_node->node[0]);
-            dest_node = dest_node->node[1];
-            arg_node->node[1]->node[0] = last_assign;
-        }
-
-        while (N_while != NODE_TYPE (ASSIGN_INSTR (dest_node))) {
-            DBUG_ASSERT ((N_assign == NODE_TYPE (dest_node)),
-                         "wrong nodetype: not N_assign");
-
-            ASSIGN_NEXT (last_assign) = MakeNode (N_assign);
-            ASSIGN_INSTR (ASSIGN_NEXT (last_assign)) = DuplicateNode (dest_node->node[0]);
-            last_assign = ASSIGN_NEXT (last_assign);
-            dest_node = dest_node->node[1];
-        }
-    }
-
-    FREE (tmp);
-
-    DBUG_RETURN (arg_node);
-}
-
-/*
- *
- *  functionname  : FltnWith
- *  arguments     : 1) argument node
- *                  2) last assignment in arg_info->node[0]
- *  description   :- Flatten each argument of the given node if necessary
- *                 - inserts initialisation of renamed (new) variable at
- *                   beginning of with_loop body
- *
- *  global vars   : with_level
- *  internal funs :
- *  external funs : Trav, MakeNode
- *  macros        : DBUG, ..., FREE
- *
- *  remarks       : ( initialisation assignments as N_assign chain are stored
- *                   in arg-info->node[1] )
-
- *
- */
-node *
-FltnWith (node *arg_node, node *arg_info)
-{
-    local_stack *tmp_tos;
-
-    DBUG_ENTER ("FltnWith");
-
-    with_level += 1;
-    tmp_tos = tos; /* store tos */
-    DBUG_PRINT ("RENAME", ("store tos " P_FORMAT, tos));
-
-    WITH_GEN (arg_node) = Trav (WITH_GEN (arg_node), arg_info); /* traverse generator */
-
-    /* traverse  N_genarray, N_modarray, N_foldfun or N_foldprf and body */
-    WITH_OPERATOR (arg_node) = Trav (WITH_OPERATOR (arg_node), arg_info);
-
-    with_level -= 1; /* now decrease it */
-
-    tos = tmp_tos; /*restore tos */
-    DBUG_PRINT ("RENAME", ("restore tos " P_FORMAT, tos));
-
-    DBUG_RETURN (arg_node);
-}
-
-/*
- *
- *  functionname  : FltnDo
- *  arguments     : 1) argument node
- *                  2) last assignment in arg_info->node[0]
- *  description   : Flatten each argument of the given node if neccessary
- *  global vars   :
- *  internal funs :
- *  external funs : Trav, MakeNode
- *  macros        : DBUG, ..., FREE
- *
- *  remarks       : arg_info->node[1] contains list of assigns that have to
- *                   be put infront of a with_loop, if conditional is part
- *                   of a with_loop and there are variables to 'copy'
- *
- */
-node *
-FltnDo (node *arg_node, node *arg_info)
-{
-    node *info_node, *tmp, *last_assign, *tmp_exprs;
-    int old_tag;
-
-    DBUG_ENTER ("FltnDo");
-
-    info_node = MakeNode (N_info);
-    info_node->node[1] = arg_info->node[1]; /* list of assigns that have to be
-                                             * put infront of a with_loop
-                                             */
-    /* traverse body of do-loop */
-    arg_node->node[1] = Trav (arg_node->node[1], info_node);
-
-    DBUG_PRINT ("FLATTEN",
-                ("info_node: %s" P_FORMAT ": %s" P_FORMAT,
-                 mdb_nodetype[info_node->node[0]->nodetype], info_node->node[0],
-                 mdb_nodetype[info_node->node[0]->node[0]->nodetype],
-                 info_node->node[0]->node[0]));
-
-    /* store info_node */
-    tmp = info_node;
-
-    info_node = info_node->node[0];
-    if (NULL != info_node) {
-        /* looking for last N_assign node in the body of the do-loop */
-        while (info_node->node[1]) {
-            DBUG_ASSERT ((N_assign == info_node->nodetype), "wrong nodetype:"
-                                                            "!= N_assign");
-            info_node = info_node->node[1];
-        }
-
-        DBUG_PRINT ("FLATTEN",
-                    ("info_node: %s" P_FORMAT ": %s" P_FORMAT,
-                     mdb_nodetype[info_node->nodetype], info_node,
-                     mdb_nodetype[info_node->node[0]->nodetype], info_node->node[0]));
-
-        /* store last N_assign node of the body */
-        last_assign = info_node;
-
-        /* clear info_node */
-        info_node = tmp;
-        info_node->node[0] = NULL;
-    } else {
-        /* there are no assigns in the body */
-        last_assign = NULL;
-        info_node = tmp;
-    }
-
-    /* create a temporary N_exprs node to flatten the termination condition
-     * in FltnExprs
-     */
-    tmp_exprs = MakeNode (N_exprs);
-    tmp_exprs->node[0] = arg_node->node[0];
-
-    /* travers termination condition */
-    old_tag = info_node->info.cint;
-    info_node->info.cint = LOOP; /* set tag for FltnExprs */
-    tmp_exprs = Trav (tmp_exprs, info_node);
-    arg_node->node[0] = tmp_exprs->node[0]; /* set node of termination condition
-                                             * correctly
-                                             */
-
-    arg_info->node[1] = info_node->node[1]; /* list of assigns that have to be
-                                             * put infront of a with_loop
-                                             */
-    FREE (tmp_exprs);
-
-    if (NULL != info_node->node[0])
-        if (NULL != last_assign) {
-            /* append flattened termination condition to last assignment
-             * in the loop's body
-             */
-            last_assign->node[1] = info_node->node[0];
-
-            DBUG_PRINT ("FLATTEN",
-                        ("info_node: %s" P_FORMAT ": %s" P_FORMAT,
-                         mdb_nodetype[info_node->node[0]->nodetype], info_node->node[0],
-                         mdb_nodetype[info_node->node[0]->node[0]->nodetype],
-                         info_node->node[0]->node[0]));
-        } else
-            arg_node->node[1]->node[0] = info_node->node[0];
-
-    FREE (tmp);
-
-    DBUG_RETURN (arg_node);
-}
-
-/*
- *
- *  functionname  : FltnModul
- *  arguments     : 1) argument node
- *                  2) last assignment in arg_info->node[0]
- *  description   : call Trav to flatten the user defined functions
- *  global vars   :
- *  internal funs :
- *  external funs : Trav
- *  macros        :
- *
- *  remarks       :
- *
- */
 node *
 FltnModul (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("FltnModul");
 
     if (MODUL_FUNS (arg_node)) {
-        DBUG_ASSERT ((N_fundef == NODE_TYPE (MODUL_FUNS (arg_node))), "blaaa");
-
         MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : FltnFundef
- *  arguments     : 1) argument node
- *                  2) last assignment in arg_info->node[0]
- *  description   : - calls Trav to flatten the user defined functions
- *                    if function body is not empty
- *                  - reset tos after flatten of the function's body
- *  global vars   : tos
- *  internal funs :
- *  external funs : Trav
- *  macros        :
+ * function:
+ *  node *FltnFundef(node *arg_node, node *arg_info)
  *
- *  remarks       : the formal parameters of a function will be traversed
- *                   to put their name on the local stack
+ * description:
+ *   - calls Trav to flatten the user defined functions if function body is not
+ *   empty and resets tos after flatten of the function's body.
+ *   - the formal parameters of a function will be traversed to put their names
+ *   on the stack!
  *
- */
+ ******************************************************************************/
+
 node *
 FltnFundef (node *arg_node, node *arg_info)
 {
@@ -1085,219 +694,471 @@ FltnFundef (node *arg_node, node *arg_info)
 
     tmp_tos = tos; /* store tos */
 
-    /* Do not flatten imported functions. These functions have already been
-       flattened and if this is done again there may arise name clashes.
-       A new temp variable __flat42 may conflict with __flat42 which was
-       inserted in the first flatten phase (module compiliation). */
+    /*
+     * Do not flatten imported functions. These functions have already been
+     * flattened and if this is done again there may arise name clashes.
+     * A new temp variable __flat42 may conflict with __flat42 which was
+     * inserted in the first flatten phase (module compiliation).
+     */
     if (FUNDEF_BODY (arg_node) && ST_imported != FUNDEF_STATUS (arg_node)) {
-        if (FUNDEF_ARGS (arg_node))
+        DBUG_PRINT ("FLATTEN", ("flattening function %s:", FUNDEF_NAME (arg_node)));
+        if (FUNDEF_ARGS (arg_node)) {
             FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
-
+        }
         FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
     }
     tos = tmp_tos; /* restore tos */
 
+    /*
+     * Proceed with the next function...
+     */
     if (FUNDEF_NEXT (arg_node))
         FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : FltnGen
- *  arguments     : 1) argument node
- *                  2) last assignment in arg_info->node[0]
- *  description   : - flattens each argument of the given node, if necessary
- *  external funs : MakeNode, Trav,
- *  macros        : DBUG,..., GEN_NODE
+ * function:
+ *  node *FltnArgs(node *arg_node, node *arg_info)
  *
- *  remarks       :
+ * description:
+ *   - adds names of formal parameters to the stack
  *
- */
+ ******************************************************************************/
+
 node *
-FltnGen (node *arg_node, node *arg_info)
+FltnArgs (node *arg_node, node *arg_info)
 {
-    node *tmp_node1, *id_node, *let_node, *assign_node, **bound;
-    int i;
-    local_stack *tmp;
-    char *old_name, *tmp_var_name;
+    DBUG_ENTER ("FltnArgs");
 
-    DBUG_ENTER ("FltnGen");
-    for (i = 0; i < 2; i++) {
-        if (i == 0)
-            bound = &GEN_LEFT (arg_node);
-        else
-            bound = &GEN_RIGHT (arg_node);
+    PUSH (ARG_NAME (arg_node), ARG_NAME (arg_node), with_level);
 
-        if (*bound)
-            if (NODE_TYPE (*bound) == N_ap || NODE_TYPE (*bound) == N_prf
-                || NODE_TYPE (*bound) == N_array) {
-                /* This argument is a function application and thus has to be abstracted
-                ** out. Therefore a new N_assign, a new N_let, and a new temporary
-                ** variable are generated and inserted.
-                */
-                tmp_node1 = *bound;
-                tmp_var_name = TmpVar ();
-                id_node = MakeId (tmp_var_name, NULL, ST_regular);
-                *bound = id_node;
+    if (ARG_NEXT (arg_node) != NULL)
+        ARG_NEXT (arg_node) = Trav (ARG_NEXT (arg_node), arg_info);
 
-                let_node = MakeNode (N_let);
-                let_node->info.ids
-                  = MakeIds (StringCopy (tmp_var_name), NULL, ST_regular);
+    DBUG_RETURN (arg_node);
+}
 
-                /*         assign_node=MakeNode(N_assign); */
-                /*         ASSIGN_INSTR(assign_node)=let_node; */
-                /*         ASSIGN_NEXT(assign_node)=arg_info->node[0]; */
+/******************************************************************************
+ *
+ * function:
+ *  node *FltnBlock(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   - if CONTEXT is CT_wl arg_node is inserted in LASTWLBLOCK and after
+ *     traversing the body LASTWLBLOCK -> NEXT is set to the result of the
+ *     traversal. This ensures that flattening and renaming do not interfere!
+ *
+ ******************************************************************************/
 
-                assign_node = MakeAssign (let_node, arg_info->node[0]);
+node *
+FltnBlock (node *arg_node, node *arg_info)
+{
+    node *assigns, *mem_last_wlblock;
 
-                /* a new node is put in front! */
+    DBUG_ENTER ("FltnBlock");
 
-                arg_info->node[0] = assign_node;
-
-                /* Now, we have to flatten the child "tmp_node1" recursively! */
-                LET_EXPR (let_node) = Trav (tmp_node1, arg_info);
-            } else
-                *bound = Trav (*bound, arg_info);
-    }
-
-    /* rename index-vector if necessary */
-    tmp = FindId (GEN_ID (arg_node));
-    if (NULL != tmp) {
-        old_name = GEN_ID (arg_node);
-        GEN_ID (arg_node) = RenameWithVar (old_name, -with_level);
-        PUSH (old_name, GEN_ID (arg_node), with_level - 1);
-    } else {
-        /* to rename index-vector if used later on the left side
-         * of a Let
-         */
-        PUSH (GEN_ID (arg_node), GEN_ID (arg_node), with_level - 1);
+    if (BLOCK_INSTR (arg_node) != NULL) {
+        if (INFO_FLTN_CONTEXT (arg_info) == CT_wl) {
+            mem_last_wlblock = INFO_FLTN_LASTWLBLOCK (arg_info);
+            INFO_FLTN_LASTWLBLOCK (arg_info) = arg_node;
+            DBUG_PRINT ("RENAME", ("LASTWLBLOCK set to %08x", arg_node));
+            assigns = Trav (BLOCK_INSTR (arg_node), arg_info);
+            if (NODE_TYPE (INFO_FLTN_LASTWLBLOCK (arg_info)) == N_block)
+                BLOCK_INSTR (INFO_FLTN_LASTWLBLOCK (arg_info)) = assigns;
+            else {
+                DBUG_ASSERT ((NODE_TYPE (INFO_FLTN_LASTWLBLOCK (arg_info)) == N_assign),
+                             ("LASTWLBLOCK in flatten does neither point to"
+                              " an N_block nor to an N_assign node !"));
+                ASSIGN_NEXT (INFO_FLTN_LASTWLBLOCK (arg_info)) = assigns;
+            }
+            DBUG_PRINT ("RENAME", ("connecting %08x to %08x!",
+                                   INFO_FLTN_LASTWLBLOCK (arg_info), assigns));
+            INFO_FLTN_LASTWLBLOCK (arg_info) = mem_last_wlblock;
+        } else {
+            BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
+        }
     }
 
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : FltnAp
- *  arguments     : 1) argument node
- *                  2) last assignment in arg_info->node[0]
- *  description   : set tag arg_info->info.cint for flatten of arguments
- *                  call Trav to flatten arguments
- *                  if function body is not empty
- *  global vars   :
- *  internal funs :
- *  external funs : Trav
- *  macros        : DBUG, AP, NULL
+ * function:
+ *  node *FltnAssign(node *arg_node, node *arg_info)
  *
- *  remarks       :
+ * description:
+ *   - stores arg_node in INFO_FLTN_LASTASSIGN( arg_info)
+ *   - stores arg_node in INFO_FLTN_FINALASSIGN( arg_info)
+ *   iff (ASSIGN_NEXT == NULL)
+ *   - returns the modified INFO_FLTN_LASTASSIGN( arg_info) yielded
+ *   by traversing the instruction so that newly created abstractions
+ *   will automatically be inserted by the calling function!
  *
- */
+ ******************************************************************************/
+
+node *
+FltnAssign (node *arg_node, node *arg_info)
+{
+    node *return_node;
+
+    DBUG_ENTER ("FltnAssign");
+
+    INFO_FLTN_LASTASSIGN (arg_info) = arg_node;
+    DBUG_PRINT ("FLATTEN", ("LASTASSIGN set to %08x!", arg_node));
+
+    ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+    /*
+     * newly inserted abstractions are prepanded in front of
+     * INFO_FLTN_LASTASSIGN( arg_info). To properly insert these nodes,
+     * that pointer has to be returned:
+     */
+    return_node = INFO_FLTN_LASTASSIGN (arg_info);
+
+    DBUG_EXECUTE ("FLATTEN", {
+        if (return_node != arg_node)
+            DBUG_PRINT ("FLATTEN", ("node %08x will be inserted instead of %08x",
+                                    return_node, arg_node));
+    });
+
+    if (ASSIGN_NEXT (arg_node))
+        ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+    else {
+        INFO_FLTN_FINALASSIGN (arg_info) = arg_node;
+        DBUG_PRINT ("FLATTEN", ("FINALASSIGN set to %08x!", arg_node));
+    }
+
+    DBUG_RETURN (return_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *  node *FltnLet(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   - for each id from the LHS do:
+ *     - if we have   a = with ...   AND it is absolutely sure
+ *       that a has been defined before, i.e.,
+ *         if a has been defined within a conditional, it has been defined
+ *         in both branches or if a has been defined in a while-loop, then
+ *         it has been defined before as well
+ *         <=>  there exists an entry [a, <x>, <wl>] on the stack,
+ *       then we rename   a   into a temp-var   __flat<n>   and insert an
+ *       assignment of the form    a = __flat<n>;   after the with-loop.
+ *       NOTE HERE, that we neither have to push  __flat<n>  nor we
+ *       have to take care of any required renamings of   a   as indicated
+ *       by <x> and <wl> since that assignment will be traversed later and thus
+ *       a required renaming will take place in that invocation of
+ *       FltnLet !!
+ *     - if this LET-node is within a with-loop AND it is absolutely
+ *       sure that   a   has been defined before, i.e.,
+ *         there exists an entry [a, <x>, <wl>] on the stack,
+ *       then we have to make sure, that   a   will be renamed!
+ *       - if this is the first assignment to   a   in the actual with-loop,
+ *           i.e., <wl> < with_level
+ *         then we have to rename it to   __w<with_level>a,
+ *         insert an assignment of the form:
+ *           __w<with_level>a = <x>;
+ *         at the beginning of the with-loop (this can be done via
+ *         INFO_FLTN_WL_BLOCK( arg_info)),
+ *         and push [ a, __w<with_level>a, <with_level>] on the stack.
+ *       - otherwise, this is  NOT the first assignment to    a   in the
+ *         actual with-loop, i.e.,
+ *           <wl> == with_level,
+ *         then we simply rename it to   __w<with_level>a.
+ *     - in all other cases we simply push [ a, a, with_level] on the stack
+ *
+ *   - NOTE, that the RHS has to be traversed first, since the vars on the
+ *     LHS should not be on the stack during that traversal!!
+ *
+ ******************************************************************************/
+
+node *
+FltnLet (node *arg_node, node *arg_info)
+{
+    ids *ids;
+    char *var_name, *tmp_var;
+    local_stack *tmp;
+    node *mem_last_assign;
+
+    DBUG_ENTER ("FltnLet");
+
+    mem_last_assign = INFO_FLTN_LASTASSIGN (arg_info);
+    ids = LET_IDS (arg_node);
+
+    DBUG_PRINT ("FLATTEN", ("flattening RHS of let-assignment to %s", IDS_NAME (ids)));
+
+    LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
+
+    DBUG_PRINT ("RENAME",
+                ("checking LHS of let-assignment to %s for renaming", IDS_NAME (ids)));
+
+    while (ids != NULL) {
+        var_name = IDS_NAME (ids);
+        tmp = FindId (var_name);
+
+        if (tmp == 0) {
+            PUSH (var_name, var_name, with_level);
+            /*
+             * this PUSH operation covers the whole "third case" from the description
+             * above. if var_name is found in the stack and non of the other cases
+             * is given, then (with_level == 0) holds and [ var_name, var_name, 0]
+             * has been pushed anyway!!
+             */
+        } else {
+            if ((NODE_TYPE (LET_EXPR (arg_node)) == N_with)
+                || (NODE_TYPE (LET_EXPR (arg_node))
+                    == N_Nwith)) { /* the let expr is a WL */
+                DBUG_PRINT ("RENAME", ("renaming LHS of WL-assignment"));
+                tmp_var = TmpVar ();
+                /*
+                 * Now, we insert an assignment    var_name = tmp_var;   AFTER
+                 * the actual assignment! This id done
+                 * by using InsertRenaming with a pointer to the actual
+                 * assignment-node which can be found in mem_last_assign!!!
+                 */
+                mem_last_assign = InsertRenaming (mem_last_assign, var_name, tmp_var);
+                /*
+                 * and we rename the actual LHS:
+                 */
+                FREE (var_name);
+                IDS_NAME (ids) = tmp_var;
+            } else {                  /* the let expr is not a WL */
+                if (with_level > 0) { /* we are in the body of a WL */
+                    if (tmp->w_level
+                        < with_level) { /* var_name has not yet been renamed */
+                        DBUG_PRINT ("RENAME", ("inserting new renaming - assignment at "
+                                               "the beginning of the WL"));
+                        tmp_var = RenameWithVar (var_name, with_level);
+                        PUSH (tmp->id_old, tmp_var, with_level);
+                        INFO_FLTN_LASTWLBLOCK (arg_info)
+                          = InsertRenaming (INFO_FLTN_LASTWLBLOCK (arg_info), tmp_var,
+                                            tmp->id_new);
+                    } else {
+                        tmp_var = StringCopy (tmp->id_new);
+                    }
+                    FREE (var_name);
+                    IDS_NAME (ids) = tmp_var;
+                }
+            }
+        }
+        ids = IDS_NEXT (ids);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *  node *FltnArray(node *arg_node, node *arg_info)
+ *
+ * description:
+ *  set the context-flag of arg_info to CT_normal, traverse the arguments,
+ *  and finally restore the old context-flag.
+ *
+ ******************************************************************************/
+
+node *
+FltnArray (node *arg_node, node *arg_info)
+{
+    contextflag old_ctxt;
+
+    DBUG_ENTER ("FltnArray");
+
+    DBUG_ASSERT ((ARRAY_AELEMS (arg_node) != NULL), "N_array node where AELEMS is NULL!");
+
+    old_ctxt = INFO_FLTN_CONTEXT (arg_info);
+    INFO_FLTN_CONTEXT (arg_info) = CT_normal;
+    ARRAY_AELEMS (arg_node) = Trav (ARRAY_AELEMS (arg_node), arg_info);
+    INFO_FLTN_CONTEXT (arg_info) = old_ctxt;
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *  node *FltnAp(node *arg_node, node *arg_info)
+ *
+ * description:
+ *  if the application has some arguments, set the context-flag of
+ *  arg_info to CT_ap, traverse the arguments, and finally restore
+ *  the old context-flag.
+ *
+ ******************************************************************************/
+
 node *
 FltnAp (node *arg_node, node *arg_info)
 {
-    int old_tag;
+    contextflag old_ctxt;
 
     DBUG_ENTER ("FltnAp");
 
-    if (NULL != arg_node->node[0]) {
-        old_tag = arg_info->info.cint;
-        arg_info->info.cint = AP;
-        arg_node->node[0] = Trav (arg_node->node[0], arg_info);
-        arg_info->info.cint = old_tag;
+    DBUG_PRINT ("FLATTEN", ("flattening application of %s:", AP_NAME (arg_node)));
+
+    if (AP_ARGS (arg_node) != NULL) {
+        old_ctxt = INFO_FLTN_CONTEXT (arg_info);
+        INFO_FLTN_CONTEXT (arg_info) = CT_ap;
+        AP_ARGS (arg_node) = Trav (AP_ARGS (arg_node), arg_info);
+        INFO_FLTN_CONTEXT (arg_info) = old_ctxt;
     }
 
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : FltnPrf
- *  arguments     : 1) argument node
- *                  2) last assignment in arg_info->node[0]
- *  description   : set tag arg_info->info.cint for flatten of arguments
- *                  call Trav to flatten arguments
- *                  if function body is not empty
- *  global vars   :
- *  internal funs :
- *  external funs : Trav
- *  macros        : DBUG, AP, NULL
+ * function:
+ *  node *FltnPrf(node *arg_node, node *arg_info)
  *
- *  remarks       : calls to psi are treated as user-defined function
- *                  applications.
- *                  This is due to abstract array arguments in the case
- *                  of overloaded primitive functions.
+ * description:
+ *  - If the application has some arguments, set the context-flag of
+ *  arg_info either to CT_ap or to CT_normal, traverse the arguments, and
+ *  finally restore the old context-flag.
+ *  - The context-flag is set to CT_normal iff we want arrays NOT to be abstracted
+ *  out!!! This is needed only for the typechecker when he wants to infer the
+ *  exact shapes for applications of functions such as TAKE, etc.
  *
- *
- */
+ ******************************************************************************/
+
 node *
 FltnPrf (node *arg_node, node *arg_info)
 {
-    int old_tag;
+    contextflag old_ctxt;
 
-    DBUG_ENTER ("FltnAp");
+    DBUG_ENTER ("FltnPrf");
 
-    if (PRF_ARGS (arg_node)) {
-        old_tag = arg_info->info.cint;
-        if ((arg_node->info.prf == F_psi) || (arg_node->info.prf == F_modarray)) {
-            arg_info->info.cint = AP;
-        }
+    DBUG_PRINT ("FLATTEN",
+                ("flattening application of %s:", mdb_prf[PRF_PRF (arg_node)]));
+
+    if (PRF_ARGS (arg_node) != NULL) {
+        old_ctxt = INFO_FLTN_CONTEXT (arg_info);
+        if ((PRF_PRF (arg_node) == F_psi) || (PRF_PRF (arg_node) == F_modarray))
+            INFO_FLTN_CONTEXT (arg_info) = CT_ap;
+        else
+            INFO_FLTN_CONTEXT (arg_info) = CT_normal;
 
         PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
-        arg_info->info.cint = old_tag;
+        INFO_FLTN_CONTEXT (arg_info) = old_ctxt;
     }
 
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : FltnReturn
- *  arguments     : 1) argument node
- *                  2) last assignment in arg_info->node[0]
- *  description   : set tag arg_info->info.cint for flatten of arguments
- *                  call Trav to flatten arguments
- *  global vars   :
- *  internal funs :
- *  external funs : Trav
- *  macros        : DBUG, RET, NULL
+ * function:
+ *  node *FltnReturn(node *arg_node, node *arg_info)
  *
- *  remarks       :
+ * description:
+ *  if the function returns values, set the context-flag of
+ *  arg_info to CT_return, traverse the results, and finally restore
+ *  the old context-flag.
  *
- */
+ ******************************************************************************/
+
 node *
 FltnReturn (node *arg_node, node *arg_info)
 {
-    int old_tag;
+    contextflag old_ctxt;
 
     DBUG_ENTER ("FltnReturn");
 
-    if (NULL != arg_node->node[0]) {
-        old_tag = arg_info->info.cint;
-        arg_info->info.cint = RET;
-        arg_node->node[0] = Trav (arg_node->node[0], arg_info);
-        arg_info->info.cint = old_tag;
+    if (RETURN_EXPRS (arg_node) != NULL) {
+        old_ctxt = INFO_FLTN_CONTEXT (arg_info);
+        INFO_FLTN_CONTEXT (arg_info) = CT_return;
+        RETURN_EXPRS (arg_node) = Trav (RETURN_EXPRS (arg_node), arg_info);
+        INFO_FLTN_CONTEXT (arg_info) = old_ctxt;
     }
 
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : FltnId
- *  arguments     : 1) argument node
- *                  2) last assignment in arg_info->node[0]
- *  description   : renames identifier if neccessary
- *  global vars   : with_level
- *  internal funs : FindFun
- *  external funs : StringCopy
- *  macros        : DBUG, RET, NULL
+ * function:
+ *  node *FltnExprs(node *arg_node, node *arg_info)
  *
- *  remarks       :- this function is only used for renaming of variables
- *                   of a with_loop
+ * description:
+ *  - flattens all the exprs depending on the context INFO_FLTN_CONTEXT( arg_info)
  *
- */
+ ******************************************************************************/
+
+node *
+FltnExprs (node *arg_node, node *arg_info)
+{
+    int abstract;
+    node *expr, *expr2;
+
+    DBUG_ENTER ("FltnExprs");
+
+    expr = EXPRS_EXPR (arg_node);
+
+    /* skip leading casts */
+    while (NODE_TYPE (expr) == N_cast)
+        expr = CAST_EXPR (expr);
+
+    /*
+     * compute whether to abstract <expr> or not , depending on the
+     * context of the expression, given by INFO_FLTN_CONTEXT( arg_info)
+     */
+    switch (INFO_FLTN_CONTEXT (arg_info)) {
+    case CT_return:
+        abstract = ((NODE_TYPE (expr) == N_num) || (NODE_TYPE (expr) == N_float)
+                    || (NODE_TYPE (expr) == N_double) || (NODE_TYPE (expr) == N_bool)
+                    || (NODE_TYPE (expr) == N_str) || (NODE_TYPE (expr) == N_array)
+                    || (NODE_TYPE (expr) == N_ap) || (NODE_TYPE (expr) == N_prf)
+                    || (NODE_TYPE (expr) == N_Nwith) || (NODE_TYPE (expr) == N_with));
+        break;
+    case CT_ap:
+        abstract = ((NODE_TYPE (expr) == N_array) || (NODE_TYPE (expr) == N_prf)
+                    || (NODE_TYPE (expr) == N_ap) || (NODE_TYPE (expr) == N_Nwith)
+                    || (NODE_TYPE (expr) == N_with));
+        break;
+    case CT_normal:
+        abstract = ((NODE_TYPE (expr) == N_ap) || (NODE_TYPE (expr) == N_prf)
+                    || (NODE_TYPE (expr) == N_Nwith) || (NODE_TYPE (expr) == N_with));
+        break;
+    default:
+        DBUG_ASSERT (0, "illegal context !");
+    }
+
+    DBUG_PRINT ("FLATTEN",
+                ("context: %d, abstract: %d, expr: %s", INFO_FLTN_CONTEXT (arg_info),
+                 abstract, mdb_nodetype[NODE_TYPE (expr)]));
+
+    if (abstract) {
+        EXPRS_EXPR (arg_node) = Abstract (EXPRS_EXPR (arg_node), arg_info);
+    }
+    expr2 = Trav (expr, arg_info);
+    DBUG_ASSERT ((expr == expr2),
+                 "return-node differs from arg_node while flattening an expr!");
+
+    /*
+     * Last, but not least remaining exprs have to be done:
+     */
+    if (EXPRS_NEXT (arg_node))
+        EXPRS_NEXT (arg_node) = Trav (EXPRS_NEXT (arg_node), arg_info);
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *  node *FltnId(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   - this function is only used for renaming of variables within a WL
+ *   - it does so, iff the identifier is found on the stack AND the
+ *     variable has to be renamed, i.e. (tmp->id_new != tmp->id_old)
+ *
+ ******************************************************************************/
+
 node *
 FltnId (node *arg_node, node *arg_info)
 {
@@ -1309,14 +1170,10 @@ FltnId (node *arg_node, node *arg_info)
     if (0 < with_level) {
         tmp = FindId (ID_NAME (arg_node));
         if (tmp) {
-            DBUG_PRINT ("RENAME", ("arg_node:" P_FORMAT " ids:" P_FORMAT, arg_node,
-                                   arg_node->info.ids));
-            DBUG_PRINT ("RENAME",
-                        ("found:" P_FORMAT "old: %s, new: %s, id_level: %d ,"
-                         " with_level: %d",
-                         tmp, ID_NAME (arg_node), tmp->id_new, tmp->w_level, with_level));
-
-            if (with_level >= tmp->w_level) {
+            DBUG_ASSERT ((with_level >= tmp->w_level), "actual with-level is smaller "
+                                                       "than with-level pushed on the "
+                                                       "stack!");
+            if (tmp->id_new != tmp->id_old) {
                 old_name = ID_NAME (arg_node);
                 ID_NAME (arg_node) = StringCopy (tmp->id_new);
 
@@ -1329,234 +1186,424 @@ FltnId (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : FltnLet
- *  arguments     : 1) argument node
- *                  2) last assignment in arg_info->node[0]
- *  description   : - renames variable assigned to and adds a new node
- *                    to arg_info->node[1], if necessary
- *                  - adds assigned to variable to local stack, if they
- *                    are not in ste stack
- *  global vars   : with_level
- *  internal funs : RenameWithVar, AppendIdentity
- *  external funs :
- *  macros        : DBUG, NULL
+ * function:
+ *  node *FltnCond(node *arg_node, node *arg_info)
  *
- *  remarks       :  arg_info->node[1] contains list of assigns that have to
- *                   be put in front of a with_loop
- *                 - this function is only used for renaming of variables
- *                   of a with_loop
- */
+ * description:
+ *   - flattens the predicate and both alternatives.
+ *   - after doing the first alternative all those vars that have been
+ *     pushed on the stack during that traversal are copied into a freshly
+ *     allocated stack segment (-> then_stack_seg). Only those elems which
+ *     where pushed due to a renaming are pushed back to the global stack
+ *     since they are inserted before the conditional.
+ *     In a similar way, the vars pushed during the traversal of the second
+ *     alternative are handled. The only difference being that vars that are
+ *     local in both branches, i.e., they are in then_stack_seg and in
+ *     else_stack_seg, are pushed as well!
+ *   - This approach makes sure that only those vars will remain on the
+ *     stack that are either defined before the conditional or in both
+ *     branches of the conditional. As a consequence, there will be no
+ *     more renamings that lead to errors during type-checking!
+ *
+ ******************************************************************************/
+
 node *
-FltnLet (node *arg_node, node *arg_info)
+FltnCond (node *arg_node, node *arg_info)
 {
-    ids *ids;
+    int then_stack_sz, else_stack_sz, i;
+    local_stack *mem_tos, *then_stack_seg, *else_stack_seg;
+    node *pred, *pred2, *mem_last_assign;
+
+    DBUG_ENTER ("FltnCond");
+
+    pred = COND_COND (arg_node);
+    if ((NODE_TYPE (pred) == N_ap) || (NODE_TYPE (pred) == N_prf)) {
+        COND_COND (arg_node) = Abstract (pred, arg_info);
+    }
+
+    pred2 = Trav (pred, arg_info);
+    DBUG_ASSERT ((pred == pred2),
+                 "return-node differs from arg_node while flattening an expr!");
+
+    mem_last_assign = INFO_FLTN_LASTASSIGN (arg_info);
+
+    mem_tos = tos;
+    if (COND_THEN (arg_node)) {
+        COND_THEN (arg_node) = Trav (COND_THEN (arg_node), arg_info);
+    }
+    then_stack_sz = tos - mem_tos;
+    then_stack_seg = CopyStackSeg (mem_tos, tos);
+    tos = mem_tos;
+
+    for (i = 0; i < then_stack_sz; i++) {
+        if (then_stack_seg[i].id_new != then_stack_seg[i].id_old) {
+            /*
+             * if those two pointers (!) are different, we do have a
+             * variable renaming here which has happend in this with-level
+             * and thus has been inserted BEFORE the conditional.
+             * Hence, the renamed variable has to be available in the
+             * else-part!
+             */
+            PUSH_ENTRY (then_stack_seg[i]);
+        }
+    }
+
+    mem_tos = tos;
+    if (COND_ELSE (arg_node)) {
+        COND_ELSE (arg_node) = Trav (COND_ELSE (arg_node), arg_info);
+    }
+    else_stack_sz = tos - mem_tos;
+    else_stack_seg = CopyStackSeg (mem_tos, tos);
+    tos = mem_tos;
+
+    for (i = 0; i < else_stack_sz; i++) {
+        if ((FindIdInSeg (else_stack_seg[i].id_old, then_stack_sz, then_stack_seg)
+             != NULL)
+            || (else_stack_seg[i].id_new != else_stack_seg[i].id_old)) {
+            /*
+             * for the same reason as for the then-part, renamed vars have to be
+             * pushed AND those vars that have been defined locally in BOTH
+             * branches of the conditional have to be pushed as well!
+             */
+            PUSH_ENTRY (else_stack_seg[i]);
+        }
+    }
+
+    FREE (then_stack_seg);
+    FREE (else_stack_seg);
+
+    INFO_FLTN_LASTASSIGN (arg_info) = mem_last_assign;
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *  node *FltnWhile(node *arg_node, node *arg_info)
+ *
+ * description:
+ *  - traverse the body
+ *  - leave only those new entries on the stack that have been
+ *    renamings since the renamings are inserted before the while-loop!!
+ *  - if the predicate has to be flattened out, duplicate the condition
+ *    and insert the new assignment at the end of the while-loop body and
+ *    before the while-loop.
+ *  - Anyway, invoke flatten on the condition(s) => renaming!
+ *
+ ******************************************************************************/
+
+node *
+FltnWhile (node *arg_node, node *arg_info)
+{
+    node *mem_last_assign, *pred, *pred2, *new_assign, *mem_final_assign;
+    local_stack *mem_tos, *body_stack_seg;
+    int i, body_stack_sz;
+
+    DBUG_ENTER ("FltnWhile");
+
+    mem_tos = tos;
+    mem_last_assign = INFO_FLTN_LASTASSIGN (arg_info);
+
+    /*
+     * First, we traverse the body of the while-loop.
+     * This guarantees that INFO_FLTN_FINALASSIGN( arg_info)
+     * will be set to the last N_assign in the body of the loop
+     * which may be required for inserting assignments that
+     * flatten the break condition!
+     */
+    WHILE_BODY (arg_node) = Trav (WHILE_BODY (arg_node), arg_info);
+
+    body_stack_sz = tos - mem_tos;
+    body_stack_seg = CopyStackSeg (mem_tos, tos);
+    tos = mem_tos;
+
+    for (i = 0; i < body_stack_sz; i++) {
+        if (body_stack_seg[i].id_new != body_stack_seg[i].id_old) {
+            /*
+             * if those two pointers (!) are different, we do have a
+             * variable renaming here which has happend in this with-level
+             * and thus has been inserted BEFORE the while-loop.
+             * Hence, the renamed variable has to be available after
+             * the loop irrespective of the result of the first evaluation
+             * of the break-condition!
+             */
+            PUSH_ENTRY (body_stack_seg[i]);
+        }
+    }
+    FREE (body_stack_seg);
+    INFO_FLTN_LASTASSIGN (arg_info) = mem_last_assign;
+
+    /*
+     * Now, we take care of the predicate of the loop:
+     *   INFO_FLTN_LASTASSIGN( arg_info) points to the actual N_assign,
+     *   INFO_FLTN_FINALASSIGN( arg_info) points to the last N_assign in
+     *     the while-loop body!
+     */
+
+    pred = WHILE_COND (arg_node);
+    if ((NODE_TYPE (pred) == N_ap) || (NODE_TYPE (pred) == N_prf)) {
+        /*
+         * abstract the condition out and insert it before the while-loop:
+         */
+        WHILE_COND (arg_node) = Abstract (pred, arg_info);
+
+        /*
+         * Duplicate the new N_assign node, flatten it, and insert the
+         * chain of assignments after INFO_FLTN_FINALASSIGN( arg_info):
+         */
+        new_assign = DupNode (INFO_FLTN_LASTASSIGN (arg_info));
+        DBUG_PRINT ("FLATTEN", ("duplicated %08x to %08x!",
+                                INFO_FLTN_LASTASSIGN (arg_info), new_assign));
+        ASSIGN_NEXT (new_assign) = NULL;
+
+        mem_last_assign = INFO_FLTN_LASTASSIGN (arg_info);
+        mem_final_assign = INFO_FLTN_FINALASSIGN (arg_info);
+        new_assign = Trav (new_assign, arg_info);
+        ASSIGN_NEXT (mem_final_assign) = new_assign;
+        DBUG_PRINT ("FLATTEN", ("appending %08x to %08x!", new_assign, mem_final_assign));
+        INFO_FLTN_LASTASSIGN (arg_info) = mem_last_assign;
+    }
+
+    /*
+     * Whether abstracted out or not, do flatten the condition:
+     */
+    pred2 = Trav (pred, arg_info);
+    DBUG_ASSERT ((pred == pred2),
+                 "return-node differs from arg_node while flattening an expr!");
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *  node *FltnDo(node *arg_node, node *arg_info)
+ *
+ * description:
+ *  - traverse the body
+ *  - leave all entries on the stack since the loop will be executed
+ *    at least once!
+ *  - if the predicate has to be flattened out, insert the new assignment
+ *    at the end of the do-loop body.
+ *  - Anyway, invoke flatten on the condition => renaming!
+ *
+ ******************************************************************************/
+
+node *
+FltnDo (node *arg_node, node *arg_info)
+{
+    node *mem_last_assign, *pred, *pred2;
+
+    DBUG_ENTER ("FltnDo");
+
+    mem_last_assign = INFO_FLTN_LASTASSIGN (arg_info);
+
+    /*
+     * First, we traverse the body of the while-loop.
+     * This guarantees that INFO_FLTN_FINALASSIGN( arg_info)
+     * will be set to the last N_assign in the body of the loop
+     * which may be required for inserting assignments that
+     * flatten the break condition!
+     */
+    DO_BODY (arg_node) = Trav (DO_BODY (arg_node), arg_info);
+
+    pred = DO_COND (arg_node);
+    if ((NODE_TYPE (pred) == N_ap) || (NODE_TYPE (pred) == N_prf)) {
+        /*
+         * abstract the condition out and insert it at the end of the do-loop:
+         */
+        INFO_FLTN_LASTASSIGN (arg_info) = NULL;
+        DO_COND (arg_node) = Abstract (pred, arg_info);
+    } else {
+        INFO_FLTN_LASTASSIGN (arg_info) = NULL;
+    }
+    pred2 = Trav (pred, arg_info);
+    DBUG_ASSERT ((pred == pred2),
+                 "return-node differs from arg_node while flattening an expr!");
+    ASSIGN_NEXT (INFO_FLTN_FINALASSIGN (arg_info)) = INFO_FLTN_LASTASSIGN (arg_info);
+    DBUG_PRINT ("FLATTEN", ("appending %08x tp %08x!", INFO_FLTN_LASTASSIGN (arg_info),
+                            INFO_FLTN_FINALASSIGN (arg_info)));
+    INFO_FLTN_LASTASSIGN (arg_info) = mem_last_assign;
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *  node *FltnWith(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   - increase with-level during traversal of the WL-generator and WL-body
+ *     (the former is necessary since the generator pushes the generator-vars!)
+ *   - pop all vars from stack which have been pushed during the traversal
+ *     of the WL-body
+ *
+ ******************************************************************************/
+
+node *
+FltnWith (node *arg_node, node *arg_info)
+{
+    local_stack *tmp_tos;
+
+    DBUG_ENTER ("FltnWith");
+
+    with_level += 1;
+    tmp_tos = tos; /* store tos */
+    DBUG_PRINT ("RENAME", ("store tos " P_FORMAT, tos));
+
+    /*
+     * traverse the generator:
+     */
+    WITH_GEN (arg_node) = Trav (WITH_GEN (arg_node), arg_info);
+    /*
+     * traverse  N_genarray, N_modarray, N_foldfun or N_foldprf and body:
+     */
+    WITH_OPERATOR (arg_node) = Trav (WITH_OPERATOR (arg_node), arg_info);
+
+    with_level -= 1;
+    tos = tmp_tos; /* restore tos */
+    DBUG_PRINT ("RENAME", ("restore tos " P_FORMAT, tos));
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *  node *FltnGen(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   - abstract out exprs from the boundary-exprs
+ *   - rename the generator-variable if necessary.
+ *     For doing so, TmpVarName( <generator-variable>) is used since
+ *     it might benecessary to rename <generator-variable> once more in
+ *     the body of the WL (iff used on the LHS of an assignment!).
+ *   - push the generator-variable on the stack with (with_level-1)
+ *     Using (with_level-1) forces any assignments to the generator-variable
+ *     within the body of the WL to be renamed. This does NOT affect the
+ *     assignment in the level above since the stack will be cleared in FltnWith
+ *     before leaving the actual WL!
+ *
+ ******************************************************************************/
+
+node *
+FltnGen (node *arg_node, node *arg_info)
+{
+    int i;
     char *old_name;
-    local_stack *tmp, *tmp_tos;
-    node *new_assign;
+    node **bound, *bound_expr, *bound_expr2;
+    local_stack *tmp;
 
-    DBUG_ENTER ("FltnLet");
+    DBUG_ENTER ("FltnGen");
 
-    ids = LET_IDS (arg_node);
-    if (N_with != NODE_TYPE (LET_EXPR (arg_node))
-        && N_Nwith != NODE_TYPE (LET_EXPR (arg_node))) { /* this is not a WL */
-        while (ids) {
-            tmp = FindId (ids->id);
-            if (!tmp) {
-                PUSH (ids->id, ids->id, with_level);
-            } else {
-                /* if not inside a WL the with_level is exactly 0 so nothing happens */
-                if ((0 < with_level) && (with_level > tmp->w_level)) {
-                    old_name = ids->id;
-                    ids->id = RenameWithVar (old_name, with_level);
-                    PUSH (old_name, ids->id, with_level);
-                    /* arg_info->node[1]=AppendIdentity(arg_info->node[1],
-                     * StringCopy(tmp->id_new), ids->id); */
-                    arg_info->node[1]
-                      = AppendIdentity (arg_info->node[1], tmp->id_new, ids->id);
-                } else if ((0 < with_level) && (with_level == tmp->w_level)) {
-                    FREE (ids->id);
-                    ids->id = StringCopy (tmp->id_new);
-                }
-            }
-            ids = ids->next;
+    for (i = 0; i < 2; i++) {
+        if (i == 0)
+            bound = &GEN_LEFT (arg_node);
+        else
+            bound = &GEN_RIGHT (arg_node);
+        bound_expr = *bound;
+
+        DBUG_ASSERT ((bound_expr != NULL), "NULL boundary of generator in WL!");
+
+        if (NODE_TYPE (bound_expr) == N_ap || NODE_TYPE (bound_expr) == N_prf
+            || NODE_TYPE (bound_expr) == N_array) {
+            /*
+             * This generator-bound has to be abstracted out:
+             */
+            *bound = Abstract (bound_expr, arg_info);
         }
-    } else { /* the let expr is a WL */
-        new_assign = MakeNode (N_assign);
-        tmp = FindId (ids->id);
-        if (tmp) {
-            char *new_name, *let_name;
+        bound_expr2 = Trav (bound_expr, arg_info);
 
-            new_name = RenameWithVar (ids->id, -(with_level));
-            if (with_level > 0) {
-                let_name = RenameWithVar (ids->id, with_level);
-                PUSH (ids->id, let_name, with_level);
-            } else
-                let_name = tmp->id_new;
-            tmp_tos = tos;
-            PUSH (ids->id, new_name, with_level);
-            ids->id = StringCopy (let_name);
-            /*          new_assign=AppendIdentity(new_assign, */
-            /*                                    StringCopy(tmp->id_new), new_name); */
-            new_assign = AppendIdentity (new_assign, tmp->id_new, new_name);
-        } else {
-            PUSH (ids->id, ids->id, with_level);
-        }
+        DBUG_ASSERT ((bound_expr == bound_expr2),
+                     "return-node differs from arg_node while flattening an expr!");
     }
-    LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
 
-    if (N_with == NODE_TYPE (LET_EXPR (arg_node))
-        || N_Nwith == NODE_TYPE (LET_EXPR (arg_node))) {
-        if (ASSIGN_INSTR (new_assign)) {
-            FREE (ASSIGN_NEXT (new_assign)->node[1]);
-            /* a new node is put in front! */
-            ASSIGN_NEXT (new_assign) = arg_info->node[0];
-            arg_info->node[0] = new_assign;
-            tos = tmp_tos;
-        } else
-            FREE (new_assign);
+    /* rename index-vector if necessary */
+    old_name = GEN_ID (arg_node);
+    tmp = FindId (old_name);
+    if (NULL != tmp) {
+        GEN_ID (arg_node) = TmpVarName (old_name);
     }
+    PUSH (old_name, GEN_ID (arg_node), with_level - 1);
 
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : FltnArgs
- *  arguments     : 1) argument node
- *                  2) last assignment in arg_info->node[0]
- *  description   : adds name of formal parameters to local stack and calls
- *                  Trav to traverse next node if any
- *  global vars   :
- *  internal funs :
- *  external funs : Trav
- *  macros        : DBUG, NULL, PUSH
+ * function:
+ *  node *FltnCon(node *arg_node, node *arg_info)
  *
- *  remarks       :
+ * description:
  *
- */
-node *
-FltnArgs (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("FltnArgs");
+ ******************************************************************************/
 
-    PUSH (arg_node->ID, arg_node->ID, 0);
-    if (NULL != arg_node->node[0])
-        arg_node->node[0] = Trav (arg_node->node[0], arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/*
- *
- *  functionname  : FltnCon
- *  arguments     : 1) argument node
- *                  2) last assignment in arg_info->node[0]
- *  description   : flattens N_modarray, N_genarray, N_foldprf  and N_foldfun
- *  global vars   :
- *  internal funs :
- *  external funs : Trav
- *  macros        : DBUG, NULL, NORMAL, MODARRAY
- *
- *  remarks       : if the argument of modarray is a N_prf, N_ap or N_array
- *                  node a temporary N_exprs node will be created and
- *                  flattened
- *
- */
 node *
 FltnCon (node *arg_node, node *arg_info)
 {
-    node *info_node;
+    node *expr, *expr2, *mem_last_assign, **body;
 
     DBUG_ENTER ("FltnCon");
-    info_node = MakeNode (N_info);
 
     switch (NODE_TYPE (arg_node)) {
     case N_modarray: {
-        if ((N_prf == NODE_TYPE (MODARRAY_ARRAY (arg_node)))
-            || (N_ap == NODE_TYPE (MODARRAY_ARRAY (arg_node)))
-            || (N_array == NODE_TYPE (MODARRAY_ARRAY (arg_node)))) {
-            int old_tag = arg_info->info.cint;
-            node *exprs = MakeExprs (MODARRAY_ARRAY (arg_node), NULL);
-            arg_info->info.cint = MODARRAY;
-            exprs = Trav (exprs, arg_info);
-            arg_info->info.cint = old_tag;
-            MODARRAY_ARRAY (arg_node) = EXPRS_EXPR (exprs);
-            FREE (exprs);
-        } else
-            arg_node->node[0] = Trav (arg_node->node[0], arg_info);
-        arg_node->node[1] = Trav (arg_node->node[1], info_node);
+        expr = MODARRAY_ARRAY (arg_node);
+        if ((NODE_TYPE (expr) == N_prf) || (NODE_TYPE (expr) == N_ap)
+            || (NODE_TYPE (expr) == N_array)) {
+            MODARRAY_ARRAY (arg_node) = Abstract (expr, arg_info);
+        }
+        body = &MODARRAY_BODY (arg_node);
         break;
     }
     case N_foldfun: {
-        int old_tag = arg_info->info.cint;
-        node *exprs = MakeNode (N_exprs);
-
-        /* set new tag for FltnExprs
-         * Flatten arg_node->node[0] (neutral element) normaly.
-         * (generate new variable if arg_node->node[0]->node[0]->nodetype
-         *  is N_ap, N_prf or N_with )
-         */
-        arg_info->info.cint = NORMAL;
-        exprs->node[0] = arg_node->node[1]; /* exprs is only used temporary to
-                                             * call FltnExprs
-                                             */
-        exprs = Trav (exprs, arg_info);     /* call FltnExprs */
-        arg_node->node[1] = exprs->node[0];
-        FREE (exprs);
-        arg_info->info.cint = old_tag;
-        arg_node->node[0] = Trav (arg_node->node[0], info_node);
+        expr = FOLDFUN_NEUTRAL (arg_node);
+        if ((NODE_TYPE (expr) == N_prf) || (NODE_TYPE (expr) == N_ap)
+            || (NODE_TYPE (expr) == N_array) || (NODE_TYPE (expr) == N_with)
+            || (NODE_TYPE (expr) == N_Nwith)) {
+            FOLDFUN_NEUTRAL (arg_node) = Abstract (expr, arg_info);
+        }
+        body = &FOLDFUN_BODY (arg_node);
         break;
     }
     case N_foldprf: {
-        /* srs: flattening of neutral element was forgotten. We flatten the
-           neutral element now but the variable in this position causes other
-           errors. => ASSERT here */
-        int old_tag = arg_info->info.cint;
-        node *exprs;
-        if (FOLDPRF_NEUTRAL (arg_node)) {
-            exprs = MakeNode (N_exprs);
-            arg_info->info.cint = NORMAL;
-            /* exprs is only used temporary to call FltnExprs */
-            EXPRS_EXPR (exprs) = FOLDPRF_NEUTRAL (arg_node);
-            exprs = Trav (exprs, arg_info); /* call FltnExprs */
-            FOLDPRF_NEUTRAL (arg_node) = EXPRS_EXPR (exprs);
-            FREE (exprs);
-            DBUG_ASSERT (N_id != NODE_TYPE (FOLDPRF_NEUTRAL (arg_node)),
-                         "FoldPrf only for constant neutral elements implemented yet.");
+        expr = FOLDPRF_NEUTRAL (arg_node);
+        if ((expr != NULL)
+            && ((NODE_TYPE (expr) == N_prf) || (NODE_TYPE (expr) == N_ap)
+                || (NODE_TYPE (expr) == N_array) || (NODE_TYPE (expr) == N_with)
+                || (NODE_TYPE (expr) == N_Nwith))) {
+            FOLDPRF_NEUTRAL (arg_node) = Abstract (expr, arg_info);
         }
-
-        arg_info->info.cint = old_tag;
-        FOLDPRF_BODY (arg_node) = Trav (FOLDPRF_BODY (arg_node), info_node);
+        body = &FOLDPRF_BODY (arg_node);
         break;
     }
     case N_genarray: {
-        GENARRAY_BODY (arg_node) = Trav (GENARRAY_BODY (arg_node), info_node);
+        expr = NULL;
+        body = &GENARRAY_BODY (arg_node);
         break;
     }
-    default:
-        DBUG_ASSERT (0, "wrong nodetype");
+    default: {
+        DBUG_ASSERT (0, "wrong nodetype in WL constructor!");
         break;
     }
-
-    /* insert assignments stored in arg_info->node[1] */
-    if (info_node->node[1]) {
-        node *tmp = info_node->node[1];
-
-        while (tmp->node[1] != NULL)
-            tmp = tmp->node[1];
-
-        if ((N_foldprf == arg_node->nodetype) || (N_foldfun == arg_node->nodetype)) {
-            tmp->node[1] = arg_node->node[0]->node[0];
-            arg_node->node[0]->node[0] = info_node->node[1];
-        } else {
-            tmp->node[1] = arg_node->node[1]->node[0];
-            arg_node->node[1]->node[0] = info_node->node[1];
-        }
+    }
+    if (expr != NULL) {
+        tos = tos - 1; /* DIRTY TRICK: hide the generator-variable! */
+        expr2 = Trav (expr, arg_info);
+        DBUG_ASSERT ((expr == expr2),
+                     "return-node differs from arg_node while flattening an expr!");
+        tos = tos + 1; /* DIRTY TRICK: make the generator-variable visible again! */
     }
 
-    FREE (info_node);
+    mem_last_assign = INFO_FLTN_LASTASSIGN (arg_info);
+    INFO_FLTN_CONTEXT (arg_info) = CT_wl;
+    DBUG_PRINT ("RENAME", ("CONTEXT set to CT_wl"));
+    *body = Trav (*body, arg_info);
+    INFO_FLTN_LASTASSIGN (arg_info) = mem_last_assign;
+
     DBUG_RETURN (arg_node);
 }
 
@@ -1579,15 +1626,76 @@ FltnNwith (node *arg_node, node *arg_info)
 
     with_level++;
     tmp_tos = tos; /* store tos */
+    DBUG_PRINT ("RENAME", ("store tos " P_FORMAT, tos));
 
+    /*
+     * for traversing the operation, the generator var(s) should
+     * not yet be pushed!
+     */
     NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
 
-    /* The N_Ncode has to be flattened after the N_Npart node. */
+    /*
+     * for traversing the body, the generator var(s) should BE pushed!
+     */
     NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
     NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
 
     with_level--;
     tos = tmp_tos;
+    DBUG_PRINT ("RENAME", ("restore tos " P_FORMAT, tos));
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *FltnNwithop(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   flattens N_Nwithop
+ *   - genarray: the shape is NOT flattened!
+ *   - modarray: the array has to be an id or is flattened otherwise.
+ *   - fold: the neutral element has to be an id or a constant scalar
+ *           or is flattened otherwise. It is optional.
+ *
+ ******************************************************************************/
+node *
+FltnNwithop (node *arg_node, node *arg_info)
+{
+    node *expr, *expr2;
+    DBUG_ENTER ("FltnNwithop");
+
+    switch (NWITHOP_TYPE (arg_node)) {
+    case WO_modarray:
+        expr = NWITHOP_ARRAY (arg_node);
+        if ((NODE_TYPE (expr) == N_prf) || (NODE_TYPE (expr) == N_ap)
+            || (NODE_TYPE (expr) == N_array)) {
+            NWITHOP_ARRAY (arg_node) = Abstract (expr, arg_info);
+        }
+        break;
+    case WO_genarray:
+        expr = NULL;
+        break;
+    case WO_foldfun:
+    case WO_foldprf:
+        expr = NWITHOP_NEUTRAL (arg_node);
+        if ((expr != NULL)
+            && ((NODE_TYPE (expr) == N_prf) || (NODE_TYPE (expr) == N_ap)
+                || (NODE_TYPE (expr) == N_array) || (NODE_TYPE (expr) == N_with)
+                || (NODE_TYPE (expr) == N_Nwith))) {
+            NWITHOP_NEUTRAL (arg_node) = Abstract (expr, arg_info);
+        }
+    default:
+        DBUG_ASSERT (0, "wrong withop tag in N_Nwithop node!");
+        break;
+    }
+
+    if (expr != NULL) {
+        expr2 = Trav (expr, arg_info);
+        DBUG_ASSERT ((expr == expr2),
+                     "return-node differs from arg_node while flattening an expr!");
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -1602,9 +1710,9 @@ FltnNwith (node *arg_node, node *arg_info)
  *
  * remark:
  *   the index variables are always renamed to unique names (this differs
- *   from the old WLs). This is done in respect of later Withloop foling.
- *   There WL bodies are merged and with unique generators name clashes
- *   are debarred. Example:
+ *   from the old WLs). This is done in respect of later Withloop folding.
+ *   During WL-folding WL bodies are merged and with unique generators name clashes
+ *   can beavoided. Example:
  *   A: with (...i...) { ...B... }
  *   B: with((...j...) { ...tmp = i... }  i bound outside withloop.
  *   substitute B in A and i is bound to index variable of A.
@@ -1614,9 +1722,6 @@ node *
 FltnNpart (node *arg_node, node *arg_info)
 {
     ids *_ids;
-#if 0
-  local_stack *lstack;
-#endif
     char *old_name;
 
     DBUG_ENTER ("FltnNpart");
@@ -1624,34 +1729,31 @@ FltnNpart (node *arg_node, node *arg_info)
     /* flatten the generator */
     NPART_GEN (arg_node) = Trav (NPART_GEN (arg_node), arg_info);
 
-    /* rename index scalars */
-    /* in the old WL renaming was only done if a variable of the same name
-       was found before. Here we rename all index variables. */
-    _ids = NWITHID_IDS (NPART_WITHID (arg_node));
+    /*
+     * rename index scalars:
+     * in the old WL renaming was only done if a variable of the same name
+     * was found before. Here we rename all index variables.
+     */
+    _ids = NPART_IDS (arg_node);
     while (_ids) {
-        /*     lstack = FindId(IDS_NAME(_ids)); */
-        /*     if (lstack) { */
         old_name = IDS_NAME (_ids);
-        /*     IDS_NAME(_ids)=RenameWithVar(old_name, -with_level); */
         IDS_NAME (_ids) = TmpVarName (old_name);
         PUSH (old_name, IDS_NAME (_ids), with_level - 1);
-        /*   } */
-        /*     else  */
-        /*       PUSH(IDS_NAME(_ids), IDS_NAME(_ids), with_level-1); */
         _ids = IDS_NEXT (_ids);
     }
 
-    /* rename index-vector */
-    _ids = NWITHID_VEC (NPART_WITHID (arg_node));
+    /*
+     * rename index-vector:
+     */
+    _ids = NPART_VEC (arg_node);
     if (_ids) {
         old_name = IDS_NAME (_ids);
-        /*     IDS_NAME(_ids) = RenameWithVar(old_name, -with_level); */
         IDS_NAME (_ids) = TmpVarName (old_name);
         PUSH (old_name, IDS_NAME (_ids), with_level - 1);
     }
 
     /* at this early point there are no other N_Npart nodes */
-    DBUG_ASSERT (!NPART_NEXT (arg_node), "NPART_NEXT() should not exist.");
+    DBUG_ASSERT (!NPART_NEXT (arg_node), "NPART_NEXT() should not yet exist.");
 
     DBUG_RETURN (arg_node);
 }
@@ -1671,111 +1773,65 @@ FltnNpart (node *arg_node, node *arg_info)
 node *
 FltnNgenerator (node *arg_node, node *arg_info)
 {
-    node **act_son, *let_node, *tmp_node;
-    char *new_id;
+    node **act_son, *act_son_expr, *act_son_expr2;
     int i;
     DBUG_ENTER ("FltnNgenerator");
 
-    /* if bound1/2 are explicitly specified (not "."), the operators are
-     set to <= (bound1) and < (bound2). */
+    /*
+     * First, the bounds are adjusted so that the operator can be
+     * "normalized" to:   bound1 <= iv = [...] < bound2
+     * Howeveer, this is done only for those bounds given explicitly,
+     * not for the "." bounds. For those bounds, the "normalization"
+     * takes place during typechecking!
+     */
     if (NGEN_BOUND1 (arg_node) && F_lt == NGEN_OP1 (arg_node)) {
         /* make <= from < and add 1 to bound */
         NGEN_OP1 (arg_node) = F_le;
-        tmp_node = MakeNum (1);
-        tmp_node = MakeExprs (tmp_node, NULL);
-        tmp_node = MakeExprs (NGEN_BOUND1 (arg_node), tmp_node);
-        NGEN_BOUND1 (arg_node) = MakePrf (F_add, tmp_node);
+        NGEN_BOUND1 (arg_node)
+          = MakePrf (F_add,
+                     MakeExprs (NGEN_BOUND1 (arg_node), MakeExprs (MakeNum (1), NULL)));
     }
     if (NGEN_BOUND2 (arg_node) && F_le == NGEN_OP2 (arg_node)) {
         /* make < from <= and add 1 to bound */
         NGEN_OP2 (arg_node) = F_lt;
-        tmp_node = MakeNum (1);
-        tmp_node = MakeExprs (tmp_node, NULL);
-        tmp_node = MakeExprs (NGEN_BOUND2 (arg_node), tmp_node);
-        NGEN_BOUND2 (arg_node) = MakePrf (F_add, tmp_node);
+        NGEN_BOUND2 (arg_node)
+          = MakePrf (F_add,
+                     MakeExprs (NGEN_BOUND2 (arg_node), MakeExprs (MakeNum (1), NULL)));
     }
 
-    /* extract bound1/2, step or width if not id. Even constant arrays are removed
-       and eventually reinserted later (in phase WLI, if WLF is enabled). */
     for (i = 0; i < 4; i++) {
         switch (i) {
         case 0:
             act_son = &NGEN_BOUND1 (arg_node);
+            DBUG_PRINT ("FLATTEN", ("flattening left boundary!"));
             break;
         case 1:
             act_son = &NGEN_BOUND2 (arg_node);
+            DBUG_PRINT ("FLATTEN", ("flattening right boundary!"));
             break;
         case 2:
             act_son = &NGEN_STEP (arg_node);
+            DBUG_PRINT ("FLATTEN", ("flattening step parameter!"));
             break;
         case 3:
             act_son = &NGEN_WIDTH (arg_node);
+            DBUG_PRINT ("FLATTEN", ("flattening width parameter!"));
             break;
         default:;
         }
 
+        act_son_expr = *act_son;
+
         /* flatten evreything but Ids and constant arrays */
-        if (*act_son
-            && (N_id != NODE_TYPE (*act_son) && !IsConstantArray (*act_son, N_num))) {
-            new_id = TmpVar ();
-            let_node = MakeLet (NULL, MakeIds (new_id, NULL, ST_regular));
-            arg_info->node[0] = MakeAssign (let_node, arg_info->node[0]);
-            LET_EXPR (let_node) = Trav (*act_son, arg_info);
-            *act_son = MakeId (StringCopy (new_id), NULL, ST_regular);
-        }
-    }
+        if (act_son_expr != NULL) {
+            if ((N_id != NODE_TYPE (act_son_expr))
+                && !IsConstantArray (act_son_expr, N_num)) {
+                *act_son = Abstract (act_son_expr, arg_info);
+            }
+            act_son_expr2 = Trav (act_son_expr, arg_info);
 
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *FltnNwithop(node *arg_node, node *arg_info)
- *
- * description:
- *   flattens N_Nwithop
- *   - genarray: at the moment shape is limited to a constant array
- *   - modarray: the array has to be an id or is flattened otherwise.
- *   - fold: the neutral element has to be an id or a constant scalar
- *           or is flattened otherwise. It is optional.
- *
- ******************************************************************************/
-node *
-FltnNwithop (node *arg_node, node *arg_info)
-{
-    node *exprs;
-    int old_tag;
-    DBUG_ENTER ("FltnNwithop");
-
-    switch (NWITHOP_TYPE (arg_node)) {
-    case WO_genarray:
-        break;
-    case WO_modarray:
-        if ((N_prf == NODE_TYPE (NWITHOP_ARRAY (arg_node)))
-            || (N_ap == NODE_TYPE (NWITHOP_ARRAY (arg_node)))
-            || (N_array == NODE_TYPE (NWITHOP_ARRAY (arg_node)))) {
-            old_tag = arg_info->info.cint;
-            /* exprs is only used temporary to call FltnExprs */
-            exprs = MakeExprs (NWITHOP_ARRAY (arg_node), NULL);
-            arg_info->info.cint = MODARRAY;
-            exprs = Trav (exprs, arg_info);
-            arg_info->info.cint = old_tag;
-            NWITHOP_ARRAY (arg_node) = EXPRS_EXPR (exprs);
-            FREE (exprs);
-        } else /* eventually replace id. */
-            NWITHOP_ARRAY (arg_node) = Trav (NWITHOP_ARRAY (arg_node), arg_info);
-        break;
-    default:
-        if (NWITHOP_NEUTRAL (arg_node)) {
-            old_tag = arg_info->info.cint;
-            /* exprs is only used temporary to call FltnExprs */
-            exprs = MakeExprs (NWITHOP_NEUTRAL (arg_node), NULL);
-            arg_info->info.cint = NORMAL;
-            exprs = Trav (exprs, arg_info); /* call FltnExprs */
-            arg_info->info.cint = old_tag;
-            NWITHOP_NEUTRAL (arg_node) = EXPRS_EXPR (exprs);
-            FREE (exprs);
+            DBUG_ASSERT ((act_son_expr == act_son_expr2),
+                         "return-node differs from arg_node while flattening an expr!");
         }
     }
 
@@ -1795,61 +1851,49 @@ FltnNwithop (node *arg_node, node *arg_info)
 node *
 FltnNcode (node *arg_node, node *arg_info)
 {
-    node *info_node, *tmp, *assign_node, *let_node;
-    char *name;
+    node **insert_at, *expr, *expr2, *mem_last_assign;
+
     DBUG_ENTER ("FltnNcode");
 
-    /* here we prepere a litte trick for the TC:
-       every argument, regardless if constant of not, is unconditionally
-       flattened into the body. So the type of the body's last let-expr is
-       automatically the type of the final expression. */
-    /*   if (N_float != NODE_TYPE(NCODE_CEXPR(arg_node)) && */
-    /*       N_double != NODE_TYPE(NCODE_CEXPR(arg_node)) && */
-    /*       N_num != NODE_TYPE(NCODE_CEXPR(arg_node))) */
-    {
-        name = TmpVar ();
-        let_node = MakeLet (NCODE_CEXPR (arg_node), MakeIds (name, NULL, ST_regular));
-        assign_node = MakeAssign (let_node, NULL);
-        NCODE_CEXPR (arg_node) = MakeId (StringCopy (name), NULL, ST_regular);
-        /* name will be pushed on the local_stack later while processing the body. */
+    mem_last_assign = INFO_FLTN_LASTASSIGN (arg_info);
 
-        if (NCODE_CBLOCK (arg_node)) {
-            /* insert assign_node at the end of the body */
-            tmp = BLOCK_INSTR (NCODE_CBLOCK (arg_node));
-            if (N_empty == NODE_TYPE (tmp)) {
-                FreeTree (tmp);
-                BLOCK_INSTR (NCODE_CBLOCK (arg_node)) = assign_node;
-            } else {
-                while (ASSIGN_NEXT (tmp))
-                    tmp = ASSIGN_NEXT (tmp);
-                ASSIGN_NEXT (tmp) = assign_node;
-            }
-        } else
-            /* create body */
-            NCODE_CBLOCK (arg_node) = MakeBlock (assign_node, NULL);
+    /*
+     * First, we traverse the body so that INFO_FLTN_FINALASSIGN will
+     * be set correctly, and all renamings will be pushed already!
+     * For inserting a flattened CEXPR later we memoize INFO_FLTN_FINALASSIGN
+     * in *insert_at, since the block may be empty (->access macros!!!)
+     */
+    if (NCODE_CBLOCK (arg_node) == NULL) {
+        NCODE_CBLOCK (arg_node) = MakeBlock (NULL, NULL);
+        insert_at = &BLOCK_INSTR (NCODE_CBLOCK (arg_node));
+    } else {
+        if (NODE_TYPE (BLOCK_INSTR (NCODE_CBLOCK (arg_node))) == N_empty) {
+            insert_at = &BLOCK_INSTR (NCODE_CBLOCK (arg_node));
+        } else {
+            INFO_FLTN_CONTEXT (arg_info) = CT_wl;
+            DBUG_PRINT ("RENAME", ("CONTEXT set to CT_wl"));
+            NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
+            insert_at = &ASSIGN_NEXT (INFO_FLTN_FINALASSIGN (arg_info));
+        }
     }
 
-    /* traverse the body, use info_node to save arg_info */
-    info_node = MakeInfo ();
-    info_node->info.cint = NORMAL;
-    if (NCODE_CBLOCK (arg_node))
-        NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), info_node);
-
-    /* Every variable which is assigned a new value to in the body is local and
-       so has to be renamed if used outside the body. The renaming has been done
-       so far. But the new variable is still not initialised, which is important
-       if the assignment is only in one part of a condidion.
-       The initialisations can be found in info_node->node[1]. */
-    if (info_node->node[1]) {
-        tmp = info_node->node[1];
-
-        while (ASSIGN_NEXT (tmp))
-            tmp = ASSIGN_NEXT (tmp);
-
-        ASSIGN_NEXT (tmp) = BLOCK_INSTR (NCODE_CBLOCK (arg_node));
-        BLOCK_INSTR (NCODE_CBLOCK (arg_node)) = info_node->node[1];
+    /*
+     * After traversing the body, we finally flatten the CEXPR!
+     */
+    INFO_FLTN_LASTASSIGN (arg_info) = NULL;
+    expr = NCODE_CEXPR (arg_node);
+    if (0 == 0) {
+        NCODE_CEXPR (arg_node) = Abstract (expr, arg_info);
     }
+    expr2 = Trav (expr, arg_info);
+    DBUG_ASSERT ((expr == expr2),
+                 "return-node differs from arg_node while flattening an expr!");
+    *insert_at = INFO_FLTN_LASTASSIGN (arg_info);
 
-    /* there is only one Ncode node at this time so we can ignore NCODE_NEXT(). */
+    INFO_FLTN_LASTASSIGN (arg_info) = mem_last_assign;
+
+    DBUG_ASSERT ((NCODE_NEXT (arg_node) == NULL),
+                 "there should be only one code block during flatten!");
+
     DBUG_RETURN (arg_node);
 }
