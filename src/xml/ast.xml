@@ -14,7 +14,7 @@
     <type name="OldType" ctype="types*" init="NULL"
     copy="function" persist="no" />
     <type name="Node" ctype="node*" init="NULL" copy="function" />
-    <type name="Link" ctype="node*" init="NULL" copy="hash" persist="no" />
+    <type name="Link" ctype="node*" init="NULL" copy="hash" />
     <type name="ExtLink" ctype="node*" init="NULL" copy="hash" persist="yes" />
     <type name="DownLink" ctype="node*" init="NULL" copy="hash" persist="no" />
     <type name="FileType" ctype="file_type" init="F_unknown"
@@ -121,7 +121,14 @@
       <traversal id="SBT" name="Serialize Build Stack" default="user" include="serialize_buildstack.h" />
       <traversal id="SET" name="Serialize Node Traversal" default="user" include="serialize_node.h" />
       <traversal id="SEL" name="Serialize Link Traversal" default="user" include="serialize_link.h" />
-      <traversal id="DS" name="DeSerialize Traversal" default="sons" include="serialize_link.h" />
+      <traversal id="DS" name="DeSerialize Traversal" default="sons" include="deserialize.h">
+        <travuser>
+	  <node name="Fundef" />
+	  <node name="Return" />
+	  <node name="Block" />
+	  <node name="Arg" />
+	</travuser>
+      </traversal>
       <traversal id="TNT" name="ToNewTypes Traversal" default="sons" include="ToNewTypes.h" >
 	<travuser>
 	  <node name="Fundef" />
