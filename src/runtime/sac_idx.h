@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2003/09/25 13:44:59  dkr
+ * ND_WRITE replaced by ND_WRITE_COPY
+ *
  * Revision 3.11  2003/09/19 12:26:40  dkr
  * postfixes _nt, _any of varnames renamed into _NT, _ANY
  *
@@ -111,7 +114,7 @@
 /* ND_PRF_IDX_MODARRAY__DATA( ...) is a C-ICM */
 
 #define SAC_ND_USE_GENVAR_OFFSET(off_NT, wl_NT)                                          \
-    SAC_ND_WRITE (off_NT, 0) = SAC_WL_OFFSET (wl_NT);
+    SAC_ND_WRITE_COPY (off_NT, 0, SAC_WL_OFFSET (wl_NT), );
 
 #else /* TAGGED_ARRAYS */
 
