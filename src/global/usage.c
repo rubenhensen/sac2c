@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.23  2002/07/10 16:33:38  dkr
+ * -b2:yacc added
+ *
  * Revision 3.22  2002/07/03 15:28:18  dkr
  * -checkt added (for TAGGED_ARRAYS)
  *
@@ -116,6 +119,9 @@
         for (_i = 0; _i < (13 - strlen (spec)); _i++) {                                  \
             printf (" ");                                                                \
         }                                                                                \
+        if (ph < 10) {                                                                   \
+            printf (" ");                                                                \
+        }                                                                                \
         printf ("%s\n", comment);                                                        \
     }
 
@@ -229,6 +235,10 @@ usage ()
             "\twithin a particular phase.\n\n"
 
             "\tCurrently supported:\n\n");
+
+    PRINT_BREAK_SPEC (PH_scanparse, "yacc", "stop after parsing (yacc)");
+
+    printf ("\n");
 
     PRINT_BREAK_SPEC (PH_sacopt, "inl", "stop after function inlining");
     PRINT_BREAK_SPEC (PH_sacopt, "dfr", "stop after initial dead function removal");
