@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.10  1995/03/13 17:58:12  asi
+ * Revision 1.11  1995/03/15 15:16:38  asi
+ * modified mask handling in conditionals
+ *
+ * Revision 1.10  1995/03/13  17:58:12  asi
  * changover from 'info.id' to 'info.ids' of node N_id
  *
  * Revision 1.9  1995/03/13  16:59:05  asi
@@ -696,19 +699,17 @@ CFcond (node *arg_node, node *arg_info)
     DBUG_ENTER ("CFcond");
     returnnode = arg_node;
     PushDupVL ();
-    oldmask[0] = arg_info->mask[0];
     oldmask[1] = arg_info->mask[1];
-    arg_info->mask[0] = GenMask (VARNO);
     arg_info->mask[1] = GenMask (VARNO);
 
     arg_node->node[0] = Trav (arg_node->node[0], arg_info);
 
-    MinusMask (arg_node->mask[0], arg_info->mask[0], VARNO);
     MinusMask (arg_node->mask[1], arg_info->mask[1], VARNO);
-    PlusMask (oldmask[0], arg_info->mask[0], VARNO);
     PlusMask (oldmask[1], arg_info->mask[1], VARNO);
-    ClearMask (arg_info->mask[0], VARNO);
     ClearMask (arg_info->mask[1], VARNO);
+
+    oldmask[0] = arg_info->mask[0];
+    arg_info->mask[0] = GenMask (VARNO);
 
     if (arg_node->node[0]->nodetype == N_bool) {
         if (arg_node->node[0]->info.cint != 0) {
