@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.12  1999/06/28 09:53:32  cg
+ * Handling of options -noLUR, -noWLUR, and -noLUS corrected.
+ *
  * Revision 2.11  1999/06/11 12:54:46  cg
  * Bug fixed in option -cshost.
  * Added options -csfile and csdir.
@@ -201,14 +204,14 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_CHOICE ("inl", optimize |= OPT_INL);
         ARG_CHOICE ("INL", optimize |= OPT_INL);
 
-        ARG_CHOICE ("lunr", optimize |= OPT_LUR);
-        ARG_CHOICE ("LUNR", optimize |= OPT_LUR);
+        ARG_CHOICE ("lur", optimize |= OPT_LUR);
+        ARG_CHOICE ("LUR", optimize |= OPT_LUR);
 
-        ARG_CHOICE ("wlunr", optimize |= OPT_WLUR);
-        ARG_CHOICE ("WLUNR", optimize |= OPT_WLUR);
+        ARG_CHOICE ("wlur", optimize |= OPT_WLUR);
+        ARG_CHOICE ("WLUR", optimize |= OPT_WLUR);
 
-        ARG_CHOICE ("uns", optimize |= OPT_LUS);
-        ARG_CHOICE ("UNS", optimize |= OPT_LUS);
+        ARG_CHOICE ("lus", optimize |= OPT_LUS);
+        ARG_CHOICE ("LUS", optimize |= OPT_LUS);
 
         ARG_CHOICE ("cse", optimize |= OPT_CSE);
         ARG_CHOICE ("CSE", optimize |= OPT_CSE);
@@ -353,14 +356,14 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_CHOICE ("inl", optimize &= ~OPT_INL);
         ARG_CHOICE ("INL", optimize &= ~OPT_INL);
 
-        ARG_CHOICE ("lunr", optimize &= ~OPT_LUR);
-        ARG_CHOICE ("LUNR", optimize &= ~OPT_LUR);
+        ARG_CHOICE ("lur", optimize &= ~OPT_LUR);
+        ARG_CHOICE ("LUR", optimize &= ~OPT_LUR);
 
-        ARG_CHOICE ("wlunr", optimize &= ~OPT_WLUR);
-        ARG_CHOICE ("WLUNR", optimize &= ~OPT_WLUR);
+        ARG_CHOICE ("wlur", optimize &= ~OPT_WLUR);
+        ARG_CHOICE ("WLUR", optimize &= ~OPT_WLUR);
 
-        ARG_CHOICE ("uns", optimize &= ~OPT_LUS);
-        ARG_CHOICE ("UNS", optimize &= ~OPT_LUS);
+        ARG_CHOICE ("lus", optimize &= ~OPT_LUS);
+        ARG_CHOICE ("LUS", optimize &= ~OPT_LUS);
 
         ARG_CHOICE ("cse", optimize &= ~OPT_CSE);
         ARG_CHOICE ("CSE", optimize &= ~OPT_CSE);
