@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.34  1996/02/21 15:10:05  cg
+ * Revision 1.35  1996/02/29 14:51:24  sbs
+ * implementation for ND_IDX_PSI_A debugged;
+ * accepts now constants as source parameter as well
+ *
+ * Revision 1.34  1996/02/21  15:10:05  cg
  * typedefs and defines moved to libsac.h
  *
  * Revision 1.33  1996/02/05  09:21:48  sbs
@@ -650,9 +654,9 @@
 
 #define ND_IDX_PSI_A(s, a, res)                                                          \
     {                                                                                    \
-        int __i;                                                                         \
+        int __i, __s = s;                                                                \
         for (__i = 0; __i < ND_A_SIZE (res); __i++)                                      \
-            ND_A_FIELD (res)[__i] = ND_A_FIELD (a)[s++];                                 \
+            ND_A_FIELD (res)[__i] = ND_A_FIELD (a)[__s++];                               \
     };
 
 #define ND_KS_USE_GENVAR_OFFSET(offsetvar, res) offsetvar = res##__destptr;
