@@ -1,7 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.11  1996/01/21 16:02:47  cg
+ * Revision 1.12  1996/01/22 18:40:07  cg
+ * All object definitions are rearranged in a sequence that allows their
+ * sequential initialization. If this is not possible, then an error
+ * message occurrs.
+ *
+ * Revision 1.11  1996/01/21  16:02:47  cg
  * bug fixed in OBJobjdef
  *
  * Revision 1.10  1995/12/28  10:28:10  cg
@@ -87,6 +92,171 @@ HandleObjects (node *syntax_tree)
 
 /*
  *
+ *  functionname  :
+ *  arguments     :
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+
+/*
+ *
+ *  functionname  : InsertIntoInitlist
+ *  arguments     :
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+
+int
+InsertIntoInitlist (node *objdef, nodelist **already_done)
+{
+    nodelist *needed, *tmp;
+    int success = 1;
+
+    DBUG_ENTER ("InsertIntoInitlist");
+
+    if (OBJDEF_NEEDOBJS (objdef) != NULL) {
+        needed = OBJDEF_NEEDOBJS (objdef);
+    } else {
+        needed = FUNDEF_NEEDOBJS (AP_FUNDEF (OBJDEF_EXPR (objdef)));
+    }
+
+    while (needed != NULL) {
+        tmp = *already_done;
+
+        while (tmp != NULL) {
+            if (NODELIST_NODE (needed) == NODELIST_NODE (tmp)) {
+                break;
+            }
+
+            tmp = NODELIST_NEXT (tmp);
+        }
+
+        if (tmp == NULL) {
+            success = 0;
+            break;
+        }
+
+        needed = NODELIST_NEXT (needed);
+    }
+
+    if (success) {
+        *already_done = MakeNodelist (objdef, ST_regular, *already_done);
+    }
+
+    DBUG_RETURN (success);
+}
+
+/*
+ *
+ *  functionname  : RearrangeObjdefs
+ *  arguments     :
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+
+node *
+RearrangeObjdefs (node *objects)
+{
+    node *tmp, *first, *last;
+    nodelist *already_done = NULL;
+    int inserted, not_ready;
+
+    DBUG_ENTER ("RearrangeObjdefs");
+
+    do {
+        inserted = 0;
+        not_ready = 0;
+        tmp = objects;
+
+        while (tmp != NULL) {
+            if (OBJDEF_ATTRIB (tmp) == ST_regular) {
+                not_ready = 1;
+
+                if (1 == InsertIntoInitlist (tmp, &already_done)) {
+                    inserted = 1;
+                    OBJDEF_ATTRIB (tmp) = ST_resolved;
+
+                    DBUG_PRINT ("OBJ", ("Object %s added to init list", ItemName (tmp)));
+                }
+            }
+
+            tmp = OBJDEF_NEXT (tmp);
+        }
+    } while (inserted);
+
+    if (not_ready) {
+        ERROR (0, ("The following global objects cannot be initialized due "
+                   "to mutual dependencies"));
+
+        tmp = objects;
+
+        while (tmp != NULL) {
+            if (OBJDEF_ATTRIB (tmp) == ST_regular) {
+                CONT_ERROR (("'%s`", ItemName (tmp)));
+            }
+
+            tmp = OBJDEF_NEXT (tmp);
+        }
+
+        ABORT_ON_ERROR;
+    }
+
+    DBUG_ASSERT (already_done != NULL, "RearrangeObjdefs called with 0 objects");
+
+    last = NODELIST_NODE (already_done);
+    OBJDEF_NEXT (last) = NULL;
+    already_done = NODELIST_NEXT (already_done);
+    first = last;
+
+    DBUG_PRINT ("OBJ", ("Rearranging object %s", ItemName (first)));
+
+    /***************************************/
+#ifndef NEWTREE
+    last->nnode = 1;
+#endif
+    /***************************************/
+
+    while (already_done != NULL) {
+        first = NODELIST_NODE (already_done);
+
+        DBUG_PRINT ("OBJ", ("Rearranging object %s", ItemName (first)));
+
+        OBJDEF_NEXT (first) = last;
+
+        /***************************************/
+#ifndef NEWTREE
+        last->nnode = 2;
+#endif
+        /***************************************/
+
+        last = first;
+
+        already_done = NODELIST_NEXT (already_done);
+    }
+
+    DBUG_RETURN (first);
+}
+
+/*
+ *
  *  functionname  : OBJmodul
  *  arguments     : 1) pointer to N_modul node of syntax tree
  *                  2) arg_info unused
@@ -113,6 +283,10 @@ OBJmodul (node *arg_node, node *arg_info)
 
     if (MODUL_FUNS (arg_node) != NULL) {
         MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
+    }
+
+    if (MODUL_OBJS (arg_node) != NULL) {
+        MODUL_OBJS (arg_node) = RearrangeObjdefs (MODUL_OBJS (arg_node));
     }
 
     DBUG_RETURN (arg_node);
