@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.8  1998/05/08 15:45:29  dkr
+ * fixed a bug in cube-generation:
+ *   pathologic grids are eleminated now :)
+ *
  * Revision 1.7  1998/05/08 00:46:09  dkr
  * added some attributes to N_Nwith/N_Nwith2
  *
@@ -315,6 +319,18 @@ NormalizeStride_1 (node *stride)
     }
     if ((step > 1) && (grid_b1 == 0) && (grid_b2 == step)) {
         grid_b2 = step = 1;
+    }
+
+    /*
+     * if (bound2 - bound1 <= step), we set (step = 1) to avoid pathologic cases!!!
+     */
+
+    if (bound2 - bound1 <= step) {
+        bound2 = bound1 + grid_b2;
+        bound1 += grid_b1;
+        grid_b1 = 0;
+        grid_b2 = 1;
+        step = 1;
     }
 
     /*
