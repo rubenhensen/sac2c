@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.38  2001/05/11 13:34:11  nmw
+ * AdjustAvisData fixed for handling multiple inlined ssacounters
+ *
  * Revision 3.37  2001/05/09 12:32:24  nmw
  * AdjustAvisData created ssacnt nodes only when used in ssaform
  *
@@ -1847,12 +1850,12 @@ MakeArgFromVardec (node *vardec_node)
  *   block of the given fundef (sideeffekt!!!)
  *
  ******************************************************************************/
-
 node *
 AdjustAvisData (node *new_vardec, node *fundef)
 {
     node *avis_node;
     char *base_id;
+    node *ssacnt;
 
     DBUG_ENTER ("AdjustAvisData");
 
@@ -1863,22 +1866,43 @@ AdjustAvisData (node *new_vardec, node *fundef)
 
     /* SSACOUNTER operations are only necessary when operating on ssa form */
     if (valid_ssaform) {
-        /* if there is an existing base_id - use it, else take the vardec name */
-        if (AVIS_SSACOUNT (VARDEC_AVIS (new_vardec)) != NULL) {
-            base_id = SSACNT_BASEID (AVIS_SSACOUNT (VARDEC_AVIS (new_vardec)));
-            DBUG_PRINT ("AAD", ("reuse base_id %s for vardec %s", base_id,
-                                VARDEC_NAME (new_vardec)));
-        } else {
-            base_id = VARDEC_NAME (new_vardec);
-            DBUG_PRINT ("AAD", ("create new base_id %s for vardec %s", base_id,
-                                VARDEC_NAME (new_vardec)));
+        DBUG_ASSERT ((AVIS_SSACOUNT (VARDEC_AVIS (new_vardec)) != NULL),
+                     "corrupted ssa form found - unknown baseid");
+
+        base_id = SSACNT_BASEID (AVIS_SSACOUNT (VARDEC_AVIS (new_vardec)));
+
+        /*
+         * first we check if there is already an ssacounter with this baseid in
+         * the target fundef so we attach our new created avis to this ssa counter.
+         * by doing this we avoid name conflicts when renaming during ssa updates
+         */
+        ssacnt = BLOCK_SSACOUNTER (FUNDEF_BODY (fundef));
+        while ((ssacnt != NULL) && (strcmp (SSACNT_BASEID (ssacnt), base_id) != 0)) {
+            ssacnt = SSACNT_NEXT (ssacnt);
         }
 
-        BLOCK_SSACOUNTER (FUNDEF_BODY (fundef))
-          = MakeSSAcnt (BLOCK_SSACOUNTER (FUNDEF_BODY (fundef)), 0, StringCopy (base_id));
+        if (ssacnt != NULL) {
+            /* found a matching base id */
+            AVIS_SSACOUNT (avis_node) = ssacnt;
+            DBUG_PRINT ("AAD", ("use existing ssacounter with baseid %s for vardec %s",
+                                base_id, VARDEC_NAME (new_vardec)));
 
-        AVIS_SSACOUNT (avis_node) = BLOCK_SSACOUNTER (FUNDEF_BODY (fundef));
+        } else {
+            /*
+             * if we find no matching ssacounter we create a new one with the current
+             * base id and add it to the ssacounter chain
+             */
+            DBUG_PRINT ("AAD", ("reuse base_id %s for vardec %s", base_id,
+                                VARDEC_NAME (new_vardec)));
+
+            BLOCK_SSACOUNTER (FUNDEF_BODY (fundef))
+              = MakeSSAcnt (BLOCK_SSACOUNTER (FUNDEF_BODY (fundef)), 0,
+                            StringCopy (base_id));
+
+            AVIS_SSACOUNT (avis_node) = BLOCK_SSACOUNTER (FUNDEF_BODY (fundef));
+        }
     } else {
+        /* no ssacounter needed */
         AVIS_SSACOUNT (avis_node) = NULL;
     }
     AVIS_SSALPINV (avis_node) = FALSE;
