@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.54  2004/07/29 15:25:51  sah
+ * reenabled array padding
+ * disabled wls
+ *  (due to bug #41)
+ *
  * Revision 3.53  2004/07/23 15:53:50  ktr
  * - removed OPT_BLIR
  * - removed -ktr
@@ -493,13 +498,13 @@ bool patch_with = FALSE;
 #ifdef PRODUCTION
 unsigned int optimize = OPT_ALL & (~OPT_LIR) & (~OPT_MTO) & (~OPT_SBE) & (~OPT_MTI)
                         & (~OPT_APL) & (~OPT_DL) & (~OPT_SP) & (~OPT_TSI) & (~OPT_WLFS)
-                        & (~OPT_CVP) & (~OPT_WLPG) & (~OPT_AP);
+                        & (~OPT_CVP) & (~OPT_WLPG) & (~OPT_WLS);
 #else /* PRODUCTION */
 /* as long as OPT_SBE is shared with OPT_CVP OPT_SBE should be not used here
  * to allow to work with OPT_CVP
  */
 unsigned int optimize = OPT_ALL & (~OPT_MTO) /*& (~OPT_SBE)*/ & (~OPT_MTI) & (~OPT_APL)
-                        & (~OPT_WLFS) & (~OPT_TSI) & (~OPT_WLPG) & (~OPT_AP);
+                        & (~OPT_WLFS) & (~OPT_TSI) & (~OPT_WLPG) & (~OPT_WLS);
 
 #endif /* PRODUCTION */
 
