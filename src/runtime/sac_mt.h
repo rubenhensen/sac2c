@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.46  2003/03/20 13:53:50  sbs
+ * config.h included; NEED_REENTRANT used.
+ *
  * Revision 3.45  2002/07/16 12:51:49  dkr
  * code beautified
  *
@@ -140,6 +143,8 @@
 #define _POSIX_C_SOURCE 199506L
 #endif
 
+#include "config.h"
+
 /*
  * On some systems _REENTRANT has to be defined before including system libs
  * when intending to create thread-safe code. POSIX does not require this.
@@ -148,10 +153,8 @@
  * which conflicts a prior definition. Therefore, we better do not preset
  * _REENTRANT on that system.
  */
-#ifndef SAC_FOR_OSF_ALPHA
-#ifndef _REENTRANT
+#ifdef NEED_REENTRANT
 #define _REENTRANT
-#endif
 #endif
 
 #include <pthread.h>
