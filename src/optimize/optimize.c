@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.84  2005/03/17 14:03:11  sah
+ * removed global check for function body
+ *
  * Revision 3.83  2005/03/10 09:41:09  cg
  * Added #include "DupTree.h"
  *
@@ -1246,7 +1249,16 @@ OPTfundef (node *arg_node, info *arg_info)
     strcpy (argtype_buffer, "");
     buffer_space = 77;
 
-    DBUG_ASSERT (FUNDEF_BODY (arg_node) != NULL, "fundec found in fundef chain");
+#if 0
+  
+  /*
+   * this check is no more valid. A FUNDEC is an external function
+   * here the existence of a function body is checked
+   */
+
+  DBUG_ASSERT( FUNDEF_BODY (arg_node) != NULL, 
+               "fundec found in fundef chain");
+#endif
 
     /*
      * The global variable 'do_break' is used to report a break to OPTmodul().
