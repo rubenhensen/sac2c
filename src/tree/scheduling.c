@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.39  2004/08/01 16:28:53  sah
+ * all abstract types are now abstract structures
+ * instead of void pointers
+ *
  * Revision 3.38  2004/08/01 13:17:08  ktr
  * Added SCHMMVScheduling, SCHMMVTasksel
  *
@@ -205,6 +209,7 @@
 #include <string.h>
 #include <stdarg.h>
 
+#include "scheduling.h"
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -267,15 +272,13 @@ typedef struct {
     } arg;
 } sched_arg_t;
 
-typedef struct {
+typedef struct SCHED_T {
     char *discipline;
     sched_class_t class;
     int line;
     int num_args;
     sched_arg_t *args;
 } sched_t;
-
-typedef sched_t *SCHsched_t;
 
 /******************************************************************************
  *
@@ -1203,15 +1206,13 @@ SCHCompileSchedulingInit (int seg_id, ids *wl_ids, sched_t *sched, node *arg_nod
  *
  ******************************************************************************/
 
-typedef struct {
+typedef struct TASKSEL_T {
     char *discipline;
     int line;
     int num_args;
     int *arg;
     int dims;
 } tasksel_t;
-
-typedef tasksel_t *SCHtasksel_t;
 
 /******************************************************************************
  *

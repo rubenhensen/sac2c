@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2004/08/01 16:28:53  sah
+ * all abstract types are now abstract structures
+ * instead of void pointers
+ *
  * Revision 3.9  2004/08/01 13:17:08  ktr
  * Added SCHMMVScheduling, SCHMMVTasksel
  *
@@ -80,7 +84,7 @@
 #include <stdio.h>
 #include "LookUpTable.h"
 
-typedef void *SCHsched_t;
+typedef struct SCHED_T *SCHsched_t;
 
 extern SCHsched_t SCHMakeScheduling (char *discipline, ...);
 extern SCHsched_t SCHMakeSchedulingByPragma (node *ap_node, int line);
@@ -89,11 +93,11 @@ extern SCHsched_t SCHRemoveScheduling (SCHsched_t sched);
 extern SCHsched_t SCHCopyScheduling (SCHsched_t sched);
 extern SCHsched_t SCHPrecompileScheduling (SCHsched_t sched);
 extern SCHsched_t SCHMMVScheduling (SCHsched_t sched, LUT_t lut);
-extern void SCHPrintScheduling (FILE *outfile, SCHsched_t *sched);
+extern void SCHPrintScheduling (FILE *outfile, SCHsched_t sched);
 
-extern void SCHCheckSuitabilityConstSeg (SCHsched_t *sched);
-extern void SCHCheckSuitabilityVarSeg (SCHsched_t *sched);
-extern void SCHCheckSuitabilityWithloop (SCHsched_t *sched);
+extern void SCHCheckSuitabilityConstSeg (SCHsched_t sched);
+extern void SCHCheckSuitabilityVarSeg (SCHsched_t sched);
+extern void SCHCheckSuitabilityWithloop (SCHsched_t sched);
 extern bool SCHAdjustmentRequired (int dim, node *wlseg);
 
 extern node *SCHCompileSchedulingBegin (int seg_id, ids *wl_ids, SCHsched_t sched,
@@ -103,7 +107,7 @@ extern node *SCHCompileSchedulingEnd (int seg_id, ids *wl_ids, SCHsched_t sched,
 extern node *SCHCompileSchedulingInit (int seg_id, ids *wl_ids, SCHsched_t sched,
                                        node *arg_node);
 
-typedef void *SCHtasksel_t;
+typedef struct TASKSEL_T *SCHtasksel_t;
 
 extern SCHtasksel_t SCHMakeTaskselByPragma (node *ap_node, int line);
 
@@ -111,7 +115,7 @@ extern SCHtasksel_t SCHRemoveTasksel (SCHtasksel_t tasksel);
 extern SCHtasksel_t SCHCopyTasksel (SCHtasksel_t tasksel);
 extern SCHtasksel_t SCHPrecompileTasksel (SCHtasksel_t tasksel);
 extern SCHtasksel_t SCHMMVTasksel (SCHtasksel_t tasksel, LUT_t lut);
-extern void SCHPrintTasksel (FILE *outfile, SCHtasksel_t *tasksel);
+extern void SCHPrintTasksel (FILE *outfile, SCHtasksel_t tasksel);
 
 extern node *SCHCompileSchedulingWithTaskselBegin (int seg_id, ids *wl_ids,
                                                    SCHsched_t sched, SCHtasksel_t tasksel,
