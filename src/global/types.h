@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.38  1998/05/20 20:14:07  sbs
+ * contextflag for INFO_FLTN inserted.
+ *
  * Revision 1.37  1998/05/14 12:49:24  sbs
  * contextflag added
  *
@@ -270,7 +273,7 @@ typedef enum {
     F_sib
 } file_type;
 
-typedef enum { CT_normal, CT_ap, CT_return, CT_loop, CT_cond, CT_modarray } contextflag;
+typedef enum { CT_normal, CT_ap, CT_return, CT_wl } contextflag;
 
 /*
  * new nodes for yacc and the syntax tree
