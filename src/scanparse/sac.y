@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.61  2002/09/03 15:26:55  sbs
+ * _mod_SxS_ added
+ *
  * Revision 3.60  2002/08/30 12:51:23  sbs
  * reduce reduce conflicts due to redundant prfs (ADD / MUL) _SxS / _AxA
  * eliminated 8-(
@@ -266,7 +269,8 @@ static node *CheckWlcompConf( node *ap, node *exprs);
        SUB_SxS, SUB_SxA, SUB_AxS, SUB_AxA,
        MUL_SxS, MUL_SxA, MUL_AxS, MUL_AxA,
        DIV_SxS, DIV_SxA, DIV_AxS, DIV_AxA,
-       EQ_SxS, NEQ_SxS, LE_SxS, LT_SxS, GE_SxS, GT_SxS
+       EQ_SxS, NEQ_SxS, LE_SxS, LT_SxS, GE_SxS, GT_SxS,
+       MODULO_SxS
 
 %token <id> ID, STR, PRIVATEID, OPTION
 
@@ -1384,30 +1388,31 @@ foldop: ADD_SxS  { $$ = F_add_SxS;  }
       | OR       { $$ = F_or; }
       ;
 
-prf: foldop   { $$ = $1;         }
-   | DIM      { $$ = F_dim;      }
-   | SHAPE    { $$ = F_shape;    }
-   | SEL      { $$ = F_sel;      }
-   | RESHAPE  { $$ = F_reshape;  }
-   | PRF_MOD  { $$ = F_mod;      }
-   | ADD_SxA  { $$ = F_add_SxA;  }
-   | ADD_AxS  { $$ = F_add_AxS;  }
-   | SUB_SxS  { $$ = F_sub_SxS;  }
-   | SUB_SxA  { $$ = F_sub_SxA;  }
-   | SUB_AxS  { $$ = F_sub_AxS;  }
-   | SUB_AxA  { $$ = F_sub_AxA;  }
-   | MUL_SxA  { $$ = F_mul_SxA;  }
-   | MUL_AxS  { $$ = F_mul_AxS;  }
-   | DIV_SxS  { $$ = F_div_SxS;  }
-   | DIV_SxA  { $$ = F_div_SxA;  }
-   | DIV_AxS  { $$ = F_div_AxS;  }
-   | DIV_AxA  { $$ = F_div_AxA;  }
-   | EQ_SxS   { $$ = F_eq;       }
-   | NEQ_SxS  { $$ = F_neq;      }
-   | LT_SxS   { $$ = F_lt;       }
-   | LE_SxS   { $$ = F_le;       }
-   | GT_SxS   { $$ = F_gt;       }
-   | GE_SxS   { $$ = F_ge;       }
+prf: foldop     { $$ = $1;         }
+   | DIM        { $$ = F_dim;      }
+   | SHAPE      { $$ = F_shape;    }
+   | SEL        { $$ = F_sel;      }
+   | RESHAPE    { $$ = F_reshape;  }
+   | PRF_MOD    { $$ = F_mod;      }
+   | ADD_SxA    { $$ = F_add_SxA;  }
+   | ADD_AxS    { $$ = F_add_AxS;  }
+   | SUB_SxS    { $$ = F_sub_SxS;  }
+   | SUB_SxA    { $$ = F_sub_SxA;  }
+   | SUB_AxS    { $$ = F_sub_AxS;  }
+   | SUB_AxA    { $$ = F_sub_AxA;  }
+   | MUL_SxA    { $$ = F_mul_SxA;  }
+   | MUL_AxS    { $$ = F_mul_AxS;  }
+   | DIV_SxS    { $$ = F_div_SxS;  }
+   | DIV_SxA    { $$ = F_div_SxA;  }
+   | DIV_AxS    { $$ = F_div_AxS;  }
+   | DIV_AxA    { $$ = F_div_AxA;  }
+   | EQ_SxS     { $$ = F_eq;       }
+   | NEQ_SxS    { $$ = F_neq;      }
+   | LT_SxS     { $$ = F_lt;       }
+   | LE_SxS     { $$ = F_le;       }
+   | GT_SxS     { $$ = F_gt;       }
+   | GE_SxS     { $$ = F_ge;       }
+   | MODULO_SxS { $$ = F_mod;    }
    ;
 
 fun_ids: fun_id COMMA fun_ids 

@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2002/09/03 15:26:55  sbs
+ * _mod_SxS_ added
+ *
  * Revision 3.16  2002/08/14 09:55:23  sbs
  * Free s on ID tokens eliminated since that code in fact never was and never should
  * be reached!!!!!
@@ -187,6 +190,8 @@ int charpos = 0;
 "_lt_SxS_"                 { FILTER( LT_SxS); }
 "_ge_SxS_"                 { FILTER( GE_SxS); }
 "_gt_SxS_"                 { FILTER( GT_SxS); }
+
+"_mod_SxS_"                { FILTER( MODULO_SxS); }
 
 "_toi_"                    { FILTER( TOI ); }
 "_tof_"                    { FILTER( TOF ); }
