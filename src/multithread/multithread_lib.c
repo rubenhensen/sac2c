@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2004/07/28 17:47:40  skt
+ * added N_ex into assertion
+ *
  * Revision 3.5  2004/07/26 16:53:07  skt
  * added support for exclusive cells
  *
@@ -357,8 +360,9 @@ MUTHInsertBlock (node *assign, node *block, node *fundef)
     DBUG_ENTER ("MUTHInsertBlock");
 
     DBUG_ASSERT ((NODE_TYPE (assign) == N_assign), ("assign: N_assign expected"));
-    DBUG_ASSERT (((NODE_TYPE (block) == N_mt) || (NODE_TYPE (block) == N_st)),
-                 ("block: N_mt or N_st expected"));
+    DBUG_ASSERT (((NODE_TYPE (block) == N_mt) || (NODE_TYPE (block) == N_st)
+                  || (NODE_TYPE (block) == N_ex)),
+                 ("block: N_ex, N_mt or N_st expected"));
     DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef), ("fundef: N_fundef expected"));
 
     newassign = MakeAssign (ASSIGN_INSTR (assign), NULL);
