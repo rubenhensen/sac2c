@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.49  1999/08/27 11:08:25  jhs
+ * Added some INFO_SPMDCO_XXX macros and INFO_SYNC_OUTREP.
+ *
  * Revision 2.48  1999/08/09 18:36:47  dkr
  * some brackets added in macros
  *
@@ -2481,6 +2484,11 @@ extern node *MakeInfo ();
 
 /* concurrent-spmdtrav-reduceoccurences */
 /* DO NOT OVERRIDE ANY INFO_CONC_XXX here!!! */
+#define INFO_SPMDCO_RESULT(n) ((int *)(n->node[1]))
+#define INFO_SPMDCO_WHICH(n) (n->dfmask[1])
+
+/* concurrent-spmdtrav-reduceoccurences */
+/* DO NOT OVERRIDE ANY INFO_CONC_XXX here!!! */
 #define INFO_SPMDRO_CHECK(n) (n->dfmask[1])
 #define INFO_SPMDRO_COUNTERS(n) ((int *)(n->node[1]))
 
@@ -2720,7 +2728,8 @@ extern node *MakeSync (node *region);
 #define SYNC_IN(n) ((DFMmask_t)n->dfmask[0])
 #define SYNC_INOUT(n) ((DFMmask_t)n->dfmask[1])
 #define SYNC_OUT(n) ((DFMmask_t)n->dfmask[2])
-#define SYNC_LOCAL(n) ((DFMmask_t)n->dfmask[3])
+#define SYNC_OUTREP(n) ((DFMmask_t)n->dfmask[3])
+#define SYNC_LOCAL(n) ((DFMmask_t)n->dfmask[4])
 
 /*--------------------------------------------------------------------------*/
 
