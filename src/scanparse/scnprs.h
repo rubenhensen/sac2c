@@ -4,7 +4,10 @@
 /*
  *
  * $Log$
- * Revision 1.6  1996/01/02 15:59:58  cg
+ * Revision 1.7  1997/06/03 08:57:58  sbs
+ * MAX_CPP_VARS defined
+ *
+ * Revision 1.6  1996/01/02  15:59:58  cg
  * added external declaration of function ScanParse()
  *
  * Revision 1.5  1995/07/26  08:41:02  cg
@@ -32,6 +35,8 @@
  */
 
 #include "y.tab.h"
+
+#define MAX_CPP_VARS 32
 
 extern int linenum;
 extern int yyparse ();
