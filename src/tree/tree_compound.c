@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.36  2001/04/26 13:26:39  dkr
+ * CountIds() added
+ *
  * Revision 3.35  2001/04/26 12:30:09  dkr
  * GetExprsLength() renamed into CountExprs()
  *
@@ -907,6 +910,21 @@ LookupIds (char *name, ids *ids_chain)
     }
 
     DBUG_RETURN (ids_chain);
+}
+
+int
+CountIds (ids *ids_arg)
+{
+    int count = 0;
+
+    DBUG_ENTER ("CountIds");
+
+    while (ids_arg != NULL) {
+        count++;
+        ids_arg = IDS_NEXT (ids_arg);
+    }
+
+    DBUG_RETURN (count);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -2298,18 +2316,18 @@ MakeExprsNum (int num)
 int
 CountExprs (node *exprs)
 {
-    int length;
+    int count;
 
     DBUG_ENTER ("CountExprs");
 
-    length = 0;
+    count = 0;
     while (exprs != NULL) {
         DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "no N_exprs node found!");
-        length++;
+        count++;
         exprs = EXPRS_NEXT (exprs);
     }
 
-    DBUG_RETURN (length);
+    DBUG_RETURN (count);
 }
 
 /*--------------------------------------------------------------------------*/
