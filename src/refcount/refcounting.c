@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.18  2004/10/11 14:47:54  ktr
+ * Moved RCopts to rcphase.
+ *
  * Revision 1.17  2004/10/10 09:55:45  ktr
  * Reference counting now works transparently over CONDFUN boundaries,
  * using the scheme presented in IFL04 paper.
@@ -107,6 +110,7 @@
 
 /**
  * @defgroup rc Reference Counting
+ * @ingroup rcp
  *
  * This group includes all the files needed by reference counting
  *
@@ -134,7 +138,6 @@
 #include "ssa.h"
 #include "refcounting.h"
 #include "ReuseWithArrays.h"
-#include "rcopt.h"
 
 /** <!--******************************************************************-->
  *
@@ -148,7 +151,7 @@ typedef enum { rc_default, rc_else, rc_cutreuse } rc_mode;
  *  Enumeration of hthe different counting modes for N_id nodes.
  *
  ***************************************************************************/
-typedef enum { rc_unknown, rc_apuse, rc_prfuse, rc_conduse } rc_countmode;
+typedef enum { rc_unknown, rc_apuse, rc_prfuse, rc_conduse, rc_retuse } rc_countmode;
 
 /** <!--******************************************************************-->
  *
@@ -196,6 +199,9 @@ struct INFO {
     node *fundef;
     ids *lhs;
     node *condargs;
+    node *retvals;
+    node *retvals2;
+    node *retparam;
 };
 
 /**
@@ -211,6 +217,9 @@ struct INFO {
 #define INFO_EMRC_FUNDEF(n) (n->fundef)
 #define INFO_EMRC_LHS(n) (n->lhs)
 #define INFO_EMRC_CONDARGS(n) (n->condargs)
+#define INFO_EMRC_RETVALS(n) (n->retvals)
+#define INFO_EMRC_RETVALS2(n) (n->retvals2)
+#define INFO_EMRC_RETPARAM(n) (n->retparam)
 
 /**
  * INFO functions
@@ -233,6 +242,9 @@ MakeInfo (node *fundef)
     INFO_EMRC_FUNDEF (result) = fundef;
     INFO_EMRC_LHS (result) = NULL;
     INFO_EMRC_CONDARGS (result) = NULL;
+    INFO_EMRC_RETVALS (result) = NULL;
+    INFO_EMRC_RETVALS2 (result) = NULL;
+    INFO_EMRC_RETPARAM (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -273,8 +285,6 @@ EMRefCount (node *syntax_tree)
     syntax_tree = Trav (syntax_tree, NULL);
 
     DBUG_PRINT ("EMRC", ("Reference counting inference complete"));
-
-    syntax_tree = EMRCORefCountOpt (syntax_tree);
 
     DBUG_RETURN (syntax_tree);
 }
@@ -1117,6 +1127,16 @@ TravRightIds (ids *arg_ids, info *arg_info)
         INFO_EMRC_CONDARGS (arg_info) = FreeNode (INFO_EMRC_CONDARGS (arg_info));
         break;
 
+    case rc_retuse:
+        /*
+         * The environment at the current codelevel must be increased by
+         * the number of uses in CONDFUN
+         */
+        avis = AddEnvironment (avis, INFO_EMRC_DEPTH (arg_info),
+                               NUM_VAL (EXPRS_EXPR (INFO_EMRC_RETVALS (arg_info))));
+        INFO_EMRC_RETVALS (arg_info) = FreeNode (INFO_EMRC_RETVALS (arg_info));
+        break;
+
     case rc_prfuse:
         /*
          * Add one to the environment at the variable's DEFLEVEL iff it is zero
@@ -1182,7 +1202,25 @@ EMRCap (node *arg_node, info *arg_info)
      * CONDFUNs are traversed in order of appearance
      */
     if (FUNDEF_IS_CONDFUN (AP_FUNDEF (arg_node))) {
+        /*
+         * Pass the reference counters of the expected return values
+         */
+        node *avis;
+        int rc;
+        ids *_ids = INFO_EMRC_LHS (arg_info);
+
+        while (_ids != NULL) {
+            avis = IDS_AVIS (_ids);
+            rc = GetEnvironment (avis, INFO_EMRC_DEPTH (arg_info));
+            avis = PopEnvironment (avis, INFO_EMRC_DEPTH (arg_info));
+
+            INFO_EMRC_RETPARAM (arg_info) = AppendExprs (INFO_EMRC_RETPARAM (arg_info),
+                                                         MakeExprs (MakeNum (rc), NULL));
+
+            _ids = IDS_NEXT (_ids);
+        }
         AP_FUNDEF (arg_node) = Trav (AP_FUNDEF (arg_node), arg_info);
+        INFO_EMRC_MUSTCOUNT (arg_info) = FALSE;
     }
 
     args = AP_ARGS (arg_node);
@@ -1361,6 +1399,9 @@ EMRCassign (node *arg_node, info *arg_info)
                 VARDEC_AVIS (n) = RescueEnvironment (VARDEC_AVIS (n));
                 n = VARDEC_NEXT (n);
             }
+
+            INFO_EMRC_RETVALS (arg_info) = INFO_EMRC_RETVALS2 (arg_info);
+            INFO_EMRC_RETVALS2 (arg_info) = NULL;
 
             if (ASSIGN_NEXT (arg_node) != NULL) {
                 ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
@@ -1637,6 +1678,34 @@ EMRCfundef (node *fundef, info *arg_info)
          * Traverse block
          */
         if (FUNDEF_BODY (fundef) != NULL) {
+            if (FUNDEF_IS_CONDFUN (fundef)) {
+                /*
+                 * CONDFUN:
+                 * Initial counters of return values are given as argument
+                 */
+                INFO_EMRC_RETVALS (info) = INFO_EMRC_RETPARAM (arg_info);
+                INFO_EMRC_RETPARAM (arg_info) = NULL;
+            } else {
+                /*
+                 * REGULAR FUNCTION:
+                 * Initialize RETVALS with ones
+                 */
+                int i = CountTypes (FUNDEF_TYPES (fundef));
+                while (i > 0) {
+                    INFO_EMRC_RETVALS (info)
+                      = MakeExprs (MakeNum (1), INFO_EMRC_RETVALS (info));
+                    i -= 1;
+                }
+            }
+
+            /*
+             * In case there is a conditional inside the function,
+             * prepare a copy of the return RCs
+             */
+            if (FUNDEF_IS_LACFUN (fundef)) {
+                INFO_EMRC_RETVALS2 (info) = DupTree (INFO_EMRC_RETVALS (info));
+            }
+
             FUNDEF_BODY (fundef) = Trav (FUNDEF_BODY (fundef), info);
 
             /*
@@ -1655,6 +1724,8 @@ EMRCfundef (node *fundef, info *arg_info)
                       = AppendExprs (INFO_EMRC_CONDARGS (arg_info),
                                      MakeExprsNum (
                                        GetEnvironment (avis, INFO_EMRC_DEPTH (info))));
+
+                    avis = PopEnvironment (avis, INFO_EMRC_DEPTH (info));
 
                     DBUG_ASSERT (NUM_VAL (EXPRS_EXPR (INFO_EMRC_CONDARGS (arg_info))) > 0,
                                  "Unused argument of CONDFUN encountered!!!");
@@ -2242,7 +2313,7 @@ EMRCreturn (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EMRCreturn");
 
-    INFO_EMRC_COUNTMODE (arg_info) = rc_apuse;
+    INFO_EMRC_COUNTMODE (arg_info) = rc_retuse;
 
     if (RETURN_EXPRS (arg_node) != NULL) {
         RETURN_EXPRS (arg_node) = Trav (RETURN_EXPRS (arg_node), arg_info);
