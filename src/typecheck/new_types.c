@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.72  2004/11/27 00:23:44  sbs
+ * *** empty log message ***
+ *
  * Revision 3.71  2004/11/24 12:55:53  sbs
  * SacDevCamp04 done
  *
@@ -5452,7 +5455,7 @@ BuildErrorAssign (char *funname, node *args, node *vardecs)
     DBUG_ENTER ("BuildErrorAssign");
 
     assigns = TBmakeAssign (TBmakeLet (TBmakePrf (F_type_error,
-                                                  TBmakeExprs (TCmakeStr_Copy (funname),
+                                                  TBmakeExprs (TCmakeStrCopy (funname),
                                                                Args2Exprs (args))),
                                        TCmakeIdsFromVardecs (vardecs)),
                             NULL);

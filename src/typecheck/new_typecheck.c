@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.59  2004/11/27 00:23:44  sbs
+ * *** empty log message ***
+ *
  * Revision 3.58  2004/11/25 17:52:55  sbs
  * compiles
  *
@@ -263,7 +266,7 @@ typedef enum { NTC_not_checked, NTC_checking, NTC_checked } NTC_stat;
 /******************************************************************************
  *
  * function:
- *    node *NewTypeCheck( node *arg_node)
+ *    node *NTCdoNewTypeCheck( node *arg_node)
  *
  * description:
  *    starts the new type checking traversal!
@@ -271,7 +274,7 @@ typedef enum { NTC_not_checked, NTC_checking, NTC_checked } NTC_stat;
  ******************************************************************************/
 
 node *
-NewTypeCheck (node *arg_node)
+NTCdoNewTypeCheck (node *arg_node)
 {
     info *arg_info;
 
@@ -317,7 +320,7 @@ NewTypeCheck (node *arg_node)
  ******************************************************************************/
 
 ntype *
-NewTypeCheck_Expr (node *arg_node)
+NTCnewTypeCheck_Expr (node *arg_node)
 {
     info *arg_info;
     ntype *type;
