@@ -1,8 +1,8 @@
 /*
  *
  * $Log$
- * Revision 3.26  2001/03/27 21:40:53  dkr
- * MakeWLseg() modified
+ * Revision 3.27  2001/03/27 21:47:54  dkr
+ * MakeWLseg() modified: MALLOC_INIT_VECT used
  *
  * Revision 3.25  2001/03/27 18:25:39  dkr
  * argument of MakeBool() is of type 'bool' now
@@ -1742,9 +1742,9 @@ MakeWLseg (int dims, node *contents, node *next)
 
     WLSEG_BLOCKS (new_node) = 0;
     for (b = 0; b < WLSEG_BLOCKS (new_node); b++) {
-        MALLOC_INIT_VECT (WLSEG_BV (new_node, b), WLSEGX_DIMS (new_node), int, 1);
+        MALLOC_INIT_VECT (WLSEG_BV (new_node, b), WLSEG_DIMS (new_node), int, 1);
     }
-    MALLOC_INIT_VECT (WLSEG_UBV (new_node), WLSEGX_DIMS (new_node), int, 1);
+    MALLOC_INIT_VECT (WLSEG_UBV (new_node), WLSEG_DIMS (new_node), int, 1);
 
     WLSEG_SV (new_node) = NULL;
     WLSEG_IDX_MIN (new_node) = NULL;
