@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/03/09 11:21:23  bs
+ * Debugging-information in PrintArray and PrintId added. Using the debug flag
+ * "ARRAY_FLAT" the compact form of integer vectors will be printed.
+ *
  * Revision 2.1  1999/02/23 12:40:24  sacbase
  * new release made
  *
@@ -194,6 +198,44 @@ char *prf_string[] = {
 };
 
 #undef PRF_IF
+
+/******************************************************************************
+ *
+ * function:
+ *  void DbugPrintArray(node *arg_node)
+ *
+ * description:
+ *   - this function is only used for printing of debugging informations in
+ *     PrintArray and PrintId.
+ *
+ ******************************************************************************/
+
+static void
+DbugPrintArray (node *arg_node)
+{
+    int i, length, *intptr;
+
+    if (NODE_TYPE (arg_node) == N_array) {
+        intptr = ARRAY_INTARRAY (arg_node);
+        length = ARRAY_LENGTH (arg_node);
+    } else /* (NODE_TYPE(arg_node) == N_id) */ {
+        intptr = ID_CONSTARRAY (arg_node);
+        length = ID_ARRAYLENGTH (arg_node);
+    }
+
+    if ((intptr == NULL) || (length <= 1))
+        return;
+    else {
+        fprintf (outfile, ":[%d", intptr[0]);
+        for (i = 1; i < ((length < 10) ? (length) : (10)); i++)
+            fprintf (outfile, ",%d", intptr[i]);
+        if (length > 10)
+            fprintf (outfile, ",..]");
+        else
+            fprintf (outfile, "]");
+        return;
+    }
+}
 
 /******************************************************************************/
 
@@ -882,6 +924,9 @@ PrintId (node *arg_node, node *arg_info)
         fprintf (outfile, "%s:%d", ID_NAME (arg_node), ID_REFCNT (arg_node));
     }
 
+    if (compiler_phase != PH_genccode)
+        DBUG_EXECUTE ("ARRAY_FLAT", DbugPrintArray (arg_node););
+
     DBUG_RETURN (arg_node);
 }
 
@@ -1389,6 +1434,9 @@ PrintArray (node *arg_node, node *arg_info)
     fprintf (outfile, "[ ");
     Trav (ARRAY_AELEMS (arg_node), arg_info);
     fprintf (outfile, " ]");
+
+    if (compiler_phase != PH_genccode)
+        DBUG_EXECUTE ("ARRAY_FLAT", DbugPrintArray (arg_node););
 
     DBUG_RETURN (arg_node);
 }
