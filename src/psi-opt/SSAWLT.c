@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.40  2004/11/27 01:35:14  khf
+ * *** empty log message ***
+ *
  * Revision 1.39  2004/11/27 01:02:41  khf
  * call of other Functions possible
  *
@@ -1661,61 +1664,85 @@ node *SSAWLTNcode( node *arg_node, info *arg_info)
 node *
 WLTfundef (node *arg_info, info *arg_info)
 {
+    DBUG_ENTER ("SSAWLTfundef");
+    DBUG_RETURN (arg_node);
 }
 
 node *
 WLTassign (node *arg_info, info *arg_info)
 {
+    DBUG_ENTER ("SSAWLTfundef");
+    DBUG_RETURN (arg_node);
 }
 
 node *
 WLTcond (node *arg_info, info *arg_info)
 {
+    DBUG_ENTER ("SSAWLTfundef");
+    DBUG_RETURN (arg_node);
 }
 
 node *
 WLTlet (node *arg_info, info *arg_info)
 {
+    DBUG_ENTER ("SSAWLTfundef");
+    DBUG_RETURN (arg_node);
 }
 
 node *
 WLTap (node *arg_info, info *arg_info)
 {
+    DBUG_ENTER ("SSAWLTfundef");
+    DBUG_RETURN (arg_node);
 }
 
 node *
 WLTwith (node *arg_info, info *arg_info)
 {
+    DBUG_ENTER ("SSAWLTfundef");
+    DBUG_RETURN (arg_node);
 }
 
 node *
 WLTgenarray (node *arg_info, info *arg_info)
 {
+    DBUG_ENTER ("SSAWLTfundef");
+    DBUG_RETURN (arg_node);
 }
 
 node *
 WLTmodarray (node *arg_info, info *arg_info)
 {
+    DBUG_ENTER ("SSAWLTfundef");
+    DBUG_RETURN (arg_node);
 }
 
 node *
 WLTfold (node *arg_info, info *arg_info)
 {
+    DBUG_ENTER ("SSAWLTfundef");
+    DBUG_RETURN (arg_node);
 }
 
 node *
 WLTpart (node *arg_info, info *arg_info)
 {
+    DBUG_ENTER ("SSAWLTfundef");
+    DBUG_RETURN (arg_node);
 }
 
 node *
 WLTgenerator (node *arg_info, info *arg_info)
 {
+    DBUG_ENTER ("SSAWLTfundef");
+    DBUG_RETURN (arg_node);
 }
 
 node *
 WLTcode (node *arg_info, info *arg_info)
 {
+    DBUG_ENTER ("SSAWLTfundef");
+    DBUG_RETURN (arg_node);
 }
 
 /** <!-- ****************************************************************** -->
@@ -1731,12 +1758,11 @@ WLTcode (node *arg_info, info *arg_info)
 node *
 WLTdoWLT (node *arg_node)
 {
+    DBUG_ENTER ("WLTdoWLT");
 
 #if 0
   info *info;
   int expr;
-
-  DBUG_ENTER("WLTdoWLT");
 
   info = MakeInfo();
 
@@ -1756,8 +1782,7 @@ WLTdoWLT (node *arg_node)
                                              current_allocated_mem));
 
   info = FreeInfo( info);
-
-  DBUG_RETURN( arg_node);
-
 #endif
+
+    DBUG_RETURN (arg_node);
 }
