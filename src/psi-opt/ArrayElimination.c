@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  1998/05/26 13:13:24  srs
+ * fixed bug in GenPsi(): ARRAY_TYPE was not initialized
+ *
  * Revision 1.11  1998/05/12 19:55:53  srs
  * fixed bug in GenPsi()
  *
@@ -176,7 +179,6 @@ GetNumber (node *vector)
 ids *
 GenIds (node *arg[2])
 {
-    ids *ids_node;
     char *number, *new_name, *old_name;
 
     DBUG_ENTER ("GenIds");
@@ -185,8 +187,7 @@ GenIds (node *arg[2])
     new_name = (char *)Malloc (
       sizeof (char) * (strlen (old_name) + strlen (number) + AE_PREFIX_LENGTH + 1));
     sprintf (new_name, AE_PREFIX "%s%s", number, old_name);
-    ids_node = MakeIds (new_name, NULL, ST_regular);
-    DBUG_RETURN (ids_node);
+    DBUG_RETURN (MakeIds (new_name, NULL, ST_regular));
 }
 
 /*
@@ -218,10 +219,13 @@ GenPsi (ids *ids_node, node *arg_info)
     for (i = 0; i < length; i++) {
         exprn = MakeExprs (MakeNum (i), NULL);
         arg[0] = MakeArray (exprn);
+        /* srs: AE only works on arrays which have 1 dimension.
+           type attribut was missing here. */
+        ARRAY_TYPE (arg[0])
+          = MakeType (T_int, 1, MakeShpseg (MakeNums (1, NULL)), NULL, NULL);
 
         arg[1] = MakeNode (N_id);
         arg[1]->info.ids = DupIds (ids_node, arg_info);
-        /*     arg[1] = MakeId(IDS_NAME(ids_node), IDS_MOD(ids_node), ST_regular); */
 
         new_let = MakeNode (N_let);
         new_let->info.ids = GenIds (arg);
@@ -245,14 +249,9 @@ GenPsi (ids *ids_node, node *arg_info)
               = AppendNodeChain (0, new_vardec, INFO_AE_TYPES (arg_info));
             new_let->info.ids->node = new_vardec;
         }
-        new_let->node[0] = MakeNode (N_prf);
-        new_let->node[0]->info.prf = F_psi;
-        new_let->node[0]->node[0] = MakeNode (N_exprs);
-        new_let->node[0]->node[0]->node[0] = arg[0];
-        new_let->node[0]->node[0]->node[1] = MakeNode (N_exprs);
-        new_let->node[0]->node[0]->node[1]->node[0] = arg[1];
-        new_assign = MakeNode (N_assign);
-        new_assign->node[0] = new_let;
+        LET_EXPR (new_let)
+          = MakePrf (F_psi, MakeExprs (arg[0], MakeExprs (arg[1], NULL)));
+        new_assign = MakeAssign (new_let, NULL);
         new_nodes = AppendNodeChain (1, new_nodes, new_assign);
     }
     DBUG_RETURN (new_nodes);
