@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.50  2001/05/17 12:03:24  dkr
+ * FREE eliminated
+ *
  * Revision 3.49  2001/05/03 17:31:44  dkr
  * MAXHOMDIM replaced by HOMSV
  *
@@ -4581,7 +4584,7 @@ NormWL (int dims, shpseg *shape, int *idx_max, node *nodes)
 
     nodes = NormalizeWL (nodes, width);
 
-    FREE (width);
+    width = Free (width);
 
     DBUG_RETURN (nodes);
 }
@@ -6922,7 +6925,7 @@ WlTransform (node *syntax_tree)
     act_tab = wltrans_tab;
     syntax_tree = Trav (syntax_tree, info);
 
-    FREE (info);
+    info = FreeTree (info);
 
     DBUG_RETURN (syntax_tree);
 }
