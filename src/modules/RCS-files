@@ -32,3 +32,4 @@ libbuilder.h
 resolveall.c
 resolveall.h
 annotatenamespace.c
+annotatenamespace.h
