@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.179  2004/02/13 17:40:18  mwe
+ * MODUL_FUNDECS added, moved other MODUL macros to dfmask[1,2,3]
+ *
  * Revision 3.178  2004/02/06 14:19:33  mwe
  * replace usage of PHITARGET with primitive phi function
  *
@@ -755,6 +758,7 @@ extern DFMfoldmask_t *CopyDFMfoldmask (DFMfoldmask_t *mask);
  ***    node*      TYPES     (O)  (N_typedef)
  ***    node*      OBJS      (O)  (N_objdef)
  ***    node*      FUNS      (O)  (N_fundef)
+ ***    node*      FUNDECS   (O)  (N_fundef)
  ***
  ***  permanent attributes:
  ***
@@ -789,11 +793,12 @@ extern node *MakeModul (char *name, file_type filetype, node *imports, node *typ
 #define MODUL_TYPES(n) (n->node[1])
 #define MODUL_OBJS(n) (n->node[3])
 #define MODUL_FUNS(n) (n->node[2])
-#define MODUL_DECL(n) (n->node[4])
-#define MODUL_STORE_IMPORTS(n) (n->node[4])
+#define MODUL_DECL(n) ((node *)(n->dfmask[3]))
+#define MODUL_STORE_IMPORTS(n) ((node *)(n->dfmask[2]))
 #define MODUL_WRAPPERFUNS(n) ((LUT_t) (n->dfmask[0]))
-#define MODUL_FOLDFUNS(n) (n->node[4])
+#define MODUL_FOLDFUNS(n) ((node *)(n->dfmask[1]))
 #define MODUL_CWRAPPER(n) (n->node[5])
+#define MODUL_FUNDECS(n) (n->node[4])
 
 /*--------------------------------------------------------------------------*/
 
