@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2005/02/16 14:35:23  jhb
+ * test something at the three functions
+ *
  * Revision 1.8  2005/02/14 14:08:48  jhb
  * change name
  *
@@ -19,10 +22,16 @@
  */
 
 #define NEW_INFO
+
+#include "check_lib.h"
+
 #include "print.h"
 #include "free.h"
 #include "internal_lib.h"
 #include "traverse.h"
+#include "tree_basic.h"
+#include "types.h"
+#include "tree_compound.h"
 
 struct INFO {
 };
@@ -86,12 +95,11 @@ CHKexistSon (node *son, node *arg_node, char *string)
 {
     DBUG_ENTER ("CHKexistSon");
 
-    /*  if (son == NULL) {
+    if (son == NULL) {
 
-      NODE_ERROR(arg_node) = TBmakeError(string);
-
+        NODE_ERROR (arg_node) = TBmakeError (string, NODE_ERROR (arg_node));
     }
-    */
+
     DBUG_RETURN (son);
 }
 
@@ -104,26 +112,33 @@ node *
 CHKexistAttribute (void *attribute, node *arg_node, char *string)
 {
     DBUG_ENTER ("CHKexistAttribute");
-    /*
+
     if (attribute == NULL) {
 
-      NODE_ERROR(arg_node) = TBmakeError(string);
-
+        NODE_ERROR (arg_node) = TBmakeError (string, NODE_ERROR (arg_node));
     }
-    */
+
     DBUG_RETURN (attribute);
 }
 
 node *
-CHKcorrectType (void *attribute, node *arg_node, char *type, char *string)
+CHKcorrectType (void *sonattr, node *arg_node, char *type, char *string)
 {
 
     DBUG_ENTER ("CHKcorrectType");
     /*
-      if (String(attribute(type)) != type) {
-      NODE_ERROR(arg_node) = TBmakeError(NODE_ERROR(parent), string);
-      }
+    if (sonattr != NULL) {
 
+          if ( NODE_TYPE( sonattr) != ) {
+            NODE_ERROR(arg_node) = TBmakeError( string, NODE_ERROR( arg_node));
+          }
+
+    }
+    else {
+
+          NODE_ERROR(arg_node) = TBmakeError(string, NODE_ERROR( arg_node));
+
+    }
     */
-    DBUG_RETURN (attribute);
+    DBUG_RETURN (sonattr);
 }
