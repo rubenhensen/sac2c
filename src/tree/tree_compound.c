@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.45  2001/11/09 11:48:45  sbs
+ * res now initialized in default case of functions IsExternal and friends!
+ * (Just top please gcc 8-)
+ *
  * Revision 3.44  2001/07/19 16:19:57  cg
  * Added new inquiery functions IsImported, IsExternal, IsFromModule
  * and IsFromClass to avoid clumsy direct checks for import status
@@ -1536,6 +1540,7 @@ IsImported (node *symbol)
                || (FUNDEF_STATUS (symbol) == ST_imported_extclass));
         break;
     default:
+        res = 0;
         DBUG_ASSERT (0, ("Function IsImported applied to wrong node type."));
     }
 
@@ -1565,6 +1570,7 @@ IsExternal (node *symbol)
                || (FUNDEF_STATUS (symbol) == ST_imported_extclass));
         break;
     default:
+        res = 0;
         DBUG_ASSERT (0, ("Function IsExternal applied to wrong node type."));
     }
 
@@ -1594,6 +1600,7 @@ IsFromModule (node *symbol)
                || (FUNDEF_STATUS (symbol) == ST_imported_mod));
         break;
     default:
+        res = 0;
         DBUG_ASSERT (0, ("Function IsFromModule applied to wrong node type."));
     }
 
@@ -1623,6 +1630,7 @@ IsFromClass (node *symbol)
                || (FUNDEF_STATUS (symbol) == ST_imported_extclass));
         break;
     default:
+        res = 0;
         DBUG_ASSERT (0, ("Function IsFromClass applied to wrong node type."));
     }
 
