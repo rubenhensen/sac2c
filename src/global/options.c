@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.64  2004/07/19 13:08:04  ktr
+ * adjusted break specifiers arg range to 1..25
+ *
  * Revision 3.63  2004/07/15 13:36:59  ktr
  * show_refcount is only true during PH_oldrefcount
  *
@@ -436,7 +439,7 @@ AnalyseCommandline (int argc, char *argv[])
         char *break_arg = StringCopy (ARG);
 
         ARG = strtok (ARG, ":");
-        ARG_RANGE (break_after, 1, 21);
+        ARG_RANGE (break_after, 1, 25);
         switch (break_after) {
         case PH_sacopt:
             show_idx = TRUE;
