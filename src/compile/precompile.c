@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.23  2001/05/17 12:02:28  dkr
+ * MALLOC, FREE eliminated
+ *
  * Revision 3.22  2001/05/08 13:28:16  dkr
  * new RC macros used
  *
@@ -235,10 +238,10 @@ RenameLocalIdentifier (char *id)
         name_prefix = "SACl_";
     }
 
-    new_name = (char *)MALLOC (sizeof (char) * (strlen (id) + strlen (name_prefix) + 1));
+    new_name = (char *)Malloc (sizeof (char) * (strlen (id) + strlen (name_prefix) + 1));
     sprintf (new_name, "%s%s", name_prefix, id);
 
-    FREE (id);
+    id = Free (id);
 
     DBUG_RETURN (new_name);
 }
@@ -653,7 +656,7 @@ PREC1withop (node *arg_node, node *arg_info)
          */
         old_name = FUNDEF_NAME (new_foldfun);
         FUNDEF_NAME (new_foldfun) = TmpVarName (FUNDEF_NAME (new_foldfun));
-        FREE (old_name);
+        old_name = Free (old_name);
 
         new_foldfun = AdjustFoldFundef (new_foldfun, let_ids,
                                         /*
@@ -858,7 +861,7 @@ RenameId (node *idnode)
     DBUG_ASSERT ((ID_VARDEC (idnode) != NULL), "Vardec not found in function RenameId()");
 
     if (NODE_TYPE (ID_VARDEC (idnode)) == N_objdef) {
-        FREE (ID_NAME (idnode));
+        Free (ID_NAME (idnode));
         ID_NAME (idnode) = StringCopy (OBJDEF_NAME (ID_VARDEC (idnode)));
         /*
          * The global object's definition has already been renamed.
@@ -897,10 +900,10 @@ RenameTypes (types *type)
              * This is a SAC data type.
              */
             if (!strcmp (TYPES_MOD (type), MAIN_MOD_NAME)) {
-                tmp = (char *)MALLOC (sizeof (char) * (strlen (TYPES_NAME (type)) + 6));
+                tmp = (char *)Malloc (sizeof (char) * (strlen (TYPES_NAME (type)) + 6));
                 sprintf (tmp, "SACt_%s", TYPES_NAME (type));
             } else {
-                tmp = (char *)MALLOC (
+                tmp = (char *)Malloc (
                   sizeof (char)
                   * (strlen (TYPES_NAME (type)) + strlen (TYPES_MOD (type)) + 8));
                 sprintf (tmp, "SACt_%s__%s", TYPES_MOD (type), TYPES_NAME (type));
@@ -909,19 +912,19 @@ RenameTypes (types *type)
             DBUG_PRINT ("PREC", ("renaming type %s:%s to %s", TYPES_MOD (type),
                                  TYPES_NAME (type), tmp));
 
-            FREE (TYPES_NAME (type));
+            Free (TYPES_NAME (type));
             TYPES_NAME (type) = tmp;
             TYPES_MOD (type) = NULL;
         } else {
             /*
              * This is an imported C data type.
              */
-            tmp = (char *)MALLOC (sizeof (char) * (strlen (TYPES_NAME (type)) + 6));
+            tmp = (char *)Malloc (sizeof (char) * (strlen (TYPES_NAME (type)) + 6));
             sprintf (tmp, "SACe_%s", TYPES_NAME (type));
 
             DBUG_PRINT ("PREC", ("renaming type %s to %s", TYPES_NAME (type), tmp));
 
-            FREE (TYPES_NAME (type));
+            Free (TYPES_NAME (type));
             TYPES_NAME (type) = tmp;
         }
     }
@@ -961,7 +964,7 @@ RenameFun (node *fun)
          */
 
         if (FUNDEF_STATUS (fun) == ST_spmdfun) {
-            new_name = (char *)MALLOC (sizeof (char) * (strlen (FUNDEF_NAME (fun)) + 6));
+            new_name = (char *)Malloc (sizeof (char) * (strlen (FUNDEF_NAME (fun)) + 6));
             sprintf (new_name, "SACf_%s", FUNDEF_NAME (fun));
         } else {
             args = FUNDEF_ARGS (fun);
@@ -974,13 +977,13 @@ RenameFun (node *fun)
             if (!strcmp (FUNDEF_MOD (fun), MAIN_MOD_NAME)) {
                 length += (strlen (FUNDEF_NAME (fun)) + 7);
 
-                new_name = (char *)MALLOC (sizeof (char) * length);
+                new_name = (char *)Malloc (sizeof (char) * length);
 
                 sprintf (new_name, "SACf_%s_", FUNDEF_NAME (fun));
             } else {
                 length += (strlen (FUNDEF_NAME (fun)) + strlen (FUNDEF_MOD (fun)) + 9);
 
-                new_name = (char *)MALLOC (sizeof (char) * length);
+                new_name = (char *)Malloc (sizeof (char) * length);
 
                 sprintf (new_name, "SACf_%s__%s_", FUNDEF_MOD (fun), FUNDEF_NAME (fun));
             }
@@ -990,7 +993,7 @@ RenameFun (node *fun)
             while (args != NULL) {
                 strcat (new_name, "_");
                 strcat (new_name, ARG_TYPESTRING (args));
-                FREE (ARG_TYPESTRING (args));
+                ARG_TYPESTRING (args) = Free (ARG_TYPESTRING (args));
                 args = ARG_NEXT (args);
             }
         }
@@ -998,8 +1001,7 @@ RenameFun (node *fun)
         DBUG_PRINT ("PREC", ("renaming function %s:%s to %s", FUNDEF_MOD (fun),
                              FUNDEF_NAME (fun), new_name));
 
-        FREE (FUNDEF_NAME (fun));
-
+        Free (FUNDEF_NAME (fun));
         /* don't free FUNDEF_MOD(fun) because it is shared !! */
 
         FUNDEF_NAME (fun) = new_name;
@@ -1013,11 +1015,13 @@ RenameFun (node *fun)
             DBUG_PRINT ("PREC", ("renaming function %s to %s", FUNDEF_NAME (fun),
                                  FUNDEF_LINKNAME (fun)));
 
-            FREE (FUNDEF_NAME (fun));
-
+            Free (FUNDEF_NAME (fun));
             /* don't free FUNDEF_MOD(fun) because it is shared !! */
 
             FUNDEF_NAME (fun) = StringCopy (FUNDEF_LINKNAME (fun));
+            /*
+            FUNDEF_MOD( fun) = NULL;
+            */
         }
     }
 
@@ -1041,7 +1045,7 @@ RenameIds (ids *arg)
 
     if (arg != NULL) {
         if (NODE_TYPE (IDS_VARDEC (arg)) == N_objdef) {
-            FREE (IDS_NAME (arg));
+            Free (IDS_NAME (arg));
             IDS_NAME (arg) = StringCopy (OBJDEF_NAME (IDS_VARDEC (arg)));
             /*
              * The global object's definition has already been renamed.
@@ -1197,16 +1201,16 @@ PREC2typedef (node *arg_node, node *arg_info)
          * This is a SAC typedef.
          */
         if (!strcmp (TYPEDEF_MOD (arg_node), MAIN_MOD_NAME)) {
-            tmp = (char *)MALLOC (sizeof (char) * (strlen (TYPEDEF_NAME (arg_node)) + 6));
+            tmp = (char *)Malloc (sizeof (char) * (strlen (TYPEDEF_NAME (arg_node)) + 6));
             sprintf (tmp, "SACt_%s", TYPEDEF_NAME (arg_node));
         } else {
-            tmp = (char *)MALLOC (
+            tmp = (char *)Malloc (
               sizeof (char)
               * (strlen (TYPEDEF_NAME (arg_node)) + strlen (TYPEDEF_MOD (arg_node)) + 8));
             sprintf (tmp, "SACt_%s__%s", TYPEDEF_MOD (arg_node), TYPEDEF_NAME (arg_node));
         }
 
-        FREE (TYPEDEF_NAME (arg_node));
+        Free (TYPEDEF_NAME (arg_node));
         TYPEDEF_NAME (arg_node) = tmp;
         TYPEDEF_MOD (arg_node) = NULL;
 
@@ -1215,13 +1219,13 @@ PREC2typedef (node *arg_node, node *arg_info)
         /*
          * This is an imported C typedef.
          */
-        tmp = (char *)MALLOC (sizeof (char) * (strlen (TYPEDEF_NAME (arg_node)) + 6));
+        tmp = (char *)Malloc (sizeof (char) * (strlen (TYPEDEF_NAME (arg_node)) + 6));
         sprintf (tmp, "SACe_%s", TYPEDEF_NAME (arg_node));
 
-        FREE (TYPEDEF_NAME (arg_node));
+        Free (TYPEDEF_NAME (arg_node));
         TYPEDEF_NAME (arg_node) = tmp;
         /*
-         * Why are imported C renamed unlike imported C functions or global objects ?
+         * Why are imported C renamed unlike imported C functions or global objects?
          *
          * Imported C types do not have a real counterpart in the C module/class
          * implementation. So, there must be no coincidence at link time.
@@ -1263,12 +1267,12 @@ PREC2objdef (node *arg_node, node *arg_info)
 
     if (OBJDEF_MOD (arg_node) == NULL) {
         if (OBJDEF_LINKNAME (arg_node) != NULL) {
-            FREE (OBJDEF_NAME (arg_node));
+            Free (OBJDEF_NAME (arg_node));
             OBJDEF_NAME (arg_node) = OBJDEF_LINKNAME (arg_node);
-            FREE (OBJDEF_PRAGMA (arg_node));
+            OBJDEF_PRAGMA (arg_node) = Free (OBJDEF_PRAGMA (arg_node));
         }
     } else {
-        FREE (OBJDEF_VARNAME (arg_node));
+        OBJDEF_VARNAME (arg_node) = Free (OBJDEF_VARNAME (arg_node));
         /*
          * OBJDEF_VARNAME is no longer used for the generation of the final C code
          * identifier of a global object.
@@ -1276,11 +1280,11 @@ PREC2objdef (node *arg_node, node *arg_info)
 
         if (!strcmp (OBJDEF_MOD (arg_node), MAIN_MOD_NAME)) {
             new_name
-              = (char *)MALLOC (sizeof (char) * (strlen (OBJDEF_NAME (arg_node)) + 6));
+              = (char *)Malloc (sizeof (char) * (strlen (OBJDEF_NAME (arg_node)) + 6));
 
             sprintf (new_name, "SACo_%s", OBJDEF_NAME (arg_node));
         } else {
-            new_name = (char *)MALLOC (
+            new_name = (char *)Malloc (
               sizeof (char)
               * (strlen (OBJDEF_NAME (arg_node)) + strlen (OBJDEF_MOD (arg_node)) + 8));
 
@@ -1288,9 +1292,9 @@ PREC2objdef (node *arg_node, node *arg_info)
                      OBJDEF_NAME (arg_node));
         }
 
-        FREE (OBJDEF_NAME (arg_node));
-        OBJDEF_MOD (arg_node) = NULL;
+        Free (OBJDEF_NAME (arg_node));
         OBJDEF_NAME (arg_node) = new_name;
+        OBJDEF_MOD (arg_node) = NULL;
     }
 
     OBJDEF_TYPE (arg_node) = RenameTypes (OBJDEF_TYPE (arg_node));
@@ -1746,8 +1750,8 @@ PREC2ap (node *arg_node, node *arg_info)
              */
         }
 
-        FREE (AP_NAME (ap));
-        FREE (ap);
+        Free (AP_NAME (ap));
+        ap = Free (ap);
     } else {
         if (AP_ARGS (arg_node) != NULL) {
             AP_ARGS (arg_node)

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.57  2001/05/17 12:02:37  dkr
+ * MALLOC, FREE eliminated
+ *
  * Revision 3.56  2001/05/14 11:27:19  cg
  * Bug fixed in storing SCHEDULER_INIT ICMs.
  *
@@ -342,7 +345,7 @@ MakeTypeNode (types *type)
     str = GetBasetypeStr (type);
 
     if (GetDim (type) != 0) {
-        ret = (char *)MALLOC (sizeof (char) * (strlen (str) + 3));
+        ret = (char *)Malloc (sizeof (char) * (strlen (str) + 3));
         strcpy (ret, str);
         strcat (ret, " *");
     } else {
@@ -918,7 +921,7 @@ AdjustAddedAssigns (node *after_ass, node *before_ass)
                                 /*
                                  * icm names are static!
                                  *
-                                 * FREE( ICM_NAME( before));
+                                 * Free( ICM_NAME( before));
                                  */
                                 ICM_NAME (before) = "ND_KS_NO_RC_MAKE_UNIQUE_ARRAY";
                             } else if ((!strcmp (after_name, "ND_NO_RC_FREE_HIDDEN"))
@@ -927,7 +930,7 @@ AdjustAddedAssigns (node *after_ass, node *before_ass)
                                 /*
                                  * icm names are static!
                                  *
-                                 * FREE( ICM_NAME( before));
+                                 * Free( ICM_NAME( before));
                                  */
                                 ICM_NAME (before) = "ND_NO_RC_MAKE_UNIQUE_HIDDEN";
                             } else if (((!strcmp (after_name, "ND_NO_RC_ASSIGN_HIDDEN"))
@@ -936,7 +939,7 @@ AdjustAddedAssigns (node *after_ass, node *before_ass)
                                        && (!strcmp (ID_NAME (ICM_ARG1 (after)), new_name))
                                        && (!strcmp (ID_NAME (ICM_ARG2 (after)),
                                                     old_name))) {
-                                FREE (ID_NAME (ICM_ARG2 (before)));
+                                Free (ID_NAME (ICM_ARG2 (before)));
                                 ID_NAME (ICM_ARG2 (before)) = StringCopy (old_name);
                             }
                             last_after_ass = curr_after_ass;
@@ -1168,7 +1171,7 @@ GenerateIcmTypeTables (node *arg_info, node *fundef, bool gen_icm_tab, bool gen_
     INFO_COMP_TABSIZE (arg_info) = size;
 
     if (gen_icm_tab) {
-        icm_tab = (node **)MALLOC (size * sizeof (node *));
+        icm_tab = (node **)Malloc (size * sizeof (node *));
         for (i = 0; i < size; i++) {
             icm_tab[i] = NULL;
         }
@@ -1178,7 +1181,7 @@ GenerateIcmTypeTables (node *arg_info, node *fundef, bool gen_icm_tab, bool gen_
     }
 
     if (gen_type_tab) {
-        type_tab = (types **)MALLOC (size * sizeof (types *));
+        type_tab = (types **)Malloc (size * sizeof (types *));
         for (i = 0; i < size; i++) {
             type_tab[i] = NULL;
         }
@@ -1208,8 +1211,8 @@ RemoveIcmTypeTables (node *arg_info)
     DBUG_ENTER ("RemoveIcmTypeTables");
 
     INFO_COMP_TABSIZE (arg_info) = 0;
-    FREE ((INFO_COMP_ICMTAB (arg_info)));
-    FREE ((INFO_COMP_TYPETAB (arg_info)));
+    INFO_COMP_ICMTAB (arg_info) = Free (INFO_COMP_ICMTAB (arg_info));
+    INFO_COMP_TYPETAB (arg_info) = Free (INFO_COMP_TYPETAB (arg_info));
 
     INFO_COMP_CNTPARAM (arg_info) = 0;
 
@@ -2075,7 +2078,7 @@ BuildParamsByDFM (DFMmask_t *mask, char *tag, int *num_args, node *icm_args)
         vardec = DFMGetMaskEntryDeclSet (NULL);
     }
 
-    FREE (rc_tag);
+    rc_tag = Free (rc_tag);
 
     DBUG_PRINT ("JHS", ("end %s", tag));
 
@@ -2141,7 +2144,7 @@ BuildParamsByDFMfold (DFMfoldmask_t *mask, char *tag, int *num_args, node *icm_a
         mask = DFMFM_NEXT (mask);
     }
 
-    FREE (rc_tag);
+    rc_tag = Free (rc_tag);
 
     DBUG_PRINT ("JHS", ("end"));
 
@@ -2879,17 +2882,18 @@ COMPBlock (node *arg_node, node *arg_info)
     if (BLOCK_CACHESIM (arg_node) != NULL) {
         fun_name = FUNDEF_NAME (INFO_COMP_FUNDEF (arg_info));
         cs_tag
-          = (char *)MALLOC (strlen (BLOCK_CACHESIM (arg_node)) + strlen (fun_name) + 14);
+          = (char *)Malloc (strlen (BLOCK_CACHESIM (arg_node)) + strlen (fun_name) + 14);
         if (BLOCK_CACHESIM (arg_node)[0] == '\0') {
             sprintf (cs_tag, "\"%s(...)\"", fun_name);
         } else {
             sprintf (cs_tag, "\"%s in %s(...)\"", BLOCK_CACHESIM (arg_node), fun_name);
         }
 
-        FREE (BLOCK_CACHESIM (arg_node));
+        BLOCK_CACHESIM (arg_node) = Free (BLOCK_CACHESIM (arg_node));
 
         DBUG_ASSERT ((BLOCK_INSTR (arg_node) != NULL),
-                     "first instruction of block is NULL (should be a N_empty node)");
+                     "first instruction of block is NULL"
+                     " (should be a N_empty node)");
         assign = BLOCK_INSTR (arg_node);
 
         BLOCK_INSTR (arg_node) = MakeAssign (MakeIcm1 ("CS_START", MakeId_Copy (cs_tag)),
@@ -6938,10 +6942,10 @@ GetFoldTypeTag (ids *with_ids)
  * Description:
  *   compiles a N_sync node:
  *
- *     < MALLOC-ICMs >                   // if (FIRST == 0) only
+ *     < malloc-ICMs >                   // if (FIRST == 0) only
  *     MT_CONTINUE( ...)                 // if (FIRST == 0) only
  *     MT_START_SYNCBLOCK( ...)
- *     < with-loop code without MALLOC/free-ICMs >
+ *     < with-loop code without malloc/free-ICMs >
  *     MT_SYNC...( ...)
  *     < free-ICMs >
  *
