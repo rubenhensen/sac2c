@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2005/03/10 09:41:09  cg
+ * Added CTIterminateCompilation() which is always called upon
+ * successful termination whether or not a break option was used.
+ *
  * Revision 1.8  2005/02/14 14:15:04  cg
  * Layout bug fixed.
  *
@@ -75,6 +79,7 @@
 #include "convert.h"
 #include "globals.h"
 #include "free.h"
+#include "phase.h"
 
 #include "ctinfo.h"
 
@@ -194,10 +199,28 @@ PrintMessage (const char *header, const char *format, va_list arg_p)
     line = strtok (message_buffer, "@");
 
     while (line != NULL) {
-        fprintf (stderr, "%s", header);
-        fprintf (stderr, "%s\n", line);
+        fprintf (stderr, "%s%s\n", header, line);
         line = strtok (NULL, "@");
     }
+
+    DBUG_VOID_RETURN;
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn static void CleanUp()
+ *
+ *   @brief  does som clean up upon termination
+ *
+ *
+ ******************************************************************************/
+
+static void
+CleanUp ()
+{
+    DBUG_ENTER ("CleanUp");
+
+    FMGRdeleteTmpDir ();
 
     DBUG_VOID_RETURN;
 }
@@ -217,10 +240,10 @@ AbortCompilation ()
 
     fprintf (stderr, "\n*** Compilation failed ***\n");
     fprintf (stderr, "*** Exit code %d (%s)\n", global.compiler_phase,
-             global.compiler_phase_name[(int)global.compiler_phase]);
+             PHphaseName (global.compiler_phase));
     fprintf (stderr, "*** %d Error(s), %d Warning(s)\n\n", errors, warnings);
 
-    FMGRcleanUp ();
+    CleanUp ();
 
     exit ((int)global.compiler_phase);
 
@@ -306,7 +329,7 @@ InternalCompilerErrorBreak (int sig)
         fprintf (stderr, "Sorry, sac2c is unable to create a bug report file.\n");
     }
 
-    FMGRcleanUp ();
+    CleanUp ();
 
     exit (1);
 }
@@ -330,7 +353,7 @@ InternalCompilerErrorBreak (int sig)
 static void
 UserForcedBreak (int sig)
 {
-    FMGRcleanUp ();
+    CleanUp ();
     exit (0);
 }
 
@@ -720,36 +743,46 @@ CTInote (const char *format, ...)
  ******************************************************************************/
 
 void
-CTIterminateCompilation ()
+CTIterminateCompilation (compiler_phase_t phase, char *break_specifier, node *syntax_tree)
 {
     DBUG_ENTER ("CTIterminateCompilation");
 
-    if (global.compiler_phase < PH_final) {
-        if (global.compiler_phase < PH_scanparse) {
+    /*
+     * Upon premature termination of compilation process show compiler resources
+     * or syntax tree if available.
+     */
+
+    if (global.print_after_break) {
+        if (phase < PH_scanparse) {
             RSCshowResources ();
         } else {
-            if (global.print_after_break && (global.compiler_phase <= PH_compile)) {
-                global.syntax_tree = PRTdoPrint (global.syntax_tree);
+            if (phase <= PH_compile) {
+                syntax_tree = PRTdoPrint (syntax_tree);
             }
-            global.syntax_tree = FREEdoFreeTree (global.syntax_tree);
         }
     }
 
     /*
-     *  Finally, we do some clean up ...
+     *  Finally, we do some clean up.
      */
+
+    FMGRdeleteTmpDir ();
+
+    if (syntax_tree != NULL) {
+        syntax_tree = FREEdoFreeTree (syntax_tree);
+    }
 
     /*
-     *  ... and display a success message.
+     *  At last, we display a success message.
      */
 
+    CTIstate (" ");
     CTIstate ("*** Compilation successful ***");
 
-    if (global.compiler_phase < PH_final) {
-        CTIstate ("*** BREAK after: %s",
-                  global.compiler_phase_name[global.compiler_phase]);
-        if (global.break_specifier[0] != '\0') {
-            CTIstate ("*** BREAK specifier: '%s`", global.break_specifier);
+    if (phase < PH_final) {
+        CTIstate ("*** BREAK after: %s", PHphaseName (phase));
+        if (break_specifier != NULL) {
+            CTIstate ("*** BREAK specifier: '%s`", break_specifier);
         }
     }
 
@@ -762,9 +795,7 @@ CTIterminateCompilation ()
 
     CTIstate ("*** Exit code 0");
     CTIstate ("*** 0 error(s), %d warning(s)", warnings);
-    CTIstate ("\n\n");
-
-    FMGRcleanUp ();
+    CTIstate (" ");
 
     exit (0);
 
