@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.27  1995/03/13 15:12:34  asi
+ * Revision 1.28  1995/03/13 15:47:32  hw
+ * MakeIds inserted
+ *
+ * Revision 1.27  1995/03/13  15:12:34  asi
  * added new structur 'nchain'
  * added new entry in structur 'ids' -> 'nchain'
  *
@@ -213,5 +216,6 @@ typedef struct NODE {
 extern types *MakeTypes (simpletype simple);
 extern node *MakeNode (nodetype nodetype);
 extern node *AppendNodeChain (int pos, node *first, node *second);
+extern ids *MakeIds (char *id);
 
 #endif /* _sac_tree_h */

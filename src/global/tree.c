@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.9  1995/03/13 15:13:36  asi
+ * Revision 1.10  1995/03/13 15:47:32  hw
+ * MakeIds inserted
+ *
+ * Revision 1.9  1995/03/13  15:13:36  asi
  * added initialization of 'varno' in MakeNode
  *
  * Revision 1.8  1995/03/08  10:39:40  hw
@@ -153,4 +156,36 @@ AppendNodeChain (int pos, node *first, node *second)
     }
 
     DBUG_RETURN (first);
+}
+
+/*
+ *
+ *  functionname  : MakeIds
+ *  arguments     : 1) identifier
+ *  description   : generates and initialises a new 'ids' struct;
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        : DBUG..., GEN_NODE
+ *
+ *  remarks       :
+ *
+ */
+
+ids *
+MakeIds (char *id)
+{
+    ids *tmp;
+
+    DBUG_ENTER ("MakeIds");
+
+    tmp = GEN_NODE (tmp);
+    DBUG_ASSERT ((NULL != tmp), "out of memory");
+    tmp->id = id;
+    tmp->refcnt = 0;
+    tmp->node = NULL;
+    tmp->nchain = NULL;
+    tmp->next = NULL;
+
+    DBUG_RETURN (tmp);
 }
