@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/04/19 12:51:57  jhs
+ * TRUE and FALSE from internal_lib.h used from now on.
+ *
  * Revision 2.2  1999/03/31 15:07:29  bs
  *  I did some code cosmetics with the MRD_GET... macros.
  *
@@ -74,8 +77,6 @@
 #include "Unroll.h"
 #include "Unswitch.h"
 
-#define FALSE 0
-#define TRUE 1
 #define COND arg_info->node[0]
 #define LOOP_INFO arg_info->node[1]
 #define ONCE_MORE arg_info->lineno

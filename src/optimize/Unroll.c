@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/04/19 12:50:45  jhs
+ * TRUE and FALSE from internal_lib.h used from now on.
+ *
  * Revision 2.2  1999/03/31 15:06:17  bs
  * I did some code cosmetics with the MRD_GET... macros.
  *
@@ -84,9 +87,6 @@
 #include "DupTree.h"
 #include "Unroll.h"
 #include "WLUnroll.h"
-
-#define FALSE 0
-#define TRUE 1
 
 /*
  *

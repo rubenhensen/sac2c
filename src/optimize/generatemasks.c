@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.4  1999/04/19 12:55:03  jhs
+ * TRUE and FALSE from internal_lib.h used from now on.
+ *
  * Revision 2.3  1999/04/13 14:03:28  cg
  * Bug fixed in MrdGet(): function looks behind applications
  * of F_reshape only in modes 2 and 3.
@@ -96,9 +99,6 @@
  */
 
 stack *mrdl_stack;
-
-#define TRUE 1
-#define FALSE 0
 
 /*
  * assign_level is a counter for the depth of assign nodes in a function.
