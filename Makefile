@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.91  2004/07/18 08:50:09  ktr
+# added src/refcount/refcounting.o to REFCOUNT.
+#
 # Revision 3.90  2004/07/14 23:58:41  sah
 # removed old non-ssa optimizations
 #
@@ -251,7 +254,8 @@ MODULES= src/modules/filemgr.o src/modules/import.o src/modules/writesib.o \
          src/modules/implicittypes.o src/modules/analysis.o \
          src/modules/checkdec.o src/modules/readsib.o src/modules/cccall.o
 OBJECTS= src/objects/objinit.o src/objects/objects.o src/objects/uniquecheck.o
-REFCOUNT= src/refcount/refcount.o src/refcount/alloc.o
+REFCOUNT= src/refcount/refcount.o \
+          src/refcount/alloc.o src/refcount/refcounting.o
 CONCURRENT= src/concurrent/concurrent.o \
             src/concurrent/spmd_init.o src/concurrent/spmd_opt.o \
             src/concurrent/spmd_lift.o src/concurrent/sync_init.o \
