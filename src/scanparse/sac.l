@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 3.25  2004/09/21 12:28:31  sbs
+ * new try on line annotations...
+ *
  * Revision 3.24  2004/09/16 19:00:42  sbs
  * changed the pattern for source file annotations by the C preprocessor.
  * Now, they should only be recognized if not used within comments.
@@ -468,6 +471,26 @@ int charpos = 0;
 
 "\f"                       { charpos += yyleng; }
 
+#\ *[0-9]+\ \".*\"\ [0-9]* { charpos += yyleng;
+                             if( commlevel == 0) {
+                               int start, len;
+
+                               linenum=atoi(yytext+1)-1;
+                               start = strcspn( yytext, "\"")+1;
+                               len   = strcspn( yytext + start, "\"");
+                               if( ((yytext + start)[0] == '.')
+                                     && ((yytext + start)[1] == '/') ) {
+                                 /* elminate preceeding "./" */
+                                 start += 2;
+                                 len -= 2;
+                               }
+                               filename = (char *)Malloc( (len+1)*sizeof(char));
+                               strncpy( filename , yytext + start, len);
+                               filename[len] = '\0';
+                               DBUG_PRINT( "PARSE", ("# %i %s" , linenum, filename));
+                             }
+                           }
+
 #\ *[0-9]+\ \".*\"         { charpos += yyleng;
                              if( commlevel == 0) {
                                int start, len;
@@ -485,6 +508,13 @@ int charpos = 0;
                                strncpy( filename , yytext + start, len);
                                filename[len] = '\0';
                                DBUG_PRINT( "PARSE", ("# %i %s" , linenum, filename));
+                             }
+                           }
+
+#\ *[0-9]+                 { charpos += yyleng;
+                             if( commlevel == 0) {
+                               linenum=atoi(yytext+1)-1;
+                               DBUG_PRINT( "PARSE", ("# %i" , linenum));
                              }
                            }
 
