@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2002/03/13 16:03:20  ktr
+ * Help information for Withloop-Scalarization added
+ *
  * Revision 3.17  2002/01/18 11:39:02  sbs
  * updated the copyright notice.
  *
@@ -233,6 +236,7 @@ usage ()
     PRINT_BREAK_SPEC (PH_sacopt, "cyc<N>:wli",
                       "stop after with-loop information gathering ...");
     PRINT_BREAK_SPEC (PH_sacopt, "cyc<N>:wlf", "stop after with-loop folding ...");
+    PRINT_BREAK_SPEC (PH_sacopt, "cyc<N>:wls", "stop after with-loop scalarization ...");
     PRINT_BREAK_SPEC (PH_sacopt, "cyc<N>:cf2", "stop after second constant folding ...");
     PRINT_BREAK_SPEC (PH_sacopt, "cyc<N>:dcr", "stop after dead code removal ...");
     PRINT_BREAK_SPEC (PH_sacopt, "cyc<N>:lur", "stop after (with-)loop unrolling ...");
@@ -318,6 +322,7 @@ usage ()
             "\t\tCSE \tcommon subexpression elimination\n"
             "\t\tWLT \twith-loop transformation\n"
             "\t\tWLF \twith-loop folding\n"
+            "\t\tWLS \twith-loop scalarization\n"
             "\t\tDLAW\tapplication of the distributive law\n"
             "\t\tIVE \tindex vector elimination\n"
             "\t\tAE  \tarray elimination\n"
@@ -685,7 +690,8 @@ usage ()
             "\tJan-Hendrik Schoeler\n"
             "\tNico Marcussen-Wulff\n"
             "\tMarkus Bradtke\n"
-            "\tBorg Enders\n");
+            "\tBorg Enders\n"
+            "\tKai Trojahner\n");
 
     printf ("\n\nCONTACT:\n\n"
 
