@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2001/04/26 13:30:20  nmw
+ * loop unrolling for predicate != added
+ *
  * Revision 1.2  2001/04/24 16:10:23  nmw
  * ssa loop unrolling implemented
  *
@@ -74,7 +77,8 @@ static bool SSALURIsLURPredicate (node *expr);
 
 static bool SSALURGetLoopIdentifier (node *predicate, node **id);
 
-static bool SSALURAnalyseLURPredicate (node *expr, prf loop_prf, prf *pred_prf,
+static bool SSALURAnalyseLURPredicate (node *expr, prf loop_prf, loopc_t init_counter,
+                                       loopc_t loop_increment, prf *pred_prf,
                                        loopc_t *term_counter);
 
 static bool SSALURIsLURModifier (node *modifier);
@@ -261,7 +265,8 @@ SSALURGetDoLoopUnrolling (node *fundef)
     }
 
     /* get parameter from loop normal-form predicate */
-    if (!(SSALURAnalyseLURPredicate (predicate, loop_prf, &pred_prf, &term_counter))) {
+    if (!(SSALURAnalyseLURPredicate (predicate, loop_prf, init_counter, loop_increment,
+                                     &pred_prf, &term_counter))) {
         DBUG_PRINT ("SSALUR", ("predicate cannot be unrolled with given modifier"));
         DBUG_RETURN (UNR_NONE);
     }
@@ -324,8 +329,8 @@ SSALURIsLURPredicate (node *predicate)
     /* prf must be one of the comparison prfs */
     comp_prf = PRF_PRF (predicate);
 
-    if ((comp_prf != F_le) && (comp_prf != F_lt) && (comp_prf != F_eq)
-        && (comp_prf != F_ge) && (comp_prf != F_gt) && (comp_prf != F_neq)) {
+    if ((comp_prf != F_le) && (comp_prf != F_lt) && (comp_prf != F_ge)
+        && (comp_prf != F_gt) && (comp_prf != F_neq)) {
         DBUG_PRINT ("SSALUR", ("predicate with non comparision prf"));
         DBUG_RETURN (FALSE);
     }
@@ -357,6 +362,8 @@ SSALURIsLURPredicate (node *predicate)
  * function:
  *   bool SSALURAnalyseLURPredicate(node *expr,
  *                                  prf loop_prf,
+ *                                  loopc_t init_counter,
+ *                                  loopc_t loop_increment,
  *                                  prf *pred_prf,
  *                                  loopc_t term_counter)
  *
@@ -367,7 +374,8 @@ SSALURIsLURPredicate (node *predicate)
  *
  ******************************************************************************/
 static bool
-SSALURAnalyseLURPredicate (node *expr, prf loop_prf, prf *pred_prf, loopc_t *term_counter)
+SSALURAnalyseLURPredicate (node *expr, prf loop_prf, loopc_t init_counter,
+                           loopc_t loop_increment, prf *pred_prf, loopc_t *term_counter)
 {
     prf pred;
     loopc_t term;
@@ -411,13 +419,21 @@ SSALURAnalyseLURPredicate (node *expr, prf loop_prf, prf *pred_prf, loopc_t *ter
         break;
 
     case F_neq:
-        /* not useful implemented yet */
-        result = FALSE;
-        break;
-
-    case F_eq:
-        /* not useful implemented yet */
-        result = FALSE;
+        if ((loop_prf == F_add) && ((init_counter + loop_increment) <= term)
+            && (((term - init_counter) % loop_increment) == 0)) {
+            /* change F_neq to F_le for increments */
+            pred = F_le;
+            term = term - 1;
+            result = TRUE;
+        } else if ((loop_prf == F_sub) && (term <= (init_counter - loop_increment))
+                   && (((init_counter - term) % loop_increment) == 0)) {
+            /* change F_neq to F_ge for decrements */
+            pred = F_ge;
+            term = term + 1;
+            result = TRUE;
+        } else {
+            result = FALSE;
+        }
         break;
 
     default:
