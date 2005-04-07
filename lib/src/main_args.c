@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2005/04/07 16:16:27  cg
+ * Added string compare function with case sensitivity flag.
+ *
  * Revision 3.2  2001/05/15 13:50:19  cg
  * Bug fixed in handling of option copy buffer.
  *
@@ -127,4 +130,49 @@ ARGS_CheckOption (char *pattern, char *argv1, char *argv2, char **option, char *
     }
 
     return (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   bool ARGS_StringCompare( char *s1, char *s2, int case_sensitive)
+ *
+ * description:
+ *
+ *  This function compares two strings s1 and s2 for equality. The third
+ *  (boolean) parameter specifies case sensitivity.
+ *
+ ******************************************************************************/
+
+int
+ARGS_StringEqual (char *s1, char *s2, int case_sensitive)
+{
+    int i;
+
+    if ((s1 == NULL) && (s2 == NULL)) {
+        return (1);
+    }
+    if ((s1 == NULL) || (s2 == NULL)) {
+        return (0);
+    }
+
+    if (case_sensitive) {
+        for (i = 0; (s1[i] != '\0') && (s2[i] != '\0'); i++) {
+            if (s1[i] != s2[i]) {
+                return (0);
+            }
+        }
+    } else {
+        for (i = 0; (s1[i] != '\0') && (s2[i] != '\0'); i++) {
+            if (tolower (s1[i]) != tolower (s2[i])) {
+                return (0);
+            }
+        }
+    }
+
+    if ((s1[i] == '\0') && (s2[i] == '\0')) {
+        return (1);
+    } else {
+        return (0);
+    }
 }
