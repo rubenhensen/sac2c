@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 3.11  2005/04/07 16:16:27  cg
+# Added CCFLAGS
+#
 # Revision 3.10  2003/03/20 22:15:43  sah
 # added ../../src/global to includes
 #
@@ -59,10 +62,10 @@ INCS= -I../../inc -I../../src/global
 all: ../dbug.o ../main_args.o 
 
 ../dbug.o: dbug.c
-	$(CC) $(CFLAGS) $(MYFLAGS) -o ../dbug.o -c dbug.c $(INCS)
+	$(CC) $(CFLAGS) $(CCFLAGS) -o ../dbug.o -c dbug.c $(INCS)
 
 ../main_args.o: main_args.c
-	$(CC) $(CFLAGS) $(MYFLAGS) -o ../main_args.o -c main_args.c $(INCS)
+	$(CC) $(CFLAGS) $(CCFLAGS) -o ../main_args.o -c main_args.c $(INCS)
 
 clean:
 	$(RM) ../dbug.o ../main_args.o *.bak *~ .*.d
