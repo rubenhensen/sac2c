@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2005/04/07 16:16:27  cg
+ * Textual arguments to command line options are now parsed case insensitive.
+ * This allows us to write -noopt or -noOPT without specifying two different
+ * options in options.c
+ *
  * Revision 3.2  2004/11/26 16:32:19  cg
  * ARGS_OPTION_BEGIN/END added.
  *
@@ -139,6 +144,8 @@
 extern int ARGS_CheckOption (char *pattern, char *argv1, char *argv2, char **option,
                              char **argument);
 
+extern int ARGS_StringEqual (char *s1, char *s2, int case_sensitive);
+
 #define ARGS_BEGIN(argc, argv)                                                           \
     {                                                                                    \
         int ARGS_i = 1;                                                                  \
@@ -151,7 +158,8 @@ extern int ARGS_CheckOption (char *pattern, char *argv1, char *argv2, char **opt
         while (ARGS_i < ARGS_argc) {
 
 #define ARGS_FLAG(s, action)                                                             \
-    if ((ARGS_argv[ARGS_i][0] == '-') && (0 == strcmp (s, ARGS_argv[ARGS_i] + 1))) {     \
+    if ((ARGS_argv[ARGS_i][0] == '-')                                                    \
+        && ARGS_StringEqual (s, ARGS_argv[ARGS_i] + 1, 1)) {                             \
         OPT = ARGS_argv[ARGS_i] + 1;                                                     \
         ARG = NULL;                                                                      \
         action;                                                                          \
@@ -225,7 +233,7 @@ extern int ARGS_CheckOption (char *pattern, char *argv1, char *argv2, char **opt
         int ARGS_not_chosen = 1;
 
 #define ARG_CHOICE(choice, action)                                                       \
-    if (ARGS_not_chosen && (0 == strcmp (ARG, choice))) {                                \
+    if (ARGS_not_chosen && ARGS_StringEqual (ARG, choice, 0)) {                          \
         ARGS_not_chosen = 0;                                                             \
         action;                                                                          \
     }

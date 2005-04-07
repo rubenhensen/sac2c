@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.85  2005/04/07 16:16:27  cg
+ * Textual arguments to command line options are now parsed case insensitive.
+ * This allows us to write -noopt or -noOPT without specifying two different
+ * options in options.c
+ *
  * Revision 3.84  2005/03/10 09:41:09  cg
  * Removed options to control application of fun2lac and lac2fun
  * conversion.
@@ -435,14 +440,12 @@ OPTanalyseCommandline (node *syntax_tree)
         ARG_CHOICE_BEGIN ();
 
         ARG_CHOICE ("opt", global.optimize = global.optimize_all);
-        ARG_CHOICE ("OPT", global.optimize = global.optimize_all);
 
 #define OPTIMIZE(str, abbr, devl, prod, name)                                            \
     ARG_CHOICE (str, global.optimize.do##abbr = TRUE);
 #include "optimize.mac"
 
         ARG_CHOICE ("pab", global.print_after_break = TRUE);
-        ARG_CHOICE ("PAB", global.print_after_break = TRUE);
 
         ARG_CHOICE_END ();
     }
@@ -538,6 +541,8 @@ OPTanalyseCommandline (node *syntax_tree)
 
     ARGS_OPTION ("maxrepsize", ARG_NUM (global.max_replication_size));
 
+    ARGS_OPTION ("maxwls", ARG_NUM (global.maxwls));
+
     ARGS_OPTION_BEGIN ("minarrayrep")
     {
         ARG_CHOICE_BEGIN ();
@@ -568,14 +573,12 @@ OPTanalyseCommandline (node *syntax_tree)
         ARG_CHOICE_BEGIN ();
 
         ARG_CHOICE ("opt", global.optimize = global.optimize_none);
-        ARG_CHOICE ("OPT", global.optimize = global.optimize_none);
 
 #define OPTIMIZE(str, abbr, devl, prod, name)                                            \
     ARG_CHOICE (str, global.optimize.do##abbr = FALSE);
 #include "optimize.mac"
 
         ARG_CHOICE ("pab", global.print_after_break = FALSE);
-        ARG_CHOICE ("PAB", global.print_after_break = FALSE);
 
         ARG_CHOICE_END ();
     }
@@ -606,18 +609,26 @@ OPTanalyseCommandline (node *syntax_tree)
     }
     ARGS_OPTION_END ("profile");
 
+    ARGS_OPTION_BEGIN ("sigspec")
+    {
+        ARG_CHOICE_BEGIN ();
+
+        ARG_CHOICE ("akv", global.sigspec_mode = SSP_akv);
+        ARG_CHOICE ("aks", global.sigspec_mode = SSP_aks);
+        ARG_CHOICE ("akd", global.sigspec_mode = SSP_akd);
+        ARG_CHOICE ("aud", global.sigspec_mode = SSP_aud);
+
+        ARG_CHOICE_END ();
+    }
+    ARGS_OPTION_END ("sigspec");
+
     ARGS_OPTION_BEGIN ("specmode")
     {
         ARG_CHOICE_BEGIN ();
 
         ARG_CHOICE ("aks", global.spec_mode = SS_aks);
-        ARG_CHOICE ("AKS", global.spec_mode = SS_aks);
-
         ARG_CHOICE ("akd", global.spec_mode = SS_akd);
-        ARG_CHOICE ("AKD", global.spec_mode = SS_akd);
-
         ARG_CHOICE ("aud", global.spec_mode = SS_aud);
-        ARG_CHOICE ("AUD", global.spec_mode = SS_aud);
 
         ARG_CHOICE_END ();
     }
@@ -638,9 +649,14 @@ OPTanalyseCommandline (node *syntax_tree)
     }
     ARGS_OPTION_END ("trace");
 
-    ARGS_FLAG ("wls_aggressive", global.wls_aggressive = TRUE);
+    ARGS_OPTION ("v", );
+    /*
+     * The -v option has allready been processed by OPTcheckSpecialOptions().
+     * However, it must be repeated here with empty action part to avoid an
+     * illegal command line option error.
+     */
 
-    ARGS_OPTION ("maxwls", ARG_NUM (global.maxwls));
+    ARGS_FLAG ("wls_aggressive", global.wls_aggressive = TRUE);
 
     ARGS_OPTION_BEGIN ("#")
     {
@@ -670,26 +686,6 @@ OPTanalyseCommandline (node *syntax_tree)
         }
     }
     ARGS_OPTION_END ("#");
-
-    ARGS_OPTION_BEGIN ("sigspec")
-    {
-        ARG_CHOICE_BEGIN ();
-
-        ARG_CHOICE ("akv", global.sigspec_mode = SSP_akv);
-        ARG_CHOICE ("AKV", global.sigspec_mode = SSP_akv);
-
-        ARG_CHOICE ("aks", global.sigspec_mode = SSP_aks);
-        ARG_CHOICE ("AKS", global.sigspec_mode = SSP_aks);
-
-        ARG_CHOICE ("akd", global.sigspec_mode = SSP_akd);
-        ARG_CHOICE ("AKD", global.sigspec_mode = SSP_akd);
-
-        ARG_CHOICE ("aud", global.sigspec_mode = SSP_aud);
-        ARG_CHOICE ("AUD", global.sigspec_mode = SSP_aud);
-
-        ARG_CHOICE_END ();
-    }
-    ARGS_OPTION_END ("sigspec");
 
     ARGS_ARGUMENT ({
         if (global.sacfilename == NULL) {
