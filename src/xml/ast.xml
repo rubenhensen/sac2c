@@ -352,6 +352,8 @@
 	  <node name="Fundef" />
 	  <node name="Typedef" />
 	  <node name="Objdef" />
+	  <node name="While" />
+	  <node name="Do" />
 	  <node name="SPAp" />
 	  <node name="SPMop" />
 	  <node name="Arg" />
@@ -4126,6 +4128,7 @@
         <son name="Generator" mandatory="yes">
           <target>
             <node name="Generator" />
+            <node name="Empty" />
           </target>
         </son>
         <son name="Next" default="NULL" mandatory="no">
