@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.22  2005/04/10 14:35:07  sah
+ * now for while/do loops namespaces are annotated correctöy
+ *
  * Revision 1.21  2005/03/17 14:02:26  sah
  * corrected handling of mops
  *
@@ -427,6 +430,40 @@ ANSspap (node *arg_node, info *arg_info)
 }
 
 node *
+ANSwhile (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("ANSwhile");
+
+    /*
+     * whe have to traverse the body first, as it may contain
+     * additional spids which may be referenced in the conditional
+     * expression.
+     */
+
+    WHILE_BODY (arg_node) = TRAVdo (WHILE_BODY (arg_node), arg_info);
+    WHILE_COND (arg_node) = TRAVdo (WHILE_COND (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+ANSdo (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("ANSwhile");
+
+    /*
+     * whe have to traverse the body first, as it may contain
+     * additional spids which may be referenced in the conditional
+     * expression.
+     */
+
+    DO_BODY (arg_node) = TRAVdo (DO_BODY (arg_node), arg_info);
+    DO_COND (arg_node) = TRAVdo (DO_COND (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
 ANSarg (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ANSarg");
@@ -471,6 +508,8 @@ ANSspids (node *arg_node, info *arg_info)
      */
     INFO_ANS_IDS (arg_info)
       = STRSadd (SPIDS_NAME (arg_node), STRS_unknown, INFO_ANS_IDS (arg_info));
+
+    DBUG_PRINT ("ANS", ("found local id '%s'", SPIDS_NAME (arg_node)));
 
     arg_node = TRAVcont (arg_node, arg_info);
 
@@ -525,6 +564,9 @@ ANSspid (node *arg_node, info *arg_info)
 
                 SPID_MOD (arg_node)
                   = LookupNamespaceForSymbol (SPID_NAME (arg_node), arg_info);
+
+                DBUG_PRINT ("ANS", ("found ns '%s' for id '%s'", SPID_MOD (arg_node),
+                                    SPID_NAME (arg_node)));
             }
         }
     }
