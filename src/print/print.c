@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.208  2005/04/11 05:33:46  ktr
+ * Printing of external and internal assignments of special functions fixed.
+ *
  * Revision 3.207  2005/03/20 00:20:49  sbs
  * AUD required proper printing of default partitions
  *
@@ -1451,25 +1454,37 @@ PRTfundef (node *arg_node, info *arg_info)
                 if (FUNDEF_EXT_ASSIGN (arg_node) == NULL) {
                     fprintf (global.outfile, "/*  external assignment: missing */\n");
                 } else {
-                    fprintf (global.outfile, "/*  external assignment: %s */\n",
-                             IDS_NAME (
-                               LET_IDS (ASSIGN_INSTR (FUNDEF_EXT_ASSIGN (arg_node)))));
+                    node *extids;
+                    fprintf (global.outfile, "/*  external assignment: ");
+                    extids = LET_IDS (ASSIGN_INSTR (FUNDEF_EXT_ASSIGN (arg_node)));
+                    if (extids != NULL) {
+                        extids = TRAVdo (extids, arg_info);
+                    }
+                    fprintf (global.outfile, " */\n");
                 }
             } else if (FUNDEF_ISDOFUN (arg_node)) {
                 fprintf (global.outfile, "/* Loop function */\n");
                 if (FUNDEF_EXT_ASSIGN (arg_node) == NULL) {
                     fprintf (global.outfile, "/*  external assignment: missing */\n");
                 } else {
-                    fprintf (global.outfile, "/*  external assignment: %s */\n",
-                             IDS_NAME (
-                               LET_IDS (ASSIGN_INSTR (FUNDEF_EXT_ASSIGN (arg_node)))));
+                    node *extids;
+                    fprintf (global.outfile, "/*  external assignment: ");
+                    extids = LET_IDS (ASSIGN_INSTR (FUNDEF_EXT_ASSIGN (arg_node)));
+                    if (extids != NULL) {
+                        extids = TRAVdo (extids, arg_info);
+                    }
+                    fprintf (global.outfile, " */\n");
                 }
                 if (FUNDEF_INT_ASSIGN (arg_node) == NULL) {
                     fprintf (global.outfile, "/*  internal assignment: missing */\n");
                 } else {
-                    fprintf (global.outfile, "/*  external assignment: %s */\n",
-                             IDS_NAME (
-                               LET_IDS (ASSIGN_INSTR (FUNDEF_INT_ASSIGN (arg_node)))));
+                    node *intids;
+                    fprintf (global.outfile, "/*  internal assignment: ");
+                    intids = LET_IDS (ASSIGN_INSTR (FUNDEF_INT_ASSIGN (arg_node)));
+                    if (intids != NULL) {
+                        intids = TRAVdo (intids, arg_info);
+                    }
+                    fprintf (global.outfile, " */\n");
                 }
             }
 
