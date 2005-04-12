@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.35  2005/04/12 11:06:38  sah
+ * added DBUG_PRINT
+ *
  * Revision 3.34  2005/03/04 21:21:42  cg
  * Naming og LaC functions improved and made static to module.
  * FUNDEF_USED counter etc removed.
@@ -489,6 +492,9 @@ MakeL2fFundef (char *funname, char *modname, node *instr, node *funcall_let, dfm
     FUNDEF_BODY (fundef) = TBmakeBlock (assigns, vardecs);
 
     lut = LUTremoveLut (lut);
+
+    DBUG_PRINT ("L2F",
+                ("created function '%s:%s'", FUNDEF_MOD (fundef), FUNDEF_NAME (fundef)));
 
     DBUG_RETURN (fundef);
 }
