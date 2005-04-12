@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2005/04/12 15:50:16  ktr
+ * Travsersal invocation function INLdoLACInlining added. Only former loop
+ * and conditional functions will be inlined.
+ *
  * Revision 1.1  2005/02/14 11:17:37  cg
  * Initial revision
  *
@@ -13,6 +17,7 @@
 #include "types.h"
 
 extern node *INLdoInlining (node *arg_node);
+extern node *INLdoLACInlining (node *arg_node);
 
 extern node *INLmodule (node *arg_node, info *arg_info);
 extern node *INLfundef (node *arg_node, info *arg_info);

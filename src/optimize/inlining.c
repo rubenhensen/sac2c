@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2005/04/12 15:50:16  ktr
+ * Travsersal invocation function INLdoLACInlining added. Only former loop
+ * and conditional functions will be inlined.
+ *
  * Revision 1.2  2005/03/04 21:21:42  cg
  * First working revision.
  *
@@ -28,6 +32,7 @@
  * INFO structure
  */
 struct INFO {
+    bool lacinline; /* Indicates lac function inlining mode */
     node *fundef;
     node *letids;
     node *code;
@@ -37,6 +42,7 @@ struct INFO {
 /*
  * INFO macros
  */
+#define INFO_LACINLINE(n) (n->lacinline)
 #define INFO_FUNDEF(n) (n->fundef)
 #define INFO_LETIDS(n) (n->letids)
 #define INFO_CODE(n) (n->code)
@@ -54,6 +60,7 @@ MakeInfo ()
 
     result = ILIBmalloc (sizeof (info));
 
+    INFO_LACINLINE (result) = FALSE;
     INFO_FUNDEF (result) = NULL;
     INFO_LETIDS (result) = NULL;
     INFO_CODE (result) = NULL;
@@ -182,7 +189,12 @@ INLap (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("INLap");
 
-    if ((FUNDEF_ISINLINE (AP_FUNDEF (arg_node)))
+    /*
+     * In LAC function inlining, only former LAC functions are inlined.
+     * In regular function inlining, only regular inline functions are inlined.
+     */
+    if (((!INFO_LACINLINE (arg_info)) && (FUNDEF_ISINLINE (AP_FUNDEF (arg_node))))
+        || ((INFO_LACINLINE (arg_info)) && (FUNDEF_ISLACINLINE (AP_FUNDEF (arg_node))))) {
 #if 0
       /*
        * We still need a solution for recursive functions marked inline.
@@ -191,12 +203,12 @@ INLap (node *arg_node, info *arg_info)
           || (FUNGROUP_INLCOUNTER( FUNDEF_FUNGROUP( AP_FUNDEF( arg_node)))
               <= global.max_inl))
 #endif
-    ) {
+
         INFO_CODE (arg_info)
           = PINLdoPrepareInlining (&INFO_VARDECS (arg_info), AP_FUNDEF (arg_node),
                                    INFO_LETIDS (arg_info), AP_ARGS (arg_node));
 
-        if (FUNDEF_EXT_ASSIGN (AP_FUNDEF (arg_node)) != NULL) {
+        if (FUNDEF_ISLACINLINE (AP_FUNDEF (arg_node)) != NULL) {
             /*
              * Inlined function was loop or cond function.
              */
@@ -230,6 +242,41 @@ INLdoInlining (node *arg_node)
                 ("mem currently allocated: %d bytes", global.current_allocated_mem));
 
     arg_info = MakeInfo ();
+
+    TRAVpush (TR_inl);
+    arg_node = TRAVdo (arg_node, arg_info);
+    TRAVpop ();
+
+    FreeInfo (arg_info);
+
+    DBUG_PRINT ("OPTMEM",
+                ("mem currently allocated: %d bytes", global.current_allocated_mem));
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *INLdoLACInlining( node *arg_node)
+ *
+ * Description:
+ *   Starts function inlining of former loop and conditional functions.
+ *
+ ******************************************************************************/
+
+node *
+INLdoLACInlining (node *arg_node)
+{
+    info *arg_info;
+
+    DBUG_ENTER ("INLdoLACInlining");
+
+    DBUG_PRINT ("OPTMEM",
+                ("mem currently allocated: %d bytes", global.current_allocated_mem));
+
+    arg_info = MakeInfo ();
+    INFO_LACINLINE (arg_info) = TRUE;
 
     TRAVpush (TR_inl);
     arg_node = TRAVdo (arg_node, arg_info);
