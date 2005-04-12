@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2005/04/12 13:57:00  sah
+ * now, MODIMP_PATH is used to find module
+ * libraries
+ *
  * Revision 1.10  2005/03/10 09:41:09  cg
  * Added #include "internal_lib.h"
  *
@@ -18,6 +22,8 @@
 
 #include "modulemanager.h"
 #include "libmanager.h"
+#include "filemgr.h"
+#include "ctinfo.h"
 #include "dbug.h"
 #include "internal_lib.h"
 
@@ -59,13 +65,26 @@ static module_t *
 AddModuleToPool (const char *name)
 {
     module_t *result;
+    char *tmp;
 
     DBUG_ENTER ("AddModuleToPool");
 
+    DBUG_PRINT ("MODM", ("Start loading module '%s'.", name));
+
     result = ILIBmalloc (sizeof (module_t));
 
-    result->sofile = ILIBmalloc (sizeof (char) * (strlen (name) + 7));
-    sprintf (result->sofile, "lib%s.so", name);
+    tmp = ILIBmalloc (sizeof (char) * (strlen (name) + 7));
+    sprintf (tmp, "lib%s.so", name);
+
+    result->sofile = ILIBstringCopy (FMGRfindFile (PK_modimp_path, tmp));
+
+    if (result->sofile == NULL) {
+        CTIabort ("Cannot find library `%s'", tmp);
+    }
+
+    DBUG_PRINT ("MODM", ("Found library file '%s'.", result->sofile));
+
+    tmp = ILIBfree (tmp);
 
     result->name = ILIBstringCopy (name);
     result->lib = LIBMloadLibrary (result->sofile);
