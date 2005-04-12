@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.19  2005/04/12 10:00:11  sbs
+ * tracing did not work properly through fold-WLs
+ * this is fixed now...
+ *
  * Revision 1.18  2005/01/10 17:27:06  cg
  * Converted error messages from Error.h to ctinfo.c
  *
@@ -285,14 +289,28 @@ TEextendedAbort ()
         while (global.act_info_chn != NULL) {
             assign = TI_ASSIGN (global.act_info_chn);
             if (!FUNDEF_ISLACFUN (TI_FUNDEF (global.act_info_chn))) {
-                args = NTCnewTypeCheck_Expr (AP_ARGS (ASSIGN_RHS (assign)));
-                CTIerrorContinued ("-- %s(?): %d: %s:%s%s", global.filename,
-                                   TI_LINE (global.act_info_chn),
-                                   ((TI_MOD (global.act_info_chn) != NULL)
-                                      ? TI_MOD (global.act_info_chn)
-                                      : "--"),
-                                   TI_NAME (global.act_info_chn),
-                                   TYtype2String (args, FALSE, 0));
+                /**
+                 * The assigment either is a direct application of a UDF
+                 * -or- an indirect application due to a fold-WL.
+                 */
+                if (NODE_TYPE (ASSIGN_RHS (assign)) == N_with) {
+                    CTIerrorContinued (
+                      "-- %s(?): %d: %s:%s (while checking fold with loop)",
+                      global.filename, TI_LINE (global.act_info_chn),
+                      ((TI_MOD (global.act_info_chn) != NULL)
+                         ? TI_MOD (global.act_info_chn)
+                         : "--"),
+                      TI_NAME (global.act_info_chn));
+                } else {
+                    args = NTCnewTypeCheck_Expr (AP_ARGS (ASSIGN_RHS (assign)));
+                    CTIerrorContinued ("-- %s(?): %d: %s:%s%s", global.filename,
+                                       TI_LINE (global.act_info_chn),
+                                       ((TI_MOD (global.act_info_chn) != NULL)
+                                          ? TI_MOD (global.act_info_chn)
+                                          : "--"),
+                                       TI_NAME (global.act_info_chn),
+                                       TYtype2String (args, FALSE, 0));
+                }
             }
             global.act_info_chn = TI_CHN (global.act_info_chn);
         }
