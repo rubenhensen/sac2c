@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2005/04/12 11:03:35  sah
+ * added printing of module names for functions
+ *
  * Revision 1.6  2004/11/27 02:47:27  sbs
  * *** empty log message ***
  *
@@ -69,8 +72,12 @@ NTCCTcomputeType (ct_funptr CtFun, te_info *info, ntype *args)
     DBUG_ENTER ("NTCCTcomputeType");
 
     DBUG_EXECUTE ("NTC", tmp_str = TYtype2String (args, 0, 0););
-    DBUG_PRINT ("NTC", ("computing type of %s \"%s\" applied to %s", TEgetKindStr (info),
-                        TEgetNameStr (info), tmp_str));
+    DBUG_PRINT ("NTC",
+                ("computing type of %s \"%s%s%s\" applied to %s", TEgetKindStr (info),
+                 TEgetModStr (info),
+                 ((TEgetModStr (info) == NULL) || (TEgetModStr (info)[0] == 0)) ? ""
+                                                                                : ":",
+                 TEgetNameStr (info), tmp_str));
     DBUG_EXECUTE ("NTC", ILIBfree (tmp_str););
 
     /*
