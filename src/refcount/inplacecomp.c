@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2005/04/12 15:53:38  ktr
+ * In-Place-Computation can now cope with fold-withloops.
+ *
  * Revision 1.1  2004/12/16 14:38:26  ktr
  * Initial revision
  *
@@ -276,7 +279,9 @@ EMIPcode (node *arg_node, info *arg_info)
         bool isinblock;
         node *assigns;
 
-        if (PRF_PRF (wlass) == F_fill) {
+        if ((NODE_TYPE (wlass) == N_prf) && (PRF_PRF (wlass) == F_fill)
+            && (NODE_TYPE (PRF_ARG1 (wlass)) == N_prf)
+            && (PRF_PRF (PRF_ARG1 (wlass)) == F_copy)) {
             /*
              * Search for suballoc situation
              *
@@ -287,8 +292,6 @@ EMIPcode (node *arg_node, info *arg_info)
              */
             val = PRF_ARG1 (wlass);
             mem = PRF_ARG2 (wlass);
-            DBUG_ASSERT ((NODE_TYPE (val) == N_prf) && (PRF_PRF (val) == F_copy),
-                         "Illegal code situation");
             cval = PRF_ARG1 (val);
             avis = ID_AVIS (cval);
             memass = AVIS_SSAASSIGN (ID_AVIS (mem));
