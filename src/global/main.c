@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.97  2005/04/12 15:14:09  sah
+ * added missing include
+ *
  * Revision 3.96  2005/03/10 09:41:09  cg
  * Reorganized compiler setup phase.
  * This is just the first step towards reorganizing the triggering
@@ -94,6 +97,7 @@
 #include "traverse.h"
 #include "ToOldTypes.h"
 #include "ToNewTypes.h"
+#include "setup.h"
 
 #include <stdlib.h>
 #include <unistd.h>
