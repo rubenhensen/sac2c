@@ -2,6 +2,9 @@
 /*
  *
  * $Log$
+ * Revision 1.25  2005/04/12 15:51:57  ktr
+ * intermediate fold results are reassigned to the global fold result identifier
+ *
  * Revision 1.24  2005/01/08 09:53:08  ktr
  * Added traversal for do-loop
  *
@@ -834,10 +837,9 @@ MMVwith (node *arg_node, info *arg_info)
     withop = INFO_MMV_WITHOP (arg_info);
 
     INFO_MMV_LHS_WL (arg_info) = INFO_MMV_LHS (arg_info);
+    INFO_MMV_WITHOP (arg_info) = WITH_WITHOP (arg_node);
 
-    if (WITH_WITHOP (arg_node) != NULL) {
-        WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
-    }
+    WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
 
     if (WITH_PART (arg_node) != NULL) {
         WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
@@ -880,11 +882,9 @@ MMVwith2 (node *arg_node, info *arg_info)
     withop = INFO_MMV_WITHOP (arg_info);
 
     INFO_MMV_LHS_WL (arg_info) = INFO_MMV_LHS (arg_info);
-    INFO_MMV_WITHOP (arg_info) = NULL;
+    INFO_MMV_WITHOP (arg_info) = WITH2_WITHOP (arg_node);
 
-    if (WITH2_WITHOP (arg_node) != NULL) {
-        WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
-    }
+    WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
 
     if (WITH2_SEGS (arg_node) != NULL) {
         WITH2_SEGS (arg_node) = TRAVdo (WITH2_SEGS (arg_node), arg_info);
@@ -917,18 +917,18 @@ MMVwlseg (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("MMVwlseg");
 
-    if (WLSEGX_SCHEDULING (arg_node) != NULL) {
-        WLSEGX_SCHEDULING (arg_node)
-          = SCHmarkmemvalsScheduling (WLSEGX_SCHEDULING (arg_node),
+    if (WLSEG_SCHEDULING (arg_node) != NULL) {
+        WLSEG_SCHEDULING (arg_node)
+          = SCHmarkmemvalsScheduling (WLSEG_SCHEDULING (arg_node),
                                       INFO_MMV_LUT (arg_info));
-        WLSEGX_TASKSEL (arg_node)
-          = SCHmarkmemvalsTasksel (WLSEGX_TASKSEL (arg_node), INFO_MMV_LUT (arg_info));
+        WLSEG_TASKSEL (arg_node)
+          = SCHmarkmemvalsTasksel (WLSEG_TASKSEL (arg_node), INFO_MMV_LUT (arg_info));
     }
 
-    WLSEGX_CONTENTS (arg_node) = TRAVdo (WLSEGX_CONTENTS (arg_node), arg_info);
+    WLSEG_CONTENTS (arg_node) = TRAVdo (WLSEG_CONTENTS (arg_node), arg_info);
 
-    if (WLSEGX_NEXT (arg_node) != NULL) {
-        WLSEGX_NEXT (arg_node) = TRAVdo (WLSEGX_NEXT (arg_node), arg_info);
+    if (WLSEG_NEXT (arg_node) != NULL) {
+        WLSEG_NEXT (arg_node) = TRAVdo (WLSEG_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -953,12 +953,12 @@ MMVwlsegvar (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("MMVwlsegvar");
 
-    if (WLSEGX_SCHEDULING (arg_node) != NULL) {
-        WLSEGX_SCHEDULING (arg_node)
-          = SCHmarkmemvalsScheduling (WLSEGX_SCHEDULING (arg_node),
+    if (WLSEGVAR_SCHEDULING (arg_node) != NULL) {
+        WLSEGVAR_SCHEDULING (arg_node)
+          = SCHmarkmemvalsScheduling (WLSEGVAR_SCHEDULING (arg_node),
                                       INFO_MMV_LUT (arg_info));
-        WLSEGX_TASKSEL (arg_node)
-          = SCHmarkmemvalsTasksel (WLSEGX_TASKSEL (arg_node), INFO_MMV_LUT (arg_info));
+        WLSEGVAR_TASKSEL (arg_node)
+          = SCHmarkmemvalsTasksel (WLSEGVAR_TASKSEL (arg_node), INFO_MMV_LUT (arg_info));
     }
 
     DBUG_ASSERT ((WLSEGVAR_IDX_MIN (arg_node) != NULL), "WLSEGVAR_IDX_MIN not found!");
@@ -970,10 +970,10 @@ MMVwlsegvar (node *arg_node, info *arg_info)
           = TRAVdo ((WLSEGVAR_IDX_MAX (arg_node))[d], arg_info);
     }
 
-    WLSEGX_CONTENTS (arg_node) = TRAVdo (WLSEGX_CONTENTS (arg_node), arg_info);
+    WLSEGVAR_CONTENTS (arg_node) = TRAVdo (WLSEGVAR_CONTENTS (arg_node), arg_info);
 
-    if (WLSEGX_NEXT (arg_node) != NULL) {
-        WLSEGX_NEXT (arg_node) = TRAVdo (WLSEGX_NEXT (arg_node), arg_info);
+    if (WLSEGVAR_NEXT (arg_node) != NULL) {
+        WLSEGVAR_NEXT (arg_node) = TRAVdo (WLSEGVAR_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -997,9 +997,6 @@ MMVgenarray (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("MMVgenarray");
 
-    if (INFO_MMV_WITHOP (arg_info) == NULL) {
-        INFO_MMV_WITHOP (arg_info) = arg_node;
-    }
     if (GENARRAY_SHAPE (arg_node) != NULL) {
         GENARRAY_SHAPE (arg_node) = TRAVdo (GENARRAY_SHAPE (arg_node), arg_info);
     }
@@ -1042,10 +1039,6 @@ MMVmodarray (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("MMVmodarray");
 
-    if (INFO_MMV_WITHOP (arg_info) == NULL) {
-        INFO_MMV_WITHOP (arg_info) = arg_node;
-    }
-
     if (MODARRAY_ARRAY (arg_node) != NULL) {
         MODARRAY_ARRAY (arg_node) = TRAVdo (MODARRAY_ARRAY (arg_node), arg_info);
     }
@@ -1085,10 +1078,6 @@ MMVfold (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("MMVfold");
 
-    if (INFO_MMV_WITHOP (arg_info) == NULL) {
-        INFO_MMV_WITHOP (arg_info) = arg_node;
-    }
-
     if (FOLD_NEUTRAL (arg_node) != NULL) {
         FOLD_NEUTRAL (arg_node) = TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
     }
@@ -1118,6 +1107,9 @@ MMVfold (node *arg_node, info *arg_info)
 node *
 MMVcode (node *arg_node, info *arg_info)
 {
+    node *wlids;
+    node *cexprs;
+    node *withop;
 
     DBUG_ENTER ("MMVcode");
 
@@ -1127,6 +1119,39 @@ MMVcode (node *arg_node, info *arg_info)
 
     if (CODE_CEXPRS (arg_node) != NULL) {
         CODE_CEXPRS (arg_node) = TRAVdo (CODE_CEXPRS (arg_node), arg_info);
+    }
+
+    /*
+     * if at least one WL-operator ist fold the accumulation results
+     * must assigned back to the accumulation variable
+     *
+     * A,B = with(iv)
+     *         gen:{ res1 = ...;
+     *               res2 = ...;
+     *               A    = res1   <---!!!
+     *             } : A, res2
+     *       fold( op1, n1)
+     *       ...
+     *
+     */
+    wlids = INFO_MMV_LHS_WL (arg_info);
+    cexprs = CODE_CEXPRS (arg_node);
+    withop = INFO_MMV_WITHOP (arg_info);
+
+    while (withop != NULL) {
+        if (NODE_TYPE (withop) == N_fold) {
+            BLOCK_INSTR (CODE_CBLOCK (arg_node))
+              = TCappendAssign (BLOCK_INSTR (CODE_CBLOCK (arg_node)),
+                                TBmakeAssign (TBmakeLet (DUPdoDupNode (wlids),
+                                                         DUPdoDupNode (
+                                                           EXPRS_EXPR (cexprs))),
+                                              NULL));
+
+            ID_AVIS (EXPRS_EXPR (cexprs)) = IDS_AVIS (wlids);
+        }
+        wlids = IDS_NEXT (wlids);
+        cexprs = EXPRS_NEXT (cexprs);
+        withop = WITHOP_NEXT (withop);
     }
 
     if (CODE_NEXT (arg_node) != NULL) {
