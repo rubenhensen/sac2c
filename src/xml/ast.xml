@@ -2292,6 +2292,7 @@
 	<flag name="IsDoFun" />
 	<flag name="IsExtern" />
 	<flag name="IsInline" />
+	<flag name="IsLacInline" />
         <flag name="AllowsInfix" />
         <flag name="HasDotArgs" />
         <flag name="HasDotRets" />
