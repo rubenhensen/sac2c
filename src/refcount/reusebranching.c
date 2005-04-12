@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.19  2005/04/12 15:53:12  ktr
+ * Reusebranching can now cope with fold-withloops
+ *
  * Revision 1.18  2005/03/04 21:21:42  cg
  * Creation of names for new cond functions made local to this
  * compiler module in order to reduce unnecessary and counter-intuitive
@@ -100,7 +103,6 @@ struct INFO {
     node *fundef;
     node *branches;
     node *memvars;
-    node *locals;
     dfmask_base_t *maskbase;
     dfmask_t *drcs;
     dfmask_t *localvars;
@@ -113,7 +115,6 @@ struct INFO {
 #define INFO_RB_FUNDEF(n) ((n)->fundef)
 #define INFO_RB_BRANCHES(n) ((n)->branches)
 #define INFO_RB_MEMVARS(n) ((n)->memvars)
-#define INFO_RB_LOCALS(n) ((n)->locals)
 #define INFO_RB_MASKBASE(n) ((n)->maskbase)
 #define INFO_RB_DRCS(n) ((n)->drcs)
 #define INFO_RB_LOCALVARS(n) ((n)->localvars)
@@ -134,7 +135,6 @@ MakeInfo ()
     INFO_RB_FUNDEF (result) = NULL;
     INFO_RB_BRANCHES (result) = NULL;
     INFO_RB_MEMVARS (result) = NULL;
-    INFO_RB_LOCALS (result) = NULL;
     INFO_RB_MASKBASE (result) = NULL;
     INFO_RB_DRCS (result) = NULL;
     INFO_RB_LOCALVARS (result) = NULL;
@@ -826,64 +826,80 @@ EMRBcode (node *arg_node, info *arg_info)
         node *cval;
         node *memval;
 
-        switch (PRF_PRF (wlass)) {
-        case F_fill:
-            /*
-             * Search for suballoc situation
-             *
-             *   a  = with ...
-             *   m' = suballoc( A, iv);
-             *   m  = fill( copy( a), m');
-             * }: m
-             */
-            val = PRF_ARG1 (wlass);
-            mem = PRF_ARG2 (wlass);
-            DBUG_ASSERT ((NODE_TYPE (val) == N_prf) && (PRF_PRF (val) == F_copy),
-                         "Illegal code situation");
-            cval = PRF_ARG1 (val);
-            memop = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (mem))));
-            if ((PRF_PRF (memop) == F_suballoc)
-                && (DFMtestMaskEntry (INFO_RB_LOCALVARS (arg_info), NULL, ID_AVIS (cval)))
-                && ((NODE_TYPE (ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (cval)))) == N_with)
-                    || (NODE_TYPE (ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (cval))))
-                        == N_with2))) {
+        if (NODE_TYPE (wlass) == N_prf) {
+            switch (PRF_PRF (wlass)) {
+            case F_fill:
                 /*
-                 * Full branch in order to be able to move suballoc upwards
+                 * Search for suballoc situation
+                 *
+                 *   a  = with ...
+                 *   m' = suballoc( A, iv);
+                 *   m  = fill( copy( a), m');
+                 * }: m
                  */
-                DFMsetMaskSet (INFO_RB_DRCS (arg_info));
-            }
-            break;
+                val = PRF_ARG1 (wlass);
+                mem = PRF_ARG2 (wlass);
+                if ((NODE_TYPE (val) == N_prf) && (PRF_PRF (val) == F_copy)) {
+                    cval = PRF_ARG1 (val);
+                    memop = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (mem))));
+                    if ((PRF_PRF (memop) == F_suballoc)
+                        && (DFMtestMaskEntry (INFO_RB_LOCALVARS (arg_info), NULL,
+                                              ID_AVIS (cval)))
+                        && ((NODE_TYPE (ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (cval))))
+                             == N_with)
+                            || (NODE_TYPE (ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (cval))))
+                                == N_with2))) {
+                        /*
+                         * Full branch in order to be able to move suballoc upwards
+                         */
+                        DFMsetMaskSet (INFO_RB_DRCS (arg_info));
+                    }
+                }
+                break;
 
-        case F_wl_assign:
-            /*
-             * Search for selection
-             *
-             *   a = fill( B[...], ...)
-             *   r = wl_assign( a, ..., ...);
-             * }: r
-             *
-             * OR
-             *
-             *   a = fill ( idx_sel( ..., B), ...);
-             *   r = wl_assign( a, ..., ...);
-             * }: r
-             */
-            memval = ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (PRF_ARG1 (wlass))));
-            if ((NODE_TYPE (memval) == N_prf) && (PRF_PRF (memval) == F_fill)
-                && (NODE_TYPE (PRF_ARG1 (memval)) == N_prf)
-                && ((PRF_PRF (PRF_ARG1 (memval)) == F_sel)
-                    || (PRF_PRF (PRF_ARG1 (memval)) == F_idx_sel))) {
-                DFMsetMaskEntrySet (INFO_RB_DRCS (arg_info), NULL,
-                                    ID_AVIS (PRF_ARG2 (PRF_ARG1 (memval))));
-            }
-            break;
+            case F_wl_assign:
+                /*
+                 * Search for selection
+                 *
+                 *   a = fill( B[...], ...)
+                 *   r = wl_assign( a, ..., ...);
+                 * }: r
+                 *
+                 * OR
+                 *
+                 *   a = fill ( idx_sel( ..., B), ...);
+                 *   r = wl_assign( a, ..., ...);
+                 * }: r
+                 */
+                memval = ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (PRF_ARG1 (wlass))));
+                if ((NODE_TYPE (memval) == N_prf) && (PRF_PRF (memval) == F_fill)
+                    && (NODE_TYPE (PRF_ARG1 (memval)) == N_prf)
+                    && ((PRF_PRF (PRF_ARG1 (memval)) == F_sel)
+                        || (PRF_PRF (PRF_ARG1 (memval)) == F_idx_sel))) {
+                    DFMsetMaskEntrySet (INFO_RB_DRCS (arg_info), NULL,
+                                        ID_AVIS (PRF_ARG2 (PRF_ARG1 (memval))));
+                }
+                break;
 
-        default:
-            DBUG_ASSERT ((0), "Illegal WITH-LOOP assignment found!");
-            break;
+            default:
+                DBUG_PRINT ("EMRB", ("No suballoc or wl_assign found: Fold-Withop?"));
+                break;
+            }
         }
-
         cexprs = EXPRS_NEXT (cexprs);
+    }
+
+    /*
+     * restore local identifiers
+     */
+    INFO_RB_LOCALVARS (arg_info) = DFMremoveMask (INFO_RB_LOCALVARS (arg_info));
+    INFO_RB_LOCALVARS (arg_info) = oldlocals;
+
+    /*
+     * Traverse next code
+     */
+    if (CODE_NEXT (arg_node) != NULL) {
+        CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -1092,7 +1108,7 @@ EMRBgenarray (node *arg_node, info *arg_info)
     MakeWithopReuseBranches (GENARRAY_MEM (arg_node), arg_info);
 
     if (GENARRAY_NEXT (arg_node) != NULL) {
-        TRAVdo (GENARRAY_NEXT (arg_node), arg_info);
+        GENARRAY_NEXT (arg_node) = TRAVdo (GENARRAY_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -1118,7 +1134,7 @@ EMRBmodarray (node *arg_node, info *arg_info)
     MakeWithopReuseBranches (MODARRAY_MEM (arg_node), arg_info);
 
     if (MODARRAY_NEXT (arg_node) != NULL) {
-        TRAVdo (MODARRAY_NEXT (arg_node), arg_info);
+        MODARRAY_NEXT (arg_node) = TRAVdo (MODARRAY_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
