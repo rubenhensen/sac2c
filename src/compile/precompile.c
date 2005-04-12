@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.113  2005/04/12 15:51:32  ktr
+ * Steps are now enumerated automatically
+ *
  * Revision 3.112  2005/03/19 23:18:02  sbs
  * initial call to NT2OTdoTransform eliminated. THIS IS ESSENTIAL for AUD wls.
  * Furthermore NT2OTdoTransform should NEVER EVER be called outside of typecheck!!!
@@ -64,12 +67,14 @@
 node *
 PRECdoPrecompile (node *syntax_tree)
 {
+    int step = 1;
+
     DBUG_ENTER ("Precompile");
 
     /*
      * Set Linksign
      */
-    DBUG_PRINT ("PREC", ("step 0: Set Linksign"));
+    DBUG_PRINT ("PREC", ("step %d: Set Linksign", step++));
     syntax_tree = SLSdoSetLinksign (syntax_tree);
     if (ILIBstringCompare (global.break_specifier, "sls")) {
         goto DONE;
@@ -78,7 +83,7 @@ PRECdoPrecompile (node *syntax_tree)
     /*
      * MarkMemVals
      */
-    DBUG_PRINT ("PREC", ("step 1: renaming MemVals"));
+    DBUG_PRINT ("PREC", ("step %d: renaming MemVals", step++));
     syntax_tree = MMVdoMarkMemVals (syntax_tree);
     if (ILIBstringCompare (global.break_specifier, "mmv")) {
         goto DONE;
@@ -87,7 +92,7 @@ PRECdoPrecompile (node *syntax_tree)
     /*
      * Object precompilation
      */
-    DBUG_PRINT ("PREC", ("step 2: Object precompilation"));
+    DBUG_PRINT ("PREC", ("step %d: Object precompilation", step++));
     /* FIX ME */
     if (ILIBstringCompare (global.break_specifier, "opc")) {
         goto DONE;
@@ -96,7 +101,7 @@ PRECdoPrecompile (node *syntax_tree)
     /*
      * Function precompilation
      */
-    DBUG_PRINT ("PREC", ("step 3: function precompilation"));
+    DBUG_PRINT ("PREC", ("step %d: function precompilation", step++));
     syntax_tree = FPCdoFunctionPrecompile (syntax_tree);
     if (ILIBstringCompare (global.break_specifier, "fpc")) {
         goto DONE;
@@ -105,7 +110,7 @@ PRECdoPrecompile (node *syntax_tree)
     /*
      * Type conversions
      */
-    DBUG_PRINT ("PREC", ("step 4: type conversions"));
+    DBUG_PRINT ("PREC", ("step %d: type conversions", step++));
     syntax_tree = TCPdoTypeConversions (syntax_tree);
     if (ILIBstringCompare (global.break_specifier, "tcp")) {
         goto DONE;
@@ -114,7 +119,7 @@ PRECdoPrecompile (node *syntax_tree)
     /*
      * Adjusting fold functions ( MT only )
      */
-    DBUG_PRINT ("PREC", ("step 5: Adjusting fold functions"));
+    DBUG_PRINT ("PREC", ("step %d: Adjusting fold functions", step++));
     /* FIX ME */
     if (global.mtmode != MT_none) {
         DBUG_ASSERT ((0), "IMPLEMENT ME!");
@@ -126,7 +131,7 @@ PRECdoPrecompile (node *syntax_tree)
     /*
      * Type conversions
      */
-    DBUG_PRINT ("PREC", ("step 6: renaming identifiers"));
+    DBUG_PRINT ("PREC", ("step %d: renaming identifiers", step++));
     syntax_tree = RIDdoRenameIdentifiers (syntax_tree);
     if (ILIBstringCompare (global.break_specifier, "RID")) {
         goto DONE;
