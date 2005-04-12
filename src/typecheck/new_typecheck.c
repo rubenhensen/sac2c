@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.72  2005/04/12 11:07:26  sah
+ * fixed call of TEmakeInfo
+ *
  * Revision 3.71  2005/03/19 23:16:24  sbs
  * AUD AUD support requires traversal of CODE_NEXT
  *
@@ -2179,7 +2182,7 @@ NTCfold (node *arg_node, info *arg_info)
 
         args = TYmakeProductType (2, acc, elems);
         wrapper = FOLD_FUNDEF (arg_node);
-        info = TEmakeInfo (global.linenum, "fold fun", FUNDEF_NAME (wrapper),
+        info = TEmakeInfo (global.linenum, "fold fun", FUNDEF_MOD (wrapper),
                            FUNDEF_NAME (wrapper), wrapper,
                            INFO_NTC_LAST_ASSIGN (arg_info), NULL, NULL);
         res = NTCCTcomputeType (NTCCTudf, info, args);
