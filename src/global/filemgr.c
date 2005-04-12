@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2005/04/12 13:57:31  sah
+ * made returned strings constant as they point to a static buffer.
+ * modified implementation accordingly.
+ *
  * Revision 1.8  2005/03/10 09:41:09  cg
  * Handling of paths and creation of temporary directory brushed.
  *
@@ -149,8 +153,8 @@ static int bufsize[4];
  *
  */
 
-char *
-FMGRfindFile (pathkind_t p, char *name)
+const char *
+FMGRfindFile (pathkind_t p, const char *name)
 {
     FILE *file = NULL;
     static char buffer[MAX_FILE_NAME];
@@ -192,7 +196,7 @@ FMGRfindFile (pathkind_t p, char *name)
 /******************************************************************************
  *
  * function:
- *   bool FMGRcheckSystemLibrary( char *name)
+ *   bool FMGRcheckSystemLibrary( const char *name)
  *
  * description:
  *
@@ -203,7 +207,7 @@ FMGRfindFile (pathkind_t p, char *name)
  ******************************************************************************/
 
 bool
-FMGRcheckSystemLibrary (char *name)
+FMGRcheckSystemLibrary (const char *name)
 {
     int result;
 
@@ -231,7 +235,7 @@ FMGRcheckSystemLibrary (char *name)
 /******************************************************************************
  *
  * function:
- *   bool FMGRcheckExistFile(char *dir, char *name)
+ *   bool FMGRcheckExistFile(const char *dir, const char *name)
  *
  * description:
  *
@@ -243,7 +247,7 @@ FMGRcheckSystemLibrary (char *name)
  ******************************************************************************/
 
 bool
-FMGRcheckExistFile (char *dir, char *name)
+FMGRcheckExistFile (const char *dir, const char *name)
 {
     char *tmp;
     FILE *file;
@@ -287,7 +291,7 @@ FMGRcheckExistFile (char *dir, char *name)
  */
 
 void
-FMGRappendPath (pathkind_t p, char *path)
+FMGRappendPath (pathkind_t p, const char *path)
 {
     int len;
 
@@ -321,7 +325,7 @@ FMGRappendPath (pathkind_t p, char *path)
  */
 
 static void
-AppendEnvVar (pathkind_t p, char *var)
+AppendEnvVar (pathkind_t p, const char *var)
 {
     int len;
     char *buffer;
@@ -346,7 +350,7 @@ AppendEnvVar (pathkind_t p, char *var)
 /******************************************************************************
  *
  * function:
- *   void AppendConfigPaths(int pathkind, char *path
+ *   void AppendConfigPaths(int pathkind, const char *path
  *
  * description:
  *   This function adds the paths for module/class declarations and
@@ -357,17 +361,24 @@ AppendEnvVar (pathkind_t p, char *var)
  ******************************************************************************/
 
 static void
-AppendConfigPaths (pathkind_t pathkind, char *path)
+AppendConfigPaths (pathkind_t pathkind, const char *path)
 {
     char *pathentry;
     char buffer[MAX_PATH_LEN];
     char *envvar_end;
     char *envvar;
+    char *ptoken;
     int envvar_length;
 
     DBUG_ENTER ("AppendConfigPaths");
 
-    pathentry = strtok (path, ":");
+    /*
+     * we have to copy path here, as strtok modifies it
+     */
+
+    ptoken = ILIBstringCopy (path);
+
+    pathentry = strtok (ptoken, ":");
 
     while (pathentry != NULL) {
         if (pathentry[0] == '$') {
@@ -394,12 +405,10 @@ AppendConfigPaths (pathkind_t pathkind, char *path)
             FMGRappendPath (pathkind, pathentry);
         }
 
-        if (pathentry != path) {
-            *(pathentry - 1) = ':';
-        }
-
         pathentry = strtok (NULL, ":");
     }
+
+    ptoken = ILIBfree (ptoken);
 
     DBUG_VOID_RETURN;
 }
@@ -467,8 +476,8 @@ FMGRsetupPaths ()
  *
  */
 
-char *
-FMGRabsolutePathname (char *path)
+const char *
+FMGRabsolutePathname (const char *path)
 {
     char *tmp;
     static char buffer[MAX_PATH_LEN];
@@ -515,7 +524,7 @@ FMGRabsolutePathname (char *path)
  */
 
 FILE *
-FMGRwriteOpen (char *format, ...)
+FMGRwriteOpen (const char *format, ...)
 {
     va_list arg_p;
     static char buffer[MAX_PATH_LEN];
@@ -539,7 +548,7 @@ FMGRwriteOpen (char *format, ...)
 /******************************************************************************
  *
  * function:
- *   locationtype FindLocationOfFile( char *file)
+ *   locationtype FindLocationOfFile( const char *file)
  *
  * description:
  *   This function checks wether file contains "$SACBASE/stdlib/".
@@ -549,7 +558,7 @@ FMGRwriteOpen (char *format, ...)
  ******************************************************************************/
 
 locationtype
-FindLocationOfFile (char *file)
+FindLocationOfFile (const char *file)
 {
     static char stdlib_loc[MAX_FILE_NAME];
     char *sacbase;
@@ -627,11 +636,11 @@ FMGRsetFileNames (node *module)
             global.targetdir = ILIBstringConcat (global.outfilename, "/");
         }
 
-        global.modulename = MODULE_NAME (module);
+        global.modulename = ILIBstringCopy (MODULE_NAME (module));
         global.cfilename = ILIBstringConcat (MODULE_NAME (module), ".c");
         global.outfilename = ILIBstringConcat (MODULE_NAME (module), ".lib");
 
-        global.targetdir = FMGRabsolutePathname (global.targetdir);
+        global.targetdir = ILIBstringCopy (FMGRabsolutePathname (global.targetdir));
     }
 
     DBUG_VOID_RETURN;

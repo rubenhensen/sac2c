@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2005/04/12 13:57:31  sah
+ * made returned strings constant as they point to a static buffer.
+ * modified implementation accordingly.
+ *
  * Revision 1.10  2005/03/10 09:41:09  cg
  * Handling of paths and creation of temporary directory brushed.
  *
@@ -109,14 +113,14 @@
 #include <stdio.h>
 #include "types.h"
 
-extern char *FMGRfindFile (pathkind_t p, char *name);
-extern void FMGRappendPath (pathkind_t p, char *path);
+extern const char *FMGRfindFile (pathkind_t p, const char *name);
+extern void FMGRappendPath (pathkind_t p, const char *path);
 extern void FMGRsetupPaths ();
-extern char *FMGRabsolutePathname (char *path);
-extern FILE *FMGRwriteOpen (char *format, ...);
-extern bool FMGRcheckExistFile (char *dir, char *name);
-extern locationtype FMGRfindLocationOfFile (char *file);
-extern bool FMGRcheckSystemLibrary (char *name);
+extern const char *FMGRabsolutePathname (const char *path);
+extern FILE *FMGRwriteOpen (const char *format, ...);
+extern bool FMGRcheckExistFile (const char *dir, const char *name);
+extern locationtype FMGRfindLocationOfFile (const char *file);
+extern bool FMGRcheckSystemLibrary (const char *name);
 extern void FMGRsetFileNames (node *module);
 extern void FMGRdeleteTmpDir ();
 extern void FMGRcreateTmpDir ();
