@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2005/04/12 15:15:36  sah
+ * cleaned up module system compiler args
+ * and sac2crc parameters
+ *
  * Revision 1.9  2005/04/12 13:57:31  sah
  * made returned strings constant as they point to a static buffer.
  * modified implementation accordingly.
@@ -443,20 +447,15 @@ FMGRsetupPaths ()
     DBUG_ENTER ("FMGRsetupPaths");
 
     FMGRappendPath (PK_path, ".");
-    FMGRappendPath (PK_moddec_path, ".");
-    FMGRappendPath (PK_modimp_path, ".");
+    FMGRappendPath (PK_mod_path, ".");
 
     AppendEnvVar (PK_path, "SAC_PATH");
-    AppendEnvVar (PK_moddec_path, "SAC_DEC_PATH");
-    AppendEnvVar (PK_modimp_path, "SAC_LIBRARY_PATH");
+    AppendEnvVar (PK_mod_path, "SAC_LIBRARY_PATH");
 
-    AppendConfigPaths (PK_moddec_path, global.config.stdlib_decpath);
-    AppendConfigPaths (PK_modimp_path, global.config.stdlib_libpath);
-    AppendConfigPaths (PK_systemlib_path, global.config.system_libpath);
+    AppendConfigPaths (PK_mod_path, global.config.modpath);
 
     DBUG_PRINT ("FMGR", ("PATH is %s", path_bufs[PK_path]));
-    DBUG_PRINT ("FMGR", ("MODDEC_PATH is %s", path_bufs[PK_moddec_path]));
-    DBUG_PRINT ("FMGR", ("MODIMP_PATH is %s", path_bufs[PK_modimp_path]));
+    DBUG_PRINT ("FMGR", ("MOD_PATH is %s", path_bufs[PK_mod_path]));
     DBUG_PRINT ("FMGR", ("SYSTEMLIB_PATH is %s", path_bufs[PK_systemlib_path]));
 
     DBUG_VOID_RETURN;

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2005/04/12 15:15:36  sah
+ * cleaned up module system compiler args
+ * and sac2crc parameters
+ *
  * Revision 1.11  2005/04/12 13:57:00  sah
  * now, MODIMP_PATH is used to find module
  * libraries
@@ -76,7 +80,7 @@ AddModuleToPool (const char *name)
     tmp = ILIBmalloc (sizeof (char) * (strlen (name) + 7));
     sprintf (tmp, "lib%s.so", name);
 
-    result->sofile = ILIBstringCopy (FMGRfindFile (PK_modimp_path, tmp));
+    result->sofile = ILIBstringCopy (FMGRfindFile (PK_mod_path, tmp));
 
     if (result->sofile == NULL) {
         CTIabort ("Cannot find library `%s'", tmp);

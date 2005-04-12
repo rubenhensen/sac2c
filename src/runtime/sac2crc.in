@@ -49,21 +49,7 @@ MOVE             :=  mv
 RSH              :=  rsh
 DUMP_OUTPUT      :=  ">/dev/null 2>&1"
  
-STDLIB_DECPATH   :=  "$SACBASE/stdlib/modules/structures:"
-                     "$SACBASE/stdlib/modules/numerical:"
-                     "$SACBASE/stdlib/classes/random:"
-                     "$SACBASE/stdlib/world/stdio:"
-                     "$SACBASE/stdlib/world/system:"
-                     "$SACBASE/stdlib/world/x-window:"
-                     "$SACBASE/stdlib/hidden"
- 
-STDLIB_LIBPATH   :=  "$SACBASE/stdlib/modules/structures/lib:"
-                     "$SACBASE/stdlib/modules/numerical/lib:"
-                     "$SACBASE/stdlib/classes/random/lib:"
-                     "$SACBASE/stdlib/world/stdio/lib:"
-                     "$SACBASE/stdlib/world/system/lib:"
-                     "$SACBASE/stdlib/world/x-window/lib:"
-                     "$SACBASE/stdlib/hidden/lib"
+LIBPATH          :=  ""
  
 SYSTEM_LIBPATH   :=  ""
 

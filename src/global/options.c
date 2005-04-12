@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.86  2005/04/12 15:15:36  sah
+ * cleaned up module system compiler args
+ * and sac2crc parameters
+ *
  * Revision 3.85  2005/04/07 16:16:27  cg
  * Textual arguments to command line options are now parsed case insensitive.
  * This allows us to write -noopt or -noOPT without specifying two different
@@ -484,11 +488,9 @@ OPTanalyseCommandline (node *syntax_tree)
     ARGS_OPTION ("initwheap", ARG_NUM (global.initial_worker_heapsize));
     ARGS_OPTION ("inituheap", ARG_NUM (global.initial_unified_heapsize));
 
-    ARGS_OPTION ("I", FMGRappendPath (PK_moddec_path, FMGRabsolutePathname (ARG)));
-
     ARGS_OPTION_BEGIN ("L")
     {
-        FMGRappendPath (PK_modimp_path, FMGRabsolutePathname (ARG));
+        FMGRappendPath (PK_mod_path, FMGRabsolutePathname (ARG));
         FMGRappendPath (PK_systemlib_path, FMGRabsolutePathname (ARG));
     }
     ARGS_OPTION_END ("L");
@@ -554,10 +556,7 @@ OPTanalyseCommandline (node *syntax_tree)
     }
     ARGS_OPTION_END ("minarrayrep");
 
-    ARGS_FLAG ("MMlib", global.makedeps = 4);
-    ARGS_FLAG ("MM", global.makedeps = 3);
-    ARGS_FLAG ("Mlib", global.makedeps = 2);
-    ARGS_FLAG ("M", global.makedeps = 1);
+    ARGS_FLAG ("M", global.makedeps = TRUE);
 
     ARGS_OPTION_BEGIN ("numthreads")
     {

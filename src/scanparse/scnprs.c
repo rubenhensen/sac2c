@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.23  2005/04/12 15:15:36  sah
+ * cleaned up module system compiler args
+ * and sac2crc parameters
+ *
  * Revision 3.22  2005/01/11 13:52:12  cg
  * Converted output from Error.h to ctinfo.c
  *
@@ -110,7 +114,7 @@
 node *
 SPdoScanParse ()
 {
-    char *pathname;
+    const char *pathname;
     char cccallstr[MAX_PATH_LEN];
     char *cppfile;
     int err;

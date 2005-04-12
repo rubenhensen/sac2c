@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2005/04/12 15:15:36  sah
+ * cleaned up module system compiler args
+ * and sac2crc parameters
+ *
  * Revision 3.16  2005/03/10 09:41:09  cg
  * Adjusted RSCevaluateConfiguration() to compiler phase driver function
  * calling conventions.
@@ -216,8 +220,7 @@ static struct {
   {"RSH", str, &global.config.rsh},
   {"DUMP_OUTPUT", str, &global.config.dump_output},
 
-  {"STDLIB_DECPATH", str, &global.config.stdlib_decpath},
-  {"STDLIB_LIBPATH", str, &global.config.stdlib_libpath},
+  {"LIBPATH", str, &global.config.modpath},
   {"SYSTEM_LIBPATH", str, &global.config.system_libpath},
   {"TMPDIR", str, &global.config.tmpdir},
 

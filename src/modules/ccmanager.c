@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2005/04/12 15:15:36  sah
+ * cleaned up module system compiler args
+ * and sac2crc parameters
+ *
  * Revision 1.10  2005/04/12 13:58:41  sah
  * fixed small memory leak
  *
@@ -171,7 +175,8 @@ AddEfenceLib (str_buf *buffer)
     if (global.use_efence) {
         char *efence;
 
-        efence = FMGRfindFile (PK_systemlib_path, "libefence.a");
+        efence = ILIBstringCopy (FMGRfindFile (PK_systemlib_path, "libefence.a"));
+
         if (efence == NULL) {
             CTIwarn ("Unable to find `libefence.a' in SYSTEMLIB_PATH");
         } else {
@@ -218,7 +223,7 @@ BuildDepLibsStringProg (const char *lib, strstype_t kind, void *rest)
          */
         libname = ILIBmalloc (sizeof (char) * (strlen (lib) + 6));
         sprintf (libname, "lib%s.a", lib);
-        result = ILIBstringCopy (FMGRfindFile (PK_modimp_path, libname));
+        result = ILIBstringCopy (FMGRfindFile (PK_mod_path, libname));
         libname = ILIBfree (libname);
         break;
     case STRS_extlib:

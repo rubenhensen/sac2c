@@ -2,6 +2,10 @@
 /*
  *
  * $Log$
+ * Revision 1.24  2005/04/12 15:15:36  sah
+ * cleaned up module system compiler args
+ * and sac2crc parameters
+ *
  * Revision 1.23  2005/03/10 09:41:09  cg
  * Removed support for -lac2fun and -fun2lac
  * Compiler phase names are now static in phase.c
@@ -497,7 +501,7 @@ GLOBAL (bool, libstat, FALSE)
  * Don't actually compile, but display library information.
  */
 
-GLOBAL (int, makedeps, 0)
+GLOBAL (bool, makedeps, FALSE)
 /*
  * Don't actually compile, but infer module dependencies.
  */

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2005/04/12 15:15:36  sah
+ * cleaned up module system compiler args
+ * and sac2crc parameters
+ *
  * Revision 1.6  2005/02/18 10:37:23  sah
  * module system fixes
  *
@@ -31,6 +35,8 @@
 #include "internal_lib.h"
 #include "stringset.h"
 #include "resource.h"
+
+#include <string.h>
 
 static void *
 BuildDepLibsStringMod (const char *lib, strstype_t kind, void *rest)

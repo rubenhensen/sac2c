@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.22  2005/04/12 15:15:36  sah
+ * cleaned up module system compiler args
+ * and sac2crc parameters
+ *
  * Revision 1.21  2005/03/10 09:41:09  cg
  * Added enumeration type for compiler subphases.
  *
@@ -880,8 +884,7 @@ typedef struct {
     char *rsh;
     char *dump_output;
 
-    char *stdlib_decpath;
-    char *stdlib_libpath;
+    char *modpath;
     char *system_libpath;
     char *tmpdir;
 
@@ -923,12 +926,7 @@ typedef void *(*strsfoldfun_p) (const char *elem, strstype_t kind, void *rest);
  * moved from filemgr.h
  */
 
-typedef enum {
-    PK_path = 0,
-    PK_moddec_path = 1,
-    PK_modimp_path = 2,
-    PK_systemlib_path = 3
-} pathkind_t;
+typedef enum { PK_path = 0, PK_mod_path = 1, PK_systemlib_path = 2 } pathkind_t;
 
 /*
  * moved from libmanager.h
