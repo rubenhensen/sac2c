@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.109  2005/04/12 15:16:58  sah
+ * replaced strcmp by ILIBstringCompare
+ *
  * Revision 3.108  2005/01/12 15:49:05  cg
  * Bugs fixed in output conversion.
  *
@@ -5006,7 +5009,7 @@ SetSegs (node *pragma, node *cubes, int iter_dims, bool fold_float)
         while (aps != NULL) {
 
 #define WLP(fun, str, ieee)                                                              \
-    if (strcmp (AP_NAME (EXPRS_EXPR (aps)), str) == 0) {                                 \
+    if (ILIBstringCompare (AP_NAME (EXPRS_EXPR (aps)), str)) {                           \
         if ((!fold_float) || (!global.enforce_ieee) || ieee) {                           \
             segs = fun (segs, AP_ARGS (EXPRS_EXPR (aps)), cubes, iter_dims,              \
                         global.linenum);                                                 \
@@ -7367,7 +7370,7 @@ ProcessSegments (node *segs, int iter_dims, shpseg *iter_shp, bool do_naive_comp
             WLSEG_CONTENTS (seg) = SplitWl (WLSEG_CONTENTS (seg));
         }
         if ((global.break_after == PH_wltrans)
-            && (!strcmp (global.break_specifier, "split"))) {
+            && (ILIBstringCompare (global.break_specifier, "split"))) {
             goto DONE;
         }
 
@@ -7386,7 +7389,7 @@ ProcessSegments (node *segs, int iter_dims, shpseg *iter_shp, bool do_naive_comp
             }
         }
         if ((global.break_after == PH_wltrans)
-            && (!strcmp (global.break_specifier, "block"))) {
+            && (ILIBstringCompare (global.break_specifier, "block"))) {
             goto DONE;
         }
 
@@ -7399,7 +7402,7 @@ ProcessSegments (node *segs, int iter_dims, shpseg *iter_shp, bool do_naive_comp
               = BlockWl (WLSEG_CONTENTS (seg), iter_dims, WLSEG_UBV (seg), TRUE);
         }
         if ((global.break_after == PH_wltrans)
-            && (!strcmp (global.break_specifier, "ublock"))) {
+            && (ILIBstringCompare (global.break_specifier, "ublock"))) {
             goto DONE;
         }
 
@@ -7411,7 +7414,7 @@ ProcessSegments (node *segs, int iter_dims, shpseg *iter_shp, bool do_naive_comp
             WLSEG_CONTENTS (seg) = MergeWl (WLSEG_CONTENTS (seg));
         }
         if ((global.break_after == PH_wltrans)
-            && (!strcmp (global.break_specifier, "merge"))) {
+            && (ILIBstringCompare (global.break_specifier, "merge"))) {
             goto DONE;
         }
 
@@ -7423,7 +7426,7 @@ ProcessSegments (node *segs, int iter_dims, shpseg *iter_shp, bool do_naive_comp
             WLSEG_CONTENTS (seg) = OptWl (WLSEG_CONTENTS (seg));
         }
         if ((global.break_after == PH_wltrans)
-            && (!strcmp (global.break_specifier, "opt"))) {
+            && (ILIBstringCompare (global.break_specifier, "opt"))) {
             goto DONE;
         }
 
@@ -7435,7 +7438,7 @@ ProcessSegments (node *segs, int iter_dims, shpseg *iter_shp, bool do_naive_comp
             WLSEG_CONTENTS (seg) = FitWl (WLSEG_CONTENTS (seg));
         }
         if ((global.break_after == PH_wltrans)
-            && (!strcmp (global.break_specifier, "fit"))) {
+            && (ILIBstringCompare (global.break_specifier, "fit"))) {
             goto DONE;
         }
 
@@ -7448,7 +7451,7 @@ ProcessSegments (node *segs, int iter_dims, shpseg *iter_shp, bool do_naive_comp
               = NormWl (iter_dims, iter_shp, WLSEG_IDX_MAX (seg), WLSEG_CONTENTS (seg));
         }
         if ((global.break_after == PH_wltrans)
-            && (!strcmp (global.break_specifier, "norm"))) {
+            && (ILIBstringCompare (global.break_specifier, "norm"))) {
             goto DONE;
         }
 
@@ -7458,7 +7461,7 @@ ProcessSegments (node *segs, int iter_dims, shpseg *iter_shp, bool do_naive_comp
         DBUG_EXECUTE ("WLtrans", CTInote ("step 12: fill gaps (all)"););
         InsertNoopNodes (WLSEGX_CONTENTS (seg));
         if ((global.break_after == PH_wltrans)
-            && (!strcmp (global.break_specifier, "fill2"))) {
+            && (ILIBstringCompare (global.break_specifier, "fill2"))) {
             goto DONE;
         }
 
@@ -7837,7 +7840,7 @@ WLTRAwith (node *arg_node, info *arg_info)
                 bool do_naive_comp
                   = ExtractNaiveCompPragma (WITH_PRAGMA (arg_node), global.linenum);
                 if ((global.break_after == PH_wltrans)
-                    && (!strcmp (global.break_specifier, "conv"))) {
+                    && (ILIBstringCompare (global.break_specifier, "conv"))) {
                     goto DONE;
                 }
 
@@ -7848,7 +7851,7 @@ WLTRAwith (node *arg_node, info *arg_info)
                 cubes
                   = BuildCubes (strides, has_fold, iter_dims, iter_shp, &do_naive_comp);
                 if ((global.break_after == PH_wltrans)
-                    && (!strcmp (global.break_specifier, "cubes"))) {
+                    && (ILIBstringCompare (global.break_specifier, "cubes"))) {
                     goto DONE;
                 }
 
@@ -7863,7 +7866,7 @@ WLTRAwith (node *arg_node, info *arg_info)
                 DBUG_EXECUTE ("WLtrans", CTInote ("step 3: fill gaps (grids)"););
                 cubes = InsertNoopGrids (cubes);
                 if ((global.break_after == PH_wltrans)
-                    && (!strcmp (global.break_specifier, "fill1"))) {
+                    && (ILIBstringCompare (global.break_specifier, "fill1"))) {
                     goto DONE;
                 }
 
@@ -7894,7 +7897,7 @@ WLTRAwith (node *arg_node, info *arg_info)
                     segs = SetSegs (WITH_PRAGMA (arg_node), cubes, iter_dims, fold_float);
                 }
                 if ((global.break_after == PH_wltrans)
-                    && (!strcmp (global.break_specifier, "segs"))) {
+                    && (ILIBstringCompare (global.break_specifier, "segs"))) {
                     goto DONE;
                 }
 
