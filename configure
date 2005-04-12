@@ -4683,9 +4683,9 @@ case "$target_os" in
 echo "${ECHO_T}solaris settings" >&6
     ;;
   *linux*)
-    OSFLAGS="-D_POSIX_SOURCE -D_SVID_SOURCE -D_BSD_SOURCE -Dlint"
+    OSFLAGS="-fPIC -DPIC -D_POSIX_SOURCE -D_SVID_SOURCE -D_BSD_SOURCE -Dlint"
     LD_DYNAMIC="ld -dy -G"
-    LDDYNFLAG="--export-dynamic"
+    LDDYNFLAG="-export-dynamic"
     echo "$as_me:$LINENO: result: linux settings" >&5
 echo "${ECHO_T}linux settings" >&6
     ;;

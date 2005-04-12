@@ -1,5 +1,8 @@
 dnl
 dnl $Log$
+dnl Revision 1.41  2005/04/12 11:02:42  sah
+dnl module system should work on linux now
+dnl
 dnl Revision 1.40  2004/11/29 09:35:11  sah
 dnl added better test for GNU indent
 dnl
@@ -515,9 +518,9 @@ case "$target_os" in
     AC_MSG_RESULT([solaris settings])
     ;;
   *linux*)      
-    OSFLAGS=["-D_POSIX_SOURCE -D_SVID_SOURCE -D_BSD_SOURCE -Dlint"]
+    OSFLAGS=["-fPIC -DPIC -D_POSIX_SOURCE -D_SVID_SOURCE -D_BSD_SOURCE -Dlint"]
     LD_DYNAMIC=["ld -dy -G"]
-    LDDYNFLAG=["--export-dynamic"]
+    LDDYNFLAG=["-export-dynamic"]
     AC_MSG_RESULT([linux settings])
     ;;
   *osf*)	
