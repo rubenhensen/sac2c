@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.36  2005/04/12 15:47:10  ktr
+ * Concrete arguments of special functions are downgraded to the least
+ * upper bound of the concrete and the formal arguments to avoid type
+ * conflicts arising from the second assignment of a variable inside a loop.
+ *
  * Revision 3.35  2005/03/11 14:18:59  cg
  * EXT_ASSIGN information removed when special functions are turned
  * into regular ones.
@@ -160,6 +165,7 @@
 
 #include "dbug.h"
 #include "types.h"
+#include "new_types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "node_basic.h"
@@ -524,6 +530,50 @@ ReturnVarsAreIdentical (node *ext_rets, node *int_rets)
 
 /******************************************************************************
  *
+ * Function:
+ *   void DowngradeConcreteArgs( node *conc_arg, node *form_arg)
+ *
+ * Description:
+ *   The type of each concrete lacfun argument is downgraded to the least
+ *   upper bound of the types of the formal and concrete loop arguments.
+ *
+ ******************************************************************************/
+void
+DowngradeConcreteArgs (node *conc_arg, node *form_arg)
+{
+    ntype *lub;
+
+    DBUG_ENTER ("DowngradeConcreteArgs");
+
+    if (conc_arg != NULL) {
+        DBUG_ASSERT (NODE_TYPE (conc_arg) == N_exprs,
+                     "Concrete function arguments must be N_exprs");
+        DBUG_ASSERT (form_arg != NULL,
+                     "No correspondence between formal and concrete arguments");
+        DBUG_ASSERT (NODE_TYPE (form_arg) == N_arg,
+                     "Formal function arguments must be N_arg");
+
+        DowngradeConcreteArgs (EXPRS_NEXT (conc_arg), ARG_NEXT (form_arg));
+
+        DBUG_ASSERT (NODE_TYPE (EXPRS_EXPR (conc_arg)) == N_id,
+                     "Concrete function argument must be N_id");
+
+        lub = TYlubOfTypes (AVIS_TYPE (ID_AVIS (EXPRS_EXPR (conc_arg))),
+                            AVIS_TYPE (ARG_AVIS (form_arg)));
+
+        AVIS_TYPE (ID_AVIS (EXPRS_EXPR (conc_arg)))
+          = TYfreeType (AVIS_TYPE (ID_AVIS (EXPRS_EXPR (conc_arg))));
+        AVIS_TYPE (ID_AVIS (EXPRS_EXPR (conc_arg))) = lub;
+    } else {
+        DBUG_ASSERT (form_arg == NULL,
+                     "No correspondence between formal and concrete arguments");
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
  * function:
  *   node *TransformIntoDoLoop( node *fundef)
  *
@@ -567,6 +617,11 @@ ReturnVarsAreIdentical (node *ext_rets, node *int_rets)
  *   In some situations it is possible to insert just *one* assignment instead
  *   of three for a parameter at position 'i' (see comment in the header of
  *   BuildRenamingAssignsForDo())
+ *
+ *
+ *   To prepare correct inlining of the function, the type of the concrete
+ *   parameters to the loop function must be downgraded to the type
+ *   of the formal loop arguments.
  *
  *
  *   Important: The following will only happen AFTER EMRefcounting!
@@ -764,11 +819,19 @@ TransformIntoDoLoop (node *fundef)
     ASSIGN_NEXT (cond_assign) = epilogue;
 
     FUNDEF_INSTR (fundef) = TCappendAssign (ass1, cond_assign);
+
+    /*
+     * Downgrade types of the concrete loop arguments to meet the
+     * types of the potentially reassigned formal arguments.
+     */
+    DowngradeConcreteArgs (AP_ARGS (ASSIGN_RHS (FUNDEF_EXT_ASSIGN (fundef))),
+                           FUNDEF_ARGS (fundef));
+
     FUNDEF_INT_ASSIGN (fundef) = NULL;
     FUNDEF_EXT_ASSIGN (fundef) = NULL;
 
     FUNDEF_ISDOFUN (fundef) = FALSE;
-    FUNDEF_ISINLINE (fundef) = TRUE;
+    FUNDEF_ISLACINLINE (fundef) = TRUE;
 
     DBUG_RETURN (fundef);
 }
@@ -788,9 +851,17 @@ TransformIntoCond (node *fundef)
 {
     DBUG_ENTER ("TransformIntoCond");
 
+    /*
+     * Downgrade types of the concrete conditional arguments to meet the
+     * types of the formal arguments that might have been downgraded because
+     * of the inlining an inner loop.
+     */
+    DowngradeConcreteArgs (AP_ARGS (ASSIGN_RHS (FUNDEF_EXT_ASSIGN (fundef))),
+                           FUNDEF_ARGS (fundef));
+
     FUNDEF_EXT_ASSIGN (fundef) = NULL;
     FUNDEF_ISCONDFUN (fundef) = FALSE;
-    FUNDEF_ISINLINE (fundef) = TRUE;
+    FUNDEF_ISLACINLINE (fundef) = TRUE;
 
     DBUG_RETURN (fundef);
 }
