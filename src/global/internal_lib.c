@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.80  2005/04/12 15:13:27  sah
+ * updated signature of ILIBcreateCppCallString.
+ *
  * Revision 3.79  2005/02/16 22:29:13  sah
  * extended set of special characters
  *
@@ -1196,7 +1199,8 @@ ILIBsystemTest (char *format, ...)
 /******************************************************************************
  *
  * Function:
- *   void ILIBcreateCppCallString( char *file, char *cccallstr)
+ *   void ILIBcreateCppCallString( const char *file, char *cccallstr
+ *                                 const char *cppfile)
  *
  * Description:
  *   Checks whether the given filename is empty, i.e., we are reading from
@@ -1206,7 +1210,7 @@ ILIBsystemTest (char *format, ...)
  ******************************************************************************/
 
 void
-ILIBcreateCppCallString (char *file, char *cccallstr, char *cppfile)
+ILIBcreateCppCallString (const char *file, char *cccallstr, const char *cppfile)
 {
     int i;
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.38  2005/04/12 15:13:27  sah
+ * updated signature of ILIBcreateCppCallString.
+ *
  * Revision 3.37  2005/03/10 09:41:09  cg
  * Eliminated deprecated macro definitions.
  *
@@ -223,7 +226,8 @@ extern void ILIBsystemCall (char *format, ...);
 extern int ILIBsystemCall2 (char *format, ...);
 extern int ILIBsystemTest (char *format, ...);
 
-extern void ILIBcreateCppCallString (char *file, char *cccallstr, char *cppfile);
+extern void ILIBcreateCppCallString (const char *file, char *cccallstr,
+                                     const char *cppfile);
 
 extern char *ILIBtmpVar (void);
 extern char *ILIBtmpVarName (char *postfix);
