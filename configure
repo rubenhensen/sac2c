@@ -4676,9 +4676,9 @@ echo $ECHO_N "checking sac2crc system flags... $ECHO_C" >&6
 OSFLAGS=""
 case "$target_os" in
   solaris*)
-    OSFLAGS="-D__EXTENSIONS__ -D__STDC__=0 -DMUST_INIT_YY"
+    OSFLAGS="-D__EXTENSIONS__ -D__STDC__=0 -DMUST_INIT_YY -fPIC -DPIC"
     LD_DYNAMIC="ld -dy -G"
-    LDDYNFLAG="--export-dynamic"
+    LDDYNFLAG="-Wl,--export-dynamic"
     echo "$as_me:$LINENO: result: solaris settings" >&5
 echo "${ECHO_T}solaris settings" >&6
     ;;

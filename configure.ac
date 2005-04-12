@@ -1,5 +1,8 @@
 dnl
 dnl $Log$
+dnl Revision 1.42  2005/04/12 11:07:49  sah
+dnl adjusted compiler settings for solaris
+dnl
 dnl Revision 1.41  2005/04/12 11:02:42  sah
 dnl module system should work on linux now
 dnl
@@ -512,9 +515,9 @@ AC_MSG_CHECKING([sac2crc system flags])
 OSFLAGS=""
 case "$target_os" in
   solaris*)     
-    OSFLAGS=["-D__EXTENSIONS__ -D__STDC__=0 -DMUST_INIT_YY"]
+    OSFLAGS=["-D__EXTENSIONS__ -D__STDC__=0 -DMUST_INIT_YY -fPIC -DPIC"]
     LD_DYNAMIC=["ld -dy -G"]
-    LDDYNFLAG=["--export-dynamic"]
+    LDDYNFLAG=["-Wl,--export-dynamic"]
     AC_MSG_RESULT([solaris settings])
     ;;
   *linux*)      
