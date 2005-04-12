@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2005/04/12 15:49:40  ktr
+ * Added a flag for LAC inlining
+ *
  * Revision 1.11  2005/02/16 14:10:19  mwe
  * some renaming done
  *
@@ -68,6 +71,7 @@ OPTIMIZE ("dcr", dcr, TRUE, TRUE, "dead code removal")
 OPTIMIZE ("cf", cf, FALSE, FALSE, "constant folding")
 OPTIMIZE ("lir", lir, FALSE, FALSE, "loop invariant removal")
 OPTIMIZE ("inl", inl, FALSE, FALSE, "function inlining")
+OPTIMIZE ("lacinl", lacinl, TRUE, TRUE, "lac function inlining")
 OPTIMIZE ("lur", lur, FALSE, FALSE, "loop unrolling")
 OPTIMIZE ("wlur", wlur, FALSE, FALSE, "with-loop unrolling")
 OPTIMIZE ("lus", lus, FALSE, FALSE, "loop unswitching")
