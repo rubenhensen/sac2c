@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2005/04/12 13:58:41  sah
+ * fixed small memory leak
+ *
  * Revision 1.9  2005/02/16 22:29:13  sah
  * fixed dependency machanism (for objfiles)
  *
@@ -215,7 +218,7 @@ BuildDepLibsStringProg (const char *lib, strstype_t kind, void *rest)
          */
         libname = ILIBmalloc (sizeof (char) * (strlen (lib) + 6));
         sprintf (libname, "lib%s.a", lib);
-        result = FMGRfindFile (PK_modimp_path, libname);
+        result = ILIBstringCopy (FMGRfindFile (PK_modimp_path, libname));
         libname = ILIBfree (libname);
         break;
     case STRS_extlib:
