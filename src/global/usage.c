@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.74  2005/04/12 15:16:15  sah
+ * cleaned up module system arguments and
+ * changed copyright notice to something more
+ * reasonable.
+ *
  * Revision 3.73  2005/03/10 09:41:09  cg
  * -lac2fun and -fun2lac eliminated.
  * Compiler phase names are now retrieved via function.
@@ -109,25 +114,10 @@ USGprintUsage ()
       "    -VV             Display verbose version identification.\n"
       "\n"
       "    -libstat        Print status information of the given SAC library file.\n"
-      "                    This option requires the environment variables PWD,\n"
-      "                    USER, and HOST to be set when compiling the module/\n"
-      "                    class implementation in order to work correctly.\n"
       "\n"
       "    -M              Detect dependencies from imported modules/classes and\n"
       "                    write them to stdout in a way suitable for the make\n"
-      "                    utility. Only dependencies from declaration files are\n"
-      "                    considered.\n"
-      "\n"
-      "    -MM             Like `-M' but the output mentions only non-standard\n"
-      "                    library dependencies.\n"
-      "\n"
-      "    -Mlib           Detect dependencies from imported modules/classes and\n"
-      "                    write them to stdout in a way suitable for the make\n"
-      "                    utility. Dependencies from declaration files as well\n"
-      "                    as library files are (recursively) considered.\n"
-      "\n"
-      "    -MMlib          Like `-Mlib' but the output mentions only non standard\n"
-      "                    library dependencies.\n"
+      "                    utility.\n"
       "\n"
       "    NOTE:\n"
       "    When called with one of these options, sac2c does not perform\n"
@@ -139,7 +129,6 @@ USGprintUsage ()
             "    -D <var>=<val>  Set preprocessor variable <var> to <val>.\n"
             "    -cppI <path>    Specify path for preprocessor includes.\n"
             "\n"
-            "    -I <path>       Specify additional module/class declaration file path.\n"
             "    -L <path>       Specify additional SAC library file path.\n"
             "\n"
             "    -o <name>       For compilation of programs:\n"
@@ -973,13 +962,12 @@ USGprintVersionVerbose ()
             (build_host[0] == '\0') ? "???" : build_host,
             (build_os[0] == '\0') ? "???" : build_os);
 
-    printf ("(c) Copyright 1994 - 2004 by\n\n"
+    printf ("(c) Copyright 1994 - 2005 by\n\n"
 
-            "  Christian-Albrechts-Universitaet zu Kiel\n"
-            "  Institut fuer Informatik und Praktische Mathematik\n"
-            "  Herman-Rodewald-Str.3\n"
-            "  D-24118 Kiel\n"
-            "  Germany\n\n");
+            "  SaC Development Team\n\n"
+
+            "  http://www.sac-home.org\n"
+            "  email:info@sac-home.org\n");
 
     DBUG_VOID_RETURN;
 }
@@ -994,21 +982,18 @@ USGprintCopyright ()
 
             "    SAC COPYRIGHT NOTICE, LICENSE, AND DISCLAIMER\n\n"
 
-            "(c) Copyright 1994 - 2004 by\n\n"
+            "(c) Copyright 1994 - 2005 by\n\n"
 
-            "  Christian-Albrechts-Universitaet zu Kiel\n"
-            "  Institut fuer Informatik und Praktische Mathematik\n"
-            "  Herman-Rodewald-Str.3\n"
-            "  D-24118 Kiel\n"
-            "  Germany\n\n");
+            "  SaC Development Team\n\n"
+
+            "  http://www.sac-home.org\n"
+            "  email:info@sac-home.org\n\n");
 
     printf (
       "The SAC compiler, the SAC standard library, and all accompanying\n"
       "software and documentation (in the following named this software)\n"
-      "is developed by the SAC group as part of the Chair of Computer\n"
-      "Organization within the Department of Computer Science and Applied\n"
-      "Mathematics of the University of Kiel (in the following named CAU Kiel)\n"
-      "which reserves all rights on this software.\n"
+      "is developed by the SAC Development Team (in the following named\n"
+      "the developer) which reserves all rights on this software.\n"
       "\n"
       "Permission to use this software is hereby granted free of charge\n"
       "for any non-profit purpose in a non-commercial environment, i.e. for\n"
@@ -1021,12 +1006,12 @@ USGprintCopyright ()
       "a commercial purpose or in a commercial environment is not granted by\n"
       "this license.\n"
       "\n"
-      "CAU Kiel disclaims all warranties with regard to this software, including\n"
-      "all implied warranties of merchantability and fitness.  In no event\n"
-      "shall CAU Kiel be liable for any special, indirect or consequential\n"
-      "damages or any damages whatsoever resulting from loss of use, data, or\n"
-      "profits, whether in an action of contract, negligence, or other\n"
-      "tortuous action, arising out of or in connection with the use or\n"
+      "The developer disclaims all warranties with regard to this software,\n"
+      "including all implied warranties of merchantability and fitness.  In no\n"
+      "event shall the developer be liable for any special, indirect or\n"
+      "consequential damages or any damages whatsoever resulting from loss of\n"
+      "use, data, or profits, whether in an action of contract, negligence, or\n"
+      "other tortuous action, arising out of or in connection with the use or\n"
       "performance of this software. The entire risk as to the quality and\n"
       "performance of this software is with you. Should this software prove\n"
       "defective, you assume the cost of all servicing, repair, or correction.\n\n");
