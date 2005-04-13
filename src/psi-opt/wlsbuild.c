@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2005/04/13 15:27:21  ktr
+ * ConcatVectors concatenates N_array vectors and AKV N_id vectors.
+ *
  * Revision 1.3  2004/11/27 03:09:47  khf
  * adjusted name
  *
@@ -65,6 +68,7 @@
 #include "internal_lib.h"
 #include "shape.h"
 #include "free.h"
+#include "constants.h"
 
 /**
  * INFO structure
@@ -225,28 +229,61 @@ CreateOneVector (int nr)
  * @brief Concatenates vectors vec1 and vec2.
  *        IMPORTANT: Both vectors are inspected only!
  *
- * @param vec1
- * @param vec2
+ * @param vec1   Either an AKV N_id OR a N_array vector
+ * @param vec2   Either an AKV N_id OR a N_array vector
  * @param arg_info
  *
- * @return
+ * @return A N_array vector
  *
  *****************************************************************************/
 static node *
 ConcatVectors (node *vec1, node *vec2, info *arg_info)
 {
     node *res;
-    node *arg_expr_mem[2];
-    node **arg_expr = &arg_expr_mem[0];
+    node *t1 = NULL;
+    node *t2 = NULL;
 
     DBUG_ENTER ("ConcatVectors");
 
-    arg_expr[0] = vec1;
-    arg_expr[1] = vec2;
-    res = CFfoldPrfExpr (F_cat_VxV, arg_expr);
+    /*
+     * In case the arguments are constant N_id nodes, constant arrays are
+     * generated to be able to merge the elements,
+     */
+    if (NODE_TYPE (vec1) == N_id) {
+        DBUG_ASSERT (TYisAKV (ID_NTYPE (vec1)),
+                     "Bounds vectors must be AKV or structural constants!");
+        t1 = COconstant2AST (TYgetValue (ID_NTYPE (vec1)));
+    } else {
+        DBUG_ASSERT (NODE_TYPE (vec1) == N_array,
+                     "Bounds vectors must be AKV or structural constants!");
+        t1 = vec1;
+    }
 
-    if (NODE_TYPE (res) != N_array) {
-        DBUG_ASSERT ((0), "Not yet implemented");
+    if (NODE_TYPE (vec2) == N_id) {
+        DBUG_ASSERT (TYisAKV (ID_NTYPE (vec2)),
+                     "Bounds vectors must be AKV or structural constants!");
+        t2 = COconstant2AST (TYgetValue (ID_NTYPE (vec2)));
+    } else {
+        DBUG_ASSERT (NODE_TYPE (vec1) == N_array,
+                     "Bounds vectors must be AKV or structural constants!");
+        t2 = vec2;
+    }
+
+    /*
+     * concatenate the elements,
+     */
+    res = TCmakeFlatArray (
+      TCappendExprs (DUPdoDupTree (ARRAY_AELEMS (t1)), DUPdoDupTree (ARRAY_AELEMS (t2))));
+
+    /*
+     * and deallocate the newly created constant vectors must be freed.
+     */
+    if (NODE_TYPE (vec1) == N_id) {
+        t1 = FREEdoFreeTree (t1);
+    }
+
+    if (NODE_TYPE (vec2) == N_id) {
+        t2 = FREEdoFreeTree (t2);
     }
 
     DBUG_RETURN (res);
