@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.82  2005/04/13 20:48:36  ktr
+ * signal.h included (required on OS X).
+ *
  * Revision 3.81  2005/04/13 19:57:54  sah
  * added , to special characeters and
  * made the error handling in ILIBsytemCall
@@ -247,6 +250,7 @@
 #include <stdarg.h>
 #include <ctype.h>
 #include <stdlib.h>
+#include <signal.h>
 #include <sys/wait.h>
 
 #include "dbug.h"
