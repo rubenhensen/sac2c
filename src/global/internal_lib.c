@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.81  2005/04/13 19:57:54  sah
+ * added , to special characeters and
+ * made the error handling in ILIBsytemCall
+ * more POSIX like
+ *
  * Revision 3.80  2005/04/12 15:13:27  sah
  * updated signature of ILIBcreateCppCallString.
  *
@@ -241,6 +246,8 @@
 #include <string.h>
 #include <stdarg.h>
 #include <ctype.h>
+#include <stdlib.h>
+#include <sys/wait.h>
 
 #include "dbug.h"
 
@@ -1113,10 +1120,25 @@ ILIBsystemCall (char *format, ...)
 
     exit_code = system (syscall);
 
-    if (exit_code > 0) {
+    if (exit_code == -1) {
+        CTIabort ("System failure while trying to execute shell command.\n"
+                  "(e.g. out of memory).");
+    } else if (WEXITSTATUS (exit_code) > 0) {
         CTIabort ("System failed to execute shell command\n%s\n"
                   "with exit code %d",
-                  syscall, exit_code / 256);
+                  syscall, WEXITSTATUS (exit_code));
+    } else if (WIFSIGNALED (exit_code)) {
+        if (WTERMSIG (exit_code) == SIGINT) {
+            CTIabort ("Child recieved SIGINT when executing shell command \n%s\n",
+                      syscall);
+        } else if (WTERMSIG (exit_code) == SIGQUIT) {
+            CTIabort ("Child recieved SIGQUIT when executing shell command \n%s\n",
+                      syscall);
+        }
+    } else if (exit_code != 0) {
+        CTIabort ("Unknown failure while executing shell command \n%s\n"
+                  "Return value was %d",
+                  syscall, exit_code);
     }
 
     DBUG_VOID_RETURN;
@@ -1337,6 +1359,11 @@ ILIBreplaceSpecialCharacters (char *name)
         switch (name[i]) {
         case '.':
             tmp = "_DO";
+            strcat (&(new_name[j]), tmp);
+            j += strlen (tmp) - 1;
+            break;
+        case ',':
+            tmp = "_CM";
             strcat (&(new_name[j]), tmp);
             j += strlen (tmp) - 1;
             break;
