@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.16  2005/04/13 15:26:45  ktr
+ * fundef traversal now checks whether function body is NULL
+ *
  * Revision 1.15  2005/02/18 22:20:17  mwe
  * debug message removed
  *
@@ -285,7 +288,9 @@ ESDdoElimSubDiv (node *fundef)
         INFO_ESD_FUNDEF (info) = fundef;
 
         TRAVpush (TR_esd);
-        FUNDEF_BODY (fundef) = TRAVdo (FUNDEF_BODY (fundef), info);
+        if (FUNDEF_BODY (fundef) != NULL) {
+            FUNDEF_BODY (fundef) = TRAVdo (FUNDEF_BODY (fundef), info);
+        }
         TRAVpop ();
 
         info = FreeInfo (info);
