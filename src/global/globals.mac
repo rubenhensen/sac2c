@@ -1,7 +1,9 @@
-
 /*
  *
  * $Log$
+ * Revision 1.25  2005/04/13 20:48:36  ktr
+ * set default maxspec to 0 to avoid trouble with the new module system
+ *
  * Revision 1.24  2005/04/12 15:15:36  sah
  * cleaned up module system compiler args
  * and sac2crc parameters
@@ -358,7 +360,7 @@ GLOBAL (bool, enforce_ieee, FALSE)
  * IEEE-754 standard
  */
 
-GLOBAL (int, maxspec, 20)
+GLOBAL (int, maxspec, 0)
 /*
  * Maximum number of specializations per function
  */
