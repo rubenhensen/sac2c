@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2005/04/13 15:27:21  ktr
+ * WLSCgenerator added.
+ *
  * Revision 1.3  2004/11/24 15:21:03  ktr
  * COMPILES!
  *
@@ -45,6 +48,7 @@ extern node *WLSCid (node *arg_node, info *arg_info);
 extern node *WLSCpart (node *arg_node, info *arg_info);
 extern node *WLSCwith (node *arg_node, info *arg_info);
 extern node *WLSCwithid (node *arg_node, info *arg_info);
+extern node *WLSCgenerator (node *arg_node, info *arg_info);
 extern node *WLSCgenarray (node *arg_node, info *arg_info);
 extern node *WLSCmodarray (node *arg_node, info *arg_info);
 extern node *WLSCfold (node *arg_node, info *arg_info);

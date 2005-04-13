@@ -920,6 +920,7 @@
           <node name="Part" />
           <node name="With" />
           <node name="Withid" />
+          <node name="Generator" />
           <node name="Genarray" />
           <node name="Modarray" />
           <node name="Fold" />
