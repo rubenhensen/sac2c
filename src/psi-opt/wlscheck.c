@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2005/04/13 15:27:21  ktr
+ * Bounds vectors must be AKV N_id or structural constants (N_array)
+ *
  * Revision 1.2  2004/11/24 18:51:58  ktr
  * COMPILES!
  *
@@ -39,6 +42,8 @@
  * - res_1 ... res_n must all be AKS and must have equal shape
  *
  * - res_1 ... res_n must not be scalars
+ *
+ * - lb_i, ub_i must either be AKV N_id nodes OR N_array nodes.
  *
  * - if wls_aggressive was specified or size( res_i) < maxwls,
  *    => perform With-Loop Scalarization
@@ -344,6 +349,63 @@ WLSCcode (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *WLSCgenerator(node *arg_node, info *arg_info)
+ *
+ * @brief rules out non-AKV N_id bounds
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return
+ *
+ *****************************************************************************/
+node *
+WLSCgenerator (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("WLSCgenerator");
+
+    /*
+     * WLS cannot be performed if the bound vectors are neither full not
+     * structural constants
+     */
+    if ((NODE_TYPE (GENERATOR_BOUND1 (arg_node)) == N_id)
+        && (!TYisAKV (ID_NTYPE (GENERATOR_BOUND1 (arg_node))))) {
+        INFO_WLS_POSSIBLE (arg_info) = FALSE;
+        DBUG_PRINT ("WLS", ("Bounds vector is neither AKV N_id nor N_array"));
+    }
+
+    if ((NODE_TYPE (GENERATOR_BOUND2 (arg_node)) == N_id)
+        && (!TYisAKV (ID_NTYPE (GENERATOR_BOUND2 (arg_node))))) {
+        INFO_WLS_POSSIBLE (arg_info) = FALSE;
+        DBUG_PRINT ("WLS", ("Bounds vector is neither AKV N_id nor N_array"));
+    }
+
+    if ((GENERATOR_STEP (arg_node) != NULL)
+        && (NODE_TYPE (GENERATOR_STEP (arg_node)) == N_id)
+        && (!TYisAKV (ID_NTYPE (GENERATOR_STEP (arg_node))))) {
+        INFO_WLS_POSSIBLE (arg_info) = FALSE;
+        DBUG_PRINT ("WLS", ("Bounds vector is neither AKV N_id nor N_array"));
+    }
+
+    if ((GENERATOR_WIDTH (arg_node) != NULL)
+        && (NODE_TYPE (GENERATOR_WIDTH (arg_node)) == N_id)
+        && (!TYisAKV (ID_NTYPE (GENERATOR_WIDTH (arg_node))))) {
+        INFO_WLS_POSSIBLE (arg_info) = FALSE;
+        DBUG_PRINT ("WLS", ("Bounds vector is neither AKV N_id nor N_array"));
+    }
+
+    /*
+     * Inner generators must not have dependencies to the outer withloop
+     */
+    if (INFO_WLS_INNERTRAV (arg_info)) {
+        arg_node = TRAVcont (arg_node, arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *WLSCid(node *arg_node, info *arg_info)
  *
  * @brief
@@ -399,6 +461,11 @@ WLSCpart (node *arg_node, info *arg_info)
          * Traverse into the part's code
          */
         PART_CODE (arg_node) = TRAVdo (PART_CODE (arg_node), arg_info);
+
+        /*
+         * Traverse into the generator
+         */
+        PART_GENERATOR (arg_node) = TRAVdo (PART_GENERATOR (arg_node), arg_info);
 
         /*
          * Traverse next part
