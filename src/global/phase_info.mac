@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2005/04/14 14:30:31  jhb
+ * added the subphases
+ *
  * Revision 3.17  2005/03/23 14:52:20  jhb
  * added some subphases of the ast.xml
  *
@@ -121,35 +124,9 @@ SUBPHASE (rsc, "rsc", "Processing sac2c configuration file", RSCevaluateConfigur
 
 SUBPHASE (init, "init", "Initializing data structures", SETUPdoInitializations)
 
-SUBPHASE (createwrappers, "create-wrappsers", "", PHdummy)
-
-SUBPHASE (createwrappercode, "create-wrapper-code", "", PHdummy)
-
 SUBPHASE (annotatenamespace, "annotatenamespace", "", PHdummy)
 
-SUBPHASE (import, "import", "", PHdummy)
-
-SUBPHASE (writesib, "writesib", "", PHdummy)
-
-SUBPHASE (resolvepragma, "resolvepramga", "", PHdummy)
-
-SUBPHASE (respragma, "respragma", "", PHdummy)
-
-SUBPHASE (rs, "rc", "", PHdummy)
-
-SUBPHASE (fun2lac, "fun2lac", "", PHdummy)
-
-SUBPHASE (liftsmpd, "liftsmpd", "", PHdummy)
-
-SUBPHASE (rfin, "rfin", "", PHdummy)
-
-SUBPHASE (mtfin, "mtfin", "", PHdummy)
-
 SUBPHASE (BuildMultithread, "BuildMultithread", "", PHdummy)
-
-SUBPHASE (CreateCells, "CreateCells", "", PHdummy)
-
-SUBPHASE (objhandling, "obj-handling", "", PHdummy)
 
 SUBPHASE (psioptimize, "psi-optimize", "", PHdummy)
 
@@ -193,6 +170,10 @@ SUBPHASE (IVE, "IVE", "", PHdummy)
 
 PHASE (scanparse, "Loading SAC program", PHdummy)
 
+SUBPHASE (resolvepragma, "resolvepramga", "", PHdummy)
+
+SUBPHASE (respragma, "respragma", "", PHdummy)
+
 /***********************************************************************/
 
 PHASE (use, "Resolving used symbols from modules and classes", PHdummy)
@@ -209,6 +190,10 @@ PHASE (flatten, "Simplifying source code", PHdummy)
 
 PHASE (typecheck, "Running type inference system", PHdummy)
 
+SUBPHASE (createwrappers, "create-wrappers", "", PHdummy)
+
+SUBPHASE (createwrappercode, "create-wrapper-code", "", PHdummy)
+
 /***********************************************************************/
 
 PHASE (export, "Processing exports", PHdummy)
@@ -216,6 +201,8 @@ PHASE (export, "Processing exports", PHdummy)
 /***********************************************************************/
 
 PHASE (objects, "Resolving global objects and reference parameters", PHdummy)
+
+SUBPHASE (objhandling, "obj-handling", "", PHdummy)
 
 /***********************************************************************/
 
@@ -228,6 +215,8 @@ PHASE (wlenhance, "Enhancement of with-loops", PHdummy)
 /***********************************************************************/
 
 PHASE (sacopt, "Running SAC optimizations", PHdummy)
+
+SUBPHASE (rc, "rc", "", PHdummy)
 
 /***********************************************************************/
 
@@ -260,6 +249,8 @@ PHASE (compile, "Generating C code", PHdummy)
 /***********************************************************************/
 
 PHASE (genccode, "Creating C file", PHdummy)
+
+SUBPHASE (writesib, "writesib", "", PHdummy)
 
 /***********************************************************************/
 
