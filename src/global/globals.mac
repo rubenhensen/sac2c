@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.26  2005/04/15 13:23:55  ktr
+ * removed lacinline
+ *
  * Revision 1.25  2005/04/13 20:48:36  ktr
  * set default maxspec to 0 to avoid trouble with the new module system
  *
@@ -517,6 +520,11 @@ GLOBAL (bool, gen_cccall, FALSE)
 GLOBAL (bool, show_syscall, FALSE)
 /*
  * Show system calls during compilation.
+ */
+
+GLOBAL (bool, lacinline, TRUE)
+/*
+ * Inline LAC functions
  */
 
 GLOBAL (compiler_phase_t, break_after, PH_final)

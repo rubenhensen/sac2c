@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2005/04/15 13:23:55  ktr
+ * removed lacinline
+ *
  * Revision 1.13  2005/04/15 10:46:08  ktr
  * Inlining is now activated by default
  *
@@ -74,7 +77,6 @@ OPTIMIZE ("dcr", dcr, TRUE, TRUE, "dead code removal")
 OPTIMIZE ("cf", cf, FALSE, FALSE, "constant folding")
 OPTIMIZE ("lir", lir, FALSE, FALSE, "loop invariant removal")
 OPTIMIZE ("inl", inl, TRUE, TRUE, "function inlining")
-OPTIMIZE ("lacinl", lacinl, TRUE, TRUE, "lac function inlining")
 OPTIMIZE ("lur", lur, FALSE, FALSE, "loop unrolling")
 OPTIMIZE ("wlur", wlur, FALSE, FALSE, "with-loop unrolling")
 OPTIMIZE ("lus", lus, FALSE, FALSE, "loop unswitching")
