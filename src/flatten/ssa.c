@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.13  2005/04/15 13:05:11  ktr
+ * global.lacinline
+ *
  * Revision 1.12  2005/04/12 15:49:00  ktr
  * INLdoLACInlining is used instead of INLdoInlining
  *
@@ -165,7 +168,7 @@ SSAundoSsa (node *syntax_tree)
 
     DBUG_PRINT ("SSA", ("call Function Inlining"));
     /* inline loop and cond functions */
-    if (global.optimize.dolacinl) {
+    if (global.lacinline) {
         syntax_tree = INLdoLACInlining (syntax_tree);
     }
 
