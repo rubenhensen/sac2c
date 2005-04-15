@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.30  2005/04/15 09:33:38  ktr
+ * with-loop specific information is now stacked correctly.
+ *
  * Revision 1.29  2005/03/10 13:38:22  mwe
  * bug fixed (duplication of loop funs)
  *
@@ -1670,8 +1673,22 @@ TUPlet (node *arg_node, info *arg_info)
 node *
 TUPwith (node *arg_node, info *arg_info)
 {
+    node *oldwithid;
+    node *oldwithidvec;
+    node *oldwlexprs;
 
     DBUG_ENTER ("TUPwith");
+
+    /*
+     * Stack information about a surrounding withloop
+     */
+    oldwithid = INFO_TUP_WITHID (arg_info);
+    oldwithidvec = INFO_TUP_WITHIDVEC (arg_info);
+    oldwlexprs = INFO_TUP_WLEXPRS (arg_info);
+
+    INFO_TUP_WITHID (arg_info) = NULL;
+    INFO_TUP_WITHIDVEC (arg_info) = NULL;
+    INFO_TUP_WLEXPRS (arg_info) = NULL;
 
     /*
      * top node of with loop
@@ -1698,6 +1715,13 @@ TUPwith (node *arg_node, info *arg_info)
             WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
         }
     }
+
+    /*
+     * restore information for traversal of surrounding withloop
+     */
+    INFO_TUP_WITHID (arg_info) = oldwithid;
+    INFO_TUP_WITHIDVEC (arg_info) = oldwithidvec;
+    INFO_TUP_WLEXPRS (arg_info) = oldwlexprs;
 
     DBUG_RETURN (arg_node);
 }
