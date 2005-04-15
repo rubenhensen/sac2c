@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2005/04/15 08:47:35  ktr
+ * replaced TYcopyType with TYeliminateAKV
+ *
  * Revision 1.9  2005/01/11 11:19:19  cg
  * Converted output from Error.h to ctinfo.c
  *
@@ -140,8 +143,9 @@ MakeAccuAssign (node *fundef, node *lhs_ids, node *idx_vec)
     DBUG_ENTER ("MakeAccuAssign");
 
     nvarname = ILIBtmpVarName (IDS_NAME (lhs_ids));
-    _ids = TBmakeIds (TBmakeAvis (nvarname, TYcopyType (AVIS_TYPE (IDS_AVIS (lhs_ids)))),
-                      NULL);
+    _ids
+      = TBmakeIds (TBmakeAvis (nvarname, TYeliminateAKV (AVIS_TYPE (IDS_AVIS (lhs_ids)))),
+                   NULL);
 
     vardec = TBmakeVardec (IDS_AVIS (_ids), NULL);
 
@@ -193,7 +197,8 @@ MakeFoldFunAssign (node *fundef, node *withop, node *accu_ids, node *cexpr)
     DBUG_ASSERT ((NODE_TYPE (withop) == N_fold), "withop must be a N_fold node!");
 
     nvarname = ILIBtmpVarName (ID_NAME (cexpr));
-    _ids = TBmakeIds (TBmakeAvis (nvarname, TYcopyType (AVIS_TYPE (IDS_AVIS (accu_ids)))),
+    _ids = TBmakeIds (TBmakeAvis (nvarname,
+                                  TYeliminateAKV (AVIS_TYPE (IDS_AVIS (accu_ids)))),
                       NULL);
 
     vardec = TBmakeVardec (IDS_AVIS (_ids), NULL);

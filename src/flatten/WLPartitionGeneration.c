@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.38  2005/04/15 08:47:35  ktr
+ * replaced TYcopyType with TYeliminateAKV
+ *
  * Revision 1.37  2005/03/19 23:11:53  sbs
  * AUD support added; default partitions are eliminated if a WL is identified as nonAUD.
  *
@@ -480,8 +483,9 @@ NewIds (node *nd, node *fundef)
 
     if (NODE_TYPE (nd) == N_id) {
         nvarname = ILIBtmpVarName (ID_NAME (nd));
-        _ids = TBmakeIds (TBmakeAvis (nvarname, TYcopyType (AVIS_TYPE (ID_AVIS (nd)))),
-                          NULL);
+        _ids
+          = TBmakeIds (TBmakeAvis (nvarname, TYeliminateAKV (AVIS_TYPE (ID_AVIS (nd)))),
+                       NULL);
 
         vardec = TBmakeVardec (IDS_AVIS (_ids), NULL);
 
@@ -1327,7 +1331,7 @@ CreateFullPartition (node *wln, info *arg_info)
                                     INFO_WLPG_FUNDEF (arg_info));
         }
 
-        _ids = TBmakeIds (TBmakeAvis (ILIBtmpVar (), TYcopyType (AVIS_TYPE (ID_AVIS (
+        _ids = TBmakeIds (TBmakeAvis (ILIBtmpVar (), TYeliminateAKV (AVIS_TYPE (ID_AVIS (
                                                        EXPRS_EXPR (WITH_CEXPRS (wln)))))),
                           NULL);
         vardec = TBmakeVardec (IDS_AVIS (_ids), NULL);
