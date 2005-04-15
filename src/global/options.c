@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.87  2005/04/15 13:23:04  ktr
+ * added switch -d nolacinline
+ *
  * Revision 3.86  2005/04/12 15:15:36  sah
  * cleaned up module system compiler args
  * and sac2crc parameters
@@ -461,6 +464,7 @@ OPTanalyseCommandline (node *syntax_tree)
         ARG_CHOICE ("treecheck", global.treecheck = TRUE);
         ARG_CHOICE ("efence", global.use_efence = TRUE);
         ARG_CHOICE ("nocleanup", global.cleanup = FALSE);
+        ARG_CHOICE ("nolacinline", global.lacinline = FALSE);
         ARG_CHOICE ("syscall", global.show_syscall = TRUE);
         ARG_CHOICE ("cccall", global.gen_cccall = TRUE; global.cleanup = FALSE);
         ARG_CHOICE_END ();
