@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.152  2005/04/16 14:19:30  khf
+ * DUPdefault added
+ *
  * Revision 3.151  2005/03/04 21:21:42  cg
  * FUNDEF_USED counter etc removed.
  * Handling of FUNDEF_EXT_ASSIGNS drastically simplified.
@@ -2489,6 +2492,22 @@ DUPgenerator (node *arg_node, info *arg_info)
                                 DUPTRAV (GENERATOR_BOUND2 (arg_node)),
                                 DUPTRAV (GENERATOR_STEP (arg_node)),
                                 DUPTRAV (GENERATOR_WIDTH (arg_node)));
+
+    CopyCommonNodeData (new_node, arg_node);
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+
+node *
+DUPdefault (node *arg_node, info *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DUPdefault");
+
+    new_node = TBmakeDefault ();
 
     CopyCommonNodeData (new_node, arg_node);
 

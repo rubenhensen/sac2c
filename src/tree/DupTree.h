@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.46  2005/04/16 14:19:30  khf
+ * DUPdefault added
+ *
  * Revision 3.45  2005/03/04 21:21:42  cg
  * Removed UPcheckAndDupSpecialFundef.
  * Added DUPgetCopiedSpecialFundefs.
@@ -275,6 +278,7 @@ extern node *DUPpart (node *arg_node, info *arg_info);
 extern node *DUPcode (node *arg_node, info *arg_info);
 extern node *DUPwithid (node *arg_node, info *arg_info);
 extern node *DUPgenerator (node *arg_node, info *arg_info);
+extern node *DUPdefault (node *arg_node, info *arg_info);
 
 /* backend with-loop */
 extern node *DUPwith2 (node *arg_node, info *arg_info);
