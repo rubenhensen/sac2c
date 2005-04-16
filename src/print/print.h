@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.43  2005/04/16 14:17:15  khf
+ * print functions for N_default added
+ *
  * Revision 3.42  2005/02/10 14:27:23  jhb
  * added PRTerror
  *
@@ -139,6 +142,7 @@ extern node *PRTwithid (node *arg_node, info *arg_info);
 extern node *PRTcode (node *arg_node, info *arg_info);
 extern node *PRTpart (node *arg_node, info *arg_info);
 extern node *PRTgenerator (node *arg_node, info *arg_info);
+extern node *PRTdefault (node *arg_node, info *arg_info);
 extern node *PRTgenarray (node *arg_node, info *arg_info);
 extern node *PRTmodarray (node *arg_node, info *arg_info);
 extern node *PRTfold (node *arg_node, info *arg_info);

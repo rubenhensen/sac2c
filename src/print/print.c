@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.209  2005/04/16 14:17:15  khf
+ * print functions for N_default added
+ *
  * Revision 3.208  2005/04/11 05:33:46  ktr
  * Printing of external and internal assignments of special functions fixed.
  *
@@ -3323,6 +3326,42 @@ PRTgenerator (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
+ *   node *PRTdefault(node *arg_node, info *arg_info)
+ *
+ * description:
+ *   prints a default node.
+ *
+ *   The index variable is found in NPART_WITHID( INFO_PRINT_NPART( arg_info)).
+ *
+ ******************************************************************************/
+
+node *
+PRTdefault (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("PRTdefault");
+
+    fprintf (global.outfile, "default partition( ");
+
+    /* print indices */
+    if (INFO_PRINT_NPART (arg_info) != NULL) {
+        DBUG_ASSERT ((NODE_TYPE (INFO_PRINT_NPART (arg_info)) == N_part),
+                     "INFO_PRINT_NPART is no N_part node");
+
+        DBUG_ASSERT ((PART_WITHID (INFO_PRINT_NPART (arg_info)) != NULL),
+                     "PART_WITHID not found!");
+        TRAVdo (PART_WITHID (INFO_PRINT_NPART (arg_info)), arg_info);
+    } else {
+        fprintf (global.outfile, "?");
+    }
+
+    fprintf (global.outfile, " ):\n");
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *PRTcode( node *arg_node, info *arg_info)
  *
  * description:
@@ -3369,13 +3408,7 @@ PRTpart (node *arg_node, info *arg_info)
 
     /* print generator */
     INDENT; /* each gen in a new line. */
-    if (NODE_TYPE (PART_GENERATOR (arg_node)) == N_empty) {
-        fprintf (global.outfile, "default partition( ");
-        TRAVdo (PART_WITHID (arg_node), arg_info);
-        fprintf (global.outfile, " ):\n");
-    } else {
-        TRAVdo (PART_GENERATOR (arg_node), arg_info);
-    }
+    TRAVdo (PART_GENERATOR (arg_node), arg_info);
 
     DBUG_ASSERT ((PART_CODE (arg_node) != NULL),
                  "part within WL without pointer to N_code");
