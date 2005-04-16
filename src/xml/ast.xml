@@ -4130,7 +4130,7 @@
         <son name="Generator" mandatory="yes">
           <target>
             <node name="Generator" />
-            <node name="Empty" />
+            <node name="Default" />
           </target>
         </son>
         <son name="Next" default="NULL" mandatory="no">
@@ -4244,6 +4244,16 @@
           </phases>
         </attribute>
       </attributes>
+      <flags></flags>
+    </node>
+<!--
+
+  N_default :
+
+-->
+    <node name="Default">
+      <sons></sons>
+      <attributes></attributes>
       <flags></flags>
     </node>
 <!--
