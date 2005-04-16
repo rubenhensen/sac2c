@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.49  2005/04/16 14:20:58  khf
+ * changed TBmakeEmpty to TBmakeDefault in FLATpart
+ *
  * Revision 3.48  2005/03/19 23:06:07  sbs
  * AUD support added by inserting default partition. However, after three other approaches
  * to thi very idea, Cleens and myself think it would be a good idea to put this stuff
@@ -1644,7 +1647,7 @@ FLATpart (node *arg_node, info *arg_info)
     /* create the new partition for the default value */
     if (INFO_FLAT_DEFAULT (arg_info) != NULL) {
         PART_NEXT (arg_node)
-          = TBmakePart (NULL, DUPdoDupTree (PART_WITHID (arg_node)), TBmakeEmpty ());
+          = TBmakePart (NULL, DUPdoDupTree (PART_WITHID (arg_node)), TBmakeDefault ());
 
         INFO_FLAT_DEFAULT_PART (arg_info) = PART_NEXT (arg_node);
     }
