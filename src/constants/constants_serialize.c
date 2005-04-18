@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2005/04/18 08:56:10  sah
+ * fixed a format qualifier so that unsigned values
+ * are printed as such
+ *
  * Revision 1.5  2005/02/15 21:07:40  sah
  * module system fixes
  *
@@ -55,7 +59,7 @@ COserializeConstant (FILE *file, constant *cnst)
         for (cnt = 0;
              cnt < global.basetype_size[CONSTANT_TYPE (cnst)] * CONSTANT_VLEN (cnst);
              cnt++) {
-            fprintf (file, "\\%d", data[cnt]);
+            fprintf (file, "\\%u", data[cnt]);
         }
 
         fprintf (file, "\")");
