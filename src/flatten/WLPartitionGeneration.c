@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.39  2005/04/19 17:11:37  ktr
+ * Corrected a type access error.
+ *
  * Revision 1.38  2005/04/15 08:47:35  ktr
  * replaced TYcopyType with TYeliminateAKV
  *
@@ -1917,7 +1920,8 @@ WLPGlet (node *arg_node, info *arg_info)
                 /*
                  * it is possible to infer constant value
                  */
-                simple = TYgetSimpleType (AVIS_TYPE (IDS_AVIS (LET_IDS (arg_node))));
+                simple = TYgetSimpleType (
+                  TYgetScalar (AVIS_TYPE (IDS_AVIS (LET_IDS (arg_node)))));
                 AVIS_TYPE (IDS_AVIS (LET_IDS (arg_node)))
                   = TYfreeType (AVIS_TYPE (IDS_AVIS (LET_IDS (arg_node))));
                 AVIS_TYPE (IDS_AVIS (LET_IDS (arg_node)))
