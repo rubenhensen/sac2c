@@ -168,12 +168,12 @@
 	  <node name="Assign" />
 	  <node name="Fundef" />
 	  <node name="Let" />
-	  <node name="Arg" />
 	  <node name="Block" />
           <node name="Vardec" />
           <node name="Id" />
           <node name="Ids" />
-          <node name="With" />
+	  <node name="Cond" />
+	  <node name="Funcond" />
 	</travuser>
       </traversal>
       <traversal id="INFDFMS" name="Infer DataFlowMask Traversal" default="sons" include="InferDFMs.h" >
@@ -3622,20 +3622,10 @@
             </target>
           </type>
           <phases>
-            <range from="ssform" to="undossa" />
-          </phases>
-        </attribute>
-        <attribute name="SSAAssign" mandatory="yes">
-          <type name="DownLink">
-            <target>
-              <node name="Assign" />
-            </target>
-          </type>
-          <phases>
             <range from="ssaform" to="undossa" />
           </phases>
         </attribute>
-        <attribute name="SSAAssign2" mandatory="yes">
+        <attribute name="SSAAssign" mandatory="yes">
           <type name="DownLink">
             <target>
               <node name="Assign" />
@@ -3701,22 +3691,6 @@
           </type>
           <phases>
             <phase name="ssacse" />
-            <phase name="undossa" />
-          </phases>
-        </attribute>
-        <attribute name="SubstUSSA" mandatory="no">
-          <type name="DownLink">
-            <target>
-              <node name="Avis" />
-            </target>
-          </type>
-          <phases>
-            <phase name="undossa" />
-          </phases>
-        </attribute>
-        <attribute name="SSAPhiTarget" mandatory="no">
-          <type name="SSAPhi" />
-          <phases>
             <phase name="undossa" />
           </phases>
         </attribute>
