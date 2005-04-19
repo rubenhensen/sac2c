@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.86  2005/04/19 17:26:09  ktr
+ * "lacinl" break specifier introduced
+ *
  * Revision 3.85  2005/03/17 19:05:17  sbs
  * IVE still runs on old types.....
  *
@@ -1060,7 +1063,8 @@ OPTmodule (node *arg_node, info *arg_info)
        during the call of UndoSSA */
     if ((global.break_after == PH_sacopt)
         && ((0 == strcmp (global.break_specifier, "ussa"))
-            || (0 == strcmp (global.break_specifier, "f2l")))) {
+            || (0 == strcmp (global.break_specifier, "f2l"))
+            || (0 == strcmp (global.break_specifier, "lacinl")))) {
         goto DONE;
     }
 
