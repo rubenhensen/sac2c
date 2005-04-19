@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.14  2005/04/19 17:37:23  ktr
+ * added "lacinl"
+ *
  * Revision 1.13  2005/04/15 13:05:11  ktr
  * global.lacinline
  *
@@ -170,6 +173,10 @@ SSAundoSsa (node *syntax_tree)
     /* inline loop and cond functions */
     if (global.lacinline) {
         syntax_tree = INLdoLACInlining (syntax_tree);
+    }
+    if ((global.break_after == global.compiler_phase)
+        && (0 == strcmp (global.break_specifier, "lacinl"))) {
+        goto DONE;
     }
 
 DONE:
