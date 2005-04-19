@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.37  2005/04/19 17:38:17  ktr
+ * removed some includes
+ *
  * Revision 3.36  2005/04/12 15:47:10  ktr
  * Concrete arguments of special functions are downgraded to the least
  * upper bound of the concrete and the formal arguments to avoid type
@@ -174,8 +177,6 @@
 #include "free.h"
 #include "DupTree.h"
 #include "print.h"
-#include "UndoSSATransform.h"
-#include "Inline.h"
 #include "globals.h"
 
 /*
