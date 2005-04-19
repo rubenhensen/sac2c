@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.87  2005/04/19 17:59:10  khf
+ * removed transformation in ssa-form
+ *
  * Revision 3.86  2005/04/19 17:26:09  ktr
  * "lacinl" break specifier introduced
  *
@@ -869,19 +872,6 @@ OPTmodule (node *arg_node, info *arg_info)
      * apply RC (remove all cast from AST)
      */
     arg_node = RCdoRemoveCasts (arg_node);
-
-    /*
-     * apply SSA (transform AST to ssa-representation)
-     */
-    arg_node = SSAdoSsa (arg_node);
-    /* necessary to guarantee, that the compilation can be stopped
-       during the call of DoSSA */
-    if ((global.break_after == PH_sacopt)
-        && ((0 == strcmp (global.break_specifier, "l2f"))
-            || (0 == strcmp (global.break_specifier, "cha"))
-            || (0 == strcmp (global.break_specifier, "ssa")))) {
-        goto DONE;
-    }
 
     /*
      * apply INL (inlining)
