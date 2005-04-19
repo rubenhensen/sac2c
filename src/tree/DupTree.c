@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.153  2005/04/19 17:34:57  ktr
+ * removed AVIS_SSAASSIGN2, AVIS_SUBSTUSSA
+ *
  * Revision 3.152  2005/04/16 14:19:30  khf
  * DUPdefault added
  *
@@ -2855,8 +2858,6 @@ DUPavis (node *arg_node, info *arg_info)
 
     AVIS_SSAASSIGN (new_node)
       = LUTsearchInLutPp (INFO_DUP_LUT (arg_info), AVIS_SSAASSIGN (arg_node));
-    AVIS_SSAASSIGN2 (new_node)
-      = LUTsearchInLutPp (INFO_DUP_LUT (arg_info), AVIS_SSAASSIGN2 (arg_node));
     AVIS_WITHID (new_node)
       = LUTsearchInLutPp (INFO_DUP_LUT (arg_info), AVIS_WITHID (arg_node));
 
@@ -2869,7 +2870,6 @@ DUPavis (node *arg_node, info *arg_info)
     AVIS_SSAELSE (new_node) = AVIS_SSAELSE (arg_node);
     AVIS_NEEDCOUNT (new_node) = AVIS_NEEDCOUNT (arg_node);
     AVIS_SUBST (new_node) = AVIS_SUBST (arg_node);
-    AVIS_SUBSTUSSA (new_node) = AVIS_SUBSTUSSA (arg_node);
 
     AVIS_FLAGSTRUCTURE (new_node) = AVIS_FLAGSTRUCTURE (arg_node);
 

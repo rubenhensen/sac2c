@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.131  2005/04/19 17:34:57  ktr
+ * removed AVIS_SSAASSIGN2, AVIS_SUBSTUSSA
+ *
  * Revision 3.130  2005/01/11 14:06:14  cg
  * Converted output from Error.h to ctinfo.c
  *
@@ -1539,7 +1542,6 @@ TCmakeVardecFromArg (node *arg_node)
 
     /* delete wrong data in copied AVIS node */
     AVIS_SSAASSIGN (VARDEC_AVIS (new_vardec)) = NULL;
-    AVIS_SSAASSIGN2 (VARDEC_AVIS (new_vardec)) = NULL;
     AVIS_SSALPINV (VARDEC_AVIS (new_vardec)) = FALSE;
     AVIS_SSASTACK_TOP (VARDEC_AVIS (new_vardec)) = NULL;
 
@@ -1572,7 +1574,6 @@ TCmakeArgFromVardec (node *vardec_node)
 
     /* delete wrong data in copied AVIS node */
     AVIS_SSAASSIGN (new_avis) = NULL;
-    AVIS_SSAASSIGN2 (new_avis) = NULL;
     AVIS_SSALPINV (new_avis) = FALSE;
     AVIS_SSASTACK_TOP (new_avis) = NULL;
 
@@ -1605,7 +1606,6 @@ TCmakeArgFromVardec (node *vardec_node)
  *     AVIS_SSAELSE = FALSE
  *     AVIS_NEEDCOUNT = 0
  *     AVIS_SUBST = NULL
- *     AVIS_SUBSTUSSA = NULL
  *
  * remark:
  *   when creating a new ssacounter node this node is stored in the toplevel
@@ -1674,7 +1674,6 @@ TCadjustAvisData (node *new_vardec, node *fundef)
     AVIS_SSAELSE (avis_node) = FALSE;
     AVIS_NEEDCOUNT (avis_node) = 0;
     AVIS_SUBST (avis_node) = NULL;
-    AVIS_SUBSTUSSA (avis_node) = NULL;
 
     DBUG_RETURN (avis_node);
 }
