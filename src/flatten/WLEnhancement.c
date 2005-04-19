@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2005/04/19 18:01:23  khf
+ * removed transformation in and out ssa-form
+ *
  * Revision 1.8  2005/01/11 11:19:19  cg
  * Converted output from Error.h to ctinfo.c
  *
@@ -37,7 +40,6 @@
 #include "node_basic.h"
 #include "globals.h"
 #include "dbug.h"
-#include "ssa.h"
 #include "WLEnhancement.h"
 #include "ExplicitAccumulate.h"
 #include "WLPartitionGeneration.h"
@@ -66,18 +68,6 @@ WLEdoWlEnhancement (node *arg_node)
 
     DBUG_PRINT ("WLE", ("starting WLEdoWlEnhancement"));
 
-    DBUG_PRINT ("WLE", ("call SSAdoSSA"));
-    /* transformation in ssa-form */
-    arg_node = SSAdoSsa (arg_node);
-    /* necessary to guarantee, that the compilation can be stopped
-       during the call of SSAdoSsa */
-    if ((global.break_after == PH_wlenhance)
-        && ((0 == strcmp (global.break_specifier, "l2f"))
-            || (0 == strcmp (global.break_specifier, "cha"))
-            || (0 == strcmp (global.break_specifier, "ssa")))) {
-        goto DONE;
-    }
-
     DBUG_PRINT ("WLE", ("call EAdoExplicitAccumulate"));
     arg_node = EAdoExplicitAccumulate (arg_node);
 
@@ -88,23 +78,6 @@ WLEdoWlEnhancement (node *arg_node)
 
     DBUG_PRINT ("WLE", ("call WLPGdoWlPartitionGeneration"));
     arg_node = WLPGdoWlPartitionGeneration (arg_node);
-
-    if ((global.break_after == PH_wlenhance)
-        && ((0 == strcmp (global.break_specifier, "wlpg"))
-            || (0 == strcmp (global.break_specifier, "cf")))) {
-        goto DONE;
-    }
-
-    DBUG_PRINT ("WLE", ("call SSAundoSSA"));
-    /* undo tranformation in ssa-form */
-    arg_node = SSAundoSsa (arg_node);
-    /* necessary to guarantee, that the compilation can be stopped
-       during the call of SSAundoSsa */
-    if ((global.break_after == PH_wlenhance)
-        && ((0 == strcmp (global.break_specifier, "ussa"))
-            || (0 == strcmp (global.break_specifier, "f2l")))) {
-        goto DONE;
-    }
 
 DONE:
     DBUG_RETURN (arg_node);
