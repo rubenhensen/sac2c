@@ -2,7 +2,6 @@ AssociativeLaw.c
 AssociativeLaw.h
 DeadFunctionRemoval.c
 DeadFunctionRemoval.h
-Inline.h
 Makefile
 SSAInferLI.c
 SSAInferLI.h
