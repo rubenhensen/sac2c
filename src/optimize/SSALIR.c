@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.38  2005/04/20 19:13:23  ktr
+ * Brushed optimization to work with the Marielyst compiler.
+ *
  * Revision 1.37  2005/03/04 21:21:42  cg
  * FUNDEF_USED counter etc removed.
  * Handling of FUNDEF_EXT_ASSIGNS drastically simplified.
@@ -506,29 +509,14 @@ CreateNewResult (node *avis, info *arg_info)
     nodelist *letlist;
     node *tmp;
     node *cond;
-    node *right_id;
     node *assign_let;
 
     DBUG_ENTER ("CreateNewResult");
 
     /* 1. create new vardec in external (calling) fundef */
-    if (NODE_TYPE (AVIS_DECL (avis)) == N_vardec) {
-        new_ext_vardec = DUPdoDupNode (AVIS_DECL (avis));
-    } else if (NODE_TYPE (AVIS_DECL (avis)) == N_arg) {
-        new_ext_vardec = TCmakeVardecFromArg (AVIS_DECL (avis));
-    } else {
-        new_ext_vardec = NULL;
-        DBUG_ASSERT ((FALSE), "unsupported nodetype");
-    }
-
-    /* update duplicated avis node for usage in new fundef */
-    new_ext_avis = TCadjustAvisData (new_ext_vardec, INFO_SSALIR_EXTFUNDEF (arg_info));
-
-    /* create new name */
-    new_name = ILIBtmpVarName (VARDEC_NAME (new_ext_vardec));
-    AVIS_NAME (VARDEC_AVIS (new_ext_vardec))
-      = ILIBfree (AVIS_NAME (VARDEC_AVIS (new_ext_vardec)));
-    AVIS_NAME (VARDEC_AVIS (new_ext_vardec)) = new_name;
+    new_name = ILIBtmpVarName (AVIS_NAME (avis));
+    new_ext_vardec
+      = TBmakeVardec (TBmakeAvis (new_name, TYcopyType (AVIS_TYPE (avis))), NULL);
 
     DBUG_PRINT ("SSALIR",
                 ("create external vardec %s for %s", new_name, AVIS_NAME (avis)));
@@ -546,13 +534,17 @@ CreateNewResult (node *avis, info *arg_info)
     AVIS_EXPRESULT (avis) = TRUE;
 
     /* 3. create new vardec in local fundef (as result in recursive call) */
-    new_int_vardec = SSATnewVardec (AVIS_DECL (avis));
+    new_int_vardec = TBmakeVardec (TBmakeAvis (ILIBtmpVarName (AVIS_NAME (avis)),
+                                               TYcopyType (AVIS_TYPE (avis))),
+                                   NULL);
     BLOCK_VARDEC (FUNDEF_BODY (INFO_SSALIR_FUNDEF (arg_info)))
       = TCappendVardec (BLOCK_VARDEC (FUNDEF_BODY (INFO_SSALIR_FUNDEF (arg_info))),
                         new_int_vardec);
 
     /* 4. create new vardec in local fundef (as PhiCopyTarget) */
-    new_pct_vardec = SSATnewVardec (AVIS_DECL (avis));
+    new_pct_vardec = TBmakeVardec (TBmakeAvis (ILIBtmpVarName (AVIS_NAME (avis)),
+                                               TYcopyType (AVIS_TYPE (avis))),
+                                   NULL);
     BLOCK_VARDEC (FUNDEF_BODY (INFO_SSALIR_FUNDEF (arg_info)))
       = TCappendVardec (BLOCK_VARDEC (FUNDEF_BODY (INFO_SSALIR_FUNDEF (arg_info))),
                         new_pct_vardec);
@@ -590,26 +582,13 @@ CreateNewResult (node *avis, info *arg_info)
     DBUG_ASSERT ((tmp != NULL), "missing conditional in do-loop special function");
     cond = ASSIGN_INSTR (tmp);
 
-    /* insert copy assignment in then block */
-    right_id
-      = TBmakeId (TBmakeAvis (ILIBstringCopy (AVIS_NAME (DECL_AVIS (new_int_vardec))),
-                              TYcopyType (AVIS_TYPE (DECL_AVIS (new_int_vardec)))));
-
     /* create one let assign for then part */
-    assign_let
-      = TCmakeAssignLet (DECL_AVIS (DUPdoDupNode (new_pct_vardec)),
-                         TBmakeFuncond (TBmakeExprs (DUPdoDupTree (COND_COND (cond)),
-                                                     NULL),
-                                        TBmakeExprs (right_id, NULL), NULL));
+    assign_let = TCmakeAssignLet (VARDEC_AVIS (new_pct_vardec),
+                                  TBmakeFuncond (DUPdoDupNode (COND_COND (cond)),
+                                                 TBmakeId (VARDEC_AVIS (new_int_vardec)),
+                                                 TBmakeId (avis)));
 
     AVIS_SSAASSIGN (VARDEC_AVIS (new_pct_vardec)) = assign_let;
-
-    /*  insert copy assignment in else block (the given result identifier) */
-    right_id = TBmakeId (
-      TBmakeAvis (ILIBstringCopy (AVIS_NAME (avis)), TYcopyType (AVIS_TYPE (avis))));
-
-    /* create one exprs for else part */
-    FUNCOND_ELSE (ASSIGN_RHS (assign_let)) = TBmakeExprs (right_id, NULL);
 
     /* append new phi function behind cond block */
     ASSIGN_NEXT (assign_let) = ASSIGN_NEXT (tmp);
@@ -687,6 +666,7 @@ AdjustExternalResult (node *new_assigns, node *ext_assign, node *ext_fundef)
 {
     node *result_chain;
     node *new_vardec;
+    node *new_avis;
     node *new_ids;
 
     DBUG_ENTER ("AdjustExternalResult");
@@ -707,15 +687,17 @@ AdjustExternalResult (node *new_assigns, node *ext_assign, node *ext_fundef)
             while (result_chain != NULL) {
                 if (IDS_AVIS (new_ids) == IDS_AVIS (result_chain)) {
                     /* matching ids found - create new vardec and rename result_ids */
-                    new_vardec = SSATnewVardec (AVIS_DECL (IDS_AVIS (result_chain)));
+                    new_avis = TBmakeAvis (ILIBtmpVarName (IDS_NAME (result_chain)),
+                                           TYcopyType (IDS_NTYPE (result_chain)));
+                    new_vardec = TBmakeVardec (new_avis, NULL);
                     BLOCK_VARDEC (FUNDEF_BODY (ext_fundef))
                       = TCappendVardec (BLOCK_VARDEC (FUNDEF_BODY (ext_fundef)),
                                         new_vardec);
 
                     /* rename ids */
-                    IDS_AVIS (result_chain) = DECL_AVIS (new_vardec);
+                    IDS_AVIS (result_chain) = new_avis;
 
-                    /* stop seerching */
+                    /* stop searching */
                     result_chain = NULL;
 
                 } else {
@@ -980,7 +962,7 @@ LIRfundef (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* SSALIRarg(node *arg_node, info *arg_info)
+ *   node* LIRarg(node *arg_node, info *arg_info)
  *
  * description:
  *   insert mappings between args and external vardecs for all loop
@@ -1003,31 +985,10 @@ LIRarg (node *arg_node, info *arg_info)
                      "non N_id node in function application");
 
         /* add internal->external pairs to LUT: */
-        /* vardec */
-        INFO_SSALIR_MOVELUT (arg_info)
-          = LUTinsertIntoLutP (INFO_SSALIR_MOVELUT (arg_info), arg_node,
-                               AVIS_DECL (ID_AVIS (
-                                 EXPRS_EXPR (INFO_SSALIR_APARGCHAIN (arg_info)))));
-
         /* avis */
         INFO_SSALIR_MOVELUT (arg_info)
           = LUTinsertIntoLutP (INFO_SSALIR_MOVELUT (arg_info), ARG_AVIS (arg_node),
                                ID_AVIS (EXPRS_EXPR (INFO_SSALIR_APARGCHAIN (arg_info))));
-
-        /* id name */
-        INFO_SSALIR_MOVELUT (arg_info)
-          = LUTinsertIntoLutS (INFO_SSALIR_MOVELUT (arg_info), ARG_NAME (arg_node),
-                               AVIS_NAME (ID_AVIS (
-                                 EXPRS_EXPR (INFO_SSALIR_APARGCHAIN (arg_info)))));
-
-        DBUG_PRINT ("SSALIR", ("insert arg %s(" F_PTR ", " F_PTR ")"
-                               " -> %s(" F_PTR ", " F_PTR ") into LUT for mapping",
-                               ARG_NAME (arg_node), ARG_AVIS (arg_node), arg_node,
-                               (AVIS_NAME (ID_AVIS (
-                                 EXPRS_EXPR (INFO_SSALIR_APARGCHAIN (arg_info))))),
-                               ID_AVIS (EXPRS_EXPR (INFO_SSALIR_APARGCHAIN (arg_info))),
-                               AVIS_DECL (ID_AVIS (
-                                 EXPRS_EXPR (INFO_SSALIR_APARGCHAIN (arg_info))))));
     }
 
     /* init avis data for argument */
@@ -1435,55 +1396,45 @@ LIRid (node *arg_node, info *arg_info)
                           != NULL),
                          "missing definition assignment in else part");
 
-            DBUG_ASSERT ((NODE_TYPE (ASSIGN_INSTR (AVIS_SSAASSIGN ((ID_AVIS (arg_node)))))
-                          == N_let),
-                         "non let assignment node");
+            /*
+             * this is the identifier in the loop, that is returned via the
+             * ssa-phicopy assignment
+             */
+            id = FUNCOND_ELSE (ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (arg_node))));
 
-            if ((NODE_TYPE (EXPRS_EXPR (
-                   FUNCOND_ELSE (ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (arg_node))))))
-                 == N_id)) {
-                /*
-                 * this is the identifier in the loop, that is returned via the
-                 * ssa-phicopy assignment
-                 */
-                id = EXPRS_EXPR (
-                  FUNCOND_ELSE (ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (arg_node)))));
+            /*
+             * look for the corresponding result ids in the let_node of
+             * the external function application and add the mapping
+             * [local id -> result ids] to the RESULTMAP nodelist.
+             */
+            DBUG_ASSERT ((INFO_SSALIR_APRESCHAIN (arg_info) != NULL),
+                         "missing external result ids");
 
-                /*
-                 * look for the corresponding result ids in the let_node of
-                 * the external function application and add the mapping
-                 * [local id -> result ids] to the RESULTMAP nodelist.
-                 */
-                DBUG_ASSERT ((INFO_SSALIR_APRESCHAIN (arg_info) != NULL),
-                             "missing external result ids");
+            INFO_SSALIR_RESULTMAP (arg_info)
+              = TCnodeListAppend (INFO_SSALIR_RESULTMAP (arg_info), ID_AVIS (id),
+                                  IDS_AVIS (INFO_SSALIR_APRESCHAIN (arg_info)));
 
-                INFO_SSALIR_RESULTMAP (arg_info)
-                  = TCnodeListAppend (INFO_SSALIR_RESULTMAP (arg_info), ID_AVIS (id),
-                                      IDS_AVIS (INFO_SSALIR_APRESCHAIN (arg_info)));
+            /* mark variable as being a result of this function */
+            AVIS_EXPRESULT (ID_AVIS (id)) = TRUE;
 
-                /* mark variable as being a result of this function */
-                AVIS_EXPRESULT (ID_AVIS (id)) = TRUE;
+            /*
+             * if return identifier is used only once (in phi copy assignment):
+             * this identifier can be moved down behind the loop, because it is
+             * not needed in the loop.
+             * the marked variables will be checked in the bottom up traversal
+             * to be defined on an left side where all identifiers are marked for
+             * move down (see CheckMoveDownFlag()).
+             */
 
-                /*
-                 * if return identifier is used only once (in phi copy assignment):
-                 * this identifier can be moved down behind the loop, because it is
-                 * not needed in the loop.
-                 * the marked variables will be checked in the bottom up traversal
-                 * to be defined on an left side where all identifiers are marked for
-                 * move down (see CheckMoveDownFlag()).
-                 */
+            if ((AVIS_NEEDCOUNT (ID_AVIS (id)) == 1)
+                && (AVIS_LIRMOVE (ID_AVIS (id)) != LIRMOVE_STAY)) {
 
-                if ((AVIS_NEEDCOUNT (ID_AVIS (id)) == 1)
-                    && (AVIS_LIRMOVE (ID_AVIS (id)) != LIRMOVE_STAY)) {
+                DBUG_PRINT ("SSALIR",
+                            ("loop-invariant assignment (marked for move down) [%s, %s]",
+                             VARDEC_OR_ARG_NAME (AVIS_DECL (ID_AVIS (id))),
+                             VARDEC_OR_ARG_NAME (AVIS_DECL (ID_AVIS (arg_node)))));
 
-                    DBUG_PRINT (
-                      "SSALIR",
-                      ("loop-invariant assignment (marked for move down) [%s, %s]",
-                       VARDEC_OR_ARG_NAME (AVIS_DECL (ID_AVIS (id))),
-                       VARDEC_OR_ARG_NAME (AVIS_DECL (ID_AVIS (arg_node)))));
-
-                    (AVIS_LIRMOVE (ID_AVIS (id))) |= LIRMOVE_DOWN;
-                }
+                (AVIS_LIRMOVE (ID_AVIS (id))) |= LIRMOVE_DOWN;
             }
         }
         break;
@@ -1764,7 +1715,7 @@ LIRexprs (node *arg_node, info *arg_info)
 node *
 LIRids (node *arg_ids, info *arg_info)
 {
-    DBUG_ENTER ("SSALIRleftids");
+    DBUG_ENTER ("SSALIRids");
 
     DBUG_ASSERT ((arg_ids != NULL), "no ids found!");
     DBUG_ASSERT ((IDS_AVIS (arg_ids) != NULL), "IDS_AVIS not found!");
@@ -1775,8 +1726,7 @@ LIRids (node *arg_ids, info *arg_info)
     /* propagte the currect FLAG to the ids */
     switch (INFO_SSALIR_FLAG (arg_info)) {
     case SSALIR_MOVEUP:
-        DBUG_PRINT ("SSALIR", ("mark: moving up vardec %s",
-                               VARDEC_NAME (AVIS_DECL (IDS_AVIS (arg_ids)))));
+        DBUG_PRINT ("SSALIR", ("mark: moving up vardec %s", IDS_NAME (arg_ids)));
         AVIS_SSALPINV (IDS_AVIS (arg_ids)) = TRUE;
 
         (AVIS_LIRMOVE (IDS_AVIS (arg_ids))) |= LIRMOVE_UP;
@@ -2125,7 +2075,6 @@ LIRMOVids (node *arg_ids, info *arg_info)
     node *new_vardec;
     node *new_vardec_id;
     node *new_avis;
-    char *new_name;
     node *new_arg;
     node *new_arg_id;
     nodelist *letlist;
@@ -2140,14 +2089,12 @@ LIRMOVids (node *arg_ids, info *arg_info)
          */
 
         /* create new vardec */
-        new_vardec = DUPdoDupNode (AVIS_DECL (IDS_AVIS (arg_ids)));
-        new_avis = TCadjustAvisData (new_vardec, INFO_SSALIR_EXTFUNDEF (arg_info));
-        new_name = ILIBtmpVarName (VARDEC_NAME (new_vardec));
-        VARDEC_NAME (new_vardec) = ILIBfree (VARDEC_NAME (new_vardec));
-        VARDEC_NAME (new_vardec) = new_name;
+        new_avis = TBmakeAvis (ILIBtmpVarName (IDS_NAME (arg_ids)),
+                               TYcopyType (IDS_NTYPE (arg_ids)));
+        new_vardec = TBmakeVardec (new_avis, NULL);
 
-        DBUG_PRINT ("SSALIR", ("create external vardec %s for %s", new_name,
-                               (AVIS_NAME (IDS_AVIS (arg_ids)))));
+        DBUG_PRINT ("SSALIR", ("create external vardec %s for %s", (AVIS_NAME (new_avis)),
+                               (IDS_NAME (arg_ids))));
 
         /* add vardec to chain of vardecs (ext. fundef) */
         BLOCK_VARDEC (FUNDEF_BODY (INFO_SSALIR_EXTFUNDEF (arg_info)))
@@ -2158,25 +2105,10 @@ LIRMOVids (node *arg_ids, info *arg_info)
          * setup LUT for later DupTree:
          *   subst local vardec with external vardec
          */
-        /* vardec */
-        INFO_SSALIR_MOVELUT (arg_info)
-          = LUTinsertIntoLutP (INFO_SSALIR_MOVELUT (arg_info),
-                               AVIS_DECL (IDS_AVIS (arg_ids)), new_vardec);
-
         /* avis */
         INFO_SSALIR_MOVELUT (arg_info)
           = LUTinsertIntoLutP (INFO_SSALIR_MOVELUT (arg_info), IDS_AVIS (arg_ids),
                                new_avis);
-
-        /* id name */
-        INFO_SSALIR_MOVELUT (arg_info)
-          = LUTinsertIntoLutS (INFO_SSALIR_MOVELUT (arg_info), IDS_NAME (arg_ids),
-                               new_name);
-
-        DBUG_PRINT ("SSALIR", ("insert local %s(" F_PTR ", " F_PTR ")"
-                               " -> ext. %s(" F_PTR ", " F_PTR ") into LUT for mapping",
-                               IDS_NAME (arg_ids), IDS_AVIS (arg_ids), IDS_DECL (arg_ids),
-                               new_name, new_avis, new_vardec));
 
         /*
          *  modify functions signature:
@@ -2189,9 +2121,7 @@ LIRMOVids (node *arg_ids, info *arg_info)
             new_vardec_id = TBmakeId (new_avis);
 
             /* make new arg for this functions (instead of vardec) */
-            new_arg = TCmakeArgFromVardec (AVIS_DECL (IDS_AVIS (arg_ids)));
-            ARG_NAME (new_arg) = ILIBfree (ARG_NAME (new_arg));
-            ARG_NAME (new_arg) = ILIBstringCopy (new_name);
+            new_arg = TCmakeArgFromVardec (IDS_DECL (arg_ids));
 
             /* make identifier for recursive function call */
             new_arg_id = TBmakeId (ARG_AVIS (new_arg));
