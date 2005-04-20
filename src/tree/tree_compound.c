@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.132  2005/04/20 19:19:17  ktr
+ * removed TCadjustAvisData and brushed the code
+ *
  * Revision 3.131  2005/04/19 17:34:57  ktr
  * removed AVIS_SSAASSIGN2, AVIS_SUBSTUSSA
  *
@@ -1543,7 +1546,6 @@ TCmakeVardecFromArg (node *arg_node)
     /* delete wrong data in copied AVIS node */
     AVIS_SSAASSIGN (VARDEC_AVIS (new_vardec)) = NULL;
     AVIS_SSALPINV (VARDEC_AVIS (new_vardec)) = FALSE;
-    AVIS_SSASTACK_TOP (VARDEC_AVIS (new_vardec)) = NULL;
 
     DBUG_RETURN (new_vardec);
 }
@@ -1575,7 +1577,6 @@ TCmakeArgFromVardec (node *vardec_node)
     /* delete wrong data in copied AVIS node */
     AVIS_SSAASSIGN (new_avis) = NULL;
     AVIS_SSALPINV (new_avis) = FALSE;
-    AVIS_SSASTACK_TOP (new_avis) = NULL;
 
     new_arg = TBmakeArg (new_avis, NULL);
 
@@ -1586,96 +1587,6 @@ TCmakeArgFromVardec (node *vardec_node)
     AVIS_DECL (ARG_AVIS (new_arg)) = new_arg;
 
     DBUG_RETURN (new_arg);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *TCadjustAvisData( node *new_vardec, node *fundef)
- *
- * description:
- *   when a vardec is duplicated via DupTree all dependend infomation in the
- *   corresponding avis node is duplicated, too. when this vardec is used in
- *   the same fundef as the original one everything is good, but if the
- *   duplicated vardec should be used in a different fundef the fundef related
- *   attributes have to be adjusted by this function:
- *     AVIS_SSACOUNT = (new fresh ssacnt node)
- *     AVIS_SSALPINV = FALSE
- *     AVIS_SSADEFINED = FALSE
- *     AVIS_SSATHEN = FALSE
- *     AVIS_SSAELSE = FALSE
- *     AVIS_NEEDCOUNT = 0
- *     AVIS_SUBST = NULL
- *
- * remark:
- *   when creating a new ssacounter node this node is stored in the toplevel
- *   block of the given fundef (sideeffekt!!!)
- *
- ******************************************************************************/
-node *
-TCadjustAvisData (node *new_vardec, node *fundef)
-{
-    node *avis_node;
-    char *base_id;
-    node *ssacnt;
-
-    DBUG_ENTER ("TCadjustAvisData");
-
-    DBUG_ASSERT ((fundef != NULL), "missing fundef");
-    DBUG_ASSERT ((FUNDEF_BODY (fundef) != NULL), "missing body in fundef");
-
-    avis_node = VARDEC_AVIS (new_vardec);
-
-    /* SSACOUNTER operations are only necessary when operating on ssa form */
-    if (global.valid_ssaform) {
-        DBUG_ASSERT ((AVIS_SSACOUNT (VARDEC_AVIS (new_vardec)) != NULL),
-                     "corrupted ssa form found - unknown baseid");
-
-        base_id = SSACNT_BASEID (AVIS_SSACOUNT (VARDEC_AVIS (new_vardec)));
-        DBUG_ASSERT ((base_id != NULL), "no BASEID found in AVIS!");
-
-        /*
-         * first we check if there is already an ssacounter with this baseid in
-         * the target fundef so we attach our new created avis to this ssa counter.
-         * by doing this we avoid name conflicts when renaming during ssa updates
-         */
-        ssacnt = BLOCK_SSACOUNTER (FUNDEF_BODY (fundef));
-        while ((ssacnt != NULL) && ILIBstringCompare (SSACNT_BASEID (ssacnt), base_id)) {
-            ssacnt = SSACNT_NEXT (ssacnt);
-        }
-
-        if (ssacnt != NULL) {
-            /* found a matching base id */
-            AVIS_SSACOUNT (avis_node) = ssacnt;
-            DBUG_PRINT ("AAD", ("use existing ssacounter with baseid %s for vardec %s",
-                                base_id, VARDEC_NAME (new_vardec)));
-
-        } else {
-            /*
-             * if we find no matching ssacounter we create a new one with the current
-             * base id and add it to the ssacounter chain
-             */
-            DBUG_PRINT ("AAD", ("reuse base_id %s for vardec %s", base_id,
-                                VARDEC_NAME (new_vardec)));
-
-            BLOCK_SSACOUNTER (FUNDEF_BODY (fundef))
-              = TBmakeSsacnt (0, ILIBstringCopy (base_id),
-                              BLOCK_SSACOUNTER (FUNDEF_BODY (fundef)));
-
-            AVIS_SSACOUNT (avis_node) = BLOCK_SSACOUNTER (FUNDEF_BODY (fundef));
-        }
-    } else {
-        /* no ssacounter needed */
-        AVIS_SSACOUNT (avis_node) = NULL;
-    }
-    AVIS_SSALPINV (avis_node) = FALSE;
-    AVIS_SSADEFINED (avis_node) = FALSE;
-    AVIS_SSATHEN (avis_node) = FALSE;
-    AVIS_SSAELSE (avis_node) = FALSE;
-    AVIS_NEEDCOUNT (avis_node) = 0;
-    AVIS_SUBST (avis_node) = NULL;
-
-    DBUG_RETURN (avis_node);
 }
 
 /*--------------------------------------------------------------------------*/

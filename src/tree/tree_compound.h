@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.188  2005/04/20 19:19:17  ktr
+ * removed TCadjustAvisData and brushed the code
+ *
  * Revision 3.187  2005/03/04 21:21:42  cg
  * Serious bug fixed in implementation of IDS_TYPE compound
  * macro. Now, ids referring to N_arg nodes no longer cause
@@ -720,34 +723,6 @@ extern node *TCmakeVardecFromArg (node *arg_node);
  ******************************************************************************/
 
 extern node *TCmakeArgFromVardec (node *vardec_node);
-
-/******************************************************************************
- *
- * function:
- *   node *TCadjustAvisData( node *new_vardec, node *fundef)
- *
- * description:
- *   when a vardec is duplicated via DupTree all dependend infomation in the
- *   corresponding avis node is duplicated, too. when this vardec is used in
- *   the same fundef as the original one everything is good, but if the
- *   duplicated vardec should be used in a different fundef the fundef related
- *   attributes have to be adjusted by this function:
- *     AVIS_SSACOUNT = (new fresh ssacnt node)
- *     AVIS_SSALPINV = FALSE
- *     AVIS_SSADEFINED = FALSE
- *     AVIS_SSATHEN = FALSE
- *     AVIS_SSAELSE = FALSE
- *     AVIS_NEEDCOUNT = 0
- *     AVIS_SUBST = NULL
- *     AVIS_SUBSTUSSA = NULL
- *
- * remark:
- *   when creating a new ssacounter node this node is stored in the toplevel
- *   block of the given fundef (sideeffekt!!!)
- *
- ******************************************************************************/
-
-extern node *TCadjustAvisData (node *new_vardec, node *fundef);
 
 /*--------------------------------------------------------------------------*/
 
