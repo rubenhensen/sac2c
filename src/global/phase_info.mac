@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2005/04/20 07:25:18  cg
+ * Phase use renamed to module.
+ * Subphases edited.
+ *
  * Revision 3.18  2005/04/14 14:30:31  jhb
  * added the subphases
  *
@@ -124,59 +128,118 @@ SUBPHASE (rsc, "rsc", "Processing sac2c configuration file", RSCevaluateConfigur
 
 SUBPHASE (init, "init", "Initializing data structures", SETUPdoInitializations)
 
-SUBPHASE (annotatenamespace, "annotatenamespace", "", PHdummy)
+#if 0
 
-SUBPHASE (BuildMultithread, "BuildMultithread", "", PHdummy)
+SUBPHASE( annotatenamespace, "annotatenamespace",
+          "",
+          PHdummy)
 
-SUBPHASE (psioptimize, "psi-optimize", "", PHdummy)
+SUBPHASE( BuildMultithread, "BuildMultithread",
+          "",
+          PHdummy)
 
-SUBPHASE (rsp, "rsp", "", PHdummy)
 
-SUBPHASE (ssaform, "ssaform", "", PHdummy)
+SUBPHASE( psioptimize, "psi-optimize",
+          "",
+          PHdummy)
 
-SUBPHASE (inline, "inline", "", PHdummy)
+SUBPHASE( rsp, "rsp", 
+          "",
+          PHdummy)
 
-SUBPHASE (AssignmentsRearrange, "AssignmentsRearrange", "", PHdummy)
+SUBPHASE( ssaform, "ssaform",
+          "",
+          PHdummy)
 
-SUBPHASE (WLI, "WLI", "", PHdummy)
+SUBPHASE( inline, "inline",
+          "",
+          PHdummy)
 
-SUBPHASE (WLF, "WLF", "", PHdummy)
+SUBPHASE( AssignmentsRearrange, "AssignmentsRearrange",
+          "",
+          PHdummy)
 
-SUBPHASE (ssalir, "ssalir", "", PHdummy)
+SUBPHASE( WLI, "WLI", 
+          "",
+          PHdummy)
 
-SUBPHASE (lirmov, "lirmov", "", PHdummy)
+SUBPHASE( WLF, "WLF", 
+          "",
+          PHdummy)
 
-SUBPHASE (infer_dfms, "infer_dfms", "", PHdummy)
+SUBPHASE( ssalir, "ssalir", 
+          "", 
+          PHdummy)
 
-SUBPHASE (free, "free", "", PHdummy)
+SUBPHASE( lirmov, "lirmov",
+          "", 
+          PHdummy)
 
-SUBPHASE (readsib, "readsib", "", PHdummy)
+SUBPHASE( infer_dfms, "infer_dfms", 
+          "", 
+          PHdummy)
 
-SUBPHASE (undossa, "undossa", "", PHdummy)
+SUBPHASE( free, "free",
+          "",
+          PHdummy)
 
-SUBPHASE (syncinit, "syncinit", "", PHdummy)
+SUBPHASE( readsib, "readsib",
+          "",
+          PHdummy)
 
-SUBPHASE (syncopt, "syncopt", "", PHdummy)
+SUBPHASE( undossa, "undossa", 
+          "",
+          PHdummy)
 
-SUBPHASE (wlaa, "wlaa", "", PHdummy)
+SUBPHASE( syncinit, "syncinit",
+          "", 
+          PHdummy)
 
-SUBPHASE (tli, "tli", "", PHdummy)
+SUBPHASE( syncopt, "syncopt", 
+          "",
+          PHdummy)
 
-SUBPHASE (ReuseWithArrays, "ReuseWithArrays", "", PHdummy)
+SUBPHASE( wlaa, "wlaa", 
+          "", 
+          PHdummy)
 
-SUBPHASE (IVE, "IVE", "", PHdummy)
+SUBPHASE( tli, "tli", 
+          "",
+          PHdummy)
+
+SUBPHASE( ReuseWithArrays, "ReuseWithArrays",
+          "",
+          PHdummy)
+
+SUBPHASE( IVE, "IVE", 
+          "", 
+          PHdummy)
+
+#endif
 
 /***********************************************************************/
 
 PHASE (scanparse, "Loading SAC program", PHdummy)
 
-SUBPHASE (resolvepragma, "resolvepramga", "", PHdummy)
+SUBPHASE (cpp, "cpp", "Running C preprocessor", PHdummy)
 
-SUBPHASE (respragma, "respragma", "", PHdummy)
+SUBPHASE (sp, "sp", "Parsing input file", PHdummy)
+
+SUBPHASE (acn, "acn", "Resolving axis control and dot notation", PHdummy)
+
+SUBPHASE (pragma, "pramga", "Resolving pragma annotations", PHdummy)
 
 /***********************************************************************/
 
-PHASE (use, "Resolving used symbols from modules and classes", PHdummy)
+PHASE (module, "Running module system", PHdummy)
+
+SUBPHASE (rsa, "rsa", "Processing use and import statements", PHdummy)
+
+SUBPHASE (ans, "ans", "Resolving namespaces", PHdummy)
+
+SUBPHASE (uss, "uss", "Getting used symbols", PHdummy)
+
+SUBPHASE (dep, "dep", "Resolving dependencies", PHdummy)
 
 /***********************************************************************/
 
@@ -186,9 +249,15 @@ PHASE (objinit, "Generating generic types and functions", PHdummy)
 
 PHASE (flatten, "Simplifying source code", PHdummy)
 
+SUBPHASE (hm, "hm", "Handling multiple operator expressions", PHdummy)
+
+SUBPHASE (flat, "flat", "Flattening nested expressions", PHdummy)
+
 /***********************************************************************/
 
 PHASE (typecheck, "Running type inference system", PHdummy)
+
+SUBPHASE (insvd, "insvd", "Inserting variable declarations", PHdummy)
 
 SUBPHASE (createwrappers, "create-wrappers", "", PHdummy)
 
