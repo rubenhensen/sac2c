@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2005/04/20 20:45:12  sah
+ * renamed errno to checkerrno as the identifier
+ * errno is reserved (cf. ISO C Standard) and may
+ * not be used for own definitions!
+ * the use of errno results in compilation failures
+ * with GNU libc version 6!
+ *
  * Revision 1.6  2004/11/24 16:01:13  cg
  * some renamings
  *
@@ -150,7 +157,7 @@ CS (immediate, 'i', TRUE)
 RTC (boundary, 'b', FALSE)
 RTC (type, 't', FALSE)
 RTC (malloc, 'm', FALSE)
-RTC (errno, 'e', FALSE)
+RTC (checkerrno, 'e', FALSE)
 RTC (heap, 'h', FALSE)
 
 #undef RTCflag

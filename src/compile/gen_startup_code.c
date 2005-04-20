@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 3.47  2005/04/20 20:45:12  sah
+ * renamed errno to checkerrno as the identifier
+ * errno is reserved (cf. ISO C Standard) and may
+ * not be used for own definitions!
+ * the use of errno results in compilation failures
+ * with GNU libc version 6!
+ *
  * Revision 3.46  2004/12/08 11:20:21  sah
  * profiling code is pnly generated if profiling is enabled
  *
@@ -187,7 +194,7 @@ PrintGlobalSwitches ()
     fprintf (global.outfile, "#define SAC_DO_CHECK_MALLOC    %d\n",
              (global.runtimecheck.malloc) ? 1 : 0);
     fprintf (global.outfile, "#define SAC_DO_CHECK_ERRNO     %d\n",
-             (global.runtimecheck.errno) ? 1 : 0);
+             (global.runtimecheck.checkerrno) ? 1 : 0);
     fprintf (global.outfile, "#define SAC_DO_CHECK_HEAP      %d\n",
              (global.runtimecheck.heap) ? 1 : 0);
     fprintf (global.outfile, "\n");
