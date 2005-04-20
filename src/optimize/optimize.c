@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.88  2005/04/20 19:14:31  ktr
+ * removed SSArestoreSsaOneFunction after LIR
+ *
  * Revision 3.87  2005/04/19 17:59:10  khf
  * removed transformation in ssa-form
  *
@@ -1586,10 +1589,6 @@ OPTfundef (node *arg_node, info *arg_info)
             if (global.optimize.dolir) {
                 arg_node
                   = LIRdoLoopInvariantRemoval (arg_node, INFO_OPT_MODULE (arg_info));
-                /* ktr: This is a very dirty solution for bug #16.
-                   The problem of AVIS_SSAASSIGN being wrongly assigned in SSALIR.c
-                   is still unresolved. */
-                arg_node = SSArestoreSsaOneFunction (arg_node);
             }
 
             if ((global.break_after == PH_sacopt)
