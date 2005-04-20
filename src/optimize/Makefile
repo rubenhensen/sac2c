@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.41  2005/04/20 19:13:23  ktr
+# removed Inline.o
+#
 # Revision 3.40  2005/02/14 11:20:52  cg
 # Added compilation of inlining.c
 #
@@ -38,7 +41,7 @@ include $(PROJECT_ROOT)/Makefile.Config
 # local settings:
 #
 
-OBJS := optimize.o Inline.o DeadFunctionRemoval.o \
+OBJS := optimize.o DeadFunctionRemoval.o \
         SSADeadCodeRemoval.o SSACSE.o SSAConstantFolding.o SSALIR.o SSALUR.o \
         SSAWLUnroll.o SSAInferLI.o AssociativeLaw.o rmcasts.o \
         UndoElimSubDiv.o ElimSubDiv.o \
