@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.15  2005/04/20 19:15:29  ktr
+ * removed CFarg, CFlet. Codebrushing.
+ *
  * Revision 1.14  2005/02/14 15:51:48  mwe
  * CFids removed
  *
@@ -78,11 +81,9 @@ extern node *CFdoConstantFolding (node *fundef, node *modul);
 
 extern node *CFfundef (node *arg_node, info *arg_info);
 extern node *CFblock (node *arg_node, info *arg_info);
-extern node *CFarg (node *arg_node, info *arg_info);
 extern node *CFassign (node *arg_node, info *arg_info);
 extern node *CFcond (node *arg_node, info *arg_info);
 extern node *CFreturn (node *arg_node, info *arg_info);
-extern node *CFlet (node *arg_node, info *arg_info);
 extern node *CFap (node *arg_node, info *arg_info);
 extern node *CFid (node *arg_node, info *arg_info);
 extern node *CFarray (node *arg_node, info *arg_info);

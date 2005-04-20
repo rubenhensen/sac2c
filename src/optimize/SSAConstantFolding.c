@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.85  2005/04/20 19:15:29  ktr
+ * removed CFarg, CFlet. Codebrushing.
+ *
  * Revision 1.84  2005/03/04 21:21:42  cg
  * Useless conditional eliminated.
  * Integration of silently duplicated LaC funs at the end of the
@@ -288,8 +291,6 @@
 #include "shape.h"
 #include "ctinfo.h"
 #include "optimize.h"
-#include "SSATransform.h"
-#include "Inline.h"
 #include "compare_tree.h"
 #include "SSAConstantFolding.h"
 
@@ -299,16 +300,10 @@
 struct INFO {
     bool remassign;
     node *fundef;
-    bool isconst;
+    bool insconst;
     node *postassign;
-    node *topblock;
-    node *results;
-    bool inlineap;
-    node *module;
     node *assign;
-    bool inlfundef;
     node *withid;
-    bool akv2ast;
 };
 
 /*
@@ -316,16 +311,10 @@ struct INFO {
  */
 #define INFO_CF_REMASSIGN(n) (n->remassign)
 #define INFO_CF_FUNDEF(n) (n->fundef)
-#define INFO_CF_INSCONST(n) (n->isconst)
+#define INFO_CF_INSCONST(n) (n->insconst)
 #define INFO_CF_POSTASSIGN(n) (n->postassign)
-#define INFO_CF_TOPBLOCK(n) (n->topblock)
-#define INFO_CF_RESULTS(n) (n->results)
-#define INFO_CF_INLINEAP(n) (n->inlineap)
-#define INFO_CF_MODULE(n) (n->module)
 #define INFO_CF_ASSIGN(n) (n->assign)
-#define INFO_CF_INLFUNDEF(n) (n->inlfundef)
 #define INFO_CF_WITHID(n) (n->withid)
-#define INFO_CF_AKV2AST(n) (n->akv2ast)
 
 /*
  * INFO functions
@@ -343,14 +332,8 @@ MakeInfo ()
     INFO_CF_FUNDEF (result) = NULL;
     INFO_CF_INSCONST (result) = FALSE;
     INFO_CF_POSTASSIGN (result) = NULL;
-    INFO_CF_TOPBLOCK (result) = NULL;
-    INFO_CF_RESULTS (result) = NULL;
-    INFO_CF_INLINEAP (result) = FALSE;
-    INFO_CF_MODULE (result) = NULL;
     INFO_CF_ASSIGN (result) = NULL;
-    INFO_CF_INLFUNDEF (result) = FALSE;
     INFO_CF_WITHID (result) = NULL;
-    INFO_CF_AKV2AST (result) = TRUE;
 
     DBUG_RETURN (result);
 }
@@ -2023,9 +2006,6 @@ CFfundef (node *arg_node, info *arg_info)
     }
 
     if (FUNDEF_BODY (arg_node) != NULL) {
-        /* save block for inserting vardecs during the traversal */
-        INFO_CF_TOPBLOCK (arg_info) = FUNDEF_BODY (arg_node);
-
         /* traverse block of fundef */
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
     }
@@ -2056,29 +2036,6 @@ CFblock (node *arg_node, info *arg_info)
         /* insert at least the N_empty node in an empty block */
         BLOCK_INSTR (arg_node) = TBmakeEmpty ();
     }
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node* CFarg(node *arg_node, info *arg_info)
- *
- * description:
- *   checks if only loop invariant arguments are constant
- *   CFarg is only called for  special loop fundefs
- *
- *****************************************************************************/
-/*
- * MWE
- * done by type_upgrade
- * remove
- */
-node *
-CFarg (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("CFarg");
 
     DBUG_RETURN (arg_node);
 }
@@ -2195,8 +2152,6 @@ CFfuncond (node *arg_node, info *arg_info)
         arg_node = tmp;
     }
 
-    INFO_CF_AKV2AST (arg_info) = FALSE;
-
     DBUG_RETURN (arg_node);
 }
 
@@ -2226,10 +2181,6 @@ CFcond (node *arg_node, info *arg_info)
      * traverse condition to analyse for constant expression
      * and substitute constants with their values to get
      * a simple N_bool node for the condition (if constant)
-     */
-
-    /*
-     * TODO: check id for akv
      */
 
     if ((N_id == NODE_TYPE (COND_COND (arg_node)))
@@ -2347,91 +2298,6 @@ CFreturn (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* CFlet(node *arg_node, info *arg_info)
- *
- * description:
- *   checks expression for constant value and sets corresponding AVIS_SSACONST
- *   attribute for later usage.
- *   if constant folding has eliminated the condtional in a special function
- *   this function can be inlined here, because it is no longer a special one.
- *
- *****************************************************************************/
-
-node *
-CFlet (node *arg_node, info *arg_info)
-{
-
-    DBUG_ENTER ("CFlet");
-
-    DBUG_ASSERT ((LET_EXPR (arg_node) != NULL), "let without expression");
-
-    /*
-     * left side is not marked as constant -> compute expression
-     * if there is a special function application with multiple results
-     * the constant results will be removed by dead code removal
-     * so this conditions holds here, too. for a general function
-     * application there is no constant propagation allowed.
-     */
-
-    if ((LET_IDS (arg_node) != NULL)) {
-
-        INFO_CF_AKV2AST (arg_info) = TRUE;
-
-        /* traverse expression to calculate constants */
-        LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
-
-        if (INFO_CF_AKV2AST (arg_info)) {
-            if (LET_IDS (arg_node) != NULL) {
-                LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
-            }
-        }
-
-        if (NODE_TYPE (LET_EXPR (arg_node)) == N_ap) {
-            /*
-             * handling for constant back-propagation from special fundefs
-             * traverse ids chain and result chain of the concerning return
-             * statement. for each constant identifier add a separate
-             * assignent and substitute the result identifier in the
-             * function application with a dummy identifier (that will be
-             * removed by the next dead code removal)
-             */
-
-            /* called function can be inlined */
-            if (INFO_CF_INLINEAP (arg_info)) {
-                DBUG_PRINT ("CF", ("inline function %s in %s",
-                                   FUNDEF_NAME (AP_FUNDEF (LET_EXPR (arg_node))),
-                                   FUNDEF_NAME (INFO_CF_FUNDEF (arg_info))));
-
-                /* inline special function */
-                INFO_CF_POSTASSIGN (arg_info)
-                  = TCappendAssign (INLinlineSingleApplication (arg_node, INFO_CF_FUNDEF (
-                                                                            arg_info)),
-                                    INFO_CF_POSTASSIGN (arg_info));
-
-                FUNDEF_ISDOFUN (AP_FUNDEF (LET_EXPR (arg_node))) = TRUE;
-                FUNDEF_ISCONDFUN (AP_FUNDEF (LET_EXPR (arg_node))) = TRUE;
-
-                /* remove this assignment and reset the inline flag */
-                INFO_CF_REMASSIGN (arg_info) = TRUE;
-
-                INFO_CF_INLINEAP (arg_info) = FALSE;
-
-                /* update defining assigns after inlining */
-                LET_IDS (arg_node)
-                  = SetSsaAssign (LET_IDS (arg_node), INFO_CF_ASSIGN (arg_info));
-            }
-        } else if (NODE_TYPE (LET_EXPR (arg_node)) == N_with) {
-        }
-    } else {
-        /* left side is already maked as constant - no further processing needed */
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
  *   node* CFap(node *arg_node, info *arg_info)
  *
  * description:
@@ -2452,18 +2318,8 @@ CFap (node *arg_node, info *arg_info)
         /* stack arg_info frame for new fundef */
         new_arg_info = MakeInfo ();
 
-        INFO_CF_MODULE (new_arg_info) = INFO_CF_MODULE (arg_info);
-        INFO_CF_INLFUNDEF (new_arg_info) = FALSE;
-
         /* start traversal of special fundef */
         AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), new_arg_info);
-
-        /* can this special function be inlined? */
-        if (INFO_CF_INLFUNDEF (new_arg_info) == TRUE) {
-            INFO_CF_INLINEAP (arg_info) = TRUE;
-        } else {
-            INFO_CF_INLINEAP (arg_info) = FALSE;
-        }
 
         DBUG_PRINT ("CF", ("traversal of special fundef %s finished\n",
                            FUNDEF_NAME (AP_FUNDEF (arg_node))));
@@ -2844,7 +2700,7 @@ CFgenerator (node *arg_node, info *arg_info)
  *   node* CFcode(node *arg_node, info *arg_info)
  *
  * description:
- *   traverses CODE_CBLOCK
+ *   traverses CODE_CBLOCK and not CEXPRS
  *
  *****************************************************************************/
 node *
@@ -3226,8 +3082,6 @@ CFdoConstantFolding (node *fundef, node *module)
     /* do not start traversal in special functions */
     if (!(FUNDEF_ISLACFUN (fundef))) {
         arg_info = MakeInfo ();
-
-        INFO_CF_MODULE (arg_info) = module;
 
         TRAVpush (TR_cf);
         fundef = TRAVdo (fundef, arg_info);
