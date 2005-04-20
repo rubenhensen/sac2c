@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2005/04/20 19:20:47  ktr
+ * re-activated LIR
+ *
  * Revision 1.14  2005/04/15 13:23:55  ktr
  * removed lacinline
  *
@@ -75,7 +78,7 @@
 
 OPTIMIZE ("dcr", dcr, TRUE, TRUE, "dead code removal")
 OPTIMIZE ("cf", cf, FALSE, FALSE, "constant folding")
-OPTIMIZE ("lir", lir, FALSE, FALSE, "loop invariant removal")
+OPTIMIZE ("lir", lir, TRUE, FALSE, "loop invariant removal")
 OPTIMIZE ("inl", inl, TRUE, TRUE, "function inlining")
 OPTIMIZE ("lur", lur, FALSE, FALSE, "loop unrolling")
 OPTIMIZE ("wlur", wlur, FALSE, FALSE, "with-loop unrolling")
