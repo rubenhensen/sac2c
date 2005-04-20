@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2005/04/20 07:59:16  cg
+ * Bug fixed: superfluous variable declarations are removed.
+ *
  * Revision 1.2  2005/03/04 21:21:42  cg
  * Some minor bugs fixed.
  *
@@ -151,7 +154,17 @@ PINLvardec (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PINLvardec");
 
-    if (LUTsearchInLutPp (inline_lut, VARDEC_AVIS (arg_node)) == VARDEC_AVIS (arg_node)) {
+    if (AVIS_ISDEAD (VARDEC_AVIS (arg_node))) {
+        /*
+         * Since this identifier is marked dead, it must have occurred
+         * in the return-statement. This identifier is renamed to a let-bound
+         * variable in the calling context. Hence, the vardec must be eliminated.
+         */
+        if (VARDEC_NEXT (arg_node) != NULL) {
+            VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
+        }
+        arg_node = FREEdoFreeNode (arg_node);
+    } else {
         /*
          * This identifier was not found in the return-statement. Hence,
          * it is simply renamed to a fresh name to avoid name clashes
@@ -161,16 +174,6 @@ PINLvardec (node *arg_node, info *arg_info)
         if (VARDEC_NEXT (arg_node) != NULL) {
             VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
         }
-    } else {
-        /*
-         * Since this identifier is already in the LUT, it must have occurred
-         * in the return-statement. This identifier is renamed to a let-bound
-         * variable in the calling context. Hence, the vardec must be eliminated.
-         */
-        if (VARDEC_NEXT (arg_node) != NULL) {
-            VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
-        }
-        arg_node = FREEdoFreeNode (arg_node);
     }
 
     DBUG_RETURN (arg_node);
@@ -235,7 +238,10 @@ PINLid (node *arg_node, info *arg_info)
             /*
              * If AVIS_NAME is not in the LUT, it has not previously occured
              * in the return-statement. Therefore, we simply "replace" the ID with that
-             * used in the calling context. We insert AVIS_NAME into the LUT to keep
+             * used in the calling context. Since the copied vardec is no longer needed
+             * in this case, we mark it as dead and remove it later on.
+             *
+             * We insert AVIS_NAME into the LUT to keep
              * track of multiple occurrences of the same identifier in the
              * return-statement. This is the only purpose for storing the name
              * string in the LUT.
@@ -243,6 +249,8 @@ PINLid (node *arg_node, info *arg_info)
 
             inline_lut = LUTupdateLutP (inline_lut, ID_AVIS (arg_node),
                                         IDS_AVIS (INFO_LETIDS (arg_info)), NULL);
+            AVIS_ISDEAD (new_avis) = TRUE;
+
             inline_lut
               = LUTinsertIntoLutP (inline_lut, AVIS_NAME (ID_AVIS (arg_node)),
                                    AVIS_NAME (IDS_AVIS (INFO_LETIDS (arg_info))));
