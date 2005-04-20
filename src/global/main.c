@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.98  2005/04/20 07:25:18  cg
+ * CheckTree is now only called if syntax tree actually exists.
+ *
  * Revision 3.97  2005/04/12 15:14:09  sah
  * added missing include
  *
@@ -126,7 +129,7 @@
 #define PHASE_DONE_EPILOG                                                                \
     CTIabortOnError ();                                                                  \
     DBUG_EXECUTE ("MEM_LEAK", ILIBdbugMemoryLeakCheck (););                              \
-    if (global.treecheck) {                                                              \
+    if (global.treecheck && (global.syntax_tree != NULL)) {                              \
         global.syntax_tree = CHKdoTreeCheck (global.syntax_tree);                        \
     }
 
@@ -221,7 +224,7 @@ main (int argc, char *argv[])
     PHASE_DONE_EPILOG;
     PHASE_EPILOG;
 
-    if (global.break_after == PH_use)
+    if (global.break_after == PH_module)
         goto BREAK;
     global.compiler_phase++;
 

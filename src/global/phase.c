@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2005/04/20 07:25:18  cg
+ * CheckTree is now only called if syntax tree actually exists.
+ *
  * Revision 1.2  2005/03/10 09:41:09  cg
  * External declarations of phase driver functions are now created
  * automatically from phase_info.mac
@@ -95,7 +98,7 @@ PHrunCompilerPhase (compiler_phase_t phase, node *syntax_tree)
 
     DBUG_EXECUTE ("MEM_LEAK", ILIBdbugMemoryLeakCheck (););
 
-    if (global.treecheck) {
+    if (global.treecheck && (syntax_tree != NULL)) {
         syntax_tree = CHKdoTreeCheck (syntax_tree);
     }
 
