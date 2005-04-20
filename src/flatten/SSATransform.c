@@ -1,5 +1,10 @@
 /*
  * $Log$
+ * Revision 1.33  2005/04/20 19:11:01  ktr
+ * SSA form no longer leaves information in the syntax tree that must be
+ * maintained. Instead, SSACounter and SSAStack nodes are removed after
+ * SSATransform
+ *
  * Revision 1.32  2005/02/01 17:50:32  mwe
  * some changes in creation of fungroups
  *
@@ -286,6 +291,8 @@ static node *CreateFuncondAssign (node *cond, node *id, node *assign);
 static node *GetSsacnt (char *baseid, int initvalue, node *block);
 static node *TreatIdAsLhs (node *arg_node, info *arg_info);
 static node *TreatIdsAsRhs (node *, info *);
+static node *InitSSAT (node *avis);
+static node *TearDownSSAT (node *avis);
 
 /* special ssastack operations for ONE avis-node */
 static node *PopSsastack (node *avis);
@@ -547,10 +554,47 @@ SaveTopSsastackElse (node *avis)
  * node *CreateFuncondAssign( node *cond, node *id, node *assign)
  * node* GetSsacnt(char *baseid, int initvalue, node *block)
  * node* InitializeFungroup(node *arg_node, info* arg_info)
+ * node *InitSSAT( node *avis)
+ * node *TearDownSSAT( node *avis)
  * -->
  *
  */
 /*@{*/
+/** <!--********************************************************************-->
+ *
+ * @fn node *InitSSAT(node *avis)
+ *
+ *   @brief Initializes AVIS_SSASTACK with an empty stack
+ *
+ ******************************************************************************/
+static node *
+InitSSAT (node *avis)
+{
+    DBUG_ENTER ("InitSSAT");
+
+    AVIS_SSASTACK (avis) = TBmakeSsastack (NULL, NULL);
+
+    DBUG_RETURN (avis);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *TearDownSSAT(node *avis)
+ *
+ *   @brief Removes the AVIS_SSASTACK and sets AVIS_SSACNT to NULL
+ *
+ ******************************************************************************/
+static node *
+TearDownSSAT (node *avis)
+{
+    DBUG_ENTER ("TearDownSSAT");
+
+    AVIS_SSASTACK (avis) = FREEdoFreeTree (AVIS_SSASTACK (avis));
+    AVIS_SSACOUNT (avis) = NULL;
+
+    DBUG_RETURN (avis);
+}
+
 /** <!--********************************************************************-->
  *
  * @fn node *SSATnewVardec(node *old_vardec_or_arg)
@@ -758,6 +802,11 @@ SSATfundef (node *arg_node, info *arg_info)
         /* stores access points for later insertions in this fundef */
         INFO_SSA_FUNDEF (arg_info) = arg_node;
 
+        /*
+         * Attach SSAStacks to all AVIS nodes
+         */
+        FOR_ALL_AVIS (InitSSAT, arg_node);
+
         if (FUNDEF_ARGS (arg_node) != NULL) {
             /* there are some args */
             FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
@@ -766,6 +815,19 @@ SSATfundef (node *arg_node, info *arg_info)
         if (FUNDEF_BODY (arg_node) != NULL) {
             /* there is a block */
             FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+        }
+
+        /*
+         * Remove SSAStacks and set SSACnt to NULL
+         */
+        FOR_ALL_AVIS (TearDownSSAT, arg_node);
+
+        /*
+         * Remove all SSACNT nodes stored in the top-level block
+         */
+        if (BLOCK_SSACOUNTER (FUNDEF_BODY (arg_node)) != NULL) {
+            BLOCK_SSACOUNTER (FUNDEF_BODY (arg_node))
+              = FREEdoFreeTree (BLOCK_SSACOUNTER (FUNDEF_BODY (arg_node)));
         }
     }
 
