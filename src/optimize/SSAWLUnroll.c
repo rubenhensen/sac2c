@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.19  2005/04/20 19:16:22  ktr
+ * removed Inline.h
+ *
  * Revision 1.18  2005/01/14 08:45:14  cg
  * Replaced strcmp by ILIBstringCompare.
  *
@@ -88,7 +91,6 @@
 #include "shape.h"
 
 #include "optimize.h"
-#include "Inline.h"
 #include "DupTree.h"
 #include "SSAWithloopFolding.h"
 #include "SSAWLUnroll.h"
