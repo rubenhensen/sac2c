@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.162  2005/04/20 19:10:23  ktr
+# removed src/optimize/Inline.o
+#
 # Revision 3.161  2005/03/10 09:41:09  cg
 # Added linking of phase.o and setup.o.
 #
@@ -159,7 +162,6 @@ TYPECHECK= src/typecheck/gen_pseudo_fun.o \
 
 OPTIMIZE= src/optimize/optimize.o \
           src/optimize/DeadFunctionRemoval.o \
-	  src/optimize/Inline.o \
           src/optimize/AssociativeLaw.o \
           src/optimize/SSADeadCodeRemoval.o src/optimize/SSACSE.o \
           src/optimize/SSAConstantFolding.o src/optimize/SSALIR.o \
