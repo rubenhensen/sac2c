@@ -627,11 +627,9 @@
         <travuser>
           <node name="Fundef" />
           <node name="Block" />
-          <node name="Arg" />
           <node name="Assign" />
           <node name="Cond" />
           <node name="Return" />
-          <node name="Let" />
           <node name="Ap" />
           <node name="Id" />
           <node name="Array" />
@@ -642,6 +640,10 @@
           <node name="Generator" />
           <node name="Funcond" />
         </travuser>
+	<travnone>
+	  <node name="Ids" />
+	  <node name="Arg" />
+	</travnone>
       </traversal>
       <traversal id="CSE" name="Common Subexpression Elimination" default="sons" include="SSACSE.h" >
 	<travuser>
@@ -2450,14 +2452,14 @@
             <phase name="compile" />
           </phases>
         </attribute>
-        <attribute name="SSACounter" mandatory="yes">
+        <attribute name="SSACounter" mandatory="no">
           <type name="Node">
             <target>
               <node name="SSAcnt" />
             </target>
           </type>
           <phases>
-            <range from="ssaform" to="optimize" />
+            <phase name="ssaform" />
           </phases>
         </attribute>
         <attribute name="Dataflowgraph" mandatory="no">
@@ -3615,14 +3617,14 @@
             <all />
           </phases>
         </attribute>
-        <attribute name="SSACount" mandatory="yes">
+        <attribute name="SSACount" mandatory="no">
           <type name="Link">
             <target>
               <node name="SSAcnt" />
             </target>
           </type>
           <phases>
-            <range from="ssaform" to="undossa" />
+            <phase name="ssaform" />
           </phases>
         </attribute>
         <attribute name="SSAAssign" mandatory="yes">
@@ -3635,15 +3637,14 @@
             <range from="ssaform" to="undossa" />
           </phases>
         </attribute>
-        <attribute name="SSAstack"
-        default="TBmakeSsastack(NULL, NULL)" mandatory="yes">
+        <attribute name="SSAstack" mandatory="no">
           <type name="Node">
             <target>
               <node name="SSAstack" />
             </target>
           </type>
           <phases>
-            <range from="ssaform" to="undossa" />
+            <phase name="ssaform" />
           </phases>
         </attribute>
         <attribute name="WithId" default="NULL" mandatory="no">
