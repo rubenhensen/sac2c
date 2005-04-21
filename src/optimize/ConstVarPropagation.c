@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.18  2005/04/21 06:32:47  ktr
+ * Eliminated application of SSATnewVardec
+ *
  * Revision 1.17  2005/02/14 16:10:10  mwe
  * propagate only constant scalar return values
  *
@@ -72,9 +75,7 @@
 #include "internal_lib.h"
 #include "optimize.h"
 #include "free.h"
-#include "DataFlowMask.h"
 #include "DupTree.h"
-#include "SSATransform.h"
 #include "new_types.h"
 #include "constants.h"
 
@@ -185,6 +186,7 @@ struct INFO {
 #define INFO_CVP_ASSIGN(n) (n->assign)
 #define INFO_CVP_POSTASSIGN(n) (n->postassign)
 #define INFO_CVP_SPECFUN(n) (n->specfun)
+
 /*
  * INFO functions
  */
@@ -1110,29 +1112,34 @@ CVPids (node *arg_ids, info *arg_info)
             DBUG_PRINT ("CVP", ("identifier %s marked as constant",
                                 VARDEC_OR_ARG_NAME (AVIS_DECL (IDS_AVIS (arg_ids)))));
 
-            /* create one let assign for constant definition, reuse old avis/vardec */
+            /*
+             * create one let assign for constant definition,
+             * reuse old avis/vardec
+             */
             assign_let = TCmakeAssignLet (IDS_AVIS (arg_ids), COconstant2AST (new_co));
+            AVIS_SSAASSIGN (IDS_AVIS (arg_ids)) = assign_let;
 
-            /* append new copy assignment to then-part block */
+            /*
+             * append new copy assignment to then-part block
+             */
             INFO_CVP_POSTASSIGN (arg_info)
               = TCappendAssign (INFO_CVP_POSTASSIGN (arg_info), assign_let);
 
             DBUG_PRINT ("CVP",
                         ("create constant assignment for %s", (IDS_NAME (arg_ids))));
 
-            /* create new dummy identifier */
-            new_vardec = SSATnewVardec (AVIS_DECL (IDS_AVIS (arg_ids)));
+            /*
+             * Replace current IDS_AVIS with dummy identifier
+             */
+            new_vardec = TBmakeVardec (TBmakeAvis (ILIBtmpVarName (IDS_NAME (arg_ids)),
+                                                   TYeliminateAKV (IDS_NTYPE (arg_ids))),
+                                       NULL);
             BLOCK_VARDEC (FUNDEF_BODY (INFO_CVP_FUNDEF (arg_info)))
               = TCappendVardec (BLOCK_VARDEC (FUNDEF_BODY (INFO_CVP_FUNDEF (arg_info))),
                                 new_vardec);
 
-            /*
-             * set new dummy values
-             */
             AVIS_SSAASSIGN (VARDEC_AVIS (new_vardec)) = INFO_CVP_ASSIGN (arg_info);
             IDS_AVIS (arg_ids) = VARDEC_AVIS (new_vardec);
-            AVIS_TYPE (IDS_AVIS (arg_ids))
-              = TYcopyType (AVIS_TYPE (IDS_AVIS (LET_IDS (ASSIGN_INSTR (assign_let)))));
         }
 
         IDS_NEXT (arg_ids) = TRAVdo (IDS_NEXT (arg_ids), arg_info);
