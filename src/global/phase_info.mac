@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2005/04/21 14:42:17  cg
+ * Introduced (presumably almost) complete set of subphases.
+ * For the time being, subphase information is mostly unused for
+ * triggering the compilation process.
+ *
  * Revision 3.19  2005/04/20 07:25:18  cg
  * Phase use renamed to module.
  * Subphases edited.
@@ -128,95 +133,6 @@ SUBPHASE (rsc, "rsc", "Processing sac2c configuration file", RSCevaluateConfigur
 
 SUBPHASE (init, "init", "Initializing data structures", SETUPdoInitializations)
 
-#if 0
-
-SUBPHASE( annotatenamespace, "annotatenamespace",
-          "",
-          PHdummy)
-
-SUBPHASE( BuildMultithread, "BuildMultithread",
-          "",
-          PHdummy)
-
-
-SUBPHASE( psioptimize, "psi-optimize",
-          "",
-          PHdummy)
-
-SUBPHASE( rsp, "rsp", 
-          "",
-          PHdummy)
-
-SUBPHASE( ssaform, "ssaform",
-          "",
-          PHdummy)
-
-SUBPHASE( inline, "inline",
-          "",
-          PHdummy)
-
-SUBPHASE( AssignmentsRearrange, "AssignmentsRearrange",
-          "",
-          PHdummy)
-
-SUBPHASE( WLI, "WLI", 
-          "",
-          PHdummy)
-
-SUBPHASE( WLF, "WLF", 
-          "",
-          PHdummy)
-
-SUBPHASE( ssalir, "ssalir", 
-          "", 
-          PHdummy)
-
-SUBPHASE( lirmov, "lirmov",
-          "", 
-          PHdummy)
-
-SUBPHASE( infer_dfms, "infer_dfms", 
-          "", 
-          PHdummy)
-
-SUBPHASE( free, "free",
-          "",
-          PHdummy)
-
-SUBPHASE( readsib, "readsib",
-          "",
-          PHdummy)
-
-SUBPHASE( undossa, "undossa", 
-          "",
-          PHdummy)
-
-SUBPHASE( syncinit, "syncinit",
-          "", 
-          PHdummy)
-
-SUBPHASE( syncopt, "syncopt", 
-          "",
-          PHdummy)
-
-SUBPHASE( wlaa, "wlaa", 
-          "", 
-          PHdummy)
-
-SUBPHASE( tli, "tli", 
-          "",
-          PHdummy)
-
-SUBPHASE( ReuseWithArrays, "ReuseWithArrays",
-          "",
-          PHdummy)
-
-SUBPHASE( IVE, "IVE", 
-          "", 
-          PHdummy)
-
-#endif
-
 /***********************************************************************/
 
 PHASE (scanparse, "Loading SAC program", PHdummy)
@@ -235,7 +151,7 @@ PHASE (module, "Running module system", PHdummy)
 
 SUBPHASE (rsa, "rsa", "Processing use and import statements", PHdummy)
 
-SUBPHASE (ans, "ans", "Resolving namespaces", PHdummy)
+SUBPHASE (ans, "ans", "Annotating namespaces", PHdummy)
 
 SUBPHASE (uss, "uss", "Getting used symbols", PHdummy)
 
@@ -259,19 +175,44 @@ PHASE (typecheck, "Running type inference system", PHdummy)
 
 SUBPHASE (insvd, "insvd", "Inserting variable declarations", PHdummy)
 
-SUBPHASE (createwrappers, "create-wrappers", "", PHdummy)
+SUBPHASE (crtwrp, "crtwrp", "Creating wrapper functions", PHdummy)
 
-SUBPHASE (createwrappercode, "create-wrapper-code", "", PHdummy)
+SUBPHASE (l2f, "l2f", "Eliminating loops and conditionals", PHdummy)
+
+SUBPHASE (ssa, "ssa", "Establishing static single assignment form", PHdummy)
+
+SUBPHASE (tc, "tc", "Running type inference system", PHdummy)
+
+SUBPHASE (ds, "ds", "Deserializing code", PHdummy)
+
+SUBPHASE (cwc, "cwc", "Creating wrapper code", PHdummy)
+
+SUBPHASE (nt2ot, "nt2ot", "Cleaning up type inference system", PHdummy)
+
+SUBPHASE (l2fwc, "l2fwc", "Eliminating conditionals in wrapper code", PHdummy)
+
+SUBPHASE (ssawc, "ssawc", "Establishing static single assignment form in wrapper code",
+          PHdummy)
 
 /***********************************************************************/
 
 PHASE (export, "Processing exports", PHdummy)
 
+SUBPHASE (oan, "oan", "Running global object analysis", PHdummy)
+
+SUBPHASE (exp, "exp", "Exporting symbols", PHdummy)
+
+SUBPHASE (ppi, "ppi", "Restoring bodies of imported inline functions", PHdummy)
+
 /***********************************************************************/
 
 PHASE (objects, "Resolving global objects and reference parameters", PHdummy)
 
-SUBPHASE (objhandling, "obj-handling", "", PHdummy)
+SUBPHASE (obj, "obj", "Resolving global objects", PHdummy)
+
+SUBPHASE (ref, "ref", "Resolving reference parameters", PHdummy)
+
+SUBPHASE (unq, "unq", "Checking uniqueness property", PHdummy)
 
 /***********************************************************************/
 
@@ -281,11 +222,67 @@ PHASE (uniquecheck, "Checking uniqueness property of objects", PHdummy)
 
 PHASE (wlenhance, "Enhancement of with-loops", PHdummy)
 
+SUBPHASE (accu, "accu", "Introducing explicit accumulation", PHdummy)
+
+SUBPHASE (wlpgd, "wlpgd", "Generating full or default partitions", PHdummy)
+
 /***********************************************************************/
 
 PHASE (sacopt, "Running SAC optimizations", PHdummy)
 
-SUBPHASE (rc, "rc", "", PHdummy)
+SUBPHASE (inl, "inl", "Applying function inlining", PHdummy)
+
+SUBPHASE (dfr, "dfr", "Applying dead function removal", PHdummy)
+
+SUBPHASE (cse, "cse", "Applying common subexpression elimination", PHdummy)
+
+SUBPHASE (tup, "tup", "Applying type upgrade", PHdummy)
+
+SUBPHASE (cf, "cf", "Applying constant folding", PHdummy)
+
+SUBPHASE (cvp, "cvp", "Propagating constants and variables", PHdummy)
+
+SUBPHASE (wlpg, "wlpg", "Generating full with-loop partitions", PHdummy)
+
+SUBPHASE (wlf, "wlf", "Applying with-loop folding", PHdummy)
+
+SUBPHASE (cf2, "cf2", "Applying constant folding again", PHdummy)
+
+SUBPHASE (dcr, "dcr", "Applying dead code removal", PHdummy)
+
+SUBPHASE (wls, "wls", "Applying with-loop scalarization", PHdummy)
+
+SUBPHASE (lur, "lur", "Applying (with-)loop unrolling", PHdummy)
+
+SUBPHASE (cf3, "cf3", "Applying constant folding again", PHdummy)
+
+SUBPHASE (lir, "lir", "Applying loop invariant removal", PHdummy)
+
+SUBPHASE (esd, "esd", "Eliminating subtraction and division operators", PHdummy)
+
+SUBPHASE (al, "al", "Applying associative law", PHdummy)
+
+SUBPHASE (dl, "dl", "Applying distributive law", PHdummy)
+
+SUBPHASE (uesd, "uesd", "Reintroducing subtraction and division operators", PHdummy)
+
+SUBPHASE (dcr2, "dcr2", "Applying dead code removal again", PHdummy)
+
+SUBPHASE (wlfs, "wlfs", "Applying with-loop fusion", PHdummy)
+
+SUBPHASE (cse2, "cse2", "Applying common subexpression elimination again", PHdummy)
+
+SUBPHASE (dcr3, "dcr3", "Applying dead code removal again", PHdummy)
+
+SUBPHASE (wlaa, "wlaa", "Running with-loop array access analysis", PHdummy)
+
+SUBPHASE (ap, "ap", "Applying array padding", PHdummy)
+
+SUBPHASE (tsi, "tsi", "Applying tile size inference", PHdummy)
+
+SUBPHASE (dfr2, "dfr2", "Applying dead function removal", PHdummy)
+
+SUBPHASE (ive, "ive", "Applying index vector elimination", PHdummy)
 
 /***********************************************************************/
 
@@ -295,13 +292,71 @@ PHASE (wltrans, "Transforming with-loop representation", PHdummy)
 
 PHASE (alloc, "Introducing explicit allocation instructions", PHdummy)
 
+SUBPHASE (l2f2, "l2f2", "Eliminating loops and conditionals", PHdummy)
+
+SUBPHASE (ssa2, "ssa2", "Establishing static single assignment form", PHdummy)
+
+SUBPHASE (cvpemm, "cvpemm", "Propagating constants and variables", PHdummy)
+
+SUBPHASE (dcremm, "dcremm", "Removing dead code", PHdummy)
+
+SUBPHASE (copy, "copy", "Making copy operations explicit", PHdummy)
+
+SUBPHASE (alloc, "alloc", "Introducing ALLOC statements ", PHdummy)
+
+SUBPHASE (dcremm2, "dcremm2", "Removing dead code", PHdummy)
+
+SUBPHASE (rci, "rci", "Inferring reuse candidates", PHdummy)
+
+SUBPHASE (ia, "ia", "Applying interface analysis", PHdummy)
+
+SUBPHASE (lro, "lro", "Applying loop reuse optimization ", PHdummy)
+
+SUBPHASE (aa, "aa", "Applying alias analysis", PHdummy)
+
+SUBPHASE (frc, "frc", "Filtering reuse candidates", PHdummy)
+
+SUBPHASE (sr, "sr", "Introducing static reuse", PHdummy)
+
+SUBPHASE (rb, "rb", "Introducing reuse branching", PHdummy)
+
+SUBPHASE (rd, "rd", "Introducing data reuse", PHdummy)
+
+SUBPHASE (dcremm3, "dcremm3", "Removing dead code", PHdummy)
+
 /***********************************************************************/
 
 PHASE (multithread, "Generating annotations for MT", PHdummy)
 
+SUBPHASE (mtinit, "mtinit", "Initializing multithreading system", PHdummy)
+
+SUBPHASE (tem, "tem", "Tagging execution modes", PHdummy)
+
+SUBPHASE (crwiw, "crwiw", "Creating with in with", PHdummy)
+
+SUBPHASE (pem, "pem", "Prpagating execution modes", PHdummy)
+
+SUBPHASE (cdfg, "cdfg", "Creating data flow graph", PHdummy)
+
+SUBPHASE (asmra, "asmra", "Rearringing assignments", PHdummy)
+
+SUBPHASE (crece, "crece", "Creating execution mode cells", PHdummy)
+
+SUBPHASE (cegro, "cegro", "Extending execution mode cells", PHdummy)
+
+SUBPHASE (repfun, "repfun", "Replicatinmg functions", PHdummy)
+
+SUBPHASE (concel, "concel", "Consolidating execution mode cells", PHdummy)
+
 /***********************************************************************/
 
 PHASE (refcnt, "Running explicit reference count inference system", PHdummy)
+
+SUBPHASE (rc, "rc", "Introducing reference counting instructions", PHdummy)
+
+SUBPHASE (rco, "rco", "Optimizing reference counting instructions", PHdummy)
+
+SUBPHASE (re, "re", "Removing reuse instructions", PHdummy)
 
 /***********************************************************************/
 
@@ -311,6 +366,20 @@ PHASE (multithread_finish, "Finishing MT annotations", PHdummy)
 
 PHASE (precompile, "Preparing C code generation", PHdummy)
 
+SUBPHASE (sls, "sls", "Applying linksign pragma", PHdummy)
+
+SUBPHASE (mmv, "mmv", "Marking memval identifiers", PHdummy)
+
+SUBPHASE (opc, "opc", "Restoring global objects and reference parameters", PHdummy)
+
+SUBPHASE (fpc, "fpc", "Reorganizing function prototypes", PHdummy)
+
+SUBPHASE (tcp, "tcp", "Applying type conversions", PHdummy)
+
+SUBPHASE (aff, "aff", "Adjusting fold functions", PHdummy)
+
+SUBPHASE (rid, "rid", "Consistently renaming identifiers", PHdummy)
+
 /***********************************************************************/
 
 PHASE (compile, "Generating C code", PHdummy)
@@ -318,8 +387,6 @@ PHASE (compile, "Generating C code", PHdummy)
 /***********************************************************************/
 
 PHASE (genccode, "Creating C file", PHdummy)
-
-SUBPHASE (writesib, "writesib", "", PHdummy)
 
 /***********************************************************************/
 
