@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.34  2005/04/21 06:34:40  ktr
+ * Made SSATnewVardec static
+ *
  * Revision 1.33  2005/04/20 19:11:01  ktr
  * SSA form no longer leaves information in the syntax tree that must be
  * maintained. Instead, SSACounter and SSAStack nodes are removed after
@@ -605,7 +608,7 @@ TearDownSSAT (node *avis)
  *          original vardec.
  *
  ******************************************************************************/
-node *
+static node *
 SSATnewVardec (node *old_vardec_or_arg)
 {
     node *ssacnt;
