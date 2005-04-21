@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.12  2005/04/21 06:33:09  ktr
+ * SSATnewVardec is not exported any longer
+ *
  * Revision 1.11  2004/11/25 15:15:00  sbs
  * SSATdoTransformAllowGos renamed into SSATdoTransformAllowGOs
  *
@@ -111,7 +114,5 @@ extern node *SSATwithid (node *arg_node, info *arg_info);
 extern node *SSATfuncond (node *arg_node, info *arg_info);
 extern node *SSATreturn (node *arg_node, info *arg_info);
 extern node *SSATids (node *arg_node, info *arg_info);
-
-extern node *SSATnewVardec (node *old_vardec_or_arg); /* TODO use AVIS instead */
 
 #endif /* _SAC_SSATRANSFORM_H_ */
