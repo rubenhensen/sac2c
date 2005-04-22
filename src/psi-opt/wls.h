@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2005/04/22 10:09:12  ktr
+ * wls containing default generators cannot be scalarized
+ *
  * Revision 1.4  2005/04/13 15:27:21  ktr
  * WLSCgenerator added.
  *
@@ -44,6 +47,7 @@ extern int WLSCdoCheck (node *with);
 
 extern node *WLSCblock (node *arg_node, info *arg_info);
 extern node *WLSCcode (node *arg_node, info *arg_info);
+extern node *WLSCdefault (node *arg_node, info *arg_info);
 extern node *WLSCid (node *arg_node, info *arg_info);
 extern node *WLSCpart (node *arg_node, info *arg_info);
 extern node *WLSCwith (node *arg_node, info *arg_info);

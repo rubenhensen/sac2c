@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2005/04/22 10:09:12  ktr
+ * wls containing default generators cannot be scalarized
+ *
  * Revision 1.3  2005/04/13 15:27:21  ktr
  * Bounds vectors must be AKV N_id or structural constants (N_array)
  *
@@ -343,6 +346,29 @@ WLSCcode (node *arg_node, info *arg_info)
             INFO_WLS_POSSIBLE (arg_info) = FALSE;
         }
     }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *WLSCdefault(node *arg_node, info *arg_info)
+ *
+ * @brief rules out default generators
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return
+ *
+ *****************************************************************************/
+node *
+WLSCdefault (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("WLSCdefault");
+
+    INFO_WLS_POSSIBLE (arg_info) = FALSE;
+    DBUG_PRINT ("WLS", ("Default generators cannot be merged"));
 
     DBUG_RETURN (arg_node);
 }
