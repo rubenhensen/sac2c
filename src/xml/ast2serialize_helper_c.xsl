@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.6  2005/04/22 08:03:59  sah
+  added missing stringcopy
+
   Revision 1.5  2005/03/17 12:41:21  sah
   added special handling of char and float during deserialisation
   as they are promoted to int and double by the c compiler when passing
@@ -98,7 +101,7 @@ version="1.0">
   <xsl:value-of select="'int cnt, max;'" />
   <xsl:value-of select="'this->nodetype=node_type;'" />
   <xsl:value-of select="'this->lineno=lineno;'" />
-  <xsl:value-of select="'this->src_file=sfile;'" />
+  <xsl:value-of select="'this->src_file=ILIBstringCopy(sfile);'" />
   <xsl:value-of select="'switch (node_type) {'" />
   <xsl:apply-templates select="//syntaxtree/node" mode="gen-case" />
   <xsl:value-of select="'default: /* error */ '" />
