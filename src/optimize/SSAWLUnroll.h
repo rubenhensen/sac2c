@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2005/04/22 10:08:04  ktr
+ * Works with Marielyst compiler.
+ *
  * Revision 1.5  2004/11/26 17:38:04  mwe
  * corrected includes
  *
@@ -35,7 +38,7 @@
  * prefix: WLU
  *
  *****************************************************************************/
-extern int WLUcheckUnrollModarray (node *wln);
+extern int WLUcheckUnrollModarray (node *wln, info *arg_info);
 extern node *WLUdoUnrollModarray (node *wln, info *arg_info);
 
 extern int WLUcheckUnrollGenarray (node *wln, info *arg_info);

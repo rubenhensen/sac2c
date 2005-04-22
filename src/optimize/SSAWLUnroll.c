@@ -1,6 +1,8 @@
 /*
- *
  * $Log$
+ * Revision 1.20  2005/04/22 10:08:04  ktr
+ * Works with Marielyst compiler.
+ *
  * Revision 1.19  2005/04/20 19:16:22  ktr
  * removed Inline.h
  *
@@ -149,13 +151,14 @@ CreateBodyCode (node *partn, node *index)
     DBUG_ENTER ("CreateBodyCode");
 
     coden = PART_CODE (partn);
-    if (N_empty == NODE_TYPE (BLOCK_INSTR (CODE_CBLOCK (coden))))
+    if (N_empty == NODE_TYPE (BLOCK_INSTR (CODE_CBLOCK (coden)))) {
         res = NULL;
-    else
+    } else {
         res = DUPdoDupTree (BLOCK_INSTR (CODE_CBLOCK (coden)));
+    }
 
     /* index vector */
-    letn = TBmakeLet (DUPdoDupNode (PART_VEC (partn)), DUPdoDupTree (index));
+    letn = TBmakeLet (DUPdoDupNode (PART_VEC (partn)), index);
     res = TBmakeAssign (letn, res);
 
     /* index scalars */
@@ -199,15 +202,15 @@ CreateModGenarray (node *assignn, node *index)
     bodyn = CreateBodyCode (partn, index);
 
     /* create prf modarray */
-    cexpr = CODE_CEXPRS (PART_CODE (partn));
+    cexpr = EXPRS_EXPR (CODE_CEXPRS (PART_CODE (partn)));
     tmpn = TBmakeId (IDS_AVIS (array));
 
-    exprs
-      = TBmakeExprs (tmpn, TBmakeExprs (index, TBmakeExprs (DUPdoDupTree (cexpr), NULL)));
+    exprs = TBmakeExprs (tmpn, TBmakeExprs (TBmakeId (IDS_AVIS (PART_VEC (partn))),
+                                            TBmakeExprs (DUPdoDupTree (cexpr), NULL)));
 
     letexpr = TBmakePrf (F_modarray, exprs);
 
-    assignn = TBmakeAssign (TBmakeLet (letexpr, DUPdoDupNode (array)), assignn);
+    assignn = TBmakeAssign (TBmakeLet (DUPdoDupNode (array), letexpr), assignn);
 
     /* append assignn to bodyn */
     if (bodyn) {
@@ -216,8 +219,9 @@ CreateModGenarray (node *assignn, node *index)
             tmpn = ASSIGN_NEXT (tmpn);
         }
         ASSIGN_NEXT (tmpn) = assignn;
-    } else
+    } else {
         bodyn = assignn;
+    }
 
     DBUG_RETURN (bodyn);
 }
@@ -259,8 +263,8 @@ CreateFold (node *assignn, node *index)
      * append new last assignment: LHS of current WL = cexpr;
      */
 
-    acc = opfunarg[1];   /* ids* of current WL */
-    cexpr = opfunarg[2]; /* (node*) */
+    acc = opfunarg[1];   /* ids of current WL */
+    cexpr = opfunarg[2]; /* id */
 
     DBUG_ASSERT ((NODE_TYPE (bodyn) != N_empty), "BLOCK_INSTR is empty!");
 
@@ -482,7 +486,7 @@ CountElements (node *genn)
 /******************************************************************************
  *
  * function:
- *   int SSACheckUnrollModarray(node *wln)
+ *   int WLUCheckUnrollModarray(node *wln)
  *
  * description:
  *   Checks if this modarray WL can be unrolled.
@@ -493,10 +497,10 @@ CountElements (node *genn)
  ******************************************************************************/
 
 int
-WLUcheckUnrollModarray (node *wln)
+WLUcheckUnrollModarray (node *wln, info *arg_info)
 {
     int ok, elts;
-    node *partn, *genn, *coden, *tmpn, *exprn;
+    node *partn, *genn, *coden, *tmpn, *exprn, *lhs;
 
     DBUG_ENTER ("WLUcheckUnrollModarray");
 
@@ -508,17 +512,21 @@ WLUcheckUnrollModarray (node *wln)
     partn = WITH_PART (wln);
     elts = 0;
 
-    /* everything constant? If the first part is constant, all others are
-       constant, too. */
-    genn = PART_GENERATOR (partn);
-    ok = (COisConstant (GENERATOR_BOUND1 (genn)) && COisConstant (GENERATOR_BOUND2 (genn))
-          && (!GENERATOR_STEP (genn) || COisConstant (GENERATOR_STEP (genn)))
-          && (!GENERATOR_WIDTH (genn) || COisConstant (GENERATOR_WIDTH (genn))));
+    lhs = LET_IDS (ASSIGN_INSTR (INFO_SSALUR_ASSIGN (arg_info)));
 
-    while (ok && partn) {
+    ok = (TYisAKS (IDS_NTYPE (lhs)) || TYisAKV (IDS_NTYPE (lhs)));
+
+    /* everything constant? */
+    while (ok && (partn != NULL)) {
         genn = PART_GENERATOR (partn);
+        ok = ((NODE_TYPE (genn) == N_generator) && COisConstant (GENERATOR_BOUND1 (genn))
+              && COisConstant (GENERATOR_BOUND2 (genn))
+              && ((GENERATOR_STEP (genn) == NULL) || COisConstant (GENERATOR_STEP (genn)))
+              && ((GENERATOR_WIDTH (genn) == NULL)
+                  || COisConstant (GENERATOR_WIDTH (genn))));
+
         /* check if code is a copy of the original array and set NPART_COPY
-           for later usage in SSADoUnrollModarray().
+           for later usage in WLUDoUnrollModarray().
 
              B = new_with
                ([ 0 ] <= __flat_1_iv=[__flat_0_i] < [ 3 ]) {
@@ -537,16 +545,15 @@ WLUcheckUnrollModarray (node *wln)
             tmpn = ASSIGN_INSTR (BLOCK_INSTR (CODE_CBLOCK (coden)));
             exprn = LET_EXPR (tmpn);
             PART_ISCOPY (partn)
-              = (N_let == NODE_TYPE (tmpn)
-                 && ILIBstringCompare (ID_NAME (EXPRS_EXPR (CODE_CEXPRS (coden))),
-                                       IDS_NAME (LET_IDS (tmpn)))
-                 && N_prf == NODE_TYPE (exprn) && F_sel == PRF_PRF (exprn)
-                 && N_id == NODE_TYPE (PRF_ARG1 (exprn))
-                 && ILIBstringCompare (IDS_NAME (PART_VEC (partn)),
-                                       ID_NAME (PRF_ARG1 (exprn)))
-                 && N_id == NODE_TYPE (PRF_ARG2 (exprn))
-                 && ILIBstringCompare (ID_NAME (MODARRAY_ARRAY (WITH_WITHOP (wln))),
-                                       ID_NAME (PRF_ARG2 (exprn))));
+              = ((N_let == NODE_TYPE (tmpn))
+                 && (ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (coden)))
+                     == IDS_AVIS (LET_IDS (tmpn)))
+                 && (N_prf == NODE_TYPE (exprn)) && (F_sel == PRF_PRF (exprn))
+                 && (N_id == NODE_TYPE (PRF_ARG1 (exprn)))
+                 && (IDS_AVIS (PART_VEC (partn)) == ID_AVIS (PRF_ARG1 (exprn)))
+                 && (N_id == NODE_TYPE (PRF_ARG2 (exprn)))
+                 && (ID_AVIS (MODARRAY_ARRAY (WITH_WITHOP (wln)))
+                     == ID_AVIS (PRF_ARG2 (exprn))));
         }
 
         if (!PART_ISCOPY (partn)) {
@@ -573,7 +580,7 @@ WLUcheckUnrollModarray (node *wln)
 /******************************************************************************
  *
  * function:
- *   node *SSADoUnrollModarray(node *wln, info *arg_info)
+ *   node *WLUDoUnrollModarray(node *wln, info *arg_info)
  *
  * description:
  *   Unrolls all N_Npart nodes which are marked in NPART_COPY.
@@ -587,7 +594,7 @@ WLUdoUnrollModarray (node *wln, info *arg_info)
     void *arg[2];
     node *letn;
 
-    DBUG_ENTER ("SSADoUnrollModarray");
+    DBUG_ENTER ("WLUDoUnrollModarray");
 
     partn = WITH_PART (wln);
 
@@ -596,8 +603,8 @@ WLUdoUnrollModarray (node *wln, info *arg_info)
         if (!PART_ISCOPY (partn)) {
             /* unroll this part */
             opfun = CreateModGenarray;
-            arg[0] = partn;                                                  /* (node*) */
-            arg[1] = LET_IDS (ASSIGN_INSTR (INFO_SSALUR_ASSIGN (arg_info))); /* (ids*) */
+            arg[0] = partn;                                      /* (node*) */
+            arg[1] = ASSIGN_LHS (INFO_SSALUR_ASSIGN (arg_info)); /* (ids*) */
             opfunarg = arg;
             res = ForEachElement (partn, res);
         }
@@ -605,10 +612,9 @@ WLUdoUnrollModarray (node *wln, info *arg_info)
         partn = PART_NEXT (partn);
     }
 
-    /* finally add Dupilcation of new array name */
-    letn
-      = TBmakeLet (DUPdoDupNode (LET_IDS (ASSIGN_INSTR (INFO_SSALUR_ASSIGN (arg_info)))),
-                   DUPdoDupTree (MODARRAY_ARRAY (WITH_WITHOP (wln))));
+    /* finally add Duplication of new array name */
+    letn = TBmakeLet (DUPdoDupNode (ASSIGN_LHS (INFO_SSALUR_ASSIGN (arg_info))),
+                      DUPdoDupTree (MODARRAY_ARRAY (WITH_WITHOP (wln))));
     res = TBmakeAssign (letn, res);
 
     DBUG_RETURN (res);
@@ -617,7 +623,7 @@ WLUdoUnrollModarray (node *wln, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   int SSACheckUnrollGenarray( node *wln, info *arg_info)
+ *   int WLUCheckUnrollGenarray( node *wln, info *arg_info)
  *
  * description:
  *   Unrolling of arrays is done if number of array elements is smaller
@@ -628,23 +634,37 @@ WLUdoUnrollModarray (node *wln, info *arg_info)
 int
 WLUcheckUnrollGenarray (node *wln, info *arg_info)
 {
-    int ok, length;
+    bool ok;
+    int length;
     node *genn;
+    node *partn;
+    node *lhs;
 
-    DBUG_ENTER ("SSACheckUnrollGenarray");
+    DBUG_ENTER ("WLUCheckUnrollGenarray");
 
-    length = SHgetUnrLen (TYgetShape (
-      AVIS_TYPE (IDS_AVIS (LET_IDS (ASSIGN_INSTR (INFO_SSALUR_ASSIGN (arg_info)))))));
+    lhs = LET_IDS (ASSIGN_INSTR (INFO_SSALUR_ASSIGN (arg_info)));
+
+    if (TYisAKS (IDS_NTYPE (lhs)) || TYisAKV (IDS_NTYPE (lhs))) {
+        length = SHgetUnrLen (TYgetShape (IDS_NTYPE (lhs)));
+    } else {
+        length = -1;
+    }
 
     /*
      * Everything constant?
-     * If the first part is constant, all others are constant, too.
      */
-    genn = PART_GENERATOR (WITH_PART (wln));
-    ok = ((length >= 0) && COisConstant (GENERATOR_BOUND1 (genn))
-          && COisConstant (GENERATOR_BOUND2 (genn))
-          && ((GENERATOR_STEP (genn) == NULL) || COisConstant (GENERATOR_STEP (genn)))
-          && ((GENERATOR_WIDTH (genn) == NULL) || COisConstant (GENERATOR_WIDTH (genn))));
+    ok = (length >= 0);
+    partn = WITH_PART (wln);
+
+    while (ok && (partn != NULL)) {
+        genn = PART_GENERATOR (partn);
+        ok = ((NODE_TYPE (genn) == N_generator) && COisConstant (GENERATOR_BOUND1 (genn))
+              && COisConstant (GENERATOR_BOUND2 (genn))
+              && ((GENERATOR_STEP (genn) == NULL) || COisConstant (GENERATOR_STEP (genn)))
+              && ((GENERATOR_WIDTH (genn) == NULL)
+                  || COisConstant (GENERATOR_WIDTH (genn))));
+        partn = PART_NEXT (partn);
+    }
 
     if (ok && (length > global.wlunrnum)) {
         ok = 0;
@@ -663,7 +683,7 @@ WLUcheckUnrollGenarray (node *wln, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSADoUnrollGenarray(node *wln, info *arg_info)
+ *   node *WLUDoUnrollGenarray(node *wln, info *arg_info)
  *
  * description:
  *   Unrolls all N_Npart nodes which are marked in NPART_COPY.
@@ -677,6 +697,7 @@ WLUdoUnrollGenarray (node *wln, info *arg_info)
     node *letn, *let_expr;
     void *arg[2];
     node *arrayname;
+    ntype *type;
 
     DBUG_ENTER ("WLUdoUnrollGenarray");
 
@@ -697,18 +718,10 @@ WLUdoUnrollGenarray (node *wln, info *arg_info)
     /*
      * finally add   arrayname = reshape( ..., [0,...,0])
      */
-#ifdef MWE_NTYPE_READY
-    let_expr = CreateZeroFromType (NULL,
-                                   AVIS_TYPE (LET_AVIS (
-                                     ASSIGN_INSTR (INFO_SSALUR_ASSIGN (arg_info)))),
-                                   TRUE, INFO_SSALUR_FUNDEF (arg_info));
-#else
-    /*type = LET_TYPE( ASSIGN_INSTR( INFO_SSALUR_ASSIGN( arg_info)));*/
-    let_expr = TCcreateZeroFromType (/*type*/
-                                     TYtype2OldType (AVIS_TYPE (IDS_AVIS (LET_IDS (
-                                       ASSIGN_INSTR (INFO_SSALUR_ASSIGN (arg_info)))))),
-                                     TRUE, INFO_SSALUR_FUNDEF (arg_info));
-#endif
+    type = IDS_NTYPE (arrayname);
+    let_expr = TCcreateZero (TYgetShape (type), TYgetSimpleType (TYgetScalar (type)),
+                             TRUE, INFO_SSALUR_FUNDEF (arg_info));
+
     letn = TBmakeLet (DUPdoDupNode (arrayname), let_expr);
     res = TBmakeAssign (letn, res);
 
@@ -718,7 +731,7 @@ WLUdoUnrollGenarray (node *wln, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   int SSACheckUnrollFold( node *wln)
+ *   int WLUCheckUnrollFold( node *wln)
  *
  * description:
  *   Unrolling of fold-WLs is done if the total number of function calls is
@@ -732,7 +745,7 @@ WLUcheckUnrollFold (node *wln)
     int ok, elts;
     node *partn, *genn;
 
-    DBUG_ENTER ("SSACheckUnrollFold");
+    DBUG_ENTER ("WLUCheckUnrollFold");
 
     /* check all N_parts.
        All bounds (step, width) have to be constant. */
@@ -740,14 +753,15 @@ WLUcheckUnrollFold (node *wln)
     partn = WITH_PART (wln);
     elts = 0;
 
-    /* everything constant? If the first part is constant, all others are
-       constant, too. */
-    genn = PART_GENERATOR (partn);
-    ok = (COisConstant (GENERATOR_BOUND1 (genn)) && COisConstant (GENERATOR_BOUND2 (genn))
-          && ((GENERATOR_STEP (genn) != 0) || COisConstant (GENERATOR_STEP (genn)))
-          && ((GENERATOR_WIDTH (genn) != 0) || COisConstant (GENERATOR_WIDTH (genn))));
+    /* everything constant? */
 
     while (ok && (partn != NULL)) {
+        genn = PART_GENERATOR (partn);
+        ok = ((NODE_TYPE (genn) == N_generator) && COisConstant (GENERATOR_BOUND1 (genn))
+              && COisConstant (GENERATOR_BOUND2 (genn))
+              && ((GENERATOR_STEP (genn) == NULL) || COisConstant (GENERATOR_STEP (genn)))
+              && ((GENERATOR_WIDTH (genn) == NULL)
+                  || COisConstant (GENERATOR_WIDTH (genn))));
         elts += CountElements (PART_GENERATOR (partn));
         partn = PART_NEXT (partn);
     }
@@ -798,8 +812,8 @@ WLUdoUnrollFold (node *wln, info *arg_info)
         /* unroll this part */
         opfun = CreateFold;
         arg[0] = partn; /* N_Npart node */
-        arg[1] = LET_IDS (ASSIGN_INSTR (INFO_SSALUR_ASSIGN (arg_info))); /* (ids*)  */
-        arg[2] = CODE_CEXPRS (PART_CODE (partn));                        /* (node*) */
+        arg[1] = LET_IDS (ASSIGN_INSTR (INFO_SSALUR_ASSIGN (arg_info))); /* ids */
+        arg[2] = EXPRS_EXPR (CODE_CEXPRS (PART_CODE (partn)));           /* id */
         arg[3] = WITH_WITHOP (wln);             /* N_Nwithop node */
         arg[4] = INFO_SSALUR_FUNDEF (arg_info); /* N_fundef node */
         opfunarg = arg;
@@ -809,9 +823,8 @@ WLUdoUnrollFold (node *wln, info *arg_info)
     }
 
     /* finally add initialisation of accumulator with neutral element. */
-    letn
-      = TBmakeLet (DUPdoDupNode (LET_IDS (ASSIGN_INSTR (INFO_SSALUR_ASSIGN (arg_info)))),
-                   DUPdoDupTree (FOLD_NEUTRAL (WITH_WITHOP (wln))));
+    letn = TBmakeLet (DUPdoDupNode (ASSIGN_LHS (INFO_SSALUR_ASSIGN (arg_info))),
+                      DUPdoDupTree (FOLD_NEUTRAL (WITH_WITHOP (wln))));
     res = TBmakeAssign (letn, res);
 
     DBUG_RETURN (res);

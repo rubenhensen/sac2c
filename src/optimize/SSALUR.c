@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.20  2005/04/22 10:08:04  ktr
+ * Works with Marielyst compiler.
+ *
  * Revision 1.19  2005/03/04 21:21:42  cg
  * FUNDEF_USED counter etc removed.
  * Handling of FUNDEF_EXT_ASSIGNS drastically simplified.
@@ -90,6 +93,8 @@
  *****************************************************************************/
 
 #include "types.h"
+#include "new_types.h"
+#include "shape.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "node_basic.h"
@@ -234,7 +239,7 @@ SSALURGetDoLoopUnrolling (node *fundef)
     DBUG_ASSERT ((FUNDEF_BODY (fundef) != NULL), "function with body required");
 
     /* check for do special fundef */
-    if (FUNDEF_ISDOFUN (fundef)) {
+    if (!FUNDEF_ISDOFUN (fundef)) {
         DBUG_PRINT ("SSALUR", ("no do-loop special fundef"));
         DBUG_RETURN (UNR_NONE);
     }
@@ -757,7 +762,7 @@ SSALURGetConstantArg (node *id, node *fundef, loopc_t *init_counter)
     DBUG_ASSERT ((arg_chain != NULL), "arg not found in fundef arg chain");
 
     /* get matching parameter expr-node */
-    param_chain = AP_ARGS (LET_EXPR (ASSIGN_INSTR (FUNDEF_EXT_ASSIGN (fundef))));
+    param_chain = AP_ARGS (ASSIGN_RHS (FUNDEF_EXT_ASSIGN (fundef)));
 
     for (i = 1; i < pos; i++) {
         param_chain = EXPRS_NEXT (param_chain);
@@ -960,6 +965,8 @@ SSALURUnrollLoopBody (node *fundef, loopc_t unrolling)
     node *cond_assign;
     node *last;
     node *new_body;
+    node *predavis;
+    node *predass;
 
     DBUG_ENTER ("SSALURUnrollLoopBody");
 
@@ -997,9 +1004,8 @@ SSALURUnrollLoopBody (node *fundef, loopc_t unrolling)
         loop_body
           = TCappendAssign (loop_body,
                             SSALURCreateCopyAssignments (FUNDEF_ARGS (fundef),
-                                                         AP_ARGS (LET_EXPR (ASSIGN_INSTR (
-                                                           FUNDEF_INT_ASSIGN (
-                                                             fundef))))));
+                                                         AP_ARGS (ASSIGN_RHS (
+                                                           FUNDEF_INT_ASSIGN (fundef)))));
 
         new_body = NULL;
 
@@ -1013,13 +1019,36 @@ SSALURUnrollLoopBody (node *fundef, loopc_t unrolling)
     }
 
     /* set condition of conditional to false -> no more recursion */
+    predavis = TBmakeAvis (ILIBtmpVar (), TYmakeAKV (TYmakeSimpleType (T_bool),
+                                                     COmakeFalse (SHmakeShape (0))));
+
+    FUNDEF_VARDEC (fundef) = TBmakeVardec (predavis, FUNDEF_VARDEC (fundef));
+
+    predass = TCmakeAssignLet (predavis, TBmakeBool (FALSE));
+    AVIS_SSAASSIGN (predavis) = predass;
+
+    ASSIGN_NEXT (predass) = cond_assign;
+
     COND_COND (ASSIGN_INSTR (cond_assign))
       = FREEdoFreeTree (COND_COND (ASSIGN_INSTR (cond_assign)));
 
-    COND_COND (ASSIGN_INSTR (cond_assign)) = TBmakeBool (FALSE);
+    COND_COND (ASSIGN_INSTR (cond_assign)) = TBmakeId (predavis);
+
+    cond_assign = ASSIGN_NEXT (cond_assign);
+    while (NODE_TYPE (ASSIGN_INSTR (cond_assign)) == N_let) {
+        DBUG_ASSERT (NODE_TYPE (ASSIGN_RHS (cond_assign)) == N_funcond,
+                     "All node between COND and RETURN must be FUNCOND");
+
+        FUNCOND_IF (ASSIGN_RHS (cond_assign))
+          = FREEdoFreeTree (FUNCOND_IF (ASSIGN_RHS (cond_assign)));
+
+        FUNCOND_IF (ASSIGN_RHS (cond_assign)) = TBmakeId (predavis);
+
+        cond_assign = ASSIGN_NEXT (cond_assign);
+    }
 
     /* append rest of fundef assignment chain */
-    new_body = TCappendAssign (new_body, cond_assign);
+    new_body = TCappendAssign (new_body, predass);
 
     /* add new body to toplevel block of function */
     BLOCK_INSTR (FUNDEF_BODY (fundef)) = new_body;
@@ -1055,13 +1084,10 @@ SSALURCreateCopyAssignments (node *arg_chain, node *rec_chain)
         /* make right identifer as used in recursive call */
         DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (rec_chain)) == N_id),
                      "non id node as paramter in recursive call");
-        right_id = TCmakeIdCopyString (
-          ILIBstringCopy (AVIS_NAME (ID_AVIS (EXPRS_EXPR (rec_chain)))));
-
-        ID_AVIS (right_id) = ID_AVIS (EXPRS_EXPR (rec_chain));
+        right_id = TBmakeId (ID_AVIS (EXPRS_EXPR (rec_chain)));
 
         /* make copy assignment */
-        assignment = TCmakeAssignLet (ARG_AVIS (DUPdoDupTree (arg_chain)), right_id);
+        assignment = TCmakeAssignLet (ARG_AVIS (arg_chain), right_id);
 
         /* append to assignment chain */
         copy_assigns = TCappendAssign (assignment, copy_assigns);
@@ -1281,7 +1307,7 @@ LURwith (node *arg_node, info *arg_info)
         /* can this WL be unrolled? */
         switch (NODE_TYPE (WITH_WITHOP (arg_node))) {
         case N_modarray:
-            if (WLUcheckUnrollModarray (arg_node)) {
+            if (WLUcheckUnrollModarray (arg_node, arg_info)) {
                 wlunr_expr++;
 
                 DBUG_PRINT ("SSALUR", ("starting SSADoUnrollModarry()"));
