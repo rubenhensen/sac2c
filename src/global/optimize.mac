@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  2005/04/22 10:07:32  ktr
+ * re-activated LUR, WLUR
+ *
  * Revision 1.15  2005/04/20 19:20:47  ktr
  * re-activated LIR
  *
@@ -80,8 +83,8 @@ OPTIMIZE ("dcr", dcr, TRUE, TRUE, "dead code removal")
 OPTIMIZE ("cf", cf, FALSE, FALSE, "constant folding")
 OPTIMIZE ("lir", lir, TRUE, FALSE, "loop invariant removal")
 OPTIMIZE ("inl", inl, TRUE, TRUE, "function inlining")
-OPTIMIZE ("lur", lur, FALSE, FALSE, "loop unrolling")
-OPTIMIZE ("wlur", wlur, FALSE, FALSE, "with-loop unrolling")
+OPTIMIZE ("lur", lur, TRUE, FALSE, "loop unrolling")
+OPTIMIZE ("wlur", wlur, TRUE, FALSE, "with-loop unrolling")
 OPTIMIZE ("lus", lus, FALSE, FALSE, "loop unswitching")
 OPTIMIZE ("cse", cse, FALSE, FALSE, "common subexpression elimination")
 OPTIMIZE ("dfr", dfr, TRUE, TRUE, "dead function removal")
