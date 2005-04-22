@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2005/04/22 07:30:39  sah
+ * added handling of fold funs
+ *
  * Revision 1.12  2005/03/17 14:02:26  sah
  * corrected handling of mops
  *
@@ -206,6 +209,13 @@ node *
 USSfold (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("USSfold");
+
+    if (FOLD_FUN (arg_node) != NULL) {
+        /* fold uses udf */
+
+        MakeSymbolAvailable (FOLD_MOD (arg_node), FOLD_FUN (arg_node), SET_wrapperhead,
+                             arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
