@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.133  2005/04/22 10:10:26  ktr
+ * Removed CreateZeroFromType and code brushing
+ *
  * Revision 3.132  2005/04/20 19:19:17  ktr
  * removed TCadjustAvisData and brushed the code
  *
@@ -926,36 +929,6 @@ TCtype2Exprs (types *type)
     ret_node = FREEdoFreeNode (ret_node);
 
     DBUG_RETURN (ret_node);
-}
-
-/******************************************************************************
- *
- * Function:
- *   node *TCcreateZeroFromType( types *type, bool unroll, node *fundef)
- *
- * Description:
- *   Creates an array of zeros.
- *
- ******************************************************************************/
-
-node *
-TCcreateZeroFromType (types *type, bool unroll, node *fundef)
-{
-    node *zero;
-    shpseg *shape;
-    simpletype btype;
-    int dim;
-
-    DBUG_ENTER ("CreateZeroFromType");
-
-    shape = TCtype2Shpseg (type, &dim);
-    btype = TCgetBasetype (type);
-    zero = TCcreateZero (dim, shape, btype, unroll, fundef);
-    if (shape != NULL) {
-        shape = FREEfreeShpseg (shape);
-    }
-
-    DBUG_RETURN (zero);
 }
 
 /******************************************************************************
@@ -3206,7 +3179,7 @@ TCmakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg4, node *ar
 /******************************************************************************
  *
  * Function:
- *   node *TCcreateScalarWith( int dim, shpseg *shape, simpletype btype,
+ *   node *TCcreateScalarWith( shape *shape, simpletype btype,
  *                             node *expr, node *fundef)
  *
  * Description:
@@ -3215,7 +3188,7 @@ TCmakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg4, node *ar
  ******************************************************************************/
 
 node *
-TCcreateScalarWith (int dim, shpseg *shape, simpletype btype, node *expr, node *fundef)
+TCcreateScalarWith (shape *shape, simpletype btype, node *expr, node *fundef)
 {
     node *wl;
     node *id;
@@ -3224,22 +3197,22 @@ TCcreateScalarWith (int dim, shpseg *shape, simpletype btype, node *expr, node *
     node *scl_ids = NULL;
     node *new_avis;
     int i;
+    int dim;
 
     DBUG_ENTER ("TCcreateScalarWith");
 
+    dim = SHgetDim (shape);
     DBUG_ASSERT ((dim >= 0), "TCcreateScalarWith() used with unknown shape!");
 
     new_avis = TBmakeAvis (ILIBtmpVar (),
                            TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (1, dim)));
     vardecs = TBmakeVardec (new_avis, vardecs);
-    VARDEC_TYPE (vardecs) = TYtype2OldType (AVIS_TYPE (new_avis));
     vec_ids = TBmakeIds (new_avis, NULL);
 
     for (i = 0; i < dim; i++) {
         new_avis = TBmakeAvis (ILIBtmpVar (),
                                TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
         vardecs = TBmakeVardec (new_avis, vardecs);
-        VARDEC_TYPE (vardecs) = TYtype2OldType (AVIS_TYPE (new_avis));
         scl_ids = TBmakeIds (new_avis, scl_ids);
     }
 
@@ -3247,18 +3220,16 @@ TCcreateScalarWith (int dim, shpseg *shape, simpletype btype, node *expr, node *
       = TBmakeAvis (ILIBtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
     id = TBmakeId (new_avis);
     vardecs = TBmakeVardec (new_avis, vardecs);
-    VARDEC_TYPE (vardecs) = TYtype2OldType (AVIS_TYPE (new_avis));
 
     /* BORDER */
 
     wl = TBmakeWith (TBmakePart (NULL, TBmakeWithid (vec_ids, scl_ids),
                                  TBmakeGenerator (F_le, F_lt,
                                                   TCcreateZeroVector (dim, T_int),
-                                                  TCshpseg2Array (shape, dim), NULL,
-                                                  NULL)),
+                                                  SHshape2Array (shape), NULL, NULL)),
                      TBmakeCode (TBmakeBlock (TCmakeAssignLet (new_avis, expr), NULL),
                                  TBmakeExprs (id, NULL)),
-                     TBmakeGenarray (TCshpseg2Array (shape, dim), NULL));
+                     TBmakeGenarray (SHshape2Array (shape), NULL));
     CODE_USED (WITH_CODE (wl))++;
     PART_CODE (WITH_PART (wl)) = WITH_CODE (wl);
     WITH_PARTS (wl) = 1;
@@ -3271,7 +3242,7 @@ TCcreateScalarWith (int dim, shpseg *shape, simpletype btype, node *expr, node *
 /******************************************************************************
  *
  * Function:
- *   node *TCcreateZero( int dim, shpseg *shape, simpletype btype, bool no_wl,
+ *   node *TCcreateZero( shape *shape, simpletype btype, bool no_wl,
  *                       node *fundef)
  *
  * Description:
@@ -3280,14 +3251,13 @@ TCcreateScalarWith (int dim, shpseg *shape, simpletype btype, node *expr, node *
  ******************************************************************************/
 
 node *
-TCcreateZero (int dim, shpseg *shape, simpletype btype, bool no_wl, node *fundef)
+TCcreateZero (shape *shape, simpletype btype, bool no_wl, node *fundef)
 {
     node *zero;
-    int length = TCgetShpsegLength (dim, shape);
+    int dim = SHgetDim (shape);
+    int length = SHgetUnrLen (shape);
 
-    DBUG_ENTER ("RCcreateZero");
-
-    DBUG_ASSERT ((dim >= 0), "CreateZero() used with unknown shape!");
+    DBUG_ENTER ("TCcreateZero");
 
     if (dim == 0) {
         zero = TCcreateZeroScalar (btype);
@@ -3300,12 +3270,11 @@ TCcreateZero (int dim, shpseg *shape, simpletype btype, bool no_wl, node *fundef
 
             zero
               = TBmakePrf (F_reshape,
-                           TBmakeExprs (TCshpseg2Array (shape, dim),
+                           TBmakeExprs (SHshape2Array (shape),
                                         TBmakeExprs (TCcreateZeroVector (length, btype),
                                                      NULL)));
         } else {
-            zero = TCcreateScalarWith (dim, shape, btype, TCcreateZeroScalar (btype),
-                                       fundef);
+            zero = TCcreateScalarWith (shape, btype, TCcreateZeroScalar (btype), fundef);
         }
     }
 

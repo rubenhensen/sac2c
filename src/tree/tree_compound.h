@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.189  2005/04/22 10:10:26  ktr
+ * Removed CreateZeroFromType and code brushing
+ *
  * Revision 3.188  2005/04/20 19:19:17  ktr
  * removed TCadjustAvisData and brushed the code
  *
@@ -339,7 +342,6 @@ extern int TCcompareTypesImplementation (types *t1, types *t2);
 extern shpseg *TCtype2Shpseg (types *type, int *ret_dim);
 extern shape *TCtype2Shape (types *type);
 extern node *TCtype2Exprs (types *type);
-extern node *TCcreateZeroFromType (types *type, bool unroll, node *fundef);
 
 /******************************************************************************
  *
@@ -1488,11 +1490,10 @@ extern node *TCmakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *a
 #define WITH_CEXPRS(n) (CODE_CEXPRS (WITH_CODE (n)))
 #define WITH_CEXPR(n) (EXPRS_EXPR (WITH_CEXPRS (n)))
 
-extern node *TCcreateScalarWith (int dim, shpseg *shape, simpletype btype, node *expr,
+extern node *TCcreateScalarWith (shape *shape, simpletype btype, node *expr,
                                  node *fundef);
 
-extern node *TCcreateZero (int dim, shpseg *shape, simpletype btype, bool unroll,
-                           node *fundef);
+extern node *TCcreateZero (shape *shape, simpletype btype, bool unroll, node *fundef);
 
 /*--------------------------------------------------------------------------*/
 
