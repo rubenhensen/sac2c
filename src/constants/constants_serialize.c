@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2005/04/22 08:04:19  sah
+ * escape sequences have to be octal values
+ *
  * Revision 1.6  2005/04/18 08:56:10  sah
  * fixed a format qualifier so that unsigned values
  * are printed as such
@@ -59,7 +62,7 @@ COserializeConstant (FILE *file, constant *cnst)
         for (cnt = 0;
              cnt < global.basetype_size[CONSTANT_TYPE (cnst)] * CONSTANT_VLEN (cnst);
              cnt++) {
-            fprintf (file, "\\%u", data[cnt]);
+            fprintf (file, "\\%o", data[cnt]);
         }
 
         fprintf (file, "\")");
