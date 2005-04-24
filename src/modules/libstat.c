@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2005/04/24 15:20:03  sah
+ * libstat now exits the entire compiler
+ *
  * Revision 1.12  2004/11/26 23:19:54  jhb
  * PrintLibStat changed to LIBSprintStat
  *
@@ -169,6 +172,13 @@ LIBSprintLibStat (char *libname)
     DBUG_PRINT ("LIBSTAT", ("Unloading module `%s'", libname));
 
     module = MODMunLoadModule (module);
+
+    /*
+     * exit compiler at this point, as we have printed
+     * the libstat information
+     */
+
+    exit (0);
 
     DBUG_VOID_RETURN;
 }
