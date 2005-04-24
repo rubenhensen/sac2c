@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2005/04/24 15:19:10  sah
+ * modified option handling slightly to allow
+ * for the setup phase to run prior to libstat
+ *
  * Revision 3.3  2005/03/10 09:41:09  cg
  * Separated analysis of special options which do not lead to a
  * compilation process like -h or -V into new function.
@@ -36,6 +40,7 @@
 #define _SAC_OPTIONS_H_
 
 extern node *OPTanalyseCommandline (node *);
-extern void OPTcheckSpecialOptions ();
+extern void OPTcheckPreSetupOptions ();
+extern void OPTcheckPostSetupOptions ();
 
 #endif /* _SAC_OPTIONS_H_ */

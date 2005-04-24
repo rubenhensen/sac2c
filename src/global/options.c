@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.88  2005/04/24 15:19:10  sah
+ * modified option handling slightly to allow
+ * for the setup phase to run prior to libstat
+ *
  * Revision 3.87  2005/04/15 13:23:04  ktr
  * added switch -d nolacinline
  *
@@ -216,24 +220,38 @@
 #include "libstat.h"
 
 void
-OPTcheckSpecialOptions (int argc, char *argv[])
+OPTcheckPreSetupOptions ()
 {
-    DBUG_ENTER ("OPTcheckSpecialOptions");
+    DBUG_ENTER ("OPTcheckPreSetupOptions");
 
-    ARGS_BEGIN (argc, argv);
+    ARGS_BEGIN (global.argc, global.argv);
 
     ARGS_FLAG ("copyright", USGprintCopyright (); exit (0));
 
     ARGS_FLAG ("h", USGprintUsage (); exit (0));
     ARGS_FLAG ("help", USGprintUsage (); exit (0));
 
-    ARGS_OPTION ("libstat", LIBSprintLibStat (ARG));
-
     ARGS_OPTION ("v", ARG_RANGE (global.verbose_level, 0, 3));
 
     ARGS_FLAG ("V", USGprintVersion (); exit (0));
 
     ARGS_FLAG ("VV", USGprintVersionVerbose (); exit (0));
+
+    ARGS_END ();
+
+    DBUG_VOID_RETURN;
+}
+
+void
+OPTcheckPostSetupOptions ()
+{
+    DBUG_ENTER ("OPTcheckPostSetupOptions");
+
+    ARGS_BEGIN (global.argc, global.argv);
+
+    ARGS_OPTION ("libstat", LIBSprintLibStat (ARG));
+
+    ARGS_UNKNOWN (ARGS_ERROR ("Invalid command line entry"));
 
     ARGS_END ();
 
@@ -705,8 +723,6 @@ OPTanalyseCommandline (node *syntax_tree)
             ARGS_ERROR ("Too many source files specified");
         }
     });
-
-    ARGS_UNKNOWN (ARGS_ERROR ("Invalid command line entry"));
 
     ARGS_END ();
 

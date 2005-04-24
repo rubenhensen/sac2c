@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.99  2005/04/24 15:19:10  sah
+ * modified option handling slightly to allow
+ * for the setup phase to run prior to libstat
+ *
  * Revision 3.98  2005/04/20 07:25:18  cg
  * CheckTree is now only called if syntax tree actually exists.
  *
@@ -171,16 +175,24 @@ main (int argc, char *argv[])
     /*
      * Unfortunately, a few initializations must be done before running the setup
      * compiler phase. Several options like -h or -V should be handled before
-     * before compile time output with respect to a regular compiler run is
-     * produced. In particularfor the -h option we need the global variables to
+     * compile time output with respect to a regular compiler run is produced.
+     * In particular for the -h option we need the global variables to
      * be initialized. As long as we work with pre-allocated buffers of fixed
      * length (which should be changed), this initialization requires allocation
      * to work properly.
+     *
+     * Furthermore, options like libstat need to be checked after the setup
+     * phase but prior to the following compiler phases. This is achieved by
+     * calling OPTcheckPostSetupOptions.
      */
 
     SETUPdoSetupCompiler (argc, argv);
 
+    OPTcheckPreSetupOptions ();
+
     syntax_tree = PHrunCompilerPhase (PH_setup, syntax_tree);
+
+    OPTcheckPostSetupOptions ();
 
     /*
      *  Finally the compilation process is started.

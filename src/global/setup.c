@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2005/04/24 15:19:10  sah
+ * modified option handling slightly to allow
+ * for the setup phase to run prior to libstat
+ *
  * Revision 1.1  2005/03/07 13:41:06  cg
  * Initial revision
  *
@@ -37,8 +41,6 @@ SETUPdoSetupCompiler (int argc, char *argv[])
 
     global.argc = argc;
     global.argv = argv;
-
-    OPTcheckSpecialOptions (argc, argv);
 
     DBUG_VOID_RETURN;
 }
