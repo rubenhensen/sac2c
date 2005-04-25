@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.89  2005/04/25 15:03:51  sah
+ * should work noew
+ *
  * Revision 3.88  2005/04/24 15:19:10  sah
  * modified option handling slightly to allow
  * for the setup phase to run prior to libstat
@@ -250,8 +253,6 @@ OPTcheckPostSetupOptions ()
     ARGS_BEGIN (global.argc, global.argv);
 
     ARGS_OPTION ("libstat", LIBSprintLibStat (ARG));
-
-    ARGS_UNKNOWN (ARGS_ERROR ("Invalid command line entry"));
 
     ARGS_END ();
 
@@ -723,6 +724,10 @@ OPTanalyseCommandline (node *syntax_tree)
             ARGS_ERROR ("Too many source files specified");
         }
     });
+
+    ARGS_OPTION ("libstat", /* ignore for now */);
+
+    ARGS_UNKNOWN (ARGS_ERROR ("Invalid command line entry"));
 
     ARGS_END ();
 
