@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.10  2005/04/26 16:14:28  sah
+ * tuned handling of cond/loop functions
+ *
  * Revision 1.9  2005/02/18 10:37:23  sah
  * module system fixes
  *
@@ -423,7 +426,6 @@ GenerateSerFunTail (node *elem, stentrytype_t type, info *info)
 static void
 SerializeFundefBody (node *fundef, info *info)
 {
-    stvisibility_t vis;
     DBUG_ENTER ("SerializeFundefBody");
 
     INFO_SER_STACK (info) = SERbuildSerStack (FUNDEF_BODY (fundef));
@@ -439,17 +441,28 @@ SerializeFundefBody (node *fundef, info *info)
      */
     INFO_SER_ARGAVISDIRECT (info) = TRUE;
 
-    if (FUNDEF_ISEXPORTED (fundef)) {
-        vis = SVT_exported;
-    } else if (FUNDEF_ISPROVIDED (fundef)) {
-        vis = SVT_provided;
-    } else {
-        vis = SVT_local;
-    }
+    /*
+     * we do not store special funs (cond/loop)
+     * in the symbol lookup-table as they
+     * cannot be directly referenced.
+     */
 
-    STadd (FUNDEF_NAME (fundef), vis, SERgenerateSerFunName (SET_funbody, fundef),
-           FUNDEF_ISWRAPPERFUN (fundef) ? SET_wrapperbody : SET_funbody,
-           INFO_SER_TABLE (info));
+    if (!(FUNDEF_ISDOFUN (fundef) || FUNDEF_ISCONDFUN (fundef)
+          || FUNDEF_ISFOLDFUN (fundef))) {
+        stvisibility_t vis;
+
+        if (FUNDEF_ISEXPORTED (fundef)) {
+            vis = SVT_exported;
+        } else if (FUNDEF_ISPROVIDED (fundef)) {
+            vis = SVT_provided;
+        } else {
+            vis = SVT_local;
+        }
+
+        STadd (FUNDEF_NAME (fundef), vis, SERgenerateSerFunName (SET_funbody, fundef),
+               FUNDEF_ISWRAPPERFUN (fundef) ? SET_wrapperbody : SET_funbody,
+               INFO_SER_TABLE (info));
+    }
 
     GenerateSerFunHead (fundef, SET_funbody, info);
 
@@ -470,26 +483,35 @@ SerializeFundefBody (node *fundef, info *info)
 static void
 SerializeFundefHead (node *fundef, info *info)
 {
-    stvisibility_t vis;
-
     DBUG_ENTER ("SerializeFundefHead");
 
     INFO_SER_STACK (info) = SERbuildSerStack (fundef);
 
-    if (FUNDEF_ISEXPORTED (fundef)) {
-        vis = SVT_exported;
-    } else if (FUNDEF_ISPROVIDED (fundef)) {
-        vis = SVT_provided;
-    } else {
-        vis = SVT_local;
-    }
-
     FUNDEF_SYMBOLNAME (fundef)
       = ILIBstringCopy (SERgenerateSerFunName (SET_funhead, fundef));
 
-    STadd (FUNDEF_NAME (fundef), vis, FUNDEF_SYMBOLNAME (fundef),
-           FUNDEF_ISWRAPPERFUN (fundef) ? SET_wrapperhead : SET_funhead,
-           INFO_SER_TABLE (info));
+    /*
+     * we do not store special funs (cond/loop)
+     * in the symbol lookup-table as they
+     * cannot be directly referenced.
+     */
+
+    if (!(FUNDEF_ISDOFUN (fundef) || FUNDEF_ISCONDFUN (fundef)
+          || FUNDEF_ISFOLDFUN (fundef))) {
+        stvisibility_t vis;
+
+        if (FUNDEF_ISEXPORTED (fundef)) {
+            vis = SVT_exported;
+        } else if (FUNDEF_ISPROVIDED (fundef)) {
+            vis = SVT_provided;
+        } else {
+            vis = SVT_local;
+        }
+
+        STadd (FUNDEF_NAME (fundef), vis, FUNDEF_SYMBOLNAME (fundef),
+               FUNDEF_ISWRAPPERFUN (fundef) ? SET_wrapperhead : SET_funhead,
+               INFO_SER_TABLE (info));
+    }
 
     GenerateSerFunHead (fundef, SET_funhead, info);
 
