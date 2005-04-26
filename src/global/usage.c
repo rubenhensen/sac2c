@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.76  2005/04/26 18:10:05  cg
+ * Usage text for disabling/enabling optimizations is now generated
+ * from optimize.mac automatically.
+ *
  * Revision 3.75  2005/04/15 13:23:26  ktr
  * added Documentation for -d nolacinline
  *
@@ -366,60 +370,42 @@ USGprintUsage ()
       "\n"
       "    -do <opt>       Enable optimization technique <opt>.\n"
       "\n\n"
-      "    The following optimization techniques are currently supported:\n\n"
+      "    The following optimization techniques are currently supported:\n"
+      "\n");
 
-      "        CF      constant folding\n"
-      "        SP      selection propagation\n"
-      "        INL     function inlining\n"
-      "        LUR     loop unrolling\n"
-      "        WLUR    with-loop unrolling\n"
-      "        LUS     loop unswitching\n"
-      "        DCR     dead code removal\n"
-      "        DFR     dead function removal\n"
-      "        LIR     loop invariant removal\n"
-      "        CSE     common subexpression elimination\n"
-      "        WLT     with-loop transformation\n"
-      "        WLPG    with-loop partition generation\n"
-      "        WLF     with-loop folding\n"
-      "        WLFS    with-loop fusion\n"
-      "        WLS     with-loop scalarization\n"
-      "        AL      application of associative law\n"
-      "        DL      application of distributive law\n"
-      "        IVE     index vector elimination\n"
-      "        AE      array elimination\n"
-      "        RCO     refcount optimization\n"
-      "        SRF     static reuse / static free\n"
-      "        LRO     loop reuse optimization\n"
-      "        UIP     update-in-place\n"
-      "        AP      array padding\n"
-      "        APL     array placement\n"
-      "        TSI     tile size inference (blocking)\n"
-      "        TSP     tile size pragmas (blocking)\n"
-      "        MTO     multi-thread optimization\n"
-      "        SBE     syncronisation barrier elimination\n"
-      "        PHM     private heap management\n"
-      "        APS     arena preselection           (in conjunction with PHM)\n"
-      "        DAO     descriptor allocation opt.   (in conjunction with PHM)\n"
-      "        MSCA    memory size cache adjustment (in conjunction with PHM)\n"
-      "        TUP     type upgrade, function dispatch and function specialization\n"
-      "\n"
-      "        OPT     enables/disables all optimizations at once.\n"
-      "\n"
-      "    NOTE:\n"
-      "    Lower case letters may be used to indicate optimization techniques.\n"
-      "\n"
-      "    NOTE:\n"
-      "    Command line arguments are evaluated from left to right, i.e.,\n"
-      "    \"-no OPT -do INL\" disables all optimizations except for function "
-      "inlining.\n\n");
+#ifdef PRODUCTION
+#define OPTIMIZE(str, abbr, devl, prod, name)                                            \
+    printf ("      %s %-8s%s\n", prod ? "*" : " ", str, name);
+#else
+#define OPTIMIZE(str, abbr, devl, prod, name)                                            \
+    printf ("      %s %-8s%s\n", devl ? "*" : " ", str, name);
+#endif
+#include "optimize.mac"
 
     printf (
-      "    Some of the optimization techniques are parameterized by additional side\n"
-      "    conditions. They are controlled by the following options:\n"
       "\n"
-      "    -maxoptcyc <n>  Repeat optimization cycle <n> times.\n"
-      "                      (default: %d)\n\n",
-      global.max_optcycles);
+      "    NOTE:\n"
+      "     -no opt     disables all optimizations at once.\n"
+      "     -do opt     enables all optimizations at once.\n"
+      "\n"
+      "    NOTE:\n"
+      "     A leading * identifies optimization enabled by default.\n"
+      "\n"
+      "    NOTE:\n"
+      "     Upper case letters may be used to indicate optimization techniques.\n"
+      "\n"
+      "    NOTE:\n"
+      "     Command line arguments are evaluated from left to right, i.e.,\n"
+      "    \"-no opt -do inl\" disables all optimizations except for function inlining.\n"
+      "\n"
+      "    NOTE:\n"
+      "     Some of the optimization techniques are parameterized by additional side\n"
+      "     conditions. They are controlled by the following options:\n"
+      "\n");
+
+    printf ("    -maxoptcyc <n>  Repeat optimization cycle <n> times.\n"
+            "                      (default: %d)\n\n",
+            global.max_optcycles);
 
     printf ("    -maxoptvar <n>  Reserve <n> variables for optimization.\n"
             "                      (default: %d)\n\n",
