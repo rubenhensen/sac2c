@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2005/04/26 16:13:54  sah
+ * adopted path_bufs size to new situation
+ *
  * Revision 1.10  2005/04/12 15:15:36  sah
  * cleaned up module system compiler args
  * and sac2crc parameters
@@ -140,8 +143,8 @@
 #include "resource.h"
 #include "tree_basic.h"
 
-static char path_bufs[4][MAX_PATH_LEN];
-static int bufsize[4];
+static char path_bufs[3][MAX_PATH_LEN];
+static int bufsize[3];
 
 /*
  *
