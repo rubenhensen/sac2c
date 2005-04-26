@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2005/04/26 16:39:20  sah
+ * added nice error messages and import capabilities
+ *
  * Revision 1.5  2005/01/11 12:32:52  cg
  * Converted output from Error.h to ctinfo.c
  *
@@ -55,7 +58,20 @@ Symboltable2Symbols (stsymboliterator_t *iterator, bool exportedonly)
     if (STsymbolIteratorHasMore (iterator)) {
         stsymbol_t *symb = STsymbolIteratorNext (iterator);
         node *next = Symboltable2Symbols (iterator, exportedonly);
-        result = TBmakeSymbol (ILIBstringCopy (STsymbolName (symb)), next);
+
+        if (exportedonly) {
+            if (STsymbolVisibility (symb) == SVT_exported) {
+                result = TBmakeSymbol (ILIBstringCopy (STsymbolName (symb)), next);
+            } else {
+                result = next;
+            }
+        } else {
+            if (STsymbolVisibility (symb) != SVT_local) {
+                result = TBmakeSymbol (ILIBstringCopy (STsymbolName (symb)), next);
+            } else {
+                result = next;
+            }
+        }
     } else {
         result = NULL;
     }
@@ -144,6 +160,8 @@ ResolveAllFlag (char *module, node *symbols, bool exportedonly)
         symbols = FREEdoFreeTree (symbols);
     }
 
+    CTIwarn ("All flag resolved to empty set of symbols.");
+
     DBUG_RETURN (result);
 }
 
@@ -165,6 +183,18 @@ RSAuse (node *arg_node, info *arg_info)
         USE_NEXT (arg_node) = TRAVdo (USE_NEXT (arg_node), arg_info);
     }
 
+    if (USE_SYMBOL (arg_node) == NULL) {
+        node *tmp;
+
+        CTIwarnLine (NODE_LINE (arg_node),
+                     "Use statement has empty set of symbols. Ignoring...");
+
+        tmp = USE_NEXT (arg_node);
+        arg_node = FREEdoFreeNode (arg_node);
+
+        arg_node = tmp;
+    }
+
     DBUG_RETURN (arg_node);
 }
 
@@ -184,6 +214,18 @@ RSAimport (node *arg_node, info *arg_info)
 
     if (IMPORT_NEXT (arg_node) != NULL) {
         IMPORT_NEXT (arg_node) = TRAVdo (IMPORT_NEXT (arg_node), arg_info);
+    }
+
+    if (IMPORT_SYMBOL (arg_node) == NULL) {
+        node *tmp;
+
+        CTIwarnLine (NODE_LINE (arg_node),
+                     "Import statement has empty set of symbols. Ignoring...");
+
+        tmp = IMPORT_NEXT (arg_node);
+        arg_node = FREEdoFreeNode (arg_node);
+
+        arg_node = tmp;
     }
 
     DBUG_RETURN (arg_node);
