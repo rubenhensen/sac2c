@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2005/04/26 17:11:46  sah
+ * errors are now propagated from libmanager to modmanager
+ * and handele there. This allows for more precise error
+ * messages.
+ *
  * Revision 1.12  2005/04/12 15:15:36  sah
  * cleaned up module system compiler args
  * and sac2crc parameters
@@ -83,7 +88,7 @@ AddModuleToPool (const char *name)
     result->sofile = ILIBstringCopy (FMGRfindFile (PK_mod_path, tmp));
 
     if (result->sofile == NULL) {
-        CTIabort ("Cannot find library `%s'", tmp);
+        CTIabort ("Cannot find library `%s' for module `%s'", tmp, name);
     }
 
     DBUG_PRINT ("MODM", ("Found library file '%s'.", result->sofile));
@@ -95,6 +100,11 @@ AddModuleToPool (const char *name)
     result->next = modulepool;
     modulepool = result;
     result->usecount = 1;
+
+    if (result->lib == NULL) {
+        CTIabort ("Unable to open module `%s'. The reported error was: %s", name,
+                  LIBMgetError ());
+    }
 
     DBUG_RETURN (result);
 }
@@ -123,6 +133,11 @@ RemoveModuleFromPool (module_t *module)
         /* unload the library */
 
         module->lib = LIBMunLoadLibrary (module->lib);
+
+        if (module->lib != NULL) {
+            CTIabort ("Error while closing module `%s'. The reported error was: %s",
+                      module->name, LIBMgetError ());
+        }
 
         /* free the structure */
 

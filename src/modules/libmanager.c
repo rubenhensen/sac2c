@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2005/04/26 17:11:46  sah
+ * errors are now propagated from libmanager to modmanager
+ * and handele there. This allows for more precise error
+ * messages.
+ *
  * Revision 1.8  2005/01/14 08:44:39  cg
  * Beautified layout of error messages.
  *
@@ -36,6 +41,12 @@
 #include "ctinfo.h"
 
 #include <dlfcn.h>
+#include <stdarg.h>
+#include <stdio.h>
+
+#define LIBM_ERROR_MAXLEN 256
+
+static char LIBMerror[LIBM_ERROR_MAXLEN] = "";
 
 static const char *
 LibManagerError ()
@@ -51,6 +62,30 @@ LibManagerError ()
     }
 
     DBUG_RETURN (error);
+}
+
+static void
+setError (const char *format, ...)
+{
+    va_list args;
+
+    DBUG_ENTER ("setError");
+
+    va_start (args, format);
+
+    vsnprintf (LIBMerror, LIBM_ERROR_MAXLEN, format, args);
+
+    va_end (args);
+
+    DBUG_VOID_RETURN;
+}
+
+const char *
+LIBMgetError ()
+{
+    DBUG_ENTER ("LIBMgetError");
+
+    DBUG_RETURN (LIBMerror);
 }
 
 dynlib_t
@@ -69,7 +104,7 @@ LIBMloadLibrary (const char *name)
 #endif
 
     if (result == NULL) {
-        CTIabort ("Cannot open library `%s':\n%s", name, LibManagerError ());
+        setError ("Cannot open library `%s':\n%s", name, LibManagerError ());
     }
 
     DBUG_PRINT ("LIB", ("Done loading library"));
@@ -89,7 +124,7 @@ LIBMunLoadLibrary (dynlib_t lib)
     result = dlclose (lib);
 
     if (result != 0) {
-        CTIabort ("Cannot close library:\n%s", LibManagerError ());
+        setError ("Cannot close library:\n%s", LibManagerError ());
     }
 
     DBUG_PRINT ("LIB", ("Done unloading library"));
