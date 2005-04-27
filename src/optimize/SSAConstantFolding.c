@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.86  2005/04/27 07:52:25  ktr
+ * Stripped out superfluous rules
+ *
  * Revision 1.85  2005/04/20 19:15:29  ktr
  * removed CFarg, CFlet. Codebrushing.
  *
@@ -300,7 +303,7 @@
 struct INFO {
     bool remassign;
     node *fundef;
-    bool insconst;
+    node *lhs;
     node *postassign;
     node *assign;
     node *withid;
@@ -311,8 +314,8 @@ struct INFO {
  */
 #define INFO_CF_REMASSIGN(n) (n->remassign)
 #define INFO_CF_FUNDEF(n) (n->fundef)
-#define INFO_CF_INSCONST(n) (n->insconst)
 #define INFO_CF_POSTASSIGN(n) (n->postassign)
+#define INFO_CF_LHS(n) (n->lhs)
 #define INFO_CF_ASSIGN(n) (n->assign)
 #define INFO_CF_WITHID(n) (n->withid)
 
@@ -330,8 +333,8 @@ MakeInfo ()
 
     INFO_CF_REMASSIGN (result) = FALSE;
     INFO_CF_FUNDEF (result) = NULL;
-    INFO_CF_INSCONST (result) = FALSE;
     INFO_CF_POSTASSIGN (result) = NULL;
+    INFO_CF_LHS (result) = NULL;
     INFO_CF_ASSIGN (result) = NULL;
     INFO_CF_WITHID (result) = NULL;
 
@@ -2250,6 +2253,7 @@ CFcond (node *arg_node, info *arg_info)
                          "Infinite loop detected, program may not terminate");
         }
 
+        FUNDEF_ISDOFUN (INFO_CF_FUNDEF (arg_info)) = FALSE;
         FUNDEF_ISCONDFUN (INFO_CF_FUNDEF (arg_info)) = FALSE;
         FUNDEF_ISINLINE (INFO_CF_FUNDEF (arg_info)) = TRUE;
     } else {
@@ -2274,23 +2278,20 @@ CFcond (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* CFreturn(node *arg_node, info *arg_info)
+ *   node* CFlet(node *arg_node, info *arg_info)
  *
  * description:
- *   do NOT substitute identifiers in return statement with their value!
  *
  *****************************************************************************/
 
 node *
-CFreturn (node *arg_node, info *arg_info)
+CFlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CFreturn");
+    DBUG_ENTER ("CFlet");
 
-    /* do NOT substitue constant identifiers with their value */
-    INFO_CF_INSCONST (arg_info) = SUBST_NONE;
-    if (RETURN_EXPRS (arg_node) != NULL) {
-        RETURN_EXPRS (arg_node) = TRAVdo (RETURN_EXPRS (arg_node), arg_info);
-    }
+    INFO_CF_LHS (arg_info) = LET_IDS (arg_node);
+
+    LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -2332,55 +2333,6 @@ CFap (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* CFid(node *arg_node, info *arg_info)
- *
- * description:
- *   substitute identifers with their computed constant
- *   (only when INFO_CF_INSCONST flag is set)
- *   in EXPRS chain of N_ap ARGS  (if SUBST_ID_WITH_CONSTANT_IN_AP_ARGS == TRUE)
- *      EXPRS chain of N_prf ARGS (if SUBST_ID_WITH_CONSTANT_IN_AP_ARGS == TRUE)
- *      EXPRS chain of N_array AELEMS
- *
- *****************************************************************************/
-/*
- * MWE
- * still necessary
- * replace SSACONST by const from akv-type
- */
-node *
-CFid (node *arg_node, info *arg_info)
-{
-    node *new_node;
-    constant *const_node;
-    int dim;
-
-    DBUG_ENTER ("CFid");
-
-    /* check for constant scalar identifier */
-    if (TYisAKV (AVIS_TYPE (ID_AVIS (arg_node)))) {
-        const_node = TYgetValue (AVIS_TYPE (ID_AVIS (arg_node)));
-        dim = COgetDim (const_node);
-
-        if (((dim == SCALAR) && (INFO_CF_INSCONST (arg_info) >= SUBST_SCALAR))
-            || ((dim > SCALAR)
-                && (INFO_CF_INSCONST (arg_info) == SUBST_SCALAR_AND_ARRAY))) {
-            DBUG_PRINT ("CF", ("substitue identifier %s through its value",
-                               VARDEC_OR_ARG_NAME (AVIS_DECL (ID_AVIS (arg_node)))));
-
-            /* substitute identifier with its value */
-            new_node = COconstant2AST (const_node);
-            arg_node = FREEdoFreeTree (arg_node);
-            arg_node = new_node;
-        }
-        /*const_node = COfreeConstant( const_node);*/
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
  *   node* CFarray(node *arg_node, info *arg_info)
  *
  * description:
@@ -2397,10 +2349,7 @@ CFarray (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("CFarray");
 
-    /* substitute constant identifiers in array elements */
-    INFO_CF_INSCONST (arg_info) = TRUE;
     if (ARRAY_AELEMS (arg_node) != NULL) {
-        ARRAY_AELEMS (arg_node) = TRAVdo (ARRAY_AELEMS (arg_node), arg_info);
 
         /* Test whether subarrays can be copied in */
         /* Therefore all elemens need to be id nodes defined by N_array nodes.
@@ -2435,12 +2384,11 @@ CFarray (node *arg_node, info *arg_info)
             }
             newshp = SHappendShapes (ARRAY_SHAPE (arg_node), shp);
 
-            FREEdoFreeTree (arg_node);
+            arg_node = FREEdoFreeNode (arg_node);
 
             arg_node = TBmakeArray (newshp, newelems);
         }
     }
-    INFO_CF_INSCONST (arg_info) = FALSE;
 
     DBUG_RETURN (arg_node);
 }
@@ -2465,33 +2413,30 @@ CFprf (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("CFprf");
 
-    DBUG_PRINT ("CF", ("evaluating prf %s", global.mdb_prf[PRF_PRF (arg_node)]));
-
-    /*
-     * ktr: There is no reason to do this as we have CVP now
-     *      CFfoldPrfExpr will look at the constant anyways
-     *
-     * substitute constant identifiers in prf. arguments
-     */
-    INFO_CF_INSCONST (arg_info) = SUBST_ID_WITH_CONSTANT_IN_AP_ARGS;
-    if (PRF_ARGS (arg_node) != NULL) {
-        PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
-    }
-    INFO_CF_INSCONST (arg_info) = FALSE;
-
-    /* look up arguments */
-    arg_expr = GetPrfArgs (arg_expr, PRF_ARGS (arg_node), PRF_MAX_ARGS);
-
-    /* try some constant folding */
-    new_node = CFfoldPrfExpr (PRF_PRF (arg_node), arg_expr);
-
-    if (new_node != NULL) {
-        /* free this primitive function and substitute it with new node */
-        arg_node = FREEdoFreeTree (arg_node);
-        arg_node = new_node;
-
-        /* increment constant folding counter */
+    if (TYisAKV (IDS_NTYPE (INFO_CF_LHS (arg_info)))) {
+        /*
+         * Replace superfluous primitive function with AKV
+         */
+        arg_node = FREEdoFreeNode (arg_node);
+        arg_node = COconstant2AST (TYgetValue (IDS_NTYPE (INFO_CF_LHS (arg_info))));
         cf_expr++;
+    } else {
+        DBUG_PRINT ("CF", ("evaluating prf %s", global.mdb_prf[PRF_PRF (arg_node)]));
+
+        /* look up arguments */
+        arg_expr = GetPrfArgs (arg_expr, PRF_ARGS (arg_node), PRF_MAX_ARGS);
+
+        /* try some constant folding */
+        new_node = CFfoldPrfExpr (PRF_PRF (arg_node), arg_expr);
+
+        if (new_node != NULL) {
+            /* free this primitive function and substitute it with new node */
+            arg_node = FREEdoFreeTree (arg_node);
+            arg_node = new_node;
+
+            /* increment constant folding counter */
+            cf_expr++;
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -2549,6 +2494,7 @@ CFpart (node *arg_node, info *arg_info)
     if (CODE_USED (PART_CODE (arg_node)) == 1) {
         INFO_CF_WITHID (arg_info) = PART_WITHID (arg_node);
     }
+
     PART_GENERATOR (arg_node) = TRAVdo (PART_GENERATOR (arg_node), arg_info);
 
     PART_CODE (arg_node) = TRAVdo (PART_CODE (arg_node), arg_info);
@@ -2580,7 +2526,6 @@ CFgenerator (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CFgenerator");
 
-    INFO_CF_INSCONST (arg_info) = SUBST_SCALAR_AND_ARRAY;
     DBUG_PRINT ("CF", ("substitute constant generator parameters"));
 
     if (GENERATOR_BOUND1 (arg_node) != NULL) {
@@ -2688,8 +2633,6 @@ CFgenerator (node *arg_node, info *arg_info)
         }
         INFO_CF_WITHID (arg_info) = NULL;
     }
-
-    INFO_CF_INSCONST (arg_info) = SUBST_NONE;
 
     DBUG_RETURN (arg_node);
 }

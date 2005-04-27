@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.16  2005/04/27 07:52:25  ktr
+ * Stripped out superfluous rules
+ *
  * Revision 1.15  2005/04/20 19:15:29  ktr
  * removed CFarg, CFlet. Codebrushing.
  *
@@ -83,9 +86,8 @@ extern node *CFfundef (node *arg_node, info *arg_info);
 extern node *CFblock (node *arg_node, info *arg_info);
 extern node *CFassign (node *arg_node, info *arg_info);
 extern node *CFcond (node *arg_node, info *arg_info);
-extern node *CFreturn (node *arg_node, info *arg_info);
 extern node *CFap (node *arg_node, info *arg_info);
-extern node *CFid (node *arg_node, info *arg_info);
+extern node *CFlet (node *arg_node, info *arg_info);
 extern node *CFarray (node *arg_node, info *arg_info);
 extern node *CFprf (node *arg_node, info *arg_info);
 extern node *CFwith (node *arg_node, info *arg_info);
