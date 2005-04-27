@@ -629,9 +629,8 @@
           <node name="Block" />
           <node name="Assign" />
           <node name="Cond" />
-          <node name="Return" />
+          <node name="Let" />
           <node name="Ap" />
-          <node name="Id" />
           <node name="Array" />
           <node name="Prf" />
           <node name="With" />
