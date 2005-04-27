@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.21  2005/04/27 07:53:22  ktr
+ * default nodes are now handled as well
+ *
  * Revision 1.20  2005/04/22 10:08:04  ktr
  * Works with Marielyst compiler.
  *
@@ -525,39 +528,41 @@ WLUcheckUnrollModarray (node *wln, info *arg_info)
               && ((GENERATOR_WIDTH (genn) == NULL)
                   || COisConstant (GENERATOR_WIDTH (genn))));
 
-        /* check if code is a copy of the original array and set NPART_COPY
-           for later usage in WLUDoUnrollModarray().
+        if (ok) {
+            /* check if code is a copy of the original array and set NPART_COPY
+               for later usage in WLUDoUnrollModarray().
 
-             B = new_with
-               ([ 0 ] <= __flat_1_iv=[__flat_0_i] < [ 3 ]) {
-                  __wlt_4 = sel( __flat_1_iv, A );
-               } : __wlt_4,
-               ...more parts...
-             modarray( A);
+               B = new_with
+                 ([ 0 ] <= __flat_1_iv=[__flat_0_i] < [ 3 ]) {
+                    __wlt_4 = sel( __flat_1_iv, A );
+                 } : __wlt_4,
+                 ...more parts...
+               modarray( A);
 
-           We need DCR to be done before to detect identity written by the
-           programmer. */
+               We need DCR to be done before to detect identity written by the
+               programmer. */
 
-        coden = PART_CODE (partn);
-        if (N_empty == NODE_TYPE (BLOCK_INSTR (CODE_CBLOCK (coden)))) {
-            PART_ISCOPY (partn) = FALSE;
-        } else {
-            tmpn = ASSIGN_INSTR (BLOCK_INSTR (CODE_CBLOCK (coden)));
-            exprn = LET_EXPR (tmpn);
-            PART_ISCOPY (partn)
-              = ((N_let == NODE_TYPE (tmpn))
-                 && (ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (coden)))
-                     == IDS_AVIS (LET_IDS (tmpn)))
-                 && (N_prf == NODE_TYPE (exprn)) && (F_sel == PRF_PRF (exprn))
-                 && (N_id == NODE_TYPE (PRF_ARG1 (exprn)))
-                 && (IDS_AVIS (PART_VEC (partn)) == ID_AVIS (PRF_ARG1 (exprn)))
-                 && (N_id == NODE_TYPE (PRF_ARG2 (exprn)))
-                 && (ID_AVIS (MODARRAY_ARRAY (WITH_WITHOP (wln)))
-                     == ID_AVIS (PRF_ARG2 (exprn))));
-        }
+            coden = PART_CODE (partn);
+            if (N_empty == NODE_TYPE (BLOCK_INSTR (CODE_CBLOCK (coden)))) {
+                PART_ISCOPY (partn) = FALSE;
+            } else {
+                tmpn = ASSIGN_INSTR (BLOCK_INSTR (CODE_CBLOCK (coden)));
+                exprn = LET_EXPR (tmpn);
+                PART_ISCOPY (partn)
+                  = ((N_let == NODE_TYPE (tmpn))
+                     && (ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (coden)))
+                         == IDS_AVIS (LET_IDS (tmpn)))
+                     && (N_prf == NODE_TYPE (exprn)) && (F_sel == PRF_PRF (exprn))
+                     && (N_id == NODE_TYPE (PRF_ARG1 (exprn)))
+                     && (IDS_AVIS (PART_VEC (partn)) == ID_AVIS (PRF_ARG1 (exprn)))
+                     && (N_id == NODE_TYPE (PRF_ARG2 (exprn)))
+                     && (ID_AVIS (MODARRAY_ARRAY (WITH_WITHOP (wln)))
+                         == ID_AVIS (PRF_ARG2 (exprn))));
+            }
 
-        if (!PART_ISCOPY (partn)) {
-            elts += CountElements (genn);
+            if (!PART_ISCOPY (partn)) {
+                elts += CountElements (genn);
+            }
         }
 
         partn = PART_NEXT (partn);
