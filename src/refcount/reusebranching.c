@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.20  2005/04/27 07:55:32  ktr
+ * bugfix
+ *
  * Revision 1.19  2005/04/12 15:53:12  ktr
  * Reusebranching can now cope with fold-withloops
  *
@@ -871,13 +874,15 @@ EMRBcode (node *arg_node, info *arg_info)
                  *   r = wl_assign( a, ..., ...);
                  * }: r
                  */
-                memval = ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (PRF_ARG1 (wlass))));
-                if ((NODE_TYPE (memval) == N_prf) && (PRF_PRF (memval) == F_fill)
-                    && (NODE_TYPE (PRF_ARG1 (memval)) == N_prf)
-                    && ((PRF_PRF (PRF_ARG1 (memval)) == F_sel)
-                        || (PRF_PRF (PRF_ARG1 (memval)) == F_idx_sel))) {
-                    DFMsetMaskEntrySet (INFO_RB_DRCS (arg_info), NULL,
-                                        ID_AVIS (PRF_ARG2 (PRF_ARG1 (memval))));
+                if (AVIS_SSAASSIGN (ID_AVIS (PRF_ARG1 (wlass))) != NULL) {
+                    memval = ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (PRF_ARG1 (wlass))));
+                    if ((NODE_TYPE (memval) == N_prf) && (PRF_PRF (memval) == F_fill)
+                        && (NODE_TYPE (PRF_ARG1 (memval)) == N_prf)
+                        && ((PRF_PRF (PRF_ARG1 (memval)) == F_sel)
+                            || (PRF_PRF (PRF_ARG1 (memval)) == F_idx_sel))) {
+                        DFMsetMaskEntrySet (INFO_RB_DRCS (arg_info), NULL,
+                                            ID_AVIS (PRF_ARG2 (PRF_ARG1 (memval))));
+                    }
                 }
                 break;
 
