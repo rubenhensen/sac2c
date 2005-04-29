@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2005/04/29 20:31:11  khf
+ * WLPGpart and WLPGgenerator removed, WLPGmodarray added
+ * exported functions for wlanalysis
+ *
  * Revision 1.9  2004/11/24 13:22:33  khf
  * removed WLPGfold and WLPGmodarray
  *
@@ -57,7 +61,11 @@ extern node *WLPGap (node *arg_node, info *arg_info);
 
 extern node *WLPGwith (node *arg_node, info *arg_info);
 extern node *WLPGgenarray (node *arg_node, info *arg_info);
-extern node *WLPGpart (node *arg_node, info *arg_info);
-extern node *WLPGgenerator (node *arg_node, info *arg_info);
+extern node *WLPGmodarray (node *arg_node, info *arg_info);
+
+/* functions which are also used by wlanalysis.c */
+extern int NormalizeStepWidth (node **step, node **width);
+extern node *CreateStructConstant (node *expr, node *nassigns);
+extern node *CreateEntryFlatArray (int entry, int number);
 
 #endif /* _SAC_WLPARTIONGENERATION_H_ */
