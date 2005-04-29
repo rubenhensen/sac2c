@@ -546,9 +546,17 @@
           <node name="Let" />
           <node name="Ap" />
           <node name="With" />
+          <node name="Genarray" />
+          <node name="Modarray" />
+         </travuser>
+      </traversal>
+      <traversal id="WLA" name="With-Loop Analysis" default="sons" include="wlanalysis.h" >
+        <travuser>
+          <node name="With" />
           <node name="Part" />
           <node name="Generator" />
           <node name="Genarray" />
+          <node name="Modarray" />
          </travuser>
       </traversal>
     </phase>
