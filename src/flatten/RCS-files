@@ -26,3 +26,4 @@ ToNewTypes.h
 ToOldTypes.c
 ToOldTypes.h
 wlanalysis.c
+wlanalysis.h
