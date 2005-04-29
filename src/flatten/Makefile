@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.33  2005/04/29 20:31:11  khf
+# added wlanalysis.o
+#
 # Revision 3.32  2004/11/27 03:08:15  sbs
 # *** empty log message ***
 #
@@ -104,7 +107,7 @@ include $(PROJECT_ROOT)/Makefile.Config
 all: flatten.o lac2fun.o fun2lac.o insert_vardec.o handle_mops.o \
      ToNewTypes.o SSATransform.o UndoSSATransform.o ssa.o \
      WLPartitionGeneration.o WLEnhancement.o ExplicitAccumulate.o \
-     ToOldTypes.o
+     ToOldTypes.o wlanalysis.o
 
 
 %.o: %.c
