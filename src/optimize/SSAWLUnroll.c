@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.22  2005/04/29 22:54:33  khf
+ * replaced macro IDS_SHAPE
+ *
  * Revision 1.21  2005/04/27 07:53:22  ktr
  * default nodes are now handled as well
  *
@@ -367,7 +370,9 @@ ForEachElement (node *partn, node *assignn)
 
     DBUG_ENTER ("ForEachElement");
 
-    maxdim = IDS_SHAPE (PART_VEC (partn), 0);
+    /*  maxdim = IDS_SHAPE(PART_VEC(partn),0);*/
+    maxdim = SHgetExtent (TYgetShape (IDS_NTYPE (PART_VEC (partn))), 0);
+
     l = u = s = w = NULL;
     res = NULL;
 
