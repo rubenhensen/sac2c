@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.50  2005/04/29 20:31:11  khf
+ * shifted generation of default partitions into WLPartitionGeneration
+ *
  * Revision 3.49  2005/04/16 14:20:58  khf
  * changed TBmakeEmpty to TBmakeDefault in FLATpart
  *
@@ -150,8 +153,6 @@ struct INFO {
     node *lastassign;
     node *lastwlblock;
     node *finalassign;
-    node *default_expr;
-    node *default_part;
 };
 
 /**
@@ -161,8 +162,6 @@ struct INFO {
 #define INFO_FLAT_LASTASSIGN(n) (n->lastassign)
 #define INFO_FLAT_LASTWLBLOCK(n) (n->lastwlblock)
 #define INFO_FLAT_FINALASSIGN(n) (n->finalassign)
-#define INFO_FLAT_DEFAULT(n) (n->default_expr)
-#define INFO_FLAT_DEFAULT_PART(n) (n->default_part)
 
 /**
  * INFO functions
@@ -180,8 +179,6 @@ MakeInfo ()
     INFO_FLAT_LASTASSIGN (result) = NULL;
     INFO_FLAT_LASTWLBLOCK (result) = NULL;
     INFO_FLAT_FINALASSIGN (result) = NULL;
-    INFO_FLAT_DEFAULT (result) = NULL;
-    INFO_FLAT_DEFAULT_PART (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -1526,8 +1523,6 @@ FLATgenarray (node *arg_node, info *arg_info)
                      "return-node differs from arg_node while flattening an expr!");
     }
 
-    INFO_FLAT_DEFAULT (arg_info) = DUPdoDupTree (GENARRAY_DEFAULT (arg_node));
-
     DBUG_RETURN (arg_node);
 }
 
@@ -1560,16 +1555,6 @@ FLATmodarray (node *arg_node, info *arg_info)
     }
     DBUG_ASSERT ((expr == expr2),
                  "return-node differs from arg_node while flattening an expr!");
-
-    /**
-     * ATTENTION!! in case of non-scalar "inner" shapes, F_sel is NOT suitable!
-     *             Instead, psel from NTCtemplates has to be used. Maybe
-     *             the module system can be used to achieve this elegantly?
-     *             For the time being, only scalar inner shapes will be handled
-     *             properly!
-     */
-    INFO_FLAT_DEFAULT (arg_info)
-      = TCmakePrf2 (F_sel, NULL, DUPdoDupTree (MODARRAY_ARRAY (arg_node)));
 
     DBUG_RETURN (arg_node);
 }
@@ -1627,30 +1612,15 @@ FLATfold (node *arg_node, info *arg_info)
 node *
 FLATpart (node *arg_node, info *arg_info)
 {
-    node *default_expr;
-
     DBUG_ENTER ("FLATpart");
-
-    default_expr = INFO_FLAT_DEFAULT (arg_info);
-    INFO_FLAT_DEFAULT (arg_info) = NULL;
 
     /* flatten the sons */
     PART_GENERATOR (arg_node) = TRAVdo (PART_GENERATOR (arg_node), arg_info);
-
-    INFO_FLAT_DEFAULT (arg_info) = default_expr;
 
     PART_WITHID (arg_node) = TRAVdo (PART_WITHID (arg_node), arg_info);
 
     /* at this early point there are no other N_Npart nodes */
     DBUG_ASSERT ((PART_NEXT (arg_node) == NULL), "PART_NEXT should not yet exist");
-
-    /* create the new partition for the default value */
-    if (INFO_FLAT_DEFAULT (arg_info) != NULL) {
-        PART_NEXT (arg_node)
-          = TBmakePart (NULL, DUPdoDupTree (PART_WITHID (arg_node)), TBmakeDefault ());
-
-        INFO_FLAT_DEFAULT_PART (arg_info) = PART_NEXT (arg_node);
-    }
 
     DBUG_RETURN (arg_node);
 }
@@ -1669,7 +1639,6 @@ node *
 FLATwithid (node *arg_node, info *arg_info)
 {
     node *_ids;
-    node *default_expr;
     char *old_name;
 
     DBUG_ENTER ("FLATwithid");
@@ -1699,16 +1668,6 @@ FLATwithid (node *arg_node, info *arg_info)
 
     if (WITHID_VEC (arg_node) == NULL) {
         WITHID_VEC (arg_node) = TBmakeSpids (ILIBtmpVar (), NULL);
-    }
-
-    default_expr = INFO_FLAT_DEFAULT (arg_info);
-    if ((default_expr != NULL) && (NODE_TYPE (default_expr) == N_prf)) {
-        /**
-         * we are generating a modarray default i.e., we have to insert the index vector
-         * name as first argument still (cf. FLATmodarray).
-         */
-        PRF_ARG1 (default_expr)
-          = TBmakeSpid (NULL, ILIBstringCopy (SPIDS_NAME (WITHID_VEC (arg_node))));
     }
 
     DBUG_RETURN (arg_node);
@@ -1792,32 +1751,11 @@ node *
 FLATcode (node *arg_node, info *arg_info)
 {
     node **insert_at, *expr, *expr2, *mem_last_assign, *empty_block;
-    node *code;
-    char *tmp_var_string;
 
     DBUG_ENTER ("FLATcode");
 
     DBUG_ASSERT ((CODE_NEXT (arg_node) == NULL),
                  "there should be only one code block during flatten!");
-
-    if (INFO_FLAT_DEFAULT (arg_info) != NULL) {
-        tmp_var_string = ILIBtmpVar ();
-        code
-          = TBmakeCode (TBmakeBlock (TBmakeAssign (TBmakeLet (TBmakeSpids (tmp_var_string,
-                                                                           NULL),
-                                                              INFO_FLAT_DEFAULT (
-                                                                arg_info)),
-                                                   NULL),
-                                     NULL),
-                        TBmakeExprs (TBmakeSpid (NULL, ILIBstringCopy (tmp_var_string)),
-                                     NULL));
-        INFO_FLAT_DEFAULT (arg_info) = NULL;
-        PART_CODE (INFO_FLAT_DEFAULT_PART (arg_info)) = code;
-        INFO_FLAT_DEFAULT_PART (arg_info) = NULL;
-        CODE_USED (code) = 1;
-
-        CODE_NEXT (arg_node) = code;
-    }
 
     /* ATTENTION!!! code MUST NOT be traversed within flatten anymore!!!!! */
 
