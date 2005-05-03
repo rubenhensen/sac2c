@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.23  2005/05/03 09:47:07  khf
+ * reduced specialisation of type when unrolling a genarray wl
+ *
  * Revision 1.22  2005/04/29 22:54:33  khf
  * replaced macro IDS_SHAPE
  *
@@ -370,7 +373,6 @@ ForEachElement (node *partn, node *assignn)
 
     DBUG_ENTER ("ForEachElement");
 
-    /*  maxdim = IDS_SHAPE(PART_VEC(partn),0);*/
     maxdim = SHgetExtent (TYgetShape (IDS_NTYPE (PART_VEC (partn))), 0);
 
     l = u = s = w = NULL;
@@ -707,7 +709,7 @@ WLUdoUnrollGenarray (node *wln, info *arg_info)
     node *letn, *let_expr;
     void *arg[2];
     node *arrayname;
-    ntype *type;
+    ntype *type, *type2;
 
     DBUG_ENTER ("WLUdoUnrollGenarray");
 
@@ -731,6 +733,11 @@ WLUdoUnrollGenarray (node *wln, info *arg_info)
     type = IDS_NTYPE (arrayname);
     let_expr = TCcreateZero (TYgetShape (type), TYgetSimpleType (TYgetScalar (type)),
                              TRUE, INFO_SSALUR_FUNDEF (arg_info));
+
+    if (TYisAKV (type)) {
+        IDS_NTYPE (arrayname) = TYeliminateAKV (type);
+        type = TYfreeType (type);
+    }
 
     letn = TBmakeLet (DUPdoDupNode (arrayname), let_expr);
     res = TBmakeAssign (letn, res);
