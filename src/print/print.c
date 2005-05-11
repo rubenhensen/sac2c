@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.210  2005/05/11 14:23:15  sbs
+ * Now, the wrapper type is printed as a comment.
+ *
  * Revision 3.209  2005/04/16 14:17:15  khf
  * print functions for N_default added
  *
@@ -1312,6 +1315,28 @@ PrintFunctionHeader (node *arg_node, info *arg_info, bool in_comment)
             fprintf (global.outfile, " */ ");
         }
     }
+
+    /* Now, we print the new type signature, iff present */
+    fprintf (global.outfile, "\n");
+    INDENT;
+    fprintf (global.outfile, (in_comment) ? " *\n" : "/*\n");
+    fprintf (global.outfile, " *  ");
+    if (FUNDEF_NAME (arg_node) != NULL) {
+        fprintf (global.outfile, "%s :: ", FUNDEF_NAME (arg_node));
+        if (FUNDEF_WRAPPERTYPE (arg_node) != NULL) {
+            char *(*t2s_fun) (ntype *, bool, int);
+            t2s_fun = TYtype2String;
+            DBUG_EXECUTE ("PRINT_NTY", t2s_fun = TYtype2DebugString;);
+
+            fprintf (global.outfile, "%s\n",
+                     t2s_fun (FUNDEF_WRAPPERTYPE (arg_node), TRUE,
+                              global.indent + strlen (FUNDEF_NAME (arg_node)) + 8));
+        } else {
+            fprintf (global.outfile, " ---\n");
+        }
+    }
+    INDENT;
+    fprintf (global.outfile, (in_comment) ? " *" : " */");
 
     DBUG_VOID_RETURN;
 }
