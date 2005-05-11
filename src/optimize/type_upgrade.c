@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.31  2005/05/11 13:25:00  mwe
+ * some debugging
+ *
  * Revision 1.30  2005/04/15 09:33:38  ktr
  * with-loop specific information is now stacked correctly.
  *
@@ -1675,7 +1678,7 @@ TUPwith (node *arg_node, info *arg_info)
 {
     node *oldwithid;
     node *oldwithidvec;
-    node *oldwlexprs;
+    ntype *oldwlexprs;
 
     DBUG_ENTER ("TUPwith");
 
@@ -1985,12 +1988,16 @@ TUPcode (node *arg_node, info *arg_info)
     prod = NTCnewTypeCheck_Expr (CODE_CEXPRS (arg_node));
     tmp = TYcopyType (TYgetProductMember (prod, 0));
     prod = TYfreeType (prod);
-    if (NULL == INFO_TUP_WLEXPRS (arg_info)) {
 
-        INFO_TUP_WLEXPRS (arg_info) = tmp;
-    } else {
+    if (!TYisAKV (tmp)) {
+        if (NULL == INFO_TUP_WLEXPRS (arg_info)) {
 
-        INFO_TUP_WLEXPRS (arg_info) = GetLowestType (tmp, INFO_TUP_WLEXPRS (arg_info));
+            INFO_TUP_WLEXPRS (arg_info) = tmp;
+        } else {
+
+            INFO_TUP_WLEXPRS (arg_info)
+              = GetLowestType (tmp, INFO_TUP_WLEXPRS (arg_info));
+        }
     }
 
     if (CODE_NEXT (arg_node) != NULL) {
