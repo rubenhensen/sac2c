@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.24  2005/05/12 08:44:00  sbs
+ * Now, vars are indtroduced for COND funs as well.
+ * See SPEChandleLaCFuns for details
+ *
  * Revision 1.23  2005/03/04 21:21:42  cg
  * FUNDEF_USED counter etc removed.
  * LaC functions are now always duplicated along with the
@@ -263,7 +267,7 @@ UpdateVarSignature (node *fundef, ntype *arg_ts)
     node *args;
     ntype *type, *old_type, *new_type;
     int i = 0;
-    bool ok;
+    bool ok = TRUE;
 
     DBUG_ENTER ("UpdateVarSignature");
     DBUG_ASSERT ((TCcountArgs (FUNDEF_ARGS (fundef)) == TYgetProductSize (arg_ts)),
@@ -274,25 +278,22 @@ UpdateVarSignature (node *fundef, ntype *arg_ts)
     args = FUNDEF_ARGS (fundef);
     while (args) {
         type = TYgetProductMember (arg_ts, i);
-        new_type = AVIS_TYPE (ARG_AVIS (args));
-        if ((new_type == NULL) || (!TYisAlpha (new_type))) {
-            if (new_type != NULL) {
-                new_type = TYfreeType (new_type);
-            }
+        old_type = ARG_NTYPE (args);
+        if (old_type == NULL) {
             new_type = TYmakeAlphaType (NULL);
-            old_type = ARG_NTYPE (args);
-            if (old_type != NULL) {
+        } else if (!TYisAlpha (old_type)) {
+            new_type = TYmakeAlphaType (NULL);
+            if (TYgetSimpleType (TYgetScalar (old_type)) != T_unknown) {
                 ok = SSInewTypeRel (old_type, new_type);
             }
-            ok = SSInewTypeRel (type, new_type);
+            old_type = TYfreeType (old_type);
         } else {
-            DBUG_ASSERT (TYisAlpha (new_type), "UpdateVarSignature called with "
-                                               "non-var argument type");
-            ok = SSInewTypeRel (type, new_type);
-            DBUG_ASSERT (ok, "UpdateVarSignature called with incompatible args");
+            new_type = old_type;
         }
+        ok = ok && SSInewTypeRel (type, new_type);
+        DBUG_ASSERT (ok, "UpdateVarSignature called with incompatible args");
 
-        AVIS_TYPE (ARG_AVIS (args)) = new_type;
+        ARG_NTYPE (args) = new_type;
 
         args = ARG_NEXT (args);
         i++;
@@ -453,22 +454,46 @@ SPEChandleLacFun (node *fundef, node *assign, ntype *args)
     DBUG_ASSERT (FUNDEF_ISLACFUN (fundef), "SPEChandleLacFun called with non LaC fun!");
 
     /**
-     * Now, we update the signature of fundef. In case of conditionals, we can
+     * Now, we update the signature of fundef. On first thought you
+     * may think that, for conditionals, it suffices to
      * directly specialize the signature, using "UpdateFixSignature".
-     * For loops, however, we usually do have more than one call. Since we
+     * Unfortunately, this is NOT true: Due to the fix point iteration
+     * we may have to coarsen the argument types. An example for
+     * this situation is:
+     *
+     * int[*] f( )
+     * {
+     *   if( true ) {
+     *     x = f();
+     *     if( false) {
+     *       res = [x];
+     *     } else {
+     *       res = [x];
+     *     }
+     *   } else {
+     *     res = 1;
+     *   }
+     *   return( res);
+     * }
+     * To cope properly with that situation, we need to insert variable
+     * args and returns which may be coarsened afterwards.
+     *
+     * For loops, we usually do have more than one call. Since we
      * do not want to create more than ONE specialization, we use type vars
      * for approximating the argument types. On the very first call,
      * we create these type vars; on ALL calls, we make the actual argument
      * types minima of these, i.e., we make the overall types potentially
      * less precise. This is done by "UpdateVarSignature".
      */
-    if (FUNDEF_ISCONDFUN (fundef)) {
-        UpdateFixSignature (fundef, args);
-    } else {
-        UpdateVarSignature (fundef, args);
-    }
+    UpdateVarSignature (fundef, args);
 
-    FUNDEF_RETS (fundef) = TUrettypes2alphaAUD (FUNDEF_RETS (fundef));
+    /*
+     * Now we need to make sure that we have VarRets as well.
+     * If we do have Alphas already we need to leave them unchanged!
+     */
+    if ((FUNDEF_RETS (fundef) != NULL) && !TYisAlpha (RET_TYPE (FUNDEF_RETS (fundef)))) {
+        FUNDEF_RETS (fundef) = TUrettypes2alphaAUD (FUNDEF_RETS (fundef));
+    }
 
     DBUG_RETURN (fundef);
 }
