@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.32  2005/05/12 13:07:24  mwe
+ * again some debugging, signature specialization of do-loops changed
+ *
  * Revision 1.31  2005/05/11 13:25:00  mwe
  * some debugging
  *
@@ -2053,6 +2056,7 @@ TUPap (node *arg_node, info *arg_info)
              */
 
             node *signature, *args;
+            ntype *tmp;
 
             signature = FUNDEF_ARGS (AP_FUNDEF (arg_node));
             args = AP_ARGS (arg_node);
@@ -2068,10 +2072,24 @@ TUPap (node *arg_node, info *arg_info)
                     break;
                 case TY_lt: /* signature is more special than argument, that's a problem
                              */
-                    INFO_TUP_CORRECTFUNCTION (arg_info) = FALSE;
-                    break;
+                            /*INFO_TUP_CORRECTFUNCTION( arg_info) = FALSE;
+                              break;*/
                 case TY_hcs:
-                    INFO_TUP_CORRECTFUNCTION (arg_info) = FALSE;
+                    /*INFO_TUP_CORRECTFUNCTION( arg_info) = FALSE;*/
+
+                    /*
+                     * find common supertype of signature and argument type
+                     * change signature type to that argument type
+                     * common supertype should not be worser than original type
+                     */
+                    tmp = AVIS_TYPE (ARG_AVIS (signature));
+
+                    AVIS_TYPE (ARG_AVIS (signature))
+                      = TYlubOfTypes (AVIS_TYPE (ARG_AVIS (signature)),
+                                      AVIS_TYPE (ID_AVIS (EXPRS_EXPR (args))));
+
+                    tmp = TYfreeType (tmp);
+
                     break;
                 case TY_dis: /* both types are unrelated, should not be possible */
                     DBUG_ASSERT ((FALSE), "Former type is unrelated to new type! ");
