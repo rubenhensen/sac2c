@@ -753,6 +753,15 @@
 	  <node name="Ap" />
 	</travuser>
       </traversal>
+      <traversal id="LINL" name="LAC Inline Traversal" default="sons" include="lacinlining.h" >
+	<travuser>
+	  <node name="Module" />
+	  <node name="Assign" />
+	  <node name="Fundef" />
+	  <node name="Let" />
+	  <node name="Ap" />
+	</travuser>
+      </traversal>
       <traversal id="LIR" name="Loop Invariants Traversal" default="sons" include="SSALIR.h" >
 	<travuser>
 	  <node name="Ids" />
