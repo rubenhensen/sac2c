@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.164  2005/05/13 16:36:11  ktr
+# added flatten/lacinlining.o
+#
 # Revision 3.163  2005/04/29 20:31:11  khf
 # added src/flatten/wlanalysis.o
 #
@@ -143,7 +146,8 @@ FLATTEN= src/flatten/flatten.o src/flatten/lac2fun.o \
          src/flatten/ToNewTypes.o src/flatten/SSATransform.o \
          src/flatten/ssa.o src/flatten/WLPartitionGeneration.o \
 	 src/flatten/WLEnhancement.o src/flatten/ExplicitAccumulate.o \
-         src/flatten/ToOldTypes.o src/flatten/wlanalysis.o
+         src/flatten/ToOldTypes.o src/flatten/wlanalysis.o \
+         src/flatten/lacinlining.o
 
 CONSTANTS= src/constants/shape.o src/constants/constants_basic.o \
            src/constants/constants_struc_ops.o \
