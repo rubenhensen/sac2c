@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.87  2005/05/13 16:46:36  ktr
+ * some code brushing
+ *
  * Revision 1.86  2005/04/27 07:52:25  ktr
  * Stripped out superfluous rules
  *
@@ -940,19 +943,14 @@ static constant *
 Dim (node *expr)
 {
     constant *result;
-    int dim;
 
     DBUG_ENTER ("Dim");
 
-    if (NODE_TYPE (expr) == N_id) {
-        if ((TYisAKD (AVIS_TYPE (ID_AVIS (expr))))
+    if ((NODE_TYPE (expr) == N_id)
+        && ((TYisAKD (AVIS_TYPE (ID_AVIS (expr))))
             || (TYisAKS (AVIS_TYPE (ID_AVIS (expr))))
-            || (TYisAKV (AVIS_TYPE (ID_AVIS (expr))))) {
-            dim = TYgetDim (AVIS_TYPE (ID_AVIS (expr)));
-            result = COmakeConstantFromInt (dim);
-        } else {
-            result = NULL;
-        }
+            || (TYisAKV (AVIS_TYPE (ID_AVIS (expr)))))) {
+        result = COmakeConstantFromInt (TYgetDim (AVIS_TYPE (ID_AVIS (expr))));
     } else {
         result = NULL;
     }
@@ -976,29 +974,14 @@ static constant *
 Shape (node *expr)
 {
     constant *result;
-    int dim;
-    shape *cshape;
-    int *int_vec;
 
-    DBUG_ENTER ("Dim");
+    DBUG_ENTER ("Shape");
 
-    if (NODE_TYPE (expr) == N_id) {
-        if ((TYisAKD (AVIS_TYPE (ID_AVIS (expr))))
-            || (TYisAKS (AVIS_TYPE (ID_AVIS (expr))))
-            || (TYisAKV (AVIS_TYPE (ID_AVIS (expr))))) {
+    if ((NODE_TYPE (expr) == N_id)
+        && ((TYisAKS (AVIS_TYPE (ID_AVIS (expr))))
+            || (TYisAKV (AVIS_TYPE (ID_AVIS (expr)))))) {
 
-            dim = TYgetDim (AVIS_TYPE (ID_AVIS (expr)));
-            /* store known shape as constant (int vector of len dim) */
-
-            /*cshape = SHoldTypes2Shape(VARDEC_OR_ARG_TYPE(AVIS_DECL(ID_AVIS(expr)))); */
-            cshape = TYgetShape (AVIS_TYPE (ID_AVIS (expr)));
-            int_vec = SHshape2IntVec (cshape);
-
-            result = COmakeConstant (T_int, SHcreateShape (1, dim), int_vec);
-        } else {
-            result = NULL;
-        }
-
+        result = COmakeConstantFromShape (TYgetShape (AVIS_TYPE (ID_AVIS (expr))));
     } else {
         result = NULL;
     }
@@ -2255,7 +2238,7 @@ CFcond (node *arg_node, info *arg_info)
 
         FUNDEF_ISDOFUN (INFO_CF_FUNDEF (arg_info)) = FALSE;
         FUNDEF_ISCONDFUN (INFO_CF_FUNDEF (arg_info)) = FALSE;
-        FUNDEF_ISINLINE (INFO_CF_FUNDEF (arg_info)) = TRUE;
+        FUNDEF_ISLACINLINE (INFO_CF_FUNDEF (arg_info)) = TRUE;
     } else {
         /*
          * no constant condition:
@@ -2711,10 +2694,6 @@ CFfoldPrfExpr (prf op, node **arg_expr)
 
     case F_dim:
         if
-            ONE_CONST_ARG (arg_co)
-            {
-            }
-        else if
             ONE_ARG (arg_expr)
             {
                 /* for some non full constant expression */
@@ -2724,10 +2703,6 @@ CFfoldPrfExpr (prf op, node **arg_expr)
 
     case F_shape:
         if
-            ONE_CONST_ARG (arg_co)
-            {
-            }
-        else if
             ONE_ARG (arg_expr)
             {
                 /* for some non full constant expression */
