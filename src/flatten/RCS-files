@@ -27,3 +27,4 @@ ToOldTypes.c
 ToOldTypes.h
 wlanalysis.c
 wlanalysis.h
+lacinlining.c
