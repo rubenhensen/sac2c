@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.15  2005/05/13 16:44:40  ktr
+ * UndoSSA now uses lacinlining.
+ *
  * Revision 1.14  2005/04/19 17:37:23  ktr
  * added "lacinl"
  *
@@ -79,7 +82,7 @@
 #include "UndoSSATransform.h"
 #include "string.h"
 #include "tree_basic.h"
-#include "inlining.h"
+#include "lacinlining.h"
 
 #include "ssa.h"
 
@@ -172,7 +175,7 @@ SSAundoSsa (node *syntax_tree)
     DBUG_PRINT ("SSA", ("call Function Inlining"));
     /* inline loop and cond functions */
     if (global.lacinline) {
-        syntax_tree = INLdoLACInlining (syntax_tree);
+        syntax_tree = LINLdoLACInlining (syntax_tree);
     }
     if ((global.break_after == global.compiler_phase)
         && (0 == strcmp (global.break_specifier, "lacinl"))) {
