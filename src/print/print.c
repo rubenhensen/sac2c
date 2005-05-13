@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.211  2005/05/13 16:45:25  ktr
+ * /* lacinline */ is now printed as well
+ *
  * Revision 3.210  2005/05/11 14:23:15  sbs
  * Now, the wrapper type is printed as a comment.
  *
@@ -132,7 +135,8 @@
 
 #define WARN_INDENT
 
-/*
+
+/* 
  * use of arg_info in this file:
  * - node[0]: is used for storing the current fundef node.
  * - node[1]: profile macros  (?)
@@ -1237,7 +1241,11 @@ PrintFunctionHeader (node *arg_node, info *arg_info, bool in_comment)
     }
 
     if (FUNDEF_ISINLINE (arg_node)) {
-        fprintf (global.outfile, "inline ");
+        fprintf (global.outfile, "inline\n");
+    }
+
+    if (FUNDEF_ISLACINLINE (arg_node)) {
+        fprintf (global.outfile, "/* lacinline */\n");
     }
 
     if (print_c) {
