@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.34  2005/05/13 16:36:57  ktr
+# added lacinlining.o
+#
 # Revision 3.33  2005/04/29 20:31:11  khf
 # added wlanalysis.o
 #
@@ -107,7 +110,7 @@ include $(PROJECT_ROOT)/Makefile.Config
 all: flatten.o lac2fun.o fun2lac.o insert_vardec.o handle_mops.o \
      ToNewTypes.o SSATransform.o UndoSSATransform.o ssa.o \
      WLPartitionGeneration.o WLEnhancement.o ExplicitAccumulate.o \
-     ToOldTypes.o wlanalysis.o
+     ToOldTypes.o wlanalysis.o lacinlining.o
 
 
 %.o: %.c
