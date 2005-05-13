@@ -1,5 +1,10 @@
 /*
  * $Log$
+ * Revision 1.23  2005/05/13 16:43:20  ktr
+ * Copy assignments are now inserted if conditional results are given by fill-
+ * operations. This is necessary for the consistent top-down renaming performed
+ * by PREC:MMV
+ *
  * Revision 1.22  2005/04/19 17:36:18  ktr
  * Complete rewrite
  *
@@ -60,7 +65,7 @@ MakeInfo ()
 
     INFO_USSA_FUNDEF (result) = NULL;
     INFO_USSA_LHS (result) = NULL;
-    INFO_USSA_REMASSIGN (result) = NULL;
+    INFO_USSA_REMASSIGN (result) = FALSE;
     INFO_USSA_THENASS (result) = NULL;
     INFO_USSA_ELSEASS (result) = NULL;
 
@@ -397,6 +402,7 @@ node *
 USSATfuncond (node *arg_node, info *arg_info)
 {
     node *lhsavis;
+    node *rhsavis;
 
     DBUG_ENTER ("USSATfuncond");
 
@@ -404,38 +410,58 @@ USSATfuncond (node *arg_node, info *arg_info)
 
     /*
      * Ex.: r = funcond( c, t, e);
+     *
+     * Try to replace the lhs occurences of t and e with r.
+     *
+     * This can only be performed iff
+     *
+     *  - t,e are not function arguments
+     *    They must thus be defined in the conditional itself
+     *
+     *  - t,e have not already been replaced
+     *    This may happen in the presence of multiple funconds
+     *
+     *  - t,e are not given by fill-operations (after memory management)
+     *    The renaming scheme applied by PREC:MMV for good reasons relies on the
+     *    presence of a subsequent copy assignment
      */
 
     /*
      * Try to trigger replacement of t with r
      */
-    if ((NODE_TYPE (AVIS_DECL (ID_AVIS (FUNCOND_THEN (arg_node)))) == N_arg)
-        || (AVIS_SUBST (ID_AVIS (FUNCOND_THEN (arg_node))) != NULL)) {
+    rhsavis = ID_AVIS (FUNCOND_THEN (arg_node));
+    if ((NODE_TYPE (AVIS_DECL (rhsavis)) == N_arg)
+        || ((NODE_TYPE (ASSIGN_RHS (AVIS_SSAASSIGN (rhsavis))) == N_prf)
+            && (PRF_PRF (ASSIGN_RHS (AVIS_SSAASSIGN (rhsavis))) == F_fill))
+        || (AVIS_SUBST (rhsavis) != NULL)) {
+
         /*
-         * If t already is substituted, append r = t to the THEN-branch
+         * At least one criterium is not met => insert copy assignment
          */
         INFO_USSA_THENASS (arg_info)
-          = TBmakeAssign (TBmakeLet (TBmakeIds (lhsavis, NULL),
-                                     TBmakeId (ID_AVIS (FUNCOND_THEN (arg_node)))),
+          = TBmakeAssign (TBmakeLet (TBmakeIds (lhsavis, NULL), TBmakeId (rhsavis)),
                           INFO_USSA_THENASS (arg_info));
     } else {
-        AVIS_SUBST (ID_AVIS (FUNCOND_THEN (arg_node))) = lhsavis;
+        AVIS_SUBST (rhsavis) = lhsavis;
     }
 
     /*
      * Try to trigger replacement of e with r
      */
-    if ((NODE_TYPE (AVIS_DECL (ID_AVIS (FUNCOND_ELSE (arg_node)))) == N_arg)
-        || (AVIS_SUBST (ID_AVIS (FUNCOND_ELSE (arg_node))) != NULL)) {
+    rhsavis = ID_AVIS (FUNCOND_ELSE (arg_node));
+    if ((NODE_TYPE (AVIS_DECL (rhsavis)) == N_arg)
+        || ((NODE_TYPE (ASSIGN_RHS (AVIS_SSAASSIGN (rhsavis))) == N_prf)
+            && (PRF_PRF (ASSIGN_RHS (AVIS_SSAASSIGN (rhsavis))) == F_fill))
+        || (AVIS_SUBST (rhsavis) != NULL)) {
+
         /*
-         * If e already is substituted, append r = e to the ELSE-branch
+         * At least one criterium is not met => insert copy assignment
          */
         INFO_USSA_ELSEASS (arg_info)
-          = TBmakeAssign (TBmakeLet (TBmakeIds (lhsavis, NULL),
-                                     TBmakeId (ID_AVIS (FUNCOND_ELSE (arg_node)))),
+          = TBmakeAssign (TBmakeLet (TBmakeIds (lhsavis, NULL), TBmakeId (rhsavis)),
                           INFO_USSA_ELSEASS (arg_info));
     } else {
-        AVIS_SUBST (ID_AVIS (FUNCOND_ELSE (arg_node))) = lhsavis;
+        AVIS_SUBST (rhsavis) = lhsavis;
     }
 
     INFO_USSA_REMASSIGN (arg_info) = TRUE;
