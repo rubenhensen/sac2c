@@ -1,8 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 3.212  2005/05/17 10:58:48  sacbase
+ * Eliminated nested comments in RCS header section and restored
+ * compilability.
+ *
  * Revision 3.211  2005/05/13 16:45:25  ktr
- * /* lacinline */ is now printed as well
+ * "lacinline" is now printed as well
  *
  * Revision 3.210  2005/05/11 14:23:15  sbs
  * Now, the wrapper type is printed as a comment.
@@ -130,13 +134,12 @@
 #include "multithread_lib.h"
 #include "constants.h"
 #include "print_interface.h"
-#include "shape.h"
 #include "internal_lib.h"
+#include "shape.h"
 
 #define WARN_INDENT
 
-
-/* 
+/*
  * use of arg_info in this file:
  * - node[0]: is used for storing the current fundef node.
  * - node[1]: profile macros  (?)
