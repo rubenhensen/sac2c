@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.27  2005/05/17 11:36:46  cg
+ * inlnum renamed to max_recursive_inlining
+ *
  * Revision 1.26  2005/04/15 13:23:55  ktr
  * removed lacinline
  *
@@ -382,7 +385,7 @@ GLOBAL (char **, spec_mode_str, spec_mode_str_init)
  */
 
 GLOBAL (int, optvar, 50)
-GLOBAL (int, inlnum, 1)
+GLOBAL (int, max_recursive_inlining, 0)
 GLOBAL (int, unrnum, 2)
 GLOBAL (int, wlunrnum, 9)
 GLOBAL (int, minarray, 4)
