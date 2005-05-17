@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2005/05/17 11:36:46  cg
+ * Inlining completely re-organized in order to handle system of mutually
+ * recursive inline functions correctly.
+ *
  * Revision 1.4  2005/05/13 16:46:54  ktr
  * removed lacinlining functionality
  *
@@ -15,6 +19,34 @@
  * Initial revision
  *
  *
+ */
+
+/**
+ *
+ * @file inlining.c
+ *
+ * This file realizes the optimization technique function inlining.
+ *
+ * In order to properly handling inlining of (mutually) recursive functions,
+ * the traversal sequence is unusual. We start traversing the fundef chain,
+ * but as soon as we encounter an application of an inline-function, which
+ * has not been treated yet, we continue with that function and complete
+ * inlining in that function body first. As a consequence, whenever we
+ * actually perform the inlining, we do not traverse the inlined code again.
+ *
+ * Inlining of recursive functions is controlled by the command line flag
+ * -maxrecinl <n> and the corresponding global variable max_recursive_inlining.
+ * At most <n> recursive applications (!) of a function will be inlined.
+ * With <n>==0, a directly recursive function will not be inlined in itself,
+ * but one incarnation will be inlined at every external application.
+ * With two mutually recursive functions, one will be inlined into the other.
+ * All external applications of each of them are inlined as well. As a
+ * consequence, one of the two functions will become garbage, provided it is
+ * not exported by a module, etc.
+ *
+ * Greater values of max_recursive_inlining lead to a partial unrolling
+ * of recursion both for directly recursive functions as well as for systems
+ * of mutually recursive functions.
  */
 
 #include "globals.h"
@@ -39,6 +71,7 @@ struct INFO {
     node *letids;
     node *code;
     node *vardecs;
+    int depth;
 };
 
 /*
@@ -48,6 +81,7 @@ struct INFO {
 #define INFO_LETIDS(n) (n->letids)
 #define INFO_CODE(n) (n->code)
 #define INFO_VARDECS(n) (n->vardecs)
+#define INFO_DEPTH(n) (n->depth)
 
 /*
  * INFO functions
@@ -65,6 +99,7 @@ MakeInfo ()
     INFO_LETIDS (result) = NULL;
     INFO_CODE (result) = NULL;
     INFO_VARDECS (result) = NULL;
+    INFO_DEPTH (result) = 0;
 
     DBUG_RETURN (result);
 }
@@ -79,15 +114,20 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
-/******************************************************************************
+/**<!--***********************************************************************-->
  *
- * Function:
- *   node *INLmodule( node *arg_node, info *arg_info)
+ * @fn node *INLmodule( node *arg_node, info *arg_info)
  *
- * Description:
- *   Traverses FUNDEFs only.
+ * @brief traverses into function definitions only
  *
- ******************************************************************************/
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return arg_node
+ *
+ *****************************************************************************/
+
 node *
 INLmodule (node *arg_node, info *arg_info)
 {
@@ -100,46 +140,89 @@ INLmodule (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************
+/**<!--***********************************************************************-->
  *
- * Function:
- *   node *INLfundef( node *arg_node, info *arg_info)
+ * @fn node *INLfundef( node *arg_node, info *arg_info)
  *
- * Description:
- *   Traverses function body
+ * @brief realizes top-down traversal of fundef chain
  *
- ******************************************************************************/
+ *  This function is used not only for traversing the fundef chain, but also
+ *  for starting traversal of fundefs referenced in applications. The two
+ *  cases can be distinguished by INFO_DEPTH, which keeps track of the nesting
+ *  depth of function applications, i.e. INFO_DEPTH == 0 means we are on the
+ *  top-level fundef chain.
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return arg_node
+ *
+ *****************************************************************************/
+
 node *
 INLfundef (node *arg_node, info *arg_info)
 {
+    node *old_info;
+
     DBUG_ENTER ("INLfundef");
 
-    if (FUNDEF_BODY (arg_node) != NULL) {
+    if ((FUNDEF_BODY (arg_node) != NULL) && (!FUNDEF_ISINLINECOMPLETED (arg_node))
+        && ((!FUNDEF_ISLACFUN (arg_node)) || (INFO_DEPTH (arg_info) >= 1))
+        && (FUNDEF_INLINECOUNTER (arg_node) <= global.max_recursive_inlining)) {
+
+        old_info = arg_info;
+        arg_info = MakeInfo ();
+
         INFO_FUNDEF (arg_info) = arg_node;
+        FUNDEF_INLINECOUNTER (arg_node) += 1;
+
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-        INFO_FUNDEF (arg_info) = NULL;
+
+        FUNDEF_INLINECOUNTER (arg_node) -= 1;
+        FreeInfo (arg_info);
+        arg_info = old_info;
+
+        FUNDEF_ISINLINECOMPLETED (arg_node) = TRUE;
     }
 
-    if (FUNDEF_NEXT (arg_node) != NULL) {
+    if ((INFO_DEPTH (arg_info) == 0) && (FUNDEF_NEXT (arg_node) != NULL)) {
+        /*
+         * We only continue with traversing the next function if we are on
+         * the top level fundef chain.
+         */
         FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************
+/**<!--***********************************************************************-->
  *
- * Function:
- *   node *INLassign( node *arg_node, info *arg_info)
+ * @fn node *INLassign( node *arg_node, info *arg_info)
  *
- * Description:
- *   Traverses RHS and replaces arg_node with inlined code if necessary
+ * @brief traverses into right hand side of assignment and realizes inlining
  *
- ******************************************************************************/
+ *  If we find a case for inlining during traversal of the right hand side,
+ *  the code and the vardecs to be inlined are stored in the info structure.
+ *  Here, we store pointers to both on the runtime stack and continue with
+ *  the subsequent assignment. Only after traversal of the whole assignment
+ *  chain, we actually realize the inlining and replace the current assignment
+ *  by the stored code and append the vardecs to the chain of vardecs.
+ *  Doing so, we never check inlined code for further cases of inlining.
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return arg_node
+ *
+ *****************************************************************************/
+
 node *
 INLassign (node *arg_node, info *arg_info)
 {
     bool inlined = FALSE;
+    node *code = NULL;
+    node *vardecs = NULL;
 
     DBUG_ENTER ("INLassign");
 
@@ -148,19 +231,12 @@ INLassign (node *arg_node, info *arg_info)
     }
 
     if (INFO_CODE (arg_info) != NULL) {
-        ASSIGN_NEXT (arg_node)
-          = TCappendAssign (INFO_CODE (arg_info), ASSIGN_NEXT (arg_node));
-
-        inlined = TRUE;
+        code = INFO_CODE (arg_info);
         INFO_CODE (arg_info) = NULL;
+        vardecs = INFO_VARDECS (arg_info);
+        INFO_VARDECS (arg_info) = NULL;
+        inlined = TRUE;
         inl_fun++; /* global optimization counter */
-
-        if (INFO_VARDECS (arg_info) != NULL) {
-            BLOCK_VARDEC (FUNDEF_BODY (INFO_FUNDEF (arg_info)))
-              = TCappendVardec (INFO_VARDECS (arg_info),
-                                BLOCK_VARDEC (FUNDEF_BODY (INFO_FUNDEF (arg_info))));
-            INFO_VARDECS (arg_info) = NULL;
-        }
     }
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
@@ -168,21 +244,29 @@ INLassign (node *arg_node, info *arg_info)
     }
 
     if (inlined) {
+        ASSIGN_NEXT (arg_node) = TCappendAssign (code, ASSIGN_NEXT (arg_node));
+        BLOCK_VARDEC (FUNDEF_BODY (INFO_FUNDEF (arg_info)))
+          = TCappendVardec (vardecs, BLOCK_VARDEC (FUNDEF_BODY (INFO_FUNDEF (arg_info))));
         arg_node = FREEdoFreeNode (arg_node);
     }
 
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************
+/**<!--***********************************************************************-->
  *
- * Function:
- *   node *INLlet( node *arg_node, info *arg_info)
+ * @fn node *INLlet( node *arg_node, info *arg_info)
  *
- * Description:
- *   Remembers LHS in INFO node and traverses RHS
+ * @brief remembers LHS in INFO node and traverses RHS
  *
- ******************************************************************************/
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return arg_node
+ *
+ *****************************************************************************/
+
 node *
 INLlet (node *arg_node, info *arg_info)
 {
@@ -195,21 +279,36 @@ INLlet (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************
+/**<!--***********************************************************************-->
  *
- * Function:
- *   node *INLap( node *arg_node, info *arg_info)
+ * @fn node *INLap( node *arg_node, info *arg_info)
  *
- * Description:
- *   Prepares inlining of applied function
+ * @brief
  *
- ******************************************************************************/
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return arg_node
+ *
+ *****************************************************************************/
+
 node *
 INLap (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("INLap");
 
-    if (FUNDEF_ISINLINE (AP_FUNDEF (arg_node))) {
+    if (FUNDEF_ISLACFUN (AP_FUNDEF (arg_node))
+        || FUNDEF_ISINLINE (AP_FUNDEF (arg_node))) {
+        INFO_DEPTH (arg_info) += 1;
+
+        AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
+
+        INFO_DEPTH (arg_info) -= 1;
+    }
+
+    if (FUNDEF_ISINLINE (AP_FUNDEF (arg_node))
+        && FUNDEF_ISINLINECOMPLETED (AP_FUNDEF (arg_node))) {
         INFO_CODE (arg_info)
           = PINLdoPrepareInlining (&INFO_VARDECS (arg_info), AP_FUNDEF (arg_node),
                                    INFO_LETIDS (arg_info), AP_ARGS (arg_node));
@@ -218,15 +317,18 @@ INLap (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************
+/**<!--***********************************************************************-->
  *
- * Function:
- *   node *INLdoInlining( node *arg_node)
+ * @fn node *INLdoInlining( node *arg_node)
  *
- * Description:
- *   Starts function inlining.
+ * @brief initiates function inlining as optimization phase
  *
- ******************************************************************************/
+ *
+ * @param arg_node
+ *
+ * @return arg_node
+ *
+ *****************************************************************************/
 
 node *
 INLdoInlining (node *arg_node)
