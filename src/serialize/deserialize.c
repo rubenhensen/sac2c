@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2005/05/17 16:20:50  sah
+ * added some reasonable error messages
+ *
  * Revision 1.6  2005/02/16 22:29:13  sah
  * changed link handling
  *
@@ -495,6 +498,10 @@ LoadFunctionBody (node *fundef)
         serfun = MODMgetDeSerializeFunction (serfunname, module);
 
         result = serfun (DSstate);
+    } else {
+        DBUG_PRINT ("DS", ("deserialiser fun '%s' not found", serfunname));
+
+        result = NULL;
     }
 
     table = STdestroy (table);
@@ -521,6 +528,8 @@ DSdoDeserialize (node *fundef)
     body = LoadFunctionBody (fundef);
 
     setCurrentFundefHead (NULL);
+
+    DBUG_PRINT ("DS", ("Operation %s", (body == NULL) ? "failed" : "completed"));
 
     FUNDEF_BODY (fundef) = body;
 

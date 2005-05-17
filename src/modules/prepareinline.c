@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2005/05/17 16:20:50  sah
+ * added some reasonable error messages
+ *
  * Revision 1.2  2004/11/25 12:00:27  sah
  * COMPILES
  *
@@ -18,6 +21,7 @@
 #include "traverse.h"
 #include "deserialize.h"
 #include "internal_lib.h"
+#include "type_utils.h"
 
 /*
  * INFO structure
@@ -69,7 +73,20 @@ PPIfundef (node *arg_node, info *arg_info)
     if ((FUNDEF_BODY (arg_node) == NULL) && (FUNDEF_ISINLINE (arg_node))
         && (FUNDEF_SYMBOLNAME (arg_node) != NULL)) {
         arg_node = DSdoDeserialize (arg_node);
-        INFO_PPI_FETCHED (arg_info)++;
+
+        if (FUNDEF_BODY (arg_node) != NULL) {
+            INFO_PPI_FETCHED (arg_info)++;
+
+            DBUG_PRINT ("PPI", ("fetched function body for '%s:%s'",
+                                FUNDEF_MOD (arg_node), FUNDEF_NAME (arg_node)));
+        } else {
+            char *funsig = TUtypeSignature2String (arg_node);
+
+            CTIerror ("Unable to find body of function '%s:%s' with args '%s' in module.",
+                      FUNDEF_MOD (arg_node), FUNDEF_NAME (arg_node), funsig);
+
+            funsig = ILIBfree (funsig);
+        }
     }
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
@@ -122,6 +139,8 @@ PPIdoPrepareInline (node *syntax_tree)
 #ifndef DBUG_OFF
         rounds++;
 #endif
+
+        CTIabortOnError ();
     } while (INFO_PPI_FETCHED (info) != 0);
 
     TRAVpop ();
