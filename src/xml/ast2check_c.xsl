@@ -2,6 +2,9 @@
 
 <!--
   $Log$
+  Revision 1.12  2005/05/17 13:00:37  jhb
+  added the isfun
+
   Revision 1.11  2005/02/16 14:33:36  jhb
   divide the attributecode to exist and correct
 
@@ -145,6 +148,11 @@ static info *FreeInfo(info *info)
 </xsl:apply-templates>
 <xsl:value-of select="' } attr_list;'"/>
 <xsl:value-of select="$newline"/>
+
+<xsl:apply-templates select="//nodesets/nodeset">
+  <xsl:sort select="@name"/>
+</xsl:apply-templates>
+  
 </xsl:template>
 
 
@@ -178,6 +186,9 @@ static info *FreeInfo(info *info)
   <xsl:apply-templates select="./sons/son" mode="check">
   <xsl:sort select="@name"/>
   </xsl:apply-templates>
+
+
+  <xsl:value-of select="$newline"/>
   <xsl:apply-templates select="./attributes/attribute" mode="exist">
     <xsl:sort select="@name"/>
   </xsl:apply-templates>
@@ -411,7 +422,7 @@ static info *FreeInfo(info *info)
     </xsl:otherwise>
   </xsl:choose>
   <xsl:value-of select="$newline"/>
- </xsl:template>
+</xsl:template>
 
 
 
@@ -419,22 +430,65 @@ static info *FreeInfo(info *info)
    <xsl:if test="string-length(attributes/attribute/@name) &gt; 0">
      <xsl:value-of select="'  '"/>
      <xsl:value-of select="'CHK_'"/>
-      <xsl:call-template name="lowercase">
-        <xsl:with-param name="string" >
-          <xsl:value-of select="@name"/>
-        </xsl:with-param>
-      </xsl:call-template>
+     <xsl:call-template name="lowercase">
+       <xsl:with-param name="string" >
+         <xsl:value-of select="@name"/>
+       </xsl:with-param>
+     </xsl:call-template>
      <xsl:value-of select="'_'"/>
-      <xsl:call-template name="lowercase">
-        <xsl:with-param name="string" >
-          <xsl:value-of select="attributes/attribute/@name"/>
-        </xsl:with-param>
-      </xsl:call-template>
+     <xsl:call-template name="lowercase">
+       <xsl:with-param name="string" >
+         <xsl:value-of select="attributes/attribute/@name"/>
+       </xsl:with-param>
+     </xsl:call-template>
      <xsl:if test="not(position() =last())">
        <xsl:value-of select="','"/>     
      </xsl:if>
+     <xsl:value-of select="$newline"/>    
+   </xsl:if>
+ </xsl:template>
 
+ 
+ <xsl:template match="nodeset">
    <xsl:value-of select="$newline"/>    
- </xsl:if>
-</xsl:template>
+   <xsl:value-of select="$newline"/>    
+   <xsl:value-of select="'bool'"/>
+   <xsl:value-of select="' is'"/>
+   <xsl:value-of select="@name"/>
+   <xsl:value-of select="'( node *arg_node)'"/>
+   <xsl:value-of select="$newline"/>    
+   <xsl:value-of select="'{'"/>
+   <xsl:value-of select="$newline"/>   
+   <xsl:value-of select="'bool res = ('"/>  
+
+   <xsl:apply-templates select="target/node" mode="isfun">
+     <xsl:sort select="@name"/>
+   </xsl:apply-templates>
+
+   <xsl:value-of select="'));'"/>
+   <xsl:value-of select="$newline"/>    
+   <xsl:value-of select="'}'"/>        
+   <xsl:value-of select="$newline"/>
+ </xsl:template>
+
+
+ <xsl:template match="node" mode="isfun">
+   <xsl:value-of select="$newline"/>
+   <xsl:value-of select="'('"/>
+   <xsl:value-of select="' NODE_TYPE'"/>
+   <xsl:value-of select="'( arg_node) == N_'"/>
+   <xsl:call-template name="lowercase">
+     <xsl:with-param name="string" >
+       <xsl:value-of select="@name"/>
+     </xsl:with-param>
+   </xsl:call-template>
+   <xsl:if test="not(position() =last())">
+     <xsl:value-of select="') ||'"/>
+     <xsl:value-of select="$newline"/>
+   </xsl:if>        
+   <xsl:value-of select="$newline"/>
+ </xsl:template>
+
+
+
 </xsl:stylesheet>

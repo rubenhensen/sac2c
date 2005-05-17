@@ -2,6 +2,9 @@
 
 <!--
   $Log$
+  Revision 1.2  2005/05/17 13:00:37  jhb
+  added the isfun
+
   Revision 1.1  2005/02/10 12:59:58  jhb
   Initial revision
 
@@ -55,6 +58,11 @@ extern node *CHKCheck(  node *arg_node);
     <xsl:sort select="@name"/>
   </xsl:apply-templates>
 
+
+  <xsl:apply-templates select="//nodesets/nodeset">
+    <xsl:sort select="@name"/>
+  </xsl:apply-templates>
+
 <xsl:text>
 
 #endif /* _SAC_CHECK_H_ */
@@ -69,7 +77,14 @@ extern node *CHKCheck(  node *arg_node);
   <xsl:value-of select="'( node *arg_node, info *arg_info)'"/>
   <xsl:value-of select="';'"/>
   <xsl:value-of select="$newline"/>
+</xsl:template>
 
+<xsl:template match="nodeset">
+  <xsl:value-of select="'extern bool is'"/>
+  <xsl:value-of select="@name"/>
+  <xsl:value-of select="'( node *arg_node)'"/>
+  <xsl:value-of select="';'"/>
+  <xsl:value-of select="$newline"/> 
 </xsl:template>
 
 </xsl:stylesheet>
