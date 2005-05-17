@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2005/05/17 11:36:46  cg
+ * Comments added
+ *
  * Revision 1.3  2005/04/20 07:59:16  cg
  * Bug fixed: superfluous variable declarations are removed.
  *
@@ -11,6 +14,30 @@
  * Initial revision
  *
  *
+ */
+
+/**
+ *
+ * @file prepare_inlining.c
+ *
+ * This file prepares a function definition for being inlined at a concrete
+ * application position. This functionality is used by the optimization function
+ * inlining, for the inlining of loop and conditional special functions and
+ * last but not least for the preparation of fold functions to be inserted into
+ * the synchronization barrier code in the case of multithreaded code generation.
+ *
+ * The basic idea is to avoid the introduction of renaming assignments (a=b;)
+ * as far as possible. Instead the "interface variables", i.e. the function's
+ * formal parameters and the variables that occur in the return-statement, are
+ * renamed to match those variables that appear at the corresponding syntactic
+ * positions of the function application. All other variables, i.e. those being
+ * local to the function are consistently renamed to avoid name clashes.
+ * This allows the final inlining step to be realized in an almost naive way.
+ *
+ * Preparation of a function definition requires making a copy of the function
+ * body. This is exploited for an elegant implementation by carefully setting
+ * up a look-up table beforehand, that controls all renaming activities as well
+ * the establishment of back links appropriate in the inlining context.
  */
 
 #include "tree_basic.h"
@@ -83,6 +110,20 @@ FreeInfo (info *info)
 
 /**************************************************************************/
 
+/**<!--***********************************************************************-->
+ *
+ * @fn node *PINLfundef( node *arg_node, info *arg_info)
+ *
+ * @brief controls inline preparation of a function definition
+ *
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return arg_node
+ *
+ *****************************************************************************/
+
 node *
 PINLfundef (node *arg_node, info *arg_info)
 {
@@ -106,6 +147,21 @@ PINLfundef (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/**<!--***********************************************************************-->
+ *
+ * @fn node *PINLarg( node *arg_node, info *arg_info)
+ *
+ * @brief puts pairs consisting of formal paramter and corresponding application
+ *        argument in a preconstructed look-up table.
+ *
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return arg_node
+ *
+ *****************************************************************************/
+
 node *
 PINLarg (node *arg_node, info *arg_info)
 {
@@ -123,6 +179,24 @@ PINLarg (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+/**<!--***********************************************************************-->
+ *
+ * @fn node *PINLblock( node *arg_node, info *arg_info)
+ *
+ * @brief traversal function for N_block node
+ *
+ *  We first traverse into vardecs to complete setup of the look-up table.
+ *  Then we copy the assignment chain with the look-up table in effect.
+ *  Finally, the trailing return-statement is eliminated from the copied
+ *  assignment chain and it is stored in the info structure.
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return arg_node
+ *
+ *****************************************************************************/
 
 node *
 PINLblock (node *arg_node, info *arg_info)
@@ -148,6 +222,21 @@ PINLblock (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+/**<!--***********************************************************************-->
+ *
+ * @fn node *PINLvardec( node *arg_node, info *arg_info)
+ *
+ * @brief A variable declaration is either eliminated if it belongs to a
+ *        variable that appears in the return-statement, or it is renamed
+ *        by traversing into avis node.
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return arg_node
+ *
+ *****************************************************************************/
 
 node *
 PINLvardec (node *arg_node, info *arg_info)
@@ -179,6 +268,20 @@ PINLvardec (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/**<!--***********************************************************************-->
+ *
+ * @fn node *PINLavis( node *arg_node, info *arg_info)
+ *
+ * @brief Varible name is replaced by a fresh identifier.
+ *
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return arg_node
+ *
+ *****************************************************************************/
+
 node *
 PINLavis (node *arg_node, info *arg_info)
 {
@@ -192,6 +295,20 @@ PINLavis (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+/**<!--***********************************************************************-->
+ *
+ * @fn node *PINLassign( node *arg_node, info *arg_info)
+ *
+ * @brief traverses assignment chain until the trailing return-statement
+ *        and eliminates the latter.
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return arg_node
+ *
+ *****************************************************************************/
 
 node *
 PINLassign (node *arg_node, info *arg_info)
@@ -210,6 +327,28 @@ PINLassign (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+/**<!--***********************************************************************-->
+ *
+ * @fn node *PINLid( node *arg_node, info *arg_info)
+ *
+ * @brief Handling of identifiers in return-statement
+ *
+ *  Since we never traverse into expression positions otherwise, this code
+ *  is only effective in a functions's return-statement.
+ *
+ *  Pairs consisting of the return identifier and the variable bound to it in
+ *  the application context are put into the preconstructed look-up table.
+ *  Additional renaming assignments are inserted if the same variable is
+ *  multiply returned by a function or the returned variable also is a formal
+ *  parameter of the function.
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return arg_node
+ *
+ *****************************************************************************/
 
 node *
 PINLid (node *arg_node, info *arg_info)
@@ -300,6 +439,26 @@ PINLid (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+/**<!--***********************************************************************-->
+ *
+ * @fn node *PINLdoPrepareInlining( node **vardecs,
+ *                                  node *fundef,
+ *                                  node *letids,
+ *                                  node *apargs)
+ *
+ * @brief initiates inline preparation
+ *
+ *
+ * @param vardecs  return (out) parameter which yields vardecs to be added
+ *                 in calling function.
+ * @param fundef   fundef node to be prepared for inlining.
+ * @param letids   bound variables of function application
+ * @param apargs   current arguments of function application
+ *
+ * @return  assignment chain ready to be inlined naively.
+ *
+ *****************************************************************************/
 
 node *
 PINLdoPrepareInlining (node **vardecs, node *fundef, node *letids, node *apargs)
