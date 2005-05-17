@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.90  2005/05/17 11:36:46  cg
+ * Option -maxinl replace by -maxrecinl.
+ *
  * Revision 3.89  2005/04/25 15:03:51  sah
  * should work noew
  *
@@ -548,7 +551,7 @@ OPTanalyseCommandline (node *syntax_tree)
 
     ARGS_OPTION ("maxoptvar", ARG_NUM (global.optvar));
 
-    ARGS_OPTION ("maxinl", ARG_NUM (global.inlnum));
+    ARGS_OPTION ("maxrecinl", ARG_NUM (global.max_recursive_inlining));
 
     ARGS_OPTION ("maxlur", ARG_NUM (global.unrnum));
 

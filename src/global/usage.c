@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.77  2005/05/17 11:36:46  cg
+ * Option -maxinl replace by -maxrecinl.
+ *
  * Revision 3.76  2005/04/26 18:10:05  cg
  * Usage text for disabling/enabling optimizations is now generated
  * from optimize.mac automatically.
@@ -411,9 +414,10 @@ USGprintUsage ()
             "                      (default: %d)\n\n",
             global.optvar);
 
-    printf ("    -maxinl <n>     Inline recursive functions at most <n> times.\n"
-            "                      (default: %d)\n\n",
-            global.inlnum);
+    printf (
+      "    -maxrecinl <n>  Inline recursive function applications at most <n> times.\n"
+      "                      (default: %d)\n\n",
+      global.max_recursive_inlining);
 
     printf ("    -maxlur <n>     Unroll loops having at most <n> iterations.\n"
             "                      (default: %d)\n\n",
