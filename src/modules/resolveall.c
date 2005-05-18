@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2005/05/18 14:06:07  sah
+ * fixed generation of warning message
+ *
  * Revision 1.7  2005/05/18 13:56:51  sah
  * enabled caching of symboltables which
  * leads to a huge speedup when analysing use and import
@@ -166,7 +169,9 @@ ResolveAllFlag (char *module, node *symbols, bool exportedonly)
         symbols = FREEdoFreeTree (symbols);
     }
 
-    CTIwarn ("All flag resolved to empty set of symbols.");
+    if (result == NULL) {
+        CTIwarn ("All flag resolved to empty set of symbols.");
+    }
 
     DBUG_RETURN (result);
 }
