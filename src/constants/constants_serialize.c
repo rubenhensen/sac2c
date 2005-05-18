@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2005/05/18 13:55:23  sah
+ * using %hho instead of %o as the char is transformed to
+ * int when passed to printf and thus we need to tell printf
+ * that it was a char indeed.
+ *
  * Revision 1.7  2005/04/22 08:04:19  sah
  * escape sequences have to be octal values
  *
@@ -46,6 +51,7 @@ COserializeConstant (FILE *file, constant *cnst)
         fprintf (file, "NULL");
     } else {
         int cnt;
+        int max;
         char *data;
 
         fprintf (file, "COdeserializeConstant( %d, ", CONSTANT_TYPE (cnst));
@@ -56,13 +62,12 @@ COserializeConstant (FILE *file, constant *cnst)
            char array */
 
         data = (char *)CONSTANT_ELEMS (cnst);
+        max = global.basetype_size[CONSTANT_TYPE (cnst)] * CONSTANT_VLEN (cnst);
 
         fprintf (file, ", %d, \"", CONSTANT_VLEN (cnst));
 
-        for (cnt = 0;
-             cnt < global.basetype_size[CONSTANT_TYPE (cnst)] * CONSTANT_VLEN (cnst);
-             cnt++) {
-            fprintf (file, "\\%o", data[cnt]);
+        for (cnt = 0; cnt < max; cnt++) {
+            fprintf (file, "\\%hho", data[cnt]);
         }
 
         fprintf (file, "\")");
