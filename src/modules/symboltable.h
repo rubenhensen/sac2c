@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2005/05/18 13:56:51  sah
+ * enabled caching of symboltables which
+ * leads to a huge speedup when analysing use and import
+ * from big modules
+ *
  * Revision 1.10  2004/11/23 21:18:06  ktr
  * fixed some type names.
  *
@@ -56,18 +61,19 @@
 
 extern sttable_t *STinit ();
 extern sttable_t *STdestroy (sttable_t *table);
+extern sttable_t *STcopy (const sttable_t *table);
 extern void STadd (const char *symbol, stvisibility_t visbility, const char *name,
                    stentrytype_t type, sttable_t *table);
 extern void STremove (const char *symbol, sttable_t *table);
-extern bool STcontains (const char *symbol, sttable_t *table);
-extern bool STcontainsEntry (const char *name, sttable_t *table);
-extern stsymbol_t *STget (const char *symbol, sttable_t *table);
-extern stentry_t *STgetFirstEntry (const char *symbol, sttable_t *table);
+extern bool STcontains (const char *symbol, const sttable_t *table);
+extern bool STcontainsEntry (const char *name, const sttable_t *table);
+extern stsymbol_t *STget (const char *symbol, const sttable_t *table);
+extern stentry_t *STgetFirstEntry (const char *symbol, const sttable_t *table);
 
 /*
  * Symbol iterator functions
  */
-extern stsymboliterator_t *STsymbolIteratorGet (sttable_t *table);
+extern stsymboliterator_t *STsymbolIteratorGet (const sttable_t *table);
 extern stsymboliterator_t *STsymbolIteratorRelease (stsymboliterator_t *iterator);
 extern stsymbol_t *STsymbolIteratorNext (stsymboliterator_t *iterator);
 extern void STsymbolIteratorReset (stsymboliterator_t *iterator);
@@ -76,7 +82,7 @@ extern int STsymbolIteratorHasMore (stsymboliterator_t *iterator);
 /*
  * Entry iterator functions
  */
-extern stentryiterator_t *STentryIteratorGet (const char *symbol, sttable_t *table);
+extern stentryiterator_t *STentryIteratorGet (const char *symbol, const sttable_t *table);
 extern stentryiterator_t *STentryIteratorRelease (stentryiterator_t *iterator);
 extern stentry_t *STentryIteratorNext (stentryiterator_t *iterator);
 extern void STentryIteratorReset (stentryiterator_t *iterator);
@@ -97,6 +103,6 @@ extern stentrytype_t STentryType (stentry_t *entry);
 /*
  * Functions to print symbol tables
  */
-extern void STprint (sttable_t *table);
+extern void STprint (const sttable_t *table);
 
 #endif /* _SAC_SYMBOLTABLE_H_ */

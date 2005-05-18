@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2005/05/18 13:56:51  sah
+ * enabled caching of symboltables which
+ * leads to a huge speedup when analysing use and import
+ * from big modules
+ *
  * Revision 1.13  2005/04/26 17:11:46  sah
  * errors are now propagated from libmanager to modmanager
  * and handele there. This allows for more precise error
@@ -38,10 +43,13 @@
 
 #include <string.h>
 
+#undef MODM_UNLOAD_MODULES
+
 struct MODULE_T {
     char *name;
     char *sofile;
     dynlib_t lib;
+    sttable_t *stable;
     module_t *next;
     int usecount;
 };
@@ -97,6 +105,7 @@ AddModuleToPool (const char *name)
 
     result->name = ILIBstringCopy (name);
     result->lib = LIBMloadLibrary (result->sofile);
+    result->stable = NULL;
     result->next = modulepool;
     modulepool = result;
     result->usecount = 1;
@@ -116,6 +125,7 @@ RemoveModuleFromPool (module_t *module)
 
     module->usecount--;
 
+#ifdef MODM_UNLOAD_MODULES
     if (module->usecount == 0) {
 
         /* unpool the module */
@@ -143,7 +153,11 @@ RemoveModuleFromPool (module_t *module)
 
         module->sofile = ILIBfree (module->sofile);
         module->name = ILIBfree (module->name);
+        if (module->stable != NULL) {
+            module->stable = STdestroy (module->stable);
+        }
     }
+#endif
 
     module = NULL;
 
@@ -202,19 +216,20 @@ GetSymbolTableFunction (module_t *module)
     DBUG_RETURN (result);
 }
 
-sttable_t *
+const sttable_t *
 MODMgetSymbolTable (module_t *module)
 {
     symtabfun_p symtabfun;
-    sttable_t *result;
 
     DBUG_ENTER ("MODMgetSymbolTable");
 
-    symtabfun = GetSymbolTableFunction (module);
+    if (module->stable == NULL) {
+        symtabfun = GetSymbolTableFunction (module);
 
-    result = symtabfun ();
+        module->stable = symtabfun ();
+    }
 
-    DBUG_RETURN (result);
+    DBUG_RETURN (module->stable);
 }
 
 static deptabfun_p

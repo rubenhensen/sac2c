@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2005/05/18 13:56:51  sah
+ * enabled caching of symboltables which
+ * leads to a huge speedup when analysing use and import
+ * from big modules
+ *
  * Revision 1.7  2005/05/17 16:20:50  sah
  * added some reasonable error messages
  *
@@ -357,7 +362,7 @@ DSaddSymbolByName (const char *symbol, stentrytype_t type, const char *module)
 {
     node *result = NULL;
     module_t *mod;
-    sttable_t *table;
+    const sttable_t *table;
     stentryiterator_t *it;
 
     DBUG_ENTER ("DSaddSymbolByName");
@@ -378,7 +383,6 @@ DSaddSymbolByName (const char *symbol, stentrytype_t type, const char *module)
     }
 
     it = STentryIteratorRelease (it);
-    table = STdestroy (table);
     mod = MODMunLoadModule (mod);
 
     DBUG_RETURN (result);
@@ -479,7 +483,7 @@ LoadFunctionBody (node *fundef)
 {
     node *result = NULL;
     module_t *module;
-    sttable_t *table;
+    const sttable_t *table;
     serfun_p serfun;
     const char *serfunname;
 
@@ -504,7 +508,6 @@ LoadFunctionBody (node *fundef)
         result = NULL;
     }
 
-    table = STdestroy (table);
     module = MODMunLoadModule (module);
 
     DBUG_RETURN (result);

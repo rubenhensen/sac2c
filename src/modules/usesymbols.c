@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2005/05/18 13:56:51  sah
+ * enabled caching of symboltables which
+ * leads to a huge speedup when analysing use and import
+ * from big modules
+ *
  * Revision 1.13  2005/04/22 07:30:39  sah
  * added handling of fold funs
  *
@@ -109,7 +114,7 @@ static void
 CheckSymbolVisibility (const char *mod, const char *symb)
 {
     module_t *module;
-    sttable_t *table;
+    const sttable_t *table;
     stsymbol_t *symbol;
 
     DBUG_ENTER ("CheckSymbolVisibility");
@@ -124,7 +129,6 @@ CheckSymbolVisibility (const char *mod, const char *symb)
         CTIerrorLine (global.linenum, "Symbol `%s:%s' not defined", mod, symb);
     }
 
-    table = STdestroy (table);
     module = MODMunLoadModule (module);
 
     DBUG_VOID_RETURN;

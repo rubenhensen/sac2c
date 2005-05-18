@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2005/05/18 13:56:51  sah
+ * enabled caching of symboltables which
+ * leads to a huge speedup when analysing use and import
+ * from big modules
+ *
  * Revision 1.8  2004/11/23 21:18:06  ktr
  * fixed some type names.
  *
@@ -46,7 +51,7 @@ extern module_t *MODMunLoadModule (module_t *module);
 
 extern const char *MODMgetModuleName (module_t *module);
 
-extern sttable_t *MODMgetSymbolTable (module_t *module);
+extern const sttable_t *MODMgetSymbolTable (module_t *module);
 extern stringset_t *MODMgetDependencyTable (module_t *module);
 
 extern serfun_p MODMgetDeSerializeFunction (const char *symbol, module_t *module);

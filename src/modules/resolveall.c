@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2005/05/18 13:56:51  sah
+ * enabled caching of symboltables which
+ * leads to a huge speedup when analysing use and import
+ * from big modules
+ *
  * Revision 1.6  2005/04/26 16:39:20  sah
  * added nice error messages and import capabilities
  *
@@ -80,7 +85,8 @@ Symboltable2Symbols (stsymboliterator_t *iterator, bool exportedonly)
 }
 
 static node *
-CheckSymbolExistsRec (const char *mod, sttable_t *table, node *symbols, bool exportedonly)
+CheckSymbolExistsRec (const char *mod, const sttable_t *table, node *symbols,
+                      bool exportedonly)
 {
     stsymbol_t *symbol;
 
@@ -115,7 +121,7 @@ static node *
 CheckSymbolExists (const char *mod, node *symbols, bool exportedonly)
 {
     module_t *module;
-    sttable_t *table;
+    const sttable_t *table;
 
     DBUG_ENTER ("CheckSymbolExists");
 
@@ -125,7 +131,6 @@ CheckSymbolExists (const char *mod, node *symbols, bool exportedonly)
 
     symbols = CheckSymbolExistsRec (mod, table, symbols, exportedonly);
 
-    table = STdestroy (table);
     module = MODMunLoadModule (module);
 
     DBUG_RETURN (symbols);
@@ -144,7 +149,7 @@ ResolveAllFlag (char *module, node *symbols, bool exportedonly)
     /* get symbol table */
 
     mod = MODMloadModule (module);
-    symtab = MODMgetSymbolTable (mod);
+    symtab = STcopy (MODMgetSymbolTable (mod));
 
     SubSymbols (symtab, symbols);
 
@@ -154,6 +159,7 @@ ResolveAllFlag (char *module, node *symbols, bool exportedonly)
     iterator = STsymbolIteratorRelease (iterator);
 
     symtab = STdestroy (symtab);
+
     mod = MODMunLoadModule (mod);
 
     if (symbols != NULL) {

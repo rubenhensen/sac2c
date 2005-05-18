@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2005/05/18 13:56:51  sah
+ * enabled caching of symboltables which
+ * leads to a huge speedup when analysing use and import
+ * from big modules
+ *
  * Revision 1.9  2004/11/27 01:06:38  cg
  * Functions renamed according to new naming conventions.
  *
@@ -81,6 +86,24 @@ STentryDestroy (stentry_t *entry)
     DBUG_RETURN (result);
 }
 
+static stentry_t *
+STentryCopy (const stentry_t *entry)
+{
+    stentry_t *result = NULL;
+
+    DBUG_ENTER ("STentryCopy");
+
+    if (entry != NULL) {
+        result = (stentry_t *)ILIBmalloc (sizeof (stentry_t));
+
+        result->name = ILIBstringCopy (entry->name);
+        result->type = entry->type;
+        result->next = STentryCopy (entry->next);
+    }
+
+    DBUG_RETURN (result);
+}
+
 static bool
 STentryEqual (stentry_t *one, stentry_t *two)
 {
@@ -133,6 +156,25 @@ STsymbolDestroy (stsymbol_t *symbol)
     DBUG_RETURN (result);
 }
 
+static stsymbol_t *
+STsymbolCopy (const stsymbol_t *symbol)
+{
+    stsymbol_t *result = NULL;
+
+    DBUG_ENTER ("STsymbolCopy");
+
+    if (symbol != NULL) {
+        result = (stsymbol_t *)ILIBmalloc (sizeof (stsymbol_t));
+
+        result->name = ILIBstringCopy (symbol->name);
+        result->vis = symbol->vis;
+        result->head = STentryCopy (result->head);
+        result->next = STsymbolCopy (symbol->next);
+    }
+
+    DBUG_RETURN (result);
+}
+
 static void
 STentryAdd (stentry_t *entry, stsymbol_t *symbol)
 {
@@ -174,7 +216,7 @@ STsymbolAdd (stsymbol_t *symbol, sttable_t *table)
 }
 
 static stsymbol_t *
-STlookupSymbol (const char *symbol, sttable_t *table)
+STlookupSymbol (const char *symbol, const sttable_t *table)
 {
     stsymbol_t *result;
 
@@ -215,6 +257,22 @@ STdestroy (sttable_t *table)
     table = ILIBfree (table);
 
     DBUG_RETURN (table);
+}
+
+sttable_t *
+STcopy (const sttable_t *table)
+{
+    sttable_t *result = NULL;
+
+    DBUG_ENTER ("STcopy");
+
+    if (table != NULL) {
+        result = (sttable_t *)ILIBmalloc (sizeof (sttable_t));
+
+        result->head = STsymbolCopy (table->head);
+    }
+
+    DBUG_RETURN (result);
 }
 
 static void
@@ -282,7 +340,7 @@ STremove (const char *symbol, sttable_t *table)
 }
 
 bool
-STcontains (const char *symbol, sttable_t *table)
+STcontains (const char *symbol, const sttable_t *table)
 {
     bool result;
 
@@ -294,7 +352,7 @@ STcontains (const char *symbol, sttable_t *table)
 }
 
 bool
-STcontainsEntry (const char *name, sttable_t *table)
+STcontainsEntry (const char *name, const sttable_t *table)
 {
     stsymbol_t *symbol;
     stentry_t *entry;
@@ -319,7 +377,7 @@ STcontainsEntry (const char *name, sttable_t *table)
 }
 
 stsymbol_t *
-STget (const char *symbol, sttable_t *table)
+STget (const char *symbol, const sttable_t *table)
 {
     DBUG_ENTER ("STget");
 
@@ -327,7 +385,7 @@ STget (const char *symbol, sttable_t *table)
 }
 
 stentry_t *
-STgetFirstEntry (const char *symbol, sttable_t *table)
+STgetFirstEntry (const char *symbol, const sttable_t *table)
 {
     stentry_t *result;
     stsymbol_t *symbolp;
@@ -344,7 +402,7 @@ STgetFirstEntry (const char *symbol, sttable_t *table)
  * Functions for stsymboliterator_t
  */
 stsymboliterator_t *
-STsymbolIteratorGet (sttable_t *table)
+STsymbolIteratorGet (const sttable_t *table)
 {
     stsymboliterator_t *result;
 
@@ -422,7 +480,7 @@ STentryIteratorInit (stsymbol_t *symbol)
 }
 
 stentryiterator_t *
-STentryIteratorGet (const char *symbolname, sttable_t *table)
+STentryIteratorGet (const char *symbolname, const sttable_t *table)
 {
     stentryiterator_t *result;
     stsymbol_t *symbol;
@@ -573,7 +631,7 @@ STsymbolPrint (stsymbol_t *symbol)
 }
 
 void
-STprint (sttable_t *table)
+STprint (const sttable_t *table)
 {
     stsymbol_t *symbol;
 

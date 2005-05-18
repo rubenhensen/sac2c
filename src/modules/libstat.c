@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2005/05/18 13:56:51  sah
+ * enabled caching of symboltables which
+ * leads to a huge speedup when analysing use and import
+ * from big modules
+ *
  * Revision 1.13  2005/04/24 15:20:03  sah
  * libstat now exits the entire compiler
  *
@@ -137,7 +142,7 @@ void
 LIBSprintLibStat (char *libname)
 {
     module_t *module;
-    sttable_t *table;
+    const sttable_t *table;
 
     DBUG_ENTER ("LIBSprintLibStat");
 
@@ -164,10 +169,6 @@ LIBSprintLibStat (char *libname)
     DBUG_PRINT ("LIBSTAT", ("Printing code"));
 
     PrintLibStatCode (module, table);
-
-    DBUG_PRINT ("LIBSTAT", ("Destroying table"));
-
-    table = STdestroy (table);
 
     DBUG_PRINT ("LIBSTAT", ("Unloading module `%s'", libname));
 
