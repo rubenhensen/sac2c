@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.23  2005/05/19 10:26:54  sah
+ * fixed error msg
+ *
  * Revision 1.22  2005/04/10 14:35:07  sah
  * now for while/do loops namespaces are annotated correctöy
  *
@@ -120,7 +123,7 @@ CheckUseUnique (sttable_t *table)
             stentry_t *entry = STentryIteratorNext (entries);
 
             if (STentryIteratorHasMore (entries)) {
-                CTIerror ("Symbol `%s' used more than once", symbol);
+                CTIerror ("Symbol `%s' used more than once", STsymbolName (symbol));
                 CTIerrorContinued ("... from module `%s'", STentryName (entry));
 
                 while (STentryIteratorHasMore (entries)) {
