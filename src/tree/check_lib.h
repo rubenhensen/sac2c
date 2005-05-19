@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2005/05/19 13:34:44  jhb
+ * begin to add the ranges for the attributes
+ *
  * Revision 1.6  2005/02/14 14:08:48  jhb
  * change name
  *
@@ -31,7 +34,8 @@
 extern node *CHKdoTreeCheck (node *syntax_tree);
 
 extern node *CHKexistSon (node *son, node *arg_node, char *string);
-extern node *CHKexistAttribute (void *attribute, node *arg_node, char *string);
+extern node *CHKexistAttribute (void *attribute, node *arg_node, char *string, char *from,
+                                char *to);
 extern node *CHKcorrectType (void *attribute, node *arg_node, char *type, char *string);
 
 #endif /*_SAC_CHECK_LIB_H_ */

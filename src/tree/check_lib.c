@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2005/05/19 13:34:44  jhb
+ * begin to add the ranges for the attributes
+ *
  * Revision 1.10  2005/03/03 16:44:01  jhb
  * cosmetics
  *
@@ -112,7 +115,7 @@ CHKexistSon (node *son, node *arg_node, char *string)
  *
  *****************************************************************************/
 node *
-CHKexistAttribute (void *attribute, node *arg_node, char *string)
+CHKexistAttribute (void *attribute, node *arg_node, char *string, char *from, char *to)
 {
     DBUG_ENTER ("CHKexistAttribute");
 
@@ -130,18 +133,21 @@ CHKcorrectType (void *sonattr, node *arg_node, char *type, char *string)
 
     DBUG_ENTER ("CHKcorrectType");
     /*
-    if (sonattr != NULL) {
+    if ( sonattr != NULL) {
+    /* falls es gar nicht da ist */
 
+    /*
           if ( NODE_TYPE( sonattr) != ) {
-            NODE_ERROR(arg_node) = TBmakeError( string, NODE_ERROR( arg_node));
+          NODE_ERROR(arg_node) = TBmakeError( string, NODE_ERROR( arg_node));
           }
 
-    }
-    else {
+          }
+          else {
 
-          NODE_ERROR(arg_node) = TBmakeError(string, NODE_ERROR( arg_node));
+          NODE_ERROR(arg_node) = TBmakeError(string, NODE_ERROR( arg_node ));
 
-    }
+          }
     */
+
     DBUG_RETURN (sonattr);
 }
