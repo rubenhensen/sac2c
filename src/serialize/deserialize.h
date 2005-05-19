@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2005/05/19 11:10:44  sah
+ * added special import mode
+ *
  * Revision 1.2  2005/02/16 22:29:13  sah
  * changed link handling
  *
@@ -18,6 +21,8 @@
 #include "types.h"
 
 extern void DSinitDeserialize (node *module);
+extern void DSimportMode ();
+extern void DSregularMode ();
 extern void DSfinishDeserialize (node *module);
 
 extern node *DSaddSymbolByName (const char *symbol, stentrytype_t type,

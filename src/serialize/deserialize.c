@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2005/05/19 11:10:44  sah
+ * added special import mode
+ *
  * Revision 1.8  2005/05/18 13:56:51  sah
  * enabled caching of symboltables which
  * leads to a huge speedup when analysing use and import
@@ -59,6 +62,7 @@ struct INFO {
     node *vardecs;
     node *args;
     node *funhead;
+    bool importmode;
 };
 
 /*
@@ -74,6 +78,7 @@ struct INFO {
 #define INFO_DS_VARDECS(n) (n->vardecs)
 #define INFO_DS_ARGS(n) (n->args)
 #define INFO_DS_FUNHEAD(n) (n->funhead)
+#define INFO_DS_IMPORTMODE(n) (n->importmode)
 
 /*
  * INFO functions
@@ -97,6 +102,7 @@ MakeInfo ()
     INFO_DS_VARDECS (result) = NULL;
     INFO_DS_ARGS (result) = NULL;
     INFO_DS_FUNHEAD (result) = NULL;
+    INFO_DS_IMPORTMODE (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -221,9 +227,35 @@ DSinitDeserialize (node *module)
 }
 
 void
+DSimportMode ()
+{
+    DBUG_ENTER ("DSimportMode");
+
+    DBUG_ASSERT ((DSstate != NULL), "called DSimportMode without starting DS...");
+
+    INFO_DS_IMPORTMODE (DSstate) = TRUE;
+
+    DBUG_VOID_RETURN;
+}
+
+void
+DSregularMode ()
+{
+    DBUG_ENTER ("DSregularMode");
+
+    DBUG_ASSERT ((DSstate != NULL), "called DSregularMode without starting DS...");
+
+    INFO_DS_IMPORTMODE (DSstate) = FALSE;
+
+    DBUG_VOID_RETURN;
+}
+
+void
 DSfinishDeserialize (node *module)
 {
     DBUG_ENTER ("DSfinishDeserialize");
+
+    DBUG_ASSERT ((DSstate != NULL), "called DSfinishDeserialize without starting DS...");
 
     MODULE_FUNS (module)
       = TCappendFundef (MODULE_FUNS (module), INFO_DS_FUNDEFS (DSstate));
@@ -468,7 +500,24 @@ DSlookupFunction (const char *module, const char *symbol)
         result = serfun ();
         mod = MODMunLoadModule (mod);
 
+        /*
+         * the function comes from a different module, so it was used anyways
+         */
+        FUNDEF_WASUSED (result) = TRUE;
+
         InsertIntoState (result);
+    }
+
+    DBUG_ASSERT ((result != NULL), "lookup failed.");
+
+    if (INFO_DS_IMPORTMODE (DSstate)) {
+        /*
+         * we are in import mode, thus this function is looked up
+         * as a dependency of a wrapper siganture.
+         * => it is an imported instance, so mark it!
+         */
+
+        FUNDEF_WASIMPORTED (result) = TRUE;
     }
 
     DBUG_RETURN (result);
@@ -566,19 +615,6 @@ LookUpSSACounter (node *cntchain, node *arg)
     DBUG_RETURN (result);
 }
 
-static node *
-LookUpArg (const char *name, node *args)
-{
-    DBUG_ENTER ("LookUpArg");
-
-    while ((args != NULL) && (ARG_NAME (args) != NULL)
-           && (strcmp (ARG_NAME (args), name))) {
-        args = ARG_NEXT (args);
-    }
-
-    DBUG_RETURN (args);
-}
-
 node *
 DSfetchArgAvis (int pos)
 {
@@ -601,38 +637,6 @@ DSfetchArgAvis (int pos)
 /*
  * traversal functions
  */
-
-#if 0
-node *DSids( node *arg_node, info *arg_info)
-{
-  DBUG_ENTER("DSids");
-
-  DBUG_PRINT( "DS", ("Restoring ids `%s'", IDS_NAME( arg_node)));
-
-  /* 
-   * if there is no vardec for this node, it must have been
-   * linked to an arg prior to deserialization!
-   */
-  if (IDS_DECL( arg_node)  == NULL) {
-    IDS_DECL( arg_node) = LookUpArg( IDS_NAME( arg_node), INFO_DS_ARGS( arg_info));
-    
-    DBUG_ASSERT( (IDS_DECL( arg_node) != NULL),
-      "Cannot find vardec or arg for ids!");
-
-    /* now update the avis link of the ids node to the args avis */
-    if (IDS_AVIS( arg_node) == NULL) {
-      IDS_AVIS( arg_node) = ARG_AVIS( IDS_DECL( arg_node));
-    }
-  }
-
-  /* Finally make sure, that the backref avis->vardec is correct */
-  DBUG_ASSERT( (AVIS_DECL( DECL_AVIS( IDS_DECL( arg_node)))
-               == IDS_DECL( arg_node)),
-    "backref from avis to vardec is wrong!");
-
-  DBUG_RETURN( arg_node);
-}
-#endif
 
 node *
 DSfundef (node *arg_node, info *arg_info)
