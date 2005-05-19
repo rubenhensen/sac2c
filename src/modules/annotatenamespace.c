@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.25  2005/05/19 11:00:17  sah
+ * fixed dependency handling
+ *
  * Revision 1.24  2005/05/19 10:35:48  sah
  * fixed mops handling
  *
@@ -559,6 +562,8 @@ ANSspid (node *arg_node, info *arg_info)
         if (SPID_MOD (arg_node) == NULL) {
             SPID_MOD (arg_node)
               = LookupNamespaceForSymbol (SPID_NAME (arg_node), arg_info);
+
+            AddNamespaceToDependencies (SPID_MOD (arg_node), arg_info);
         }
     } else {
         if (SPID_MOD (arg_node) == NULL) {
@@ -575,6 +580,8 @@ ANSspid (node *arg_node, info *arg_info)
 
                 DBUG_PRINT ("ANS", ("found ns '%s' for id '%s'", SPID_MOD (arg_node),
                                     SPID_NAME (arg_node)));
+
+                AddNamespaceToDependencies (SPID_MOD (arg_node), arg_info);
             }
         }
     }
