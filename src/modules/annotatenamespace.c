@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.24  2005/05/19 10:35:48  sah
+ * fixed mops handling
+ *
  * Revision 1.23  2005/05/19 10:26:54  sah
  * fixed error msg
  *
@@ -553,8 +556,10 @@ ANSspid (node *arg_node, info *arg_info)
          * in special mop-mode, all SPID represent function calls,
          * so no need for a locality check
          */
-
-        SPID_MOD (arg_node) = LookupNamespaceForSymbol (SPID_NAME (arg_node), arg_info);
+        if (SPID_MOD (arg_node) == NULL) {
+            SPID_MOD (arg_node)
+              = LookupNamespaceForSymbol (SPID_NAME (arg_node), arg_info);
+        }
     } else {
         if (SPID_MOD (arg_node) == NULL) {
             /*
