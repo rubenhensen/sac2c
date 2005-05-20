@@ -1,5 +1,5 @@
 <?xml-stylesheet href="ast2html.xsl" type="text/xsl" name="HTML" media="screen"?>
-<definition>
+<definition version="$Id$">
   <attributetypes>
     <type name="String" ctype="char*" init="NULL"
     copy="function" />
@@ -2308,6 +2308,8 @@
       <flags>
         <flag name="IsExported" />
         <flag name="IsProvided" />
+        <flag name="WasImported" />
+        <flag name="WasUsed" />
 	<flag name="IsLocal" default="TRUE" />
         <flag name="IsNeeded" />
 	<flag name="IsFoldfun" />
