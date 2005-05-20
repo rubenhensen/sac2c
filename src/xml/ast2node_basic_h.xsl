@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.3  2005/05/20 18:08:35  sah
+  added _SAC_AST_VERSION_ define
+
   Revision 1.2  2004/11/23 13:14:02  ktr
   removed node_compat.h
 
@@ -44,11 +47,20 @@ version="1.0">
 #include "types.h"
 
   </xsl:text>
+  <xsl:apply-templates select="/definition/@version"/>
   <xsl:apply-templates select="//syntaxtree/node"/>
   <xsl:text>
 
     #endif /* _SAC_NODE_BASIC_H_ */
   </xsl:text>
+</xsl:template>
+
+<xsl:template match="@version">
+  <xsl:call-template name="newline"/>
+  <xsl:value-of select="'#define _SAC_AST_VERSION_ &quot;'"/>
+  <xsl:value-of select="." />
+  <xsl:value-of select="'&quot;'"/>
+  <xsl:call-template name="newline"/>
 </xsl:template>
 
 <xsl:template match="node">
