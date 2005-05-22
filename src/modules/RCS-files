@@ -26,3 +26,4 @@ prepareinline.c
 dependencies.c
 dependencies.h
 importsymbols.c
+importsymbols.h
