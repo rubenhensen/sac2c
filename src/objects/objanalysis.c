@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2005/05/22 18:37:17  sah
+ * added missing static to Make/FreeInfo
+ *
  * Revision 1.2  2004/11/26 20:27:30  jhb
  * ccompile
  *
@@ -37,7 +40,7 @@ struct INFO {
 /*
  * INFO functions
  */
-info *
+static info *
 MakeInfo ()
 {
     info *result;
@@ -52,7 +55,7 @@ MakeInfo ()
     DBUG_RETURN (result);
 }
 
-info *
+static info *
 FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
