@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.32  2005/05/22 19:45:53  sah
+ * added first implementation steps for import
+ *
  * Revision 1.31  2005/03/04 21:21:42  cg
  * Removal of zombie functions automatized.
  *
@@ -506,11 +509,11 @@ CRTWRPfundef (node *arg_node, info *arg_info)
                            FUNDEF_MOD (arg_node), FUNDEF_NAME (arg_node)));
 
     /*
-     * Check whether the function has a different namespace than the current one.
+     * Check whether the function is locally defined or imported
      */
-    if (!FUNDEF_ISLOCAL (arg_node)) {
+    if ((!FUNDEF_ISLOCAL (arg_node)) && (!FUNDEF_WASIMPORTED (arg_node))) {
         /**
-         * The function has been imported or used.
+         * The function has been used.
          * Used functions are just ignored, used wrappers are processed.
          */
         if (FUNDEF_ISWRAPPERFUN (arg_node)) {
@@ -538,7 +541,7 @@ CRTWRPfundef (node *arg_node, info *arg_info)
         }
     } else {
         /**
-         * ISLOCAL fundef !
+         * ISLOCAL or WASIMPORTED fundef !
          */
         wrapper = FindWrapper (FUNDEF_MOD (arg_node), FUNDEF_NAME (arg_node), num_args,
                                num_rets, INFO_CRTWRP_WRAPPERFUNS (arg_info));

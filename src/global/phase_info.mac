@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.21  2005/05/22 19:45:53  sah
+ * added first implementation steps for import
+ *
  * Revision 3.20  2005/04/21 14:42:17  cg
  * Introduced (presumably almost) complete set of subphases.
  * For the time being, subphase information is mostly unused for
@@ -152,6 +155,8 @@ PHASE (module, "Running module system", PHdummy)
 SUBPHASE (rsa, "rsa", "Processing use and import statements", PHdummy)
 
 SUBPHASE (ans, "ans", "Annotating namespaces", PHdummy)
+
+SUBPHASE (imp, "imp", "Getting imported symbols", PHdummy)
 
 SUBPHASE (uss, "uss", "Getting used symbols", PHdummy)
 

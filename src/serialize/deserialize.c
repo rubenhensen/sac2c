@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2005/05/22 19:45:53  sah
+ * added first implementation steps for import
+ *
  * Revision 1.9  2005/05/19 11:10:44  sah
  * added special import mode
  *
@@ -45,6 +48,7 @@
 #include "modulemanager.h"
 #include "new2old.h"
 #include "traverse.h"
+#include "free.h"
 
 #include <string.h>
 
@@ -222,30 +226,6 @@ DSinitDeserialize (node *module)
     DSstate = MakeInfo ();
 
     INFO_DS_MODULE (DSstate) = module;
-
-    DBUG_VOID_RETURN;
-}
-
-void
-DSimportMode ()
-{
-    DBUG_ENTER ("DSimportMode");
-
-    DBUG_ASSERT ((DSstate != NULL), "called DSimportMode without starting DS...");
-
-    INFO_DS_IMPORTMODE (DSstate) = TRUE;
-
-    DBUG_VOID_RETURN;
-}
-
-void
-DSregularMode ()
-{
-    DBUG_ENTER ("DSregularMode");
-
-    DBUG_ASSERT ((DSstate != NULL), "called DSregularMode without starting DS...");
-
-    INFO_DS_IMPORTMODE (DSstate) = FALSE;
 
     DBUG_VOID_RETURN;
 }
@@ -441,6 +421,60 @@ DSaddSymbolById (const char *symbid, const char *module)
     mod = MODMunLoadModule (mod);
 
     DBUG_RETURN (entryp);
+}
+
+void
+DSimportInstancesByName (const char *name, const char *module)
+{
+    module_t *mod;
+    const sttable_t *table;
+    stentryiterator_t *it;
+    stentry_t *symbol;
+    node *entryp;
+    serfun_p serfun;
+
+    DBUG_ENTER ("DSimportInstancesByName");
+
+    DBUG_ASSERT ((DSstate != NULL),
+                 "DSimportInstancesByName called without calling InitDeserialize.");
+
+    DBUG_PRINT ("DS", ("processing import of '%s:%s'...", module, name));
+
+    mod = MODMloadModule (module);
+
+    table = MODMgetSymbolTable (mod);
+    it = STentryIteratorGet (name, table);
+
+    while (STentryIteratorHasMore (it)) {
+        /*
+         * fetch all wrappers matching the given symbol name
+         */
+        symbol = STentryIteratorNext (it);
+
+        if (STentryType (symbol) == SET_wrapperhead) {
+            INFO_DS_IMPORTMODE (DSstate) = TRUE;
+
+            DBUG_PRINT ("DS", ("fetching instances for '%s:%s'...", module,
+                               STentryName (symbol)));
+
+            serfun = MODMgetDeSerializeFunction (STentryName (symbol), mod);
+            /*
+             * fetch wrapper
+             */
+            entryp = serfun (DSstate);
+            /*
+             * and throw it away again
+             */
+            entryp = FREEdoFreeNode (entryp);
+
+            INFO_DS_IMPORTMODE (DSstate) = FALSE;
+        }
+    }
+
+    it = STentryIteratorRelease (it);
+    mod = MODMunLoadModule (mod);
+
+    DBUG_VOID_RETURN;
 }
 
 /*

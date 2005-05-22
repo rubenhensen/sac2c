@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2005/05/22 19:45:53  sah
+ * added first implementation steps for import
+ *
  * Revision 1.3  2005/05/19 11:10:44  sah
  * added special import mode
  *
@@ -21,14 +24,12 @@
 #include "types.h"
 
 extern void DSinitDeserialize (node *module);
-extern void DSimportMode ();
-extern void DSregularMode ();
 extern void DSfinishDeserialize (node *module);
 
 extern node *DSaddSymbolByName (const char *symbol, stentrytype_t type,
                                 const char *module);
 extern node *DSaddSymbolById (const char *symbid, const char *module);
-
+extern void DSimportInstancesByName (const char *name, const char *module);
 /*
  * hooks for deserialization
  */

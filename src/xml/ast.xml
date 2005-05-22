@@ -378,6 +378,16 @@
 	  <node name="Module" />
 	</travuser>
       </traversal>
+      <traversal id="IMP" name="Import Symbols" default="sons" include="importsymbols.h" >
+        <travuser>
+	  <node name="Module" />
+	  <node name="Import" />
+	  <node name="Export" />
+	  <node name="Use" />
+	  <node name="Provide" />
+	  <node name="Symbol" />
+        </travuser>
+      </traversal>
     </phase>
     <phase id="objinit" name="Generating generic types and functions"
       startfun="OIdoObjInit" include="objinit.h"

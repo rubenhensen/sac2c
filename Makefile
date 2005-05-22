@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.165  2005/05/22 19:45:53  sah
+# added first implementation steps for import
+#
 # Revision 3.164  2005/05/13 16:36:11  ktr
 # added flatten/lacinlining.o
 #
@@ -198,7 +201,8 @@ MODULES= src/modules/symboltable.o \
          src/modules/export.o src/modules/ccmanager.o \
          src/modules/libbuilder.o src/modules/resolveall.o \
          src/modules/annotatenamespace.o src/modules/usesymbols.o \
-         src/modules/prepareinline.o src/modules/dependencies.o 
+         src/modules/prepareinline.o src/modules/dependencies.o \
+         src/modules/importsymbols.o
 
 OBJECTS= src/objects/objinit.o src/objects/objects.o \
          src/objects/uniquecheck.o src/objects/objanalysis.o

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.100  2005/05/22 19:45:53  sah
+ * added first implementation steps for import
+ *
  * Revision 3.99  2005/04/24 15:19:10  sah
  * modified option handling slightly to allow
  * for the setup phase to run prior to libstat
@@ -87,6 +90,7 @@
 #include "libstat.h"
 #include "resolveall.h"
 #include "annotatenamespace.h"
+#include "importsymbols.h"
 #include "usesymbols.h"
 #include "libstat.h"
 #include "ccmanager.h"
@@ -226,6 +230,8 @@ main (int argc, char *argv[])
     RSAdoResolveAll (syntax_tree);
     NOTE (("Resolving namespaces..."));
     ANSdoAnnotateNamespace (syntax_tree);
+    NOTE (("Getting imported symbols..."));
+    IMPdoImportSymbols (syntax_tree);
     NOTE (("Getting used symbols..."));
     USSdoUseSymbols (syntax_tree);
     NOTE (("Resolving dependencies..."));

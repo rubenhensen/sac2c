@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.28  2005/05/22 19:45:53  sah
+# added first implementation steps for import
+#
 # Revision 3.27  2004/11/26 16:10:35  sah
 # #da
 #
@@ -111,7 +114,7 @@ include $(PROJECT_ROOT)/Makefile.Config
 OBJS := symboltable.o stringset.o \
         libmanager.o modulemanager.o libstat.o export.o \
         ccmanager.o libbuilder.o resolveall.o annotatenamespace.o \
-        usesymbols.o prepareinline.o dependencies.o
+        usesymbols.o prepareinline.o dependencies.o importsymbols.o
 
 all: $(OBJS)
 
