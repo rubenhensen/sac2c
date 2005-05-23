@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.34  2005/05/23 20:42:27  sbs
+ * now wrappers are created for local functions only.
+ * ,
+ *
  * Revision 1.33  2005/04/05 10:14:13  sah
  * fixed traversal while splitting wrappers
  *
@@ -325,11 +329,7 @@ WrapperCodeIsNeeded (node *fundef)
 
     DBUG_ENTER ("WrapperCodeIsNeeded");
 
-    /*
-     * for the time being we always create the wrapper code although it
-     * might never actually be used!!
-     */
-    result = TRUE;
+    result = FUNDEF_ISLOCAL (fundef);
 
     DBUG_RETURN (result);
 }
