@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.33  2005/05/23 07:41:33  sah
+ * import now creates correct wrappers
+ * except for the return types!
+ *
  * Revision 1.32  2005/05/22 19:45:53  sah
  * added first implementation steps for import
  *
@@ -249,7 +253,8 @@ FindWrapper (char *mod, char *name, int num_args, int num_rets, lut_t *lut)
 
     DBUG_ENTER ("FindWrapper");
 
-    DBUG_PRINT ("CRTWRP", ("Searching for %s %d args %d rets", name, num_args, num_rets));
+    DBUG_PRINT ("CRTWRP",
+                ("Searching for %s:%s %d args %d rets", mod, name, num_args, num_rets));
 
     /* initial search for wrapper in LUT */
     wrapper_p = (node **)LUTsearchInLutS (lut, name);
@@ -346,6 +351,9 @@ CreateWrapperFor (node *fundef, info *info)
         wrapper = DUPdoDupNode (fundef);
         FUNDEF_BODY (fundef) = body;
         FUNDEF_ISWRAPPERFUN (wrapper) = TRUE;
+        FUNDEF_ISLOCAL (wrapper) = TRUE;
+        FUNDEF_WASUSED (wrapper) = FALSE;
+        FUNDEF_WASIMPORTED (wrapper) = FALSE;
         if (FUNDEF_ISEXTERN (wrapper)) {
             /* this is a wrapper for external functions.
              * the wrapper itself is not external, so
@@ -356,6 +364,14 @@ CreateWrapperFor (node *fundef, info *info)
             ResetArgsOrRets (FUNDEF_RETS (wrapper));
             ResetArgsOrRets (FUNDEF_ARGS (wrapper));
         }
+        /*
+         * finally, set the module name to the one of the
+         * currently compiled module. Although the instance
+         * might come from another module, the created
+         * wrapper has to be local!
+         */
+        FUNDEF_MOD (wrapper) = ILIBfree (FUNDEF_MOD (wrapper));
+        FUNDEF_MOD (wrapper) = ILIBstringCopy (MODULE_NAME (INFO_CRTWRP_MODULE (info)));
     }
 
     /*
@@ -543,8 +559,9 @@ CRTWRPfundef (node *arg_node, info *arg_info)
         /**
          * ISLOCAL or WASIMPORTED fundef !
          */
-        wrapper = FindWrapper (FUNDEF_MOD (arg_node), FUNDEF_NAME (arg_node), num_args,
-                               num_rets, INFO_CRTWRP_WRAPPERFUNS (arg_info));
+        wrapper = FindWrapper (MODULE_NAME (INFO_CRTWRP_MODULE (arg_info)),
+                               FUNDEF_NAME (arg_node), num_args, num_rets,
+                               INFO_CRTWRP_WRAPPERFUNS (arg_info));
         if (wrapper == NULL) {
             wrapper = CreateWrapperFor (arg_node, arg_info);
             INFO_CRTWRP_WRAPPERFUNS (arg_info)
@@ -569,10 +586,16 @@ CRTWRPfundef (node *arg_node, info *arg_info)
         }
 
         /*
-         * Insert Alphas as ret-type, except for external functions (there, we just trust
-         * the type specified)
+         * Insert Alphas as ret-type, except for external functions
+         * (there, we just trust the type specified)
          */
         if (!FUNDEF_ISEXTERN (arg_node)) {
+            /*
+             * SBS:
+             * this should not happen for IMPORTED funs, as we need
+             * the lower bound later on we cannot throw it away here
+             * (the function wont be typechecked!)
+             */
             FUNDEF_RETS (arg_node) = TUrettypes2alphaAUD (FUNDEF_RETS (arg_node));
         }
 
