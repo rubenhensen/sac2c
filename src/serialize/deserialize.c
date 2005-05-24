@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2005/05/24 19:40:14  sah
+ * fixed handling of WASUSED/WASIMPORTED on
+ * deserialization
+ *
  * Revision 1.10  2005/05/22 19:45:53  sah
  * added first implementation steps for import
  *
@@ -138,10 +142,16 @@ InsertIntoState (node *item)
     case N_fundef:
         /*
          * The fundef is neither local, nor is it provided/exported
+         * furthermore we reset the WASUSED/WASIMPORTED here
+         * as these informations refer to the context where
+         * the fundef has been serialized. Functions calling this
+         * function should set the flags appropriate again
          */
         FUNDEF_ISLOCAL (item) = FALSE;
         FUNDEF_ISEXPORTED (item) = FALSE;
         FUNDEF_ISPROVIDED (item) = FALSE;
+        FUNDEF_WASUSED (item) = FALSE;
+        FUNDEF_WASIMPORTED (item) = FALSE;
 
         if (FUNDEF_ISEXTERN (item)) {
             INFO_DS_FUNDECS (DSstate) = TCappendFundef (INFO_DS_FUNDECS (DSstate), item);
@@ -252,6 +262,32 @@ DSfinishDeserialize (node *module)
 }
 
 /*
+ * helper functions
+ */
+
+static void
+updateContextInformation (node *entry)
+{
+    DBUG_ENTER ("updateContextInformation");
+
+    switch (NODE_TYPE (entry)) {
+    case N_fundef:
+        /*
+         * we have to update the WASUSED/WASIMPORTED
+         * information for fundefs
+         */
+        if (INFO_DS_IMPORTMODE (DSstate)) {
+            FUNDEF_WASIMPORTED (entry) = TRUE;
+        } else {
+            FUNDEF_WASUSED (entry) = TRUE;
+        }
+        break;
+    default:
+        break;
+    }
+}
+
+/*
  * functions for symbol lookup in ast
  */
 
@@ -358,6 +394,8 @@ AddEntryToAst (stentry_t *entry, stentrytype_t type, module_t *module)
                 entryp = serfun (DSstate);
                 /* add to ast */
                 InsertIntoState (entryp);
+
+                updateContextInformation (entryp);
             }
             break;
         default:
@@ -417,6 +455,8 @@ DSaddSymbolById (const char *symbid, const char *module)
 
     /* add to ast */
     InsertIntoState (entryp);
+
+    updateContextInformation (entryp);
 
     mod = MODMunLoadModule (mod);
 
@@ -534,25 +574,12 @@ DSlookupFunction (const char *module, const char *symbol)
         result = serfun ();
         mod = MODMunLoadModule (mod);
 
-        /*
-         * the function comes from a different module, so it was used anyways
-         */
-        FUNDEF_WASUSED (result) = TRUE;
-
         InsertIntoState (result);
     }
 
     DBUG_ASSERT ((result != NULL), "lookup failed.");
 
-    if (INFO_DS_IMPORTMODE (DSstate)) {
-        /*
-         * we are in import mode, thus this function is looked up
-         * as a dependency of a wrapper siganture.
-         * => it is an imported instance, so mark it!
-         */
-
-        FUNDEF_WASIMPORTED (result) = TRUE;
-    }
+    updateContextInformation (result);
 
     DBUG_RETURN (result);
 }
