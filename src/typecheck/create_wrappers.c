@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.35  2005/05/24 18:17:50  sbs
+ * now, externals are treated in the same way as wasimported ones ;-)
+ *
  * Revision 1.34  2005/05/24 08:25:17  sbs
  * some code brushing and lower bound inserted into imported instances.
  *
@@ -599,7 +602,7 @@ CRTWRPfundef (node *arg_node, info *arg_info)
             }
         }
 
-        if (FUNDEF_ISLOCAL (arg_node)) {
+        if (FUNDEF_ISLOCAL (arg_node) && !(FUNDEF_ISEXTERN (arg_node))) {
             FUNDEF_RETS (arg_node) = TUrettypes2alphaAUD (FUNDEF_RETS (arg_node));
         } else {
             FUNDEF_RETS (arg_node) = TUrettypes2alpha (FUNDEF_RETS (arg_node));
