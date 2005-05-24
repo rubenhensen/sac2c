@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.73  2005/05/24 08:34:33  sbs
+ * some log messages eliminated
+ *
  * Revision 3.72  2005/04/12 11:07:26  sah
  * fixed call of TEmakeInfo
  *
@@ -68,89 +71,6 @@
  * Revision 3.51  2004/11/11 15:20:30  sah
  * in new ast mode a typedef now has a ntype after parsing
  * changed NTCtypedef accordingly
- *
- * Revision 3.50  2004/10/28 16:10:23  sah
- * added deserialisation support needed for
- * specialising functions
- *
- * Revision 3.49  2004/10/26 15:37:35  sah
- *  FUNDEF_TCSTAT is set to NTC_checked now
- *
- * Revision 3.48  2004/10/26 10:47:56  sbs
- * module name printed out as well now.
- *
- * Revision 3.47  2004/10/05 13:50:05  sah
- * added some defines for NEW_AST mode
- *
- * Revision 3.46  2004/09/27 16:28:54  sah
- * fixed the errorneous use of accidently copied types during specialization
- *
- * Revision 3.45  2004/09/23 18:18:56  sbs
- * non termination detection inserted.
- * This leads to more comprehensible error messages if lower bounds
- * are missing after ntc itself.
- *
- * Revision 3.44  2004/08/12 16:13:11  sbs
- * made a warning from 3.37 available again.
- *
- * Revision 3.43  2004/07/30 17:27:38  sbs
- * switch to new INFO structure
- * PHASE I
- * and UGLY trick for smuggling through info * node instead of node * node:
- * casted. Compare UGLY counterpart in NTCCond (ct_basic.c).
- *
- * Revision 3.42  2004/03/22 18:31:15  sbs
- * the number of return expressions now has to match the number of return types!
- * Otherwise, a proper error message is generated!.
- *
- * Revision 3.41  2004/03/08 12:28:39  sbs
- * potentially un-initialized usage of var i in NTClet eliminated.
- *
- * Revision 3.40  2004/03/06 14:30:40  sbs
- * changed phi targets into funcond nodes.
- *
- * Revision 3.39  2004/03/05 19:32:28  sbs
- * NTCfuncond added.
- *
- * Revision 3.38  2004/03/05 16:19:36  sbs
- * changed behavior on ... return types
- * traversing fundecs as well now to get fixed types for back conversion
- *
- * Revision 3.37  2004/03/05 12:10:14  sbs
- * changed the phi handling; changed the conditionals
- * (now, SDs may be created here as well....)
- *
- * Revision 3.36  2003/11/26 13:53:19  sbs
- * default value of new genarray WLs now is checked as well.
- *
- * Revision 3.35  2003/11/04 12:36:08  sbs
- * rudimentary support for empty arrays added.
- *
- * Revision 3.34  2003/09/18 15:24:47  sbs
- * prf applications whose return values are not taken
- * properly care of by the user result in an appropriate
- * error message now.
- *
- * Revision 3.33  2003/09/09 14:56:11  sbs
- * extended type error reporting added
- *
- * Revision 3.32  2003/06/23 13:44:40  sbs
- * type checking for fold wl extended to fix point iteration
- * fixes bug no 18!
- *
- * Revision 3.31  2003/06/19 09:06:08  sbs
- * changed NTCBASIC. In case COAST2Constant cannot create a proper
- * constant node (which whas not checked until now(!) ), an
- * AKS is created instead of an AKV!
- *
- * Revision 3.30  2003/06/17 10:53:14  dkr
- * ; removed from error message
- *
- * Revision 3.29  2003/05/30 17:55:22  sbs
- * patched NTCcond to deal with function predicates better!
- * This is not the proper solution to the conceptual problem
- * (see comments in NTCcond!) but it is a good enough work-around
- * for the time being!
  *
  * ... [eliminated] ....
  *
