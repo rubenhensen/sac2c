@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.35  2005/05/24 08:24:27  sbs
+ * some DBUG_PRINT etended.
+ *
  * Revision 1.34  2005/05/23 20:42:27  sbs
  * now wrappers are created for local functions only.
  * ,
@@ -289,7 +292,8 @@ SplitWrapper (node *fundef)
     old_type = FUNDEF_WRAPPERTYPE (fundef);
     tmp_type = TYcopyType (old_type);
     FUNDEF_WRAPPERTYPE (fundef) = NULL;
-    DBUG_PRINT ("CWC", ("splitting wrapper of %s", FUNDEF_NAME (fundef)));
+    DBUG_PRINT ("CWC", ("splitting wrapper of %s:%s", FUNDEF_MOD (fundef),
+                        FUNDEF_NAME (fundef)));
     do {
         new_fundef = DUPdoDupNode (fundef);
         new_type = TYsplitWrapperType (tmp_type, &finished);
@@ -536,7 +540,7 @@ CorrectFundefPointer (node *fundef, char *funname, ntype *arg_types)
          *      avoid superfluous wrapper function calls
          *   -> if static dispatch impossible, search for correct wrapper
          */
-        DBUG_PRINT ("CWC", ("correcting fundef for %s", funname));
+        DBUG_PRINT ("CWC", ("correcting fundef for %s:%s", FUNDEF_MOD (fundef), funname));
 
         /*
          * try to dispatch the function application statically
