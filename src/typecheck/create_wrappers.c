@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.34  2005/05/24 08:25:17  sbs
+ * some code brushing and lower bound inserted into imported instances.
+ *
  * Revision 1.33  2005/05/23 07:41:33  sah
  * import now creates correct wrappers
  * except for the return types!
@@ -524,13 +527,24 @@ CRTWRPfundef (node *arg_node, info *arg_info)
     DBUG_PRINT ("CRTWRP", ("----- Processing function %s:%s: -----",
                            FUNDEF_MOD (arg_node), FUNDEF_NAME (arg_node)));
 
-    /*
-     * Check whether the function is locally defined or imported
+    /**
+     * we need to include the following functions into wrappers:
+     *   - ALL local fundefs
+     *   - ALL imported fundefs ( but NO imported wrappers)
+     *   - ALL used wrappers ( but NO used fundefs)
+     * While the former two categories obtain local wrappers,
+     * the latter retain their original namespace.
+     *
+     * NB: imported wrappers should not occur as they should not be loaded in
+     *     the first place....
      */
-    if ((!FUNDEF_ISLOCAL (arg_node)) && (!FUNDEF_WASIMPORTED (arg_node))) {
+    DBUG_ASSERT (!(FUNDEF_WASIMPORTED (arg_node) && FUNDEF_ISWRAPPERFUN (arg_node)),
+                 "imported wrapper found!");
+    if (!FUNDEF_ISLOCAL (arg_node) && !FUNDEF_WASIMPORTED (arg_node)) {
         /**
-         * The function has been used.
-         * Used functions are just ignored, used wrappers are processed.
+         * First, we combine used wrappers. Note here, that this will only combine
+         * all wrappers from ONE module with an identical amount of args / rets, i.e.,
+         * its the dual to SplitWrappers!
          */
         if (FUNDEF_ISWRAPPERFUN (arg_node)) {
             wrapper
@@ -538,7 +552,7 @@ CRTWRPfundef (node *arg_node, info *arg_info)
                              num_rets, INFO_CRTWRP_WRAPPERFUNS (arg_info));
             if (wrapper == NULL) {
                 /**
-                 * There is no wrapper that would match this one yet!
+                 * There is no wrapper for this function yet.
                  * Therefore, CreateWrapperFor will reuse this one and generalize
                  * its arg / return types.
                  */
@@ -547,7 +561,7 @@ CRTWRPfundef (node *arg_node, info *arg_info)
                   = LUTinsertIntoLutS (INFO_CRTWRP_WRAPPERFUNS (arg_info),
                                        FUNDEF_NAME (arg_node), wrapper);
             } else {
-                /* overload the existing wrapper with existing wrappers */
+                /* integrate this wrapper into the existing one */
 
                 FUNDEF_WRAPPERTYPE (wrapper)
                   = TYmakeOverloadedFunType (TYcopyType (FUNDEF_WRAPPERTYPE (arg_node)),
@@ -585,18 +599,10 @@ CRTWRPfundef (node *arg_node, info *arg_info)
             }
         }
 
-        /*
-         * Insert Alphas as ret-type, except for external functions
-         * (there, we just trust the type specified)
-         */
-        if (!FUNDEF_ISEXTERN (arg_node)) {
-            /*
-             * SBS:
-             * this should not happen for IMPORTED funs, as we need
-             * the lower bound later on we cannot throw it away here
-             * (the function wont be typechecked!)
-             */
+        if (FUNDEF_ISLOCAL (arg_node)) {
             FUNDEF_RETS (arg_node) = TUrettypes2alphaAUD (FUNDEF_RETS (arg_node));
+        } else {
+            FUNDEF_RETS (arg_node) = TUrettypes2alpha (FUNDEF_RETS (arg_node));
         }
 
         FUNDEF_WRAPPERTYPE (wrapper)
