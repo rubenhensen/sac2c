@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2005/05/24 08:26:34  sbs
+ * TUretypes2alpha modified.
+ *
  * Revision 1.9  2004/12/09 12:32:27  sbs
  * TUargtypes2AUD and TYrettypes2AUD eliminated
  *
@@ -131,32 +134,6 @@ TUreplaceRetTypes (node *rets, ntype *prodt)
 
 /** <!--********************************************************************-->
  *
- * @fn node  *TUrettypes2alpha( node *rets);
- *
- *   @brief
- *   @param
- *   @return
- *
- ******************************************************************************/
-
-node *
-TUrettypes2alpha (node *rets)
-{
-    node *tmp = rets;
-
-    DBUG_ENTER ("TUrettypes2alpha");
-
-    while (tmp != NULL) {
-        RET_TYPE (tmp) = TYfreeType (RET_TYPE (tmp));
-        RET_TYPE (tmp) = TYmakeAlphaType (NULL);
-        tmp = RET_NEXT (tmp);
-    }
-
-    DBUG_RETURN (rets);
-}
-
-/** <!--********************************************************************-->
- *
  * @fn node  *TUrettypes2unknownAUD( node *rets);
  *
  *   @brief
@@ -248,6 +225,42 @@ TUrettypes2alphaAUD (node *rets)
         }
         RET_TYPE (tmp) = TYfreeType (RET_TYPE (tmp));
         RET_TYPE (tmp) = new;
+        tmp = RET_NEXT (tmp);
+    }
+
+    DBUG_RETURN (rets);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node  *TUrettypes2alpha( node *rets);
+ *
+ *   @brief
+ *   @param
+ *   @return
+ *
+ ******************************************************************************/
+
+node *
+TUrettypes2alpha (node *rets)
+{
+    node *tmp = rets;
+    ntype *new, *scalar;
+
+    DBUG_ENTER ("TUrettypes2alpha");
+
+    while (tmp != NULL) {
+        if (!TYisAlpha (RET_TYPE (tmp))) {
+            scalar = TYgetScalar (RET_TYPE (tmp));
+            if (TYgetSimpleType (scalar) == T_unknown) {
+                new = TYmakeAlphaType (NULL);
+                RET_TYPE (tmp) = TYfreeType (RET_TYPE (tmp));
+            } else {
+                new = TYmakeAlphaType (TYmakeAUD (TYcopyType (scalar)));
+                SSInewMin (TYgetAlpha (new), RET_TYPE (tmp));
+            }
+            RET_TYPE (tmp) = new;
+        }
         tmp = RET_NEXT (tmp);
     }
 

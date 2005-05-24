@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2005/05/24 08:26:34  sbs
+ * TUretypes2alpha modified.
+ *
  * Revision 1.8  2004/12/09 12:32:27  sbs
  * TUargtypes2AUD and TYrettypes2AUD eliminated
  *
@@ -37,9 +40,9 @@
 extern node *TUcreateTmpVardecsFromRets (node *rets);
 extern ntype *TUmakeProductTypeFromRets (node *rets);
 extern node *TUreplaceRetTypes (node *rets, ntype *prodt);
-extern node *TUrettypes2alpha (node *rets);
 extern node *TUrettypes2unknownAUD (node *rets);
 extern node *TUargtypes2unknownAUD (node *rets);
+extern node *TUrettypes2alpha (node *rets);
 extern node *TUrettypes2alphaAUD (node *rets);
 extern bool TUisUniqueUserType (ntype *type);
 extern bool TUisArrayOfUser (ntype *type);
