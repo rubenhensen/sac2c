@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2005/05/25 17:41:03  khf
+ * corrected test on empty generators
+ *
  * Revision 1.1  2005/04/29 20:51:52  khf
  * Initial revision
  *
@@ -324,7 +327,7 @@ ComputeGeneratorProperties (node *wl, shape *max_shp)
 
         if (non_empty_bounds) {
             tmpc = COge (lbc, ubc);
-            if (COisTrue (tmpc, TRUE)) {
+            if (COisTrue (tmpc, FALSE)) {
                 res = GPT_empty;
             }
             tmpc = COfreeConstant (tmpc);
