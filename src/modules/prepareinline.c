@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2005/05/25 20:27:16  sah
+ * bodies of lacfuns are fetched now as well
+ *
  * Revision 1.4  2005/05/25 19:11:35  sah
  * prepareinline disabled if inline disabled as well
  *
@@ -21,6 +24,7 @@
 
 #include "prepareinline.h"
 #include "tree_basic.h"
+#include "tree_compound.h"
 #include "traverse.h"
 #include "deserialize.h"
 #include "internal_lib.h"
@@ -73,7 +77,14 @@ PPIfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PPIfundef");
 
-    if ((FUNDEF_BODY (arg_node) == NULL) && (FUNDEF_ISINLINE (arg_node))
+    /*
+     * we fetch bodies for functions which are
+     * A) inline, thus the body is needed for inlining
+     * B) lacfun, thus the body _has_ to be present for
+     *            lac2fun & fun2lac to work
+     */
+    if ((FUNDEF_BODY (arg_node) == NULL)
+        && ((FUNDEF_ISINLINE (arg_node) || FUNDEF_ISLACFUN (arg_node)))
         && (FUNDEF_SYMBOLNAME (arg_node) != NULL)) {
         arg_node = DSdoDeserialize (arg_node);
 
