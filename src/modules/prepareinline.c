@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2005/05/25 19:11:35  sah
+ * prepareinline disabled if inline disabled as well
+ *
  * Revision 1.3  2005/05/17 16:20:50  sah
  * added some reasonable error messages
  *
@@ -126,22 +129,26 @@ PPIdoPrepareInline (node *syntax_tree)
 
     TRAVpush (TR_ppi);
 
-    do {
-        DBUG_PRINT ("PPI", ("Starting round %d.", rounds));
+    if (global.optimize.doinl) {
+        do {
+            DBUG_PRINT ("PPI", ("Starting round %d.", rounds));
 
-        INFO_PPI_FETCHED (info) = 0;
+            INFO_PPI_FETCHED (info) = 0;
 
-        syntax_tree = TRAVdo (syntax_tree, info);
+            syntax_tree = TRAVdo (syntax_tree, info);
 
-        DBUG_PRINT ("PPI", ("Finished round %d, fetched %d bodies.", rounds,
-                            INFO_PPI_FETCHED (info)));
+            DBUG_PRINT ("PPI", ("Finished round %d, fetched %d bodies.", rounds,
+                                INFO_PPI_FETCHED (info)));
 
 #ifndef DBUG_OFF
-        rounds++;
+            rounds++;
 #endif
 
-        CTIabortOnError ();
-    } while (INFO_PPI_FETCHED (info) != 0);
+            CTIabortOnError ();
+        } while (INFO_PPI_FETCHED (info) != 0);
+    } else {
+        DBUG_PRINT ("PPI", ("skipping PPI as inlining is disabled..."));
+    }
 
     TRAVpop ();
 
