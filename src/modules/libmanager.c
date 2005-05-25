@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2005/05/25 20:27:45  sah
+ * modified error propagation
+ *
  * Revision 1.9  2005/04/26 17:11:46  sah
  * errors are now propagated from libmanager to modmanager
  * and handele there. This allows for more precise error
@@ -143,11 +146,13 @@ LIBMgetLibraryFunction (const char *name, dynlib_t lib)
 
     result = dlsym (lib, name);
 
-    if (result == NULL) {
-        CTIabort ("Cannot open library function `%s':\n%s", name, LibManagerError ());
+#ifndef DBUG_OFF
+    if (result != NULL) {
+        DBUG_PRINT ("LIB", ("Done getting library function"));
+    } else {
+        DBUG_PRINT ("LIB", ("Failed getting library function"));
     }
-
-    DBUG_PRINT ("LIB", ("Done getting library function"));
+#endif
 
     DBUG_RETURN (result);
 }

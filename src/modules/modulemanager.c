@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  2005/05/25 20:27:45  sah
+ * modified error propagation
+ *
  * Revision 1.15  2005/05/25 19:06:16  sah
  * added check for AST version
  *
@@ -76,6 +79,10 @@ hasSameASTVersion (module_t *module)
     sprintf (name, "__%s_VERSION", module->name);
 
     verfun = (modversionfun_p)LIBMgetLibraryFunction (name, module->lib);
+
+    if (verfun == NULL) {
+        CTIabort ("Error loading module version information: %s", LIBMgetError ());
+    }
 
     name = ILIBfree (name);
 
@@ -241,6 +248,10 @@ GetSymbolTableFunction (module_t *module)
 
     result = (symtabfun_p)LIBMgetLibraryFunction (name, module->lib);
 
+    if (result == NULL) {
+        CTIabort ("Error loading symbol table: %s", LIBMgetError ());
+    }
+
     name = ILIBfree (name);
 
     DBUG_RETURN (result);
@@ -274,6 +285,10 @@ GetDependencyTableFunction (module_t *module)
     sprintf (name, "__%s__DEPTAB", module->name);
 
     result = (deptabfun_p)LIBMgetLibraryFunction (name, module->lib);
+
+    if (result == NULL) {
+        CTIabort ("Error loading dependency table: %s", LIBMgetError ());
+    }
 
     name = ILIBfree (name);
 
