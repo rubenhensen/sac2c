@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.90  2005/05/25 09:52:33  khf
+ * optimize normal functions instead of zombie functions
+ *
  * Revision 3.89  2005/05/13 16:46:15  ktr
  * lacinlining is now performed in the cycle
  *
@@ -1256,7 +1259,7 @@ OPTfundef (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("OPTfundef");
 
-    if (FUNDEF_ISZOMBIE (arg_node)) {
+    if (!FUNDEF_ISZOMBIE (arg_node)) {
         strcpy (argtype_buffer, "");
         buffer_space = 77;
 
