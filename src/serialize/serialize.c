@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.11  2005/05/25 19:06:16  sah
+ * added check for AST version
+ *
  * Revision 1.10  2005/04/26 16:14:28  sah
  * tuned handling of cond/loop functions
  *
@@ -150,6 +153,19 @@ GenerateSerFileHead (FILE *file)
 
     fprintf (file, "#define DROP( x, y) y\n");
     fprintf (file, "#define NULL (void *) 0\n");
+
+    DBUG_VOID_RETURN;
+}
+
+static void
+GenerateSerFileVersionInfo (node *module, FILE *file)
+{
+    DBUG_ENTER ("GenerateSerFileVersionInfo");
+
+    fprintf (file,
+             "const char *__%s_VERSION() {\n"
+             "  return( \"" _SAC_AST_VERSION_ "\"); \n}\n\n",
+             MODULE_NAME (module));
 
     DBUG_VOID_RETURN;
 }
@@ -618,6 +634,8 @@ SERdoSerialize (node *module)
     INFO_SER_FILE (info) = FMGRwriteOpen ("%s/serialize.c", global.tmp_dirname);
 
     GenerateSerFileHead (INFO_SER_FILE (info));
+
+    GenerateSerFileVersionInfo (module, INFO_SER_FILE (info));
 
     TRAVpush (TR_ser);
 

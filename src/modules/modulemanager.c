@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2005/05/25 19:06:16  sah
+ * added check for AST version
+ *
  * Revision 1.14  2005/05/18 13:56:51  sah
  * enabled caching of symboltables which
  * leads to a huge speedup when analysing use and import
@@ -40,6 +43,7 @@
 #include "ctinfo.h"
 #include "dbug.h"
 #include "internal_lib.h"
+#include "tree_basic.h"
 
 #include <string.h>
 
@@ -58,6 +62,25 @@ static module_t *modulepool = NULL;
 
 typedef sttable_t *(*symtabfun_p) ();
 typedef stringset_t *(*deptabfun_p) ();
+typedef const char *(*modversionfun_p) ();
+
+static bool
+hasSameASTVersion (module_t *module)
+{
+    modversionfun_p verfun;
+    char *name;
+
+    DBUG_ENTER ("hasSameASTVersion");
+
+    name = ILIBmalloc (sizeof (char) * (strlen (module->name) + 12));
+    sprintf (name, "__%s_VERSION", module->name);
+
+    verfun = (modversionfun_p)LIBMgetLibraryFunction (name, module->lib);
+
+    name = ILIBfree (name);
+
+    DBUG_RETURN (ILIBstringCompare (verfun (), _SAC_AST_VERSION_));
+}
 
 static module_t *
 LookupModuleInPool (const char *name)
@@ -113,6 +136,11 @@ AddModuleToPool (const char *name)
     if (result->lib == NULL) {
         CTIabort ("Unable to open module `%s'. The reported error was: %s", name,
                   LIBMgetError ());
+    }
+
+    if (!hasSameASTVersion (result)) {
+        CTIabort ("Module `%s' was compiled using an incompatible version of "
+                  "sac2c.");
     }
 
     DBUG_RETURN (result);
@@ -213,6 +241,8 @@ GetSymbolTableFunction (module_t *module)
 
     result = (symtabfun_p)LIBMgetLibraryFunction (name, module->lib);
 
+    name = ILIBfree (name);
+
     DBUG_RETURN (result);
 }
 
@@ -244,6 +274,8 @@ GetDependencyTableFunction (module_t *module)
     sprintf (name, "__%s__DEPTAB", module->name);
 
     result = (deptabfun_p)LIBMgetLibraryFunction (name, module->lib);
+
+    name = ILIBfree (name);
 
     DBUG_RETURN (result);
 }
