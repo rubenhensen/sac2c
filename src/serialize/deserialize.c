@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2005/05/25 20:26:35  sah
+ * FUNDEF_EXT_ASSIGN is restored now
+ * during deserialisation
+ *
  * Revision 1.11  2005/05/24 19:40:14  sah
  * fixed handling of WASUSED/WASIMPORTED on
  * deserialization
@@ -70,23 +74,25 @@ struct INFO {
     node *vardecs;
     node *args;
     node *funhead;
+    node *lastassign;
     bool importmode;
 };
 
 /*
  * INFO macros
  */
-#define INFO_DS_RETURN(n) (n->ret)
-#define INFO_DS_SSACOUNTER(n) (n->ssacounter)
-#define INFO_DS_MODULE(n) (n->module)
-#define INFO_DS_FUNDEFS(n) (n->fundefs)
-#define INFO_DS_FUNDECS(n) (n->fundecs)
-#define INFO_DS_TYPEDEFS(n) (n->typedefs)
-#define INFO_DS_OBJDEFS(n) (n->objdefs)
-#define INFO_DS_VARDECS(n) (n->vardecs)
-#define INFO_DS_ARGS(n) (n->args)
-#define INFO_DS_FUNHEAD(n) (n->funhead)
-#define INFO_DS_IMPORTMODE(n) (n->importmode)
+#define INFO_DS_RETURN(n) ((n)->ret)
+#define INFO_DS_SSACOUNTER(n) ((n)->ssacounter)
+#define INFO_DS_MODULE(n) ((n)->module)
+#define INFO_DS_FUNDEFS(n) ((n)->fundefs)
+#define INFO_DS_FUNDECS(n) ((n)->fundecs)
+#define INFO_DS_TYPEDEFS(n) ((n)->typedefs)
+#define INFO_DS_OBJDEFS(n) ((n)->objdefs)
+#define INFO_DS_VARDECS(n) ((n)->vardecs)
+#define INFO_DS_ARGS(n) ((n)->args)
+#define INFO_DS_FUNHEAD(n) ((n)->funhead)
+#define INFO_DS_LASTASSIGN(n) ((n)->lastassign)
+#define INFO_DS_IMPORTMODE(n) ((n)->importmode)
 
 /*
  * INFO functions
@@ -110,6 +116,7 @@ MakeInfo ()
     INFO_DS_VARDECS (result) = NULL;
     INFO_DS_ARGS (result) = NULL;
     INFO_DS_FUNHEAD (result) = NULL;
+    INFO_DS_LASTASSIGN (result) = NULL;
     INFO_DS_IMPORTMODE (result) = FALSE;
 
     DBUG_RETURN (result);
@@ -391,6 +398,11 @@ AddEntryToAst (stentry_t *entry, stentrytype_t type, module_t *module)
             /* first check, whether it is already available */
             if (FindSymbolInAst (STentryName (entry)) == NULL) {
                 serfun = MODMgetDeSerializeFunction (STentryName (entry), module);
+
+                DBUG_ASSERT ((serfun != NULL),
+                             "module is inconsistent. cannot find function referenced in"
+                             "symbol table");
+
                 entryp = serfun (DSstate);
                 /* add to ast */
                 InsertIntoState (entryp);
@@ -451,6 +463,8 @@ DSaddSymbolById (const char *symbid, const char *module)
 
     fun = MODMgetDeSerializeFunction (symbid, mod);
 
+    DBUG_ASSERT ((fun != NULL), "requested symbol does not exist!");
+
     entryp = fun ();
 
     /* add to ast */
@@ -498,6 +512,10 @@ DSimportInstancesByName (const char *name, const char *module)
                                STentryName (symbol)));
 
             serfun = MODMgetDeSerializeFunction (STentryName (symbol), mod);
+
+            DBUG_ASSERT ((serfun != NULL),
+                         "found inconsistency between module and its symbol table");
+
             /*
              * fetch wrapper
              */
@@ -571,6 +589,11 @@ DSlookupFunction (const char *module, const char *symbol)
 
         mod = MODMloadModule (module);
         serfun = MODMgetDeSerializeFunction (symbol, mod);
+
+        DBUG_ASSERT ((serfun != NULL),
+                     "inconsistency in serialized module found. referenced "
+                     "function does not exist");
+
         result = serfun ();
         mod = MODMunLoadModule (mod);
 
@@ -607,16 +630,11 @@ LoadFunctionBody (node *fundef)
 
     serfunname = SERgenerateSerFunName (SET_funbody, fundef);
 
-    if (STcontainsEntry (serfunname, table)) {
+    serfun = MODMgetDeSerializeFunction (serfunname, module);
 
-        serfun = MODMgetDeSerializeFunction (serfunname, module);
+    DBUG_ASSERT ((serfun != NULL), "requested deserializer for function body not found");
 
-        result = serfun (DSstate);
-    } else {
-        DBUG_PRINT ("DS", ("deserialiser fun '%s' not found", serfunname));
-
-        result = NULL;
-    }
+    result = serfun (DSstate);
 
     module = MODMunLoadModule (module);
 
@@ -631,7 +649,7 @@ DSdoDeserialize (node *fundef)
     DBUG_ENTER ("DSdoDeserialize");
 
     DBUG_ASSERT ((DSstate != NULL),
-                 "AddFunctionBodyToHead called without calling InitDeserialize");
+                 "DSdoDeserialize called without calling InitDeserialize");
 
     DBUG_PRINT ("DS", ("Adding function body to `%s:%s'.", FUNDEF_MOD (fundef),
                        FUNDEF_NAME (fundef)));
@@ -752,6 +770,49 @@ DSarg (node *arg_node, info *arg_info)
 
     AVIS_SSACOUNT (ARG_AVIS (arg_node))
       = LookUpSSACounter (INFO_DS_SSACOUNTER (arg_info), arg_node);
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+DSassign (node *arg_node, info *arg_info)
+{
+    node *oldassign;
+
+    DBUG_ENTER ("DSassign");
+
+    /*
+     * we have to store the last assign, as we need
+     * it to restore the EXT_ASSIGN value of
+     * cond and loop functions that may be called
+     * on the LHS
+     */
+    oldassign = INFO_DS_LASTASSIGN (arg_info);
+    INFO_DS_LASTASSIGN (arg_info) = arg_node;
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    INFO_DS_LASTASSIGN (arg_info) = oldassign;
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+DSap (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("DSap");
+
+    DBUG_ASSERT (AP_FUNDEF (arg_node) != NULL, "found a ap without fundef link!");
+
+    if (FUNDEF_ISLACFUN (AP_FUNDEF (arg_node))) {
+        /*
+         * we have to restore the EXT_ASSIGN field
+         * of the referenced Cond/Do-Fun
+         */
+        FUNDEF_EXT_ASSIGN (AP_FUNDEF (arg_node)) = INFO_DS_LASTASSIGN (arg_info);
+    }
 
     arg_node = TRAVcont (arg_node, arg_info);
 

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2005/05/25 20:26:35  sah
+ * FUNDEF_EXT_ASSIGN is restored now
+ * during deserialisation
+ *
  * Revision 1.4  2005/05/22 19:45:53  sah
  * added first implementation steps for import
  *
@@ -47,5 +51,7 @@ extern node *DSfundef (node *arg_node, info *arg_info);
 extern node *DSreturn (node *arg_node, info *arg_info);
 extern node *DSblock (node *arg_node, info *arg_info);
 extern node *DSarg (node *arg_node, info *arg_info);
+extern node *DSassign (node *arg_node, info *arg_info);
+extern node *DSap (node *arg_node, info *arg_info);
 
 #endif /* _SAC_DESERIALIZE_H_ */
