@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2005/05/26 18:37:53  sbs
+ * corrected NTUgetShapeClassFromNType :-(
+ * naughty sh***y Marielyst hack
+ *
  * Revision 1.12  2004/11/26 21:30:51  ktr
  * ntype backend stage 0
  *
@@ -304,45 +308,25 @@ NTUgetShapeClassFromNType (ntype *ntype)
      * C_scl can not be deactivated for hidden objects in order to prevent
      * inconsistency with the implementation of the hidden type.
      */
-    if (!((z == C_scl) && TUisHidden (ntype))) {
+    if (!TUisHidden (ntype)) {
 
         switch (global.min_array_rep) {
-        case MAR_scl_aud:
+        case MAR_aud:
             z = C_aud;
             break;
 
-        case MAR_scl_akd:
-            switch (z) {
-            case C_scl:
-            case C_aks:
-                z = C_akd;
-                break;
-
-            case C_akd:
-            case C_aud:
-                break;
-
-            default:
-                DBUG_ASSERT ((0), "Illegal shape class");
-                break;
+        case MAR_scl_aud:
+            if (z != C_scl) {
+                z = C_aud;
             }
             break;
 
-        case MAR_scl_aks:
-            switch (z) {
-            case C_scl:
+        case MAR_scl_akd:
+            if (z == C_aks) {
                 z = C_aks;
-                break;
-
-            case C_aks:
-            case C_akd:
-            case C_aud:
-                break;
-                break;
-            default:
-                DBUG_ASSERT ((0), "Illegal shape class");
-                break;
             }
+
+        case MAR_scl_aks:
         default:
             break;
         }
