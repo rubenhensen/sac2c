@@ -2988,7 +2988,9 @@
           </phases>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags>
+        <flag name="ConsiderInline" default="TRUE" />
+      </flags>
     </node>
 <!--
 
