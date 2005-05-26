@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.33  2005/05/26 16:09:25  mwe
+ * convert akv to aks types in TUPcode now
+ *
  * Revision 1.32  2005/05/12 13:07:24  mwe
  * again some debugging, signature specialization of do-loops changed
  *
@@ -1974,7 +1977,7 @@ TUPgenerator (node *arg_node, info *arg_info)
 node *
 TUPcode (node *arg_node, info *arg_info)
 {
-    ntype *prod, *tmp;
+    ntype *prod, *tmp, *tmp2;
     DBUG_ENTER ("TUPcode");
 
     /*
@@ -1992,15 +1995,19 @@ TUPcode (node *arg_node, info *arg_info)
     tmp = TYcopyType (TYgetProductMember (prod, 0));
     prod = TYfreeType (prod);
 
-    if (!TYisAKV (tmp)) {
-        if (NULL == INFO_TUP_WLEXPRS (arg_info)) {
+    if (TYisAKV (tmp)) {
 
-            INFO_TUP_WLEXPRS (arg_info) = tmp;
-        } else {
+        tmp2 = tmp;
+        tmp = TYmakeAKS (TYcopyType (TYgetScalar (tmp)), SHcopyShape (TYgetShape (tmp)));
+        tmp2 = TYfreeType (tmp2);
+    }
 
-            INFO_TUP_WLEXPRS (arg_info)
-              = GetLowestType (tmp, INFO_TUP_WLEXPRS (arg_info));
-        }
+    if (NULL == INFO_TUP_WLEXPRS (arg_info)) {
+
+        INFO_TUP_WLEXPRS (arg_info) = tmp;
+    } else {
+
+        INFO_TUP_WLEXPRS (arg_info) = GetLowestType (tmp, INFO_TUP_WLEXPRS (arg_info));
     }
 
     if (CODE_NEXT (arg_node) != NULL) {
@@ -2014,9 +2021,10 @@ TUPcode (node *arg_node, info *arg_info)
      * reverse upgrade of types possible
      */
 
-    if ((TYcmpTypes (INFO_TUP_WLEXPRS (arg_info),
-                     AVIS_TYPE (ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (arg_node)))))
-         == TY_lt)
+    if ((global.optimize.dortup)
+        && (TYcmpTypes (INFO_TUP_WLEXPRS (arg_info),
+                        AVIS_TYPE (ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (arg_node)))))
+            == TY_lt)
         && (N_vardec
             == NODE_TYPE (AVIS_DECL (ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (arg_node))))))) {
 
