@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.3  2005/05/26 18:26:04  sah
+ * import statements are now removed after
+ * processing
+ *
  * Revision 1.2  2005/05/26 07:47:44  sah
  * modules used by imports are added to the
  * dependencies now, as well
@@ -23,6 +27,7 @@
 #include "internal_lib.h"
 #include "deserialize.h"
 #include "stringset.h"
+#include "free.h"
 #include "dbug.h"
 
 struct INFO {
@@ -61,6 +66,8 @@ FreeInfo (info *info)
 node *
 IMPimport (node *arg_node, info *arg_info)
 {
+    node *tmp;
+
     DBUG_ENTER ("IMPimport");
 
     INFO_IMP_CURRENT (arg_info) = IMPORT_MOD (arg_node);
@@ -79,7 +86,10 @@ IMPimport (node *arg_node, info *arg_info)
         IMPORT_NEXT (arg_node) = TRAVdo (IMPORT_NEXT (arg_node), arg_info);
     }
 
-    DBUG_RETURN (arg_node);
+    tmp = IMPORT_NEXT (arg_node);
+    arg_node = FREEdoFreeNode (arg_node);
+
+    DBUG_RETURN (tmp);
 }
 
 node *
