@@ -1,6 +1,14 @@
 /*
  *
  * $Log$
+ * Revision 1.36  2005/05/26 20:33:01  sah
+ * somehow this is fucked up beyond all recoginition!
+ * one should be very careful when deleting functions
+ * within the ast as they might be used somewhere!
+ * changed the code so that only the generic wrappers
+ * are deleted as these are guaranteed to be not used
+ * anymore.
+ *
  * Revision 1.35  2005/05/24 08:24:27  sbs
  * some DBUG_PRINT etended.
  *
@@ -306,6 +314,13 @@ SplitWrapper (node *fundef)
           = TUreplaceRetTypes (FUNDEF_RETS (new_fundef), TYgetWrapperRetType (new_type));
         FUNDEF_ARGS (new_fundef)
           = TYcorrectWrapperArgTypes (FUNDEF_ARGS (new_fundef), new_type);
+
+        /*
+         * mark new wrapper as needed, so it can be easily distinguished
+         * from the generic ones
+         */
+        FUNDEF_ISNEEDED (new_fundef) = TRUE;
+
         FUNDEF_NEXT (new_fundef) = new_fundefs;
         new_fundefs = new_fundef;
     } while (!finished);
@@ -601,10 +616,10 @@ CorrectFundefPointer (node *fundef, char *funname, ntype *arg_types)
                               && ILIBstringCompare (funname, FUNDEF_NAME (fundef))
                               && FUNDEF_ISWRAPPERFUN (fundef)),
                              "no appropriate wrapper function found!");
+
+                DBUG_ASSERT ((!FUNDEF_ISZOMBIE (fundef)), "zombie found");
             } while (!SignatureMatches (FUNDEF_ARGS (fundef), arg_types));
             DBUG_PRINT ("CWC", ("  correct wrapper found"));
-
-            DBUG_ASSERT ((FUNDEF_BODY (fundef) != NULL), "no wrapper code found!");
         }
     }
 
@@ -653,13 +668,18 @@ FundefBuildWrappers (node *arg_node, info *arg_info)
         }
 
         /*
-         * insert new wrapper functions at the begining of MODULE_FUNS and
-         * free original wrapper function (-> zombie function)
+         * insert new wrapper functions after the generic wrapper
+         * the generic wrapper is freed later on
          */
         new_fundefs = TCappendFundef (new_fundefs, FUNDEF_NEXT (arg_node));
         DBUG_ASSERT ((FUNDEF_BODY (arg_node) == NULL),
                      "body of generic wrapper function has not been kept empty");
         FUNDEF_NEXT (arg_node) = new_fundefs;
+
+        /*
+         * mark the old generic wrapper as not needed
+         */
+        FUNDEF_ISNEEDED (arg_node) = FALSE;
     } else {
         /*
          * if this is no wrapper function, just skip to the next function
@@ -676,12 +696,12 @@ FundefAdjustPointers (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FundefAdjustPointers");
 
-    if ((!FUNDEF_ISWRAPPERFUN (arg_node)) && (FUNDEF_BODY (arg_node) != NULL)) {
-        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-    }
-
     if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+    }
+
+    if ((!FUNDEF_ISWRAPPERFUN (arg_node)) && (FUNDEF_BODY (arg_node) != NULL)) {
+        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -696,7 +716,7 @@ FundefRemoveGarbage (node *arg_node, info *arg_info)
         FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
     }
 
-    if ((FUNDEF_ISWRAPPERFUN (arg_node)) && (FUNDEF_BODY (arg_node) == NULL)) {
+    if ((FUNDEF_ISWRAPPERFUN (arg_node)) && (!FUNDEF_ISNEEDED (arg_node))) {
         /*
          * remove statically dispatchable wrapper function and all generic wrappers
          */
