@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2005/05/26 08:51:54  sbs
+ * missing DBUG_VOID_RETURN added in updateContextInformation
+ *
  * Revision 1.12  2005/05/25 20:26:35  sah
  * FUNDEF_EXT_ASSIGN is restored now
  * during deserialisation
@@ -292,6 +295,7 @@ updateContextInformation (node *entry)
     default:
         break;
     }
+    DBUG_VOID_RETURN;
 }
 
 /*
