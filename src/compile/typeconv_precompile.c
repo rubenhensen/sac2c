@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2005/05/26 18:44:16  sbs
+ * some DBUG prints added and unused vars eliminated
+ *
  * Revision 1.5  2004/12/09 21:09:58  ktr
  * bugfix roundup
  *
@@ -155,7 +158,6 @@ static void
 LiftArg (node *arg, node *fundef, ntype *new_type, node **new_assigns)
 {
     char *new_name;
-    node *new_vardec;
     node *new_ids;
     node *new_avis;
 
@@ -357,6 +359,10 @@ TCPap (node *arg_node, info *arg_info)
     shape_class_t actual_cls, formal_cls;
 
     DBUG_ENTER ("TCPap");
+
+    DBUG_PRINT ("TCP",
+                ("analyzing application of %s:%s ......",
+                 FUNDEF_MOD (AP_FUNDEF (arg_node)), FUNDEF_NAME (AP_FUNDEF (arg_node))));
 
     fun_argtab = FUNDEF_ARGTAB (AP_FUNDEF (arg_node));
     ap_argtab = AP_ARGTAB (arg_node);
