@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.2  2005/05/26 07:47:44  sah
+ * modules used by imports are added to the
+ * dependencies now, as well
+ *
  * Revision 1.1  2005/05/22 19:46:39  sah
  * Initial revision
  *
@@ -18,6 +22,7 @@
 #include "tree_basic.h"
 #include "internal_lib.h"
 #include "deserialize.h"
+#include "stringset.h"
 #include "dbug.h"
 
 struct INFO {
@@ -59,6 +64,10 @@ IMPimport (node *arg_node, info *arg_info)
     DBUG_ENTER ("IMPimport");
 
     INFO_IMP_CURRENT (arg_info) = IMPORT_MOD (arg_node);
+
+    MODULE_DEPENDENCIES (INFO_IMP_MODULE (arg_info))
+      = STRSadd (IMPORT_MOD (arg_node), STRS_saclib,
+                 MODULE_DEPENDENCIES (INFO_IMP_MODULE (arg_info)));
 
     if (IMPORT_SYMBOL (arg_node) != NULL) {
         IMPORT_SYMBOL (arg_node) = TRAVdo (IMPORT_SYMBOL (arg_node), arg_info);
