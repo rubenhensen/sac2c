@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.213  2005/05/26 20:31:46  sah
+ * enabled printing of c-headers for external wrapper functions
+ *
  * Revision 3.212  2005/05/17 10:58:48  sacbase
  * Eliminated nested comments in RCS header section and restored
  * compilability.
@@ -755,7 +758,7 @@ Argtab2Let (node *ap)
 /******************************************************************************
  *
  * Function:
- *   void PrintArgtags( argtab_t *argtab)
+ *   void PrintArgtags( argtab_t *argtab, bool in_comment)
  *
  * Description:
  *
@@ -763,13 +766,15 @@ Argtab2Let (node *ap)
  ******************************************************************************/
 
 static void
-PrintArgtags (argtab_t *argtab)
+PrintArgtags (argtab_t *argtab, bool in_comment)
 {
     int i;
 
     DBUG_ENTER ("PrintArgtags");
 
-    fprintf (global.outfile, " /*");
+    if (!in_comment) {
+        fprintf (global.outfile, " /*");
+    }
 
     /* return value */
     if (argtab->tag[0] != ATG_notag) {
@@ -785,7 +790,9 @@ PrintArgtags (argtab_t *argtab)
         fprintf (global.outfile, " %s", global.argtag_string[argtab->tag[i]]);
     }
 
-    fprintf (global.outfile, " */ ");
+    if (!in_comment) {
+        fprintf (global.outfile, " */ ");
+    }
 
     DBUG_VOID_RETURN;
 }
@@ -1265,7 +1272,7 @@ PrintFunctionHeader (node *arg_node, info *arg_info, bool in_comment)
 
         fprintf (global.outfile, " ");
         if (!print_argtab) {
-            PrintArgtags (FUNDEF_ARGTAB (arg_node));
+            PrintArgtags (FUNDEF_ARGTAB (arg_node), in_comment);
         }
     }
 
@@ -1423,8 +1430,7 @@ PRTfundef (node *arg_node, info *arg_info)
          * print function declaration
          */
 
-        if ((!FUNDEF_ISZOMBIE (arg_node)) && (!FUNDEF_ISWRAPPERFUN (arg_node))
-            && (!FUNDEF_ISSPMDFUN (arg_node))) {
+        if ((!FUNDEF_ISZOMBIE (arg_node)) && (!FUNDEF_ISSPMDFUN (arg_node))) {
             if ((FUNDEF_BODY (arg_node) == NULL)
                 || ((FUNDEF_RETURN (arg_node) != NULL)
                     && (NODE_TYPE (FUNDEF_RETURN (arg_node)) == N_icm))) {
@@ -2089,7 +2095,7 @@ PRTlet (node *arg_node, info *arg_info)
         tmp = FREEdoFreeTree (tmp);
 
         if (!print_argtab) {
-            PrintArgtags (AP_ARGTAB (expr));
+            PrintArgtags (AP_ARGTAB (expr), FALSE);
         }
     }
 
