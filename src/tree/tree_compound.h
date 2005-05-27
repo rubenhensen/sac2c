@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.190  2005/05/27 20:29:37  ktr
+ * Inserted various L_...X macros
+ *
  * Revision 3.189  2005/04/22 10:10:26  ktr
  * Removed CreateZeroFromType and code brushing
  *
@@ -1773,6 +1776,20 @@ extern node *TCmakeWlSegX (int dims, node *contents, node *next);
 #define WLXBLOCK_NEXT(n)                                                                 \
     ((NODE_TYPE (n) == N_wlblock) ? WLBLOCK_NEXT (n) : WLUBLOCK_NEXT (n))
 
+#define L_WLXBLOCK_CONTENTS(n, rhs)                                                      \
+    if (NODE_TYPE (n) == N_wlblock) {                                                    \
+        WLBLOCK_CONTENTS (n) = (rhs);                                                    \
+    } else {                                                                             \
+        WLUBLOCK_CONTENTS (n) = (rhs);                                                   \
+    }
+
+#define L_WLXBLOCK_NEXTDIM(n, rhs)                                                       \
+    if (NODE_TYPE (n) == N_wlblock) {                                                    \
+        WLBLOCK_NEXTDIM (n) = (rhs);                                                     \
+    } else {                                                                             \
+        WLUBLOCK_NEXTDIM (n) = (rhs);                                                    \
+    }
+
 /*--------------------------------------------------------------------------*/
 
 /***
@@ -1815,6 +1832,20 @@ extern node *TCmakeWlSegX (int dims, node *contents, node *next);
 #define WLSTRIDEX_NEXT(n)                                                                \
     ((NODE_TYPE (n) == N_wlstride) ? WLSTRIDE_NEXT (n) : WLSTRIDEVAR_NEXT (n))
 
+#define L_WLSTRIDEX_CONTENTS(n, rhs)                                                     \
+    if (NODE_TYPE (n) == N_wlstride) {                                                   \
+        WLSTRIDE_CONTENTS (n) = (rhs);                                                   \
+    } else {                                                                             \
+        WLSTRIDEVAR_CONTENTS (n) = (rhs);                                                \
+    }
+
+#define L_WLSTRIDEX_NEXT(n, rhs)                                                         \
+    if (NODE_TYPE (n) == N_wlstride) {                                                   \
+        WLSTRIDE_NEXT (n) = (rhs);                                                       \
+    } else {                                                                             \
+        WLSTRIDEVAR_NEXT (n) = (rhs);                                                    \
+    }
+
 /*--------------------------------------------------------------------------*/
 
 /***
@@ -1848,7 +1879,7 @@ extern node *TCmakeWlSegX (int dims, node *contents, node *next);
 
 #define WLGRIDX_DIM(n) ((NODE_TYPE (n) == N_wlgrid) ? WLGRID_DIM (n) : WLGRIDVAR_DIM (n))
 
-#define WLGRIDX_FITTED(n)                                                                \
+#define WLGRIDX_ISFITTED(n)                                                              \
     ((NODE_TYPE (n) == N_wlgrid) ? WLGRID_ISFITTED (n) : WLGRIDVAR_ISFITTED (n))
 
 #define WLGRIDX_NEXTDIM(n)                                                               \
@@ -1872,6 +1903,34 @@ extern node *TCmakeWlSegX (int dims, node *contents, node *next);
     ((NODE_TYPE (n) == N_wlgrid)                                                         \
        ? (void *)&(WLGRID_##field (n))                                                   \
        : ((NODE_TYPE (n) == N_wlgridvar) ? (void *)&(WLGRIDVAR_##field (n)) : NULL))
+
+#define L_WLGRIDX_ISNOOP(n, rhs)                                                         \
+    if (NODE_TYPE (n) == N_wlgrid) {                                                     \
+        WLGRID_ISNOOP (n) = (rhs);                                                       \
+    } else {                                                                             \
+        WLGRIDVAR_ISNOOP (n) = (rhs);                                                    \
+    }
+
+#define L_WLGRIDX_NEXTDIM(n, rhs)                                                        \
+    if (NODE_TYPE (n) == N_wlgrid) {                                                     \
+        WLGRID_NEXTDIM (n) = (rhs);                                                      \
+    } else {                                                                             \
+        WLGRIDVAR_NEXTDIM (n) = (rhs);                                                   \
+    }
+
+#define L_WLGRIDX_CODE(n, rhs)                                                           \
+    if (NODE_TYPE (n) == N_wlgrid) {                                                     \
+        WLGRID_CODE (n) = (rhs);                                                         \
+    } else {                                                                             \
+        WLGRIDVAR_CODE (n) = (rhs);                                                      \
+    }
+
+#define L_WLGRIDX_ISFITTED(n, rhs)                                                       \
+    if (NODE_TYPE (n) == N_wlgrid) {                                                     \
+        WLGRID_ISFITTED (n) = (rhs);                                                     \
+    } else {                                                                             \
+        WLGRIDVAR_ISFITTED (n) = (rhs);                                                  \
+    }
 
 /*--------------------------------------------------------------------------*/
 
