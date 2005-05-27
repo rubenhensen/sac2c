@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.155  2005/05/27 20:30:23  ktr
+ * Changed WLGRIDX_FITTED into WLGRIDX_ISFITTED
+ *
  * Revision 3.154  2005/03/19 23:19:45  sbs
  * AUD support added!!!!!!
  *
@@ -6269,7 +6272,7 @@ COMPwlgridx (node *arg_node, info *arg_info)
     dim = WLGRIDX_DIM (arg_node);
 
     mt_active = WITH2_MT (wlnode);
-    is_fitted = WLGRIDX_FITTED (arg_node);
+    is_fitted = WLGRIDX_ISFITTED (arg_node);
 
     if (WLGRIDX_ISNOOP (arg_node)) {
         node_icms = MakeIcm_WL_ADJUST_OFFSET (arg_node, NULL);
