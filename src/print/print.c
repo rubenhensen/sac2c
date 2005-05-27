@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.214  2005/05/27 20:53:29  ktr
+ * chenged WLGRIDX_FITTED to WLGRIDX_ISFITTED
+ *
  * Revision 3.213  2005/05/26 20:31:46  sah
  * enabled printing of c-headers for external wrapper functions
  *
@@ -4011,7 +4014,7 @@ PRTwlgrid (node *arg_node, info *arg_info)
     fprintf (global.outfile, "(");
     WLBnodeOrIntPrint (global.outfile, NODE_TYPE (arg_node),
                        WLGRIDX_GET_ADDR (arg_node, BOUND1), WLGRIDX_DIM (arg_node));
-    fprintf (global.outfile, " %s%s> ", str, WLGRIDX_FITTED (arg_node) ? str : ">");
+    fprintf (global.outfile, " %s%s> ", str, WLGRIDX_ISFITTED (arg_node) ? str : ">");
     WLBnodeOrIntPrint (global.outfile, NODE_TYPE (arg_node),
                        WLGRIDX_GET_ADDR (arg_node, BOUND2), WLGRIDX_DIM (arg_node));
     fprintf (global.outfile, "):");
@@ -4049,7 +4052,7 @@ PRTwlgridvar (node *arg_node, info *arg_info)
     fprintf (global.outfile, "(");
     WLBnodeOrIntPrint (global.outfile, NODE_TYPE (arg_node),
                        WLGRIDX_GET_ADDR (arg_node, BOUND1), WLGRIDX_DIM (arg_node));
-    fprintf (global.outfile, " %s%s> ", str, WLGRIDX_FITTED (arg_node) ? str : ">");
+    fprintf (global.outfile, " %s%s> ", str, WLGRIDX_ISFITTED (arg_node) ? str : ">");
     WLBnodeOrIntPrint (global.outfile, NODE_TYPE (arg_node),
                        WLGRIDX_GET_ADDR (arg_node, BOUND2), WLGRIDX_DIM (arg_node));
     fprintf (global.outfile, "):");
