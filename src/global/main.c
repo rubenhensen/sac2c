@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.101  2005/05/27 20:34:11  ktr
+ * removed conversion fto and from old types around application of
+ * WLTransform
+ *
  * Revision 3.100  2005/05/22 19:45:53  sah
  * added first implementation steps for import
  *
@@ -373,14 +377,9 @@ main (int argc, char *argv[])
      */
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
-    /*
-     * TODO:
-     * - WLtransform must work with new types
-     * - WLtransform must work in SSA-form
-     */
-    syntax_tree = TOTdoToOldTypes (syntax_tree);
+
     syntax_tree = WLTRAdoWlTransform (syntax_tree); /* wltrans_tab */
-    syntax_tree = TNTdoToNewTypes (syntax_tree);
+
     PHASE_DONE_EPILOG;
     PHASE_EPILOG;
 
