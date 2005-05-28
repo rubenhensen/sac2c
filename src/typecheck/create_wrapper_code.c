@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.37  2005/05/28 09:00:49  sbs
+ * CompareSignature did use (AHHEMMMM) old types still, i.e.,
+ * no backlink correction to wrappers could work if more than
+ * one base type wrappers for a single function existed....
+ *
  * Revision 1.36  2005/05/26 20:33:01  sah
  * somehow this is fucked up beyond all recoginition!
  * one should be very careful when deleting functions
@@ -306,7 +311,7 @@ SplitWrapper (node *fundef)
         new_fundef = DUPdoDupNode (fundef);
         new_type = TYsplitWrapperType (tmp_type, &finished);
         DBUG_EXECUTE ("CWC", tmp_str = TYtype2String (new_type, TRUE, 0););
-        DBUG_PRINT ("CWC", ("  new wrapper split off: %s", tmp_str));
+        DBUG_PRINT ("CWC", ("  new wrapper split off: %s : " F_PTR, tmp_str, new_fundef));
         DBUG_EXECUTE ("CWC", tmp_str = ILIBfree (tmp_str););
 
         FUNDEF_WRAPPERTYPE (new_fundef) = new_type;
@@ -504,8 +509,7 @@ SignatureMatches (node *formal, ntype *actual_prod_type)
     DBUG_ENTER ("SignatureMatches");
 
     pos = 0;
-    while ((formal != NULL) && (ARG_TYPE (formal) != NULL)
-           && (TYPES_BASETYPE (ARG_TYPE (formal)) != T_dots)) {
+    while ((formal != NULL) && (ARG_NTYPE (formal) != NULL)) {
         DBUG_ASSERT ((NODE_TYPE (formal) == N_arg), "illegal args found!");
 
         formal_type = AVIS_TYPE (ARG_AVIS (formal));
