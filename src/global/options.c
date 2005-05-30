@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.91  2005/05/30 13:07:55  cg
+ * Option -maxrecinl de-activated temporarily.
+ *
  * Revision 3.90  2005/05/17 11:36:46  cg
  * Option -maxinl replace by -maxrecinl.
  *
@@ -551,7 +554,8 @@ OPTanalyseCommandline (node *syntax_tree)
 
     ARGS_OPTION ("maxoptvar", ARG_NUM (global.optvar));
 
-    ARGS_OPTION ("maxrecinl", ARG_NUM (global.max_recursive_inlining));
+    ARGS_OPTION ("maxrecinl", CTIabort ("Option -maxrecinl de-activated temporarily");
+                 ARG_NUM (global.max_recursive_inlining));
 
     ARGS_OPTION ("maxlur", ARG_NUM (global.unrnum));
 
