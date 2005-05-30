@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2005/05/30 13:09:13  cg
+ * Inlining into wrapper functions is now prevented.
+ * Inlining is made ready to be applied repeatedly in
+ * the optimization cycle.
+ *
  * Revision 1.5  2005/05/17 11:36:46  cg
  * Inlining completely re-organized in order to handle system of mutually
  * recursive inline functions correctly.
@@ -162,19 +167,22 @@ INLmodule (node *arg_node, info *arg_info)
 node *
 INLfundef (node *arg_node, info *arg_info)
 {
-    node *old_info;
+    info *old_info;
 
     DBUG_ENTER ("INLfundef");
 
     if ((FUNDEF_BODY (arg_node) != NULL) && (!FUNDEF_ISINLINECOMPLETED (arg_node))
-        && ((!FUNDEF_ISLACFUN (arg_node)) || (INFO_DEPTH (arg_info) >= 1))
-        && (FUNDEF_INLINECOUNTER (arg_node) <= global.max_recursive_inlining)) {
+        && (!FUNDEF_ISWRAPPERFUN (arg_node))
+        && ((!FUNDEF_ISLACFUN (arg_node)) || (INFO_DEPTH (arg_info) >= 1))) {
 
         old_info = arg_info;
         arg_info = MakeInfo ();
 
         INFO_FUNDEF (arg_info) = arg_node;
         FUNDEF_INLINECOUNTER (arg_node) += 1;
+
+        DBUG_PRINT ("INL", ("Traversing body of %s:%s", FUNDEF_MOD (arg_node),
+                            FUNDEF_NAME (arg_node)));
 
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 
@@ -185,12 +193,23 @@ INLfundef (node *arg_node, info *arg_info)
         FUNDEF_ISINLINECOMPLETED (arg_node) = TRUE;
     }
 
-    if ((INFO_DEPTH (arg_info) == 0) && (FUNDEF_NEXT (arg_node) != NULL)) {
+    if (INFO_DEPTH (arg_info) == 0) {
         /*
          * We only continue with traversing the next function if we are on
          * the top level fundef chain.
          */
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+        if (FUNDEF_NEXT (arg_node) != NULL) {
+            FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+        }
+
+        /*
+         * Once we have finished inlining, we reset this flag to prepare the
+         * inlining mechanism for subsequent applications in the optimization
+         * cycle.
+         */
+        /*
+        FUNDEF_ISINLINECOMPLETED( arg_node) = FALSE;
+        */
     }
 
     DBUG_RETURN (arg_node);
@@ -244,6 +263,8 @@ INLassign (node *arg_node, info *arg_info)
     }
 
     if (inlined) {
+        DBUG_PRINT ("INL", ("Inlining code"));
+
         ASSIGN_NEXT (arg_node) = TCappendAssign (code, ASSIGN_NEXT (arg_node));
         BLOCK_VARDEC (FUNDEF_BODY (INFO_FUNDEF (arg_info)))
           = TCappendVardec (vardecs, BLOCK_VARDEC (FUNDEF_BODY (INFO_FUNDEF (arg_info))));
@@ -298,20 +319,37 @@ INLap (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("INLap");
 
-    if (FUNDEF_ISLACFUN (AP_FUNDEF (arg_node))
-        || FUNDEF_ISINLINE (AP_FUNDEF (arg_node))) {
-        INFO_DEPTH (arg_info) += 1;
+    if (AP_CONSIDERINLINE (arg_node)
+        && (FUNDEF_INLINECOUNTER (AP_FUNDEF (arg_node))
+            <= global.max_recursive_inlining)) {
 
-        AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
+        if (FUNDEF_ISLACFUN (AP_FUNDEF (arg_node))
+            || (FUNDEF_ISINLINE (AP_FUNDEF (arg_node)))) {
+            INFO_DEPTH (arg_info) += 1;
 
-        INFO_DEPTH (arg_info) -= 1;
-    }
+            AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
 
-    if (FUNDEF_ISINLINE (AP_FUNDEF (arg_node))
-        && FUNDEF_ISINLINECOMPLETED (AP_FUNDEF (arg_node))) {
-        INFO_CODE (arg_info)
-          = PINLdoPrepareInlining (&INFO_VARDECS (arg_info), AP_FUNDEF (arg_node),
-                                   INFO_LETIDS (arg_info), AP_ARGS (arg_node));
+            INFO_DEPTH (arg_info) -= 1;
+        }
+
+        if (FUNDEF_ISINLINE (AP_FUNDEF (arg_node))
+            && FUNDEF_ISINLINECOMPLETED (AP_FUNDEF (arg_node))) {
+            DBUG_PRINT ("INL",
+                        ("Inline preparing %s:%s", FUNDEF_MOD (AP_FUNDEF (arg_node)),
+                         FUNDEF_NAME (AP_FUNDEF (arg_node))));
+
+            INFO_CODE (arg_info)
+              = PINLdoPrepareInlining (&INFO_VARDECS (arg_info), AP_FUNDEF (arg_node),
+                                       INFO_LETIDS (arg_info), AP_ARGS (arg_node));
+        }
+    } else {
+        /*
+         * Maximum number of recursive inlinings is exceeded, so we mark the ap
+         * node and will never try again to inline here. This precaution is necessary
+         * to enforce the limit on recursive inlinigs through multiple applications
+         * of the function inlining optimization.
+         */
+        AP_CONSIDERINLINE (arg_node) = FALSE;
     }
 
     DBUG_RETURN (arg_node);
