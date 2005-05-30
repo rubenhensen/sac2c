@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.36  2005/05/30 13:08:22  cg
+ * Wrapper functions are now NEVER tagged inline.
+ *
  * Revision 1.35  2005/05/24 18:17:50  sbs
  * now, externals are treated in the same way as wasimported ones ;-)
  *
@@ -356,10 +359,13 @@ CreateWrapperFor (node *fundef, info *info)
         FUNDEF_BODY (fundef) = NULL;
         wrapper = DUPdoDupNode (fundef);
         FUNDEF_BODY (fundef) = body;
+
         FUNDEF_ISWRAPPERFUN (wrapper) = TRUE;
         FUNDEF_ISLOCAL (wrapper) = TRUE;
         FUNDEF_WASUSED (wrapper) = FALSE;
         FUNDEF_WASIMPORTED (wrapper) = FALSE;
+        FUNDEF_ISINLINE (wrapper) = FALSE;
+
         if (FUNDEF_ISEXTERN (wrapper)) {
             /* this is a wrapper for external functions.
              * the wrapper itself is not external, so
