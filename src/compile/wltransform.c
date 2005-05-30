@@ -1,5 +1,11 @@
 /*
  * $Log$
+ * Revision 3.111  2005/05/30 05:41:29  ktr
+ * With-loop transformation is now performed for only those with-loops
+ * with full partitions.
+ * This means all AKD with-loops must be converted into full partitions prior
+ * to wltransform.
+ *
  * Revision 3.110  2005/05/27 20:30:23  ktr
  * Wltransform now uses new types
  *
@@ -7113,16 +7119,17 @@ WLTRAwith (node *arg_node, info *arg_info)
 
     idx_type = IDS_NTYPE (WITH_VEC (arg_node));
 
-    if (!(TYisAKV (idx_type) || TYisAKS (idx_type))) {
-        /*
-         * index vector is AKD or AUD
-         *   -> we have to create totally different C code
-         *   -> we leave the N_Nwith node untouched
-         */
-        DBUG_EXECUTE ("WLtrans", CTInote ("with-loop with non-AKS withid found (line %d)",
-                                          global.linenum););
+    if (WITH_PARTS (arg_node) <= 0) {
+        DBUG_ASSERT (!(TYisAKV (idx_type) || TYisAKS (idx_type)),
+                     "AKD with-loop without full partition encountered!");
+
+        DBUG_EXECUTE ("WLtrans",
+                      CTInote ("with-loop without full partition found (line %d)",
+                               global.linenum););
         new_node = arg_node;
     } else {
+        DBUG_ASSERT ((TYisAKV (idx_type) || TYisAKS (idx_type)),
+                     "Index vector of full-partition with-loop must be AKS!");
         /*
          * index vector is AKS:
          * Number of dimensions of the iteration space is known
