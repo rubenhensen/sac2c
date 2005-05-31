@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2005/05/31 12:28:06  mwe
+ * bug fixed
+ *
  * Revision 1.6  2005/02/18 22:19:02  mwe
  * bug fixed
  *
@@ -175,7 +178,7 @@ SISIfundef (node *arg_node, info *arg_info)
     if ((FUNDEF_RETS (arg_node) != NULL) && (!FUNDEF_ISLACFUN (arg_node))
         && (!ILIBstringCompare ("main", FUNDEF_NAME (arg_node)))
         && (!ILIBstringCompare (MAIN_MOD_NAME, FUNDEF_MOD (arg_node)))
-        && (!FUNDEF_ISEXPORTED (arg_node)) && (FUNDEF_ISPROVIDED (arg_node))) {
+        && (!FUNDEF_ISEXPORTED (arg_node)) && (!FUNDEF_ISPROVIDED (arg_node))) {
         FUNDEF_RETS (arg_node) = TRAVdo (FUNDEF_RETS (arg_node), arg_info);
     }
 
