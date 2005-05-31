@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2005/05/31 19:27:02  sah
+ * when adding usertypes, all info is explicitly copied to avoid sharing
+ *
  * Revision 1.13  2005/05/26 08:51:54  sbs
  * missing DBUG_VOID_RETURN added in updateContextInformation
  *
@@ -180,8 +183,10 @@ InsertIntoState (node *item)
         /*
          * first add the type to the UDT repository
          */
-        udt = UTaddUserType (TYPEDEF_NAME (item), TYPEDEF_MOD (item),
-                             TYPEDEF_NTYPE (item), NULL, NODE_LINE (item), item);
+        udt = UTaddUserType (ILIBstringCopy (TYPEDEF_NAME (item)),
+                             ILIBstringCopy (TYPEDEF_MOD (item)),
+                             TYcopyType (TYPEDEF_NTYPE (item)), NULL, NODE_LINE (item),
+                             item);
         /*
          * now compute the basetype
          */
