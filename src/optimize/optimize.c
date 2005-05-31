@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.91  2005/05/31 13:41:38  mwe
+ * run sisi only when dcr activated
+ *
  * Revision 3.90  2005/05/25 09:52:33  khf
  * optimize normal functions instead of zombie functions
  *
@@ -980,7 +983,7 @@ OPTmodule (node *arg_node, info *arg_info)
             /*
              * apply SISI (signature simplification)
              */
-            if (global.optimize.dosisi) {
+            if ((global.optimize.dosisi) && (global.optimize.dodcr)) {
                 arg_node = SISIdoSignatureSimplification (arg_node);
 
                 if ((global.break_after == PH_sacopt)
