@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.19  2005/05/31 13:59:34  mwe
+ * bug in CVPids fixed
+ *
  * Revision 1.18  2005/04/21 06:32:47  ktr
  * Eliminated application of SSATnewVardec
  *
@@ -175,6 +178,7 @@ struct INFO {
     node *assign;
     node *postassign;
     bool specfun;
+    bool singleids;
 };
 
 /*
@@ -186,7 +190,7 @@ struct INFO {
 #define INFO_CVP_ASSIGN(n) (n->assign)
 #define INFO_CVP_POSTASSIGN(n) (n->postassign)
 #define INFO_CVP_SPECFUN(n) (n->specfun)
-
+#define INFO_CVP_SINGLEIDS(n) (n->singleids)
 /*
  * INFO functions
  */
@@ -205,6 +209,7 @@ MakeInfo ()
     INFO_CVP_ASSIGN (result) = NULL;
     INFO_CVP_POSTASSIGN (result) = NULL;
     INFO_CVP_SPECFUN (result) = TRUE;
+    INFO_CVP_SINGLEIDS (result) = TRUE;
 
     DBUG_RETURN (result);
 }
@@ -1104,7 +1109,7 @@ CVPids (node *arg_ids, info *arg_info)
 
     DBUG_ENTER ("CVPids");
 
-    if (IDS_NEXT (arg_ids) != NULL) {
+    if ((IDS_NEXT (arg_ids) != NULL) || (!INFO_CVP_SINGLEIDS (arg_info))) {
         if ((TYisAKV (AVIS_TYPE (IDS_AVIS (arg_ids))))
             && (0 == TYgetDim (AVIS_TYPE (IDS_AVIS (arg_ids))))) {
             new_co = TYgetValue (AVIS_TYPE (IDS_AVIS (arg_ids)));
@@ -1141,11 +1146,13 @@ CVPids (node *arg_ids, info *arg_info)
             AVIS_SSAASSIGN (VARDEC_AVIS (new_vardec)) = INFO_CVP_ASSIGN (arg_info);
             IDS_AVIS (arg_ids) = VARDEC_AVIS (new_vardec);
         }
-
-        IDS_NEXT (arg_ids) = TRAVdo (IDS_NEXT (arg_ids), arg_info);
+        INFO_CVP_SINGLEIDS (arg_info) = FALSE;
+        if (NULL != IDS_NEXT (arg_ids)) {
+            IDS_NEXT (arg_ids) = TRAVdo (IDS_NEXT (arg_ids), arg_info);
+        }
     } else {
 
-        if ((TYisAKV (AVIS_TYPE (IDS_AVIS (arg_ids))))
+        if ((INFO_CVP_SINGLEIDS (arg_info)) && (TYisAKV (AVIS_TYPE (IDS_AVIS (arg_ids))))
             && (0 == TYgetDim (AVIS_TYPE (IDS_AVIS (arg_ids))))) {
             new_co = TYgetValue (AVIS_TYPE (IDS_AVIS (arg_ids)));
 
@@ -1153,6 +1160,8 @@ CVPids (node *arg_ids, info *arg_info)
               = COconstant2AST (new_co);
         }
     }
+
+    INFO_CVP_SINGLEIDS (arg_info) = TRUE;
 
     DBUG_RETURN (arg_ids);
 }
