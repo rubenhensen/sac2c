@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2005/05/31 13:59:34  mwe
+ * usage of ARG_ISINUSE instaed of NEEDCOUNT
+ * some methods new implemented
+ *
  * Revision 1.7  2005/05/31 12:28:06  mwe
  * bug fixed
  *
@@ -53,6 +57,7 @@ struct INFO {
     node *apfunrets;
     bool remassign;
     bool idslet;
+    node *postassign;
 };
 
 #define INFO_SISI_FUNDEF(n) (n->fundef)
@@ -61,8 +66,8 @@ struct INFO {
 #define INFO_SISI_ISAPNODE(n) (n->isapnode)
 #define INFO_SISI_RETS(n) (n->rets)
 #define INFO_SISI_APFUNRETS(n) (n->apfunrets)
-#define INFO_SISI_REMOVEASSIGN(n) (n->remassign)
 #define INFO_SISI_IDSLET(n) (n->idslet)
+#define INFO_SISI_POSTASSIGN(n) (n->postassign)
 
 static info *
 MakeInfo ()
@@ -78,8 +83,8 @@ MakeInfo ()
     INFO_SISI_ISAPNODE (result) = FALSE;
     INFO_SISI_RETS (result) = NULL;
     INFO_SISI_APFUNRETS (result) = NULL;
-    INFO_SISI_REMOVEASSIGN (result) = FALSE;
     INFO_SISI_IDSLET (result) = FALSE;
+    INFO_SISI_POSTASSIGN (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -220,15 +225,12 @@ SISIarg (node *arg_node, info *arg_info)
      * now bottom-up traversal
      */
 
-    if (AVIS_NEEDCOUNT (ARG_AVIS (arg_node)) == 0) {
+    if (!ARG_ISINUSE (arg_node)) {
 
         node *tmp;
 
         /*
          * we are dealing with an unused argument
-         */
-
-        /*
          * delete argument from chain
          */
         tmp = ARG_NEXT (arg_node);
@@ -284,25 +286,19 @@ SISIassign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SISIassign");
 
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
-
-    INFO_SISI_REMOVEASSIGN (arg_info) = FALSE;
+    INFO_SISI_POSTASSIGN (arg_info) = NULL;
 
     if (ASSIGN_INSTR (arg_node) != NULL) {
         ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
     }
+    /* integrate post assignments after current assignment */
+    ASSIGN_NEXT (arg_node)
+      = TCappendAssign (INFO_SISI_POSTASSIGN (arg_info), ASSIGN_NEXT (arg_node));
+    INFO_SISI_POSTASSIGN (arg_info) = NULL;
 
-    if (INFO_SISI_REMOVEASSIGN (arg_info)) {
-        node *tmp;
-
-        tmp = ASSIGN_NEXT (arg_node);
-        ASSIGN_NEXT (arg_node) = NULL;
-        arg_node = FREEdoFreeNode (arg_node);
-        arg_node = tmp;
+    if (ASSIGN_NEXT (arg_node) != NULL) {
+        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
     }
-
     DBUG_RETURN (arg_node);
 }
 
@@ -331,7 +327,7 @@ SISIlet (node *arg_node, info *arg_info)
 
     if ((INFO_SISI_ISAPNODE (arg_info)) && (LET_IDS (arg_node) != NULL)
         && (INFO_SISI_APFUNRETS (arg_info) != NULL)) {
-        INFO_SISI_REMOVEASSIGN (arg_info) = TRUE;
+
         INFO_SISI_IDSLET (arg_info) = TRUE;
         LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
         INFO_SISI_IDSLET (arg_info) = FALSE;
@@ -372,7 +368,7 @@ SISIap (node *arg_node, info *arg_info)
 
         while (fun_args != NULL) {
 
-            if (AVIS_NEEDCOUNT (ARG_AVIS (fun_args)) != 0) {
+            if (ARG_ISINUSE (fun_args)) {
                 if (NULL == new_args) {
                     new_args = curr_args;
                     AP_ARGS (arg_node) = new_args;
@@ -418,11 +414,12 @@ SISIap (node *arg_node, info *arg_info)
 node *
 SISIids (node *arg_node, info *arg_info)
 {
-    node *succ, *ret;
-
+    node *succ, *ret, *assign_let;
+    constant *new_co;
     DBUG_ENTER ("SISIids");
 
     if (INFO_SISI_IDSLET (arg_info)) {
+
         ret = INFO_SISI_APFUNRETS (arg_info);
         if (RET_NEXT (INFO_SISI_APFUNRETS (arg_info)) != NULL) {
             INFO_SISI_APFUNRETS (arg_info) = RET_NEXT (INFO_SISI_APFUNRETS (arg_info));
@@ -430,30 +427,50 @@ SISIids (node *arg_node, info *arg_info)
             DBUG_ASSERT ((IDS_NEXT (arg_node) == NULL),
                          "ret and ids do not fit together");
         }
+
         if (IDS_NEXT (arg_node) != NULL) {
+
             IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
         }
 
         /*
-         * remove bottom-up ids
+         * bottom-up traversal
          */
 
-        if (AVIS_NEEDCOUNT (IDS_AVIS (arg_node)) == 0) {
+        if ((TYisAKV (RET_TYPE (ret))) && (0 == TYgetDim (RET_TYPE (ret)))) {
+            new_co = TYgetValue (RET_TYPE (ret));
 
+            DBUG_PRINT ("SISI", ("identifier %s marked as constant",
+                                 VARDEC_OR_ARG_NAME (AVIS_DECL (IDS_AVIS (arg_node)))));
+
+            /*
+             * create one let assign for constant definition,
+             * reuse old avis/vardec
+             */
+            assign_let = TCmakeAssignLet (IDS_AVIS (arg_node), COconstant2AST (new_co));
+            AVIS_SSAASSIGN (IDS_AVIS (arg_node)) = assign_let;
+
+            /*
+             * append new copy assignment to then-part block
+             */
+            INFO_SISI_POSTASSIGN (arg_info)
+              = TCappendAssign (INFO_SISI_POSTASSIGN (arg_info), assign_let);
+
+            DBUG_PRINT ("SISI",
+                        ("create constant assignment for %s", (IDS_NAME (arg_node))));
+
+            /*
+             * Remove current ids
+             */
             succ = IDS_NEXT (arg_node);
             IDS_NEXT (arg_node) = NULL;
             arg_node = FREEdoFreeNode (arg_node);
             arg_node = succ;
 
             sisi_expr++;
-        } else {
-            /*
-             * non akv-node found, expression has to remain in AST
-             */
-
-            INFO_SISI_REMOVEASSIGN (arg_info) = FALSE;
         }
     }
+
     DBUG_RETURN (arg_node);
 }
 
@@ -542,16 +559,19 @@ SISIret (node *arg_node, info *arg_info)
 node *
 SISIexprs (node *arg_node, info *arg_info)
 {
-    bool old_removeexpr;
+    bool remove;
     node *ret;
     DBUG_ENTER ("SISIexprs");
 
     if (INFO_SISI_RETURNEXPRS (arg_info) == TRUE) {
 
-        old_removeexpr = INFO_SISI_REMOVEEXPRS (arg_info);
         INFO_SISI_REMOVEEXPRS (arg_info) = FALSE;
 
         ret = INFO_SISI_RETS (arg_info);
+
+        EXPRS_EXPR (arg_node) = TRAVdo (EXPRS_EXPR (arg_node), arg_info);
+
+        remove = INFO_SISI_REMOVEEXPRS (arg_info);
 
         if (EXPRS_NEXT (arg_node) != NULL) {
             INFO_SISI_RETS (arg_info) = RET_NEXT (INFO_SISI_RETS (arg_info));
@@ -561,7 +581,7 @@ SISIexprs (node *arg_node, info *arg_info)
          * remove bottom-up exprs
          */
 
-        if (INFO_SISI_REMOVEEXPRS (arg_info)) {
+        if (remove) {
             node *tmp;
             tmp = EXPRS_NEXT (arg_node);
             EXPRS_EXPR (arg_node) = NULL;
@@ -570,8 +590,6 @@ SISIexprs (node *arg_node, info *arg_info)
 
             RET_WASREMOVED (ret) = TRUE;
         }
-
-        INFO_SISI_REMOVEEXPRS (arg_info) = old_removeexpr;
     }
     DBUG_RETURN (arg_node);
 }
@@ -593,7 +611,7 @@ SISIid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SISIid");
 
-    if (AVIS_NEEDCOUNT (ID_AVIS (arg_node)) == 0) {
+    if (TYisAKV (AVIS_TYPE (ID_AVIS (arg_node)))) {
 
         INFO_SISI_REMOVEEXPRS (arg_info) = TRUE;
     }
