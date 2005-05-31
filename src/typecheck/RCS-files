@@ -35,3 +35,4 @@ user_types.c
 user_types.h
 type_utils.c
 type_utils.h
+resolvesymboltypes.c
