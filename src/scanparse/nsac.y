@@ -4,6 +4,9 @@
 /*
 *
 * $Log$
+* Revision 1.32  2005/05/31 18:13:50  sah
+* removed sharing of module names
+*
 * Revision 1.31  2005/01/11 13:52:12  cg
 * Converted output from Error.h to ctinfo.c
 *
@@ -130,7 +133,6 @@ extern char *yytext;
 extern int yylex();
 
 
-static char *mod_name = MAIN_MOD_NAME;
 static node *global_wlcomp_aps = NULL;
 static node *store_pragma = NULL;
 static bool have_seen_dots = FALSE;
@@ -337,7 +339,7 @@ eof: { if (commlevel) {
 
 prg: defs
      { $$ = $1;
-       MODULE_NAME( $$) = mod_name;
+       MODULE_NAME( $$) = ILIBstringCopy( MAIN_MOD_NAME);
        MODULE_FILETYPE( $$) = F_prog;
      }
    ;
@@ -492,7 +494,7 @@ symbolsetentries: ext_id COMMA symbolsetentries { $$ = TBmakeSymbol( $1, $3); }
 */
 
 typedef: TYPEDEF ntype ID SEMIC 
-         { $$ = TBmakeTypedef( $3, mod_name, $2, NULL);
+         { $$ = TBmakeTypedef( $3, NULL, $2, NULL);
 
            DBUG_PRINT( "PARSE",
                        ("%s:"F_PTR","F_PTR", Id: %s",
@@ -502,7 +504,7 @@ typedef: TYPEDEF ntype ID SEMIC
                         TYPEDEF_NAME( $$)));
          }
        | EXTERN TYPEDEF ID SEMIC
-         { $$ = TBmakeTypedef( $3, mod_name, TYmakeAKS(
+         { $$ = TBmakeTypedef( $3, NULL, TYmakeAKS(
                   TYmakeSimpleType( T_hidden), 
                   SHmakeShape( 0)), NULL);
 
@@ -1691,19 +1693,19 @@ userntype: ID
  ******************************************************************************
  ******************************************************************************/
 
-module: MODULE { file_kind = F_modimp; } ID { mod_name = $3; } SEMIC defs
-        { $$ = $6;
-          MODULE_NAME( $$) = mod_name;
+module: MODULE { file_kind = F_modimp; } ID SEMIC defs
+        { $$ = $5;
+          MODULE_NAME( $$) = $3;
           MODULE_FILETYPE( $$) = file_kind;
         }
         ;
 
-class: CLASS { file_kind = F_classimp; } ID { mod_name = $3; } SEMIC
+class: CLASS { file_kind = F_classimp; } ID SEMIC
        CLASSTYPE ntype SEMIC defs
-       { $$ = $9;
-         MODULE_NAME( $$) = mod_name;
+       { $$ = $8;
+         MODULE_NAME( $$) = $3;
          MODULE_FILETYPE( $$) = file_kind;
-         MODULE_CLASSTYPE( $$) = $7;
+         MODULE_CLASSTYPE( $$) = $6;
        }
      ;
 
