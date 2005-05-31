@@ -14,14 +14,30 @@
 #include "tree_basic.h"
 #include "dbug.h"
 #include "ctinfo.h"
+#include "globals.h"
+#include "internal_lib.h"
 
 static ntype *
 RSTntype (ntype *arg_type, info *arg_info)
 {
+#ifndef DBUG_OFF
+    char *tmp_str;
+#endif
+
     DBUG_ENTER ("RSTntype");
 
+    DBUG_EXECUTE ("RST", tmp_str = TYtype2DebugString (arg_type, FALSE, 0););
+    DBUG_PRINT ("RST", ("starting to process type %s", tmp_str));
+    DBUG_EXECUTE ("RST", tmp_str = ILIBfree (tmp_str););
+
+    /*
+     * as the TYget functions do not copy the internal type
+     * prior to returning it, we have to copy it here.
+     * This is neccessary, as the TYset functions free the inner
+     * type prior to assigning the new one.
+     */
     if (TYisArray (arg_type)) {
-        ntype *scalar = TYgetScalar (arg_type);
+        ntype *scalar = TYcopyType (TYgetScalar (arg_type));
         scalar = RSTntype (scalar, arg_info);
         arg_type = TYsetScalar (arg_type, scalar);
     } else if (TYisProd (arg_type)) {
@@ -30,7 +46,7 @@ RSTntype (ntype *arg_type, info *arg_info)
         ntype *member;
 
         for (cnt = 0; cnt < max; cnt++) {
-            member = TYgetProductMember (arg_type, cnt);
+            member = TYcopyType (TYgetProductMember (arg_type, cnt));
             member = RSTntype (member, arg_info);
             arg_type = TYsetProductMember (arg_type, cnt, member);
         }
@@ -55,6 +71,10 @@ RSTntype (ntype *arg_type, info *arg_info)
             arg_type = TYmakeUserType (udt);
         }
     }
+
+    DBUG_EXECUTE ("RST", tmp_str = TYtype2DebugString (arg_type, FALSE, 0););
+    DBUG_PRINT ("RST", ("resulting type is %s", tmp_str));
+    DBUG_EXECUTE ("RST", tmp_str = ILIBfree (tmp_str););
 
     DBUG_RETURN (arg_type);
 }
@@ -85,15 +105,53 @@ RSTmodule (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/******************************************************************************
+ *
+ * function:
+ *    node *RSTtypedef(node *arg_node, info *arg_info)
+ *
+ * description:
+ *   On the traversal down, we insert all user defined types. While doing so
+ *   we check on duplicate definitions and issue ERROR-messages if neccessary.
+ *
+ ******************************************************************************/
 node *
 RSTtypedef (node *arg_node, info *arg_info)
 {
+#ifndef DBUG_OFF
+    char *tmp_str;
+#endif
+
     DBUG_ENTER ("RSTtypedef");
 
-    /*
-     * nothing to do here yet, as up to now the udt database
-     * is built during typechecking
-     */
+    if (TYPEDEF_ISLOCAL (arg_node)) {
+        usertype udt = UTfindUserType (TYPEDEF_NAME (arg_node), TYPEDEF_MOD (arg_node));
+
+        if (udt != UT_NOT_DEFINED) {
+            CTIerrorLine (global.linenum,
+                          "Type %s:%s multiply defined;"
+                          " previous definition in line %d",
+                          TYPEDEF_MOD (arg_node), TYPEDEF_NAME (arg_node),
+                          UTgetLine (udt));
+        }
+
+        DBUG_EXECUTE ("UDT",
+                      tmp_str = TYtype2String (TYPEDEF_NTYPE (arg_node), FALSE, 0););
+        DBUG_PRINT ("UDT", ("adding user type %s:%s defined as %s",
+                            TYPEDEF_MOD (arg_node), TYPEDEF_NAME (arg_node), tmp_str));
+        DBUG_EXECUTE ("UDT", tmp_str = ILIBfree (tmp_str););
+
+        UTaddUserType (ILIBstringCopy (TYPEDEF_NAME (arg_node)),
+                       ILIBstringCopy (TYPEDEF_MOD (arg_node)),
+                       TYcopyType (TYPEDEF_NTYPE (arg_node)), NULL, global.linenum,
+                       arg_node);
+    } else {
+        DBUG_EXECUTE ("UDT",
+                      tmp_str = TYtype2String (TYPEDEF_NTYPE (arg_node), FALSE, 0););
+        DBUG_PRINT ("UDT", ("passing user type %s:%s defined as %s",
+                            TYPEDEF_MOD (arg_node), TYPEDEF_NAME (arg_node), tmp_str));
+        DBUG_EXECUTE ("UDT", tmp_str = ILIBfree (tmp_str););
+    }
 
     if (TYPEDEF_NEXT (arg_node) != NULL) {
         TYPEDEF_NEXT (arg_node) = TRAVdo (TYPEDEF_NEXT (arg_node), arg_info);
