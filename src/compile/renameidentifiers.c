@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2005/05/31 18:11:51  sah
+ * fixed a typoe
+ *
  * Revision 1.11  2005/02/02 18:14:17  mwe
  * naming for functions with akv-types changed
  *
@@ -408,6 +411,9 @@ RIDtypedef (node *arg_node, info *arg_info)
      */
     newname = BuildTypesRenaming (TYPEDEF_MOD (arg_node), TYPEDEF_NAME (arg_node));
 
+    DBUG_PRINT ("PREC", ("renaming type %s:%s to %s", TYPEDEF_MOD (arg_node),
+                         TYPEDEF_NAME (arg_node), newname));
+
     /*
      * now we have to rename the type in the user type database
      * as well.
@@ -422,7 +428,7 @@ RIDtypedef (node *arg_node, info *arg_info)
 
     TYPEDEF_NAME (arg_node) = ILIBfree (TYPEDEF_NAME (arg_node));
     TYPEDEF_NAME (arg_node) = newname;
-    TYPEDEF_MOD (arg_node) = ILIBfree (TYPEDEF_NAME (arg_node));
+    TYPEDEF_MOD (arg_node) = ILIBfree (TYPEDEF_MOD (arg_node));
 
     if (TYPEDEF_NEXT (arg_node) != NULL) {
         TYPEDEF_NEXT (arg_node) = TRAVdo (TYPEDEF_NEXT (arg_node), arg_info);
