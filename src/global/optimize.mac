@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  2005/05/31 13:38:17  mwe
+ * sisi deactivated
+ *
  * Revision 1.16  2005/04/22 10:07:32  ktr
  * re-activated LUR, WLUR
  *
@@ -114,7 +117,7 @@ OPTIMIZE ("sp", sp, FALSE, FALSE, "selection propagation")
 OPTIMIZE ("wlfs", wlfs, FALSE, FALSE, "with-loop fusion")
 OPTIMIZE ("lro", lro, TRUE, TRUE, "loop reuse optimization")
 OPTIMIZE ("tup", tup, TRUE, FALSE, "type upgrade")
-OPTIMIZE ("sisi", sisi, TRUE, FALSE, "signature simplification")
+OPTIMIZE ("sisi", sisi, FALSE, FALSE, "signature simplification")
 OPTIMIZE ("rtup", rtup, TRUE, FALSE, "reverse type upgrade")
 OPTIMIZE ("sfd", sfd, TRUE, FALSE, "static function dispatch")
 OPTIMIZE ("fsp", fsp, TRUE, FALSE, "function specilization")
