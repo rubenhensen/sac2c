@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.29  2005/05/31 13:59:34  mwe
+ * ARG_ISINUSE added
+ *
  * Revision 1.28  2005/03/04 21:21:42  cg
  * FUNDEF_USED counter etc removed.
  * Handling of FUNDEF_EXT_ASSIGNS drastically simplified.
@@ -227,6 +230,7 @@ InitAvisFlags (node *fundef)
     tmp = FUNDEF_ARGS (fundef);
     while (tmp != NULL) {
         AVIS_NEEDCOUNT (ARG_AVIS (tmp)) = DCR_NOTNEEDED;
+        ARG_ISINUSE (tmp) = FALSE;
         tmp = ARG_NEXT (tmp);
     }
 
@@ -558,6 +562,10 @@ DCRid (node *arg_node, info *arg_info)
     DBUG_PRINT ("DCR", ("mark id %s as needed", ID_NAME (arg_node)));
 
     AVIS_NEEDCOUNT (ID_AVIS (arg_node)) = AVIS_NEEDCOUNT (ID_AVIS (arg_node)) + 1;
+
+    if (N_arg == NODE_TYPE (AVIS_DECL (ID_AVIS (arg_node)))) {
+        ARG_ISINUSE (AVIS_DECL (ID_AVIS (arg_node))) = TRUE;
+    }
 
     DBUG_RETURN (arg_node);
 }
