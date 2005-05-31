@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2005/05/31 18:13:13  sah
+ * even more namespaces are set now...
+ *
  * Revision 1.9  2005/04/10 14:35:07  sah
  * now for while/do loops namespaces are annotated correctly
  *
@@ -57,7 +60,9 @@ extern node *ANSobjdef (node *arg_node, info *arg_info);
 extern node *ANSspap (node *arg_node, info *arg_info);
 extern node *ANSwhile (node *arg_node, info *arg_info);
 extern node *ANSdo (node *arg_node, info *arg_info);
+extern node *ANSavis (node *arg_node, info *arg_info);
 extern node *ANSarg (node *arg_node, info *arg_info);
+extern node *ANSret (node *arg_node, info *arg_info);
 extern node *ANSspids (node *arg_node, info *arg_info);
 extern node *ANSspid (node *arg_node, info *arg_info);
 extern node *ANSspmop (node *arg_node, info *arg_info);

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.26  2005/05/31 18:13:13  sah
+ * even more namespaces are set now...
+ *
  * Revision 1.25  2005/05/19 11:00:17  sah
  * fixed dependency handling
  *
@@ -364,6 +367,10 @@ ANSfundef (node *arg_node, info *arg_info)
         FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
     }
 
+    if (FUNDEF_RETS (arg_node) != NULL) {
+        FUNDEF_RETS (arg_node) = TRAVdo (FUNDEF_RETS (arg_node), arg_info);
+    }
+
     if (FUNDEF_BODY (arg_node) != NULL) {
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
     }
@@ -473,6 +480,18 @@ ANSdo (node *arg_node, info *arg_info)
 }
 
 node *
+ANSavis (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("ANSavis");
+
+    if (AVIS_TYPE (arg_node) != NULL) {
+        AVIS_TYPE (arg_node) = ANSntype (AVIS_TYPE (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
 ANSarg (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ANSarg");
@@ -484,8 +503,28 @@ ANSarg (node *arg_node, info *arg_info)
         ARG_TYPE (arg_node) = ANStypes (ARG_TYPE (arg_node), arg_info);
     }
 
+    if (ARG_AVIS (arg_node) != NULL) {
+        ARG_AVIS (arg_node) = TRAVdo (ARG_AVIS (arg_node), arg_info);
+    }
+
     if (ARG_NEXT (arg_node) != NULL) {
         ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+ANSret (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("ANSret");
+
+    if (RET_TYPE (arg_node) != NULL) {
+        RET_TYPE (arg_node) = ANSntype (RET_TYPE (arg_node), arg_info);
+    }
+
+    if (RET_NEXT (arg_node) != NULL) {
+        RET_NEXT (arg_node) = TRAVdo (RET_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
