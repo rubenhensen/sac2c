@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.156  2005/05/31 18:14:19  sah
+ * added dbug print
+ *
  * Revision 3.155  2005/05/27 20:30:23  ktr
  * Changed WLGRIDX_FITTED into WLGRIDX_ISFITTED
  *
@@ -2028,6 +2031,8 @@ COMPtypedef (node *arg_node, info *arg_info)
     node *icm = NULL;
 
     DBUG_ENTER ("COMPtypedef");
+
+    DBUG_PRINT ("COMP", ("compiling typedef '%s'", TYPEDEF_NAME (arg_node)));
 
     icm
       = TCmakeIcm1 ("ND_TYPEDEF", MakeTypeArgs (TYPEDEF_NAME (arg_node),
