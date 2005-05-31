@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.74  2005/05/31 19:26:12  sah
+ * moved usertype handling to resolvesymboltypes.c
+ *
  * Revision 3.73  2005/05/24 08:34:33  sbs
  * some log messages eliminated
  *
@@ -118,6 +121,7 @@
 #include "specialize.h"
 #include "constants.h"
 #include "deserialize.h"
+#include "resolvesymboltypes.h"
 
 /*
  * OPEN PROBLEMS:
@@ -500,7 +504,18 @@ NTCmodule (node *arg_node, info *arg_info)
     DBUG_ENTER ("NTCmodule");
     /*
      * First, we gather all typedefs and setup the global table
-     * which is kept in "new_types".
+     * which is kept in "new_types". Furthermore, the symbol types
+     * generated during scanparse are replaced by the proper
+     * udts
+     */
+    arg_node = RSTdoResolveSymbolTypes (arg_node);
+    if ((global.break_after == PH_typecheck)
+        && (0 == strcmp (global.break_specifier, "rst"))) {
+        goto DONE;
+    }
+
+    /*
+     * now we check for consistency and try to gather the basetypes
      */
     if (NULL != MODULE_TYPES (arg_node)) {
         MODULE_TYPES (arg_node) = TRAVdo (MODULE_TYPES (arg_node), arg_info);
@@ -795,9 +810,7 @@ NTCcheckUdtAndSetBaseType (usertype udt, int *visited)
  *    node *NTCtypedef(node *arg_node, info *arg_info)
  *
  * description:
- *   On the traversal down, we insert all user defined types. While doing so
- *   we check on duplicate definitions and issue ERROR-messages if neccessary.
- *   On the way back up we check on consistency (for the exact restrictions
+ *   We check on consistency (for the exact restrictions
  *   see "CheckUdtAndSetBaseType") and replace the defining type by its
  *   basetype.
  *
@@ -806,45 +819,12 @@ NTCcheckUdtAndSetBaseType (usertype udt, int *visited)
 node *
 NTCtypedef (node *arg_node, info *arg_info)
 {
-    char *name, *mod;
-    ntype *nt, *base;
-#ifndef NEW_AST
-    types *potential_hidden_definition;
-#endif
+    ntype *base;
     usertype udt;
-#ifndef DBUG_OFF
-    char *tmp_str;
-#endif
 
     DBUG_ENTER ("NTCtypedef");
-    name = TYPEDEF_NAME (arg_node);
-    mod = (TYPEDEF_MOD (arg_node) ? TYPEDEF_MOD (arg_node) : ILIBstringCopy (""));
-    nt = TYPEDEF_NTYPE (arg_node);
 
-    if (TYPEDEF_ISLOCAL (arg_node)) {
-        udt = UTfindUserType (name, mod);
-        if (udt != UT_NOT_DEFINED) {
-            CTIerrorLine (global.linenum,
-                          "Type %s:%s multiply defined;"
-                          " previous definition in line %d",
-                          mod, name, UTgetLine (udt));
-        }
-
-        DBUG_EXECUTE ("UDT", tmp_str = TYtype2String (nt, FALSE, 0););
-        DBUG_PRINT ("UDT", ("adding user type %s:%s defined as %s", mod, name, tmp_str));
-        DBUG_EXECUTE ("UDT", tmp_str = ILIBfree (tmp_str););
-
-        udt = UTaddUserType (name, mod, nt, NULL, global.linenum, arg_node);
-    } else {
-        DBUG_EXECUTE ("UDT", tmp_str = TYtype2String (nt, FALSE, 0););
-        DBUG_PRINT ("UDT", ("passing user type %s:%s defined as %s", mod, name, tmp_str));
-        DBUG_EXECUTE ("UDT", tmp_str = ILIBfree (tmp_str););
-
-        udt = UTfindUserType (name, mod);
-    }
-
-    if (TYPEDEF_NEXT (arg_node) != NULL)
-        TYPEDEF_NEXT (arg_node) = TRAVdo (TYPEDEF_NEXT (arg_node), arg_info);
+    udt = UTfindUserType (TYPEDEF_NAME (arg_node), TYPEDEF_MOD (arg_node));
 
     if (TYPEDEF_ISLOCAL (arg_node)) {
         base = NTCcheckUdtAndSetBaseType (udt, NULL);
@@ -852,7 +832,13 @@ NTCtypedef (node *arg_node, info *arg_info)
         base = UTgetBaseType (udt);
     }
 
+    /*
+    TYPEDEF_NTYPE( arg_node) = TYfreeType( TYPEDEF_NTYPE( arg_node));
+    */
     TYPEDEF_NTYPE (arg_node) = base;
+
+    if (TYPEDEF_NEXT (arg_node) != NULL)
+        TYPEDEF_NEXT (arg_node) = TRAVdo (TYPEDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
