@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.166  2005/05/31 18:16:14  sah
+# added resolve symbol types phase
+#
 # Revision 3.165  2005/05/22 19:45:53  sah
 # added first implementation steps for import
 #
@@ -168,7 +171,8 @@ TYPECHECK= src/typecheck/gen_pseudo_fun.o \
            src/typecheck/specialize.o src/typecheck/new2old.o \
            src/typecheck/create_wrapper_code.o \
            src/typecheck/type_statistics.o \
-           src/typecheck/type_utils.o
+           src/typecheck/type_utils.o \
+           src/typecheck/resolvesymboltypes.o
 
 OPTIMIZE= src/optimize/optimize.o \
           src/optimize/DeadFunctionRemoval.o \

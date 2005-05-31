@@ -356,7 +356,9 @@
 	  <node name="Do" />
 	  <node name="SPAp" />
 	  <node name="SPMop" />
+	  <node name="Avis" />
 	  <node name="Arg" />
+	  <node name="Ret" />
 	  <node name="Vardec" />
 	  <node name="SPIds" />
 	  <node name="SPId" />
@@ -465,6 +467,16 @@
           <node name="With" />
           <node name="Genarray" />
           <node name="Fold" />
+        </travuser>
+      </traversal>
+      <traversal id="RST" name="Resolve Symbol Types" default="sons" include="resolvesymboltypes.h" >
+        <travuser>
+          <node name="Module" />
+          <node name="Fundef" />
+          <node name="Arg" />
+          <node name="Ret" />
+          <node name="Avis" />
+          <node name="Typedef" />
         </travuser>
       </traversal>
       <traversal id="NT2OT" name="Convert from new to old types and do some cleanup" default="sons" include="new2old.h" >

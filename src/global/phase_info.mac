@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.22  2005/05/31 18:16:14  sah
+ * added resolve symbol types phase
+ *
  * Revision 3.21  2005/05/22 19:45:53  sah
  * added first implementation steps for import
  *
@@ -191,6 +194,8 @@ SUBPHASE (tc, "tc", "Running type inference system", PHdummy)
 SUBPHASE (ds, "ds", "Deserializing code", PHdummy)
 
 SUBPHASE (cwc, "cwc", "Creating wrapper code", PHdummy)
+
+SUBPHASE (rst, "rst", "Resolving symbol types", PHdummy)
 
 SUBPHASE (nt2ot, "nt2ot", "Cleaning up type inference system", PHdummy)
 
