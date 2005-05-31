@@ -1,5 +1,13 @@
 /*
  * $Log$
+ * Revision 3.112  2005/05/31 11:52:58  ktr
+ * Rewrote the predicate deciding which with-loops can be converted into
+ * with2 representation.
+ * Only with-loops with AKS index vectors and a full partition will be
+ * converted.
+ * Especially, with-loops with AKS index vector WITHOUT a full partition are
+ * rejected as they must be provided with a full partition by WLPG.
+ *
  * Revision 3.111  2005/05/30 05:41:29  ktr
  * With-loop transformation is now performed for only those with-loops
  * with full partitions.
@@ -7117,19 +7125,15 @@ WLTRAwith (node *arg_node, info *arg_info)
         withop = WITHOP_NEXT (withop);
     }
 
-    idx_type = IDS_NTYPE (WITH_VEC (arg_node));
+    idx_type = TYeliminateAKV (IDS_NTYPE (WITH_VEC (arg_node)));
 
-    if (WITH_PARTS (arg_node) <= 0) {
-        DBUG_ASSERT (!(TYisAKV (idx_type) || TYisAKS (idx_type)),
-                     "AKD with-loop without full partition encountered!");
+    if (!TYisAKS (idx_type)) {
 
         DBUG_EXECUTE ("WLtrans",
-                      CTInote ("with-loop without full partition found (line %d)",
+                      CTInote ("With-loop without full partition found (line %d)",
                                global.linenum););
         new_node = arg_node;
     } else {
-        DBUG_ASSERT ((TYisAKV (idx_type) || TYisAKS (idx_type)),
-                     "Index vector of full-partition with-loop must be AKS!");
         /*
          * index vector is AKS:
          * Number of dimensions of the iteration space is known
@@ -7137,6 +7141,9 @@ WLTRAwith (node *arg_node, info *arg_info)
         node *strides;
         int iter_dims;   /* >= 0 */
         shape *iter_shp; /* may be NULL! */
+
+        DBUG_ASSERT ((WITH_PARTS (arg_node) > 0),
+                     "With-loop with AKS index vector is not fully partitioned!");
 
         DBUG_EXECUTE ("WLtrans", CTInote ("with-loop with AKS withid found (line %d)",
                                           global.linenum););
@@ -7277,6 +7284,8 @@ WLTRAwith (node *arg_node, info *arg_info)
         /* old WL-representation is no longer needed */
         arg_node = FREEdoFreeTree (arg_node);
     }
+
+    idx_type = TYfreeType (idx_type);
 
     DBUG_EXECUTE ("WLtrans", CTInote ("<<< <<< leaving with-loop"););
 
