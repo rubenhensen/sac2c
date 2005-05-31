@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2005/05/31 18:15:35  sah
+ * made the alpha-a-lizer functions symbol-type aware
+ *
  * Revision 1.10  2005/05/24 08:26:34  sbs
  * TUretypes2alpha modified.
  *
@@ -217,7 +220,7 @@ TUrettypes2alphaAUD (node *rets)
             }
         } else {
             scalar = TYgetScalar (RET_TYPE (tmp));
-            if (TYgetSimpleType (scalar) == T_unknown) {
+            if ((TYisSimple (scalar) && (TYgetSimpleType (scalar) == T_unknown))) {
                 new = TYmakeAlphaType (NULL);
             } else {
                 new = TYmakeAlphaType (TYmakeAUD (TYcopyType (scalar)));
@@ -252,7 +255,7 @@ TUrettypes2alpha (node *rets)
     while (tmp != NULL) {
         if (!TYisAlpha (RET_TYPE (tmp))) {
             scalar = TYgetScalar (RET_TYPE (tmp));
-            if (TYgetSimpleType (scalar) == T_unknown) {
+            if ((TYisSimple (scalar) && (TYgetSimpleType (scalar) == T_unknown))) {
                 new = TYmakeAlphaType (NULL);
                 RET_TYPE (tmp) = TYfreeType (RET_TYPE (tmp));
             } else {
