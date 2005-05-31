@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2005/05/31 09:45:35  sah
+ * libbuilding process now uses -o flag to determine
+ * targetdir
+ *
  * Revision 1.7  2005/04/12 15:15:36  sah
  * cleaned up module system compiler args
  * and sac2crc parameters
@@ -79,21 +83,22 @@ LIBBcreateLibrary (stringset_t *deps)
 
     deplibs = STRSfold (&BuildDepLibsStringMod, deps, ILIBstringCopy (""));
 
-    ILIBsystemCall ("%s lib%s.a %s/fun*.o %s", global.config.ar_create, global.modulename,
-                    global.tmp_dirname, deplibs);
+    ILIBsystemCall ("%s %slib%s.a %s/fun*.o %s", global.config.ar_create,
+                    global.targetdir, global.modulename, global.tmp_dirname, deplibs);
 
     if (global.config.ranlib[0] != '\0') {
-        ILIBsystemCall ("%s lib%s.a", global.config.ranlib, global.modulename);
+        ILIBsystemCall ("%s %slib%s.a", global.config.ranlib, global.targetdir,
+                        global.modulename);
     }
 
     deplibs = ILIBfree (deplibs);
 
     CTInote ("Creating shared SAC library `lib%s.so'", global.modulename);
 
-    ILIBsystemCall ("%s -o lib%s.so %s/serialize.o %s/symboltable.o"
+    ILIBsystemCall ("%s -o %slib%s.so %s/serialize.o %s/symboltable.o"
                     " %s/dependencytable.o",
-                    global.config.ld_dynamic, global.modulename, global.tmp_dirname,
-                    global.tmp_dirname, global.tmp_dirname);
+                    global.config.ld_dynamic, global.targetdir, global.modulename,
+                    global.tmp_dirname, global.tmp_dirname, global.tmp_dirname);
 
     DBUG_VOID_RETURN;
 }

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2005/05/31 09:45:35  sah
+ * libbuilding process now uses -o flag to determine
+ * targetdir
+ *
  * Revision 1.11  2005/04/26 16:13:54  sah
  * adopted path_bufs size to new situation
  *
@@ -596,9 +600,6 @@ FMGRsetFileNames (node *module)
 {
     char *buffer;
 
-    /*
-     * TODO: clean up this function
-     */
     DBUG_ENTER ("FMGRsetFileNames");
 
     global.filetype = MODULE_FILETYPE (module);
@@ -640,7 +641,7 @@ FMGRsetFileNames (node *module)
 
         global.modulename = ILIBstringCopy (MODULE_NAME (module));
         global.cfilename = ILIBstringConcat (MODULE_NAME (module), ".c");
-        global.outfilename = ILIBstringConcat (MODULE_NAME (module), ".lib");
+        global.outfilename = ILIBstringConcat (MODULE_NAME (module), ".out");
 
         global.targetdir = ILIBstringCopy (FMGRabsolutePathname (global.targetdir));
     }
