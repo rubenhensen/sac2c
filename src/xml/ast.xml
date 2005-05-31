@@ -2436,6 +2436,10 @@
         <flag name="IsAliasing" default="TRUE" />
         <flag name="IsRefcounted" default="TRUE" />
         <flag name="HasLinksignInfo" />
+	<flag name="IsInUse" default="FALSE" >
+	  <description> Used to mark unused function arguments in DeadCodeRemoval. Marked arguments are removed in signature simplification.
+	  </description>
+        </flag>	  
       </flags>
     </node>
 <!--
