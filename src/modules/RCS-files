@@ -27,3 +27,4 @@ dependencies.c
 dependencies.h
 importsymbols.c
 importsymbols.h
+gatherdependencies.c
