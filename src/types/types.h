@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.24  2005/06/01 18:00:56  sah
+ * removed some old unused filetypes
+ *
  * Revision 1.23  2005/06/01 12:47:45  sah
  * added lots of runtime paths
  *
@@ -322,18 +325,7 @@ typedef enum {
 
 typedef enum { DOLLAR, VECT, IDX } useflag;
 
-typedef enum {
-    F_prog,
-    F_modimp,
-    F_classimp,
-    F_moddec,
-    F_extmoddec,
-    F_classdec,
-    F_extclassdec,
-    F_sib,
-    F_modspec,
-    F_unknown
-} file_type;
+typedef enum { F_prog, F_modimp, F_classimp, F_modspec, F_unknown } file_type;
 
 typedef enum { CT_normal, CT_ap, CT_array, CT_return, CT_wl } contextflag;
 
