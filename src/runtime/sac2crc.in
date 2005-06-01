@@ -50,27 +50,11 @@ RSH              :=  rsh
 DUMP_OUTPUT      :=  ">/dev/null 2>&1"
  
 LIBPATH          :=  ""
+IMPPATH          :=  ""
+EXTLIBPATH       :=  ""
  
-SYSTEM_LIBPATH   :=  ""
-
-/*
-SYSTEM_LIBPATH   :=  "/usr/ccs/bin:" (sun)
-                     "/usr/ccs/lib:"
-                     "/opt/gnu/lib:"
-                     "/lib:"
-                     "/usr/lib:"
-                     "/home/sacbase/efence"
-
-SYSTEM_LIBPATH   :=  "/usr/lib:/lib:/usr/local/lib:"   (linux,alpha,mac)
-                     "/home/sac/lib/efence"
-*/
-
 TMPDIR           :=  "/tmp"
 
-/*
-TMPDIR           :=  "/var/tmp" (sun)
-TMPDIR           :=  "/tmp" (linux,alpha,mac)
-*/
 CACHE1_SIZE      :=  0
 CACHE1_LINE      :=  0
 CACHE1_ASSOC     :=  0

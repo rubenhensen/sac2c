@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  2005/06/01 12:47:45  sah
+ * added lots of runtime paths
+ *
  * Revision 1.16  2005/05/25 20:27:45  sah
  * modified error propagation
  *
@@ -123,7 +126,7 @@ AddModuleToPool (const char *name)
     tmp = ILIBmalloc (sizeof (char) * (strlen (name) + 7));
     sprintf (tmp, "lib%s.so", name);
 
-    result->sofile = ILIBstringCopy (FMGRfindFile (PK_mod_path, tmp));
+    result->sofile = ILIBstringCopy (FMGRfindFile (PK_lib_path, tmp));
 
     if (result->sofile == NULL) {
         CTIabort ("Cannot find library `%s' for module `%s'", tmp, name);

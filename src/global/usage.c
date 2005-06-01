@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.78  2005/06/01 12:47:45  sah
+ * added lots of runtime paths
+ *
  * Revision 3.77  2005/05/17 11:36:46  cg
  * Option -maxinl replace by -maxrecinl.
  *
@@ -140,6 +143,8 @@ USGprintUsage ()
             "    -cppI <path>    Specify path for preprocessor includes.\n"
             "\n"
             "    -L <path>       Specify additional SAC library file path.\n"
+            "    -I <path>       Specify additional SAC library source file path.\n"
+            "    -E <path>       Specify additional C library file path.\n"
             "\n"
             "    -o <name>       For compilation of programs:\n"
             "                      Write executable to specified file.\n"
@@ -851,19 +856,15 @@ USGprintUsage ()
             "                    from a file named .sac2crc within the user's home\n"
             "                    directory.\n");
 
-    printf (
-      "\n\nENVIRONMENT VARIABLES:\n\n"
+    printf ("\n\nENVIRONMENT VARIABLES:\n\n"
 
-      "    The following environment variables are used by sac2c:\n"
-      "\n"
-      "    SACBASE           Base directory of SAC installation.\n"
-      "    SAC_PATH          Search path for SAC source code files.\n"
-      "    SAC_DEC_PATH      Search path for module/class declaration files.\n"
-      "    SAC_LIBRARY_PATH  Search path for SAC library files.\n"
-      "\n"
-      "    The following environment variables must be set correctly when compiling\n"
-      "    a SAC module/class implementation in order to enable full usability of\n"
-      "    sac2c command line option \"-libstat\": PWD, USER, and HOST.\n");
+            "    The following environment variables are used by sac2c:\n"
+            "\n"
+            "    SACBASE                  Base directory of SAC installation.\n"
+            "    SAC_PATH                 Search path for SAC source code files.\n"
+            "    SAC_LIBRARY_PATH         Search path for SAC library files.\n"
+            "    SAC_IMPLEMENTATION_PATH  Search path for SAC library source files.\n"
+            "\n");
 
     printf ("\n\nAUTHORS:\n\n"
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2005/06/01 12:47:45  sah
+ * added lots of runtime paths
+ *
  * Revision 3.17  2005/04/12 15:15:36  sah
  * cleaned up module system compiler args
  * and sac2crc parameters
@@ -220,8 +223,9 @@ static struct {
   {"RSH", str, &global.config.rsh},
   {"DUMP_OUTPUT", str, &global.config.dump_output},
 
-  {"LIBPATH", str, &global.config.modpath},
-  {"SYSTEM_LIBPATH", str, &global.config.system_libpath},
+  {"LIBPATH", str, &global.config.libpath},
+  {"IMPPATH", str, &global.config.imppath},
+  {"EXTLIBPATH", str, &global.config.extlibpath},
   {"TMPDIR", str, &global.config.tmpdir},
 
   {"CACHE1_SIZE", num, &global.config.cache1_size},

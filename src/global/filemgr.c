@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2005/06/01 12:47:45  sah
+ * added lots of runtime paths
+ *
  * Revision 1.12  2005/05/31 09:45:35  sah
  * libbuilding process now uses -o flag to determine
  * targetdir
@@ -147,8 +150,8 @@
 #include "resource.h"
 #include "tree_basic.h"
 
-static char path_bufs[3][MAX_PATH_LEN];
-static int bufsize[3];
+static char path_bufs[4][MAX_PATH_LEN];
+static int bufsize[4];
 
 /*
  *
@@ -454,16 +457,22 @@ FMGRsetupPaths ()
     DBUG_ENTER ("FMGRsetupPaths");
 
     FMGRappendPath (PK_path, ".");
-    FMGRappendPath (PK_mod_path, ".");
+    FMGRappendPath (PK_lib_path, ".");
+    FMGRappendPath (PK_imp_path, ".");
+    FMGRappendPath (PK_extlib_path, ".");
 
     AppendEnvVar (PK_path, "SAC_PATH");
-    AppendEnvVar (PK_mod_path, "SAC_LIBRARY_PATH");
+    AppendEnvVar (PK_lib_path, "SAC_LIBRARY_PATH");
+    AppendEnvVar (PK_imp_path, "SAC_IMPLEMENTATION_PATH");
 
-    AppendConfigPaths (PK_mod_path, global.config.modpath);
+    AppendConfigPaths (PK_lib_path, global.config.libpath);
+    AppendConfigPaths (PK_imp_path, global.config.imppath);
+    AppendConfigPaths (PK_extlib_path, global.config.extlibpath);
 
     DBUG_PRINT ("FMGR", ("PATH is %s", path_bufs[PK_path]));
-    DBUG_PRINT ("FMGR", ("MOD_PATH is %s", path_bufs[PK_mod_path]));
-    DBUG_PRINT ("FMGR", ("SYSTEMLIB_PATH is %s", path_bufs[PK_systemlib_path]));
+    DBUG_PRINT ("FMGR", ("LIB_PATH is %s", path_bufs[PK_lib_path]));
+    DBUG_PRINT ("FMGR", ("IMP_PATH is %s", path_bufs[PK_imp_path]));
+    DBUG_PRINT ("FMGR", ("EXTLIB_PATH is %s", path_bufs[PK_extlib_path]));
 
     DBUG_VOID_RETURN;
 }

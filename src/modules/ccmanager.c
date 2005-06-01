@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2005/06/01 12:47:45  sah
+ * added lots of runtime paths
+ *
  * Revision 1.11  2005/04/12 15:15:36  sah
  * cleaned up module system compiler args
  * and sac2crc parameters
@@ -175,10 +178,10 @@ AddEfenceLib (str_buf *buffer)
     if (global.use_efence) {
         char *efence;
 
-        efence = ILIBstringCopy (FMGRfindFile (PK_systemlib_path, "libefence.a"));
+        efence = ILIBstringCopy (FMGRfindFile (PK_extlib_path, "libefence.a"));
 
         if (efence == NULL) {
-            CTIwarn ("Unable to find `libefence.a' in SYSTEMLIB_PATH");
+            CTIwarn ("Unable to find `libefence.a' in EXTLIB_PATH");
         } else {
             ILIBstrBufPrintf (buffer, "%s ", efence);
         }
@@ -223,12 +226,21 @@ BuildDepLibsStringProg (const char *lib, strstype_t kind, void *rest)
          */
         libname = ILIBmalloc (sizeof (char) * (strlen (lib) + 6));
         sprintf (libname, "lib%s.a", lib);
-        result = ILIBstringCopy (FMGRfindFile (PK_mod_path, libname));
+        result = ILIBstringCopy (FMGRfindFile (PK_lib_path, libname));
         libname = ILIBfree (libname);
         break;
     case STRS_extlib:
-        result = ILIBmalloc (sizeof (char) * (strlen (lib) + 3));
-        sprintf (result, "-l%s", lib);
+        libname = ILIBmalloc (sizeof (char) * (strlen (lib) + 6));
+        sprintf (libname, "lib%s.a", lib);
+        result = ILIBstringCopy (FMGRfindFile (PK_extlib_path, libname));
+        if (result == 0) {
+            /*
+             * the library cannot be found, so leave it to the c
+             * compiler to look it up
+             */
+            result = ILIBmalloc (sizeof (char) * (strlen (lib) + 3));
+            sprintf (result, "-l%s", lib);
+        }
         break;
     case STRS_objfile:
         result = ILIBmalloc (sizeof (char) * (strlen (lib) + 3));

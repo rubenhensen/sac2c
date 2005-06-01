@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.92  2005/06/01 12:47:45  sah
+ * added lots of runtime paths
+ *
  * Revision 3.91  2005/05/30 13:07:55  cg
  * Option -maxrecinl de-activated temporarily.
  *
@@ -519,10 +522,21 @@ OPTanalyseCommandline (node *syntax_tree)
 
     ARGS_OPTION_BEGIN ("L")
     {
-        FMGRappendPath (PK_mod_path, FMGRabsolutePathname (ARG));
-        FMGRappendPath (PK_systemlib_path, FMGRabsolutePathname (ARG));
+        FMGRappendPath (PK_lib_path, FMGRabsolutePathname (ARG));
     }
     ARGS_OPTION_END ("L");
+
+    ARGS_OPTION_BEGIN ("I")
+    {
+        FMGRappendPath (PK_imp_path, FMGRabsolutePathname (ARG));
+    }
+    ARGS_OPTION_END ("I");
+
+    ARGS_OPTION_BEGIN ("E")
+    {
+        FMGRappendPath (PK_extlib_path, FMGRabsolutePathname (ARG));
+    }
+    ARGS_OPTION_END ("E");
 
     ARGS_FLAG ("mt", {
         if (store_mtmode == MT_none) {

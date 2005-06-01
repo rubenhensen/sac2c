@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.23  2005/06/01 12:47:45  sah
+ * added lots of runtime paths
+ *
  * Revision 1.22  2005/04/12 15:15:36  sah
  * cleaned up module system compiler args
  * and sac2crc parameters
@@ -884,8 +887,9 @@ typedef struct {
     char *rsh;
     char *dump_output;
 
-    char *modpath;
-    char *system_libpath;
+    char *libpath;
+    char *imppath;
+    char *extlibpath;
     char *tmpdir;
 
     int cache1_size;
@@ -926,7 +930,12 @@ typedef void *(*strsfoldfun_p) (const char *elem, strstype_t kind, void *rest);
  * moved from filemgr.h
  */
 
-typedef enum { PK_path = 0, PK_mod_path = 1, PK_systemlib_path = 2 } pathkind_t;
+typedef enum {
+    PK_path = 0,
+    PK_lib_path = 1,
+    PK_imp_path = 2,
+    PK_extlib_path = 3
+} pathkind_t;
 
 /*
  * moved from libmanager.h
