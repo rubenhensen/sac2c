@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.18  2005/06/01 15:57:57  sah
+ * fixed an error message
+ *
  * Revision 1.17  2005/06/01 12:47:45  sah
  * added lots of runtime paths
  *
@@ -150,7 +153,8 @@ AddModuleToPool (const char *name)
 
     if (!hasSameASTVersion (result)) {
         CTIabort ("Module `%s' was compiled using an incompatible version of "
-                  "sac2c.");
+                  "sac2c.",
+                  name);
     }
 
     DBUG_RETURN (result);
