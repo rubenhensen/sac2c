@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.24  2005/06/01 14:02:02  ktr
+ * Extended criteria for copy assignment insertion
+ *
  * Revision 1.23  2005/05/13 16:43:20  ktr
  * Copy assignments are now inserted if conditional results are given by fill-
  * operations. This is necessary for the consistent top-down renaming performed
@@ -393,6 +396,54 @@ USSATcond (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
+ *   bool IdGivenByFillOperation( node *id)
+ *
+ * description:
+ *
+ *****************************************************************************/
+static bool
+IdGivenByFillOperation (node *idavis)
+{
+    bool res = FALSE;
+
+    DBUG_ENTER ("IdGivenByFillOperation");
+
+    if (AVIS_SSAASSIGN (idavis) != NULL) {
+        node *ids, *expr;
+
+        ids = ASSIGN_LHS (AVIS_SSAASSIGN (idavis));
+        expr = ASSIGN_RHS (AVIS_SSAASSIGN (idavis));
+
+        if (NODE_TYPE (expr) == N_prf) {
+            res = (PRF_PRF (expr) == F_fill);
+        } else {
+            if ((NODE_TYPE (expr) == N_with) || (NODE_TYPE (expr) == N_with2)) {
+                node *ops;
+
+                if (NODE_TYPE (expr) == N_with) {
+                    ops = WITH_WITHOP (expr);
+                } else {
+                    ops = WITH2_WITHOP (expr);
+                }
+
+                while (IDS_AVIS (ids) != idavis) {
+                    ids = IDS_NEXT (ids);
+                    ops = WITHOP_NEXT (ops);
+                }
+
+                res
+                  = (((NODE_TYPE (ops) == N_genarray) || (NODE_TYPE (ops) == N_modarray))
+                     && (WITHOP_MEM (ops) != NULL));
+            }
+        }
+    }
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *USSATfuncond(node *arg_node, info *arg_info)
  *
  * description:
@@ -424,15 +475,16 @@ USSATfuncond (node *arg_node, info *arg_info)
      *  - t,e are not given by fill-operations (after memory management)
      *    The renaming scheme applied by PREC:MMV for good reasons relies on the
      *    presence of a subsequent copy assignment
+     *
+     *  - t,e are not given by genarray oder modarray with-loops
+     *    for the same reason they must not be given by fill operations.
      */
 
     /*
      * Try to trigger replacement of t with r
      */
     rhsavis = ID_AVIS (FUNCOND_THEN (arg_node));
-    if ((NODE_TYPE (AVIS_DECL (rhsavis)) == N_arg)
-        || ((NODE_TYPE (ASSIGN_RHS (AVIS_SSAASSIGN (rhsavis))) == N_prf)
-            && (PRF_PRF (ASSIGN_RHS (AVIS_SSAASSIGN (rhsavis))) == F_fill))
+    if ((NODE_TYPE (AVIS_DECL (rhsavis)) == N_arg) || (IdGivenByFillOperation (rhsavis))
         || (AVIS_SUBST (rhsavis) != NULL)) {
 
         /*
@@ -449,9 +501,7 @@ USSATfuncond (node *arg_node, info *arg_info)
      * Try to trigger replacement of e with r
      */
     rhsavis = ID_AVIS (FUNCOND_ELSE (arg_node));
-    if ((NODE_TYPE (AVIS_DECL (rhsavis)) == N_arg)
-        || ((NODE_TYPE (ASSIGN_RHS (AVIS_SSAASSIGN (rhsavis))) == N_prf)
-            && (PRF_PRF (ASSIGN_RHS (AVIS_SSAASSIGN (rhsavis))) == F_fill))
+    if ((NODE_TYPE (AVIS_DECL (rhsavis)) == N_arg) || (IdGivenByFillOperation (rhsavis))
         || (AVIS_SUBST (rhsavis) != NULL)) {
 
         /*
