@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.9  2005/06/01 08:12:15  sbs
+ * ct on modarray wls lacked some essential checks.
+ *
  * Revision 1.8  2004/11/24 17:42:07  sbs
  * compiles
  *
@@ -188,6 +191,8 @@ NTCCTwl_mod (te_info *info, ntype *args)
     res = TYnestTypes (dummy, expr);
     TYfreeType (dummy);
 
+    TEassureIntVect ("index expression of modarray with loop", idx);
+    TEassureSameScalarType ("array to be modified", array, "body expression", expr);
     res = TEassureSameShape ("array expression", array, "result of modarray with loop",
                              res);
 
