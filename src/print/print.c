@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.215  2005/06/01 15:51:08  sah
+ * this needs to be rewritten. ASAP!
+ *
  * Revision 3.214  2005/05/27 20:53:29  ktr
  * chenged WLGRIDX_FITTED to WLGRIDX_ISFITTED
  *
@@ -689,6 +692,14 @@ Argtab2Fundef (node *fundef)
 
     DBUG_ASSERT ((argtab->ptr_in[0] == NULL), "argtab inconsistent");
 
+    /*
+     * TODO: doesn't this introduce sharing?!?
+     *       afaik one cannot call this function twice
+     *       as it will segfault???
+     *       Furthermore the entire idea to generate a fundef
+     *       from the argtab just 2 print it is fubar. It
+     *       would be much better to print it directly.
+     */
     rets = argtab->ptr_out[0];
 
     for (i = argtab->size - 1; i >= 1; i--) {
@@ -1485,15 +1496,23 @@ PRTfundef (node *arg_node, info *arg_info)
 
             if (FUNDEF_ISWRAPPERFUN (arg_node)) {
                 if (FUNDEF_BODY (arg_node) == NULL) {
-                    fprintf (global.outfile, "/*\n");
-                    INDENT;
-                    fprintf (global.outfile, " * wrapper function:\n");
-                    INDENT;
-                    fprintf (global.outfile, " *   ");
-                    PrintFunctionHeader (arg_node, arg_info, TRUE);
-                    fprintf (global.outfile, "\n");
-                    INDENT;
-                    fprintf (global.outfile, " */\n\n");
+                    /*
+                     * there is no reason to print anything here
+                     * as we already have printed a header earlier
+                     * and without body there is no further
+                     * information to print
+                     */
+#if 0
+          fprintf( global.outfile, "/*\n");
+          INDENT;
+          fprintf( global.outfile, " * wrapper function:\n");
+          INDENT;
+          fprintf( global.outfile, " *   ");
+          PrintFunctionHeader( arg_node, arg_info, TRUE);
+          fprintf( global.outfile, "\n");
+          INDENT;
+          fprintf( global.outfile, " */\n\n");
+#endif
                 } else {
                     fprintf (global.outfile, "/* wrapper function */\n");
                 }
