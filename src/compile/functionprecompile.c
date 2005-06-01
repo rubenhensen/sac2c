@@ -1,5 +1,11 @@
 /*
  * $Log$
+ * Revision 1.13  2005/06/01 22:02:32  sah
+ * fixed InsertIntoOut. the FUNDEF_RETURN is only set if
+ * the function has a body and this will be compiled.
+ * In all other cases the FUNDEF_RETURN does not exist and
+ * is not needed!
+ *
  * Revision 1.12  2005/02/16 22:29:13  sah
  * added some DBUGS and fixed a small bug
  *
@@ -260,27 +266,33 @@ InsertIntoOut (argtab_t *argtab, node *fundef, node *ret)
 
         /*
          * lookup the return N_exprs node corresponding to the current ret node
-         * and save it as the c return expression for later use in compile
+         * and save it as the c return expression for later use in compile.
+         * this is only done if the function has a body and thus will be
+         * compiled.
          */
 
-        DBUG_ASSERT ((FUNDEF_RETURN (fundef) != NULL),
-                     "FUNDEF_RETURN is missing although return values do exist.");
+        if (FUNDEF_BODY (fundef) != NULL) {
+            DBUG_ASSERT ((FUNDEF_RETURN (fundef) != NULL), "FUNDEF_RETURN is missing "
+                                                           "although return values do "
+                                                           "exist and body"
+                                                           " is non null.");
 
-        DBUG_ASSERT ((NODE_TYPE (FUNDEF_RETURN (fundef)) == N_return),
-                     "no N_return node found!");
+            DBUG_ASSERT ((NODE_TYPE (FUNDEF_RETURN (fundef)) == N_return),
+                         "no N_return node found!");
 
-        retexprs = RETURN_EXPRS (FUNDEF_RETURN (fundef));
-        rets = FUNDEF_RETS (fundef);
+            retexprs = RETURN_EXPRS (FUNDEF_RETURN (fundef));
+            rets = FUNDEF_RETS (fundef);
 
-        while ((rets != NULL) && (retexprs != NULL) && (rets != ret)) {
-            rets = RET_NEXT (rets);
-            retexprs = EXPRS_NEXT (retexprs);
+            while ((rets != NULL) && (retexprs != NULL) && (rets != ret)) {
+                rets = RET_NEXT (rets);
+                retexprs = EXPRS_NEXT (retexprs);
+            }
+
+            DBUG_ASSERT (((retexprs != NULL) && (rets != NULL)),
+                         "not enough return values found!");
+
+            RETURN_CRET (FUNDEF_RETURN (fundef)) = retexprs;
         }
-
-        DBUG_ASSERT (((retexprs != NULL) && (rets != NULL)),
-                     "not enough return values found!");
-
-        RETURN_CRET (FUNDEF_RETURN (fundef)) = retexprs;
     }
     /*
      * update the argtab
