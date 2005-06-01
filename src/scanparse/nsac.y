@@ -4,6 +4,9 @@
 /*
 *
 * $Log$
+* Revision 1.34  2005/06/01 20:34:21  sah
+* fixed creation of to_string call
+*
 * Revision 1.33  2005/06/01 18:05:04  sbs
 * now, pragmas on erxternal fundecs follow the fundec rather than being
 * notated before the SEMIC!!!!
@@ -1975,7 +1978,7 @@ node *String2Array(char *str)
   node *new_exprs;
   int i, cnt;
   node *array;
-  node *len_exprs;
+  node *len_expr;
   node *res;
 
   DBUG_ENTER( "String2Array");
@@ -2031,7 +2034,7 @@ node *String2Array(char *str)
     cnt+=1;
   }
 
-  len_exprs = TBmakeExprs( TBmakeNum( cnt), NULL);
+  len_expr = TBmakeNum( cnt);
   array = TCmakeFlatArray( new_exprs);
 
 #ifndef CHAR_ARRAY_NOT_AS_STRING
@@ -2039,7 +2042,7 @@ node *String2Array(char *str)
 #endif  /* CHAR_ARRAY_AS_STRING */
 
   res = TCmakeSpap2( ILIBstringCopy( "String") , ILIBstringCopy( "to_string"), 
-                    array, len_exprs);
+                    array, len_expr);
 
   DBUG_RETURN( res); 
 }
