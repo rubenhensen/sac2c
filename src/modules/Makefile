@@ -1,6 +1,11 @@
 #
 #
 # $Log$
+# Revision 3.29  2005/06/01 16:59:05  sah
+# separated annotating namespaces and gathering dependencies in two
+# phase to allow for reusing the gathering phase to print the
+# dependencies of a module.
+#
 # Revision 3.28  2005/05/22 19:45:53  sah
 # added first implementation steps for import
 #
@@ -114,7 +119,8 @@ include $(PROJECT_ROOT)/Makefile.Config
 OBJS := symboltable.o stringset.o \
         libmanager.o modulemanager.o libstat.o export.o \
         ccmanager.o libbuilder.o resolveall.o annotatenamespace.o \
-        usesymbols.o prepareinline.o dependencies.o importsymbols.o
+        usesymbols.o prepareinline.o dependencies.o importsymbols.o \
+        gatherdependencies.o
 
 all: $(OBJS)
 

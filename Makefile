@@ -1,6 +1,11 @@
 
 #
 # $Log$
+# Revision 3.167  2005/06/01 16:59:05  sah
+# separated annotating namespaces and gathering dependencies in two
+# phase to allow for reusing the gathering phase to print the
+# dependencies of a module.
+#
 # Revision 3.166  2005/05/31 18:16:14  sah
 # added resolve symbol types phase
 #
@@ -206,7 +211,7 @@ MODULES= src/modules/symboltable.o \
          src/modules/libbuilder.o src/modules/resolveall.o \
          src/modules/annotatenamespace.o src/modules/usesymbols.o \
          src/modules/prepareinline.o src/modules/dependencies.o \
-         src/modules/importsymbols.o
+         src/modules/importsymbols.o src/modules/gatherdependencies.o
 
 OBJECTS= src/objects/objinit.o src/objects/objects.o \
          src/objects/uniquecheck.o src/objects/objanalysis.o

@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.102  2005/06/01 16:59:05  sah
+ * separated annotating namespaces and gathering dependencies in two
+ * phase to allow for reusing the gathering phase to print the
+ * dependencies of a module.
+ *
  * Revision 3.101  2005/05/27 20:34:11  ktr
  * removed conversion fto and from old types around application of
  * WLTransform
@@ -94,6 +99,7 @@
 #include "libstat.h"
 #include "resolveall.h"
 #include "annotatenamespace.h"
+#include "gatherdependencies.h"
 #include "importsymbols.h"
 #include "usesymbols.h"
 #include "libstat.h"
@@ -234,6 +240,8 @@ main (int argc, char *argv[])
     RSAdoResolveAll (syntax_tree);
     NOTE (("Resolving namespaces..."));
     ANSdoAnnotateNamespace (syntax_tree);
+    NOTE (("Gathering dependencies..."));
+    GDPdoGatherDependencies (syntax_tree);
     NOTE (("Getting imported symbols..."));
     IMPdoImportSymbols (syntax_tree);
     NOTE (("Getting used symbols..."));

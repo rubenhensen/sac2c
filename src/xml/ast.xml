@@ -342,6 +342,22 @@
 	  <node name="Module" />
 	</travuser>
       </traversal>
+      <traversal id="GDP" name="Gather Dependencies" default="sons" include="gatherdependencies.h">
+        <travuser>
+	  <node name="Use" />
+	  <node name="Import" />
+	  <node name="Fundef" />
+	  <node name="Typedef" />
+	  <node name="Objdef" />
+	  <node name="Avis" />
+	  <node name="Arg" />
+	  <node name="Ret" />
+	  <node name="Vardec" />
+	  <node name="SPId" />
+	  <node name="Fold" />
+	  <node name="Module" />
+	</travuser>
+      </traversal>
       <traversal id="ANS" name="Annotate Namespaces" default="sons" include="annotatenamespace.h">
         <travuser>
 	  <node name="Symbol" />

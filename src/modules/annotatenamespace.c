@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.27  2005/06/01 16:59:05  sah
+ * separated annotating namespaces and gathering dependencies in two
+ * phase to allow for reusing the gathering phase to print the
+ * dependencies of a module.
+ *
  * Revision 1.26  2005/05/31 18:13:13  sah
  * even more namespaces are set now...
  *
@@ -187,23 +192,6 @@ LookupNamespaceForSymbol (const char *name, info *info)
     DBUG_RETURN (result);
 }
 
-static void
-AddNamespaceToDependencies (const char *ns, info *info)
-{
-    DBUG_ENTER ("AddNamespaceToDependencies");
-
-    if (!ILIBstringCompare (MODULE_NAME (INFO_ANS_MODULE (info)), ns)) {
-        /*
-         * this symbol comes from another namespace
-         *  -> add the namespace to the dependency list
-         */
-        MODULE_DEPENDENCIES (INFO_ANS_MODULE (info))
-          = STRSadd (ns, STRS_saclib, MODULE_DEPENDENCIES (INFO_ANS_MODULE (info)));
-    }
-
-    DBUG_VOID_RETURN;
-}
-
 /*
  * Traversal functions
  */
@@ -218,8 +206,6 @@ ANStypes (types *arg_types, info *arg_info)
         TYPES_MOD (arg_types)
           = LookupNamespaceForSymbol (TYPES_NAME (arg_types), arg_info);
     }
-
-    AddNamespaceToDependencies (TYPES_MOD (arg_types), arg_info);
 
     DBUG_RETURN (arg_types);
 }
@@ -252,9 +238,6 @@ ANSntype (ntype *arg_ntype, info *arg_info)
             DBUG_PRINT ("ANS", ("Updated namespace for type %s to %s", TYgetName (scalar),
                                 TYgetMod (scalar)));
         }
-
-        /* save the namespace as a dependency */
-        AddNamespaceToDependencies (TYgetMod (scalar), arg_info);
     }
 
     DBUG_RETURN (arg_ntype);
@@ -420,6 +403,10 @@ ANSobjdef (node *arg_node, info *arg_info)
         OBJDEF_MOD (arg_node) = ILIBstringCopy (MODULE_NAME (INFO_ANS_MODULE (arg_info)));
     }
 
+    if (OBJDEF_TYPE (arg_node) != NULL) {
+        OBJDEF_TYPE (arg_node) = ANSntype (OBJDEF_TYPE (arg_node), arg_info);
+    }
+
     arg_node = TRAVcont (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
@@ -437,8 +424,6 @@ ANSspap (node *arg_node, info *arg_info)
 
         SPAP_MOD (arg_node) = LookupNamespaceForSymbol (SPAP_NAME (arg_node), arg_info);
     }
-
-    AddNamespaceToDependencies (SPAP_MOD (arg_node), arg_info);
 
     arg_node = TRAVcont (arg_node, arg_info);
 
@@ -601,8 +586,6 @@ ANSspid (node *arg_node, info *arg_info)
         if (SPID_MOD (arg_node) == NULL) {
             SPID_MOD (arg_node)
               = LookupNamespaceForSymbol (SPID_NAME (arg_node), arg_info);
-
-            AddNamespaceToDependencies (SPID_MOD (arg_node), arg_info);
         }
     } else {
         if (SPID_MOD (arg_node) == NULL) {
@@ -619,8 +602,6 @@ ANSspid (node *arg_node, info *arg_info)
 
                 DBUG_PRINT ("ANS", ("found ns '%s' for id '%s'", SPID_MOD (arg_node),
                                     SPID_NAME (arg_node)));
-
-                AddNamespaceToDependencies (SPID_MOD (arg_node), arg_info);
             }
         }
     }
