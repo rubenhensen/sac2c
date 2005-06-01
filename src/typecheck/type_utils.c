@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2005/06/01 20:08:57  sah
+ * TYisHidden now is aware of the structure of hidden types
+ *
  * Revision 1.11  2005/05/31 18:15:35  sah
  * made the alpha-a-lizer functions symbol-type aware
  *
@@ -313,12 +316,22 @@ bool
 TUisHidden (ntype *ty)
 {
     bool res = FALSE;
+#ifndef DBUG_OFF
+    char *tmp;
+#endif
 
     DBUG_ENTER ("TUisHidden");
 
     if (TYisUser (TYgetScalar (ty))) {
-        res = (TYgetSimpleType (UTgetBaseType (TYgetUserType (TYgetScalar (ty))))
-               == T_hidden);
+        ntype *base = UTgetBaseType (TYgetUserType (TYgetScalar (ty)));
+
+        DBUG_EXECUTE ("TU", tmp = TYtype2DebugString (base, FALSE, 0););
+
+        DBUG_PRINT ("TU", ("found basetype %s", tmp));
+
+        DBUG_EXECUTE ("TU", tmp = ILIBfree (tmp););
+
+        res = (TYgetSimpleType (TYgetScalar (base)) == T_hidden);
     }
 
     DBUG_RETURN (res);
