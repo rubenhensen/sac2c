@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.134  2005/06/01 20:12:26  sah
+ * made TCgetTypesLine aware of new types and
+ * removed Denmark TODO
+ *
  * Revision 3.133  2005/04/22 10:10:26  ktr
  * Removed CreateZeroFromType and code brushing
  *
@@ -514,21 +518,25 @@ TCgetTypesLine (types *type, int line)
             DBUG_ASSERT ((tdef != NULL), "typedef not found!");
         }
 
-#if 0 /* TODO - macros for old types */
-    DBUG_ASSERT( (TYPEDEF_BASETYPE( tdef) != T_user),
-                 "unresolved nested user-defined type found");
+        /*
+         * we have to switch to ntypes here, as the typedefs do
+         * not hold any old types anymore. maybe the backend
+         * will move to newtypes one day so this hybrid function
+         * can be removed.
+         */
 
-    if (TYPEDEF_BASETYPE( tdef) == T_hidden) {
-      /*
-       * Basic type is hidden therefore we have to use the original type
-       * structure and rely on the belonging typedef!!
-       */
-      res_type = type;
-    }
-    else {
-      res_type = TYPEDEF_TYPE( tdef);
-    }
-#endif
+        if (TUisHidden (TYPEDEF_NTYPE (tdef))) {
+            /*
+             * Basic type is hidden therefore we have to use the original type
+             * structure and rely on the belonging typedef!!
+             */
+            res_type = type;
+        } else {
+            /*
+             * ok, we can resolve the type to the corresponding basetype
+             */
+            res_type = TYtype2OldType (TYPEDEF_NTYPE (tdef));
+        }
     } else {
         res_type = type;
     }
