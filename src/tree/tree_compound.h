@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.191  2005/06/01 14:02:33  ktr
+ * corrected WITHOP_MEM
+ *
  * Revision 3.190  2005/05/27 20:29:37  ktr
  * Inserted various L_...X macros
  *
@@ -1556,7 +1559,7 @@ extern int TCcountParts (node *parts);
        : ((NODE_TYPE (n) == N_modarray) ? MODARRAY_NEXT (n) : FOLD_NEXT (n)))
 
 #define WITHOP_MEM(n)                                                                    \
-    ((NODE_TYPE (n) == N_genarray) ? GENARRAY_MEM (n) : MODARRAY_NEXT (n))
+    ((NODE_TYPE (n) == N_genarray) ? GENARRAY_MEM (n) : MODARRAY_MEM (n))
 
 /*--------------------------------------------------------------------------*/
 
