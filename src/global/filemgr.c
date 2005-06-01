@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2005/06/01 18:01:24  sah
+ * finished printing of dependencies
+ *
  * Revision 1.13  2005/06/01 12:47:45  sah
  * added lots of runtime paths
  *
@@ -620,7 +623,7 @@ FMGRsetFileNames (node *module)
         if (global.outfilename == NULL) {
             global.outfilename = "a.out";
             global.cfilename = "a.out.c";
-            global.targetdir = "./";
+            global.targetdir = "";
         } else {
             global.cfilename = ILIBstringConcat (global.outfilename, ".c");
             global.targetdir = "";
@@ -643,7 +646,7 @@ FMGRsetFileNames (node *module)
         }
 
         if (global.outfilename == NULL) {
-            global.targetdir = "./";
+            global.targetdir = "";
         } else {
             global.targetdir = ILIBstringConcat (global.outfilename, "/");
         }
@@ -651,8 +654,6 @@ FMGRsetFileNames (node *module)
         global.modulename = ILIBstringCopy (MODULE_NAME (module));
         global.cfilename = ILIBstringConcat (MODULE_NAME (module), ".c");
         global.outfilename = ILIBstringConcat (MODULE_NAME (module), ".out");
-
-        global.targetdir = ILIBstringCopy (FMGRabsolutePathname (global.targetdir));
     }
 
     DBUG_VOID_RETURN;

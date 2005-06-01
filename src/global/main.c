@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.103  2005/06/01 18:01:24  sah
+ * finished printing of dependencies
+ *
  * Revision 3.102  2005/06/01 16:59:05  sah
  * separated annotating namespaces and gathering dependencies in two
  * phase to allow for reusing the gathering phase to print the
@@ -236,6 +239,16 @@ main (int argc, char *argv[])
      * Module system use
      */
     NOTE_COMPILER_PHASE;
+    /*
+     * print dependencies if requested
+     */
+    if (global.makedeps) {
+        NOTE (("Gathering Dependencies"));
+        GDPdoGatherDependencies (syntax_tree);
+        NOTE (("Printing Dependency Information..."));
+        DEPdoPrintDependencies (syntax_tree);
+    }
+
     NOTE (("Processing use and import statements..."));
     RSAdoResolveAll (syntax_tree);
     NOTE (("Resolving namespaces..."));
