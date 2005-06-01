@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2005/06/01 11:27:04  mwe
+ * some comments added
+ *
  * Revision 1.8  2005/05/31 13:59:34  mwe
  * usage of ARG_ISINUSE instaed of NEEDCOUNT
  * some methods new implemented
@@ -29,6 +32,28 @@
  *
  *
  */
+
+/**<!--******************************************************************-->
+ *
+ * @file signature_simplification.c
+ *
+ * This module based optimization removes all unused input arguments of
+ * non-exported, non-provided and non-lac functions of a module.
+ * Also all constant and scalar return types of that functions are removed
+ * from the function signature and inserted directly in the calling context.
+ *
+ * First while traversal through the function body all unused function
+ * arguments are removed from the signature of the calling contexts and
+ * constant scalar return values are inserted in the calling context.
+ * Finally constant scalar return values are removed from the
+ * return-exprs-chain.
+ * After modifying all function bodies, all function signatures (args and rets)
+ * are modified.
+ *
+ * Unused function arguments are marked by (ARG_ISINUSE == FALSE), which
+ * is set in SSADeadCodeRemoval.
+ *
+ **************************************************************************/
 
 #include "tree_basic.h"
 #include "traverse.h"
@@ -200,11 +225,10 @@ SISIfundef (node *arg_node, info *arg_info)
  *
  * @fn node *SISIarg(node *arg_node, info *arg_info)
  *
- * @brief Move scalar akv-arguments from args-chain to vardec-chain
- *    and create new assignment. Change non-scalar akv-args to aks-args.
+ * @brief Delete unused arguments from args-chain.
  *
  *    Do not change signatures of exported or provided functions. Leave also
- *    LAC-functions as they are.
+ *    LAC-functions as they are (ensured in SISIfundef).
  *
  * @param arg_node args-chain to be traversed
  * @param arg_info
@@ -272,8 +296,7 @@ SISIblock (node *arg_node, info *arg_info)
  *
  * @fn node *SISIassign(node *arg_node, info *arg_info)
  *
- * @brief top-down: traverse in assignments,
- *        bottom-up: insert new assignments, remove marked assignments
+ * @brief traverse in assignments, insert new assignments if necessary
  *
  * @param arg_node node to be traversed
  * @param arg_info
@@ -340,7 +363,7 @@ SISIlet (node *arg_node, info *arg_info)
  *
  * @fn node *SISIap(node *arg_node, info *arg_info)
  *
- * @brief check fundef-args for scalar akv-args,
+ * @brief check fundef-args for unused arguments,
  *      remove corresponding exprs from args-chain
  *
  * @param arg_node node to be traversed
@@ -403,7 +426,7 @@ SISIap (node *arg_node, info *arg_info)
  *
  * @fn node *SISIids(node *arg_node, info *arg_info)
  *
- * @brief removes ids-nodes with scalar akv-types from ids-chain
+ * @brief removes ids-nodes with corresponding scalar akv-types in ret-chain
  *
  * @param arg_node node to be traversed
  * @param arg_info
@@ -512,7 +535,7 @@ SISIreturn (node *arg_node, info *arg_info)
  *
  * @fn node *SISIret(node *arg_node, info *arg_info)
  *
- * @brief remove scalar akv-rets
+ * @brief remove marked (already removed) rets
  *
  * @param arg_node node to be traversed
  * @param arg_info
@@ -547,7 +570,7 @@ SISIret (node *arg_node, info *arg_info)
  *
  * @fn node *SISIexprs(node *arg_node, info *arg_info)
  *
- * @brief top-down: mark exprs to be removed,
+ * @brief top-down: find and mark exprs to be removed,
  *        bottom-up: remove marked exprs
  *
  * @param arg_node node to be traversed
@@ -611,7 +634,8 @@ SISIid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SISIid");
 
-    if (TYisAKV (AVIS_TYPE (ID_AVIS (arg_node)))) {
+    if ((TYisAKV (AVIS_TYPE (ID_AVIS (arg_node))))
+        && (0 == TYgetDim (AVIS_TYPE (ID_AVIS (arg_node))))) {
 
         INFO_SISI_REMOVEEXPRS (arg_info) = TRUE;
     }
