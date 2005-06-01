@@ -4,6 +4,10 @@
 /*
 *
 * $Log$
+* Revision 1.33  2005/06/01 18:05:04  sbs
+* now, pragmas on erxternal fundecs follow the fundec rather than being
+* notated before the SEMIC!!!!
+*
 * Revision 1.32  2005/05/31 18:13:50  sah
 * removed sharing of module names
 *
@@ -135,6 +139,7 @@ extern int yylex();
 
 static node *global_wlcomp_aps = NULL;
 static node *store_pragma = NULL;
+static bool was_fundec = TRUE;
 static bool have_seen_dots = FALSE;
 
 /*
@@ -220,7 +225,7 @@ PRF_CAT_VxV  PRF_TAKE_SxV  PRF_DROP_SxV
 * SAC programs
 */
 
-%type <node> prg  defs  def2  def3  def4 def5
+%type <node> prg  defs  def2  def3  def4 def5 def6
 
 %type <node> typedef
 
@@ -369,23 +374,38 @@ def3: objdefs def4
       { $$ = $1; }
     ;
 
-def4: fundec def4
-      { $$ = $2;
-        MODULE_FUNDECS( $$) = TCappendFundef( MODULE_FUNDECS( $$), $1);
-      }
-    | wlcomp_pragma_global main def5
-      { $$ = $3;
-        MODULE_FUNS( $$) = TCappendFundef( MODULE_FUNS( $$), $2);
-      } 
-    | wlcomp_pragma_global fundef def4
-      { $$ = $3;
-        MODULE_FUNS( $$) = TCappendFundef( MODULE_FUNS( $$), $2);
-      }
+def4: wlcomp_pragma_global def5
+      { $$ = $2; }
     | def5
       { $$ = $1; }
     ;
 
-def5: { $$ = TBmakeModule( NULL, F_prog, NULL, NULL, NULL, NULL, NULL);
+def5: fundec { was_fundec = TRUE; } pragmas def5
+      { $$ = $4;
+        FUNDEF_PRAGMA( $1) = $3;
+        MODULE_FUNDECS( $$) = TCappendFundef( MODULE_FUNDECS( $$), $1);
+      }
+    | fundec def5
+      { $$ = $2;
+        MODULE_FUNDECS( $$) = TCappendFundef( MODULE_FUNDECS( $$), $1);
+      }
+    | fundef { was_fundec = FALSE; } pragmas def5
+      { $$ = $4;
+        MODULE_FUNS( $$) = TCappendFundef( MODULE_FUNS( $$), $1);
+      }
+    | fundef def5
+      { $$ = $2;
+        MODULE_FUNS( $$) = TCappendFundef( MODULE_FUNS( $$), $1);
+      }
+    | main def6
+      { $$ = $2;
+        MODULE_FUNS( $$) = TCappendFundef( MODULE_FUNS( $$), $1);
+      } 
+    | def6
+      { $$ = $1; }
+    ;
+
+def6: { $$ = TBmakeModule( NULL, F_prog, NULL, NULL, NULL, NULL, NULL);
 
         DBUG_PRINT( "PARSE",
 	            ("%s:"F_PTR,
@@ -730,19 +750,17 @@ fundec: EXTERN returndectypes ext_id BRACKET_L fundec2
         }
       ;
 
-fundec2: fundecargs BRACKET_R { $<cint>$ = global.linenum; } pragmas SEMIC
+fundec2: fundecargs BRACKET_R { $<cint>$ = global.linenum; } SEMIC
          { $$ = TBmakeFundef( NULL, NULL, NULL, $1, NULL, NULL);
            NODE_LINE( $$) = $<cint>3;
-           FUNDEF_PRAGMA( $$) = $4;
            if( have_seen_dots) {
              FUNDEF_HASDOTARGS( $$) = TRUE;
              have_seen_dots = FALSE;
            }
          }
-       | BRACKET_R { $<cint>$ = global.linenum; } pragmas SEMIC
+       | BRACKET_R { $<cint>$ = global.linenum; } SEMIC
          { $$ = TBmakeFundef( NULL, NULL, NULL, NULL, NULL, NULL);
            NODE_LINE( $$) = $<cint>2;
-           FUNDEF_PRAGMA( $$) = $3;
          }
        ;
 
@@ -766,9 +784,6 @@ wlcomp_pragma_global: hash_pragma WLCOMP wlcomp_conf
                         if ($3 != NULL) {
                           global_wlcomp_aps = $3;
                         }
-                      }
-                    | /* empty */
-                      {
                       }
                     ;
 
@@ -811,17 +826,18 @@ pragmas: pragmalist
          { $$ = store_pragma;
            store_pragma = NULL;
          }
-       | 
-         { $$ = NULL;
-         }
        ;
 
-pragmalist: pragmalist pragma
+pragmalist: pragma pragmalist
           | pragma
+          | wlcomp_pragma_global
           ;
 
 pragma: hash_pragma LINKNAME string
-        { if (store_pragma == NULL) {
+        { if( !was_fundec) {
+            yyerror( "pragma \"linkname\" not allowed here");
+          }
+          if (store_pragma == NULL) {
             store_pragma = TBmakePragma();
           }
           if (PRAGMA_LINKNAME( store_pragma) != NULL) {
@@ -831,7 +847,10 @@ pragma: hash_pragma LINKNAME string
           PRAGMA_LINKNAME( store_pragma) = $3;
         }
       | hash_pragma LINKWITH string
-        { if (store_pragma == NULL) {
+        { if( !was_fundec) {
+            yyerror( "pragma \"linkwith\" not allowed here");
+          }
+          if (store_pragma == NULL) {
             store_pragma = TBmakePragma();
           }
           if (PRAGMA_LINKMOD( store_pragma) != NULL) {
@@ -841,7 +860,10 @@ pragma: hash_pragma LINKNAME string
           PRAGMA_LINKMOD( store_pragma) = $3;
         }
       | hash_pragma LINKOBJ string
-        { if (store_pragma == NULL) {
+        { if( !was_fundec) {
+            yyerror( "pragma \"linkobj\" not allowed here");
+          }
+          if (store_pragma == NULL) {
             store_pragma = TBmakePragma();
           }
           if (PRAGMA_LINKOBJ( store_pragma) != NULL) {
@@ -851,7 +873,10 @@ pragma: hash_pragma LINKNAME string
           PRAGMA_LINKOBJ( store_pragma) = $3;
         }
       | hash_pragma LINKSIGN SQBR_L nums SQBR_R
-        { if (store_pragma == NULL) {
+        { if( !was_fundec) {
+            yyerror( "pragma \"linksign\" not allowed here");
+          }
+          if (store_pragma == NULL) {
             store_pragma = TBmakePragma();
           }
           if (PRAGMA_LINKSIGN( store_pragma) != NULL) {
@@ -861,7 +886,10 @@ pragma: hash_pragma LINKNAME string
           PRAGMA_LINKSIGN( store_pragma) = $4;
         }
       | hash_pragma REFCOUNTING SQBR_L nums SQBR_R
-        { if (store_pragma == NULL) {
+        { if( !was_fundec) {
+            yyerror( "pragma \"refcounting\" not allowed here");
+          }
+          if (store_pragma == NULL) {
             store_pragma = TBmakePragma();
           }
           if (PRAGMA_REFCOUNTING( store_pragma) != NULL) {
@@ -871,7 +899,10 @@ pragma: hash_pragma LINKNAME string
           PRAGMA_REFCOUNTING( store_pragma) = $4;
         }
       | hash_pragma READONLY SQBR_L nums SQBR_R
-        { if (store_pragma == NULL) {
+        { if( !was_fundec) {
+            yyerror( "pragma \"readonly\" not allowed here");
+          }
+          if (store_pragma == NULL) {
             store_pragma = TBmakePragma();
           }
           if (PRAGMA_READONLY( store_pragma) != NULL) {
@@ -881,7 +912,10 @@ pragma: hash_pragma LINKNAME string
           PRAGMA_READONLY( store_pragma) = $4;
         }
       | hash_pragma EFFECT qual_ext_ids
-        { if (store_pragma == NULL) {
+        { if( !was_fundec) {
+            yyerror( "pragma \"effect\" not allowed here");
+          }
+          if (store_pragma == NULL) {
             store_pragma = TBmakePragma();
           }
           if (PRAGMA_EFFECT( store_pragma) != NULL) {
@@ -891,7 +925,10 @@ pragma: hash_pragma LINKNAME string
           PRAGMA_EFFECT( store_pragma) = $3;
         }
       | hash_pragma TOUCH qual_ext_ids
-        { if (store_pragma == NULL) {
+        { if( !was_fundec) {
+            yyerror( "pragma \"touch\" not allowed here");
+          }
+          if (store_pragma == NULL) {
             store_pragma = TBmakePragma();
           }
           if (PRAGMA_TOUCH( store_pragma) != NULL) {
@@ -901,7 +938,10 @@ pragma: hash_pragma LINKNAME string
           PRAGMA_TOUCH( store_pragma) = $3;
         }
       | hash_pragma COPYFUN string
-        { if (store_pragma == NULL) {
+        { if( !was_fundec) {
+            yyerror( "pragma \"copyfun\" not allowed here");
+          }
+          if (store_pragma == NULL) {
             store_pragma = TBmakePragma();
           }
           if (PRAGMA_COPYFUN( store_pragma) != NULL) {
@@ -911,7 +951,10 @@ pragma: hash_pragma LINKNAME string
           PRAGMA_COPYFUN( store_pragma) = $3;
         }
       | hash_pragma FREEFUN string
-        { if (store_pragma == NULL) {
+        { if( !was_fundec) {
+            yyerror( "pragma \"freefun\" not allowed here");
+          }
+          if (store_pragma == NULL) {
             store_pragma = TBmakePragma();
           }
           if (PRAGMA_FREEFUN( store_pragma) != NULL) {
@@ -921,7 +964,10 @@ pragma: hash_pragma LINKNAME string
           PRAGMA_FREEFUN( store_pragma) = $3;
         }
       | hash_pragma INITFUN string
-        { if (store_pragma == NULL) {
+        { if( !was_fundec) {
+            yyerror( "pragma \"initfun\" not allowed here");
+          }
+          if (store_pragma == NULL) {
             store_pragma = TBmakePragma();
           }
           if (PRAGMA_INITFUN( store_pragma) != NULL) {
@@ -1558,8 +1604,8 @@ prf: foldop        { $$ = $1;        }
    | PRF_DROP_SxV  { $$ = F_drop_SxV;}
    ;
 
-qual_ext_ids: qual_ext_id qual_ext_ids
-              { $$ = TBmakeExprs( $1, $2);
+qual_ext_ids: qual_ext_id COMMA qual_ext_ids
+              { $$ = TBmakeExprs( $1, $3);
               }
             | qual_ext_id
               { $$ = TBmakeExprs( $1, NULL);
