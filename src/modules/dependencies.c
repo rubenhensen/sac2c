@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2005/06/02 17:02:34  sbs
+ * added an empty alldeps rule for -Mlib in case there are no
+ * dependencies at all.
+ *
  * Revision 1.4  2005/06/02 15:02:37  sah
  * added -Mlib option and corresponding implementation
  *
@@ -98,7 +102,13 @@ PrintLibDepFoldFun (const char *entry, strstype_t kind, void *modname)
 
             printf (".PHONY: \\\n  %s\n\n", entry);
 
-            printf ("%s:\n\t( cd %s; $(MAKE) lib%s.so)\n\n", entry, libdir, entry);
+            /**
+             *
+             * The space before the colon is essential here!
+             * This allows us to easily distinguish this case from the
+             * alldeps rules, in particular, the empty rule in doPrintLibDependencies
+             */
+            printf ("%s :\n\t( cd %s; $(MAKE) lib%s.so)\n\n", entry, libdir, entry);
         }
 
         libfile = ILIBfree (libfile);
@@ -115,6 +125,14 @@ doPrintLibDependencies (node *tree)
 #ifndef DBUG_OFF
     printf ("#\n# extended dependencies for file %s\n#\n\n", global.filename);
 #endif
+
+    /**
+     * First, we give an empty rule. This is required iff there
+     * are no dependencies!
+     * The non-space before the colon is essential here!
+     * Cf. PrintLibDepFoldFun!
+     */
+    printf ("alldeps_%s:\n", MODULE_NAME (tree));
 
     STRSfold (&PrintLibDepFoldFun, MODULE_DEPENDENCIES (tree), MODULE_NAME (tree));
 
