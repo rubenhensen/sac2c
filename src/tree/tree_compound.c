@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.135  2005/06/02 18:57:26  sah
+ * fixed a denmark fubar function
+ *
  * Revision 3.134  2005/06/01 20:12:26  sah
  * made TCgetTypesLine aware of new types and
  * removed Denmark TODO
@@ -995,11 +998,13 @@ TCisHidden (types *type)
         tdef = TYPES_TDEF (type);
         DBUG_ASSERT ((tdef != NULL), "Failed attempt to look up typedef");
 
-#if 0 /* TODO - macros for old types */
-    if (TYPEDEF_BASETYPE( tdef) == T_hidden) {
-      ret = TRUE;
-    }
-#endif
+        /*
+         * we have to move to the new types here, as the typedef does
+         * not hold any old types anymore
+         */
+        if (TYisSimple (TYgetScalar (TYPEDEF_NTYPE (tdef)))) {
+            ret = (TYgetSimpleType (TYgetScalar (TYPEDEF_NTYPE (tdef))) == T_hidden);
+        }
     }
 
     DBUG_RETURN (ret);
