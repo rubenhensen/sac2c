@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2005/06/02 20:35:27  sah
+ * found a ANSI C compliant portable way to
+ * print constant vectors.
+ *
  * Revision 1.8  2005/05/18 13:55:23  sah
  * using %hho instead of %o as the char is transformed to
  * int when passed to printf and thus we need to tell printf
@@ -52,22 +56,24 @@ COserializeConstant (FILE *file, constant *cnst)
     } else {
         int cnt;
         int max;
-        char *data;
+        unsigned char *data;
 
         fprintf (file, "COdeserializeConstant( %d, ", CONSTANT_TYPE (cnst));
 
         SHserializeShape (file, CONSTANT_SHAPE (cnst));
 
         /* the data vector of a constant is serialized as a
-           char array */
+         * unsigned char array. the unsigned ensured proper
+         * conversion by printf.
+         */
 
-        data = (char *)CONSTANT_ELEMS (cnst);
+        data = (unsigned char *)CONSTANT_ELEMS (cnst);
         max = global.basetype_size[CONSTANT_TYPE (cnst)] * CONSTANT_VLEN (cnst);
 
         fprintf (file, ", %d, \"", CONSTANT_VLEN (cnst));
 
         for (cnt = 0; cnt < max; cnt++) {
-            fprintf (file, "\\%hho", data[cnt]);
+            fprintf (file, "\\%o", data[cnt]);
         }
 
         fprintf (file, "\")");
