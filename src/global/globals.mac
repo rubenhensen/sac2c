@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.28  2005/06/02 15:02:37  sah
+ * added -Mlib option and corresponding implementation
+ *
  * Revision 1.27  2005/05/17 11:36:46  cg
  * inlnum renamed to max_recursive_inlining
  *
@@ -512,6 +515,11 @@ GLOBAL (bool, libstat, FALSE)
 GLOBAL (bool, makedeps, FALSE)
 /*
  * Don't actually compile, but infer module dependencies.
+ */
+
+GLOBAL (bool, makelibdeps, FALSE)
+/*
+ * Don't actually compile, but infer extended module dependencies.
  */
 
 GLOBAL (bool, gen_cccall, FALSE)

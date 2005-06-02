@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2005/06/02 15:02:37  sah
+ * added -Mlib option and corresponding implementation
+ *
  * Revision 1.3  2005/06/01 18:01:24  sah
  * finished printing of dependencies
  *
@@ -17,6 +20,7 @@
 #include "dependencies.h"
 
 #include <string.h>
+#include <libgen.h>
 #include "stringset.h"
 #include "tree_basic.h"
 #include "modulemanager.h"
@@ -68,11 +72,60 @@ DEPdoResolveDependencies (node *syntax_tree)
     DBUG_RETURN (syntax_tree);
 }
 
+static void *
+PrintLibDepFoldFun (const char *entry, strstype_t kind, void *modname)
+{
+    DBUG_ENTER ("PrintLibDepFoldFun");
+
+    /*
+     * if the dependency is a sac library, we print a make
+     * rule for the given library
+     */
+    if (kind == STRS_saclib) {
+        char *libname;
+        char *libfile;
+
+        libname = ILIBmalloc (sizeof (char) * (strlen (entry) + 5));
+        sprintf (libname, "%s.sac", entry);
+
+        libfile = ILIBstringCopy (FMGRfindFile (PK_imp_path, libname));
+        libname = ILIBfree (libname);
+
+        if (libfile != NULL) {
+            char *libdir = dirname (libfile);
+
+            printf ("alldeps_%s: \\\n  %s\n\n", (char *)modname, entry);
+
+            printf (".PHONY: \\\n  %s\n\n", entry);
+
+            printf ("%s:\n\t( cd %s; $(MAKE) lib%s.so)\n\n", entry, libdir, entry);
+        }
+
+        libfile = ILIBfree (libfile);
+    }
+
+    DBUG_RETURN (modname);
+}
+
+static void
+doPrintLibDependencies (node *tree)
+{
+    DBUG_ENTER ("doPrintLibDependencies");
+
+#ifndef DBUG_OFF
+    printf ("#\n# extended dependencies for file %s\n#\n\n", global.filename);
+#endif
+
+    STRSfold (&PrintLibDepFoldFun, MODULE_DEPENDENCIES (tree), MODULE_NAME (tree));
+
+    DBUG_VOID_RETURN;
+}
+
 static void
 PrintSACLib (const char *name)
 {
     char *filename;
-    const char *result;
+    char *result;
 
     DBUG_ENTER ("PrintSACLib");
 
@@ -83,33 +136,22 @@ PrintSACLib (const char *name)
     filename = ILIBmalloc (sizeof (char) * (strlen (name) + 7));
     sprintf (filename, "lib%s.so", name);
 
-    result = FMGRfindFile (PK_lib_path, filename);
+    result = ILIBstringCopy (FMGRfindFile (PK_lib_path, filename));
 
     filename = ILIBfree (filename);
 
     if (result == NULL) {
         /*
-         * now try to find the .sac file
+         * otherwise use the pure filename
          */
 
-        filename = ILIBmalloc (sizeof (char) * (strlen (name) + 5));
-        sprintf (filename, "%s.sac", name);
-
-        result = FMGRfindFile (PK_imp_path, filename);
-
-        filename = ILIBfree (filename);
+        result = ILIBmalloc (sizeof (char) * (strlen (name) + 7));
+        sprintf (result, "lib%s.so", name);
     }
 
-    if (result == NULL) {
-        /*
-         * still have not found a file, give up
-         */
-        CTIerror ("Can find neither library lib%s.so, nor implementation "
-                  "%s.sac.",
-                  name, name);
-    } else {
-        printf (" \\\n  %s", result);
-    }
+    printf (" \\\n  %s", result);
+
+    result = ILIBfree (result);
 
     DBUG_VOID_RETURN;
 }
@@ -170,6 +212,10 @@ DEPdoPrintDependencies (node *syntax_tree)
 {
     DBUG_ENTER ("DEPdoPrintDependencies");
 
+#ifndef DBUG_OFF
+    printf ("#\n# dependencies for file %s\n#\n\n", global.filename);
+#endif
+
     /*
      * first, print how the output will be named
      */
@@ -184,6 +230,14 @@ DEPdoPrintDependencies (node *syntax_tree)
      * and finally two newline to make it look nicer
      */
     printf ("\n\n");
+
+    /*
+     * if we are in special Mlib (aka sbs) mode, we have to print
+     * some more dependencies, handeled by doPrintLibDependencies
+     */
+    if (global.makelibdeps) {
+        doPrintLibDependencies (syntax_tree);
+    }
 
     exit (0);
 

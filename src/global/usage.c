@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.79  2005/06/02 15:02:37  sah
+ * added -Mlib option and corresponding implementation
+ *
  * Revision 3.78  2005/06/01 12:47:45  sah
  * added lots of runtime paths
  *
@@ -131,6 +134,9 @@ USGprintUsage ()
       "    -M              Detect dependencies from imported modules/classes and\n"
       "                    write them to stdout in a way suitable for the make\n"
       "                    utility.\n"
+      "    -Mlib           Same as -M except that the output format is suitable\n"
+      "                    for makefiles used by the standard library building\n"
+      "                    process.\n"
       "\n"
       "    NOTE:\n"
       "    When called with one of these options, sac2c does not perform\n"

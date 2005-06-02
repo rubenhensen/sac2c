@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.93  2005/06/02 15:02:37  sah
+ * added -Mlib option and corresponding implementation
+ *
  * Revision 3.92  2005/06/01 12:47:45  sah
  * added lots of runtime paths
  *
@@ -601,6 +604,7 @@ OPTanalyseCommandline (node *syntax_tree)
     ARGS_OPTION_END ("minarrayrep");
 
     ARGS_FLAG ("M", global.makedeps = TRUE);
+    ARGS_FLAG ("Mlib", global.makedeps = global.makelibdeps = TRUE);
 
     ARGS_OPTION_BEGIN ("numthreads")
     {
