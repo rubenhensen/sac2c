@@ -1,5 +1,9 @@
 /* *
  * $Log$
+ * Revision 1.34  2005/06/02 13:42:48  mwe
+ * check if LET_IDS is NULL
+ * corrected reverse type upgrade
+ *
  * Revision 1.33  2005/05/26 16:09:25  mwe
  * convert akv to aks types in TUPcode now
  *
@@ -1623,7 +1627,10 @@ TUPlet (node *arg_node, info *arg_info)
          * insert result types in ids-chain
          */
         INFO_TUP_TYPECOUNTER (arg_info) = 0;
-        LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
+
+        if (LET_IDS (arg_node) != NULL) {
+            LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
+        }
 
         /*
          * INFO_TUP_TYPE contains now the type of the lhs of current expression
@@ -1828,6 +1835,10 @@ TUPgenerator (node *arg_node, info *arg_info)
     } else {
         wi = NULL;
     }
+
+    withid = INFO_TUP_WITHID (arg_info);
+    current
+      = GetLowestType (current, TYcopyType (AVIS_TYPE (IDS_AVIS (WITHID_VEC (withid)))));
 
     if (TYisAKV (current)) {
         tmp = TYmakeAKS (TYcopyType (TYgetScalar (current)),
