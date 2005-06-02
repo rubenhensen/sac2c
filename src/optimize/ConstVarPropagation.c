@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.20  2005/06/02 13:42:48  mwe
+ * set SSAASSIGN if moving constant args in vardec chain
+ *
  * Revision 1.19  2005/05/31 13:59:34  mwe
  * bug in CVPids fixed
  *
@@ -1070,6 +1073,8 @@ CVParg (node *arg_node, info *arg_info)
                                        TYgetValue (AVIS_TYPE (ARG_AVIS (arg_node))))),
                           BLOCK_INSTR (FUNDEF_BODY (INFO_CVP_FUNDEF (arg_info))));
 
+        AVIS_SSAASSIGN (ARG_AVIS (arg_node))
+          = BLOCK_INSTR (FUNDEF_BODY (INFO_CVP_FUNDEF (arg_info)));
         AVIS_DECL (ARG_AVIS (arg_node))
           = BLOCK_VARDEC (FUNDEF_BODY (INFO_CVP_FUNDEF (arg_info)));
 
