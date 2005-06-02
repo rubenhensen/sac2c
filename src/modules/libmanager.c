@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2005/06/02 19:14:11  sah
+ * extended error messages
+ *
  * Revision 1.10  2005/05/25 20:27:45  sah
  * modified error propagation
  *
@@ -150,7 +153,7 @@ LIBMgetLibraryFunction (const char *name, dynlib_t lib)
     if (result != NULL) {
         DBUG_PRINT ("LIB", ("Done getting library function"));
     } else {
-        DBUG_PRINT ("LIB", ("Failed getting library function"));
+        DBUG_PRINT ("LIB", ("Failed getting library function: ", LibManagerError ()));
     }
 #endif
 
