@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2005/06/02 13:42:48  mwe
+ * set WASOPTIMIZED flag if some constant return values were found
+ *
  * Revision 1.9  2005/06/01 11:27:04  mwe
  * some comments added
  *
@@ -491,6 +494,7 @@ SISIids (node *arg_node, info *arg_info)
             arg_node = succ;
 
             sisi_expr++;
+            FUNDEF_WASOPTIMIZED (INFO_SISI_FUNDEF (arg_info)) = TRUE;
         }
     }
 
