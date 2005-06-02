@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.92  2005/06/02 13:42:48  mwe
+ * rerun optimization cycle if sisi found optimization cases
+ *
  * Revision 3.91  2005/05/31 13:41:38  mwe
  * run sisi only when dcr activated
  *
@@ -984,11 +987,16 @@ OPTmodule (node *arg_node, info *arg_info)
              * apply SISI (signature simplification)
              */
             if ((global.optimize.dosisi) && (global.optimize.dodcr)) {
+                int tmp = sisi_expr;
                 arg_node = SISIdoSignatureSimplification (arg_node);
 
                 if ((global.break_after == PH_sacopt)
                     && (0 == strcmp (global.break_specifier, "sisi"))) {
                     goto DONE;
+                }
+
+                if (sisi_expr > tmp) {
+                    INFO_OPT_CONTINUE (arg_info) = TRUE;
                 }
             }
         } while ((INFO_OPT_CONTINUE (arg_info)) && (loop1 < global.max_optcycles));
