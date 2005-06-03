@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.41  2005/06/03 17:17:41  khf
+ * type setting corrected
+ *
  * Revision 1.40  2005/04/29 20:31:11  khf
  * removed call of CF
  * generation of default partitions inserted
@@ -1109,7 +1112,7 @@ CreateArraySel (node *sel_vec, node *sel_ids, node *sel_array, node **nassigns,
         shape *shape, *mshape;
         simpletype btype;
         ntype *array_type;
-        int dim;
+        int dim, num_ids;
 
         array_type = ID_NTYPE (sel_array);
         dim = (dim_array - len_index);
@@ -1147,14 +1150,15 @@ CreateArraySel (node *sel_vec, node *sel_ids, node *sel_array, node **nassigns,
         }
         IDS_NEXT (tmp_ids) = WITH_IDS (sel); /* concat ids chains */
         new_index = TCids2Array (sel_ids);
+        num_ids = TCcountIds (sel_ids);
         IDS_NEXT (tmp_ids) = NULL; /* restore ids chains */
 
         /*
          * create new id
          */
-        avis = TBmakeAvis (ILIBtmpVar (),
-                           TYmakeAKS (TYmakeSimpleType (T_int),
-                                      SHcreateShape (1, TCcountIds (sel_ids))));
+        avis = TBmakeAvis (ILIBtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int),
+                                                     SHcreateShape (1, num_ids)));
+
         id = TBmakeId (avis);
         vardec = TBmakeVardec (avis, NULL);
 
@@ -1171,6 +1175,8 @@ CreateArraySel (node *sel_vec, node *sel_ids, node *sel_array, node **nassigns,
          * create assignment 'tmp = [...];' and insert it into WL
          */
         ass = TCmakeAssignLet (ID_AVIS (id), new_index);
+        /* set correct backref to defining assignment */
+        AVIS_SSAASSIGN (ID_AVIS (id)) = ass;
         ASSIGN_NEXT (ass) = BLOCK_INSTR (WITH_CBLOCK (sel));
         BLOCK_INSTR (WITH_CBLOCK (sel)) = ass;
     }
