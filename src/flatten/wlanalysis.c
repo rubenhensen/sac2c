@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2005/06/03 17:18:09  khf
+ * shape information of indexvector rules
+ *
  * Revision 1.2  2005/05/25 17:41:03  khf
  * corrected test on empty generators
  *
@@ -48,6 +51,8 @@ struct INFO {
     node *nassigns;
     int genprop;
     int genshp;
+    int idxshp;
+    int shpext;
 };
 
 #define INFO_WLA_WL(n) (n->wl)
@@ -56,6 +61,8 @@ struct INFO {
 #define INFO_WLA_NASSIGNS(n) (n->nassigns)
 #define INFO_WLA_GENPROP(n) (n->genprop)
 #define INFO_WLA_GENSHP(n) (n->genshp)
+#define INFO_WLA_IDXSHP(n) (n->idxshp)
+#define INFO_WLA_SHPEXT(n) (n->shpext)
 
 /**
  * INFO functions
@@ -74,6 +81,8 @@ MakeInfo ()
     INFO_WLA_NASSIGNS (result) = NULL;
     INFO_WLA_GENPROP (result) = 0;
     INFO_WLA_GENSHP (result) = 0;
+    INFO_WLA_IDXSHP (result) = 0;
+    INFO_WLA_SHPEXT (result) = 0;
 
     DBUG_RETURN (result);
 }
@@ -97,24 +106,28 @@ typedef enum {
     GV_unknown_shape
 } gen_shape_t;
 
+typedef enum { IDX_known_shape, IDX_unknown_shape } idx_shape_t;
+
 #ifndef DBUG_OFF
 static char *gen_prop_str[] = {"GPT_empty", "GPT_full", "GPT_partial", "GPT_unknown"};
+
+static char *idx_prop_str[] = {"IDX_known_shape", "IDX_unknown_shape"};
 #endif
 
 /** <!--********************************************************************-->
  *
- * @fn node *CreateNewAssigns( node *expr, node *fundef)
+ * @fn node *CreateNewAssigns( node *expr, node *fundef, int shpext)
  *
  *   @brief expects (expr) to point to an identifier and generates as many
- *          new assigns as the value of the shapevector at position 0 of (expr)
- *          indicates.
+ *          new assigns as (shpext) indicates.
  *
  *   @param  node *expr   :  expr
  *           node *fundef :  N_fundef
+ *           int   shpext :
  *   @return node *       :  a chained list of N_assign nodes
  ******************************************************************************/
 static node *
-CreateNewAssigns (node *expr, node *fundef)
+CreateNewAssigns (node *expr, node *fundef, int shpext)
 {
     int i;
     node *tmp1, *tmp2, *tmp3, *nassigns, *vardec, *_ids;
@@ -128,7 +141,7 @@ CreateNewAssigns (node *expr, node *fundef)
 
     nassigns = NULL;
 
-    for (i = SHgetExtent (TYgetShape (ID_NTYPE (expr)), 0) - 1; i >= 0; i--) {
+    for (i = shpext - 1; i >= 0; i--) {
         nvarname = ILIBtmpVarName (ID_NAME (expr));
         _ids = TBmakeIds (TBmakeAvis (nvarname, TYmakeAKS (TYmakeSimpleType (T_int),
                                                            SHmakeShape (0))),
@@ -429,7 +442,8 @@ WLAwith (node *arg_node, info *arg_info)
  *
  * @fn node *WLApart(node *arg_node, info *arg_info)
  *
- *   @brief traverse only generator to propagate arrays
+ *   @brief infer shape property of indexvector and
+ *          traverse generator to propagate arrays
  *
  *   @param  node *arg_node:  N_part
  *           info *arg_info:  N_info
@@ -439,13 +453,25 @@ WLAwith (node *arg_node, info *arg_info)
 node *
 WLApart (node *arg_node, info *arg_info)
 {
+    node *withidvec;
+
     DBUG_ENTER ("WLApart");
+
+    withidvec = WITHID_VEC (PART_WITHID (arg_node));
+    if ((TYisAKS (IDS_NTYPE (withidvec)) || TYisAKV (IDS_NTYPE (withidvec)))) {
+        INFO_WLA_IDXSHP (arg_info) = IDX_known_shape;
+        INFO_WLA_SHPEXT (arg_info) = SHgetExtent (TYgetShape (IDS_NTYPE (withidvec)), 0);
+    } else {
+        INFO_WLA_IDXSHP (arg_info) = IDX_unknown_shape;
+    }
+
+    DBUG_PRINT ("WLPG", ("indexvector property of with loop in line %d : %s",
+                         global.linenum, idx_prop_str[INFO_WLA_IDXSHP (arg_info)]));
 
     PART_GENERATOR (arg_node) = TRAVdo (PART_GENERATOR (arg_node), arg_info);
 
     DBUG_ASSERT ((PART_NEXT (arg_node) == NULL)
-                   || ((PART_NEXT (arg_node) != NULL)
-                       && NODE_TYPE (PART_NEXT (arg_node)) == N_default),
+                   || (NODE_TYPE (PART_GENERATOR (PART_NEXT (arg_node))) == N_default),
                  "Second partition is no default partition!");
 
     DBUG_RETURN (arg_node);
@@ -502,8 +528,10 @@ WLAgenerator (node *arg_node, info *arg_info)
      * First, we try to propagate (structural) constants into all sons:
      */
     current_shape = PropagateArrayConstants (&(GENERATOR_BOUND1 (arg_node)));
-    if (current_shape == GV_known_shape) {
-        nassigns = CreateNewAssigns (GENERATOR_BOUND1 (arg_node), f_def);
+    if ((current_shape >= GV_known_shape)
+        && (INFO_WLA_IDXSHP (arg_info) == IDX_known_shape)) {
+        nassigns = CreateNewAssigns (GENERATOR_BOUND1 (arg_node), f_def,
+                                     INFO_WLA_SHPEXT (arg_info));
         GENERATOR_BOUND1 (arg_node)
           = CreateStructConstant (GENERATOR_BOUND1 (arg_node), nassigns);
         gshape = GV_struct_constant;
@@ -514,8 +542,10 @@ WLAgenerator (node *arg_node, info *arg_info)
     }
 
     current_shape = PropagateArrayConstants (&(GENERATOR_BOUND2 (arg_node)));
-    if (current_shape == GV_known_shape) {
-        nassigns = CreateNewAssigns (GENERATOR_BOUND2 (arg_node), f_def);
+    if ((current_shape >= GV_known_shape)
+        && (INFO_WLA_IDXSHP (arg_info) == IDX_known_shape)) {
+        nassigns = CreateNewAssigns (GENERATOR_BOUND2 (arg_node), f_def,
+                                     INFO_WLA_SHPEXT (arg_info));
         GENERATOR_BOUND2 (arg_node)
           = CreateStructConstant (GENERATOR_BOUND2 (arg_node), nassigns);
         current_shape = GV_struct_constant;
@@ -528,8 +558,10 @@ WLAgenerator (node *arg_node, info *arg_info)
     check_bounds = (gshape == GV_constant);
 
     current_shape = PropagateArrayConstants (&(GENERATOR_STEP (arg_node)));
-    if (current_shape == GV_known_shape) {
-        nassigns = CreateNewAssigns (GENERATOR_STEP (arg_node), f_def);
+    if ((current_shape >= GV_known_shape)
+        && (INFO_WLA_IDXSHP (arg_info) == IDX_known_shape)) {
+        nassigns = CreateNewAssigns (GENERATOR_STEP (arg_node), f_def,
+                                     INFO_WLA_SHPEXT (arg_info));
         GENERATOR_STEP (arg_node)
           = CreateStructConstant (GENERATOR_STEP (arg_node), nassigns);
         current_shape = GV_struct_constant;
@@ -543,8 +575,10 @@ WLAgenerator (node *arg_node, info *arg_info)
     check_stepwidth = (current_shape <= GV_struct_constant);
 
     current_shape = PropagateArrayConstants (&(GENERATOR_WIDTH (arg_node)));
-    if (current_shape == GV_known_shape) {
-        nassigns = CreateNewAssigns (GENERATOR_WIDTH (arg_node), f_def);
+    if ((current_shape >= GV_known_shape)
+        && (INFO_WLA_IDXSHP (arg_info) == IDX_known_shape)) {
+        nassigns = CreateNewAssigns (GENERATOR_WIDTH (arg_node), f_def,
+                                     INFO_WLA_SHPEXT (arg_info));
         GENERATOR_WIDTH (arg_node)
           = CreateStructConstant (GENERATOR_WIDTH (arg_node), nassigns);
         current_shape = GV_struct_constant;
@@ -630,8 +664,10 @@ WLAgenarray (node *arg_node, info *arg_info)
         GENARRAY_SHAPE (arg_node) = TRAVdo (GENARRAY_SHAPE (arg_node), arg_info);
     }
     current_shape = PropagateArrayConstants (&(GENARRAY_SHAPE (arg_node)));
-    if (current_shape == GV_known_shape) {
-        nassigns = CreateNewAssigns (GENARRAY_SHAPE (arg_node), f_def);
+    if ((current_shape >= GV_known_shape)
+        && (INFO_WLA_IDXSHP (arg_info) == IDX_known_shape)) {
+        nassigns = CreateNewAssigns (GENARRAY_SHAPE (arg_node), f_def,
+                                     INFO_WLA_SHPEXT (arg_info));
         GENARRAY_SHAPE (arg_node)
           = CreateStructConstant (GENARRAY_SHAPE (arg_node), nassigns);
         current_shape = GV_struct_constant;
