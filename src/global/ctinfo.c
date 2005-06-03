@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2005/06/03 09:34:16  cg
+ * Bug fixed in handling of error message buffer.
+ *
  * Revision 1.9  2005/03/10 09:41:09  cg
  * Added CTIterminateCompilation() which is always called upon
  * successful termination whether or not a break option was used.
@@ -179,11 +182,23 @@ PrintMessage (const char *header, const char *format, va_list arg_p)
 
     len = vsnprintf (message_buffer, message_buffer_size, format, arg_p);
 
-    if ((len < 0) || (len >= message_buffer_size)) {
-        /* buffer too small or output error */
-        if (len < 0) {
-            len = 120;
-        }
+    if (len < 0) {
+        DBUG_ASSERT ((message_buffer_size == 0), "message buffer corruption");
+        /*
+         * Output error due to non-existing message buffer
+         */
+
+        len = 120;
+
+        message_buffer = (char *)ILIBmalloc (len + 2);
+        message_buffer_size = len + 2;
+
+        len = vsnprintf (message_buffer, message_buffer_size, format, arg_p);
+        DBUG_ASSERT ((len >= 0), "message buffer corruption");
+    }
+
+    if (len >= message_buffer_size) {
+        /* buffer too small  */
 
         ILIBfree (message_buffer);
         message_buffer = (char *)ILIBmalloc (len + 2);
