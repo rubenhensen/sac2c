@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2005/06/03 10:10:07  sbs
+ * OOOOps
+ *
  * Revision 1.11  2005/06/03 10:09:20  sbs
  * CTIerrorLineVA added
  *
@@ -470,9 +473,9 @@ CTIerrorLine (int line, const char *format, ...)
  ******************************************************************************/
 
 void
-CTIerrorLine (int line, const char *format, va_list arg_p)
+CTIerrorLineVA (int line, const char *format, va_list arg_p)
 {
-    DBUG_ENTER ("CTIerrorLine");
+    DBUG_ENTER ("CTIerrorLineVA");
 
     fprintf (stderr, "\n");
     fprintf (stderr, "%sline %d  file: %s\n", error_message_header, line,
