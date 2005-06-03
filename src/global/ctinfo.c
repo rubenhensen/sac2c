@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2005/06/03 10:09:20  sbs
+ * CTIerrorLineVA added
+ *
  * Revision 1.10  2005/06/03 09:34:16  cg
  * Bug fixed in handling of error message buffer.
  *
@@ -448,6 +451,33 @@ CTIerrorLine (int line, const char *format, ...)
     PrintMessage (error_message_header, format, arg_p);
 
     va_end (arg_p);
+
+    errors++;
+
+    DBUG_VOID_RETURN;
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn void CTIerrorLineVA( int line, const char *format, va_list arg_p)
+ *
+ *   @brief  produces an error message preceded by file name and line number.
+ *
+ *
+ *   @param line  line number
+ *   @param format  format string like in printf
+ *
+ ******************************************************************************/
+
+void
+CTIerrorLine (int line, const char *format, va_list arg_p)
+{
+    DBUG_ENTER ("CTIerrorLine");
+
+    fprintf (stderr, "\n");
+    fprintf (stderr, "%sline %d  file: %s\n", error_message_header, line,
+             global.filename);
+    PrintMessage (error_message_header, format, arg_p);
 
     errors++;
 
