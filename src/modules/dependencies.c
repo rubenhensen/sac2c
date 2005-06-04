@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2005/06/04 11:50:00  sbs
+ * output of -M changed. Now, dependencies to .sac files are provided if no .so
+ * is found but the source is found.
+ *
  * Revision 1.5  2005/06/02 17:02:34  sbs
  * added an empty alldeps rule for -Mlib in case there are no
  * dependencies at all.
@@ -157,6 +161,19 @@ PrintSACLib (const char *name)
     result = ILIBstringCopy (FMGRfindFile (PK_lib_path, filename));
 
     filename = ILIBfree (filename);
+
+    if (result == NULL) {
+        /*
+         * now try to find the .sac file
+         */
+
+        filename = ILIBmalloc (sizeof (char) * (strlen (name) + 5));
+        sprintf (filename, "%s.sac", name);
+
+        result = ILIBstringCopy (FMGRfindFile (PK_imp_path, filename));
+
+        filename = ILIBfree (filename);
+    }
 
     if (result == NULL) {
         /*
