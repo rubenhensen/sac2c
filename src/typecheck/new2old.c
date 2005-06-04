@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.33  2005/06/04 20:11:42  sbs
+ * type conversion from new to old type disabled by if 0's
+ *
  * Revision 1.32  2005/03/20 00:22:16  sbs
  * NT2OTpart added.
  * insertion of scalarised index vectors corrected for default partitions.
@@ -324,9 +327,11 @@ NT2OTfundef (node *arg_node, info *arg_info)
     }
 
     if (TYisProdOfArray (type)) {
-        old_type = FUNDEF_TYPES (arg_node);
-        FUNDEF_TYPES (arg_node) = TYtype2OldType (type);
-        old_type = FREEfreeAllTypes (old_type);
+#if 0
+    old_type = FUNDEF_TYPES( arg_node);
+    FUNDEF_TYPES( arg_node) = TYtype2OldType( type);
+    old_type = FREEfreeAllTypes( old_type);
+#endif
 
     } else {
         CTIabort ("Could not infer proper type for fun %s; type found: %s",
@@ -401,8 +406,10 @@ NT2OTarg (node *arg_node, info *arg_info)
                       tmp_str2 = ILIBfree (tmp_str2););
 
         if (TYisArray (type)) {
-            ARG_TYPE (arg_node) = FREEfreeAllTypes (ARG_TYPE (arg_node));
-            ARG_TYPE (arg_node) = TYtype2OldType (type);
+#if 0
+      ARG_TYPE( arg_node) = FREEfreeAllTypes( ARG_TYPE( arg_node));
+      ARG_TYPE( arg_node) = TYtype2OldType( type);
+#endif
         } else {
             CTIabort ("Could not infer proper type for arg %s", ARG_NAME (arg_node));
         }
@@ -491,8 +498,10 @@ NT2OTvardec (node *arg_node, info *arg_info)
     }
 
     if (TYisArray (type)) {
-        VARDEC_TYPE (arg_node) = FREEfreeAllTypes (VARDEC_TYPE (arg_node));
-        VARDEC_TYPE (arg_node) = TYtype2OldType (type);
+#if 0
+    VARDEC_TYPE( arg_node) = FREEfreeAllTypes( VARDEC_TYPE( arg_node));
+    VARDEC_TYPE( arg_node) = TYtype2OldType( type);
+#endif
     } else {
         CTIabort ("Could not infer proper type for var %s", VARDEC_NAME (arg_node));
     }
