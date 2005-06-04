@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2005/06/04 12:59:43  sbs
+ * as FUNDEF_RETS and FUNDEF_ARGS are optional we should never
+ * traverse them w/o checking whether they exist.
+ *
  * Revision 1.10  2005/02/18 10:37:23  sah
  * module system fixes
  *
@@ -259,8 +263,12 @@ AnnotateRefcounting (node *arg_node, info *arg_info, node *nums)
     INFO_RSP_NUMS (arg_info) = nums;
     INFO_RSP_TRAVMODE (arg_info) = RSP_refcnt;
 
-    FUNDEF_RETS (arg_node) = TRAVdo (FUNDEF_RETS (arg_node), arg_info);
-    FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
+    if (FUNDEF_RETS (arg_node) != NULL) {
+        FUNDEF_RETS (arg_node) = TRAVdo (FUNDEF_RETS (arg_node), arg_info);
+    }
+    if (FUNDEF_ARGS (arg_node) != NULL) {
+        FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
+    }
 
     INFO_RSP_COUNTER (arg_info) = 0;
     INFO_RSP_NUMS (arg_info) = NULL;
@@ -277,8 +285,12 @@ AnnotateLinksign (node *arg_node, info *arg_info, node *nums)
     INFO_RSP_NUMS (arg_info) = nums;
     INFO_RSP_TRAVMODE (arg_info) = RSP_linksign;
 
-    FUNDEF_RETS (arg_node) = TRAVdo (FUNDEF_RETS (arg_node), arg_info);
-    FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
+    if (FUNDEF_RETS (arg_node) != NULL) {
+        FUNDEF_RETS (arg_node) = TRAVdo (FUNDEF_RETS (arg_node), arg_info);
+    }
+    if (FUNDEF_ARGS (arg_node) != NULL) {
+        FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
+    }
 
     INFO_RSP_NUMS (arg_info) = NULL;
     INFO_RSP_TRAVMODE (arg_info) = RSP_default;
