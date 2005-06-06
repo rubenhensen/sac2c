@@ -35,3 +35,4 @@ ast2traverse_helper_c.xsl
 check-integrity.xsl
 ast2check_h.xsl
 ast2checktst_c.xsl
+ast2checktst_h.xsl
