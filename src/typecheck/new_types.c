@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.84  2005/06/06 09:01:55  sah
+ * for udts, the modules is printed as well
+ *
  * Revision 3.83  2005/01/11 14:20:44  cg
  * Converted output generation from Error.h to ctinfo.c
  *
@@ -3909,7 +3912,12 @@ ScalarType2String (ntype *type)
         }
         break;
     case TC_user:
-        buf = ILIBstrBufPrintf (buf, "%s", UTgetName (USER_TYPE (type)));
+        if (UTgetMod (USER_TYPE (type)) == NULL) {
+            buf = ILIBstrBufPrintf (buf, "%s", UTgetName (USER_TYPE (type)));
+        } else {
+            buf = ILIBstrBufPrintf (buf, "%s:%s", UTgetMod (USER_TYPE (type)),
+                                    UTgetName (USER_TYPE (type)));
+        }
         break;
     case TC_poly:
         buf = ILIBstrBufPrintf (buf, "<%s>", POLY_NAME (type));
