@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2005/06/06 14:01:07  ktr
+ * Withloopification now builds copy with-loops for functions arguments as well
+ *
  * Revision 1.2  2004/11/24 18:51:58  ktr
  * COMPILES!
  *
@@ -424,17 +427,22 @@ CreateCopyWithloop (node *array, int dim, node *fundef)
          */
         unrdim = (dim < 1) ? dim : 1;
     } else {
-        DBUG_ASSERT (AVIS_SSAASSIGN (ID_AVIS (array)) != NULL,
-                     "AVIS_SSAASSIGN must not be zero!");
+        if (AVIS_SSAASSIGN (ID_AVIS (array)) != NULL) {
+            node *arr = ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (array)));
 
-        if (NODE_TYPE (ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (array)))) == N_array) {
-            /*
-             * array is given by an array, unroll at most the array dimensionality
-             */
-            int arraydim
-              = SHgetDim (ARRAY_SHAPE (ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (array)))));
+            if (NODE_TYPE (array) == N_array) {
+                /*
+                 * array is given by an array, unroll at most the array dimensionality
+                 */
+                int arraydim = SHgetDim (arr);
 
-            unrdim = (dim < arraydim) ? dim : arraydim;
+                unrdim = (dim < arraydim) ? dim : arraydim;
+            } else {
+                /*
+                 * In all other cases, build a plain copy with-loop
+                 */
+                unrdim = 0;
+            }
         } else {
             /*
              * In all other cases, build a plain copy with-loop
