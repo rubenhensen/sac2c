@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.168  2005/06/06 10:18:34  jhb
+# added checktst.o
+#
 # Revision 3.167  2005/06/01 16:59:05  sah
 # separated annotating namespaces and gathering dependencies in two
 # phase to allow for reusing the gathering phase to print the
@@ -137,7 +140,8 @@ TREE= src/tree/traverse.o src/tree/tree_basic.o src/tree/free.o \
       src/tree/scheduling.o src/tree/wl_bounds.o \
       src/tree/node_basic.o src/tree/free_node.o \
       src/tree/free_attribs.o src/tree/traverse_tables.o src/tree/traverse_helper.o \
-      src/tree/check.o src/tree/check_lib.o src/tree/prepare_inlining.o
+      src/tree/check.o src/tree/check_lib.o src/tree/checktst.o \
+      src/tree/prepare_inlining.o
 
 SERIALIZE= src/serialize/serialize_node.o \
            src/serialize/serialize_attribs.o src/serialize/deserialize.o \
@@ -156,7 +160,7 @@ FLATTEN= src/flatten/flatten.o src/flatten/lac2fun.o \
          src/flatten/handle_mops.o src/flatten/UndoSSATransform.o \
          src/flatten/ToNewTypes.o src/flatten/SSATransform.o \
          src/flatten/ssa.o src/flatten/WLPartitionGeneration.o \
-	 src/flatten/WLEnhancement.o src/flatten/ExplicitAccumulate.o \
+         src/flatten/WLEnhancement.o src/flatten/ExplicitAccumulate.o \
          src/flatten/ToOldTypes.o src/flatten/wlanalysis.o \
          src/flatten/lacinlining.o
 
@@ -201,8 +205,8 @@ PSIOPT= src/psi-opt/index.o src/psi-opt/ArrayElimination.o \
         src/psi-opt/SSAWLI.o src/psi-opt/SSAWLF.o \
         src/psi-opt/pad.o src/psi-opt/pad_collect.o src/psi-opt/pad_infer.o \
         src/psi-opt/pad_transform.o src/psi-opt/pad_info.o \
-	src/psi-opt/WithloopFusion.o src/psi-opt/detectdependencies.o \
-	src/psi-opt/tagdependencies.o src/psi-opt/resolvedependencies.o
+        src/psi-opt/WithloopFusion.o src/psi-opt/detectdependencies.o \
+        src/psi-opt/tagdependencies.o src/psi-opt/resolvedependencies.o
 
 MODULES= src/modules/symboltable.o \
          src/modules/stringset.o src/modules/libstat.o \

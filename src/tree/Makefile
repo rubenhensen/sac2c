@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.45  2005/06/06 10:19:01  jhb
+# added checktst.o
+#
 # Revision 3.44  2005/02/14 11:23:03  cg
 # Added compilation of prepare_inlining.c
 #
@@ -125,7 +128,7 @@ OBJS := tree_basic.o tree_compound.o free.o DupTree.o traverse.o \
         LookUpTable.o adjust_ids.o cleanup_decls.o scheduling.o \
         change_signature.o compare_tree.o wl_bounds.o \
         node_basic.o free_node.o free_attribs.o \
-        traverse_tables.o traverse_helper.o check_lib.o check.o \
+        traverse_tables.o traverse_helper.o check_lib.o check.o checktst.o \
         prepare_inlining.o
 
 
