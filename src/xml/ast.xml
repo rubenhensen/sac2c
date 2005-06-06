@@ -123,67 +123,67 @@
       <traversal id="SEL" name="Serialize Link Traversal" default="user" include="serialize_link.h" />
       <traversal id="DS" name="DeSerialize Traversal" default="sons" include="deserialize.h">
         <travuser>
-	  <node name="Fundef" />
-	  <node name="Return" />
-	  <node name="Block" />
-	  <node name="Arg" />
-	</travuser>
+          <node name="Fundef" />
+          <node name="Return" />
+          <node name="Block" />
+          <node name="Arg" />
+        </travuser>
       </traversal>
       <traversal id="TNT" name="ToNewTypes Traversal" default="sons" include="ToNewTypes.h" >
-	<travuser>
-	  <node name="Fundef" />
-	  <node name="Arg" />
-	  <node name="Vardec" />
-	  <node name="Block" />
-	  <node name="Ap" />
-	</travuser>
+        <travuser>
+          <node name="Fundef" />
+          <node name="Arg" />
+          <node name="Vardec" />
+          <node name="Block" />
+          <node name="Ap" />
+        </travuser>
       </traversal>
       <traversal id="TOT" name="ToOldTypes Traversal" default="sons" include="ToOldTypes.h" >
-	<travuser>
-	  <node name="Fundef" />
-	  <node name="Arg" />
-	  <node name="Block" />
-	  <node name="Vardec" />
-	  <node name="Ret" />
-	</travuser>
+        <travuser>
+          <node name="Fundef" />
+          <node name="Arg" />
+          <node name="Block" />
+          <node name="Vardec" />
+          <node name="Ret" />
+        </travuser>
       </traversal>
-
+      
       <traversal id="CUD" name="Cleanup Declarations" default="sons" include="cleanup_decls.h" >
-	<travuser>
-	  <node name="Block" />
-	  <node name="Fundef" />
-	  <node name="Id" />
-	  <node name="Ids" />
-	  <node name="Vardec" />
-	</travuser>
+        <travuser>
+          <node name="Block" />
+          <node name="Fundef" />
+          <node name="Id" />
+          <node name="Ids" />
+          <node name="Vardec" />
+        </travuser>
       </traversal>
       <traversal id="F2L" name="Fun2Lac Traversal" default="sons" include="fun2lac.h" >
-	<travuser>
-	  <node name="Module" />
-	  <node name="Fundef" />
-	</travuser>
+        <travuser>
+          <node name="Module" />
+          <node name="Fundef" />
+        </travuser>
       </traversal>
       <traversal id="USSAT" name="UndoSSATransform Traversal" default="sons" include="UndoSSATransform.h" >
-	<travuser>
-	  <node name="Assign" />
-	  <node name="Fundef" />
-	  <node name="Let" />
-	  <node name="Block" />
+        <travuser>
+          <node name="Assign" />
+          <node name="Fundef" />
+          <node name="Let" />
+          <node name="Block" />
           <node name="Vardec" />
           <node name="Id" />
           <node name="Ids" />
-	  <node name="Cond" />
-	  <node name="Funcond" />
-	</travuser>
+          <node name="Cond" />
+          <node name="Funcond" />
+        </travuser>
       </traversal>
       <traversal id="INFDFMS" name="Infer DataFlowMask Traversal" default="sons" include="InferDFMs.h" >
-	<travuser>
-	  <node name="Assign" />
-	  <node name="Do" />
-	  <node name="Fundef" />
-	  <node name="Let" />
-	  <node name="Arg" />
-	  <node name="Code" />
+        <travuser>
+          <node name="Assign" />
+          <node name="Do" />
+          <node name="Fundef" />
+          <node name="Let" />
+          <node name="Arg" />
+          <node name="Code" />
           <node name="Ap" />
           <node name="Id" />
           <node name="Ids" />
@@ -192,24 +192,24 @@
           <node name="Cond" />
           <node name="Icm" />
           <node name="Cond" />
-	</travuser>
+        </travuser>
       </traversal>
       <traversal id="CMPT" name="Compare Tree Traversal" default="CMPTunknown" prefun="CMPTnodeType" include="compare_tree.h" >
-	<travuser>
+        <travuser>
           <node name="Num" />
           <node name="Char" />
           <node name="Bool" />
           <node name="Str" />
           <node name="Float" />
           <node name="Double" />
-	  <node name="Array" />
-	  <node name="Let" />
+          <node name="Array" />
+          <node name="Let" />
           <node name="Ap" />
           <node name="Prf" />
           <node name="Id" />
           <node name="Ids" />
           <node name="Generator" />
-	  <node name="Code" />
+          <node name="Code" />
           <node name="Withid" />
           <node name="Fold" />
           <node name="Globobj" />
@@ -222,12 +222,12 @@
           <node name="Do" />
           <node name="Exprs" />
           <node name="Empty" />
-	</travuser>
+        </travuser>
       </traversal>
-      <traversal id="CHK" name="Check the Tree" default="sons" include="check_lib.h" />
-      <traversal id="CHKTST" name="Check the TreeTest" default="sons" include="checktst.h" />
+      <traversal id="CHK" name="Check the Tree" default="user" include="check.h" />
+      <traversal id="CHKTST" name="Check the TreeTest" default="user" include="checktst.h" />
     </general>
-
+    
     <phase id="setup" name="Setting up sac2c compiler environment"
       startfun="SUdoSetup" include="setup.h"
       if="true"
@@ -239,33 +239,33 @@
       breakspec="sp">
       <traversal id="HM" name="Handle Mops" default="sons" include="handle_mops.h" >
         <travuser>
-	  <node name="SPMop" />
-	</travuser>
+          <node name="SPMop" />
+        </travuser>
       </traversal>
       <traversal id="HD" name="Handle Dots" default="sons" include="handle_dots.h">
         <travuser>
-	  <node name="SPId" />
-	  <node name="With" />
-	  <node name="Genarray" />
-	  <node name="Modarray" />
-	  <node name="Fold" />
-	  <node name="Part" />
-	  <node name="Generator" />
-	  <node name="Dot" />
-	  <node name="SPAp" />
-	  <node name="Prf" />
-	  <node name="Assign" />
-	  <node name="SetWL" />
-	  <node name="SPId" />
-	</travuser>
+          <node name="SPId" />
+          <node name="With" />
+          <node name="Genarray" />
+          <node name="Modarray" />
+          <node name="Fold" />
+          <node name="Part" />
+          <node name="Generator" />
+          <node name="Dot" />
+          <node name="SPAp" />
+          <node name="Prf" />
+          <node name="Assign" />
+          <node name="SetWL" />
+          <node name="SPId" />
+        </travuser>
       </traversal>
       <traversal id="RSP" name="Resolve pragmas" default="sons" include="resolvepragma.h">
         <travuser>
-	  <node name="Arg" />
-	  <node name="Fundef" />
-	  <node name="Module" />
-	  <node name="Ret" />
-	</travuser>
+          <node name="Arg" />
+          <node name="Fundef" />
+          <node name="Module" />
+          <node name="Ret" />
+        </travuser>
       </traversal>
     </phase>
     <phase id="simplify" name="Simplifying source code" 
