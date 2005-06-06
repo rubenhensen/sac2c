@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.154  2005/06/06 10:19:26  jhb
+ * duplication of obsolete attributes
+ *
  * Revision 3.153  2005/04/19 17:34:57  ktr
  * removed AVIS_SSAASSIGN2, AVIS_SUBSTUSSA
  *
@@ -1488,9 +1491,6 @@ DUPreturn (node *arg_node, info *arg_info)
     RETURN_CRET (new_node)
       = LUTsearchInLutPp (INFO_DUP_LUT (arg_info), RETURN_CRET (arg_node));
 
-    RETURN_USEMASK (new_node) = DupDfmask (RETURN_USEMASK (arg_node), arg_info);
-    RETURN_DEFMASK (new_node) = DupDfmask (RETURN_DEFMASK (arg_node), arg_info);
-
     CopyCommonNodeData (new_node, arg_node);
 
     INFO_DUP_LUT (arg_info)
@@ -1657,9 +1657,6 @@ DUPlet (node *arg_node, info *arg_info)
      * EXPR must be traversed after IDS (for AP_ARGTAB)
      */
     LET_EXPR (new_node) = DUPTRAV (LET_EXPR (arg_node));
-
-    LET_USEMASK (new_node) = DupDfmask (LET_USEMASK (arg_node), arg_info);
-    LET_DEFMASK (new_node) = DupDfmask (LET_DEFMASK (arg_node), arg_info);
 
     CopyCommonNodeData (new_node, arg_node);
 
