@@ -225,6 +225,7 @@
 	</travuser>
       </traversal>
       <traversal id="CHK" name="Check the Tree" default="sons" include="check_lib.h" />
+      <traversal id="CHKTST" name="Check the TreeTest" default="sons" include="checktst.h" />
     </general>
 
     <phase id="setup" name="Setting up sac2c compiler environment"
@@ -2262,11 +2263,9 @@
             <phase name="typecheck" />
           </phases>
         </attribute>
-        <attribute name="DFM_Base" mandatory="yes">
+        <attribute name="DFM_Base" mandatory="no">
           <type name="DFMaskBase" />
           <phases>
-            <range from="rc" to="final" />
-            <range from="fun2lac" to="final" /> <!-- TODO -->
           </phases>
         </attribute>
         <attribute name="ArgTab" mandatory="yes">
@@ -2283,7 +2282,7 @@
             </target>
           </type>
           <phases>
-            <range from="liftsmpd" to="compile" /> <!-- TODO -->
+            <range from="liftspmd" to="compile" />
           </phases>
         </attribute>
         <attribute name="Worker" mandatory="no">
@@ -2305,14 +2304,13 @@
             </target>
           </type>
           <phases>
-            <range from="rfin" to="final" /> <!-- TODO -->
-            <range from="multithread_finish" to="final" /> <!-- mtfin TODO -->
-          </phases>
+            <range from="repfun" to="final" /> 
+		  </phases>
         </attribute>
 	<attribute name="ExecMode" mandatory="no">
 	  <type name="MTExecMode"/>
 	  <phases>
-	    <range from="BuildMultithread" to="crece"/> <!-- TODO -->
+	    <!-- <range from="BuildMultithread" to="crece"/> TODO -->
 	  </phases>
 	</attribute>
         <attribute name="FunGroup" default="NULL" mandatory="no">
@@ -2376,10 +2374,10 @@
     <node name="Arg">
       <sons>
         <son name="Avis" mandatory="yes">
-	  <target>
-	    <node name="Avis" />
-	  </target>
-	</son>
+		  <target>
+			<node name="Avis" />
+		  </target>
+		</son>
         <son name="Next" mandatory="no">
           <target>
             <node name="Arg" />
@@ -2408,50 +2406,53 @@
             <phase name="precompile" />
           </phases>
         </attribute>
-        <attribute name="Objdef" mandatory="yes">
+        <attribute name="Objdef" mandatory="no">
           <type name="Link">
             <target>
               <node name="Objdef" />
             </target>
           </type>
           <phases>
-            <range from="obj-handling" to="precompile" /><!-- TODO -->
+            <!-- <range from="obj-handling" to="precompile" /> TODO -->
           </phases>
+          <description>
+            Deprecated. TODO: This should be eliminated.
+          </description>
         </attribute>
-        <attribute name="ActChn" mandatory="yes">
+        <attribute name="ActChn" mandatory="no">
           <type name="Link">
             <target>
               <node name="Vinfo" />
             </target>
           </type>
           <phases>
-            <range from="psi-optimize" to="final" /><!-- TODO -->
+            <phase name="ive" />
           </phases>
         </attribute>
-        <attribute name="ColChn" mandatory="yes">
+        <attribute name="ColChn" mandatory="no">
           <type name="Link">
             <target>
               <node name="Vinfo" />
             </target>
           </type>
           <phases>
-            <range from="psi-optimize" to="final" /><!-- TODO -->
+            <phase name="ive" />
           </phases>
         </attribute>
-        <attribute name="Fundef" mandatory="yes">
+        <attribute name="Fundef" mandatory="no">
           <type name="ExtLink">
             <target>
               <node name="Fundef" />
             </target>
           </type>
           <phases>
-            <range from="psi-optimize" to="final" /><!-- TODO -->
+            <phase name="ive" />
           </phases>
         </attribute>
 	<attribute name="Linksign" mandatory="no" >
 	  <type name="Integer" />
 	  <phases>
-	    <range from="rsp" to="final" /><!-- TODO -->
+	    <range from="pragma" to="final" />
 	  </phases>
 	</attribute>
       </attributes>
@@ -2581,7 +2582,7 @@
             </target>
           </type>
           <phases>
-            <range from="psi-optimize" to="end" /><!-- TODO -->
+            <phase name="ive" />
           </phases>
         </attribute>
         <attribute name="ColChn" mandatory="no">
@@ -2591,7 +2592,7 @@
             </target>
           </type>
           <phases>
-            <range from="psi-optimize" to="end" /><!-- TODO -->
+            <phase name="ive" />
           </phases>
         </attribute>
         <attribute name="VarNo" mandatory="yes">
@@ -2640,10 +2641,10 @@
         </son>
       </sons>
       <attributes>
-	<attribute name="ExecMode" mandatory="yes">
+	<attribute name="ExecMode" mandatory="no">
 	  <type name="Integer" />
 	  <phases>
-	    <range from="BuildMultithread" to="crece" /><!-- TODO -->
+	    <!-- <range from="BuildMultithread" to="crece" /> TODO -->
 	  </phases>
 	</attribute>
 	<attribute name="CellId" mandatory="yes">
@@ -2685,7 +2686,7 @@
         <attribute name="Index" mandatory="yes">
           <type name="IndexInfo" />
           <phases>
-            <range from="WLI" to="wlf" /><!-- TODO -->
+            <phase name="wlf" />
           </phases>
         </attribute>
       </attributes>
@@ -2713,22 +2714,10 @@
 	</son>
       </sons>
       <attributes>
-        <attribute name="UseMask" mandatory="yes">
-          <type name="DFMask" />
-          <phases>
-            <range from="multithread" to="final" />
-          </phases>
-        </attribute>
-        <attribute name="DefMask" mandatory="yes">
-          <type name="DFMask" />
-          <phases>
-            <range from="multithread" to="final" />
-          </phases>
-        </attribute>
         <attribute name="LIRFlag" mandatory="yes">
           <type name="Integer" />
           <phases>
-            <range from="lir" to="lirmov" /><!-- TODO -->
+            <phase name="lir" />
           </phases>
         </attribute>
       </attributes>
@@ -2793,18 +2782,6 @@
             <range from="precompile" to="final" />
           </phases>
         </attribute>
-        <attribute name="UseMask" mandatory="yes">
-          <type name="DFMask" />
-          <phases>
-            <range from="multithread" to="final" />
-          </phases>
-        </attribute>
-        <attribute name="DefMask" mandatory="yes">
-          <type name="DFMask" />
-          <phases>
-            <range from="multithread" to="final" />
-          </phases>
-        </attribute>
       </attributes>
       <flags></flags>
     </node>
@@ -2835,25 +2812,22 @@
         <attribute name="In_Mask" mandatory="yes">
           <type name="DFMask" />
           <phases>
-            <range from="infer_dfms" to="lac2fun" /><!-- TODO -->
-            <range from="lac2fun" to="refcnt" /><!-- TODO -->
-            <range from="refcnt" to="final" />
+            <phase name="lac2fun" />
+            <phase name="lac2fun2" />
           </phases>
         </attribute>
         <attribute name="Out_Mask" mandatory="yes">
           <type name="DFMask" />
           <phases>
-            <range from="infer_dfms" to="lac2fun" /><!-- TODO -->
-            <range from="lac2fun" to="refcnt" /><!-- TODO -->
-            <range from="refcnt" to="final" />
+            <phase name="lac2fun" />
+            <phase name="lac2fun2" />
           </phases>
         </attribute>
         <attribute name="Local_Mask" mandatory="yes">
           <type name="DFMask" />
           <phases>
-            <range from="infer_dfms" to="lac2fun" /><!-- TODO -->
-            <range from="lac2fun" to="refcnt" /><!-- TODO -->
-            <range from="refcnt" to="final" />
+            <phase name="lac2fun" />
+            <phase name="lac2fun2" />
           </phases>
         </attribute>
       </attributes>
@@ -2883,28 +2857,31 @@
         </son>
       </sons>
       <attributes>
-        <attribute name="Label">
+        <attribute name="Label" mandatory="yes">
           <type name="String" />
           <phases>
-            <range from="fun2lac" to="final" /><!-- TODO -->
+            <range from="fun2lac2" to="final" />
           </phases>
         </attribute>
         <attribute name="In_Mask" mandatory="yes">
           <type name="DFMask" />
           <phases>
-            <range from="infer_dfms" to="final" /><!-- TODO -->
+            <phase name="lac2fun" />
+            <phase name="lac2fun2" />
           </phases>
         </attribute>
         <attribute name="Out_Mask" mandatory="yes">
           <type name="DFMask" />
           <phases>
-            <range from="infer_dfms" to="final" /><!-- TODO -->
+            <phase name="lac2fun" />
+            <phase name="lac2fun2" />
           </phases>
         </attribute>
         <attribute name="Local_Mask" mandatory="yes">
           <type name="DFMask" />
           <phases>
-            <range from="infer_dfms" to="final" /><!-- TODO -->
+            <phase name="lac2fun" />
+            <phase name="lac2fun2" />
           </phases>
         </attribute>
       </attributes>
@@ -2928,26 +2905,7 @@
           </target>
         </son>
       </sons>
-      <attributes>
-        <attribute name="In_Mask" mandatory="yes">
-          <type name="DFMask" />
-          <phases>
-            <range from="infer_dfms" to="final" /><!-- TODO -->
-          </phases>
-        </attribute>
-        <attribute name="Out_Mask" mandatory="yes">
-          <type name="DFMask" />
-          <phases>
-            <range from="infer_dfms" to="final" /><!-- TODO -->
-          </phases>
-        </attribute>
-        <attribute name="Local_Mask" mandatory="yes">
-          <type name="DFMask" />
-          <phases>
-            <range from="inger_dfms" to="final" /><!-- TODO -->
-          </phases>
-        </attribute>
-      </attributes>
+      <attributes></attributes>
       <flags></flags>
     </node>
 <!--
@@ -3204,7 +3162,7 @@
             </target>
           </type>
           <phases>
-            <range from="wli" to="wlf" /><!-- TODO -->
+            <phase name="wlf" />
           </phases>
         </attribute>
 	<attribute name="ICMtext" default="NULL" mandatory="no">
@@ -3447,7 +3405,7 @@
             </target>
           </type>
           <phases>
-            <range from="compile" to="free" /><!-- TODO -->
+            <range from="compile" to="final" />
           </phases>
         </attribute>
       </attributes>
@@ -3536,19 +3494,19 @@
         <attribute name="InitFun" mandatory="no">
           <type name="String" />
           <phases>
-            <range from="import" to="readsib" /><!-- TODO -->
+            <!-- <range from="imp" to="readsib" /> TODO -->
           </phases>
         </attribute>
         <attribute name="CopyFun" mandatory="no">
           <type name="String" />
           <phases>
-            <range from="import" to="readsib" /><!-- TODO -->
+            <!-- <range from="import" to="readsib" /> TODO -->
           </phases>
         </attribute>
         <attribute name="FreeFun" mandatory="no">
           <type name="String" />
           <phases>
-            <range from="import" to="readsib" /><!-- TODO -->
+            <!-- <range from="import" to="readsib" /> TODO -->
           </phases>
         </attribute>
        </attributes>
@@ -3700,7 +3658,8 @@
             </target>
           </type>
           <phases>
-            <range from="ssaform" to="undossa" /><!-- TODO -->
+            <range from="ssa" to="ussa" />
+            <range from="ssa2" to="ussa2" />
           </phases>
         </attribute>
         <attribute name="SSAstack" mandatory="no">
@@ -3990,17 +3949,6 @@
             <all />
           </phases>
         </attribute>
-        <attribute name="With_Ptrs" mandatory="yes">
-          <type name="Node">
-            <target>
-              <node name="Exprs" />
-            </target>
-          </type>
-          <phases>
-            <range from="syncinit" to="syncopt" /><!-- TODO -->
-            <range from="syncopt" to="final" /><!-- TODO -->
-          </phases>
-        </attribute>
       </attributes>
       <flags>
          <flag name="First">
@@ -4114,40 +4062,40 @@
             <range from="scanparse" to="wltrans" />
           </phases>
         </attribute>
+        <attribute name="In_Mask" mandatory="no">
+          <type name="DFMask" />
+          <phases>
+            <phase name="lac2fun"/>
+          </phases>
+        </attribute>
+        <attribute name="Out_Mask" mandatory="no">
+          <type name="DFMask" />
+          <phases>
+            <phase name="lac2fun"/>
+          </phases>
+        </attribute>
+        <attribute name="Local_Mask" mandatory="no">
+          <type name="DFMask" />
+          <phases>
+            <phase name="lac2fun"/>
+          </phases>
+        </attribute>
         <attribute name="Referenced" mandatory="yes">
           <type name="Integer" />
           <phases>
-            <range from="wlt" to="wlf" /><!-- TODO -->
+            <phase name="wlf" />
           </phases>
         </attribute>
         <attribute name="Referenced_Fold" mandatory="yes">
           <type name="Integer" />
           <phases>
-            <range from="wlt" to="wlf" /><!-- TODO -->
+            <phase name="wlf" />
           </phases>
         </attribute>
         <attribute name="References_Folded" mandatory="yes">
           <type name="Integer" />
           <phases>
-            <range from="wlt" to="wlf" /><!-- TODO -->
-          </phases>
-        </attribute>
-        <attribute name="In_Mask" mandatory="yes">
-          <type name="DFMask" />
-          <phases>
-            <range from="infer_dfms" to="wltrans" /><!-- TODO -->
-          </phases>
-        </attribute>
-        <attribute name="Out_Mask" mandatory="yes">
-          <type name="DFMask" />
-          <phases>
-            <range from="infer_dfms" to="wltrans" /><!-- TODO -->
-          </phases>
-        </attribute>
-        <attribute name="Local_Mask" mandatory="yes">
-          <type name="DFMask" />
-          <phases>
-            <range from="infer_dfms" to="wltrans" /><!-- TODO -->
+            <phase name="wlf" />
           </phases>
         </attribute>
       </attributes>
@@ -4349,10 +4297,10 @@
             <range from="wlaa" to="final" />
           </phases>
         </attribute>
-        <attribute name="TSI_TileShp" mandatory="yes">
+        <attribute name="TSI_TileShp" mandatory="no">
           <type name="ShpSeg" />
           <phases>
-            <range from="tli" to="final" /><!-- TODO -->
+            <range from="tsi" to="final" />
           </phases>
         </attribute>
       </attributes>
@@ -4408,28 +4356,28 @@
             <all />
           </phases>
         </attribute>
-        <attribute name="In_Mask" mandatory="yes">
+        <attribute name="In_Mask" mandatory="no">
           <type name="DFMask" />
           <phases>
-            <range from="infer_dfms" to="final" /><!-- TODO -->
+            <phase name="lac2fun"/>
           </phases>
         </attribute>
-        <attribute name="Out_Mask" mandatory="yes">
+        <attribute name="Out_Mask" mandatory="no">
           <type name="DFMask" />
           <phases>
-            <range from="infer_dfms" to="final" /><!-- TODO -->
+            <phase name="lac2fun"/>
           </phases>
         </attribute>
-        <attribute name="Local_Mask" mandatory="yes">
+        <attribute name="Local_Mask" mandatory="no">
           <type name="DFMask" />
           <phases>
-            <range from="infer_dfms" to="final" /><!-- TODO -->
+            <phase name="lac2fun"/>
           </phases>
         </attribute>
-        <attribute name="ReUse" mandatory="yes">
+        <attribute name="ReUse" mandatory="no">
           <type name="DFMask" />
           <phases>
-            <range from="ReuseWithArrays" to="final" /><!-- TODO -->
+            <phase name="rci" />
           </phases>
         </attribute>
       </attributes>
@@ -5478,7 +5426,7 @@
 	<attribute name="Linksign" mandatory="no" >
 	  <type name="Integer" />
 	  <phases>
-	    <range from="rsp" to="final" /><!-- TODO -->
+	    <range from="pragma" to="final" />
 	  </phases>
 	</attribute>
       </attributes>
