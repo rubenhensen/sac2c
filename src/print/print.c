@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.216  2005/06/06 10:22:01  jhb
+ * printing of obsolete attributes removed
+ *
  * Revision 3.215  2005/06/01 15:51:08  sah
  * this needs to be rewritten. ASAP!
  *
@@ -2077,19 +2080,6 @@ PRTlet (node *arg_node, info *arg_info)
     DBUG_ENTER ("PRTlet");
 
     DBUG_PRINT ("PRINT", ("%s " F_PTR, NODE_TEXT (arg_node), arg_node));
-
-    if (LET_USEMASK (arg_node) != NULL) {
-        fprintf (global.outfile, "/* use:");
-        DFMprintMask (global.outfile, " %s", LET_USEMASK (arg_node));
-        fprintf (global.outfile, " */\n");
-        INDENT;
-    }
-    if (LET_DEFMASK (arg_node) != NULL) {
-        fprintf (global.outfile, "/* def:");
-        DFMprintMask (global.outfile, " %s", LET_DEFMASK (arg_node));
-        fprintf (global.outfile, " */\n");
-        INDENT;
-    }
 
     expr = LET_EXPR (arg_node);
     if ((NODE_TYPE (expr) == N_ap) && (AP_ARGTAB (expr) != NULL)) {
