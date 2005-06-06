@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2005/06/06 13:26:40  jhb
+ * added the check traversal after each subphase
+ *
  * Revision 1.3  2005/04/20 07:25:18  cg
  * CheckTree is now only called if syntax tree actually exists.
  *
@@ -131,6 +134,10 @@ PHrunCompilerSubPhase (compiler_subphase_t subphase, node *syntax_tree)
     if (ILIBstringCompare (global.break_specifier, subphase_specifier[subphase])) {
         CTIterminateCompilation (global.compiler_phase, global.break_specifier,
                                  syntax_tree);
+    }
+
+    if ((global.treecheck) && (syntax_tree != NULL)) {
+        syntax_tree = CHKdoTreeCheck (syntax_tree);
     }
 
     DBUG_RETURN (syntax_tree);
