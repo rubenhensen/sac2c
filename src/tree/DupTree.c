@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.155  2005/06/06 13:24:31  jhb
+ * ccorrected copy behavior for N_ERROR
+ *
  * Revision 3.154  2005/06/06 10:19:26  jhb
  * duplication of obsolete attributes
  *
@@ -697,13 +700,14 @@ DupFlags (node *new_node, node *old_node)
 static void
 CopyCommonNodeData (node *new_node, node *old_node)
 {
-    info *arg_info = NULL;
-
     DBUG_ENTER ("CopyCommonNodeData");
 
     NODE_LINE (new_node) = NODE_LINE (old_node);
     NODE_FILE (new_node) = NODE_FILE (old_node);
-    NODE_ERROR (new_node) = DUPTRAV (NODE_ERROR (old_node));
+
+    if (NODE_ERROR (new_node) != NULL) {
+        NODE_ERROR (new_node) = DUPerror (NODE_ERROR (old_node), NULL);
+    }
 
     new_node = DupFlags (new_node, old_node);
 
@@ -2944,8 +2948,11 @@ DUPerror (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("DUPerror");
 
-    new_node = TBmakeError (ILIBstringCopy (ERROR_MESSAGE (arg_node)),
-                            DUPCONT (ERROR_NEXT (arg_node)));
+    new_node = TBmakeError (ILIBstringCopy (ERROR_MESSAGE (arg_node)), NULL);
+
+    if (ERROR_NEXT (arg_node) != NULL) {
+        ERROR_NEXT (new_node) = DUPerror (ERROR_NEXT (arg_node), NULL);
+    }
 
     DBUG_RETURN (new_node);
 }
