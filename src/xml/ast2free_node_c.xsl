@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.8  2005/06/06 13:17:20  jhb
+  added handling of NODE_ERROR
+
   Revision 1.7  2005/03/10 09:41:09  cg
   Added some necessary includes.
 
@@ -247,6 +250,7 @@ version="1.0">
   <xsl:value-of select="'&quot;);'"/>
   <!-- give hint we start to free now -->
   <xsl:value-of select="'DBUG_PRINT( &quot;FREE&quot;, (&quot;Processing node %s at &quot; F_PTR, NODE_TEXT( arg_node), arg_node));'"/>
+  <xsl:value-of select="'NODE_ERROR( arg_node) = FREECOND( NODE_ERROR( arg_node), arg_info);'"/>
   <!-- first free everything downwards in the ast -->
   <xsl:apply-templates select="sons/son[@name = &quot;Next&quot;]"/>
   <!-- call free for attributes -->
