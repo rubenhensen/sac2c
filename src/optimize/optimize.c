@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.93  2005/06/06 13:28:40  jhb
+ * added PHrunCompilerSubPhase
+ *
  * Revision 3.92  2005/06/02 13:42:48  mwe
  * rerun optimization cycle if sisi found optimization cases
  *
@@ -1069,15 +1072,9 @@ OPTmodule (node *arg_node, info *arg_info)
     /*
      * apply USSA (undo ssa transformation)
      */
-    arg_node = SSAundoSsa (arg_node);
-    /* necessary to guarantee, that the compilation can be stopped
-       during the call of UndoSSA */
-    if ((global.break_after == PH_sacopt)
-        && ((0 == strcmp (global.break_specifier, "ussa"))
-            || (0 == strcmp (global.break_specifier, "f2l"))
-            || (0 == strcmp (global.break_specifier, "lacinl")))) {
-        goto DONE;
-    }
+    arg_node = PHrunCompilerSubPhase (SUBPH_ussa, arg_node);
+    arg_node = PHrunCompilerSubPhase (SUBPH_fun2lac, arg_node);
+    arg_node = PHrunCompilerSubPhase (SUBPH_lacinl, arg_node);
 
     /*
      * apply WLAA (analyze the array accesses within WLs)

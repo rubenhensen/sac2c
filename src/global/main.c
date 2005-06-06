@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.104  2005/06/06 13:26:40  jhb
+ * added PHrunCompilerSubPhase
+ *
  * Revision 3.103  2005/06/01 18:01:24  sah
  * finished printing of dependencies
  *
@@ -75,13 +78,10 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "internal_lib.h"
-#include "ssa.h"
 #include "free.h"
 #include "DupTree.h"
 #include "globals.h"
 #include "usage.h"
-#include "lac2fun.h"
-#include "fun2lac.h"
 #include "flatten.h"
 #include "print.h"
 #include "new_typecheck.h"
@@ -149,10 +149,7 @@
 
 #define PHASE_DONE_EPILOG                                                                \
     CTIabortOnError ();                                                                  \
-    DBUG_EXECUTE ("MEM_LEAK", ILIBdbugMemoryLeakCheck (););                              \
-    if (global.treecheck && (global.syntax_tree != NULL)) {                              \
-        global.syntax_tree = CHKdoTreeCheck (global.syntax_tree);                        \
-    }
+    DBUG_EXECUTE ("MEM_LEAK", ILIBdbugMemoryLeakCheck (););
 
 #define PHASE_EPILOG CHECK_DBUG_STOP;
 
@@ -470,18 +467,24 @@ main (int argc, char *argv[])
 
     switch (global.mtmode) {
     case MT_none:
-        syntax_tree = SSAundoSsa (syntax_tree);
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_ussa2, syntax_tree);
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_fun2lac2, syntax_tree);
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_lacinl2, syntax_tree);
         break;
     case MT_createjoin:
         NOTE (("Using create-join version of multithreading (MT1)"));
         /* spmd..._tab, sync..._tab */
-        syntax_tree = SSAundoSsa (syntax_tree);
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_ussa2, syntax_tree);
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_fun2lac2, syntax_tree);
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_lacinl2, syntax_tree);
         syntax_tree = CONCdoConcurrent (syntax_tree);
         break;
     case MT_startstop:
         NOTE (("Using start-stop version of multithreading (MT2)"));
         /* spmd..._tab, sync..._tab */
-        syntax_tree = SSAundoSsa (syntax_tree);
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_ussa2, syntax_tree);
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_fun2lac2, syntax_tree);
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_lacinl2, syntax_tree);
         syntax_tree = CONCdoConcurrent (syntax_tree);
         break;
     case MT_mtstblock:
@@ -494,7 +497,9 @@ main (int argc, char *argv[])
 
         /* something's missing... */
 
-        syntax_tree = SSAundoSsa (syntax_tree);
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_ussa2, syntax_tree);
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_fun2lac2, syntax_tree);
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_lacinl2, syntax_tree);
         break;
     }
 

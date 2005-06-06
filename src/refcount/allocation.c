@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2005/06/06 13:29:23  jhb
+ * added PHrunCompilerSubPhase
+ *
  * Revision 1.11  2004/12/16 14:37:30  ktr
  * added InplaceComputation
  *
@@ -38,12 +41,12 @@
 
 #include "allocation.h"
 
+#include "phase.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
 #include "globals.h"
 #include "dbug.h"
-#include "ssa.h"
 #include "alloc.h"
 #include "ConstVarPropagation.h"
 #include "SSADeadCodeRemoval.h"
@@ -130,14 +133,9 @@ EMAdoAllocation (node *syntax_tree)
      * !!! IF THIS BECOMES UNNECESSARY ONE DAY: !!!
      *     CVP and DCR can be removed as well
      */
-    DBUG_PRINT ("EMM", ("Transforming syntax tree into SSA form (l2f, cha, ssa)"));
-    syntax_tree = SSAdoSsa (syntax_tree);
-    if ((global.break_after == PH_alloc)
-        && ((0 == strcmp (global.break_specifier, "l2f"))
-            || (0 == strcmp (global.break_specifier, "cha"))
-            || (0 == strcmp (global.break_specifier, "ssa")))) {
-        goto DONE;
-    }
+    DBUG_PRINT ("EMM", ("Transforming syntax tree into SSA form (lac2fun2, ssa2)"));
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_lac2fun2, syntax_tree);
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_ssa2, syntax_tree);
 
     /*
      * Constant and variable propagation
