@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 1.11  2005/06/06 10:15:41  jhb
+# added ast2checktst_c.xsl and ast2checktst_h.xsl
+#
 # Revision 1.10  2005/02/16 11:35:08  sah
 # removed TABs
 #
@@ -61,7 +64,8 @@ TARGETS = ../tree/attribs.h ../tree/node_basic.h ../tree/node_basic.c \
           ../global/node_info.mac ../tree/traverse_tables.c \
           ../tree/traverse_tables.h ../tree/sons.h \
           ../tree/traverse_helper.c \
-          ../tree/check.h ../tree/check.c
+          ../tree/check.h ../tree/check.c \
+          ../tree/checktst.h ../tree/checktst.c
 
 all: $(TARGETS) html
 
@@ -174,6 +178,15 @@ ast.html: ast.xml ast2html.xsl
 ../tree/check.c: ast.xml ast2check_c.xsl
 	$(XSLTENGINE) ast2check_c.xsl ast.xml \
         | $(CODE_BEAUTIFIER) >$@
+
+../tree/checktst.h: ast.xml ast2checktst_h.xsl
+	$(XSLTENGINE) ast2checktst_h.xsl ast.xml \
+        | $(CODE_BEAUTIFIER) >$@
+
+../tree/checktst.c: ast.xml ast2checktst_c.xsl
+	$(XSLTENGINE) ast2checktst_c.xsl ast.xml \
+        | $(CODE_BEAUTIFIER) >$@
+
 
 
 clean:
