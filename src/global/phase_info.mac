@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.23  2005/06/06 13:26:40  jhb
+ * corrected some subphases
+ *
  * Revision 3.22  2005/05/31 18:16:14  sah
  * added resolve symbol types phase
  *
@@ -185,9 +188,10 @@ SUBPHASE (insvd, "insvd", "Inserting variable declarations", PHdummy)
 
 SUBPHASE (crtwrp, "crtwrp", "Creating wrapper functions", PHdummy)
 
-SUBPHASE (l2f, "l2f", "Eliminating loops and conditionals", PHdummy)
+SUBPHASE (lac2fun, "lac2fun", "Eliminating loops and conditionals", F2LdoFun2Lac)
 
-SUBPHASE (ssa, "ssa", "Establishing static single assignment form", PHdummy)
+SUBPHASE (ssa, "ssa", "Establishing static single assignment form",
+          SSATdoTransformAllowGOs)
 
 SUBPHASE (tc, "tc", "Running type inference system", PHdummy)
 
@@ -199,10 +203,11 @@ SUBPHASE (rst, "rst", "Resolving symbol types", PHdummy)
 
 SUBPHASE (nt2ot, "nt2ot", "Cleaning up type inference system", PHdummy)
 
-SUBPHASE (l2fwc, "l2fwc", "Eliminating conditionals in wrapper code", PHdummy)
+SUBPHASE (lac2funwc, "lac2funwc", "Eliminating conditionals in wrapper code",
+          L2FdoLac2Fun)
 
 SUBPHASE (ssawc, "ssawc", "Establishing static single assignment form in wrapper code",
-          PHdummy)
+          SSATdoTransformAllowGOs)
 
 /***********************************************************************/
 
@@ -284,6 +289,12 @@ SUBPHASE (cse2, "cse2", "Applying common subexpression elimination again", PHdum
 
 SUBPHASE (dcr3, "dcr3", "Applying dead code removal again", PHdummy)
 
+SUBPHASE (ussa, "ussa", "Converting from SSA form", USSATdoUndoSsaTransform)
+
+SUBPHASE (fun2lac, "fun2lac", "Reintroducing loops and conditionals", F2LdoFun2Lac)
+
+SUBPHASE (lacinl, "lacinl", "Inlining LaC functions", LINLdoLACInlining)
+
 SUBPHASE (wlaa, "wlaa", "Running with-loop array access analysis", PHdummy)
 
 SUBPHASE (ap, "ap", "Applying array padding", PHdummy)
@@ -302,9 +313,9 @@ PHASE (wltrans, "Transforming with-loop representation", PHdummy)
 
 PHASE (alloc, "Introducing explicit allocation instructions", PHdummy)
 
-SUBPHASE (l2f2, "l2f2", "Eliminating loops and conditionals", PHdummy)
+SUBPHASE (lac2fun2, "lac2fun2", "Eliminating loops and conditionals", F2LdoFun2Lac)
 
-SUBPHASE (ssa2, "ssa2", "Establishing static single assignment form", PHdummy)
+SUBPHASE (ssa2, "ssa2", "Establishing static single assignment form", SSATdoTransform)
 
 SUBPHASE (cvpemm, "cvpemm", "Propagating constants and variables", PHdummy)
 
@@ -372,9 +383,30 @@ SUBPHASE (re, "re", "Removing reuse instructions", PHdummy)
 
 PHASE (multithread_finish, "Finishing MT annotations", PHdummy)
 
+SUBPHASE (spmdinit, "spmdinit", "Building SPMD blocks around with-loops", PHdummy)
+
+SUBPHASE (spmdemm, "spmdemm", "Moving memory management instructions of local variables",
+          PHdummy)
+
+SUBPHASE (spmdlift, "spmdlift", "Lifting SPMD blocks to functions", PHdummy)
+
+SUBPHASE (scheduling, "scheduling", "Removing scheduling informations from SPMD blocks",
+          PHdummy)
+
+SUBPHASE (syncinit, "syncinit", "Building synchronisation blocks in SPMD functions",
+          PHdummy)
+
+SUBPHASE (syncopt, "syncopt", "Optmizing synchronisation blocks", PHdummy)
+
 /***********************************************************************/
 
 PHASE (precompile, "Preparing C code generation", PHdummy)
+
+SUBPHASE (ussa2, "ussa2", "Converting from SSA form", USSATdoUndoSsaTransform)
+
+SUBPHASE (fun2lac2, "fun2lac2", "Reintroducing loops and conditionals", F2LdoFun2Lac)
+
+SUBPHASE (lacinl2, "lacinl2", "Inlining LaC functions", LINLdoLACInlining)
 
 SUBPHASE (sls, "sls", "Applying linksign pragma", PHdummy)
 
