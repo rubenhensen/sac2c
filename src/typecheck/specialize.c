@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.25  2005/06/06 07:02:52  sbs
+ * UpdateVarSignature now is aware of user types as well
+ *
  * Revision 1.24  2005/05/12 08:44:00  sbs
  * Now, vars are indtroduced for COND funs as well.
  * See SPEChandleLaCFuns for details
@@ -283,7 +286,8 @@ UpdateVarSignature (node *fundef, ntype *arg_ts)
             new_type = TYmakeAlphaType (NULL);
         } else if (!TYisAlpha (old_type)) {
             new_type = TYmakeAlphaType (NULL);
-            if (TYgetSimpleType (TYgetScalar (old_type)) != T_unknown) {
+            if (TYisUser (TYgetScalar (old_type))
+                || TYgetSimpleType (TYgetScalar (old_type)) != T_unknown) {
                 ok = SSInewTypeRel (old_type, new_type);
             }
             old_type = TYfreeType (old_type);
