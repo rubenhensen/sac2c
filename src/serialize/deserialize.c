@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2005/06/06 09:01:55  sah
+ * fixed a minor bug in findEntryInAST
+ *
  * Revision 1.14  2005/05/31 19:27:02  sah
  * when adding usertypes, all info is explicitly copied to avoid sharing
  *
@@ -356,6 +359,10 @@ FindSymbolInAst (const char *symbol)
 
     if (result == NULL) {
         result = FindSymbolInFundefChain (symbol, INFO_DS_FUNDECS (DSstate));
+    }
+
+    if (result == NULL) {
+        result = FindSymbolInFundefChain (symbol, INFO_DS_FUNDEFS (DSstate));
     }
 
     if (result == NULL) {
