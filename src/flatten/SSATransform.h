@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.13  2005/06/06 13:21:00  jhb
+ * removed SSATransformExplicitAllocs
+ *
  * Revision 1.12  2005/04/21 06:33:09  ktr
  * SSATnewVardec is not exported any longer
  *
@@ -92,7 +95,6 @@
  *****************************************************************************/
 extern node *SSATdoTransform (node *ast);
 extern node *SSATdoTransformAllowGOs (node *ast);
-extern node *SSATdoTransformExplicitAllocs (node *ast);
 extern node *SSATdoTransformOneFunction (node *fundef);
 extern node *SSATdoTransformOneFundef (node *fundef);
 

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.6  2005/06/06 13:21:00  jhb
+ * removed SSATransformExplicitAllocs
+ *
  * Revision 1.5  2004/11/24 19:16:24  mwe
  * changing function names according to naming conventions
  *
@@ -34,9 +37,6 @@
  * Prefix: SSA
  *
  *****************************************************************************/
-extern node *SSAdoSsa (node *syntax_tree);
-extern node *SSAundoSsa (node *syntax_tree);
-extern node *SSArestoreSsaExplicitAllocs (node *syntax_tree);
 extern node *SSArestoreSsaOneFunction (node *fundef);
 extern node *SSArestoreSsaOneFundef (node *fundef);
 

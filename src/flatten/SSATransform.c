@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.35  2005/06/06 13:21:00  jhb
+ * removed SSATransformExplicitAllocs
+ *
  * Revision 1.34  2005/04/21 06:34:40  ktr
  * Made SSATnewVardec static
  *
@@ -318,9 +321,6 @@ static node *SaveTopSsastackElse (node *avis);
  *                    are defined below.
  * ALLOW_GOS        : flag indicating whether global objects are potentially
  *                    contained in the code to be reformed
- * EXPLICIT_ALLOCS  : flag indicating whether mem allocs have been made
- *                    explicit.
- *
  * GENERATE_FUNCOND : indicates funcond generation mode rather than
  *                    renaming mode (toggled by SSAreturn)
  * RENAMING_MODE    : used in funconds only; steers renaming in SSArightids;
@@ -340,7 +340,6 @@ static node *SaveTopSsastackElse (node *avis);
 struct INFO {
     int singlefundef;
     bool allow_gos;
-    bool explicit_allocs;
 
     bool generate_funcond;
     int renaming_mode;
@@ -374,7 +373,6 @@ struct INFO {
  */
 #define INFO_SSA_SINGLEFUNDEF(n) (n->singlefundef)
 #define INFO_SSA_ALLOW_GOS(n) (n->allow_gos)
-#define INFO_SSA_EXPLICIT_ALLOCS(n) (n->explicit_allocs)
 
 #define INFO_SSA_GENERATE_FUNCOND(n) (n->generate_funcond)
 #define INFO_SSA_RENAMING_MODE(n) (n->renaming_mode)
@@ -401,7 +399,6 @@ MakeInfo ()
 
     INFO_SSA_SINGLEFUNDEF (result) = 0;
     INFO_SSA_ALLOW_GOS (result) = FALSE;
-    INFO_SSA_EXPLICIT_ALLOCS (result) = FALSE;
 
     INFO_SSA_GENERATE_FUNCOND (result) = FALSE;
     INFO_SSA_RENAMING_MODE (result) = SSA_USE_TOP;
@@ -1355,11 +1352,6 @@ SSATpart (node *arg_node, info *arg_info)
  *          we only have to treat the very first one as LHS, all others as
  *          RHS. To distinguish these cases, we use INFO_SSA_FIRST_WITHID,
  *          which is reset in SSAwith.
- *          Another exception arises if SSATransform is called after memory
- *          allocation has been made explicit. In this case
- *          SSATransformExplicitAllocs has to be called which sets
- *          INFO_SSA_EXPLICIT_ALLOCS which forces ALL withids to be treated
- *          as RHSs.
  *
  ******************************************************************************/
 node *
@@ -1378,25 +1370,15 @@ SSATwithid (node *arg_node, info *arg_info)
     if (INFO_SSA_FIRST_WITHID (arg_info) == NULL) {
         /**
          * This is the first withid. Therefore, we have to treat it as LHS.
-         * The only exception is when withids have been allocated explicitly
-         * (refcounting). In that case, we treat them as RHSs like all the others.
          */
         INFO_SSA_FIRST_WITHID (arg_info) = arg_node;
 
         if (WITHID_VEC (arg_node) != NULL) {
-            if (INFO_SSA_EXPLICIT_ALLOCS (arg_info)) {
-                WITHID_VEC (arg_node) = TreatIdsAsRhs (WITHID_VEC (arg_node), arg_info);
-            } else {
-                WITHID_VEC (arg_node) = TRAVdo (WITHID_VEC (arg_node), arg_info);
-            }
+            WITHID_VEC (arg_node) = TRAVdo (WITHID_VEC (arg_node), arg_info);
         }
 
         if (WITHID_IDS (arg_node) != NULL) {
-            if (INFO_SSA_EXPLICIT_ALLOCS (arg_info)) {
-                WITHID_IDS (arg_node) = TreatIdsAsRhs (WITHID_IDS (arg_node), arg_info);
-            } else {
-                WITHID_IDS (arg_node) = TRAVdo (WITHID_IDS (arg_node), arg_info);
-            }
+            WITHID_IDS (arg_node) = TRAVdo (WITHID_IDS (arg_node), arg_info);
         }
     } else {
         /**
@@ -1845,8 +1827,6 @@ TreatIdsAsRhs (node *arg_ids, info *arg_info)
  * <!--
  * node *SSATransform(node *ast)            : general traversal function
  * node *SSATransformAllowGOs(node *ast)    : ignore usages of non-defined vars
- * node *SSATransformExplicitAllocs(node *syntax_tree) : support explicit
- *                                                       withid allocations
  * node *SSATransformOneFunction(node *ast) : one fundef + included LC funs
  * node *SSATransformOneFundef(node *ast)   : one fundef only
  *
@@ -1873,8 +1853,6 @@ SSATdoTransform (node *syntax_tree)
     info *arg_info;
 
     DBUG_ENTER ("SSATdoTransform");
-
-    CTInote ("Converting to SSA representation");
 
     DBUG_ASSERT ((NODE_TYPE (syntax_tree) == N_module),
                  "SSATransform is used for module nodes only");
@@ -1930,50 +1908,6 @@ SSATdoTransformAllowGOs (node *syntax_tree)
     arg_info = MakeInfo ();
     INFO_SSA_SINGLEFUNDEF (arg_info) = SSA_TRAV_FUNDEFS;
     INFO_SSA_ALLOW_GOS (arg_info) = TRUE;
-
-    TRAVpush (TR_ssat);
-    syntax_tree = TRAVdo (syntax_tree, arg_info);
-    TRAVpop ();
-
-    arg_info = FreeInfo (arg_info);
-
-    global.valid_ssaform = TRUE;
-
-    DBUG_RETURN (syntax_tree);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *SSATdoTransformExplicitAllocs(node *syntax_tree)
- *
- *   @brief In principle, this is only a wrapper for SSATransform. The only
- *          difference is that it assumes the withid elements to be initialized
- *          explicitlt BEFORE each WL. Therefore, SSAWithid has to behave
- *          slightly different.
- *          This variant is required after explicit reference counting
- *          has been introduced in the syntax tree.
- *
- ******************************************************************************/
-node *
-SSATdoTransformExplicitAllocs (node *syntax_tree)
-{
-    info *arg_info;
-
-    DBUG_ENTER ("SSATransformExplicitAllocs");
-
-    DBUG_ASSERT ((NODE_TYPE (syntax_tree) == N_module),
-                 "SSATransformExplicitAllocs is used for module nodes only");
-
-#ifndef DBUG_OFF
-    if (global.compiler_phase == PH_sacopt) {
-        DBUG_PRINT ("OPT",
-                    ("starting ssa transformation expecting explicit withid allocs"));
-    }
-#endif
-
-    arg_info = MakeInfo ();
-    INFO_SSA_SINGLEFUNDEF (arg_info) = SSA_TRAV_FUNDEFS;
-    INFO_SSA_EXPLICIT_ALLOCS (arg_info) = TRUE;
 
     TRAVpush (TR_ssat);
     syntax_tree = TRAVdo (syntax_tree, arg_info);

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.16  2005/06/06 13:21:00  jhb
+ * removed SSATransformExplicitAllocs
+ *
  * Revision 1.15  2005/05/13 16:44:40  ktr
  * UndoSSA now uses lacinlining.
  *
@@ -88,106 +91,6 @@
 
 /** <!--********************************************************************-->
  *
- * @fn node *SSAdoSsa(node *syntax_tree)
- *
- *   @brief  takes the syntax_tree and return it in ssa-form
- *
- *   <pre>
- *   1. Conversion of conditionals and loops into their true
- *      functional represantation
- *   2. Check for correct Avis nodes in vardec/arg nodes. All backrefs
- *      from N_id or IDS structures are checked for consistent values.
- *      This traversal is needed for compatiblity with old code without
- *      knowledge of the avis nodes.
- *   3. Transform code in SSA form.
- *      Every variable has exaclty one definition.
- *      After all the valid_ssaform flag is set to TRUE.
- *   </pre>
- *
- *   @param syntax_tree  nomen est omen
- *   @return the whole syntax_tree, now in ssa-form
- *
- *****************************************************************************/
-
-node *
-SSAdoSsa (node *syntax_tree)
-{
-    DBUG_ENTER ("SSAdoSsa");
-
-    DBUG_PRINT ("SSA", ("call Lac2Fun"));
-    syntax_tree = L2FdoLac2Fun (syntax_tree);
-    if ((global.break_after == global.compiler_phase)
-        && (0 == strcmp (global.break_specifier, "l2f"))) {
-        goto DONE;
-    }
-
-    DBUG_PRINT ("SSA", ("call SSATransform"));
-    syntax_tree = SSATdoTransform (syntax_tree);
-
-DONE:
-
-    DBUG_RETURN (syntax_tree);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *SSAundoSsa(node *syntax_tree)
- *
- *   @brief  takes the syntax_tree and return it in nonssa-form
- *
- *   <pre>
- *   1.a Renames all artificial identifier to their original
- *       baseid to avoid problems with multiple global object names in the
- *       compiler backend.
- *     b All result-variables of a multigenerator fold-withloop are
- *       made identical.This adjustment is necessary for the inlining
- *       of the fold-function.
- *   2. Reconversion of conditionals and loops from their true functional
- *      representation into an explicit representation suitable for code
- *      generation.
- *   </pre>
- *
- *   @param syntax_tree  nomen est omen
- *   @return the whole syntax_tree, no longer in ssa-form
- *
- *****************************************************************************/
-
-node *
-SSAundoSsa (node *syntax_tree)
-{
-    DBUG_ENTER ("SSAundoSsa");
-
-    DBUG_PRINT ("SSA", ("call SSAundoSsa"));
-    syntax_tree = USSATdoUndoSsaTransform (syntax_tree);
-    if ((global.break_after == global.compiler_phase)
-        && (0 == strcmp (global.break_specifier, "ussa"))) {
-        goto DONE;
-    }
-
-    DBUG_PRINT ("SSA", ("call Fun2Lac"));
-    /* undo lac2fun transformation */
-    syntax_tree = F2LdoFun2Lac (syntax_tree);
-    if ((global.break_after == global.compiler_phase)
-        && (0 == strcmp (global.break_specifier, "f2l"))) {
-        goto DONE;
-    }
-
-    DBUG_PRINT ("SSA", ("call Function Inlining"));
-    /* inline loop and cond functions */
-    if (global.lacinline) {
-        syntax_tree = LINLdoLACInlining (syntax_tree);
-    }
-    if ((global.break_after == global.compiler_phase)
-        && (0 == strcmp (global.break_specifier, "lacinl"))) {
-        goto DONE;
-    }
-
-DONE:
-    DBUG_RETURN (syntax_tree);
-}
-
-/** <!--********************************************************************-->
- *
  * @fn node *SSArestoreSsaOneFunction(node *syntax_tree)
  *
  *   @brief  takes an N_fundef node and restores ssa-form
@@ -258,44 +161,6 @@ SSArestoreSsaOneFundef (node *fundef)
     fundef = SSATdoTransformOneFundef (fundef);
 
     DBUG_RETURN (fundef);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *SSArestoreSsaExplicitAllocs(node *syntax_tree)
- *
- *   @brief  takes an Nmodul node and restores ssa-form
- *
- *   <pre>
- *   1. Check for correct Avis nodes in vardec/arg nodes. All backrefs
- *      from N_id or IDS structures are checked for consistent values.
- *      This traversal is needed for compatiblity with old code without
- *      knowledge of the avis nodes.
- *   2. Transform code in SSA form.
- *      Every variable has exaclty one definition.
- *      After all the valid_ssaform flag is set to TRUE.
- *   3. A difference is that it assumes the withid elements to be initialized
- *      explicitlt BEFORE each WL. Therefore, SSAWithid has to behave
- *      slightly different.
- *
- *   </pre>
- *
- *   @param syntax_tree  N_modul
- *   @return syntax_tree in restored ssa-form
- *
- *****************************************************************************/
-
-node *
-SSArestoreSsaExplicitAllocs (node *syntax_tree)
-{
-    DBUG_ENTER ("SSArestoreSsaExplicitAllocs");
-
-    DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_module,
-                 "SSArestoreSsaExplicitAllocs called without N_module node.");
-
-    syntax_tree = SSATdoTransformExplicitAllocs (syntax_tree);
-
-    DBUG_RETURN (syntax_tree);
 }
 
 /**

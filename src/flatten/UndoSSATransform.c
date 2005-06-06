@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.25  2005/06/06 13:21:00  jhb
+ * removed SSATransformExplicitAllocs
+ *
  * Revision 1.24  2005/06/01 14:02:02  ktr
  * Extended criteria for copy assignment insertion
  *
@@ -534,10 +537,6 @@ USSATdoUndoSsaTransform (node *module)
     info *arg_info;
 
     DBUG_ENTER ("USSATdoUndoSSATransform");
-
-    CTInote ("Converting from SSA representation");
-
-    DBUG_PRINT ("OPT", ("starting UNDO ssa transformation"));
 
     arg_info = MakeInfo ();
 
