@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.113  2005/06/06 13:59:48  ktr
+ * Fixed implementation of StridesDisjointAllDims
+ *
  * Revision 3.112  2005/05/31 11:52:58  ktr
  * Rewrote the predicate deciding which with-loops can be converted into
  * with2 representation.
@@ -2882,18 +2885,21 @@ StridesDisjointAllDims (node *stride1, node *stride2)
 
     DBUG_ENTER ("StridesDisjointAllDims");
 
-    if ((NODE_TYPE (stride1) == N_wlstridevar)
-        || (NODE_TYPE (stride2) == N_wlstridevar)) {
-        /*
-         * disjointness check for var. strides not implemented yet
-         */
-        disjoint = TRUE;
-    } else {
-        while (stride1 != NULL) {
+    while (stride1 != NULL) {
+        if ((NODE_TYPE (stride1) == N_wlstridevar)
+            || (NODE_TYPE (stride2) == N_wlstridevar)) {
+            /*
+             * disjointness check for var. strides not implemented yet
+             */
+            disjoint = TRUE;
+            break;
+        } else {
             DBUG_ASSERT ((stride2 != NULL),
                          "stride1 contains more dimensions than stride2");
+
             grid1 = WLSTRIDE_CONTENTS (stride1);
             grid2 = WLSTRIDE_CONTENTS (stride2);
+
             DBUG_ASSERT (((grid1 != NULL) && (grid2 != NULL)),
                          "stride with missing grid found");
 
