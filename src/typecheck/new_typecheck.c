@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.75  2005/06/06 13:22:05  jhb
+ * added usage of PHrunCompilerSubPhase
+ *
  * Revision 3.74  2005/05/31 19:26:12  sah
  * moved usertype handling to resolvesymboltypes.c
  *
@@ -90,6 +93,7 @@
 #include "ctinfo.h"
 
 #include "types.h"
+#include "phase.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "internal_lib.h"
@@ -97,9 +101,7 @@
 #include "DupTree.h"
 #include "globals.h"
 #include "print.h"
-#include "lac2fun.h"
 #include "shape.h"
-#include "SSATransform.h"
 #include "insert_vardec.h"
 #include "create_wrappers.h"
 #include "create_wrapper_code.h"
@@ -571,17 +573,8 @@ NTCmodule (node *arg_node, info *arg_info)
      * Now that all ids have backrefs to vardecs and all funaps have backrefs
      * to wrapper-fundefs, Lac2Fun can finally be run.
      */
-    arg_node = L2FdoLac2Fun (arg_node);
-    if ((global.break_after == PH_typecheck)
-        && (0 == strcmp (global.break_specifier, "l2f"))) {
-        goto DONE;
-    }
-
-    arg_node = SSATdoTransformAllowGOs (arg_node);
-    if ((global.break_after == PH_typecheck)
-        && (0 == strcmp (global.break_specifier, "ssa"))) {
-        goto DONE;
-    }
+    arg_node = PHrunCompilerSubPhase (SUBPH_lac2fun, arg_node);
+    arg_node = PHrunCompilerSubPhase (SUBPH_ssa, arg_node);
 
     /*
      * Now, we do the actual type inference ....
@@ -676,8 +669,10 @@ NTCmodule (node *arg_node, info *arg_info)
     /*
      * Convert the wrapper function code into SSA form
      */
-    arg_node = L2FdoLac2Fun (arg_node);
-    arg_node = SSATdoTransformAllowGOs (arg_node);
+
+    arg_node = PHrunCompilerSubPhase (SUBPH_lac2funwc, arg_node);
+
+    arg_node = PHrunCompilerSubPhase (SUBPH_ssawc, arg_node);
 
 DONE:
     DBUG_RETURN (arg_node);
