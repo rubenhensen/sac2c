@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.217  2005/06/06 13:29:40  jhb
+ * added error print function
+ *
  * Revision 3.216  2005/06/06 10:22:01  jhb
  * printing of obsolete attributes removed
  *
@@ -4528,7 +4531,10 @@ PRTerror (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PRTerror");
 
-    if (arg_node != NULL) {
+    fprintf (global.outfile, "\n/* %s */", ERROR_MESSAGE (arg_node));
+
+    if (ERROR_NEXT (arg_node) != NULL) {
+        PRINT_CONT (TRAVdo (ERROR_NEXT (arg_node), arg_info), ;);
     }
 
     DBUG_RETURN (arg_node);
