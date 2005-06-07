@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.24  2005/06/07 12:27:57  ktr
+ * Corrected lac2fun, lac2fun2
+ *
  * Revision 3.23  2005/06/06 13:26:40  jhb
  * corrected some subphases
  *
@@ -188,7 +191,7 @@ SUBPHASE (insvd, "insvd", "Inserting variable declarations", PHdummy)
 
 SUBPHASE (crtwrp, "crtwrp", "Creating wrapper functions", PHdummy)
 
-SUBPHASE (lac2fun, "lac2fun", "Eliminating loops and conditionals", F2LdoFun2Lac)
+SUBPHASE (lac2fun, "lac2fun", "Eliminating loops and conditionals", L2FdoLac2Fun)
 
 SUBPHASE (ssa, "ssa", "Establishing static single assignment form",
           SSATdoTransformAllowGOs)
@@ -313,7 +316,7 @@ PHASE (wltrans, "Transforming with-loop representation", PHdummy)
 
 PHASE (alloc, "Introducing explicit allocation instructions", PHdummy)
 
-SUBPHASE (lac2fun2, "lac2fun2", "Eliminating loops and conditionals", F2LdoFun2Lac)
+SUBPHASE (lac2fun2, "lac2fun2", "Eliminating loops and conditionals", L2FdoLac2Fun)
 
 SUBPHASE (ssa2, "ssa2", "Establishing static single assignment form", SSATdoTransform)
 
