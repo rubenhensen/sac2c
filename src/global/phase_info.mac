@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.25  2005/06/08 13:38:47  jhb
+ * added some SUBPHASES
+ *
  * Revision 3.24  2005/06/07 12:27:57  ktr
  * Corrected lac2fun, lac2fun2
  *
@@ -175,6 +178,8 @@ SUBPHASE (dep, "dep", "Resolving dependencies", PHdummy)
 
 PHASE (objinit, "Generating generic types and functions", PHdummy)
 
+SUBPHASE (objinit, "objinit", "Generating generic types and functions", PHdummy)
+
 /***********************************************************************/
 
 PHASE (flatten, "Simplifying source code", PHdummy)
@@ -312,6 +317,8 @@ SUBPHASE (ive, "ive", "Applying index vector elimination", PHdummy)
 
 PHASE (wltrans, "Transforming with-loop representation", PHdummy)
 
+SUBPHASE (wltra, "wltra", "Transforming with-loop representation", PHdummy)
+
 /***********************************************************************/
 
 PHASE (alloc, "Introducing explicit allocation instructions", PHdummy)
@@ -428,6 +435,10 @@ SUBPHASE (rid, "rid", "Consistently renaming identifiers", PHdummy)
 /***********************************************************************/
 
 PHASE (compile, "Generating C code", PHdummy)
+
+SUBPHASE (tot, "tot", "Converting to old type representation", PHdummy)
+
+SUBPHASE (comp, "comp", "Generating C code", PHdummy)
 
 /***********************************************************************/
 
