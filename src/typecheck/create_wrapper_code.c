@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.38  2005/06/08 19:17:09  sbs
+ * adjusted the call of TYsplitwrappers
+ *
  * Revision 1.37  2005/05/28 09:00:49  sbs
  * CompareSignature did use (AHHEMMMM) old types still, i.e.,
  * no backlink correction to wrappers could work if more than
@@ -293,7 +296,7 @@ SplitWrapper (node *fundef)
 {
     ntype *old_type, *tmp_type;
     ntype *new_type;
-    bool finished;
+    int pathes_remaining;
     node *new_fundef;
     node *new_fundefs = NULL;
 #ifndef DBUG_OFF
@@ -309,9 +312,16 @@ SplitWrapper (node *fundef)
                         FUNDEF_NAME (fundef)));
     do {
         new_fundef = DUPdoDupNode (fundef);
-        new_type = TYsplitWrapperType (tmp_type, &finished);
+        new_type = TYsplitWrapperType (tmp_type, &pathes_remaining);
+        if (pathes_remaining == 1) {
+            tmp_type = NULL;
+        }
         DBUG_EXECUTE ("CWC", tmp_str = TYtype2String (new_type, TRUE, 0););
-        DBUG_PRINT ("CWC", ("  new wrapper split off: %s : " F_PTR, tmp_str, new_fundef));
+        DBUG_PRINT ("CWC",
+                    ("  new wrapper split off: \n%s : " F_PTR, tmp_str, new_fundef));
+        DBUG_EXECUTE ("CWC", tmp_str = ILIBfree (tmp_str););
+        DBUG_EXECUTE ("CWC", tmp_str = TYtype2String (tmp_type, TRUE, 0););
+        DBUG_PRINT ("CWC", ("  remaining wrapper : \n%s : ", tmp_str));
         DBUG_EXECUTE ("CWC", tmp_str = ILIBfree (tmp_str););
 
         FUNDEF_WRAPPERTYPE (new_fundef) = new_type;
@@ -328,9 +338,8 @@ SplitWrapper (node *fundef)
 
         FUNDEF_NEXT (new_fundef) = new_fundefs;
         new_fundefs = new_fundef;
-    } while (!finished);
+    } while (pathes_remaining > 1);
     FUNDEF_WRAPPERTYPE (fundef) = old_type;
-    tmp_type = TYfreeType (tmp_type);
 
     DBUG_RETURN (new_fundefs);
 }
