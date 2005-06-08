@@ -1861,7 +1861,7 @@
         </son>
         <son name="Types" mandatory="no">
           <description>types defined within the
-          module</description>
+            module</description>
           <target>
             <node name="Typedef" />
           </target>
@@ -1903,7 +1903,7 @@
         <attribute name="Classtype" mandatory="no">
           <type name="NewType" />
           <phases>
-            <range from="scanparse" to="objinit"/>
+            <range from="sp" to="objinit"/>
           </phases>
         </attribute>
         <attribute name="WrapperFuns" mandatory="yes">
@@ -1919,14 +1919,14 @@
             </target>
           </type>
           <phases>
-            <range from="compile" to="final" />
+            <range from="comp" to="final" />
           </phases>
         </attribute>
-	<attribute name="Dependencies" mandatory="yes">
-	  <type name="StringSet" />
-	  <phases>
-	    <range from="ans" to="final" />
-	  </phases>
+        <attribute name="Dependencies" mandatory="yes">
+          <type name="StringSet" />
+          <phases>
+            <range from="ans" to="final" />
+          </phases>
         </attribute>
       </attributes>
       <flags></flags>
@@ -1971,7 +1971,7 @@
             </target>
           </type>
           <phases>
-            <range from="imp" to="writesib" />
+            <range from="imp" to="exp" />
           </phases>
         </attribute>
         <attribute name="CopyFun" mandatory="no">
@@ -1993,20 +1993,20 @@
             </target>
           </type>
           <phases>
-            <range from="compile" to="final" />
+            <range from="comp" to="final" />
           </phases>
         </attribute>
-	<attribute name="SymbolName" mandatory="no">
-	  <type name="String" />
-	  <phases>
-	    <range from="export" to="final" />
-	  </phases>
-	</attribute>
+        <attribute name="SymbolName" mandatory="no">
+          <type name="String" />
+          <phases>
+            <range from="exp" to="final" />
+          </phases>
+        </attribute>
       </attributes>
       <flags>
         <flag name="IsExported" />
         <flag name="IsProvided" />
-	<flag name="IsLocal" default="TRUE"/>
+        <flag name="IsLocal" default="TRUE"/>
         <flag name="IsUnique" />
       </flags>
     </node>
@@ -2053,10 +2053,10 @@
             <range from="pragma" to="final" />
           </phases>
         </attribute>
-        <attribute name="VarName" mandatory="yes">
+        <attribute name="VarName" mandatory="no">
           <type name="String" />
           <phases>
-            <phase name="objdects" />
+            <!-- <phase name="objdects" /> TODO -->
           </phases>
         </attribute>
         <attribute name="Pragma" mandatory="yes">
@@ -2066,7 +2066,7 @@
             </target>
           </type>
           <phases>
-            <range from="scanparse" to="final" />
+            <range from="sp" to="final" />
           </phases>
         </attribute>
         <attribute name="Arg" mandatory="yes">
@@ -2076,7 +2076,7 @@
             </target>
           </type>
           <phases>
-            <phase name="handle-obj" />
+            <phase name="obj" />
           </phases>
         </attribute>
         <attribute name="Icm" mandatory="no">
@@ -2086,20 +2086,20 @@
             </target>
           </type>
           <phases>
-            <range from="compile" to="final" />
+            <range from="comp" to="final" />
           </phases>
         </attribute>
-	<attribute name="SymbolName" mandatory="no">
-	  <type name="String" />
-	  <phases>
-	    <range from="export" to="final" />
-	  </phases>
-	</attribute>
+        <attribute name="SymbolName" mandatory="no">
+          <type name="String" />
+          <phases>
+            <range from="exp" to="final" />
+          </phases>
+        </attribute>
       </attributes>
       <flags>
         <flag name="IsExported" />
         <flag name="IsProvided" />
-	<flag name="IsLocal" default="TRUE"/>
+        <flag name="IsLocal" default="TRUE"/>
         <flag name="IsExtern" />
       </flags>
     </node>
@@ -2111,10 +2111,10 @@
     <node name="Fundef">
       <sons>
         <son name="Rets" mandatory="no">
-	  <target>
-	    <node name="Ret" />
-	  </target>
-	</son>
+          <target>
+            <node name="Ret" />
+          </target>
+        </son>
         <son name="Args" mandatory="no">
           <target>
             <node name="Arg" />
@@ -2152,7 +2152,7 @@
         <attribute name="SymbolName" default="NULL" mandatory="no">
           <type name="String" />
           <phases>
-            <range from="export" to="final" />
+            <range from="exp" to="final" />
           </phases>
         </attribute>
         <attribute name="LinkName" default="NULL" mandatory="no">
@@ -2167,10 +2167,10 @@
             <all />
           </phases>
         </attribute>
-        <attribute name="FunNo" default="0" mandatory="yes">
+        <attribute name="FunNo" default="0" mandatory="no">
           <type name="Integer" />
           <phases>
-            <phase name="annotatefuncalls" />
+            <!-- <phase name="annotatefuncalls" /> TODO -->
           </phases>
         </attribute>
         <attribute name="Pragma" default="NULL" mandatory="no">
@@ -2183,14 +2183,13 @@
             <all />
           </phases>
         </attribute>
-	<attribute name="Types" mandatory="no" >
-	  <type name="OldType" />
-	  <phases>
-	    <range from="typecheck" to="final" />
-	  </phases>
-	</attribute>
-        <attribute name="Ext_Assign" default="NULL"
-        mandatory="no">
+        <attribute name="Types" mandatory="no" >
+          <type name="OldType" />
+          <phases>
+            <range from="tot" to="final" />
+          </phases>
+        </attribute>
+        <attribute name="Ext_Assign" default="NULL" mandatory="no">
           <description>only for ST_condfun, ST_dofun</description>
           <type name="Link">
             <target>
@@ -2212,10 +2211,10 @@
             <all />
           </phases>
         </attribute>
-        <attribute name="Specs" mandatory="yes">
+        <attribute name="Specs" mandatory="no">
           <type name="Integer" />
           <phases>
-            <phase name="new_typecheck" />
+            <phase name="tc" />
           </phases>
         </attribute>
         <attribute name="Return" mandatory="yes">
@@ -2225,7 +2224,7 @@
             </target>
           </type>
           <phases>
-            <range from="typecheck" to="compile" />
+            <range from="tc" to="comp" />
           </phases>
         </attribute>
         <attribute name="Impl" mandatory="no">
@@ -2235,7 +2234,7 @@
             </target>
           </type>
           <phases>
-            <phase name="typecheck" />
+            <phase name="tc" />
           </phases>
         </attribute>
         <attribute name="Icm" mandatory="yes">
@@ -2245,22 +2244,22 @@
             </target>
           </type>
           <phases>
-            <range from="compile" to="print" />
+            <range from="comp" to="final" />
           </phases>
         </attribute>
-        <attribute name="VarNo" mandatory="yes">
+        <attribute name="VarNo" mandatory="no">
           <type name="Integer" />
           <phases>
-            <range from="sacopt" to="final" />
+            <range from="sacopt" to="final"/>
           </phases>
           <description>
             Deprecated. TODO: This should be eliminated.
           </description>
         </attribute>
-        <attribute name="TCStat" mandatory="yes">
+        <attribute name="TCStat" mandatory="no">
           <type name="Integer" />
           <phases>
-            <phase name="typecheck" />
+            <phase name="tc" />
           </phases>
         </attribute>
         <attribute name="DFM_Base" mandatory="no">
@@ -2271,7 +2270,7 @@
         <attribute name="ArgTab" mandatory="yes">
           <type name="ArgTab" />
           <phases>
-            <range from="precompile" to="compile" />
+            <range from="fpc" to="comp" />
           </phases>
         </attribute>
         <attribute name="LiftedFrom" mandatory="no">
@@ -2282,7 +2281,7 @@
             </target>
           </type>
           <phases>
-            <range from="liftspmd" to="compile" />
+            <range from="spmdlift" to="comp" />
           </phases>
         </attribute>
         <attribute name="Worker" mandatory="no">
@@ -2307,63 +2306,63 @@
             <range from="repfun" to="final" /> 
 		  </phases>
         </attribute>
-	<attribute name="ExecMode" mandatory="no">
-	  <type name="MTExecMode"/>
-	  <phases>
-	    <!-- <range from="BuildMultithread" to="crece"/> TODO -->
-	  </phases>
-	</attribute>
-        <attribute name="FunGroup" default="NULL" mandatory="no">
+        <attribute name="ExecMode" mandatory="no">
+          <type name="MTExecMode"/>
+          <phases>
+            <!-- <range from="BuildMultithread" to="crece"/> TODO -->
+          </phases>
+        </attribute>
+        <attribute name="FunGroup" default="NULL" mandatory="yes">
           <type name="Link" >
             <target>
               <node name="Fungroup" />
             </target>
           </type>
           <phases>
-             <range from="typecheck" to="final" />
+            <range from="tc" to="final" />
           </phases>
-         </attribute>
+        </attribute>
         <attribute name="AkvId" default="0" mandatory="yes">
-	  <description>Identifier for function instances with akv-arguments 
-                       (used for function naming in renameidentifiers.c)</description>
+          <description>Identifier for function instances with akv-arguments 
+            (used for function naming in renameidentifiers.c)</description>
           <type name="Integer" />
           <phases>
-             <all />
+            <all />
           </phases>
-         </attribute>
+        </attribute>
         <attribute name="InlineCounter" default="0" mandatory="yes">
-	  <description>Counter for how many times the function has been recursively
-                       inlined.</description>
+          <description>Counter for how many times the function has been recursively
+            inlined.</description>
           <type name="Integer" />
           <phases>
-            <phase name="inlining" />
+            <all />
           </phases>
-         </attribute>
+        </attribute>
       </attributes>
       <flags>
         <flag name="IsExported" />
         <flag name="IsProvided" />
         <flag name="WasImported" />
         <flag name="WasUsed" />
-	<flag name="IsLocal" default="TRUE" />
+        <flag name="IsLocal" default="TRUE" />
         <flag name="IsNeeded" />
-	<flag name="IsFoldfun" />
-	<flag name="IsCondfun" />
-	<flag name="IsDoFun" />
+        <flag name="IsFoldfun" />
+        <flag name="IsCondfun" />
+        <flag name="IsDoFun" />
         <flag name="IsSpmdfun" />
-	<flag name="IsWrapperfun" />
-	<flag name="IsZombie" />
-	<flag name="IsClassConversionFun" />
-	<flag name="IsExtern" />
-	<flag name="IsInline" />
-	<flag name="IsInlineCompleted" />
-	<flag name="IsLacInline" />
+        <flag name="IsWrapperfun" />
+        <flag name="IsZombie" />
+        <flag name="IsClassConversionFun" />
+        <flag name="IsExtern" />
+        <flag name="IsInline" />
+        <flag name="IsInlineCompleted" />
+        <flag name="IsLacInline" />
         <flag name="AllowsInfix" />
         <flag name="HasDotArgs" />
         <flag name="HasDotRets" />
         <flag name="WasOptimized" default="TRUE">
-	  <description>TRUE if function should be accounted for next optimization cycle again</description>
-	</flag>
+          <description>TRUE if function should be accounted for next optimization cycle again</description>
+        </flag>
       </flags>
     </node>
 <!--
@@ -2403,7 +2402,7 @@
         <attribute name="TypeString" mandatory="yes">
           <type name="String" />
           <phases>
-            <phase name="precompile" />
+            <phase name="rid" />
           </phases>
         </attribute>
         <attribute name="Objdef" mandatory="no">
@@ -2504,7 +2503,7 @@
             </target>
           </type>
           <phases>
-            <phase name="compile" />
+            <phase name="comp" />
           </phases>
         </attribute>
         <attribute name="Scheduler_Init" mandatory="yes">
@@ -2514,7 +2513,7 @@
             </target>
           </type>
           <phases>
-            <phase name="compile" />
+            <phase name="comp" />
           </phases>
         </attribute>
         <attribute name="SSACounter" mandatory="no">
@@ -2524,7 +2523,9 @@
             </target>
           </type>
           <phases>
-            <phase name="ssaform" />
+            <phase name="ssa" />
+            <phase name="ssa2" />
+            <phase name="ssawc" />
           </phases>
         </attribute>
         <attribute name="Dataflowgraph" mandatory="no">
@@ -2534,7 +2535,7 @@
             </target>
           </type>
           <phases>
-            <phase name="multithread" />
+            <range from="cdfg" to="concel" />
           </phases>
         </attribute>
       </attributes>
@@ -2548,10 +2549,10 @@
     <node name="Vardec">
       <sons>
         <son name="Avis" mandatory="yes">
-	  <target>
-	    <node name="Avis" />
-	  </target>
-	</son>
+          <target>
+            <node name="Avis" />
+          </target>
+        </son>
         <son name="Next" mandatory="no">
           <target>
             <node name="Vardec" />
@@ -2562,7 +2563,7 @@
         <attribute name="Type" default="NULL" mandatory="yes">
           <type name="OldType" />
           <phases>
-            <all />
+            <range from="tot" to="final" />
           </phases>
         </attribute>
         <attribute name="Objdef" mandatory="no">
@@ -2572,7 +2573,7 @@
             </target>
           </type>
           <phases>
-            <range from="inl" to="precompile" />
+            <!-- <range from="inl" to="precompile" /> TODO -->
           </phases>
         </attribute>
         <attribute name="ActChn" mandatory="no">
@@ -2611,7 +2612,7 @@
             </target>
           </type>
           <phases>
-            <range from="compile" to="final" />
+            <range from="comp" to="final" />
           </phases>
         </attribute>
       </attributes>
@@ -2680,7 +2681,7 @@
             </target>
           </type>
           <phases>
-            <range from="multithread" to="multithread" />
+            <range from="cdfg" to="concel" />
           </phases>
         </attribute>
         <attribute name="Index" mandatory="yes">
@@ -2760,16 +2761,16 @@
         </son>
       </sons>
       <attributes>
-        <attribute name="Reference" mandatory="yes">
+        <attribute name="Reference" mandatory="no">
           <description>List of artificial return values which
-          correspond to reference parameters</description>
+            correspond to reference parameters</description>
           <type name="Link">
             <target>
               <set name="Expr" />
             </target>
           </type>
           <phases>
-            <range from="precompile" to="final" />
+            <!-- <range from="precompile" to="final" /> TODO -->
           </phases>
         </attribute>
         <attribute name="CRet" mandatory="yes">
@@ -2779,7 +2780,7 @@
             </target>
           </type>
           <phases>
-            <range from="precompile" to="final" />
+           <!--  <range from="precompile" to="final" /> TODO -->
           </phases>
         </attribute>
       </attributes>
@@ -2974,7 +2975,7 @@
         <attribute name="ArgTab" mandatory="yes">
           <type name="ArgTab" />
           <phases>
-            <range from="precompile" to="compile" />
+            <range from="fpc" to="final" />
           </phases>
         </attribute>
       </attributes>
@@ -3145,16 +3146,16 @@
     <node name="Id">
       <sons></sons>
       <attributes>
-	<attribute name="Avis" mandatory="yes" >
-	  <type name="Link" >
-	    <target>
-	      <node name="Avis" />
-	    </target>
-	  </type>
-	  <phases>
-	    <all />
-	  </phases>
-	</attribute>
+        <attribute name="Avis" mandatory="yes" >
+          <type name="Link" >
+            <target>
+              <node name="Avis" />
+            </target>
+          </type>
+          <phases>
+            <all />
+          </phases>
+        </attribute>
         <attribute name="WL" mandatory="yes">
           <type name="Link">
             <target>
@@ -3165,19 +3166,19 @@
             <phase name="wlf" />
           </phases>
         </attribute>
-	<attribute name="ICMtext" default="NULL" mandatory="no">
-	  <type name="String" />
-	  <phases>
-	    <range from="compile" to="final" />
-	  </phases>
+        <attribute name="ICMtext" default="NULL" mandatory="no">
+          <type name="String" />
+          <phases>
+            <range from="comp" to="final" />
+          </phases>
           <description>
             Deprecated. Still used in the compiler backend until major redesign of backend node structure.
           </description>
-	</attribute>
+        </attribute>
         <attribute name="NT_Tag" default="NULL" mandatory="no">
           <type name="String" />
           <phases>
-            <range from="compile" to="final" />
+            <range from="comp" to="final" />
           </phases>
           <description>
             Deprecated. Still used in the compiler backend until major redesign of backend node structure.
@@ -3381,10 +3382,9 @@
             <all />
           </phases>
         </attribute>
-        <attribute name="Indent_Before" default="0"
-        mandatory="yes">
+        <attribute name="Indent_Before" default="0" mandatory="yes">
           <description>the default value has to be
-          fixed!</description>
+            fixed!</description>
           <type name="Integer" />
           <phases>
             <all />
@@ -3399,13 +3399,14 @@
           </phases>
         </attribute>
         <attribute name="Fundef" mandatory="yes">
+          <description>please delete me!</description>
           <type name="Link">
             <target>
               <node name="Fundef" />
             </target>
           </type>
           <phases>
-            <range from="compile" to="final" />
+            <range from="comp" to="final" />
           </phases>
         </attribute>
       </attributes>
@@ -3622,19 +3623,19 @@
             <target>
               <node name="Vardec" />
               <node name="Arg" />
-	      <node name="Objdef" />
+              <node name="Objdef" />
             </target>
           </type>
           <phases>
             <all />
           </phases>
         </attribute>
-	<attribute name="Name" mandatory="yes">
-	  <type name="String" />
-	  <phases>
-	    <all />
-	  </phases>
-	</attribute>
+        <attribute name="Name" mandatory="yes">
+          <type name="String" />
+          <phases>
+            <all />
+          </phases>
+        </attribute>
         <attribute name="Type" mandatory="no">
           <type name="NewType" />
           <phases>
@@ -3648,7 +3649,9 @@
             </target>
           </type>
           <phases>
-            <phase name="ssaform" />
+            <phase name="ssa" />
+            <phase name="ssa2" />
+            <phase name="ssawc" />
           </phases>
         </attribute>
         <attribute name="SSAAssign" mandatory="yes">
@@ -3669,7 +3672,9 @@
             </target>
           </type>
           <phases>
-            <phase name="ssaform" />
+            <phase name="ssa" />
+            <phase name="ssa2" />
+            <phase name="ssawc" />
           </phases>
         </attribute>
         <attribute name="WithId" default="NULL" mandatory="no">
@@ -3679,7 +3684,8 @@
             </target>
           </type>
           <phases>
-            <all />
+            <range from="ssa" to="ussa" />
+            <range from="ssa2" to="ussa2" />
           </phases>
         </attribute>
         <attribute name="SSAThen" mandatory="no">
@@ -3689,7 +3695,9 @@
             </target>
           </type>
           <phases>
-            <phase name="ssaform" />
+            <phase name="ssa" />
+            <phase name="ssa2" />
+            <phase name="ssawc" />
           </phases>
         </attribute>
         <attribute name="SSAElse" mandatory="no">
@@ -3699,14 +3707,16 @@
             </target>
           </type>
           <phases>
-            <phase name="ssaform" />
+            <phase name="ssa" />
+            <phase name="ssa2" />
+            <phase name="ssawc" />
           </phases>
         </attribute>
         <attribute name="NeedCount" mandatory="no">
           <type name="Integer" />
           <phases>
-            <phase name="SSALIR" />
-            <phase name="SSADeadCodeRemoval" />
+            <phase name="lir" />
+            <phase name="dcr" />
           </phases>
         </attribute>
         <attribute name="Subst" mandatory="no">
@@ -3716,64 +3726,66 @@
             </target>
           </type>
           <phases>
-            <phase name="ssacse" />
-            <phase name="undossa" />
+            <phase name="cse" />
+            <phase name="lir" />
+            <phase name="ussa" />
+            <phase name="ussa2" />
           </phases>
         </attribute>
         <attribute name="DefDepth" mandatory="no">
           <type name="Integer" />
           <phases>
-            <phase name="ssalir" />
+            <phase name="lir" />
           </phases>
         </attribute>
         <attribute name="LirMove" mandatory="no">
           <type name="BitField" />
           <phases>
-            <phase name="ssalir" />
+            <phase name="lir" />
           </phases>
         </attribute>
         <attribute name="ExpResult" mandatory="no">
           <type name="Bool" />
           <phases>
-            <phase name="ssalir" />
+            <phase name="lir" />
           </phases>
         </attribute>
-	<attribute name="EMRC_DefLevel" mandatory="no">
-	  <type name="Integer" />
-	  <phases>
-	    <phase name="EMRC" />
-	  </phases>
+        <attribute name="EMRC_DefLevel" mandatory="no">
+          <type name="Integer" />
+          <phases>
+            <phase name="rc" />
+          </phases>
           <description>
             Used by Reference Counting inference to store the definition level (nesting level) of a variable.
           </description>
-	</attribute>
-	<attribute name="EMRC_Counter" mandatory="no">
-	  <type name="RCCounter" />
-	  <phases>
-	    <phase name="EMRC" />
+        </attribute>
+        <attribute name="EMRC_Counter" mandatory="no">
+          <type name="RCCounter" />
+          <phases>
+            <phase name="rc" />
           </phases>
           <description>
             Used by Reference Counting inference to store an information structure.
           </description>
-	</attribute>
-	<attribute name="EMRC_Counter2" mandatory="no">
-	  <type name="RCCounter" />
-	  <phases>
-	    <phase name="EMRC" />
-	  </phases>
+        </attribute>
+        <attribute name="EMRC_Counter2" mandatory="no">
+          <type name="RCCounter" />
+          <phases>
+            <phase name="rc" />
+          </phases>
           <description>
             Used by Reference Counting inference to store an information structure. A second structure is needed for proper treatment of conditionals.
           </description>
-	</attribute>
-	<attribute name="AliasMask" mandatory="no">
-	  <type name="DFMask" />
-	  <phases>
-	    <phase name="EMIA" />
-	  </phases>
+        </attribute>
+        <attribute name="AliasMask" mandatory="no">
+          <type name="DFMask" />
+          <phases>
+            <phase name="ia" />
+          </phases>
           <description>
             Used by by Interface Analsysis in order to obtain the transitive hull of variable aliases.
           </description>
-	</attribute>
+        </attribute>
       </attributes>
       <flags>
         <flag name="SSAUndoFLag" />
@@ -3784,7 +3796,7 @@
             Set by the Alias Analysis traversel, AVIS_ISALIAS denotes whether there can be more than one identifier for a given data object.
           </description>
         </flag>
-	<flag name="IsUnique" />
+        <flag name="IsUnique" />
         <flag name="IsDead" >
           <description>
             Used by MarkMemVals traversal in order to indicate which VARDECS are no longer needed and can thus be eliminated.
@@ -3853,7 +3865,7 @@
             </target>
           </type>
           <phases>
-            <range from="compile" to="final" />
+            <range from="comp" to="final" />
           </phases>
         </attribute>
         <attribute name="ICM_Parallel" mandatory="yes">
@@ -3863,7 +3875,7 @@
             </target>
           </type>
           <phases>
-            <range from="compile" to="final" />
+            <range from="comp" to="final" />
           </phases>
         </attribute>
         <attribute name="ICM_AltSeq" mandatory="yes">
@@ -3873,7 +3885,7 @@
             </target>
           </type>
           <phases>
-            <range from="compile" to="final" />
+            <range from="comp" to="final" />
           </phases>
         </attribute>
         <attribute name="ICM_Sequential" mandatory="yes">
@@ -3883,7 +3895,7 @@
             </target>
           </type>
           <phases>
-            <range from="compile" to="final" />
+            <range from="comp" to="final" />
           </phases>
         </attribute>
         <attribute name="ICM_End" mandatory="yes">
@@ -3893,7 +3905,7 @@
             </target>
           </type>
           <phases>
-            <range from="compile" to="final" />
+            <range from="comp" to="final" />
           </phases>
         </attribute>
       </attributes>
@@ -4059,7 +4071,7 @@
             </target>
           </type>
           <phases>
-            <range from="scanparse" to="wltrans" />
+            <range from="sp" to="wltra" />
           </phases>
         </attribute>
         <attribute name="In_Mask" mandatory="no">
@@ -4275,20 +4287,20 @@
             <all />
           </phases>
         </attribute>
-        <attribute name="Id" mandatory="yes">
+        <attribute name="Id" mandatory="no">
           <type name="Integer" />
           <phases>
-            <phase name="print" />
+            <phase name="final" /> <!-- TODO misc phase? -->
           </phases>
         </attribute>
-        <attribute name="Use" mandatory="yes">
+        <attribute name="Use" mandatory="no">
           <type name="Link">
             <target>
               <node name="Vinfo" />
             </target>
           </type>
           <phases>
-            <phase name="IVE" />
+            <phase name="ive" />
           </phases>
         </attribute>
         <attribute name="WLAA_Info" mandatory="yes">
@@ -4405,11 +4417,11 @@
             <set name="Expr" />
           </target>
         </son>
-	<son name="Mem" default="NULL" mandatory="no">
-	  <target>
-	    <node name="Id" />
-	  </target>
-	</son>
+        <son name="Mem" default="NULL" mandatory="no">
+          <target>
+            <node name="Id" />
+          </target>
+        </son>
         <son name="Next" default="NULL" mandatory="no">
           <target>
             <set name="WithOp" />
@@ -4421,7 +4433,7 @@
           <type name="Link">
           </type>
           <phases>
-            <range from="scanparse" to="scanparse" />
+            <phase name="sp" />
           </phases>
         </attribute>
       </attributes>
@@ -4440,11 +4452,11 @@
             <set name="Expr" />
           </target>
         </son>
-	<son name="Mem" default="NULL" mandatory="no">
-	  <target>
-	    <node name="Id" />
-	  </target>
-	</son>
+        <son name="Mem" default="NULL" mandatory="no">
+          <target>
+            <node name="Id" />
+          </target>
+        </son>
         <son name="Next" default="NULL" mandatory="no">
           <target>
             <set name="WithOp" />
@@ -4456,7 +4468,7 @@
           <type name="Link">
           </type>
           <phases>
-            <range from="scanparse" to="scanparse" />
+            <phase name="sp" />
           </phases>
         </attribute>
       </attributes>
@@ -4507,16 +4519,14 @@
             </target>
           </type>
           <phases>
-            <range from="typecheck" to="precompile" />
-            <range from="precompile" to="compile" />
-            <range from="compile" to="final" />
+            <range from="tc" to="final" />
           </phases>
         </attribute>
         <attribute name="SPEXPR" mandatory="yes">
           <type name="Link">
           </type>
           <phases>
-            <range from="scanparse" to="scanparse" />
+            <phase name="sp" />
           </phases>
         </attribute>
       </attributes>
@@ -4583,25 +4593,25 @@
         <attribute name="SV" default="NULL" mandatory="yes">
           <type name="IntegerPointer" />
           <phases>
-            <range from="wltrans" to="final" />
+            <range from="wltra" to="final" />
           </phases>
         </attribute>
         <attribute name="HomSV" mandatory="yes">
           <type name="IntegerPointer" />
           <phases>
-            <range from="wltrans" to="final" />
+            <range from="wltra" to="final" />
           </phases>
         </attribute>
         <attribute name="Scheduling" mandatory="yes">
           <type name="Scheduling" />
           <phases>
-            <range from="wltrans" to="final" />
+            <range from="wltra" to="final" />
           </phases>
         </attribute>
         <attribute name="TaskSel" mandatory="yes">
           <type name="TaskSel" />
           <phases>
-            <range from="wltrans" to="final" />
+            <range from="wltra" to="final" />
           </phases>
         </attribute>
       </attributes>
@@ -4659,13 +4669,13 @@
         <attribute name="Scheduling" mandatory="yes">
           <type name="Scheduling" />
           <phases>
-            <range from="wltrans" to="final" />
+            <range from="wltra" to="final" />
           </phases>
         </attribute>
         <attribute name="TaskSel" mandatory="yes">
           <type name="TaskSel" />
           <phases>
-            <range from="wltransrange" to="final" />
+            <range from="wltra" to="final" />
           </phases>
         </attribute>
       </attributes>
@@ -4844,7 +4854,7 @@
             </target>
           </type>
           <phases>
-            <range from="wltrans" to="final" />
+            <range from="wltra" to="final" />
           </phases>
         </attribute>
         <attribute name="Modified" mandatory="yes">
@@ -4854,7 +4864,7 @@
             </target>
           </type>
           <phases>
-            <range from="wltrans" to="final" />
+            <range from="wltra" to="final" />
           </phases>
         </attribute>
       </attributes>
@@ -4970,18 +4980,18 @@
             </target>
           </type>
           <phases>
-            <phase name="wltransform" />
+            <phase name="wltra" />
           </phases>
         </attribute>
         <attribute name="Code" mandatory="no">
-	  <type name="Link">
+          <type name="Link">
             <target>
               <node name="Code" />
             </target>
-	  </type>
-	  <phases>
-	    <all />
-	  </phases>
+          </type>
+          <phases>
+            <all />
+          </phases>
         </attribute>
       </attributes>
       <flags>
@@ -5419,24 +5429,24 @@
               <node name="Arg" />
             </target>
           </type>
-	  <phases>
-	    <all />
-	  </phases>
-	</attribute>
-	<attribute name="Linksign" mandatory="no" >
-	  <type name="Integer" />
-	  <phases>
-	    <range from="pragma" to="final" />
-	  </phases>
-	</attribute>
+          <phases>
+            <all />
+          </phases>
+        </attribute>
+        <attribute name="Linksign" mandatory="no" >
+          <type name="Integer" />
+          <phases>
+            <range from="pragma" to="final" />
+          </phases>
+        </attribute>
       </attributes>
       <flags>
         <flag name="IsAliasing" default="TRUE" />
         <flag name="IsArtificial" />
         <flag name="IsRefcounted" default="TRUE" />
         <flag name="HasLinksignInfo" />
-	<flag name="IsCReturn" />
-	<flag name="WasRemoved" default="FALSE" />
+        <flag name="IsCReturn" />
+        <flag name="WasRemoved" default="FALSE" />
       </flags>
     </node>
 <!--
@@ -5447,22 +5457,22 @@
     <node name="Ids">
       <sons>
         <son name="Next" mandatory="no">
-	  <target>
-	    <node name="Ids" />
-	  </target>
-	</son>
+          <target>
+            <node name="Ids" />
+          </target>
+        </son>
       </sons>
       <attributes>
-	<attribute name="Avis" mandatory="yes" >
-	  <type name="Link">
-	    <target>
-	      <node name="Avis" />
-	    </target>
-	  </type>
-	  <phases>
-	    <all />
-	  </phases>
-	</attribute>
+        <attribute name="Avis" mandatory="yes" >
+          <type name="Link">
+            <target>
+              <node name="Avis" />
+            </target>
+          </type>
+          <phases>
+            <all />
+          </phases>
+        </attribute>
         <attribute name="Use" mandatory="yes" >
           <type name="Link">
             <target>
@@ -5470,7 +5480,7 @@
             </target>
           </type>
           <phases>
-            <range from="ive" to="ive"  />
+            <phase name="ive" />
           </phases>
         </attribute>
       </attributes>
@@ -5623,45 +5633,45 @@
       <sons></sons>
       <attributes>
         <attribute name="Funlist" mandatory="yes">
-	  <description>Pointerlist to all function instances</description>
+          <description>Pointerlist to all function instances</description>
           <type name="Link">
             <target>
               <node name="Linklist" />
             </target>
           </type>
           <phases>
-            <range from="typecheck" to="final" />
+            <range from="tc" to="final" />
           </phases>
         </attribute>
         <attribute name="SpecCounter" default="0" mandatory="yes">
-	  <description>Number of specialized function instances</description>
+          <description>Number of specialized function instances</description>
           <type name="Integer" />
           <phases>
-            <range from="typecheck" to="final" />
+            <range from="tc" to="final" />
           </phases>
         </attribute>
         <attribute name="RefCounter" default="0" mandatory="yes">
-	  <description>Number of all (known) function instances</description>
+          <description>Number of all (known) function instances</description>
           <type name="Integer" />
           <phases>
-            <range from="typecheck" to="final" />
+            <range from="tc" to="final" />
           </phases>
         </attribute>
         <attribute name="InlCounter" default="0" mandatory="yes" >
-	  <description>Number of inlined function instances</description>
+          <description>Number of inlined function instances</description>
           <type name="Integer" />
           <phases>
-            <range from="typecheck" to="final" />
+            <range from="tc" to="final" />
           </phases>
         </attribute>
         <attribute name="AkvCounter" default="0" mandatory="yes" >
-	  <description>
-	    Used in type_upgrade for counting created function instances with
-	    AKV-arguments
-	  </description>
+          <description>
+            Used in type_upgrade for counting created function instances with
+            AKV-arguments
+          </description>
           <type name="Integer" />
           <phases>
-            <range from="typecheck" to="final" />
+            <range from="tc" to="final" />
           </phases>
         </attribute>
       </attributes>
