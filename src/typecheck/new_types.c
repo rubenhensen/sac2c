@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.85  2005/06/08 19:19:40  sbs
+ * rewrote SplitWrappers entirely.
+ *
  * Revision 3.84  2005/06/06 09:01:55  sah
  * for udts, the modules is printed as well
  *
@@ -208,45 +211,6 @@
  * Revision 3.23  2002/09/04 16:19:53  dkr
  * - IsTypeError() added
  * - BuildCondAssign(): optimization added
- *
- * Revision 3.22  2002/09/04 13:55:53  sbs
- * single LUT in Overload replaced by n LUTS....
- *
- * Revision 3.21  2002/09/04 12:59:46  sbs
- * some further StrBufprintf changed into StrBufprint.
- *
- * Revision 3.20  2002/09/04 12:20:37  dkr
- * some comments added...
- *
- * Revision 3.19  2002/09/04 12:16:38  dkr
- * data type DFT_state invented
- *
- * Revision 3.18  2002/09/03 18:53:58  dkr
- * - interface for dispatching functions added
- * - creating wrapper function code is complete now
- *
- * Revision 3.17  2002/09/03 13:17:00  sbs
- * partial derivations added and type2string mechanism
- * changed to StrBuf usage....
- *
- * Revision 3.16  2002/08/30 10:49:42  dkr
- * BuildApAssign modified
- *
- * Revision 3.15  2002/08/15 21:10:57  dkr
- * some errors corrected
- *
- * Revision 3.14  2002/08/13 15:59:30  dkr
- * signature of TYCreateWrapper...() functions modified
- *
- * Revision 3.13  2002/08/13 13:45:32  dkr
- * - SearchInLUT_PP used instead of SearchInLUT_P
- * - functions for creation of wrapper function code added
- *
- * Revision 3.12  2002/08/09 14:52:04  dkr
- * signature of TYType2WrapperCode modified
- *
- * Revision 3.11  2002/08/09 13:01:18  dkr
- * TYType2WrapperCode() added
  *
  * [eliminated] ....
  *
@@ -1949,6 +1913,40 @@ MakeOverloadedFunType (ntype *fun1, ntype *fun2)
             DBUG_ASSERT ((0), "TYmakeOverloadFunType called with illegal funtype!");
         }
         fun1 = TYfreeTypeConstructor (fun1);
+    }
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn int TYgetArity( ntype *fun)
+ *
+ *   @brief counts the number of TC_fun constructors found on the "topmost"
+ *          chain.
+ *   @param TC_fun node
+ *   @return the number of TC_fun nodes found
+ *
+ ******************************************************************************/
+
+int
+TYgetArity (ntype *fun)
+{
+    int res = 0;
+    ntype *next;
+
+    DBUG_ENTER ("TYgetArity");
+
+    DBUG_ASSERT (NTYPE_CON (fun) == TC_fun, "TYgetArity applied to non function type");
+    DBUG_ASSERT (NTYPE_ARITY (fun) >= 1, "TC_fun with (ARITY < 1) found!");
+    DBUG_ASSERT ((FUN_IBASE (fun, 0) != NULL), "TC_fun with (NTYPE_SON == NULL) found!");
+
+    next = IRES_TYPE (IBASE_GEN (FUN_IBASE (fun, 0)));
+
+    if (NTYPE_CON (next) == TC_fun) {
+        res = 1 + TYgetArity (next);
+    } else {
+        res = 1;
     }
 
     DBUG_RETURN (res);
@@ -5018,6 +5016,63 @@ TYtype2OldType (ntype *new)
  **  functions for creating wrapper function code
  **/
 
+/** <!--********************************************************************-->
+ *
+ * @fn void ExtractTopBaseSignature( ntype *fun, ntype **frame)
+ *
+ *   @brief extracts ntype pointers that point to scalar types
+ *          defining the signature of the "topmost" chain and puts these into
+ *          the frame provided.
+ *   @param fun TC_fun node
+ *   @param frame array big enough to accomadate the scalar types of the signature
+ *
+ ******************************************************************************/
+
+static void
+ExtractTopBaseSignature (ntype *fun, ntype **frame)
+{
+    ntype *next;
+
+    DBUG_ENTER ("ExtractTopBaseSignature");
+
+    *frame = TYcopyType (IBASE_BASE (FUN_IBASE (fun, 0)));
+    next = IRES_TYPE (IBASE_GEN (FUN_IBASE (fun, 0)));
+
+    if (NTYPE_CON (next) == TC_fun) {
+        ExtractTopBaseSignature (next, frame + 1);
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn int FindBase( ntype *scalar, ntype *fun)
+ *
+ *   @brief searches for scalar in the ibases attached to fun.
+ *   @param scalar scalar type we are looking for
+ *   @param fun TC_fun node
+ *   @return position of the ibase or -1 in case no suitable ibase is present
+ *
+ ******************************************************************************/
+
+static int
+FindBase (ntype *scalar, ntype *fun)
+{
+    int res = -1;
+    int i;
+
+    DBUG_ENTER ("FindBase");
+
+    for (i = 0; i < NTYPE_ARITY (fun); i++) {
+        if (TYeqTypes (scalar, IBASE_BASE (NTYPE_SON (fun, i)))) {
+            res = i;
+        }
+    }
+
+    DBUG_RETURN (res);
+}
+
 /******************************************************************************
  *
  * Function:
@@ -5032,51 +5087,112 @@ TYtype2OldType (ntype *new)
  ******************************************************************************/
 
 static ntype *
-SplitWrapperType (ntype *type, bool *finished)
+SplitWrapperType (ntype *type, int level, ntype **frame, int *pathes_remaining)
 {
-    ntype *new_type;
-    int n, i;
-    bool old_finished, once_finished;
+    ntype *new_type, *son;
+    int i, pos, pathes_found;
+    int mandatory = 1;
+#ifndef DBUG_OFF
+    char *tmp_str;
+#endif
 
-    DBUG_ENTER ("TYsplitWrapperType");
+    DBUG_ENTER ("SplitWrapperType");
 
     if (type == NULL) {
         new_type = NULL;
     } else {
-        n = NTYPE_ARITY (type);
         new_type = CopyTypeConstructor (type, tv_id);
 
-        if (TYisFun (type)) {
-            DBUG_ASSERT ((n >= 1), "TC_fun with (ARITY < 1) found!");
+        DBUG_PRINT ("NTY_SPLIT", ("processing %s node at" F_PTR "(cpy:" F_PTR ")",
+                                  dbug_str[NTYPE_CON (type)], type, new_type));
+        switch (NTYPE_CON (type)) {
 
-            NTYPE_ARITY (new_type) = 1;
-            NTYPE_SONS (new_type) = (ntype **)ILIBmalloc (sizeof (ntype *));
+        case TC_fun:
+            DBUG_ASSERT ((NTYPE_ARITY (type) >= 1), "TC_fun with (ARITY < 1) found!");
 
-            DBUG_ASSERT ((NTYPE_SON (type, (n - 1)) != NULL),
-                         "TC_fun with (NTYPE_SON == NULL) found!");
+            DBUG_EXECUTE ("NTY_SPLIT",
+                          tmp_str = TYtype2DebugString (frame[level], FALSE, 0););
+            DBUG_PRINT ("NTY_SPLIT", ("--looking for %s", tmp_str));
+            DBUG_EXECUTE ("NTY_SPLIT", tmp_str = ILIBfree (tmp_str););
 
-            NTYPE_SON (new_type, 0)
-              = SplitWrapperType (NTYPE_SON (type, (n - 1)), finished);
+            pos = FindBase (frame[level], type);
+            if (pos < 0) {
+                /**
+                 * we found a dead end => switch to kill-mode
+                 */
 
-            if (*finished) {
-                NTYPE_ARITY (type) = n - 1;
-                NTYPE_SON (type, (n - 1)) = TYfreeType (NTYPE_SON (type, (n - 1)));
-                if (n > 1) {
-                    (*finished) = FALSE;
+                DBUG_PRINT ("NTY_SPLIT", ("--not found switching to kill mode"));
+                *pathes_remaining = 0;
+
+            } else {
+
+                DBUG_PRINT ("NTY_SPLIT", ("--found in position %d", pos));
+                son = SplitWrapperType (NTYPE_SON (type, pos), level + 1, frame,
+                                        pathes_remaining);
+
+                DBUG_PRINT ("NTY_SPLIT", ("--adding " F_PTR " to " F_PTR, son, new_type));
+                new_type = MakeNewSon (new_type, son);
+
+                if (*pathes_remaining == 1) {
+                    *pathes_remaining = NTYPE_ARITY (type);
+                    DBUG_PRINT ("NTY_SPLIT", ("--deleting " F_PTR " from " F_PTR,
+                                              NTYPE_SON (type, pos), type));
+                    type = DeleteSon (type, pos);
+                } else {
+                    *pathes_remaining *= NTYPE_ARITY (type);
                 }
             }
-        } else {
-            NTYPE_ARITY (new_type) = n;
-            NTYPE_SONS (new_type) = (ntype **)ILIBmalloc (n * sizeof (ntype *));
-            old_finished = *finished;
-            once_finished = old_finished;
-            for (i = 0; i < n; i++) {
-                *finished = old_finished;
-                NTYPE_SON (new_type, i)
-                  = SplitWrapperType (NTYPE_SON (type, i), finished);
-                once_finished = once_finished && (*finished);
+            break;
+
+        case TC_ibase:
+            mandatory = 3;
+        case TC_iarr:
+        case TC_idim:
+        case TC_ishape:
+        case TC_ires:
+            pathes_found = 0;
+            for (i = 0; i < NTYPE_ARITY (type); i++) {
+                *pathes_remaining = 1;
+                son = SplitWrapperType (NTYPE_SON (type, i), level, frame,
+                                        pathes_remaining);
+                if ((*pathes_remaining > 0) || (i < mandatory)) {
+                    /**
+                     * NB: In certain situations NULL sons NEED to be inserted.
+                     *     These are mandatory nodes such as [] and [*] in IBASE.
+                     */
+                    DBUG_PRINT ("NTY_SPLIT",
+                                ("--adding " F_PTR " to " F_PTR, son, new_type));
+                    new_type = MakeNewSon (new_type, son);
+                    if (*pathes_remaining == 1) {
+                        if (i >= mandatory) {
+                            DBUG_PRINT ("NTY_SPLIT", ("**deleting " F_PTR " from " F_PTR,
+                                                      NTYPE_SON (type, i), type));
+                            type = DeleteSon (type, i);
+                        } else {
+                            DBUG_PRINT ("NTY_SPLIT",
+                                        ("**setting " F_PTR " from " F_PTR " to NULL",
+                                         NTYPE_SON (type, i), type));
+                            NTYPE_SON (type, i) = NULL;
+                        }
+                    }
+                }
+                pathes_found
+                  = (pathes_found < *pathes_remaining ? *pathes_remaining : pathes_found);
             }
-            *finished = once_finished;
+            *pathes_remaining = pathes_found;
+            break;
+        default:
+            new_type = ILIBfree (new_type);
+            new_type = TYcopyType (type);
+        }
+
+        if (*pathes_remaining == 0) {
+            DBUG_PRINT ("NTY_SPLIT", ("--killing %s node at" F_PTR,
+                                      dbug_str[NTYPE_CON (type)], new_type));
+            new_type = ILIBfree (new_type);
+        } else if (*pathes_remaining == 1) {
+            DBUG_PRINT ("NTY_SPLIT", ("**freeing " F_PTR, type));
+            type = TYfreeTypeConstructor (type);
         }
     }
 
@@ -5084,13 +5200,34 @@ SplitWrapperType (ntype *type, bool *finished)
 }
 
 ntype *
-TYsplitWrapperType (ntype *type, bool *finished)
+TYsplitWrapperType (ntype *type, int *pathes_remaining)
 {
+    int n;
+    ntype **frame;
+
     DBUG_ENTER ("TYSplitWrapperType");
 
-    *finished = TRUE;
-    type = SplitWrapperType (type, finished);
+    if (NTYPE_CON (type) == TC_fun) {
+        n = TYgetArity (type);
+        frame = (ntype **)ILIBmalloc (n * sizeof (ntype *));
+        ExtractTopBaseSignature (type, frame);
 
+        *pathes_remaining = 1;
+
+        type = SplitWrapperType (type, 0, frame, pathes_remaining);
+
+        while (n > 0) {
+            n--;
+            frame[n] = ILIBfree (frame[n]);
+        }
+        frame = ILIBfree (frame);
+    } else {
+        /**
+         * we are dealing with a parameterless function here!
+         */
+        type = TYcopyType (type);
+        *pathes_remaining = 1;
+    }
     DBUG_RETURN (type);
 }
 
