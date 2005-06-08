@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.219  2005/06/08 09:48:32  ktr
+ * Tweaked Argtab2Fundef to introduce shared RETS. But it is still ugly
+ *
  * Revision 3.218  2005/06/06 15:26:05  jhb
  * added a if statement to each function to print the NODE_ERROR
  *
@@ -702,14 +705,11 @@ Argtab2Fundef (node *fundef)
     DBUG_ASSERT ((argtab->ptr_in[0] == NULL), "argtab inconsistent");
 
     /*
-     * TODO: doesn't this introduce sharing?!?
-     *       afaik one cannot call this function twice
-     *       as it will segfault???
-     *       Furthermore the entire idea to generate a fundef
+     * TODO: The entire idea to generate a fundef
      *       from the argtab just 2 print it is fubar. It
      *       would be much better to print it directly.
      */
-    rets = argtab->ptr_out[0];
+    rets = DUPdoDupNode (argtab->ptr_out[0]);
 
     for (i = argtab->size - 1; i >= 1; i--) {
         if (argtab->ptr_in[i] != NULL) {
