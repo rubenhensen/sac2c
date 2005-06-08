@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.27  2005/06/08 19:21:10  sbs
+ * adjusted the signature of TYsplitWrapperType
+ *
  * Revision 3.26  2005/06/08 19:16:43  sbs
  * added TYgetArity
  *
@@ -376,7 +379,7 @@ extern ntype *TYoldTypes2ProdType (types *old);
 /*
  * Functions for converting types into SAC code for wrapper functions
  */
-extern ntype *TYsplitWrapperType (ntype *type, bool *finished);
+extern ntype *TYsplitWrapperType (ntype *type, int *pathes_remaining);
 extern ntype *TYgetWrapperRetType (ntype *type);
 extern node *TYcorrectWrapperArgTypes (node *args, ntype *type);
 extern node *TYcreateWrapperCode (node *fundef, node *vardecs, node **new_vardecs);
