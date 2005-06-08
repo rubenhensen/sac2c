@@ -2,6 +2,9 @@
 
 <!--
   $Log$
+  Revision 1.14  2005/06/08 13:33:03  jhb
+  attribute are now check correctly
+
   Revision 1.13  2005/05/19 13:34:02  jhb
   added the rangequery for the attributes
 
@@ -189,9 +192,9 @@ static info *FreeInfo(info *info)
     <xsl:apply-templates select="./attributes/attribute" mode="exist">
       <xsl:sort select="@name"/>
     </xsl:apply-templates>
-    <xsl:apply-templates select="./attributes/attribute" mode="correct">
+    <!--    <xsl:apply-templates select="./attributes/attribute" mode="correct">
       <xsl:sort select="@name"/>
-    </xsl:apply-templates>
+    </xsl:apply-templates>-->
     <xsl:apply-templates select="./sons/son" mode="trav">
       <xsl:sort select="@name"/>
     </xsl:apply-templates>
@@ -290,7 +293,7 @@ static info *FreeInfo(info *info)
   </xsl:template>
   
   
-  <!-- exist attributes  -->
+  <!-- exist attributes -->
   <xsl:template match="attribute" mode="exist">
     <xsl:choose>
       <!-- literal attributes are ignored -->
@@ -298,87 +301,41 @@ static info *FreeInfo(info *info)
         <!-- do nothing -->
       </xsl:when>
       <xsl:otherwise>
-        <xsl:if test="string-length(@mandatory) &gt; 2">
-          <xsl:value-of select="$newline"/>
-          <xsl:value-of select="'  /* this attribute is mandatory = '"/>
-          <xsl:value-of select="@mandatory"/>
-          <xsl:value-of select="' */'"/>
-          <xsl:value-of select="$newline"/>
-          <xsl:if test="key(&quot;arraytypes&quot;, ./type/@name)">
-            <xsl:value-of select="'for( cnt = 0; cnt &lt; '" />
-            <xsl:value-of select="key(&quot;types&quot;, ./type/@name)/@size"/>
-            <xsl:value-of select="'; cnt++) { '" />
+        <xsl:choose>
+          <xsl:when test="((./phases/all) or (not(./phases)))">
+            <xsl:if test="string-length(@mandatory) &gt; 2">
+              <xsl:call-template name="CHKexistAttribute"/>                
+            </xsl:if>
+          </xsl:when>
+          <xsl:when test="((./phases/range) or ( true()))">
+            <xsl:value-of select="'if( ( FALSE)'"/>
+            <xsl:apply-templates select="./phases/*"/>
+            <xsl:value-of select="') {'"/>
+            <xsl:if test="string-length(@mandatory) &gt; 2">
+              <xsl:call-template name="CHKexistAttribute"/>
+            </xsl:if>
+            <xsl:value-of select="'}'"/>
+            <xsl:value-of select="'else {'"/>
+            <xsl:call-template name="CHKnotExistAttribute"/>
+            <xsl:value-of select="'}'"/>
             <xsl:value-of select="$newline"/>
-          </xsl:if>
-          <xsl:value-of select="'  CHKexistAttribute( '"/>
-          <xsl:call-template name="node-access">
-            <xsl:with-param name="node">arg_node</xsl:with-param>
-            <xsl:with-param name="nodetype">
-              <xsl:value-of select="../../@name"/>
-            </xsl:with-param>
-            <xsl:with-param name="field">
-              <xsl:value-of select="@name"/>
-            </xsl:with-param>
-            <!-- if its is an array, we have to add another parameter -->
-            <xsl:with-param name="index">
-              <xsl:if test="key(&quot;arraytypes&quot;, ./type/@name)">
-                <xsl:value-of select="'cnt'"/>
-              </xsl:if>
-            </xsl:with-param>
-          </xsl:call-template>
-          <xsl:value-of select="', '"/>
-          <xsl:value-of select="'arg_node'"/>
-          <xsl:value-of select="', '"/>
-          <xsl:value-of select="$newline"/>
-          <xsl:value-of select="'                     '"/>
-          <xsl:value-of select="'&quot;'"/>
-          <xsl:value-of select="'mandatory attribute '"/>
-          <xsl:apply-templates select="../../@name" mode="uppercase"/>
-          <xsl:value-of select="'_'"/>
-          <xsl:apply-templates select="@name" mode="uppercase"/>
-          <xsl:value-of select="' is NULL'"/>
-          <xsl:value-of select="'&quot;'"/>
-          <!-- this is the query for the ranges of the attributes; attrubtes without range get the default: from initial to final -->
-          <xsl:choose>   
-          <xsl:when test="phases/range/@from">
-            <xsl:value-of select="', '"/>
-            <xsl:value-of select="'&quot;'"/>                
-            <xsl:value-of select="phases/range/@from"/>
-            <xsl:value-of select="'&quot;'"/>                
-            <xsl:value-of select="', '"/>
-            <xsl:value-of select="'&quot;'"/>                
-            <xsl:value-of select="phases/range/@to"/>      
-            <xsl:value-of select="'&quot;'"/>                    
           </xsl:when>
           <xsl:otherwise>
-            <xsl:value-of select="', '"/>
-            <xsl:value-of select="'&quot;'"/>                
-            <xsl:value-of select="'initial'"/>
-            <xsl:value-of select="'&quot;'"/>                
-            <xsl:value-of select="', '"/>
-            <xsl:value-of select="'&quot;'"/>                
-            <xsl:value-of select="'final'"/>
-            <xsl:value-of select="'&quot;'"/>                          
+            <xsl:call-template name="CHKnotExistAttribute"/>                
           </xsl:otherwise>
         </xsl:choose>
-        <xsl:value-of select="');'"/>
         <xsl:value-of select="$newline"/>
-        <xsl:if test="key(&quot;arraytypes&quot;, ./type/@name)">
-          <xsl:value-of select="'}'"/>
-        </xsl:if>
-      </xsl:if>
-    </xsl:otherwise>
-  </xsl:choose>
-  <xsl:value-of select="$newline"/>
-</xsl:template>
+      </xsl:otherwise> 
+    </xsl:choose>
+  </xsl:template>
 
 
-<!-- attribute type check -->
+<!-- 
 <xsl:template match="attribute" mode="correct">
   <xsl:choose>
-    <!-- literal attributes are ignored -->
+
     <xsl:when test="key(&quot;types&quot;, ./type/@name)[@copy = &quot;literal&quot;]">
-      <!-- do nothing -->
+
     </xsl:when>
     <xsl:otherwise>
       <xsl:value-of select="$newline"/>
@@ -397,7 +354,7 @@ static info *FreeInfo(info *info)
           <xsl:with-param name="field">
             <xsl:value-of select="@name"/>
           </xsl:with-param>
-          <!-- if its is an array, we have to add another parameter -->
+
           <xsl:with-param name="index">
             <xsl:if test="key(&quot;arraytypes&quot;, ./type/@name)">
               <xsl:value-of select="'cnt'"/>
@@ -443,7 +400,7 @@ static info *FreeInfo(info *info)
     </xsl:choose>
     <xsl:value-of select="$newline"/>
   </xsl:template>
-
+-->
 
   <!-- create the enums for the output -->
   <xsl:template match="node" mode="enum">
@@ -507,5 +464,130 @@ static info *FreeInfo(info *info)
     </xsl:if>        
     <xsl:value-of select="$newline"/>
   </xsl:template>
+
+
+
+
+  <xsl:template match="range">
+    <xsl:value-of select="'|| (( global.compiler_subphase &gt;= '"/>
+    <xsl:value-of select="'SUBPH_'"/>
+    <xsl:value-of select="@from"/>
+    <xsl:value-of select="')'"/>
+    <xsl:value-of select="' &amp;&amp; ( global.compiler_subphase &lt; '"/>
+    <xsl:value-of select="'SUBPH_'"/>
+    <xsl:value-of select="@to"/>
+    <xsl:value-of select="' ))'"/>
+  </xsl:template>
+
+  <xsl:template match="phase">
+    <xsl:value-of select="'|| (( global.compiler_subphase &gt;= '"/>
+    <xsl:value-of select="'SUBPH_'"/>
+    <xsl:value-of select="@name"/>
+    <xsl:value-of select="')'"/>
+    <xsl:value-of select="' &amp;&amp; ( global.compiler_subphase &lt; '"/>
+    <xsl:value-of select="'SUBPH_'"/>
+    <xsl:value-of select="@name"/>
+    <xsl:value-of select="' ))'"/>
+  </xsl:template>
   
+  <xsl:template match="all">
+    <xsl:value-of select="'|| ( TRUE)'"/>
+  </xsl:template>
+
+
+
+  <xsl:template name="CHKexistAttribute">
+    <xsl:if test="key(&quot;arraytypes&quot;, ./type/@name)">
+      <xsl:value-of select="'for( cnt = 0; cnt &lt; '" />
+      <xsl:value-of select="key(&quot;types&quot;, ./type/@name)/@size"/>
+      <xsl:value-of select="'; cnt++) { '" />
+      <xsl:value-of select="$newline"/>
+    </xsl:if>
+    <xsl:value-of select="'  CHKexistAttribute( '"/>
+    <xsl:call-template name="node-access">
+      <xsl:with-param name="node">arg_node</xsl:with-param>
+      <xsl:with-param name="nodetype">
+        <xsl:value-of select="../../@name"/>
+      </xsl:with-param>
+      <xsl:with-param name="field">
+        <xsl:value-of select="@name"/>
+      </xsl:with-param>
+      <xsl:with-param name="index">
+        <xsl:if test="key(&quot;arraytypes&quot;, ./type/@name)">
+          <xsl:value-of select="'cnt'"/>
+        </xsl:if>
+      </xsl:with-param>
+    </xsl:call-template>
+    <xsl:value-of select="', '"/>
+    <xsl:value-of select="'arg_node'"/>
+    <xsl:value-of select="', '"/>
+    <xsl:value-of select="$newline"/>
+    <xsl:value-of select="'                     '"/>
+    <xsl:value-of select="'&quot;'"/>
+    <xsl:value-of select="'mandatory attribute '"/>
+    <xsl:apply-templates select="../../@name" mode="uppercase"/>
+    <xsl:value-of select="'_'"/>
+    <xsl:apply-templates select="@name" mode="uppercase"/>
+    <xsl:value-of select="' is NULL'"/>
+    <xsl:value-of select="'&quot;'"/>
+    <xsl:value-of select="');'"/>
+    <xsl:value-of select="$newline"/>
+    <xsl:if test="key(&quot;arraytypes&quot;, ./type/@name)">
+      <xsl:value-of select="'}'"/>
+    </xsl:if>
+  </xsl:template>
+
+
+  <xsl:template name="CHKnotExistAttribute">
+    <xsl:if test="key(&quot;arraytypes&quot;, ./type/@name)">
+      <xsl:value-of select="'for( cnt = 0; cnt &lt; '" />
+      <xsl:value-of select="key(&quot;types&quot;, ./type/@name)/@size"/>
+      <xsl:value-of select="'; cnt++) { '" />
+      <xsl:value-of select="$newline"/>
+    </xsl:if>
+    <xsl:value-of select="'  CHKnotExistAttribute( '"/>
+    <xsl:call-template name="node-access">
+      <xsl:with-param name="node">arg_node</xsl:with-param>
+      <xsl:with-param name="nodetype">
+        <xsl:value-of select="../../@name"/>
+      </xsl:with-param>
+      <xsl:with-param name="field">
+        <xsl:value-of select="@name"/>
+      </xsl:with-param>
+      <xsl:with-param name="index">
+        <xsl:if test="key(&quot;arraytypes&quot;, ./type/@name)">
+          <xsl:value-of select="'cnt'"/>
+        </xsl:if>
+      </xsl:with-param>
+    </xsl:call-template>
+    <xsl:value-of select="', '"/>
+    <xsl:value-of select="'arg_node'"/>
+    <xsl:value-of select="', '"/>
+    <xsl:value-of select="$newline"/>
+    <xsl:value-of select="'                     '"/>
+    <xsl:value-of select="'&quot;'"/>
+    <xsl:value-of select="'attribute '"/>
+    <xsl:call-template name="node-access">
+      <xsl:with-param name="node">arg_node</xsl:with-param>
+      <xsl:with-param name="nodetype">
+        <xsl:value-of select="../../@name"/>
+      </xsl:with-param>
+      <xsl:with-param name="field">
+        <xsl:value-of select="@name"/>
+      </xsl:with-param>
+      <xsl:with-param name="index">
+        <xsl:if test="key(&quot;arraytypes&quot;, ./type/@name)">
+          <xsl:value-of select="'cnt'"/>
+        </xsl:if>
+      </xsl:with-param>
+    </xsl:call-template>
+    <xsl:value-of select="'must be NULL'"/>
+    <xsl:value-of select="'&quot;'"/>
+    <xsl:value-of select="');'"/>
+    <xsl:value-of select="$newline"/>
+    <xsl:if test="key(&quot;arraytypes&quot;, ./type/@name)">
+      <xsl:value-of select="'}'"/>
+    </xsl:if>
+  </xsl:template>
+
 </xsl:stylesheet>

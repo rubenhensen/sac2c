@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2005/06/08 13:37:08  jhb
+ * attribute are now check correctly
+ *
  * Revision 1.11  2005/05/19 13:34:44  jhb
  * begin to add the ranges for the attributes
  *
@@ -38,6 +41,7 @@
 #include "tree_basic.h"
 #include "types.h"
 #include "tree_compound.h"
+#include "checktst.h"
 
 struct INFO {
 };
@@ -80,6 +84,8 @@ CHKdoTreeCheck (node *syntax_tree)
 
     info = MakeInfo ();
 
+    syntax_tree = CHKTSTdoTreeCheckTest (syntax_tree);
+
     TRAVpush (TR_chk);
     syntax_tree = TRAVdo (syntax_tree, info);
     TRAVpop ();
@@ -103,7 +109,8 @@ CHKexistSon (node *son, node *arg_node, char *string)
 
     if (son == NULL) {
 
-        NODE_ERROR (arg_node) = TBmakeError (string, NODE_ERROR (arg_node));
+        NODE_ERROR (arg_node)
+          = TBmakeError (ILIBstringCopy (string), NODE_ERROR (arg_node));
     }
 
     DBUG_RETURN (son);
@@ -115,13 +122,34 @@ CHKexistSon (node *son, node *arg_node, char *string)
  *
  *****************************************************************************/
 node *
-CHKexistAttribute (void *attribute, node *arg_node, char *string, char *from, char *to)
+CHKexistAttribute (void *attribute, node *arg_node, char *string)
 {
     DBUG_ENTER ("CHKexistAttribute");
 
     if (attribute == NULL) {
 
-        NODE_ERROR (arg_node) = TBmakeError (string, NODE_ERROR (arg_node));
+        NODE_ERROR (arg_node)
+          = TBmakeError (ILIBstringCopy (string), NODE_ERROR (arg_node));
+    }
+
+    DBUG_RETURN (attribute);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *CHKnotExistAttribute( node *attribute, node *arg_node, char *string)
+ *
+ *****************************************************************************/
+
+node *
+CHKnotExistAttribute (void *attribute, node *arg_node, char *string)
+{
+    DBUG_ENTER ("CHKexistAttribute");
+
+    if (attribute != NULL) {
+
+        NODE_ERROR (arg_node)
+          = TBmakeError (ILIBstringCopy (string), NODE_ERROR (arg_node));
     }
 
     DBUG_RETURN (attribute);

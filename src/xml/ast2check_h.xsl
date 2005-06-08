@@ -2,6 +2,9 @@
 
 <!--
   $Log$
+  Revision 1.3  2005/06/08 13:33:03  jhb
+  attribute are now check correctly
+
   Revision 1.2  2005/05/17 13:00:37  jhb
   added the isfun
 
@@ -33,9 +36,9 @@ version="1.0">
 
  <xsl:text>
 /**
- * @file free_node.h
+ * @file check.h
  *
- * Functions to free node structures
+ * Functions to check node structures
  * 
  * THIS FILE HAS BEEN GENERATED USING 
  * $Id$.
@@ -50,7 +53,6 @@ version="1.0">
 
 #include "types.h"
 
-extern node *CHKCheck(  node *arg_node);
 </xsl:text> 
 <xsl:value-of select="$newline"/>
 
