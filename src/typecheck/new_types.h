@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.26  2005/06/08 19:16:43  sbs
+ * added TYgetArity
+ *
  * Revision 3.25  2004/11/25 18:01:40  sbs
  * compiles
  *
@@ -287,6 +290,8 @@ extern char *TYgetPolyName (ntype *poly);
  */
 extern ntype *TYmakeFunType (ntype *arg, ntype *res, node *fun_info);
 extern ntype *TYmakeOverloadedFunType (ntype *fun1, ntype *fun2);
+
+extern int TYgetArity (ntype *fun);
 
 extern dft_res *TYdispatchFunType (ntype *fun, ntype *args);
 
