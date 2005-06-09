@@ -4,6 +4,9 @@
 /*
 *
 * $Log$
+* Revision 1.35  2005/06/09 08:16:48  ktr
+* Corrected application of TBmakeLet
+*
 * Revision 1.34  2005/06/01 20:34:21  sah
 * fixed creation of to_string call
 *
@@ -1140,7 +1143,7 @@ let:       ids LET { $<cint>$ = global.linenum; } expr
              $$ = TBmakeLet( ids, ap);
              NODE_LINE( $$) = $<cint>5;
            }
-         | expr_ap { $$ = TBmakeLet( $1, NULL); }
+         | expr_ap { $$ = TBmakeLet( NULL, $1); }
          | ID INC { $$ = MakeIncDecLet( $1, ILIBstringCopy( "+")); }
          | INC ID { $$ = MakeIncDecLet( $2, ILIBstringCopy( "+")); }
          | ID DEC { $$ = MakeIncDecLet( $1, ILIBstringCopy( "-")); }
