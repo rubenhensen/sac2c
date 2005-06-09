@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.22  2005/06/09 10:47:36  sbs
+ * EXPRS_EXPR forgotten in recursive call of Mop2Ap
+ *
  * Revision 1.21  2005/01/11 11:19:19  cg
  * Converted output from Error.h to ctinfo.c
  *
@@ -299,7 +302,7 @@ Mop2Ap (node *op, node *mop)
         } else {
             SPMOP_EXPRS (mop) = EXPRS_NEXT (exprs);
             SPMOP_OPS (mop) = EXPRS_NEXT (fun_ids);
-            mop = Mop2Ap (fun_ids, mop); /* where clause! */
+            mop = Mop2Ap (EXPRS_EXPR (fun_ids), mop); /* where clause! */
 
             exprs_prime = SPMOP_EXPRS (mop);
 
