@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.31  2005/06/09 15:38:27  ktr
+ * identifier appearing inside of shape descriptions are now refcounted
+ * as well.
+ *
  * Revision 1.30  2004/12/13 18:54:49  ktr
  * Withids contain N_id/N_exprs of N_id after explicit allocation now.
  *
@@ -2185,6 +2189,7 @@ EMRCfold (node *arg_node, info *arg_info)
      */
     INFO_EMRC_COUNTMODE (arg_info) = rc_apuse;
     FOLD_NEUTRAL (arg_node) = TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
+
     if (FOLD_NEXT (arg_node) != NULL) {
         FOLD_NEXT (arg_node) = TRAVdo (FOLD_NEXT (arg_node), arg_info);
     }
@@ -2248,14 +2253,20 @@ EMRCprf (node *arg_node, info *arg_info)
          *
          * - initialize rc with 1
          */
-        PRF_ARGS (arg_node) = TBmakeExprs (TBmakeNum (1), PRF_ARGS (arg_node));
+        if (INFO_EMRC_LHS (arg_info) != NULL) {
+            PRF_ARGS (arg_node) = TBmakeExprs (TBmakeNum (1), PRF_ARGS (arg_node));
+        }
 
         /*
          * Traverse reuse candidates
+         * TODO: Restore EXPRS4 iff problems arise
          */
-        if (PRF_EXPRS4 (arg_node) != NULL) {
+        if (PRF_ARGS (arg_node) != NULL) {
+            node *lhs = INFO_EMRC_LHS (arg_info);
+            INFO_EMRC_LHS (arg_info) = NULL;
             INFO_EMRC_COUNTMODE (arg_info) = rc_prfuse;
-            PRF_EXPRS4 (arg_node) = TRAVdo (PRF_EXPRS4 (arg_node), arg_info);
+            PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
+            INFO_EMRC_LHS (arg_info) = lhs;
         }
         break;
 
