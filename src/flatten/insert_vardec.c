@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.23  2005/06/09 15:16:17  sbs
+ * added support for void functions, i.e., LHS of let is not mendatory
+ * anymore ;-)
+ *
  * Revision 1.22  2005/03/19 23:05:26  sbs
  * AUD support requires PART_NEXT and CODE_NEXT to be traversed too.
  *
@@ -325,7 +329,9 @@ INSVDlet (node *arg_node, info *arg_info)
 
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
-    LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
+    if (LET_IDS (arg_node) != NULL) {
+        LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
