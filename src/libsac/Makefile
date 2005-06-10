@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.21  2005/06/10 21:24:18  sbs
+# dependencies for libsac2c eliminated
+#
 # Revision 3.20  2005/06/10 13:33:43  sbs
 # added rules for libsac2c
 #
@@ -104,7 +107,7 @@ OBJS_LIBSAC_MT := message_mt.o misc_mt.o trace_mt.o mt.o mt_trace.o \
 .PHONY: all tar clean prod
 
 
-all: libsac.a libsac2c.so
+all: libsac.a
 ifneq ($(DISABLE_MT),yes)
 all: libsac_mt.a
 endif
@@ -130,7 +133,7 @@ libsac_mt.a: $(OBJS_LIBSAC_MT)
 	$(CLOCK_SKEW_ELIMINATION) $@
 
 
-libsac2c.so: $(PROJECT_ROOT)/sac2c sac2c.sac
+libsac2c.so: sac2c.sac
 	sac2c -maxspec 0 -noopt -doDFR -O3 sac2c.sac
 
 $(PROJECT_ROOT)/sac2c:
