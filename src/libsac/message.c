@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2005/06/10 17:34:09  sbs
+ * SAC_RuntimeErrorLine added.
+ *
  * Revision 3.3  2003/09/16 13:23:12  dkr
  * sac_misc.h included
  *
@@ -102,6 +105,34 @@ SAC_RuntimeError (char *format, ...)
 
     fprintf (stderr, "\n\n*** SAC runtime error\n");
     fprintf (stderr, "*** ");
+
+    va_start (arg_p, format);
+    vfprintf (stderr, format, arg_p);
+    va_end (arg_p);
+
+    fprintf (stderr, "\n\n");
+
+    SAC_MT_RELEASE_LOCK (SAC_MT_output_lock);
+
+    exit (1);
+}
+
+void
+SAC_RuntimeErrorLine (int line, char *format, ...)
+{
+    va_list arg_p;
+
+    SAC_MT_ACQUIRE_LOCK (SAC_MT_output_lock);
+
+    SAC_HM_ShowDiagnostics ();
+    /*
+     * If the program is not linked with the diagnostic version of the private
+     * heap manager, a dummy function will be called here defined either in
+     * heapmgr/setup.c or in libsac/nophm.c.
+     */
+
+    fprintf (stderr, "\n\n*** SAC runtime error\n");
+    fprintf (stderr, "*** Line %d: ", line);
 
     va_start (arg_p, format);
     vfprintf (stderr, format, arg_p);

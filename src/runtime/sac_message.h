@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2005/06/10 17:33:37  sbs
+ * SAC_RuntimeErrorLine added.
+ *
  * Revision 3.3  2003/04/29 11:55:05  cg
  * Added function SAC_RuntimeWarning in analogy to SAC_RuntimeError.
  *
@@ -40,6 +43,7 @@
 #define _SAC_MESSAGE_H
 
 extern void SAC_RuntimeError (char *format, ...);
+extern void SAC_RuntimeErrorLine (int line, char *format, ...);
 extern void SAC_RuntimeWarning (char *format, ...);
 extern void SAC_Print (char *format, ...);
 
