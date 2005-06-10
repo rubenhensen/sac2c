@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.23  2005/06/10 13:33:10  sbs
+# added libsac2c.so
+#
 # Revision 3.22  2003/10/20 14:35:53  dkr
 # target icm_test modified
 #
@@ -84,7 +87,7 @@ LIBS :=
 
 all:  libsac.a libsac_mt.a libsac_heapmgr.a  \
       libsac_heapmgr_diag.a libsac_heapmgr_mt.a libsac_heapmgr_mt_diag.a  \
-      CacheSimAnalyser sac2crc config.h
+      CacheSimAnalyser sac2crc config.h libsac2c.so libsac2c.a
 
 
 tar: runtime.tar
@@ -94,6 +97,13 @@ libsac_heap%.a :
 	@ if [ ! -f $@ ]; \
 	    then ln -s ../heapmgr/$@;  \
                  echo ln -s ../heapmgr/$@;  \
+	  fi
+	$(CLOCK_SKEW_ELIMINATION) $@
+
+lib%.so : 
+	@ if [ ! -f $@ ]; \
+	    then ln -s ../libsac/$@;  \
+                 echo ln -s ../libsac/$@;  \
 	  fi
 	$(CLOCK_SKEW_ELIMINATION) $@
 
