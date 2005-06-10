@@ -1,6 +1,6 @@
 module sac2c;
 
-provide: {sel};
+provide {sel};
 
 #define BUILT_IN( fun)    \
 fun( int)                 \
