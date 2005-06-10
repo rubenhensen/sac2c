@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.43  2005/06/10 19:17:05  khf
+ * corrected type checks
+ *
  * Revision 1.42  2005/06/10 16:41:05  khf
  * using of sac2c:sel for modarray wls added
  * bugfix
@@ -1033,38 +1036,25 @@ CreateScalarWL (int dim, node *array_shape, simpletype btype, node *expr, node *
  *   @return node *         :  array of zeros
  ******************************************************************************/
 static node *
-CreateZeros (node *array, node *fundef)
+CreateZeros (ntype *array_type, node *fundef)
 {
     node *zero = NULL;
-    ntype *array_type;
+    node *array_shape = NULL;
     simpletype btype;
     shape *shape;
     int dim;
 
     DBUG_ENTER ("CreateZeros");
 
-    DBUG_ASSERT ((NODE_TYPE (array) == N_id), "no N_id node found!");
-
-    array_type = ID_NTYPE (array);
-    dim = TYgetDim (array_type);
     DBUG_ASSERT ((TYisSimple (array_type) == FALSE), "N_id is no array type!");
+    dim = TYgetDim (array_type);
     btype = TYgetSimpleType (TYgetScalar (array_type));
     shape = TYgetShape (array_type);
 
     if (dim == 0) {
         zero = TCcreateZeroScalar (btype);
     } else {
-        node *array_shape = NULL;
-
-        if (TYisAKV (array_type) || TYisAKS (array_type)) {
-
-            array_shape = SHshape2Array (shape);
-        } else { /* AKD array */
-            CTIabortLine (global.linenum,
-                          "Genarray with-loop with missing default expression found."
-                          " Unfortunately, a default expression is necessary here"
-                          " to generate code for new partitions");
-        }
+        array_shape = SHshape2Array (shape);
         zero
           = CreateScalarWL (dim, array_shape, btype, TCcreateZeroScalar (btype), fundef);
         array_shape = FREEdoFreeNode (array_shape);
@@ -1234,9 +1224,20 @@ CreateFullPartition (node *wln, info *arg_info)
         /* create code for all new parts */
         nassigns = NULL;
         if (NODE_TYPE (WITH_WITHOP (wln)) == N_genarray) {
+
             if (GENARRAY_DEFAULT (WITH_WITHOP (wln)) == NULL) {
-                coden = CreateZeros (EXPRS_EXPR (WITH_CEXPRS (wln)),
-                                     INFO_WLPG_FUNDEF (arg_info));
+                array_type = ID_NTYPE (EXPRS_EXPR (WITH_CEXPRS (wln)));
+
+                if (TYisAKV (array_type) || TYisAKS (array_type)) {
+                    coden = CreateZeros (array_type, INFO_WLPG_FUNDEF (arg_info));
+                } else {
+                    CTIabortLine (global.linenum,
+                                  "Genarray with-loop with missing default expression "
+                                  "found."
+                                  " Unfortunately, a default expression is necessary here"
+                                  " to generate code for new partitions");
+                }
+
             } else {
                 coden = DUPdoDupTree (GENARRAY_DEFAULT (WITH_WITHOP (wln)));
             }
@@ -1368,8 +1369,8 @@ CreateEmptyGenWLReplacement (node *wl, info *arg_info)
     node *tmpn, *assignn, *blockn, *cexpr;
     node *nassigns = NULL;
     node *_ids;
-
     node *res;
+    ntype *array_type;
 
     DBUG_ENTER ("CreateEmptyGenWLReplacement");
 
@@ -1421,12 +1422,20 @@ CreateEmptyGenWLReplacement (node *wl, info *arg_info)
             blockn = CODE_CBLOCK (code);
             tmpn = BLOCK_INSTR (blockn);
             cexpr = EXPRS_EXPR (CODE_CEXPRS (code));
+            array_type = ID_NTYPE (cexpr);
 
             if (N_empty == NODE_TYPE (tmpn)) {
                 /* there is no instruction in the block right now. */
                 _ids = NewIds (cexpr, INFO_WLPG_FUNDEF (arg_info));
 
-                tmpn = CreateZeros (cexpr, INFO_WLPG_FUNDEF (arg_info));
+                if (TYisAKV (array_type) || TYisAKS (array_type)) {
+                    tmpn = CreateZeros (array_type, INFO_WLPG_FUNDEF (arg_info));
+                } else {
+                    CTIabortLine (global.linenum,
+                                  "Cexpr of Genarray with-loop is not AKV/AKS."
+                                  " Unfortunately, a AKV/AKS cexpr is necessary here"
+                                  " to generate code for empty WL replacement");
+                }
 
                 /* replace N_empty with new assignment "_ids = [0,..,0]" */
                 assignn = TBmakeAssign (TBmakeLet (_ids, tmpn), NULL);
@@ -1451,7 +1460,15 @@ CreateEmptyGenWLReplacement (node *wl, info *arg_info)
                 LET_EXPR (ASSIGN_INSTR (assignn))
                   = FREEdoFreeTree (LET_EXPR (ASSIGN_INSTR (assignn)));
 
-                tmpn = CreateZeros (cexpr, INFO_WLPG_FUNDEF (arg_info));
+                if (TYisAKV (array_type) || TYisAKS (array_type)) {
+                    tmpn = CreateZeros (array_type, INFO_WLPG_FUNDEF (arg_info));
+                } else {
+                    CTIabortLine (global.linenum,
+                                  "Cexpr of Genarray with-loop is not AKV/AKS."
+                                  " Unfortunately, a AKV/AKS cexpr is necessary here"
+                                  " to generate code for empty WL replacement");
+                }
+
                 CODE_VISITED (code) = TRUE;
                 LET_EXPR (ASSIGN_INSTR (assignn)) = tmpn;
                 nassigns = TCappendAssign (nassigns, assignn);
