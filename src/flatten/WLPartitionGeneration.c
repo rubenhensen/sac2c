@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.42  2005/06/10 16:41:05  khf
+ * using of sac2c:sel for modarray wls added
+ * bugfix
+ *
  * Revision 1.41  2005/06/03 17:17:41  khf
  * type setting corrected
  *
@@ -220,6 +224,7 @@
 #include "traverse.h"
 #include "constants.h"
 #include "ssa.h"
+#include "deserialize.h"
 #include "wlanalysis.h"
 #include "WLPartitionGeneration.h"
 
@@ -237,6 +242,7 @@ struct INFO {
     int subphase;
     bool hasdefpart;
     node *default_expr;
+    node *sel_wrapper;
 };
 
 /*******************************************************************************
@@ -264,8 +270,7 @@ struct INFO {
 #define INFO_WLPG_SUBPHASE(n) (n->subphase)
 #define INFO_WLPG_HASDEFPART(n) (n->hasdefpart)
 #define INFO_WLPG_DEFAULT(n) (n->default_expr)
-
-#define AtLeastAKD(type) ((TYisAKV (type) || TYisAKS (type) || TYisAKD (type)))
+#define INFO_WLPG_SELWRAPPER(n) (n->sel_wrapper)
 
 /**
  * INFO functions
@@ -289,6 +294,7 @@ MakeInfo ()
     INFO_WLPG_SUBPHASE (result) = 0;
     INFO_WLPG_HASDEFPART (result) = FALSE;
     INFO_WLPG_DEFAULT (result) = NULL;
+    INFO_WLPG_SELWRAPPER (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -1027,9 +1033,9 @@ CreateScalarWL (int dim, node *array_shape, simpletype btype, node *expr, node *
  *   @return node *         :  array of zeros
  ******************************************************************************/
 static node *
-CreateZeros (node *array, node **nassigns, node *fundef)
+CreateZeros (node *array, node *fundef)
 {
-    node *zero = NULL, *assigns = NULL;
+    node *zero = NULL;
     ntype *array_type;
     simpletype btype;
     shape *shape;
@@ -1054,39 +1060,34 @@ CreateZeros (node *array, node **nassigns, node *fundef)
 
             array_shape = SHshape2Array (shape);
         } else { /* AKD array */
-            assigns = CreateIdxShapeSelAssigns (array, 0, (dim - 1), fundef);
-            array_shape = CreateStructConstant (array_shape, assigns);
+            CTIabortLine (global.linenum,
+                          "Genarray with-loop with missing default expression found."
+                          " Unfortunately, a default expression is necessary here"
+                          " to generate code for new partitions");
         }
         zero
           = CreateScalarWL (dim, array_shape, btype, TCcreateZeroScalar (btype), fundef);
         array_shape = FREEdoFreeNode (array_shape);
     }
 
-    (*nassigns) = assigns;
     DBUG_RETURN (zero);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn node *CreateArraySel( node *sel_vec, node *sel_ids, node *sel_array,
- *                           node **nassigns, node *fundef)
+ * @fn node *CreateArraySel( node *sel_vec, node *sel_array, node *module)
  *
- *   @brief creates an WL with element-wise reference on 'sel_array'
+ *   @brief creates an scalar or vector-wise reference on 'sel_array'
  *
  *   @param  node *sel_vec   : N_WITHID_VEC of current WL
- *           node *sel_ids   : N_WITHID_IDS of current WL
  *           node *sel_array :
- *           node **nassigns : != NULL iff new assignments have been created
- *                             (AKD case)
- *           node *fundef    : N_FUNDEF
- *   @return node *          : N_Nwith
+ *           info *arg_info  :
+ *   @return node *          : N_ap or N_prf
  ******************************************************************************/
 static node *
-CreateArraySel (node *sel_vec, node *sel_ids, node *sel_array, node **nassigns,
-                node *fundef)
+CreateArraySel (node *sel_vec, node *sel_array, info *arg_info)
 {
     node *sel;
-    node *assigns = NULL;
     int len_index, dim_array;
 
     DBUG_ENTER ("CreateArraySel");
@@ -1107,81 +1108,29 @@ CreateArraySel (node *sel_vec, node *sel_ids, node *sel_array, node **nassigns,
           = TBmakePrf (F_sel, TBmakeExprs (DUPdupIdsId (sel_vec),
                                            TBmakeExprs (DUPdoDupNode (sel_array), NULL)));
     } else { /* (len_index < dim_array) */
-        node *new_index, *id, *vardec, *ass, *tmp_ids, *avis;
-        node *array_shape = NULL;
-        shape *shape, *mshape;
-        simpletype btype;
-        ntype *array_type;
-        int dim, num_ids;
 
-        array_type = ID_NTYPE (sel_array);
-        dim = (dim_array - len_index);
+        if (INFO_WLPG_DEFAULT (arg_info) != NULL) {
+            /* use selection from former default partition */
+            sel = INFO_WLPG_DEFAULT (arg_info);
+            INFO_WLPG_DEFAULT (arg_info) = NULL;
+        } else {
+            /* first application of WLPartitionGeneration on current WL */
+            if (INFO_WLPG_SELWRAPPER (arg_info) == NULL) {
 
-        btype = TYgetSimpleType (TYgetScalar (array_type));
+                DSinitDeserialize (INFO_WLPG_MODULE (arg_info));
 
-        if (TYisAKV (array_type) || TYisAKS (array_type)) {
-
-            shape = TYgetShape (array_type);
-            mshape = SHdropFromShape (len_index, shape);
-            array_shape = SHshape2Array (mshape);
-
-            if (mshape) {
-                SHfreeShape (mshape);
+                INFO_WLPG_SELWRAPPER (arg_info)
+                  = DSaddSymbolByName ("sel", SET_wrapperhead, "sac2c");
+                DSfinishDeserialize (INFO_WLPG_MODULE (arg_info));
             }
-        } else { /* AKD array */
-            assigns
-              = CreateIdxShapeSelAssigns (sel_array, len_index, (dim_array - 1), fundef);
-            array_shape = CreateStructConstant (array_shape, assigns);
+
+            DBUG_ASSERT ((INFO_WLPG_SELWRAPPER (arg_info) != NULL),
+                         "no sac2c:sel wrapper found!");
+            sel = TCmakeAp2 (INFO_WLPG_SELWRAPPER (arg_info), DUPdupIdsId (sel_vec),
+                             DUPdoDupNode (sel_array));
         }
-
-        /*
-         * create WL without expression
-         */
-        sel = CreateScalarWL (dim, array_shape, btype, NULL, fundef);
-
-        array_shape = FREEdoFreeNode (array_shape);
-
-        /*
-         * create index vector for F_sel
-         */
-        tmp_ids = sel_ids;
-        while (IDS_NEXT (tmp_ids) != NULL) {
-            tmp_ids = IDS_NEXT (tmp_ids);
-        }
-        IDS_NEXT (tmp_ids) = WITH_IDS (sel); /* concat ids chains */
-        new_index = TCids2Array (sel_ids);
-        num_ids = TCcountIds (sel_ids);
-        IDS_NEXT (tmp_ids) = NULL; /* restore ids chains */
-
-        /*
-         * create new id
-         */
-        avis = TBmakeAvis (ILIBtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int),
-                                                     SHcreateShape (1, num_ids)));
-
-        id = TBmakeId (avis);
-        vardec = TBmakeVardec (avis, NULL);
-
-        fundef = TCaddVardecs (fundef, vardec);
-
-        /*
-         * create expression 'sel( tmp, A)' and insert it into WL
-         */
-        ASSIGN_RHS (BLOCK_INSTR (WITH_CBLOCK (sel)))
-          = TBmakePrf (F_sel,
-                       TBmakeExprs (id, TBmakeExprs (DUPdoDupNode (sel_array), NULL)));
-
-        /*
-         * create assignment 'tmp = [...];' and insert it into WL
-         */
-        ass = TCmakeAssignLet (ID_AVIS (id), new_index);
-        /* set correct backref to defining assignment */
-        AVIS_SSAASSIGN (ID_AVIS (id)) = ass;
-        ASSIGN_NEXT (ass) = BLOCK_INSTR (WITH_CBLOCK (sel));
-        BLOCK_INSTR (WITH_CBLOCK (sel)) = ass;
     }
 
-    (*nassigns) = assigns;
     DBUG_RETURN (sel);
 }
 
@@ -1214,6 +1163,11 @@ CreateFullPartition (node *wln, info *arg_info)
 
     if (PART_NEXT (WITH_PART (wln)) != NULL) {
         /* we do have a default partition here */
+        if (NODE_TYPE (WITH_WITHOP (wln)) == N_modarray) {
+            /* recycle default expression */
+            INFO_WLPG_DEFAULT (arg_info) = DUPdoDupNode (
+              ASSIGN_RHS (BLOCK_INSTR (PART_CBLOCK (PART_NEXT (WITH_PART (wln))))));
+        }
         PART_NEXT (WITH_PART (wln)) = FREEdoFreeTree (PART_NEXT (WITH_PART (wln)));
     }
 
@@ -1251,6 +1205,8 @@ CreateFullPartition (node *wln, info *arg_info)
               = TCappendAssign (INFO_WLPG_NASSIGNS (arg_info), nassigns);
         } else {
             /* dimension unknown */
+            DBUG_ASSERT ((0), "Can not create upper array bound."
+                              "Dimension of modifying WL unknown!");
             array_shape = NULL;
         }
     } break;
@@ -1279,16 +1235,14 @@ CreateFullPartition (node *wln, info *arg_info)
         nassigns = NULL;
         if (NODE_TYPE (WITH_WITHOP (wln)) == N_genarray) {
             if (GENARRAY_DEFAULT (WITH_WITHOP (wln)) == NULL) {
-                coden = CreateZeros (EXPRS_EXPR (WITH_CEXPRS (wln)), &(nassigns),
+                coden = CreateZeros (EXPRS_EXPR (WITH_CEXPRS (wln)),
                                      INFO_WLPG_FUNDEF (arg_info));
             } else {
                 coden = DUPdoDupTree (GENARRAY_DEFAULT (WITH_WITHOP (wln)));
             }
         } else { /* modarray */
             coden = CreateArraySel (WITHID_VEC (WITH_WITHID (wln)),
-                                    WITHID_IDS (WITH_WITHID (wln)),
-                                    MODARRAY_ARRAY (WITH_WITHOP (wln)), &(nassigns),
-                                    INFO_WLPG_FUNDEF (arg_info));
+                                    MODARRAY_ARRAY (WITH_WITHOP (wln)), arg_info);
         }
 
         _ids = TBmakeIds (TBmakeAvis (ILIBtmpVar (), TYeliminateAKV (AVIS_TYPE (ID_AVIS (
@@ -1472,7 +1426,7 @@ CreateEmptyGenWLReplacement (node *wl, info *arg_info)
                 /* there is no instruction in the block right now. */
                 _ids = NewIds (cexpr, INFO_WLPG_FUNDEF (arg_info));
 
-                tmpn = CreateZeros (cexpr, &(nassigns), INFO_WLPG_FUNDEF (arg_info));
+                tmpn = CreateZeros (cexpr, INFO_WLPG_FUNDEF (arg_info));
 
                 /* replace N_empty with new assignment "_ids = [0,..,0]" */
                 assignn = TBmakeAssign (TBmakeLet (_ids, tmpn), NULL);
@@ -1497,7 +1451,7 @@ CreateEmptyGenWLReplacement (node *wl, info *arg_info)
                 LET_EXPR (ASSIGN_INSTR (assignn))
                   = FREEdoFreeTree (LET_EXPR (ASSIGN_INSTR (assignn)));
 
-                tmpn = CreateZeros (cexpr, &(nassigns), INFO_WLPG_FUNDEF (arg_info));
+                tmpn = CreateZeros (cexpr, INFO_WLPG_FUNDEF (arg_info));
                 CODE_VISITED (code) = TRUE;
                 LET_EXPR (ASSIGN_INSTR (assignn)) = tmpn;
                 nassigns = TCappendAssign (nassigns, assignn);
@@ -1810,8 +1764,7 @@ WLPGwith (node *arg_node, info *arg_info)
                 }
             }
 
-        } else if ((INFO_WLPG_GENPROP (arg_info) == GPT_partial)
-                   && AtLeastAKD (ID_NTYPE (EXPRS_EXPR (WITH_CEXPRS (arg_node))))) {
+        } else if ((INFO_WLPG_GENPROP (arg_info) == GPT_partial)) {
             arg_node = CreateFullPartition (arg_node, arg_info);
 
         } else if ((PART_NEXT (WITH_PART (arg_node)) == NULL)
@@ -1876,19 +1829,21 @@ WLPGmodarray (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLPGmodarray");
 
-    /**
-     * ATTENTION!! in case of non-scalar "inner" shapes, F_sel is NOT suitable!
-     *             Instead, psel from NTCtemplates has to be used. Maybe
-     *             the module system can be used to achieve this elegantly?
-     *             For the time being, only scalar inner shapes will be handled
-     *             properly!
-     */
+    if (INFO_WLPG_SELWRAPPER (arg_info) == NULL) {
+
+        DSinitDeserialize (INFO_WLPG_MODULE (arg_info));
+
+        INFO_WLPG_SELWRAPPER (arg_info)
+          = DSaddSymbolByName ("sel", SET_wrapperhead, "sac2c");
+
+        DSfinishDeserialize (INFO_WLPG_MODULE (arg_info));
+    }
 
     INFO_WLPG_DEFAULT (arg_info)
-      = TCmakePrf2 (F_sel,
-                    DUPdupIdsId (
-                      WITHID_VEC (PART_WITHID (WITH_PART (INFO_WLPG_WL (arg_info))))),
-                    DUPdoDupTree (MODARRAY_ARRAY (arg_node)));
+      = TCmakeAp2 (INFO_WLPG_SELWRAPPER (arg_info),
+                   DUPdupIdsId (
+                     WITHID_VEC (PART_WITHID (WITH_PART (INFO_WLPG_WL (arg_info))))),
+                   DUPdoDupTree (MODARRAY_ARRAY (arg_node)));
 
     DBUG_RETURN (arg_node);
 }
