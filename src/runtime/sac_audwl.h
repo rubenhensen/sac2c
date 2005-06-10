@@ -2,6 +2,13 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2005/06/10 15:57:44  sbs
+ * added support for check-tb which requires SHAPE_FACTOR.
+ * However, we have to use a degenerate version here, as we do not
+ * statically know the number of outer dimensions.
+ * Therefore, we use FACTOR-0 only and set this to the extent of the
+ * value elements.
+ *
  * Revision 1.4  2005/03/19 23:17:01  sbs
  * FOLD macros added
  *
@@ -71,11 +78,13 @@
         int SAC_max_d = SAC_ND_A_SIZE (idx_vec_NT) - 1;                                  \
         int SAC_d = SAC_ND_A_DIM (res_NT) - 1;                                           \
         int SAC_WL_OFFSET (res_NT) = 0;                                                  \
+        int SAC_WL_SHAPE_FACTOR (res_NT, 0);                                             \
                                                                                          \
         while (SAC_d > SAC_max_d) {                                                      \
             SAC_off_inc *= SAC_ND_A_SHAPE (res_NT, SAC_d);                               \
             SAC_d--;                                                                     \
         }                                                                                \
+        SAC_WL_SHAPE_FACTOR (res_NT, 0) = SAC_off_inc;                                   \
                                                                                          \
         while (SAC_d >= 0) {                                                             \
             SAC_ND_WRITE (idx_vec_NT, SAC_d) = 0;                                        \
