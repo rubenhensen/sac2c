@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.44  2005/06/10 15:56:11  sbs
+ * changed WL_EMM_ASSIGN compilation. As second arg to the SHAPE_FACTOR h-icm
+ * we now pass 0 whenever dims < 0. This should cover the AUD case properly
+ * (cross fingers).
+ *
  * Revision 3.43  2004/11/25 10:26:46  jhb
  * compile SACdevCamp 2k4
  *
@@ -617,13 +622,13 @@ ICMCompileWL_EMM_ASSIGN (char *val_NT, int val_sdim, char *to_NT, int to_sdim,
 
     ASSURE_TYPE_ASS (fprintf (global.outfile,
                               "SAC_ND_A_DIM( %s) == (SAC_ND_A_DIM( %s) - %d)", val_NT,
-                              to_NT, dims);
+                              to_NT, (dims < 0 ? 0 : dims));
                      , fprintf (global.outfile,
                                 "WL expression with illegal dimension found!"););
 
     ASSURE_TYPE_ASS (fprintf (global.outfile,
                               "SAC_ND_A_SIZE( %s) == SAC_WL_SHAPE_FACTOR( %s, %d)",
-                              val_NT, to_NT, dims - 1);
+                              val_NT, to_NT, (dims < 0 ? 0 : dims - 1));
                      ,
                      fprintf (global.outfile, "WL expression with illegal size found!"););
 
