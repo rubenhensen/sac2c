@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.20  2005/06/10 13:33:43  sbs
+# added rules for libsac2c
+#
 # Revision 3.19  2003/03/20 22:13:11  sah
 # removed fixed -DREENTRANT setting
 # as it is set by configure
@@ -101,7 +104,7 @@ OBJS_LIBSAC_MT := message_mt.o misc_mt.o trace_mt.o mt.o mt_trace.o \
 .PHONY: all tar clean prod
 
 
-all: libsac.a
+all: libsac.a libsac2c.so
 ifneq ($(DISABLE_MT),yes)
 all: libsac_mt.a
 endif
@@ -126,6 +129,12 @@ libsac_mt.a: $(OBJS_LIBSAC_MT)
 	ranlib $@
 	$(CLOCK_SKEW_ELIMINATION) $@
 
+
+libsac2c.so: $(PROJECT_ROOT)/sac2c sac2c.sac
+	sac2c -maxspec 0 -noopt -doDFR -O3 sac2c.sac
+
+$(PROJECT_ROOT)/sac2c:
+	cd $(PROJECT_ROOT); $(MAKE) sac2c
 
 mt_trace.o: mt.c 
 	$(CC) -DTRACE $(CCFLAGS) $(CFLAGS) $(INCS) $(MTFLAGS) -o $@ -c $<
