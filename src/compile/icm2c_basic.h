@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.25  2005/06/10 17:35:48  sbs
+ * Now, SAC_ASSURE_TYPE_LINE is used rather than SAC_ASSURE_TYPE.
+ *
  * Revision 3.24  2004/11/24 23:05:28  jhb
  * removed include types.h
  *
@@ -89,9 +92,9 @@ extern int print_comment; /* bool */
     fprintf (global.outfile, ";\n")
 
 #define ASSURE_TYPE_EXPR(cond_expr, msg_expr)                                            \
-    fprintf (global.outfile, "SAC_ASSURE_TYPE( (");                                      \
-    cond_expr fprintf (global.outfile, "), (\"");                                        \
-    msg_expr fprintf (global.outfile, "\"))")
+    fprintf (global.outfile, "SAC_ASSURE_TYPE_LINE( (");                                 \
+    cond_expr fprintf (global.outfile, "), %d, \"", global.linenum);                     \
+    msg_expr fprintf (global.outfile, "\")")
 
 #define BLOCK(ass)                                                                       \
     INDENT;                                                                              \

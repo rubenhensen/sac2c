@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2005/06/10 17:34:33  sbs
+ * Now, SAC_ASSURE_TYPE_LINE is used rather than SAC_ASSURE_TYPE.
+ *
  * Revision 1.7  2003/11/10 20:22:56  dkrHH
  * debug output: NT objs are converted into strings correctly now
  *
@@ -83,9 +86,14 @@
 #define SAC_ASSURE_TYPE(cond, message) (cond) ? 0 : SAC_RuntimeError message
 /* yes, in C '0;' is indeed a legal statement 8-)) */
 
+#define SAC_ASSURE_TYPE_LINE(cond, line, message)                                        \
+    (cond) ? 0 : SAC_RuntimeErrorLine (line, message)
+
 #else /* SAC_DO_CHECK_TYPE */
 
 #define SAC_ASSURE_TYPE(cond, message) /* nothing */
+
+#define SAC_ASSURE_TYPE_LINE(cond, line, message) /* nothing */
 
 #endif /* SAC_DO_CHECK_TYPE */
 
