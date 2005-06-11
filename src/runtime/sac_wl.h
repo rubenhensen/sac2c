@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.25  2005/06/11 20:50:05  ktr
+ * added SAC_WL_SUB_SHAPE
+ *
  * Revision 3.24  2004/03/09 23:54:04  dkrHH
  * file sac_wl.tagged.h renamed into sac_wl.h
  * old backend removed
@@ -639,5 +642,58 @@
     SAC_ND_WRITE_READ (idx_vec_NT, dim, idx_scl_NT, 0);
 
 /*****************************************************************************/
+
+#define SAC_WL_SUB_SHAPE(sub_NT, idx_vec_NT, res_NT)                                     \
+    CAT17 (SAC_WL_SUB_SHAPE__, NT_SHP (sub_NT) BuildArgs3 (sub_NT, idx_vec_NT, res_NT))
+
+/*
+ * SCL
+ */
+#define SAC_WL_SUB_SHAPE__SCL(sub_NT, idx_vec_NT, res_NT) SAC_NOOP ()
+
+/*
+ * AKS
+ */
+#define SAC_WL_SUB_SHAPE__AKS(sub_NT, idx_vec_NT, res_NT) SAC_NOOP ()
+
+/*
+ * AKD
+ */
+#define SAC_WL_SUB_SHAPE__AKD(sub_NT, idx_vec_NT, res_NT)                                \
+    {                                                                                    \
+        int SAC_max_d = SAC_ND_A_DIM (idx_vec_NT) - 1;                                   \
+        int SAC_d = SAC_ND_A_SIZE (res_NT) - 1;                                          \
+        int SAC_size = 1;                                                                \
+                                                                                         \
+        while (SAC_d > SAC_max_d) {                                                      \
+            SAC_ND_A_DESC_SHAPE (sub_NT, SAC_d - SAC_max_d - 1)                          \
+              = SAC_ND_A_SHAPE (res_NT, SAC_d);                                          \
+            SAC_ND_A_MIRROR_SHAPE (sub_NT, SAC_d - SAC_max_d - 1)                        \
+              = SAC_ND_A_SHAPE (res_NT, SAC_d);                                          \
+            SAC_size *= SAC_ND_A_SHAPE (res_NT, SAC_d);                                  \
+            SAC_d--;                                                                     \
+        }                                                                                \
+        SAC_ND_A_DESC_SIZE (sub_NT) = SAC_size;                                          \
+        SAC_ND_A_MIRROR_SIZE (sub_NT) = SAC_size;                                        \
+    }
+
+/*
+ * AUD
+ */
+#define SAC_WL_SUB_SHAPE__AUD(sub_NT, idx_vec_NT, res_NT)                                \
+    {                                                                                    \
+        int SAC_max_d = SAC_ND_A_SIZE (idx_vec_NT) - 1;                                  \
+        int SAC_d = SAC_ND_A_DIM (res_NT) - 1;                                           \
+        int SAC_size = 1;                                                                \
+                                                                                         \
+        while (SAC_d > SAC_max_d) {                                                      \
+            SAC_ND_A_DESC_SHAPE (sub_NT, SAC_d - SAC_max_d - 1)                          \
+              = SAC_ND_A_SHAPE (res_NT, SAC_d);                                          \
+            SAC_size *= SAC_ND_A_SHAPE (res_NT, SAC_d);                                  \
+            SAC_d--;                                                                     \
+        }                                                                                \
+        SAC_ND_A_DESC_SIZE (sub_NT) = SAC_size;                                          \
+        SAC_ND_A_MIRROR_SIZE (sub_NT) = SAC_size;                                        \
+    }
 
 #endif /* _sac_wl_h_ */
