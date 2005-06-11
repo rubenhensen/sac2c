@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.157  2005/06/11 20:52:24  ktr
+ * WL_SUB_SHAPE is now used to initialize the descriptor of the generic subarrayy
+ *
  * Revision 3.156  2005/05/31 18:14:19  sah
  * added dbug print
  *
@@ -5234,7 +5237,7 @@ MakeIcm_WL_SET_OFFSET (node *arg_node, node *assigns)
     DBUG_RETURN (assigns);
 }
 
-/** <!--********************************************************************-->
+/** <!--*******************************************************************-->
  *
  * @fn  node *COMPwith( node *arg_node, info *arg_info)
  *
@@ -5242,7 +5245,7 @@ MakeIcm_WL_SET_OFFSET (node *arg_node, node *assigns)
  *   The return value is a N_assign chain of ICMs.
  *   The old 'arg_node' is removed by COMPLet.
  *
- ******************************************************************************/
+ ****************************************************************************/
 
 node *
 COMPwith (node *arg_node, info *arg_info)
@@ -5250,6 +5253,8 @@ COMPwith (node *arg_node, info *arg_info)
     node *icm_chain = NULL, *body_icms, *default_icms;
     node *let_neutral;
     node *res_ids, *idx_id, *lower_id, *upper_id;
+    char *sub_name;
+    node *sub_vardec, *sub_get_dim, *sub_set_shape, *sub_icm_args;
     bool isfold;
 
     DBUG_ENTER ("COMPwith");
@@ -5258,13 +5263,15 @@ COMPwith (node *arg_node, info *arg_info)
 
     /**
      * First, we traverse the partition.
-     * This will yield the index vector var in INFO_COMP_IDXVEC (cf. COMPwithid) and
-     * the generator-check icms in INFO_COMP_ICMCHAIN (cf. COMPgenerator).
-     * Whereas the former is a back-link only (and thus has to be copied!), the latter
-     * has been produced for insertion here (and thus can be used as is!).
-     *  Furthermore, note that the index vector comes as N_id as we are after EMM!!
-     * Another aspect to be noticed here is that COMPpart relies on INFO_COMP_ISFOLD to be
-     * set properly since for With-Loops different code has to be created.
+     * This will yield the index vector var in INFO_COMP_IDXVEC (cf. COMPwithid)
+     * and the generator-check icms in INFO_COMP_ICMCHAIN (cf. COMPgenerator).
+     * Whereas the former is a back-link only (and thus has to be copied!), the
+     * latter has been produced for insertion here and thus can be used as is!.
+     * Furthermore, note that the index vector comes as N_id as we are
+     * after EMM!!
+     * Another aspect to be noticed here is that COMPpart relies on
+     * INFO_COMP_ISFOLD to be set properly since for With-Loops different code
+     * has to be created.
      */
     DBUG_ASSERT ((WITH_PARTS (arg_node) < 2),
                  "with-loop with non-AKS withid and multiple generators found!");
@@ -5313,6 +5320,29 @@ COMPwith (node *arg_node, info *arg_info)
 
     } else {
 
+        /*
+         * The descriptor of A_sub must only be built if it is
+         * actually used (shape checks are done)
+         */
+        if (global.doruntimecheck) {
+            sub_name = ILIBstringConcat (IDS_NAME (res_ids), "_sub");
+            sub_vardec = FUNDEF_VARDEC (INFO_COMP_FUNDEF (arg_info));
+            while ((sub_vardec != NULL)
+                   && (strcmp (sub_name, VARDEC_NAME (sub_vardec)))) {
+                sub_vardec = VARDEC_NEXT (sub_vardec);
+            }
+            ILIBfree (sub_name);
+            DBUG_ASSERT (sub_vardec != NULL, "No vardec for X_sub found!");
+
+            /*
+             * Free descriptor of subarray
+             */
+            icm_chain = TCmakeAssignIcm1 ("ND_FREE__DESC",
+                                          TCmakeIdCopyStringNt (VARDEC_NAME (sub_vardec),
+                                                                VARDEC_TYPE (sub_vardec)),
+                                          icm_chain);
+        }
+
         if (CODE_NEXT (WITH_CODE (arg_node)) == NULL) {
             CTIabortLine (NODE_LINE (arg_node),
                           "cannot infer default element for with-loop");
@@ -5339,6 +5369,53 @@ COMPwith (node *arg_node, info *arg_info)
                               TCmakeIdCopyStringNt (IDS_NAME (res_ids),
                                                     IDS_TYPE (res_ids)),
                               icm_chain);
+
+        if (global.doruntimecheck) {
+
+            /*
+             * Calculate dimension of subarray
+             *
+             * dim( A_sub) = dim( A) - size( iv)
+             */
+            sub_get_dim
+              = TCmakeIcm3 ("ND_BINOP", TCmakeIdCopyString (global.prf_symbol[F_sub_SxS]),
+                            TCmakeIcm1 ("ND_A_DIM",
+                                        TCmakeIdCopyStringNt (IDS_NAME (res_ids),
+                                                              IDS_TYPE (res_ids))),
+                            TCmakeIcm1 ("ND_A_SIZE",
+                                        TCmakeIdCopyStringNt (ID_NAME (idx_id),
+                                                              ID_TYPE (idx_id))));
+
+            /*
+             * Calculate shape of subarray
+             *
+             * Shape( A_Sub) = Shape( Sel( Iv, A))
+             */
+            sub_icm_args
+              = MakeTypeArgs (VARDEC_NAME (sub_vardec), VARDEC_TYPE (sub_vardec), FALSE,
+                              TRUE, FALSE,
+                              MakeTypeArgs (IDS_NAME (res_ids), IDS_TYPE (res_ids), FALSE,
+                                            TRUE, FALSE,
+                                            TBmakeExprs (DUPdupIdNt (idx_id), NULL)));
+
+            /*
+             * Annotate shape of subarray
+             */
+            sub_set_shape
+              = TCmakeIcm3 ("WL_SUB_SHAPE",
+                            TCmakeIdCopyStringNt (VARDEC_NAME (sub_vardec),
+                                                  VARDEC_TYPE (sub_vardec)),
+                            TCmakeIdCopyStringNt (ID_NAME (idx_id), ID_TYPE (idx_id)),
+                            TCmakeIdCopyStringNt (IDS_NAME (res_ids),
+                                                  IDS_TYPE (res_ids)));
+
+            /*
+             * Allocate descriptor of subarray
+             */
+            icm_chain
+              = MakeAllocDescIcm (VARDEC_NAME (sub_vardec), VARDEC_TYPE (sub_vardec), 1,
+                                  sub_get_dim, TBmakeAssign (sub_set_shape, icm_chain));
+        }
     }
 
     INFO_COMP_ICMCHAIN (arg_info) = NULL;
@@ -5487,9 +5564,7 @@ COMPwith2 (node *arg_node, info *arg_info)
     node *sub_vardec;
     node *sub_get_dim;
     node *sub_set_shape;
-    node *sub_icm_args;
     node *let_neutral;
-    int i;
 
     DBUG_ENTER ("COMPwith2");
 
@@ -5551,7 +5626,7 @@ COMPwith2 (node *arg_node, info *arg_info)
          * The descriptor of A_sub must only be built if it is
          * actually used (shape checks are done)
          */
-        if ((!global.doruntimecheck)
+        if ((global.doruntimecheck)
             && ((NODE_TYPE (withop) == N_genarray)
                 || (NODE_TYPE (withop) == N_modarray))) {
 
@@ -5576,24 +5651,16 @@ COMPwith2 (node *arg_node, info *arg_info)
                                 TBmakeNum (WITH2_DIMS (arg_node)));
 
                 /*
-                 * Calculate shape of subarray
-                 *
-                 * shape( A_sub) = shape( sel( iv, A))
+                 * Annotate shape of subarray
                  */
-                sub_icm_args = NULL;
-                for (i = 0; i < WITH2_DIMS (arg_node); i++) {
-                    sub_icm_args = TBmakeExprs (TBmakeNum (0), sub_icm_args);
-                }
-                sub_icm_args
-                  = MakeTypeArgs (VARDEC_NAME (sub_vardec), VARDEC_TYPE (sub_vardec),
-                                  FALSE, TRUE, FALSE,
-                                  MakeTypeArgs (IDS_NAME (tmp_ids), IDS_TYPE (tmp_ids),
-                                                FALSE, TRUE, FALSE,
-                                                TBmakeExprs (TBmakeNum (
-                                                               WITH2_DIMS (arg_node)),
-                                                             sub_icm_args)));
-
-                sub_set_shape = TCmakeIcm1 ("ND_PRF_SEL__SHAPE_arr", sub_icm_args);
+                sub_set_shape
+                  = TCmakeIcm3 ("WL_SUB_SHAPE",
+                                TCmakeIdCopyStringNt (VARDEC_NAME (sub_vardec),
+                                                      VARDEC_TYPE (sub_vardec)),
+                                TCmakeIdCopyStringNt (ID_NAME (WITH2_VEC (wlnode)),
+                                                      ID_TYPE (WITH2_VEC (wlnode))),
+                                TCmakeIdCopyStringNt (IDS_NAME (tmp_ids),
+                                                      IDS_TYPE (tmp_ids)));
 
                 /*
                  * Allocate descriptor of subarray
