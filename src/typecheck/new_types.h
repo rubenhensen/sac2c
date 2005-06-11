@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.28  2005/06/11 09:36:55  sbs
+ * bottom type added.
+ *
  * Revision 3.27  2005/06/08 19:21:10  sbs
  * adjusted the signature of TYsplitWrapperType
  *
@@ -283,6 +286,12 @@ extern int TYgetProductSize (ntype *prod);
 extern ntype *TYgetProductMember (ntype *prod, int pos);
 
 /*
+ * Bottom Types:
+ */
+extern ntype *TYmakeBottomType (char *err_msg);
+extern char *TYgetBottomError (ntype *type);
+
+/*
  * Polymorphic Types:
  */
 extern ntype *TYmakePolyType (char *name);
@@ -315,6 +324,8 @@ extern bool TYisSimple (ntype *);
 extern bool TYisUser (ntype *);
 extern bool TYisSymb (ntype *);
 extern bool TYisScalar (ntype *);
+
+extern bool TYisBottom (ntype *);
 
 extern bool TYisAlpha (ntype *);
 extern bool TYisFixedAlpha (ntype *);

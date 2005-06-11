@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.86  2005/06/11 09:36:29  sbs
+ * bottom type added.
+ *
  * Revision 3.85  2005/06/08 19:19:40  sbs
  * rewrote SplitWrappers entirely.
  *
@@ -350,6 +353,7 @@ typedef union {
     shape *a_ishape;
     attr_ires a_ires;
     tvar *a_alpha;
+    char *a_bottom;
     char *a_poly;
 } typeattr;
 
@@ -403,6 +407,7 @@ struct NTYPE {
 
 #define ALPHA_SSI(n) (n->typeattr.a_alpha)
 
+#define BOTTOM_MSG(n) (n->typeattr.a_bottom)
 #define POLY_NAME(n) (n->typeattr.a_poly)
 
 /*
@@ -1172,6 +1177,50 @@ TYgetPolyName (ntype *type)
                  "TYgetPolyName applied to non poly type!");
 
     DBUG_RETURN (POLY_NAME (type));
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn ntype *TYmakeBottomType( char *err_msg)
+ *
+ *   @brief creates bottom type
+ *   @param err_msg error that generated this type
+ *   @return freshly created bottom type
+ *
+ ******************************************************************************/
+
+ntype *
+TYmakeBottomType (char *err_msg)
+{
+    ntype *res;
+
+    DBUG_ENTER ("TYmakeBottomType");
+
+    res = MakeNtype (TC_bottom, 0);
+    BOTTOM_MSG (res) = err_msg;
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn char *TYgetBottomError( ntype *type)
+ *
+ *   @brief extracts the error messgae from the bottom type
+ *   @param type bottom type given
+ *   @return erroro message contained
+ *
+ ******************************************************************************/
+
+char *
+TYgetBottomError (ntype *type)
+{
+    DBUG_ENTER ("TYgetBottomError");
+
+    DBUG_ASSERT ((NTYPE_CON (type) == TC_bottom),
+                 "TYgetBottomError applied to non bottom type!");
+
+    DBUG_RETURN (BOTTOM_MSG (type));
 }
 
 /******************************************************************************
@@ -2793,6 +2842,7 @@ TYgetAlpha (ntype *type)
  *    bool TYisUser( ntype *type)
  *    bool TYisSymb( ntype *type)
  *    bool TYisScalar( ntype *type)
+ *    bool TYisBottom( ntype *type)
  *    bool TYisAlpha( ntype *type)
  *    bool TYisFixedAlpha( ntype *type)
  *    bool TYisNonFixedAlpha( ntype *type)
@@ -2839,6 +2889,13 @@ TYisScalar (ntype *type)
 {
     DBUG_ENTER ("TYisScalar");
     DBUG_RETURN (NTYPE_ARITY (type) == 0);
+}
+
+bool
+TYisBottom (ntype *type)
+{
+    DBUG_ENTER ("TYisBottom");
+    DBUG_RETURN (NTYPE_CON (type) == TC_bottom);
 }
 
 bool
@@ -3137,9 +3194,18 @@ TYcmpTypes (ntype *t1, ntype *t2)
     DBUG_ENTER ("TYcmpTypes");
 
     switch (NTYPE_CON (t1)) {
+    case TC_bottom:
+        if (NTYPE_CON (t2) == TC_bottom) {
+            res = TY_eq;
+        } else {
+            res = TY_lt;
+        }
+        break;
     case TC_simple:
         if ((NTYPE_CON (t2) == TC_simple) && (SIMPLE_TYPE (t1) == SIMPLE_TYPE (t2))) {
             res = TY_eq;
+        } else if (NTYPE_CON (t2) == TC_bottom) {
+            res = TY_gt;
         }
         break;
     case TC_symbol:
@@ -3149,15 +3215,22 @@ TYcmpTypes (ntype *t1, ntype *t2)
                     && ILIBstringCompare (SYMBOL_MOD (t1), SYMBOL_MOD (t2))))
             && ILIBstringCompare (SYMBOL_NAME (t1), SYMBOL_NAME (t2))) {
             res = TY_eq;
+        } else if (NTYPE_CON (t2) == TC_bottom) {
+            res = TY_gt;
         }
         break;
     case TC_user:
         if ((NTYPE_CON (t2) == TC_user) && (USER_TYPE (t1) == USER_TYPE (t2))) {
             res = TY_eq;
+        } else if (NTYPE_CON (t2) == TC_bottom) {
+            res = TY_gt;
         }
         break;
     case TC_akv:
         switch (NTYPE_CON (t2)) {
+        case TC_bottom:
+            res = TY_gt;
+            break;
         case TC_akv:
             if (TYcmpTypes (AKV_BASE (t1), AKV_BASE (t2)) == TY_eq) {
                 if (COcompareConstants (AKV_CONST (t1), AKV_CONST (t2))) {
@@ -3205,6 +3278,9 @@ TYcmpTypes (ntype *t1, ntype *t2)
         break;
     case TC_aks:
         switch (NTYPE_CON (t2)) {
+        case TC_bottom:
+            res = TY_gt;
+            break;
         case TC_akv:
             if (TYcmpTypes (AKS_BASE (t1), AKV_BASE (t2)) == TY_eq) {
                 if (SHcompareShapes (AKS_SHP (t1), COgetShape (AKV_CONST (t2)))) {
@@ -3252,6 +3328,9 @@ TYcmpTypes (ntype *t1, ntype *t2)
         break;
     case TC_akd:
         switch (NTYPE_CON (t2)) {
+        case TC_bottom:
+            res = TY_gt;
+            break;
         case TC_akv:
         case TC_aks:
             if (TYcmpTypes (AKD_BASE (t1), AKS_BASE (t2)) == TY_eq) {
@@ -3291,6 +3370,9 @@ TYcmpTypes (ntype *t1, ntype *t2)
         break;
     case TC_audgz:
         switch (NTYPE_CON (t2)) {
+        case TC_bottom:
+            res = TY_gt;
+            break;
         case TC_akv:
         case TC_aks:
         case TC_akd:
@@ -3318,6 +3400,9 @@ TYcmpTypes (ntype *t1, ntype *t2)
         break;
     case TC_aud:
         switch (NTYPE_CON (t2)) {
+        case TC_bottom:
+            res = TY_gt;
+            break;
         case TC_akv:
         case TC_aks:
         case TC_akd:
@@ -3609,6 +3694,9 @@ TYfreeTypeConstructor (ntype *type)
     DBUG_ASSERT ((type != NULL), "argument is NULL");
 
     switch (NTYPE_CON (type)) {
+    case TC_bottom:
+        BOTTOM_MSG (type) = ILIBfree (BOTTOM_MSG (type));
+        break;
     case TC_symbol:
         SYMBOL_MOD (type) = ILIBfree (SYMBOL_MOD (type));
         SYMBOL_NAME (type) = ILIBfree (SYMBOL_NAME (type));
@@ -3719,6 +3807,9 @@ CopyTypeConstructor (ntype *type, TV_treatment new_tvars)
          * Then we copy the attributes:
          */
         switch (NTYPE_CON (type)) {
+        case TC_bottom:
+            BOTTOM_MSG (res) = ILIBstringCopy (BOTTOM_MSG (type));
+            break;
         case TC_simple:
             SIMPLE_TYPE (res) = SIMPLE_TYPE (type);
             break;
@@ -4174,6 +4265,9 @@ TYtype2String (ntype *type, bool multiline, int offset)
     } else {
 
         switch (NTYPE_CON (type)) {
+        case TC_bottom:
+            res = ILIBstringCopy ("_|_");
+            break;
         case TC_aud:
         case TC_audgz:
         case TC_akd:
@@ -4243,6 +4337,10 @@ TYtype2DebugString (ntype *type, bool multiline, int offset)
         buf = ILIBstrBufPrintf (buf, "%s{ ", dbug_str[NTYPE_CON (type)]);
 
         switch (NTYPE_CON (type)) {
+        case TC_bottom:
+            multiline = FALSE;
+            buf = ILIBstrBufPrint (buf, BOTTOM_MSG (type));
+            break;
         case TC_akv:
             multiline = FALSE;
             tmp_str = COconstant2String (AKV_CONST (type));
