@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.6  2005/06/11 08:49:36  sbs
+ * bottom type added
+ *
  * Revision 3.5  2003/04/01 16:51:28  sbs
  * TC_akv added.
  *
@@ -62,8 +65,8 @@ TCI (TC_simple, 0, "Simple", 0), TCI (TC_symbol, 0, "Symbol", 0),
   TCI (TC_prod, 0, "PROD", 1), TCI (TC_union, 2, "UNION", 1), TCI (TC_fun, 1, "FUN", 1),
   TCI (TC_ibase, 3, "IBASE", 0), TCI (TC_iarr, 1, "IARR", 1), TCI (TC_idim, 1, "IDIM", 1),
   TCI (TC_ishape, 1, "ISHAPE", 0), TCI (TC_ires, 1, "IRES", 0),
-  TCI (TC_alpha, 0, "ALPHA", 0), TCI (TC_poly, 0, "POLY", 0),
-  TCI (TC_dummy, 0, "LastTCI", 0)
+  TCI (TC_alpha, 0, "ALPHA", 0), TCI (TC_bottom, 0, "BOTTOM", 0),
+  TCI (TC_poly, 0, "POLY", 0), TCI (TC_dummy, 0, "LastTCI", 0)
 
 #undef TCITypeConstr
 #undef TCIArity
