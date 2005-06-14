@@ -30,3 +30,4 @@ wlanalysis.h
 lacinlining.c
 lacinlining.h
 wldefaultpartition.c
+wldefaultpartition.h
