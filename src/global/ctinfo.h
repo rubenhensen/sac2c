@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2005/06/14 23:39:03  sbs
+ * CTIabortOnBottom added for reporting bottom types
+ *
  * Revision 1.6  2005/06/14 17:58:19  sbs
  * added CTIgetErrorMessageVA
  *
@@ -42,6 +45,7 @@ extern void CTIerror (const char *format, ...);
 extern void CTIerrorLine (int line, const char *format, ...);
 extern void CTIerrorContinued (const char *format, ...);
 extern int CTIgetErrorMessageLineLength ();
+extern void CTIabortOnBottom (char *err_msg);
 extern void CTIabort (const char *format, ...);
 extern void CTIabortLine (int line, const char *format, ...);
 extern void CTIabortOnError ();

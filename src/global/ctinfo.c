@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2005/06/14 23:39:03  sbs
+ * CTIabortOnBottom added for reporting bottom types
+ *
  * Revision 1.13  2005/06/14 17:58:19  sbs
  * added CTIgetErrorMessageVA
  *
@@ -240,7 +243,7 @@ CTIgetErrorMessageVA (int line, const char *format, va_list arg_p)
     ProcessMessage (message_buffer, message_line_length - strlen (error_message_header));
 
     first_line = (char *)ILIBmalloc (32 * sizeof (char));
-    vsprintf (first_line, "line %d @", line);
+    sprintf (first_line, "line %d @", line);
     res = ILIBstringConcat (first_line, message_buffer);
     first_line = ILIBfree (first_line);
 
@@ -588,6 +591,40 @@ CTIgetErrorMessageLineLength ()
     DBUG_ENTER ("CTIgetErrorMessageLineLength");
 
     DBUG_RETURN (message_line_length - strlen (error_message_header));
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn void CTIabortOnBottom( const char *err_msg)
+ *
+ *   @brief   produces an error message from preprocessed error message
+ *            containing @ symbols as line breaks.
+ *
+ *   @param err_msg  pre-processed error message
+ *
+ ******************************************************************************/
+
+void
+CTIabortOnBottom (char *err_msg)
+{
+    char *line;
+
+    DBUG_ENTER ("CTIabortOnBottom");
+
+    fprintf (stderr, "\n");
+
+    line = strtok (err_msg, "@");
+
+    while (line != NULL) {
+        fprintf (stderr, "%s%s\n", error_message_header, line);
+        line = strtok (NULL, "@");
+    }
+
+    errors++;
+
+    AbortCompilation ();
+
+    DBUG_VOID_RETURN;
 }
 
 /** <!--********************************************************************-->
