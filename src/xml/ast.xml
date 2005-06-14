@@ -577,6 +577,16 @@
           <node name="Code" />
         </travuser>
       </traversal>
+      <traversal id="WLDP" name="With-Loop Default Partition" default="sons" include="wldefaultpartition.h" >
+        <travuser>
+          <node name="Module" />
+          <node name="Fundef" />
+          <node name="With" />
+          <node name="Part" />
+          <node name="Genarray" />
+          <node name="Modarray" />
+         </travuser>
+      </traversal>
       <traversal id="WLPG" name="With-Loop Partition Generation" default="sons" include="WLPartitionGeneration.h" >
         <travuser>
           <node name="Module" />
@@ -585,9 +595,7 @@
           <node name="Let" />
           <node name="Ap" />
           <node name="With" />
-          <node name="Genarray" />
-          <node name="Modarray" />
-         </travuser>
+        </travuser>
       </traversal>
       <traversal id="WLA" name="With-Loop Analysis" default="sons" include="wlanalysis.h" >
         <travuser>
