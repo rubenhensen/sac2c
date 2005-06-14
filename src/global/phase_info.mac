@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.26  2005/06/14 08:52:04  khf
+ * added subphase WLDP
+ *
  * Revision 3.25  2005/06/08 13:38:47  jhb
  * added some SUBPHASES
  *
@@ -247,7 +250,9 @@ PHASE (wlenhance, "Enhancement of with-loops", PHdummy)
 
 SUBPHASE (accu, "accu", "Introducing explicit accumulation", PHdummy)
 
-SUBPHASE (wlpgd, "wlpgd", "Generating full or default partitions", PHdummy)
+SUBPHASE (wldp, "wldp", "Adding default partitions", PHdummy)
+
+SUBPHASE (wlpg, "wlpg", "Generating full with-loop partitions", PHdummy)
 
 /***********************************************************************/
 
@@ -265,7 +270,7 @@ SUBPHASE (cf, "cf", "Applying constant folding", PHdummy)
 
 SUBPHASE (cvp, "cvp", "Propagating constants and variables", PHdummy)
 
-SUBPHASE (wlpg, "wlpg", "Generating full with-loop partitions", PHdummy)
+SUBPHASE (wlpg2, "wlpg2", "Generating full with-loop partitions", PHdummy)
 
 SUBPHASE (wlf, "wlf", "Applying with-loop folding", PHdummy)
 
