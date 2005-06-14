@@ -500,11 +500,14 @@
         <travuser>
           <node name="Module" />
           <node name="Fundef" />
-          <node name="Arg" />
+          <node name="Avis" />
           <node name="Block" />
           <node name="Vardec" />
           <node name="Cast" />
+          <node name="Assign" />
           <node name="Let" />
+          <node name="Cond" />
+          <node name="Funcond" />
           <node name="Fold" />
           <node name="Part" />
           <node name="Withid" />
