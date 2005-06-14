@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2005/06/14 08:52:04  khf
+ * WLPGmodarray and WLPGgenarray removed
+ *
  * Revision 1.10  2005/04/29 20:31:11  khf
  * WLPGpart and WLPGgenerator removed, WLPGmodarray added
  * exported functions for wlanalysis
@@ -60,8 +63,6 @@ extern node *WLPGlet (node *arg_node, info *arg_info);
 extern node *WLPGap (node *arg_node, info *arg_info);
 
 extern node *WLPGwith (node *arg_node, info *arg_info);
-extern node *WLPGgenarray (node *arg_node, info *arg_info);
-extern node *WLPGmodarray (node *arg_node, info *arg_info);
 
 /* functions which are also used by wlanalysis.c */
 extern int NormalizeStepWidth (node **step, node **width);
