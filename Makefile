@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.169  2005/06/14 08:52:04  khf
+# added wldefaultpartition.o
+#
 # Revision 3.168  2005/06/06 10:18:34  jhb
 # added checktst.o
 #
@@ -162,7 +165,7 @@ FLATTEN= src/flatten/flatten.o src/flatten/lac2fun.o \
          src/flatten/ssa.o src/flatten/WLPartitionGeneration.o \
          src/flatten/WLEnhancement.o src/flatten/ExplicitAccumulate.o \
          src/flatten/ToOldTypes.o src/flatten/wlanalysis.o \
-         src/flatten/lacinlining.o
+         src/flatten/lacinlining.o src/flatten/wldefaultpartition.o
 
 CONSTANTS= src/constants/shape.o src/constants/constants_basic.o \
            src/constants/constants_struc_ops.o \

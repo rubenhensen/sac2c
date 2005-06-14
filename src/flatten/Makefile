@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.35  2005/06/14 08:52:04  khf
+# added wldefaultpartition.o
+#
 # Revision 3.34  2005/05/13 16:36:57  ktr
 # added lacinlining.o
 #
@@ -110,7 +113,7 @@ include $(PROJECT_ROOT)/Makefile.Config
 all: flatten.o lac2fun.o fun2lac.o insert_vardec.o handle_mops.o \
      ToNewTypes.o SSATransform.o UndoSSATransform.o ssa.o \
      WLPartitionGeneration.o WLEnhancement.o ExplicitAccumulate.o \
-     ToOldTypes.o wlanalysis.o lacinlining.o
+     ToOldTypes.o wlanalysis.o lacinlining.o wldefaultpartition.o
 
 
 %.o: %.c
