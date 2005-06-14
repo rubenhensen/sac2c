@@ -4868,19 +4868,14 @@
             <range from="wltra" to="final" />
           </phases>
         </attribute>
-        <attribute name="Modified" mandatory="yes">
-          <type name="Link">
-            <target>
-              <unknown />
-            </target>
-          </type>
-          <phases>
-            <range from="wltra" to="final" />
-          </phases>
-        </attribute>
       </attributes>
       <flags>
         <flag name="DoUnroll" />
+        <flag name="IsModified">
+          <description>
+            Used in wltransform.
+          </description>
+        </flag>
       </flags>
     </node>
 <!--
@@ -4984,16 +4979,6 @@
             <all />
           </phases>
         </attribute>
-        <attribute name="Modified" mandatory="yes">
-          <type name="Node">
-            <target>
-              <unknown />
-            </target>
-          </type>
-          <phases>
-            <phase name="wltra" />
-          </phases>
-        </attribute>
         <attribute name="Code" mandatory="no">
           <type name="Link">
             <target>
@@ -5009,6 +4994,11 @@
         <flag name="IsFitted" />
         <flag name="DoUnroll" />
         <flag name="IsNoOp" />
+        <flag name="IsModified">
+          <description>
+            Used in wltransform.
+          </description>
+        </flag>
       </flags>
     </node>
 <!--

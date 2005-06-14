@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.114  2005/06/14 10:49:46  ktr
+ * changed GRID_MODIFIED and STRIDE_MODIFIED into flags X_ISMODIFIED
+ *
  * Revision 3.113  2005/06/06 13:59:48  ktr
  * Fixed implementation of StridesDisjointAllDims
  *
@@ -3707,10 +3710,10 @@ ComputeCubes (node *strides)
         fixpoint = TRUE;
         new_strides = NULL;
 
-        /* check WLSTRIDE_MODIFIED */
+        /* check WLSTRIDE_ISMODIFIED */
         stride1 = strides;
         while (stride1 != NULL) {
-            DBUG_ASSERT ((WLSTRIDE_MODIFIED (stride1) == NULL), "stride was modified");
+            DBUG_ASSERT ((!WLSTRIDE_ISMODIFIED (stride1)), "stride was modified");
             stride1 = WLSTRIDE_NEXT (stride1);
         }
 
@@ -3724,11 +3727,11 @@ ComputeCubes (node *strides)
 
                 if (res == 1) {
                     fixpoint = FALSE;
-                    WLSTRIDE_MODIFIED (stride1) = divided_stridea;
+                    WLSTRIDE_ISMODIFIED (stride1) = TRUE;
                 } else {
                     if (res == 2) {
                         fixpoint = FALSE;
-                        WLSTRIDE_MODIFIED (stride2) = divided_stridea;
+                        WLSTRIDE_ISMODIFIED (stride2) = TRUE;
                     } else {
                         DBUG_ASSERT (((divided_stridea == NULL)
                                       && (divided_strideb == NULL)),
@@ -3743,7 +3746,7 @@ ComputeCubes (node *strides)
             }
 
             /* was 'stride1' not modified? */
-            if (WLSTRIDE_MODIFIED (stride1) == NULL) {
+            if (!WLSTRIDE_ISMODIFIED (stride1)) {
                 /* insert 'stride1' in 'new_strides' */
                 tmp = stride1;
                 stride1 = WLSTRIDE_NEXT (stride1);
@@ -3770,10 +3773,10 @@ ComputeCubes (node *strides)
         fixpoint = TRUE;
         new_strides = NULL;
 
-        /* check WLSTRIDE_MODIFIED */
+        /* check WLSTRIDE_ISMODIFIED */
         stride1 = strides;
         while (stride1 != NULL) {
-            DBUG_ASSERT ((WLSTRIDE_MODIFIED (stride1) == NULL), "stride was modified");
+            DBUG_ASSERT ((!WLSTRIDE_ISMODIFIED (stride1)), "stride was modified");
             stride1 = WLSTRIDE_NEXT (stride1);
         }
 
@@ -3788,7 +3791,7 @@ ComputeCubes (node *strides)
                 if (i_stride1 != NULL) {
                     if (CompareWlNode (stride1, i_stride1, 1) != 0) {
                         fixpoint = FALSE;
-                        WLSTRIDE_MODIFIED (stride1) = i_stride1;
+                        WLSTRIDE_ISMODIFIED (stride1) = TRUE;
                         new_strides = WLTRAinsertWlNodes (new_strides, i_stride1);
                     } else {
                         /*
@@ -3802,7 +3805,7 @@ ComputeCubes (node *strides)
                 if (i_stride2 != NULL) {
                     if (CompareWlNode (stride2, i_stride2, 1) != 0) {
                         fixpoint = FALSE;
-                        WLSTRIDE_MODIFIED (stride2) = i_stride2;
+                        WLSTRIDE_ISMODIFIED (stride2) = TRUE;
                         new_strides = WLTRAinsertWlNodes (new_strides, i_stride2);
                     } else {
                         /*
@@ -3816,7 +3819,7 @@ ComputeCubes (node *strides)
             }
 
             /* was 'stride1' not modified? */
-            if (WLSTRIDE_MODIFIED (stride1) == NULL) {
+            if (!WLSTRIDE_ISMODIFIED (stride1)) {
                 /* insert 'stride1' in 'new_strides' */
                 tmp = stride1;
                 stride1 = WLSTRIDE_NEXT (stride1);
@@ -4757,11 +4760,10 @@ SplitWl (node *strides)
             fixpoint = TRUE;    /* initialize 'fixpoint' */
             new_strides = NULL; /* here we collect the new stride-set */
 
-            /* check WLSTRIDE_MODIFIED */
+            /* check WLSTRIDE_ISMODIFIED */
             stride1 = strides;
             while (stride1 != NULL) {
-                DBUG_ASSERT ((WLSTRIDE_MODIFIED (stride1) == NULL),
-                             "stride was modified");
+                DBUG_ASSERT ((!WLSTRIDE_ISMODIFIED (stride1)), "stride was modified");
                 stride1 = WLSTRIDE_NEXT (stride1);
             }
 
@@ -4776,8 +4778,8 @@ SplitWl (node *strides)
                     if (split_stride1 != NULL) {
                         DBUG_ASSERT ((split_stride2 != NULL), "wrong splitting");
                         fixpoint = FALSE; /* no, not a fixpoint yet :( */
-                        WLSTRIDE_MODIFIED (stride1) = WLSTRIDE_MODIFIED (stride2)
-                          = stride1;
+                        WLSTRIDE_ISMODIFIED (stride1) = TRUE;
+                        WLSTRIDE_ISMODIFIED (stride2) = TRUE;
                         new_strides = WLTRAinsertWlNodes (new_strides, split_stride1);
                         new_strides = WLTRAinsertWlNodes (new_strides, split_stride2);
                     } else {
@@ -4790,7 +4792,7 @@ SplitWl (node *strides)
                  * was 'stride1' not modified?
                  *  -> it is a part of the result
                  */
-                if (WLSTRIDE_MODIFIED (stride1) == NULL) {
+                if (!WLSTRIDE_ISMODIFIED (stride1)) {
                     /* insert 'stride1' in 'new_strides' */
                     tmp = stride1;
                     stride1 = WLSTRIDE_NEXT (stride1);
@@ -5295,10 +5297,10 @@ MergeWl (node *nodes)
                 fixpoint = TRUE;
                 new_grids = NULL;
 
-                /* check WLGRID_MODIFIED */
+                /* check WLGRID_ISMODIFIED */
                 grid1 = grids;
                 while (grid1 != NULL) {
-                    DBUG_ASSERT ((WLGRID_MODIFIED (grid1) == NULL), "grid was modified");
+                    DBUG_ASSERT ((!WLGRID_ISMODIFIED (grid1)), "grid was modified");
                     grid1 = WLGRID_NEXT (grid1);
                 }
 
@@ -5309,19 +5311,19 @@ MergeWl (node *nodes)
                         IntersectGrid (grid1, grid2, step, &i_grid1, &i_grid2);
                         if (i_grid1 != NULL) {
                             new_grids = WLTRAinsertWlNodes (new_grids, i_grid1);
-                            WLGRID_MODIFIED (grid1) = new_grids;
+                            WLGRID_ISMODIFIED (grid1) = TRUE;
                             fixpoint = FALSE;
                         }
                         if (i_grid2 != NULL) {
                             new_grids = WLTRAinsertWlNodes (new_grids, i_grid2);
-                            WLGRID_MODIFIED (grid2) = new_grids;
+                            WLGRID_ISMODIFIED (grid2) = TRUE;
                             fixpoint = FALSE;
                         }
                         grid2 = WLGRID_NEXT (grid2);
                     }
 
                     /* was 'grid1' not modified? */
-                    if (WLGRID_MODIFIED (grid1) == NULL) {
+                    if (!WLGRID_ISMODIFIED (grid1)) {
                         /* insert 'grid1' in 'new_grids' */
                         tmp = grid1;
                         grid1 = WLGRID_NEXT (grid1);

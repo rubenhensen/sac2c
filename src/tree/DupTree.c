@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.156  2005/06/14 10:50:48  ktr
+ * changed GRID_MODIFIED and STRIDE_MODIFIED into flags X_ISMODIFIED
+ *
  * Revision 3.155  2005/06/06 13:24:31  jhb
  * ccorrected copy behavior for N_ERROR
  *
@@ -2688,10 +2691,11 @@ DUPwlstride (node *arg_node, info *arg_info)
 
     WLSTRIDE_PART (new_node) = WLSTRIDE_PART (arg_node);
     WLSTRIDE_FLAGSTRUCTURE (new_node) = WLSTRIDE_FLAGSTRUCTURE (arg_node);
+
     /*
      * duplicated strides are not modified yet ;)
      */
-    WLSTRIDE_MODIFIED (new_node) = NULL;
+    WLSTRIDE_ISMODIFIED (new_node) = FALSE;
 
     CopyCommonNodeData (new_node, arg_node);
 
@@ -2740,12 +2744,12 @@ DUPwlgrid (node *arg_node, info *arg_info)
         CODE_INC_USED (WLGRID_CODE (new_node));
     }
 
+    WLGRID_FLAGSTRUCTURE (new_node) = WLGRID_FLAGSTRUCTURE (arg_node);
+
     /*
      * duplicated grids are not modified yet ;)
      */
-    WLGRID_MODIFIED (new_node) = NULL;
-
-    WLGRID_FLAGSTRUCTURE (new_node) = WLGRID_FLAGSTRUCTURE (arg_node);
+    WLGRID_ISMODIFIED (new_node) = FALSE;
 
     CopyCommonNodeData (new_node, arg_node);
 
