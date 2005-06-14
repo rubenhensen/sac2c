@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.21  2005/06/14 17:58:53  sbs
+ * used CTIgetErrorMessageVA
+ *
  * Revision 1.20  2005/06/14 09:55:10  sbs
  * support for bottom types integrated.
  *
@@ -342,7 +345,7 @@ TEhandleError (int line, const char *format, ...)
 #if 0
   errors = errors ++ CTIgetErrorMessageVA( line, arg_p);
 #else
-    errors = ILIBstringCopy ("error message!");
+    errors = CTIgetErrorMessageVA (line, format, arg_p);
 #endif
 
     va_end (arg_p);
