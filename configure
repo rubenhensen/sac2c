@@ -20136,7 +20136,7 @@ echo "${ECHO_T}solaris settings" >&6
     ;;
   *linux*)
     OSFLAGS="-fPIC -DPIC -D_POSIX_SOURCE -D_SVID_SOURCE -D_BSD_SOURCE -Dlint"
-    LD_DYNAMIC="ld -dy -G"
+    LD_DYNAMIC="ld -G -dy -shared -allow-shlib-undefined"
     echo "$as_me:$LINENO: result: linux settings" >&5
 echo "${ECHO_T}linux settings" >&6
     ;;

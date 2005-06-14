@@ -1,5 +1,8 @@
 dnl
 dnl $Log$
+dnl Revision 1.44  2005/06/14 16:59:18  sah
+dnl made linker flags SuSE safe
+dnl
 dnl Revision 1.43  2005/06/14 12:27:35  sah
 dnl use libtool to build sac2c
 dnl
@@ -519,7 +522,7 @@ case "$target_os" in
     ;;
   *linux*)      
     OSFLAGS=["-fPIC -DPIC -D_POSIX_SOURCE -D_SVID_SOURCE -D_BSD_SOURCE -Dlint"]
-    LD_DYNAMIC=["ld -dy -G"]
+    LD_DYNAMIC=["ld -G -dy -shared -allow-shlib-undefined"]
     AC_MSG_RESULT([linux settings])
     ;;
   *osf*)	
