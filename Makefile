@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.170  2005/06/14 12:27:35  sah
+# use libtool to build sac2c
+#
 # Revision 3.169  2005/06/14 08:52:04  khf
 # added wldefaultpartition.o
 #
@@ -285,8 +288,6 @@ product: check_os tools/bin/cse clean prod sac2c.prod
 
 distrib_product: check_os tools/bin/cse prod sac2c.prod
 
-twice: check_os tools/bin/cse dummy sac2c sac2c.twice
-
 tools/bin/cse:
 	$(MAKE) -C tools
 	$(CLOCK_SKEW_ELIMINATION) Makefile.Config
@@ -367,19 +368,13 @@ endif
 	(cd src/c-interface; $(MAKE_PROD) )
 
 sac2c: $(OBJ) $(LIB)
-	$(CC) $(CCFLAGS) $(CFLAGS) -o sac2c $(OBJ) $(LIB) $(LIBS) $(LDDYNFLAG)
+	$(LIBTOOL) $(CC) $(CCFLAGS) $(CFLAGS) -o sac2c $(OBJ) $(LIB) $(LIBS) $(LDDYNFLAG)
 
 sac2c.efence: $(OBJ) $(LIB)
-	$(CC) $(CCFLAGS) $(CFLAGS) -o sac2c.efence $(OBJ) $(LIB) $(LIBS) $(EFLIBS) $(LDDYNFLAG)
+	$(LIBTOOL) $(CC) $(CCFLAGS) $(CFLAGS) -o sac2c.efence $(OBJ) $(LIB) $(LIBS) $(EFLIBS) $(LDDYNFLAG)
 
 sac2c.prod:  $(OBJ) $(LIB)
-	$(CCPROD) $(CCPROD_FLAGS) $(CPROD_FLAGS) -o sac2c $(OBJ) $(LIB) $(LIBS)
-
-sac2c.twice: $(OBJ) $(LIB)
-	ssh twice \
-	  "cd $(RCSROOT); \
-           setenv PATH /opt/gnu/bin\:$$$$PATH; \
-           $(CC) $(CCFLAGS) $(CFLAGS) -o sac2c.twice $(OBJ) $(LIB) $(LIBS)"
+	$(LIBTOOL) $(CCPROD) $(CCPROD_FLAGS) $(CPROD_FLAGS) -o sac2c $(OBJ) $(LIB) $(LIBS)
 
 doxygen:
 	doxygen sac2cdoxy

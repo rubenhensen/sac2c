@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 1.24  2005/06/14 12:27:35  sah
+# use libtool to build sac2c
+#
 # Revision 1.23  2004/12/11 17:36:38  ktr
 # added -DCLEANMEM
 #
@@ -111,6 +114,7 @@ CFLAGS       := -DSHOW_MALLOC -DWLAA_DEACTIVATED -DAE_DEACTIVATED \
 CPROD_FLAGS  := -DDBUG_OFF -DPRODUCTION -DWLAA_DEACTIVATED -DAE_DEACTIVATED \
                 -DTSI_DEACTIVATED -DPADT_DEACTIVATED -DOBJUC_DEACTIVATED \
                 -DOBJR_DEACTIVATED -DOBJ_DEACTIVATED -DOBJI_DEACTIVATED
+LIBTOOL      := $(PROJECT_ROOT)/libtool --mode=link 
 
 XSLTENGINE := sabcmd
 
@@ -118,7 +122,7 @@ MAKE_NORM    := $(MAKE) CC="$(CC)" CCFLAGS="$(CCFLAGS)" CFLAGS="$(CFLAGS)"
 MAKE_PROD    := $(MAKE) CC="$(CCPROD)" CCFLAGS="$(CCPROD_FLAGS)" CFLAGS="$(CPROD_FLAGS)"
 MAKE_CLEAN   := $(MAKE) TARGET="clean" clean
 MAKEFLAGS    += --no-print-directory
-LDDYNFLAG    := @LDDYNFLAG@
+LDDYNFLAG    := -export-dynamic
 
 TAR          :=tar
 EXCLUDE_INCS :=libsac runtime xml tools
