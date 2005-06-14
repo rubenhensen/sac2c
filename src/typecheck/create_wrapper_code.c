@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.40  2005/06/14 23:41:29  sbs
+ * functions with errorneous instances only will lead to type errors now as well.
+ *
  * Revision 1.39  2005/06/14 09:55:10  sbs
  * support for bottom types integrated.
  *
@@ -298,7 +301,8 @@ static node *
 SplitWrapper (node *fundef)
 {
     ntype *old_type, *tmp_type;
-    ntype *new_type;
+    ntype *new_type, *new_rets;
+    ntype *bottom = NULL;
     int pathes_remaining;
     node *new_fundef;
     node *new_fundefs = NULL;
@@ -328,8 +332,16 @@ SplitWrapper (node *fundef)
         DBUG_EXECUTE ("CWC", tmp_str = ILIBfree (tmp_str););
 
         FUNDEF_WRAPPERTYPE (new_fundef) = new_type;
-        FUNDEF_RETS (new_fundef)
-          = TUreplaceRetTypes (FUNDEF_RETS (new_fundef), TYgetWrapperRetType (new_type));
+        new_rets = TYgetWrapperRetType (new_type);
+        bottom = TYgetBottom (new_rets);
+        if (bottom != NULL) {
+            CTIerrorLine (global.linenum, "All instances of \"%s\" contain type errors",
+                          FUNDEF_NAME (new_fundef));
+            CTIabortOnBottom (TYgetBottomError (bottom));
+        }
+
+        FUNDEF_RETS (new_fundef) = TUreplaceRetTypes (FUNDEF_RETS (new_fundef), new_rets);
+
         FUNDEF_ARGS (new_fundef)
           = TYcorrectWrapperArgTypes (FUNDEF_ARGS (new_fundef), new_type);
 
