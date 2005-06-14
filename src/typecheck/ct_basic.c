@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2005/06/14 09:55:10  sbs
+ * support for bottom types integrated.
+ *
  * Revision 1.7  2005/04/12 11:03:35  sah
  * added printing of module names for functions
  *
@@ -64,7 +67,8 @@
 ntype *
 NTCCTcomputeType (ct_funptr CtFun, te_info *info, ntype *args)
 {
-    ntype *res;
+    ntype *res, *bottom;
+    int i, num_res;
 #ifndef DBUG_OFF
     char *tmp_str;
 #endif
@@ -98,8 +102,21 @@ NTCCTcomputeType (ct_funptr CtFun, te_info *info, ntype *args)
      *    all result types!
      */
 
-    if (TYisProdOfArray (args)) {
-        res = CtFun (info, args);
+    if (TYcountNonFixedAlpha (args) == 0) {
+        if (TYisProdOfArray (args)) {
+            res = CtFun (info, args);
+        } else {
+            /**
+             * args contain bottom which needs to be propagated.
+             */
+            bottom = TYgetBottom (args);
+            DBUG_ASSERT ((bottom != NULL), "inconsistent type in NTCCTcomputeType!");
+            num_res = TEgetNumRets (info);
+            res = TYmakeEmptyProductType (num_res);
+            for (i = 0; i < num_res; i++) {
+                res = TYsetProductMember (res, i, TYcopyType (bottom));
+            }
+        }
     } else {
         res = SDcreateSignatureDependency (CtFun, info, args);
     }
@@ -135,43 +152,28 @@ NTCCTcond (te_info *err_info, ntype *args)
     ntype *pred, *res;
     node *cond;
     info *arg_info;
+    char *err_msg;
 
     DBUG_ENTER ("NTCCTcond");
     DBUG_ASSERT ((TYisProdOfArray (args)), "NTCCond called with non-fixed predicate!");
 
     pred = TYgetProductMember (args, 0);
     TEassureBoolS ("predicate", pred);
-
-    cond = TEgetWrapper (err_info);
-    arg_info = (info *)TEgetAssign (err_info);
-
-#if 0
-  /**
-   * I'm not sure whether the sequel will work. Most liekely, 
-   * we will have to make sure, that NO code is traversed more than once!!
-   */
-  if( TYisAKV( pred) ) {
-    if( COIsTrue( TYgetValue( pred), TRUE) ) {
-      DBUG_PRINT( "NTC", ("traversing then branch only..."));
-      COND_THEN( cond) = TRAVdo( COND_THEN( cond), arg_info);
+    err_msg = TEfetchErrors ();
+    if (err_msg != NULL) {
+        CTIabort (err_msg);
     } else {
-      DBUG_PRINT( "NTC", ("traversing else branch only..."));
-      COND_ELSE( cond) = TRAVdo( COND_ELSE( cond), arg_info);
-    }
-  } else {
-    DBUG_PRINT( "NTC", ("traversing then branch..."));
-    COND_THEN( cond) = TRAVdo( COND_THEN( cond), arg_info);
-    DBUG_PRINT( "NTC", ("traversing else branch..."));
-    COND_ELSE( cond) = TRAVdo( COND_ELSE( cond), arg_info);
-  }
-#else
-    DBUG_PRINT ("NTC", ("traversing then branch..."));
-    COND_THEN (cond) = TRAVdo (COND_THEN (cond), arg_info);
-    DBUG_PRINT ("NTC", ("traversing else branch..."));
-    COND_ELSE (cond) = TRAVdo (COND_ELSE (cond), arg_info);
-#endif
 
-    res = TYmakeProductType (0);
+        cond = TEgetWrapper (err_info);
+        arg_info = (info *)TEgetAssign (err_info);
+
+        DBUG_PRINT ("NTC", ("traversing then branch..."));
+        COND_THEN (cond) = TRAVdo (COND_THEN (cond), arg_info);
+        DBUG_PRINT ("NTC", ("traversing else branch..."));
+        COND_ELSE (cond) = TRAVdo (COND_ELSE (cond), arg_info);
+
+        res = TYmakeProductType (0);
+    }
 
     DBUG_RETURN (res);
 }

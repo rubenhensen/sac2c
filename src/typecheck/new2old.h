@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2005/06/14 09:55:10  sbs
+ * support for bottom types integrated.
+ *
  * Revision 1.11  2005/03/20 00:22:02  sbs
  * NT2OTpart added.
  *
@@ -46,13 +49,16 @@ extern node *NT2OTdoTransform (node *arg_node);
 
 extern node *NT2OTmodule (node *arg_node, info *arg_info);
 extern node *NT2OTfundef (node *arg_node, info *arg_info);
-extern node *NT2OTarg (node *arg_node, info *arg_info);
+extern node *NT2OTavis (node *arg_node, info *arg_info);
 extern node *NT2OTblock (node *arg_node, info *arg_info);
 extern node *NT2OTvardec (node *arg_node, info *arg_info);
 extern node *NT2OTcast (node *arg_node, info *arg_info);
 extern node *NT2OTlet (node *arg_node, info *arg_info);
+extern node *NT2OTassign (node *arg_node, info *arg_info);
 extern node *NT2OTfold (node *arg_node, info *arg_info);
 extern node *NT2OTpart (node *arg_node, info *arg_info);
 extern node *NT2OTwithid (node *arg_node, info *arg_info);
+extern node *NT2OTcond (node *arg_node, info *arg_info);
+extern node *NT2OTfuncond (node *arg_node, info *arg_info);
 
 #endif /* _SAC_NEW2OLD_H_ */

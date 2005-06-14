@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.87  2005/06/14 09:55:10  sbs
+ * support for bottom types integrated.
+ *
  * Revision 3.86  2005/06/11 09:36:29  sbs
  * bottom type added.
  *
@@ -1037,7 +1040,7 @@ TYmakeUnionType (ntype *t1, ntype *t2)
  * description:
  *   Functions for creating product types. Note here, that this function, like
  *   all MakeXYZ and GetXYZ functions consumes its arguments!!
- *   At the time being, only array types or type variables may be given as
+ *   At the time being, only array types, bottom types, or type variables may be given as
  *   arguments.
  *   The first version is useful in all situations where the number of
  *   components is statically known. However, in many situations this is not
@@ -1060,8 +1063,8 @@ TYmakeProductType (int size, ...)
         va_start (Argp, size);
         for (i = 0; i < size; i++) {
             arg = va_arg (Argp, ntype *);
-            DBUG_ASSERT ((TYisArray (arg) || TYisAlpha (arg)),
-                         "non array type / type var components of product types"
+            DBUG_ASSERT ((TYisArray (arg) || TYisBottom (arg) || TYisAlpha (arg)),
+                         "non array type / bottom / type var components of product types"
                          " are not yet supported!");
             PROD_MEMBER (res, i) = arg;
         }
@@ -3166,6 +3169,42 @@ TYcountNoMinAlpha (ntype *type)
     DBUG_RETURN (res);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn ntype *TYgetBottom( ntype *type)
+ *
+ *   @brief searches for bottom types contained in type
+ *   @param type is the typeto be examined
+ *   @return pointer to the first bottom type found, NULL otherwise
+ *
+ ******************************************************************************/
+
+ntype *
+TYgetBottom (ntype *type)
+{
+    ntype *res = NULL;
+    int i, n;
+
+    DBUG_ENTER ("TYfindBottom");
+
+    if (TYisProd (type)) {
+        n = TYgetProductSize (type);
+        i = 0;
+        while ((i < n) && (res == NULL)) {
+            res
+              = (TYisBottom (TYgetProductMember (type, i)) ? TYgetProductMember (type, i)
+                                                           : NULL);
+            i++;
+        }
+    } else if (TYisBottom (type)) {
+        res = type;
+    } else {
+        res = NULL;
+    }
+
+    DBUG_RETURN (res);
+}
+
 /***
  *** functions that check for the relationship of types:
  ***/
@@ -3594,6 +3633,55 @@ TYfixAndEliminateAlpha (ntype *t1)
 
         for (cnt = 0; cnt < NTYPE_ARITY (t1); cnt++) {
             NTYPE_SON (res, cnt) = TYfixAndEliminateAlpha (NTYPE_SON (t1, cnt));
+        }
+    }
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    ntype * TYliftBottomFixAndEliminateAlpha( ntype *t1)
+ *
+ * description:
+ *    if t1 is a type variable with a lower bound the lower bound
+ *    is returned, otherwise, a copy of t1 is returned.
+ *
+ ******************************************************************************/
+
+ntype *
+TYliftBottomFixAndEliminateAlpha (ntype *t1)
+{
+    ntype *res;
+    ntype *min;
+
+    DBUG_ENTER ("TYliftBottomFixAndEliminateAlpha");
+
+    if (t1 == NULL) {
+        res = t1;
+    } else if (TYisAlpha (t1)) {
+        min = SSIgetMin (TYgetAlpha (t1));
+        if (min != NULL) {
+            if (TYisBottom (min)) {
+                res = TYcopyType (SSIgetMax (ALPHA_SSI (t1)));
+                DBUG_ASSERT (res != NULL, "TYliftBottomFixAndEliminateAlpha applied to "
+                                          "alpha wo upper bound");
+            } else {
+                res = TYcopyType (SSIgetMin (ALPHA_SSI (t1)));
+            }
+        } else {
+            res = TYcopyType (t1);
+        }
+    } else {
+        int cnt;
+
+        res = TYcopyTypeConstructor (t1);
+
+        res = IncreaseArity (res, NTYPE_ARITY (t1));
+
+        for (cnt = 0; cnt < NTYPE_ARITY (t1); cnt++) {
+            NTYPE_SON (res, cnt) = TYliftBottomFixAndEliminateAlpha (NTYPE_SON (t1, cnt));
         }
     }
 

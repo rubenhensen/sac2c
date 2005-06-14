@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.34  2005/06/14 09:55:10  sbs
+ * support for bottom types integrated.
+ *
  * Revision 1.33  2005/06/04 20:11:42  sbs
  * type conversion from new to old type disabled by if 0's
  *
@@ -117,8 +120,6 @@
  *
  */
 
-#define NEW_INFO
-
 #include <stdio.h>
 #include <string.h>
 #include "new2old.h"
@@ -133,6 +134,7 @@
 #include "traverse.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
+#include "traverse_helper.h"
 
 #include "gen_pseudo_fun.h"
 #include "new_typecheck.h"
@@ -162,6 +164,9 @@
  *   INFO_NT2OT_LAST_LET   -   poiner to the last N_let node
  *   INFO_NT2OT_VARDECS    -   list of the generated vardecs
  *   INFO_NT2OT_WLIDS      -   WITHID_VEC of first partition
+ *   INFO_NT2OT_THENBOTTS  -   type_error let
+ *   INFO_NT2OT_ELSEBOTTS  -   type_error let
+ *   INFO_NT2OT_VARDECMODE -   M_fix / M_filter
  */
 
 /**
@@ -172,6 +177,9 @@ struct INFO {
     node *last_let;
     node *vardecs;
     node *wlids;
+    node *then_botts;
+    node *else_botts;
+    enum { M_fix, M_filter } mode;
 };
 
 /**
@@ -181,6 +189,9 @@ struct INFO {
 #define INFO_NT2OT_LAST_LET(n) (n->last_let)
 #define INFO_NT2OT_VARDECS(n) (n->vardecs)
 #define INFO_NT2OT_WLIDS(n) (n->wlids)
+#define INFO_NT2OT_THENBOTTS(n) (n->then_botts)
+#define INFO_NT2OT_ELSEBOTTS(n) (n->else_botts)
+#define INFO_NT2OT_VARDECMODE(n) (n->mode)
 
 /**
  * INFO functions
@@ -198,6 +209,9 @@ MakeInfo ()
     INFO_NT2OT_LAST_LET (result) = NULL;
     INFO_NT2OT_VARDECS (result) = NULL;
     INFO_NT2OT_WLIDS (result) = NULL;
+    INFO_NT2OT_THENBOTTS (result) = NULL;
+    INFO_NT2OT_ELSEBOTTS (result) = NULL;
+    INFO_NT2OT_VARDECMODE (result) = M_fix;
 
     DBUG_RETURN (result);
 }
@@ -210,6 +224,110 @@ FreeInfo (info *info)
     info = ILIBfree (info);
 
     DBUG_RETURN (info);
+}
+
+static bool
+IdsContainBottom (node *ids)
+{
+    bool res = FALSE;
+
+    DBUG_ENTER ("IdsContainBottom");
+
+    while (ids != NULL) {
+        res = res || TYisBottom (AVIS_TYPE (IDS_AVIS (ids)));
+        ids = IDS_NEXT (ids);
+    }
+
+    DBUG_RETURN (res);
+}
+
+static node *
+AddTypeError (node *assign, node *bottom_id, ntype *other_type)
+{
+    node *ids;
+    DBUG_ENTER ("AddTypeError");
+
+    if (assign == NULL) {
+        /**
+         * No errors yet : create an assignment of the form
+         *
+         *   bottom_id = type_error( err_msg);
+         *
+         */
+        assign
+          = TBmakeAssign (TBmakeLet (TBmakeIds (ID_AVIS (bottom_id), NULL),
+                                     TCmakePrf1 (F_type_error,
+                                                 TCmakeStrCopy (TYgetBottomError (
+                                                   AVIS_TYPE (ID_AVIS (bottom_id)))))),
+                          NULL);
+
+    } else {
+        /**
+         * We have seen other errors before, add a new LHS
+         */
+        ids = LET_IDS (ASSIGN_INSTR (assign));
+        ids = TBmakeIds (ID_AVIS (bottom_id), ids);
+        LET_IDS (ASSIGN_INSTR (assign)) = ids;
+    }
+    /**
+     * Finally, we change the type of bottom_id to other_type.
+     */
+    AVIS_TYPE (ID_AVIS (bottom_id)) = TYfreeType (AVIS_TYPE (ID_AVIS (bottom_id)));
+    AVIS_TYPE (ID_AVIS (bottom_id)) = TYcopyType (other_type);
+    /**
+     * and we eliminate the defining N_let:
+     */
+    DBUG_ASSERT ((AVIS_SSAASSIGN (ID_AVIS (bottom_id)) != NULL),
+                 "missing AVIS_SSAASSIGN!");
+    DBUG_ASSERT ((NODE_TYPE (AVIS_SSAASSIGN (ID_AVIS (bottom_id))) == N_assign),
+                 "AVIS_SSAASSIGN points to non N_assign node!");
+    DBUG_ASSERT ((NODE_TYPE (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (bottom_id))))
+                  == N_let),
+                 "AVIS_SSAASSIGN does not point to an N_let assignment!");
+
+    ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (bottom_id)))
+      = FREEdoFreeTree (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (bottom_id))));
+
+    DBUG_RETURN (assign);
+}
+
+static node *
+CreateTypeErrorBody (ntype *inferred_type, ntype *res_type)
+{
+    node *block, *avis;
+    node *vardecs = NULL;
+    node *ids = NULL;
+    node *exprs = NULL;
+    char *err_msg = NULL;
+    ;
+    int i, n;
+    char *tmp;
+
+    DBUG_ENTER ("CreateTypeErrorBody");
+    n = TYgetProductSize (res_type);
+    for (i = n - 1; i >= 0; i--) {
+        avis = TBmakeAvis (ILIBtmpVar (), TYcopyType (TYgetProductMember (res_type, i)));
+        if (TYisBottom (TYgetProductMember (inferred_type, i))) {
+            if (err_msg == NULL) {
+                err_msg = ILIBstringCopy (
+                  TYgetBottomError (TYgetProductMember (inferred_type, i)));
+            } else {
+                tmp
+                  = ILIBstringConcat (err_msg, TYgetBottomError (
+                                                 TYgetProductMember (inferred_type, i)));
+                err_msg = ILIBfree (err_msg);
+                err_msg = tmp;
+            }
+        }
+        vardecs = TBmakeVardec (avis, vardecs);
+        ids = TBmakeIds (avis, ids);
+        exprs = TBmakeExprs (TBmakeId (avis), exprs);
+    }
+    block = TBmakeBlock (TBmakeAssign (TBmakeLet (ids, TCmakePrf1 (F_type_error,
+                                                                   TBmakeStr (err_msg))),
+                                       TBmakeAssign (TBmakeReturn (exprs), NULL)),
+                         vardecs);
+    DBUG_RETURN (block);
 }
 
 /******************************************************************************
@@ -309,15 +427,14 @@ NT2OTmodule (node *arg_node, info *arg_info)
 node *
 NT2OTfundef (node *arg_node, info *arg_info)
 {
-    ntype *type;
-    types *old_type;
+    ntype *otype, *ftype, *bottom;
 
     DBUG_ENTER ("NT2OTfundef");
 
-    type = TUmakeProductTypeFromRets (FUNDEF_RETS (arg_node));
-    DBUG_ASSERT ((type != NULL), "FUNDEF_RET_TYPE not found!");
-    type = TYfixAndEliminateAlpha (type);
-    FUNDEF_RETS (arg_node) = TUreplaceRetTypes (FUNDEF_RETS (arg_node), type);
+    otype = TUmakeProductTypeFromRets (FUNDEF_RETS (arg_node));
+    DBUG_ASSERT ((otype != NULL), "FUNDEF_RET_TYPE not found!");
+    ftype = TYfixAndEliminateAlpha (otype);
+    FUNDEF_RETS (arg_node) = TUreplaceRetTypes (FUNDEF_RETS (arg_node), ftype);
 
     /* process the real function type as well */
     if (FUNDEF_WRAPPERTYPE (arg_node) != NULL) {
@@ -326,40 +443,70 @@ NT2OTfundef (node *arg_node, info *arg_info)
         FUNDEF_WRAPPERTYPE (arg_node) = funtype;
     }
 
-    if (TYisProdOfArray (type)) {
-#if 0
-    old_type = FUNDEF_TYPES( arg_node);
-    FUNDEF_TYPES( arg_node) = TYtype2OldType( type);
-    old_type = FREEfreeAllTypes( old_type);
-#endif
+    if (TYcountNoMinAlpha (ftype) > 0) {
 
+        if (FUNDEF_ISPROVIDED (arg_node) || FUNDEF_ISEXPORTED (arg_node)) {
+            CTIabortLine (NODE_LINE (arg_node),
+                          "One component of inferred return type (%s) has no lower bound;"
+                          " an application of \"%s\" will not terminate",
+                          TYtype2String (ftype, FALSE, 0), FUNDEF_NAME (arg_node));
+        } else {
+            DBUG_PRINT ("FIXNT", ("eliminating function %s due to lacking result type",
+                                  FUNDEF_NAME (arg_node)));
+            arg_node = FREEdoFreeNode (arg_node);
+        }
     } else {
-        CTIabort ("Could not infer proper type for fun %s; type found: %s",
-                  FUNDEF_NAME (arg_node), TYtype2String (type, FALSE, 0));
-    }
+        bottom = TYgetBottom (ftype);
+        if (bottom != NULL) {
+            DBUG_PRINT ("FIXNT", ("bottom component found in function %s",
+                                  FUNDEF_NAME (arg_node)));
+            if (ILIBstringCompare (FUNDEF_NAME (arg_node), "main")
+                || FUNDEF_ISPROVIDED (arg_node) || FUNDEF_ISEXPORTED (arg_node)) {
+                CTIabort (TYgetBottomError (bottom));
+            } else {
+                /**
+                 * we transform the entire body into one 'type error' assignment
+                 */
+                ftype = TYliftBottomFixAndEliminateAlpha (otype);
 
-    if (FUNDEF_ARGS (arg_node) != NULL) {
-        FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
-    }
+                FUNDEF_BODY (arg_node) = FREEdoFreeTree (FUNDEF_BODY (arg_node));
 
-    INFO_NT2OT_VARDECS (arg_info) = NULL;
-    if (FUNDEF_BODY (arg_node) != NULL) {
-        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-    }
+                FUNDEF_BODY (arg_node) = CreateTypeErrorBody (otype, ftype);
 
-    if (INFO_NT2OT_VARDECS (arg_info) != NULL) {
-        /*
-         * if some new vardecs have been built, insert them !
-         * this has to be done here rather than in NT2OTblock since blocks
-         * in general may not be top level.
-         * AFAIK, the only place where vardecs are in fact built is the
-         * extension of withloop ids in NT2OTwithid.
-         */
-        INFO_NT2OT_VARDECS (arg_info) = TRAVdo (INFO_NT2OT_VARDECS (arg_info), arg_info);
+                FUNDEF_RETS (arg_node)
+                  = TUreplaceRetTypes (FUNDEF_RETS (arg_node), ftype);
+            }
 
-        FUNDEF_VARDEC (arg_node)
-          = TCappendVardec (INFO_NT2OT_VARDECS (arg_info), FUNDEF_VARDEC (arg_node));
-        INFO_NT2OT_VARDECS (arg_info) = NULL;
+        } else {
+            DBUG_ASSERT (TYisProdOfArray (ftype), "inconsistent return type found");
+            DBUG_PRINT ("FIXNT", ("ProdOfArray return type found for function %s",
+                                  FUNDEF_NAME (arg_node)));
+
+            if (FUNDEF_ARGS (arg_node) != NULL) {
+                FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
+            }
+
+            INFO_NT2OT_VARDECS (arg_info) = NULL;
+            if (FUNDEF_BODY (arg_node) != NULL) {
+                FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+            }
+
+            if (INFO_NT2OT_VARDECS (arg_info) != NULL) {
+                /*
+                 * if some new vardecs have been built, insert them !
+                 * this has to be done here rather than in NT2OTblock since blocks
+                 * in general may not be top level.
+                 * AFAIK, the only place where vardecs are in fact built is the
+                 * extension of withloop ids in NT2OTwithid.
+                 */
+                INFO_NT2OT_VARDECS (arg_info)
+                  = TRAVdo (INFO_NT2OT_VARDECS (arg_info), arg_info);
+
+                FUNDEF_VARDEC (arg_node) = TCappendVardec (INFO_NT2OT_VARDECS (arg_info),
+                                                           FUNDEF_VARDEC (arg_node));
+                INFO_NT2OT_VARDECS (arg_info) = NULL;
+            }
+        }
     }
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
@@ -372,15 +519,15 @@ NT2OTfundef (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *NT2OTarg( node *arg_node, info *arg_info)
+ *   node *NT2OTavis( node *arg_node, info *arg_info)
  *
  * description:
- *   Fix (!) the ntype and compute the corresponding old type.
+ *   Fix (!) the ntype.
  *
  ******************************************************************************/
 
 node *
-NT2OTarg (node *arg_node, info *arg_info)
+NT2OTavis (node *arg_node, info *arg_info)
 {
     ntype *type;
 #ifndef DBUG_OFF
@@ -389,40 +536,24 @@ NT2OTarg (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("NT2OTarg");
 
-    type = AVIS_TYPE (ARG_AVIS (arg_node));
+    type = AVIS_TYPE (arg_node);
 
-    if (type != NULL) {
-        DBUG_EXECUTE ("FIXNT", tmp_str = TYtype2String (type, FALSE, 0););
-        DBUG_PRINT ("FIXNT", ("replacing argument %s\'s type %s by ...",
-                              ARG_NAME (arg_node), tmp_str));
-        type = TYfixAndEliminateAlpha (type);
-        DBUG_EXECUTE ("FIXNT", tmp_str2 = TYtype2String (type, FALSE, 0););
+    DBUG_ASSERT (type != NULL, "non existant type at avis");
+
+    DBUG_EXECUTE ("FIXNT", tmp_str = TYtype2String (type, FALSE, 0););
+    DBUG_PRINT ("FIXNT", ("replacing argument/vardec %s\'s type %s by ...",
+                          AVIS_NAME (arg_node), tmp_str));
+    type = TYfixAndEliminateAlpha (type);
+    DBUG_EXECUTE ("FIXNT", tmp_str2 = TYtype2String (type, FALSE, 0););
 #if CWC_WOULD_BE_PROPER
-        AVIS_TYPE (ARG_AVIS (arg_node)) = TYfreeType (AVIS_TYPE (ARG_AVIS (arg_node)));
+    AVIS_TYPE (arg_node) = TYfreeType (AVIS_TYPE (arg_node));
 #endif
-        AVIS_TYPE (ARG_AVIS (arg_node)) = type;
-        DBUG_PRINT ("FIXNT", ("... %s", tmp_str2));
-        DBUG_EXECUTE ("FIXNT", tmp_str = ILIBfree (tmp_str);
-                      tmp_str2 = ILIBfree (tmp_str2););
+    AVIS_TYPE (arg_node) = type;
+    DBUG_PRINT ("FIXNT", ("... %s", tmp_str2));
+    DBUG_EXECUTE ("FIXNT", tmp_str = ILIBfree (tmp_str); tmp_str2 = ILIBfree (tmp_str2););
 
-        if (TYisArray (type)) {
-#if 0
-      ARG_TYPE( arg_node) = FREEfreeAllTypes( ARG_TYPE( arg_node));
-      ARG_TYPE( arg_node) = TYtype2OldType( type);
-#endif
-        } else {
-            CTIabort ("Could not infer proper type for arg %s", ARG_NAME (arg_node));
-        }
-
-        if (ARG_NEXT (arg_node) != NULL) {
-            ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
-        }
-
-    } else {
-        if ((ARG_TYPE (arg_node) != NULL)
-            && (TYPES_BASETYPE (ARG_TYPE (arg_node)) != T_dots)) {
-            CTIabort ("Could not infer proper type for arg %s", ARG_NAME (arg_node));
-        }
+    if (!(TYisArray (type) || TYisBottom (type))) {
+        CTIabort ("Could not infer proper type for arg %s", ARG_NAME (arg_node));
     }
 
     DBUG_RETURN (arg_node);
@@ -443,15 +574,18 @@ NT2OTblock (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("NT2OTblock");
 
-    /*
-     * the VARDECs must be traversed first!!
-     */
+    INFO_NT2OT_VARDECMODE (arg_info) = M_fix;
     if (BLOCK_VARDEC (arg_node) != NULL) {
         BLOCK_VARDEC (arg_node) = TRAVdo (BLOCK_VARDEC (arg_node), arg_info);
     }
 
     if (BLOCK_INSTR (arg_node) != NULL) {
         BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
+    }
+
+    INFO_NT2OT_VARDECMODE (arg_info) = M_filter;
+    if (BLOCK_VARDEC (arg_node) != NULL) {
+        BLOCK_VARDEC (arg_node) = TRAVdo (BLOCK_VARDEC (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -470,44 +604,30 @@ NT2OTblock (node *arg_node, info *arg_info)
 node *
 NT2OTvardec (node *arg_node, info *arg_info)
 {
-    ntype *type;
-#ifndef DBUG_OFF
-    char *tmp_str, *tmp_str2;
-#endif
+    node *this_vardec;
 
     DBUG_ENTER ("NT2OTvardec");
 
-    type = AVIS_TYPE (VARDEC_AVIS (arg_node));
-
-    if (type != NULL) {
-        DBUG_EXECUTE ("FIXNT", tmp_str = TYtype2String (type, FALSE, 0););
-        DBUG_PRINT ("FIXNT", ("replacing vardec %s\'s type %s by ...",
-                              VARDEC_NAME (arg_node), tmp_str));
-        type = TYfixAndEliminateAlpha (type);
-        DBUG_EXECUTE ("FIXNT", tmp_str2 = TYtype2String (type, FALSE, 0););
-#if CWC_WOULD_BE_PROPER
-        AVIS_TYPE (VARDEC_AVIS (arg_node))
-          = TYfreeType (AVIS_TYPE (VARDEC_AVIS (arg_node)));
-#endif
-        AVIS_TYPE (VARDEC_AVIS (arg_node)) = type;
-        DBUG_PRINT ("FIXNT", ("... %s", tmp_str2));
-        DBUG_EXECUTE ("FIXNT", tmp_str = ILIBfree (tmp_str);
-                      tmp_str2 = ILIBfree (tmp_str2););
-    } else {
-        CTIabort ("Could not infer proper type for var %s", VARDEC_NAME (arg_node));
-    }
-
-    if (TYisArray (type)) {
-#if 0
-    VARDEC_TYPE( arg_node) = FREEfreeAllTypes( VARDEC_TYPE( arg_node));
-    VARDEC_TYPE( arg_node) = TYtype2OldType( type);
-#endif
-    } else {
-        CTIabort ("Could not infer proper type for var %s", VARDEC_NAME (arg_node));
+    if (INFO_NT2OT_VARDECMODE (arg_info) == M_fix) {
+        VARDEC_AVIS (arg_node) = TRAVdo (VARDEC_AVIS (arg_node), arg_info);
     }
 
     if (VARDEC_NEXT (arg_node) != NULL) {
         VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
+    }
+
+    if (INFO_NT2OT_VARDECMODE (arg_info) == M_filter) {
+        if (TYisBottom (VARDEC_NTYPE (arg_node))) {
+            /**
+             * eliminate this vardec completely!
+             */
+            DBUG_PRINT ("FIXNT",
+                        ("eliminating bottom vardec for %s", VARDEC_NAME (arg_node)));
+            this_vardec = arg_node;
+            arg_node = VARDEC_NEXT (arg_node);
+            VARDEC_NEXT (this_vardec) = NULL;
+            this_vardec = FREEdoFreeTree (this_vardec);
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -554,12 +674,136 @@ NT2OTlet (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("NT2OTlet");
 
-    old_last_let = INFO_NT2OT_LAST_LET (arg_info);
-    INFO_NT2OT_LAST_LET (arg_info) = arg_node;
+    if (IdsContainBottom (LET_IDS (arg_node))) {
+        DBUG_PRINT ("FIXNT", ("bottom LHS found; eliminating N_let \"%s...\"",
+                              IDS_NAME (LET_IDS (arg_node))));
+        arg_node = FREEdoFreeTree (arg_node);
+    } else {
 
-    LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
+        old_last_let = INFO_NT2OT_LAST_LET (arg_info);
+        INFO_NT2OT_LAST_LET (arg_info) = arg_node;
 
-    INFO_NT2OT_LAST_LET (arg_info) = old_last_let;
+        LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
+
+        INFO_NT2OT_LAST_LET (arg_info) = old_last_let;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *NT2OTassign( node *arg_node, info *arg_info)
+ *
+ *   @brief
+ *   @param
+ *   @return
+ *
+ ******************************************************************************/
+
+node *
+NT2OTassign (node *arg_node, info *arg_info)
+{
+    node *this_assign;
+    DBUG_ENTER ("NT2OTassign");
+
+    /**
+     * First we go down in order to collect those funcond vars that need to be
+     * created by the prf 'type_error'.
+     */
+    if (ASSIGN_NEXT (arg_node) != NULL) {
+        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
+    }
+
+    /**
+     * Now, we can go into the instruction. In case of N_lets that have bottom
+     * vars on their LHS, we will obtain NULL, which signals us to eliminate
+     * this very N_assign.
+     */
+    if (ASSIGN_INSTR (arg_node) != NULL) {
+        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    }
+    if (ASSIGN_INSTR (arg_node) == NULL) {
+        this_assign = arg_node;
+        arg_node = ASSIGN_NEXT (arg_node);
+        ASSIGN_NEXT (this_assign) = NULL;
+        this_assign = FREEdoFreeNode (this_assign);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *NT2OTcond( node *arg_node, info *arg_info)
+ *
+ *   @brief
+ *   @param
+ *   @return
+ *
+ ******************************************************************************/
+
+node *
+NT2OTcond (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("NT2OTcond");
+
+    if ((INFO_NT2OT_THENBOTTS (arg_info) != NULL)
+        && (INFO_NT2OT_ELSEBOTTS (arg_info) != NULL)) {
+        /**
+         * There are errors in both branches, i.e., abort
+         */
+        CTIabortLine (global.linenum, "Conditional with type errors in both branches");
+    }
+    COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
+    COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
+
+    if (INFO_NT2OT_THENBOTTS (arg_info) != NULL) {
+        ASSIGN_NEXT (INFO_NT2OT_THENBOTTS (arg_info))
+          = BLOCK_INSTR (COND_THEN (arg_node));
+        BLOCK_INSTR (COND_THEN (arg_node)) = INFO_NT2OT_THENBOTTS (arg_info);
+        INFO_NT2OT_THENBOTTS (arg_info) = NULL;
+    }
+    if (INFO_NT2OT_ELSEBOTTS (arg_info) != NULL) {
+        ASSIGN_NEXT (INFO_NT2OT_ELSEBOTTS (arg_info))
+          = BLOCK_INSTR (COND_ELSE (arg_node));
+        BLOCK_INSTR (COND_ELSE (arg_node)) = INFO_NT2OT_ELSEBOTTS (arg_info);
+        INFO_NT2OT_THENBOTTS (arg_info) = NULL;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *NT2OTfuncond( node *arg_node, info *arg_info)
+ *
+ *   @brief
+ *   @param
+ *   @return
+ *
+ ******************************************************************************/
+
+node *
+NT2OTfuncond (node *arg_node, info *arg_info)
+{
+    ntype *ttype, *etype;
+
+    DBUG_ENTER ("NT2OTfuncond");
+
+    ttype = AVIS_TYPE (ID_AVIS (FUNCOND_THEN (arg_node)));
+    etype = AVIS_TYPE (ID_AVIS (FUNCOND_ELSE (arg_node)));
+
+    if (TYisBottom (ttype)) {
+        DBUG_ASSERT (!TYisBottom (etype), "two bottom args for funcond found");
+        INFO_NT2OT_THENBOTTS (arg_info) = AddTypeError (INFO_NT2OT_THENBOTTS (arg_info),
+                                                        FUNCOND_THEN (arg_node), etype);
+    }
+    if (TYisBottom (etype)) {
+        DBUG_ASSERT (!TYisBottom (ttype), "two bottom args for funcond found");
+        INFO_NT2OT_ELSEBOTTS (arg_info) = AddTypeError (INFO_NT2OT_ELSEBOTTS (arg_info),
+                                                        FUNCOND_ELSE (arg_node), ttype);
+    }
 
     DBUG_RETURN (arg_node);
 }

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.76  2005/06/14 09:55:10  sbs
+ * support for bottom types integrated.
+ *
  * Revision 3.75  2005/06/06 13:22:05  jhb
  * added usage of PHrunCompilerSubPhase
  *
@@ -646,16 +649,6 @@ NTCmodule (node *arg_node, info *arg_info)
     DSfinishDeserialize (arg_node);
 
     /*
-     * Now, we create SAC code for all wrapper functions
-     */
-
-    arg_node = CWCdoCreateWrapperCode (arg_node);
-    if ((global.break_after == PH_typecheck)
-        && (0 == strcmp (global.break_specifier, "cwc"))) {
-        goto DONE;
-    }
-
-    /*
      * Finally, we compute the old type representation from the ntypes
      * we just inferred.
      */
@@ -663,6 +656,16 @@ NTCmodule (node *arg_node, info *arg_info)
     arg_node = NT2OTdoTransform (arg_node);
     if ((global.break_after == PH_typecheck)
         && (0 == strcmp (global.break_specifier, "n2o"))) {
+        goto DONE;
+    }
+
+    /*
+     * Now, we create SAC code for all wrapper functions
+     */
+
+    arg_node = CWCdoCreateWrapperCode (arg_node);
+    if ((global.break_after == PH_typecheck)
+        && (0 == strcmp (global.break_specifier, "cwc"))) {
         goto DONE;
     }
 

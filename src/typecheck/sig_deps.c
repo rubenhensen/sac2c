@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2005/06/14 09:55:10  sbs
+ * support for bottom types integrated.
+ *
  * Revision 1.6  2004/12/09 12:31:15  sbs
  * several bug eliminated
  *
@@ -140,7 +143,6 @@ ntype *
 SDcreateSignatureDependency (ct_funptr CtFun, te_info *info, ntype *args)
 {
     sig_dep *sig;
-    node *wrapper;
     ntype *arg_t, *res_t;
     int num_args, num_res, i;
     bool ok = TRUE;
@@ -153,25 +155,8 @@ SDcreateSignatureDependency (ct_funptr CtFun, te_info *info, ntype *args)
     /*
      * First, we create the return type as it is part of the sig_dep structure:
      */
-    if (TEgetWrapper (info) == NULL) {
-        /**
-         * we are dealing with a CTprf case here!
-         */
-        num_res = 1;
-    } else {
-        if (NODE_TYPE (TEgetWrapper (info)) == N_fundef) {
-            /**
-             * we are dealing with CTudf here!
-             */
-            wrapper = TEgetWrapper (info);
-            num_res = TCcountRets (FUNDEF_RETS (wrapper));
-        } else {
-            /**
-             * we are dealing with a CTcond case here!
-             */
-            num_res = 0;
-        }
-    }
+    num_res = TEgetNumRets (info);
+
     res_t = TYmakeEmptyProductType (num_res);
     for (i = 0; i < num_res; i++) {
         res_t = TYsetProductMember (res_t, i, TYmakeAlphaType (NULL));
@@ -220,7 +205,7 @@ SDcreateSignatureDependency (ct_funptr CtFun, te_info *info, ntype *args)
 bool
 SDhandleContradiction (sig_dep *fun_sig)
 {
-    ntype *res_vars, *res_t, *res, *args;
+    ntype *res_vars, *res_t, *res, *args, *bottom;
     bool ok;
     te_info *info;
     int i;
@@ -242,29 +227,48 @@ SDhandleContradiction (sig_dep *fun_sig)
          * Now, we compute a new approximation:
          */
         args = TYfixAndEliminateAlpha (SD_ARGS (fun_sig));
-        res_t = SD_FUN (fun_sig) (info, args);
-        res_t = TYeliminateAlpha (res_t);
-
-        DBUG_EXECUTE ("SSI", tmp_str = TYtype2String (args, FALSE, 0););
-        DBUG_EXECUTE ("SSI", tmp2_str = TYtype2String (res_t, FALSE, 0););
-        DBUG_PRINT ("SSI", ("approximating %s \"%s\" for %s yields %s",
-                            TEgetKindStr (info), TEgetNameStr (info), tmp_str, tmp2_str));
-        DBUG_EXECUTE ("SSI", tmp_str = ILIBfree (tmp_str););
-        DBUG_EXECUTE ("SSI", tmp2_str = ILIBfree (tmp_str););
-
-        /*
-         * and insert the findings into the return types:
-         */
-        res_vars = SD_RES (fun_sig);
-        ok = TRUE;
-        for (i = 0; i < TYgetProductSize (res_vars); i++) {
-            res = TYgetProductMember (res_t, i);
-            if (TYisAlpha (res)) {
+        bottom = TYgetBottom (args);
+        if (bottom != NULL) {
+            /**
+             * insert copies of bottom into the return types:
+             */
+            res_vars = SD_RES (fun_sig);
+            ok = TRUE;
+            for (i = 0; i < TYgetProductSize (res_vars); i++) {
                 ok = ok
-                     && SSInewRel (TYgetAlpha (res),
-                                   TYgetAlpha (TYgetProductMember (res_vars, i)));
-            } else {
-                ok = ok && SSInewMin (TYgetAlpha (TYgetProductMember (res_vars, i)), res);
+                     && SSInewMin (TYgetAlpha (TYgetProductMember (res_vars, i)),
+                                   TYcopyType (bottom));
+            }
+
+        } else {
+
+            res_t = SD_FUN (fun_sig) (info, args);
+            res_t = TYeliminateAlpha (res_t);
+
+            DBUG_EXECUTE ("SSI", tmp_str = TYtype2String (args, FALSE, 0););
+            DBUG_EXECUTE ("SSI", tmp2_str = TYtype2String (res_t, FALSE, 0););
+            DBUG_PRINT ("SSI",
+                        ("approximating %s \"%s\" for %s yields %s", TEgetKindStr (info),
+                         TEgetNameStr (info), tmp_str, tmp2_str));
+            DBUG_EXECUTE ("SSI", tmp_str = ILIBfree (tmp_str););
+            DBUG_EXECUTE ("SSI", tmp2_str = ILIBfree (tmp_str););
+
+            /*
+             * and insert the findings into the return types:
+             */
+            res_vars = SD_RES (fun_sig);
+            ok = TRUE;
+            for (i = 0; i < TYgetProductSize (res_vars); i++) {
+                res = TYgetProductMember (res_t, i);
+                if (TYisAlpha (res)) {
+                    ok = ok
+                         && SSInewRel (TYgetAlpha (res),
+                                       TYgetAlpha (TYgetProductMember (res_vars, i)));
+                } else {
+                    ok
+                      = ok
+                        && SSInewMin (TYgetAlpha (TYgetProductMember (res_vars, i)), res);
+                }
             }
         }
     }

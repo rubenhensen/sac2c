@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.29  2005/06/14 09:55:10  sbs
+ * support for bottom types integrated.
+ *
  * Revision 3.28  2005/06/11 09:36:55  sbs
  * bottom type added.
  *
@@ -352,6 +355,8 @@ extern bool TYisProdContainingAKV (ntype *);
 extern int TYcountNonFixedAlpha (ntype *);
 extern int TYcountNoMinAlpha (ntype *);
 
+extern ntype *TYgetBottom (ntype *);
+
 extern ct_res TYcmpTypes (ntype *t1, ntype *t2);
 extern bool TYleTypes (ntype *t1, ntype *t2);
 extern bool TYeqTypes (ntype *t1, ntype *t2);
@@ -363,6 +368,7 @@ extern bool TYeqTypes (ntype *t1, ntype *t2);
 extern ntype *TYlubOfTypes (ntype *t1, ntype *t2);
 extern ntype *TYeliminateAlpha (ntype *t1);
 extern ntype *TYfixAndEliminateAlpha (ntype *t1);
+extern ntype *TYliftBottomFixAndEliminateAlpha (ntype *t1);
 extern ntype *TYeliminateUser (ntype *t1);
 extern ntype *TYeliminateAKV (ntype *t1);
 

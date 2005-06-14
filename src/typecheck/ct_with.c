@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.10  2005/06/14 09:55:10  sbs
+ * support for bottom types integrated.
+ *
  * Revision 1.9  2005/06/01 08:12:15  sbs
  * ct on modarray wls lacked some essential checks.
  *
@@ -98,6 +101,7 @@ ntype *
 NTCCTwl_idx (te_info *info, ntype *args)
 {
     ntype *lb, *idx, *ub, *sv, *wv, *res;
+    char *err_msg;
 
     DBUG_ENTER ("NTCCTwl_idx");
 
@@ -107,18 +111,58 @@ NTCCTwl_idx (te_info *info, ntype *args)
 
     TEassureIntVect ("lower bound of with loop", lb);
     TEassureIntVect ("upper bound of with loop", ub);
-    res = TEassureSameShape ("lower bound", lb, "upper bound of with loop", ub);
-    res = TEassureSameShape ("index variables", idx, "generator boundaries", res);
+    err_msg = TEfetchErrors ();
+    if (err_msg != NULL) {
+        res = TYmakeBottomType (err_msg);
+    } else {
 
-    if (TYgetProductSize (args) >= 4) {
-        sv = TYgetProductMember (args, 3);
-        TEassureIntVect ("step vector of with loop", sv);
-        res = TEassureSameShape ("step vector", sv, "generator boundaries", res);
+        res = TEassureSameShape ("lower bound", lb, "upper bound of with loop", ub);
+        err_msg = TEfetchErrors ();
+        if (err_msg != NULL) {
+            res = TYmakeBottomType (err_msg);
+        } else {
 
-        if (TYgetProductSize (args) == 5) {
-            wv = TYgetProductMember (args, 4);
-            TEassureIntVect ("width vector of with loop", wv);
-            res = TEassureSameShape ("width vector", wv, "generator boundaries", res);
+            res = TEassureSameShape ("index variables", idx, "generator boundaries", res);
+            err_msg = TEfetchErrors ();
+            if (err_msg != NULL) {
+                res = TYmakeBottomType (err_msg);
+            } else {
+
+                if (TYgetProductSize (args) >= 4) {
+                    sv = TYgetProductMember (args, 3);
+                    TEassureIntVect ("step vector of with loop", sv);
+                    err_msg = TEfetchErrors ();
+                    if (err_msg != NULL) {
+                        res = TYmakeBottomType (err_msg);
+                    } else {
+
+                        res = TEassureSameShape ("step vector", sv,
+                                                 "generator boundaries", res);
+                        err_msg = TEfetchErrors ();
+                        if (err_msg != NULL) {
+                            res = TYmakeBottomType (err_msg);
+                        } else {
+
+                            if (TYgetProductSize (args) == 5) {
+                                wv = TYgetProductMember (args, 4);
+                                TEassureIntVect ("width vector of with loop", wv);
+                                err_msg = TEfetchErrors ();
+                                if (err_msg != NULL) {
+                                    res = TYmakeBottomType (err_msg);
+                                } else {
+
+                                    res = TEassureSameShape ("width vector", wv,
+                                                             "generator boundaries", res);
+                                    err_msg = TEfetchErrors ();
+                                    if (err_msg != NULL) {
+                                        res = TYmakeBottomType (err_msg);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -139,6 +183,7 @@ NTCCTwl_gen (te_info *info, ntype *args)
 {
     ntype *idx, *shp, *expr, *dexpr, *res;
     ntype *dummy;
+    char *err_msg;
 
     DBUG_ENTER ("NTCCTwl_gen");
 
@@ -147,21 +192,32 @@ NTCCTwl_gen (te_info *info, ntype *args)
     expr = TYgetProductMember (args, 2);
     dexpr = TYgetProductMember (args, 3);
 
-    TEassureIntVect ("shape expression of genarray with loop", shp);
-    TEassureNonNegativeValues ("shape expression of genarray with loop", shp);
     idx = TEassureSameShape ("shape expression", shp,
                              "generator boundaries of genarray with loop", idx);
 
     TEassureSameScalarType ("body expression", expr, "default expression", dexpr);
     expr = TEassureSameShape ("body expression", expr, "default expression", dexpr);
-
-    if (TYgetConstr (shp) == TC_akv) {
-        dummy = Idx2Outer (shp);
+    TEassureIntVect ("shape expression of genarray with loop", shp);
+    err_msg = TEfetchErrors ();
+    if (err_msg != NULL) {
+        res = TYmakeBottomType (err_msg);
     } else {
-        dummy = Idx2Outer (idx);
+
+        TEassureNonNegativeValues ("shape expression of genarray with loop", shp);
+        err_msg = TEfetchErrors ();
+        if (err_msg != NULL) {
+            res = TYmakeBottomType (err_msg);
+        } else {
+
+            if (TYgetConstr (shp) == TC_akv) {
+                dummy = Idx2Outer (shp);
+            } else {
+                dummy = Idx2Outer (idx);
+            }
+            res = TYnestTypes (dummy, expr);
+            TYfreeType (dummy);
+        }
     }
-    res = TYnestTypes (dummy, expr);
-    TYfreeType (dummy);
 
     DBUG_RETURN (TYmakeProductType (1, res));
 }
@@ -180,6 +236,7 @@ NTCCTwl_mod (te_info *info, ntype *args)
 {
     ntype *idx, *array, *expr, *res;
     ntype *dummy;
+    char *err_msg;
 
     DBUG_ENTER ("NTCCTwl_mod");
 
@@ -193,8 +250,17 @@ NTCCTwl_mod (te_info *info, ntype *args)
 
     TEassureIntVect ("index expression of modarray with loop", idx);
     TEassureSameScalarType ("array to be modified", array, "body expression", expr);
-    res = TEassureSameShape ("array expression", array, "result of modarray with loop",
-                             res);
+    err_msg = TEfetchErrors ();
+    if (err_msg != NULL) {
+        res = TYmakeBottomType (err_msg);
+    } else {
+        res = TEassureSameShape ("array expression", array,
+                                 "result of modarray with loop", res);
+        err_msg = TEfetchErrors ();
+        if (err_msg != NULL) {
+            res = TYmakeBottomType (err_msg);
+        }
+    }
 
     DBUG_RETURN (TYmakeProductType (1, res));
 }
@@ -212,6 +278,7 @@ ntype *
 NTCCTwl_fold (te_info *info, ntype *args)
 {
     ntype *neutr, *expr, *res;
+    char *err_msg;
 
     DBUG_ENTER ("NTCCTwl_foldfun");
 
@@ -220,7 +287,12 @@ NTCCTwl_fold (te_info *info, ntype *args)
 
     TEassureSameSimpleType ("neutral element", neutr, "body expression of fold with loop",
                             expr);
-    res = TYlubOfTypes (neutr, expr);
+    err_msg = TEfetchErrors ();
+    if (err_msg != NULL) {
+        res = TYmakeBottomType (err_msg);
+    } else {
+        res = TYlubOfTypes (neutr, expr);
+    }
 
     DBUG_RETURN (TYmakeProductType (1, res));
 }

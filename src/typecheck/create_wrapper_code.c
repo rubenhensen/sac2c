@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.39  2005/06/14 09:55:10  sbs
+ * support for bottom types integrated.
+ *
  * Revision 1.38  2005/06/08 19:17:09  sbs
  * adjusted the call of TYsplitwrappers
  *
@@ -570,69 +573,84 @@ CorrectFundefPointer (node *fundef, char *funname, ntype *arg_types)
          */
         DBUG_PRINT ("CWC", ("correcting fundef for %s:%s", FUNDEF_MOD (fundef), funname));
 
-        /*
-         * try to dispatch the function application statically
-         */
-        dft_res = NTCCTdispatchFunType (fundef, arg_types);
-        if (dft_res == NULL) {
-            DBUG_ASSERT ((TYgetProductSize (arg_types) == 0),
-                         "illegal dispatch result found!");
+        if (TYgetBottom (arg_types) == NULL) {
             /*
-             * no args found -> static dispatch possible
-             *
-             * fundef can be found in FUNDEF_IMPL (dirty hack!)
+             * try to dispatch the function application statically
              */
-            fundef = FUNDEF_IMPL (fundef);
-            DBUG_PRINT ("CWC", ("  dispatched statically %s", funname));
-        } else if ((dft_res->num_partials == 0)
-                   && (dft_res->num_deriveable_partials == 0)) {
-            /*
-             * static dispatch possible
-             */
-            if (dft_res->def != NULL) {
-                DBUG_ASSERT ((dft_res->deriveable == NULL), "def and deriveable found!");
-                fundef = dft_res->def;
+            dft_res = NTCCTdispatchFunType (fundef, arg_types);
+            if (dft_res == NULL) {
+                DBUG_ASSERT ((TYgetProductSize (arg_types) == 0),
+                             "illegal dispatch result found!");
+                /*
+                 * no args found -> static dispatch possible
+                 *
+                 * fundef can be found in FUNDEF_IMPL (dirty hack!)
+                 */
+                fundef = FUNDEF_IMPL (fundef);
+                DBUG_PRINT ("CWC", ("  dispatched statically %s", funname));
+            } else if ((dft_res->num_partials == 0)
+                       && (dft_res->num_deriveable_partials == 0)) {
+                /*
+                 * static dispatch possible
+                 */
+                if (dft_res->def != NULL) {
+                    DBUG_ASSERT ((dft_res->deriveable == NULL),
+                                 "def and deriveable found!");
+                    fundef = dft_res->def;
+                } else {
+                    fundef = dft_res->deriveable;
+                }
+                DBUG_PRINT ("CWC", ("  dispatched statically %s", funname));
+            } else if (!WrapperCodeIsPossible (fundef)) {
+                /*
+                 * static dispatch impossible,
+                 *    but no wrapper function could be created either!!
+                 * if only a single instance is available, do the dispatch statically and
+                 * give a warning message, otherwise we are stuck here!
+                 */
+                if ((dft_res->num_partials + dft_res->num_deriveable_partials == 1)
+                    && (dft_res->def == NULL) && (dft_res->deriveable == NULL)) {
+                    fundef = (dft_res->num_partials == 1)
+                               ? dft_res->partials[0]
+                               : dft_res->deriveable_partials[0];
+                    CTIwarnLine (global.linenum,
+                                 "Application of var-arg function %s found which may"
+                                 " cause a type error",
+                                 FUNDEF_NAME (fundef));
+                    DBUG_PRINT ("CWC", ("  dispatched statically although only partial"
+                                        " has been found (T_dots)!",
+                                        funname));
+                } else {
+                    DBUG_ASSERT ((0), "wrapper with T_dots found which could be "
+                                      "dispatched statically!");
+                }
             } else {
-                fundef = dft_res->deriveable;
-            }
-            DBUG_PRINT ("CWC", ("  dispatched statically %s", funname));
-        } else if (!WrapperCodeIsPossible (fundef)) {
-            /*
-             * static dispatch impossible,
-             *    but no wrapper function could be created either!!
-             * if only a single instance is available, do the dispatch statically and
-             * give a warning message, otherwise we are stuck here!
-             */
-            if ((dft_res->num_partials + dft_res->num_deriveable_partials == 1)
-                && (dft_res->def == NULL) && (dft_res->deriveable == NULL)) {
-                fundef = (dft_res->num_partials == 1) ? dft_res->partials[0]
-                                                      : dft_res->deriveable_partials[0];
-                CTIwarnLine (global.linenum,
-                             "Application of var-arg function %s found which may"
-                             " cause a type error",
-                             FUNDEF_NAME (fundef));
-                DBUG_PRINT ("CWC", ("  dispatched statically although only partial"
-                                    " has been found (T_dots)!",
-                                    funname));
-            } else {
-                DBUG_ASSERT ((0), "wrapper with T_dots found which could be dispatched "
-                                  "statically!");
+                /*
+                 * static dispatch impossible -> search for correct wrapper
+                 */
+                DBUG_PRINT ("CWC", ("  static dispatch impossible, search for wrapper"));
+                do {
+                    fundef = FUNDEF_NEXT (fundef);
+                    DBUG_ASSERT (((fundef != NULL)
+                                  && ILIBstringCompare (funname, FUNDEF_NAME (fundef))
+                                  && FUNDEF_ISWRAPPERFUN (fundef)),
+                                 "no appropriate wrapper function found!");
+
+                    DBUG_ASSERT ((!FUNDEF_ISZOMBIE (fundef)), "zombie found");
+                } while (!SignatureMatches (FUNDEF_ARGS (fundef), arg_types));
+                DBUG_PRINT ("CWC", ("  correct wrapper found"));
             }
         } else {
-            /*
-             * static dispatch impossible -> search for correct wrapper
+            /**
+             * as we are dealing with a bottom argument, we need to select any one
+             * of the non-generic wrappers. Since at least one of them will follow the
+             * generic one directly, we can choose that one.
              */
-            DBUG_PRINT ("CWC", ("  static dispatch impossible, search for wrapper"));
-            do {
-                fundef = FUNDEF_NEXT (fundef);
-                DBUG_ASSERT (((fundef != NULL)
-                              && ILIBstringCompare (funname, FUNDEF_NAME (fundef))
-                              && FUNDEF_ISWRAPPERFUN (fundef)),
-                             "no appropriate wrapper function found!");
-
-                DBUG_ASSERT ((!FUNDEF_ISZOMBIE (fundef)), "zombie found");
-            } while (!SignatureMatches (FUNDEF_ARGS (fundef), arg_types));
-            DBUG_PRINT ("CWC", ("  correct wrapper found"));
+            fundef = FUNDEF_NEXT (fundef);
+            DBUG_ASSERT (((fundef != NULL)
+                          && ILIBstringCompare (funname, FUNDEF_NAME (fundef))
+                          && FUNDEF_ISWRAPPERFUN (fundef)),
+                         "no appropriate wrapper function found!");
         }
     }
 
@@ -790,6 +808,9 @@ CWCap (node *arg_node, info *arg_info)
     if (AP_ARGS (arg_node) != NULL) {
         AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
     }
+
+    DBUG_PRINT ("CWC", ("Ap of function %s:%s pointed to " F_PTR ".", AP_MOD (arg_node),
+                        AP_NAME (arg_node), AP_FUNDEF (arg_node)));
 
     arg_types = ActualArgs2Ntype (AP_ARGS (arg_node));
     AP_FUNDEF (arg_node)
