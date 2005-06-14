@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.26  2005/06/14 14:54:29  sah
+ * some cleanup
+ *
  * Revision 1.25  2005/03/04 21:21:42  cg
  * Serious bug fixed in implementation of IDS_TYPE compound
  * macro. Now, ids referring to N_arg nodes no longer cause
@@ -198,6 +201,79 @@ FREEattribNode (node *attr, node *parent)
     DBUG_RETURN (attr);
 }
 
+static void
+FREEattribLinkFungroup (node *attr, node *parent)
+{
+    node *tmp = FUNGROUP_FUNLIST (attr);
+    node *tofree = NULL;
+
+    DBUG_ENTER ("FREEattribLinkFungroup");
+
+    if (tmp != NULL) {
+        if (LINKLIST_LINK (tmp) == parent) {
+            /*
+             * first function in FUNLIST will be freed
+             */
+            tofree = tmp;
+            FUNGROUP_FUNLIST (attr) = LINKLIST_NEXT (FUNGROUP_FUNLIST (attr));
+            LINKLIST_NEXT (tofree) = NULL;
+            LINKLIST_LINK (tofree) = NULL;
+            tofree = FREEdoFreeNode (tofree);
+            (FUNGROUP_REFCOUNTER (attr))--;
+
+        } else {
+            /*
+             * function to be freed is not first function in
+             * FUNLIST
+             */
+            while ((NULL != LINKLIST_NEXT (tmp))
+                   && (parent != LINKLIST_LINK (LINKLIST_NEXT (tmp)))) {
+                tmp = LINKLIST_NEXT (tmp);
+            }
+            if (tmp != NULL) {
+                /*
+                 * LINKLIST_NEXT(tmp) contains parent
+                 */
+                tofree = LINKLIST_NEXT (tmp);
+                LINKLIST_NEXT (tmp) = LINKLIST_NEXT (LINKLIST_NEXT (tmp));
+                LINKLIST_NEXT (tofree) = NULL;
+                LINKLIST_LINK (tofree) = NULL;
+                tofree = FREEdoFreeNode (tofree);
+                (FUNGROUP_REFCOUNTER (attr))--;
+            }
+        }
+    }
+
+    if (FUNGROUP_REFCOUNTER (attr) == 0) {
+        /*
+         * free the fungroup as it is referenced no more
+         */
+        attr = FREEdoFreeNode (attr);
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+static void
+FREEattribLinkFunlist (node *attr, node *parent)
+{
+    DBUG_ENTER ("FREEattribLinkFunlist");
+
+    if (N_fungroup == NODE_TYPE (parent)) {
+        /*
+         * now the FUNLIST from fungroups should be deleted
+         */
+        node *tmp = attr;
+        while (tmp != NULL) {
+            LINKLIST_LINK (tmp) = NULL;
+            tmp = LINKLIST_NEXT (tmp);
+        }
+        attr = FREEdoFreeTree (attr);
+    }
+
+    DBUG_VOID_RETURN;
+}
+
 /** <!--******************************************************************-->
  *
  * @fn FREEattribLink
@@ -213,12 +289,12 @@ FREEattribNode (node *attr, node *parent)
 node *
 FREEattribLink (node *attr, node *parent)
 {
-    node *tmp, *tofree;
     DBUG_ENTER ("FREEattribLink");
 
     /*
-     * when handling link attributes, always check whether the target
-     * has already been freed. ( This is checked via the attribs union)
+     * this will only work, if all link attributes point upwards
+     * in the tree and thus there targets have not been freed, yet
+     * in all other cases, this will cause a segafault!
      */
     if (attr != NULL) {
         switch (NODE_TYPE (attr)) {
@@ -229,57 +305,13 @@ FREEattribLink (node *attr, node *parent)
             break;
 
         case N_fungroup:
-            tmp = FUNGROUP_FUNLIST (attr);
-            tofree = NULL;
-
-            if (tmp != NULL) {
-                if (LINKLIST_LINK (tmp) == parent) {
-                    /*
-                     * first function in FUNLIST will be freed
-                     */
-                    tofree = tmp;
-                    FUNGROUP_FUNLIST (attr) = LINKLIST_NEXT (FUNGROUP_FUNLIST (attr));
-                    LINKLIST_NEXT (tofree) = NULL;
-                    LINKLIST_LINK (tofree) = NULL;
-                    tofree = FREEdoFreeNode (tofree);
-                    (FUNGROUP_REFCOUNTER (attr))--;
-
-                } else {
-                    /*
-                     * function to be freed is not first function in
-                     * FUNLIST
-                     */
-                    while ((NULL != LINKLIST_NEXT (tmp))
-                           && (parent != LINKLIST_LINK (LINKLIST_NEXT (tmp)))) {
-                        tmp = LINKLIST_NEXT (tmp);
-                    }
-                    if (tmp != NULL) {
-                        /*
-                         * LINKLIST_NEXT(tmp) contains parent
-                         */
-                        tofree = LINKLIST_NEXT (tmp);
-                        LINKLIST_NEXT (tmp) = LINKLIST_NEXT (LINKLIST_NEXT (tmp));
-                        LINKLIST_NEXT (tofree) = NULL;
-                        LINKLIST_LINK (tofree) = NULL;
-                        tofree = FREEdoFreeNode (tofree);
-                        (FUNGROUP_REFCOUNTER (attr))--;
-                    }
-                }
-            }
+            FREEattribLinkFungroup (attr, parent);
             break;
 
         case N_linklist:
-            if (N_fungroup == NODE_TYPE (parent)) {
-                /*
-                 * now the FUNLIST from fungroups should be deleted
-                 */
-                tmp = attr;
-                while (tmp != NULL) {
-                    LINKLIST_LINK (tmp) = NULL;
-                    tmp = LINKLIST_NEXT (tmp);
-                }
-                attr = FREEdoFreeTree (attr);
-            }
+            FREEattribLinkFunlist (attr, parent);
+            break;
+
         default:
             break;
         }
@@ -459,11 +491,10 @@ FREEattribDFMask (dfmask_t *attr)
     DBUG_ENTER ("FREEattribDFMask");
 
 #if 0 /* TODO: dfmasks are not correctly freed */
-       
-    if (attr != NULL) {
-      attr = DFMremoveMask( attr);
-    }
 
+  if (attr != NULL) {
+    attr = DFMremoveMask (attr);
+  }
 #else
     attr = NULL;
 #endif

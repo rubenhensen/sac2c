@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.79  2005/06/14 14:54:29  sah
+ * some cleanup
+ *
  * Revision 3.78  2005/03/04 21:21:42  cg
  * LaC functions are immediately zombified when their single
  * application is deleted.
@@ -243,26 +246,26 @@ FREEfreeOneAccess (access_t *fr)
 
     if (fr != NULL) {
 #if 0
-    DBUG_ASSERT( ((NODE_TYPE( ACCESS_IV( fr)) == N_vardec) ||
-                  (NODE_TYPE( ACCESS_IV( fr)) == N_arg)),
+    DBUG_ASSERT (((NODE_TYPE (ACCESS_IV (fr)) == N_vardec) ||
+                  (NODE_TYPE (ACCESS_IV (fr)) == N_arg)),
                  "ACCESS_IV is neither a N_vardec- nor a N_arg-node!");
 
-    DBUG_ASSERT( ((NODE_TYPE( ACCESS_ARRAY( fr)) == N_vardec) ||
-                  (NODE_TYPE( ACCESS_ARRAY( fr)) == N_arg)),
+    DBUG_ASSERT (((NODE_TYPE (ACCESS_ARRAY (fr)) == N_vardec) ||
+                  (NODE_TYPE (ACCESS_ARRAY (fr)) == N_arg)),
                  "ACCESS_ARRAY is neither a N_vardec- nor a N_arg-node!");
 
-    DBUG_PRINT( "FREE", ("Removing Access: sel(%s, %s)", 
-                         VARDEC_OR_ARG_NAME( ACCESS_IV( fr)),
-                         VARDEC_OR_ARG_NAME( ACCESS_ARRAY( fr))));
+    DBUG_PRINT ("FREE", ("Removing Access: sel(%s, %s)",
+                         VARDEC_OR_ARG_NAME (ACCESS_IV (fr)),
+                         VARDEC_OR_ARG_NAME (ACCESS_ARRAY (fr))));
 
     tmp = fr;
-    fr = ACCESS_NEXT( fr);
-    
-    if (ACCESS_OFFSET( tmp) != NULL) {
-      ACCESS_OFFSET( tmp) = FREEfreeShpseg( ACCESS_OFFSET( tmp));
+    fr = ACCESS_NEXT (fr);
+
+    if (ACCESS_OFFSET (tmp) != NULL) {
+      ACCESS_OFFSET (tmp) = FREEfreeShpseg (ACCESS_OFFSET (tmp));
     }
-    
-    tmp = ILIBfree( tmp);
+
+    tmp = ILIBfree (tmp);
 #else
         fr = NULL;
 #endif
@@ -412,42 +415,6 @@ FreeZombie (node *fundef)
 
         if (FUNDEF_WRAPPERTYPE (fundef) != NULL) {
             FUNDEF_WRAPPERTYPE (fundef) = TYfreeType (FUNDEF_WRAPPERTYPE (fundef));
-        }
-
-        /*
-         * remove reference to fundef from fungroup
-         */
-        if (FUNDEF_FUNGROUP (fundef) != NULL) {
-            node *p1, *p2;
-            p1 = FUNGROUP_FUNLIST (FUNDEF_FUNGROUP (fundef));
-            if (LINKLIST_LINK (p1) == fundef) {
-                /* head of FUNLIST is reference to fundef */
-                FUNGROUP_FUNLIST (FUNDEF_FUNGROUP (fundef)) = LINKLIST_NEXT (p1);
-                LINKLIST_NEXT (p1) = NULL;
-                p1 = FREEdoFreeNode (p1);
-
-                /* decrement reference counter */
-                FUNGROUP_REFCOUNTER (FUNDEF_FUNGROUP (fundef)) -= 1;
-            } else {
-                /* reference is somewhere inside the linklist */
-                p2 = p1;
-                p1 = LINKLIST_NEXT (p1);
-
-                while (p1 != NULL) {
-                    if (LINKLIST_LINK (p1) == fundef) {
-                        /* p1 is refernce to fundef */
-                        LINKLIST_NEXT (p2) = LINKLIST_NEXT (p1);
-                        LINKLIST_NEXT (p1) = NULL;
-                        p1 = FREEdoFreeNode (p1);
-
-                        /* decrement reference counter */
-                        FUNGROUP_REFCOUNTER (FUNDEF_FUNGROUP (fundef)) -= 1;
-                        break;
-                    }
-                    p2 = p1;
-                    p1 = LINKLIST_NEXT (p1);
-                }
-            }
         }
 
         tmp = fundef;
