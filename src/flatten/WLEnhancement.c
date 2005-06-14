@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2005/06/14 08:52:04  khf
+ * added traversal in subphase WLDP
+ *
  * Revision 1.9  2005/04/19 18:01:23  khf
  * removed transformation in and out ssa-form
  *
@@ -42,6 +45,7 @@
 #include "dbug.h"
 #include "WLEnhancement.h"
 #include "ExplicitAccumulate.h"
+#include "wldefaultpartition.h"
 #include "WLPartitionGeneration.h"
 
 /** <!--********************************************************************-->
@@ -73,6 +77,14 @@ WLEdoWlEnhancement (node *arg_node)
 
     if ((global.break_after == PH_wlenhance)
         && (0 == strcmp (global.break_specifier, "ea"))) {
+        goto DONE;
+    }
+
+    DBUG_PRINT ("WLE", ("call WLDPdoWlDefaultPartition"));
+    arg_node = WLDPdoWlDefaultPartition (arg_node);
+
+    if ((global.break_after == PH_wlenhance)
+        && (0 == strcmp (global.break_specifier, "wldp"))) {
         goto DONE;
     }
 
