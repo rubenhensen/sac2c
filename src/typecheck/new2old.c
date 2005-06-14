@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.35  2005/06/14 23:40:58  sbs
+ * CreateTypeErrorBody bigs fixed
+ *
  * Revision 1.34  2005/06/14 09:55:10  sbs
  * support for bottom types integrated.
  *
@@ -427,7 +430,7 @@ NT2OTmodule (node *arg_node, info *arg_info)
 node *
 NT2OTfundef (node *arg_node, info *arg_info)
 {
-    ntype *otype, *ftype, *bottom;
+    ntype *otype, *ftype, *fltype, *bottom;
 
     DBUG_ENTER ("NT2OTfundef");
 
@@ -462,19 +465,19 @@ NT2OTfundef (node *arg_node, info *arg_info)
                                   FUNDEF_NAME (arg_node)));
             if (ILIBstringCompare (FUNDEF_NAME (arg_node), "main")
                 || FUNDEF_ISPROVIDED (arg_node) || FUNDEF_ISEXPORTED (arg_node)) {
-                CTIabort (TYgetBottomError (bottom));
+                CTIabortOnBottom (TYgetBottomError (bottom));
             } else {
                 /**
                  * we transform the entire body into one 'type error' assignment
                  */
-                ftype = TYliftBottomFixAndEliminateAlpha (otype);
+                fltype = TYliftBottomFixAndEliminateAlpha (otype);
 
                 FUNDEF_BODY (arg_node) = FREEdoFreeTree (FUNDEF_BODY (arg_node));
 
-                FUNDEF_BODY (arg_node) = CreateTypeErrorBody (otype, ftype);
+                FUNDEF_BODY (arg_node) = CreateTypeErrorBody (ftype, fltype);
 
                 FUNDEF_RETS (arg_node)
-                  = TUreplaceRetTypes (FUNDEF_RETS (arg_node), ftype);
+                  = TUreplaceRetTypes (FUNDEF_RETS (arg_node), fltype);
             }
 
         } else {
