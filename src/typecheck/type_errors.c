@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.22  2005/06/14 23:40:08  sbs
+ * proper error message retrieval installed.
+ *
  * Revision 1.21  2005/06/14 17:58:53  sbs
  * used CTIgetErrorMessageVA
  *
@@ -342,11 +345,12 @@ TEhandleError (int line, const char *format, ...)
      * TEextendedAbort( );
      */
 
-#if 0
-  errors = errors ++ CTIgetErrorMessageVA( line, arg_p);
-#else
-    errors = CTIgetErrorMessageVA (line, format, arg_p);
-#endif
+    if (errors == NULL) {
+        errors = CTIgetErrorMessageVA (line, format, arg_p);
+    } else {
+        errors
+          = ILIBstringConcat3 (errors, "@", CTIgetErrorMessageVA (line, format, arg_p));
+    }
 
     va_end (arg_p);
 
