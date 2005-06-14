@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.44  2005/06/14 08:52:04  khf
+ * moved adding of default partitions in wldefaultpartition
+ *
  * Revision 1.43  2005/06/10 19:17:05  khf
  * corrected type checks
  *
@@ -227,8 +230,8 @@
 #include "traverse.h"
 #include "constants.h"
 #include "ssa.h"
-#include "deserialize.h"
 #include "wlanalysis.h"
+#include "wldefaultpartition.h"
 #include "WLPartitionGeneration.h"
 
 /**
@@ -243,9 +246,6 @@ struct INFO {
     int genprob;
     int genshp;
     int subphase;
-    bool hasdefpart;
-    node *default_expr;
-    node *sel_wrapper;
 };
 
 /*******************************************************************************
@@ -271,9 +271,6 @@ struct INFO {
 #define INFO_WLPG_GENPROP(n) (n->genprob)
 #define INFO_WLPG_GENSHP(n) (n->genshp)
 #define INFO_WLPG_SUBPHASE(n) (n->subphase)
-#define INFO_WLPG_HASDEFPART(n) (n->hasdefpart)
-#define INFO_WLPG_DEFAULT(n) (n->default_expr)
-#define INFO_WLPG_SELWRAPPER(n) (n->sel_wrapper)
 
 /**
  * INFO functions
@@ -295,9 +292,6 @@ MakeInfo ()
     INFO_WLPG_GENPROP (result) = 0;
     INFO_WLPG_GENSHP (result) = 0;
     INFO_WLPG_SUBPHASE (result) = 0;
-    INFO_WLPG_HASDEFPART (result) = FALSE;
-    INFO_WLPG_DEFAULT (result) = NULL;
-    INFO_WLPG_SELWRAPPER (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -957,175 +951,6 @@ CompleteGrid (node *ls, node *us, node *step, node *width, int dim, node *wln,
 
 /** <!--********************************************************************-->
  *
- * @fn node *CreateScalarWL( int dim, node *array_shape, simpletype btype,
- *                           node *expr, node *fundef)
- *
- *   @brief  build new genarray WL of shape 'array_shape' and blockinstr.
- *           'expr'
- *
- *   @param  int  *dim         : dimension of iteration space
- *           node *array_shape : shape and upper bound of WL
- *           simpletype btype  : type of 'expr'
- *           node *expr        : rhs of BLOCK_INSTR
- *           node *fundef      : N_FUNDEF
- *   @return node *            : N_Nwith
- ******************************************************************************/
-static node *
-CreateScalarWL (int dim, node *array_shape, simpletype btype, node *expr, node *fundef)
-{
-    node *wl;
-    node *id;
-    node *vardecs = NULL;
-    node *vec_ids;
-    node *scl_ids = NULL;
-    node *tmp_ids;
-    int i;
-
-    DBUG_ENTER ("CreateScalarWL");
-
-    DBUG_ASSERT ((dim >= 0), "CreateScalarWl() used with unknown shape!");
-
-    vec_ids = TBmakeIds (TBmakeAvis (ILIBtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int),
-                                                               SHcreateShape (1, dim))),
-                         NULL);
-
-    vardecs = TBmakeVardec (IDS_AVIS (vec_ids), vardecs);
-
-    for (i = 0; i < dim; i++) {
-        tmp_ids
-          = TBmakeIds (TBmakeAvis (ILIBtmpVar (),
-                                   TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0))),
-                       NULL);
-
-        vardecs = TBmakeVardec (IDS_AVIS (tmp_ids), vardecs);
-        IDS_NEXT (tmp_ids) = scl_ids;
-        scl_ids = tmp_ids;
-    }
-
-    id = TBmakeId (
-      TBmakeAvis (ILIBtmpVar (), TYmakeAKS (TYmakeSimpleType (btype), SHmakeShape (0))));
-    vardecs = TBmakeVardec (ID_AVIS (id), vardecs);
-
-    wl
-      = TBmakeWith (TBmakePart (NULL, TBmakeWithid (vec_ids, scl_ids),
-                                TBmakeGenerator (F_le, F_lt,
-                                                 TCcreateZeroVector (dim, T_int),
-                                                 DUPdoDupNode (array_shape), NULL, NULL)),
-                    TBmakeCode (TBmakeBlock (TCmakeAssignLet (ID_AVIS (id), expr), NULL),
-                                TBmakeExprs (id, NULL)),
-                    TBmakeGenarray (DUPdoDupNode (array_shape), NULL));
-    CODE_USED (WITH_CODE (wl))++;
-    PART_CODE (WITH_PART (wl)) = WITH_CODE (wl);
-    WITH_PARTS (wl) = 1;
-
-    fundef = TCaddVardecs (fundef, vardecs);
-
-    DBUG_RETURN (wl);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *CreateZeros( node *array, node **nassigns, node *fundef)
- *
- *   @brief creates an array of zeros depending on shape and type of 'array'
- *
- *   @param  node *array    :
- *           node **nassign :  != NULL iff new assignments have been created
- *                             (AKD case)
- *           node *fundef   :  N_FUNDEF
- *   @return node *         :  array of zeros
- ******************************************************************************/
-static node *
-CreateZeros (ntype *array_type, node *fundef)
-{
-    node *zero = NULL;
-    node *array_shape = NULL;
-    simpletype btype;
-    shape *shape;
-    int dim;
-
-    DBUG_ENTER ("CreateZeros");
-
-    DBUG_ASSERT ((TYisSimple (array_type) == FALSE), "N_id is no array type!");
-    dim = TYgetDim (array_type);
-    btype = TYgetSimpleType (TYgetScalar (array_type));
-    shape = TYgetShape (array_type);
-
-    if (dim == 0) {
-        zero = TCcreateZeroScalar (btype);
-    } else {
-        array_shape = SHshape2Array (shape);
-        zero
-          = CreateScalarWL (dim, array_shape, btype, TCcreateZeroScalar (btype), fundef);
-        array_shape = FREEdoFreeNode (array_shape);
-    }
-
-    DBUG_RETURN (zero);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *CreateArraySel( node *sel_vec, node *sel_array, node *module)
- *
- *   @brief creates an scalar or vector-wise reference on 'sel_array'
- *
- *   @param  node *sel_vec   : N_WITHID_VEC of current WL
- *           node *sel_array :
- *           info *arg_info  :
- *   @return node *          : N_ap or N_prf
- ******************************************************************************/
-static node *
-CreateArraySel (node *sel_vec, node *sel_array, info *arg_info)
-{
-    node *sel;
-    int len_index, dim_array;
-
-    DBUG_ENTER ("CreateArraySel");
-
-    DBUG_ASSERT ((NODE_TYPE (sel_array) == N_id), "no N_id node found!");
-
-    len_index = SHgetExtent (TYgetShape (IDS_NTYPE (sel_vec)), 0);
-    DBUG_ASSERT ((len_index > 0), "illegal index length found!");
-
-    dim_array = TYgetDim (ID_NTYPE (sel_array));
-    DBUG_ASSERT ((dim_array > 0), "illegal array dimensionality found!");
-
-    if (len_index > dim_array) {
-        DBUG_ASSERT ((0), "illegal array selection found!");
-        sel = NULL;
-    } else if ((len_index == dim_array)) {
-        sel
-          = TBmakePrf (F_sel, TBmakeExprs (DUPdupIdsId (sel_vec),
-                                           TBmakeExprs (DUPdoDupNode (sel_array), NULL)));
-    } else { /* (len_index < dim_array) */
-
-        if (INFO_WLPG_DEFAULT (arg_info) != NULL) {
-            /* use selection from former default partition */
-            sel = INFO_WLPG_DEFAULT (arg_info);
-            INFO_WLPG_DEFAULT (arg_info) = NULL;
-        } else {
-            /* first application of WLPartitionGeneration on current WL */
-            if (INFO_WLPG_SELWRAPPER (arg_info) == NULL) {
-
-                DSinitDeserialize (INFO_WLPG_MODULE (arg_info));
-
-                INFO_WLPG_SELWRAPPER (arg_info)
-                  = DSaddSymbolByName ("sel", SET_wrapperhead, "sac2c");
-                DSfinishDeserialize (INFO_WLPG_MODULE (arg_info));
-            }
-
-            DBUG_ASSERT ((INFO_WLPG_SELWRAPPER (arg_info) != NULL),
-                         "no sac2c:sel wrapper found!");
-            sel = TCmakeAp2 (INFO_WLPG_SELWRAPPER (arg_info), DUPdupIdsId (sel_vec),
-                             DUPdoDupNode (sel_array));
-        }
-    }
-
-    DBUG_RETURN (sel);
-}
-
-/** <!--********************************************************************-->
- *
  * @fn  node *CreateFullPartition( node *wln, info *arg_info)
  *
  *   @brief  generates full partition if possible:
@@ -1142,8 +967,7 @@ CreateArraySel (node *sel_vec, node *sel_array, info *arg_info)
 static node *
 CreateFullPartition (node *wln, info *arg_info)
 {
-    node *coden, *idn, *nassign, *array_shape = NULL, *array_null, *vardec, *nassigns,
-                                 *_ids;
+    node *coden, *array_shape = NULL, *array_null, *nassigns;
     ntype *array_type;
     shape *shape, *mshape;
     int gen_shape = 0;
@@ -1151,15 +975,15 @@ CreateFullPartition (node *wln, info *arg_info)
 
     DBUG_ENTER ("CreateFullPartition");
 
-    if (PART_NEXT (WITH_PART (wln)) != NULL) {
-        /* we do have a default partition here */
-        if (NODE_TYPE (WITH_WITHOP (wln)) == N_modarray) {
-            /* recycle default expression */
-            INFO_WLPG_DEFAULT (arg_info) = DUPdoDupNode (
-              ASSIGN_RHS (BLOCK_INSTR (PART_CBLOCK (PART_NEXT (WITH_PART (wln))))));
-        }
-        PART_NEXT (WITH_PART (wln)) = FREEdoFreeTree (PART_NEXT (WITH_PART (wln)));
-    }
+    DBUG_ASSERT ((PART_NEXT (WITH_PART (wln)) != NULL)
+                   && (NODE_TYPE (PART_GENERATOR (PART_NEXT (WITH_PART (wln))))
+                       == N_default),
+                 "Second partition is no default partition!");
+
+    /* recycle default code for all new parts*/
+    coden = DUPdoDupNode (PART_CODE (PART_NEXT (WITH_PART (wln))));
+    /* delete default partition */
+    PART_NEXT (WITH_PART (wln)) = FREEdoFreeTree (PART_NEXT (WITH_PART (wln)));
 
     do_create = TRUE;
 
@@ -1221,47 +1045,6 @@ CreateFullPartition (node *wln, info *arg_info)
 
         array_null = CreateEntryFlatArray (0, gen_shape);
 
-        /* create code for all new parts */
-        nassigns = NULL;
-        if (NODE_TYPE (WITH_WITHOP (wln)) == N_genarray) {
-
-            if (GENARRAY_DEFAULT (WITH_WITHOP (wln)) == NULL) {
-                array_type = ID_NTYPE (EXPRS_EXPR (WITH_CEXPRS (wln)));
-
-                if (TYisAKV (array_type) || TYisAKS (array_type)) {
-                    coden = CreateZeros (array_type, INFO_WLPG_FUNDEF (arg_info));
-                } else {
-                    CTIabortLine (global.linenum,
-                                  "Genarray with-loop with missing default expression "
-                                  "found."
-                                  " Unfortunately, a default expression is necessary here"
-                                  " to generate code for new partitions");
-                }
-
-            } else {
-                coden = DUPdoDupTree (GENARRAY_DEFAULT (WITH_WITHOP (wln)));
-            }
-        } else { /* modarray */
-            coden = CreateArraySel (WITHID_VEC (WITH_WITHID (wln)),
-                                    MODARRAY_ARRAY (WITH_WITHOP (wln)), arg_info);
-        }
-
-        _ids = TBmakeIds (TBmakeAvis (ILIBtmpVar (), TYeliminateAKV (AVIS_TYPE (ID_AVIS (
-                                                       EXPRS_EXPR (WITH_CEXPRS (wln)))))),
-                          NULL);
-        vardec = TBmakeVardec (IDS_AVIS (_ids), NULL);
-
-        INFO_WLPG_FUNDEF (arg_info) = TCaddVardecs (INFO_WLPG_FUNDEF (arg_info), vardec);
-
-        idn = DUPdupIdsId (_ids);
-
-        /* create new N_code node  */
-        nassign = TBmakeAssign (TBmakeLet (_ids, coden), NULL);
-        /* set correct backref to defining assignment */
-        AVIS_SSAASSIGN (IDS_AVIS (_ids)) = nassign;
-        nassigns = TCappendAssign (nassigns, nassign);
-        coden = TBmakeCode (TBmakeBlock (nassigns, NULL), TBmakeExprs (idn, NULL));
-
         /* create surrounding cuboids */
         wln = CutSlices (array_null, array_shape, WITH_BOUND1 (wln), WITH_BOUND2 (wln),
                          gen_shape, wln, coden);
@@ -1285,54 +1068,6 @@ CreateFullPartition (node *wln, info *arg_info)
     if (array_shape != NULL) {
         array_shape = FREEdoFreeTree (array_shape);
     }
-
-    DBUG_RETURN (wln);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn  node *AddDefaultPartition( node *wln, info *arg_info)
- *
- *   @brief  adds a default partition
- *
- *   @param  node *wl       :  N_with node of the WL
- *           info *arg_info :
- *   @return node *         :  modified N_with
- ******************************************************************************/
-static node *
-AddDefaultPartition (node *wln, info *arg_info)
-{
-    node *_ids, *vardec, *idn, *code;
-
-    DBUG_ENTER ("AddDefaultPartition");
-
-    DBUG_ASSERT ((INFO_WLPG_DEFAULT (arg_info) != NULL),
-                 "default expression is missing!");
-
-    _ids = TBmakeIds (TBmakeAvis (ILIBtmpVar (), TYeliminateAKV (AVIS_TYPE (ID_AVIS (
-                                                   EXPRS_EXPR (WITH_CEXPRS (wln)))))),
-                      NULL);
-
-    vardec = TBmakeVardec (IDS_AVIS (_ids), NULL);
-
-    INFO_WLPG_FUNDEF (arg_info) = TCaddVardecs (INFO_WLPG_FUNDEF (arg_info), vardec);
-
-    idn = DUPdupIdsId (_ids);
-
-    code
-      = TBmakeCode (TBmakeBlock (TBmakeAssign (TBmakeLet (_ids,
-                                                          INFO_WLPG_DEFAULT (arg_info)),
-                                               NULL),
-                                 NULL),
-                    TBmakeExprs (idn, NULL));
-
-    INFO_WLPG_DEFAULT (arg_info) = NULL;
-
-    PART_NEXT (WITH_PART (wln))
-      = TBmakePart (code, DUPdoDupTree (PART_WITHID (WITH_PART (wln))), TBmakeDefault ());
-    CODE_USED (code) = 1;
-
-    CODE_NEXT (WITH_CODE (wln)) = code;
 
     DBUG_RETURN (wln);
 }
@@ -1497,7 +1232,7 @@ CreateEmptyGenWLReplacement (node *wl, info *arg_info)
  *
  * @fn node *WLPGmodule(node *arg_node, info *arg_info)
  *
- *   @brief first traversal of function definitions ofWLPartitionGeneration
+ *   @brief first traversal of function definitions of WLPartitionGeneration
  *
  *   @param  node *arg_node:  N_module
  *           info *arg_info:  N_info
@@ -1715,7 +1450,7 @@ WLPGap (node *arg_node, info *arg_info)
 node *
 WLPGwith (node *arg_node, info *arg_info)
 {
-    node *let_tmp, *nassigns = NULL;
+    node *let_tmp, *nassigns = NULL, *def;
     bool replace_wl = FALSE;
     int gprop = 0;
 
@@ -1775,7 +1510,10 @@ WLPGwith (node *arg_node, info *arg_info)
             WITH_PARTS (arg_node) = 1;
 
             if (NODE_TYPE (WITH_WITHOP (arg_node)) == N_genarray) {
-                if (GENARRAY_DEFAULT (WITH_WITHOP (arg_node)) != NULL) {
+                def = GENARRAY_DEFAULT (WITH_WITHOP (arg_node));
+
+                if ((def != NULL)
+                    && (TYisAKV (ID_NTYPE (def)) || TYisAKS (ID_NTYPE (def)))) {
                     GENARRAY_DEFAULT (WITH_WITHOP (arg_node))
                       = FREEdoFreeTree (GENARRAY_DEFAULT (WITH_WITHOP (arg_node)));
                 }
@@ -1783,84 +1521,11 @@ WLPGwith (node *arg_node, info *arg_info)
 
         } else if ((INFO_WLPG_GENPROP (arg_info) == GPT_partial)) {
             arg_node = CreateFullPartition (arg_node, arg_info);
-
-        } else if ((PART_NEXT (WITH_PART (arg_node)) == NULL)
-                   && (INFO_WLPG_GENPROP (arg_info) == GPT_unknown)) {
-            /*
-             *Current WL is AUD so we have to build a default partition.
-             *First we traverse the WITHOP to create a default expression.
-             */
-            WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
-
-            arg_node = AddDefaultPartition (arg_node, arg_info);
         }
     }
 
     INFO_WLPG_WL (arg_info) = NULL;
     INFO_WLPG_LET (arg_info) = NULL;
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *WLPGgenarray( node *arg_node, info *arg_info)
- *
- *   @brief  gets default expression
- *
- *   @param  node *arg_node:  N_genarray
- *           info *arg_info:  N_info
- *   @return node *        :  N_genarray
- ******************************************************************************/
-
-node *
-WLPGgenarray (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("WLPGgenarray");
-
-    if (GENARRAY_DEFAULT (arg_node) == NULL) {
-        CTIabortLine (global.linenum,
-                      "Genarray with-loop with missing default expression found."
-                      " Unfortunately, a default expression is necessary here"
-                      " to generate a default partition");
-    } else {
-        INFO_WLPG_DEFAULT (arg_info) = DUPdoDupTree (GENARRAY_DEFAULT (arg_node));
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *WLPGmodarray( node *arg_node, info *arg_info)
- *
- *   @brief  creates default expression.
- *
- *   @param  node *arg_node:  N_modarray
- *           info *arg_info:  N_info
- *   @return node *        :  N_modarray
- ******************************************************************************/
-
-node *
-WLPGmodarray (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("WLPGmodarray");
-
-    if (INFO_WLPG_SELWRAPPER (arg_info) == NULL) {
-
-        DSinitDeserialize (INFO_WLPG_MODULE (arg_info));
-
-        INFO_WLPG_SELWRAPPER (arg_info)
-          = DSaddSymbolByName ("sel", SET_wrapperhead, "sac2c");
-
-        DSfinishDeserialize (INFO_WLPG_MODULE (arg_info));
-    }
-
-    INFO_WLPG_DEFAULT (arg_info)
-      = TCmakeAp2 (INFO_WLPG_SELWRAPPER (arg_info),
-                   DUPdupIdsId (
-                     WITHID_VEC (PART_WITHID (WITH_PART (INFO_WLPG_WL (arg_info))))),
-                   DUPdoDupTree (MODARRAY_ARRAY (arg_node)));
 
     DBUG_RETURN (arg_node);
 }
