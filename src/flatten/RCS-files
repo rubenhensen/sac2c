@@ -29,3 +29,4 @@ wlanalysis.c
 wlanalysis.h
 lacinlining.c
 lacinlining.h
+wldefaultpartition.c
