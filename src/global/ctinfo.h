@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2005/06/14 17:58:19  sbs
+ * added CTIgetErrorMessageVA
+ *
  * Revision 1.5  2005/03/10 09:41:09  cg
  * Added CTIterminateCompilation()
  *
@@ -31,8 +34,10 @@
 #define _SAC_CTINFO_H_
 
 #include "types.h"
+#include <stdarg.h>
 
 extern void CTIinstallInterruptHandlers ();
+extern char *CTIgetErrorMessageVA (int line, const char *format, va_list arg_p);
 extern void CTIerror (const char *format, ...);
 extern void CTIerrorLine (int line, const char *format, ...);
 extern void CTIerrorContinued (const char *format, ...);

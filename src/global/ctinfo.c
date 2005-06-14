@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2005/06/14 17:58:19  sbs
+ * added CTIgetErrorMessageVA
+ *
  * Revision 1.12  2005/06/03 10:10:07  sbs
  * OOOOps
  *
@@ -162,29 +165,22 @@ ProcessMessage (char *buffer, int line_length)
 
 /** <!--********************************************************************-->
  *
- * @fn void PrintMessage( const char *header, const char *format, va_list arg_p)
+ * @fn void Format2Buffer( const char *format, va_list arg_p)
  *
- *   @brief prints message
- *
- *          The message specified by format string and variable number
+ *   @brief The message specified by format string and variable number
  *          of arguments is "printed" into the global message buffer.
- *          It is taken care of buffer overflows. Afterwards, the message
- *          is formatted to fit a certain line length and is printed to
- *          stderr.
+ *          It is taken care of buffer overflows.
  *
- *   @param header  string which precedes each line of the message, e.g.
-                    ERROR or WARNING.
  *   @param format  format string like in printf family of functions
  *
  ******************************************************************************/
 
 static void
-PrintMessage (const char *header, const char *format, va_list arg_p)
+Format2Buffer (const char *format, va_list arg_p)
 {
-    char *line;
     int len;
 
-    DBUG_ENTER ("PrintMessage");
+    DBUG_ENTER ("Format2Buffer");
 
     len = vsnprintf (message_buffer, message_buffer_size, format, arg_p);
 
@@ -214,6 +210,69 @@ PrintMessage (const char *header, const char *format, va_list arg_p)
 
         DBUG_ASSERT ((len < message_buffer_size), "message buffer corruption");
     }
+
+    DBUG_VOID_RETURN;
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn char *CTIgetErrorMessageVA( int line, const char *format, va_list arg_p)
+ *
+ *   @brief generates error message string
+ *
+ *          The message specified by format string and variable number
+ *          of arguments is "printed" into the global message buffer.
+ *          It is taken care of buffer overflows. Afterwards, the message
+ *          is formatted to fit a certain line length and is printed to
+ *          stderr.
+ *
+ *   @param format  format string like in printf family of functions
+ *
+ ******************************************************************************/
+
+char *
+CTIgetErrorMessageVA (int line, const char *format, va_list arg_p)
+{
+    char *first_line, *res;
+
+    DBUG_ENTER ("CTIgetErrorMessageVA");
+    Format2Buffer (format, arg_p);
+    ProcessMessage (message_buffer, message_line_length - strlen (error_message_header));
+
+    first_line = (char *)ILIBmalloc (32 * sizeof (char));
+    vsprintf (first_line, "line %d @", line);
+    res = ILIBstringConcat (first_line, message_buffer);
+    first_line = ILIBfree (first_line);
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn void PrintMessage( const char *header, const char *format, va_list arg_p)
+ *
+ *   @brief prints message
+ *
+ *          The message specified by format string and variable number
+ *          of arguments is "printed" into the global message buffer.
+ *          It is taken care of buffer overflows. Afterwards, the message
+ *          is formatted to fit a certain line length and is printed to
+ *          stderr.
+ *
+ *   @param header  string which precedes each line of the message, e.g.
+                    ERROR or WARNING.
+ *   @param format  format string like in printf family of functions
+ *
+ ******************************************************************************/
+
+static void
+PrintMessage (const char *header, const char *format, va_list arg_p)
+{
+    char *line;
+
+    DBUG_ENTER ("PrintMessage");
+
+    Format2Buffer (format, arg_p);
 
     ProcessMessage (message_buffer, message_line_length - strlen (header));
 
