@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.221  2005/06/15 12:42:15  sah
+ * added printing of ...
+ *
  * Revision 3.220  2005/06/15 07:27:17  sah
  * fixed PRTfundef to avoid segfault on linux
  * this entire thing needs a cleanup!
@@ -731,6 +734,9 @@ Argtab2Fundef (node *fundef)
       = TBmakeFundef (ILIBstringCopy (FUNDEF_NAME (fundef)),
                       ILIBstringCopy (FUNDEF_MOD (fundef)), rets, args, NULL, NULL);
 
+    FUNDEF_HASDOTARGS (new_fundef) = FUNDEF_HASDOTARGS (fundef);
+    FUNDEF_HASDOTRETS (new_fundef) = FUNDEF_HASDOTRETS (fundef);
+
     DBUG_RETURN (new_fundef);
 }
 
@@ -1378,6 +1384,10 @@ PrintFunctionHeader (node *arg_node, info *arg_info, bool in_comment)
 
         if (FUNDEF_ARGS (arg_node) != NULL) {
             TRAVdo (FUNDEF_ARGS (arg_node), arg_info); /* print args of function */
+        }
+
+        if (FUNDEF_HASDOTARGS (arg_node) || FUNDEF_HASDOTRETS (arg_node)) {
+            fprintf (global.outfile, ", ...");
         }
 
         fprintf (global.outfile, ")");
