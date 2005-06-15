@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.88  2005/06/15 10:24:30  sbs
+ * call history added to error messages.
+ * TYextendBottomError added.
+ *
  * Revision 3.87  2005/06/14 09:55:10  sbs
  * support for bottom types integrated.
  *
@@ -1203,6 +1207,30 @@ TYmakeBottomType (char *err_msg)
     BOTTOM_MSG (res) = err_msg;
 
     DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn void TYextendBottomError( ntype *type, char *err_msg)
+ *
+ *   @brief replaces the err_msg contained in the bottom type by a concatinantion
+ *          of the existing message and the new one.
+ *   @param err_msg error that generated this type
+ *
+ ******************************************************************************/
+
+void
+TYextendBottomError (ntype *type, char *err_msg)
+{
+    char *new_msg;
+
+    DBUG_ENTER ("TYextendBottomError");
+
+    new_msg = ILIBstringConcat3 (BOTTOM_MSG (type), "@", err_msg);
+    BOTTOM_MSG (type) = ILIBfree (BOTTOM_MSG (type));
+    BOTTOM_MSG (type) = new_msg;
+
+    DBUG_VOID_RETURN;
 }
 
 /** <!--********************************************************************-->

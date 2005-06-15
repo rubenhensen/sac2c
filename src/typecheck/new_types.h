@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.30  2005/06/15 10:24:30  sbs
+ * call history added to error messages.
+ * TYextendBottomError added.
+ *
  * Revision 3.29  2005/06/14 09:55:10  sbs
  * support for bottom types integrated.
  *
@@ -292,6 +296,7 @@ extern ntype *TYgetProductMember (ntype *prod, int pos);
  * Bottom Types:
  */
 extern ntype *TYmakeBottomType (char *err_msg);
+extern void TYextendBottomError (ntype *type, char *err_msg);
 extern char *TYgetBottomError (ntype *type);
 
 /*
