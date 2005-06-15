@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2005/06/15 10:23:31  sbs
+ * call history added to error messages.
+ *
  * Revision 1.8  2005/01/10 17:27:06  cg
  * Converted error messages from Error.h to ctinfo.c
  *
@@ -36,6 +39,7 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "new_types.h"
+#include "ssi.h"
 #include "new_typecheck.h"
 #include "type_errors.h"
 #include "type_utils.h"
@@ -192,10 +196,13 @@ NTCCTdispatchFunType (node *wrapper, ntype *args)
 ntype *
 NTCCTudf (te_info *info, ntype *args)
 {
-    ntype *res;
+    ntype *res, *res_mem;
+    tvar *alpha;
     node *fundef, *assign;
     dft_res *dft_res;
     te_info *old_info_chn;
+    char *tmp, *tmp2;
+    int i;
 
     DBUG_ENTER ("NTCCTudf");
     DBUG_ASSERT ((TYisProdOfArray (args)), "NTCCTudf called with non-fixed args!");
@@ -266,6 +273,29 @@ NTCCTudf (te_info *info, ntype *args)
 
     global.act_info_chn = old_info_chn;
     DBUG_PRINT ("NTC_INFOCHN", ("global.act_info_chn reset to %p", global.act_info_chn));
+
+    tmp = TYtype2String (args, FALSE, 0);
+    TEhandleError (global.linenum, " -- in %s:%s%s@", FUNDEF_MOD (fundef),
+                   FUNDEF_NAME (fundef), tmp);
+    tmp = ILIBfree (tmp);
+    tmp2 = TEfetchErrors ();
+
+    for (i = 0; i < TYgetProductSize (res); i++) {
+        res_mem = TYgetProductMember (res, i);
+        if (TYisBottom (res_mem)) {
+            TYextendBottomError (res_mem, tmp2);
+        } else if (TYisAlpha (res_mem)) {
+            alpha = TYgetAlpha (res_mem);
+            if (SSIgetMin (alpha) != NULL) {
+                res_mem = SSIgetMin (alpha);
+                if (TYisBottom (res_mem)) {
+                    TYextendBottomError (res_mem, tmp2);
+                }
+            }
+        }
+    }
+
+    tmp2 = ILIBfree (tmp2);
 
     DBUG_RETURN (res);
 }
