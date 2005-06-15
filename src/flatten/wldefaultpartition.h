@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2005/06/15 08:43:21  ktr
+ * Some bugfixing
+ *
  * Revision 1.1  2005/06/14 08:58:59  khf
  * Initial revision
  *
@@ -26,6 +29,7 @@ extern node *WLDPdoWlDefaultPartition (node *arg_node);
 extern node *WLDPmodule (node *arg_node, info *arg_info);
 extern node *WLDPfundef (node *arg_node, info *arg_info);
 
+extern node *WLDPassign (node *arg_node, info *arg_info);
 extern node *WLDPwith (node *arg_node, info *arg_info);
 extern node *WLDPpart (node *arg_node, info *arg_info);
 extern node *WLDPgenarray (node *arg_node, info *arg_info);
