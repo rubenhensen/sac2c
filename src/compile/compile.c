@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.159  2005/06/15 18:22:31  ktr
+ * -check tb: Descriptor for subarray is only built iff there actually is a
+ * subarray (i.e. a Vardec named X_sub exists). Otherwise, no descriptor
+ * is built instead of aborting the compilation.
+ *
  * Revision 3.158  2005/06/15 12:41:12  sah
  * fixed handling of ... args
  *
@@ -5332,6 +5337,7 @@ COMPwith (node *arg_node, info *arg_info)
         /*
          * The descriptor of A_sub must only be built if it is
          * actually used (shape checks are done)
+         * AND there actually IS a subarray
          */
         if (global.doruntimecheck) {
             sub_name = ILIBstringConcat (IDS_NAME (res_ids), "_sub");
@@ -5341,15 +5347,17 @@ COMPwith (node *arg_node, info *arg_info)
                 sub_vardec = VARDEC_NEXT (sub_vardec);
             }
             ILIBfree (sub_name);
-            DBUG_ASSERT (sub_vardec != NULL, "No vardec for X_sub found!");
 
             /*
-             * Free descriptor of subarray
+             * Free descriptor of subarray (IF it exists)
              */
-            icm_chain = TCmakeAssignIcm1 ("ND_FREE__DESC",
-                                          TCmakeIdCopyStringNt (VARDEC_NAME (sub_vardec),
-                                                                VARDEC_TYPE (sub_vardec)),
-                                          icm_chain);
+            if (sub_vardec != NULL) {
+                icm_chain
+                  = TCmakeAssignIcm1 ("ND_FREE__DESC",
+                                      TCmakeIdCopyStringNt (VARDEC_NAME (sub_vardec),
+                                                            VARDEC_TYPE (sub_vardec)),
+                                      icm_chain);
+            }
         }
 
         if (CODE_NEXT (WITH_CODE (arg_node)) == NULL) {
@@ -5379,7 +5387,7 @@ COMPwith (node *arg_node, info *arg_info)
                                                     IDS_TYPE (res_ids)),
                               icm_chain);
 
-        if (global.doruntimecheck) {
+        if ((global.doruntimecheck) && (sub_vardec != NULL)) {
 
             /*
              * Calculate dimension of subarray
