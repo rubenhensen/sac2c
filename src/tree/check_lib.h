@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2005/06/15 12:43:03  jhb
+ * little fixes
+ *
  * Revision 1.8  2005/06/08 13:37:08  jhb
  * attribute are now check correctly
  *
@@ -39,6 +42,7 @@ extern node *CHKdoTreeCheck (node *syntax_tree);
 extern node *CHKexistSon (node *son, node *arg_node, char *string);
 extern node *CHKexistAttribute (void *attribute, node *arg_node, char *string);
 extern node *CHKnotExistAttribute (void *attribute, node *arg_node, char *string);
-extern node *CHKcorrectType (void *attribute, node *arg_node, char *type, char *string);
+/*extern node *CHKcorrectType( void *attribute, node *arg_node, char *type, char
+ * *string);*/
 
 #endif /*_SAC_CHECK_LIB_H_ */

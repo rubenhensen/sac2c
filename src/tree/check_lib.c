@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2005/06/15 12:43:03  jhb
+ * little fixes
+ *
  * Revision 1.12  2005/06/08 13:37:08  jhb
  * attribute are now check correctly
  *
@@ -155,27 +158,25 @@ CHKnotExistAttribute (void *attribute, node *arg_node, char *string)
     DBUG_RETURN (attribute);
 }
 
-node *
-CHKcorrectType (void *sonattr, node *arg_node, char *type, char *string)
+/*node *CHKcorrectType(void *sonattr, node *arg_node, char *type, char *string)
 {
 
-    DBUG_ENTER ("CHKcorrectType");
-    /*
-    if ( sonattr != NULL) {
-    /* falls es gar nicht da ist */
+  DBUG_ENTER( "CHKcorrectType");
 
-    /*
-          if ( NODE_TYPE( sonattr) != ) {
-          NODE_ERROR(arg_node) = TBmakeError( string, NODE_ERROR( arg_node));
-          }
+  if ( sonattr != NULL) {
 
-          }
-          else {
 
-          NODE_ERROR(arg_node) = TBmakeError(string, NODE_ERROR( arg_node ));
+        if ( NODE_TYPE( arg_node) != ) {
+        NODE_ERROR(arg_node) = TBmakeError( string, NODE_ERROR( arg_node));
+        }
 
-          }
-    */
+        }
+        else {
 
-    DBUG_RETURN (sonattr);
-}
+        NODE_ERROR(arg_node) = TBmakeError(string, NODE_ERROR( arg_node ));
+
+        }
+
+
+  DBUG_RETURN( sonattr);
+}*/
