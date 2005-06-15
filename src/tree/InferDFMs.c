@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.34  2005/06/15 12:41:12  sah
+ * fixed handling of ... args
+ *
  * Revision 1.33  2004/12/13 18:55:48  ktr
  * Withids contain N_id/N_exprs of N_id after explicit allocation now.
  *
@@ -1409,7 +1412,7 @@ INFDFMSap (node *arg_node, info *arg_info)
     /* traverse the formal (fundef_args) and current (ap_args) parameters */
     fundef_args = FUNDEF_ARGS (AP_FUNDEF (arg_node));
     ap_args = AP_ARGS (arg_node);
-    while (ap_args != NULL) {
+    while ((ap_args != NULL) && (fundef_args != NULL)) {
         if ((ARG_ISREFERENCE (fundef_args))) {
             DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (ap_args)) == N_id),
                          "Reference parameter must be a N_id node!");

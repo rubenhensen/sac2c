@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.14  2005/06/15 12:41:12  sah
+ * fixed handling of ... args
+ *
  * Revision 1.13  2005/06/01 22:02:32  sah
  * fixed InsertIntoOut. the FUNDEF_RETURN is only set if
  * the function has a body and this will be compiled.
@@ -744,7 +747,8 @@ FPClet (node *arg_node, info *arg_info)
         idx = ap_argtab->size; /* to avoid a CC warning */
 
         while (exprs != NULL) {
-            DBUG_ASSERT ((args != NULL), "application is inconsistant");
+            DBUG_ASSERT (((args != NULL) || (dots_offset != 0)),
+                         "application is inconsistant");
 
             if (dots_offset == 0) {
                 idx = GetArgtabIndexIn (args, argtab);

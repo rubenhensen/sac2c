@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.158  2005/06/15 12:41:12  sah
+ * fixed handling of ... args
+ *
  * Revision 3.157  2005/06/11 20:52:24  ktr
  * WL_SUB_SHAPE is now used to initialize the descriptor of the generic subarrayy
  *
@@ -1626,6 +1629,18 @@ MakeIcm_ND_FUN_DEC (node *fundef)
     argtab = FUNDEF_ARGTAB (fundef);
     DBUG_ASSERT ((argtab != NULL), "no argtab found!");
 
+    if (FUNDEF_HASDOTARGS (fundef) || FUNDEF_HASDOTRETS (fundef)) {
+        /*
+         * for ... arguments the name should expand to an empty string
+         *  -> replace 'tag' and 'id'
+         */
+
+        icm_args
+          = TBmakeExprs (TCmakeIdCopyString (global.argtag_string[ATG_notag]),
+                         TBmakeExprs (TCmakeIdCopyString ("..."),
+                                      TBmakeExprs (TCmakeIdCopyString (NULL), icm_args)));
+    }
+
     /* arguments */
     for (i = argtab->size - 1; i >= 1; i--) {
         argtag_t tag;
@@ -1652,22 +1667,16 @@ MakeIcm_ND_FUN_DEC (node *fundef)
             }
         }
 
-        if (TYPES_BASETYPE (type) == T_dots) {
-            /*
-             * for ... arguments the name should expand to an empty string
-             *  -> replace 'tag' and 'id'
-             */
-            tag = ATG_notag;
-            id = FREEdoFreeTree (id);
-            id = TCmakeIdCopyString (NULL);
-        }
-
         icm_args = TBmakeExprs (TCmakeIdCopyString (global.argtag_string[tag]),
                                 TBmakeExprs (MakeBasetypeArg (type),
                                              TBmakeExprs (id, icm_args)));
     }
 
-    icm_args = TBmakeExprs (TBmakeNum (argtab->size - 1), icm_args);
+    if (FUNDEF_HASDOTARGS (fundef) || FUNDEF_HASDOTRETS (fundef)) {
+        icm_args = TBmakeExprs (TBmakeNum (argtab->size), icm_args);
+    } else {
+        icm_args = TBmakeExprs (TBmakeNum (argtab->size - 1), icm_args);
+    }
 
     /* return value */
     DBUG_ASSERT ((argtab->ptr_in[0] == NULL), "argtab inconsistent!");
