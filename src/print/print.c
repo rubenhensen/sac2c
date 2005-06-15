@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.220  2005/06/15 07:27:17  sah
+ * fixed PRTfundef to avoid segfault on linux
+ * this entire thing needs a cleanup!
+ *
  * Revision 3.219  2005/06/08 09:48:32  ktr
  * Tweaked Argtab2Fundef to introduce shared RETS. But it is still ugly
  *
@@ -462,7 +466,7 @@ WLAAprintAccesses (node *arg_node, info *arg_info)
 
             switch (ACCESS_CLASS (access)) {
             case ACL_irregular:
-            /* here's no break missing ! */
+                /* here's no break missing ! */
             case ACL_unknown:
                 fprintf (global.outfile, "sel( %s ", VARDEC_NAME (ACCESS_IV (access)));
                 fprintf (global.outfile, ", %s)", VARDEC_NAME (ACCESS_ARRAY (access)));
@@ -1534,73 +1538,61 @@ PRTfundef (node *arg_node, info *arg_info)
                  */
             }
         } else {
-
-            if (FUNDEF_ISWRAPPERFUN (arg_node)) {
-                if (FUNDEF_BODY (arg_node) == NULL) {
-                    /*
-                     * there is no reason to print anything here
-                     * as we already have printed a header earlier
-                     * and without body there is no further
-                     * information to print
-                     */
-#if 0
-          fprintf( global.outfile, "/*\n");
-          INDENT;
-          fprintf( global.outfile, " * wrapper function:\n");
-          INDENT;
-          fprintf( global.outfile, " *   ");
-          PrintFunctionHeader( arg_node, arg_info, TRUE);
-          fprintf( global.outfile, "\n");
-          INDENT;
-          fprintf( global.outfile, " */\n\n");
-#endif
-                } else {
-                    fprintf (global.outfile, "/* wrapper function */\n");
-                }
-            } else if (FUNDEF_ISCONDFUN (arg_node)) {
-                fprintf (global.outfile, "/* Cond function */\n");
-                if (FUNDEF_EXT_ASSIGN (arg_node) == NULL) {
-                    fprintf (global.outfile, "/*  external assignment: missing */\n");
-                } else {
-                    node *extids;
-                    fprintf (global.outfile, "/*  external assignment: ");
-                    extids = LET_IDS (ASSIGN_INSTR (FUNDEF_EXT_ASSIGN (arg_node)));
-                    if (extids != NULL) {
-                        extids = TRAVdo (extids, arg_info);
-                    }
-                    fprintf (global.outfile, " */\n");
-                }
-            } else if (FUNDEF_ISDOFUN (arg_node)) {
-                fprintf (global.outfile, "/* Loop function */\n");
-                if (FUNDEF_EXT_ASSIGN (arg_node) == NULL) {
-                    fprintf (global.outfile, "/*  external assignment: missing */\n");
-                } else {
-                    node *extids;
-                    fprintf (global.outfile, "/*  external assignment: ");
-                    extids = LET_IDS (ASSIGN_INSTR (FUNDEF_EXT_ASSIGN (arg_node)));
-                    if (extids != NULL) {
-                        extids = TRAVdo (extids, arg_info);
-                    }
-                    fprintf (global.outfile, " */\n");
-                }
-                if (FUNDEF_INT_ASSIGN (arg_node) == NULL) {
-                    fprintf (global.outfile, "/*  internal assignment: missing */\n");
-                } else {
-                    node *intids;
-                    fprintf (global.outfile, "/*  internal assignment: ");
-                    intids = LET_IDS (ASSIGN_INSTR (FUNDEF_INT_ASSIGN (arg_node)));
-                    if (intids != NULL) {
-                        intids = TRAVdo (intids, arg_info);
-                    }
-                    fprintf (global.outfile, " */\n");
-                }
-            }
+            /*
+             * we only print functions with bodies here, as we
+             * already have printed headers for all other functions
+             * earlier!
+             */
 
             if (FUNDEF_BODY (arg_node) != NULL) {
                 if (INFO_PRINT_SEPARATE (arg_info)) {
                     global.outfile = FMGRwriteOpen ("%s/fun%d.c", global.tmp_dirname,
                                                     global.function_counter);
                     fprintf (global.outfile, "#include \"header.h\"\n\n");
+                }
+
+                if (FUNDEF_ISWRAPPERFUN (arg_node)) {
+                    fprintf (global.outfile, "/* wrapper function */\n");
+                } else if (FUNDEF_ISCONDFUN (arg_node)) {
+                    fprintf (global.outfile, "/* Cond function */\n");
+
+                    if (FUNDEF_EXT_ASSIGN (arg_node) == NULL) {
+                        fprintf (global.outfile, "/*  external assignment: missing */\n");
+                    } else {
+                        node *extids;
+                        fprintf (global.outfile, "/*  external assignment: ");
+                        extids = LET_IDS (ASSIGN_INSTR (FUNDEF_EXT_ASSIGN (arg_node)));
+                        if (extids != NULL) {
+                            extids = TRAVdo (extids, arg_info);
+                        }
+                        fprintf (global.outfile, " */\n");
+                    }
+                } else if (FUNDEF_ISDOFUN (arg_node)) {
+                    fprintf (global.outfile, "/* Loop function */\n");
+
+                    if (FUNDEF_EXT_ASSIGN (arg_node) == NULL) {
+                        fprintf (global.outfile, "/*  external assignment: missing */\n");
+                    } else {
+                        node *extids;
+                        fprintf (global.outfile, "/*  external assignment: ");
+                        extids = LET_IDS (ASSIGN_INSTR (FUNDEF_EXT_ASSIGN (arg_node)));
+                        if (extids != NULL) {
+                            extids = TRAVdo (extids, arg_info);
+                        }
+                        fprintf (global.outfile, " */\n");
+                    }
+
+                    if (FUNDEF_INT_ASSIGN (arg_node) == NULL) {
+                        fprintf (global.outfile, "/*  internal assignment: missing */\n");
+                    } else {
+                        node *intids;
+                        fprintf (global.outfile, "/*  internal assignment: ");
+                        intids = LET_IDS (ASSIGN_INSTR (FUNDEF_INT_ASSIGN (arg_node)));
+                        if (intids != NULL) {
+                            intids = TRAVdo (intids, arg_info);
+                        }
+                        fprintf (global.outfile, " */\n");
+                    }
                 }
 
                 if ((FUNDEF_ISSPMDFUN (arg_node))
@@ -1700,21 +1692,19 @@ PRTannotate (node *arg_node, info *arg_info)
     }
 
 #if 0 /**** TODO ****/
-  if (ANNOTATE_TAG( arg_node) & INL_FUN) {
-    sprintf( strbuffer2, "PROFILE_INLINE( %s)", strbuffer1);
-  }
-  else {
-    strcpy( strbuffer2, strbuffer1);
-  }
-
-  if (ANNOTATE_TAG( arg_node) & LIB_FUN) {
-    sprintf( strbuffer1, "PROFILE_LIBRARY( %s)", strbuffer2);
-  }
-  else {
-    strcpy( strbuffer1, strbuffer2);
+  if (ANNOTATE_TAG (arg_node) & INL_FUN) {
+    sprintf (strbuffer2, "PROFILE_INLINE( %s)", strbuffer1);
+  } else {
+    strcpy (strbuffer2, strbuffer1);
   }
 
-  fprintf( global.outfile, "%s;", strbuffer1);
+  if (ANNOTATE_TAG (arg_node) & LIB_FUN) {
+    sprintf (strbuffer1, "PROFILE_LIBRARY( %s)", strbuffer2);
+  } else {
+    strcpy (strbuffer1, strbuffer2);
+  }
+
+  fprintf (global.outfile, "%s;", strbuffer1);
 
 #endif
 
@@ -2247,16 +2237,16 @@ PRTprf (node *arg_node, info *arg_info)
                 ("%s (%s)" F_PTR, NODE_TEXT (arg_node), global.mdb_prf[prf], arg_node));
 
 #if 0 /*  TODO: needs to be moved into PRTap! */
-  if ((prf == F_sel) && (TCcountExprs( PRF_ARGS( arg_node)) == 2)) {
+  if ((prf == F_sel) && (TCcountExprs (PRF_ARGS (arg_node)) == 2)) {
     /*
      * F_sel is printed with special [] notation:
      * first the array argument is printed, then a leading '[' followed by
      * the selection vector and finally the closing ']'.
      */
-    TRAVdo( PRF_ARG2( arg_node), arg_info);
-    fprintf( global.outfile, "[");
-    TRAVdo( PRF_ARG1( arg_node), arg_info);
-    fprintf( global.outfile, "]"); 
+    TRAVdo (PRF_ARG2 (arg_node), arg_info);
+    fprintf (global.outfile, "[");
+    TRAVdo (PRF_ARG1 (arg_node), arg_info);
+    fprintf (global.outfile, "]");
   }
 #endif
 
@@ -3054,76 +3044,76 @@ PRTpragma (node *arg_node, info *arg_info)
         }
         fprintf (global.outfile, "]\n");
     }
-
 #if 0 /*    TODO    */
-  if (PRAGMA_REFCOUNTING( arg_node) != NULL) {
-    fprintf( global.outfile, "#pragma refcounting [");
+  if (PRAGMA_REFCOUNTING (arg_node) != NULL) {
+    fprintf (global.outfile, "#pragma refcounting [");
     first = 1;
-    for (i = 0; i < PRAGMA_NUMPARAMS( arg_node); i++) {
-      if (PRAGMA_RC( arg_node, i)) {
+    for (i = 0; i < PRAGMA_NUMPARAMS (arg_node); i++) {
+      if (PRAGMA_RC (arg_node, i)) {
         if (first) {
-          fprintf( global.outfile, "%d", i);
+          fprintf (global.outfile, "%d", i);
           first = 0;
-        }
-        else {
-          fprintf( global.outfile, ", %d", i);
+        } else {
+          fprintf (global.outfile, ", %d", i);
         }
       }
     }
-    fprintf(global.outfile, "]\n");
+    fprintf (global.outfile, "]\n");
   }
 
-  if (PRAGMA_READONLY( arg_node)!=NULL) {
-    fprintf( global.outfile, "#pragma readonly [");
+  if (PRAGMA_READONLY (arg_node) != NULL) {
+    fprintf (global.outfile, "#pragma readonly [");
     first = 1;
-    for (i = 0; i < PRAGMA_NUMPARAMS( arg_node); i++) {
-      if (PRAGMA_RO( arg_node, i)) {
+    for (i = 0; i < PRAGMA_NUMPARAMS (arg_node); i++) {
+      if (PRAGMA_RO (arg_node, i)) {
         if (first) {
-          fprintf( global.outfile, "%d", i);
+          fprintf (global.outfile, "%d", i);
           first = 0;
-        }
-        else {
-          fprintf( global.outfile, ", %d", i);
+        } else {
+          fprintf (global.outfile, ", %d", i);
         }
       }
     }
-    fprintf( global.outfile, "]\n");
+    fprintf (global.outfile, "]\n");
   }
 
-  if (PRAGMA_EFFECT( arg_node)!=NULL) {
-    fprintf( global.outfile, "#pragma effect ");
-    TRAVdo( PRAGMA_EFFECT( arg_node), arg_info);
-    fprintf( global.outfile, "\n");
+  if (PRAGMA_EFFECT (arg_node) != NULL) {
+    fprintf (global.outfile, "#pragma effect ");
+    TRAVdo (PRAGMA_EFFECT (arg_node), arg_info);
+    fprintf (global.outfile, "\n");
   }
 
-  if (PRAGMA_TOUCH( arg_node)!=NULL) {
-    fprintf( global.outfile, "#pragma touch ");
-    TRAVdo( PRAGMA_TOUCH( arg_node), arg_info);
-    fprintf( global.outfile, "\n");
+  if (PRAGMA_TOUCH (arg_node) != NULL) {
+    fprintf (global.outfile, "#pragma touch ");
+    TRAVdo (PRAGMA_TOUCH (arg_node), arg_info);
+    fprintf (global.outfile, "\n");
   }
 
-  if (PRAGMA_COPYFUN( arg_node)!=NULL) {
-    fprintf( global.outfile, "#pragma copyfun \"%s\"\n", PRAGMA_COPYFUN( arg_node));
+  if (PRAGMA_COPYFUN (arg_node) != NULL) {
+    fprintf (global.outfile, "#pragma copyfun \"%s\"\n",
+             PRAGMA_COPYFUN (arg_node));
   }
 
-  if (PRAGMA_FREEFUN( arg_node)!=NULL) {
-    fprintf( global.outfile, "#pragma freefun \"%s\"\n", PRAGMA_FREEFUN( arg_node));
+  if (PRAGMA_FREEFUN (arg_node) != NULL) {
+    fprintf (global.outfile, "#pragma freefun \"%s\"\n",
+             PRAGMA_FREEFUN (arg_node));
   }
 
-  if (PRAGMA_INITFUN( arg_node)!=NULL) {
-    fprintf( global.outfile, "#pragma initfun \"%s\"\n", PRAGMA_INITFUN( arg_node));
+  if (PRAGMA_INITFUN (arg_node) != NULL) {
+    fprintf (global.outfile, "#pragma initfun \"%s\"\n",
+             PRAGMA_INITFUN (arg_node));
   }
 
-  if (PRAGMA_WLCOMP_APS( arg_node) != NULL) {
-    fprintf( global.outfile, "#pragma wlcomp ");
-    TRAVdo( PRAGMA_WLCOMP_APS( arg_node), arg_info);
-    fprintf( global.outfile, "\n");
+  if (PRAGMA_WLCOMP_APS (arg_node) != NULL) {
+    fprintf (global.outfile, "#pragma wlcomp ");
+    TRAVdo (PRAGMA_WLCOMP_APS (arg_node), arg_info);
+    fprintf (global.outfile, "\n");
   }
 
-  if (PRAGMA_APL( arg_node) != NULL) {
-    fprintf( global.outfile, "#pragma wlcomp ");
-    TRAVdo( PRAGMA_APL( arg_node), arg_info);
-    fprintf( global.outfile, "\n");
+  if (PRAGMA_APL (arg_node) != NULL) {
+    fprintf (global.outfile, "#pragma wlcomp ");
+    TRAVdo (PRAGMA_APL (arg_node), arg_info);
+    fprintf (global.outfile, "\n");
   }
 #endif
 
@@ -3294,44 +3284,42 @@ PRTmt (node *arg_node, info *arg_info)
     if (NODE_ERROR (arg_node) != NULL) {
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
     }
-
 #if 0 /***** TODO   */
   /* PrintAssign already indents */
-  fprintf( global.outfile, "MT {");
-  fprintf( global.outfile, " /*** begin of mt cell ***/\n");
+  fprintf (global.outfile, "MT {");
+  fprintf (global.outfile, " /*** begin of mt cell ***/\n");
 
-  if (MT_USEMASK( arg_node) != NULL) {
+  if (MT_USEMASK (arg_node) != NULL) {
     INDENT;
-    fprintf( global.outfile, "/* use:");
-    DFMPrintMask( global.outfile, " %s", MT_USEMASK( arg_node));
-    fprintf( global.outfile, " */\n");
+    fprintf (global.outfile, "/* use:");
+    DFMPrintMask (global.outfile, " %s", MT_USEMASK (arg_node));
+    fprintf (global.outfile, " */\n");
   }
-  if (MT_DEFMASK( arg_node) != NULL) {
+  if (MT_DEFMASK (arg_node) != NULL) {
     INDENT;
-    fprintf( global.outfile, "/* def:");
-    DFMPrintMask( global.outfile, " %s", MT_DEFMASK( arg_node));
-    fprintf( global.outfile, " */\n");
+    fprintf (global.outfile, "/* def:");
+    DFMPrintMask (global.outfile, " %s", MT_DEFMASK (arg_node));
+    fprintf (global.outfile, " */\n");
   }
-  if (MT_NEEDLATER( arg_node) != NULL) {
+  if (MT_NEEDLATER (arg_node) != NULL) {
     INDENT;
-    fprintf( global.outfile, "/* needlater:");
-    DFMPrintMask( global.outfile, " %s", MT_NEEDLATER( arg_node));
-    fprintf( global.outfile, " */\n");
+    fprintf (global.outfile, "/* needlater:");
+    DFMPrintMask (global.outfile, " %s", MT_NEEDLATER (arg_node));
+    fprintf (global.outfile, " */\n");
   }
 
   global.indent++;
-  if (MT_REGION( arg_node) != NULL) {
-    TRAVdo( MT_REGION( arg_node), arg_info);
-  }
-  else {
+  if (MT_REGION (arg_node) != NULL) {
+    TRAVdo (MT_REGION (arg_node), arg_info);
+  } else {
     INDENT;
-    fprintf( global.outfile, "/* ... Empty ... */");
+    fprintf (global.outfile, "/* ... Empty ... */");
   }
   global.indent--;
 
-  fprintf( global.outfile, "\n");
+  fprintf (global.outfile, "\n");
   INDENT;
-  fprintf( global.outfile, "} /*** end of mt cell ***/\n");
+  fprintf (global.outfile, "} /*** end of mt cell ***/\n");
 
 #endif
 
@@ -4350,58 +4338,51 @@ PRTwlgridvar (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 
-node *PRTcwrapper(node *arg_node, info *arg_info)
+node *
+PRTcwrapper (node * arg_node, info * arg_info)
 {
-  DBUG_ENTER("PrintCWrapper");
+  DBUG_ENTER ("PrintCWrapper");
 
-  if( NODE_ERROR( arg_node) != NULL) {
-    NODE_ERROR( arg_node) = TRAVdo( NODE_ERROR( arg_node), arg_info);
+  if (NODE_ERROR (arg_node) != NULL) {
+    NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
   }
-  
-  if ( global.compiler_phase != PH_genccode) {
+
+  if (global.compiler_phase != PH_genccode) {
     /* internal debug output of mapping-tree of wrappers */
-    DBUG_EXECUTE( "PRINT_CWRAPPER",
-      {
-        nodelist *funlist;
-        node *fundef;
-        char *type_str;
+    DBUG_EXECUTE ("PRINT_CWRAPPER", {
+                  nodelist * funlist;
+                  node * fundef;
+                  char *type_str;
+                  fprintf (global.outfile,
+                           "CWrapper %s with %d arg(s) and %d result(s)\n",
+                           CWRAPPER_NAME (arg_node),
+                           CWRAPPER_ARGCOUNT (arg_node),
+                           CWRAPPER_RESCOUNT (arg_node));
+                  funlist = CWRAPPER_FUNS (arg_node);
+                  while (funlist != NULL) {
+                  fundef = NODELIST_NODE (funlist);
+                  fprintf (global.outfile, "  overloaded for (");
+                  /* print args of function */
+                  if (FUNDEF_ARGS (fundef) != NULL) {
+                  TRAVdo (FUNDEF_ARGS (fundef), arg_info);}
 
-        fprintf( global.outfile, "CWrapper %s with %d arg(s) and %d result(s)\n",
-                          CWRAPPER_NAME(arg_node),
-                          CWRAPPER_ARGCOUNT(arg_node),
-                          CWRAPPER_RESCOUNT(arg_node));
+                  fprintf (global.outfile, ") -> (");
+                  /* print results of function */
+                  type_str =
+                  Type2String (FUNDEF_WRAPPERTYPES (fundef), 0, TRUE);
+                  fprintf (global.outfile, "%s", type_str);
+                  type_str = ILIBfree (type_str);
+                  fprintf (global.outfile, ")\n");
+                  funlist = NODELIST_NEXT (funlist);}
 
-        funlist = CWRAPPER_FUNS( arg_node);      
-        while(funlist != NULL) {
-          fundef = NODELIST_NODE(funlist);
-
-          fprintf( global.outfile, "  overloaded for (");
-          /* print args of function */
-          if (FUNDEF_ARGS( fundef) != NULL) {
-            TRAVdo( FUNDEF_ARGS( fundef), arg_info);
-          }
-
-          fprintf( global.outfile, ") -> (");
-
-          /* print results of function */
-          type_str = Type2String( FUNDEF_WRAPPERTYPES( fundef), 0, TRUE);
-          fprintf( global.outfile, "%s", type_str);
-          type_str = ILIBfree( type_str);
-
-          fprintf( global.outfile, ")\n");
-          funlist = NODELIST_NEXT(funlist);
-        }
-
-        fprintf(global.outfile, "\n\n");
-
-        if (CWRAPPER_NEXT( arg_node) != NULL) {
-          PRINT_CONT( TRAVdo( CWRAPPER_NEXT( arg_node), arg_info), ; );
-        }
-      }
+                  fprintf (global.outfile, "\n\n");
+                  if (CWRAPPER_NEXT (arg_node) != NULL) {
+                  PRINT_CONT (TRAVdo (CWRAPPER_NEXT (arg_node), arg_info),;);}
+                  }
     );
   }
 
-  DBUG_RETURN( arg_node);
+  DBUG_RETURN (arg_node);
 }
 
 #endif
