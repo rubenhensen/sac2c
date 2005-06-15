@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.47  2005/06/15 17:52:14  ktr
+ * with-loops with AUD results and AKS index vector are now equipped with a full
+ * partition
+ *
  * Revision 1.46  2005/06/15 16:43:58  ktr
  * Some brushing. Modarray with-loops with AUD result and AKS index vector
  * are not yet equipped with full partition.
@@ -1031,19 +1035,13 @@ CreateFullPartition (node *wln, info *arg_info)
             if (mshape) {
                 SHfreeShape (mshape);
             }
-        } else if (TYisAKD (array_type)) {
-
+        } else {
             nassigns
               = CreateIdxShapeSelAssigns (MODARRAY_ARRAY (WITH_WITHOP (wln)), 0,
                                           (gen_shape - 1), INFO_WLPG_FUNDEF (arg_info));
             array_shape = CreateStructConstant (array_shape, nassigns);
             INFO_WLPG_NASSIGNS (arg_info)
               = TCappendAssign (INFO_WLPG_NASSIGNS (arg_info), nassigns);
-        } else {
-            /* dimension unknown */
-            DBUG_ASSERT ((0), "Can not create upper array bound."
-                              "Dimension of modifying WL unknown!");
-            array_shape = NULL;
         }
     } break;
 
