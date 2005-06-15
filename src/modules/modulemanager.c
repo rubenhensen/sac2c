@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.19  2005/06/15 12:41:38  sah
+ * made error message more explanatory
+ *
  * Revision 1.18  2005/06/01 15:57:57  sah
  * fixed an error message
  *
@@ -152,9 +155,9 @@ AddModuleToPool (const char *name)
     }
 
     if (!hasSameASTVersion (result)) {
-        CTIabort ("Module `%s' was compiled using an incompatible version of "
+        CTIabort ("Module `%s' [%s] was compiled using an incompatible version of "
                   "sac2c.",
-                  name);
+                  name, result->sofile);
     }
 
     DBUG_RETURN (result);
