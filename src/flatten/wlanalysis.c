@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2005/06/15 17:50:55  ktr
+ * removed WLAmodarray as it only restricted with-loops with AUD result from
+ * obtaining a full partition.
+ *
  * Revision 1.4  2005/06/15 16:47:36  ktr
  * Some brushing. Modarray with-loops with AUD result and AKS index vector
  * are not yet equipped with full partition.
@@ -685,33 +689,6 @@ WLAgenarray (node *arg_node, info *arg_info)
         if (current_shape == GV_unknown_shape) {
             INFO_WLA_GENPROP (arg_info) = GPT_unknown;
         }
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *WLAmodarray( node *arg_node, info *arg_info)
- *
- *   @brief
- *
- *   @param  node *arg_node:  N_modarray
- *           info *arg_info:  N_info
- *   @return node *        :  N_modarray
- ******************************************************************************/
-
-node *
-WLAmodarray (node *arg_node, info *arg_info)
-{
-    ntype *array_type;
-
-    DBUG_ENTER ("WLAmodarray");
-
-    array_type = ID_NTYPE (MODARRAY_ARRAY (arg_node));
-
-    if (!(TYisAKV (array_type) || TYisAKS (array_type) || TYisAKD (array_type))) {
-        INFO_WLA_GENPROP (arg_info) = GPT_unknown;
     }
 
     DBUG_RETURN (arg_node);

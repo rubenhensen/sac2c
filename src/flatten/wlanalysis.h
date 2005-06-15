@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2005/06/15 17:50:55  ktr
+ * removed WLAmodarray as it only restricted with-loops with AUD result from
+ * obtaining a full partition.
+ *
  * Revision 1.2  2005/06/15 16:47:36  ktr
  * Some brushing. Modarray with-loops with AUD result and AKS index vector
  * are not yet equipped with full partition.
@@ -33,6 +37,5 @@ extern node *WLAwith (node *arg_node, info *arg_info);
 extern node *WLApart (node *arg_node, info *arg_info);
 extern node *WLAgenerator (node *arg_node, info *arg_info);
 extern node *WLAgenarray (node *arg_node, info *arg_info);
-extern node *WLAmodarray (node *arg_node, info *arg_info);
 
 #endif /* _SAC_WLANALYSIS_H_ */
