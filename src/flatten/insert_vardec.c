@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.24  2005/06/15 13:03:46  sbs
+ * improved error messages.
+ *
  * Revision 1.23  2005/06/09 15:16:17  sbs
  * added support for void functions, i.e., LHS of let is not mendatory
  * anymore ;-)
@@ -363,7 +366,7 @@ INSVDspid (node *arg_node, info *arg_info)
 
         if (vardec == NULL) {
             CTIerrorLine (global.linenum,
-                          "Vardec for Identifier with name '%s` is not available",
+                          "Identifier '%s` used without previous definition",
                           SPID_NAME (arg_node));
         } else {
             /*
