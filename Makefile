@@ -1,6 +1,10 @@
 
 #
 # $Log$
+# Revision 3.171  2005/06/15 10:54:19  sbs
+# libsac2c rule added
+# could have deps in all, sac2c.prod but considered overhead during development
+#
 # Revision 3.170  2005/06/14 12:27:35  sah
 # use libtool to build sac2c
 #
@@ -369,6 +373,9 @@ endif
 
 sac2c: $(OBJ) $(LIB)
 	$(LIBTOOL) $(CC) $(CCFLAGS) $(CFLAGS) -o sac2c $(OBJ) $(LIB) $(LIBS) $(LDDYNFLAG)
+
+libsac2c: sac2c
+	$(MAKE) -C src/libsac libsac2c.so
 
 sac2c.efence: $(OBJ) $(LIB)
 	$(LIBTOOL) $(CC) $(CCFLAGS) $(CFLAGS) -o sac2c.efence $(OBJ) $(LIB) $(LIBS) $(EFLIBS) $(LDDYNFLAG)
