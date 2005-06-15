@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.36  2005/06/15 10:34:16  sbs
+ * F_dispatch_error added.
+ *
  * Revision 3.35  2005/02/15 10:43:09  mwe
  * esd_neg and esd_rec added
  *
@@ -226,6 +229,8 @@ PRF_IF (F_toi_S, "F_toi_S", "_toi_S_", "toi", FALSE, 1, NTCCTprf_toiS, COtoi),
           NULL),
   PRF_IF (F_type_error, "F_type_error", "_type_error_", "type_error", FALSE, 1,
           NTCCTprf_dummy, NULL),
+  PRF_IF (F_dispatch_error, "F_dispatch_error", "_dispatch_error_", "dispatch_error",
+          FALSE, 1, NTCCTprf_dummy, NULL),
 
   PRF_IF (F_phi, "F_phi", "_phi_", "phi", FALSE, 2, NTCCTprf_dummy, NULL),
 
