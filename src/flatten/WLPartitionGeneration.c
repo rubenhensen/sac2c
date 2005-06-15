@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.45  2005/06/15 08:43:46  ktr
+ * some bugfixing
+ *
  * Revision 1.44  2005/06/14 08:52:04  khf
  * moved adding of default partitions in wldefaultpartition
  *
@@ -309,6 +312,33 @@ FreeInfo (info *info)
 typedef enum { GPT_empty, GPT_full, GPT_partial, GPT_unknown } gen_prop_t;
 
 typedef enum { SP_mod, SP_func } sub_phase_t;
+
+/** <!--********************************************************************-->
+ *
+ * @fn node RemoveUnusedCodes(node *codes)
+ *
+ *   @brief removes all unused N_codes recursively
+ *
+ *   @param  node *codes : N_code chain
+ *   @return node *      : modified N_code chain
+ ******************************************************************************/
+static node *
+RemoveUnusedCodes (node *codes)
+{
+    DBUG_ENTER ("RemoveUnusedCodes");
+    DBUG_ASSERT ((codes != NULL), "no codes available!");
+    DBUG_ASSERT ((NODE_TYPE (codes) == N_code), "type of codes is not N_code!");
+
+    if (CODE_NEXT (codes) != NULL) {
+        CODE_NEXT (codes) = RemoveUnusedCodes (CODE_NEXT (codes));
+    }
+
+    if (CODE_USED (codes) == 0) {
+        codes = FREEdoFreeNode (codes);
+    }
+
+    DBUG_RETURN (codes);
+}
 
 /** <!--********************************************************************-->
  *
@@ -1509,6 +1539,12 @@ WLPGwith (node *arg_node, info *arg_info)
         } else if (INFO_WLPG_GENPROP (arg_info) == GPT_full) {
             WITH_PARTS (arg_node) = 1;
 
+            /* delete default partition */
+            if (PART_NEXT (WITH_PART (arg_node)) != NULL) {
+                PART_NEXT (WITH_PART (arg_node))
+                  = FREEdoFreeTree (PART_NEXT (WITH_PART (arg_node)));
+            }
+
             if (NODE_TYPE (WITH_WITHOP (arg_node)) == N_genarray) {
                 def = GENARRAY_DEFAULT (WITH_WITHOP (arg_node));
 
@@ -1523,6 +1559,11 @@ WLPGwith (node *arg_node, info *arg_info)
             arg_node = CreateFullPartition (arg_node, arg_info);
         }
     }
+
+    /*
+     * Remove unused codes (former default codes)
+     */
+    WITH_CODE (arg_node) = RemoveUnusedCodes (WITH_CODE (arg_node));
 
     INFO_WLPG_WL (arg_info) = NULL;
     INFO_WLPG_LET (arg_info) = NULL;
