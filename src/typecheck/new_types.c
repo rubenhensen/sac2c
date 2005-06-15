@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.89  2005/06/15 12:46:39  sah
+ * added serialisation of bottom types
+ *
  * Revision 3.88  2005/06/15 10:24:30  sbs
  * call history added to error messages.
  * TYextendBottomError added.
@@ -6408,6 +6411,16 @@ SerializePolyType (FILE *file, ntype *type)
 }
 
 static void
+SerializeBottomType (FILE *file, ntype *type)
+{
+    DBUG_ENTER ("SerializeBottomType");
+
+    fprintf (file, "TYdeserializeType( %d, \"%s\")", NTYPE_CON (type), BOTTOM_MSG (type));
+
+    DBUG_VOID_RETURN;
+}
+
+static void
 SerializeDummyType (FILE *file, ntype *type)
 {
     DBUG_ENTER ("SerializeDummyType");
@@ -6485,6 +6498,9 @@ TYserializeType (FILE *file, ntype *type)
             break;
         case TC_poly:
             SerializePolyType (file, type);
+            break;
+        case TC_bottom:
+            SerializeBottomType (file, type);
             break;
         case TC_dummy:
             SerializeDummyType (file, type);
@@ -6727,6 +6743,13 @@ TYdeserializeType (typeconstr con, ...)
 
         va_end (args);
     } break;
+    case TC_bottom: {
+        va_start (args, con);
+
+        result = TYmakeBottomType (ILIBstringCopy (va_arg (args, char *)));
+
+        va_end (args);
+    }
     case TC_dummy: {
         result = MakeNtype (TC_dummy, 0);
     } break;
