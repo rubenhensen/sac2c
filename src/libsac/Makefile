@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.22  2005/06/15 10:48:17  sbs
+# made libsac2c.so dependent on PROJECT_ROOT sac2c
+#
 # Revision 3.21  2005/06/10 21:24:18  sbs
 # dependencies for libsac2c eliminated
 #
@@ -133,7 +136,7 @@ libsac_mt.a: $(OBJS_LIBSAC_MT)
 	$(CLOCK_SKEW_ELIMINATION) $@
 
 
-libsac2c.so: sac2c.sac
+libsac2c.so: sac2c.sac $(PROJECT_ROOT)/sac2c
 	sac2c -maxspec 0 -noopt -doDFR -O3 sac2c.sac
 
 $(PROJECT_ROOT)/sac2c:
