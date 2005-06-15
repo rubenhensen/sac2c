@@ -394,8 +394,7 @@
         <travuser>
 	  <node name="Typedef" />
 	  <node name="Fold" />
-	  <node name="Arg" />
-	  <node name="Vardec" />
+	  <node name="Avis" />
 	  <node name="SPAp" />
 	  <node name="SPId" />
 	  <node name="SPMop" />
