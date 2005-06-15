@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2005/06/15 16:47:36  ktr
+ * Some brushing. Modarray with-loops with AUD result and AKS index vector
+ * are not yet equipped with full partition.
+ *
  * Revision 1.3  2005/06/03 17:18:09  khf
  * shape information of indexvector rules
  *
@@ -41,6 +45,15 @@
 #include "WLPartitionGeneration.h"
 #include "wlanalysis.h"
 
+typedef enum {
+    GV_constant,
+    GV_struct_constant,
+    GV_known_shape,
+    GV_unknown_shape
+} gen_shape_t;
+
+typedef enum { IDX_known_shape, IDX_unknown_shape } idx_shape_t;
+
 /**
  * INFO structure
  */
@@ -49,9 +62,9 @@ struct INFO {
     node *fundef;
     node *let;
     node *nassigns;
-    int genprop;
-    int genshp;
-    int idxshp;
+    gen_prop_t genprop;
+    gen_shape_t genshp;
+    idx_shape_t idxshp;
     int shpext;
 };
 
@@ -79,9 +92,9 @@ MakeInfo ()
     INFO_WLA_WL (result) = NULL;
     INFO_WLA_FUNDEF (result) = NULL;
     INFO_WLA_NASSIGNS (result) = NULL;
-    INFO_WLA_GENPROP (result) = 0;
-    INFO_WLA_GENSHP (result) = 0;
-    INFO_WLA_IDXSHP (result) = 0;
+    INFO_WLA_GENPROP (result) = GPT_empty;
+    INFO_WLA_GENSHP (result) = GV_constant;
+    INFO_WLA_IDXSHP (result) = IDX_known_shape;
     INFO_WLA_SHPEXT (result) = 0;
 
     DBUG_RETURN (result);
@@ -96,17 +109,6 @@ FreeInfo (info *info)
 
     DBUG_RETURN (info);
 }
-
-typedef enum { GPT_empty, GPT_full, GPT_partial, GPT_unknown } gen_prop_t;
-
-typedef enum {
-    GV_constant,
-    GV_struct_constant,
-    GV_known_shape,
-    GV_unknown_shape
-} gen_shape_t;
-
-typedef enum { IDX_known_shape, IDX_unknown_shape } idx_shape_t;
 
 #ifndef DBUG_OFF
 static char *gen_prop_str[] = {"GPT_empty", "GPT_full", "GPT_partial", "GPT_unknown"};
@@ -663,7 +665,9 @@ WLAgenarray (node *arg_node, info *arg_info)
     if (GENARRAY_SHAPE (arg_node) != NULL) {
         GENARRAY_SHAPE (arg_node) = TRAVdo (GENARRAY_SHAPE (arg_node), arg_info);
     }
+
     current_shape = PropagateArrayConstants (&(GENARRAY_SHAPE (arg_node)));
+
     if ((current_shape >= GV_known_shape)
         && (INFO_WLA_IDXSHP (arg_info) == IDX_known_shape)) {
         nassigns = CreateNewAssigns (GENARRAY_SHAPE (arg_node), f_def,
@@ -728,24 +732,23 @@ WLAmodarray (node *arg_node, info *arg_info)
  *                                   returned. Possible values are
  *                                    (poss. ambiguities are resolved top
  *                                   to bottom):
- *                                   GPT_empty   : the generator is empty!
- *                                   GPT_full    : the generator covers the
- *                                                 entire range!
- *                                   GPT_partial : 1. the generator has constant
- *                                                    upper and lower bounds,
- *                                                    but  - most likely  - only
- *                                                    a part is covered!
- *                                                 2. the generator contains
- *                                                    at least one structural
- *                                                    constant at position of
- *                                                    bounds, step and width
- *                                   GPT_unknown : we don't know anything
+ *                  GPT_empty   : the generator is empty!
+ *                  GPT_full    : the generator covers the entire range!
+ *                  GPT_partial : 1. the generator has constant
+ *                                   upper and lower bounds,
+ *                                   but  - most likely  - only
+ *                                   a part is covered!
+ *                                2. the generator contains
+ *                                   at least one structural
+ *                                   constant at position of
+ *                                   bounds, step and width
+ *                  GPT_unknown : we don't know anything
  *
  *   @return node *               :  modified N_with
  ******************************************************************************/
 
 node *
-WLAdoWlAnalysis (node *wl, node *fundef, node *let, node **nassigns, int *gprop)
+WLAdoWlAnalysis (node *wl, node *fundef, node *let, node **nassigns, gen_prop_t *gprop)
 {
     info *arg_info;
 

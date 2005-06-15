@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.46  2005/06/15 16:43:58  ktr
+ * Some brushing. Modarray with-loops with AUD result and AKS index vector
+ * are not yet equipped with full partition.
+ *
  * Revision 1.45  2005/06/15 08:43:46  ktr
  * some bugfixing
  *
@@ -237,6 +241,8 @@
 #include "wldefaultpartition.h"
 #include "WLPartitionGeneration.h"
 
+typedef enum { SP_mod, SP_func } sub_phase_t;
+
 /**
  * INFO structure
  */
@@ -246,9 +252,7 @@ struct INFO {
     node *let;
     node *nassign;
     node *module;
-    int genprob;
-    int genshp;
-    int subphase;
+    sub_phase_t subphase;
 };
 
 /*******************************************************************************
@@ -260,10 +264,6 @@ struct INFO {
  *  - node : NASSIGNS: pointer to a list of new assigns, which where needed
  *                     to build structural constants and had to be inserted
  *                     in front of the considered with-loop.
- *  - int  : GENPROB : pointer to the status of the considered generator
- *                     concerning coverage of the entire range
- *  - int  : GENSHP  : pointer to the status of the bounds, step and width
- *                     of the considered generator concerning shape
  *
  ******************************************************************************/
 #define INFO_WLPG_WL(n) (n->wl)
@@ -271,8 +271,6 @@ struct INFO {
 #define INFO_WLPG_LET(n) (n->let)
 #define INFO_WLPG_NASSIGNS(n) (n->nassign)
 #define INFO_WLPG_MODULE(n) (n->module)
-#define INFO_WLPG_GENPROP(n) (n->genprob)
-#define INFO_WLPG_GENSHP(n) (n->genshp)
 #define INFO_WLPG_SUBPHASE(n) (n->subphase)
 
 /**
@@ -292,9 +290,7 @@ MakeInfo ()
     INFO_WLPG_LET (result) = NULL;
     INFO_WLPG_NASSIGNS (result) = NULL;
     INFO_WLPG_MODULE (result) = NULL;
-    INFO_WLPG_GENPROP (result) = 0;
-    INFO_WLPG_GENSHP (result) = 0;
-    INFO_WLPG_SUBPHASE (result) = 0;
+    INFO_WLPG_SUBPHASE (result) = SP_mod;
 
     DBUG_RETURN (result);
 }
@@ -308,10 +304,6 @@ FreeInfo (info *info)
 
     DBUG_RETURN (info);
 }
-
-typedef enum { GPT_empty, GPT_full, GPT_partial, GPT_unknown } gen_prop_t;
-
-typedef enum { SP_mod, SP_func } sub_phase_t;
 
 /** <!--********************************************************************-->
  *
@@ -1482,7 +1474,7 @@ WLPGwith (node *arg_node, info *arg_info)
 {
     node *let_tmp, *nassigns = NULL, *def;
     bool replace_wl = FALSE;
-    int gprop = 0;
+    gen_prop_t genprop = GPT_empty;
 
     DBUG_ENTER ("WLPGwith");
 
@@ -1515,48 +1507,71 @@ WLPGwith (node *arg_node, info *arg_info)
          */
         INFO_WLPG_WL (arg_info) = arg_node; /* store the current node for later */
 
-        /* analyse and prepare WL for generating a full partition
+        /*
+         * analyse and prepare WL for generating a full partition
          * Besides changes in the generator, two one is computed
          * during this traversal:
-         *
-         *  INFO_WLPG_GENPROP(arg_info) !!
          */
         DBUG_PRINT ("WLPG", ("call WLAdoWlAnalysis"));
         arg_node = WLAdoWlAnalysis (arg_node, INFO_WLPG_FUNDEF (arg_info),
-                                    INFO_WLPG_LET (arg_info), &(nassigns), &gprop);
+                                    INFO_WLPG_LET (arg_info), &(nassigns), &genprop);
 
         DBUG_PRINT ("WLPG", ("WLAdoWlAnalysis ended"));
 
         INFO_WLPG_NASSIGNS (arg_info)
           = TCappendAssign (INFO_WLPG_NASSIGNS (arg_info), nassigns);
 
-        INFO_WLPG_GENPROP (arg_info) = gprop;
-
-        if (INFO_WLPG_GENPROP (arg_info) == GPT_empty) {
+        switch (genprop) {
+        case GPT_empty:
+            /*
+             * with-loop is empty
+             */
             arg_node = CreateEmptyGenWLReplacement (arg_node, arg_info);
             replace_wl = TRUE;
+            break;
 
-        } else if (INFO_WLPG_GENPROP (arg_info) == GPT_full) {
+        case GPT_full:
+            /*
+             * Generator covers whole index range
+             */
             WITH_PARTS (arg_node) = 1;
 
-            /* delete default partition */
+            /*
+             * delete default partition
+             */
             if (PART_NEXT (WITH_PART (arg_node)) != NULL) {
                 PART_NEXT (WITH_PART (arg_node))
                   = FREEdoFreeTree (PART_NEXT (WITH_PART (arg_node)));
             }
 
+            /*
+             * Delete default partition if default element is AKS
+             */
             if (NODE_TYPE (WITH_WITHOP (arg_node)) == N_genarray) {
                 def = GENARRAY_DEFAULT (WITH_WITHOP (arg_node));
 
                 if ((def != NULL)
                     && (TYisAKV (ID_NTYPE (def)) || TYisAKS (ID_NTYPE (def)))) {
                     GENARRAY_DEFAULT (WITH_WITHOP (arg_node))
-                      = FREEdoFreeTree (GENARRAY_DEFAULT (WITH_WITHOP (arg_node)));
+                      = FREEdoFreeNode (GENARRAY_DEFAULT (WITH_WITHOP (arg_node)));
                 }
             }
+            break;
 
-        } else if ((INFO_WLPG_GENPROP (arg_info) == GPT_partial)) {
+        case GPT_partial:
+            /*
+             * Generator does not cover the whole index range
+             */
             arg_node = CreateFullPartition (arg_node, arg_info);
+            break;
+
+        case GPT_unknown:
+            /*
+             * Nothing has been inferred
+             */
+            DBUG_ASSERT ((!TYisAKS (IDS_NTYPE (WITH_VEC (arg_node)))),
+                         "WLPG failure: IV is AKS and GPT_unknown was inferred");
+            break;
         }
     }
 
