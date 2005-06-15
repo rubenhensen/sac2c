@@ -611,7 +611,6 @@
           <node name="Part" />
           <node name="Generator" />
           <node name="Genarray" />
-          <node name="Modarray" />
          </travuser>
       </traversal>
     </phase>
