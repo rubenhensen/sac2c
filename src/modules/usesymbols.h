@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2005/06/15 12:41:38  sah
+ * fixed symbol gathering
+ *
  * Revision 1.7  2005/03/17 14:02:26  sah
  * corrected handling of mops
  *
@@ -42,8 +45,7 @@ extern node *USSdoUseSymbols (node *modul);
 
 extern node *USStypedef (node *arg_node, info *arg_info);
 extern node *USSfold (node *arg_node, info *arg_info);
-extern node *USSarg (node *arg_node, info *arg_info);
-extern node *USSvardec (node *arg_node, info *arg_info);
+extern node *USSavis (node *arg_node, info *arg_info);
 extern node *USSspap (node *arg_node, info *arg_info);
 extern node *USSspmop (node *arg_node, info *arg_info);
 extern node *USSspid (node *arg_node, info *arg_info);

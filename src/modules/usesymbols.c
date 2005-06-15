@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2005/06/15 12:41:38  sah
+ * fixed symbol gathering
+ *
  * Revision 1.14  2005/05/18 13:56:51  sah
  * enabled caching of symboltables which
  * leads to a huge speedup when analysing use and import
@@ -152,12 +155,12 @@ MakeSymbolAvailable (const char *mod, const char *symb, stentrytype_t type, info
  * Traversal functions
  */
 
-ntype *
-USSNtype (ntype *arg_ntype, info *arg_info)
+static ntype *
+USSntype (ntype *arg_ntype, info *arg_info)
 {
     ntype *scalar;
 
-    DBUG_ENTER ("USSNtype");
+    DBUG_ENTER ("USSntype");
 
     /* get scalar base type of type */
     if (TYisArray (arg_ntype)) {
@@ -183,7 +186,7 @@ USStypedef (node *arg_node, info *arg_info)
     DBUG_ENTER ("USStypedef");
 
     if (TYPEDEF_NTYPE (arg_node) != NULL) {
-        TYPEDEF_NTYPE (arg_node) = USSNtype (TYPEDEF_NTYPE (arg_node), arg_info);
+        TYPEDEF_NTYPE (arg_node) = USSntype (TYPEDEF_NTYPE (arg_node), arg_info);
     }
 
     if (TYPEDEF_NEXT (arg_node) != NULL) {
@@ -194,17 +197,13 @@ USStypedef (node *arg_node, info *arg_info)
 }
 
 node *
-USSarg (node *arg_node, info *arg_info)
+USSavis (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("USSarg");
+    DBUG_ENTER ("USSavis");
 
-    DBUG_RETURN (arg_node);
-}
-
-node *
-USSvardec (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("USSvardec");
+    if (AVIS_TYPE (arg_node) != NULL) {
+        AVIS_TYPE (arg_node) = USSntype (AVIS_TYPE (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -285,6 +284,10 @@ USSmodule (node *arg_node, info *arg_info)
 
     if (MODULE_TYPES (arg_node) != NULL) {
         MODULE_TYPES (arg_node) = TRAVdo (MODULE_TYPES (arg_node), arg_info);
+    }
+
+    if (MODULE_FUNDECS (arg_node) != NULL) {
+        MODULE_FUNDECS (arg_node) = TRAVdo (MODULE_FUNDECS (arg_node), arg_info);
     }
 
     if (MODULE_FUNS (arg_node) != NULL) {
