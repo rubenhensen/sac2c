@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2005/06/16 09:49:25  sbs
+ * added sac_errors.h
+ *
  * Revision 3.9  2004/12/18 15:38:38  sbs
  * sac_audwl.h included
  *
@@ -99,6 +102,7 @@
 #include "sac_icm.h"
 
 #include "sac_message.h"
+#include "sac_errors.h"
 #include "sac_runtimecheck.h"
 #include "sac_bool.h"
 #include "sac_std.h"
