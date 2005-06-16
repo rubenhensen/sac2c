@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2005/06/16 15:55:11  sah
+ * intermediate fix
+ *
  * Revision 1.14  2005/06/16 15:34:22  sah
  * even better way of linking sac2c module
  *
@@ -180,8 +183,8 @@ AddSacLibs (str_buf *buffer)
     if (sac2clib != NULL) {
         ILIBstrBufPrint (buffer, sac2clib);
     } else {
-        CTIabort ("The sac-runtime library libsac2c.a can not be found! "
-                  "Check your installation of sac2c.");
+        /*  CTIabort( "The sac-runtime library libsac2c.a can not be found! "
+                    "Check your installation of sac2c."); */
     }
 
     DBUG_VOID_RETURN;
