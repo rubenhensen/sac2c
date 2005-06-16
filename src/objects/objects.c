@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2005/06/16 08:01:45  sbs
+ * F_dispatch_error supported
+ *
  * Revision 3.17  2005/01/11 12:35:07  cg
  * Removed superfluous include of Error.h
  *
@@ -970,7 +973,8 @@ OBJlet (node *arg_node, info *arg_info)
                  */
                 if ((NODE_TYPE (let_expr) == N_ap)
                     || ((NODE_TYPE (let_expr) == N_prf)
-                        && (PRF_PRF (let_expr) == F_type_error))) {
+                        && ((PRF_PRF (let_expr) == F_type_error)
+                            || (PRF_PRF (let_expr) == F_dispatch_error)))) {
                     args = AP_OR_PRF_ARGS (let_expr);
                     while (args != NULL) {
                         arg_id = EXPRS_EXPR (args);
