@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2005/06/16 15:19:46  sah
+ * made linking of sac2c implicit
+ *
  * Revision 1.12  2005/06/01 12:47:45  sah
  * added lots of runtime paths
  *
@@ -165,7 +168,7 @@ AddSacLibs (str_buf *buffer)
         }
     }
 
-    ILIBstrBufPrint (buffer, "-lsac ");
+    ILIBstrBufPrint (buffer, "-static -lsac -lsac2c");
 
     DBUG_VOID_RETURN;
 }
