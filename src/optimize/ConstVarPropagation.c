@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.21  2005/06/16 08:02:53  sbs
+ * F_dispatch_error supported.
+ *
  * Revision 1.20  2005/06/02 13:42:48  mwe
  * set SSAASSIGN if moving constant args in vardec chain
  *
@@ -636,6 +639,7 @@ CVPprf (node *arg_node, info *arg_info)
     case F_shape:
     case F_accu:
     case F_type_error:
+    case F_dispatch_error:
     case F_sel:
     case F_shape_sel:
         /*
