@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2005/06/16 10:00:44  sah
+ * fixed continue on error problem
+ *
  * Revision 1.10  2005/05/18 13:56:51  sah
  * enabled caching of symboltables which
  * leads to a huge speedup when analysing use and import
@@ -473,8 +476,16 @@ STentryIteratorInit (stsymbol_t *symbol)
 
     result = (stentryiterator_t *)ILIBmalloc (sizeof (stentryiterator_t));
 
-    result->head = symbol->head;
-    result->pos = symbol->head;
+    if (symbol != NULL) {
+        result->head = symbol->head;
+        result->pos = symbol->head;
+    } else {
+        /*
+         * create an empty iterator for unknown symbols
+         */
+        result->head = NULL;
+        result->pos = NULL;
+    }
 
     DBUG_RETURN (result);
 }

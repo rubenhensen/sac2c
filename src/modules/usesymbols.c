@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  2005/06/16 10:00:44  sah
+ * fixed continue on error problem
+ *
  * Revision 1.15  2005/06/15 12:41:38  sah
  * fixed symbol gathering
  *
@@ -113,12 +116,13 @@ FreeInfo (info *info)
  * helper functions
  */
 
-static void
+static bool
 CheckSymbolVisibility (const char *mod, const char *symb)
 {
     module_t *module;
     const sttable_t *table;
     stsymbol_t *symbol;
+    bool result = TRUE;
 
     DBUG_ENTER ("CheckSymbolVisibility");
 
@@ -130,11 +134,13 @@ CheckSymbolVisibility (const char *mod, const char *symb)
         || ((!(STsymbolVisibility (symbol) == SVT_exported))
             && (!(STsymbolVisibility (symbol) == SVT_provided)))) {
         CTIerrorLine (global.linenum, "Symbol `%s:%s' not defined", mod, symb);
+
+        result = FALSE;
     }
 
     module = MODMunLoadModule (module);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN (result);
 }
 
 static void
@@ -143,9 +149,9 @@ MakeSymbolAvailable (const char *mod, const char *symb, stentrytype_t type, info
     DBUG_ENTER ("MakeSymbolAvailable");
 
     if (!ILIBstringCompare (mod, MODULE_NAME (INFO_USS_MODULE (info)))) {
-        CheckSymbolVisibility (mod, symb);
-
-        DSaddSymbolByName (symb, type, mod);
+        if (CheckSymbolVisibility (mod, symb)) {
+            DSaddSymbolByName (symb, type, mod);
+        }
     }
 
     DBUG_VOID_RETURN;
