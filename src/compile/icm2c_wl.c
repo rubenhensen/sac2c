@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.45  2005/06/16 22:28:53  sbs
+ * bug in ASSERT macro eliinated.
+ *
  * Revision 3.44  2005/06/10 15:56:11  sbs
  * changed WL_EMM_ASSIGN compilation. As second arg to the SHAPE_FACTOR h-icm
  * we now pass 0 whenever dims < 0. This should cover the AUD case properly
@@ -621,8 +624,9 @@ ICMCompileWL_EMM_ASSIGN (char *val_NT, int val_sdim, char *to_NT, int to_sdim,
 #undef WL_EMM_ASSIGN
 
     ASSURE_TYPE_ASS (fprintf (global.outfile,
-                              "SAC_ND_A_DIM( %s) == (SAC_ND_A_DIM( %s) - %d)", val_NT,
-                              to_NT, (dims < 0 ? 0 : dims));
+                              "SAC_ND_A_DIM( %s) == (SAC_ND_A_DIM( %s) - SAC_ND_A_SIZE( "
+                              "%s))",
+                              val_NT, to_NT, idx_vec_NT);
                      , fprintf (global.outfile,
                                 "WL expression with illegal dimension found!"););
 
