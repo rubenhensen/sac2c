@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.160  2005/06/16 09:47:15  sbs
+ * changed TYPE_ERROR into DISPATCH_ERROR
+ * added TYPE_ERROR :-)
+ *
  * Revision 3.159  2005/06/15 18:22:31  ktr
  * -check tb: Descriptor for subarray is only built iff there actually is a
  * subarray (i.e. a Vardec named X_sub exists). Otherwise, no descriptor
@@ -4436,21 +4440,46 @@ COMPPrfBin (char *icm_name, node *arg_node, info *arg_info)
 static node *
 COMPPrfTypeError (node *arg_node, info *arg_info)
 {
-    node *let_ids;
-    node *head, *tail;
+    node *head;
     node *ret_node;
 
     DBUG_ENTER ("COMPPrfTypeError");
 
+    DBUG_ASSERT ((PRF_ARGS (arg_node) != NULL),
+                 "1st argument of F_type_error not found!");
+    head = EXPRS_EXPR (PRF_ARGS (arg_node));
+
+    ret_node = TCmakeAssignIcm1 ("TYPE_ERROR", DUPdoDupNode (head), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  node *COMPPrfDispatchError( node *arg_node, info *arg_info)
+ *
+ * @brief  ...
+ *
+ ******************************************************************************/
+
+static node *
+COMPPrfDispatchError (node *arg_node, info *arg_info)
+{
+    node *let_ids;
+    node *head, *tail;
+    node *ret_node;
+
+    DBUG_ENTER ("COMPPrfDispatchError");
+
     let_ids = INFO_COMP_LASTIDS (arg_info);
 
     DBUG_ASSERT ((PRF_ARGS (arg_node) != NULL),
-                 "1st argument of F_type_error not found!");
+                 "1st argument of F_dispatch_error not found!");
     head = EXPRS_EXPR (PRF_ARGS (arg_node));
     tail = EXPRS_NEXT (PRF_ARGS (arg_node));
 
     ret_node
-      = TCmakeAssignIcm5 ("TYPE_ERROR", TBmakeNum (TCcountIds (let_ids)),
+      = TCmakeAssignIcm5 ("DISPATCH_ERROR", TBmakeNum (TCcountIds (let_ids)),
                           TCids2Exprs (let_ids), DUPdoDupNode (head),
                           TBmakeNum (TCcountExprs (tail)), DUPdoDupTree (tail), NULL);
 
@@ -4497,228 +4526,227 @@ COMPprf (node *arg_node, info *arg_info)
 
     let_ids = INFO_COMP_LASTIDS (arg_info);
 
-    /*
-     * some prfs require a special treatment
-     */
-    if (PRF_PRF (arg_node) == F_type_error) {
-        /* F_type_error has multiple return values! */
+    switch (PRF_PRF (arg_node)) {
+        /*
+         * some prfs require a special treatment
+         */
+
+    case F_type_error:
         ret_node = COMPPrfTypeError (arg_node, arg_info);
-    } else if (PRF_PRF (arg_node) == F_to_unq) {
+        break;
+    case F_dispatch_error:
+        ret_node = COMPPrfDispatchError (arg_node, arg_info);
+        break;
+    case F_to_unq:
         ret_node = COMPIdToUnique (AP_ARG1 (arg_node), arg_info);
-    } else if (PRF_PRF (arg_node) == F_from_unq) {
+        break;
+    case F_from_unq:
         ret_node = COMPIdFromUnique (AP_ARG1 (arg_node), arg_info);
+
+        /*
+         *  explicit memory management instructions
+         */
+    case F_alloc:
+        ret_node = COMPPrfAlloc (arg_node, arg_info);
+        break;
+
+    case F_alloc_or_reuse:
+        ret_node = COMPPrfAllocOrReuse (arg_node, arg_info);
+        break;
+
+    case F_reuse:
+        DBUG_ASSERT ((0), "F_reuse must be eliminated before code generation");
+        break;
+
+    case F_reshape:
+        ret_node = COMPPrfReshape (arg_node, arg_info);
+        break;
+
+    case F_alloc_or_reshape:
+        ret_node = COMPPrfAllocOrReshape (arg_node, arg_info);
+        break;
+
+    case F_isreused:
+        ret_node = COMPPrfIsReused (arg_node, arg_info);
+        break;
+
+    case F_suballoc:
+        ret_node = COMPPrfSuballoc (arg_node, arg_info);
+        break;
+
+    case F_wl_assign:
+        ret_node = COMPPrfWLAssign (arg_node, arg_info);
+        break;
+
+    case F_copy:
+        ret_node = COMPPrfCopy (arg_node, arg_info);
+        break;
+
+    case F_noop:
+        ret_node = COMPPrfNoop (arg_node, arg_info);
+        break;
+
+    case F_free:
+        ret_node = COMPPrfFree (arg_node, arg_info);
+        break;
+
+    case F_dec_rc:
+        ret_node = COMPPrfDecRC (arg_node, arg_info);
+        break;
+
+    case F_inc_rc:
+        ret_node = COMPPrfIncRC (arg_node, arg_info);
+        break;
+
+    case F_accu:
+        ret_node = TCmakeAssignIcm0 ("NOOP", NULL);
+        break;
+
+        /*
+         *  convert operations
+         */
+
+    case F_toi_S:
+    case F_tof_S:
+    case F_tod_S:
+        ret_node = COMPPrfConvertScalar (arg_node, arg_info);
+        break;
+
+        /*
+         *  arithmetical operations
+         */
+
+    case F_neg:
+        ret_node = COMPPrfUniScalar ("SAC_PRF_NEG", arg_node, arg_info);
+        break;
+
+    case F_abs:
+        ret_node = COMPPrfUniScalar ("SAC_PRF_ABS", arg_node, arg_info);
+        break;
+
+    case F_not:
+        ret_node = COMPPrfUniScalar ("SAC_PRF_UNIOP", arg_node, arg_info);
+        break;
+
+    case F_min:
+        ret_node = COMPPrfBin ("SAC_PRF_MIN", arg_node, arg_info);
+        break;
+
+    case F_max:
+        ret_node = COMPPrfBin ("SAC_PRF_MAX", arg_node, arg_info);
+        break;
+
+    case F_add_SxS:
+    case F_add_SxA:
+    case F_add_AxS:
+    case F_add_AxA:
+    case F_sub_SxS:
+    case F_sub_SxA:
+    case F_sub_AxS:
+    case F_sub_AxA:
+    case F_mul_SxS:
+    case F_mul_SxA:
+    case F_mul_AxS:
+    case F_mul_AxA:
+    case F_div_SxS:
+    case F_div_SxA:
+    case F_div_AxS:
+    case F_div_AxA:
+    case F_mod:
+    case F_and:
+    case F_or:
+    case F_le:
+    case F_lt:
+    case F_eq:
+    case F_neq:
+    case F_ge:
+    case F_gt:
+        ret_node = COMPPrfBin ("SAC_PRF_BINOP", arg_node, arg_info);
+        break;
+
+        /*
+         *  array operations (intrinsics)
+         */
+
+    case F_dim:
+        ret_node = COMPPrfDim (arg_node, arg_info);
+        break;
+
+    case F_shape:
+        ret_node = COMPPrfShape (arg_node, arg_info);
+        break;
+
+    case F_idx_sel:
+        ret_node = COMPPrfIdxSel (arg_node, arg_info);
+        break;
+
+    case F_idx_modarray:
+        ret_node = COMPPrfIdxModarray (arg_node, arg_info);
+        break;
+
+    case F_shape_sel:
+        ret_node = COMPPrfShapeSel (arg_node, arg_info);
+        break;
+
+    case F_idx_shape_sel:
+        ret_node = COMPPrfIdxShapeSel (arg_node, arg_info);
+        break;
+
+    case F_sel:
+        ret_node = COMPPrfSel (arg_node, arg_info);
+        break;
+
+    case F_modarray:
+        ret_node = COMPPrfModarray (arg_node, arg_info);
+        break;
+
+    case F_genarray:
+        ret_node = COMPPrfGenarray (arg_node, arg_info);
+        break;
+
+    case F_cat_VxV:
+        ret_node = COMPPrfCat (arg_node, arg_info);
+        break;
+
+    case F_take_SxV:
+        ret_node = COMPPrfTake (arg_node, arg_info);
+        break;
+
+    case F_drop_SxV:
+        ret_node = COMPPrfDrop (arg_node, arg_info);
+        break;
+
+        /*
+         *  array operations (non-intrinsics)
+         */
+
+    case F_toi_A:
+    case F_tof_A:
+    case F_tod_A:
+        ret_node = COMPPrfConvertArray (arg_node, arg_info);
+        break;
+
+    case F_take:
+    case F_drop:
+    case F_cat:
+    case F_rotate:
+        DBUG_ASSERT ((0), "Non-instrinsic primitive functions not implemented!"
+                          " Use array.lib instead!");
+        ret_node = NULL;
+        break;
+
+        /*
+         *  otherwise
+         */
+
+    default:
+        DBUG_ASSERT ((0), "unknown prf found!");
+        ret_node = NULL;
+        break;
     }
 
-    /*
-     * the remaining prfs can be compiled in a common way
-     */
-    else {
-        switch (PRF_PRF (arg_node)) {
-            /*
-             *  explicit memory management instructions
-             */
-        case F_alloc:
-            ret_node = COMPPrfAlloc (arg_node, arg_info);
-            break;
-
-        case F_alloc_or_reuse:
-            ret_node = COMPPrfAllocOrReuse (arg_node, arg_info);
-            break;
-
-        case F_reuse:
-            DBUG_ASSERT ((0), "F_reuse must be eliminated before code generation");
-            break;
-
-        case F_reshape:
-            ret_node = COMPPrfReshape (arg_node, arg_info);
-            break;
-
-        case F_alloc_or_reshape:
-            ret_node = COMPPrfAllocOrReshape (arg_node, arg_info);
-            break;
-
-        case F_isreused:
-            ret_node = COMPPrfIsReused (arg_node, arg_info);
-            break;
-
-        case F_suballoc:
-            ret_node = COMPPrfSuballoc (arg_node, arg_info);
-            break;
-
-        case F_wl_assign:
-            ret_node = COMPPrfWLAssign (arg_node, arg_info);
-            break;
-
-        case F_copy:
-            ret_node = COMPPrfCopy (arg_node, arg_info);
-            break;
-
-        case F_noop:
-            ret_node = COMPPrfNoop (arg_node, arg_info);
-            break;
-
-        case F_free:
-            ret_node = COMPPrfFree (arg_node, arg_info);
-            break;
-
-        case F_dec_rc:
-            ret_node = COMPPrfDecRC (arg_node, arg_info);
-            break;
-
-        case F_inc_rc:
-            ret_node = COMPPrfIncRC (arg_node, arg_info);
-            break;
-
-        case F_accu:
-            ret_node = TCmakeAssignIcm0 ("NOOP", NULL);
-            break;
-
-            /*
-             *  convert operations
-             */
-
-        case F_toi_S:
-        case F_tof_S:
-        case F_tod_S:
-            ret_node = COMPPrfConvertScalar (arg_node, arg_info);
-            break;
-
-            /*
-             *  arithmetical operations
-             */
-
-        case F_neg:
-            ret_node = COMPPrfUniScalar ("SAC_PRF_NEG", arg_node, arg_info);
-            break;
-
-        case F_abs:
-            ret_node = COMPPrfUniScalar ("SAC_PRF_ABS", arg_node, arg_info);
-            break;
-
-        case F_not:
-            ret_node = COMPPrfUniScalar ("SAC_PRF_UNIOP", arg_node, arg_info);
-            break;
-
-        case F_min:
-            ret_node = COMPPrfBin ("SAC_PRF_MIN", arg_node, arg_info);
-            break;
-
-        case F_max:
-            ret_node = COMPPrfBin ("SAC_PRF_MAX", arg_node, arg_info);
-            break;
-
-        case F_add_SxS:
-        case F_add_SxA:
-        case F_add_AxS:
-        case F_add_AxA:
-        case F_sub_SxS:
-        case F_sub_SxA:
-        case F_sub_AxS:
-        case F_sub_AxA:
-        case F_mul_SxS:
-        case F_mul_SxA:
-        case F_mul_AxS:
-        case F_mul_AxA:
-        case F_div_SxS:
-        case F_div_SxA:
-        case F_div_AxS:
-        case F_div_AxA:
-        case F_mod:
-        case F_and:
-        case F_or:
-        case F_le:
-        case F_lt:
-        case F_eq:
-        case F_neq:
-        case F_ge:
-        case F_gt:
-            ret_node = COMPPrfBin ("SAC_PRF_BINOP", arg_node, arg_info);
-            break;
-
-            /*
-             *  array operations (intrinsics)
-             */
-
-        case F_dim:
-            ret_node = COMPPrfDim (arg_node, arg_info);
-            break;
-
-        case F_shape:
-            ret_node = COMPPrfShape (arg_node, arg_info);
-            break;
-
-        case F_idx_sel:
-            ret_node = COMPPrfIdxSel (arg_node, arg_info);
-            break;
-
-        case F_idx_modarray:
-            ret_node = COMPPrfIdxModarray (arg_node, arg_info);
-            break;
-
-        case F_shape_sel:
-            ret_node = COMPPrfShapeSel (arg_node, arg_info);
-            break;
-
-        case F_idx_shape_sel:
-            ret_node = COMPPrfIdxShapeSel (arg_node, arg_info);
-            break;
-
-        case F_sel:
-            ret_node = COMPPrfSel (arg_node, arg_info);
-            break;
-
-        case F_modarray:
-            ret_node = COMPPrfModarray (arg_node, arg_info);
-            break;
-
-        case F_genarray:
-            ret_node = COMPPrfGenarray (arg_node, arg_info);
-            break;
-
-        case F_cat_VxV:
-            ret_node = COMPPrfCat (arg_node, arg_info);
-            break;
-
-        case F_take_SxV:
-            ret_node = COMPPrfTake (arg_node, arg_info);
-            break;
-
-        case F_drop_SxV:
-            ret_node = COMPPrfDrop (arg_node, arg_info);
-            break;
-
-            /*
-             *  array operations (non-intrinsics)
-             */
-
-        case F_toi_A:
-        case F_tof_A:
-        case F_tod_A:
-            ret_node = COMPPrfConvertArray (arg_node, arg_info);
-            break;
-
-        case F_take:
-        case F_drop:
-        case F_cat:
-        case F_rotate:
-            DBUG_ASSERT ((0), "Non-instrinsic primitive functions not implemented!"
-                              " Use array.lib instead!");
-            ret_node = NULL;
-            break;
-
-            /*
-             *  otherwise
-             */
-
-        default:
-            DBUG_ASSERT ((0), "unknown prf found!");
-            ret_node = NULL;
-            break;
-        }
-
-        DBUG_ASSERT (((ret_node != NULL) && (NODE_TYPE (ret_node) == N_assign)),
-                     "no assignment chain found!");
-    }
+    DBUG_ASSERT (((ret_node != NULL) && (NODE_TYPE (ret_node) == N_assign)),
+                 "no assignment chain found!");
 
     DBUG_RETURN (ret_node);
 }
