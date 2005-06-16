@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.90  2005/06/16 09:51:47  sbs
+ * we now issue F_dispatch_error if instances are not found
+ * rather than F_type_error
+ *
  * Revision 3.89  2005/06/15 12:46:39  sah
  * added serialisation of bottom types
  *
@@ -5638,8 +5642,8 @@ BranchesAreEquivalent (node *assigns1, node *assigns2)
     if ((prf_or_fundef1 != NULL) && (prf_or_fundef2 != NULL)) {
         if ((NODE_TYPE (prf_or_fundef1) == N_prf)
             && (NODE_TYPE (prf_or_fundef2) == N_prf)) {
-            DBUG_ASSERT (((PRF_PRF (prf_or_fundef1) == F_type_error)
-                          && (PRF_PRF (prf_or_fundef2) == F_type_error)),
+            DBUG_ASSERT (((PRF_PRF (prf_or_fundef1) == F_dispatch_error)
+                          && (PRF_PRF (prf_or_fundef2) == F_dispatch_error)),
                          "illegal prf found!");
             res = TRUE;
         } else if ((NODE_TYPE (prf_or_fundef1) == N_fundef)
@@ -5853,7 +5857,7 @@ BuildErrorAssign (char *funname, node *args, node *vardecs)
     DBUG_ENTER ("BuildErrorAssign");
 
     assigns = TBmakeAssign (TBmakeLet (TCmakeIdsFromVardecs (vardecs),
-                                       TBmakePrf (F_type_error,
+                                       TBmakePrf (F_dispatch_error,
                                                   TBmakeExprs (TCmakeStrCopy (funname),
                                                                Args2Exprs (args)))),
                             NULL);
