@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.34  2005/06/16 08:04:05  sbs
+ * F_dispatch_error treated in the same way as F_type_error
+ *
  * Revision 1.33  2005/03/17 19:37:43  sbs
  * EMALwith now can handle two parts as well.
  *
@@ -1431,6 +1434,7 @@ EMALprf (node *arg_node, info *arg_info)
         break;
 
     case F_type_error:
+    case F_dispatch_error:
         /*
          * v,... = _type_error_( ...)
          * _type_error_ requires a special treatment as
