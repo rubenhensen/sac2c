@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2005/06/16 09:48:48  sbs
+ * changed TYPE_ERROR into DISPATCH_ERROR
+ *
  * Revision 1.5  2004/11/21 22:04:36  ktr
  * Ismop SacDevCamp 04
  *
@@ -21,7 +24,7 @@
 #ifndef _SAC_ICM2C_ERROR_H_
 #define _SAC_ICM2C_ERROR_H_
 
-extern void ICMCompileTYPE_ERROR (int cnt_to, char **to_ANY, char *funname, int cnt_from,
-                                  char **from_ANY);
+extern void ICMCompileDISPATCH_ERROR (int cnt_to, char **to_ANY, char *funname,
+                                      int cnt_from, char **from_ANY);
 
 #endif /* _SAC_ICM2C_ERROR_H_ */

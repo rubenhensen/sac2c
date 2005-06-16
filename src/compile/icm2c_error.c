@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2005/06/16 09:48:48  sbs
+ * changed TYPE_ERROR into DISPATCH_ERROR
+ *
  * Revision 1.7  2004/11/25 10:26:46  jhb
  * compile SACdevCamp 2k4
  *
@@ -37,30 +40,37 @@
 /******************************************************************************
  *
  * function:
- *   void ICMCompileTYPE_ERROR( int cnt_to,   char **to_ANY,
- *                              int cnt_from, char **from_ANY)
+ *   void ICMCompileDISPATCH_ERROR( int cnt_to,   char **to_ANY,
+ *                                  int cnt_from, char **from_ANY)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   TYPE_ERROR( cnt_to,   [ to_sdim,   to_nt   ]* , funname,
- *               cnt_from, [ from_sdim, from_nt ]* )
+ *   DISPATCH_ERROR( cnt_to,   [ to_sdim,   to_nt   ]* , funname,
+ *                   cnt_from, [ from_sdim, from_nt ]* )
  *
  ******************************************************************************/
 
 void
-ICMCompileTYPE_ERROR (int cnt_to, char **to_ANY, char *funname, int cnt_from,
-                      char **from_ANY)
+ICMCompileDISPATCH_ERROR (int cnt_to, char **to_ANY, char *funname, int cnt_from,
+                          char **from_ANY)
 {
-    DBUG_ENTER ("ICMCompileTYPE_ERROR");
 
-#define TYPE_ERROR
+    DBUG_ENTER ("ICMCompileDISPATCH_ERROR");
+
+#define DISPATCH_ERROR
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef TYPE_ERROR
+#undef DISPATCH_ERROR
 
     INDENT;
 #if 0
+  /**
+   * requires the implementation of SAC_RuntimeError_Mult
+   * and SAC_PrintShape......
+   * i.e. FUTURE WORK!!!
+   * Until then, we go with a less instructive message (see below).
+   */
   fprintf( global.outfile, "SAC_RuntimeError_Mult( ");
   fprintf( global.outfile, "%i", cnt_from + 1);
   fprintf( global.outfile, ", ");

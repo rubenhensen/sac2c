@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.78  2005/06/16 09:47:59  sbs
+ * changed TYPE_ERROR into DISPATCH_ERROR
+ *
  * Revision 3.77  2004/11/24 20:17:35  jhb
  * TRACE_* changed to ICM_TRACE_NONE or ICM_TRACE(flag)
  *
@@ -1205,12 +1208,12 @@ ICM_END( MT_SCHEDULER_Affinity_INIT, (sched_id, ts_name, ts_dims,
 #endif
 
 
-#if defined(TYPE_ERROR) || defined(ICM_ALL)
-ICM_DEF( TYPE_ERROR, ICM_TRACE_NONE)
+#if defined(DISPATCH_ERROR) || defined(ICM_ALL)
+ICM_DEF( DISPATCH_ERROR, ICM_TRACE_NONE)
   ICM_INT( cnt_to)
   ICM_VARANY( (cnt_to), to_ANY)
   ICM_STR( funname)
   ICM_INT( cnt_from)
   ICM_VARANY( (cnt_from), from_ANY)
-ICM_END( TYPE_ERROR, (cnt_to, to_ANY, funname, cnt_from, from_ANY))
+ICM_END( DISPATCH_ERROR, (cnt_to, to_ANY, funname, cnt_from, from_ANY))
 #endif
