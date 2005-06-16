@@ -256,6 +256,16 @@ GDPmodule (node *arg_node, info *arg_info)
 
     INFO_GDP_MODULE (arg_info) = arg_node;
 
+    /*
+     * every module depends on the special sac2c module,
+     * as later phases may introduce references to that
+     * module which are not present here. Maybe one should
+     * do this more nicely sometime...
+     *
+     * TODO: sah implement properly
+     */
+    AddNamespaceToDependencies ("sac2c", arg_info);
+
     arg_node = TRAVcont (arg_node, arg_info);
 
     INFO_GDP_MODULE (arg_info) = NULL;
