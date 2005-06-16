@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2005/06/16 15:34:22  sah
+ * even better way of linking sac2c module
+ *
  * Revision 1.13  2005/06/16 15:19:46  sah
  * made linking of sac2c implicit
  *
@@ -150,6 +153,8 @@ AddCCLibs (str_buf *buffer)
 static void
 AddSacLibs (str_buf *buffer)
 {
+    const char *sac2clib;
+
     DBUG_ENTER ("AddSacLibs");
 
     if (global.optimize.dophm) {
@@ -168,7 +173,16 @@ AddSacLibs (str_buf *buffer)
         }
     }
 
-    ILIBstrBufPrint (buffer, "-static -lsac -lsac2c");
+    ILIBstrBufPrint (buffer, "-lsac ");
+
+    sac2clib = FMGRfindFile (PK_lib_path, "libsac2c.a");
+
+    if (sac2clib != NULL) {
+        ILIBstrBufPrint (buffer, sac2clib);
+    } else {
+        CTIabort ("The sac-runtime library libsac2c.a can not be found! "
+                  "Check your installation of sac2c.");
+    }
 
     DBUG_VOID_RETURN;
 }
