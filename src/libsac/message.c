@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2005/06/16 09:50:44  sbs
+ * added support for mult-line format strings encoded by @-symbols
+ *
  * Revision 3.4  2005/06/10 17:34:09  sbs
  * SAC_RuntimeErrorLine added.
  *
@@ -67,6 +70,7 @@
  *****************************************************************************/
 
 #include <stdio.h>
+#include <strings.h>
 #include <stdarg.h>
 #include <stdlib.h>
 
@@ -93,6 +97,8 @@ void
 SAC_RuntimeError (char *format, ...)
 {
     va_list arg_p;
+    char *line;
+    char *tmp;
 
     SAC_MT_ACQUIRE_LOCK (SAC_MT_output_lock);
 
@@ -104,10 +110,18 @@ SAC_RuntimeError (char *format, ...)
      */
 
     fprintf (stderr, "\n\n*** SAC runtime error\n");
-    fprintf (stderr, "*** ");
 
     va_start (arg_p, format);
-    vfprintf (stderr, format, arg_p);
+
+    tmp = strdup (format);
+    line = strtok (tmp, "@");
+    while (line != NULL) {
+        fprintf (stderr, "*** ");
+        vfprintf (stderr, line, arg_p);
+        fprintf (stderr, "\n");
+        line = strtok (NULL, "@");
+    }
+
     va_end (arg_p);
 
     fprintf (stderr, "\n\n");
@@ -132,7 +146,7 @@ SAC_RuntimeErrorLine (int line, char *format, ...)
      */
 
     fprintf (stderr, "\n\n*** SAC runtime error\n");
-    fprintf (stderr, "*** Line %d: ", line);
+    fprintf (stderr, "*** line %d\n*** ", line);
 
     va_start (arg_p, format);
     vfprintf (stderr, format, arg_p);
