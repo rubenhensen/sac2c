@@ -2,6 +2,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2005/06/16 18:33:23  sbs
+ * fixed iv-access problem in case of empty generator shape
+ *
  * Revision 1.5  2005/06/10 15:57:44  sbs
  * added support for check-tb which requires SHAPE_FACTOR.
  * However, we have to use a degenerate version here, as we do not
@@ -149,12 +152,14 @@
 
 #define SAC_AUD_WL_END(idx_vec_NT, res_NT)                                               \
     SAC_d = SAC_max_d;                                                                   \
-    SAC_ND_WRITE (idx_vec_NT, SAC_d) = SAC_ND_READ (idx_vec_NT, SAC_d) + 1;              \
-    while ((SAC_d > 0)                                                                   \
-           && (SAC_ND_READ (idx_vec_NT, SAC_d) == SAC_ND_A_SHAPE (res_NT, SAC_d))) {     \
-        SAC_ND_WRITE (idx_vec_NT, SAC_d) = 0;                                            \
-        SAC_d--;                                                                         \
+    if (SAC_d >= 0) {                                                                    \
         SAC_ND_WRITE (idx_vec_NT, SAC_d) = SAC_ND_READ (idx_vec_NT, SAC_d) + 1;          \
+        while ((SAC_d > 0)                                                               \
+               && (SAC_ND_READ (idx_vec_NT, SAC_d) == SAC_ND_A_SHAPE (res_NT, SAC_d))) { \
+            SAC_ND_WRITE (idx_vec_NT, SAC_d) = 0;                                        \
+            SAC_d--;                                                                     \
+            SAC_ND_WRITE (idx_vec_NT, SAC_d) = SAC_ND_READ (idx_vec_NT, SAC_d) + 1;      \
+        }                                                                                \
     }                                                                                    \
     SAC_WL_OFFSET (res_NT) += SAC_off_inc;                                               \
     }                                                                                    \
