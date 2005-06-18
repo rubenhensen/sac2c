@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.105  2005/06/18 18:06:00  sah
+ * moved entire dependency handling to dependencies.c
+ * the dependency table is now created shortly prior
+ * to c code generation
+ *
  * Revision 3.104  2005/06/06 13:26:40  jhb
  * added PHrunCompilerSubPhase
  *
@@ -572,6 +577,15 @@ main (int argc, char *argv[])
      */
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
+
+    if (global.filetype != F_prog) {
+        /*
+         * finally generate the dependency table.
+         * we do this here as new dependencies may be introduced
+         * during the compilation steps up to here
+         */
+        DEPgenerateDependencyTable (dependencies);
+    }
 
     CCMinvokeCC (dependencies);
 

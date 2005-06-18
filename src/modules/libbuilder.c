@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2005/06/18 18:06:00  sah
+ * moved entire dependency handling to dependencies.c
+ * the dependency table is now created shortly prior
+ * to c code generation
+ *
  * Revision 1.8  2005/05/31 09:45:35  sah
  * libbuilding process now uses -o flag to determine
  * targetdir
@@ -39,6 +44,7 @@
 #include "internal_lib.h"
 #include "stringset.h"
 #include "resource.h"
+#include "filemgr.h"
 
 #include <string.h>
 

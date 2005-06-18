@@ -1,5 +1,10 @@
 /*
  * $Log$
+ * Revision 1.4  2005/06/18 18:06:00  sah
+ * moved entire dependency handling to dependencies.c
+ * the dependency table is now created shortly prior
+ * to c code generation
+ *
  * Revision 1.3  2004/11/27 01:52:55  ktr
  * fixed
  *

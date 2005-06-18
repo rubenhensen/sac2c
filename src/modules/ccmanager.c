@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.16  2005/06/18 18:06:00  sah
+ * moved entire dependency handling to dependencies.c
+ * the dependency table is now created shortly prior
+ * to c code generation
+ *
  * Revision 1.15  2005/06/16 15:55:11  sah
  * intermediate fix
  *
@@ -156,8 +161,6 @@ AddCCLibs (str_buf *buffer)
 static void
 AddSacLibs (str_buf *buffer)
 {
-    const char *sac2clib;
-
     DBUG_ENTER ("AddSacLibs");
 
     if (global.optimize.dophm) {
@@ -177,15 +180,6 @@ AddSacLibs (str_buf *buffer)
     }
 
     ILIBstrBufPrint (buffer, "-lsac ");
-
-    sac2clib = FMGRfindFile (PK_lib_path, "libsac2c.a");
-
-    if (sac2clib != NULL) {
-        ILIBstrBufPrint (buffer, sac2clib);
-    } else {
-        /*  CTIabort( "The sac-runtime library libsac2c.a can not be found! "
-                    "Check your installation of sac2c."); */
-    }
 
     DBUG_VOID_RETURN;
 }
