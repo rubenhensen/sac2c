@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2005/06/18 18:07:09  sah
+ * fixed a memory sharing bug
+ *
  * Revision 1.14  2005/06/01 18:01:24  sah
  * finished printing of dependencies
  *
@@ -618,7 +621,7 @@ FMGRsetFileNames (node *module)
 
     if (MODULE_FILETYPE (module) == F_prog) {
 
-        global.modulename = MODULE_NAME (module);
+        global.modulename = ILIBstringCopy (MODULE_NAME (module));
 
         if (global.outfilename == NULL) {
             global.outfilename = "a.out";
