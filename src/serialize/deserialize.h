@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2005/06/18 18:07:51  sah
+ * added DSdispatchFunCall
+ *
  * Revision 1.5  2005/05/25 20:26:35  sah
  * FUNDEF_EXT_ASSIGN is restored now
  * during deserialisation
@@ -27,13 +30,25 @@
 
 #include "types.h"
 
+/*
+ * init/finish functions
+ */
 extern void DSinitDeserialize (node *module);
 extern void DSfinishDeserialize (node *module);
 
+/*
+ * functions used by entire compiler
+ */
+extern node *DSdispatchFunCall (const char *mod, const char *name, node *args);
+
+/*
+ * functions used by module system
+ */
 extern node *DSaddSymbolByName (const char *symbol, stentrytype_t type,
                                 const char *module);
 extern node *DSaddSymbolById (const char *symbid, const char *module);
 extern void DSimportInstancesByName (const char *name, const char *module);
+
 /*
  * hooks for deserialization
  */

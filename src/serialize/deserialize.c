@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  2005/06/18 18:07:51  sah
+ * added DSdispatchFunCall
+ *
  * Revision 1.16  2005/06/18 13:14:42  sah
  * fixed incompatiblity
  *
@@ -63,8 +66,10 @@
 #include "tree_compound.h"
 #include "user_types.h"
 #include "new_types.h"
+#include "type_utils.h"
 #include "new_typecheck.h"
 #include "symboltable.h"
+#include "stringset.h"
 #include "modulemanager.h"
 #include "new2old.h"
 #include "traverse.h"
@@ -88,6 +93,7 @@ struct INFO {
     node *funhead;
     node *lastassign;
     bool importmode;
+    stringset_t *dependencies;
 };
 
 /*
@@ -105,6 +111,7 @@ struct INFO {
 #define INFO_DS_FUNHEAD(n) ((n)->funhead)
 #define INFO_DS_LASTASSIGN(n) ((n)->lastassign)
 #define INFO_DS_IMPORTMODE(n) ((n)->importmode)
+#define INFO_DS_DEPS(n) ((n)->dependencies)
 
 /*
  * INFO functions
@@ -130,6 +137,7 @@ MakeInfo ()
     INFO_DS_FUNHEAD (result) = NULL;
     INFO_DS_LASTASSIGN (result) = NULL;
     INFO_DS_IMPORTMODE (result) = FALSE;
+    INFO_DS_DEPS (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -276,6 +284,9 @@ DSfinishDeserialize (node *module)
 
     MODULE_TYPES (module)
       = TCappendTypedef (MODULE_TYPES (module), INFO_DS_TYPEDEFS (DSstate));
+
+    MODULE_DEPENDENCIES (module)
+      = STRSjoin (MODULE_DEPENDENCIES (module), INFO_DS_DEPS (DSstate));
 
     DSstate = FreeInfo (DSstate);
 
@@ -437,7 +448,20 @@ AddEntryToAst (stentry_t *entry, stentrytype_t type, module_t *module)
 
     DBUG_RETURN (entryp);
 }
-
+/**
+ * @brief adds the given symbol from the given module to the AST.
+ *
+ * Be aware, that the return value is any of the inserted symbols. In
+ * case of wrapper functions, this may be any of the inserted wrappers.
+ * So never rely on the returned pointer to point to the actually needed
+ * wrapper!
+ *
+ * @param symbol the name of the symbol to be loaded
+ * @param type the type of symbol to be loaded
+ * @param module the module to load the symbol from
+ *
+ * @return a pointer to one of the loaded symbols
+ */
 node *
 DSaddSymbolByName (const char *symbol, stentrytype_t type, const char *module)
 {
@@ -552,6 +576,100 @@ DSimportInstancesByName (const char *name, const char *module)
     mod = MODMunLoadModule (mod);
 
     DBUG_VOID_RETURN;
+}
+
+/*
+ * general deserialise and dispatch functions
+ */
+
+static node *
+doDispatchFunCall (node *fundefs, const char *mod, const char *name, ntype *argtypes)
+{
+    node *result = NULL;
+
+    DBUG_ENTER ("doDispatchFunCall");
+
+    while ((fundefs != NULL) && (result == NULL)) {
+
+        if (FUNDEF_ISWRAPPERFUN (fundefs)) {
+            if (ILIBstringCompare (FUNDEF_MOD (fundefs), mod)
+                && ILIBstringCompare (FUNDEF_NAME (fundefs), name)) {
+                if (TUsignatureMatches (FUNDEF_ARGS (fundefs), argtypes)) {
+                    result = fundefs;
+                }
+            }
+        }
+
+        fundefs = FUNDEF_NEXT (fundefs);
+    }
+
+    DBUG_RETURN (result);
+}
+
+/**
+ * @brief dispatches the given function call to the matching wrapper
+ *        of the given function.
+ *
+ * @param mod module name
+ * @param name function name
+ * @param args N_exprs chain containing the arguments of the function call
+ *
+ * @return N_ap node encoding the call or NULL in case of failure
+ */
+node *
+DSdispatchFunCall (const char *mod, const char *name, node *args)
+{
+    node *result = NULL;
+    node *fundef;
+    ntype *argtypes;
+
+    DBUG_ENTER ("DSdispatchFunCall");
+
+    DBUG_ASSERT ((DSstate != NULL),
+                 "called doDispatchFunCall without initialising deserialise engine!");
+
+    /*
+     * first make sure the needed function is indeed available
+     */
+    DSaddSymbolByName (name, SET_wrapperhead, mod);
+
+    /*
+     * now walk through the fundef chains and try to find
+     * the correct wrapper or instance of that function
+     * and do the dispatch!
+     */
+
+    argtypes = TUactualArgs2Ntype (args);
+
+    fundef = doDispatchFunCall (INFO_DS_FUNDECS (DSstate), mod, name, argtypes);
+
+    if (fundef == NULL) {
+        fundef = doDispatchFunCall (INFO_DS_FUNDEFS (DSstate), mod, name, argtypes);
+
+        if (fundef == NULL) {
+            fundef = doDispatchFunCall (MODULE_FUNDECS (INFO_DS_MODULE (DSstate)), mod,
+                                        name, argtypes);
+
+            if (fundef == NULL) {
+                fundef = doDispatchFunCall (MODULE_FUNS (INFO_DS_MODULE (DSstate)), mod,
+                                            name, argtypes);
+            }
+        }
+    }
+
+    argtypes = TYfreeType (argtypes);
+
+    if (fundef != NULL) {
+        /*
+         * build the Ap Node and add the corresponding module to the
+         * dependencies.
+         */
+        result = TBmakeAp (fundef, args);
+
+        INFO_DS_DEPS (DSstate) = STRSadd (mod, STRS_saclib, INFO_DS_DEPS (DSstate));
+    }
+
+    DBUG_RETURN (result);
 }
 
 /*
