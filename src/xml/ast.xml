@@ -15,13 +15,13 @@
     copy="function" persist="no" />
     <type name="Node" ctype="node*" init="NULL" copy="function" />
     <!-- a Link pointing upwards in the tree, strictly to a higher node -->
-    <type name="Link" ctype="node*" init="NULL" copy="hash" />
+    <type name="Link" ctype="node*" init="NULL" copy="hash" persist="yes" />
     <!-- a Link pointing outside of the current context, e.g. to another
          son of a module node -->
     <type name="ExtLink" ctype="node*" init="NULL" copy="hash" persist="yes" />
     <!-- a Link pointing to a node at the same level or downwards from the
          current node -->
-    <type name="DownLink" ctype="node*" init="NULL" copy="hash" persist="no" />
+    <type name="DownLink" ctype="node*" init="NULL" copy="hash" persist="yes" />
     <type name="FileType" ctype="file_type" init="F_unknown"
     copy="literal" />
     <type name="LUT" ctype="lut_t*" init="NULL" copy="function" persist="no" />

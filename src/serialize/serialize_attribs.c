@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2005/06/18 13:14:42  sah
+ * fixed incompatiblity
+ *
  * Revision 1.6  2005/02/16 22:29:13  sah
  * changed link handling
  *
@@ -303,7 +306,7 @@ SATserializeNode (info *info, node *attr, node *parent)
 
 /** <!--******************************************************************-->
  *
- * @fn SATserializeLink
+ * @fn SATserializeDownLink
  *
  * @brief generates code to de-serialize the given attribute
  *
@@ -314,9 +317,9 @@ SATserializeNode (info *info, node *attr, node *parent)
  ***************************************************************************/
 
 void
-SATserializeLink (info *info, node *attr, node *parent)
+SATserializeDownLink (info *info, node *attr, node *parent)
 {
-    DBUG_ENTER ("SATserializeLink");
+    DBUG_ENTER ("SATserializeDownLink");
 
     if (attr != NULL) {
         /*
@@ -380,7 +383,7 @@ SATserializeExtLink (info *info, node *attr, node *parent)
 
 /** <!--******************************************************************-->
  *
- * @fn SATserializeDownLink
+ * @fn SATserializeLink
  *
  * @brief generates code to de-serialize the given attribute
  *
@@ -391,9 +394,11 @@ SATserializeExtLink (info *info, node *attr, node *parent)
  ***************************************************************************/
 
 void
-SATserializeDownLink (info *info, node *attr, node *parent)
+SATserializeLink (info *info, node *attr, node *parent)
 {
-    DBUG_ENTER ("SATserializeDownLink");
+    DBUG_ENTER ("SATserializeLink");
+
+    fprintf (INFO_SER_FILE (info), "NULL");
 
     DBUG_VOID_RETURN;
 }

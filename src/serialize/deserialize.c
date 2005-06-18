@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  2005/06/18 13:14:42  sah
+ * fixed incompatiblity
+ *
  * Revision 1.15  2005/06/06 09:01:55  sah
  * fixed a minor bug in findEntryInAST
  *
@@ -623,6 +626,25 @@ DSlookupFunction (const char *module, const char *symbol)
     DBUG_RETURN (result);
 }
 
+node *
+DSfetchArgAvis (int pos)
+{
+    node *arg;
+
+    DBUG_ENTER ("DSfetchArgAvis");
+
+    arg = FUNDEF_ARGS (getCurrentFundefHead ());
+
+    while ((arg != NULL) && (pos != 0)) {
+        pos--;
+        arg = ARG_NEXT (arg);
+    }
+
+    DBUG_ASSERT ((pos == 0), "Referenced arg does not exist!");
+
+    DBUG_RETURN (ARG_AVIS (arg));
+}
+
 /*
  * deserialize traversal functions
  */
@@ -708,25 +730,6 @@ LookUpSSACounter (node *cntchain, node *arg)
     }
 
     DBUG_RETURN (result);
-}
-
-node *
-DSfetchArgAvis (int pos)
-{
-    node *arg;
-
-    DBUG_ENTER ("DSfetchArgAvis");
-
-    arg = FUNDEF_ARGS (getCurrentFundefHead ());
-
-    while ((arg != NULL) && (pos != 0)) {
-        pos--;
-        arg = ARG_NEXT (arg);
-    }
-
-    DBUG_ASSERT ((pos == 0), "Referenced arg does not exist!");
-
-    DBUG_RETURN (ARG_AVIS (arg));
 }
 
 /*
