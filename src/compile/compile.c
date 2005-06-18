@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.161  2005/06/18 13:11:22  sah
+ * fixed a dbug message
+ *
  * Revision 3.160  2005/06/16 09:47:15  sbs
  * changed TYPE_ERROR into DISPATCH_ERROR
  * added TYPE_ERROR :-)
@@ -616,7 +619,7 @@ GenericFun (int which, types *type)
 
     DBUG_ENTER ("GenericFun");
 
-    DBUG_PRINT ("COMP", ("Looking for generic fun %d (0==copy/1==free)"));
+    DBUG_PRINT ("COMP", ("Looking for generic fun %d (0==copy/1==free)", which));
 
     DBUG_ASSERT ((type != NULL), "no type found!");
 
@@ -645,7 +648,7 @@ GenericFun (int which, types *type)
         }
     }
 
-    DBUG_PRINT ("COMP", ("Found generic fun %s", STR_OR_EMPTY (ret)));
+    DBUG_PRINT ("COMP", ("Found generic fun `%s'", STR_OR_EMPTY (ret)));
 
     DBUG_RETURN (ret);
 }
