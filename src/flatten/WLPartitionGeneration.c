@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.48  2005/06/18 18:03:52  sah
+ * now the default element is never freed
+ *
  * Revision 1.47  2005/06/15 17:52:14  ktr
  * with-loops with AUD results and AKS index vector are now equipped with a full
  * partition
@@ -1470,7 +1473,7 @@ WLPGap (node *arg_node, info *arg_info)
 node *
 WLPGwith (node *arg_node, info *arg_info)
 {
-    node *let_tmp, *nassigns = NULL, *def;
+    node *let_tmp, *nassigns = NULL;
     bool replace_wl = FALSE;
     gen_prop_t genprop = GPT_empty;
 
@@ -1543,17 +1546,28 @@ WLPGwith (node *arg_node, info *arg_info)
             }
 
             /*
-             * Delete default partition if default element is AKS
+             * the default element cannot always be deleted if
+             * it is a scalar! If the type of the generator expression
+             * is AUD/AKD, the default element is still needed
+             * by the memory allocation in alloc.c.
+             * TODO: find a better way to decide whether the defexpr
+             *       can be deleted
              */
-            if (NODE_TYPE (WITH_WITHOP (arg_node)) == N_genarray) {
-                def = GENARRAY_DEFAULT (WITH_WITHOP (arg_node));
-
-                if ((def != NULL)
-                    && (TYisAKV (ID_NTYPE (def)) || TYisAKS (ID_NTYPE (def)))) {
-                    GENARRAY_DEFAULT (WITH_WITHOP (arg_node))
-                      = FREEdoFreeNode (GENARRAY_DEFAULT (WITH_WITHOP (arg_node)));
-                }
-            }
+#if 0
+      /*
+       * Delete default element if default element is AKS
+       */
+      if( NODE_TYPE( WITH_WITHOP( arg_node)) == N_genarray) {
+        node *def = GENARRAY_DEFAULT( WITH_WITHOP( arg_node));
+        
+        if( ( def != NULL) &&
+            ( TYisAKV( ID_NTYPE( def)) ||
+              TYisAKS( ID_NTYPE( def)))) {
+          GENARRAY_DEFAULT( WITH_WITHOP( arg_node)) 
+            = FREEdoFreeNode( GENARRAY_DEFAULT( WITH_WITHOP( arg_node)));
+        }
+      }
+#endif
             break;
 
         case GPT_partial:
