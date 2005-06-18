@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.41  2005/06/18 13:52:03  sah
+ * moved SignatureMatches and ActualArgs2Ntype from
+ * create_wrapper_code to type_utils
+ *
  * Revision 1.40  2005/06/14 23:41:29  sbs
  * functions with errorneous instances only will lead to type errors now as well.
  *
@@ -478,89 +482,6 @@ InsertWrapperCode (node *fundef)
 /******************************************************************************
  *
  * Function:
- *   ntype *ActualArgs2Ntype( node *actual)
- *
- * Description:
- *   Returns the appropriate product type for the given actual arguments.
- *
- ******************************************************************************/
-
-static ntype *
-ActualArgs2Ntype (node *actual)
-{
-    ntype *actual_type, *tmp_type, *prod_type;
-    int size, pos;
-
-    DBUG_ENTER ("ActualArgs2Ntype");
-
-    size = TCcountExprs (actual);
-    prod_type = TYmakeEmptyProductType (size);
-
-    pos = 0;
-    while (actual != NULL) {
-        tmp_type = NTCnewTypeCheck_Expr (EXPRS_EXPR (actual));
-        actual_type = TYfixAndEliminateAlpha (tmp_type);
-        tmp_type = TYfreeType (tmp_type);
-
-        TYsetProductMember (prod_type, pos, actual_type);
-        actual = EXPRS_NEXT (actual);
-        pos++;
-    }
-
-    DBUG_RETURN (prod_type);
-}
-
-/******************************************************************************
- *
- * Function:
- *   bool SignatureMatches( node *formal, ntype *actual_prod_type)
- *
- * Description:
- *   Checks whether TYPE('formal') is a supertype of 'actual_prod_type'.
- *
- ******************************************************************************/
-
-static bool
-SignatureMatches (node *formal, ntype *actual_prod_type)
-{
-    ntype *actual_type, *formal_type;
-    int pos;
-    bool match = TRUE;
-#ifndef DBUG_OFF
-    char *tmp_str, *tmp2_str;
-#endif
-
-    DBUG_ENTER ("SignatureMatches");
-
-    pos = 0;
-    while ((formal != NULL) && (ARG_NTYPE (formal) != NULL)) {
-        DBUG_ASSERT ((NODE_TYPE (formal) == N_arg), "illegal args found!");
-
-        formal_type = AVIS_TYPE (ARG_AVIS (formal));
-        actual_type = TYgetProductMember (actual_prod_type, pos);
-        DBUG_EXECUTE ("CWC", tmp_str = TYtype2String (formal_type, FALSE, 0);
-                      tmp2_str = TYtype2String (actual_type, FALSE, 0););
-        DBUG_PRINT ("CWC", ("    comparing formal type %s with actual type %s", tmp_str,
-                            tmp2_str));
-        DBUG_EXECUTE ("CWC", tmp_str = ILIBfree (tmp_str);
-                      tmp2_str = ILIBfree (tmp2_str););
-
-        if (!TYleTypes (actual_type, formal_type)) {
-            match = FALSE;
-            break;
-        }
-
-        formal = ARG_NEXT (formal);
-        pos++;
-    }
-    DBUG_PRINT ("CWC", ("    result: %d", match));
-
-    DBUG_RETURN (match);
-}
-
-/******************************************************************************
- *
- * Function:
  *   node *CorrectFundefPointer( node *fundef, char *funname, ntype *arg_types)
  *
  * Description:
@@ -649,7 +570,7 @@ CorrectFundefPointer (node *fundef, char *funname, ntype *arg_types)
                                  "no appropriate wrapper function found!");
 
                     DBUG_ASSERT ((!FUNDEF_ISZOMBIE (fundef)), "zombie found");
-                } while (!SignatureMatches (FUNDEF_ARGS (fundef), arg_types));
+                } while (!TUsignatureMatches (FUNDEF_ARGS (fundef), arg_types));
                 DBUG_PRINT ("CWC", ("  correct wrapper found"));
             }
         } else {
@@ -824,7 +745,7 @@ CWCap (node *arg_node, info *arg_info)
     DBUG_PRINT ("CWC", ("Ap of function %s:%s pointed to " F_PTR ".", AP_MOD (arg_node),
                         AP_NAME (arg_node), AP_FUNDEF (arg_node)));
 
-    arg_types = ActualArgs2Ntype (AP_ARGS (arg_node));
+    arg_types = TUactualArgs2Ntype (AP_ARGS (arg_node));
     AP_FUNDEF (arg_node)
       = CorrectFundefPointer (AP_FUNDEF (arg_node), AP_NAME (arg_node), arg_types);
 

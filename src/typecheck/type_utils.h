@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2005/06/18 13:52:03  sah
+ * moved SignatureMatches and ActualArgs2Ntype from
+ * create_wrapper_code to type_utils
+ *
  * Revision 1.9  2005/05/24 08:26:34  sbs
  * TUretypes2alpha modified.
  *
@@ -50,5 +54,7 @@ extern bool TUisHidden (ntype *type);
 extern bool TUisBoxed (ntype *type);
 extern ntype *TUcomputeImplementationType (ntype *ty);
 extern char *TUtypeSignature2String (node *fundef);
+extern ntype *TUactualArgs2Ntype (node *actual);
+extern bool TUsignatureMatches (node *formal, ntype *actual_prod_type);
 
 #endif /* _SAC_TYPE_UTILS_H_*/

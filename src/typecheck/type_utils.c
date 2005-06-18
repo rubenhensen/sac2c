@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2005/06/18 13:52:03  sah
+ * moved SignatureMatches and ActualArgs2Ntype from
+ * create_wrapper_code to type_utils
+ *
  * Revision 1.12  2005/06/01 20:08:57  sah
  * TYisHidden now is aware of the structure of hidden types
  *
@@ -49,6 +53,7 @@
 #include "tree_compound.h"
 
 #include "new_types.h"
+#include "new_typecheck.h"
 #include "ssi.h"
 #include "user_types.h"
 
@@ -458,4 +463,87 @@ TUtypeSignature2String (node *fundef)
     ILIBstrBufFlush (buf);
 
     DBUG_RETURN (tmp_str);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   ntype *TUactualArgs2Ntype( node *actual)
+ *
+ * Description:
+ *   Returns the appropriate product type for the given actual arguments.
+ *
+ ******************************************************************************/
+
+ntype *
+TUactualArgs2Ntype (node *actual)
+{
+    ntype *actual_type, *tmp_type, *prod_type;
+    int size, pos;
+
+    DBUG_ENTER ("TUactualArgs2Ntype");
+
+    size = TCcountExprs (actual);
+    prod_type = TYmakeEmptyProductType (size);
+
+    pos = 0;
+    while (actual != NULL) {
+        tmp_type = NTCnewTypeCheck_Expr (EXPRS_EXPR (actual));
+        actual_type = TYfixAndEliminateAlpha (tmp_type);
+        tmp_type = TYfreeType (tmp_type);
+
+        TYsetProductMember (prod_type, pos, actual_type);
+        actual = EXPRS_NEXT (actual);
+        pos++;
+    }
+
+    DBUG_RETURN (prod_type);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   bool TUsignatureMatches( node *formal, ntype *actual_prod_type)
+ *
+ * Description:
+ *   Checks whether TYPE('formal') is a supertype of 'actual_prod_type'.
+ *
+ ******************************************************************************/
+
+bool
+TUsignatureMatches (node *formal, ntype *actual_prod_type)
+{
+    ntype *actual_type, *formal_type;
+    int pos;
+    bool match = TRUE;
+#ifndef DBUG_OFF
+    char *tmp_str, *tmp2_str;
+#endif
+
+    DBUG_ENTER ("TUsignatureMatches");
+
+    pos = 0;
+    while ((formal != NULL) && (ARG_NTYPE (formal) != NULL)) {
+        DBUG_ASSERT ((NODE_TYPE (formal) == N_arg), "illegal args found!");
+
+        formal_type = AVIS_TYPE (ARG_AVIS (formal));
+        actual_type = TYgetProductMember (actual_prod_type, pos);
+        DBUG_EXECUTE ("TU", tmp_str = TYtype2String (formal_type, FALSE, 0);
+                      tmp2_str = TYtype2String (actual_type, FALSE, 0););
+        DBUG_PRINT ("TU", ("    comparing formal type %s with actual type %s", tmp_str,
+                           tmp2_str));
+        DBUG_EXECUTE ("TU", tmp_str = ILIBfree (tmp_str);
+                      tmp2_str = ILIBfree (tmp2_str););
+
+        if (!TYleTypes (actual_type, formal_type)) {
+            match = FALSE;
+            break;
+        }
+
+        formal = ARG_NEXT (formal);
+        pos++;
+    }
+    DBUG_PRINT ("TU", ("    result: %d", match));
+
+    DBUG_RETURN (match);
 }
