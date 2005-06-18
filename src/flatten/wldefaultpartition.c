@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2005/06/18 18:04:52  sah
+ * the special function sac2c:sel is now inserted using
+ * DSdispatchFunCall
+ *
  * Revision 1.2  2005/06/15 08:43:21  ktr
  * Some bugfixing
  *
@@ -274,11 +278,15 @@ WLDPmodule (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLDPmodule");
 
+    DSinitDeserialize (arg_node);
+
     INFO_WLDP_MODULE (arg_info) = arg_node;
 
     if (MODULE_FUNS (arg_node) != NULL) {
         MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
     }
+
+    DSfinishDeserialize (arg_node);
 
     DBUG_RETURN (arg_node);
 }
@@ -480,21 +488,10 @@ WLDPmodarray (node *arg_node, info *arg_info)
   }
   else{
 #endif
-    if (INFO_WLDP_SELWRAPPER (arg_info) == NULL) {
-
-        DSinitDeserialize (INFO_WLDP_MODULE (arg_info));
-
-        INFO_WLDP_SELWRAPPER (arg_info)
-          = DSaddSymbolByName ("sel", SET_wrapperhead, "sac2c");
-        DSfinishDeserialize (INFO_WLDP_MODULE (arg_info));
-    }
-
-    DBUG_ASSERT ((INFO_WLDP_SELWRAPPER (arg_info) != NULL),
-                 "no sac2c:sel wrapper found!");
     INFO_WLDP_DEFEXPR (arg_info)
-      = TCmakeAp2 (INFO_WLDP_SELWRAPPER (arg_info), DUPdupIdsId (sel_vec),
-                   DUPdoDupNode (sel_array));
-
+      = DSdispatchFunCall ("sac2c", "sel",
+                           TBmakeExprs (DUPdupIdsId (sel_vec),
+                                        TBmakeExprs (DUPdoDupNode (sel_array), NULL)));
 #if 0
   }
 #endif
