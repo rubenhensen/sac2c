@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.45  2005/06/18 18:09:13  sah
+ * bugfixing
+ *
  * Revision 1.44  2005/01/10 16:59:45  cg
  * Converted error messages from Error.h to ctinfo.c
  *
@@ -91,7 +94,7 @@
  *       -no support of partial selection on arrays of different
  *        dimenionality
  */
-#undef HD_SETWL_VECTOR
+#define HD_SETWL_VECTOR
 
 /**
  * Structures to store all information about dots occuring in select state-
@@ -927,6 +930,7 @@ static node *
 BuildDefaultWithloop (node *array, node *shape)
 {
     node *result = NULL;
+    node *defexpr;
 
     DBUG_ENTER ("BuildDefaultWithloop");
 
@@ -936,14 +940,28 @@ BuildDefaultWithloop (node *array, node *shape)
                                 TBmakeGenerator (F_le, F_le, TBmakeDot (1), TBmakeDot (1),
                                                  NULL, NULL)),
                     TBmakeCode (MAKE_EMPTY_BLOCK (),
-                                TBmakeExprs (TCmakeSpap1 (NULL, ILIBstringCopy ("zero"),
+                                TBmakeExprs (TCmakeSpap1 (ILIBstringCopy ("sac2c"),
+                                                          ILIBstringCopy ("zero"),
                                                           DUPdoDupTree (array)),
                                              NULL)),
-                    TBmakeGenarray (shape, TCmakeSpap1 (NULL, ILIBstringCopy ("zero"),
+                    TBmakeGenarray (shape, TCmakeSpap1 (ILIBstringCopy ("sac2c"),
+                                                        ILIBstringCopy ("zero"),
                                                         DUPdoDupTree (array))));
 
     CODE_USED (WITH_CODE (result))++;
     PART_CODE (WITH_PART (result)) = WITH_CODE (result);
+
+    /*
+     * and we need a default expression for the
+     * default expression withloop. Well, this is
+     * obviously just a scalar...
+     */
+
+    defexpr = TBmakeExprs (DUPdoDupTree (array), NULL);
+    defexpr = TBmakeSpap (TBmakeSpid (ILIBstringCopy ("sac2c"), ILIBstringCopy ("zero")),
+                          defexpr);
+
+    GENARRAY_DEFAULT (WITH_WITHOP (result)) = defexpr;
 
     DBUG_RETURN (result);
 }
@@ -993,7 +1011,9 @@ BuildSelectionDefault (node *array, dotinfo *info)
         /* default is just a scalar */
 
         result = TBmakeExprs (DUPdoDupTree (array), NULL);
-        result = TBmakeSpap (TBmakeSpid (NULL, ILIBstringCopy ("zero")), result);
+        result
+          = TBmakeSpap (TBmakeSpid (ILIBstringCopy ("sac2c"), ILIBstringCopy ("zero")),
+                        result);
     }
 
     DBUG_RETURN (result);
@@ -1074,7 +1094,7 @@ BuildIdTable (node *ids, idtable *appendto)
             result = newtab;
             ids = EXPRS_NEXT (ids);
         }
-    } else if (NODE_TYPE (ids) == N_id)
+    } else if (NODE_TYPE (ids) == N_spid)
 #ifdef HD_SETWL_VECTOR
     {
         idtable *newtab = ILIBmalloc (sizeof (idtable));
@@ -1945,7 +1965,7 @@ HDspap (node *arg_node, info *arg_info)
                         arg_info);
         }
 #ifdef HD_SETWL_VECTOR
-        else if (NODE_TYPE (SPAP_ARG1 (arg_node)) == N_id) {
+        else if (NODE_TYPE (SPAP_ARG1 (arg_node)) == N_spid) {
             ScanId (SPAP_ARG1 (arg_node), &SPAP_ARG2 (arg_node), arg_info);
         }
 #endif
@@ -2005,7 +2025,7 @@ HDprf (node *arg_node, info *arg_info)
                         arg_info);
         }
 #ifdef HD_SETWL_VECTOR
-        else if (NODE_TYPE (PRF_ARG1 (arg_node)) == N_id) {
+        else if (NODE_TYPE (PRF_ARG1 (arg_node)) == N_spid) {
             ScanId (PRF_ARG1 (arg_node), &PRF_ARG2 (arg_node), arg_info);
         }
 #endif
@@ -2161,12 +2181,12 @@ HDsetwl (node *arg_node, info *arg_info)
     }
 #ifdef HD_SETWL_VECTOR
     else {
-        node *newids = MakeSpids (ILIBstringCopy (SPID_NAME (ids)), NULL);
+        node *newids = TBmakeSpids (ILIBstringCopy (SPID_NAME (ids)), NULL);
 
         result
           = TBmakeWith (TBmakePart (NULL, TBmakeWithid (newids, NULL),
-                                    TBmakeGenerator (TBmakeDot (1), TBmakeDot (1), F_le,
-                                                     F_le, NULL, NULL)),
+                                    TBmakeGenerator (F_le, F_le, TBmakeDot (1),
+                                                     TBmakeDot (1), NULL, NULL)),
                         TBmakeCode (MAKE_EMPTY_BLOCK (),
                                     TBmakeExprs (DUPdoDupTree (SETWL_EXPR (arg_node)),
                                                  NULL)),
