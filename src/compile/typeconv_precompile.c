@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2005/06/18 13:13:49  sah
+ * bugfixing
+ *
  * Revision 1.6  2005/05/26 18:44:16  sbs
  * some DBUG prints added and unused vars eliminated
  *
