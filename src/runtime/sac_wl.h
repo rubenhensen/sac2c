@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.26  2005/06/19 11:14:40  sah
+ * first time ever patching icms ;)
+ * fixed SAC_WL_SUB_SHAPE
+ *
  * Revision 3.25  2005/06/11 20:50:05  ktr
  * added SAC_WL_SUB_SHAPE
  *
@@ -644,21 +648,47 @@
 /*****************************************************************************/
 
 #define SAC_WL_SUB_SHAPE(sub_NT, idx_vec_NT, res_NT)                                     \
-    CAT17 (SAC_WL_SUB_SHAPE__, NT_SHP (sub_NT) BuildArgs3 (sub_NT, idx_vec_NT, res_NT))
+    CAT17 (SAC_WL_SUB_SHAPE__,                                                           \
+           CAT17 (NT_SHP (sub_NT),                                                       \
+                  CAT17 (__, NT_SHP (res_NT) BuildArgs3 (sub_NT, idx_vec_NT, res_NT))))
 
 /*
  * SCL
  */
+#define SAC_WL_SUB_SHAPE__SCL__SCL(sub_NT, idx_vec_NT, res_NT)                           \
+    SAC_WL_SUB_SHAPE__SCL (sub_NT, idx_vec_NT, res_NT)
+#define SAC_WL_SUB_SHAPE__SCL__AKS(sub_NT, idx_vec_NT, res_NT)                           \
+    SAC_WL_SUB_SHAPE__SCL (sub_NT, idx_vec_NT, res_NT)
+#define SAC_WL_SUB_SHAPE__SCL__AKD(sub_NT, idx_vec_NT, res_NT)                           \
+    SAC_WL_SUB_SHAPE__SCL (sub_NT, idx_vec_NT, res_NT)
+#define SAC_WL_SUB_SHAPE__SCL__AUD(sub_NT, idx_vec_NT, res_NT)                           \
+    SAC_WL_SUB_SHAPE__SCL (sub_NT, idx_vec_NT, res_NT)
+
 #define SAC_WL_SUB_SHAPE__SCL(sub_NT, idx_vec_NT, res_NT) SAC_NOOP ()
 
 /*
  * AKS
  */
+#define SAC_WL_SUB_SHAPE__AKS__SCL(sub_NT, idx_vec_NT, res_NT) SAC_ICM_UNDEF ()
+#define SAC_WL_SUB_SHAPE__AKS__AKS(sub_NT, idx_vec_NT, res_NT)                           \
+    SAC_WL_SUB_SHAPE__AKS (sub_NT, idx_vec_NT, res_NT)
+#define SAC_WL_SUB_SHAPE__AKS__AKD(sub_NT, idx_vec_NT, res_NT)                           \
+    SAC_WL_SUB_SHAPE__AKS (sub_NT, idx_vec_NT, res_NT)
+#define SAC_WL_SUB_SHAPE__AKS__AUD(sub_NT, idx_vec_NT, res_NT)                           \
+    SAC_WL_SUB_SHAPE__AKS (sub_NT, idx_vec_NT, res_NT)
+
 #define SAC_WL_SUB_SHAPE__AKS(sub_NT, idx_vec_NT, res_NT) SAC_NOOP ()
 
 /*
  * AKD
  */
+#define SAC_WL_SUB_SHAPE__AKD__SCL(sub_NT, idx_vec_NT, res_NT) SAC_ICM_UNDEF ()
+#define SAC_WL_SUB_SHAPE__AKD__AKS(sub_NT, idx_vec_NT, res_NT) SAC_ICM_UNDEF ()
+#define SAC_WL_SUB_SHAPE__AKD__AKD(sub_NT, idx_vec_NT, res_NT)                           \
+    SAC_WL_SUB_SHAPE__AKD (sub_NT, idx_vec_NT, res_NT)
+#define SAC_WL_SUB_SHAPE__AKD__AUD(sub_NT, idx_vec_NT, res_NT)                           \
+    SAC_WL_SUB_SHAPE__AKD (sub_NT, idx_vec_NT, res_NT)
+
 #define SAC_WL_SUB_SHAPE__AKD(sub_NT, idx_vec_NT, res_NT)                                \
     {                                                                                    \
         int SAC_max_d = SAC_ND_A_DIM (idx_vec_NT) - 1;                                   \
@@ -680,6 +710,12 @@
 /*
  * AUD
  */
+#define SAC_WL_SUB_SHAPE__AUD__SCL(sub_NT, idx_vec_NT, res_NT) SAC_ICM_UNDEF ()
+#define SAC_WL_SUB_SHAPE__AUD__AKS(sub_NT, idx_vec_NT, res_NT) SAC_ICM_UNDEF ()
+#define SAC_WL_SUB_SHAPE__AUD__AKD(sub_NT, idx_vec_NT, res_NT) SAC_ICM_UNDEF ()
+#define SAC_WL_SUB_SHAPE__AUD__AUD(sub_NT, idx_vec_NT, res_NT)                           \
+    SAC_WL_SUB_SHAPE__AUD (sub_NT, idx_vec_NT, res_NT)
+
 #define SAC_WL_SUB_SHAPE__AUD(sub_NT, idx_vec_NT, res_NT)                                \
     {                                                                                    \
         int SAC_max_d = SAC_ND_A_SIZE (idx_vec_NT) - 1;                                  \
