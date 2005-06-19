@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.35  2005/06/19 11:15:33  sah
+ * modified insertion of suballoc
+ *
  * Revision 1.34  2005/06/16 08:04:05  sbs
  * F_dispatch_error treated in the same way as F_type_error
  *
@@ -131,7 +134,6 @@
  * much more text needed
  *
  */
-#define NEW_INFO
 
 #include "alloc.h"
 
@@ -188,12 +190,12 @@ struct INFO {
 /**
  * INFO macros
  */
-#define INFO_EMAL_ALLOCLIST(n) (n->alloclist)
-#define INFO_EMAL_FUNDEF(n) (n->fundef)
-#define INFO_EMAL_WITHOPS(n) (n->withops)
-#define INFO_EMAL_INDEXVECTOR(n) (n->indexvector)
-#define INFO_EMAL_MUSTFILL(n) (n->mustfill)
-#define INFO_EMAL_WITHOPMODE(n) (n->withopmode)
+#define INFO_EMAL_ALLOCLIST(n) ((n)->alloclist)
+#define INFO_EMAL_FUNDEF(n) ((n)->fundef)
+#define INFO_EMAL_WITHOPS(n) ((n)->withops)
+#define INFO_EMAL_INDEXVECTOR(n) ((n)->indexvector)
+#define INFO_EMAL_MUSTFILL(n) ((n)->mustfill)
+#define INFO_EMAL_WITHOPMODE(n) ((n)->withopmode)
 
 /**
  * INFO functions
@@ -717,6 +719,7 @@ EMALcode (node *arg_node, info *arg_info)
     alloclist_struct *als;
     node *withops, *indexvector, *cexprs, *assign;
     node *memavis, *valavis, *cexavis;
+    ntype *crestype;
 
     DBUG_ENTER ("EMALcode");
 
@@ -790,17 +793,39 @@ EMALcode (node *arg_node, info *arg_info)
          *   ...
          * }: a;
          */
+
+        /*
+         * when inserting suballocs, we have to make sure that the
+         * shape class of the suballocated var matches the shape
+         * class of the array the suballocation is performed
+         * on. So we use the default expression here to find out the
+         * shape class to use. If the result of the cexpr does not
+         * fit within the default value, this will lead to a type
+         * error during runtime!
+         */
+        if ((NODE_TYPE (withops) == N_genarray) && (GENARRAY_DEFAULT (withops) != NULL)) {
+            DBUG_ASSERT ((NODE_TYPE (GENARRAY_DEFAULT (withops)) == N_id),
+                         "found a non flattened default expression!");
+
+            if (TYleTypes (AVIS_TYPE (cexavis),
+                           AVIS_TYPE (ID_AVIS (GENARRAY_DEFAULT (withops))))) {
+                crestype = AVIS_TYPE (cexavis);
+            } else {
+                crestype = AVIS_TYPE (ID_AVIS (GENARRAY_DEFAULT (withops)));
+            }
+        } else {
+            crestype = AVIS_TYPE (cexavis);
+        }
+
         if ((NODE_TYPE (withops) == N_genarray) || (NODE_TYPE (withops) == N_modarray)) {
 
-            if ((TYisAKD (AVIS_TYPE (cexavis)) || TYisAKS (AVIS_TYPE (cexavis))
-                 || TYisAKV (AVIS_TYPE (cexavis)))
-                && (TYgetDim (AVIS_TYPE (cexavis)) == 0)) {
+            if ((TYisAKD (crestype) || TYisAKS (crestype) || TYisAKV (crestype))
+                && (TYgetDim (crestype) == 0)) {
                 /*
                  * Create a new value variable
                  * Ex: a_val
                  */
-                valavis
-                  = TBmakeAvis (ILIBtmpVarName ("val"), TYcopyType (AVIS_TYPE (cexavis)));
+                valavis = TBmakeAvis (ILIBtmpVarName ("val"), TYcopyType (crestype));
 
                 FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info))
                   = TBmakeVardec (valavis, FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info)));
@@ -809,6 +834,7 @@ EMALcode (node *arg_node, info *arg_info)
                  * Create wl-assign operation
                  *
                  * Ex:
+                 * {
                  *   ...
                  *   a_val = wl_assign( a, A, iv);
                  * }: a_val;
@@ -827,6 +853,7 @@ EMALcode (node *arg_node, info *arg_info)
                  * Substitute cexpr
                  *
                  * Ex:
+                 * {
                  *   ...
                  *   a_val = wl_assign( a, A, iv);
                  * }: a_val;
@@ -838,8 +865,7 @@ EMALcode (node *arg_node, info *arg_info)
                  * Create a new memory variable
                  * Ex: a_mem
                  */
-                memavis = TBmakeAvis (ILIBtmpVarName ("mem"),
-                                      TYeliminateAKV (AVIS_TYPE (cexavis)));
+                memavis = TBmakeAvis (ILIBtmpVarName ("mem"), TYeliminateAKV (crestype));
 
                 FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info))
                   = TBmakeVardec (memavis, FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info)));
@@ -848,8 +874,7 @@ EMALcode (node *arg_node, info *arg_info)
                  * Create a new value variable
                  * Ex: a_val
                  */
-                valavis
-                  = TBmakeAvis (ILIBtmpVarName ("val"), TYcopyType (AVIS_TYPE (cexavis)));
+                valavis = TBmakeAvis (ILIBtmpVarName ("val"), TYcopyType (crestype));
 
                 FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info))
                   = TBmakeVardec (valavis, FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info)));
@@ -858,6 +883,7 @@ EMALcode (node *arg_node, info *arg_info)
                  * Create fill operation
                  *
                  * Ex:
+                 * {
                  *   ...
                  *   a_val = fill( copy( a), a_mem);
                  * }: a;
@@ -875,6 +901,7 @@ EMALcode (node *arg_node, info *arg_info)
                  * Substitute cexpr
                  *
                  * Ex:
+                 * {
                  *   ...
                  *   a_val = fill( copy( a), a_mem);
                  * }: a_val;
@@ -886,6 +913,7 @@ EMALcode (node *arg_node, info *arg_info)
                  * Create suballoc assignment
                  *
                  * Ex:
+                 * {
                  *   ...
                  *   a_mem = suballoc( A, iv);
                  *   a_val = fill( copy( a), a_mem);
