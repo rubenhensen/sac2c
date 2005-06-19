@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.49  2005/06/19 11:05:35  sbs
+ * now, cut slices sets WITH_PARTS to 1 if the initial generator covered the entire range
+ * already
+ *
  * Revision 1.48  2005/06/18 18:03:52  sah
  * now the default element is never freed
  *
@@ -803,6 +807,13 @@ CutSlices (node *ls, node *us, node *l, node *u, int dim, node *wln, node *coden
     lsc = FREEdoFreeTree (lsc);
     usc = FREEdoFreeTree (usc);
     withidn = FREEdoFreeTree (withidn);
+
+    if (WITH_PARTS (wln) == -1) {
+        /**
+         * no new slice neede to be cut. So the original generator is full!
+         */
+        WITH_PARTS (wln) = 1;
+    }
 
     DBUG_RETURN (wln);
 }
