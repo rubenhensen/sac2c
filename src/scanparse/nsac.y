@@ -4,6 +4,9 @@
 /*
 *
 * $Log$
+* Revision 1.37  2005/06/21 19:46:56  sah
+* call of make for setwl fixed
+*
 * Revision 1.36  2005/06/18 18:08:13  sah
 * fixed a set notation parsing problem
 *
@@ -1323,7 +1326,7 @@ expr: qual_ext_id                { $$ = $1;                   }
       { $$ = TBmakeCast( $3, $5);
       }
     | BRACE_L ID ARROW expr BRACE_R
-      { $$ = TBmakeSetwl( TBmakeSpid( ILIBstringCopy( $2), NULL), $4);
+      { $$ = TBmakeSetwl( TBmakeSpid( NULL, ILIBstringCopy( $2)), $4);
       }
     | BRACE_L SQBR_L exprs SQBR_R ARROW expr BRACE_R
       { $$ = TBmakeSetwl( $3, $6);
