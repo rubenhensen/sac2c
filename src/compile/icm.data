@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.79  2005/06/21 23:39:39  sah
+ * added setting of modarray wls subvar descriptors
+ * using new C-icm WL_MODARRAY_SUBSHAPE
+ *
  * Revision 3.78  2005/06/16 09:47:59  sbs
  * changed TYPE_ERROR into DISPATCH_ERROR
  *
@@ -747,6 +751,15 @@ ICM_DEF( WL_SUBALLOC, ICM_TRACE_NONE)
   ICM_NT( sub_NT)
   ICM_NT( to_NT)
 ICM_END( WL_SUBALLOC, (sub_NT, to_NT))
+#endif
+
+#if defined(WL_MODARRAY_SUBSHAPE) || defined(ICM_ALL)
+ICM_DEF( WL_MODARRAY_SUBSHAPE, ICM_TRACE_NONE)
+  ICM_NT( sub_NT)
+  ICM_NT( idx_NT)
+  ICM_INT( dims)
+  ICM_NT( to_NT)
+ICM_END( WL_MODARRAY_SUBSHAPE, (sub_NT, idx_NT, dims, to_NT))
 #endif
 
 #if defined(WL_INC_OFFSET) || defined(ICM_ALL)

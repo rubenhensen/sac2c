@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.25  2005/06/21 23:39:39  sah
+ * added setting of modarray wls subvar descriptors
+ * using new C-icm WL_MODARRAY_SUBSHAPE
+ *
  * Revision 3.24  2004/11/21 22:04:36  ktr
  * Ismop SacDevCamp 04
  *
@@ -104,6 +108,9 @@ extern void ICMCompileWL_OFFSET_SHAPE_FACTOR (char *to_NT, int to_sdim, char *id
 extern void ICMCompileWL_SCHEDULE__END (int dims);
 
 extern void ICMCompileWL_SUBALLOC (char *sub_NT, char *to_NT);
+
+extern void ICMCompileWL_MODARRAY_SUBSHAPE (char *sub_NT, char *idx_NT, int dims,
+                                            char *to_NT);
 
 extern void ICMCompileWL_INC_OFFSET (char *to_NT, char *val_NT);
 

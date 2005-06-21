@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.164  2005/06/21 23:39:39  sah
+ * added setting of modarray wls subvar descriptors
+ * using new C-icm WL_MODARRAY_SUBSHAPE
+ *
  * Revision 3.163  2005/06/21 13:30:00  sah
  * shape of sub-vars in aud withloops is
  * calculated based on the default values shape
@@ -5470,6 +5474,21 @@ COMPwith (node *arg_node, info *arg_info)
                     DBUG_ASSERT (0, "no default value found! "
                                     "cannot create subvar shape");
                 }
+            } else if ((NODE_TYPE (WITH_WITHOP (arg_node)) == N_modarray)
+                       && (TCgetShapeDim (VARDEC_TYPE (sub_vardec)) < 0)) {
+                DBUG_PRINT ("COMP", ("creating WL_MODARRAY_SUBSHAPE for SUBALLOC var"));
+                /*
+                 * set shape in modarray case based upon result
+                 * and index vector
+                 */
+                sub_set_shape
+                  = TCmakeIcm4 ("WL_MODARRAY_SUBSHAPE",
+                                TCmakeIdCopyStringNt (VARDEC_NAME (sub_vardec),
+                                                      VARDEC_TYPE (sub_vardec)),
+                                DUPdupIdNt (WITHID_VEC (WITH_WITHID (arg_node))),
+                                TBmakeNum (TCgetDim (VARDEC_TYPE (sub_vardec))),
+                                DUPdupIdsIdNt (res_ids));
+                icm_chain = TBmakeAssign (sub_set_shape, icm_chain);
             }
 
             /*
@@ -5743,6 +5762,23 @@ COMPwith2 (node *arg_node, info *arg_info)
                         DBUG_ASSERT (0, "no default value found! "
                                         "cannot create subvar shape");
                     }
+                } else if ((NODE_TYPE (withop) == N_modarray)
+                           && (TCgetShapeDim (VARDEC_TYPE (sub_vardec)) < 0)) {
+                    DBUG_PRINT ("COMP",
+                                ("creating WL_MODARRAY_SUBSHAPE for SUBALLOC var"));
+                    /*
+                     * set shape in modarray case based upon result
+                     * and index vector
+                     */
+                    sub_set_shape
+                      = TCmakeIcm4 ("WL_MODARRAY_SUBSHAPE",
+                                    TCmakeIdCopyStringNt (VARDEC_NAME (sub_vardec),
+                                                          VARDEC_TYPE (sub_vardec)),
+                                    DUPdupIdNt (WITHID_VEC (WITH2_WITHID (arg_node))),
+                                    TBmakeNum (TCgetDim (VARDEC_TYPE (sub_vardec))),
+                                    DUPdupIdsIdNt (tmp_ids));
+
+                    alloc_icms = TBmakeAssign (sub_set_shape, alloc_icms);
                 }
 
                 /*
