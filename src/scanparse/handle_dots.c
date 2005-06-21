@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.46  2005/06/21 15:33:04  sah
+ * adapted handledots to new ast and
+ * fixed default value creation.
+ * reenabled vectors in setwl
+ *
  * Revision 1.45  2005/06/18 18:09:13  sah
  * bugfixing
  *
@@ -90,7 +95,6 @@
  * set this to enable support for vectors as index of a set notation.
  *
  * NOTE: The implementation is far from complete:
- *       -missing default values in resulting WL
  *       -no support of partial selection on arrays of different
  *        dimenionality
  */
@@ -125,7 +129,7 @@ typedef struct DOTINFO {
  * traversal in HD_sacn mode.
  */
 typedef enum TRAVSTATE { HD_sel, HD_scan, HD_default } travstate;
-typedef enum IDTYPE { ID_vector, ID_scalar } idtype;
+typedef enum IDTYPE { ID_notfound = 0, ID_vector = 1, ID_scalar = 2 } idtype;
 
 typedef struct SHPCHAIN {
     node *shape;
@@ -165,14 +169,16 @@ struct INFO {
     idtable *idtab;
     node *assigns;
     node *setassigns;
+    node *wlshape;
 };
 
 /* access macros */
-#define INFO_HD_DOTSHAPE(n) n->dotshape
-#define INFO_HD_TRAVSTATE(n) n->state
-#define INFO_HD_IDTABLE(n) n->idtab
-#define INFO_HD_ASSIGNS(n) n->assigns
-#define INFO_HD_SETASSIGNS(n) n->setassigns
+#define INFO_HD_DOTSHAPE(n) ((n)->dotshape)
+#define INFO_HD_TRAVSTATE(n) ((n)->state)
+#define INFO_HD_IDTABLE(n) ((n)->idtab)
+#define INFO_HD_ASSIGNS(n) ((n)->assigns)
+#define INFO_HD_SETASSIGNS(n) ((n)->setassigns)
+#define INFO_HD_WLSHAPE(n) ((n)->wlshape)
 
 /**
  * builds an info structure.
@@ -193,6 +199,7 @@ MakeInfo ()
     INFO_HD_IDTABLE (result) = NULL;
     INFO_HD_ASSIGNS (result) = NULL;
     INFO_HD_SETASSIGNS (result) = NULL;
+    INFO_HD_WLSHAPE (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -1124,16 +1131,16 @@ BuildIdTable (node *ids, idtable *appendto)
  * @return 1 if found, 0 otherwise
  */
 
-static int
+static idtype
 IdTableContains (char *id, idtable *ids)
 {
-    int result = 0;
+    idtype result = ID_notfound;
 
     DBUG_ENTER ("IdTableContains");
 
     while (ids != NULL) {
         if (ILIBstringCompare (id, ids->id)) {
-            result = 1;
+            result = ids->type;
             break;
         }
         ids = ids->next;
@@ -1328,15 +1335,16 @@ BuildShapeVectorMin (shpchain *vectors)
 
     indexids = TBmakeSpids (ILIBstringCopy (SPID_NAME (index)), NULL);
 
-    shape = TBmakePrf (F_shape, TBmakeExprs (vectors->shape, NULL));
+    shape = TBmakePrf (F_shape, TBmakeExprs (DUPdoDupTree (vectors->shape), NULL));
 
-    expr = MAKE_BIN_PRF (F_sel, DUPdoDupTree (index), vectors->shape);
+    expr = MAKE_BIN_PRF (F_sel, DUPdoDupTree (index), DUPdoDupTree (vectors->shape));
 
     vectors = vectors->next;
 
     while (vectors != NULL) {
         expr = MAKE_BIN_PRF (F_min,
-                             MAKE_BIN_PRF (F_sel, DUPdoDupTree (index), vectors->shape),
+                             MAKE_BIN_PRF (F_sel, DUPdoDupTree (index),
+                                           DUPdoDupTree (vectors->shape)),
                              expr);
         vectors = vectors->next;
     }
@@ -1589,52 +1597,6 @@ BuildPermutatedVector (node *ids, node *vect)
     }
 
     result = TCmakeFlatArray (result);
-
-    DBUG_RETURN (result);
-}
-
-/** <!--********************************************************************-->
- * constructs the default value of a selection within a setnotation.
- * A default is built for any selection as for the default value, the real
- * value is of no importance and the generated withloops should be removed
- * by the optimizations for all static arrays.
- *
- * @param array AST of the array the selection occurs on
- * @param info dotinfo strcuture of the selection
- * @return AST of a default value
- *****************************************************************************/
-
-static node *
-BuildSetNotationDefault (node *array, dotinfo *info)
-{
-    node *result = NULL;
-    node *shape = NULL;
-
-    DBUG_ENTER ("BuildSetNotationDefault");
-
-    if (info->dotcnt == 0) {
-        /* no dots at all */
-
-        shape
-          = MAKE_BIN_PRF (F_drop_SxV, TBmakeNum (info->selcnt),
-                          TBmakePrf (F_shape, TBmakeExprs (DUPdoDupTree (array), NULL)));
-    } else if (info->triplepos == 0) {
-        /* no tripledot but dots, build default */
-
-        node *leftshape = BuildLeftShape (array, info);
-        shape = BuildSelectionElementShape (array, info);
-
-        /* concatenate if not empty */
-        if (leftshape != NULL) {
-            shape = BuildConcat (leftshape, shape);
-        }
-    } else {
-        /* contains tripledot, so build the full shape */
-
-        shape = BuildShape (array, info);
-    }
-
-    result = BuildDefaultWithloop (array, shape);
 
     DBUG_RETURN (result);
 }
@@ -1971,23 +1933,6 @@ HDspap (node *arg_node, info *arg_info)
 #endif
     }
 
-    /* if in HD_default mode, rebuild selection */
-
-    if ((INFO_HD_TRAVSTATE (arg_info) == HD_default)
-        && (ILIBstringCompare (SPAP_NAME (arg_node), "sel"))
-        && (SPAP_MOD (arg_node) == NULL) && (NODE_TYPE (SPAP_ARG1 (arg_node)) == N_array))
-
-    {
-        dotinfo *info = MakeDotInfo (ARRAY_AELEMS (SPAP_ARG1 (arg_node)));
-
-        node *defexpr = BuildSetNotationDefault (SPAP_ARG2 (arg_node), info);
-
-        FREEdoFreeTree (result);
-        FreeDotInfo (info);
-
-        result = defexpr;
-    }
-
     /* Now we traverse our result in order to handle any */
     /* dots inside.                                      */
 
@@ -2029,18 +1974,6 @@ HDprf (node *arg_node, info *arg_info)
             ScanId (PRF_ARG1 (arg_node), &PRF_ARG2 (arg_node), arg_info);
         }
 #endif
-    }
-
-    if ((INFO_HD_TRAVSTATE (arg_info) == HD_default) && (PRF_PRF (arg_node) == F_sel)
-        && (NODE_TYPE (PRF_ARG1 (arg_node)) == N_array)) {
-        dotinfo *info = MakeDotInfo (ARRAY_AELEMS (PRF_ARG1 (arg_node)));
-
-        node *defexpr = BuildSetNotationDefault (PRF_ARG2 (arg_node), info);
-
-        FREEdoFreeTree (arg_node);
-        FreeDotInfo (info);
-
-        arg_node = defexpr;
     }
 
     arg_node = TRAVcont (arg_node, arg_info);
@@ -2143,7 +2076,7 @@ HDsetwl (node *arg_node, info *arg_info)
     node *result = NULL;
     travstate oldstate = INFO_HD_TRAVSTATE (arg_info);
     idtable *oldtable = INFO_HD_IDTABLE (arg_info);
-    node *shape = NULL;
+    node *oldshape = INFO_HD_WLSHAPE (arg_info);
     node *defexpr = NULL;
     node *ids = NULL;
     int dotcnt;
@@ -2167,7 +2100,7 @@ HDsetwl (node *arg_node, info *arg_info)
 
     arg_node = TRAVcont (arg_node, arg_info);
 
-    shape = BuildWLShape (INFO_HD_IDTABLE (arg_info), oldtable);
+    INFO_HD_WLSHAPE (arg_info) = BuildWLShape (INFO_HD_IDTABLE (arg_info), oldtable);
 
     if (INFO_HD_IDTABLE (arg_info)->type == ID_scalar) {
         result
@@ -2177,7 +2110,8 @@ HDsetwl (node *arg_node, info *arg_info)
                         TBmakeCode (MAKE_EMPTY_BLOCK (),
                                     TBmakeExprs (DUPdoDupTree (SETWL_EXPR (arg_node)),
                                                  NULL)),
-                        TBmakeGenarray (shape, NULL));
+                        TBmakeGenarray (INFO_HD_WLSHAPE (arg_info), NULL));
+
     }
 #ifdef HD_SETWL_VECTOR
     else {
@@ -2190,7 +2124,7 @@ HDsetwl (node *arg_node, info *arg_info)
                         TBmakeCode (MAKE_EMPTY_BLOCK (),
                                     TBmakeExprs (DUPdoDupTree (SETWL_EXPR (arg_node)),
                                                  NULL)),
-                        TBmakeGenarray (shape, NULL));
+                        TBmakeGenarray (INFO_HD_WLSHAPE (arg_info), NULL));
     }
 #endif
 
@@ -2227,7 +2161,7 @@ HDsetwl (node *arg_node, info *arg_info)
 
         /* build the default value */
         defshape
-          = MAKE_BIN_PRF (F_drop_SxV, TBmakeNum (TCcountExprs (ids)),
+          = MAKE_BIN_PRF (F_drop_SxV, TBmakeNum (TCcountExprs (SETWL_VEC (arg_node))),
                           TBmakePrf (F_shape, TBmakeExprs (DUPdoDupTree (setid), NULL)));
 
         defexpr = BuildDefaultWithloop (setid, defshape);
@@ -2252,25 +2186,43 @@ HDsetwl (node *arg_node, info *arg_info)
 
     INFO_HD_IDTABLE (arg_info) = oldtable;
     INFO_HD_TRAVSTATE (arg_info) = oldstate;
+    INFO_HD_WLSHAPE (arg_info) = oldshape;
 
     result = TRAVdo (result, arg_info);
 
     DBUG_RETURN (result);
 }
 
+/**
+ * @brief hook to replace ids bound by setwl notation
+ *        within default values.
+ *
+ * @param arg_node current node of the ast
+ * @param arg_info info node
+ *
+ * @return transformed AST
+ */
 node *
 HDspid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("HDspid");
 
     if (INFO_HD_TRAVSTATE (arg_info) == HD_default) {
-        if (IdTableContains (SPID_NAME (arg_node), INFO_HD_IDTABLE (arg_info))) {
-            CTIwarnLine (global.linenum,
-                         "Cannot infer default value for %s in set notation, using 0",
-                         SPID_NAME (arg_node));
+        idtype type = IdTableContains (SPID_NAME (arg_node), INFO_HD_IDTABLE (arg_info));
 
+        if (type == ID_scalar) {
             FREEdoFreeTree (arg_node);
             arg_node = TBmakeNum (0);
+        } else if (type == ID_vector) {
+            FREEdoFreeTree (arg_node);
+            /*
+             * build 0 * wlshape instead of vector
+             */
+            arg_node = TBmakePrf (F_mul_SxA,
+                                  TBmakeExprs (TBmakeNum (0),
+                                               TBmakeExprs (DUPdoDupTree (
+                                                              INFO_HD_WLSHAPE (arg_info)),
+                                                            NULL)));
         }
     }
 
