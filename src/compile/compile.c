@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.163  2005/06/21 13:30:00  sah
+ * shape of sub-vars in aud withloops is
+ * calculated based on the default values shape
+ * now
+ *
  * Revision 3.162  2005/06/21 10:01:24  sah
  * for AKS/AKD wls the descriptor of the suballoc var
  * is built based upon the default values descriptor.
@@ -5303,7 +5308,7 @@ COMPwith (node *arg_node, info *arg_info)
     node *let_neutral;
     node *res_ids, *idx_id, *lower_id, *upper_id;
     char *sub_name;
-    node *sub_vardec, *sub_get_dim, *sub_set_shape, *sub_icm_args;
+    node *sub_vardec, *sub_get_dim, *sub_set_shape;
     bool isfold;
 
     DBUG_ENTER ("COMPwith");
@@ -5370,29 +5375,24 @@ COMPwith (node *arg_node, info *arg_info)
     } else {
 
         /*
-         * The descriptor of A_sub must only be built if it is
-         * actually used (shape checks are done)
-         * AND there actually IS a subarray
+         * The descriptor of A_sub must only be built if
+         * there actually IS a subarray
          */
-        if (global.doruntimecheck) {
-            sub_name = ILIBstringConcat (IDS_NAME (res_ids), "_sub");
-            sub_vardec = FUNDEF_VARDEC (INFO_COMP_FUNDEF (arg_info));
-            while ((sub_vardec != NULL)
-                   && (strcmp (sub_name, VARDEC_NAME (sub_vardec)))) {
-                sub_vardec = VARDEC_NEXT (sub_vardec);
-            }
-            ILIBfree (sub_name);
+        sub_name = ILIBstringConcat (IDS_NAME (res_ids), "_sub");
+        sub_vardec = FUNDEF_VARDEC (INFO_COMP_FUNDEF (arg_info));
+        while ((sub_vardec != NULL) && (strcmp (sub_name, VARDEC_NAME (sub_vardec)))) {
+            sub_vardec = VARDEC_NEXT (sub_vardec);
+        }
+        ILIBfree (sub_name);
 
-            /*
-             * Free descriptor of subarray (IF it exists)
-             */
-            if (sub_vardec != NULL) {
-                icm_chain
-                  = TCmakeAssignIcm1 ("ND_FREE__DESC",
-                                      TCmakeIdCopyStringNt (VARDEC_NAME (sub_vardec),
-                                                            VARDEC_TYPE (sub_vardec)),
-                                      icm_chain);
-            }
+        /*
+         * Free descriptor of subarray (IF it exists)
+         */
+        if (sub_vardec != NULL) {
+            icm_chain = TCmakeAssignIcm1 ("ND_FREE__DESC",
+                                          TCmakeIdCopyStringNt (VARDEC_NAME (sub_vardec),
+                                                                VARDEC_TYPE (sub_vardec)),
+                                          icm_chain);
         }
 
         if (CODE_NEXT (WITH_CODE (arg_node)) == NULL) {
@@ -5422,8 +5422,7 @@ COMPwith (node *arg_node, info *arg_info)
                                                     IDS_TYPE (res_ids)),
                               icm_chain);
 
-        if ((global.doruntimecheck) && (sub_vardec != NULL)) {
-
+        if (sub_vardec != NULL) {
             /*
              * Calculate dimension of subarray
              *
@@ -5439,34 +5438,46 @@ COMPwith (node *arg_node, info *arg_info)
                                                               ID_TYPE (idx_id))));
 
             /*
-             * Calculate shape of subarray
-             *
-             * Shape( A_Sub) = Shape( Sel( Iv, A))
+             * Annotate shape of subarray if default present
+             * (genarray only)
              */
-            sub_icm_args
-              = MakeTypeArgs (VARDEC_NAME (sub_vardec), VARDEC_TYPE (sub_vardec), FALSE,
-                              TRUE, FALSE,
-                              MakeTypeArgs (IDS_NAME (res_ids), IDS_TYPE (res_ids), FALSE,
-                                            TRUE, FALSE,
-                                            TBmakeExprs (DUPdupIdNt (idx_id), NULL)));
+            if ((NODE_TYPE (WITH_WITHOP (arg_node)) == N_genarray)
+                && (TCgetShapeDim (VARDEC_TYPE (sub_vardec)) < 0)) {
+                if (GENARRAY_DEFAULT (WITH_WITHOP (arg_node)) != NULL) {
+                    DBUG_PRINT ("COMP", ("creating COPY__SHAPE for SUBALLOC var"));
+                    /*
+                     * copy shape
+                     */
+                    sub_set_shape
+                      = TCmakeIcm1 ("ND_COPY__SHAPE",
+                                    MakeTypeArgs (VARDEC_NAME (sub_vardec),
+                                                  VARDEC_TYPE (sub_vardec), FALSE, TRUE,
+                                                  FALSE,
+                                                  MakeTypeArgs (ID_NAME (
+                                                                  GENARRAY_DEFAULT (
+                                                                    WITH_WITHOP (
+                                                                      arg_node))),
+                                                                ID_TYPE (
+                                                                  GENARRAY_DEFAULT (
+                                                                    WITH_WITHOP (
+                                                                      arg_node))),
+                                                                FALSE, TRUE, FALSE,
+                                                                NULL)));
 
-            /*
-             * Annotate shape of subarray
-             */
-            sub_set_shape
-              = TCmakeIcm3 ("WL_SUB_SHAPE",
-                            TCmakeIdCopyStringNt (VARDEC_NAME (sub_vardec),
-                                                  VARDEC_TYPE (sub_vardec)),
-                            TCmakeIdCopyStringNt (ID_NAME (idx_id), ID_TYPE (idx_id)),
-                            TCmakeIdCopyStringNt (IDS_NAME (res_ids),
-                                                  IDS_TYPE (res_ids)));
+                    icm_chain = TBmakeAssign (sub_set_shape, icm_chain);
+
+                } else {
+                    DBUG_ASSERT (0, "no default value found! "
+                                    "cannot create subvar shape");
+                }
+            }
 
             /*
              * Allocate descriptor of subarray
              */
             icm_chain
               = MakeAllocDescIcm (VARDEC_NAME (sub_vardec), VARDEC_TYPE (sub_vardec), 1,
-                                  sub_get_dim, TBmakeAssign (sub_set_shape, icm_chain));
+                                  sub_get_dim, icm_chain);
         }
     }
 
@@ -5703,8 +5714,10 @@ COMPwith2 (node *arg_node, info *arg_info)
 
                 /*
                  * Annotate shape of subarray if default present
+                 * (genarray only)
                  */
-                if (NODE_TYPE (withop) == N_genarray) {
+                if ((NODE_TYPE (withop) == N_genarray)
+                    && (TCgetShapeDim (VARDEC_TYPE (sub_vardec)) < 0)) {
                     if (GENARRAY_DEFAULT (withop) != NULL) {
                         DBUG_PRINT ("COMP", ("creating COPY__SHAPE for SUBALLOC var"));
                         /*
@@ -5727,8 +5740,8 @@ COMPwith2 (node *arg_node, info *arg_info)
                         alloc_icms = TBmakeAssign (sub_set_shape, alloc_icms);
 
                     } else {
-                        DBUG_PRINT ("COMP",
-                                    ("cannot create COPY__SHAPE, as no default found"));
+                        DBUG_ASSERT (0, "no default value found! "
+                                        "cannot create subvar shape");
                     }
                 }
 
