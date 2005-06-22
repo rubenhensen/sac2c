@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.36  2005/06/22 20:48:15  sah
+ * fixed WL_MODARRAY_SUBSHAPE and its
+ * usage.
+ *
  * Revision 1.35  2005/06/19 11:15:33  sah
  * modified insertion of suballoc
  *
@@ -795,26 +799,96 @@ EMALcode (node *arg_node, info *arg_info)
          */
 
         /*
-         * when inserting suballocs, we have to make sure that the
-         * shape class of the suballocated var matches the shape
-         * class of the array the suballocation is performed
-         * on. So we use the default expression here to find out the
-         * shape class to use. If the result of the cexpr does not
-         * fit within the default value, this will lead to a type
-         * error during runtime!
+         * We first try to find out the most special type for the
+         * elements computed in each iteration of the withloop
+         * (the c-expression). The reason for this is twofold:
+         *
+         * - if we manage to find an AKS type, we can use wlassign
+         *   instead of a subvar which is more efficient
+         *
+         * - to be able to allocate and build a correct descriptor
+         *   we have to make sure, that the shape-class of the
+         *   subvar is AKS if the default value or cexpr is
+         *   (in the latter case, there usually is no default value
+         *   at all). If the subvar is AKD/AUD, we need the default
+         *   value to assign a correct descriptor.
+         *   For modarrays, we use a special WL_MODARRAY_SUBSHAPE
+         *   icm to create the descriptor of the subvar. This icm
+         *   relies on the fact, that the shape-class of the subvar
+         *   always is more special than the one of the result
+         *   array.
+         */
+
+        /*
+         * N_genarray
          */
         if ((NODE_TYPE (withops) == N_genarray) && (GENARRAY_DEFAULT (withops) != NULL)) {
             DBUG_ASSERT ((NODE_TYPE (GENARRAY_DEFAULT (withops)) == N_id),
                          "found a non flattened default expression!");
 
+            /*
+             * use more special type of default or cexpression
+             */
             if (TYleTypes (AVIS_TYPE (cexavis),
                            AVIS_TYPE (ID_AVIS (GENARRAY_DEFAULT (withops))))) {
-                crestype = AVIS_TYPE (cexavis);
+                crestype = TYcopyType (AVIS_TYPE (cexavis));
             } else {
-                crestype = AVIS_TYPE (ID_AVIS (GENARRAY_DEFAULT (withops)));
+                crestype = TYcopyType (AVIS_TYPE (ID_AVIS (GENARRAY_DEFAULT (withops))));
+            }
+            /*
+             * N_modarray:
+             */
+        } else if ((NODE_TYPE (withops) == N_modarray)
+                   && (TYisAUD (AVIS_TYPE (cexavis)) || TYisAKD (AVIS_TYPE (cexavis)))) {
+            ntype *ivtype = AVIS_TYPE (ID_AVIS (indexvector));
+            ntype *restype = AVIS_TYPE (als->avis);
+            /*
+             * we need a AKS index vector in order to
+             * do any computation on the cexpressions
+             * shape.
+             */
+            if (TYisAKS (ivtype) && (TYisAKD (restype) || TYisAKS (restype))) {
+                if (TYgetDim (restype) == SHgetExtent (TYgetShape (ivtype), 0)) {
+                    /*
+                     * a scalar!
+                     */
+                    DBUG_PRINT ("EMAL", ("subvar %s is Scalar", AVIS_NAME (als->avis)));
+
+                    crestype
+                      = TYmakeAKS (TYcopyType (TYgetScalar (restype)), SHmakeShape (0));
+                } else {
+                    /*
+                     * non scalar!
+                     */
+                    if (TYisAKD (restype)) {
+                        DBUG_PRINT ("EMAL",
+                                    ("subvar of %s is AKD", AVIS_NAME (als->avis)));
+
+                        crestype = TYmakeAKD (TYcopyType (TYgetScalar (restype)),
+                                              TYgetDim (restype) - TYgetDim (ivtype),
+                                              SHmakeShape (0));
+                    } else if (TYisAKS (restype)) {
+                        DBUG_PRINT ("EMAL",
+                                    ("subvar of %s is AKS", AVIS_NAME (als->avis)));
+
+                        crestype
+                          = TYmakeAKS (TYcopyType (TYgetScalar (restype)),
+                                       SHdropFromShape (SHgetExtent (TYgetShape (ivtype),
+                                                                     0),
+                                                        TYgetShape (restype)));
+                    }
+                }
+            } else {
+                /*
+                 * restype is AUD or index is non AKS, so leave crestype as is
+                 */
+                crestype = TYcopyType (AVIS_TYPE (cexavis));
             }
         } else {
-            crestype = AVIS_TYPE (cexavis);
+            /*
+             * cexavis already is AKS, so we cannot do better!
+             */
+            crestype = TYcopyType (AVIS_TYPE (cexavis));
         }
 
         if ((NODE_TYPE (withops) == N_genarray) || (NODE_TYPE (withops) == N_modarray)) {
@@ -932,6 +1006,7 @@ EMALcode (node *arg_node, info *arg_info)
         als = als->next;
         withops = WITHOP_NEXT (withops);
         cexprs = EXPRS_NEXT (cexprs);
+        crestype = TYfreeType (crestype);
     }
 
     if (assign != NULL) {

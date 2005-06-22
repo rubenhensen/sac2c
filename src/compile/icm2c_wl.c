@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.47  2005/06/22 20:48:15  sah
+ * fixed WL_MODARRAY_SUBSHAPE and its
+ * usage.
+ *
  * Revision 3.46  2005/06/21 23:39:39  sah
  * added setting of modarray wls subvar descriptors
  * using new C-icm WL_MODARRAY_SUBSHAPE
@@ -585,6 +589,7 @@ void
 ICMCompileWL_MODARRAY_SUBSHAPE (char *sub_NT, char *idx_NT, int dims, char *to_NT)
 {
     shape_class_t sub_sc = ICUGetShapeClass (sub_NT);
+    shape_class_t to_sc = ICUGetShapeClass (to_NT);
     int cnt;
 
     DBUG_ENTER ("ICMCompileWL_MODARRAY_SUBSHAPE");
@@ -600,21 +605,28 @@ ICMCompileWL_MODARRAY_SUBSHAPE (char *sub_NT, char *idx_NT, int dims, char *to_N
         fprintf (global.outfile, "SAC_NOOP()\n");
         break;
     case C_akd:
+        DBUG_ASSERT (((to_sc == C_akd) || (to_sc == C_aud)),
+                     "applied WL_MODARRAY_SUBSHAPE to AKD subvar but "
+                     "non AKD/AUD resultvar. cannot handle this!");
         /*
          * start a fresh block
          */
-        BLOCK_VARDECS (fprintf (global.outfile, "SAC_size = 1;");
+        BLOCK_VARDECS (fprintf (global.outfile, "int SAC_size = 1;");
                        ,
                        /*
-                        * update shape elements
-                        * and calculate size
+                        * update shape elements and calculate size.
+                        *
+                        * NOTE: we have to use DESC_SHAPE here as the
+                        *       selection index is not constant. But we
+                        *       do know that it is a AKD/AUD so this
+                        *       should exist;)
                         */
                        for (cnt = 0; cnt < dims; cnt++) {
-                           SET_SHAPE_AKD (sub_NT, dims,
+                           SET_SHAPE_AKD (sub_NT, cnt,
                                           fprintf (global.outfile,
-                                                   "SAC_ND_A_SHAPE( %s, SAC_ND_A_DIM( "
-                                                   "%s) - %d)",
-                                                   sub_NT, sub_NT, dims - cnt););
+                                                   "SAC_ND_A_DESC_SHAPE( %s, "
+                                                   "SAC_ND_A_DIM( %s) - %d)",
+                                                   to_NT, to_NT, dims - cnt););
                            fprintf (global.outfile,
                                     "SAC_size *= SAC_ND_A_SHAPE( %s, %d);", sub_NT, cnt);
                        }
@@ -625,30 +637,33 @@ ICMCompileWL_MODARRAY_SUBSHAPE (char *sub_NT, char *idx_NT, int dims, char *to_N
 
         break;
     case C_aud:
+        DBUG_ASSERT ((to_sc == C_aud), "applied WL_MODARRAY_SUBSHAPE to AUD subvar but "
+                                       "non AUD resultvar. cannot handle this!");
         /*
          * set shape and calculate size
          */
         BLOCK_VARDECS (fprintf (global.outfile, "int SAC_size = 1;\n");
-                       , FOR_LOOP_INC_VARDEC (fprintf (global.outfile, "SAC_i");
-                                              , fprintf (global.outfile, "0");
-                                              , fprintf (global.outfile,
-                                                         "SAC_ND_A_DIM( %s)", sub_NT);
-                                              , SET_SHAPE_AUD (sub_NT,
-                                                               fprintf (global.outfile,
-                                                                        "SAC_i");
-                                                               , fprintf (global.outfile,
-                                                                          "SAC_ND_A_DESC_"
-                                                                          "SHAPE( %s, "
-                                                                          "SAC_ND_A_DIM( "
-                                                                          "%s) - "
-                                                                          "SAC_ND_A_DIM( "
-                                                                          "%s) + SAC_i)",
-                                                                          to_NT, to_NT,
-                                                                          sub_NT););
-                                              fprintf (global.outfile,
-                                                       "SAC_size *= "
-                                                       "SAC_ND_A_SHAPE( %s, SAC_i);\n",
-                                                       sub_NT););
+                       ,
+                       FOR_LOOP_INC_VARDEC (fprintf (global.outfile, "SAC_i");
+                                            , fprintf (global.outfile, "0");
+                                            , fprintf (global.outfile,
+                                                       "SAC_ND_A_DIM( %s)", sub_NT);
+                                            ,
+                                            SET_SHAPE_AUD (sub_NT,
+                                                           fprintf (global.outfile,
+                                                                    "SAC_i");
+                                                           ,
+                                                           fprintf (global.outfile,
+                                                                    "SAC_ND_A_SHAPE( %s, "
+                                                                    "SAC_ND_A_DIM( %s) - "
+                                                                    "SAC_ND_A_DIM( %s) + "
+                                                                    "SAC_i)",
+                                                                    to_NT, to_NT,
+                                                                    sub_NT););
+                                            fprintf (global.outfile,
+                                                     "SAC_size *= "
+                                                     "SAC_ND_A_SHAPE( %s, SAC_i);\n",
+                                                     sub_NT););
                        SET_SIZE (sub_NT, fprintf (global.outfile, "SAC_size");););
 
         break;
