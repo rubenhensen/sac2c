@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.136  2005/06/23 09:02:44  sah
+ * added TCids2ExprsNt
+ *
  * Revision 3.135  2005/06/02 18:57:26  sah
  * fixed a denmark fubar function
  *
@@ -2539,6 +2542,32 @@ TCids2Exprs (node *ids_arg)
 
     if (ids_arg != NULL) {
         exprs = TBmakeExprs (DUPdupIdsId (ids_arg), TCids2Exprs (IDS_NEXT (ids_arg)));
+    } else {
+        exprs = NULL;
+    }
+
+    DBUG_RETURN (exprs);
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   node *TCids2ExprsNT( ids *ids_arg)
+ *
+ * description:
+ *   convert ids into N_exprs chain
+ *
+ *****************************************************************************/
+
+node *
+TCids2ExprsNt (node *ids_arg)
+{
+    node *exprs;
+
+    DBUG_ENTER ("TCids2ExprsNt");
+
+    if (ids_arg != NULL) {
+        exprs = TBmakeExprs (DUPdupIdsIdNt (ids_arg), TCids2ExprsNt (IDS_NEXT (ids_arg)));
     } else {
         exprs = NULL;
     }

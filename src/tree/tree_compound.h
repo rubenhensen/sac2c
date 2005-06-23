@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.192  2005/06/23 09:02:44  sah
+ * added TCids2ExprsNt
+ *
  * Revision 3.191  2005/06/01 14:02:33  ktr
  * corrected WITHOP_MEM
  *
@@ -1186,6 +1189,7 @@ extern node *TCcreateZeroVector (int length, simpletype btype);
 extern bool TCisConstArray (node *array);
 
 extern node *TCids2Exprs (node *ids_arg);
+extern node *TCids2ExprsNt (node *ids_arg);
 extern node *TCids2Array (node *ids_arg);
 
 /******************************************************************************
