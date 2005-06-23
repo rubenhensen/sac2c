@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2005/06/23 09:04:49  sah
+ * implemented SAC_RuntimeError_Mult and SAC_PrintShape
+ *
  * Revision 3.4  2005/06/10 17:33:37  sbs
  * SAC_RuntimeErrorLine added.
  *
@@ -42,9 +45,13 @@
 #ifndef _SAC_MESSAGE_H
 #define _SAC_MESSAGE_H
 
+#include "sac_std.h"
+
 extern void SAC_RuntimeError (char *format, ...);
+extern void SAC_RuntimeError_Mult (int cnt, ...);
 extern void SAC_RuntimeErrorLine (int line, char *format, ...);
 extern void SAC_RuntimeWarning (char *format, ...);
+extern const char *SAC_PrintShape (SAC_array_descriptor_t desc);
 extern void SAC_Print (char *format, ...);
 
 #endif /* _SAC_MESSAGE_H */

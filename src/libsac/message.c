@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2005/06/23 09:04:49  sah
+ * implemented SAC_RuntimeError_Mult and SAC_PrintShape
+ *
  * Revision 3.5  2005/06/16 09:50:44  sbs
  * added support for mult-line format strings encoded by @-symbols
  *
@@ -70,10 +73,11 @@
  *****************************************************************************/
 
 #include <stdio.h>
-#include <strings.h>
+#include <string.h>
 #include <stdarg.h>
 #include <stdlib.h>
 
+#include "sac_std.h"
 #include "sac_misc.h"
 #include "sac_heapmgr.h"
 
@@ -132,6 +136,47 @@ SAC_RuntimeError (char *format, ...)
 }
 
 void
+SAC_RuntimeError_Mult (int cnt, ...)
+{
+    va_list arg_p;
+    char *line;
+    char *next;
+    int pos;
+
+    SAC_MT_ACQUIRE_LOCK (SAC_MT_output_lock);
+
+    SAC_HM_ShowDiagnostics ();
+    /*
+     * If the program is not linked with the diagnostic version of the private
+     * heap manager, a dummy function will be called here defined either in
+     * heapmgr/setup.c or in libsac/nophm.c.
+     */
+
+    fprintf (stderr, "\n\n*** SAC runtime error\n");
+
+    va_start (arg_p, cnt);
+
+    for (pos = 0; pos < cnt; pos++) {
+        next = strdup (va_arg (arg_p, char *));
+        line = strtok (next, "@");
+        while (line != NULL) {
+            fprintf (stderr, "*** ");
+            vfprintf (stderr, line, arg_p);
+            fprintf (stderr, "\n");
+            line = strtok (NULL, "@");
+        }
+    }
+
+    va_end (arg_p);
+
+    fprintf (stderr, "\n\n");
+
+    SAC_MT_RELEASE_LOCK (SAC_MT_output_lock);
+
+    exit (1);
+}
+
+void
 SAC_RuntimeErrorLine (int line, char *format, ...)
 {
     va_list arg_p;
@@ -176,6 +221,44 @@ SAC_RuntimeWarning (char *format, ...)
     fprintf (stderr, "\n\n");
 
     SAC_MT_RELEASE_LOCK (SAC_MT_output_lock);
+}
+
+#define MAX_SHAPE_SIZE 255
+
+const char *
+SAC_PrintShape (SAC_array_descriptor_t desc)
+{
+    int pos;
+    char bufA[MAX_SHAPE_SIZE];
+    char bufB[MAX_SHAPE_SIZE];
+    char *from = bufA;
+    char *to = bufB;
+    int written;
+
+    from[0] = '[';
+    from[1] = '\0';
+
+    for (pos = 0; pos < DESC_DIM (desc); pos++) {
+        if (pos < DESC_DIM (desc) - 1) {
+            written
+              = snprintf (to, MAX_SHAPE_SIZE - 5, "%s %d,", from, DESC_SHAPE (desc, pos));
+        } else {
+            written
+              = snprintf (to, MAX_SHAPE_SIZE - 5, "%s %d", from, DESC_SHAPE (desc, pos));
+        }
+        if (written == MAX_SHAPE_SIZE - 5) {
+            snprintf (from, MAX_SHAPE_SIZE, "%s...", to);
+            break;
+        } else {
+            char *tmp = to;
+            to = from;
+            from = tmp;
+        }
+    }
+
+    snprintf (to, MAX_SHAPE_SIZE, "%s]", from);
+
+    return (to);
 }
 
 void
