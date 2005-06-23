@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.165  2005/06/23 09:06:38  sah
+ * added correct handling of named tuples
+ * to COMPPrfDispatchError
+ *
  * Revision 3.164  2005/06/21 23:39:39  sah
  * added setting of modarray wls subvar descriptors
  * using new C-icm WL_MODARRAY_SUBSHAPE
@@ -4496,8 +4500,8 @@ COMPPrfDispatchError (node *arg_node, info *arg_info)
 
     ret_node
       = TCmakeAssignIcm5 ("DISPATCH_ERROR", TBmakeNum (TCcountIds (let_ids)),
-                          TCids2Exprs (let_ids), DUPdoDupNode (head),
-                          TBmakeNum (TCcountExprs (tail)), DUPdoDupTree (tail), NULL);
+                          TCids2ExprsNt (let_ids), DUPdoDupNode (head),
+                          TBmakeNum (TCcountExprs (tail)), DUPdupExprsNt (tail), NULL);
 
     DBUG_RETURN (ret_node);
 }
