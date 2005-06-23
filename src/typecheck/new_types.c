@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.91  2005/06/23 09:01:07  sah
+ * dispatch errors now include module name and
+ * function signature as well (as this is much
+ * more descriptive!)
+ *
  * Revision 3.90  2005/06/16 09:51:47  sbs
  * we now issue F_dispatch_error if instances are not found
  * rather than F_type_error
@@ -6075,6 +6080,8 @@ node *
 TYcreateWrapperCode (node *fundef, node *vardecs, node **new_vardecs)
 {
     node *assigns = NULL;
+    char *funsig;
+    char *tmp;
 
     DBUG_ENTER ("TYcreateWrapperCode");
 
@@ -6087,9 +6094,19 @@ TYcreateWrapperCode (node *fundef, node *vardecs, node **new_vardecs)
                      "wrapper function with ... return type found!");
         DBUG_ASSERT ((!FUNDEF_HASDOTARGS (fundef)),
                      "wrapper function with ... argument found!");
-        assigns = CreateWrapperCode (FUNDEF_WRAPPERTYPE (fundef), NULL, 0,
-                                     FUNDEF_NAME (fundef), FUNDEF_ARGS (fundef),
-                                     FUNDEF_ARGS (fundef), vardecs, new_vardecs);
+
+        tmp = TUtypeSignature2String (fundef);
+        funsig = ILIBmalloc (sizeof (char)
+                             * (strlen (FUNDEF_MOD (fundef))
+                                + strlen (FUNDEF_NAME (fundef)) + strlen (tmp) + 6));
+        sprintf (funsig, "%s:%s :: %s", FUNDEF_MOD (fundef), FUNDEF_NAME (fundef), tmp);
+
+        assigns = CreateWrapperCode (FUNDEF_WRAPPERTYPE (fundef), NULL, 0, funsig,
+                                     FUNDEF_ARGS (fundef), FUNDEF_ARGS (fundef), vardecs,
+                                     new_vardecs);
+
+        tmp = ILIBfree (tmp);
+        funsig = ILIBfree (funsig);
     }
 
     DBUG_RETURN (assigns);
