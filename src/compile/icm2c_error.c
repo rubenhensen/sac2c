@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2005/06/23 09:04:01  sah
+ * made message printed by DISPATCH_ERROR
+ * much more descriptive
+ *
  * Revision 1.8  2005/06/16 09:48:48  sbs
  * changed TYPE_ERROR into DISPATCH_ERROR
  *
@@ -55,6 +59,7 @@ void
 ICMCompileDISPATCH_ERROR (int cnt_to, char **to_ANY, char *funname, int cnt_from,
                           char **from_ANY)
 {
+    int i;
 
     DBUG_ENTER ("ICMCompileDISPATCH_ERROR");
 
@@ -64,36 +69,24 @@ ICMCompileDISPATCH_ERROR (int cnt_to, char **to_ANY, char *funname, int cnt_from
 #undef DISPATCH_ERROR
 
     INDENT;
-#if 0
-  /**
-   * requires the implementation of SAC_RuntimeError_Mult
-   * and SAC_PrintShape......
-   * i.e. FUTURE WORK!!!
-   * Until then, we go with a less instructive message (see below).
-   */
-  fprintf( global.outfile, "SAC_RuntimeError_Mult( ");
-  fprintf( global.outfile, "%i", cnt_from + 1);
-  fprintf( global.outfile, ", ");
-  fprintf( global.outfile, "\"No appropriate instance of function \\\"\" %s"
-                    " \"\\\" found!\"", funname);
-  fprintf( global.outfile, ", ");
-  fprintf( global.outfile, "\"Types of arguments:\"");
-  fprintf( global.outfile, ", ");
-  for (i = 0; i < cnt_from; i++) {
-    fprintf( global.outfile, "\"  %%s\", SAC_PrintShape( SAC_ND_A_DESC( %s))",
-                      from_ANY[i]);
-    if (i < cnt_from - 1) {
-      fprintf( global.outfile, ", ");
-    }
-  }
-  fprintf( global.outfile, ");\n");
-#else
+    fprintf (global.outfile, "SAC_RuntimeError_Mult( ");
+    fprintf (global.outfile, "%i", cnt_from + 2);
+    fprintf (global.outfile, ", ");
     fprintf (global.outfile,
-             "SAC_RuntimeError( "
-             "\"No appropriate instance of function"
-             " \\\"\" %s \"\\\" found!\");\n",
+             "\"No appropriate instance of function \\\"\" %s"
+             " \"\\\" found!\"",
              funname);
-#endif
+    fprintf (global.outfile, ", ");
+    fprintf (global.outfile, "\"Shape of arguments:\"");
+    fprintf (global.outfile, ", ");
+    for (i = 0; i < cnt_from; i++) {
+        fprintf (global.outfile, "\"  %%s\", SAC_PrintShape( SAC_ND_A_DESC( %s))",
+                 from_ANY[i]);
+        if (i < cnt_from - 1) {
+            fprintf (global.outfile, ", ");
+        }
+    }
+    fprintf (global.outfile, ");\n");
 
     /*
      * It would be nice to initialize the return values correctly in order
