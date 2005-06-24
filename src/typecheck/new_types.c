@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.92  2005/06/24 09:00:29  sbs
+ * fixed a stupid error in TYsplitWrapperType
+ * (inserted i--)
+ *
  * Revision 3.91  2005/06/23 09:01:07  sah
  * dispatch errors now include module name and
  * function signature as well (as this is much
@@ -5394,6 +5398,13 @@ SplitWrapperType (ntype *type, int level, ntype **frame, int *pathes_remaining)
                             DBUG_PRINT ("NTY_SPLIT", ("**deleting " F_PTR " from " F_PTR,
                                                       NTYPE_SON (type, i), type));
                             type = DeleteSon (type, i);
+                            /**
+                             * ATTENTION: DeleteSons decrements our arity and thus the
+                             * position of all sons that follow!
+                             * therefore, we must not increment i !!!
+                             * Instead we compensate the i++ from the for loop:
+                             */
+                            i--;
                         } else {
                             DBUG_PRINT ("NTY_SPLIT",
                                         ("**setting " F_PTR " from " F_PTR " to NULL",
