@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2005/06/24 16:09:23  sah
+ * added insertion of type conversion assignments
+ * for conditionals
+ *
  * Revision 1.7  2005/06/18 13:13:49  sah
  * bugfixing
  *
@@ -62,6 +66,7 @@
 #include "traverse.h"
 #include "NameTuplesUtils.h"
 #include "new_types.h"
+#include "shape.h"
 
 /*
  * INFO structure
@@ -192,6 +197,61 @@ LiftArg (node *arg, node *fundef, ntype *new_type, node **new_assigns)
       = TBmakeAssign (TBmakeLet (new_ids, TBmakeId (ID_AVIS (arg))), (*new_assigns));
 
     ID_AVIS (arg) = new_avis;
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *LiftId( node *id, node *fundef,
+ *                 ntype *ntype, node **new_assigns)
+ *
+ * Description:
+ *   Lifts the given id of a cond or do
+ *    - Generates a new and fresh varname.
+ *    - Generates a new vardec and inserts it into the vardec chain of 'fundef'.
+ *      If 'new_type' is not NULL, 'new_type' is used as VARDEC_TYPE instead
+ *      of ID_TYPE(arg).
+ *    - Builds a new assignment and inserts it into the assignment chain
+ *      'new_assigns'.
+ *
+ ******************************************************************************/
+static void
+LiftId (node *id, node *fundef, ntype *new_type, node **new_assigns)
+{
+    char *new_name;
+    node *new_ids;
+    node *new_avis;
+
+    DBUG_ENTER ("LiftId");
+
+    new_name = ILIBtmpVarName (ID_NAME (id));
+
+    /*
+     * Insert vardec for new var
+     */
+    if (new_type == NULL) {
+        new_type = ID_NTYPE (id);
+    }
+
+    new_avis = TBmakeAvis (new_name, TYcopyType (new_type));
+
+    FUNDEF_VARDEC (fundef) = TBmakeVardec (new_avis, FUNDEF_VARDEC (fundef));
+
+    /*
+     * Abstract the given argument out:
+     *   ... = cond ( A, ...) || while ( A )
+     * is transformed into
+     *   A' = A;
+     *   ... = cond ( A', ...) || while ( A')
+     */
+    new_ids = TBmakeIds (new_avis, NULL);
+
+    (*new_assigns)
+      = TBmakeAssign (TBmakeLet (new_ids, TBmakeId (ID_AVIS (id))), (*new_assigns));
+
+    ID_AVIS (id) = new_avis;
 
     DBUG_VOID_RETURN;
 }
@@ -419,6 +479,78 @@ TCPap (node *arg_node, info *arg_info)
             }
         }
         idx++;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *TCPcond( node *arg_node, info *arg_info)
+ *
+ * Description:
+ *   inserts an assignment to ensure that the condition is an SCL of type
+ *   bool, if needed
+ *
+ ******************************************************************************/
+node *
+TCPcond (node *arg_node, info *arg_info)
+{
+    shape_class_t cond_cls;
+    ntype *cond_type;
+
+    DBUG_ENTER ("TCPcond");
+
+    cond_type = AVIS_TYPE (ID_AVIS (COND_COND (arg_node)));
+    cond_cls = NTUgetShapeClassFromNType (cond_type);
+
+    if (cond_cls != C_scl) {
+        /*
+         * non scalar cond-var found! we need to
+         * insert an extra assignment to trigger a
+         * type assertion and make sure that
+         * the cond is a scalar
+         */
+        LiftId (COND_COND (arg_node), INFO_TCP_FUNDEF (arg_info),
+                TYmakeAKS (TYcopyType (TYgetScalar (cond_type)), SHmakeShape (0)),
+                &(INFO_TCP_PREASSIGNS (arg_info)));
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *TCPdo( node *arg_node, info *arg_info)
+ *
+ * Description:
+ *   inserts an assignment to ensure that the condition is an SCL of type
+ *   bool, if needed
+ *
+ ******************************************************************************/
+node *
+TCPdo (node *arg_node, info *arg_info)
+{
+    shape_class_t do_cls;
+    ntype *do_type;
+
+    DBUG_ENTER ("TCPdo");
+
+    do_type = AVIS_TYPE (ID_AVIS (DO_COND (arg_node)));
+    do_cls = NTUgetShapeClassFromNType (do_type);
+
+    if (do_cls != C_scl) {
+        /*
+         * non scalar cond-var found! we need to
+         * insert an extra assignment to trigger a
+         * type assertion and make sure that
+         * the cond is a scalar
+         */
+        LiftId (DO_COND (arg_node), INFO_TCP_FUNDEF (arg_info),
+                TYmakeAKS (TYcopyType (TYgetScalar (do_type)), SHmakeShape (0)),
+                &(INFO_TCP_PREASSIGNS (arg_info)));
     }
 
     DBUG_RETURN (arg_node);

@@ -1701,6 +1701,8 @@
           <node name="Fundef" />
           <node name="Assign" />
           <node name="Ap" />
+          <node name="Cond" />
+          <node name="Do" />
         </travuser>
       </traversal>
       <traversal id="RID" name="Rename Identifiers" default="sons" include="renameidentifiers.h">
