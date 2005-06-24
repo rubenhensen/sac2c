@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2005/06/24 18:19:27  sah
+ * fixed traversal order and insertion of assigns
+ *
  * Revision 1.9  2005/06/24 17:42:51  sah
  * stupid bug :(
  *
@@ -78,6 +81,7 @@ struct INFO {
     node *fundef;
     node *preassigns;
     node *postassigns;
+    node *endblockassigns;
 };
 
 /*
@@ -86,6 +90,7 @@ struct INFO {
 #define INFO_TCP_FUNDEF(n) ((n)->fundef)
 #define INFO_TCP_PREASSIGNS(n) ((n)->preassigns)
 #define INFO_TCP_POSTASSIGNS(n) ((n)->postassigns)
+#define INFO_TCP_ENDBLOCKASSIGNS(n) ((n)->endblockassigns)
 
 /*
  * INFO functions
@@ -102,6 +107,7 @@ MakeInfo ()
     INFO_TCP_FUNDEF (result) = NULL;
     INFO_TCP_PREASSIGNS (result) = NULL;
     INFO_TCP_POSTASSIGNS (result) = NULL;
+    INFO_TCP_ENDBLOCKASSIGNS (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -391,6 +397,12 @@ TCPassign (node *arg_node, info *arg_info)
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
+    if ((ASSIGN_NEXT (arg_node) == NULL)
+        && (INFO_TCP_ENDBLOCKASSIGNS (arg_info) != NULL)) {
+        ASSIGN_NEXT (arg_node) = INFO_TCP_ENDBLOCKASSIGNS (arg_info);
+        INFO_TCP_ENDBLOCKASSIGNS (arg_info) = NULL;
+    }
+
     if (INFO_TCP_POSTASSIGNS (arg_info) != NULL) {
         ASSIGN_NEXT (arg_node)
           = TCappendAssign (INFO_TCP_POSTASSIGNS (arg_info), ASSIGN_NEXT (arg_node));
@@ -505,6 +517,18 @@ TCPcond (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("TCPcond");
 
+    /*
+     * first traverse the two blocks
+     * as we insert the assigns on our way up
+     */
+    if (COND_THEN (arg_node) != NULL) {
+        COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
+    }
+
+    if (COND_ELSE (arg_node) != NULL) {
+        COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
+    }
+
     cond_type = AVIS_TYPE (ID_AVIS (COND_COND (arg_node)));
     cond_cls = NTUgetShapeClassFromNType (cond_type);
 
@@ -519,8 +543,6 @@ TCPcond (node *arg_node, info *arg_info)
                 TYmakeAKS (TYcopyType (TYgetScalar (cond_type)), SHmakeShape (0)),
                 &(INFO_TCP_PREASSIGNS (arg_info)));
     }
-
-    arg_node = TRAVcont (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -555,10 +577,20 @@ TCPdo (node *arg_node, info *arg_info)
          */
         LiftId (DO_COND (arg_node), INFO_TCP_FUNDEF (arg_info),
                 TYmakeAKS (TYcopyType (TYgetScalar (do_type)), SHmakeShape (0)),
-                &(INFO_TCP_PREASSIGNS (arg_info)));
+                &(INFO_TCP_ENDBLOCKASSIGNS (arg_info)));
     }
 
-    arg_node = TRAVcont (arg_node, arg_info);
+    /*
+     * the new assign is inserted on our way through the body at
+     * the end of the body
+     */
+    if (DO_BODY (arg_node) != NULL) {
+        DO_BODY (arg_node) = TRAVdo (DO_BODY (arg_node), arg_info);
+    }
+
+    if (DO_SKIP (arg_node) != NULL) {
+        DO_SKIP (arg_node) = TRAVdo (DO_SKIP (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
