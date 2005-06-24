@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2005/06/24 17:42:51  sah
+ * stupid bug :(
+ *
  * Revision 1.8  2005/06/24 16:09:23  sah
  * added insertion of type conversion assignments
  * for conditionals
@@ -517,6 +520,8 @@ TCPcond (node *arg_node, info *arg_info)
                 &(INFO_TCP_PREASSIGNS (arg_info)));
     }
 
+    arg_node = TRAVcont (arg_node, arg_info);
+
     DBUG_RETURN (arg_node);
 }
 
@@ -552,6 +557,8 @@ TCPdo (node *arg_node, info *arg_info)
                 TYmakeAKS (TYcopyType (TYgetScalar (do_type)), SHmakeShape (0)),
                 &(INFO_TCP_PREASSIGNS (arg_info)));
     }
+
+    arg_node = TRAVcont (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }
