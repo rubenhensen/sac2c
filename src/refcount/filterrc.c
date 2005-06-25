@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2005/06/25 20:09:51  cg
+ * Bug fixed in handling of conditionals without subsequent funcond.
+ *
  * Revision 1.7  2004/11/23 22:16:18  ktr
  * renaming done.
  *
@@ -280,9 +283,9 @@ EMFRCarg (node *arg_node, info *arg_info)
         DFMsetMaskEntrySet (INFO_FRC_USEMASK (arg_info), NULL, ARG_AVIS (arg_node));
     }
 
-    INFO_FRC_CONDARGS (arg_info) = EXPRS_NEXT (INFO_FRC_CONDARGS (arg_info));
-
     if (ARG_NEXT (arg_node) != NULL) {
+        INFO_FRC_CONDARGS (arg_info) = EXPRS_NEXT (INFO_FRC_CONDARGS (arg_info));
+
         ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
     }
 
@@ -336,6 +339,16 @@ EMFRCcond (node *arg_node, info *arg_info)
     DBUG_ENTER ("EMFRCcond");
 
     DBUG_PRINT ("EMFRC", ("Filtering conditional"));
+
+    if (INFO_FRC_THENMASK (arg_info) == NULL) {
+        /*
+         * If a loop or cond fun has no return values, it also has no funcond.
+         * So, here we must still care about non-existant INFO_FRC_THENMASK and
+         * INFO_FRC_ELSEMASK.
+         */
+        INFO_FRC_THENMASK (arg_info) = DFMgenMaskCopy (INFO_FRC_USEMASK (arg_info));
+        INFO_FRC_ELSEMASK (arg_info) = INFO_FRC_USEMASK (arg_info);
+    }
 
     INFO_FRC_USEMASK (arg_info) = INFO_FRC_THENMASK (arg_info);
     COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
