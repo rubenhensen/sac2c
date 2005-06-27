@@ -40,7 +40,6 @@ markmemvals.h
 functionprecompile.c
 functionprecompile.h
 renameidentifiers.c
-renameidentifiers.c
 renameidentifiers.h
 typeconv_precompile.c
 typeconv_precompile.h
