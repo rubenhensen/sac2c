@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2005/06/27 21:23:15  sah
+ * added STRSduplicate
+ *
  * Revision 1.7  2004/11/24 17:57:18  sah
  * COMPILES.
  *
@@ -154,6 +157,24 @@ STRSprintFoldFun (const char *entry, strstype_t kind, void *rest)
     }
 
     DBUG_RETURN ((void *)0);
+}
+
+stringset_t *
+STRSduplicate (stringset_t *src)
+{
+    stringset_t *result = NULL;
+
+    DBUG_ENTER ("STRSduplicate");
+
+    if (src != NULL) {
+        result = ILIBmalloc (sizeof (stringset_t));
+
+        result->val = ILIBstringCopy (src->val);
+        result->kind = src->kind;
+        result->next = STRSduplicate (src->next);
+    }
+
+    DBUG_RETURN (result);
 }
 
 void

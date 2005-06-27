@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2005/06/27 21:23:15  sah
+ * added STRSduplicate
+ *
  * Revision 1.8  2004/11/24 17:57:18  sah
  * COMPILES.
  *
@@ -46,6 +49,7 @@ extern stringset_t *STRSadd (const char *string, strstype_t kind, stringset_t *s
 extern void *STRSfold (strsfoldfun_p fun, stringset_t *set, void *init);
 extern stringset_t *STRSjoin (stringset_t *one, stringset_t *two);
 extern stringset_t *STRSfree (stringset_t *set);
+extern stringset_t *STRSduplicate (stringset_t *src);
 extern void STRSprint (stringset_t *set);
 
 #endif /* _SAC_STRINGSET_H_ */
