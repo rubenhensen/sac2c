@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.47  2005/06/27 20:29:12  sah
+ * removed a small bug
+ *
  * Revision 1.46  2005/06/21 15:33:04  sah
  * adapted handledots to new ast and
  * fixed default value creation.
@@ -2166,14 +2169,15 @@ HDsetwl (node *arg_node, info *arg_info)
 
         defexpr = BuildDefaultWithloop (setid, defshape);
 
-        result
-          = TBmakeWith (TBmakePart (NULL, TBmakeWithid (withids, NULL),
-                                    TBmakeGenerator (F_le, F_le, TBmakeDot (1),
-                                                     TBmakeDot (1), NULL, NULL)),
-                        TBmakeCode (MAKE_EMPTY_BLOCK (),
-                                    TBmakeExprs (MAKE_BIN_PRF (F_sel, selvector, setid),
-                                                 NULL)),
-                        TBmakeGenarray (shapevector, defexpr));
+        result = TBmakeWith (TBmakePart (NULL, TBmakeWithid (withids, NULL),
+                                         TBmakeGenerator (F_le, F_le, TBmakeDot (1),
+                                                          TBmakeDot (1), NULL, NULL)),
+                             TBmakeCode (MAKE_EMPTY_BLOCK (),
+                                         TBmakeExprs (TCmakeSpap2 (NULL,
+                                                                   ILIBstringCopy ("sel"),
+                                                                   selvector, setid),
+                                                      NULL)),
+                             TBmakeGenarray (shapevector, defexpr));
 
         CODE_USED (WITH_CODE (result))++;
         PART_CODE (WITH_PART (result)) = WITH_CODE (result);
