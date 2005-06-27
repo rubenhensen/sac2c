@@ -4,6 +4,10 @@
 /*
 *
 * $Log$
+* Revision 1.38  2005/06/27 13:44:55  sah
+* now multiple LINKOBJ and LINKMOD per file
+* function are possible and handeled correctly.
+*
 * Revision 1.37  2005/06/21 19:46:56  sah
 * call of make for setwl fixed
 *
@@ -137,6 +141,7 @@
 #include "handle_mops.h"
 #include "new_types.h"
 #include "shape.h"
+#include "stringset.h"
 
 #include "resource.h"
 
@@ -865,11 +870,8 @@ pragma: hash_pragma LINKNAME string
           if (store_pragma == NULL) {
             store_pragma = TBmakePragma();
           }
-          if (PRAGMA_LINKMOD( store_pragma) != NULL) {
-            CTIwarnLine( global.linenum,
-                         "Conflicting definitions of pragma 'linkmod`");
-          }
-          PRAGMA_LINKMOD( store_pragma) = $3;
+          PRAGMA_LINKMOD( store_pragma) = STRSadd( $3, STRS_extlib,
+                                            PRAGMA_LINKMOD( store_pragma));
         }
       | hash_pragma LINKOBJ string
         { if( !was_fundec) {
@@ -878,11 +880,8 @@ pragma: hash_pragma LINKNAME string
           if (store_pragma == NULL) {
             store_pragma = TBmakePragma();
           }
-          if (PRAGMA_LINKOBJ( store_pragma) != NULL) {
-            CTIwarnLine( global.linenum,
-                         "Conflicting definitions of pragma 'linkmod`");
-          }
-          PRAGMA_LINKOBJ( store_pragma) = $3;
+          PRAGMA_LINKOBJ( store_pragma) = STRSadd( $3, STRS_objfile,
+                                            PRAGMA_LINKOBJ( store_pragma));
         }
       | hash_pragma LINKSIGN SQBR_L nums SQBR_R
         { if( !was_fundec) {

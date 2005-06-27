@@ -3472,13 +3472,13 @@
           </phases>
         </attribute>
         <attribute name="LinkMod" default="NULL" mandatory="no">
-          <type name="String" />
+          <type name="StringSet" />
           <phases>
             <all />
           </phases>
         </attribute>
         <attribute name="LinkObj" default="NULL" mandatory="no">
-          <type name="String" />
+          <type name="StringSet" />
           <phases>
             <all />
           </phases>

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2005/06/27 13:44:55  sah
+ * now multiple LINKOBJ and LINKMOD per file
+ * function are possible and handeled correctly.
+ *
  * Revision 1.11  2005/06/04 12:59:43  sbs
  * as FUNDEF_RETS and FUNDEF_ARGS are optional we should never
  * traverse them w/o checking whether they exist.
@@ -421,10 +425,10 @@ RSPfundef (node *arg_node, info *arg_info)
          */
         if (PRAGMA_LINKMOD (pragma) != NULL) {
             MODULE_DEPENDENCIES (INFO_RSP_MODULE (arg_info))
-              = STRSadd (PRAGMA_LINKMOD (pragma), STRS_extlib,
-                         MODULE_DEPENDENCIES (INFO_RSP_MODULE (arg_info)));
+              = STRSjoin (PRAGMA_LINKMOD (pragma),
+                          MODULE_DEPENDENCIES (INFO_RSP_MODULE (arg_info)));
 
-            PRAGMA_LINKMOD (pragma) = ILIBfree (PRAGMA_LINKMOD (pragma));
+            PRAGMA_LINKMOD (pragma) = NULL;
         }
 
         /*
@@ -433,10 +437,10 @@ RSPfundef (node *arg_node, info *arg_info)
          */
         if (PRAGMA_LINKOBJ (pragma) != NULL) {
             MODULE_DEPENDENCIES (INFO_RSP_MODULE (arg_info))
-              = STRSadd (PRAGMA_LINKOBJ (pragma), STRS_objfile,
-                         MODULE_DEPENDENCIES (INFO_RSP_MODULE (arg_info)));
+              = STRSjoin (PRAGMA_LINKOBJ (pragma),
+                          MODULE_DEPENDENCIES (INFO_RSP_MODULE (arg_info)));
 
-            PRAGMA_LINKOBJ (pragma) = ILIBfree (PRAGMA_LINKOBJ (pragma));
+            PRAGMA_LINKOBJ (pragma) = NULL;
         }
 
         if (PRAGMA_TOUCH (pragma) != NULL) {
