@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.157  2005/06/27 21:23:15  sah
+ * bugfix
+ *
  * Revision 3.156  2005/06/14 10:50:48  ktr
  * changed GRID_MODIFIED and STRIDE_MODIFIED into flags X_ISMODIFIED
  *
@@ -420,6 +423,7 @@
 #include "LookUpTable.h"
 #include "scheduling.h"
 #include "constants.h"
+#include "stringset.h"
 
 /*
  * INFO structure
@@ -2159,7 +2163,8 @@ DUPpragma (node *arg_node, info *arg_info)
 
     PRAGMA_COPYFUN (new_node) = ILIBstringCopy (PRAGMA_COPYFUN (arg_node));
     PRAGMA_FREEFUN (new_node) = ILIBstringCopy (PRAGMA_FREEFUN (arg_node));
-    PRAGMA_LINKMOD (new_node) = ILIBstringCopy (PRAGMA_LINKMOD (arg_node));
+    PRAGMA_LINKMOD (new_node) = STRSduplicate (PRAGMA_LINKMOD (arg_node));
+    PRAGMA_LINKOBJ (new_node) = STRSduplicate (PRAGMA_LINKOBJ (arg_node));
     PRAGMA_NUMPARAMS (new_node) = PRAGMA_NUMPARAMS (arg_node);
 
     CopyCommonNodeData (new_node, arg_node);
