@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.7  2005/06/27 18:15:50  sah
+  fixed bug #90
+
   Revision 1.6  2005/04/22 08:03:59  sah
   added missing stringcopy
 
@@ -291,7 +294,7 @@ version="1.0">
     </xsl:with-param>
   </xsl:call-template>
   <xsl:value-of select="': switch( no) {'" />
-  <xsl:apply-templates select="attributes/attribute[type/@name=&quot;Link&quot;] | attributes/attribute[type/@name=&quot;DownLink&quot;]" mode="gen-fixlink-fun" />
+  <xsl:apply-templates select="attributes/attribute[type/@name=&quot;Link&quot;] | attributes/attribute[type/@name=&quot;CodeLink&quot;]" mode="gen-fixlink-fun" />
   <xsl:value-of select="'default: break;'" />
   <xsl:value-of select="'} break;'" />
 </xsl:template>

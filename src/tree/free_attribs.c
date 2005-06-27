@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.27  2005/06/27 18:15:50  sah
+ * fixed bug #90
+ *
  * Revision 1.26  2005/06/14 14:54:29  sah
  * some cleanup
  *
@@ -201,79 +204,6 @@ FREEattribNode (node *attr, node *parent)
     DBUG_RETURN (attr);
 }
 
-static void
-FREEattribLinkFungroup (node *attr, node *parent)
-{
-    node *tmp = FUNGROUP_FUNLIST (attr);
-    node *tofree = NULL;
-
-    DBUG_ENTER ("FREEattribLinkFungroup");
-
-    if (tmp != NULL) {
-        if (LINKLIST_LINK (tmp) == parent) {
-            /*
-             * first function in FUNLIST will be freed
-             */
-            tofree = tmp;
-            FUNGROUP_FUNLIST (attr) = LINKLIST_NEXT (FUNGROUP_FUNLIST (attr));
-            LINKLIST_NEXT (tofree) = NULL;
-            LINKLIST_LINK (tofree) = NULL;
-            tofree = FREEdoFreeNode (tofree);
-            (FUNGROUP_REFCOUNTER (attr))--;
-
-        } else {
-            /*
-             * function to be freed is not first function in
-             * FUNLIST
-             */
-            while ((NULL != LINKLIST_NEXT (tmp))
-                   && (parent != LINKLIST_LINK (LINKLIST_NEXT (tmp)))) {
-                tmp = LINKLIST_NEXT (tmp);
-            }
-            if (tmp != NULL) {
-                /*
-                 * LINKLIST_NEXT(tmp) contains parent
-                 */
-                tofree = LINKLIST_NEXT (tmp);
-                LINKLIST_NEXT (tmp) = LINKLIST_NEXT (LINKLIST_NEXT (tmp));
-                LINKLIST_NEXT (tofree) = NULL;
-                LINKLIST_LINK (tofree) = NULL;
-                tofree = FREEdoFreeNode (tofree);
-                (FUNGROUP_REFCOUNTER (attr))--;
-            }
-        }
-    }
-
-    if (FUNGROUP_REFCOUNTER (attr) == 0) {
-        /*
-         * free the fungroup as it is referenced no more
-         */
-        attr = FREEdoFreeNode (attr);
-    }
-
-    DBUG_VOID_RETURN;
-}
-
-static void
-FREEattribLinkFunlist (node *attr, node *parent)
-{
-    DBUG_ENTER ("FREEattribLinkFunlist");
-
-    if (N_fungroup == NODE_TYPE (parent)) {
-        /*
-         * now the FUNLIST from fungroups should be deleted
-         */
-        node *tmp = attr;
-        while (tmp != NULL) {
-            LINKLIST_LINK (tmp) = NULL;
-            tmp = LINKLIST_NEXT (tmp);
-        }
-        attr = FREEdoFreeTree (attr);
-    }
-
-    DBUG_VOID_RETURN;
-}
-
 /** <!--******************************************************************-->
  *
  * @fn FREEattribLink
@@ -292,30 +222,10 @@ FREEattribLink (node *attr, node *parent)
     DBUG_ENTER ("FREEattribLink");
 
     /*
-     * this will only work, if all link attributes point upwards
-     * in the tree and thus there targets have not been freed, yet
-     * in all other cases, this will cause a segafault!
+     * NEVER do anything with this kind of attribute
+     * as you cannot make sure the node you reference
+     * here really exists!
      */
-    if (attr != NULL) {
-        switch (NODE_TYPE (attr)) {
-        case N_code:
-            if (attr->attribs.N_code != NULL) {
-                CODE_DEC_USED (attr);
-            }
-            break;
-
-        case N_fungroup:
-            FREEattribLinkFungroup (attr, parent);
-            break;
-
-        case N_linklist:
-            FREEattribLinkFunlist (attr, parent);
-            break;
-
-        default:
-            break;
-        }
-    }
 
     DBUG_RETURN ((node *)NULL);
 }
@@ -357,7 +267,7 @@ FREEattribExtLink (node *attr, node *parent)
 
 /** <!--******************************************************************-->
  *
- * @fn FREEattribDownLink
+ * @fn FREEattribCodeLink
  *
  * @brief Frees Link attribute
  *
@@ -369,13 +279,13 @@ FREEattribExtLink (node *attr, node *parent)
  ***************************************************************************/
 
 node *
-FREEattribDownLink (node *attr, node *parent)
+FREEattribCodeLink (node *attr, node *parent)
 {
-    DBUG_ENTER ("FREEattribDownLink");
+    DBUG_ENTER ("FREEattribCodeLink");
 
-    /* as this link points downwards in the ast, the
-     * referenced node is already freed.
-     */
+    if (attr != NULL) {
+        CODE_DEC_USED (attr);
+    }
 
     DBUG_RETURN ((node *)NULL);
 }

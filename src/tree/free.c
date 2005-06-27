@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.80  2005/06/27 18:15:50  sah
+ * fixed bug #90
+ *
  * Revision 3.79  2005/06/14 14:54:29  sah
  * some cleanup
  *
@@ -390,6 +393,67 @@ FREEdoFreeTree (node *free_node)
  *
  ******************************************************************************/
 
+static void
+RemoveFromFungroup (node *fundef)
+{
+    node *group = FUNDEF_FUNGROUP (fundef);
+    node *list;
+    node *tofree = NULL;
+
+    DBUG_ENTER ("RemoveFromFungroup");
+
+    if (group != NULL) {
+        list = FUNGROUP_FUNLIST (group);
+
+        if (list != NULL) {
+            if (LINKLIST_LINK (list) == fundef) {
+                /*
+                 * first function in FUNLIST will be freed
+                 */
+                tofree = list;
+                FUNGROUP_FUNLIST (group) = LINKLIST_NEXT (FUNGROUP_FUNLIST (group));
+                LINKLIST_NEXT (tofree) = NULL;
+                LINKLIST_LINK (tofree) = NULL;
+                tofree = FREEdoFreeNode (tofree);
+                (FUNGROUP_REFCOUNTER (group))--;
+
+            } else {
+                /*
+                 * function to be freed is not first function in
+                 * FUNLIST
+                 */
+                while ((NULL != LINKLIST_NEXT (list))
+                       && (fundef != LINKLIST_LINK (LINKLIST_NEXT (list)))) {
+                    list = LINKLIST_NEXT (list);
+                }
+                if (list != NULL) {
+                    /*
+                     * LINKLIST_NEXT(list) contains fundef
+                     */
+                    tofree = LINKLIST_NEXT (list);
+                    LINKLIST_NEXT (list) = LINKLIST_NEXT (LINKLIST_NEXT (list));
+                    LINKLIST_NEXT (tofree) = NULL;
+                    LINKLIST_LINK (tofree) = NULL;
+                    tofree = FREEdoFreeNode (tofree);
+                    (FUNGROUP_REFCOUNTER (group))--;
+                }
+            }
+        }
+
+        if (FUNGROUP_REFCOUNTER (group) == 0) {
+            /*
+             * free the fungroup as it is referenced no more
+             */
+            DBUG_ASSERT ((FUNGROUP_FUNLIST (group) == NULL),
+                         "FunGroup refcnt == 0, but still functions in funlist!");
+
+            group = FREEdoFreeNode (group);
+        }
+    }
+
+    DBUG_VOID_RETURN;
+}
+
 static node *
 FreeZombie (node *fundef)
 {
@@ -416,6 +480,11 @@ FreeZombie (node *fundef)
         if (FUNDEF_WRAPPERTYPE (fundef) != NULL) {
             FUNDEF_WRAPPERTYPE (fundef) = TYfreeType (FUNDEF_WRAPPERTYPE (fundef));
         }
+
+        /*
+         * remove the fungroup entry
+         */
+        RemoveFromFungroup (fundef);
 
         tmp = fundef;
         fundef = FUNDEF_NEXT (fundef);

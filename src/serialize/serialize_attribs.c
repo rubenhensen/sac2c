@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2005/06/27 18:15:50  sah
+ * fixed bug #90
+ *
  * Revision 1.7  2005/06/18 13:14:42  sah
  * fixed incompatiblity
  *
@@ -306,7 +309,7 @@ SATserializeNode (info *info, node *attr, node *parent)
 
 /** <!--******************************************************************-->
  *
- * @fn SATserializeDownLink
+ * @fn SATserializeLink
  *
  * @brief generates code to de-serialize the given attribute
  *
@@ -317,9 +320,9 @@ SATserializeNode (info *info, node *attr, node *parent)
  ***************************************************************************/
 
 void
-SATserializeDownLink (info *info, node *attr, node *parent)
+SATserializeLink (info *info, node *attr, node *parent)
 {
-    DBUG_ENTER ("SATserializeDownLink");
+    DBUG_ENTER ("SATserializeLink");
 
     if (attr != NULL) {
         /*
@@ -394,9 +397,15 @@ SATserializeExtLink (info *info, node *attr, node *parent)
  ***************************************************************************/
 
 void
-SATserializeLink (info *info, node *attr, node *parent)
+SATserializeCodeLink (info *info, node *attr, node *parent)
 {
-    DBUG_ENTER ("SATserializeLink");
+    DBUG_ENTER ("SATserializeCodeLink");
+
+    /*
+     * links to N_code nodes are serialized and deserialized
+     * by the serialize traversal, so nothing has to be done
+     * here
+     */
 
     fprintf (INFO_SER_FILE (info), "NULL");
 

@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.3  2005/06/27 18:15:50  sah
+  fixed bug #90
+
   Revision 1.2  2004/11/23 22:52:12  sah
   COMPILES!
 
@@ -124,7 +127,7 @@ version="1.0">
   </xsl:call-template>
   <xsl:value-of select="'&quot;);'" />
   <!-- serialize link attributes -->
-  <xsl:apply-templates select="attributes/attribute[type/@name=&quot;Link&quot;] | attributes/attribute[type/@name=&quot;DownLink&quot;]" />
+  <xsl:apply-templates select="attributes/attribute[type/@name=&quot;Link&quot;] | attributes/attribute[type/@name=&quot;CodeLink&quot;]" />
   <!-- trav sons -->
   <xsl:apply-templates select="sons" />
   <!-- trav node attributes -->

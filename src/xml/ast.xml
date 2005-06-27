@@ -14,14 +14,13 @@
     <type name="OldType" ctype="types*" init="NULL"
     copy="function" persist="no" />
     <type name="Node" ctype="node*" init="NULL" copy="function" />
-    <!-- a Link pointing upwards in the tree, strictly to a higher node -->
+    <!-- a Link pointing to a node within the tree -->
     <type name="Link" ctype="node*" init="NULL" copy="hash" persist="yes" />
     <!-- a Link pointing outside of the current context, e.g. to another
          son of a module node -->
     <type name="ExtLink" ctype="node*" init="NULL" copy="hash" persist="yes" />
-    <!-- a Link pointing to a node at the same level or downwards from the
-         current node -->
-    <type name="DownLink" ctype="node*" init="NULL" copy="hash" persist="yes" />
+    <!-- a Link pointing from a N_part node to a N_code node -->
+    <type name="CodeLink" ctype="node*" init="NULL" copy="hash" persist="yes" />
     <type name="FileType" ctype="file_type" init="F_unknown"
     copy="literal" />
     <type name="LUT" ctype="lut_t*" init="NULL" copy="function" persist="no" />
@@ -2235,7 +2234,7 @@
           </phases>
         </attribute>
         <attribute name="Return" mandatory="yes">
-          <type name="DownLink">
+          <type name="Link">
             <target>
               <node name="Return" />
             </target>
@@ -2791,7 +2790,7 @@
           </phases>
         </attribute>
         <attribute name="CRet" mandatory="yes">
-          <type name="DownLink">
+          <type name="Link">
             <target>
               <set name="Expr" />
             </target>
@@ -3164,7 +3163,7 @@
       <sons></sons>
       <attributes>
         <attribute name="Avis" mandatory="yes" >
-          <type name="DownLink" >
+          <type name="Link" >
             <target>
               <node name="Avis" />
             </target>
@@ -3672,7 +3671,7 @@
           </phases>
         </attribute>
         <attribute name="SSAAssign" mandatory="yes">
-          <type name="DownLink">
+          <type name="Link">
             <target>
               <node name="Assign" />
             </target>
@@ -3706,7 +3705,7 @@
           </phases>
         </attribute>
         <attribute name="SSAThen" mandatory="no">
-          <type name="DownLink">
+          <type name="Link">
             <target>
               <node name="Avis" />
             </target>
@@ -3718,7 +3717,7 @@
           </phases>
         </attribute>
         <attribute name="SSAElse" mandatory="no">
-          <type name="DownLink">
+          <type name="Link">
             <target>
               <node name="Avis" />
             </target>
@@ -3737,7 +3736,7 @@
           </phases>
         </attribute>
         <attribute name="Subst" mandatory="no">
-          <type name="DownLink">
+          <type name="Link">
             <target>
               <node name="Avis" />
             </target>
@@ -4160,8 +4159,8 @@
       <attributes>
         <attribute name="Code" mandatory="yes">
           <description>if present, the used counter for the code
-          should be increased which is not done yet</description>
-          <type name="Link">
+          needs to be increased</description>
+          <type name="CodeLink">
             <target>
               <node name="Code" />
             </target>
@@ -5471,7 +5470,7 @@
       </sons>
       <attributes>
         <attribute name="Avis" mandatory="yes" >
-          <type name="DownLink">
+          <type name="Link">
             <target>
               <node name="Avis" />
             </target>
