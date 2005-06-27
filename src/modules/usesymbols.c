@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  2005/06/27 17:57:20  sah
+ * fixed bug #98
+ *
  * Revision 1.16  2005/06/16 10:00:44  sah
  * fixed continue on error problem
  *
@@ -225,6 +228,8 @@ USSfold (node *arg_node, info *arg_info)
         MakeSymbolAvailable (FOLD_MOD (arg_node), FOLD_FUN (arg_node), SET_wrapperhead,
                              arg_info);
     }
+
+    arg_node = TRAVcont (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }
