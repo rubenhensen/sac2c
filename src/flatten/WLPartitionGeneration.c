@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.50  2005/06/27 19:28:58  cg
+ * Partition Generation now supports empty vectors in with-loop boundaries
+ * even if they are AKS and not AKV.
+ *
  * Revision 1.49  2005/06/19 11:05:35  sbs
  * now, cut slices sets WITH_PARTS to 1 if the initial generator covered the entire range
  * already
@@ -325,6 +329,7 @@ FreeInfo (info *info)
  *   @param  node *codes : N_code chain
  *   @return node *      : modified N_code chain
  ******************************************************************************/
+
 static node *
 RemoveUnusedCodes (node *codes)
 {
@@ -364,13 +369,11 @@ CreateStructConstant (node *expr, node *nassigns)
 
     DBUG_ENTER ("CreateStructConstant");
 
-    DBUG_ASSERT ((nassigns != NULL), "NASSIGNS is empty");
-
     tmp1 = NULL;
     tmp2 = NULL;
     iterator = nassigns;
 
-    while (iterator) {
+    while (iterator != NULL) {
         idn = DUPdupIdsId (LET_IDS (ASSIGN_INSTR (iterator)));
 
         if (tmp1) {
@@ -409,6 +412,7 @@ CreateStructConstant (node *expr, node *nassigns)
  *           node *fundef  :  N_fundef
  *   @return node *        :  a chained list of N_assign nodes
  ******************************************************************************/
+
 static node *
 CreateIdxShapeSelAssigns (node *array, int begin, int end, node *fundef)
 {
@@ -461,6 +465,7 @@ CreateIdxShapeSelAssigns (node *array, int begin, int end, node *fundef)
  *           node *fundef   :  N_fundef
  *   @return node *         :  new Ids
  ******************************************************************************/
+
 static node *
 NewIds (node *nd, node *fundef)
 {
@@ -506,15 +511,13 @@ NewIds (node *nd, node *fundef)
  *   @return node *      : N_array
  ******************************************************************************/
 
-node *
+static node *
 CreateEntryFlatArray (int entry, int number)
 {
     node *tmp;
     int i;
 
     DBUG_ENTER ("CreateOneArray");
-
-    DBUG_ASSERT ((number > 0), "dim is <= 0");
 
     tmp = NULL;
     for (i = 0; i < number; i++) {
@@ -539,7 +542,8 @@ CreateEntryFlatArray (int entry, int number)
  *                                new generator shall point to.
  *   @return node *             : N_Npart
  ******************************************************************************/
-node *
+
+static node *
 CreateNewPart (node *lb, node *ub, node *step, node *width, node *withid, node *coden)
 {
     node *genn, *partn;
@@ -664,6 +668,7 @@ NormalizeStepWidth (node **step, node **width)
  *           node *npart  : N_Npart
  *   @return node *       : modified N_Nwith
  ******************************************************************************/
+
 static node *
 AppendPart2WL (node *wln, node *partn)
 {
@@ -708,6 +713,7 @@ AppendPart2WL (node *wln, node *partn)
  *                           shall point to.
  *   @return node *        : modified N_Nwith
  ******************************************************************************/
+
 static node *
 CutSlices (node *ls, node *us, node *l, node *u, int dim, node *wln, node *coden)
 {
@@ -836,6 +842,7 @@ CutSlices (node *ls, node *us, node *l, node *u, int dim, node *wln, node *coden
  *           info *arg_info     : N_INFO is needed to create new vars
  *   @return intern_gen *       : chain of intern_gen struct
  ******************************************************************************/
+
 static node *
 CompleteGrid (node *ls, node *us, node *step, node *width, int dim, node *wln,
               node *coden, info *arg_info)
@@ -1004,6 +1011,7 @@ CompleteGrid (node *ls, node *us, node *step, node *width, int dim, node *wln,
  *                             function
  *   @return node *         :  modified N_with
  ******************************************************************************/
+
 static node *
 CreateFullPartition (node *wln, info *arg_info)
 {
@@ -1029,7 +1037,6 @@ CreateFullPartition (node *wln, info *arg_info)
 
     /* get shape of the index vector (generator) */
     gen_shape = SHgetExtent (TYgetShape (IDS_NTYPE (WITH_VEC (wln))), 0);
-    DBUG_ASSERT ((gen_shape > 0), "shape of index vector has to be > 0!");
 
     /*
      * allocate "array_shape"
@@ -1128,6 +1135,7 @@ CreateFullPartition (node *wln, info *arg_info)
  *           info *arg_info :  N_INFO
  *   @return node *         :  modified N_with
  ******************************************************************************/
+
 static node *
 CreateEmptyGenWLReplacement (node *wl, info *arg_info)
 {
