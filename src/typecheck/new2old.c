@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.36  2005/06/27 22:28:10  sacbase
+ * another typo fixed
+ *
  * Revision 1.35  2005/06/14 23:40:58  sbs
  * CreateTypeErrorBody bigs fixed
  *
@@ -302,7 +305,6 @@ CreateTypeErrorBody (ntype *inferred_type, ntype *res_type)
     node *ids = NULL;
     node *exprs = NULL;
     char *err_msg = NULL;
-    ;
     int i, n;
     char *tmp;
 
