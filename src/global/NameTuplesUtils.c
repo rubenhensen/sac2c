@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2005/06/28 15:51:15  sah
+ * removed a warning
+ *
  * Revision 1.13  2005/05/26 18:37:53  sbs
  * corrected NTUgetShapeClassFromNType :-(
  * naughty sh***y Marielyst hack
@@ -299,6 +302,7 @@ NTUgetShapeClassFromNType (ntype *ntype)
 
     default:
         DBUG_ASSERT ((0), "Illegal Shape Class");
+        z = C_unknowns;
         break;
     }
 
