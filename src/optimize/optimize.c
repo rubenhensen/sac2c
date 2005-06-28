@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.94  2005/06/28 15:38:25  jhb
+ * added phase.h by the includes
+ *
  * Revision 3.93  2005/06/06 13:28:40  jhb
  * added PHrunCompilerSubPhase
  *
@@ -410,6 +413,7 @@
 #include "convert.h"
 #include "new_types.h"
 #include "DupTree.h"
+#include "phase.h"
 
 #include "optimize.h"
 #include "DeadFunctionRemoval.h"
