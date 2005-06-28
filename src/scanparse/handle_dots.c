@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.48  2005/06/28 14:50:01  sah
+ * new default values
+ *
  * Revision 1.47  2005/06/27 20:29:12  sah
  * removed a small bug
  *
@@ -940,7 +943,6 @@ static node *
 BuildDefaultWithloop (node *array, node *shape)
 {
     node *result = NULL;
-    node *defexpr;
 
     DBUG_ENTER ("BuildDefaultWithloop");
 
@@ -960,18 +962,6 @@ BuildDefaultWithloop (node *array, node *shape)
 
     CODE_USED (WITH_CODE (result))++;
     PART_CODE (WITH_PART (result)) = WITH_CODE (result);
-
-    /*
-     * and we need a default expression for the
-     * default expression withloop. Well, this is
-     * obviously just a scalar...
-     */
-
-    defexpr = TBmakeExprs (DUPdoDupTree (array), NULL);
-    defexpr = TBmakeSpap (TBmakeSpid (ILIBstringCopy ("sac2c"), ILIBstringCopy ("zero")),
-                          defexpr);
-
-    GENARRAY_DEFAULT (WITH_WITHOP (result)) = defexpr;
 
     DBUG_RETURN (result);
 }
@@ -1913,8 +1903,8 @@ HDspap (node *arg_node, info *arg_info)
 
             result = BuildWithLoop (shape, iv, SPAP_ARG2 (arg_node), index, block, info);
 
-            FREEdoFreeTree (arg_node);
-            FREEdoFreeNode (iv);
+            arg_node = FREEdoFreeTree (arg_node);
+            iv = FREEdoFreeNode (iv);
         }
 
         FreeDotInfo (info);
@@ -1934,6 +1924,77 @@ HDspap (node *arg_node, info *arg_info)
             ScanId (SPAP_ARG1 (arg_node), &SPAP_ARG2 (arg_node), arg_info);
         }
 #endif
+    }
+
+    /*
+     * if in HD_default mode, build default
+     */
+    if ((INFO_HD_TRAVSTATE (arg_info) == HD_default)
+        && (ILIBstringCompare (SPAP_NAME (arg_node), "sel"))
+        && (SPAP_MOD (arg_node) == NULL)) {
+        if (NODE_TYPE (SPAP_ARG1 (arg_node)) == N_array) {
+            /*
+             * found a selection using a selection
+             * vector build of scalars and maybe dots.
+             * if a ... is contained, the default will
+             * be a scalar and a withloop with shape
+             * drop( #Exprs, shape( array))
+             * otherwise
+             */
+            dotinfo *info = MakeDotInfo (ARRAY_AELEMS (SPAP_ARG1 (arg_node)));
+
+            if (info->tripledot != 0) {
+                /* contains tripledot */
+                result = TCmakeSpap1 (ILIBstringCopy ("sac2c"), ILIBstringCopy ("zero"),
+                                      DUPdoDupTree (SPAP_ARG2 (arg_node)));
+
+                arg_node = FREEdoFreeTree (arg_node);
+            } else {
+                /* no tripledot */
+                node *defshape
+                  = TCmakePrf2 (F_drop_SxV, TBmakeNum (info->selcnt),
+                                TCmakePrf1 (F_shape,
+                                            DUPdoDupTree (SPAP_ARG2 (arg_node))));
+
+                result = BuildDefaultWithloop (SPAP_ARG2 (arg_node), defshape);
+
+                arg_node = FREEdoFreeTree (arg_node);
+            }
+
+            FreeDotInfo (info);
+        } else if (NODE_TYPE (SPAP_ARG1 (arg_node)) == N_spid) {
+            idtype type = IdTableContains (SPID_NAME (SPAP_ARG1 (arg_node)),
+                                           INFO_HD_IDTABLE (arg_info));
+
+            if (type == ID_vector) {
+                /*
+                 * found a setwl vector as index for a selection
+                 * so replace the selection by a withloop
+                 * with shape
+                 * drop (_sel_( [0], shape( wlindex)), shape( array))
+                 */
+
+                node *wlshape
+                  = TCmakePrf2 (F_drop_SxV,
+                                TCmakePrf2 (F_sel,
+                                            TCmakeFlatArray (
+                                              TBmakeExprs (TBmakeNum (0), NULL)),
+                                            TCmakePrf1 (F_shape,
+                                                        DUPdoDupTree (
+                                                          INFO_HD_WLSHAPE (arg_info)))),
+                                TCmakePrf1 (F_shape,
+                                            DUPdoDupTree (SPAP_ARG2 (arg_node))));
+
+                result = BuildDefaultWithloop (SPAP_ARG2 (arg_node), wlshape);
+
+                arg_node = FREEdoFreeTree (arg_node);
+            } else if (type == ID_scalar) {
+                CTIerrorLine (NODE_LINE (SPAP_ARG2 (arg_node)),
+                              "identifier %s defined as vector in set notation cannot "
+                              "be used as scalar in selection!",
+                              SPID_NAME (SPAP_ARG2 (arg_node)));
+            }
+        }
     }
 
     /* Now we traverse our result in order to handle any */
@@ -2215,9 +2276,16 @@ HDspid (node *arg_node, info *arg_info)
         idtype type = IdTableContains (SPID_NAME (arg_node), INFO_HD_IDTABLE (arg_info));
 
         if (type == ID_scalar) {
+            CTIwarnLine (NODE_LINE (arg_node), "Cannot infer default for %s, using 0",
+                         SPID_NAME (arg_node));
+
             FREEdoFreeTree (arg_node);
             arg_node = TBmakeNum (0);
         } else if (type == ID_vector) {
+            CTIwarnLine (NODE_LINE (arg_node),
+                         "Cannot infer default for %s, using 0-vector",
+                         SPID_NAME (arg_node));
+
             FREEdoFreeTree (arg_node);
             /*
              * build 0 * wlshape instead of vector
