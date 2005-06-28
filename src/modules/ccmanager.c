@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  2005/06/28 16:23:25  sah
+ * added module inconsistency check
+ *
  * Revision 1.16  2005/06/18 18:06:00  sah
  * moved entire dependency handling to dependencies.c
  * the dependency table is now created shortly prior
@@ -241,6 +244,13 @@ BuildDepLibsStringProg (const char *lib, strstype_t kind, void *rest)
         libname = ILIBmalloc (sizeof (char) * (strlen (lib) + 6));
         sprintf (libname, "lib%s.a", lib);
         result = ILIBstringCopy (FMGRfindFile (PK_lib_path, libname));
+
+        if (result == NULL) {
+            CTIabort ("Cannot find static library '%s'. The module '%s' "
+                      "seems to be corrupted.",
+                      libname, lib);
+        }
+
         libname = ILIBfree (libname);
         break;
     case STRS_extlib:
