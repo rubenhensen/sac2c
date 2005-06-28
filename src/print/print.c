@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.222  2005/06/28 20:51:52  ktr
+ * changed printing of funcond into ?: notation
+ *
  * Revision 3.221  2005/06/15 12:42:15  sah
  * added printing of ...
  *
@@ -2246,20 +2249,6 @@ PRTprf (node *arg_node, info *arg_info)
     DBUG_PRINT ("PRINT",
                 ("%s (%s)" F_PTR, NODE_TEXT (arg_node), global.mdb_prf[prf], arg_node));
 
-#if 0 /*  TODO: needs to be moved into PRTap! */
-  if ((prf == F_sel) && (TCcountExprs (PRF_ARGS (arg_node)) == 2)) {
-    /*
-     * F_sel is printed with special [] notation:
-     * first the array argument is printed, then a leading '[' followed by
-     * the selection vector and finally the closing ']'.
-     */
-    TRAVdo (PRF_ARG2 (arg_node), arg_info);
-    fprintf (global.outfile, "[");
-    TRAVdo (PRF_ARG1 (arg_node), arg_info);
-    fprintf (global.outfile, "]");
-  }
-#endif
-
     if (global.prf_is_infix[prf]) {
         /* primitive functions in infix notation */
         fprintf (global.outfile, "(");
@@ -2309,13 +2298,13 @@ PRTfuncond (node *arg_node, info *arg_info)
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
     }
 
-    fprintf (global.outfile, "Funcond( ");
+    fprintf (global.outfile, "( ");
     TRAVdo (FUNCOND_IF (arg_node), arg_info);
-    fprintf (global.outfile, ", ");
+    fprintf (global.outfile, " ? ");
     TRAVdo (FUNCOND_THEN (arg_node), arg_info);
-    fprintf (global.outfile, ", ");
+    fprintf (global.outfile, " : ");
     TRAVdo (FUNCOND_ELSE (arg_node), arg_info);
-    fprintf (global.outfile, ")");
+    fprintf (global.outfile, " )");
 
     DBUG_RETURN (arg_node);
 }
