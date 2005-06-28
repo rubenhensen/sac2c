@@ -2,6 +2,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2005/06/28 15:55:42  sbs
+ * now, fold-wls with empty bounds should work as well
+ *
  * Revision 1.6  2005/06/16 18:33:23  sbs
  * fixed iv-access problem in case of empty generator shape
  *
@@ -215,14 +218,19 @@
 
 #define SAC_AUD_WL_FOLD_END(idx_vec_NT, lower_NT, upper_NT)                              \
     SAC_d = SAC_max_d;                                                                   \
-    SAC_ND_WRITE (idx_vec_NT, SAC_d) = SAC_ND_READ (idx_vec_NT, SAC_d) + 1;              \
-    while ((SAC_d > 0)                                                                   \
-           && (SAC_ND_READ (idx_vec_NT, SAC_d) == SAC_ND_READ (upper_NT, SAC_d))) {      \
-        SAC_ND_WRITE (idx_vec_NT, SAC_d) = SAC_ND_READ (lower_NT, SAC_d);                \
-        SAC_d--;                                                                         \
+    if (SAC_d >= 0) {                                                                    \
         SAC_ND_WRITE (idx_vec_NT, SAC_d) = SAC_ND_READ (idx_vec_NT, SAC_d) + 1;          \
+        while ((SAC_d > 0)                                                               \
+               && (SAC_ND_READ (idx_vec_NT, SAC_d) == SAC_ND_READ (upper_NT, SAC_d))) {  \
+            SAC_ND_WRITE (idx_vec_NT, SAC_d) = SAC_ND_READ (lower_NT, SAC_d);            \
+            SAC_d--;                                                                     \
+            SAC_ND_WRITE (idx_vec_NT, SAC_d) = SAC_ND_READ (idx_vec_NT, SAC_d) + 1;      \
+        }                                                                                \
+        SAC_within_bounds                                                                \
+          = SAC_ND_READ (idx_vec_NT, SAC_d) < SAC_ND_READ (upper_NT, SAC_d);             \
+    } else {                                                                             \
+        SAC_within_bounds = 0;                                                           \
     }                                                                                    \
-    SAC_within_bounds = SAC_ND_READ (idx_vec_NT, SAC_d) < SAC_ND_READ (upper_NT, SAC_d); \
     }                                                                                    \
     }
 
