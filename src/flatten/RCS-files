@@ -31,3 +31,5 @@ lacinlining.c
 lacinlining.h
 wldefaultpartition.c
 wldefaultpartition.h
+while2do.c
+while2do.h
