@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2005/06/28 15:43:29  sah
+ * added missing include
+ *
  * Revision 3.3  2005/04/07 16:16:27  cg
  * Added string compare function with case sensitivity flag.
  *
@@ -40,6 +43,7 @@
 
 #include <stdio.h>  /* for NULL only */
 #include <string.h> /* for strncpy() */
+#include <ctype.h>  /* for tolower() */
 
 #define MAX_OPT_LEN 64
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
