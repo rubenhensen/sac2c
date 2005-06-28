@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.158  2005/06/28 16:12:02  sah
+ * removed a lot of warning
+ * messages
+ *
  * Revision 3.157  2005/06/27 21:23:15  sah
  * bugfix
  *
@@ -1997,13 +2001,10 @@ DUPcwrapper (node *arg_node, info *arg_info)
 node *
 DUPdataflowgraph (node *arg_node, info *arg_info)
 {
-
-    node *new_node;
-
     DBUG_ENTER ("DUPdataflowgraph");
 
     DBUG_ASSERT ((FALSE), "DUPdataflowgraph until now not implemented!! :-(");
-    DBUG_RETURN (new_node);
+    DBUG_RETURN (NULL);
 }
 
 /*******************************************************************************/
@@ -2011,12 +2012,11 @@ DUPdataflowgraph (node *arg_node, info *arg_info)
 node *
 DUPdataflownode (node *arg_node, info *arg_info)
 {
-
-    node *new_node;
-
     DBUG_ENTER ("DUPdataflownode");
+
     DBUG_ASSERT ((FALSE), "DUPdataflownode until now not implemented!! :-(");
-    DBUG_RETURN (new_node);
+
+    DBUG_RETURN (NULL);
 }
 
 /*******************************************************************************/
@@ -2024,14 +2024,17 @@ DUPdataflownode (node *arg_node, info *arg_info)
 node *
 DUPimport (node *arg_node, info *arg_info)
 {
-
     node *new_node;
 
     DBUG_ENTER ("DUPimport");
 
-    DBUG_ASSERT ((FALSE), "DUPimport until now not implemented!! :-(");
+    new_node = TBmakeImport (ILIBstringCopy (IMPORT_MOD (arg_node)),
+                             DUPCONT (IMPORT_NEXT (arg_node)),
+                             DUPTRAV (IMPORT_SYMBOL (arg_node)));
 
-    DBUG_RETURN (new_node);
+    IMPORT_FLAGSTRUCTURE (new_node) = IMPORT_FLAGSTRUCTURE (arg_node);
+
+    DBUG_RETURN (NULL);
 }
 
 /*******************************************************************************/
@@ -2039,12 +2042,11 @@ DUPimport (node *arg_node, info *arg_info)
 node *
 DUPexport (node *arg_node, info *arg_info)
 {
-
     node *new_node;
 
     DBUG_ENTER ("DUPexport");
 
-    new_node = TBmakeExport (DUPTRAV (EXPORT_NEXT (arg_node)),
+    new_node = TBmakeExport (DUPCONT (EXPORT_NEXT (arg_node)),
                              DUPTRAV (EXPORT_SYMBOL (arg_node)));
 
     EXPORT_FLAGSTRUCTURE (new_node) = EXPORT_FLAGSTRUCTURE (arg_node);
@@ -2057,12 +2059,12 @@ DUPexport (node *arg_node, info *arg_info)
 node *
 DUPuse (node *arg_node, info *arg_info)
 {
-
     node *new_node;
 
     DBUG_ENTER ("DUPuse");
 
-    DBUG_ASSERT ((FALSE), "DUPuse until now not implemented!! :-(");
+    new_node = TBmakeUse (ILIBstringCopy (USE_MOD (arg_node)),
+                          DUPCONT (USE_NEXT (arg_node)), DUPTRAV (USE_SYMBOL (arg_node)));
 
     DBUG_RETURN (new_node);
 }
@@ -2072,12 +2074,12 @@ DUPuse (node *arg_node, info *arg_info)
 node *
 DUPprovide (node *arg_node, info *arg_info)
 {
-
     node *new_node;
 
     DBUG_ENTER ("DUPprovide");
 
-    DBUG_ASSERT ((FALSE), "DUPprovide until now not implemented!! :-(");
+    new_node = TBmakeProvide (DUPCONT (PROVIDE_NEXT (arg_node)),
+                              DUPTRAV (PROVIDE_SYMBOL (arg_node)));
 
     DBUG_RETURN (new_node);
 }
@@ -2087,12 +2089,18 @@ DUPprovide (node *arg_node, info *arg_info)
 node *
 DUPlinklist (node *arg_node, info *arg_info)
 {
-
     node *new_node;
+    node *link;
 
     DBUG_ENTER ("DUPlinklist");
 
-    DBUG_ASSERT ((FALSE), "DUPlinklist until now not implemented!! :-(");
+    link = LUTsearchInLutPp (INFO_DUP_LUT (arg_info), LINKLIST_LINK (arg_node));
+
+    if (link == NULL) {
+        link = LINKLIST_LINK (arg_node);
+    }
+
+    new_node = TBmakeLinklist (link, DUPCONT (LINKLIST_NEXT (arg_node)));
 
     DBUG_RETURN (new_node);
 }
@@ -2102,12 +2110,11 @@ DUPlinklist (node *arg_node, info *arg_info)
 node *
 DUPnums (node *arg_node, info *arg_info)
 {
-
     node *new_node;
 
     DBUG_ENTER ("DUPnums");
 
-    DBUG_ASSERT ((FALSE), "DUPnums until now not implemented!! :-(");
+    new_node = TBmakeNums (NUMS_VAL (arg_node), DUPCONT (NUMS_NEXT (arg_node)));
 
     DBUG_RETURN (new_node);
 }
@@ -2117,12 +2124,12 @@ DUPnums (node *arg_node, info *arg_info)
 node *
 DUPsymbol (node *arg_node, info *arg_info)
 {
-
     node *new_node;
 
     DBUG_ENTER ("DUPsymbol");
 
-    DBUG_ASSERT ((FALSE), "DUPsymbol until now not implemented!! :-(");
+    new_node = TBmakeSymbol (ILIBstringCopy (SYMBOL_ID (arg_node)),
+                             DUPCONT (SYMBOL_NEXT (arg_node)));
 
     DBUG_RETURN (new_node);
 }
@@ -2133,10 +2140,17 @@ node *
 DUPglobobj (node *arg_node, info *arg_info)
 {
     node *new_node;
+    node *link;
 
     DBUG_ENTER ("DUPglobobj");
 
-    DBUG_ASSERT ((FALSE), "DUPglobobj until now not implemented!! :-(");
+    link = LUTsearchInLutPp (INFO_DUP_LUT (arg_info), GLOBOBJ_OBJDEF (arg_node));
+
+    if (link == NULL) {
+        link = GLOBOBJ_OBJDEF (arg_node);
+    }
+
+    new_node = TBmakeGlobobj (link);
 
     DBUG_RETURN (new_node);
 }
