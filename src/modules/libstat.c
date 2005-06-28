@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2005/06/28 16:29:46  sah
+ * removed some warning messages
+ *
  * Revision 1.14  2005/05/18 13:56:51  sah
  * enabled caching of symboltables which
  * leads to a huge speedup when analysing use and import
@@ -61,7 +64,7 @@ PrintLibStatDependencies (module_t *module)
 }
 
 static void
-PrintLibStatTable (sttable_t *table)
+PrintLibStatTable (const sttable_t *table)
 {
     DBUG_ENTER ("PrintLibStatTable");
 #ifndef DBUG_OFF
@@ -94,7 +97,7 @@ PrintLibStatCodeAddBodies (module_t *module, node *modnode, node *fundef)
 }
 
 static void
-PrintLibStatCodeReadSymbols (module_t *module, stsymbol_t *symbol, sttable_t *table)
+PrintLibStatCodeReadSymbols (module_t *module, stsymbol_t *symbol, const sttable_t *table)
 {
     DBUG_ENTER ("PrintLibStatCodeReadSymbols");
 
@@ -107,7 +110,7 @@ PrintLibStatCodeReadSymbols (module_t *module, stsymbol_t *symbol, sttable_t *ta
 }
 
 static void
-PrintLibStatCode (module_t *module, sttable_t *table)
+PrintLibStatCode (module_t *module, const sttable_t *table)
 {
     stsymboliterator_t *iterator;
     node *syntax_tree;
