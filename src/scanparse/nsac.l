@@ -3,6 +3,11 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2005/06/28 20:58:02  cg
+ * The boolean operators && and || now support lazy evaluation of the
+ * second argument. Therefore, they are not scanned/parsed as function,
+ * but as special constructs represented as funconds.
+ *
  * Revision 1.5  2005/01/11 13:52:12  cg
  * Converted output from Error.h to ctinfo.c
  *
@@ -232,6 +237,9 @@ int charpos = 0;
 
 "true"                     { FILTER( TRUETOKEN); }
 "false"                    { FILTER( FALSETOKEN); }
+"&&"                       { FILTER( LAZYAND); }
+"||"                       { FILTER( LAZYOR); }
+"?"                        { FILTER( QUESTION); }  /* needed for conditional expressions */
 
 "const"                    { FILTER( C_KEYWORD); }
 "auto"                     { FILTER( C_KEYWORD); }

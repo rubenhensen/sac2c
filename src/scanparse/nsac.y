@@ -4,6 +4,11 @@
 /*
 *
 * $Log$
+* Revision 1.39  2005/06/28 20:58:02  cg
+* The boolean operators && and || now support lazy evaluation of the
+* second argument. Therefore, they are not scanned/parsed as function,
+* but as special constructs represented as funconds.
+*
 * Revision 1.38  2005/06/27 13:44:55  sah
 * now multiple LINKOBJ and LINKMOD per file
 * function are possible and handeled correctly.
@@ -215,7 +220,7 @@ HASH  PRAGMA  LINKNAME  LINKSIGN  EFFECT  READONLY  REFCOUNTING
 TOUCH  COPYFUN  FREEFUN  INITFUN  LINKWITH LINKOBJ
 WLCOMP  CACHESIM  SPECIALIZE 
 TARGET  STEP  WIDTH  GENARRAY  MODARRAY 
-LE  LT  GT 
+LE  LT  GT LAZYAND LAZYOR QUESTION
 STAR  PLUS  MINUS  TILDE  EXCL 
 
 PRF_DIM  PRF_SHAPE  PRF_RESHAPE  PRF_SEL  PRF_GENARRAY  PRF_MODARRAY 
@@ -238,9 +243,10 @@ PRF_CAT_VxV  PRF_TAKE_SxV  PRF_DROP_SxV
 %token <cdbl> DOUBLE
 %token <cchar> CHAR
 
+
 /*******************************************************************************
-* SAC programs
-*/
+ * SAC programs
+ */
 
 %type <node> prg  defs  def2  def3  def4 def5 def6
 
@@ -306,7 +312,8 @@ GENARRAY MODARRAY ALL AMPERS
 %right BM_OP
 %right MM_OP CAST
 %right SQBR_L BRACKET_L
-%right ELSE
+%right ELSE 
+%right LAZYAND LAZYOR QUESTION COLON
 
 %start all
 
@@ -1269,9 +1276,12 @@ expr: qual_ext_id                { $$ = $1;                   }
     | FLOAT                      { $$ = TBmakeFloat( $1);     }
     | DOUBLE                     { $$ = TBmakeDouble( $1);    }
     | CHAR                       { $$ = TBmakeChar( $1);      }
+    | string                     { $$ = String2Array( $1);    }
     | TRUETOKEN                  { $$ = TBmakeBool( 1);       }
     | FALSETOKEN                 { $$ = TBmakeBool( 0);       }
-    | string                     { $$ = String2Array( $1);    }
+    | expr LAZYAND expr          { $$ = TBmakeFuncond( $1, $3, TBmakeBool(0)); }
+    | expr LAZYOR expr           { $$ = TBmakeFuncond( $1, TBmakeBool(1), $3); }
+    | expr QUESTION expr COLON expr   { $$ = TBmakeFuncond( $1, $3, $5); }
     | BRACKET_L expr BRACKET_R
       { $$ = $2;
         if( NODE_TYPE( $2) == N_spmop) {
