@@ -276,6 +276,19 @@
       startfun="NULL" include=".h"
       if="true"
       breakspec="si">
+      <traversal id="W2D" name="While2do" default="sons" include="while2do.h" >
+	<travuser>
+	  <node name="While" />
+	</travuser>
+      </traversal>
+      <traversal id="HCE" name="Handle conditional expressions" 
+                 default="sons" include="handle_condexpr.h" >
+	<travuser>
+	  <node name="Assign" />
+	  <node name="Cond" />
+	  <node name="Funcond" />
+	</travuser>
+      </traversal>
       <traversal id="FLAT" name="Flatten" default="sons" include="flatten.h" >
         <travuser>
           <node name="Assign" />
@@ -286,7 +299,6 @@
           <node name="SPAp" />
           <node name="Block" />
           <node name="Cond" />
-          <node name="While" />
           <node name="Do" />
           <node name="Array" />
           <node name="Return" />
