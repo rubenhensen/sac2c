@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  2005/06/28 10:04:03  ktr
+ * _sel_ will not perform any non-scalar valued selections any longer
+ *
  * Revision 1.16  2004/11/25 10:26:46  jhb
  * compile SACdevCamp 2k4
  *
@@ -469,29 +472,14 @@ PrfSel_Data (char *to_NT, int to_sdim, char *from_NT, int from_sdim, void *idx,
 
     DBUG_ENTER ("PrfSel_Data");
 
-    if (to_dim == 0) {
-        BLOCK_VARDECS (fprintf (global.outfile, "int SAC_idx;");
-                       , Vect2Offset ("SAC_idx", idx, idx_size, idx_size_fun,
-                                      idx_read_fun, from_NT, from_dim);
-                       INDENT;
-                       fprintf (global.outfile,
-                                "SAC_ND_WRITE_READ_COPY( %s, 0, %s, SAC_idx, %s)\n",
-                                to_NT, from_NT, copyfun););
-    } else {
-        BLOCK_VARDECS (fprintf (global.outfile, "int SAC_idx, SAC_i;");
-                       , Vect2Offset ("SAC_idx", idx, idx_size, idx_size_fun,
-                                      idx_read_fun, from_NT, from_dim);
-                       FOR_LOOP_INC (fprintf (global.outfile, "SAC_i");
-                                     , fprintf (global.outfile, "0");
-                                     , fprintf (global.outfile, "SAC_ND_A_SIZE( %s)",
-                                                to_NT);
-                                     , INDENT;
-                                     fprintf (global.outfile,
-                                              "SAC_ND_WRITE_READ_COPY( %s, SAC_i,"
-                                              " %s, SAC_idx, %s)\n",
-                                              to_NT, from_NT, copyfun);
-                                     INDENT; fprintf (global.outfile, "SAC_idx++;\n");););
-    }
+    DBUG_ASSERT ((to_dim == 0), "Primitive selection can only yield scalar results!");
+
+    BLOCK_VARDECS (fprintf (global.outfile, "int SAC_idx;");
+                   , Vect2Offset ("SAC_idx", idx, idx_size, idx_size_fun, idx_read_fun,
+                                  from_NT, from_dim);
+                   INDENT; fprintf (global.outfile,
+                                    "SAC_ND_WRITE_READ_COPY( %s, 0, %s, SAC_idx, %s)\n",
+                                    to_NT, from_NT, copyfun););
 
     DBUG_VOID_RETURN;
 }
@@ -532,9 +520,11 @@ ICMCompileND_PRF_SEL__DATA_id (char *to_NT, int to_sdim, char *from_NT, int from
     ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) == 1", idx_NT);
                      , fprintf (global.outfile, "1st argument of %s is not a vector!",
                                 global.prf_string[F_sel]););
-    ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) >= SAC_ND_A_SIZE( %s)",
+    ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) == SAC_ND_A_SIZE( %s)",
                               from_NT, idx_NT);
-                     , fprintf (global.outfile, "1st argument of %s has illegal size!",
+                     , fprintf (global.outfile,
+                                "Length of index vector used for %s does not "
+                                "match rank of argument array!",
                                 global.prf_string[F_sel]););
 
     PrfSel_Data (to_NT, to_sdim, from_NT, from_sdim, idx_NT, idx_size, SizeId, ReadId,
@@ -593,9 +583,11 @@ ICMCompileND_PRF_SEL__DATA_arr (char *to_NT, int to_sdim, char *from_NT, int fro
                                         global.prf_string[F_sel]););
         }
     }
-    ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) >= %d", from_NT,
+    ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) == %d", from_NT,
                               idx_size);
-                     , fprintf (global.outfile, "1st argument of %s has illegal size!",
+                     , fprintf (global.outfile,
+                                "Length of index vector used for %s does not "
+                                "match rank of argument array!",
                                 global.prf_string[F_sel]););
 
     PrfSel_Data (to_NT, to_sdim, from_NT, from_sdim, idxs_ANY, idx_size, NULL,
