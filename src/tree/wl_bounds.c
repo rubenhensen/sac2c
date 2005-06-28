@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2005/06/28 12:39:42  sbs
+ * adjusted WLBnodeOrIntPrint and WLBnodeOrIntMakeIndex
+ * As we assume that this code is relevant for with2 only(!!),
+ * we can now rely on WLPG to make bounds structural constants
+ * As a consequence of that, we know, that we just need to
+ * expect scalars either as num or as id.
+ *
  * Revision 1.12  2004/12/13 18:55:48  ktr
  * Withids contain N_id/N_exprs of N_id after explicit allocation now.
  *
@@ -316,7 +323,19 @@ WLBnodeOrIntMakeIndex (nodetype nt, void *node_or_int, int dim, node *wl_ids)
         DBUG_ASSERT ((ID_DECL ((*((node **)node_or_int))) != NULL),
                      "no vardec/decl found!");
 
-        sel_dim = (ID_DIM ((*((node **)node_or_int))) == SCALAR) ? 0 : dim;
+        /**
+         * As we assume that this code is relevant for with2 only(!!),
+         * we can now rely on WLPG to make bounds structural constants
+         * As a consequence of that, we know, that we just need to select
+         * the scalar value!
+         * However, I left the original commented out in case
+         * this is used in a different context too.
+         */
+#if 0
+    sel_dim = (ID_DIM( (*((node **) node_or_int))) == SCALAR) ? 0 : dim;
+#else
+        sel_dim = 0;
+#endif
 
         index = TCmakeIcm2 ("ND_READ", DUPdupIdNt ((*((node **)node_or_int))),
                             TBmakeNum (sel_dim));
@@ -566,27 +585,29 @@ WLBnodeOrIntPrint (FILE *handle, nodetype nt, void *node_or_int, int dim)
         } else if (val == IDX_SHAPE) {
             fprintf (handle, ".");
         } else {
+            /**
+             * As we assume that this code is relevant for with2 only(!!),
+             * we can now rely on WLPG to make bounds structural constants
+             * As a consequence of that, we know, that we just need to select
+             * the scalar value!
+             */
             fprintf (handle, "%i", val);
         }
     } else {
         node *n = *((node **)node_or_int);
 
         if (AVIS_TYPE (ID_AVIS (n)) != NULL) {
-            if ((TYisAKD (AVIS_TYPE (ID_AVIS (n))) || TYisAKS (AVIS_TYPE (ID_AVIS (n)))
-                 || TYisAKV (AVIS_TYPE (ID_AVIS (n))))
-                && (TYgetDim (AVIS_TYPE (ID_AVIS (n))) == 0)) {
-                fprintf (handle, "%s", name);
-            } else {
-                fprintf (handle, "%s[%i]", name, dim);
-            }
+            fprintf (handle, "%s", name);
         } else {
             DBUG_ASSERT ((ID_DECL (n) != NULL), "no vardec found!");
 
-            if (ID_DIM (n) == SCALAR) {
-                fprintf (handle, "%s", name);
-            } else {
-                fprintf (handle, "%s[%i]", name, dim);
-            }
+            /**
+             * As we assume that this code is relevant for with2 only(!!),
+             * we can now rely on WLPG to make bounds structural constants
+             * As a consequence of that, we know, that we just need to select
+             * the scalar value!
+             */
+            fprintf (handle, "%s", name);
         }
     }
 
