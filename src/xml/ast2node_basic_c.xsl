@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.5  2005/06/28 14:14:53  sah
+  NODE_ERROR is intitialised with NULL now!
+
   Revision 1.4  2005/01/11 14:23:48  cg
   Removed useless #include Error.h
 
@@ -55,6 +58,8 @@ static node *MakeEmptyNode()
   DBUG_ENTER("MakeEmptyNode");
 
   result = (node *) ILIBmalloc( sizeof( node));
+
+  NODE_ERROR( result) = NULL;
 
   DBUG_RETURN( result);
 }
