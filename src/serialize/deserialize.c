@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.18  2005/06/28 16:23:57  sah
+ * cleanup
+ *
  * Revision 1.17  2005/06/18 18:07:51  sah
  * added DSdispatchFunCall
  *
@@ -694,16 +697,6 @@ DSloadUserType (const char *name, const char *mod)
     DBUG_ASSERT ((udt != UT_NOT_DEFINED), "typedef not in udt repository");
 
     result = TYmakeUserType (udt);
-
-    DBUG_RETURN (result);
-}
-
-ntype *
-DSloadSymbolType (const char *mod, const char *name)
-{
-    ntype *result;
-
-    DBUG_ENTER ("DSloadSymbolType");
 
     DBUG_RETURN (result);
 }

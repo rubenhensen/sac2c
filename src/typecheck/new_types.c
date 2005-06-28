@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.93  2005/06/28 16:23:57  sah
+ * cleanup
+ *
  * Revision 3.92  2005/06/24 09:00:29  sbs
  * fixed a stupid error in TYsplitWrapperType
  * (inserted i--)
@@ -6577,7 +6580,7 @@ TYdeserializeType (typeconstr con, ...)
         name = va_arg (args, char *);
         mod = va_arg (args, char *);
 
-        result = DSloadSymbolType (name, mod);
+        result = TYmakeSymbType (ILIBstringCopy (name), ILIBstringCopy (mod));
 
         va_end (args);
     } break;

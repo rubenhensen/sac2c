@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2005/06/28 16:23:57  sah
+ * cleanup
+ *
  * Revision 1.6  2005/06/18 18:07:51  sah
  * added DSdispatchFunCall
  *
@@ -53,7 +56,6 @@ extern void DSimportInstancesByName (const char *name, const char *module);
  * hooks for deserialization
  */
 extern ntype *DSloadUserType (const char *mod, const char *name);
-extern ntype *DSloadSymbolType (const char *mod, const char *name);
 extern node *DSlookupFunction (const char *module, const char *symbol);
 extern node *DSfetchArgAvis (int pos);
 
