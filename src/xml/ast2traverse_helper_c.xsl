@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.5  2005/06/28 16:17:07  sah
+  removed a warning message
+
   Revision 1.4  2004/11/27 03:00:31  sah
   bugfix
 
@@ -101,7 +104,7 @@ int TRAVnumSons( node *node)
 
 node *TRAVgetSon( int no, node *parent)
 {
-  node * result;
+  node * result = NULL;
 
   DBUG_ENTER("TRAVgetSon");
 
