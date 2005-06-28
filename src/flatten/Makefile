@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.36  2005/06/28 20:57:09  cg
+# Added while2do.[ch] and handle_condexpr.[ch]
+#
 # Revision 3.35  2005/06/14 08:52:04  khf
 # added wldefaultpartition.o
 #
@@ -113,8 +116,8 @@ include $(PROJECT_ROOT)/Makefile.Config
 all: flatten.o lac2fun.o fun2lac.o insert_vardec.o handle_mops.o \
      ToNewTypes.o SSATransform.o UndoSSATransform.o ssa.o \
      WLPartitionGeneration.o WLEnhancement.o ExplicitAccumulate.o \
-     ToOldTypes.o wlanalysis.o lacinlining.o wldefaultpartition.o
-
+     ToOldTypes.o wlanalysis.o lacinlining.o wldefaultpartition.o \
+     while2do.o handle_condexpr.o
 
 %.o: %.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o $@ -c $< $(INCS)

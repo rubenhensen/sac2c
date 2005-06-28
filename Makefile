@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.172  2005/06/28 20:57:36  cg
+# Added while2do.[ch] and handle_condexpr.[ch]
+#
 # Revision 3.171  2005/06/15 10:54:19  sbs
 # libsac2c rule added
 # could have deps in all, sac2c.prod but considered overhead during development
@@ -172,7 +175,8 @@ FLATTEN= src/flatten/flatten.o src/flatten/lac2fun.o \
          src/flatten/ssa.o src/flatten/WLPartitionGeneration.o \
          src/flatten/WLEnhancement.o src/flatten/ExplicitAccumulate.o \
          src/flatten/ToOldTypes.o src/flatten/wlanalysis.o \
-         src/flatten/lacinlining.o src/flatten/wldefaultpartition.o
+         src/flatten/lacinlining.o src/flatten/wldefaultpartition.o \
+         src/flatten/while2do.o src/flatten/handle_condexpr.o
 
 CONSTANTS= src/constants/shape.o src/constants/constants_basic.o \
            src/constants/constants_struc_ops.o \
