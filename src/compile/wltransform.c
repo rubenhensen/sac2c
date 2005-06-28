@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 3.115  2005/06/28 12:30:33  sbs
+ * we assume now, that wltransform is called iff the bounds are structural constants
+ * Therefore, we assert this in CurrentComponentGetNode
+ *
  * Revision 3.114  2005/06/14 10:49:46  ktr
  * changed GRID_MODIFIED and STRIDE_MODIFIED into flags X_ISMODIFIED
  *
@@ -2657,14 +2661,11 @@ CurrentComponentGetNode (node *aelems)
     if (IDX_IS_NUM (comp_int)) {
         comp = TBmakeNum (comp_int);
     } else {
-        if (NODE_TYPE (aelems) == N_exprs) {
-            DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (aelems)) == N_id),
-                         "wrong node type found");
-            comp = DUPdoDupNode (EXPRS_EXPR (aelems));
-        } else {
-            DBUG_ASSERT ((NODE_TYPE (aelems) == N_id), "wrong node type found!");
-            comp = DUPdoDupNode (aelems);
-        }
+        DBUG_ASSERT (NODE_TYPE (aelems) == N_exprs,
+                     "non-structural constants are no longer accepted"
+                     " as WL boundaries in wltransform");
+        DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (aelems)) == N_id), "wrong node type found");
+        comp = DUPdoDupNode (EXPRS_EXPR (aelems));
     }
 
     DBUG_RETURN (comp);
