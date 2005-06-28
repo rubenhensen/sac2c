@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.48  2005/06/28 16:34:06  sah
+ * removed a warning
+ *
  * Revision 3.47  2005/06/22 20:48:15  sah
  * fixed WL_MODARRAY_SUBSHAPE and its
  * usage.
@@ -589,7 +592,9 @@ void
 ICMCompileWL_MODARRAY_SUBSHAPE (char *sub_NT, char *idx_NT, int dims, char *to_NT)
 {
     shape_class_t sub_sc = ICUGetShapeClass (sub_NT);
+#ifndef DBUG_OFF
     shape_class_t to_sc = ICUGetShapeClass (to_NT);
+#endif
     int cnt;
 
     DBUG_ENTER ("ICMCompileWL_MODARRAY_SUBSHAPE");
