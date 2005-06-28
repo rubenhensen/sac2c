@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.83  2005/06/28 15:46:19  sah
+ * malloc_align_step hidden if SHOW_MALLOC undefined
+ *
  * Revision 3.82  2005/04/13 20:48:36  ktr
  * signal.h included (required on OS X).
  *
@@ -288,9 +291,9 @@ typedef struct {
     malloc_align_type align;
 } malloc_header_type;
 
-#endif /* SHOW_MALLOC */
-
 static int malloc_align_step = 0;
+
+#endif /* SHOW_MALLOC */
 
 /******************************************************************************
  *
