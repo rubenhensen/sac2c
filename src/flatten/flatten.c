@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.51  2005/06/28 21:02:52  cg
+ * Moved while2do transformation into separate traversal.
+ * Added calls to new traversals while2do and handle_condexpr.
+ *
  * Revision 3.50  2005/04/29 20:31:11  khf
  * shifted generation of default partitions into WLPartitionGeneration
  *
@@ -107,6 +111,8 @@
 #include "DupTree.h"
 #include "ctinfo.h"
 #include "handle_mops.h"
+#include "while2do.h"
+#include "handle_condexpr.h"
 
 #include "flatten.h"
 
@@ -603,6 +609,18 @@ FLATdoFlatten (node *arg_node)
     info *info_node;
 
     DBUG_ENTER ("FLATdoFlatten");
+
+    arg_node = W2DdoTransformWhile2Do (arg_node);
+    if ((global.break_after == PH_flatten)
+        && (0 == strcmp (global.break_specifier, "w2d"))) {
+        goto DONE;
+    }
+
+    arg_node = HCEdoHandleConditionalExpressions (arg_node);
+    if ((global.break_after == PH_flatten)
+        && (0 == strcmp (global.break_specifier, "hce"))) {
+        goto DONE;
+    }
 
     /*
      * Before applying the actual flattening of code, we eliminate some
@@ -1323,55 +1341,6 @@ FLATcond (node *arg_node, info *arg_info)
     else_stack_seg = ILIBfree (else_stack_seg);
 
     INFO_FLAT_LASTASSIGN (arg_info) = mem_last_assign;
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *  node *FLATwhile(node *arg_node, info *arg_info)
- *
- * description:
- *
- *   N_while nodes are replaced by N_do nodes contained in an
- *   conditional.
- *
- *   while(cond) {               if(cond) {
- *     body;                -->    do {
- *   }                               body;
- *                                 } while(cond);
- *                               }
- *
- ******************************************************************************/
-
-node *
-FLATwhile (node *arg_node, info *arg_info)
-{
-    node *new_cond;
-    node *new_do;
-
-    DBUG_ENTER ("FLATwhile");
-
-    /* create new do-node */
-    new_do = TBmakeDo (WHILE_COND (arg_node), WHILE_BODY (arg_node));
-    NODE_LINE (new_do) = NODE_LINE (arg_node);
-
-    /* create cond-node with do-loop in then-part */
-    new_cond = TBmakeCond (DUPdoDupTree (DO_COND (new_do)),
-                           TBmakeBlock (TBmakeAssign (new_do, NULL), NULL),
-                           TBmakeBlock (TBmakeEmpty (), NULL));
-    NODE_LINE (new_cond) = NODE_LINE (arg_node);
-
-    /* delete links in old while-node */
-    WHILE_COND (arg_node) = NULL;
-    WHILE_BODY (arg_node) = NULL;
-
-    /* free old while-node */
-    arg_node = FREEdoFreeTree (arg_node);
-
-    /* re-traverse transformed node structure */
-    arg_node = TRAVdo (new_cond, arg_info);
 
     DBUG_RETURN (arg_node);
 }

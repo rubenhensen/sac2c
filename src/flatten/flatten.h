@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2005/06/28 21:02:52  cg
+ * Moved while2do transformation into separate traversal.
+ * Added calls to new traversals while2do and handle_condexpr.
+ *
  * Revision 3.6  2004/12/05 16:45:38  sah
  * added SPIds SPId SPAp in frontend
  *
@@ -79,13 +83,13 @@
  * Prefix: FLAT
  *
  *****************************************************************************/
+
 extern node *FLATdoFlatten (node *syntax_tree);
 
 extern node *FLATblock (node *arg_node, info *arg_info);
 extern node *FLATassign (node *arg_node, info *arg_info);
 extern node *FLATexprs (node *arg_node, info *arg_info);
 extern node *FLATcond (node *arg_node, info *arg_info);
-extern node *FLATwhile (node *arg_node, info *arg_info);
 extern node *FLATdo (node *arg_node, info *arg_info);
 extern node *FLATmodule (node *arg_node, info *arg_info);
 extern node *FLATfundef (node *arg_node, info *arg_info);
