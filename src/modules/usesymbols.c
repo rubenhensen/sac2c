@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.18  2005/06/28 16:31:21  sah
+ * fixed a warning message
+ *
  * Revision 1.17  2005/06/27 17:57:20  sah
  * fixed bug #98
  *
@@ -178,6 +181,7 @@ USSntype (ntype *arg_ntype, info *arg_info)
         scalar = arg_ntype;
     } else {
         DBUG_ASSERT (0, "don't know what to do here");
+        scalar = NULL;
     }
 
     /* if it is external, get the typedef */

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.37  2005/06/28 16:26:21  sah
+ * fixed a warning message
+ *
  * Revision 1.36  2005/05/30 13:08:22  cg
  * Wrapper functions are now NEVER tagged inline.
  *
@@ -522,7 +525,7 @@ CRTWRPmodule (node *arg_node, info *arg_info)
 node *
 CRTWRPfundef (node *arg_node, info *arg_info)
 {
-    node *wrapper;
+    node *wrapper = NULL;
     int num_args, num_rets;
     bool dot_args, dot_rets;
 
@@ -699,7 +702,8 @@ node *
 CRTWRPspap (node *arg_node, info *arg_info)
 {
     int num_args;
-    node *wrapper, *new_node;
+    node *wrapper;
+    node *new_node = NULL;
 
     DBUG_ENTER ("CRTWRPspap");
 
