@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2005/06/28 12:42:08  ktr
+ * removed invalid DEC_RC in ND_ASSIGN__DATA
+ *
  * Revision 3.17  2004/03/09 23:53:27  dkrHH
  * file sac_std.tagged.h renamed into sac_std.h
  * old backend removed
@@ -1340,7 +1343,6 @@ typedef int *SAC_array_descriptor_t;
 #define SAC_ND_ASSIGN__DATA__SCL_NHD__AUD_NHD(to_NT, from_NT, copyfun)                   \
     {                                                                                    \
         SAC_ND_WRITE_READ_COPY (to_NT, 0, from_NT, 0, copyfun)                           \
-        SAC_ND_DEC_RC_FREE (from_NT, 1, )                                                \
     }
 #define SAC_ND_ASSIGN__DATA__SCL_HID__AUD_HID(to_NT, from_NT, copyfun)                   \
     CAT16 (SAC_ND_ASSIGN__DATA__SCL_HID_,                                                \
