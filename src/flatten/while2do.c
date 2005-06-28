@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2005/06/28 20:55:43  cg
+ * Separate traversal for transforming while-loops into do-loops reactivated.
+ *
  * Revision 1.4  2003/09/11 08:21:21  sbs
  * DBUG_PRINTs OPT inserted.
  *
@@ -55,8 +58,9 @@
  *   while(cond){...}  -->  if(cond){do{ ...} while(cond)} else {}
  *
  ******************************************************************************/
+
 node *
-W2Dwhile (node *arg_node, node *arg_info)
+W2Dwhile (node *arg_node, info *arg_info)
 {
     node *new_cond;
     node *new_do;
@@ -65,27 +69,27 @@ W2Dwhile (node *arg_node, node *arg_info)
 
     /* first traverse condition and body */
     if (WHILE_COND (arg_node) != NULL) {
-        WHILE_COND (arg_node) = Trav (WHILE_COND (arg_node), arg_info);
+        WHILE_COND (arg_node) = TRAVdo (WHILE_COND (arg_node), arg_info);
     }
 
     if (WHILE_BODY (arg_node) != NULL) {
-        WHILE_BODY (arg_node) = Trav (WHILE_BODY (arg_node), arg_info);
+        WHILE_BODY (arg_node) = TRAVdo (WHILE_BODY (arg_node), arg_info);
     }
 
     /* create new do-node */
-    new_do = MakeDo (WHILE_COND (arg_node), WHILE_BODY (arg_node));
+    new_do = TBmakeDo (WHILE_COND (arg_node), WHILE_BODY (arg_node));
 
     /* create cond-node with do-loop in then-part */
-    new_cond
-      = MakeCond (DupTree (DO_COND (new_do)), MakeBlock (MakeAssign (new_do, NULL), NULL),
-                  MakeBlock (MakeEmpty (), NULL));
+    new_cond = TBmakeCond (DUPdoDupTree (DO_COND (new_do)),
+                           TBmakeBlock (TBmakeAssign (new_do, NULL), NULL),
+                           TBmakeBlock (TBmakeEmpty (), NULL));
 
     /* delete links in old while-node */
     WHILE_COND (arg_node) = NULL;
     WHILE_BODY (arg_node) = NULL;
 
     /* free old while-node */
-    arg_node = FreeTree (arg_node);
+    arg_node = FREEdoFreeTree (arg_node);
 
     DBUG_RETURN (new_cond);
 }
@@ -93,42 +97,21 @@ W2Dwhile (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* TransformWhile2Do(node* syntax_tree)
+ *   node* W2DdoTransformWhile2Do(node* syntax_tree)
  *
  * description:
  *   starts traversal of syntax tree to transform all while- in to do-loops.
  *
  ******************************************************************************/
+
 node *
-TransformWhile2Do (node *syntax_tree)
+W2DdoTransformWhile2Do (node *syntax_tree)
 {
-    node *arg_info;
-    funtab *old_tab;
+    DBUG_ENTER ("W2DdoTransformWhile2Do");
 
-    DBUG_ENTER ("TransformWhile2Do");
-
-    arg_info = MakeInfo ();
-
-    old_tab = act_tab;
-    act_tab = w2d_tab;
-
-#ifndef DBUG_OFF
-    if (compiler_phase == PH_sacopt) {
-        DBUG_PRINT ("OPT", ("WHILE2DO"));
-    }
-#endif
-
-    syntax_tree = Trav (syntax_tree, arg_info);
-
-#ifndef DBUG_OFF
-    if (compiler_phase == PH_sacopt) {
-        DBUG_PRINT ("OPT", ("                        done"));
-    }
-#endif
-
-    act_tab = old_tab;
-
-    arg_info = FreeTree (arg_info);
+    TRAVpush (TR_w2d);
+    syntax_tree = TRAVdo (syntax_tree, NULL);
+    TRAVpop ();
 
     DBUG_RETURN (syntax_tree);
 }
