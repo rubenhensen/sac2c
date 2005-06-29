@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.37  2005/06/29 16:08:11  ktr
+ * the array modified by a modarray prf is now always reused as it was either
+ * reused or allocated by the preceeding copy operation.
+ *
  * Revision 1.36  2005/06/22 20:48:15  sah
  * fixed WL_MODARRAY_SUBSHAPE and its
  * usage.
@@ -176,6 +180,7 @@ typedef struct ALLOCLIST_STRUCT {
     node *dim;
     node *shape;
     node *reshape;
+    node *reuse;
     struct ALLOCLIST_STRUCT *next;
 } alloclist_struct;
 
@@ -266,6 +271,7 @@ MakeALS (alloclist_struct *als, node *avis, node *dim, node *shape)
     res->dim = dim;
     res->shape = shape;
     res->reshape = NULL;
+    res->reuse = NULL;
     res->next = als;
 
     DBUG_RETURN (res);
@@ -385,30 +391,35 @@ MakeAllocAssignment (alloclist_struct *als, node *next_node)
 
     ids = TBmakeIds (als->avis, NULL);
 
-    DBUG_ASSERT (als->dim != NULL, "alloc requires a dim expression!");
-    DBUG_ASSERT (als->shape != NULL, "alloc requires a shape expression!");
+    if (als->reuse != NULL) {
+        alloc = TCmakePrf1 (F_reuse, als->reuse);
+        als->reuse = NULL;
+    } else {
+        DBUG_ASSERT (als->dim != NULL, "alloc requires a dim expression!");
+        DBUG_ASSERT (als->shape != NULL, "alloc requires a shape expression!");
 
-    /*
-     * Annotate exact dim/shape information if available
-     */
+        /*
+         * Annotate exact dim/shape information if available
+         */
 #ifdef USEAKS
-    if ((TYisAKD (AVIS_TYPE (als->avis))) || (TYisAKS (AVIS_TYPE (als->avis)))
-        || (TYisAKV (AVIS_TYPE (als->avis)))) {
-        als->dim = FREEdoFreeTree (als->dim);
-        als->dim = TBmakeNum (TYgetDim (AVIS_TYPE (als->avis)));
-    }
+        if ((TYisAKD (AVIS_TYPE (als->avis))) || (TYisAKS (AVIS_TYPE (als->avis)))
+            || (TYisAKV (AVIS_TYPE (als->avis)))) {
+            als->dim = FREEdoFreeTree (als->dim);
+            als->dim = TBmakeNum (TYgetDim (AVIS_TYPE (als->avis)));
+        }
 
-    if ((TYisAKS (AVIS_TYPE (als->avis))) || (TYisAKV (AVIS_TYPE (als->avis)))) {
-        als->shape = FREEdoFreeTree (als->shape);
-        als->shape = SHshape2Array (TYgetShape (AVIS_TYPE (als->avis)));
-    }
+        if ((TYisAKS (AVIS_TYPE (als->avis))) || (TYisAKV (AVIS_TYPE (als->avis)))) {
+            als->shape = FREEdoFreeTree (als->shape);
+            als->shape = SHshape2Array (TYgetShape (AVIS_TYPE (als->avis)));
+        }
 #endif
 
-    if (als->reshape != NULL) {
-        alloc = TCmakePrf3 (F_alloc_or_reshape, als->dim, als->shape, als->reshape);
-        als->reshape = NULL;
-    } else {
-        alloc = TCmakePrf2 (F_alloc, als->dim, als->shape);
+        if (als->reshape != NULL) {
+            alloc = TCmakePrf3 (F_alloc_or_reshape, als->dim, als->shape, als->reshape);
+            als->reshape = NULL;
+        } else {
+            alloc = TCmakePrf2 (F_alloc, als->dim, als->shape);
+        }
     }
     als->dim = NULL;
     als->shape = NULL;
@@ -1447,11 +1458,12 @@ EMALprf (node *arg_node, info *arg_info)
     case F_modarray:
     case F_idx_modarray:
         /*
+         * modarray( A, iv, val);
          * idx_modarray( A, idx, val);
-         * alloc( dim( A ), shape ( A ));
+         *
+         * reuse( A);
          */
-        als->dim = MakeDimArg (PRF_ARG1 (arg_node));
-        als->shape = MakeShapeArg (PRF_ARG1 (arg_node));
+        als->reuse = DUPdoDupNode (PRF_ARG1 (arg_node));
         break;
 
     case F_idx_shape_sel:
