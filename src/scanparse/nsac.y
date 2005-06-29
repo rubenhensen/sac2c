@@ -4,6 +4,9 @@
 /*
 *
 * $Log$
+* Revision 1.40  2005/06/29 10:18:13  cg
+* Corrected precedence and associativity rules for &&, || and ?:
+*
 * Revision 1.39  2005/06/28 20:58:02  cg
 * The boolean operators && and || now support lazy evaluation of the
 * second argument. Therefore, they are not scanned/parsed as function,
@@ -307,13 +310,15 @@ PRF_CAT_VxV  PRF_TAKE_SxV  PRF_DROP_SxV
 
 
 
+%right QUESTION COLON
+%right LAZYOR
+%right LAZYAND
 %right INC DEC STAR PLUS MINUS TILDE EXCL LE LT GT ID
 GENARRAY MODARRAY ALL AMPERS
 %right BM_OP
 %right MM_OP CAST
 %right SQBR_L BRACKET_L
 %right ELSE 
-%right LAZYAND LAZYOR QUESTION COLON
 
 %start all
 
