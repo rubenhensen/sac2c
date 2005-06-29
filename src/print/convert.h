@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2005/06/29 18:32:14  sah
+ * added CVbasetype2ShortString
+ *
  * Revision 3.7  2004/12/07 14:37:45  sbs
  * eliminated CVoldTypeSignature2String
  *
@@ -39,6 +42,7 @@ extern char *CVtype2String (types *type, int flag, bool all);
 extern char *CVdouble2String (double);
 extern char *CVfloat2String (float);
 extern char *CVbasetype2String (simpletype type);
+extern char *CVbasetype2ShortString (simpletype type);
 extern char *CVshpseg2String (int dim, shpseg *shape);
 extern char *CVintBytes2String (unsigned int bytes);
 

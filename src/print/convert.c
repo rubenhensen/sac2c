@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2005/06/29 18:32:14  sah
+ * added CVbasetype2ShortString
+ *
  * Revision 3.19  2004/12/07 14:37:45  sbs
  * eliminated CVoldTypeSignature2String
  *
@@ -395,6 +398,34 @@ CVbasetype2String (simpletype type)
     };
 
     DBUG_ENTER ("CVbasetype2String");
+
+    res = ctype_string[type];
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   char *CVbasetype2ShortString(simpletype type)
+ *
+ * description:
+ *   This function yields a pointer to a static memory area that contains
+ *   the short name of basic data type as a string.
+ *
+ ******************************************************************************/
+
+char *
+CVbasetype2ShortString (simpletype type)
+{
+    char *res;
+
+#define TYP_IFfunr_str(str) str
+    static char *ctype_string[] = {
+#include "type_info.mac"
+    };
+
+    DBUG_ENTER ("CVbasetype2ShortString");
 
     res = ctype_string[type];
 
