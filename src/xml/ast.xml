@@ -285,8 +285,11 @@
                  default="sons" include="handle_condexpr.h" >
 	<travuser>
 	  <node name="Assign" />
+	  <node name="Code" />
 	  <node name="Cond" />
+	  <node name="Do" />
 	  <node name="Funcond" />
+	  <node name="With" />
 	</travuser>
       </traversal>
       <traversal id="FLAT" name="Flatten" default="sons" include="flatten.h" >
@@ -3065,18 +3068,17 @@
       <sons>
         <son name="If" mandatory="yes">
           <target>
-            <node name="Id" />
-            <node name="Bool" />
+            <set name="Expr" />
           </target>
         </son>
         <son name="Then" mandatory="yes">
           <target>
-            <node name="Id" />
+            <set name="Expr" />
           </target>
         </son>
         <son name="Else" mandatory="yes">
           <target>
-            <node name="Id" />
+            <set name="Expr" />
           </target>
         </son>
       </sons>
