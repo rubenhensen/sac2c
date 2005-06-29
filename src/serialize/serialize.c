@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.13  2005/06/29 18:31:18  sah
+ * function names of serializers do not depend on return type
+ * and are much more concise now
+ *
  * Revision 1.12  2005/06/18 18:06:00  sah
  * moved entire dependency handling to dependencies.c
  * the dependency table is now created shortly prior
@@ -54,7 +58,9 @@
 #include "globals.h"
 #include "tree_basic.h"
 #include "filemgr.h"
-#include "type_utils.h"
+#include "convert.h"
+#include "user_types.h"
+#include "new_types.h"
 #include <string.h>
 
 #define MAX_FUN_NAME_LEN 255
@@ -258,18 +264,101 @@ SerializeSymbolTable (node *module, sttable_t *table)
 }
 
 static void
+AppendSerFunType (char *funname, ntype *type)
+{
+    char *pos;
+    int size;
+    int written;
+    ntype *scalar;
+
+    DBUG_ENTER ("AppendSerFunType");
+
+    size = strlen (funname);
+
+    pos = &funname[size];
+
+    DBUG_ASSERT ((size < MAX_FUN_NAME_LEN - 1), "fundef name buffer to small!");
+
+    *pos = '_';
+    pos++;
+
+    if (TYisScalar (type)) {
+        *pos = 'S';
+        pos++;
+        size++;
+        scalar = type;
+    } else if ((TYisAKS (type)) || (TYisAKV (type))) {
+        *pos = 'K';
+        pos++;
+        size++;
+        scalar = TYgetScalar (type);
+    } else if (TYisAKD (type)) {
+        *pos = 'D';
+        pos++;
+        size++;
+        scalar = TYgetScalar (type);
+    } else if (TYisAUDGZ (type)) {
+        *pos = 'G';
+        pos++;
+        size++;
+        scalar = TYgetScalar (type);
+    } else if (TYisAUD (type)) {
+        *pos = 'U';
+        pos++;
+        size++;
+        scalar = TYgetScalar (type);
+    } else {
+        DBUG_ASSERT (0, "unknown shape class!");
+        scalar = NULL;
+    }
+
+    if (TYisSimple (scalar)) {
+        simpletype simple = TYgetSimpleType (scalar);
+
+        written = snprintf (pos, MAX_FUN_NAME_LEN - size, "%s",
+                            CVbasetype2ShortString (simple));
+
+        pos += written;
+        size += written;
+    } else if (TYisUser (scalar)) {
+        usertype user = TYgetUserType (scalar);
+
+        written = snprintf (pos, MAX_FUN_NAME_LEN - size, "%s__%s", UTgetMod (user),
+                            UTgetName (user));
+
+        pos += written;
+        size += written;
+    } else if (TYisSymb (scalar)) {
+        written = snprintf (pos, MAX_FUN_NAME_LEN - size, "%s__%s", TYgetMod (scalar),
+                            TYgetName (scalar));
+
+        pos += written;
+        size += written;
+    } else {
+        DBUG_ASSERT (0, "unknown scalar type found");
+    }
+
+    DBUG_ASSERT ((size < MAX_FUN_NAME_LEN), "funname buffer to small");
+
+    *pos = '\0';
+
+    DBUG_VOID_RETURN;
+}
+
+static void
 AppendSerFunTypeSignature (char *funname, node *fundef)
 {
-    char *signature;
+    node *args;
 
     DBUG_ENTER ("AppendSerFunTypeSignature");
 
-    signature = TUtypeSignature2String (fundef);
+    args = FUNDEF_ARGS (fundef);
 
-    strcat (funname, "_");
-    strcat (funname, signature);
+    while (args != NULL) {
+        AppendSerFunType (funname, AVIS_TYPE (ARG_AVIS (args)));
 
-    ILIBfree (signature);
+        args = ARG_NEXT (args);
+    }
 
     DBUG_VOID_RETURN;
 }
@@ -277,7 +366,7 @@ AppendSerFunTypeSignature (char *funname, node *fundef)
 const char *
 SERgenerateSerFunName (stentrytype_t type, node *node)
 {
-    static char result[MAX_FUN_NAME_LEN];
+    static char result[MAX_FUN_NAME_LEN + 1];
     char *tmp;
 
     DBUG_ENTER ("SERgenerateSerFunName");
