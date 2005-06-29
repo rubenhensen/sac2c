@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  2005/06/29 16:04:55  ktr
+ * An array copied by means of F_copy is always a reuse candidate
+ *
  * Revision 1.15  2005/01/11 13:35:40  cg
  * Useless include of Error.h removed
  *
@@ -532,8 +535,9 @@ EMRIprf (node *arg_node, info *arg_info)
     case F_dec_rc:
         break;
 
+    case F_reuse:
     case F_suballoc:
-        if (INFO_RI_RHSCAND (arg_info) != NULL) {
+        if (INFO_RI_TRAVMODE (arg_info) == ri_annotate) {
             INFO_RI_RHSCAND (arg_info) = FREEdoFreeTree (INFO_RI_RHSCAND (arg_info));
         }
         break;
@@ -570,6 +574,19 @@ EMRIprf (node *arg_node, info *arg_info)
             INFO_RI_TRAVMODE (arg_info) = ri_default;
         }
         INFO_RI_ADDLHS (arg_info) = TRUE;
+        break;
+
+    case F_copy:
+        /*
+         * The copied array is always a reuse candidate
+         */
+        rhc = DUPdoDupTree (PRF_ARGS (arg_node));
+        INFO_RI_RHSCAND (arg_info) = CutExprs (INFO_RI_CANDIDATES (arg_info), rhc);
+
+        if (INFO_RI_RHSCAND (arg_info) != NULL) {
+            DBUG_PRINT ("RI", ("RHSCAND"));
+            DBUG_EXECUTE ("RI", PRTdoPrint (INFO_RI_RHSCAND (arg_info)););
+        }
         break;
 
     default:
