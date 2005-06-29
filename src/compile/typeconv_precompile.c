@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2005/06/29 08:50:19  ktr
+ * TCPcond and TCPdo are now robust against X_COND not being an identifier.
+ *
  * Revision 1.10  2005/06/24 18:19:27  sah
  * fixed traversal order and insertion of assigns
  *
@@ -529,19 +532,21 @@ TCPcond (node *arg_node, info *arg_info)
         COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
     }
 
-    cond_type = AVIS_TYPE (ID_AVIS (COND_COND (arg_node)));
-    cond_cls = NTUgetShapeClassFromNType (cond_type);
+    if (NODE_TYPE (COND_COND (arg_node)) == N_id) {
+        cond_type = AVIS_TYPE (ID_AVIS (COND_COND (arg_node)));
+        cond_cls = NTUgetShapeClassFromNType (cond_type);
 
-    if (cond_cls != C_scl) {
-        /*
-         * non scalar cond-var found! we need to
-         * insert an extra assignment to trigger a
-         * type assertion and make sure that
-         * the cond is a scalar
-         */
-        LiftId (COND_COND (arg_node), INFO_TCP_FUNDEF (arg_info),
-                TYmakeAKS (TYcopyType (TYgetScalar (cond_type)), SHmakeShape (0)),
-                &(INFO_TCP_PREASSIGNS (arg_info)));
+        if (cond_cls != C_scl) {
+            /*
+             * non scalar cond-var found! we need to
+             * insert an extra assignment to trigger a
+             * type assertion and make sure that
+             * the cond is a scalar
+             */
+            LiftId (COND_COND (arg_node), INFO_TCP_FUNDEF (arg_info),
+                    TYmakeAKS (TYcopyType (TYgetScalar (cond_type)), SHmakeShape (0)),
+                    &(INFO_TCP_PREASSIGNS (arg_info)));
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -565,19 +570,21 @@ TCPdo (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("TCPdo");
 
-    do_type = AVIS_TYPE (ID_AVIS (DO_COND (arg_node)));
-    do_cls = NTUgetShapeClassFromNType (do_type);
+    if (NODE_TYPE (DO_COND (arg_node)) == N_id) {
+        do_type = AVIS_TYPE (ID_AVIS (DO_COND (arg_node)));
+        do_cls = NTUgetShapeClassFromNType (do_type);
 
-    if (do_cls != C_scl) {
-        /*
-         * non scalar cond-var found! we need to
-         * insert an extra assignment to trigger a
-         * type assertion and make sure that
-         * the cond is a scalar
-         */
-        LiftId (DO_COND (arg_node), INFO_TCP_FUNDEF (arg_info),
-                TYmakeAKS (TYcopyType (TYgetScalar (do_type)), SHmakeShape (0)),
-                &(INFO_TCP_ENDBLOCKASSIGNS (arg_info)));
+        if (do_cls != C_scl) {
+            /*
+             * non scalar cond-var found! we need to
+             * insert an extra assignment to trigger a
+             * type assertion and make sure that
+             * the cond is a scalar
+             */
+            LiftId (DO_COND (arg_node), INFO_TCP_FUNDEF (arg_info),
+                    TYmakeAKS (TYcopyType (TYgetScalar (do_type)), SHmakeShape (0)),
+                    &(INFO_TCP_ENDBLOCKASSIGNS (arg_info)));
+        }
     }
 
     /*
