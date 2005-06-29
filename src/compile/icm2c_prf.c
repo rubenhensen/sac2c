@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.18  2005/06/29 16:04:02  ktr
+ * cleaned up implementation of modarray as all copying is now performed by a
+ * seperate copy prf.
+ *
  * Revision 1.17  2005/06/28 10:04:03  ktr
  * _sel_ will not perform any non-scalar valued selections any longer
  *
@@ -632,29 +636,6 @@ PrfModarray_Data (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
         (ICUGetShapeClass (val_ANY) == C_scl)) {
         /* 'val_ANY' is scalar */
         INDENT;
-        fprintf (global.outfile, "SAC_IS_REUSED__BLOCK_BEGIN( %s, %s)\n", to_NT, from_NT);
-        global.indent++;
-        INDENT;
-        fprintf (global.outfile,
-                 "SAC_TR_MEM_PRINT("
-                 " (\"reuse memory of %s at %%p for %s\","
-                 " SAC_ND_A_FIELD( %s)))\n",
-                 from_NT, to_NT, from_NT);
-        global.indent--;
-        INDENT;
-        fprintf (global.outfile, "SAC_IS_REUSED__BLOCK_ELSE( %s, %s)\n", to_NT, from_NT);
-        global.indent++;
-        INDENT;
-        fprintf (global.outfile, "int SAC_i;\n");
-        FOR_LOOP_INC (fprintf (global.outfile, "SAC_i");, fprintf (global.outfile, "0");
-                      , fprintf (global.outfile, "SAC_ND_A_SIZE( %s)", to_NT);, INDENT;
-                      fprintf (global.outfile,
-                               "SAC_ND_WRITE_READ_COPY( %s, SAC_i, %s, SAC_i, %s)\n",
-                               to_NT, from_NT, copyfun););
-        global.indent--;
-        INDENT;
-        fprintf (global.outfile, "SAC_IS_REUSED__BLOCK_END( %s, %s)\n", to_NT, from_NT);
-
         BLOCK_VARDECS (fprintf (global.outfile, "int SAC_idx;");
                        ,
                        if (idx_unrolled) {
@@ -683,14 +664,6 @@ PrfModarray_Data (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
                            Vect2Offset ("SAC_idx", idx, idx_size, idx_size_fun,
                                         idx_read_fun, to_NT, to_dim);
                        } INDENT;
-                       fprintf (global.outfile, "SAC_IS_REUSED__BLOCK_BEGIN( %s, %s)\n",
-                                to_NT, from_NT);
-                       global.indent++; INDENT;
-                       fprintf (global.outfile,
-                                "SAC_TR_MEM_PRINT("
-                                " (\"reuse memory of %s at %%p for %s\","
-                                " SAC_ND_A_FIELD( %s)))\n",
-                                from_NT, to_NT, from_NT);
                        FOR_LOOP (fprintf (global.outfile, "SAC_i = SAC_idx, SAC_j = 0");
                                  , fprintf (global.outfile, "SAC_j < SAC_ND_A_SIZE( %s)",
                                             val_ANY);
@@ -698,38 +671,7 @@ PrfModarray_Data (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
                                  fprintf (global.outfile,
                                           "SAC_ND_WRITE_READ_COPY("
                                           " %s, SAC_i, %s, SAC_j, %s)\n",
-                                          to_NT, val_ANY, copyfun););
-                       global.indent--; INDENT;
-                       fprintf (global.outfile, "SAC_IS_REUSED__BLOCK_ELSE( %s, %s)\n",
-                                to_NT, from_NT);
-                       global.indent++;
-                       FOR_LOOP_INC (fprintf (global.outfile, "SAC_i");
-                                     , fprintf (global.outfile, "0");
-                                     , fprintf (global.outfile, "SAC_idx");, INDENT;
-                                     fprintf (global.outfile,
-                                              "SAC_ND_WRITE_READ_COPY("
-                                              " %s, SAC_i, %s, SAC_i, %s)\n",
-                                              to_NT, from_NT, copyfun););
-                       FOR_LOOP_INC (fprintf (global.outfile, "SAC_j");
-                                     , fprintf (global.outfile, "0");
-                                     , fprintf (global.outfile, "SAC_ND_A_SIZE( %s)",
-                                                val_ANY);
-                                     , INDENT; fprintf (global.outfile,
-                                                        "SAC_ND_WRITE_READ_COPY("
-                                                        " %s, SAC_i, %s, SAC_j, %s)\n",
-                                                        to_NT, val_ANY, copyfun);
-                                     INDENT; fprintf (global.outfile, "SAC_i++;\n"););
-                       FOR_LOOP (fprintf (global.outfile, " ");
-                                 , fprintf (global.outfile, "SAC_i < SAC_ND_A_SIZE( %s)",
-                                            to_NT);
-                                 , fprintf (global.outfile, "SAC_i++");, INDENT;
-                                 fprintf (global.outfile,
-                                          "SAC_ND_WRITE_READ_COPY("
-                                          " %s, SAC_i, %s, SAC_i, %s)\n",
-                                          to_NT, from_NT, copyfun););
-                       global.indent--; INDENT;
-                       fprintf (global.outfile, "SAC_IS_REUSED__BLOCK_END( %s, %s)\n",
-                                to_NT, from_NT););
+                                          to_NT, val_ANY, copyfun);););
     }
 
     DBUG_VOID_RETURN;
