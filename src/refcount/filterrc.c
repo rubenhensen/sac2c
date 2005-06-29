@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2005/06/29 16:09:21  ktr
+ * the reuse prf which can arise from modarray prfs in alloc.c is never filtered
+ *
  * Revision 1.8  2005/06/25 20:09:51  cg
  * Bug fixed in handling of conditionals without subsequent funcond.
  *
@@ -205,11 +208,12 @@ FilterRCs (node *arg_node, info *arg_info)
     DBUG_ASSERT ((NODE_TYPE (alloc) == N_prf)
                    && ((PRF_PRF (alloc) == F_alloc)
                        || (PRF_PRF (alloc) == F_alloc_or_reuse)
+                       || (PRF_PRF (alloc) == F_reuse)
                        || (PRF_PRF (alloc) == F_alloc_or_reshape)
                        || (PRF_PRF (alloc) == F_suballoc)),
                  "Illegal node type!");
 
-    if (PRF_PRF (alloc) != F_suballoc) {
+    if ((PRF_PRF (alloc) != F_suballoc) && (PRF_PRF (alloc) != F_reuse)) {
 
         if (PRF_EXPRS3 (alloc) != NULL) {
             PRF_EXPRS3 (alloc) = FilterTrav (PRF_EXPRS3 (alloc), arg_info);
