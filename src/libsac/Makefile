@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.23  2005/06/29 09:31:53  sbs
+# making of libsac2c made less verbose.
+#
 # Revision 3.22  2005/06/15 10:48:17  sbs
 # made libsac2c.so dependent on PROJECT_ROOT sac2c
 #
@@ -137,7 +140,7 @@ libsac_mt.a: $(OBJS_LIBSAC_MT)
 
 
 libsac2c.so: sac2c.sac $(PROJECT_ROOT)/sac2c
-	sac2c -maxspec 0 -noopt -doDFR -O3 sac2c.sac
+	sac2c -v0 -maxspec 0 -noopt -doDFR -O3 sac2c.sac
 
 $(PROJECT_ROOT)/sac2c:
 	cd $(PROJECT_ROOT); $(MAKE) sac2c
