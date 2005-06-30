@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2005/06/30 16:41:37  ktr
+ * missing , inserter into trace macro
+ *
  * Revision 3.18  2005/06/28 12:42:08  ktr
  * removed invalid DEC_RC in ND_ASSIGN__DATA
  *
@@ -1365,7 +1368,7 @@ typedef int *SAC_array_descriptor_t;
 #define SAC_ND_COPY__DATA__SCL__SCL(to_NT, from_NT, copyfun)                             \
     {                                                                                    \
         SAC_TR_MEM_PRINT (                                                               \
-          ("ND_COPY__DATA( %s, %s, %s)" NT_STR (to_NT), #from_NT, #copyfun))             \
+          ("ND_COPY__DATA( %s, %s, %s)", NT_STR (to_NT), #from_NT, #copyfun))            \
         SAC_ND_WRITE_READ_COPY (to_NT, 0, from_NT, 0, copyfun)                           \
     }
 #define SAC_ND_COPY__DATA__SCL__AKS(to_NT, from_NT, copyfun) SAC_ICM_UNDEF ();
