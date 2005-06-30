@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.35  2005/06/30 16:40:52  ktr
+# added audscldist.o
+#
 # Revision 3.34  2004/12/16 14:37:30  ktr
 # added InplaceComputation
 #
@@ -129,7 +132,7 @@ include $(PROJECT_ROOT)/Makefile.Config
 all: allocation.o alloc.o refcounting.o reuse.o rcopt.o rcphase.o \
      filterrc.o aliasanalysis.o staticreuse.o reuseelimination.o \
      interfaceanalysis.o loopreuseopt.o datareuse.o explicitcopy.o \
-     reusebranching.o ReuseWithArrays.o inplacecomp.o
+     reusebranching.o ReuseWithArrays.o inplacecomp.o audscldist.o
 
 
 %.o: %.c
