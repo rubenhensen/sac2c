@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2005/06/30 16:40:52  ktr
+ * added AUD SCL distincion as first pass
+ *
  * Revision 1.12  2005/06/06 13:29:23  jhb
  * added PHrunCompilerSubPhase
  *
@@ -61,6 +64,7 @@
 #include "reusebranching.h"
 #include "print.h"
 #include "inplacecomp.h"
+#include "audscldist.h"
 #include <string.h>
 #include <stdio.h>
 
@@ -174,6 +178,16 @@ EMAdoAllocation (node *syntax_tree)
     }
     if ((global.break_after == PH_alloc)
         && (0 == strcmp (global.break_specifier, "dcr"))) {
+        goto DONE;
+    }
+
+    /*
+     * AUD SCL distinction
+     */
+    DBUG_PRINT ("EMM", ("Seperating AUD and SCL variables (asd)"));
+    syntax_tree = ASDdoAudSclDistinction (syntax_tree);
+    if ((global.break_after == PH_alloc)
+        && (0 == strcmp (global.break_specifier, "asd"))) {
         goto DONE;
     }
 
