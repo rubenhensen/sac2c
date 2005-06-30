@@ -1134,6 +1134,18 @@
           <node name="Block" />
         </travsons>
       </traversal>
+      <traversal id="ASD" name="AUD SCL distinction" 
+                 default="sons" include="audscldist.h">
+        <travuser>
+          <node name="Module" />
+          <node name="Fundef" />
+          <node name="Assign" />
+          <node name="Ap" />
+          <node name="Cond" />
+          <node name="Do" />
+          <node name="Let" />
+        </travuser>
+      </traversal>
       <traversal id="EMAL" name="Allocation" default="none" include="alloc.h" >
         <travuser>
           <node name="Num" />
@@ -1715,8 +1727,6 @@
           <node name="Fundef" />
           <node name="Assign" />
           <node name="Ap" />
-          <node name="Cond" />
-          <node name="Do" />
         </travuser>
       </traversal>
       <traversal id="RID" name="Rename Identifiers" default="sons" include="renameidentifiers.h">
