@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  2005/06/30 11:57:02  ktr
+ * made adjustments necessary for shapeclass dependent dopying
+ *
  * Revision 1.16  2005/06/29 16:04:55  ktr
  * An array copied by means of F_copy is always a reuse candidate
  *
@@ -521,6 +524,7 @@ EMRIlet (node *arg_node, info *arg_info)
 node *
 EMRIprf (node *arg_node, info *arg_info)
 {
+    ntype *rt, *lt;
     node *rhc;
 
     DBUG_ENTER ("EMRIprf");
@@ -578,15 +582,23 @@ EMRIprf (node *arg_node, info *arg_info)
 
     case F_copy:
         /*
-         * The copied array is always a reuse candidate
+         * The copied array can be a reuse candidate without being AKS
          */
-        rhc = DUPdoDupTree (PRF_ARGS (arg_node));
-        INFO_RI_RHSCAND (arg_info) = CutExprs (INFO_RI_CANDIDATES (arg_info), rhc);
+        rt = TYeliminateAKV (ID_NTYPE (PRF_ARG1 (arg_node)));
+        lt = TYeliminateAKV (IDS_NTYPE (INFO_RI_LHS (arg_info)));
 
-        if (INFO_RI_RHSCAND (arg_info) != NULL) {
-            DBUG_PRINT ("RI", ("RHSCAND"));
-            DBUG_EXECUTE ("RI", PRTdoPrint (INFO_RI_RHSCAND (arg_info)););
+        if (TYeqTypes (lt, rt)) {
+            rhc = DUPdoDupTree (PRF_ARGS (arg_node));
+            INFO_RI_RHSCAND (arg_info) = CutExprs (INFO_RI_CANDIDATES (arg_info), rhc);
+
+            if (INFO_RI_RHSCAND (arg_info) != NULL) {
+                DBUG_PRINT ("RI", ("RHSCAND"));
+                DBUG_EXECUTE ("RI", PRTdoPrint (INFO_RI_RHSCAND (arg_info)););
+            }
         }
+
+        rt = TYfreeType (rt);
+        lt = TYfreeType (lt);
         break;
 
     default:
