@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.173  2005/06/30 16:39:07  ktr
+# added src/refcount/audscldist.o
+#
 # Revision 3.172  2005/06/28 20:57:36  cg
 # Added while2do.[ch] and handle_condexpr.[ch]
 #
@@ -242,7 +245,7 @@ REFCOUNT= src/refcount/allocation.o src/refcount/rcopt.o \
           src/refcount/interfaceanalysis.o src/refcount/loopreuseopt.o \
           src/refcount/datareuse.o src/refcount/explicitcopy.o \
           src/refcount/reusebranching.o src/refcount/ReuseWithArrays.o \
-          src/refcount/inplacecomp.o
+          src/refcount/inplacecomp.o src/refcount/audscldist.o
 
 CONCURRENT= src/concurrent/concurrent.o src/concurrent/spmd_init.o  \
             src/concurrent/spmd_lift.o src/concurrent/sync_init.o \
