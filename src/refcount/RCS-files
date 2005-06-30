@@ -33,3 +33,4 @@ ReuseWithArrays.c
 ReuseWithArrays.h
 inplacecomp.c
 inplacecomp.h
+audscldist.c
