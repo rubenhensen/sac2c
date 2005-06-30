@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2005/06/30 16:39:51  ktr
+ * Stripped out stuff belonging into AUD SCL Distinction
+ *
  * Revision 1.11  2005/06/29 08:50:19  ktr
  * TCPcond and TCPdo are now robust against X_COND not being an identifier.
  *
@@ -216,61 +219,6 @@ LiftArg (node *arg, node *fundef, ntype *new_type, node **new_assigns)
 /******************************************************************************
  *
  * Function:
- *   node *LiftId( node *id, node *fundef,
- *                 ntype *ntype, node **new_assigns)
- *
- * Description:
- *   Lifts the given id of a cond or do
- *    - Generates a new and fresh varname.
- *    - Generates a new vardec and inserts it into the vardec chain of 'fundef'.
- *      If 'new_type' is not NULL, 'new_type' is used as VARDEC_TYPE instead
- *      of ID_TYPE(arg).
- *    - Builds a new assignment and inserts it into the assignment chain
- *      'new_assigns'.
- *
- ******************************************************************************/
-static void
-LiftId (node *id, node *fundef, ntype *new_type, node **new_assigns)
-{
-    char *new_name;
-    node *new_ids;
-    node *new_avis;
-
-    DBUG_ENTER ("LiftId");
-
-    new_name = ILIBtmpVarName (ID_NAME (id));
-
-    /*
-     * Insert vardec for new var
-     */
-    if (new_type == NULL) {
-        new_type = ID_NTYPE (id);
-    }
-
-    new_avis = TBmakeAvis (new_name, TYcopyType (new_type));
-
-    FUNDEF_VARDEC (fundef) = TBmakeVardec (new_avis, FUNDEF_VARDEC (fundef));
-
-    /*
-     * Abstract the given argument out:
-     *   ... = cond ( A, ...) || while ( A )
-     * is transformed into
-     *   A' = A;
-     *   ... = cond ( A', ...) || while ( A')
-     */
-    new_ids = TBmakeIds (new_avis, NULL);
-
-    (*new_assigns)
-      = TBmakeAssign (TBmakeLet (new_ids, TBmakeId (ID_AVIS (id))), (*new_assigns));
-
-    ID_AVIS (id) = new_avis;
-
-    DBUG_VOID_RETURN;
-}
-
-/******************************************************************************
- *
- * Function:
  *   void LiftIds( ids *ids_arg, node *fundef,
  *                 types *new_type, node **new_assigns)
  *
@@ -463,6 +411,9 @@ TCPap (node *arg_node, info *arg_info)
             if ((actual_cls != formal_cls)
                 && (global.argtag_has_shp[fun_argtab->tag[idx]] || (actual_cls == C_scl)
                     || (formal_cls == C_scl))) {
+                DBUG_ASSERT ((actual_cls != C_scl) && (formal_cls != C_scl),
+                             "Conversion from or to scalar encountered!");
+
                 DBUG_PRINT ("TCP",
                             ("Return value with inappropriate shape class found:"));
                 DBUG_PRINT ("TCP", ("   ... %s ... = %s( ... ), %s instead of %s",
@@ -487,6 +438,9 @@ TCPap (node *arg_node, info *arg_info)
             if ((actual_cls != formal_cls)
                 && (global.argtag_has_shp[fun_argtab->tag[idx]] || (actual_cls == C_scl)
                     || (formal_cls == C_scl))) {
+                DBUG_ASSERT ((actual_cls != C_scl) && (formal_cls != C_scl),
+                             "Conversion from or to scalar encountered!");
+
                 DBUG_PRINT ("TCP", ("Argument with inappropriate shape class found:"));
                 DBUG_PRINT ("TCP", ("   ... = %s( ... %s ...), %s instead of %s",
                                     FUNDEF_NAME (INFO_TCP_FUNDEF (arg_info)),
@@ -497,106 +451,6 @@ TCPap (node *arg_node, info *arg_info)
             }
         }
         idx++;
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * Function:
- *   node *TCPcond( node *arg_node, info *arg_info)
- *
- * Description:
- *   inserts an assignment to ensure that the condition is an SCL of type
- *   bool, if needed
- *
- ******************************************************************************/
-node *
-TCPcond (node *arg_node, info *arg_info)
-{
-    shape_class_t cond_cls;
-    ntype *cond_type;
-
-    DBUG_ENTER ("TCPcond");
-
-    /*
-     * first traverse the two blocks
-     * as we insert the assigns on our way up
-     */
-    if (COND_THEN (arg_node) != NULL) {
-        COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
-    }
-
-    if (COND_ELSE (arg_node) != NULL) {
-        COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
-    }
-
-    if (NODE_TYPE (COND_COND (arg_node)) == N_id) {
-        cond_type = AVIS_TYPE (ID_AVIS (COND_COND (arg_node)));
-        cond_cls = NTUgetShapeClassFromNType (cond_type);
-
-        if (cond_cls != C_scl) {
-            /*
-             * non scalar cond-var found! we need to
-             * insert an extra assignment to trigger a
-             * type assertion and make sure that
-             * the cond is a scalar
-             */
-            LiftId (COND_COND (arg_node), INFO_TCP_FUNDEF (arg_info),
-                    TYmakeAKS (TYcopyType (TYgetScalar (cond_type)), SHmakeShape (0)),
-                    &(INFO_TCP_PREASSIGNS (arg_info)));
-        }
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * Function:
- *   node *TCPdo( node *arg_node, info *arg_info)
- *
- * Description:
- *   inserts an assignment to ensure that the condition is an SCL of type
- *   bool, if needed
- *
- ******************************************************************************/
-node *
-TCPdo (node *arg_node, info *arg_info)
-{
-    shape_class_t do_cls;
-    ntype *do_type;
-
-    DBUG_ENTER ("TCPdo");
-
-    if (NODE_TYPE (DO_COND (arg_node)) == N_id) {
-        do_type = AVIS_TYPE (ID_AVIS (DO_COND (arg_node)));
-        do_cls = NTUgetShapeClassFromNType (do_type);
-
-        if (do_cls != C_scl) {
-            /*
-             * non scalar cond-var found! we need to
-             * insert an extra assignment to trigger a
-             * type assertion and make sure that
-             * the cond is a scalar
-             */
-            LiftId (DO_COND (arg_node), INFO_TCP_FUNDEF (arg_info),
-                    TYmakeAKS (TYcopyType (TYgetScalar (do_type)), SHmakeShape (0)),
-                    &(INFO_TCP_ENDBLOCKASSIGNS (arg_info)));
-        }
-    }
-
-    /*
-     * the new assign is inserted on our way through the body at
-     * the end of the body
-     */
-    if (DO_BODY (arg_node) != NULL) {
-        DO_BODY (arg_node) = TRAVdo (DO_BODY (arg_node), arg_info);
-    }
-
-    if (DO_SKIP (arg_node) != NULL) {
-        DO_SKIP (arg_node) = TRAVdo (DO_SKIP (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);

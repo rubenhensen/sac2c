@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2005/06/30 16:39:51  ktr
+ * Stripped out stuff belonging into AUD SCL Distinction
+ *
  * Revision 1.2  2005/06/24 16:09:23  sah
  * added insertion of type conversion assignments
  * for conditionals
@@ -28,7 +31,5 @@ extern node *TCPmodule (node *arg_node, info *arg_info);
 extern node *TCPfundef (node *arg_node, info *arg_info);
 extern node *TCPassign (node *arg_node, info *arg_info);
 extern node *TCPap (node *arg_node, info *arg_info);
-extern node *TCPcond (node *arg_node, info *arg_info);
-extern node *TCPdo (node *arg_node, info *arg_info);
 
 #endif /* _SAC_TYPE_CONVERSIONS_H_ */
