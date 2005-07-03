@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.80  2005/07/03 17:08:18  ktr
+ * changed PH_flatten to PH_simplify
+ *
  * Revision 3.79  2005/06/02 15:02:37  sah
  * added -Mlib option and corresponding implementation
  *
@@ -192,7 +195,7 @@ USGprintUsage ()
 
     printf ("\n");
 
-    PRINT_BREAK_SPEC (PH_flatten, "mop",
+    PRINT_BREAK_SPEC (PH_simplify, "mop",
                       "Stop after resolving (multiple) applications of infix");
     CONT_BREAK_SPEC ("operations.");
 
