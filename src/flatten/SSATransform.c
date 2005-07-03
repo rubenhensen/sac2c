@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.36  2005/07/03 17:04:54  ktr
+ * removed references to PH_flatten
+ *
  * Revision 1.35  2005/06/06 13:21:00  jhb
  * removed SSATransformExplicitAllocs
  *
@@ -1648,10 +1651,10 @@ SSATids (node *arg_ids, info *arg_info)
         /* new rename-to target for old vardec */
         AVIS_SSASTACK_TOP (IDS_AVIS (arg_ids)) = VARDEC_AVIS (new_vardec);
 
-        if ((global.compiler_phase != PH_flatten)
-            && (global.compiler_phase != PH_typecheck))
+        if (global.compiler_phase > PH_typecheck) {
             AVIS_TYPE (VARDEC_AVIS (new_vardec))
               = TYcopyType (AVIS_TYPE (IDS_AVIS (arg_ids)));
+        }
 
         /* rename this ids */
         IDS_AVIS (arg_ids) = VARDEC_AVIS (new_vardec);
@@ -1719,10 +1722,10 @@ TreatIdAsLhs (node *arg_node, info *arg_info)
         /* new rename-to target for old vardec */
         AVIS_SSASTACK_TOP (ID_AVIS (arg_node)) = VARDEC_AVIS (new_vardec);
 
-        if ((global.compiler_phase != PH_flatten)
-            && (global.compiler_phase != PH_typecheck))
+        if (global.compiler_phase > PH_typecheck) {
             AVIS_TYPE (VARDEC_AVIS (new_vardec))
               = TYcopyType (AVIS_TYPE (ID_AVIS (arg_node)));
+        }
 
         /* rename this ids */
         ID_AVIS (arg_node) = VARDEC_AVIS (new_vardec);
