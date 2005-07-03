@@ -1635,6 +1635,23 @@
           <node name="Objdef" />
         </travnone>
       </traversal>
+      <traversal id="RCM" name="Reference counting minimization" default="sons" include="rcminimize.h" >
+        <travuser>
+          <node name="Ap" />
+          <node name="Assign" />
+          <node name="Code" />
+          <node name="Cond" />
+          <node name="Funcond" />
+          <node name="Fundef" />
+          <node name="Id" />
+          <node name="Let" />
+          <node name="Prf" />
+          <node name="Return" />
+        </travuser>
+        <travnone>
+          <node name="Objdef" />
+        </travnone>
+      </traversal>
       <traversal id="EMRCO" name="Reference counting optimizations" default="none" include="rcopt.h" >
         <travuser>
           <node name="Assign" />
