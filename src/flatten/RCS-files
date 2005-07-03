@@ -36,3 +36,4 @@ while2do.h
 handle_condexpr.c
 handle_condexpr.h
 codesimplification.c
+codesimplification.h
