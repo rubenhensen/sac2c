@@ -36,3 +36,4 @@ inplacecomp.h
 audscldist.c
 audscldist.h
 NumLookUpTable.c
+NumLookUpTable.h
