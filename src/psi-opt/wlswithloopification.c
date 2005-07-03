@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2005/07/03 17:18:17  ktr
+ * Fixed a pointer type problem
+ *
  * Revision 1.3  2005/06/06 14:01:07  ktr
  * Withloopification now builds copy with-loops for functions arguments as well
  *
@@ -428,13 +431,13 @@ CreateCopyWithloop (node *array, int dim, node *fundef)
         unrdim = (dim < 1) ? dim : 1;
     } else {
         if (AVIS_SSAASSIGN (ID_AVIS (array)) != NULL) {
-            node *arr = ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (array)));
+            node *rhs = ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (array)));
 
-            if (NODE_TYPE (array) == N_array) {
+            if (NODE_TYPE (rhs) == N_array) {
                 /*
                  * array is given by an array, unroll at most the array dimensionality
                  */
-                int arraydim = SHgetDim (arr);
+                int arraydim = SHgetDim (ARRAY_SHAPE (rhs));
 
                 unrdim = (dim < arraydim) ? dim : arraydim;
             } else {
