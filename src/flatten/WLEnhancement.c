@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2005/07/03 17:06:32  ktr
+ * switched to phase.h
+ *
  * Revision 1.10  2005/06/14 08:52:04  khf
  * added traversal in subphase WLDP
  *
@@ -35,18 +38,11 @@
  *
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include "tree_basic.h"
-#include "node_basic.h"
-#include "globals.h"
-#include "dbug.h"
 #include "WLEnhancement.h"
-#include "ExplicitAccumulate.h"
-#include "wldefaultpartition.h"
-#include "WLPartitionGeneration.h"
+
+#include "phase.h"
+#include "tree_basic.h"
+#include "dbug.h"
 
 /** <!--********************************************************************-->
  *
@@ -62,35 +58,30 @@
  ******************************************************************************/
 
 node *
-WLEdoWlEnhancement (node *arg_node)
+WLEdoWlEnhancement (node *syntax_tree)
 {
 
     DBUG_ENTER ("WLEdoWlEnhancement");
 
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module),
+    DBUG_ASSERT ((NODE_TYPE (syntax_tree) == N_module),
                  "WLEdoWlEnhancement not started with modul node");
 
     DBUG_PRINT ("WLE", ("starting WLEdoWlEnhancement"));
 
-    DBUG_PRINT ("WLE", ("call EAdoExplicitAccumulate"));
-    arg_node = EAdoExplicitAccumulate (arg_node);
+    /*
+     * Explicit accumulation
+     */
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_accu, syntax_tree);
 
-    if ((global.break_after == PH_wlenhance)
-        && (0 == strcmp (global.break_specifier, "ea"))) {
-        goto DONE;
-    }
+    /*
+     * Default partition generation
+     */
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_wldp, syntax_tree);
 
-    DBUG_PRINT ("WLE", ("call WLDPdoWlDefaultPartition"));
-    arg_node = WLDPdoWlDefaultPartition (arg_node);
+    /*
+     * With-loop partition generation
+     */
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_wlpg, syntax_tree);
 
-    if ((global.break_after == PH_wlenhance)
-        && (0 == strcmp (global.break_specifier, "wldp"))) {
-        goto DONE;
-    }
-
-    DBUG_PRINT ("WLE", ("call WLPGdoWlPartitionGeneration"));
-    arg_node = WLPGdoWlPartitionGeneration (arg_node);
-
-DONE:
-    DBUG_RETURN (arg_node);
+    DBUG_RETURN (syntax_tree);
 }
