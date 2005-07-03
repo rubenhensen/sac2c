@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2005/07/03 16:59:18  ktr
+ * Superfluous variable removed
+ *
  * Revision 1.1  2005/06/30 16:40:23  ktr
  * Initial revision
  *
@@ -418,7 +421,6 @@ ASDap (node *arg_node, info *arg_info)
 {
     node *ids, *exprs, *id;
     node *ret, *arg;
-    int idx;
     shape_class_t actual_cls, formal_cls;
 
     DBUG_ENTER ("ASDap");
