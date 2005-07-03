@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.37  2005/07/03 17:02:38  ktr
+# added code simplification
+#
 # Revision 3.36  2005/06/28 20:57:09  cg
 # Added while2do.[ch] and handle_condexpr.[ch]
 #
@@ -117,7 +120,7 @@ all: flatten.o lac2fun.o fun2lac.o insert_vardec.o handle_mops.o \
      ToNewTypes.o SSATransform.o UndoSSATransform.o ssa.o \
      WLPartitionGeneration.o WLEnhancement.o ExplicitAccumulate.o \
      ToOldTypes.o wlanalysis.o lacinlining.o wldefaultpartition.o \
-     while2do.o handle_condexpr.o
+     while2do.o handle_condexpr.o codesimplification.o
 
 %.o: %.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o $@ -c $< $(INCS)
