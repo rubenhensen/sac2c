@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.24  2005/07/03 17:13:14  ktr
+ * All variables are initialized.
+ * Bool used instead of int where appropriate
+ *
  * Revision 1.23  2005/05/03 09:47:07  khf
  * reduced specialisation of type when unrolling a genarray wl
  *
@@ -496,7 +500,7 @@ CountElements (node *genn)
 /******************************************************************************
  *
  * function:
- *   int WLUCheckUnrollModarray(node *wln)
+ *   bool WLUCheckUnrollModarray(node *wln)
  *
  * description:
  *   Checks if this modarray WL can be unrolled.
@@ -506,10 +510,11 @@ CountElements (node *genn)
  *
  ******************************************************************************/
 
-int
+bool
 WLUcheckUnrollModarray (node *wln, info *arg_info)
 {
-    int ok, elts;
+    bool ok;
+    int elts;
     node *partn, *genn, *coden, *tmpn, *exprn, *lhs;
 
     DBUG_ENTER ("WLUcheckUnrollModarray");
@@ -576,7 +581,7 @@ WLUcheckUnrollModarray (node *wln, info *arg_info)
     }
 
     if (ok && (elts > global.wlunrnum)) {
-        ok = 0;
+        ok = FALSE;
         if (elts <= 32) {
             /*
              * Most with-loops can easily be unrolled.
@@ -635,7 +640,7 @@ WLUdoUnrollModarray (node *wln, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   int WLUCheckUnrollGenarray( node *wln, info *arg_info)
+ *   bool WLUCheckUnrollGenarray( node *wln, info *arg_info)
  *
  * description:
  *   Unrolling of arrays is done if number of array elements is smaller
@@ -643,7 +648,7 @@ WLUdoUnrollModarray (node *wln, info *arg_info)
  *
  ******************************************************************************/
 
-int
+bool
 WLUcheckUnrollGenarray (node *wln, info *arg_info)
 {
     bool ok;
@@ -679,7 +684,7 @@ WLUcheckUnrollGenarray (node *wln, info *arg_info)
     }
 
     if (ok && (length > global.wlunrnum)) {
-        ok = 0;
+        ok = FALSE;
         if (length <= 32) {
             CTInote ("WLUR: -maxwlur %d would unroll genarray with-loop", length);
             /*
@@ -709,7 +714,7 @@ WLUdoUnrollGenarray (node *wln, info *arg_info)
     node *letn, *let_expr;
     void *arg[2];
     node *arrayname;
-    ntype *type, *type2;
+    ntype *type;
 
     DBUG_ENTER ("WLUdoUnrollGenarray");
 
@@ -748,7 +753,7 @@ WLUdoUnrollGenarray (node *wln, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   int WLUCheckUnrollFold( node *wln)
+ *   bool WLUCheckUnrollFold( node *wln)
  *
  * description:
  *   Unrolling of fold-WLs is done if the total number of function calls is
@@ -756,10 +761,11 @@ WLUdoUnrollGenarray (node *wln, info *arg_info)
  *
  ******************************************************************************/
 
-int
+bool
 WLUcheckUnrollFold (node *wln)
 {
-    int ok, elts;
+    int ok = TRUE;
+    int elts;
     node *partn, *genn;
 
     DBUG_ENTER ("WLUCheckUnrollFold");
@@ -771,7 +777,6 @@ WLUcheckUnrollFold (node *wln)
     elts = 0;
 
     /* everything constant? */
-
     while (ok && (partn != NULL)) {
         genn = PART_GENERATOR (partn);
         ok = ((NODE_TYPE (genn) == N_generator) && COisConstant (GENERATOR_BOUND1 (genn))
@@ -784,7 +789,7 @@ WLUcheckUnrollFold (node *wln)
     }
 
     if (ok && (elts > global.wlunrnum)) {
-        ok = 0;
+        ok = FALSE;
         if (elts <= 32) {
             CTInote ("WLUR: -maxwlur %d would unroll fold with-loop", elts);
             /*

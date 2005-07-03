@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2005/07/03 17:13:14  ktr
+ * All variables are initialized.
+ * Bool used instead of int where appropriate
+ *
  * Revision 1.6  2005/04/22 10:08:04  ktr
  * Works with Marielyst compiler.
  *
@@ -38,13 +42,13 @@
  * prefix: WLU
  *
  *****************************************************************************/
-extern int WLUcheckUnrollModarray (node *wln, info *arg_info);
+extern bool WLUcheckUnrollModarray (node *wln, info *arg_info);
 extern node *WLUdoUnrollModarray (node *wln, info *arg_info);
 
-extern int WLUcheckUnrollGenarray (node *wln, info *arg_info);
+extern bool WLUcheckUnrollGenarray (node *wln, info *arg_info);
 extern node *WLUdoUnrollGenarray (node *wln, info *arg_info);
 
-extern int WLUcheckUnrollFold (node *wln);
+extern bool WLUcheckUnrollFold (node *wln);
 extern node *WLUdoUnrollFold (node *wln, info *arg_info);
 
 #endif /* _SAC_SSAWLUNROLL_H_ */
