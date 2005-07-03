@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.17  2005/07/03 17:17:25  ktr
+ * commented out APCgenarray
+ *
  * Revision 3.16  2004/12/08 18:02:10  ktr
  * removed ARRAY_TYPE/ARRAY_NTYPE
  *
@@ -725,18 +728,19 @@ APClet (node *arg_node, info *arg_info)
 node *
 APCgenarray (node *arg_node, info *arg_info)
 {
-    shpseg *shape;
-    types *type;
-    int dim;
-    simpletype basetype;
-
     DBUG_ENTER ("APCgenarray");
 
-    DBUG_PRINT ("APC", ("withop-node detected"));
-
-    DBUG_PRINT ("APC", (" genarray-loop"));
-    if (INFO_APC_UNSUPPORTED (arg_info)) {
 #if 0
+  shpseg* shape;
+  types* type;
+  int dim;
+  simpletype basetype;
+
+
+  DBUG_PRINT( "APC", ("withop-node detected")); 
+
+  DBUG_PRINT( "APC", (" genarray-loop"));
+  if (INFO_APC_UNSUPPORTED(arg_info)) {
   TODO: the following assumes, genarray_shape is given by a N_array node
     /* do not add type of vector, but contents of array to unsupported shapes */
     basetype = TYPES_BASETYPE(ID_TYPE(WITH_CEXPR(INFO_APC_WITH(arg_info))));
@@ -750,8 +754,8 @@ APCgenarray (node *arg_node, info *arg_info)
     AddUnsupported(arg_info,type);
 
     FREEfreeOneTypes( type);
+  }
 #endif
-    }
 
     DBUG_RETURN (arg_node);
 }
