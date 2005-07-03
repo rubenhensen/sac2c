@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.27  2005/07/03 17:07:51  ktr
+ * added various traversals.
+ *
  * Revision 3.26  2005/06/14 08:52:04  khf
  * added subphase WLDP
  *
@@ -185,11 +188,16 @@ SUBPHASE (objinit, "objinit", "Generating generic types and functions", PHdummy)
 
 /***********************************************************************/
 
-PHASE (flatten, "Simplifying source code", PHdummy)
+PHASE (simplify, "Simplifying source code", CSdoCodeSimplification)
 
-SUBPHASE (hm, "hm", "Handling multiple operator expressions", PHdummy)
+SUBPHASE (w2d, "w2d", "Transforming while-loops into do-loops", W2DdoTransformWhile2Do)
 
-SUBPHASE (flat, "flat", "Flattening nested expressions", PHdummy)
+SUBPHASE (hce, "hce", "Eliminating conditional expressions",
+          HCEdoHandleConditionalExpressions)
+
+SUBPHASE (hm, "hm", "Handling multiple operator expressions", HMdoHandleMops)
+
+SUBPHASE (flat, "flat", "Flattening nested expressions", FLATdoFlatten)
 
 /***********************************************************************/
 
@@ -246,13 +254,14 @@ PHASE (uniquecheck, "Checking uniqueness property of objects", PHdummy)
 
 /***********************************************************************/
 
-PHASE (wlenhance, "Enhancement of with-loops", PHdummy)
+PHASE (wlenhance, "Enhancing of with-loops", PHdummy)
 
-SUBPHASE (accu, "accu", "Introducing explicit accumulation", PHdummy)
+SUBPHASE (accu, "accu", "Introducing explicit accumulators", EAdoExplicitAccumulate)
 
-SUBPHASE (wldp, "wldp", "Adding default partitions", PHdummy)
+SUBPHASE (wldp, "wldp", "Adding default partitions", WLDPdoWlDefaultPartition)
 
-SUBPHASE (wlpg, "wlpg", "Generating full with-loop partitions", PHdummy)
+SUBPHASE (wlpg, "wlpg", "Generating full with-loop partitions",
+          WLPGdoWlPartitionGeneration)
 
 /***********************************************************************/
 
@@ -332,33 +341,38 @@ SUBPHASE (lac2fun2, "lac2fun2", "Eliminating loops and conditionals", L2FdoLac2F
 
 SUBPHASE (ssa2, "ssa2", "Establishing static single assignment form", SSATdoTransform)
 
-SUBPHASE (cvpemm, "cvpemm", "Propagating constants and variables", PHdummy)
+SUBPHASE (cvpemm, "cvpemm", "Propagating constants and variables",
+          CVPdoConstVarPropagation)
 
-SUBPHASE (dcremm, "dcremm", "Removing dead code", PHdummy)
+SUBPHASE (dcremm, "dcremm", "Removing dead code", DCRdoDeadCodeRemoval)
 
-SUBPHASE (copy, "copy", "Making copy operations explicit", PHdummy)
+SUBPHASE (asd, "asd", "AUD/SCL distinction", ASDdoAudSclDistinction)
 
-SUBPHASE (alloc, "alloc", "Introducing ALLOC statements ", PHdummy)
+SUBPHASE (copy, "copy", "Making copy operations explicit", EMECdoExplicitCopy)
 
-SUBPHASE (dcremm2, "dcremm2", "Removing dead code", PHdummy)
+SUBPHASE (alloc, "alloc", "Introducing explicit allocation statements ", EMALdoAlloc)
 
-SUBPHASE (rci, "rci", "Inferring reuse candidates", PHdummy)
+SUBPHASE (dcremm2, "dcremm2", "Removing dead code", DCRdoDeadCodeRemoval)
 
-SUBPHASE (ia, "ia", "Applying interface analysis", PHdummy)
+SUBPHASE (rci, "rci", "Inferring reuse candidates", EMRIdoReuseInference)
 
-SUBPHASE (lro, "lro", "Applying loop reuse optimization ", PHdummy)
+SUBPHASE (ia, "ia", "Interface aliasing analysis", EMIAdoInterfaceAnalysis)
 
-SUBPHASE (aa, "aa", "Applying alias analysis", PHdummy)
+SUBPHASE (lro, "lro", "Applying loop reuse optimization", EMLRdoLoopReuseOptimization)
 
-SUBPHASE (frc, "frc", "Filtering reuse candidates", PHdummy)
+SUBPHASE (aa, "aa", "Aliasing analysis", EMAAdoAliasAnalysis)
 
-SUBPHASE (sr, "sr", "Introducing static reuse", PHdummy)
+SUBPHASE (frc, "frc", "Filtering reuse candidates", EMFRCdoFilterReuseCandidates)
 
-SUBPHASE (rb, "rb", "Introducing reuse branching", PHdummy)
+SUBPHASE (sr, "sr", "Static reuse", EMSRdoStaticReuse)
 
-SUBPHASE (rd, "rd", "Introducing data reuse", PHdummy)
+SUBPHASE (rb, "rb", "Introducing reuse branches", EMRBdoReuseBranching)
 
-SUBPHASE (dcremm3, "dcremm3", "Removing dead code", PHdummy)
+SUBPHASE (ipc, "ipc", "Identfying in-place updates", EMIPdoInplaceComputation)
+
+SUBPHASE (dr, "dr", "Exploiting data reuse", EMIPdoInplaceComputation)
+
+SUBPHASE (dcremm3, "dcremm3", "Removing dead code", DCRdoDeadCodeRemoval)
 
 /***********************************************************************/
 
@@ -388,11 +402,13 @@ SUBPHASE (concel, "concel", "Consolidating execution mode cells", PHdummy)
 
 PHASE (refcnt, "Running explicit reference count inference system", PHdummy)
 
-SUBPHASE (rc, "rc", "Introducing reference counting instructions", PHdummy)
+SUBPHASE (rc, "rc", "Reference counting inference", EMRCdoRefCounting)
 
-SUBPHASE (rco, "rco", "Optimizing reference counting instructions", PHdummy)
+SUBPHASE (rcm, "rcm", "Reference counting minimization", RCMdoRefcountMinimization)
 
-SUBPHASE (re, "re", "Removing reuse instructions", PHdummy)
+SUBPHASE (rco, "rco", "Optimizing reference counting instructions", EMRCOdoRefCountOpt)
+
+SUBPHASE (re, "re", "Removing reuse instructions", EMREdoReuseElimination)
 
 /***********************************************************************/
 
@@ -423,19 +439,19 @@ SUBPHASE (fun2lac2, "fun2lac2", "Reintroducing loops and conditionals", F2LdoFun
 
 SUBPHASE (lacinl2, "lacinl2", "Inlining LaC functions", LINLdoLACInlining)
 
-SUBPHASE (sls, "sls", "Applying linksign pragma", PHdummy)
+SUBPHASE (sls, "sls", "Applying linksign pragma", SLSdoSetLinksign)
 
-SUBPHASE (mmv, "mmv", "Marking memval identifiers", PHdummy)
+SUBPHASE (mmv, "mmv", "Marking memval identifiers", MMVdoMarkMemVals)
 
 SUBPHASE (opc, "opc", "Restoring global objects and reference parameters", PHdummy)
 
-SUBPHASE (fpc, "fpc", "Reorganizing function prototypes", PHdummy)
+SUBPHASE (fpc, "fpc", "Reorganizing function prototypes", FPCdoFunctionPrecompile)
 
-SUBPHASE (tcp, "tcp", "Applying type conversions", PHdummy)
+SUBPHASE (tcp, "tcp", "Applying type conversions", TCPdoTypeConversions)
 
 SUBPHASE (aff, "aff", "Adjusting fold functions", PHdummy)
 
-SUBPHASE (rid, "rid", "Consistently renaming identifiers", PHdummy)
+SUBPHASE (rid, "rid", "Consistently renaming identifiers", RIDdoRenameIdentifiers)
 
 /***********************************************************************/
 
