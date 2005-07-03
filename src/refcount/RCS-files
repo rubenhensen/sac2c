@@ -37,3 +37,4 @@ audscldist.c
 audscldist.h
 NumLookUpTable.c
 NumLookUpTable.h
+rcminimize.c
