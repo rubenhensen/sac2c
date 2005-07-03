@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.35  2005/07/03 17:14:47  ktr
+ * No idea what changed.
+ *
  * Revision 1.34  2005/06/02 13:42:48  mwe
  * check if LET_IDS is NULL
  * corrected reverse type upgrade
@@ -291,13 +294,12 @@ TryToDoTypeUpgrade (node *fundef)
 
     DBUG_ENTER ("TryToDoTypeUpgrade");
 
+    arg_info = MakeInfo ();
+    INFO_TUP_CORRECTFUNCTION (arg_info) = TRUE;
+    INFO_TUP_CHECKLOOPFUN (arg_info) = TRUE;
+
     if (fundef != NULL) {
-
         DBUG_PRINT ("TUP", ("!!!!TryToDoTypeUpgrade!!! "));
-
-        arg_info = MakeInfo ();
-        INFO_TUP_CORRECTFUNCTION (arg_info) = TRUE;
-        INFO_TUP_CHECKLOOPFUN (arg_info) = TRUE;
 
         INFO_TUP_FUNDEF (arg_info) = fundef;
 
@@ -315,6 +317,7 @@ TryToDoTypeUpgrade (node *fundef)
         fundef = FREEdoFreeTree (fundef);
         fundef = NULL;
     }
+
     arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (fundef);
@@ -1409,11 +1412,10 @@ TryToFindSpecializedFunction (node *fundef, node *args, info *arg_info)
 node *
 TUPdoTypeUpgrade (node *arg_node)
 {
-    info *arg_info;
-
     DBUG_ENTER ("TUPdoTypeUpgrade");
 
     if (arg_node != NULL) {
+        info *arg_info;
 
         arg_info = MakeInfo ();
 
@@ -1422,9 +1424,9 @@ TUPdoTypeUpgrade (node *arg_node)
         TRAVpush (TR_tup);
         arg_node = TRAVdo (arg_node, arg_info);
         TRAVpop ();
-    }
 
-    arg_info = FreeInfo (arg_info);
+        arg_info = FreeInfo (arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
