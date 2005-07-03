@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2005/07/03 17:09:04  ktr
+ * Initialized a variable.
+ *
  * Revision 1.8  2005/06/14 09:55:10  sbs
  * support for bottom types integrated.
  *
@@ -149,7 +152,8 @@ NTCCTcomputeType (ct_funptr CtFun, te_info *info, ntype *args)
 ntype *
 NTCCTcond (te_info *err_info, ntype *args)
 {
-    ntype *pred, *res;
+    ntype *pred;
+    ntype *res = NULL;
     node *cond;
     info *arg_info;
     char *err_msg;
