@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.52  2005/07/03 17:03:03  ktr
+ * moved application of other traversals to code simplification
+ *
  * Revision 3.51  2005/06/28 21:02:52  cg
  * Moved while2do transformation into separate traversal.
  * Added calls to new traversals while2do and handle_condexpr.
@@ -610,34 +613,6 @@ FLATdoFlatten (node *arg_node)
 
     DBUG_ENTER ("FLATdoFlatten");
 
-    arg_node = W2DdoTransformWhile2Do (arg_node);
-    if ((global.break_after == PH_flatten)
-        && (0 == strcmp (global.break_specifier, "w2d"))) {
-        goto DONE;
-    }
-
-    arg_node = HCEdoHandleConditionalExpressions (arg_node);
-    if ((global.break_after == PH_flatten)
-        && (0 == strcmp (global.break_specifier, "hce"))) {
-        goto DONE;
-    }
-
-    /*
-     * Before applying the actual flattening of code, we eliminate some
-     * special constructs such as N_mop nodes.( Later, this should be the place
-     * to eliminate N_dot nodes as well but, at the time being, this happens
-     * right after scan-parse.
-     */
-    arg_node = HMdoHandleMops (arg_node);
-    if ((global.break_after == PH_flatten)
-        && (0 == strcmp (global.break_specifier, "mop"))) {
-        goto DONE;
-    }
-
-    /*
-     * Now, the actual flattening is started.
-     * First, we initialize the static variables :
-     */
     stack = (local_stack *)ILIBmalloc (sizeof (local_stack) * STACK_SIZE);
     stack_limit = STACK_SIZE + stack;
     tos = stack;
@@ -662,7 +637,6 @@ FLATdoFlatten (node *arg_node)
      */
     stack = ILIBfree (stack);
 
-DONE:
     DBUG_RETURN (arg_node);
 }
 
