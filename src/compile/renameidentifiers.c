@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2005/07/03 17:16:37  ktr
+ * Initialized a variable.
+ *
  * Revision 1.12  2005/05/31 18:11:51  sah
  * fixed a typoe
  *
@@ -198,7 +201,7 @@ RenameFunName (node *fundef)
     char *prefix;
     char *tmp_name;
     char *new_name;
-    char *akv_id;
+    char *akv_id = NULL;
 
     DBUG_ENTER ("RenameFunName");
 
