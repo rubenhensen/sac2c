@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.36  2005/07/03 16:59:18  ktr
+# added NumLookUpTable.o rcminimize.o
+#
 # Revision 3.35  2005/06/30 16:40:52  ktr
 # added audscldist.o
 #
@@ -132,7 +135,8 @@ include $(PROJECT_ROOT)/Makefile.Config
 all: allocation.o alloc.o refcounting.o reuse.o rcopt.o rcphase.o \
      filterrc.o aliasanalysis.o staticreuse.o reuseelimination.o \
      interfaceanalysis.o loopreuseopt.o datareuse.o explicitcopy.o \
-     reusebranching.o ReuseWithArrays.o inplacecomp.o audscldist.o
+     reusebranching.o ReuseWithArrays.o inplacecomp.o audscldist.o \
+     NumLookUpTable.o rcminimize.o
 
 
 %.o: %.c
