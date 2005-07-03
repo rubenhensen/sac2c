@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.106  2005/07/03 17:07:10  ktr
+ * Replaced FLATdoFlatten with CSdoCodeSimplification
+ *
  * Revision 3.105  2005/06/18 18:06:00  sah
  * moved entire dependency handling to dependencies.c
  * the dependency table is now created shortly prior
@@ -87,7 +90,6 @@
 #include "DupTree.h"
 #include "globals.h"
 #include "usage.h"
-#include "flatten.h"
 #include "print.h"
 #include "new_typecheck.h"
 #include "type_statistics.h"
@@ -127,6 +129,7 @@
 #include "ToOldTypes.h"
 #include "ToNewTypes.h"
 #include "setup.h"
+#include "codesimplification.h"
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -289,15 +292,15 @@ main (int argc, char *argv[])
     global.compiler_phase++;
 
     /*
-     * flatten
+     * Code simplification
      */
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
-    syntax_tree = FLATdoFlatten (syntax_tree); /* flat_tab */
+    syntax_tree = CSdoCodeSimplification (syntax_tree);
     PHASE_DONE_EPILOG;
     PHASE_EPILOG;
 
-    if (global.break_after == PH_flatten)
+    if (global.break_after == PH_simplify)
         goto BREAK;
     global.compiler_phase++;
 
