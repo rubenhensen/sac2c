@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2005/07/03 17:05:42  ktr
+ * removed CreateEntryFlatArray
+ *
  * Revision 1.11  2005/06/14 08:52:04  khf
  * WLPGmodarray and WLPGgenarray removed
  *
@@ -67,6 +70,5 @@ extern node *WLPGwith (node *arg_node, info *arg_info);
 /* functions which are also used by wlanalysis.c */
 extern int NormalizeStepWidth (node **step, node **width);
 extern node *CreateStructConstant (node *expr, node *nassigns);
-extern node *CreateEntryFlatArray (int entry, int number);
 
 #endif /* _SAC_WLPARTIONGENERATION_H_ */
