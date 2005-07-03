@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.51  2005/07/03 17:05:42  ktr
+ * Initialized a varible
+ *
  * Revision 1.50  2005/06/27 19:28:58  cg
  * Partition Generation now supports empty vectors in with-loop boundaries
  * even if they are AKS and not AKV.
@@ -1146,7 +1149,7 @@ CreateEmptyGenWLReplacement (node *wl, info *arg_info)
     node *tmpn, *assignn, *blockn, *cexpr;
     node *nassigns = NULL;
     node *_ids;
-    node *res;
+    node *res = NULL;
     ntype *array_type;
 
     DBUG_ENTER ("CreateEmptyGenWLReplacement");
