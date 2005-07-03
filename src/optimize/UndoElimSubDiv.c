@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.12  2005/07/03 17:11:43  ktr
+ * Some codebrushing. IMHO code needs complete rewrite
+ *
  * Revision 1.11  2005/02/18 22:19:02  mwe
  * bug fixed
  *
@@ -141,8 +144,7 @@ CheckExpr (node *expr, prf op)
     if ((N_id == NODE_TYPE (expr)) && (AVIS_SSAASSIGN (ID_AVIS (expr)) != NULL)) {
 
         node *assign = AVIS_SSAASSIGN (ID_AVIS (expr));
-        prf prfop;
-        bool correctop = FALSE;
+        prf prfop = F_noop;
 
         switch (op) {
         case F_add_SxS:
@@ -150,21 +152,18 @@ CheckExpr (node *expr, prf op)
         case F_add_SxA:
         case F_add_AxA:
             prfop = F_esd_neg;
-            correctop = TRUE;
             break;
         case F_mul_SxS:
         case F_mul_AxS:
         case F_mul_SxA:
         case F_mul_AxA:
             prfop = F_esd_rec;
-            correctop = TRUE;
             break;
         default:
-            correctop = FALSE;
             break;
         }
 
-        if ((correctop) && (N_let == NODE_TYPE (ASSIGN_INSTR (assign)))
+        if ((prfop != F_noop) && (N_let == NODE_TYPE (ASSIGN_INSTR (assign)))
             && (N_prf == NODE_TYPE (LET_EXPR (ASSIGN_INSTR (assign))))) {
 
             if (PRF_PRF (LET_EXPR (ASSIGN_INSTR (assign))) == prfop) {
@@ -190,33 +189,44 @@ CheckExpr (node *expr, prf op)
 static prf
 TogglePrf (prf op)
 {
-    prf result;
+    prf result = F_noop;
     DBUG_ENTER ("TogglePrf");
 
-    if (F_add_SxS == op) {
+    switch (op) {
+    case F_add_SxS:
         result = F_sub_SxS;
-    }
-    if (F_add_SxA == op) {
-        result = F_sub_SxA;
-    }
-    if (F_add_AxS == op) {
-        result = F_sub_AxS;
-    }
-    if (F_add_AxA == op) {
-        result = F_sub_AxA;
-    }
+        break;
 
-    if (F_mul_SxS == op) {
+    case F_add_SxA:
+        result = F_sub_SxA;
+        break;
+
+    case F_add_AxS:
+        result = F_sub_AxS;
+        break;
+
+    case F_add_AxA:
+        result = F_sub_AxA;
+        break;
+
+    case F_mul_SxS:
         result = F_div_SxS;
-    }
-    if (F_mul_SxA == op) {
+        break;
+
+    case F_mul_SxA:
         result = F_div_SxA;
-    }
-    if (F_mul_AxS == op) {
+        break;
+
+    case F_mul_AxS:
         result = F_div_AxS;
-    }
-    if (F_mul_AxA == op) {
+        break;
+
+    case F_mul_AxA:
         result = F_div_AxA;
+        break;
+
+    default:
+        DBUG_ASSERT ((0), "Illegal argument prf!");
     }
 
     DBUG_RETURN (result);
@@ -448,7 +458,6 @@ UESDprf (node *arg_node, info *arg_info)
             }
 
             break;
-
         default:
             break;
         }

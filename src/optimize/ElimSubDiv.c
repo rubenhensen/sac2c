@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.17  2005/07/03 17:11:43  ktr
+ * Some codebrushing. IMHO code needs complete rewrite
+ *
  * Revision 1.16  2005/04/13 15:26:45  ktr
  * fundef traversal now checks whether function body is NULL
  *
@@ -152,29 +155,41 @@ TogglePrf (prf op)
     prf result;
     DBUG_ENTER ("TogglePrf");
 
-    if (F_sub_SxS == op) {
+    switch (op) {
+    case F_sub_SxS:
         result = F_add_SxS;
-    }
-    if (F_sub_SxA == op) {
+        break;
+
+    case F_sub_SxA:
         result = F_add_SxA;
-    }
-    if (F_sub_AxS == op) {
+        break;
+
+    case F_sub_AxS:
         result = F_add_AxS;
-    }
-    if (F_sub_AxA == op) {
+        break;
+
+    case F_sub_AxA:
         result = F_add_AxA;
-    }
-    if (F_div_SxS == op) {
+        break;
+
+    case F_div_SxS:
         result = F_mul_SxS;
-    }
-    if (F_div_SxA == op) {
+        break;
+
+    case F_div_SxA:
         result = F_mul_SxA;
-    }
-    if (F_div_AxS == op) {
+        break;
+
+    case F_div_AxS:
         result = F_mul_AxS;
-    }
-    if (F_div_AxA == op) {
+        break;
+
+    case F_div_AxA:
         result = F_mul_AxA;
+        break;
+
+    default:
+        DBUG_ASSERT ((0), "Illegal argument prf!");
     }
 
     DBUG_RETURN (result);
@@ -403,9 +418,8 @@ ESDlet (node *arg_node, info *arg_info)
 node *
 ESDprf (node *arg_node, info *arg_info)
 {
-    prf op;
+    prf op = F_noop;
     node *newnode = NULL;
-    bool opt_case = FALSE;
 
     DBUG_ENTER ("ESDprf");
 
@@ -418,21 +432,18 @@ ESDprf (node *arg_node, info *arg_info)
     case F_sub_SxA:
     case F_sub_AxA:
         op = F_esd_neg;
-        opt_case = TRUE;
         break;
     case F_div_SxS:
     case F_div_AxS:
     case F_div_SxA:
     case F_div_AxA:
         op = F_esd_rec;
-        opt_case = TRUE;
         break;
-
     default:
-        opt_case = FALSE;
+        break;
     }
 
-    if (opt_case) {
+    if (op != F_noop) {
         node *avis, *vardec;
 
         /*
@@ -444,16 +455,19 @@ ESDprf (node *arg_node, info *arg_info)
         newnode = TBmakePrf (op, EXPRS_NEXT (PRF_ARGS (arg_node)));
         newnode = TCmakeAssignLet (avis, newnode);
         AVIS_SSAASSIGN (avis) = newnode;
+
         /*
          * use new assign
          */
         EXPRS_NEXT (PRF_ARGS (arg_node)) = TBmakeExprs (TBmakeId (avis), NULL);
         PRF_PRF (arg_node) = TogglePrf (PRF_PRF (arg_node));
+
         /*
          * insert vardec
          */
-        VARDEC_NEXT (vardec) = BLOCK_VARDEC (FUNDEF_BODY (INFO_ESD_FUNDEF (arg_info)));
-        BLOCK_VARDEC (FUNDEF_BODY (INFO_ESD_FUNDEF (arg_info))) = vardec;
+        VARDEC_NEXT (vardec) = FUNDEF_VARDEC (INFO_ESD_FUNDEF (arg_info));
+        FUNDEF_VARDEC (INFO_ESD_FUNDEF (arg_info)) = vardec;
+
         /*
          * save newnode
          */

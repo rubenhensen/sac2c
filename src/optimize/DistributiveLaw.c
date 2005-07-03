@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.20  2005/07/03 17:11:43  ktr
+ * Some codebrushing. IMHO code needs complete rewrite
+ *
  * Revision 1.19  2004/11/24 12:05:40  mwe
  * changed signature of TBmakeLet
  *
@@ -441,91 +444,71 @@ FreeInfo (info *info)
 static node *
 GetNeutralElement (node *op, info *arg_info)
 {
-
-    node *neutral_elem;
+    node *neutral_elem = NULL;
     simpletype basetype;
 
     DBUG_ENTER ("GetNeutralElement");
 
-    neutral_elem = NULL;
+    DBUG_ASSERT (NODE_TYPE (op) == N_prf, "Only N_prf node are supported!");
 
-    /* is 'op' a supported node-type? */
-    if (NODE_TYPE (op) == N_prf) {
+    DBUG_ASSERT (TYisArray (INFO_DL_NTYPE (arg_info)), "Non-array type encountered!");
+    basetype = TYgetSimpleType (TYgetScalar (INFO_DL_NTYPE (arg_info)));
 
-        /* is 'op' a supported operator? */
-        if ((PRF_PRF (op) == F_add_SxS) || (PRF_PRF (op) == F_add_AxS)
-            || (PRF_PRF (op) == F_add_SxA) || (PRF_PRF (op) == F_add_AxA)) {
-
-            if (TYisArray (INFO_DL_NTYPE (arg_info))) {
-
-                basetype = TYgetSimpleType (TYgetScalar (INFO_DL_NTYPE (arg_info)));
-            } else if (TYisSimple (INFO_DL_NTYPE (arg_info))) {
-
-                basetype = TYgetSimpleType (INFO_DL_NTYPE (arg_info));
-            }
-
-            /* choose correct basetype of the neutral element */
-            if (basetype == T_int) {
-
-                neutral_elem = TBmakeNum (0);
-            }
-
-            if (basetype == T_float) {
-
-                neutral_elem = TBmakeFloat (0.0f);
-            }
-            if (basetype == T_double) {
-
-                neutral_elem = TBmakeDouble (0.0);
-            }
+    switch (PRF_PRF (op)) {
+    case F_add_SxS:
+    case F_add_AxS:
+    case F_add_SxA:
+    case F_add_AxA:
+        switch (basetype) {
+        case T_int:
+            neutral_elem = TBmakeNum (0);
+            break;
+        case T_float:
+            neutral_elem = TBmakeFloat (0.0f);
+            break;
+        case T_double:
+            neutral_elem = TBmakeDouble (0.0);
+            break;
+        default:
+            break;
         }
+        break;
 
-        /* is 'op' a supported operator? */
-        else if ((PRF_PRF (op) == F_mul_SxS) || (PRF_PRF (op) == F_mul_AxS)
-                 || (PRF_PRF (op) == F_mul_SxA) || (PRF_PRF (op) == F_mul_AxA)) {
-
-            if (TYisArray (INFO_DL_NTYPE (arg_info))) {
-
-                basetype = TYgetSimpleType (TYgetScalar (INFO_DL_NTYPE (arg_info)));
-            } else if (TYisSimple (INFO_DL_NTYPE (arg_info))) {
-
-                basetype = TYgetSimpleType (INFO_DL_NTYPE (arg_info));
-            }
-
-            /* choose correct basetype of the neutral element */
-            if (basetype == T_int) {
-
-                neutral_elem = TBmakeNum (1);
-            }
-
-            if (basetype == T_float) {
-
-                neutral_elem = TBmakeFloat (1.0f);
-            }
-            if (basetype == T_double) {
-
-                neutral_elem = TBmakeDouble (1.0);
-            }
+    case F_mul_SxS:
+    case F_mul_AxS:
+    case F_mul_SxA:
+    case F_mul_AxA:
+        switch (basetype) {
+        case T_int:
+            neutral_elem = TBmakeNum (1);
+            break;
+        case T_float:
+            neutral_elem = TBmakeFloat (1.0f);
+            break;
+        case T_double:
+            neutral_elem = TBmakeDouble (1.0);
+            break;
+        default:
+            break;
         }
+        break;
 
-        /* is 'op' a supported operator? */
-        else if (PRF_PRF (op) == F_and) {
+    case F_and:
+        neutral_elem = TBmakeBool (TRUE);
+        break;
 
-            neutral_elem = TBmakeBool (TRUE);
+    case F_or:
+#if 0
+    /* 
+     * commented out as it was not implemented in original implementation
+     */
+     neutral_elem = TBmakeBool( FALSE);
+     break;
+#endif
 
-        } else {
-
-            DBUG_ASSERT (FALSE,
-                         "Not supported primitive operation! No neutral element known!");
-        }
-
-    } else if (NODE_TYPE (op) == N_ap) {
-
-        DBUG_ASSERT (FALSE, "No N_ap nodes supported! No neutral element known!");
-
-    } else {
-
-        DBUG_ASSERT (FALSE, "Unexpected node! Only N_prf/N_ap nodes accepted!");
+    default:
+        DBUG_ASSERT (FALSE, "Not supported primitive operation!"
+                            "No neutral element known!");
     }
 
     DBUG_RETURN (neutral_elem);
