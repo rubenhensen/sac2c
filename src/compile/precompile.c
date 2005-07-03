@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.114  2005/07/03 17:16:07  ktr
+ * changed to phase.h
+ *
  * Revision 3.113  2005/04/12 15:51:32  ktr
  * Steps are now enumerated automatically
  *
@@ -37,18 +40,7 @@
 #include "precompile.h"
 
 #include "dbug.h"
-#include "markmemvals.h"
-#include "traverse.h"
-#include "internal_lib.h"
-#include "globals.h"
-#include "functionprecompile.h"
-#include "typeconv_precompile.h"
-#include "renameidentifiers.h"
-#include "ToOldTypes.h"
-#include "setlinksign.h"
-#include "internal_lib.h"
-
-#include <string.h>
+#include "phase.h"
 
 /******************************************************************************
  *
@@ -67,76 +59,48 @@
 node *
 PRECdoPrecompile (node *syntax_tree)
 {
-    int step = 1;
-
     DBUG_ENTER ("Precompile");
 
     /*
      * Set Linksign
      */
-    DBUG_PRINT ("PREC", ("step %d: Set Linksign", step++));
-    syntax_tree = SLSdoSetLinksign (syntax_tree);
-    if (ILIBstringCompare (global.break_specifier, "sls")) {
-        goto DONE;
-    }
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_sls, syntax_tree);
 
     /*
      * MarkMemVals
      */
-    DBUG_PRINT ("PREC", ("step %d: renaming MemVals", step++));
-    syntax_tree = MMVdoMarkMemVals (syntax_tree);
-    if (ILIBstringCompare (global.break_specifier, "mmv")) {
-        goto DONE;
-    }
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_mmv, syntax_tree);
 
-    /*
-     * Object precompilation
-     */
-    DBUG_PRINT ("PREC", ("step %d: Object precompilation", step++));
-    /* FIX ME */
-    if (ILIBstringCompare (global.break_specifier, "opc")) {
-        goto DONE;
-    }
+#if 0
+  /*
+   * Object precompilation
+   */
+  syntax_tree = PHrunCompilerSubPhase( SUBPH_opc, syntax_tree);
+#endif
 
     /*
      * Function precompilation
      */
-    DBUG_PRINT ("PREC", ("step %d: function precompilation", step++));
-    syntax_tree = FPCdoFunctionPrecompile (syntax_tree);
-    if (ILIBstringCompare (global.break_specifier, "fpc")) {
-        goto DONE;
-    }
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_fpc, syntax_tree);
 
     /*
      * Type conversions
      */
-    DBUG_PRINT ("PREC", ("step %d: type conversions", step++));
-    syntax_tree = TCPdoTypeConversions (syntax_tree);
-    if (ILIBstringCompare (global.break_specifier, "tcp")) {
-        goto DONE;
-    }
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_tcp, syntax_tree);
+
+#if 0  
+  /*
+   * Adjusting fold functions ( MT only )
+   */
+  if ( global.mtmode != MT_none) {
+    syntax_tree = PHrunCompilerSubPhase( SUBPH_aff, syntax_tree);
+  }
+#endif
 
     /*
-     * Adjusting fold functions ( MT only )
+     * Rename identifiers
      */
-    DBUG_PRINT ("PREC", ("step %d: Adjusting fold functions", step++));
-    /* FIX ME */
-    if (global.mtmode != MT_none) {
-        DBUG_ASSERT ((0), "IMPLEMENT ME!");
-    }
-    if (ILIBstringCompare (global.break_specifier, "aff")) {
-        goto DONE;
-    }
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_rid, syntax_tree);
 
-    /*
-     * Type conversions
-     */
-    DBUG_PRINT ("PREC", ("step %d: renaming identifiers", step++));
-    syntax_tree = RIDdoRenameIdentifiers (syntax_tree);
-    if (ILIBstringCompare (global.break_specifier, "RID")) {
-        goto DONE;
-    }
-
-DONE:
     DBUG_RETURN (syntax_tree);
 }
