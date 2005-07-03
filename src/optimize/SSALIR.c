@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.39  2005/07/03 17:10:55  ktr
+ * Initialized a variable and some brushing
+ *
  * Revision 1.38  2005/04/20 19:13:23  ktr
  * Brushed optimization to work with the Marielyst compiler.
  *
@@ -502,7 +505,6 @@ void
 CreateNewResult (node *avis, info *arg_info)
 {
     node *new_ext_vardec;
-    node *new_ext_avis;
     node *new_int_vardec;
     node *new_pct_vardec;
     char *new_name;
@@ -522,13 +524,13 @@ CreateNewResult (node *avis, info *arg_info)
                 ("create external vardec %s for %s", new_name, AVIS_NAME (avis)));
 
     /* add vardec to chain of vardecs (ext. fundef) */
-    BLOCK_VARDEC (FUNDEF_BODY (INFO_SSALIR_EXTFUNDEF (arg_info)))
-      = TCappendVardec (BLOCK_VARDEC (FUNDEF_BODY (INFO_SSALIR_EXTFUNDEF (arg_info))),
-                        new_ext_vardec);
+    FUNDEF_VARDEC (INFO_SSALIR_EXTFUNDEF (arg_info))
+      = TCappendVardec (FUNDEF_VARDEC (INFO_SSALIR_EXTFUNDEF (arg_info)), new_ext_vardec);
 
     /* 2. add [avis -> new_ext_avis] to RESULTMAP nodelist */
     INFO_SSALIR_RESULTMAP (arg_info)
-      = TCnodeListAppend (INFO_SSALIR_RESULTMAP (arg_info), avis, new_ext_avis);
+      = TCnodeListAppend (INFO_SSALIR_RESULTMAP (arg_info), avis,
+                          VARDEC_AVIS (new_ext_vardec));
 
     /* mark variable as being a result of this function */
     AVIS_EXPRESULT (avis) = TRUE;
@@ -537,17 +539,16 @@ CreateNewResult (node *avis, info *arg_info)
     new_int_vardec = TBmakeVardec (TBmakeAvis (ILIBtmpVarName (AVIS_NAME (avis)),
                                                TYcopyType (AVIS_TYPE (avis))),
                                    NULL);
-    BLOCK_VARDEC (FUNDEF_BODY (INFO_SSALIR_FUNDEF (arg_info)))
-      = TCappendVardec (BLOCK_VARDEC (FUNDEF_BODY (INFO_SSALIR_FUNDEF (arg_info))),
-                        new_int_vardec);
+
+    FUNDEF_VARDEC (INFO_SSALIR_FUNDEF (arg_info))
+      = TCappendVardec (FUNDEF_VARDEC (INFO_SSALIR_FUNDEF (arg_info)), new_int_vardec);
 
     /* 4. create new vardec in local fundef (as PhiCopyTarget) */
     new_pct_vardec = TBmakeVardec (TBmakeAvis (ILIBtmpVarName (AVIS_NAME (avis)),
                                                TYcopyType (AVIS_TYPE (avis))),
                                    NULL);
-    BLOCK_VARDEC (FUNDEF_BODY (INFO_SSALIR_FUNDEF (arg_info)))
-      = TCappendVardec (BLOCK_VARDEC (FUNDEF_BODY (INFO_SSALIR_FUNDEF (arg_info))),
-                        new_pct_vardec);
+    FUNDEF_VARDEC (INFO_SSALIR_FUNDEF (arg_info))
+      = TCappendVardec (FUNDEF_VARDEC (INFO_SSALIR_FUNDEF (arg_info)), new_pct_vardec);
 
     /* 5. modify functions signature (AddResult) */
     /* recursive call */
@@ -556,7 +557,7 @@ CreateNewResult (node *avis, info *arg_info)
                                   FUNDEF_INT_ASSIGN (INFO_SSALIR_FUNDEF (arg_info))),
                                 new_int_vardec);
 
-    /*external call */
+    /* external call */
     letlist = TCnodeListAppend (letlist,
                                 ASSIGN_INSTR (
                                   FUNDEF_EXT_ASSIGN (INFO_SSALIR_FUNDEF (arg_info))),
