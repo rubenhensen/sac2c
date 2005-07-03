@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2005/07/03 16:59:18  ktr
+ * Switched to phase.h
+ *
  * Revision 1.10  2004/12/16 14:37:30  ktr
  * added InplaceComputation
  *
@@ -50,16 +53,11 @@
  */
 #include "rcphase.h"
 
+#include "phase.h"
 #include "globals.h"
-#include "tree_basic.h"
-#include "tree_compound.h"
 #include "traverse.h"
+#include "tree_basic.h"
 #include "dbug.h"
-#include "print.h"
-#include "refcounting.h"
-#include "rcopt.h"
-#include "reuseelimination.h"
-#include <string.h>
 
 /** <!--*******************************************************************-->
  *
@@ -83,36 +81,25 @@ EMRdoRefCountPhase (node *syntax_tree)
     /*
      * Reference counting
      */
-    DBUG_PRINT ("EMM", ("Performing reference counting (rc)"));
-    syntax_tree = EMRCdoRefCounting (syntax_tree);
-    if ((global.break_after == PH_refcnt)
-        && (0 == strcmp (global.break_specifier, "rc"))) {
-        goto DONE;
-    }
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_rc, syntax_tree);
+
+    /*
+     * Refcount minimization
+     */
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_rcm, syntax_tree);
 
     /*
      * Reference counting optimizations
      */
     if (global.optimize.dorco) {
-        DBUG_PRINT ("EMM", ("Performing reference counting optmizations (rco)"));
-        syntax_tree = EMRCOdoRefCountOpt (syntax_tree);
-    }
-    if ((global.break_after == PH_refcnt)
-        && (0 == strcmp (global.break_specifier, "rco"))) {
-        goto DONE;
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_rco, syntax_tree);
     }
 
     /*
      * Reuse elimination
      */
-    DBUG_PRINT ("EMM", ("Removing reuse operations (re)"));
-    syntax_tree = EMREdoReuseElimination (syntax_tree);
-    if ((global.break_after == PH_refcnt)
-        && (0 == strcmp (global.break_specifier, "re"))) {
-        goto DONE;
-    }
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_re, syntax_tree);
 
-DONE:
     DBUG_RETURN (syntax_tree);
 }
 

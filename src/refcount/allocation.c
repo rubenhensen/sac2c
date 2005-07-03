@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2005/07/03 16:59:18  ktr
+ * Switched to phase.h
+ *
  * Revision 1.13  2005/06/30 16:40:52  ktr
  * added AUD SCL distincion as first pass
  *
@@ -50,23 +53,10 @@
 #include "traverse.h"
 #include "globals.h"
 #include "dbug.h"
-#include "alloc.h"
 #include "ConstVarPropagation.h"
 #include "SSADeadCodeRemoval.h"
-#include "reuse.h"
-#include "aliasanalysis.h"
-#include "interfaceanalysis.h"
-#include "staticreuse.h"
-#include "filterrc.h"
-#include "loopreuseopt.h"
-#include "datareuse.h"
-#include "explicitcopy.h"
-#include "reusebranching.h"
 #include "print.h"
-#include "inplacecomp.h"
-#include "audscldist.h"
 #include <string.h>
-#include <stdio.h>
 
 /** <!--********************************************************************-->
  *
@@ -184,32 +174,17 @@ EMAdoAllocation (node *syntax_tree)
     /*
      * AUD SCL distinction
      */
-    DBUG_PRINT ("EMM", ("Seperating AUD and SCL variables (asd)"));
-    syntax_tree = ASDdoAudSclDistinction (syntax_tree);
-    if ((global.break_after == PH_alloc)
-        && (0 == strcmp (global.break_specifier, "asd"))) {
-        goto DONE;
-    }
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_asd, syntax_tree);
 
     /*
      * Explicit copy
      */
-    DBUG_PRINT ("EMM", ("Making copy operations explicit (copy)"));
-    syntax_tree = EMECdoExplicitCopy (syntax_tree);
-    if ((global.break_after == PH_alloc)
-        && (0 == strcmp (global.break_specifier, "copy"))) {
-        goto DONE;
-    }
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_copy, syntax_tree);
 
     /*
      * Explicit allocation
      */
-    DBUG_PRINT ("EMM", ("Introducing ALLOC statements (alloc)"));
-    syntax_tree = EMALdoAlloc (syntax_tree);
-    if ((global.break_after == PH_alloc)
-        && (0 == strcmp (global.break_specifier, "alloc"))) {
-        goto DONE;
-    }
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_alloc, syntax_tree);
 
     /*
      * Dead code removal
@@ -229,111 +204,67 @@ EMAdoAllocation (node *syntax_tree)
     }
 
     /*
-     * Reuse inference
+     * Reuse candidate inference
      */
     if (global.optimize.douip) {
-        DBUG_PRINT ("EMM", ("Inferencing Reuse Candidates (ri)"));
-        syntax_tree = EMRIdoReuseInference (syntax_tree);
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_rci, syntax_tree);
     }
-    if ((global.break_after == PH_alloc)
-        && (0 == strcmp (global.break_specifier, "ri"))) {
-        goto DONE;
-    }
-
-    TRAVsetPreFun (TR_prt, EMAprintPreFun);
 
     /*
      * Interface analysis
      */
+    TRAVsetPreFun (TR_prt, EMAprintPreFun);
     if (global.optimize.dosrf) {
-        DBUG_PRINT ("EMM", ("Interface analysis (ia)"));
-        syntax_tree = EMIAdoInterfaceAnalysis (syntax_tree);
-    }
-    if ((global.break_after == PH_alloc)
-        && (0 == strcmp (global.break_specifier, "ia"))) {
-        goto DONE;
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_ia, syntax_tree);
     }
 
     /*
      * Loop reuse optimization
      */
-    if ((global.optimize.dolro) && (global.optimize.dosrf)) {
-        DBUG_PRINT ("EMM", ("Loop reuse optimization (lro)"));
-        syntax_tree = EMLRdoLoopReuseOptimization (syntax_tree);
-    }
-    if ((global.break_after == PH_alloc)
-        && (0 == strcmp (global.break_specifier, "lro"))) {
-        goto DONE;
+    if ((global.optimize.dosrf) && (global.optimize.dolro)) {
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_lro, syntax_tree);
     }
 
     /*
      * Alias analysis
      */
     if (global.optimize.dosrf) {
-        DBUG_PRINT ("EMM", ("Alias analysis (aa)"));
-        syntax_tree = EMAAdoAliasAnalysis (syntax_tree);
-    }
-    if ((global.break_after == PH_alloc)
-        && (0 == strcmp (global.break_specifier, "aa"))) {
-        goto DONE;
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_aa, syntax_tree);
     }
 
     /*
      * Filter reuse candidates
      */
-    DBUG_PRINT ("EMM", ("Filtering reuse candidates (frc)"));
-    syntax_tree = EMFRCdoFilterReuseCandidates (syntax_tree);
-    if ((global.break_after == PH_alloc)
-        && (0 == strcmp (global.break_specifier, "frc"))) {
-        goto DONE;
+    if (global.optimize.douip) {
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_frc, syntax_tree);
     }
 
     /*
      * Static reuse
      */
-    if (global.optimize.dosrf) {
-        DBUG_PRINT ("EMM", ("Static reuse (sr)"));
-        syntax_tree = EMSRdoStaticReuse (syntax_tree);
-    }
-    if ((global.break_after == PH_alloc)
-        && (0 == strcmp (global.break_specifier, "sr"))) {
-        goto DONE;
+    if ((global.optimize.douip) && (global.optimize.dosrf)) {
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_sr, syntax_tree);
     }
 
     /*
      * Reuse case dependent branching
      */
-    if ((global.optimize.doipc) || (global.optimize.dodr)) {
-        DBUG_PRINT ("EMM", ("Reuse branching (rb)"));
-        syntax_tree = EMRBdoReuseBranching (syntax_tree);
-    }
-    if ((global.break_after == PH_alloc)
-        && (0 == strcmp (global.break_specifier, "rb"))) {
-        goto DONE;
+    if ((global.optimize.doipc) || ((global.optimize.douip) && (global.optimize.dodr))) {
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_rb, syntax_tree);
     }
 
     /*
      * In Place computation
      */
     if (global.optimize.doipc) {
-        DBUG_PRINT ("EMM", ("In-Place computation (ipc)"));
-        syntax_tree = EMIPdoInplaceComputation (syntax_tree);
-    }
-    if ((global.break_after == PH_alloc)
-        && (0 == strcmp (global.break_specifier, "ipc"))) {
-        goto DONE;
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_ipc, syntax_tree);
     }
 
     /*
      * Data reuse
      */
-    if (global.optimize.dodr) {
-        DBUG_PRINT ("EMM", ("Data reuse (dr)"));
-        syntax_tree = EMDRdoDataReuse (syntax_tree);
-    }
-    if ((global.break_after == PH_alloc)
-        && (0 == strcmp (global.break_specifier, "dr"))) {
-        goto DONE;
+    if ((global.optimize.douip) && (global.optimize.dodr)) {
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_dr, syntax_tree);
     }
 
     /*
