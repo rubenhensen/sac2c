@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.174  2005/07/03 17:00:43  ktr
+# added some files
+#
 # Revision 3.173  2005/06/30 16:39:07  ktr
 # added src/refcount/audscldist.o
 #
@@ -161,7 +164,8 @@ TREE= src/tree/traverse.o src/tree/tree_basic.o src/tree/free.o \
 
 SERIALIZE= src/serialize/serialize_node.o \
            src/serialize/serialize_attribs.o src/serialize/deserialize.o \
-           src/serialize/serialize_buildstack.o src/serialize/serialize_helper.o \
+           src/serialize/serialize_buildstack.o \
+           src/serialize/serialize_helper.o \
            src/serialize/serialize_link.o src/serialize/serialize.o \
            src/serialize/serialize_stack.o
 
@@ -179,7 +183,8 @@ FLATTEN= src/flatten/flatten.o src/flatten/lac2fun.o \
          src/flatten/WLEnhancement.o src/flatten/ExplicitAccumulate.o \
          src/flatten/ToOldTypes.o src/flatten/wlanalysis.o \
          src/flatten/lacinlining.o src/flatten/wldefaultpartition.o \
-         src/flatten/while2do.o src/flatten/handle_condexpr.o
+         src/flatten/while2do.o src/flatten/handle_condexpr.o \
+         src/flatten/codesimplification.o
 
 CONSTANTS= src/constants/shape.o src/constants/constants_basic.o \
            src/constants/constants_struc_ops.o \
@@ -245,7 +250,8 @@ REFCOUNT= src/refcount/allocation.o src/refcount/rcopt.o \
           src/refcount/interfaceanalysis.o src/refcount/loopreuseopt.o \
           src/refcount/datareuse.o src/refcount/explicitcopy.o \
           src/refcount/reusebranching.o src/refcount/ReuseWithArrays.o \
-          src/refcount/inplacecomp.o src/refcount/audscldist.o
+          src/refcount/inplacecomp.o src/refcount/audscldist.o \
+          src/refcount/rcminimize.o src/refcount/NumLookUpTable.o
 
 CONCURRENT= src/concurrent/concurrent.o src/concurrent/spmd_init.o  \
             src/concurrent/spmd_lift.o src/concurrent/sync_init.o \
