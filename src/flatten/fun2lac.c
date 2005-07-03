@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.39  2005/07/03 17:04:05  ktr
+ * Removed an unused variable
+ *
  * Revision 3.38  2005/05/19 16:27:43  ktr
  * DowngradeConcreteArgs now only downgrades AKV to AKS. In all other cases,
  * additional assignments are inserted.
@@ -546,7 +549,7 @@ ReturnVarsAreIdentical (node *ext_rets, node *int_rets)
 void
 DowngradeConcreteArgs (node *conc_arg, node *form_arg, node *fundef)
 {
-    ntype *lub, *ftype, *ctype;
+    ntype *ftype, *ctype;
     node *newavis;
 
     DBUG_ENTER ("DowngradeConcreteArgs");
