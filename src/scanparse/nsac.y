@@ -4,6 +4,9 @@
 /*
 *
 * $Log$
+* Revision 1.41  2005/07/04 10:31:04  sbs
+* changed name-space-identifyer-separation to double colon.
+*
 * Revision 1.40  2005/06/29 10:18:13  cg
 * Corrected precedence and associativity rules for &&, || and ?:
 *
@@ -211,7 +214,7 @@ static int prf_arity[] = {
 
 %token PARSE_PRG  PARSE_RC
 
-%token BRACE_L  BRACE_R  BRACKET_L  BRACKET_R  SQBR_L  SQBR_R  COLON  SEMIC 
+%token BRACE_L  BRACE_R  BRACKET_L  BRACKET_R  SQBR_L  SQBR_R  COLON DCOLON SEMIC 
 COMMA  AMPERS  DOT  QUESTION  ARROW 
 INLINE  LET  TYPEDEF  OBJDEF  CLASSTYPE 
 INC  DEC  ADDON  SUBON  MULON  DIVON  MODON 
@@ -307,7 +310,6 @@ PRF_CAT_VxV  PRF_TAKE_SxV  PRF_DROP_SxV
 %type <target_list_t> targets
 %type <inheritence_list_t> inherits
 %type <resource_list_t> resources
-
 
 
 %right QUESTION COLON
@@ -482,7 +484,7 @@ interface: import interface
            }
          ;
 
-import: IMPORT ID COLON ALL SEMIC
+import: IMPORT ID ALL SEMIC
         { $$ = TBmakeImport( $2, NULL, NULL);
           IMPORT_ALL( $$) = TRUE; 
         }
@@ -1286,7 +1288,9 @@ expr: qual_ext_id                { $$ = $1;                   }
     | FALSETOKEN                 { $$ = TBmakeBool( 0);       }
     | expr LAZYAND expr          { $$ = TBmakeFuncond( $1, $3, TBmakeBool(0)); }
     | expr LAZYOR expr           { $$ = TBmakeFuncond( $1, TBmakeBool(1), $3); }
-    | expr QUESTION expr COLON expr   { $$ = TBmakeFuncond( $1, $3, $5); }
+    | expr QUESTION expr COLON expr 
+      { $$ = TBmakeFuncond( $1, $3, $5); 
+      }
     | BRACKET_L expr BRACKET_R
       { $$ = $2;
         if( NODE_TYPE( $2) == N_spmop) {
@@ -1641,12 +1645,12 @@ qual_ext_ids: qual_ext_id COMMA qual_ext_ids
 qual_ext_id: ext_id
              { $$ = TBmakeSpid( NULL, $1);
              }
-           | ID COLON ext_id
+           | ID DCOLON ext_id
              { $$ = TBmakeSpid( $1, $3);
              }
            ; 
 
-ext_id: ID         { $$ = $1; }
+ext_id: ID         { $$ = $1; } 
       | reservedid { $$ = $1; }
       ; 
 
@@ -1826,18 +1830,18 @@ modspec: modheader OWN COLON expdesc
  *******************************************************************************/
 
 
-targets: TARGET ID COLON inherits resources targets
-         { $$ = RSCmakeTargetListEntry( $2, $4, $5, $6);
+targets: TARGET ID inherits resources targets
+         { $$ = RSCmakeTargetListEntry( $2, $3, $4, $5);
          }
        | /* empty */
          { $$ = NULL;
          }
        ;
 
-inherits: COLON ID COLON inherits
-           { $$ = RSCmakeInheritenceListEntry( $2, $4);
+inherits: DCOLON ID inherits
+           { $$ = RSCmakeInheritenceListEntry( $2, $3);
            }
-        | /* empty */
+        | COLON
           { $$ = NULL;
           } 
         ;
