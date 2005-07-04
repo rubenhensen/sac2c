@@ -4,6 +4,9 @@
 /*
 *
 * $Log$
+* Revision 1.42  2005/07/04 10:42:26  sbs
+* string.h included
+*
 * Revision 1.41  2005/07/04 10:31:04  sbs
 * changed name-space-identifyer-separation to double colon.
 *
@@ -136,6 +139,7 @@
 
 
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include <memory.h>
 
