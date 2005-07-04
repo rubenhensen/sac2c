@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2005/07/04 10:26:36  sbs
+ * introduced DCOLON (double colon)
+ *
  * Revision 1.6  2005/06/28 20:58:02  cg
  * The boolean operators && and || now support lazy evaluation of the
  * second argument. Therefore, they are not scanned/parsed as function,
@@ -96,6 +99,7 @@ int charpos = 0;
 "["                        { FILTER( SQBR_L); }
 "]"                        { FILTER( SQBR_R); }
 ":"                        { FILTER( COLON); }
+"::"                       { FILTER( DCOLON); }
 ";"                        { FILTER( SEMIC); }
 ","                        { FILTER( COMMA); }
 "="                        { FILTER( LET); }
