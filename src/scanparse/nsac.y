@@ -4,6 +4,9 @@
 /*
 *
 * $Log$
+* Revision 1.43  2005/07/04 11:02:09  sbs
+* adjusted imported types to DCOLON too
+*
 * Revision 1.42  2005/07/04 10:42:26  sbs
 * string.h included
 *
@@ -230,7 +233,7 @@ HASH  PRAGMA  LINKNAME  LINKSIGN  EFFECT  READONLY  REFCOUNTING
 TOUCH  COPYFUN  FREEFUN  INITFUN  LINKWITH LINKOBJ
 WLCOMP  CACHESIM  SPECIALIZE 
 TARGET  STEP  WIDTH  GENARRAY  MODARRAY 
-LE  LT  GT LAZYAND LAZYOR QUESTION
+LE  LT  GT LAZYAND LAZYOR
 STAR  PLUS  MINUS  TILDE  EXCL 
 
 PRF_DIM  PRF_SHAPE  PRF_RESHAPE  PRF_SEL  PRF_GENARRAY  PRF_MODARRAY 
@@ -488,7 +491,7 @@ interface: import interface
            }
          ;
 
-import: IMPORT ID ALL SEMIC
+import: IMPORT ID COLON ALL SEMIC
         { $$ = TBmakeImport( $2, NULL, NULL);
           IMPORT_ALL( $$) = TRUE; 
         }
@@ -1755,7 +1758,7 @@ simplentype: TYPE_INT    { $$ = TYmakeSimpleType( T_int);    }
 userntype: ID
            { $$ = TYmakeSymbType( $1, NULL);
            }
-         | ID COLON ID
+         | ID DCOLON ID
            { $$ = TYmakeSymbType( $3, $1);
            }
          ;
