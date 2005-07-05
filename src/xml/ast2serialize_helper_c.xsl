@@ -1,6 +1,10 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.8  2005/07/05 14:36:10  sah
+  NODE_ERROR is now initialised properly
+  when deserialising code
+
   Revision 1.7  2005/06/27 18:15:50  sah
   fixed bug #90
 
@@ -102,9 +106,10 @@ version="1.0">
   <xsl:value-of select="'node *this = ILIBmalloc( sizeof( node));'" />
   <xsl:value-of select="'va_list args;'" />
   <xsl:value-of select="'int cnt, max;'" />
-  <xsl:value-of select="'this->nodetype=node_type;'" />
-  <xsl:value-of select="'this->lineno=lineno;'" />
-  <xsl:value-of select="'this->src_file=ILIBstringCopy(sfile);'" />
+  <xsl:value-of select="'NODE_TYPE( this) = node_type;'" />
+  <xsl:value-of select="'NODE_LINE( this) = lineno;'" />
+  <xsl:value-of select="'NODE_FILE( this) = ILIBstringCopy(sfile);'" />
+  <xsl:value-of select="'NODE_ERROR( this) = NULL;'" />
   <xsl:value-of select="'switch (node_type) {'" />
   <xsl:apply-templates select="//syntaxtree/node" mode="gen-case" />
   <xsl:value-of select="'default: /* error */ '" />
