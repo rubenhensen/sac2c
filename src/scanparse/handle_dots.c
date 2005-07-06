@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.49  2005/07/06 12:50:39  sah
+ * rewrote default value creation
+ *
  * Revision 1.48  2005/06/28 14:50:01  sah
  * new default values
  *
@@ -1936,30 +1939,111 @@ HDspap (node *arg_node, info *arg_info)
             /*
              * found a selection using a selection
              * vector build of scalars and maybe dots.
-             * if a ... is contained, the default will
-             * be a scalar and a withloop with shape
-             * drop( #Exprs, shape( array))
-             * otherwise
              */
             dotinfo *info = MakeDotInfo (ARRAY_AELEMS (SPAP_ARG1 (arg_node)));
+            node *defshape = NULL;
 
-            if (info->tripledot != 0) {
-                /* contains tripledot */
-                result = TCmakeSpap1 (ILIBstringCopy ("sac2c"), ILIBstringCopy ("zero"),
-                                      DUPdoDupTree (SPAP_ARG2 (arg_node)));
+            /*
+             * LEVEL I: handle all dots from the right
+             *          to the middle ...
+             */
 
-                arg_node = FREEdoFreeTree (arg_node);
-            } else {
-                /* no tripledot */
-                node *defshape
-                  = TCmakePrf2 (F_drop_SxV, TBmakeNum (info->selcnt),
+            dotlist *dots = info->right;
+
+            while ((dots != NULL) && (dots->dottype == 1)) {
+                defshape = TBmakeExprs (TCmakePrf2 (F_sel,
+                                                    TCmakeFlatArray (
+                                                      TBmakeExprs (TBmakeNum (
+                                                                     dots->position - 1),
+                                                                   NULL)),
+                                                    TCmakePrf1 (F_shape,
+                                                                DUPdoDupTree (
+                                                                  SPAP_ARG2 (arg_node)))),
+                                        defshape);
+
+                dots = dots->prev;
+            }
+
+            defshape = TCmakeFlatArray (defshape);
+
+            /*
+             * LEVEL II: handle the ... in the middle, if it exists
+             */
+
+            if (info->triplepos != 0) {
+                node *middleshape;
+
+                /*
+                 * take( dim(A) - selcnt, shape(A))
+                 */
+                middleshape
+                  = TCmakePrf2 (F_take_SxV,
+                                TCmakePrf2 (F_sub_SxS,
+                                            TCmakePrf1 (F_dim, DUPdoDupTree (
+                                                                 SPAP_ARG2 (arg_node))),
+                                            TBmakeNum (info->selcnt - 1)),
                                 TCmakePrf1 (F_shape,
                                             DUPdoDupTree (SPAP_ARG2 (arg_node))));
+                /*
+                 * drop( triplepos, ...)
+                 */
+                middleshape
+                  = TCmakePrf2 (F_drop_SxV, TBmakeNum (info->triplepos - 1), middleshape);
+                /*
+                 * combine shapes
+                 */
+                defshape = TCmakePrf2 (F_cat_VxV, middleshape, defshape);
 
-                result = BuildDefaultWithloop (SPAP_ARG2 (arg_node), defshape);
-
-                arg_node = FREEdoFreeTree (arg_node);
+                /*
+                 * move on to next dot
+                 */
+                dots = dots->prev;
             }
+
+            /*
+             * LEVEL III: continue handling dots on the
+             *            left side of ... if any
+             */
+            if (dots != NULL) {
+                node *leftshape = NULL;
+
+                while ((dots != NULL) && (dots->dottype == 1)) {
+                    leftshape
+                      = TBmakeExprs (TCmakePrf2 (F_sel,
+                                                 TCmakeFlatArray (
+                                                   TBmakeExprs (TBmakeNum (dots->position
+                                                                           - 1),
+                                                                NULL)),
+                                                 TCmakePrf1 (F_shape,
+                                                             DUPdoDupTree (
+                                                               SPAP_ARG2 (arg_node)))),
+                                     leftshape);
+
+                    dots = dots->prev;
+                }
+
+                leftshape = TCmakeFlatArray (leftshape);
+
+                defshape = TCmakePrf2 (F_cat_VxV, leftshape, defshape);
+            }
+
+            /*
+             * LEVEL IV: if there was no ...
+             *           add the non handeled dimensions
+             */
+
+            if (info->triplepos == 0) {
+                defshape
+                  = TCmakePrf2 (F_cat_VxV, defshape,
+                                TCmakePrf2 (F_drop_SxV, TBmakeNum (info->selcnt),
+                                            TCmakePrf1 (F_shape, DUPdoDupTree (SPAP_ARG2 (
+                                                                   arg_node)))));
+            }
+
+            /*
+             * use the shape to build a default wl
+             */
+            result = BuildDefaultWithloop (SPAP_ARG2 (arg_node), defshape);
 
             FreeDotInfo (info);
         } else if (NODE_TYPE (SPAP_ARG1 (arg_node)) == N_spid) {
