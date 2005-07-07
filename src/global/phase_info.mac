@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.28  2005/07/07 17:54:54  ktr
+ * Corrected data reuse
+ *
  * Revision 3.27  2005/07/03 17:07:51  ktr
  * added various traversals.
  *
@@ -370,7 +373,7 @@ SUBPHASE (rb, "rb", "Introducing reuse branches", EMRBdoReuseBranching)
 
 SUBPHASE (ipc, "ipc", "Identfying in-place updates", EMIPdoInplaceComputation)
 
-SUBPHASE (dr, "dr", "Exploiting data reuse", EMIPdoInplaceComputation)
+SUBPHASE (dr, "dr", "Exploiting data reuse", EMDRdoDataReuse)
 
 SUBPHASE (dcremm3, "dcremm3", "Removing dead code", DCRdoDeadCodeRemoval)
 
