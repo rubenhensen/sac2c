@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2005/07/07 17:54:25  ktr
+ * added some DBUG_PRINTs
+ *
  * Revision 1.13  2004/12/16 14:37:30  ktr
  * added InplaceComputation
  *
@@ -463,12 +466,15 @@ EMDRfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EMDRfundef");
 
+    DBUG_PRINT ("EMDR", ("Traversing function %s", FUNDEF_NAME (arg_node)));
+
     /*
      * CONDFUNs may only be traversed from AP-nodes
      */
     if ((!FUNDEF_ISCONDFUN (arg_node)) || (arg_info != NULL)) {
 
         if (FUNDEF_BODY (arg_node) != NULL) {
+            DBUG_PRINT ("EMDR", ("Traversing function body %s", FUNDEF_NAME (arg_node)));
             info *info = MakeInfo (arg_node);
 
             if (arg_info != NULL) {
@@ -579,6 +585,7 @@ EMDRprf (node *arg_node, info *arg_info)
                 if (LUTsearchInLutPp (INFO_EMDR_REUSELUT (arg_info),
                                       ID_AVIS (PRF_ARG2 (arg_node)))
                     == ID_AVIS (PRF_ARG1 (prf))) {
+                    DBUG_PRINT ("EMDR", ("Inplace copy situation recognized!"));
                     PRF_PRF (prf) = F_noop;
                 }
                 break;
