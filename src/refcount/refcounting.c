@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.32  2005/07/07 17:53:50  ktr
+ * Simplified EMRCprf
+ *
  * Revision 1.31  2005/06/09 15:38:27  ktr
  * identifier appearing inside of shape descriptions are now refcounted
  * as well.
@@ -2215,14 +2218,6 @@ EMRCprf (node *arg_node, info *arg_info)
     DBUG_ENTER ("EMRCprf");
 
     switch (PRF_PRF (arg_node)) {
-    case F_noop:
-        /*
-         * noop( iv)
-         *
-         * - iv must not be counted as it is already counted by WITHID traversal
-         */
-        break;
-
     case F_fill:
         /*
          * fill( expr, a);
@@ -2233,15 +2228,6 @@ EMRCprf (node *arg_node, info *arg_info)
         PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
         INFO_EMRC_COUNTMODE (arg_info) = rc_apuse;
         PRF_ARG2 (arg_node) = TRAVdo (PRF_ARG2 (arg_node), arg_info);
-        break;
-
-    case F_accu:
-        /*
-         * accu( iv, n)
-         *
-         * - iv must not be counted as it is already counted by WITHID traversal
-         * - n  must not be counted as it is already counted by WITHOP traversal
-         */
         break;
 
     case F_alloc:
@@ -2259,7 +2245,6 @@ EMRCprf (node *arg_node, info *arg_info)
 
         /*
          * Traverse reuse candidates
-         * TODO: Restore EXPRS4 iff problems arise
          */
         if (PRF_ARGS (arg_node) != NULL) {
             node *lhs = INFO_EMRC_LHS (arg_info);
@@ -2285,26 +2270,6 @@ EMRCprf (node *arg_node, info *arg_info)
         PRF_ARG2 (arg_node) = TRAVdo (PRF_ARG2 (arg_node), arg_info);
         break;
 
-    case F_suballoc:
-        /*
-         * suballoc( A, iv);
-         *
-         * - A  must not be counted as it is already counted by WITHOP traversal
-         * - iv must not be counted as it is already counted by WITHID traversal
-         */
-        break;
-
-    case F_wl_assign:
-        /*
-         * wl_assign( a, A, iv);
-         *
-         * - a must be refcounted like prf use
-         * - A  must not be counted as it is already counted by WITHOP traversal
-         * - iv must not be counted as it is already counted by WITHID traversal
-         */
-        INFO_EMRC_COUNTMODE (arg_info) = rc_prfuse;
-        PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
-        break;
     default:
         INFO_EMRC_COUNTMODE (arg_info) = rc_prfuse;
         if (PRF_ARGS (arg_node) != NULL) {
