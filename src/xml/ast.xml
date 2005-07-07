@@ -4703,6 +4703,7 @@
         </attribute>
         <attribute name="Idx_Min" default="NULL" mandatory="yes">
           <type name="NodePointer">
+            <description>wird bei der correct-type function ausgelassen, da nicht klar war, wie mit dem Arraytyp umgegangen werden soll </description>
             <target>
               <node name="Num" />
               <node name="Id" />
@@ -4714,6 +4715,7 @@
         </attribute>
         <attribute name="Idx_Max" default="NULL" mandatory="yes">
           <type name="NodePointer">
+            <description>wird bei der correct-type function ausgelassen, da nicht klar war, wie mit dem Arraytyp umgegangen werden soll</description>
             <target>
               <node name="Num" />
               <node name="Id" />
