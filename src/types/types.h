@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.25  2005/07/11 15:00:46  sah
+ * added namespace_t type
+ *
  * Revision 1.24  2005/06/01 18:00:56  sah
  * removed some old unused filetypes
  *
@@ -529,7 +532,6 @@ typedef union INFOTYPE {
     generator_rel genrel; /* used in N_Ngenerator node */
 } infotype;
 
-#ifdef NEW_AST
 /*
  * The NEW node structure of the SAC syntax tree
  * The type is abstract, as there is _no_ way to access a node other
@@ -537,31 +539,6 @@ typedef union INFOTYPE {
  * tree_basic.h. This as well solves dependency problems.
  */
 typedef struct NODE node;
-
-#else
-/*
- *  The node structure of the SAC syntax tree
- */
-
-typedef struct NODE {
-    nodetype nodetype;           /* type of node */
-    infotype info;               /* node dependent information */
-    void *info2;                 /* any node dependent information */
-    void *info3;                 /* any node dependent information */
-    int refcnt;                  /* reference count information */
-    int flag;                    /* the flag is used for node-status        */
-                                 /* (loop invariant/not loop invariant,...) */
-    int counter;                 /* needed for the enumeration of fundefs! */
-    int varno;                   /* number of variables */
-    int int_data;                /* additional int-entry */
-    long *mask[MAX_MASK];        /* special information about variables */
-                                 /* mainly used for optimizations       */
-    void *dfmask[MAX_MASK];      /* dataflow masks */
-    int lineno;                  /* line number in source code */
-    char *src_file;              /* pointer to filename or source code */
-    struct NODE *node[MAX_SONS]; /* pointers to child nodes */
-} node;
-#endif /* NEW_AST */
 
 /*****************************************************************************
  * The info structure is used during traversal to store some stateful
@@ -574,6 +551,12 @@ typedef struct NODE {
  *****************************************************************************/
 
 typedef struct INFO info;
+
+/*
+ * the namespace_t structure is used for namespaces (formerly represented
+ * by module name strings). See namespace.[ch] for details
+ */
+typedef struct NAMESPACE namespace_t;
 
 /******************************************************************************
  *
