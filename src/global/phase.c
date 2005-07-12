@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2005/07/12 12:57:44  jhb
+ * changed the start of the checks
+ *
  * Revision 1.4  2005/06/06 13:26:40  jhb
  * added the check traversal after each subphase
  *
@@ -131,13 +134,13 @@ PHrunCompilerSubPhase (compiler_subphase_t subphase, node *syntax_tree)
 
     CTIabortOnError ();
 
+    if ((global.treecheck) && (syntax_tree != NULL)) {
+        syntax_tree = CHKdoTreeCheck (syntax_tree);
+    }
+
     if (ILIBstringCompare (global.break_specifier, subphase_specifier[subphase])) {
         CTIterminateCompilation (global.compiler_phase, global.break_specifier,
                                  syntax_tree);
-    }
-
-    if ((global.treecheck) && (syntax_tree != NULL)) {
-        syntax_tree = CHKdoTreeCheck (syntax_tree);
     }
 
     DBUG_RETURN (syntax_tree);
