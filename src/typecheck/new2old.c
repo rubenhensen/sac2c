@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.37  2005/07/12 10:22:48  sah
+ * renamed CreateTypeErrorBody to ReplaceBodyByTypeError
+ * as it now handles an entire fundef and sets the
+ * FUNDEF_RETURN properly.
+ *
  * Revision 1.36  2005/06/27 22:28:10  sacbase
  * another typo fixed
  *
@@ -298,17 +303,19 @@ AddTypeError (node *assign, node *bottom_id, ntype *other_type)
 }
 
 static node *
-CreateTypeErrorBody (ntype *inferred_type, ntype *res_type)
+ReplaceBodyByTypeError (node *fundef, ntype *inferred_type, ntype *res_type)
 {
     node *block, *avis;
     node *vardecs = NULL;
     node *ids = NULL;
     node *exprs = NULL;
+    node *ret = NULL;
     char *err_msg = NULL;
     int i, n;
     char *tmp;
 
-    DBUG_ENTER ("CreateTypeErrorBody");
+    DBUG_ENTER ("ReplaceBodyByTypeError");
+
     n = TYgetProductSize (res_type);
     for (i = n - 1; i >= 0; i--) {
         avis = TBmakeAvis (ILIBtmpVar (), TYcopyType (TYgetProductMember (res_type, i)));
@@ -328,11 +335,22 @@ CreateTypeErrorBody (ntype *inferred_type, ntype *res_type)
         ids = TBmakeIds (avis, ids);
         exprs = TBmakeExprs (TBmakeId (avis), exprs);
     }
+
+    ret = TBmakeReturn (exprs);
+
     block = TBmakeBlock (TBmakeAssign (TBmakeLet (ids, TCmakePrf1 (F_type_error,
                                                                    TBmakeStr (err_msg))),
-                                       TBmakeAssign (TBmakeReturn (exprs), NULL)),
+                                       TBmakeAssign (ret, NULL)),
                          vardecs);
-    DBUG_RETURN (block);
+
+    FUNDEF_BODY (fundef) = FREEdoFreeTree (FUNDEF_BODY (fundef));
+
+    FUNDEF_BODY (fundef) = block;
+    FUNDEF_RETURN (fundef) = ret;
+
+    FUNDEF_RETS (fundef) = TUreplaceRetTypes (FUNDEF_RETS (fundef), res_type);
+
+    DBUG_RETURN (fundef);
 }
 
 /******************************************************************************
@@ -474,12 +492,7 @@ NT2OTfundef (node *arg_node, info *arg_info)
                  */
                 fltype = TYliftBottomFixAndEliminateAlpha (otype);
 
-                FUNDEF_BODY (arg_node) = FREEdoFreeTree (FUNDEF_BODY (arg_node));
-
-                FUNDEF_BODY (arg_node) = CreateTypeErrorBody (ftype, fltype);
-
-                FUNDEF_RETS (arg_node)
-                  = TUreplaceRetTypes (FUNDEF_RETS (arg_node), fltype);
+                arg_node = ReplaceBodyByTypeError (arg_node, ftype, fltype);
             }
 
         } else {
