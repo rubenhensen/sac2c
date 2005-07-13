@@ -2,6 +2,9 @@
 
 <!--
   $Log$
+  Revision 1.2  2005/07/13 12:10:13  jhb
+  bug fixed
+
   Revision 1.1  2005/06/06 10:14:55  jhb
   Initial revision
 
@@ -147,7 +150,6 @@ node *CHKTSTdoTreeCheckTest( node *syntax_tree)
   <xsl:value-of select="'{'"/>  
   <xsl:value-of select="$newline"/>
     <xsl:if test="attributes/attribute[key(&quot;arraytypes&quot;, ./type/@name)]">
-      <xsl:value-of select="'int cnt;'" />
       <xsl:value-of select="$newline"/>
     </xsl:if>
     <xsl:value-of select="$newline"/>
