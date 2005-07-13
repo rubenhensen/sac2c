@@ -2,6 +2,9 @@
 
 <!--
   $Log$
+  Revision 1.4  2005/07/13 11:48:59  jhb
+  insert the CHKinserterror function
+
   Revision 1.3  2005/06/08 13:33:03  jhb
   attribute are now check correctly
 
@@ -79,14 +82,6 @@ version="1.0">
   <xsl:value-of select="'( node *arg_node, info *arg_info)'"/>
   <xsl:value-of select="';'"/>
   <xsl:value-of select="$newline"/>
-</xsl:template>
-
-<xsl:template match="nodeset">
-  <xsl:value-of select="'extern bool is'"/>
-  <xsl:value-of select="@name"/>
-  <xsl:value-of select="'( node *arg_node)'"/>
-  <xsl:value-of select="';'"/>
-  <xsl:value-of select="$newline"/> 
 </xsl:template>
 
 </xsl:stylesheet>
