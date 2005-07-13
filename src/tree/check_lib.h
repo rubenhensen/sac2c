@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2005/07/13 11:53:42  jhb
+ * some little fixes
+ *
  * Revision 1.9  2005/06/15 12:43:03  jhb
  * little fixes
  *
@@ -42,7 +45,6 @@ extern node *CHKdoTreeCheck (node *syntax_tree);
 extern node *CHKexistSon (node *son, node *arg_node, char *string);
 extern node *CHKexistAttribute (void *attribute, node *arg_node, char *string);
 extern node *CHKnotExistAttribute (void *attribute, node *arg_node, char *string);
-/*extern node *CHKcorrectType( void *attribute, node *arg_node, char *type, char
- * *string);*/
+extern node *CHKcorrectTypeInsertError (node *arg_node, char *string);
 
 #endif /*_SAC_CHECK_LIB_H_ */

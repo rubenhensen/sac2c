@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2005/07/13 11:53:42  jhb
+ * some little fixes
+ *
  * Revision 1.13  2005/06/15 12:43:03  jhb
  * little fixes
  *
@@ -102,6 +105,30 @@ CHKdoTreeCheck (node *syntax_tree)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *CHKinsertError( node *arg_node, char *string)
+ *****************************************************************************/
+static node *
+CHKinsertError (node *arg_node, char *string)
+{
+    DBUG_ENTER ("CHKinsertError");
+
+    if (arg_node == NULL) {
+
+        printf ("%s\n", string);
+        arg_node = TBmakeError (ILIBstringCopy (string), arg_node);
+    } else {
+
+        if (!(ILIBstringCompare (string, ERROR_MESSAGE (arg_node)))) {
+
+            ERROR_NEXT (arg_node) = CHKinsertError (ERROR_NEXT (arg_node), string);
+        }
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *CHKexistSon( node *child, node *arg_node, char *string)
  *
  *****************************************************************************/
@@ -112,8 +139,7 @@ CHKexistSon (node *son, node *arg_node, char *string)
 
     if (son == NULL) {
 
-        NODE_ERROR (arg_node)
-          = TBmakeError (ILIBstringCopy (string), NODE_ERROR (arg_node));
+        NODE_ERROR (arg_node) = CHKinsertError (NODE_ERROR (arg_node), string);
     }
 
     DBUG_RETURN (son);
@@ -131,8 +157,7 @@ CHKexistAttribute (void *attribute, node *arg_node, char *string)
 
     if (attribute == NULL) {
 
-        NODE_ERROR (arg_node)
-          = TBmakeError (ILIBstringCopy (string), NODE_ERROR (arg_node));
+        NODE_ERROR (arg_node) = CHKinsertError (NODE_ERROR (arg_node), string);
     }
 
     DBUG_RETURN (attribute);
@@ -151,32 +176,18 @@ CHKnotExistAttribute (void *attribute, node *arg_node, char *string)
 
     if (attribute != NULL) {
 
-        NODE_ERROR (arg_node)
-          = TBmakeError (ILIBstringCopy (string), NODE_ERROR (arg_node));
+        NODE_ERROR (arg_node) = CHKinsertError (NODE_ERROR (arg_node), string);
     }
 
     DBUG_RETURN (attribute);
 }
 
-/*node *CHKcorrectType(void *sonattr, node *arg_node, char *type, char *string)
+node *
+CHKcorrectTypeInsertError (node *arg_node, char *string)
 {
+    DBUG_ENTER ("CHKcorrectType");
 
-  DBUG_ENTER( "CHKcorrectType");
+    NODE_ERROR (arg_node) = CHKinsertError (NODE_ERROR (arg_node), string);
 
-  if ( sonattr != NULL) {
-
-
-        if ( NODE_TYPE( arg_node) != ) {
-        NODE_ERROR(arg_node) = TBmakeError( string, NODE_ERROR( arg_node));
-        }
-
-        }
-        else {
-
-        NODE_ERROR(arg_node) = TBmakeError(string, NODE_ERROR( arg_node ));
-
-        }
-
-
-  DBUG_RETURN( sonattr);
-}*/
+    DBUG_RETURN (arg_node);
+}
