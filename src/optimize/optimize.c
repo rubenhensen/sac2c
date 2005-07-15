@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.96  2005/07/15 15:57:02  sah
+ * introduced namespaces
+ *
  * Revision 3.95  2005/07/15 15:23:08  ktr
  * removed type conversions before and after IVE
  *
@@ -446,6 +449,7 @@
 #include "WithloopFusion.h"
 #include "type_upgrade.h"
 #include "signature_simplification.h"
+#include "dispatchfuncalls.h"
 
 #include "ToOldTypes.h"
 #include "ToNewTypes.h"
@@ -863,6 +867,7 @@ OPTdoOptimize (node *arg_node)
  *
  *   <pre>
  *
+ *               DFC
  *               INL
  *               DFR
  *                |
@@ -893,6 +898,11 @@ OPTmodule (node *arg_node, info *arg_info)
     INFO_OPT_MODULE (arg_info) = arg_node;
     CTIstate (" ");
     CTIstate ("  Starting initial interfunctional optimizations");
+
+    /*
+     * apply DFC (dispatch fun call where possible
+     */
+    arg_node = DFCdoDispatchFunCalls (arg_node);
 
     /*
      * apply RC (remove all cast from AST)

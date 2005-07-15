@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.15  2005/07/15 15:57:02  sah
+ * introduced namespaces
+ *
  * Revision 1.14  2005/06/15 12:41:12  sah
  * fixed handling of ... args
  *
@@ -82,6 +85,7 @@
 #include "globals.h"
 #include "type_utils.h"
 #include "internal_lib.h"
+#include "namespaces.h"
 
 /*
  * INFO structure
@@ -478,7 +482,7 @@ FPCfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FPCfundef");
 
-    DBUG_PRINT ("FPC", ("processing fundef %s:%s...", FUNDEF_MOD (arg_node),
+    DBUG_PRINT ("FPC", ("processing fundef %s:%s...", NSgetName (FUNDEF_NS (arg_node)),
                         FUNDEF_NAME (arg_node)));
 
     INFO_FPC_FUNDEF (arg_info) = arg_node;
@@ -692,7 +696,7 @@ FPClet (node *arg_node, info *arg_info)
 
         DBUG_ASSERT ((fundef != NULL), "AP_FUNDEF not found!");
 
-        DBUG_PRINT ("PREC", ("Application of %s:%s().", FUNDEF_MOD (fundef),
+        DBUG_PRINT ("PREC", ("Application of %s:%s().", NSgetName (FUNDEF_NS (fundef)),
                              FUNDEF_NAME (fundef)));
 
         ids = LET_IDS (arg_node);

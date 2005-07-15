@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2005/07/15 15:57:02  sah
+ * introduced namespaces
+ *
  * Revision 1.12  2005/02/16 22:29:13  sah
  * added/changed some funs
  *
@@ -57,5 +60,6 @@ extern void *STinit ();
 extern void STadd (char *s1, int l, char *s2, int i, void *table);
 extern void *STRSadd (char *s1, int i, void *p);
 extern void *DSfetchArgAvis (int i);
+extern void *NSdeserializeNamespace (char *s1);
 
 #endif /* _SAC_SERIALIZE_H_ */

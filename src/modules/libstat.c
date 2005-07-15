@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  2005/07/15 15:57:02  sah
+ * introduced namespaces
+ *
  * Revision 1.15  2005/06/28 16:29:46  sah
  * removed some warning messages
  *
@@ -36,6 +39,7 @@
 #include "new2old.h"
 #include "stringset.h"
 #include "internal_lib.h"
+#include "namespaces.h"
 #include "free.h"
 
 static void
@@ -117,7 +121,7 @@ PrintLibStatCode (module_t *module, const sttable_t *table)
 
     DBUG_ENTER ("PrintLibStatPrintCode");
 
-    syntax_tree = TBmakeModule (ILIBstringCopy (MODMgetModuleName (module)), F_prog, NULL,
+    syntax_tree = TBmakeModule (NSgetNamespace (MODMgetModuleName (module)), F_prog, NULL,
                                 NULL, NULL, NULL, NULL);
 
     iterator = STsymbolIteratorGet (table);

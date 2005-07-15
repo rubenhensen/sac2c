@@ -4,6 +4,9 @@
 /*
 *
 * $Log$
+* Revision 1.44  2005/07/15 15:57:02  sah
+* introduced namespaces
+*
 * Revision 1.43  2005/07/04 11:02:09  sbs
 * adjusted imported types to DCOLON too
 *
@@ -160,6 +163,7 @@
 #include "new_types.h"
 #include "shape.h"
 #include "stringset.h"
+#include "namespaces.h"
 
 #include "resource.h"
 
@@ -382,7 +386,7 @@ eof: { if (commlevel) {
 
 prg: defs
      { $$ = $1;
-       MODULE_NAME( $$) = ILIBstringCopy( MAIN_MOD_NAME);
+       MODULE_NAMESPACE( $$) = NSgetRootNamespace();
        MODULE_FILETYPE( $$) = F_prog;
      }
    ;
@@ -634,7 +638,9 @@ fundef1: returntypes BRACKET_L ext_id BRACKET_R BRACKET_L fundef2
            DBUG_PRINT( "PARSE",
                         ("%s: %s:%s "F_PTR,
                         global.mdb_nodetype[ NODE_TYPE( $$)],
-                        (FUNDEF_MOD( $$) == NULL) ? "(null)": FUNDEF_MOD( $$),
+                        (FUNDEF_NS( $$) == NULL) 
+                          ? "(null)"
+                          : NSgetName( FUNDEF_NS( $$)),
                         FUNDEF_NAME( $$),
                         FUNDEF_NAME( $$)));
 
@@ -648,7 +654,9 @@ fundef1: returntypes BRACKET_L ext_id BRACKET_R BRACKET_L fundef2
            DBUG_PRINT( "PARSE",
                         ("%s: %s:%s "F_PTR,
                         global.mdb_nodetype[ NODE_TYPE( $$)],
-                        (FUNDEF_MOD( $$) == NULL) ? "(null)" : FUNDEF_MOD( $$),
+                        (FUNDEF_NS( $$) == NULL) 
+                          ? "(null)" 
+                          : NSgetName( FUNDEF_NS( $$)),
                         FUNDEF_NAME( $$),
                         FUNDEF_NAME( $$)));
 
@@ -1560,7 +1568,7 @@ nwithop: GENARRAY BRACKET_L expr COMMA expr BRACKET_R
        | FOLD BRACKET_L qual_ext_id COMMA expr BRACKET_R
          { $$ = TBmakeFold( $5);
            FOLD_FUN( $$) = ILIBstringCopy( SPID_NAME( $3));
-           FOLD_MOD( $$) = ILIBstringCopy( SPID_MOD( $3));
+           FOLD_NS( $$) = NSdupNamespace( SPID_NS( $3));
            $3 = FREEdoFreeTree( $3);
          }
        ;
@@ -1585,7 +1593,7 @@ withop: GENARRAY BRACKET_L expr COMMA expr BRACKET_R
       | FOLD BRACKET_L qual_ext_id COMMA expr COMMA expr BRACKET_R
         { $$ = TBmakeFold( $5);
           FOLD_FUN( $$) = ILIBstringCopy( SPID_NAME( $3));
-          FOLD_MOD( $$) = ILIBstringCopy( SPID_MOD( $3));
+          FOLD_NS( $$) = NSdupNamespace( SPID_NS( $3));
           $3 = FREEdoFreeTree( $3);
           FOLD_SPEXPR( $$) = $7;
         }
@@ -1653,7 +1661,7 @@ qual_ext_id: ext_id
              { $$ = TBmakeSpid( NULL, $1);
              }
            | ID DCOLON ext_id
-             { $$ = TBmakeSpid( $1, $3);
+             { $$ = TBmakeSpid( NSgetNamespace( $1), $3);
              }
            ; 
 
@@ -1759,7 +1767,7 @@ userntype: ID
            { $$ = TYmakeSymbType( $1, NULL);
            }
          | ID DCOLON ID
-           { $$ = TYmakeSymbType( $3, $1);
+           { $$ = TYmakeSymbType( $3, NSgetNamespace( $1));
            }
          ;
 
@@ -1778,7 +1786,7 @@ userntype: ID
 
 module: MODULE { file_kind = F_modimp; } ID SEMIC defs
         { $$ = $5;
-          MODULE_NAME( $$) = $3;
+          MODULE_NAMESPACE( $$) = NSgetNamespace( $3);
           MODULE_FILETYPE( $$) = file_kind;
         }
         ;
@@ -1786,7 +1794,7 @@ module: MODULE { file_kind = F_modimp; } ID SEMIC defs
 class: CLASS { file_kind = F_classimp; } ID SEMIC
        CLASSTYPE ntype SEMIC defs
        { $$ = $8;
-         MODULE_NAME( $$) = $3;
+         MODULE_NAMESPACE( $$) = NSgetNamespace( $3);
          MODULE_FILETYPE( $$) = file_kind;
          MODULE_CLASSTYPE( $$) = $6;
        }
@@ -2075,7 +2083,7 @@ node *String2Array(char *str)
   ARRAY_STRING(array)=str;
 #endif  /* CHAR_ARRAY_AS_STRING */
 
-  res = TCmakeSpap2( ILIBstringCopy( "String") , ILIBstringCopy( "to_string"), 
+  res = TCmakeSpap2( NSgetNamespace( "String") , ILIBstringCopy( "to_string"), 
                     array, len_expr);
 
   DBUG_RETURN( res); 
@@ -2378,7 +2386,7 @@ static ntype *Exprs2NType( ntype *basetype, node *exprs)
 
   switch (NODE_TYPE( EXPRS_EXPR1( exprs))) {
     case N_spid:
-      if (SPID_MOD( EXPRS_EXPR1( exprs)) != NULL) {
+      if (SPID_NS( EXPRS_EXPR1( exprs)) != NULL) {
         yyerror("illegal shape specification");
       } else if (SPID_NAME( EXPRS_EXPR1( exprs))[1] != '\0') {
         yyerror("illegal shape specification");

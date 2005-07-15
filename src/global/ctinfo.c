@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2005/07/15 15:57:02  sah
+ * introduced namespaces
+ *
  * Revision 1.14  2005/06/14 23:39:03  sbs
  * CTIabortOnBottom added for reporting bottom types
  *
@@ -95,6 +98,8 @@
 #include "globals.h"
 #include "free.h"
 #include "phase.h"
+#include "namespaces.h"
+#include "tree_basic.h"
 
 #include "ctinfo.h"
 
@@ -110,6 +115,8 @@ static char *note_message_header = "  ";
 
 static int errors = 0;
 static int warnings = 0;
+
+#define MAX_ITEM_NAME_LENGTH 255
 
 /** <!--********************************************************************-->
  *
@@ -944,4 +951,61 @@ CTIterminateCompilation (compiler_phase_t phase, char *break_specifier, node *sy
     exit (0);
 
     DBUG_VOID_RETURN;
+}
+
+/**
+ * @fn const char *CTIitemName(node *item)
+ *
+ * @brief creates a string containing the module and name of
+ *        the given item. As this function uses an internal
+ *        buffer, the returned string should only be used to
+ *        print one single message.
+ *
+ * @param item a N_fundef, N_objdef or N_typedef
+ *
+ * @return a constant string
+ */
+
+const char *
+formatItemName (namespace_t *ns, char *name)
+{
+    char buffer[MAX_ITEM_NAME_LENGTH + 1];
+    int written;
+
+    DBUG_ENTER ("formatItemName");
+
+    if (ns != NULL) {
+        written = snprintf (buffer, MAX_ITEM_NAME_LENGTH, "%s::%s", NSgetName (ns), name);
+    } else {
+        written = snprintf (buffer, MAX_ITEM_NAME_LENGTH, "%s", name);
+    }
+
+    DBUG_ASSERT ((written < MAX_ITEM_NAME_LENGTH), "buffer in formatItemName too small");
+
+    DBUG_RETURN (buffer);
+}
+
+const char *
+CTIitemName (node *item)
+{
+    const char *ret;
+
+    DBUG_ENTER ("CTIitemName");
+
+    switch (NODE_TYPE (item)) {
+    case N_fundef:
+        ret = formatItemName (FUNDEF_NS (item), FUNDEF_NAME (item));
+        break;
+    case N_typedef:
+        ret = formatItemName (TYPEDEF_NS (item), TYPEDEF_NAME (item));
+        break;
+    case N_objdef:
+        ret = formatItemName (OBJDEF_NS (item), OBJDEF_NAME (item));
+        break;
+    default:
+        DBUG_ASSERT (0, "Wrong item in call of function 'CTIitemName`");
+        ret = NULL;
+    }
+
+    DBUG_RETURN (ret);
 }

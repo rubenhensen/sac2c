@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.77  2005/07/15 15:57:02  sah
+ * introduced namespaces
+ *
  * Revision 3.76  2005/06/14 09:55:10  sbs
  * support for bottom types integrated.
  *
@@ -126,6 +129,7 @@
 #include "specialize.h"
 #include "constants.h"
 #include "deserialize.h"
+#include "namespaces.h"
 #include "resolvesymboltypes.h"
 
 /*
@@ -343,8 +347,7 @@ TypeCheckFunctionBody (node *fundef, info *arg_info)
 
     FUNDEF_TCSTAT (fundef) = NTC_checking;
 
-    DBUG_PRINT ("NTC", ("type checking function \"%s:%s\" with", FUNDEF_MOD (fundef),
-                        FUNDEF_NAME (fundef)));
+    DBUG_PRINT ("NTC", ("type checking function \"%s:%s\" with", CTIitemName (fundef)));
 
     /**
      * First, we have to ensure that ALL return types are in fact type vars.
@@ -472,8 +475,8 @@ TypeCheckFunctionBody (node *fundef, info *arg_info)
     INFO_NTC_TYPE (arg_info) = NULL;
 
     DBUG_EXECUTE ("NTC", tmp_str = TYtype2String (spec_type, FALSE, 0););
-    DBUG_PRINT ("NTC", ("final return type of \"%s:%s\" is: %s", FUNDEF_MOD (fundef),
-                        FUNDEF_NAME (fundef), tmp_str));
+    DBUG_PRINT ("NTC",
+                ("final return type of \"%s:%s\" is: %s", CTIitemName (fundef), tmp_str));
     DBUG_EXECUTE ("NTC", tmp_str = ILIBfree (tmp_str););
 
     /* now the functions is entirely typechecked, so we mark it as checked */
@@ -723,9 +726,9 @@ NTCcheckUdtAndSetBaseType (usertype udt, int *visited)
         base = UTgetTypedef (udt);
         if (!(TYisScalar (base) || TYisAKS (base))) {
             CTIerrorLine (global.linenum,
-                          "Typedef of %s:%s is illegal; should be either"
+                          "Typedef of %s::%s is illegal; should be either"
                           " scalar type or array type of fixed shape",
-                          UTgetMod (udt), UTgetName (udt));
+                          NSgetName (UTgetNamespace (udt)), UTgetName (udt));
         } else {
             /*
              * Here, we know that we are either dealing with
@@ -735,11 +738,13 @@ NTCcheckUdtAndSetBaseType (usertype udt, int *visited)
              */
             if (TYisSymb (base) || TYisAKSSymb (base)) {
                 base_elem = (TYisSymb (base) ? base : TYgetScalar (base));
-                inner_udt = UTfindUserType (TYgetName (base_elem), TYgetMod (base_elem));
+                inner_udt
+                  = UTfindUserType (TYgetName (base_elem), TYgetNamespace (base_elem));
                 if (inner_udt == UT_NOT_DEFINED) {
                     CTIerrorLine (global.linenum,
-                                  "Typedef of %s:%s is illegal; type %s:%s unknown",
-                                  UTgetMod (udt), UTgetName (udt), TYgetMod (base_elem),
+                                  "Typedef of %s::%s is illegal; type %s::%s unknown",
+                                  NSgetName (UTgetNamespace (udt)), UTgetName (udt),
+                                  NSgetName (TYgetNamespace (base_elem)),
                                   TYgetName (base_elem));
                 } else {
                     /*
@@ -772,7 +777,7 @@ NTCcheckUdtAndSetBaseType (usertype udt, int *visited)
                      */
                     if (visited[inner_udt] == 1) {
                         CTIerrorLine (global.linenum, "Type %s:%s recursively defined",
-                                      UTgetMod (udt), UTgetName (udt));
+                                      NSgetName (UTgetNamespace (udt)), UTgetName (udt));
                     } else {
                         visited[udt] = 1;
                         inner_base = NTCcheckUdtAndSetBaseType (inner_udt, visited);
@@ -822,7 +827,7 @@ NTCtypedef (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("NTCtypedef");
 
-    udt = UTfindUserType (TYPEDEF_NAME (arg_node), TYPEDEF_MOD (arg_node));
+    udt = UTfindUserType (TYPEDEF_NAME (arg_node), TYPEDEF_NS (arg_node));
 
     if (TYPEDEF_ISLOCAL (arg_node)) {
         base = NTCcheckUdtAndSetBaseType (udt, NULL);
@@ -1360,8 +1365,9 @@ NTCap (node *arg_node, info *arg_info)
     wrapper = AP_FUNDEF (arg_node);
     old_info_chn = global.act_info_chn;
     global.act_info_chn
-      = TEmakeInfo (global.linenum, "udf", FUNDEF_MOD (wrapper), FUNDEF_NAME (wrapper),
-                    wrapper, INFO_NTC_LAST_ASSIGN (arg_info), NULL, global.act_info_chn);
+      = TEmakeInfo (global.linenum, "udf", NSgetName (FUNDEF_NS (wrapper)),
+                    FUNDEF_NAME (wrapper), wrapper, INFO_NTC_LAST_ASSIGN (arg_info), NULL,
+                    global.act_info_chn);
     DBUG_PRINT ("TEINFO",
                 ("TE info %p created for udf ap %p", global.act_info_chn, arg_node));
     res = NTCCTcomputeType (NTCCTudf, global.act_info_chn, args);
@@ -2086,7 +2092,7 @@ NTCfold (node *arg_node, info *arg_info)
 
         args = TYmakeProductType (2, acc, elems);
         wrapper = FOLD_FUNDEF (arg_node);
-        info = TEmakeInfo (global.linenum, "fold fun", FUNDEF_MOD (wrapper),
+        info = TEmakeInfo (global.linenum, "fold fun", NSgetName (FUNDEF_NS (wrapper)),
                            FUNDEF_NAME (wrapper), wrapper,
                            INFO_NTC_LAST_ASSIGN (arg_info), NULL, NULL);
         res = NTCCTcomputeType (NTCCTudf, info, args);

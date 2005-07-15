@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2005/07/15 15:57:02  sah
+ * introduced namespaces
+ *
  * Revision 3.13  2004/11/25 15:36:04  khf
  * removed IS_REFERENCED, IS_GLOBAl
  *
@@ -112,6 +115,7 @@
 #include "internal_lib.h"
 #include "LookUpTable.h"
 #include "InferDFMs.h"
+#include "namespaces.h"
 #include "concurrent_info.h"
 
 /******************************************************************************
@@ -339,8 +343,15 @@ SPMDLspmd (node *arg_node, info *arg_info)
     body = DUPdoDupTreeLut (SPMD_REGION (arg_node), lut);
     BLOCK_VARDEC (body) = fvardecs;
 
-    new_fundef = TBmakeFundef (ILIBtmpVarName (FUNDEF_NAME (fundef)), "_SPMD",
-                               MakeRetsFromTypes (rettypes), fargs, body, NULL);
+    /*
+     * TODO: sah
+     *
+     * SPMD functions should go to a view _SPMD,
+     * not a module!
+     */
+    new_fundef
+      = TBmakeFundef (ILIBtmpVarName (FUNDEF_NAME (fundef)), NSgetNamespace ("_SPMD"),
+                      MakeRetsFromTypes (rettypes), fargs, body, NULL);
 
     FUNDEF_TYPES (new_fundef) = rettypes;
 

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2005/07/15 15:57:02  sah
+ * introduced namespaces
+ *
  * Revision 1.3  2005/05/26 18:26:04  sah
  * import statements are now removed after
  * processing
@@ -35,7 +38,6 @@ struct INFO {
     const char *current;
 };
 
-#define INFO_IMP_MODULE(n) ((n)->module)
 #define INFO_IMP_CURRENT(n) ((n)->current)
 
 static info *
@@ -47,7 +49,6 @@ MakeInfo ()
 
     result = (info *)ILIBmalloc (sizeof (info));
 
-    INFO_IMP_MODULE (result) = NULL;
     INFO_IMP_CURRENT (result) = NULL;
 
     DBUG_RETURN (result);
@@ -71,10 +72,6 @@ IMPimport (node *arg_node, info *arg_info)
     DBUG_ENTER ("IMPimport");
 
     INFO_IMP_CURRENT (arg_info) = IMPORT_MOD (arg_node);
-
-    MODULE_DEPENDENCIES (INFO_IMP_MODULE (arg_info))
-      = STRSadd (IMPORT_MOD (arg_node), STRS_saclib,
-                 MODULE_DEPENDENCIES (INFO_IMP_MODULE (arg_info)));
 
     if (IMPORT_SYMBOL (arg_node) != NULL) {
         IMPORT_SYMBOL (arg_node) = TRAVdo (IMPORT_SYMBOL (arg_node), arg_info);
@@ -150,11 +147,7 @@ IMPmodule (node *arg_node, info *arg_info)
     if (MODULE_IMPORTS (arg_node) != NULL) {
         DSinitDeserialize (arg_node);
 
-        INFO_IMP_MODULE (arg_info) = arg_node;
-
         MODULE_IMPORTS (arg_node) = TRAVdo (MODULE_IMPORTS (arg_node), arg_info);
-
-        INFO_IMP_MODULE (arg_info) = NULL;
 
         DSfinishDeserialize (arg_node);
     }

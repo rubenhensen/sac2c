@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.10  2005/07/15 15:57:02  sah
+ * introduced namespaces
+ *
  * Revision 3.9  2005/01/11 14:20:44  cg
  * Converted output generation from Error.h to ctinfo.c
  *
@@ -39,6 +42,7 @@
 #include "ctinfo.h"
 #include "free.h"
 #include "internal_lib.h"
+#include "namespaces.h"
 #include "new_types.h"
 #include "user_types.h"
 
@@ -65,7 +69,7 @@
 
 typedef struct UDT_ENTRY {
     char *name;
-    char *mod;
+    namespace_t *mod;
     ntype *type;
     ntype *base;
     int line;
@@ -78,7 +82,7 @@ typedef struct UDT_ENTRY {
  */
 
 #define ENTRY_NAME(e) (e->name)
-#define ENTRY_MOD(e) (e->mod)
+#define ENTRY_NS(e) (e->mod)
 #define ENTRY_DEF(e) (e->type)
 #define ENTRY_BASE(e) (e->base)
 #define ENTRY_LINE(e) (e->line)
@@ -110,8 +114,8 @@ static int udt_no = 0;
 /******************************************************************************
  *
  * function:
- *    usertype UTaddUserType( char *name, char *mod, ntype *type, ntype *base,
- *                            int lineno, node *tdef)
+ *    usertype UTaddUserType( char *name, namespace_t *ns, ntype *type,
+ *                            ntype *base, int lineno, node *tdef)
  *
  * description:
  *   adds a udt to the repository and enlarges it whenever (udt_no % CHUNKSIZE)
@@ -120,7 +124,8 @@ static int udt_no = 0;
  ******************************************************************************/
 
 usertype
-UTaddUserType (char *name, char *mod, ntype *type, ntype *base, int lineno, node *tdef)
+UTaddUserType (char *name, namespace_t *ns, ntype *type, ntype *base, int lineno,
+               node *tdef)
 {
     udt_entry *entry;
     udt_entry **new_rep;
@@ -133,7 +138,7 @@ UTaddUserType (char *name, char *mod, ntype *type, ntype *base, int lineno, node
      */
     entry = (udt_entry *)ILIBmalloc (sizeof (udt_entry));
     ENTRY_NAME (entry) = name;
-    ENTRY_MOD (entry) = mod;
+    ENTRY_NS (entry) = ns;
     ENTRY_DEF (entry) = type;
     ENTRY_BASE (entry) = base;
     ENTRY_LINE (entry) = lineno;
@@ -161,19 +166,19 @@ UTaddUserType (char *name, char *mod, ntype *type, ntype *base, int lineno, node
 /******************************************************************************
  *
  * function:
- *    usertype UTfindUserType( char *name, char *mod)
+ *    usertype UTfindUserType( char *name, namespace_t *ns)
  *
  * description:
- *   looks up the udf mod:name. If it is not within the udt_rep, UT_NOT_DEFINED
+ *   looks up the udf ns::name. If it is not within the udt_rep, UT_NOT_DEFINED
  *   is returned.
- *   if mod is not yet given (i.e. mod == NULL), it is checked wether *:name
+ *   if ns is not yet given (i.e. ns == NULL), it is checked wether *:name
  *   matches more than one entry in udt_rep. If so, an ERROR message is posted
  *   and the most recent entry found is returned.
  *
  ******************************************************************************/
 
 usertype
-UTfindUserType (const char *name, const char *mod)
+UTfindUserType (const char *name, const namespace_t *ns)
 {
     int res, res2;
 
@@ -183,7 +188,7 @@ UTfindUserType (const char *name, const char *mod)
     DBUG_ASSERT ((name != NULL), "UTFindUserType called with NULL name!");
 
     res = udt_no - 1;
-    if (mod == NULL) {
+    if (ns == NULL) {
         while ((res >= 0) && (strcmp (name, ENTRY_NAME (udt_rep[res])) != 0)) {
             res--;
         }
@@ -198,8 +203,8 @@ UTfindUserType (const char *name, const char *mod)
         }
     } else {
         while ((res >= 0)
-               && ((strcmp (name, ENTRY_NAME (udt_rep[res])) != 0)
-                   || (strcmp (mod, ENTRY_MOD (udt_rep[res])) != 0))) {
+               && ((!ILIBstringCompare (name, ENTRY_NAME (udt_rep[res])))
+                   || (!NSequals (ns, ENTRY_NS (udt_rep[res]))))) {
             res--;
         }
     }
@@ -228,7 +233,7 @@ UTgetNumberOfUserTypes ()
 /******************************************************************************
  *
  * function:
- *    char *UTgetMod( usertype udt)
+ *    char *UTgetNamespace( usertype udt)
  *    char *UTgetName( usertype udt)
  *    ntype *UTgetTypedef( usertype udt)
  *    ntype *UTgetBaseType( usertype udt)
@@ -241,13 +246,13 @@ UTgetNumberOfUserTypes ()
  *
  ******************************************************************************/
 
-char *
-UTgetMod (usertype udt)
+const namespace_t *
+UTgetNamespace (usertype udt)
 {
-    DBUG_ENTER ("UTgetMod");
-    DBUG_ASSERT ((udt < udt_no), "UTgetMod called with illegal udt!");
+    DBUG_ENTER ("UTgetNamespace");
+    DBUG_ASSERT ((udt < udt_no), "UTgetNamespace called with illegal udt!");
 
-    DBUG_RETURN (ENTRY_MOD (udt_rep[udt]));
+    DBUG_RETURN (ENTRY_NS (udt_rep[udt]));
 }
 
 char *
@@ -341,12 +346,12 @@ UTsetName (usertype udt, const char *name)
 }
 
 void
-UTsetMod (usertype udt, const char *mod)
+UTsetNamespace (usertype udt, const namespace_t *ns)
 {
-    DBUG_ENTER ("UTsetMod");
-    DBUG_ASSERT ((udt < udt_no), "UTsetMod called with illegal udt!");
+    DBUG_ENTER ("UTsetNamespace");
+    DBUG_ASSERT ((udt < udt_no), "UTsetNamespace called with illegal udt!");
 
-    ENTRY_MOD (udt_rep[udt]) = ILIBstringCopy (mod);
+    ENTRY_NS (udt_rep[udt]) = NSdupNamespace (ns);
     DBUG_VOID_RETURN;
 }
 
@@ -372,8 +377,9 @@ UTprintRepository (FILE *outfile)
     fprintf (outfile, "\n %4.4s " UTPRINT_FORMAT " %6s | %9s\n", "udt:", "module:",
              "name:", "defining type:", "base type:", "line:", "def node:");
     for (i = 0; i < udt_no; i++) {
-        fprintf (outfile, " %4d " UTPRINT_FORMAT " %6d |  %8p\n", i, UTgetMod (i),
-                 UTgetName (i), TYtype2String (UTgetTypedef (i), TRUE, 0),
+        fprintf (outfile, " %4d " UTPRINT_FORMAT " %6d |  %8p\n", i,
+                 NSgetName (UTgetNamespace (i)), UTgetName (i),
+                 TYtype2String (UTgetTypedef (i), TRUE, 0),
                  TYtype2String (UTgetBaseType (i), TRUE, 0), UTgetLine (i),
                  UTgetTdef (i));
     }

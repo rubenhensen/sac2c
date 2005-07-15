@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.53  2005/07/15 15:57:02  sah
+ * introduced namespaces
+ *
  * Revision 3.52  2005/07/03 17:03:03  ktr
  * moved application of other traversals to code simplification
  *
@@ -116,6 +119,7 @@
 #include "handle_mops.h"
 #include "while2do.h"
 #include "handle_condexpr.h"
+#include "namespaces.h"
 
 #include "flatten.h"
 
@@ -545,7 +549,7 @@ FltnMgwith (node *wloop)
          */
         if (NODE_TYPE (WITH_WITHOP (wloop)) == N_fold) {
             WITH_WITHOP (wloop) = TBmakeFold (first_wl);
-            FOLD_MOD (WITH_WITHOP (wloop)) = ILIBstringCopy (FOLD_MOD (withop));
+            FOLD_NS (WITH_WITHOP (wloop)) = NSdupNamespace (FOLD_NS (withop));
             FOLD_FUN (WITH_WITHOP (wloop)) = ILIBstringCopy (FOLD_FUN (withop));
             FOLD_PRF (WITH_WITHOP (wloop)) = FOLD_PRF (withop);
         } else {

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2005/07/15 15:57:02  sah
+ * introduced namespaces
+ *
  * Revision 1.12  2005/06/30 16:39:51  ktr
  * Stripped out stuff belonging into AUD SCL Distinction
  *
@@ -389,9 +392,8 @@ TCPap (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("TCPap");
 
-    DBUG_PRINT ("TCP",
-                ("analyzing application of %s:%s ......",
-                 FUNDEF_MOD (AP_FUNDEF (arg_node)), FUNDEF_NAME (AP_FUNDEF (arg_node))));
+    DBUG_PRINT ("TCP", ("analyzing application of %s::%s ......",
+                        NSgetName (AP_NS (arg_node)), AP_NAME (arg_node)));
 
     fun_argtab = FUNDEF_ARGTAB (AP_FUNDEF (arg_node));
     ap_argtab = AP_ARGTAB (arg_node);

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.14  2005/07/15 15:57:02  sah
+ * introduced namespaces
+ *
  * Revision 1.13  2005/06/29 18:31:18  sah
  * function names of serializers do not depend on return type
  * and are much more concise now
@@ -59,8 +62,10 @@
 #include "tree_basic.h"
 #include "filemgr.h"
 #include "convert.h"
+#include "namespaces.h"
 #include "user_types.h"
 #include "new_types.h"
+
 #include <string.h>
 
 #define MAX_FUN_NAME_LEN 255
@@ -176,7 +181,7 @@ GenerateSerFileVersionInfo (node *module, FILE *file)
     fprintf (file,
              "const char *__%s_VERSION() {\n"
              "  return( \"" _SAC_AST_VERSION_ "\"); \n}\n\n",
-             MODULE_NAME (module));
+             NSgetName (MODULE_NAMESPACE (module)));
 
     DBUG_VOID_RETURN;
 }
@@ -197,7 +202,7 @@ GenerateSerSymbolTableHead (node *module, FILE *file)
 {
     DBUG_ENTER ("GenerateSerSymbolTableHead");
 
-    fprintf (file, "void *__%s__SYMTAB()\n", MODULE_NAME (module));
+    fprintf (file, "void *__%s__SYMTAB()\n", NSgetName (MODULE_NAMESPACE (module)));
 
     fprintf (file, "{\nvoid *result;\n");
     fprintf (file, "result = STinit();\n");
@@ -323,14 +328,14 @@ AppendSerFunType (char *funname, ntype *type)
     } else if (TYisUser (scalar)) {
         usertype user = TYgetUserType (scalar);
 
-        written = snprintf (pos, MAX_FUN_NAME_LEN - size, "%s__%s", UTgetMod (user),
-                            UTgetName (user));
+        written = snprintf (pos, MAX_FUN_NAME_LEN - size, "%s__%s",
+                            NSgetName (UTgetNamespace (user)), UTgetName (user));
 
         pos += written;
         size += written;
     } else if (TYisSymb (scalar)) {
-        written = snprintf (pos, MAX_FUN_NAME_LEN - size, "%s__%s", TYgetMod (scalar),
-                            TYgetName (scalar));
+        written = snprintf (pos, MAX_FUN_NAME_LEN - size, "%s__%s",
+                            NSgetName (TYgetNamespace (scalar)), TYgetName (scalar));
 
         pos += written;
         size += written;
@@ -374,26 +379,27 @@ SERgenerateSerFunName (stentrytype_t type, node *node)
     switch (type) {
     case SET_funbody:
     case SET_wrapperbody:
-        snprintf (result, MAX_FUN_NAME_LEN, "SBDY_%s_%s_%d_", FUNDEF_MOD (node),
-                  FUNDEF_NAME (node), FUNDEF_ISWRAPPERFUN (node));
+        snprintf (result, MAX_FUN_NAME_LEN, "SBDY_%s_%s_%d_",
+                  NSgetName (FUNDEF_NS (node)), FUNDEF_NAME (node),
+                  FUNDEF_ISWRAPPERFUN (node));
 
         AppendSerFunTypeSignature (result, node);
 
         break;
     case SET_funhead:
     case SET_wrapperhead:
-        snprintf (result, MAX_FUN_NAME_LEN, "SHD_%s_%s_%d_", FUNDEF_MOD (node),
+        snprintf (result, MAX_FUN_NAME_LEN, "SHD_%s_%s_%d_", NSgetName (FUNDEF_NS (node)),
                   FUNDEF_NAME (node), FUNDEF_ISWRAPPERFUN (node));
 
         AppendSerFunTypeSignature (result, node);
 
         break;
     case SET_typedef:
-        snprintf (result, MAX_FUN_NAME_LEN, "STD_%s_%s_", TYPEDEF_MOD (node),
+        snprintf (result, MAX_FUN_NAME_LEN, "STD_%s_%s_", NSgetName (TYPEDEF_NS (node)),
                   TYPEDEF_NAME (node));
         break;
     case SET_objdef:
-        snprintf (result, MAX_FUN_NAME_LEN, "SOD_%s_%s_", OBJDEF_MOD (node),
+        snprintf (result, MAX_FUN_NAME_LEN, "SOD_%s_%s_", NSgetName (OBJDEF_NS (node)),
                   OBJDEF_NAME (node));
         break;
     default:
@@ -661,21 +667,6 @@ SERdoSerialize (node *module)
     DBUG_RETURN (module);
 }
 
-void
-SERserializeFundefLink (node *fundef, FILE *file)
-{
-    DBUG_ENTER ("SERserializeFundefLink");
-
-    if (fundef == NULL) {
-        fprintf (file, "NULL");
-    } else {
-        fprintf (file, "DSlookupFunction( \"%s\", \"%s\")", FUNDEF_MOD (fundef),
-                 SERgenerateSerFunName (SET_funhead, fundef));
-    }
-
-    DBUG_VOID_RETURN;
-}
-
 node *
 SERfundef (node *arg_node, info *arg_info)
 {
@@ -768,4 +759,15 @@ SERobjdef (node *arg_node, info *arg_info)
     INFO_SER_CURRENT (arg_info) = last;
 
     DBUG_RETURN (arg_node);
+}
+
+void
+SERserializeFundefLink (node *fundef, FILE *file)
+{
+    DBUG_ENTER ("SERserializeFundefLink");
+
+    fprintf (file, "DSlookupFunction( \"%s\", \"%s\")", NSgetModule (FUNDEF_NS (fundef)),
+             SERgenerateSerFunName (SET_funhead, fundef));
+
+    DBUG_VOID_RETURN;
 }

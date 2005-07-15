@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.36  2005/07/15 15:57:02  sah
+ * introduced namespaces
+ *
  * Revision 3.35  2005/04/12 11:06:38  sah
  * added DBUG_PRINT
  *
@@ -245,6 +248,7 @@
 #include "DataFlowMaskUtils.h"
 #include "InferDFMs.h"
 #include "cleanup_decls.h"
+#include "namespaces.h"
 #include "lac2fun.h"
 
 /*
@@ -322,7 +326,7 @@ CreateLacFunName (char *funname, char *suffix)
 /******************************************************************************
  *
  * function:
- *   node *MakeL2fFundef( char *funname, char *modname,
+ *   node *MakeL2fFundef( char *funname, namespace_t *ns,
  *                        node *instr, node *funcall_let,
  *                        DFMmask_t in, DFMmask_t out, DFMmask_t local,
  *                        info *arg_info)
@@ -333,8 +337,8 @@ CreateLacFunName (char *funname, char *suffix)
  ******************************************************************************/
 
 static node *
-MakeL2fFundef (char *funname, char *modname, node *instr, node *funcall_let, dfmask_t *in,
-               dfmask_t *out, dfmask_t *local, info *arg_info)
+MakeL2fFundef (char *funname, namespace_t *ns, node *instr, node *funcall_let,
+               dfmask_t *in, dfmask_t *out, dfmask_t *local, info *arg_info)
 {
     lut_t *lut;
     dfmask_t *tmp_mask;
@@ -435,8 +439,8 @@ MakeL2fFundef (char *funname, char *modname, node *instr, node *funcall_let, dfm
     ret = TBmakeAssign (TBmakeReturn (DFMUdfm2ReturnExprs (out, lut)), NULL);
 
     fundef
-      = TBmakeFundef (ILIBstringCopy (funname), ILIBstringCopy (modname),
-                      DFMUdfm2Rets (out), args, NULL, /* the block is not complete yet */
+      = TBmakeFundef (ILIBstringCopy (funname), NSdupNamespace (ns), DFMUdfm2Rets (out),
+                      args, NULL, /* the block is not complete yet */
                       NULL);
 
     FUNDEF_TYPES (fundef) = DFMUdfm2ReturnTypes (out);
@@ -493,8 +497,8 @@ MakeL2fFundef (char *funname, char *modname, node *instr, node *funcall_let, dfm
 
     lut = LUTremoveLut (lut);
 
-    DBUG_PRINT ("L2F",
-                ("created function '%s:%s'", FUNDEF_MOD (fundef), FUNDEF_NAME (fundef)));
+    DBUG_PRINT ("L2F", ("created function '%s:%s'", NSgetName (FUNDEF_NS (fundef)),
+                        FUNDEF_NAME (fundef)));
 
     DBUG_RETURN (fundef);
 }
@@ -539,7 +543,8 @@ static node *
 DoLifting (char *suffix, dfmask_t *in, dfmask_t *out, dfmask_t *local, node *arg_node,
            info *arg_info)
 {
-    char *funname, *modname;
+    char *funname;
+    namespace_t *funns;
     node *fundef, *let;
 
     DBUG_ENTER ("DoLifting");
@@ -548,14 +553,16 @@ DoLifting (char *suffix, dfmask_t *in, dfmask_t *out, dfmask_t *local, node *arg
      * build call of the new LaC function
      */
     funname = CreateLacFunName (FUNDEF_NAME (INFO_L2F_FUNDEF (arg_info)), suffix);
-    modname = ILIBstringCopy (FUNDEF_MOD (INFO_L2F_FUNDEF (arg_info)));
-    DBUG_ASSERT ((modname != NULL), "modul name for LAC function is NULL!");
+    funns = FUNDEF_NS (INFO_L2F_FUNDEF (arg_info));
+
+    DBUG_ASSERT ((funns != NULL), "modul name for LAC function is NULL!");
+
     let = MakeL2fFunLet (NULL, in, out);
 
     /*
      * build new LaC function
      */
-    fundef = MakeL2fFundef (funname, modname, arg_node, let, in, out, local, arg_info);
+    fundef = MakeL2fFundef (funname, funns, arg_node, let, in, out, local, arg_info);
 
     DBUG_ASSERT ((NODE_TYPE (LET_EXPR (let)) == N_ap), "N_ap expected!");
     AP_FUNDEF (LET_EXPR (let)) = fundef;

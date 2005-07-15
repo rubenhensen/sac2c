@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.31  2005/07/15 15:57:02  sah
+ * introduced namespaces
+ *
  * Revision 3.30  2005/06/15 10:24:30  sbs
  * call history added to error messages.
  * TYextendBottomError added.
@@ -251,15 +254,15 @@ typeconstr TYgetConstr (ntype *type);
  */
 extern ntype *TYmakeSimpleType (simpletype base);
 extern ntype *TYmakeUserType (usertype base);
-extern ntype *TYmakeSymbType (char *name, char *mod);
+extern ntype *TYmakeSymbType (char *name, namespace_t *mod);
 
 extern ntype *TYsetSimpleType (ntype *simple, simpletype base);
 
 extern simpletype TYgetSimpleType (ntype *simple);
 extern usertype TYgetUserType (ntype *user);
 extern char *TYgetName (ntype *symb);
-extern char *TYgetMod (ntype *symb);
-extern ntype *TYsetMod (ntype *symb, char *mod);
+extern const namespace_t *TYgetNamespace (ntype *symb);
+extern ntype *TYsetNamespace (ntype *symb, namespace_t *ns);
 
 /*
  * Array Types: AKS / AKD / AUDGZ / AUD

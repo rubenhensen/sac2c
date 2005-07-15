@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.193  2005/07/15 15:57:02  sah
+ * introduced namespaces
+ *
  * Revision 3.192  2005/06/23 09:02:44  sah
  * added TCids2ExprsNt
  *
@@ -538,16 +541,6 @@ extern node *TCappendTypedef (node *tdef_chain, node *tdef);
 #define OBJDEF_EFFECT(n)                                                                 \
     (OBJDEF_PRAGMA (n) == NULL ? NULL : PRAGMA_EFFECT (OBJDEF_PRAGMA (n)))
 
-/*
- *
- *  functionname  : TCsearchObjdef
- *  arguments     : 1) global object name to be searched for
- *                  2) module name of global object to be searched for
- *                  3) list of object implementations (objdef nodes)
- *  description   : looks for a certain objdef in list of objdefs
- *
- */
-
 extern node *TCsearchObjdef (const char *name, char *mod, node *implementations);
 
 /*
@@ -597,23 +590,6 @@ extern node *TCappendObjdef (node *objdef_chain, node *objdef);
 #define FUNDEF_TNAME(n) (TYPES_NAME (FUNDEF_TYPES (n)))
 #define FUNDEF_TMOD(n) (TYPES_MOD (FUNDEF_TYPES (n)))
 #define FUNDEF_TDEF(n) (TYPES_TDEF (FUNDEF_TYPES (n)))
-
-/*
- *  The following compound access macros are useful whenever a fundef
- *  node is used to represent a function declaration rather than a
- *  function definition.
- */
-
-/*
- * Ugly macros, don't use
- */
-#define FUNDEC_TYPES(n) (FUNDEF_TYPES (FUNDEC_DEF (n)))
-#define FUNDEC_BASETYPE(n) (FUNDEF_BASETYPE (FUNDEC_DEF (n)))
-#define FUNDEC_DIM(n) (FUNDEF_DIM (FUNDEC_DEF (n)))
-#define FUNDEC_SHAPE(n, x) (FUNDEF_SHAPE (FUNDEC_DEF (n), x))
-#define FUNDEC_SHPSEG(n) (FUNDEF_SHPSEG (FUNDEC_DEF (n)))
-#define FUNDEC_TNAME(n) (FUNDEF_NAME (FUNDEC_DEF (n)))
-#define FUNDEC_TMOD(n) (FUNDEF_MOD (FUNDEC_DEF (n)))
 
 extern node *TCfindVardec_Name (char *name, node *fundef);
 extern node *TCfindVardec_Varno (int varno, node *fundef);
@@ -1083,7 +1059,6 @@ extern node *TCgetNthExpr (int n, node *exprs);
  */
 
 #define LET_NAME(n) (IDS_NAME (LET_IDS (n)))
-#define LET_MOD(n) (IDS_MOD (LET_IDS (n)))
 #define LET_STATUS(n) (IDS_STATUS (LET_IDS (n)))
 #define LET_BASETYPE(n) (TYPES_BASETYPE (LET_TYPE (n)))
 #define LET_USE(n) (IDS_USE (LET_IDS (n)))
@@ -1338,10 +1313,10 @@ extern node *TCmakePrf3 (prf prf, node *arg1, node *arg2, node *arg3);
  */
 
 #define AP_NAME(n) FUNDEF_NAME (AP_FUNDEF (n))
-#define AP_MOD(n) FUNDEF_MOD (AP_FUNDEF (n))
+#define AP_NS(n) FUNDEF_NS (AP_FUNDEF (n))
 
 #define SPAP_NAME(n) SPID_NAME (SPAP_ID (n))
-#define SPAP_MOD(n) SPID_MOD (SPAP_ID (n))
+#define SPAP_NS(n) SPID_NS (SPAP_ID (n))
 
 #define AP_EXPRS1(n) AP_ARGS (n)
 #define AP_EXPRS2(n) EXPRS_EXPRS2 (AP_ARGS (n))
@@ -1369,11 +1344,12 @@ extern node *TCmakeAp2 (node *fundef, node *arg1, node *arg2);
 
 extern node *TCmakeAp3 (node *fundef, node *arg1, node *arg2, node *arg3);
 
-extern node *TCmakeSpap1 (char *mod, char *name, node *arg1);
+extern node *TCmakeSpap1 (namespace_t *ns, char *name, node *arg1);
 
-extern node *TCmakeSpap2 (char *mod, char *name, node *arg1, node *arg2);
+extern node *TCmakeSpap2 (namespace_t *ns, char *name, node *arg1, node *arg2);
 
-extern node *TCmakeSpap3 (char *mod, char *name, node *arg1, node *arg2, node *arg3);
+extern node *TCmakeSpap3 (namespace_t *ns, char *name, node *arg1, node *arg2,
+                          node *arg3);
 
 /*--------------------------------------------------------------------------*/
 

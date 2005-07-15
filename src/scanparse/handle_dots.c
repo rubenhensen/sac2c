@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.50  2005/07/15 15:57:02  sah
+ * introduced namespaces
+ *
  * Revision 1.49  2005/07/06 12:50:39  sah
  * rewrote default value creation
  *
@@ -53,6 +56,7 @@
 #include "DupTree.h"
 #include "internal_lib.h"
 #include "tree_basic.h"
+#include "namespaces.h"
 
 #include <strings.h>
 
@@ -955,11 +959,11 @@ BuildDefaultWithloop (node *array, node *shape)
                                 TBmakeGenerator (F_le, F_le, TBmakeDot (1), TBmakeDot (1),
                                                  NULL, NULL)),
                     TBmakeCode (MAKE_EMPTY_BLOCK (),
-                                TBmakeExprs (TCmakeSpap1 (ILIBstringCopy ("sac2c"),
+                                TBmakeExprs (TCmakeSpap1 (NSgetNamespace ("sac2c"),
                                                           ILIBstringCopy ("zero"),
                                                           DUPdoDupTree (array)),
                                              NULL)),
-                    TBmakeGenarray (shape, TCmakeSpap1 (ILIBstringCopy ("sac2c"),
+                    TBmakeGenarray (shape, TCmakeSpap1 (NSgetNamespace ("sac2c"),
                                                         ILIBstringCopy ("zero"),
                                                         DUPdoDupTree (array))));
 
@@ -1015,7 +1019,7 @@ BuildSelectionDefault (node *array, dotinfo *info)
 
         result = TBmakeExprs (DUPdoDupTree (array), NULL);
         result
-          = TBmakeSpap (TBmakeSpid (ILIBstringCopy ("sac2c"), ILIBstringCopy ("zero")),
+          = TBmakeSpap (TBmakeSpid (NSgetNamespace ("sac2c"), ILIBstringCopy ("zero")),
                         result);
     }
 
@@ -1888,7 +1892,7 @@ HDspap (node *arg_node, info *arg_info)
 
     if ((INFO_HD_TRAVSTATE (arg_info) == HD_sel)
         && (ILIBstringCompare (SPAP_NAME (arg_node), "sel"))
-        && (SPAP_MOD (arg_node) == NULL)
+        && (SPAP_NS (arg_node) == NULL)
         && (NODE_TYPE (SPAP_ARG1 (arg_node)) == N_array)) {
         dotinfo *info = MakeDotInfo (ARRAY_AELEMS (SPAP_ARG1 (arg_node)));
 
@@ -1917,7 +1921,7 @@ HDspap (node *arg_node, info *arg_info)
 
     if ((INFO_HD_TRAVSTATE (arg_info) == HD_scan)
         && (ILIBstringCompare (SPAP_NAME (arg_node), "sel"))
-        && (SPAP_MOD (arg_node) == NULL)) {
+        && (SPAP_NS (arg_node) == NULL)) {
         if (NODE_TYPE (SPAP_ARG1 (arg_node)) == N_array) {
             ScanVector (ARRAY_AELEMS (SPAP_ARG1 (arg_node)), &SPAP_ARG2 (arg_node),
                         arg_info);
@@ -1934,7 +1938,7 @@ HDspap (node *arg_node, info *arg_info)
      */
     if ((INFO_HD_TRAVSTATE (arg_info) == HD_default)
         && (ILIBstringCompare (SPAP_NAME (arg_node), "sel"))
-        && (SPAP_MOD (arg_node) == NULL)) {
+        && (SPAP_NS (arg_node) == NULL)) {
         if (NODE_TYPE (SPAP_ARG1 (arg_node)) == N_array) {
             /*
              * found a selection using a selection

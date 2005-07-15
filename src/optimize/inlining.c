@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2005/07/15 15:57:02  sah
+ * introduced namespaces
+ *
  * Revision 1.6  2005/05/30 13:09:13  cg
  * Inlining into wrapper functions is now prevented.
  * Inlining is made ready to be applied repeatedly in
@@ -63,6 +66,7 @@
 #include "dbug.h"
 #include "traverse.h"
 #include "free.h"
+#include "ctinfo.h" /* for CTIitemName */
 #include "internal_lib.h"
 #include "prepare_inlining.h"
 
@@ -181,8 +185,7 @@ INLfundef (node *arg_node, info *arg_info)
         INFO_FUNDEF (arg_info) = arg_node;
         FUNDEF_INLINECOUNTER (arg_node) += 1;
 
-        DBUG_PRINT ("INL", ("Traversing body of %s:%s", FUNDEF_MOD (arg_node),
-                            FUNDEF_NAME (arg_node)));
+        DBUG_PRINT ("INL", ("Traversing body of %s", CTIitemName (arg_node)));
 
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 
@@ -335,8 +338,7 @@ INLap (node *arg_node, info *arg_info)
         if (FUNDEF_ISINLINE (AP_FUNDEF (arg_node))
             && FUNDEF_ISINLINECOMPLETED (AP_FUNDEF (arg_node))) {
             DBUG_PRINT ("INL",
-                        ("Inline preparing %s:%s", FUNDEF_MOD (AP_FUNDEF (arg_node)),
-                         FUNDEF_NAME (AP_FUNDEF (arg_node))));
+                        ("Inline preparing %s", CTIitemName (AP_FUNDEF (arg_node))));
 
             INFO_CODE (arg_info)
               = PINLdoPrepareInlining (&INFO_VARDECS (arg_info), AP_FUNDEF (arg_node),

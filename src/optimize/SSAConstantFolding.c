@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.88  2005/07/15 15:57:02  sah
+ * introduced namespaces
+ *
  * Revision 1.87  2005/05/13 16:46:36  ktr
  * some code brushing
  *
@@ -298,6 +301,7 @@
 #include "ctinfo.h"
 #include "optimize.h"
 #include "compare_tree.h"
+#include "namespaces.h"
 #include "SSAConstantFolding.h"
 
 /*
@@ -394,17 +398,17 @@ FreeInfo (info *info)
 /* structural constant (SCO) should be integrated in constants.[ch] in future */
 /* special constant version used for structural constants */
 struct STRUCT_CONSTANT {
-    simpletype simpletype; /* basetype of struct constant */
-    char *name;            /* only used for T_user !! */
-    char *name_mod;        /* name of modul belonging to 'name' */
-    shape *shape;          /* shape of struct constant */
-    constant *hidden_co;   /* pointer to constant of pointers */
+    simpletype simpletype;      /* basetype of struct constant */
+    char *name;                 /* only used for T_user !! */
+    const namespace_t *name_ns; /* namespace belonging to 'name' */
+    shape *shape;               /* shape of struct constant */
+    constant *hidden_co;        /* pointer to constant of pointers */
 };
 
 /* access macros for structural constant type */
 #define SCO_BASETYPE(n) (n->simpletype)
 #define SCO_NAME(n) (n->name)
-#define SCO_MOD(n) (n->name_mod)
+#define SCO_NS(n) (n->name_ns)
 #define SCO_SHAPE(n) (n->shape)
 #define SCO_HIDDENCO(n) (n->hidden_co)
 #define SCO_ELEMDIM(n) (SHgetDim (SCO_SHAPE (n)) - COgetDim (SCO_HIDDENCO (n)))
@@ -578,10 +582,10 @@ CFscoWithidVec2StructConstant (node *expr)
     SCO_BASETYPE (struc_co) = T_int;
     if (TYisUser (vtype)) {
         SCO_NAME (struc_co) = TYgetName (vtype);
-        SCO_MOD (struc_co) = TYgetMod (vtype);
+        SCO_NS (struc_co) = TYgetNamespace (vtype);
     } else {
         SCO_NAME (struc_co) = NULL;
-        SCO_MOD (struc_co) = NULL;
+        SCO_NS (struc_co) = NULL;
     }
     SCO_SHAPE (struc_co) = SHcopyShape (vshape);
 
@@ -670,10 +674,10 @@ CFscoArray2StructConstant (node *expr)
         SCO_BASETYPE (struc_co) = TYgetSimpleType (TYgetScalar (atype));
         if (TYisUser (atype)) {
             SCO_NAME (struc_co) = TYgetName (atype);
-            SCO_MOD (struc_co) = TYgetMod (atype);
+            SCO_NS (struc_co) = TYgetNamespace (atype);
         } else {
             SCO_NAME (struc_co) = NULL;
-            SCO_MOD (struc_co) = NULL;
+            SCO_NS (struc_co) = NULL;
         }
         SCO_SHAPE (struc_co) = realshape;
 
@@ -735,10 +739,10 @@ CFscoScalar2StructConstant (node *expr)
         SCO_BASETYPE (struc_co) = TYgetSimpleType (TYgetScalar (ctype));
         if (TYisUser (ctype)) {
             SCO_NAME (struc_co) = TYgetName (ctype);
-            SCO_MOD (struc_co) = TYgetMod (ctype);
+            SCO_NS (struc_co) = TYgetNamespace (ctype);
         } else {
             SCO_NAME (struc_co) = NULL;
-            SCO_MOD (struc_co) = NULL;
+            SCO_NS (struc_co) = NULL;
         }
         SCO_SHAPE (struc_co) = SHcopyShape (cshape);
         SCO_HIDDENCO (struc_co) = COmakeConstant (T_hidden, cshape, elem);

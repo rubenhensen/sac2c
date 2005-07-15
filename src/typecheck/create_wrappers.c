@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.38  2005/07/15 15:57:02  sah
+ * introduced namespaces
+ *
  * Revision 1.37  2005/06/28 16:26:21  sah
  * fixed a warning message
  *
@@ -132,7 +135,7 @@
 #include "internal_lib.h"
 #include "traverse.h"
 #include "globals.h"
-
+#include "namespaces.h"
 #include "user_types.h"
 #include "new_types.h"
 #include "type_utils.h"
@@ -254,7 +257,7 @@ CRTWRPdoCreateWrappers (node *arg_node)
  ******************************************************************************/
 
 static node *
-FindWrapper (char *mod, char *name, int num_args, int num_rets, lut_t *lut)
+FindWrapper (namespace_t *ns, char *name, int num_args, int num_rets, lut_t *lut)
 {
     bool last_parm_is_dots;
     bool last_res_is_dots;
@@ -265,8 +268,8 @@ FindWrapper (char *mod, char *name, int num_args, int num_rets, lut_t *lut)
 
     DBUG_ENTER ("FindWrapper");
 
-    DBUG_PRINT ("CRTWRP",
-                ("Searching for %s:%s %d args %d rets", mod, name, num_args, num_rets));
+    DBUG_PRINT ("CRTWRP", ("Searching for %s:%s %d args %d rets", NSgetName (ns), name,
+                           num_args, num_rets));
 
     /* initial search for wrapper in LUT */
     wrapper_p = (node **)LUTsearchInLutS (lut, name);
@@ -281,7 +284,7 @@ FindWrapper (char *mod, char *name, int num_args, int num_rets, lut_t *lut)
                                num_parms, (last_res_is_dots ? ">=" : ""), num_res));
         if (((num_res == num_rets) || (last_res_is_dots && (num_res <= num_rets)))
             && ((num_parms == num_args) || (last_parm_is_dots && (num_parms <= num_args)))
-            && ILIBstringCompare (FUNDEF_MOD (wrapper), mod)) {
+            && NSequals (FUNDEF_NS (wrapper), ns)) {
             found = TRUE;
         } else {
             /* search for next wrapper in LUT */
@@ -343,8 +346,8 @@ CreateWrapperFor (node *fundef, info *info)
 
     DBUG_ENTER ("CreateWrapperFor");
     DBUG_PRINT ("CRTWRP",
-                ("Creating wrapper for %s:%s %s%d args %d rets", FUNDEF_MOD (fundef),
-                 FUNDEF_NAME (fundef), (FUNDEF_HASDOTARGS (fundef) ? ">=" : ""),
+                ("Creating wrapper for %s %s%d args %d rets", CTIitemName (fundef),
+                 (FUNDEF_HASDOTARGS (fundef) ? ">=" : ""),
                  (FUNDEF_HASDOTARGS (fundef) ? TCcountArgs (FUNDEF_ARGS (fundef)) - 1
                                              : TCcountArgs (FUNDEF_ARGS (fundef))),
                  TCcountRets (FUNDEF_RETS (fundef))));
@@ -385,8 +388,9 @@ CreateWrapperFor (node *fundef, info *info)
          * might come from another module, the created
          * wrapper has to be local!
          */
-        FUNDEF_MOD (wrapper) = ILIBfree (FUNDEF_MOD (wrapper));
-        FUNDEF_MOD (wrapper) = ILIBstringCopy (MODULE_NAME (INFO_CRTWRP_MODULE (info)));
+        FUNDEF_NS (wrapper) = NSfreeNamespace (FUNDEF_NS (wrapper));
+        FUNDEF_NS (wrapper)
+          = NSdupNamespace (MODULE_NAMESPACE (INFO_CRTWRP_MODULE (info)));
     }
 
     /*
@@ -536,8 +540,8 @@ CRTWRPfundef (node *arg_node, info *arg_info)
     num_args = TCcountArgs (FUNDEF_ARGS (arg_node));
     num_rets = TCcountRets (FUNDEF_RETS (arg_node));
 
-    DBUG_PRINT ("CRTWRP", ("----- Processing function %s:%s: -----",
-                           FUNDEF_MOD (arg_node), FUNDEF_NAME (arg_node)));
+    DBUG_PRINT ("CRTWRP",
+                ("----- Processing function %s: -----", CTIitemName (arg_node)));
 
     /**
      * we need to include the following functions into wrappers:
@@ -559,9 +563,8 @@ CRTWRPfundef (node *arg_node, info *arg_info)
          * its the dual to SplitWrappers!
          */
         if (FUNDEF_ISWRAPPERFUN (arg_node)) {
-            wrapper
-              = FindWrapper (FUNDEF_MOD (arg_node), FUNDEF_NAME (arg_node), num_args,
-                             num_rets, INFO_CRTWRP_WRAPPERFUNS (arg_info));
+            wrapper = FindWrapper (FUNDEF_NS (arg_node), FUNDEF_NAME (arg_node), num_args,
+                                   num_rets, INFO_CRTWRP_WRAPPERFUNS (arg_info));
             if (wrapper == NULL) {
                 /**
                  * There is no wrapper for this function yet.
@@ -585,7 +588,7 @@ CRTWRPfundef (node *arg_node, info *arg_info)
         /**
          * ISLOCAL or WASIMPORTED fundef !
          */
-        wrapper = FindWrapper (MODULE_NAME (INFO_CRTWRP_MODULE (arg_info)),
+        wrapper = FindWrapper (MODULE_NAMESPACE (INFO_CRTWRP_MODULE (arg_info)),
                                FUNDEF_NAME (arg_node), num_args, num_rets,
                                INFO_CRTWRP_WRAPPERFUNS (arg_info));
         if (wrapper == NULL) {
@@ -597,12 +600,12 @@ CRTWRPfundef (node *arg_node, info *arg_info)
             if ((dot_args != FUNDEF_HASDOTARGS (wrapper))
                 || (dot_rets != FUNDEF_HASDOTRETS (wrapper))) {
                 CTIabortLine (global.linenum,
-                              "Trying to overload function \"%s:%s\" that expects %s %d "
+                              "Trying to overload function \"%s\" that expects %s %d "
                               "argument(s) "
                               "and %s %d return value(s) with a version that expects %s "
                               "%d argument(s) "
                               "and %s %d return value(s)",
-                              FUNDEF_MOD (arg_node), FUNDEF_NAME (arg_node),
+                              CTIitemName (wrapper),
                               (FUNDEF_HASDOTARGS (wrapper) ? ">=" : ""),
                               TCcountArgs (wrapper),
                               (FUNDEF_HASDOTRETS (wrapper) ? ">=" : ""),
@@ -641,8 +644,8 @@ CRTWRPfundef (node *arg_node, info *arg_info)
     INFO_CRTWRP_EXPRETS (arg_info) = 1;
 
     if (FUNDEF_BODY (arg_node) != NULL) {
-        DBUG_PRINT ("CRTWRP", ("----- Processing body of %s:%s: -----",
-                               FUNDEF_MOD (arg_node), FUNDEF_NAME (arg_node)));
+        DBUG_PRINT ("CRTWRP",
+                    ("----- Processing body of %s: -----", CTIitemName (arg_node)));
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
     }
 
@@ -709,17 +712,18 @@ CRTWRPspap (node *arg_node, info *arg_info)
 
     num_args = TCcountExprs (SPAP_ARGS (arg_node));
     wrapper
-      = FindWrapper (SPAP_MOD (arg_node), SPAP_NAME (arg_node), num_args,
+      = FindWrapper (SPAP_NS (arg_node), SPAP_NAME (arg_node), num_args,
                      INFO_CRTWRP_EXPRETS (arg_info), INFO_CRTWRP_WRAPPERFUNS (arg_info));
 
-    DBUG_PRINT ("CRTWRP", ("Adding backreference to %s:%s as " F_PTR ".",
-                           SPAP_MOD (arg_node), SPAP_NAME (arg_node), wrapper));
+    DBUG_PRINT ("CRTWRP",
+                ("Adding backreference to %s:%s as " F_PTR ".",
+                 NSgetName (SPAP_NS (arg_node)), SPAP_NAME (arg_node), wrapper));
 
     if (wrapper == NULL) {
         CTIabortLine (NODE_LINE (arg_node),
                       "No definition found for a function \"%s:%s\" that expects"
                       " %i argument(s) and yields %i return value(s)",
-                      SPAP_MOD (arg_node), SPAP_NAME (arg_node), num_args,
+                      NSgetName (SPAP_NS (arg_node)), SPAP_NAME (arg_node), num_args,
                       INFO_CRTWRP_EXPRETS (arg_info));
     } else {
         /*
@@ -780,14 +784,14 @@ CRTWRPfold (node *arg_node, info *arg_info)
         FOLD_NEUTRAL (arg_node) = TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
 
         num_args = 2;
-        wrapper = FindWrapper (FOLD_MOD (arg_node), FOLD_FUN (arg_node), 2, 1,
+        wrapper = FindWrapper (FOLD_NS (arg_node), FOLD_FUN (arg_node), 2, 1,
                                INFO_CRTWRP_WRAPPERFUNS (arg_info));
 
         if (wrapper == NULL) {
             CTIabortLine (NODE_LINE (arg_node),
-                          "No definition found for a function \"%s\" that expects"
+                          "No definition found for a function \"%s:%s\" that expects"
                           " 2 arguments and yields 1 return value",
-                          FOLD_FUN (arg_node));
+                          NSgetName (FOLD_NS (arg_node)), FOLD_FUN (arg_node));
         } else {
             FOLD_FUNDEF (arg_node) = wrapper;
         }

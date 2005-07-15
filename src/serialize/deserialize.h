@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2005/07/15 15:57:02  sah
+ * introduced namespaces
+ *
  * Revision 1.7  2005/06/28 16:23:57  sah
  * cleanup
  *
@@ -42,7 +45,7 @@ extern void DSfinishDeserialize (node *module);
 /*
  * functions used by entire compiler
  */
-extern node *DSdispatchFunCall (const char *mod, const char *name, node *args);
+extern node *DSdispatchFunCall (const namespace_t *ns, const char *name, node *args);
 
 /*
  * functions used by module system
@@ -55,7 +58,7 @@ extern void DSimportInstancesByName (const char *name, const char *module);
 /*
  * hooks for deserialization
  */
-extern ntype *DSloadUserType (const char *mod, const char *name);
+extern ntype *DSloadUserType (const char *name, const namespace_t *ns);
 extern node *DSlookupFunction (const char *module, const char *symbol);
 extern node *DSfetchArgAvis (int pos);
 

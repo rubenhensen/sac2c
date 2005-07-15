@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2005/07/15 15:57:02  sah
+ * introduced namespaces
+ *
  * Revision 1.2  2005/07/03 16:59:18  ktr
  * Superfluous variable removed
  *
@@ -34,6 +37,7 @@
 #include "tree_compound.h"
 #include "internal_lib.h"
 #include "free.h"
+#include "ctinfo.h"
 #include "traverse.h"
 #include "NameTuplesUtils.h"
 #include "new_types.h"
@@ -425,9 +429,8 @@ ASDap (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("ASDap");
 
-    DBUG_PRINT ("ASD",
-                ("analyzing application of %s:%s ......",
-                 FUNDEF_MOD (AP_FUNDEF (arg_node)), FUNDEF_NAME (AP_FUNDEF (arg_node))));
+    DBUG_PRINT ("ASD", ("analyzing application of %s ......",
+                        CTIitemName (AP_FUNDEF (arg_node))));
 
     ret = FUNDEF_RETS (AP_FUNDEF (arg_node));
     ids = INFO_ASD_LHS (arg_info);

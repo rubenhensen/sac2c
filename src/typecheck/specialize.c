@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.26  2005/07/15 15:57:02  sah
+ * introduced namespaces
+ *
  * Revision 1.25  2005/06/06 07:02:52  sbs
  * UpdateVarSignature now is aware of user types as well
  *
@@ -99,6 +102,7 @@
 #include "new_types.h"
 #include "type_utils.h"
 #include "ssi.h"
+#include "namespaces.h"
 
 /**
  *
@@ -165,10 +169,11 @@ SpecializationOracle (node *wrapper, node *fundef, ntype *args, dft_res *dft)
     int i;
 
     DBUG_ENTER ("SpecializationOracle");
+
     if ((dft->num_deriveable_partials > 1)
         || ((dft->num_deriveable_partials == 1) && (dft->deriveable != NULL))
         || FUNDEF_ISEXTERN (fundef) || (FUNDEF_SPECS (fundef) >= global.maxspec)
-        || (global.spec_mode == SS_aud)) {
+        || (!FUNDEF_ISLOCAL (wrapper)) || (global.spec_mode == SS_aud)) {
 
         arg = FUNDEF_ARGS (fundef);
         res = TYmakeEmptyProductType (TCcountArgs (arg));
@@ -185,7 +190,6 @@ SpecializationOracle (node *wrapper, node *fundef, ntype *args, dft_res *dft)
             arg = ARG_NEXT (arg);
             i++;
         }
-
     } else if (TYisProdContainingAKV (args)) {
         res = TYeliminateAKV (args);
     } else {
@@ -330,16 +334,25 @@ DoSpecialize (node *wrapper, node *fundef, ntype *args)
     DBUG_PRINT ("NTC", ("specializing %s for %s", FUNDEF_NAME (fundef), tmp_str));
     DBUG_EXECUTE ("NTC", tmp_str = ILIBfree (tmp_str););
 
-    /*
-     * in case of a function of a module, the body is missing, so
-     * fetch it
-     */
-    if ((FUNDEF_SYMBOLNAME (fundef) != NULL) && (FUNDEF_BODY (fundef) == NULL)) {
-        fundef = DSdoDeserialize (fundef);
-    }
-
     /* copy the fundef to be specialized */
     res = DUPdoDupNode (fundef);
+
+    /*
+     * in case of a function of a module, the body is missing, so
+     * fetch it for the copy (the one we will specialize later)
+     */
+    if ((FUNDEF_SYMBOLNAME (fundef) != NULL) && (FUNDEF_BODY (fundef) == NULL)) {
+        res = DSdoDeserialize (res);
+
+#if 0
+    /*
+     * now we flush the deserialize buffers and insert the pending
+     * parts into the ast. this only works as the typechecking
+     * walks downwards in the ast!
+     */
+    DSflushDeserialize();
+#endif
+    }
 
     /* reset the SYMBOLNAME attribute, as the function is _not_
      * the one referenced by the SYMBOLNAME anymore
@@ -347,6 +360,24 @@ DoSpecialize (node *wrapper, node *fundef, ntype *args)
     if (FUNDEF_SYMBOLNAME (res) != NULL) {
         FUNDEF_SYMBOLNAME (res) = ILIBfree (FUNDEF_SYMBOLNAME (res));
     }
+
+    /*
+     * reset all flags and the namespace to ensure that
+     * the specialisation is handeled as a local function
+     */
+    FUNDEF_ISLOCAL (res) = TRUE;
+    FUNDEF_WASUSED (res) = FALSE;
+    FUNDEF_WASIMPORTED (res) = FALSE;
+
+    /*
+     * make the new function local
+     * up to now we just put it into the local
+     * namespace
+     *
+     * TODO: create a view here
+     */
+    FUNDEF_NS (res) = NSfreeNamespace (FUNDEF_NS (res));
+    FUNDEF_NS (res) = NSdupNamespace (NSgetNamespace (global.modulename));
 
     /* insert the new fundef into the specialized chain */
     FUNDEF_NEXT (res) = specialized_fundefs;

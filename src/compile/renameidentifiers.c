@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2005/07/15 15:57:02  sah
+ * introduced namespaces
+ *
  * Revision 1.13  2005/07/03 17:16:37  ktr
  * Initialized a variable.
  *
@@ -66,6 +69,7 @@
 #include "tree_compound.h"
 #include "free.h"
 #include "convert.h"
+#include "namespaces.h"
 
 /*
  * INFO structure
@@ -228,15 +232,15 @@ RenameFunName (node *fundef)
 
         if (FUNDEF_AKVID (fundef) > 0) {
             akv_id = ILIBitoa (FUNDEF_AKVID (fundef));
-            length += (strlen (prefix) + strlen (FUNDEF_MOD (fundef)) + strlen (tmp_name)
-                       + 4 + 6 + strlen (akv_id));
+            length += (strlen (prefix) + strlen (NSgetName (FUNDEF_NS (fundef)))
+                       + strlen (tmp_name) + 4 + 6 + strlen (akv_id));
         } else {
-            length
-              += (strlen (prefix) + strlen (FUNDEF_MOD (fundef)) + strlen (tmp_name) + 4);
+            length += (strlen (prefix) + strlen (NSgetName (FUNDEF_NS (fundef)))
+                       + strlen (tmp_name) + 4);
         }
 
         new_name = (char *)ILIBmalloc (length * sizeof (char));
-        sprintf (new_name, "%s_%s__%s", prefix, FUNDEF_MOD (fundef), tmp_name);
+        sprintf (new_name, "%s_%s__%s", prefix, NSgetName (FUNDEF_NS (fundef)), tmp_name);
 
         arg = FUNDEF_ARGS (fundef);
         while (arg != NULL) {
@@ -303,12 +307,12 @@ RenameFun (node *fun)
 
         new_name = RenameFunName (fun);
 
-        DBUG_PRINT ("PREC", ("renaming SAC function %s:%s to %s", FUNDEF_MOD (fun),
-                             FUNDEF_NAME (fun), new_name));
+        DBUG_PRINT ("PREC", ("renaming SAC function %s:%s to %s",
+                             NSgetName (FUNDEF_NS (fun)), FUNDEF_NAME (fun), new_name));
 
         FUNDEF_NAME (fun) = ILIBfree (FUNDEF_NAME (fun));
         FUNDEF_NAME (fun) = new_name;
-        FUNDEF_MOD (fun) = ILIBfree (FUNDEF_MOD (fun));
+        FUNDEF_NS (fun) = NSfreeNamespace (FUNDEF_NS (fun));
     }
 
     DBUG_RETURN (fun);
@@ -340,8 +344,10 @@ RIDobjInitFunctionName (bool before_rename)
 
         strcpy (new_name, name);
     } else {
-        new_name = ILIBmalloc (strlen (name) + strlen (MAIN_MOD_NAME) + 8);
-        sprintf (new_name, "SACf_%s__%s", MAIN_MOD_NAME, name);
+        new_name
+          = ILIBmalloc (strlen (name) + strlen (NSgetName (NSgetRootNamespace ())) + 8);
+
+        sprintf (new_name, "SACf_%s__%s", NSgetName (NSgetRootNamespace ()), name);
     }
 
     DBUG_RETURN (new_name);
@@ -412,18 +418,19 @@ RIDtypedef (node *arg_node, info *arg_info)
      * which maps it directly to either void* or some basic type, its renaming
      * avoids potential name clashes with other external symbols.
      */
-    newname = BuildTypesRenaming (TYPEDEF_MOD (arg_node), TYPEDEF_NAME (arg_node));
+    newname
+      = BuildTypesRenaming (NSgetName (TYPEDEF_NS (arg_node)), TYPEDEF_NAME (arg_node));
 
-    DBUG_PRINT ("PREC", ("renaming type %s:%s to %s", TYPEDEF_MOD (arg_node),
+    DBUG_PRINT ("PREC", ("renaming type %s:%s to %s", NSgetName (TYPEDEF_NS (arg_node)),
                          TYPEDEF_NAME (arg_node), newname));
 
     /*
      * now we have to rename the type in the user type database
      * as well.
      */
-    type = UTfindUserType (TYPEDEF_NAME (arg_node), TYPEDEF_MOD (arg_node));
+    type = UTfindUserType (TYPEDEF_NAME (arg_node), TYPEDEF_NS (arg_node));
     UTsetName (type, newname);
-    UTsetMod (type, NULL);
+    UTsetNamespace (type, NULL);
 
     /*
      * and rename the typedef
@@ -431,7 +438,7 @@ RIDtypedef (node *arg_node, info *arg_info)
 
     TYPEDEF_NAME (arg_node) = ILIBfree (TYPEDEF_NAME (arg_node));
     TYPEDEF_NAME (arg_node) = newname;
-    TYPEDEF_MOD (arg_node) = ILIBfree (TYPEDEF_MOD (arg_node));
+    TYPEDEF_NS (arg_node) = NSfreeNamespace (TYPEDEF_NS (arg_node));
 
     if (TYPEDEF_NEXT (arg_node) != NULL) {
         TYPEDEF_NEXT (arg_node) = TRAVdo (TYPEDEF_NEXT (arg_node), arg_info);
@@ -471,15 +478,17 @@ RIDobjdef (node *arg_node, info *arg_info)
          * identifier of a global object.
          */
 
-        new_name = (char *)ILIBmalloc (
-          sizeof (char)
-          * (strlen (OBJDEF_NAME (arg_node)) + strlen (OBJDEF_MOD (arg_node)) + 8));
+        new_name
+          = (char *)ILIBmalloc (sizeof (char)
+                                * (strlen (OBJDEF_NAME (arg_node))
+                                   + strlen (NSgetName (OBJDEF_NS (arg_node))) + 8));
 
-        sprintf (new_name, "SACo_%s__%s", OBJDEF_MOD (arg_node), OBJDEF_NAME (arg_node));
+        sprintf (new_name, "SACo_%s__%s", NSgetName (OBJDEF_NS (arg_node)),
+                 OBJDEF_NAME (arg_node));
 
         OBJDEF_NAME (arg_node) = ILIBfree (OBJDEF_NAME (arg_node));
         OBJDEF_NAME (arg_node) = new_name;
-        OBJDEF_MOD (arg_node) = ILIBfree (OBJDEF_MOD (arg_node));
+        OBJDEF_NS (arg_node) = NSfreeNamespace (OBJDEF_NS (arg_node));
     } else {
         /*
          * imported C objdef

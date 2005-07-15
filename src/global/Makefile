@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.26  2005/07/15 15:57:02  sah
+# introduced namespaces
+#
 # Revision 3.25  2005/03/10 09:41:09  cg
 # Added compilation of phase.c and setup.c
 #
@@ -81,8 +84,8 @@ include $(PROJECT_ROOT)/Makefile.Config
 #
 
 
-all: main.o Error.o usage.o internal_lib.o globals.o resource.o \
-     build.o interrupt.o options.o NameTuplesUtils.o filemgr.o \
+all: main.o usage.o internal_lib.o globals.o resource.o \
+     build.o options.o NameTuplesUtils.o filemgr.o \
      ctinfo.o phase.o setup.o
 
 build.c: 

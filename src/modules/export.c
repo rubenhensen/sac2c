@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2005/07/15 15:57:02  sah
+ * introduced namespaces
+ *
  * Revision 1.14  2005/02/15 21:07:40  sah
  * module system fixes
  *
@@ -42,6 +45,7 @@
 #include "internal_lib.h"
 #include "tree_basic.h"
 #include "ctinfo.h"
+#include "namespaces.h"
 
 #include <string.h>
 
@@ -66,7 +70,6 @@ struct INFO {
 #define INFO_EXP_PROVIDED(n) (n->provided)
 #define INFO_EXP_RESULT(n) (n->result)
 #define INFO_EXP_INTERFACE(n) (n->interface)
-#define INFO_EXP_MODNAME(n) (n->modname)
 #define INFO_EXP_FILETYPE(n) (n->filetype)
 
 /*
@@ -86,7 +89,6 @@ MakeInfo ()
     INFO_EXP_PROVIDED (result) = FALSE;
     INFO_EXP_RESULT (result) = FALSE;
     INFO_EXP_INTERFACE (result) = NULL;
-    INFO_EXP_MODNAME (result) = NULL;
     INFO_EXP_FILETYPE (result) = 0;
 
     DBUG_RETURN (result);
@@ -223,7 +225,7 @@ EXPfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EXPfundef");
 
-    DBUG_PRINT ("EXP", ("Processing Fundef %s:%s...", FUNDEF_MOD (arg_node),
+    DBUG_PRINT ("EXP", ("Processing Fundef %s:%s...", NSgetName (FUNDEF_NS (arg_node)),
                         FUNDEF_NAME (arg_node)));
 
     if (FUNDEF_ISLOCAL (arg_node)) {
@@ -284,7 +286,7 @@ EXPfundef (node *arg_node, info *arg_info)
     }
 
     DBUG_PRINT ("EXP", ("Fundef %s:%s has final status %d/%d [PROVIDE/EXPORT].",
-                        FUNDEF_MOD (arg_node), FUNDEF_NAME (arg_node),
+                        NSgetName (FUNDEF_NS (arg_node)), FUNDEF_NAME (arg_node),
                         FUNDEF_ISPROVIDED (arg_node), FUNDEF_ISEXPORTED (arg_node)));
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
@@ -362,7 +364,6 @@ EXPmodule (node *arg_node, info *arg_info)
     DBUG_ENTER ("EXPmodule");
 
     INFO_EXP_INTERFACE (arg_info) = MODULE_IMPORTS (arg_node);
-    INFO_EXP_MODNAME (arg_info) = MODULE_NAME (arg_node);
     INFO_EXP_FILETYPE (arg_info) = MODULE_FILETYPE (arg_node);
 
     if (MODULE_FUNS (arg_node) != NULL) {

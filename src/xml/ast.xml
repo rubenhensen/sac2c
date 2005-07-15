@@ -5,6 +5,8 @@
     copy="function" />
     <type name="SharedString" ctype="char*" init="NULL"
     copy="function" />
+    <type name="Namespace" ctype="namespace_t*" init="NULL"
+    copy="function" />
     <type name="Integer" ctype="int" init="0" copy="literal" />
     <type name="Long" ctype="long" init="0" copy="literal" />
     <type name="Bool" ctype="bool" init="FALSE" copy="literal" />
@@ -495,6 +497,16 @@
         </travuser>
       </traversal>
       <traversal id="CWC" name="Create Wrapper Code" default="sons" include="create_wrapper_code.h" >
+        <travuser>
+          <node name="Module" />
+          <node name="Fundef" />
+          <node name="Ap" />
+          <node name="With" />
+          <node name="Genarray" />
+          <node name="Fold" />
+        </travuser>
+      </traversal>
+      <traversal id="DFC" name="Dispatch Funcalls" default="sons" include="dispatchfuncalls.h" >
         <travuser>
           <node name="Module" />
           <node name="Fundef" />
@@ -1946,8 +1958,8 @@
         </son>
       </sons>
       <attributes>
-        <attribute name="Name" mandatory="no">
-          <type name="SharedString" />
+        <attribute name="Namespace" mandatory="no">
+          <type name="Namespace" />
           <phases>
             <all />
           </phases>
@@ -2010,8 +2022,8 @@
             <all />
           </phases>
         </attribute>
-        <attribute name="Mod" mandatory="no">
-          <type name="String" />
+        <attribute name="Ns" mandatory="no">
+          <type name="Namespace" />
           <phases>
             <all />
           </phases>
@@ -2093,8 +2105,8 @@
             <all />
           </phases>
         </attribute>
-        <attribute name="Mod" mandatory="yes">
-          <type name="String" />
+        <attribute name="Ns" mandatory="yes">
+          <type name="Namespace" />
           <phases>
             <all />
           </phases>
@@ -2201,8 +2213,8 @@
             <all />
           </phases>
         </attribute>
-        <attribute name="Mod" mandatory="yes">
-          <type name="SharedString" />
+        <attribute name="Ns" mandatory="yes">
+          <type name="Namespace" />
           <phases>
             <all />
           </phases>
@@ -4557,8 +4569,8 @@
             <all />
           </phases>
         </attribute>
-        <attribute name="Mod" default="NULL" mandatory="yes">
-          <type name="SharedString" />
+        <attribute name="Ns" default="NULL" mandatory="yes">
+          <type name="Namespace" />
           <phases>
             <all />
           </phases>
@@ -5137,8 +5149,8 @@
             <all />
           </phases>
         </attribute>
-        <attribute name="Mod" mandatory="yes">
-          <type name="SharedString" />
+        <attribute name="Ns" mandatory="yes">
+          <type name="Namespace" />
           <phases>
             <all />
           </phases>
@@ -5590,8 +5602,8 @@
     <node name="SPId">
       <sons></sons>
       <attributes>
-        <attribute name="Mod" mandatory="no">
-	  <type name="String" />
+        <attribute name="Ns" mandatory="no">
+	  <type name="Namespace" />
 	  <phases>
 	    <all />
 	  </phases>

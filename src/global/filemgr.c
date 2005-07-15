@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  2005/07/15 15:57:02  sah
+ * introduced namespaces
+ *
  * Revision 1.15  2005/06/18 18:07:09  sah
  * fixed a memory sharing bug
  *
@@ -154,6 +157,7 @@
 #include "types.h"
 #include "filemgr.h"
 #include "resource.h"
+#include "namespaces.h"
 #include "tree_basic.h"
 
 static char path_bufs[4][MAX_PATH_LEN];
@@ -621,7 +625,7 @@ FMGRsetFileNames (node *module)
 
     if (MODULE_FILETYPE (module) == F_prog) {
 
-        global.modulename = ILIBstringCopy (MODULE_NAME (module));
+        global.modulename = ILIBstringCopy (NSgetName (MODULE_NAMESPACE (module)));
 
         if (global.outfilename == NULL) {
             global.outfilename = "a.out";
@@ -638,12 +642,13 @@ FMGRsetFileNames (node *module)
         }
 
         if (global.sacfilename != NULL) {
-            buffer = ILIBstringConcat (MODULE_NAME (module), ".sac");
+            buffer = ILIBstringConcat (NSgetName (MODULE_NAMESPACE (module)), ".sac");
 
             if (!ILIBstringCompare (buffer, global.puresacfilename)) {
                 CTIwarn ("Module/class '%s` should be in a file named \"%s\" "
                          "instead of \"%s\"",
-                         MODULE_NAME (module), buffer, global.sacfilename);
+                         NSgetName (MODULE_NAMESPACE (module)), buffer,
+                         global.sacfilename);
             }
             ILIBfree (buffer);
         }
@@ -654,9 +659,9 @@ FMGRsetFileNames (node *module)
             global.targetdir = ILIBstringConcat (global.outfilename, "/");
         }
 
-        global.modulename = ILIBstringCopy (MODULE_NAME (module));
-        global.cfilename = ILIBstringConcat (MODULE_NAME (module), ".c");
-        global.outfilename = ILIBstringConcat (MODULE_NAME (module), ".out");
+        global.modulename = ILIBstringCopy (NSgetName (MODULE_NAMESPACE (module)));
+        global.cfilename = ILIBstringConcat (global.modulename, ".c");
+        global.outfilename = ILIBstringConcat (global.modulename, ".out");
     }
 
     DBUG_VOID_RETURN;

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.81  2005/07/15 15:57:02  sah
+ * introduced namespaces
+ *
  * Revision 3.80  2005/06/27 18:15:50  sah
  * fixed bug #90
  *
@@ -46,6 +49,7 @@
 #include "free_info.h"
 #include "tree_basic.h"
 #include "new_types.h"
+#include "namespaces.h"
 
 /*
  * static global variables
@@ -470,7 +474,7 @@ FreeZombie (node *fundef)
          * remove all the zombie data
          */
         FUNDEF_NAME (fundef) = ILIBfree (FUNDEF_NAME (fundef));
-        FUNDEF_MOD (fundef) = ILIBfree (FUNDEF_MOD (fundef));
+        FUNDEF_NS (fundef) = NSfreeNamespace (FUNDEF_NS (fundef));
         FUNDEF_IMPL (fundef) = NULL;
 
         if (FUNDEF_TYPES (fundef) != NULL) {

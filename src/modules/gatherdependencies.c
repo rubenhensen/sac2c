@@ -14,6 +14,7 @@
 #include "internal_lib.h"
 #include "new_types.h"
 #include "traverse.h"
+#include "namespaces.h"
 
 /*
  * INFO structure
@@ -63,18 +64,39 @@ FreeInfo (info *info)
 }
 
 static void
-AddNamespaceToDependencies (const char *ns, info *info)
+AddNamespaceToDependencies (const namespace_t *ns, info *info)
 {
     DBUG_ENTER ("AddNamespaceToDependencies");
 
     if (ns != NULL) {
-        if (!ILIBstringCompare (MODULE_NAME (INFO_GDP_MODULE (info)), ns)) {
+        if (!NSequals (MODULE_NAMESPACE (INFO_GDP_MODULE (info)), ns)) {
             /*
              * this symbol comes from another namespace
              *  -> add the namespace to the dependency list
              */
             MODULE_DEPENDENCIES (INFO_GDP_MODULE (info))
-              = STRSadd (ns, STRS_saclib, MODULE_DEPENDENCIES (INFO_GDP_MODULE (info)));
+              = STRSadd (NSgetName (ns), STRS_saclib,
+                         MODULE_DEPENDENCIES (INFO_GDP_MODULE (info)));
+        }
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+static void
+AddModuleToDependencies (const char *mod, info *info)
+{
+    DBUG_ENTER ("AddModuleToDependencies");
+
+    if (mod != NULL) {
+        if (!ILIBstringCompare (NSgetName (MODULE_NAMESPACE (INFO_GDP_MODULE (info))),
+                                mod)) {
+            /*
+             * this symbol comes from another module
+             *  -> add the module name to the dependency list
+             */
+            MODULE_DEPENDENCIES (INFO_GDP_MODULE (info))
+              = STRSadd (mod, STRS_saclib, MODULE_DEPENDENCIES (INFO_GDP_MODULE (info)));
         }
     }
 
@@ -96,7 +118,7 @@ GDPntype (ntype *arg_type, info *arg_info)
         }
 
         if (TYisSymb (scalar)) {
-            AddNamespaceToDependencies (TYgetMod (scalar), arg_info);
+            AddNamespaceToDependencies (TYgetNamespace (scalar), arg_info);
         }
     }
 
@@ -104,17 +126,17 @@ GDPntype (ntype *arg_type, info *arg_info)
 }
 
 static types *
-GDPtypes (types *arg_type, info *arg_info)
+GDPtypes (types *arg_types, info *arg_info)
 {
     DBUG_ENTER ("GDPtypes");
 
-    if (arg_type != NULL) {
-        AddNamespaceToDependencies (TYPES_MOD (arg_type), arg_info);
+    if (arg_types != NULL) {
+        AddModuleToDependencies (TYPES_MOD (arg_types), arg_info);
 
-        TYPES_NEXT (arg_type) = GDPtypes (TYPES_NEXT (arg_type), arg_info);
+        TYPES_NEXT (arg_types) = GDPtypes (TYPES_NEXT (arg_types), arg_info);
     }
 
-    DBUG_RETURN (arg_type);
+    DBUG_RETURN (arg_types);
 }
 
 node *
@@ -122,7 +144,7 @@ GDPspid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("GDPspid");
 
-    AddNamespaceToDependencies (SPID_MOD (arg_node), arg_info);
+    AddNamespaceToDependencies (SPID_NS (arg_node), arg_info);
 
     arg_node = TRAVcont (arg_node, arg_info);
 
@@ -134,7 +156,7 @@ GDPfold (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("GDPfold");
 
-    AddNamespaceToDependencies (FOLD_MOD (arg_node), arg_info);
+    AddNamespaceToDependencies (FOLD_NS (arg_node), arg_info);
 
     arg_node = TRAVcont (arg_node, arg_info);
 
@@ -230,7 +252,7 @@ GDPuse (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("GDPuse");
 
-    AddNamespaceToDependencies (USE_MOD (arg_node), arg_info);
+    AddModuleToDependencies (USE_MOD (arg_node), arg_info);
 
     arg_node = TRAVcont (arg_node, arg_info);
 
@@ -242,7 +264,7 @@ GDPimport (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("GDPimport");
 
-    AddNamespaceToDependencies (IMPORT_MOD (arg_node), arg_info);
+    AddModuleToDependencies (IMPORT_MOD (arg_node), arg_info);
 
     arg_node = TRAVcont (arg_node, arg_info);
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.28  2005/07/15 15:57:02  sah
+ * introduced namespaces
+ *
  * Revision 1.27  2005/06/27 18:15:50  sah
  * fixed bug #90
  *
@@ -105,6 +108,7 @@
 #include "shape.h"
 #include "constants.h"
 #include "scheduling.h"
+#include "namespaces.h"
 #include "dbug.h"
 
 /** <!--******************************************************************-->
@@ -199,6 +203,30 @@ FREEattribNode (node *attr, node *parent)
         DBUG_PRINT ("FREE", ("Starting to free %s node attribute at " F_PTR,
                              NODE_TEXT (attr), attr));
         attr = FREEdoFreeTree (attr);
+    }
+
+    DBUG_RETURN (attr);
+}
+
+/** <!--******************************************************************-->
+ *
+ * @fn FREEattribNamespace
+ *
+ * @brief Frees Namespace attribute
+ *
+ * @param attr Namespace node to process
+ * @param parent parent node
+ *
+ * @return result of Free call, usually NULL
+ *
+ ***************************************************************************/
+namespace_t *
+FREEattribNamespace (namespace_t *attr, node *parent)
+{
+    DBUG_ENTER ("FREEattribNamespace");
+
+    if (attr != NULL) {
+        attr = NSfreeNamespace (attr);
     }
 
     DBUG_RETURN (attr);

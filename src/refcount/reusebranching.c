@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.21  2005/07/15 15:57:02  sah
+ * introduced namespaces
+ *
  * Revision 1.20  2005/04/27 07:55:32  ktr
  * bugfix
  *
@@ -94,6 +97,7 @@
 #include "DataFlowMask.h"
 #include "DataFlowMaskUtils.h"
 #include "free.h"
+#include "namespaces.h"
 #include "new_types.h"
 #include "shape.h"
 
@@ -348,7 +352,7 @@ BuildCondTree (node *ass, node *branches, node *memvars, node *fundef, char *roo
                                 cfargs);
 
             condfun = TBmakeFundef (CreateLacFunName (root_funname),
-                                    ILIBstringCopy (FUNDEF_MOD (fundef)), cfrets, cfargs,
+                                    NSdupNamespace (FUNDEF_NS (fundef)), cfrets, cfargs,
                                     TBmakeBlock (NULL, NULL), FUNDEF_NEXT (fundef));
 
             FUNDEF_TYPES (condfun) = cftypes;

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.25  2005/07/15 15:57:02  sah
+ * introduced namespaces
+ *
  * Revision 1.24  2005/06/15 13:03:46  sbs
  * improved error messages.
  *
@@ -125,6 +128,7 @@
 #include "ctinfo.h"
 #include "dbug.h"
 #include "DupTree.h"
+#include "namespaces.h"
 
 #include "insert_vardec.h"
 
@@ -135,6 +139,7 @@ struct INFO {
     node *vardecs;
     node *args;
     node *objdefs;
+    node *module;
 };
 
 /*
@@ -143,6 +148,7 @@ struct INFO {
 #define INFO_INSVD_VARDECS(n) ((n)->vardecs)
 #define INFO_INSVD_ARGS(n) ((n)->args)
 #define INFO_INSVD_OBJDEFS(n) ((n)->objdefs)
+#define INFO_INSVD_MODULE(n) ((n)->module)
 
 /*
  * INFO functions
@@ -221,17 +227,17 @@ SearchForNameInArgs (char *name, node *args)
  *  node * SearchForNameInObjs( char *mod, char *name, node *args)
  *
  * description:
- *   looks up the name in the args given. Returns the address of the arg
- *   if found, NULL otherwise.
+ *   looks up the name in the objdefs given. Returns the address of the
+ *   objdef if found, NULL otherwise.
  *
  ******************************************************************************/
 static node *
-SearchForNameInObjs (char *mod, char *name, node *objs)
+SearchForNameInObjs (const namespace_t *ns, const char *name, node *objs)
 {
     DBUG_ENTER ("SearchForNameInObjs");
 
     while ((objs != NULL)
-           && ((!ILIBstringCompare (OBJDEF_MOD (objs), mod))
+           && ((!NSequals (OBJDEF_NS (objs), ns))
                || (!ILIBstringCompare (OBJDEF_NAME (objs), name)))) {
         objs = OBJDEF_NEXT (objs);
     }
@@ -252,6 +258,7 @@ INSVDmodule (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("INSVDmodule");
 
+    INFO_INSVD_MODULE (arg_info) = arg_node;
     INFO_INSVD_OBJDEFS (arg_info) = MODULE_OBJS (arg_node);
 
     if (MODULE_FUNS (arg_node) != NULL) {
@@ -355,7 +362,7 @@ INSVDspid (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("INSVDspid");
 
-    if (SPID_MOD (arg_node) == NULL) {
+    if (SPID_NS (arg_node) == NULL) {
         vardec
           = SearchForNameInVardecs (SPID_NAME (arg_node), INFO_INSVD_VARDECS (arg_info));
 
@@ -365,9 +372,23 @@ INSVDspid (node *arg_node, info *arg_info)
         }
 
         if (vardec == NULL) {
-            CTIerrorLine (global.linenum,
-                          "Identifier '%s` used without previous definition",
-                          SPID_NAME (arg_node));
+            /*
+             * we still have not found a declaration but
+             * maybe its a global object!
+             */
+
+            vardec
+              = SearchForNameInObjs (MODULE_NAMESPACE (INFO_INSVD_MODULE (arg_info)),
+                                     SPID_NAME (arg_node), INFO_INSVD_OBJDEFS (arg_info));
+
+            if (vardec == NULL) {
+                CTIerrorLine (global.linenum,
+                              "Identifier '%s` used without previous definition",
+                              SPID_NAME (arg_node));
+            } else {
+                arg_node = FREEdoFreeNode (arg_node);
+                arg_node = TBmakeGlobobj (vardec);
+            }
         } else {
             /*
              * now we can build a real id and remove the spid node
@@ -380,12 +401,12 @@ INSVDspid (node *arg_node, info *arg_info)
          * this id is a global object
          */
 
-        vardec = SearchForNameInObjs (SPID_MOD (arg_node), SPID_NAME (arg_node),
+        vardec = SearchForNameInObjs (SPID_NS (arg_node), SPID_NAME (arg_node),
                                       INFO_INSVD_OBJDEFS (arg_info));
 
         if (vardec == NULL) {
             CTIerrorLine (global.linenum, "No definition for global object %s:%s found",
-                          SPID_MOD (arg_node), SPID_NAME (arg_node));
+                          NSgetName (SPID_NS (arg_node)), SPID_NAME (arg_node));
         } else {
             arg_node = FREEdoFreeNode (arg_node);
             arg_node = TBmakeGlobobj (vardec);

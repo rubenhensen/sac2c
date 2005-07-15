@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2005/07/15 15:57:02  sah
+ * introduced namespaces
+ *
  * Revision 1.7  2005/06/14 23:39:03  sbs
  * CTIabortOnBottom added for reporting bottom types
  *
@@ -57,5 +60,6 @@ extern void CTIstate (const char *format, ...);
 extern void CTInote (const char *format, ...);
 extern void CTIterminateCompilation (compiler_phase_t phase, char *break_specifier,
                                      node *syntax_tree);
+extern const char *CTIitemName (node *item);
 
 #endif /* _SAC_CTINFO_H_ */

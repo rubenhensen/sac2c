@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.16  2005/07/15 15:57:02  sah
+ * introduced namespaces
+ *
  * Revision 1.15  2005/06/14 09:55:10  sbs
  * support for bottom types integrated.
  *
@@ -78,7 +81,7 @@ extern void TEassureSameSimpleType (char *obj1, ntype *type1, char *obj2, ntype 
 extern void TEassureSameScalarType (char *obj1, ntype *type1, char *obj2, ntype *type2);
 extern ntype *TEassureSameShape (char *obj1, ntype *type1, char *obj2, ntype *type2);
 
-extern te_info *TEmakeInfo (int linenum, char *kind_str, char *mod_str,
+extern te_info *TEmakeInfo (int linenum, char *kind_str, const char *mod_str,
                             const char *name_str, node *wrapper, node *assign,
                             const void *cffun, te_info *parent);
 extern void TEhandleError (int line, const char *format, ...);
@@ -86,7 +89,7 @@ extern char *TEfetchErrors ();
 extern void TEextendedAbort ();
 extern int TEgetLine (te_info *info);
 extern char *TEgetKindStr (te_info *info);
-extern char *TEgetModStr (te_info *info);
+extern const char *TEgetModStr (te_info *info);
 extern const char *TEgetNameStr (te_info *info);
 extern node *TEgetWrapper (te_info *info);
 extern int TEgetNumRets (te_info *info);

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.28  2005/07/15 15:57:02  sah
+ * introduced namespaces
+ *
  * Revision 1.27  2005/06/01 16:59:05  sah
  * separated annotating namespaces and gathering dependencies in two
  * phase to allow for reusing the gathering phase to print the
@@ -63,6 +66,7 @@
 #include "free.h"
 #include "ctinfo.h"
 #include "internal_lib.h"
+#include "namespaces.h"
 
 /*
  * INFO structure
@@ -167,10 +171,10 @@ CheckLocalNameClash (const char *symbol, sttable_t *table, int lineno)
     DBUG_VOID_RETURN;
 }
 
-static char *
+namespace_t *
 LookupNamespaceForSymbol (const char *name, info *info)
 {
-    char *result;
+    namespace_t *result;
 
     DBUG_ENTER ("LookupNamespaceForSymbol");
 
@@ -181,12 +185,12 @@ LookupNamespaceForSymbol (const char *name, info *info)
          */
         stentry_t *entry = STgetFirstEntry (name, INFO_ANS_SYMBOLS (info));
 
-        result = ILIBstringCopy (STentryName (entry));
+        result = NSgetNamespace (STentryName (entry));
     } else {
         /*
          * this symbol is local
          */
-        result = ILIBstringCopy (MODULE_NAME (INFO_ANS_MODULE (info)));
+        result = NSdupNamespace (MODULE_NAMESPACE (INFO_ANS_MODULE (info)));
     }
 
     DBUG_RETURN (result);
@@ -199,12 +203,17 @@ LookupNamespaceForSymbol (const char *name, info *info)
 static types *
 ANStypes (types *arg_types, info *arg_info)
 {
+    namespace_t *ns;
+
     DBUG_ENTER ("ANStypes");
 
     if (TYPES_MOD (arg_types) == NULL) {
-        /* look up correct type */
-        TYPES_MOD (arg_types)
-          = LookupNamespaceForSymbol (TYPES_NAME (arg_types), arg_info);
+        /*
+         * look up correct namespace
+         */
+        ns = LookupNamespaceForSymbol (TYPES_NAME (arg_types), arg_info);
+        TYPES_MOD (arg_types) = ILIBstringCopy (NSgetName (ns));
+        ns = NSfreeNamespace (ns);
     }
 
     DBUG_RETURN (arg_types);
@@ -230,13 +239,13 @@ ANSntype (ntype *arg_ntype, info *arg_info)
 #endif
 
     if (TYisSymb (scalar)) {
-        if (TYgetMod (scalar) == NULL) {
+        if (TYgetNamespace (scalar) == NULL) {
             /* we have to add the correct namespace here */
-            scalar = TYsetMod (scalar,
-                               LookupNamespaceForSymbol (TYgetName (scalar), arg_info));
+            scalar = TYsetNamespace (scalar, LookupNamespaceForSymbol (TYgetName (scalar),
+                                                                       arg_info));
 
             DBUG_PRINT ("ANS", ("Updated namespace for type %s to %s", TYgetName (scalar),
-                                TYgetMod (scalar)));
+                                NSgetName (TYgetNamespace (scalar))));
         }
     }
 
@@ -338,8 +347,9 @@ ANSfundef (node *arg_node, info *arg_info)
     CheckLocalNameClash (FUNDEF_NAME (arg_node), INFO_ANS_SYMBOLS (arg_info),
                          NODE_LINE (arg_node));
 
-    if (FUNDEF_MOD (arg_node) == NULL) {
-        FUNDEF_MOD (arg_node) = ILIBstringCopy (MODULE_NAME (INFO_ANS_MODULE (arg_info)));
+    if (FUNDEF_NS (arg_node) == NULL) {
+        FUNDEF_NS (arg_node)
+          = NSdupNamespace (MODULE_NAMESPACE (INFO_ANS_MODULE (arg_info)));
     }
 
     if (FUNDEF_TYPES (arg_node) != NULL) {
@@ -375,9 +385,9 @@ ANStypedef (node *arg_node, info *arg_info)
     CheckLocalNameClash (TYPEDEF_NAME (arg_node), INFO_ANS_SYMBOLS (arg_info),
                          NODE_LINE (arg_node));
 
-    if (TYPEDEF_MOD (arg_node) == NULL) {
-        TYPEDEF_MOD (arg_node)
-          = ILIBstringCopy (MODULE_NAME (INFO_ANS_MODULE (arg_info)));
+    if (TYPEDEF_NS (arg_node) == NULL) {
+        TYPEDEF_NS (arg_node)
+          = NSdupNamespace (MODULE_NAMESPACE (INFO_ANS_MODULE (arg_info)));
     }
 
     if (TYPEDEF_NTYPE (arg_node) != NULL) {
@@ -399,8 +409,9 @@ ANSobjdef (node *arg_node, info *arg_info)
     CheckLocalNameClash (OBJDEF_NAME (arg_node), INFO_ANS_SYMBOLS (arg_info),
                          NODE_LINE (arg_node));
 
-    if (OBJDEF_MOD (arg_node) == NULL) {
-        OBJDEF_MOD (arg_node) = ILIBstringCopy (MODULE_NAME (INFO_ANS_MODULE (arg_info)));
+    if (OBJDEF_NS (arg_node) == NULL) {
+        OBJDEF_NS (arg_node)
+          = NSdupNamespace (MODULE_NAMESPACE (INFO_ANS_MODULE (arg_info)));
     }
 
     if (OBJDEF_TYPE (arg_node) != NULL) {
@@ -417,12 +428,12 @@ ANSspap (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ANSspap");
 
-    if (SPAP_MOD (arg_node) == NULL) {
+    if (SPAP_NS (arg_node) == NULL) {
         /*
          * look up the correct namespace
          */
 
-        SPAP_MOD (arg_node) = LookupNamespaceForSymbol (SPAP_NAME (arg_node), arg_info);
+        SPAP_NS (arg_node) = LookupNamespaceForSymbol (SPAP_NAME (arg_node), arg_info);
     }
 
     arg_node = TRAVcont (arg_node, arg_info);
@@ -583,12 +594,12 @@ ANSspid (node *arg_node, info *arg_info)
          * in special mop-mode, all SPID represent function calls,
          * so no need for a locality check
          */
-        if (SPID_MOD (arg_node) == NULL) {
-            SPID_MOD (arg_node)
+        if (SPID_NS (arg_node) == NULL) {
+            SPID_NS (arg_node)
               = LookupNamespaceForSymbol (SPID_NAME (arg_node), arg_info);
         }
     } else {
-        if (SPID_MOD (arg_node) == NULL) {
+        if (SPID_NS (arg_node) == NULL) {
             /*
              * check whether this id is local
              */
@@ -597,11 +608,12 @@ ANSspid (node *arg_node, info *arg_info)
                  * look up the correct namespace
                  */
 
-                SPID_MOD (arg_node)
+                SPID_NS (arg_node)
                   = LookupNamespaceForSymbol (SPID_NAME (arg_node), arg_info);
 
-                DBUG_PRINT ("ANS", ("found ns '%s' for id '%s'", SPID_MOD (arg_node),
-                                    SPID_NAME (arg_node)));
+                DBUG_PRINT ("ANS",
+                            ("found ns '%s' for id '%s'", NSgetName (SPID_NS (arg_node)),
+                             SPID_NAME (arg_node)));
             }
         }
     }
@@ -659,12 +671,12 @@ ANSfold (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ANSfold");
 
-    if ((FOLD_MOD (arg_node) == NULL) && (FOLD_FUN (arg_node) != NULL)) {
+    if ((FOLD_NS (arg_node) == NULL) && (FOLD_FUN (arg_node) != NULL)) {
         /*
          * look up the correct namespace
          */
 
-        FOLD_MOD (arg_node) = LookupNamespaceForSymbol (FOLD_FUN (arg_node), arg_info);
+        FOLD_NS (arg_node) = LookupNamespaceForSymbol (FOLD_FUN (arg_node), arg_info);
     }
 
     arg_node = TRAVcont (arg_node, arg_info);
@@ -679,35 +691,47 @@ ANSmodule (node *arg_node, info *arg_info)
 
     INFO_ANS_MODULE (arg_info) = arg_node;
 
-    /* traverse use/import statements */
+    /*
+     * traverse use/import statements
+     */
 
     if (MODULE_IMPORTS (arg_node) != NULL) {
         MODULE_IMPORTS (arg_node) = TRAVdo (MODULE_IMPORTS (arg_node), arg_info);
     }
 
-    /* check uniqueness property of symbols in use */
+    /*
+     * check uniqueness property of symbols refernced by use statements
+     */
 
     CheckUseUnique (INFO_ANS_SYMBOLS (arg_info));
 
-    /* traverse fundecs */
+    /*
+     * traverse fundecs
+     */
 
     if (MODULE_FUNDECS (arg_node) != NULL) {
         MODULE_FUNDECS (arg_node) = TRAVdo (MODULE_FUNDECS (arg_node), arg_info);
     }
 
-    /* traverse fundefs */
+    /*
+     * traverse fundefs
+     */
 
     if (MODULE_FUNS (arg_node) != NULL) {
         MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
     }
 
-    /* traverse typedefs */
+    /*
+     * traverse typedefs
+     */
 
     if (MODULE_TYPES (arg_node) != NULL) {
         MODULE_TYPES (arg_node) = TRAVdo (MODULE_TYPES (arg_node), arg_info);
     }
 
-    /* traverse objdefs */
+    /*
+     * traverse objdefs
+     */
 
     if (MODULE_OBJS (arg_node) != NULL) {
         MODULE_OBJS (arg_node) = TRAVdo (MODULE_OBJS (arg_node), arg_info);

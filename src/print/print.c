@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.223  2005/07/15 15:57:02  sah
+ * introduced namespaces
+ *
  * Revision 3.222  2005/06/28 20:51:52  ktr
  * changed printing of funcond into ?: notation
  *
@@ -166,6 +169,7 @@
 #include "constants.h"
 #include "print_interface.h"
 #include "internal_lib.h"
+#include "namespaces.h"
 #include "shape.h"
 
 #define WARN_INDENT
@@ -735,7 +739,7 @@ Argtab2Fundef (node *fundef)
 
     new_fundef
       = TBmakeFundef (ILIBstringCopy (FUNDEF_NAME (fundef)),
-                      ILIBstringCopy (FUNDEF_MOD (fundef)), rets, args, NULL, NULL);
+                      NSdupNamespace (FUNDEF_NS (fundef)), rets, args, NULL, NULL);
 
     FUNDEF_HASDOTARGS (new_fundef) = FUNDEF_HASDOTARGS (fundef);
     FUNDEF_HASDOTRETS (new_fundef) = FUNDEF_HASDOTRETS (fundef);
@@ -974,7 +978,7 @@ PRTmodule (node *arg_node, info *arg_info)
         fprintf (global.outfile,
                  "int SAC__%s__dummy_value_which_is_completely_useless"
                  " = 0;\n\n",
-                 MODULE_NAME (arg_node));
+                 NSgetName (MODULE_NAMESPACE (arg_node)));
 
         if (NULL != MODULE_OBJS (arg_node)) {
             fprintf (global.outfile, "\n\n");
@@ -1013,14 +1017,14 @@ PRTmodule (node *arg_node, info *arg_info)
                      "/*\n"
                      " *  Module %s :\n"
                      " */\n",
-                     MODULE_NAME (arg_node));
+                     NSgetName (MODULE_NAMESPACE (arg_node)));
             break;
         case F_classimp:
             fprintf (global.outfile,
                      "\n"
                      "/*\n"
                      " *  Class %s :\n",
-                     MODULE_NAME (arg_node));
+                     NSgetName (MODULE_NAMESPACE (arg_node)));
             if (MODULE_CLASSTYPE (arg_node) != NULL) {
                 type_str = TYtype2String (MODULE_CLASSTYPE (arg_node), 0, TRUE);
                 fprintf (global.outfile, " *  classtype %s;\n", type_str);
@@ -1139,8 +1143,8 @@ PRTtypedef (node *arg_node, info *arg_info)
         fprintf (global.outfile, "typedef %s ", type_str);
         type_str = ILIBfree (type_str);
 
-        if (TYPEDEF_MOD (arg_node) != NULL) {
-            fprintf (global.outfile, "%s:", TYPEDEF_MOD (arg_node));
+        if (TYPEDEF_NS (arg_node) != NULL) {
+            fprintf (global.outfile, "%s::", NSgetName (TYPEDEF_NS (arg_node)));
         }
         fprintf (global.outfile, "%s", TYPEDEF_NAME (arg_node));
 
@@ -1209,8 +1213,8 @@ PRTobjdef (node *arg_node, info *arg_info)
         fprintf (global.outfile, "%s ", type_str);
         type_str = ILIBfree (type_str);
 
-        if (OBJDEF_MOD (arg_node) != NULL) {
-            fprintf (global.outfile, "%s:", OBJDEF_MOD (arg_node));
+        if (OBJDEF_NS (arg_node) != NULL) {
+            fprintf (global.outfile, "%s::", NSgetName (OBJDEF_NS (arg_node)));
         }
 
         fprintf (global.outfile, "%s", OBJDEF_NAME (arg_node));
@@ -1375,8 +1379,8 @@ PrintFunctionHeader (node *arg_node, info *arg_info, bool in_comment)
 
         fprintf (global.outfile, " ");
 
-        if (FUNDEF_MOD (arg_node) != NULL) {
-            fprintf (global.outfile, "%s:", FUNDEF_MOD (arg_node));
+        if (FUNDEF_NS (arg_node) != NULL) {
+            fprintf (global.outfile, "%s::", NSgetName (FUNDEF_NS (arg_node)));
         }
 
         if (FUNDEF_NAME (arg_node) != NULL) {
@@ -2340,8 +2344,8 @@ PRTap (node *arg_node, info *arg_info)
     if ((FUNDEF_ISWRAPPERFUN (fundef))) {
         fprintf (global.outfile, "wrapper:");
     }
-    if (FUNDEF_MOD (fundef) != NULL) {
-        fprintf (global.outfile, "%s:", FUNDEF_MOD (fundef));
+    if (FUNDEF_NS (fundef) != NULL) {
+        fprintf (global.outfile, "%s::", NSgetName (FUNDEF_NS (fundef)));
     }
     fprintf (global.outfile, "%s", FUNDEF_NAME (fundef));
 
@@ -2422,8 +2426,8 @@ PRTspmop (node *arg_node, info *arg_info)
     while (fun_ids != NULL) {
         TRAVdo (EXPRS_EXPR (exprs), arg_info);
 
-        if (SPID_MOD (EXPRS_EXPR (fun_ids)) != NULL) {
-            fprintf (global.outfile, " %s:", SPID_MOD (EXPRS_EXPR (fun_ids)));
+        if (SPID_NS (EXPRS_EXPR (fun_ids)) != NULL) {
+            fprintf (global.outfile, " %s::", NSgetName (SPID_NS (EXPRS_EXPR (fun_ids))));
         } else {
             fprintf (global.outfile, " ");
         }
@@ -2642,8 +2646,8 @@ PRTspid (node *arg_node, info *arg_info)
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
     }
 
-    if (SPID_MOD (arg_node) != NULL) {
-        fprintf (global.outfile, "%s:", SPID_MOD (arg_node));
+    if (SPID_NS (arg_node) != NULL) {
+        fprintf (global.outfile, "%s::", NSgetName (SPID_NS (arg_node)));
     }
     fprintf (global.outfile, "%s", SPID_NAME (arg_node));
 
@@ -2669,8 +2673,12 @@ PRTglobobj (node *arg_node, info *arg_info)
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
     }
 
-    fprintf (global.outfile, "%s:%s", OBJDEF_MOD (GLOBOBJ_OBJDEF (arg_node)),
-             OBJDEF_NAME (GLOBOBJ_OBJDEF (arg_node)));
+    if (OBJDEF_NS (GLOBOBJ_OBJDEF (arg_node)) != NULL) {
+        fprintf (global.outfile,
+                 "%s::", NSgetName (OBJDEF_NS (GLOBOBJ_OBJDEF (arg_node))));
+    }
+
+    fprintf (global.outfile, "%s", OBJDEF_NAME (GLOBOBJ_OBJDEF (arg_node)));
 
     DBUG_RETURN (arg_node);
 }
@@ -3795,21 +3803,24 @@ PRTfold (node *arg_node, info *arg_info)
 
     if (FOLD_FUNDEF (arg_node) != NULL) {
         /**
-         * udf-case after TC!
+         * * udf-case after TC!
          */
         fundef = FOLD_FUNDEF (arg_node);
-        fprintf (global.outfile, "fold/*udf*/( %s:%s", FUNDEF_MOD (fundef),
-                 FUNDEF_NAME (fundef));
+        fprintf (global.outfile, "fold/*udf*/(");
+        if (FUNDEF_NS (fundef) != NULL) {
+            fprintf (global.outfile, " %s::", NSgetName (FUNDEF_NS (fundef)));
+        }
+        fprintf (global.outfile, "%s", FUNDEF_NAME (fundef));
         TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
     } else if (FOLD_FUN (arg_node) != NULL) {
         /**
          * udf-case prior to TC!
          */
-        if (FOLD_MOD (arg_node) == NULL) {
+        if (FOLD_NS (arg_node) == NULL) {
             fprintf (global.outfile, "fold/*udf*/( %s", FOLD_FUN (arg_node));
         } else {
-            fprintf (global.outfile, "fold/*udf*/( %s:%s", FOLD_MOD (arg_node),
-                     FOLD_FUN (arg_node));
+            fprintf (global.outfile, "fold/*udf*/( %s::%s",
+                     NSgetName (FOLD_NS (arg_node)), FOLD_FUN (arg_node));
         }
         TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
     } else {

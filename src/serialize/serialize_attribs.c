@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2005/07/15 15:57:02  sah
+ * introduced namespaces
+ *
  * Revision 1.8  2005/06/27 18:15:50  sah
  * fixed bug #90
  *
@@ -58,6 +61,7 @@
 #include "shape.h"
 #include "globals.h"
 #include "constants.h"
+#include "namespaces.h"
 #include "dbug.h"
 
 /** <!--******************************************************************-->
@@ -302,6 +306,32 @@ SATserializeNode (info *info, node *attr, node *parent)
         fprintf (INFO_SER_FILE (info), "DROP( x");
         TRAVdo (attr, info);
         fprintf (INFO_SER_FILE (info), ")");
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/** <!--******************************************************************-->
+ *
+ * @fn SATserializNamespace
+ *
+ * @brief generates code to de-serialize the given attribute
+ *
+ * @param info   info structure of serialize traversal
+ * @param attr   the attribute itself
+ * @param parent the parent node
+ *
+ ***************************************************************************/
+
+void
+SATserializeNamespace (info *info, namespace_t *attr, node *parent)
+{
+    DBUG_ENTER ("SATserializeNamespace");
+
+    if (attr == NULL) {
+        fprintf (INFO_SER_FILE (info), "NULL");
+    } else {
+        NSserializeNamespace (INFO_SER_FILE (info), attr);
     }
 
     DBUG_VOID_RETURN;

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.6  2005/07/15 15:57:02  sah
+ * introduced namespaces
+ *
  * Revision 3.5  2004/11/27 02:12:28  sah
  * ...
  *
@@ -47,13 +50,13 @@
  */
 #define UT_NOT_DEFINED -1
 
-extern usertype UTaddUserType (char *name, char *mod, ntype *type, ntype *base,
+extern usertype UTaddUserType (char *name, namespace_t *ns, ntype *type, ntype *base,
                                int lineno, node *tdef);
-extern usertype UTfindUserType (const char *name, const char *mod);
+extern usertype UTfindUserType (const char *name, const namespace_t *ns);
 
 extern int UTgetNumberOfUserTypes ();
 
-extern char *UTgetMod (usertype t1);
+extern const namespace_t *UTgetNamespace (usertype t1);
 extern char *UTgetName (usertype t1);
 extern ntype *UTgetTypedef (usertype t1);
 extern ntype *UTgetBaseType (usertype t1);
@@ -63,7 +66,7 @@ extern node *UTgetTdef (usertype t1);
 extern void UTsetTypedef (usertype t1, ntype *type);
 extern void UTsetBaseType (usertype t1, ntype *type);
 extern void UTsetName (usertype t1, const char *name);
-extern void UTsetMod (usertype t1, const char *mod);
+extern void UTsetNamespace (usertype t1, const namespace_t *ns);
 
 extern void UTprintRepository (FILE *outfile);
 

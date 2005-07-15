@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2005/07/15 15:57:02  sah
+ * introduced namespaces
+ *
  * Revision 3.18  2004/12/09 00:38:18  sbs
  * swapped the ars of TBmakeLet
  *
@@ -106,6 +109,7 @@
 #include "print.h"
 #include "gen_pseudo_fun.h"
 #include "new_types.h"
+#include "namespaces.h"
 
 /******************************************************************************
  *
@@ -181,9 +185,12 @@ GPFcreateFoldFun (ntype *elem_type, node *fold_fundef, prf fold_prf, char *res_n
 
     ret_ass = TBmakeReturn (TBmakeExprs (TBmakeId (tmp_res_avis), NULL));
 
+    /*
+     * TODO: there should be a view _FOLD instead of a module
+     */
     new_fundef
       = TBmakeFundef (ILIBstringCopy (pseudo_fold_fun_name),
-                      ILIBstringCopy (PSEUDO_MOD_FOLD),
+                      NSgetNamespace (PSEUDO_MOD_FOLD),
                       TBmakeRet (TYcopyType (elem_type), NULL), formal_args,
                       TBmakeBlock (TBmakeAssign (TBmakeLet (TBmakeIds (tmp_res_avis,
                                                                        NULL),

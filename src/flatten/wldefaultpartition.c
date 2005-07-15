@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2005/07/15 15:57:02  sah
+ * introduced namespaces
+ *
  * Revision 1.3  2005/06/18 18:04:52  sah
  * the special function sac2c:sel is now inserted using
  * DSdispatchFunCall
@@ -40,6 +43,7 @@
 #include "traverse.h"
 #include "constants.h"
 #include "deserialize.h"
+#include "namespaces.h"
 #include "wldefaultpartition.h"
 
 /**
@@ -489,7 +493,7 @@ WLDPmodarray (node *arg_node, info *arg_info)
   else{
 #endif
     INFO_WLDP_DEFEXPR (arg_info)
-      = DSdispatchFunCall ("sac2c", "sel",
+      = DSdispatchFunCall (NSgetNamespace ("sac2c"), "sel",
                            TBmakeExprs (DUPdupIdsId (sel_vec),
                                         TBmakeExprs (DUPdoDupNode (sel_array), NULL)));
 #if 0

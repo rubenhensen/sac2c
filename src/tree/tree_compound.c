@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.137  2005/07/15 15:57:02  sah
+ * introduced namespaces
+ *
  * Revision 3.136  2005/06/23 09:02:44  sah
  * added TCids2ExprsNt
  *
@@ -138,6 +141,7 @@
 #include "NameTuplesUtils.h"
 #include "type_utils.h"
 #include "internal_lib.h"
+#include "namespaces.h"
 
 /*****************************************************************************/
 /**
@@ -170,44 +174,8 @@
  */
 
 #define CMP_TYPEDEF(a, b)                                                                \
-    ((NULL == TYPEDEF_MOD (a))                                                           \
-       ? (!ILIBstringCompare (TYPEDEF_NAME (a), TYPEDEF_NAME (b))                        \
-          && (NULL == TYPEDEF_MOD (b)))                                                  \
-       : ((NULL == TYPEDEF_MOD (b))                                                      \
-            ? 0                                                                          \
-            : ((!ILIBstringCompare (TYPEDEF_NAME (a), TYPEDEF_NAME (b)))                 \
-               && (!ILIBstringCompare (TYPEDEF_MOD (a), TYPEDEF_MOD (b))))))
-
-/*
- *  macro name    : CMP_TYPE_TYPEDEF(name, mod, typedef)
- *  arg types     : 1) char*
- *                  2) char*
- *                  3) node*  (N_typedef)
- *  result type   : int
- *  description   : compares name and module name of a type with the
- *                  defined name and module name of a typedef
- *                  result: 1 - equal, 0 - not equal
- */
-
-#define CMP_TYPE_TYPEDEF(name, mod, tdef)                                                \
-    ((!ILIBstringCompare (name, TYPEDEF_NAME (tdef)))                                    \
-     && (!ILIBstringCompare (STR_OR_EMPTY (mod), STR_OR_EMPTY (TYPEDEF_MOD (tdef)))))
-
-/*
- *  macro name    : CMP_OBJ_OBJDEF
- *  arg types     : 1) char*
- *                  2) char*
- *                  3) node*  (N_objdef)
- *  result type   : int
- *  description   : compares name and module name of an object with the
- *                  defined name and module name of an objdef
- *                  result: 1 - equal, 0 - not equal
- */
-
-#define CMP_OBJ_OBJDEF(name, mod, odef)                                                  \
-    ((mod == NULL) ? (!ILIBstringCompare (name, OBJDEF_NAME (odef)))                     \
-                   : ((!ILIBstringCompare (name, OBJDEF_NAME (odef)))                    \
-                      && (!ILIBstringCompare (mod, OBJDEF_MOD (odef)))))
+    ((!ILIBstringCompare (TYPEDEF_NAME (a), TYPEDEF_NAME (b)))                           \
+     && (!NSequals (TYPEDEF_NS (a), TYPEDEF_NS (b))))
 
 /*
  *  macro name    : CMP_FUN_ID(a,b)
@@ -220,8 +188,7 @@
 
 #define CMP_FUN_ID(a, b)                                                                 \
     ((!ILIBstringCompare (FUNDEF_NAME (a), FUNDEF_NAME (b)))                             \
-     && (!ILIBstringCompare (STR_OR_EMPTY (FUNDEF_MOD (a)),                              \
-                             STR_OR_EMPTY (FUNDEF_MOD (b)))))
+     && (!NSequals (FUNDEF_NS (a), FUNDEF_NS (b))))
 
 /*****************************************************************************/
 
@@ -1293,14 +1260,16 @@ TCnodeListFind (nodelist *nl, node *node)
  ***/
 
 node *
-TCsearchTypedef (char *name, char *mod, node *implementations)
+TCsearchTypedef (const char *name, const namespace_t *ns, node *implementations)
 {
     node *tmp;
 
     DBUG_ENTER ("TCsearchTypedef");
 
     tmp = implementations;
-    while ((tmp != NULL) && (CMP_TYPE_TYPEDEF (name, mod, tmp) == 0)) {
+
+    while ((tmp != NULL) && (!ILIBstringCompare (name, TYPEDEF_NAME (tmp)))
+           && (!NSequals (ns, TYPEDEF_NS (tmp)))) {
         tmp = TYPEDEF_NEXT (tmp);
     }
 
@@ -1329,21 +1298,6 @@ TCappendTypedef (node *tdef_chain, node *tdef)
 /***
  ***  N_objdef :
  ***/
-
-node *
-TCsearchObjdef (const char *name, char *mod, node *implementations)
-{
-    node *tmp;
-
-    DBUG_ENTER ("TCsearchObjdef");
-
-    tmp = implementations;
-    while ((tmp != NULL) && (CMP_OBJ_OBJDEF (name, mod, tmp) == 0)) {
-        tmp = OBJDEF_NEXT (tmp);
-    }
-
-    DBUG_RETURN (tmp);
-}
 
 void
 TCobjList2ArgList (node *objdef)
@@ -3009,39 +2963,39 @@ TCmakeAp3 (node *fundef, node *arg1, node *arg2, node *arg3)
 }
 
 node *
-TCmakeSpap1 (char *mod, char *name, node *arg1)
+TCmakeSpap1 (namespace_t *ns, char *name, node *arg1)
 {
     node *result;
 
     DBUG_ENTER ("TCmakeSpap1");
 
-    result = TBmakeSpap (TBmakeSpid (mod, name), TBmakeExprs (arg1, NULL));
+    result = TBmakeSpap (TBmakeSpid (ns, name), TBmakeExprs (arg1, NULL));
 
     DBUG_RETURN (result);
 }
 
 node *
-TCmakeSpap2 (char *mod, char *name, node *arg1, node *arg2)
+TCmakeSpap2 (namespace_t *ns, char *name, node *arg1, node *arg2)
 {
     node *result;
 
     DBUG_ENTER ("TCmakeSpap1");
 
     result
-      = TBmakeSpap (TBmakeSpid (mod, name), TBmakeExprs (arg1, TBmakeExprs (arg2, NULL)));
+      = TBmakeSpap (TBmakeSpid (ns, name), TBmakeExprs (arg1, TBmakeExprs (arg2, NULL)));
 
     DBUG_RETURN (result);
 }
 
 node *
-TCmakeSpap3 (char *mod, char *name, node *arg1, node *arg2, node *arg3)
+TCmakeSpap3 (namespace_t *ns, char *name, node *arg1, node *arg2, node *arg3)
 {
     node *result;
 
     DBUG_ENTER ("TCmakeSpap1");
 
     result
-      = TBmakeSpap (TBmakeSpid (mod, name),
+      = TBmakeSpap (TBmakeSpid (ns, name),
                     TBmakeExprs (arg1, TBmakeExprs (arg2, TBmakeExprs (arg3, NULL))));
 
     DBUG_RETURN (result);

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2005/07/15 15:57:02  sah
+ * introduced namespaces
+ *
  * Revision 1.5  2005/05/25 20:27:16  sah
  * bodies of lacfuns are fetched now as well
  *
@@ -29,6 +32,7 @@
 #include "deserialize.h"
 #include "internal_lib.h"
 #include "type_utils.h"
+#include "namespaces.h"
 
 /*
  * INFO structure
@@ -91,13 +95,14 @@ PPIfundef (node *arg_node, info *arg_info)
         if (FUNDEF_BODY (arg_node) != NULL) {
             INFO_PPI_FETCHED (arg_info)++;
 
-            DBUG_PRINT ("PPI", ("fetched function body for '%s:%s'",
-                                FUNDEF_MOD (arg_node), FUNDEF_NAME (arg_node)));
+            DBUG_PRINT ("PPI",
+                        ("fetched function body for '%s:%s'",
+                         NSgetName (FUNDEF_NS (arg_node)), FUNDEF_NAME (arg_node)));
         } else {
             char *funsig = TUtypeSignature2String (arg_node);
 
             CTIerror ("Unable to find body of function '%s:%s' with args '%s' in module.",
-                      FUNDEF_MOD (arg_node), FUNDEF_NAME (arg_node), funsig);
+                      NSgetName (FUNDEF_NS (arg_node)), FUNDEF_NAME (arg_node), funsig);
 
             funsig = ILIBfree (funsig);
         }

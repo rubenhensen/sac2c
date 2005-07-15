@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.166  2005/07/15 15:57:02  sah
+ * introduced namespaces
+ *
  * Revision 3.165  2005/06/23 09:06:38  sah
  * added correct handling of named tuples
  * to COMPPrfDispatchError
@@ -644,7 +647,7 @@ GenericFun (int which, types *type)
         tdef = TYPES_TDEF (type);
         DBUG_ASSERT ((tdef != NULL), "Failed attempt to look up typedef");
 
-        utype = UTfindUserType (TYPEDEF_NAME (tdef), TYPEDEF_MOD (tdef));
+        utype = UTfindUserType (TYPEDEF_NAME (tdef), TYPEDEF_NS (tdef));
 
         DBUG_ASSERT ((utype != UT_NOT_DEFINED)
                        && (!TYisUser (TYgetScalar (UTgetBaseType (utype)))),

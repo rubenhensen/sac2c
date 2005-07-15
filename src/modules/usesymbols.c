@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.19  2005/07/15 15:57:02  sah
+ * introduced namespaces
+ *
  * Revision 1.18  2005/06/28 16:31:21  sah
  * fixed a warning message
  *
@@ -75,6 +78,7 @@
 #include "new_types.h"
 #include "symboltable.h"
 #include "ctinfo.h"
+#include "namespaces.h"
 
 /*
  * INFO structure
@@ -123,7 +127,7 @@ FreeInfo (info *info)
  */
 
 static bool
-CheckSymbolVisibility (const char *mod, const char *symb)
+CheckSymbolVisibility (const namespace_t *ns, const char *symb)
 {
     module_t *module;
     const sttable_t *table;
@@ -132,14 +136,14 @@ CheckSymbolVisibility (const char *mod, const char *symb)
 
     DBUG_ENTER ("CheckSymbolVisibility");
 
-    module = MODMloadModule (mod);
+    module = MODMloadModule (NSgetModule (ns));
     table = MODMgetSymbolTable (module);
     symbol = STget (symb, table);
 
     if ((symbol == NULL)
         || ((!(STsymbolVisibility (symbol) == SVT_exported))
             && (!(STsymbolVisibility (symbol) == SVT_provided)))) {
-        CTIerrorLine (global.linenum, "Symbol `%s:%s' not defined", mod, symb);
+        CTIerrorLine (global.linenum, "Symbol `%s:%s' not defined", NSgetName (ns), symb);
 
         result = FALSE;
     }
@@ -150,13 +154,14 @@ CheckSymbolVisibility (const char *mod, const char *symb)
 }
 
 static void
-MakeSymbolAvailable (const char *mod, const char *symb, stentrytype_t type, info *info)
+MakeSymbolAvailable (const namespace_t *ns, const char *symb, stentrytype_t type,
+                     info *info)
 {
     DBUG_ENTER ("MakeSymbolAvailable");
 
-    if (!ILIBstringCompare (mod, MODULE_NAME (INFO_USS_MODULE (info)))) {
-        if (CheckSymbolVisibility (mod, symb)) {
-            DSaddSymbolByName (symb, type, mod);
+    if (!NSequals (ns, MODULE_NAMESPACE (INFO_USS_MODULE (info)))) {
+        if (CheckSymbolVisibility (ns, symb)) {
+            DSaddSymbolByName (symb, type, NSgetModule (ns));
         }
     }
 
@@ -186,7 +191,7 @@ USSntype (ntype *arg_ntype, info *arg_info)
 
     /* if it is external, get the typedef */
     if (TYisSymb (scalar)) {
-        MakeSymbolAvailable (TYgetMod (scalar), TYgetName (scalar), SET_typedef,
+        MakeSymbolAvailable (TYgetNamespace (scalar), TYgetName (scalar), SET_typedef,
                              arg_info);
     }
 
@@ -229,7 +234,7 @@ USSfold (node *arg_node, info *arg_info)
     if (FOLD_FUN (arg_node) != NULL) {
         /* fold uses udf */
 
-        MakeSymbolAvailable (FOLD_MOD (arg_node), FOLD_FUN (arg_node), SET_wrapperhead,
+        MakeSymbolAvailable (FOLD_NS (arg_node), FOLD_FUN (arg_node), SET_wrapperhead,
                              arg_info);
     }
 
@@ -243,7 +248,7 @@ USSspap (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("USSspap");
 
-    MakeSymbolAvailable (SPAP_MOD (arg_node), SPAP_NAME (arg_node), SET_wrapperhead,
+    MakeSymbolAvailable (SPAP_NS (arg_node), SPAP_NAME (arg_node), SET_wrapperhead,
                          arg_info);
 
     arg_node = TRAVcont (arg_node, arg_info);
@@ -281,7 +286,7 @@ USSspid (node *arg_node, info *arg_info)
 
     if (INFO_USS_INSIDEMOP (arg_info) == TRUE) {
 
-        MakeSymbolAvailable (SPID_MOD (arg_node), SPID_NAME (arg_node), SET_wrapperhead,
+        MakeSymbolAvailable (SPID_NS (arg_node), SPID_NAME (arg_node), SET_wrapperhead,
                              arg_info);
     }
 

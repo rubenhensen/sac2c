@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.94  2005/07/15 15:57:02  sah
+ * introduced namespaces
+ *
  * Revision 3.93  2005/06/28 16:23:57  sah
  * cleanup
  *
@@ -331,6 +334,7 @@
 
 #include "serialize.h"
 #include "deserialize.h"
+#include "namespaces.h"
 
 /*
  * Since all type constructors may have different attributes,
@@ -344,7 +348,7 @@ typedef struct ATTR_AKD {
 } attr_akd;
 
 typedef struct ATTR_SYMBOL {
-    char *mod;
+    namespace_t *mod;
     char *name;
 } attr_symbol;
 
@@ -414,7 +418,7 @@ struct NTYPE {
  * Macros for accessing the attributes...
  */
 #define SIMPLE_TYPE(n) (n->typeattr.a_simple)
-#define SYMBOL_MOD(n) (n->typeattr.a_symbol.mod)
+#define SYMBOL_NS(n) (n->typeattr.a_symbol.mod)
 #define SYMBOL_NAME(n) (n->typeattr.a_symbol.name)
 #define USER_TYPE(n) (n->typeattr.a_user)
 #define AKV_CONST(n) (n->typeattr.a_akv)
@@ -688,7 +692,7 @@ TYgetConstr (ntype *type)
  *
  * function:
  *   ntype * TYmakeSimpleType( simpletype base)
- *   ntype * TYmakeSymbType( char *name, char *mod)
+ *   ntype * TYmakeSymbType( char *name, namespace_t *ns)
  *   ntype * TYmakeUserType( usertype udt)
  *
  *   ntype * TYsetSimpleType( ntype *simple, simpletype base)
@@ -713,7 +717,7 @@ TYmakeSimpleType (simpletype base)
 }
 
 ntype *
-TYmakeSymbType (char *name, char *mod)
+TYmakeSymbType (char *name, namespace_t *ns)
 {
     ntype *res;
 
@@ -722,7 +726,7 @@ TYmakeSymbType (char *name, char *mod)
     DBUG_ASSERT ((name != NULL), ("TYmakeSymbType called with NULL name!"));
 
     res = MakeNtype (TC_symbol, 0);
-    SYMBOL_MOD (res) = mod;
+    SYMBOL_NS (res) = ns;
     SYMBOL_NAME (res) = name;
 
     DBUG_RETURN (res);
@@ -754,10 +758,10 @@ TYsetSimpleType (ntype *simple, simpletype base)
 /******************************************************************************
  *
  * function:
- *   simpletype TYgetSimpleType( ntype *simple)
- *   usertype   TYgetUserType( ntype *user)
- *   char     * TYgetName( ntype *symb)
- *   char     * TYgetMod( ntype *symb)
+ *   simpletype    TYgetSimpleType( ntype *simple)
+ *   usertype      TYgetUserType( ntype *user)
+ *   char        * TYgetName( ntype *symb)
+ *   namespace_t * TYgetNamespace( ntype *symb)
  *
  * description:
  *   Several functions for extracting the attributes from scalar types.
@@ -790,34 +794,36 @@ TYgetName (ntype *symb)
     DBUG_RETURN (SYMBOL_NAME (symb));
 }
 
-char *
-TYgetMod (ntype *symb)
+const namespace_t *
+TYgetNamespace (ntype *symb)
 {
-    DBUG_ENTER ("TYgetMod");
-    DBUG_ASSERT ((NTYPE_CON (symb) == TC_symbol), "TYgetMod applied to nonsymbol-type!");
-    DBUG_RETURN (SYMBOL_MOD (symb));
+    DBUG_ENTER ("TYgetNamespace");
+    DBUG_ASSERT ((NTYPE_CON (symb) == TC_symbol),
+                 "TYgetNamespace applied to nonsymbol-type!");
+    DBUG_RETURN (SYMBOL_NS (symb));
 }
 
 /******************************************************************************
  *
  * function:
- *   ntype     * TYsetMod( ntype *symb, char *mod)
+ *   ntype     * TYsetNamespace( ntype *symb, namespace_t *ns)
  *
  * description:
  *   Several functions for changing the attributes from scalar types.
  *
  ******************************************************************************/
 ntype *
-TYsetMod (ntype *symb, char *mod)
+TYsetNamespace (ntype *symb, namespace_t *ns)
 {
-    DBUG_ENTER ("TYsetMod");
-    DBUG_ASSERT ((NTYPE_CON (symb) == TC_symbol), "TYsetMod applied to nonsymbol-type!");
+    DBUG_ENTER ("TYsetNamespace");
+    DBUG_ASSERT ((NTYPE_CON (symb) == TC_symbol),
+                 "TYsetNamespace applied to nonsymbol-type!");
 
-    if (SYMBOL_MOD (symb) != NULL) {
-        SYMBOL_MOD (symb) = ILIBfree (SYMBOL_MOD (symb));
+    if (SYMBOL_NS (symb) != NULL) {
+        SYMBOL_NS (symb) = NSfreeNamespace (SYMBOL_NS (symb));
     }
 
-    SYMBOL_MOD (symb) = mod;
+    SYMBOL_NS (symb) = ns;
 
     DBUG_RETURN (symb);
 }
@@ -3295,10 +3301,7 @@ TYcmpTypes (ntype *t1, ntype *t2)
         }
         break;
     case TC_symbol:
-        if ((NTYPE_CON (t2) == TC_symbol)
-            && (((SYMBOL_MOD (t1) == NULL) && (SYMBOL_MOD (t2) == NULL))
-                || ((SYMBOL_MOD (t1) != NULL) && (SYMBOL_MOD (t2) != NULL)
-                    && ILIBstringCompare (SYMBOL_MOD (t1), SYMBOL_MOD (t2))))
+        if ((NTYPE_CON (t2) == TC_symbol) && (NSequals (SYMBOL_NS (t1), SYMBOL_NS (t2)))
             && ILIBstringCompare (SYMBOL_NAME (t1), SYMBOL_NAME (t2))) {
             res = TY_eq;
         } else if (NTYPE_CON (t2) == TC_bottom) {
@@ -3833,7 +3836,7 @@ TYfreeTypeConstructor (ntype *type)
         BOTTOM_MSG (type) = ILIBfree (BOTTOM_MSG (type));
         break;
     case TC_symbol:
-        SYMBOL_MOD (type) = ILIBfree (SYMBOL_MOD (type));
+        SYMBOL_NS (type) = NSfreeNamespace (SYMBOL_NS (type));
         SYMBOL_NAME (type) = ILIBfree (SYMBOL_NAME (type));
         break;
     case TC_akv:
@@ -3949,7 +3952,7 @@ CopyTypeConstructor (ntype *type, TV_treatment new_tvars)
             SIMPLE_TYPE (res) = SIMPLE_TYPE (type);
             break;
         case TC_symbol:
-            SYMBOL_MOD (res) = ILIBstringCopy (SYMBOL_MOD (type));
+            SYMBOL_NS (res) = NSdupNamespace (SYMBOL_NS (type));
             SYMBOL_NAME (res) = ILIBstringCopy (SYMBOL_NAME (type));
             break;
         case TC_poly:
@@ -4129,17 +4132,19 @@ ScalarType2String (ntype *type)
         buf = ILIBstrBufPrintf (buf, "%s", global.mdb_type[SIMPLE_TYPE (type)]);
         break;
     case TC_symbol:
-        if (SYMBOL_MOD (type) == NULL) {
+        if (SYMBOL_NS (type) == NULL) {
             buf = ILIBstrBufPrintf (buf, "%s", SYMBOL_NAME (type));
         } else {
-            buf = ILIBstrBufPrintf (buf, "%s:%s", SYMBOL_MOD (type), SYMBOL_NAME (type));
+            buf = ILIBstrBufPrintf (buf, "%s::%s", NSgetName (SYMBOL_NS (type)),
+                                    SYMBOL_NAME (type));
         }
         break;
     case TC_user:
-        if (UTgetMod (USER_TYPE (type)) == NULL) {
+        if (UTgetNamespace (USER_TYPE (type)) == NULL) {
             buf = ILIBstrBufPrintf (buf, "%s", UTgetName (USER_TYPE (type)));
         } else {
-            buf = ILIBstrBufPrintf (buf, "%s:%s", UTgetMod (USER_TYPE (type)),
+            buf = ILIBstrBufPrintf (buf, "%s::%s",
+                                    NSgetName (UTgetNamespace (USER_TYPE (type))),
                                     UTgetName (USER_TYPE (type)));
         }
         break;
@@ -4503,10 +4508,10 @@ TYtype2DebugString (ntype *type, bool multiline, int offset)
             break;
         case TC_symbol:
             multiline = FALSE;
-            if (SYMBOL_MOD (type) == NULL) {
+            if (SYMBOL_NS (type) == NULL) {
                 buf = ILIBstrBufPrint (buf, SYMBOL_NAME (type));
             } else {
-                buf = ILIBstrBufPrintf (buf, "%s:%s", SYMBOL_MOD (type),
+                buf = ILIBstrBufPrintf (buf, "%s::%s", NSgetName (SYMBOL_NS (type)),
                                         SYMBOL_NAME (type));
             }
             break;
@@ -5029,10 +5034,10 @@ TYoldType2ScalarType (types *old)
         if (TYPES_POLY (old)) {
             res = TYmakePolyType (TYPES_NAME (old));
         } else {
-            udt = UTfindUserType (TYPES_NAME (old), TYPES_MOD (old));
+            udt = UTfindUserType (TYPES_NAME (old), NSgetNamespace (TYPES_MOD (old)));
             if (udt == UT_NOT_DEFINED) {
                 res = TYmakeSymbType (ILIBstringCopy (TYPES_NAME (old)),
-                                      ILIBstringCopy (TYPES_MOD (old)));
+                                      NSgetNamespace (TYPES_MOD (old)));
             } else {
                 res = TYmakeUserType (udt);
             }
@@ -5212,7 +5217,10 @@ Type2OldType (ntype *new)
         break;
     case TC_user:
         res = TBmakeTypes (T_user, 0, NULL, ILIBstringCopy (UTgetName (USER_TYPE (new))),
-                           ILIBstringCopy (UTgetMod (USER_TYPE (new))));
+                           ILIBstringCopy (
+                             (UTgetNamespace (USER_TYPE (new)) == NULL)
+                               ? NULL
+                               : NSgetName (UTgetNamespace (USER_TYPE (new)))));
         TYPES_TDEF (res) = UTgetTdef (USER_TYPE (new));
         break;
     default:
@@ -6111,9 +6119,8 @@ TYcreateWrapperCode (node *fundef, node *vardecs, node **new_vardecs)
 
         tmp = TUtypeSignature2String (fundef);
         funsig = ILIBmalloc (sizeof (char)
-                             * (strlen (FUNDEF_MOD (fundef))
-                                + strlen (FUNDEF_NAME (fundef)) + strlen (tmp) + 6));
-        sprintf (funsig, "%s:%s :: %s", FUNDEF_MOD (fundef), FUNDEF_NAME (fundef), tmp);
+                             * (strlen (CTIitemName (fundef)) + strlen (tmp) + 5));
+        sprintf (funsig, "%s :: %s", CTIitemName (fundef), tmp);
 
         assigns = CreateWrapperCode (FUNDEF_WRAPPERTYPE (fundef), NULL, 0, funsig,
                                      FUNDEF_ARGS (fundef), FUNDEF_ARGS (fundef), vardecs,
@@ -6146,7 +6153,7 @@ SerializeSymbolType (FILE *file, ntype *type)
     DBUG_ENTER ("SerializeSymbolType");
 
     fprintf (file, "TYdeserializeType( %d, \"%s\", \"%s\")", NTYPE_CON (type),
-             SYMBOL_NAME (type), SYMBOL_MOD (type));
+             SYMBOL_NAME (type), NSgetName (SYMBOL_NS (type)));
 
     DBUG_VOID_RETURN;
 }
@@ -6156,8 +6163,12 @@ SerializeUserType (FILE *file, ntype *type)
 {
     DBUG_ENTER ("SerializeUserType");
 
-    fprintf (file, "TYdeserializeType( %d, \"%s\", \"%s\")", NTYPE_CON (type),
-             UTgetName (USER_TYPE (type)), UTgetMod (USER_TYPE (type)));
+    fprintf (file, "TYdeserializeType( %d, \"%s\", ", NTYPE_CON (type),
+             UTgetName (USER_TYPE (type)));
+
+    NSserializeNamespace (file, UTgetNamespace (USER_TYPE (type)));
+
+    fprintf (file, ")");
 
     DBUG_VOID_RETURN;
 }
@@ -6573,33 +6584,33 @@ TYdeserializeType (typeconstr con, ...)
     } break;
     case TC_symbol: {
         char *name;
-        char *mod;
+        namespace_t *ns;
 
         va_start (args, con);
 
         name = va_arg (args, char *);
-        mod = va_arg (args, char *);
+        ns = va_arg (args, namespace_t *);
 
-        result = TYmakeSymbType (ILIBstringCopy (name), ILIBstringCopy (mod));
+        result = TYmakeSymbType (ILIBstringCopy (name), ns);
 
         va_end (args);
     } break;
     case TC_user: {
         char *name;
-        char *mod;
+        namespace_t *ns;
         usertype type;
 
         va_start (args, con);
 
         name = va_arg (args, char *);
-        mod = va_arg (args, char *);
+        ns = va_arg (args, namespace_t *);
 
-        type = UTfindUserType (name, mod);
+        type = UTfindUserType (name, ns);
 
         if (type != UT_NOT_DEFINED) {
             result = TYmakeUserType (type);
         } else {
-            result = DSloadUserType (name, mod);
+            result = DSloadUserType (name, ns);
         }
 
         va_end (args);

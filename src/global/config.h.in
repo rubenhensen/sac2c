@@ -96,9 +96,6 @@
  * Further sac2c settings.
  */
 
-#define MAIN_MOD_NAME   "_MAIN"
-#define EXTERN_MOD_NAME "_EXT"
-
 #define MAX_PATH_LEN 1024
 #define MAX_FILE_NAME 256
 

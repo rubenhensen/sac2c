@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.30  2005/07/15 15:57:02  sah
+# introduced namespaces
+#
 # Revision 3.29  2005/06/01 16:59:05  sah
 # separated annotating namespaces and gathering dependencies in two
 # phase to allow for reusing the gathering phase to print the
@@ -120,7 +123,7 @@ OBJS := symboltable.o stringset.o \
         libmanager.o modulemanager.o libstat.o export.o \
         ccmanager.o libbuilder.o resolveall.o annotatenamespace.o \
         usesymbols.o prepareinline.o dependencies.o importsymbols.o \
-        gatherdependencies.o
+        gatherdependencies.o namespaces.o
 
 all: $(OBJS)
 

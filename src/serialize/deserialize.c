@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.19  2005/07/15 15:57:02  sah
+ * introduced namespaces
+ *
  * Revision 1.18  2005/06/28 16:23:57  sah
  * cleanup
  *
@@ -74,8 +77,10 @@
 #include "symboltable.h"
 #include "stringset.h"
 #include "modulemanager.h"
+#include "namespaces.h"
 #include "new2old.h"
 #include "traverse.h"
+#include "ctinfo.h"
 #include "free.h"
 
 #include <string.h>
@@ -201,7 +206,7 @@ InsertIntoState (node *item)
          * first add the type to the UDT repository
          */
         udt = UTaddUserType (ILIBstringCopy (TYPEDEF_NAME (item)),
-                             ILIBstringCopy (TYPEDEF_MOD (item)),
+                             NSdupNamespace (TYPEDEF_NS (item)),
                              TYcopyType (TYPEDEF_NTYPE (item)), NULL, NODE_LINE (item),
                              item);
         /*
@@ -586,7 +591,8 @@ DSimportInstancesByName (const char *name, const char *module)
  */
 
 static node *
-doDispatchFunCall (node *fundefs, const char *mod, const char *name, ntype *argtypes)
+doDispatchFunCall (node *fundefs, const namespace_t *ns, const char *name,
+                   ntype *argtypes)
 {
     node *result = NULL;
 
@@ -595,7 +601,7 @@ doDispatchFunCall (node *fundefs, const char *mod, const char *name, ntype *argt
     while ((fundefs != NULL) && (result == NULL)) {
 
         if (FUNDEF_ISWRAPPERFUN (fundefs)) {
-            if (ILIBstringCompare (FUNDEF_MOD (fundefs), mod)
+            if (NSequals (FUNDEF_NS (fundefs), ns)
                 && ILIBstringCompare (FUNDEF_NAME (fundefs), name)) {
                 if (TUsignatureMatches (FUNDEF_ARGS (fundefs), argtypes)) {
                     result = fundefs;
@@ -620,7 +626,7 @@ doDispatchFunCall (node *fundefs, const char *mod, const char *name, ntype *argt
  * @return N_ap node encoding the call or NULL in case of failure
  */
 node *
-DSdispatchFunCall (const char *mod, const char *name, node *args)
+DSdispatchFunCall (const namespace_t *ns, const char *name, node *args)
 {
     node *result = NULL;
     node *fundef;
@@ -634,7 +640,7 @@ DSdispatchFunCall (const char *mod, const char *name, node *args)
     /*
      * first make sure the needed function is indeed available
      */
-    DSaddSymbolByName (name, SET_wrapperhead, mod);
+    DSaddSymbolByName (name, SET_wrapperhead, NSgetModule (ns));
 
     /*
      * now walk through the fundef chains and try to find
@@ -644,17 +650,17 @@ DSdispatchFunCall (const char *mod, const char *name, node *args)
 
     argtypes = TUactualArgs2Ntype (args);
 
-    fundef = doDispatchFunCall (INFO_DS_FUNDECS (DSstate), mod, name, argtypes);
+    fundef = doDispatchFunCall (INFO_DS_FUNDECS (DSstate), ns, name, argtypes);
 
     if (fundef == NULL) {
-        fundef = doDispatchFunCall (INFO_DS_FUNDEFS (DSstate), mod, name, argtypes);
+        fundef = doDispatchFunCall (INFO_DS_FUNDEFS (DSstate), ns, name, argtypes);
 
         if (fundef == NULL) {
-            fundef = doDispatchFunCall (MODULE_FUNDECS (INFO_DS_MODULE (DSstate)), mod,
+            fundef = doDispatchFunCall (MODULE_FUNDECS (INFO_DS_MODULE (DSstate)), ns,
                                         name, argtypes);
 
             if (fundef == NULL) {
-                fundef = doDispatchFunCall (MODULE_FUNS (INFO_DS_MODULE (DSstate)), mod,
+                fundef = doDispatchFunCall (MODULE_FUNS (INFO_DS_MODULE (DSstate)), ns,
                                             name, argtypes);
             }
         }
@@ -669,7 +675,8 @@ DSdispatchFunCall (const char *mod, const char *name, node *args)
          */
         result = TBmakeAp (fundef, args);
 
-        INFO_DS_DEPS (DSstate) = STRSadd (mod, STRS_saclib, INFO_DS_DEPS (DSstate));
+        INFO_DS_DEPS (DSstate)
+          = STRSadd (NSgetModule (ns), STRS_saclib, INFO_DS_DEPS (DSstate));
     }
 
     DBUG_RETURN (result);
@@ -680,7 +687,7 @@ DSdispatchFunCall (const char *mod, const char *name, node *args)
  */
 
 ntype *
-DSloadUserType (const char *name, const char *mod)
+DSloadUserType (const char *name, const namespace_t *ns)
 {
     ntype *result;
     node *tdef;
@@ -688,11 +695,11 @@ DSloadUserType (const char *name, const char *mod)
 
     DBUG_ENTER ("DSloadUserType");
 
-    tdef = DSaddSymbolByName (name, SET_typedef, mod);
+    tdef = DSaddSymbolByName (name, SET_typedef, NSgetModule (ns));
 
     DBUG_ASSERT ((tdef != NULL), "deserialisation of typedef failed!");
 
-    udt = UTfindUserType (name, mod);
+    udt = UTfindUserType (name, ns);
 
     DBUG_ASSERT ((udt != UT_NOT_DEFINED), "typedef not in udt repository");
 
@@ -774,7 +781,7 @@ LoadFunctionBody (node *fundef)
     DBUG_ASSERT ((DSstate != NULL),
                  "LoadFunctionBody called without calling InitDeserialize");
 
-    module = MODMloadModule (FUNDEF_MOD (fundef));
+    module = MODMloadModule (NSgetModule (FUNDEF_NS (fundef)));
     table = MODMgetSymbolTable (module);
 
     serfunname = SERgenerateSerFunName (SET_funbody, fundef);
@@ -800,8 +807,7 @@ DSdoDeserialize (node *fundef)
     DBUG_ASSERT ((DSstate != NULL),
                  "DSdoDeserialize called without calling InitDeserialize");
 
-    DBUG_PRINT ("DS", ("Adding function body to `%s:%s'.", FUNDEF_MOD (fundef),
-                       FUNDEF_NAME (fundef)));
+    DBUG_PRINT ("DS", ("Adding function body to `%s'.", CTIitemName (fundef)));
 
     setCurrentFundefHead (fundef);
 

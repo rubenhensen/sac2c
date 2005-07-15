@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2005/07/15 15:57:02  sah
+ * introduced namespaces
+ *
  * Revision 1.7  2005/06/18 18:06:00  sah
  * moved entire dependency handling to dependencies.c
  * the dependency table is now created shortly prior
@@ -39,6 +42,7 @@
 #include "modulemanager.h"
 #include "filemgr.h"
 #include "internal_lib.h"
+#include "namespaces.h"
 #include "dbug.h"
 
 /*
@@ -206,7 +210,8 @@ PrintLibDepFoldFun (const char *entry, strstype_t kind, void *modname)
              *
              * The space before the colon is essential here!
              * This allows us to easily distinguish this case from the
-             * alldeps rules, in particular, the empty rule in doPrintLibDependencies
+             * alldeps rules, in particular, the empty rule in
+             * doPrintLibDependencies
              */
             printf ("%s :\n\t( cd %s; $(MAKE) lib%s.so)\n\n", entry, libdir, entry);
         }
@@ -232,9 +237,10 @@ doPrintLibDependencies (node *tree)
      * The non-space before the colon is essential here!
      * Cf. PrintLibDepFoldFun!
      */
-    printf ("alldeps_%s:\n", MODULE_NAME (tree));
+    printf ("alldeps_%s:\n", NSgetName (MODULE_NAMESPACE (tree)));
 
-    STRSfold (&PrintLibDepFoldFun, MODULE_DEPENDENCIES (tree), MODULE_NAME (tree));
+    STRSfold (&PrintLibDepFoldFun, MODULE_DEPENDENCIES (tree),
+              (void *)NSgetName (MODULE_NAMESPACE (tree)));
 
     DBUG_VOID_RETURN;
 }
@@ -313,7 +319,7 @@ PrintDepFoldFun (const char *entry, strstype_t kind, void *rest)
         break;
     }
 
-    DBUG_RETURN (NULL);
+    DBUG_RETURN ((void *)NULL);
 }
 
 static void
@@ -327,8 +333,9 @@ PrintTargetName (node *tree)
         break;
     case F_modimp:
     case F_classimp:
-        printf ("%slib%s.so %slib%s.a:", global.targetdir, MODULE_NAME (tree),
-                global.targetdir, MODULE_NAME (tree));
+        printf ("%slib%s.so %slib%s.a:", global.targetdir,
+                NSgetName (MODULE_NAMESPACE (tree)), global.targetdir,
+                NSgetName (MODULE_NAMESPACE (tree)));
         break;
     default:
         DBUG_ASSERT (0, ("unknown file type found!"));

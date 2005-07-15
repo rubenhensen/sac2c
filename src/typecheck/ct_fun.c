@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2005/07/15 15:57:02  sah
+ * introduced namespaces
+ *
  * Revision 1.9  2005/06/15 10:23:31  sbs
  * call history added to error messages.
  *
@@ -44,6 +47,7 @@
 #include "type_errors.h"
 #include "type_utils.h"
 #include "specialize.h"
+#include "namespaces.h"
 
 /*
  * OPEN PROBLEMS:
@@ -86,8 +90,7 @@ DispatchFunType (node *wrapper, ntype *args)
     DBUG_ENTER ("DispatchFunType");
 
     DBUG_EXECUTE ("NTC", tmp_str = TYtype2String (args, 0, 0););
-    DBUG_PRINT ("NTC", ("dispatching %s:%s for %s", FUNDEF_MOD (wrapper),
-                        FUNDEF_NAME (wrapper), tmp_str));
+    DBUG_PRINT ("NTC", ("dispatching %s for %s", CTIitemName (wrapper), tmp_str));
 
     res = TYdispatchFunType (FUNDEF_WRAPPERTYPE (wrapper), args);
 
@@ -163,8 +166,7 @@ NTCCTdispatchFunType (node *wrapper, ntype *args)
     DBUG_ENTER ("NTCCTdispatchFunType");
 
     DBUG_EXECUTE ("NTC", tmp_str = TYtype2String (args, 0, 0););
-    DBUG_PRINT ("NTC", ("dispatching %s:%s for %s", FUNDEF_MOD (wrapper),
-                        FUNDEF_NAME (wrapper), tmp_str));
+    DBUG_PRINT ("NTC", ("dispatching %s for %s", CTIitemName (wrapper), tmp_str));
 
     res = TYdispatchFunType (FUNDEF_WRAPPERTYPE (wrapper), args);
 
@@ -253,11 +255,9 @@ NTCCTudf (te_info *info, ntype *args)
                  * no match at all!
                  */
                 CTIerrorLine (global.linenum,
-                              "No matching definition found for the application of "
-                              "\"%s:%s\" "
-                              " to arguments %s",
-                              FUNDEF_MOD (fundef), FUNDEF_NAME (fundef),
-                              TYtype2String (args, FALSE, 0));
+                              "No matching definition found for the application "
+                              " of \"%s\" to arguments %s",
+                              CTIitemName (fundef), TYtype2String (args, FALSE, 0));
                 global.act_info_chn = TEgetParent (global.act_info_chn);
                 TEextendedAbort ();
             }
@@ -275,7 +275,7 @@ NTCCTudf (te_info *info, ntype *args)
     DBUG_PRINT ("NTC_INFOCHN", ("global.act_info_chn reset to %p", global.act_info_chn));
 
     tmp = TYtype2String (args, FALSE, 0);
-    TEhandleError (global.linenum, " -- in %s:%s%s@", FUNDEF_MOD (fundef),
+    TEhandleError (global.linenum, " -- in %s::%s%s@", NSgetName (FUNDEF_NS (fundef)),
                    FUNDEF_NAME (fundef), tmp);
     tmp = ILIBfree (tmp);
     tmp2 = TEfetchErrors ();

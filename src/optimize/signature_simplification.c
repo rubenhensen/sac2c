@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2005/07/15 15:57:02  sah
+ * introduced namespaces
+ *
  * Revision 1.10  2005/06/02 13:42:48  mwe
  * set WASOPTIMIZED flag if some constant return values were found
  *
@@ -69,6 +72,7 @@
 #include "globals.h"
 #include "constants.h"
 #include "shape.h"
+#include "namespaces.h"
 #include "tree_compound.h"
 
 #include "signature_simplification.h"
@@ -210,7 +214,7 @@ SISIfundef (node *arg_node, info *arg_info)
 
     if ((FUNDEF_RETS (arg_node) != NULL) && (!FUNDEF_ISLACFUN (arg_node))
         && (!ILIBstringCompare ("main", FUNDEF_NAME (arg_node)))
-        && (!ILIBstringCompare (MAIN_MOD_NAME, FUNDEF_MOD (arg_node)))
+        && (!NSequals (NSgetRootNamespace (), FUNDEF_NS (arg_node)))
         && (!FUNDEF_ISEXPORTED (arg_node)) && (!FUNDEF_ISPROVIDED (arg_node))) {
         FUNDEF_RETS (arg_node) = TRAVdo (FUNDEF_RETS (arg_node), arg_info);
     }
@@ -520,7 +524,7 @@ SISIreturn (node *arg_node, info *arg_info)
 
     if ((!FUNDEF_ISLACFUN (INFO_SISI_FUNDEF (arg_info)))
         && (!ILIBstringCompare ("main", FUNDEF_NAME (INFO_SISI_FUNDEF (arg_info))))
-        && (!ILIBstringCompare (MAIN_MOD_NAME, FUNDEF_MOD (INFO_SISI_FUNDEF (arg_info))))
+        && (!NSequals (NSgetRootNamespace (), FUNDEF_NS (INFO_SISI_FUNDEF (arg_info))))
         && (!FUNDEF_ISEXPORTED (INFO_SISI_FUNDEF (arg_info)))
         && (!FUNDEF_ISPROVIDED (INFO_SISI_FUNDEF (arg_info)))) {
 

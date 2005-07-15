@@ -15,6 +15,7 @@
 #include "dbug.h"
 #include "ctinfo.h"
 #include "globals.h"
+#include "namespaces.h"
 #include "internal_lib.h"
 
 static ntype *
@@ -58,14 +59,15 @@ RSTntype (ntype *arg_type, info *arg_info)
     } else if (TYisSymb (arg_type)) {
         usertype udt;
 
-        udt = UTfindUserType (TYgetName (arg_type), TYgetMod (arg_type));
+        udt = UTfindUserType (TYgetName (arg_type), TYgetNamespace (arg_type));
 
         if (udt == UT_NOT_DEFINED) {
-            CTIerror ("unknown user defined type `%s:%s'.", TYgetMod (arg_type),
-                      TYgetName (arg_type));
+            CTIerror ("unknown user defined type `%s::%s'.",
+                      NSgetName (TYgetNamespace (arg_type)), TYgetName (arg_type));
         } else {
-            DBUG_PRINT ("RST", ("resolved symbol type %s:%s.", TYgetMod (arg_type),
-                                TYgetName (arg_type)));
+            DBUG_PRINT ("RST",
+                        ("resolved symbol type %s:%s.",
+                         NSgetName (TYgetNamespace (arg_type)), TYgetName (arg_type)));
 
             arg_type = TYfreeType (arg_type);
             arg_type = TYmakeUserType (udt);
@@ -125,31 +127,30 @@ RSTtypedef (node *arg_node, info *arg_info)
     DBUG_ENTER ("RSTtypedef");
 
     if (TYPEDEF_ISLOCAL (arg_node)) {
-        usertype udt = UTfindUserType (TYPEDEF_NAME (arg_node), TYPEDEF_MOD (arg_node));
+        usertype udt = UTfindUserType (TYPEDEF_NAME (arg_node), TYPEDEF_NS (arg_node));
 
         if (udt != UT_NOT_DEFINED) {
             CTIerrorLine (global.linenum,
-                          "Type %s:%s multiply defined;"
+                          "Type %s multiply defined;"
                           " previous definition in line %d",
-                          TYPEDEF_MOD (arg_node), TYPEDEF_NAME (arg_node),
-                          UTgetLine (udt));
+                          CTIitemName (arg_node), UTgetLine (udt));
         }
 
         DBUG_EXECUTE ("UDT",
                       tmp_str = TYtype2String (TYPEDEF_NTYPE (arg_node), FALSE, 0););
-        DBUG_PRINT ("UDT", ("adding user type %s:%s defined as %s",
-                            TYPEDEF_MOD (arg_node), TYPEDEF_NAME (arg_node), tmp_str));
+        DBUG_PRINT ("UDT", ("adding user type %s defined as %s", CTIitemName (arg_node),
+                            tmp_str));
         DBUG_EXECUTE ("UDT", tmp_str = ILIBfree (tmp_str););
 
         UTaddUserType (ILIBstringCopy (TYPEDEF_NAME (arg_node)),
-                       ILIBstringCopy (TYPEDEF_MOD (arg_node)),
+                       NSdupNamespace (TYPEDEF_NS (arg_node)),
                        TYcopyType (TYPEDEF_NTYPE (arg_node)), NULL, global.linenum,
                        arg_node);
     } else {
         DBUG_EXECUTE ("UDT",
                       tmp_str = TYtype2String (TYPEDEF_NTYPE (arg_node), FALSE, 0););
-        DBUG_PRINT ("UDT", ("passing user type %s:%s defined as %s",
-                            TYPEDEF_MOD (arg_node), TYPEDEF_NAME (arg_node), tmp_str));
+        DBUG_PRINT ("UDT", ("passing user type %s defined as %s", CTIitemName (arg_node),
+                            tmp_str));
         DBUG_EXECUTE ("UDT", tmp_str = ILIBfree (tmp_str););
     }
 

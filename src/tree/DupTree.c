@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.159  2005/07/15 15:57:02  sah
+ * introduced namespaces
+ *
  * Revision 3.158  2005/06/28 16:12:02  sah
  * removed a lot of warning
  * messages
@@ -428,6 +431,7 @@
 #include "scheduling.h"
 #include "constants.h"
 #include "stringset.h"
+#include "namespaces.h"
 
 /*
  * INFO structure
@@ -1109,7 +1113,7 @@ DUPspid (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("DUPspid");
 
-    new_node = TBmakeSpid (ILIBstringCopy (SPID_MOD (arg_node)),
+    new_node = TBmakeSpid (NSdupNamespace (SPID_NS (arg_node)),
                            ILIBstringCopy (SPID_NAME (arg_node)));
 
     CopyCommonNodeData (new_node, arg_node);
@@ -1144,8 +1148,8 @@ DUPmodule (node *arg_node, info *arg_info)
     DBUG_ENTER ("DUPmodule");
 
     new_node
-      = TBmakeModule (ILIBstringCopy (MODULE_NAME (arg_node)), MODULE_FILETYPE (arg_node),
-                      DUPTRAV (MODULE_IMPORTS (arg_node)),
+      = TBmakeModule (NSdupNamespace (MODULE_NAMESPACE (arg_node)),
+                      MODULE_FILETYPE (arg_node), DUPTRAV (MODULE_IMPORTS (arg_node)),
                       DUPTRAV (MODULE_TYPES (arg_node)), DUPTRAV (MODULE_OBJS (arg_node)),
                       DUPTRAV (MODULE_FUNS (arg_node)),
                       DUPTRAV (MODULE_FUNDECS (arg_node)));
@@ -1167,7 +1171,7 @@ DUPtypedef (node *arg_node, info *arg_info)
     DBUG_ENTER ("DUPtypedef");
 
     new_node = TBmakeTypedef (ILIBstringCopy (TYPEDEF_NAME (arg_node)),
-                              ILIBstringCopy (TYPEDEF_MOD (arg_node)),
+                              NSdupNamespace (TYPEDEF_NS (arg_node)),
                               TYcopyType (TYPEDEF_NTYPE (arg_node)),
                               DUPCONT (TYPEDEF_NEXT (arg_node)));
 
@@ -1192,7 +1196,7 @@ DUPobjdef (node *arg_node, info *arg_info)
 
     new_node
       = TBmakeObjdef (TYcopyType (OBJDEF_TYPE (arg_node)),
-                      ILIBstringCopy (OBJDEF_MOD (arg_node)),
+                      NSdupNamespace (OBJDEF_NS (arg_node)),
                       ILIBstringCopy (OBJDEF_NAME (arg_node)),
                       DUPTRAV (OBJDEF_EXPR (arg_node)), DUPCONT (OBJDEF_NEXT (arg_node)));
 
@@ -1247,7 +1251,7 @@ DUPfundef (node *arg_node, info *arg_info)
     INFO_DUP_FUNDEF (arg_info) = arg_node;
 
     new_node = TBmakeFundef (ILIBstringCopy (FUNDEF_NAME (arg_node)),
-                             ILIBstringCopy (FUNDEF_MOD (arg_node)),
+                             NSdupNamespace (FUNDEF_NS (arg_node)),
                              DUPTRAV (FUNDEF_RETS (arg_node)),
                              NULL, /* must be duplicated later on */
                              NULL, /* must be duplicated later on */
@@ -1990,7 +1994,7 @@ DUPcwrapper (node *arg_node, info *arg_info)
 
     new_node = TBmakeCwrapper (CWRAPPER_FUNS (arg_node),
                                ILIBstringCopy (CWRAPPER_NAME (arg_node)),
-                               ILIBstringCopy (CWRAPPER_MOD (arg_node)),
+                               NSdupNamespace (CWRAPPER_NS (arg_node)),
                                CWRAPPER_ARGCOUNT (arg_node), CWRAPPER_RESCOUNT (arg_node),
                                DUPTRAV (CWRAPPER_NEXT (arg_node)));
     DBUG_RETURN (new_node);
@@ -2004,7 +2008,7 @@ DUPdataflowgraph (node *arg_node, info *arg_info)
     DBUG_ENTER ("DUPdataflowgraph");
 
     DBUG_ASSERT ((FALSE), "DUPdataflowgraph until now not implemented!! :-(");
-    DBUG_RETURN (NULL);
+    DBUG_RETURN ((node *)NULL);
 }
 
 /*******************************************************************************/
@@ -2016,7 +2020,7 @@ DUPdataflownode (node *arg_node, info *arg_info)
 
     DBUG_ASSERT ((FALSE), "DUPdataflownode until now not implemented!! :-(");
 
-    DBUG_RETURN (NULL);
+    DBUG_RETURN ((node *)NULL);
 }
 
 /*******************************************************************************/
@@ -2034,7 +2038,7 @@ DUPimport (node *arg_node, info *arg_info)
 
     IMPORT_FLAGSTRUCTURE (new_node) = IMPORT_FLAGSTRUCTURE (arg_node);
 
-    DBUG_RETURN (NULL);
+    DBUG_RETURN (new_node);
 }
 
 /*******************************************************************************/
@@ -2407,7 +2411,7 @@ DUPfold (node *arg_node, info *arg_info)
     new_node = TBmakeFold (DUPTRAV (FOLD_NEUTRAL (arg_node)));
 
     FOLD_FUN (new_node) = ILIBstringCopy (FOLD_FUN (arg_node));
-    FOLD_MOD (new_node) = ILIBstringCopy (FOLD_MOD (arg_node));
+    FOLD_NS (new_node) = NSdupNamespace (FOLD_NS (arg_node));
 
     FOLD_FUNDEF (new_node)
       = LUTsearchInLutPp (INFO_DUP_LUT (arg_info), FOLD_FUNDEF (arg_node));

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.48  2005/07/15 15:57:02  sah
+ * introduced namespaces
+ *
  * Revision 3.47  2005/04/20 20:45:12  sah
  * renamed errno to checkerrno as the identifier
  * errno is reserved (cf. ISO C Standard) and may
@@ -122,6 +125,7 @@
 #include "gen_startup_code.h"
 #include "internal_lib.h"
 #include "renameidentifiers.h"
+#include "namespaces.h"
 
 /******************************************************************************
  *
@@ -886,7 +890,8 @@ GSCprintMain ()
     GSCprintMainBegin ();
 
     INDENT;
-    fprintf (global.outfile, "SACf_" MAIN_MOD_NAME "__main( ");
+    fprintf (global.outfile, "SACf_%s__main( ", NSgetName (NSgetRootNamespace ()));
+
     if (print_thread_id) {
         fprintf (global.outfile, "SAC_ND_ARG_in( %s), ", mythread_NT);
     }

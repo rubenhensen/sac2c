@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.23  2005/07/15 15:57:02  sah
+ * introduced namespaces
+ *
  * Revision 1.22  2005/06/14 23:40:08  sbs
  * proper error message retrieval installed.
  *
@@ -90,7 +93,7 @@
 struct TE_INFO {
     int line;             /* line where the application is situated */
     char *kind_str;       /* kind of function we are dealing with */
-    char *mod_str;        /* optional module name */
+    const char *mod_str;  /* optional module name */
     const char *name_str; /* name of the function */
     node *wrapper;        /* for udfs, this pointer points to the wrapper function */
     node *assign;         /* for udfs, this pointer points to the assign node of the ap */
@@ -211,7 +214,7 @@ MatchNumA (ntype *type)
  ******************************************************************************/
 
 te_info *
-TEmakeInfo (int linenum, char *kind_str, char *mod_str, const char *name_str,
+TEmakeInfo (int linenum, char *kind_str, const char *mod_str, const char *name_str,
             node *wrapper, node *assign, const void *cffun, te_info *parent)
 {
     te_info *res;
@@ -245,7 +248,7 @@ TEgetKindStr (te_info *info)
     DBUG_RETURN (TI_KIND (info));
 }
 
-char *
+const char *
 TEgetModStr (te_info *info)
 {
     DBUG_ENTER ("TEgetModStr");
