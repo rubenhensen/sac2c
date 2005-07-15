@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2005/07/15 17:41:49  sah
+ * prevented the deletion of instances that might be
+ * used for dispatch later on
+ *
  * Revision 3.18  2005/07/15 17:34:14  sah
  * added some better debugging facilities
  *
@@ -207,8 +211,20 @@ DFRfundef (node *arg_node, info *arg_info)
             FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
         }
 
-        /* on bottom up traversal turn unused fundefs into zombies */
-        if (!(FUNDEF_ISNEEDED (arg_node))) {
+        /* on bottom up traversal turn unused local fundefs into zombies.
+         * we ignore imported/used functions, as we cannot easily find
+         * out about their dependencies (e.g. which instances belong to
+         * which wrapper). Furthermore there is no point in deleting
+         * external functions as no code will be generated anyways.
+         * Another possibility would be to use the wrapper type to tag
+         * the instances... so we place a
+         *
+         * TODO
+         *
+         * here
+         */
+
+        if ((!FUNDEF_ISNEEDED (arg_node)) && FUNDEF_ISLOCAL (arg_node)) {
             DBUG_PRINT ("DFR", ("Going to delete %s for %s",
                                 (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
                                 CTIitemName (arg_node)));
