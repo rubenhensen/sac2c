@@ -30,3 +30,4 @@ importsymbols.h
 gatherdependencies.c
 gatherdependencies.h
 namespaces.c
+namespaces.h
