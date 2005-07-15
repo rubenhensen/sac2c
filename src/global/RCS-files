@@ -7,7 +7,6 @@ globals.c
 globals.h
 internal_lib.c
 internal_lib.h
-interrupt.c
 interrupt.h
 main.c
 nt_info.mac
