@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.95  2005/07/15 15:23:08  ktr
+ * removed type conversions before and after IVE
+ *
  * Revision 3.94  2005/06/28 15:38:25  jhb
  * added phase.h by the includes
  *
@@ -1137,9 +1140,7 @@ OPTmodule (node *arg_node, info *arg_info)
      * apply IVE (index vector elimination)
      */
     if (global.optimize.doive) {
-        arg_node = TOTdoToOldTypes (arg_node);
         arg_node = IVEdoIndexVectorElimination (arg_node);
-        arg_node = TNTdoToNewTypes (arg_node);
 
         if ((global.break_after == PH_sacopt)
             && (0 == strcmp (global.break_specifier, "ive"))) {
