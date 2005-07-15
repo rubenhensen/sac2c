@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.78  2005/07/15 17:34:50  sah
+ * fixed a DBUG_PRINT
+ *
  * Revision 3.77  2005/07/15 15:57:02  sah
  * introduced namespaces
  *
@@ -347,7 +350,7 @@ TypeCheckFunctionBody (node *fundef, info *arg_info)
 
     FUNDEF_TCSTAT (fundef) = NTC_checking;
 
-    DBUG_PRINT ("NTC", ("type checking function \"%s:%s\" with", CTIitemName (fundef)));
+    DBUG_PRINT ("NTC", ("type checking function \"%s\" with", CTIitemName (fundef)));
 
     /**
      * First, we have to ensure that ALL return types are in fact type vars.
