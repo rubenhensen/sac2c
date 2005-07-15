@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2005/07/15 15:24:13  ktr
+ * Adapted to new types. However, IVE does not work yet.
+ *
  * Revision 3.8  2004/11/26 19:54:47  skt
  * IDX -> IVE
  *
@@ -48,7 +51,6 @@
 extern node *IVEdoIndexVectorElimination (node *syntax_tree);
 
 extern char *IVEchangeId (char *varname, shape *shp);
-extern char *IVEchangeIdOld (char *varname, types *shp);
 
 extern node *IVEmodule (node *arg_node, info *arg_info);
 extern node *IVEfundef (node *arg_node, info *arg_info);

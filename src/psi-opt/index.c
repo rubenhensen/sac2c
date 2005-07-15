@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.71  2005/07/15 15:24:13  ktr
+ * Adapted to new types. However, IVE does not work yet.
+ *
  * Revision 3.70  2005/01/11 13:32:21  cg
  * Converted output from Error.h to ctinfo.c
  *
@@ -247,8 +250,6 @@
  *
  */
 
-#define NEW_INFO
-
 #include <stdio.h>
 #include <string.h>
 #include "index.h"
@@ -257,6 +258,7 @@
 #include "tree_compound.h"
 #include "internal_lib.h"
 #include "shape.h"
+#include "new_types.h"
 #include "dbug.h"
 #include "ctinfo.h"
 #include "print.h"
@@ -831,7 +833,7 @@ static int ive_op;
 /******************************************************************************
  *
  * Function:
- *   node *LiftArg( node *arg, node *fundef, types *new_type, bool do_rc,
+ *   node *LiftArg( node *arg, node *fundef, ntype *new_type,
  *                  node **new_assigns)
  *
  * Description:
@@ -847,33 +849,19 @@ static int ive_op;
  ******************************************************************************/
 
 node *
-LiftArg (node *arg, node *fundef, types *new_type, node **new_assigns)
+LiftArg (node *arg, node *fundef, ntype *new_type, node **new_assigns)
 {
     char *new_name;
     node *new_vardec;
     node *new_arg;
     node *new_ids;
-    node *avis;
+    node *new_avis;
 
     DBUG_ENTER ("LiftArg");
 
-    if (NODE_TYPE (arg) == N_id) {
-        new_name = ILIBtmpVarName (ID_NAME (arg));
-        /* Insert vardec for new var */
-        if (new_type == NULL) {
-            new_type = ID_TYPE (arg);
-        }
-    } else {
-        new_name = ILIBtmpVar ();
-        DBUG_ASSERT ((new_type != NULL), "no type found!");
-    }
-
-    avis = TBmakeAvis (new_name, NULL);
-
-    new_vardec = TBmakeVardec (avis, NULL);
-
-    VARDEC_TYPE (new_vardec) = DUPdupAllTypes (new_type);
-
+    new_name = ILIBtmpVarName (ID_NAME (arg));
+    new_avis = TBmakeAvis (new_name, new_type);
+    new_vardec = TBmakeVardec (new_avis, NULL);
     fundef = TCaddVardecs (fundef, new_vardec);
 
     /*
@@ -883,13 +871,12 @@ LiftArg (node *arg, node *fundef, types *new_type, node **new_assigns)
      *   __A = A;
      *   ... = fun( __A, ...);
      */
-    new_ids = TBmakeIds (avis, NULL);
-
-    IDS_DECL (new_ids) = new_vardec;
+    new_ids = TBmakeIds (new_avis, NULL);
 
     (*new_assigns) = TBmakeAssign (TBmakeLet (new_ids, arg), (*new_assigns));
 
-    new_arg = TBmakeId (avis);
+    AVIS_SSAASSIGN (new_avis) = (*new_assigns);
+    new_arg = TBmakeId (new_avis);
 
     DBUG_RETURN (new_arg);
 }
@@ -1337,41 +1324,6 @@ IVEchangeId (char *varname, shape *shp)
 
 /** <!--********************************************************************-->
  *
- * @fn char *IVEchangeIdOld( char *varname, types *type)
- *
- * @brief appends the shape given by type to the varname.
- *
- *    Example:
- *    test, int[1,4,2,3]  =>  test_1_4_2_3__
- *    does not free the argument space!
- *
- ******************************************************************************/
-
-char *
-IVEchangeIdOld (char *varname, types *type)
-{
-    shpseg *tmp_shpseg;
-    static char buffer[1024];
-    static char buffer2[32];
-    int i;
-
-    DBUG_ENTER ("IVEchangeIdOld");
-
-    sprintf (buffer, "%s", varname);
-    tmp_shpseg = TCtype2Shpseg (type, NULL);
-    for (i = 0; i < TCgetShapeDim (type); i++) {
-        sprintf (buffer2, "_%d", SHPSEG_SHAPE (tmp_shpseg, i));
-        strcat (buffer, buffer2);
-    }
-    sprintf (buffer2, "__");
-    strcat (buffer, buffer2);
-    tmp_shpseg = FREEfreeShpseg (tmp_shpseg);
-
-    DBUG_RETURN (ILIBstringCopy (buffer));
-}
-
-/** <!--********************************************************************-->
- *
  * @fn node *VardecIdx(node *vardec, shape *shp)
  *
  * @brief vardec points to the N_vardec/ N_arg node of the original
@@ -1399,35 +1351,26 @@ VardecIdx (node *vardec, shape *shp)
          */
         varname = IVEchangeId (VARDEC_OR_ARG_NAME (vardec), shp);
         if (NODE_TYPE (vardec) == N_vardec) {
-#ifdef MWE_NTYPE_READY
             newvardec
               = TBmakeVardec (TBmakeAvis (varname, TYmakeAKS (TYmakeSimpleType (T_int),
-                                                              SHcreateSHape (0))),
+                                                              SHmakeShape (0))),
                               VARDEC_NEXT (vardec));
-#else
-            newvardec = TBmakeVardec (TBmakeAvis (varname, NULL), VARDEC_NEXT (vardec));
-            VARDEC_TYPE (newvardec) = TBmakeTypes1 (T_int);
-#endif
             VARDEC_NEXT (vardec) = newvardec;
         } else {
             block = FUNDEF_BODY (ARG_FUNDEF (vardec));
-#ifdef MWE_NTYPE_READY
             newvardec
               = TBmakeVardec (TBmakeAvis (varname, TYmakeAKS (TYmakeSimpleType (T_int),
-                                                              SHcreateSHape (0))),
-                              VARDEC_NEXT (vardec));
-#else
-            newvardec = TBmakeVardec (TBmakeAvis (varname, NULL), BLOCK_VARDEC (block));
-            VARDEC_TYPE (newvardec) = TBmakeTypes1 (T_int);
-#endif
+                                                              SHmakeShape (0))),
+                              BLOCK_VARDEC (block));
             BLOCK_VARDEC (block) = newvardec;
         }
         VINFO_VARDEC (vinfo) = newvardec;
         DBUG_PRINT ("IDX",
                     ("inserting new vardec %s between %s and %s", varname,
                      ((NODE_TYPE (vardec) == N_vardec) ? VARDEC_NAME (vardec) : "NULL"),
-                     (VARDEC_NEXT (newvardec) ? VARDEC_NAME (VARDEC_NEXT (newvardec))
-                                              : "NULL")));
+                     (VARDEC_NEXT (newvardec) != NULL
+                        ? VARDEC_NAME (VARDEC_NEXT (newvardec))
+                        : "NULL")));
     }
 
     DBUG_PRINT ("IDX", ("vinfo " F_PTR " points to vardec %s", vinfo,
@@ -1547,15 +1490,9 @@ CreateVect2OffsetIcm (node *vardec, shape *shp)
     iv_vect_id = NTUaddNtTag (iv_vect_id);
     iv_off_id = NTUaddNtTag (iv_off_id);
 
-#ifdef MWE_NTYPE_READY
     icm = TCmakeIcm5 ("ND_VECT2OFFSET", iv_off_id,
                       TBmakeNum (SHgetUnrLen (TYgetShape (ID_NTYPE (iv_vect_id)))),
                       iv_vect_id, TBmakeNum (SHgetDim (shp)), exprs);
-#else
-    icm = TCmakeIcm5 ("ND_VECT2OFFSET", iv_off_id,
-                      TBmakeNum (TCgetTypesLength (ID_TYPE (iv_vect_id))), iv_vect_id,
-                      TBmakeNum (SHgetDim (shp)), exprs);
-#endif
 
     /*
      * Finally, we mark vardec as VECT!
@@ -1667,7 +1604,6 @@ node *
 IVEarg (node *arg_node, info *arg_info)
 {
     node *newassign, *block, *vinfo;
-    int dim;
 
     DBUG_ENTER ("IVEarg");
 
@@ -1677,14 +1613,10 @@ IVEarg (node *arg_node, info *arg_info)
          * instanciated before traversing the body!
          */
         ARG_FUNDEF (arg_node) = INFO_IVE_FUNDEF (arg_info);
-#ifdef MWE_NTYPE_READY
-        dim = TYgetDim (ARG_NTYPE (arg_node));
-        if ((TYgetBasetype (ARG_NTYPE (arg_node)) == T_int)
-            && (DIM_NO_OFFSET (dim) == 1)) {
-#else
-        dim = ARG_DIM (arg_node);
-        if ((ARG_BASETYPE (arg_node) == T_int) && (DIM_NO_OFFSET (dim) == 1)) {
-#endif
+        if ((TYgetSimpleType (TYgetScalar (ARG_NTYPE (arg_node))) == T_int)
+            && (TYisAKD (ARG_NTYPE (arg_node)) || TYisAKS (ARG_NTYPE (arg_node))
+                || TYisAKV (ARG_NTYPE (arg_node)))
+            && (TYgetDim (ARG_NTYPE (arg_node)) == 1)) {
             ARG_ACTCHN (arg_node) = TCmakeVinfoDollar (NULL);
             ARG_COLCHN (arg_node) = TCmakeVinfoDollar (NULL);
         }
@@ -1776,7 +1708,6 @@ IVEblock (node *arg_node, info *arg_info)
 node *
 IVEvardec (node *arg_node, info *arg_info)
 {
-    int dim;
     node *next;
 
     DBUG_ENTER ("IVEvardec");
@@ -1786,14 +1717,10 @@ IVEvardec (node *arg_node, info *arg_info)
          * This is the first traversal which initializes the int[.]
          * vardecs with $!
          */
-#ifdef MWE_NTYPE_READY
-        dim = TYgetDim (AVIS_TYPE (VARDEC_AVIS (arg_node)));
-        if ((TYgetBasetype (AVIS_TYPE (VARDEC_AVIS (arg_node))) == T_int)
-            && (DIM_NO_OFFSET (dim) == 1)) {
-#else
-        dim = VARDEC_DIM (arg_node);
-        if ((VARDEC_BASETYPE (arg_node) == T_int) && (DIM_NO_OFFSET (dim) == 1)) {
-#endif
+        if ((TYgetSimpleType (TYgetScalar (VARDEC_NTYPE (arg_node))) == T_int)
+            && (TYisAKD (VARDEC_NTYPE (arg_node)) || TYisAKS (VARDEC_NTYPE (arg_node))
+                || TYisAKV (VARDEC_NTYPE (arg_node)))
+            && (TYgetDim (VARDEC_NTYPE (arg_node)) == 1)) {
             /* we are dealing with a potential indexing vector ! */
             VARDEC_ACTCHN (arg_node) = TCmakeVinfoDollar (NULL);
             VARDEC_COLCHN (arg_node) = TCmakeVinfoDollar (NULL);
@@ -1810,16 +1737,11 @@ IVEvardec (node *arg_node, info *arg_info)
          * I hope that this is sufficient, since I add VECT whenever Vect2Offset
          * is introduced ( see "CreateVect2OffsetIcm").
          */
-#ifdef MWE_NTYPE_READY
-        dim = TYgetDim (AVIS_TYPE (VARDEC_AVIS (arg_node)));
-        if ((TYgetBasetype (AVIS_TYPE (VARDEC_AVIS (arg_node))) == T_int)
-            && (DIM_NO_OFFSET (dim) == 1)
+        if ((TYgetSimpleType (TYgetScalar (VARDEC_NTYPE (arg_node))) == T_int)
+            && (TYisAKD (VARDEC_NTYPE (arg_node)) || TYisAKS (VARDEC_NTYPE (arg_node))
+                || TYisAKV (VARDEC_NTYPE (arg_node)))
+            && (TYgetDim (VARDEC_NTYPE (arg_node)) == 1)
             && (VINFO_FLAG (FindVect (VARDEC_COLCHN (arg_node))) == DOLLAR)) {
-#else
-        dim = VARDEC_DIM (arg_node);
-        if ((VARDEC_BASETYPE (arg_node) == T_int) && (DIM_NO_OFFSET (dim) == 1)
-            && (VINFO_FLAG (FindVect (VARDEC_COLCHN (arg_node))) == DOLLAR)) {
-#endif
             /*
              * we are dealing with an indexing vector that is not
              * needed as a vector anymore!
@@ -2149,11 +2071,8 @@ node *
 IVEprf (node *arg_node, info *arg_info)
 {
     node *arg1, *arg2, *arg3, *vinfo;
-#ifdef MWE_NTYPE_READY
     ntype *type1, *type2;
-#else
-    types *type1, *type2;
-#endif
+
     DBUG_ENTER ("IVEprf");
 
     /*
@@ -2171,26 +2090,16 @@ IVEprf (node *arg_node, info *arg_info)
         DBUG_ASSERT (((NODE_TYPE (arg2) == N_id) || (NODE_TYPE (arg2) == N_array)),
                      "wrong arg in F_sel application");
 
-#ifdef MWE_NTYPE_READY
         type1 = ID_NTYPE (arg1);
         type2 = ID_NTYPE (arg2);
-#else
-        type1 = ID_TYPE (arg1);
-        type2 = ID_TYPE (arg2);
-#endif
         /*
          * if the shape of the array or the shape of the index are unknown,
          * do not(!) replace sel by idx_sel but mark the selecting vector as VECT!
          * this is done by traversal with NULL instead of vinfo!
          */
-#ifdef MWE_NTYPE_READY
-        if (((TYIsAKD (type1)) || (TYIsAUD (type1)) || (TYIsAUDGZ (type1)))
-            && ((TYIsAKD (type2)) || (TYIsAUD (type2)) || (TYIsAUDGZ (type2)))) {
-            vinfo = TBmakeVinfo (IDX, TYtype2Shape (type2), NULL, NULL);
-#else
-        if ((TYPES_SHPSEG (type1) != NULL) && (TYPES_SHPSEG (type2) != NULL)) {
-            vinfo = TBmakeVinfo (IDX, TCtype2Shape (type2), NULL, NULL);
-#endif
+        if ((TYisAKS (type1) || TYisAKV (type1))
+            && (TYisAKS (type2) || TYisAKV (type2))) {
+            vinfo = TBmakeVinfo (IDX, SHcopyShape (TYgetShape (type2)), NULL, NULL);
             INFO_IVE_TRANSFORM_VINFO (arg_info) = vinfo;
             PRF_ARG1 (arg_node) = TRAVdo (arg1, arg_info);
             vinfo = FREEdoFreeNode (vinfo);
@@ -2198,16 +2107,10 @@ IVEprf (node *arg_node, info *arg_info)
                 PRF_PRF (arg_node) = F_idx_sel;
             }
             if (NODE_TYPE (PRF_ARG1 (arg_node)) == N_prf) {
-#ifdef MWE_NTYPE_READY
-                PRF_ARG1 (arg_node)
-                  = LiftArg (PRF_ARG1 (arg_node), INFO_IVE_FUNDEF (arg_info), NULL,
-                             TYmakeSimpleType (T_int),
-                             &(INFO_IVE_PRE_ASSIGNS (arg_info)));
-#else
                 PRF_ARG1 (arg_node)
                   = LiftArg (PRF_ARG1 (arg_node), INFO_IVE_FUNDEF (arg_info),
-                             TBmakeTypes1 (T_int), &(INFO_IVE_PRE_ASSIGNS (arg_info)));
-#endif
+                             TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)),
+                             &(INFO_IVE_PRE_ASSIGNS (arg_info)));
             }
         } else {
             INFO_IVE_TRANSFORM_VINFO (arg_info) = NULL;
@@ -2224,26 +2127,17 @@ IVEprf (node *arg_node, info *arg_info)
         DBUG_ASSERT (((NODE_TYPE (arg1) == N_id) || (NODE_TYPE (arg1) == N_array)),
                      "wrong arg in F_modarray application");
 
-#ifdef MWE_NTYPE_READY
         type1 = ID_NTYPE (arg1);
         type2 = ID_NTYPE (arg2);
-#else
-        type1 = ID_TYPE (arg1);
-        type2 = ID_TYPE (arg2);
-#endif
+
         /*
          * if the shape of the array or the index vector are unknown, do not(!)
          * replace modarray by idx_modarray but mark the selecting vector as VECT!
          * this is done by traversal with NULL instead of vinfo!
          */
-#ifdef MWE_TYPE_READY
-        if (((TYIsAKD (type1)) || (TYIsAUD (type1)) || (TYIsAUDGZ (type1)))
-            && ((TYIsAKD (type2)) || (TYIsAUD (type2)) || (TYIsAUDGZ (type2)))) {
-            vinfo = TBmakeVinfo (IDX, TYtype2Shape (type1), NULL, NULL);
-#else
-        if ((TYPES_SHPSEG (type1) != NULL) && (TYPES_SHPSEG (type2) != NULL)) {
-            vinfo = TBmakeVinfo (IDX, TCtype2Shape (type1), NULL, NULL);
-#endif
+        if ((TYisAKS (type1) || TYisAKV (type1))
+            && (TYisAKS (type2) || TYisAKV (type2))) {
+            vinfo = TBmakeVinfo (IDX, SHcopyShape (TYgetShape (type1)), NULL, NULL);
             INFO_IVE_TRANSFORM_VINFO (arg_info) = vinfo;
             PRF_ARG2 (arg_node) = TRAVdo (arg2, arg_info);
             vinfo = FREEdoFreeNode (vinfo);
@@ -2251,16 +2145,10 @@ IVEprf (node *arg_node, info *arg_info)
                 PRF_PRF (arg_node) = F_idx_modarray;
             }
             if (NODE_TYPE (PRF_ARG2 (arg_node)) == N_prf) {
-#ifdef MWE_NTYPE_READY
-                PRF_ARG2 (arg_node)
-                  = LiftArg (PRF_ARG2 (arg_node), INFO_IVE_FUNDEF (arg_info), NULL,
-                             TBmakeSimpleType (T_int),
-                             &(INFO_IVE_PRE_ASSIGNS (arg_info)));
-#else
                 PRF_ARG2 (arg_node)
                   = LiftArg (PRF_ARG2 (arg_node), INFO_IVE_FUNDEF (arg_info),
-                             TBmakeTypes1 (T_int), &(INFO_IVE_PRE_ASSIGNS (arg_info)));
-#endif
+                             TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)),
+                             &(INFO_IVE_PRE_ASSIGNS (arg_info)));
             }
         } else {
             INFO_IVE_TRANSFORM_VINFO (arg_info) = NULL;
@@ -2276,15 +2164,10 @@ IVEprf (node *arg_node, info *arg_info)
             && (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL)) {
             PRF_PRF (arg_node) = F_add_SxS;
             ive_op++;
-#ifdef MWE_NTYPE_READY
-            DBUG_ASSERT ((TYgetDim (
-                            AVIS_TYPE (VARDEC_AVIS (ID_DECL (PRF_ARG2 (arg_node)))))
-                          >= 0),
+            DBUG_ASSERT ((TYisAKD (ID_NTYPE (PRF_ARG2 (arg_node)))
+                          || TYisAKS (ID_NTYPE (PRF_ARG2 (arg_node)))
+                          || TYisAKV (ID_NTYPE (PRF_ARG2 (arg_node)))),
                          "trying to transform F_add_SxA with arg2 of unknown shape");
-#else
-            DBUG_ASSERT ((TCgetShapeDim (ID_TYPE (PRF_ARG2 (arg_node))) >= 0),
-                         "trying to transform F_add_SxA with arg2 of unknown shape");
-#endif
             INFO_IVE_NON_SCAL_LEN (arg_info) = ID_SHAPE (PRF_ARG2 (arg_node), 0);
         }
         PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
@@ -2295,15 +2178,10 @@ IVEprf (node *arg_node, info *arg_info)
             && (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL)) {
             PRF_PRF (arg_node) = F_add_SxS;
             ive_op++;
-#ifdef MWE_NTYPE_READY
-            DBUG_ASSERT ((TYgetDim (
-                            AVIS_TYPE (VARDEC_AVIS (ID_DECL (PRF_ARG1 (arg_node)))))
-                          >= 0),
+            DBUG_ASSERT ((TYisAKD (ID_NTYPE (PRF_ARG1 (arg_node)))
+                          || TYisAKS (ID_NTYPE (PRF_ARG1 (arg_node)))
+                          || TYisAKV (ID_NTYPE (PRF_ARG1 (arg_node)))),
                          "trying to transform F_add_AxS with arg1 of unknown shape");
-#else
-            DBUG_ASSERT ((TCgetShapeDim (ID_TYPE (PRF_ARG1 (arg_node))) >= 0),
-                         "trying to transform F_add_AxS with arg1 of unknown shape");
-#endif
             INFO_IVE_NON_SCAL_LEN (arg_info) = ID_SHAPE (PRF_ARG1 (arg_node), 0);
         }
         PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
@@ -2323,15 +2201,10 @@ IVEprf (node *arg_node, info *arg_info)
             && (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL)) {
             PRF_PRF (arg_node) = F_sub_SxS;
             ive_op++;
-#ifdef MWE_NTYPE_READY
-            DBUG_ASSERT ((TYgetDim (
-                            AVIS_TYPE (VARDEC_AVIS (ID_DECL (PRF_ARG2 (arg_node)))))
-                          >= 0),
+            DBUG_ASSERT ((TYisAKD (ID_NTYPE (PRF_ARG2 (arg_node)))
+                          || TYisAKS (ID_NTYPE (PRF_ARG2 (arg_node)))
+                          || TYisAKV (ID_NTYPE (PRF_ARG2 (arg_node)))),
                          "trying to transform F_sub_SxA with arg2 of unknown shape");
-#else
-            DBUG_ASSERT ((TCgetShapeDim (ID_TYPE (PRF_ARG2 (arg_node))) >= 0),
-                         "trying to transform F_sub_SxA with arg2 of unknown shape");
-#endif
             INFO_IVE_NON_SCAL_LEN (arg_info) = ID_SHAPE (PRF_ARG2 (arg_node), 0);
         }
         PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
@@ -2342,15 +2215,10 @@ IVEprf (node *arg_node, info *arg_info)
             && (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL)) {
             PRF_PRF (arg_node) = F_sub_SxS;
             ive_op++;
-#ifdef MWE_NTYPE_READY
-            DBUG_ASSERT ((TYgetDim (
-                            AVIS_TYPE (VARDEC_AVIS (ID_DECL (PRF_ARG1 (arg_node)))))
-                          >= 0),
+            DBUG_ASSERT ((TYisAKD (ID_NTYPE (PRF_ARG1 (arg_node)))
+                          || TYisAKS (ID_NTYPE (PRF_ARG1 (arg_node)))
+                          || TYisAKV (ID_NTYPE (PRF_ARG1 (arg_node)))),
                          "trying to transform F_sub_AxS with arg1 of unknown shape");
-#else
-            DBUG_ASSERT ((TCgetShapeDim (ID_TYPE (PRF_ARG1 (arg_node))) >= 0),
-                         "trying to transform F_sub_AxS with arg1 of unknown shape");
-#endif
             INFO_IVE_NON_SCAL_LEN (arg_info) = ID_SHAPE (PRF_ARG1 (arg_node), 0);
         }
         PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
@@ -2434,16 +2302,15 @@ IVEid (node *arg_node, info *arg_info)
     DBUG_ENTER ("IVEid");
 
     vardec = ID_DECL (arg_node);
+
     DBUG_ASSERT (((NODE_TYPE (vardec) == N_vardec) || (NODE_TYPE (vardec) == N_arg)),
                  "non vardec/arg node as backref in N_id!");
+
     if (NODE_TYPE (vardec) == N_vardec) {
-#ifdef MWE_NTYPE_READY
-        if ((TYgetBasetype (AVIS_TYPE (VARDEC_AVIS (vardec))) == T_int)
-            && (DIM_NO_OFFSET (TYgetDim (AVIS_TYPE (VARDEC_AVIS (vardec)))) == 1)) {
-#else
-        if ((VARDEC_BASETYPE (vardec) == T_int)
-            && (DIM_NO_OFFSET (VARDEC_DIM (vardec)) == 1)) {
-#endif
+        if ((TYgetSimpleType (TYgetScalar (VARDEC_NTYPE (vardec))) == T_int)
+            && (TYisAKD (VARDEC_NTYPE (vardec)) || TYisAKS (VARDEC_NTYPE (vardec))
+                || TYisAKV (VARDEC_NTYPE (vardec)))
+            && (TYgetDim (VARDEC_NTYPE (vardec)) == 1)) {
             if (INFO_IVE_TRANSFORM_VINFO (arg_info) == NULL) {
                 DBUG_PRINT ("IVE", ("assigning VECT to %s:", ID_NAME (arg_node)));
                 VARDEC_ACTCHN (vardec) = SetVect (VARDEC_ACTCHN (vardec));
@@ -2466,12 +2333,10 @@ IVEid (node *arg_node, info *arg_info)
             }
         }
     } else {
-#ifdef MWE_NTYPE_READY
-        if ((TYgetBasetype (ARG_NTYPE (vardec)) == T_int)
-            && &&(DIM_NO_OFFSET (TYgetDim (ARG_NTYPE (vardec))) == 1)) {
-#else
-        if ((ARG_BASETYPE (vardec) == T_int) && (DIM_NO_OFFSET (ARG_DIM (vardec)) == 1)) {
-#endif
+        if ((TYgetSimpleType (TYgetScalar (ARG_NTYPE (vardec))) == T_int)
+            && (TYisAKD (ARG_NTYPE (vardec)) || TYisAKS (ARG_NTYPE (vardec))
+                || TYisAKV (ARG_NTYPE (vardec)))
+            && (TYgetDim (ARG_NTYPE (vardec)) == 1)) {
             if (INFO_IVE_TRANSFORM_VINFO (arg_info) == NULL) {
                 DBUG_PRINT ("IVE", ("assigning VECT to %s:", ID_NAME (arg_node)));
                 ARG_ACTCHN (vardec) = SetVect (ARG_ACTCHN (vardec));
@@ -2703,11 +2568,7 @@ IVEcode (node *arg_node, info *arg_info)
     node *with, *idx_decl, *vinfo, *col_vinfo, *new_assign, *let_node, *current_assign,
       *new_id, *array_id, *tmp_withop;
     node *idxs, *tmp_ids;
-#ifdef MWE_NTYPES_READY
     ntype *arr_type;
-#else
-    types *arr_type;
-#endif
     shape *arr_shape;
     bool use_genvar_offset;
 
@@ -2755,19 +2616,13 @@ IVEcode (node *arg_node, info *arg_info)
                 use_genvar_offset = FALSE;
 
                 while (tmp_ids != NULL) {
-#ifdef MWE_NTYPE_READY
                     arr_type = IDS_NTYPE (tmp_ids);
                     DBUG_ASSERT ((arr_type != NULL), "missing type-info for LHS of let!");
-                    arr_shape = TYtype2Shape (arr_type);
-#else
-                    arr_type = IDS_TYPE (tmp_ids);
-
-                    DBUG_ASSERT ((arr_type != NULL), "missing type-info for LHS of let!");
-                    arr_shape = TCtype2Shape (arr_type);
-#endif
                     DBUG_ASSERT ((tmp_withop != NULL), "missing N_withop node!");
 
-                    if (arr_shape != NULL) {
+                    if (TYisAKS (arr_type) || TYisAKV (arr_type)) {
+                        arr_shape = TYgetShape (arr_type);
+
                         if (((NODE_TYPE (tmp_withop) == N_modarray)
                              || (NODE_TYPE (tmp_withop) == N_genarray))
                             && SHcompareShapes (VINFO_SHAPE (vinfo), arr_shape)) {
@@ -2811,8 +2666,6 @@ IVEcode (node *arg_node, info *arg_info)
                              */
                             break;
                         }
-
-                        arr_shape = SHfreeShape (arr_shape);
                     }
                     tmp_ids = IDS_NEXT (tmp_ids);
                     tmp_withop = WITHOP_NEXT (tmp_withop);
@@ -2870,14 +2723,16 @@ IVEcond (node *arg_node, info *arg_info)
     /* Now, we duplicate the topmost chain of actchn! */
     MAP_TO_ALL_VARDEC_ACTCHNS (DuplicateTop, INFO_IVE_VARDECS (arg_info));
 
-    if (COND_THEN (arg_node) != NULL)
+    if (COND_THEN (arg_node) != NULL) {
         COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
+    }
 
     /* Now, we switch the two topmost chains of actchn! */
     MAP_TO_ALL_VARDEC_ACTCHNS (SwitchTop, INFO_IVE_VARDECS (arg_info));
 
-    if (COND_ELSE (arg_node) != NULL)
+    if (COND_ELSE (arg_node) != NULL) {
         COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
+    }
 
     /* Now, we merge the topmost chain of actchn into the rest of actchn! */
     MAP_TO_ALL_VARDEC_ACTCHNS (MergeTop, INFO_IVE_VARDECS (arg_info));
@@ -2910,8 +2765,9 @@ IVEdo (node *arg_node, info *arg_info)
     old_uses_mode = INFO_IVE_MODE (arg_info);
     INFO_IVE_MODE (arg_info) = M_uses_only;
 
-    if (DO_BODY (arg_node) != NULL)
+    if (DO_BODY (arg_node) != NULL) {
         DO_BODY (arg_node) = TRAVdo (DO_BODY (arg_node), arg_info);
+    }
 
     /* Now, we merge the topmost chain of actchn into the rest of actchn! */
     MAP_TO_ALL_VARDEC_ACTCHNS (MergeCopyTop, INFO_IVE_VARDECS (arg_info));
@@ -2921,8 +2777,9 @@ IVEdo (node *arg_node, info *arg_info)
      * (see comment above!)
      */
     INFO_IVE_MODE (arg_info) = old_uses_mode;
-    if (DO_BODY (arg_node) != NULL)
+    if (DO_BODY (arg_node) != NULL) {
         DO_BODY (arg_node) = TRAVdo (DO_BODY (arg_node), arg_info);
+    }
 
     MAP_TO_ALL_VARDEC_ACTCHNS (FreeTop, INFO_IVE_VARDECS (arg_info));
 
