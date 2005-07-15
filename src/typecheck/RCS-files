@@ -38,3 +38,4 @@ type_utils.h
 resolvesymboltypes.c
 resolvesymboltypes.h
 dispatchfuncalls.c
+dispatchfuncalls.h
