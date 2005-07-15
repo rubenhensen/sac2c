@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.107  2005/07/15 17:41:30  sah
+ * removed interrupt.h
+ *
  * Revision 3.106  2005/07/03 17:07:10  ktr
  * Replaced FLATdoFlatten with CSdoCodeSimplification
  *
@@ -120,7 +123,6 @@
 #include "resolvepragma.h"
 #include "objanalysis.h"
 #include "resource.h"
-#include "interrupt.h"
 #include "options.h"
 #include "multithread.h"
 #include "WLEnhancement.h"
