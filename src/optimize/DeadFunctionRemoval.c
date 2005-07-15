@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2005/07/15 17:34:14  sah
+ * added some better debugging facilities
+ *
  * Revision 3.17  2005/03/04 21:21:42  cg
  * Optimization completely streamlined.
  * Removal of zombie functions automatized.
@@ -179,15 +182,20 @@ DFRfundef (node *arg_node, info *arg_info)
 
     if (INFO_DFR_SPINE (arg_info)) {
         DBUG_PRINT ("DFR",
-                    ("Dead Function Removal in function: %s", FUNDEF_NAME (arg_node)));
+                    ("Dead Function Removal in function: %s", CTIitemName (arg_node)));
 
         /*
          * remark: main is always tagged as provided
          */
         if (FUNDEF_ISPROVIDED (arg_node)) {
+            DBUG_PRINT ("DFR", (">>> %s is provided",
+                                (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef")));
+
             FUNDEF_ISNEEDED (arg_node) = TRUE;
 
             if (FUNDEF_BODY (arg_node) != NULL) {
+                DBUG_PRINT ("DFR", (">>> inspecting body..."));
+
                 INFO_DFR_SPINE (arg_info) = FALSE;
                 FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
                 INFO_DFR_SPINE (arg_info) = TRUE;
@@ -201,16 +209,26 @@ DFRfundef (node *arg_node, info *arg_info)
 
         /* on bottom up traversal turn unused fundefs into zombies */
         if (!(FUNDEF_ISNEEDED (arg_node))) {
+            DBUG_PRINT ("DFR", ("Going to delete %s for %s",
+                                (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
+                                CTIitemName (arg_node)));
             dead_fun++;
             arg_node = FREEdoFreeNode (arg_node);
         }
     } else {
         if (!FUNDEF_ISNEEDED (arg_node)) {
+            DBUG_PRINT ("DFR",
+                        (">>> fundef %s tagged as a dependency", CTIitemName (arg_node)));
+
             FUNDEF_ISNEEDED (arg_node) = TRUE;
 
             if (FUNDEF_BODY (arg_node) != NULL) {
                 FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
             }
+#ifndef DBUG_OFF
+        } else {
+            DBUG_PRINT ("DFR", (">>> fundef %s already marked", CTIitemName (arg_node)));
+#endif
         }
     }
 
