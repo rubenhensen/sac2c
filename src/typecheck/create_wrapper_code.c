@@ -1,12 +1,17 @@
 /*
  *
  * $Log$
+ * Revision 1.42  2005/07/15 15:52:18  sah
+ * splitted create_wrapper_code and dispatchfuncalls
+ * introduced namespaces
+ *
  * Revision 1.41  2005/06/18 13:52:03  sah
  * moved SignatureMatches and ActualArgs2Ntype from
  * create_wrapper_code to type_utils
  *
  * Revision 1.40  2005/06/14 23:41:29  sbs
- * functions with errorneous instances only will lead to type errors now as well.
+ * functions with errorneous instances only
+ * will lead to type errors now as well.
  *
  * Revision 1.39  2005/06/14 09:55:10  sbs
  * support for bottom types integrated.
@@ -162,6 +167,7 @@
 #include "new_types.h"
 #include "type_utils.h"
 #include "ct_fun.h"
+#include "namespaces.h"
 
 /*******************************************************************************
  *
@@ -174,8 +180,7 @@
 struct INFO {
     int travno;
     lut_t *wrapperfuns;
-    node *modul;
-    node *nwith;
+    node *with;
 };
 
 /**
@@ -183,8 +188,7 @@ struct INFO {
  */
 #define INFO_CWC_TRAVNO(n) ((n)->travno)
 #define INFO_CWC_WRAPPERFUNS(n) ((n)->wrapperfuns)
-#define INFO_CWC_MODUL(n) ((n)->modul)
-#define INFO_CWC_WITH(n) ((n)->nwith)
+#define INFO_CWC_WITH(n) ((n)->with)
 
 /**
  * INFO functions
@@ -200,8 +204,6 @@ MakeInfo ()
 
     INFO_CWC_TRAVNO (result) = 0;
     INFO_CWC_WRAPPERFUNS (result) = NULL;
-    INFO_CWC_MODUL (result) = NULL;
-    INFO_CWC_WITH (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -319,8 +321,8 @@ SplitWrapper (node *fundef)
     old_type = FUNDEF_WRAPPERTYPE (fundef);
     tmp_type = TYcopyType (old_type);
     FUNDEF_WRAPPERTYPE (fundef) = NULL;
-    DBUG_PRINT ("CWC", ("splitting wrapper of %s:%s", FUNDEF_MOD (fundef),
-                        FUNDEF_NAME (fundef)));
+    DBUG_PRINT ("CWC", ("splitting wrapper of %s", CTIitemName (fundef)));
+
     do {
         new_fundef = DUPdoDupNode (fundef);
         new_type = TYsplitWrapperType (tmp_type, &pathes_remaining);
@@ -474,6 +476,17 @@ InsertWrapperCode (node *fundef)
          *
          * Inlining of wrapper functions proved unsatisfactory.
          */
+
+#if 0
+    /*
+     * mark wrapper function as already typechecked. If the
+     * wrapper is imported later on, it is not typechecked 
+     * again (as there is no need to typecheck wrappers ;) )
+     *
+     * TODO: make TCSTAT type available
+     */
+    FUNDEF_TCSTAT( fundef) = 3;
+#endif
     }
 
     DBUG_RETURN (fundef);
@@ -490,97 +503,42 @@ InsertWrapperCode (node *fundef)
  ******************************************************************************/
 
 node *
-CorrectFundefPointer (node *fundef, char *funname, ntype *arg_types)
+CorrectFundefPointer (node *fundef, const namespace_t *funns, const char *funname,
+                      ntype *arg_types)
 {
-    dft_res *dft_res;
-
     DBUG_ENTER ("CorrectFundefPointer");
 
     DBUG_ASSERT ((fundef != NULL), "fundef not found!");
     if (FUNDEF_ISWRAPPERFUN (fundef)) {
         /*
          * 'fundef' points to an generic wrapper function
-         *   -> try to dispatch the function application statically in order to
-         *      avoid superfluous wrapper function calls
-         *   -> if static dispatch impossible, search for correct wrapper
+         *    -> search the specific wrapper function
          */
-        DBUG_PRINT ("CWC", ("correcting fundef for %s:%s", FUNDEF_MOD (fundef), funname));
+        DBUG_PRINT ("CWC", ("correcting fundef for %s", CTIitemName (fundef)));
 
         if (TYgetBottom (arg_types) == NULL) {
             /*
-             * try to dispatch the function application statically
+             * -> search for correct wrapper
              */
-            dft_res = NTCCTdispatchFunType (fundef, arg_types);
-            if (dft_res == NULL) {
-                DBUG_ASSERT ((TYgetProductSize (arg_types) == 0),
-                             "illegal dispatch result found!");
-                /*
-                 * no args found -> static dispatch possible
-                 *
-                 * fundef can be found in FUNDEF_IMPL (dirty hack!)
-                 */
-                fundef = FUNDEF_IMPL (fundef);
-                DBUG_PRINT ("CWC", ("  dispatched statically %s", funname));
-            } else if ((dft_res->num_partials == 0)
-                       && (dft_res->num_deriveable_partials == 0)) {
-                /*
-                 * static dispatch possible
-                 */
-                if (dft_res->def != NULL) {
-                    DBUG_ASSERT ((dft_res->deriveable == NULL),
-                                 "def and deriveable found!");
-                    fundef = dft_res->def;
-                } else {
-                    fundef = dft_res->deriveable;
-                }
-                DBUG_PRINT ("CWC", ("  dispatched statically %s", funname));
-            } else if (!WrapperCodeIsPossible (fundef)) {
-                /*
-                 * static dispatch impossible,
-                 *    but no wrapper function could be created either!!
-                 * if only a single instance is available, do the dispatch statically and
-                 * give a warning message, otherwise we are stuck here!
-                 */
-                if ((dft_res->num_partials + dft_res->num_deriveable_partials == 1)
-                    && (dft_res->def == NULL) && (dft_res->deriveable == NULL)) {
-                    fundef = (dft_res->num_partials == 1)
-                               ? dft_res->partials[0]
-                               : dft_res->deriveable_partials[0];
-                    CTIwarnLine (global.linenum,
-                                 "Application of var-arg function %s found which may"
-                                 " cause a type error",
-                                 FUNDEF_NAME (fundef));
-                    DBUG_PRINT ("CWC", ("  dispatched statically although only partial"
-                                        " has been found (T_dots)!",
-                                        funname));
-                } else {
-                    DBUG_ASSERT ((0), "wrapper with T_dots found which could be "
-                                      "dispatched statically!");
-                }
-            } else {
-                /*
-                 * static dispatch impossible -> search for correct wrapper
-                 */
-                DBUG_PRINT ("CWC", ("  static dispatch impossible, search for wrapper"));
-                do {
-                    fundef = FUNDEF_NEXT (fundef);
-                    DBUG_ASSERT (((fundef != NULL)
-                                  && ILIBstringCompare (funname, FUNDEF_NAME (fundef))
-                                  && FUNDEF_ISWRAPPERFUN (fundef)),
-                                 "no appropriate wrapper function found!");
+            DBUG_PRINT ("CWC", ("  search for wrapper"));
+            do {
+                fundef = FUNDEF_NEXT (fundef);
+                DBUG_ASSERT (((fundef != NULL) && NSequals (funns, FUNDEF_NS (fundef))
+                              && ILIBstringCompare (funname, FUNDEF_NAME (fundef))
+                              && FUNDEF_ISWRAPPERFUN (fundef)),
+                             "no appropriate wrapper function found!");
 
-                    DBUG_ASSERT ((!FUNDEF_ISZOMBIE (fundef)), "zombie found");
-                } while (!TUsignatureMatches (FUNDEF_ARGS (fundef), arg_types));
-                DBUG_PRINT ("CWC", ("  correct wrapper found"));
-            }
+                DBUG_ASSERT ((!FUNDEF_ISZOMBIE (fundef)), "zombie found");
+            } while (!TUsignatureMatches (FUNDEF_ARGS (fundef), arg_types));
+            DBUG_PRINT ("CWC", ("  correct wrapper found"));
         } else {
             /**
              * as we are dealing with a bottom argument, we need to select any one
-             * of the non-generic wrappers. Since at least one of them will follow the
-             * generic one directly, we can choose that one.
+             * of the non-generic wrappers. Since at least one of them will follow
+             * the generic one directly, we can choose that one.
              */
             fundef = FUNDEF_NEXT (fundef);
-            DBUG_ASSERT (((fundef != NULL)
+            DBUG_ASSERT (((fundef != NULL) && NSequals (funns, FUNDEF_NS (fundef))
                           && ILIBstringCompare (funname, FUNDEF_NAME (fundef))
                           && FUNDEF_ISWRAPPERFUN (fundef)),
                          "no appropriate wrapper function found!");
@@ -693,7 +651,6 @@ FundefRemoveGarbage (node *arg_node, info *arg_info)
 node *
 CWCfundef (node *arg_node, info *arg_info)
 {
-
     DBUG_ENTER ("CWCfundef");
 
     if (INFO_CWC_TRAVNO (arg_info) == 1) {
@@ -742,15 +699,17 @@ CWCap (node *arg_node, info *arg_info)
         AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
     }
 
-    DBUG_PRINT ("CWC", ("Ap of function %s:%s pointed to " F_PTR ".", AP_MOD (arg_node),
-                        AP_NAME (arg_node), AP_FUNDEF (arg_node)));
+    DBUG_PRINT ("CWC",
+                ("Ap of function %s::%s pointed to " F_PTR ".",
+                 NSgetName (AP_NS (arg_node)), AP_NAME (arg_node), AP_FUNDEF (arg_node)));
 
     arg_types = TUactualArgs2Ntype (AP_ARGS (arg_node));
-    AP_FUNDEF (arg_node)
-      = CorrectFundefPointer (AP_FUNDEF (arg_node), AP_NAME (arg_node), arg_types);
+    AP_FUNDEF (arg_node) = CorrectFundefPointer (AP_FUNDEF (arg_node), AP_NS (arg_node),
+                                                 AP_NAME (arg_node), arg_types);
 
-    DBUG_PRINT ("CWC", ("Ap of function %s:%s now points to " F_PTR ".",
-                        AP_MOD (arg_node), AP_NAME (arg_node), AP_FUNDEF (arg_node)));
+    DBUG_PRINT ("CWC",
+                ("Ap of function %s::%s now points to " F_PTR ".",
+                 NSgetName (AP_NS (arg_node)), AP_NAME (arg_node), AP_FUNDEF (arg_node)));
     arg_types = TYfreeType (arg_types);
 
     DBUG_RETURN (arg_node);
@@ -825,7 +784,8 @@ CWCfold (node *arg_node, info *arg_info)
         arg_types = TYmakeProductType (2, arg_type, TYcopyType (arg_type));
 
         FOLD_FUNDEF (arg_node)
-          = CorrectFundefPointer (FOLD_FUNDEF (arg_node), FOLD_FUN (arg_node), arg_types);
+          = CorrectFundefPointer (FOLD_FUNDEF (arg_node), FOLD_NS (arg_node),
+                                  FOLD_FUN (arg_node), arg_types);
         arg_types = TYfreeType (arg_types);
         body_type = TYfreeType (body_type);
         neutr_type = TYfreeType (neutr_type);
@@ -836,6 +796,31 @@ CWCfold (node *arg_node, info *arg_info)
     }
 
     DBUG_RETURN (arg_node);
+}
+
+/**
+ * @brief returns true iff create_wrapper_code would
+ *        create a wrapper body for the given fundef
+ *        and thus whether the wrapper in fact can
+ *        be called (non-static dispatch).
+ *
+ * @param fundef the fundef to inspect
+ *
+ * @return true iff the wrapper has a body
+ */
+bool
+CWChasWrapperCode (node *fundef)
+{
+    bool result;
+
+    DBUG_ENTER ("CWChasWrapperCode");
+
+    DBUG_ASSERT ((FUNDEF_ISWRAPPERFUN (fundef)),
+                 "called CWChasWrapperCode with a non-wrapper fun");
+
+    result = WrapperCodeIsPossible (fundef);
+
+    DBUG_RETURN (result);
 }
 
 /******************************************************************************

@@ -1,6 +1,10 @@
 #
 #
 # $Log$
+# Revision 3.30  2005/07/15 15:52:18  sah
+# splitted create_wrapper_code and dispatchfuncalls
+# introduced namespaces
+#
 # Revision 3.29  2005/05/31 18:16:14  sah
 # added resolve symbol types phase
 #
@@ -90,7 +94,8 @@ include $(PROJECT_ROOT)/Makefile.Config
 OBJS:=gen_pseudo_fun.o new_typecheck.o new_types.o user_types.o \
       create_wrappers.o ssi.o sig_deps.o ct_basic.o ct_fun.o ct_prf.o \
       ct_with.o type_errors.o specialize.o new2old.o create_wrapper_code.o \
-      type_statistics.o type_utils.o resolvesymboltypes.o
+      type_statistics.o type_utils.o resolvesymboltypes.o \
+      dispatchfuncalls.o
 
 all: $(OBJS)
 

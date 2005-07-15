@@ -1,6 +1,10 @@
 
 #
 # $Log$
+# Revision 3.175  2005/07/15 15:52:18  sah
+# splitted create_wrapper_code and dispatchfuncalls
+# introduced namespaces
+#
 # Revision 3.174  2005/07/03 17:00:43  ktr
 # added some files
 #
@@ -144,12 +148,11 @@ SOURCE_FILES := $(foreach dir,$(SOURCE_DIRS),$(addprefix $(dir)/,$(filter-out RC
 # Collection of object files
 #
 
-GLOBAL= src/global/main.o src/global/Error.o src/global/usage.o \
+GLOBAL= src/global/main.o src/global/setup.o src/global/usage.o \
         src/global/internal_lib.o src/global/globals.o \
-        src/global/resource.o src/global/build.o src/global/interrupt.o \
+        src/global/resource.o src/global/build.o \
         src/global/options.o src/global/NameTuplesUtils.o\
-        src/global/filemgr.o src/global/ctinfo.o src/global/phase.o \
-        src/global/setup.o
+        src/global/filemgr.o src/global/ctinfo.o src/global/phase.o
 
 TREE= src/tree/traverse.o src/tree/tree_basic.o src/tree/free.o \
       src/tree/tree_compound.o src/tree/DupTree.o src/tree/LookUpTable.o \
@@ -203,7 +206,8 @@ TYPECHECK= src/typecheck/gen_pseudo_fun.o \
            src/typecheck/create_wrapper_code.o \
            src/typecheck/type_statistics.o \
            src/typecheck/type_utils.o \
-           src/typecheck/resolvesymboltypes.o
+           src/typecheck/resolvesymboltypes.o \
+           src/typecheck/dispatchfuncalls.o
 
 OPTIMIZE= src/optimize/optimize.o \
           src/optimize/DeadFunctionRemoval.o \
@@ -237,7 +241,8 @@ MODULES= src/modules/symboltable.o \
          src/modules/libbuilder.o src/modules/resolveall.o \
          src/modules/annotatenamespace.o src/modules/usesymbols.o \
          src/modules/prepareinline.o src/modules/dependencies.o \
-         src/modules/importsymbols.o src/modules/gatherdependencies.o
+         src/modules/importsymbols.o src/modules/gatherdependencies.o \
+         src/modules/namespaces.o
 
 OBJECTS= src/objects/objinit.o src/objects/objects.o \
          src/objects/uniquecheck.o src/objects/objanalysis.o

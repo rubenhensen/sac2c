@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.9  2005/07/15 15:52:18  sah
+ * splitted create_wrapper_code and dispatchfuncalls
+ * introduced namespaces
+ *
  * Revision 1.8  2004/11/25 18:01:40  sbs
  * compiles
  *
@@ -33,13 +37,14 @@
 
 #include "types.h"
 
-node *CWCdoCreateWrapperCode (node *ast);
+extern node *CWCdoCreateWrapperCode (node *ast);
 
-node *CWCmodule (node *arg_node, info *arg_info);
-node *CWCfundef (node *arg_node, info *arg_info);
-node *CWCap (node *arg_node, info *arg_info);
-node *CWCwith (node *arg_node, info *arg_info);
-node *CWCgenarray (node *arg_node, info *arg_info);
-node *CWCfold (node *arg_node, info *arg_info);
+extern bool CWChasWrapperCode (node *fundef);
+extern node *CWCmodule (node *arg_node, info *arg_info);
+extern node *CWCfundef (node *arg_node, info *arg_info);
+extern node *CWCap (node *arg_node, info *arg_info);
+extern node *CWCwith (node *arg_node, info *arg_info);
+extern node *CWCgenarray (node *arg_node, info *arg_info);
+extern node *CWCfold (node *arg_node, info *arg_info);
 
 #endif /* _SAC_CREATE_WRAPPER_CODE_H_ */
