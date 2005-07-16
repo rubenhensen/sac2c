@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2005/07/16 09:57:55  ktr
+ * enhanced functionality
+ *
  * Revision 1.1  2005/07/03 16:57:49  ktr
  * Initial revision
  *
@@ -17,11 +20,14 @@
  * Prefix: NLUT
  *
  *****************************************************************************/
-extern lut_t *NLUTgenerateNlut (node *args, node *vardecs);
-extern lut_t *NLUTduplicateNlut (lut_t *nlut);
-extern lut_t *NLUTremoveNlut (lut_t *nlut);
+extern nlut_t *NLUTgenerateNlut (node *args, node *vardecs);
+extern nlut_t *NLUTduplicateNlut (nlut_t *nlut);
+extern nlut_t *NLUTremoveNlut (nlut_t *nlut);
 
-extern void NLUTsetNum (lut_t *nlut, node *avis, int num);
-extern int NLUTgetNum (lut_t *nlut, node *avis);
+extern int NLUTgetNum (nlut_t *nlut, node *avis);
+extern void NLUTsetNum (nlut_t *nlut, node *avis, int num);
+extern void NLUTincNum (nlut_t *nlut, node *avis, int num);
+
+extern dfmask_t *NLUTgetNonZeroMask (nlut_t *nlut);
 
 #endif /* _SAC_NUMLOOKUPTABLE_H_ */
