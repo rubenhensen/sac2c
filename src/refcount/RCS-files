@@ -39,3 +39,4 @@ NumLookUpTable.c
 NumLookUpTable.h
 rcminimize.c
 rcminimize.h
+referencecounting.c
