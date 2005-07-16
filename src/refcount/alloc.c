@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.38  2005/07/16 09:57:55  ktr
+ * slight modifications.
+ *
  * Revision 1.37  2005/06/29 16:08:11  ktr
  * the array modified by a modarray prf is now always reused as it was either
  * reused or allocated by the preceeding copy operation.
@@ -734,7 +737,7 @@ EMALcode (node *arg_node, info *arg_info)
     alloclist_struct *als;
     node *withops, *indexvector, *cexprs, *assign;
     node *memavis, *valavis, *cexavis;
-    ntype *crestype;
+    ntype *crestype = NULL;
 
     DBUG_ENTER ("EMALcode");
 
