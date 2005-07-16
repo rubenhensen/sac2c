@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.19  2005/07/16 22:55:36  sah
+ * and AKV as well
+ *
  * Revision 1.18  2005/07/16 22:50:27  sah
  * and maybe AKD works now as well
  *
@@ -228,9 +231,7 @@ AppendSerFunType (char *funname, ntype *type)
         pos++;
         size++;
         scalar = type;
-    } else if (TYisAKV (type)) {
-        DBUG_ASSERT (0, "found AKV as argument type. cannot handle this.");
-    } else if (TYisAKS (type)) {
+    } else if ((TYisAKS (type) || (TYisAKV (type)))) {
         char *shape = SHshape2String (0, TYgetShape (type));
         written = 0;
 
