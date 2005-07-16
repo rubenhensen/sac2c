@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2005/07/16 19:06:08  sbs
+ * TUshapeKnown added.
+ *
  * Revision 1.14  2005/07/16 12:30:50  sbs
  * TUisIntVect added.
  *
@@ -279,6 +282,23 @@ TUrettypes2alpha (node *rets)
     }
 
     DBUG_RETURN (rets);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn bool TUshapeKnown( ntype *ty)
+ *
+ *   @brief
+ *   @param
+ *   @return
+ *
+ ******************************************************************************/
+
+bool
+TUshapeKnown (ntype *ty)
+{
+    DBUG_ENTER ("TUshapeKnown");
+    DBUG_RETURN (TYisAKS (ty) || TYisAKV (ty));
 }
 
 /** <!--********************************************************************-->

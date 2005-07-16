@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2005/07/16 19:06:08  sbs
+ * TUshapeKnown added.
+ *
  * Revision 1.11  2005/07/16 12:30:50  sbs
  * TUisIntVect added.
  *
@@ -51,6 +54,7 @@ extern node *TUrettypes2unknownAUD (node *rets);
 extern node *TUargtypes2unknownAUD (node *rets);
 extern node *TUrettypes2alpha (node *rets);
 extern node *TUrettypes2alphaAUD (node *rets);
+extern bool TUshapeKnown (ntype *ty);
 extern bool TUisIntVect (ntype *ty);
 extern bool TUisUniqueUserType (ntype *type);
 extern bool TUisArrayOfUser (ntype *type);
