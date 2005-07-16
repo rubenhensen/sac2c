@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.29  2005/07/16 10:02:14  ktr
+ * adapted to new reference counting
+ *
  * Revision 3.28  2005/07/07 17:54:54  ktr
  * Corrected data reuse
  *
@@ -405,7 +408,7 @@ SUBPHASE (concel, "concel", "Consolidating execution mode cells", PHdummy)
 
 PHASE (refcnt, "Running explicit reference count inference system", PHdummy)
 
-SUBPHASE (rc, "rc", "Reference counting inference", EMRCdoRefCounting)
+SUBPHASE (rc, "rc", "Reference counting", RCIdoReferenceCounting)
 
 SUBPHASE (rcm, "rcm", "Reference counting minimization", RCMdoRefcountMinimization)
 
