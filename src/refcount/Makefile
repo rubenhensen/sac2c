@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.37  2005/07/16 09:57:55  ktr
+# added referencecounting.o
+#
 # Revision 3.36  2005/07/03 16:59:18  ktr
 # added NumLookUpTable.o rcminimize.o
 #
@@ -132,11 +135,11 @@ include $(PROJECT_ROOT)/Makefile.Config
 #
 # local settings:
 #
-all: allocation.o alloc.o refcounting.o reuse.o rcopt.o rcphase.o \
+all: allocation.o alloc.o referencecounting.o reuse.o rcopt.o rcphase.o \
      filterrc.o aliasanalysis.o staticreuse.o reuseelimination.o \
      interfaceanalysis.o loopreuseopt.o datareuse.o explicitcopy.o \
      reusebranching.o ReuseWithArrays.o inplacecomp.o audscldist.o \
-     NumLookUpTable.o rcminimize.o
+     NumLookUpTable.o rcminimize.o 
 
 
 %.o: %.c
