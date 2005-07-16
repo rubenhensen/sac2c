@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.29  2005/07/16 15:48:52  sah
+ * the CAST is back, yeah!
+ *
  * Revision 1.28  2005/07/15 15:57:02  sah
  * introduced namespaces
  *
@@ -483,6 +486,22 @@ ANSavis (node *arg_node, info *arg_info)
     if (AVIS_TYPE (arg_node) != NULL) {
         AVIS_TYPE (arg_node) = ANSntype (AVIS_TYPE (arg_node), arg_info);
     }
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+ANScast (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("ANScast");
+
+    if (CAST_NTYPE (arg_node) != NULL) {
+        CAST_NTYPE (arg_node) = ANSntype (CAST_NTYPE (arg_node), arg_info);
+    }
+
+    arg_node = TRAVcont (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }

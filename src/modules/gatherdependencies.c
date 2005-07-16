@@ -212,6 +212,18 @@ GDPavis (node *arg_node, info *arg_info)
 }
 
 node *
+GDPcast (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("GDPcast");
+
+    CAST_NTYPE (arg_node) = GDPntype (CAST_NTYPE (arg_node), arg_info);
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
 GDPobjdef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("GDPobjdef");

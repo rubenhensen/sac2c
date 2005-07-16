@@ -377,6 +377,7 @@
 	  <node name="Vardec" />
 	  <node name="SPId" />
 	  <node name="Fold" />
+	  <node name="Cast" />
 	  <node name="Module" />
 	</travuser>
       </traversal>
@@ -404,6 +405,7 @@
 	  <node name="With" />
 	  <node name="Fold" />
 	  <node name="Module" />
+	  <node name="Cast" />
 	</travuser>
       </traversal>
       <traversal id="USS" name="Use Symbols" default="sons" include="usesymbols.h" >
@@ -524,6 +526,7 @@
           <node name="Ret" />
           <node name="Avis" />
           <node name="Typedef" />
+          <node name="Cast" />
         </travuser>
       </traversal>
       <traversal id="NT2OT" name="Convert from new to old types and do some cleanup" default="sons" include="new2old.h" >

@@ -18,6 +18,7 @@ extern node *RSTfundef (node *arg_node, info *arg_info);
 extern node *RSTarg (node *arg_node, info *arg_info);
 extern node *RSTret (node *arg_node, info *arg_info);
 extern node *RSTavis (node *arg_node, info *arg_info);
+extern node *RSTcast (node *arg_node, info *arg_info);
 
 extern node *RSTdoResolveSymbolTypes (node *syntax_tree);
 #endif

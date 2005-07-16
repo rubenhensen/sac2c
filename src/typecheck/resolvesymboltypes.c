@@ -231,6 +231,22 @@ RSTavis (node *arg_node, info *arg_info)
         AVIS_TYPE (arg_node) = RSTntype (AVIS_TYPE (arg_node), arg_info);
     }
 
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+RSTcast (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("RSTcast");
+
+    if (CAST_NTYPE (arg_node) != NULL) {
+        CAST_NTYPE (arg_node) = RSTntype (CAST_NTYPE (arg_node), arg_info);
+    }
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
     DBUG_RETURN (arg_node);
 }
 

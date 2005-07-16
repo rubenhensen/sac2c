@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2005/07/16 15:48:52  sah
+ * the CAST is back, yeah!
+ *
  * Revision 1.10  2005/05/31 18:13:13  sah
  * even more namespaces are set now...
  *
@@ -70,6 +73,7 @@ extern node *ANSlet (node *arg_node, info *arg_info);
 extern node *ANSwith (node *arg_node, info *arg_info);
 extern node *ANSfold (node *arg_node, info *arg_info);
 extern node *ANSvardec (node *arg_node, info *arg_info);
+extern node *ANScast (node *arg_node, info *arg_info);
 extern node *ANSmodule (node *arg_node, info *arg_info);
 
 #endif /* _SAC_ANNOTATENAMESPACES_H_ */
