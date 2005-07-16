@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.18  2005/07/16 22:50:27  sah
+ * and maybe AKD works now as well
+ *
  * Revision 1.17  2005/07/16 22:40:34  sah
  * generateSerFunName should handle AKS now properly
  *
@@ -242,9 +245,15 @@ AppendSerFunType (char *funname, ntype *type)
         shape = ILIBfree (shape);
         scalar = TYgetScalar (type);
     } else if (TYisAKD (type)) {
+        int written;
         *pos = 'D';
         pos++;
         size++;
+
+        written = snprintf (pos, MAX_FUN_NAME_LEN - size, "%d", TYgetDim (type));
+        pos += written;
+        size += written;
+
         scalar = TYgetScalar (type);
     } else if (TYisAUDGZ (type)) {
         *pos = 'G';
