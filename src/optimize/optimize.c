@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.97  2005/07/16 21:14:24  sbs
+ * moved dispatch and rmcasts into WLEnhancement.c
+ *
  * Revision 3.96  2005/07/15 15:57:02  sah
  * introduced namespaces
  *
@@ -899,15 +902,22 @@ OPTmodule (node *arg_node, info *arg_info)
     CTIstate (" ");
     CTIstate ("  Starting initial interfunctional optimizations");
 
-    /*
-     * apply DFC (dispatch fun call where possible
-     */
-    arg_node = DFCdoDispatchFunCalls (arg_node);
+#if 0
+  /*
+   * TODO: the following two phases have been (temporarily) moved into
+   *       WLEnhancement. For details see the TODO comment there....
+   */
+  /*
+   * apply DFC (dispatch fun call where possible
+   */
+  arg_node = DFCdoDispatchFunCalls( arg_node);
 
-    /*
-     * apply RC (remove all cast from AST)
-     */
-    arg_node = RCdoRemoveCasts (arg_node);
+  /* 
+   * apply RC (remove all cast from AST)
+   */
+  arg_node = RCdoRemoveCasts (arg_node);
+
+#endif
 
     /*
      * apply INL (inlining)
