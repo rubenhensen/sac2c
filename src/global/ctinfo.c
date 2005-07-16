@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  2005/07/16 10:08:26  sah
+ * made a local var static to preserve its state
+ *
  * Revision 1.15  2005/07/15 15:57:02  sah
  * introduced namespaces
  *
@@ -969,7 +972,7 @@ CTIterminateCompilation (compiler_phase_t phase, char *break_specifier, node *sy
 const char *
 formatItemName (namespace_t *ns, char *name)
 {
-    char buffer[MAX_ITEM_NAME_LENGTH + 1];
+    static char buffer[MAX_ITEM_NAME_LENGTH + 1];
     int written;
 
     DBUG_ENTER ("formatItemName");
