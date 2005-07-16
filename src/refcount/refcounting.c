@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.33  2005/07/16 09:57:55  ktr
+ * maintenance
+ *
  * Revision 1.32  2005/07/07 17:53:50  ktr
  * Simplified EMRCprf
  *
@@ -921,7 +924,6 @@ MakeAdjustRC (node *avis, int count, node *next_node)
              * Make INC_RC
              */
             prf = TCmakePrf2 (F_inc_rc, TBmakeId (avis), TBmakeNum (count));
-
         } else {
             /*
              * Make DEC_RC
