@@ -3820,33 +3820,6 @@
             <phase name="lir" />
           </phases>
         </attribute>
-        <attribute name="EMRC_DefLevel" mandatory="no">
-          <type name="Integer" />
-          <phases>
-            <phase name="rc" />
-          </phases>
-          <description>
-            Used by Reference Counting inference to store the definition level (nesting level) of a variable.
-          </description>
-        </attribute>
-        <attribute name="EMRC_Counter" mandatory="no">
-          <type name="RCCounter" />
-          <phases>
-            <phase name="rc" />
-          </phases>
-          <description>
-            Used by Reference Counting inference to store an information structure.
-          </description>
-        </attribute>
-        <attribute name="EMRC_Counter2" mandatory="no">
-          <type name="RCCounter" />
-          <phases>
-            <phase name="rc" />
-          </phases>
-          <description>
-            Used by Reference Counting inference to store an information structure. A second structure is needed for proper treatment of conditionals.
-          </description>
-        </attribute>
         <attribute name="AliasMask" mandatory="no">
           <type name="DFMask" />
           <phases>
