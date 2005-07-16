@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.176  2005/07/16 10:01:12  ktr
+# added src/refcount/referencecounting.o
+#
 # Revision 3.175  2005/07/15 15:52:18  sah
 # splitted create_wrapper_code and dispatchfuncalls
 # introduced namespaces
@@ -249,7 +252,7 @@ OBJECTS= src/objects/objinit.o src/objects/objects.o \
 
 REFCOUNT= src/refcount/allocation.o src/refcount/rcopt.o \
           src/refcount/rcphase.o src/refcount/filterrc.o \
-          src/refcount/alloc.o src/refcount/refcounting.o \
+          src/refcount/alloc.o src/refcount/referencecounting.o \
           src/refcount/reuse.o src/refcount/aliasanalysis.o \
           src/refcount/staticreuse.o src/refcount/reuseelimination.o \
           src/refcount/interfaceanalysis.o src/refcount/loopreuseopt.o \
