@@ -25,4 +25,5 @@ extern const char *NSgetModule (const namespace_t *ns);
 extern void NSserializeNamespace (FILE *file, const namespace_t *ns);
 extern namespace_t *NSdeserialzeNamespace (const char *name);
 
+extern void NSgenerateNamespaceMap ();
 #endif /* _SAC_NAMESPACES_H_ */

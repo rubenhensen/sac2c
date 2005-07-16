@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2005/07/16 21:11:29  sah
+ * implemented serialisation of namespaces
+ * based on a namespace mapping instead
+ * of a LUT
+ *
  * Revision 1.9  2005/06/18 18:06:00  sah
  * moved entire dependency handling to dependencies.c
  * the dependency table is now created shortly prior
@@ -102,9 +107,10 @@ LIBBcreateLibrary (stringset_t *deps)
     CTInote ("Creating shared SAC library `lib%s.so'", global.modulename);
 
     ILIBsystemCall ("%s -o %slib%s.so %s/serialize.o %s/symboltable.o"
-                    " %s/dependencytable.o",
+                    " %s/dependencytable.o %s/namespacemap.o",
                     global.config.ld_dynamic, global.targetdir, global.modulename,
-                    global.tmp_dirname, global.tmp_dirname, global.tmp_dirname);
+                    global.tmp_dirname, global.tmp_dirname, global.tmp_dirname,
+                    global.tmp_dirname);
 
     DBUG_VOID_RETURN;
 }

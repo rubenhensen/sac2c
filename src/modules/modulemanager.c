@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.20  2005/07/16 21:11:29  sah
+ * implemented serialisation of namespaces
+ * based on a namespace mapping instead
+ * of a LUT
+ *
  * Revision 1.19  2005/06/15 12:41:38  sah
  * made error message more explanatory
  *
@@ -75,6 +80,7 @@ static module_t *modulepool = NULL;
 typedef sttable_t *(*symtabfun_p) ();
 typedef stringset_t *(*deptabfun_p) ();
 typedef const char *(*modversionfun_p) ();
+typedef void (*nsmapfun_p) ();
 
 static bool
 hasSameASTVersion (module_t *module)
@@ -96,6 +102,30 @@ hasSameASTVersion (module_t *module)
     name = ILIBfree (name);
 
     DBUG_RETURN (ILIBstringCompare (verfun (), _SAC_AST_VERSION_));
+}
+
+static void
+addNamespaceMappings (module_t *module)
+{
+    nsmapfun_p mapfun;
+    char *name;
+
+    DBUG_ENTER ("addNamespaceMappings");
+
+    name = ILIBmalloc (sizeof (char) * (strlen (module->name) + 19));
+    sprintf (name, "__%s__MapConstructor", module->name);
+
+    mapfun = (nsmapfun_p)LIBMgetLibraryFunction (name, module->lib);
+
+    if (mapfun == NULL) {
+        CTIabort ("Error loading namespace mapping information: %s", LIBMgetError ());
+    }
+
+    mapfun ();
+
+    name = ILIBfree (name);
+
+    DBUG_VOID_RETURN;
 }
 
 static module_t *
@@ -160,6 +190,8 @@ AddModuleToPool (const char *name)
                   name, result->sofile);
     }
 
+    addNamespaceMappings (result);
+
     DBUG_RETURN (result);
 }
 
@@ -170,39 +202,8 @@ RemoveModuleFromPool (module_t *module)
 
     module->usecount--;
 
-#ifdef MODM_UNLOAD_MODULES
-    if (module->usecount == 0) {
-
-        /* unpool the module */
-
-        if (modulepool == module) {
-            modulepool = module->next;
-        } else {
-            module_t *pos = modulepool;
-            while (pos->next != module) {
-                pos = pos->next;
-            }
-            pos->next = module->next;
-        }
-
-        /* unload the library */
-
-        module->lib = LIBMunLoadLibrary (module->lib);
-
-        if (module->lib != NULL) {
-            CTIabort ("Error while closing module `%s'. The reported error was: %s",
-                      module->name, LIBMgetError ());
-        }
-
-        /* free the structure */
-
-        module->sofile = ILIBfree (module->sofile);
-        module->name = ILIBfree (module->name);
-        if (module->stable != NULL) {
-            module->stable = STdestroy (module->stable);
-        }
-    }
-#endif
+    DBUG_PRINT ("MODM",
+                ("Module %s has usage count %d.", module->name, module->usecount));
 
     module = NULL;
 

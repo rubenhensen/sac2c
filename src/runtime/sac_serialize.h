@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2005/07/16 21:11:29  sah
+ * implemented serialisation of namespaces
+ * based on a namespace mapping instead
+ * of a LUT
+ *
  * Revision 1.13  2005/07/15 15:57:02  sah
  * introduced namespaces
  *
@@ -60,6 +65,7 @@ extern void *STinit ();
 extern void STadd (char *s1, int l, char *s2, int i, void *table);
 extern void *STRSadd (char *s1, int i, void *p);
 extern void *DSfetchArgAvis (int i);
-extern void *NSdeserializeNamespace (char *s1);
+extern void *NSdeserializeNamespace (int i);
+extern int NSaddMapping (char *s1);
 
 #endif /* _SAC_SERIALIZE_H_ */
