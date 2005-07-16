@@ -39,3 +39,4 @@ wlswithloopification.c
 resolvedependencies.c
 resolvedependencies.h
 index_infer.c
+index_infer.h
