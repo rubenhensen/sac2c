@@ -1616,16 +1616,12 @@
       </traversal>
     </phase>
     <phase id="refcnt" name="Introducing explicit allocation instructions" 
-      startfun="NULL" include=".h"
-      if="true"
-      breakspec="rc">
-      <traversal id="EMRC" name="Reference Counting Inference" default="sons" include="refcounting.h" >
+      startfun="NULL" include=".h" if="true" breakspec="rc">
+      <traversal id="RCI" name="Reference Counting Inference" default="sons" include="referencecounting.h" >
         <travuser>
           <node name="Ap" />
-          <node name="Arg" />
           <node name="Array" />
           <node name="Assign" />
-          <node name="Block" />
           <node name="Code" />
           <node name="Cond" />
           <node name="Fold" />
@@ -1634,34 +1630,39 @@
           <node name="Genarray" />
           <node name="Icm" />
           <node name="Id" />
+          <node name="Ids" />
           <node name="Let" />
           <node name="Modarray" />
           <node name="Prf" />
           <node name="Return" />
-          <node name="Vardec" />
           <node name="With" />
           <node name="With2" />
           <node name="Withid" />
         </travuser>
         <travnone>
           <node name="Objdef" />
+          <node name="Arg" />
+          <node name="Vardec" />
         </travnone>
       </traversal>
       <traversal id="RCM" name="Reference counting minimization" default="sons" include="rcminimize.h" >
         <travuser>
           <node name="Ap" />
+          <node name="Arg" />
           <node name="Assign" />
           <node name="Code" />
           <node name="Cond" />
           <node name="Funcond" />
           <node name="Fundef" />
           <node name="Id" />
+          <node name="Ids" />
           <node name="Let" />
           <node name="Prf" />
           <node name="Return" />
         </travuser>
         <travnone>
           <node name="Objdef" />
+          <node name="Withid" />
         </travnone>
       </traversal>
       <traversal id="EMRCO" name="Reference counting optimizations" default="none" include="rcopt.h" >
