@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.177  2005/07/16 18:33:36  sah
+# cleanup
+#
 # Revision 3.176  2005/07/16 10:01:12  ktr
 # added src/refcount/referencecounting.o
 #
@@ -173,7 +176,8 @@ SERIALIZE= src/serialize/serialize_node.o \
            src/serialize/serialize_buildstack.o \
            src/serialize/serialize_helper.o \
            src/serialize/serialize_link.o src/serialize/serialize.o \
-           src/serialize/serialize_stack.o
+           src/serialize/serialize_stack.o \
+           src/serialize/serialize_symboltable.o
 
 SCANP= src/scanparse/y.tab.o src/scanparse/lex.yy.o \
        src/scanparse/scnprs.o src/scanparse/handle_dots.o \

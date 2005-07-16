@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.15  2005/07/16 18:33:36  sah
+ * cleanup
+ *
  * Revision 1.14  2005/07/15 15:57:02  sah
  * introduced namespaces
  *
@@ -65,6 +68,7 @@
 #include "namespaces.h"
 #include "user_types.h"
 #include "new_types.h"
+#include "serialize_symboltable.h"
 
 #include <string.h>
 
@@ -160,7 +164,7 @@ StartSerializeLinkTraversal (node *node, info *info)
 }
 
 static void
-GenerateSerFileHead (FILE *file)
+GenerateSerFileHead (FILE *file, node *module)
 {
     DBUG_ENTER ("GenerateSerFileHead");
 
@@ -169,6 +173,9 @@ GenerateSerFileHead (FILE *file)
 
     fprintf (file, "#define DROP( x, y) y\n");
     fprintf (file, "#define NULL (void *) 0\n");
+    fprintf (file, "#define MAPNS( x) __%s__nsmap[ x]\n",
+             NSgetName (MODULE_NAMESPACE (module)));
+    fprintf (file, "\nextern int* __%s__nsmap;\n", NSgetName (MODULE_NAMESPACE (module)));
 
     DBUG_VOID_RETURN;
 }
@@ -182,88 +189,6 @@ GenerateSerFileVersionInfo (node *module, FILE *file)
              "const char *__%s_VERSION() {\n"
              "  return( \"" _SAC_AST_VERSION_ "\"); \n}\n\n",
              NSgetName (MODULE_NAMESPACE (module)));
-
-    DBUG_VOID_RETURN;
-}
-
-static void
-GenerateSerSymbolTableAdd (stsymbol_t *symbol, stentry_t *entry, FILE *file)
-{
-    DBUG_ENTER ("GenerateSerSymbolTableAdd");
-
-    fprintf (file, "STadd( \"%s\", %d, \"%s\", %d, result);\n", STsymbolName (symbol),
-             STsymbolVisibility (symbol), STentryName (entry), STentryType (entry));
-
-    DBUG_VOID_RETURN;
-}
-
-static void
-GenerateSerSymbolTableHead (node *module, FILE *file)
-{
-    DBUG_ENTER ("GenerateSerSymbolTableHead");
-
-    fprintf (file, "void *__%s__SYMTAB()\n", NSgetName (MODULE_NAMESPACE (module)));
-
-    fprintf (file, "{\nvoid *result;\n");
-    fprintf (file, "result = STinit();\n");
-
-    DBUG_VOID_RETURN;
-}
-
-static void
-GenerateSerSymbolTableTail (node *module, FILE *file)
-{
-    DBUG_ENTER ("GenerateSerSymbolTableTail");
-
-    fprintf (file, "return( result);\n");
-    fprintf (file, "}\n");
-
-    DBUG_VOID_RETURN;
-}
-
-static void
-SerializeSymbolTableSymbol (stsymbol_t *symbol, sttable_t *table, FILE *file)
-{
-    stentryiterator_t *iterator;
-
-    DBUG_ENTER ("SerializeSymbolTableSymbol");
-
-    iterator = STentryIteratorGet (STsymbolName (symbol), table);
-
-    while (STentryIteratorHasMore (iterator)) {
-        GenerateSerSymbolTableAdd (symbol, STentryIteratorNext (iterator), file);
-    }
-
-    iterator = STentryIteratorRelease (iterator);
-
-    DBUG_VOID_RETURN;
-}
-
-static void
-SerializeSymbolTable (node *module, sttable_t *table)
-{
-    stsymboliterator_t *iterator;
-    FILE *file;
-
-    DBUG_ENTER ("SerializeSymbolTable");
-
-    file = FMGRwriteOpen ("%s/symboltable.c", global.tmp_dirname);
-
-    GenerateSerFileHead (file);
-
-    GenerateSerSymbolTableHead (module, file);
-
-    iterator = STsymbolIteratorGet (table);
-
-    while (STsymbolIteratorHasMore (iterator)) {
-        SerializeSymbolTableSymbol (STsymbolIteratorNext (iterator), table, file);
-    }
-
-    iterator = STsymbolIteratorRelease (iterator);
-
-    GenerateSerSymbolTableTail (module, file);
-
-    fclose (file);
 
     DBUG_VOID_RETURN;
 }
@@ -647,7 +572,7 @@ SERdoSerialize (node *module)
 
     INFO_SER_FILE (info) = FMGRwriteOpen ("%s/serialize.c", global.tmp_dirname);
 
-    GenerateSerFileHead (INFO_SER_FILE (info));
+    GenerateSerFileHead (INFO_SER_FILE (info), module);
 
     GenerateSerFileVersionInfo (module, INFO_SER_FILE (info));
 
@@ -660,7 +585,11 @@ SERdoSerialize (node *module)
     fclose (INFO_SER_FILE (info));
     INFO_SER_FILE (info) = NULL;
 
-    SerializeSymbolTable (module, INFO_SER_TABLE (info));
+    SSTserializeSymbolTable (module, INFO_SER_TABLE (info));
+
+#if 0
+  NSgenerateNamespaceMap();
+#endif
 
     info = FreeInfo (info);
 
