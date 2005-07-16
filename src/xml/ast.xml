@@ -904,6 +904,8 @@
       <traversal id="RC" name="Remove Cast" default="sons" include="rmcasts.h" >
         <travuser>
           <node name="Cast" />
+          <node name="Avis" />
+          <node name="Ret" />
         </travuser>
       </traversal>
       <traversal id="SISI" name="Signature Simplification" default="sons" include="signature_simplification.h" >
