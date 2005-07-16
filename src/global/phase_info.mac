@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.30  2005/07/16 19:07:33  sbs
+ * ivei added
+ *
  * Revision 3.29  2005/07/16 10:02:14  ktr
  * adapted to new reference counting
  *
@@ -330,6 +333,8 @@ SUBPHASE (ap, "ap", "Applying array padding", PHdummy)
 SUBPHASE (tsi, "tsi", "Applying tile size inference", PHdummy)
 
 SUBPHASE (dfr2, "dfr2", "Applying dead function removal", PHdummy)
+
+SUBPHASE (ivei, "ivei", "Applying index vector elimination: Uses Inference", PHdummy)
 
 SUBPHASE (ive, "ive", "Applying index vector elimination", PHdummy)
 
