@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2005/07/16 17:41:26  sbs
+ * Now, all user types are resolved
+ *
  * Revision 1.3  2004/11/22 18:10:19  sbs
  * SacDevCamp04
  *
@@ -32,5 +35,7 @@
 
 extern node *RCdoRemoveCasts (node *ast);
 extern node *RCcast (node *arg_node, info *arg_info);
+extern node *RCavis (node *arg_node, info *arg_info);
+extern node *RCret (node *arg_node, info *arg_info);
 
 #endif /* SAC_RMCASTS_H_ */

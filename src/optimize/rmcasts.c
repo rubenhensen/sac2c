@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2005/07/16 17:41:26  sbs
+ * Now, all user types are resolved
+ *
  * Revision 1.3  2004/11/26 14:36:47  mwe
  * SacDevCamp: compiles!
  *
@@ -31,17 +34,16 @@
 #include "tree_basic.h"
 #include "traverse.h"
 #include "free.h"
+#include "new_types.h"
+#include "type_utils.h"
 #include "rmcasts.h"
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *   node* RCcast(node *arg_node, info *arg_info)
- *
- * description:
- *   removes this cast node and returns the cast expression.
+ * @fn node *RCcast( node *arg_node, info *arg_info )
  *
  ******************************************************************************/
+
 node *
 RCcast (node *arg_node, info *arg_info)
 {
@@ -56,6 +58,56 @@ RCcast (node *arg_node, info *arg_info)
     arg_node = FREEdoFreeTree (arg_node);
 
     DBUG_RETURN (expr);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *RCavis( node *arg_node, info *arg_info )
+ *
+ ******************************************************************************/
+
+node *
+RCavis (node *arg_node, info *arg_info)
+{
+    ntype *type, *new_type;
+
+    DBUG_ENTER ("RCavis");
+
+    type = AVIS_TYPE (arg_node);
+    if (TUisArrayOfUser (type)) {
+        new_type = TYeliminateUser (type);
+        type = TYfreeType (type);
+        AVIS_TYPE (arg_node) = new_type;
+    }
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *RCret( node *arg_node, info *arg_info )
+ *
+ ******************************************************************************/
+
+node *
+RCret (node *arg_node, info *arg_info)
+{
+    ntype *type, *new_type;
+
+    DBUG_ENTER ("RCret");
+
+    type = RET_TYPE (arg_node);
+    if (TUisArrayOfUser (type)) {
+        new_type = TYeliminateUser (type);
+        type = TYfreeType (type);
+        RET_TYPE (arg_node) = new_type;
+    }
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
 }
 
 /******************************************************************************
