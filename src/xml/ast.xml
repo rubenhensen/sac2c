@@ -1053,23 +1053,13 @@
       </traversal>
       <traversal id="IVE" name="Index Vector Elimination" default="sons" include="index.h">
         <travuser>
-          <node name="Module" />
-          <node name="Fundef" />
-          <node name="Block" />
-          <node name="Vardec" />
-          <node name="Arg" />
+        </travuser>
+      </traversal>
+      <traversal id="IVEI" name="IVE - Use Inference" default="sons" include="index_infer.h">
+        <travuser>
           <node name="Assign" />
-          <node name="Return" />
-          <node name="Let" />
           <node name="Prf" />
           <node name="Id" />
-          <node name="Num" />
-          <node name="Array" />
-          <node name="With" />
-          <node name="Part" />
-          <node name="Code" />
-          <node name="Cond" />
-          <node name="Do" />
         </travuser>
       </traversal>
     </phase>
@@ -3750,6 +3740,16 @@
             <phase name="ssa" />
             <phase name="ssa2" />
             <phase name="ssawc" />
+          </phases>
+        </attribute>
+        <attribute name="UseChn" mandatory="no">
+          <type name="Node">
+            <target>
+              <node name="Vinfo" />
+            </target>
+          </type>
+          <phases>
+            <range from="ivei" to="ive" />
           </phases>
         </attribute>
         <attribute name="WithId" default="NULL" mandatory="no">
