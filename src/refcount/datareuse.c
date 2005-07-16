@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2005/07/16 10:07:54  sah
+ * moved variable declaration to begin of block
+ *
  * Revision 1.14  2005/07/07 17:54:25  ktr
  * added some DBUG_PRINTs
  *
@@ -474,8 +477,10 @@ EMDRfundef (node *arg_node, info *arg_info)
     if ((!FUNDEF_ISCONDFUN (arg_node)) || (arg_info != NULL)) {
 
         if (FUNDEF_BODY (arg_node) != NULL) {
+            info *info;
+
             DBUG_PRINT ("EMDR", ("Traversing function body %s", FUNDEF_NAME (arg_node)));
-            info *info = MakeInfo (arg_node);
+            info = MakeInfo (arg_node);
 
             if (arg_info != NULL) {
                 INFO_EMDR_PREDAVIS (info) = INFO_EMDR_PREDAVIS (arg_info);
