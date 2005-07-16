@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.26  2005/07/16 19:02:42  sbs
+# index_infer.o added
+#
 # Revision 3.25  2004/11/24 15:00:20  ktr
 # removed INCS
 #
@@ -84,7 +87,7 @@ all: index.o ArrayElimination.o wl_access_analyze.o tile_size_inference.o \
      wls.o wlscheck.o wlsbuild.o wlswithloopification.o \
      pad.o pad_info.o pad_collect.o pad_infer.o pad_transform.o \
      WithloopFusion.o detectdependencies.o tagdependencies.o \
-     resolvedependencies.o
+     resolvedependencies.o index_infer.o
 
 
 #
