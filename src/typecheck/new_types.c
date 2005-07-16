@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.95  2005/07/16 19:06:54  sbs
+ * some DBUG output added.
+ *
  * Revision 3.94  2005/07/15 15:57:02  sah
  * introduced namespaces
  *
@@ -3285,6 +3288,12 @@ TYcmpTypes (ntype *t1, ntype *t2)
 
     DBUG_ENTER ("TYcmpTypes");
 
+    DBUG_EXECUTE ("NTY_CMP", tmp_str = TYtype2DebugString (t1, FALSE, 0);
+                  tmp_str2 = TYtype2DebugString (t2, FALSE, 0););
+    DBUG_PRINT ("NTY_CMP", ("comparing %s and %s", tmp_str, tmp_str2));
+    DBUG_EXECUTE ("NTY_CMP", tmp_str = ILIBfree (tmp_str);
+                  tmp_str2 = ILIBfree (tmp_str2););
+
     switch (NTYPE_CON (t1)) {
     case TC_bottom:
         if (NTYPE_CON (t2) == TC_bottom) {
@@ -3510,13 +3519,10 @@ TYcmpTypes (ntype *t1, ntype *t2)
         }
         break;
     default:
-        DBUG_EXECUTE ("NTY", tmp_str = TYtype2String (t1, FALSE, 0);
-                      tmp_str2 = TYtype2String (t2, FALSE, 0););
-        DBUG_PRINT ("NTY", ("trying to compare %s and %s", tmp_str, tmp_str2));
-
         DBUG_ASSERT ((0), "Type comparison for non-array types not yet implemented!");
     }
 
+    DBUG_PRINT ("NTY_CMP", ("result: %d", res));
     DBUG_RETURN (res);
 }
 
