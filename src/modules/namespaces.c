@@ -8,7 +8,6 @@
 
 #include "namespaces.h"
 #include "dbug.h"
-#include "LookUpTable.h"
 #include "internal_lib.h"
 #include "filemgr.h"
 
@@ -23,13 +22,6 @@ struct NSPOOL {
 };
 
 typedef struct NSPOOL nspool_t;
-
-/*
- * this LookUpTable is used to match namespace names
- * to namespace records, as these are implicitly
- * shared.
- */
-static lut_t *namespaces = NULL;
 
 /*
  * this pool is used to keep the namespaces
@@ -99,6 +91,31 @@ GetFromPool (int id)
 }
 
 namespace_t *
+FindInPool (const char *name)
+{
+    namespace_t *result = NULL;
+    nspool_t *pos;
+    int cnt;
+
+    DBUG_ENTER ("GetFromPool");
+
+    pos = pool;
+
+    for (cnt = 0; cnt < nextid; cnt++) {
+        if (ILIBstringCompare (pos->block[cnt]->name, name)) {
+            result = pos->block[cnt];
+            break;
+        }
+
+        if ((cnt % 100) == 99) {
+            pos = pos->next;
+        }
+    }
+
+    DBUG_RETURN (result);
+}
+
+namespace_t *
 AddNamespaceToPool (const char *name)
 {
     namespace_t *new;
@@ -110,11 +127,6 @@ AddNamespaceToPool (const char *name)
     new->name = ILIBstringCopy (name);
     new->id = nextid++;
 
-    if (namespaces == NULL) {
-        namespaces = LUTgenerateLut ();
-    }
-
-    namespaces = LUTinsertIntoLutS (namespaces, (char *)name, new);
     PutInPool (new);
 
     DBUG_RETURN (new);
@@ -124,7 +136,6 @@ namespace_t *
 NSgetNamespace (const char *name)
 {
     namespace_t *result;
-    void **search = NULL;
 
     DBUG_ENTER ("NSgetNamespace");
 
@@ -136,14 +147,10 @@ NSgetNamespace (const char *name)
 
         result = NULL;
     } else {
-        if (namespaces != NULL) {
-            search = LUTsearchInLutS (namespaces, (char *)name);
-        }
+        result = FindInPool ((char *)name);
 
-        if (search == NULL) {
+        if (result == NULL) {
             result = AddNamespaceToPool (name);
-        } else {
-            result = (namespace_t *)*search;
         }
     }
 
