@@ -38,3 +38,4 @@ wlscheck.c
 wlswithloopification.c
 resolvedependencies.c
 resolvedependencies.h
+index_infer.c
