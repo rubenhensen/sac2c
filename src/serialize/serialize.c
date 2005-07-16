@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.17  2005/07/16 22:40:34  sah
+ * generateSerFunName should handle AKS now properly
+ *
  * Revision 1.16  2005/07/16 21:11:29  sah
  * implemented serialisation of namespaces
  * based on a namespace mapping instead
@@ -73,6 +76,7 @@
 #include "namespaces.h"
 #include "user_types.h"
 #include "new_types.h"
+#include "shape.h"
 #include "serialize_symboltable.h"
 
 #include <string.h>
@@ -221,10 +225,21 @@ AppendSerFunType (char *funname, ntype *type)
         pos++;
         size++;
         scalar = type;
-    } else if ((TYisAKS (type)) || (TYisAKV (type))) {
+    } else if (TYisAKV (type)) {
+        DBUG_ASSERT (0, "found AKV as argument type. cannot handle this.");
+    } else if (TYisAKS (type)) {
+        char *shape = SHshape2String (0, TYgetShape (type));
+        written = 0;
+
         *pos = 'K';
         pos++;
         size++;
+
+        written = snprintf (pos, MAX_FUN_NAME_LEN - size, "%s", shape);
+        pos += written;
+        size += written;
+
+        shape = ILIBfree (shape);
         scalar = TYgetScalar (type);
     } else if (TYisAKD (type)) {
         *pos = 'D';
