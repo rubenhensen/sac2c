@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.178  2005/07/16 19:08:19  sbs
+# index_infer.o added.
+#
 # Revision 3.177  2005/07/16 18:33:36  sah
 # cleanup
 #
@@ -230,7 +233,7 @@ OPTIMIZE= src/optimize/optimize.o \
 
 PROFILE= src/profile/annotate_fun_calls.o
 
-PSIOPT= src/psi-opt/index.o src/psi-opt/ArrayElimination.o \
+PSIOPT= src/psi-opt/index.o src/psi-opt/index_infer.o src/psi-opt/ArrayElimination.o \
         src/psi-opt/wl_access_analyze.o src/psi-opt/tile_size_inference.o \
         src/psi-opt/wls.o src/psi-opt/wlscheck.o \
         src/psi-opt/wlsbuild.o src/psi-opt/wlswithloopification.o \
