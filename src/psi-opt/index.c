@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.72  2005/07/16 19:02:28  sbs
+ * *** empty log message ***
+ *
  * Revision 3.71  2005/07/15 15:24:13  ktr
  * Adapted to new types. However, IVE does not work yet.
  *
@@ -267,6 +270,7 @@
 #include "free.h"
 #include "convert.h"
 #include "NameTuplesUtils.h"
+#include "index_infer.h"
 
 /*
  * INFO structure
@@ -813,10 +817,12 @@ static int ive_expr;
  */
 static int ive_op;
 
+#if 0
+
 /**
  *
  * @name Some functions for handling N_vinfo nodes:
- *
+ * 
  * <!--
  * node * FindVect( node *N_vinfo_chain)        : checks whether VECT is in
  *                                                  the chain of N_vinfo nodes
@@ -830,10 +836,12 @@ static int ive_op;
  * @{
  */
 
+
+
 /******************************************************************************
  *
  * Function:
- *   node *LiftArg( node *arg, node *fundef, ntype *new_type,
+ *   node *LiftArg( node *arg, node *fundef, ntype *new_type, 
  *                  node **new_assigns)
  *
  * Description:
@@ -848,38 +856,40 @@ static int ive_op;
  *
  ******************************************************************************/
 
-node *
-LiftArg (node *arg, node *fundef, ntype *new_type, node **new_assigns)
+node *LiftArg( node *arg, node *fundef, ntype *new_type, node **new_assigns)
 {
-    char *new_name;
-    node *new_vardec;
-    node *new_arg;
-    node *new_ids;
-    node *new_avis;
+  char *new_name;
+  node *new_vardec;
+  node *new_arg;
+  node *new_ids;
+  node *new_avis;
 
-    DBUG_ENTER ("LiftArg");
+  DBUG_ENTER( "LiftArg");
 
-    new_name = ILIBtmpVarName (ID_NAME (arg));
-    new_avis = TBmakeAvis (new_name, new_type);
-    new_vardec = TBmakeVardec (new_avis, NULL);
-    fundef = TCaddVardecs (fundef, new_vardec);
+  new_name = ILIBtmpVarName( ID_NAME( arg));
+  new_avis = TBmakeAvis( new_name, new_type);
+  new_vardec = TBmakeVardec( new_avis, NULL);
+  fundef = TCaddVardecs( fundef, new_vardec);
 
-    /*
-     * Abstract the given argument out:
-     *   ... = fun( A, ...);
-     * is transformed into
-     *   __A = A;
-     *   ... = fun( __A, ...);
-     */
-    new_ids = TBmakeIds (new_avis, NULL);
+  /*
+   * Abstract the given argument out:
+   *   ... = fun( A, ...);
+   * is transformed into
+   *   __A = A;
+   *   ... = fun( __A, ...);
+   */
+  new_ids = TBmakeIds( new_avis, NULL);
 
-    (*new_assigns) = TBmakeAssign (TBmakeLet (new_ids, arg), (*new_assigns));
+  (*new_assigns) = TBmakeAssign( TBmakeLet( new_ids, arg),
+				 ( *new_assigns));
 
-    AVIS_SSAASSIGN (new_avis) = (*new_assigns);
-    new_arg = TBmakeId (new_avis);
+  AVIS_SSAASSIGN( new_avis) = (*new_assigns);
+  new_arg = TBmakeId( new_avis);
 
-    DBUG_RETURN (new_arg);
+  DBUG_RETURN( new_arg);
 }
+
+
 
 /** <!--********************************************************************-->
  *
@@ -892,17 +902,18 @@ LiftArg (node *arg, node *fundef, ntype *new_type, node **new_assigns)
  *
  ******************************************************************************/
 
-node *
-FindVect (node *chain)
+node *FindVect( node *chain)
 {
-    DBUG_ENTER ("FindVect");
+  DBUG_ENTER("FindVect");
 
-    while (VINFO_FLAG (chain) == IDX) {
-        chain = VINFO_NEXT (chain);
-    }
+  while( VINFO_FLAG( chain) == IDX) {
+    chain=VINFO_NEXT(chain);
+  }
 
-    DBUG_RETURN (chain);
+  DBUG_RETURN(chain );
 }
+
+
 
 /** <!--********************************************************************-->
  *
@@ -915,19 +926,21 @@ FindVect (node *chain)
  *
  ******************************************************************************/
 
-node *
-FindIdx (node *chain, shape *vshape)
+
+node *FindIdx( node *chain, shape *vshape)
 {
-    DBUG_ENTER ("FindIdx");
+  DBUG_ENTER("FindIdx");
 
-    while ((VINFO_FLAG (chain) != DOLLAR)
-           && ((VINFO_FLAG (chain) != IDX)
-               || !SHcompareShapes (VINFO_SHAPE (chain), vshape))) {
-        chain = VINFO_NEXT (chain);
-    }
+  while((VINFO_FLAG(chain) != DOLLAR) &&
+        ( (VINFO_FLAG(chain) != IDX) 
+          || !SHcompareShapes(VINFO_SHAPE(chain), vshape))) {
+    chain = VINFO_NEXT( chain);
+  }
 
-    DBUG_RETURN (chain);
+  DBUG_RETURN(chain );
 }
+
+
 
 /** <!--********************************************************************-->
  *
@@ -939,18 +952,19 @@ FindIdx (node *chain, shape *vshape)
  *
  ******************************************************************************/
 
-node *
-SetVect (node *chain)
+
+node *SetVect( node *chain)
 {
-    DBUG_ENTER ("SetVect");
+  DBUG_ENTER("SetVect");
 
-    DBUG_PRINT ("IDX", ("VECT assigned"));
-    if (VINFO_FLAG (FindVect (chain)) == DOLLAR) {
-        chain = TBmakeVinfo (VECT, NULL, chain, VINFO_DOLLAR (chain));
-    }
+  DBUG_PRINT("IDX",("VECT assigned"));
+  if( VINFO_FLAG( FindVect( chain)) == DOLLAR) {
+    chain = TBmakeVinfo(VECT, NULL, chain, VINFO_DOLLAR(chain));
+  }
 
-    DBUG_RETURN (chain);
+  DBUG_RETURN(chain);
 }
+
 
 /** <!--*********************************************************************-->
  *
@@ -964,31 +978,36 @@ SetVect (node *chain)
  *
  ******************************************************************************/
 
-node *
-SetIdx (node *chain, shape *varshape)
+
+node *SetIdx( node *chain, shape *varshape)
 {
 #ifndef DBUG_OFF
-    char *shp_str;
+  char *shp_str;
 #endif
 
-    DBUG_ENTER ("SetIdx");
+  DBUG_ENTER("SetIdx");
 
-    if (VINFO_FLAG (FindIdx (chain, varshape)) == DOLLAR) {
-        chain = TBmakeVinfo (IDX, SHcopyShape (varshape), chain, VINFO_DOLLAR (chain));
-        DBUG_EXECUTE ("IDX", shp_str = SHshape2String (0, VINFO_SHAPE (chain)););
-        DBUG_PRINT ("IDX", ("IDX(%s) assigned", shp_str));
-        DBUG_EXECUTE ("IDX", shp_str = ILIBfree (shp_str););
-    }
+  if( VINFO_FLAG( FindIdx( chain, varshape)) == DOLLAR )  {
+    chain=TBmakeVinfo( IDX, SHcopyShape( varshape), 
+                       chain, VINFO_DOLLAR(chain));
+    DBUG_EXECUTE( "IDX",
+      shp_str = SHshape2String( 0, VINFO_SHAPE( chain));
+    );
+    DBUG_PRINT( "IDX", ("IDX(%s) assigned", shp_str));
+    DBUG_EXECUTE( "IDX",
+      shp_str = ILIBfree( shp_str);
+    );
+  }
 
-    DBUG_RETURN (chain);
+  DBUG_RETURN(chain);
 }
 
 /*@}*/
-
+
 /**
  *
  * @name Some basic functions for handling N_vinfo chains:
- *
+ * 
  * <!--
  * node *CutVinfoChn( node * chain) :
  *           cuts off the topmost chain and returns the rest
@@ -996,8 +1015,8 @@ SetIdx (node *chain, shape *varshape)
  *           links the chain cb to the topmost chain of ca.
  *           Expects ca to contain one chain only!
  * node *MergeVinfoChn( node *ca, node *cb) :
- *           merges the entries of the topmost chain from ca with
- *           the elements of the topmost chain of cb and returns it
+ *           merges the entries of the topmost chain from ca with  
+ *           the elements of the topmost chain of cb and returns it 
  *           followed by the "rest" of cb.
  *           Expects ca to contain one chain only!
  * -->
@@ -1012,7 +1031,7 @@ SetIdx (node *chain, shape *varshape)
  *   @brief cuts off the topmost chain and returns the rest.
  *
  *   <pre>
- *   if we give a cinfo-chain as argument, e.g.
+ *   if we give a cinfo-chain as argument, e.g. 
  *     VECT : IDX([2,2]) : $ : VECT : $
  *   CutVinfoChn cuts off the first list by setting the NEXT pointer of the first
  *   $-symbol to NULL, and returns a pointer to the rest of the chain, e.g.
@@ -1023,19 +1042,21 @@ SetIdx (node *chain, shape *varshape)
  *
  ******************************************************************************/
 
-node *
-CutVinfoChn (node *chain)
+node *CutVinfoChn( node *chain)
 {
-    node *rest;
+  node *rest;
 
-    DBUG_ENTER ("CutVinfoChn");
+  DBUG_ENTER( "CutVinfoChn");
 
-    DBUG_ASSERT ((VINFO_DOLLAR (chain) != NULL), "Dollar-ref in vinfo-chain missing!");
-    rest = VINFO_NEXT (VINFO_DOLLAR (chain));
-    VINFO_NEXT (VINFO_DOLLAR (chain)) = NULL;
+  DBUG_ASSERT( (VINFO_DOLLAR(chain) != NULL),
+               "Dollar-ref in vinfo-chain missing!");
+  rest = VINFO_NEXT( VINFO_DOLLAR(chain));
+  VINFO_NEXT( VINFO_DOLLAR(chain)) = NULL;
 
-    DBUG_RETURN (rest);
+  DBUG_RETURN(rest);
 }
+
+
 
 /** <!--********************************************************************-->
  *
@@ -1052,19 +1073,21 @@ CutVinfoChn (node *chain)
  *
  ******************************************************************************/
 
-node *
-AppendVinfoChn (node *ca, node *cb)
+node *AppendVinfoChn( node *ca, node *cb)
 {
-    DBUG_ENTER ("AppendVinfoChn");
+  DBUG_ENTER( "AppendVinfoChn");
 
-    DBUG_ASSERT ((VINFO_DOLLAR (ca) != NULL), "Dollar-ref in vinfo-chain missing!");
-    DBUG_ASSERT ((VINFO_NEXT (VINFO_DOLLAR (ca)) == NULL),
-                 "AppendVinfoChn called with a first argument"
-                 " containing more than one chain!");
-    VINFO_NEXT (VINFO_DOLLAR (ca)) = cb;
+  DBUG_ASSERT( (VINFO_DOLLAR(ca) != NULL),
+               "Dollar-ref in vinfo-chain missing!");
+  DBUG_ASSERT( (VINFO_NEXT( VINFO_DOLLAR(ca)) == NULL),
+               "AppendVinfoChn called with a first argument"
+               " containing more than one chain!");
+  VINFO_NEXT( VINFO_DOLLAR(ca)) = cb; 
 
-    DBUG_RETURN (ca);
+  DBUG_RETURN(ca);
 }
+
+
 
 /** <!--********************************************************************-->
  *
@@ -1082,28 +1105,30 @@ AppendVinfoChn (node *ca, node *cb)
  *
  ******************************************************************************/
 
-node *
-MergeVinfoChn (node *ca, node *cb)
+node *MergeVinfoChn( node *ca, node *cb)
 {
-    DBUG_ENTER ("MergeVinfoChn");
+  DBUG_ENTER( "MergeVinfoChn");
 
-    DBUG_ASSERT ((VINFO_DOLLAR (ca) != NULL), "Dollar-ref in vinfo-chain missing!");
-    DBUG_ASSERT ((VINFO_NEXT (VINFO_DOLLAR (ca)) == NULL),
-                 "AppendVinfoChn called with a first argument"
-                 " containing more than one chain!");
-    while (VINFO_FLAG (ca) != DOLLAR) {
-        if (VINFO_FLAG (ca) == VECT)
-            cb = SetVect (cb);
-        else
-            cb = SetIdx (cb, VINFO_SHAPE (ca));
-        ca = VINFO_NEXT (ca);
-    }
+  DBUG_ASSERT( (VINFO_DOLLAR(ca) != NULL),
+               "Dollar-ref in vinfo-chain missing!");
+  DBUG_ASSERT( (VINFO_NEXT( VINFO_DOLLAR(ca)) == NULL),
+               "AppendVinfoChn called with a first argument"
+               " containing more than one chain!");
+  while( VINFO_FLAG( ca) != DOLLAR) {
+    if( VINFO_FLAG( ca) == VECT)
+      cb = SetVect( cb);
+    else
+      cb = SetIdx( cb, VINFO_SHAPE(ca));
+    ca = VINFO_NEXT( ca);
+  }
 
-    DBUG_RETURN (cb);
+  DBUG_RETURN(cb);
 }
 
-/*@}*/
 
+
+/*@}*/
+
 /**
  *
  * @name Functions that are applied to the entire vardec chain:
@@ -1117,7 +1142,7 @@ MergeVinfoChn (node *ca, node *cb)
  * -->
  *
  * all these functions can be applied to the entire vardec-chain
- * by using the macro MAP_TO_ALL_VARDEC_ACTCHNS as a
+ * by using the macro MAP_TO_ALL_VARDEC_ACTCHNS as a 
  * "higher-order-function"
  * @{
  */
@@ -1142,28 +1167,33 @@ MergeVinfoChn (node *ca, node *cb)
         }                                                                                \
     }
 
+
+
 /** <!--********************************************************************-->
  *
  * @fn node *DuplicateTop( node *actchn)
  *
  ******************************************************************************/
 
-node *
-DuplicateTop (node *actchn)
+node *DuplicateTop( node *actchn)
 {
-    node *copy, *restchn, *res;
+  node *copy, *restchn, *res;
 
-    DBUG_ENTER ("DuplicateTop");
+  DBUG_ENTER( "DuplicateTop");
 
-    restchn = CutVinfoChn (actchn);
-    copy = DUPdoDupTree (actchn);
-    res = AppendVinfoChn (copy, AppendVinfoChn (actchn, restchn));
+  restchn = CutVinfoChn( actchn);
+  copy    = DUPdoDupTree( actchn);
+  res     = AppendVinfoChn( copy, AppendVinfoChn( actchn, restchn));
 
-    DBUG_PRINT ("IVE", ("DuplicateTop yields:"));
-    DBUG_EXECUTE ("IVE", PRTdoPrint (res););
+  DBUG_PRINT( "IVE" , ("DuplicateTop yields:"));
+  DBUG_EXECUTE( "IVE",
+    PRTdoPrint( res);
+  );
 
-    DBUG_RETURN (res);
+  DBUG_RETURN( res);
 }
+
+
 
 /** <!--********************************************************************-->
  *
@@ -1171,23 +1201,26 @@ DuplicateTop (node *actchn)
  *
  ******************************************************************************/
 
-node *
-SwitchTop (node *actchn)
+node *SwitchTop( node *actchn)
 {
-    node *scndchn, *restchn, *res;
+  node *scndchn, *restchn, *res;
 
-    DBUG_ENTER ("SwitchTop");
+  DBUG_ENTER( "SwitchTop");
 
-    DBUG_PRINT ("IVE", ("SwitchTop yields:"));
+  DBUG_PRINT( "IVE" , ("SwitchTop yields:"));
 
-    scndchn = CutVinfoChn (actchn);
-    restchn = CutVinfoChn (scndchn);
-    res = AppendVinfoChn (scndchn, AppendVinfoChn (actchn, restchn));
+  scndchn = CutVinfoChn( actchn);
+  restchn = CutVinfoChn( scndchn);
+  res     = AppendVinfoChn( scndchn, AppendVinfoChn( actchn, restchn));
+  
+  DBUG_EXECUTE( "IVE",
+    PRTdoPrint( res);
+  );
 
-    DBUG_EXECUTE ("IVE", PRTdoPrint (res););
-
-    DBUG_RETURN (res);
+  DBUG_RETURN( res);
 }
+
+
 
 /** <!--********************************************************************-->
  *
@@ -1195,23 +1228,26 @@ SwitchTop (node *actchn)
  *
  ******************************************************************************/
 
-node *
-MergeTop (node *actchn)
+node *MergeTop( node *actchn)
 {
-    node *restchn, *res;
+  node *restchn, *res;
 
-    DBUG_ENTER ("MergeTop");
+  DBUG_ENTER( "MergeTop");
 
-    DBUG_PRINT ("IVE", ("MergeTop yields:"));
+  DBUG_PRINT( "IVE" , ("MergeTop yields:"));
 
-    restchn = CutVinfoChn (actchn);
-    res = MergeVinfoChn (actchn, restchn);
-    FREEdoFreeTree (actchn);
+  restchn = CutVinfoChn( actchn);
+  res     = MergeVinfoChn( actchn, restchn);
+  FREEdoFreeTree( actchn);
+  
+  DBUG_EXECUTE( "IVE",
+    PRTdoPrint( res);
+  );
 
-    DBUG_EXECUTE ("IVE", PRTdoPrint (res););
-
-    DBUG_RETURN (res);
+  DBUG_RETURN( res);
 }
+
+
 
 /** <!--********************************************************************-->
  *
@@ -1219,22 +1255,25 @@ MergeTop (node *actchn)
  *
  ******************************************************************************/
 
-node *
-FreeTop (node *actchn)
+node *FreeTop( node *actchn)
 {
-    node *res;
+  node *res;
 
-    DBUG_ENTER ("FreeTop");
+  DBUG_ENTER( "FreeTop");
 
-    DBUG_PRINT ("IVE", ("FreeTop yields:"));
+  DBUG_PRINT( "IVE" , ("FreeTop yields:"));
 
-    res = CutVinfoChn (actchn);
-    FREEdoFreeTree (actchn);
+  res = CutVinfoChn( actchn);
+  FREEdoFreeTree( actchn);
+ 
+  DBUG_EXECUTE( "IVE",
+    PRTdoPrint( res);
+  );
 
-    DBUG_EXECUTE ("IVE", PRTdoPrint (res););
-
-    DBUG_RETURN (res);
+  DBUG_RETURN( res);
 }
+
+
 
 /** <!--********************************************************************-->
  *
@@ -1242,33 +1281,37 @@ FreeTop (node *actchn)
  *
  ******************************************************************************/
 
-node *
-MergeCopyTop (node *actchn)
+node *MergeCopyTop( node *actchn)
 {
-    node *restchn, *scndchn, *res;
+  node *restchn, *scndchn, *res;
 
-    DBUG_ENTER ("MergeCopyTop");
+  DBUG_ENTER( "MergeCopyTop");
 
-    DBUG_PRINT ("IVE", ("MergeCopyTop yields:"));
+  DBUG_PRINT( "IVE" , ("MergeCopyTop yields:"));
 
-    scndchn = CutVinfoChn (actchn);
-    restchn = CutVinfoChn (scndchn);
+  scndchn  = CutVinfoChn( actchn);
+  restchn  = CutVinfoChn( scndchn);
 
-    /*
-     * scndchn is abstraced out since it has to be made sure, that MergeVinfoChn
-     * is called BEFORE AppendVinfoChn. This is essential, because AppendVinfoChn
-     * operates in place, i.e. it performes a side effect on it's first parameter!!
-     */
-    scndchn = MergeVinfoChn (actchn, scndchn);
-    res = AppendVinfoChn (scndchn, AppendVinfoChn (actchn, restchn));
+  /* 
+   * scndchn is abstraced out since it has to be made sure, that MergeVinfoChn
+   * is called BEFORE AppendVinfoChn. This is essential, because AppendVinfoChn
+   * operates in place, i.e. it performes a side effect on it's first parameter!!
+   */
+  scndchn  = MergeVinfoChn( actchn, scndchn); 
+  res      = AppendVinfoChn( scndchn,
+                             AppendVinfoChn( actchn,
+                                             restchn));
 
-    DBUG_EXECUTE ("IVE", PRTdoPrint (res););
+  DBUG_EXECUTE( "IVE",
+    PRTdoPrint( res);
+  );
 
-    DBUG_RETURN (res);
+  DBUG_RETURN( res);
 }
 
-/*@}*/
 
+/*@}*/
+
 /**
  *
  * @name Helper functions used by the traversal functions:
@@ -1279,7 +1322,7 @@ MergeCopyTop (node *actchn)
  *
  *  node *VardecIdx(node *vardec, shape *shp) :
  *            for finding / creating V_vardecs for "shapely" iv's.
- *
+ *   
  *  node *CreateIdxs2OffsetIcm(node *vardec, shape *shp):
  *            for creating Idxs2Offset that initialize "shapely" iv's.
  *
@@ -1289,6 +1332,8 @@ MergeCopyTop (node *actchn)
  *
  * @{
  */
+
+#endif
 
 /** <!--********************************************************************-->
  *
@@ -1322,62 +1367,64 @@ IVEchangeId (char *varname, shape *shp)
     DBUG_RETURN (ILIBstringCopy (buffer));
 }
 
+#if 0
+
 /** <!--********************************************************************-->
  *
  * @fn node *VardecIdx(node *vardec, shape *shp)
  *
  * @brief vardec points to the N_vardec/ N_arg node of the original
- *    declaration, i.e. the "VECT"-version, of an index variable.
+ *    declaration, i.e. the "VECT"-version, of an index variable. 
  *    VardecIdx looks up, whether there already exists a declaration of the
  *    "IDX(type)" variant. If so, the pointer to that declaration is returned,
  *    otherwise a new declaration is created and a pointer to it is returned.
  *
  ******************************************************************************/
 
-node *
-VardecIdx (node *vardec, shape *shp)
+node *VardecIdx(node *vardec, shape *shp)
 {
-    node *newvardec, *vinfo, *block;
-    char *varname;
+  node *newvardec, *vinfo, *block;
+  char *varname;
 
-    DBUG_ENTER ("VardecIdx");
+  DBUG_ENTER("VardecIdx");
 
-    vinfo = FindIdx (VARDEC_OR_ARG_COLCHN (vardec), shp);
-    DBUG_ASSERT ((VINFO_FLAG (vinfo) != DOLLAR),
-                 "given shape not inserted in collected chain of vardec node!");
-    if (VINFO_VARDEC (vinfo) == NULL) {
-        /*
-         * A vardec does not yet exist !
-         */
-        varname = IVEchangeId (VARDEC_OR_ARG_NAME (vardec), shp);
-        if (NODE_TYPE (vardec) == N_vardec) {
-            newvardec
-              = TBmakeVardec (TBmakeAvis (varname, TYmakeAKS (TYmakeSimpleType (T_int),
-                                                              SHmakeShape (0))),
-                              VARDEC_NEXT (vardec));
-            VARDEC_NEXT (vardec) = newvardec;
-        } else {
-            block = FUNDEF_BODY (ARG_FUNDEF (vardec));
-            newvardec
-              = TBmakeVardec (TBmakeAvis (varname, TYmakeAKS (TYmakeSimpleType (T_int),
-                                                              SHmakeShape (0))),
-                              BLOCK_VARDEC (block));
-            BLOCK_VARDEC (block) = newvardec;
-        }
-        VINFO_VARDEC (vinfo) = newvardec;
-        DBUG_PRINT ("IDX",
-                    ("inserting new vardec %s between %s and %s", varname,
-                     ((NODE_TYPE (vardec) == N_vardec) ? VARDEC_NAME (vardec) : "NULL"),
-                     (VARDEC_NEXT (newvardec) != NULL
-                        ? VARDEC_NAME (VARDEC_NEXT (newvardec))
-                        : "NULL")));
+  vinfo = FindIdx(VARDEC_OR_ARG_COLCHN(vardec), shp);
+  DBUG_ASSERT((VINFO_FLAG(vinfo) != DOLLAR),
+              "given shape not inserted in collected chain of vardec node!");
+  if ( VINFO_VARDEC( vinfo) == NULL) {
+    /*
+     * A vardec does not yet exist !
+     */
+    varname = IVEchangeId( VARDEC_OR_ARG_NAME( vardec), shp);
+    if( NODE_TYPE( vardec) == N_vardec) {
+      newvardec = TBmakeVardec( TBmakeAvis( varname, 
+                                            TYmakeAKS( TYmakeSimpleType(T_int),
+                                                       SHmakeShape(0))),
+                                VARDEC_NEXT(vardec));
+      VARDEC_NEXT( vardec) = newvardec;
+    } else {
+      block = FUNDEF_BODY( ARG_FUNDEF( vardec));
+      newvardec = TBmakeVardec( TBmakeAvis( varname, 
+                                            TYmakeAKS( TYmakeSimpleType(T_int),
+                                                       SHmakeShape(0))),
+                                BLOCK_VARDEC( block));
+      BLOCK_VARDEC( block) = newvardec;
     }
+    VINFO_VARDEC(vinfo) = newvardec;
+    DBUG_PRINT("IDX", ("inserting new vardec %s between %s and %s",
+                       varname,
+                       ( (NODE_TYPE( vardec) == N_vardec)
+                            ? VARDEC_NAME(vardec) : "NULL" ),
+                       ( VARDEC_NEXT( newvardec) != NULL
+                            ? VARDEC_NAME(VARDEC_NEXT(newvardec)) : "NULL")));
+  }
 
-    DBUG_PRINT ("IDX", ("vinfo " F_PTR " points to vardec %s", vinfo,
-                        VARDEC_NAME (VINFO_VARDEC (vinfo))));
-
-    DBUG_RETURN (VINFO_VARDEC (vinfo));
+  DBUG_PRINT("IDX", ("vinfo " F_PTR " points to vardec %s",
+                      vinfo, VARDEC_NAME( VINFO_VARDEC( vinfo))));
+      
+  DBUG_RETURN( VINFO_VARDEC( vinfo));
 }
+
 
 /** <!--********************************************************************-->
  *
@@ -1396,49 +1443,53 @@ VardecIdx (node *vardec, shape *shp)
  *
  ******************************************************************************/
 
-node *
-CreateIdxs2OffsetIcm (node *vardec, node *idxs, shape *shp)
+node *CreateIdxs2OffsetIcm(node *vardec, node *idxs, shape *shp)
 {
-    node *shp_exprs, *ids_exprs, *icm, *iv_off_id;
-    node *exprs, *new_vardec;
-    char *iv_name;
+  node *shp_exprs, *ids_exprs, *icm, *iv_off_id;
+  node * exprs, *new_vardec;
+  char *iv_name;
 
-    DBUG_ENTER ("CreateIdxs2OffsetIcm");
+  DBUG_ENTER("CreateIdxs2OffsetIcm");
 
-    /*
-     * First, we create an N_exprs-chain containing the shape!
-     */
-    shp_exprs = SHshape2Exprs (shp);
+  /*
+   * First, we create an N_exprs-chain containing the shape!
+   */
+  shp_exprs = SHshape2Exprs( shp);
 
-    /*
-     * Now, we create an N_id node containing the name of the shapely
-     * version of the index vector (iv in the example above).
-     */
-    iv_name = VARDEC_OR_ARG_NAME (vardec);
+  /*
+   * Now, we create an N_id node containing the name of the shapely
+   * version of the index vector (iv in the example above).
+   */
+  iv_name = VARDEC_OR_ARG_NAME( vardec);
 
-    new_vardec = VardecIdx (vardec, shp);
-    iv_off_id = TBmakeId (VARDEC_AVIS (new_vardec));
+  new_vardec = VardecIdx( vardec, shp);
+  iv_off_id  = TBmakeId( VARDEC_AVIS( new_vardec));
 
-    /*
-     * Then, we create an N_exprs-chain containing the N_ids of the idxs:
-     */
-    ids_exprs = TCids2Exprs (idxs);
+  /*
+   * Then, we create an N_exprs-chain containing the N_ids of the idxs:
+   */
+  ids_exprs = TCids2Exprs( idxs);
 
-    /*
-     * Now, we create the desired icm:
-     */
-    iv_off_id = NTUaddNtTag (iv_off_id);
-    exprs = ids_exprs;
-    while (exprs != NULL) {
-        EXPRS_EXPR (exprs) = NTUaddNtTag (EXPRS_EXPR (exprs));
-        exprs = EXPRS_NEXT (exprs);
-    }
+  /*
+   * Now, we create the desired icm:
+   */
+  iv_off_id = NTUaddNtTag( iv_off_id);
+  exprs = ids_exprs;
+  while( exprs != NULL) {
+    EXPRS_EXPR( exprs) = NTUaddNtTag( EXPRS_EXPR( exprs));
+    exprs = EXPRS_NEXT( exprs);
+  }
 
-    icm = TCmakeIcm5 ("ND_IDXS2OFFSET", iv_off_id, TBmakeNum (TCcountIds (idxs)),
-                      ids_exprs, TBmakeNum (SHgetDim (shp)), shp_exprs);
+  icm = TCmakeIcm5( "ND_IDXS2OFFSET",
+                  iv_off_id,
+                  TBmakeNum( TCcountIds( idxs)),
+                  ids_exprs,
+                  TBmakeNum( SHgetDim( shp)),
+                  shp_exprs);
 
-    DBUG_RETURN (TBmakeAssign (icm, NULL));
+  DBUG_RETURN( TBmakeAssign( icm, NULL));
 }
+
 
 /** <!--********************************************************************-->
  *
@@ -1447,7 +1498,7 @@ CreateIdxs2OffsetIcm (node *vardec, node *idxs, shape *shp)
  * @brief 'vardec' points to the N_vardec/ N_arg node of the original
  *    declaration, i.e. the "VECT"-version, of an index variable.
  *    'shp' indicates which IDX(shp) version has to be computed.
- *    CreateVect2OffsetIcm creates the required  ND_VECT2OFFSET-ICM, e.g.,
+ *    CreateVect2OffsetIcm creates the required  ND_VECT2OFFSET-ICM, e.g., 
  *    if   vardec ->  int[2] iv    and   shp -> [4,5,6],
  *    an icm ND_VECT2OFFSET( iv_4_5_6__, 2, iv, 3, 4, 5, 6)  is created.
  *    While doing so it makes sure, that a vardec for iv_3_4_5__ exists and
@@ -1456,54 +1507,58 @@ CreateIdxs2OffsetIcm (node *vardec, node *idxs, shape *shp)
  *    Finally, the index variable is marked as VECT since the vector is
  *    needed for this ICM!! (This is crucial for the elimination of superfluous
  *    vector declarations!
- *
+ *    
  ******************************************************************************/
 
-node *
-CreateVect2OffsetIcm (node *vardec, shape *shp)
+node *CreateVect2OffsetIcm(node *vardec, shape *shp)
 {
-    node *exprs, *icm, *iv_off_id, *iv_vect_id;
-    node *new_vardec;
-    char *iv_name;
+  node *exprs, *icm, *iv_off_id, *iv_vect_id;
+  node *new_vardec;
+  char *iv_name;
 
-    DBUG_ENTER ("CreateVect2OffsetIcm");
+  DBUG_ENTER("CreateVect2OffsetIcm");
 
-    /*
-     * First, we create an N_exprs-chain containing the shape!
-     */
-    exprs = SHshape2Exprs (shp);
+  /* 
+   * First, we create an N_exprs-chain containing the shape!
+   */
+  exprs = SHshape2Exprs( shp);
 
-    /*
-     * Now, we create two N_id nodes containing the name of the iv itself
-     * and containing the shapely version of iv, respectively.
-     */
-    iv_name = VARDEC_OR_ARG_NAME (vardec);
+  /* 
+   * Now, we create two N_id nodes containing the name of the iv itself
+   * and containing the shapely version of iv, respectively.
+   */
+  iv_name = VARDEC_OR_ARG_NAME( vardec);
 
-    new_vardec = VardecIdx (vardec, shp);
-    iv_off_id = TBmakeId (VARDEC_AVIS (new_vardec));
+  new_vardec = VardecIdx( vardec, shp);
+  iv_off_id  = TBmakeId( VARDEC_AVIS( new_vardec));
 
-    iv_vect_id = TBmakeId (VARDEC_AVIS (vardec));
+  
+  iv_vect_id = TBmakeId( VARDEC_AVIS( vardec));
+  
+  /*
+   * Now, we create the desired icm:
+   */
+  iv_vect_id = NTUaddNtTag( iv_vect_id);
+  iv_off_id = NTUaddNtTag( iv_off_id);
 
-    /*
-     * Now, we create the desired icm:
-     */
-    iv_vect_id = NTUaddNtTag (iv_vect_id);
-    iv_off_id = NTUaddNtTag (iv_off_id);
+  icm = TCmakeIcm5( "ND_VECT2OFFSET",
+                  iv_off_id,
+                  TBmakeNum( SHgetUnrLen( TYgetShape( ID_NTYPE( iv_vect_id)))),
+                  iv_vect_id,
+                  TBmakeNum( SHgetDim( shp)),
+                  exprs);  
 
-    icm = TCmakeIcm5 ("ND_VECT2OFFSET", iv_off_id,
-                      TBmakeNum (SHgetUnrLen (TYgetShape (ID_NTYPE (iv_vect_id)))),
-                      iv_vect_id, TBmakeNum (SHgetDim (shp)), exprs);
-
-    /*
-     * Finally, we mark vardec as VECT!
-     */
-    L_VARDEC_OR_ARG_COLCHN (vardec, SetVect (VARDEC_OR_ARG_COLCHN (vardec)));
-
-    DBUG_RETURN (TBmakeAssign (icm, NULL));
+  /*
+   * Finally, we mark vardec as VECT!
+   */
+  L_VARDEC_OR_ARG_COLCHN( vardec, SetVect( VARDEC_OR_ARG_COLCHN( vardec) ));
+   
+  DBUG_RETURN( TBmakeAssign( icm, NULL));
 }
 
-/*@}*/
 
+/*@}*/
+
 /******************************************************************************
  ***
  ***          Here, the traversal functions start!
@@ -1517,23 +1572,25 @@ CreateVect2OffsetIcm (node *vardec, shape *shp)
  * @{
  */
 
+
 /** <!--********************************************************************-->
  *
  * @fn node *IVEmodule(node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 
-node *
-IVEmodule (node *arg_node, info *arg_info)
+node *IVEmodule(node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IVEmodule");
+  DBUG_ENTER("IVEmodule");
 
-    if (NULL != MODULE_FUNS (arg_node)) {
-        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
-    }
+  if ( NULL != MODULE_FUNS(arg_node)) {
+    MODULE_FUNS(arg_node)=TRAVdo(MODULE_FUNS(arg_node), arg_info);
+  }
 
-    DBUG_RETURN (arg_node);
+  DBUG_RETURN(arg_node);
 }
+
+
 
 /** <!--********************************************************************-->
  *
@@ -1541,52 +1598,53 @@ IVEmodule (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 
-node *
-IVEfundef (node *arg_node, info *arg_info)
+node *IVEfundef(node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IVEfundef");
+  DBUG_ENTER("IVEfundef");
 
-    INFO_IVE_FUNDEF (arg_info) = arg_node;
+  INFO_IVE_FUNDEF( arg_info) = arg_node;
 
-    /*
-     * We have to traverse the args first, since we need backrefs
-     * to this fundef-node.
-     * For doing so we supply the fundef-node in INFO_IVE_FUNDEF( arg_info).
-     */
-    if (FUNDEF_ARGS (arg_node) != NULL) {
-        FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
-    }
+  /*
+   * We have to traverse the args first, since we need backrefs
+   * to this fundef-node.
+   * For doing so we supply the fundef-node in INFO_IVE_FUNDEF( arg_info).
+   */
+  if (FUNDEF_ARGS(arg_node) != NULL) {
+    FUNDEF_ARGS(arg_node)=TRAVdo(FUNDEF_ARGS(arg_node), arg_info);
+  }
 
-    /*
-     * The vardec stacking mechanism needed for conditionals and loops
-     * requires knowledge of the topmost vardec node which is kept in
-     * INFO_IVE_VARDECS( arg_info).
-     * Furthermore, the default mode has to be set to M_uses_and_transform!
-     */
-    if (FUNDEF_BODY (arg_node) != NULL) {
-        INFO_IVE_VARDECS (arg_info) = FUNDEF_VARDEC (arg_node);
-        INFO_IVE_MODE (arg_info) = M_uses_and_transform;
-        INFO_IVE_PRE_ASSIGNS (arg_info) = NULL;
-        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-    }
+  /*
+   * The vardec stacking mechanism needed for conditionals and loops
+   * requires knowledge of the topmost vardec node which is kept in
+   * INFO_IVE_VARDECS( arg_info).
+   * Furthermore, the default mode has to be set to M_uses_and_transform!
+   */
+  if (FUNDEF_BODY( arg_node) != NULL) {
+    INFO_IVE_VARDECS( arg_info) = FUNDEF_VARDEC( arg_node);
+    INFO_IVE_MODE( arg_info) = M_uses_and_transform;
+    INFO_IVE_PRE_ASSIGNS( arg_info) = NULL;
+    FUNDEF_BODY(arg_node)=TRAVdo(FUNDEF_BODY(arg_node), arg_info);
+  }
 
-    /*
-     * A second pass through the arguments has to be done in order
-     * to insert initialisations for index-args. This can NOT be done
-     * when traversing the body since the traversal mechanism would
-     * automatically eliminate the freshly inserted assign-nodes.
-     * The second pass is indicated to IDXarg by a NULL arg_info!
-     */
-    if (FUNDEF_ARGS (arg_node) != NULL) {
-        FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), NULL);
-    }
+  /*
+   * A second pass through the arguments has to be done in order
+   * to insert initialisations for index-args. This can NOT be done
+   * when traversing the body since the traversal mechanism would
+   * automatically eliminate the freshly inserted assign-nodes.
+   * The second pass is indicated to IDXarg by a NULL arg_info!
+   */
+  if (FUNDEF_ARGS(arg_node) != NULL) {
+    FUNDEF_ARGS(arg_node)=TRAVdo(FUNDEF_ARGS(arg_node), NULL);
+  }
 
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-    }
+  if (FUNDEF_NEXT(arg_node) != NULL) {
+    FUNDEF_NEXT(arg_node)=TRAVdo(FUNDEF_NEXT(arg_node), arg_info);
+  }
 
-    DBUG_RETURN (arg_node);
+  DBUG_RETURN(arg_node);
 }
+
+
 
 /** <!--********************************************************************-->
  *
@@ -1600,57 +1658,60 @@ IVEfundef (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 
-node *
-IVEarg (node *arg_node, info *arg_info)
+node *IVEarg(node *arg_node, info *arg_info)
 {
-    node *newassign, *block, *vinfo;
+  node *newassign, *block, *vinfo;
 
-    DBUG_ENTER ("IVEarg");
+  DBUG_ENTER("IVEarg");
 
-    if (arg_info != NULL) {
-        /* This is the first pass; insert backref to fundef
-         * and make sure that all ARG_COLCHN-nodes are properly
-         * instanciated before traversing the body!
-         */
-        ARG_FUNDEF (arg_node) = INFO_IVE_FUNDEF (arg_info);
-        if ((TYgetSimpleType (TYgetScalar (ARG_NTYPE (arg_node))) == T_int)
-            && (TYisAKD (ARG_NTYPE (arg_node)) || TYisAKS (ARG_NTYPE (arg_node))
-                || TYisAKV (ARG_NTYPE (arg_node)))
-            && (TYgetDim (ARG_NTYPE (arg_node)) == 1)) {
-            ARG_ACTCHN (arg_node) = TCmakeVinfoDollar (NULL);
-            ARG_COLCHN (arg_node) = TCmakeVinfoDollar (NULL);
-        }
-    } else {
-        /*
-         * This is the second pass; insert index-arg initialisations of the form:
-         *   ND_VECT2OFFSET( <off-name>, <var-name>, <dim>, <dims>, <shape>)
-         */
-        block = FUNDEF_BODY (ARG_FUNDEF (arg_node));
-        if (block != NULL) { /* insertion not necessary for external decls! */
-            vinfo = ARG_COLCHN (arg_node);
-            while ((vinfo != NULL) && (VINFO_FLAG (vinfo) != DOLLAR)) {
-                /* loop over all "Uses" attributes */
-                if (VINFO_FLAG (vinfo) == IDX) {
-                    /*
-                     * since arg_node is a function argument, a scalarized
-                     * version is not available => CreateIdxs2OffsetIcm  cannot
-                     * be used 8-(
-                     */
-                    newassign = CreateVect2OffsetIcm (arg_node, VINFO_SHAPE (vinfo));
-
-                    ASSIGN_NEXT (newassign) = BLOCK_INSTR (block);
-                    BLOCK_INSTR (block) = newassign;
-                }
-                vinfo = VINFO_NEXT (vinfo);
-            }
-        }
+  if( arg_info != NULL) {
+    /* This is the first pass; insert backref to fundef
+     * and make sure that all ARG_COLCHN-nodes are properly
+     * instanciated before traversing the body!
+     */
+    ARG_FUNDEF(arg_node) = INFO_IVE_FUNDEF( arg_info);
+    if ( ( TYgetSimpleType( TYgetScalar( ARG_NTYPE( arg_node))) == T_int) && 
+         ( TYisAKD( ARG_NTYPE( arg_node)) ||
+           TYisAKS( ARG_NTYPE( arg_node)) ||
+           TYisAKV( ARG_NTYPE( arg_node))) &&
+         ( TYgetDim( ARG_NTYPE( arg_node))  == 1)) {
+      ARG_ACTCHN( arg_node) = TCmakeVinfoDollar( NULL);
+      ARG_COLCHN( arg_node) = TCmakeVinfoDollar( NULL);
     }
-    if (NULL != ARG_NEXT (arg_node)) {
-        ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
+  }
+  else {
+    /*
+     * This is the second pass; insert index-arg initialisations of the form:
+     *   ND_VECT2OFFSET( <off-name>, <var-name>, <dim>, <dims>, <shape>)
+     */
+    block = FUNDEF_BODY( ARG_FUNDEF(arg_node));
+    if( block != NULL) { /* insertion not necessary for external decls! */
+      vinfo = ARG_COLCHN( arg_node);
+      while((vinfo != NULL) && (VINFO_FLAG( vinfo) != DOLLAR)) {
+        /* loop over all "Uses" attributes */
+        if (VINFO_FLAG( vinfo)==IDX) {
+          /*
+           * since arg_node is a function argument, a scalarized
+           * version is not available => CreateIdxs2OffsetIcm  cannot
+           * be used 8-(
+           */
+          newassign = CreateVect2OffsetIcm( arg_node, VINFO_SHAPE( vinfo));
+  
+          ASSIGN_NEXT( newassign) = BLOCK_INSTR( block);
+          BLOCK_INSTR( block) = newassign;
+        }
+        vinfo = VINFO_NEXT( vinfo);
+      }
     }
+  }
+  if( NULL != ARG_NEXT(arg_node)) {
+    ARG_NEXT(arg_node)=TRAVdo(ARG_NEXT(arg_node), arg_info);
+  }
 
-    DBUG_RETURN (arg_node);
+  DBUG_RETURN(arg_node);
 }
+
+
 
 /** <!--********************************************************************-->
  *
@@ -1665,39 +1726,40 @@ IVEarg (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 
-node *
-IVEblock (node *arg_node, info *arg_info)
+node *IVEblock(node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IVEblock");
+  DBUG_ENTER("IVEblock");
 
-    /*
-     * First pass through the vardecs: all int[.] vars are initialized by $!
-     */
-    if (BLOCK_VARDEC (arg_node) != NULL) {
-        BLOCK_VARDEC (arg_node) = TRAVdo (BLOCK_VARDEC (arg_node), arg_info);
-    }
+  /*
+   * First pass through the vardecs: all int[.] vars are initialized by $!
+   */
+  if( BLOCK_VARDEC( arg_node) != NULL) {
+    BLOCK_VARDEC( arg_node) = TRAVdo( BLOCK_VARDEC( arg_node), arg_info);
+  }
 
-    if (BLOCK_INSTR (arg_node) != NULL) {
-        BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
-    }
+  if( BLOCK_INSTR( arg_node) != NULL) {
+    BLOCK_INSTR( arg_node) = TRAVdo( BLOCK_INSTR( arg_node), arg_info);
+  }
 
-    /*
-     * Second pass through the vardecs: we eliminate all superfluous int[.]
-     * vardecs. This is indicated by arg_info == NULL !
-     */
-    if (BLOCK_VARDEC (arg_node) != NULL) {
-        BLOCK_VARDEC (arg_node) = TRAVdo (BLOCK_VARDEC (arg_node), NULL);
-    }
+  /* 
+   * Second pass through the vardecs: we eliminate all superfluous int[.]
+   * vardecs. This is indicated by arg_info == NULL !
+   */
+  if( BLOCK_VARDEC( arg_node) != NULL) {
+    BLOCK_VARDEC( arg_node) = TRAVdo( BLOCK_VARDEC( arg_node), NULL);
+  }
 
-    DBUG_RETURN (arg_node);
+  DBUG_RETURN(arg_node);
 }
+
+
 
 /** <!--********************************************************************-->
  *
  * @fn node *IVEvardec( node *arg_node, info *arg_info )
  *
  * @brief
- *   if( arg_info != NULL)
+ *   if( arg_info != NULL) 
  *       create an N_vinfo node for all vars with either type int[x]
  *       or type int[.] (needed for the AKD-case!).
  *   else
@@ -1705,63 +1767,68 @@ IVEblock (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 
-node *
-IVEvardec (node *arg_node, info *arg_info)
+node *IVEvardec(node *arg_node, info *arg_info)
 {
-    node *next;
+  node *next;
 
-    DBUG_ENTER ("IVEvardec");
+  DBUG_ENTER("IVEvardec");
 
-    if (arg_info != NULL) {
-        /*
-         * This is the first traversal which initializes the int[.]
-         * vardecs with $!
-         */
-        if ((TYgetSimpleType (TYgetScalar (VARDEC_NTYPE (arg_node))) == T_int)
-            && (TYisAKD (VARDEC_NTYPE (arg_node)) || TYisAKS (VARDEC_NTYPE (arg_node))
-                || TYisAKV (VARDEC_NTYPE (arg_node)))
-            && (TYgetDim (VARDEC_NTYPE (arg_node)) == 1)) {
-            /* we are dealing with a potential indexing vector ! */
-            VARDEC_ACTCHN (arg_node) = TCmakeVinfoDollar (NULL);
-            VARDEC_COLCHN (arg_node) = TCmakeVinfoDollar (NULL);
-        }
-
-        if (VARDEC_NEXT (arg_node) != NULL) {
-            VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
-        }
-    } else {
-        /*
-         * This is the second traversal which is done after traversing the body
-         * and is used to eliminate index vectors which are no longer needed.
-         * As criterium for need, the existance of VECT in the COLCHN is taken.
-         * I hope that this is sufficient, since I add VECT whenever Vect2Offset
-         * is introduced ( see "CreateVect2OffsetIcm").
-         */
-        if ((TYgetSimpleType (TYgetScalar (VARDEC_NTYPE (arg_node))) == T_int)
-            && (TYisAKD (VARDEC_NTYPE (arg_node)) || TYisAKS (VARDEC_NTYPE (arg_node))
-                || TYisAKV (VARDEC_NTYPE (arg_node)))
-            && (TYgetDim (VARDEC_NTYPE (arg_node)) == 1)
-            && (VINFO_FLAG (FindVect (VARDEC_COLCHN (arg_node))) == DOLLAR)) {
-            /*
-             * we are dealing with an indexing vector that is not
-             * needed as a vector anymore!
-             */
-            next = VARDEC_NEXT (arg_node);
-            VARDEC_NEXT (arg_node) = NULL;
-            FREEdoFreeTree (arg_node);
-            if (next != NULL)
-                arg_node = TRAVdo (next, arg_info);
-            else
-                arg_node = NULL;
-        } else {
-            if (VARDEC_NEXT (arg_node) != NULL) {
-                VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
-            }
-        }
+  if (arg_info != NULL) {
+    /*
+     * This is the first traversal which initializes the int[.]
+     * vardecs with $!
+     */
+    if( ( TYgetSimpleType( TYgetScalar( VARDEC_NTYPE( arg_node))) == T_int) && 
+        ( TYisAKD( VARDEC_NTYPE( arg_node)) ||
+          TYisAKS( VARDEC_NTYPE( arg_node)) ||
+          TYisAKV( VARDEC_NTYPE( arg_node))) &&
+        ( TYgetDim( VARDEC_NTYPE( arg_node)) == 1)) {
+      /* we are dealing with a potential indexing vector ! */
+      VARDEC_ACTCHN( arg_node) = TCmakeVinfoDollar( NULL);
+      VARDEC_COLCHN( arg_node) = TCmakeVinfoDollar( NULL);
     }
 
-    DBUG_RETURN (arg_node);
+    if (VARDEC_NEXT( arg_node) != NULL) {
+      VARDEC_NEXT( arg_node) = TRAVdo( VARDEC_NEXT( arg_node), arg_info);
+    }
+  }
+  else {
+    /*
+     * This is the second traversal which is done after traversing the body
+     * and is used to eliminate index vectors which are no longer needed.
+     * As criterium for need, the existance of VECT in the COLCHN is taken.
+     * I hope that this is sufficient, since I add VECT whenever Vect2Offset
+     * is introduced ( see "CreateVect2OffsetIcm").
+     */
+    if ( ( TYgetSimpleType( TYgetScalar( VARDEC_NTYPE( arg_node))) == T_int) &&
+         ( TYisAKD( VARDEC_NTYPE( arg_node)) ||
+           TYisAKS( VARDEC_NTYPE( arg_node)) ||
+           TYisAKV( VARDEC_NTYPE( arg_node))) &&
+         ( TYgetDim( VARDEC_NTYPE( arg_node)) == 1) &&
+	 ( VINFO_FLAG( FindVect( VARDEC_COLCHN( arg_node))) == DOLLAR)) {
+      /* 
+       * we are dealing with an indexing vector that is not
+       * needed as a vector anymore!
+       */
+      next = VARDEC_NEXT( arg_node);
+      VARDEC_NEXT( arg_node) = NULL;
+      FREEdoFreeTree( arg_node);
+      if( next != NULL)
+        arg_node = TRAVdo( next, arg_info);
+      else
+        arg_node = NULL;
+    }
+    else {
+      if (VARDEC_NEXT( arg_node) != NULL) {
+        VARDEC_NEXT( arg_node) = TRAVdo( VARDEC_NEXT( arg_node), arg_info);
+      }
+    }
+  }
+
+  DBUG_RETURN(arg_node);
 }
+
+
 
 /** <!--********************************************************************-->
  *
@@ -1769,27 +1836,29 @@ IVEvardec (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 
-node *
-IVEassign (node *arg_node, info *arg_info)
+node *IVEassign(node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IVEassign");
+  DBUG_ENTER( "IVEassign");
 
-    /* Bottom up traversal!! */
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
+  /* Bottom up traversal!! */
+  if (ASSIGN_NEXT(arg_node) != NULL) {
+    ASSIGN_NEXT(arg_node)=TRAVdo(ASSIGN_NEXT(arg_node), arg_info);
+  }
 
-    /* store the current N_assign in INFO_IVE_CURRENTASSIGN */
-    INFO_IVE_CURRENTASSIGN (arg_info) = arg_node;
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+  /* store the current N_assign in INFO_IVE_CURRENTASSIGN */
+  INFO_IVE_CURRENTASSIGN( arg_info) = arg_node;
+  ASSIGN_INSTR( arg_node) = TRAVdo( ASSIGN_INSTR( arg_node), arg_info);
 
-    if (INFO_IVE_PRE_ASSIGNS (arg_info) != NULL) {
-        arg_node = TCappendAssign (INFO_IVE_PRE_ASSIGNS (arg_info), arg_node);
-        INFO_IVE_PRE_ASSIGNS (arg_info) = NULL;
-    }
+  if (INFO_IVE_PRE_ASSIGNS( arg_info) != NULL) {
+    arg_node = TCappendAssign( INFO_IVE_PRE_ASSIGNS( arg_info),
+                             arg_node);
+    INFO_IVE_PRE_ASSIGNS( arg_info) = NULL;
+  }
 
-    DBUG_RETURN (arg_node);
+  DBUG_RETURN( arg_node);
 }
+
+
 
 /** <!--********************************************************************-->
  *
@@ -1801,19 +1870,21 @@ IVEassign (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 
-node *
-IVEreturn (node *arg_node, info *arg_info)
+node *IVEreturn(node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IVEreturn");
+  DBUG_ENTER("IVEreturn");
 
-    INFO_IVE_TRANSFORM_VINFO (arg_info) = NULL;
-    if (RETURN_EXPRS (arg_node) != NULL) {
-        RETURN_EXPRS (arg_node) = TRAVdo (RETURN_EXPRS (arg_node), arg_info);
-    }
+  INFO_IVE_TRANSFORM_VINFO( arg_info) = NULL;
+  if (RETURN_EXPRS( arg_node) != NULL) {
+    RETURN_EXPRS( arg_node) = TRAVdo( RETURN_EXPRS( arg_node), arg_info);
+  }
 
-    DBUG_RETURN (arg_node);
+  DBUG_RETURN(arg_node);
 }
 
+
+
+
 /** <!--********************************************************************-->
  *
  * @fn node *IVElet(node *arg_node, info *arg_info)
@@ -1824,236 +1895,235 @@ IVEreturn (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 
-node *
-IVElet (node *arg_node, info *arg_info)
+node *IVElet(node *arg_node, info *arg_info)
 {
-    node *vars;
-    node *vardec, *vinfo, *act_let, *newassign = NULL;
-    node *current_assign, *next_assign, *chain, *rest_chain;
+  node *vars;
+  node *vardec, *vinfo, *act_let, *newassign = NULL;
+  node *current_assign, *next_assign, *chain, *rest_chain;
 
-    DBUG_ENTER ("IVElet");
+  DBUG_ENTER("IVElet");
 
-    /* *
-     * First, we attach the collected uses-attributes( they are in the
-     * actual chain of the vardec) to the variables of the LHS of the
-     * assignment!
+  /* *
+   * First, we attach the collected uses-attributes( they are in the
+   * actual chain of the vardec) to the variables of the LHS of the
+   * assignment!
+   */
+  vars=LET_IDS(arg_node);
+  if( vars == NULL) {
+    /**
+     * we are dealing with a void function here!
+     * => no uses attribs to be collected!
+     * => no transformation / index generation required!
+     * => all that needs to be done is collecting uses on the RHS!
      */
-    vars = LET_IDS (arg_node);
-    if (vars == NULL) {
-        /**
-         * we are dealing with a void function here!
-         * => no uses attribs to be collected!
-         * => no transformation / index generation required!
-         * => all that needs to be done is collecting uses on the RHS!
-         */
-        INFO_IVE_TRANSFORM_VINFO (arg_info) = NULL;
-        LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
+    INFO_IVE_TRANSFORM_VINFO( arg_info) = NULL;
+    LET_EXPR( arg_node) = TRAVdo(LET_EXPR( arg_node), arg_info);
 
-    } else {
-        do {
-            vardec = IDS_DECL (vars);
-            if (NODE_TYPE (vardec) == N_vardec) {
-                if (VARDEC_COLCHN (vardec) != NULL) {
-                    /* So we are dealing with a potential index var! */
-                    chain = VARDEC_ACTCHN (vardec);
-                    IDS_USE (vars) = chain;
-                    rest_chain = CutVinfoChn (chain);
-                    /* Now, re-initialize the actual chain! */
-                    VARDEC_ACTCHN (vardec) = TCmakeVinfoDollar (rest_chain);
-                }
-            } else {
-                DBUG_ASSERT ((NODE_TYPE (vardec) == N_arg),
-                             "backref from let-var neither vardec nor arg!");
-                if (ARG_COLCHN (vardec) != NULL) {
-                    /* So we are dealing with a potential index var! */
-                    chain = ARG_ACTCHN (vardec);
-                    IDS_USE (vars) = chain;
-                    rest_chain = CutVinfoChn (chain);
-                    /* Now, re-initialize the actual chain! */
-                    ARG_ACTCHN (vardec) = TCmakeVinfoDollar (rest_chain);
-                }
-            }
-            vars = IDS_NEXT (vars);
-        } while (vars);
-
-        /* Now, that we have done all that is needed for th "Uses" inference
-         * of the variables from the LHS, we have to check what kind of RHS
-         * we are dealing with.
-         *  - If it is (an arithmetic operation( +,-,*,\), a variable or a constant),
-         *    AND it is neither F_mul_AxA nor F_div_AxA !!!
-         *    AND the LHS variable is NOT used as VECT
-         *    AND the LHS variable IS used as IDX(...):
-         *    we traverse the assignment for each IDX(shape) with
-         *    INFO_IVE_TRANSFORM_VINFO( arginfo) being set to the N_vinfo that
-         *    carries IDX(shape)! This/these traversal(s) will mark the arguments
-         *    of the index computation IDX(shape) as well!
-         *
-         *    In case ( NFO_IVE_MODE( arg_info) == M_uses_and_transform ), we
-         *    duplicate the assignment for each IDX(shape) prior to traversal,
-         *    so that the traversal may replace the index-array operations by
-         *    integer-index operations and replace the vector identifiers by their
-         *    scalar counterparts. Note here, that the last traversal converts the
-         *    orginal (VECT-) version by the last IDX(...) version.
-         *
-         *  - In all other cases:
-         *    Iff ( NFO_IVE_MODE( arg_info) == M_uses_and_transform ),
-         *    for each variable of the LHS that is needed as IDX(shape) we
-         *    generate an assignment of the form:
-         *      ND_VECT2OFFSET( off-name, var-name, dim, dims, shape)
-         *    this instruction will calculate the indices needed from the vector
-         *    generated by the RHS.
-         *
-         *    After doing so, we traverse the assignment with
-         *    INFO_IVE_TRANSFORM_VINFO( arginfo) being set to NULL.
-         */
-
-        vars = LET_IDS (arg_node); /* pick the first LHS variable */
-        vinfo = IDS_USE (vars);    /* pick the "Uses"set from the first LHS var */
-        if ((vinfo != NULL) && (VINFO_FLAG (FindVect (vinfo)) == DOLLAR)
-            && (VINFO_FLAG (vinfo) == IDX)
-            && (((NODE_TYPE (LET_EXPR (arg_node)) == N_prf)
-                 && ((PRF_PRF (LET_EXPR (arg_node)) == F_add_SxA)
-                     || (PRF_PRF (LET_EXPR (arg_node)) == F_add_AxS)
-                     || (PRF_PRF (LET_EXPR (arg_node)) == F_add_AxA)
-                     || (PRF_PRF (LET_EXPR (arg_node)) == F_sub_SxA)
-                     || (PRF_PRF (LET_EXPR (arg_node)) == F_sub_AxS)
-                     || (PRF_PRF (LET_EXPR (arg_node)) == F_sub_AxA)
-                     || (PRF_PRF (LET_EXPR (arg_node)) == F_mul_SxA)
-                     || (PRF_PRF (LET_EXPR (arg_node)) == F_mul_AxS)
-                     || (PRF_PRF (LET_EXPR (arg_node)) == F_div_SxA)
-                     || (PRF_PRF (LET_EXPR (arg_node)) == F_div_AxS)))
-                || (NODE_TYPE (LET_EXPR (arg_node)) == N_id)
-                || (NODE_TYPE (LET_EXPR (arg_node)) == N_array))) {
-            /*
-             * Here, for each IDX(...) in LET_USE(arg_node), we traverse the assignment
-             * with INFO_IVE_TRANSFORM_VINFO( arg_info) being set accordingly.
-             * iff we have to transform the assignment as well, i.e.,
-             * (INFO_IVE_MODE( arg_info) == M_uses_and_transform) , we duplicate it
-             * first!
-             */
-            act_let = arg_node;
-            while (VINFO_FLAG (vinfo) != DOLLAR) {
-                DBUG_ASSERT (((NODE_TYPE (act_let) == N_let)
-                              && (NODE_TYPE (INFO_IVE_CURRENTASSIGN (arg_info))
-                                  == N_assign)),
-                             "wrong let/assign node generated in IVELet!");
-                if (INFO_IVE_MODE (arg_info) == M_uses_and_transform) {
-                    if (VINFO_FLAG (VINFO_NEXT (vinfo)) != DOLLAR) {
-                        /* We have to transform the assignment AND there are more indices
-                         * needed, so we have to duplicate the let node and repeat the
-                         * let-traversal until there are no shapes left!
-                         * More precisely, we have to copy the assign node, who is the
-                         * father of the let node and whose adress is given by arg_info!
-                         */
-                        current_assign = INFO_IVE_CURRENTASSIGN (arg_info);
-                        next_assign = ASSIGN_NEXT (current_assign);
-                        ASSIGN_NEXT (current_assign) = NULL;
-                        newassign = DUPdoDupTree (current_assign);
-
-                        ASSIGN_NEXT (current_assign) = newassign;
-                        ASSIGN_NEXT (newassign) = next_assign;
-                    }
-
-                    /*
-                     * Now, we traverse the RHS of act_let! This will transform the RHS
-                     * since M_uses_and_transform is set!
-                     */
-                    INFO_IVE_TRANSFORM_VINFO (arg_info) = vinfo;
-                    LET_EXPR (act_let) = TRAVdo (LET_EXPR (act_let), arg_info);
-
-                    /* Make sure we do have a vardec! */
-                    LET_NAME (act_let)
-                      = IVEchangeId (LET_NAME (act_let), VINFO_SHAPE (vinfo));
-                    IDS_AVIS (LET_IDS (act_let)) = VARDEC_AVIS (
-                      VardecIdx (IDS_DECL (LET_IDS (act_let)), VINFO_SHAPE (vinfo)));
-
-                } else {
-                    /* Traverse the RHS but do NOT transform it! */
-                    INFO_IVE_TRANSFORM_VINFO (arg_info) = vinfo;
-                    LET_EXPR (act_let) = TRAVdo (LET_EXPR (act_let), arg_info);
-                }
-
-                vinfo = VINFO_NEXT (vinfo);
-                DBUG_ASSERT ((vinfo != NULL),
-                             "non $-terminated N_vinfo chain encountered!");
-
-                if ((VINFO_FLAG (vinfo) != DOLLAR)
-                    && (INFO_IVE_MODE (arg_info) == M_uses_and_transform)) {
-                    /* we did insert a new assignment! */
-                    INFO_IVE_CURRENTASSIGN (arg_info) = newassign;
-                    act_let = ASSIGN_INSTR (newassign);
-                }
-            }
-
-        } else {
-            /*
-             * We do not have a "pure" address calculation here!
-             * Therefore, iff (INFO_IVE_MODE( arg_info) == M_uses_and_transform)
-             * we insert for each shape-index needed for each variable of
-             * the LHS an assignment of the form :
-             *   ND_VECT2OFFSET( <off-name>, <var-name>, <dim>, <dims>, <shape> )
-             */
-            if (INFO_IVE_MODE (arg_info) == M_uses_and_transform) {
-                do { /* loop over all LHS-Vars */
-                    vinfo = IDS_USE (vars);
-                    vardec = IDS_DECL (vars);
-
-                    if ((vinfo != NULL) && (VINFO_FLAG (vinfo) == DOLLAR)) {
-                        /* Now, we now that the LHSvar is a vector which is neither used
-                         * as IDX(shp) nor as VECT!!
-                         * In this case, we mark the VARDEC-COLCHN as VECT in order to
-                         * prevent an errorneous vardec-elimination!! (see IDXvardec)
-                         */
-                        L_VARDEC_OR_ARG_COLCHN (vardec,
-                                                SetVect (VARDEC_OR_ARG_COLCHN (vardec)));
-                    } else {
-                        /* Here, we either have a non-vector LHSvar or a vector which
-                         * is used at least once (IDX or VECT!)
-                         */
-                        while (vinfo != NULL) { /* loop over all "Uses" attributes */
-                            if (VINFO_FLAG (vinfo) == IDX) {
-                                /*
-                                 * I cannot imagine a case, where Idxs2Offset could be
-                                 * used instead of Vect2Offset here. However, I'm not
-                                 * entirely sure....
-                                 */
-                                newassign
-                                  = CreateVect2OffsetIcm (vardec, VINFO_SHAPE (vinfo));
-
-                                current_assign = INFO_IVE_CURRENTASSIGN (arg_info);
-                                ASSIGN_NEXT (newassign) = ASSIGN_NEXT (current_assign);
-                                ASSIGN_NEXT (current_assign) = newassign;
-
-                                /*
-                                 * It is important here, to leave
-                                 * INFO_IVE_CURRENTASSIGN( arg_info)
-                                 * on current_assign; otherwise, a withloop-created index
-                                 * vector will find a corrupted INFO_IVE_CURRENTASSIGN(
-                                 * arg_info) which points to an INDEX2VECT-ICM rather than
-                                 * a let!!
-                                 *
-                                 * Hence, I hope that the following line is not essential:
-                                 *
-                                 * INFO_IVE_CURRENTASSIGN( arg_info) = newassign;
-                                 */
-                            }
-                            vinfo = VINFO_NEXT (vinfo);
-                        }
-                    }
-
-                    vars = IDS_NEXT (vars);
-                } while (vars != NULL);
-            }
-
-            /* Finally, we traverse the RHS! */
-
-            INFO_IVE_TRANSFORM_VINFO (arg_info) = NULL;
-            LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
+  } else {
+    do {
+      vardec = IDS_DECL(vars);
+      if( NODE_TYPE( vardec) == N_vardec) {
+        if( VARDEC_COLCHN( vardec) != NULL) { 
+          /* So we are dealing with a potential index var! */
+          chain                 = VARDEC_ACTCHN(vardec);
+          IDS_USE(vars)         = chain;
+          rest_chain            = CutVinfoChn( chain);
+          /* Now, re-initialize the actual chain! */
+          VARDEC_ACTCHN(vardec) = TCmakeVinfoDollar( rest_chain);
         }
-    }
+      }
+      else {
+        DBUG_ASSERT((  NODE_TYPE( vardec) == N_arg),
+                    "backref from let-var neither vardec nor arg!");
+        if( ARG_COLCHN( vardec) != NULL) {
+          /* So we are dealing with a potential index var! */
+          chain              = ARG_ACTCHN(vardec);
+          IDS_USE(vars)      = chain;
+           rest_chain        = CutVinfoChn( chain);
+          /* Now, re-initialize the actual chain! */
+          ARG_ACTCHN(vardec) = TCmakeVinfoDollar( rest_chain);
+        }
+      }
+      vars = IDS_NEXT(vars);
+    } while(vars);
 
-    DBUG_RETURN (arg_node);
+    /* Now, that we have done all that is needed for th "Uses" inference
+     * of the variables from the LHS, we have to check what kind of RHS
+     * we are dealing with.
+     *  - If it is (an arithmetic operation( +,-,*,\), a variable or a constant),
+     *    AND it is neither F_mul_AxA nor F_div_AxA !!!
+     *    AND the LHS variable is NOT used as VECT
+     *    AND the LHS variable IS used as IDX(...):
+     *    we traverse the assignment for each IDX(shape) with
+     *    INFO_IVE_TRANSFORM_VINFO( arginfo) being set to the N_vinfo that
+     *    carries IDX(shape)! This/these traversal(s) will mark the arguments
+     *    of the index computation IDX(shape) as well!
+     *
+     *    In case ( NFO_IVE_MODE( arg_info) == M_uses_and_transform ), we 
+     *    duplicate the assignment for each IDX(shape) prior to traversal,
+     *    so that the traversal may replace the index-array operations by
+     *    integer-index operations and replace the vector identifiers by their
+     *    scalar counterparts. Note here, that the last traversal converts the
+     *    orginal (VECT-) version by the last IDX(...) version.
+     *
+     *  - In all other cases:
+     *    Iff ( NFO_IVE_MODE( arg_info) == M_uses_and_transform ),
+     *    for each variable of the LHS that is needed as IDX(shape) we
+     *    generate an assignment of the form:
+     *      ND_VECT2OFFSET( off-name, var-name, dim, dims, shape)
+     *    this instruction will calculate the indices needed from the vector
+     *    generated by the RHS.
+     *
+     *    After doing so, we traverse the assignment with
+     *    INFO_IVE_TRANSFORM_VINFO( arginfo) being set to NULL.
+     */
+  
+    vars  = LET_IDS(arg_node);  /* pick the first LHS variable */
+    vinfo = IDS_USE(vars); /* pick the "Uses"set from the first LHS var */
+    if( (vinfo != NULL) && (VINFO_FLAG( FindVect(vinfo)) == DOLLAR) && 
+        (VINFO_FLAG( vinfo) == IDX) &&
+        ( ((NODE_TYPE( LET_EXPR( arg_node)) == N_prf) &&
+           ((PRF_PRF( LET_EXPR( arg_node)) == F_add_SxA) ||
+            (PRF_PRF( LET_EXPR( arg_node)) == F_add_AxS) ||
+            (PRF_PRF( LET_EXPR( arg_node)) == F_add_AxA) ||
+            (PRF_PRF( LET_EXPR( arg_node)) == F_sub_SxA) ||
+            (PRF_PRF( LET_EXPR( arg_node)) == F_sub_AxS) ||
+            (PRF_PRF( LET_EXPR( arg_node)) == F_sub_AxA) ||
+            (PRF_PRF( LET_EXPR( arg_node)) == F_mul_SxA) ||
+            (PRF_PRF( LET_EXPR( arg_node)) == F_mul_AxS) ||
+            (PRF_PRF( LET_EXPR( arg_node)) == F_div_SxA) ||
+            (PRF_PRF( LET_EXPR( arg_node)) == F_div_AxS)))
+       || (NODE_TYPE( LET_EXPR( arg_node)) == N_id)
+       || (NODE_TYPE( LET_EXPR( arg_node)) == N_array) )) {
+      /*
+       * Here, for each IDX(...) in LET_USE(arg_node), we traverse the assignment
+       * with INFO_IVE_TRANSFORM_VINFO( arg_info) being set accordingly.
+       * iff we have to transform the assignment as well, i.e.,
+       * (INFO_IVE_MODE( arg_info) == M_uses_and_transform) , we duplicate it
+       * first!
+       */
+      act_let=arg_node;
+      while (VINFO_FLAG(vinfo) != DOLLAR) {
+        DBUG_ASSERT( ((NODE_TYPE(act_let)==N_let) &&
+                      (NODE_TYPE(INFO_IVE_CURRENTASSIGN( arg_info)) == N_assign)),
+                     "wrong let/assign node generated in IVELet!");
+        if( INFO_IVE_MODE( arg_info) == M_uses_and_transform) {
+          if( VINFO_FLAG( VINFO_NEXT( vinfo)) != DOLLAR) {
+            /* We have to transform the assignment AND there are more indices
+             * needed, so we have to duplicate the let node and repeat the
+             * let-traversal until there are no shapes left!
+             * More precisely, we have to copy the assign node, who is the father
+             * of the let node and whose adress is given by arg_info!
+             */
+            current_assign = INFO_IVE_CURRENTASSIGN( arg_info);
+            next_assign = ASSIGN_NEXT( current_assign);
+            ASSIGN_NEXT( current_assign) = NULL;
+            newassign = DUPdoDupTree( current_assign);
+  
+            ASSIGN_NEXT( current_assign) = newassign;
+            ASSIGN_NEXT( newassign) = next_assign;
+          }
+  
+          /*
+           * Now, we traverse the RHS of act_let! This will transform the RHS
+           * since M_uses_and_transform is set!
+           */
+          INFO_IVE_TRANSFORM_VINFO( arg_info) = vinfo;
+          LET_EXPR( act_let) = TRAVdo( LET_EXPR( act_let), arg_info);
+  
+          /* Make sure we do have a vardec! */
+          LET_NAME( act_let)  = IVEchangeId( LET_NAME(act_let),
+                                             VINFO_SHAPE( vinfo));
+          IDS_AVIS( LET_IDS(act_let)) = 
+            VARDEC_AVIS( VardecIdx( IDS_DECL( LET_IDS(act_let)),
+                                    VINFO_SHAPE( vinfo)));
+  
+        } else {
+          /* Traverse the RHS but do NOT transform it! */
+          INFO_IVE_TRANSFORM_VINFO( arg_info) = vinfo;
+          LET_EXPR( act_let) = TRAVdo( LET_EXPR( act_let), arg_info);
+        }
+  
+        vinfo = VINFO_NEXT( vinfo);
+        DBUG_ASSERT( (vinfo != NULL),
+                     "non $-terminated N_vinfo chain encountered!");
+  
+        if( (VINFO_FLAG( vinfo) != DOLLAR)
+            && (INFO_IVE_MODE( arg_info) == M_uses_and_transform)) {
+          /* we did insert a new assignment! */
+          INFO_IVE_CURRENTASSIGN( arg_info) = newassign;
+          act_let  = ASSIGN_INSTR( newassign);
+        }
+      } 
+  
+    } else {
+      /*
+       * We do not have a "pure" address calculation here!
+       * Therefore, iff (INFO_IVE_MODE( arg_info) == M_uses_and_transform)
+       * we insert for each shape-index needed for each variable of
+       * the LHS an assignment of the form :
+       *   ND_VECT2OFFSET( <off-name>, <var-name>, <dim>, <dims>, <shape> )
+       */
+      if( INFO_IVE_MODE( arg_info) == M_uses_and_transform) {
+        do { /* loop over all LHS-Vars */
+          vinfo= IDS_USE( vars);
+          vardec = IDS_DECL(vars);
+  
+          if( (vinfo!=NULL) && (VINFO_FLAG( vinfo)==DOLLAR)) {
+            /* Now, we now that the LHSvar is a vector which is neither used
+             * as IDX(shp) nor as VECT!!
+             * In this case, we mark the VARDEC-COLCHN as VECT in order to
+             * prevent an errorneous vardec-elimination!! (see IDXvardec)
+             */
+            L_VARDEC_OR_ARG_COLCHN( vardec,
+                                    SetVect( VARDEC_OR_ARG_COLCHN( vardec) ));
+          } else {
+            /* Here, we either have a non-vector LHSvar or a vector which
+             * is used at least once (IDX or VECT!)
+             */
+            while(vinfo != NULL) { /* loop over all "Uses" attributes */
+              if (VINFO_FLAG( vinfo)==IDX) {
+                /*
+                 * I cannot imagine a case, where Idxs2Offset could be used
+                 * instead of Vect2Offset here. However, I'm not entirely sure....
+                 */
+                newassign = CreateVect2OffsetIcm( vardec, VINFO_SHAPE( vinfo));
+  
+                current_assign               = INFO_IVE_CURRENTASSIGN( arg_info);
+                ASSIGN_NEXT( newassign)      = ASSIGN_NEXT( current_assign);
+                ASSIGN_NEXT( current_assign) = newassign;
+  
+                /*
+                 * It is important here, to leave
+                 * INFO_IVE_CURRENTASSIGN( arg_info)
+                 * on current_assign; otherwise, a withloop-created index vector
+                 * will find a corrupted INFO_IVE_CURRENTASSIGN( arg_info) which
+                 * points to an INDEX2VECT-ICM rather than a let!!
+                 *
+                 * Hence, I hope that the following line is not essential:
+                 *
+                 * INFO_IVE_CURRENTASSIGN( arg_info) = newassign;
+                 */
+              }
+              vinfo = VINFO_NEXT( vinfo);
+            } 
+          } 
+  
+          vars=IDS_NEXT( vars);
+        } while( vars != NULL);
+      }
+  
+      /* Finally, we traverse the RHS! */
+  
+      INFO_IVE_TRANSFORM_VINFO( arg_info) = NULL;
+      LET_EXPR( arg_node) = TRAVdo(LET_EXPR( arg_node), arg_info);
+    }
+  }
+  
+  DBUG_RETURN(arg_node);
 }
+
+
 
 /*
  *
@@ -2067,217 +2137,224 @@ IVElet (node *arg_node, info *arg_info)
  *
  */
 
-node *
-IVEprf (node *arg_node, info *arg_info)
+node *IVEprf( node *arg_node, info *arg_info)
 {
-    node *arg1, *arg2, *arg3, *vinfo;
-    ntype *type1, *type2;
+  node *arg1, *arg2, *arg3, *vinfo;
+  ntype *type1, *type2;
 
-    DBUG_ENTER ("IVEprf");
+  DBUG_ENTER("IVEprf");
 
-    /*
-     * INFO_IVE_MODE( arg_info) indicates whether this traversal infers
-     * the usage only: M_uses_only or transforms as well: M_uses_and_transform.
-     *
-     * INFO_IVE_TRANSFORM_VINFO( arg_info) indicates whether this is just a
-     * normal traverse (NULL), or the traversal of an arithmetic
-     * index calculation (N_vinfo-node) which requires IDX(...) to be set.
-     */
-    switch (PRF_PRF (arg_node)) {
-    case F_sel:
-        arg1 = PRF_ARG1 (arg_node);
-        arg2 = PRF_ARG2 (arg_node);
-        DBUG_ASSERT (((NODE_TYPE (arg2) == N_id) || (NODE_TYPE (arg2) == N_array)),
-                     "wrong arg in F_sel application");
+  /*
+   * INFO_IVE_MODE( arg_info) indicates whether this traversal infers
+   * the usage only: M_uses_only or transforms as well: M_uses_and_transform.
+   *
+   * INFO_IVE_TRANSFORM_VINFO( arg_info) indicates whether this is just a
+   * normal traverse (NULL), or the traversal of an arithmetic
+   * index calculation (N_vinfo-node) which requires IDX(...) to be set.
+   */
+  switch( PRF_PRF( arg_node)) {
+    case F_sel: 
+      arg1 = PRF_ARG1( arg_node);
+      arg2 = PRF_ARG2( arg_node);
+      DBUG_ASSERT( ((NODE_TYPE( arg2) == N_id) ||
+                    (NODE_TYPE( arg2) == N_array)),
+                   "wrong arg in F_sel application");
 
-        type1 = ID_NTYPE (arg1);
-        type2 = ID_NTYPE (arg2);
-        /*
-         * if the shape of the array or the shape of the index are unknown,
-         * do not(!) replace sel by idx_sel but mark the selecting vector as VECT!
-         * this is done by traversal with NULL instead of vinfo!
-         */
-        if ((TYisAKS (type1) || TYisAKV (type1))
-            && (TYisAKS (type2) || TYisAKV (type2))) {
-            vinfo = TBmakeVinfo (IDX, SHcopyShape (TYgetShape (type2)), NULL, NULL);
-            INFO_IVE_TRANSFORM_VINFO (arg_info) = vinfo;
-            PRF_ARG1 (arg_node) = TRAVdo (arg1, arg_info);
-            vinfo = FREEdoFreeNode (vinfo);
-            if (INFO_IVE_MODE (arg_info) == M_uses_and_transform) {
-                PRF_PRF (arg_node) = F_idx_sel;
-            }
-            if (NODE_TYPE (PRF_ARG1 (arg_node)) == N_prf) {
-                PRF_ARG1 (arg_node)
-                  = LiftArg (PRF_ARG1 (arg_node), INFO_IVE_FUNDEF (arg_info),
-                             TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)),
-                             &(INFO_IVE_PRE_ASSIGNS (arg_info)));
-            }
-        } else {
-            INFO_IVE_TRANSFORM_VINFO (arg_info) = NULL;
-            PRF_ARG1 (arg_node) = TRAVdo (arg1, arg_info);
+      type1 = ID_NTYPE( arg1);
+      type2 = ID_NTYPE( arg2);
+      /*
+       * if the shape of the array or the shape of the index are unknown,
+       * do not(!) replace sel by idx_sel but mark the selecting vector as VECT!
+       * this is done by traversal with NULL instead of vinfo!
+       */
+      if ( ( TYisAKS( type1) || TYisAKV( type1)) &&
+	   ( TYisAKS( type2) || TYisAKV( type2))) {
+	vinfo = TBmakeVinfo( IDX, SHcopyShape( TYgetShape( type2)), 
+                             NULL, NULL);
+        INFO_IVE_TRANSFORM_VINFO( arg_info) = vinfo;
+        PRF_ARG1( arg_node) = TRAVdo( arg1, arg_info);
+        vinfo = FREEdoFreeNode( vinfo);
+        if (INFO_IVE_MODE( arg_info) == M_uses_and_transform) {
+          PRF_PRF( arg_node)  = F_idx_sel;
         }
-        INFO_IVE_TRANSFORM_VINFO (arg_info) = NULL;
-        PRF_ARG2 (arg_node) = TRAVdo (arg2, arg_info);
-        break;
-
-    case F_modarray:
-        arg1 = PRF_ARG1 (arg_node);
-        arg2 = PRF_ARG2 (arg_node);
-        arg3 = PRF_ARG3 (arg_node);
-        DBUG_ASSERT (((NODE_TYPE (arg1) == N_id) || (NODE_TYPE (arg1) == N_array)),
-                     "wrong arg in F_modarray application");
-
-        type1 = ID_NTYPE (arg1);
-        type2 = ID_NTYPE (arg2);
-
-        /*
-         * if the shape of the array or the index vector are unknown, do not(!)
-         * replace modarray by idx_modarray but mark the selecting vector as VECT!
-         * this is done by traversal with NULL instead of vinfo!
-         */
-        if ((TYisAKS (type1) || TYisAKV (type1))
-            && (TYisAKS (type2) || TYisAKV (type2))) {
-            vinfo = TBmakeVinfo (IDX, SHcopyShape (TYgetShape (type1)), NULL, NULL);
-            INFO_IVE_TRANSFORM_VINFO (arg_info) = vinfo;
-            PRF_ARG2 (arg_node) = TRAVdo (arg2, arg_info);
-            vinfo = FREEdoFreeNode (vinfo);
-            if (INFO_IVE_MODE (arg_info) == M_uses_and_transform) {
-                PRF_PRF (arg_node) = F_idx_modarray;
-            }
-            if (NODE_TYPE (PRF_ARG2 (arg_node)) == N_prf) {
-                PRF_ARG2 (arg_node)
-                  = LiftArg (PRF_ARG2 (arg_node), INFO_IVE_FUNDEF (arg_info),
-                             TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)),
-                             &(INFO_IVE_PRE_ASSIGNS (arg_info)));
-            }
-        } else {
-            INFO_IVE_TRANSFORM_VINFO (arg_info) = NULL;
-            PRF_ARG2 (arg_node) = TRAVdo (arg2, arg_info);
+        if (NODE_TYPE( PRF_ARG1( arg_node)) == N_prf) {
+          PRF_ARG1( arg_node) = LiftArg( PRF_ARG1( arg_node),
+                                         INFO_IVE_FUNDEF( arg_info),
+                                         TYmakeAKS( TYmakeSimpleType(T_int),
+                                                    SHmakeShape( 0)),
+                                         &(INFO_IVE_PRE_ASSIGNS( arg_info)));
         }
-        INFO_IVE_TRANSFORM_VINFO (arg_info) = NULL;
-        PRF_ARG1 (arg_node) = TRAVdo (arg1, arg_info);
-        PRF_ARG3 (arg_node) = TRAVdo (arg3, arg_info);
-        break;
+      } else {
+        INFO_IVE_TRANSFORM_VINFO( arg_info) = NULL;
+        PRF_ARG1( arg_node) = TRAVdo(arg1, arg_info);
+      }
+      INFO_IVE_TRANSFORM_VINFO( arg_info) = NULL;
+      PRF_ARG2( arg_node) = TRAVdo(arg2, arg_info);
+      break;
+
+    case F_modarray: 
+      arg1 = PRF_ARG1( arg_node);
+      arg2 = PRF_ARG2( arg_node);
+      arg3 = PRF_ARG3( arg_node);
+      DBUG_ASSERT( ((NODE_TYPE( arg1) == N_id) ||
+                    (NODE_TYPE( arg1) == N_array)),
+                   "wrong arg in F_modarray application");
+
+      type1 = ID_NTYPE( arg1);
+      type2 = ID_NTYPE( arg2);
+
+      /*
+       * if the shape of the array or the index vector are unknown, do not(!)
+       * replace modarray by idx_modarray but mark the selecting vector as VECT!
+       * this is done by traversal with NULL instead of vinfo!
+       */
+      if ( ( TYisAKS( type1) || TYisAKV( type1)) &&
+	   ( TYisAKS( type2) || TYisAKV( type2))) {
+	vinfo = TBmakeVinfo( IDX, SHcopyShape( TYgetShape( type1)), 
+                             NULL, NULL);
+        INFO_IVE_TRANSFORM_VINFO( arg_info) = vinfo;
+        PRF_ARG2( arg_node) = TRAVdo(arg2, arg_info);
+        vinfo = FREEdoFreeNode( vinfo);
+        if(INFO_IVE_MODE( arg_info) == M_uses_and_transform) {
+          PRF_PRF( arg_node)  = F_idx_modarray;
+        }
+        if (NODE_TYPE( PRF_ARG2( arg_node)) == N_prf) {
+          PRF_ARG2( arg_node) = LiftArg( PRF_ARG2( arg_node),
+                                         INFO_IVE_FUNDEF( arg_info),
+                                         TYmakeAKS( TYmakeSimpleType(T_int),
+                                                    SHmakeShape( 0)),
+                                         &(INFO_IVE_PRE_ASSIGNS( arg_info)));
+        }
+      } else {
+        INFO_IVE_TRANSFORM_VINFO( arg_info) = NULL;
+        PRF_ARG2( arg_node) = TRAVdo(arg2, arg_info);
+      }
+      INFO_IVE_TRANSFORM_VINFO( arg_info) = NULL;
+      PRF_ARG1( arg_node) = TRAVdo(arg1, arg_info);
+      PRF_ARG3( arg_node) = TRAVdo(arg3, arg_info);
+      break;
 
     case F_add_SxA:
-        if ((INFO_IVE_MODE (arg_info) == M_uses_and_transform)
-            && (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL)) {
-            PRF_PRF (arg_node) = F_add_SxS;
-            ive_op++;
-            DBUG_ASSERT ((TYisAKD (ID_NTYPE (PRF_ARG2 (arg_node)))
-                          || TYisAKS (ID_NTYPE (PRF_ARG2 (arg_node)))
-                          || TYisAKV (ID_NTYPE (PRF_ARG2 (arg_node)))),
-                         "trying to transform F_add_SxA with arg2 of unknown shape");
-            INFO_IVE_NON_SCAL_LEN (arg_info) = ID_SHAPE (PRF_ARG2 (arg_node), 0);
-        }
-        PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
-        break;
+      if((INFO_IVE_MODE( arg_info) == M_uses_and_transform)
+         && (INFO_IVE_TRANSFORM_VINFO( arg_info) != NULL)) {
+        PRF_PRF( arg_node) = F_add_SxS;
+        ive_op++;
+        DBUG_ASSERT( ( TYisAKD( ID_NTYPE( PRF_ARG2( arg_node))) ||
+                       TYisAKS( ID_NTYPE( PRF_ARG2( arg_node))) ||
+                       TYisAKV( ID_NTYPE( PRF_ARG2( arg_node)))),
+                   "trying to transform F_add_SxA with arg2 of unknown shape");
+        INFO_IVE_NON_SCAL_LEN( arg_info) = ID_SHAPE( PRF_ARG2( arg_node), 0);
+      }
+      PRF_ARGS( arg_node) = TRAVdo(PRF_ARGS( arg_node), arg_info);
+      break;
 
     case F_add_AxS:
-        if ((INFO_IVE_MODE (arg_info) == M_uses_and_transform)
-            && (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL)) {
-            PRF_PRF (arg_node) = F_add_SxS;
-            ive_op++;
-            DBUG_ASSERT ((TYisAKD (ID_NTYPE (PRF_ARG1 (arg_node)))
-                          || TYisAKS (ID_NTYPE (PRF_ARG1 (arg_node)))
-                          || TYisAKV (ID_NTYPE (PRF_ARG1 (arg_node)))),
-                         "trying to transform F_add_AxS with arg1 of unknown shape");
-            INFO_IVE_NON_SCAL_LEN (arg_info) = ID_SHAPE (PRF_ARG1 (arg_node), 0);
-        }
-        PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
-        break;
+      if((INFO_IVE_MODE( arg_info) == M_uses_and_transform)
+         && (INFO_IVE_TRANSFORM_VINFO( arg_info) != NULL)) {
+        PRF_PRF( arg_node) = F_add_SxS;
+        ive_op++;
+        DBUG_ASSERT( ( TYisAKD( ID_NTYPE( PRF_ARG1( arg_node))) ||
+                       TYisAKS( ID_NTYPE( PRF_ARG1( arg_node))) ||
+                       TYisAKV( ID_NTYPE( PRF_ARG1( arg_node)))),
+                   "trying to transform F_add_AxS with arg1 of unknown shape");
+        INFO_IVE_NON_SCAL_LEN( arg_info) = ID_SHAPE( PRF_ARG1( arg_node), 0);
+      }
+      PRF_ARGS( arg_node) = TRAVdo(PRF_ARGS( arg_node), arg_info);
+      break;
 
     case F_add_AxA:
-        if ((INFO_IVE_MODE (arg_info) == M_uses_and_transform)
-            && (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL)) {
-            PRF_PRF (arg_node) = F_add_SxS;
-            ive_op++;
-        }
-        PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
-        break;
+      if((INFO_IVE_MODE( arg_info) == M_uses_and_transform)
+         && (INFO_IVE_TRANSFORM_VINFO( arg_info) != NULL)) {
+        PRF_PRF( arg_node) = F_add_SxS;
+        ive_op++;
+      }
+      PRF_ARGS( arg_node) = TRAVdo(PRF_ARGS( arg_node), arg_info);
+      break;
 
     case F_sub_SxA:
-        if ((INFO_IVE_MODE (arg_info) == M_uses_and_transform)
-            && (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL)) {
-            PRF_PRF (arg_node) = F_sub_SxS;
-            ive_op++;
-            DBUG_ASSERT ((TYisAKD (ID_NTYPE (PRF_ARG2 (arg_node)))
-                          || TYisAKS (ID_NTYPE (PRF_ARG2 (arg_node)))
-                          || TYisAKV (ID_NTYPE (PRF_ARG2 (arg_node)))),
-                         "trying to transform F_sub_SxA with arg2 of unknown shape");
-            INFO_IVE_NON_SCAL_LEN (arg_info) = ID_SHAPE (PRF_ARG2 (arg_node), 0);
-        }
-        PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
-        break;
+      if((INFO_IVE_MODE( arg_info) == M_uses_and_transform)
+         && (INFO_IVE_TRANSFORM_VINFO( arg_info) != NULL)) {
+        PRF_PRF( arg_node) = F_sub_SxS;
+        ive_op++;
+        DBUG_ASSERT( ( TYisAKD( ID_NTYPE( PRF_ARG2( arg_node))) ||
+                       TYisAKS( ID_NTYPE( PRF_ARG2( arg_node))) ||
+                       TYisAKV( ID_NTYPE( PRF_ARG2( arg_node)))),
+                   "trying to transform F_sub_SxA with arg2 of unknown shape");
+        INFO_IVE_NON_SCAL_LEN( arg_info) = ID_SHAPE( PRF_ARG2( arg_node), 0);
+      }
+      PRF_ARGS( arg_node) = TRAVdo(PRF_ARGS( arg_node), arg_info);
+      break;
 
     case F_sub_AxS:
-        if ((INFO_IVE_MODE (arg_info) == M_uses_and_transform)
-            && (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL)) {
-            PRF_PRF (arg_node) = F_sub_SxS;
-            ive_op++;
-            DBUG_ASSERT ((TYisAKD (ID_NTYPE (PRF_ARG1 (arg_node)))
-                          || TYisAKS (ID_NTYPE (PRF_ARG1 (arg_node)))
-                          || TYisAKV (ID_NTYPE (PRF_ARG1 (arg_node)))),
-                         "trying to transform F_sub_AxS with arg1 of unknown shape");
-            INFO_IVE_NON_SCAL_LEN (arg_info) = ID_SHAPE (PRF_ARG1 (arg_node), 0);
-        }
-        PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
-        break;
+      if((INFO_IVE_MODE( arg_info) == M_uses_and_transform)
+         && (INFO_IVE_TRANSFORM_VINFO( arg_info) != NULL)) {
+        PRF_PRF( arg_node) = F_sub_SxS;
+        ive_op++;
+        DBUG_ASSERT( ( TYisAKD( ID_NTYPE( PRF_ARG1( arg_node))) ||
+                       TYisAKS( ID_NTYPE( PRF_ARG1( arg_node))) ||
+                       TYisAKV( ID_NTYPE( PRF_ARG1( arg_node)))),
+                   "trying to transform F_sub_AxS with arg1 of unknown shape");
+        INFO_IVE_NON_SCAL_LEN( arg_info) = ID_SHAPE( PRF_ARG1( arg_node), 0);
+      }
+      PRF_ARGS( arg_node) = TRAVdo(PRF_ARGS( arg_node), arg_info);
+      break;
 
     case F_sub_AxA:
-        if ((INFO_IVE_MODE (arg_info) == M_uses_and_transform)
-            && (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL)) {
-            PRF_PRF (arg_node) = F_sub_SxS;
-            ive_op++;
-        }
-        PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
-        break;
+      if((INFO_IVE_MODE( arg_info) == M_uses_and_transform)
+         && (INFO_IVE_TRANSFORM_VINFO( arg_info) != NULL)) {
+        PRF_PRF( arg_node) = F_sub_SxS;
+        ive_op++;
+      }
+      PRF_ARGS( arg_node) = TRAVdo(PRF_ARGS( arg_node), arg_info);
+      break;
 
     case F_mul_SxA:
-        if ((INFO_IVE_MODE (arg_info) == M_uses_and_transform)
-            && (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL)) {
-            PRF_PRF (arg_node) = F_mul_SxS;
-            ive_op++;
-        }
-        PRF_ARG2 (arg_node) = TRAVdo (PRF_ARG2 (arg_node), arg_info);
-        break;
+      if( (INFO_IVE_MODE( arg_info) == M_uses_and_transform)
+         && (INFO_IVE_TRANSFORM_VINFO( arg_info) != NULL)) {
+        PRF_PRF( arg_node) = F_mul_SxS;
+        ive_op++;
+      }
+      PRF_ARG2( arg_node) = TRAVdo( PRF_ARG2( arg_node), arg_info);
+      break;
 
     case F_mul_AxS:
-        if ((INFO_IVE_MODE (arg_info) == M_uses_and_transform)
-            && (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL)) {
-            PRF_PRF (arg_node) = F_mul_SxS;
-            ive_op++;
-        }
-        PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
-        break;
+      if( (INFO_IVE_MODE( arg_info) == M_uses_and_transform)
+         && (INFO_IVE_TRANSFORM_VINFO( arg_info) != NULL)) {
+        PRF_PRF( arg_node) = F_mul_SxS;
+        ive_op++;
+      }
+      PRF_ARG1( arg_node) = TRAVdo( PRF_ARG1( arg_node), arg_info);
+      break;
 
     case F_div_SxA:
-        if ((INFO_IVE_MODE (arg_info) == M_uses_and_transform)
-            && (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL)) {
-            PRF_PRF (arg_node) = F_div_SxS;
-            ive_op++;
-        }
-        PRF_ARG2 (arg_node) = TRAVdo (PRF_ARG2 (arg_node), arg_info);
-        break;
+      if( (INFO_IVE_MODE( arg_info) == M_uses_and_transform)
+         && (INFO_IVE_TRANSFORM_VINFO( arg_info) != NULL)) {
+        PRF_PRF( arg_node) = F_div_SxS;
+        ive_op++;
+      }
+      PRF_ARG2( arg_node) = TRAVdo( PRF_ARG2( arg_node), arg_info);
+      break;
 
     case F_div_AxS:
-        if ((INFO_IVE_MODE (arg_info) == M_uses_and_transform)
-            && (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL)) {
-            PRF_PRF (arg_node) = F_div_SxS;
-            ive_op++;
-        }
-        PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
-        break;
+      if( (INFO_IVE_MODE( arg_info) == M_uses_and_transform)
+         && (INFO_IVE_TRANSFORM_VINFO( arg_info) != NULL)) {
+        PRF_PRF( arg_node) = F_div_SxS;
+        ive_op++;
+      }
+      PRF_ARG1( arg_node) = TRAVdo( PRF_ARG1( arg_node), arg_info);
+      break;
 
     default:
-        DBUG_ASSERT ((INFO_IVE_TRANSFORM_VINFO (arg_info) == NULL),
-                     "Inconsistency between IdxLet and IdxPrf");
-        PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
-        break;
-    }
+      DBUG_ASSERT( (INFO_IVE_TRANSFORM_VINFO( arg_info) == NULL),
+                   "Inconsistency between IdxLet and IdxPrf");
+      PRF_ARGS( arg_node) = TRAVdo(PRF_ARGS( arg_node), arg_info);
+      break;
+  }
 
-    DBUG_RETURN (arg_node);
+  DBUG_RETURN(arg_node);
 }
+
+
 
 /*
  *
@@ -2292,81 +2369,87 @@ IVEprf (node *arg_node, info *arg_info)
  *
  */
 
-node *
-IVEid (node *arg_node, info *arg_info)
+node *IVEid( node *arg_node, info *arg_info)
 {
-    shape *shp;
-    node *vardec;
-    char *newid;
+  shape *shp;
+  node *vardec;
+  char *newid;
 
-    DBUG_ENTER ("IVEid");
+  DBUG_ENTER( "IVEid");
 
-    vardec = ID_DECL (arg_node);
+  vardec = ID_DECL( arg_node);
 
-    DBUG_ASSERT (((NODE_TYPE (vardec) == N_vardec) || (NODE_TYPE (vardec) == N_arg)),
-                 "non vardec/arg node as backref in N_id!");
+  DBUG_ASSERT( ((NODE_TYPE( vardec) == N_vardec)
+                || (NODE_TYPE( vardec) == N_arg)),
+               "non vardec/arg node as backref in N_id!");
 
-    if (NODE_TYPE (vardec) == N_vardec) {
-        if ((TYgetSimpleType (TYgetScalar (VARDEC_NTYPE (vardec))) == T_int)
-            && (TYisAKD (VARDEC_NTYPE (vardec)) || TYisAKS (VARDEC_NTYPE (vardec))
-                || TYisAKV (VARDEC_NTYPE (vardec)))
-            && (TYgetDim (VARDEC_NTYPE (vardec)) == 1)) {
-            if (INFO_IVE_TRANSFORM_VINFO (arg_info) == NULL) {
-                DBUG_PRINT ("IVE", ("assigning VECT to %s:", ID_NAME (arg_node)));
-                VARDEC_ACTCHN (vardec) = SetVect (VARDEC_ACTCHN (vardec));
-                VARDEC_COLCHN (vardec) = SetVect (VARDEC_COLCHN (vardec));
-            } else {
-                shp = VINFO_SHAPE (INFO_IVE_TRANSFORM_VINFO (arg_info));
-                DBUG_PRINT ("IVE", ("assigning IDX to %s:", ID_NAME (arg_node)));
-                VARDEC_ACTCHN (vardec) = SetIdx (VARDEC_ACTCHN (vardec), shp);
-                VARDEC_COLCHN (vardec) = SetIdx (VARDEC_COLCHN (vardec), shp);
-                if (INFO_IVE_MODE (arg_info) == M_uses_and_transform) {
-                    newid = IVEchangeId (ID_NAME (arg_node), shp);
-                    DBUG_PRINT ("IVE",
-                                ("renaming id %s into %s", ID_NAME (arg_node), newid));
-                    ID_NAME (arg_node) = ILIBfree (ID_NAME (arg_node));
-                    ID_NAME (arg_node) = newid;
-                    /* Now, we have to insert the respective declaration */
-                    /* If the declaration does not yet exist, it has to be created! */
-                    ID_AVIS (arg_node) = VARDEC_AVIS (VardecIdx (vardec, shp));
-                }
-            }
+  if( NODE_TYPE( vardec) == N_vardec) {
+    if ( ( TYgetSimpleType( TYgetScalar( VARDEC_NTYPE( vardec))) == T_int) &&
+         ( TYisAKD( VARDEC_NTYPE( vardec)) ||
+           TYisAKS( VARDEC_NTYPE( vardec)) ||
+           TYisAKV( VARDEC_NTYPE( vardec))) &&
+         ( TYgetDim( VARDEC_NTYPE( vardec)) == 1)) {
+      if( INFO_IVE_TRANSFORM_VINFO( arg_info) == NULL) {
+        DBUG_PRINT("IVE",("assigning VECT to %s:", ID_NAME( arg_node)));
+        VARDEC_ACTCHN( vardec) = SetVect( VARDEC_ACTCHN( vardec));
+        VARDEC_COLCHN( vardec) = SetVect( VARDEC_COLCHN( vardec));
+      }
+      else {
+        shp = VINFO_SHAPE( INFO_IVE_TRANSFORM_VINFO( arg_info));
+        DBUG_PRINT("IVE",("assigning IDX to %s:", ID_NAME( arg_node)));
+        VARDEC_ACTCHN( vardec) = SetIdx( VARDEC_ACTCHN( vardec), shp);
+        VARDEC_COLCHN( vardec) = SetIdx( VARDEC_COLCHN( vardec), shp);
+        if( INFO_IVE_MODE( arg_info) == M_uses_and_transform) {
+          newid = IVEchangeId( ID_NAME(arg_node), shp);
+          DBUG_PRINT( "IVE", ("renaming id %s into %s",
+                              ID_NAME(arg_node), newid));
+          ID_NAME(arg_node) = ILIBfree( ID_NAME(arg_node));
+          ID_NAME(arg_node) = newid;
+          /* Now, we have to insert the respective declaration */
+          /* If the declaration does not yet exist, it has to be created! */
+          ID_AVIS( arg_node) = VARDEC_AVIS( VardecIdx( vardec, shp));
         }
-    } else {
-        if ((TYgetSimpleType (TYgetScalar (ARG_NTYPE (vardec))) == T_int)
-            && (TYisAKD (ARG_NTYPE (vardec)) || TYisAKS (ARG_NTYPE (vardec))
-                || TYisAKV (ARG_NTYPE (vardec)))
-            && (TYgetDim (ARG_NTYPE (vardec)) == 1)) {
-            if (INFO_IVE_TRANSFORM_VINFO (arg_info) == NULL) {
-                DBUG_PRINT ("IVE", ("assigning VECT to %s:", ID_NAME (arg_node)));
-                ARG_ACTCHN (vardec) = SetVect (ARG_ACTCHN (vardec));
-                ARG_COLCHN (vardec) = SetVect (ARG_COLCHN (vardec));
-            } else {
-                shp = VINFO_SHAPE (INFO_IVE_TRANSFORM_VINFO (arg_info));
-                DBUG_PRINT ("IVE", ("assigning IDX to %s:", ID_NAME (arg_node)));
-                ARG_ACTCHN (vardec) = SetIdx (ARG_ACTCHN (vardec), shp);
-                ARG_COLCHN (vardec) = SetIdx (ARG_COLCHN (vardec), shp);
-                if (INFO_IVE_MODE (arg_info) == M_uses_and_transform) {
-                    newid = IVEchangeId (ID_NAME (arg_node), shp);
-                    DBUG_PRINT ("IVE",
-                                ("renaming id %s into %s", ID_NAME (arg_node), newid));
-                    newid = ILIBfree (newid);
-                    vardec = VardecIdx (vardec, shp);
-                    ID_AVIS (arg_node) = VARDEC_AVIS (vardec);
-                }
-            }
-        }
+      }
     }
+  } else {
+    if ( ( TYgetSimpleType( TYgetScalar( ARG_NTYPE( vardec))) == T_int) &&
+         ( TYisAKD( ARG_NTYPE( vardec)) ||
+           TYisAKS( ARG_NTYPE( vardec)) ||
+           TYisAKV( ARG_NTYPE( vardec))) &&
+         ( TYgetDim( ARG_NTYPE( vardec)) == 1)) {
+      if( INFO_IVE_TRANSFORM_VINFO( arg_info) == NULL) {
+        DBUG_PRINT("IVE",("assigning VECT to %s:", ID_NAME( arg_node)));
+        ARG_ACTCHN( vardec) = SetVect( ARG_ACTCHN( vardec));
+        ARG_COLCHN( vardec) = SetVect( ARG_COLCHN( vardec));
+      }
+      else {
+        shp = VINFO_SHAPE( INFO_IVE_TRANSFORM_VINFO(arg_info));
+        DBUG_PRINT("IVE",("assigning IDX to %s:", ID_NAME( arg_node)));
+        ARG_ACTCHN( vardec) = SetIdx( ARG_ACTCHN( vardec), shp);
+        ARG_COLCHN( vardec) = SetIdx( ARG_COLCHN( vardec), shp);
+        if( INFO_IVE_MODE( arg_info) == M_uses_and_transform) {
+          newid = IVEchangeId( ID_NAME(arg_node), shp);
+          DBUG_PRINT( "IVE", ("renaming id %s into %s",
+                              ID_NAME(arg_node), newid));
+          newid = ILIBfree( newid);
+          vardec = VardecIdx( vardec, shp);
+          ID_AVIS( arg_node) = VARDEC_AVIS(vardec);
+        }
+      }
+    }
+  }
 
-    DBUG_RETURN (arg_node);
+  DBUG_RETURN(arg_node);
 }
+
+
 
 /*
  *
  *  functionname  : IVEarray
  *  arguments     : 1) node*: N_array node
  *                  2) node*: INFO_IVE_TRANSFORM_VINFO( arg_info) = vinfo
- *                  R) node*: index of N_array in unrolling of shape
+ *                  R) node*: index of N_array in unrolling of shape 
  *  description   : if vinfo == NULL all Array-Elements are traversed with
  *                  INFO_IVE_TRANSFORM_VINFO( arg_info) NULL, since there may be
  *                  some array_variables;
@@ -2381,50 +2464,55 @@ IVEid (node *arg_node, info *arg_info)
  *
  */
 
-node *
-IVEarray (node *arg_node, info *arg_info)
+node *IVEarray( node *arg_node, info *arg_info)
 {
-    shape *shp;
-    node *idx;
-    node *expr;
-    int i;
+  shape *shp;
+  node *idx;
+  node *expr;
+  int i;
 
-    DBUG_ENTER ("IVEarray");
+  DBUG_ENTER("IVEarray");
 
-    if (INFO_IVE_TRANSFORM_VINFO (arg_info) == NULL) {
-        if (ARRAY_AELEMS (arg_node) != NULL) {
-            ARRAY_AELEMS (arg_node) = TRAVdo (ARRAY_AELEMS (arg_node), arg_info);
-        }
-    } else {
-        if (INFO_IVE_MODE (arg_info) == M_uses_and_transform) {
-            expr = ARRAY_AELEMS (arg_node);
-            shp = VINFO_SHAPE (INFO_IVE_TRANSFORM_VINFO (arg_info));
-            idx = EXPRS_EXPR (expr);
-            expr = EXPRS_NEXT (expr);
-            for (i = 1; i < SHgetDim (shp); i++) {
-                if (expr != NULL) {
-                    DBUG_ASSERT ((NODE_TYPE (expr) == N_exprs),
-                                 "corrupted syntax tree at N_array(N_exprs expected)!");
-                    idx = TBmakeExprs (idx, TBmakeExprs (TBmakeNum (SHgetExtent (shp, i)),
-                                                         NULL));
-                    idx = TBmakePrf (F_mul_SxS, idx);
-                    idx = TBmakeExprs (idx, expr);
-                    expr = EXPRS_NEXT (expr);
-                    EXPRS_NEXT (EXPRS_NEXT (idx)) = NULL;
-                    idx = TBmakePrf (F_add_SxS, idx);
-                } else {
-                    idx = TBmakeExprs (idx, TBmakeExprs (TBmakeNum (SHgetExtent (shp, i)),
-                                                         NULL));
-                    idx = TBmakePrf (F_mul_SxS, idx);
-                }
-            }
-            arg_node = idx;
-            ive_expr++;
-        }
+  if (INFO_IVE_TRANSFORM_VINFO( arg_info)==NULL) {
+    if (ARRAY_AELEMS(arg_node) != NULL) {
+      ARRAY_AELEMS( arg_node) = TRAVdo( ARRAY_AELEMS( arg_node), arg_info);
     }
+  }
+  else {
+    if( INFO_IVE_MODE( arg_info) == M_uses_and_transform) {
+      expr= ARRAY_AELEMS( arg_node);
+      shp = VINFO_SHAPE( INFO_IVE_TRANSFORM_VINFO( arg_info));
+      idx = EXPRS_EXPR( expr);
+      expr = EXPRS_NEXT( expr);
+      for (i = 1; i < SHgetDim( shp); i++) {
+        if (expr != NULL) {
+          DBUG_ASSERT((NODE_TYPE(expr) == N_exprs),
+                      "corrupted syntax tree at N_array(N_exprs expected)!");
+          idx = TBmakeExprs( idx,
+                TBmakeExprs( TBmakeNum( SHgetExtent( shp, i)),
+                  NULL));
+          idx = TBmakePrf( F_mul_SxS, idx);
+          idx = TBmakeExprs( idx, expr);
+          expr= EXPRS_NEXT( expr);
+          EXPRS_NEXT( EXPRS_NEXT( idx)) = NULL;
+          idx = TBmakePrf( F_add_SxS, idx);
+        }
+        else {
+          idx = TBmakeExprs( idx,
+                TBmakeExprs( TBmakeNum( SHgetExtent( shp, i)),
+                  NULL));
+          idx = TBmakePrf( F_mul_SxS, idx);
+        }
+      } 
+      arg_node = idx;
+      ive_expr++;
+    }
+  }
 
-    DBUG_RETURN (arg_node);
+  DBUG_RETURN(arg_node);
 }
+
+
 
 /*
  *
@@ -2438,35 +2526,36 @@ IVEarray (node *arg_node, info *arg_info)
  *
  */
 
-node *
-IVEnum (node *arg_node, info *arg_info)
+node *IVEnum( node *arg_node, info *arg_info)
 {
-    int val, i, len_iv, dim_array, sum;
-    shape *shp;
+  int val, i, len_iv, dim_array, sum;
+  shape *shp;
 
-    DBUG_ENTER ("IVEnum");
+  DBUG_ENTER( "IVEnum");
 
-    if ((INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL)
-        && (INFO_IVE_MODE (arg_info) == M_uses_and_transform)) {
-        DBUG_ASSERT ((NODE_TYPE (INFO_IVE_TRANSFORM_VINFO (arg_info)) == N_vinfo),
-                     "corrupted arg_info node in IVEnum!");
-        shp = VINFO_SHAPE (INFO_IVE_TRANSFORM_VINFO (arg_info));
-        val = NUM_VAL (arg_node);
-        dim_array = SHgetDim (shp);
-        len_iv = INFO_IVE_NON_SCAL_LEN (arg_info);
+  if ( (INFO_IVE_TRANSFORM_VINFO( arg_info) != NULL)
+       && (INFO_IVE_MODE( arg_info) == M_uses_and_transform) ) {
+    DBUG_ASSERT( (NODE_TYPE( INFO_IVE_TRANSFORM_VINFO(arg_info)) == N_vinfo),
+                 "corrupted arg_info node in IVEnum!");
+    shp = VINFO_SHAPE( INFO_IVE_TRANSFORM_VINFO( arg_info));
+    val = NUM_VAL(arg_node);
+    dim_array = SHgetDim( shp);
+    len_iv = INFO_IVE_NON_SCAL_LEN( arg_info);
 
-        sum = val;
-        for (i = 1; i < len_iv; i++) {
-            sum = (sum * SHgetExtent (shp, i)) + val;
-        }
-        for (; i < dim_array; i++) {
-            sum = sum * SHgetExtent (shp, i);
-        }
-        NUM_VAL (arg_node) = sum;
+    sum = val;
+    for (i = 1; i < len_iv; i++) {
+      sum = (sum * SHgetExtent( shp, i)) + val;
     }
+    for ( ; i < dim_array; i++) {
+      sum = sum * SHgetExtent( shp, i);
+    }
+    NUM_VAL(arg_node) = sum;
+  }
 
-    DBUG_RETURN (arg_node);
+  DBUG_RETURN(arg_node);
 }
+
+
 
 /** <!--********************************************************************-->
  *
@@ -2474,22 +2563,23 @@ IVEnum (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 
-node *
-IVEwith (node *arg_node, info *arg_info)
+node *IVEwith( node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IVEwith");
+  DBUG_ENTER( "IVEwith");
 
-    WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
-    WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
+  WITH_WITHOP( arg_node) = TRAVdo( WITH_WITHOP( arg_node), arg_info);
+  WITH_CODE( arg_node) = TRAVdo( WITH_CODE( arg_node), arg_info);
 
-    /*
-     * Finally, we traverse the Npart nodes in order to eliminate
-     * superfluous index-vectors!
-     */
-    WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
+  /*
+   * Finally, we traverse the Npart nodes in order to eliminate
+   * superfluous index-vectors!
+   */
+  WITH_PART( arg_node) = TRAVdo( WITH_PART( arg_node), arg_info);
 
-    DBUG_RETURN (arg_node);
+  DBUG_RETURN( arg_node);
 }
+
+
 
 /** <!--********************************************************************-->
  *
@@ -2501,58 +2591,59 @@ IVEwith (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 
-node *
-IVEpart (node *arg_node, info *arg_info)
+node *IVEpart( node *arg_node, info *arg_info)
 {
-    node *decl, *mem_transform;
+  node *decl, *mem_transform;
 
-    DBUG_ENTER ("IVEpart");
+  DBUG_ENTER( "IVEpart");
 
 #ifdef REFCOUNT_PROBLEM_SOLVED
-    if (INFO_IVE_MODE (arg_info) == M_uses_and_transform) {
-        if (VINFO_FLAG (FindVect (CODE_USE (PART_CODE (arg_node)))) == DOLLAR) {
-            /*
-             * The index vector variable is used as IDX(...) only!
-             * => we can eliminate the vector completely!
-             */
-            PART_VEC (arg_node) = ILIBfree (PART_VEC (arg_node));
-        }
+  if( INFO_IVE_MODE( arg_info) == M_uses_and_transform) {
+    if( VINFO_FLAG( FindVect( CODE_USE( PART_CODE( arg_node)))) == DOLLAR) {
+      /*
+       * The index vector variable is used as IDX(...) only!
+       * => we can eliminate the vector completely!
+       */
+      PART_VEC(arg_node) = ILIBfree( PART_VEC(arg_node));
     }
+  }
 #else
-    if (INFO_IVE_MODE (arg_info) == M_uses_and_transform) {
-        /*
-         * This makes sure, that the declaration of the index vector variable
-         * will survive the second traversal of the vardecs, even if there is
-         * no further reference to it but the one in the generator!
-         * IF REFCOUNT_PROBLEM_SOLVED this can be spared since the one in the
-         * generator would be deleted anyways ( see above)!!
-         */
-        decl = IDS_DECL (PART_VEC (arg_node));
-        L_VARDEC_OR_ARG_COLCHN (decl, SetVect (VARDEC_OR_ARG_COLCHN (decl)));
-    }
+  if( INFO_IVE_MODE( arg_info) == M_uses_and_transform) {
+    /*
+     * This makes sure, that the declaration of the index vector variable
+     * will survive the second traversal of the vardecs, even if there is 
+     * no further reference to it but the one in the generator!
+     * IF REFCOUNT_PROBLEM_SOLVED this can be spared since the one in the
+     * generator would be deleted anyways ( see above)!!
+     */
+    decl = IDS_DECL( PART_VEC( arg_node));
+    L_VARDEC_OR_ARG_COLCHN( decl, SetVect( VARDEC_OR_ARG_COLCHN( decl)));
+  }
 #endif
 
-    /*
-     * Now, we want to traverse the bounds and filters in order
-     * to obtain all potential VECT uses.
-     * For preventing any transformations of these, we have to make
-     * sure, that (INFO_IVE_TRANSFORM_VINFO( arg_info) == NULL) during
-     * that traversal!
-     */
-    mem_transform = INFO_IVE_TRANSFORM_VINFO (arg_info);
-    INFO_IVE_TRANSFORM_VINFO (arg_info) = NULL;
-    if (PART_GENERATOR (arg_node) != NULL)
-        PART_GENERATOR (arg_node) = TRAVdo (PART_GENERATOR (arg_node), arg_info);
-    INFO_IVE_TRANSFORM_VINFO (arg_info) = mem_transform;
+  /*
+   * Now, we want to traverse the bounds and filters in order
+   * to obtain all potential VECT uses.
+   * For preventing any transformations of these, we have to make
+   * sure, that (INFO_IVE_TRANSFORM_VINFO( arg_info) == NULL) during
+   * that traversal!
+   */
+  mem_transform = INFO_IVE_TRANSFORM_VINFO( arg_info);
+  INFO_IVE_TRANSFORM_VINFO( arg_info) = NULL; 
+  if( PART_GENERATOR( arg_node) != NULL)
+    PART_GENERATOR( arg_node) = TRAVdo( PART_GENERATOR( arg_node), arg_info);
+  INFO_IVE_TRANSFORM_VINFO( arg_info) = mem_transform;
 
-    /*
-     * Finally, we take care of any subsequent generators!
-     */
-    if (PART_NEXT (arg_node) != NULL)
-        PART_NEXT (arg_node) = TRAVdo (PART_NEXT (arg_node), arg_info);
+  /* 
+   * Finally, we take care of any subsequent generators!
+   */
+  if( PART_NEXT( arg_node) != NULL)
+    PART_NEXT( arg_node) = TRAVdo( PART_NEXT( arg_node), arg_info);
 
-    DBUG_RETURN (arg_node);
+  DBUG_RETURN( arg_node);
 }
+
+
 
 /** <!--********************************************************************-->
  *
@@ -2562,152 +2653,155 @@ IVEpart (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 
-node *
-IVEcode (node *arg_node, info *arg_info)
+node *IVEcode( node *arg_node, info *arg_info)
 {
-    node *with, *idx_decl, *vinfo, *col_vinfo, *new_assign, *let_node, *current_assign,
-      *new_id, *array_id, *tmp_withop;
-    node *idxs, *tmp_ids;
-    ntype *arr_type;
-    shape *arr_shape;
-    bool use_genvar_offset;
+  node *with, *idx_decl, *vinfo, *col_vinfo,
+       *new_assign, *let_node, *current_assign,
+       *new_id, *array_id, *tmp_withop;
+  node *idxs, *tmp_ids;
+  ntype *arr_type;
+  shape *arr_shape;
+  bool use_genvar_offset;
+  
 
-    DBUG_ENTER ("IVEcode");
+  DBUG_ENTER( "IVEcode");
 
-    /*
-     * we traverse the current code block
-     */
-    current_assign = INFO_IVE_CURRENTASSIGN (arg_info);
-    let_node = ASSIGN_INSTR (current_assign);
+  /*
+   * we traverse the current code block
+   */
+  current_assign = INFO_IVE_CURRENTASSIGN( arg_info);
+  let_node = ASSIGN_INSTR( current_assign);
 
-    /*
-     * this is an implicit return statement! (see IVEreturn())
-     */
-    INFO_IVE_TRANSFORM_VINFO (arg_info) = NULL;
+  /*
+   * this is an implicit return statement! (see IVEreturn())
+   */
+  INFO_IVE_TRANSFORM_VINFO( arg_info) = NULL;
 
-    CODE_CEXPRS (arg_node) = TRAVdo (CODE_CEXPRS (arg_node), arg_info);
-    CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
+  CODE_CEXPRS( arg_node) = TRAVdo( CODE_CEXPRS( arg_node), arg_info);
+  CODE_CBLOCK( arg_node) = TRAVdo( CODE_CBLOCK( arg_node), arg_info);
 
-    DBUG_ASSERT (((NODE_TYPE (let_node) == N_let)
-                  && (NODE_TYPE (LET_EXPR (let_node)) == N_with)),
-                 "arg_info contains no let with a with-loop on the RHS!");
+  DBUG_ASSERT( ((NODE_TYPE( let_node) == N_let) &&
+                (NODE_TYPE( LET_EXPR( let_node)) == N_with)),
+               "arg_info contains no let with a with-loop on the RHS!");
 
-    /*
-     * we insert instances of the index-vector-var as first statement of the
-     *  current code block.
-     */
+  /*
+   * we insert instances of the index-vector-var as first statement of the
+   *  current code block.
+   */
 
-    with = LET_EXPR (let_node);
-    idx_decl = IDS_DECL (WITH_VEC (with));
-    idxs = WITH_IDS (with);
-    vinfo = VARDEC_OR_ARG_ACTCHN (idx_decl);
-    CODE_USE (arg_node) = vinfo;
-    L_VARDEC_OR_ARG_ACTCHN (idx_decl, TCmakeVinfoDollar (CutVinfoChn (vinfo)));
+  with = LET_EXPR( let_node);
+  idx_decl = IDS_DECL( WITH_VEC( with));
+  idxs = WITH_IDS( with);
+  vinfo = VARDEC_OR_ARG_ACTCHN( idx_decl);
+  CODE_USE( arg_node) = vinfo;
+  L_VARDEC_OR_ARG_ACTCHN( idx_decl, TCmakeVinfoDollar( CutVinfoChn( vinfo)));
 
-    if (INFO_IVE_MODE (arg_info) == M_uses_and_transform) {
-        while (VINFO_FLAG (vinfo) != DOLLAR) {
+  if( INFO_IVE_MODE( arg_info) == M_uses_and_transform) {
+    while (VINFO_FLAG( vinfo) != DOLLAR) {
 
-            if (VINFO_FLAG (vinfo) == IDX) {
+      if (VINFO_FLAG( vinfo) == IDX) {
 
-                /* scan all operators and corresponding resultvalues */
-                tmp_ids = LET_IDS (let_node);
-                tmp_withop = WITH_WITHOP (with);
-                new_assign = NULL;
-                use_genvar_offset = FALSE;
+        /* scan all operators and corresponding resultvalues */ 
+        tmp_ids = LET_IDS( let_node);
+        tmp_withop = WITH_WITHOP( with);
+        new_assign = NULL;
+        use_genvar_offset = FALSE;
+        
+        while (tmp_ids != NULL){
+	  arr_type = IDS_NTYPE( tmp_ids );
+          DBUG_ASSERT( (arr_type != NULL),
+                       "missing type-info for LHS of let!");
+          DBUG_ASSERT( (tmp_withop != NULL),
+                       "missing N_withop node!");
 
-                while (tmp_ids != NULL) {
-                    arr_type = IDS_NTYPE (tmp_ids);
-                    DBUG_ASSERT ((arr_type != NULL), "missing type-info for LHS of let!");
-                    DBUG_ASSERT ((tmp_withop != NULL), "missing N_withop node!");
+          if ( TYisAKS( arr_type) || TYisAKV( arr_type)) {
+            arr_shape = TYgetShape( arr_type);
 
-                    if (TYisAKS (arr_type) || TYisAKV (arr_type)) {
-                        arr_shape = TYgetShape (arr_type);
+            if (((NODE_TYPE( tmp_withop) == N_modarray) ||
+                 (NODE_TYPE( tmp_withop) == N_genarray)) &&
+                SHcompareShapes( VINFO_SHAPE( vinfo), arr_shape)) {
+            
+              /*
+               * we can reuse the genvar as index directly!
+               * therefore we create an ICM of the form:
+               * ND_USE_GENVAR_OFFSET( <idx-varname>, <result-array-varname>)
+               */
+            
+              new_id = TCmakeIdCopyString( IVEchangeId( IDS_NAME( WITH_VEC( with)), arr_shape));
+              col_vinfo = FindIdx( VARDEC_OR_ARG_COLCHN( idx_decl), arr_shape);
+              DBUG_ASSERT( ((col_vinfo != NULL) &&
+                            (VINFO_VARDEC( col_vinfo) != NULL)),
+                           "missing vardec for IDX variable");
+              ID_AVIS( new_id) = VARDEC_AVIS( VINFO_VARDEC( col_vinfo));
+              array_id = TCmakeIdCopyString( IDS_NAME( tmp_ids));
+              
+              /*
+               * The backref to declaration of the array-id must set correctly
+               * because following compilation steps (e.g. AdjustIdentifiers())
+               * depend on it!
+               * Therefore RC itself must be patch in order to ignore this icm!
+               */
+              ID_DECL( array_id) = IDS_DECL( tmp_ids);
+            
+              new_id = NTUaddNtTag( new_id);
+              array_id = NTUaddNtTag( array_id);
+            
+              new_assign = TBmakeAssign( TCmakeIcm2( "ND_USE_GENVAR_OFFSET",
+                                                     new_id,
+                                                     array_id),
+                                         NULL);
 
-                        if (((NODE_TYPE (tmp_withop) == N_modarray)
-                             || (NODE_TYPE (tmp_withop) == N_genarray))
-                            && SHcompareShapes (VINFO_SHAPE (vinfo), arr_shape)) {
-
-                            /*
-                             * we can reuse the genvar as index directly!
-                             * therefore we create an ICM of the form:
-                             * ND_USE_GENVAR_OFFSET( <idx-varname>,
-                             * <result-array-varname>)
-                             */
-
-                            new_id = TCmakeIdCopyString (
-                              IVEchangeId (IDS_NAME (WITH_VEC (with)), arr_shape));
-                            col_vinfo
-                              = FindIdx (VARDEC_OR_ARG_COLCHN (idx_decl), arr_shape);
-                            DBUG_ASSERT (((col_vinfo != NULL)
-                                          && (VINFO_VARDEC (col_vinfo) != NULL)),
-                                         "missing vardec for IDX variable");
-                            ID_AVIS (new_id) = VARDEC_AVIS (VINFO_VARDEC (col_vinfo));
-                            array_id = TCmakeIdCopyString (IDS_NAME (tmp_ids));
-
-                            /*
-                             * The backref to declaration of the array-id must set
-                             * correctly because following compilation steps (e.g.
-                             * AdjustIdentifiers()) depend on it! Therefore RC itself must
-                             * be patch in order to ignore this icm!
-                             */
-                            ID_DECL (array_id) = IDS_DECL (tmp_ids);
-
-                            new_id = NTUaddNtTag (new_id);
-                            array_id = NTUaddNtTag (array_id);
-
-                            new_assign = TBmakeAssign (TCmakeIcm2 ("ND_USE_GENVAR_OFFSET",
-                                                                   new_id, array_id),
-                                                       NULL);
-
-                            use_genvar_offset = TRUE;
-                            /**
-                             * The use of break in other positions than switches is
-                             * deprecated!!!!! (sbs) Needs to be brushed!!!!
-                             */
-                            break;
-                        }
-                    }
-                    tmp_ids = IDS_NEXT (tmp_ids);
-                    tmp_withop = WITHOP_NEXT (tmp_withop);
-                }
-
-                if (!use_genvar_offset) {
-                    /*
-                     * we have to instanciate the idx-variable by an ICM of the form:
-                     *   ND_IDXS2OFFSET( <off-name>, <num idxs>, idx-names,
-                     *                               <dim of array>, shape_elems)
-                     *
-                     * NB: we do not use ND_VECT2OFFSET here, as the index scalars will
-                     * be created anyways, and, using them, may
-                     *   a) speedup the access times (better opts in the C compiler)
-                     *   b) avoid the allocation of the vector entirely!
-                     */
-                    new_assign
-                      = CreateIdxs2OffsetIcm (idx_decl, idxs, VINFO_SHAPE (vinfo));
-                }
-
-                ASSIGN_NEXT (new_assign) = CODE_CBLOCK_INSTR (arg_node);
-                DBUG_ASSERT ((NODE_TYPE (CODE_CBLOCK_INSTR (arg_node)) != N_empty),
-                             "N_empty node in block found");
-                BLOCK_INSTR (CODE_CBLOCK (arg_node)) = new_assign;
+              use_genvar_offset = TRUE;
+              /**
+               * The use of break in other positions than switches is deprecated!!!!!
+               * (sbs)
+               * Needs to be brushed!!!!
+               */
+              break;
             }
-
-            vinfo = VINFO_NEXT (vinfo);
+          }
+          tmp_ids = IDS_NEXT( tmp_ids);
+          tmp_withop = WITHOP_NEXT( tmp_withop);
         }
+        
+        if (!use_genvar_offset) {
+          /*
+           * we have to instanciate the idx-variable by an ICM of the form:
+           *   ND_IDXS2OFFSET( <off-name>, <num idxs>, idx-names,
+           *                               <dim of array>, shape_elems)
+           *
+           * NB: we do not use ND_VECT2OFFSET here, as the index scalars will
+           * be created anyways, and, using them, may 
+           *   a) speedup the access times (better opts in the C compiler)
+           *   b) avoid the allocation of the vector entirely!
+           */
+          new_assign = CreateIdxs2OffsetIcm( idx_decl, idxs,
+                                             VINFO_SHAPE( vinfo));
+        }
+
+        ASSIGN_NEXT( new_assign) = CODE_CBLOCK_INSTR( arg_node);
+        DBUG_ASSERT( (NODE_TYPE( CODE_CBLOCK_INSTR( arg_node)) != N_empty),
+                     "N_empty node in block found");
+        BLOCK_INSTR( CODE_CBLOCK( arg_node)) = new_assign;
+      }
+
+      vinfo = VINFO_NEXT( vinfo);
     }
+  }
+  
+  /*
+   * now we traverse the next code block
+   */
+  
+  if (CODE_NEXT( arg_node) != NULL) {
+    /* restore valid CURRENTASSIGN!! */
+    INFO_IVE_CURRENTASSIGN( arg_info) = current_assign;
+    CODE_NEXT( arg_node) = TRAVdo( CODE_NEXT( arg_node), arg_info);
+  }
 
-    /*
-     * now we traverse the next code block
-     */
-
-    if (CODE_NEXT (arg_node) != NULL) {
-        /* restore valid CURRENTASSIGN!! */
-        INFO_IVE_CURRENTASSIGN (arg_info) = current_assign;
-        CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
+  DBUG_RETURN( arg_node);
 }
+
 
 /** <!--********************************************************************-->
  *
@@ -2715,30 +2809,32 @@ IVEcode (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 
-node *
-IVEcond (node *arg_node, info *arg_info)
+node *IVEcond( node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IVEcond");
+  DBUG_ENTER( "IVEcond");
 
-    /* Now, we duplicate the topmost chain of actchn! */
-    MAP_TO_ALL_VARDEC_ACTCHNS (DuplicateTop, INFO_IVE_VARDECS (arg_info));
+  /* Now, we duplicate the topmost chain of actchn! */
+  MAP_TO_ALL_VARDEC_ACTCHNS( DuplicateTop, INFO_IVE_VARDECS( arg_info));
 
-    if (COND_THEN (arg_node) != NULL) {
-        COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
-    }
+  if( COND_THEN( arg_node) != NULL) {
+    COND_THEN( arg_node) = TRAVdo( COND_THEN( arg_node), arg_info);
+  }
 
-    /* Now, we switch the two topmost chains of actchn! */
-    MAP_TO_ALL_VARDEC_ACTCHNS (SwitchTop, INFO_IVE_VARDECS (arg_info));
+  /* Now, we switch the two topmost chains of actchn! */
+  MAP_TO_ALL_VARDEC_ACTCHNS( SwitchTop, INFO_IVE_VARDECS( arg_info));
 
-    if (COND_ELSE (arg_node) != NULL) {
-        COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
-    }
+  if( COND_ELSE( arg_node) != NULL) {
+    COND_ELSE( arg_node) = TRAVdo( COND_ELSE( arg_node), arg_info);
+  }
 
-    /* Now, we merge the topmost chain of actchn into the rest of actchn! */
-    MAP_TO_ALL_VARDEC_ACTCHNS (MergeTop, INFO_IVE_VARDECS (arg_info));
-
-    DBUG_RETURN (arg_node);
+  /* Now, we merge the topmost chain of actchn into the rest of actchn! */
+  MAP_TO_ALL_VARDEC_ACTCHNS( MergeTop, INFO_IVE_VARDECS( arg_info));
+   
+  DBUG_RETURN( arg_node);
 }
+
+
+
 
 /** <!--********************************************************************-->
  *
@@ -2746,46 +2842,47 @@ IVEcond (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 
-node *
-IVEdo (node *arg_node, info *arg_info)
+node *IVEdo( node *arg_node, info *arg_info)
 {
-    int old_uses_mode;
+  int old_uses_mode;
 
-    DBUG_ENTER ("IVEdo");
+  DBUG_ENTER( "IVEdo");
 
-    /* Now, we duplicate the topmost chain of actchn! */
-    MAP_TO_ALL_VARDEC_ACTCHNS (DuplicateTop, INFO_IVE_VARDECS (arg_info));
+  /* Now, we duplicate the topmost chain of actchn! */
+  MAP_TO_ALL_VARDEC_ACTCHNS( DuplicateTop, INFO_IVE_VARDECS( arg_info));
 
-    /*
-     * We have to memorize the old uses_mode in order to
-     * prevent code-transformations during the second traversal of the loop
-     * in case the entire loop resides within an outer loop whose body is
-     * traversed the first time!
-     */
-    old_uses_mode = INFO_IVE_MODE (arg_info);
-    INFO_IVE_MODE (arg_info) = M_uses_only;
+  /*
+   * We have to memorize the old uses_mode in order to
+   * prevent code-transformations during the second traversal of the loop
+   * in case the entire loop resides within an outer loop whose body is
+   * traversed the first time!
+   */
+  old_uses_mode = INFO_IVE_MODE( arg_info);
+  INFO_IVE_MODE( arg_info) = M_uses_only;
 
-    if (DO_BODY (arg_node) != NULL) {
-        DO_BODY (arg_node) = TRAVdo (DO_BODY (arg_node), arg_info);
-    }
+  if( DO_BODY( arg_node) != NULL) {
+    DO_BODY( arg_node) = TRAVdo( DO_BODY( arg_node), arg_info);
+  }
 
-    /* Now, we merge the topmost chain of actchn into the rest of actchn! */
-    MAP_TO_ALL_VARDEC_ACTCHNS (MergeCopyTop, INFO_IVE_VARDECS (arg_info));
+  /* Now, we merge the topmost chain of actchn into the rest of actchn! */
+  MAP_TO_ALL_VARDEC_ACTCHNS( MergeCopyTop, INFO_IVE_VARDECS( arg_info));
 
-    /*
-     * Now, we restore the uses_mode to the value set before entering the loop
-     * (see comment above!)
-     */
-    INFO_IVE_MODE (arg_info) = old_uses_mode;
-    if (DO_BODY (arg_node) != NULL) {
-        DO_BODY (arg_node) = TRAVdo (DO_BODY (arg_node), arg_info);
-    }
+  /*
+   * Now, we restore the uses_mode to the value set before entering the loop
+   * (see comment above!)
+   */
+  INFO_IVE_MODE( arg_info) = old_uses_mode;
+  if( DO_BODY( arg_node) != NULL) {
+    DO_BODY( arg_node) = TRAVdo( DO_BODY( arg_node), arg_info);
+  }
 
-    MAP_TO_ALL_VARDEC_ACTCHNS (FreeTop, INFO_IVE_VARDECS (arg_info));
+  MAP_TO_ALL_VARDEC_ACTCHNS( FreeTop, INFO_IVE_VARDECS( arg_info));
 
-    DBUG_RETURN (arg_node);
+  DBUG_RETURN( arg_node);
 }
 /*@}*/
+
+#endif
 
 /**
  *
@@ -2816,13 +2913,16 @@ IVEdoIndexVectorElimination (node *syntax_tree)
     ive_expr = 0;
     ive_op = 0;
 
-    TRAVpush (TR_ive);
+    syntax_tree = IndexVectorEliminationInference (syntax_tree);
+#if 0
+  TRAVpush( TR_ive);
 
-    info = MakeInfo ();
-    syntax_tree = TRAVdo (syntax_tree, info);
-
-    info = FreeInfo (info);
-    TRAVpop ();
+  info = MakeInfo();
+  syntax_tree = TRAVdo( syntax_tree, info);
+ 
+  info = FreeInfo( info);
+  TRAVpop();
+#endif
 
     CTInote ("%d index-vector(s) eliminated", ive_expr);
     CTInote ("%d index-vector-operation(s) eliminated", ive_op);
