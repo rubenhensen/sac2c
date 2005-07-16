@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2005/07/16 12:23:52  ktr
+ * shape descriptors are not corrupted any longer
+ *
  * Revision 1.1  2005/07/16 09:57:19  ktr
  * Initial revision
  *
@@ -552,11 +555,15 @@ RCIprf (node *arg_node, info *arg_info)
          *
          * - initialize rc with 1
          */
-        PRF_ARGS (arg_node) = TBmakeExprs (TBmakeNum (1), PRF_ARGS (arg_node));
+        if (INFO_RC_LHS (arg_info) != NULL) {
+            PRF_ARGS (arg_node) = TBmakeExprs (TBmakeNum (1), PRF_ARGS (arg_node));
+        }
 
         /*
          * Traverse shape expression and reuse candidates
+         * without corrupting the shape descriptor
          */
+        INFO_RC_LHS (arg_info) = NULL;
         INFO_RC_MODE (arg_info) = rc_prfuse;
         PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
         break;
