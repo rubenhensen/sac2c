@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2005/07/16 12:30:50  sbs
+ * TUisIntVect added.
+ *
  * Revision 1.13  2005/06/18 13:52:03  sah
  * moved SignatureMatches and ActualArgs2Ntype from
  * create_wrapper_code to type_utils
@@ -276,6 +279,27 @@ TUrettypes2alpha (node *rets)
     }
 
     DBUG_RETURN (rets);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn bool TUisIntVect( ntype *ty)
+ *
+ *   @brief
+ *   @param
+ *   @return
+ *
+ ******************************************************************************/
+
+bool
+TUisIntVect (ntype *ty)
+{
+    bool res;
+
+    DBUG_ENTER ("TUisIntVect");
+    res = ((TYgetSimpleType (TYgetScalar (ty)) == T_int)
+           && (TYisAKD (ty) || TYisAKS (ty) || TYisAKV (ty)) && (TYgetDim (ty) == 1));
+    DBUG_RETURN (res);
 }
 
 /** <!--********************************************************************-->

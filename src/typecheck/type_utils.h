@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2005/07/16 12:30:50  sbs
+ * TUisIntVect added.
+ *
  * Revision 1.10  2005/06/18 13:52:03  sah
  * moved SignatureMatches and ActualArgs2Ntype from
  * create_wrapper_code to type_utils
@@ -48,6 +51,7 @@ extern node *TUrettypes2unknownAUD (node *rets);
 extern node *TUargtypes2unknownAUD (node *rets);
 extern node *TUrettypes2alpha (node *rets);
 extern node *TUrettypes2alphaAUD (node *rets);
+extern bool TUisIntVect (ntype *ty);
 extern bool TUisUniqueUserType (ntype *type);
 extern bool TUisArrayOfUser (ntype *type);
 extern bool TUisHidden (ntype *type);
