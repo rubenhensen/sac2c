@@ -1,7 +1,6 @@
 Makefile
 alloc.c
 alloc.h
-refcounting.h
 allocation.c
 allocation.h
 reuse.c
