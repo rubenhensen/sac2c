@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.108  2005/07/17 20:14:29  sbs
+ * added new phase PH_elimudt
+ *
  * Revision 3.107  2005/07/15 17:41:30  sah
  * removed interrupt.h
  *
@@ -365,6 +368,26 @@ main (int argc, char *argv[])
     PHASE_EPILOG;
 
     if (global.break_after == PH_uniquecheck)
+        goto BREAK;
+    global.compiler_phase++;
+
+    /*
+     * user-type elimination and wrapper code creation
+     */
+
+    PHASE_PROLOG;
+    NOTE_COMPILER_PHASE;
+
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_cwc, syntax_tree);
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_lac2funwc, syntax_tree);
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_ssawc, syntax_tree);
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_dfc, syntax_tree);
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_eudt, syntax_tree);
+
+    PHASE_DONE_EPILOG;
+    PHASE_EPILOG;
+
+    if (global.break_after == PH_elimudt)
         goto BREAK;
     global.compiler_phase++;
 
