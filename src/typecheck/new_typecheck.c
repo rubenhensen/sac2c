@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.79  2005/07/17 20:11:48  sbs
+ * the wrapper body creation has been moved into a separate phase now.
+ *
  * Revision 3.78  2005/07/15 17:34:50  sah
  * fixed a DBUG_PRINT
  *
@@ -113,7 +116,7 @@
 #include "shape.h"
 #include "insert_vardec.h"
 #include "create_wrappers.h"
-#include "create_wrapper_code.h"
+#include "split_wrappers.h"
 #include "new2old.h"
 #include "import_specialization.h"
 
@@ -669,19 +672,11 @@ NTCmodule (node *arg_node, info *arg_info)
      * Now, we create SAC code for all wrapper functions
      */
 
-    arg_node = CWCdoCreateWrapperCode (arg_node);
+    arg_node = SWRdoSplitWrappers (arg_node);
     if ((global.break_after == PH_typecheck)
-        && (0 == strcmp (global.break_specifier, "cwc"))) {
+        && (0 == strcmp (global.break_specifier, "swr"))) {
         goto DONE;
     }
-
-    /*
-     * Convert the wrapper function code into SSA form
-     */
-
-    arg_node = PHrunCompilerSubPhase (SUBPH_lac2funwc, arg_node);
-
-    arg_node = PHrunCompilerSubPhase (SUBPH_ssawc, arg_node);
 
 DONE:
     DBUG_RETURN (arg_node);
