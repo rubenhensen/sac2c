@@ -40,3 +40,4 @@ resolvesymboltypes.h
 dispatchfuncalls.c
 dispatchfuncalls.h
 split_wrappers.c
+split_wrappers.h
