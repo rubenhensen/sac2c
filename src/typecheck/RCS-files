@@ -39,3 +39,4 @@ resolvesymboltypes.c
 resolvesymboltypes.h
 dispatchfuncalls.c
 dispatchfuncalls.h
+split_wrappers.c
