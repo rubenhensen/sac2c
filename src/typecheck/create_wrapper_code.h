@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.10  2005/07/17 20:10:47  sbs
+ * inserts bodies only; the splitted has been outsourced to split_wrappers
+ *
  * Revision 1.9  2005/07/15 15:52:18  sah
  * splitted create_wrapper_code and dispatchfuncalls
  * introduced namespaces
@@ -40,11 +43,6 @@
 extern node *CWCdoCreateWrapperCode (node *ast);
 
 extern bool CWChasWrapperCode (node *fundef);
-extern node *CWCmodule (node *arg_node, info *arg_info);
 extern node *CWCfundef (node *arg_node, info *arg_info);
-extern node *CWCap (node *arg_node, info *arg_info);
-extern node *CWCwith (node *arg_node, info *arg_info);
-extern node *CWCgenarray (node *arg_node, info *arg_info);
-extern node *CWCfold (node *arg_node, info *arg_info);
 
 #endif /* _SAC_CREATE_WRAPPER_CODE_H_ */

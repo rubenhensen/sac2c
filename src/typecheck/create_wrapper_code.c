@@ -1,150 +1,14 @@
 /*
  *
  * $Log$
+ * Revision 1.43  2005/07/17 20:10:47  sbs
+ * inserts bodies only; the splitted has been outsourced to split_wrappers
+ *
  * Revision 1.42  2005/07/15 15:52:18  sah
  * splitted create_wrapper_code and dispatchfuncalls
  * introduced namespaces
  *
- * Revision 1.41  2005/06/18 13:52:03  sah
- * moved SignatureMatches and ActualArgs2Ntype from
- * create_wrapper_code to type_utils
- *
- * Revision 1.40  2005/06/14 23:41:29  sbs
- * functions with errorneous instances only
- * will lead to type errors now as well.
- *
- * Revision 1.39  2005/06/14 09:55:10  sbs
- * support for bottom types integrated.
- *
- * Revision 1.38  2005/06/08 19:17:09  sbs
- * adjusted the call of TYsplitwrappers
- *
- * Revision 1.37  2005/05/28 09:00:49  sbs
- * CompareSignature did use (AHHEMMMM) old types still, i.e.,
- * no backlink correction to wrappers could work if more than
- * one base type wrappers for a single function existed....
- *
- * Revision 1.36  2005/05/26 20:33:01  sah
- * somehow this is fucked up beyond all recoginition!
- * one should be very careful when deleting functions
- * within the ast as they might be used somewhere!
- * changed the code so that only the generic wrappers
- * are deleted as these are guaranteed to be not used
- * anymore.
- *
- * Revision 1.35  2005/05/24 08:24:27  sbs
- * some DBUG_PRINT etended.
- *
- * Revision 1.34  2005/05/23 20:42:27  sbs
- * now wrappers are created for local functions only.
- * ,
- *
- * Revision 1.33  2005/04/05 10:14:13  sah
- * fixed traversal while splitting wrappers
- *
- * Revision 1.32  2005/03/04 21:21:42  cg
- * Wrapper functions are no longer marked 'inline' since they
- * are no longer intended to be inlined.
- *
- * Revision 1.31  2005/01/11 14:20:44  cg
- * Converted output generation from Error.h to ctinfo.c
- *
- * Revision 1.30  2004/12/09 00:39:41  sbs
- * bug in CWCfold
- *
- * Revision 1.29  2004/12/06 17:29:04  sbs
- * removal of generic wrappers changed. Now there should be no zombie funs no more!
- * TUreplaceRettypes is now non-destructive!
- *
- * Revision 1.28  2004/11/27 02:11:57  jhb
- * fixed bug with header and c-file functions-declaration
- *
- * Revision 1.27  2004/11/25 17:52:55  sbs
- * compiles
- *
- * Revision 1.26  2004/11/24 17:42:48  sbs
- * not yet
- *
- * Revision 1.25  2004/11/19 10:15:50  sah
- * for objinit funs no wrapper is built
- *
- * Revision 1.24  2004/11/10 19:35:09  sbs
- * INFO_CWC_WITH now is stacked properly in CWCnwith...
- *
- * Revision 1.23  2004/11/07 18:12:48  sah
- * added some dbug statements
- *
- * Revision 1.22  2004/09/27 19:08:15  sbs
- * sharing of FUNDEF_RET_TYPEs eliminated when extracting return types
- * from the split wrappers using TYgetWrapperRetType
- *
- * Revision 1.21  2004/08/26 18:12:47  sbs
- * INFO_CWC_WITH added, CWCwith added,
- * CorrectFundefPointer signature changed (arg_types instead of args)
- * in order to be able to select the CORRECT version of foldfuns
- * => bug 48.
- *
- * Revision 1.20  2004/07/30 17:29:21  sbs
- * switch to new INFO structure
- * PHASE I
- *
- * Revision 1.19  2004/03/05 12:04:13  sbs
- * Now, the modified wrappers will be inserted into the fundef chain correctly 8-)
- *
- * Revision 1.18  2004/02/20 08:14:00  mwe
- * now functions with and without body are separated
- * changed tree traversal (added traverse of MODULE_FUNDECS)
- *
- * Revision 1.17  2003/11/18 17:45:42  dkr
- * CWCwithop(): all node sons are traversed now
- *
- * Revision 1.16  2003/05/30 16:58:05  dkr
- * WrapperCodeIsNeeded() and WrapperCodeIsPossible() added
- *
- * Revision 1.15  2003/05/30 15:10:13  dkr
- * InsertWrapperCode() modified: wrapper code is build for all
- * non-var-args functions now,
- * bug in CorrectFundefPointer() fixed.
- *
- * Revision 1.14  2003/05/29 14:39:09  dkr
- * bug in CorrectFundefPointer() fixed
- *
- * Revision 1.13  2003/05/29 12:44:48  dkr
- * SearchWrapper() renamed into CorrectFundefPointer()
- *
- * Revision 1.12  2002/10/31 19:46:26  dkr
- * CorrectFundef() renamed into SearchWrapper()
- *
- * Revision 1.11  2002/10/30 16:11:35  dkr
- * trivial wrappers are no longer built but dispatched statically
- *
- * Revision 1.10  2002/10/30 13:23:59  sbs
- * handling of dot args introduced.
- *
- * Revision 1.9  2002/10/18 14:33:17  sbs
- * some DBUG output added and some FLAG handling of freshly created N_id nodes
- * added.
- *
- * Revision 1.8  2002/09/05 14:45:55  dkr
- * CWCwithop() added
- *
- * Revision 1.7  2002/09/03 18:54:41  dkr
- * this modul is complete now :-)
- *
- * Revision 1.6  2002/08/28 11:36:05  dkr
- * SignatureMatches() added
- *
- * Revision 1.5  2002/08/15 21:27:50  dkr
- * MODULE_WRAPPERFUNS added (not used yet ...)
- *
- * Revision 1.4  2002/08/13 15:59:09  dkr
- * some more cwc stuff added (not finished yet)
- *
- * Revision 1.3  2002/08/09 14:50:53  dkr
- * CWCap added
- *
- * Revision 1.2  2002/08/09 13:15:20  dkr
- * CWCmodul, CWCfundef added
+ * ... [eliminated] .....
  *
  * Revision 1.1  2002/08/09 13:00:02  dkr
  * Initial revision
@@ -159,7 +23,6 @@
 #include "internal_lib.h"
 #include "dbug.h"
 #include "ctinfo.h"
-#include "LookUpTable.h"
 #include "traverse.h"
 #include "free.h"
 #include "DupTree.h"
@@ -169,201 +32,15 @@
 #include "ct_fun.h"
 #include "namespaces.h"
 
-/*******************************************************************************
- *
- *
- */
-
-/**
- * INFO structure
- */
-struct INFO {
-    int travno;
-    lut_t *wrapperfuns;
-    node *with;
-};
-
-/**
- * INFO macros
- */
-#define INFO_CWC_TRAVNO(n) ((n)->travno)
-#define INFO_CWC_WRAPPERFUNS(n) ((n)->wrapperfuns)
-#define INFO_CWC_WITH(n) ((n)->with)
-
-/**
- * INFO functions
- */
-static info *
-MakeInfo ()
-{
-    info *result;
-
-    DBUG_ENTER ("MakeInfo");
-
-    result = ILIBmalloc (sizeof (info));
-
-    INFO_CWC_TRAVNO (result) = 0;
-    INFO_CWC_WRAPPERFUNS (result) = NULL;
-
-    DBUG_RETURN (result);
-}
-
-static info *
-FreeInfo (info *info)
-{
-    DBUG_ENTER ("FreeInfo");
-
-    info = ILIBfree (info);
-
-    DBUG_RETURN (info);
-}
-
 /**
  **
  ** Function:
- **   node *CreateWrapperCode( node *ast)
+ **   node *CWCdoCreateWrapperCode( node *ast)
  **
  ** Description:
- **   Modifies all wrappers of the AST in a way that they represent correct
- **   SAC functions and that they contain correct code for dispatching
- **   overloaded functions at runtime. In more detail:
- **     - Replaces generic wrappers (valid for more than a single simpletype)
- **       by individual wrappers for each simpletype.
  *      - Generates the bodies of the wrapper functions.
- **   Moreover, all references to replaced wrapper functions are corrected
- **   accordingly:
- **     - AP_FUNDEF,
- **     - NWITHOP_FUNDEF.
  **
  **/
-
-/******************************************************************************
- *
- * Function:
- *   node *CWCmodule( node *arg_node, info *arg_info);
- *
- * Description:
- *
- *
- ******************************************************************************/
-
-node *
-CWCmodule (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("CWCmodule");
-
-    DBUG_ASSERT ((MODULE_WRAPPERFUNS (arg_node) != NULL),
-                 "MODULE_WRAPPERFUNS not found!");
-    INFO_CWC_WRAPPERFUNS (arg_info) = MODULE_WRAPPERFUNS (arg_node);
-
-    /*
-     * create separate wrapper function for all base type constellations
-     * As all wrappers are in the FUNS, we have to traverse these only!
-     */
-    INFO_CWC_TRAVNO (arg_info) = 1;
-
-    if (MODULE_FUNS (arg_node) != NULL) {
-        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
-    }
-
-    /*
-     * adjust AP_FUNDEF pointers
-     * As only FUNS may contain N_ap's we have to traverse these only!
-     */
-    INFO_CWC_TRAVNO (arg_info) = 2;
-    if (MODULE_FUNS (arg_node) != NULL) {
-        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
-    }
-
-    /*
-     * remove non-used and zombie funs!
-     */
-    INFO_CWC_TRAVNO (arg_info) = 3;
-
-    if (MODULE_FUNDECS (arg_node) != NULL) {
-        MODULE_FUNDECS (arg_node) = TRAVdo (MODULE_FUNDECS (arg_node), arg_info);
-    }
-
-    if (MODULE_FUNS (arg_node) != NULL) {
-        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
-    }
-
-    MODULE_WRAPPERFUNS (arg_node) = LUTremoveLut (MODULE_WRAPPERFUNS (arg_node));
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * Function:
- *   node *SplitWrapper( node *fundef)
- *
- * Description:
- *
- *
- ******************************************************************************/
-
-static node *
-SplitWrapper (node *fundef)
-{
-    ntype *old_type, *tmp_type;
-    ntype *new_type, *new_rets;
-    ntype *bottom = NULL;
-    int pathes_remaining;
-    node *new_fundef;
-    node *new_fundefs = NULL;
-#ifndef DBUG_OFF
-    char *tmp_str;
-#endif
-
-    DBUG_ENTER ("SplitWrapper");
-
-    old_type = FUNDEF_WRAPPERTYPE (fundef);
-    tmp_type = TYcopyType (old_type);
-    FUNDEF_WRAPPERTYPE (fundef) = NULL;
-    DBUG_PRINT ("CWC", ("splitting wrapper of %s", CTIitemName (fundef)));
-
-    do {
-        new_fundef = DUPdoDupNode (fundef);
-        new_type = TYsplitWrapperType (tmp_type, &pathes_remaining);
-        if (pathes_remaining == 1) {
-            tmp_type = NULL;
-        }
-        DBUG_EXECUTE ("CWC", tmp_str = TYtype2String (new_type, TRUE, 0););
-        DBUG_PRINT ("CWC",
-                    ("  new wrapper split off: \n%s : " F_PTR, tmp_str, new_fundef));
-        DBUG_EXECUTE ("CWC", tmp_str = ILIBfree (tmp_str););
-        DBUG_EXECUTE ("CWC", tmp_str = TYtype2String (tmp_type, TRUE, 0););
-        DBUG_PRINT ("CWC", ("  remaining wrapper : \n%s : ", tmp_str));
-        DBUG_EXECUTE ("CWC", tmp_str = ILIBfree (tmp_str););
-
-        FUNDEF_WRAPPERTYPE (new_fundef) = new_type;
-        new_rets = TYgetWrapperRetType (new_type);
-        bottom = TYgetBottom (new_rets);
-        if (bottom != NULL) {
-            CTIerrorLine (global.linenum, "All instances of \"%s\" contain type errors",
-                          FUNDEF_NAME (new_fundef));
-            CTIabortOnBottom (TYgetBottomError (bottom));
-        }
-
-        FUNDEF_RETS (new_fundef) = TUreplaceRetTypes (FUNDEF_RETS (new_fundef), new_rets);
-
-        FUNDEF_ARGS (new_fundef)
-          = TYcorrectWrapperArgTypes (FUNDEF_ARGS (new_fundef), new_type);
-
-        /*
-         * mark new wrapper as needed, so it can be easily distinguished
-         * from the generic ones
-         */
-        FUNDEF_ISNEEDED (new_fundef) = TRUE;
-
-        FUNDEF_NEXT (new_fundef) = new_fundefs;
-        new_fundefs = new_fundef;
-    } while (pathes_remaining > 1);
-    FUNDEF_WRAPPERTYPE (fundef) = old_type;
-
-    DBUG_RETURN (new_fundefs);
-}
 
 /** <!--********************************************************************-->
  *
@@ -468,81 +145,6 @@ InsertWrapperCode (node *fundef)
          * insert function body
          */
         FUNDEF_BODY (fundef) = TBmakeBlock (assigns, TCappendVardec (vardecs1, vardecs2));
-
-        /*
-         * mark wrapper function as a inline function
-         *
-         * FUNDEF_ISINLINE( fundef) = TRUE;
-         *
-         * Inlining of wrapper functions proved unsatisfactory.
-         */
-
-#if 0
-    /*
-     * mark wrapper function as already typechecked. If the
-     * wrapper is imported later on, it is not typechecked 
-     * again (as there is no need to typecheck wrappers ;) )
-     *
-     * TODO: make TCSTAT type available
-     */
-    FUNDEF_TCSTAT( fundef) = 3;
-#endif
-    }
-
-    DBUG_RETURN (fundef);
-}
-
-/******************************************************************************
- *
- * Function:
- *   node *CorrectFundefPointer( node *fundef, char *funname, ntype *arg_types)
- *
- * Description:
- *
- *
- ******************************************************************************/
-
-node *
-CorrectFundefPointer (node *fundef, const namespace_t *funns, const char *funname,
-                      ntype *arg_types)
-{
-    DBUG_ENTER ("CorrectFundefPointer");
-
-    DBUG_ASSERT ((fundef != NULL), "fundef not found!");
-    if (FUNDEF_ISWRAPPERFUN (fundef)) {
-        /*
-         * 'fundef' points to an generic wrapper function
-         *    -> search the specific wrapper function
-         */
-        DBUG_PRINT ("CWC", ("correcting fundef for %s", CTIitemName (fundef)));
-
-        if (TYgetBottom (arg_types) == NULL) {
-            /*
-             * -> search for correct wrapper
-             */
-            DBUG_PRINT ("CWC", ("  search for wrapper"));
-            do {
-                fundef = FUNDEF_NEXT (fundef);
-                DBUG_ASSERT (((fundef != NULL) && NSequals (funns, FUNDEF_NS (fundef))
-                              && ILIBstringCompare (funname, FUNDEF_NAME (fundef))
-                              && FUNDEF_ISWRAPPERFUN (fundef)),
-                             "no appropriate wrapper function found!");
-
-                DBUG_ASSERT ((!FUNDEF_ISZOMBIE (fundef)), "zombie found");
-            } while (!TUsignatureMatches (FUNDEF_ARGS (fundef), arg_types));
-            DBUG_PRINT ("CWC", ("  correct wrapper found"));
-        } else {
-            /**
-             * as we are dealing with a bottom argument, we need to select any one
-             * of the non-generic wrappers. Since at least one of them will follow
-             * the generic one directly, we can choose that one.
-             */
-            fundef = FUNDEF_NEXT (fundef);
-            DBUG_ASSERT (((fundef != NULL) && NSequals (funns, FUNDEF_NS (fundef))
-                          && ILIBstringCompare (funname, FUNDEF_NAME (fundef))
-                          && FUNDEF_ISWRAPPERFUN (fundef)),
-                         "no appropriate wrapper function found!");
-        }
     }
 
     DBUG_RETURN (fundef);
@@ -558,241 +160,20 @@ CorrectFundefPointer (node *fundef, const namespace_t *funns, const char *funnam
  *
  ******************************************************************************/
 
-static node *
-FundefBuildWrappers (node *arg_node, info *arg_info)
-{
-    node *new_fundef;
-    node *new_fundefs;
-
-    DBUG_ENTER ("FundefBuildWrappers");
-
-    if (FUNDEF_ISWRAPPERFUN (arg_node)) {
-        DBUG_ASSERT ((FUNDEF_BODY (arg_node) == NULL),
-                     "wrapper function has already a body!");
-
-        /*
-         * build a separate fundef for each base type constellation
-         */
-        new_fundefs = SplitWrapper (arg_node);
-
-        /*
-         * build code for all wrapper functions
-         */
-        new_fundef = new_fundefs;
-        DBUG_ASSERT ((new_fundef != NULL), "no wrapper functions found!");
-        do {
-            new_fundef = InsertWrapperCode (new_fundef);
-            new_fundef = FUNDEF_NEXT (new_fundef);
-        } while (new_fundef != NULL);
-
-        if (FUNDEF_NEXT (arg_node) != NULL) {
-            FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-        }
-
-        /*
-         * insert new wrapper functions after the generic wrapper
-         * the generic wrapper is freed later on
-         */
-        new_fundefs = TCappendFundef (new_fundefs, FUNDEF_NEXT (arg_node));
-        DBUG_ASSERT ((FUNDEF_BODY (arg_node) == NULL),
-                     "body of generic wrapper function has not been kept empty");
-        FUNDEF_NEXT (arg_node) = new_fundefs;
-
-        /*
-         * mark the old generic wrapper as not needed
-         */
-        FUNDEF_ISNEEDED (arg_node) = FALSE;
-    } else {
-        /*
-         * if this is no wrapper function, just skip to the next function
-         */
-        if (FUNDEF_NEXT (arg_node) != NULL) {
-            FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-        }
-    }
-    DBUG_RETURN (arg_node);
-}
-
-static node *
-FundefAdjustPointers (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("FundefAdjustPointers");
-
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-    }
-
-    if ((!FUNDEF_ISWRAPPERFUN (arg_node)) && (FUNDEF_BODY (arg_node) != NULL)) {
-        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-static node *
-FundefRemoveGarbage (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("FundefRemoveGarbage");
-
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-    }
-
-    if ((FUNDEF_ISWRAPPERFUN (arg_node)) && (!FUNDEF_ISNEEDED (arg_node))) {
-        /*
-         * remove statically dispatchable wrapper function and all generic wrappers
-         */
-        arg_node = FREEdoFreeNode (arg_node);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
 node *
 CWCfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CWCfundef");
 
-    if (INFO_CWC_TRAVNO (arg_info) == 1) {
-        /*
-         * first traversal -> build wrapper functions and their bodies
-         */
-        arg_node = FundefBuildWrappers (arg_node, arg_info);
-    } else if (INFO_CWC_TRAVNO (arg_info) == 2) {
-        /*
-         * second traversal -> adjust all AP_FUNDEF pointers
-         *
-         * This is needed if the original wrapper function was valid for more than
-         * a single base type.
-         */
-        arg_node = FundefAdjustPointers (arg_node, arg_info);
-    } else {
-        DBUG_ASSERT ((INFO_CWC_TRAVNO (arg_info) == 3), "illegal INFO_CWC_TRAVNO found!");
-        /*
-         * third traversal -> remove zombies and empty wrappers
-         */
+    if (FUNDEF_ISWRAPPERFUN (arg_node)) {
+        DBUG_ASSERT ((FUNDEF_BODY (arg_node) == NULL),
+                     "wrapper function has already a body!");
 
-        arg_node = FundefRemoveGarbage (arg_node, arg_info);
+        arg_node = InsertWrapperCode (arg_node);
     }
 
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * Function:
- *   node *CWCap( node *arg_node, info *arg_info);
- *
- * Description:
- *
- *
- ******************************************************************************/
-
-node *
-CWCap (node *arg_node, info *arg_info)
-{
-    ntype *arg_types;
-
-    DBUG_ENTER ("CWCap");
-
-    if (AP_ARGS (arg_node) != NULL) {
-        AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
-    }
-
-    DBUG_PRINT ("CWC",
-                ("Ap of function %s::%s pointed to " F_PTR ".",
-                 NSgetName (AP_NS (arg_node)), AP_NAME (arg_node), AP_FUNDEF (arg_node)));
-
-    arg_types = TUactualArgs2Ntype (AP_ARGS (arg_node));
-    AP_FUNDEF (arg_node) = CorrectFundefPointer (AP_FUNDEF (arg_node), AP_NS (arg_node),
-                                                 AP_NAME (arg_node), arg_types);
-
-    DBUG_PRINT ("CWC",
-                ("Ap of function %s::%s now points to " F_PTR ".",
-                 NSgetName (AP_NS (arg_node)), AP_NAME (arg_node), AP_FUNDEF (arg_node)));
-    arg_types = TYfreeType (arg_types);
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn  node *CWCwith( node *arg_node, info *arg_info)
- *
- * @brief inserts actual with node into the info structure
- *
- ******************************************************************************/
-
-node *
-CWCwith (node *arg_node, info *arg_info)
-{
-    node *old_with;
-    DBUG_ENTER ("CWCwith");
-
-    old_with = INFO_CWC_WITH (arg_info);
-    INFO_CWC_WITH (arg_info) = arg_node;
-
-    WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
-    WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
-    WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
-
-    INFO_CWC_WITH (arg_info) = old_with;
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * Function:
- *   node *CWCgenarray( node *arg_node, info *arg_info)
- *
- * Description:
- *
- *
- ******************************************************************************/
-
-node *
-CWCgenarray (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("CWCgenarrray");
-
-    GENARRAY_SHAPE (arg_node) = TRAVdo (GENARRAY_SHAPE (arg_node), arg_info);
-    if (GENARRAY_DEFAULT (arg_node) != NULL) {
-        GENARRAY_DEFAULT (arg_node) = TRAVdo (GENARRAY_DEFAULT (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-node *
-CWCfold (node *arg_node, info *arg_info)
-{
-    ntype *neutr_type, *body_type;
-    ntype *arg_type, *arg_types;
-
-    DBUG_ENTER ("CWCfold");
-
-    if (FOLD_FUN (arg_node) != NULL) {
-        FOLD_NEUTRAL (arg_node) = TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
-
-        neutr_type
-          = TYfixAndEliminateAlpha (AVIS_TYPE (ID_AVIS (FOLD_NEUTRAL (arg_node))));
-        body_type = TYfixAndEliminateAlpha (
-          AVIS_TYPE (ID_AVIS (WITH_CEXPR (INFO_CWC_WITH (arg_info)))));
-
-        arg_type = TYlubOfTypes (neutr_type, body_type);
-        arg_types = TYmakeProductType (2, arg_type, TYcopyType (arg_type));
-
-        FOLD_FUNDEF (arg_node)
-          = CorrectFundefPointer (FOLD_FUNDEF (arg_node), FOLD_NS (arg_node),
-                                  FOLD_FUN (arg_node), arg_types);
-        arg_types = TYfreeType (arg_types);
-        body_type = TYfreeType (body_type);
-        neutr_type = TYfreeType (neutr_type);
-    } else {
-        if (FOLD_NEUTRAL (arg_node) != NULL) {
-            FOLD_NEUTRAL (arg_node) = TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
-        }
+    if (FUNDEF_NEXT (arg_node) != NULL) {
+        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -826,7 +207,7 @@ CWChasWrapperCode (node *fundef)
 /******************************************************************************
  *
  * Function:
- *   node *CreateWrapperCode( node *ast)
+ *   node *CWCdoCreateWrapperCode( node *ast)
  *
  * Description:
  *
@@ -842,9 +223,8 @@ CWCdoCreateWrapperCode (node *ast)
 
     TRAVpush (TR_cwc);
 
-    info_node = MakeInfo ();
+    info_node = NULL;
     ast = TRAVdo (ast, info_node);
-    info_node = FreeInfo (info_node);
 
     TRAVpop ();
 
