@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.224  2005/07/17 21:14:59  sah
+ * dummy fun is created for empty modules
+ *
  * Revision 3.223  2005/07/15 15:57:02  sah
  * introduced namespaces
  *
@@ -987,19 +990,6 @@ PRTmodule (node *arg_node, info *arg_info)
             TRAVdo (MODULE_OBJS (arg_node), arg_info);
         }
 
-        /*
-         *  Maybe there's nothing to compile in this module because all functions
-         *  deal with shape-independent arrays which are removed after writing
-         *  the SIB.
-         *
-         *  Unfortunately, things are not as easy as they should be.
-         *  If there is no symbol declared in this file then gcc creates an
-         *  object file which does not contain any objects. This causes ranlib
-         *  not (!!) to produce an empty symbol table, but to produce no symbol
-         *  table at all. Finding no symbol table lets the linker give some
-         *  nasty warnings. These are suppressed by the above dummy symbol.
-         */
-
         fclose (global.outfile);
 
         if (NULL != MODULE_FUNS (arg_node)) {
@@ -1009,6 +999,20 @@ PRTmodule (node *arg_node, info *arg_info)
                                                         * These files are opened and closed in PRTfundef().
                                                         */
         }
+
+        /*
+         * finally create a dummy funfile, so we can rely on one to exist
+         * when using wildcards like fun*.c
+         */
+
+        global.outfile = FMGRwriteOpen ("%s/fundummy.c", global.tmp_dirname);
+        fprintf (global.outfile, "#include \"header.h\"\n\n");
+        fprintf (global.outfile,
+                 "int SAC__%s__another_dummy_value_which_is_completely_useless"
+                 " = 0;\n\n",
+                 NSgetName (MODULE_NAMESPACE (arg_node)));
+        fclose (global.outfile);
+
     } else {
         switch (global.filetype) {
         case F_modimp:
