@@ -498,7 +498,7 @@
           <node name="Fold" />
         </travuser>
       </traversal>
-      <traversal id="CWC" name="Create Wrapper Code" default="sons" include="create_wrapper_code.h" >
+      <traversal id="SWR" name="Split Wrappers" default="sons" include="split_wrappers.h" >
         <travuser>
           <node name="Module" />
           <node name="Fundef" />
@@ -506,6 +506,11 @@
           <node name="With" />
           <node name="Genarray" />
           <node name="Fold" />
+        </travuser>
+      </traversal>
+      <traversal id="CWC" name="Create Wrapper Code" default="sons" include="create_wrapper_code.h" >
+        <travuser>
+          <node name="Fundef" />
         </travuser>
       </traversal>
       <traversal id="DFC" name="Dispatch Funcalls" default="sons" include="dispatchfuncalls.h" >
