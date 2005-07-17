@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.97  2005/07/17 16:41:56  sah
+ * debugging code generation for user defined types
+ *
  * Revision 3.96  2005/07/17 16:02:44  sah
  * enhanced wrapper code creation to work
  * with user defined types.
@@ -5700,6 +5703,7 @@ static node *
 BuildDimAssign (node *arg, node **new_vardecs)
 {
     node *assign;
+    node *preassign = NULL;
     node *dim;
     ntype *type;
 
@@ -5730,7 +5734,14 @@ BuildDimAssign (node *arg, node **new_vardecs)
         ntype *basetype = UTgetBaseType (TYgetUserType (type));
 
         if (TYisArray (basetype)) {
-            dim = TCmakePrf2 (F_sub_SxS, TCmakePrf1 (F_dim, TBmakeId (ARG_AVIS (arg))),
+            preassign
+              = TBmakeAssign (TBmakeLet (BuildTmpIds (TYmakeAKS (TYmakeSimpleType (T_int),
+                                                                 SHcreateShape (0)),
+                                                      new_vardecs),
+                                         TCmakePrf1 (F_dim, TBmakeId (ARG_AVIS (arg)))),
+                              NULL);
+
+            dim = TCmakePrf2 (F_sub_SxS, TBmakeId (IDS_AVIS (ASSIGN_LHS (preassign))),
                               TBmakeNum (TYgetDim (basetype)));
         } else {
             dim = TBmakePrf (F_dim, TBmakeExprs (TBmakeId (ARG_AVIS (arg)), NULL));
@@ -5744,6 +5755,11 @@ BuildDimAssign (node *arg, node **new_vardecs)
                                                    new_vardecs),
                                       dim),
                            NULL);
+
+    if (preassign != NULL) {
+        ASSIGN_NEXT (preassign) = assign;
+        assign = preassign;
+    }
 
     DBUG_RETURN (assign);
 }
@@ -5801,9 +5817,9 @@ static node *
 BuildCondAssign (node *prf_ass, prf rel_prf, node *expr, node *then_ass, node *else_ass,
                  node **new_vardecs)
 {
-    node *prf_ids;
     prf prf;
     node *assigns;
+    node *prf_ids;
     node *id;
 
     DBUG_ENTER ("BuildCondAssign");
@@ -5816,10 +5832,20 @@ BuildCondAssign (node *prf_ass, prf rel_prf, node *expr, node *then_ass, node *e
         assigns = then_ass;
         else_ass = FREEdoFreeTree (else_ass);
     } else {
-        prf_ids = ASSIGN_LHS (prf_ass);
+        /*
+         * first go to the final assign in the given
+         * assigns chain (as a dim on a udt consists of
+         * more than one operation)
+         */
+        while (ASSIGN_NEXT (prf_ass) != NULL) {
+            prf_ass = ASSIGN_NEXT (prf_ass);
+        }
+
         prf = PRF_PRF (ASSIGN_RHS (prf_ass));
+        prf_ids = ASSIGN_LHS (prf_ass);
 
         switch (prf) {
+        case F_sub_SxS: /* last op in dim on udt */
         case F_dim: {
             node *prf2;
             node *prf_ids2;
@@ -5841,6 +5867,7 @@ BuildCondAssign (node *prf_ass, prf rel_prf, node *expr, node *then_ass, node *e
                                             NULL));
         } break;
 
+        case F_drop_SxV: /* last op of shape on udts */
         case F_shape: {
             node *prf2, *prf3, *prf4;
             node *flt_prf2, *flt_prf3, *flt_prf4;
