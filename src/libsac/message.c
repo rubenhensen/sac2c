@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2005/07/17 13:29:25  sah
+ * modified printShape
+ *
  * Revision 3.6  2005/06/23 09:04:49  sah
  * implemented SAC_RuntimeError_Mult and SAC_PrintShape
  *
@@ -233,6 +236,7 @@ SAC_PrintShape (SAC_array_descriptor_t desc)
     char bufB[MAX_SHAPE_SIZE];
     char *from = bufA;
     char *to = bufB;
+    char *res;
     int written;
 
     from[0] = '[';
@@ -258,7 +262,10 @@ SAC_PrintShape (SAC_array_descriptor_t desc)
 
     snprintf (to, MAX_SHAPE_SIZE, "%s]", from);
 
-    return (to);
+    res = malloc (strlen (to) + 1);
+    strcpy (res, to);
+
+    return (res);
 }
 
 void
