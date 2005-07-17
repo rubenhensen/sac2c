@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.96  2005/07/17 16:02:44  sah
+ * enhanced wrapper code creation to work
+ * with user defined types.
+ *
  * Revision 3.95  2005/07/16 19:06:54  sbs
  * some DBUG output added.
  *
@@ -5696,16 +5700,50 @@ static node *
 BuildDimAssign (node *arg, node **new_vardecs)
 {
     node *assign;
+    node *dim;
+    ntype *type;
 
     DBUG_ENTER ("BuildDimAssign");
 
-    assign
-      = TBmakeAssign (TBmakeLet (BuildTmpIds (TYmakeAKS (TYmakeSimpleType (T_int),
-                                                         SHcreateShape (0)),
-                                              new_vardecs),
-                                 TBmakePrf (F_dim, TBmakeExprs (TBmakeId (ARG_AVIS (arg)),
-                                                                NULL))),
-                      NULL);
+    /*
+     * the generated dim statement has to calculate the
+     * dimensionality of the given argument A. In case of
+     * a built in type this can be done by
+     *
+     * assign = _dim_( A)
+     *
+     * in case of a user defined type, _dim_ returns the
+     * dimensionality of the inner type. Thus the dimensionality
+     * of A wrt. the user defined type can be calculated by
+     *
+     * assign = _sub_SxS( _dim_( A), _dim_( base( A)))
+     *
+     * where _dim_( base( A)) is statically known
+     */
+    type = AVIS_TYPE (ARG_AVIS (arg));
+
+    if (TYisArray (type)) {
+        type = TYgetScalar (type);
+    }
+
+    if (TYisUser (type)) {
+        ntype *basetype = UTgetBaseType (TYgetUserType (type));
+
+        if (TYisArray (basetype)) {
+            dim = TCmakePrf2 (F_sub_SxS, TCmakePrf1 (F_dim, TBmakeId (ARG_AVIS (arg))),
+                              TBmakeNum (TYgetDim (basetype)));
+        } else {
+            dim = TBmakePrf (F_dim, TBmakeExprs (TBmakeId (ARG_AVIS (arg)), NULL));
+        }
+    } else {
+        dim = TBmakePrf (F_dim, TBmakeExprs (TBmakeId (ARG_AVIS (arg)), NULL));
+    }
+
+    assign = TBmakeAssign (TBmakeLet (BuildTmpIds (TYmakeAKS (TYmakeSimpleType (T_int),
+                                                              SHcreateShape (0)),
+                                                   new_vardecs),
+                                      dim),
+                           NULL);
 
     DBUG_RETURN (assign);
 }
@@ -5714,14 +5752,46 @@ static node *
 BuildShapeAssign (node *arg, node **new_vardecs)
 {
     node *assign;
+    node *shape;
+    ntype *type;
 
     DBUG_ENTER ("BuildShapeAssign");
 
+    /*
+     * the generated shape statement has to calculate the
+     * shape of the given argument A. In case of a built-in
+     * type this can be done by
+     *
+     * assign = _shape_( A)
+     *
+     * In case of a user-defined type, the prf _shape_
+     * computes the shape of the inner type. Thus to
+     * yield the shape of the udt:
+     *
+     * assign = drop( - _dim_( base( A)), _shape_( A))
+     */
+    type = AVIS_TYPE (ARG_AVIS (arg));
+
+    if (TYisArray (type)) {
+        type = TYgetScalar (type);
+    }
+
+    if (TYisUser (type)) {
+        ntype *basetype = UTgetBaseType (TYgetUserType (type));
+
+        if (TYisArray (basetype)) {
+            shape = TCmakePrf2 (F_drop_SxV, TBmakeNum (-TYgetDim (basetype)),
+                                TCmakePrf1 (F_shape, TBmakeId (ARG_AVIS (arg))));
+        } else {
+            shape = TBmakePrf (F_shape, TBmakeExprs (TBmakeId (ARG_AVIS (arg)), NULL));
+        }
+    } else {
+        shape = TBmakePrf (F_shape, TBmakeExprs (TBmakeId (ARG_AVIS (arg)), NULL));
+    }
+
     assign = TBmakeAssign (TBmakeLet (BuildTmpIds (TYmakeAUDGZ (TYmakeSimpleType (T_int)),
                                                    new_vardecs),
-                                      TBmakePrf (F_shape,
-                                                 TBmakeExprs (TBmakeId (ARG_AVIS (arg)),
-                                                              NULL))),
+                                      shape),
                            NULL);
 
     DBUG_RETURN (assign);
