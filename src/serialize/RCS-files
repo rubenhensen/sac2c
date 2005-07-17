@@ -10,3 +10,4 @@ serialize_stack.h
 serialize_symboltable.c
 serialize_symboltable.h
 serialize_filenames.c
+serialize_filenames.h
