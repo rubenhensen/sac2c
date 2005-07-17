@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.3  2005/07/17 11:46:54  sah
+  cleanup
+
   Revision 1.2  2004/11/23 22:50:27  sah
   COMPILES!
 
@@ -80,6 +83,7 @@ version="1.0">
 #include "serialize_attribs.h"
 #include "serialize_info.h"
 #include "serialize_stack.h"
+#include "serialize_filenames.h"
 #include "tree_basic.h"
 #include "traverse.h"
 #include "internal_lib.h"
@@ -128,14 +132,14 @@ version="1.0">
   <xsl:value-of select="@name"/>
   <xsl:value-of select="' node&quot;));'" />
   <!-- print start of block -->
-  <xsl:value-of select="'fprintf( INFO_SER_FILE( arg_info), &quot;, SHLPmakeNode( %d, %d, \&quot;%s\&quot; &quot;, '" />
+  <xsl:value-of select="'fprintf( INFO_SER_FILE( arg_info), &quot;, SHLPmakeNode( %d, %d, FILENAME( %d) &quot;, '" />
   <!-- generate nodetype argument -->
   <xsl:call-template name="name-to-nodeenum">
     <xsl:with-param name="name">
       <xsl:value-of select="@name" />
     </xsl:with-param>
   </xsl:call-template>
-  <xsl:value-of select="', NODE_LINE( arg_node), NODE_FILE( arg_node));'" /> 
+  <xsl:value-of select="', NODE_LINE( arg_node), SFNgetId( NODE_FILE( arg_node)));'" /> 
   <!-- print generators of all arguments -->
   <xsl:apply-templates select="." mode="gen-values"/>
   <!-- print end of block -->

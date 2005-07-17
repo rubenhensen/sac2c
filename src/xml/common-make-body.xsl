@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.6  2005/07/17 11:46:54  sah
+  cleanup
+
   Revision 1.5  2004/11/29 10:54:09  ktr
   added newline.
 
@@ -89,10 +92,10 @@ version="1.0">
   <xsl:value-of select="';'" />
   <!-- set lineno -->
   <xsl:value-of select="'DBUG_PRINT( &quot;MAKE&quot;, (&quot;setting lineno to %d&quot;, global.linenum));'"/>
-  <xsl:value-of select="'this->lineno = global.linenum;'" />
+  <xsl:value-of select="'NODE_LINE( this) = global.linenum;'" />
   <!-- set filename -->
   <xsl:value-of select="'DBUG_PRINT( &quot;MAKE&quot;, (&quot;setting filename to %s&quot;, global.filename));'"/>
-  <xsl:value-of select="'this->src_file = global.filename;'" />
+  <xsl:value-of select="'NODE_FILE( this) = global.filename;'" />
   <!-- assign sons and attributes a value -->
   <xsl:apply-templates select="sons/son" mode="make-body"/>
   <xsl:apply-templates select="attributes/attribute" mode="make-body"/>
