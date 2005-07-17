@@ -1,13 +1,16 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2005/07/17 20:34:18  sah
+ * fixed an include
+ *
  * Revision 1.1  2005/07/17 20:10:17  sbs
  * Initial revision
  *
  *
  */
 
-#include "create_wrapper_code.h"
+#include "split_wrappers.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "internal_lib.h"
