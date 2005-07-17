@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2005/07/17 20:13:33  sbs
+ * DFC and RC moved into separate phase now.
+ *
  * Revision 1.12  2005/07/16 21:13:51  sbs
  * moved dispatch and rmcasts here
  *
@@ -72,26 +75,6 @@ WLEdoWlEnhancement (node *syntax_tree)
                  "WLEdoWlEnhancement not started with modul node");
 
     DBUG_PRINT ("WLE", ("starting WLEdoWlEnhancement"));
-
-    /*
-     * TODO: dispatch and rmcast should not be in this phase!!
-     *       However, we have to deal with the following constraints:
-     *       RCdoRemoveCasts needs to run PRIOR to at least the default
-     *       partition generation as that is defined on built-in types only!
-     *       RCdoRemoveCasts needs to run AFTER DFCdoDispatchFunCalls as
-     *       the wrapper types are NOT stripped from user types.
-     *       This could be changed but is quite some ISMOP.
-     *       It would be nice to have DFCdoDispatchFunCalls in the opt-cycle....
-     */
-    /*
-     * apply DFC (dispatch fun call where possible
-     */
-    syntax_tree = DFCdoDispatchFunCalls (syntax_tree);
-
-    /*
-     * apply RC (remove all cast from AST)
-     */
-    syntax_tree = RCdoRemoveCasts (syntax_tree);
 
     /*
      * Explicit accumulation
