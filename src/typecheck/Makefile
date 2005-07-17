@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.31  2005/07/17 20:35:52  sah
+# split_wrappers.o
+#
 # Revision 3.30  2005/07/15 15:52:18  sah
 # splitted create_wrapper_code and dispatchfuncalls
 # introduced namespaces
@@ -95,7 +98,7 @@ OBJS:=gen_pseudo_fun.o new_typecheck.o new_types.o user_types.o \
       create_wrappers.o ssi.o sig_deps.o ct_basic.o ct_fun.o ct_prf.o \
       ct_with.o type_errors.o specialize.o new2old.o create_wrapper_code.o \
       type_statistics.o type_utils.o resolvesymboltypes.o \
-      dispatchfuncalls.o
+      dispatchfuncalls.o split_wrappers.o
 
 all: $(OBJS)
 
