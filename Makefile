@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.179  2005/07/17 11:46:54  sah
+# added serialize_filenames.o
+#
 # Revision 3.178  2005/07/16 19:08:19  sbs
 # index_infer.o added.
 #
@@ -180,7 +183,8 @@ SERIALIZE= src/serialize/serialize_node.o \
            src/serialize/serialize_helper.o \
            src/serialize/serialize_link.o src/serialize/serialize.o \
            src/serialize/serialize_stack.o \
-           src/serialize/serialize_symboltable.o
+           src/serialize/serialize_symboltable.o \
+           src/serialize/serialize_filenames.o
 
 SCANP= src/scanparse/y.tab.o src/scanparse/lex.yy.o \
        src/scanparse/scnprs.o src/scanparse/handle_dots.o \

@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 1.4  2005/07/17 11:46:54  sah
+# added serialize_filenames.o
+#
 # Revision 1.3  2005/07/16 18:33:36  sah
 # cleanup
 #
@@ -20,6 +23,7 @@
 #
 
 PROJECT_ROOT := ../..
+
 include $(PROJECT_ROOT)/Makefile.Config
 
 
@@ -32,7 +36,8 @@ OBJS := serialize_node.o serialize_attribs.o \
         deserialize.o serialize_buildstack.o \
         serialize_helper.o serialize_link.o \
         serialize.o serialize_stack.o \
-        serialize_symboltable.o
+        serialize_symboltable.o \
+        serialize_filenames.o 
 
 all: $(OBJS)
 
