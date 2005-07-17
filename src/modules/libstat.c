@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  2005/07/17 21:14:59  sah
+ * wrapper bodies are no more deserialized
+ *
  * Revision 1.16  2005/07/15 15:57:02  sah
  * introduced namespaces
  *
@@ -86,7 +89,7 @@ PrintLibStatCodeAddBodies (module_t *module, node *modnode, node *fundef)
 #ifndef DBUG_OFF
     if (fundef != NULL) {
 
-        if (FUNDEF_BODY (fundef) == NULL) {
+        if ((FUNDEF_BODY (fundef) == NULL) && (!FUNDEF_ISWRAPPERFUN (fundef))) {
             DSinitDeserialize (modnode);
 
             DSdoDeserialize (fundef);
