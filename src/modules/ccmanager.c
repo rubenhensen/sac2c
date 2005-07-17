@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.18  2005/07/17 21:14:59  sah
+ * no OPT flag when compiling serializer code
+ *
  * Revision 1.17  2005/06/28 16:23:25  sah
  * added module inconsistency check
  *
@@ -311,8 +314,14 @@ InvokeCCModule (char *cccall, char *ccflags)
 {
     DBUG_ENTER ("InvokeCCModule");
 
-    ILIBsystemCall ("cd %s; %s %s -c *.c", global.tmp_dirname, cccall, ccflags);
+    ILIBsystemCall ("cd %s; %s %s -c fun*.c globals.c", global.tmp_dirname, cccall,
+                    ccflags);
 
+    ILIBsystemCall ("cd %s; %s -c serialize.c", global.tmp_dirname, cccall);
+    ILIBsystemCall ("cd %s; %s -c filenames.c", global.tmp_dirname, cccall);
+    ILIBsystemCall ("cd %s; %s -c namespacemap.c", global.tmp_dirname, cccall);
+    ILIBsystemCall ("cd %s; %s -c symboltable.c", global.tmp_dirname, cccall);
+    ILIBsystemCall ("cd %s; %s -c dependencytable.c", global.tmp_dirname, cccall);
     DBUG_VOID_RETURN;
 }
 
