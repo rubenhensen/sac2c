@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2005/07/17 11:46:54  sah
+ * added fancy filename serialisation
+ *
  * Revision 1.10  2005/07/16 21:11:29  sah
  * implemented serialisation of namespaces
  * based on a namespace mapping instead
@@ -107,10 +110,10 @@ LIBBcreateLibrary (stringset_t *deps)
     CTInote ("Creating shared SAC library `lib%s.so'", global.modulename);
 
     ILIBsystemCall ("%s -o %slib%s.so %s/serialize.o %s/symboltable.o"
-                    " %s/dependencytable.o %s/namespacemap.o",
+                    " %s/dependencytable.o %s/namespacemap.o %s/filenames.o",
                     global.config.ld_dynamic, global.targetdir, global.modulename,
                     global.tmp_dirname, global.tmp_dirname, global.tmp_dirname,
-                    global.tmp_dirname);
+                    global.tmp_dirname, global.tmp_dirname);
 
     DBUG_VOID_RETURN;
 }

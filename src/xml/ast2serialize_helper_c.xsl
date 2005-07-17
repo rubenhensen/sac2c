@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.9  2005/07/17 11:46:54  sah
+  added fancy filename serialisation
+
   Revision 1.8  2005/07/05 14:36:10  sah
   NODE_ERROR is now initialised properly
   when deserialising code
@@ -108,7 +111,7 @@ version="1.0">
   <xsl:value-of select="'int cnt, max;'" />
   <xsl:value-of select="'NODE_TYPE( this) = node_type;'" />
   <xsl:value-of select="'NODE_LINE( this) = lineno;'" />
-  <xsl:value-of select="'NODE_FILE( this) = ILIBstringCopy(sfile);'" />
+  <xsl:value-of select="'NODE_FILE( this) = sfile;'" />
   <xsl:value-of select="'NODE_ERROR( this) = NULL;'" />
   <xsl:value-of select="'switch (node_type) {'" />
   <xsl:apply-templates select="//syntaxtree/node" mode="gen-case" />
