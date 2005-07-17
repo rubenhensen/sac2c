@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2005/07/17 07:29:37  ktr
+ * eliminated USE and DEF Nluts and  introduced a post assignment chain
+ *
  * Revision 1.2  2005/07/16 12:23:52  ktr
  * shape descriptors are not corrupted any longer
  *
@@ -39,7 +42,7 @@
 
 /** <!--******************************************************************-->
  *
- *  Enumeration of hthe different counting modes for N_id nodes.
+ *  Enumeration of the different counting modes for N_id nodes.
  *
  ***************************************************************************/
 typedef enum { rc_prfuse, rc_apuse } rc_countmode;
@@ -51,8 +54,7 @@ struct INFO {
     rc_countmode mode;
     nlut_t *env;
     nlut_t *env2;
-    nlut_t *def;
-    nlut_t *use;
+    node *postassign;
     node *fundef;
     dfmask_t *withmask;
     bool withvecneeded;
@@ -66,8 +68,7 @@ struct INFO {
 #define INFO_RC_MODE(n) (n->mode)
 #define INFO_RC_ENV(n) (n->env)
 #define INFO_RC_ENV2(n) (n->env2)
-#define INFO_RC_DEF(n) (n->def)
-#define INFO_RC_USE(n) (n->use)
+#define INFO_RC_POSTASSIGN(n) (n->postassign)
 #define INFO_RC_FUNDEF(n) (n->fundef)
 #define INFO_RC_WITHMASK(n) (n->withmask)
 #define INFO_RC_WITHVECNEEDED(n) (n->withvecneeded)
@@ -89,8 +90,7 @@ MakeInfo ()
     INFO_RC_MODE (result) = rc_prfuse;
     INFO_RC_ENV (result) = NULL;
     INFO_RC_ENV2 (result) = NULL;
-    INFO_RC_DEF (result) = NULL;
-    INFO_RC_USE (result) = NULL;
+    INFO_RC_POSTASSIGN (result) = NULL;
     INFO_RC_FUNDEF (result) = NULL;
     INFO_RC_WITHMASK (result) = NULL;
     INFO_RC_LHS (result) = NULL;
@@ -144,26 +144,40 @@ RCIdoReferenceCounting (node *syntax_tree)
  *
  ****************************************************************************/
 static node *
-MakeRCAssignments (nlut_t *nlut)
+AdjustRC (node *avis, int count, node *arg_node)
 {
-    node *res, *avis, *prf;
-    int count;
+    node *prf;
 
-    DBUG_ENTER ("MakeRCAssignments");
+    DBUG_ENTER ("AdjustRC");
 
-    res = NULL;
-    avis = DFMgetMaskEntryAvisSet (NLUTgetNonZeroMask (nlut));
-
-    while (avis != NULL) {
-        count = NLUTgetNum (nlut, avis);
-        NLUTsetNum (nlut, avis, 0);
-
+    if (count != 0) {
         if (count > 0) {
             prf = TCmakePrf2 (F_inc_rc, TBmakeId (avis), TBmakeNum (count));
         } else {
             prf = TCmakePrf2 (F_dec_rc, TBmakeId (avis), TBmakeNum (-count));
         }
-        res = TBmakeAssign (TBmakeLet (NULL, prf), res);
+        arg_node = TBmakeAssign (TBmakeLet (NULL, prf), arg_node);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+static node *
+MakeRCAssignments (nlut_t *nlut)
+{
+    node *res, *avis;
+    int count;
+
+    DBUG_ENTER ("MakeRCAssignments");
+
+    res = NULL;
+
+    avis = DFMgetMaskEntryAvisSet (NLUTgetNonZeroMask (nlut));
+    while (avis != NULL) {
+        count = NLUTgetNum (nlut, avis);
+        NLUTsetNum (nlut, avis, 0);
+
+        res = AdjustRC (avis, count, res);
 
         avis = DFMgetMaskEntryAvisSet (NULL);
     }
@@ -172,21 +186,21 @@ MakeRCAssignments (nlut_t *nlut)
 }
 
 static node *
-PrependRCAssignments (nlut_t *nlut, node *ass)
+PrependAssignments (node *ass1, node *ass2)
 {
-    DBUG_ENTER ("PrependRCAssignments");
+    DBUG_ENTER ("PrependAssignments");
 
-    if ((ass != NULL) && (NODE_TYPE (ass) == N_empty)) {
-        ass = FREEdoFreeNode (ass);
+    if ((ass2 != NULL) && (NODE_TYPE (ass2) == N_empty)) {
+        ass2 = FREEdoFreeNode (ass2);
     }
 
-    ass = TCappendAssign (MakeRCAssignments (nlut), ass);
+    ass1 = TCappendAssign (ass1, ass2);
 
-    if (ass == NULL) {
-        ass = TBmakeEmpty ();
+    if (ass1 == NULL) {
+        ass1 = TBmakeEmpty ();
     }
 
-    DBUG_RETURN (ass);
+    DBUG_RETURN (ass1);
 }
 
 /** <!--********************************************************************-->
@@ -225,12 +239,9 @@ RCIfundef (node *arg_node, info *arg_info)
             info *info;
 
             info = MakeInfo ();
+            INFO_RC_FUNDEF (info) = arg_node;
             INFO_RC_ENV (info)
               = NLUTgenerateNlut (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
-            INFO_RC_DEF (info) = NLUTduplicateNlut (INFO_RC_ENV (info));
-            INFO_RC_USE (info) = NLUTduplicateNlut (INFO_RC_ENV (info));
-
-            INFO_RC_FUNDEF (info) = arg_node;
 
             if (FUNDEF_ISCONDFUN (arg_node)) {
                 /*
@@ -284,13 +295,11 @@ RCIfundef (node *arg_node, info *arg_info)
                 }
 
                 BLOCK_INSTR (FUNDEF_BODY (arg_node))
-                  = PrependRCAssignments (INFO_RC_ENV (info),
-                                          BLOCK_INSTR (FUNDEF_BODY (arg_node)));
+                  = PrependAssignments (MakeRCAssignments (INFO_RC_ENV (info)),
+                                        BLOCK_INSTR (FUNDEF_BODY (arg_node)));
             }
 
             INFO_RC_ENV (info) = NLUTremoveNlut (INFO_RC_ENV (info));
-            INFO_RC_DEF (info) = NLUTremoveNlut (INFO_RC_DEF (info));
-            INFO_RC_USE (info) = NLUTremoveNlut (INFO_RC_USE (info));
 
             info = FreeInfo (info);
         }
@@ -324,7 +333,7 @@ RCIfundef (node *arg_node, info *arg_info)
 node *
 RCIassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RCIlet");
+    DBUG_ENTER ("RCIassign");
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
@@ -332,11 +341,9 @@ RCIassign (node *arg_node, info *arg_info)
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
-    ASSIGN_NEXT (arg_node) = TCappendAssign (MakeRCAssignments (INFO_RC_USE (arg_info)),
-                                             ASSIGN_NEXT (arg_node));
-
-    ASSIGN_NEXT (arg_node) = TCappendAssign (MakeRCAssignments (INFO_RC_DEF (arg_info)),
-                                             ASSIGN_NEXT (arg_node));
+    ASSIGN_NEXT (arg_node)
+      = TCappendAssign (INFO_RC_POSTASSIGN (arg_info), ASSIGN_NEXT (arg_node));
+    INFO_RC_POSTASSIGN (arg_info) = NULL;
 
     DBUG_RETURN (arg_node);
 }
@@ -422,7 +429,8 @@ RCIid (node *arg_node, info *arg_info)
     NLUTincNum (INFO_RC_ENV (arg_info), ID_AVIS (arg_node), 1);
 
     if (INFO_RC_MODE (arg_info) == rc_prfuse) {
-        NLUTincNum (INFO_RC_USE (arg_info), ID_AVIS (arg_node), -1);
+        INFO_RC_POSTASSIGN (arg_info)
+          = AdjustRC (ID_AVIS (arg_node), -1, INFO_RC_POSTASSIGN (arg_info));
     }
 
     DBUG_RETURN (arg_node);
@@ -443,12 +451,15 @@ RCIid (node *arg_node, info *arg_info)
 node *
 RCIids (node *arg_node, info *arg_info)
 {
+    int count;
+
     DBUG_ENTER ("RCIids");
 
-    NLUTsetNum (INFO_RC_DEF (arg_info), IDS_AVIS (arg_node),
-                NLUTgetNum (INFO_RC_ENV (arg_info), IDS_AVIS (arg_node)) - 1);
-
+    count = NLUTgetNum (INFO_RC_ENV (arg_info), IDS_AVIS (arg_node));
     NLUTsetNum (INFO_RC_ENV (arg_info), IDS_AVIS (arg_node), 0);
+
+    INFO_RC_POSTASSIGN (arg_info)
+      = AdjustRC (IDS_AVIS (arg_node), count - 1, INFO_RC_POSTASSIGN (arg_info));
 
     if (IDS_NEXT (arg_node) != NULL) {
         IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
@@ -488,7 +499,9 @@ RCIap (node *arg_node, info *arg_info)
         while (ids != NULL) {
             if (NLUTgetNum (INFO_RC_ENV (arg_info), IDS_AVIS (ids)) == 0) {
                 NLUTsetNum (INFO_RC_ENV (arg_info), IDS_AVIS (ids), 1);
-                NLUTsetNum (INFO_RC_USE (arg_info), IDS_AVIS (ids), -1);
+
+                INFO_RC_POSTASSIGN (arg_info)
+                  = AdjustRC (IDS_AVIS (ids), -1, INFO_RC_POSTASSIGN (arg_info));
             }
             ids = IDS_NEXT (ids);
         }
@@ -729,10 +742,12 @@ RCIwith (node *arg_node, info *arg_info)
     avis = DFMgetMaskEntryAvisSet (INFO_RC_WITHMASK (arg_info));
     while (avis != NULL) {
         /*
-         * Add one to the environment and put the variable into USELIST
+         * Add one to the environment and create a dec_rc
          */
         NLUTincNum (INFO_RC_ENV (arg_info), avis, 1);
-        NLUTincNum (INFO_RC_USE (arg_info), avis, -1);
+
+        INFO_RC_POSTASSIGN (arg_info)
+          = AdjustRC (avis, -1, INFO_RC_POSTASSIGN (arg_info));
 
         avis = DFMgetMaskEntryAvisSet (NULL);
     }
@@ -788,10 +803,12 @@ RCIwith2 (node *arg_node, info *arg_info)
     avis = DFMgetMaskEntryAvisSet (INFO_RC_WITHMASK (arg_info));
     while (avis != NULL) {
         /*
-         * Add one to the environment and put the variable into USELIST
+         * Add one to the environment and create a dec_rc
          */
         NLUTincNum (INFO_RC_ENV (arg_info), avis, 1);
-        NLUTincNum (INFO_RC_USE (arg_info), avis, -1);
+
+        INFO_RC_POSTASSIGN (arg_info)
+          = AdjustRC (avis, -1, INFO_RC_POSTASSIGN (arg_info));
 
         avis = DFMgetMaskEntryAvisSet (NULL);
     }
@@ -846,29 +863,24 @@ RCIcode (node *arg_node, info *arg_info)
      */
     INFO_RC_MODE (arg_info) = rc_apuse;
     CODE_CEXPRS (arg_node) = TRAVdo (CODE_CEXPRS (arg_node), arg_info);
-
     CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
 
     /*
-     * Prepend block with Adjust_RC prfs
+     * Mark the variable as used in the outer context
      */
     nzmask = NLUTgetNonZeroMask (INFO_RC_ENV (arg_info));
     avis = DFMgetMaskEntryAvisSet (nzmask);
     while (avis != NULL) {
-        /*
-         * Mark the variable as used in the outer context and put it into DEFLIST
-         */
-        NLUTsetNum (INFO_RC_DEF (arg_info), avis,
-                    NLUTgetNum (INFO_RC_ENV (arg_info), avis));
-
         DFMsetMaskEntrySet (withmask, NULL, avis);
-
         avis = DFMgetMaskEntryAvisSet (NULL);
     }
 
+    /*
+     * Prepend block with INC_RC statements
+     */
     BLOCK_INSTR (CODE_CBLOCK (arg_node))
-      = PrependRCAssignments (INFO_RC_DEF (arg_info),
-                              BLOCK_INSTR (CODE_CBLOCK (arg_node)));
+      = PrependAssignments (MakeRCAssignments (INFO_RC_ENV (arg_info)),
+                            BLOCK_INSTR (CODE_CBLOCK (arg_node)));
 
     INFO_RC_WITHMASK (arg_info) = withmask;
     INFO_RC_ENV (arg_info) = NLUTremoveNlut (INFO_RC_ENV (arg_info));
@@ -1094,7 +1106,8 @@ RCIcond (node *arg_node, info *arg_info)
     INFO_RC_MODE (arg_info) = rc_prfuse;
     COND_COND (arg_node) = TRAVdo (COND_COND (arg_node), arg_info);
     COND_THENINSTR (arg_node)
-      = PrependRCAssignments (INFO_RC_USE (arg_info), COND_THENINSTR (arg_node));
+      = PrependAssignments (INFO_RC_POSTASSIGN (arg_info), COND_THENINSTR (arg_node));
+    INFO_RC_POSTASSIGN (arg_info) = NULL;
 
     env = INFO_RC_ENV (arg_info);
     INFO_RC_ENV (arg_info) = INFO_RC_ENV2 (arg_info);
@@ -1104,7 +1117,8 @@ RCIcond (node *arg_node, info *arg_info)
     INFO_RC_MODE (arg_info) = rc_prfuse;
     COND_COND (arg_node) = TRAVdo (COND_COND (arg_node), arg_info);
     COND_ELSEINSTR (arg_node)
-      = PrependRCAssignments (INFO_RC_USE (arg_info), COND_ELSEINSTR (arg_node));
+      = PrependAssignments (INFO_RC_POSTASSIGN (arg_info), COND_ELSEINSTR (arg_node));
+    INFO_RC_POSTASSIGN (arg_info) = NULL;
 
     INFO_RC_ENV (arg_info) = env;
 
@@ -1137,9 +1151,11 @@ RCIcond (node *arg_node, info *arg_info)
     nzmask = DFMremoveMask (nzmask);
 
     COND_THENINSTR (arg_node)
-      = PrependRCAssignments (INFO_RC_ENV (arg_info), COND_THENINSTR (arg_node));
+      = PrependAssignments (MakeRCAssignments (INFO_RC_ENV (arg_info)),
+                            COND_THENINSTR (arg_node));
     COND_ELSEINSTR (arg_node)
-      = PrependRCAssignments (INFO_RC_ENV2 (arg_info), COND_ELSEINSTR (arg_node));
+      = PrependAssignments (MakeRCAssignments (INFO_RC_ENV2 (arg_info)),
+                            COND_ELSEINSTR (arg_node));
 
     INFO_RC_ENV2 (arg_info) = NLUTremoveNlut (INFO_RC_ENV2 (arg_info));
     INFO_RC_ENV (arg_info) = NLUTremoveNlut (INFO_RC_ENV (arg_info));
