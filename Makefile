@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.180  2005/07/17 20:12:35  sbs
+# split_wrappers.o added.
+#
 # Revision 3.179  2005/07/17 11:46:54  sah
 # added serialize_filenames.o
 #
@@ -221,6 +224,7 @@ TYPECHECK= src/typecheck/gen_pseudo_fun.o \
            src/typecheck/type_statistics.o \
            src/typecheck/type_utils.o \
            src/typecheck/resolvesymboltypes.o \
+           src/typecheck/split_wrappers.o \
            src/typecheck/dispatchfuncalls.o
 
 OPTIMIZE= src/optimize/optimize.o \
