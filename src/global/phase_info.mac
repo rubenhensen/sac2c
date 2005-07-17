@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.31  2005/07/17 20:20:51  sbs
+ * moved some typechecking phases into elimudt
+ *
  * Revision 3.30  2005/07/16 19:07:33  sbs
  * ivei added
  *
@@ -225,17 +228,11 @@ SUBPHASE (tc, "tc", "Running type inference system", PHdummy)
 
 SUBPHASE (ds, "ds", "Deserializing code", PHdummy)
 
-SUBPHASE (cwc, "cwc", "Creating wrapper code", PHdummy)
-
 SUBPHASE (rst, "rst", "Resolving symbol types", PHdummy)
 
 SUBPHASE (nt2ot, "nt2ot", "Cleaning up type inference system", PHdummy)
 
-SUBPHASE (lac2funwc, "lac2funwc", "Eliminating conditionals in wrapper code",
-          L2FdoLac2Fun)
-
-SUBPHASE (ssawc, "ssawc", "Establishing static single assignment form in wrapper code",
-          SSATdoTransformAllowGOs)
+SUBPHASE (swr, "swr", "Splitting Wrappers", SWRdoSplitWrappers)
 
 /***********************************************************************/
 
@@ -260,6 +257,22 @@ SUBPHASE (unq, "unq", "Checking uniqueness property", PHdummy)
 /***********************************************************************/
 
 PHASE (uniquecheck, "Checking uniqueness property of objects", PHdummy)
+
+/***********************************************************************/
+
+PHASE (elimudt, "Eliminating User-Defined Types and Creating Wrapper Code", PHdummy)
+
+SUBPHASE (cwc, "cwc", "Creating Wrapper Bodies", CWCdoCreateWrapperCode)
+
+SUBPHASE (lac2funwc, "lac2funwc", "Eliminating conditionals in wrapper code",
+          L2FdoLac2Fun)
+
+SUBPHASE (ssawc, "ssawc", "Establishing static single assignment form in wrapper code",
+          SSATdoTransformAllowGOs)
+
+SUBPHASE (dfc, "dfc", "Trying to dispatch staticly", DFCdoDispatchFunCalls)
+
+SUBPHASE (eudt, "eudt", "Eliminating User-Defined Types", RCdoRemoveCasts)
 
 /***********************************************************************/
 
