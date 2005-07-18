@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.20  2005/07/18 15:54:45  sbs
+ * fixed stupid bug
+ *
  * Revision 1.19  2005/07/18 15:45:59  sah
  * modified compiler link flag generation
  *
@@ -266,8 +269,8 @@ BuildDepLibsStringProg (const char *lib, strstype_t kind, void *rest)
         path = ILIBstringCopy (FMGRfindFilePath (PK_extlib_path, libname));
 
         if (path != NULL) {
-            result = ILIBmalloc (sizeof (char) * (strlen (lib) + 5 + strlen (path)));
-            result = sprintf (result, "-L%s -l%s", path, lib);
+            result = ILIBmalloc (sizeof (char) * (strlen (lib) + 6 + strlen (path)));
+            sprintf (result, "-L%s -l%s", path, lib);
         } else {
             result = ILIBmalloc (sizeof (char) * (strlen (lib) + 3));
             sprintf (result, "-l%s", lib);
