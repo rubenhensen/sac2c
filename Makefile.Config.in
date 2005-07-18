@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 1.25  2005/07/18 09:38:21  ktr
+# added check for available xslt engines
+#
 # Revision 1.24  2005/06/14 12:27:35  sah
 # use libtool to build sac2c
 #
@@ -116,7 +119,7 @@ CPROD_FLAGS  := -DDBUG_OFF -DPRODUCTION -DWLAA_DEACTIVATED -DAE_DEACTIVATED \
                 -DOBJR_DEACTIVATED -DOBJ_DEACTIVATED -DOBJI_DEACTIVATED
 LIBTOOL      := $(PROJECT_ROOT)/libtool --mode=link 
 
-XSLTENGINE := sabcmd
+XSLTENGINE := @XSLT@
 
 MAKE_NORM    := $(MAKE) CC="$(CC)" CCFLAGS="$(CCFLAGS)" CFLAGS="$(CFLAGS)"
 MAKE_PROD    := $(MAKE) CC="$(CCPROD)" CCFLAGS="$(CCPROD_FLAGS)" CFLAGS="$(CPROD_FLAGS)"
