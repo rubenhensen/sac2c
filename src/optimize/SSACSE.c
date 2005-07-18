@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.45  2005/07/18 18:24:14  sbs
+ * eliminated FUNDEF_EXT_ASSIGN
+ *
  * Revision 1.44  2005/03/04 21:21:42  cg
  * Useless conditional eliminated.
  * Integration of silently duplicated LaC funs at the end of the
@@ -165,12 +168,12 @@
  *       e = c + d;                  e = a + b;
  *
  *   the implementation is a stack of lists with available expressions in the
- *   current context (needed for conditionals and with-loops). for each
- *   expression we do an tree-compare with the available CSE we stored before.
- *   in addition to the tree-compare we have to check the types of the
+ *   current context (needed for conditionals and with-loops). For each
+ *   expression we do a tree-compare with the available CSE we stored before.
+ *   In addition to the tree-compare we have to check the types of the
  *   assigned LHS to be equal to avoid wrong substitutions of constant
  *   RHS arrays (e.g. [1,2,3,4] used as [[1,2],[3,4]]).
- *   if we find a matching one, we substitute the LHS otherwise we add this
+ *   If we find a matching one, we substitute the LHS otherwise we add this
  *   new expression to the list of available expressions.
  *
  *
@@ -180,26 +183,26 @@
  *       c = b;                      <removed>
  *       d = g(c);                   d = g(a);
  *
- *   these optimizations does not happen for identifier of global objects or
+ *   These optimizations do not happen for identifiers of global objects or
  *   other unique types, because the current used implementation of objects
- *   does not use a global word object for creation, so we get the following
+ *   does not use a global word object for creation, so we hit the following
  *   problem:
  *       obj1  = CreateNewObj();        obj1  = CreateNewObj();
  *       obj1' = modify(1, obj1);  -->  obj1' = modify(obj1);
  *       obj2  = CreateNewObj();        <removed>
  *       obj2' = modify(2, obj2);       obj2' = modify(obj1);
  *                                                    ******
- *   this is wrong code and no more unique (two accesses to obj1)!!!
+ *   This is wrong code and no more unique (two accesses to obj1)!!!
  *   if this issue is ressolved you can disable this handling by
  *   defining CREATE_UNIQUE_BY_HEAP
  *
- *   the copy propagation information is propagates in special fundefs for
+ *   The copy propagation information is propagated into special fundefs for
  *   the called args (all for cond-funs, loop invariant ones for loop-funs).
  *   for details see SSACSEPropagateSubst2Args() in this file.
  *
- *   if we find results of special fundes that are arguments of the fundef,
- *   we try to avoid a passing of this arg through the special fundef. instead
- *   we use the correct result id directly in the calling context. for details
+ *   If we find results of special fundes that are arguments of the fundef,
+ *   we try to avoid a passing of this arg through the special fundef. Instead
+ *   we use the correct result id directly in the calling context. For details
  *   see SSACSEBuildSubstNodelist().
  *
  *****************************************************************************/
@@ -225,6 +228,7 @@
 struct INFO {
     bool remassign;
     node *fundef;
+    node *ext_assign;
     node *cse;
     node *module;
     node *assign;
@@ -237,6 +241,7 @@ struct INFO {
  */
 #define INFO_CSE_REMASSIGN(n) (n->remassign)
 #define INFO_CSE_FUNDEF(n) (n->fundef)
+#define INFO_CSE_EXT_ASSIGN(n) (n->ext_assign)
 #define INFO_CSE_CSE(n) (n->cse)
 #define INFO_CSE_MODULE(n) (n->module)
 #define INFO_CSE_ASSIGN(n) (n->assign)
@@ -257,6 +262,7 @@ MakeInfo ()
 
     INFO_CSE_REMASSIGN (result) = FALSE;
     INFO_CSE_FUNDEF (result) = NULL;
+    INFO_CSE_EXT_ASSIGN (result) = NULL;
     INFO_CSE_CSE (result) = NULL;
     INFO_CSE_MODULE (result) = NULL;
     INFO_CSE_ASSIGN (result) = NULL;
@@ -290,9 +296,9 @@ static node *FindCse (node *cselist, node *let);
 static bool CmpIdsTypes (node *ichain1, node *ichain2);
 static node *PropagateSubst2Args (node *fun_args, node *ap_args, node *fundef);
 static node *PropagateReturn2Results (node *ap_fundef, node *ids_chain);
-static nodelist *BuildSubstNodelist (node *return_exprs, node *fundef);
+static nodelist *BuildSubstNodelist (node *return_exprs, node *fundef, node *ext_assign);
 static node *GetResultArgAvis (node *id, condpart cp);
-static node *GetApAvisOfArgAvis (node *arg_avis, node *fundef);
+static node *GetApAvisOfArgAvis (node *arg_avis, node *fundef, node *ext_assign);
 
 /******************************************************************************
  *
@@ -654,7 +660,7 @@ PropagateSubst2Args (node *fun_args, node *ap_args, node *fundef)
 /******************************************************************************
  *
  * function:
- *   nodelist *BuildSubstNodelist( node *return_exprs, node *fundef)
+ *   nodelist *BuildSubstNodelist( node *return_exprs, node *fundef, node *ext_assign)
  *
  * description:
  *   analyse the return statement of a special fundef for results that
@@ -690,7 +696,7 @@ PropagateSubst2Args (node *fun_args, node *ap_args, node *fundef)
  *
  *****************************************************************************/
 static nodelist *
-BuildSubstNodelist (node *return_exprs, node *fundef)
+BuildSubstNodelist (node *return_exprs, node *fundef, node *ext_assign)
 {
     nodelist *nl;
     node *ext_avis;
@@ -713,7 +719,7 @@ BuildSubstNodelist (node *return_exprs, node *fundef)
              * we get an arg that is result of this fundef,
              * now search for the external corresponding avis node in application
              */
-            ext_avis = GetApAvisOfArgAvis (avis2, fundef);
+            ext_avis = GetApAvisOfArgAvis (avis2, fundef, ext_assign);
         } else {
             ext_avis = NULL;
         }
@@ -723,8 +729,8 @@ BuildSubstNodelist (node *return_exprs, node *fundef)
          * nodelist we can use in the bottom down travsersal of the corresponding
          * ids chain in the calling let node.
          */
-        nl = TBmakeNodelistNode (ext_avis,
-                                 BuildSubstNodelist (EXPRS_NEXT (return_exprs), fundef));
+        nl = TBmakeNodelistNode (ext_avis, BuildSubstNodelist (EXPRS_NEXT (return_exprs),
+                                                               fundef, ext_assign));
     } else {
         /* no more return expression available */
         nl = NULL;
@@ -857,7 +863,7 @@ GetResultArgAvis (node *id, condpart cp)
 /******************************************************************************
  *
  * function:
- *   node *GetApAvisOfArgAvis(node *arg_avis, node *fundef)
+ *   node *GetApAvisOfArgAvis(node *arg_avis, node *fundef, node *ext_assign)
  *
  * description:
  *   search for the matching external ap_arg avis to the given fundef arg avis.
@@ -865,7 +871,7 @@ GetResultArgAvis (node *id, condpart cp)
  *
  *****************************************************************************/
 static node *
-GetApAvisOfArgAvis (node *arg_avis, node *fundef)
+GetApAvisOfArgAvis (node *arg_avis, node *fundef, node *ext_assign)
 {
     node *ap_avis;
     node *exprs_chain;
@@ -879,7 +885,7 @@ GetApAvisOfArgAvis (node *arg_avis, node *fundef)
 
     arg_chain = FUNDEF_ARGS (fundef);
 
-    exprs_chain = AP_ARGS (ASSIGN_RHS (FUNDEF_EXT_ASSIGN (fundef)));
+    exprs_chain = AP_ARGS (ASSIGN_RHS (ext_assign));
 
     ap_avis = NULL;
     cont = TRUE;
@@ -994,9 +1000,7 @@ CSEblock (node *arg_node, info *arg_info)
     if (BLOCK_INSTR (arg_node) != NULL) {
         /* traverse assignments of block */
         BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
-    }
-
-    if (BLOCK_INSTR (arg_node) == NULL) {
+    } else {
         /* insert at least the N_empty node in an empty block */
         BLOCK_INSTR (arg_node) = TBmakeEmpty ();
     }
@@ -1130,7 +1134,8 @@ CSEreturn (node *arg_node, info *arg_info)
      */
     if (FUNDEF_ISLACFUN (INFO_CSE_FUNDEF (arg_info))) {
         INFO_CSE_RESULTARG (arg_info)
-          = BuildSubstNodelist (RETURN_EXPRS (arg_node), INFO_CSE_FUNDEF (arg_info));
+          = BuildSubstNodelist (RETURN_EXPRS (arg_node), INFO_CSE_FUNDEF (arg_info),
+                                INFO_CSE_EXT_ASSIGN (arg_info));
     } else {
         INFO_CSE_RESULTARG (arg_info) = NULL;
     }
@@ -1272,6 +1277,9 @@ CSEap (node *arg_node, info *arg_info)
 
         /* stack arg_info frame for new fundef */
         new_arg_info = MakeInfo ();
+
+        /* keep this assignment as external assignment */
+        INFO_CSE_EXT_ASSIGN (new_arg_info) = INFO_CSE_ASSIGN (arg_info);
 
         /* start with empty cse stack */
         INFO_CSE_CSE (new_arg_info) = NULL;
