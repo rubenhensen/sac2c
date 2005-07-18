@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.19  2005/07/18 15:45:59  sah
+ * modified compiler link flag generation
+ *
  * Revision 1.18  2005/07/17 21:14:59  sah
  * no OPT flag when compiling serializer code
  *
@@ -236,6 +239,7 @@ BuildDepLibsStringProg (const char *lib, strstype_t kind, void *rest)
 {
     char *result;
     char *libname;
+    char *path;
 
     DBUG_ENTER ("BuildDepLibsStringProg");
 
@@ -259,15 +263,18 @@ BuildDepLibsStringProg (const char *lib, strstype_t kind, void *rest)
     case STRS_extlib:
         libname = ILIBmalloc (sizeof (char) * (strlen (lib) + 6));
         sprintf (libname, "lib%s.a", lib);
-        result = ILIBstringCopy (FMGRfindFile (PK_extlib_path, libname));
-        if (result == 0) {
-            /*
-             * the library cannot be found, so leave it to the c
-             * compiler to look it up
-             */
+        path = ILIBstringCopy (FMGRfindFilePath (PK_extlib_path, libname));
+
+        if (path != NULL) {
+            result = ILIBmalloc (sizeof (char) * (strlen (lib) + 5 + strlen (path)));
+            result = sprintf (result, "-L%s -l%s", path, lib);
+        } else {
             result = ILIBmalloc (sizeof (char) * (strlen (lib) + 3));
             sprintf (result, "-l%s", lib);
         }
+
+        libname = ILIBfree (libname);
+        path = ILIBfree (path);
         break;
     case STRS_objfile:
         result = ILIBmalloc (sizeof (char) * (strlen (lib) + 3));
