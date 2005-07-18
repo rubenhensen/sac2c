@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2005/07/18 15:45:59  sah
+ * added findFilePath
+ *
  * Revision 1.11  2005/04/12 13:57:31  sah
  * made returned strings constant as they point to a static buffer.
  * modified implementation accordingly.
@@ -114,6 +117,7 @@
 #include "types.h"
 
 extern const char *FMGRfindFile (pathkind_t p, const char *name);
+extern const char *FMGRfindFilePath (pathkind_t p, const char *name);
 extern void FMGRappendPath (pathkind_t p, const char *path);
 extern void FMGRsetupPaths ();
 extern const char *FMGRabsolutePathname (const char *path);

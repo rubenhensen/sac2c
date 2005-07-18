@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  2005/07/18 15:45:59  sah
+ * added findFilePath
+ *
  * Revision 1.16  2005/07/15 15:57:02  sah
  * introduced namespaces
  *
@@ -178,7 +181,7 @@ static int bufsize[4];
  */
 
 const char *
-FMGRfindFile (pathkind_t p, const char *name)
+FMGRfindFilePath (pathkind_t p, const char *name)
 {
     FILE *file = NULL;
     static char buffer[MAX_FILE_NAME];
@@ -186,11 +189,11 @@ FMGRfindFile (pathkind_t p, const char *name)
     char *path;
     char *result = NULL;
 
-    DBUG_ENTER ("FMGRfindFile");
+    DBUG_ENTER ("FMGRfindFilePath");
 
     if (name[0] == '/') { /* absolute path specified! */
-        strcpy (buffer, name);
-        file = fopen (buffer, "r");
+        file = fopen (name, "r");
+        path = "";
     } else {
         strcpy (buffer2, path_bufs[p]);
         path = strtok (buffer2, ":");
@@ -211,6 +214,24 @@ FMGRfindFile (pathkind_t p, const char *name)
     }
     if (file != NULL) {
         fclose (file);
+        result = path;
+    }
+
+    DBUG_RETURN (result);
+}
+
+const char *
+FMGRfindFile (pathkind_t p, const char *name)
+{
+    static char buffer[MAX_FILE_NAME];
+    const char *result;
+
+    DBUG_ENTER ("FMGRfindFile");
+
+    result = FMGRfindFilePath (p, name);
+
+    if (result != NULL) {
+        snprintf (buffer, MAX_FILE_NAME - 1, "%s/%s", result, name);
         result = buffer;
     }
 
