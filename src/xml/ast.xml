@@ -4566,7 +4566,7 @@
           </phases>
         </attribute>
         <attribute name="Fundef" mandatory="yes">
-          <type name="Link">
+          <type name="ExtLink">
             <target>
               <node name="Fundef" />
             </target>
