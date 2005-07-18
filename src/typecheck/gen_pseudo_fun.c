@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2005/07/18 15:01:46  sbs
+ * removed the PSEUDE namespace FOLD for fold funs.
+ * Considered safe by sah due to _ prefix in fun-name :-)
+ *
  * Revision 3.19  2005/07/15 15:57:02  sah
  * introduced namespaces
  *
@@ -185,12 +189,9 @@ GPFcreateFoldFun (ntype *elem_type, node *fold_fundef, prf fold_prf, char *res_n
 
     ret_ass = TBmakeReturn (TBmakeExprs (TBmakeId (tmp_res_avis), NULL));
 
-    /*
-     * TODO: there should be a view _FOLD instead of a module
-     */
     new_fundef
       = TBmakeFundef (ILIBstringCopy (pseudo_fold_fun_name),
-                      NSgetNamespace (PSEUDO_MOD_FOLD),
+                      NSgetNamespace (global.modulename),
                       TBmakeRet (TYcopyType (elem_type), NULL), formal_args,
                       TBmakeBlock (TBmakeAssign (TBmakeLet (TBmakeIds (tmp_res_avis,
                                                                        NULL),
