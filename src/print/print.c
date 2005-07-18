@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.225  2005/07/18 17:49:38  sbs
+ * output of FUNDEF_INT and FUNDEF_EXT eliminated
+ *
  * Revision 3.224  2005/07/17 21:14:59  sah
  * dummy fun is created for empty modules
  *
@@ -1577,43 +1580,8 @@ PRTfundef (node *arg_node, info *arg_info)
                 } else if (FUNDEF_ISCONDFUN (arg_node)) {
                     fprintf (global.outfile, "/* Cond function */\n");
 
-                    if (FUNDEF_EXT_ASSIGN (arg_node) == NULL) {
-                        fprintf (global.outfile, "/*  external assignment: missing */\n");
-                    } else {
-                        node *extids;
-                        fprintf (global.outfile, "/*  external assignment: ");
-                        extids = LET_IDS (ASSIGN_INSTR (FUNDEF_EXT_ASSIGN (arg_node)));
-                        if (extids != NULL) {
-                            extids = TRAVdo (extids, arg_info);
-                        }
-                        fprintf (global.outfile, " */\n");
-                    }
                 } else if (FUNDEF_ISDOFUN (arg_node)) {
                     fprintf (global.outfile, "/* Loop function */\n");
-
-                    if (FUNDEF_EXT_ASSIGN (arg_node) == NULL) {
-                        fprintf (global.outfile, "/*  external assignment: missing */\n");
-                    } else {
-                        node *extids;
-                        fprintf (global.outfile, "/*  external assignment: ");
-                        extids = LET_IDS (ASSIGN_INSTR (FUNDEF_EXT_ASSIGN (arg_node)));
-                        if (extids != NULL) {
-                            extids = TRAVdo (extids, arg_info);
-                        }
-                        fprintf (global.outfile, " */\n");
-                    }
-
-                    if (FUNDEF_INT_ASSIGN (arg_node) == NULL) {
-                        fprintf (global.outfile, "/*  internal assignment: missing */\n");
-                    } else {
-                        node *intids;
-                        fprintf (global.outfile, "/*  internal assignment: ");
-                        intids = LET_IDS (ASSIGN_INSTR (FUNDEF_INT_ASSIGN (arg_node)));
-                        if (intids != NULL) {
-                            intids = TRAVdo (intids, arg_info);
-                        }
-                        fprintf (global.outfile, " */\n");
-                    }
                 }
 
                 if ((FUNDEF_ISSPMDFUN (arg_node))
