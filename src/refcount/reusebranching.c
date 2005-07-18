@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.22  2005/07/18 16:31:33  ktr
+ * removed FUNDEF_EXT_ASSIGN
+ *
  * Revision 1.21  2005/07/15 15:57:02  sah
  * introduced namespaces
  *
@@ -517,8 +520,6 @@ BuildCondTree (node *ass, node *branches, node *memvars, node *fundef, char *roo
                 AVIS_SSAASSIGN (IDS_AVIS (cfids)) = res;
                 cfids = IDS_NEXT (cfids);
             }
-
-            FUNDEF_EXT_ASSIGN (condfun) = res;
 
             /*
              * Create  c  = fill( isreused( a, b), c');

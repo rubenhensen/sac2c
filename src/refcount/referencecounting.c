@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2005/07/18 16:31:33  ktr
+ * removed FUNDEF_EXT_ASSIGN
+ *
  * Revision 1.3  2005/07/17 07:29:37  ktr
  * eliminated USE and DEF Nluts and  introduced a post assignment chain
  *
@@ -58,7 +61,7 @@ struct INFO {
     node *fundef;
     dfmask_t *withmask;
     bool withvecneeded;
-    node *lhs;
+    node *assign;
     bool mustcount;
 };
 
@@ -72,7 +75,7 @@ struct INFO {
 #define INFO_RC_FUNDEF(n) (n->fundef)
 #define INFO_RC_WITHMASK(n) (n->withmask)
 #define INFO_RC_WITHVECNEEDED(n) (n->withvecneeded)
-#define INFO_RC_LHS(n) (n->lhs)
+#define INFO_RC_ASSIGN(n) (n->assign)
 #define INFO_RC_MUSTCOUNT(n) (n->mustcount)
 
 /**
@@ -93,7 +96,7 @@ MakeInfo ()
     INFO_RC_POSTASSIGN (result) = NULL;
     INFO_RC_FUNDEF (result) = NULL;
     INFO_RC_WITHMASK (result) = NULL;
-    INFO_RC_LHS (result) = NULL;
+    INFO_RC_ASSIGN (result) = NULL;
     INFO_RC_MUSTCOUNT (result) = FALSE;
     INFO_RC_WITHVECNEEDED (result) = FALSE;
 
@@ -249,7 +252,7 @@ RCIfundef (node *arg_node, info *arg_info)
                  */
                 node *extlet, *retexprs, *ids;
 
-                extlet = ASSIGN_INSTR (FUNDEF_EXT_ASSIGN (arg_node));
+                extlet = ASSIGN_INSTR (INFO_RC_ASSIGN (arg_info));
                 retexprs = RETURN_EXPRS (FUNDEF_RETURN (arg_node));
                 ids = LET_IDS (extlet);
 
@@ -271,7 +274,7 @@ RCIfundef (node *arg_node, info *arg_info)
                  */
                 node *extlet, *argexprs, *args;
 
-                extlet = ASSIGN_INSTR (FUNDEF_EXT_ASSIGN (arg_node));
+                extlet = ASSIGN_INSTR (INFO_RC_ASSIGN (arg_info));
                 args = FUNDEF_ARGS (arg_node);
                 argexprs = AP_ARGS (LET_EXPR (extlet));
 
@@ -339,6 +342,7 @@ RCIassign (node *arg_node, info *arg_info)
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
     }
 
+    INFO_RC_ASSIGN (arg_info) = arg_node;
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
     ASSIGN_NEXT (arg_node)
@@ -365,7 +369,6 @@ RCIlet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("RCIlet");
 
-    INFO_RC_LHS (arg_info) = LET_IDS (arg_node);
     INFO_RC_MUSTCOUNT (arg_info) = TRUE;
 
     INFO_RC_MODE (arg_info) = rc_apuse;
@@ -494,7 +497,7 @@ RCIap (node *arg_node, info *arg_info)
          * CONDFUNs are traversed in order of appearance
          * Make sure all results are actually consumed first!
          */
-        node *ids = INFO_RC_LHS (arg_info);
+        node *ids = ASSIGN_LHS (INFO_RC_ASSIGN (arg_info));
 
         while (ids != NULL) {
             if (NLUTgetNum (INFO_RC_ENV (arg_info), IDS_AVIS (ids)) == 0) {
@@ -568,7 +571,7 @@ RCIprf (node *arg_node, info *arg_info)
          *
          * - initialize rc with 1
          */
-        if (INFO_RC_LHS (arg_info) != NULL) {
+        if (INFO_RC_ASSIGN (arg_info) != NULL) {
             PRF_ARGS (arg_node) = TBmakeExprs (TBmakeNum (1), PRF_ARGS (arg_node));
         }
 
@@ -576,7 +579,7 @@ RCIprf (node *arg_node, info *arg_info)
          * Traverse shape expression and reuse candidates
          * without corrupting the shape descriptor
          */
-        INFO_RC_LHS (arg_info) = NULL;
+        INFO_RC_ASSIGN (arg_info) = NULL;
         INFO_RC_MODE (arg_info) = rc_prfuse;
         PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
         break;
@@ -1057,6 +1060,7 @@ node *
 RCIfuncond (node *arg_node, info *arg_info)
 {
     int n;
+    node *lhs;
 
     DBUG_ENTER ("RCIfuncond");
 
@@ -1064,9 +1068,10 @@ RCIfuncond (node *arg_node, info *arg_info)
         INFO_RC_ENV2 (arg_info) = NLUTduplicateNlut (INFO_RC_ENV (arg_info));
     }
 
-    n = NLUTgetNum (INFO_RC_ENV (arg_info), IDS_AVIS (INFO_RC_LHS (arg_info)));
-    NLUTsetNum (INFO_RC_ENV (arg_info), IDS_AVIS (INFO_RC_LHS (arg_info)), 0);
-    NLUTsetNum (INFO_RC_ENV2 (arg_info), IDS_AVIS (INFO_RC_LHS (arg_info)), 0);
+    lhs = ASSIGN_LHS (INFO_RC_ASSIGN (arg_info));
+    n = NLUTgetNum (INFO_RC_ENV (arg_info), IDS_AVIS (lhs));
+    NLUTsetNum (INFO_RC_ENV (arg_info), IDS_AVIS (lhs), 0);
+    NLUTsetNum (INFO_RC_ENV2 (arg_info), IDS_AVIS (lhs), 0);
 
     NLUTincNum (INFO_RC_ENV (arg_info), ID_AVIS (FUNCOND_THEN (arg_node)), n);
     NLUTincNum (INFO_RC_ENV2 (arg_info), ID_AVIS (FUNCOND_ELSE (arg_node)), n);
