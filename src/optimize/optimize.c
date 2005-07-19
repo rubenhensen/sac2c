@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.98  2005/07/19 17:08:26  ktr
+ * replaced SSADeadCodeRemoval with deadcoderemoval
+ *
  * Revision 3.97  2005/07/16 21:14:24  sbs
  * moved dispatch and rmcasts into WLEnhancement.c
  *
@@ -437,7 +440,7 @@
 #include "index.h"
 #include "pad.h"
 #include "ssa.h"
-#include "SSADeadCodeRemoval.h"
+#include "deadcoderemoval.h"
 #include "SSACSE.h"
 #include "SSAConstantFolding.h"
 #include "SSALIR.h"

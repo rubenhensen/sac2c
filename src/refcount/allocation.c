@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2005/07/19 17:08:47  ktr
+ * replaced SSADeadCodeRemoval with deadcoderemoval
+ *
  * Revision 1.14  2005/07/03 16:59:18  ktr
  * Switched to phase.h
  *
@@ -54,7 +57,7 @@
 #include "globals.h"
 #include "dbug.h"
 #include "ConstVarPropagation.h"
-#include "SSADeadCodeRemoval.h"
+#include "deadcoderemoval.h"
 #include "print.h"
 #include <string.h>
 
