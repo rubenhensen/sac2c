@@ -25,7 +25,6 @@ SSACSE.c
 SSACSE.h
 SSAConstantFolding.c
 SSAConstantFolding.h
-SSADeadCodeRemoval.h
 SSAWLUnroll.c
 SSAWLUnroll.h
 SSALUR_info.h
