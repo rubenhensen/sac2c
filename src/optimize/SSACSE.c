@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.46  2005/07/19 22:49:04  sbs
+ * funconds fixed
+ * before, exprs chains were still expected.
+ *
  * Revision 1.45  2005/07/18 18:24:14  sbs
  * eliminated FUNDEF_EXT_ASSIGN
  *
@@ -787,16 +791,16 @@ PropagateReturn2Results (node *ap_fundef, node *ids_chain)
              */
 
             if ((AVIS_SUBST (IDS_AVIS (act_result)) == NULL)
-                && (NODE_TYPE (EXPRS_EXPR (FUNCOND_ELSE (
-                      ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (act_exprs)))))))
+                && (NODE_TYPE (FUNCOND_ELSE (
+                      ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (act_exprs))))))
                     == N_id)
-                && (NODE_TYPE (EXPRS_EXPR (FUNCOND_ELSE (
-                      ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (search_exprs)))))))
+                && (NODE_TYPE (FUNCOND_ELSE (
+                      ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (search_exprs))))))
                     == N_id)
-                && (ID_AVIS (EXPRS_EXPR (FUNCOND_ELSE (
-                      ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (act_exprs)))))))
-                    == ID_AVIS (EXPRS_EXPR (FUNCOND_ELSE (ASSIGN_RHS (
-                         AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (search_exprs))))))))) {
+                && (ID_AVIS (FUNCOND_ELSE (
+                      ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (act_exprs))))))
+                    == ID_AVIS (FUNCOND_ELSE (ASSIGN_RHS (
+                         AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (search_exprs)))))))) {
                 /* stop further searching */
                 found_match = TRUE;
                 AVIS_SUBST (IDS_AVIS (act_result)) = IDS_AVIS (search_result);
@@ -846,9 +850,9 @@ GetResultArgAvis (node *id, condpart cp)
         defassign = (ASSIGN_RHS (defassign));
 
         if (cp == THENPART) {
-            defassign = EXPRS_EXPR (FUNCOND_THEN (defassign));
+            defassign = FUNCOND_THEN (defassign);
         } else {
-            defassign = EXPRS_EXPR (FUNCOND_ELSE (defassign));
+            defassign = FUNCOND_ELSE (defassign);
         }
 
         /* check if id is defined as arg */
