@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.11  2005/07/19 07:20:06  sbs
+ * corrected fold computation TEassureSameScalar instead of sameSimple
+ *
  * Revision 1.10  2005/06/14 09:55:10  sbs
  * support for bottom types integrated.
  *
@@ -285,7 +288,7 @@ NTCCTwl_fold (te_info *info, ntype *args)
     neutr = TYgetProductMember (args, 0);
     expr = TYgetProductMember (args, 1);
 
-    TEassureSameSimpleType ("neutral element", neutr, "body expression of fold with loop",
+    TEassureSameScalarType ("neutral element", neutr, "body expression of fold with loop",
                             expr);
     err_msg = TEfetchErrors ();
     if (err_msg != NULL) {
