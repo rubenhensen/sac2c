@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.160  2005/07/19 13:02:54  sah
+ * duplification of lacfuns no longer relies on EXT/INT ASSIGNS
+ *
  * Revision 3.159  2005/07/15 15:57:02  sah
  * introduced namespaces
  *
@@ -1268,13 +1271,6 @@ DUPfundef (node *arg_node, info *arg_info)
     FUNDEF_NEXT (new_node) = DUPCONT (FUNDEF_NEXT (arg_node));
 
     /*
-     * must be done before traversal of BODY
-     */
-    if (FUNDEF_ISLACFUN (new_node)) {
-        FUNDEF_EXT_ASSIGN (new_node) = NULL;
-    }
-
-    /*
      * before duplicating ARGS or VARDEC (in BODY) we have to duplicate
      * SSACOUNTER (located in the top-block, but traversed here)
      */
@@ -1285,6 +1281,11 @@ DUPfundef (node *arg_node, info *arg_info)
         new_ssacnt = NULL;
     }
 
+    /*
+     * we have to insert the new fundef into the LUT prior to
+     * traversing the body as otherwise recursive calls could
+     * not be properly linked to the new fundef
+     */
     INFO_DUP_LUT (arg_info)
       = LUTinsertIntoLutP (INFO_DUP_LUT (arg_info), arg_node, new_node);
 
@@ -1316,11 +1317,6 @@ DUPfundef (node *arg_node, info *arg_info)
 
     FUNDEF_IMPL (new_node)
       = LUTsearchInLutPp (INFO_DUP_LUT (arg_info), FUNDEF_IMPL (arg_node));
-
-    if (FUNDEF_ISDOFUN (new_node)) {
-        FUNDEF_INT_ASSIGN (new_node)
-          = LUTsearchInLutPp (INFO_DUP_LUT (arg_info), FUNDEF_INT_ASSIGN (arg_node));
-    }
 
     if (FUNDEF_WRAPPERTYPE (arg_node) != NULL) {
         FUNDEF_WRAPPERTYPE (new_node) = TYcopyType (FUNDEF_WRAPPERTYPE (arg_node));
@@ -1776,25 +1772,28 @@ DUPap (node *arg_node, info *arg_info)
     old_fundef = AP_FUNDEF (arg_node);
 
     if (old_fundef != NULL) {
+        new_fundef = LUTsearchInLutPp (INFO_DUP_LUT (arg_info), old_fundef);
+
+        DBUG_ASSERT ((!FUNDEF_ISCONDFUN (old_fundef) || (new_fundef == old_fundef)),
+                     "found a condfun ap that points to an already copied function !?!");
+
         if (FUNDEF_ISCONDFUN (old_fundef)
-            || (FUNDEF_ISDOFUN (old_fundef)
-                && (arg_node != ASSIGN_RHS (FUNDEF_INT_ASSIGN (old_fundef))))
-            || (!FUNDEF_ISDOFUN (old_fundef)
-                && (FUNDEF_EXT_ASSIGN (old_fundef) != NULL))) {
+            || (FUNDEF_ISDOFUN (old_fundef) && (new_fundef == old_fundef))) {
             /*
              * Definitions of special functions must be duplicated immediately
              * to retain one-to-one correspondence between application and
              * definition.
-             *
-             * If there is a link to a unique external assignment, this property
-             * is also preserved. This situation applies only when inlining is
-             * used after fun2lac.
              *
              * INFO_DUP_CONT must be reset to avoid copying of entire fundef
              * chain.
              */
             node *store_dup_cont;
             int store_dup_type;
+
+            DBUG_PRINT ("DUP", ("LaC function: copying in-place %s() ...",
+                                (AP_FUNDEF (arg_node) != NULL)
+                                  ? FUNDEF_NAME (AP_FUNDEF (arg_node))
+                                  : "?"));
 
             store_dup_cont = INFO_DUP_CONT (arg_info);
             store_dup_type = INFO_DUP_TYPE (arg_info);
@@ -1811,8 +1810,6 @@ DUPap (node *arg_node, info *arg_info)
 
             FUNDEF_NAME (new_fundef) = ILIBfree (FUNDEF_NAME (new_fundef));
             FUNDEF_NAME (new_fundef) = ILIBtmpVarName (FUNDEF_NAME (old_fundef));
-
-            FUNDEF_EXT_ASSIGN (new_fundef) = INFO_DUP_ASSIGN (arg_info);
 
             /*
              * Unfortunately, there is no proper way to insert the new fundef
