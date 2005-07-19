@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.37  2005/07/19 13:03:29  sah
+ * EXT/INT_ASSIGN is no longer maintained
+ *
  * Revision 3.36  2005/07/15 15:57:02  sah
  * introduced namespaces
  *
@@ -257,7 +260,6 @@
 struct INFO {
     node *fundef;
     node *funs;
-    node *assign;
 };
 
 /*
@@ -265,7 +267,6 @@ struct INFO {
  */
 #define INFO_L2F_FUNDEF(n) (n->fundef)
 #define INFO_L2F_FUNS(n) (n->funs)
-#define INFO_L2F_ASSIGN(n) (n->assign)
 
 /*
  * INFO functions
@@ -281,7 +282,6 @@ MakeInfo ()
 
     INFO_L2F_FUNDEF (result) = NULL;
     INFO_L2F_FUNS (result) = NULL;
-    INFO_L2F_ASSIGN (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -445,14 +445,10 @@ MakeL2fFundef (char *funname, namespace_t *ns, node *instr, node *funcall_let,
 
     FUNDEF_TYPES (fundef) = DFMUdfm2ReturnTypes (out);
     FUNDEF_RETURN (fundef) = ASSIGN_INSTR (ret);
-    FUNDEF_INT_ASSIGN (fundef) = NULL;
-    FUNDEF_EXT_ASSIGN (fundef) = INFO_L2F_ASSIGN (arg_info);
 
     /*
      * construct the new type for the created function
      */
-    DBUG_PRINT ("L2F",
-                ("set link to external assignment: " F_PTR, INFO_L2F_ASSIGN (arg_info)));
 
     switch (NODE_TYPE (instr)) {
     case N_cond:
@@ -658,21 +654,13 @@ L2Ffundef (node *arg_node, info *arg_info)
 node *
 L2Fassign (node *arg_node, info *arg_info)
 {
-    node *old_assign;
-
     DBUG_ENTER ("L2Fassign");
-
-    old_assign = INFO_L2F_ASSIGN (arg_info);
-
-    INFO_L2F_ASSIGN (arg_info) = arg_node;
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
     }
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
-
-    INFO_L2F_ASSIGN (arg_info) = old_assign;
 
     DBUG_RETURN (arg_node);
 }
