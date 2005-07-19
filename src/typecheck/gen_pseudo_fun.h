@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2005/07/19 09:23:38  sbs
+ * _FOLD define eliminated
+ *
  * Revision 3.4  2004/11/25 18:01:40  sbs
  * compiles
  *
@@ -25,8 +28,6 @@
 #define _SAC_GEN_PSEUDO_FUN_H_
 
 #include "types.h"
-
-#define PSEUDO_MOD_FOLD "_FOLD"
 
 extern node *GPFcreateFoldFun (ntype *elem_type, node *fold_fundef, prf fold_prf,
                                char *res_name, char *cexpr_name);
