@@ -37,3 +37,4 @@ signature_simplification.h
 inlining.c
 inlining.h
 deadcoderemoval.c
+deadcoderemoval.h
