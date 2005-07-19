@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.40  2005/07/19 13:04:56  sah
+ * fun2lac no longer relies on EXT/INT_ASSIGN
+ * moved DowngradeConcreteArgs functionality to lacinling.c
+ *
  * Revision 3.39  2005/07/03 17:04:05  ktr
  * Removed an unused variable
  *
@@ -538,84 +542,6 @@ ReturnVarsAreIdentical (node *ext_rets, node *int_rets)
 
 /******************************************************************************
  *
- * Function:
- *   void DowngradeConcreteArgs( node *conc_arg, node *form_arg, node *fundef)
- *
- * Description:
- *   The type of each concrete lacfun argument is downgraded to the least
- *   upper bound of the types of the formal and concrete loop arguments.
- *
- ******************************************************************************/
-void
-DowngradeConcreteArgs (node *conc_arg, node *form_arg, node *fundef)
-{
-    ntype *ftype, *ctype;
-    node *newavis;
-
-    DBUG_ENTER ("DowngradeConcreteArgs");
-
-    if (conc_arg != NULL) {
-        DBUG_ASSERT (NODE_TYPE (conc_arg) == N_exprs,
-                     "Concrete function arguments must be N_exprs");
-        DBUG_ASSERT (form_arg != NULL,
-                     "No correspondence between formal and concrete arguments");
-        DBUG_ASSERT (NODE_TYPE (form_arg) == N_arg,
-                     "Formal function arguments must be N_arg");
-
-        DowngradeConcreteArgs (EXPRS_NEXT (conc_arg), ARG_NEXT (form_arg), fundef);
-
-        DBUG_ASSERT (NODE_TYPE (EXPRS_EXPR (conc_arg)) == N_id,
-                     "Concrete function argument must be N_id");
-
-        ftype = AVIS_TYPE (ARG_AVIS (form_arg));
-        ctype = AVIS_TYPE (ID_AVIS (EXPRS_EXPR (conc_arg)));
-
-        if (!TYeqTypes (ftype, ctype)) {
-            /*
-             * Only formal args being more general than concrete args
-             * are acceptable
-             */
-            DBUG_ASSERT (TYleTypes (ctype, ftype),
-                         "Formal type is more special than concrete type!");
-
-            if (TYisAKS (ftype)) {
-                /*
-                 * Concrete arg is AKV while formal arg is AKS:
-                 * Downgrade concrete arg to AKS
-                 */
-                AVIS_TYPE (ID_AVIS (EXPRS_EXPR (conc_arg)))
-                  = TYfreeType (AVIS_TYPE (ID_AVIS (EXPRS_EXPR (conc_arg))));
-                AVIS_TYPE (ID_AVIS (EXPRS_EXPR (conc_arg))) = TYcopyType (ftype);
-            } else {
-                /*
-                 * Formal arg is more general than AKS:
-                 * Insert assignment
-                 */
-                newavis
-                  = TBmakeAvis (ILIBtmpVarName (ARG_NAME (form_arg)), TYcopyType (ctype));
-
-                FUNDEF_INSTR (fundef)
-                  = TBmakeAssign (TBmakeLet (TBmakeIds (ARG_AVIS (form_arg), NULL),
-                                             TBmakeId (newavis)),
-                                  FUNDEF_INSTR (fundef));
-
-                FUNDEF_VARDEC (fundef)
-                  = TBmakeVardec (ARG_AVIS (form_arg), FUNDEF_VARDEC (fundef));
-
-                ARG_AVIS (form_arg) = newavis;
-            }
-        }
-
-    } else {
-        DBUG_ASSERT (form_arg == NULL,
-                     "No correspondence between formal and concrete arguments");
-    }
-
-    DBUG_VOID_RETURN;
-}
-
-/******************************************************************************
- *
  * function:
  *   node *TransformIntoDoLoop( node *fundef)
  *
@@ -862,16 +788,6 @@ TransformIntoDoLoop (node *fundef)
 
     FUNDEF_INSTR (fundef) = TCappendAssign (ass1, cond_assign);
 
-    /*
-     * Downgrade types of the concrete loop arguments to meet the
-     * types of the potentially reassigned formal arguments.
-     */
-    DowngradeConcreteArgs (AP_ARGS (ASSIGN_RHS (FUNDEF_EXT_ASSIGN (fundef))),
-                           FUNDEF_ARGS (fundef), fundef);
-
-    FUNDEF_INT_ASSIGN (fundef) = NULL;
-    FUNDEF_EXT_ASSIGN (fundef) = NULL;
-
     FUNDEF_ISDOFUN (fundef) = FALSE;
     FUNDEF_ISLACINLINE (fundef) = TRUE;
 
@@ -893,15 +809,6 @@ TransformIntoCond (node *fundef)
 {
     DBUG_ENTER ("TransformIntoCond");
 
-    /*
-     * Downgrade types of the concrete conditional arguments to meet the
-     * types of the formal arguments that might have been downgraded because
-     * of the inlining an inner loop.
-     */
-    DowngradeConcreteArgs (AP_ARGS (ASSIGN_RHS (FUNDEF_EXT_ASSIGN (fundef))),
-                           FUNDEF_ARGS (fundef), fundef);
-
-    FUNDEF_EXT_ASSIGN (fundef) = NULL;
     FUNDEF_ISCONDFUN (fundef) = FALSE;
     FUNDEF_ISLACINLINE (fundef) = TRUE;
 
