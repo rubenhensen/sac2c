@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.21  2005/07/19 08:00:43  sbs
+ * some beautification
+ *
  * Revision 1.20  2005/07/17 11:46:54  sah
  * added fancy filename serialisation
  *
@@ -212,29 +215,27 @@ GenerateSerFileVersionInfo (node *module, FILE *file)
     DBUG_VOID_RETURN;
 }
 
-static void
-AppendSerFunType (char *funname, ntype *type)
+static int
+AppendSerFunType (char *funname, ntype *type, int size)
 {
     char *pos;
-    int size;
     int written;
     ntype *scalar;
 
     DBUG_ENTER ("AppendSerFunType");
 
-    size = strlen (funname);
+    pos = &funname[strlen (funname)];
 
-    pos = &funname[size];
-
-    DBUG_ASSERT ((size < MAX_FUN_NAME_LEN - 1), "fundef name buffer to small!");
+    DBUG_ASSERT ((size > 2), "fundef name buffer to small!");
 
     *pos = '_';
     pos++;
+    size--;
 
     if (TYisScalar (type)) {
         *pos = 'S';
         pos++;
-        size++;
+        size--;
         scalar = type;
     } else if ((TYisAKS (type) || (TYisAKV (type)))) {
         char *shape = SHshape2String (0, TYgetShape (type));
@@ -242,11 +243,11 @@ AppendSerFunType (char *funname, ntype *type)
 
         *pos = 'K';
         pos++;
-        size++;
+        size--;
 
-        written = snprintf (pos, MAX_FUN_NAME_LEN - size, "%s", shape);
+        written = snprintf (pos, size, "%s", shape);
         pos += written;
-        size += written;
+        size -= written;
 
         shape = ILIBfree (shape);
         scalar = TYgetScalar (type);
@@ -254,22 +255,22 @@ AppendSerFunType (char *funname, ntype *type)
         int written;
         *pos = 'D';
         pos++;
-        size++;
+        size--;
 
-        written = snprintf (pos, MAX_FUN_NAME_LEN - size, "%d", TYgetDim (type));
+        written = snprintf (pos, size, "%d", TYgetDim (type));
         pos += written;
-        size += written;
+        size -= written;
 
         scalar = TYgetScalar (type);
     } else if (TYisAUDGZ (type)) {
         *pos = 'G';
         pos++;
-        size++;
+        size--;
         scalar = TYgetScalar (type);
     } else if (TYisAUD (type)) {
         *pos = 'U';
         pos++;
-        size++;
+        size--;
         scalar = TYgetScalar (type);
     } else {
         DBUG_ASSERT (0, "unknown shape class!");
@@ -279,38 +280,37 @@ AppendSerFunType (char *funname, ntype *type)
     if (TYisSimple (scalar)) {
         simpletype simple = TYgetSimpleType (scalar);
 
-        written = snprintf (pos, MAX_FUN_NAME_LEN - size, "%s",
-                            CVbasetype2ShortString (simple));
+        written = snprintf (pos, size, "%s", CVbasetype2ShortString (simple));
 
         pos += written;
-        size += written;
+        size -= written;
     } else if (TYisUser (scalar)) {
         usertype user = TYgetUserType (scalar);
 
-        written = snprintf (pos, MAX_FUN_NAME_LEN - size, "%s__%s",
-                            NSgetName (UTgetNamespace (user)), UTgetName (user));
+        written = snprintf (pos, size, "%s__%s", NSgetName (UTgetNamespace (user)),
+                            UTgetName (user));
 
         pos += written;
-        size += written;
+        size -= written;
     } else if (TYisSymb (scalar)) {
         written = snprintf (pos, MAX_FUN_NAME_LEN - size, "%s__%s",
                             NSgetName (TYgetNamespace (scalar)), TYgetName (scalar));
 
         pos += written;
-        size += written;
+        size -= written;
     } else {
         DBUG_ASSERT (0, "unknown scalar type found");
     }
 
-    DBUG_ASSERT ((size < MAX_FUN_NAME_LEN), "funname buffer to small");
+    DBUG_ASSERT ((size > 0), "funname buffer to small");
 
     *pos = '\0';
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN (size);
 }
 
-static void
-AppendSerFunTypeSignature (char *funname, node *fundef)
+static int
+AppendSerFunTypeSignature (char *funname, node *fundef, int size)
 {
     node *args;
 
@@ -319,18 +319,19 @@ AppendSerFunTypeSignature (char *funname, node *fundef)
     args = FUNDEF_ARGS (fundef);
 
     while (args != NULL) {
-        AppendSerFunType (funname, AVIS_TYPE (ARG_AVIS (args)));
+        size = AppendSerFunType (funname, AVIS_TYPE (ARG_AVIS (args)), size);
 
         args = ARG_NEXT (args);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN (size);
 }
 
 const char *
 SERgenerateSerFunName (stentrytype_t type, node *node)
 {
     static char result[MAX_FUN_NAME_LEN + 1];
+    int size = MAX_FUN_NAME_LEN;
     char *tmp;
 
     DBUG_ENTER ("SERgenerateSerFunName");
@@ -338,33 +339,34 @@ SERgenerateSerFunName (stentrytype_t type, node *node)
     switch (type) {
     case SET_funbody:
     case SET_wrapperbody:
-        snprintf (result, MAX_FUN_NAME_LEN, "SBDY_%s_%s_%d_",
-                  NSgetName (FUNDEF_NS (node)), FUNDEF_NAME (node),
-                  FUNDEF_ISWRAPPERFUN (node));
+        size -= snprintf (result, size, "SBDY_%s_%s_%d_", NSgetName (FUNDEF_NS (node)),
+                          FUNDEF_NAME (node), FUNDEF_ISWRAPPERFUN (node));
 
-        AppendSerFunTypeSignature (result, node);
+        size = AppendSerFunTypeSignature (result, node, size);
 
         break;
     case SET_funhead:
     case SET_wrapperhead:
-        snprintf (result, MAX_FUN_NAME_LEN, "SHD_%s_%s_%d_", NSgetName (FUNDEF_NS (node)),
-                  FUNDEF_NAME (node), FUNDEF_ISWRAPPERFUN (node));
+        size -= snprintf (result, size, "SHD_%s_%s_%d_", NSgetName (FUNDEF_NS (node)),
+                          FUNDEF_NAME (node), FUNDEF_ISWRAPPERFUN (node));
 
-        AppendSerFunTypeSignature (result, node);
+        size = AppendSerFunTypeSignature (result, node, size);
 
         break;
     case SET_typedef:
-        snprintf (result, MAX_FUN_NAME_LEN, "STD_%s_%s_", NSgetName (TYPEDEF_NS (node)),
-                  TYPEDEF_NAME (node));
+        size -= snprintf (result, size, "STD_%s_%s_", NSgetName (TYPEDEF_NS (node)),
+                          TYPEDEF_NAME (node));
         break;
     case SET_objdef:
-        snprintf (result, MAX_FUN_NAME_LEN, "SOD_%s_%s_", NSgetName (OBJDEF_NS (node)),
-                  OBJDEF_NAME (node));
+        size -= snprintf (result, size, "SOD_%s_%s_", NSgetName (OBJDEF_NS (node)),
+                          OBJDEF_NAME (node));
         break;
     default:
         DBUG_ASSERT (0, "Unexpected symboltype found!");
         break;
     }
+
+    DBUG_ASSERT ((size > 0), "internak buffer in SERgenerateSerFunName too small!");
 
     DBUG_PRINT ("SER", ("Generated new function name: %s", result));
 
