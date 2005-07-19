@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.21  2005/07/19 17:02:40  sbs
+ * FUNDEF_INT and FUNDEF_EXT eliminated.
+ *
  * Revision 1.20  2005/04/22 10:08:04  ktr
  * Works with Marielyst compiler.
  *
@@ -79,7 +82,7 @@
  * description:
  *
  *   This module implements loop-unrolling for special do-functions in ssa
- *   form. all while loops have been removed and converted to do-loops before
+ *   form. All while loops have been removed and converted to do-loops before
  *   so we have to deal only with the do loops.
  *   We also do the withloop unrolling by using the existing implementation
  *   in WLUnroll().
@@ -130,6 +133,7 @@ MakeInfo ()
     result = ILIBmalloc (sizeof (info));
 
     INFO_SSALUR_ASSIGN (result) = NULL;
+    INFO_SSALUR_EXT_ASSIGN (result) = NULL;
     INFO_SSALUR_FUNDEF (result) = NULL;
     INFO_SSALUR_MODUL (result) = NULL;
     INFO_SSALUR_REMASSIGN (result) = FALSE;
@@ -154,7 +158,7 @@ FreeInfo (info *info)
 typedef long loopc_t;
 
 /* helper functions for internal use only */
-static loopc_t SSALURGetDoLoopUnrolling (node *fundef);
+static loopc_t SSALURGetDoLoopUnrolling (node *fundef, node *ext_assign);
 static node *FindCondAssign (node *assigns);
 static bool SSALURIsLURPredicate (node *expr);
 static bool SSALURGetLoopIdentifier (node *predicate, node **id);
@@ -164,7 +168,8 @@ static bool SSALURAnalyseLURPredicate (node *expr, prf loop_prf, loopc_t init_co
 static bool SSALURIsLURModifier (node *modifier);
 static bool SSALURAnalyseLURModifier (node *modifier, node **id, prf *loop_prf,
                                       loopc_t *inc);
-static bool SSALURGetConstantArg (node *id, node *fundef, loopc_t *init_counter);
+static bool SSALURGetConstantArg (node *id, node *fundef, node *ext_assign,
+                                  loopc_t *init_counter);
 static bool SSALURIsEqualParameterPosition (node *arg_chain, node *loop_entrance_arg,
                                             node *param_chain, node *loop_rec_param);
 static loopc_t SSALURCalcUnrolling (loopc_t init_counter, loopc_t term_counter,
@@ -177,7 +182,7 @@ static node *SSALURCreateCopyAssignments (node *arg_chain, node *rec_chain);
 /******************************************************************************
  *
  * function:
- *   loopc_t SSALURGetDoLoopUnrolling(node *fundef)
+ *   loopc_t SSALURGetDoLoopUnrolling(node *fundef, node *ext_assign)
  *
  * description:
  *   checks the given fundef for unrolling.
@@ -191,17 +196,20 @@ static node *SSALURCreateCopyAssignments (node *arg_chain, node *rec_chain);
  *
  *     res_t f_do(..., int loop_entrance_counter_id, ...) {
  *             LOOP-BODY;
- *             loop_id = modifier_expr (loop_entrance_counter_id,
- *                                      loop_prf,
- *                                      loop_increment);
+ *             loop_counter_id = modifier_expr (loop_entrance_counter_id,
+ *                                              loop_prf,
+ *                                              loop_increment);
+ *             LOOP-BODY;
  *             cond_id = predicate_expr(loop_counter_id,
  *                                      pred_prf,
  *                                      term_counter);
+ *             LOOP-BODY;
  *             if (cond_id) {
- *               r = f_do(..., loop_counter_id, ...)
+ *               r1 = f_do(..., loop_counter_id, ...)
  *             } else {
- *               r = ...
+ *               r2 = ...
  *             }
+               r = (cond_id ? r1 : r2);
  *             return(r);
  *           }
  *
@@ -213,9 +221,10 @@ static node *SSALURCreateCopyAssignments (node *arg_chain, node *rec_chain);
  *
  ******************************************************************************/
 static loopc_t
-SSALURGetDoLoopUnrolling (node *fundef)
+SSALURGetDoLoopUnrolling (node *fundef, node *ext_assign)
 {
     node *cond_assign;              /* N_assign */
+    node *then_instr;               /* N_assign */
     node *condition;                /* N_expr */
     node *predicate_assign;         /* N_assign */
     node *predicate;                /* N_expr */
@@ -319,19 +328,29 @@ SSALURGetDoLoopUnrolling (node *fundef)
     DBUG_ASSERT ((error == FALSE), "unexpected error occured during analysis");
 
     /* check loop entrance identifier to be a (external constant) arg */
-    if (!(SSALURGetConstantArg (loop_entrance_counter_id, fundef, &init_counter))) {
+    if (!(SSALURGetConstantArg (loop_entrance_counter_id, fundef, ext_assign,
+                                &init_counter))) {
         DBUG_PRINT ("SSALUR", ("loop entrance counter is no constant arg"));
         DBUG_RETURN (UNR_NONE);
     }
 
+    /* extract recursive call behind cond */
+    then_instr = COND_THENINSTR (ASSIGN_INSTR (cond_assign));
+    DBUG_ASSERT ((NODE_TYPE (then_instr) == N_assign),
+                 "cond of loop fun w/o N_assign in then body");
+    DBUG_ASSERT ((NODE_TYPE (ASSIGN_INSTR (then_instr)) == N_let),
+                 "cond of loop fun w/o N_let in then body");
+    DBUG_ASSERT ((NODE_TYPE (ASSIGN_RHS (then_instr)) == N_ap),
+                 "cond of loop fun w/o N_ap in then body");
+    DBUG_ASSERT ((AP_FUNDEF (ASSIGN_RHS (then_instr)) == fundef),
+                 "cond of loop fun w/o recursiv call in then body");
     /*
      * check arg position of entrance identifier and position of
      * loop count identifier in and recursive call to be equal
      */
     if (!(SSALURIsEqualParameterPosition (FUNDEF_ARGS (fundef),
                                           AVIS_DECL (ID_AVIS (loop_entrance_counter_id)),
-                                          AP_ARGS (LET_EXPR (
-                                            ASSIGN_INSTR (FUNDEF_INT_ASSIGN (fundef)))),
+                                          AP_ARGS (LET_EXPR (ASSIGN_INSTR (then_instr))),
                                           AVIS_DECL (ID_AVIS (loop_counter_id))))) {
         DBUG_PRINT ("SSALUR", ("arg and recursive parameter position don't match"));
         DBUG_RETURN (UNR_NONE);
@@ -722,7 +741,8 @@ SSALURAnalyseLURModifier (node *modifier, node **id, prf *loop_prf, loopc_t *inc
 /******************************************************************************
  *
  * function:
- *   bool SSALURGetConstantArg(node *id, node *fundef, loopc_t *init_counter)
+ *   bool SSALURGetConstantArg(node *id, node *fundef, node *ext_assign,
+ *                             loopc_t *init_counter)
  *
  * description:
  *   checks, if given id is an argument with external constant value.
@@ -732,7 +752,7 @@ SSALURAnalyseLURModifier (node *modifier, node **id, prf *loop_prf, loopc_t *inc
  *
  ******************************************************************************/
 static bool
-SSALURGetConstantArg (node *id, node *fundef, loopc_t *init_counter)
+SSALURGetConstantArg (node *id, node *fundef, node *ext_assign, loopc_t *init_counter)
 {
     node *arg_chain;
     node *param_chain;
@@ -762,7 +782,7 @@ SSALURGetConstantArg (node *id, node *fundef, loopc_t *init_counter)
     DBUG_ASSERT ((arg_chain != NULL), "arg not found in fundef arg chain");
 
     /* get matching parameter expr-node */
-    param_chain = AP_ARGS (ASSIGN_RHS (FUNDEF_EXT_ASSIGN (fundef)));
+    param_chain = AP_ARGS (ASSIGN_RHS (ext_assign));
 
     for (i = 1; i < pos; i++) {
         param_chain = EXPRS_NEXT (param_chain);
@@ -953,6 +973,52 @@ CalcMulUnroll (loopc_t init, loopc_t inc, loopc_t term)
  *   to get the right references between loop-end and loop-start.
  *   this duplicating destroys the ssa form that has to be restored afterwards.
  *   the contained conditional is set to FALSE to skip recursion.
+ *   More precisely, we transform our pattern:
+ *
+ *     res_t f_do(..., int loop_entrance_counter_id, ...) {
+ *             LOOP-BODY;
+ *             loop_counter_id = modifier_expr (loop_entrance_counter_id,
+ *                                              loop_prf,
+ *                                              loop_increment);
+ *             LOOP-BODY;
+ *             cond_id = predicate_expr(loop_counter_id,
+ *                                      pred_prf,
+ *                                      term_counter);
+ *             LOOP-BODY;
+ *             if (cond_id) {
+ *               r1 = f_do(..., loop_counter_id, ...)
+ *             } else {
+ *               r2 = ...
+ *             }
+ *             r = (cond_id ? r1 : r2);
+ *             return(r);
+ *           }
+ *
+ *   into:
+ *
+ *     res_t f_do(..., int loop_entrance_counter_id, ...) {
+ *       /     LOOP-BODY;
+ *       |     loop_counter_id = modifier_expr (loop_entrance_counter_id,
+ *       |                                      loop_prf,
+ *       |                                      loop_increment);
+ *       |     LOOP-BODY;
+ *       |     cond_id = predicate_expr(loop_counter_id,
+ *  n-times                             pred_prf,
+ *       |                              term_counter);
+ *       |     LOOP-BODY;
+ *       |     ...
+ *       |     loop_entrance_counter_id = loop_counter_id;
+ *       |     ...
+ *       \_
+ *             tmp_var = false;
+ *             if (tmp_var) {
+ *               r1 = f_do(..., loop_counter_id, ...)
+ *             } else {
+ *               r2 = ...
+ *             }
+ *             r = (cond_id ? r1 : r2);
+ *             return(r);
+ *           }
  *
  * !!! WARNING - this transformation destroys the ssa form              !!!
  * !!! the ssa form has to be restored before leaving this optimization !!!
@@ -962,6 +1028,7 @@ static node *
 SSALURUnrollLoopBody (node *fundef, loopc_t unrolling)
 {
     node *loop_body;
+    node *then_instr; /* N_assign */
     node *cond_assign;
     node *last;
     node *new_body;
@@ -1000,12 +1067,22 @@ SSALURUnrollLoopBody (node *fundef, loopc_t unrolling)
     } else {
         /* unrolling */
 
+        /* extract recursive call behind cond */
+        then_instr = COND_THENINSTR (cond_assign);
+        DBUG_ASSERT ((NODE_TYPE (then_instr) == N_assign),
+                     "cond of loop fun w/o N_assign in then body");
+        DBUG_ASSERT ((NODE_TYPE (ASSIGN_INSTR (then_instr)) == N_let),
+                     "cond of loop fun w/o N_let in then body");
+        DBUG_ASSERT ((NODE_TYPE (ASSIGN_RHS (then_instr)) == N_ap),
+                     "cond of loop fun w/o N_ap in then body");
+        DBUG_ASSERT ((AP_FUNDEF (ASSIGN_RHS (then_instr)) == fundef),
+                     "cond of loop fun w/o recursiv call in then body");
+
         /* append copy assignments to loop-body */
         loop_body
-          = TCappendAssign (loop_body,
-                            SSALURCreateCopyAssignments (FUNDEF_ARGS (fundef),
-                                                         AP_ARGS (ASSIGN_RHS (
-                                                           FUNDEF_INT_ASSIGN (fundef)))));
+          = TCappendAssign (loop_body, SSALURCreateCopyAssignments (FUNDEF_ARGS (fundef),
+                                                                    AP_ARGS (ASSIGN_RHS (
+                                                                      then_instr))));
 
         new_body = NULL;
 
@@ -1141,7 +1218,7 @@ LURfundef (node *arg_node, info *arg_info)
     }
 
     /* analyse fundef for possible unrolling */
-    unrolling = SSALURGetDoLoopUnrolling (arg_node);
+    unrolling = SSALURGetDoLoopUnrolling (arg_node, INFO_SSALUR_EXT_ASSIGN (arg_info));
 
     if (unrolling != UNR_NONE) {
         if (unrolling <= global.unrnum) {
@@ -1251,6 +1328,7 @@ LURap (node *arg_node, info *arg_info)
         new_arg_info = MakeInfo ();
 
         INFO_SSALUR_MODUL (new_arg_info) = INFO_SSALUR_MODUL (arg_info);
+        INFO_SSALUR_EXT_ASSIGN (new_arg_info) = INFO_SSALUR_ASSIGN (arg_info);
 
         /* start traversal of special fundef */
         AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), new_arg_info);
