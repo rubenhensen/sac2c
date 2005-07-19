@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2005/07/19 22:47:53  sbs
+ * deadcoderemoval and - more importantly - DFmask generation
+ * suppressed for body-less fundefs
+ *
  * Revision 1.1  2005/07/19 16:56:48  ktr
  * Initial revision
  *
@@ -176,47 +180,48 @@ DCRfundef (node *arg_node, info *arg_info)
     DBUG_PRINT ("DCR",
                 ("\nstarting dead code removal in fundef %s.", FUNDEF_NAME (arg_node)));
 
-    if ((!FUNDEF_ISLACFUN (arg_node)) || (arg_info != NULL)) {
-        info *info;
-        dfmask_base_t *maskbase;
+    if (FUNDEF_BODY (arg_node) != NULL) {
 
-        maskbase = DFMgenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
+        if ((!FUNDEF_ISLACFUN (arg_node)) || (arg_info != NULL)) {
+            info *info;
+            dfmask_base_t *maskbase;
 
-        info = MakeInfo ();
-        INFO_DCR_FUNDEF (info) = arg_node;
-        INFO_DCR_USEDMASK (info) = DFMgenMaskClear (maskbase);
+            maskbase = DFMgenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
 
-        if (FUNDEF_BODY (arg_node) != NULL) {
+            info = MakeInfo ();
+            INFO_DCR_FUNDEF (info) = arg_node;
+            INFO_DCR_USEDMASK (info) = DFMgenMaskClear (maskbase);
+
             FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), info);
-        }
 
-        if (FUNDEF_ISLACFUN (arg_node)) {
-            /*
-             * traverse args and rets to remove unused ones from signature
-             */
-            INFO_DCR_EXT_ASSIGN (info) = INFO_DCR_ASSIGN (arg_info);
-            if (FUNDEF_ARGS (arg_node) != NULL) {
-                FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), info);
-            }
-
-            if (FUNDEF_RETS (arg_node) != NULL) {
-                FUNDEF_RETS (arg_node) = TRAVdo (FUNDEF_RETS (arg_node), info);
-            }
-
-            if (INFO_DCR_CONDREMOVED (arg_info)) {
+            if (FUNDEF_ISLACFUN (arg_node)) {
                 /*
-                 * Conditional was removed: Convert to regular function
+                 * traverse args and rets to remove unused ones from signature
                  */
-                FUNDEF_ISCONDFUN (arg_node) = FALSE;
-                FUNDEF_ISDOFUN (arg_node) = FALSE;
-                FUNDEF_ISINLINE (arg_node) = TRUE;
+                INFO_DCR_EXT_ASSIGN (info) = INFO_DCR_ASSIGN (arg_info);
+                if (FUNDEF_ARGS (arg_node) != NULL) {
+                    FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), info);
+                }
+
+                if (FUNDEF_RETS (arg_node) != NULL) {
+                    FUNDEF_RETS (arg_node) = TRAVdo (FUNDEF_RETS (arg_node), info);
+                }
+
+                if (INFO_DCR_CONDREMOVED (arg_info)) {
+                    /*
+                     * Conditional was removed: Convert to regular function
+                     */
+                    FUNDEF_ISCONDFUN (arg_node) = FALSE;
+                    FUNDEF_ISDOFUN (arg_node) = FALSE;
+                    FUNDEF_ISINLINE (arg_node) = TRUE;
+                }
             }
+
+            INFO_DCR_USEDMASK (info) = DFMremoveMask (INFO_DCR_USEDMASK (info));
+            info = FreeInfo (info);
+
+            maskbase = DFMremoveMaskBase (maskbase);
         }
-
-        INFO_DCR_USEDMASK (info) = DFMremoveMask (INFO_DCR_USEDMASK (info));
-        info = FreeInfo (info);
-
-        maskbase = DFMremoveMaskBase (maskbase);
     }
 
     DBUG_RETURN (arg_node);
