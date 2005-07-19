@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  2005/07/19 22:46:45  sbs
+ * fixed problem with NULL arg_node2
+ *
  * Revision 1.16  2004/12/08 18:02:40  ktr
  * removed ARRAY_TYPE/ARRAY_NTYPE
  *
@@ -161,22 +164,39 @@ TravLocal (node *arg_node, info *arg_info)
 
     arg_node2 = INFO_CMPT_TREE (arg_info);
 
-    for (i = 0; i < TRAVnumSons (arg_node); i++) {
-        /* process every son of node */
-        if (INFO_CMPT_EQFLAG (arg_info) == CMPT_EQ) {
-            if (TRAVgetSon (i, arg_node) != NULL) {
-                /* start traversal of son */
-                INFO_CMPT_TREE (arg_info) = TRAVgetSon (i, arg_node2);
-                TRAVdo (TRAVgetSon (i, arg_node), arg_info);
-            } else {
-                /* check, if second tree is also NULL */
-                if (TRAVgetSon (i, arg_node2) != NULL) {
-                    INFO_CMPT_EQFLAG (arg_info) = CMPT_NEQ;
+    if (arg_node == NULL) {
+        if (arg_node2 == NULL) {
+            INFO_CMPT_EQFLAG (arg_info) = CMPT_EQ;
+        } else {
+            INFO_CMPT_EQFLAG (arg_info) = CMPT_NEQ;
+        }
+    } else {
+        if (arg_node2 == NULL) {
+            INFO_CMPT_EQFLAG (arg_info) = CMPT_NEQ;
+        } else {
+
+            for (i = 0; i < TRAVnumSons (arg_node); i++) {
+                /* process every son of node */
+                if (INFO_CMPT_EQFLAG (arg_info) == CMPT_EQ) {
+                    if (TRAVgetSon (i, arg_node) != NULL) {
+                        /* start traversal of son */
+                        INFO_CMPT_TREE (arg_info) = TRAVgetSon (i, arg_node2);
+                        if (INFO_CMPT_TREE (arg_info) != NULL) {
+                            TRAVdo (TRAVgetSon (i, arg_node), arg_info);
+                        } else {
+                            INFO_CMPT_EQFLAG (arg_info) = CMPT_NEQ;
+                        }
+                    } else {
+                        /* check, if second tree is also NULL */
+                        if (TRAVgetSon (i, arg_node2) != NULL) {
+                            INFO_CMPT_EQFLAG (arg_info) = CMPT_NEQ;
+                        }
+                    }
+                } else {
+                    /* stop further traversals */
+                    i = TRAVnumSons (arg_node) + 1;
                 }
             }
-        } else {
-            /* stop further traversals */
-            i = TRAVnumSons (arg_node) + 1;
         }
     }
 
