@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.181  2005/07/19 16:57:40  ktr
+# replaced SSADeadCodeRemoval with deadcoderemoval.
+#
 # Revision 3.180  2005/07/17 20:12:35  sbs
 # split_wrappers.o added.
 #
@@ -230,7 +233,7 @@ TYPECHECK= src/typecheck/gen_pseudo_fun.o \
 OPTIMIZE= src/optimize/optimize.o \
           src/optimize/DeadFunctionRemoval.o \
           src/optimize/AssociativeLaw.o \
-          src/optimize/SSADeadCodeRemoval.o src/optimize/SSACSE.o \
+          src/optimize/deadcoderemoval.o src/optimize/SSACSE.o \
           src/optimize/SSAConstantFolding.o src/optimize/SSALIR.o \
           src/optimize/SSALUR.o src/optimize/SSAInferLI.o \
           src/optimize/SSAWLUnroll.o src/optimize/rmcasts.o \

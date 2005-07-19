@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.42  2005/07/19 16:57:14  ktr
+# replaced SSADeadCodeRemoval with deadcoderemoval.
+#
 # Revision 3.41  2005/04/20 19:13:23  ktr
 # removed Inline.o
 #
@@ -41,8 +44,8 @@ include $(PROJECT_ROOT)/Makefile.Config
 # local settings:
 #
 
-OBJS := optimize.o DeadFunctionRemoval.o \
-        SSADeadCodeRemoval.o SSACSE.o SSAConstantFolding.o SSALIR.o SSALUR.o \
+OBJS := optimize.o DeadFunctionRemoval.o deadcoderemoval.o \
+        SSACSE.o SSAConstantFolding.o SSALIR.o SSALUR.o \
         SSAWLUnroll.o SSAInferLI.o AssociativeLaw.o rmcasts.o \
         UndoElimSubDiv.o ElimSubDiv.o \
         ConstVarPropagation.o DistributiveLaw.o type_upgrade.o \

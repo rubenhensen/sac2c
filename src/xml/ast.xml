@@ -780,10 +780,11 @@
 	  <node name="Ids" />
 	</travuser>
       </traversal>
-    <traversal id="DCR" name="Dead Code Removal" default="sons" include="SSADeadCodeRemoval.h" >
+    <traversal id="DCR" name="Dead Code Removal" default="sons" include="deadcoderemoval.h" >
 	<travuser>
 	  <node name="Fundef" />
 	  <node name="Arg" />
+	  <node name="Ret" />
 	  <node name="Vardec" />
 	  <node name="Block" />
 	  <node name="Assign" />
@@ -792,8 +793,6 @@
 	  <node name="Ids" />
 	  <node name="Code" />
 	  <node name="Cond" />
-	  <node name="With" />
-	  <node name="Part" />
 	  <node name="Withid" />
 	  <node name="Ap" />
 	  <node name="Return" />
