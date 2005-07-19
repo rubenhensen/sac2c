@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  2005/07/19 11:52:43  sah
+ * introduced ILIBstringCompare
+ *
  * Revision 1.15  2005/07/15 15:57:02  sah
  * introduced namespaces
  *
@@ -209,7 +212,7 @@ EXPsymbol (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EXPsymbol");
 
-    if (!strcmp (INFO_EXP_SYMBOL (arg_info), SYMBOL_ID (arg_node))) {
+    if (ILIBstringCompare (INFO_EXP_SYMBOL (arg_info), SYMBOL_ID (arg_node))) {
         INFO_EXP_RESULT (arg_info) = TRUE;
     }
 
