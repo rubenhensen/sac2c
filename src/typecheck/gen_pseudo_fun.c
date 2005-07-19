@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.21  2005/07/19 17:09:59  sbs
+ * eliminated module encoding
+ *
  * Revision 3.20  2005/07/18 15:01:46  sbs
  * removed the PSEUDE namespace FOLD for fold funs.
  * Considered safe by sah due to _ prefix in fun-name :-)
@@ -127,8 +130,8 @@
  * description:
  *  - generates an N_fundef node of the following kind:
  *
- *      <elem_type> _FOLD:_type_<n>_<mod>__<fold_fun>( <elem_type> <res_name>,
- *                                                     <elem_type> <cexpr_name>)
+ *      <elem_type> actNS:_type_<n>__<fold_fun>( <elem_type> <res_name>,
+ *                                               <elem_type> <cexpr_name>)
  *      {
  *        tmp__<res_name> = <fold_fun>( <res_name>, <cexpr_name>)
  *        return( tmp__<res_name>);
@@ -175,9 +178,7 @@ GPFcreateFoldFun (ntype *elem_type, node *fold_fundef, prf fold_prf, char *res_n
      * that no two fold functions from different modules may have the same
      * internal name.
      */
-    buffer = (char *)ILIBmalloc (strlen (pseudo_fold_fun_name)
-                                 + strlen (global.modulename) + 3);
-    strcpy (buffer, global.modulename);
+    buffer = (char *)ILIBmalloc (strlen (pseudo_fold_fun_name) + 3);
     strcat (buffer, "__");
     strcat (buffer, pseudo_fold_fun_name);
     pseudo_fold_fun_name = ILIBtmpVarName (buffer);
