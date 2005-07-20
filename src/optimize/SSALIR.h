@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.8  2005/07/20 13:12:37  ktr
+ * removed FUNDEF_EXTASSIGN/INTASSIGN
+ *
  * Revision 1.7  2004/11/26 21:59:14  mwe
  * LIRids, LIRMOVids added
  *
@@ -72,6 +75,5 @@ extern node *LIRMOVwithid (node *arg_node, info *arg_info);
 extern node *LIRMOVblock (node *arg_node, info *arg_info);
 extern node *LIRMOVassign (node *arg_node, info *arg_info);
 extern node *LIRMOVlet (node *arg_node, info *arg_info);
-extern node *LIRMOVreturn (node *arg_node, info *arg_info);
 extern node *LIRMOVids (node *arg_node, info *arg_info);
 #endif /* _SAC_SSALIR_H_ */
