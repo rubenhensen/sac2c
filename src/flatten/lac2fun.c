@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.38  2005/07/20 13:10:06  ktr
+ * removed FUNDEF_INT_ASSIGN
+ *
  * Revision 3.37  2005/07/19 13:03:29  sah
  * EXT/INT_ASSIGN is no longer maintained
  *
@@ -471,7 +474,6 @@ MakeL2fFundef (char *funname, namespace_t *ns, node *instr, node *funcall_let,
             let = DUPdoDupTreeLut (funcall_let, lut);
             AP_FUNDEF (LET_EXPR (let)) = fundef;
             ass = TBmakeAssign (let, NULL);
-            FUNDEF_INT_ASSIGN (fundef) = ass;
             ASSIGN_NEXT (tmp)
               = TBmakeAssign (TBmakeCond (DUPdoDupTreeLut (DO_COND (instr), lut),
                                           TBmakeBlock (ass, NULL),

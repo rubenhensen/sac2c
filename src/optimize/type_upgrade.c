@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.36  2005/07/20 13:13:02  ktr
+ * removed FUNDEF_INT_ASSIGN
+ *
  * Revision 1.35  2005/07/03 17:14:47  ktr
  * No idea what changed.
  *
@@ -2070,12 +2073,12 @@ TUPap (node *arg_node, info *arg_info)
     DBUG_ENTER ("TUPap");
 
     if (INFO_TUP_CHECKLOOPFUN (arg_info)) {
-        if (ASSIGN_RHS (FUNDEF_INT_ASSIGN (INFO_TUP_FUNDEF (arg_info))) == arg_node) {
+        if ((FUNDEF_ISDOFUN (AP_FUNDEF (arg_node)))
+            && (AP_FUNDEF (arg_node) == INFO_TUP_FUNDEF (arg_info))) {
             /*
-             * at the moment we are checking, if the recursive call of a loop function
-             * will work with specialized signature
+             * at the moment we are checking, if the recursive call of a loop
+             * function will work with specialized signature
              */
-
             node *signature, *args;
             ntype *tmp;
 
