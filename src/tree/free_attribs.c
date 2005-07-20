@@ -1,9 +1,8 @@
 /*
  *
  * $Log$
- * Revision 1.29  2005/07/20 13:15:33  ktr
- * FREEattribExtLink no longe removes LaC functions. This is now done in the
- * mandatory lacinline traversal
+ * Revision 1.30  2005/07/20 19:11:07  sah
+ * reverted to pre-kai free
  *
  * Revision 1.28  2005/07/15 15:57:02  sah
  * introduced namespaces
@@ -278,6 +277,20 @@ node *
 FREEattribExtLink (node *attr, node *parent)
 {
     DBUG_ENTER ("FREEattribExtLink");
+
+    if (attr != NULL) {
+        if (NODE_TYPE (attr) == N_fundef) {
+            if (attr->attribs.N_fundef != NULL) {
+                DBUG_ASSERT ((NODE_TYPE (attr) == N_fundef),
+                             "illegal value in AP_FUNDEF found!");
+                if (FUNDEF_ISDOFUN (attr) && (!FUNDEF_ISZOMBIE (attr))) {
+                    attr = FREEdoFreeNode (attr);
+                } else if (FUNDEF_ISCONDFUN (attr)) {
+                    attr = FREEdoFreeNode (attr);
+                }
+            }
+        }
+    }
 
     DBUG_RETURN ((node *)NULL);
 }
