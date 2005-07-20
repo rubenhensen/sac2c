@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.20  2005/07/20 13:16:50  ktr
+ * removed FUNDEF_EXT_ASSIGM
+ *
  * Revision 1.19  2005/07/15 15:57:02  sah
  * introduced namespaces
  *
@@ -941,14 +944,6 @@ DSap (node *arg_node, info *arg_info)
     DBUG_ENTER ("DSap");
 
     DBUG_ASSERT (AP_FUNDEF (arg_node) != NULL, "found a ap without fundef link!");
-
-    if (FUNDEF_ISLACFUN (AP_FUNDEF (arg_node))) {
-        /*
-         * we have to restore the EXT_ASSIGN field
-         * of the referenced Cond/Do-Fun
-         */
-        FUNDEF_EXT_ASSIGN (AP_FUNDEF (arg_node)) = INFO_DS_LASTASSIGN (arg_info);
-    }
 
     arg_node = TRAVcont (arg_node, arg_info);
 
