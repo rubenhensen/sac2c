@@ -173,7 +173,7 @@ extern void _db_longjmp_ (); /* Restore debugger environment */
     if (!(expr)) {                                                                       \
         fprintf (stderr, "Assertion 'expr' failed: file '%s', line %d\n** %s\n",         \
                  __FILE__, __LINE__, text);                                              \
-        exit (1);                                                                        \
+        abort ();                                                                        \
     } else                                                                               \
         NOOP
 
