@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.38  2005/07/20 14:31:25  sbs
+ * reflagged lac funs into lacinline funs whenever the code is transformed
+ * due to bottom types
+ *
  * Revision 1.37  2005/07/12 10:22:48  sah
  * renamed CreateTypeErrorBody to ReplaceBodyByTypeError
  * as it now handles an entire fundef and sets the
@@ -350,6 +354,17 @@ ReplaceBodyByTypeError (node *fundef, ntype *inferred_type, ntype *res_type)
 
     FUNDEF_RETS (fundef) = TUreplaceRetTypes (FUNDEF_RETS (fundef), res_type);
 
+    /**
+     * finally, we need to make sure that this function is tagged appropriately
+     * As it does not have a body anymore, we need to remove potential LAC flags
+     * and ensure the code will be inlined.
+     */
+    if (FUNDEF_ISLACFUN (fundef)) {
+        FUNDEF_ISDOFUN (fundef) = FALSE;
+        FUNDEF_ISCONDFUN (fundef) = FALSE;
+        FUNDEF_ISLACINLINE (fundef) = TRUE;
+    }
+
     DBUG_RETURN (fundef);
 }
 
@@ -524,8 +539,15 @@ NT2OTfundef (node *arg_node, info *arg_info)
                                                            FUNDEF_VARDEC (arg_node));
                 INFO_NT2OT_VARDECS (arg_info) = NULL;
             }
+            if (FUNDEF_ISDOFUN (arg_node) && INFO_NT2OT_THENBOTTS (arg_info) != NULL) {
+                FUNDEF_ISDOFUN (arg_node) = FALSE;
+                FUNDEF_ISLACINLINE (arg_node) = TRUE;
+            }
         }
     }
+
+    INFO_NT2OT_THENBOTTS (arg_info) = NULL;
+    INFO_NT2OT_ELSEBOTTS (arg_info) = NULL;
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
@@ -780,13 +802,11 @@ NT2OTcond (node *arg_node, info *arg_info)
         ASSIGN_NEXT (INFO_NT2OT_THENBOTTS (arg_info))
           = BLOCK_INSTR (COND_THEN (arg_node));
         BLOCK_INSTR (COND_THEN (arg_node)) = INFO_NT2OT_THENBOTTS (arg_info);
-        INFO_NT2OT_THENBOTTS (arg_info) = NULL;
     }
     if (INFO_NT2OT_ELSEBOTTS (arg_info) != NULL) {
         ASSIGN_NEXT (INFO_NT2OT_ELSEBOTTS (arg_info))
           = BLOCK_INSTR (COND_ELSE (arg_node));
         BLOCK_INSTR (COND_ELSE (arg_node)) = INFO_NT2OT_ELSEBOTTS (arg_info);
-        INFO_NT2OT_THENBOTTS (arg_info) = NULL;
     }
 
     DBUG_RETURN (arg_node);
