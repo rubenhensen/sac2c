@@ -874,7 +874,6 @@
 	  <node name="Assign" />
           <node name="Block" />
           <node name="Let" />
-          <node name="Return" />
           <node name="Ids" />
 	</travuser>
       </traversal>
@@ -2257,28 +2256,6 @@
           <type name="OldType" />
           <phases>
             <range from="tot" to="final" />
-          </phases>
-        </attribute>
-        <attribute name="Ext_Assign" default="NULL" mandatory="no">
-          <description>only for ST_condfun, ST_dofun</description>
-          <type name="Link">
-            <target>
-              <node name="Assign" />
-            </target>
-          </type>
-          <phases>
-            <all />
-          </phases>
-        </attribute>
-        <attribute name="Int_Assign" default="NULL" mandatory="no">
-          <description>only for ST_dofun</description>
-          <type name="Link">
-            <target>
-              <node name="Assign" />
-            </target>
-          </type>
-          <phases>
-            <all />
           </phases>
         </attribute>
         <attribute name="Specs" mandatory="no">
