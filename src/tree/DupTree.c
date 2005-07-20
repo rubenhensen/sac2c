@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.161  2005/07/20 13:14:35  ktr
+ * removed stuff commented out using if 0
+ *
  * Revision 3.160  2005/07/19 13:02:54  sah
  * duplification of lacfuns no longer relies on EXT/INT ASSIGNS
  *
@@ -3491,115 +3494,3 @@ DUPgetCopiedSpecialFundefs ()
 
     DBUG_RETURN (store);
 }
-
-#if 0
-
-/******************************************************************************
- *
- * Function:
- *   node *CheckAndDupSpecialFundef( node *module, node *fundef, node *assign)
- *
- * Returns:
- *   modified module node
- *
- * Description:
- *   Checks a special fundef for multiple uses. if there are more than one
- *   external assignment/function application, this given assignment is removed
- *   from the special function list of external assignments and added to
- *   the newly duplicated and renamed version of this fundef. the concerning
- *   assignment/function application is modified to call the new fundef.
- *   the new fundef is added to the global MODUL_FUNS chain of fundefs.
- * 
- * remarks:
- *   because the global fundef chain is modified during the traversal of 
- *   this function chain it is necessary not to overwrite the MODUL_FUNS
- *   attribute in the bottom-up traversal!!!
- *
- *****************************************************************************/
-
-node *DUPcheckAndDupSpecialFundef( node *module, node *fundef, node *assign)
-{
-  node *new_fundef;
-  char *new_name;
-
-  DBUG_ENTER("DUPcheckAndDupSpecialFundef");
-
-  DBUG_ASSERT( (NODE_TYPE(module) == N_module), 
-               "given module node is not a module");
-  DBUG_ASSERT( (NODE_TYPE(fundef) == N_fundef),
-               "given fundef node is not a fundef");
-  DBUG_ASSERT( (NODE_TYPE(assign) == N_assign),
-               "given assign node is not an assignment");
-  DBUG_ASSERT( (FUNDEF_ISLACFUN(fundef)),
-               "given fundef is not a special fundef");
-  DBUG_ASSERT( (FUNDEF_USED( fundef) != USED_INACTIVE),
-               "FUNDEF_USED must be active for special functions!");
-  DBUG_ASSERT( (FUNDEF_USED( fundef) > 0),
-               "fundef is not used anymore");
-  DBUG_ASSERT( (FUNDEF_EXT_ASSIGNS(fundef) != NULL),
-               "fundef has no external assignments");
-  DBUG_ASSERT( (NODE_TYPE(ASSIGN_INSTR(assign)) == N_let),
-               "assignment contains no let");
-  DBUG_ASSERT( (NODE_TYPE(ASSIGN_RHS(assign)) == N_ap),
-                "assignment is to application");
-  DBUG_ASSERT( (AP_FUNDEF(ASSIGN_RHS(assign)) == fundef),
-               "application of different fundef than given fundef");
-  DBUG_ASSERT( (TCnodeListFind(FUNDEF_EXT_ASSIGNS(fundef), assign) != NULL),
-               "given assignment is not element of external assignment list");
-
-  if (FUNDEF_USED( fundef) > 1) {
-    /* multiple uses - duplicate special fundef */
-    DBUG_PRINT("DUP", ("duplicating multiple fundef %s", FUNDEF_NAME(fundef)));
-    
-    new_fundef = DUPdoDupNode( fundef);
-    
-    /* rename fundef */
-    new_name = ILIBtmpVarName( FUNDEF_NAME( fundef));
-    FUNDEF_NAME( new_fundef) = ILIBfree( FUNDEF_NAME( new_fundef));
-    FUNDEF_NAME( new_fundef) = new_name;
-    
-    /* rename recursive funap (only do/while fundefs */
-    if (FUNDEF_ISDOFUN(new_fundef)){      DBUG_ASSERT((FUNDEF_INT_ASSIGN( new_fundef) != NULL),
-        "missing link to recursive function call");
-
-      AP_FUNDEF( ASSIGN_RHS( FUNDEF_INT_ASSIGN( new_fundef))) = new_fundef;
-    }
-    
-    /* init external assignment list */
-    FUNDEF_EXT_ASSIGNS( new_fundef) = TCnodeListAppend( NULL, assign, NULL);
-    FUNDEF_USED( new_fundef) = 1;
-
-    /* rename the external assign/funap */
-    AP_FUNDEF( ASSIGN_RHS( assign)) = new_fundef;
-
-    /* add new fundef to global chain of fundefs */
-    if (FUNDEF_BODY( new_fundef) != NULL){
-      FUNDEF_NEXT( new_fundef) = MODULE_FUNS( module);
-      MODULE_FUNS( module) = new_fundef;
-    }
-    else{
-      FUNDEF_NEXT( new_fundef) = MODULE_FUNDECS( module);
-      MODULE_FUNDECS( module) = new_fundef;
-    }
-
-    DBUG_ASSERT( (TCnodeListFind( FUNDEF_EXT_ASSIGNS( fundef),
-                                assign) != NULL),
-                 "Assignment not found in FUNDEF_EXT_ASSIGNS!");
-
-    /* remove assignment from old external assignment list */
-    FUNDEF_EXT_ASSIGNS( fundef) = TCnodeListDelete( FUNDEF_EXT_ASSIGNS( fundef),
-                                                  assign, FALSE);
-
-    (FUNDEF_USED( fundef))--;
-
-    DBUG_ASSERT( (FUNDEF_USED( fundef) >= 0),
-                 "FUNDEF_USED dropped below 0");
-  }
-  else {
-    /* only single use - no duplication needed */
-  }
-
-  DBUG_RETURN(module);
-}
-
-#endif
