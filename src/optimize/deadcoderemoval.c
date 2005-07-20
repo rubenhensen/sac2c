@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2005/07/20 13:13:30  ktr
+ * LaC functions whose conditional has been eliminated are now marked LACINLINE
+ *
  * Revision 1.2  2005/07/19 22:47:53  sbs
  * deadcoderemoval and - more importantly - DFmask generation
  * suppressed for body-less fundefs
@@ -213,7 +216,7 @@ DCRfundef (node *arg_node, info *arg_info)
                      */
                     FUNDEF_ISCONDFUN (arg_node) = FALSE;
                     FUNDEF_ISDOFUN (arg_node) = FALSE;
-                    FUNDEF_ISINLINE (arg_node) = TRUE;
+                    FUNDEF_ISLACINLINE (arg_node) = TRUE;
                 }
             }
 
