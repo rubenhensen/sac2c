@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.162  2005/07/20 20:20:14  sbs
+ * copied flags in N_ap
+ *
  * Revision 3.161  2005/07/20 13:14:35  ktr
  * removed stuff commented out using if 0
  *
@@ -1838,6 +1841,7 @@ DUPap (node *arg_node, info *arg_info)
     AP_ARGTAB (new_node) = DupArgtab (AP_ARGTAB (arg_node), arg_info);
 
     CopyCommonNodeData (new_node, arg_node);
+    AP_FLAGSTRUCTURE (new_node) = AP_FLAGSTRUCTURE (arg_node);
 
     DBUG_RETURN (new_node);
 }
