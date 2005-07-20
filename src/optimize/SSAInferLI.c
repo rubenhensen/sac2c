@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2005/07/20 13:12:05  ktr
+ * Slight brushing
+ *
  * Revision 1.4  2005/07/19 16:53:08  sah
  * removed INT/EXT_ASSIGN
  *
@@ -22,7 +25,7 @@
  *
  * file:   SSAInferLI.c
  *
- * prefix: SSAILI
+ * prefix: ILI
  *
  * description:
  *
@@ -45,16 +48,14 @@
  */
 struct INFO {
     node *fundef;
-    node *argchain;
     node *exprchain;
 };
 
 /*
  * INFO macros
  */
-#define INFO_SSAILI_FUNDEF(n) (n->fundef)
-#define INFO_SSAILI_ARGCHAIN(n) (n->argchain)
-#define INFO_SSAILI_EXPRCHAIN(n) (n->exprchain)
+#define INFO_ILI_FUNDEF(n) (n->fundef)
+#define INFO_ILI_EXPRCHAIN(n) (n->exprchain)
 
 /*
  * INFO functions
@@ -68,8 +69,8 @@ MakeInfo ()
 
     result = ILIBmalloc (sizeof (info));
 
-    INFO_SSAILI_FUNDEF (result) = NULL;
-    INFO_SSAILI_ARGCHAIN (result) = NULL;
+    INFO_ILI_FUNDEF (result) = NULL;
+    INFO_ILI_EXPRCHAIN (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -87,11 +88,11 @@ FreeInfo (info *info)
 /** <!-- ***************************************************************** -->
  * @fn node *ILIarg(node *arg_node, info *arg_info)
  *
- * @brief in do/while special functions: set the SSALIR attribute for the
+ * @brief in do/while special functions: set the LIR attribute for the
  *        args by comparing the args with the corresponding identifier
  *        in the recursive call. if they are identical the args is a loop
  *        invariant arg and will be tagged.
- *        This function relieas on INFO_SSAILI_EXPRCHAIN to be set to the
+ *        This function relieas on INFO_ILI_EXPRCHAIN to be set to the
  *        N_exprs chain of the recusive calls' arguments. This is done in
  *        ILIap prior to traversing the args.
  *
@@ -106,28 +107,22 @@ ILIarg (node *arg_node, info *arg_info)
     DBUG_ENTER ("ILIarg");
 
     /* infere loop invarinat args */
-    DBUG_ASSERT ((INFO_SSAILI_EXPRCHAIN (arg_info) != NULL),
+    DBUG_ASSERT ((INFO_ILI_EXPRCHAIN (arg_info) != NULL),
                  "reached ILIarg without having a link to the args "
                  "of the recursive call!");
-    DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (INFO_SSAILI_EXPRCHAIN (arg_info)))),
+    DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (INFO_ILI_EXPRCHAIN (arg_info))) == N_id),
                  "function args are no identifiers");
 
     /* compare arg and fun-ap argument */
-    if (ARG_AVIS (arg_node) == ID_AVIS (EXPRS_EXPR (INFO_SSAILI_EXPRCHAIN (arg_info)))) {
-        DBUG_PRINT ("SSAILI", ("mark %s as loop invariant", ARG_NAME (arg_node)));
-        if (AVIS_SSALPINV (ARG_AVIS (arg_node)) != TRUE) {
-            AVIS_SSALPINV (ARG_AVIS (arg_node)) = TRUE;
-        }
+    if (ARG_AVIS (arg_node) == ID_AVIS (EXPRS_EXPR (INFO_ILI_EXPRCHAIN (arg_info)))) {
+        DBUG_PRINT ("ILI", ("mark %s as loop invariant", ARG_NAME (arg_node)));
+        AVIS_SSALPINV (ARG_AVIS (arg_node)) = TRUE;
     } else {
-        DBUG_PRINT ("SSAILI", ("mark %s as non loop invariant", ARG_NAME (arg_node)));
+        DBUG_PRINT ("ILI", ("mark %s as non loop invariant", ARG_NAME (arg_node)));
     }
 
     if (ARG_NEXT (arg_node) != NULL) {
-        /* when checking for LI-args traverse to next parameter of recursive call */
-        if (INFO_SSAILI_EXPRCHAIN (arg_info) != NULL) {
-            INFO_SSAILI_EXPRCHAIN (arg_info)
-              = EXPRS_NEXT (INFO_SSAILI_EXPRCHAIN (arg_info));
-        }
+        INFO_ILI_EXPRCHAIN (arg_info) = EXPRS_NEXT (INFO_ILI_EXPRCHAIN (arg_info));
 
         /* traverse to next arg */
         ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
@@ -139,8 +134,7 @@ ILIarg (node *arg_node, info *arg_info)
 /**  <!-- ***************************************************************** -->
  * @fn node* ILIfundef(node *arg_node, info *arg_info)
  *
- * @brief traverses cond functions. the argument N_arg chain is stored
- *        in INFO_SSAILI_ARGCHAIN and then the body is traversed in order
+ * @brief traverses cond functions. The body is traversed in order
  *        to find the recursive call
  *
  * @param arg_node N_fundef node
@@ -151,28 +145,19 @@ ILIarg (node *arg_node, info *arg_info)
 node *
 ILIfundef (node *arg_node, info *arg_info)
 {
+    info *info;
+
     DBUG_ENTER ("ILIfundef");
 
-    INFO_SSAILI_FUNDEF (arg_info) = arg_node;
+    info = MakeInfo ();
+    INFO_ILI_FUNDEF (info) = arg_node;
 
-    /* traverse args of special (loop) functions to infere loop invariant args */
-    if ((FUNDEF_ARGS (arg_node) != NULL) && (FUNDEF_ISDOFUN (arg_node))) {
-
-        /* save pointer to argchain of function definition */
-        INFO_SSAILI_ARGCHAIN (arg_info) = FUNDEF_ARGS (arg_node);
-
-        /* save pointer to current fundef */
-        INFO_SSAILI_FUNDEF (arg_info) = arg_node;
-
-        /* traverse function body */
-        if (FUNDEF_BODY (arg_node) != NULL) {
-            FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-        }
-
-        /* remove pointers again */
-        INFO_SSAILI_FUNDEF (arg_info) = NULL;
-        INFO_SSAILI_ARGCHAIN (arg_info) = NULL;
+    /* traverse function body */
+    if (FUNDEF_BODY (arg_node) != NULL) {
+        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), info);
     }
+
+    info = FreeInfo (info);
 
     DBUG_RETURN (arg_node);
 }
@@ -181,9 +166,9 @@ ILIfundef (node *arg_node, info *arg_info)
  * @fn node *ILIap(node *arg_node, info *arg_info)
  *
  * @brief detects whether the current function call is the recursive call of
- *        the given loop function. If so, INFO_SSAILI_EXPRCHAIN is set to
+ *        the given loop function. If so, INFO_ILI_EXPRCHAIN is set to
  *        the args of the N_ap node and the traversal of the N_arg chain
- *        stored in INFO_SSAILI_ARGCHAIN is started.
+ *        stored in INFO_ILI_ARGCHAIN is started.
  *
  * @param arg_node N_ap node
  * @param arg_info info structure
@@ -202,17 +187,27 @@ ILIap (node *arg_node, info *arg_info)
      * traverse into the saved fundef args and check them against
      * the exprs, so we save the exprs chain here...
      */
-    if ((AP_FUNDEF (arg_node) == INFO_SSAILI_FUNDEF (arg_info))
-        && (AP_ARGS (arg_node) != NULL)) {
-        /* save args-exprs */
-        INFO_SSAILI_EXPRCHAIN (arg_info) = AP_ARGS (arg_node);
+    if (FUNDEF_ISLACFUN (AP_FUNDEF (arg_node))) {
+        if ((AP_FUNDEF (arg_node) == INFO_ILI_FUNDEF (arg_info))
+            && (AP_ARGS (arg_node) != NULL)) {
+            /* save args-exprs */
+            INFO_ILI_EXPRCHAIN (arg_info) = AP_ARGS (arg_node);
 
-        /* traverse arg chain of fundef */
-        INFO_SSAILI_ARGCHAIN (arg_info)
-          = TRAVdo (INFO_SSAILI_ARGCHAIN (arg_info), arg_info);
+            /* traverse arg chain of fundef */
+            FUNDEF_ARGS (INFO_ILI_FUNDEF (arg_info))
+              = TRAVdo (FUNDEF_ARGS (INFO_ILI_FUNDEF (arg_info)), arg_info);
 
-        /* remove exprs chain */
-        INFO_SSAILI_EXPRCHAIN (arg_info) = NULL;
+            /* remove exprs chain */
+            INFO_ILI_EXPRCHAIN (arg_info) = NULL;
+        } else {
+            DBUG_PRINT ("ILI", ("traverse in special fundef %s",
+                                FUNDEF_NAME (AP_FUNDEF (arg_node))));
+
+            AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
+
+            DBUG_PRINT ("ILI", ("traversal of special fundef %s finished\n",
+                                FUNDEF_NAME (AP_FUNDEF (arg_node))));
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -230,22 +225,15 @@ ILIap (node *arg_node, info *arg_info)
 node *
 ILIdoInferLoopInvariants (node *fundef)
 {
-    info *arg_info;
-
     DBUG_ENTER ("ILIdoInferLoopInvariants");
 
     DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
                  "ILIdoInferLoopInvariants() is used for fundef nodes only");
 
     if (!(FUNDEF_ISLACFUN (fundef))) {
-
-        arg_info = MakeInfo ();
-
         TRAVpush (TR_ili);
-        fundef = TRAVdo (fundef, arg_info);
+        fundef = TRAVdo (fundef, NULL);
         TRAVpop ();
-
-        arg_info = FreeInfo (arg_info);
     }
 
     DBUG_RETURN (fundef);
