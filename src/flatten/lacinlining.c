@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.3  2005/07/20 13:10:54  ktr
+ * Functions markes as ISLACINLINE are now removed during the bottom-up
+ * traversal
+ *
  * Revision 1.2  2005/07/19 13:04:05  sah
  * moved DowngradeConcreteArgs from fun2lac to lacinlining
  * as the local knowledge is better during inlining
@@ -196,6 +200,13 @@ LINLfundef (node *arg_node, info *arg_info)
 
     if ((!INFO_ONEFUNDEF (arg_info)) && (FUNDEF_NEXT (arg_node) != NULL)) {
         FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+
+        /*
+         * Remove inlined LAC functions
+         */
+        if (FUNDEF_ISLACINLINE (arg_node)) {
+            arg_node = FREEdoFreeNode (arg_node);
+        }
     }
 
     DBUG_RETURN (arg_node);
