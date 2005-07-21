@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.42  2005/07/21 14:18:54  sah
+# introduced remove_external_code
+#
 # Revision 3.41  2004/11/29 14:41:57  sah
 # added setlinksign traversal
 #
@@ -127,7 +130,7 @@ SAC2C_OBJS := wlpragma_funs.o precompile.o compile.o wltransform.o \
               icm2c_std.o icm2c_prf.o icm2c_wl.o icm2c_mt.o icm2c_sched.o \
               icm2c_error.o icm2c_basic.o icm2c_utils.o markmemvals.o \
               typeconv_precompile.o functionprecompile.o renameidentifiers.o \
-              setlinksign.o
+              setlinksign.o remove_external_code.o
 
 
 all: $(SAC2C_OBJS)

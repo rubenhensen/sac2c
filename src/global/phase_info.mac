@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.32  2005/07/21 14:18:54  sah
+ * introduced remove_external_code
+ *
  * Revision 3.31  2005/07/17 20:20:51  sbs
  * moved some typechecking phases into elimudt
  *
@@ -462,6 +465,8 @@ SUBPHASE (ussa2, "ussa2", "Converting from SSA form", USSATdoUndoSsaTransform)
 SUBPHASE (fun2lac2, "fun2lac2", "Reintroducing loops and conditionals", F2LdoFun2Lac)
 
 SUBPHASE (lacinl2, "lacinl2", "Inlining LaC functions", LINLdoLACInlining)
+
+SUBPHASE (rec, "rec", "Removing external code", RECdoRemoveExternalCode)
 
 SUBPHASE (sls, "sls", "Applying linksign pragma", SLSdoSetLinksign)
 

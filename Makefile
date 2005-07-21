@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.182  2005/07/21 14:18:54  sah
+# introduced remove_external_code
+#
 # Revision 3.181  2005/07/19 16:57:40  ktr
 # replaced SSADeadCodeRemoval with deadcoderemoval.
 #
@@ -304,7 +307,8 @@ COMPILE= src/compile/wlpragma_funs.o src/compile/wltransform.o \
          src/compile/icm2c_mt.o src/compile/icm2c_sched.o \
          src/compile/icm2c_wl.o src/compile/icm2c_error.o \
          src/compile/renameidentifiers.o src/compile/functionprecompile.o \
-         src/compile/typeconv_precompile.o  src/compile/setlinksign.o
+         src/compile/typeconv_precompile.o  src/compile/setlinksign.o \
+         src/compile/remove_external_code.o
 
 CINTERFACE=
 #CINTERFACE= src/c-interface/map_cwrapper.o \

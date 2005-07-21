@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.115  2005/07/21 14:18:54  sah
+ * introduced remove_external_code
+ *
  * Revision 3.114  2005/07/03 17:16:07  ktr
  * changed to phase.h
  *
@@ -60,6 +63,11 @@ node *
 PRECdoPrecompile (node *syntax_tree)
 {
     DBUG_ENTER ("Precompile");
+
+    /*
+     * Remove External Code
+     */
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_rec, syntax_tree);
 
     /*
      * Set Linksign

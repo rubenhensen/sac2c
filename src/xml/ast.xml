@@ -1708,6 +1708,11 @@
       startfun="NULL" include=".h"
       if="true"
       breakspec="pc">
+      <traversal id="REC" name="Remove External Code" default="sons" include="remove_external_code.h" >
+        <travuser>
+	  <node name="fundef" />
+	</travuser>
+      </traversal>
       <traversal id="SLS" name="Set Linksign" default="sons" include="setlinksign.h" >
         <travuser>
 	  <node name="Module" />
