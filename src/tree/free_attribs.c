@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.31  2005/07/21 12:02:21  sbs
+ * using !AP_ISRECURSIVEDOFUNCALL now
+ *
  * Revision 1.30  2005/07/20 19:11:07  sah
  * reverted to pre-kai free
  *
@@ -279,15 +282,20 @@ FREEattribExtLink (node *attr, node *parent)
     DBUG_ENTER ("FREEattribExtLink");
 
     if (attr != NULL) {
-        if (NODE_TYPE (attr) == N_fundef) {
-            if (attr->attribs.N_fundef != NULL) {
-                DBUG_ASSERT ((NODE_TYPE (attr) == N_fundef),
-                             "illegal value in AP_FUNDEF found!");
-                if (FUNDEF_ISDOFUN (attr) && (!FUNDEF_ISZOMBIE (attr))) {
-                    attr = FREEdoFreeNode (attr);
-                } else if (FUNDEF_ISCONDFUN (attr)) {
-                    attr = FREEdoFreeNode (attr);
-                }
+        if ((NODE_TYPE (attr) == N_fundef) && (NODE_TYPE (parent) == N_ap)) {
+            if ((FUNDEF_ISCONDFUN (attr) || (FUNDEF_ISDOFUN (attr))
+                 || (FUNDEF_ISLACINLINE (attr)))
+                && !AP_ISRECURSIVEDOFUNCALL (parent)) {
+                /**
+                 * treat all lac funs as if they were inlined.
+                 * Since FUNDEF_ISLACINLINE funs are degenerated
+                 * lac funs these need to be traeted in the same
+                 * way.
+                 * However, we need to make sure that the external
+                 * call is treated in that way ONLY!
+                 * Hence, we demand that !AP_ISRECURSIVEDOFUNCALL( parent) !
+                 */
+                attr = FREEdoFreeNode (attr);
             }
         }
     }
