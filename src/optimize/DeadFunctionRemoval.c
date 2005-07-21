@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.21  2005/07/21 16:18:12  sah
+ * now all instances get tagged correctly
+ *
  * Revision 3.20  2005/07/21 14:22:33  sah
  * improved DFR on external functions
  *
@@ -184,18 +187,83 @@ DFRmodule (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 static node *
-tagAsNeeded (node *fundef)
+tagFundefAsNeeded (node *fundef, info *info)
 {
-    DBUG_ENTER ("tagAsNeeded");
+    DBUG_ENTER ("tagFundefAsNeeded");
 
     DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
-                 "tagAsNeeded applied to non fundef node");
+                 "tagFundefAsNeeded applied to non fundef node");
 
-    DBUG_PRINT ("DFR", (">>> >>> tagging fundef %s", CTIitemName (fundef)));
+    DBUG_ASSERT ((!FUNDEF_ISWRAPPERFUN (fundef)),
+                 "tagFundefAsNeeded called on wrapper fun");
 
-    FUNDEF_ISNEEDED (fundef) = TRUE;
+    if (!FUNDEF_ISNEEDED (fundef)) {
+        DBUG_PRINT ("DFR", (">>> tagging fundef %s", CTIitemName (fundef)));
+
+        FUNDEF_ISNEEDED (fundef) = TRUE;
+
+        if (FUNDEF_BODY (fundef) != NULL) {
+            bool oldspine = INFO_DFR_SPINE (info);
+            INFO_DFR_SPINE (info) = FALSE;
+
+            DBUG_PRINT ("DFR", (">>> inspecting body..."));
+            FUNDEF_BODY (fundef) = TRAVdo (FUNDEF_BODY (fundef), info);
+
+            INFO_DFR_SPINE (info) = oldspine;
+        }
+    }
 
     DBUG_RETURN (fundef);
+}
+
+static node *
+tagWrapperAsNeeded (node *wrapper, info *info)
+{
+    DBUG_ENTER ("tagWrapperAsNeeded");
+
+    DBUG_ASSERT ((NODE_TYPE (wrapper) == N_fundef),
+                 "tagWrapperAsNeeded applied to non fundef node");
+
+    DBUG_ASSERT ((FUNDEF_ISWRAPPERFUN (wrapper)),
+                 "tagFundefAsNeeded called on non-wrapper fun");
+
+    if (!FUNDEF_ISNEEDED (wrapper)) {
+        DBUG_PRINT ("DFR", (">>> tagging wrapper %s", CTIitemName (wrapper)));
+
+        FUNDEF_ISNEEDED (wrapper) = TRUE;
+
+        if (FUNDEF_BODY (wrapper) != NULL) {
+            bool oldspine = INFO_DFR_SPINE (info);
+            INFO_DFR_SPINE (info) = FALSE;
+
+            DBUG_PRINT ("DFR", (">>> inspecting body..."));
+            FUNDEF_BODY (wrapper) = TRAVdo (FUNDEF_BODY (wrapper), info);
+
+            INFO_DFR_SPINE (info) = oldspine;
+        } else if (FUNDEF_IMPL (wrapper) != NULL) {
+            /*
+             * we found a wrapper that has FUNDEF_IMPL set
+             * this is a dirty hack telling us that the function
+             * has no arguments and thus only one instance!
+             * so we tag that instance
+             */
+            DBUG_PRINT ("DFR", (">>> inspecting FUNDEF_IMPL..."));
+
+            FUNDEF_IMPL (wrapper) = tagFundefAsNeeded (FUNDEF_IMPL (wrapper), info);
+        } else if (FUNDEF_WRAPPERTYPE (wrapper) != NULL) {
+            DBUG_PRINT ("DFR", (">>> inspecting wrappertype..."));
+
+            FUNDEF_WRAPPERTYPE (wrapper)
+              = TYmapFunctionInstances (FUNDEF_WRAPPERTYPE (wrapper), &tagFundefAsNeeded,
+                                        info);
+#ifndef DBUG_OFF
+        } else {
+            DBUG_ASSERT (0, "found a wrapper with neither FUNDEF_IMPL, nor wrappertype");
+#endif
+        }
+    }
+
+    DBUG_RETURN (wrapper);
 }
 
 node *
@@ -204,8 +272,9 @@ DFRfundef (node *arg_node, info *arg_info)
     DBUG_ENTER ("DFRfundef");
 
     if (INFO_DFR_SPINE (arg_info)) {
-        DBUG_PRINT ("DFR",
-                    ("Dead Function Removal in function: %s", CTIitemName (arg_node)));
+        DBUG_PRINT ("DFR", ("Dead Function Removal in %s: %s",
+                            (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
+                            CTIitemName (arg_node)));
 
         /*
          * remark: main is always tagged as provided
@@ -214,33 +283,10 @@ DFRfundef (node *arg_node, info *arg_info)
             DBUG_PRINT ("DFR", (">>> %s is provided",
                                 (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef")));
 
-            arg_node = tagAsNeeded (arg_node);
-
-            if (FUNDEF_BODY (arg_node) != NULL) {
-                DBUG_PRINT ("DFR", (">>> inspecting body..."));
-
-                INFO_DFR_SPINE (arg_info) = FALSE;
-                FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-                INFO_DFR_SPINE (arg_info) = TRUE;
-            } else if (FUNDEF_ISWRAPPERFUN (arg_node)
-                       && (FUNDEF_IMPL (arg_node) != NULL)) {
-                /*
-                 * we found a wrapper that has FUNDEF_IMPL set
-                 * this is a dirty hack telling us that the function
-                 * has no arguments and thus only one instance!
-                 * so we tag that instance
-                 */
-                DBUG_PRINT ("DFR", (">>> inspecting FUNDEF_IMPL..."));
-
-                FUNDEF_IMPL (arg_node) = tagAsNeeded (FUNDEF_IMPL (arg_node));
-            } else if (FUNDEF_ISWRAPPERFUN (arg_node)
-                       && (FUNDEF_WRAPPERTYPE (arg_node) != NULL)) {
-                DBUG_PRINT ("DFR", (">>> inspecting wrappertype..."));
-
-                FUNDEF_WRAPPERTYPE (arg_node)
-                  = TYmapFunctionInstances (FUNDEF_WRAPPERTYPE (arg_node), &tagAsNeeded);
+            if (FUNDEF_ISWRAPPERFUN (arg_node)) {
+                arg_node = tagWrapperAsNeeded (arg_node, arg_info);
             } else {
-                DBUG_PRINT ("DFR", (">>> has no body..."));
+                arg_node = tagFundefAsNeeded (arg_node, arg_info);
             }
         }
 
@@ -263,18 +309,11 @@ DFRfundef (node *arg_node, info *arg_info)
         }
     } else {
         if (!FUNDEF_ISNEEDED (arg_node)) {
-            DBUG_PRINT ("DFR",
-                        (">>> fundef %s tagged as a dependency", CTIitemName (arg_node)));
-
-            FUNDEF_ISNEEDED (arg_node) = TRUE;
-
-            if (FUNDEF_BODY (arg_node) != NULL) {
-                FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+            if (FUNDEF_ISWRAPPERFUN (arg_node)) {
+                arg_node = tagWrapperAsNeeded (arg_node, arg_info);
+            } else {
+                arg_node = tagFundefAsNeeded (arg_node, arg_info);
             }
-#ifndef DBUG_OFF
-        } else {
-            DBUG_PRINT ("DFR", (">>> fundef %s already marked", CTIitemName (arg_node)));
-#endif
         }
     }
 
