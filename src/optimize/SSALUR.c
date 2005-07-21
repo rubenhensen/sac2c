@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.22  2005/07/21 16:58:52  ktr
+ * traversal is now robust against Functions without bodies
+ *
  * Revision 1.21  2005/07/19 17:02:40  sbs
  * FUNDEF_INT and FUNDEF_EXT eliminated.
  *
@@ -245,13 +248,13 @@ SSALURGetDoLoopUnrolling (node *fundef, node *ext_assign)
     DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
                  "SSALURGetDoLoopUnrolling called for non-fundef node");
 
-    DBUG_ASSERT ((FUNDEF_BODY (fundef) != NULL), "function with body required");
-
     /* check for do special fundef */
     if (!FUNDEF_ISDOFUN (fundef)) {
         DBUG_PRINT ("SSALUR", ("no do-loop special fundef"));
         DBUG_RETURN (UNR_NONE);
     }
+
+    DBUG_ASSERT ((FUNDEF_BODY (fundef) != NULL), "function with body required");
 
     /* search conditional in do fundef */
     cond_assign = FindCondAssign (BLOCK_INSTR (FUNDEF_BODY (fundef)));

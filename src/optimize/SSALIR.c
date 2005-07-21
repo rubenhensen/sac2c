@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.41  2005/07/21 16:58:52  ktr
+ * traversal is now robust against Functions without bodies
+ *
  * Revision 1.40  2005/07/20 13:12:37  ktr
  * removed FUNDEF_EXTASSIGN/INTASSIGN
  *
@@ -962,12 +965,12 @@ LIRfundef (node *arg_node, info *arg_info)
     /* traverse function body */
     if (FUNDEF_BODY (arg_node) != NULL) {
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), info);
-    }
 
-    /* start LIRMOV traversal of BODY to move out marked assignments */
-    TRAVpush (TR_lirmov);
-    FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), info);
-    TRAVpop ();
+        /* start LIRMOV traversal of BODY to move out marked assignments */
+        TRAVpush (TR_lirmov);
+        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), info);
+        TRAVpop ();
+    }
 
     /* clean up insert list */
     INFO_LIR_INSLIST (info) = InsListPopFrame (INFO_LIR_INSLIST (info));
@@ -2157,8 +2160,6 @@ LIRMOVids (node *arg_ids, info *arg_info)
 node *
 LIRdoLoopInvariantRemoval (node *fundef, node *modul)
 {
-    info *arg_info;
-
     DBUG_ENTER ("LIRdoLoopInvariantRemoval");
 
     DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
