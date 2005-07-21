@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.39  2005/07/21 11:58:46  sbs
+ * used AP_ISRECURSIVEDOFUNCALL now
+ *
  * Revision 3.38  2005/07/20 13:10:06  ktr
  * removed FUNDEF_INT_ASSIGN
  *
@@ -473,6 +476,7 @@ MakeL2fFundef (char *funname, namespace_t *ns, node *instr, node *funcall_let,
             }
             let = DUPdoDupTreeLut (funcall_let, lut);
             AP_FUNDEF (LET_EXPR (let)) = fundef;
+            AP_ISRECURSIVEDOFUNCALL (LET_EXPR (let)) = TRUE;
             ass = TBmakeAssign (let, NULL);
             ASSIGN_NEXT (tmp)
               = TBmakeAssign (TBmakeCond (DUPdoDupTreeLut (DO_COND (instr), lut),
@@ -563,7 +567,6 @@ DoLifting (char *suffix, dfmask_t *in, dfmask_t *out, dfmask_t *local, node *arg
     fundef = MakeL2fFundef (funname, funns, arg_node, let, in, out, local, arg_info);
 
     DBUG_ASSERT ((NODE_TYPE (LET_EXPR (let)) == N_ap), "N_ap expected!");
-    AP_FUNDEF (LET_EXPR (let)) = fundef;
 
     funname = ILIBfree (funname);
 
