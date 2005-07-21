@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.2  2005/07/21 15:13:32  sah
+ * moved var decl to beginning of block
+ *
  * Revision 1.1  2005/07/17 11:42:41  sah
  * Initial revision
  *
@@ -36,9 +39,9 @@ SFNgetId (const char *filename)
 
         result = 0;
     } else {
+        bool found = FALSE;
         result = 0;
         names = database;
-        bool found = FALSE;
 
         while ((names->next != NULL) && (!found)) {
             if (names->name == filename) {
