@@ -729,10 +729,7 @@
           <node name="Ap" />
           <node name="Array" />
           <node name="Prf" />
-          <node name="With" />
-          <node name="Part" />
           <node name="Code" />
-          <node name="Generator" />
           <node name="Funcond" />
         </travuser>
 	<travnone>
@@ -3734,17 +3731,6 @@
             <range from="ivei" to="ive" />
           </phases>
         </attribute>
-        <attribute name="WithId" default="NULL" mandatory="no">
-          <type name="Link">
-            <target>
-              <node name="Withid" />
-            </target>
-          </type>
-          <phases>
-            <range from="ssa" to="ussa" />
-            <range from="ssa2" to="ussa2" />
-          </phases>
-        </attribute>
         <attribute name="SSAThen" mandatory="no">
           <type name="Link">
             <target>
@@ -3773,7 +3759,6 @@
           <type name="Integer" />
           <phases>
             <phase name="lir" />
-            <phase name="dcr" />
           </phases>
         </attribute>
         <attribute name="Subst" mandatory="no">
