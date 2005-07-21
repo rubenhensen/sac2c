@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.32  2005/07/21 14:22:15  sah
+ * introduced TYmapFunctionInstances
+ *
  * Revision 3.31  2005/07/15 15:57:02  sah
  * introduced namespaces
  *
@@ -313,6 +316,8 @@ extern char *TYgetPolyName (ntype *poly);
  */
 extern ntype *TYmakeFunType (ntype *arg, ntype *res, node *fun_info);
 extern ntype *TYmakeOverloadedFunType (ntype *fun1, ntype *fun2);
+
+extern ntype *TYmapFunctionInstances (ntype *funtype, node *(*mapfun) (node *));
 
 extern int TYgetArity (ntype *fun);
 
