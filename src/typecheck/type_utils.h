@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2005/07/21 12:02:24  ktr
+ * added TUdimKnown
+ *
  * Revision 1.12  2005/07/16 19:06:08  sbs
  * TUshapeKnown added.
  *
@@ -54,6 +57,7 @@ extern node *TUrettypes2unknownAUD (node *rets);
 extern node *TUargtypes2unknownAUD (node *rets);
 extern node *TUrettypes2alpha (node *rets);
 extern node *TUrettypes2alphaAUD (node *rets);
+extern bool TUdimKnown (ntype *ty);
 extern bool TUshapeKnown (ntype *ty);
 extern bool TUisIntVect (ntype *ty);
 extern bool TUisUniqueUserType (ntype *type);

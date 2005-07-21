@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  2005/07/21 12:02:24  ktr
+ * added TUdimKnown
+ *
  * Revision 1.15  2005/07/16 19:06:08  sbs
  * TUshapeKnown added.
  *
@@ -282,6 +285,23 @@ TUrettypes2alpha (node *rets)
     }
 
     DBUG_RETURN (rets);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn bool TUdimKnown( ntype *ty)
+ *
+ *   @brief
+ *   @param
+ *   @return
+ *
+ ******************************************************************************/
+
+bool
+TUdimKnown (ntype *ty)
+{
+    DBUG_ENTER ("TUdimKnown");
+    DBUG_RETURN (TYisAKD (ty) || TYisAKS (ty) || TYisAKV (ty));
 }
 
 /** <!--********************************************************************-->
