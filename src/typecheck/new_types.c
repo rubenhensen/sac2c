@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.99  2005/07/21 16:17:42  sah
+ * added passing of info structure to TYmapFunctionInstances
+ *
  * Revision 3.98  2005/07/21 14:22:15  sah
  * introduced TYmapFunctionInstances
  *
@@ -2037,7 +2040,7 @@ MakeOverloadedFunType (ntype *fun1, ntype *fun2)
 }
 
 ntype *
-mapFunctionInstances (ntype *type, node *(*mapfun) (node *))
+mapFunctionInstances (ntype *type, node *(*mapfun) (node *, info *), info *info)
 {
     int cnt;
 
@@ -2047,13 +2050,13 @@ mapFunctionInstances (ntype *type, node *(*mapfun) (node *))
         switch (NTYPE_CON (type)) {
         case TC_ires:
             for (cnt = 0; cnt < IRES_NUMFUNS (type); cnt++) {
-                IRES_FUNDEF (type, cnt) = mapfun (IRES_FUNDEF (type, cnt));
+                IRES_FUNDEF (type, cnt) = mapfun (IRES_FUNDEF (type, cnt), info);
             }
 
         default:
             for (cnt = 0; cnt < NTYPE_ARITY (type); cnt++) {
                 NTYPE_SON (type, cnt)
-                  = mapFunctionInstances (NTYPE_SON (type, cnt), mapfun);
+                  = mapFunctionInstances (NTYPE_SON (type, cnt), mapfun, info);
             }
         }
     }
@@ -2062,14 +2065,14 @@ mapFunctionInstances (ntype *type, node *(*mapfun) (node *))
 }
 
 ntype *
-TYmapFunctionInstances (ntype *funtype, node *(*mapfun) (node *))
+TYmapFunctionInstances (ntype *funtype, node *(*mapfun) (node *, info *), info *info)
 {
     DBUG_ENTER ("TYmapFunctionInstances");
 
     DBUG_ASSERT ((NTYPE_CON (funtype) == TC_fun),
                  "called TYmapFunctionInstances with non function type");
 
-    funtype = mapFunctionInstances (funtype, mapfun);
+    funtype = mapFunctionInstances (funtype, mapfun, info);
 
     DBUG_RETURN (funtype);
 }
