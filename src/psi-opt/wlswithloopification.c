@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2005/07/21 12:03:21  ktr
+ * removed AVIS_WITHID
+ *
  * Revision 1.4  2005/07/03 17:18:17  ktr
  * Fixed a pointer type problem
  *
@@ -382,8 +385,8 @@ MakeSelParts (shape *maxshp, int unrdim, node *withid)
  * @brief creates a withloop copying the first dimensions from array array.
  *        Typically, this means there is one part containing a selection
  *        array[iv].
- *        However, if array is an N_array or an index vector, its elements
- *        are copied elementwise by one part per array element.
+ *        However, if array is an N_array, its elements are copied elementwise
+ *        by one part per array element.
  *
  * @param array id of the array to be copied
  * @param dim number of dimensions the copy-wl shall cover
@@ -405,7 +408,7 @@ CreateCopyWithloop (node *array, int dim, node *fundef)
     node *vec_ids;
     node *scl_ids = NULL;
     int i;
-    int unrdim;
+    int unrdim = 0;
     shape *maxshp;
 
     DBUG_ENTER ("CreateCopyWithloop");
@@ -424,33 +427,16 @@ CreateCopyWithloop (node *array, int dim, node *fundef)
         scl_ids = TBmakeIds (avis, scl_ids);
     }
 
-    if (AVIS_WITHID (ID_AVIS (array)) != NULL) {
-        /*
-         * array is an index vector, unroll at most one dimenstion
-         */
-        unrdim = (dim < 1) ? dim : 1;
-    } else {
-        if (AVIS_SSAASSIGN (ID_AVIS (array)) != NULL) {
-            node *rhs = ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (array)));
+    if (AVIS_SSAASSIGN (ID_AVIS (array)) != NULL) {
+        node *rhs = ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (array)));
 
-            if (NODE_TYPE (rhs) == N_array) {
-                /*
-                 * array is given by an array, unroll at most the array dimensionality
-                 */
-                int arraydim = SHgetDim (ARRAY_SHAPE (rhs));
-
-                unrdim = (dim < arraydim) ? dim : arraydim;
-            } else {
-                /*
-                 * In all other cases, build a plain copy with-loop
-                 */
-                unrdim = 0;
-            }
-        } else {
+        if (NODE_TYPE (rhs) == N_array) {
             /*
-             * In all other cases, build a plain copy with-loop
+             * array is given by an array, unroll at most the array dimensionality
              */
-            unrdim = 0;
+            int arraydim = SHgetDim (ARRAY_SHAPE (rhs));
+
+            unrdim = (dim < arraydim) ? dim : arraydim;
         }
     }
 
@@ -893,8 +879,7 @@ WLSWwith (node *arg_node, info *arg_info)
  *
  * @fn node *WLSWwithid(node *arg_node, info *arg_info)
  *
- * @brief Initializes AVIS_WITHID of the index vector and
- *        remembers the first withid in the INFO structure.
+ * @brief remembers the first withid in the INFO structure.
  *
  * @param arg_node
  * @param arg_info
@@ -907,7 +892,6 @@ WLSWwithid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLSWwithid");
 
-    AVIS_WITHID (IDS_AVIS (WITHID_VEC (arg_node))) = arg_node;
     INFO_WLSW_OUTERWITHID (arg_info) = arg_node;
 
     DBUG_RETURN (arg_node);

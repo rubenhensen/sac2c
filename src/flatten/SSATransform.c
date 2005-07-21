@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.37  2005/07/21 12:01:57  ktr
+ * removed AVIS_WITHID
+ *
  * Revision 1.36  2005/07/03 17:04:54  ktr
  * removed references to PH_flatten
  *
@@ -384,7 +387,6 @@ struct INFO {
 #define INFO_SSA_ASSIGN(n) (n->assign)
 #define INFO_SSA_CONDSTMT(n) (n->condstmt)
 #define INFO_SSA_FUNCOND_FOUND(n) (n->funcond_found)
-#define INFO_SSA_WITHID(n) (n->withid)
 #define INFO_SSA_FIRST_WITHID(n) (n->first_withid)
 #define INFO_SSA_FUNGROUP(n) (n->fungroup)
 
@@ -410,7 +412,6 @@ MakeInfo ()
     INFO_SSA_ASSIGN (result) = NULL;
     INFO_SSA_CONDSTMT (result) = NULL;
     INFO_SSA_FUNCOND_FOUND (result) = FALSE;
-    INFO_SSA_WITHID (result) = NULL;
     INFO_SSA_FIRST_WITHID (result) = NULL;
     INFO_SSA_FUNGROUP (result) = NULL;
 
@@ -1182,10 +1183,6 @@ SSATid (node *arg_node, info *arg_info)
 
         /* restore all depended attributes with correct values */
         ID_DECL (arg_node) = AVIS_DECL (ID_AVIS (arg_node));
-
-        if (INFO_SSA_WITHID (arg_info) != NULL) {
-            AVIS_WITHID (ID_AVIS (arg_node)) = INFO_SSA_WITHID (arg_info);
-        }
     }
 
     DBUG_RETURN (arg_node);
@@ -1368,7 +1365,6 @@ SSATwithid (node *arg_node, info *arg_info)
     /* Set current assign to NULL for these special ids! */
     assign = INFO_SSA_ASSIGN (arg_info);
     INFO_SSA_ASSIGN (arg_info) = NULL;
-    INFO_SSA_WITHID (arg_info) = arg_node;
 
     if (INFO_SSA_FIRST_WITHID (arg_info) == NULL) {
         /**
@@ -1414,7 +1410,6 @@ SSATwithid (node *arg_node, info *arg_info)
 
     /* restore currect assign for further processing */
     INFO_SSA_ASSIGN (arg_info) = assign;
-    INFO_SSA_WITHID (arg_info) = NULL;
 
     DBUG_RETURN (arg_node);
 }
@@ -1637,7 +1632,6 @@ SSATids (node *arg_ids, info *arg_info)
                             AVIS_NAME (IDS_AVIS (arg_ids)), IDS_AVIS (arg_ids)));
 
         AVIS_SSAASSIGN (IDS_AVIS (arg_ids)) = INFO_SSA_ASSIGN (arg_info);
-        AVIS_WITHID (IDS_AVIS (arg_ids)) = INFO_SSA_WITHID (arg_info);
 
     } else {
         /* redefinition - create new unique variable/vardec */
@@ -1671,7 +1665,6 @@ SSATids (node *arg_ids, info *arg_info)
             AVIS_SSAUNDOFLAG (IDS_AVIS (arg_ids)) = TRUE;
         }
         AVIS_SSAASSIGN (IDS_AVIS (arg_ids)) = INFO_SSA_ASSIGN (arg_info);
-        AVIS_WITHID (IDS_AVIS (arg_ids)) = INFO_SSA_WITHID (arg_info);
     }
 
     /* traverese next ids */
@@ -1708,7 +1701,6 @@ TreatIdAsLhs (node *arg_node, info *arg_info)
                             AVIS_NAME (ID_AVIS (arg_node)), ID_AVIS (arg_node)));
 
         AVIS_SSAASSIGN (ID_AVIS (arg_node)) = INFO_SSA_ASSIGN (arg_info);
-        AVIS_WITHID (ID_AVIS (arg_node)) = INFO_SSA_WITHID (arg_info);
 
     } else {
         /* redefinition - create new unique variable/vardec */
@@ -1741,7 +1733,6 @@ TreatIdAsLhs (node *arg_node, info *arg_info)
             AVIS_SSAUNDOFLAG (ID_AVIS (arg_node)) = TRUE;
         }
         AVIS_SSAASSIGN (ID_AVIS (arg_node)) = INFO_SSA_ASSIGN (arg_info);
-        AVIS_WITHID (ID_AVIS (arg_node)) = INFO_SSA_WITHID (arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -1807,10 +1798,6 @@ TreatIdsAsRhs (node *arg_ids, info *arg_info)
         }
     } else {
         IDS_AVIS (arg_ids) = new_avis;
-    }
-
-    if (INFO_SSA_WITHID (arg_info) != NULL) {
-        AVIS_WITHID (IDS_AVIS (arg_ids)) = INFO_SSA_WITHID (arg_info);
     }
 
     /* traverese next ids */

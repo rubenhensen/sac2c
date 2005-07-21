@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2005/07/21 12:03:21  ktr
+ * removed AVIS_WITHID
+ *
  * Revision 1.4  2005/04/22 10:09:12  ktr
  * wls containing default generators cannot be scalarized
  *
@@ -445,11 +448,23 @@ WLSCgenerator (node *arg_node, info *arg_info)
 node *
 WLSCid (node *arg_node, info *arg_info)
 {
+    node *ids;
+
     DBUG_ENTER ("WLSCid");
 
-    if (AVIS_WITHID (ID_AVIS (arg_node)) == INFO_WLS_OUTERWITHID (arg_info)) {
+    ids = WITHID_VEC (INFO_WLS_OUTERWITHID (arg_info));
+    if (ID_AVIS (arg_node) == IDS_AVIS (ids)) {
         INFO_WLS_POSSIBLE (arg_info) = FALSE;
         DBUG_PRINT ("WLS", ("Dependecy of with-loop constructs detected!!!"));
+    }
+
+    ids = WITHID_IDS (INFO_WLS_OUTERWITHID (arg_info));
+    while (ids != NULL) {
+        if (ID_AVIS (arg_node) == IDS_AVIS (ids)) {
+            INFO_WLS_POSSIBLE (arg_info) = FALSE;
+            DBUG_PRINT ("WLS", ("Dependecy of with-loop constructs detected!!!"));
+        }
+        ids = IDS_NEXT (ids);
     }
 
     DBUG_RETURN (arg_node);
@@ -476,11 +491,6 @@ WLSCpart (node *arg_node, info *arg_info)
         /*
          * Outer part traversal
          */
-
-        /*
-         * Traverse into withid in order to initialize AVIS_WITHID fields
-         */
-        PART_WITHID (arg_node) = TRAVdo (PART_WITHID (arg_node), arg_info);
         INFO_WLS_OUTERWITHID (arg_info) = PART_WITHID (arg_node);
 
         /*
@@ -618,30 +628,7 @@ WLSCwithid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLSCwithid");
 
-    if (!INFO_WLS_INNERTRAV (arg_info)) {
-        /*
-         * Outer withid traversal
-         */
-        node *_ids;
-
-        /*
-         * The outer WL must be a AKD-WL
-         * => index scalars must be present
-         */
-        INFO_WLS_POSSIBLE (arg_info)
-          = (INFO_WLS_POSSIBLE (arg_info) && (WITHID_IDS (arg_node) != NULL));
-
-        /*
-         * Initialize the AVIS_WITHID field of the withid variables
-         */
-        AVIS_WITHID (IDS_AVIS (WITHID_VEC (arg_node))) = arg_node;
-
-        _ids = WITHID_IDS (arg_node);
-        while (_ids != NULL) {
-            AVIS_WITHID (IDS_AVIS (_ids)) = arg_node;
-            _ids = IDS_NEXT (_ids);
-        }
-    } else {
+    if (INFO_WLS_INNERTRAV (arg_info)) {
         /*
          * Inner withid traversal
          */

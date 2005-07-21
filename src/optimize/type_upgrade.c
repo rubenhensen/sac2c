@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.37  2005/07/21 12:02:59  ktr
+ * removed AVIS_WITHID
+ *
  * Revision 1.36  2005/07/20 13:13:02  ktr
  * removed FUNDEF_INT_ASSIGN
  *
@@ -1950,7 +1953,6 @@ TUPgenerator (node *arg_node, info *arg_info)
 
                     FUNDEF_VARDEC (INFO_TUP_FUNDEF (arg_info)) = vardec;
 
-                    AVIS_WITHID (avis) = withid;
                     AVIS_DECL (avis) = vardec;
 
                     dim--;

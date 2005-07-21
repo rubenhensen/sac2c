@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.163  2005/07/21 12:00:48  ktr
+ * removed AVIS_WITHID
+ *
  * Revision 3.162  2005/07/20 20:20:14  sbs
  * copied flags in N_ap
  *
@@ -453,7 +456,6 @@ struct INFO {
     bool inspecial;
     node *assign;
     node *fundefssa;
-    node *withid;
 };
 
 /*
@@ -466,7 +468,6 @@ struct INFO {
 #define INFO_DUP_INSPECIAL(n) (n->inspecial)
 #define INFO_DUP_ASSIGN(n) (n->assign)
 #define INFO_DUP_FUNDEFSSA(n) (n->fundefssa)
-#define INFO_DUP_WITHID(n) (n->withid)
 
 /*
  * INFO functions
@@ -487,7 +488,6 @@ MakeInfo ()
     INFO_DUP_INSPECIAL (result) = FALSE;
     INFO_DUP_ASSIGN (result) = NULL;
     INFO_DUP_FUNDEFSSA (result) = NULL;
-    INFO_DUP_WITHID (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -1730,9 +1730,7 @@ DUPids (node *arg_node, info *arg_info)
 
     avis = LUTsearchInLutPp (INFO_DUP_LUT (arg_info), IDS_AVIS (arg_node));
 
-    if ((INFO_DUP_WITHID (arg_info) != NULL) && (AVIS_WITHID (avis) != NULL)) {
-        AVIS_WITHID (avis) = INFO_DUP_WITHID (arg_info);
-    } else if ((INFO_DUP_ASSIGN (arg_info) != NULL) && (AVIS_SSAASSIGN (avis) != NULL)) {
+    if ((INFO_DUP_ASSIGN (arg_info) != NULL) && (AVIS_SSAASSIGN (avis) != NULL)) {
         AVIS_SSAASSIGN (avis) = INFO_DUP_ASSIGN (arg_info);
     }
 
@@ -2498,12 +2496,8 @@ DUPwithid (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("DUPwithid");
 
-    INFO_DUP_WITHID (arg_info) = arg_node;
-
     new_node
       = TBmakeWithid (DUPTRAV (WITHID_VEC (arg_node)), DUPTRAV (WITHID_IDS (arg_node)));
-
-    INFO_DUP_WITHID (arg_info) = NULL;
 
     WITHID_FLAGSTRUCTURE (new_node) = WITHID_FLAGSTRUCTURE (arg_node);
 
@@ -2890,8 +2884,6 @@ DUPavis (node *arg_node, info *arg_info)
 
     AVIS_SSAASSIGN (new_node)
       = LUTsearchInLutPp (INFO_DUP_LUT (arg_info), AVIS_SSAASSIGN (arg_node));
-    AVIS_WITHID (new_node)
-      = LUTsearchInLutPp (INFO_DUP_LUT (arg_info), AVIS_WITHID (arg_node));
 
     AVIS_SSALPINV (new_node) = AVIS_SSALPINV (arg_node);
     AVIS_SSASTACK (new_node) = DUPTRAV (AVIS_SSASTACK (arg_node));

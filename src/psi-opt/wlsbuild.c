@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2005/07/21 12:03:21  ktr
+ * removed AVIS_WITHID
+ *
  * Revision 1.4  2005/04/13 15:27:21  ktr
  * ConcatVectors concatenates N_array vectors and AKV N_id vectors.
  *
@@ -358,7 +361,6 @@ WLSBcode (node *arg_node, info *arg_info)
             avis = IDS_AVIS (WITHID_VEC (INFO_WLSB_OUTERWITHID (arg_info)));
 
             prefix = TCmakeAssignLet (avis, array);
-            AVIS_WITHID (avis) = NULL;
             AVIS_SSAASSIGN (avis) = prefix;
 
             /*
@@ -377,7 +379,6 @@ WLSBcode (node *arg_node, info *arg_info)
             avis = IDS_AVIS (WITHID_VEC (INFO_WLSB_INNERWITHID (arg_info)));
 
             ASSIGN_NEXT (prefix) = TCmakeAssignLet (avis, array);
-            AVIS_WITHID (avis) = NULL;
             AVIS_SSAASSIGN (avis) = ASSIGN_NEXT (prefix);
 
             /*
