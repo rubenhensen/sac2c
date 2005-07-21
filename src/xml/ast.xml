@@ -80,6 +80,8 @@
     copy="function" persist="no" />
     <type name="IndexInfo" ctype="index_info*" init="NULL"
     copy="function" persist="no" />
+    <type name="TypeCheckingStatus" ctype="NTC_stat" init="NULL"
+    copy="literal" persist="yes" />
   </attributetypes>
   <phases>
     <!-- id is the short id of the traversal 
@@ -2306,7 +2308,7 @@
           </description>
         </attribute>
         <attribute name="TCStat" mandatory="no">
-          <type name="Integer" />
+          <type name="TypeCheckingStatus" />
           <phases>
             <phase name="tc" />
           </phases>

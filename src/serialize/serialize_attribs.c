@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2005/07/21 18:50:32  sah
+ * made TCstat type externally visible
+ *
  * Revision 1.9  2005/07/15 15:57:02  sah
  * introduced namespaces
  *
@@ -46,8 +49,6 @@
  *
  * @{
  */
-
-#define NEW_INFO
 
 #include "serialize_attribs.h"
 #include "serialize_info.h"
@@ -1066,7 +1067,7 @@ SATserializeMTExecMode (info *info, mtexecmode_t attr, node *parent)
 
 /** <!--******************************************************************-->
  *
- * @fn SATserializeRCCounter
+ * @fn SATserializeTypeCheckingStatus
  *
  * @brief generates code to de-serialize the given attribute
  *
@@ -1077,11 +1078,11 @@ SATserializeMTExecMode (info *info, mtexecmode_t attr, node *parent)
  ***************************************************************************/
 
 void
-SATserializeRCCounter (info *info, rc_counter *attr, node *parent)
+SATserializeTypeCheckingStatus (info *info, NTC_stat attr, node *parent)
 {
-    DBUG_ENTER ("SATserializeMTExecMode");
+    DBUG_ENTER ("SATserializeTypeCheckingStatus");
 
-    fprintf (INFO_SER_FILE (info), "NULL");
+    fprintf (INFO_SER_FILE (info), "%d", attr);
 
     DBUG_VOID_RETURN;
 }

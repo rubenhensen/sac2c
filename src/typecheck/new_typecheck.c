@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.80  2005/07/21 18:50:32  sah
+ * made TCstat type externally visible
+ *
  * Revision 3.79  2005/07/17 20:11:48  sbs
  * the wrapper body creation has been moved into a separate phase now.
  *
@@ -231,8 +234,6 @@ FreeInfo (info *info)
 
     DBUG_RETURN (info);
 }
-
-typedef enum { NTC_not_checked, NTC_checking, NTC_checked } NTC_stat;
 
 /**
  *

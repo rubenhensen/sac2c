@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.27  2005/07/21 18:50:32  sah
+ * made TCstat type externally visible
+ *
  * Revision 1.26  2005/07/16 10:03:01  ktr
  * added nlut_t
  *
@@ -734,6 +737,13 @@ typedef struct PTR_BUF ptr_buf;
  */
 
 typedef struct NTYPE ntype;
+
+/*******************************************************************************
+ *
+ * moved from new_typecheck.c
+ */
+
+typedef enum { NTC_not_checked, NTC_checking, NTC_checked } NTC_stat;
 
 /*
  * basic stuff which should only be used if essential from a performance
