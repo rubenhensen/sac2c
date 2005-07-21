@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.21  2005/07/21 12:02:59  sbs
+ * fixed bug in imports
+ * free wheeling zombies caught and properly disposed of.
+ *
  * Revision 1.20  2005/07/20 13:16:50  ktr
  * removed FUNDEF_EXT_ASSIGM
  *
@@ -578,6 +582,7 @@ DSimportInstancesByName (const char *name, const char *module)
              * and throw it away again
              */
             entryp = FREEdoFreeNode (entryp);
+            entryp = FREEremoveAllZombies (entryp);
 
             INFO_DS_IMPORTMODE (DSstate) = FALSE;
         }
