@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2005/07/21 12:00:58  sbs
+ * moved freeing of lacinline functions into free
+ *
  * Revision 1.3  2005/07/20 13:10:54  ktr
  * Functions markes as ISLACINLINE are now removed during the bottom-up
  * traversal
@@ -200,13 +203,6 @@ LINLfundef (node *arg_node, info *arg_info)
 
     if ((!INFO_ONEFUNDEF (arg_info)) && (FUNDEF_NEXT (arg_node) != NULL)) {
         FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-
-        /*
-         * Remove inlined LAC functions
-         */
-        if (FUNDEF_ISLACINLINE (arg_node)) {
-            arg_node = FREEdoFreeNode (arg_node);
-        }
     }
 
     DBUG_RETURN (arg_node);
@@ -253,6 +249,13 @@ LINLassign (node *arg_node, info *arg_info)
     }
 
     if (inlined) {
+        /*
+         * you won't believe it, but this statement as well does
+         * remove the lacfunction which it points to. This funny
+         * sideeffect is not documented, but may be found in
+         * free_attribs.c (FREEattribsExtLink)
+         */
+
         arg_node = FREEdoFreeNode (arg_node);
     }
 
@@ -305,11 +308,6 @@ LINLap (node *arg_node, info *arg_info)
         INFO_CODE (arg_info)
           = PINLdoPrepareInlining (&INFO_VARDECS (arg_info), AP_FUNDEF (arg_node),
                                    INFO_LETIDS (arg_info), AP_ARGS (arg_node));
-
-        /*
-         * Inlined function was loop or cond function and can thus be destroyed
-         */
-        AP_FUNDEF (arg_node) = FREEdoFreeNode (AP_FUNDEF (arg_node));
     }
 
     DBUG_RETURN (arg_node);
