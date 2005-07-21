@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  2005/07/21 14:21:55  sah
+ * cond funs are not visible anymore
+ *
  * Revision 1.16  2005/07/19 11:52:43  sah
  * introduced ILIBstringCompare
  *
@@ -47,6 +50,7 @@
 #include "globals.h"
 #include "internal_lib.h"
 #include "tree_basic.h"
+#include "tree_compound.h"
 #include "ctinfo.h"
 #include "namespaces.h"
 
@@ -234,41 +238,52 @@ EXPfundef (node *arg_node, info *arg_info)
     if (FUNDEF_ISLOCAL (arg_node)) {
         DBUG_PRINT ("EXP", ("...local fundef"));
 
-        INFO_EXP_SYMBOL (arg_info) = FUNDEF_NAME (arg_node);
-        INFO_EXP_EXPORTED (arg_info) = FALSE;
-        INFO_EXP_PROVIDED (arg_info) = FALSE;
+        if (FUNDEF_ISLACFUN (arg_node)) {
+            DBUG_PRINT ("EXP", ("...is not visible (LaC function)"));
 
-        if (INFO_EXP_INTERFACE (arg_info) != NULL) {
-            INFO_EXP_INTERFACE (arg_info)
-              = TRAVdo (INFO_EXP_INTERFACE (arg_info), arg_info);
-        }
+            /*
+             * LaC functions are not provided, as nobody could
+             * call them anyways
+             */
 
-        if (INFO_EXP_EXPORTED (arg_info)) {
-            DBUG_PRINT ("EXP", ("...is exported"));
+            FUNDEF_ISEXPORTED (arg_node) = FALSE;
+            FUNDEF_ISPROVIDED (arg_node) = FALSE;
+        } else if ((INFO_EXP_FILETYPE (arg_info) == F_prog)
+                   && (ILIBstringCompare (FUNDEF_NAME (arg_node), "main"))) {
 
-            FUNDEF_ISEXPORTED (arg_node) = TRUE;
-            FUNDEF_ISPROVIDED (arg_node) = TRUE;
-        } else if (INFO_EXP_PROVIDED (arg_info)) {
-            DBUG_PRINT ("EXP", ("...is provided"));
+            /* override exports/provide for function main in a
+             * program! Main is always provided.
+             */
+
+            DBUG_PRINT ("EXP", ("...override for main"));
 
             FUNDEF_ISEXPORTED (arg_node) = FALSE;
             FUNDEF_ISPROVIDED (arg_node) = TRUE;
         } else {
-            DBUG_PRINT ("EXP", ("...is not visible"));
+            INFO_EXP_SYMBOL (arg_info) = FUNDEF_NAME (arg_node);
+            INFO_EXP_EXPORTED (arg_info) = FALSE;
+            INFO_EXP_PROVIDED (arg_info) = FALSE;
 
-            FUNDEF_ISEXPORTED (arg_node) = FALSE;
-            FUNDEF_ISPROVIDED (arg_node) = FALSE;
-        }
+            if (INFO_EXP_INTERFACE (arg_info) != NULL) {
+                INFO_EXP_INTERFACE (arg_info)
+                  = TRAVdo (INFO_EXP_INTERFACE (arg_info), arg_info);
+            }
 
-        /* override exports/provide for function main in a
-         * program! Main is always provided.
-         */
-        if (INFO_EXP_FILETYPE (arg_info) == F_prog) {
-            if (ILIBstringCompare (FUNDEF_NAME (arg_node), "main")) {
-                DBUG_PRINT ("EXP", ("...override for main"));
+            if (INFO_EXP_EXPORTED (arg_info)) {
+                DBUG_PRINT ("EXP", ("...is exported"));
+
+                FUNDEF_ISEXPORTED (arg_node) = TRUE;
+                FUNDEF_ISPROVIDED (arg_node) = TRUE;
+            } else if (INFO_EXP_PROVIDED (arg_info)) {
+                DBUG_PRINT ("EXP", ("...is provided"));
 
                 FUNDEF_ISEXPORTED (arg_node) = FALSE;
                 FUNDEF_ISPROVIDED (arg_node) = TRUE;
+            } else {
+                DBUG_PRINT ("EXP", ("...is not visible"));
+
+                FUNDEF_ISEXPORTED (arg_node) = FALSE;
+                FUNDEF_ISPROVIDED (arg_node) = FALSE;
             }
         }
         /* TODO: adapt to new object handling */
