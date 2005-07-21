@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.89  2005/07/21 12:15:52  ktr
+ * removed AVIS_WITHID and some structural constand folding on withids that was
+ * deactivated anyways.
+ *
  * Revision 1.88  2005/07/15 15:57:02  sah
  * introduced namespaces
  *
@@ -291,6 +295,7 @@
 #include "tree_compound.h"
 #include "internal_lib.h"
 #include "new_types.h"
+#include "type_utils.h"
 #include "new_typecheck.h"
 #include "globals.h"
 #include "traverse.h"
@@ -313,7 +318,6 @@ struct INFO {
     node *lhs;
     node *postassign;
     node *assign;
-    node *withid;
 };
 
 /*
@@ -324,7 +328,6 @@ struct INFO {
 #define INFO_CF_POSTASSIGN(n) (n->postassign)
 #define INFO_CF_LHS(n) (n->lhs)
 #define INFO_CF_ASSIGN(n) (n->assign)
-#define INFO_CF_WITHID(n) (n->withid)
 
 /*
  * INFO functions
@@ -343,7 +346,6 @@ MakeInfo ()
     INFO_CF_POSTASSIGN (result) = NULL;
     INFO_CF_LHS (result) = NULL;
     INFO_CF_ASSIGN (result) = NULL;
-    INFO_CF_WITHID (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -489,9 +491,7 @@ CFscoExpr2StructConstant (node *expr)
         if (NODE_TYPE (expr) == N_id) {
             if (AVIS_SSAASSIGN (ID_AVIS (expr)) != NULL) {
                 /* expression is an identifier */
-                if ((TYisAKD (AVIS_TYPE (ID_AVIS (expr))))
-                    || (TYisAKS (AVIS_TYPE (ID_AVIS (expr))))
-                    || (TYisAKV (AVIS_TYPE (ID_AVIS (expr))))) {
+                if (TUdimKnown (AVIS_TYPE (ID_AVIS (expr)))) {
                     dim = TYgetDim (AVIS_TYPE (ID_AVIS (expr)));
                 } else {
                     dim = -1;
@@ -504,92 +504,9 @@ CFscoExpr2StructConstant (node *expr)
                     /* id is a defined array */
                     struc_co = CFscoArray2StructConstant (expr);
                 }
-            } else {
-                if (AVIS_WITHID (ID_AVIS (expr))) {
-                    /* expression is given by a withid */
-                    if ((TYisAKD (AVIS_TYPE (ID_AVIS (expr))))
-                        || (TYisAKS (AVIS_TYPE (ID_AVIS (expr))))
-                        || (TYisAKV (AVIS_TYPE (ID_AVIS (expr))))) {
-                        dim = TYgetDim (AVIS_TYPE (ID_AVIS (expr)));
-                    } else {
-                        dim = -1;
-                    }
-
-                    if (dim == SCALAR) {
-                        /* id is a defined scalar */
-                        struc_co = CFscoScalar2StructConstant (expr);
-                    } else if (dim > SCALAR) {
-                        /* id is a withid vector */
-                        struc_co = CFscoWithidVec2StructConstant (expr);
-                    }
-                }
             }
         }
     }
-
-    DBUG_RETURN (struc_co);
-}
-
-/******************************************************************************
- *
- * function:
- *   struct_constant *CFscoWithidVec2StructConstant(node *expr)
- *
- * description:
- *   converts a vector defined in a NWithId-Node into a structural constant.
- *
- *****************************************************************************/
-struct_constant *
-CFscoWithidVec2StructConstant (node *expr)
-{
-    struct_constant *struc_co;
-    node *withid;
-    node *scalars;
-    node *exprs;
-    int elem_count;
-    node *tmp;
-    ntype *vtype;
-    node **node_vec;
-    shape *vshape;
-    int i;
-
-    DBUG_ENTER ("CFscoWithidVec2StructConstant");
-
-    DBUG_ASSERT ((NODE_TYPE (expr) == N_id),
-                 "CFscoWithidVec2StructConstant supports only N_id nodes");
-
-    withid = AVIS_WITHID (ID_AVIS (expr));
-    scalars = WITHID_IDS (withid);
-    exprs = TCids2Exprs (scalars);
-    elem_count = TCcountExprs (scalars);
-
-    /* create structural constant of vector */
-    vtype = AVIS_TYPE (ID_AVIS (expr));
-
-    /* alloc hidden vector */
-    vshape = SHcreateShape (1, elem_count);
-    node_vec = (node **)ILIBmalloc (elem_count * sizeof (node *));
-
-    /* copy element pointers from array to vector */
-    tmp = exprs;
-    for (i = 0; i < elem_count; i++) {
-        node_vec[i] = EXPRS_EXPR (tmp);
-        tmp = EXPRS_NEXT (tmp);
-    }
-
-    /* create struct_constant */
-    struc_co = ILIBmalloc (sizeof (struct_constant));
-    SCO_BASETYPE (struc_co) = T_int;
-    if (TYisUser (vtype)) {
-        SCO_NAME (struc_co) = TYgetName (vtype);
-        SCO_NS (struc_co) = TYgetNamespace (vtype);
-    } else {
-        SCO_NAME (struc_co) = NULL;
-        SCO_NS (struc_co) = NULL;
-    }
-    SCO_SHAPE (struc_co) = SHcopyShape (vshape);
-
-    SCO_HIDDENCO (struc_co) = COmakeConstant (T_hidden, vshape, node_vec);
 
     DBUG_RETURN (struc_co);
 }
@@ -2424,201 +2341,6 @@ CFprf (node *arg_node, info *arg_info)
             /* increment constant folding counter */
             cf_expr++;
         }
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *CFwith( node *arg_node, info *arg_info)
- *
- * description:
- *   traverses parts and withops
- *
- *****************************************************************************/
-
-node *
-CFwith (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("CFwith");
-
-    if (WITH_PART (arg_node) != NULL) {
-        WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
-    }
-
-    if (WITH_WITHOP (arg_node) != NULL) {
-        WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *CFpart( node *arg_node, info *arg_info)
- *
- * description:
- *   traverses withid, generators and code
- *   if the current generator covers only one element and the current
- *   code is only used once, withid can become constant in the code
- *
- *****************************************************************************/
-
-node *
-CFpart (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("CFpart");
-
-    PART_WITHID (arg_node) = TRAVdo (PART_WITHID (arg_node), arg_info);
-
-    /*
-     * If this part's code is only used by this part,
-     * withid may become constant
-     */
-    if (CODE_USED (PART_CODE (arg_node)) == 1) {
-        INFO_CF_WITHID (arg_info) = PART_WITHID (arg_node);
-    }
-
-    PART_GENERATOR (arg_node) = TRAVdo (PART_GENERATOR (arg_node), arg_info);
-
-    PART_CODE (arg_node) = TRAVdo (PART_CODE (arg_node), arg_info);
-
-    if (PART_NEXT (arg_node) != NULL) {
-        PART_NEXT (arg_node) = TRAVdo (PART_NEXT (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node* CFgenerator(node *arg_node, info *arg_info)
- *
- * description:
- *   traverses parameter of generator to substitute constant arrays
- *   with their array representation to allow constant folding on known
- *   shape information.
- *   Furthermore, index elements which are known to be constant in this
- *   generator (e.g. [0,0] <= iv = [i,j] < [1000,1] => j == 0) are
- *   augmented with a constant.
- *
- *****************************************************************************/
-
-node *
-CFgenerator (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("CFgenerator");
-
-    DBUG_PRINT ("CF", ("substitute constant generator parameters"));
-
-    if (GENERATOR_BOUND1 (arg_node) != NULL) {
-        GENERATOR_BOUND1 (arg_node) = TRAVdo (GENERATOR_BOUND1 (arg_node), arg_info);
-    }
-    if (GENERATOR_BOUND2 (arg_node) != NULL) {
-        GENERATOR_BOUND2 (arg_node) = TRAVdo (GENERATOR_BOUND2 (arg_node), arg_info);
-    }
-    if (GENERATOR_STEP (arg_node) != NULL) {
-        GENERATOR_STEP (arg_node) = TRAVdo (GENERATOR_STEP (arg_node), arg_info);
-    }
-    if (GENERATOR_WIDTH (arg_node) != NULL) {
-        GENERATOR_WIDTH (arg_node) = TRAVdo (GENERATOR_WIDTH (arg_node), arg_info);
-    }
-
-    if (INFO_CF_WITHID (arg_info) != NULL) {
-        /*
-         * If the upper and lower bounds vectors are known and the index space
-         * covers just one element, the index vector is constant
-         */
-        if ((GENERATOR_BOUND1 (arg_node) != NULL)
-            && (GENERATOR_BOUND2 (arg_node) != NULL)) {
-#if 0
-      constant *lower, *upper, *diff;
-      shape *diffshp;
-      node *_ids;
-
-      /*MWE
-       * change to usage of akv
-       * types are modified: move to type_upgrade
-       */ 
-      lower = COaST2Constant( GENERATOR_BOUND1( arg_node));
-      upper = COaST2Constant( GENERATOR_BOUND2( arg_node));
-
-      if (( lower != NULL) && ( upper != NULL)) {
-        diff     = COsub( upper, lower);
-        diffshp  = COconstant2Shape( diff);
-        diff     = COfreeConstant( diff);
-        
-        /*
-         * Check whether the whole index vector is constant
-         */
-        if  ( SHgetUnrLen( diffshp) == 1) {
-          _ids = WITHID_VEC( INFO_CF_WITHID( arg_info));
-          if ( _ids != NULL) {
-            AVIS_SSACONST( IDS_AVIS( _ids)) = COcopyConstant( lower);
-          }
-        }
-        diffshp = SHfreeShape( diffshp);
-      }
-
-      if (lower != NULL) {
-        lower = COfreeConstant( lower);
-      }
-      if (upper != NULL) {
-        upper = COfreeConstant( upper);
-      }
-
-#endif
-            if ((NODE_TYPE (GENERATOR_BOUND1 (arg_node)) == N_array)
-                && (NODE_TYPE (GENERATOR_BOUND2 (arg_node)) == N_array)) {
-                /*
-                 * Check whether the index scalars are constant
-                 */
-                node *_ids;
-                node *lb, *ub;
-#if 0
-        constant *lbc, *ubc;
-#endif
-                lb = ARRAY_AELEMS (GENERATOR_BOUND1 (arg_node));
-                ub = ARRAY_AELEMS (GENERATOR_BOUND2 (arg_node));
-                _ids = WITHID_IDS (INFO_CF_WITHID (arg_info));
-
-#if 0
-	/* MWE
-	 * change to akv
-	 * types are modified: move to type upgrade
-	 */
-        while (_ids != NULL) {
-          lbc = COaST2Constant( EXPRS_EXPR( lb));
-          ubc = COaST2Constant( EXPRS_EXPR( ub));
-
-          if ( ( lbc != NULL) && ( ubc != NULL)) {
-            diff = COsub( ubc, lbc);
-            if ( COisOne( diff, TRUE)) {
-              AVIS_SSACONST( IDS_AVIS( _ids)) = COcopyConstant( lbc);
-            }
-            diff = COfreeConstant( diff);
-          }
-
-          if ( lbc != NULL) {
-            lbc = COfreeConstant( lbc);
-          }
-
-          if ( ubc != NULL) {
-            ubc = COfreeConstant( ubc);
-          }
-          
-          lb = EXPRS_NEXT( lb);
-          ub = EXPRS_NEXT( ub);
-          _ids = IDS_NEXT( _ids);
-        }
-#endif
-            }
-        }
-        INFO_CF_WITHID (arg_info) = NULL;
     }
 
     DBUG_RETURN (arg_node);

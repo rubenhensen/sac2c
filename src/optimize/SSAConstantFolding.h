@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.17  2005/07/21 12:15:52  ktr
+ * removed AVIS_WITHID and some structural constand folding on withids that was
+ * deactivated anyways.
+ *
  * Revision 1.16  2005/04/27 07:52:25  ktr
  * Stripped out superfluous rules
  *
@@ -75,7 +79,6 @@
  */
 extern struct_constant *CFscoExpr2StructConstant (node *expr);
 extern struct_constant *CFscoArray2StructConstant (node *expr);
-extern struct_constant *CFscoWithidVec2StructConstant (node *expr);
 extern struct_constant *CFscoScalar2StructConstant (node *expr);
 extern node *CFscoDupStructConstant2Expr (struct_constant *struc_co);
 extern struct_constant *CFscoFreeStructConstant (struct_constant *struc_co);
@@ -90,10 +93,7 @@ extern node *CFap (node *arg_node, info *arg_info);
 extern node *CFlet (node *arg_node, info *arg_info);
 extern node *CFarray (node *arg_node, info *arg_info);
 extern node *CFprf (node *arg_node, info *arg_info);
-extern node *CFwith (node *arg_node, info *arg_info);
-extern node *CFpart (node *arg_node, info *arg_info);
 extern node *CFcode (node *arg_node, info *arg_info);
-extern node *CFgenerator (node *arg_node, info *arg_info);
 extern node *CFfuncond (node *arg_node, info *arg_info);
 
 extern node *CFfoldPrfExpr (prf op, node **arg_expr);
