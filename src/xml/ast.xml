@@ -3028,6 +3028,7 @@
       </attributes>
       <flags>
         <flag name="ConsiderInline" default="TRUE" />
+        <flag name="IsRecursiveDoFunCall" default="FALSE" />
       </flags>
     </node>
 <!--
