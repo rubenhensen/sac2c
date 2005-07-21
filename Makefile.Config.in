@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 1.27  2005/07/21 11:56:57  sbs
+# eliminated O0 again :-)
+#
 # Revision 1.26  2005/07/21 09:38:08  sbs
 # added -O0 as CFLAGS in the debug case
 # However, that should be more compiler independent.....eventually
@@ -117,7 +120,7 @@ CCPROD_FLAGS := @PDCCFLAGS@ @OSFLAGS@ -DNEW_AST
 CFLAGS       := -DSHOW_MALLOC -DWLAA_DEACTIVATED -DAE_DEACTIVATED \
                 -DTSI_DEACTIVATED -DPADT_DEACTIVATED -DOBJUC_DEACTIVATED \
                 -DOBJR_DEACTIVATED -DOBJ_DEACTIVATED -DOBJI_DEACTIVATED \
-                -DCLEANMEM -O0
+                -DCLEANMEM
 CPROD_FLAGS  := -DDBUG_OFF -DPRODUCTION -DWLAA_DEACTIVATED -DAE_DEACTIVATED \
                 -DTSI_DEACTIVATED -DPADT_DEACTIVATED -DOBJUC_DEACTIVATED \
                 -DOBJR_DEACTIVATED -DOBJ_DEACTIVATED -DOBJI_DEACTIVATED
