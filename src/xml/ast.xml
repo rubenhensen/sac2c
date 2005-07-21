@@ -1710,7 +1710,7 @@
       breakspec="pc">
       <traversal id="REC" name="Remove External Code" default="sons" include="remove_external_code.h" >
         <travuser>
-	  <node name="fundef" />
+	  <node name="Fundef" />
 	</travuser>
       </traversal>
       <traversal id="SLS" name="Set Linksign" default="sons" include="setlinksign.h" >
