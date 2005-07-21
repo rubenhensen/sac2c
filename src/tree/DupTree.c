@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.164  2005/07/21 12:07:14  sbs
+ * proper DUPping of LACINLINEs
+ *
  * Revision 3.163  2005/07/21 12:00:48  ktr
  * removed AVIS_WITHID
  *
@@ -1782,7 +1785,8 @@ DUPap (node *arg_node, info *arg_info)
                      "found a condfun ap that points to an already copied function !?!");
 
         if (FUNDEF_ISCONDFUN (old_fundef)
-            || (FUNDEF_ISDOFUN (old_fundef) && (new_fundef == old_fundef))) {
+            || (FUNDEF_ISLACINLINE (old_fundef) && (!AP_ISRECURSIVEDOFUNCALL (arg_node)))
+            || (FUNDEF_ISDOFUN (old_fundef) && (!AP_ISRECURSIVEDOFUNCALL (arg_node)))) {
             /*
              * Definitions of special functions must be duplicated immediately
              * to retain one-to-one correspondence between application and
@@ -1829,7 +1833,7 @@ DUPap (node *arg_node, info *arg_info)
         }
     } else {
         /*
-         * This case is only (?) used during lac2fun conversion.
+         * This case is only (!) used during lac2fun conversion.
          */
         new_fundef = NULL;
     }
