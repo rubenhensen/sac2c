@@ -1,6 +1,10 @@
 #
 #
 # $Log$
+# Revision 1.26  2005/07/21 09:38:08  sbs
+# added -O0 as CFLAGS in the debug case
+# However, that should be more compiler independent.....eventually
+#
 # Revision 1.25  2005/07/18 09:38:21  ktr
 # added check for available xslt engines
 #
@@ -113,7 +117,7 @@ CCPROD_FLAGS := @PDCCFLAGS@ @OSFLAGS@ -DNEW_AST
 CFLAGS       := -DSHOW_MALLOC -DWLAA_DEACTIVATED -DAE_DEACTIVATED \
                 -DTSI_DEACTIVATED -DPADT_DEACTIVATED -DOBJUC_DEACTIVATED \
                 -DOBJR_DEACTIVATED -DOBJ_DEACTIVATED -DOBJI_DEACTIVATED \
-                -DCLEANMEM
+                -DCLEANMEM -O0
 CPROD_FLAGS  := -DDBUG_OFF -DPRODUCTION -DWLAA_DEACTIVATED -DAE_DEACTIVATED \
                 -DTSI_DEACTIVATED -DPADT_DEACTIVATED -DOBJUC_DEACTIVATED \
                 -DOBJR_DEACTIVATED -DOBJ_DEACTIVATED -DOBJI_DEACTIVATED
