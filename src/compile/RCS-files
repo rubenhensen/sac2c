@@ -46,3 +46,4 @@ typeconv_precompile.h
 setlinksign.c
 setlinksign.h
 remove_external_code.c
+remove_external_code.h
