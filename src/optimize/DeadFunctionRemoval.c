@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2005/07/21 14:22:33  sah
+ * improved DFR on external functions
+ *
  * Revision 3.19  2005/07/15 17:41:49  sah
  * prevented the deletion of instances that might be
  * used for dispatch later on
@@ -28,6 +31,7 @@
 
 #include "DeadFunctionRemoval.h"
 #include "tree_basic.h"
+#include "new_types.h"
 #include "internal_lib.h"
 #include "free.h"
 #include "dbug.h"
@@ -179,6 +183,21 @@ DFRmodule (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 
+static node *
+tagAsNeeded (node *fundef)
+{
+    DBUG_ENTER ("tagAsNeeded");
+
+    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
+                 "tagAsNeeded applied to non fundef node");
+
+    DBUG_PRINT ("DFR", (">>> >>> tagging fundef %s", CTIitemName (fundef)));
+
+    FUNDEF_ISNEEDED (fundef) = TRUE;
+
+    DBUG_RETURN (fundef);
+}
+
 node *
 DFRfundef (node *arg_node, info *arg_info)
 {
@@ -195,7 +214,7 @@ DFRfundef (node *arg_node, info *arg_info)
             DBUG_PRINT ("DFR", (">>> %s is provided",
                                 (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef")));
 
-            FUNDEF_ISNEEDED (arg_node) = TRUE;
+            arg_node = tagAsNeeded (arg_node);
 
             if (FUNDEF_BODY (arg_node) != NULL) {
                 DBUG_PRINT ("DFR", (">>> inspecting body..."));
@@ -203,6 +222,25 @@ DFRfundef (node *arg_node, info *arg_info)
                 INFO_DFR_SPINE (arg_info) = FALSE;
                 FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
                 INFO_DFR_SPINE (arg_info) = TRUE;
+            } else if (FUNDEF_ISWRAPPERFUN (arg_node)
+                       && (FUNDEF_IMPL (arg_node) != NULL)) {
+                /*
+                 * we found a wrapper that has FUNDEF_IMPL set
+                 * this is a dirty hack telling us that the function
+                 * has no arguments and thus only one instance!
+                 * so we tag that instance
+                 */
+                DBUG_PRINT ("DFR", (">>> inspecting FUNDEF_IMPL..."));
+
+                FUNDEF_IMPL (arg_node) = tagAsNeeded (FUNDEF_IMPL (arg_node));
+            } else if (FUNDEF_ISWRAPPERFUN (arg_node)
+                       && (FUNDEF_WRAPPERTYPE (arg_node) != NULL)) {
+                DBUG_PRINT ("DFR", (">>> inspecting wrappertype..."));
+
+                FUNDEF_WRAPPERTYPE (arg_node)
+                  = TYmapFunctionInstances (FUNDEF_WRAPPERTYPE (arg_node), &tagAsNeeded);
+            } else {
+                DBUG_PRINT ("DFR", (">>> has no body..."));
             }
         }
 
@@ -211,25 +249,17 @@ DFRfundef (node *arg_node, info *arg_info)
             FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
         }
 
-        /* on bottom up traversal turn unused local fundefs into zombies.
-         * we ignore imported/used functions, as we cannot easily find
-         * out about their dependencies (e.g. which instances belong to
-         * which wrapper). Furthermore there is no point in deleting
-         * external functions as no code will be generated anyways.
-         * Another possibility would be to use the wrapper type to tag
-         * the instances... so we place a
-         *
-         * TODO
-         *
-         * here
-         */
-
-        if ((!FUNDEF_ISNEEDED (arg_node)) && FUNDEF_ISLOCAL (arg_node)) {
+        if (!FUNDEF_ISNEEDED (arg_node)) {
             DBUG_PRINT ("DFR", ("Going to delete %s for %s",
                                 (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
                                 CTIitemName (arg_node)));
             dead_fun++;
             arg_node = FREEdoFreeNode (arg_node);
+        } else {
+            /*
+             * clean up for next run -- remove the tag
+             */
+            FUNDEF_ISNEEDED (arg_node) = FALSE;
         }
     } else {
         if (!FUNDEF_ISNEEDED (arg_node)) {
