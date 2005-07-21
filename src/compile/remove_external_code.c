@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.2  2005/07/21 16:59:52  sah
+ * the DataFlowMaskBase is removed now as well
+ * as it is tightly coupled with the body
+ *
  * Revision 1.1  2005/07/21 14:19:27  sah
  * Initial revision
  *
@@ -12,6 +16,7 @@
 #include "traverse.h"
 #include "ctinfo.h"
 #include "free.h"
+#include "DataFlowMask.h"
 #include "dbug.h"
 
 node *
@@ -38,6 +43,11 @@ RECfundef (node *arg_node, info *arg_info)
          * target!
          */
         FUNDEF_RETURN (arg_node) = NULL;
+
+        /*
+         * remove the dataflowmasks
+         */
+        FUNDEF_DFM_BASE (arg_node) = DFMremoveMaskBase (FUNDEF_DFM_BASE (arg_node));
 
         /*
          * and free the body
