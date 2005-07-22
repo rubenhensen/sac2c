@@ -2289,7 +2289,7 @@
           </phases>
         </attribute>
 	<attribute name="SpecNs" mandatory="no">
-	  <type name="namespace" />
+	  <type name="Namespace" />
 	  <phases>
 	    <phase name="tc" />
 	  </phases>
