@@ -11,7 +11,7 @@
 
 #include "types.h"
 
-extern namespace_t *NSgetNamespace (const char *name);
+extern namespace_t *NSgetNamespace (const char *module);
 extern namespace_t *NSgetRootNamespace ();
 
 extern namespace_t *NSdupNamespace (const namespace_t *ns);
@@ -22,8 +22,11 @@ extern bool NSequals (const namespace_t *one, const namespace_t *two);
 extern const char *NSgetName (const namespace_t *ns);
 extern const char *NSgetModule (const namespace_t *ns);
 
+extern namespace_t *NSbuildView (namespace_t *orig);
+
 extern void NSserializeNamespace (FILE *file, const namespace_t *ns);
-extern namespace_t *NSdeserialzeNamespace (const char *name);
+extern namespace_t *NSdeserialzeNamespace (int id);
+extern view_t *NSdeserializeView (const char *module, int id, view_t *next);
 
 extern void NSgenerateNamespaceMap ();
 #endif /* _SAC_NAMESPACES_H_ */

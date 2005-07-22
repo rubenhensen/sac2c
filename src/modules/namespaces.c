@@ -11,9 +11,17 @@
 #include "internal_lib.h"
 #include "filemgr.h"
 
-struct NAMESPACE {
+struct VIEW {
     char *name;
     int id;
+    struct VIEW *next;
+};
+
+struct NAMESPACE {
+    char *name;
+    char *module;
+    int id;
+    view_t *view;
 };
 
 struct NSPOOL {
@@ -34,7 +42,31 @@ static nspool_t *pool = NULL;
  */
 static int nextid = 0;
 
-void
+/*
+ * global view id counter
+ */
+static int nextviewid = 0;
+
+static bool
+equalsView (view_t *one, view_t *two)
+{
+    bool result = TRUE;
+
+    DBUG_ENTER ("equalsView");
+
+    if ((one == NULL) && (two != NULL)) {
+        result = FALSE;
+    } else if ((one != NULL) && (two == NULL)) {
+        result = FALSE;
+    } else if (one != two) {
+        result = ((one->id == two->id) && (ILIBstringCompare (one->name, two->name))
+                  && (equalsView (one->next, two->next)));
+    }
+
+    DBUG_RETURN (result);
+}
+
+static void
 PutInPool (namespace_t *ns)
 {
     int cnt;
@@ -70,7 +102,7 @@ PutInPool (namespace_t *ns)
     DBUG_VOID_RETURN;
 }
 
-namespace_t *
+static namespace_t *
 GetFromPool (int id)
 {
     namespace_t *result;
@@ -90,8 +122,8 @@ GetFromPool (int id)
     DBUG_RETURN (result);
 }
 
-namespace_t *
-FindInPool (const char *name)
+static namespace_t *
+FindInPool (const char *module, view_t *view)
 {
     namespace_t *result = NULL;
     nspool_t *pos;
@@ -102,7 +134,8 @@ FindInPool (const char *name)
     pos = pool;
 
     for (cnt = 0; cnt < nextid; cnt++) {
-        if (ILIBstringCompare (pos->block[cnt]->name, name)) {
+        if ((ILIBstringCompare (pos->block[cnt]->module, module))
+            && (equalsView (pos->block[cnt]->view, view))) {
             result = pos->block[cnt];
             break;
         }
@@ -115,8 +148,34 @@ FindInPool (const char *name)
     DBUG_RETURN (result);
 }
 
-namespace_t *
-AddNamespaceToPool (const char *name)
+static char *
+buildNamespaceName (namespace_t *ns)
+{
+    char *result;
+    str_buf *buf;
+    view_t *view;
+
+    DBUG_ENTER ("buildNamespaceName");
+
+    buf = ILIBstrBufCreate (255);
+
+    buf = ILIBstrBufPrint (buf, ns->module);
+
+    view = ns->view;
+
+    while (view != NULL) {
+        buf = ILIBstrBufPrintf (buf, ":%s", view->name);
+        view = view->next;
+    }
+
+    result = ILIBstrBuf2String (buf);
+    buf = ILIBstrBufFree (buf);
+
+    DBUG_RETURN (result);
+}
+
+static namespace_t *
+AddNamespaceToPool (const char *module, view_t *view)
 {
     namespace_t *new;
 
@@ -124,8 +183,10 @@ AddNamespaceToPool (const char *name)
 
     new = ILIBmalloc (sizeof (namespace_t));
 
-    new->name = ILIBstringCopy (name);
+    new->module = ILIBstringCopy (module);
     new->id = nextid++;
+    new->view = view;
+    new->name = buildNamespaceName (new);
 
     PutInPool (new);
 
@@ -133,13 +194,13 @@ AddNamespaceToPool (const char *name)
 }
 
 namespace_t *
-NSgetNamespace (const char *name)
+NSgetNamespace (const char *module)
 {
     namespace_t *result;
 
     DBUG_ENTER ("NSgetNamespace");
 
-    if (name == NULL) {
+    if (module == NULL) {
         /*
          * the empty namespace is mapped to the empty namespace
          * this merly is for convenience
@@ -147,10 +208,10 @@ NSgetNamespace (const char *name)
 
         result = NULL;
     } else {
-        result = FindInPool ((char *)name);
+        result = FindInPool (module, NULL);
 
         if (result == NULL) {
-            result = AddNamespaceToPool (name);
+            result = AddNamespaceToPool (module, NULL);
         }
     }
 
@@ -160,11 +221,13 @@ NSgetNamespace (const char *name)
 namespace_t *
 NSgetRootNamespace ()
 {
-    namespace_t *result;
+    static namespace_t *result;
 
     DBUG_ENTER ("NSgetRootNamespace");
 
-    result = NSgetNamespace ("_MAIN");
+    if (result == NULL) {
+        result = NSgetNamespace ("_MAIN");
+    }
 
     DBUG_RETURN (result);
 }
@@ -226,8 +289,51 @@ NSgetModule (const namespace_t *ns)
 
     DBUG_ASSERT ((ns != NULL), "called NSgetModule with argument NULL!");
 
-    DBUG_RETURN (ns->name);
+    DBUG_RETURN (ns->module);
 }
+
+view_t *
+dupView (view_t *src)
+{
+    view_t *result;
+
+    DBUG_ENTER ("dupView");
+
+    if (src == NULL) {
+        result = NULL;
+    } else {
+        result = ILIBmalloc (sizeof (view_t));
+
+        result->id = src->id;
+        result->name = ILIBstringCopy (src->name);
+        result->next = dupView (src->next);
+    }
+
+    DBUG_RETURN (result);
+}
+
+namespace_t *
+NSbuildView (namespace_t *orig)
+{
+    namespace_t *result;
+    view_t *view;
+
+    DBUG_ENTER ("NSbuildView");
+
+    view = ILIBmalloc (sizeof (view_t));
+
+    view->name = ILIBstringCopy (orig->name);
+    view->id = nextviewid++;
+    view->next = dupView (orig->view);
+
+    result = AddNamespaceToPool (global.modulename, view);
+
+    DBUG_RETURN (result);
+}
+
+/*
+ * serialisation support
+ */
 
 void
 NSserializeNamespace (FILE *file, const namespace_t *ns)
@@ -256,17 +362,37 @@ NSdeserializeNamespace (int id)
     DBUG_RETURN (result);
 }
 
+view_t *
+NSdeserializeView (const char *name, int id, view_t *next)
+{
+    view_t *result;
+
+    DBUG_ENTER ("NSdeserializeView");
+
+    result = ILIBmalloc (sizeof (view_t));
+
+    result->name = ILIBstringCopy (name);
+    result->id = id;
+    result->next = next;
+
+    DBUG_RETURN (result);
+}
+
 int
-NSaddMapping (const char *name)
+NSaddMapping (const char *module, view_t *view)
 {
     namespace_t *ns;
     int result;
 
     DBUG_ENTER ("NSaddMapping");
 
-    DBUG_PRINT ("NS", ("adding new mapping for '%s'...", name));
+    DBUG_PRINT ("NS", ("adding new mapping for '%s'...", module));
 
-    ns = NSgetNamespace (name);
+    ns = FindInPool (module, view);
+
+    if (ns == NULL) {
+        ns = AddNamespaceToPool (module, view);
+    }
 
     result = ns->id;
 
@@ -303,6 +429,24 @@ GenerateNamespaceMapDeclaration (FILE *file)
 }
 
 static void
+GenerateViewConstructor (FILE *file, view_t *view)
+{
+    DBUG_ENTER ("GenerateViewConstructor");
+
+    if (view == NULL) {
+        fprintf (file, "NULL");
+    } else {
+        fprintf (file, "NSdeserializeView( \"%s\", %d, ", view->name, view->id);
+
+        GenerateViewConstructor (file, view->next);
+
+        fprintf (file, ")");
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+static void
 GenerateNamespaceMappingConstructor (FILE *file)
 {
     nspool_t *pos;
@@ -315,8 +459,12 @@ GenerateNamespaceMappingConstructor (FILE *file)
     fprintf (file, "void __%s__MapConstructor() {\n", global.modulename);
 
     for (cnt = 0; cnt < nextid; cnt++) {
-        fprintf (file, "MAPNS(%d) = NSaddMapping( \"%s\");\n", cnt,
+        fprintf (file, "MAPNS(%d) = NSaddMapping( \"%s\",", cnt,
                  NSgetName (pool->block[cnt % 100]));
+
+        GenerateViewConstructor (file, pool->block[cnt % 100]->view);
+
+        fprintf (file, ");\n");
 
         if ((cnt % 100) == 99) {
             pos = pos->next;

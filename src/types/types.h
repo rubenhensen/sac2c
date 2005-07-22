@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.28  2005/07/22 13:13:12  sah
+ * added views and some cleanup
+ *
  * Revision 1.27  2005/07/21 18:50:32  sah
  * made TCstat type externally visible
  *
@@ -563,6 +566,7 @@ typedef struct INFO info;
  * by module name strings). See namespace.[ch] for details
  */
 typedef struct NAMESPACE namespace_t;
+typedef struct VIEW view_t;
 
 /******************************************************************************
  *
