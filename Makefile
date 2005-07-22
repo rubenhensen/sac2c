@@ -1,6 +1,10 @@
 
 #
 # $Log$
+# Revision 3.183  2005/07/22 13:10:52  sah
+# extracted some functionality from
+# deserialize into add_function_body
+#
 # Revision 3.182  2005/07/21 14:18:54  sah
 # introduced remove_external_code
 #
@@ -193,7 +197,8 @@ SERIALIZE= src/serialize/serialize_node.o \
            src/serialize/serialize_link.o src/serialize/serialize.o \
            src/serialize/serialize_stack.o \
            src/serialize/serialize_symboltable.o \
-           src/serialize/serialize_filenames.o
+           src/serialize/serialize_filenames.o \
+           src/serialize/add_function_body.o
 
 SCANP= src/scanparse/y.tab.o src/scanparse/lex.yy.o \
        src/scanparse/scnprs.o src/scanparse/handle_dots.o \

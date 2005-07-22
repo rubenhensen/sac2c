@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2005/07/22 13:10:52  sah
+ * extracted some functionality from
+ * deserialize into add_function_body
+ *
  * Revision 1.8  2005/07/15 15:57:02  sah
  * introduced namespaces
  *
@@ -54,6 +58,7 @@ extern node *DSaddSymbolByName (const char *symbol, stentrytype_t type,
                                 const char *module);
 extern node *DSaddSymbolById (const char *symbid, const char *module);
 extern void DSimportInstancesByName (const char *name, const char *module);
+extern node *DSloadFunctionBody (node *fundef);
 
 /*
  * hooks for deserialization
@@ -61,17 +66,5 @@ extern void DSimportInstancesByName (const char *name, const char *module);
 extern ntype *DSloadUserType (const char *name, const namespace_t *ns);
 extern node *DSlookupFunction (const char *module, const char *symbol);
 extern node *DSfetchArgAvis (int pos);
-
-/*
- * DS traversal
- */
-extern node *DSdoDeserialize (node *fundef);
-
-extern node *DSfundef (node *arg_node, info *arg_info);
-extern node *DSreturn (node *arg_node, info *arg_info);
-extern node *DSblock (node *arg_node, info *arg_info);
-extern node *DSarg (node *arg_node, info *arg_info);
-extern node *DSassign (node *arg_node, info *arg_info);
-extern node *DSap (node *arg_node, info *arg_info);
 
 #endif /* _SAC_DESERIALIZE_H_ */

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.22  2005/07/22 13:10:52  sah
+ * extracted some functionality from
+ * deserialize into add_function_body
+ *
  * Revision 1.21  2005/07/21 12:02:59  sbs
  * fixed bug in imports
  * free wheeling zombies caught and properly disposed of.
@@ -258,11 +262,11 @@ getCurrentFundefHead ()
 }
 
 static void
-setCurrentFundefHead (node *fundef)
+SetCurrentFundefHead (node *fundef)
 {
-    DBUG_ENTER ("setCurrentFundefHead");
+    DBUG_ENTER ("SetCurrentFundefHead");
 
-    DBUG_ASSERT ((DSstate != NULL), "called setCurrentFundefHead without starting DS...");
+    DBUG_ASSERT ((DSstate != NULL), "called SetCurrentFundefHead without starting DS...");
 
     INFO_DS_FUNHEAD (DSstate) = fundef;
 
@@ -594,6 +598,35 @@ DSimportInstancesByName (const char *name, const char *module)
     DBUG_VOID_RETURN;
 }
 
+node *
+DSloadFunctionBody (node *fundef)
+{
+    node *result = NULL;
+    const char *serfunname;
+    serfun_p serfun;
+    module_t *module;
+
+    DBUG_ENTER ("DSloadFunctionBody");
+
+    module = MODMloadModule (NSgetModule (FUNDEF_NS (fundef)));
+
+    serfunname = SERgenerateSerFunName ((FUNDEF_ISWRAPPERFUN (fundef) ? SET_wrapperbody
+                                                                      : SET_funbody),
+                                        fundef);
+
+    serfun = MODMgetDeSerializeFunction (serfunname, module);
+
+    SetCurrentFundefHead (fundef);
+
+    result = serfun ();
+
+    SetCurrentFundefHead (NULL);
+
+    module = MODMunLoadModule (module);
+
+    DBUG_RETURN (result);
+}
+
 /*
  * general deserialise and dispatch functions
  */
@@ -769,188 +802,4 @@ DSfetchArgAvis (int pos)
     DBUG_ASSERT ((pos == 0), "Referenced arg does not exist!");
 
     DBUG_RETURN (ARG_AVIS (arg));
-}
-
-/*
- * deserialize traversal functions
- */
-
-static node *
-LoadFunctionBody (node *fundef)
-{
-    node *result = NULL;
-    module_t *module;
-    const sttable_t *table;
-    serfun_p serfun;
-    const char *serfunname;
-
-    DBUG_ENTER ("LoadFunctionBody");
-
-    DBUG_ASSERT ((DSstate != NULL),
-                 "LoadFunctionBody called without calling InitDeserialize");
-
-    module = MODMloadModule (NSgetModule (FUNDEF_NS (fundef)));
-    table = MODMgetSymbolTable (module);
-
-    serfunname = SERgenerateSerFunName (SET_funbody, fundef);
-
-    serfun = MODMgetDeSerializeFunction (serfunname, module);
-
-    DBUG_ASSERT ((serfun != NULL), "requested deserializer for function body not found");
-
-    result = serfun (DSstate);
-
-    module = MODMunLoadModule (module);
-
-    DBUG_RETURN (result);
-}
-
-node *
-DSdoDeserialize (node *fundef)
-{
-    node *body;
-
-    DBUG_ENTER ("DSdoDeserialize");
-
-    DBUG_ASSERT ((DSstate != NULL),
-                 "DSdoDeserialize called without calling InitDeserialize");
-
-    DBUG_PRINT ("DS", ("Adding function body to `%s'.", CTIitemName (fundef)));
-
-    setCurrentFundefHead (fundef);
-
-    body = LoadFunctionBody (fundef);
-
-    setCurrentFundefHead (NULL);
-
-    DBUG_PRINT ("DS", ("Operation %s", (body == NULL) ? "failed" : "completed"));
-
-    FUNDEF_BODY (fundef) = body;
-
-    TRAVpush (TR_ds);
-
-    TRAVdo (fundef, DSstate);
-
-    TRAVpop ();
-
-    DBUG_RETURN (fundef);
-}
-
-/*
- * Helper functions for deserialize traversal
- */
-
-static node *
-LookUpSSACounter (node *cntchain, node *arg)
-{
-    node *result = NULL;
-    DBUG_ENTER ("LookUpSSACounter");
-
-    while ((cntchain != NULL) && (result == NULL)) {
-        if (!strcmp (SSACNT_BASEID (cntchain), ARG_NAME (arg))) {
-            result = cntchain;
-        }
-
-        cntchain = SSACNT_NEXT (cntchain);
-    }
-
-    DBUG_RETURN (result);
-}
-
-/*
- * traversal functions
- */
-
-node *
-DSfundef (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("DSfundef");
-
-    INFO_DS_ARGS (arg_info) = FUNDEF_ARGS (arg_node);
-
-    arg_node = TRAVcont (arg_node, arg_info);
-
-    FUNDEF_RETURN (arg_node) = INFO_DS_RETURN (arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-node *
-DSreturn (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("DSreturn");
-
-    INFO_DS_RETURN (arg_info) = arg_node;
-
-    arg_node = TRAVcont (arg_node, arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-node *
-DSblock (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("DSblock");
-
-    if (INFO_DS_SSACOUNTER (arg_info) == NULL) {
-        /* we are the first block underneath the Fundef node */
-        INFO_DS_SSACOUNTER (arg_info) = BLOCK_SSACOUNTER (arg_node);
-    }
-
-    if (INFO_DS_VARDECS (arg_info) == NULL) {
-        /* no vardecs set yet, so we do it */
-        INFO_DS_VARDECS (arg_info) = BLOCK_VARDEC (arg_node);
-    }
-
-    arg_node = TRAVcont (arg_node, arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-node *
-DSarg (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("DSarg");
-
-    AVIS_SSACOUNT (ARG_AVIS (arg_node))
-      = LookUpSSACounter (INFO_DS_SSACOUNTER (arg_info), arg_node);
-
-    arg_node = TRAVcont (arg_node, arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-node *
-DSassign (node *arg_node, info *arg_info)
-{
-    node *oldassign;
-
-    DBUG_ENTER ("DSassign");
-
-    /*
-     * we have to store the last assign, as we need
-     * it to restore the EXT_ASSIGN value of
-     * cond and loop functions that may be called
-     * on the LHS
-     */
-    oldassign = INFO_DS_LASTASSIGN (arg_info);
-    INFO_DS_LASTASSIGN (arg_info) = arg_node;
-
-    arg_node = TRAVcont (arg_node, arg_info);
-
-    INFO_DS_LASTASSIGN (arg_info) = oldassign;
-
-    DBUG_RETURN (arg_node);
-}
-
-node *
-DSap (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("DSap");
-
-    DBUG_ASSERT (AP_FUNDEF (arg_node) != NULL, "found a ap without fundef link!");
-
-    arg_node = TRAVcont (arg_node, arg_info);
-
-    DBUG_RETURN (arg_node);
 }

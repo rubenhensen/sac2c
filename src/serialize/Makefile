@@ -1,6 +1,10 @@
 #
 #
 # $Log$
+# Revision 1.5  2005/07/22 13:10:52  sah
+# extracted some functionality from
+# deserialize into add_function_body
+#
 # Revision 1.4  2005/07/17 11:46:54  sah
 # added serialize_filenames.o
 #
@@ -37,7 +41,7 @@ OBJS := serialize_node.o serialize_attribs.o \
         serialize_helper.o serialize_link.o \
         serialize.o serialize_stack.o \
         serialize_symboltable.o \
-        serialize_filenames.o 
+        serialize_filenames.o add_function_body.o
 
 all: $(OBJS)
 
