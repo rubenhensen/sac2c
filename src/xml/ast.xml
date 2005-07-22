@@ -80,7 +80,7 @@
     copy="function" persist="no" />
     <type name="IndexInfo" ctype="index_info*" init="NULL"
     copy="function" persist="no" />
-    <type name="TypeCheckingStatus" ctype="NTC_stat" init="NULL"
+    <type name="TypeCheckingStatus" ctype="NTC_stat" init="NTC_not_checked"
     copy="literal" persist="yes" />
   </attributetypes>
   <phases>
