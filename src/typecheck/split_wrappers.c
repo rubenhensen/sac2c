@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2005/07/22 13:12:37  sah
+ * new wrapperfuns are maked as NTC_checked
+ *
  * Revision 1.2  2005/07/17 20:34:18  sah
  * fixed an include
  *
@@ -205,6 +208,13 @@ SplitWrapper (node *fundef)
          * from the generic ones
          */
         FUNDEF_ISNEEDED (new_fundef) = TRUE;
+
+        /*
+         * mark the new wrapper as typechecked, as it is known to be
+         * correctly typed! this is important as wrappers might be
+         * loaded during typechecking!
+         */
+        FUNDEF_TCSTAT (new_fundef) = NTC_checked;
 
         FUNDEF_NEXT (new_fundef) = new_fundefs;
         new_fundefs = new_fundef;
