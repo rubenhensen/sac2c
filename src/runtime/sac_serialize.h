@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2005/07/22 13:12:13  sah
+ * small clean up
+ *
  * Revision 1.14  2005/07/16 21:11:29  sah
  * implemented serialisation of namespaces
  * based on a namespace mapping instead
@@ -52,6 +55,8 @@
 #ifndef _SAC_SERIALIZE_H_
 #define _SAC_SERIALIZE_H_
 
+#define NULL ((void *)0)
+
 extern void *SHLPmakeNode (int ntype, int lineno, char *sfile, ...);
 extern void *SHLPfixLink (void *stack, int a, int b, int c);
 extern void *COdeserializeConstant (int type, void *shp, int vlen, char *vec);
@@ -66,6 +71,7 @@ extern void STadd (char *s1, int l, char *s2, int i, void *table);
 extern void *STRSadd (char *s1, int i, void *p);
 extern void *DSfetchArgAvis (int i);
 extern void *NSdeserializeNamespace (int i);
-extern int NSaddMapping (char *s1);
+extern void *NSdeserializeView (char *s, int i, void *p);
+extern int NSaddMapping (char *s1, void *p);
 
 #endif /* _SAC_SERIALIZE_H_ */

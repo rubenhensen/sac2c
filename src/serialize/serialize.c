@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.22  2005/07/22 13:12:13  sah
+ * small clean up
+ *
  * Revision 1.21  2005/07/19 08:00:43  sbs
  * some beautification
  *
@@ -197,7 +200,6 @@ GenerateSerFileHead (FILE *file, node *module)
     fprintf (file, "#include \"filenames.h\"\n\n");
 
     fprintf (file, "#define DROP( x, y) y\n");
-    fprintf (file, "#define NULL (void *) 0\n");
 
     DBUG_VOID_RETURN;
 }
