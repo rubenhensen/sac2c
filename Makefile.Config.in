@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 1.28  2005/07/22 14:49:16  sbs
+# modified EFLIBS
+#
 # Revision 1.27  2005/07/21 11:56:57  sbs
 # eliminated O0 again :-)
 #
@@ -139,7 +142,7 @@ EXCLUDE_INCS :=libsac runtime xml tools
 INCS         :=-I../../inc $(patsubst %,-I../%,$(filter-out $(EXCLUDE_INCS),\
                                   $(notdir $(wildcard ../*))))
 LIBS         :=@LIBS@@LEXLIB@
-EFLIBS       :=-L/home/sacbase/efence -lefence
+EFLIBS       :=-L/usr2/sacware/lib -lefence
 RM           :=rm -f
 GZIP         :=gzip -f
 ECHO         :=echo
