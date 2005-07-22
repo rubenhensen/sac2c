@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.32  2005/07/22 15:05:10  sbs
+ * DFMasks are freed now as well
+ *
  * Revision 1.31  2005/07/21 12:02:21  sbs
  * using !AP_ISRECURSIVEDOFUNCALL now
  *
@@ -438,14 +441,9 @@ FREEattribDFMask (dfmask_t *attr)
 {
     DBUG_ENTER ("FREEattribDFMask");
 
-#if 0 /* TODO: dfmasks are not correctly freed */
-
-  if (attr != NULL) {
-    attr = DFMremoveMask (attr);
-  }
-#else
-    attr = NULL;
-#endif
+    if (attr != NULL) {
+        attr = DFMremoveMask (attr);
+    }
 
     DBUG_RETURN (attr);
 }
