@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.40  2005/07/22 15:05:40  sbs
+ * errorneous Free on masks eliminated in DoLifting
+ *
  * Revision 3.39  2005/07/21 11:58:46  sbs
  * used AP_ISRECURSIVEDOFUNCALL now
  *
@@ -584,9 +587,6 @@ DoLifting (char *suffix, dfmask_t *in, dfmask_t *out, dfmask_t *local, node *arg
     /*
      * replace the instruction by a call of the new LaC function
      */
-    in = DFMremoveMask (in);
-    out = DFMremoveMask (out);
-    local = DFMremoveMask (local);
     arg_node = FREEdoFreeTree (arg_node);
     arg_node = let;
 
