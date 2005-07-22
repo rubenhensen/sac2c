@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.18  2005/07/22 13:11:39  sah
+ * interface changes
+ *
  * Revision 1.17  2005/07/17 21:14:59  sah
  * wrapper bodies are no more deserialized
  *
@@ -92,7 +95,7 @@ PrintLibStatCodeAddBodies (module_t *module, node *modnode, node *fundef)
         if ((FUNDEF_BODY (fundef) == NULL) && (!FUNDEF_ISWRAPPERFUN (fundef))) {
             DSinitDeserialize (modnode);
 
-            DSdoDeserialize (fundef);
+            fundef = AFBdoAddFunctionBody (fundef);
 
             DSfinishDeserialize (modnode);
         }

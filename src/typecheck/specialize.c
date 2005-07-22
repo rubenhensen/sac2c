@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.27  2005/07/22 13:11:39  sah
+ * interface changes
+ *
  * Revision 1.26  2005/07/15 15:57:02  sah
  * introduced namespaces
  *
@@ -99,6 +102,7 @@
 #include "tree_compound.h"
 #include "DupTree.h"
 #include "deserialize.h"
+#include "add_function_body.h"
 #include "new_types.h"
 #include "type_utils.h"
 #include "ssi.h"
@@ -342,16 +346,7 @@ DoSpecialize (node *wrapper, node *fundef, ntype *args)
      * fetch it for the copy (the one we will specialize later)
      */
     if ((FUNDEF_SYMBOLNAME (fundef) != NULL) && (FUNDEF_BODY (fundef) == NULL)) {
-        res = DSdoDeserialize (res);
-
-#if 0
-    /*
-     * now we flush the deserialize buffers and insert the pending
-     * parts into the ast. this only works as the typechecking
-     * walks downwards in the ast!
-     */
-    DSflushDeserialize();
-#endif
+        res = AFBdoAddFunctionBody (res);
     }
 
     /* reset the SYMBOLNAME attribute, as the function is _not_

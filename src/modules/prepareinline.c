@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2005/07/22 13:11:39  sah
+ * interface changes
+ *
  * Revision 1.6  2005/07/15 15:57:02  sah
  * introduced namespaces
  *
@@ -29,6 +32,7 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
+#include "add_function_body.h"
 #include "deserialize.h"
 #include "internal_lib.h"
 #include "type_utils.h"
@@ -90,7 +94,7 @@ PPIfundef (node *arg_node, info *arg_info)
     if ((FUNDEF_BODY (arg_node) == NULL)
         && ((FUNDEF_ISINLINE (arg_node) || FUNDEF_ISLACFUN (arg_node)))
         && (FUNDEF_SYMBOLNAME (arg_node) != NULL)) {
-        arg_node = DSdoDeserialize (arg_node);
+        arg_node = AFBdoAddFunctionBody (arg_node);
 
         if (FUNDEF_BODY (arg_node) != NULL) {
             INFO_PPI_FETCHED (arg_info)++;
