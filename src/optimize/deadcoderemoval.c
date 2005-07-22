@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2005/07/22 07:33:25  ktr
+ * intermediate conservative solution
+ *
  * Revision 1.3  2005/07/20 13:13:30  ktr
  * LaC functions whose conditional has been eliminated are now marked LACINLINE
  *
@@ -584,8 +587,6 @@ DCRlet (node *arg_node, info *arg_info)
 node *
 DCRap (node *arg_node, info *arg_info)
 {
-    bool travargs = TRUE;
-
     DBUG_ENTER ("DCRap");
 
     /* traverse special fundef without recursion */
@@ -593,33 +594,6 @@ DCRap (node *arg_node, info *arg_info)
         if (AP_FUNDEF (arg_node) == INFO_DCR_FUNDEF (arg_info)) {
             /* remember internal assignment */
             INFO_DCR_INT_ASSIGN (arg_info) = INFO_DCR_ASSIGN (arg_info);
-
-            /*
-             * arguments of recursive args do not need to be traversed
-             * as they must create a demand otherwise not present.
-             *
-             * Ex.:
-             * int Loop_0( int c, int d)
-             * {
-             *   _flat_0 = 1;
-             *   c__SSA0_1 = (c + _flat_0);
-             *   _flat_1 = 1;
-             *   d__SSA0_1 = (d + _flat_1);
-             *   if (true)
-             *   {
-             *     c__SSA0_2 = Loop_0( c__SSA0_1, d__SSA0_1);
-             *   }
-             *   else {
-             *   }
-             *   c__SSA0_3 = ( true ? c__SSA0_2 : c__SSA0_1 );
-             *   return( c__SSA0_3);
-             * }
-             *
-             * All arguments of the recursive application also demanded
-             * - in the funcond block   OR
-             * - in the loop body
-             */
-            travargs = FALSE;
         } else {
             DBUG_PRINT ("DCR", ("traverse in special fundef %s",
                                 FUNDEF_NAME (AP_FUNDEF (arg_node))));
@@ -635,7 +609,7 @@ DCRap (node *arg_node, info *arg_info)
     }
 
     /* mark all args as needed */
-    if ((travargs) && (AP_ARGS (arg_node) != NULL)) {
+    if (AP_ARGS (arg_node) != NULL) {
         AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
     }
 
