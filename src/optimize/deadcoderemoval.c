@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2005/07/22 11:48:31  ktr
+ * *** empty log message ***
+ *
  * Revision 1.4  2005/07/22 07:33:25  ktr
  * intermediate conservative solution
  *
@@ -37,6 +40,25 @@
  *    know that there is always exactly on calling application that we can
  *    modifiy, too.
  *    the flags if we need an identifier are stored in the avis nodes
+ *
+ * remarks:
+ *    it turns out this implementation is rather conservative and is not able
+ *    to remove superfluous computations performed in loops.
+ *    To handle this, it would be necessary to split DCR into two seperate
+ *    traversal.
+ *    1. Identify all unused variables.
+ *       In loops, this means that the recursive application itself does not
+ *       induce demand for a computation. However, if non-dead assignments in
+ *       the loop body depend on a certain loop argument, the identifier used
+ *       in the corresponding argument position of the recursive application
+ *       must not be considered dead.
+ *       Hence, loops require a fixed point iteration to compute the minimal
+ *       demand.
+ *    2. Remove all assignments that are not actually needed along with
+ *       superfluous return values and arguments of LaC functions.
+ *
+ *    It might be a good idea to use AVIS_ISDEAD to communicate whether a
+ *    variable is needed or not between those traversal.
  *
  *****************************************************************************/
 #include "deadcoderemoval.h"
