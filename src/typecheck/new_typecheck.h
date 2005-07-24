@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2005/07/24 20:01:50  sah
+ * moved all the preparations for typechecking
+ * into a different phase
+ *
  * Revision 3.14  2004/11/25 18:01:40  sbs
  * compiles
  *
@@ -59,7 +63,6 @@ extern ntype *NTCnewTypeCheck_Expr (node *arg_node);
 
 extern ntype *NTCcheckUdtAndSetBaseType (usertype udt, int *visited);
 
-extern node *NTCtypedef (node *arg_node, info *arg_info);
 extern node *NTCmodule (node *arg_node, info *arg_info);
 extern node *NTCfundef (node *arg_node, info *arg_info);
 extern node *NTCarg (node *arg_node, info *arg_info);

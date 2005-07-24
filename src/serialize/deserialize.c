@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.23  2005/07/24 20:01:50  sah
+ * moved all the preparations for typechecking
+ * into a different phase
+ *
  * Revision 1.22  2005/07/22 13:10:52  sah
  * extracted some functionality from
  * deserialize into add_function_body
@@ -220,10 +224,12 @@ InsertIntoState (node *item)
                              NSdupNamespace (TYPEDEF_NS (item)),
                              TYcopyType (TYPEDEF_NTYPE (item)), NULL, NODE_LINE (item),
                              item);
-        /*
-         * now compute the basetype
-         */
-        NTCcheckUdtAndSetBaseType (udt, NULL);
+#if 0
+      /*
+       * now compute the basetype
+       */
+      NTCcheckUdtAndSetBaseType( udt, NULL);
+#endif
 
         INFO_DS_TYPEDEFS (DSstate) = TCappendTypedef (INFO_DS_TYPEDEFS (DSstate), item);
         break;

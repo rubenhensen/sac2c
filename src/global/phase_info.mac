@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.33  2005/07/24 20:01:50  sah
+ * moved all the preparations for typechecking
+ * into a different phase
+ *
  * Revision 3.32  2005/07/21 14:18:54  sah
  * introduced remove_external_code
  *
@@ -216,22 +220,26 @@ SUBPHASE (flat, "flat", "Flattening nested expressions", FLATdoFlatten)
 
 /***********************************************************************/
 
-PHASE (typecheck, "Running type inference system", PHdummy)
+PHASE (pretypecheck, "Converting to static single assignment form", PHdummy)
 
-SUBPHASE (insvd, "insvd", "Inserting variable declarations", PHdummy)
+SUBPHASE (rst, "rst", "Processing user defined types", RSTdoResolveSymbolTypes)
 
-SUBPHASE (crtwrp, "crtwrp", "Creating wrapper functions", PHdummy)
+SUBPHASE (insvd, "insvd", "Inserting variable declarations", INSVDdoInsertVardec)
+
+SUBPHASE (crtwrp, "crtwrp", "Creating wrapper functions", CRTWRPdoCreateWrappers)
 
 SUBPHASE (lac2fun, "lac2fun", "Eliminating loops and conditionals", L2FdoLac2Fun)
 
 SUBPHASE (ssa, "ssa", "Establishing static single assignment form",
           SSATdoTransformAllowGOs)
 
+/***********************************************************************/
+
+PHASE (typecheck, "Running type inference system", PHdummy)
+
 SUBPHASE (tc, "tc", "Running type inference system", PHdummy)
 
 SUBPHASE (ds, "ds", "Deserializing code", PHdummy)
-
-SUBPHASE (rst, "rst", "Resolving symbol types", PHdummy)
 
 SUBPHASE (nt2ot, "nt2ot", "Cleaning up type inference system", PHdummy)
 

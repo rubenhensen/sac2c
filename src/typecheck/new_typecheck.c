@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.81  2005/07/24 20:01:50  sah
+ * moved all the preparations for typechecking
+ * into a different phase
+ *
  * Revision 3.80  2005/07/21 18:50:32  sah
  * made TCstat type externally visible
  *
@@ -517,17 +521,6 @@ NTCmodule (node *arg_node, info *arg_info)
     node *fundef, *ignore;
 
     DBUG_ENTER ("NTCmodule");
-    /*
-     * First, we gather all typedefs and setup the global table
-     * which is kept in "new_types". Furthermore, the symbol types
-     * generated during scanparse are replaced by the proper
-     * udts
-     */
-    arg_node = RSTdoResolveSymbolTypes (arg_node);
-    if ((global.break_after == PH_typecheck)
-        && (0 == strcmp (global.break_specifier, "rst"))) {
-        goto DONE;
-    }
 
     /*
      * now we check for consistency and try to gather the basetypes
@@ -540,58 +533,13 @@ NTCmodule (node *arg_node, info *arg_info)
     CTIabortOnError ();
 
     /*
-     * Then we insert the topmost objdef into the arg_info node
+     * We insert the topmost objdef into the arg_info node
      * for later reference.
      */
 
     INFO_NTC_OBJDEFS (arg_info) = MODULE_OBJS (arg_node);
 
     /*
-     * Before doing the actual type inference, we want to switch to the FUN-
-     * representation. This requires several preparational steps:
-     *
-     * I) Inserting Vardecs
-     * =====================
-     *
-     * First, we insert a vardec node for each identifier used.
-     * This has to be done prior to Lac2Fun as Lac2Fun uses dataflowmasks
-     * which in turn rely on the existance of Vardecs. Note here, that the
-     * vardecs do not contain any type info yet!
-     */
-    arg_node = INSVDdoInsertVardec (arg_node);
-    if ((global.break_after == PH_typecheck)
-        && (0 == strcmp (global.break_specifier, "ivd"))) {
-        goto DONE;
-    }
-
-    /*
-     * II) Creating Wrappers
-     * ======================
-     *
-     * Since Lac2Fun needs to know about reference parameters, it requires each
-     * application of a user defined function to contain a backref to the
-     * function that is actually applied. Since this -in general- cannot be
-     * statically decided, the backref points to a wrapper function which
-     * contains the (intersection type based) function type of the overloaded
-     * function as well as pointers to all potential implementations. These
-     * structures are created by "CreateWrappers".
-     */
-    arg_node = CRTWRPdoCreateWrappers (arg_node);
-    if ((global.break_after == PH_typecheck)
-        && (0 == strcmp (global.break_specifier, "cwr"))) {
-        goto DONE;
-    }
-
-    /*
-     * Now that all ids have backrefs to vardecs and all funaps have backrefs
-     * to wrapper-fundefs, Lac2Fun can finally be run.
-     */
-    arg_node = PHrunCompilerSubPhase (SUBPH_lac2fun, arg_node);
-    arg_node = PHrunCompilerSubPhase (SUBPH_ssa, arg_node);
-
-    /*
-     * Now, we do the actual type inference ....
-     *
      * First, we mark all functions that need to be checked as NTC_not_checked.
      * All others are marked NTC_checked:
      */
@@ -680,168 +628,6 @@ NTCmodule (node *arg_node, info *arg_info)
     }
 
 DONE:
-    DBUG_RETURN (arg_node);
-}
-
-/*******************************************************************************
- *
- * function:
- *   ntype *CheckUdtAndSetBaseType( usertype udt, int* visited)
- *
- * description:
- *  This function checks the integrity of a user defined type, and while doing
- *  so it converts Symb{} types into Udt{} types, it computes its base-type,
- *  AND stores it in the udt-repository!
- *  At the time being, the following restrictions apply:
- *  - the defining type has to be one of Symb{} Simple{}, AKS{ Symb{}},
- *    or AKS{ Simple{}}.
- *  - if the defining type contains a Symb{} type, this type and all further
- *    decendents must be defined without any recursion in type definitions!
- *
- *  The second parameter ("visited") is needed for detecting recusive
- *  definitions only. Therefore, the initial call should be made with
- *  (visited == NULL)!
- *
- *  We ASSUME, that the existence of a basetype indicates that the udt has
- *  been checked already!!!
- *  Furthermore, we ASSUME that iff basetype is not yet set, the defining
- *  type either is a simple- or a symbol-type, NOT a user-type!
- *
- ******************************************************************************/
-
-ntype *
-NTCcheckUdtAndSetBaseType (usertype udt, int *visited)
-{
-    ntype *base, *base_elem;
-    usertype inner_udt;
-    ntype *inner_base;
-    ntype *new_base, *new_base_elem;
-    int num_udt, i;
-
-    DBUG_ENTER ("NTCcheckUdtandSetBaseType");
-
-    base = UTgetBaseType (udt);
-    if (base == NULL) {
-        base = UTgetTypedef (udt);
-        if (!(TYisScalar (base) || TYisAKS (base))) {
-            CTIerrorLine (global.linenum,
-                          "Typedef of %s::%s is illegal; should be either"
-                          " scalar type or array type of fixed shape",
-                          NSgetName (UTgetNamespace (udt)), UTgetName (udt));
-        } else {
-            /*
-             * Here, we know that we are either dealing with
-             * Symb{} Simple{}, AKS{ Symb{}}, or AKS{ Simple{}}.
-             * If we would be dealing with    User{} or AKS{ User{}}
-             * base type would have been set already!
-             */
-            if (TYisSymb (base) || TYisAKSSymb (base)) {
-                base_elem = (TYisSymb (base) ? base : TYgetScalar (base));
-                inner_udt
-                  = UTfindUserType (TYgetName (base_elem), TYgetNamespace (base_elem));
-                if (inner_udt == UT_NOT_DEFINED) {
-                    CTIerrorLine (global.linenum,
-                                  "Typedef of %s::%s is illegal; type %s::%s unknown",
-                                  NSgetName (UTgetNamespace (udt)), UTgetName (udt),
-                                  NSgetName (TYgetNamespace (base_elem)),
-                                  TYgetName (base_elem));
-                } else {
-                    /*
-                     * First, we replace the defining symbol type by the appropriate
-                     * user-defined-type, i.e., inner_udt!
-                     */
-                    new_base_elem = TYmakeUserType (inner_udt);
-                    new_base
-                      = (TYisSymb (base)
-                           ? new_base_elem
-                           : TYmakeAKS (new_base_elem, SHcopyShape (TYgetShape (base))));
-                    UTsetTypedef (udt, new_base);
-                    TYfreeType (base);
-                    base = new_base;
-
-                    /*
-                     * If this is the initial call, we have to allocate and
-                     * initialize our recursion detection mask "visited".
-                     */
-                    if (visited == NULL) {
-                        /* This is the initial call, so visited has to be initialized! */
-                        num_udt = UTgetNumberOfUserTypes ();
-                        visited = (int *)ILIBmalloc (sizeof (int) * num_udt);
-                        for (i = 0; i < num_udt; i++)
-                            visited[i] = 0;
-                    }
-                    /*
-                     * if we have not yet checked the inner_udt, recursively call
-                     * CheckUdtAndSetBaseType!
-                     */
-                    if (visited[inner_udt] == 1) {
-                        CTIerrorLine (global.linenum, "Type %s:%s recursively defined",
-                                      NSgetName (UTgetNamespace (udt)), UTgetName (udt));
-                    } else {
-                        visited[udt] = 1;
-                        inner_base = NTCcheckUdtAndSetBaseType (inner_udt, visited);
-                        /*
-                         * Finally, we compute the resulting base-type by nesting
-                         * the inner base type with the actual typedef!
-                         */
-                        base = TYnestTypes (base, inner_base);
-                    }
-                }
-            } else {
-                /*
-                 * Here, we deal with Simple{} or AKS{ Simple{}}. In both cases
-                 * base is the base type. Therefore, there will be no further
-                 * recursice call. This allows us to free "visited".
-                 * To be precise, we would have to free "visited in all ERROR-cases
-                 * as well, but we neglect that since in case of an error the
-                 * program will terminate soon anyways!
-                 */
-                if (visited != NULL)
-                    visited = ILIBfree (visited);
-            }
-        }
-        UTsetBaseType (udt, base);
-    }
-
-    DBUG_RETURN (base);
-}
-
-/******************************************************************************
- *
- * function:
- *    node *NTCtypedef(node *arg_node, info *arg_info)
- *
- * description:
- *   We check on consistency (for the exact restrictions
- *   see "CheckUdtAndSetBaseType") and replace the defining type by its
- *   basetype.
- *
- ******************************************************************************/
-
-node *
-NTCtypedef (node *arg_node, info *arg_info)
-{
-    ntype *base;
-    usertype udt;
-
-    DBUG_ENTER ("NTCtypedef");
-
-    udt = UTfindUserType (TYPEDEF_NAME (arg_node), TYPEDEF_NS (arg_node));
-
-    if (TYPEDEF_ISLOCAL (arg_node)) {
-        base = NTCcheckUdtAndSetBaseType (udt, NULL);
-    } else {
-        base = UTgetBaseType (udt);
-    }
-
-    /*
-    TYPEDEF_NTYPE( arg_node) = TYfreeType( TYPEDEF_NTYPE( arg_node));
-    */
-    TYPEDEF_NTYPE (arg_node) = base;
-
-    if (TYPEDEF_NEXT (arg_node) != NULL)
-        TYPEDEF_NEXT (arg_node) = TRAVdo (TYPEDEF_NEXT (arg_node), arg_info);
-
     DBUG_RETURN (arg_node);
 }
 

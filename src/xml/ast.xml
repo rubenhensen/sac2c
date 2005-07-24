@@ -467,7 +467,6 @@
       </traversal>
       <traversal id="NTC" name="New Type Inference" default="sons" include="new_typecheck.h" >
         <travuser> 
-          <node name="Typedef" />
           <node name="Module" />
           <node name="Fundef" />
           <node name="Arg" />

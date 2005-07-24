@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.109  2005/07/24 20:01:50  sah
+ * moved all the preparations for typechecking
+ * into a different phase
+ *
  * Revision 3.108  2005/07/17 20:14:29  sbs
  * added new phase PH_elimudt
  *
@@ -307,6 +311,23 @@ main (int argc, char *argv[])
 
     if (global.break_after == PH_simplify)
         goto BREAK;
+    global.compiler_phase++;
+
+    /*
+     * creating SSA form
+     */
+    PHASE_PROLOG;
+    NOTE_COMPILER_PHASE;
+
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_rst, syntax_tree);
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_insvd, syntax_tree);
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_crtwrp, syntax_tree);
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_lac2fun, syntax_tree);
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_ssa, syntax_tree);
+
+    PHASE_DONE_EPILOG;
+    PHASE_EPILOG;
+
     global.compiler_phase++;
 
     /*
