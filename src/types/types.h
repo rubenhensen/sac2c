@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.29  2005/07/25 16:43:39  sbs
+ * heap and php_cmp_fun added.
+ *
  * Revision 1.28  2005/07/22 13:13:12  sah
  * added views and some cleanup
  *
@@ -910,6 +913,13 @@ typedef struct {
 
 typedef struct TVAR tvar;
 typedef bool (*tvar_ass_handle_fun) (sig_dep *handle);
+
+/**
+ * types from PHP
+ */
+
+typedef struct HEAP heap;
+typedef bool (*php_cmp_fun) (void *elem1, void *elem2);
 
 /*
  * moved from stringset.h
