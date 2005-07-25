@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2005/07/25 10:22:58  sah
+ * single phases of tc are now triggered in main.c
+ *
  * Revision 3.15  2005/07/24 20:01:50  sah
  * moved all the preparations for typechecking
  * into a different phase
@@ -60,8 +63,6 @@
 
 extern node *NTCdoNewTypeCheck (node *arg_node);
 extern ntype *NTCnewTypeCheck_Expr (node *arg_node);
-
-extern ntype *NTCcheckUdtAndSetBaseType (usertype udt, int *visited);
 
 extern node *NTCmodule (node *arg_node, info *arg_info);
 extern node *NTCfundef (node *arg_node, info *arg_info);

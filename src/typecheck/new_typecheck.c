@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.82  2005/07/25 10:22:58  sah
+ * single phases of tc are now triggered in main.c
+ *
  * Revision 3.81  2005/07/24 20:01:50  sah
  * moved all the preparations for typechecking
  * into a different phase
@@ -523,16 +526,6 @@ NTCmodule (node *arg_node, info *arg_info)
     DBUG_ENTER ("NTCmodule");
 
     /*
-     * now we check for consistency and try to gather the basetypes
-     */
-    if (NULL != MODULE_TYPES (arg_node)) {
-        MODULE_TYPES (arg_node) = TRAVdo (MODULE_TYPES (arg_node), arg_info);
-    }
-    DBUG_EXECUTE ("UDT", UTprintRepository (stderr););
-
-    CTIabortOnError ();
-
-    /*
      * We insert the topmost objdef into the arg_info node
      * for later reference.
      */
@@ -551,7 +544,11 @@ NTCmodule (node *arg_node, info *arg_info)
 
     /**
      * Before starting the type checking mechanism, we first mark all
-     * non-wrapper functions as NTC_not_checked,   AND
+     * wrapper functions as NTC_checked (as these have no bodies).
+     * For all other functions, we rely on FUNDEF_TCSTAT being set
+     * properly. This is done by the TBmakeFundef function and
+     * the module system (for imported/used functions).
+     * FURTHERMORE
      * we do have to run NTC on all argument nodes of user defined
      * functions. One might think that this could be done when
      * "TypeCheckFunctionBody" is run ( and in fact this was our first
@@ -564,18 +561,12 @@ NTCmodule (node *arg_node, info *arg_info)
      */
     fundef = MODULE_FUNS (arg_node);
     while (fundef != NULL) {
-        if (!FUNDEF_ISWRAPPERFUN (fundef)) {
-#ifndef NEW_AST
-            /* the new ast is already marked properly, so there is no need
-             * to do so here
-             */
-            FUNDEF_TCSTAT (fundef) = NTC_not_checked;
-#endif
+        if (FUNDEF_ISWRAPPERFUN (fundef)) {
+            FUNDEF_TCSTAT (fundef) = NTC_checked;
+        } else {
             if (!FUNDEF_ISLACFUN (fundef) && (NULL != FUNDEF_ARGS (fundef))) {
                 FUNDEF_ARGS (fundef) = TRAVdo (FUNDEF_ARGS (fundef), arg_info);
             }
-        } else {
-            FUNDEF_TCSTAT (fundef) = NTC_checked;
         }
         fundef = FUNDEF_NEXT (fundef);
     }
@@ -595,39 +586,12 @@ NTCmodule (node *arg_node, info *arg_info)
         MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
     }
 
-    if ((global.break_after == PH_typecheck)
-        && (0 == strcmp (global.break_specifier, "ntc"))) {
-        goto DONE;
-    }
-
     /*
-     * from here on, no more functions are deserialized, so ww can
+     * from here on, no more functions are deserialized, so we can
      * finish the deseralization engine
      */
     DSfinishDeserialize (arg_node);
 
-    /*
-     * Finally, we compute the old type representation from the ntypes
-     * we just inferred.
-     */
-
-    arg_node = NT2OTdoTransform (arg_node);
-    if ((global.break_after == PH_typecheck)
-        && (0 == strcmp (global.break_specifier, "n2o"))) {
-        goto DONE;
-    }
-
-    /*
-     * Now, we create SAC code for all wrapper functions
-     */
-
-    arg_node = SWRdoSplitWrappers (arg_node);
-    if ((global.break_after == PH_typecheck)
-        && (0 == strcmp (global.break_specifier, "swr"))) {
-        goto DONE;
-    }
-
-DONE:
     DBUG_RETURN (arg_node);
 }
 
