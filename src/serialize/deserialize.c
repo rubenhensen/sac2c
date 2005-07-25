@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.24  2005/07/25 10:23:21  sah
+ * for typedefs, the basetype is now properly set on import
+ *
  * Revision 1.23  2005/07/24 20:01:50  sah
  * moved all the preparations for typechecking
  * into a different phase
@@ -222,8 +225,8 @@ InsertIntoState (node *item)
          */
         udt = UTaddUserType (ILIBstringCopy (TYPEDEF_NAME (item)),
                              NSdupNamespace (TYPEDEF_NS (item)),
-                             TYcopyType (TYPEDEF_NTYPE (item)), NULL, NODE_LINE (item),
-                             item);
+                             TYcopyType (TYPEDEF_NTYPE (item)),
+                             TYcopyType (TYPEDEF_NTYPE (item)), NODE_LINE (item), item);
 #if 0
       /*
        * now compute the basetype
