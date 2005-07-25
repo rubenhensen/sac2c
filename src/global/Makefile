@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.27  2005/07/25 16:57:25  sbs
+# private_heap.o added.
+#
 # Revision 3.26  2005/07/15 15:57:02  sah
 # introduced namespaces
 #
@@ -86,7 +89,7 @@ include $(PROJECT_ROOT)/Makefile.Config
 
 all: main.o usage.o internal_lib.o globals.o resource.o \
      build.o options.o NameTuplesUtils.o filemgr.o \
-     ctinfo.o phase.o setup.o
+     ctinfo.o phase.o setup.o private_heap.o
 
 build.c: 
 	echo "char build_date[] = \"`date`\";"  >  build.c

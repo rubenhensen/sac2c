@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.184  2005/07/25 16:57:40  sbs
+# private_heap.o added.
+#
 # Revision 3.183  2005/07/22 13:10:52  sah
 # extracted some functionality from
 # deserialize into add_function_body
@@ -177,7 +180,8 @@ GLOBAL= src/global/main.o src/global/setup.o src/global/usage.o \
         src/global/internal_lib.o src/global/globals.o \
         src/global/resource.o src/global/build.o \
         src/global/options.o src/global/NameTuplesUtils.o\
-        src/global/filemgr.o src/global/ctinfo.o src/global/phase.o
+        src/global/filemgr.o src/global/ctinfo.o src/global/phase.o \
+        src/global/private_heap.o
 
 TREE= src/tree/traverse.o src/tree/tree_basic.o src/tree/free.o \
       src/tree/tree_compound.o src/tree/DupTree.o src/tree/LookUpTable.o \
