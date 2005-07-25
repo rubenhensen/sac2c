@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.110  2005/07/25 10:22:33  sah
+ * phase system is used for import/export and tc now
+ *
  * Revision 3.109  2005/07/24 20:01:50  sah
  * moved all the preparations for typechecking
  * into a different phase
@@ -257,24 +260,16 @@ main (int argc, char *argv[])
      * print dependencies if requested
      */
     if (global.makedeps) {
-        NOTE (("Gathering Dependencies"));
-        GDPdoGatherDependencies (syntax_tree);
-        NOTE (("Printing Dependency Information..."));
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_gdp, syntax_tree);
         DEPdoPrintDependencies (syntax_tree);
     }
 
-    NOTE (("Processing use and import statements..."));
-    RSAdoResolveAll (syntax_tree);
-    NOTE (("Resolving namespaces..."));
-    ANSdoAnnotateNamespace (syntax_tree);
-    NOTE (("Gathering dependencies..."));
-    GDPdoGatherDependencies (syntax_tree);
-    NOTE (("Getting imported symbols..."));
-    IMPdoImportSymbols (syntax_tree);
-    NOTE (("Getting used symbols..."));
-    USSdoUseSymbols (syntax_tree);
-    NOTE (("Resolving dependencies..."));
-    DEPdoResolveDependencies (syntax_tree);
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_rsa, syntax_tree);
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_ans, syntax_tree);
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_gdp, syntax_tree);
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_imp, syntax_tree);
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_uss, syntax_tree);
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_dep, syntax_tree);
 
     ABORT_ON_ERROR;
 
@@ -336,7 +331,9 @@ main (int argc, char *argv[])
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
 
-    syntax_tree = NTCdoNewTypeCheck (syntax_tree); /* ntc_tab */
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_tc, syntax_tree);
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_nt2ot, syntax_tree);
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_swr, syntax_tree);
 
     PHASE_DONE_EPILOG;
 #ifndef NEW_AST
@@ -355,9 +352,11 @@ main (int argc, char *argv[])
      */
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
-    OANdoObjectAnalysis (syntax_tree);
-    EXPdoExport (syntax_tree);
-    PPIdoPrepareInline (syntax_tree);
+
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_oan, syntax_tree);
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_exp, syntax_tree);
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_ppi, syntax_tree);
+
     PHASE_DONE_EPILOG;
 
     PHASE_EPILOG;

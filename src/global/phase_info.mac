@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.34  2005/07/25 10:22:33  sah
+ * phase system is used for import/export and tc now
+ *
  * Revision 3.33  2005/07/24 20:01:50  sah
  * moved all the preparations for typechecking
  * into a different phase
@@ -189,15 +192,17 @@ SUBPHASE (pragma, "pramga", "Resolving pragma annotations", PHdummy)
 
 PHASE (module, "Running module system", PHdummy)
 
-SUBPHASE (rsa, "rsa", "Processing use and import statements", PHdummy)
+SUBPHASE (rsa, "rsa", "Processing use and import statements", RSAdoResolveAll)
 
-SUBPHASE (ans, "ans", "Annotating namespaces", PHdummy)
+SUBPHASE (ans, "ans", "Annotating namespaces", ANSdoAnnotateNamespace)
 
-SUBPHASE (imp, "imp", "Getting imported symbols", PHdummy)
+SUBPHASE (gdp, "gdp", "Gathering dependencies", GDPdoGatherDependencies)
 
-SUBPHASE (uss, "uss", "Getting used symbols", PHdummy)
+SUBPHASE (imp, "imp", "Getting imported symbols", IMPdoImportSymbols)
 
-SUBPHASE (dep, "dep", "Resolving dependencies", PHdummy)
+SUBPHASE (uss, "uss", "Getting used symbols", USSdoUseSymbols)
+
+SUBPHASE (dep, "dep", "Resolving dependencies", DEPdoResolveDependencies)
 
 /***********************************************************************/
 
@@ -237,11 +242,11 @@ SUBPHASE (ssa, "ssa", "Establishing static single assignment form",
 
 PHASE (typecheck, "Running type inference system", PHdummy)
 
-SUBPHASE (tc, "tc", "Running type inference system", PHdummy)
+SUBPHASE (tc, "tc", "Running type inference system", NTCdoNewTypeCheck)
 
 SUBPHASE (ds, "ds", "Deserializing code", PHdummy)
 
-SUBPHASE (nt2ot, "nt2ot", "Cleaning up type inference system", PHdummy)
+SUBPHASE (nt2ot, "nt2ot", "Finalising infered type information", NT2OTdoTransform)
 
 SUBPHASE (swr, "swr", "Splitting Wrappers", SWRdoSplitWrappers)
 
@@ -249,11 +254,11 @@ SUBPHASE (swr, "swr", "Splitting Wrappers", SWRdoSplitWrappers)
 
 PHASE (export, "Processing exports", PHdummy)
 
-SUBPHASE (oan, "oan", "Running global object analysis", PHdummy)
+SUBPHASE (oan, "oan", "Running global object analysis", OANdoObjectAnalysis)
 
-SUBPHASE (exp, "exp", "Exporting symbols", PHdummy)
+SUBPHASE (exp, "exp", "Exporting symbols", EXPdoExport)
 
-SUBPHASE (ppi, "ppi", "Restoring bodies of imported inline functions", PHdummy)
+SUBPHASE (ppi, "ppi", "Restoring bodies of imported inline functions", PPIdoPrepareInline)
 
 /***********************************************************************/
 
