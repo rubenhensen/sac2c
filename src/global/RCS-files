@@ -30,3 +30,4 @@ phase.h
 setup.c
 setup.h
 private_heap.c
+private_heap.h
