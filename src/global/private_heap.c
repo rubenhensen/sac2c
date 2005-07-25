@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2005/07/25 17:13:09  sbs
+ * commented all functions
+ *
  * Revision 1.1  2005/07/25 16:43:06  sbs
  * Initial revision
  *
@@ -56,6 +59,18 @@ struct HEAP {
 #define HEAP_DATA(n) (n->data)
 #define HEAP_NEXT(n) (n->next)
 
+/** <!--********************************************************************-->
+ *
+ * @fn  heap *PHPcreateHeap( size_t elem_size, int chunk_size)
+ *
+ *   @brief  allocates the heap. NB: In fact only the top most heap frame
+ *           is allocated. However, this is invisible to the "user".
+ *   @param  elem_size  size of each heap entry (in bytes).
+ *   @param  chunk_size size of the heap frames (in elements).
+ *   @return pointer to the heap created.
+ *
+ ******************************************************************************/
+
 heap *
 PHPcreateHeap (size_t elem_size, int chunk_size)
 {
@@ -77,6 +92,17 @@ PHPcreateHeap (size_t elem_size, int chunk_size)
     DBUG_RETURN (res);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn  void *PHPmalloc( heap *private_heap)
+ *
+ *   @brief  allocates one element (of the prespecified size) within the
+ *           given heap.
+ *   @param  private_heap   the heap the element is to be drawen from.
+ *   @return pointer to the "allocated element".
+ *
+ ******************************************************************************/
+
 void *
 PHPmalloc (heap *private_heap)
 {
@@ -96,6 +122,21 @@ PHPmalloc (heap *private_heap)
     }
     DBUG_RETURN (res);
 }
+
+/** <!--********************************************************************-->
+ *
+ * @fn  void *PHPfindElem( heap *private_heap, php_cmp_fun fun, void *elem)
+ *
+ *   @brief  search for a given element in the heap using the comparison
+ *           function provided.
+ *           given heap.
+ *   @param  private_heap   the heap containing the elements to be searched.
+ *   @param  fun  comparison function to be used.
+ *   @param  elem element to be compared against.
+ *   @return pointer to the element we are looking for. in case the element is
+ *           not found, NULL is returned.
+ *
+ ******************************************************************************/
 
 void *
 PHPfindElem (heap *private_heap, php_cmp_fun fun, void *elem)
@@ -120,6 +161,16 @@ PHPfindElem (heap *private_heap, php_cmp_fun fun, void *elem)
 
     DBUG_RETURN (this);
 }
+
+/** <!--********************************************************************-->
+ *
+ * @fn  heap *PHPfreeHeap( heap *private_heap)
+ *
+ *   @brief  frees the entire heap provided
+ *   @param  private_heap   the heap to be freed.
+ *   @return NULL pointer.
+ *
+ ******************************************************************************/
 
 heap *
 PHPfreeHeap (heap *private_heap)
