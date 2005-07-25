@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2005/07/25 17:14:25  sbs
+ * changed to private heap in order to be able to collectively free sig_deps
+ *
  * Revision 1.7  2005/06/14 09:55:10  sbs
  * support for bottom types integrated.
  *
@@ -32,6 +35,7 @@
 #include "internal_lib.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
+#include "private_heap.h"
 
 #include "ssi.h"
 #include "new_types.h"
@@ -81,6 +85,8 @@ struct SIG_DEP {
 #define SD_RES(n) (n->res)
 #define SD_RC(n) (n->rc)
 
+static heap *sig_dep_heap = NULL;
+
 /******************************************************************************
  ***
  ***                   Some static helper functions:
@@ -105,7 +111,11 @@ MakeSig (ct_funptr ct_fun, te_info *info, ntype *args, ntype *results, int rc)
 
     DBUG_ENTER ("MakeSig");
 
-    res = (sig_dep *)ILIBmalloc (sizeof (sig_dep));
+    if (sig_dep_heap == NULL) {
+        sig_dep_heap = PHPcreateHeap (sizeof (sig_dep), 1000);
+    }
+
+    res = (sig_dep *)PHPmalloc (sig_dep_heap);
     SD_FUN (res) = ct_fun;
     SD_INFO (res) = info;
     SD_ARGS (res) = args;
