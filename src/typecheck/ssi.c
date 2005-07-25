@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2005/07/25 17:14:25  sbs
+ * changed to private heap in order to be able to collectively free tvars
+ *
  * Revision 1.9  2005/01/11 14:20:44  cg
  * Converted output generation from Error.h to ctinfo.c
  *
@@ -37,6 +40,7 @@
 #include "new_types.h"
 #include "internal_lib.h"
 #include "ctinfo.h"
+#include "private_heap.h"
 
 /**
  *
@@ -95,6 +99,8 @@ static int var_cntr = 0;
 static bool ass_system_active = FALSE;
 static tvar_ass_handle_fun ass_contra_handle = NULL;
 static tvar_ass_handle_fun ass_fix_handle = NULL;
+
+static heap *tvar_heap = NULL;
 
 /*******************************************************************************
  ***
@@ -217,7 +223,11 @@ SSImakeVariable ()
 
     DBUG_ENTER ("SSImakeVariable");
 
-    res = (tvar *)ILIBmalloc (sizeof (tvar));
+    if (tvar_heap == NULL) {
+        tvar_heap = PHPcreateHeap (sizeof (tvar), 1000);
+    }
+
+    res = (tvar *)PHPmalloc (tvar_heap);
     TVAR_NO (res) = var_cntr++;
     TVAR_MAX (res) = NULL;
     TVAR_MIN (res) = NULL;
