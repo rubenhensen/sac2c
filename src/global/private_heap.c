@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2005/07/26 16:02:07  sbs
+ * PHPfreeHeap may be called with NULL ptr now.
+ *
  * Revision 1.2  2005/07/25 17:13:09  sbs
  * commented all functions
  *
@@ -177,11 +180,13 @@ PHPfreeHeap (heap *private_heap)
 {
     DBUG_ENTER ("PHPfreeHeap");
 
-    if (HEAP_NEXT (private_heap) != NULL) {
-        HEAP_NEXT (private_heap) = PHPfreeHeap (HEAP_NEXT (private_heap));
+    if (private_heap != NULL) {
+        if (HEAP_NEXT (private_heap) != NULL) {
+            HEAP_NEXT (private_heap) = PHPfreeHeap (HEAP_NEXT (private_heap));
+        }
+        HEAP_DATA (private_heap) = ILIBfree (HEAP_DATA (private_heap));
+        private_heap = ILIBfree (private_heap);
     }
-    HEAP_DATA (private_heap) = ILIBfree (HEAP_DATA (private_heap));
-    private_heap = ILIBfree (private_heap);
 
     DBUG_RETURN (private_heap);
 }
