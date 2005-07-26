@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.22  2005/07/26 15:44:42  sah
+ * CVP no more propagates constants in
+ * default expression position of a wl
+ *
  * Revision 1.21  2005/06/16 08:02:53  sbs
  * F_dispatch_error supported.
  *
@@ -156,6 +160,7 @@
  *   withloop_cexprs: is set when traversing in the cexprs chain of a withloop
  *   cond:            is set when traversing in the conditional of a condition
  *   neutral:         is set when traversing in the neutral element of fold-wl
+ *   default:         is set when traversing in the default element of wl
  *   sel:             constant N_num arrays and N_ids arrays are allowed
  *
  */
@@ -171,6 +176,7 @@ typedef enum {
     CON_cond,
     CON_funcond,
     CON_neutral,
+    CON_default,
     CON_undef
 } context_t;
 
@@ -367,6 +373,7 @@ AskPropagationOracle (node *let, info *arg_info)
     case CON_withloop_cexprs:
     case CON_specialfun:
     case CON_neutral:
+    case CON_default:
     case CON_ap:
     case CON_funcond:
         /* TRUE iff behind let node is an id node */
@@ -831,7 +838,9 @@ CVPgenarray (node *arg_node, info *arg_info)
 
     INFO_CVP_CONTEXT (arg_info) = CON_withloop;
     if (GENARRAY_DEFAULT (arg_node) != NULL) {
+        INFO_CVP_CONTEXT (arg_info) = CON_default;
         GENARRAY_DEFAULT (arg_node) = TRAVdo (GENARRAY_DEFAULT (arg_node), arg_info);
+        INFO_CVP_CONTEXT (arg_info) = CON_withloop;
     }
 
     if (GENARRAY_NEXT (arg_node) != NULL) {
