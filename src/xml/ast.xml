@@ -542,7 +542,6 @@
           <node name="Avis" />
           <node name="Block" />
           <node name="Vardec" />
-          <node name="Cast" />
           <node name="Assign" />
           <node name="Let" />
           <node name="Cond" />
