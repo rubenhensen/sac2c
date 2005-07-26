@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2005/07/26 12:42:24  sah
+ * added basic support for aliasing
+ *
  * Revision 1.9  2005/07/22 13:10:52  sah
  * extracted some functionality from
  * deserialize into add_function_body
@@ -59,6 +62,9 @@ extern node *DSaddSymbolByName (const char *symbol, stentrytype_t type,
 extern node *DSaddSymbolById (const char *symbid, const char *module);
 extern void DSimportInstancesByName (const char *name, const char *module);
 extern node *DSloadFunctionBody (node *fundef);
+
+extern void DSaddAliasing (const char *symbol, node *target);
+extern void DSremoveAliasing (const char *symbol);
 
 /*
  * hooks for deserialization

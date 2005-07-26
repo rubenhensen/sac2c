@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.25  2005/07/26 12:42:24  sah
+ * added basic support for aliasing
+ *
  * Revision 1.24  2005/07/25 10:23:21  sah
  * for typedefs, the basetype is now properly set on import
  *
@@ -92,6 +95,7 @@
 #include "new_types.h"
 #include "type_utils.h"
 #include "new_typecheck.h"
+#include "LookUpTable.h"
 #include "symboltable.h"
 #include "stringset.h"
 #include "modulemanager.h"
@@ -178,7 +182,46 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
+/*
+ * the state of the deserializer is stored here so we
+ * do not have to pass it around. This makes the code
+ * generation for serializer functions alot easier
+ */
 static info *DSstate = NULL;
+
+/*
+ * we store the aliasing lut outside of the state as
+ * it needs to be preserved between multiple runs of
+ * the deserializer and can be filled even though the
+ * deserializer is not initialized.
+ */
+static lut_t *aliasinglut = NULL;
+
+/*
+ * we store aliasing structures in the LUT. this
+ * allows us to stack aliasings!
+ */
+struct DS_ALIASING {
+    node *alias;
+    struct DS_ALIASING *next;
+};
+
+typedef struct DS_ALIASING ds_aliasing_t;
+
+static ds_aliasing_t *
+makeAliasing (node *target, ds_aliasing_t *next)
+{
+    ds_aliasing_t *result;
+
+    DBUG_ENTER ("makeAliasing");
+
+    result = ILIBmalloc (sizeof (ds_aliasing_t));
+
+    result->alias = target;
+    result->next = next;
+
+    DBUG_RETURN (result);
+}
 
 /*
  * functions handling the internal state
@@ -349,6 +392,104 @@ updateContextInformation (node *entry)
 }
 
 /*
+ * functions handling the aliasing
+ */
+
+static void
+initAliasingLut ()
+{
+    DBUG_ENTER ("initAliasingLut");
+
+    aliasinglut = LUTgenerateLut ();
+
+    DBUG_VOID_RETURN;
+}
+
+void
+DSaddAliasing (const char *symbol, node *target)
+{
+    ds_aliasing_t *oldalias;
+    ds_aliasing_t *alias;
+    void **search;
+
+    DBUG_ENTER ("DSaddAliasing");
+
+    if (aliasinglut == NULL) {
+        initAliasingLut ();
+    }
+
+    search = LUTsearchInLutS (aliasinglut, (char *)symbol);
+
+    if (search != NULL) {
+        oldalias = (ds_aliasing_t *)*search;
+    } else {
+        oldalias = NULL;
+    }
+
+    alias = makeAliasing (target, oldalias);
+
+    aliasinglut = LUTinsertIntoLutS (aliasinglut, (char *)symbol, alias);
+
+    DBUG_VOID_RETURN;
+}
+
+void
+DSremoveAliasing (const char *symbol)
+{
+    ds_aliasing_t *oldalias;
+    void **search;
+
+    DBUG_ENTER ("DSremoveAliasing");
+
+    DBUG_ASSERT ((aliasinglut != NULL),
+                 "cannot remove a aliasing without ever defining one!");
+
+    search = LUTsearchInLutS (aliasinglut, (char *)symbol);
+
+    if (search != NULL) {
+        /*
+         * fetch the old alias which has been shadowed by the current
+         * one. If this was the last aliasing, we will put a NULL pointer
+         * into the LUT. As we cannot delete an entry anyways (that
+         * would be too expensive), this will do as well.
+         */
+        oldalias = (ds_aliasing_t *)*search;
+        oldalias = oldalias->next;
+    } else {
+        DBUG_ASSERT (1, "no alias to remove found!");
+        oldalias = NULL;
+    }
+
+    aliasinglut = LUTupdateLutS (aliasinglut, (char *)symbol, oldalias, NULL);
+
+    DBUG_VOID_RETURN;
+}
+
+static node *
+getAliasing (const char *symbol)
+{
+    ds_aliasing_t *alias = NULL;
+    void **search;
+    node *result;
+
+    DBUG_ENTER ("getAliasing");
+
+    search = LUTsearchInLutS (aliasinglut, (char *)symbol);
+
+    if (search != NULL) {
+        alias = (ds_aliasing_t *)*search;
+    }
+
+    if (alias == NULL) {
+        result = NULL;
+    } else {
+        result = alias->alias;
+    }
+
+    DBUG_RETURN (result);
+}
+
+/*
  * functions for symbol lookup in ast
  */
 
@@ -397,7 +538,11 @@ FindSymbolInAst (const char *symbol)
 
     DBUG_ENTER ("FindSymbolInAst");
 
-    result = FindSymbolInFundefChain (symbol, INFO_DS_FUNDEFS (DSstate));
+    result = getAliasing (symbol);
+
+    if (result == NULL) {
+        result = FindSymbolInFundefChain (symbol, INFO_DS_FUNDEFS (DSstate));
+    }
 
     if (result == NULL) {
         result = FindSymbolInFundefChain (symbol, INFO_DS_FUNDECS (DSstate));
