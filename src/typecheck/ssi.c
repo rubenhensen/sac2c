@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2005/07/26 16:04:22  sbs
+ * added SSIfreeAllTvars
+ *
  * Revision 1.10  2005/07/25 17:14:25  sbs
  * changed to private heap in order to be able to collectively free tvars
  *
@@ -247,6 +250,16 @@ SSImakeVariable ()
     DBUG_PRINT ("SSI", ("new type var generated: #%d", var_cntr - 1));
 
     DBUG_RETURN (res);
+}
+
+void
+SSIfreeAllTvars ()
+{
+    DBUG_ENTER ("SSIfreeAllTvars");
+
+    tvar_heap = PHPfreeHeap (tvar_heap);
+
+    DBUG_VOID_RETURN;
 }
 
 /******************************************************************************

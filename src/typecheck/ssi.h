@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2005/07/26 16:04:22  sbs
+ * added SSIfreeAllTvars
+ *
  * Revision 1.5  2004/11/22 15:36:00  sbs
  * SacDevCamp04
  *
@@ -26,6 +29,7 @@
 #include "types.h"
 
 extern tvar *SSImakeVariable ();
+extern void SSIfreeAllTvars ();
 
 extern bool SSInewMax (tvar *var, ntype *cmax);
 extern bool SSInewMin (tvar *var, ntype *cmin);
