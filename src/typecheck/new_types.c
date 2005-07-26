@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.100  2005/07/26 12:45:13  sah
+ * added TYfoldFunctionInstances
+ * added TYcontainsAlpha
+ * fixed generation of wrapper code
+ *
  * Revision 3.99  2005/07/21 16:17:42  sah
  * added passing of info structure to TYmapFunctionInstances
  *
@@ -2039,6 +2044,19 @@ MakeOverloadedFunType (ntype *fun1, ntype *fun2)
     DBUG_RETURN (res);
 }
 
+/** <!-- ***************************************************************** -->
+ * @fn ntype *mapFunctionInstances( ntype *type,
+ *                                  node *(*mapfun)( node  *, info *),
+ *                                  info *info)
+ *
+ * @brief Helper function used by TYmapFunctionInstances.
+ *
+ * @param type a valid ntype
+ * @param mapfun the function to map to the instances
+ * @param info info node to pass along
+ *
+ * @return the (unmodified) ntype
+ */
 ntype *
 mapFunctionInstances (ntype *type, node *(*mapfun) (node *, info *), info *info)
 {
@@ -2052,17 +2070,50 @@ mapFunctionInstances (ntype *type, node *(*mapfun) (node *, info *), info *info)
             for (cnt = 0; cnt < IRES_NUMFUNS (type); cnt++) {
                 IRES_FUNDEF (type, cnt) = mapfun (IRES_FUNDEF (type, cnt), info);
             }
+            break;
+
+        case TC_fun:
+            /*
+             * starting at a fun node, we walk down the tree for every
+             * basetype.
+             */
+            for (cnt = 0; cnt < NTYPE_ARITY (type); cnt++) {
+                FUN_IBASE (type, cnt)
+                  = mapFunctionInstances (FUN_IBASE (type, cnt), mapfun, info);
+            }
+            break;
+
+        case TC_ibase:
+            /*
+             * we only walk down the [*] edge, as this will contain
+             * all instances
+             */
+            IBASE_GEN (type) = mapFunctionInstances (IBASE_GEN (type), mapfun, info);
+            break;
 
         default:
-            for (cnt = 0; cnt < NTYPE_ARITY (type); cnt++) {
-                NTYPE_SON (type, cnt)
-                  = mapFunctionInstances (NTYPE_SON (type, cnt), mapfun, info);
-            }
+            DBUG_ASSERT (0, "mapFunctionInstances reached a type-constructur it never "
+                            "was intended to reach!");
         }
     }
 
     DBUG_RETURN (type);
 }
+
+/** <!-- ***************************************************************** -->
+ * @fn ntype *TYmapFunctionInstances( ntype *funtype,
+ *                                    node *(*mapfun)(node  *, info *),
+ *                                    info *info)
+ *
+ * @brief Maps the given function mapfun to all N_fundef nodes
+ *        that are contained within the given funtype.
+ *
+ * @param funtype a function type
+ * @param mapfun the function to map to the instances
+ * @param info info node to pass along
+ *
+ * @return the (unmodified) funtype
+ */
 
 ntype *
 TYmapFunctionInstances (ntype *funtype, node *(*mapfun) (node *, info *), info *info)
@@ -2076,6 +2127,64 @@ TYmapFunctionInstances (ntype *funtype, node *(*mapfun) (node *, info *), info *
 
     DBUG_RETURN (funtype);
 }
+
+void *
+foldFunctionInstances (ntype *type, void *(*foldfun) (node *, void *), void *result)
+{
+    int cnt;
+
+    DBUG_ENTER ("foldFunctionInstances");
+
+    switch (NTYPE_CON (type)) {
+    case TC_ires:
+        for (cnt = 0; cnt < IRES_NUMFUNS (type); cnt++) {
+            result = foldfun (IRES_FUNDEF (type, cnt), result);
+        }
+        break;
+
+    case TC_fun:
+        /*
+         * starting at a fun node, we walk down the tree for every
+         * basetype.
+         */
+        for (cnt = 0; cnt < NTYPE_ARITY (type); cnt++) {
+            result = foldFunctionInstances (FUN_IBASE (type, cnt), foldfun, result);
+        }
+        break;
+
+    case TC_ibase:
+        /*
+         * we only walk down the [*] edge, as this will contain
+         * all instances
+         */
+        result = foldFunctionInstances (IBASE_GEN (type), foldfun, result);
+        break;
+
+    default:
+        DBUG_ASSERT (0, "foldFunctionInstances passed a typeconstructur it never was "
+                        "intended to pass!");
+
+        result = NULL;
+    }
+
+    DBUG_RETURN (result);
+}
+
+void *
+TYfoldFunctionInstances (ntype *funtype, void *(*foldfun) (node *, void *), void *initial)
+{
+    void *result;
+
+    DBUG_ENTER ("TYfoldFunctionInstances");
+
+    DBUG_ASSERT ((NTYPE_CON (funtype) == TC_fun),
+                 "TYfoldFunctionInstances called with non-function type");
+
+    result = foldFunctionInstances (funtype, foldfun, initial);
+
+    DBUG_RETURN (result);
+}
+
 /** <!--********************************************************************-->
  *
  * @fn int TYgetArity( ntype *fun)
@@ -2938,6 +3047,95 @@ TYgetAlpha (ntype *type)
                  "TYgetAlpha applied to non type variable!");
 
     DBUG_RETURN (ALPHA_SSI (type));
+}
+
+bool
+TYcontainsAlpha (ntype *type)
+{
+    bool result = FALSE;
+    int cnt;
+
+    DBUG_ENTER ("TYcontainsAlpha");
+
+    if (type != NULL) {
+        switch (NTYPE_CON (type)) {
+        case TC_fun:
+            for (cnt = 0; ((cnt < NTYPE_ARITY (type)) && !result); cnt++) {
+                result = TYcontainsAlpha (FUN_IBASE (type, cnt));
+            }
+            break;
+
+        case TC_ibase:
+            result = TYcontainsAlpha (IBASE_GEN (type));
+            if (!result) {
+                result = TYcontainsAlpha (IBASE_SCAL (type));
+
+                if (!result) {
+                    result = TYcontainsAlpha (IBASE_IARR (type));
+                }
+            }
+            break;
+
+        case TC_iarr:
+            result = TYcontainsAlpha (IARR_GEN (type));
+
+            for (cnt = 0; ((cnt < NTYPE_ARITY (type) - 1) && !result); cnt++) {
+                result = TYcontainsAlpha (IARR_IDIM (type, cnt));
+            }
+            break;
+
+        case TC_idim:
+            result = TYcontainsAlpha (IDIM_GEN (type));
+
+            for (cnt = 0; ((cnt < NTYPE_ARITY (type) - 1) && !result); cnt++) {
+                result = TYcontainsAlpha (IDIM_ISHAPE (type, cnt));
+            }
+            break;
+
+        case TC_ishape:
+            result = TYcontainsAlpha (ISHAPE_GEN (type));
+            break;
+
+        case TC_ires:
+            result = TYcontainsAlpha (IRES_TYPE (type));
+            break;
+
+        case TC_prod:
+            for (cnt = 0; ((cnt < NTYPE_ARITY (type)) && !result); cnt++) {
+                result = TYcontainsAlpha (PROD_MEMBER (type, cnt));
+            }
+            break;
+
+        case TC_union:
+            for (cnt = 0; ((cnt < NTYPE_ARITY (type)) && !result); cnt++) {
+                result = TYcontainsAlpha (UNION_MEMBER (type, cnt));
+            }
+            break;
+
+        case TC_aud:
+        case TC_audgz:
+        case TC_akd:
+        case TC_aks:
+        case TC_akv:
+            result = TYcontainsAlpha (TYgetScalar (type));
+            break;
+
+        case TC_simple:
+        case TC_user:
+        case TC_symbol:
+            result = FALSE;
+            break;
+
+        case TC_alpha:
+            result = TRUE;
+            break;
+
+        default:
+            DBUG_ASSERT (0, "found unhandeled type constructor!");
+        }
+    }
+
+    DBUG_RETURN (result);
 }
 
 /***
@@ -5811,6 +6009,7 @@ static node *
 BuildShapeAssign (node *arg, node **new_vardecs)
 {
     node *assign;
+    node *preassign = NULL;
     node *shape;
     ntype *type;
 
@@ -5839,8 +6038,15 @@ BuildShapeAssign (node *arg, node **new_vardecs)
         ntype *basetype = UTgetBaseType (TYgetUserType (type));
 
         if (TYisArray (basetype)) {
+            preassign
+              = TBmakeAssign (TBmakeLet (BuildTmpIds (TYmakeAKD (TYmakeSimpleType (T_int),
+                                                                 1, SHcreateShape (0)),
+                                                      new_vardecs),
+                                         TCmakePrf1 (F_shape, TBmakeId (ARG_AVIS (arg)))),
+                              NULL);
+
             shape = TCmakePrf2 (F_drop_SxV, TBmakeNum (-TYgetDim (basetype)),
-                                TCmakePrf1 (F_shape, TBmakeId (ARG_AVIS (arg))));
+                                TBmakeId (IDS_AVIS (ASSIGN_LHS (preassign))));
         } else {
             shape = TBmakePrf (F_shape, TBmakeExprs (TBmakeId (ARG_AVIS (arg)), NULL));
         }
@@ -5852,6 +6058,11 @@ BuildShapeAssign (node *arg, node **new_vardecs)
                                                    new_vardecs),
                                       shape),
                            NULL);
+
+    if (preassign != NULL) {
+        ASSIGN_NEXT (preassign) = assign;
+        assign = preassign;
+    }
 
     DBUG_RETURN (assign);
 }

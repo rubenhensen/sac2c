@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.34  2005/07/26 12:45:13  sah
+ * added TYfoldFunctionInstances
+ * added TYcontainsAlpha
+ * fixed generation of wrapper code
+ *
  * Revision 3.33  2005/07/21 16:17:42  sah
  * added passing of info structure to TYmapFunctionInstances
  *
@@ -323,6 +328,9 @@ extern ntype *TYmakeOverloadedFunType (ntype *fun1, ntype *fun2);
 extern ntype *TYmapFunctionInstances (ntype *funtype, node *(*mapfun) (node *, info *),
                                       info *info);
 
+extern void *TYfoldFunctionInstances (ntype *funtype, void *(*foldfun) (node *, void *),
+                                      void *initial);
+
 extern int TYgetArity (ntype *fun);
 
 extern dft_res *TYdispatchFunType (ntype *fun, ntype *args);
@@ -336,6 +344,7 @@ extern char *TYdft_res2DebugString (dft_res *dft);
  */
 extern ntype *TYmakeAlphaType (ntype *maxtype);
 extern tvar *TYgetAlpha (ntype *type);
+extern bool TYcontainsAlpha (ntype *type);
 
 /*
  * Some predicates for inspecting types:
