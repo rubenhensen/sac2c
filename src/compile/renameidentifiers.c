@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2005/07/26 12:43:52  sah
+ * : in ns-names are replaced by _CL now
+ *
  * Revision 1.14  2005/07/15 15:57:02  sah
  * introduced namespaces
  *
@@ -205,6 +208,7 @@ RenameFunName (node *fundef)
     char *prefix;
     char *tmp_name;
     char *new_name;
+    char *ns_name;
     char *akv_id = NULL;
 
     DBUG_ENTER ("RenameFunName");
@@ -230,17 +234,20 @@ RenameFunName (node *fundef)
             prefix = "SACf";
         }
 
+        ns_name = ILIBreplaceSpecialCharacters (NSgetName (FUNDEF_NS (fundef)));
+
         if (FUNDEF_AKVID (fundef) > 0) {
             akv_id = ILIBitoa (FUNDEF_AKVID (fundef));
-            length += (strlen (prefix) + strlen (NSgetName (FUNDEF_NS (fundef)))
-                       + strlen (tmp_name) + 4 + 6 + strlen (akv_id));
+            length += (strlen (prefix) + strlen (ns_name) + strlen (tmp_name) + 4 + 6
+                       + strlen (akv_id));
         } else {
-            length += (strlen (prefix) + strlen (NSgetName (FUNDEF_NS (fundef)))
-                       + strlen (tmp_name) + 4);
+            length += (strlen (prefix) + strlen (ns_name) + strlen (tmp_name) + 4);
         }
 
         new_name = (char *)ILIBmalloc (length * sizeof (char));
-        sprintf (new_name, "%s_%s__%s", prefix, NSgetName (FUNDEF_NS (fundef)), tmp_name);
+        sprintf (new_name, "%s_%s__%s", prefix, ns_name, tmp_name);
+
+        ns_name = ILIBfree (ns_name);
 
         arg = FUNDEF_ARGS (fundef);
         while (arg != NULL) {
