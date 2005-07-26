@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.39  2005/07/26 12:41:40  sah
+ * ILIBreplaceSpecialCharacters now has a const char argument
+ *
  * Revision 3.38  2005/04/12 15:13:27  sah
  * updated signature of ILIBcreateCppCallString.
  *
@@ -232,7 +235,7 @@ extern void ILIBcreateCppCallString (const char *file, char *cccallstr,
 extern char *ILIBtmpVar (void);
 extern char *ILIBtmpVarName (char *postfix);
 
-extern char *ILIBreplaceSpecialCharacters (char *name);
+extern char *ILIBreplaceSpecialCharacters (const char *name);
 
 #ifdef SHOW_MALLOC
 extern void ILIBcomputeMallocAlignStep (void);

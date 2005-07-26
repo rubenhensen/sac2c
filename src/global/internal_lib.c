@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.84  2005/07/26 12:41:40  sah
+ * ILIBreplaceSpecialCharacters now has a const char argument
+ *
  * Revision 3.83  2005/06/28 15:46:19  sah
  * malloc_align_step hidden if SHOW_MALLOC undefined
  *
@@ -1343,7 +1346,7 @@ ILIBtmpVarName (char *postfix)
 /******************************************************************************
  *
  * function:
- *   char *ILIBreplaceSpecialCharacters( char *name)
+ *   char *ILIBreplaceSpecialCharacters( const char *name)
  *
  * description:
  *   Replaces special characters such that they can be used as identifiers
@@ -1351,7 +1354,7 @@ ILIBtmpVarName (char *postfix)
  *
  *****************************************************************************/
 char *
-ILIBreplaceSpecialCharacters (char *name)
+ILIBreplaceSpecialCharacters (const char *name)
 {
     char *new_name;
     char *tmp;
