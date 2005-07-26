@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.28  2005/07/26 12:44:24  sah
+ * made specialisation work with new MS
+ *
  * Revision 1.27  2005/07/22 13:11:39  sah
  * interface changes
  *
@@ -106,6 +109,7 @@
 #include "new_types.h"
 #include "type_utils.h"
 #include "ssi.h"
+#include "ctinfo.h"
 #include "namespaces.h"
 
 /**
@@ -177,7 +181,7 @@ SpecializationOracle (node *wrapper, node *fundef, ntype *args, dft_res *dft)
     if ((dft->num_deriveable_partials > 1)
         || ((dft->num_deriveable_partials == 1) && (dft->deriveable != NULL))
         || FUNDEF_ISEXTERN (fundef) || (FUNDEF_SPECS (fundef) >= global.maxspec)
-        || (!FUNDEF_ISLOCAL (wrapper)) || (global.spec_mode == SS_aud)) {
+        || (global.spec_mode == SS_aud)) {
 
         arg = FUNDEF_ARGS (fundef);
         res = TYmakeEmptyProductType (TCcountArgs (arg));
@@ -238,7 +242,8 @@ UpdateFixSignature (node *fundef, ntype *arg_ts)
         old_type = ARG_NTYPE (args);
         DBUG_ASSERT (old_type != NULL,
                      "UpdateFixSignature called on fundef w/o arg type");
-        if (TYgetSimpleType (TYgetScalar (old_type)) == T_unknown) {
+        if ((TYisSimple (TYgetScalar (old_type)))
+            && (TYgetSimpleType (TYgetScalar (old_type)) == T_unknown)) {
             DBUG_ASSERT (FUNDEF_ISLACFUN (fundef), "unknown arg type at non-LaC fun!");
             old_type = TYfreeType (old_type);
             new_type = TYcopyType (type);
@@ -314,6 +319,47 @@ UpdateVarSignature (node *fundef, ntype *arg_ts)
     DBUG_RETURN (fundef);
 }
 
+static ntype *
+buildWrapper (node *fundef, ntype *type)
+{
+    DBUG_ENTER ("buildWrapper");
+
+    /*
+     * set this instances return types to AUD[*]
+     */
+    FUNDEF_RETS (fundef) = TUrettypes2alpha (FUNDEF_RETS (fundef));
+
+    /*
+     * add the fundef to the wrappertype
+     */
+    type = TYmakeOverloadedFunType (CRTWRPcreateFuntype (fundef), type);
+
+    DBUG_RETURN (type);
+}
+
+static ntype *
+checkAndRebuildWrapperType (ntype *type)
+{
+    ntype *result;
+
+    DBUG_ENTER ("checkAndRebuildWrapperType");
+
+    if (TYcontainsAlpha (type)) {
+        DBUG_PRINT ("SPEC", ("wrapper type seems not to be finalized"));
+
+        result = type;
+    } else {
+        DBUG_PRINT ("SPEC", ("wrapper type seems to be finalized -- rebuilding"));
+
+        result
+          = TYfoldFunctionInstances (type, (void *(*)(node *, void *))buildWrapper, NULL);
+
+        type = TYfreeType (type);
+    }
+
+    DBUG_RETURN (result);
+}
+
 /******************************************************************************
  *
  * function:
@@ -334,9 +380,9 @@ DoSpecialize (node *wrapper, node *fundef, ntype *args)
 
     DBUG_ENTER ("DoSpecialize");
 
-    DBUG_EXECUTE ("NTC", tmp_str = TYtype2String (args, FALSE, 0););
-    DBUG_PRINT ("NTC", ("specializing %s for %s", FUNDEF_NAME (fundef), tmp_str));
-    DBUG_EXECUTE ("NTC", tmp_str = ILIBfree (tmp_str););
+    DBUG_EXECUTE ("SPEC", tmp_str = TYtype2String (args, FALSE, 0););
+    DBUG_PRINT ("SPEC", ("specializing %s for %s", CTIitemName (fundef), tmp_str));
+    DBUG_EXECUTE ("SPEC", tmp_str = ILIBfree (tmp_str););
 
     /* copy the fundef to be specialized */
     res = DUPdoDupNode (fundef);
@@ -348,6 +394,8 @@ DoSpecialize (node *wrapper, node *fundef, ntype *args)
     if ((FUNDEF_SYMBOLNAME (fundef) != NULL) && (FUNDEF_BODY (fundef) == NULL)) {
         res = AFBdoAddFunctionBody (res);
     }
+
+    DBUG_ASSERT ((FUNDEF_BODY (res) != NULL), "missing body while trying to specialise!");
 
     /* reset the SYMBOLNAME attribute, as the function is _not_
      * the one referenced by the SYMBOLNAME anymore
@@ -363,26 +411,69 @@ DoSpecialize (node *wrapper, node *fundef, ntype *args)
     FUNDEF_ISLOCAL (res) = TRUE;
     FUNDEF_WASUSED (res) = FALSE;
     FUNDEF_WASIMPORTED (res) = FALSE;
+    FUNDEF_ISSPECIALISATION (res) = TRUE;
 
     /*
-     * make the new function local
-     * up to now we just put it into the local
-     * namespace
-     *
-     * TODO: create a view here
+     * if it is a used function, we have to make up a new
+     * namespace for the specialisations. As a function instance
+     * can be used and imported at the same time, we need
+     * to look at the current wrapper to find out what the current
+     * context is. A non-local wrapper is a good indicator for
+     * a used function
      */
-    FUNDEF_NS (res) = NSfreeNamespace (FUNDEF_NS (res));
-    FUNDEF_NS (res) = NSdupNamespace (NSgetNamespace (global.modulename));
 
-    /* insert the new fundef into the specialized chain */
+    if (FUNDEF_ISLOCAL (wrapper)) {
+        /*
+         * we have a local wrapper so the new specialisation should
+         * become a member of the current namespace. We have to set
+         * that here explicitly, as the instance this specialisation
+         * was derived from, might come from another namespace
+         */
+        FUNDEF_NS (res) = NSfreeNamespace (FUNDEF_NS (res));
+        FUNDEF_NS (res) = NSdupNamespace (FUNDEF_NS (wrapper));
+    } else {
+        /*
+         * this must be a used instance, so we have to create a new
+         * view for it. As there may be more specialisations for
+         * this overloaded function and we dont want to have too
+         * many views, we annotate the view at the wrapper and
+         * reuse it for further specialisations.
+         * Furthermore, split_wrappers uses this informations to
+         * decide where to put the new wrapper.
+         */
+        if (FUNDEF_SPECNS (wrapper) == NULL) {
+            FUNDEF_SPECNS (wrapper) = NSbuildView (FUNDEF_NS (wrapper));
+        }
+
+        FUNDEF_NS (res) = NSfreeNamespace (FUNDEF_NS (res));
+        FUNDEF_NS (res) = NSdupNamespace (FUNDEF_SPECNS (wrapper));
+    }
+
+    /*
+     * store the fundef in the specchain
+     */
     FUNDEF_NEXT (res) = specialized_fundefs;
     specialized_fundefs = res;
 
-    /* do actually specialize the copy !! */
+    /*
+     * do actually specialize the copy !!
+     * */
     UpdateFixSignature (res, args);
 
-    /* convert the return type(s) into Alpha - AUDs */
+    /*
+     * convert the return type(s) into Alpha - AUDs
+     */
     FUNDEF_RETS (res) = TUrettypes2alphaAUD (FUNDEF_RETS (res));
+
+    /*
+     * make sure the funtype annotated at the wrapper is
+     * not finalised (e.g. it still contains alphas). If it
+     * already is finalised (thus it was either used, or we
+     * are running in the optimizations) rebuild the wrapper
+     * type from scratch.
+     */
+    FUNDEF_WRAPPERTYPE (wrapper)
+      = checkAndRebuildWrapperType (FUNDEF_WRAPPERTYPE (wrapper));
 
     /*
      * Finally, we make the result type variable(s) (a) subtype(s) of the
@@ -402,7 +493,12 @@ DoSpecialize (node *wrapper, node *fundef, ntype *args)
 
     FUNDEF_SPECS (fundef)++;
 
-    DBUG_RETURN (res);
+    /*
+     * we do not return the specialised fundef, as we do not want
+     * to dispatch right now! this will be done lateron in
+     * staticfunctiondispatch.
+     */
+    DBUG_RETURN (fundef);
 }
 
 /******************************************************************************
