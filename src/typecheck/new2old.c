@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.41  2005/07/26 16:03:07  sbs
+ * frees the tvar and sig_dep heaps now.
+ *
  * Revision 1.40  2005/07/26 14:32:08  sah
  * moved creation of special fold funs to
  * dispatchfuncall as new2old is running
@@ -165,6 +168,8 @@
 #include "new_typecheck.h"
 #include "new_types.h"
 #include "type_utils.h"
+#include "ssi.h"
+#include "sig_deps.h"
 
 /*
  * OPEN PROBLEMS:
@@ -395,6 +400,13 @@ NT2OTdoTransform (node *arg_node)
 
     TRAVpop ();
 
+    /**
+     * Since all alpha types are gone now, we may may free all tvars and all
+     *  sig_deps:
+     */
+    SSIfreeAllTvars ();
+    SDfreeAllSignatureDependencies ();
+
     DBUG_RETURN (arg_node);
 }
 
@@ -411,8 +423,6 @@ NT2OTdoTransform (node *arg_node)
 node *
 NT2OTmodule (node *arg_node, info *arg_info)
 {
-    node *tmp;
-
     DBUG_ENTER ("NT2OTmodule");
 
     if (MODULE_IMPORTS (arg_node) != NULL) {
