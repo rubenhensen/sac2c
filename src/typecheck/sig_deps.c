@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2005/07/26 16:03:51  sbs
+ * added SDfreeAllSignature Dependencies
+ *
  * Revision 1.8  2005/07/25 17:14:25  sbs
  * changed to private heap in order to be able to collectively free sig_deps
  *
@@ -123,6 +126,16 @@ MakeSig (ct_funptr ct_fun, te_info *info, ntype *args, ntype *results, int rc)
     SD_RC (res) = rc;
 
     DBUG_RETURN (res);
+}
+
+void
+SDfreeAllSignatureDependencies ()
+{
+    DBUG_ENTER ("SDfreeAllSignatureDependencies");
+
+    sig_dep_heap = PHPfreeHeap (sig_dep_heap);
+
+    DBUG_VOID_RETURN;
 }
 
 /******************************************************************************

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2005/07/26 16:03:51  sbs
+ * added SDfreeAllSignature Dependencies
+ *
  * Revision 1.2  2004/11/22 15:36:00  sbs
  * SacDevCamp04
  *
@@ -21,6 +24,7 @@
 #include "types.h"
 
 extern ntype *SDcreateSignatureDependency (ct_funptr CtFun, te_info *info, ntype *args);
+extern void SDfreeAllSignatureDependencies ();
 extern bool SDhandleContradiction (sig_dep *fun_sig);
 extern bool SDhandleElimination (sig_dep *fun_sig);
 
