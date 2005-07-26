@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2005/07/26 12:46:50  sah
+ * added support to move wrapper to their corresponding
+ * view if specialisations were added
+ * added removing of aliasing on splitting wrappers
+ *
  * Revision 1.3  2005/07/22 13:12:37  sah
  * new wrapperfuns are maked as NTC_checked
  *
@@ -28,6 +33,8 @@
 #include "type_utils.h"
 #include "ct_fun.h"
 #include "namespaces.h"
+#include "serialize.h"
+#include "deserialize.h"
 
 /*******************************************************************************
  *
@@ -145,6 +152,30 @@ SWRmodule (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+bool
+isLocalInstance (node *fundef, bool result)
+{
+    DBUG_ENTER ("isLocalInstance");
+
+    result = result | FUNDEF_ISLOCAL (fundef);
+
+    DBUG_RETURN (result);
+}
+
+bool
+containsLocalInstances (node *wrapper)
+{
+    bool result;
+
+    DBUG_ENTER ("containsLocalInstances");
+
+    result = (bool)TYfoldFunctionInstances (FUNDEF_WRAPPERTYPE (wrapper),
+                                            (void *(*)(node *, void *))isLocalInstance,
+                                            (void *)FALSE);
+
+    DBUG_RETURN (result);
+}
+
 /******************************************************************************
  *
  * Function:
@@ -215,6 +246,50 @@ SplitWrapper (node *fundef)
          * loaded during typechecking!
          */
         FUNDEF_TCSTAT (new_fundef) = NTC_checked;
+
+        /*
+         * remove the aliasing for the splitoff
+         */
+        if (!FUNDEF_ISLOCAL (fundef)) {
+            FUNDEF_SYMBOLNAME (new_fundef)
+              = ILIBstringCopy (SERgenerateSerFunName (SET_wrapperhead, new_fundef));
+
+            DBUG_PRINT ("SWR",
+                        ("generated symbolname is %s", FUNDEF_SYMBOLNAME (new_fundef)));
+
+            DSremoveAliasing (FUNDEF_SYMBOLNAME (new_fundef));
+        }
+
+        /*
+         * if the created wrapper contains any local instances because it
+         *
+         * a) is a wrapper which was locally generated
+         *
+         * b) is a used wrapper with added specialisations
+         *
+         * we must make sure it is added into the right namespace. A
+         * wrapper with added specialisations can be easily identified
+         * by looking at the SPECNS attribute of the generic wrapper.
+         * By checking whether this splitof has any local instances,
+         * we can make sure that only those wrappers which have been
+         * altered are made local.
+         * Locally generated wrappers will have the correct namespace
+         * anyways, so we do not need to care for that here
+         */
+        if ((FUNDEF_SPECNS (fundef) != NULL) && containsLocalInstances (new_fundef)) {
+            /*
+             * store the SPECNS of the generic wrapper within the SPECNS
+             * of the splitof wrapper. We cannot directly rename the
+             * namespace here as the old namespace is still needed
+             * in CorrectFundefPointer on the bottom up traversal.
+             */
+            FUNDEF_SPECNS (new_fundef) = NSdupNamespace (FUNDEF_SPECNS (fundef));
+
+            FUNDEF_ISLOCAL (new_fundef) = TRUE;
+            FUNDEF_WASUSED (new_fundef) = FALSE;
+            FUNDEF_WASIMPORTED (new_fundef) = FALSE;
+            FUNDEF_SYMBOLNAME (new_fundef) = ILIBfree (FUNDEF_SYMBOLNAME (new_fundef));
+        }
 
         FUNDEF_NEXT (new_fundef) = new_fundefs;
         new_fundefs = new_fundef;
@@ -369,6 +444,20 @@ FundefRemoveGarbage (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+static node *
+FundefMoveToFinalNs (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("FundefMoveToFinalNs");
+
+    if (FUNDEF_SPECNS (arg_node) != NULL) {
+        FUNDEF_NS (arg_node) = NSfreeNamespace (FUNDEF_NS (arg_node));
+        FUNDEF_NS (arg_node) = FUNDEF_SPECNS (arg_node);
+        FUNDEF_SPECNS (arg_node) = NULL;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
 node *
 SWRfundef (node *arg_node, info *arg_info)
 {
@@ -391,9 +480,12 @@ SWRfundef (node *arg_node, info *arg_info)
         DBUG_ASSERT ((INFO_SWR_TRAVNO (arg_info) == 3), "illegal INFO_SWR_TRAVNO found!");
         /*
          * third traversal -> remove zombies and empty wrappers
+         *                    finally move specialised wrappers into their
+         *                      final namespace
          */
 
         arg_node = FundefRemoveGarbage (arg_node, arg_info);
+        arg_node = FundefMoveToFinalNs (arg_node, arg_info);
     }
 
     DBUG_RETURN (arg_node);
