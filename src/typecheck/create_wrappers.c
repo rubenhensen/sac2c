@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.39  2005/07/26 12:46:15  sah
+ * on joining wrappers, aliases are created
+ *
  * Revision 1.38  2005/07/15 15:57:02  sah
  * introduced namespaces
  *
@@ -139,6 +142,7 @@
 #include "user_types.h"
 #include "new_types.h"
 #include "type_utils.h"
+#include "deserialize.h"
 
 /*******************************************************************************
  *
@@ -360,6 +364,18 @@ CreateWrapperFor (node *fundef, info *info)
      */
     if (FUNDEF_ISWRAPPERFUN (fundef)) {
         wrapper = fundef;
+
+        /*
+         * as this is no more the wrapper stored within
+         * the module, we have to remove the symbolid. As
+         * there might be some deserialisation during typechecking
+         * and this prior to splitwrappers, we must make sure
+         * that deserialised function calls point to the generic
+         * wrapper. Thats why we have to add an aliasing prior
+         * to deleting the symbolname!
+         */
+        DSaddAliasing (FUNDEF_SYMBOLNAME (fundef), wrapper);
+        FUNDEF_SYMBOLNAME (fundef) = ILIBfree (FUNDEF_SYMBOLNAME (fundef));
     } else {
         body = FUNDEF_BODY (fundef);
         FUNDEF_BODY (fundef) = NULL;
@@ -423,11 +439,7 @@ CreateWrapperFor (node *fundef, info *info)
  *    ntype *CRTWRPcreateFuntype( node *fundef)
  *
  * description:
- *    creates a function type from the given arg/return types. While doing so,
- *    a copy of the return type is put into FUNDEF_RET_TYPE( fundef) !!!!
- *    This shortcut is very useful during type inference, when the return
- *    statement is reached (cf. NTCreturn). Otherwise, it would be necessary
- *    to dig through the intersection type in order to find the return type.
+ *    creates a function type from the given arg/return types.
  *
  ******************************************************************************/
 
@@ -581,6 +593,11 @@ CRTWRPfundef (node *arg_node, info *arg_info)
                 FUNDEF_WRAPPERTYPE (wrapper)
                   = TYmakeOverloadedFunType (TYcopyType (FUNDEF_WRAPPERTYPE (arg_node)),
                                              FUNDEF_WRAPPERTYPE (wrapper));
+                /*
+                 * add an aliasing so calls to this wrapper will
+                 * point to the correct general wrapper
+                 */
+                DSaddAliasing (FUNDEF_SYMBOLNAME (arg_node), wrapper);
                 arg_node = FREEdoFreeNode (arg_node);
             }
         }
