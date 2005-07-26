@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2005/07/26 14:32:08  sah
+ * moved creation of special fold funs to
+ * dispatchfuncall as new2old is running
+ * prior to the module system which again relies
+ * on the fact that no foldfuns have been
+ * created, yet.
+ *
  * Revision 1.13  2005/07/26 12:43:21  sah
  * new2old no longer removes casts
  *
@@ -57,7 +64,6 @@ extern node *NT2OTblock (node *arg_node, info *arg_info);
 extern node *NT2OTvardec (node *arg_node, info *arg_info);
 extern node *NT2OTlet (node *arg_node, info *arg_info);
 extern node *NT2OTassign (node *arg_node, info *arg_info);
-extern node *NT2OTfold (node *arg_node, info *arg_info);
 extern node *NT2OTpart (node *arg_node, info *arg_info);
 extern node *NT2OTwithid (node *arg_node, info *arg_info);
 extern node *NT2OTcond (node *arg_node, info *arg_info);

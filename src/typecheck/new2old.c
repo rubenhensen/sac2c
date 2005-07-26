@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 1.40  2005/07/26 14:32:08  sah
+ * moved creation of special fold funs to
+ * dispatchfuncall as new2old is running
+ * prior to the module system which again relies
+ * on the fact that no foldfuns have been
+ * created, yet.
+ *
  * Revision 1.39  2005/07/26 12:43:21  sah
  * new2old no longer removes casts
  *
@@ -178,8 +185,6 @@
 /*
  * usages of 'arg_info':
  *
- *   INFO_NT2OT_FOLDFUNS   -   list of the generated fold funs
- *   INFO_NT2OT_LAST_LET   -   poiner to the last N_let node
  *   INFO_NT2OT_VARDECS    -   list of the generated vardecs
  *   INFO_NT2OT_WLIDS      -   WITHID_VEC of first partition
  *   INFO_NT2OT_THENBOTTS  -   type_error let
@@ -191,8 +196,6 @@
  * INFO structure
  */
 struct INFO {
-    node *foldfuns;
-    node *last_let;
     node *vardecs;
     node *wlids;
     node *then_botts;
@@ -203,8 +206,6 @@ struct INFO {
 /**
  * INFO macros
  */
-#define INFO_NT2OT_FOLDFUNS(n) (n->foldfuns)
-#define INFO_NT2OT_LAST_LET(n) (n->last_let)
 #define INFO_NT2OT_VARDECS(n) (n->vardecs)
 #define INFO_NT2OT_WLIDS(n) (n->wlids)
 #define INFO_NT2OT_THENBOTTS(n) (n->then_botts)
@@ -223,8 +224,6 @@ MakeInfo ()
 
     result = ILIBmalloc (sizeof (info));
 
-    INFO_NT2OT_FOLDFUNS (result) = NULL;
-    INFO_NT2OT_LAST_LET (result) = NULL;
     INFO_NT2OT_VARDECS (result) = NULL;
     INFO_NT2OT_WLIDS (result) = NULL;
     INFO_NT2OT_THENBOTTS (result) = NULL;
@@ -416,8 +415,6 @@ NT2OTmodule (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("NT2OTmodule");
 
-    INFO_NT2OT_FOLDFUNS (arg_info) = NULL;
-
     if (MODULE_IMPORTS (arg_node) != NULL) {
         MODULE_IMPORTS (arg_node) = TRAVdo (MODULE_IMPORTS (arg_node), arg_info);
     }
@@ -434,22 +431,8 @@ NT2OTmodule (node *arg_node, info *arg_info)
         MODULE_FUNDECS (arg_node) = TRAVdo (MODULE_FUNDECS (arg_node), arg_info);
     }
 
-    if (INFO_NT2OT_FOLDFUNS (arg_info) != NULL) {
-        MODULE_FUNDECS (arg_node)
-          = TCappendFundef (INFO_NT2OT_FOLDFUNS (arg_info), MODULE_FUNDECS (arg_node));
-    }
-
-    INFO_NT2OT_FOLDFUNS (arg_info) = NULL;
-
     if (MODULE_FUNS (arg_node) != NULL) {
         MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
-    }
-
-    while (INFO_NT2OT_FOLDFUNS (arg_info) != NULL) {
-        tmp = INFO_NT2OT_FOLDFUNS (arg_info);
-        INFO_NT2OT_FOLDFUNS (arg_info) = NULL;
-        tmp = TRAVdo (tmp, arg_info);
-        MODULE_FUNS (arg_node) = TCappendFundef (tmp, MODULE_FUNS (arg_node));
     }
 
     DBUG_RETURN (arg_node);
@@ -689,8 +672,6 @@ NT2OTvardec (node *arg_node, info *arg_info)
 node *
 NT2OTlet (node *arg_node, info *arg_info)
 {
-    node *old_last_let;
-
     DBUG_ENTER ("NT2OTlet");
 
     if (IdsContainBottom (LET_IDS (arg_node))) {
@@ -698,13 +679,7 @@ NT2OTlet (node *arg_node, info *arg_info)
                               IDS_NAME (LET_IDS (arg_node))));
         arg_node = FREEdoFreeTree (arg_node);
     } else {
-
-        old_last_let = INFO_NT2OT_LAST_LET (arg_info);
-        INFO_NT2OT_LAST_LET (arg_info) = arg_node;
-
         LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
-
-        INFO_NT2OT_LAST_LET (arg_info) = old_last_let;
     }
 
     DBUG_RETURN (arg_node);
@@ -906,49 +881,6 @@ NT2OTwithid (node *arg_node, info *arg_info)
          */
         WITHID_IDS (arg_node) = DUPdoDupTree (INFO_NT2OT_WLIDS (arg_info));
     }
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *NT2OTfold( node *arg_node, info *arg_info)
- *
- * description:
- *
- *
- ******************************************************************************/
-
-node *
-NT2OTfold (node *arg_node, info *arg_info)
-{
-    node *foldfun;
-    node *cexpr, *neutr;
-    node *nwith;
-    ntype *fold_type;
-
-    DBUG_ENTER ("NT2OTfold");
-
-    nwith = LET_EXPR (INFO_NT2OT_LAST_LET (arg_info));
-    cexpr = WITH_CEXPR (nwith);
-    neutr = FOLD_NEUTRAL (arg_node);
-    DBUG_ASSERT ((neutr != NULL), "WITH_NEUTRAL does not exist");
-    DBUG_ASSERT ((NODE_TYPE (neutr) == N_id), "WITH_NEUTRAL is not a N_id");
-    DBUG_ASSERT ((NODE_TYPE (cexpr) == N_id), "WITH_CEXPR is not a N_id");
-    fold_type = TYlubOfTypes (AVIS_TYPE (ID_AVIS (cexpr)), AVIS_TYPE (ID_AVIS (neutr)));
-
-    foldfun = GPFcreateFoldFun (fold_type, FOLD_FUNDEF (arg_node), FOLD_PRF (arg_node),
-                                IDS_NAME (LET_IDS (INFO_NT2OT_LAST_LET (arg_info))),
-                                ID_NAME (cexpr));
-    FOLD_FUNDEF (arg_node) = foldfun;
-    fold_type = TYfreeType (fold_type);
-
-    /*
-     * append foldfun to INFO_NT2OT_FOLDFUNS
-     */
-    FUNDEF_NEXT (foldfun) = INFO_NT2OT_FOLDFUNS (arg_info);
-    INFO_NT2OT_FOLDFUNS (arg_info) = foldfun;
 
     DBUG_RETURN (arg_node);
 }

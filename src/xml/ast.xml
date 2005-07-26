@@ -514,7 +514,7 @@
           <node name="Fundef" />
         </travuser>
       </traversal>
-      <traversal id="DFC" name="Dispatch Funcalls" default="sons" include="dispatchfuncalls.h" >
+      <traversal id="DFC" name="Dispatch Funcalls and Create Foldfuns" default="sons" include="dispatchfuncalls.h" >
         <travuser>
           <node name="Module" />
           <node name="Fundef" />
@@ -522,6 +522,7 @@
           <node name="With" />
           <node name="Genarray" />
           <node name="Fold" />
+          <node name="Let" />
         </travuser>
       </traversal>
       <traversal id="RST" name="Resolve Symbol Types" default="sons" include="resolvesymboltypes.h" >
@@ -546,7 +547,6 @@
           <node name="Let" />
           <node name="Cond" />
           <node name="Funcond" />
-          <node name="Fold" />
           <node name="Part" />
           <node name="Withid" />
         </travuser>

@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2005/07/26 14:32:08  sah
+ * moved creation of special fold funs to
+ * dispatchfuncall as new2old is running
+ * prior to the module system which again relies
+ * on the fact that no foldfuns have been
+ * created, yet.
+ *
  * Revision 1.1  2005/07/15 15:53:33  sah
  * Initial revision
  *
@@ -18,6 +25,7 @@
 #include "type_utils.h"
 #include "create_wrapper_code.h"
 #include "namespaces.h"
+#include "gen_pseudo_fun.h"
 #include "ct_fun.h"
 
 /*******************************************************************************
@@ -30,12 +38,16 @@
  */
 struct INFO {
     node *with;
+    node *let;
+    node *foldfuns;
 };
 
 /**
  * INFO macros
  */
 #define INFO_DFC_WITH(n) ((n)->with)
+#define INFO_DFC_LASTLET(n) ((n)->let)
+#define INFO_DFC_FOLDFUNS(n) ((n)->foldfuns)
 
 /**
  * INFO functions
@@ -50,6 +62,8 @@ MakeInfo ()
     result = ILIBmalloc (sizeof (info));
 
     INFO_DFC_WITH (result) = NULL;
+    INFO_DFC_LASTLET (result) = NULL;
+    INFO_DFC_FOLDFUNS (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -81,6 +95,11 @@ DFCmodule (node *arg_node, info *arg_info)
 
     if (MODULE_FUNS (arg_node) != NULL) {
         MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
+    }
+
+    if (INFO_DFC_FOLDFUNS (arg_info) != NULL) {
+        MODULE_FUNS (arg_node)
+          = TCappendFundef (INFO_DFC_FOLDFUNS (arg_info), MODULE_FUNS (arg_node));
     }
 
     DBUG_RETURN (arg_node);
@@ -290,6 +309,37 @@ DFCgenarray (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+static node *
+buildSpecialFoldFun (node *arg_node, info *arg_info, ntype *argtype)
+{
+    node *foldfun;
+    node *cexpr, *neutr;
+    node *with;
+
+    DBUG_ENTER ("buildSpecialFoldFun");
+
+    with = INFO_DFC_WITH (arg_info);
+    cexpr = WITH_CEXPR (with);
+    neutr = FOLD_NEUTRAL (arg_node);
+
+    DBUG_ASSERT ((neutr != NULL), "WITH_NEUTRAL does not exist");
+    DBUG_ASSERT ((NODE_TYPE (neutr) == N_id), "WITH_NEUTRAL is not a N_id");
+    DBUG_ASSERT ((NODE_TYPE (cexpr) == N_id), "WITH_CEXPR is not a N_id");
+
+    foldfun = GPFcreateFoldFun (argtype, FOLD_FUNDEF (arg_node), FOLD_PRF (arg_node),
+                                IDS_NAME (LET_IDS (INFO_DFC_LASTLET (arg_info))),
+                                ID_NAME (cexpr));
+    FOLD_FUNDEF (arg_node) = foldfun;
+
+    /*
+     * append foldfun to INFO_NT2OT_FOLDFUNS
+     */
+    FUNDEF_NEXT (foldfun) = INFO_DFC_FOLDFUNS (arg_info);
+    INFO_DFC_FOLDFUNS (arg_info) = foldfun;
+
+    DBUG_RETURN (arg_node);
+}
+
 node *
 DFCfold (node *arg_node, info *arg_info)
 {
@@ -299,25 +349,56 @@ DFCfold (node *arg_node, info *arg_info)
     DBUG_ENTER ("DFCfold");
 
     if (FOLD_FUN (arg_node) != NULL) {
-        FOLD_NEUTRAL (arg_node) = TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
+        if (FOLD_FUNDEF (arg_node) == NULL) {
+            /*
+             * first dispatch the function call
+             */
+            FOLD_NEUTRAL (arg_node) = TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
 
-        neutr_type
-          = TYfixAndEliminateAlpha (AVIS_TYPE (ID_AVIS (FOLD_NEUTRAL (arg_node))));
-        body_type = TYfixAndEliminateAlpha (
-          AVIS_TYPE (ID_AVIS (WITH_CEXPR (INFO_DFC_WITH (arg_info)))));
+            neutr_type
+              = TYfixAndEliminateAlpha (AVIS_TYPE (ID_AVIS (FOLD_NEUTRAL (arg_node))));
+            body_type = TYfixAndEliminateAlpha (
+              AVIS_TYPE (ID_AVIS (WITH_CEXPR (INFO_DFC_WITH (arg_info)))));
 
-        arg_type = TYlubOfTypes (neutr_type, body_type);
-        arg_types = TYmakeProductType (2, arg_type, TYcopyType (arg_type));
+            arg_type = TYlubOfTypes (neutr_type, body_type);
+            arg_types = TYmakeProductType (2, arg_type, TYcopyType (arg_type));
 
-        FOLD_FUNDEF (arg_node) = DispatchFunCall (FOLD_FUNDEF (arg_node), arg_types);
-        arg_types = TYfreeType (arg_types);
-        body_type = TYfreeType (body_type);
-        neutr_type = TYfreeType (neutr_type);
+            FOLD_FUNDEF (arg_node) = DispatchFunCall (FOLD_FUNDEF (arg_node), arg_types);
+
+            /*
+             * second, create a special foldfun
+             */
+            arg_node = buildSpecialFoldFun (arg_node, arg_info, arg_type);
+
+            /*
+             * cleanup
+             */
+            arg_types = TYfreeType (arg_types);
+            body_type = TYfreeType (body_type);
+            neutr_type = TYfreeType (neutr_type);
+        }
     } else {
         if (FOLD_NEUTRAL (arg_node) != NULL) {
             FOLD_NEUTRAL (arg_node) = TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
         }
     }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+DFClet (node *arg_node, info *arg_info)
+{
+    node *old_lastlet;
+
+    DBUG_ENTER ("DFClet");
+
+    old_lastlet = INFO_DFC_LASTLET (arg_info);
+    INFO_DFC_LASTLET (arg_info) = arg_node;
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    INFO_DFC_LASTLET (arg_info) = old_lastlet;
 
     DBUG_RETURN (arg_node);
 }
