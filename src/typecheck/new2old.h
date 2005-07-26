@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2005/07/26 12:43:21  sah
+ * new2old no longer removes casts
+ *
  * Revision 1.12  2005/06/14 09:55:10  sbs
  * support for bottom types integrated.
  *
@@ -52,7 +55,6 @@ extern node *NT2OTfundef (node *arg_node, info *arg_info);
 extern node *NT2OTavis (node *arg_node, info *arg_info);
 extern node *NT2OTblock (node *arg_node, info *arg_info);
 extern node *NT2OTvardec (node *arg_node, info *arg_info);
-extern node *NT2OTcast (node *arg_node, info *arg_info);
 extern node *NT2OTlet (node *arg_node, info *arg_info);
 extern node *NT2OTassign (node *arg_node, info *arg_info);
 extern node *NT2OTfold (node *arg_node, info *arg_info);

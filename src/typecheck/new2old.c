@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.39  2005/07/26 12:43:21  sah
+ * new2old no longer removes casts
+ *
  * Revision 1.38  2005/07/20 14:31:25  sbs
  * reflagged lac funs into lacinline funs whenever the code is transformed
  * due to bottom types
@@ -671,30 +674,6 @@ NT2OTvardec (node *arg_node, info *arg_info)
     }
 
     DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *NT2OTcast( node *arg_node, info *arg_info)
- *
- * description:
- *
- *
- ******************************************************************************/
-
-node *
-NT2OTcast (node *arg_node, info *arg_info)
-{
-    node *res;
-
-    DBUG_ENTER ("NT2OTcast");
-
-    res = TRAVdo (CAST_EXPR (arg_node), arg_info);
-    CAST_EXPR (arg_node) = NULL;
-    arg_node = FREEdoFreeNode (arg_node);
-
-    DBUG_RETURN (res);
 }
 
 /******************************************************************************
