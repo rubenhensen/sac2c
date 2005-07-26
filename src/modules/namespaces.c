@@ -460,7 +460,7 @@ GenerateNamespaceMappingConstructor (FILE *file)
 
     for (cnt = 0; cnt < nextid; cnt++) {
         fprintf (file, "MAPNS(%d) = NSaddMapping( \"%s\",", cnt,
-                 NSgetName (pool->block[cnt % 100]));
+                 NSgetModule (pool->block[cnt % 100]));
 
         GenerateViewConstructor (file, pool->block[cnt % 100]->view);
 
