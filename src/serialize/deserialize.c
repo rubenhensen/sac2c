@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.26  2005/07/27 10:39:08  sah
+ * added some DBUG_PRINTS
+ *
  * Revision 1.25  2005/07/26 12:42:24  sah
  * added basic support for aliasing
  *
@@ -418,10 +421,14 @@ DSaddAliasing (const char *symbol, node *target)
         initAliasingLut ();
     }
 
+    DBUG_PRINT ("DS_ALIAS", ("adding new aliasing for %s", symbol));
+
     search = LUTsearchInLutS (aliasinglut, (char *)symbol);
 
     if (search != NULL) {
         oldalias = (ds_aliasing_t *)*search;
+        DBUG_PRINT ("DS_ALIAS", (">>> will hide old alias"));
+
     } else {
         oldalias = NULL;
     }
@@ -441,6 +448,8 @@ DSremoveAliasing (const char *symbol)
 
     DBUG_ENTER ("DSremoveAliasing");
 
+    DBUG_PRINT ("DS_ALIAS", ("removing aliasing for %s", symbol));
+
     DBUG_ASSERT ((aliasinglut != NULL),
                  "cannot remove a aliasing without ever defining one!");
 
@@ -455,8 +464,14 @@ DSremoveAliasing (const char *symbol)
          */
         oldalias = (ds_aliasing_t *)*search;
         oldalias = oldalias->next;
+
+#ifndef DBUG_OFF
+        if (oldalias != NULL) {
+            DBUG_PRINT ("DS_ALIAS", (">>> this will unhide old alias"));
+        }
+#endif
     } else {
-        DBUG_ASSERT (1, "no alias to remove found!");
+        DBUG_ASSERT (0, "no alias to remove found!");
         oldalias = NULL;
     }
 
@@ -484,6 +499,7 @@ getAliasing (const char *symbol)
         result = NULL;
     } else {
         result = alias->alias;
+        DBUG_PRINT ("DS_ALIAS", ("using alias for %s", symbol));
     }
 
     DBUG_RETURN (result);
