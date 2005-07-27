@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.19  2005/07/27 13:40:40  sah
+ * added missing include
+ *
  * Revision 1.18  2005/07/22 13:11:39  sah
  * interface changes
  *
@@ -40,6 +43,7 @@
 #include "modulemanager.h"
 #include "serialize.h"
 #include "deserialize.h"
+#include "add_function_body.h"
 #include "tree_basic.h"
 #include "print.h"
 #include "new2old.h"
