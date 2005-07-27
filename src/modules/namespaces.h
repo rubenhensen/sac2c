@@ -1,9 +1,15 @@
+/*
+ * $Log$
+ * Revision 1.5  2005/07/27 13:42:18  sah
+ * fixed a typoe
+ *
+ *
+ */
+
 /**
  * @file namespaces.h
  * @brief function declarations for handling namespace identifiers
  *        as uses throughout the compiler
- * @author Stephan Herhut
- * @date 2005-07-11
  */
 
 #ifndef _SAC_NAMESPACES_H_
@@ -23,7 +29,7 @@ extern const char *NSgetName (const namespace_t *ns);
 extern const char *NSgetModule (const namespace_t *ns);
 
 extern namespace_t *NSbuildView (const namespace_t *orig);
-extern bool NShasView (const namespace_t *ns);
+extern bool NSisView (const namespace_t *ns);
 
 extern void NSserializeNamespace (FILE *file, const namespace_t *ns);
 extern namespace_t *NSdeserialzeNamespace (int id);
