@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.18  2005/07/27 14:58:56  sah
+ * added global.modulenamespace
+ *
  * Revision 1.17  2005/07/18 15:45:59  sah
  * added findFilePath
  *
@@ -630,7 +633,7 @@ FindLocationOfFile (const char *file)
  *
  * Description:
  *   Sets the global variables
- *     modulename, outfilename, cfilename, targetdir
+ *     modulename, modulenamespace, outfilename, cfilename, targetdir
  *   according to the kind of file and the -o command line option.
  *
  ******************************************************************************/
@@ -646,6 +649,7 @@ FMGRsetFileNames (node *module)
 
     if (MODULE_FILETYPE (module) == F_prog) {
 
+        global.modulenamespace = NSdupNamespace (MODULE_NAMESPACE (module));
         global.modulename = ILIBstringCopy (NSgetName (MODULE_NAMESPACE (module)));
 
         if (global.outfilename == NULL) {
@@ -680,6 +684,7 @@ FMGRsetFileNames (node *module)
             global.targetdir = ILIBstringConcat (global.outfilename, "/");
         }
 
+        global.modulenamespace = NSdupNamespace (MODULE_NAMESPACE (module));
         global.modulename = ILIBstringCopy (NSgetName (MODULE_NAMESPACE (module)));
         global.cfilename = ILIBstringConcat (global.modulename, ".c");
         global.outfilename = ILIBstringConcat (global.modulename, ".out");
