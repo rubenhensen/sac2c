@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.40  2005/07/27 10:39:55  sah
+ * modified joining and splitting of wrappers
+ * to allow for non-joined wrappers as are
+ * created by the specialisations
+ *
  * Revision 1.39  2005/07/26 12:46:15  sah
  * on joining wrappers, aliases are created
  *
@@ -376,6 +381,13 @@ CreateWrapperFor (node *fundef, info *info)
          */
         DSaddAliasing (FUNDEF_SYMBOLNAME (fundef), wrapper);
         FUNDEF_SYMBOLNAME (fundef) = ILIBfree (FUNDEF_SYMBOLNAME (fundef));
+
+        /*
+         * we set the wrapper to local here. In split_wrappers this
+         * will be made undone if no local instances were added
+         * during typechecking
+         */
+        FUNDEF_ISLOCAL (wrapper) = TRUE;
     } else {
         body = FUNDEF_BODY (fundef);
         FUNDEF_BODY (fundef) = NULL;

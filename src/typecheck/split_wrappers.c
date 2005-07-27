@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2005/07/27 10:39:55  sah
+ * modified joining and splitting of wrappers
+ * to allow for non-joined wrappers as are
+ * created by the specialisations
+ *
  * Revision 1.4  2005/07/26 12:46:50  sah
  * added support to move wrapper to their corresponding
  * view if specialisations were added
@@ -48,6 +53,7 @@ struct INFO {
     int travno;
     lut_t *wrapperfuns;
     node *with;
+    namespace_t *ns;
 };
 
 /**
@@ -56,6 +62,7 @@ struct INFO {
 #define INFO_SWR_TRAVNO(n) ((n)->travno)
 #define INFO_SWR_WRAPPERFUNS(n) ((n)->wrapperfuns)
 #define INFO_SWR_WITH(n) ((n)->with)
+#define INFO_SWR_NAMESPACE(n) ((n)->ns)
 
 /**
  * INFO functions
@@ -71,6 +78,8 @@ MakeInfo ()
 
     INFO_SWR_TRAVNO (result) = 0;
     INFO_SWR_WRAPPERFUNS (result) = NULL;
+    INFO_SWR_WITH (result) = NULL;
+    INFO_SWR_NAMESPACE (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -114,6 +123,7 @@ SWRmodule (node *arg_node, info *arg_info)
     DBUG_ASSERT ((MODULE_WRAPPERFUNS (arg_node) != NULL),
                  "MODULE_WRAPPERFUNS not found!");
     INFO_SWR_WRAPPERFUNS (arg_info) = MODULE_WRAPPERFUNS (arg_node);
+    INFO_SWR_NAMESPACE (arg_info) = MODULE_NAMESPACE (arg_node);
 
     /*
      * create separate wrapper function for all base type constellations
@@ -169,9 +179,14 @@ containsLocalInstances (node *wrapper)
 
     DBUG_ENTER ("containsLocalInstances");
 
-    result = (bool)TYfoldFunctionInstances (FUNDEF_WRAPPERTYPE (wrapper),
-                                            (void *(*)(node *, void *))isLocalInstance,
-                                            (void *)FALSE);
+    if (FUNDEF_IMPL (wrapper) != NULL) {
+        result = FUNDEF_ISLOCAL (FUNDEF_IMPL (wrapper));
+    } else {
+        result
+          = (bool)TYfoldFunctionInstances (FUNDEF_WRAPPERTYPE (wrapper),
+                                           (void *(*)(node *, void *))isLocalInstance,
+                                           (void *)FALSE);
+    }
 
     DBUG_RETURN (result);
 }
@@ -179,7 +194,7 @@ containsLocalInstances (node *wrapper)
 /******************************************************************************
  *
  * Function:
- *   node *SplitWrapper( node *fundef)
+ *   node *SplitWrapper( node *fundef, info *arg_info)
  *
  * Description:
  *
@@ -187,7 +202,7 @@ containsLocalInstances (node *wrapper)
  ******************************************************************************/
 
 static node *
-SplitWrapper (node *fundef)
+SplitWrapper (node *fundef, info *arg_info)
 {
     ntype *old_type, *tmp_type;
     ntype *new_type, *new_rets;
@@ -248,9 +263,17 @@ SplitWrapper (node *fundef)
         FUNDEF_TCSTAT (new_fundef) = NTC_checked;
 
         /*
+         * mark the wrapper as non-local if it is from
+         * a different namespace than the current
+         */
+        if (!NSequals (FUNDEF_NS (new_fundef), INFO_SWR_NAMESPACE (arg_info))) {
+            FUNDEF_ISLOCAL (new_fundef) = FALSE;
+        }
+
+        /*
          * remove the aliasing for the splitoff
          */
-        if (!FUNDEF_ISLOCAL (fundef)) {
+        if (!FUNDEF_ISLOCAL (new_fundef)) {
             FUNDEF_SYMBOLNAME (new_fundef)
               = ILIBstringCopy (SERgenerateSerFunName (SET_wrapperhead, new_fundef));
 
@@ -276,7 +299,7 @@ SplitWrapper (node *fundef)
          * Locally generated wrappers will have the correct namespace
          * anyways, so we do not need to care for that here
          */
-        if ((FUNDEF_SPECNS (fundef) != NULL) && containsLocalInstances (new_fundef)) {
+        if ((FUNDEF_SPECNS (fundef) != NULL) && containsLocalInstances (fundef)) {
             /*
              * store the SPECNS of the generic wrapper within the SPECNS
              * of the splitof wrapper. We cannot directly rename the
@@ -316,7 +339,7 @@ CorrectFundefPointer (node *fundef, const namespace_t *funns, const char *funnam
     DBUG_ENTER ("CorrectFundefPointer");
 
     DBUG_ASSERT ((fundef != NULL), "fundef not found!");
-    if (FUNDEF_ISWRAPPERFUN (fundef)) {
+    if (FUNDEF_ISWRAPPERFUN (fundef) && FUNDEF_ISLOCAL (fundef)) {
         /*
          * 'fundef' points to an generic wrapper function
          *    -> search the specific wrapper function
@@ -372,14 +395,18 @@ FundefBuildWrappers (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("FundefBuildWrappers");
 
-    if (FUNDEF_ISWRAPPERFUN (arg_node)) {
+    /*
+     * only process wrappers that are local (eg. created by create_wrappers)
+     * as for all others there is nothing to split
+     */
+    if ((FUNDEF_ISWRAPPERFUN (arg_node) && (FUNDEF_ISLOCAL (arg_node)))) {
         DBUG_ASSERT ((FUNDEF_BODY (arg_node) == NULL),
                      "wrapper function has already a body!");
 
         /*
          * build a separate fundef for each base type constellation
          */
-        new_fundefs = SplitWrapper (arg_node);
+        new_fundefs = SplitWrapper (arg_node, arg_info);
 
         if (FUNDEF_NEXT (arg_node) != NULL) {
             FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
@@ -434,7 +461,8 @@ FundefRemoveGarbage (node *arg_node, info *arg_info)
         FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
     }
 
-    if ((FUNDEF_ISWRAPPERFUN (arg_node)) && (!FUNDEF_ISNEEDED (arg_node))) {
+    if ((FUNDEF_ISWRAPPERFUN (arg_node)) && (!FUNDEF_ISNEEDED (arg_node))
+        && (FUNDEF_ISLOCAL (arg_node))) {
         /*
          * remove statically dispatchable wrapper function and all generic wrappers
          */
