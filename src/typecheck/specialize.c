@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.29  2005/07/27 14:59:39  sah
+ * a wrapper may have ISLOCAL set, but be from
+ * another namespace. changed checks accordingly
+ *
  * Revision 1.28  2005/07/26 12:44:24  sah
  * made specialisation work with new MS
  *
@@ -418,11 +422,11 @@ DoSpecialize (node *wrapper, node *fundef, ntype *args)
      * namespace for the specialisations. As a function instance
      * can be used and imported at the same time, we need
      * to look at the current wrapper to find out what the current
-     * context is. A non-local wrapper is a good indicator for
-     * a used function
+     * context is. If that wrapper has a different namespace than
+     * the current, it is a used function.
      */
 
-    if (FUNDEF_ISLOCAL (wrapper)) {
+    if (NSequals (FUNDEF_NS (wrapper), global.modulenamespace)) {
         /*
          * we have a local wrapper so the new specialisation should
          * become a member of the current namespace. We have to set
