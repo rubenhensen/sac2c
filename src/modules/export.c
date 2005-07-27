@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.18  2005/07/27 13:42:49  sah
+ * functions contained in a view are never
+ * exported or provided now
+ *
  * Revision 1.17  2005/07/21 14:21:55  sah
  * cond funs are not visible anymore
  *
@@ -232,8 +236,7 @@ EXPfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EXPfundef");
 
-    DBUG_PRINT ("EXP", ("Processing Fundef %s:%s...", NSgetName (FUNDEF_NS (arg_node)),
-                        FUNDEF_NAME (arg_node)));
+    DBUG_PRINT ("EXP", ("Processing Fundef %s...", CTIitemName (arg_node)));
 
     if (FUNDEF_ISLOCAL (arg_node)) {
         DBUG_PRINT ("EXP", ("...local fundef"));
@@ -246,6 +249,16 @@ EXPfundef (node *arg_node, info *arg_info)
              * call them anyways
              */
 
+            FUNDEF_ISEXPORTED (arg_node) = FALSE;
+            FUNDEF_ISPROVIDED (arg_node) = FALSE;
+        } else if (NSisView (FUNDEF_NS (arg_node))) {
+            DBUG_PRINT ("EXP", ("...is not visible (in view)"));
+
+            /*
+             * views are generally not visible as they
+             * contain compiler generated functions of
+             * another namespace
+             */
             FUNDEF_ISEXPORTED (arg_node) = FALSE;
             FUNDEF_ISPROVIDED (arg_node) = FALSE;
         } else if ((INFO_EXP_FILETYPE (arg_info) == F_prog)
@@ -301,11 +314,16 @@ EXPfundef (node *arg_node, info *arg_info)
     SET_FLAG( FUNDEF, arg_node, IS_EXPORTED, FALSE);
     SET_FLAG( FUNDEF, arg_node, IS_PROVIDED, FALSE);
 #endif
+    } else {
+        DBUG_PRINT ("EXP", ("...is not visible (non local)"));
+
+        FUNDEF_ISEXPORTED (arg_node) = FALSE;
+        FUNDEF_ISPROVIDED (arg_node) = FALSE;
     }
 
-    DBUG_PRINT ("EXP", ("Fundef %s:%s has final status %d/%d [PROVIDE/EXPORT].",
-                        NSgetName (FUNDEF_NS (arg_node)), FUNDEF_NAME (arg_node),
-                        FUNDEF_ISPROVIDED (arg_node), FUNDEF_ISEXPORTED (arg_node)));
+    DBUG_PRINT ("EXP", ("Fundef %s has final status %d/%d [PROVIDE/EXPORT].",
+                        CTIitemName (arg_node), FUNDEF_ISPROVIDED (arg_node),
+                        FUNDEF_ISEXPORTED (arg_node)));
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
