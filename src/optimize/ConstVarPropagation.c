@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.23  2005/07/27 17:41:46  sah
+ * now, LaC-funs are only optimized if their
+ * corresponding application is passed and
+ * not if CVP is applied directly
+ *
  * Revision 1.22  2005/07/26 15:44:42  sah
  * CVP no more propagates constants in
  * default expression position of a wl
@@ -727,6 +732,7 @@ CVPap (node *arg_node, info *arg_info)
             AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
         }
         if (FUNDEF_ISCONDFUN (AP_FUNDEF (arg_node))) {
+            INFO_CVP_CONTEXT (arg_info) = CON_specialfun;
             arg_node = RemovePropagationFromCondArgs (arg_node);
         }
         INFO_CVP_CONTEXT (arg_info) = CON_specialfun;
@@ -1034,8 +1040,16 @@ CVPfundef (node *arg_node, info *arg_info)
     oldfundef = INFO_CVP_FUNDEF (arg_info);
     INFO_CVP_FUNDEF (arg_info) = arg_node;
 
-    if (FUNDEF_BODY (arg_node) != NULL) {
-        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+    /*
+     * traverse body only if it is no LaC-Fun or
+     * this traversal was triggered by an application
+     * of this function (indicated by CON_specialfun)
+     */
+    if ((!FUNDEF_ISLACFUN (arg_node))
+        || (INFO_CVP_CONTEXT (arg_info) == CON_specialfun)) {
+        if (FUNDEF_BODY (arg_node) != NULL) {
+            FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+        }
     }
 
     if ((FUNDEF_ARGS (arg_node) != NULL) && (!FUNDEF_ISEXPORTED (arg_node))
@@ -1071,6 +1085,10 @@ CVParg (node *arg_node, info *arg_info)
 
     if ((TYisAKV (AVIS_TYPE (ARG_AVIS (arg_node))))
         && (0 == TYgetDim (AVIS_TYPE (ARG_AVIS (arg_node))))) {
+
+        DBUG_PRINT ("CVP",
+                    ("replacing arg %s of fundef %s by constant", ARG_NAME (arg_node),
+                     CTIitemName (INFO_CVP_FUNDEF (arg_info))));
 
         /*
          * argument is a known scalar value
@@ -1169,6 +1187,8 @@ CVPids (node *arg_ids, info *arg_info)
             IDS_NEXT (arg_ids) = TRAVdo (IDS_NEXT (arg_ids), arg_info);
         }
     } else {
+
+        DBUG_PRINT ("CVP", ("transformed %s in a constant", IDS_NAME (arg_ids)));
 
         if ((INFO_CVP_SINGLEIDS (arg_info)) && (TYisAKV (AVIS_TYPE (IDS_AVIS (arg_ids))))
             && (0 == TYgetDim (AVIS_TYPE (IDS_AVIS (arg_ids))))) {
