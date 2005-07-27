@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.29  2005/07/27 10:40:40  sah
+ * set maxspec to 20
+ *
  * Revision 1.28  2005/06/02 15:02:37  sah
  * added -Mlib option and corresponding implementation
  *
@@ -369,7 +372,7 @@ GLOBAL (bool, enforce_ieee, FALSE)
  * IEEE-754 standard
  */
 
-GLOBAL (int, maxspec, 0)
+GLOBAL (int, maxspec, 20)
 /*
  * Maximum number of specializations per function
  */
