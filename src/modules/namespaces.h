@@ -22,7 +22,8 @@ extern bool NSequals (const namespace_t *one, const namespace_t *two);
 extern const char *NSgetName (const namespace_t *ns);
 extern const char *NSgetModule (const namespace_t *ns);
 
-extern namespace_t *NSbuildView (namespace_t *orig);
+extern namespace_t *NSbuildView (const namespace_t *orig);
+extern bool NShasView (const namespace_t *ns);
 
 extern void NSserializeNamespace (FILE *file, const namespace_t *ns);
 extern namespace_t *NSdeserialzeNamespace (int id);

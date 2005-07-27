@@ -313,7 +313,7 @@ dupView (view_t *src)
 }
 
 namespace_t *
-NSbuildView (namespace_t *orig)
+NSbuildView (const namespace_t *orig)
 {
     namespace_t *result;
     view_t *view;
@@ -327,6 +327,18 @@ NSbuildView (namespace_t *orig)
     view->next = dupView (orig->view);
 
     result = AddNamespaceToPool (global.modulename, view);
+
+    DBUG_RETURN (result);
+}
+
+bool
+NSisView (const namespace_t *ns)
+{
+    bool result;
+
+    DBUG_ENTER ("NSisView");
+
+    result = (ns->view != NULL);
 
     DBUG_RETURN (result);
 }
