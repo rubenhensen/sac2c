@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2005/07/27 14:57:57  sah
+ * fixed a minor bug
+ *
  * Revision 1.5  2005/07/27 10:39:55  sah
  * modified joining and splitting of wrappers
  * to allow for non-joined wrappers as are
@@ -299,7 +302,7 @@ SplitWrapper (node *fundef, info *arg_info)
          * Locally generated wrappers will have the correct namespace
          * anyways, so we do not need to care for that here
          */
-        if ((FUNDEF_SPECNS (fundef) != NULL) && containsLocalInstances (fundef)) {
+        if ((FUNDEF_SPECNS (fundef) != NULL) && containsLocalInstances (new_fundef)) {
             /*
              * store the SPECNS of the generic wrapper within the SPECNS
              * of the splitof wrapper. We cannot directly rename the
