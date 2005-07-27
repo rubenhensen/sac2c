@@ -1,5 +1,11 @@
 /*
  * $Log$
+ * Revision 1.23  2005/07/27 13:43:13  sah
+ * local functions and functionbodies should
+ * not be placed in the symbol table as they
+ * are never looked up by symbol name and clutter
+ * the namespace
+ *
  * Revision 1.22  2005/07/22 13:12:13  sah
  * small clean up
  *
@@ -424,7 +430,7 @@ SerializeFundefBody (node *fundef, info *info)
     INFO_SER_STACK (info) = SERbuildSerStack (FUNDEF_BODY (fundef));
 
     /*
-     * this flag indicates, whether we should link to the ais of an arg
+     * this flag indicates, whether we should link to the avis of an arg
      * directly using DSfetchArgAvis or by using the usual link
      * mechanism.
      * As we serialize the body, the head (including the args) is not in
@@ -435,27 +441,11 @@ SerializeFundefBody (node *fundef, info *info)
     INFO_SER_ARGAVISDIRECT (info) = TRUE;
 
     /*
-     * we do not store special funs (cond/loop)
-     * in the symbol lookup-table as they
-     * cannot be directly referenced.
+     * we do not store function bodies in the symbol
+     * table as they are never looked up by symbol
+     * name. Instead, the symbolid is always known
+     * by looking at the fundefs's signature
      */
-
-    if (!(FUNDEF_ISDOFUN (fundef) || FUNDEF_ISCONDFUN (fundef)
-          || FUNDEF_ISFOLDFUN (fundef))) {
-        stvisibility_t vis;
-
-        if (FUNDEF_ISEXPORTED (fundef)) {
-            vis = SVT_exported;
-        } else if (FUNDEF_ISPROVIDED (fundef)) {
-            vis = SVT_provided;
-        } else {
-            vis = SVT_local;
-        }
-
-        STadd (FUNDEF_NAME (fundef), vis, SERgenerateSerFunName (SET_funbody, fundef),
-               FUNDEF_ISWRAPPERFUN (fundef) ? SET_wrapperbody : SET_funbody,
-               INFO_SER_TABLE (info));
-    }
 
     GenerateSerFunHead (fundef, SET_funbody, info);
 
@@ -501,9 +491,15 @@ SerializeFundefHead (node *fundef, info *info)
             vis = SVT_local;
         }
 
-        STadd (FUNDEF_NAME (fundef), vis, FUNDEF_SYMBOLNAME (fundef),
-               FUNDEF_ISWRAPPERFUN (fundef) ? SET_wrapperhead : SET_funhead,
-               INFO_SER_TABLE (info));
+        /*
+         * only store those functions that are
+         * visible!
+         */
+        if (vis != SVT_local) {
+            STadd (FUNDEF_NAME (fundef), vis, FUNDEF_SYMBOLNAME (fundef),
+                   FUNDEF_ISWRAPPERFUN (fundef) ? SET_wrapperhead : SET_funhead,
+                   INFO_SER_TABLE (info));
+        }
     }
 
     GenerateSerFunHead (fundef, SET_funhead, info);
@@ -541,8 +537,14 @@ SerializeTypedef (node *tdef, info *info)
         vis = SVT_local;
     }
 
-    STadd (TYPEDEF_NAME (tdef), vis, TYPEDEF_SYMBOLNAME (tdef), SET_typedef,
-           INFO_SER_TABLE (info));
+    /*
+     * only add those typedefs to the
+     * table that are visible
+     */
+    if (vis != SVT_local) {
+        STadd (TYPEDEF_NAME (tdef), vis, TYPEDEF_SYMBOLNAME (tdef), SET_typedef,
+               INFO_SER_TABLE (info));
+    }
 
     GenerateSerFunHead (tdef, SET_typedef, info);
 
@@ -579,8 +581,14 @@ SerializeObjdef (node *objdef, info *info)
         vis = SVT_local;
     }
 
-    STadd (OBJDEF_NAME (objdef), vis, OBJDEF_SYMBOLNAME (objdef), SET_objdef,
-           INFO_SER_TABLE (info));
+    /*
+     * only add those objdefs to the table
+     * that are indeed visible
+     */
+    if (vis != SVT_local) {
+        STadd (OBJDEF_NAME (objdef), vis, OBJDEF_SYMBOLNAME (objdef), SET_objdef,
+               INFO_SER_TABLE (info));
+    }
 
     GenerateSerFunHead (objdef, SET_objdef, info);
 
