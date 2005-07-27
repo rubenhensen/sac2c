@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.19  2005/07/27 14:57:31  sah
+ * added better DBUG messages
+ *
  * Revision 1.18  2005/07/27 13:42:49  sah
  * functions contained in a view are never
  * exported or provided now
@@ -236,7 +239,9 @@ EXPfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EXPfundef");
 
-    DBUG_PRINT ("EXP", ("Processing Fundef %s...", CTIitemName (arg_node)));
+    DBUG_PRINT ("EXP", ("Processing %s %s...",
+                        (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "function"),
+                        CTIitemName (arg_node)));
 
     if (FUNDEF_ISLOCAL (arg_node)) {
         DBUG_PRINT ("EXP", ("...local fundef"));
@@ -321,7 +326,8 @@ EXPfundef (node *arg_node, info *arg_info)
         FUNDEF_ISPROVIDED (arg_node) = FALSE;
     }
 
-    DBUG_PRINT ("EXP", ("Fundef %s has final status %d/%d [PROVIDE/EXPORT].",
+    DBUG_PRINT ("EXP", ("%s %s has final status %d/%d [PROVIDE/EXPORT].",
+                        (FUNDEF_ISWRAPPERFUN (arg_node) ? "Wrapper" : "Function"),
                         CTIitemName (arg_node), FUNDEF_ISPROVIDED (arg_node),
                         FUNDEF_ISEXPORTED (arg_node)));
 
