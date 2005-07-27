@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.18  2005/07/27 10:40:53  sah
+ * enabled and disabled some
+ * optimisations to reflect
+ * current state of compiler
+ *
  * Revision 1.17  2005/05/31 13:38:17  mwe
  * sisi deactivated
  *
@@ -83,11 +88,11 @@
 #endif
 
 OPTIMIZE ("dcr", dcr, TRUE, TRUE, "dead code removal")
-OPTIMIZE ("cf", cf, FALSE, FALSE, "constant folding")
+OPTIMIZE ("cf", cf, TRUE, FALSE, "constant folding")
 OPTIMIZE ("lir", lir, TRUE, FALSE, "loop invariant removal")
-OPTIMIZE ("inl", inl, TRUE, TRUE, "function inlining")
-OPTIMIZE ("lur", lur, TRUE, FALSE, "loop unrolling")
-OPTIMIZE ("wlur", wlur, TRUE, FALSE, "with-loop unrolling")
+OPTIMIZE ("inl", inl, FALSE, FALSE, "function inlining")
+OPTIMIZE ("lur", lur, FALSE, FALSE, "loop unrolling")
+OPTIMIZE ("wlur", wlur, FALSE, FALSE, "with-loop unrolling")
 OPTIMIZE ("lus", lus, FALSE, FALSE, "loop unswitching")
 OPTIMIZE ("cse", cse, FALSE, FALSE, "common subexpression elimination")
 OPTIMIZE ("dfr", dfr, TRUE, TRUE, "dead function removal")
@@ -116,12 +121,12 @@ OPTIMIZE ("al", al, FALSE, FALSE, "associative law")
 OPTIMIZE ("sp", sp, FALSE, FALSE, "selection propagation")
 OPTIMIZE ("wlfs", wlfs, FALSE, FALSE, "with-loop fusion")
 OPTIMIZE ("lro", lro, TRUE, TRUE, "loop reuse optimization")
-OPTIMIZE ("tup", tup, TRUE, FALSE, "type upgrade")
+OPTIMIZE ("tup", tup, FALSE, FALSE, "type upgrade")
 OPTIMIZE ("sisi", sisi, FALSE, FALSE, "signature simplification")
-OPTIMIZE ("rtup", rtup, TRUE, FALSE, "reverse type upgrade")
-OPTIMIZE ("sfd", sfd, TRUE, FALSE, "static function dispatch")
-OPTIMIZE ("fsp", fsp, TRUE, FALSE, "function specilization")
-OPTIMIZE ("esd", esd, TRUE, FALSE, "eliminate substraction and division")
+OPTIMIZE ("rtup", rtup, FALSE, FALSE, "reverse type upgrade")
+OPTIMIZE ("sfd", sfd, FALSE, FALSE, "static function dispatch (tup)")
+OPTIMIZE ("fsp", fsp, FALSE, FALSE, "function specilization (tup)")
+OPTIMIZE ("esd", esd, FALSE, FALSE, "eliminate substraction and division")
 
 #undef OPTIMIZEstr
 #undef OPTIMIZEabbr
