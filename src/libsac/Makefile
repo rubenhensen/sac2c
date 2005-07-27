@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.24  2005/07/27 10:39:27  sah
+# enabled specialisation and optimisations
+#
 # Revision 3.23  2005/06/29 09:31:53  sbs
 # making of libsac2c made less verbose.
 #
@@ -140,7 +143,7 @@ libsac_mt.a: $(OBJS_LIBSAC_MT)
 
 
 libsac2c.so: sac2c.sac $(PROJECT_ROOT)/sac2c
-	sac2c -v0 -maxspec 0 -noopt -doDFR -O3 sac2c.sac
+	sac2c -v0 -O3 sac2c.sac
 
 $(PROJECT_ROOT)/sac2c:
 	cd $(PROJECT_ROOT); $(MAKE) sac2c
