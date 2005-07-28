@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2005/07/28 10:58:02  sah
+ * specialisation for used functions is handeled
+ * correctly now even in obscure cases
+ *
  * Revision 1.6  2005/07/27 14:57:57  sah
  * fixed a minor bug
  *
@@ -310,11 +314,6 @@ SplitWrapper (node *fundef, info *arg_info)
              * in CorrectFundefPointer on the bottom up traversal.
              */
             FUNDEF_SPECNS (new_fundef) = NSdupNamespace (FUNDEF_SPECNS (fundef));
-
-            FUNDEF_ISLOCAL (new_fundef) = TRUE;
-            FUNDEF_WASUSED (new_fundef) = FALSE;
-            FUNDEF_WASIMPORTED (new_fundef) = FALSE;
-            FUNDEF_SYMBOLNAME (new_fundef) = ILIBfree (FUNDEF_SYMBOLNAME (new_fundef));
         }
 
         FUNDEF_NEXT (new_fundef) = new_fundefs;
@@ -480,10 +479,30 @@ FundefMoveToFinalNs (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FundefMoveToFinalNs");
 
+    /*
+     * if the current wrapper has a SPECNS assign, this can have
+     * two reasons:
+     *
+     * a) a specialisation was added to this wrapper in
+     *    DoSpecialise
+     *
+     * b) this wrapper is a splitof of a wrapper built in create_wrappers
+     *    and a specialisation was assigned to the splitof part of the
+     *    generic wrapper.
+     *
+     * In both cases, we have to make sure that the wrapper gets the
+     * new namespace AND is made local, so that it will be compiled
+     * and serialized.
+     */
     if (FUNDEF_SPECNS (arg_node) != NULL) {
         FUNDEF_NS (arg_node) = NSfreeNamespace (FUNDEF_NS (arg_node));
         FUNDEF_NS (arg_node) = FUNDEF_SPECNS (arg_node);
         FUNDEF_SPECNS (arg_node) = NULL;
+
+        FUNDEF_ISLOCAL (arg_node) = TRUE;
+        FUNDEF_WASUSED (arg_node) = FALSE;
+        FUNDEF_WASIMPORTED (arg_node) = FALSE;
+        FUNDEF_SYMBOLNAME (arg_node) = ILIBfree (FUNDEF_SYMBOLNAME (arg_node));
     }
 
     DBUG_RETURN (arg_node);
