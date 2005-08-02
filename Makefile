@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.185  2005/08/02 14:23:38  ktr
+# added src/optimize/deadcodeinference.o
+#
 # Revision 3.184  2005/07/25 16:57:40  sbs
 # private_heap.o added.
 #
@@ -244,7 +247,7 @@ TYPECHECK= src/typecheck/gen_pseudo_fun.o \
 
 OPTIMIZE= src/optimize/optimize.o \
           src/optimize/DeadFunctionRemoval.o \
-          src/optimize/AssociativeLaw.o \
+          src/optimize/AssociativeLaw.o src/optimize/deadcodeinference.o \
           src/optimize/deadcoderemoval.o src/optimize/SSACSE.o \
           src/optimize/SSAConstantFolding.o src/optimize/SSALIR.o \
           src/optimize/SSALUR.o src/optimize/SSAInferLI.o \
