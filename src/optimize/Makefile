@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.43  2005/08/02 14:24:37  ktr
+# a seperate dead code inference traversal is now employed
+#
 # Revision 3.42  2005/07/19 16:57:14  ktr
 # replaced SSADeadCodeRemoval with deadcoderemoval.
 #
@@ -47,7 +50,7 @@ include $(PROJECT_ROOT)/Makefile.Config
 OBJS := optimize.o DeadFunctionRemoval.o deadcoderemoval.o \
         SSACSE.o SSAConstantFolding.o SSALIR.o SSALUR.o \
         SSAWLUnroll.o SSAInferLI.o AssociativeLaw.o rmcasts.o \
-        UndoElimSubDiv.o ElimSubDiv.o \
+        UndoElimSubDiv.o ElimSubDiv.o deadcodeinference.o \
         ConstVarPropagation.o DistributiveLaw.o type_upgrade.o \
         signature_simplification.o inlining.o
 

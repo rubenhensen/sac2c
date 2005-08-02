@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2005/08/02 14:24:37  ktr
+ * a seperate dead code inference traversal is now employed
+ *
  * Revision 1.5  2005/07/22 11:48:31  ktr
  * *** empty log message ***
  *
@@ -70,20 +73,16 @@
 #include "traverse.h"
 #include "free.h"
 #include "optimize.h"
-#include "DataFlowMask.h"
 
 /*
  * INFO structure
  */
 struct INFO {
     bool remassign;
-    dfmask_t *usedmask;
     node *assign;
     node *fundef;
     node *int_assign;
     node *ext_assign;
-    node *lacrets;
-    bool idsneeded;
     bool condremoved;
 };
 
@@ -91,13 +90,10 @@ struct INFO {
  * INFO macros
  */
 #define INFO_DCR_REMASSIGN(n) (n->remassign)
-#define INFO_DCR_USEDMASK(n) (n->usedmask)
 #define INFO_DCR_ASSIGN(n) (n->assign)
 #define INFO_DCR_FUNDEF(n) (n->fundef)
 #define INFO_DCR_INT_ASSIGN(n) (n->int_assign)
 #define INFO_DCR_EXT_ASSIGN(n) (n->ext_assign)
-#define INFO_DCR_LACRETS(n) (n->lacrets)
-#define INFO_DCR_IDSNEEDED(n) (n->idsneeded)
 #define INFO_DCR_CONDREMOVED(n) (n->condremoved)
 
 /*
@@ -113,13 +109,10 @@ MakeInfo ()
     result = ILIBmalloc (sizeof (info));
 
     INFO_DCR_REMASSIGN (result) = FALSE;
-    INFO_DCR_USEDMASK (result) = NULL;
     INFO_DCR_ASSIGN (result) = NULL;
     INFO_DCR_FUNDEF (result) = NULL;
     INFO_DCR_INT_ASSIGN (result) = NULL;
     INFO_DCR_EXT_ASSIGN (result) = NULL;
-    INFO_DCR_LACRETS (result) = NULL;
-    INFO_DCR_IDSNEEDED (result) = FALSE;
     INFO_DCR_CONDREMOVED (result) = FALSE;
 
     DBUG_RETURN (result);
@@ -169,20 +162,19 @@ DCRdoDeadCodeRemoval (node *fundef, node *module)
 /******************************************************************************
  *
  * function:
- *   node *RemoveUnusedReturnValues( node *exprs, node *rets)
+ *   node *RemoveUnusedReturnValues( node *exprs)
  *
  *****************************************************************************/
-node *
-RemoveUnusedReturnValues (node *exprs, node *rets)
+static node *
+RemoveUnusedReturnValues (node *exprs)
 {
     DBUG_ENTER ("RemoveUnusedReturnValues");
 
     if (EXPRS_NEXT (exprs) != NULL) {
-        EXPRS_NEXT (exprs)
-          = RemoveUnusedReturnValues (EXPRS_NEXT (exprs), RET_NEXT (rets));
+        EXPRS_NEXT (exprs) = RemoveUnusedReturnValues (EXPRS_NEXT (exprs));
     }
 
-    if (RET_WASREMOVED (rets)) {
+    if (AVIS_ISDEAD (ID_AVIS (EXPRS_EXPR (exprs)))) {
         exprs = FREEdoFreeNode (exprs);
     }
 
@@ -208,17 +200,22 @@ DCRfundef (node *arg_node, info *arg_info)
     DBUG_PRINT ("DCR",
                 ("\nstarting dead code removal in fundef %s.", FUNDEF_NAME (arg_node)));
 
-    if (FUNDEF_BODY (arg_node) != NULL) {
+    if ((!FUNDEF_ISLACFUN (arg_node)) || (arg_info != NULL)) {
 
-        if ((!FUNDEF_ISLACFUN (arg_node)) || (arg_info != NULL)) {
+        if (FUNDEF_BODY (arg_node) != NULL) {
             info *info;
-            dfmask_base_t *maskbase;
 
-            maskbase = DFMgenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
+            if (!FUNDEF_ISLACFUN (arg_node)) {
+                /*
+                 * Infere dead variables
+                 */
+                TRAVpush (TR_dci);
+                arg_node = TRAVdo (arg_node, NULL);
+                TRAVpop ();
+            }
 
             info = MakeInfo ();
             INFO_DCR_FUNDEF (info) = arg_node;
-            INFO_DCR_USEDMASK (info) = DFMgenMaskClear (maskbase);
 
             FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), info);
 
@@ -245,10 +242,7 @@ DCRfundef (node *arg_node, info *arg_info)
                 }
             }
 
-            INFO_DCR_USEDMASK (info) = DFMremoveMask (INFO_DCR_USEDMASK (info));
             info = FreeInfo (info);
-
-            maskbase = DFMremoveMaskBase (maskbase);
         }
     }
 
@@ -316,8 +310,7 @@ DCRarg (node *arg_node, info *arg_info)
      * If this argument is not actually needed, it is removed from
      * the ARG list along with the concrete argument in the function applications
      */
-    if (!DFMtestMaskEntry (INFO_DCR_USEDMASK (arg_info), NULL, ARG_AVIS (arg_node))) {
-
+    if (AVIS_ISDEAD (ARG_AVIS (arg_node))) {
         DBUG_PRINT ("DCR", ("remove arg %sa", ARG_NAME (arg_node)));
 
         arg_node = FREEdoFreeNode (arg_node);
@@ -391,7 +384,7 @@ DCRret (node *arg_node, info *arg_info)
      * If this argument is not actually needed, it is removed from
      * the RET list along with the concrete argument in the function applications
      */
-    if (RET_WASREMOVED (arg_node)) {
+    if (AVIS_ISDEAD (IDS_AVIS (LET_IDS (extlet)))) {
         DBUG_PRINT ("DCR", ("removing ret"));
 
         arg_node = FREEdoFreeNode (arg_node);
@@ -458,7 +451,7 @@ DCRvardec (node *arg_node, info *arg_info)
     }
 
     /* process vardec and remove it, if dead code */
-    if (!DFMtestMaskEntry (INFO_DCR_USEDMASK (arg_info), NULL, VARDEC_AVIS (arg_node))) {
+    if (AVIS_ISDEAD (VARDEC_AVIS (arg_node))) {
         DBUG_PRINT ("DCR", ("remove unused vardec %s", VARDEC_NAME (arg_node)));
         arg_node = FREEdoFreeNode (arg_node);
         dead_var++;
@@ -507,7 +500,6 @@ DCRassign (node *arg_node, info *arg_info)
  *   node *DCRreturn(node *arg_node , info *arg_info)
  *
  * description:
- *   starts traversal of return expressions to mark them as needed.
  *
  *****************************************************************************/
 node *
@@ -515,14 +507,7 @@ DCRreturn (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("DCRreturn");
 
-    if (FUNDEF_ISLACFUN (INFO_DCR_FUNDEF (arg_info))) {
-        RETURN_EXPRS (arg_node)
-          = RemoveUnusedReturnValues (RETURN_EXPRS (arg_node),
-                                      FUNDEF_RETS (INFO_DCR_FUNDEF (arg_info)));
-    }
-
-    /* mark returned identifiers as needed */
-    arg_node = TRAVcont (arg_node, arg_info);
+    RETURN_EXPRS (arg_node) = RemoveUnusedReturnValues (RETURN_EXPRS (arg_node));
 
     /* do not remove return instruction */
     INFO_DCR_REMASSIGN (arg_info) = FALSE;
@@ -536,14 +521,6 @@ DCRreturn (node *arg_node, info *arg_info)
  *   node *DCRlet(node *arg_node , info *arg_info)
  *
  * description:
- *  checks, if at least one of the left ids vardecs are needed. then this
- *  let is needed.
- *  a functions application of a special function requieres a special
- *  handling because you can remove parts of the results an modify the
- *  functions signature
- *  a RHS containing a primitive function application of type F_accu
- *  must never become dead code as we would lose the handle to the
- *  intermediate fold result (FIXES BUG #43)
  *
  *****************************************************************************/
 node *
@@ -552,41 +529,15 @@ DCRlet (node *arg_node, info *arg_info)
     DBUG_ENTER ("DCRlet");
 
     /*
-     * check for special function as N_ap expression
-     */
-    if (NODE_TYPE (LET_EXPR (arg_node)) == N_ap) {
-        if ((FUNDEF_ISLACFUN (AP_FUNDEF (LET_EXPR (arg_node))))
-            && (AP_FUNDEF (LET_EXPR (arg_node)) != INFO_DCR_FUNDEF (arg_info))) {
-            INFO_DCR_LACRETS (arg_info) = FUNDEF_RETS (AP_FUNDEF (LET_EXPR (arg_node)));
-        }
-    }
-
-    /*
      * Traverse lhs identifiers
      */
     if (LET_IDS (arg_node) != NULL) {
         LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
     }
-    INFO_DCR_LACRETS (arg_info) = NULL;
-
-    /*
-     * accu() must never become dead code
-     */
-    if ((NODE_TYPE (LET_EXPR (arg_node)) == N_prf)
-        && (PRF_PRF (LET_EXPR (arg_node)) == F_accu)) {
-        INFO_DCR_REMASSIGN (arg_info) = FALSE;
-    }
 
     if (!INFO_DCR_REMASSIGN (arg_info)) {
-        /* traverse right side of let (mark needed variables) */
+        /* traverse right side of let */
         LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
-
-        /* mark ALL left hand side identifiers as needed */
-        if (LET_IDS (arg_node) != NULL) {
-            INFO_DCR_IDSNEEDED (arg_info) = TRUE;
-            LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
-            INFO_DCR_IDSNEEDED (arg_info) = FALSE;
-        }
 
         /* Restore remassign information */
         INFO_DCR_REMASSIGN (arg_info) = FALSE;
@@ -603,7 +554,6 @@ DCRlet (node *arg_node, info *arg_info)
  * description:
  *   if application of special function (cond, do) traverse into this
  *   function except for recursive calls of the current function.
- *   traverse all arguments to marks them as needed
  *
  *****************************************************************************/
 node *
@@ -630,31 +580,6 @@ DCRap (node *arg_node, info *arg_info)
         }
     }
 
-    /* mark all args as needed */
-    if (AP_ARGS (arg_node) != NULL) {
-        AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *DCRid(node *arg_node , info *arg_info)
- *
- * description:
- *
- *
- *****************************************************************************/
-node *
-DCRid (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("DCRid");
-
-    /* Mark identifier as needed */
-    DFMsetMaskEntrySet (INFO_DCR_USEDMASK (arg_info), NULL, ID_AVIS (arg_node));
-
     DBUG_RETURN (arg_node);
 }
 
@@ -673,34 +598,14 @@ DCRids (node *arg_node, info *arg_info)
     DBUG_ENTER ("DCRids");
 
     /*
-     * Traverse ids bottom-up, always preserving the correct ret node
+     * Traverse ids bottom-up
      */
     if (IDS_NEXT (arg_node) != NULL) {
-        node *ret = NULL;
-
-        if (INFO_DCR_LACRETS (arg_info) != NULL) {
-            ret = INFO_DCR_LACRETS (arg_info);
-            INFO_DCR_LACRETS (arg_info) = RET_NEXT (ret);
-        }
         IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
-
-        INFO_DCR_LACRETS (arg_info) = ret;
     }
 
-    if (INFO_DCR_IDSNEEDED (arg_info)) {
-        /* preserve ids nodes still needed */
-        DFMsetMaskEntrySet (INFO_DCR_USEDMASK (arg_info), NULL, IDS_AVIS (arg_node));
-    } else {
-        if (DFMtestMaskEntry (INFO_DCR_USEDMASK (arg_info), NULL, IDS_AVIS (arg_node))) {
-            /* Variable is needed => preserve assignment */
-            INFO_DCR_REMASSIGN (arg_info) = FALSE;
-        } else {
-            /* Variable is not needed */
-            if (INFO_DCR_LACRETS (arg_info) != NULL) {
-                /* mark ret node of special function for removal */
-                RET_WASREMOVED (INFO_DCR_LACRETS (arg_info)) = TRUE;
-            }
-        }
+    if (!AVIS_ISDEAD (IDS_AVIS (arg_node))) {
+        INFO_DCR_REMASSIGN (arg_info) = FALSE;
     }
 
     DBUG_RETURN (arg_node);
@@ -712,18 +617,13 @@ DCRids (node *arg_node, info *arg_info)
  *   node *DCRcode(node *arg_node , info *arg_info)
  *
  * description:
- *   traverses exprs, block and next in this order
+ *   traverses block and next in this order
  *
  *****************************************************************************/
 node *
 DCRcode (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("DCRcode");
-
-    /* traverse expression */
-    if (CODE_CEXPRS (arg_node) != NULL) {
-        CODE_CEXPRS (arg_node) = TRAVdo (CODE_CEXPRS (arg_node), arg_info);
-    }
 
     /* traverse code block */
     if (CODE_CBLOCK (arg_node) != NULL) {
@@ -734,33 +634,6 @@ DCRcode (node *arg_node, info *arg_info)
     if (CODE_NEXT (arg_node) != NULL) {
         CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
     }
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *DCRwithid(node *arg_node , info *arg_info)
- *
- * description:
- *   marks index vector and identifier as needed to preserve them
- *   if they are not explicit used in Withloop.
- *   to do so these identifier are handeld like ids on the RIGHT side of
- *   an assignment.
- *
- *****************************************************************************/
-node *
-DCRwithid (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("DCRwithid");
-
-    INFO_DCR_IDSNEEDED (arg_info) = TRUE;
-
-    /* Traverse sons */
-    arg_node = TRAVcont (arg_node, arg_info);
-
-    INFO_DCR_IDSNEEDED (arg_info) = FALSE;
 
     DBUG_RETURN (arg_node);
 }
