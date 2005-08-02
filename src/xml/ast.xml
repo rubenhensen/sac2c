@@ -786,13 +786,28 @@
 	  <node name="Block" />
 	  <node name="Assign" />
 	  <node name="Let" />
-	  <node name="Id" />
 	  <node name="Ids" />
 	  <node name="Code" />
 	  <node name="Cond" />
-	  <node name="Withid" />
 	  <node name="Ap" />
 	  <node name="Return" />
+	</travuser>
+      </traversal>
+    <traversal id="DCI" name="Dead Code Inference" default="sons" include="deadcodeinference.h" >
+	<travuser>
+	  <node name="Fundef" />
+	  <node name="Arg" />
+	  <node name="Vardec" />
+	  <node name="Block" />
+	  <node name="Assign" />
+	  <node name="Return" />
+	  <node name="Cond" />
+	  <node name="Let" />
+	  <node name="Ap" />
+	  <node name="Id" />
+	  <node name="Ids" />
+	  <node name="Code" />
+	  <node name="Withid" />
 	</travuser>
       </traversal>
       <traversal id="DDEPEND" name="Detect Dependencies" default="sons" include="detectdependencies.h" >
