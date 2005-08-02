@@ -36,3 +36,4 @@ inlining.c
 inlining.h
 deadcoderemoval.c
 deadcoderemoval.h
+deadcodeinference.c
