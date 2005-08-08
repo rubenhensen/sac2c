@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2005/08/08 23:54:03  sah
+ * FUNDEF_RETURN is now set correctly and
+ * the code is a bit more commented now
+ *
  * Revision 1.1  2005/07/22 15:09:38  sah
  * Initial revision
  *
@@ -99,6 +103,17 @@ AFBdoAddFunctionBody (node *fundef)
  * Helper functions for deserialize traversal
  */
 
+/**
+ * @brief Looks up the SSACounter for the given arg in the given chain.
+ *        This is done by comparing the args name to the basename stored
+ *        in the SSACounter. As args are always the first occurence of
+ *        a name and thus never are renamed, this test suffices.
+ *
+ * @param cntchain chain of ssacounter nodes
+ * @param arg the arg node
+ *
+ * @return matching ssacounter node or NULL
+ */
 static node *
 LookUpSSACounter (node *cntchain, node *arg)
 {
@@ -120,18 +135,47 @@ LookUpSSACounter (node *cntchain, node *arg)
  * traversal functions
  */
 
+/**
+ * @brief continues traversal within the body of the fundef in order to
+ *        find the return node which is needed to set FUNDEF_RETURN
+ *        correctly. Furthermore, the SSACounters for the args are corrected.
+ *
+ * @param arg_node a fundef node
+ * @param arg_info info structure
+ *
+ * @return corrected fundef node
+ */
 node *
 AFBfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("AFBfundef");
 
-    arg_node = TRAVcont (arg_node, arg_info);
+    /*
+     * infer INFO_AFB_RETURN and INFO_AFB_SSACOUNTER
+     */
+    FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 
+    /*
+     * correct args ssa counters
+     */
+    FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
+
+    /*
+     * correct FUNDEF_RETURN
+     */
     FUNDEF_RETURN (arg_node) = INFO_AFB_RETURN (arg_info);
 
     DBUG_RETURN (arg_node);
 }
 
+/**
+ * @brief Sets INFO_AFB_RETURN to the current node.
+ *
+ * @param arg_node return node
+ * @param arg_info info structure
+ *
+ * @return non-modified return node
+ */
 node *
 AFBreturn (node *arg_node, info *arg_info)
 {
@@ -144,6 +188,15 @@ AFBreturn (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/**
+ * @brief Saves this blocks SSACounter in INFO_AFB_SSACOUNTER for
+ *        further reference.
+ *
+ * @param arg_node block node
+ * @param arg_info info structure
+ *
+ * @return unmodified block node
+ */
 node *
 AFBblock (node *arg_node, info *arg_info)
 {
@@ -159,6 +212,15 @@ AFBblock (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/**
+ * @brief restores the args SSACounter based on the information found
+ *        in INFO_AFB_SSACOUNTER.
+ *
+ * @param arg_node an arg node
+ * @param arg_info info structure
+ *
+ * @return corrected arg node
+ */
 node *
 AFBarg (node *arg_node, info *arg_info)
 {
