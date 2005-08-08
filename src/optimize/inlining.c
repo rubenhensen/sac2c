@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2005/08/08 17:29:08  sah
+ * added some DBUG_PRINTs
+ *
  * Revision 1.7  2005/07/15 15:57:02  sah
  * introduced namespaces
  *
@@ -321,6 +324,8 @@ node *
 INLap (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("INLap");
+
+    DBUG_PRINT ("INL", ("Processing call of fun %s", CTIitemName (AP_FUNDEF (arg_node))));
 
     if (AP_CONSIDERINLINE (arg_node)
         && (FUNDEF_INLINECOUNTER (AP_FUNDEF (arg_node))

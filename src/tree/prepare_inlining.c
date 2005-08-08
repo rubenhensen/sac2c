@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2005/08/08 17:29:08  sah
+ * added some DBUG_PRINTs
+ *
  * Revision 1.4  2005/05/17 11:36:46  cg
  * Comments added
  *
@@ -167,6 +170,10 @@ PINLarg (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PINLarg");
 
+    DBUG_PRINT ("PINL", ("formal parameter %s linked to argument %s",
+                         AVIS_NAME (ARG_AVIS (arg_node)),
+                         AVIS_NAME (ID_AVIS (EXPRS_EXPR (INFO_APARGS (arg_info))))));
+
     inline_lut = LUTinsertIntoLutP (inline_lut, ARG_AVIS (arg_node),
                                     ID_AVIS (EXPRS_EXPR (INFO_APARGS (arg_info))));
 
@@ -290,6 +297,9 @@ PINLavis (node *arg_node, info *arg_info)
     DBUG_ENTER ("PINLavis");
 
     name = ILIBtmpVarName (AVIS_NAME (arg_node));
+
+    DBUG_PRINT ("PINL", ("renaming %s to %s", AVIS_NAME (arg_node), name));
+
     ILIBfree (AVIS_NAME (arg_node));
     AVIS_NAME (arg_node) = name;
 
@@ -385,6 +395,10 @@ PINLid (node *arg_node, info *arg_info)
              * return-statement. This is the only purpose for storing the name
              * string in the LUT.
              */
+
+            DBUG_PRINT ("PINL", ("relinking return var %s to let var %s",
+                                 AVIS_NAME (ID_AVIS (arg_node)),
+                                 AVIS_NAME (IDS_AVIS (INFO_LETIDS (arg_info)))));
 
             inline_lut = LUTupdateLutP (inline_lut, ID_AVIS (arg_node),
                                         IDS_AVIS (INFO_LETIDS (arg_info)), NULL);
