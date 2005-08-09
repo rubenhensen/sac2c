@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2005/08/09 10:06:52  sah
+ * using CTIterminateCompilation instead of exit
+ * to make sure the tmpdir is removed and all
+ * the cleanup is done correctly
+ *
  * Revision 1.8  2005/07/15 15:57:02  sah
  * introduced namespaces
  *
@@ -43,6 +48,7 @@
 #include "filemgr.h"
 #include "internal_lib.h"
 #include "namespaces.h"
+#include "ctinfo.h"
 #include "dbug.h"
 
 /*
@@ -377,7 +383,7 @@ DEPdoPrintDependencies (node *syntax_tree)
         doPrintLibDependencies (syntax_tree);
     }
 
-    exit (0);
+    CTIterminateCompilation (PH_final, NULL, syntax_tree);
 
     DBUG_RETURN (syntax_tree);
 }

@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.20  2005/08/09 10:06:52  sah
+ * using CTIterminateCompilation instead of exit
+ * to make sure the tmpdir is removed and all
+ * the cleanup is done correctly
+ *
  * Revision 1.19  2005/07/27 13:40:40  sah
  * added missing include
  *
@@ -50,6 +55,7 @@
 #include "stringset.h"
 #include "internal_lib.h"
 #include "namespaces.h"
+#include "ctinfo.h"
 #include "free.h"
 
 static void
@@ -196,7 +202,7 @@ LIBSprintLibStat (char *libname)
      * the libstat information
      */
 
-    exit (0);
+    CTIterminateCompilation (PH_final, NULL, NULL);
 
     DBUG_VOID_RETURN;
 }
