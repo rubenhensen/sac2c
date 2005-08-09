@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.165  2005/08/09 09:41:30  sah
+ * AVIS_DECLTYPE is copied now, as well
+ *
  * Revision 3.164  2005/07/21 12:07:14  sbs
  * proper DUPping of LACINLINEs
  *
@@ -2889,6 +2892,7 @@ DUPavis (node *arg_node, info *arg_info)
     AVIS_SSAASSIGN (new_node)
       = LUTsearchInLutPp (INFO_DUP_LUT (arg_info), AVIS_SSAASSIGN (arg_node));
 
+    AVIS_DECLTYPE (new_node) = TYcopyType (AVIS_DECLTYPE (arg_node));
     AVIS_SSALPINV (new_node) = AVIS_SSALPINV (arg_node);
     AVIS_SSASTACK (new_node) = DUPTRAV (AVIS_SSASTACK (arg_node));
     AVIS_SSAUNDOFLAG (new_node) = AVIS_SSAUNDOFLAG (arg_node);
