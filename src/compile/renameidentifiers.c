@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  2005/08/09 09:43:18  sah
+ * AVIS_DECLTYPE is now used to rename fundefs
+ *
  * Revision 1.15  2005/07/26 12:43:52  sah
  * : in ns-names are replaced by _CL now
  *
@@ -589,9 +592,16 @@ RIDarg (node *arg_node, info *arg_info)
 
     /*
      * Here, a string representation for the argument types is built which
-     * is lateron used when renaming the function
+     * is lateron used when renaming the function. If present, we use
+     * the declared type here, as the ntype might have been modified (e.g.
+     * the udts might have been replaced) so that the resulting signature
+     * would not be unique anymore.
      */
-    ot = TYtype2OldType (ARG_NTYPE (arg_node));
+    if (AVIS_DECLTYPE (ARG_AVIS (arg_node)) != NULL) {
+        ot = TYtype2OldType (AVIS_DECLTYPE (ARG_AVIS (arg_node)));
+    } else {
+        ot = TYtype2OldType (ARG_NTYPE (arg_node));
+    }
     ARG_TYPESTRING (arg_node) = CVtype2String (ot, 2, TRUE);
     ot = FREEfreeOneTypes (ot);
 
