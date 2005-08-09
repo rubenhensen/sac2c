@@ -2,6 +2,9 @@
 
 <!--
   $Log$
+  Revision 1.18  2005/08/09 14:16:39  jhb
+  set the is* function to the begin
+
   Revision 1.17  2005/07/13 11:48:29  jhb
   some bugs fixed
 
@@ -147,6 +150,11 @@ static info *FreeInfo(info *info)
       */
     </xsl:text>
     <xsl:value-of select="$newline"/>
+
+    <xsl:apply-templates select="//nodesets/nodeset">
+      <xsl:sort select="@name"/>
+    </xsl:apply-templates>
+
     <xsl:apply-templates select="//syntaxtree/node" mode="function">
       <xsl:sort select="@name"/>
     </xsl:apply-templates>
@@ -159,9 +167,7 @@ static info *FreeInfo(info *info)
     </xsl:apply-templates>
     <xsl:value-of select="' } attr_list;'"/>
     <xsl:value-of select="$newline"/>
-    <xsl:apply-templates select="//nodesets/nodeset">
-      <xsl:sort select="@name"/>
-    </xsl:apply-templates>
+
   </xsl:template>
  
 
