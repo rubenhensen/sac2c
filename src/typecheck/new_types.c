@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.102  2005/08/09 10:16:36  sah
+ * AVIS_DECLTYPE handeled correctly when fixing
+ * wrapper types
+ *
  * Revision 3.101  2005/08/09 09:43:03  sah
  * enhanced a DBUG_PRINT
  *
@@ -5791,6 +5795,8 @@ TYcorrectWrapperArgTypes (node *args, ntype *type)
         DBUG_ASSERT ((TYisFun (type)), "no TC_fun found!");
         DBUG_ASSERT ((NTYPE_ARITY (type) == 1), "multiple FUN_IBASE found!");
 
+        AVIS_TYPE (ARG_AVIS (args)) = TYfreeType (AVIS_TYPE (ARG_AVIS (args)));
+
         if (ARG_ISARTIFICIAL (args) || ARG_ISREFERENCE (args)) {
             AVIS_TYPE (ARG_AVIS (args))
               = TYmakeAKS (TYcopyType (IBASE_BASE (FUN_IBASE (type, 0))),
@@ -5799,6 +5805,9 @@ TYcorrectWrapperArgTypes (node *args, ntype *type)
             AVIS_TYPE (ARG_AVIS (args))
               = TYmakeAUD (TYcopyType (IBASE_BASE (FUN_IBASE (type, 0))));
         }
+
+        AVIS_DECLTYPE (ARG_AVIS (args)) = TYfreeType (AVIS_DECLTYPE (ARG_AVIS (args)));
+        AVIS_DECLTYPE (ARG_AVIS (args)) = TYcopyType (AVIS_TYPE (ARG_AVIS (args)));
 
         type = IRES_TYPE (IBASE_GEN (FUN_IBASE (type, 0)));
         ARG_NEXT (args) = TYcorrectWrapperArgTypes (ARG_NEXT (args), type);
