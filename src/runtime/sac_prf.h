@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.24  2005/08/09 18:54:28  ktr
+ * removed faulty implementation of idx_shape_sel and shape_sel
+ *
  * Revision 3.23  2005/02/16 09:58:13  ktr
  * Typo fixed for Bodo.
  *
@@ -295,17 +298,6 @@
                                          SAC_ND_READ (from2_NT, SAC_i)), );              \
         }                                                                                \
     }
-
-#define SAC_ND_PRF_IDX_SHAPE_SEL__DATA(to_NT, to_sdim, from_NT, from_sdim, scl)          \
-    SAC_TR_PRF_PRINT (("ND_PRF_IDX_SHAPE_SEL__...( %s, %d, %s, %d, %s)\n",               \
-                       NT_STR (to_NT), to_sdim, NT_STR (from_NT), from_sdim, #scl))      \
-    SAC_ND_CREATE__SCALAR__DATA (to_NT, SAC_ND_A_SHAPE (from_NT, scl))
-
-#define SAC_ND_PRF_SHAPE_SEL__DATA(to_NT, to_sdim, from_NT, from_sdim, from2_NT)         \
-    SAC_TR_PRF_PRINT (("ND_PRF_IDX_SHAPE_SEL__...( %s, %d, %s, %d, %s)\n",               \
-                       NT_STR (to_NT), to_sdim, NT_STR (from_NT), from_sdim, from2_NT))  \
-    SAC_ND_CREATE__SCALAR__DATA (to_NT,                                                  \
-                                 SAC_ND_A_SHAPE (from_NT, SAC_ND_READ (from2_NT, 0)))
 
 #define SAC_ND_PRF_IS_REUSED(to_NT, from_NT, from2_NT)                                   \
     CAT17 (SAC_ND_PRF_IS_REUSED__, NT_SHP (from_NT) BuildArgs3 (to_NT, from_NT, from2_NT))
