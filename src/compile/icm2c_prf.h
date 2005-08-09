@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2005/08/09 18:55:15  ktr
+ * F_shape_sel and F_idx_shape_sel are implemented by means of C-ICMs now
+ *
  * Revision 1.4  2004/11/21 22:04:36  ktr
  * Ismop SacDevCamp 04
  *
@@ -74,5 +77,11 @@ extern void ICMCompileND_PRF_DROP__DATA (char *to_NT, int to_sdim, char *from_NT
 
 extern void ICMCompileND_PRF_CAT__SHAPE (char *to_NT, int to_sdim, char *from1_NT,
                                          int from1_sdim, char *from2_NT, int from2_sdim);
+
+extern void ICMCompileND_PRF_SHAPE_SEL__DATA_id (char *to_NT, int to_sdim, char *from_NT,
+                                                 int from_sdim, char *idx_NT);
+
+extern void ICMCompileND_PRF_IDX_SHAPE_SEL__DATA (char *to_NT, int to_sdim, char *from_NT,
+                                                  int from_sdim, char *idx_ANY);
 
 #endif /* _SAC_ICM2C_PRF_H_ */

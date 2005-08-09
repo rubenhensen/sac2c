@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.19  2005/08/09 18:55:15  ktr
+ * F_shape_sel and F_idx_shape_sel are implemented by means of C-ICMs now
+ *
  * Revision 1.18  2005/06/29 16:04:02  ktr
  * cleaned up implementation of modarray as all copying is now performed by a
  * seperate copy prf.
@@ -951,6 +954,154 @@ ICMCompileND_PRF_IDX_SEL__DATA (char *to_NT, int to_sdim, char *from_NT, int fro
                           fprintf (global.outfile,
                                    "SAC_ND_WRITE_READ_COPY( %s, SAC_i, %s, SAC_j, %s)\n",
                                    to_NT, from_NT, copyfun););
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   void ICMCompileND_PRF_SHAPE_SEL__DATA_id( char *to_NT, int to_sdim,
+ *                                             char *from_NT, int from_sdim,
+ *                                             char *idx_NT)
+ *
+ * Description:
+ *   implements the compilation of the following ICM:
+ *
+ *   ND_PRF_SHAPE_SEL__DATA_id( to_NT, to_sdim, from_NT, from_sdim,
+ *                              idx_NT)
+ *
+ ******************************************************************************/
+
+void
+ICMCompileND_PRF_SHAPE_SEL__DATA_id (char *to_NT, int to_sdim, char *from_NT,
+                                     int from_sdim, char *idx_NT)
+{
+    int i;
+
+    DBUG_ENTER ("ICMCompileND_PRF_SHAPE_SEL__DATA_id");
+
+#define ND_PRF_SHAPE_SEL__DATA_id
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef ND_PRF_SHAPE_SEL__DATA_id
+
+    INDENT;
+    fprintf (global.outfile,
+             "SAC_TR_PRF_PRINT("
+             " (\"ND_PRF_SHAPE_SEL__DATA( %s, %d, %s, %d, %s)\"))\n",
+             to_NT, to_sdim, from_NT, from_sdim, idx_NT);
+
+    ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) == 1", idx_NT);
+                     , fprintf (global.outfile, "1st argument of %s is not a vector!",
+                                global.prf_string[F_shape_sel]););
+    ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_SIZE( %s) == 1", idx_NT);
+                     , fprintf (global.outfile,
+                                "Length of index vector used for %s is not one!",
+                                global.prf_string[F_shape_sel]););
+
+    /*
+     * IFF array is aks AND index is given by an id, then we cannot use
+     * SAC_ND_A_SHAPE
+     */
+    if (from_sdim >= 0) {
+        for (i = 0; i < from_sdim; i++) {
+            INDENT;
+            fprintf (global.outfile, "if ( %d == SAC_ND_READ( %s ,0)) ", i, idx_NT);
+            fprintf (global.outfile,
+                     "{ SAC_ND_CREATE__SCALAR__DATA( %s, SAC_ND_A_SHAPE( %s, %d)) } "
+                     "else\n",
+                     to_NT, from_NT, i);
+        }
+        INDENT;
+        fprintf (global.outfile, "SAC_RuntimeError(\"Illegal shape access!\");\n");
+    } else {
+        INDENT;
+        fprintf (global.outfile,
+                 "SAC_ND_CREATE__SCALAR__DATA( %s,"
+                 "SAC_ND_A_DESC_SHAPE( %s, SAC_ND_READ( %s ,0)))\n",
+                 to_NT, from_NT, idx_NT);
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   void ICMCompileND_PRF_IDX_SHAPE_SEL__DATA( char *to_NT, int to_sdim,
+ *                                              char *from_NT, int from_sdim,
+ *                                              char *idx_ANY)
+ *
+ * Description:
+ *   implements the compilation of the following ICM:
+ *
+ *   ND_PRF_IDX_SHAPE_SEL__DATA( to_NT, to_sdim, from_NT, from_sdim, idx_ANY)
+ *
+ ******************************************************************************/
+
+void
+ICMCompileND_PRF_IDX_SHAPE_SEL__DATA (char *to_NT, int to_sdim, char *from_NT,
+                                      int from_sdim, char *idx_ANY)
+{
+    int i;
+
+    DBUG_ENTER ("ICMCompileND_PRF_IDX_SHAPE_SEL__DATA");
+
+#define ND_PRF_IDX_SHAPE_SEL__DATA
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef ND_PRF_IDX_SHAPE_SEL__DATA
+
+    /*
+     * CAUTION:
+     * 'idx_ANY' is either a tagged identifier (representing a scalar)
+     * or a constant scalar!
+     */
+
+    INDENT;
+    fprintf (global.outfile,
+             "SAC_TR_PRF_PRINT("
+             " (\"ND_PRF_IDX_SHAPE_SEL__DATA( %s, %d, %s, %d, %s)\"))\n",
+             to_NT, to_sdim, from_NT, from_sdim, idx_ANY);
+
+    if (idx_ANY[0] == '(') {
+        ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) == 0", idx_ANY);
+                         , fprintf (global.outfile, "1st argument of %s is not a scalar!",
+                                    global.prf_string[F_idx_shape_sel]););
+    }
+
+    /*
+     * if the index is given by an id, we cannot use SAC_ND_A_SHAPE
+     */
+    if (idx_ANY[0] == '(') {
+        if (from_sdim >= 0) {
+            for (i = 0; i < from_sdim; i++) {
+                INDENT;
+                fprintf (global.outfile, "if ( %d == ", i);
+                ReadScalar (idx_ANY, NULL, 0);
+                fprintf (global.outfile,
+                         ") { SAC_ND_CREATE__SCALAR__DATA( %s, SAC_ND_A_SHAPE( %s, %d)) "
+                         "} else\n",
+                         to_NT, from_NT, i);
+            }
+            INDENT;
+            fprintf (global.outfile, "SAC_RuntimeError(\"Illegal shape access!\");\n");
+        } else {
+            INDENT;
+            fprintf (global.outfile,
+                     "SAC_ND_CREATE__SCALAR__DATA( %s, SAC_ND_A_DESC_SHAPE( %s, ", to_NT,
+                     from_NT);
+            ReadScalar (idx_ANY, NULL, 0);
+            fprintf (global.outfile, "))\n");
+        }
+    } else {
+        INDENT;
+        fprintf (global.outfile, "SAC_ND_CREATE__SCALAR__DATA( %s, SAC_ND_A_SHAPE( %s, ",
+                 to_NT, from_NT);
+        ReadScalar (idx_ANY, NULL, 0);
+        fprintf (global.outfile, "))\n");
     }
 
     DBUG_VOID_RETURN;

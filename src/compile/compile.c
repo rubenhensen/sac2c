@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.167  2005/08/09 18:55:15  ktr
+ * F_shape_sel and F_idx_shape_sel are implemented by means of C-ICMs now
+ *
  * Revision 3.166  2005/07/15 15:57:02  sah
  * introduced namespaces
  *
@@ -3884,7 +3887,6 @@ COMPPrfShapeSel (node *arg_node, info *arg_info)
 {
     node *arg1, *arg2;
     node *let_ids;
-    int dim;
     node *ret_node;
 
     DBUG_ENTER ("COMPPrfShapeSel");
@@ -3893,20 +3895,31 @@ COMPPrfShapeSel (node *arg_node, info *arg_info)
     arg1 = PRF_ARG1 (arg_node);
     arg2 = PRF_ARG2 (arg_node);
 
-    DBUG_ASSERT (((NODE_TYPE (arg1) == N_id) || (NODE_TYPE (arg1) == N_num)),
+    DBUG_ASSERT (((NODE_TYPE (arg1) == N_id) || (NODE_TYPE (arg1) == N_array)),
                  "1st arg of F_shape_sel is neither N_id nor N_num!");
     DBUG_ASSERT ((NODE_TYPE (arg2) == N_id), "2nd arg of F_shape_sel is no N_id!");
 
-    /* shape_sel() can only return scalars!!! */
-    dim = TCgetDim (IDS_TYPE (let_ids));
-    DBUG_ASSERT ((dim == 0), "shape_sel can only return scalars!");
-
-    ret_node = TCmakeAssignIcm3 ("ND_PRF_SHAPE_SEL__DATA",
-                                 MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                                               FALSE, TRUE, FALSE, NULL),
-                                 MakeTypeArgs (ID_NAME (arg2), ID_TYPE (arg2), FALSE,
-                                               TRUE, FALSE, NULL),
-                                 TBmakeExprs (DUPdupIdNt (arg1), NULL), NULL);
+    if (NODE_TYPE (arg1) == N_id) {
+        ret_node = TCmakeAssignIcm3 ("ND_PRF_SHAPE_SEL__DATA_id",
+                                     MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                                   FALSE, TRUE, FALSE, NULL),
+                                     MakeTypeArgs (ID_NAME (arg2), ID_TYPE (arg2), FALSE,
+                                                   TRUE, FALSE, NULL),
+                                     TBmakeExprs (DUPdupIdNt (arg1), NULL), NULL);
+    } else {
+        /*
+         * NODE_TYPE( arg_1) == N_array
+         */
+        ret_node = TCmakeAssignIcm3 ("ND_PRF_IDX_SHAPE_SEL__DATA",
+                                     MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                                   FALSE, TRUE, FALSE, NULL),
+                                     MakeTypeArgs (ID_NAME (arg2), ID_TYPE (arg2), FALSE,
+                                                   TRUE, FALSE, NULL),
+                                     TBmakeExprs (DUPdupNodeNt (
+                                                    EXPRS_EXPR (ARRAY_AELEMS (arg1))),
+                                                  NULL),
+                                     NULL);
+    }
 
     DBUG_RETURN (ret_node);
 }
@@ -3929,7 +3942,6 @@ COMPPrfIdxShapeSel (node *arg_node, info *arg_info)
 {
     node *arg1, *arg2;
     node *let_ids;
-    int dim;
     node *ret_node;
 
     DBUG_ENTER ("COMPPrfIdxShapeSel");
@@ -3942,16 +3954,12 @@ COMPPrfIdxShapeSel (node *arg_node, info *arg_info)
                  "1st arg of F_idx_shape_sel is neither N_id nor N_num!");
     DBUG_ASSERT ((NODE_TYPE (arg2) == N_id), "2nd arg of F_idx_shape_sel is no N_id!");
 
-    /* idx_shape_sel() can only return scalars!!! */
-    dim = TCgetDim (IDS_TYPE (let_ids));
-    DBUG_ASSERT ((dim == 0), "idx_shape_sel can only return scalars!");
-
     ret_node = TCmakeAssignIcm3 ("ND_PRF_IDX_SHAPE_SEL__DATA",
                                  MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
                                                FALSE, TRUE, FALSE, NULL),
                                  MakeTypeArgs (ID_NAME (arg2), ID_TYPE (arg2), FALSE,
                                                TRUE, FALSE, NULL),
-                                 TBmakeExprs (DupExpr_NT_AddReadIcms (arg1), NULL), NULL);
+                                 TBmakeExprs (DUPdupNodeNt (arg1), NULL), NULL);
 
     DBUG_RETURN (ret_node);
 }
