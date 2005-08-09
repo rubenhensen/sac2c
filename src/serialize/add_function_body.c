@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2005/08/09 12:20:34  sah
+ * fixed a bug in handling functions with zero arguments
+ *
  * Revision 1.2  2005/08/08 23:54:03  sah
  * FUNDEF_RETURN is now set correctly and
  * the code is a bit more commented now
@@ -158,7 +161,9 @@ AFBfundef (node *arg_node, info *arg_info)
     /*
      * correct args ssa counters
      */
-    FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
+    if (FUNDEF_ARGS (arg_node) != NULL) {
+        FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
+    }
 
     /*
      * correct FUNDEF_RETURN
