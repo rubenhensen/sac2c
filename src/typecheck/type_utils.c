@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  2005/08/09 10:17:05  sah
+ * argtypes2UnknownAUD now processes DECLTYPE as well
+ *
  * Revision 1.16  2005/07/21 12:02:24  ktr
  * added TUdimKnown
  *
@@ -198,6 +201,10 @@ TUargtypes2unknownAUD (node *args)
     while (tmp != NULL) {
         ARG_NTYPE (tmp) = TYfreeType (ARG_NTYPE (tmp));
         ARG_NTYPE (tmp) = TYmakeAUD (TYmakeSimpleType (T_unknown));
+
+        AVIS_DECLTYPE (ARG_AVIS (tmp)) = TYfreeType (AVIS_DECLTYPE (ARG_AVIS (tmp)));
+        AVIS_DECLTYPE (ARG_AVIS (tmp)) = TYcopyType (ARG_NTYPE (tmp));
+
         tmp = ARG_NEXT (tmp);
     }
 
