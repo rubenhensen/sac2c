@@ -4,6 +4,9 @@
 /*
 *
 * $Log$
+* Revision 1.45  2005/08/09 09:41:49  sah
+* AVIS_DECLTYPE is set for args now
+*
 * Revision 1.44  2005/07/15 15:57:02  sah
 * introduced namespaces
 *
@@ -731,6 +734,8 @@ varargs: arg COMMA args
 arg: ntype ID
      { $$ = TBmakeArg( TBmakeAvis( $2, $1), NULL);
 
+       AVIS_DECLTYPE( ARG_AVIS( $$)) = TYcopyType( $1);
+
        DBUG_PRINT( "PARSE",
                    ("%s: "F_PTR", Id: %s ",
                     global.mdb_nodetype[ NODE_TYPE( $$)],
@@ -741,6 +746,8 @@ arg: ntype ID
    | ntype AMPERS ID
      { $$ = TBmakeArg( TBmakeAvis( $3, $1), NULL);
        ARG_ISREFERENCE( $$) = TRUE;
+
+       AVIS_DECLTYPE( ARG_AVIS( $$)) = TYcopyType( $1);
 
        DBUG_PRINT( "PARSE",
                    ("%s: "F_PTR", Id: %s, Attrib: %d ",
