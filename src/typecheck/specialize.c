@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.30  2005/08/09 09:42:09  sah
+ * AVIS_DECLTYPE is updated now as well
+ *
  * Revision 1.29  2005/07/27 14:59:39  sah
  * a wrapper may have ISLOCAL set, but be from
  * another namespace. changed checks accordingly
@@ -220,9 +223,10 @@ SpecializationOracle (node *wrapper, node *fundef, ntype *args, dft_res *dft)
  *    Here, we assume that all argument types are either array types or
  *    type variables with identical Min and Max!
  *    This function replaces the old type siganture (in the N_arg nodes)
- *    by the MINIMUM of the old type and the given argument types (arg_ts),
- *    and updates the function type ( FUNDEF_WRAPPERTYPE( fundef) ) as well.
+ *    by the MINIMUM of the old type and the given argument types (arg_ts).
  *    Such a minimum MUST exist as we want to specialize the function!!
+ *    Furthermore, the declared type is updated as well, as a specialisation
+ *    basically is a new function declaration.
  *    It returns the modified N_fundef node.
  *
  ******************************************************************************/
@@ -260,6 +264,8 @@ UpdateFixSignature (node *fundef, ntype *arg_ts)
             new_type = old_type;
         }
         AVIS_TYPE (ARG_AVIS (args)) = new_type;
+        AVIS_DECLTYPE (ARG_AVIS (args)) = TYfreeType (AVIS_DECLTYPE (ARG_AVIS (args)));
+        AVIS_DECLTYPE (ARG_AVIS (args)) = TYcopyType (new_type);
 
         args = ARG_NEXT (args);
         i++;
