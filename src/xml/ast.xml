@@ -3713,6 +3713,15 @@
             <all />
           </phases>
         </attribute>
+	<attribute name="DeclType" mandatory="no" default="NULL">
+	  <description>
+	    stores the declared type, iff present.
+	  </description>
+	  <type name="NewType" />
+	  <phases>
+	    <all />
+	  </phases>
+	</attribute>
         <attribute name="SSACount" mandatory="no">
           <type name="Link">
             <target>
