@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2005/08/09 12:18:01  sah
+ * fixed a DBUG message
+ *
  * Revision 1.7  2005/07/22 13:11:39  sah
  * interface changes
  *
@@ -85,6 +88,7 @@ PPIfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PPIfundef");
 
+    DBUG_PRINT ("PPI", ("processing '%s'", CTIitemName (arg_node)));
     /*
      * we fetch bodies for functions which are
      * A) inline, thus the body is needed for inlining
@@ -100,8 +104,7 @@ PPIfundef (node *arg_node, info *arg_info)
             INFO_PPI_FETCHED (arg_info)++;
 
             DBUG_PRINT ("PPI",
-                        ("fetched function body for '%s:%s'",
-                         NSgetName (FUNDEF_NS (arg_node)), FUNDEF_NAME (arg_node)));
+                        ("fetched function body for '%s'", CTIitemName (arg_node)));
         } else {
             char *funsig = TUtypeSignature2String (arg_node);
 
