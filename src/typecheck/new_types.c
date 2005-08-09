@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.101  2005/08/09 09:43:03  sah
+ * enhanced a DBUG_PRINT
+ *
  * Revision 3.100  2005/07/26 12:45:13  sah
  * added TYfoldFunctionInstances
  * added TYcontainsAlpha
@@ -5496,11 +5499,13 @@ TYtype2OldType (ntype *new)
 
     DBUG_ENTER ("Type2OldType");
 
+    DBUG_EXECUTE ("NTY", tmp_str = TYtype2DebugString (new, FALSE, 0););
+    DBUG_PRINT ("NTY", ("converting %s", tmp_str));
+
     res = Type2OldType (new);
 
-    DBUG_EXECUTE ("NTY", tmp_str = TYtype2DebugString (new, FALSE, 0););
     DBUG_EXECUTE ("NTY", tmp_str2 = CVtype2String (res, 0, TRUE););
-    DBUG_PRINT ("NTY", ("converting %s into %s", tmp_str, tmp_str2));
+    DBUG_PRINT ("NTY", ("... result is %s", tmp_str2));
     DBUG_EXECUTE ("NTY", tmp_str = ILIBfree (tmp_str););
     DBUG_EXECUTE ("NTY", tmp_str2 = ILIBfree (tmp_str2););
 
