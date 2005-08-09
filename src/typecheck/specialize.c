@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.31  2005/08/09 09:48:59  sah
+ * added a comment
+ *
  * Revision 1.30  2005/08/09 09:42:09  sah
  * AVIS_DECLTYPE is updated now as well
  *
@@ -264,6 +267,15 @@ UpdateFixSignature (node *fundef, ntype *arg_ts)
             new_type = old_type;
         }
         AVIS_TYPE (ARG_AVIS (args)) = new_type;
+        /*
+         * the declared type is set to the infered type here.
+         * as these usually do not differ for args at this stage
+         * of compilation, this should not be a problem. Be aware
+         * that when using the specialisation system after the
+         * typechecker, this assumption may not be true anymore!
+         * especially after replacing udts by their basetypes, the
+         * inferred type cannot be simply copied!
+         */
         AVIS_DECLTYPE (ARG_AVIS (args)) = TYfreeType (AVIS_DECLTYPE (ARG_AVIS (args)));
         AVIS_DECLTYPE (ARG_AVIS (args)) = TYcopyType (new_type);
 
