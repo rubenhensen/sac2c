@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.38  2005/08/10 19:13:59  sbs
+ * adjusted calls to TEmakeInfo
+ *
  * Revision 1.37  2005/07/21 12:02:59  ktr
  * removed AVIS_WITHID
  *
@@ -2284,7 +2287,7 @@ TUPmodarray (node *arg_node, info *arg_info)
         DBUG_ASSERT ((TYisArray (expr)), "array type expected");
     }
 
-    info = TEmakeInfo (global.linenum, "with", "", "modarray", NULL, NULL, NULL, NULL);
+    info = TEmakeInfo (global.linenum, TE_with, "modarray");
     prod = TYmakeProductType (3, idx, array, expr);
 
     tmp = NTCCTwl_mod (info, prod);
@@ -2327,7 +2330,7 @@ TUPgenarray (node *arg_node, info *arg_info)
     }
 
     prod = TYmakeProductType (4, idx, shp, expr, dexpr);
-    info = TEmakeInfo (global.linenum, "with", "", "genarray", NULL, NULL, NULL, NULL);
+    info = TEmakeInfo (global.linenum, TE_with, "genarray");
 
     tmp = NTCCTwl_gen (info, prod);
 
@@ -2365,7 +2368,7 @@ TUPfold (node *arg_node, info *arg_info)
     DBUG_ASSERT ((TYisArray (expr)), "non array node!");
 
     prod = TYmakeProductType (2, neutr, expr);
-    info = TEmakeInfo (global.linenum, "with", "", "fold", NULL, NULL, NULL, NULL);
+    info = TEmakeInfo (global.linenum, TE_with, "fold");
 
     tmp = NTCCTwl_fold (info, prod);
 
@@ -2483,8 +2486,7 @@ TUParray (node *arg_node, info *arg_info)
         num_elems = TYgetProductSize (elems);
         if (num_elems > 0) {
 
-            info = TEmakeInfo (global.linenum, "prf", "", "array-constructor", NULL, NULL,
-                               NULL, NULL);
+            info = TEmakeInfoPrf (global.linenum, TE_prf, "array-constructor", NULL);
             type = NTCCTprf_array (info, elems);
 
         } else {
@@ -2554,8 +2556,8 @@ TUPprf (node *arg_node, info *arg_info)
         args = INFO_TUP_TYPE (arg_info);
         INFO_TUP_TYPE (arg_info) = NULL;
 
-        info = TEmakeInfo (global.linenum, "prf", "", global.prf_string[prf], NULL, NULL,
-                           global.ntc_cffuntab[prf], NULL);
+        info = TEmakeInfoPrf (global.linenum, TE_prf, global.prf_string[prf],
+                              global.ntc_cffuntab[prf]);
         res = NTCCTcomputeType (global.ntc_funtab[prf], info, args);
 
         TYfreeType (args);
