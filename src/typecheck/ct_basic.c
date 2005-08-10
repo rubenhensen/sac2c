@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2005/08/10 19:09:16  sbs
+ * changed handling of conds
+ * branches are checked in new_typecheck.c since SDcontradictions would
+ * lead to re-checking of those (cf. bug no 105)
+ *
  * Revision 1.9  2005/07/03 17:09:04  ktr
  * Initialized a variable.
  *
@@ -81,9 +86,11 @@ NTCCTcomputeType (ct_funptr CtFun, te_info *info, ntype *args)
     DBUG_EXECUTE ("NTC", tmp_str = TYtype2String (args, 0, 0););
     DBUG_PRINT ("NTC",
                 ("computing type of %s \"%s%s%s\" applied to %s", TEgetKindStr (info),
-                 TEgetModStr (info),
-                 ((TEgetModStr (info) == NULL) || (TEgetModStr (info)[0] == 0)) ? ""
-                                                                                : ":",
+                 ((TEgetKind (info) == TE_udf) || (TEgetKind (info) == TE_foldf)
+                    ? TEgetModStr (info)
+                    : ""),
+                 ((TEgetKind (info) == TE_udf) || (TEgetKind (info) == TE_foldf) ? "::"
+                                                                                 : ""),
                  TEgetNameStr (info), tmp_str));
     DBUG_EXECUTE ("NTC", ILIBfree (tmp_str););
 
@@ -154,8 +161,6 @@ NTCCTcond (te_info *err_info, ntype *args)
 {
     ntype *pred;
     ntype *res = NULL;
-    node *cond;
-    info *arg_info;
     char *err_msg;
 
     DBUG_ENTER ("NTCCTcond");
@@ -164,18 +169,10 @@ NTCCTcond (te_info *err_info, ntype *args)
     pred = TYgetProductMember (args, 0);
     TEassureBoolS ("predicate", pred);
     err_msg = TEfetchErrors ();
+
     if (err_msg != NULL) {
         CTIabort (err_msg);
     } else {
-
-        cond = TEgetWrapper (err_info);
-        arg_info = (info *)TEgetAssign (err_info);
-
-        DBUG_PRINT ("NTC", ("traversing then branch..."));
-        COND_THEN (cond) = TRAVdo (COND_THEN (cond), arg_info);
-        DBUG_PRINT ("NTC", ("traversing else branch..."));
-        COND_ELSE (cond) = TRAVdo (COND_ELSE (cond), arg_info);
-
         res = TYmakeProductType (0);
     }
 
