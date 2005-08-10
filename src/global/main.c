@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.111  2005/08/10 11:57:46  sbs
+ * added breaking facility after PH_pretypecheck
+ *
  * Revision 3.110  2005/07/25 10:22:33  sah
  * phase system is used for import/export and tc now
  *
@@ -323,6 +326,8 @@ main (int argc, char *argv[])
     PHASE_DONE_EPILOG;
     PHASE_EPILOG;
 
+    if (global.break_after == PH_pretypecheck)
+        goto BREAK;
     global.compiler_phase++;
 
     /*
