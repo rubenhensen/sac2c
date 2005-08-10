@@ -1,5 +1,10 @@
 /*
  * $Log$
+ * Revision 1.17  2005/08/10 19:10:32  sbs
+ * changed type of te_info
+ * changed ILIBmalloc to PHPmalloc
+ * added variants of TEmakeInfo
+ *
  * Revision 1.16  2005/07/15 15:57:02  sah
  * introduced namespaces
  *
@@ -81,14 +86,20 @@ extern void TEassureSameSimpleType (char *obj1, ntype *type1, char *obj2, ntype 
 extern void TEassureSameScalarType (char *obj1, ntype *type1, char *obj2, ntype *type2);
 extern ntype *TEassureSameShape (char *obj1, ntype *type1, char *obj2, ntype *type2);
 
-extern te_info *TEmakeInfo (int linenum, char *kind_str, const char *mod_str,
-                            const char *name_str, node *wrapper, node *assign,
-                            const void *cffun, te_info *parent);
+extern te_info *TEmakeInfo (int linenum, te_kind_t kind, const char *name_str);
+extern te_info *TEmakeInfoUdf (int linenum, te_kind_t kind, const char *mod_str,
+                               const char *name_str, node *wrapper, node *assign,
+                               te_info *parent);
+extern te_info *TEmakeInfoPrf (int linenum, te_kind_t kind, const char *name_str,
+                               const void *cffun);
+extern void TEfreeAllTypeErrorInfos ();
+
 extern void TEhandleError (int line, const char *format, ...);
 extern char *TEfetchErrors ();
 extern void TEextendedAbort ();
 extern int TEgetLine (te_info *info);
 extern char *TEgetKindStr (te_info *info);
+extern te_kind_t TEgetKind (te_info *info);
 extern const char *TEgetModStr (te_info *info);
 extern const char *TEgetNameStr (te_info *info);
 extern node *TEgetWrapper (te_info *info);

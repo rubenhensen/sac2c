@@ -1,5 +1,10 @@
 /*
  * $Log$
+ * Revision 1.24  2005/08/10 19:10:32  sbs
+ * changed type of te_info
+ * changed ILIBmalloc to PHPmalloc
+ * added variants of TEmakeInfo
+ *
  * Revision 1.23  2005/07/15 15:57:02  sah
  * introduced namespaces
  *
@@ -89,26 +94,43 @@
 #include "tree_compound.h"
 #include "new_types.h"
 #include "new_typecheck.h"
+#include "private_heap.h"
+
+static char *kind_str[] = {"udf", "prf", "cond", "wl", "with", "fold_fun"};
+static heap *tinfo_heap = NULL;
+
+struct TE_INFO_UDF {
+    const char *mod_str; /* optional module name */
+    node *wrapper;       /* pointer to the wrapper function */
+    node *assign;        /* pointer to the assign node of the ap */
+    struct TE_INFO *chn; /* pointer to the info of the caller */
+};
+
+struct TE_INFO_PRF {
+    const void *cffun;
+    ; /* pointer to the CF function of the prf */
+};
 
 struct TE_INFO {
     int line;             /* line where the application is situated */
-    char *kind_str;       /* kind of function we are dealing with */
-    const char *mod_str;  /* optional module name */
+    te_kind_t kind;       /* kind of function we are dealing with */
     const char *name_str; /* name of the function */
-    node *wrapper;        /* for udfs, this pointer points to the wrapper function */
-    node *assign;         /* for udfs, this pointer points to the assign node of the ap */
-    const void *cffun;   /* for prfs, this pointer points to the CF function of the prf */
-    struct TE_INFO *chn; /* for udfs, this pointer points to the info of the caller */
+    union {
+        struct TE_INFO_UDF udf;
+        struct TE_INFO_PRF prf;
+    } info;
 };
 
 #define TI_LINE(n) (n->line)
-#define TI_KIND(n) (n->kind_str)
-#define TI_MOD(n) (n->mod_str)
+#define TI_KIND(n) (n->kind)
+#define TI_MOD(n) (n->info.udf.mod_str)
 #define TI_NAME(n) (n->name_str)
-#define TI_FUNDEF(n) (n->wrapper)
-#define TI_ASSIGN(n) (n->assign)
-#define TI_CFFUN(n) (n->cffun)
-#define TI_CHN(n) (n->chn)
+#define TI_FUNDEF(n) (n->info.udf.wrapper)
+#define TI_ASSIGN(n) (n->info.udf.assign)
+#define TI_CHN(n) (n->info.udf.chn)
+#define TI_CFFUN(n) (n->info.prf.cffun)
+
+#define TI_KIND_STR(n) (kind_str[TI_KIND (n)])
 
 /******************************************************************************
  ***
@@ -214,24 +236,63 @@ MatchNumA (ntype *type)
  ******************************************************************************/
 
 te_info *
-TEmakeInfo (int linenum, char *kind_str, const char *mod_str, const char *name_str,
-            node *wrapper, node *assign, const void *cffun, te_info *parent)
+TEmakeInfo (int linenum, te_kind_t kind, const char *name_str)
 {
     te_info *res;
 
     DBUG_ENTER ("TEmakeInfo");
 
-    res = (te_info *)ILIBmalloc (sizeof (te_info));
+    if (tinfo_heap == NULL) {
+        tinfo_heap = PHPcreateHeap (sizeof (te_info), 1000);
+    }
+
+    res = (te_info *)PHPmalloc (tinfo_heap);
+
     TI_LINE (res) = linenum;
-    TI_KIND (res) = kind_str;
-    TI_MOD (res) = mod_str;
+    TI_KIND (res) = kind;
     TI_NAME (res) = name_str;
+
+    DBUG_RETURN (res);
+}
+
+te_info *
+TEmakeInfoUdf (int linenum, te_kind_t kind, const char *mod_str, const char *name_str,
+               node *wrapper, node *assign, te_info *parent)
+{
+    te_info *res;
+
+    DBUG_ENTER ("TEmakeInfo");
+
+    res = TEmakeInfo (linenum, kind, name_str);
+    TI_MOD (res) = mod_str;
     TI_FUNDEF (res) = wrapper;
     TI_ASSIGN (res) = assign;
-    TI_CFFUN (res) = cffun;
     TI_CHN (res) = parent;
 
     DBUG_RETURN (res);
+}
+
+te_info *
+TEmakeInfoPrf (int linenum, te_kind_t kind, const char *name_str, const void *cffun)
+{
+    te_info *res;
+
+    DBUG_ENTER ("TEmakeInfo");
+
+    res = TEmakeInfo (linenum, kind, name_str);
+    TI_CFFUN (res) = cffun;
+
+    DBUG_RETURN (res);
+}
+
+void
+TEfreeAllTypeErrorInfos ()
+{
+    DBUG_ENTER ("TEfreeAllTypeErrorInfos");
+
+    tinfo_heap = PHPfreeHeap (tinfo_heap);
+
+    DBUG_VOID_RETURN;
 }
 
 int
@@ -241,11 +302,17 @@ TEgetLine (te_info *info)
     DBUG_RETURN (TI_LINE (info));
 }
 
+te_kind_t
+TEgetKind (te_info *info)
+{
+    DBUG_ENTER ("TEgetKind");
+    DBUG_RETURN (TI_KIND (info));
+}
 char *
 TEgetKindStr (te_info *info)
 {
     DBUG_ENTER ("TEgetKindStr");
-    DBUG_RETURN (TI_KIND (info));
+    DBUG_RETURN (TI_KIND_STR (info));
 }
 
 const char *
@@ -298,24 +365,29 @@ TEgetNumRets (te_info *info)
 
     DBUG_ENTER ("TEgetNumRets");
 
-    if (TEgetWrapper (info) == NULL) {
-        /**
-         * we are dealing with a CTprf case here!
-         */
+    switch (TI_KIND (info)) {
+    case TE_udf:
+        wrapper = TEgetWrapper (info);
+        num_res = TCcountRets (FUNDEF_RETS (wrapper));
+        break;
+    case TE_prf:
         num_res = 1;
-    } else {
-        if (NODE_TYPE (TEgetWrapper (info)) == N_fundef) {
-            /**
-             * we are dealing with CTudf here!
-             */
-            wrapper = TEgetWrapper (info);
-            num_res = TCcountRets (FUNDEF_RETS (wrapper));
-        } else {
-            /**
-             * we are dealing with a CTcond case here!
-             */
-            num_res = 0;
-        }
+        break;
+    case TE_cond:
+        num_res = 0;
+        break;
+    case TE_generator:
+        num_res = 1;
+        break;
+    case TE_with:
+        num_res = 1;
+        break;
+    case TE_foldf:
+        num_res = 1;
+        break;
+    default:
+        DBUG_ASSERT (FALSE, "illegal TI_KIND in info!");
+        break;
     }
 
     DBUG_RETURN (num_res);
