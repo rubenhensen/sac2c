@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.30  2005/08/10 19:13:33  sbs
+ * added te_kind_t
+ *
  * Revision 1.29  2005/07/25 16:43:39  sbs
  * heap and php_cmp_fun added.
  *
@@ -793,6 +796,8 @@ typedef enum { TY_symb, TY_user } type_conversion_flag;
  *
  * moved from type_errors.h
  */
+
+typedef enum { TE_udf, TE_prf, TE_cond, TE_generator, TE_with, TE_foldf } te_kind_t;
 
 typedef struct TE_INFO te_info;
 
