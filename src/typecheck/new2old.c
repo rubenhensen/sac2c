@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.42  2005/08/10 19:08:46  sbs
+ * frees now te_infos as well.
+ *
  * Revision 1.41  2005/07/26 16:03:07  sbs
  * frees the tvar and sig_dep heaps now.
  *
@@ -401,11 +404,12 @@ NT2OTdoTransform (node *arg_node)
     TRAVpop ();
 
     /**
-     * Since all alpha types are gone now, we may may free all tvars and all
-     *  sig_deps:
+     * Since all alpha types are gone now, we may may free all tvars, all
+     *  sig_deps, and all te_infos:
      */
     SSIfreeAllTvars ();
     SDfreeAllSignatureDependencies ();
+    TEfreeAllTypeErrorInfos ();
 
     DBUG_RETURN (arg_node);
 }
