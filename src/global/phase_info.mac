@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.35  2005/08/11 13:00:10  sbs
+ * changed some subphase specifiers
+ *
  * Revision 3.34  2005/07/25 10:22:33  sah
  * phase system is used for import/export and tc now
  *
@@ -229,11 +232,11 @@ PHASE (pretypecheck, "Converting to static single assignment form", PHdummy)
 
 SUBPHASE (rst, "rst", "Processing user defined types", RSTdoResolveSymbolTypes)
 
-SUBPHASE (insvd, "insvd", "Inserting variable declarations", INSVDdoInsertVardec)
+SUBPHASE (insvd, "ivd", "Inserting variable declarations", INSVDdoInsertVardec)
 
-SUBPHASE (crtwrp, "crtwrp", "Creating wrapper functions", CRTWRPdoCreateWrappers)
+SUBPHASE (crtwrp, "cwr", "Creating wrapper functions", CRTWRPdoCreateWrappers)
 
-SUBPHASE (lac2fun, "lac2fun", "Eliminating loops and conditionals", L2FdoLac2Fun)
+SUBPHASE (lac2fun, "l2f", "Eliminating loops and conditionals", L2FdoLac2Fun)
 
 SUBPHASE (ssa, "ssa", "Establishing static single assignment form",
           SSATdoTransformAllowGOs)
@@ -242,11 +245,11 @@ SUBPHASE (ssa, "ssa", "Establishing static single assignment form",
 
 PHASE (typecheck, "Running type inference system", PHdummy)
 
-SUBPHASE (tc, "tc", "Running type inference system", NTCdoNewTypeCheck)
+SUBPHASE (tc, "ntc", "Running type inference system", NTCdoNewTypeCheck)
 
 SUBPHASE (ds, "ds", "Deserializing code", PHdummy)
 
-SUBPHASE (nt2ot, "nt2ot", "Finalising infered type information", NT2OTdoTransform)
+SUBPHASE (nt2ot, "n2o", "Finalising infered type information", NT2OTdoTransform)
 
 SUBPHASE (swr, "swr", "Splitting Wrappers", SWRdoSplitWrappers)
 
@@ -280,10 +283,9 @@ PHASE (elimudt, "Eliminating User-Defined Types and Creating Wrapper Code", PHdu
 
 SUBPHASE (cwc, "cwc", "Creating Wrapper Bodies", CWCdoCreateWrapperCode)
 
-SUBPHASE (lac2funwc, "lac2funwc", "Eliminating conditionals in wrapper code",
-          L2FdoLac2Fun)
+SUBPHASE (lac2funwc, "l2f", "Eliminating conditionals in wrapper code", L2FdoLac2Fun)
 
-SUBPHASE (ssawc, "ssawc", "Establishing static single assignment form in wrapper code",
+SUBPHASE (ssawc, "ssa", "Establishing static single assignment form in wrapper code",
           SSATdoTransformAllowGOs)
 
 SUBPHASE (dfc, "dfc", "Trying to dispatch staticly", DFCdoDispatchFunCalls)
