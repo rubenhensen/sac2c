@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.226  2005/08/11 13:48:37  sbs
+ * changed PRTstr so that C compliant strings will be printed including proper escape
+ * characters. However, currently only quotes are supported :-)
+ *
  * Revision 3.225  2005/07/18 17:49:38  sbs
  * output of FUNDEF_INT and FUNDEF_EXT eliminated
  *
@@ -2776,13 +2780,26 @@ PRTbool (node *arg_node, info *arg_info)
 node *
 PRTstr (node *arg_node, info *arg_info)
 {
+    char *s;
+
     DBUG_ENTER ("PRTstr");
 
     if (NODE_ERROR (arg_node) != NULL) {
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
     }
 
-    fprintf (global.outfile, "\"%s\"", STR_STRING (arg_node));
+    s = STR_STRING (arg_node);
+
+    putc ('\"', global.outfile);
+    while (s[0] != '\0') {
+        if (s[0] == '\"') {
+            fprintf (global.outfile, "\\\"");
+        } else {
+            putc (s[0], global.outfile);
+        }
+        s++;
+    }
+    putc ('\"', global.outfile);
 
     DBUG_RETURN (arg_node);
 }
