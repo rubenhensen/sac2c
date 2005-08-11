@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.81  2005/08/11 13:00:30  sbs
+ * adjusted the description of the break specifiers prior the optimizations
+ * to the reality
+ *
  * Revision 3.80  2005/07/03 17:08:18  ktr
  * changed PH_flatten to PH_simplify
  *
@@ -201,29 +205,40 @@ USGprintUsage ()
 
     printf ("\n");
 
-    PRINT_BREAK_SPEC (PH_typecheck, "ivd", "Stop after inserting vardecs.");
-    PRINT_BREAK_SPEC (PH_typecheck, "cwr", "Stop after creating wrappers.");
-    PRINT_BREAK_SPEC (PH_typecheck, "l2f",
+    PRINT_BREAK_SPEC (PH_pretypecheck, "rst", "Stop after resolving symbol types.");
+    PRINT_BREAK_SPEC (PH_pretypecheck, "ivd", "Stop after inserting vardecs.");
+    PRINT_BREAK_SPEC (PH_pretypecheck, "cwr", "Stop after creating wrappers.");
+    PRINT_BREAK_SPEC (PH_pretypecheck, "l2f",
                       "Stop after converting loops and conditionals into");
     CONT_BREAK_SPEC ("functions.");
-    PRINT_BREAK_SPEC (PH_typecheck, "ssa", "Stop after converting into SSA form.");
-    PRINT_BREAK_SPEC (PH_typecheck, "ntc", "Stop after infering all types.");
-    PRINT_BREAK_SPEC (PH_typecheck, "cwc",
-                      "Stop after creating SAC code for wrapper functions.");
-    PRINT_BREAK_SPEC (PH_typecheck, "n2o",
-                      "Stop after computing old type representation.");
+    PRINT_BREAK_SPEC (PH_pretypecheck, "ssa", "Stop after converting into SSA form.");
 
     printf ("\n");
 
-    PRINT_BREAK_SPEC (PH_wlenhance, "l2f",
+    PRINT_BREAK_SPEC (PH_typecheck, "ntc", "Stop after infering all types.");
+    PRINT_BREAK_SPEC (PH_typecheck, "ds", "Stop after deserializing code.");
+    PRINT_BREAK_SPEC (PH_typecheck, "n2o",
+                      "Stop after computing old type representation.");
+    PRINT_BREAK_SPEC (PH_typecheck, "swr", "Stop after splitting wrappers.");
+
+    printf ("\n");
+
+    PRINT_BREAK_SPEC (PH_elimudt, "cwc",
+                      "Stop after creating SAC code for wrapper functions.");
+    PRINT_BREAK_SPEC (PH_elimudt, "l2f",
                       "Stop after converting loops and conditionals into");
     CONT_BREAK_SPEC ("functions.");
-    PRINT_BREAK_SPEC (PH_wlenhance, "ssa", "Stop after converting into SSA form.");
-    PRINT_BREAK_SPEC (PH_wlenhance, "ea", "Stop after inserting explicit accumulation.");
-    PRINT_BREAK_SPEC (PH_wlenhance, "cf", "Stop after constant folding.");
+    PRINT_BREAK_SPEC (PH_elimudt, "ssa", "Stop after converting into SSA form.");
+    PRINT_BREAK_SPEC (PH_elimudt, "dfc",
+                      "Stop after trying to dispatch function calls statically.");
+    PRINT_BREAK_SPEC (PH_elimudt, "eudt", "Stop after eliminating user-defined types.");
+
+    printf ("\n");
+
+    PRINT_BREAK_SPEC (PH_wlenhance, "accu",
+                      "Stop after inserting explicit accumulation.");
+    PRINT_BREAK_SPEC (PH_wlenhance, "wldp", "Stop after adding default partitions.");
     PRINT_BREAK_SPEC (PH_wlenhance, "wlpg", "Stop after with-loop partition generation.");
-    PRINT_BREAK_SPEC (PH_wlenhance, "ussa", "Stop after undo SSA transformation.");
-    PRINT_BREAK_SPEC (PH_wlenhance, "f2l", "Stop after transf. into LaC representation.");
 
     printf ("\n");
 
