@@ -1164,9 +1164,10 @@
           <node name="Assign" />
           <node name="Ap" />
           <node name="Cond" />
-          <node name="Do" />
-          <node name="Let" />
         </travuser>
+	<traverror>
+          <node name="Do" />
+	</traverror>
       </traversal>
       <traversal id="EMAL" name="Allocation" default="none" include="alloc.h" >
         <travuser>
