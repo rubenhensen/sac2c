@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2005/08/11 07:40:56  ktr
+ * funcond nodes are now handled correctly as well
+ *
  * Revision 1.1  2005/06/30 16:40:32  ktr
  * Initial revision
  *
@@ -25,7 +28,5 @@ extern node *ASDfundef (node *arg_node, info *arg_info);
 extern node *ASDassign (node *arg_node, info *arg_info);
 extern node *ASDap (node *arg_node, info *arg_info);
 extern node *ASDcond (node *arg_node, info *arg_info);
-extern node *ASDdo (node *arg_node, info *arg_info);
-extern node *ASDlet (node *arg_node, info *arg_info);
 
 #endif /* _SAC_AUD_SCL_DISTINCTION_H_ */
