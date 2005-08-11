@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 3.103  2005/08/11 13:52:21  sbs
+ * changed the placement of bottom types.
+ * These are no longer subtypes of ALL types but only subtypes of all
+ * non-AKV types. This is a pre-requisite for using AKV types as basis
+ * for CF!
+ *
  * Revision 3.102  2005/08/09 10:16:36  sah
  * AVIS_DECLTYPE handeled correctly when fixing
  * wrapper types
@@ -1097,8 +1103,8 @@ TYmakeUnionType (ntype *t1, ntype *t2)
  * description:
  *   Functions for creating product types. Note here, that this function, like
  *   all MakeXYZ and GetXYZ functions consumes its arguments!!
- *   At the time being, only array types, bottom types, or type variables may be given as
- *   arguments.
+ *   At the time being, only array types, bottom types, or type variables
+ *   may be given as arguments.
  *   The first version is useful in all situations where the number of
  *   components is statically known. However, in many situations this is not
  *   the case. In these situations, the latter two functions are to be used.
@@ -3553,6 +3559,8 @@ TYcmpTypes (ntype *t1, ntype *t2)
     case TC_bottom:
         if (NTYPE_CON (t2) == TC_bottom) {
             res = TY_eq;
+        } else if (NTYPE_CON (t2) == TC_akv) {
+            res = TY_hcs;
         } else {
             res = TY_lt;
         }
@@ -3582,7 +3590,7 @@ TYcmpTypes (ntype *t1, ntype *t2)
     case TC_akv:
         switch (NTYPE_CON (t2)) {
         case TC_bottom:
-            res = TY_gt;
+            res = TY_hcs;
             break;
         case TC_akv:
             if (TYcmpTypes (AKV_BASE (t1), AKV_BASE (t2)) == TY_eq) {
@@ -3828,6 +3836,13 @@ TYlubOfTypes (ntype *t1, ntype *t2)
         break;
     case TY_hcs:
         switch (NTYPE_CON (t1)) {
+        case TC_bottom:
+            /**
+             * we need to increase the non-bottom type. Hence, we switch
+             * the arguments.
+             */
+            res = TYlubOfTypes (t2, t1);
+            break;
         case TC_akv:
             new_t1 = TYmakeAKS (TYcopyType (AKV_BASE (t1)),
                                 SHcopyShape (COgetShape (AKV_CONST (t1))));
