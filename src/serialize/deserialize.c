@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.27  2005/08/11 16:54:46  sah
+ * hack to prevent specialisations from beeing imported
+ *
  * Revision 1.26  2005/07/27 10:39:08  sah
  * added some DBUG_PRINTS
  *
@@ -383,7 +386,19 @@ updateContextInformation (node *entry)
          * information for fundefs
          */
         if (INFO_DS_IMPORTMODE (DSstate)) {
-            FUNDEF_WASIMPORTED (entry) = TRUE;
+            /*
+             * this is a hack somehow, but for the time
+             * being the best solution. We never mark
+             * specialised as imported to prevent them
+             * to be added to the local wrapper and thus
+             * resolve the multiple-instances by specialisation
+             * problem.
+             *
+             * HACK: sah
+             */
+            if (!FUNDEF_ISSPECIALISATION (entry)) {
+                FUNDEF_WASIMPORTED (entry) = TRUE;
+            }
         } else {
             FUNDEF_WASUSED (entry) = TRUE;
         }
