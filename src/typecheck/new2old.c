@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.43  2005/08/11 13:50:39  sbs
+ * changed the lifting of bottom types when type_error applications are built
+ * Now, the result type is at least AKS
+ *
  * Revision 1.42  2005/08/10 19:08:46  sbs
  * frees now te_infos as well.
  *
@@ -171,6 +175,7 @@
 #include "new_typecheck.h"
 #include "new_types.h"
 #include "type_utils.h"
+#include "type_errors.h"
 #include "ssi.h"
 #include "sig_deps.h"
 
@@ -298,7 +303,7 @@ AddTypeError (node *assign, node *bottom_id, ntype *other_type)
      * Finally, we change the type of bottom_id to other_type.
      */
     AVIS_TYPE (ID_AVIS (bottom_id)) = TYfreeType (AVIS_TYPE (ID_AVIS (bottom_id)));
-    AVIS_TYPE (ID_AVIS (bottom_id)) = TYcopyType (other_type);
+    AVIS_TYPE (ID_AVIS (bottom_id)) = TYeliminateAKV (other_type);
     /**
      * and we eliminate the defining N_let:
      */
