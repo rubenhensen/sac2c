@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.25  2005/08/16 14:41:33  sbs
+ * added assignment in TEgetNumRets just to please gcc
+ *
  * Revision 1.24  2005/08/10 19:10:32  sbs
  * changed type of te_info
  * changed ILIBmalloc to PHPmalloc
@@ -387,6 +390,7 @@ TEgetNumRets (te_info *info)
         break;
     default:
         DBUG_ASSERT (FALSE, "illegal TI_KIND in info!");
+        num_res = 0; /* just to please gcc 8-) */
         break;
     }
 
