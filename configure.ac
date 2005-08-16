@@ -1,5 +1,10 @@
 dnl
 dnl $Log$
+dnl Revision 1.46  2005/08/16 15:32:44  sah
+dnl now, sabcmd is used if present and xsltproc
+dnl is the fallback. this is due some bugs in
+dnl older xsltproc versions
+dnl
 dnl Revision 1.45  2005/07/18 09:38:21  ktr
 dnl added check for available xslt engines
 dnl
@@ -292,7 +297,7 @@ dnl search for flex or lex
 AC_PROG_LEX()
 
 dnl search for xlst engine
-AC_CHECK_PROGS(XSLT, [xsltproc sabcmd], [!fail])
+AC_CHECK_PROGS(XSLT, [sabcmd xsltproc], [!fail])
 
 dnl search for malloc.h
 AC_CHECK_HEADERS(malloc.h)
