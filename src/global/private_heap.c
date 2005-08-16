@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2005/08/16 14:38:31  sbs
+ * eliminated bug in PHPfindElem
+ *
  * Revision 1.3  2005/07/26 16:02:07  sbs
  * PHPfreeHeap may be called with NULL ptr now.
  *
@@ -145,14 +148,15 @@ void *
 PHPfindElem (heap *private_heap, php_cmp_fun fun, void *elem)
 {
     bool found = FALSE;
-    void *this;
-    int i;
+    void *this = NULL;
+    int i = 0;
 
     DBUG_ENTER ("PHPfindElem");
 
     while ((i < HEAP_NUM_ELEMS (private_heap)) && !found) {
         this = (void *)(HEAP_DATA (private_heap) + HEAP_ELEM_SIZE (private_heap) * i);
         found = fun (this, elem);
+        i++;
     }
     if (!found) {
         if (HEAP_NEXT (private_heap) == NULL) {
