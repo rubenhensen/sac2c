@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2005/08/16 13:33:58  sah
+ * fixed a dbug print
+ *
  * Revision 3.11  2004/12/08 21:25:01  ktr
  * DFMtestMaskEntry now returns bool instead of int.
  *
@@ -1198,7 +1201,7 @@ DFMsetMaskEntrySet (mask_t *mask, const char *id, node *avis)
                   } else {
                       fprintf (stderr,
                                "DFMsetMaskEntrySet called for declaration of %s\n",
-                               VARDEC_NAME (decl));
+                               DECL_NAME (decl));
                   });
 
     CHECK_MASK (mask);
