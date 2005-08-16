@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2005/08/16 13:31:11  sah
+ * udts in return-types are handeled correctly by the module
+ * system now
+ *
  * Revision 1.8  2005/06/15 12:41:38  sah
  * fixed symbol gathering
  *
@@ -46,6 +50,7 @@ extern node *USSdoUseSymbols (node *modul);
 extern node *USStypedef (node *arg_node, info *arg_info);
 extern node *USSfold (node *arg_node, info *arg_info);
 extern node *USSavis (node *arg_node, info *arg_info);
+extern node *USSret (node *arg_node, info *arg_info);
 extern node *USSspap (node *arg_node, info *arg_info);
 extern node *USSspmop (node *arg_node, info *arg_info);
 extern node *USSspid (node *arg_node, info *arg_info);

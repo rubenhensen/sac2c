@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.20  2005/08/16 13:31:11  sah
+ * udts in return-types are handeled correctly by the module
+ * system now
+ *
  * Revision 1.19  2005/07/15 15:57:02  sah
  * introduced namespaces
  *
@@ -222,6 +226,20 @@ USSavis (node *arg_node, info *arg_info)
     if (AVIS_TYPE (arg_node) != NULL) {
         AVIS_TYPE (arg_node) = USSntype (AVIS_TYPE (arg_node), arg_info);
     }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+USSret (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("USSret");
+
+    if (RET_TYPE (arg_node) != NULL) {
+        RET_TYPE (arg_node) = USSntype (RET_TYPE (arg_node), arg_info);
+    }
+
+    arg_node = TRAVcont (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }
