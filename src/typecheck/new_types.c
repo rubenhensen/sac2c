@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.104  2005/08/16 13:35:16  sah
+ * added a dbugmessage
+ *
  * Revision 3.103  2005/08/11 13:52:21  sbs
  * changed the placement of bottom types.
  * These are no longer subtypes of ALL types but only subtypes of all
@@ -6326,10 +6329,17 @@ CreateWrapperCode (ntype *type, dft_state *state, int lower, char *funname, node
     node *assigns;
     node *tmp_ass;
     int i;
+#ifndef DBUG_OFF
+    char *dbug_str;
+#endif
 
     DBUG_ENTER ("CreateWrapperCode");
 
     DBUG_ASSERT ((type != NULL), "no type found!");
+
+    DBUG_EXECUTE ("NTY", dbug_str = TYtype2DebugString (type, TRUE, 0););
+    DBUG_PRINT ("NTY", ("building wrapper for type: %s\n", dbug_str));
+    DBUG_EXECUTE ("NTY", dbug_str = ILIBfree (dbug_str););
 
     switch (TYgetConstr (type)) {
     case TC_fun:
