@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.194  2005/08/16 13:34:39  sah
+ * fixed declaration of DECL_NAME
+ *
  * Revision 3.193  2005/07/15 15:57:02  sah
  * introduced namespaces
  *
@@ -468,7 +471,7 @@ extern nodelist *TCnodeListFind (nodelist *nl, node *node);
  ***/
 
 #define DECL_AVIS(n) ((NODE_TYPE (n) == N_arg) ? ARG_AVIS (n) : VARDEC_AVIS (n))
-#define DECL_NAME(n) (AVIS_NAME (DECL_AVIS))
+#define DECL_NAME(n) (AVIS_NAME (DECL_AVIS (n)))
 
 /*--------------------------------------------------------------------------*/
 
