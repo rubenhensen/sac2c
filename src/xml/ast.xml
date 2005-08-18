@@ -1903,6 +1903,7 @@
 	<node name="Dot" />
 	<node name="Str" />
         <node name="Icm" />
+        <node name="Type" />
       </target>
     </nodeset>
     <nodeset name="Instr">
@@ -3362,6 +3363,22 @@
         </attribute>
       </attributes>
       <flags></flags>
+    </node>
+<!--
+
+  N_type :
+
+-->
+    <node name="Type">
+      <sons></sons>
+      <attributes>
+        <attribute name="Type" mandatory="yes">
+	  <type name="NewType" />
+	  <phases>
+	    <all />
+	  </phases>
+	</attribute>
+      </attributes>
     </node>
 <!--
 
