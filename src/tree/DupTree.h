@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.47  2005/08/18 06:20:21  sbs
+ * DUPtype added
+ *
  * Revision 3.46  2005/04/16 14:19:30  khf
  * DUPdefault added
  *
@@ -213,6 +216,7 @@ extern node *DUPfloat (node *arg_node, info *arg_info);
 extern node *DUPdouble (node *arg_node, info *arg_info);
 extern node *DUPchar (node *arg_node, info *arg_info);
 extern node *DUPstr (node *arg_node, info *arg_info);
+extern node *DUPtype (node *arg_node, info *arg_info);
 extern node *DUPdot (node *arg_node, info *arg_info);
 extern node *DUPsetwl (node *arg_node, info *arg_info);
 extern node *DUPid (node *arg_node, info *arg_info);

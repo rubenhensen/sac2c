@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.166  2005/08/18 06:20:21  sbs
+ * DUPtype added
+ *
  * Revision 3.165  2005/08/09 09:41:30  sah
  * AVIS_DECLTYPE is copied now, as well
  *
@@ -1043,6 +1046,22 @@ DUPstr (node *arg_node, info *arg_info)
     DBUG_ENTER ("DUPstr");
 
     new_node = TBmakeStr (ILIBstringCopy (STR_STRING (arg_node)));
+
+    CopyCommonNodeData (new_node, arg_node);
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+
+node *
+DUPtype (node *arg_node, info *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DUPtype");
+
+    new_node = TBmakeType (TYcopyType (TYPE_TYPE (arg_node)));
 
     CopyCommonNodeData (new_node, arg_node);
 
