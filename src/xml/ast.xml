@@ -456,6 +456,15 @@
           <node name="Do" />
 	</travuser>
       </traversal>
+      <traversal id="INSTC" name="Insert Type Conversions" default="sons" include="insert_type_conv.h" >
+        <travuser>
+          <node name="Fundef" />
+          <node name="Assign" />
+          <node name="Ids" />
+          <node name="Id" />
+          <node name="Return" />
+        </travuser>
+      </traversal>
       <traversal id="CRTWRP" name="Create Wrappers" default="sons" include="create_wrappers.h">
         <travuser>
           <node name="Module" />
