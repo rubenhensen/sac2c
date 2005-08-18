@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.44  2005/08/18 06:19:51  sbs
+ * PRTtype added
+ *
  * Revision 3.43  2005/04/16 14:17:15  khf
  * print functions for N_default added
  *
@@ -113,6 +116,7 @@ extern node *PRTnum (node *arg_node, info *arg_info);
 extern node *PRTfloat (node *arg_node, info *arg_info);
 extern node *PRTdouble (node *arg_node, info *arg_info);
 extern node *PRTbool (node *arg_node, info *arg_info);
+extern node *PRTtype (node *arg_node, info *arg_info);
 extern node *PRTdot (node *arg_node, info *arg_info);
 extern node *PRTsetwl (node *arg_node, info *arg_info);
 extern node *PRTstr (node *arg_node, info *arg_info);

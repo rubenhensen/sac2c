@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.227  2005/08/18 06:19:51  sbs
+ * PRTtype added
+ *
  * Revision 3.226  2005/08/11 13:48:37  sbs
  * changed PRTstr so that C compliant strings will be printed including proper escape
  * characters. However, currently only quotes are supported :-)
@@ -2800,6 +2803,34 @@ PRTstr (node *arg_node, info *arg_info)
         s++;
     }
     putc ('\"', global.outfile);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * Function:
+ *   node *PRTtype( node *arg_node, info *arg_info)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+PRTtype (node *arg_node, info *arg_info)
+{
+    char *type_str;
+
+    DBUG_ENTER ("PRTtype");
+
+    DBUG_PRINT ("PRINT", ("%s " F_PTR, NODE_TEXT (arg_node), arg_node));
+
+    if (RET_TYPE (arg_node) != NULL) {
+        type_str = TYtype2String (RET_TYPE (arg_node), FALSE, 0);
+        fprintf (global.outfile, "%s", type_str);
+        type_str = ILIBfree (type_str);
+    }
 
     DBUG_RETURN (arg_node);
 }
