@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.31  2005/08/18 16:22:12  ktr
+ * removed conditional lhs expressions
+ *
  * Revision 1.30  2005/08/10 19:13:33  sbs
  * added te_kind_t
  *
@@ -401,6 +404,7 @@ typedef struct NODELIST {
     struct NODE *node;
     statustype attrib;
     statustype status;
+    int num;
     struct NODE *attrib2;
     struct NODELIST *next;
 } nodelist;

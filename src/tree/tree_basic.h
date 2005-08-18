@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.244  2005/08/18 16:22:12  ktr
+ * removed conditional lhs expressions
+ *
  * Revision 3.243  2005/01/20 14:16:06  ktr
  * some bugfixing
  *
@@ -196,7 +199,7 @@ extern nodelist *TBmakeNodelistNode (node *node, nodelist *next);
 #define NODELIST_ATTRIB2(n) (n->attrib2)
 #define NODELIST_STATUS(n) (n->status)
 #define NODELIST_NEXT(n) (n->next)
-#define NODELIST_INT(n) ((int)(n->attrib))
+#define NODELIST_INT(n) (n->num)
 
 /*--------------------------------------------------------------------------*/
 

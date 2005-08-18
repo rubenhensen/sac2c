@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.24  2005/08/18 16:22:12  ktr
+ * removed conditional lhs expressions
+ *
  * Revision 1.23  2005/01/11 13:32:21  cg
  * Converted output from Error.h to ctinfo.c
  *
@@ -990,7 +993,7 @@ FuseWithloops (node *wl, info *arg_info, node *fusionable_assign)
     while (WITHOP_NEXT (tmp_withop) != NULL) {
         tmp_withop = WITHOP_NEXT (tmp_withop);
     }
-    WITHOP_NEXT (tmp_withop) = DUPdoDupTree (WITH_WITHOP (wl));
+    L_WITHOP_NEXT (tmp_withop, DUPdoDupTree (WITH_WITHOP (wl)));
 
     DBUG_RETURN (wl);
 }
@@ -2159,8 +2162,8 @@ WLFSgenarray (node *arg_node, info *arg_info)
 
     INFO_WLFS_LHS_WL (arg_info) = IDS_NEXT (INFO_WLFS_LHS_WL (arg_info));
 
-    if (WITHOP_NEXT (arg_node) != NULL) {
-        WITHOP_NEXT (arg_node) = TRAVdo (WITHOP_NEXT (arg_node), arg_info);
+    if (GENARRAY_NEXT (arg_node) != NULL) {
+        GENARRAY_NEXT (arg_node) = TRAVdo (GENARRAY_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -2238,8 +2241,8 @@ WLFSmodarray (node *arg_node, info *arg_info)
 
     INFO_WLFS_LHS_WL (arg_info) = IDS_NEXT (INFO_WLFS_LHS_WL (arg_info));
 
-    if (WITHOP_NEXT (arg_node) != NULL) {
-        WITHOP_NEXT (arg_node) = TRAVdo (WITHOP_NEXT (arg_node), arg_info);
+    if (MODARRAY_NEXT (arg_node) != NULL) {
+        MODARRAY_NEXT (arg_node) = TRAVdo (MODARRAY_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -2277,8 +2280,8 @@ WLFSfold (node *arg_node, info *arg_info)
 
     INFO_WLFS_LHS_WL (arg_info) = IDS_NEXT (INFO_WLFS_LHS_WL (arg_info));
 
-    if (WITHOP_NEXT (arg_node) != NULL) {
-        WITHOP_NEXT (arg_node) = TRAVdo (WITHOP_NEXT (arg_node), arg_info);
+    if (FOLD_NEXT (arg_node) != NULL) {
+        FOLD_NEXT (arg_node) = TRAVdo (FOLD_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);

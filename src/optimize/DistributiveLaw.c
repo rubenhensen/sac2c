@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.21  2005/08/18 16:22:12  ktr
+ * removed conditional lhs expressions
+ *
  * Revision 1.20  2005/07/03 17:11:43  ktr
  * Some codebrushing. IMHO code needs complete rewrite
  *
@@ -66,7 +69,6 @@
 
 #define DL_NODELIST_OPERATOR(n) ((node *)NODELIST_ATTRIB2 (n))
 #define DL_NODELIST_PARENTNODES(n) ((nodelist *)NODELIST_ATTRIB2 (n))
-#define DL_NODELIST_FLAGS(n) (NODELIST_STATUS (n))
 
 /*****************************************************************************
  *
@@ -323,9 +325,9 @@
  *  -NODELIST_ATTRIB2   NODELIST_PARENTNODES
  *                        used in OPTLIST to store the path to
  *                        MOSTFREQUENTNODE
- *  -NODELIST_FLAGS     NODELIST_STATUS
- *                        is set in COUNTLIST when one MOSTFREQUENTNODE
- *                        was found in the current subtree
+ *  -NODELIST_STATUS    is set to 1 in COUNTLIST when one MOSTFREQUENTNODE
+ *                      was found in the current subtree
+ *
  *****************************************************************************/
 
 #include <stdio.h>
@@ -343,9 +345,7 @@
 #include "internal_lib.h"
 #include "optimize.h"
 #include "free.h"
-#include "DataFlowMask.h"
 #include "DupTree.h"
-#include "SSATransform.h"
 
 #include "DistributiveLaw.h"
 
@@ -1042,7 +1042,7 @@ ResetFlags (info *arg_info)
 
     while (list != NULL) {
 
-        DL_NODELIST_FLAGS (list) = 0;
+        NODELIST_STATUS (list) = 0;
         list = NODELIST_NEXT (list);
     }
     DBUG_VOID_RETURN;
@@ -1788,8 +1788,9 @@ CheckNode (node *arg_node, info *arg_info)
 
         /*
          * add following nodes to PARENTNODES of head-node
+         * DL_NODELIST_PARENTNODES( head) = INFO_DL_TMPLIST( arg_info);
          */
-        DL_NODELIST_PARENTNODES (head) = INFO_DL_TMPLIST (arg_info);
+        NODELIST_ATTRIB2 (head) = (node *)INFO_DL_TMPLIST (arg_info);
 
         /*
          * add head to OPTLIST
@@ -2492,8 +2493,12 @@ RegisterNode (node *arg_node, info *arg_info)
 
         NODELIST_NODE (newnodelistnode) = arg_node;
 
-        DL_NODELIST_OPERATOR (newnodelistnode) = lastOperator;
-        DL_NODELIST_FLAGS (newnodelistnode) = 1;
+        /*
+         * DL_NODELIST_OPERATOR(newnodelistnode) = lastOperator;
+         */
+        NODELIST_ATTRIB2 (newnodelistnode) = lastOperator;
+
+        NODELIST_STATUS (newnodelistnode) = 1;
 
         NODELIST_INT (newnodelistnode) = 1;
 
@@ -2506,9 +2511,9 @@ RegisterNode (node *arg_node, info *arg_info)
          * node with operator is in COUNTLIST
          * only increase counter
          */
-        if (DL_NODELIST_FLAGS (node_in_list) == 0)
+        if (NODELIST_STATUS (node_in_list) == 0)
             NODELIST_INT (node_in_list) = NODELIST_INT (node_in_list) + 1;
-        DL_NODELIST_FLAGS (node_in_list) = 1;
+        NODELIST_STATUS (node_in_list) = 1;
     }
     DBUG_VOID_RETURN;
 }

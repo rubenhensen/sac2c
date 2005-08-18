@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2005/08/18 16:22:12  ktr
+ * removed conditional lhs expressions
+ *
  * Revision 1.13  2005/07/15 15:57:02  sah
  * introduced namespaces
  *
@@ -82,6 +85,7 @@
 #include "NameTuplesUtils.h"
 #include "new_types.h"
 #include "shape.h"
+#include "namespaces.h"
 
 /*
  * INFO structure

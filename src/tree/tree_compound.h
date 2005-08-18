@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.195  2005/08/18 16:22:12  ktr
+ * removed conditional lhs expressions
+ *
  * Revision 3.194  2005/08/16 13:34:39  sah
  * fixed declaration of DECL_NAME
  *
@@ -1540,6 +1543,23 @@ extern int TCcountParts (node *parts);
     ((NODE_TYPE (n) == N_genarray)                                                       \
        ? GENARRAY_NEXT (n)                                                               \
        : ((NODE_TYPE (n) == N_modarray) ? MODARRAY_NEXT (n) : FOLD_NEXT (n)))
+
+#define L_WITHOP_NEXT(n, rhs)                                                            \
+    switch                                                                               \
+        NODE_TYPE (n)                                                                    \
+        {                                                                                \
+        case N_genarray:                                                                 \
+            GENARRAY_NEXT (n) = rhs;                                                     \
+            break;                                                                       \
+        case N_modarray:                                                                 \
+            MODARRAY_NEXT (n) = rhs;                                                     \
+            break;                                                                       \
+        case N_fold:                                                                     \
+            FOLD_NEXT (n) = rhs;                                                         \
+            break;                                                                       \
+        default:                                                                         \
+            DBUG_ASSERT (FALSE, "Illegal node type");                                    \
+        }
 
 #define WITHOP_MEM(n)                                                                    \
     ((NODE_TYPE (n) == N_genarray) ? GENARRAY_MEM (n) : MODARRAY_MEM (n))

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.228  2005/08/18 16:22:12  ktr
+ * removed conditional lhs expressions
+ *
  * Revision 3.227  2005/08/18 06:19:51  sbs
  * PRTtype added
  *
@@ -4050,6 +4053,8 @@ PRTwlsegvar (node *arg_node, info *arg_info)
 static node *
 PrintWLxblock (node *arg_node, info *arg_info)
 {
+    int bound1, bound2;
+
     DBUG_ENTER ("PrintWLxblock");
 
     if (NODE_ERROR (arg_node) != NULL) {
@@ -4059,11 +4064,13 @@ PrintWLxblock (node *arg_node, info *arg_info)
     INDENT;
     fprintf (global.outfile, "(");
 
-    WLBnodeOrIntPrint (global.outfile, NODE_TYPE (arg_node),
-                       &(WLXBLOCK_BOUND1 (arg_node)), WLXBLOCK_DIM (arg_node));
+    bound1 = WLXBLOCK_BOUND1 (arg_node);
+    WLBnodeOrIntPrint (global.outfile, NODE_TYPE (arg_node), &bound1,
+                       WLXBLOCK_DIM (arg_node));
     fprintf (global.outfile, " -> ");
-    WLBnodeOrIntPrint (global.outfile, NODE_TYPE (arg_node),
-                       &(WLXBLOCK_BOUND2 (arg_node)), WLXBLOCK_DIM (arg_node));
+    bound2 = WLXBLOCK_BOUND2 (arg_node);
+    WLBnodeOrIntPrint (global.outfile, NODE_TYPE (arg_node), &bound2,
+                       WLXBLOCK_DIM (arg_node));
     fprintf (global.outfile, "), ");
 
     fprintf (global.outfile,
