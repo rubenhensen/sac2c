@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.38  2005/08/18 06:24:23  sbs
+ * added F_type_conv
+ *
  * Revision 3.37  2005/06/28 20:52:31  ktr
  * changed symbols for _and_ and _or_
  *
@@ -230,6 +233,8 @@ PRF_IF (F_toi_S, "F_toi_S", "_toi_S_", "toi", FALSE, 1, NTCCTprf_toiS, COtoi),
   PRF_IF (F_to_unq, "F_to_unq", "_to_unq_", "to_unq", FALSE, 1, NTCCTprf_dummy, NULL),
   PRF_IF (F_from_unq, "F_from_unq", "_from_unq_", "from_unq", FALSE, 1, NTCCTprf_dummy,
           NULL),
+  PRF_IF (F_type_conv, "F_type_conv", "_type_conv_", "type_conv", FALSE, 1,
+          NTCCTprf_dummy, NULL),
   PRF_IF (F_type_error, "F_type_error", "_type_error_", "type_error", FALSE, 1,
           NTCCTprf_dummy, NULL),
   PRF_IF (F_dispatch_error, "F_dispatch_error", "_dispatch_error_", "dispatch_error",
