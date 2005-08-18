@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.32  2005/08/18 07:01:23  sbs
+# insert_type_conv.o added.
+#
 # Revision 3.31  2005/07/17 20:35:52  sah
 # split_wrappers.o
 #
@@ -98,7 +101,7 @@ OBJS:=gen_pseudo_fun.o new_typecheck.o new_types.o user_types.o \
       create_wrappers.o ssi.o sig_deps.o ct_basic.o ct_fun.o ct_prf.o \
       ct_with.o type_errors.o specialize.o new2old.o create_wrapper_code.o \
       type_statistics.o type_utils.o resolvesymboltypes.o \
-      dispatchfuncalls.o split_wrappers.o
+      dispatchfuncalls.o split_wrappers.o insert_type_conv.o
 
 all: $(OBJS)
 

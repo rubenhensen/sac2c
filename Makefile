@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.186  2005/08/18 07:00:57  sbs
+# insert_type_conv.o added.
+#
 # Revision 3.185  2005/08/02 14:23:38  ktr
 # added src/optimize/deadcodeinference.o
 #
@@ -243,7 +246,8 @@ TYPECHECK= src/typecheck/gen_pseudo_fun.o \
            src/typecheck/type_utils.o \
            src/typecheck/resolvesymboltypes.o \
            src/typecheck/split_wrappers.o \
-           src/typecheck/dispatchfuncalls.o
+           src/typecheck/dispatchfuncalls.o \
+           src/typecheck/insert_type_conv.o
 
 OPTIMIZE= src/optimize/optimize.o \
           src/optimize/DeadFunctionRemoval.o \
