@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.38  2005/08/19 17:18:41  sbs
+ * eliminated some hair-raising stuff from old types
+ *
  * Revision 1.37  2005/07/21 12:01:57  ktr
  * removed AVIS_WITHID
  *
@@ -614,6 +617,7 @@ SSATnewVardec (node *old_vardec_or_arg)
 {
     node *ssacnt;
     node *new_vardec;
+    ntype *type;
     char tmpstring[TMP_STRING_LEN];
 
     DBUG_ENTER ("SSATnewVardec");
@@ -625,11 +629,16 @@ SSATnewVardec (node *old_vardec_or_arg)
         if (global.compiler_phase <= PH_typecheck) {
             /**
              * we are running SSATransform prior or during TC! Therefore,
-             * the type has to be virginized, i.e., set to _unknown_ !
+             * the type needs to be generalized to unknown[*]. This requires
+             * insert_type_conv to be run prior to SSATransform!
              */
-            VARDEC_TYPE (new_vardec) = FREEfreeAllTypes (VARDEC_TYPE (new_vardec));
-            VARDEC_TYPE (new_vardec) = TBmakeTypes1 (T_unknown);
-            DBUG_PRINT ("SBS", ("POOP"));
+            type = VARDEC_NTYPE (new_vardec);
+            VARDEC_NTYPE (new_vardec) = TYmakeAUD (TYmakeSimpleType (T_unknown));
+            type = TYfreeType (type);
+            /**
+             * Stephan memorial line:  (please do not remove)
+             *    DBUG_PRINT( "SBS", ("POOP"));
+             */
         }
     } else {
         new_vardec = DUPdoDupNode (old_vardec_or_arg);
@@ -1645,11 +1654,6 @@ SSATids (node *arg_ids, info *arg_info)
         /* new rename-to target for old vardec */
         AVIS_SSASTACK_TOP (IDS_AVIS (arg_ids)) = VARDEC_AVIS (new_vardec);
 
-        if (global.compiler_phase > PH_typecheck) {
-            AVIS_TYPE (VARDEC_AVIS (new_vardec))
-              = TYcopyType (AVIS_TYPE (IDS_AVIS (arg_ids)));
-        }
-
         /* rename this ids */
         IDS_AVIS (arg_ids) = VARDEC_AVIS (new_vardec);
 
@@ -1713,11 +1717,6 @@ TreatIdAsLhs (node *arg_node, info *arg_info)
 
         /* new rename-to target for old vardec */
         AVIS_SSASTACK_TOP (ID_AVIS (arg_node)) = VARDEC_AVIS (new_vardec);
-
-        if (global.compiler_phase > PH_typecheck) {
-            AVIS_TYPE (VARDEC_AVIS (new_vardec))
-              = TYcopyType (AVIS_TYPE (ID_AVIS (arg_node)));
-        }
 
         /* rename this ids */
         ID_AVIS (arg_node) = VARDEC_AVIS (new_vardec);
