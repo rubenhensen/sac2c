@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2005/08/19 14:16:54  sah
+ * added TCPprf:
+ *   - F_type_conv prfs are now removed as the
+ *     backend implicitly inserts type-conversions
+ *     where necessary
+ *
  * Revision 1.14  2005/08/18 16:22:12  ktr
  * removed conditional lhs expressions
  *
@@ -370,6 +376,40 @@ TCPassign (node *arg_node, info *arg_info)
     if (INFO_TCP_PREASSIGNS (arg_info) != NULL) {
         arg_node = TCappendAssign (INFO_TCP_PREASSIGNS (arg_info), arg_node);
         INFO_TCP_PREASSIGNS (arg_info) = NULL;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!-- ***************************************************************** -->
+ * @brief removes prfs of type F_type_conv by replacing them with
+ *        their second argument.
+ *
+ * @param arg_node N_prf node
+ * @param arg_info info structure
+ *
+ * @return N_prf node != N_type_conv or the second argument of the given
+ *         prf
+ */
+node *
+TCPprf (node *arg_node, info *arg_info)
+{
+    node *tmp;
+
+    DBUG_ENTER ("TCPprf");
+
+    if (PRF_PRF (arg_node) == F_type_conv) {
+        /*
+         * replace expressions of form:
+         *     type_conv( <type>, <expr>)
+         * by
+         *     <expr>
+         */
+        tmp = arg_node;
+        arg_node = PRF_ARG2 (tmp);
+        PRF_ARG2 (tmp) = NULL;
+
+        tmp = FREEdoFreeNode (tmp);
     }
 
     DBUG_RETURN (arg_node);
