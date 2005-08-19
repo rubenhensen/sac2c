@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.108  2005/08/19 23:08:51  sah
+ * quick fix to get stdlib compiled.
+ *
  * Revision 3.107  2005/08/19 18:36:57  sah
  * minor bug in mapFunctionInstances
  *
@@ -2097,19 +2100,32 @@ mapFunctionInstances (ntype *type, node *(*mapfun) (node *, info *), info *info)
     if (type != NULL) {
         switch (NTYPE_CON (type)) {
         case TC_ires:
+#if 0
+        /*
+         * we want to walk down until we reach the leaf (which is
+         * a product type). Once we arrived there, we know that
+         * this IRES node contains all instances for the
+         * given basetype combination.
+         */
+        if (TYisProd( IRES_TYPE( type))) {
+          for (cnt = 0; cnt < IRES_NUMFUNS( type); cnt++) {
+            IRES_FUNDEF( type, cnt) = mapfun( IRES_FUNDEF( type, cnt), info);
+          }
+        } else {
+          IRES_TYPE( type) = 
+            mapFunctionInstances( IRES_TYPE( type), mapfun, info);
+        }
+#else
             /*
-             * we want to walk down until we reach the leaf (which is
-             * a product type). Once we arrived there, we know that
-             * this IRES node contains all instances for the
-             * given basetype combination.
+             * TODO: HACK: sah
+             * as long as SplitWrapperType does not delete the outdated
+             * possibilities, we have to visit all instances and thus
+             * use the first [*] we find.
              */
-            if (TYisProd (IRES_TYPE (type))) {
-                for (cnt = 0; cnt < IRES_NUMFUNS (type); cnt++) {
-                    IRES_FUNDEF (type, cnt) = mapfun (IRES_FUNDEF (type, cnt), info);
-                }
-            } else {
-                IRES_TYPE (type) = mapFunctionInstances (IRES_TYPE (type), mapfun, info);
+            for (cnt = 0; cnt < IRES_NUMFUNS (type); cnt++) {
+                IRES_FUNDEF (type, cnt) = mapfun (IRES_FUNDEF (type, cnt), info);
             }
+#endif
             break;
 
         case TC_fun:
