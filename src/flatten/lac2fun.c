@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.41  2005/08/19 22:42:16  sah
+ * minor fix to please gcc
+ *
  * Revision 3.40  2005/07/22 15:05:40  sbs
  * errorneous Free on masks eliminated in DoLifting
  *
@@ -435,7 +438,7 @@ MakeL2fFundef (char *funname, namespace_t *ns, node *instr, node *funcall_let,
              * Therefore we must search for ARG_NAME instead of the pointer itself!
              */
             if (!DFMtestMaskEntry (out, ARG_NAME (tmp), NULL)) {
-                AVIS_ISUNIQUE (ARG_AVIS (tmp)) = ST_unique;
+                AVIS_ISUNIQUE (ARG_AVIS (tmp)) = TRUE;
             }
 
             DBUG_PRINT ("L2F", ("ARG_ATTRIB[ .. %s( .. %s ..) { .. } ]: "
