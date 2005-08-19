@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2005/08/19 17:26:54  sbs
+ * added avis and block
+ *
  * Revision 1.1  2005/08/18 07:01:55  sbs
  * Initial revision
  *
@@ -23,6 +26,8 @@
 extern node *INSTCdoInsertTypeConv (node *syntaxtree);
 
 extern node *INSTCfundef (node *arg_node, info *arg_info);
+extern node *INSTCblock (node *arg_node, info *arg_info);
+extern node *INSTCavis (node *arg_node, info *arg_info);
 extern node *INSTCassign (node *arg_node, info *arg_info);
 extern node *INSTCids (node *arg_node, info *arg_info);
 extern node *INSTCid (node *arg_node, info *arg_info);

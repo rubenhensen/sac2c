@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2005/08/19 17:26:54  sbs
+ * added avis and block
+ *
  * Revision 1.1  2005/08/18 07:01:54  sbs
  * Initial revision
  *
@@ -103,7 +106,6 @@ FreeInfo (info *info)
  *
  *   a = _type_conv_( int[.], a);
  *
- *
  ******************************************************************************/
 
 static node *
@@ -156,6 +158,57 @@ INSTCfundef (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
+ *   node *INSTCblock( node *arg_node, info *arg_info)
+ *
+ * description:
+ *   make sure that we traverse the body BEFORE traversing i.e. generalizing
+ *   the vardecs.
+ *
+ ******************************************************************************/
+
+node *
+INSTCblock (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("INSTCblock");
+
+    if (BLOCK_INSTR (arg_node) != NULL) {
+        BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
+    }
+
+    if (BLOCK_VARDEC (arg_node) != NULL) {
+        BLOCK_VARDEC (arg_node) = TRAVdo (BLOCK_VARDEC (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *INSTCavis( node *arg_node, info *arg_info)
+ *
+ * description:
+ *
+ ******************************************************************************/
+
+node *
+INSTCavis (node *arg_node, info *arg_info)
+{
+    ntype *old_type;
+
+    DBUG_ENTER ("INSTCavis");
+
+    old_type = AVIS_TYPE (arg_node);
+    if (!TYisAUD (old_type)) {
+        AVIS_TYPE (arg_node) = TYmakeAUD (TYmakeSimpleType (T_unknown));
+        old_type = TYfreeType (old_type);
+    }
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *INSTCassign( node *arg_node, info *arg_info)
  *
  * description:
@@ -175,10 +228,31 @@ INSTCassign (node *arg_node, info *arg_info)
         ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
     }
 
-    if (INFO_INSTC_NEW_ASSIGN (arg_info) != NULL) {
-        ASSIGN_NEXT (arg_node)
-          = TCappendAssign (INFO_INSTC_NEW_ASSIGN (arg_info), ASSIGN_NEXT (arg_node));
-        INFO_INSTC_NEW_ASSIGN (arg_info) = NULL;
+    if (INFO_INSTC_RETURN (arg_info) != NULL) {
+        /**
+         * we are dealing with a return:
+         */
+        if (INFO_INSTC_NEW_ASSIGN (arg_info) != NULL) {
+            /**
+             * insert new assignments BEFORE this one!
+             */
+            arg_node = TCappendAssign (INFO_INSTC_NEW_ASSIGN (arg_info), arg_node);
+            INFO_INSTC_NEW_ASSIGN (arg_info) = NULL;
+        }
+        INFO_INSTC_RETURN (arg_info) = NULL;
+
+    } else {
+        /**
+         * we are dealing with lets / loops / conds:
+         */
+        if (INFO_INSTC_NEW_ASSIGN (arg_info) != NULL) {
+            /**
+             * insert new assignments AFTER this N_assign!
+             */
+            ASSIGN_NEXT (arg_node)
+              = TCappendAssign (INFO_INSTC_NEW_ASSIGN (arg_info), ASSIGN_NEXT (arg_node));
+            INFO_INSTC_NEW_ASSIGN (arg_info) = NULL;
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -206,7 +280,8 @@ INSTCids (node *arg_node, info *arg_info)
     }
 
     scalar_type = TYgetScalar (IDS_NTYPE (arg_node));
-    if (!TYisSimple (scalar_type) || (TYgetSimpleType (scalar_type) != T_unknown)) {
+    if (!TYisAUD (IDS_NTYPE (arg_node))
+        && (!TYisSimple (scalar_type) || (TYgetSimpleType (scalar_type) != T_unknown))) {
 
         assign = CreateTypeConv (IDS_AVIS (arg_node), IDS_NTYPE (arg_node));
 
@@ -230,16 +305,22 @@ node *
 INSTCid (node *arg_node, info *arg_info)
 {
     node *assign;
+    ntype *old_type;
 
     DBUG_ENTER ("INSTCid");
 
     if (INFO_INSTC_RETURN (arg_info) != NULL) {
 
-        assign
-          = CreateTypeConv (ID_AVIS (arg_node), RET_TYPE (INFO_INSTC_RETS (arg_info)));
+        old_type = RET_TYPE (INFO_INSTC_RETS (arg_info));
+        if (!TYisAUD (old_type)) {
+            assign = CreateTypeConv (ID_AVIS (arg_node), old_type);
 
-        ASSIGN_NEXT (assign) = INFO_INSTC_NEW_ASSIGN (arg_info);
-        INFO_INSTC_NEW_ASSIGN (arg_info) = assign;
+            ASSIGN_NEXT (assign) = INFO_INSTC_NEW_ASSIGN (arg_info);
+            INFO_INSTC_NEW_ASSIGN (arg_info) = assign;
+
+            RET_TYPE (INFO_INSTC_RETS (arg_info)) = TYmakeAUD (TYgetScalar (old_type));
+            old_type = TYfreeTypeConstructor (old_type);
+        }
 
         INFO_INSTC_RETS (arg_info) = RET_NEXT (INFO_INSTC_RETS (arg_info));
     }
@@ -266,8 +347,6 @@ INSTCreturn (node *arg_node, info *arg_info)
     if (RETURN_EXPRS (arg_node) != NULL) {
         RETURN_EXPRS (arg_node) = TRAVdo (RETURN_EXPRS (arg_node), arg_info);
     }
-
-    INFO_INSTC_RETURN (arg_info) = NULL;
 
     DBUG_RETURN (arg_node);
 }
