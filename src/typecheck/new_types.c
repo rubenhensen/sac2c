@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.107  2005/08/19 18:36:57  sah
+ * minor bug in mapFunctionInstances
+ *
  * Revision 3.106  2005/08/19 18:22:00  sah
  * added missing break.
  *
@@ -2105,7 +2108,7 @@ mapFunctionInstances (ntype *type, node *(*mapfun) (node *, info *), info *info)
                     IRES_FUNDEF (type, cnt) = mapfun (IRES_FUNDEF (type, cnt), info);
                 }
             } else {
-                type = mapFunctionInstances (IRES_TYPE (type), mapfun, info);
+                IRES_TYPE (type) = mapFunctionInstances (IRES_TYPE (type), mapfun, info);
             }
             break;
 
