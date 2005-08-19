@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.84  2005/08/19 17:28:42  sbs
+ * changed for proper type_conv handling
+ *
  * Revision 3.83  2005/08/10 19:09:16  sbs
  * changed handling of conds
  * branches are checked in new_typecheck.c since SDcontradictions would
@@ -213,7 +216,6 @@ struct INFO {
 #define INFO_NTC_NUM_EXPRS_SOFAR(n) (n->num_exprs_sofar)
 #define INFO_NTC_LAST_ASSIGN(n) (n->last_assign)
 #define INFO_NTC_RETURN(n) (n->ptr_return)
-#define INFO_NTC_OBJDEFS(n) (n->ptr_objdefs)
 
 /**
  * INFO functions
@@ -232,7 +234,6 @@ MakeInfo ()
     INFO_NTC_NUM_EXPRS_SOFAR (result) = 0;
     INFO_NTC_LAST_ASSIGN (result) = NULL;
     INFO_NTC_RETURN (result) = NULL;
-    INFO_NTC_OBJDEFS (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -268,11 +269,41 @@ node *
 NTCdoNewTypeCheck (node *arg_node)
 {
     info *arg_info;
+    bool ok;
+    node *fundef;
+    node *ignore;
 
     DBUG_ENTER ("NTCdoNewTypeCheck");
 
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module),
                  "NTCdoNewTypeCheck() not called with N_module node!");
+
+    ok = SSIinitAssumptionSystem (SDhandleContradiction, SDhandleElimination);
+    DBUG_ASSERT (ok, "Initialisation of Assumption System went wrong!");
+
+    ignore = SPECresetSpecChain ();
+
+    /**
+     * Before starting the type checking mechanism, we first mark all
+     * wrapper functions as NTC_checked (as these have no bodies).
+     * For all other functions, we rely on FUNDEF_TCSTAT being set
+     * properly. This is done by the TBmakeFundef function and
+     * the module system (for imported/used functions).
+     */
+    fundef = MODULE_FUNS (arg_node);
+    while (fundef != NULL) {
+        if (FUNDEF_ISWRAPPERFUN (fundef)) {
+            FUNDEF_TCSTAT (fundef) = NTC_checked;
+        }
+        fundef = FUNDEF_NEXT (fundef);
+    }
+
+    /*
+     * Now we have to initialize the deserialisation unit, as
+     * specializations may add new functions as dependencies
+     * of bodies to the ast
+     */
+    DSinitDeserialize (arg_node);
 
 #ifndef NEW_AST
     /*
@@ -295,6 +326,12 @@ NTCdoNewTypeCheck (node *arg_node)
     arg_info = FreeInfo (arg_info);
 
     TRAVpop ();
+
+    /*
+     * from here on, no more functions are deserialized, so we can
+     * finish the deseralization engine
+     */
+    DSfinishDeserialize (arg_node);
 
     DBUG_RETURN (arg_node);
 }
@@ -376,7 +413,7 @@ TypeCheckFunctionBody (node *fundef, info *arg_info)
      * limit!
      */
     if (FUNDEF_ISLACFUN (fundef)) {
-        FUNDEF_RETS (fundef) = TUrettypes2alpha (FUNDEF_RETS (fundef));
+        FUNDEF_RETS (fundef) = TUrettypes2alphaMax (FUNDEF_RETS (fundef));
     }
 
     DBUG_EXECUTE (
@@ -525,63 +562,7 @@ TypeCheckFunctionBody (node *fundef, info *arg_info)
 node *
 NTCmodule (node *arg_node, info *arg_info)
 {
-    bool ok;
-    node *fundef, *ignore;
-
     DBUG_ENTER ("NTCmodule");
-
-    /*
-     * We insert the topmost objdef into the arg_info node
-     * for later reference.
-     */
-
-    INFO_NTC_OBJDEFS (arg_info) = MODULE_OBJS (arg_node);
-
-    /*
-     * First, we mark all functions that need to be checked as NTC_not_checked.
-     * All others are marked NTC_checked:
-     */
-
-    ok = SSIinitAssumptionSystem (SDhandleContradiction, SDhandleElimination);
-    DBUG_ASSERT (ok, "Initialisation of Assumption System went wrong!");
-
-    ignore = SPECresetSpecChain ();
-
-    /**
-     * Before starting the type checking mechanism, we first mark all
-     * wrapper functions as NTC_checked (as these have no bodies).
-     * For all other functions, we rely on FUNDEF_TCSTAT being set
-     * properly. This is done by the TBmakeFundef function and
-     * the module system (for imported/used functions).
-     * FURTHERMORE
-     * we do have to run NTC on all argument nodes of user defined
-     * functions. One might think that this could be done when
-     * "TypeCheckFunctionBody" is run ( and in fact this was our first
-     * attempt [see comment in that function] 8-), BUT,
-     * the problem here is that TYDispatchFuntype
-     * in some rare cases (for detecting some function shadowing...)
-     * wants to inspect the new type nodes behind the argument N_avis's.
-     * So these have to be present even if the function has not yet been
-     * type checked.
-     */
-    fundef = MODULE_FUNS (arg_node);
-    while (fundef != NULL) {
-        if (FUNDEF_ISWRAPPERFUN (fundef)) {
-            FUNDEF_TCSTAT (fundef) = NTC_checked;
-        } else {
-            if (!FUNDEF_ISLACFUN (fundef) && (NULL != FUNDEF_ARGS (fundef))) {
-                FUNDEF_ARGS (fundef) = TRAVdo (FUNDEF_ARGS (fundef), arg_info);
-            }
-        }
-        fundef = FUNDEF_NEXT (fundef);
-    }
-
-    /*
-     * Now we have to initialize the deserialisation unit, as
-     * specializations may add new functions as dependencies
-     * of bodies to the ast
-     */
-    DSinitDeserialize (arg_node);
 
     if (NULL != MODULE_FUNDECS (arg_node)) {
         MODULE_FUNDECS (arg_node) = TRAVdo (MODULE_FUNDECS (arg_node), arg_info);
@@ -590,12 +571,6 @@ NTCmodule (node *arg_node, info *arg_info)
     if (NULL != MODULE_FUNS (arg_node)) {
         MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
     }
-
-    /*
-     * from here on, no more functions are deserialized, so we can
-     * finish the deseralization engine
-     */
-    DSfinishDeserialize (arg_node);
 
     DBUG_RETURN (arg_node);
 }
@@ -623,6 +598,10 @@ NTCfundef (node *arg_node, info *arg_info)
          */
         global.act_info_chn = NULL;
         DBUG_PRINT ("NTC_INFOCHN", ("global.act_info_chn reset to NULL"));
+
+        if (FUNDEF_ARGS (arg_node) != NULL) {
+            FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
+        }
         arg_node = TypeCheckFunctionBody (arg_node, arg_info);
     }
 
@@ -713,23 +692,33 @@ NTCblock (node *arg_node, info *arg_info)
  *  node * NTCvardec( node *arg_node, info *arg_info )
  *
  * description:
+ *  existing types are converted into type vars with upper bounds!
  *
  ******************************************************************************/
 
 node *
 NTCvardec (node *arg_node, info *arg_info)
 {
+    ntype *type;
     DBUG_ENTER ("NTCvardec");
 
-    if (AVIS_TYPE (VARDEC_AVIS (arg_node)) != NULL) {
+    type = AVIS_TYPE (VARDEC_AVIS (arg_node));
+    if (type != NULL) {
         /**
-         * this means that the vardec has been created by duplicating a type-
-         * checked function. Since this may require slightly different (e.g.
-         * more specific) types to be inferred, we simply eliminate the existing
-         * ones!
+         * this means that the vardec has been created
+         *  (a) through a variable declaration   or
+         *  (b) by duplicating a type-checked function   or
+         *  (c) by an earlier run of the type-checker
+         * In ALL these cases, we want to make sure that only more specific
+         * types can be inferred!
+         * While in (a) and (c) the type is fixed, in (b) it may be an alpha!
+         *     TUtype2alphaMax( type);
+         * would do that job. However, this precludes us from recognizing
+         * uses of non-defined vars when running the first time!
+         * Hence, we just eliminate the existing types and start from scratch.
          */
-        AVIS_TYPE (VARDEC_AVIS (arg_node))
-          = TYfreeType (AVIS_TYPE (VARDEC_AVIS (arg_node)));
+        AVIS_TYPE (VARDEC_AVIS (arg_node)) = NULL;
+        type = TYfreeType (type);
     }
 
     if (VARDEC_NEXT (arg_node) != NULL) {
@@ -1382,6 +1371,24 @@ NTCBASIC (double, T_double)
 NTCBASIC (float, T_float)
 NTCBASIC (char, T_char)
 NTCBASIC (bool, T_bool)
+
+/******************************************************************************
+ *
+ * function:
+ *   node *NTCtype( node *arg_node, info *arg_info)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+NTCtype (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("NTCtype");
+    INFO_NTC_TYPE (arg_info) = TYcopyType (TYPE_TYPE (arg_node));
+    DBUG_RETURN (arg_node);
+}
 
 /******************************************************************************
  *

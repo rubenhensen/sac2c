@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2005/08/19 17:28:42  sbs
+ * changed for proper type_conv handling
+ *
  * Revision 3.16  2005/07/25 10:22:58  sah
  * single phases of tc are now triggered in main.c
  *
@@ -81,6 +84,7 @@ extern node *NTCcast (node *arg_node, info *arg_info);
 extern node *NTCexprs (node *arg_node, info *arg_info);
 extern node *NTCid (node *arg_node, info *arg_info);
 extern node *NTCglobobj (node *arg_node, info *arg_info);
+extern node *NTCtype (node *arg_node, info *arg_info);
 extern node *NTCnum (node *arg_node, info *arg_info);
 extern node *NTCbool (node *arg_node, info *arg_info);
 extern node *NTCchar (node *arg_node, info *arg_info);
