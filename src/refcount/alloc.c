@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.39  2005/08/19 17:18:11  sbs
+ * *** empty log message ***
+ *
  * Revision 1.38  2005/07/16 09:57:55  ktr
  * slight modifications.
  *
@@ -1552,11 +1555,12 @@ EMALprf (node *arg_node, info *arg_info)
         break;
 
     case F_type_error:
+    case F_type_conv:
     case F_dispatch_error:
         /*
          * v,... = _type_error_( ...)
          * _type_error_ requires a special treatment as
-         * none of its return value must llocated
+         * none of its return value must be allocated
          */
         INFO_EMAL_ALLOCLIST (arg_info) = FreeALS (INFO_EMAL_ALLOCLIST (arg_info));
 
