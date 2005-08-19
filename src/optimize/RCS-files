@@ -40,3 +40,4 @@ deadcodeinference.c
 deadcodeinference.h
 inferneedcounters.c
 inferneedcounters.h
+associativity.c
