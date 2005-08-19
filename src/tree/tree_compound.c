@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.138  2005/08/19 18:21:47  ktr
+ * Added N_exprs functions
+ *
  * Revision 3.137  2005/07/15 15:57:02  sah
  * introduced namespaces
  *
@@ -2243,6 +2246,43 @@ TCgetNthExpr (int n, node *exprs)
     }
 
     DBUG_RETURN (result);
+}
+
+node *
+TCfilterExprs (bool (*pred) (node *), node **exprs)
+{
+    node *res = NULL;
+
+    DBUG_ENTER ("TCfilterExprs");
+
+    if (EXPRS_NEXT (*exprs) != NULL) {
+        res = TCfilterExprs (pred, &(EXPRS_NEXT (*exprs)));
+    }
+
+    if (pred (EXPRS_EXPR (*exprs))) {
+        node *tmp = EXPRS_NEXT (*exprs);
+        EXPRS_NEXT (*exprs) = res;
+        res = *exprs;
+        *exprs = tmp;
+    }
+
+    DBUG_RETURN (res);
+}
+
+bool
+TCfoldPredExprs (bool (*pred) (node *), node *exprs)
+{
+    bool res;
+
+    DBUG_ENTER ("TCfoldPredExprs");
+
+    if (exprs == NULL) {
+        res = TRUE;
+    } else {
+        res = (pred (EXPRS_EXPR (exprs)) && TCfoldPredExprs (pred, EXPRS_NEXT (exprs)));
+    }
+
+    DBUG_RETURN (res);
 }
 
 /*--------------------------------------------------------------------------*/

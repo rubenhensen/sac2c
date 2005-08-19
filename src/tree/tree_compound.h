@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.196  2005/08/19 18:21:47  ktr
+ * Added N_exprs functions
+ *
  * Revision 3.195  2005/08/18 16:22:12  ktr
  * removed conditional lhs expressions
  *
@@ -1053,6 +1056,29 @@ extern node *TCgetNthExpr (int n, node *exprs);
 #define EXPRS_EXPR4(n) EXPRS_EXPR (EXPRS_EXPRS4 (n))
 #define EXPRS_EXPR5(n) EXPRS_EXPR (EXPRS_EXPRS5 (n))
 #define EXPRS_EXPR6(n) EXPRS_EXPR (EXPRS_EXPRS6 (n))
+
+/******************************************************************************
+ *
+ * function:
+ *   node *TCfilterExprs( bool (*pred)( node *), node **exprs)
+ *
+ * description:
+ *   Filters the given exprs chain
+ *
+ *****************************************************************************/
+extern node *TCfilterExprs (bool (*pred) (node *), node **exprs);
+
+/******************************************************************************
+ *
+ * function:
+ *   bool TCfoldPredExprs( bool (*pred)( node *), node *exprs)
+ *
+ * description:
+ *   Evaluates whether a given predicate holds for all elements of an exprs
+ *   chain
+ *
+ *****************************************************************************/
+extern bool TCfoldPredExprs (bool (*pred) (node *), node *exprs);
 
 /*--------------------------------------------------------------------------*/
 
