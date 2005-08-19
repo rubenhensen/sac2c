@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.18  2005/08/19 18:20:45  ktr
+ * Added neutral behaviour for F_type_conv, F_type_error, F_dispatch_error
+ *
  * Revision 1.17  2005/06/30 11:57:02  ktr
  * made adjustments necessary for shapeclass dependent dopying
  *
@@ -537,6 +540,9 @@ EMRIprf (node *arg_node, info *arg_info)
     case F_from_unq:
     case F_inc_rc:
     case F_dec_rc:
+    case F_type_conv:
+    case F_type_error:
+    case F_dispatch_error:
         break;
 
     case F_reuse:
