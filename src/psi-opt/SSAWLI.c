@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.24  2005/08/19 13:08:30  ktr
+ * removed SSAINDEX macro
+ *
  * Revision 1.23  2005/01/11 13:32:21  cg
  * Converted output from Error.h to ctinfo.c
  *
@@ -410,14 +413,14 @@ CreateIndexInfoId (node *idn, info *arg_info)
     assignn = INFO_SSAWLI_ASSIGN (arg_info);
     wln = INFO_SSAWLI_WL (arg_info);
 
-    DBUG_ASSERT (!SSAINDEX (assignn), ("index_info already assigned"));
+    DBUG_ASSERT (!ASSIGN_INDEX (assignn), ("index_info already assigned"));
 
     if (TYgetDim (ID_NTYPE (idn)) >= 0) {
         /* index var? */
         index_var = WLFlocateIndexVar (idn, wln);
         if (index_var) {
             iinfo = WLFcreateIndex ((index_var > 0) ? 0 : ID_SHAPE (idn, 0));
-            SSAINDEX (assignn) = iinfo; /* make this N_assign valid */
+            ASSIGN_INDEX (assignn) = iinfo; /* make this N_assign valid */
 
             if (-1 == index_var) { /* index vector */
                 elts = ID_SHAPE (idn, 0);
@@ -433,12 +436,12 @@ CreateIndexInfoId (node *idn, info *arg_info)
             /* valid local variable */
             iinfo = WLFvalidLocalId (idn);
             if (iinfo) {
-                SSAINDEX (assignn) = WLFduplicateIndexInfo (iinfo);
+                ASSIGN_INDEX (assignn) = WLFduplicateIndexInfo (iinfo);
             }
         }
     }
 
-    DBUG_RETURN (NULL != SSAINDEX (assignn));
+    DBUG_RETURN (NULL != ASSIGN_INDEX (assignn));
 }
 
 /******************************************************************************
@@ -485,8 +488,8 @@ CreateIndexInfoSxS (node *prfn, info *arg_info)
             index_var = WLFlocateIndexVar (idn, wln);
 
         if (iinfo || index_var) {
-            iinfo = WLFcreateIndex (0); /* create a scalar index_info */
-            SSAINDEX (assignn) = iinfo; /* make this N_assign valid */
+            iinfo = WLFcreateIndex (0);     /* create a scalar index_info */
+            ASSIGN_INDEX (assignn) = iinfo; /* make this N_assign valid */
 
             /* if the Id is an index var... */
             if (index_var) {
@@ -590,7 +593,7 @@ CreateIndexInfoA (node *prfn, info *arg_info)
                 /* ^^^ valid local id (vector) */
                 elts = ID_SHAPE (idn, 0);
                 iinfo = WLFcreateIndex (elts);
-                SSAINDEX (assignn) = iinfo; /* make this N_assign valid */
+                ASSIGN_INDEX (assignn) = iinfo; /* make this N_assign valid */
 
                 iinfo->arg_no = (constn == const1) ? 1 : 2;
                 iinfo->prf = SimplifyFun (PRF_PRF (prfn));
@@ -638,7 +641,7 @@ CreateIndexInfoA (node *prfn, info *arg_info)
                 /* This is a valid vector. Permutation and last of index_info are
                    already set. But we still need to handle the prf. */
                 elts = iinfo->vector;
-                SSAINDEX (assignn) = iinfo;
+                ASSIGN_INDEX (assignn) = iinfo;
 
                 iinfo->arg_no = (constn == const1) ? 1 : 2;
                 iinfo->prf = SimplifyFun (PRF_PRF (prfn));
@@ -716,12 +719,12 @@ WLIassign (node *arg_node, info *arg_info)
 
     INFO_SSAWLI_ASSIGN (arg_info) = arg_node;
 
-    if (SSAINDEX (arg_node) != NULL) {
+    if (ASSIGN_INDEX (arg_node) != NULL) {
         /* this is important. Only index transformations
-           with a non-null SSAINDEX are valid. See SSAWLIlet. Before WLI, this
+           with a non-null ASSIGN_INDEX are valid. See SSAWLIlet. Before WLI, this
            pointer may be non null (somwhere wrong initialisation -> better
            use MakeAssign()!!! ) */
-        SSAINDEX (arg_node) = FREEfreeIndexInfo (SSAINDEX (arg_node));
+        ASSIGN_INDEX (arg_node) = FREEfreeIndexInfo (ASSIGN_INDEX (arg_node));
     }
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
@@ -920,8 +923,8 @@ WLIlet (node *arg_node, info *arg_info)
                     tmpn
                       = CheckArrayFoldable (PRF_ARG1 (exprn), PRF_ARG2 (exprn), arg_info);
                     if (!tmpn) {
-                        SSAINDEX (INFO_SSAWLI_ASSIGN (arg_info))
-                          = FREEfreeIndexInfo (SSAINDEX (INFO_SSAWLI_ASSIGN (arg_info)));
+                        ASSIGN_INDEX (INFO_SSAWLI_ASSIGN (arg_info)) = FREEfreeIndexInfo (
+                          ASSIGN_INDEX (INFO_SSAWLI_ASSIGN (arg_info)));
                     }
                 }
                 break;
@@ -941,7 +944,7 @@ WLIlet (node *arg_node, info *arg_info)
 
         /* The let expr still may be a construction of a vector (without a prf). */
         if (N_array == NODE_TYPE (exprn)) {
-            SSAINDEX (INFO_SSAWLI_ASSIGN (arg_info))
+            ASSIGN_INDEX (INFO_SSAWLI_ASSIGN (arg_info))
               = Scalar2ArrayIndex (exprn, INFO_SSAWLI_WL (arg_info));
         }
 

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.26  2005/08/19 13:08:30  ktr
+ * removed SSAINDEX macro
+ *
  * Revision 1.25  2005/01/26 10:34:45  mwe
  * just edited last log message...
  *
@@ -232,7 +235,7 @@ WLFvalidLocalId (node *idn)
 
     /* get defining assignment via avis_ssaassign link */
     if (AVIS_SSAASSIGN (ID_AVIS (idn)) != NULL) {
-        iinfo = SSAINDEX (AVIS_SSAASSIGN (ID_AVIS (idn)));
+        iinfo = ASSIGN_INDEX (AVIS_SSAASSIGN (ID_AVIS (idn)));
     } else {
         iinfo = NULL;
     }

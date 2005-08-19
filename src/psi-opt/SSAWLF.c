@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.24  2005/08/19 13:08:30  ktr
+ * removed SSAINDEX macro
+ *
  * Revision 1.23  2005/01/11 13:32:21  cg
  * Converted output from Error.h to ctinfo.c
  *
@@ -1600,7 +1603,7 @@ WLFid (node *arg_node, info *arg_info)
            We used ID_WL in case (1) here (see header of file) */
         if (ID_WL (arg_node)) { /* a WL is referenced (this is an array Id), */
             if (INFO_SSAWLF_WL (arg_info) && /* inside WL, */
-                SSAINDEX (INFO_SSAWLF_ASSIGN (arg_info))
+                ASSIGN_INDEX (INFO_SSAWLF_ASSIGN (arg_info))
                 && /* valid index transformation */
                 FoldDecision (INFO_SSAWLF_WL (arg_info), ID_WL (arg_node))) {
                 INFO_SSAWLF_FLAG (arg_info) = 1;
@@ -1761,7 +1764,7 @@ WLFlet (node *arg_node, info *arg_info)
 
             /* We just traversed the original code in the wlfm_search_ref phase, so
                ASSIGN_INDEX provides the correct index_info.*/
-            transformation = SSAINDEX (INFO_SSAWLF_ASSIGN (arg_info));
+            transformation = ASSIGN_INDEX (INFO_SSAWLF_ASSIGN (arg_info));
 
             DBUG_PRINT ("WLF", ("folding array %s in line %d now...", ID_NAME (idn),
                                 NODE_LINE (arg_node)));

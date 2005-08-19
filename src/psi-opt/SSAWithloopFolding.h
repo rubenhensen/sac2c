@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.9  2005/08/19 13:08:30  ktr
+ * removed SSAINDEX macro
+ *
  * Revision 1.8  2004/11/26 15:51:50  jhb
  * WLFwithloopFoldingWLT changed WLFwithloopFoldingWlt
  *
@@ -82,8 +85,5 @@ extern intern_gen *WLFfreeInternGenChain (intern_gen *ig);
 /* if not defined, indexes with more than one occurence of an
    index scalar are allowed to be valid transformations, e.g. [i,i,j] */
 /* #define TRANSF_TRUE_PERMUTATIONS */
-
-/* index_info related macros. */
-#define SSAINDEX(n) ((index_info *)ASSIGN_INDEX (n))
 
 #endif /* _SAC_WITHLOOPFOLDING_H_ */
