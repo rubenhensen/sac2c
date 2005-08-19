@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.32  2005/08/19 17:23:16  sbs
+ * changed from TUrettypes2alpha to TUrettypes2alphaFix, etc
+ * changed the relataion of lacfuns (varupdate) if there exists a non-alpha type
+ * eliminated seemingly superfluous TUrettypes2alphaAUD for lacfuns as well....
+ *
  * Revision 1.31  2005/08/09 09:48:59  sah
  * added a comment
  *
@@ -323,7 +328,7 @@ UpdateVarSignature (node *fundef, ntype *arg_ts)
             new_type = TYmakeAlphaType (NULL);
             if (TYisUser (TYgetScalar (old_type))
                 || TYgetSimpleType (TYgetScalar (old_type)) != T_unknown) {
-                ok = SSInewTypeRel (old_type, new_type);
+                ok = SSInewTypeRel (new_type, old_type);
             }
             old_type = TYfreeType (old_type);
         } else {
@@ -349,7 +354,7 @@ buildWrapper (node *fundef, ntype *type)
     /*
      * set this instances return types to AUD[*]
      */
-    FUNDEF_RETS (fundef) = TUrettypes2alpha (FUNDEF_RETS (fundef));
+    FUNDEF_RETS (fundef) = TUrettypes2alphaFix (FUNDEF_RETS (fundef));
 
     /*
      * add the fundef to the wrappertype
@@ -485,7 +490,7 @@ DoSpecialize (node *wrapper, node *fundef, ntype *args)
     /*
      * convert the return type(s) into Alpha - AUDs
      */
-    FUNDEF_RETS (res) = TUrettypes2alphaAUD (FUNDEF_RETS (res));
+    FUNDEF_RETS (res) = TUrettypes2alphaMax (FUNDEF_RETS (res));
 
     /*
      * make sure the funtype annotated at the wrapper is
@@ -634,14 +639,6 @@ SPEChandleLacFun (node *fundef, node *assign, ntype *args)
      * less precise. This is done by "UpdateVarSignature".
      */
     UpdateVarSignature (fundef, args);
-
-    /*
-     * Now we need to make sure that we have VarRets as well.
-     * If we do have Alphas already we need to leave them unchanged!
-     */
-    if ((FUNDEF_RETS (fundef) != NULL) && !TYisAlpha (RET_TYPE (FUNDEF_RETS (fundef)))) {
-        FUNDEF_RETS (fundef) = TUrettypes2alphaAUD (FUNDEF_RETS (fundef));
-    }
 
     DBUG_RETURN (fundef);
 }
