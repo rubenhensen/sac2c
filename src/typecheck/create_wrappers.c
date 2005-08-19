@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.41  2005/08/19 17:20:40  sbs
+ * changed from TUrettypes2alphaAUD to TUrettypes2alphaMax
+ * and from TUrettypes2alpha to TUrettypes2alphaFix
+ *
  * Revision 1.40  2005/07/27 10:39:55  sah
  * modified joining and splitting of wrappers
  * to allow for non-joined wrappers as are
@@ -644,9 +648,9 @@ CRTWRPfundef (node *arg_node, info *arg_info)
         }
 
         if (FUNDEF_ISLOCAL (arg_node) && !(FUNDEF_ISEXTERN (arg_node))) {
-            FUNDEF_RETS (arg_node) = TUrettypes2alphaAUD (FUNDEF_RETS (arg_node));
+            FUNDEF_RETS (arg_node) = TUrettypes2alphaMax (FUNDEF_RETS (arg_node));
         } else {
-            FUNDEF_RETS (arg_node) = TUrettypes2alpha (FUNDEF_RETS (arg_node));
+            FUNDEF_RETS (arg_node) = TUrettypes2alphaFix (FUNDEF_RETS (arg_node));
         }
 
         FUNDEF_WRAPPERTYPE (wrapper)
