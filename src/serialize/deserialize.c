@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.28  2005/08/19 18:08:58  sah
+ * cleanup, DBUG prints and lots of comments
+ *
  * Revision 1.27  2005/08/11 16:54:46  sah
  * hack to prevent specialisations from beeing imported
  *
@@ -389,7 +392,7 @@ updateContextInformation (node *entry)
             /*
              * this is a hack somehow, but for the time
              * being the best solution. We never mark
-             * specialised as imported to prevent them
+             * specialised funs as imported to prevent them
              * to be added to the local wrapper and thus
              * resolve the multiple-instances by specialisation
              * problem.
@@ -399,9 +402,14 @@ updateContextInformation (node *entry)
             if (!FUNDEF_ISSPECIALISATION (entry)) {
                 FUNDEF_WASIMPORTED (entry) = TRUE;
             }
-        } else {
-            FUNDEF_WASUSED (entry) = TRUE;
         }
+
+        /*
+         * it is always safe to mark a function as used, so
+         * we can simply do so here
+         */
+        FUNDEF_WASUSED (entry) = TRUE;
+
         break;
     default:
         break;
@@ -570,6 +578,13 @@ FindSymbolInAst (const char *symbol)
     DBUG_ENTER ("FindSymbolInAst");
 
     result = getAliasing (symbol);
+
+#ifndef DBUG_OFF
+    if (result != NULL) {
+        DBUG_PRINT ("DS_ALIAS",
+                    ("using alias %s for symbol %s.", CTIitemName (result), symbol));
+    }
+#endif
 
     if (result == NULL) {
         result = FindSymbolInFundefChain (symbol, INFO_DS_FUNDEFS (DSstate));
@@ -764,14 +779,21 @@ DSimportInstancesByName (const char *name, const char *module)
                          "found inconsistency between module and its symbol table");
 
             /*
-             * fetch wrapper
+             * fetch wrapper: as the instances are encoded within the wrapper type,
+             *                we will automatically get all instances as well.
+             *                as we have set INFO_DS_IMPORTMODE, those will be
+             *                even imported.
              */
             entryp = serfun (DSstate);
+
             /*
-             * and throw it away again
+             * as the wrapper itself was not imported, make sure it has
+             * the right state. That way we can just leave it within
+             * the ast and do not have to decide whether it needs to
+             * be deleted or not. The deserialisation process has marked
+             * it as used anyways.
              */
-            entryp = FREEdoFreeNode (entryp);
-            entryp = FREEremoveAllZombies (entryp);
+            FUNDEF_WASIMPORTED (entryp) = FALSE;
 
             INFO_DS_IMPORTMODE (DSstate) = FALSE;
         }
@@ -948,7 +970,8 @@ DSlookupFunction (const char *module, const char *symbol)
     result = FindSymbolInAst (symbol);
 
     if (result == NULL) {
-        DBUG_PRINT ("DS", ("Looking up function `%s' in `%s'.", symbol, module));
+        DBUG_PRINT ("DS",
+                    ("Looking up function `%s:%s' in `%s'.", module, symbol, module));
 
         mod = MODMloadModule (module);
         serfun = MODMgetDeSerializeFunction (symbol, mod);
