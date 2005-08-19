@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.106  2005/08/19 18:22:00  sah
+ * added missing break.
+ *
  * Revision 3.105  2005/08/19 18:10:58  sah
  * tweaked TYmapFunctionInstances and TYfoldFunctionInstances:
  *   both functions now always traverse to the leafs of the
@@ -2104,6 +2107,8 @@ mapFunctionInstances (ntype *type, node *(*mapfun) (node *, info *), info *info)
             } else {
                 type = mapFunctionInstances (IRES_TYPE (type), mapfun, info);
             }
+            break;
+
         case TC_fun:
             /*
              * starting at a fun node, we walk down the tree for every
