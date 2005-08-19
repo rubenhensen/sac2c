@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.28  2005/08/19 17:27:33  sbs
+ * added NTCCTprf_type_conv
+ *
  * Revision 1.27  2005/06/14 09:55:10  sbs
  * support for bottom types integrated.
  *
@@ -357,6 +360,45 @@ NTCCTprf_cast (te_info *info, ntype *elems)
         res_bt = TYfreeType (res_bt);
     } else {
         res = res_bt;
+    }
+
+    DBUG_RETURN (TYmakeProductType (1, res));
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    ntype *NTCCTprf_type_conv( te_info *info, ntype *elems)
+ *
+ * description:
+ *
+ ******************************************************************************/
+
+ntype *
+NTCCTprf_type_conv (te_info *info, ntype *args)
+{
+    ntype *type;
+    ntype *arg;
+    ntype *res;
+    ct_res cmp;
+    char *err_msg;
+
+    DBUG_ENTER ("NTCCTprf_type_conv");
+
+    type = TYgetProductMember (args, 0);
+    arg = TYgetProductMember (args, 1);
+
+    cmp = TYcmpTypes (type, arg);
+
+    if ((cmp == TY_eq) || (cmp == TY_lt)) {
+        res = TYcopyType (type);
+    } else if (cmp == TY_gt) {
+        res = TYcopyType (arg);
+    } else {
+        TEhandleError (TEgetLine (info), "inferred type %s should match declared type %s",
+                       TYtype2String (arg, FALSE, 0), TYtype2String (type, FALSE, 0));
+        err_msg = TEfetchErrors ();
+        res = TYmakeBottomType (err_msg);
     }
 
     DBUG_RETURN (TYmakeProductType (1, res));

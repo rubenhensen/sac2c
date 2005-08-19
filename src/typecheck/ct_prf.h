@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.12  2005/08/19 17:27:33  sbs
+ * added NTCCTprf_type_conv
+ *
  * Revision 1.11  2004/11/22 15:36:00  sbs
  * SacDevCamp04
  *
@@ -46,6 +49,7 @@
 extern ntype *NTCCTprf_dummy (te_info *info, ntype *args);
 extern ntype *NTCCTprf_array (te_info *info, ntype *elems);
 extern ntype *NTCCTprf_cast (te_info *info, ntype *elems);
+extern ntype *NTCCTprf_type_conv (te_info *info, ntype *elems);
 extern ntype *NTCCTprf_dim (te_info *info, ntype *args);
 extern ntype *NTCCTprf_shape (te_info *info, ntype *args);
 extern ntype *NTCCTprf_reshape (te_info *info, ntype *args);
