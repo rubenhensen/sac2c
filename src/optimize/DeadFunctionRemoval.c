@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.22  2005/08/19 22:58:25  sah
+ * fixed an error message.
+ *
  * Revision 3.21  2005/07/21 16:18:12  sah
  * now all instances get tagged correctly
  *
@@ -225,7 +228,7 @@ tagWrapperAsNeeded (node *wrapper, info *info)
                  "tagWrapperAsNeeded applied to non fundef node");
 
     DBUG_ASSERT ((FUNDEF_ISWRAPPERFUN (wrapper)),
-                 "tagFundefAsNeeded called on non-wrapper fun");
+                 "tagWrapperAsNeeded called on non-wrapper fun");
 
     if (!FUNDEF_ISNEEDED (wrapper)) {
         DBUG_PRINT ("DFR", (">>> tagging wrapper %s", CTIitemName (wrapper)));
