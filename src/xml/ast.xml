@@ -724,6 +724,24 @@
           <!-- <node name="Prf" /> -->
         </travuser>
       </traversal>
+      <traversal id="INFNC" name="NeedCounter Inference" default="sons" include="inferneedcounters.h" >
+	<travuser>
+	  <node name="Block" />
+	  <node name="Fundef" />
+	  <node name="Avis" />
+	  <node name="Id" />
+	</travuser>
+      </traversal>
+      <traversal id="ASSOC" name="Associativity Optimization" default="sons" include="associativity.h" >
+	<travuser>
+	  <node name="Fundef" />
+	  <node name="Block" />
+	  <node name="Assign" />
+	  <node name="Let" />
+	  <node name="Ids" />
+	  <node name="Prf" />
+	</travuser>
+      </traversal>
       <traversal id="AL" name="AssociativeLaw" default="sons" include="AssociativeLaw.h" >
 	<travuser>
 	  <node name="Block" />
@@ -3273,6 +3291,7 @@
         </attribute>
       </attributes>
       <flags>
+        <flag name="IsSclPrf" />
       </flags>
     </node>
 <!--
@@ -3827,6 +3846,7 @@
           <type name="Integer" />
           <phases>
             <phase name="lir" />
+            <phase name="assoc" />
           </phases>
         </attribute>
         <attribute name="Subst" mandatory="no">
