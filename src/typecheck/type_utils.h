@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2005/08/19 17:25:06  sbs
+ * changed TUrettypes2alpha into TUrettypes2alphaFix, etc.
+ *
  * Revision 1.13  2005/07/21 12:02:24  ktr
  * added TUdimKnown
  *
@@ -55,8 +58,9 @@ extern ntype *TUmakeProductTypeFromRets (node *rets);
 extern node *TUreplaceRetTypes (node *rets, ntype *prodt);
 extern node *TUrettypes2unknownAUD (node *rets);
 extern node *TUargtypes2unknownAUD (node *rets);
-extern node *TUrettypes2alpha (node *rets);
-extern node *TUrettypes2alphaAUD (node *rets);
+extern ntype *TUtype2alphaMax (ntype *type);
+extern node *TUrettypes2alphaFix (node *rets);
+extern node *TUrettypes2alphaMax (node *rets);
 extern bool TUdimKnown (ntype *ty);
 extern bool TUshapeKnown (ntype *ty);
 extern bool TUisIntVect (ntype *ty);

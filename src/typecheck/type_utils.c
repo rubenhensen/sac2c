@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.18  2005/08/19 17:25:06  sbs
+ * changed TUrettypes2alpha into TUrettypes2alphaFix, etc.
+ *
  * Revision 1.17  2005/08/09 10:17:05  sah
  * argtypes2UnknownAUD now processes DECLTYPE as well
  *
@@ -213,7 +216,46 @@ TUargtypes2unknownAUD (node *args)
 
 /** <!--********************************************************************-->
  *
- * @fn node  *TUrettypes2alphaAUD( node *rets);
+ * @fn ntype  *TUtype2alphaMax( ntype *type);
+ *
+ *   @brief
+ *   @param
+ *   @return
+ *
+ ******************************************************************************/
+
+ntype *
+TUtype2alphaMax (ntype *type)
+{
+    ntype *new, *scalar;
+    tvar *tv;
+
+    DBUG_ENTER ("TUtype2alphaMax");
+
+    if (TYisAlpha (type)) {
+        tv = TYgetAlpha (type);
+        if (SSIgetMax (tv) != NULL) {
+            new = TYmakeAlphaType (TYcopyType (SSIgetMax (tv)));
+        } else if (SSIgetMin (tv) != NULL) {
+            new = TYmakeAlphaType (TYmakeAUD (TYcopyType (TYgetScalar (SSIgetMin (tv)))));
+        } else {
+            new = TYmakeAlphaType (NULL);
+        }
+    } else {
+        scalar = TYgetScalar (type);
+        if ((TYisSimple (scalar) && (TYgetSimpleType (scalar) == T_unknown))) {
+            new = TYmakeAlphaType (NULL);
+        } else {
+            new = TYmakeAlphaType (TYcopyType (type));
+        }
+    }
+
+    DBUG_RETURN (new);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node  *TUrettypes2alphaMax( node *rets);
  *
  *   @brief
  *   @param
@@ -222,34 +264,17 @@ TUargtypes2unknownAUD (node *args)
  ******************************************************************************/
 
 node *
-TUrettypes2alphaAUD (node *rets)
+TUrettypes2alphaMax (node *rets)
 {
     node *tmp = rets;
-    ntype *new, *scalar;
-    tvar *tv;
+    ntype *new;
 
-    DBUG_ENTER ("TUrettypes2alphaAUD");
+    DBUG_ENTER ("TUrettypes2alphaMax");
 
     while (tmp != NULL) {
-        if (TYisAlpha (RET_TYPE (tmp))) {
-            tv = TYgetAlpha (RET_TYPE (tmp));
-            if (SSIgetMax (tv) != NULL) {
-                new = TYmakeAlphaType (
-                  TYmakeAUD (TYcopyType (TYgetScalar (SSIgetMax (tv)))));
-            } else if (SSIgetMin (tv) != NULL) {
-                new = TYmakeAlphaType (
-                  TYmakeAUD (TYcopyType (TYgetScalar (SSIgetMin (tv)))));
-            } else {
-                new = TYmakeAlphaType (NULL);
-            }
-        } else {
-            scalar = TYgetScalar (RET_TYPE (tmp));
-            if ((TYisSimple (scalar) && (TYgetSimpleType (scalar) == T_unknown))) {
-                new = TYmakeAlphaType (NULL);
-            } else {
-                new = TYmakeAlphaType (TYmakeAUD (TYcopyType (scalar)));
-            }
-        }
+
+        new = TUtype2alphaMax (RET_TYPE (tmp));
+
         RET_TYPE (tmp) = TYfreeType (RET_TYPE (tmp));
         RET_TYPE (tmp) = new;
         tmp = RET_NEXT (tmp);
@@ -260,7 +285,7 @@ TUrettypes2alphaAUD (node *rets)
 
 /** <!--********************************************************************-->
  *
- * @fn node  *TUrettypes2alpha( node *rets);
+ * @fn node  *TUrettypes2alphaFix( node *rets);
  *
  *   @brief
  *   @param
@@ -269,24 +294,25 @@ TUrettypes2alphaAUD (node *rets)
  ******************************************************************************/
 
 node *
-TUrettypes2alpha (node *rets)
+TUrettypes2alphaFix (node *rets)
 {
     node *tmp = rets;
     ntype *new, *scalar;
 
-    DBUG_ENTER ("TUrettypes2alpha");
+    DBUG_ENTER ("TUrettypes2alphaFix");
 
     while (tmp != NULL) {
         if (!TYisAlpha (RET_TYPE (tmp))) {
             scalar = TYgetScalar (RET_TYPE (tmp));
-            if ((TYisSimple (scalar) && (TYgetSimpleType (scalar) == T_unknown))) {
-                new = TYmakeAlphaType (NULL);
-                RET_TYPE (tmp) = TYfreeType (RET_TYPE (tmp));
-            } else {
-                new = TYmakeAlphaType (TYmakeAUD (TYcopyType (scalar)));
-                SSInewMin (TYgetAlpha (new), RET_TYPE (tmp));
-            }
+            DBUG_ASSERT ((!TYisSimple (scalar)
+                          || (TYgetSimpleType (scalar) != T_unknown)),
+                         "TUrettypes2alphaFix applied to rettype with T_unknown");
+            new = TYmakeAlphaType (TYcopyType (RET_TYPE (tmp)));
+            SSInewMin (TYgetAlpha (new), RET_TYPE (tmp));
             RET_TYPE (tmp) = new;
+        } else {
+            DBUG_ASSERT (TYisFixedAlpha (RET_TYPE (tmp)),
+                         "TUrettypes2alphaFix applied to rettype with non-fix alpha");
         }
         tmp = RET_NEXT (tmp);
     }
