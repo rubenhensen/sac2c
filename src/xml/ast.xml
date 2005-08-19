@@ -459,6 +459,8 @@
       <traversal id="INSTC" name="Insert Type Conversions" default="sons" include="insert_type_conv.h" >
         <travuser>
           <node name="Fundef" />
+          <node name="Block" />
+          <node name="Avis" />
           <node name="Assign" />
           <node name="Ids" />
           <node name="Id" />
@@ -494,6 +496,7 @@
           <node name="Exprs" />
           <node name="Id" />
           <node name="Globobj" />
+          <node name="Type" />
           <node name="Num" />
           <node name="Bool" />
           <node name="Char" />
@@ -1782,6 +1785,7 @@
           <node name="Module" />
           <node name="Fundef" />
           <node name="Assign" />
+          <node name="Prf" />
           <node name="Ap" />
         </travuser>
       </traversal>
