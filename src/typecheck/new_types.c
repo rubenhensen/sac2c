@@ -1,6 +1,14 @@
 /*
  *
  * $Log$
+ * Revision 3.105  2005/08/19 18:10:58  sah
+ * tweaked TYmapFunctionInstances and TYfoldFunctionInstances:
+ *   both functions now always traverse to the leafs of the
+ *   generic ( [*] ) paths to make sure that _only_ the
+ *   instances that are available for the given basetypes are
+ *   used. This is neccessary as SplitWrapperType does not
+ *   update the possibility information
+ *
  * Revision 3.104  2005/08/16 13:35:16  sah
  * added a dbugmessage
  *
@@ -2083,11 +2091,19 @@ mapFunctionInstances (ntype *type, node *(*mapfun) (node *, info *), info *info)
     if (type != NULL) {
         switch (NTYPE_CON (type)) {
         case TC_ires:
-            for (cnt = 0; cnt < IRES_NUMFUNS (type); cnt++) {
-                IRES_FUNDEF (type, cnt) = mapfun (IRES_FUNDEF (type, cnt), info);
+            /*
+             * we want to walk down until we reach the leaf (which is
+             * a product type). Once we arrived there, we know that
+             * this IRES node contains all instances for the
+             * given basetype combination.
+             */
+            if (TYisProd (IRES_TYPE (type))) {
+                for (cnt = 0; cnt < IRES_NUMFUNS (type); cnt++) {
+                    IRES_FUNDEF (type, cnt) = mapfun (IRES_FUNDEF (type, cnt), info);
+                }
+            } else {
+                type = mapFunctionInstances (IRES_TYPE (type), mapfun, info);
             }
-            break;
-
         case TC_fun:
             /*
              * starting at a fun node, we walk down the tree for every
@@ -2153,8 +2169,18 @@ foldFunctionInstances (ntype *type, void *(*foldfun) (node *, void *), void *res
 
     switch (NTYPE_CON (type)) {
     case TC_ires:
-        for (cnt = 0; cnt < IRES_NUMFUNS (type); cnt++) {
-            result = foldfun (IRES_FUNDEF (type, cnt), result);
+        /*
+         * we want to walk down until we reach the leaf (which is
+         * a product type). Once we arrived there, we know that
+         * this IRES node contains all instances for the
+         * given basetype combination.
+         */
+        if (TYisProd (IRES_TYPE (type))) {
+            for (cnt = 0; cnt < IRES_NUMFUNS (type); cnt++) {
+                result = foldfun (IRES_FUNDEF (type, cnt), result);
+            }
+        } else {
+            result = foldFunctionInstances (IRES_TYPE (type), foldfun, result);
         }
         break;
 
@@ -5733,10 +5759,20 @@ TYsplitWrapperType (ntype *type, int *pathes_remaining)
 {
     int n;
     ntype **frame;
+#ifndef DBUG_OFF
+    char *tmp_str;
+#endif
 
     DBUG_ENTER ("TYSplitWrapperType");
 
     if (NTYPE_CON (type) == TC_fun) {
+
+        DBUG_EXECUTE ("NTY_SPLIT", tmp_str = TYtype2DebugString (type, TRUE, 20););
+
+        DBUG_PRINT ("NTY_SPLIT", ("wrapper is: %s", tmp_str));
+
+        DBUG_EXECUTE ("NTY_SPLIT", tmp_str = ILIBfree (tmp_str););
+
         n = TYgetArity (type);
         frame = (ntype **)ILIBmalloc (n * sizeof (ntype *));
         ExtractTopBaseSignature (type, frame);
@@ -5750,6 +5786,12 @@ TYsplitWrapperType (ntype *type, int *pathes_remaining)
             frame[n] = ILIBfree (frame[n]);
         }
         frame = ILIBfree (frame);
+
+        DBUG_EXECUTE ("NTY_SPLIT", tmp_str = TYtype2DebugString (type, TRUE, 20););
+
+        DBUG_PRINT ("NTY_SPLIT", ("wrapper split-off: %s", tmp_str));
+
+        DBUG_EXECUTE ("NTY_SPLIT", tmp_str = ILIBfree (tmp_str););
     } else {
         /**
          * we are dealing with a parameterless function here!
