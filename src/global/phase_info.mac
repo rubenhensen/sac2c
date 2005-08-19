@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.36  2005/08/19 17:19:58  sbs
+ * added phase instc
+ *
  * Revision 3.35  2005/08/11 13:00:10  sbs
  * changed some subphase specifiers
  *
@@ -237,6 +240,9 @@ SUBPHASE (insvd, "ivd", "Inserting variable declarations", INSVDdoInsertVardec)
 SUBPHASE (crtwrp, "cwr", "Creating wrapper functions", CRTWRPdoCreateWrappers)
 
 SUBPHASE (lac2fun, "l2f", "Eliminating loops and conditionals", L2FdoLac2Fun)
+
+SUBPHASE (instc, "itc", "Converting type decls in type conversions",
+          INSTCdoInsertTypeConv)
 
 SUBPHASE (ssa, "ssa", "Establishing static single assignment form",
           SSATdoTransformAllowGOs)

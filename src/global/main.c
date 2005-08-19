@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.112  2005/08/19 17:19:33  sbs
+ * added phase instc
+ *
  * Revision 3.111  2005/08/10 11:57:46  sbs
  * added breaking facility after PH_pretypecheck
  *
@@ -319,6 +322,7 @@ main (int argc, char *argv[])
 
     syntax_tree = PHrunCompilerSubPhase (SUBPH_rst, syntax_tree);
     syntax_tree = PHrunCompilerSubPhase (SUBPH_insvd, syntax_tree);
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_instc, syntax_tree);
     syntax_tree = PHrunCompilerSubPhase (SUBPH_crtwrp, syntax_tree);
     syntax_tree = PHrunCompilerSubPhase (SUBPH_lac2fun, syntax_tree);
     syntax_tree = PHrunCompilerSubPhase (SUBPH_ssa, syntax_tree);
