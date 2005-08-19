@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.187  2005/08/19 18:15:29  ktr
+# added src/optimize/inferneedcounters.o, src/optimize/associativity.o
+#
 # Revision 3.186  2005/08/18 07:00:57  sbs
 # insert_type_conv.o added.
 #
@@ -259,7 +262,8 @@ OPTIMIZE= src/optimize/optimize.o \
           src/optimize/ElimSubDiv.o \
           src/optimize/UndoElimSubDiv.o src/optimize/type_upgrade.o \
           src/optimize/ConstVarPropagation.o src/optimize/DistributiveLaw.o \
-          src/optimize/signature_simplification.o src/optimize/inlining.o
+          src/optimize/signature_simplification.o src/optimize/inlining.o \
+          src/optimize/inferneedcounters.o src/optimize/associativity.o
 
 PROFILE= src/profile/annotate_fun_calls.o
 
