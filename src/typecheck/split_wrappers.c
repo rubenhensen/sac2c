@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2005/08/19 18:10:00  sah
+ * adapted signature of CorrectFundefPointer to new ast structure
+ * simplified detection of generic wrappers
+ *
  * Revision 1.7  2005/07/28 10:58:02  sah
  * specialisation for used functions is handeled
  * correctly now even in obscure cases
@@ -47,6 +51,7 @@
 #include "namespaces.h"
 #include "serialize.h"
 #include "deserialize.h"
+#include "DeadFunctionRemoval.h"
 
 /*******************************************************************************
  *
@@ -327,7 +332,7 @@ SplitWrapper (node *fundef, info *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *CorrectFundefPointer( node *fundef, char *funname, ntype *arg_types)
+ *   node *CorrectFundefPointer( node *fundef, ntype *arg_types)
  *
  * Description:
  *
@@ -335,13 +340,16 @@ SplitWrapper (node *fundef, info *arg_info)
  ******************************************************************************/
 
 node *
-CorrectFundefPointer (node *fundef, const namespace_t *funns, const char *funname,
-                      ntype *arg_types)
+CorrectFundefPointer (node *fundef, ntype *arg_types)
 {
+    node *newfundef;
+
     DBUG_ENTER ("CorrectFundefPointer");
 
+    newfundef = fundef;
+
     DBUG_ASSERT ((fundef != NULL), "fundef not found!");
-    if (FUNDEF_ISWRAPPERFUN (fundef) && FUNDEF_ISLOCAL (fundef)) {
+    if (FUNDEF_ISWRAPPERFUN (fundef) && !FUNDEF_ISNEEDED (fundef)) {
         /*
          * 'fundef' points to an generic wrapper function
          *    -> search the specific wrapper function
@@ -353,15 +361,18 @@ CorrectFundefPointer (node *fundef, const namespace_t *funns, const char *funnam
              * -> search for correct wrapper
              */
             DBUG_PRINT ("SWR", ("  search for wrapper"));
+
             do {
-                fundef = FUNDEF_NEXT (fundef);
-                DBUG_ASSERT (((fundef != NULL) && NSequals (funns, FUNDEF_NS (fundef))
-                              && ILIBstringCompare (funname, FUNDEF_NAME (fundef))
-                              && FUNDEF_ISWRAPPERFUN (fundef)),
+                newfundef = FUNDEF_NEXT (newfundef);
+                DBUG_ASSERT (((newfundef != NULL)
+                              && NSequals (FUNDEF_NS (newfundef), FUNDEF_NS (fundef))
+                              && ILIBstringCompare (FUNDEF_NAME (newfundef),
+                                                    FUNDEF_NAME (fundef))
+                              && FUNDEF_ISWRAPPERFUN (newfundef)),
                              "no appropriate wrapper function found!");
 
-                DBUG_ASSERT ((!FUNDEF_ISZOMBIE (fundef)), "zombie found");
-            } while (!TUsignatureMatches (FUNDEF_ARGS (fundef), arg_types));
+                DBUG_ASSERT ((!FUNDEF_ISZOMBIE (newfundef)), "zombie found");
+            } while (!TUsignatureMatches (FUNDEF_ARGS (newfundef), arg_types));
             DBUG_PRINT ("SWR", ("  correct wrapper found"));
         } else {
             /**
@@ -369,15 +380,17 @@ CorrectFundefPointer (node *fundef, const namespace_t *funns, const char *funnam
              * of the non-generic wrappers. Since at least one of them will follow
              * the generic one directly, we can choose that one.
              */
-            fundef = FUNDEF_NEXT (fundef);
-            DBUG_ASSERT (((fundef != NULL) && NSequals (funns, FUNDEF_NS (fundef))
-                          && ILIBstringCompare (funname, FUNDEF_NAME (fundef))
-                          && FUNDEF_ISWRAPPERFUN (fundef)),
+            newfundef = FUNDEF_NEXT (fundef);
+            DBUG_ASSERT (((newfundef != NULL)
+                          && NSequals (FUNDEF_NS (newfundef), FUNDEF_NS (fundef))
+                          && ILIBstringCompare (FUNDEF_NAME (newfundef),
+                                                FUNDEF_NAME (fundef))
+                          && FUNDEF_ISWRAPPERFUN (newfundef)),
                          "no appropriate wrapper function found!");
         }
     }
 
-    DBUG_RETURN (fundef);
+    DBUG_RETURN (newfundef);
 }
 
 /******************************************************************************
@@ -427,6 +440,16 @@ FundefBuildWrappers (node *arg_node, info *arg_info)
          * mark the old generic wrapper as not needed
          */
         FUNDEF_ISNEEDED (arg_node) = FALSE;
+    } else if ((FUNDEF_ISWRAPPERFUN (arg_node) && (!FUNDEF_ISLOCAL (arg_node)))) {
+        /*
+         * this is a non local wrapper, so it is needed and has to be marked
+         * as needed...
+         */
+        FUNDEF_ISNEEDED (arg_node) = TRUE;
+
+        if (FUNDEF_NEXT (arg_node) != NULL) {
+            FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+        }
     } else {
         /*
          * if this is no wrapper function, just skip to the next function
@@ -463,8 +486,7 @@ FundefRemoveGarbage (node *arg_node, info *arg_info)
         FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
     }
 
-    if ((FUNDEF_ISWRAPPERFUN (arg_node)) && (!FUNDEF_ISNEEDED (arg_node))
-        && (FUNDEF_ISLOCAL (arg_node))) {
+    if ((FUNDEF_ISWRAPPERFUN (arg_node)) && (!FUNDEF_ISNEEDED (arg_node))) {
         /*
          * remove statically dispatchable wrapper function and all generic wrappers
          */
@@ -529,13 +551,14 @@ SWRfundef (node *arg_node, info *arg_info)
     } else {
         DBUG_ASSERT ((INFO_SWR_TRAVNO (arg_info) == 3), "illegal INFO_SWR_TRAVNO found!");
         /*
-         * third traversal -> remove zombies and empty wrappers
-         *                    finally move specialised wrappers into their
-         *                      final namespace
+         * third traversal -> move all wrappers to their final ns and mark them
+         *                    as local if they contain specialisations
+         *
+         *                    remove zombies and empty wrappers
          */
 
-        arg_node = FundefRemoveGarbage (arg_node, arg_info);
         arg_node = FundefMoveToFinalNs (arg_node, arg_info);
+        arg_node = FundefRemoveGarbage (arg_node, arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -567,8 +590,7 @@ SWRap (node *arg_node, info *arg_info)
                  NSgetName (AP_NS (arg_node)), AP_NAME (arg_node), AP_FUNDEF (arg_node)));
 
     arg_types = TUactualArgs2Ntype (AP_ARGS (arg_node));
-    AP_FUNDEF (arg_node) = CorrectFundefPointer (AP_FUNDEF (arg_node), AP_NS (arg_node),
-                                                 AP_NAME (arg_node), arg_types);
+    AP_FUNDEF (arg_node) = CorrectFundefPointer (AP_FUNDEF (arg_node), arg_types);
 
     DBUG_PRINT ("SWR",
                 ("Ap of function %s::%s now points to " F_PTR ".",
@@ -646,9 +668,7 @@ SWRfold (node *arg_node, info *arg_info)
         arg_type = TYlubOfTypes (neutr_type, body_type);
         arg_types = TYmakeProductType (2, arg_type, TYcopyType (arg_type));
 
-        FOLD_FUNDEF (arg_node)
-          = CorrectFundefPointer (FOLD_FUNDEF (arg_node), FOLD_NS (arg_node),
-                                  FOLD_FUN (arg_node), arg_types);
+        FOLD_FUNDEF (arg_node) = CorrectFundefPointer (FOLD_FUNDEF (arg_node), arg_types);
         arg_types = TYfreeType (arg_types);
         body_type = TYfreeType (body_type);
         neutr_type = TYfreeType (neutr_type);
@@ -685,6 +705,10 @@ SWRdoSplitWrappers (node *ast)
     info_node = FreeInfo (info_node);
 
     TRAVpop ();
+
+#if 0
+  ast = DFRdoDeadFunctionRemoval( ast);
+#endif
 
     DBUG_RETURN (ast);
 }
