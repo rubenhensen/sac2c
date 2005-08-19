@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.44  2005/08/19 18:16:38  ktr
+# added inferneededcounters.o, associativity.o
+#
 # Revision 3.43  2005/08/02 14:24:37  ktr
 # a seperate dead code inference traversal is now employed
 #
@@ -52,7 +55,8 @@ OBJS := optimize.o DeadFunctionRemoval.o deadcoderemoval.o \
         SSAWLUnroll.o SSAInferLI.o AssociativeLaw.o rmcasts.o \
         UndoElimSubDiv.o ElimSubDiv.o deadcodeinference.o \
         ConstVarPropagation.o DistributiveLaw.o type_upgrade.o \
-        signature_simplification.o inlining.o
+        signature_simplification.o inlining.o associativity.o \
+        inferneedcounters.o
 
 all: $(OBJS)
 
