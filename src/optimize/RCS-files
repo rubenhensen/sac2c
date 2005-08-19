@@ -38,3 +38,4 @@ deadcoderemoval.c
 deadcoderemoval.h
 deadcodeinference.c
 deadcodeinference.h
+inferneedcounters.c
