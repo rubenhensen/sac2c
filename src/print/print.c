@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.229  2005/08/19 10:04:50  sbs
+ * fixed error in PRTtype
+ *
  * Revision 3.228  2005/08/18 16:22:12  ktr
  * removed conditional lhs expressions
  *
@@ -2829,8 +2832,8 @@ PRTtype (node *arg_node, info *arg_info)
 
     DBUG_PRINT ("PRINT", ("%s " F_PTR, NODE_TEXT (arg_node), arg_node));
 
-    if (RET_TYPE (arg_node) != NULL) {
-        type_str = TYtype2String (RET_TYPE (arg_node), FALSE, 0);
+    if (TYPE_TYPE (arg_node) != NULL) {
+        type_str = TYtype2String (TYPE_TYPE (arg_node), FALSE, 0);
         fprintf (global.outfile, "%s", type_str);
         type_str = ILIBfree (type_str);
     }
