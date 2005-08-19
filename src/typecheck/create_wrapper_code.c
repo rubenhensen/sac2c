@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.44  2005/08/19 18:08:16  sah
+ * added DBUG message
+ *
  * Revision 1.43  2005/07/17 20:10:47  sbs
  * inserts bodies only; the splitted has been outsourced to split_wrappers
  *
@@ -118,6 +121,9 @@ InsertWrapperCode (node *fundef)
                  "inconsistant wrapper function found!");
 
     if (WrapperCodeIsNeeded (fundef) && WrapperCodeIsPossible (fundef)) {
+
+        DBUG_PRINT ("CWC", ("creating wrapper body for %s", CTIitemName (fundef)));
+
         /*
          * generate wrapper code together with the needed vardecs
          */
