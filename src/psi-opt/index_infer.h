@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2005/08/20 23:59:54  ktr
+ * Should work...
+ *
  * Revision 1.2  2005/08/20 19:08:02  ktr
  * starting brushing
  *
@@ -15,9 +18,12 @@
 
 #include "types.h"
 
-extern node *IVEdoIndexVectorEliminationInference (node *syntax_tree);
+extern node *IVEIdoIndexVectorEliminationInference (node *syntax_tree);
+extern node *IVEIprintPreFun (node *arg_node, info *arg_info);
 
 extern node *IVEIprf (node *arg_node, info *arg_info);
 extern node *IVEIassign (node *arg_node, info *arg_info);
+extern node *IVEIfundef (node *arg_node, info *arg_info);
+extern node *IVEIap (node *arg_node, info *arg_info);
 
 #endif /* _SAC_INDEX_INFER_H_ */
