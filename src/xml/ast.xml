@@ -3653,7 +3653,8 @@
 
 -->
     <node name="Avis">
-      <sons></sons>
+      <sons>
+      </sons>
       <attributes>
         <attribute name="Decl" default="NULL" mandatory="yes">
           <type name="Link">
@@ -3794,8 +3795,22 @@
             Used by by Interface Analsysis in order to obtain the transitive hull of variable aliases.
           </description>
         </attribute>
-	<attribute name="IdxShapes" mandatory="no">
-	  <type name="NewType" />
+	<attribute name="IdxTypes" mandatory="no">
+	  <type name="Node">
+	    <target>
+	      <node name="Type" />
+	    </target>
+	  </type>
+	  <phases>
+	    <phase name="ive" />
+	  </phases>
+	</attribute>
+	<attribute name="IdxIds" mandatory="no">
+	  <type name="Node">
+	    <target>
+	      <node name="Ids" />
+	    </target>
+	  </type>
 	  <phases>
 	    <phase name="ive" />
 	  </phases>
