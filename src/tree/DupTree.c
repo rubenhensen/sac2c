@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.167  2005/08/20 19:19:19  sah
+ * IVE-rewrite: removed N_vinfo
+ *
  * Revision 3.166  2005/08/18 06:20:21  sbs
  * DUPtype added
  *
@@ -927,33 +930,6 @@ DupArgtab (argtab_t *argtab, info *arg_info)
     }
 
     DBUG_RETURN (new_argtab);
-}
-
-/******************************************************************************/
-
-node *
-DUPvinfo (node *arg_node, info *arg_info)
-{
-    node *new_node, *rest;
-
-    DBUG_ENTER ("DUPvinfo");
-
-    rest = DUPCONT (VINFO_NEXT (arg_node));
-
-    if (VINFO_FLAG (arg_node) == DOLLAR) {
-        new_node = TCmakeVinfoDollar (rest);
-    } else {
-        new_node = TBmakeVinfo (VINFO_FLAG (arg_node),
-                                (VINFO_SHAPE (arg_node) == NULL
-                                   ? NULL
-                                   : SHcopyShape (VINFO_SHAPE (arg_node))),
-                                VINFO_DOLLAR (rest), rest);
-    }
-    VINFO_VARDEC (new_node) = VINFO_VARDEC (arg_node);
-
-    CopyCommonNodeData (new_node, arg_node);
-
-    DBUG_RETURN (new_node);
 }
 
 /******************************************************************************/

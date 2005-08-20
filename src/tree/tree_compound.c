@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.140  2005/08/20 19:19:19  sah
+ * IVE-rewrite: removed N_vinfo
+ *
  * Revision 3.139  2005/08/20 12:10:03  ktr
  * corrected TCfilterExprs
  *
@@ -2790,35 +2793,6 @@ TCarray2Vec (simpletype t, node *aelems, int *length)
     }
 
     DBUG_RETURN (res);
-}
-
-/*--------------------------------------------------------------------------*/
-
-/***
- ***  N_vinfo :
- ***/
-
-/******************************************************************************
- *
- * function:
- *   node *TCmakeVinfoDollar( node * next)
- *
- * description:
- *   create N_vinfo node with Dollar-Tag and self-ref in VINFO_DOLLAR!
- *
- ******************************************************************************/
-
-node *
-TCmakeVinfoDollar (node *next)
-{
-    node *vinfo;
-
-    DBUG_ENTER ("TCmakeVinfoDollar");
-
-    vinfo = TBmakeVinfo (DOLLAR, NULL, NULL, next);
-    VINFO_DOLLAR (vinfo) = vinfo;
-
-    DBUG_RETURN (vinfo);
 }
 
 /*--------------------------------------------------------------------------*/

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.197  2005/08/20 19:19:19  sah
+ * IVE-rewrite: removed N_vinfo
+ *
  * Revision 3.196  2005/08/19 18:21:47  ktr
  * Added N_exprs functions
  *
@@ -1238,14 +1241,6 @@ extern char *TCarray2CharVec (node *aelems, int *length);
 extern float *TCarray2FloatVec (node *aelems, int *length);
 extern double *TCarray2DblVec (node *aelems, int *length);
 extern void *TCarray2Vec (simpletype t, node *aelems, int *length);
-
-/*--------------------------------------------------------------------------*/
-
-/***
- ***  N_vinfo :
- ***/
-
-extern node *TCmakeVinfoDollar (node *next);
 
 /*--------------------------------------------------------------------------*/
 

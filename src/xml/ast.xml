@@ -103,7 +103,6 @@
       </traversal>
       <traversal id="PRT" name="Print Syntax Tree" default="user" include="print.h" >
         <travsons>
-          <node name="Vinfo" />
           <node name="SSAstack" />
           <node name="WLblock" />
           <node name="WLublock" />
@@ -1111,7 +1110,6 @@
         <travuser>
           <node name="Assign" />
           <node name="Prf" />
-          <node name="Id" />
         </travuser>
       </traversal>
     </phase>
@@ -2529,36 +2527,6 @@
             Deprecated. TODO: This should be eliminated.
           </description>
         </attribute>
-        <attribute name="ActChn" mandatory="no">
-          <type name="Link">
-            <target>
-              <node name="Vinfo" />
-            </target>
-          </type>
-          <phases>
-            <phase name="ive" />
-          </phases>
-        </attribute>
-        <attribute name="ColChn" mandatory="no">
-          <type name="Link">
-            <target>
-              <node name="Vinfo" />
-            </target>
-          </type>
-          <phases>
-            <phase name="ive" />
-          </phases>
-        </attribute>
-        <attribute name="Fundef" mandatory="no">
-          <type name="ExtLink">
-            <target>
-              <node name="Fundef" />
-            </target>
-          </type>
-          <phases>
-            <phase name="ive" />
-          </phases>
-        </attribute>
 	<attribute name="Linksign" mandatory="no" >
 	  <type name="Integer" />
 	  <phases>
@@ -2685,26 +2653,6 @@
           </type>
           <phases>
             <!-- <range from="inl" to="precompile" /> TODO -->
-          </phases>
-        </attribute>
-        <attribute name="ActChn" mandatory="no">
-          <type name="Node">
-            <target>
-              <node name="Vinfo" />
-            </target>
-          </type>
-          <phases>
-            <phase name="ive" />
-          </phases>
-        </attribute>
-        <attribute name="ColChn" mandatory="no">
-          <type name="Node">
-            <target>
-              <node name="Vinfo" />
-            </target>
-          </type>
-          <phases>
-            <phase name="ive" />
           </phases>
         </attribute>
         <attribute name="VarNo" mandatory="yes">
@@ -3202,55 +3150,6 @@
     </node>
 <!--
 
-  N_vinfo :
-
--->
-    <node name="Vinfo">
-      <sons>
-        <son name="Next" mandatory="no">
-          <target>
-            <node name="Vinfo" />
-          </target>
-        </son>
-      </sons>
-      <attributes>
-        <attribute name="Flag" mandatory="yes">
-          <type name="UseFlag" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
-        <attribute name="Shape" mandatory="no">
-          <type name="Shape" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
-        <attribute name="Dollar" mandatory="no">
-          <type name="Link">
-            <target>
-              <node name="Vinfo" />
-            </target>
-          </type>
-          <phases>
-            <all />
-          </phases>
-        </attribute>
-        <attribute name="Vardec" default="NULL" mandatory="no">
-          <type name="Link">
-            <target>
-              <node name="Vardec" />
-            </target>
-          </type>
-          <phases>
-            <all />
-          </phases>
-        </attribute>
-      </attributes>
-      <flags></flags>
-    </node>
-<!--
-
   N_id :
 
 -->
@@ -3667,6 +3566,16 @@
             <all />
           </phases>
         </attribute>
+        <attribute name="Ap" mandatory="no" default="NULL">
+          <type name="Link">
+            <target>
+              <node name="Ap" />
+            </target>
+          </type>
+          <phases>
+            <all />
+          </phases>
+        </attribute>
         <attribute name="Let" mandatory="yes">
           <type name="Link">
             <target>
@@ -3814,16 +3723,6 @@
             <phase name="ssawc" />
           </phases>
         </attribute>
-        <attribute name="UseChn" mandatory="no">
-          <type name="Node">
-            <target>
-              <node name="Vinfo" />
-            </target>
-          </type>
-          <phases>
-            <range from="ivei" to="ive" />
-          </phases>
-        </attribute>
         <attribute name="SSAThen" mandatory="no">
           <type name="Link">
             <target>
@@ -3895,6 +3794,12 @@
             Used by by Interface Analsysis in order to obtain the transitive hull of variable aliases.
           </description>
         </attribute>
+	<attribute name="IdxShapes" mandatory="no">
+	  <type name="NewType" />
+	  <phases>
+	    <phase name="ive" />
+	  </phases>
+	</attribute>
       </attributes>
       <flags>
         <flag name="SSAUndoFLag" />
@@ -4400,16 +4305,6 @@
           <type name="Integer" />
           <phases>
             <phase name="final" /> <!-- TODO misc phase? -->
-          </phases>
-        </attribute>
-        <attribute name="Use" mandatory="no">
-          <type name="Link">
-            <target>
-              <node name="Vinfo" />
-            </target>
-          </type>
-          <phases>
-            <phase name="ive" />
           </phases>
         </attribute>
         <attribute name="WLAA_Info" mandatory="yes">
@@ -5572,16 +5467,6 @@
           </type>
           <phases>
             <all />
-          </phases>
-        </attribute>
-        <attribute name="Use" mandatory="yes" >
-          <type name="Link">
-            <target>
-              <node name="Vinfo" />
-            </target>
-          </type>
-          <phases>
-            <phase name="ive" />
           </phases>
         </attribute>
       </attributes>

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.48  2005/08/20 19:19:19  sah
+ * IVE-rewrite: removed N_vinfo
+ *
  * Revision 3.47  2005/08/18 06:20:21  sbs
  * DUPtype added
  *
@@ -209,7 +212,6 @@ extern node *DUPgetCopiedSpecialFundefs ();
 /*
  * Functions for internal use during AST traversal only!
  */
-extern node *DUPvinfo (node *arg_node, info *arg_info);
 extern node *DUPnum (node *arg_node, info *arg_info);
 extern node *DUPbool (node *arg_node, info *arg_info);
 extern node *DUPfloat (node *arg_node, info *arg_info);
