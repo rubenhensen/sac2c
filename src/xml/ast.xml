@@ -1104,6 +1104,11 @@
       </traversal>
       <traversal id="IVE" name="Index Vector Elimination" default="sons" include="index.h">
         <travuser>
+	  <node name="Fundef" />
+	  <node name="Assign" />
+	  <node name="Prf" />
+	  <node name="Ids" />
+	  <node name="Ap" />
         </travuser>
       </traversal>
       <traversal id="IVEI" name="IVE - Use Inference" default="sons" include="index_infer.h">
