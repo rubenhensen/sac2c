@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.188  2005/08/20 12:05:31  ktr
+# added src/optimize/elimtypeconv.o
+#
 # Revision 3.187  2005/08/19 18:15:29  ktr
 # added src/optimize/inferneedcounters.o, src/optimize/associativity.o
 #
@@ -263,7 +266,8 @@ OPTIMIZE= src/optimize/optimize.o \
           src/optimize/UndoElimSubDiv.o src/optimize/type_upgrade.o \
           src/optimize/ConstVarPropagation.o src/optimize/DistributiveLaw.o \
           src/optimize/signature_simplification.o src/optimize/inlining.o \
-          src/optimize/inferneedcounters.o src/optimize/associativity.o
+          src/optimize/inferneedcounters.o src/optimize/associativity.o \
+          src/optimize/elimtypeconv.o
 
 PROFILE= src/profile/annotate_fun_calls.o
 
