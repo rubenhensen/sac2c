@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.47  2005/08/20 23:59:08  sah
+ * fixed a DBUG message
+ *
  * Revision 1.46  2005/07/19 22:49:04  sbs
  * funconds fixed
  * before, exprs chains were still expected.
@@ -225,6 +228,7 @@
 #include "SSACSE.h"
 #include "compare_tree.h"
 #include "optimize.h"
+#include "ctinfo.h"
 
 /*
  * INFO structure
@@ -597,7 +601,7 @@ PropagateSubst2Args (node *fun_args, node *ap_args, node *fundef)
 
             DBUG_PRINT ("CSE", ("type of formal LaC-fun (%s) arg specialized in line %d:"
                                 "  %s:%s->%s",
-                                FUNDEF_NAME (fundef), NODE_LINE (act_fun_arg),
+                                CTIitemName (fundef), NODE_LINE (act_fun_arg),
                                 ARG_NAME (act_fun_arg), stype1, stype2));
             /*
              * actual type is subtype of formal type -> specialize
