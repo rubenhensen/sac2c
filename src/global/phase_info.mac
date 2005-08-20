@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.37  2005/08/20 23:42:27  ktr
+ * re-added IVEI
+ *
  * Revision 3.36  2005/08/19 17:19:58  sbs
  * added phase instc
  *
@@ -371,9 +374,10 @@ SUBPHASE (tsi, "tsi", "Applying tile size inference", PHdummy)
 
 SUBPHASE (dfr2, "dfr2", "Applying dead function removal", PHdummy)
 
-SUBPHASE (ivei, "ivei", "Applying index vector elimination: Uses Inference", PHdummy)
+SUBPHASE (ivei, "ivei", "Applying index vector elimination (inference)",
+          IVEIdoIndexVectorEliminationInference)
 
-SUBPHASE (ive, "ive", "Applying index vector elimination", PHdummy)
+SUBPHASE (ive, "ive", "Applying index vector elimination", IVEdoIndexVectorElimination)
 
 /***********************************************************************/
 
