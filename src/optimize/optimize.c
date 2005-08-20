@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.100  2005/08/20 23:42:47  ktr
+ * added IVEI
+ *
  * Revision 3.99  2005/08/20 12:06:50  ktr
  * added TypeConvElimination
  *
@@ -442,6 +445,7 @@
 #include "wl_access_analyze.h"
 #include "tile_size_inference.h"
 #include "index.h"
+#include "index_infer.h"
 #include "pad.h"
 #include "ssa.h"
 #include "deadcoderemoval.h"
@@ -1113,82 +1117,36 @@ OPTmodule (node *arg_node, info *arg_info)
     CTIstate ("  Starting final interfunctional optimizations");
 
     /*
+     * !!! If they should ever work again, WLAA, TSI, and AP must run here
+     */
+
+    /*
+     * apply index vector elimination
+     */
+    if (global.optimize.doive) {
+        TRAVsetPreFun (TR_prt, IVEIprintPreFun);
+        arg_node = PHrunCompilerSubPhase (SUBPH_ivei, arg_node);
+        arg_node = PHrunCompilerSubPhase (SUBPH_ive, arg_node);
+        TRAVsetPreFun (TR_prt, NULL);
+    }
+
+    /*
      * apply USSA (undo ssa transformation)
      */
     arg_node = PHrunCompilerSubPhase (SUBPH_ussa, arg_node);
     arg_node = PHrunCompilerSubPhase (SUBPH_fun2lac, arg_node);
     arg_node = PHrunCompilerSubPhase (SUBPH_lacinl, arg_node);
 
-    /*
-     * apply WLAA (analyze the array accesses within WLs)
-     */
-    if ((global.optimize.dotsi) || (global.optimize.doap)) {
-        /*      arg_node = WLAAdoAccessAnalyze (arg_node); */
-
-        if ((global.break_after == PH_sacopt)
-            && (0 == strcmp (global.break_specifier, "wlaa"))) {
-            goto DONE;
-        }
-    }
-
-    /*
-     * apply AP (array padding)
-     */
-    if (global.optimize.doap) {
-        /*      arg_node = APdoArrayPadding (arg_node); */
-
-        if ((global.break_after == PH_sacopt)
-            && (0 == strcmp (global.break_specifier, "ap"))) {
-            goto DONE;
-        }
-    }
-
-    /*
-     * apply TSI (infere the tilesize)
-     */
-    if (global.optimize.dotsi) {
-        arg_node = TSIdoTileSizeInference (arg_node);
-
-        if ((global.break_after == PH_sacopt)
-            && (0 == strcmp (global.break_specifier, "tsi"))) {
-            goto DONE;
-        }
-    }
-
-    /*
-     * apply DFR (dead function removal)
-     */
-    if (global.optimize.dodfr) {
-        arg_node = DFRdoDeadFunctionRemoval (arg_node);
-    }
-
-    if ((global.break_after == PH_sacopt)
-        && (0 == strcmp (global.break_specifier, "dfr2"))) {
-        goto DONE;
-    }
-
     CTInote (" ");
     CTInote ("Overall optimization statistics:");
     PrintStatistics (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                      0, 0, 0, 0, 0, 0, ALL);
 
-    /*
-     * apply IVE (index vector elimination)
-     */
-    if (global.optimize.doive) {
-        arg_node = IVEdoIndexVectorElimination (arg_node);
-
-        if ((global.break_after == PH_sacopt)
-            && (0 == strcmp (global.break_specifier, "ive"))) {
-            goto DONE;
-        }
-    }
-
 DONE:
     DBUG_RETURN (arg_node);
 }
 
-/** <!--*********************************************************************-->
+/** <!--********************************************************************-->
  *
  * @fn node *OPTfundef( node *arg_node, info *arg_info)
  *
@@ -1241,7 +1199,7 @@ DONE:
  *        (DCR)          (applied only if WLFS succeeded!)
  *
  *   </pre>
- ******************************************************************************/
+ *****************************************************************************/
 
 node *
 OPTfundef (node *arg_node, info *arg_info)
