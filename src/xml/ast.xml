@@ -1113,6 +1113,8 @@
       </traversal>
       <traversal id="IVEI" name="IVE - Use Inference" default="sons" include="index_infer.h">
         <travuser>
+          <node name="Fundef" />
+          <node name="Ap" />
           <node name="Assign" />
           <node name="Prf" />
         </travuser>
