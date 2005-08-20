@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.45  2005/08/20 12:06:11  ktr
+# added elimtypeconv.o
+#
 # Revision 3.44  2005/08/19 18:16:38  ktr
 # added inferneededcounters.o, associativity.o
 #
@@ -56,7 +59,7 @@ OBJS := optimize.o DeadFunctionRemoval.o deadcoderemoval.o \
         UndoElimSubDiv.o ElimSubDiv.o deadcodeinference.o \
         ConstVarPropagation.o DistributiveLaw.o type_upgrade.o \
         signature_simplification.o inlining.o associativity.o \
-        inferneedcounters.o
+        inferneedcounters.o elimtypeconv.o
 
 all: $(OBJS)
 
