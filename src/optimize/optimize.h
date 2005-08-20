@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2005/08/20 12:06:50  ktr
+ * added TypeConvElimination
+ *
  * Revision 3.16  2005/02/03 18:28:22  mwe
  * counter added
  *
@@ -86,6 +89,7 @@ extern int wlf_expr;
 extern int wlt_expr;
 extern int wls_expr;
 extern int al_expr;
+extern int etc_expr;
 extern int old_wlf_expr, old_wlt_expr;
 extern int ap_padded;
 extern int ap_unsupported;

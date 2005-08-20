@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.99  2005/08/20 12:06:50  ktr
+ * added TypeConvElimination
+ *
  * Revision 3.98  2005/07/19 17:08:26  ktr
  * replaced SSADeadCodeRemoval with deadcoderemoval
  *
@@ -435,6 +438,7 @@
 #include "wls.h"
 #include "AssociativeLaw.h"
 #include "DistributiveLaw.h"
+#include "associativity.h"
 #include "wl_access_analyze.h"
 #include "tile_size_inference.h"
 #include "index.h"
@@ -456,6 +460,7 @@
 #include "type_upgrade.h"
 #include "signature_simplification.h"
 #include "dispatchfuncalls.h"
+#include "elimtypeconv.h"
 
 #include "ToOldTypes.h"
 #include "ToNewTypes.h"
@@ -552,6 +557,7 @@ int old_wlf_expr, old_wlt_expr;
 int ap_padded;
 int ap_unsupported;
 int al_expr;
+int etc_expr;
 int dl_expr;
 int sp_expr;
 int cvp_expr;
@@ -614,6 +620,7 @@ ResetCounters ()
     ap_padded = 0;
     ap_unsupported = 0;
     al_expr = 0;
+    etc_expr = 0;
     dl_expr = 0;
     sp_expr = 0;
     cvp_expr = 0;
@@ -636,8 +643,8 @@ ResetCounters ()
  *                          int off_lunr_expr, int off_wlunr_expr, int off_uns_expr,
  *                          int off_elim_arrays, int off_wlf_expr, int off_wlt_expr,
  *                          int off_cse_expr, int off_ap_padded,
- *                          int off_ap_unsupported,
- *                          int off_wls_expr, int off_al_expr, int off_dl_expr,
+ *                          int off_ap_unsupported, int off_wls_expr, int off_al_expr,
+ *                          int off_etc_expr, int off_dl_expr,
  *                          int off_sp_expr, int off_cvp_expr, int off_wlfs_expr,
  *                          int off_tup_tu_expr, int off_tup_wdp_expr,
  *                          int off_tup_fdp_expr, int off_tup_rtu_expr,
@@ -658,9 +665,10 @@ PrintStatistics (int off_inl_fun, int off_dead_expr, int off_dead_var, int off_d
                  int off_wlunr_expr, int off_uns_expr, int off_elim_arrays,
                  int off_wlf_expr, int off_wlt_expr, int off_cse_expr, int off_ap_padded,
                  int off_ap_unsupported, int off_wls_expr, int off_al_expr,
-                 int off_dl_expr, int off_sp_expr, int off_cvp_expr, int off_wlfs_expr,
-                 int off_tup_tu_expr, int off_tup_wdp_expr, int off_tup_fdp_expr,
-                 int off_tup_rtu_expr, int off_tup_fsp_expr, int off_sisi_expr, int flag)
+                 int off_etc_expr, int off_dl_expr, int off_sp_expr, int off_cvp_expr,
+                 int off_wlfs_expr, int off_tup_tu_expr, int off_tup_wdp_expr,
+                 int off_tup_fdp_expr, int off_tup_rtu_expr, int off_tup_fsp_expr,
+                 int off_sisi_expr, int flag)
 {
     int diff;
     DBUG_ENTER ("PrintStatistics");
@@ -755,6 +763,11 @@ PrintStatistics (int off_inl_fun, int off_dead_expr, int off_dead_var, int off_d
     diff = al_expr - off_al_expr;
     if ((global.optimize.doal) && ((ALL == flag) || (diff > 0))) {
         CTInote ("%d associative law optimization(s)", diff);
+    }
+
+    diff = etc_expr - off_etc_expr;
+    if ((global.optimize.doetc) && ((ALL == flag) || (diff > 0))) {
+        CTInote ("%d typeconv(s) eliminated", diff);
     }
 
     diff = dl_expr - off_dl_expr;
@@ -1157,7 +1170,7 @@ OPTmodule (node *arg_node, info *arg_info)
     CTInote (" ");
     CTInote ("Overall optimization statistics:");
     PrintStatistics (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                     0, 0, 0, 0, 0, ALL);
+                     0, 0, 0, 0, 0, 0, ALL);
 
     /*
      * apply IVE (index vector elimination)
@@ -1249,6 +1262,7 @@ OPTfundef (node *arg_node, info *arg_info)
     int mem_cse_expr = cse_expr;
     int mem_wls_expr = wls_expr;
     int mem_al_expr = al_expr;
+    int mem_etc_expr = etc_expr;
     int mem_dl_expr = dl_expr;
     int mem_sp_expr = sp_expr;
     int mem_cvp_expr = cvp_expr;
@@ -1273,6 +1287,7 @@ OPTfundef (node *arg_node, info *arg_info)
     int old_wlir_expr = wlir_expr;
     int old_wls_expr = wls_expr;
     int old_al_expr = al_expr;
+    int old_etc_expr = etc_expr;
     int old_dl_expr = dl_expr;
     int old_sp_expr = sp_expr;
     int old_cvp_expr = cvp_expr;
@@ -1410,6 +1425,7 @@ OPTfundef (node *arg_node, info *arg_info)
             old_wlir_expr = wlir_expr;
             old_wls_expr = wls_expr;
             old_al_expr = al_expr;
+            old_etc_expr = etc_expr;
             old_dl_expr = dl_expr;
             old_sp_expr = sp_expr;
             old_cvp_expr = cvp_expr;
@@ -1664,10 +1680,24 @@ OPTfundef (node *arg_node, info *arg_info)
                 }
 
                 /*
+                 * apply ETC (typeconv elimination)
+                 */
+                if (global.optimize.doetc) {
+                    arg_node = ETCdoEliminateTypeConversions (arg_node);
+                }
+
+                if ((global.break_after == PH_sacopt)
+                    && (global.break_cycle_specifier == loop1)
+                    && (0 == strcmp (global.break_specifier, "etc"))) {
+                    goto INFO;
+                }
+
+                /*
                  * apply AL (associative law)
                  */
                 if (global.optimize.doal) {
-                    arg_node = ALdoAssociativeLaw (arg_node);
+                    /* arg_node = ALdoAssociativeLaw (arg_node); */
+                    arg_node = ASSOCdoAssociativityOptimization (arg_node);
                 }
 
                 if ((global.break_after == PH_sacopt)
@@ -1784,7 +1814,7 @@ OPTfundef (node *arg_node, info *arg_info)
                 || (tup_wdp_expr != old_tup_wdp_expr)
                 || (tup_fdp_expr != old_tup_fdp_expr)
                 || (tup_fsp_expr != old_tup_fsp_expr) || (sisi_expr != old_sisi_expr)
-                || (inl_fun != old_inl_fun)) {
+                || (inl_fun != old_inl_fun) || (etc_expr != old_etc_expr)) {
 
                 INFO_OPT_CONTINUE (arg_info) = TRUE;
                 FUNDEF_WASOPTIMIZED (arg_node) = TRUE;
@@ -1953,10 +1983,10 @@ OPTfundef (node *arg_node, info *arg_info)
                          mem_lir_expr, mem_wlir_expr, mem_cf_expr, mem_lunr_expr,
                          mem_wlunr_expr, mem_uns_expr, mem_elim_arrays, mem_wlf_expr,
                          mem_wlt_expr, mem_cse_expr, 0, 0, mem_wls_expr, mem_al_expr,
-                         mem_dl_expr, mem_sp_expr, mem_cvp_expr, mem_wlfs_expr,
-                         mem_tup_tu_expr, mem_tup_wdp_expr, mem_tup_fdp_expr,
-                         mem_tup_rtu_expr, mem_tup_fsp_expr, mem_sisi_expr,
-                         NON_ZERO_ONLY);
+                         mem_etc_expr, mem_dl_expr, mem_sp_expr, mem_cvp_expr,
+                         mem_wlfs_expr, mem_tup_tu_expr, mem_tup_wdp_expr,
+                         mem_tup_fdp_expr, mem_tup_rtu_expr, mem_tup_fsp_expr,
+                         mem_sisi_expr, NON_ZERO_ONLY);
     }
 
     /*
