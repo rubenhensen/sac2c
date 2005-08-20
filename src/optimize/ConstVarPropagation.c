@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.25  2005/08/20 23:42:47  ktr
+ * adjusted treatment of modarray
+ *
  * Revision 1.24  2005/08/20 12:08:06  ktr
  * No constants are propagated into F_type_conv
  *
@@ -682,18 +685,31 @@ CVPprf (node *arg_node, info *arg_info)
           = TRAVdo (EXPRS_EXPRS2 (PRF_ARGS (arg_node)), arg_info);
         break;
 
-    case F_idx_modarray:
     case F_modarray:
         /*
-         * The first argument of modarray/idx_modarray must be variable
+         * The first two arguments of modarray must be variable
+         * the other one can as well be constant scalars
+         */
+        INFO_CVP_CONTEXT (arg_info) = CON_ap;
+        PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
+        PRF_ARG2 (arg_node) = TRAVdo (PRF_ARG2 (arg_node), arg_info);
+
+        INFO_CVP_CONTEXT (arg_info) = CON_primfun;
+        PRF_ARG3 (arg_node) = TRAVdo (PRF_ARG3 (arg_node), arg_info);
+
+        break;
+
+    case F_idx_modarray:
+        /*
+         * The first argument of idx_modarray must be variable
          * the others can as well be constant scalars
          */
         INFO_CVP_CONTEXT (arg_info) = CON_ap;
         PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
 
         INFO_CVP_CONTEXT (arg_info) = CON_primfun;
-        EXPRS_EXPRS2 (PRF_ARGS (arg_node))
-          = TRAVdo (EXPRS_EXPRS2 (PRF_ARGS (arg_node)), arg_info);
+        PRF_ARG2 (arg_node) = TRAVdo (PRF_ARG2 (arg_node), arg_info);
+        PRF_ARG3 (arg_node) = TRAVdo (PRF_ARG3 (arg_node), arg_info);
         break;
 
     default:
