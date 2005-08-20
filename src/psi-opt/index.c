@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.73  2005/08/20 19:20:48  sah
+ * IVE-rewrite: disabled old IVE code
+ *
  * Revision 3.72  2005/07/16 19:02:28  sbs
  * *** empty log message ***
  *
@@ -806,6 +809,8 @@ FreeInfo (info *info)
  *
  * </pre>
  */
+
+#ifdef KAI_BRUSHES_THIS_CODE_AT_THE_MOMENT
 
 /**
  * counts the number of index vectors removed during optimization.
@@ -2929,5 +2934,51 @@ IVEdoIndexVectorElimination (node *syntax_tree)
 
     DBUG_RETURN (syntax_tree);
 }
+
+#else /* KAI_BRUSHES_THIS_CODE_AT_THE_MOMENT */
+
+/** <!--********************************************************************-->
+ *
+ * @fn char *IVEChangeId( char *varname, shape *shp)
+ *
+ * @brief appends the shape given by type to the varname.
+ *
+ *    Example:
+ *    test, int[1,4,2,3]  =>  test_1_4_2_3__
+ *    does not free the argument space!
+ *
+ ******************************************************************************/
+
+char *
+IVEchangeId (char *varname, shape *shp)
+{
+    static char buffer[1024];
+    static char buffer2[32];
+    int i;
+
+    DBUG_ENTER ("IVEchangeId");
+
+    sprintf (buffer, "%s", varname);
+    for (i = 0; i < SHgetDim (shp); i++) {
+        sprintf (buffer2, "_%d", SHgetExtent (shp, i));
+        strcat (buffer, buffer2);
+    }
+    sprintf (buffer2, "__");
+    strcat (buffer, buffer2);
+
+    DBUG_RETURN (ILIBstringCopy (buffer));
+}
+
+node *
+IVEdoIndexVectorElimination (node *syntax_tree)
+{
+    info *info;
+
+    DBUG_ENTER ("IndexVectorElimination");
+
+    DBUG_RETURN (syntax_tree);
+}
+
+#endif /* KAI_BRUSHES_THIS_CODE_AT_THE_MOMENT */
 /*@}*/
 /*@}*/ /* defgroup ive */
