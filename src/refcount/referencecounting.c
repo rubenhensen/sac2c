@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2005/08/20 12:09:09  ktr
+ * typeconv introduces aliasing
+ *
  * Revision 1.4  2005/07/18 16:31:33  ktr
  * removed FUNDEF_EXT_ASSIGN
  *
@@ -582,6 +585,17 @@ RCIprf (node *arg_node, info *arg_info)
         INFO_RC_ASSIGN (arg_info) = NULL;
         INFO_RC_MODE (arg_info) = rc_prfuse;
         PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
+        break;
+
+    case F_type_conv:
+        /*
+         * type_conv( type, a);
+         *
+         * - type must not be traversed as it is a N_type node
+         * - a must be counted like a funap use of a
+         */
+        INFO_RC_MODE (arg_info) = rc_apuse;
+        PRF_ARG2 (arg_node) = TRAVdo (PRF_ARG2 (arg_node), arg_info);
         break;
 
     case F_fill:

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2005/08/20 12:09:09  ktr
+ * typeconv introduces aliasing
+ *
  * Revision 1.10  2004/12/09 21:09:26  ktr
  * bugfix roundup
  *
@@ -201,6 +204,31 @@ GetRetAlias (node *fundef, int num)
     }
 
     DBUG_RETURN (res);
+}
+
+static void
+MarkAllIdsAliasing (node *ids, dfmask_t *mask)
+{
+    DBUG_ENTER ("MarkAllIdsAliasing");
+
+    while (ids != NULL) {
+        DFMsetMaskEntrySet (mask, NULL, IDS_AVIS (ids));
+        ids = IDS_NEXT (ids);
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+static void
+MarkIdAliasing (node *id, dfmask_t *mask)
+{
+    DBUG_ENTER ("MarkIdAliasing");
+
+    if (NODE_TYPE (id) == N_id) {
+        DFMsetMaskEntrySet (mask, NULL, ID_AVIS (id));
+    }
+
+    DBUG_VOID_RETURN;
 }
 
 /******************************************************************************
@@ -780,8 +808,6 @@ EMAAlet (node *arg_node, info *arg_info)
 node *
 EMAAprf (node *arg_node, info *arg_info)
 {
-    node *_ids;
-
     DBUG_ENTER ("EMAAprf");
 
     /*
@@ -794,20 +820,20 @@ EMAAprf (node *arg_node, info *arg_info)
     switch (PRF_PRF (arg_node)) {
 
     case F_accu:
-        _ids = INFO_AA_LHS (arg_info);
-        while (_ids != NULL) {
-            DBUG_PRINT ("EMAA", ("%s is returned by accu()", IDS_NAME (_ids)));
-            DFMsetMaskEntrySet (INFO_AA_MASK (arg_info), NULL, IDS_AVIS (_ids));
-            _ids = IDS_NEXT (_ids);
-        }
+        MarkAllIdsAliasing (INFO_AA_LHS (arg_info), INFO_AA_MASK (arg_info));
+        break;
+
+    case F_type_conv:
+        MarkAllIdsAliasing (INFO_AA_LHS (arg_info), INFO_AA_MASK (arg_info));
+        MarkIdAliasing (PRF_ARG2 (arg_node), INFO_AA_MASK (arg_info));
         break;
 
     case F_reshape:
-        DFMsetMaskEntrySet (INFO_AA_MASK (arg_info), NULL, ID_AVIS (PRF_ARG3 (arg_node)));
+        MarkIdAliasing (PRF_ARG3 (arg_node), INFO_AA_MASK (arg_info));
         break;
 
     case F_reuse:
-        DFMsetMaskEntrySet (INFO_AA_MASK (arg_info), NULL, ID_AVIS (PRF_ARG1 (arg_node)));
+        MarkIdAliasing (PRF_ARG1 (arg_node), INFO_AA_MASK (arg_info));
         break;
 
     default:
