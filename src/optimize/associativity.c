@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.2  2005/08/20 12:08:06  ktr
+ * Already sorted subtrees are no longer re-sorted.
+ *
  * Revision 1.1  2005/08/19 18:18:01  ktr
  * Initial revision
  *
@@ -30,6 +33,7 @@ struct INFO {
     enum { DIR_down, DIR_up } direction;
     bool travrhs;
     bool onefundef;
+    node *lhs;
 };
 
 /*
@@ -42,6 +46,7 @@ struct INFO {
 #define INFO_DIRECTION(n) ((n)->direction)
 #define INFO_TRAVRHS(n) ((n)->travrhs)
 #define INFO_ONEFUNDEF(n) ((n)->onefundef)
+#define INFO_LHS(n) ((n)->lhs)
 
 /*
  * INFO functions
@@ -62,6 +67,7 @@ MakeInfo ()
     INFO_DIRECTION (result) = DIR_down;
     INFO_TRAVRHS (result) = FALSE;
     INFO_ONEFUNDEF (result) = FALSE;
+    INFO_LHS (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -229,6 +235,18 @@ isNonConstScalar (node *n)
 }
 
 static bool
+isNonConstArray (node *n)
+{
+    bool res;
+
+    DBUG_ENTER ("isNonConstArray");
+
+    res = !(isConst (n) || isNonConstScalar (n));
+
+    DBUG_RETURN (res);
+}
+
+static bool
 isScalar (node *n)
 {
     bool res;
@@ -348,45 +366,9 @@ getPrf (prf prf, node *e1, node *e2)
         DBUG_ASSERT (FALSE, "Illegal prf!");
     }
 
+    printf ("%s\n", global.prf_string[prf]);
+
     DBUG_RETURN (prf);
-}
-
-static node *
-consumeHead (node **exprs)
-{
-    node *res;
-
-    DBUG_ENTER ("consumeHead");
-
-    res = EXPRS_EXPR (*exprs);
-    EXPRS_EXPR (*exprs) = NULL;
-    *exprs = FREEdoFreeNode (*exprs);
-
-    DBUG_RETURN (res);
-}
-
-static node *
-CombineExprs2Prf (prf prf, node *expr1, node *expr2, info *arg_info)
-{
-    node *rhs;
-    node *avis = NULL;
-    node *assign;
-
-    DBUG_ENTER ("CombineExprs2Prf");
-
-    rhs = TCmakePrf2 (getPrf (prf, expr1, expr2), expr1, expr2);
-
-    avis = TBmakeAvis (ILIBtmpVar (), NTCnewTypeCheck_Expr (rhs));
-
-    BLOCK_VARDEC (INFO_TOPBLOCK (arg_info))
-      = TBmakeVardec (avis, BLOCK_VARDEC (INFO_TOPBLOCK (arg_info)));
-
-    assign = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), rhs), NULL);
-    AVIS_SSAASSIGN (avis) = assign;
-
-    INFO_PREASSIGN (arg_info) = TCappendAssign (INFO_PREASSIGN (arg_info), assign);
-
-    DBUG_RETURN (TBmakeId (avis));
 }
 
 static bool
@@ -429,6 +411,112 @@ isArg2Scl (prf prf)
     DBUG_RETURN (res);
 }
 
+static bool
+isSingletonOrEmpty (node *expr)
+{
+    bool res;
+
+    DBUG_ENTER ("isSingleton");
+
+    res = ((expr == NULL) || (EXPRS_NEXT (expr) == NULL));
+
+    DBUG_RETURN (res);
+}
+
+static bool
+isSingleton (node *expr)
+{
+    bool res;
+
+    DBUG_ENTER ("isSingleton");
+
+    res = ((expr != NULL) && (EXPRS_NEXT (expr) == NULL));
+
+    DBUG_RETURN (res);
+}
+
+static bool
+eqClass (node *expr1, node *expr2)
+{
+    bool res;
+
+    DBUG_ENTER ("eqClass");
+
+    res = ((isConst (expr1) && isConst (expr2))
+           || (isNonConstScalar (expr1) && isNonConstScalar (expr2))
+           || (isNonConstArray (expr1) && isNonConstArray (expr2)));
+
+    DBUG_RETURN (res);
+}
+
+static node *
+consumeHead (node **exprs)
+{
+    node *res;
+
+    DBUG_ENTER ("consumeHead");
+
+    res = EXPRS_EXPR (*exprs);
+    EXPRS_EXPR (*exprs) = NULL;
+    *exprs = FREEdoFreeNode (*exprs);
+
+    DBUG_RETURN (res);
+}
+
+static node *
+CombineExprs2Prf (prf prf, node *expr1, node *expr2, info *arg_info)
+{
+    node *rhs;
+    node *avis = NULL;
+    node *assign;
+    node *id;
+    ntype *prod;
+
+    DBUG_ENTER ("CombineExprs2Prf");
+
+    rhs = TCmakePrf2 (getPrf (prf, expr1, expr2), expr1, expr2);
+
+    PRTdoPrint (rhs);
+
+    prod = NTCnewTypeCheck_Expr (rhs);
+    avis = TBmakeAvis (ILIBtmpVar (), TYcopyType (TYgetProductMember (prod, 0)));
+    prod = TYfreeType (prod);
+
+    printf ("%s\n", TYtype2String (AVIS_TYPE (avis), FALSE, 0));
+
+    BLOCK_VARDEC (INFO_TOPBLOCK (arg_info))
+      = TBmakeVardec (avis, BLOCK_VARDEC (INFO_TOPBLOCK (arg_info)));
+
+    assign
+      = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), rhs), INFO_PREASSIGN (arg_info));
+    AVIS_SSAASSIGN (avis) = assign;
+
+    INFO_PREASSIGN (arg_info) = assign;
+
+    id = TBmakeId (avis);
+    ID_ISSCLPRF (id) = isScalar (expr1) && isScalar (expr2);
+
+    DBUG_RETURN (id);
+}
+
+static node *
+revert (node *ass, node *agg)
+{
+    node *res;
+
+    DBUG_ENTER ("revert");
+
+    if (ass == NULL) {
+        res = agg;
+    } else {
+        res = ASSIGN_NEXT (ass);
+        ASSIGN_NEXT (ass) = agg;
+        res = revert (res, ass);
+    }
+
+    DBUG_RETURN (res);
+}
+
 static node *
 Exprs2PrfTree (prf prf, node *exprs, info *arg_info)
 {
@@ -459,34 +547,54 @@ CollectExprs (prf prf, node *a, bool sclprf, dfmask_t *localmask)
 
     DBUG_ENTER ("CollectExprs");
 
+    res = TBmakeExprs (DUPdoDupNode (a), NULL);
+    if (NODE_TYPE (EXPRS_EXPR (res)) == N_id) {
+        ID_ISSCLPRF (EXPRS_EXPR (res)) = sclprf;
+    }
+
     if ((NODE_TYPE (a) == N_id) && (AVIS_SSAASSIGN (ID_AVIS (a)) != NULL)
         && (DFMtestMaskEntry (localmask, NULL, ID_AVIS (a)))
         && (AVIS_NEEDCOUNT (ID_AVIS (a)) == 1)) {
 
         node *rhs = ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (a)));
 
-        if (NODE_TYPE (rhs) == N_id) {
+        switch (NODE_TYPE (rhs)) {
+
+        case N_id:
+            res = FREEdoFreeTree (res);
             res = CollectExprs (prf, rhs, sclprf, localmask);
             AVIS_NEEDCOUNT (ID_AVIS (a)) = 0;
-        } else {
-            if (NODE_TYPE (rhs) == N_prf) {
-                if (compatiblePrf (prf, PRF_PRF (rhs))) {
-                    res = TCappendAssign (CollectExprs (prf, PRF_ARG1 (rhs),
-                                                        isArg1Scl (PRF_PRF (rhs)),
-                                                        localmask),
-                                          CollectExprs (prf, PRF_ARG2 (rhs),
-                                                        isArg2Scl (PRF_PRF (rhs)),
-                                                        localmask));
-                    AVIS_NEEDCOUNT (ID_AVIS (a)) = 0;
+            break;
+
+        case N_prf:
+            if (compatiblePrf (prf, PRF_PRF (rhs))) {
+                node *left, *right;
+
+                left = CollectExprs (prf, PRF_ARG1 (rhs), isArg1Scl (PRF_PRF (rhs)),
+                                     localmask);
+                right = CollectExprs (prf, PRF_ARG2 (rhs), isArg2Scl (PRF_PRF (rhs)),
+                                      localmask);
+
+                PRTdoPrint (left);
+                PRTdoPrint (right);
+
+                if (!isSingleton (left) || !isSingleton (right)
+                    || !eqClass (EXPRS_EXPR (left), EXPRS_EXPR (right))) {
+                    printf ("tree\n");
+                    res = FREEdoFreeTree (res);
+                    res = TCappendExprs (left, right);
+                } else {
+                    printf ("node\n");
+                    left = FREEdoFreeTree (left);
+                    right = FREEdoFreeTree (right);
                 }
-            } else {
-                res = TBmakeExprs (DUPdoDupNode (a), NULL);
-                ID_ISSCLPRF (EXPRS_EXPR (res)) = sclprf;
+                AVIS_NEEDCOUNT (ID_AVIS (a)) = 0;
             }
+            break;
+
+        default:
+            break;
         }
-    } else {
-        res = TBmakeExprs (DUPdoDupNode (a), NULL);
-        ID_ISSCLPRF (EXPRS_EXPR (res)) = sclprf;
     }
     DBUG_RETURN (res);
 }
@@ -573,8 +681,9 @@ ASSOCassign (node *arg_node, info *arg_info)
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
     if (INFO_PREASSIGN (arg_info) != NULL) {
-        arg_node = TCappendAssign (INFO_PREASSIGN (arg_info), arg_node);
+        arg_node = TCappendAssign (revert (INFO_PREASSIGN (arg_info), NULL), arg_node);
         INFO_PREASSIGN (arg_info) = NULL;
+        al_expr++;
     }
 
     DBUG_RETURN (arg_node);
@@ -595,6 +704,7 @@ ASSOClet (node *arg_node, info *arg_info)
             LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
         }
         if (INFO_TRAVRHS (arg_info)) {
+            INFO_LHS (arg_info) = LET_IDS (arg_node);
             LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
         }
     }
@@ -625,35 +735,60 @@ ASSOCids (node *arg_node, info *arg_info)
 node *
 ASSOCprf (node *arg_node, info *arg_info)
 {
+
     DBUG_ENTER ("ASSOCprf");
 
     if (isAssociativeAndCommutativePrf (PRF_PRF (arg_node))) {
-        prf p;
-        node *exprs;
-        node *consts, *nonconstscalars;
-        node *constid, *ncsid, *arrayid;
+        ntype *ltype = IDS_NTYPE (INFO_LHS (arg_info));
+        if ((!global.enforce_ieee)
+            || ((TYgetSimpleType (TYgetScalar (ltype)) != T_float)
+                && (TYgetSimpleType (TYgetScalar (ltype)) != T_double))) {
+            prf p;
+            node *exprs;
+            node *consts, *ncss;
+            node *constid, *ncsid, *arrayid;
 
-        p = PRF_PRF (arg_node);
+            p = PRF_PRF (arg_node);
 
-        exprs = TCappendExprs (CollectExprs (p, PRF_ARG1 (arg_node), isArg1Scl (p),
-                                             INFO_LOCALMASK (arg_info)),
-                               CollectExprs (p, PRF_ARG2 (arg_node), isArg2Scl (p),
-                                             INFO_LOCALMASK (arg_info)));
+            exprs = TCappendExprs (CollectExprs (p, PRF_ARG1 (arg_node), isArg1Scl (p),
+                                                 INFO_LOCALMASK (arg_info)),
+                                   CollectExprs (p, PRF_ARG2 (arg_node), isArg2Scl (p),
+                                                 INFO_LOCALMASK (arg_info)));
 
-        consts = TCfilterExprs (isConst, &exprs);
-        nonconstscalars = TCfilterExprs (isNonConstScalar, &exprs);
+            /*
+             * The optimization can only be performed if the combined expression
+             * consists of more than two elements
+             */
+            if (EXPRS_EXPRS3 (exprs) != NULL) {
+                consts = TCfilterExprs (isConst, &exprs);
+                ncss = TCfilterExprs (isNonConstScalar, &exprs);
 
-        constid = Exprs2PrfTree (p, consts, arg_info);
-        ncsid = Exprs2PrfTree (p, nonconstscalars, arg_info);
-        arrayid = Exprs2PrfTree (p, exprs, arg_info);
+                if ((isSingletonOrEmpty (exprs)) && (isSingletonOrEmpty (consts))
+                    && (isSingletonOrEmpty (ncss))) {
 
-        exprs = NULL;
-        exprs = TCcombineExprs (arrayid, exprs);
-        exprs = TCcombineExprs (ncsid, exprs);
-        exprs = TCcombineExprs (constid, exprs);
+                    if (exprs != NULL)
+                        exprs = FREEdoFreeTree (exprs);
+                    if (consts != NULL)
+                        consts = FREEdoFreeTree (consts);
+                    if (ncss != NULL)
+                        ncss = FREEdoFreeTree (ncss);
+                } else {
+                    constid = Exprs2PrfTree (p, consts, arg_info);
+                    ncsid = Exprs2PrfTree (p, ncss, arg_info);
+                    arrayid = Exprs2PrfTree (p, exprs, arg_info);
 
-        arg_node = FREEdoFreeNode (arg_node);
-        arg_node = Exprs2PrfTree (p, exprs, arg_info);
+                    exprs = NULL;
+                    exprs = TCcombineExprs (arrayid, exprs);
+                    exprs = TCcombineExprs (ncsid, exprs);
+                    exprs = TCcombineExprs (constid, exprs);
+
+                    arg_node = FREEdoFreeNode (arg_node);
+                    arg_node = Exprs2PrfTree (p, exprs, arg_info);
+                }
+            } else {
+                exprs = FREEdoFreeTree (exprs);
+            }
+        }
     }
 
     DBUG_RETURN (arg_node);
