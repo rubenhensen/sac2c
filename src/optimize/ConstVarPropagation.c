@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.24  2005/08/20 12:08:06  ktr
+ * No constants are propagated into F_type_conv
+ *
  * Revision 1.23  2005/07/27 17:41:46  sah
  * now, LaC-funs are only optimized if their
  * corresponding application is passed and
@@ -650,6 +653,7 @@ CVPprf (node *arg_node, info *arg_info)
     case F_dim:
     case F_shape:
     case F_accu:
+    case F_type_conv:
     case F_type_error:
     case F_dispatch_error:
     case F_sel:
