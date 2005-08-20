@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.40  2005/08/20 23:45:59  ktr
+ * added F_idxs2offset, F_vect2offset
+ *
  * Revision 3.39  2005/08/19 17:17:47  sbs
  * added NTCCTprf_type_conv
  *
@@ -211,6 +214,11 @@ PRF_IF (F_toi_S, "F_toi_S", "_toi_S_", "toi", FALSE, 1, NTCCTprf_toiS, COtoi),
           COtake),
   PRF_IF (F_drop_SxV, "F_drop_SxV", "_drop_SxV_", "drop", FALSE, 2, NTCCTprf_drop_SxV,
           COdrop),
+
+  PRF_IF (F_idxs2offset, "F_idxs2offset", "_idxs2offset_", "idxs2offset", FALSE, 0,
+          NTCCTprf_dummy, NULL),
+  PRF_IF (F_vect2offset, "F_vect2offset", "_vect2offset_", "vect2offset", FALSE, 0,
+          NTCCTprf_dummy, NULL),
 
   PRF_IF (F_accu, "F_accu", "_accu_", "accu", FALSE, 0, NTCCTprf_dummy, NULL),
 
