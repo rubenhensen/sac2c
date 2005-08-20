@@ -42,3 +42,4 @@ inferneedcounters.c
 inferneedcounters.h
 associativity.c
 associativity.h
+elimtypeconv.c
