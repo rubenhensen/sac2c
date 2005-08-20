@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.139  2005/08/20 12:10:03  ktr
+ * corrected TCfilterExprs
+ *
  * Revision 3.138  2005/08/19 18:21:47  ktr
  * Added N_exprs functions
  *
@@ -2255,15 +2258,17 @@ TCfilterExprs (bool (*pred) (node *), node **exprs)
 
     DBUG_ENTER ("TCfilterExprs");
 
-    if (EXPRS_NEXT (*exprs) != NULL) {
-        res = TCfilterExprs (pred, &(EXPRS_NEXT (*exprs)));
-    }
+    if (*exprs != NULL) {
+        if (EXPRS_NEXT (*exprs) != NULL) {
+            res = TCfilterExprs (pred, &(EXPRS_NEXT (*exprs)));
+        }
 
-    if (pred (EXPRS_EXPR (*exprs))) {
-        node *tmp = EXPRS_NEXT (*exprs);
-        EXPRS_NEXT (*exprs) = res;
-        res = *exprs;
-        *exprs = tmp;
+        if (pred (EXPRS_EXPR (*exprs))) {
+            node *tmp = EXPRS_NEXT (*exprs);
+            EXPRS_NEXT (*exprs) = res;
+            res = *exprs;
+            *exprs = tmp;
+        }
     }
 
     DBUG_RETURN (res);
