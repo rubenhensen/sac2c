@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.168  2005/08/21 09:32:20  ktr
+ * added implementations for F_idxs2offset, F_vect2offset
+ *
  * Revision 3.167  2005/08/09 18:55:15  ktr
  * F_shape_sel and F_idx_shape_sel are implemented by means of C-ICMs now
  *
@@ -4539,6 +4542,65 @@ COMPPrfNoop (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn  node *COMPPrfIdxs2Offset( node *arg_node, info *arg_info)
+ *
+ * @brief  ...
+ *
+ ******************************************************************************/
+
+static node *
+COMPPrfIdxs2Offset (node *arg_node, info *arg_info)
+{
+    node *let_ids;
+    node *icm;
+    node *idxs_exprs;
+    node *shpexprs;
+
+    DBUG_ENTER ("COMPPrfIdxs2Offset");
+
+    let_ids = INFO_COMP_LASTIDS (arg_info);
+    shpexprs = ARRAY_AELEMS (PRF_ARG1 (arg_node));
+    idxs_exprs = EXPRS_NEXT (PRF_ARGS (arg_node));
+
+    icm = TCmakeIcm5 ("ND_IDXS2OFFSET", DUPdupIdsIdNt (let_ids),
+                      TBmakeNum (TCcountExprs (idxs_exprs)), idxs_exprs,
+                      TBmakeNum (TCcountExprs (shpexprs)), DUPdoDupTree (shpexprs));
+
+    DBUG_RETURN (TBmakeAssign (icm, NULL));
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  node *COMPPrfVect2Offset( node *arg_node, info *arg_info)
+ *
+ * @brief  ...
+ *
+ ******************************************************************************/
+
+static node *
+COMPPrfVect2Offset (node *arg_node, info *arg_info)
+{
+    node *let_ids;
+    node *iv_vect;
+    node *shpexprs;
+    node *icm;
+
+    DBUG_ENTER ("COMPPrfVect2Offset");
+
+    let_ids = INFO_COMP_LASTIDS (arg_info);
+    shpexprs = ARRAY_AELEMS (PRF_ARG1 (arg_node));
+    iv_vect = PRF_ARG2 (arg_node);
+
+    icm = TCmakeIcm5 ("ND_VECT2OFFSET", DUPdupIdsIdNt (let_ids),
+                      TBmakeNum (SHgetUnrLen (TYgetShape (ID_NTYPE (iv_vect)))),
+                      DUPdoDupNode (iv_vect), TBmakeNum (TCcountExprs (shpexprs)),
+                      DUPdoDupTree (shpexprs));
+
+    DBUG_RETURN (TBmakeAssign (icm, NULL));
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn  node *COMPprf( node *arg_node, info *arg_info)
  *
  * @brief  Compilation of a N_prf node.
@@ -4764,6 +4826,17 @@ COMPprf (node *arg_node, info *arg_info)
         DBUG_ASSERT ((0), "Non-instrinsic primitive functions not implemented!"
                           " Use array.lib instead!");
         ret_node = NULL;
+        break;
+
+        /*
+         * IVE operations
+         */
+    case F_idxs2offset:
+        ret_node = COMPPrfIdxs2Offset (arg_node, arg_info);
+        break;
+
+    case F_vect2offset:
+        ret_node = COMPPrfVect2Offset (arg_node, arg_info);
         break;
 
         /*
