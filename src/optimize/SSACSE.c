@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.48  2005/08/21 09:31:00  ktr
+ * SSACSEPropagateSubst2Args brushed
+ *
  * Revision 1.47  2005/08/20 23:59:08  sah
  * fixed a DBUG message
  *
@@ -597,19 +600,26 @@ PropagateSubst2Args (node *fun_args, node *ap_args, node *fundef)
 
         stype1 = TYtype2String (AVIS_TYPE (ARG_AVIS (act_fun_arg)), TRUE, 0);
         stype2 = TYtype2String (ext_ap_type, TRUE, 0);
-        if ((cmp == TY_eq) || (cmp == TY_gt)) {
+        if (cmp == TY_gt) {
 
-            DBUG_PRINT ("CSE", ("type of formal LaC-fun (%s) arg specialized in line %d:"
-                                "  %s:%s->%s",
-                                CTIitemName (fundef), NODE_LINE (act_fun_arg),
-                                ARG_NAME (act_fun_arg), stype1, stype2));
             /*
              * actual type is subtype of formal type -> specialize
              */
-            AVIS_TYPE (ARG_AVIS (act_fun_arg))
-              = TYfreeType (AVIS_TYPE (ARG_AVIS (act_fun_arg)));
-            AVIS_TYPE (ARG_AVIS (act_fun_arg)) = TYcopyType (ext_ap_type);
-        } else if ((cmp == TY_dis) || (TY_hcs)) {
+            if ((FUNDEF_ISCONDFUN (fundef))
+                || ((FUNDEF_ISDOFUN (fundef))
+                    && (AVIS_SSALPINV (ARG_AVIS (act_fun_arg))))) {
+
+                DBUG_PRINT ("CSE",
+                            ("type of formal LaC-fun (%s) arg specialized in line %d:"
+                             "  %s:%s->%s",
+                             CTIitemName (fundef), NODE_LINE (act_fun_arg),
+                             ARG_NAME (act_fun_arg), stype1, stype2));
+
+                AVIS_TYPE (ARG_AVIS (act_fun_arg))
+                  = TYfreeType (AVIS_TYPE (ARG_AVIS (act_fun_arg)));
+                AVIS_TYPE (ARG_AVIS (act_fun_arg)) = TYcopyType (ext_ap_type);
+            }
+        } else if ((cmp == TY_dis) || (cmp == TY_hcs)) {
             /*
              * special function application with incompatible types found
              */
