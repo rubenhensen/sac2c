@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.75  2005/08/21 12:35:25  sah
+ * IVE-rewrite: basic implementation
+ *
  * Revision 3.74  2005/08/20 20:08:32  sah
  * IVE-rewrite: skeleton implementation
  *
@@ -9,24 +12,19 @@
  *
  */
 
-#include <stdio.h>
-#include <string.h>
 #include "index.h"
 
+#include <string.h>
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "internal_lib.h"
 #include "shape.h"
 #include "new_types.h"
 #include "dbug.h"
-#include "ctinfo.h"
-#include "print.h"
 #include "traverse.h"
 #include "DupTree.h"
+#include "type_utils.h"
 #include "free.h"
-#include "convert.h"
-#include "NameTuplesUtils.h"
-#include "index_infer.h"
 
 /*
  * OPEN PROBLEMS:
@@ -508,6 +506,51 @@
  */
 
 /**
+ * INFO structure
+ */
+struct INFO {
+    node *postassigns;
+    node *lhs;
+    node *withid;
+};
+
+/**
+ * INFO macros
+ */
+#define INFO_POSTASSIGNS(n) ((n)->postassigns)
+#define INFO_LHS(n) ((n)->lhs)
+#define INFO_WITHID(n) ((n)->withid)
+
+/**
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = ILIBmalloc (sizeof (info));
+
+    INFO_POSTASSIGNS (result) = NULL;
+    INFO_LHS (result) = NULL;
+    INFO_WITHID (result) = NULL;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = ILIBfree (info);
+
+    DBUG_RETURN (info);
+}
+
+/**
  * counts the number of index vectors removed during optimization.
  */
 static int ive_expr;
@@ -548,38 +591,357 @@ IVEchangeId (char *varname, shape *shp)
     DBUG_RETURN (ILIBstringCopy (buffer));
 }
 
+static node *
+Type2IdxAssign (ntype *type, node *avis, node *iv)
+{
+    node *result;
+    node *offset;
+
+    DBUG_ENTER ("Type2IdxAssign");
+
+    DBUG_ASSERT ((TYisAKS (type)), "Type2IdxAssign called with non AKS type");
+
+    if ((iv != NULL) && ((NODE_TYPE (iv) == N_array) || (NODE_TYPE (iv) == N_ids))) {
+        /*
+         * iv = [x,y,...] =>
+         *
+         * _idxs2offset_( [ <shp>], x, y, ...)
+         */
+        offset
+          = TBmakePrf (F_idxs2offset, TBmakeExprs (SHshape2Array (TYgetShape (type)),
+                                                   (NODE_TYPE (iv) == N_array)
+                                                     ? DUPdoDupTree (ARRAY_AELEMS (iv))
+                                                     : TCids2Exprs (iv)));
+    } else {
+        /*
+         * iv = id =>
+         *
+         * _vect2offset_( [ <shp> ], iv)
+         */
+        offset = TCmakePrf2 (F_vect2offset, SHshape2Array (TYgetShape (type)),
+                             TBmakeId (avis));
+    }
+
+    result
+      = TBmakeAssign (TBmakeLet (TBmakeIds (TBmakeAvis (ILIBtmpVarName (AVIS_NAME (avis)),
+                                                        TYmakeAKS (TYmakeSimpleType (
+                                                                     T_int),
+                                                                   SHmakeShape (0))),
+                                            NULL),
+                                 offset),
+                      NULL);
+
+    AVIS_SSAASSIGN (IDS_AVIS (ASSIGN_LHS (result))) = result;
+
+    DBUG_RETURN (result);
+}
+
+/** <!-- ****************************************************************** -->
+ * @brief Generates idx2offset/vect2offset assignments for the given
+ *        index variable and shapes.
+ *
+ * @param types N_exprs chain of N_type nodes containing all shapes
+ *              an offset has to be built for.
+ * @param avis N_avis node of the selection index
+ * @param iv N_array node or N_ids chain giving the scalarized representation
+ *           of the index vector or NULL of none available
+ * @param info info structure
+ *
+ * @return N_ids chain containing all created offset ids
+ ******************************************************************************/
+static node *
+IdxTypes2IdxIds (node *types, node *avis, node *iv, info *info)
+{
+    node *result = NULL;
+    node *idxassign;
+
+    DBUG_ENTER ("IdxTypes2IdxIds");
+
+    if (types != NULL) {
+        result = IdxTypes2IdxIds (EXPRS_NEXT (types), avis, iv, info);
+
+        idxassign = Type2IdxAssign (TYPE_TYPE (EXPRS_EXPR (types)), avis, iv);
+
+        INFO_POSTASSIGNS (info) = TCappendAssign (idxassign, INFO_POSTASSIGNS (info));
+
+        result = TBmakeIds (IDS_AVIS (ASSIGN_LHS (idxassign)), result);
+    }
+
+    DBUG_RETURN (result);
+}
+
+static node *
+GetAvis4Shape (node *avis, ntype *type)
+{
+    node *result = NULL;
+    node *types;
+    node *ids;
+
+    DBUG_ENTER ("GetAvis4Shape");
+
+    if (TUshapeKnown (type)) {
+        types = AVIS_IDXTYPES (avis);
+        ids = AVIS_IDXIDS (avis);
+
+        while (types != NULL) {
+            DBUG_ASSERT ((ids != NULL),
+                         "number of IDXTYPES does not match number of IDXIDS!");
+
+            if (SHcompareShapes (TYgetShape (type),
+                                 TYgetShape (TYPE_TYPE (EXPRS_EXPR (types))))) {
+                result = IDS_AVIS (ids);
+                break;
+            }
+
+            types = EXPRS_NEXT (types);
+            ids = IDS_NEXT (ids);
+        }
+    } else {
+        result = NULL;
+    }
+
+    DBUG_RETURN (result);
+}
+
+static node *
+CheckAndReplaceSel (node *prf, node *lhs)
+{
+    node *result;
+    node *avis;
+
+    DBUG_ENTER ("CheckAndReplaceSel");
+
+    avis = GetAvis4Shape (ID_AVIS (PRF_ARG1 (prf)), ID_NTYPE (PRF_ARG2 (prf)));
+
+    if (avis != NULL) {
+        result = TCmakePrf2 (F_idx_sel, TBmakeId (avis), PRF_ARG2 (prf));
+
+        PRF_ARG2 (prf) = NULL;
+        prf = FREEdoFreeNode (prf);
+
+        ive_expr++;
+    } else {
+        result = prf;
+    }
+
+    DBUG_RETURN (result);
+}
+
+static node *
+CheckAndReplaceModarray (node *prf, node *lhs)
+{
+    node *result;
+    node *avis;
+
+    DBUG_ENTER ("CheckAndReplaceModarray");
+
+    avis = GetAvis4Shape (ID_AVIS (PRF_ARG2 (prf)), ID_NTYPE (PRF_ARG1 (prf)));
+
+    if ((avis != NULL) && (TUshapeKnown (IDS_NTYPE (lhs)))
+        && (TUshapeKnown (ID_NTYPE (PRF_ARG1 (prf))))
+        && (TUshapeKnown (ID_NTYPE (PRF_ARG2 (prf))))
+        && (TUshapeKnown (ID_NTYPE (PRF_ARG3 (prf))))) {
+        /*
+         * TODO: sah
+         * _idx_modarray_ is limited to args and return
+         * values of at least AKS type, so we have to check
+         * that here. A better idea would be to modify the
+         * _idx_modarray_ prf to work on AKD as well...
+         */
+        result
+          = TCmakePrf3 (F_idx_modarray, PRF_ARG1 (prf), TBmakeId (avis), PRF_ARG3 (prf));
+
+        PRF_ARG1 (prf) = NULL;
+        PRF_ARG3 (prf) = NULL;
+        prf = FREEdoFreeNode (prf);
+
+        ive_expr++;
+    } else {
+        result = prf;
+    }
+
+    DBUG_RETURN (result);
+}
+
 /**
  * traversal functions
  */
 
+/** <!-- ****************************************************************** -->
+ * @brief First traverses into the args chain of the given fundef to append
+ *        offset-arguments which are propagated into the fundef body. This
+ *        is only done for LACFUNS!. Secondly it traverses into the body of
+ *        the given fundef to start the generation of idx2offset/vect2offset
+ *        assignments and the replacement of sel/modarray ops.
+ *
+ * @param arg_node N_fundef node
+ * @param arg_info info structure
+ *
+ * @return unchanged N_fundef node
+ ******************************************************************************/
 node *
 IVEfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("IVEfundef");
 
+    if (FUNDEF_BODY (arg_node) != NULL) {
+        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+    }
+
+    if (FUNDEF_NEXT (arg_node) != NULL) {
+        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+    }
+
     DBUG_RETURN (arg_node);
 }
 
+node *
+IVEarg (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("IVEarg");
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!-- ****************************************************************** -->
+ * @brief Traverses into the assignments within the block to trigger
+ *        the generation of idx2offset/vect2offset assignments. Prior to
+ *        doing so, any leftover POSTASSIGNS are inserted at the beginning
+ *        of the block. This is necessary, as the assignments generated
+ *        for a WITHID ids need to be inserted at the beginning of the
+ *        block of the corresponding CODE.
+ *
+ * @param arg_node N_block node
+ * @param arg_info info structure
+ *
+ * @return unchanged N_block node
+ ******************************************************************************/
+node *
+IVEblock (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("IVEblock");
+
+    if (INFO_POSTASSIGNS (arg_info) != NULL) {
+        if (NODE_TYPE (BLOCK_INSTR (arg_node)) == N_empty) {
+            BLOCK_INSTR (arg_node) = FREEdoFreeNode (BLOCK_INSTR (arg_node));
+            BLOCK_INSTR (arg_node) = INFO_POSTASSIGNS (arg_info);
+            INFO_POSTASSIGNS (arg_info) = NULL;
+        } else {
+            BLOCK_INSTR (arg_node)
+              = TCappendAssign (INFO_POSTASSIGNS (arg_info), BLOCK_INSTR (arg_node));
+            INFO_POSTASSIGNS (arg_info) = NULL;
+        }
+    }
+
+    BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!-- ****************************************************************** -->
+ * @brief Generates idx2offset/vect2offset assignments and
+ *        annotates the corresponding ids at the avis node.
+ *
+ * @param arg_node N_ids node
+ * @param arg_info info structure
+ *
+ * @return unchanged N_ids node
+ ******************************************************************************/
 node *
 IVEids (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("IVEids");
 
+    if (AVIS_IDXTYPES (IDS_AVIS (arg_node)) != NULL) {
+        AVIS_IDXIDS (IDS_AVIS (arg_node))
+          = IdxTypes2IdxIds (AVIS_IDXTYPES (IDS_AVIS (arg_node)), IDS_AVIS (arg_node),
+                             ASSIGN_LHS (AVIS_SSAASSIGN (IDS_AVIS (arg_node))), arg_info);
+    }
+
     DBUG_RETURN (arg_node);
 }
 
+/** <!-- ****************************************************************** -->
+ * @brief Replaces F_sel/F_modarray by F_idx_sel/F_idx_modarray whereever
+ *        possible.
+ *
+ * @param arg_node N_prf node
+ * @param arg_info info structure
+ *
+ * @return possibly replaced N_prf node
+ ******************************************************************************/
 node *
 IVEprf (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("IVEprf");
 
+    switch (PRF_PRF (arg_node)) {
+    case F_sel:
+        arg_node = CheckAndReplaceSel (arg_node, INFO_LHS (arg_info));
+        break;
+    case F_modarray:
+        arg_node = CheckAndReplaceModarray (arg_node, INFO_LHS (arg_info));
+        break;
+
+    default:
+        break;
+    }
+
     DBUG_RETURN (arg_node);
 }
 
+/** <!-- ****************************************************************** -->
+ * @brief Directs the traversal into the assignment instruction and inserts
+ *        the INFO_POSTASSIGNS chain after the current node prior to
+ *        traversing further down.
+ *
+ * @param arg_node N_assign node
+ * @param arg_info info structure
+ *
+ * @return unchanged N_assign node
+ ******************************************************************************/
 node *
 IVEassign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("IVEassign");
+
+    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+
+    if (INFO_POSTASSIGNS (arg_info) != NULL) {
+        ASSIGN_NEXT (arg_node)
+          = TCappendAssign (INFO_POSTASSIGNS (arg_info), ASSIGN_NEXT (arg_node));
+        INFO_POSTASSIGNS (arg_info) = NULL;
+    }
+
+    if (ASSIGN_NEXT (arg_node) != NULL) {
+        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!-- ****************************************************************** -->
+ * @brief Stores the LET_IDS in INFO_LHS for further usage.
+ *
+ * @param arg_node N_let node
+ * @param arg_info info structure
+ *
+ * @return unchanged N_let node
+ ******************************************************************************/
+node *
+IVElet (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("IVElet");
+
+    INFO_LHS (arg_info) = LET_IDS (arg_node);
+
+    if (LET_EXPR (arg_node) != NULL) {
+        LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
+    }
+
+    if (LET_IDS (arg_node) != NULL) {
+        LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -588,6 +950,51 @@ node *
 IVEap (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("IVEap");
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+IVEwith (node *arg_node, info *arg_info)
+{
+    node *oldwithid;
+
+    DBUG_ENTER ("IVEwith");
+
+    oldwithid = INFO_WITHID (arg_info);
+    INFO_WITHID (arg_info) = WITH_WITHID (arg_node);
+
+    if (WITH_CODE (arg_node) != NULL) {
+        WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
+    }
+
+    INFO_WITHID (arg_info) = oldwithid;
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+IVEcode (node *arg_node, info *arg_info)
+{
+    node *avis;
+    node *ids;
+
+    DBUG_ENTER ("IVEcode");
+
+    avis = IDS_AVIS (WITHID_VEC (INFO_WITHID (arg_info)));
+    ids = WITHID_IDS (INFO_WITHID (arg_info));
+
+    if (AVIS_IDXIDS (avis) != NULL) {
+        AVIS_IDXIDS (avis) = FREEdoFreeTree (AVIS_IDXIDS (avis));
+    }
+
+    AVIS_IDXIDS (avis) = IdxTypes2IdxIds (AVIS_IDXTYPES (avis), avis, ids, arg_info);
+
+    CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
+
+    if (CODE_NEXT (arg_node) != NULL) {
+        CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -604,16 +1011,22 @@ IVEap (node *arg_node, info *arg_info)
 node *
 IVEdoIndexVectorElimination (node *syntax_tree)
 {
+    info *info;
+
     DBUG_ENTER ("IndexVectorElimination");
 
     DBUG_ASSERT ((NODE_TYPE (syntax_tree) == N_module),
                  "IVE is intended to run on the entire tree");
 
+    info = MakeInfo ();
+
     TRAVpush (TR_ive);
 
-    syntax_tree = TRAVdo (syntax_tree, NULL);
+    syntax_tree = TRAVdo (syntax_tree, info);
 
     TRAVpop ();
+
+    info = FreeInfo (info);
 
     DBUG_RETURN (syntax_tree);
 }
