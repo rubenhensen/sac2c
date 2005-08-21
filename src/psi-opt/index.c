@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.76  2005/08/21 14:25:47  sah
+ * IVE-rewrite: now the vardecs are created as well ;)
+ *
  * Revision 3.75  2005/08/21 12:35:25  sah
  * IVE-rewrite: basic implementation
  *
@@ -510,6 +513,7 @@
  */
 struct INFO {
     node *postassigns;
+    node *vardecs;
     node *lhs;
     node *withid;
 };
@@ -518,6 +522,7 @@ struct INFO {
  * INFO macros
  */
 #define INFO_POSTASSIGNS(n) ((n)->postassigns)
+#define INFO_VARDECS(n) ((n)->vardecs)
 #define INFO_LHS(n) ((n)->lhs)
 #define INFO_WITHID(n) ((n)->withid)
 
@@ -534,6 +539,7 @@ MakeInfo ()
     result = ILIBmalloc (sizeof (info));
 
     INFO_POSTASSIGNS (result) = NULL;
+    INFO_VARDECS (result) = NULL;
     INFO_LHS (result) = NULL;
     INFO_WITHID (result) = NULL;
 
@@ -592,9 +598,10 @@ IVEchangeId (char *varname, shape *shp)
 }
 
 static node *
-Type2IdxAssign (ntype *type, node *avis, node *iv)
+Type2IdxAssign (ntype *type, node *avis, node *iv, info *info)
 {
     node *result;
+    node *assign;
     node *offset;
 
     DBUG_ENTER ("Type2IdxAssign");
@@ -622,16 +629,16 @@ Type2IdxAssign (ntype *type, node *avis, node *iv)
                              TBmakeId (avis));
     }
 
-    result
-      = TBmakeAssign (TBmakeLet (TBmakeIds (TBmakeAvis (ILIBtmpVarName (AVIS_NAME (avis)),
-                                                        TYmakeAKS (TYmakeSimpleType (
-                                                                     T_int),
-                                                                   SHmakeShape (0))),
-                                            NULL),
-                                 offset),
-                      NULL);
+    result = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (avis)),
+                         TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
 
-    AVIS_SSAASSIGN (IDS_AVIS (ASSIGN_LHS (result))) = result;
+    INFO_VARDECS (info) = TBmakeVardec (result, INFO_VARDECS (info));
+
+    assign = TBmakeAssign (TBmakeLet (TBmakeIds (result, NULL), offset), NULL);
+
+    INFO_POSTASSIGNS (info) = TCappendAssign (assign, INFO_POSTASSIGNS (info));
+
+    AVIS_SSAASSIGN (result) = assign;
 
     DBUG_RETURN (result);
 }
@@ -653,18 +660,16 @@ static node *
 IdxTypes2IdxIds (node *types, node *avis, node *iv, info *info)
 {
     node *result = NULL;
-    node *idxassign;
+    node *idxavis;
 
     DBUG_ENTER ("IdxTypes2IdxIds");
 
     if (types != NULL) {
         result = IdxTypes2IdxIds (EXPRS_NEXT (types), avis, iv, info);
 
-        idxassign = Type2IdxAssign (TYPE_TYPE (EXPRS_EXPR (types)), avis, iv);
+        idxavis = Type2IdxAssign (TYPE_TYPE (EXPRS_EXPR (types)), avis, iv, info);
 
-        INFO_POSTASSIGNS (info) = TCappendAssign (idxassign, INFO_POSTASSIGNS (info));
-
-        result = TBmakeIds (IDS_AVIS (ASSIGN_LHS (idxassign)), result);
+        result = TBmakeIds (idxavis, result);
     }
 
     DBUG_RETURN (result);
@@ -786,6 +791,12 @@ IVEfundef (node *arg_node, info *arg_info)
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+    }
+
+    if (INFO_VARDECS (arg_info) != NULL) {
+        FUNDEF_VARDEC (arg_node)
+          = TCappendVardec (FUNDEF_VARDEC (arg_node), INFO_VARDECS (arg_info));
+        INFO_VARDECS (arg_info) = NULL;
     }
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
