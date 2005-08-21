@@ -1,8 +1,9 @@
 /*
  *
  * $Log$
- * Revision 1.3  2005/08/20 23:59:54  ktr
- * Should work...
+ * Revision 1.4  2005/08/21 09:34:29  ktr
+ * all arguments and the return value of sel and modarray must be AKS to allow conversion
+ * into idx_sel and idx_modarray,respectively
  *
  * Revision 1.2  2005/08/20 19:08:02  ktr
  * starting brushing
@@ -29,6 +30,7 @@
 struct INFO {
     node *fundef;
     node *intap;
+    node *lhs;
 };
 
 /*
@@ -36,6 +38,7 @@ struct INFO {
  */
 #define INFO_FUNDEF(n) ((n)->fundef)
 #define INFO_INTAP(n) ((n)->intap)
+#define INFO_LHS(n) ((n)->lhs)
 
 /*
  * INFO functions
@@ -243,6 +246,22 @@ IVEIfundef (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/** <!--*******************************************************************-->
+ *
+ * @fn node *IVEIlet( node *arg_node, info *arg_info)
+ *
+ ****************************************************************************/
+node *
+IVEIlet (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("IVEIlet");
+
+    INFO_LHS (arg_info) = LET_IDS (arg_node);
+    LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
 /** <!--********************************************************************-->
  *
  * @fn node *IVEIprf( node *arg_node, info *arg_info )
@@ -252,39 +271,46 @@ IVEIfundef (node *arg_node, info *arg_info)
 node *
 IVEIprf (node *arg_node, info *arg_info)
 {
-    node *arg1, *arg2;
-    ntype *type1, *type2;
+    node *lhs, *arg1, *arg2, *arg3;
+    ntype *ltype, *type1, *type2, *type3;
 
     DBUG_ENTER ("IVEIprf");
 
     switch (PRF_PRF (arg_node)) {
     case F_sel:
+        lhs = INFO_LHS (arg_info);
         arg1 = PRF_ARG1 (arg_node);
         arg2 = PRF_ARG2 (arg_node);
 
         DBUG_ASSERT (((NODE_TYPE (arg1) == N_id) && (NODE_TYPE (arg2) == N_id)),
                      "wrong arg in F_sel application");
 
+        ltype = IDS_NTYPE (lhs);
         type1 = ID_NTYPE (arg1);
         type2 = ID_NTYPE (arg2);
 
-        if (TUshapeKnown (type2) && TUisIntVect (type1)) {
+        if (TUshapeKnown (ltype) && TUshapeKnown (type2) && TUisIntVect (type1)
+            && TUshapeKnown (type1)) {
             AddTypeToIdxTypes (ID_AVIS (arg1), type2);
         }
         break;
 
     case F_modarray:
+        lhs = INFO_LHS (arg_info);
         arg1 = PRF_ARG1 (arg_node);
         arg2 = PRF_ARG2 (arg_node);
+        arg3 = PRF_ARG3 (arg_node);
 
         DBUG_ASSERT (((NODE_TYPE (arg1) == N_id) && (NODE_TYPE (arg2) == N_id)),
                      "wrong arg in F_modarray application");
 
+        ltype = IDS_NTYPE (lhs);
         type1 = ID_NTYPE (arg1);
         type2 = ID_NTYPE (arg2);
+        type3 = ID_NTYPE (arg3);
 
-        if (TUshapeKnown (type1) && TUisIntVect (type2) && TUshapeKnown (type2)
-            && (TYgetDim (type1) == SHgetUnrLen (TYgetShape (type2)))) {
+        if (TUshapeKnown (ltype) && TUshapeKnown (type1) && TUisIntVect (type2)
+            && TUshapeKnown (type2) && TUshapeKnown (type3)) {
             AddTypeToIdxTypes (ID_AVIS (arg2), type1);
         }
         break;
@@ -346,10 +372,14 @@ IVEIprintPreFun (node *arg_node, info *arg_info)
     switch (NODE_TYPE (arg_node)) {
     case N_avis:
         exprs = AVIS_IDXTYPES (arg_node);
-        while (exprs != NULL) {
-            printf (":IDX(%s)",
-                    SHshape2String (0, TYgetShape (TYPE_TYPE (EXPRS_EXPR (exprs)))));
-            exprs = EXPRS_NEXT (exprs);
+        if (exprs != NULL) {
+            printf ("/*");
+            while (exprs != NULL) {
+                printf (":IDX(%s)",
+                        SHshape2String (0, TYgetShape (TYPE_TYPE (EXPRS_EXPR (exprs)))));
+                exprs = EXPRS_NEXT (exprs);
+            }
+            printf ("*/");
         }
         break;
 
