@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2005/08/23 14:24:27  sbs
+ * added COzipCvChar
+ *
  * Revision 3.10  2004/11/26 16:33:16  cg
  * identifiers brushed.
  *
@@ -167,7 +170,7 @@ TYP_IF (T_unknown, "unknown", "_unknown_", "", COcv2ScalarDummy, COcv2CvDummy,
           sizeof (char *), COzipCvDummy, CObaseCvDummy, unused, unused),
 
   TYP_IF (T_char, "char", "char", "c", COcv2Char, COcv2CvChar, COcv2StrChar,
-          sizeof (char), COzipCvDummy, CObaseCvDummy, unused, unused),
+          sizeof (char), COzipCvChar, CObaseCvDummy, unused, unused),
 
   TYP_IF (T_hidden, "hidden", "SAC_hidden", "h", COcv2ScalarDummy, COcv2CvHidden,
           COcv2StrDummy, sizeof (void *), COzipCvDummy, CObaseCvDummy, unused, unused),
