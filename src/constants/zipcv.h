@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.7  2005/08/23 14:23:42  sbs
+ * introduced the Char versions
+ *
  * Revision 1.6  2004/11/23 11:38:17  cg
  * SacDevCamp renaming
  *
@@ -48,6 +51,8 @@
                                         void *res, int res_pos);                         \
                                                                                          \
     extern void COzipCvBool##fun (void *arg1, int pos1, void *arg2, int pos2, void *res, \
+                                  int res_pos);                                          \
+    extern void COzipCvChar##fun (void *arg1, int pos1, void *arg2, int pos2, void *res, \
                                   int res_pos);                                          \
                                                                                          \
     extern void COzipCvDummy##fun (void *arg1, int pos1, void *arg2, int pos2,           \

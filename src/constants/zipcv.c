@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2005/08/23 14:23:42  sbs
+ * introduced the Char versions
+ *
  * Revision 1.5  2004/11/26 16:09:53  jhb
  * compile
  *
@@ -122,7 +125,8 @@
                 COzipCvTEMPLATE (fun, fname, float, Float, float)                        \
                   COzipCvTEMPLATE (fun, fname, double, Double, double)                   \
                     COzipCvTEMPLATE (fun, fname, long double, LongDouble, long double)   \
-                      COzipCvDUMMYTEMP (Bool, fname) COzipCvDUMMYTEMP (Dummy, fname)
+                      COzipCvDUMMYTEMP (Bool, fname) COzipCvDUMMYTEMP (Char, fname)      \
+                        COzipCvDUMMYTEMP (Dummy, fname)
 
 #define MAP_MINMAX_NUMxNUM_NUM(fun, fname)                                               \
     COzipCvMINMAXTEMPLATE (fun, fname, unsigned short, UShort, unsigned short)           \
@@ -135,7 +139,7 @@
                   COzipCvMINMAXTEMPLATE (fun, fname, double, Double, double)             \
                     COzipCvMINMAXTEMPLATE (fun, fname, long double, LongDouble,          \
                                            long double) COzipCvDUMMYTEMP (Bool, fname)   \
-                      COzipCvDUMMYTEMP (Dummy, fname)
+                      COzipCvDUMMYTEMP (Char, fname) COzipCvDUMMYTEMP (Dummy, fname)
 
 #define MAP_INTxINT_INT(fun, fname)                                                      \
     COzipCvTEMPLATE (fun, fname, unsigned short, UShort, unsigned short)                 \
@@ -146,14 +150,14 @@
               COzipCvTEMPLATE (fun, fname, long, Long, long)                             \
                 COzipCvDUMMYTEMP (Float, fname) COzipCvDUMMYTEMP (Double, fname)         \
                   COzipCvDUMMYTEMP (LongDouble, fname) COzipCvDUMMYTEMP (Bool, fname)    \
-                    COzipCvDUMMYTEMP (Dummy, fname)
+                    COzipCvDUMMYTEMP (Char, fname) COzipCvDUMMYTEMP (Dummy, fname)
 
 #define MAP_BOOLxBOOL_BOOL(fun, fname)                                                   \
     COzipCvDUMMYTEMP (UShort, fname) COzipCvDUMMYTEMP (UInt, fname)                      \
       COzipCvDUMMYTEMP (ULong, fname) COzipCvDUMMYTEMP (Short, fname)                    \
-        COzipCvDUMMYTEMP (Int, fname) COzipCvDUMMYTEMP (Long, fname)                     \
-          COzipCvDUMMYTEMP (Float, fname) COzipCvDUMMYTEMP (Double, fname)               \
-            COzipCvDUMMYTEMP (LongDouble, fname)                                         \
+        COzipCvDUMMYTEMP (Int, fname) COzipCvDUMMYTEMP (Char, fname)                     \
+          COzipCvDUMMYTEMP (Long, fname) COzipCvDUMMYTEMP (Float, fname)                 \
+            COzipCvDUMMYTEMP (Double, fname) COzipCvDUMMYTEMP (LongDouble, fname)        \
               COzipCvTEMPLATE (fun, fname, bool, Bool, bool)                             \
                 COzipCvDUMMYTEMP (Dummy, fname)
 
@@ -168,7 +172,8 @@
                   COzipCvTEMPLATE (fun, fname, double, Double, bool)                     \
                     COzipCvTEMPLATE (fun, fname, long double, LongDouble, bool)          \
                       COzipCvTEMPLATE (fun, fname, bool, Bool, bool)                     \
-                        COzipCvDUMMYTEMP (Dummy, fname)
+                        COzipCvTEMPLATE (fun, fname, char, Char, bool)                   \
+                          COzipCvDUMMYTEMP (Dummy, fname)
 
 #define MAP_NUMxNUM_BOOL(fun, fname)                                                     \
     COzipCvTEMPLATE (fun, fname, unsigned short, UShort, bool)                           \
@@ -180,14 +185,15 @@
                 COzipCvTEMPLATE (fun, fname, float, Float, bool)                         \
                   COzipCvTEMPLATE (fun, fname, double, Double, bool)                     \
                     COzipCvTEMPLATE (fun, fname, long double, LongDouble, bool)          \
-                      COzipCvDUMMYTEMP (Bool, fname) COzipCvDUMMYTEMP (Dummy, fname)
+                      COzipCvDUMMYTEMP (Bool, fname) COzipCvDUMMYTEMP (Char, fname)      \
+                        COzipCvDUMMYTEMP (Dummy, fname)
 
 #define MAP_BOOL_BOOL(fun, fname)                                                        \
     COzipCvDUMMYTEMP (UShort, fname) COzipCvDUMMYTEMP (UInt, fname)                      \
       COzipCvDUMMYTEMP (ULong, fname) COzipCvDUMMYTEMP (Short, fname)                    \
-        COzipCvDUMMYTEMP (Int, fname) COzipCvDUMMYTEMP (Long, fname)                     \
-          COzipCvDUMMYTEMP (Float, fname) COzipCvDUMMYTEMP (Double, fname)               \
-            COzipCvDUMMYTEMP (LongDouble, fname)                                         \
+        COzipCvDUMMYTEMP (Int, fname) COzipCvDUMMYTEMP (Char, fname)                     \
+          COzipCvDUMMYTEMP (Long, fname) COzipCvDUMMYTEMP (Float, fname)                 \
+            COzipCvDUMMYTEMP (Double, fname) COzipCvDUMMYTEMP (LongDouble, fname)        \
               COzipCvUNARYTEMPLATE (fun, fname, bool, Bool, bool)                        \
                 COzipCvDUMMYTEMP (Dummy, fname)
 
@@ -201,7 +207,22 @@
                 COzipCvUNARYTEMPLATE (fun, fname, float, Float, target_t)                \
                   COzipCvUNARYTEMPLATE (fun, fname, double, Double, target_t)            \
                     COzipCvUNARYTEMPLATE (fun, fname, long double, LongDouble, target_t) \
-                      COzipCvDUMMYTEMP (Bool, fname) COzipCvDUMMYTEMP (Dummy, fname)
+                      COzipCvDUMMYTEMP (Char, fname) COzipCvDUMMYTEMP (Bool, fname)      \
+                        COzipCvDUMMYTEMP (Dummy, fname)
+
+#define MAP_ANY_TYPE(fun, fname, target_t)                                               \
+    COzipCvUNARYTEMPLATE (fun, fname, unsigned short, UShort, target_t)                  \
+      COzipCvUNARYTEMPLATE (fun, fname, unsigned int, UInt, target_t)                    \
+        COzipCvUNARYTEMPLATE (fun, fname, unsigned long, ULong, target_t)                \
+          COzipCvUNARYTEMPLATE (fun, fname, short, Short, target_t)                      \
+            COzipCvUNARYTEMPLATE (fun, fname, int, Int, target_t)                        \
+              COzipCvUNARYTEMPLATE (fun, fname, long, Long, target_t)                    \
+                COzipCvUNARYTEMPLATE (fun, fname, float, Float, target_t)                \
+                  COzipCvUNARYTEMPLATE (fun, fname, double, Double, target_t)            \
+                    COzipCvUNARYTEMPLATE (fun, fname, long double, LongDouble, target_t) \
+                      COzipCvUNARYTEMPLATE (fun, fname, bool, Bool, target_t)            \
+                        COzipCvUNARYTEMPLATE (fun, fname, char, Char, target_t)          \
+                          COzipCvDUMMYTEMP (Dummy, fname)
 
 #define MAP_NUM_NUM(fun, fname)                                                          \
     COzipCvUNARYTEMPLATE (fun, fname, unsigned short, UShort, unsigned short)            \
@@ -213,8 +234,8 @@
                 COzipCvUNARYTEMPLATE (fun, fname, float, Float, float)                   \
                   COzipCvUNARYTEMPLATE (fun, fname, double, Double, double)              \
                     COzipCvUNARYTEMPLATE (fun, fname, long double, LongDouble,           \
-                                          long double) COzipCvDUMMYTEMP (Bool, fname)    \
-                      COzipCvDUMMYTEMP (Dummy, fname)
+                                          long double) COzipCvDUMMYTEMP (Char, fname)    \
+                      COzipCvDUMMYTEMP (Bool, fname) COzipCvDUMMYTEMP (Dummy, fname)
 
 #define MAP_ABS_NUM_NUM(fun, fname)                                                      \
     COzipCvUNARYTEMPLATE (, fname, unsigned short, UShort, unsigned short)               \
@@ -226,7 +247,8 @@
               COzipCvABSTEMPLATE (fun, fname, float, Float, float)                       \
                 COzipCvABSTEMPLATE (fun, fname, double, Double, double)                  \
                   COzipCvABSTEMPLATE (fun, fname, long double, LongDouble, long double)  \
-                    COzipCvDUMMYTEMP (Bool, fname) COzipCvDUMMYTEMP (Dummy, fname)
+                    COzipCvDUMMYTEMP (Bool, fname) COzipCvDUMMYTEMP (Char, fname)        \
+                      COzipCvDUMMYTEMP (Dummy, fname)
 /*
  * The actual function definitions are defined by the following macro usages:
  */
@@ -263,11 +285,11 @@ MAP_NUMxNUM_NUM (+, Plus)
 
                               MAP_BOOL_BOOL (!, Not)
 
-                                MAP_NUM_TYPE ((int), Toi, int)
+                                MAP_ANY_TYPE ((int), Toi, int)
 
-                                  MAP_NUM_TYPE ((float), Tof, float)
+                                  MAP_ANY_TYPE ((float), Tof, float)
 
-                                    MAP_NUM_TYPE ((double), Tod, double)
+                                    MAP_ANY_TYPE ((double), Tod, double)
 
                                       MAP_ABS_NUM_NUM (NOP, Abs)
 
