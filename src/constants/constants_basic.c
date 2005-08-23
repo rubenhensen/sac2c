@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.37  2005/08/23 14:22:47  sbs
+ * introduced the recognition of char constants
+ *
  * Revision 1.36  2005/01/26 10:34:45  mwe
  * just edited last log message...
  *
@@ -769,6 +772,12 @@ COaST2Constant (node *n)
             new_co = COmakeConstant (T_bool, SHmakeShape (0), element);
             break;
 
+        case N_char:
+            element = (char *)ILIBmalloc (sizeof (char));
+            *((char *)element) = CHAR_VAL (n);
+            new_co = COmakeConstant (T_char, SHmakeShape (0), element);
+            break;
+
         case N_array:
             atype = NTCnewTypeCheck_Expr (n);
             if (TYisAKS (atype) || TYisAKV (atype)) {
@@ -810,7 +819,7 @@ COaST2Constant (node *n)
  *    checks if a given node is constant
  *
  *    this funtion can deal with scalar types like
- *      N_num, N_double, N_float, N_bool
+ *      N_num, N_double, N_float, N_bool, N_char
  *    arrays (N_array)
  *    and identifier (N_id with akv type)
  *
@@ -829,6 +838,7 @@ COisConstant (node *n)
         case N_double:
         case N_float:
         case N_bool:
+        case N_char:
             res = TRUE;
             break;
 
