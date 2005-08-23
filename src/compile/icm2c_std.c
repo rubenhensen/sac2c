@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.63  2005/08/23 13:43:48  ktr
+ * corrected ICMCompileND_CREATE__ARRAY__DATA
+ *
  * Revision 3.62  2004/11/25 10:26:46  jhb
  * compile SACdevCamp 2k4
  *
@@ -1473,10 +1476,25 @@ ICMCompileND_CREATE__ARRAY__DATA (char *to_NT, int to_sdim, int val_size, char *
     }
 
     if (entries_are_scalars) {
+
+        /* ensure all entries are scalar */
+        for (i = 0; i < val_size; i++) {
+            if ((vals_ANY[i][0] == '(') && (ICUGetShapeClass (vals_ANY[i]) != C_scl)) {
+                DBUG_ASSERT ((ICUGetShapeClass (vals_ANY[i]) == C_aud),
+                             "tagged id is no scalar!");
+                INDENT;
+                ASSURE_TYPE_EXPR (fprintf (global.outfile, "SAC_ND_A_DIM( %s) == 0",
+                                           vals_ANY[i]);
+                                  , fprintf (global.outfile, "Scalar expected but array "
+                                                             "with (dim > 0) found!"););
+                fprintf (global.outfile, "\n");
+            }
+        }
+
         for (i = 0; i < val_size; i++) {
             INDENT;
             fprintf (global.outfile, "SAC_ND_WRITE_COPY( %s, %d, ", to_NT, i);
-            ReadScalar_Check (vals_ANY[i], NULL, 0);
+            ReadScalar (vals_ANY[i], NULL, 0);
             fprintf (global.outfile, ", %s)\n", copyfun);
         }
     } else {
