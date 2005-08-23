@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.29  2005/08/23 14:25:51  sbs
+ * extended _toi_S_ _tof_S_ and _tod_S_ for all types
+ * including bool and char!
+ *
  * Revision 1.28  2005/08/19 17:27:33  sbs
  * added NTCCTprf_type_conv
  *
@@ -699,7 +703,12 @@ ConvS (te_info *info, ntype *args, simpletype st)
 
     array = TYgetProductMember (args, 0);
 
-    TEassureNumS (TEprfArg2Obj (TEgetNameStr (info), 1), array);
+#if 0
+  TEassureNumS( TEprfArg2Obj( TEgetNameStr( info), 1), array);
+#else
+    TEassureScalar (TEprfArg2Obj (TEgetNameStr (info), 1), array);
+    TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 1), array);
+#endif
     err_msg = TEfetchErrors ();
     if (err_msg != NULL) {
         res = TYmakeBottomType (err_msg);
