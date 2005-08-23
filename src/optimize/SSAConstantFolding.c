@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.90  2005/08/23 13:43:25  ktr
+ * corrected usage of TYgetShape
+ *
  * Revision 1.89  2005/07/21 12:15:52  ktr
  * removed AVIS_WITHID and some structural constand folding on withids that was
  * deactivated anyways.
@@ -564,7 +567,7 @@ CFscoArray2StructConstant (node *expr)
     }
 
     /* build an abstract structural constant of type (void*) T_hidden */
-    if ((array != NULL) && (TYisAKS (atype) || TYisAKV (atype))) {
+    if ((array != NULL) && TUshapeKnown (atype)) {
         /* alloc hidden vector */
         realshape = SHcopyShape (TYgetShape (atype));
         ashape = SHcopyShape (ARRAY_SHAPE (array));
@@ -640,9 +643,10 @@ CFscoScalar2StructConstant (node *expr)
     nt = NODE_TYPE (expr);
 
     if ((nt == N_num) || (nt == N_float) || (nt == N_double) || (nt == N_bool)
-        || ((nt == N_id) && (TYgetDim (AVIS_TYPE (ID_AVIS (expr))) == SCALAR))) {
+        || ((nt == N_id) && (TUdimKnown (ID_NTYPE (expr)))
+            && (TYgetDim (ID_NTYPE (expr)) == 0))) {
         /* create structural constant as scalar */
-        ctype = AVIS_TYPE (ID_AVIS (expr));
+        ctype = ID_NTYPE (expr);
 
         /* alloc hidden vector */
         cshape = SHmakeShape (0);
@@ -867,11 +871,8 @@ Dim (node *expr)
 
     DBUG_ENTER ("Dim");
 
-    if ((NODE_TYPE (expr) == N_id)
-        && ((TYisAKD (AVIS_TYPE (ID_AVIS (expr))))
-            || (TYisAKS (AVIS_TYPE (ID_AVIS (expr))))
-            || (TYisAKV (AVIS_TYPE (ID_AVIS (expr)))))) {
-        result = COmakeConstantFromInt (TYgetDim (AVIS_TYPE (ID_AVIS (expr))));
+    if ((NODE_TYPE (expr) == N_id) && TUdimKnown (ID_NTYPE (expr))) {
+        result = COmakeConstantFromInt (TYgetDim (ID_NTYPE (expr)));
     } else {
         result = NULL;
     }
@@ -898,11 +899,8 @@ Shape (node *expr)
 
     DBUG_ENTER ("Shape");
 
-    if ((NODE_TYPE (expr) == N_id)
-        && ((TYisAKS (AVIS_TYPE (ID_AVIS (expr))))
-            || (TYisAKV (AVIS_TYPE (ID_AVIS (expr)))))) {
-
-        result = COmakeConstantFromShape (TYgetShape (AVIS_TYPE (ID_AVIS (expr))));
+    if ((NODE_TYPE (expr) == N_id) && TUshapeKnown (ID_NTYPE (expr))) {
+        result = COmakeConstantFromShape (TYgetShape (ID_NTYPE (expr)));
     } else {
         result = NULL;
     }
@@ -1437,7 +1435,7 @@ ArithmOpWrapper (prf op, constant **arg_co, node **arg_expr)
 static shape *
 GetShapeOfExpr (node *expr)
 {
-    ntype *etype = NULL;
+    ntype *etype;
     shape *shp = NULL;
 
     DBUG_ENTER ("GetShapeOfExpr");
@@ -1446,7 +1444,7 @@ GetShapeOfExpr (node *expr)
 
     etype = NTCnewTypeCheck_Expr (expr);
 
-    if (TYisAKS (etype) || TYisAKV (etype)) {
+    if (TUshapeKnown (etype)) {
         shp = SHcopyShape (TYgetShape (etype));
     }
 
@@ -1708,13 +1706,10 @@ ShapeSel (constant *idx, node *array_expr)
 
     DBUG_ENTER ("ShapeSel");
 
-    if (TYisAKS (AVIS_TYPE (ID_AVIS (array_expr)))
-        || TYisAKV (AVIS_TYPE (ID_AVIS (array_expr)))) {
-
+    if (TUshapeKnown (ID_NTYPE (array_expr))) {
         shape_elem = ((int *)COgetDataVec (idx))[0];
 
-        res = TBmakeNum (
-          SHgetExtent (TYgetShape (AVIS_TYPE (ID_AVIS (array_expr))), shape_elem));
+        res = TBmakeNum (SHgetExtent (TYgetShape (ID_NTYPE (array_expr)), shape_elem));
     }
 
     DBUG_RETURN (res);
@@ -2559,15 +2554,12 @@ CFfoldPrfExpr (prf op, node **arg_expr)
             new_node = StructOpReshape (arg_co[0], arg_expr[1]);
             if ((new_node == NULL) && (NODE_TYPE (arg_expr[1]) == N_id)) {
                 /* reshape( shp, a)  ->  a    iff (shp == shape(a)) */
-                /*	shape *shp = SHoldTypes2Shape( TYtype2OldType( ID_NTYPE(
-                 * arg_expr[1])));*/
-                shape *shp = SHcopyShape (TYgetShape (ID_NTYPE (arg_expr[1])));
-                if (shp != NULL) {
-                    if (SHcompareWithCArray (shp, COgetDataVec (arg_co[0]),
+                if (TUshapeKnown (ID_NTYPE (arg_expr[1]))) {
+                    if (SHcompareWithCArray (TYgetShape (ID_NTYPE (arg_expr[1])),
+                                             COgetDataVec (arg_co[0]),
                                              SHgetExtent (COgetShape (arg_co[0]), 0))) {
                         new_node = DUPdoDupNode (arg_expr[1]);
                     }
-                    shp = SHfreeShape (shp);
                 }
             }
         }
