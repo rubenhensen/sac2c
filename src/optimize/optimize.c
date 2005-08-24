@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.101  2005/08/24 10:26:01  ktr
+ * added wlidxs traversal
+ *
  * Revision 3.100  2005/08/20 23:42:47  ktr
  * added IVEI
  *
@@ -1129,6 +1132,11 @@ OPTmodule (node *arg_node, info *arg_info)
         arg_node = PHrunCompilerSubPhase (SUBPH_ive, arg_node);
         TRAVsetPreFun (TR_prt, NULL);
     }
+
+    /*
+     * annotate offset scalars on with-loops
+     */
+    arg_node = PHrunCompilerSubPhase (SUBPH_wlidx, arg_node);
 
     /*
      * apply USSA (undo ssa transformation)
