@@ -1116,12 +1116,21 @@
 	  <node name="Code" />
         </travuser>
       </traversal>
+      <traversal id="WLIDX" name="Annotate withloop idxs" default="sons" include="wlidxs.h">
+        <travuser>
+          <node name="Fundef" />
+          <node name="Let" />
+          <node name="With" />
+          <node name="Withid" />
+        </travuser>
+      </traversal>
       <traversal id="IVEI" name="IVE - Use Inference" default="sons" include="index_infer.h">
         <travuser>
           <node name="Fundef" />
           <node name="Ap" />
           <node name="Assign" />
           <node name="Prf" />
+          <node name="Let" />
         </travuser>
       </traversal>
     </phase>
@@ -1239,6 +1248,7 @@
           <node name="Prf" />
           <node name="With" />
           <node name="With2" />
+          <node name="Withid" />
         </travuser>
         <travsons>
           <node name="Module" />
@@ -4223,6 +4233,14 @@
           <description>After explicit allocation (EMAL), Ids points to an N_exprs-list of N_id nodes.
           </description>
 	</son>
+        <son name="Idxs" mandatory="no" default="NULL" >
+	  <target>
+	    <node name="Ids" />
+            <node name="Exprs" />
+	  </target>
+          <description>After explicit allocation (EMAL), Idxs points to an N_exprs-list of N_id nodes.
+          </description>
+	</son>
       </sons>
       <attributes>
       </attributes>
@@ -4467,6 +4485,16 @@
             <phase name="sp" />
           </phases>
         </attribute>
+        <attribute name="Idx" mandatory="yes">
+          <type name="Link">
+            <target>
+              <node name="Avis" />
+            </target>
+          </type>
+          <phases>
+            <range from="wlidx" to="final" />
+          </phases>
+        </attribute>
       </attributes>
       <flags></flags>
     </node>
@@ -4500,6 +4528,16 @@
           </type>
           <phases>
             <phase name="sp" />
+          </phases>
+        </attribute>
+        <attribute name="Idx" mandatory="yes">
+          <type name="Link">
+            <target>
+              <node name="Avis" />
+            </target>
+          </type>
+          <phases>
+            <range from="wlidx" to="final" />
           </phases>
         </attribute>
       </attributes>
