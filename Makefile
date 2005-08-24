@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.189  2005/08/24 10:31:44  ktr
+# added src/compile/wlidx.o
+#
 # Revision 3.188  2005/08/20 12:05:31  ktr
 # added src/optimize/elimtypeconv.o
 #
@@ -332,7 +335,7 @@ COMPILE= src/compile/wlpragma_funs.o src/compile/wltransform.o \
          src/compile/icm2c_wl.o src/compile/icm2c_error.o \
          src/compile/renameidentifiers.o src/compile/functionprecompile.o \
          src/compile/typeconv_precompile.o  src/compile/setlinksign.o \
-         src/compile/remove_external_code.o
+         src/compile/remove_external_code.o src/compile/wlidxs.o
 
 CINTERFACE=
 #CINTERFACE= src/c-interface/map_cwrapper.o \
