@@ -2,6 +2,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2005/08/24 10:18:16  ktr
+ * added support for explicit offset variables
+ *
  * Revision 1.7  2005/06/28 15:55:42  sbs
  * now, fold-wls with empty bounds should work as well
  *
@@ -76,15 +79,16 @@
 
 /*****************************************************************************/
 
-#define SAC_AUD_WL_BEGIN(idx_vec_NT, res_NT)                                             \
+#define SAC_AUD_WL_BEGIN(idx_vec_NT, offset_NT, res_NT)                                  \
     {                                                                                    \
         int SAC_in_gen;                                                                  \
         int SAC_max_off = SAC_ND_A_SIZE (res_NT);                                        \
         int SAC_off_inc = 1;                                                             \
         int SAC_max_d = SAC_ND_A_SIZE (idx_vec_NT) - 1;                                  \
         int SAC_d = SAC_ND_A_DIM (res_NT) - 1;                                           \
-        int SAC_WL_OFFSET (res_NT) = 0;                                                  \
         int SAC_WL_SHAPE_FACTOR (res_NT, 0);                                             \
+                                                                                         \
+        SAC_ND_WRITE (offset_NT, 0) = 0;                                                 \
                                                                                          \
         while (SAC_d > SAC_max_d) {                                                      \
             SAC_off_inc *= SAC_ND_A_SHAPE (res_NT, SAC_d);                               \
@@ -97,7 +101,7 @@
             SAC_d--;                                                                     \
         }                                                                                \
                                                                                          \
-        while (SAC_WL_OFFSET (res_NT) < SAC_max_off) {
+        while (SAC_ND_READ (offset_NT, 0) < SAC_max_off) {
 
 #define SAC_AUD_WL_LU_GEN(lower_NT, idx_vec_NT, upper_NT)                                \
     SAC_d = SAC_max_d;                                                                   \
@@ -153,7 +157,7 @@
 
 #define SAC_AUD_WL_COND_END() }
 
-#define SAC_AUD_WL_END(idx_vec_NT, res_NT)                                               \
+#define SAC_AUD_WL_END(idx_vec_NT, offset_NT, res_NT)                                    \
     SAC_d = SAC_max_d;                                                                   \
     if (SAC_d >= 0) {                                                                    \
         SAC_ND_WRITE (idx_vec_NT, SAC_d) = SAC_ND_READ (idx_vec_NT, SAC_d) + 1;          \
@@ -164,7 +168,7 @@
             SAC_ND_WRITE (idx_vec_NT, SAC_d) = SAC_ND_READ (idx_vec_NT, SAC_d) + 1;      \
         }                                                                                \
     }                                                                                    \
-    SAC_WL_OFFSET (res_NT) += SAC_off_inc;                                               \
+    SAC_ND_WRITE (offset_NT, 0) = SAC_ND_READ (offset_NT, 0) + SAC_off_inc;              \
     }                                                                                    \
     }
 

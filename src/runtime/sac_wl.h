@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.28  2005/08/24 10:18:16  ktr
+ * added support for explicit offset variables
+ *
  * Revision 3.27  2005/06/21 13:33:32  sah
  * removed WL_SUB_SHAPE icm as it is not
  * used anymore
@@ -116,16 +119,6 @@
  * ..LOOP0_BEGIN is used for the outermost node of each dimension (..LEVEL == 0)
  * ..LOOP_BEGIN is used for all inner nodes of each dimension (..LEVEL > 0)
  */
-
-/*****************************************************************************/
-
-/***
- *** Definition the name of the destination variable of the with-loop.
- *** During the with-loop iteration this variable always points to the
- *** current array entry.
- ***/
-
-#define SAC_WL_OFFSET(to_NT) CAT0 (NT_NAME (to_NT), __off)
 
 /*****************************************************************************/
 
@@ -648,6 +641,16 @@
 
 #define SAC_WL_SET_IDXVEC(dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2)                       \
     SAC_ND_WRITE_READ (idx_vec_NT, dim, idx_scl_NT, 0);
+
+/*****************************************************************************/
+
+/***
+ *** This macro is needed, if the index-vector is referenced somewhere in the
+ *** with-loop-body.
+ ***/
+
+#define SAC_WL_INC_OFFSET(off_NT, val_NT)                                                \
+    SAC_ND_WRITE (off_NT, 0) = SAC_ND_READ (off_NT, 0) + SAC_ND_A_SIZE (val_NT);
 
 /*****************************************************************************/
 

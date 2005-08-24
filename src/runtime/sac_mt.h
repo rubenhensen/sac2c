@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.54  2005/08/24 10:18:16  ktr
+ * added support for explicit offset variables
+ *
  * Revision 3.53  2004/10/05 17:38:20  khf
  * splitted SAC_MT_ADJUST_SCHEDULER__OFFSET into
  * SAC_MT_ADJUST_SCHEDULER__BEGIN ..__OFFSET
@@ -1276,11 +1279,9 @@ typedef union {
                           SAC_WL_MT_SCHEDULE_STOP (dim)));
 /* Here is no closing bracket missing -> SAC_MT_ADJUST_SCHEDULER__END */
 
-#define SAC_MT_ADJUST_SCHEDULER__OFFSET(to_NT, dims, dim, lower, upper, unrolling)       \
-    {                                                                                    \
-                                                                                         \
-        SAC_WL_OFFSET (to_NT) += diff_start * SAC_WL_SHAPE_FACTOR (to_NT, dim);          \
-    }
+#define SAC_MT_ADJUST_SCHEDULER__OFFSET(off_NT, to_NT, dim)                              \
+    SAC_ND_WRITE (off_NT, 0)                                                             \
+      = SAC_ND_READ (off_NT, 0) + diff_start * SAC_WL_SHAPE_FACTOR (to_NT, dim);
 
 #define SAC_MT_ADJUST_SCHEDULER__END(to_NT, dims, dim, lower, upper, unrolling) }
 
