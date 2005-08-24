@@ -2,6 +2,9 @@
 /*
  *
  * $Log$
+ * Revision 1.26  2005/08/24 10:22:14  ktr
+ * modified treatment of F_suballoc
+ *
  * Revision 1.25  2005/04/12 15:51:57  ktr
  * intermediate fold results are reassigned to the global fold result identifier
  *
@@ -613,12 +616,8 @@ MMVprfSuballoc (node *arg_node, info *arg_info)
     DBUG_ENTER ("MMVprfSuballoc");
 
     /*
-     * a = suballoc( A, iv)
-     *
-     * 1. remove iv
-     * => a = suballoc( A);
+     * a = suballoc( A, idx)
      */
-    PRF_EXPRS2 (arg_node) = FREEdoFreeTree (PRF_EXPRS2 (arg_node));
 
     /*
      * rename RHS
