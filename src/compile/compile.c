@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.169  2005/08/24 10:21:26  ktr
+ * added support for explicit with-loop offsets
+ *
  * Revision 3.168  2005/08/21 09:32:20  ktr
  * added implementations for F_idxs2offset, F_vect2offset
  *
@@ -258,13 +261,13 @@
  *
  * Other:
  *
- *   INFO_COMP_MODUL       : pointer to current modul
- *   INFO_COMP_FUNDEF      : pointer to current fundef
+ *   INFO_MODUL       : pointer to current modul
+ *   INFO_FUNDEF      : pointer to current fundef
  *
- *   INFO_COMP_LASTIDS     : pointer to IDS of current let
- *   INFO_COMP_LASTSYNC    : pointer to ... ???
+ *   INFO_LASTIDS     : pointer to IDS of current let
+ *   INFO_LASTSYNC    : pointer to ... ???
  *
- *   INFO_COMP_FOLDFUNS    : [flag]
+ *   INFO_FOLDFUNS    : [flag]
  *     In order to guarantee that the special fold-funs are compiled *before*
  *     the associated with-loops, the fundef chain is traversed twice.
  *     During the first traversal (FOLDFUNS == TRUE) only special fold-funs
@@ -284,6 +287,7 @@ struct INFO {
     int schedid;
     node *schedinit;
     node *idxvec;
+    node *offsets;
     node *lowervec;
     node *uppervec;
     node *icmchain;
@@ -292,18 +296,19 @@ struct INFO {
 /*
  * INFO macros
  */
-#define INFO_COMP_MODUL(n) (n->modul)
-#define INFO_COMP_FUNDEF(n) (n->fundef)
-#define INFO_COMP_LASTSYNC(n) (n->lastsync)
-#define INFO_COMP_LASTIDS(n) (n->lastids)
-#define INFO_COMP_ASSIGN(n) (n->assign)
-#define INFO_COMP_SCHEDULERID(n) (n->schedid)
-#define INFO_COMP_SCHEDULERINIT(n) (n->schedinit)
-#define INFO_COMP_IDXVEC(n) (n->idxvec)
-#define INFO_COMP_LOWERVEC(n) (n->lowervec)
-#define INFO_COMP_UPPERVEC(n) (n->uppervec)
-#define INFO_COMP_ICMCHAIN(n) (n->icmchain)
-#define INFO_COMP_ISFOLD(n) (n->isfold)
+#define INFO_MODUL(n) (n->modul)
+#define INFO_FUNDEF(n) (n->fundef)
+#define INFO_LASTSYNC(n) (n->lastsync)
+#define INFO_LASTIDS(n) (n->lastids)
+#define INFO_ASSIGN(n) (n->assign)
+#define INFO_SCHEDULERID(n) (n->schedid)
+#define INFO_SCHEDULERINIT(n) (n->schedinit)
+#define INFO_IDXVEC(n) (n->idxvec)
+#define INFO_OFFSETS(n) (n->offsets)
+#define INFO_LOWERVEC(n) (n->lowervec)
+#define INFO_UPPERVEC(n) (n->uppervec)
+#define INFO_ICMCHAIN(n) (n->icmchain)
+#define INFO_ISFOLD(n) (n->isfold)
 
 /*
  * INFO functions
@@ -317,15 +322,16 @@ MakeInfo ()
 
     result = ILIBmalloc (sizeof (info));
 
-    INFO_COMP_MODUL (result) = NULL;
-    INFO_COMP_FUNDEF (result) = NULL;
-    INFO_COMP_LASTSYNC (result) = NULL;
-    INFO_COMP_LASTIDS (result) = NULL;
-    INFO_COMP_ASSIGN (result) = NULL;
-    INFO_COMP_SCHEDULERID (result) = 0;
-    INFO_COMP_SCHEDULERINIT (result) = NULL;
-    INFO_COMP_IDXVEC (result) = NULL;
-    INFO_COMP_ICMCHAIN (result) = NULL;
+    INFO_MODUL (result) = NULL;
+    INFO_FUNDEF (result) = NULL;
+    INFO_LASTSYNC (result) = NULL;
+    INFO_LASTIDS (result) = NULL;
+    INFO_ASSIGN (result) = NULL;
+    INFO_SCHEDULERID (result) = 0;
+    INFO_SCHEDULERINIT (result) = NULL;
+    INFO_IDXVEC (result) = NULL;
+    INFO_OFFSETS (result) = NULL;
+    INFO_ICMCHAIN (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -362,12 +368,6 @@ FreeInfo (info *info)
 
 #define RC_IS_ZERO(rc) ((rc) == 0)
 #define RC_IS_VITAL(rc) ((rc) > 0)
-
-/*
- * macros for internal purposes
- */
-#define WITHOP_ISOFFSETNEEDED(n)                                                         \
-    ((NODE_TYPE (n) == N_genarray) || (NODE_TYPE (n) == N_modarray))
 
 /******************************************************************************
  *
@@ -736,6 +736,32 @@ COMPgetFoldCode (node *fundef)
     ASSIGN_NEXT (tmp) = FREEdoFreeNode (ASSIGN_NEXT (tmp));
 
     DBUG_RETURN (fold_code);
+}
+
+/** <!--*******************************************************************-->
+ *
+ * @fn bool IsNextOffset( node *withop, node *cur_idx, node *all_idxs)
+ *
+ ****************************************************************************/
+static bool
+IsNextOffset (node *withop, node *cur_idx, node *all_idxs)
+{
+    bool res;
+
+    DBUG_ENTER ("IsNextOffset");
+
+    res = ((NODE_TYPE (withop) == N_genarray) || (NODE_TYPE (withop) == N_modarray));
+
+    if (res) {
+        while (EXPRS_EXPR (all_idxs) != cur_idx) {
+            if (ID_AVIS (EXPRS_EXPR (all_idxs)) == WITHOP_IDX (withop)) {
+                res = FALSE;
+            }
+            all_idxs = EXPRS_NEXT (all_idxs);
+        }
+    }
+
+    DBUG_RETURN (res);
 }
 
 static /* forward declaration */
@@ -2045,7 +2071,7 @@ COMPmodule (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("COMPmodule");
 
-    INFO_COMP_MODUL (arg_info) = arg_node;
+    INFO_MODUL (arg_info) = arg_node;
 
     if (MODULE_OBJS (arg_node) != NULL) {
         MODULE_OBJS (arg_node) = TRAVdo (MODULE_OBJS (arg_node), arg_info);
@@ -2228,26 +2254,26 @@ COMPfundef (node *arg_node, info *arg_info)
         /*
          * push 'arg_info'
          */
-        old_fundef = INFO_COMP_FUNDEF (arg_info);
-        INFO_COMP_FUNDEF (arg_info) = arg_node;
+        old_fundef = INFO_FUNDEF (arg_info);
+        INFO_FUNDEF (arg_info) = arg_node;
 
         /********** begin: traverse body **********/
 
         /*
          * During compilation of a N_sync, the prior N_sync (if exists) is needed.
-         * INFO_COMP_LASTSYNC provides these information, it is initialized here
+         * INFO_LASTSYNC provides these information, it is initialized here
          * with NULL and will be updated by each compilation of a N_sync (one needs
          * to compile them ordered!), this includes the destruction of such a
          * N_sync-tree.
          * After compilation of the function the last known sync is destroyed then.
          */
-        INFO_COMP_LASTSYNC (arg_info) = NULL;
+        INFO_LASTSYNC (arg_info) = NULL;
 
         /*
          * Each scheduler within a single SPMD function must be associated with a
          * unique segment ID. This is realized by means of the following counter.
          */
-        INFO_COMP_SCHEDULERID (arg_info) = 0;
+        INFO_SCHEDULERID (arg_info) = 0;
 
         /*
          * For each scheduler a specific initialization ICM is created during the
@@ -2255,7 +2281,7 @@ COMPfundef (node *arg_node, info *arg_info)
          * nodes and will later be inserted into the code which sets up the
          * environment for multithreaded execution.
          */
-        INFO_COMP_SCHEDULERINIT (arg_info) = NULL;
+        INFO_SCHEDULERINIT (arg_info) = NULL;
 
         if (FUNDEF_BODY (arg_node) != NULL) {
             /*
@@ -2266,11 +2292,10 @@ COMPfundef (node *arg_node, info *arg_info)
             /*
              * Store collected scheduler information.
              */
-            BLOCK_SCHEDULER_INIT (FUNDEF_BODY (arg_node))
-              = INFO_COMP_SCHEDULERINIT (arg_info);
+            BLOCK_SCHEDULER_INIT (FUNDEF_BODY (arg_node)) = INFO_SCHEDULERINIT (arg_info);
 
-            if (INFO_COMP_SCHEDULERID (arg_info) > global.max_schedulers) {
-                global.max_schedulers = INFO_COMP_SCHEDULERID (arg_info);
+            if (INFO_SCHEDULERID (arg_info) > global.max_schedulers) {
+                global.max_schedulers = INFO_SCHEDULERID (arg_info);
             }
         }
 
@@ -2278,9 +2303,8 @@ COMPfundef (node *arg_node, info *arg_info)
          * Destruction of last known N_sync is done here, all others have been
          * killed while traversing.
          */
-        if (INFO_COMP_LASTSYNC (arg_info) != NULL) {
-            INFO_COMP_LASTSYNC (arg_info)
-              = FREEdoFreeTree (INFO_COMP_LASTSYNC (arg_info));
+        if (INFO_LASTSYNC (arg_info) != NULL) {
+            INFO_LASTSYNC (arg_info) = FREEdoFreeTree (INFO_LASTSYNC (arg_info));
         }
 
         /********** end: traverse body **********/
@@ -2322,8 +2346,8 @@ COMPfundef (node *arg_node, info *arg_info)
                 node *tmp;
 
                 tmp = FUNDEF_NEXT (arg_node);
-                FUNDEF_NEXT (arg_node) = MODULE_FOLDFUNS (INFO_COMP_MODUL (arg_info));
-                MODULE_FOLDFUNS (INFO_COMP_MODUL (arg_info)) = arg_node;
+                FUNDEF_NEXT (arg_node) = MODULE_FOLDFUNS (INFO_MODUL (arg_info));
+                MODULE_FOLDFUNS (INFO_MODUL (arg_info)) = arg_node;
                 arg_node = tmp;
             }
         }
@@ -2331,7 +2355,7 @@ COMPfundef (node *arg_node, info *arg_info)
         /*
          * pop 'arg_info'
          */
-        INFO_COMP_FUNDEF (arg_info) = old_fundef;
+        INFO_FUNDEF (arg_info) = old_fundef;
     } else {
         if (FUNDEF_NEXT (arg_node) != NULL) {
             FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
@@ -2385,7 +2409,7 @@ COMPblock (node *arg_node, info *arg_info)
     DBUG_ENTER ("COMPblock");
 
     if (BLOCK_CACHESIM (arg_node) != NULL) {
-        fun_name = FUNDEF_NAME (INFO_COMP_FUNDEF (arg_info));
+        fun_name = FUNDEF_NAME (INFO_FUNDEF (arg_info));
         cs_tag = (char *)ILIBmalloc (strlen (BLOCK_CACHESIM (arg_node))
                                      + strlen (fun_name) + 14);
         if (BLOCK_CACHESIM (arg_node)[0] == '\0') {
@@ -2442,7 +2466,7 @@ COMPassign (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("COMPassign");
 
-    INFO_COMP_ASSIGN (arg_info) = arg_node;
+    INFO_ASSIGN (arg_info) = arg_node;
     instr = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
     next = ASSIGN_NEXT (arg_node);
 
@@ -2504,7 +2528,7 @@ COMPNormalFunReturn (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("COMPNormalFunReturn");
 
-    fundef = INFO_COMP_FUNDEF (arg_info);
+    fundef = INFO_FUNDEF (arg_info);
     DBUG_ASSERT (((fundef != NULL) && (NODE_TYPE (fundef) == N_fundef)),
                  "no fundef node found!");
 
@@ -2620,7 +2644,7 @@ COMPSpmdFunReturn (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("COMPSpmdFunReturn");
 
-    fundef = INFO_COMP_FUNDEF (arg_info);
+    fundef = INFO_FUNDEF (arg_info);
     DBUG_ASSERT (((fundef != NULL) && (NODE_TYPE (fundef) == N_fundef)),
                  "no fundef node found!");
 
@@ -2678,7 +2702,7 @@ COMPreturn (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("COMPreturn");
 
-    fundef = INFO_COMP_FUNDEF (arg_info);
+    fundef = INFO_FUNDEF (arg_info);
 
     if (FUNDEF_ISSPMDFUN (fundef)) {
         arg_node = COMPSpmdFunReturn (arg_node, arg_info);
@@ -2707,7 +2731,7 @@ COMPlet (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("COMPlet");
 
-    INFO_COMP_LASTIDS (arg_info) = LET_IDS (arg_node);
+    INFO_LASTIDS (arg_info) = LET_IDS (arg_node);
 
     expr = TRAVdo (LET_EXPR (arg_node), arg_info);
 
@@ -2731,7 +2755,7 @@ COMPlet (node *arg_node, info *arg_info)
         ret_node = arg_node;
     }
 
-    INFO_COMP_LASTIDS (arg_info) = NULL;
+    INFO_LASTIDS (arg_info) = NULL;
 
     DBUG_RETURN (ret_node);
 }
@@ -2856,7 +2880,7 @@ COMPApArgs (node *ap, info *arg_info)
  *   The flattening phase assures that no one of the arguments occurs on the LHS
  *   of the application (a = fun(a) is impossible).
  *
- *   INFO_COMP_LASTIDS contains pointer to previous let-ids.
+ *   INFO_LASTIDS contains pointer to previous let-ids.
  *
  ******************************************************************************/
 
@@ -2870,7 +2894,7 @@ COMPap (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("COMPap");
 
-    let_ids = INFO_COMP_LASTIDS (arg_info);
+    let_ids = INFO_LASTIDS (arg_info);
     fundef = AP_FUNDEF (arg_node);
 
     DBUG_ASSERT ((CheckAp (arg_node, arg_info)),
@@ -2913,7 +2937,7 @@ COMPid (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("COMPid");
 
-    let_ids = INFO_COMP_LASTIDS (arg_info);
+    let_ids = INFO_LASTIDS (arg_info);
 
     /*
      * 'arg_node' and 'let_ids' are both non-unique or both unique
@@ -2961,7 +2985,7 @@ COMPIdFromUnique (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("COMPIdFromUnique");
 
-    let_ids = INFO_COMP_LASTIDS (arg_info);
+    let_ids = INFO_LASTIDS (arg_info);
 
     /*
      * 'arg_node' is unique and 'let_ids' is non-unique
@@ -3017,7 +3041,7 @@ COMPIdToUnique (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("COMPIdToUnique");
 
-    let_ids = INFO_COMP_LASTIDS (arg_info);
+    let_ids = INFO_LASTIDS (arg_info);
     DBUG_ASSERT (strcmp (IDS_NAME (let_ids), ID_NAME (arg_node)),
                  ".=to_unq(.) on identical objects is not allowed!");
 
@@ -3064,7 +3088,7 @@ COMPscalar (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("COMPscalar");
 
-    let_ids = INFO_COMP_LASTIDS (arg_info);
+    let_ids = INFO_LASTIDS (arg_info);
 
     ret_node = TCmakeAssignIcm2 ("ND_CREATE__SCALAR__DATA", DUPdupIdsIdNt (let_ids),
                                  DUPdoDupNode (arg_node), NULL);
@@ -3195,7 +3219,7 @@ COMParray (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("COMParray");
 
-    let_ids = INFO_COMP_LASTIDS (arg_info);
+    let_ids = INFO_LASTIDS (arg_info);
 
     if (ARRAY_STRING (arg_node) != NULL) {
         /* array is a string */
@@ -3263,7 +3287,7 @@ COMParray (node *arg_node, info *arg_info)
  *   Note, that the old 'arg_node' is removed by COMPLet.
  *
  * Remarks:
- *   INFO_COMP_LASTIDS contains name of assigned variable.
+ *   INFO_LASTIDS contains name of assigned variable.
  *
  ******************************************************************************/
 static node *
@@ -3294,7 +3318,7 @@ COMPPrfIncRC (node *arg_node, info *arg_info)
  *   Note, that the old 'arg_node' is removed by COMPLet.
  *
  * Remarks:
- *   INFO_COMP_LASTIDS contains name of assigned variable.
+ *   INFO_LASTIDS contains name of assigned variable.
  *
  ******************************************************************************/
 static node *
@@ -3326,7 +3350,7 @@ COMPPrfDecRC (node *arg_node, info *arg_info)
  *   Note, that the old 'arg_node' is removed by COMPLet.
  *
  * Remarks:
- *   INFO_COMP_LASTIDS contains name of assigned variable.
+ *   INFO_LASTIDS contains name of assigned variable.
  *
  ******************************************************************************/
 
@@ -3341,7 +3365,7 @@ COMPPrfAlloc (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("COMPPrfAlloc");
 
-    let_ids = INFO_COMP_LASTIDS (arg_info);
+    let_ids = INFO_LASTIDS (arg_info);
 
     rc = NUM_VAL (PRF_ARG1 (arg_node));
     get_dim = MakeGetDimIcm (PRF_ARG2 (arg_node));
@@ -3362,7 +3386,7 @@ COMPPrfAlloc (node *arg_node, info *arg_info)
  *   Note, that the old 'arg_node' is removed by COMPLet.
  *
  * Remarks:
- *   INFO_COMP_LASTIDS contains name of assigned variable.
+ *   INFO_LASTIDS contains name of assigned variable.
  *
  ******************************************************************************/
 
@@ -3378,7 +3402,7 @@ COMPPrfAllocOrReuse (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("COMPPrfAllocOrReuse");
 
-    let_ids = INFO_COMP_LASTIDS (arg_info);
+    let_ids = INFO_LASTIDS (arg_info);
 
     rc = NUM_VAL (PRF_ARG1 (arg_node));
     get_dim = MakeGetDimIcm (PRF_ARG2 (arg_node));
@@ -3431,7 +3455,7 @@ COMPPrfFree (node *arg_node, info *arg_info)
  *   Note, that the old 'arg_node' is removed by COMPLet.
  *
  * Remarks:
- *   INFO_COMP_LASTIDS contains name of assigned variable.
+ *   INFO_LASTIDS contains name of assigned variable.
  *
  ******************************************************************************/
 
@@ -3444,13 +3468,14 @@ COMPPrfSuballoc (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("COMPPrfSuballoc");
 
-    let_ids = INFO_COMP_LASTIDS (arg_info);
+    let_ids = INFO_LASTIDS (arg_info);
     sc = NTUgetShapeClassFromTypes (IDS_TYPE (let_ids));
 
     DBUG_ASSERT (sc != C_scl, "scalars cannot be suballocated\n");
 
-    ret_node = TCmakeAssignIcm2 ("WL_SUBALLOC", DUPdupIdsIdNt (let_ids),
-                                 DUPdupIdNt (PRF_ARG1 (arg_node)), NULL);
+    ret_node = TCmakeAssignIcm3 ("WL_SUBALLOC", DUPdupIdsIdNt (let_ids),
+                                 DUPdupIdNt (PRF_ARG1 (arg_node)),
+                                 DUPdupIdNt (PRF_ARG2 (arg_node)), NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -3464,7 +3489,7 @@ COMPPrfSuballoc (node *arg_node, info *arg_info)
  *   Note, that the old 'arg_node' is removed by COMPLet.
  *
  * Remarks:
- *   INFO_COMP_LASTIDS contains name of assigned variable.
+ *   INFO_LASTIDS contains name of assigned variable.
  *
  ******************************************************************************/
 
@@ -3476,17 +3501,16 @@ COMPPrfWLAssign (node *arg_node, info *arg_info)
     DBUG_ENTER ("COMPPrfWLAssign");
 
     ret_node
-      = TCmakeAssignIcm5 ("WL_EMM_ASSIGN",
+      = TCmakeAssignIcm6 ("WL_ASSIGN",
                           MakeTypeArgs (ID_NAME (PRF_ARG1 (arg_node)),
                                         ID_TYPE (PRF_ARG1 (arg_node)), FALSE, TRUE, FALSE,
                                         NULL),
                           MakeTypeArgs (ID_NAME (PRF_ARG2 (arg_node)),
                                         ID_TYPE (PRF_ARG2 (arg_node)), FALSE, TRUE, FALSE,
                                         NULL),
-                          MakeTypeArgs (ID_NAME (PRF_ARG3 (arg_node)),
-                                        ID_TYPE (PRF_ARG3 (arg_node)), FALSE, FALSE,
-                                        FALSE, NULL),
+                          DUPdupIdNt (PRF_ARG3 (arg_node)),
                           TBmakeExprs (MakeSizeArg (PRF_ARG3 (arg_node), TRUE), NULL),
+                          DUPdupIdNt (PRF_ARG4 (arg_node)),
                           TCmakeIdCopyString (
                             GenericFun (0, ID_TYPE (PRF_ARG1 (arg_node)))),
                           NULL);
@@ -3514,7 +3538,7 @@ COMPPrfCopy (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("COMPPrfCopy");
 
-    let_ids = INFO_COMP_LASTIDS (arg_info);
+    let_ids = INFO_LASTIDS (arg_info);
 
     ret_node = TCmakeAssignIcm3 ("ND_COPY__DATA", DUPdupIdsIdNt (let_ids),
                                  DUPdupIdNt (PRF_ARG1 (arg_node)),
@@ -3545,7 +3569,7 @@ COMPPrfIsReused (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("COMPPrfIsReused");
 
-    let_ids = INFO_COMP_LASTIDS (arg_info);
+    let_ids = INFO_LASTIDS (arg_info);
 
     ret_node = TCmakeAssignIcm3 ("ND_PRF_IS_REUSED", DUPdupIdsIdNt (let_ids),
                                  DUPdupIdNt (PRF_ARG1 (arg_node)),
@@ -3563,7 +3587,7 @@ COMPPrfIsReused (node *arg_node, info *arg_info)
  *   Note, that the old 'arg_node' is removed by COMPLet.
  *
  * Remarks:
- *   INFO_COMP_LASTIDS contains name of assigned variable.
+ *   INFO_LASTIDS contains name of assigned variable.
  *
  ******************************************************************************/
 
@@ -3576,7 +3600,7 @@ COMPPrfDim (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("COMPPrfDim");
 
-    let_ids = INFO_COMP_LASTIDS (arg_info);
+    let_ids = INFO_LASTIDS (arg_info);
     arg = PRF_ARG1 (arg_node);
 
     DBUG_ASSERT ((NODE_TYPE (arg) == N_id), "arg of F_dim is no N_id!");
@@ -3600,7 +3624,7 @@ COMPPrfDim (node *arg_node, info *arg_info)
  *   Note, that the old 'arg_node' is removed by COMPLet.
  *
  * Remarks:
- *   INFO_COMP_LASTIDS contains name of assigned variable.
+ *   INFO_LASTIDS contains name of assigned variable.
  *
  ******************************************************************************/
 
@@ -3613,7 +3637,7 @@ COMPPrfShape (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("COMPPrfShape");
 
-    let_ids = INFO_COMP_LASTIDS (arg_info);
+    let_ids = INFO_LASTIDS (arg_info);
     arg = PRF_ARG1 (arg_node);
 
     DBUG_ASSERT ((NODE_TYPE (arg) == N_id), "arg of F_shape is no N_id!");
@@ -3637,7 +3661,7 @@ COMPPrfShape (node *arg_node, info *arg_info)
  *   Note, that the old 'arg_node' is removed by COMPLet.
  *
  * Remarks:
- *   INFO_COMP_LASTIDS contains name of assigned variable.
+ *   INFO_LASTIDS contains name of assigned variable.
  *
  ******************************************************************************/
 
@@ -3653,7 +3677,7 @@ COMPPrfReshape (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("COMPPrfReshape");
 
-    let_ids = INFO_COMP_LASTIDS (arg_info);
+    let_ids = INFO_LASTIDS (arg_info);
 
     /*
      *   B = reshape( sv, A);
@@ -3729,7 +3753,7 @@ COMPPrfReshape (node *arg_node, info *arg_info)
  *   Note, that the old 'arg_node' is removed by COMPLet.
  *
  * Remarks:
- *   INFO_COMP_LASTIDS contains name of assigned variable.
+ *   INFO_LASTIDS contains name of assigned variable.
  *
  ******************************************************************************/
 
@@ -3743,7 +3767,7 @@ COMPPrfAllocOrReshape (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("COMPPrfAllocOrReshape");
 
-    let_ids = INFO_COMP_LASTIDS (arg_info);
+    let_ids = INFO_LASTIDS (arg_info);
 
     rc = NUM_VAL (PRF_ARG1 (arg_node));
     NUM_VAL (PRF_ARG1 (arg_node)) = 1;
@@ -3776,7 +3800,7 @@ COMPPrfAllocOrReshape (node *arg_node, info *arg_info)
  *   Note, that the old 'arg_node' is removed by COMPLet.
  *
  * Remarks:
- *   INFO_COMP_LASTIDS contains name of assigned variable.
+ *   INFO_LASTIDS contains name of assigned variable.
  *
  ******************************************************************************/
 static node *
@@ -3790,7 +3814,7 @@ COMPPrfIdxSel (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("COMPPrfIdxSel");
 
-    let_ids = INFO_COMP_LASTIDS (arg_info);
+    let_ids = INFO_LASTIDS (arg_info);
     arg1 = PRF_ARG1 (arg_node);
     arg2 = PRF_ARG2 (arg_node);
 
@@ -3828,7 +3852,7 @@ COMPPrfIdxSel (node *arg_node, info *arg_info)
  *   Note, that the old 'arg_node' is removed by COMPLet.
  *
  * Remarks:
- *   INFO_COMP_LASTIDS contains name of assigned variable.
+ *   INFO_LASTIDS contains name of assigned variable.
  *
  ******************************************************************************/
 
@@ -3841,7 +3865,7 @@ COMPPrfIdxModarray (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("COMPPrfIdxModarray");
 
-    let_ids = INFO_COMP_LASTIDS (arg_info);
+    let_ids = INFO_LASTIDS (arg_info);
     arg1 = PRF_ARG1 (arg_node);
     arg2 = PRF_ARG2 (arg_node);
     arg3 = PRF_ARG3 (arg_node);
@@ -3881,7 +3905,7 @@ COMPPrfIdxModarray (node *arg_node, info *arg_info)
  *         Note, that the old 'arg_node' is removed by COMPLet.
  *
  * Remarks:
- *   INFO_COMP_LASTIDS contains name of assigned variable.
+ *   INFO_LASTIDS contains name of assigned variable.
  *
  ******************************************************************************/
 
@@ -3894,7 +3918,7 @@ COMPPrfShapeSel (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("COMPPrfShapeSel");
 
-    let_ids = INFO_COMP_LASTIDS (arg_info);
+    let_ids = INFO_LASTIDS (arg_info);
     arg1 = PRF_ARG1 (arg_node);
     arg2 = PRF_ARG2 (arg_node);
 
@@ -3936,7 +3960,7 @@ COMPPrfShapeSel (node *arg_node, info *arg_info)
  *         Note, that the old 'arg_node' is removed by COMPLet.
  *
  * Remarks:
- *   INFO_COMP_LASTIDS contains name of assigned variable.
+ *   INFO_LASTIDS contains name of assigned variable.
  *
  ******************************************************************************/
 
@@ -3949,7 +3973,7 @@ COMPPrfIdxShapeSel (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("COMPPrfIdxShapeSel");
 
-    let_ids = INFO_COMP_LASTIDS (arg_info);
+    let_ids = INFO_LASTIDS (arg_info);
     arg1 = PRF_ARG1 (arg_node);
     arg2 = PRF_ARG2 (arg_node);
 
@@ -3976,7 +4000,7 @@ COMPPrfIdxShapeSel (node *arg_node, info *arg_info)
  *   Note, that the old 'arg_node' is removed by COMPLet.
  *
  * Remarks:
- *   INFO_COMP_LASTIDS contains name of assigned variable.
+ *   INFO_LASTIDS contains name of assigned variable.
  *
  ******************************************************************************/
 
@@ -3990,7 +4014,7 @@ COMPPrfSel (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("COMPPrfSel");
 
-    let_ids = INFO_COMP_LASTIDS (arg_info);
+    let_ids = INFO_LASTIDS (arg_info);
     arg1 = PRF_ARG1 (arg_node);
     arg2 = PRF_ARG2 (arg_node);
 
@@ -4055,7 +4079,7 @@ COMPPrfSel (node *arg_node, info *arg_info)
  *   Note, that the old 'arg_node' is removed by COMPLet.
  *
  * Remarks:
- *   INFO_COMP_LASTIDS contains name of assigned variable.
+ *   INFO_LASTIDS contains name of assigned variable.
  *
  ******************************************************************************/
 
@@ -4068,7 +4092,7 @@ COMPPrfModarray (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("COMPPrfModarray");
 
-    let_ids = INFO_COMP_LASTIDS (arg_info);
+    let_ids = INFO_LASTIDS (arg_info);
     arg1 = PRF_ARG1 (arg_node);
     arg2 = PRF_ARG2 (arg_node);
     arg3 = PRF_ARG3 (arg_node);
@@ -4131,7 +4155,7 @@ COMPPrfModarray (node *arg_node, info *arg_info)
  *   Note, that the old 'arg_node' is removed by COMPLet.
  *
  * Remarks:
- *   INFO_COMP_LASTIDS contains name of assigned variable.
+ *   INFO_LASTIDS contains name of assigned variable.
  *
  ******************************************************************************/
 
@@ -4144,7 +4168,7 @@ COMPPrfGenarray (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("COMPPrfGenarray");
 
-    let_ids = INFO_COMP_LASTIDS (arg_info);
+    let_ids = INFO_LASTIDS (arg_info);
     arg1 = PRF_ARG1 (arg_node);
     arg2 = PRF_ARG2 (arg_node);
 
@@ -4164,7 +4188,7 @@ COMPPrfGenarray (node *arg_node, info *arg_info)
  *   Note, that the old 'arg_node' is removed by COMPLet.
  *
  * Remarks:
- *   INFO_COMP_LASTIDS contains name of assigned variable.
+ *   INFO_LASTIDS contains name of assigned variable.
  *
  ******************************************************************************/
 
@@ -4178,7 +4202,7 @@ COMPPrfTake (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("COMPPrfTake");
 
-    let_ids = INFO_COMP_LASTIDS (arg_info);
+    let_ids = INFO_LASTIDS (arg_info);
     arg1 = PRF_ARG1 (arg_node);
     arg2 = PRF_ARG2 (arg_node);
 
@@ -4207,7 +4231,7 @@ COMPPrfTake (node *arg_node, info *arg_info)
  *   Note, that the old 'arg_node' is removed by COMPLet.
  *
  * Remarks:
- *   INFO_COMP_LASTIDS contains name of assigned variable.
+ *   INFO_LASTIDS contains name of assigned variable.
  *
  ******************************************************************************/
 
@@ -4221,7 +4245,7 @@ COMPPrfDrop (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("COMPPrfDrop");
 
-    let_ids = INFO_COMP_LASTIDS (arg_info);
+    let_ids = INFO_LASTIDS (arg_info);
     arg1 = PRF_ARG1 (arg_node);
     arg2 = PRF_ARG2 (arg_node);
 
@@ -4250,7 +4274,7 @@ COMPPrfDrop (node *arg_node, info *arg_info)
  *   Note, that the old 'arg_node' is removed by COMPLet.
  *
  * Remarks:
- *   INFO_COMP_LASTIDS contains name of assigned variable.
+ *   INFO_LASTIDS contains name of assigned variable.
  *
  ******************************************************************************/
 
@@ -4265,7 +4289,7 @@ COMPPrfCat (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("COMPPrfCat");
 
-    let_ids = INFO_COMP_LASTIDS (arg_info);
+    let_ids = INFO_LASTIDS (arg_info);
     arg1 = PRF_ARG1 (arg_node);
     arg2 = PRF_ARG2 (arg_node);
 
@@ -4308,7 +4332,7 @@ COMPPrfConvertScalar (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("COMPPrfConvertScalar");
 
-    let_ids = INFO_COMP_LASTIDS (arg_info);
+    let_ids = INFO_LASTIDS (arg_info);
     arg = PRF_ARG1 (arg_node);
 
     if (NODE_TYPE (arg) == N_id) {
@@ -4339,7 +4363,7 @@ COMPPrfConvertArray (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("COMPPrfConvertArray");
 
-    let_ids = INFO_COMP_LASTIDS (arg_info);
+    let_ids = INFO_LASTIDS (arg_info);
     arg = PRF_ARG1 (arg_node);
 
     DBUG_ASSERT ((NODE_TYPE (arg) == N_id), "arg of F_to?_A is no N_id!");
@@ -4363,7 +4387,7 @@ COMPPrfConvertArray (node *arg_node, info *arg_info)
  *         Note, that the old 'arg_node' is removed by COMPLet.
  *
  * Remarks:
- *   INFO_COMP_LASTIDS contains name of assigned variable.
+ *   INFO_LASTIDS contains name of assigned variable.
  *
  ******************************************************************************/
 
@@ -4377,7 +4401,7 @@ COMPPrfUniScalar (char *icm_name, node *arg_node, info *arg_info)
 
     DBUG_ENTER ("COMPPrfUniScalar");
 
-    let_ids = INFO_COMP_LASTIDS (arg_info);
+    let_ids = INFO_LASTIDS (arg_info);
     arg = PRF_ARG1 (arg_node);
 
     /* assure that the prf has exactly one argument */
@@ -4407,7 +4431,7 @@ COMPPrfUniScalar (char *icm_name, node *arg_node, info *arg_info)
  *         Note, that the old 'arg_node' is removed by COMPLet.
  *
  * Remarks:
- *   INFO_COMP_LASTIDS contains name of assigned variable.
+ *   INFO_LASTIDS contains name of assigned variable.
  *
  ******************************************************************************/
 
@@ -4422,7 +4446,7 @@ COMPPrfBin (char *icm_name, node *arg_node, info *arg_info)
 
     DBUG_ENTER ("COMPPrfBin");
 
-    let_ids = INFO_COMP_LASTIDS (arg_info);
+    let_ids = INFO_LASTIDS (arg_info);
 
     /* assure that the prf has exactly two arguments */
     DBUG_ASSERT (((PRF_EXPRS1 (arg_node) != NULL) && (PRF_EXPRS2 (arg_node) != NULL)
@@ -4505,7 +4529,7 @@ COMPPrfDispatchError (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("COMPPrfDispatchError");
 
-    let_ids = INFO_COMP_LASTIDS (arg_info);
+    let_ids = INFO_LASTIDS (arg_info);
 
     DBUG_ASSERT ((PRF_ARGS (arg_node) != NULL),
                  "1st argument of F_dispatch_error not found!");
@@ -4558,7 +4582,7 @@ COMPPrfIdxs2Offset (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("COMPPrfIdxs2Offset");
 
-    let_ids = INFO_COMP_LASTIDS (arg_info);
+    let_ids = INFO_LASTIDS (arg_info);
     shpexprs = ARRAY_AELEMS (PRF_ARG1 (arg_node));
     idxs_exprs = EXPRS_NEXT (PRF_ARGS (arg_node));
 
@@ -4587,7 +4611,7 @@ COMPPrfVect2Offset (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("COMPPrfVect2Offset");
 
-    let_ids = INFO_COMP_LASTIDS (arg_info);
+    let_ids = INFO_LASTIDS (arg_info);
     shpexprs = ARRAY_AELEMS (PRF_ARG1 (arg_node));
     iv_vect = PRF_ARG2 (arg_node);
 
@@ -4617,7 +4641,7 @@ COMPprf (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("COMPprf");
 
-    let_ids = INFO_COMP_LASTIDS (arg_info);
+    let_ids = INFO_LASTIDS (arg_info);
 
     switch (PRF_PRF (arg_node)) {
         /*
@@ -5113,6 +5137,8 @@ MakeIcm_MT_ADJUST_SCHEDULER (node *arg_node, node *assigns)
     node *end_icm = NULL;
     node *offset_icms = NULL;
     node *tmp_ids;
+    node *idxs_exprs;
+
     int dim;
 
     DBUG_ENTER ("MakeIcm_MT_ADJUST_SCHEDULER");
@@ -5146,24 +5172,18 @@ MakeIcm_MT_ADJUST_SCHEDULER (node *arg_node, node *assigns)
 
         /* for every ids of wlids (multioperator WL) */
         tmp_ids = wlids;
+        idxs_exprs = WITH2_IDXS (wlnode);
         withop = WITH2_WITHOP (wlnode);
 
-        while (tmp_ids != NULL) {
-            if (WITHOP_ISOFFSETNEEDED (withop)) {
+        while (idxs_exprs != NULL) {
+            node *idxid = EXPRS_EXPR (idxs_exprs);
+            if (IsNextOffset (withop, idxid, WITH2_IDXS (wlnode))) {
+                offset_icms
+                  = TCmakeAssignIcm3 ("MT_ADJUST_SCHEDULER__OFFSET", DUPdupIdNt (idxid),
+                                      DUPdupIdsIdNt (tmp_ids), TBmakeNum (dim),
+                                      offset_icms);
 
-                offset_icms = TCmakeAssignIcm6 (
-                  "MT_ADJUST_SCHEDULER__OFFSET", DUPdupIdsIdNt (tmp_ids),
-                  TBmakeNum (WLSEGX_DIMS (wlseg)), TBmakeNum (dim),
-                  WLBnodeOrIntMakeIndex (NODE_TYPE (arg_node),
-                                         WLBLOCKSTR_GET_ADDR (arg_node, BOUND1), dim,
-                                         tmp_ids),
-                  WLBnodeOrIntMakeIndex (NODE_TYPE (arg_node),
-                                         WLBLOCKSTR_GET_ADDR (arg_node, BOUND2), dim,
-                                         tmp_ids),
-                  WLBnodeOrIntMakeIndex (NODE_TYPE (arg_node),
-                                         WLBLOCKSTR_GET_ADDR (arg_node, STEP), dim,
-                                         tmp_ids),
-                  offset_icms);
+                idxs_exprs = EXPRS_NEXT (idxs_exprs);
             }
 
             tmp_ids = IDS_NEXT (tmp_ids);
@@ -5205,17 +5225,22 @@ MakeIcm_WL_INIT_OFFSET (node *arg_node, node *assigns)
 {
     node *withop;
     node *tmp_ids;
+    node *idxs_exprs;
 
     DBUG_ENTER ("MakeIcm_WL_INIT_OFFSET");
 
     /* for every ids of wlids (multioperator WL) */
+    idxs_exprs = WITH2_IDXS (wlnode);
     tmp_ids = wlids;
     withop = WITH2_WITHOP (wlnode);
 
-    while (tmp_ids != NULL) {
-        if (WITHOP_ISOFFSETNEEDED (withop)) {
-            assigns = TCmakeAssignIcm1 ("WL_INIT_OFFSET",
+    while (idxs_exprs != NULL) {
+        node *idxid = EXPRS_EXPR (idxs_exprs);
+        if (IsNextOffset (withop, idxid, WITH2_IDXS (wlnode))) {
+            assigns = TCmakeAssignIcm2 ("WL_INIT_OFFSET", DUPdupIdNt (idxid),
                                         MakeIcmArgs_WL_OP1 (arg_node, tmp_ids), assigns);
+
+            idxs_exprs = EXPRS_NEXT (idxs_exprs);
         }
 
         tmp_ids = IDS_NEXT (tmp_ids);
@@ -5238,18 +5263,23 @@ MakeIcm_WL_ADJUST_OFFSET (node *arg_node, node *assigns)
 {
     node *withop;
     node *tmp_ids;
+    node *idxs_exprs;
 
     DBUG_ENTER ("MakeIcm_WL_ADJUST_OFFSET");
 
     /* for every ids of wlids (multioperator WL) */
     tmp_ids = wlids;
+    idxs_exprs = WITH2_IDXS (wlnode);
     withop = WITH2_WITHOP (wlnode);
 
-    while (tmp_ids != NULL) {
-        if (WITHOP_ISOFFSETNEEDED (withop)) {
-            assigns
-              = TCmakeAssignIcm2 ("WL_ADJUST_OFFSET", TBmakeNum (WLNODE_DIM (arg_node)),
-                                  MakeIcmArgs_WL_OP2 (arg_node, tmp_ids), assigns);
+    while (idxs_exprs != NULL) {
+        node *idxid = EXPRS_EXPR (idxs_exprs);
+        if (IsNextOffset (withop, idxid, WITH2_IDXS (wlnode))) {
+            assigns = TCmakeAssignIcm3 ("WL_ADJUST_OFFSET", DUPdupIdNt (idxid),
+                                        TBmakeNum (WLNODE_DIM (arg_node)),
+                                        MakeIcmArgs_WL_OP2 (arg_node, tmp_ids), assigns);
+
+            idxs_exprs = EXPRS_NEXT (idxs_exprs);
         }
         tmp_ids = IDS_NEXT (tmp_ids);
         withop = WITHOP_NEXT (withop);
@@ -5286,15 +5316,18 @@ MakeIcm_WL_SET_OFFSET (node *arg_node, node *assigns)
     int icm_dim = (-1);
     node *withop;
     node *tmp_ids;
+    node *idxs_exprs;
 
     DBUG_ENTER ("MakeIcm_WL_SET_OFFSET");
 
     /* for every ids of wlids (multioperator WL) */
     tmp_ids = wlids;
     withop = WITH2_WITHOP (wlnode);
+    idxs_exprs = WITH2_IDXS (wlnode);
 
-    while (tmp_ids != NULL) {
-        if (WITHOP_ISOFFSETNEEDED (withop)) {
+    while (idxs_exprs != NULL) {
+        node *idxid = EXPRS_EXPR (idxs_exprs);
+        if (IsNextOffset (withop, idxid, WITH2_IDXS (wlnode))) {
             dim = WLNODE_DIM (arg_node);
             dims = WLSEGX_DIMS (wlseg);
 
@@ -5325,8 +5358,9 @@ MakeIcm_WL_SET_OFFSET (node *arg_node, node *assigns)
             }
 
             /*
-             * infer the last dimension for which the segment's domain is not the full
-             * range (== -1, if the segment's domain equals the full index vector space)
+             * infer the last dimension for which the segment's domain is not the
+             * full range (== -1, if the segment's domain equals the full index
+             * vector space)
              */
             shape = TYPES_SHPSEG (IDS_TYPE (tmp_ids));
             d = dims - 1;
@@ -5348,7 +5382,8 @@ MakeIcm_WL_SET_OFFSET (node *arg_node, node *assigns)
             last_frac_dim = d;
 
             /*
-             * check whether 'WL_SET_OFFSET' is needed in the current dimension or not
+             * check whether 'WL_SET_OFFSET' is needed in the current dimension
+             * or not
              */
             if (first_block_dim < dims) {
                 /*
@@ -5371,10 +5406,11 @@ MakeIcm_WL_SET_OFFSET (node *arg_node, node *assigns)
 
             if (icm_dim >= 0) {
                 assigns
-                  = TCmakeAssignIcm3 ("WL_SET_OFFSET", TBmakeNum (dim),
-                                      TBmakeNum (icm_dim),
+                  = TCmakeAssignIcm4 ("WL_SET_OFFSET", DUPdupIdNt (idxid),
+                                      TBmakeNum (dim), TBmakeNum (icm_dim),
                                       MakeIcmArgs_WL_OP2 (arg_node, tmp_ids), assigns);
             }
+            idxs_exprs = EXPRS_NEXT (idxs_exprs);
         }
         tmp_ids = IDS_NEXT (tmp_ids);
         withop = WITHOP_NEXT (withop);
@@ -5398,40 +5434,44 @@ COMPwith (node *arg_node, info *arg_info)
 {
     node *icm_chain = NULL, *body_icms, *default_icms;
     node *let_neutral;
-    node *res_ids, *idx_id, *lower_id, *upper_id;
+    node *res_ids, *idx_id, *offs_id, *lower_id, *upper_id;
     char *sub_name;
     node *sub_vardec, *sub_get_dim, *sub_set_shape;
     bool isfold;
 
     DBUG_ENTER ("COMPwith");
 
-    res_ids = INFO_COMP_LASTIDS (arg_info);
+    res_ids = INFO_LASTIDS (arg_info);
 
     /**
      * First, we traverse the partition.
-     * This will yield the index vector var in INFO_COMP_IDXVEC (cf. COMPwithid)
-     * and the generator-check icms in INFO_COMP_ICMCHAIN (cf. COMPgenerator).
+     * This will yield the index vector var in INFO_IDXVEC (cf. COMPwithid)
+     * and the generator-check icms in INFO_ICMCHAIN (cf. COMPgenerator).
      * Whereas the former is a back-link only (and thus has to be copied!), the
      * latter has been produced for insertion here and thus can be used as is!.
      * Furthermore, note that the index vector comes as N_id as we are
      * after EMM!!
      * Another aspect to be noticed here is that COMPpart relies on
-     * INFO_COMP_ISFOLD to be set properly since for With-Loops different code
+     * INFO_ISFOLD to be set properly since for With-Loops different code
      * has to be created.
      */
     DBUG_ASSERT ((WITH_PARTS (arg_node) < 2),
                  "with-loop with non-AKS withid and multiple generators found!");
 
     isfold = (NODE_TYPE (WITH_WITHOP (arg_node)) == N_fold);
-    INFO_COMP_ISFOLD (arg_info) = isfold;
+    INFO_ISFOLD (arg_info) = isfold;
     DBUG_ASSERT (WITH_PART (arg_node) != NULL, "missing part in AUD with loop!");
     WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
 
-    idx_id = INFO_COMP_IDXVEC (arg_info);
-    lower_id = INFO_COMP_LOWERVEC (arg_info);
-    upper_id = INFO_COMP_UPPERVEC (arg_info);
+    idx_id = INFO_IDXVEC (arg_info);
+    if (!isfold) {
+        offs_id = EXPRS_EXPR (INFO_OFFSETS (arg_info));
+    }
+    lower_id = INFO_LOWERVEC (arg_info);
+    upper_id = INFO_UPPERVEC (arg_info);
 
-    INFO_COMP_IDXVEC (arg_info) = NULL;
+    INFO_IDXVEC (arg_info) = NULL;
+    INFO_OFFSETS (arg_info) = NULL;
 
     DBUG_ASSERT (WITH_CODE (arg_node) != NULL, "missing code in AUD with loop!");
     WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
@@ -5450,7 +5490,7 @@ COMPwith (node *arg_node, info *arg_info)
         icm_chain = TCmakeAssignIcm0 ("AUD_WL_COND_END", icm_chain);
         icm_chain = TCappendAssign (body_icms, icm_chain);
         icm_chain = TCmakeAssignIcm0 ("AUD_WL_COND_BODY", icm_chain);
-        icm_chain = TCappendAssign (INFO_COMP_ICMCHAIN (arg_info), icm_chain);
+        icm_chain = TCappendAssign (INFO_ICMCHAIN (arg_info), icm_chain);
         icm_chain
           = TCmakeAssignIcm3 ("AUD_WL_FOLD_BEGIN",
                               TCmakeIdCopyStringNt (ID_NAME (idx_id), ID_TYPE (idx_id)),
@@ -5471,7 +5511,7 @@ COMPwith (node *arg_node, info *arg_info)
          * there actually IS a subarray
          */
         sub_name = ILIBstringConcat (IDS_NAME (res_ids), "_sub");
-        sub_vardec = FUNDEF_VARDEC (INFO_COMP_FUNDEF (arg_info));
+        sub_vardec = FUNDEF_VARDEC (INFO_FUNDEF (arg_info));
         while ((sub_vardec != NULL) && (strcmp (sub_name, VARDEC_NAME (sub_vardec)))) {
             sub_vardec = VARDEC_NEXT (sub_vardec);
         }
@@ -5496,8 +5536,9 @@ COMPwith (node *arg_node, info *arg_info)
           = DUPdoDupTree (BLOCK_INSTR (CODE_CBLOCK (CODE_NEXT (WITH_CODE (arg_node)))));
 
         icm_chain
-          = TCmakeAssignIcm2 ("AUD_WL_END",
+          = TCmakeAssignIcm3 ("AUD_WL_END",
                               TCmakeIdCopyStringNt (ID_NAME (idx_id), ID_TYPE (idx_id)),
+                              TCmakeIdCopyStringNt (ID_NAME (offs_id), ID_TYPE (offs_id)),
                               TCmakeIdCopyStringNt (IDS_NAME (res_ids),
                                                     IDS_TYPE (res_ids)),
                               icm_chain);
@@ -5506,10 +5547,11 @@ COMPwith (node *arg_node, info *arg_info)
         icm_chain = TCmakeAssignIcm0 ("AUD_WL_COND_DEFAULT", icm_chain);
         icm_chain = TCappendAssign (body_icms, icm_chain);
         icm_chain = TCmakeAssignIcm0 ("AUD_WL_COND_BODY", icm_chain);
-        icm_chain = TCappendAssign (INFO_COMP_ICMCHAIN (arg_info), icm_chain);
+        icm_chain = TCappendAssign (INFO_ICMCHAIN (arg_info), icm_chain);
         icm_chain
-          = TCmakeAssignIcm2 ("AUD_WL_BEGIN",
+          = TCmakeAssignIcm3 ("AUD_WL_BEGIN",
                               TCmakeIdCopyStringNt (ID_NAME (idx_id), ID_TYPE (idx_id)),
+                              TCmakeIdCopyStringNt (ID_NAME (offs_id), ID_TYPE (offs_id)),
                               TCmakeIdCopyStringNt (IDS_NAME (res_ids),
                                                     IDS_TYPE (res_ids)),
                               icm_chain);
@@ -5588,7 +5630,7 @@ COMPwith (node *arg_node, info *arg_info)
         }
     }
 
-    INFO_COMP_ICMCHAIN (arg_info) = NULL;
+    INFO_ICMCHAIN (arg_info) = NULL;
 
     DBUG_RETURN (icm_chain);
 }
@@ -5602,7 +5644,7 @@ COMPwith (node *arg_node, info *arg_info)
  *     ATTENTION: this is used in case of AUD only! i.e. when being called
  *     from N_with but NOT from N_with2!
  *
- ******************************************************************************/
+ *****************************************************************************/
 
 node *
 COMPpart (node *arg_node, info *arg_info)
@@ -5622,20 +5664,21 @@ COMPpart (node *arg_node, info *arg_info)
  * @fn  node *COMPwithid( node *arg_node, info *arg_info)
  *
  * @brief
- *     passes up pointer to the generator vector variable via INFO_COMP_IDXVEC.
+ *     passes up pointer to the generator vector variable via INFO_IDXVEC.
  *     ATTENTION: this is used in case of AUD only! i.e. when being called
  *     from N_with but NOT from N_with2!
  *
- ******************************************************************************/
+ *****************************************************************************/
 
 node *
 COMPwithid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("COMPwithid");
-    DBUG_ASSERT (WITHID_IDS (arg_node) == NULL, "AUD with loop with WITHID_IDS found! "
-                                                "Should have been transformed into "
-                                                "N_with2 (AKD)!");
-    INFO_COMP_IDXVEC (arg_info) = WITHID_VEC (arg_node);
+    DBUG_ASSERT (WITHID_IDS (arg_node) == NULL,
+                 "AUD with loop with WITHID_IDS found!"
+                 "Should have been transformed into N_with2 (AKD)!");
+    INFO_IDXVEC (arg_info) = WITHID_VEC (arg_node);
+    INFO_OFFSETS (arg_info) = WITHID_IDXS (arg_node);
     DBUG_RETURN (arg_node);
 }
 
@@ -5644,13 +5687,14 @@ COMPwithid (node *arg_node, info *arg_info)
  * @fn  node *COMPgenerator( node *arg_node, info *arg_info)
  *
  * @brief
- *     creates an ICM for the generator-check and returns it via INFO_COMP_ICMCHAIN.
- *     returns lower and upper bound in INFO_COMP_LOWERVEC and INFO_COMP_UPPERVEC,
- *respectively. expects INFO_COMP_IDXVEC and INFO_COMP_ISFOLD to be set properly!
+ *     creates an ICM for the generator-check and returns it via
+ *     INFO_ICMCHAIN. returns lower and upper bound in INFO_LOWERVEC
+ *     and INFO_UPPERVEC, respectively.
+ *     expects INFO_IDXVEC and INFO_ISFOLD to be set properly!
  *     ATTENTION: this is used in case of AUD only! i.e. when being called
  *     from N_with but NOT from N_with2!
  *
- ******************************************************************************/
+ *****************************************************************************/
 
 node *
 COMPgenerator (node *arg_node, info *arg_info)
@@ -5663,31 +5707,31 @@ COMPgenerator (node *arg_node, info *arg_info)
     step = GENERATOR_STEP (arg_node);
     width = GENERATOR_WIDTH (arg_node);
 
-    idx = INFO_COMP_IDXVEC (arg_info);
-    INFO_COMP_LOWERVEC (arg_info) = lower;
-    INFO_COMP_UPPERVEC (arg_info) = upper;
+    idx = INFO_IDXVEC (arg_info);
+    INFO_LOWERVEC (arg_info) = lower;
+    INFO_UPPERVEC (arg_info) = upper;
 
     if (step == NULL) {
-        INFO_COMP_ICMCHAIN (arg_info)
-          = TCmakeAssignIcm3 ((INFO_COMP_ISFOLD (arg_info) ? "AUD_WL_FOLD_LU_GEN"
-                                                           : "AUD_WL_LU_GEN"),
+        INFO_ICMCHAIN (arg_info)
+          = TCmakeAssignIcm3 ((INFO_ISFOLD (arg_info) ? "AUD_WL_FOLD_LU_GEN"
+                                                      : "AUD_WL_LU_GEN"),
                               TCmakeIdCopyStringNt (ID_NAME (lower), ID_TYPE (lower)),
                               TCmakeIdCopyStringNt (ID_NAME (idx), ID_TYPE (idx)),
                               TCmakeIdCopyStringNt (ID_NAME (upper), ID_TYPE (upper)),
                               NULL);
     } else if (width == NULL) {
-        INFO_COMP_ICMCHAIN (arg_info)
-          = TCmakeAssignIcm4 ((INFO_COMP_ISFOLD (arg_info) ? "AUD_WL_FOLD_LUS_GEN"
-                                                           : "AUD_WL_LUS_GEN"),
+        INFO_ICMCHAIN (arg_info)
+          = TCmakeAssignIcm4 ((INFO_ISFOLD (arg_info) ? "AUD_WL_FOLD_LUS_GEN"
+                                                      : "AUD_WL_LUS_GEN"),
                               TCmakeIdCopyStringNt (ID_NAME (lower), ID_TYPE (lower)),
                               TCmakeIdCopyStringNt (ID_NAME (idx), ID_TYPE (idx)),
                               TCmakeIdCopyStringNt (ID_NAME (upper), ID_TYPE (upper)),
                               TCmakeIdCopyStringNt (ID_NAME (step), ID_TYPE (step)),
                               NULL);
     } else {
-        INFO_COMP_ICMCHAIN (arg_info)
-          = TCmakeAssignIcm5 ((INFO_COMP_ISFOLD (arg_info) ? "AUD_WL_FOLD_LUSW_GEN"
-                                                           : "AUD_WL_LUSW_GEN"),
+        INFO_ICMCHAIN (arg_info)
+          = TCmakeAssignIcm5 ((INFO_ISFOLD (arg_info) ? "AUD_WL_FOLD_LUSW_GEN"
+                                                      : "AUD_WL_LUSW_GEN"),
                               TCmakeIdCopyStringNt (ID_NAME (lower), ID_TYPE (lower)),
                               TCmakeIdCopyStringNt (ID_NAME (idx), ID_TYPE (idx)),
                               TCmakeIdCopyStringNt (ID_NAME (upper), ID_TYPE (upper)),
@@ -5726,9 +5770,10 @@ COMPwith2 (node *arg_node, info *arg_info)
     node *free_icms = NULL;
     node *fold_icms = NULL;
     node *fold_rc_icms = NULL;
-    node *offset_icms = NULL;
-    node *offset_shp_icms = NULL;
+    node *shpfac_decl_icms = NULL;
+    node *shpfac_def_icms = NULL;
     node *tmp_ids;
+    node *idxs_exprs;
     node *withop;
     char *sub_name;
     node *sub_vardec;
@@ -5740,10 +5785,10 @@ COMPwith2 (node *arg_node, info *arg_info)
 
     /*
      * we must store the with-loop ids *before* compiling the codes
-     *  because INFO_COMP_LASTIDS is possibly updated afterwards!!!
+     *  because INFO_LASTIDS is possibly updated afterwards!!!
      */
     old_wlids = wlids; /* stack 'wlids' */
-    wlids = INFO_COMP_LASTIDS (arg_info);
+    wlids = INFO_LASTIDS (arg_info);
     old_wlnode = wlnode; /* stack 'wlnode' */
     wlnode = arg_node;
 
@@ -5755,42 +5800,43 @@ COMPwith2 (node *arg_node, info *arg_info)
      * build arguments for  'WL_SCHEDULE__BEGIN'-ICM and 'WL_SCHEDULE__END'-ICM
      */
 
+    /*
+     * build all required(!) shape factors
+     */
+    tmp_ids = wlids;
+    idxs_exprs = WITH2_IDXS (wlnode);
+    withop = WITH2_WITHOP (wlnode);
+
+    while (idxs_exprs != NULL) {
+        node *idxid = EXPRS_EXPR (idxs_exprs);
+        if (IsNextOffset (withop, idxid, WITH2_IDXS (wlnode))) {
+            shpfac_decl_icms
+              = TCmakeAssignIcm3 ("WL_DECLARE_SHAPE_FACTOR",
+                                  MakeTypeArgs (IDS_NAME (tmp_ids), IDS_TYPE (tmp_ids),
+                                                FALSE, TRUE, FALSE, NULL),
+                                  DUPdupIdNt (WITH2_VEC (wlnode)),
+                                  TBmakeNum (WITH2_DIMS (arg_node)), shpfac_decl_icms);
+
+            shpfac_def_icms
+              = TCmakeAssignIcm3 ("WL_DEFINE_SHAPE_FACTOR",
+                                  MakeTypeArgs (IDS_NAME (tmp_ids), IDS_TYPE (tmp_ids),
+                                                FALSE, TRUE, FALSE, NULL),
+                                  DUPdupIdNt (WITH2_VEC (wlnode)),
+                                  TBmakeNum (WITH2_DIMS (arg_node)), shpfac_def_icms);
+
+            idxs_exprs = EXPRS_NEXT (idxs_exprs);
+        }
+
+        tmp_ids = IDS_NEXT (tmp_ids);
+        withop = WITHOP_NEXT (withop);
+    }
+
     icm_args = TBmakeExprs (TBmakeNum (WITH2_DIMS (arg_node)), NULL);
 
-    /* for every ids of wlids (multioperator WL) */
     tmp_ids = wlids;
     withop = WITH2_WITHOP (wlnode);
+
     while (tmp_ids != NULL) {
-
-        /*
-         * build offsets
-         */
-
-        if (WITHOP_ISOFFSETNEEDED (withop)) {
-            offset_icms
-              = TCmakeAssignIcm1 ("WL_OFFSET",
-                                  MakeTypeArgs (IDS_NAME (tmp_ids), IDS_TYPE (tmp_ids),
-                                                FALSE, TRUE, FALSE,
-                                                TBmakeExprs (DUPdupIdNt (
-                                                               WITH2_VEC (wlnode)),
-                                                             TBmakeExprs (TBmakeNum (
-                                                                            WITH2_DIMS (
-                                                                              arg_node)),
-                                                                          NULL))),
-                                  offset_icms);
-
-            offset_shp_icms
-              = TCmakeAssignIcm1 ("WL_OFFSET_SHAPE_FACTOR",
-                                  MakeTypeArgs (IDS_NAME (tmp_ids), IDS_TYPE (tmp_ids),
-                                                FALSE, TRUE, FALSE,
-                                                TBmakeExprs (DUPdupIdNt (
-                                                               WITH2_VEC (wlnode)),
-                                                             TBmakeExprs (TBmakeNum (
-                                                                            WITH2_DIMS (
-                                                                              arg_node)),
-                                                                          NULL))),
-                                  offset_shp_icms);
-        }
 
         /*
          * The descriptor of A_sub must be built
@@ -5800,7 +5846,7 @@ COMPwith2 (node *arg_node, info *arg_info)
         if ((NODE_TYPE (withop) == N_genarray) || (NODE_TYPE (withop) == N_modarray)) {
 
             sub_name = ILIBstringConcat (IDS_NAME (tmp_ids), "_sub");
-            sub_vardec = FUNDEF_VARDEC (INFO_COMP_FUNDEF (arg_info));
+            sub_vardec = FUNDEF_VARDEC (INFO_FUNDEF (arg_info));
             while ((sub_vardec != NULL)
                    && (strcmp (sub_name, VARDEC_NAME (sub_vardec)))) {
                 sub_vardec = VARDEC_NEXT (sub_vardec);
@@ -5946,7 +5992,7 @@ COMPwith2 (node *arg_node, info *arg_info)
                                           TCmakeIdCopyString (profile_name),
                                           TCmakeAssignIcm1 ("WL_SCHEDULE__BEGIN",
                                                             icm_args, NULL)),
-                        offset_icms, offset_shp_icms,
+                        shpfac_decl_icms, shpfac_def_icms,
                         TRAVdo (WITH2_SEGS (arg_node), arg_info),
                         TCmakeAssignIcm1 ("WL_SCHEDULE__END", DUPdoDupTree (icm_args),
                                           TCmakeAssignIcm1 ("PF_END_WITH",
@@ -6006,22 +6052,21 @@ COMPwlsegx (node *arg_node, info *arg_info)
      * used during sequential execution.
      */
     if (WLSEGX_SCHEDULING (arg_node) != NULL) {
-        INFO_COMP_SCHEDULERINIT (arg_info)
-          = TBmakeAssign (SCHcompileSchedulingWithTaskselInit (INFO_COMP_SCHEDULERID (
+        INFO_SCHEDULERINIT (arg_info)
+          = TBmakeAssign (SCHcompileSchedulingWithTaskselInit (INFO_SCHEDULERID (
                                                                  arg_info),
                                                                wlids,
                                                                WLSEGX_SCHEDULING (
                                                                  arg_node),
                                                                WLSEGX_TASKSEL (arg_node),
                                                                arg_node),
-                          INFO_COMP_SCHEDULERINIT (arg_info));
+                          INFO_SCHEDULERINIT (arg_info));
 
-        (INFO_COMP_SCHEDULERID (arg_info))++;
+        (INFO_SCHEDULERID (arg_info))++;
     }
 
     ret_node
-      = TCmakeAssigns4 (SCHcompileSchedulingWithTaskselBegin (INFO_COMP_SCHEDULERID (
-                                                                arg_info),
+      = TCmakeAssigns4 (SCHcompileSchedulingWithTaskselBegin (INFO_SCHEDULERID (arg_info),
                                                               wlids,
                                                               WLSEGX_SCHEDULING (
                                                                 arg_node),
@@ -6030,8 +6075,7 @@ COMPwlsegx (node *arg_node, info *arg_info)
                         MakeIcm_WL_INIT_OFFSET (arg_node,
                                                 TRAVdo (WLSEGX_CONTENTS (arg_node),
                                                         arg_info)),
-                        SCHcompileSchedulingWithTaskselEnd (INFO_COMP_SCHEDULERID (
-                                                              arg_info),
+                        SCHcompileSchedulingWithTaskselEnd (INFO_SCHEDULERID (arg_info),
                                                             wlids,
                                                             WLSEGX_SCHEDULING (arg_node),
                                                             WLSEGX_TASKSEL (arg_node),
@@ -6575,163 +6619,78 @@ COMPwlgridx (node *arg_node, info *arg_info)
 
             node *icm_args;
             char *icm_name;
-            node *code_rc_icms = NULL;
-            node *cexpr, *def;
+            node *cexpr;
             node *tmp_ids;
             node *withop;
+            node *idxs_exprs;
+            node *idxid;
             node *cexprs;
 
-            if (WLGRIDX_CODE (arg_node) == NULL) {
+            DBUG_ASSERT (WLGRIDX_CODE (arg_node) != NULL,
+                         "WLGRIDX_CODE must not be NULL!");
+
+            /*
+             * insert compiled code.
+             */
+            cexprs = CODE_CEXPRS (WLGRIDX_CODE (arg_node));
+            DBUG_ASSERT ((cexprs != NULL), "no code exprs found");
+
+            DBUG_ASSERT ((WLGRIDX_CBLOCK (arg_node) != NULL),
+                         "no code block found in N_Ncode node");
+            DBUG_ASSERT ((WLGRIDX_CBLOCK_INSTR (arg_node) != NULL),
+                         "first instruction of block is NULL"
+                         " (should be a N_empty node)");
+
+            if (NODE_TYPE (WLGRIDX_CBLOCK_INSTR (arg_node)) != N_empty) {
+                node_icms = DUPdoDupTree (WLGRIDX_CBLOCK_INSTR (arg_node));
+            }
+
+            /* for every ids of wlids (multioperator WL) */
+            tmp_ids = wlids;
+            idxs_exprs = WITH2_IDXS (wlnode);
+            withop = WITH2_WITHOP (wlnode);
+
+            while (tmp_ids != NULL) {
+                cexpr = EXPRS_EXPR (cexprs);
                 /*
-                 * no code found  ->  default value / noop
+                 * choose right ICM
                  */
+                switch (NODE_TYPE (withop)) {
+                case N_genarray:
+                    /* here is no break missing! */
+                case N_modarray:
+                    DBUG_ASSERT ((NODE_TYPE (cexpr) == N_id), "code expr is not a id");
 
-                /* for every ids of wlids (multioperator WL) */
-                tmp_ids = wlids;
-                withop = WITH2_WITHOP (wlnode);
-                while (tmp_ids != NULL) {
-                    /*
-                     * choose right ICM
-                     */
-                    switch (NODE_TYPE (withop)) {
-                    case N_genarray:
-                        DBUG_ASSERT ((WITHOP_ISOFFSETNEEDED (withop)),
-                                     "wrong value for OFFSET_NEEDED found!");
-                        def = GENARRAY_DEFAULT (withop);
-                        if (def != NULL) {
-                            DBUG_ASSERT ((NODE_TYPE (def) == N_id),
-                                         "GENARRAY_DEFAULT is no N_id node");
-                            icm_name = "WL_ASSIGN";
-                            icm_args
-                              = TCappendExprs (MakeTypeArgs (ID_NAME (def), ID_TYPE (def),
-                                                             FALSE, TRUE, FALSE,
-                                                             MakeIcmArgs_WL_OP2 (arg_node,
-                                                                                 tmp_ids)),
-                                               TBmakeExprs (TCmakeIdCopyString (
-                                                              GenericFun (0,
-                                                                          ID_TYPE (def))),
-                                                            NULL));
-                        } else {
-                            /*
-                             * no default value found  ->  fill with 0
-                             */
-                            icm_name = "WL_ASSIGN__INIT";
-                            icm_args = MakeIcmArgs_WL_OP2 (arg_node, tmp_ids);
-                        }
-                        break;
-
-                    case N_modarray:
-                        DBUG_ASSERT ((WITHOP_ISOFFSETNEEDED (withop)),
-                                     "wrong value for OFFSET_NEEDED found!");
-                        DBUG_ASSERT ((NODE_TYPE (MODARRAY_ARRAY (withop)) == N_id),
-                                     "no N_id node found!");
-
-                        icm_name = "WL_ASSIGN__COPY";
-                        icm_args
-                          = TCappendExprs (TBmakeExprs (DUPdupIdNt (
-                                                          MODARRAY_ARRAY (withop)),
-                                                        MakeIcmArgs_WL_OP2 (arg_node,
-                                                                            tmp_ids)),
-                                           TBmakeExprs (TCmakeIdCopyString (
-                                                          GenericFun (0,
-                                                                      ID_TYPE (
-                                                                        MODARRAY_ARRAY (
-                                                                          withop)))),
-                                                        NULL));
-                        break;
-
-                    case N_fold:
-                        DBUG_ASSERT ((0), "illegal NOOP value found!");
-                        icm_name = NULL;
-                        icm_args = NULL;
-                        break;
-
-                    default:
-                        DBUG_ASSERT ((0), "illegal withop type found!");
-                        icm_name = NULL;
-                        icm_args = NULL;
-                        break;
-                    }
-
-                    if (icm_name != NULL) {
-                        node_icms = TCappendAssign (node_icms,
-                                                    TCmakeAssignIcm1 (icm_name, icm_args,
-                                                                      code_rc_icms));
-                    }
-
-                    tmp_ids = IDS_NEXT (tmp_ids);
-                    withop = WITHOP_NEXT (withop);
-                }
-
-            } else {
-                /*
-                 * insert compiled code.
-                 */
-                cexprs = CODE_CEXPRS (WLGRIDX_CODE (arg_node));
-                DBUG_ASSERT ((cexprs != NULL), "no code exprs found");
-
-                DBUG_ASSERT ((WLGRIDX_CBLOCK (arg_node) != NULL),
-                             "no code block found in N_Ncode node");
-                DBUG_ASSERT ((WLGRIDX_CBLOCK_INSTR (arg_node) != NULL),
-                             "first instruction of block is NULL"
-                             " (should be a N_empty node)");
-
-                if (NODE_TYPE (WLGRIDX_CBLOCK_INSTR (arg_node)) != N_empty) {
-                    node_icms = DUPdoDupTree (WLGRIDX_CBLOCK_INSTR (arg_node));
-                }
-
-                /* for every ids of wlids (multioperator WL) */
-                tmp_ids = wlids;
-                withop = WITH2_WITHOP (wlnode);
-                while (tmp_ids != NULL) {
-                    cexpr = EXPRS_EXPR (cexprs);
-                    /*
-                     * choose right ICM
-                     */
-                    switch (NODE_TYPE (withop)) {
-                    case N_genarray:
-                        /* here is no break missing! */
-                    case N_modarray:
-                        DBUG_ASSERT ((WITHOP_ISOFFSETNEEDED (withop)),
-                                     "wrong value for OFFSET_NEEDED found!");
-                        DBUG_ASSERT ((NODE_TYPE (cexpr) == N_id),
-                                     "code expr is not a id");
-
+                    idxid = EXPRS_EXPR (idxs_exprs);
+                    if (IsNextOffset (withop, idxid, WITH2_IDXS (wlnode))) {
                         icm_name = "WL_INC_OFFSET";
-                        icm_args = TBmakeExprs (DUPdupIdsIdNt (tmp_ids),
+                        icm_args = TBmakeExprs (DUPdupIdNt (idxid),
                                                 TBmakeExprs (DUPdupIdNt (cexpr), NULL));
-                        code_rc_icms = NULL;
-
-                        break;
-
-                    case N_fold:
-                        if (WITHOP_ISOFFSETNEEDED (withop)) {
-                            icm_name = "WL_FOLD__OFFSET";
-                        } else {
-                            icm_name = "WL_FOLD";
-                        }
-
-                        icm_args = MakeIcmArgs_WL_OP2 (arg_node, tmp_ids);
-
-                        break;
-
-                    default:
-                        DBUG_ASSERT ((0), "illegal withop type found");
-                        icm_name = NULL;
-                        icm_args = NULL;
-                        break;
+                        idxs_exprs = EXPRS_NEXT (idxs_exprs);
                     }
+                    break;
 
-                    if (icm_name != NULL) {
-                        node_icms = TCappendAssign (node_icms,
-                                                    TCmakeAssignIcm1 (icm_name, icm_args,
-                                                                      code_rc_icms));
-                    }
+                case N_fold:
+                    icm_name = "WL_FOLD";
+                    icm_args = MakeIcmArgs_WL_OP2 (arg_node, tmp_ids);
+                    break;
 
-                    cexprs = EXPRS_NEXT (cexprs);
-                    tmp_ids = IDS_NEXT (tmp_ids);
-                    withop = WITHOP_NEXT (withop);
+                default:
+                    DBUG_ASSERT ((0), "illegal withop type found");
+                    icm_name = NULL;
+                    icm_args = NULL;
+                    break;
                 }
+
+                if (icm_name != NULL) {
+                    node_icms
+                      = TCappendAssign (node_icms,
+                                        TCmakeAssignIcm1 (icm_name, icm_args, NULL));
+                }
+
+                cexprs = EXPRS_NEXT (cexprs);
+                tmp_ids = IDS_NEXT (tmp_ids);
+                withop = WITHOP_NEXT (withop);
             }
         }
     }
@@ -6872,7 +6831,7 @@ COMPwlgrid (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPWLgridx( node *arg_node, info *arg_info)
+ * @fn  node *COMPWLgridvar( node *arg_node, info *arg_info)
  *
  * @brief  Compilation of a N_wlgridvar-node:
  *     Returns a N_assign-chain with ICMs and leaves 'arg_node' untouched!!
@@ -6966,7 +6925,7 @@ COMPspmd (node *arg_node, info *arg_info)
     /*
      * Now, build up the ICMs of the parallel block.
      */
-    fundef = INFO_COMP_FUNDEF (arg_info);
+    fundef = INFO_FUNDEF (arg_info);
     assigns = NULL;
     assigns = TCmakeAssignIcm1 ("MT_SPMD_EXECUTE",
                                 TCmakeIdCopyString (FUNDEF_NAME (SPMD_FUNDEF (arg_node))),
@@ -7128,7 +7087,7 @@ COMPsync (node *arg_node, info *arg_info)
 
     DBUG_PRINT ("COMP_MT", ("Enter fold-args"));
 
-    last_sync = INFO_COMP_LASTSYNC (arg_info);
+    last_sync = INFO_LASTSYNC (arg_info);
     fold_args = NULL;
     num_fold_args = 0;
     if (last_sync != NULL) {
@@ -7493,7 +7452,7 @@ COMPsync (node *arg_node, info *arg_info)
             fold_args = FREEdoFreeTree (fold_args);
         }
 
-        BLOCK_SPMD_PROLOG_ICMS (FUNDEF_BODY (INFO_COMP_FUNDEF (arg_info))) = prolog_icms;
+        BLOCK_SPMD_PROLOG_ICMS (FUNDEF_BODY (INFO_FUNDEF (arg_info))) = prolog_icms;
     }
     barrier_id++;
 
@@ -7619,10 +7578,10 @@ COMPsync (node *arg_node, info *arg_info)
      *  Will be needed for next N_sync, if no next N_sync exists,
      *  COMPFundef() will take care of this tree.
      */
-    if (INFO_COMP_LASTSYNC (arg_info) != NULL) {
-        INFO_COMP_LASTSYNC (arg_info) = FREEdoFreeTree (INFO_COMP_LASTSYNC (arg_info));
+    if (INFO_LASTSYNC (arg_info) != NULL) {
+        INFO_LASTSYNC (arg_info) = FREEdoFreeTree (INFO_LASTSYNC (arg_info));
     }
-    INFO_COMP_LASTSYNC (arg_info) = arg_node;
+    INFO_LASTSYNC (arg_info) = arg_node;
 
     DBUG_RETURN (assigns);
 }

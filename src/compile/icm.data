@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.81  2005/08/24 10:21:26  ktr
+ * added support for explicit with-loop offsets
+ *
  * Revision 3.80  2005/08/09 18:55:15  ktr
  * F_shape_sel and F_idx_shape_sel are implemented by means of C-ICMs now
  *
@@ -737,22 +740,22 @@ ICM_DEF( WL_SCHEDULE__BEGIN, ICM_TRACE_NONE)
 ICM_END( WL_SCHEDULE__BEGIN, ( dims))
 #endif
 
-#if defined(WL_OFFSET) || defined(ICM_ALL)
-ICM_DEF( WL_OFFSET, ICM_TRACE_NONE)
+#if defined(WL_DECLARE_SHAPE_FACTOR) || defined(ICM_ALL)
+ICM_DEF( WL_DECLARE_SHAPE_FACTOR, ICM_TRACE_NONE)
   ICM_NT( to_NT)
   ICM_INT( to_sdim)
   ICM_NT( idx_vec_NT)
   ICM_INT( dims)
-ICM_END( WL_OFFSET, (to_NT, to_sdim, idx_vec_NT, dims))
+ICM_END( WL_DECLARE_SHAPE_FACTOR, (to_NT, to_sdim, idx_vec_NT, dims))
 #endif
 
-#if defined(WL_OFFSET_SHAPE_FACTOR) || defined(ICM_ALL)
-ICM_DEF( WL_OFFSET_SHAPE_FACTOR, ICM_TRACE_NONE)
+#if defined(WL_DEFINE_SHAPE_FACTOR) || defined(ICM_ALL)
+ICM_DEF( WL_DEFINE_SHAPE_FACTOR, ICM_TRACE_NONE)
   ICM_NT( to_NT)
   ICM_INT( to_sdim)
   ICM_NT( idx_vec_NT)
   ICM_INT( dims)
-ICM_END( WL_OFFSET_SHAPE_FACTOR, (to_NT, to_sdim, idx_vec_NT, dims))
+ICM_END( WL_DEFINE_SHAPE_FACTOR, (to_NT, to_sdim, idx_vec_NT, dims))
 #endif
 
 #if defined(WL_SCHEDULE__END) || defined(ICM_ALL)
@@ -761,50 +764,12 @@ ICM_DEF( WL_SCHEDULE__END, ICM_TRACE_NONE)
 ICM_END( WL_SCHEDULE__END, ( dims))
 #endif
 
-#if defined(WL_INIT_OFFSET) || defined(ICM_ALL)
-ICM_DEF( WL_INIT_OFFSET, ICM_TRACE_NONE)
-  ICM_NT( to_NT)
-  ICM_INT( to_sdim)
-  ICM_NT( idx_vec_NT)
-  ICM_INT( dims)
-ICM_END( WL_INIT_OFFSET, (to_NT, to_sdim, idx_vec_NT, dims))
-#endif
-
-
 #if defined(WL_SUBALLOC) || defined(ICM_ALL)
 ICM_DEF( WL_SUBALLOC, ICM_TRACE_NONE)
   ICM_NT( sub_NT)
   ICM_NT( to_NT)
-ICM_END( WL_SUBALLOC, (sub_NT, to_NT))
-#endif
-
-#if defined(WL_MODARRAY_SUBSHAPE) || defined(ICM_ALL)
-ICM_DEF( WL_MODARRAY_SUBSHAPE, ICM_TRACE_NONE)
-  ICM_NT( sub_NT)
-  ICM_NT( idx_NT)
-  ICM_INT( dims)
-  ICM_NT( to_NT)
-ICM_END( WL_MODARRAY_SUBSHAPE, (sub_NT, idx_NT, dims, to_NT))
-#endif
-
-#if defined(WL_INC_OFFSET) || defined(ICM_ALL)
-ICM_DEF( WL_INC_OFFSET, ICM_TRACE_NONE)
-  ICM_NT( to_NT)
-  ICM_NT( val_NT)
-ICM_END( WL_INC_OFFSET, (to_NT, val_NT))
-#endif
-
-#if defined(WL_EMM_ASSIGN) || defined(ICM_ALL)
-ICM_DEF( WL_EMM_ASSIGN, ICM_TRACE_NONE)
-  ICM_NT( val_NT)
-  ICM_INT( val_sdim)
-  ICM_NT( to_NT)
-  ICM_INT( to_sdim)
-  ICM_NT( idx_vec_NT)
-  ICM_INT( dims)
-  ICM_ID( copyfun)
-ICM_END( WL_EMM_ASSIGN, (val_NT, val_sdim, to_NT, to_sdim,
-                         idx_vec_NT, dims, copyfun ))
+  ICM_NT( off_NT)
+ICM_END( WL_SUBALLOC, (sub_NT, to_NT, off_NT))
 #endif
 
 #if defined(WL_ASSIGN) || defined(ICM_ALL)
@@ -815,43 +780,19 @@ ICM_DEF( WL_ASSIGN, ICM_TRACE_NONE)
   ICM_INT( to_sdim)
   ICM_NT( idx_vec_NT)
   ICM_INT( dims)
-  ICM_VARNT( dims, idxs_scl_NT)
+  ICM_NT( off_NT)
   ICM_ID( copyfun)
 ICM_END( WL_ASSIGN, (val_NT, val_sdim, to_NT, to_sdim,
-                     idx_vec_NT, dims, idxs_scl_NT, copyfun))
+                     idx_vec_NT, dims, off_NT, copyfun ))
 #endif
 
-#if defined(WL_ASSIGN__INIT) || defined(ICM_ALL)
-ICM_DEF( WL_ASSIGN__INIT, ICM_TRACE_NONE)
-  ICM_NT( to_NT)
-  ICM_INT( to_sdim)
-  ICM_NT( idx_vec_NT)
+#if defined(WL_MODARRAY_SUBSHAPE) || defined(ICM_ALL)
+ICM_DEF( WL_MODARRAY_SUBSHAPE, ICM_TRACE_NONE)
+  ICM_NT( sub_NT)
+  ICM_NT( idx_NT)
   ICM_INT( dims)
-  ICM_VARNT( dims, idxs_scl_NT)
-ICM_END( WL_ASSIGN__INIT, (to_NT, to_sdim, idx_vec_NT, dims, idxs_scl_NT))
-#endif
-
-#if defined(WL_ASSIGN__COPY) || defined(ICM_ALL)
-ICM_DEF( WL_ASSIGN__COPY, ICM_TRACE_NONE)
-  ICM_NT( from_NT)
   ICM_NT( to_NT)
-  ICM_INT( to_sdim)
-  ICM_NT( idx_vec_NT)
-  ICM_INT( dims)
-  ICM_VARNT( dims, idxs_scl_NT)
-  ICM_ID( copyfun)
-ICM_END( WL_ASSIGN__COPY, (from_NT, to_NT, to_sdim, idx_vec_NT, dims, idxs_scl_NT,
-                           copyfun))
-#endif
-
-#if defined(WL_FOLD__OFFSET) || defined(ICM_ALL)
-ICM_DEF( WL_FOLD__OFFSET, ICM_TRACE_NONE)
-  ICM_NT( to_NT)
-  ICM_INT( to_sdim)
-  ICM_NT( idx_vec_NT)
-  ICM_INT( dims)
-  ICM_VARNT( dims, idxs_scl_NT)
-ICM_END( WL_FOLD__OFFSET, (to_NT, to_sdim, idx_vec_NT, dims, idxs_scl_NT))
+ICM_END( WL_MODARRAY_SUBSHAPE, (sub_NT, idx_NT, dims, to_NT))
 #endif
 
 #if defined(WL_FOLD) || defined(ICM_ALL)
@@ -864,19 +805,32 @@ ICM_DEF( WL_FOLD, ICM_TRACE_NONE)
 ICM_END( WL_FOLD, (to_NT, to_sdim, idx_vec_NT, dims, idxs_scl_NT))
 #endif
 
+#if defined(WL_INIT_OFFSET) || defined(ICM_ALL)
+ICM_DEF( WL_INIT_OFFSET, ICM_TRACE_NONE)
+  ICM_NT( off_NT)
+  ICM_NT( to_NT)
+  ICM_INT( to_sdim)
+  ICM_NT( idx_vec_NT)
+  ICM_INT( dims)
+ICM_END( WL_INIT_OFFSET, (off_NT, to_NT, to_sdim, idx_vec_NT, dims))
+#endif
+
+
 #if defined(WL_ADJUST_OFFSET) || defined(ICM_ALL)
 ICM_DEF( WL_ADJUST_OFFSET, ICM_TRACE_NONE)
+  ICM_NT( off_NT)
   ICM_INT( dim)
   ICM_NT( to_NT)
   ICM_INT( to_sdim)
   ICM_NT( idx_vec_NT)
   ICM_INT( dims)
   ICM_VARNT( dims, idxs_scl_NT)
-ICM_END( WL_ADJUST_OFFSET, (dim, to_NT, to_sdim, idx_vec_NT, dims, idxs_scl_NT))
+ICM_END( WL_ADJUST_OFFSET, (off_NT, dim, to_NT, to_sdim, idx_vec_NT, dims, idxs_scl_NT))
 #endif
 
 #if defined(WL_SET_OFFSET) || defined(ICM_ALL)
 ICM_DEF( WL_SET_OFFSET, ICM_TRACE_NONE)
+  ICM_NT( off_NT)
   ICM_INT( dim)
   ICM_INT( first_block_dim)
   ICM_NT( to_NT)
@@ -884,7 +838,7 @@ ICM_DEF( WL_SET_OFFSET, ICM_TRACE_NONE)
   ICM_NT( idx_vec_NT)
   ICM_INT( dims)
   ICM_VARNT( dims, idxs_scl_NT)
-ICM_END( WL_SET_OFFSET, (dim, first_block_dim, to_NT, to_sdim,
+ICM_END( WL_SET_OFFSET, (off_NT, dim, first_block_dim, to_NT, to_sdim,
                          idx_vec_NT, dims, idxs_scl_NT))
 #endif
 
