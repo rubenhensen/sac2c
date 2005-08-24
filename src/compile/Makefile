@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.43  2005/08/24 10:21:26  ktr
+# added wlidx.o
+#
 # Revision 3.42  2005/07/21 14:18:54  sah
 # introduced remove_external_code
 #
@@ -130,7 +133,7 @@ SAC2C_OBJS := wlpragma_funs.o precompile.o compile.o wltransform.o \
               icm2c_std.o icm2c_prf.o icm2c_wl.o icm2c_mt.o icm2c_sched.o \
               icm2c_error.o icm2c_basic.o icm2c_utils.o markmemvals.o \
               typeconv_precompile.o functionprecompile.o renameidentifiers.o \
-              setlinksign.o remove_external_code.o
+              setlinksign.o remove_external_code.o wlidxs.o
 
 
 all: $(SAC2C_OBJS)
