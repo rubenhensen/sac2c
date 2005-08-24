@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.198  2005/08/24 10:17:30  ktr
+ * added support for WITHID_IDXS, GENARRAY_IDX, MODARRAY_IDS
+ *
  * Revision 3.197  2005/08/20 19:19:19  sah
  * IVE-rewrite: removed N_vinfo
  *
@@ -1585,6 +1588,9 @@ extern int TCcountParts (node *parts);
 #define WITHOP_MEM(n)                                                                    \
     ((NODE_TYPE (n) == N_genarray) ? GENARRAY_MEM (n) : MODARRAY_MEM (n))
 
+#define WITHOP_IDX(n)                                                                    \
+    ((NODE_TYPE (n) == N_genarray) ? GENARRAY_IDX (n) : MODARRAY_IDX (n))
+
 /*--------------------------------------------------------------------------*/
 
 /***
@@ -1595,6 +1601,7 @@ extern int TCcountParts (node *parts);
 
 #define WITH2_IDS(n) (WITHID_IDS (WITH2_WITHID (n)))
 #define WITH2_VEC(n) (WITHID_VEC (WITH2_WITHID (n)))
+#define WITH2_IDXS(n) (WITHID_IDXS (WITH2_WITHID (n)))
 
 /*
  * CBLOCK, CEXPR of the *first* N_code-node
