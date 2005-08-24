@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2005/08/24 10:20:09  ktr
+ * added support for WITHID_IDXS, some brushing
+ *
  * Revision 1.6  2004/11/28 18:14:21  ktr
  * added traversal functions for bool, num, float, double, char
  *
@@ -57,5 +60,6 @@ extern node *EMALmodarray (node *arg_node, info *arg_info);
 extern node *EMALprf (node *arg_node, info *arg_info);
 extern node *EMALwith (node *arg_node, info *arg_info);
 extern node *EMALwith2 (node *arg_node, info *arg_info);
+extern node *EMALwithid (node *arg_node, info *arg_info);
 
 #endif /* _SAC_ALLOC_H_ */

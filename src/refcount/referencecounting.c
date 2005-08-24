@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2005/08/24 10:20:09  ktr
+ * added support for WITHID_IDXS, some brushing
+ *
  * Revision 1.5  2005/08/20 12:09:09  ktr
  * typeconv introduces aliasing
  *
@@ -934,6 +937,10 @@ RCIwithid (node *arg_node, info *arg_info)
 
     if (WITHID_IDS (arg_node) != NULL) {
         WITHID_IDS (arg_node) = TRAVdo (WITHID_IDS (arg_node), arg_info);
+    }
+
+    if (WITHID_IDXS (arg_node) != NULL) {
+        WITHID_IDXS (arg_node) = TRAVdo (WITHID_IDXS (arg_node), arg_info);
     }
 
     if (INFO_RC_WITHVECNEEDED (arg_info)) {
