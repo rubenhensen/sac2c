@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2005/08/24 10:19:41  ktr
+ * added WLIDXlet
+ *
  * Revision 1.3  2005/08/20 23:59:54  ktr
  * Should work...
  *
@@ -25,5 +28,6 @@ extern node *IVEIprf (node *arg_node, info *arg_info);
 extern node *IVEIassign (node *arg_node, info *arg_info);
 extern node *IVEIfundef (node *arg_node, info *arg_info);
 extern node *IVEIap (node *arg_node, info *arg_info);
+extern node *IVEIlet (node *arg_node, info *arg_info);
 
 #endif /* _SAC_INDEX_INFER_H_ */
