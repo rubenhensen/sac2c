@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.38  2005/08/24 10:27:02  ktr
+ * added with-loop index annotation phase
+ *
  * Revision 3.37  2005/08/20 23:42:27  ktr
  * re-added IVEI
  *
@@ -378,6 +381,9 @@ SUBPHASE (ivei, "ivei", "Applying index vector elimination (inference)",
           IVEIdoIndexVectorEliminationInference)
 
 SUBPHASE (ive, "ive", "Applying index vector elimination", IVEdoIndexVectorElimination)
+
+SUBPHASE (wlidx, "wlidx", "Annoting offset variable at with-loops",
+          WLIDXdoAnnotateWithloopIdxs)
 
 /***********************************************************************/
 
