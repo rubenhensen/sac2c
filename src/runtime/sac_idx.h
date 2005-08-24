@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2005/08/24 10:18:16  ktr
+ * removed ICM USE_GENVAR_OFFSET
+ *
  * Revision 3.13  2004/03/09 23:56:15  dkrHH
  * old backend removed
  *
@@ -113,8 +116,5 @@
 /* ND_PRF_IDX_SEL__DATA( ...) is a C-ICM */
 
 /* ND_PRF_IDX_MODARRAY__DATA( ...) is a C-ICM */
-
-#define SAC_ND_USE_GENVAR_OFFSET(off_NT, wl_NT)                                          \
-    SAC_ND_WRITE_COPY (off_NT, 0, SAC_WL_OFFSET (wl_NT), );
 
 #endif /* _SAC_IDX_H */
