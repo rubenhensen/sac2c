@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.230  2005/08/24 10:26:26  ktr
+ * added support for WITHID_IDXS, GENARRAY_IDX, MODARRAY_IDX
+ *
  * Revision 3.229  2005/08/19 10:04:50  sbs
  * fixed error in PRTtype
  *
@@ -3512,17 +3515,23 @@ PRTwithid (node *arg_node, info *arg_info)
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
     }
 
-    if (WITHID_VEC (arg_node)) {
+    if (WITHID_VEC (arg_node) != NULL) {
         TRAVdo (WITHID_VEC (arg_node), arg_info);
-        if (WITHID_IDS (arg_node)) {
+        if (WITHID_IDS (arg_node) != NULL) {
             fprintf (global.outfile, "=");
         }
     }
 
-    if (WITHID_IDS (arg_node)) {
+    if (WITHID_IDS (arg_node) != NULL) {
         fprintf (global.outfile, "[");
         TRAVdo (WITHID_IDS (arg_node), arg_info);
         fprintf (global.outfile, "]");
+    }
+
+    if (WITHID_IDXS (arg_node) != NULL) {
+        fprintf (global.outfile, " (IDXS:");
+        TRAVdo (WITHID_IDXS (arg_node), arg_info);
+        fprintf (global.outfile, ")");
     }
 
     DBUG_RETURN (arg_node);
@@ -3743,12 +3752,17 @@ PRTgenarray (node *arg_node, info *arg_info)
         fprintf (global.outfile, " , ");
         TRAVdo (GENARRAY_DEFAULT (arg_node), arg_info);
     }
+
     if (GENARRAY_MEM (arg_node) != NULL) {
         fprintf (global.outfile, " , ");
         TRAVdo (GENARRAY_MEM (arg_node), arg_info);
     }
 
     fprintf (global.outfile, ")");
+
+    if (GENARRAY_IDX (arg_node) != NULL) {
+        fprintf (global.outfile, " /* IDX: %s */", AVIS_NAME (GENARRAY_IDX (arg_node)));
+    }
 
     if (GENARRAY_NEXT (arg_node) != NULL) {
         fprintf (global.outfile, ",\n");
@@ -3784,6 +3798,7 @@ PRTmodarray (node *arg_node, info *arg_info)
     INDENT;
 
     fprintf (global.outfile, "modarray( ");
+
     TRAVdo (MODARRAY_ARRAY (arg_node), arg_info);
     if (MODARRAY_MEM (arg_node) != NULL) {
         fprintf (global.outfile, " , ");
@@ -3791,6 +3806,10 @@ PRTmodarray (node *arg_node, info *arg_info)
     }
 
     fprintf (global.outfile, ")");
+
+    if (MODARRAY_IDX (arg_node) != NULL) {
+        fprintf (global.outfile, " /* IDX: %s */", AVIS_NAME (MODARRAY_IDX (arg_node)));
+    }
 
     if (MODARRAY_NEXT (arg_node) != NULL) {
         fprintf (global.outfile, ",\n");
@@ -3943,7 +3962,6 @@ PRTwith2 (node *arg_node, info *arg_info)
     INDENT;
     fprintf (global.outfile, "/********** conexpr: **********/\n");
     TRAVdo (WITH2_WITHOP (arg_node), arg_info);
-    fprintf (global.outfile, ")");
 
     global.indent--;
 
