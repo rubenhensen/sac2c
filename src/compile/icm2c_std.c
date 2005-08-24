@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.64  2005/08/24 15:57:02  ktr
+ * changed a ASSURE_TYPE_EXPR to ASSURE_TYPE_ASS
+ *
  * Revision 3.63  2005/08/23 13:43:48  ktr
  * corrected ICMCompileND_CREATE__ARRAY__DATA
  *
@@ -1483,10 +1486,10 @@ ICMCompileND_CREATE__ARRAY__DATA (char *to_NT, int to_sdim, int val_size, char *
                 DBUG_ASSERT ((ICUGetShapeClass (vals_ANY[i]) == C_aud),
                              "tagged id is no scalar!");
                 INDENT;
-                ASSURE_TYPE_EXPR (fprintf (global.outfile, "SAC_ND_A_DIM( %s) == 0",
-                                           vals_ANY[i]);
-                                  , fprintf (global.outfile, "Scalar expected but array "
-                                                             "with (dim > 0) found!"););
+                ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) == 0",
+                                          vals_ANY[i]);
+                                 , fprintf (global.outfile, "Scalar expected but array "
+                                                            "with (dim > 0) found!"););
                 fprintf (global.outfile, "\n");
             }
         }
