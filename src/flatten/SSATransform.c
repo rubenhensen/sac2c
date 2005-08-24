@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.39  2005/08/24 10:31:27  ktr
+ * added support for WITHID_IDXS
+ *
  * Revision 1.38  2005/08/19 17:18:41  sbs
  * eliminated some hair-raising stuff from old types
  *
@@ -364,7 +367,7 @@ struct INFO {
 
 /**
  * legal values for
- * INFO_SSA_SINGLEFUNDEF :
+ * INFO_SINGLEFUNDEF :
  */
 #define SSA_TRAV_FUNDEFS 0
 #define SSA_TRAV_SPECIALS 1
@@ -380,18 +383,18 @@ struct INFO {
 /*
  * access macros:
  */
-#define INFO_SSA_SINGLEFUNDEF(n) (n->singlefundef)
-#define INFO_SSA_ALLOW_GOS(n) (n->allow_gos)
+#define INFO_SINGLEFUNDEF(n) (n->singlefundef)
+#define INFO_ALLOW_GOS(n) (n->allow_gos)
 
-#define INFO_SSA_GENERATE_FUNCOND(n) (n->generate_funcond)
-#define INFO_SSA_RENAMING_MODE(n) (n->renaming_mode)
+#define INFO_GENERATE_FUNCOND(n) (n->generate_funcond)
+#define INFO_RENAMING_MODE(n) (n->renaming_mode)
 
-#define INFO_SSA_FUNDEF(n) (n->fundef)
-#define INFO_SSA_ASSIGN(n) (n->assign)
-#define INFO_SSA_CONDSTMT(n) (n->condstmt)
-#define INFO_SSA_FUNCOND_FOUND(n) (n->funcond_found)
-#define INFO_SSA_FIRST_WITHID(n) (n->first_withid)
-#define INFO_SSA_FUNGROUP(n) (n->fungroup)
+#define INFO_FUNDEF(n) (n->fundef)
+#define INFO_ASSIGN(n) (n->assign)
+#define INFO_CONDSTMT(n) (n->condstmt)
+#define INFO_FUNCOND_FOUND(n) (n->funcond_found)
+#define INFO_FIRST_WITHID(n) (n->first_withid)
+#define INFO_FUNGROUP(n) (n->fungroup)
 
 /*
  * INFO functions:
@@ -405,18 +408,18 @@ MakeInfo ()
 
     result = ILIBmalloc (sizeof (info));
 
-    INFO_SSA_SINGLEFUNDEF (result) = 0;
-    INFO_SSA_ALLOW_GOS (result) = FALSE;
+    INFO_SINGLEFUNDEF (result) = 0;
+    INFO_ALLOW_GOS (result) = FALSE;
 
-    INFO_SSA_GENERATE_FUNCOND (result) = FALSE;
-    INFO_SSA_RENAMING_MODE (result) = SSA_USE_TOP;
+    INFO_GENERATE_FUNCOND (result) = FALSE;
+    INFO_RENAMING_MODE (result) = SSA_USE_TOP;
 
-    INFO_SSA_FUNDEF (result) = NULL;
-    INFO_SSA_ASSIGN (result) = NULL;
-    INFO_SSA_CONDSTMT (result) = NULL;
-    INFO_SSA_FUNCOND_FOUND (result) = FALSE;
-    INFO_SSA_FIRST_WITHID (result) = NULL;
-    INFO_SSA_FUNGROUP (result) = NULL;
+    INFO_FUNDEF (result) = NULL;
+    INFO_ASSIGN (result) = NULL;
+    INFO_CONDSTMT (result) = NULL;
+    INFO_FUNCOND_FOUND (result) = FALSE;
+    INFO_FIRST_WITHID (result) = NULL;
+    INFO_FUNGROUP (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -751,7 +754,7 @@ InitializeFungroup (node *arg_node, info *arg_info)
 
     if ((!FUNDEF_ISDOFUN (arg_node)) && (!FUNDEF_ISCONDFUN (arg_node))
         && (FUNDEF_FUNGROUP (arg_node) == NULL)) {
-        tmp = INFO_SSA_FUNGROUP (arg_info);
+        tmp = INFO_FUNGROUP (arg_info);
 
         /*
          * search for corresponding fungroup in grouplist
@@ -774,8 +777,7 @@ InitializeFungroup (node *arg_node, info *arg_info)
             fg = TBmakeFungroup ();
             FUNGROUP_FUNLIST (fg) = TBmakeLinklist (arg_node, NULL);
             FUNGROUP_REFCOUNTER (fg) = 1;
-            INFO_SSA_FUNGROUP (arg_info)
-              = TBmakeLinklist (fg, INFO_SSA_FUNGROUP (arg_info));
+            INFO_FUNGROUP (arg_info) = TBmakeLinklist (fg, INFO_FUNGROUP (arg_info));
             FUNDEF_FUNGROUP (arg_node) = fg;
         }
     }
@@ -806,14 +808,14 @@ SSATfundef (node *arg_node, info *arg_info)
      * process only fundefs with body
      */
 
-    INFO_SSA_CONDSTMT (arg_info) = NULL;
-    INFO_SSA_FUNCOND_FOUND (arg_info) = FALSE;
+    INFO_CONDSTMT (arg_info) = NULL;
+    INFO_FUNCOND_FOUND (arg_info) = FALSE;
 
     arg_node = InitializeFungroup (arg_node, arg_info);
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         /* stores access points for later insertions in this fundef */
-        INFO_SSA_FUNDEF (arg_info) = arg_node;
+        INFO_FUNDEF (arg_info) = arg_node;
 
         /*
          * Attach SSAStacks to all AVIS nodes
@@ -845,7 +847,7 @@ SSATfundef (node *arg_node, info *arg_info)
     }
 
     /* traverse next fundef */
-    if ((INFO_SSA_SINGLEFUNDEF (arg_info) == SSA_TRAV_FUNDEFS)
+    if ((INFO_SINGLEFUNDEF (arg_info) == SSA_TRAV_FUNDEFS)
         && (FUNDEF_NEXT (arg_node) != NULL)) {
         FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
     }
@@ -885,7 +887,7 @@ SSATblock (node *arg_node, info *arg_info)
  * @fn node *SSATassign(node *arg_node, info *arg_info)
  *
  *   @brief traverses assign chain top down. While traversing the RHS,
- *          the actual assign node is made available in INFO_SSA_ASSIGN.
+ *          the actual assign node is made available in INFO_ASSIGN.
  *          If this is changed during traversal of the RHS, the new value
  *          is considered an intended REPLACEMENT! Therefore, it has to be
  *          traversed and to be inserted into the actual chain of assignments.
@@ -899,9 +901,9 @@ SSATassign (node *arg_node, info *arg_info)
     DBUG_ENTER ("SSATassign");
 
     /* preserve the old assignment link */
-    old_assign = INFO_SSA_ASSIGN (arg_info);
+    old_assign = INFO_ASSIGN (arg_info);
 
-    INFO_SSA_ASSIGN (arg_info) = arg_node;
+    INFO_ASSIGN (arg_info) = arg_node;
 
     /* traverse expr */
     if (ASSIGN_INSTR (arg_node) != NULL) {
@@ -909,9 +911,9 @@ SSATassign (node *arg_node, info *arg_info)
     }
 
     /* check for potentially required insertions */
-    if (INFO_SSA_ASSIGN (arg_info) != arg_node) {
+    if (INFO_ASSIGN (arg_info) != arg_node) {
         /* indirectly insert these here and traverse them again */
-        arg_node = INFO_SSA_ASSIGN (arg_info);
+        arg_node = INFO_ASSIGN (arg_info);
         ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
     }
 
@@ -921,7 +923,7 @@ SSATassign (node *arg_node, info *arg_info)
     }
 
     /* restore old assignment link */
-    INFO_SSA_ASSIGN (arg_info) = old_assign;
+    INFO_ASSIGN (arg_info) = old_assign;
 
     DBUG_RETURN (arg_node);
 }
@@ -1041,7 +1043,7 @@ SSATarg (node *arg_node, info *arg_info)
     if (AVIS_SSACOUNT (ARG_AVIS (arg_node)) == NULL) {
         /* insert ssa-counter to this baseid */
         AVIS_SSACOUNT (ARG_AVIS (arg_node))
-          = GetSsacnt (ARG_NAME (arg_node), 0, FUNDEF_BODY (INFO_SSA_FUNDEF (arg_info)));
+          = GetSsacnt (ARG_NAME (arg_node), 0, FUNDEF_BODY (INFO_FUNDEF (arg_info)));
     }
 
     /* actual rename-to target on stack*/
@@ -1090,8 +1092,7 @@ SSATvardec (node *arg_node, info *arg_info)
     if (AVIS_SSACOUNT (VARDEC_AVIS (arg_node)) == NULL) {
         /* insert ssa-counter to this baseid */
         AVIS_SSACOUNT (VARDEC_AVIS (arg_node))
-          = GetSsacnt (VARDEC_NAME (arg_node), 0,
-                       FUNDEF_BODY (INFO_SSA_FUNDEF (arg_info)));
+          = GetSsacnt (VARDEC_NAME (arg_node), 0, FUNDEF_BODY (INFO_FUNDEF (arg_info)));
     }
 
     /* jet undefined on stack */
@@ -1120,8 +1121,8 @@ SSATvardec (node *arg_node, info *arg_info)
  *
  * @fn node *SSATid( node *arg_node, info *arg_info)
  *
- *   @brief depending on INFO_SSA_GENERATE_FUNCOND either generate funconds
- *          and prepend them to INFO_SSA_ASSIGN     or
+ *   @brief depending on INFO_GENERATE_FUNCOND either generate funconds
+ *          and prepend them to INFO_ASSIGN     or
  *          trigger renaming by traversing into the RHS ids.
  *
  ******************************************************************************/
@@ -1131,26 +1132,26 @@ SSATid (node *arg_node, info *arg_info)
     node *new_avis;
     DBUG_ENTER ("SSATid");
 
-    if (INFO_SSA_GENERATE_FUNCOND (arg_info)) {
+    if (INFO_GENERATE_FUNCOND (arg_info)) {
         /* check for different assignments in then and else part */
         if (AVIS_SSATHEN (ID_AVIS (arg_node)) != AVIS_SSAELSE (ID_AVIS (arg_node))) {
             DBUG_ASSERT ((AVIS_SSATHEN (ID_AVIS (arg_node))),
                          "undefined variable in then part");
             DBUG_ASSERT ((AVIS_SSATHEN (ID_AVIS (arg_node))),
                          "undefined variable in then part");
-            INFO_SSA_ASSIGN (arg_info)
-              = CreateFuncondAssign (INFO_SSA_CONDSTMT (arg_info), arg_node,
-                                     INFO_SSA_ASSIGN (arg_info));
+            INFO_ASSIGN (arg_info)
+              = CreateFuncondAssign (INFO_CONDSTMT (arg_info), arg_node,
+                                     INFO_ASSIGN (arg_info));
         }
     } else {
 
-        if (INFO_SSA_RENAMING_MODE (arg_info) == SSA_USE_TOP) {
+        if (INFO_RENAMING_MODE (arg_info) == SSA_USE_TOP) {
             new_avis = AVIS_SSASTACK_TOP (ID_AVIS (arg_node));
-        } else if (INFO_SSA_RENAMING_MODE (arg_info) == SSA_USE_THEN) {
+        } else if (INFO_RENAMING_MODE (arg_info) == SSA_USE_THEN) {
             new_avis = AVIS_SSATHEN (ID_AVIS (arg_node));
         } else {
-            DBUG_ASSERT ((INFO_SSA_RENAMING_MODE (arg_info) == SSA_USE_ELSE),
-                         "illegal value for INFO_SSA_RENAMING_MODE");
+            DBUG_ASSERT ((INFO_RENAMING_MODE (arg_info) == SSA_USE_ELSE),
+                         "illegal value for INFO_RENAMING_MODE");
             new_avis = AVIS_SSAELSE (ID_AVIS (arg_node));
         }
 
@@ -1182,7 +1183,7 @@ SSATid (node *arg_node, info *arg_info)
              * without taking scopes into account!). However, wrt. the actual scope
              * there is NO valid definition. Hence AVIS_SSASTACK_TOP is NULL.
              */
-            if (INFO_SSA_ALLOW_GOS (arg_info) == FALSE) {
+            if (INFO_ALLOW_GOS (arg_info) == FALSE) {
                 CTIerrorLine (global.linenum, "Variable %s used without definition",
                               ID_NAME (arg_node));
             }
@@ -1220,15 +1221,15 @@ SSATap (node *arg_node, info *arg_info)
 
     /* traverse special fundef without recursion (only in single fundef mode) */
     if ((FUNDEF_ISLACFUN (AP_FUNDEF (arg_node)))
-        && (INFO_SSA_SINGLEFUNDEF (arg_info) == SSA_TRAV_SPECIALS)
-        && (AP_FUNDEF (arg_node) != INFO_SSA_FUNDEF (arg_info))) {
+        && (INFO_SINGLEFUNDEF (arg_info) == SSA_TRAV_SPECIALS)
+        && (AP_FUNDEF (arg_node) != INFO_FUNDEF (arg_info))) {
         DBUG_PRINT ("SSA", ("traverse in special fundef %s",
                             FUNDEF_NAME (AP_FUNDEF (arg_node))));
 
         /* stack arg_info frame for new fundef */
         new_arg_info = MakeInfo ();
 
-        INFO_SSA_SINGLEFUNDEF (new_arg_info) = INFO_SSA_SINGLEFUNDEF (arg_info);
+        INFO_SINGLEFUNDEF (new_arg_info) = INFO_SINGLEFUNDEF (arg_info);
 
         /* start traversal of special fundef */
         AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), new_arg_info);
@@ -1271,7 +1272,7 @@ SSATwith (node *arg_node, info *arg_info)
      * reset FIRST_WITHID (being set in SSAwithid) for the next with loop
      * traversal
      */
-    INFO_SSA_FIRST_WITHID (arg_info) = NULL;
+    INFO_FIRST_WITHID (arg_info) = NULL;
 
     /**
      * traverse code: as we may have more than one code stacking is done
@@ -1310,7 +1311,7 @@ SSATwith2 (node *arg_node, info *arg_info)
      * reset FIRST_WITHID (being set in SSAwithid) for the next with loop
      * traversal
      */
-    INFO_SSA_FIRST_WITHID (arg_info) = NULL;
+    INFO_FIRST_WITHID (arg_info) = NULL;
 
     /**
      * traverse code: as we may have more than one code stacking is done
@@ -1359,7 +1360,7 @@ SSATpart (node *arg_node, info *arg_info)
  *          introduce new variables. However, if we do have multi generator
  *          with loops, we expect all withids to be identical. Therefore,
  *          we only have to treat the very first one as LHS, all others as
- *          RHS. To distinguish these cases, we use INFO_SSA_FIRST_WITHID,
+ *          RHS. To distinguish these cases, we use INFO_FIRST_WITHID,
  *          which is reset in SSAwith.
  *
  ******************************************************************************/
@@ -1372,14 +1373,14 @@ SSATwithid (node *arg_node, info *arg_info)
     DBUG_ENTER ("SSATwithid");
 
     /* Set current assign to NULL for these special ids! */
-    assign = INFO_SSA_ASSIGN (arg_info);
-    INFO_SSA_ASSIGN (arg_info) = NULL;
+    assign = INFO_ASSIGN (arg_info);
+    INFO_ASSIGN (arg_info) = NULL;
 
-    if (INFO_SSA_FIRST_WITHID (arg_info) == NULL) {
+    if (INFO_FIRST_WITHID (arg_info) == NULL) {
         /**
          * This is the first withid. Therefore, we have to treat it as LHS.
          */
-        INFO_SSA_FIRST_WITHID (arg_info) = arg_node;
+        INFO_FIRST_WITHID (arg_info) = arg_node;
 
         if (WITHID_VEC (arg_node) != NULL) {
             WITHID_VEC (arg_node) = TRAVdo (WITHID_VEC (arg_node), arg_info);
@@ -1388,14 +1389,18 @@ SSATwithid (node *arg_node, info *arg_info)
         if (WITHID_IDS (arg_node) != NULL) {
             WITHID_IDS (arg_node) = TRAVdo (WITHID_IDS (arg_node), arg_info);
         }
+
+        if (WITHID_IDXS (arg_node) != NULL) {
+            WITHID_IDXS (arg_node) = TRAVdo (WITHID_IDXS (arg_node), arg_info);
+        }
     } else {
         /**
-         * There have been prior partitions in this WL. INFO_SSA_FIRST_WITHID
+         * There have been prior partitions in this WL. INFO_FIRST_WITHID
          * points to the topmost one (in renamed form). => treat as RHS!
          * First, we do the renaming, if necessary. Then, we check consistency with
-         * INFO_SSA_FIRST_WITHID.
+         * INFO_FIRST_WITHID.
          */
-        first = INFO_SSA_FIRST_WITHID (arg_info);
+        first = INFO_FIRST_WITHID (arg_info);
         if (WITHID_VEC (arg_node) != NULL) {
             WITHID_VEC (arg_node) = TreatIdsAsRhs (WITHID_VEC (arg_node), arg_info);
             DBUG_ASSERT (IDS_AVIS (WITHID_VEC (arg_node))
@@ -1415,10 +1420,20 @@ SSATwithid (node *arg_node, info *arg_info)
             DBUG_ASSERT (WITHID_IDS (first) == NULL,
                          "multigenerator withloop with inconsistent withids");
         }
+
+        if (WITHID_IDXS (arg_node) != NULL) {
+            WITHID_IDXS (arg_node) = TreatIdsAsRhs (WITHID_IDXS (arg_node), arg_info);
+            DBUG_ASSERT (IDS_AVIS (WITHID_IDXS (arg_node))
+                           == IDS_AVIS (WITHID_IDXS (first)),
+                         "multigenerator withloop with inconsistent withids");
+        } else {
+            DBUG_ASSERT (WITHID_IDXS (first) == NULL,
+                         "multigenerator withloop with inconsistent withids");
+        }
     }
 
     /* restore currect assign for further processing */
-    INFO_SSA_ASSIGN (arg_info) = assign;
+    INFO_ASSIGN (arg_info) = assign;
 
     DBUG_RETURN (arg_node);
 }
@@ -1438,7 +1453,7 @@ SSATcode (node *arg_node, info *arg_info)
     DBUG_ENTER ("SSATcode");
 
     /* do stacking of current renaming status */
-    FOR_ALL_AVIS (DupTopSsastack, INFO_SSA_FUNDEF (arg_info));
+    FOR_ALL_AVIS (DupTopSsastack, INFO_FUNDEF (arg_info));
 
     /* traverse block */
     if (CODE_CBLOCK (arg_node) != NULL) {
@@ -1450,7 +1465,7 @@ SSATcode (node *arg_node, info *arg_info)
     CODE_CEXPRS (arg_node) = TRAVdo (CODE_CEXPRS (arg_node), arg_info);
 
     /* restore old rename stack !!! */
-    FOR_ALL_AVIS (PopSsastack, INFO_SSA_FUNDEF (arg_info));
+    FOR_ALL_AVIS (PopSsastack, INFO_FUNDEF (arg_info));
 
     if (CODE_NEXT (arg_node) != NULL) {
         /* traverse next part */
@@ -1476,14 +1491,14 @@ SSATcond (node *arg_node, info *arg_info)
     DBUG_ENTER ("SSATcond");
 
     /* save this cond_node for later insertions of copy assignments */
-    INFO_SSA_CONDSTMT (arg_info) = arg_node;
+    INFO_CONDSTMT (arg_info) = arg_node;
 
     /* traverse conditional */
     DBUG_ASSERT ((COND_COND (arg_node) != NULL), "Ncond without cond node!");
     COND_COND (arg_node) = TRAVdo (COND_COND (arg_node), arg_info);
 
     /* do stacking of current renaming status */
-    FOR_ALL_AVIS (DupTopSsastack, INFO_SSA_FUNDEF (arg_info));
+    FOR_ALL_AVIS (DupTopSsastack, INFO_FUNDEF (arg_info));
 
     /* traverse then */
     if (COND_THEN (arg_node) != NULL) {
@@ -1491,13 +1506,13 @@ SSATcond (node *arg_node, info *arg_info)
     }
 
     /* save to then for later merging */
-    FOR_ALL_AVIS (SaveTopSsastackThen, INFO_SSA_FUNDEF (arg_info));
+    FOR_ALL_AVIS (SaveTopSsastackThen, INFO_FUNDEF (arg_info));
 
     /* so some status restauration */
-    FOR_ALL_AVIS (PopSsastack, INFO_SSA_FUNDEF (arg_info));
+    FOR_ALL_AVIS (PopSsastack, INFO_FUNDEF (arg_info));
 
     /* do stacking of current renaming status */
-    FOR_ALL_AVIS (DupTopSsastack, INFO_SSA_FUNDEF (arg_info));
+    FOR_ALL_AVIS (DupTopSsastack, INFO_FUNDEF (arg_info));
 
     /* traverse else */
     if (COND_ELSE (arg_node) != NULL) {
@@ -1505,10 +1520,10 @@ SSATcond (node *arg_node, info *arg_info)
     }
 
     /* save to else for later merging */
-    FOR_ALL_AVIS (SaveTopSsastackElse, INFO_SSA_FUNDEF (arg_info));
+    FOR_ALL_AVIS (SaveTopSsastackElse, INFO_FUNDEF (arg_info));
 
     /* so some status restauration */
-    FOR_ALL_AVIS (PopSsastack, INFO_SSA_FUNDEF (arg_info));
+    FOR_ALL_AVIS (PopSsastack, INFO_FUNDEF (arg_info));
 
     DBUG_RETURN (arg_node);
 }
@@ -1517,7 +1532,7 @@ SSATcond (node *arg_node, info *arg_info)
  *
  * @fn node *SSATfuncond(node *arg_node, info *arg_info)
  *
- *   @brief set INFO_SSA_FUNCOND_FOUND and traverse all sons
+ *   @brief set INFO_FUNCOND_FOUND and traverse all sons
  *
  ******************************************************************************/
 node *
@@ -1525,7 +1540,7 @@ SSATfuncond (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSATfuncond");
 
-    INFO_SSA_FUNCOND_FOUND (arg_info) = TRUE;
+    INFO_FUNCOND_FOUND (arg_info) = TRUE;
 
     if (FUNCOND_IF (arg_node) != NULL) {
         FUNCOND_IF (arg_node) = TRAVdo (FUNCOND_IF (arg_node), arg_info);
@@ -1537,17 +1552,17 @@ SSATfuncond (node *arg_node, info *arg_info)
          * is found in the AVIS_SSATHEN node! Otherwise AVIS_SSASTACK_TOP can
          * be used as usual.
          */
-        INFO_SSA_RENAMING_MODE (arg_info)
-          = (INFO_SSA_CONDSTMT (arg_info) ? SSA_USE_THEN : SSA_USE_TOP);
+        INFO_RENAMING_MODE (arg_info)
+          = (INFO_CONDSTMT (arg_info) ? SSA_USE_THEN : SSA_USE_TOP);
         FUNCOND_THEN (arg_node) = TRAVdo (FUNCOND_THEN (arg_node), arg_info);
-        INFO_SSA_RENAMING_MODE (arg_info) = SSA_USE_TOP;
+        INFO_RENAMING_MODE (arg_info) = SSA_USE_TOP;
     }
 
     if (FUNCOND_ELSE (arg_node) != NULL) {
-        INFO_SSA_RENAMING_MODE (arg_info)
-          = (INFO_SSA_CONDSTMT (arg_info) ? SSA_USE_ELSE : SSA_USE_TOP);
+        INFO_RENAMING_MODE (arg_info)
+          = (INFO_CONDSTMT (arg_info) ? SSA_USE_ELSE : SSA_USE_TOP);
         FUNCOND_ELSE (arg_node) = TRAVdo (FUNCOND_ELSE (arg_node), arg_info);
-        INFO_SSA_RENAMING_MODE (arg_info) = SSA_USE_TOP;
+        INFO_RENAMING_MODE (arg_info) = SSA_USE_TOP;
     }
 
     DBUG_RETURN (arg_node);
@@ -1569,21 +1584,21 @@ SSATreturn (node *arg_node, info *arg_info)
      * check whether this function contains a conditional but does not contain
      * funconds yet. If this is the case, switch the traversal mode to
      * "GENERATE_FUNCOND". This will insert new funcond assignments into
-     * INFO_SSA_ASSIGN, but do no SSA conversion at all!
+     * INFO_ASSIGN, but do no SSA conversion at all!
      * On return, SSAassign will notice these insertions, traverse them
      * (including this return node again!) for SSA construction, and finally
      * insert them into the actual chain.
      */
-    if ((INFO_SSA_CONDSTMT (arg_info) != NULL) && !INFO_SSA_FUNCOND_FOUND (arg_info)) {
+    if ((INFO_CONDSTMT (arg_info) != NULL) && !INFO_FUNCOND_FOUND (arg_info)) {
 
-        INFO_SSA_GENERATE_FUNCOND (arg_info) = TRUE;
+        INFO_GENERATE_FUNCOND (arg_info) = TRUE;
         /**
          * Though a rare case, we may not have to generate funconds at all.
          * e.g., in void functions or if the return values do not depend
          * at all on vars defined in the branches.
          * To avoid non-termination in these cases, we set FUNCOND_FOUND!
          */
-        INFO_SSA_FUNCOND_FOUND (arg_info) = TRUE;
+        INFO_FUNCOND_FOUND (arg_info) = TRUE;
     }
 
     /* traverse exprs */
@@ -1591,7 +1606,7 @@ SSATreturn (node *arg_node, info *arg_info)
         RETURN_EXPRS (arg_node) = TRAVdo (RETURN_EXPRS (arg_node), arg_info);
     }
 
-    INFO_SSA_GENERATE_FUNCOND (arg_info) = FALSE;
+    INFO_GENERATE_FUNCOND (arg_info) = FALSE;
 
     DBUG_RETURN (arg_node);
 }
@@ -1640,13 +1655,13 @@ SSATids (node *arg_ids, info *arg_info)
         DBUG_PRINT ("SSA", ("first definition, no renaming: %s (" F_PTR ")",
                             AVIS_NAME (IDS_AVIS (arg_ids)), IDS_AVIS (arg_ids)));
 
-        AVIS_SSAASSIGN (IDS_AVIS (arg_ids)) = INFO_SSA_ASSIGN (arg_info);
+        AVIS_SSAASSIGN (IDS_AVIS (arg_ids)) = INFO_ASSIGN (arg_info);
 
     } else {
         /* redefinition - create new unique variable/vardec */
         new_vardec = SSATnewVardec (AVIS_DECL (IDS_AVIS (arg_ids)));
-        FUNDEF_VARDEC (INFO_SSA_FUNDEF (arg_info))
-          = TCappendVardec (FUNDEF_VARDEC (INFO_SSA_FUNDEF (arg_info)), new_vardec);
+        FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+          = TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)), new_vardec);
         DBUG_PRINT ("SSA", ("re-definition, renaming: %s (" F_PTR ") -> %s",
                             AVIS_NAME (IDS_AVIS (arg_ids)), IDS_AVIS (arg_ids),
                             AVIS_NAME (VARDEC_AVIS (new_vardec))));
@@ -1668,7 +1683,7 @@ SSATids (node *arg_ids, info *arg_info)
 
             AVIS_SSAUNDOFLAG (IDS_AVIS (arg_ids)) = TRUE;
         }
-        AVIS_SSAASSIGN (IDS_AVIS (arg_ids)) = INFO_SSA_ASSIGN (arg_info);
+        AVIS_SSAASSIGN (IDS_AVIS (arg_ids)) = INFO_ASSIGN (arg_info);
     }
 
     /* traverese next ids */
@@ -1704,13 +1719,13 @@ TreatIdAsLhs (node *arg_node, info *arg_info)
         DBUG_PRINT ("SSA", ("first definition, no renaming: %s (" F_PTR ")",
                             AVIS_NAME (ID_AVIS (arg_node)), ID_AVIS (arg_node)));
 
-        AVIS_SSAASSIGN (ID_AVIS (arg_node)) = INFO_SSA_ASSIGN (arg_info);
+        AVIS_SSAASSIGN (ID_AVIS (arg_node)) = INFO_ASSIGN (arg_info);
 
     } else {
         /* redefinition - create new unique variable/vardec */
         new_vardec = SSATnewVardec (AVIS_DECL (ID_AVIS (arg_node)));
-        FUNDEF_VARDEC (INFO_SSA_FUNDEF (arg_info))
-          = TCappendVardec (FUNDEF_VARDEC (INFO_SSA_FUNDEF (arg_info)), new_vardec);
+        FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+          = TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)), new_vardec);
         DBUG_PRINT ("SSA", ("re-definition, renaming: %s (" F_PTR ") -> %s",
                             AVIS_NAME (ID_AVIS (arg_node)), ID_AVIS (arg_node),
                             AVIS_NAME (VARDEC_AVIS (new_vardec))));
@@ -1731,7 +1746,7 @@ TreatIdAsLhs (node *arg_node, info *arg_info)
             || (AVIS_ISUNIQUE (ID_AVIS (arg_node)))) {
             AVIS_SSAUNDOFLAG (ID_AVIS (arg_node)) = TRUE;
         }
-        AVIS_SSAASSIGN (ID_AVIS (arg_node)) = INFO_SSA_ASSIGN (arg_info);
+        AVIS_SSAASSIGN (ID_AVIS (arg_node)) = INFO_ASSIGN (arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -1742,7 +1757,7 @@ TreatIdAsLhs (node *arg_node, info *arg_info)
  * @fn node *SSArightids(ids *arg_ids, info *arg_info)
  *
  *   @brief rename variable to actual ssa renaming counter. Depending on
- *          INFO_SSA_RENAMING_MODE, this is either AVIS_SSASTACK_TOP,
+ *          INFO_RENAMING_MODE, this is either AVIS_SSASTACK_TOP,
  *          AVIS_SSATHEN, or AVIS_SSAELSE.
  *
  ******************************************************************************/
@@ -1753,13 +1768,13 @@ TreatIdsAsRhs (node *arg_ids, info *arg_info)
 
     DBUG_ENTER ("TreatIdsAsRhs");
 
-    if (INFO_SSA_RENAMING_MODE (arg_info) == SSA_USE_TOP) {
+    if (INFO_RENAMING_MODE (arg_info) == SSA_USE_TOP) {
         new_avis = AVIS_SSASTACK_TOP (IDS_AVIS (arg_ids));
-    } else if (INFO_SSA_RENAMING_MODE (arg_info) == SSA_USE_THEN) {
+    } else if (INFO_RENAMING_MODE (arg_info) == SSA_USE_THEN) {
         new_avis = AVIS_SSATHEN (IDS_AVIS (arg_ids));
     } else {
-        DBUG_ASSERT ((INFO_SSA_RENAMING_MODE (arg_info) == SSA_USE_ELSE),
-                     "illegal value for INFO_SSA_RENAMING_MODE");
+        DBUG_ASSERT ((INFO_RENAMING_MODE (arg_info) == SSA_USE_ELSE),
+                     "illegal value for INFO_RENAMING_MODE");
         new_avis = AVIS_SSAELSE (IDS_AVIS (arg_ids));
     }
 
@@ -1791,7 +1806,7 @@ TreatIdsAsRhs (node *arg_ids, info *arg_info)
          * without taking scopes into account!). However, wrt. the actual scope
          * there is NO valid definition. Hence AVIS_SSASTACK_TOP is NULL.
          */
-        if (INFO_SSA_ALLOW_GOS (arg_info) == FALSE) {
+        if (INFO_ALLOW_GOS (arg_info) == FALSE) {
             CTIerrorLine (global.linenum, "Variable %s used without definition",
                           IDS_NAME (arg_ids));
         }
@@ -1853,8 +1868,8 @@ SSATdoTransform (node *syntax_tree)
 #endif
 
     arg_info = MakeInfo ();
-    INFO_SSA_SINGLEFUNDEF (arg_info) = SSA_TRAV_FUNDEFS;
-    INFO_SSA_ALLOW_GOS (arg_info) = FALSE;
+    INFO_SINGLEFUNDEF (arg_info) = SSA_TRAV_FUNDEFS;
+    INFO_ALLOW_GOS (arg_info) = FALSE;
 
     TRAVpush (TR_ssat);
     syntax_tree = TRAVdo (syntax_tree, arg_info);
@@ -1895,8 +1910,8 @@ SSATdoTransformAllowGOs (node *syntax_tree)
 #endif
 
     arg_info = MakeInfo ();
-    INFO_SSA_SINGLEFUNDEF (arg_info) = SSA_TRAV_FUNDEFS;
-    INFO_SSA_ALLOW_GOS (arg_info) = TRUE;
+    INFO_SINGLEFUNDEF (arg_info) = SSA_TRAV_FUNDEFS;
+    INFO_ALLOW_GOS (arg_info) = TRUE;
 
     TRAVpush (TR_ssat);
     syntax_tree = TRAVdo (syntax_tree, arg_info);
@@ -1937,7 +1952,7 @@ SSATdoTransformOneFunction (node *fundef)
 #endif
 
         arg_info = MakeInfo ();
-        INFO_SSA_SINGLEFUNDEF (arg_info) = SSA_TRAV_SPECIALS;
+        INFO_SINGLEFUNDEF (arg_info) = SSA_TRAV_SPECIALS;
 
         TRAVpush (TR_ssat);
         fundef = TRAVdo (fundef, arg_info);
@@ -1974,7 +1989,7 @@ SSATdoTransformOneFundef (node *fundef)
 #endif
 
     arg_info = MakeInfo ();
-    INFO_SSA_SINGLEFUNDEF (arg_info) = SSA_TRAV_NONE;
+    INFO_SINGLEFUNDEF (arg_info) = SSA_TRAV_NONE;
 
     TRAVpush (TR_ssat);
     fundef = TRAVdo (fundef, arg_info);
