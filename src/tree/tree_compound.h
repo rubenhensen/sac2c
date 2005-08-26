@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.200  2005/08/26 16:27:47  ktr
+ * some cleanup
+ *
  * Revision 3.199  2005/08/26 12:30:15  ktr
  * removed ID_SHAPE, ID_SHPSEG, IDS_SHAPE, IDS_SHPSEG
  *
@@ -368,31 +371,12 @@ extern int TCgetDim (types *type);
 extern simpletype TCgetBasetype (types *type);
 extern int TCgetBasetypeSize (types *type);
 extern int TCgetTypesLength (types *type);
-extern int TCcompareTypesImplementation (types *t1, types *t2);
 extern shpseg *TCtype2Shpseg (types *type, int *ret_dim);
 extern shape *TCtype2Shape (types *type);
 extern node *TCtype2Exprs (types *type);
 
-/******************************************************************************
- *
- * function:
- *   bool TCisBoxed( types *type)
- *   bool TCisArray( types *type)
- *   bool TCisUnique( types *type)
- *   bool TCisHidden( types *type)
- *   bool TCisNonUniqueHidden( types *type)
- *
- * description:
- *   These functions may be used to check for particular properties
- *   of a given data type.
- *
- ******************************************************************************/
-
-extern bool TCisBoxed (types *type);
-extern bool TCisArray (types *type);
 extern bool TCisUnique (types *type);
 extern bool TCisHidden (types *type);
-extern bool TCisNonUniqueHidden (types *type);
 
 /*--------------------------------------------------------------------------*/
 
@@ -1184,23 +1168,6 @@ extern node *TCnodeBehindCast (node *arg_node);
 extern node *TCmakeFlatArray (node *aelems);
 extern node *TCcreateZeroScalar (simpletype btype);
 extern node *TCcreateZeroVector (int length, simpletype btype);
-
-/******************************************************************************
- *
- * Function:
- *   bool TCisConstArray( node *array);
- *
- * Description:
- *   Returns number of constant elements if argument is an N_array and all
- *   its elements are N_num, N_char, N_float, N_double, N_bool or otherwise
- *   returns 0.
- *
- *   The parameter type specified the necessary type all elements have to
- *   be of (nodetype, e.g. N_num). If N_ok is given, the type is ignored.
- *
- ******************************************************************************/
-
-extern bool TCisConstArray (node *array);
 
 extern node *TCids2Exprs (node *ids_arg);
 extern node *TCids2ExprsNt (node *ids_arg);

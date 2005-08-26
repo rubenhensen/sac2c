@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.39  2005/08/26 16:28:05  ktr
+ * some cleanup
+ *
  * Revision 1.38  2005/08/26 12:41:36  ktr
  * COast2Constant now uses AKV type returned from NTCnewTypeCheckExpr
  *
@@ -828,6 +831,7 @@ COaST2Constant (node *n)
 bool
 COisConstant (node *n)
 {
+    ntype *atype;
     bool res;
 
     DBUG_ENTER ("COisConstant");
@@ -843,7 +847,9 @@ COisConstant (node *n)
             break;
 
         case N_array:
-            res = TCisConstArray (n);
+            atype = NTCnewTypeCheck_Expr (n);
+            res = TYisAKV (atype);
+            atype = TYfreeType (atype);
             break;
 
         case N_id:

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.141  2005/08/26 16:27:47  ktr
+ * some cleanup
+ *
  * Revision 3.140  2005/08/20 19:19:19  sah
  * IVE-rewrite: removed N_vinfo
  *
@@ -151,55 +154,6 @@
 #include "type_utils.h"
 #include "internal_lib.h"
 #include "namespaces.h"
-
-/*****************************************************************************/
-/**
- **  some ugly macros (better use modul CompareTree!), moved from
- **  tree_compound.h
- **/
-
-/*
- *  macro name    : CMP_TYPE_USER
- *  arg types     : 1) types*
- *                  2) types*
- *  result type   : int
- *  description   : compares two user-defined types (name and module)
- *                  Names and module names must be equal.
- *  remarks       : result: 1 - equal, 0 - not equal
- */
-
-#define CMP_TYPE_USER(a, b)                                                              \
-    ((!ILIBstringCompare (TYPES_NAME (a), TYPES_NAME (b)))                               \
-     && (!ILIBstringCompare (STR_OR_EMPTY (TYPES_MOD (a)),                               \
-                             STR_OR_EMPTY (TYPES_MOD (b)))))
-
-/*
- *  macro name    : CMP_TYPEDEF(a,b)
- *  arg types     : 1) node*  (N_typedef)
- *                  2) node*  (N_typedef)
- *  result type   : int
- *  description   : compares two typedef nodes (name and module)
- *                  result: 1 - equal, 0 - not equal
- */
-
-#define CMP_TYPEDEF(a, b)                                                                \
-    ((!ILIBstringCompare (TYPEDEF_NAME (a), TYPEDEF_NAME (b)))                           \
-     && (!NSequals (TYPEDEF_NS (a), TYPEDEF_NS (b))))
-
-/*
- *  macro name    : CMP_FUN_ID(a,b)
- *  arg types     : 1) node*  (N_objdef)
- *                  2) node*  (N_objdef)
- *  result type   : int
- *  description   : compares two fundef nodes (name and module only)
- *                  result: 1 - equal, 0 - not equal
- */
-
-#define CMP_FUN_ID(a, b)                                                                 \
-    ((!ILIBstringCompare (FUNDEF_NAME (a), FUNDEF_NAME (b)))                             \
-     && (!NSequals (FUNDEF_NS (a), FUNDEF_NS (b))))
-
-/*****************************************************************************/
 
 /*
  * macro template for append functions
@@ -686,79 +640,6 @@ TCgetBasetypeSize (types *type)
 /******************************************************************************
  *
  * Function:
- *   int TCcompareTypesImplementation( types *t1, types *t2)
- *
- * Description:
- *   compares two types for having the equal implementation types (resolving
- *   user defined types) - that means double[2] and Complex are equal!
- *
- *   return value:
- *     (t1 == t2)   ->   0
- *     (t1 <  t2)   ->  -1
- *     (t1 >  t2)   ->   1
- *     (t1 != t2)   ->   2
- *
- ******************************************************************************/
-
-int
-TCcompareTypesImplementation (types *t1, types *t2)
-{
-    int res;
-    shpseg *shpseg1, *shpseg2;
-    int shpdim1, shpdim2;
-    int dim;
-
-    DBUG_ENTER ("TCcompareTypesImplementation");
-
-    DBUG_ASSERT (((t1 != NULL) && (t2 != NULL)),
-                 "TCcompareTypesImplementation() called with NULL type");
-
-    if (TCgetBasetype (t1) == TCgetBasetype (t2)) {
-        shpdim1 = TCgetShapeDim (t1);
-        shpdim2 = TCgetShapeDim (t2);
-
-        if (shpdim1 == shpdim2) {
-            if (KNOWN_SHAPE (shpdim1)) { /* -> KNOWN_SHAPE( shpdim2) */
-                shpseg1 = TCtype2Shpseg (t1, &dim);
-                shpseg2 = TCtype2Shpseg (t2, NULL);
-
-                res = (TCequalShpseg (dim, shpseg1, shpseg2)) ? 0 : 2;
-
-                if (shpseg1 != NULL) {
-                    shpseg1 = FREEfreeShpseg (shpseg1);
-                }
-                if (shpseg2 != NULL) {
-                    shpseg2 = FREEfreeShpseg (shpseg2);
-                }
-            } else {
-                res = 0;
-            }
-        } else if (shpdim1 == ARRAY_OR_SCALAR) {
-            res = 1;
-        } else if (shpdim2 == ARRAY_OR_SCALAR) {
-            res = -1;
-        } else if (shpdim1 == UNKNOWN_SHAPE) {
-            res = (shpdim2 == SCALAR) ? 2 : 1;
-        } else if (shpdim2 == UNKNOWN_SHAPE) {
-            res = (shpdim1 == SCALAR) ? 2 : -1;
-        } else if (shpdim1 < KNOWN_DIM_OFFSET) {
-            res = (DIM_NO_OFFSET (shpdim1) != DIM_NO_OFFSET (shpdim2)) ? 2 : 1;
-        } else if (shpdim2 < KNOWN_DIM_OFFSET) {
-            res = (DIM_NO_OFFSET (shpdim1) != DIM_NO_OFFSET (shpdim2)) ? 2 : -1;
-        } else {
-            DBUG_ASSERT ((0), "illegal shape constellation found!");
-            res = 0; /* just to please gcc */
-        }
-    } else {
-        res = 2;
-    }
-
-    DBUG_RETURN (res);
-}
-
-/******************************************************************************
- *
- * Function:
  *   int GetTypesLength( types *type)
  *
  * Description:
@@ -921,48 +802,6 @@ TCtype2Exprs (types *type)
     DBUG_RETURN (ret_node);
 }
 
-/******************************************************************************
- *
- * function:
- *   bool IsArray( types *type)
- *   bool IsHidden( types *type)
- *   bool IsUnique( types *type)
- *   bool IsNonUniqueHidden( types *type)
- *   bool IsBoxed( types *type)
- *
- * description:
- *   These functions may be used to check for particular properties
- *   of a given data type.
- *
- ******************************************************************************/
-
-/*
- * TCisArray := Is not a (static) scalar
- */
-bool
-TCisArray (types *type)
-{
-    node *tdef;
-    bool ret = FALSE;
-
-    DBUG_ENTER ("IsArray");
-
-    if (TYPES_DIM (type) != SCALAR) {
-        ret = TRUE;
-    } else if (TYPES_BASETYPE (type) == T_user) {
-        tdef = TYPES_TDEF (type);
-        DBUG_ASSERT ((tdef != NULL), "Failed attempt to look up typedef");
-
-#if 0 /* TODO - macro for old types */
-    if (TYPEDEF_DIM( tdef) != SCALAR) {
-      ret = TRUE;
-    }
-#endif
-    }
-
-    DBUG_RETURN (ret);
-}
-
 bool
 TCisHidden (types *type)
 {
@@ -999,30 +838,6 @@ TCisUnique (types *type)
     if (TYPES_BASETYPE (type) == T_user) {
         ret = TUisUniqueUserType (TYoldType2Type (type));
     }
-
-    DBUG_RETURN (ret);
-}
-
-bool
-TCisNonUniqueHidden (types *type)
-{
-    bool ret;
-
-    DBUG_ENTER ("IsNonUniqueHidden");
-
-    ret = (TCisHidden (type) && (!TCisUnique (type)));
-
-    DBUG_RETURN (ret);
-}
-
-bool
-TCisBoxed (types *type)
-{
-    bool ret;
-
-    DBUG_ENTER ("IsBoxed");
-
-    ret = (TCisHidden (type) || TCisArray (type));
 
     DBUG_RETURN (ret);
 }
@@ -2455,74 +2270,6 @@ TCcreateZeroVector (int length, simpletype btype)
     ret_node = TCmakeFlatArray (exprs_node);
 
     DBUG_RETURN (ret_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   bool TCisConstArray(node *array)
- *
- * description:
- *   Returns 1 if argument is an constant array and 0 otherwise.
- *
- * CAUTION:
- *   In this situation, 'constant array' means that all array elements are
- *   constant, irrespectively whether there exists an constant representation
- *   (ARRAY_ISCONST, ARRAY_CONSTVEC) or not!!!
- *
- ******************************************************************************/
-
-bool
-TCisConstArray (node *array)
-{
-    ntype *atype;
-    nodetype type;
-    bool isconst = FALSE;
-
-    DBUG_ENTER ("TCisConstArray");
-
-    if (array != NULL) {
-        switch (NODE_TYPE (array)) {
-        case N_array:
-            atype = NTCnewTypeCheck_Expr (array);
-            isconst = TYisAKV (atype);
-            atype = TYfreeType (atype);
-
-            if (!isconst) {
-                /*
-                 * Although ARRAY_ISCONST is false, the array still may be constant:
-                 *   1.) For the time being ISCONST is false for all non-int-arrays.
-                 *   2.) ISCONST may be inconsistent to this respect.
-                 *       (E.g. after some optimizations new constant arrays may occur.)
-                 */
-                array = ARRAY_AELEMS (array);
-                isconst = TRUE;
-                /*
-                 * remark: array may be NULL (empty array) -> constant
-                 */
-                while (array != NULL) {
-                    type = NODE_TYPE (EXPRS_EXPR (array));
-                    if ((type == N_num) || (type == N_char) || (type == N_bool)
-                        || (type == N_float) || (type == N_double)) {
-                        array = EXPRS_NEXT (array);
-                    } else {
-                        isconst = FALSE;
-                        break;
-                    }
-                }
-            }
-            break;
-        case N_id:
-            isconst = TYisAKV (ID_NTYPE (array));
-            break;
-        default:
-            isconst = FALSE;
-        }
-    } else {
-        isconst = FALSE;
-    }
-
-    DBUG_RETURN (isconst);
 }
 
 /*****************************************************************************
