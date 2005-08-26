@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2005/08/26 12:29:13  ktr
+ * major brushing,seams to work
+ *
  * Revision 1.3  2004/11/22 17:29:51  sbs
  * SacDevCamp04
  *
@@ -19,6 +22,8 @@
 #define _SAC_WLF_H_
 
 #include "types.h"
+
+extern node *WLFdoWLF (node *arg_node);
 
 extern node *WLFfundef (node *arg_node, info *arg_info);
 extern node *WLFassign (node *arg_node, info *arg_info);

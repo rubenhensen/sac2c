@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.25  2005/08/26 12:29:13  ktr
+ * major brushing,seams to work
+ *
  * Revision 1.24  2005/08/19 13:08:30  ktr
  * removed SSAINDEX macro
  *
@@ -136,8 +139,6 @@
 
  ******************************************************************************/
 
-#define NEW_INFO
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -179,16 +180,16 @@ struct INFO {
 /*
  * INFO macros
  */
-#define INFO_SSAWLF_NEXT(n) (n->next)
-#define INFO_SSAWLF_SUBST(n) (n->subst)
-#define INFO_SSAWLF_WL(n) (n->wl)
-#define INFO_SSAWLF_NEW_ID(n) (n->new_id)
-#define INFO_SSAWLF_ASSIGN(n) (n->assign)
-#define INFO_SSAWLF_FUNDEF(n) (n->fundef)
-#define INFO_SSAWLF_ID(n) (n->id)
-#define INFO_SSAWLF_NCA(n) (n->nca)
-#define INFO_SSAWLF_FLAG(n) (n->flag)
-#define INFO_SSAWLF_MYSTERY(n) (n->mystery)
+#define INFO_NEXT(n) (n->next)
+#define INFO_SUBST(n) (n->subst)
+#define INFO_WL(n) (n->wl)
+#define INFO_NEW_ID(n) (n->new_id)
+#define INFO_ASSIGN(n) (n->assign)
+#define INFO_FUNDEF(n) (n->fundef)
+#define INFO_ID(n) (n->id)
+#define INFO_NCA(n) (n->nca)
+#define INFO_FLAG(n) (n->flag)
+#define INFO_MYSTERY(n) (n->mystery)
 
 /*
  * INFO functions
@@ -202,16 +203,16 @@ MakeInfo ()
 
     result = ILIBmalloc (sizeof (info));
 
-    INFO_SSAWLF_NEXT (result) = NULL;
-    INFO_SSAWLF_SUBST (result) = NULL;
-    INFO_SSAWLF_WL (result) = NULL;
-    INFO_SSAWLF_NEW_ID (result) = NULL;
-    INFO_SSAWLF_ASSIGN (result) = NULL;
-    INFO_SSAWLF_FUNDEF (result) = NULL;
-    INFO_SSAWLF_ID (result) = NULL;
-    INFO_SSAWLF_NCA (result) = NULL;
-    INFO_SSAWLF_FLAG (result) = 0;
-    INFO_SSAWLF_MYSTERY (result) = 0;
+    INFO_NEXT (result) = NULL;
+    INFO_SUBST (result) = NULL;
+    INFO_WL (result) = NULL;
+    INFO_NEW_ID (result) = NULL;
+    INFO_ASSIGN (result) = NULL;
+    INFO_FUNDEF (result) = NULL;
+    INFO_ID (result) = NULL;
+    INFO_NCA (result) = NULL;
+    INFO_FLAG (result) = 0;
+    INFO_MYSTERY (result) = 0;
 
     DBUG_RETURN (result);
 }
@@ -620,7 +621,8 @@ LinearTransformationsScalar (intern_gen *ig, index_info *transformations, int di
 /******************************************************************************
  *
  * function:
- *   void LinearTransformationsVector(intern_gen *ig, index_info *transformations)
+ *   void LinearTransformationsVector(intern_gen *ig,
+ *                                    index_info *transformations)
  *
  * description:
  *   realizes transformations on the given list of intern gens.
@@ -775,7 +777,7 @@ FinalTransformations (intern_gen *substig, index_info *transformations, int targ
  *   node *CreateCode(node *target, node *subst)
  *
  * description:
- *   substitutes the code block subst into target. INFO_SSAWLF_ID points
+ *   substitutes the code block subst into target. INFO_ID points
  *   to the N_id node in the target WL which shall be replaced.
  *   New vardecs and assignments are introduced and an N_Ncode node is returned.
  *   Most of the work is done in the usual traversal steps (with mode
@@ -799,14 +801,14 @@ CreateCode (node *target, node *subst)
     /* create new arg_info to avoid modifications of the old one and copy
        all relevant information */
     new_arg_info = MakeInfo ();
-    INFO_SSAWLF_FUNDEF (new_arg_info) = INFO_SSAWLF_FUNDEF (ref_mode_arg_info);
-    INFO_SSAWLF_ID (new_arg_info) = INFO_SSAWLF_ID (ref_mode_arg_info);
-    INFO_SSAWLF_NCA (new_arg_info) = INFO_SSAWLF_NCA (ref_mode_arg_info);
-    INFO_SSAWLF_SUBST (new_arg_info) = subst;
-    INFO_SSAWLF_NEW_ID (new_arg_info) = NULL;
+    INFO_FUNDEF (new_arg_info) = INFO_FUNDEF (ref_mode_arg_info);
+    INFO_ID (new_arg_info) = INFO_ID (ref_mode_arg_info);
+    INFO_NCA (new_arg_info) = INFO_NCA (ref_mode_arg_info);
+    INFO_SUBST (new_arg_info) = subst;
+    INFO_NEW_ID (new_arg_info) = NULL;
 
     /* WHY is this copied? */
-    INFO_SSAWLF_MYSTERY (new_arg_info) = INFO_SSAWLF_MYSTERY (ref_mode_arg_info);
+    INFO_MYSTERY (new_arg_info) = INFO_MYSTERY (ref_mode_arg_info);
 
     /*
      * DUPdoDupTree() shall fill ID_WL of Id nodes with special information.
@@ -1158,6 +1160,7 @@ TransformationRangeCheck (index_info *transformations, node *substwln,
 {
     int result, dim, i;
     node *tmpn;
+    shape *s;
     intern_gen *whole_ig;
 
     DBUG_ENTER ("TransformationRangeCheck");
@@ -1176,9 +1179,10 @@ TransformationRangeCheck (index_info *transformations, node *substwln,
         break;
 
     case N_modarray:
+        s = TYgetShape (ID_NTYPE (MODARRAY_ARRAY (WITH_WITHOP (substwln))));
         for (i = 0; i < dim; i++) {
             whole_ig->l[i] = 0;
-            whole_ig->u[i] = ID_SHAPE (MODARRAY_ARRAY (WITH_WITHOP (substwln)), i);
+            whole_ig->u[i] = SHgetExtent (s, i);
         }
         break;
 
@@ -1378,9 +1382,8 @@ CheckForSuperfluousCodes (node *wln)
 static node *
 Modarray2Genarray (node *wln, node *substwln)
 {
-    node *shape, *eltn;
-    types *type;
-    int dimensions, i;
+    node *shparray;
+    shape *vecshape, *arrayshape, *prefix;
 
     DBUG_ENTER ("Modarray2Genarray");
 
@@ -1393,19 +1396,17 @@ Modarray2Genarray (node *wln, node *substwln)
     (WITH_REFERENCES_FOLDED (substwln))++; /* removed another reference */
 
     /* compute shape of WL for NWITHOP_SHAPE() */
-    type = ID_TYPE (MODARRAY_ARRAY (WITH_WITHOP (wln)));
-    dimensions = IDS_SHAPE (WITH_VEC (wln), 0); /* TODO IDS_SHAPE contains shpseg */
+    vecshape = TYgetShape (IDS_NTYPE (WITH_VEC (wln)));
+    arrayshape = TYgetShape (ID_NTYPE (MODARRAY_ARRAY (WITH_WITHOP (wln))));
 
-    eltn = NULL;
-    for (i = dimensions - 1; i >= 0; i--) {
-        eltn = TBmakeExprs (TBmakeNum (TYPES_SHAPE (type, i)), eltn);
-    }
+    prefix = SHtakeFromShape (SHgetUnrLen (vecshape), arrayshape);
+    shparray = SHshape2Array (prefix);
 
-    shape = TCmakeFlatArray (eltn);
+    prefix = SHfreeShape (prefix);
 
     /* delete old withop and create new one */
     FREEdoFreeTree (WITH_WITHOP (wln));
-    WITH_WITHOP (wln) = TBmakeGenarray (shape, NULL);
+    WITH_WITHOP (wln) = TBmakeGenarray (shparray, NULL);
 
     DBUG_RETURN (wln);
 }
@@ -1431,8 +1432,8 @@ WLFfundef (node *arg_node, info *arg_info)
     DBUG_ENTER ("WLFfundef");
 
     DBUG_PRINT ("WLF", ("entering %s for WLF", FUNDEF_NAME (arg_node)));
-    INFO_SSAWLF_WL (arg_info) = NULL;
-    INFO_SSAWLF_FUNDEF (arg_info) = arg_node;
+    INFO_WL (arg_info) = NULL;
+    INFO_FUNDEF (arg_info) = arg_node;
 
     wlf_mode = wlfm_search_WL;
     if (FUNDEF_BODY (arg_node)) {
@@ -1458,12 +1459,10 @@ node *
 WLFassign (node *arg_node, info *arg_info)
 {
     node *tmpn, *last_assign, *substn;
-    ntype *idt;
-    int i;
 
     DBUG_ENTER ("WLFassign");
 
-    INFO_SSAWLF_ASSIGN (arg_info) = arg_node;
+    INFO_ASSIGN (arg_info) = arg_node;
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
     switch (wlf_mode) {
@@ -1476,58 +1475,17 @@ WLFassign (node *arg_node, info *arg_info)
                to N_assign nodes and new code is inserted there. */
             TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
         }
-
-        /* now it's the time when we run the once traversed path through the
-           syntax tree back.
-           We apply a speed-optimization here by removing WLs which - after WLF -
-           are not referenced anymore. DCR could remove the WLs later, but we
-           hope that the mem requirement in GenerateMasks will go down dramatically.
-           */
-        if (global.optimize.dodcr) {
-            tmpn = ASSIGN_INSTR (arg_node);
-            if ((N_let == NODE_TYPE (tmpn))
-                && !(TUisArrayOfUser (AVIS_TYPE (IDS_AVIS (LET_IDS (tmpn)))))) {
-                if (N_with == NODE_TYPE (LET_EXPR (tmpn))
-                    && WITH_REFERENCED (LET_EXPR (tmpn)) > 0
-                    && WITH_REFERENCED (LET_EXPR (tmpn))
-                         == WITH_REFERENCES_FOLDED (LET_EXPR (tmpn))) {
-                    LET_EXPR (tmpn) = FREEdoFreeTree (LET_EXPR (tmpn));
-                    /* create genarray([..],0) and replace the WL. This does not change
-                       the program symantically because the WL is not referenced
-                       anymore.*/
-                    idt = AVIS_TYPE (IDS_AVIS (LET_IDS (tmpn)));
-                    tmpn = NULL;
-                    for (i = TYgetDim (idt); i > 0; i--)
-                        tmpn = TBmakeExprs (TBmakeNum (
-                                              TYPES_SHAPE (TYtype2OldType (idt), i - 1)),
-                                            tmpn); /* Array elements */
-                    tmpn = TCmakeFlatArray (tmpn); /* N_Array */
-                    /*
-                     * TODO: F_genarray is not implemented!
-                     *       A withloop must be used!
-                     */
-                    tmpn = TBmakePrf (F_genarray, /* prf N_genarray */
-                                      TBmakeExprs (tmpn,
-                                                   TBmakeExprs (TCcreateZeroScalar (
-                                                                  TYgetSimpleType (
-                                                                    TYgetScalar (idt))),
-                                                                NULL)));
-                    LET_EXPR (ASSIGN_INSTR (arg_node)) = tmpn;
-                }
-            }
-        }
-
         break;
 
     case wlfm_replace:
-        if (INFO_SSAWLF_NEW_ID (arg_info)) {
+        if (INFO_NEW_ID (arg_info)) {
             /* paste the new code (subst WL code) into the assign chain (target WL
-               code). The current assign node is appended to the new INFO_SSAWLF_SUBST
+               code). The current assign node is appended to the new INFO_SUBST
                chain. Therefor, reuse the current assign node because the
                previous assign node (which cannot be reached from here) points
                to it. */
 
-            substn = INFO_SSAWLF_SUBST (arg_info);
+            substn = INFO_SUBST (arg_info);
             /* ist there something to insert? */
             if (substn) {
                 last_assign
@@ -1551,9 +1509,9 @@ WLFassign (node *arg_node, info *arg_info)
 
             /* transform sel(.,array) into Id. */
             tmpn = ASSIGN_INSTR (tmpn);
-            LET_EXPR (tmpn) = FREEdoFreeTree (LET_EXPR (tmpn));
-            LET_EXPR (tmpn) = INFO_SSAWLF_NEW_ID (arg_info);
-            INFO_SSAWLF_NEW_ID (arg_info) = NULL;
+            LET_EXPR (tmpn) = FREEdoFreeNode (LET_EXPR (tmpn));
+            LET_EXPR (tmpn) = INFO_NEW_ID (arg_info);
+            INFO_NEW_ID (arg_info) = NULL;
         } else {
             if (ASSIGN_NEXT (arg_node)) {
                 ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
@@ -1598,15 +1556,14 @@ WLFid (node *arg_node, info *arg_info)
     case wlfm_search_WL:
         /* check if we want to fold this Id.
            If no, clear ID_WL. This is the sign for the following phases to fold.
-           If yes, set INFO_SSAWLF_FLAG. This is only a speed-up flag. If it is 0,
+           If yes, set INFO_FLAG. This is only a speed-up flag. If it is 0,
            we do not enter the wlfm_search_ref phase.
            We used ID_WL in case (1) here (see header of file) */
-        if (ID_WL (arg_node)) { /* a WL is referenced (this is an array Id), */
-            if (INFO_SSAWLF_WL (arg_info) && /* inside WL, */
-                ASSIGN_INDEX (INFO_SSAWLF_ASSIGN (arg_info))
-                && /* valid index transformation */
-                FoldDecision (INFO_SSAWLF_WL (arg_info), ID_WL (arg_node))) {
-                INFO_SSAWLF_FLAG (arg_info) = 1;
+        if (ID_WL (arg_node)) {       /* a WL is referenced (this is an array Id), */
+            if (INFO_WL (arg_info) && /* inside WL, */
+                ASSIGN_INDEX (INFO_ASSIGN (arg_info)) && /* valid index transformation */
+                FoldDecision (INFO_WL (arg_info), ID_WL (arg_node))) {
+                INFO_FLAG (arg_info) = 1;
             } else {
                 ID_WL (arg_node) = NULL;
             }
@@ -1619,15 +1576,15 @@ WLFid (node *arg_node, info *arg_info)
 
     case wlfm_replace:
         /* This ID_WL is used in case (2) here (see header of file) */
-        if (ID_WL (arg_node) == INFO_SSAWLF_ID (arg_info)) {
+        if (ID_WL (arg_node) == INFO_ID (arg_info)) {
             /* this is the Id which has to be replaced. */
-            /* First store the C_EXPR in INFO_SSAWLF_NEW_ID. Usage: see WLFassign.
+            /* First store the C_EXPR in INFO_NEW_ID. Usage: see WLFassign.
                It might happen that this C_EXPR in the substn will be renamed when
                loops surround the WL. Then we have to rename the C_EXPR, too. */
-            coden = INFO_SSAWLF_SUBST (arg_info);
+            coden = INFO_SUBST (arg_info);
 
             /* keep original name */
-            INFO_SSAWLF_NEW_ID (arg_info) = DUPdoDupTree (CODE_CEXPR (coden));
+            INFO_NEW_ID (arg_info) = DUPdoDupTree (CODE_CEXPR (coden));
 
             /* Create substitution code. */
             if (N_empty == NODE_TYPE (CODE_CBLOCK_INSTR (coden))) {
@@ -1647,10 +1604,10 @@ WLFid (node *arg_node, info *arg_info)
                Remember that iv,i,j,k all are temporary variables, inserted
                in flatten. No name clashes can happen. */
             subst_header = NULL;
-            vectorn = PRF_ARG1 (LET_EXPR (ASSIGN_INSTR (INFO_SSAWLF_ASSIGN (arg_info))));
+            vectorn = PRF_ARG1 (LET_EXPR (ASSIGN_INSTR (INFO_ASSIGN (arg_info))));
             count = 0;
             /* This ID_WL is used in case (1) here (see header of file) */
-            subst_wl_partn = WITH_PART (ASSIGN_RHS (ID_WL (INFO_SSAWLF_ID (arg_info))));
+            subst_wl_partn = WITH_PART (ASSIGN_RHS (ID_WL (INFO_ID (arg_info))));
             subst_wl_ids = PART_IDS (subst_wl_partn);
             while (subst_wl_ids) {
                 /* Here we use masks which have been generated before WLI. These masks
@@ -1687,9 +1644,9 @@ WLFid (node *arg_node, info *arg_info)
             /* trav subst code with wlfm_rename to solve name clashes. */
             if (substn) {
                 wlf_mode = wlfm_rename;
-                old_arg_info_assign = INFO_SSAWLF_ASSIGN (arg_info); /* save arg_info */
+                old_arg_info_assign = INFO_ASSIGN (arg_info); /* save arg_info */
                 substn = TRAVdo (substn, arg_info);
-                INFO_SSAWLF_ASSIGN (arg_info) = old_arg_info_assign;
+                INFO_ASSIGN (arg_info) = old_arg_info_assign;
                 wlf_mode = wlfm_replace;
             }
 
@@ -1698,13 +1655,13 @@ WLFid (node *arg_node, info *arg_info)
                new subst assign chain here. WLFassign uses this information to
                melt both chains. */
             if (subst_header) {
-                INFO_SSAWLF_SUBST (arg_info) = subst_header;
+                INFO_SUBST (arg_info) = subst_header;
                 while (ASSIGN_NEXT (subst_header)) {
                     subst_header = ASSIGN_NEXT (subst_header);
                 }
                 ASSIGN_NEXT (subst_header) = substn;
             } else {
-                INFO_SSAWLF_SUBST (arg_info) = substn;
+                INFO_SUBST (arg_info) = substn;
             }
         }
         break;
@@ -1755,16 +1712,16 @@ WLFlet (node *arg_node, info *arg_info)
 
             /* These assignments are only done to transfer information
                to CreateCode (wlfm_replace) */
-            INFO_SSAWLF_ID (arg_info) = idn;
-            INFO_SSAWLF_NCA (arg_info) = ID_WL (idn);
+            INFO_ID (arg_info) = idn;
+            INFO_NCA (arg_info) = ID_WL (idn);
 
             ref_mode_arg_info = arg_info; /* needed in CreateCode() */
             substwln = LET_EXPR (ASSIGN_INSTR (ID_WL (idn)));
-            targetwln = INFO_SSAWLF_WL (arg_info);
+            targetwln = INFO_WL (arg_info);
 
             /* We just traversed the original code in the wlfm_search_ref phase, so
                ASSIGN_INDEX provides the correct index_info.*/
-            transformation = ASSIGN_INDEX (INFO_SSAWLF_ASSIGN (arg_info));
+            transformation = ASSIGN_INDEX (INFO_ASSIGN (arg_info));
 
             DBUG_PRINT ("WLF", ("folding array %s in line %d now...", ID_NAME (idn),
                                 NODE_LINE (arg_node)));
@@ -1775,8 +1732,8 @@ WLFlet (node *arg_node, info *arg_info)
             (WITH_REFERENCES_FOLDED (substwln))++;
 
             /* unused here */
-            INFO_SSAWLF_ID (arg_info) = NULL;
-            INFO_SSAWLF_NCA (arg_info) = NULL;
+            INFO_ID (arg_info) = NULL;
+            INFO_NCA (arg_info) = NULL;
         }
 
         break;
@@ -1813,12 +1770,12 @@ WLFwith (node *arg_node, info *arg_info)
         /* inside the body of this WL we may find another WL. So we better
          save the old arg_info information. */
         tmpi = MakeInfo ();
-        INFO_SSAWLF_FUNDEF (tmpi) = INFO_SSAWLF_FUNDEF (arg_info);
-        INFO_SSAWLF_ASSIGN (tmpi) = INFO_SSAWLF_ASSIGN (arg_info);
-        INFO_SSAWLF_NEXT (tmpi) = arg_info;
+        INFO_FUNDEF (tmpi) = INFO_FUNDEF (arg_info);
+        INFO_ASSIGN (tmpi) = INFO_ASSIGN (arg_info);
+        INFO_NEXT (tmpi) = arg_info;
         arg_info = tmpi;
 
-        INFO_SSAWLF_WL (arg_info) = arg_node; /* store the current node for later */
+        INFO_WL (arg_info) = arg_node; /* store the current node for later */
 
         /* if WO_modarray, save referenced WL to transform modarray into
            genarray later. */
@@ -1831,11 +1788,13 @@ WLFwith (node *arg_node, info *arg_info)
            1. traverse into bodies to find WL within and fold them first
            2. and then try to fold references to other WLs.
            */
-        INFO_SSAWLF_FLAG (arg_info) = 0;
+        INFO_FLAG (arg_info) = 0;
         DBUG_PRINT ("WLF", ("traversing body of WL in line %d", NODE_LINE (arg_node)));
         arg_node = TRAVcont (arg_node, arg_info);
 
-        if (INFO_SSAWLF_FLAG (arg_info)) {
+        if (INFO_FLAG (arg_info)) {
+            int dim;
+
             /* traverse bodies of this WL again and fold now.
                Do not traverse WithOp (Id would confuse us). */
             wlf_mode = wlfm_search_ref; /* we do not need to save arg_info here */
@@ -1843,10 +1802,9 @@ WLFwith (node *arg_node, info *arg_info)
             all_new_ig = NULL;
             new_codes = NULL;
 
-            intersect_grids_ot
-              = ILIBmalloc (sizeof (int) * IDS_SHAPE (WITH_VEC (arg_node), 0));
-            intersect_grids_os
-              = ILIBmalloc (sizeof (int) * IDS_SHAPE (WITH_VEC (arg_node), 0));
+            dim = SHgetUnrLen (TYgetShape (IDS_NTYPE (WITH_VEC (arg_node))));
+            intersect_grids_ot = ILIBmalloc (sizeof (int) * dim);
+            intersect_grids_os = ILIBmalloc (sizeof (int) * dim);
 
             DBUG_PRINT ("WLF", ("=> found something to fold in WL in line %d",
                                 NODE_LINE (arg_node)));
@@ -1892,7 +1850,7 @@ WLFwith (node *arg_node, info *arg_info)
 
         /* restore arg_info */
         tmpi = arg_info;
-        arg_info = INFO_SSAWLF_NEXT (arg_info);
+        arg_info = INFO_NEXT (arg_info);
         tmpi = FreeInfo (tmpi);
         break;
 
@@ -1943,7 +1901,7 @@ WLFcode (node *arg_node, info *arg_info)
         /* create generator list. Copy all generators of the target-WL
            to this list which point to the current N_Ncode node. Don't use
            the traversal mechanism because it's slow. */
-        new_ig = WLFtree2InternGen (INFO_SSAWLF_WL (arg_info), arg_node);
+        new_ig = WLFtree2InternGen (INFO_WL (arg_info), arg_node);
 
         /* traverse Code, create new_ig, fold. */
         CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
@@ -1969,6 +1927,36 @@ WLFcode (node *arg_node, info *arg_info)
     if (CODE_NEXT (arg_node) != NULL) {
         CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
     }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *WLFdoWLF( node *arg_node)
+ *
+ *****************************************************************************/
+node *
+WLFdoWLF (node *arg_node)
+{
+    info *info;
+
+    DBUG_ENTER ("WLFdoWLF");
+
+    info = MakeInfo ();
+
+    DBUG_PRINT ("OPT", ("WLF"));
+    DBUG_PRINT ("OPTMEM",
+                ("mem currently allocated: %d bytes", global.current_allocated_mem));
+
+    TRAVpush (TR_wlf);
+    arg_node = TRAVdo (arg_node, info);
+    TRAVpop ();
+
+    DBUG_PRINT ("OPTMEM",
+                ("mem currently allocated: %d bytes", global.current_allocated_mem));
+
+    info = FreeInfo (info);
 
     DBUG_RETURN (arg_node);
 }

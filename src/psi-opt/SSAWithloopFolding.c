@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.27  2005/08/26 12:29:13  ktr
+ * major brushing,seams to work
+ *
  * Revision 1.26  2005/08/19 13:08:30  ktr
  * removed SSAINDEX macro
  *
@@ -145,8 +148,9 @@
 #include "ssa.h"
 #include "SSAWithloopFolding.h"
 #include "SSAWLI.h"
-#include "SSAWLT.h"
+#include "SSAWLF.h"
 #include "new_types.h"
+#include "shape.h"
 
 /******************************************************************************
  *
@@ -343,16 +347,19 @@ WLFlocateIndexVar (node *idn, node *wln)
     wln = PART_WITHID (WITH_PART (wln));
     _ids = WITHID_VEC (wln);
 
-    if (!strcmp (IDS_NAME (_ids), ID_NAME (idn)))
+    if (IDS_AVIS (_ids) == ID_AVIS (idn)) {
         result = -1;
-
-    i = 1;
-    _ids = WITHID_IDS (wln);
-    while (_ids && !result) {
-        if (!strcmp (IDS_NAME (_ids), ID_NAME (idn)))
-            result = i;
-        i++;
-        _ids = IDS_NEXT (_ids);
+    } else {
+        i = 1;
+        _ids = WITHID_IDS (wln);
+        while (_ids != NULL) {
+            if (IDS_AVIS (_ids) == ID_AVIS (idn)) {
+                result = i;
+                break;
+            }
+            i++;
+            _ids = IDS_NEXT (_ids);
+        }
     }
 
     DBUG_RETURN (result);
@@ -575,9 +582,8 @@ WLFarrayST2ArrayInt (node *arrayn, int **iarray, int shape)
     } else /* (NODE_TYPE(arrayn) == N_id) */ {
         DBUG_ASSERT ((NODE_TYPE (arrayn) == N_id), "wrong arrayn");
 
-        if (TYisAKV (AVIS_TYPE (ID_AVIS (arrayn)))) {
-            tmp
-              = COgetDataVec (COcopyConstant (TYgetValue (AVIS_TYPE (ID_AVIS (arrayn)))));
+        if (TYisAKV (ID_NTYPE (arrayn))) {
+            tmp = COgetDataVec (TYgetValue (ID_NTYPE (arrayn)));
             for (i = 0; i < shape; i++) {
                 (*iarray)[i] = tmp[i];
             }
@@ -615,7 +621,7 @@ WLFtree2InternGen (node *wln, node *filter)
     while (partn) {
         if (!filter || PART_CODE (partn) == filter) {
             genn = PART_GENERATOR (partn);
-            shape = IDS_SHAPE (PART_VEC (partn), 0);
+            shape = SHgetUnrLen (TYgetShape (IDS_NTYPE (PART_VEC (partn))));
             tmp_ig = WLFappendInternGen (tmp_ig, shape, PART_CODE (partn),
                                          (GENERATOR_STEP (genn) != NULL)
                                            || (GENERATOR_WIDTH (genn) != NULL));
@@ -704,24 +710,15 @@ WLFinternGen2Tree (node *wln, intern_gen *ig)
     no_parts = 0;
 
     /* create type for N_array nodes*/
-#ifdef MWE_TYPE_READY
     while (ig) {
         /* create generator components */
         b1n = WLFcreateArrayFromInternGen (ig->l, ig->shape);
         b2n = WLFcreateArrayFromInternGen (ig->u, ig->shape);
         stepn = ig->step ? WLFcreateArrayFromInternGen (ig->step, ig->shape) : NULL;
         widthn = ig->width ? WLFcreateArrayFromInternGen (ig->width, ig->shape) : NULL;
-#else
-    while (ig) {
-        /* create generator components */
-        b1n = WLFcreateArrayFromInternGen (ig->l, ig->shape);
-        b2n = WLFcreateArrayFromInternGen (ig->u, ig->shape);
-        stepn = ig->step ? WLFcreateArrayFromInternGen (ig->step, ig->shape) : NULL;
-        widthn = ig->width ? WLFcreateArrayFromInternGen (ig->width, ig->shape) : NULL;
-#endif
         /* create tree structures */
         genn = TBmakeGenerator (F_le, F_lt, b1n, b2n, stepn, widthn);
-        *part = TBmakePart (DUPdoDupTree (withidn), genn, ig->code);
+        *part = TBmakePart (ig->code, DUPdoDupTree (withidn), genn);
         CODE_INC_USED (ig->code);
 
         ig = ig->next;
@@ -791,110 +788,6 @@ WLFfreeInternGenChain (intern_gen *ig)
     DBUG_RETURN (ig);
 }
 
-#ifdef MWE_TYPE_READY
-/******************************************************************************
- *
- * function:
- *   node *WLFcreateVardec(char *name, ntype *type, node **vardecs)
- *
- * description:
- *   creates a new Vardec with 'name' of type 'type' at the beginning of
- *   the 'vardecs' chain. The node of the new Vardec is returned.
- *   If a vardec for this name already exists, this node is returned.
- *
- *
- * remark:
- *   new memory is allocated for name. It is expected that type
- *   is a pointer to an existing type  and it is duplicated, too.
- *
- *   does not preserve ssa form because of missing ssacount attribute
- *
- ******************************************************************************/
-node *
-WLFcreateVardec (char *name, ntype *type, node **vardecs)
-{
-    node *vardecn;
-    char *c;
-
-    DBUG_ENTER ("WLFcreateVardec");
-
-    /* search for already existing vardec for this name. */
-    vardecn = TCsearchDecl (name, *vardecs);
-
-    /* if not found, create vardec. */
-    if (!vardecn) {
-        if (!type) {
-            c = ILIBmalloc (50);
-            c[0] = 0;
-            c = strcat (c, "parameter type is NULL for variable ");
-            c = strcat (c, name);
-            DBUG_ASSERT (0, (c));
-        }
-
-        type = TYcopyType (type);
-        vardecn = TBmakeVardec (ILIBstringCopy (name), NULL, type, *vardecs);
-        VARDEC_VARNO (vardecn) = -1;
-
-        /* create ssacnt node: to be implemented */
-
-        *vardecs = vardecn;
-    }
-
-    DBUG_RETURN (vardecn);
-}
-#else
-/******************************************************************************
- *
- * function:
- *   node *WLFcreateVardec(char *name, types *type, node **vardecs)
- *
- * description:
- *   creates a new Vardec with 'name' of type 'type' at the beginning of
- *   the 'vardecs' chain. The node of the new Vardec is returned.
- *   If a vardec for this name already exists, this node is returned.
- *
- *
- * remark:
- *   new memory is allocated for name. It is expected that type
- *   is a pointer to an existing type  and it is duplicated, too.
- *
- *   does not preserve ssa form because of missing ssacount attribute
- *
- ******************************************************************************/
-node *
-WLFcreateVardec (node *avis, node **vardecs)
-{
-    node *vardecn;
-    /*char *c;*/ /* TODO must be change to new type */
-
-    DBUG_ENTER ("WLFcreateVardec");
-
-    /* search for already existing vardec for this name. */
-    vardecn = TCsearchDecl (AVIS_NAME (avis), *vardecs);
-
-    /* if not found, create vardec. */
-    /*if (!vardecn) {
-     *if (!AVIS_TYPE( avis));
-     *  c = ILIBmalloc(50);
-     *  c[0] = 0;
-     *  c = strcat(c,"parameter type is NULL for variable ");
-     *  c = strcat(c,name);
-     *  DBUG_ASSERT(0,(c));
-     *}
-     *
-     *type = DUPdupAllTypes(type); */
-    vardecn = TBmakeVardec (avis, *vardecs);
-    VARDEC_VARNO (vardecn) = -1;
-
-    /* create ssacnt node: to be implemented */
-
-    *vardecs = vardecn;
-    /*}*/
-
-    DBUG_RETURN (vardecn);
-}
-#endif
-
 /******************************************************************************
  *
  * function:
@@ -922,7 +815,7 @@ WLFdoWithloopFolding (node *arg_node, int loop)
 
     if (!(FUNDEF_ISLACFUN (arg_node))) {
 
-        /* WLISSA traversal */
+        /* WLI traversal */
         WLIdoWLI (arg_node);
 
         /* break after WLI? */
@@ -930,40 +823,8 @@ WLFdoWithloopFolding (node *arg_node, int loop)
             || strcmp (global.break_specifier, "wli")) {
 
             /* SSAWLF traversal: fold WLs */
-            WLTdoWLT (arg_node);
+            WLFdoWLF (arg_node);
         }
-
-        /* restore ssa form */
-        arg_node = SSArestoreSsaOneFunction (arg_node);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *WLFwithloopFoldingWLT( node *arg_node)
- *
- * description:
- *   executes only SSAWLT phase, not SSAWLI and SSAWLF.
- *   after withloop transformation the ssaform is restored by calling
- *   CheckAvis and SSATransform.
- *
- ******************************************************************************/
-node *
-WLFdoWithloopFoldingWlt (node *arg_node)
-{
-    DBUG_ENTER ("WLIwithloopFoldingWLT");
-
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_fundef),
-                 "WLIwithloopFoldingWLT not called for fundef node");
-
-    if (!(FUNDEF_ISLACFUN (arg_node))) {
-        /* start ssawlt traversal only in non-special fundefs */
-
-        /* SSAWLT traversal: transform WLs */
-        WLTdoWLT (arg_node);
 
         /* restore ssa form */
         arg_node = SSArestoreSsaOneFunction (arg_node);

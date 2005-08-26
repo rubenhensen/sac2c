@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.25  2005/08/26 12:29:13  ktr
+ * major brushing,seams to work
+ *
  * Revision 1.24  2005/08/19 13:08:30  ktr
  * removed SSAINDEX macro
  *
@@ -134,6 +137,7 @@
 #include "tree_basic.h"
 #include "new_types.h"
 #include "new_typecheck.h"
+#include "type_utils.h"
 #include "shape.h"
 #include "tree_compound.h"
 #include "node_basic.h"
@@ -163,17 +167,16 @@ struct INFO {
 /*
  * INFO macros
  */
+#define INFO_NEXT(n) (n->next)
+#define INFO_WL(n) (n->wl)
+#define INFO_ASSIGN(n) (n->assign)
+#define INFO_FUNDEF(n) (n->fundef)
+#define INFO_FOLDABLE(n) (n->foldable)
+#define INFO_DETFOLDABLE(n) (n->detfoldable)
 
-#define INFO_SSAWLI_NEXT(n) (n->next)
-#define INFO_SSAWLI_WL(n) (n->wl)
-#define INFO_SSAWLI_ASSIGN(n) (n->assign)
-#define INFO_SSAWLI_FUNDEF(n) (n->fundef)
-#define INFO_SSAWLI_FOLDABLE(n) (n->foldable)
-#define INFO_SSAWLI_DETFOLDABLE(n) (n->detfoldable)
 /*
  * INFO functions
  */
-
 static info *
 MakeInfo ()
 {
@@ -183,12 +186,12 @@ MakeInfo ()
 
     result = ILIBmalloc (sizeof (info));
 
-    INFO_SSAWLI_NEXT (result) = NULL;
-    INFO_SSAWLI_WL (result) = NULL;
-    INFO_SSAWLI_ASSIGN (result) = NULL;
-    INFO_SSAWLI_FUNDEF (result) = NULL;
-    INFO_SSAWLI_FOLDABLE (result) = 0;
-    INFO_SSAWLI_DETFOLDABLE (result) = FALSE;
+    INFO_NEXT (result) = NULL;
+    INFO_WL (result) = NULL;
+    INFO_ASSIGN (result) = NULL;
+    INFO_FUNDEF (result) = NULL;
+    INFO_FOLDABLE (result) = 0;
+    INFO_DETFOLDABLE (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -278,7 +281,7 @@ CheckArrayFoldable (node *indexn, node *idn, info *arg_info)
     DBUG_ASSERT (N_id == NODE_TYPE (indexn), ("Wrong nodetype for indexn"));
     DBUG_ASSERT (N_id == NODE_TYPE (idn), ("Wrong nodetype for idn"));
 
-    thisn = INFO_SSAWLI_WL (arg_info);
+    thisn = INFO_WL (arg_info);
     if (WITH_ISFOLDABLE (thisn)) {
         substn = ID_WL (idn);
 
@@ -288,8 +291,10 @@ CheckArrayFoldable (node *indexn, node *idn, info *arg_info)
 
             /* We have to assure that the access index and the generator
                index of the substitution WL have the same shape. */
-            if (WITH_ISFOLDABLE (substn)
-                && IDS_SHAPE (PART_VEC (WITH_PART (substn)), 0) == ID_SHAPE (indexn, 0)) {
+            if (WITH_ISFOLDABLE (substn) && TUshapeKnown (IDS_NTYPE (WITH_VEC (substn)))
+                && TUshapeKnown (ID_NTYPE (indexn))
+                && SHcompareShapes (TYgetShape (IDS_NTYPE (WITH_VEC (substn))),
+                                    TYgetShape (ID_NTYPE (indexn)))) {
                 WITH_REFERENCED_FOLD (substn)++;
             } else {
                 substn = NULL;
@@ -330,7 +335,7 @@ Scalar2ArrayIndex (node *arrayn, node *wln)
     DBUG_ASSERT (N_array == NODE_TYPE (arrayn), ("wrong nodetype (array)"));
 
     atype = NTCnewTypeCheck_Expr (arrayn);
-    if (TYisAKS (atype) || TYisAKV (atype)) {
+    if (TUshapeKnown (atype)) {
         elts = SHgetExtent (TYgetShape (atype), 0);
         arrayn = ARRAY_AELEMS (arrayn);
 
@@ -410,20 +415,25 @@ CreateIndexInfoId (node *idn, info *arg_info)
 
     DBUG_ENTER ("CreateIndexInfoId");
 
-    assignn = INFO_SSAWLI_ASSIGN (arg_info);
-    wln = INFO_SSAWLI_WL (arg_info);
+    assignn = INFO_ASSIGN (arg_info);
+    wln = INFO_WL (arg_info);
 
     DBUG_ASSERT (!ASSIGN_INDEX (assignn), ("index_info already assigned"));
 
-    if (TYgetDim (ID_NTYPE (idn)) >= 0) {
+    if (TUshapeKnown (ID_NTYPE (idn))) {
         /* index var? */
         index_var = WLFlocateIndexVar (idn, wln);
-        if (index_var) {
-            iinfo = WLFcreateIndex ((index_var > 0) ? 0 : ID_SHAPE (idn, 0));
+        if (index_var != 0) {
+            if (index_var < 0) {
+                /* Index vector */
+                iinfo = WLFcreateIndex (SHgetExtent (TYgetShape (ID_NTYPE (idn)), 0));
+            } else {
+                iinfo = WLFcreateIndex (0);
+            }
             ASSIGN_INDEX (assignn) = iinfo; /* make this N_assign valid */
 
             if (-1 == index_var) { /* index vector */
-                elts = ID_SHAPE (idn, 0);
+                elts = SHgetExtent (TYgetShape (ID_NTYPE (idn)), 0);
                 for (i = 0; i < elts; i++) {
                     iinfo->last[i] = NULL;
                     iinfo->permutation[i] = i + 1;
@@ -463,14 +473,15 @@ CreateIndexInfoSxS (node *prfn, info *arg_info)
 
     DBUG_ENTER (" CreateIndexInfoSxS");
 
-    assignn = INFO_SSAWLI_ASSIGN (arg_info);
-    wln = INFO_SSAWLI_WL (arg_info);
+    assignn = INFO_ASSIGN (arg_info);
+    wln = INFO_WL (arg_info);
 
     /* CF has been done, so we just search for an Id and a constant.
        Since we do not want to practice constant folding here we ignore
        prfs with two constants. */
-    if (N_id == NODE_TYPE (PRF_ARG1 (prfn)) &&  /* first arg is an Id */
-        N_num == NODE_TYPE (PRF_ARG2 (prfn))) { /* second arg is a numeric constant */
+    if (N_id == NODE_TYPE (PRF_ARG1 (prfn)) && /* first arg is an Id */
+        N_num == NODE_TYPE (PRF_ARG2 (prfn))) {
+        /* second arg is a numeric constant */
         id_no = 1;
         idn = PRF_ARG1 (prfn);
     } else if (N_id == NODE_TYPE (PRF_ARG2 (prfn))
@@ -479,20 +490,22 @@ CreateIndexInfoSxS (node *prfn, info *arg_info)
         idn = PRF_ARG2 (prfn);
     }
 
-    if (id_no) {
+    if (id_no != 0) {
         /* we found a constant and an Id. If this Id is a vaild Id (i.e.
            it is declared in the generator or it is a valid local Id)
            this transformation is valid, too. */
         iinfo = WLFvalidLocalId (idn);
-        if (!iinfo) /* maybe it's an index var. */
+        if (iinfo == NULL) {
+            /* maybe it's an index var. */
             index_var = WLFlocateIndexVar (idn, wln);
+        }
 
-        if (iinfo || index_var) {
+        if ((iinfo != NULL) || (index_var != 0)) {
             iinfo = WLFcreateIndex (0);     /* create a scalar index_info */
             ASSIGN_INDEX (assignn) = iinfo; /* make this N_assign valid */
 
             /* if the Id is an index var... */
-            if (index_var) {
+            if (index_var != 0) {
                 iinfo->last[0] = NULL;
                 iinfo->permutation[0] = index_var; /* set permutation, always != -1 */
             } else {
@@ -539,16 +552,15 @@ CreateIndexInfoA (node *prfn, info *arg_info)
     int elts, i, index;
     int val = 0;
     node *idn = NULL;
-    node *cf_node, *assignn, *wln;
-    node *args[3];
+    node *assignn, *wln;
     index_info *iinfo, *tmpinfo;
     constant *const1, *const2, *constn = NULL;
     int *const_elems;
 
     DBUG_ENTER (" CreateIndexInfoA");
 
-    assignn = INFO_SSAWLI_ASSIGN (arg_info);
-    wln = INFO_SSAWLI_WL (arg_info);
+    assignn = INFO_ASSIGN (arg_info);
+    wln = INFO_WL (arg_info);
 
     const1 = COaST2Constant (PRF_ARG1 (prfn));
     const2 = COaST2Constant (PRF_ARG2 (prfn));
@@ -586,12 +598,12 @@ CreateIndexInfoA (node *prfn, info *arg_info)
             /* The Id is the index vector itself or, else it has to
                be an Id which is a valid vector. It must not be based
                on an index scalar (we do want "i prfop [c,c,c]"). */
-            if ((TYgetDim (ID_NTYPE (idn)) >= 0)
+            if (TUshapeKnown (ID_NTYPE (idn))
                 && ((-1 == index) ||
                     /* ^^^ index vector itself */
                     (tmpinfo && (1 == TYgetDim (ID_NTYPE (idn)))))) {
                 /* ^^^ valid local id (vector) */
-                elts = ID_SHAPE (idn, 0);
+                elts = SHgetExtent (TYgetShape (ID_NTYPE (idn)), 0);
                 iinfo = WLFcreateIndex (elts);
                 ASSIGN_INDEX (assignn) = iinfo; /* make this N_assign valid */
 
@@ -615,20 +627,18 @@ CreateIndexInfoA (node *prfn, info *arg_info)
                     if (iinfo->permutation[i]) {
                         iinfo->const_arg[i] = val;
                     } else {
-                        /*
-                         * constant. Use SSACFFoldPrfExpr() to constantfold.,
-                         * there MUST always be three args in arg array!!!
-                         */
-                        args[0] = TBmakeNum (val);
-                        args[1] = TBmakeNum (tmpinfo->const_arg[i]);
-                        args[2] = NULL;
-                        cf_node = CFfoldPrfExpr (PRF_PRF (prfn), args);
-                        DBUG_ASSERT ((NODE_TYPE (cf_node) == N_num),
-                                     "non integer result from constant folding");
-                        iinfo->const_arg[i] = NUM_VAL (cf_node);
-                        args[0] = FREEdoFreeTree (args[0]);
-                        args[1] = FREEdoFreeTree (args[1]);
-                        cf_node = FREEdoFreeTree (cf_node);
+                        node *expr;
+                        ntype *nt;
+                        expr = TCmakePrf2 (PRF_PRF (prfn), TBmakeNum (val),
+                                           TBmakeNum (tmpinfo->const_arg[i]));
+                        nt = NTCnewTypeCheck_Expr (expr);
+                        DBUG_ASSERT ((TYisAKV (nt)) && (TYgetDim (nt) == 0)
+                                       && (TYgetSimpleType (TYgetScalar (nt)) == T_int),
+                                     "non integer result from constant folding!");
+                        iinfo->const_arg[i] = ((int *)COgetDataVec (TYgetValue (nt)))[0];
+
+                        nt = TYfreeType (nt);
+                        expr = FREEdoFreeNode (expr);
                     }
                 }
             } /* this Id is valid. */
@@ -652,20 +662,18 @@ CreateIndexInfoA (node *prfn, info *arg_info)
                     /* is the element in the other vector a constant, too?
                        Then we have to fold immedeately. */
                     if (!iinfo->permutation[i]) {
-                        /*
-                         * constant. Use SSACFFoldPrfExpr() to constantfold.
-                         * there MUST always be 3 args in array!!!
-                         */
-                        args[0] = TBmakeNum (val);
-                        args[1] = TBmakeNum (iinfo->const_arg[i]);
-                        args[2] = NULL;
-                        cf_node = CFfoldPrfExpr (PRF_PRF (prfn), args);
-                        DBUG_ASSERT ((NODE_TYPE (cf_node) == N_num),
-                                     "non integer result from constant folding");
-                        iinfo->const_arg[i] = NUM_VAL (cf_node);
-                        args[0] = ILIBfree (args[0]);
-                        args[1] = ILIBfree (args[1]);
-                        cf_node = ILIBfree (cf_node);
+                        node *expr;
+                        ntype *nt;
+                        expr = TCmakePrf2 (PRF_PRF (prfn), TBmakeNum (val),
+                                           TBmakeNum (tmpinfo->const_arg[i]));
+                        nt = NTCnewTypeCheck_Expr (expr);
+                        DBUG_ASSERT ((TYisAKV (nt)) && (TYgetDim (nt) == 0)
+                                       && (TYgetSimpleType (TYgetScalar (nt)) == T_int),
+                                     "non integer result from constant folding!");
+                        iinfo->const_arg[i] = ((int *)COgetDataVec (TYgetValue (nt)))[0];
+
+                        nt = TYfreeType (nt);
+                        expr = FREEdoFreeNode (expr);
                     } else {
                         iinfo->const_arg[i] = val;
                     }
@@ -693,8 +701,8 @@ WLIfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLIfundef");
 
-    INFO_SSAWLI_WL (arg_info) = NULL;
-    INFO_SSAWLI_FUNDEF (arg_info) = arg_node;
+    INFO_WL (arg_info) = NULL;
+    INFO_FUNDEF (arg_info) = arg_node;
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         FUNDEF_INSTR (arg_node) = TRAVdo (FUNDEF_INSTR (arg_node), arg_info);
@@ -717,7 +725,7 @@ WLIassign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLIassign");
 
-    INFO_SSAWLI_ASSIGN (arg_info) = arg_node;
+    INFO_ASSIGN (arg_info) = arg_node;
 
     if (ASSIGN_INDEX (arg_node) != NULL) {
         /* this is important. Only index transformations
@@ -781,7 +789,7 @@ WLIap (node *arg_node, info *arg_info)
     /* non-recursive call of special fundef
      */
     if ((AP_FUNDEF (arg_node) != NULL) && (FUNDEF_ISLACFUN (AP_FUNDEF (arg_node)))
-        && (INFO_SSAWLI_FUNDEF (arg_info) != AP_FUNDEF (arg_node))) {
+        && (INFO_FUNDEF (arg_info) != AP_FUNDEF (arg_node))) {
 
         /* stack arg_info frame for new fundef */
         new_arg_info = MakeInfo ();
@@ -831,7 +839,7 @@ WLIid (node *arg_node, info *arg_info)
         /*
          * arg_node describes a WL, so NWITH_REFERENCED has to be incremented
          */
-        (WITH_REFERENCED (ASSIGN_RHS (assignn)))++;
+        (WITH_REFERENCED (ASSIGN_RHS (assignn))) += 1;
     } else {
         /* id is not defined by a withloop */
         ID_WL (arg_node) = NULL;
@@ -862,12 +870,12 @@ WLIlet (node *arg_node, info *arg_info)
     DBUG_ENTER ("WLIlet");
 
     /* traverse sons first so that ID_WL of every Id is defined (or NULL). */
-    old_assignn = INFO_SSAWLI_ASSIGN (arg_info);
+    old_assignn = INFO_ASSIGN (arg_info);
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
-    INFO_SSAWLI_ASSIGN (arg_info) = old_assignn;
+    INFO_ASSIGN (arg_info) = old_assignn;
 
     /* if we are inside a WL we have to search for valid index transformations. */
-    if (INFO_SSAWLI_WL (arg_info)) {
+    if (INFO_WL (arg_info)) {
         /* if this is a prf, we are interrested in transformations like +,*,-,/
            and in indexing (F_sel). */
         exprn = LET_EXPR (arg_node);
@@ -923,8 +931,8 @@ WLIlet (node *arg_node, info *arg_info)
                     tmpn
                       = CheckArrayFoldable (PRF_ARG1 (exprn), PRF_ARG2 (exprn), arg_info);
                     if (!tmpn) {
-                        ASSIGN_INDEX (INFO_SSAWLI_ASSIGN (arg_info)) = FREEfreeIndexInfo (
-                          ASSIGN_INDEX (INFO_SSAWLI_ASSIGN (arg_info)));
+                        ASSIGN_INDEX (INFO_ASSIGN (arg_info))
+                          = FREEfreeIndexInfo (ASSIGN_INDEX (INFO_ASSIGN (arg_info)));
                     }
                 }
                 break;
@@ -944,8 +952,8 @@ WLIlet (node *arg_node, info *arg_info)
 
         /* The let expr still may be a construction of a vector (without a prf). */
         if (N_array == NODE_TYPE (exprn)) {
-            ASSIGN_INDEX (INFO_SSAWLI_ASSIGN (arg_info))
-              = Scalar2ArrayIndex (exprn, INFO_SSAWLI_WL (arg_info));
+            ASSIGN_INDEX (INFO_ASSIGN (arg_info))
+              = Scalar2ArrayIndex (exprn, INFO_WL (arg_info));
         }
 
     } /* is this a WL? */
@@ -975,13 +983,13 @@ WLIwith (node *arg_node, info *arg_info)
     /* inside the body of this WL we may find another WL. So we better
        save the old arg_info information. */
     tmpi = MakeInfo ();
-    INFO_SSAWLI_FUNDEF (tmpi) = INFO_SSAWLI_FUNDEF (arg_info);
-    INFO_SSAWLI_ASSIGN (tmpi) = INFO_SSAWLI_ASSIGN (arg_info);
-    INFO_SSAWLI_NEXT (tmpi) = arg_info;
+    INFO_FUNDEF (tmpi) = INFO_FUNDEF (arg_info);
+    INFO_ASSIGN (tmpi) = INFO_ASSIGN (arg_info);
+    INFO_NEXT (tmpi) = arg_info;
     arg_info = tmpi;
 
     /* initialize WL traversal */
-    INFO_SSAWLI_WL (arg_info) = arg_node; /* store the current node for later */
+    INFO_WL (arg_info) = arg_node; /* store the current node for later */
     tmpn = WITH_CODE (arg_node);
     while (tmpn) { /* reset traversal flag for each code */
         CODE_VISITED (tmpn) = FALSE;
@@ -993,31 +1001,25 @@ WLIwith (node *arg_node, info *arg_info)
     WITH_REFERENCES_FOLDED (arg_node) = 0;
 
     /* initialize determination of FOLDABLE */
-    INFO_SSAWLI_FOLDABLE (arg_info) = TRUE;
-    INFO_SSAWLI_DETFOLDABLE (arg_info) = TRUE;
+    INFO_FOLDABLE (arg_info) = TRUE;
+    INFO_DETFOLDABLE (arg_info) = TRUE;
 
     /* determine FOLDABLE */
-    if (WITH_PART (arg_node) != NULL) {
-        WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
-    }
-    WITH_ISFOLDABLE (INFO_SSAWLI_WL (arg_info)) = INFO_SSAWLI_FOLDABLE (arg_info);
-    INFO_SSAWLI_DETFOLDABLE (arg_info) = FALSE;
+    WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
+    WITH_ISFOLDABLE (INFO_WL (arg_info)) = INFO_FOLDABLE (arg_info);
+    INFO_DETFOLDABLE (arg_info) = FALSE;
 
     /* traverse all parts (and implicitely bodies) */
     DBUG_PRINT ("WLI", ("searching code of  WL in line %d", NODE_LINE (arg_node)));
-    if (WITH_PART (arg_node) != NULL) {
-        WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
-    }
+    WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
     DBUG_PRINT ("WLI", ("searching done"));
 
     /* traverse N_Nwithop */
-    if (WITH_WITHOP (arg_node) != NULL) {
-        WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
-    }
+    WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
 
     /* restore arg_info */
     tmpi = arg_info;
-    arg_info = INFO_SSAWLI_NEXT (arg_info);
+    arg_info = INFO_NEXT (arg_info);
     tmpi = FreeInfo (tmpi);
 
     DBUG_RETURN (arg_node);
@@ -1042,13 +1044,13 @@ WLImodarray (node *arg_node, info *arg_info)
 
     arg_node = TRAVcont (arg_node, arg_info);
 
-    if (WITH_ISFOLDABLE (INFO_SSAWLI_WL (arg_info))) {
+    if (WITH_ISFOLDABLE (INFO_WL (arg_info))) {
         substn = ID_WL (MODARRAY_ARRAY (arg_node));
         /*
          * we just traversed through the sons so SSAWLIid for NWITHOP_ARRAY
          * has been called and its result is stored in ID_WL().
          */
-        if (substn) {
+        if (substn != NULL) {
             (WITH_REFERENCED_FOLD (ASSIGN_RHS (substn)))++;
         }
     }
@@ -1070,10 +1072,8 @@ WLIpart (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLIpart");
 
-    if (INFO_SSAWLI_DETFOLDABLE (arg_info)) {
-
+    if (INFO_DETFOLDABLE (arg_info)) {
         PART_GENERATOR (arg_node) = TRAVdo (PART_GENERATOR (arg_node), arg_info);
-
     } else {
         /*
          * traverse code. But do this only once, even if there are more than
@@ -1099,7 +1099,7 @@ WLIpart (node *arg_node, info *arg_info)
  *
  * description:
  *   checks whether borders, step and width are constant. The result is stored
- *   in INFO_SSAWLI_FOLDABLE( arg_info).
+ *   in INFO_FOLDABLE( arg_info).
  *
  ******************************************************************************/
 node *
@@ -1107,18 +1107,17 @@ WLIgenerator (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLIgenerator");
 
-    INFO_SSAWLI_FOLDABLE (arg_info)
-      = INFO_SSAWLI_FOLDABLE (arg_info) && COisConstant (GENERATOR_BOUND1 (arg_node));
-    INFO_SSAWLI_FOLDABLE (arg_info)
-      = INFO_SSAWLI_FOLDABLE (arg_info) && COisConstant (GENERATOR_BOUND2 (arg_node));
+    INFO_FOLDABLE (arg_info)
+      = INFO_FOLDABLE (arg_info) && COisConstant (GENERATOR_BOUND1 (arg_node));
+    INFO_FOLDABLE (arg_info)
+      = INFO_FOLDABLE (arg_info) && COisConstant (GENERATOR_BOUND2 (arg_node));
 
     if (GENERATOR_STEP (arg_node) != NULL) {
-        INFO_SSAWLI_FOLDABLE (arg_info)
-          = INFO_SSAWLI_FOLDABLE (arg_info) && COisConstant (GENERATOR_STEP (arg_node));
+        INFO_FOLDABLE (arg_info)
+          = INFO_FOLDABLE (arg_info) && COisConstant (GENERATOR_STEP (arg_node));
         if (GENERATOR_WIDTH (arg_node) != NULL) {
-            INFO_SSAWLI_FOLDABLE (arg_info)
-              = INFO_SSAWLI_FOLDABLE (arg_info)
-                && COisConstant (GENERATOR_WIDTH (arg_node));
+            INFO_FOLDABLE (arg_info)
+              = INFO_FOLDABLE (arg_info) && COisConstant (GENERATOR_WIDTH (arg_node));
         }
     } else {
         DBUG_ASSERT ((GENERATOR_WIDTH (arg_node) == NULL),
@@ -1149,10 +1148,7 @@ WLIcode (node *arg_node, info *arg_info)
      */
     CODE_VISITED (arg_node) = TRUE;
 
-    if (CODE_CBLOCK (arg_node) != NULL) {
-        CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
-    }
-
+    CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
     CODE_CEXPR (arg_node) = TRAVdo (CODE_CEXPR (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
