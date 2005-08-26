@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.25  2005/08/26 16:38:33  ktr
+ * small bugfix
+ *
  * Revision 1.24  2005/07/03 17:13:14  ktr
  * All variables are initialized.
  * Bool used instead of int where appropriate
@@ -784,7 +787,9 @@ WLUcheckUnrollFold (node *wln)
               && ((GENERATOR_STEP (genn) == NULL) || COisConstant (GENERATOR_STEP (genn)))
               && ((GENERATOR_WIDTH (genn) == NULL)
                   || COisConstant (GENERATOR_WIDTH (genn))));
-        elts += CountElements (PART_GENERATOR (partn));
+        if (ok) {
+            elts += CountElements (genn);
+        }
         partn = PART_NEXT (partn);
     }
 
