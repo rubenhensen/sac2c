@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.199  2005/08/26 12:30:15  ktr
+ * removed ID_SHAPE, ID_SHPSEG, IDS_SHAPE, IDS_SHPSEG
+ *
  * Revision 3.198  2005/08/24 10:17:30  ktr
  * added support for WITHID_IDXS, GENARRAY_IDX, MODARRAY_IDS
  *
@@ -407,8 +410,6 @@ extern bool TCisNonUniqueHidden (types *type);
  * TODO: remove
  */
 #define IDS_TYPE(n) VARDEC_OR_ARG_TYPE (IDS_DECL (n))
-#define IDS_SHPSEG(n) TYPES_SHPSEG (VARDEC_OR_ARG_TYPE (IDS_DECL (n)))
-#define IDS_SHAPE(n, x) SHPSEG_SHAPE (IDS_SHPSEG (n), x)
 
 extern node *TCappendIds (node *chain, node *item);
 extern int TCcountIds (node *ids_arg);
@@ -1268,9 +1269,6 @@ extern void *TCarray2Vec (simpletype t, node *aelems, int *length);
        : ((NODE_TYPE (AVIS_DECL (ID_AVIS (n))) == N_arg)                                 \
             ? ARG_TYPE (AVIS_DECL (ID_AVIS (n)))                                         \
             : NULL))
-
-#define ID_SHPSEG(n) TYPES_SHPSEG (ID_TYPE (n))
-#define ID_SHAPE(n, x) SHPSEG_SHAPE (ID_SHPSEG (n), x)
 
 #define ID_SSAASSIGN(n) (AVIS_SSAASSIGN (ID_AVIS (n)))
 
