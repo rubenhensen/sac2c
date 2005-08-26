@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.52  2005/08/26 12:24:34  ktr
+ * WLPG will only transform with-loops with AKS index vector
+ *
  * Revision 1.51  2005/07/03 17:05:42  ktr
  * Initialized a varible
  *
@@ -242,6 +245,7 @@
 #include <string.h>
 
 #include "new_types.h"
+#include "type_utils.h"
 #include "tree_basic.h"
 #include "node_basic.h"
 #include "tree_compound.h"
@@ -1523,7 +1527,7 @@ WLPGwith (node *arg_node, info *arg_info)
      * Initially, it is set to -1; if we have successfully generated a full
      * partition, it carries a positive value.
      */
-    if (WITH_PARTS (arg_node) == -1) {
+    if ((WITH_PARTS (arg_node) == -1) && TUshapeKnown (IDS_NTYPE (WITH_VEC (arg_node)))) {
 
         /*
          * initialize WL traversal
@@ -1603,8 +1607,7 @@ WLPGwith (node *arg_node, info *arg_info)
             /*
              * Nothing has been inferred
              */
-            DBUG_ASSERT ((!TYisAKS (IDS_NTYPE (WITH_VEC (arg_node)))),
-                         "WLPG failure: IV is AKS and GPT_unknown was inferred");
+            DBUG_ASSERT ((FALSE), "WLPG failure: IV is AKS and GPT_unknown was inferred");
             break;
         }
     }
