@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.10  2005/08/26 12:29:51  ktr
+ * major brushing, seems to work
+ *
  * Revision 1.9  2005/08/19 13:08:30  ktr
  * removed SSAINDEX macro
  *
@@ -49,14 +52,7 @@
 
 /* general functions */
 extern node *WLFdoWithloopFolding (node *arg_node, int loop);
-extern node *WLFdoWithloopFoldingWlt (node *arg_node);
 extern int WLFlocateIndexVar (node *idn, node *wln);
-
-#ifdef MWE_NTYPE_READY
-extern node *WLFcreateVardec (node *avis, node **vardecs);
-#else
-extern node *WLFcreateVardec (node *avis, node **vardecs);
-#endif
 
 extern void WLFarrayST2ArrayInt (node *arrayn, int **iarray, int shape);
 
