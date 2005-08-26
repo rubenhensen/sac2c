@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.102  2005/08/26 12:27:31  ktr
+ * removed WLT (superseded by WLPG)
+ *
  * Revision 3.101  2005/08/24 10:26:01  ktr
  * added wlidxs traversal
  *
@@ -1482,22 +1485,6 @@ OPTfundef (node *arg_node, info *arg_info)
                     goto INFO;
                 }
 
-#ifdef _SSA_WLT_FIXED_
-
-                /*
-                 * apply WLT (with-loop ...)
-                 */
-                if (global.optimize.dowlt) {
-                    arg_node = WLFdoWithloopFoldingWlt (arg_node);
-                }
-
-                if ((global.break_after == PH_sacopt)
-                    && (global.break_cycle_specifier == loop1)
-                    && (0 == strcmp (global.break_specifier, "wlt"))) {
-                    goto INFO;
-                }
-#endif
-
                 /*
                  * apply WLF (with-loop folding)
                  */
@@ -1845,25 +1832,6 @@ OPTfundef (node *arg_node, info *arg_info)
                 && (0 == strcmp (global.break_specifier, "cf"))) {
                 goto INFO;
             }
-
-            /*
-             * This is needed to transform more index vectors in scalars or vice versa.
-             */
-#ifdef _SSA_WLT_FIXED_
-
-            /*
-             * apply WLT (with-loop ...)
-             */
-            if (global.optimize.dowlt) {
-                arg_node = WLFdoWithloopFoldingWlt (arg_node);
-            }
-
-            if ((global.break_after == PH_sacopt)
-                && (global.break_cycle_specifier == (loop1 + loop2))
-                && (0 == strcmp (global.break_specifier, "wlt"))) {
-                goto INFO;
-            }
-#endif
 
             if (wlt_expr != old_wlt_expr) {
                 INFO_OPT_CONTINUE (arg_info) = TRUE;
