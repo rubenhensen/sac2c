@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.38  2005/08/26 12:41:36  ktr
+ * COast2Constant now uses AKV type returned from NTCnewTypeCheckExpr
+ *
  * Revision 1.37  2005/08/23 14:22:47  sbs
  * introduced the recognition of char constants
  *
@@ -740,7 +743,6 @@ COaST2Constant (node *n)
     constant *new_co;
     void *element;
     ntype *atype;
-    simpletype simple;
 
     DBUG_ENTER ("COAST2Constant");
 
@@ -780,10 +782,8 @@ COaST2Constant (node *n)
 
         case N_array:
             atype = NTCnewTypeCheck_Expr (n);
-            if (TYisAKS (atype) || TYisAKV (atype)) {
-                simple = TYgetSimpleType (TYgetScalar (atype));
-                new_co = COmakeConstant (simple, SHcopyShape (TYgetShape (atype)),
-                                         TCarray2Vec (simple, ARRAY_AELEMS (n), NULL));
+            if (TYisAKV (atype)) {
+                new_co = COcopyConstant (TYgetValue (atype));
             } else {
                 new_co = NULL;
             }
