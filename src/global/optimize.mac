@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.21  2005/08/27 19:17:58  ktr
+ * re-activated wlf, wlur
+ *
  * Revision 1.20  2005/08/20 12:05:50  ktr
  * added elimtypeconv optimization
  *
@@ -97,13 +100,13 @@ OPTIMIZE ("dcr", dcr, TRUE, TRUE, "dead code removal")
 OPTIMIZE ("cf", cf, TRUE, FALSE, "constant folding")
 OPTIMIZE ("lir", lir, TRUE, FALSE, "loop invariant removal")
 OPTIMIZE ("inl", inl, TRUE, TRUE, "function inlining")
-OPTIMIZE ("lur", lur, FALSE, FALSE, "loop unrolling")
-OPTIMIZE ("wlur", wlur, FALSE, FALSE, "with-loop unrolling")
+OPTIMIZE ("lur", lur, TRUE, FALSE, "loop unrolling")
+OPTIMIZE ("wlur", wlur, TRUE, FALSE, "with-loop unrolling")
 OPTIMIZE ("lus", lus, FALSE, FALSE, "loop unswitching")
 OPTIMIZE ("cse", cse, FALSE, FALSE, "common subexpression elimination")
 OPTIMIZE ("dfr", dfr, TRUE, TRUE, "dead function removal")
 OPTIMIZE ("wlt", wlt, FALSE, FALSE, "with-loop transformation")
-OPTIMIZE ("wlf", wlf, FALSE, FALSE, "with-loop folding")
+OPTIMIZE ("wlf", wlf, TRUE, FALSE, "with-loop folding")
 OPTIMIZE ("ive", ive, FALSE, FALSE, "index vector elimination")
 OPTIMIZE ("ae", ae, FALSE, FALSE, "array elimination")
 OPTIMIZE ("dl", dl, FALSE, FALSE, "distributive law")
