@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.26  2005/08/28 11:53:46  ktr
+ * indented a comment
+ *
  * Revision 1.25  2005/08/26 12:29:13  ktr
  * major brushing,seams to work
  *
@@ -129,13 +132,13 @@
      point to it's original Id. So we have to distinguish between the Ids
      which are in the original code (1) and those in newly created code
      blocks (2).
-     Creation of new code is initiated in CreateCode() and the resulting N_Ncode
-     nodes are collected in new_codes until they are inserted into the syntax
-     tree in WLFNwith(). While a code is in new_codes, ID_WL of every Id inside
-     the code points to it's original Id (this is the Id which was copied by
-     DUPdoDupTree()). DUPdoDupTree() sets this pointer and, if the argument of
- DUPdoDupTree() is a code inside new_codes, copies ID_WL of this code (which is a pointer
- to the original).
+     Creation of new code is initiated in CreateCode() and the resulting
+     N_Ncode nodes are collected in new_codes until they are inserted into the
+     syntax tree in WLFNwith(). While a code is in new_codes, ID_WL of every
+     Id inside the code points to it's original Id (this is the Id which was
+     copied by DUPdoDupTree()). DUPdoDupTree() sets this pointer and, if the
+     argument of DUPdoDupTree() is a code inside new_codes, copies ID_WL of
+     this code (which is a pointer to the original).
 
  ******************************************************************************/
 
