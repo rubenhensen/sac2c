@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.103  2005/08/29 11:27:02  ktr
+ * As long as TUP is not fixed, the NTC is applied in the opt cycle
+ *
  * Revision 3.102  2005/08/26 12:27:31  ktr
  * removed WLT (superseded by WLPG)
  *
@@ -468,6 +471,7 @@
 #include "WLPartitionGeneration.h"
 #include "WithloopFusion.h"
 #include "type_upgrade.h"
+#include "new_typecheck.h"
 #include "signature_simplification.h"
 #include "dispatchfuncalls.h"
 #include "elimtypeconv.h"
@@ -1428,6 +1432,15 @@ OPTfundef (node *arg_node, info *arg_info)
                  */
                 arg_node = ILIdoInferLoopInvariants (arg_node);
 
+#ifndef TUPFIXED
+                /*
+                 * apply typechecker (as long as TUP is broken)
+                 */
+                if ((global.optimize.dotup) || (global.optimize.dortup)
+                    || (global.optimize.dofsp) || (global.optimize.dosfd)) {
+                    arg_node = NTCdoNewTypeCheckOneFunction (arg_node);
+                }
+#else
                 /*
                  * apply TUP  (type upgrade),
                  *       RTUP (reverse type upgrade),
@@ -1439,7 +1452,7 @@ OPTfundef (node *arg_node, info *arg_info)
 
                     arg_node = TUPdoTypeUpgrade (arg_node);
                 }
-
+#endif
                 if ((global.break_after == PH_sacopt)
                     && (global.break_cycle_specifier == loop1)
                     && (0 == strcmp (global.break_specifier, "tup"))) {
@@ -1684,6 +1697,16 @@ OPTfundef (node *arg_node, info *arg_info)
                  * traversal for this function for the next cycle pass.
                  */
 
+#ifndef TUPFIXED
+                /*
+                 * apply typechecker (as long as TUP is broken)
+                 */
+                if ((global.optimize.dotup) || (global.optimize.dortup)
+                    || (global.optimize.dofsp) || (global.optimize.dosfd)) {
+
+                    arg_node = NTCdoNewTypeCheckOneFunction (arg_node);
+                }
+#else
                 /*
                  * apply TUP  (type upgrade),
                  *       RTUP (reverse type upgrade),
@@ -1692,8 +1715,10 @@ OPTfundef (node *arg_node, info *arg_info)
                  */
                 if ((global.optimize.dotup) || (global.optimize.dortup)
                     || (global.optimize.dofsp) || (global.optimize.dosfd)) {
+
                     arg_node = TUPdoTypeUpgrade (arg_node);
                 }
+#endif
 
                 if ((global.break_after == PH_sacopt)
                     && (global.break_cycle_specifier == loop1)
