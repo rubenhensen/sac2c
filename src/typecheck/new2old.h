@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2005/08/29 11:25:21  ktr
+ * NTC may now run in the optimization cycle
+ *
  * Revision 1.14  2005/07/26 14:32:08  sah
  * moved creation of special fold funs to
  * dispatchfuncall as new2old is running
@@ -56,9 +59,11 @@
 #include "types.h"
 
 extern node *NT2OTdoTransform (node *arg_node);
+extern node *NT2OTdoTransformOneFunction (node *arg_node);
 
 extern node *NT2OTmodule (node *arg_node, info *arg_info);
 extern node *NT2OTfundef (node *arg_node, info *arg_info);
+extern node *NT2OTap (node *arg_node, info *arg_info);
 extern node *NT2OTavis (node *arg_node, info *arg_info);
 extern node *NT2OTblock (node *arg_node, info *arg_info);
 extern node *NT2OTvardec (node *arg_node, info *arg_info);

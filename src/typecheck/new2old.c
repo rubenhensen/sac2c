@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.44  2005/08/29 11:25:21  ktr
+ * NTC may now run in the optimization cycle
+ *
  * Revision 1.43  2005/08/11 13:50:39  sbs
  * changed the lifting of bottom types when type_error applications are built
  * Now, the result type is at least AKS
@@ -198,11 +201,13 @@
 /*
  * usages of 'arg_info':
  *
- *   INFO_NT2OT_VARDECS    -   list of the generated vardecs
- *   INFO_NT2OT_WLIDS      -   WITHID_VEC of first partition
- *   INFO_NT2OT_THENBOTTS  -   type_error let
- *   INFO_NT2OT_ELSEBOTTS  -   type_error let
- *   INFO_NT2OT_VARDECMODE -   M_fix / M_filter
+ *   INFO_VARDECS    -   list of the generated vardecs
+ *   INFO_WLIDS      -   WITHID_VEC of first partition
+ *   INFO_THENBOTTS  -   type_error let
+ *   INFO_ELSEBOTTS  -   type_error let
+ *   INFO_ONEFUNCTION - traverse one function only (and associated lacfuns)
+ *   INFO_FUNDEF     - pointer to current fundef to prevent infinite recursion
+ *   INFO_VARDECMODE -   M_fix / M_filter
  */
 
 /**
@@ -213,17 +218,21 @@ struct INFO {
     node *wlids;
     node *then_botts;
     node *else_botts;
+    bool onefunction;
+    node *fundef;
     enum { M_fix, M_filter } mode;
 };
 
 /**
  * INFO macros
  */
-#define INFO_NT2OT_VARDECS(n) (n->vardecs)
-#define INFO_NT2OT_WLIDS(n) (n->wlids)
-#define INFO_NT2OT_THENBOTTS(n) (n->then_botts)
-#define INFO_NT2OT_ELSEBOTTS(n) (n->else_botts)
-#define INFO_NT2OT_VARDECMODE(n) (n->mode)
+#define INFO_VARDECS(n) (n->vardecs)
+#define INFO_WLIDS(n) (n->wlids)
+#define INFO_THENBOTTS(n) (n->then_botts)
+#define INFO_ELSEBOTTS(n) (n->else_botts)
+#define INFO_ONEFUNCTION(n) (n->onefunction)
+#define INFO_FUNDEF(n) (n->fundef)
+#define INFO_VARDECMODE(n) (n->mode)
 
 /**
  * INFO functions
@@ -237,11 +246,13 @@ MakeInfo ()
 
     result = ILIBmalloc (sizeof (info));
 
-    INFO_NT2OT_VARDECS (result) = NULL;
-    INFO_NT2OT_WLIDS (result) = NULL;
-    INFO_NT2OT_THENBOTTS (result) = NULL;
-    INFO_NT2OT_ELSEBOTTS (result) = NULL;
-    INFO_NT2OT_VARDECMODE (result) = M_fix;
+    INFO_VARDECS (result) = NULL;
+    INFO_WLIDS (result) = NULL;
+    INFO_THENBOTTS (result) = NULL;
+    INFO_ELSEBOTTS (result) = NULL;
+    INFO_ONEFUNCTION (result) = FALSE;
+    INFO_FUNDEF (result) = NULL;
+    INFO_VARDECMODE (result) = M_fix;
 
     DBUG_RETURN (result);
 }
@@ -422,6 +433,48 @@ NT2OTdoTransform (node *arg_node)
 /******************************************************************************
  *
  * function:
+ *   node *NT2OTdoTransformOneFunction( node *arg_node)
+ *
+ * description:
+ *   adjusts all old vardec types according to the attached ntypes!
+ *
+ ******************************************************************************/
+
+node *
+NT2OTdoTransformOneFunction (node *arg_node)
+{
+    info *info_node;
+
+    DBUG_ENTER ("NT2OTdoTransformOneFunction");
+
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_fundef,
+                 "NT2OTdoTransformOneFunction can only be applied to fundefs");
+
+    if (!FUNDEF_ISLACFUN (arg_node)) {
+        TRAVpush (TR_nt2ot);
+
+        info_node = MakeInfo ();
+        INFO_ONEFUNCTION (info_node) = TRUE;
+        arg_node = TRAVdo (arg_node, info_node);
+        info_node = FreeInfo (info_node);
+
+        TRAVpop ();
+
+        /**
+         * Since all alpha types are gone now, we may may free all tvars, all
+         *  sig_deps, and all te_infos:
+         */
+        SSIfreeAllTvars ();
+        SDfreeAllSignatureDependencies ();
+        TEfreeAllTypeErrorInfos ();
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *NT2OTmodule( node *arg_node, info *arg_info)
  *
  * description:
@@ -474,6 +527,8 @@ NT2OTfundef (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("NT2OTfundef");
 
+    INFO_FUNDEF (arg_info) = arg_node;
+
     otype = TUmakeProductTypeFromRets (FUNDEF_RETS (arg_node));
     DBUG_ASSERT ((otype != NULL), "FUNDEF_RET_TYPE not found!");
     ftype = TYfixAndEliminateAlpha (otype);
@@ -524,12 +579,12 @@ NT2OTfundef (node *arg_node, info *arg_info)
                 FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
             }
 
-            INFO_NT2OT_VARDECS (arg_info) = NULL;
+            INFO_VARDECS (arg_info) = NULL;
             if (FUNDEF_BODY (arg_node) != NULL) {
                 FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
             }
 
-            if (INFO_NT2OT_VARDECS (arg_info) != NULL) {
+            if (INFO_VARDECS (arg_info) != NULL) {
                 /*
                  * if some new vardecs have been built, insert them !
                  * this has to be done here rather than in NT2OTblock since blocks
@@ -537,25 +592,47 @@ NT2OTfundef (node *arg_node, info *arg_info)
                  * AFAIK, the only place where vardecs are in fact built is the
                  * extension of withloop ids in NT2OTwithid.
                  */
-                INFO_NT2OT_VARDECS (arg_info)
-                  = TRAVdo (INFO_NT2OT_VARDECS (arg_info), arg_info);
+                INFO_VARDECS (arg_info) = TRAVdo (INFO_VARDECS (arg_info), arg_info);
 
-                FUNDEF_VARDEC (arg_node) = TCappendVardec (INFO_NT2OT_VARDECS (arg_info),
-                                                           FUNDEF_VARDEC (arg_node));
-                INFO_NT2OT_VARDECS (arg_info) = NULL;
+                FUNDEF_VARDEC (arg_node)
+                  = TCappendVardec (INFO_VARDECS (arg_info), FUNDEF_VARDEC (arg_node));
+                INFO_VARDECS (arg_info) = NULL;
             }
-            if (FUNDEF_ISDOFUN (arg_node) && INFO_NT2OT_THENBOTTS (arg_info) != NULL) {
+            if (FUNDEF_ISDOFUN (arg_node) && INFO_THENBOTTS (arg_info) != NULL) {
                 FUNDEF_ISDOFUN (arg_node) = FALSE;
                 FUNDEF_ISLACINLINE (arg_node) = TRUE;
             }
         }
     }
 
-    INFO_NT2OT_THENBOTTS (arg_info) = NULL;
-    INFO_NT2OT_ELSEBOTTS (arg_info) = NULL;
+    INFO_THENBOTTS (arg_info) = NULL;
+    INFO_ELSEBOTTS (arg_info) = NULL;
 
-    if (FUNDEF_NEXT (arg_node) != NULL) {
+    if ((!INFO_ONEFUNCTION (arg_info)) && (FUNDEF_NEXT (arg_node) != NULL)) {
         FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *NT2OTap( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+NT2OTap (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("NT2OTap");
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    if (INFO_ONEFUNCTION (arg_info) && FUNDEF_ISLACFUN (AP_FUNDEF (arg_node))
+        && (AP_FUNDEF (arg_node) != INFO_FUNDEF (arg_info))) {
+        info *new_info = MakeInfo ();
+        INFO_ONEFUNCTION (new_info) = TRUE;
+        AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), new_info);
+        new_info = FreeInfo (new_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -619,7 +696,7 @@ NT2OTblock (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("NT2OTblock");
 
-    INFO_NT2OT_VARDECMODE (arg_info) = M_fix;
+    INFO_VARDECMODE (arg_info) = M_fix;
     if (BLOCK_VARDEC (arg_node) != NULL) {
         BLOCK_VARDEC (arg_node) = TRAVdo (BLOCK_VARDEC (arg_node), arg_info);
     }
@@ -628,7 +705,7 @@ NT2OTblock (node *arg_node, info *arg_info)
         BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
     }
 
-    INFO_NT2OT_VARDECMODE (arg_info) = M_filter;
+    INFO_VARDECMODE (arg_info) = M_filter;
     if (BLOCK_VARDEC (arg_node) != NULL) {
         BLOCK_VARDEC (arg_node) = TRAVdo (BLOCK_VARDEC (arg_node), arg_info);
     }
@@ -653,7 +730,7 @@ NT2OTvardec (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("NT2OTvardec");
 
-    if (INFO_NT2OT_VARDECMODE (arg_info) == M_fix) {
+    if (INFO_VARDECMODE (arg_info) == M_fix) {
         VARDEC_AVIS (arg_node) = TRAVdo (VARDEC_AVIS (arg_node), arg_info);
     }
 
@@ -661,7 +738,7 @@ NT2OTvardec (node *arg_node, info *arg_info)
         VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
     }
 
-    if (INFO_NT2OT_VARDECMODE (arg_info) == M_filter) {
+    if (INFO_VARDECMODE (arg_info) == M_filter) {
         if (TYisBottom (VARDEC_NTYPE (arg_node))) {
             /**
              * eliminate this vardec completely!
@@ -761,8 +838,7 @@ NT2OTcond (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("NT2OTcond");
 
-    if ((INFO_NT2OT_THENBOTTS (arg_info) != NULL)
-        && (INFO_NT2OT_ELSEBOTTS (arg_info) != NULL)) {
+    if ((INFO_THENBOTTS (arg_info) != NULL) && (INFO_ELSEBOTTS (arg_info) != NULL)) {
         /**
          * There are errors in both branches, i.e., abort
          */
@@ -771,15 +847,13 @@ NT2OTcond (node *arg_node, info *arg_info)
     COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
     COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
 
-    if (INFO_NT2OT_THENBOTTS (arg_info) != NULL) {
-        ASSIGN_NEXT (INFO_NT2OT_THENBOTTS (arg_info))
-          = BLOCK_INSTR (COND_THEN (arg_node));
-        BLOCK_INSTR (COND_THEN (arg_node)) = INFO_NT2OT_THENBOTTS (arg_info);
+    if (INFO_THENBOTTS (arg_info) != NULL) {
+        ASSIGN_NEXT (INFO_THENBOTTS (arg_info)) = BLOCK_INSTR (COND_THEN (arg_node));
+        BLOCK_INSTR (COND_THEN (arg_node)) = INFO_THENBOTTS (arg_info);
     }
-    if (INFO_NT2OT_ELSEBOTTS (arg_info) != NULL) {
-        ASSIGN_NEXT (INFO_NT2OT_ELSEBOTTS (arg_info))
-          = BLOCK_INSTR (COND_ELSE (arg_node));
-        BLOCK_INSTR (COND_ELSE (arg_node)) = INFO_NT2OT_ELSEBOTTS (arg_info);
+    if (INFO_ELSEBOTTS (arg_info) != NULL) {
+        ASSIGN_NEXT (INFO_ELSEBOTTS (arg_info)) = BLOCK_INSTR (COND_ELSE (arg_node));
+        BLOCK_INSTR (COND_ELSE (arg_node)) = INFO_ELSEBOTTS (arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -807,13 +881,13 @@ NT2OTfuncond (node *arg_node, info *arg_info)
 
     if (TYisBottom (ttype)) {
         DBUG_ASSERT (!TYisBottom (etype), "two bottom args for funcond found");
-        INFO_NT2OT_THENBOTTS (arg_info) = AddTypeError (INFO_NT2OT_THENBOTTS (arg_info),
-                                                        FUNCOND_THEN (arg_node), etype);
+        INFO_THENBOTTS (arg_info)
+          = AddTypeError (INFO_THENBOTTS (arg_info), FUNCOND_THEN (arg_node), etype);
     }
     if (TYisBottom (etype)) {
         DBUG_ASSERT (!TYisBottom (ttype), "two bottom args for funcond found");
-        INFO_NT2OT_ELSEBOTTS (arg_info) = AddTypeError (INFO_NT2OT_ELSEBOTTS (arg_info),
-                                                        FUNCOND_ELSE (arg_node), ttype);
+        INFO_ELSEBOTTS (arg_info)
+          = AddTypeError (INFO_ELSEBOTTS (arg_info), FUNCOND_ELSE (arg_node), ttype);
     }
 
     DBUG_RETURN (arg_node);
@@ -839,7 +913,7 @@ NT2OTpart (node *arg_node, info *arg_info)
     if (PART_NEXT (arg_node) != NULL) {
         PART_NEXT (arg_node) = TRAVdo (PART_NEXT (arg_node), arg_info);
     } else {
-        INFO_NT2OT_WLIDS (arg_info) = NULL;
+        INFO_WLIDS (arg_info) = NULL;
     }
 
     DBUG_RETURN (arg_node);
@@ -865,7 +939,7 @@ NT2OTwithid (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("NT2OTwithid");
 
-    if (INFO_NT2OT_WLIDS (arg_info) == NULL) {
+    if (INFO_WLIDS (arg_info) == NULL) {
         vec_type = AVIS_TYPE (IDS_AVIS (WITHID_VEC (arg_node)));
         vec_type = TYfixAndEliminateAlpha (vec_type);
 
@@ -875,7 +949,7 @@ NT2OTwithid (node *arg_node, info *arg_info)
                                       IDS_NAME (WITHID_VEC (arg_node))));
                 num_vars = SHgetExtent (TYgetShape (vec_type), 0);
                 new_ids = NULL;
-                new_vardecs = INFO_NT2OT_VARDECS (arg_info);
+                new_vardecs = INFO_VARDECS (arg_info);
                 for (i = 0; i < num_vars; i++) {
                     tmp_avis
                       = TBmakeAvis (ILIBtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int),
@@ -884,21 +958,21 @@ NT2OTwithid (node *arg_node, info *arg_info)
                     new_ids = TBmakeIds (tmp_avis, new_ids);
                 }
                 WITHID_IDS (arg_node) = new_ids;
-                INFO_NT2OT_WLIDS (arg_info) = new_ids;
-                INFO_NT2OT_VARDECS (arg_info) = new_vardecs;
+                INFO_WLIDS (arg_info) = new_ids;
+                INFO_VARDECS (arg_info) = new_vardecs;
             } else {
                 DBUG_PRINT ("NT2OT", ("no WITHID_IDS for %s built",
                                       IDS_NAME (WITHID_VEC (arg_node))));
             }
         } else {
-            INFO_NT2OT_WLIDS (arg_info) = WITHID_IDS (arg_node);
+            INFO_WLIDS (arg_info) = WITHID_IDS (arg_node);
         }
     } else {
         /**
          * we are dealing with a default partition here => Duplicate those of the real
          * one!
          */
-        WITHID_IDS (arg_node) = DUPdoDupTree (INFO_NT2OT_WLIDS (arg_info));
+        WITHID_IDS (arg_node) = DUPdoDupTree (INFO_WLIDS (arg_info));
     }
 
     DBUG_RETURN (arg_node);

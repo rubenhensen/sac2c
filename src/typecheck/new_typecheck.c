@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.85  2005/08/29 11:25:21  ktr
+ * NTC may now run in the optimization cycle
+ *
  * Revision 3.84  2005/08/19 17:28:42  sbs
  * changed for proper type_conv handling
  *
@@ -336,6 +339,64 @@ NTCdoNewTypeCheck (node *arg_node)
     DBUG_RETURN (arg_node);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn node *NTCdoNewTypeCheckOneFunction( node *arg_node)
+ *
+ *****************************************************************************/
+node *
+NTCdoNewTypeCheckOneFunction (node *arg_node)
+{
+    DBUG_ENTER ("NTCdoNewTypeCheckOneFunction");
+
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_fundef,
+                 "NTCdoNewTypeCheckOneFunction can only be applied to N_fundef");
+
+    if (!FUNDEF_ISWRAPPERFUN (arg_node) && !FUNDEF_ISLACFUN (arg_node)
+        && (FUNDEF_BODY (arg_node) != NULL)) {
+        int oldmaxspec;
+        node *oldfundefnext;
+        info *arg_info;
+
+        /*
+         * De-activate specialising
+         */
+        oldmaxspec = global.maxspec;
+        global.maxspec = 0;
+
+        /*
+         * Rescue FUNDEF_NEXT
+         */
+        oldfundefnext = FUNDEF_NEXT (arg_node);
+        FUNDEF_NEXT (arg_node) = NULL;
+
+        /*
+         * Apply typechecker
+         */
+        FUNDEF_TCSTAT (arg_node) = NTC_not_checked;
+        TRAVpush (TR_ntc);
+
+        arg_info = MakeInfo ();
+        arg_node = TRAVdo (arg_node, arg_info);
+        arg_info = FreeInfo (arg_info);
+
+        TRAVpop ();
+
+        /*
+         * Apple mysterious n2o traversal
+         */
+        arg_node = NT2OTdoTransformOneFunction (arg_node);
+
+        /*
+         * Restore FUNDEF_NEXT and global.maxspec
+         */
+        global.maxspec = oldmaxspec;
+        FUNDEF_NEXT (arg_node) = oldfundefnext;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
 /******************************************************************************
  *
  * function:
@@ -445,7 +506,9 @@ TypeCheckFunctionBody (node *fundef, info *arg_info)
 
     } else {
         DBUG_ASSERT (FUNDEF_ISEXTERN (fundef),
-                     "non external function with NULL body found but not expected here!");
+                     "non external function with NULL body found"
+                     " but not expected here!");
+
         /*
          * We simply accept the type found in the external. declaration here:
          */

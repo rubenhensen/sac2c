@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2005/08/29 11:25:21  ktr
+ * NTC may now run in the optimization cycle
+ *
  * Revision 3.17  2005/08/19 17:28:42  sbs
  * changed for proper type_conv handling
  *
@@ -65,6 +68,7 @@
 #include "types.h"
 
 extern node *NTCdoNewTypeCheck (node *arg_node);
+extern node *NTCdoNewTypeCheckOneFunction (node *arg_node);
 extern ntype *NTCnewTypeCheck_Expr (node *arg_node);
 
 extern node *NTCmodule (node *arg_node, info *arg_info);
