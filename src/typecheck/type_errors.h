@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.18  2005/08/29 16:43:03  ktr
+ * added support for prfs F_idx_sel, F_shape_sel, F_idx_shape_sel
+ *
  * Revision 1.17  2005/08/10 19:10:32  sbs
  * changed type of te_info
  * changed ILIBmalloc to PHPmalloc
@@ -76,9 +79,12 @@ extern void TEassureNumA (char *obj, ntype *type);
 extern void TEassureSimpleType (char *obj, ntype *type);
 extern void TEassureIntS (char *obj, ntype *type);
 extern void TEassureIntVect (char *obj, ntype *type);
+extern void TEassureIntVectLengthOne (char *obj, ntype *type);
 extern void TEassureNonNegativeValues (char *obj, ntype *type);
 extern void TEassureShpMatchesDim (char *obj1, ntype *type1, char *obj2, ntype *type2);
+extern void TEassureValMatchesDim (char *obj1, ntype *type1, char *obj2, ntype *type2);
 extern void TEassureValMatchesShape (char *obj1, ntype *type1, char *obj2, ntype *type2);
+extern void TEassureIdxMatchesShape (char *obj1, ntype *type1, char *obj2, ntype *type2);
 extern void TEassureAbsValFitsShape (char *obj1, ntype *type1, char *obj2, ntype *type2);
 extern void TEassureProdValMatchesProdShape (char *obj1, ntype *type1, char *obj2,
                                              ntype *type2);

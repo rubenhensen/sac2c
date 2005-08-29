@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.30  2005/08/29 16:43:03  ktr
+ * added support for prfs F_idx_sel, F_shape_sel, F_idx_shape_sel
+ *
  * Revision 1.29  2005/08/23 14:25:51  sbs
  * extended _toi_S_ _tof_S_ and _tod_S_ for all types
  * including bool and char!
@@ -609,13 +612,156 @@ NTCCTprf_selS (te_info *info, ntype *args)
             if (err_msg != NULL) {
                 res = TYmakeBottomType (err_msg);
             } else {
-
                 if (TYisAKV (idx) && TYisAKV (array)) {
                     res = TYmakeAKV (TYcopyType (TYgetScalar (array)),
                                      ApplyCF (info, args));
                 } else {
                     res = TYmakeAKS (TYcopyType (TYgetScalar (array)), SHmakeShape (0));
                 }
+            }
+        }
+    }
+
+    DBUG_RETURN (TYmakeProductType (1, res));
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    ntype *NTCCTprf_idx_selS( te_info *info, ntype *args)
+ *
+ * description:
+ *
+ ******************************************************************************/
+
+ntype *
+NTCCTprf_idx_selS (te_info *info, ntype *args)
+{
+    ntype *res = NULL;
+    ntype *idx, *array;
+    char *err_msg;
+
+    DBUG_ENTER ("NTCCTprf_idx_selS");
+    DBUG_ASSERT (TYgetProductSize (args) == 2,
+                 "selS called with incorrect number of arguments");
+
+    idx = TYgetProductMember (args, 0);
+    array = TYgetProductMember (args, 1);
+
+    TEassureIntS (TEprfArg2Obj (TEgetNameStr (info), 1), idx);
+    TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 2), array);
+    err_msg = TEfetchErrors ();
+    if (err_msg != NULL) {
+        res = TYmakeBottomType (err_msg);
+    } else {
+        TEassureIdxMatchesShape (TEprfArg2Obj (TEgetNameStr (info), 1), idx,
+                                 TEarg2Obj (2), array);
+        err_msg = TEfetchErrors ();
+        if (err_msg != NULL) {
+            res = TYmakeBottomType (err_msg);
+        } else {
+            if (TYisAKV (idx) && TYisAKV (array)) {
+                res = TYmakeAKV (TYcopyType (TYgetScalar (array)), ApplyCF (info, args));
+            } else {
+                res = TYmakeAKS (TYcopyType (TYgetScalar (array)), SHmakeShape (0));
+            }
+        }
+    }
+
+    DBUG_RETURN (TYmakeProductType (1, res));
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    ntype *NTCCTprf_shape_sel( te_info *info, ntype *args)
+ *
+ * description:
+ *
+ ******************************************************************************/
+
+ntype *
+NTCCTprf_shape_sel (te_info *info, ntype *args)
+{
+    ntype *res = NULL;
+    ntype *idx, *array;
+    char *err_msg;
+
+    DBUG_ENTER ("NTCCTprf_shape_sel");
+    DBUG_ASSERT (TYgetProductSize (args) == 2,
+                 "selS called with incorrect number of arguments");
+
+    idx = TYgetProductMember (args, 0);
+    array = TYgetProductMember (args, 1);
+
+    TEassureIntVectLengthOne (TEprfArg2Obj (TEgetNameStr (info), 1), idx);
+    TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 2), array);
+    err_msg = TEfetchErrors ();
+    if (err_msg != NULL) {
+        res = TYmakeBottomType (err_msg);
+    } else {
+        TEassureValMatchesDim (TEprfArg2Obj (TEgetNameStr (info), 1), idx, TEarg2Obj (2),
+                               array);
+        err_msg = TEfetchErrors ();
+        if (err_msg != NULL) {
+            res = TYmakeBottomType (err_msg);
+        } else {
+            if (TYisAKV (idx) && (TYisAKS (array) || TYisAKV (array))) {
+                int i = ((int *)COgetDataVec (TYgetValue (idx)))[0];
+                res = TYmakeAKV (TYmakeSimpleType (T_int),
+                                 COmakeConstantFromInt (
+                                   SHgetExtent (TYgetShape (array), i)));
+            } else {
+                res = TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0));
+            }
+        }
+    }
+
+    DBUG_RETURN (TYmakeProductType (1, res));
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    ntype *NTCCTprf_idx_shape_sel( te_info *info, ntype *args)
+ *
+ * description:
+ *
+ ******************************************************************************/
+
+ntype *
+NTCCTprf_idx_shape_sel (te_info *info, ntype *args)
+{
+    ntype *res = NULL;
+    ntype *idx, *array;
+    char *err_msg;
+
+    DBUG_ENTER ("NTCCTprf_idx_shape_sel");
+    DBUG_ASSERT (TYgetProductSize (args) == 2,
+                 "selS called with incorrect number of arguments");
+
+    idx = TYgetProductMember (args, 0);
+    array = TYgetProductMember (args, 1);
+
+    TEassureIntS (TEprfArg2Obj (TEgetNameStr (info), 1), idx);
+    TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 2), array);
+    err_msg = TEfetchErrors ();
+    if (err_msg != NULL) {
+        res = TYmakeBottomType (err_msg);
+    } else {
+        TEassureValMatchesDim (TEprfArg2Obj (TEgetNameStr (info), 1), idx, TEarg2Obj (2),
+                               array);
+        err_msg = TEfetchErrors ();
+        if (err_msg != NULL) {
+            res = TYmakeBottomType (err_msg);
+        } else {
+            if (TYisAKV (idx) && (TYisAKS (array) || TYisAKV (array))) {
+                int i = ((int *)COgetDataVec (TYgetValue (idx)))[0];
+                res = TYmakeAKV (TYmakeSimpleType (T_int),
+                                 COmakeConstantFromInt (
+                                   SHgetExtent (TYgetShape (array), i)));
+            } else {
+                res = TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0));
             }
         }
     }

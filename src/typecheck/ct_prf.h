@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.13  2005/08/29 16:43:03  ktr
+ * added support for prfs F_idx_sel, F_shape_sel, F_idx_shape_sel
+ *
  * Revision 1.12  2005/08/19 17:27:33  sbs
  * added NTCCTprf_type_conv
  *
@@ -54,6 +57,9 @@ extern ntype *NTCCTprf_dim (te_info *info, ntype *args);
 extern ntype *NTCCTprf_shape (te_info *info, ntype *args);
 extern ntype *NTCCTprf_reshape (te_info *info, ntype *args);
 extern ntype *NTCCTprf_selS (te_info *info, ntype *args);
+extern ntype *NTCCTprf_idx_selS (te_info *info, ntype *args);
+extern ntype *NTCCTprf_shape_sel (te_info *info, ntype *args);
+extern ntype *NTCCTprf_idx_shape_sel (te_info *info, ntype *args);
 extern ntype *NTCCTprf_modarrayS (te_info *info, ntype *args);
 extern ntype *NTCCTprf_toiS (te_info *info, ntype *args);
 extern ntype *NTCCTprf_toiA (te_info *info, ntype *args);

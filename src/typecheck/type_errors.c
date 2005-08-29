@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.26  2005/08/29 16:43:03  ktr
+ * added support for prfs F_idx_sel, F_shape_sel, F_idx_shape_sel
+ *
  * Revision 1.25  2005/08/16 14:41:33  sbs
  * added assignment in TEgetNumRets just to please gcc
  *
@@ -176,6 +179,31 @@ MatchVect (ntype *type)
     switch (TYgetConstr (type)) {
     case TC_akv:
     case TC_aks:
+    case TC_akd:
+        res = (TYgetDim (type) == 1);
+        break;
+    case TC_audgz:
+    case TC_aud:
+        res = TRUE;
+        break;
+    default:
+        DBUG_ASSERT (FALSE, "MatchVect applied to non-array type");
+    }
+
+    DBUG_RETURN (res);
+}
+
+static bool
+MatchVectLengthOne (ntype *type)
+{
+    bool res = FALSE;
+    DBUG_ENTER ("MatchVect");
+
+    switch (TYgetConstr (type)) {
+    case TC_akv:
+    case TC_aks:
+        res = (TYgetDim (type) == 1) && (SHgetExtent (TYgetShape (type), 0) == 1);
+        break;
     case TC_akd:
         res = (TYgetDim (type) == 1);
         break;
@@ -792,6 +820,28 @@ TEassureIntVect (char *obj, ntype *type)
 /******************************************************************************
  *
  * function:
+ *    void TEassureIntVectLengthOne( char *obj, ntype *type)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+void
+TEassureIntVectLengthOne (char *obj, ntype *type)
+{
+    DBUG_ENTER ("AssureIntVectLengthOne");
+
+    if (!MatchIntA (type) || !MatchVectLengthOne (type)) {
+        TEhandleError (global.linenum, "%s should be an integer vector; type found: %s",
+                       obj, TYtype2String (type, FALSE, 0));
+    }
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
  *    void TEassureNonNegativeValues( char *obj, ntype *type)
  *
  * description:
@@ -854,6 +904,40 @@ TEassureShpMatchesDim (char *obj1, ntype *type1, char *obj2, ntype *type2)
 
 /** <!--********************************************************************-->
  *
+ * @fn void TEassureValMatchesDim( char *obj1, ntype *type1,
+ *                                 char *obj2, ntype *type2)
+ *
+ *   @brief  makes shure, that if type1 is AKV and type2 is AKS, type1
+ *           constitutes a legal index into shape( type2).
+ *           It is assumed, that type1 is a vector or a scalar!!
+ *
+ ******************************************************************************/
+
+void
+TEassureValMatchesDim (char *obj1, ntype *type1, char *obj2, ntype *type2)
+{
+    int *dv;
+
+    DBUG_ENTER ("TEassureValMatchesDim");
+
+    if ((TYgetConstr (type1) == TC_akv)
+        && ((TYgetConstr (type2) == TC_akd) || (TYgetConstr (type2) == TC_aks)
+            || (TYgetConstr (type2) == TC_akv))) {
+        dv = (int *)COgetDataVec (TYgetValue (type1));
+        if ((dv[0] < 0) || (dv[0] >= TYgetDim (type2))) {
+            TEhandleError (global.linenum,
+                           "%s should be legal index into shape( %s);"
+                           " types found: %s  and  %s",
+                           obj1, obj2, TYtype2String (type1, FALSE, 0),
+                           TYtype2String (type2, FALSE, 0));
+        }
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn void TEassureValMatchesShape( char *obj1, ntype *type1,
  *                                   char *obj2, ntype *type2)
  *
@@ -884,6 +968,39 @@ TEassureValMatchesShape (char *obj1, ntype *type1, char *obj2, ntype *type2)
                                obj1, obj2, TYtype2String (type1, FALSE, 0),
                                TYtype2String (type2, FALSE, 0));
             }
+        }
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn void TEassureIdxMatchesShape( char *obj1, ntype *type1,
+ *                                   char *obj2, ntype *type2)
+ *
+ *   @brief  makes shure, that if type1 is AKV and type2 is AKS, type1
+ *           constitutes a legal offset into type2.
+ *           Type1 must be scalar!
+ *
+ ******************************************************************************/
+
+void
+TEassureIdxMatchesShape (char *obj1, ntype *type1, char *obj2, ntype *type2)
+{
+    int *dv;
+
+    DBUG_ENTER ("TEassureValMatchesShape");
+
+    if ((TYgetConstr (type1) == TC_akv)
+        && ((TYgetConstr (type2) == TC_aks) || (TYgetConstr (type2) == TC_akv))) {
+        dv = (int *)COgetDataVec (TYgetValue (type1));
+        if ((dv[0] < 0) || (dv[0] >= SHgetUnrLen (TYgetShape (type2)))) {
+            TEhandleError (global.linenum,
+                           "%s should be legal offset index into %s;"
+                           " types found: %s  and  %s",
+                           obj1, obj2, TYtype2String (type1, FALSE, 0),
+                           TYtype2String (type2, FALSE, 0));
         }
     }
 
