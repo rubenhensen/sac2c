@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.86  2005/08/30 14:40:03  sbs
+ * NTCap can deal with dispatched function calls now.
+ *
  * Revision 3.85  2005/08/29 11:25:21  ktr
  * NTC may now run in the optimization cycle
  *
@@ -1154,40 +1157,50 @@ NTCap (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("NTCap");
 
-    /*
-     * First we collect the argument types. NTCexprs puts them into a product type
-     * which is expected in INFO_NTC_TYPE( arg_info) afterwards!
-     * INFO_NTC_NUM_EXPRS_SOFAR is used to count the number of exprs "on the fly"!
-     */
-    INFO_NTC_NUM_EXPRS_SOFAR (arg_info) = 0;
-
-    if (NULL != AP_ARGS (arg_node)) {
-        AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
-    } else {
-        INFO_NTC_TYPE (arg_info) = TYmakeProductType (0);
-    }
-
-    DBUG_ASSERT (TYisProd (INFO_NTC_TYPE (arg_info)),
-                 "NTCexprs did not create a product type");
-
-    args = INFO_NTC_TYPE (arg_info);
-    INFO_NTC_TYPE (arg_info) = NULL;
-
     wrapper = AP_FUNDEF (arg_node);
-    old_info_chn = global.act_info_chn;
-    global.act_info_chn
-      = TEmakeInfoUdf (global.linenum, TE_udf, NSgetName (FUNDEF_NS (wrapper)),
-                       FUNDEF_NAME (wrapper), wrapper, INFO_NTC_LAST_ASSIGN (arg_info),
-                       global.act_info_chn);
-    DBUG_PRINT ("TEINFO",
-                ("TE info %p created for udf ap %p", global.act_info_chn, arg_node));
-    res = NTCCTcomputeType (NTCCTudf, global.act_info_chn, args);
+    if (!FUNDEF_ISWRAPPERFUN (wrapper) && !FUNDEF_ISLACFUN (wrapper)) {
+        /**
+         * the fun call has been dispatched already!
+         * (i.e., we are in type-upgrade)
+         * get the existing return type only!
+         */
+        INFO_NTC_TYPE (arg_info) = TUmakeProductTypeFromRets (FUNDEF_RETS (wrapper));
 
-    global.act_info_chn = old_info_chn;
-    DBUG_PRINT ("NTC_INFOCHN", ("global.act_info_chn set back to %p", old_info_chn));
+    } else {
+        /*
+         * First we collect the argument types. NTCexprs puts them into a product type
+         * which is expected in INFO_NTC_TYPE( arg_info) afterwards!
+         * INFO_NTC_NUM_EXPRS_SOFAR is used to count the number of exprs "on the fly"!
+         */
+        INFO_NTC_NUM_EXPRS_SOFAR (arg_info) = 0;
 
-    TYfreeType (args);
-    INFO_NTC_TYPE (arg_info) = res;
+        if (NULL != AP_ARGS (arg_node)) {
+            AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
+        } else {
+            INFO_NTC_TYPE (arg_info) = TYmakeProductType (0);
+        }
+
+        DBUG_ASSERT (TYisProd (INFO_NTC_TYPE (arg_info)),
+                     "NTCexprs did not create a product type");
+
+        args = INFO_NTC_TYPE (arg_info);
+        INFO_NTC_TYPE (arg_info) = NULL;
+
+        old_info_chn = global.act_info_chn;
+        global.act_info_chn
+          = TEmakeInfoUdf (global.linenum, TE_udf, NSgetName (FUNDEF_NS (wrapper)),
+                           FUNDEF_NAME (wrapper), wrapper,
+                           INFO_NTC_LAST_ASSIGN (arg_info), global.act_info_chn);
+        DBUG_PRINT ("TEINFO",
+                    ("TE info %p created for udf ap %p", global.act_info_chn, arg_node));
+        res = NTCCTcomputeType (NTCCTudf, global.act_info_chn, args);
+
+        global.act_info_chn = old_info_chn;
+        DBUG_PRINT ("NTC_INFOCHN", ("global.act_info_chn set back to %p", old_info_chn));
+
+        TYfreeType (args);
+        INFO_NTC_TYPE (arg_info) = res;
+    }
 
     DBUG_RETURN (arg_node);
 }
