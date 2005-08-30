@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.82  2005/08/30 13:28:12  sbs
+ * added break after tup
+ *
  * Revision 3.81  2005/08/11 13:00:30  sbs
  * adjusted the description of the break specifiers prior the optimizations
  * to the reality
@@ -256,6 +259,7 @@ USGprintUsage ()
 
     PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:cse",
                       "Stop in cycle <n> after common subexpression elimination.");
+    PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:tup", "Stop in cycle <n> after type upgrade.");
     PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:cf",
                       "Stop in cycle <n> after constant folding.");
     PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:sp",
