@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.20  2005/08/30 18:16:27  sah
+ * DFR is now disabled after export when compiling
+ * a module
+ *
  * Revision 1.19  2005/07/27 14:57:31  sah
  * added better DBUG messages
  *
@@ -467,6 +471,15 @@ EXPdoExport (node *syntax_tree)
             CTIwarn ("Dead Function Removal is disabled. This will lead to "
                      "bigger modules.");
         }
+
+        /*
+         * we have to disable DFR now, as for modules every function that
+         * has been serialised, has to be present in the binary module
+         * as well. Especially when specialising one instance from this
+         * module in a later context, all dependent functions need to be
+         * present!
+         */
+        global.optimize.dodfr = FALSE;
 
         SERdoSerialize (syntax_tree);
     }
