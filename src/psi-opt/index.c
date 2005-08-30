@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.77  2005/08/30 11:47:29  sah
+ * basic implementation
+ *
  * Revision 3.76  2005/08/21 14:25:47  sah
  * IVE-rewrite: now the vardecs are created as well ;)
  *
@@ -745,7 +748,8 @@ CheckAndReplaceModarray (node *prf, node *lhs)
     if ((avis != NULL) && (TUshapeKnown (IDS_NTYPE (lhs)))
         && (TUshapeKnown (ID_NTYPE (PRF_ARG1 (prf))))
         && (TUshapeKnown (ID_NTYPE (PRF_ARG2 (prf))))
-        && (TUshapeKnown (ID_NTYPE (PRF_ARG3 (prf))))) {
+        && ((NODE_TYPE (PRF_ARG3 (prf)) != N_id)
+            || TUshapeKnown (ID_NTYPE (PRF_ARG3 (prf))))) {
         /*
          * TODO: sah
          * _idx_modarray_ is limited to args and return
@@ -789,6 +793,10 @@ IVEfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("IVEfundef");
 
+    if (FUNDEF_ARGS (arg_node) != NULL) {
+        FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
+    }
+
     if (FUNDEF_BODY (arg_node) != NULL) {
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
     }
@@ -810,6 +818,12 @@ node *
 IVEarg (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("IVEarg");
+
+    if (AVIS_IDXTYPES (ARG_AVIS (arg_node)) != NULL) {
+        AVIS_IDXIDS (ARG_AVIS (arg_node))
+          = IdxTypes2IdxIds (AVIS_IDXTYPES (ARG_AVIS (arg_node)), ARG_AVIS (arg_node),
+                             NULL, arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
