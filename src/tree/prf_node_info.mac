@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.42  2005/08/30 20:24:29  ktr
+ * added CF function for ids_sel
+ *
  * Revision 3.41  2005/08/29 16:43:47  ktr
  * added typechecker support for F_idx_sel, F_shape_sel, F_idx_shape_sel
  *
@@ -199,7 +202,7 @@ PRF_IF (F_toi_S, "F_toi_S", "_toi_S_", "toi", FALSE, 1, NTCCTprf_toiS, COtoi),
   PRF_IF (F_idx_shape_sel, "F_idx_shape_sel", "_idx_shape_sel_", "idx_shape_sel", FALSE,
           2, NTCCTprf_idx_shape_sel, NULL),
   PRF_IF (F_idx_sel, "F_idx_sel", "_idx_sel_", "idx_sel", FALSE, 2, NTCCTprf_idx_selS,
-          NULL),
+          COidxSel),
   PRF_IF (F_idx_modarray, "F_idx_modarray", "_idx_modarray_", "idx_modarray", FALSE, 3,
           NTCCTprf_dummy, NULL),
   PRF_IF (F_sel, "F_sel", "_sel_", "sel", FALSE, 2, NTCCTprf_selS, COsel),
