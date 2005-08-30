@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.109  2005/08/30 13:39:09  sbs
+ * DBUG_ASSERT added.
+ *
  * Revision 3.108  2005/08/19 23:08:51  sah
  * quick fix to get stdlib compiled.
  *
@@ -2936,6 +2939,7 @@ TYdispatchFunType (ntype *fun, ntype *args)
 
     DBUG_ENTER ("TYDispatchFunType");
 
+    DBUG_ASSERT (fun != NULL, "first arg of TYDispatchFunType is NULL funtype !");
     DBUG_ASSERT ((NTYPE_CON (args) = TC_prod),
                  ("second arg of TYDispatchFunType non-product type!"));
 
