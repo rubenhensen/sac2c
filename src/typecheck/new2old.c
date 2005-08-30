@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.45  2005/08/30 20:23:14  ktr
+ * AVIS nodes without AVIS_TYPE are now equipped with a default type (int).
+ * This is important as dead variables can arise during the opt cycle.
+ *
  * Revision 1.44  2005/08/29 11:25:21  ktr
  * NTC may now run in the optimization cycle
  *
@@ -660,22 +664,29 @@ NT2OTavis (node *arg_node, info *arg_info)
 
     type = AVIS_TYPE (arg_node);
 
-    DBUG_ASSERT (type != NULL, "non existant type at avis");
+    if (type != NULL) {
 
-    DBUG_EXECUTE ("FIXNT", tmp_str = TYtype2String (type, FALSE, 0););
-    DBUG_PRINT ("FIXNT", ("replacing argument/vardec %s\'s type %s by ...",
-                          AVIS_NAME (arg_node), tmp_str));
-    type = TYfixAndEliminateAlpha (type);
-    DBUG_EXECUTE ("FIXNT", tmp_str2 = TYtype2String (type, FALSE, 0););
+        DBUG_EXECUTE ("FIXNT", tmp_str = TYtype2String (type, FALSE, 0););
+        DBUG_PRINT ("FIXNT", ("replacing argument/vardec %s\'s type %s by ...",
+                              AVIS_NAME (arg_node), tmp_str));
+        type = TYfixAndEliminateAlpha (type);
+        DBUG_EXECUTE ("FIXNT", tmp_str2 = TYtype2String (type, FALSE, 0););
 #if CWC_WOULD_BE_PROPER
-    AVIS_TYPE (arg_node) = TYfreeType (AVIS_TYPE (arg_node));
+        AVIS_TYPE (arg_node) = TYfreeType (AVIS_TYPE (arg_node));
 #endif
-    AVIS_TYPE (arg_node) = type;
-    DBUG_PRINT ("FIXNT", ("... %s", tmp_str2));
-    DBUG_EXECUTE ("FIXNT", tmp_str = ILIBfree (tmp_str); tmp_str2 = ILIBfree (tmp_str2););
+        AVIS_TYPE (arg_node) = type;
+        DBUG_PRINT ("FIXNT", ("... %s", tmp_str2));
+        DBUG_EXECUTE ("FIXNT", tmp_str = ILIBfree (tmp_str);
+                      tmp_str2 = ILIBfree (tmp_str2););
 
-    if (!(TYisArray (type) || TYisBottom (type))) {
-        CTIabort ("Could not infer proper type for arg %s", ARG_NAME (arg_node));
+        if (!(TYisArray (type) || TYisBottom (type))) {
+            CTIabort ("Could not infer proper type for arg %s", ARG_NAME (arg_node));
+        }
+    } else {
+        /*
+         * AVIS_TYPE CAN BE NULL iff nt2ot is run in the opt cycle
+         */
+        AVIS_TYPE (arg_node) = TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0));
     }
 
     DBUG_RETURN (arg_node);
