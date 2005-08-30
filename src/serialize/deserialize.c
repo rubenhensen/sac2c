@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.29  2005/08/30 11:43:46  sah
+ * deserialisation no longer relies on the signature being
+ * intact. the symbolname is used instead noiw
+ *
  * Revision 1.28  2005/08/19 18:08:58  sah
  * cleanup, DBUG prints and lots of comments
  *
@@ -417,6 +421,27 @@ updateContextInformation (node *entry)
     DBUG_VOID_RETURN;
 }
 
+static char *
+HeadSymbol2BodySymbol (const char *symbol)
+{
+    char *result;
+
+    DBUG_ENTER ("HeadSymbol2BodySymbol");
+
+    DBUG_ASSERT (((symbol[0] == 'S') && (symbol[1] == 'H') && (symbol[2] == 'D')),
+                 "given symbol is not a function header symbol!");
+
+    result = ILIBmalloc (strlen (symbol) + 2);
+
+    snprintf (result, strlen (symbol) + 2, "S%s", symbol);
+
+    result[1] = 'B';
+    result[2] = 'D';
+    result[3] = 'Y';
+
+    DBUG_RETURN (result);
+}
+
 /*
  * functions handling the aliasing
  */
@@ -809,7 +834,7 @@ node *
 DSloadFunctionBody (node *fundef)
 {
     node *result = NULL;
-    const char *serfunname;
+    char *serfunname;
     serfun_p serfun;
     module_t *module;
 
@@ -817,13 +842,23 @@ DSloadFunctionBody (node *fundef)
 
     module = MODMloadModule (NSgetModule (FUNDEF_NS (fundef)));
 
-    serfunname = SERgenerateSerFunName ((FUNDEF_ISWRAPPERFUN (fundef) ? SET_wrapperbody
-                                                                      : SET_funbody),
-                                        fundef);
+    DBUG_ASSERT ((FUNDEF_SYMBOLNAME (fundef) != NULL),
+                 "cannot load body for a function without symbolname!");
+
+    serfunname = HeadSymbol2BodySymbol (FUNDEF_SYMBOLNAME (fundef));
+
+    DBUG_PRINT ("DS_BODY", ("deserializing fundef body for symbol %s...", serfunname));
+
+    SetCurrentFundefHead (fundef);
 
     serfun = MODMgetDeSerializeFunction (serfunname, module);
 
+    serfunname = ILIBfree (serfunname);
+
     SetCurrentFundefHead (fundef);
+
+    DBUG_ASSERT ((serfun != NULL),
+                 "deserializer not found. module seems to be inconsistent!");
 
     result = serfun ();
 

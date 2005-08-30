@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.33  2005/08/30 11:43:46  sah
+ * deserialisation no longer relies on the signature being
+ * intact. the symbolname is used instead noiw
+ *
  * Revision 1.32  2005/08/19 17:23:16  sbs
  * changed from TUrettypes2alpha to TUrettypes2alphaFix, etc
  * changed the relataion of lacfuns (varupdate) if there exists a non-alpha type
@@ -417,8 +421,11 @@ DoSpecialize (node *wrapper, node *fundef, ntype *args)
     /*
      * in case of a function of a module, the body is missing, so
      * fetch it for the copy (the one we will specialize later)
+     * we have to set the symbolname of the copy explicitly, as
+     * it is not copied by DupTree!
      */
     if ((FUNDEF_SYMBOLNAME (fundef) != NULL) && (FUNDEF_BODY (fundef) == NULL)) {
+        FUNDEF_SYMBOLNAME (res) = ILIBstringCopy (FUNDEF_SYMBOLNAME (fundef));
         res = AFBdoAddFunctionBody (res);
     }
 
