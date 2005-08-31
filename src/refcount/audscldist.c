@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2005/08/31 17:09:06  ktr
+ * AAVIS_SSAASSIGN is now set for copy assignment
+ *
  * Revision 1.4  2005/08/11 07:40:56  ktr
  * funcond nodes are now handled correctly as well
  *
@@ -178,6 +181,8 @@ LiftId (node *id, node *fundef, ntype *new_type, node **new_assigns)
       = TBmakeAssign (TBmakeLet (new_ids, TCmakePrf1 (F_copy, TBmakeId (ID_AVIS (id)))),
                       *new_assigns);
 
+    AVIS_SSAASSIGN (new_avis) = (*new_assigns);
+
     ID_AVIS (id) = new_avis;
 
     DBUG_VOID_RETURN;
@@ -235,6 +240,8 @@ LiftIds (node *ids_arg, node *fundef, ntype *new_type, node **new_assigns)
     (*new_assigns) = TBmakeAssign (TBmakeLet (TBmakeIds (IDS_AVIS (ids_arg), NULL),
                                               TCmakePrf1 (F_copy, new_id)),
                                    *new_assigns);
+
+    AVIS_SSAASSIGN (IDS_AVIS (ids_arg)) = (*new_assigns);
 
     IDS_AVIS (ids_arg) = new_avis;
 
