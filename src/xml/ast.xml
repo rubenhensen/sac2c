@@ -794,24 +794,20 @@
       <traversal id="CVP" name="Constant Variable Propagation" default="sons" include="ConstVarPropagation.h" >
 	<travuser>
 	  <node name="Fundef" />
-	  <node name="Block" />
 	  <node name="Assign" />
 	  <node name="Let" />
 	  <node name="Code" />
 	  <node name="Cond" />
-	  <node name="With" />
+	  <node name="Generator" />
 	  <node name="Genarray" />
 	  <node name="Modarray" />
 	  <node name="Fold" />
 	  <node name="Ap" />
 	  <node name="Prf" />
-	  <node name="Exprs" />
 	  <node name="Id" />
 	  <node name="Return" />
 	  <node name="Array" />
 	  <node name="Funcond" />
-	  <node name="Arg" />
-	  <node name="Ids" />
 	</travuser>
       </traversal>
     <traversal id="DCR" name="Dead Code Removal" default="sons" include="deadcoderemoval.h" >
