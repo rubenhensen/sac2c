@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.27  2005/09/01 07:10:23  ktr
+ * cvp_expr is now incremented
+ *
  * Revision 1.26  2005/08/31 17:12:39  ktr
  * Major simplification
  *
@@ -189,12 +192,12 @@ CVPid (node *arg_node, info *arg_info)
                 && (TYgetDim (AVIS_TYPE (avis)) == 0)))) {
         arg_node = FREEdoFreeNode (arg_node);
         arg_node = COconstant2AST (TYgetValue (AVIS_TYPE (avis)));
+        cvp_expr += 1;
     } else {
         if ((INFO_PROPMODE (arg_info) & PROP_variable) && (AVIS_SSAASSIGN (avis) != NULL)
             && (NODE_TYPE (ASSIGN_RHS (AVIS_SSAASSIGN (avis))) == N_id)) {
-            avis = ID_AVIS (ASSIGN_RHS (AVIS_SSAASSIGN (avis)));
-            arg_node = FREEdoFreeNode (arg_node);
-            arg_node = TBmakeId (avis);
+            ID_AVIS (arg_node) = ID_AVIS (ASSIGN_RHS (AVIS_SSAASSIGN (avis)));
+            cvp_expr += 1;
         }
     }
 
@@ -544,7 +547,8 @@ CVPfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CVPfundef");
 
-    DBUG_PRINT ("OPT", ("Traversion function %s", FUNDEF_NAME (arg_node)));
+    DBUG_PRINT ("OPT", ("Performing ConstVarPropagation in function %s",
+                        FUNDEF_NAME (arg_node)));
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
