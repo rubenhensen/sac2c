@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.34  2005/09/01 12:17:26  sah
+ * modified function body fetching slightly
+ *
  * Revision 1.33  2005/08/30 11:43:46  sah
  * deserialisation no longer relies on the signature being
  * intact. the symbolname is used instead noiw
@@ -415,19 +418,16 @@ DoSpecialize (node *wrapper, node *fundef, ntype *args)
     DBUG_PRINT ("SPEC", ("specializing %s for %s", CTIitemName (fundef), tmp_str));
     DBUG_EXECUTE ("SPEC", tmp_str = ILIBfree (tmp_str););
 
-    /* copy the fundef to be specialized */
-    res = DUPdoDupNode (fundef);
-
     /*
      * in case of a function of a module, the body is missing, so
-     * fetch it for the copy (the one we will specialize later)
-     * we have to set the symbolname of the copy explicitly, as
-     * it is not copied by DupTree!
+     * fetch it.
      */
     if ((FUNDEF_SYMBOLNAME (fundef) != NULL) && (FUNDEF_BODY (fundef) == NULL)) {
-        FUNDEF_SYMBOLNAME (res) = ILIBstringCopy (FUNDEF_SYMBOLNAME (fundef));
-        res = AFBdoAddFunctionBody (res);
+        fundef = AFBdoAddFunctionBody (fundef);
     }
+
+    /* copy the fundef to be specialized */
+    res = DUPdoDupNode (fundef);
 
     DBUG_ASSERT ((FUNDEF_BODY (res) != NULL), "missing body while trying to specialise!");
 
