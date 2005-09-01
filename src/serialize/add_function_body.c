@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2005/09/01 12:20:15  sah
+ * added AFBap: when adding a functions body, the bodies of all LAC funs
+ *              are added now as well
+ *
  * Revision 1.3  2005/08/09 12:20:34  sah
  * fixed a bug in handling functions with zero arguments
  *
@@ -19,6 +23,7 @@
 #include "serialize.h"
 #include "internal_lib.h"
 #include "tree_basic.h"
+#include "tree_compound.h"
 #include "modulemanager.h"
 #include "namespaces.h"
 #include "traverse.h"
@@ -235,6 +240,30 @@ AFBarg (node *arg_node, info *arg_info)
       = LookUpSSACounter (INFO_AFB_SSACOUNTER (arg_info), arg_node);
 
     arg_node = TRAVcont (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!-- ***************************************************************** -->
+ * @brief in case of a LACFUN, this funtion ensures that the body
+ *        of that lacfun is deserialized as well, as it is a part
+ *        of this functions body.
+ *
+ * @param arg_node N_ap node
+ * @param arg_info info structure
+ *
+ * @return unmodified N_ap node
+ */
+node *
+AFBap (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("AFBap");
+
+    if (FUNDEF_ISLACFUN (AP_FUNDEF (arg_node))
+        && (FUNDEF_BODY (AP_FUNDEF (arg_node)) == NULL)) {
+
+        AP_FUNDEF (arg_node) = AFBdoAddFunctionBody (AP_FUNDEF (arg_node));
+    }
 
     DBUG_RETURN (arg_node);
 }
