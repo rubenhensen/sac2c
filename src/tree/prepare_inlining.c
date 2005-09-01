@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2005/09/01 15:40:40  sah
+ * fixed indenting of code to please kai
+ *
  * Revision 1.6  2005/09/01 15:11:55  sah
  * quickfix for bug #110. see BUG110_FIXED marks
  *
@@ -301,7 +304,6 @@ node *
 PINLvardec (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PINLvardec");
-
     if (AVIS_ISDEAD (VARDEC_AVIS (arg_node))) {
         /*
          * Since this identifier is marked dead, it must have occurred
