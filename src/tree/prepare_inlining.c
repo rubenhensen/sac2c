@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2005/09/01 15:11:55  sah
+ * quickfix for bug #110. see BUG110_FIXED marks
+ *
  * Revision 1.5  2005/08/08 17:29:08  sah
  * added some DBUG_PRINTs
  *
@@ -52,6 +55,10 @@
 #include "internal_lib.h"
 #include "DupTree.h"
 #include "LookUpTable.h"
+
+#ifndef BUG110_FIXED
+#include "new_types.h"
+#endif
 
 #include "prepare_inlining.h"
 
@@ -140,7 +147,13 @@ PINLfundef (node *arg_node, info *arg_info)
     }
 
     if (FUNDEF_VARDEC (arg_node) != NULL) {
+#ifdef BUG110_FIXED
         INFO_VARDECS (arg_info) = DUPdoDupTreeLut (FUNDEF_VARDEC (arg_node), inline_lut);
+#else
+        INFO_VARDECS (arg_info)
+          = TCappendVardec (INFO_VARDECS (arg_info),
+                            DUPdoDupTreeLut (FUNDEF_VARDEC (arg_node), inline_lut));
+#endif
     }
 
     FUNDEF_RETURN (arg_node) = TRAVdo (FUNDEF_RETURN (arg_node), arg_info);
@@ -168,14 +181,38 @@ PINLfundef (node *arg_node, info *arg_info)
 node *
 PINLarg (node *arg_node, info *arg_info)
 {
+    node *avis;
+
     DBUG_ENTER ("PINLarg");
 
     DBUG_PRINT ("PINL", ("formal parameter %s linked to argument %s",
                          AVIS_NAME (ARG_AVIS (arg_node)),
                          AVIS_NAME (ID_AVIS (EXPRS_EXPR (INFO_APARGS (arg_info))))));
 
+#ifdef BUG110_FIXED
     inline_lut = LUTinsertIntoLutP (inline_lut, ARG_AVIS (arg_node),
                                     ID_AVIS (EXPRS_EXPR (INFO_APARGS (arg_info))));
+#else
+    if (global.valid_ssaform) {
+        inline_lut = LUTinsertIntoLutP (inline_lut, ARG_AVIS (arg_node),
+                                        ID_AVIS (EXPRS_EXPR (INFO_APARGS (arg_info))));
+    } else {
+        /*
+         * we simply insert a renaming here
+         */
+        avis = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (ARG_AVIS (arg_node))),
+                           TYcopyType (AVIS_TYPE (ARG_AVIS (arg_node))));
+
+        INFO_ASSIGNS (arg_info)
+          = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL),
+                                     DUPdoDupNode (EXPRS_EXPR (INFO_APARGS (arg_info)))),
+                          INFO_ASSIGNS (arg_info));
+
+        INFO_VARDECS (arg_info) = TBmakeVardec (avis, INFO_VARDECS (arg_info));
+
+        inline_lut = LUTinsertIntoLutP (inline_lut, ARG_AVIS (arg_node), avis);
+    }
+#endif
 
     if (ARG_NEXT (arg_node) != NULL) {
         DBUG_ASSERT ((EXPRS_NEXT (INFO_APARGS (arg_info)) != NULL),
@@ -208,13 +245,24 @@ PINLarg (node *arg_node, info *arg_info)
 node *
 PINLblock (node *arg_node, info *arg_info)
 {
+#ifndef BUG110_FIXED
+    node *assigns;
+#endif
+
     DBUG_ENTER ("PINLblock");
 
     if (INFO_VARDECS (arg_info) != NULL) {
         INFO_VARDECS (arg_info) = TRAVdo (INFO_VARDECS (arg_info), arg_info);
     }
 
+#ifdef BUG110_FIXED
     INFO_ASSIGNS (arg_info) = DUPdoDupTreeLut (BLOCK_INSTR (arg_node), inline_lut);
+#else
+    assigns = INFO_ASSIGNS (arg_info);
+
+    INFO_ASSIGNS (arg_info) = DUPdoDupTreeLut (BLOCK_INSTR (arg_node), inline_lut);
+#endif
+
     /*
      * Due to the construction of the LUT all identifiers' AVIS nodes will
      * be redirected to either AVIS nodes in the calling context or to copies
@@ -226,6 +274,10 @@ PINLblock (node *arg_node, info *arg_info)
      * Here, we merely traverse the assignment chain to eliminate the trailing
      * return-statement and to append renaming assignments created beforehand.
      */
+
+#ifndef BUG110_FIXED
+    INFO_ASSIGNS (arg_info) = TCappendAssign (assigns, INFO_ASSIGNS (arg_info));
+#endif
 
     DBUG_RETURN (arg_node);
 }
