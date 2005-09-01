@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2005/09/01 12:19:51  sah
+ * streamlined it a bit
+ *
  * Revision 1.8  2005/08/09 12:18:01  sah
  * fixed a DBUG message
  *
@@ -90,13 +93,10 @@ PPIfundef (node *arg_node, info *arg_info)
 
     DBUG_PRINT ("PPI", ("processing '%s'", CTIitemName (arg_node)));
     /*
-     * we fetch bodies for functions which are
-     * A) inline, thus the body is needed for inlining
-     * B) lacfun, thus the body _has_ to be present for
-     *            lac2fun & fun2lac to work
+     * we fetch bodies for functions which are inline,
+     * thus the body is needed for inlining
      */
-    if ((FUNDEF_BODY (arg_node) == NULL)
-        && ((FUNDEF_ISINLINE (arg_node) || FUNDEF_ISLACFUN (arg_node)))
+    if ((FUNDEF_BODY (arg_node) == NULL) && (FUNDEF_ISINLINE (arg_node))
         && (FUNDEF_SYMBOLNAME (arg_node) != NULL)) {
         arg_node = AFBdoAddFunctionBody (arg_node);
 
