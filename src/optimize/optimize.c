@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.104  2005/09/02 14:25:26  ktr
+ * uses liftoptflags
+ *
  * Revision 3.103  2005/08/29 11:27:02  ktr
  * As long as TUP is not fixed, the NTC is applied in the opt cycle
  *
@@ -475,10 +478,12 @@
 #include "signature_simplification.h"
 #include "dispatchfuncalls.h"
 #include "elimtypeconv.h"
+#include "liftoptflags.h"
 
 #include "ToOldTypes.h"
 #include "ToNewTypes.h"
 
+#define ALWAYSMAXOPT
 /*
  * INFO structure
  */
@@ -1022,6 +1027,7 @@ OPTmodule (node *arg_node, info *arg_info)
 
             INFO_OPT_CONTINUE (arg_info) = FALSE;
             INFO_OPT_PASSESLOOP1 (arg_info) = loop1;
+            MODULE_FUNS (arg_node) = LOFdoLiftOptFlags (MODULE_FUNS (arg_node));
             MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
 
             /*
@@ -1490,6 +1496,7 @@ OPTfundef (node *arg_node, info *arg_info)
                  */
                 if (global.optimize.dowlpg) {
                     arg_node = WLPGdoWlPartitionGenerationOpt (arg_node);
+                    arg_node = TCappendFundef (arg_node, DUPgetCopiedSpecialFundefs ());
                 }
 
                 if ((global.break_after == PH_sacopt)
@@ -1503,6 +1510,7 @@ OPTfundef (node *arg_node, info *arg_info)
                  */
                 if (global.optimize.dowlf) {
                     arg_node = WLFdoWithloopFolding (arg_node, loop1);
+                    arg_node = TCappendFundef (arg_node, DUPgetCopiedSpecialFundefs ());
                 }
 
                 if ((global.break_after == PH_sacopt)
@@ -1552,6 +1560,7 @@ OPTfundef (node *arg_node, info *arg_info)
                  */
                 if (global.optimize.dowls) {
                     arg_node = WLSdoWithloopScalarization (arg_node);
+                    arg_node = TCappendFundef (arg_node, DUPgetCopiedSpecialFundefs ());
                 }
 
                 if ((global.break_after == PH_sacopt)
@@ -1565,6 +1574,7 @@ OPTfundef (node *arg_node, info *arg_info)
                  */
                 if ((global.optimize.dolur) || (global.optimize.dowlur)) {
                     arg_node = LURdoLoopUnrolling (arg_node, INFO_OPT_MODULE (arg_info));
+                    arg_node = TCappendFundef (arg_node, DUPgetCopiedSpecialFundefs ());
                     /*
                      * important:
                      *   SSALoopUnrolling uses internally SSAWLUnroll to get the
@@ -1610,6 +1620,7 @@ OPTfundef (node *arg_node, info *arg_info)
                  */
                 if (global.lacinline) {
                     arg_node = LINLdoLACInliningOneFundef (arg_node);
+                    arg_node = TCappendFundef (arg_node, DUPgetCopiedSpecialFundefs ());
                 }
 
                 if ((global.break_after == PH_sacopt)
@@ -1731,6 +1742,7 @@ OPTfundef (node *arg_node, info *arg_info)
                  */
                 if (global.lacinline) {
                     arg_node = LINLdoLACInliningOneFundef (arg_node);
+                    arg_node = TCappendFundef (arg_node, DUPgetCopiedSpecialFundefs ());
                 }
 
                 if ((global.break_after == PH_sacopt)
@@ -1797,6 +1809,11 @@ OPTfundef (node *arg_node, info *arg_info)
                 INFO_OPT_CONTINUE (arg_info) = TRUE;
                 FUNDEF_WASOPTIMIZED (arg_node) = TRUE;
             }
+
+#ifdef ALWAYSMAXOPT
+            INFO_OPT_CONTINUE (arg_info) = TRUE;
+            FUNDEF_WASOPTIMIZED (arg_node) = TRUE;
+#endif
 
             /*
              *  END OF OS_CYCLE11
@@ -1951,10 +1968,6 @@ OPTfundef (node *arg_node, info *arg_info)
     /*
      * traverse in next function
      */
-
-    if (FUNDEF_NEXT (arg_node) == NULL) {
-        FUNDEF_NEXT (arg_node) = DUPgetCopiedSpecialFundefs ();
-    }
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
