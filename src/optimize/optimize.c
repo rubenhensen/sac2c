@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.105  2005/09/02 17:48:59  sah
+ * removed ALWAYSMAXOPT again
+ *
  * Revision 3.104  2005/09/02 14:25:26  ktr
  * uses liftoptflags
  *
@@ -483,7 +486,6 @@
 #include "ToOldTypes.h"
 #include "ToNewTypes.h"
 
-#define ALWAYSMAXOPT
 /*
  * INFO structure
  */
@@ -1809,11 +1811,6 @@ OPTfundef (node *arg_node, info *arg_info)
                 INFO_OPT_CONTINUE (arg_info) = TRUE;
                 FUNDEF_WASOPTIMIZED (arg_node) = TRUE;
             }
-
-#ifdef ALWAYSMAXOPT
-            INFO_OPT_CONTINUE (arg_info) = TRUE;
-            FUNDEF_WASOPTIMIZED (arg_node) = TRUE;
-#endif
 
             /*
              *  END OF OS_CYCLE11
