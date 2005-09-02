@@ -45,3 +45,4 @@ associativity.h
 elimtypeconv.c
 elimtypeconv.h
 liftoptflags.c
+liftoptflags.h
