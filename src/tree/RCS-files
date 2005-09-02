@@ -41,3 +41,4 @@ check_lib.h
 prepare_inlining.c
 prepare_inlining.h
 map_lac_funs.c
+map_lac_funs.h
