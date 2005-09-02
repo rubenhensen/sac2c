@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.46  2005/09/02 14:25:45  ktr
+# added liftoptflags.o
+#
 # Revision 3.45  2005/08/20 12:06:11  ktr
 # added elimtypeconv.o
 #
@@ -59,7 +62,7 @@ OBJS := optimize.o DeadFunctionRemoval.o deadcoderemoval.o \
         UndoElimSubDiv.o ElimSubDiv.o deadcodeinference.o \
         ConstVarPropagation.o DistributiveLaw.o type_upgrade.o \
         signature_simplification.o inlining.o associativity.o \
-        inferneedcounters.o elimtypeconv.o
+        inferneedcounters.o elimtypeconv.o liftoptflags.o
 
 all: $(OBJS)
 
