@@ -666,6 +666,13 @@
       startfun="NULL" include=".h"
       if="true"
       breakspec="op">
+      <traversal id="LOF" name="Lift OptFlags" default="sons" include="liftoptflags.h">
+        <travuser>
+	  <node name="Fundef" />
+	  <node name="Assign" />
+	  <node name="Ap" />
+	</travuser>
+      </traversal>
       <traversal id="PPI" name="Prepare Inline" default="sons" include="prepareinline.h">
         <travuser>
 	  <node name="Fundef" />
