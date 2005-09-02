@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.87  2005/09/02 17:47:43  sah
+ * lacfuns are now marked as not-typechecked when
+ * typechecking one function
+ *
  * Revision 3.86  2005/08/30 14:40:03  sbs
  * NTCap can deal with dispatched function calls now.
  *
@@ -161,6 +165,7 @@
 #include "deserialize.h"
 #include "namespaces.h"
 #include "resolvesymboltypes.h"
+#include "map_lac_funs.h"
 
 /*
  * OPEN PROBLEMS:
@@ -347,6 +352,17 @@ NTCdoNewTypeCheck (node *arg_node)
  * @fn node *NTCdoNewTypeCheckOneFunction( node *arg_node)
  *
  *****************************************************************************/
+
+static node *
+TagAsUnchecked (node *fundef, info *info)
+{
+    DBUG_ENTER ("TagAsUnchecked");
+
+    FUNDEF_TCSTAT (fundef) = NTC_not_checked;
+
+    DBUG_RETURN (fundef);
+}
+
 node *
 NTCdoNewTypeCheckOneFunction (node *arg_node)
 {
@@ -376,7 +392,9 @@ NTCdoNewTypeCheckOneFunction (node *arg_node)
         /*
          * Apply typechecker
          */
-        FUNDEF_TCSTAT (arg_node) = NTC_not_checked;
+        MLFdoMapLacFuns (arg_node, TagAsUnchecked, NULL, NULL);
+        arg_node = TagAsUnchecked (arg_node, NULL);
+
         TRAVpush (TR_ntc);
 
         arg_info = MakeInfo ();
