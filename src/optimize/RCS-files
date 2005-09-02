@@ -44,3 +44,4 @@ associativity.c
 associativity.h
 elimtypeconv.c
 elimtypeconv.h
+liftoptflags.c
