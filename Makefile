@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.190  2005/09/02 14:26:00  ktr
+# added src/optimize/liftoptargs.o
+#
 # Revision 3.189  2005/08/24 10:31:44  ktr
 # added src/compile/wlidx.o
 #
@@ -270,7 +273,7 @@ OPTIMIZE= src/optimize/optimize.o \
           src/optimize/ConstVarPropagation.o src/optimize/DistributiveLaw.o \
           src/optimize/signature_simplification.o src/optimize/inlining.o \
           src/optimize/inferneedcounters.o src/optimize/associativity.o \
-          src/optimize/elimtypeconv.o
+          src/optimize/elimtypeconv.o src/optimize/liftoptflags.o
 
 PROFILE= src/profile/annotate_fun_calls.o
 
