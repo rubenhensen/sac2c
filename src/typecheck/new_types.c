@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.110  2005/09/02 17:48:30  sah
+ * code for wrapper bodies is flattened
+ * now correctly
+ *
  * Revision 3.109  2005/08/30 13:39:09  sbs
  * DBUG_ASSERT added.
  *
@@ -6225,8 +6229,8 @@ BuildCondAssign (node *prf_ass, prf rel_prf, node *expr, node *then_ass, node *e
 
         case F_drop_SxV: /* last op of shape on udts */
         case F_shape: {
-            node *prf2, *prf3, *prf4;
-            node *flt_prf2, *flt_prf3, *flt_prf4;
+            node *prf2, *prf3, *prf4, *array;
+            node *flt_prf2, *flt_prf3, *flt_prf4, *flt_array;
             node *aexprs, *last_ass;
             int dim;
 
@@ -6238,10 +6242,12 @@ BuildCondAssign (node *prf_ass, prf rel_prf, node *expr, node *then_ass, node *e
             flt_prf4 = TBmakeBool (TRUE);
             while (aexprs != NULL) {
                 id = DUPdupIdsId (prf_ids);
-                prf2
-                  = TBmakePrf (F_sel, TBmakeExprs (TCmakeFlatArray (
-                                                     TBmakeExprs (TBmakeNum (dim), NULL)),
-                                                   TBmakeExprs (id, NULL)));
+                array = TCmakeFlatArray (TBmakeExprs (TBmakeNum (dim), NULL));
+                flt_array = BuildTmpId (TYmakeAKV (TYmakeSimpleType (T_int),
+                                                   COaST2Constant (array)),
+                                        new_vardecs);
+
+                prf2 = TBmakePrf (F_sel, TBmakeExprs (flt_array, TBmakeExprs (id, NULL)));
                 flt_prf2
                   = BuildTmpId (TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)),
                                 new_vardecs);
@@ -6259,14 +6265,16 @@ BuildCondAssign (node *prf_ass, prf rel_prf, node *expr, node *then_ass, node *e
                   = BuildTmpId (TYmakeAKS (TYmakeSimpleType (T_bool), SHcreateShape (0)),
                                 new_vardecs);
 
-                ASSIGN_NEXT (last_ass)
-                  = TBmakeAssign (TBmakeLet (DUPdupIdIds (flt_prf2), prf2),
-                                  TBmakeAssign (TBmakeLet (DUPdupIdIds (flt_prf3), prf3),
-                                                TBmakeAssign (TBmakeLet (DUPdupIdIds (
-                                                                           flt_prf4),
-                                                                         prf4),
-                                                              NULL)));
-                last_ass = ASSIGN_NEXT (ASSIGN_NEXT (ASSIGN_NEXT (last_ass)));
+                ASSIGN_NEXT (last_ass) = TBmakeAssign (
+                  TBmakeLet (DUPdupIdIds (flt_array), array),
+                  TBmakeAssign (TBmakeLet (DUPdupIdIds (flt_prf2), prf2),
+                                TBmakeAssign (TBmakeLet (DUPdupIdIds (flt_prf3), prf3),
+                                              TBmakeAssign (TBmakeLet (DUPdupIdIds (
+                                                                         flt_prf4),
+                                                                       prf4),
+                                                            NULL))));
+                last_ass
+                  = ASSIGN_NEXT (ASSIGN_NEXT (ASSIGN_NEXT (ASSIGN_NEXT (last_ass))));
 
                 aexprs = EXPRS_NEXT (aexprs);
                 dim++;
