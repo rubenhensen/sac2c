@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.2  2005/09/02 17:45:56  sah
+ * switched to map_lac_funs
+ *
  * Revision 1.1  2005/09/02 14:25:16  ktr
  * Initial revision
  *
@@ -20,14 +23,12 @@
  */
 struct INFO {
     bool optflag;
-    node *fundef;
 };
 
 /*
  * INFO macros
  */
 #define INFO_OPTFLAG(n) (n->optflag)
-#define INFO_FUNDEF(n) (n->fundef)
 
 /*
  * INFO functions
@@ -42,7 +43,6 @@ MakeInfo ()
     result = ILIBmalloc (sizeof (info));
 
     INFO_OPTFLAG (result) = FALSE;
-    INFO_FUNDEF (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -78,6 +78,26 @@ LOFdoLiftOptFlags (node *arg_node)
     DBUG_RETURN (arg_node);
 }
 
+static node *
+InferOptFlag (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("InferOptFlag");
+
+    INFO_OPTFLAG (arg_info) |= FUNDEF_WASOPTIMIZED (arg_node);
+
+    DBUG_RETURN (arg_node);
+}
+
+static node *
+SetOptFlag (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("SetOptFlag");
+
+    FUNDEF_WASOPTIMIZED (arg_node) = INFO_OPTFLAG (arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
 /** <!--********************************************************************-->
  *
  * @fn node *LOFfundef( node *arg_node, info *arg_info)
@@ -90,77 +110,13 @@ LOFfundef (node *arg_node, info *arg_info)
 
     if (!FUNDEF_ISLACFUN (arg_node)) {
         arg_info = MakeInfo ();
-    }
 
-    if (arg_info != NULL) {
-        INFO_FUNDEF (arg_info) = arg_node;
-        INFO_OPTFLAG (arg_info) |= FUNDEF_WASOPTIMIZED (arg_node);
+        INFO_OPTFLAG (arg_info) = FUNDEF_WASOPTIMIZED (arg_node);
+        arg_info = MLFdoMapLacFuns (arg_node, InferOptFlag, SetOptFlag, arg_info);
 
-        if ((!INFO_OPTFLAG (arg_info)) && (FUNDEF_BODY (arg_node) != NULL)) {
+        FUNDEF_WASOPTIMIZED (arg_node) = INFO_OPTFLAG (arg_info);
 
-            DBUG_PRINT ("LOF", ("%s was is yet marked for further optimization!\n",
-                                FUNDEF_NAME (arg_node)));
-
-            FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-
-            FUNDEF_WASOPTIMIZED (arg_node) |= INFO_OPTFLAG (arg_info);
-            if (FUNDEF_WASOPTIMIZED (arg_node)) {
-                DBUG_PRINT ("LOF", ("%s is now marked for further optimization!\n",
-                                    FUNDEF_NAME (arg_node)));
-            }
-        }
-    }
-
-    if (!FUNDEF_ISLACFUN (arg_node)) {
         arg_info = FreeInfo (arg_info);
-    }
-
-    if ((!FUNDEF_ISLACFUN (arg_node)) || (arg_info == NULL)) {
-        if (FUNDEF_NEXT (arg_node) != NULL) {
-            FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-        }
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *LOFassign( node *arg_node, info *arg_info)
- *
- *****************************************************************************/
-node *
-LOFassign (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("LOFassign");
-
-    if (!INFO_OPTFLAG (arg_info)) {
-        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
-
-        if (ASSIGN_NEXT (arg_node) != NULL) {
-            ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-        }
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *LOFap( node *arg_node, info *arg_info)
- *
- *****************************************************************************/
-node *
-LOFap (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("LOFap");
-
-    if (FUNDEF_ISLACFUN (AP_FUNDEF (arg_node))
-        && (AP_FUNDEF (arg_node) != INFO_FUNDEF (arg_info))) {
-
-        node *oldfundef = INFO_FUNDEF (arg_info);
-        AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
-        INFO_FUNDEF (arg_info) = oldfundef;
     }
 
     DBUG_RETURN (arg_node);

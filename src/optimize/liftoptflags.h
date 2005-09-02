@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2005/09/02 17:45:56  sah
+ * switched to map_lac_funs
+ *
  * Revision 1.1  2005/09/02 14:25:21  ktr
  * Initial revision
  *
@@ -14,7 +17,5 @@
 extern node *LOFdoLiftOptFlags (node *arg_node);
 
 extern node *LOFfundef (node *arg_node, info *arg_info);
-extern node *LOFassign (node *arg_node, info *arg_info);
-extern node *LOFap (node *arg_node, info *arg_info);
 
 #endif /* _SAC_INLINING_H_ */
