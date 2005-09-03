@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2005/09/03 08:46:40  ktr
+ * changed some DBUG_PRINTs from DCR to DCI
+ *
  * Revision 1.1  2005/08/02 14:19:16  ktr
  * Initial revision
  *
@@ -29,12 +32,12 @@ struct INFO {
 /*
  * INFO macros
  */
-#define INFO_DCI_ASSIGN(n) (n->assign)
-#define INFO_DCI_FUNDEF(n) (n->fundef)
-#define INFO_DCI_INT_ASSIGN(n) (n->int_assign)
-#define INFO_DCI_EXT_ASSIGN(n) (n->ext_assign)
-#define INFO_DCI_ONEIDSNEEDED(n) (n->oneidsneeded)
-#define INFO_DCI_ALLIDSNEEDED(n) (n->allidsneeded)
+#define INFO_ASSIGN(n) (n->assign)
+#define INFO_FUNDEF(n) (n->fundef)
+#define INFO_INT_ASSIGN(n) (n->int_assign)
+#define INFO_EXT_ASSIGN(n) (n->ext_assign)
+#define INFO_ONEIDSNEEDED(n) (n->oneidsneeded)
+#define INFO_ALLIDSNEEDED(n) (n->allidsneeded)
 
 /*
  * INFO functions
@@ -48,12 +51,12 @@ MakeInfo ()
 
     result = ILIBmalloc (sizeof (info));
 
-    INFO_DCI_ASSIGN (result) = NULL;
-    INFO_DCI_FUNDEF (result) = NULL;
-    INFO_DCI_INT_ASSIGN (result) = NULL;
-    INFO_DCI_EXT_ASSIGN (result) = NULL;
-    INFO_DCI_ONEIDSNEEDED (result) = FALSE;
-    INFO_DCI_ALLIDSNEEDED (result) = FALSE;
+    INFO_ASSIGN (result) = NULL;
+    INFO_FUNDEF (result) = NULL;
+    INFO_INT_ASSIGN (result) = NULL;
+    INFO_EXT_ASSIGN (result) = NULL;
+    INFO_ONEIDSNEEDED (result) = FALSE;
+    INFO_ALLIDSNEEDED (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -94,7 +97,7 @@ DCIfundef (node *arg_node, info *arg_info)
 
             info = MakeInfo ();
 
-            INFO_DCI_FUNDEF (info) = arg_node;
+            INFO_FUNDEF (info) = arg_node;
 
             /*
              * Traverse ARGS and VARDECS to initialize AVIS_ISDEAD
@@ -108,7 +111,7 @@ DCIfundef (node *arg_node, info *arg_info)
             }
 
             if (FUNDEF_ISLACFUN (arg_node)) {
-                INFO_DCI_EXT_ASSIGN (info) = INFO_DCI_ASSIGN (arg_info);
+                INFO_EXT_ASSIGN (info) = INFO_ASSIGN (arg_info);
             }
 
             while (!fixedpointreached) {
@@ -119,7 +122,7 @@ DCIfundef (node *arg_node, info *arg_info)
                 if (FUNDEF_ISDOFUN (arg_node)) {
                     node *args, *recexprs;
                     args = FUNDEF_ARGS (arg_node);
-                    recexprs = AP_ARGS (ASSIGN_RHS (INFO_DCI_INT_ASSIGN (info)));
+                    recexprs = AP_ARGS (ASSIGN_RHS (INFO_INT_ASSIGN (info)));
 
                     while (args != NULL) {
                         if ((!AVIS_ISDEAD (ARG_AVIS (args)))
@@ -153,7 +156,7 @@ DCIarg (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("DCIarg");
 
-    if (FUNDEF_ISLACFUN (INFO_DCI_FUNDEF (arg_info))) {
+    if (FUNDEF_ISLACFUN (INFO_FUNDEF (arg_info))) {
         AVIS_ISDEAD (ARG_AVIS (arg_node)) = TRUE;
     } else {
         AVIS_ISDEAD (ARG_AVIS (arg_node)) = FALSE;
@@ -226,7 +229,7 @@ DCIassign (node *arg_node, info *arg_info)
     }
 
     /* traverse instruction */
-    INFO_DCI_ASSIGN (arg_info) = arg_node;
+    INFO_ASSIGN (arg_info) = arg_node;
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -246,12 +249,12 @@ DCIreturn (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("DCIreturn");
 
-    if (FUNDEF_ISLACFUN (INFO_DCI_FUNDEF (arg_info))) {
+    if (FUNDEF_ISLACFUN (INFO_FUNDEF (arg_info))) {
         node *extids, *retexprs;
 
         /* mark only those return values as needed that are required in the
            applying context */
-        extids = ASSIGN_LHS (INFO_DCI_EXT_ASSIGN (arg_info));
+        extids = ASSIGN_LHS (INFO_EXT_ASSIGN (arg_info));
         retexprs = RETURN_EXPRS (arg_node);
 
         while (extids != NULL) {
@@ -308,8 +311,8 @@ DCIlet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("DCIlet");
 
-    INFO_DCI_ONEIDSNEEDED (arg_info) = FALSE;
-    INFO_DCI_ALLIDSNEEDED (arg_info) = FALSE;
+    INFO_ONEIDSNEEDED (arg_info) = FALSE;
+    INFO_ALLIDSNEEDED (arg_info) = FALSE;
 
     if (LET_IDS (arg_node) != NULL) {
         LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
@@ -320,10 +323,10 @@ DCIlet (node *arg_node, info *arg_info)
      */
     if ((NODE_TYPE (LET_EXPR (arg_node)) == N_prf)
         && (PRF_PRF (LET_EXPR (arg_node)) == F_accu)) {
-        INFO_DCI_ONEIDSNEEDED (arg_info) = TRUE;
+        INFO_ONEIDSNEEDED (arg_info) = TRUE;
     }
 
-    if (INFO_DCI_ONEIDSNEEDED (arg_info)) {
+    if (INFO_ONEIDSNEEDED (arg_info)) {
 
         if (!((NODE_TYPE (LET_EXPR (arg_node)) == N_ap)
               && (FUNDEF_ISLACFUN (AP_FUNDEF (LET_EXPR (arg_node)))))) {
@@ -332,7 +335,7 @@ DCIlet (node *arg_node, info *arg_info)
              * LAC functions. In all other cases, one live IDS keeps all other IDS
              * alive
              */
-            INFO_DCI_ALLIDSNEEDED (arg_info) = TRUE;
+            INFO_ALLIDSNEEDED (arg_info) = TRUE;
             if (LET_IDS (arg_node) != NULL) {
                 LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
             }
@@ -365,25 +368,25 @@ DCIap (node *arg_node, info *arg_info)
 
     /* traverse special fundef without recursion */
     if (FUNDEF_ISLACFUN (AP_FUNDEF (arg_node))) {
-        if (AP_FUNDEF (arg_node) == INFO_DCI_FUNDEF (arg_info)) {
+        if (AP_FUNDEF (arg_node) == INFO_FUNDEF (arg_info)) {
             /* remember internal assignment */
-            INFO_DCI_INT_ASSIGN (arg_info) = INFO_DCI_ASSIGN (arg_info);
+            INFO_INT_ASSIGN (arg_info) = INFO_ASSIGN (arg_info);
 
             /* do not mark the recursive parameters as needed in order not to
                create excessive demand */
         } else {
             node *args, *argexprs;
 
-            DBUG_PRINT ("DCR", ("traverse in special fundef %s",
+            DBUG_PRINT ("DCI", ("traverse in special fundef %s",
                                 FUNDEF_NAME (AP_FUNDEF (arg_node))));
 
             /* start traversal of special fundef (and maybe reduce parameters!) */
             AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
 
-            DBUG_PRINT ("DCR", ("traversal of special fundef %s finished"
+            DBUG_PRINT ("DCI", ("traversal of special fundef %s finished"
                                 "continue in fundef %s\n",
                                 FUNDEF_NAME (AP_FUNDEF (arg_node)),
-                                FUNDEF_NAME (INFO_DCI_FUNDEF (arg_info))));
+                                FUNDEF_NAME (INFO_FUNDEF (arg_info))));
 
             /* mark only those variables needed by the special function as live */
             args = FUNDEF_ARGS (AP_FUNDEF (arg_node));
@@ -442,13 +445,13 @@ DCIids (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("DCIids");
 
-    if (INFO_DCI_ALLIDSNEEDED (arg_info)) {
+    if (INFO_ALLIDSNEEDED (arg_info)) {
         /* Mark identifier as needed */
         AVIS_ISDEAD (IDS_AVIS (arg_node)) = FALSE;
     }
 
     if (!AVIS_ISDEAD (IDS_AVIS (arg_node))) {
-        INFO_DCI_ONEIDSNEEDED (arg_info) = TRUE;
+        INFO_ONEIDSNEEDED (arg_info) = TRUE;
     }
 
     if (IDS_NEXT (arg_node) != NULL) {
@@ -505,12 +508,12 @@ DCIwithid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("DCIwithid");
 
-    INFO_DCI_ALLIDSNEEDED (arg_info) = TRUE;
+    INFO_ALLIDSNEEDED (arg_info) = TRUE;
 
     /* Traverse sons */
     arg_node = TRAVcont (arg_node, arg_info);
 
-    INFO_DCI_ALLIDSNEEDED (arg_info) = FALSE;
+    INFO_ALLIDSNEEDED (arg_info) = FALSE;
 
     DBUG_RETURN (arg_node);
 }
