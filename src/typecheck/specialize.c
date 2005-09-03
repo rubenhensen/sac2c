@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.35  2005/09/03 14:39:00  sah
+ * on specialisation, the namespace information is propagated properly
+ * into LaC funs now. Uses new MLF traversal.,
+ *
  * Revision 1.34  2005/09/01 12:17:26  sah
  * modified function body fetching slightly
  *
@@ -133,6 +137,7 @@
 #include "ssi.h"
 #include "ctinfo.h"
 #include "namespaces.h"
+#include "map_lac_funs.h"
 
 /**
  *
@@ -394,15 +399,56 @@ checkAndRebuildWrapperType (ntype *type)
     DBUG_RETURN (result);
 }
 
-/******************************************************************************
+/** <!-- ****************************************************************** -->
+ * @brief Helper functions for MLF traversal. Resets some flags of LaC-funs
+ *        as they become local during specialisation.
  *
- * function:
- *    node *DoSpecialize(node *wrapper, node *fundef, ntype *args)
+ * @param arg_node N_fundef node of a LaC-fun
+ * @param arg_info NULL
  *
- * description:
- *
+ * @return modified N_fundef node
  ******************************************************************************/
+static node *
+ResetLaCFlags (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("ResetLaCFlags");
 
+    FUNDEF_ISLOCAL (arg_node) = TRUE;
+    FUNDEF_WASUSED (arg_node) = FALSE;
+    FUNDEF_WASIMPORTED (arg_node) = FALSE;
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!-- ****************************************************************** -->
+ * @brief Helper function for MLF traversal. Sets the namespace of all LaC-funs
+ *        to the given namespace.
+ *
+ * @param arg_node N_fundef node of LaC-fun
+ * @param ns namespace
+ *
+ * @return modified N_fundef node
+ ******************************************************************************/
+static node *
+SetLaCNamespace (node *arg_node, namespace_t *ns)
+{
+    DBUG_ENTER ("SetLaCNamespace");
+
+    FUNDEF_NS (arg_node) = NSfreeNamespace (FUNDEF_NS (arg_node));
+    FUNDEF_NS (arg_node) = NSdupNamespace (ns);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!-- ****************************************************************** -->
+ * @brief Entry function for specialising a given function.
+ *
+ * @param wrapper Wrapper of the function to be specialised
+ * @param fundef Instance to be specialised
+ * @param args Types of arguments the instance shall be specialised for
+ *
+ * @return the wrapper, possibly containing the new instance
+ ******************************************************************************/
 static node *
 DoSpecialize (node *wrapper, node *fundef, ntype *args)
 {
@@ -419,7 +465,7 @@ DoSpecialize (node *wrapper, node *fundef, ntype *args)
     DBUG_EXECUTE ("SPEC", tmp_str = ILIBfree (tmp_str););
 
     /*
-     * in case of a function of a module, the body is missing, so
+     * in case of a function loaded from a module, the body may be missing, so
      * fetch it.
      */
     if ((FUNDEF_SYMBOLNAME (fundef) != NULL) && (FUNDEF_BODY (fundef) == NULL)) {
@@ -446,6 +492,11 @@ DoSpecialize (node *wrapper, node *fundef, ntype *args)
     FUNDEF_WASUSED (res) = FALSE;
     FUNDEF_WASIMPORTED (res) = FALSE;
     FUNDEF_ISSPECIALISATION (res) = TRUE;
+
+    /*
+     * reset flags of contained lac funs as well
+     */
+    MLFdoMapLacFuns (res, ResetLaCFlags, NULL, NULL);
 
     /*
      * if it is a used function, we have to make up a new
@@ -482,6 +533,11 @@ DoSpecialize (node *wrapper, node *fundef, ntype *args)
         FUNDEF_NS (res) = NSfreeNamespace (FUNDEF_NS (res));
         FUNDEF_NS (res) = NSdupNamespace (FUNDEF_SPECNS (wrapper));
     }
+
+    /*
+     * propagate namespace information into lac funs
+     */
+    MLFdoMapLacFuns (res, (travfun_p)SetLaCNamespace, NULL, (info *)FUNDEF_NS (res));
 
     /*
      * store the fundef in the specchain
