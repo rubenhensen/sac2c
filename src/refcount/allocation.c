@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  2005/09/03 08:47:28  ktr
+ * CVP is now performed for all functions
+ *
  * Revision 1.15  2005/07/19 17:08:47  ktr
  * replaced SSADeadCodeRemoval with deadcoderemoval
  *
@@ -143,9 +146,7 @@ EMAdoAllocation (node *syntax_tree)
         DBUG_PRINT ("EMM", ("Performing Constant and Varible Propagation (cvp)"));
         fundef = MODULE_FUNS (syntax_tree);
         while (fundef != NULL) {
-            if (!(FUNDEF_ISLACFUN (fundef))) {
-                fundef = CVPdoConstVarPropagation (fundef);
-            }
+            fundef = CVPdoConstVarPropagation (fundef);
 
             fundef = FUNDEF_NEXT (fundef);
         }
