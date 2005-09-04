@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.32  2005/09/04 12:56:17  ktr
+ * added optimize_counter_t
+ *
  * Revision 1.31  2005/08/18 16:22:12  ktr
  * removed conditional lhs expressions
  *
@@ -1034,6 +1037,15 @@ typedef struct ST_SYMBOL_T stsymbol_t;
 /*
  * New types for global
  */
+
+/*
+ * Read in optimization counters from optimize.mac
+ */
+
+typedef struct OPTIMIZE_COUNTER_T {
+#define OPTCOUNTERid(id) int id;
+#include "optimize.mac"
+} optimize_counter_t;
 
 /*
  * Read in optimization flag type from optimize.mac
