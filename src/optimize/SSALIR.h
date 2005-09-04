@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.9  2005/09/04 12:52:11  ktr
+ * re-engineered the optimization cycle
+ *
  * Revision 1.8  2005/07/20 13:12:37  ktr
  * removed FUNDEF_EXTASSIGN/INTASSIGN
  *
@@ -44,7 +47,7 @@
  *   traversal functions to infere loop invariant expressions
  *
  *****************************************************************************/
-extern node *LIRdoLoopInvariantRemoval (node *fundef, node *modul);
+extern node *LIRdoLoopInvariantRemoval (node *fundef);
 
 extern node *LIRfundef (node *arg_node, info *arg_info);
 extern node *LIRarg (node *arg_node, info *arg_info);

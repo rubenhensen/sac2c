@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2005/09/04 12:52:11  ktr
+ * re-engineered the optimization cycle
+ *
  * Revision 3.17  2005/08/20 12:06:50  ktr
  * added TypeConvElimination
  *
@@ -70,42 +73,7 @@
 
 #include "types.h"
 
-#define VAR_LENGTH 10
-
-extern int dead_expr;
-extern int dead_var;
-extern int dead_fun;
-extern int cf_expr;
-extern int lir_expr;
-extern int wlir_expr;
-extern int inl_fun;
-extern int lunr_expr;
-extern int wlunr_expr;
-extern int uns_expr;
-extern int optvar_counter;
-extern int elim_arrays;
-extern int cse_expr;
-extern int wlf_expr;
-extern int wlt_expr;
-extern int wls_expr;
-extern int al_expr;
-extern int etc_expr;
-extern int old_wlf_expr, old_wlt_expr;
-extern int ap_padded;
-extern int ap_unsupported;
-extern int dl_expr;
-extern int sp_expr;
-extern int cvp_expr;
-extern int wlfs_expr;
-extern int tup_tu_expr;
-extern int tup_wdp_expr;
-extern int tup_fdp_expr;
-extern int tup_rtu_expr;
-extern int tup_fsp_expr;
-extern int sisi_expr;
-
 extern node *OPTdoOptimize (node *arg_node);
-extern node *OPTmodule (node *arg_node, info *arg_info);
-extern node *OPTfundef (node *arg_node, info *arg_info);
+extern node *OPTdoIntraFunctionalOptimizations (node *arg_node);
 
 #endif /* _SAC_OPTIMIZE_H_ */

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2005/09/04 12:52:11  ktr
+ * re-engineered the optimization cycle
+ *
  * Revision 1.3  2005/05/13 16:46:54  ktr
  * removed lacinlining functionality
  *

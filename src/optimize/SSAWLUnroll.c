@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.26  2005/09/04 12:52:11  ktr
+ * re-engineered the optimization cycle
+ *
  * Revision 1.25  2005/08/26 16:38:33  ktr
  * small bugfix
  *
@@ -530,7 +533,7 @@ WLUcheckUnrollModarray (node *wln, info *arg_info)
     partn = WITH_PART (wln);
     elts = 0;
 
-    lhs = LET_IDS (ASSIGN_INSTR (INFO_SSALUR_ASSIGN (arg_info)));
+    lhs = LET_IDS (ASSIGN_INSTR (INFO_ASSIGN (arg_info)));
 
     ok = (TYisAKS (IDS_NTYPE (lhs)) || TYisAKV (IDS_NTYPE (lhs)));
 
@@ -623,8 +626,8 @@ WLUdoUnrollModarray (node *wln, info *arg_info)
         if (!PART_ISCOPY (partn)) {
             /* unroll this part */
             opfun = CreateModGenarray;
-            arg[0] = partn;                                      /* (node*) */
-            arg[1] = ASSIGN_LHS (INFO_SSALUR_ASSIGN (arg_info)); /* (ids*) */
+            arg[0] = partn;                               /* (node*) */
+            arg[1] = ASSIGN_LHS (INFO_ASSIGN (arg_info)); /* (ids*) */
             opfunarg = arg;
             res = ForEachElement (partn, res);
         }
@@ -633,7 +636,7 @@ WLUdoUnrollModarray (node *wln, info *arg_info)
     }
 
     /* finally add Duplication of new array name */
-    letn = TBmakeLet (DUPdoDupNode (ASSIGN_LHS (INFO_SSALUR_ASSIGN (arg_info))),
+    letn = TBmakeLet (DUPdoDupNode (ASSIGN_LHS (INFO_ASSIGN (arg_info))),
                       DUPdoDupTree (MODARRAY_ARRAY (WITH_WITHOP (wln))));
     res = TBmakeAssign (letn, res);
 
@@ -662,7 +665,7 @@ WLUcheckUnrollGenarray (node *wln, info *arg_info)
 
     DBUG_ENTER ("WLUCheckUnrollGenarray");
 
-    lhs = LET_IDS (ASSIGN_INSTR (INFO_SSALUR_ASSIGN (arg_info)));
+    lhs = LET_IDS (ASSIGN_INSTR (INFO_ASSIGN (arg_info)));
 
     if (TYisAKS (IDS_NTYPE (lhs)) || TYisAKV (IDS_NTYPE (lhs))) {
         length = SHgetUnrLen (TYgetShape (IDS_NTYPE (lhs)));
@@ -722,7 +725,7 @@ WLUdoUnrollGenarray (node *wln, info *arg_info)
     DBUG_ENTER ("WLUdoUnrollGenarray");
 
     partn = WITH_PART (wln);
-    arrayname = LET_IDS (ASSIGN_INSTR (INFO_SSALUR_ASSIGN (arg_info)));
+    arrayname = LET_IDS (ASSIGN_INSTR (INFO_ASSIGN (arg_info)));
 
     res = NULL;
     while (partn) {
@@ -740,7 +743,7 @@ WLUdoUnrollGenarray (node *wln, info *arg_info)
      */
     type = IDS_NTYPE (arrayname);
     let_expr = TCcreateZero (TYgetShape (type), TYgetSimpleType (TYgetScalar (type)),
-                             TRUE, INFO_SSALUR_FUNDEF (arg_info));
+                             TRUE, INFO_FUNDEF (arg_info));
 
     if (TYisAKV (type)) {
         IDS_NTYPE (arrayname) = TYeliminateAKV (type);
@@ -813,7 +816,7 @@ WLUcheckUnrollFold (node *wln)
  *   node *WLUdoUnrollFold(node *wln, info *arg_info)
  *
  * description:
- *   INFO_SSALUR_FUNDEF( arg_info) contains the pointer to the N_fundef node
+ *   INFO_FUNDEF( arg_info) contains the pointer to the N_fundef node
  *     where this WL is situated in.
  *
  *   Unroll fold WL:
@@ -838,11 +841,11 @@ WLUdoUnrollFold (node *wln, info *arg_info)
     while (partn != NULL) {
         /* unroll this part */
         opfun = CreateFold;
-        arg[0] = partn; /* N_Npart node */
-        arg[1] = LET_IDS (ASSIGN_INSTR (INFO_SSALUR_ASSIGN (arg_info))); /* ids */
-        arg[2] = EXPRS_EXPR (CODE_CEXPRS (PART_CODE (partn)));           /* id */
-        arg[3] = WITH_WITHOP (wln);             /* N_Nwithop node */
-        arg[4] = INFO_SSALUR_FUNDEF (arg_info); /* N_fundef node */
+        arg[0] = partn;                                           /* N_Npart node */
+        arg[1] = LET_IDS (ASSIGN_INSTR (INFO_ASSIGN (arg_info))); /* ids */
+        arg[2] = EXPRS_EXPR (CODE_CEXPRS (PART_CODE (partn)));    /* id */
+        arg[3] = WITH_WITHOP (wln);                               /* N_Nwithop node */
+        arg[4] = INFO_FUNDEF (arg_info);                          /* N_fundef node */
         opfunarg = arg;
         res = ForEachElement (partn, res);
 
@@ -850,7 +853,7 @@ WLUdoUnrollFold (node *wln, info *arg_info)
     }
 
     /* finally add initialisation of accumulator with neutral element. */
-    letn = TBmakeLet (DUPdoDupNode (ASSIGN_LHS (INFO_SSALUR_ASSIGN (arg_info))),
+    letn = TBmakeLet (DUPdoDupNode (ASSIGN_LHS (INFO_ASSIGN (arg_info))),
                       DUPdoDupTree (FOLD_NEUTRAL (WITH_WITHOP (wln))));
     res = TBmakeAssign (letn, res);
 

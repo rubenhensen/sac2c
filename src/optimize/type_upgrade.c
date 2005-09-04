@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.39  2005/09/04 12:52:11  ktr
+ * re-engineered the optimization cycle
+ *
  * Revision 1.38  2005/08/10 19:13:59  sbs
  * adjusted calls to TEmakeInfo
  *
@@ -144,7 +147,6 @@
 #include "new_typecheck.h"
 #include "dbug.h"
 #include "internal_lib.h"
-#include "optimize.h"
 #include "free.h"
 #include "DupTree.h"
 #include "globals.h"
@@ -181,19 +183,19 @@ struct INFO {
     node *assign;
 };
 
-#define INFO_TUP_FUNDEF(n) (n->fundef)
-#define INFO_TUP_WITHIDVEC(n) (n->withidvec)
-#define INFO_TUP_WITHID(n) (n->withid)
-#define INFO_TUP_CORRECTFUNCTION(n) (n->corrlf)
-#define INFO_TUP_CHECKLOOPFUN(n) (n->chklf)
-#define INFO_TUP_TYPE(n) (n->type)
-#define INFO_TUP_TYPECOUNTER(n) (n->counter)
-#define INFO_TUP_WLEXPRS(n) (n->wlexprs)
-#define INFO_TUP_BESTFITTINGFUN(n) (n->bestfit)
-#define INFO_TUP_THENTYPEERROR(n) (n->then_terr)
-#define INFO_TUP_ELSETYPEERROR(n) (n->else_terr)
-#define INFO_TUP_TYPEERROR(n) (n->type_error)
-#define INFO_TUP_ASSIGN(n) (n->assign)
+#define INFO_FUNDEF(n) (n->fundef)
+#define INFO_WITHIDVEC(n) (n->withidvec)
+#define INFO_WITHID(n) (n->withid)
+#define INFO_CORRECTFUNCTION(n) (n->corrlf)
+#define INFO_CHECKLOOPFUN(n) (n->chklf)
+#define INFO_TYPE(n) (n->type)
+#define INFO_TYPECOUNTER(n) (n->counter)
+#define INFO_WLEXPRS(n) (n->wlexprs)
+#define INFO_BESTFITTINGFUN(n) (n->bestfit)
+#define INFO_THENTYPEERROR(n) (n->then_terr)
+#define INFO_ELSETYPEERROR(n) (n->else_terr)
+#define INFO_TYPEERROR(n) (n->type_error)
+#define INFO_ASSIGN(n) (n->assign)
 
 static info *
 MakeInfo ()
@@ -203,19 +205,19 @@ MakeInfo ()
     DBUG_ENTER ("MakeInfo");
     result = ILIBmalloc (sizeof (info));
 
-    INFO_TUP_FUNDEF (result) = NULL;
-    INFO_TUP_WITHID (result) = NULL;
-    INFO_TUP_WITHIDVEC (result) = NULL;
-    INFO_TUP_CORRECTFUNCTION (result) = TRUE;
-    INFO_TUP_CHECKLOOPFUN (result) = FALSE;
-    INFO_TUP_TYPE (result) = NULL;
-    INFO_TUP_TYPECOUNTER (result) = 0;
-    INFO_TUP_WLEXPRS (result) = NULL;
-    INFO_TUP_BESTFITTINGFUN (result) = NULL;
-    INFO_TUP_THENTYPEERROR (result) = FALSE;
-    INFO_TUP_ELSETYPEERROR (result) = FALSE;
-    INFO_TUP_TYPEERROR (result) = FALSE;
-    INFO_TUP_ASSIGN (result) = NULL;
+    INFO_FUNDEF (result) = NULL;
+    INFO_WITHID (result) = NULL;
+    INFO_WITHIDVEC (result) = NULL;
+    INFO_CORRECTFUNCTION (result) = TRUE;
+    INFO_CHECKLOOPFUN (result) = FALSE;
+    INFO_TYPE (result) = NULL;
+    INFO_TYPECOUNTER (result) = 0;
+    INFO_WLEXPRS (result) = NULL;
+    INFO_BESTFITTINGFUN (result) = NULL;
+    INFO_THENTYPEERROR (result) = FALSE;
+    INFO_ELSETYPEERROR (result) = FALSE;
+    INFO_TYPEERROR (result) = FALSE;
+    INFO_ASSIGN (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -304,20 +306,20 @@ TryToDoTypeUpgrade (node *fundef)
     DBUG_ENTER ("TryToDoTypeUpgrade");
 
     arg_info = MakeInfo ();
-    INFO_TUP_CORRECTFUNCTION (arg_info) = TRUE;
-    INFO_TUP_CHECKLOOPFUN (arg_info) = TRUE;
+    INFO_CORRECTFUNCTION (arg_info) = TRUE;
+    INFO_CHECKLOOPFUN (arg_info) = TRUE;
 
     if (fundef != NULL) {
         DBUG_PRINT ("TUP", ("!!!!TryToDoTypeUpgrade!!! "));
 
-        INFO_TUP_FUNDEF (arg_info) = fundef;
+        INFO_FUNDEF (arg_info) = fundef;
 
         TRAVpush (TR_tup);
         fundef = TRAVdo (fundef, arg_info);
         TRAVpop ();
     }
 
-    if (!(INFO_TUP_CORRECTFUNCTION (arg_info))) {
+    if (!(INFO_CORRECTFUNCTION (arg_info))) {
 
         /*
          * Wrong types for recursive call
@@ -448,7 +450,7 @@ AssignTypeToExpr (node *expr, ntype *type)
          * check if type in id is less special as type to be assigned
          */
         if (TY_lt == TYcmpTypes (type, AVIS_TYPE (ID_AVIS (expr)))) {
-            tup_rtu_expr++;
+            global.optcounters.tup_rtu_expr++;
         }
 
         AVIS_TYPE (ID_AVIS (expr)) = TYfreeType (AVIS_TYPE (ID_AVIS (expr)));
@@ -502,11 +504,10 @@ IsArgumentOfSpecialFunction (node *arg, info *arg_info)
              * arg is an argument of a function.
              * Now we have to verify wheter it is a special function or not.
              */
-            DBUG_ASSERT ((INFO_TUP_FUNDEF (arg_info) != NULL),
-                         "No pointer to fundef found");
+            DBUG_ASSERT ((INFO_FUNDEF (arg_info) != NULL), "No pointer to fundef found");
 
-            if ((FUNDEF_ISCONDFUN (INFO_TUP_FUNDEF (arg_info)))
-                || (FUNDEF_ISDOFUN (INFO_TUP_FUNDEF (arg_info)))) {
+            if ((FUNDEF_ISCONDFUN (INFO_FUNDEF (arg_info)))
+                || (FUNDEF_ISDOFUN (INFO_FUNDEF (arg_info)))) {
                 result = TRUE;
             } else {
                 result = FALSE;
@@ -906,9 +907,9 @@ SpecializationOracle (node *fundef, node *args)
         DBUG_PRINT ("TUP", ("           *** function %s specialized via oracle:",
                             FUNDEF_NAME (fundef)));
         if (FUNDEF_ISWRAPPERFUN (fundef)) {
-            tup_wdp_expr++;
+            global.optcounters.tup_wdp_expr++;
         } else {
-            tup_fsp_expr++;
+            global.optcounters.tup_fsp_expr++;
         }
 
         if (akv_in_signature) {
@@ -1048,7 +1049,7 @@ TryToSpecializeFunction (node *fundef, node *ap_node, info *arg_info)
                      * Why not taking new_fun here?
                      * Who de-allocates new_fun as it is no longer used?
                      */
-                    tup_fsp_expr++;
+                    global.optcounters.tup_fsp_expr++;
 
                 } else {
                     /*
@@ -1062,7 +1063,7 @@ TryToSpecializeFunction (node *fundef, node *ap_node, info *arg_info)
 
                 FUNDEF_ARGS (fundef) = AdjustSignatureToArgs (FUNDEF_ARGS (fundef), args);
 
-                tup_fsp_expr++;
+                global.optcounters.tup_fsp_expr++;
 
                 DBUG_PRINT ("TUP",
                             ("cond-function %s specialized:", FUNDEF_NAME (fundef)));
@@ -1357,7 +1358,7 @@ TryToFindSpecializedFunction (node *fundef, node *args, info *arg_info)
     }
 
     if ((result != NULL) && (result != fundef)) {
-        tup_fdp_expr++;
+        global.optcounters.tup_fdp_expr++;
     }
     /*
      * Static dispatch was not successful or no wrapper functions could be found
@@ -1368,23 +1369,23 @@ TryToFindSpecializedFunction (node *fundef, node *args, info *arg_info)
         funs = FUNGROUP_FUNLIST (FUNDEF_FUNGROUP (fundef));
 
         if (NULL == result) {
-            INFO_TUP_BESTFITTINGFUN (arg_info) = fundef;
+            INFO_BESTFITTINGFUN (arg_info) = fundef;
         } else {
-            INFO_TUP_BESTFITTINGFUN (arg_info) = result;
+            INFO_BESTFITTINGFUN (arg_info) = result;
         }
 
         while (funs != NULL) {
-            INFO_TUP_BESTFITTINGFUN (arg_info)
-              = GetBestFittingFun (LINKLIST_LINK (funs),
-                                   INFO_TUP_BESTFITTINGFUN (arg_info), args);
+            INFO_BESTFITTINGFUN (arg_info)
+              = GetBestFittingFun (LINKLIST_LINK (funs), INFO_BESTFITTINGFUN (arg_info),
+                                   args);
             funs = LINKLIST_NEXT (funs);
         }
-        result = INFO_TUP_BESTFITTINGFUN (arg_info);
+        result = INFO_BESTFITTINGFUN (arg_info);
         if (result != fundef) {
             if (FUNDEF_ISWRAPPERFUN (fundef)) {
-                tup_wdp_expr++;
+                global.optcounters.tup_wdp_expr++;
             } else {
-                tup_fsp_expr++;
+                global.optcounters.tup_fsp_expr++;
             }
             if (ContainsAkvArgs (FUNDEF_ARGS (result))) {
                 (FUNGROUP_AKVCOUNTER (FUNDEF_FUNGROUP (result)))++;
@@ -1428,7 +1429,7 @@ TUPdoTypeUpgrade (node *arg_node)
 
         arg_info = MakeInfo ();
 
-        INFO_TUP_FUNDEF (arg_info) = arg_node;
+        INFO_FUNDEF (arg_info) = arg_node;
 
         TRAVpush (TR_tup);
         arg_node = TRAVdo (arg_node, arg_info);
@@ -1444,7 +1445,7 @@ TUPdoTypeUpgrade (node *arg_node)
  *
  * @fn node *TUPfundef(node *arg_node, info *arg_info)
  *
- * @brief traverse through fundefs. Sets INFO_TUP_FUNDEF pointer
+ * @brief traverse through fundefs. Sets INFO_FUNDEF pointer
  *
  * @param arg_node
  * @param arg_info
@@ -1458,7 +1459,7 @@ TUPfundef (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("TUPfundef");
     DBUG_PRINT ("TUP", ("   --- Enter TUPfundef ---"));
-    INFO_TUP_FUNDEF (arg_info) = arg_node;
+    INFO_FUNDEF (arg_info) = arg_node;
 
     if (NULL != FUNDEF_BODY (arg_node)) {
 
@@ -1515,7 +1516,7 @@ TUPassign (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("TUPassign");
 
-    INFO_TUP_ASSIGN (arg_info) = arg_node;
+    INFO_ASSIGN (arg_info) = arg_node;
 
     if (ASSIGN_INSTR (arg_node) != NULL) {
 
@@ -1554,15 +1555,14 @@ TUPreturn (node *arg_node, info *arg_info)
 
     DBUG_PRINT ("TUP", ("evaluationg return node"));
 
-    if ((NULL != RETURN_EXPRS (arg_node))
-        && (!FUNDEF_ISEXPORTED (INFO_TUP_FUNDEF (arg_info)))
-        && (!FUNDEF_ISPROVIDED (INFO_TUP_FUNDEF (arg_info)))
-        && (INFO_TUP_CORRECTFUNCTION (arg_info))) {
+    if ((NULL != RETURN_EXPRS (arg_node)) && (!FUNDEF_ISEXPORTED (INFO_FUNDEF (arg_info)))
+        && (!FUNDEF_ISPROVIDED (INFO_FUNDEF (arg_info)))
+        && (INFO_CORRECTFUNCTION (arg_info))) {
 
         /* convert ntypes of return values to return type of function add them to
          * ret-node*/
 
-        ret = FUNDEF_RETS (INFO_TUP_FUNDEF (arg_info));
+        ret = FUNDEF_RETS (INFO_FUNDEF (arg_info));
         exprs = RETURN_EXPRS (arg_node);
 
         while (ret != NULL) {
@@ -1622,14 +1622,14 @@ TUPlet (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("TUPlet");
 
-    INFO_TUP_TYPE (arg_info) = NULL;
+    INFO_TYPE (arg_info) = NULL;
 
     /*
      * traverse in RHS-expression
      */
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
-    if (INFO_TUP_CORRECTFUNCTION (arg_info)) {
+    if (INFO_CORRECTFUNCTION (arg_info)) {
         /*
          * no typecheck errors while traversal
          */
@@ -1637,19 +1637,19 @@ TUPlet (node *arg_node, info *arg_info)
         /*
          * insert result types in ids-chain
          */
-        INFO_TUP_TYPECOUNTER (arg_info) = 0;
+        INFO_TYPECOUNTER (arg_info) = 0;
 
         if (LET_IDS (arg_node) != NULL) {
             LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
         }
 
         /*
-         * INFO_TUP_TYPE contains now the type of the lhs of current expression
+         * INFO_TYPE contains now the type of the lhs of current expression
          * check now if reverse type-upgrade is possible
          */
 
-        if ((INFO_TUP_TYPE (arg_info) != NULL)
-            && (NODE_TYPE (LET_EXPR (arg_node)) == N_id) && (global.optimize.dortup)) {
+        if ((INFO_TYPE (arg_info) != NULL) && (NODE_TYPE (LET_EXPR (arg_node)) == N_id)
+            && (global.optimize.dortup)) {
 
             /*
              * rhs is a single identifier
@@ -1663,23 +1663,23 @@ TUPlet (node *arg_node, info *arg_info)
                  * local identifier
                  */
 
-                if (TYcmpTypes (INFO_TUP_TYPE (arg_info),
+                if (TYcmpTypes (INFO_TYPE (arg_info),
                                 AVIS_TYPE (ID_AVIS (LET_EXPR (arg_node))))
                     == TY_lt) {
 
                     AVIS_TYPE (ID_AVIS (LET_EXPR (arg_node)))
                       = TYfreeType (AVIS_TYPE (ID_AVIS (LET_EXPR (arg_node))));
                     AVIS_TYPE (ID_AVIS (LET_EXPR (arg_node)))
-                      = TYcopyType (INFO_TUP_TYPE (arg_info));
+                      = TYcopyType (INFO_TYPE (arg_info));
 
                     /*
                      * update counter
                      */
-                    tup_rtu_expr++;
+                    global.optcounters.tup_rtu_expr++;
                 }
             }
         }
-        INFO_TUP_TYPE (arg_info) = NULL;
+        INFO_TYPE (arg_info) = NULL;
     }
 
     DBUG_RETURN (arg_node);
@@ -1709,13 +1709,13 @@ TUPwith (node *arg_node, info *arg_info)
     /*
      * Stack information about a surrounding withloop
      */
-    oldwithid = INFO_TUP_WITHID (arg_info);
-    oldwithidvec = INFO_TUP_WITHIDVEC (arg_info);
-    oldwlexprs = INFO_TUP_WLEXPRS (arg_info);
+    oldwithid = INFO_WITHID (arg_info);
+    oldwithidvec = INFO_WITHIDVEC (arg_info);
+    oldwlexprs = INFO_WLEXPRS (arg_info);
 
-    INFO_TUP_WITHID (arg_info) = NULL;
-    INFO_TUP_WITHIDVEC (arg_info) = NULL;
-    INFO_TUP_WLEXPRS (arg_info) = NULL;
+    INFO_WITHID (arg_info) = NULL;
+    INFO_WITHIDVEC (arg_info) = NULL;
+    INFO_WLEXPRS (arg_info) = NULL;
 
     /*
      * top node of with loop
@@ -1746,9 +1746,9 @@ TUPwith (node *arg_node, info *arg_info)
     /*
      * restore information for traversal of surrounding withloop
      */
-    INFO_TUP_WITHID (arg_info) = oldwithid;
-    INFO_TUP_WITHIDVEC (arg_info) = oldwithidvec;
-    INFO_TUP_WLEXPRS (arg_info) = oldwlexprs;
+    INFO_WITHID (arg_info) = oldwithid;
+    INFO_WITHIDVEC (arg_info) = oldwithidvec;
+    INFO_WLEXPRS (arg_info) = oldwlexprs;
 
     DBUG_RETURN (arg_node);
 }
@@ -1783,9 +1783,9 @@ TUPpart (node *arg_node, info *arg_info)
          * generator variable, i.e, we check whether we do have scalar indices:
          */
 
-        INFO_TUP_WITHIDVEC (arg_info) = WITHID_VEC (PART_WITHID (arg_node));
+        INFO_WITHIDVEC (arg_info) = WITHID_VEC (PART_WITHID (arg_node));
 
-        INFO_TUP_WITHID (arg_info) = PART_WITHID (arg_node);
+        INFO_WITHID (arg_info) = PART_WITHID (arg_node);
 
         if (PART_GENERATOR (arg_node) != NULL) {
 
@@ -1847,7 +1847,7 @@ TUPgenerator (node *arg_node, info *arg_info)
         wi = NULL;
     }
 
-    withid = INFO_TUP_WITHID (arg_info);
+    withid = INFO_WITHID (arg_info);
     current
       = GetLowestType (current, TYcopyType (AVIS_TYPE (IDS_AVIS (WITHID_VEC (withid)))));
 
@@ -1919,7 +1919,7 @@ TUPgenerator (node *arg_node, info *arg_info)
      * update withid with same type
      */
 
-    withid = INFO_TUP_WITHID (arg_info);
+    withid = INFO_WITHID (arg_info);
 
     /*
      * WITHID_VEC should never become an AKV-type
@@ -1951,10 +1951,9 @@ TUPgenerator (node *arg_node, info *arg_info)
                     avis = TBmakeAvis (ILIBtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int),
                                                                  SHcreateShape (0)));
                     ids = TBmakeIds (avis, ids);
-                    vardec
-                      = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_TUP_FUNDEF (arg_info)));
+                    vardec = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
 
-                    FUNDEF_VARDEC (INFO_TUP_FUNDEF (arg_info)) = vardec;
+                    FUNDEF_VARDEC (INFO_FUNDEF (arg_info)) = vardec;
 
                     AVIS_DECL (avis) = vardec;
 
@@ -1962,7 +1961,7 @@ TUPgenerator (node *arg_node, info *arg_info)
                 }
                 WITHID_IDS (withid) = ids;
             }
-            tup_tu_expr++;
+            global.optcounters.tup_tu_expr++;
             break;
 
         default:
@@ -2023,12 +2022,12 @@ TUPcode (node *arg_node, info *arg_info)
         tmp2 = TYfreeType (tmp2);
     }
 
-    if (NULL == INFO_TUP_WLEXPRS (arg_info)) {
+    if (NULL == INFO_WLEXPRS (arg_info)) {
 
-        INFO_TUP_WLEXPRS (arg_info) = tmp;
+        INFO_WLEXPRS (arg_info) = tmp;
     } else {
 
-        INFO_TUP_WLEXPRS (arg_info) = GetLowestType (tmp, INFO_TUP_WLEXPRS (arg_info));
+        INFO_WLEXPRS (arg_info) = GetLowestType (tmp, INFO_WLEXPRS (arg_info));
     }
 
     if (CODE_NEXT (arg_node) != NULL) {
@@ -2043,7 +2042,7 @@ TUPcode (node *arg_node, info *arg_info)
      */
 
     if ((global.optimize.dortup)
-        && (TYcmpTypes (INFO_TUP_WLEXPRS (arg_info),
+        && (TYcmpTypes (INFO_WLEXPRS (arg_info),
                         AVIS_TYPE (ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (arg_node)))))
             == TY_lt)
         && (N_vardec
@@ -2052,9 +2051,9 @@ TUPcode (node *arg_node, info *arg_info)
         AVIS_TYPE (ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (arg_node))))
           = TYfreeType (AVIS_TYPE (ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (arg_node)))));
         AVIS_TYPE (ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (arg_node))))
-          = TYcopyType (INFO_TUP_WLEXPRS (arg_info));
+          = TYcopyType (INFO_WLEXPRS (arg_info));
 
-        tup_rtu_expr++;
+        global.optcounters.tup_rtu_expr++;
     }
 
     DBUG_RETURN (arg_node);
@@ -2077,9 +2076,9 @@ TUPap (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("TUPap");
 
-    if (INFO_TUP_CHECKLOOPFUN (arg_info)) {
+    if (INFO_CHECKLOOPFUN (arg_info)) {
         if ((FUNDEF_ISDOFUN (AP_FUNDEF (arg_node)))
-            && (AP_FUNDEF (arg_node) == INFO_TUP_FUNDEF (arg_info))) {
+            && (AP_FUNDEF (arg_node) == INFO_FUNDEF (arg_info))) {
             /*
              * at the moment we are checking, if the recursive call of a loop
              * function will work with specialized signature
@@ -2090,7 +2089,7 @@ TUPap (node *arg_node, info *arg_info)
             signature = FUNDEF_ARGS (AP_FUNDEF (arg_node));
             args = AP_ARGS (arg_node);
 
-            while ((INFO_TUP_CORRECTFUNCTION (arg_info)) && (signature != NULL)) {
+            while ((INFO_CORRECTFUNCTION (arg_info)) && (signature != NULL)) {
 
                 switch (TYcmpTypes (AVIS_TYPE (ARG_AVIS (signature)),
                                     AVIS_TYPE (ID_AVIS (EXPRS_EXPR (args))))) {
@@ -2101,10 +2100,10 @@ TUPap (node *arg_node, info *arg_info)
                     break;
                 case TY_lt: /* signature is more special than argument, that's a problem
                              */
-                            /*INFO_TUP_CORRECTFUNCTION( arg_info) = FALSE;
+                            /*INFO_CORRECTFUNCTION( arg_info) = FALSE;
                               break;*/
                 case TY_hcs:
-                    /*INFO_TUP_CORRECTFUNCTION( arg_info) = FALSE;*/
+                    /*INFO_CORRECTFUNCTION( arg_info) = FALSE;*/
 
                     /*
                      * find common supertype of signature and argument type
@@ -2122,7 +2121,7 @@ TUPap (node *arg_node, info *arg_info)
                     break;
                 case TY_dis: /* both types are unrelated, should not be possible */
                     DBUG_ASSERT ((FALSE), "Former type is unrelated to new type! ");
-                    INFO_TUP_CORRECTFUNCTION (arg_info) = FALSE;
+                    INFO_CORRECTFUNCTION (arg_info) = FALSE;
                     break;
 
                 default: /* no other cases exist */
@@ -2142,7 +2141,7 @@ TUPap (node *arg_node, info *arg_info)
         result = AP_FUNDEF (arg_node);
 
         if ((!FUNDEF_ISDOFUN (result))
-            || (!ILIBstringCompare (FUNDEF_NAME (INFO_TUP_FUNDEF (arg_info)),
+            || (!ILIBstringCompare (FUNDEF_NAME (INFO_FUNDEF (arg_info)),
                                     FUNDEF_NAME (result)))) {
             DBUG_PRINT ("TUP", ("-> checking function call %s", FUNDEF_NAME (result)));
 
@@ -2171,9 +2170,9 @@ TUPap (node *arg_node, info *arg_info)
             }
         }
     }
-    if (INFO_TUP_CORRECTFUNCTION (arg_info)) {
+    if (INFO_CORRECTFUNCTION (arg_info)) {
 
-        INFO_TUP_TYPE (arg_info)
+        INFO_TYPE (arg_info)
           = TUmakeProductTypeFromRets (FUNDEF_RETS (AP_FUNDEF (arg_node)));
     }
 
@@ -2198,17 +2197,16 @@ TUPids (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("TUPids");
 
-    if ((INFO_TUP_TYPE (arg_info) != NULL) && (global.optimize.dotup)) {
+    if ((INFO_TYPE (arg_info) != NULL) && (global.optimize.dotup)) {
 
         oldtype = AVIS_TYPE (IDS_AVIS (arg_node));
 
-        if (!TYisProd (INFO_TUP_TYPE (arg_info))) {
+        if (!TYisProd (INFO_TYPE (arg_info))) {
 
-            DBUG_ASSERT ((TYisProd (INFO_TUP_TYPE (arg_info))), "Product type expected!");
+            DBUG_ASSERT ((TYisProd (INFO_TYPE (arg_info))), "Product type expected!");
         }
 
-        type = TYgetProductMember (INFO_TUP_TYPE (arg_info),
-                                   INFO_TUP_TYPECOUNTER (arg_info));
+        type = TYgetProductMember (INFO_TYPE (arg_info), INFO_TYPECOUNTER (arg_info));
 
         DBUG_ASSERT ((TYisArray (type)), "array type expected");
 
@@ -2230,14 +2228,14 @@ TUPids (node *arg_node, info *arg_info)
             AVIS_TYPE (IDS_AVIS (arg_node))
               = TYfreeType (AVIS_TYPE (IDS_AVIS (arg_node)));
             AVIS_TYPE (IDS_AVIS (arg_node)) = TYcopyType (type);
-            tup_tu_expr++;
+            global.optcounters.tup_tu_expr++;
             break;
 
         default: /* all cases are listed above, so default should never be entered*/
             DBUG_ASSERT ((FALSE), "New element in enumeration added?");
         }
 
-        INFO_TUP_TYPECOUNTER (arg_info) = INFO_TUP_TYPECOUNTER (arg_info) + 1;
+        INFO_TYPECOUNTER (arg_info) = INFO_TYPECOUNTER (arg_info) + 1;
 
         if (IDS_NEXT (arg_node) != NULL) {
 
@@ -2247,10 +2245,9 @@ TUPids (node *arg_node, info *arg_info)
 
     /*
      * now all ids elements are traversed in top-down order
-     * bottom-up traversal: set INFO_TUP_TYPE to current node type for reverse type
-     * upgarde
+     * bottom-up traversal: set INFO_TYPE to current node type for reverse type upgarde
      */
-    INFO_TUP_TYPE (arg_info) = AVIS_TYPE (IDS_AVIS (arg_node));
+    INFO_TYPE (arg_info) = AVIS_TYPE (IDS_AVIS (arg_node));
 
     DBUG_RETURN (arg_node);
 }
@@ -2276,9 +2273,9 @@ TUPmodarray (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("TUPmodarray");
 
-    expr = INFO_TUP_WLEXPRS (arg_info);
+    expr = INFO_WLEXPRS (arg_info);
 
-    idx = TYcopyType (AVIS_TYPE (IDS_AVIS (INFO_TUP_WITHIDVEC (arg_info))));
+    idx = TYcopyType (AVIS_TYPE (IDS_AVIS (INFO_WITHIDVEC (arg_info))));
 
     array = NTCnewTypeCheck_Expr (MODARRAY_ARRAY (arg_node));
 
@@ -2294,8 +2291,8 @@ TUPmodarray (node *arg_node, info *arg_info)
 
     prod = TYfreeType (prod);
 
-    INFO_TUP_TYPE (arg_info) = tmp;
-    INFO_TUP_WLEXPRS (arg_info) = NULL;
+    INFO_TYPE (arg_info) = tmp;
+    INFO_WLEXPRS (arg_info) = NULL;
 
     DBUG_RETURN (arg_node);
 }
@@ -2320,8 +2317,8 @@ TUPgenarray (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("TUPgenarray");
 
-    expr = INFO_TUP_WLEXPRS (arg_info);
-    idx = TYcopyType (AVIS_TYPE (IDS_AVIS (INFO_TUP_WITHIDVEC (arg_info))));
+    expr = INFO_WLEXPRS (arg_info);
+    idx = TYcopyType (AVIS_TYPE (IDS_AVIS (INFO_WITHIDVEC (arg_info))));
     shp = NTCnewTypeCheck_Expr (GENARRAY_SHAPE (arg_node));
     if (GENARRAY_DEFAULT (arg_node) != NULL) {
         dexpr = NTCnewTypeCheck_Expr (GENARRAY_DEFAULT (arg_node));
@@ -2336,7 +2333,7 @@ TUPgenarray (node *arg_node, info *arg_info)
 
     prod = TYfreeType (prod);
 
-    INFO_TUP_TYPE (arg_info) = tmp;
+    INFO_TYPE (arg_info) = tmp;
 
     DBUG_RETURN (arg_node);
 }
@@ -2361,7 +2358,7 @@ TUPfold (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("TUPfold");
 
-    expr = INFO_TUP_WLEXPRS (arg_info);
+    expr = INFO_WLEXPRS (arg_info);
     neutr = NTCnewTypeCheck_Expr (FOLD_NEUTRAL (arg_node));
 
     DBUG_ASSERT ((TYisArray (neutr)), "non array node!");
@@ -2374,7 +2371,7 @@ TUPfold (node *arg_node, info *arg_info)
 
     prod = TYfreeType (prod);
 
-    INFO_TUP_TYPE (arg_info) = tmp;
+    INFO_TYPE (arg_info) = tmp;
 
     DBUG_RETURN (arg_node);
 }
@@ -2397,7 +2394,7 @@ TUPexprs (node *arg_node, info *arg_info)
     DBUG_ENTER ("TUPexprs");
 
     if (global.optimize.dotup) {
-        INFO_TUP_TYPE (arg_info) = NTCnewTypeCheck_Expr (arg_node);
+        INFO_TYPE (arg_info) = NTCnewTypeCheck_Expr (arg_node);
     }
 
     DBUG_RETURN (arg_node);
@@ -2408,7 +2405,7 @@ TUPexprs (node *arg_node, info *arg_info)
  * @fn node *TUPid(node *arg_node, info *arg_info)
  *
  * @brief The type of the id is transformed to product type
- *   and referenced by INFO_TUP_TYPE
+ *   and referenced by INFO_TYPE
  *
  * @param arg_node * @param arg_info
  *
@@ -2430,10 +2427,10 @@ TUPid (node *arg_node, info *arg_info)
         if (!(TYisProd (type))) {
             DBUG_ASSERT ((TYisArray (type)), "non array node!");
 
-            INFO_TUP_TYPE (arg_info) = TYmakeProductType (1, TYcopyType (type));
+            INFO_TYPE (arg_info) = TYmakeProductType (1, TYcopyType (type));
         } else {
 
-            INFO_TUP_TYPE (arg_info) = TYcopyType (type);
+            INFO_TYPE (arg_info) = TYcopyType (type);
         }
     }
 
@@ -2471,14 +2468,14 @@ TUParray (node *arg_node, info *arg_info)
         } else {
 
             DBUG_ASSERT ((FALSE), "array without elements");
-            INFO_TUP_TYPE (arg_info) = TYmakeProductType (0);
+            INFO_TYPE (arg_info) = TYmakeProductType (0);
         }
 
-        DBUG_ASSERT (TYisProd (INFO_TUP_TYPE (arg_info)),
+        DBUG_ASSERT (TYisProd (INFO_TYPE (arg_info)),
                      "NTCexprs did not create a product type");
 
-        elems = INFO_TUP_TYPE (arg_info);
-        INFO_TUP_TYPE (arg_info) = NULL;
+        elems = INFO_TYPE (arg_info);
+        INFO_TYPE (arg_info) = NULL;
 
         /*
          * Now, we built the resulting (AKS-)type type from the product type found:
@@ -2502,7 +2499,7 @@ TUParray (node *arg_node, info *arg_info)
                                                                     NULL)));
         }
 
-        INFO_TUP_TYPE (arg_info) = type;
+        INFO_TYPE (arg_info) = type;
     }
 
     DBUG_RETURN (arg_node);
@@ -2547,24 +2544,24 @@ TUPprf (node *arg_node, info *arg_info)
         } else {
 
             DBUG_ASSERT ((FALSE), "primitive function without arguments");
-            INFO_TUP_TYPE (arg_info) = TYmakeProductType (0);
+            INFO_TYPE (arg_info) = TYmakeProductType (0);
         }
 
-        DBUG_ASSERT (TYisProd (INFO_TUP_TYPE (arg_info)),
+        DBUG_ASSERT (TYisProd (INFO_TYPE (arg_info)),
                      "TUPexprs did not create a product type");
 
-        args = INFO_TUP_TYPE (arg_info);
-        INFO_TUP_TYPE (arg_info) = NULL;
+        args = INFO_TYPE (arg_info);
+        INFO_TYPE (arg_info) = NULL;
 
         info = TEmakeInfoPrf (global.linenum, TE_prf, global.prf_string[prf],
                               global.ntc_cffuntab[prf]);
         res = NTCCTcomputeType (global.ntc_funtab[prf], info, args);
 
         TYfreeType (args);
-        INFO_TUP_TYPE (arg_info) = res;
+        INFO_TYPE (arg_info) = res;
     } else {
 
-        INFO_TUP_TYPE (arg_info) = NULL;
+        INFO_TYPE (arg_info) = NULL;
     }
 
     DBUG_RETURN (arg_node);
@@ -2602,7 +2599,7 @@ TUPfuncond (node *arg_node, info *arg_info)
                                                 "conditional could be infered!");
         }
 
-        INFO_TUP_TYPE (arg_info) = TYmakeProductType (1, tmp);
+        INFO_TYPE (arg_info) = TYmakeProductType (1, tmp);
     }
 
     DBUG_RETURN (arg_node);
@@ -2625,18 +2622,18 @@ TUPcond (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("TUPcond");
 
-    INFO_TUP_THENTYPEERROR (arg_info) = FALSE;
-    INFO_TUP_ELSETYPEERROR (arg_info) = FALSE;
-    INFO_TUP_TYPEERROR (arg_info) = FALSE;
+    INFO_THENTYPEERROR (arg_info) = FALSE;
+    INFO_ELSETYPEERROR (arg_info) = FALSE;
+    INFO_TYPEERROR (arg_info) = FALSE;
 
     COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
 
-    INFO_TUP_THENTYPEERROR (arg_info) = INFO_TUP_TYPEERROR (arg_info);
-    INFO_TUP_TYPEERROR (arg_info) = FALSE;
+    INFO_THENTYPEERROR (arg_info) = INFO_TYPEERROR (arg_info);
+    INFO_TYPEERROR (arg_info) = FALSE;
 
     COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
 
-    INFO_TUP_ELSETYPEERROR (arg_info) = INFO_TUP_TYPEERROR (arg_info);
+    INFO_ELSETYPEERROR (arg_info) = INFO_TYPEERROR (arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -2665,12 +2662,12 @@ TUPcond (node *arg_node, info *arg_info)
                                                                                          \
             cv = COaST2Constant (arg_node);                                              \
             if (cv == NULL) {                                                            \
-                INFO_TUP_TYPE (arg_info)                                                 \
+                INFO_TYPE (arg_info)                                                     \
                   = TYmakeAKS (TYmakeSimpleType (base), SHcreateShape (0));              \
             } else {                                                                     \
-                INFO_TUP_TYPE (arg_info) = TYmakeAKV (TYmakeSimpleType (base), cv);      \
+                INFO_TYPE (arg_info) = TYmakeAKV (TYmakeSimpleType (base), cv);          \
             }                                                                            \
-            INFO_TUP_TYPE (arg_info) = TYmakeProductType (1, INFO_TUP_TYPE (arg_info));  \
+            INFO_TYPE (arg_info) = TYmakeProductType (1, INFO_TYPE (arg_info));          \
         }                                                                                \
         DBUG_RETURN (arg_node);                                                          \
     }

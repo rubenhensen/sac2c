@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.6  2005/09/04 12:52:11  ktr
+ * re-engineered the optimization cycle
+ *
  * Revision 1.5  2004/11/22 18:33:19  ktr
  * SACDevCamp 04 Ismop
  *
@@ -38,7 +41,7 @@
  *   so we have to deal only with the do loops.
  *
  *****************************************************************************/
-extern node *LURdoLoopUnrolling (node *fundef, node *modul);
+extern node *LURdoLoopUnrolling (node *fundef);
 
 extern node *LURfundef (node *arg_node, info *arg_info);
 extern node *LURassign (node *arg_node, info *arg_info);

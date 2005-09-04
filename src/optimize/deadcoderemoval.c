@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2005/09/04 12:52:11  ktr
+ * re-engineered the optimization cycle
+ *
  * Revision 1.6  2005/08/02 14:24:37  ktr
  * a seperate dead code inference traversal is now employed
  *
@@ -72,7 +75,7 @@
 #include "dbug.h"
 #include "traverse.h"
 #include "free.h"
-#include "optimize.h"
+#include "map_fun_trav.h"
 
 /*
  * INFO structure
@@ -89,12 +92,12 @@ struct INFO {
 /*
  * INFO macros
  */
-#define INFO_DCR_REMASSIGN(n) (n->remassign)
-#define INFO_DCR_ASSIGN(n) (n->assign)
-#define INFO_DCR_FUNDEF(n) (n->fundef)
-#define INFO_DCR_INT_ASSIGN(n) (n->int_assign)
-#define INFO_DCR_EXT_ASSIGN(n) (n->ext_assign)
-#define INFO_DCR_CONDREMOVED(n) (n->condremoved)
+#define INFO_REMASSIGN(n) (n->remassign)
+#define INFO_ASSIGN(n) (n->assign)
+#define INFO_FUNDEF(n) (n->fundef)
+#define INFO_INT_ASSIGN(n) (n->int_assign)
+#define INFO_EXT_ASSIGN(n) (n->ext_assign)
+#define INFO_CONDREMOVED(n) (n->condremoved)
 
 /*
  * INFO functions
@@ -108,12 +111,12 @@ MakeInfo ()
 
     result = ILIBmalloc (sizeof (info));
 
-    INFO_DCR_REMASSIGN (result) = FALSE;
-    INFO_DCR_ASSIGN (result) = NULL;
-    INFO_DCR_FUNDEF (result) = NULL;
-    INFO_DCR_INT_ASSIGN (result) = NULL;
-    INFO_DCR_EXT_ASSIGN (result) = NULL;
-    INFO_DCR_CONDREMOVED (result) = FALSE;
+    INFO_REMASSIGN (result) = FALSE;
+    INFO_ASSIGN (result) = NULL;
+    INFO_FUNDEF (result) = NULL;
+    INFO_INT_ASSIGN (result) = NULL;
+    INFO_EXT_ASSIGN (result) = NULL;
+    INFO_CONDREMOVED (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -131,23 +134,23 @@ FreeInfo (info *info)
 /******************************************************************************
  *
  * function:
- *   node *DCRdoDeadCodeRemoval(node *fundef, node *modul)
+ *   node *DCRdoDeadCodeRemoval(node *fundef)
  *
  * description:
- *   starting point of DeadCodeRemoval for SSA form.
- *   Starting fundef must not be a special fundef (do, while, cond) created by
+ *   starting point of DeadCodeRemoval for SSA form. DCR will only be performed
+ *   if fundef is not a special fundef (do, while, cond) created by
  *   lac2fun transformation. These "inline" functions will be traversed in
  *   their order of usage. The traversal mode (on toplevel, in special
- *   function) is annotated in the stacked INFO_DCR_DEPTH attribute.
+ *   function) is annotated in the stacked INFO_DEPTH attribute.
  *
  *****************************************************************************/
 node *
-DCRdoDeadCodeRemoval (node *fundef, node *module)
+DCRdoDeadCodeRemoval (node *fundef)
 {
     DBUG_ENTER ("DCRdoDeadCodeRemoval");
 
     DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
-                 "DCRdoDeadCodeRemoval called for non-fundef node");
+                 "DCRdoDeadCodeRemovalOneFunction called for non-fundef node");
 
     DBUG_PRINT ("OPT", ("starting dead code removal (ssa) in function %s",
                         FUNDEF_NAME (fundef)));
@@ -157,6 +160,25 @@ DCRdoDeadCodeRemoval (node *fundef, node *module)
     TRAVpop ();
 
     DBUG_RETURN (fundef);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *DCRdoDeadCodeRemovalModule(node *module)
+ *
+ * description:
+ *   applies dead code removal to all functions of the given module
+ *
+ *****************************************************************************/
+node *
+DCRdoDeadCodeRemovalModule (node *module)
+{
+    DBUG_ENTER ("DCRdoDeadCodeRemovalModule");
+
+    module = MFTdoMapFunTrav (module, DCRdoDeadCodeRemoval);
+
+    DBUG_RETURN (module);
 }
 
 /******************************************************************************
@@ -215,7 +237,7 @@ DCRfundef (node *arg_node, info *arg_info)
             }
 
             info = MakeInfo ();
-            INFO_DCR_FUNDEF (info) = arg_node;
+            INFO_FUNDEF (info) = arg_node;
 
             FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), info);
 
@@ -223,7 +245,7 @@ DCRfundef (node *arg_node, info *arg_info)
                 /*
                  * traverse args and rets to remove unused ones from signature
                  */
-                INFO_DCR_EXT_ASSIGN (info) = INFO_DCR_ASSIGN (arg_info);
+                INFO_EXT_ASSIGN (info) = INFO_ASSIGN (arg_info);
                 if (FUNDEF_ARGS (arg_node) != NULL) {
                     FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), info);
                 }
@@ -232,7 +254,7 @@ DCRfundef (node *arg_node, info *arg_info)
                     FUNDEF_RETS (arg_node) = TRAVdo (FUNDEF_RETS (arg_node), info);
                 }
 
-                if (INFO_DCR_CONDREMOVED (arg_info)) {
+                if (INFO_CONDREMOVED (arg_info)) {
                     /*
                      * Conditional was removed: Convert to regular function
                      */
@@ -270,9 +292,9 @@ DCRarg (node *arg_node, info *arg_info)
     /*
      * Store the internal and external N_ap nodes
      */
-    extap = ASSIGN_RHS (INFO_DCR_EXT_ASSIGN (arg_info));
-    if (INFO_DCR_INT_ASSIGN (arg_info) != NULL) {
-        intap = ASSIGN_RHS (INFO_DCR_INT_ASSIGN (arg_info));
+    extap = ASSIGN_RHS (INFO_EXT_ASSIGN (arg_info));
+    if (INFO_INT_ASSIGN (arg_info) != NULL) {
+        intap = ASSIGN_RHS (INFO_INT_ASSIGN (arg_info));
     }
 
     if (ARG_NEXT (arg_node) != NULL) {
@@ -281,7 +303,7 @@ DCRarg (node *arg_node, info *arg_info)
          * stack internal and external arguments corresponding to this arg node
          */
         intarg = NULL;
-        if (INFO_DCR_INT_ASSIGN (arg_info) != NULL) {
+        if (INFO_INT_ASSIGN (arg_info) != NULL) {
             intarg = AP_ARGS (intap);
             AP_ARGS (intap) = EXPRS_NEXT (intarg);
         }
@@ -297,7 +319,7 @@ DCRarg (node *arg_node, info *arg_info)
         /*
          * Restore internal and external arguments
          */
-        if (INFO_DCR_INT_ASSIGN (arg_info) != NULL) {
+        if (INFO_INT_ASSIGN (arg_info) != NULL) {
             EXPRS_NEXT (intarg) = AP_ARGS (intap);
             AP_ARGS (intap) = intarg;
         }
@@ -315,7 +337,7 @@ DCRarg (node *arg_node, info *arg_info)
 
         arg_node = FREEdoFreeNode (arg_node);
         AP_ARGS (extap) = FREEdoFreeNode (AP_ARGS (extap));
-        if (INFO_DCR_INT_ASSIGN (arg_info) != NULL) {
+        if (INFO_INT_ASSIGN (arg_info) != NULL) {
             AP_ARGS (intap) = FREEdoFreeNode (AP_ARGS (intap));
         }
     }
@@ -344,9 +366,9 @@ DCRret (node *arg_node, info *arg_info)
     /*
      * Store the internal and external N_ap nodes
      */
-    extlet = ASSIGN_INSTR (INFO_DCR_EXT_ASSIGN (arg_info));
-    if (INFO_DCR_INT_ASSIGN (arg_info) != NULL) {
-        intlet = ASSIGN_INSTR (INFO_DCR_INT_ASSIGN (arg_info));
+    extlet = ASSIGN_INSTR (INFO_EXT_ASSIGN (arg_info));
+    if (INFO_INT_ASSIGN (arg_info) != NULL) {
+        intlet = ASSIGN_INSTR (INFO_INT_ASSIGN (arg_info));
     }
 
     if (RET_NEXT (arg_node) != NULL) {
@@ -355,7 +377,7 @@ DCRret (node *arg_node, info *arg_info)
          * stack internal and external arguments corresponding to this arg node
          */
         intids = NULL;
-        if (INFO_DCR_INT_ASSIGN (arg_info) != NULL) {
+        if (INFO_INT_ASSIGN (arg_info) != NULL) {
             intids = LET_IDS (intlet);
             LET_IDS (intlet) = IDS_NEXT (intids);
         }
@@ -371,7 +393,7 @@ DCRret (node *arg_node, info *arg_info)
         /*
          * Restore internal and external arguments
          */
-        if (INFO_DCR_INT_ASSIGN (arg_info) != NULL) {
+        if (INFO_INT_ASSIGN (arg_info) != NULL) {
             IDS_NEXT (intids) = LET_IDS (intlet);
             LET_IDS (intlet) = intids;
         }
@@ -389,7 +411,7 @@ DCRret (node *arg_node, info *arg_info)
 
         arg_node = FREEdoFreeNode (arg_node);
         LET_IDS (extlet) = FREEdoFreeNode (LET_IDS (extlet));
-        if (INFO_DCR_INT_ASSIGN (arg_info) != NULL) {
+        if (INFO_INT_ASSIGN (arg_info) != NULL) {
             LET_IDS (intlet) = FREEdoFreeNode (LET_IDS (intlet));
         }
     }
@@ -454,7 +476,7 @@ DCRvardec (node *arg_node, info *arg_info)
     if (AVIS_ISDEAD (VARDEC_AVIS (arg_node))) {
         DBUG_PRINT ("DCR", ("remove unused vardec %s", VARDEC_NAME (arg_node)));
         arg_node = FREEdoFreeNode (arg_node);
-        dead_var++;
+        global.optcounters.dead_var++;
     }
 
     DBUG_RETURN (arg_node);
@@ -467,7 +489,7 @@ DCRvardec (node *arg_node, info *arg_info)
  *
  * description:
  *  traverses assignment chain bottom-up and removes all assignments not
- *  needed (marked by INFO_DCR_REMASSIGN)
+ *  needed (marked by INFO_REMASSIGN)
  *
  *****************************************************************************/
 node *
@@ -480,15 +502,15 @@ DCRassign (node *arg_node, info *arg_info)
     }
 
     /* traverse instruction */
-    INFO_DCR_REMASSIGN (arg_info) = TRUE;
-    INFO_DCR_ASSIGN (arg_info) = arg_node;
+    INFO_REMASSIGN (arg_info) = TRUE;
+    INFO_ASSIGN (arg_info) = arg_node;
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
     /* free this assignment if unused anymore */
-    if (INFO_DCR_REMASSIGN (arg_info)) {
+    if (INFO_REMASSIGN (arg_info)) {
         DBUG_PRINT ("DCR", ("removing assignment"));
         arg_node = FREEdoFreeNode (arg_node);
-        dead_expr++;
+        global.optcounters.dead_expr++;
     }
 
     DBUG_RETURN (arg_node);
@@ -510,7 +532,7 @@ DCRreturn (node *arg_node, info *arg_info)
     RETURN_EXPRS (arg_node) = RemoveUnusedReturnValues (RETURN_EXPRS (arg_node));
 
     /* do not remove return instruction */
-    INFO_DCR_REMASSIGN (arg_info) = FALSE;
+    INFO_REMASSIGN (arg_info) = FALSE;
 
     DBUG_RETURN (arg_node);
 }
@@ -535,12 +557,12 @@ DCRlet (node *arg_node, info *arg_info)
         LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
     }
 
-    if (!INFO_DCR_REMASSIGN (arg_info)) {
+    if (!INFO_REMASSIGN (arg_info)) {
         /* traverse right side of let */
         LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
         /* Restore remassign information */
-        INFO_DCR_REMASSIGN (arg_info) = FALSE;
+        INFO_REMASSIGN (arg_info) = FALSE;
     }
 
     DBUG_RETURN (arg_node);
@@ -563,9 +585,9 @@ DCRap (node *arg_node, info *arg_info)
 
     /* traverse special fundef without recursion */
     if (FUNDEF_ISLACFUN (AP_FUNDEF (arg_node))) {
-        if (AP_FUNDEF (arg_node) == INFO_DCR_FUNDEF (arg_info)) {
+        if (AP_FUNDEF (arg_node) == INFO_FUNDEF (arg_info)) {
             /* remember internal assignment */
-            INFO_DCR_INT_ASSIGN (arg_info) = INFO_DCR_ASSIGN (arg_info);
+            INFO_INT_ASSIGN (arg_info) = INFO_ASSIGN (arg_info);
         } else {
             DBUG_PRINT ("DCR", ("traverse in special fundef %s",
                                 FUNDEF_NAME (AP_FUNDEF (arg_node))));
@@ -576,7 +598,7 @@ DCRap (node *arg_node, info *arg_info)
             DBUG_PRINT ("DCR", ("traversal of special fundef %s finished"
                                 "continue in fundef %s\n",
                                 FUNDEF_NAME (AP_FUNDEF (arg_node)),
-                                FUNDEF_NAME (INFO_DCR_FUNDEF (arg_info))));
+                                FUNDEF_NAME (INFO_FUNDEF (arg_info))));
         }
     }
 
@@ -605,7 +627,7 @@ DCRids (node *arg_node, info *arg_info)
     }
 
     if (!AVIS_ISDEAD (IDS_AVIS (arg_node))) {
-        INFO_DCR_REMASSIGN (arg_info) = FALSE;
+        INFO_REMASSIGN (arg_info) = FALSE;
     }
 
     DBUG_RETURN (arg_node);
@@ -652,15 +674,15 @@ DCRcond (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("DCRcond");
 
-    if (NODE_TYPE (ASSIGN_INSTR (ASSIGN_NEXT (INFO_DCR_ASSIGN (arg_info)))) != N_return) {
+    if (NODE_TYPE (ASSIGN_INSTR (ASSIGN_NEXT (INFO_ASSIGN (arg_info)))) != N_return) {
 
         /* Traverse branches and predicate */
         arg_node = TRAVcont (arg_node, arg_info);
 
-        INFO_DCR_REMASSIGN (arg_info) = FALSE;
+        INFO_REMASSIGN (arg_info) = FALSE;
     } else {
         /* There is no subsequent funcond: conditional is dead */
-        INFO_DCR_CONDREMOVED (arg_info) = TRUE;
+        INFO_CONDREMOVED (arg_info) = TRUE;
     }
 
     DBUG_RETURN (arg_node);

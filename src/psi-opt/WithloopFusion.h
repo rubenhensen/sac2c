@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2005/09/04 12:54:00  ktr
+ * re-engineered the optimization cycle
+ *
  * Revision 1.6  2004/11/22 17:57:54  khf
  * more codebrushing
  *
@@ -40,7 +43,6 @@ extern node *WLFSdoWithloopFusion (node *arg_node);
 extern node *WLFSfundef (node *arg_node, info *arg_info);
 extern node *WLFSblock (node *arg_node, info *arg_info);
 extern node *WLFSassign (node *arg_node, info *arg_info);
-extern node *WLFSap (node *arg_node, info *arg_info);
 extern node *WLFSid (node *arg_node, info *arg_info);
 
 extern node *WLFSwith (node *arg_node, info *arg_info);

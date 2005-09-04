@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2005/09/04 12:52:11  ktr
+ * re-engineered the optimization cycle
+ *
  * Revision 1.9  2005/08/31 17:12:39  ktr
  * Major simplification
  *
@@ -46,6 +49,7 @@
  *
  *****************************************************************************/
 extern node *CVPdoConstVarPropagation (node *arg_node);
+extern node *CVPdoConstVarPropagationOneFundef (node *arg_node);
 
 extern node *CVPfundef (node *arg_node, info *arg_info);
 extern node *CVPassign (node *arg_node, info *arg_info);

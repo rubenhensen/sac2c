@@ -1,8 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2005/09/04 12:52:11  ktr
+ * re-engineered the optimization cycle
+ *
  * Revision 1.2  2005/07/19 16:09:20  sbs
- * added INFO_SSALUR_EXT_ASSIGN
+ * added INFO_EXT_ASSIGN
  *
  * Revision 1.1  2004/07/18 20:00:48  sah
  * Initial revision
@@ -24,7 +27,6 @@ struct INFO {
     node *assign;
     node *ext_assign;
     node *fundef;
-    node *modul;
     bool remassign;
     node *preassign;
 };
@@ -32,9 +34,8 @@ struct INFO {
 /*
  * INFO macros
  */
-#define INFO_SSALUR_ASSIGN(n) (n->assign)
-#define INFO_SSALUR_EXT_ASSIGN(n) (n->ext_assign)
-#define INFO_SSALUR_FUNDEF(n) (n->fundef)
-#define INFO_SSALUR_MODUL(n) (n->modul)
-#define INFO_SSALUR_REMASSIGN(n) (n->remassign)
-#define INFO_SSALUR_PREASSIGN(n) (n->preassign)
+#define INFO_ASSIGN(n) (n->assign)
+#define INFO_EXT_ASSIGN(n) (n->ext_assign)
+#define INFO_FUNDEF(n) (n->fundef)
+#define INFO_REMASSIGN(n) (n->remassign)
+#define INFO_PREASSIGN(n) (n->preassign)

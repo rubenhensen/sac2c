@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2005/09/04 12:54:00  ktr
+ * re-engineered the optimization cycle
+ *
  * Revision 1.5  2005/07/21 12:03:21  ktr
  * removed AVIS_WITHID
  *
@@ -64,7 +67,6 @@
 #include "dbug.h"
 #include "new_types.h"
 #include "print.h"
-#include "optimize.h"
 #include "DupTree.h"
 #include "LookUpTable.h"
 #include "SSAConstantFolding.h"
@@ -95,19 +97,19 @@ struct INFO {
 /**
  * INFO macros
  */
-#define INFO_WLSB_FUNDEF(n) (n->fundef)
-#define INFO_WLSB_CEXPR(n) (n->cexpr)
-#define INFO_WLSB_INNERTRAV(n) (n->innertrav)
-#define INFO_WLSB_NEWWITHID(n) (n->newwithid)
-#define INFO_WLSB_INNERWITHID(n) (n->innerwithid)
-#define INFO_WLSB_OUTERWITHID(n) (n->outerwithid)
-#define INFO_WLSB_OUTERGEN(n) (n->outergen)
-#define INFO_WLSB_NEWGEN(n) (n->newgen)
-#define INFO_WLSB_NEWCODE(n) (n->newcode)
-#define INFO_WLSB_NEWCODES(n) (n->newcodes)
-#define INFO_WLSB_NEWPARTS(n) (n->newparts)
-#define INFO_WLSB_NEWWITHOP(n) (n->newwithop)
-#define INFO_WLSB_CODELUT(n) (n->codelut)
+#define INFO_FUNDEF(n) (n->fundef)
+#define INFO_CEXPR(n) (n->cexpr)
+#define INFO_INNERTRAV(n) (n->innertrav)
+#define INFO_NEWWITHID(n) (n->newwithid)
+#define INFO_INNERWITHID(n) (n->innerwithid)
+#define INFO_OUTERWITHID(n) (n->outerwithid)
+#define INFO_OUTERGEN(n) (n->outergen)
+#define INFO_NEWGEN(n) (n->newgen)
+#define INFO_NEWCODE(n) (n->newcode)
+#define INFO_NEWCODES(n) (n->newcodes)
+#define INFO_NEWPARTS(n) (n->newparts)
+#define INFO_NEWWITHOP(n) (n->newwithop)
+#define INFO_CODELUT(n) (n->codelut)
 
 /**
  * INFO functions
@@ -121,19 +123,19 @@ MakeInfo (node *fundef)
 
     result = ILIBmalloc (sizeof (info));
 
-    INFO_WLSB_FUNDEF (result) = fundef;
-    INFO_WLSB_INNERTRAV (result) = FALSE;
-    INFO_WLSB_CEXPR (result) = NULL;
-    INFO_WLSB_NEWWITHID (result) = NULL;
-    INFO_WLSB_INNERWITHID (result) = NULL;
-    INFO_WLSB_OUTERWITHID (result) = NULL;
-    INFO_WLSB_OUTERGEN (result) = NULL;
-    INFO_WLSB_NEWGEN (result) = NULL;
-    INFO_WLSB_NEWCODE (result) = NULL;
-    INFO_WLSB_NEWCODES (result) = NULL;
-    INFO_WLSB_NEWPARTS (result) = NULL;
-    INFO_WLSB_NEWWITHOP (result) = NULL;
-    INFO_WLSB_CODELUT (result) = LUTgenerateLut ();
+    INFO_FUNDEF (result) = fundef;
+    INFO_INNERTRAV (result) = FALSE;
+    INFO_CEXPR (result) = NULL;
+    INFO_NEWWITHID (result) = NULL;
+    INFO_INNERWITHID (result) = NULL;
+    INFO_OUTERWITHID (result) = NULL;
+    INFO_OUTERGEN (result) = NULL;
+    INFO_NEWGEN (result) = NULL;
+    INFO_NEWCODE (result) = NULL;
+    INFO_NEWCODES (result) = NULL;
+    INFO_NEWPARTS (result) = NULL;
+    INFO_NEWWITHOP (result) = NULL;
+    INFO_CODELUT (result) = LUTgenerateLut ();
 
     DBUG_RETURN (result);
 }
@@ -143,7 +145,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    INFO_WLSB_CODELUT (info) = LUTremoveLut (INFO_WLSB_CODELUT (info));
+    INFO_CODELUT (info) = LUTremoveLut (INFO_CODELUT (info));
     info = ILIBfree (info);
 
     DBUG_RETURN (info);
@@ -317,18 +319,18 @@ WLSBcode (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLSBcode");
 
-    if (!INFO_WLSB_INNERTRAV (arg_info)) {
+    if (!INFO_INNERTRAV (arg_info)) {
         /*
          * Outer code traversal
          */
-        INFO_WLSB_INNERTRAV (arg_info) = TRUE;
+        INFO_INNERTRAV (arg_info) = TRUE;
         CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
-        INFO_WLSB_INNERTRAV (arg_info) = FALSE;
+        INFO_INNERTRAV (arg_info) = FALSE;
 
         /*
          * Remember an old CEXPR in order to be able to build a new withop
          */
-        INFO_WLSB_CEXPR (arg_info) = CODE_CEXPR (arg_node);
+        INFO_CEXPR (arg_info) = CODE_CEXPR (arg_node);
     } else {
         /*
          * Inner code traversal
@@ -337,9 +339,8 @@ WLSBcode (node *arg_node, info *arg_info)
         /*
          * Try to find a hashed version of the needed code
          */
-        INFO_WLSB_NEWCODE (arg_info)
-          = LUTsearchInLutPp (INFO_WLSB_CODELUT (arg_info), arg_node);
-        if (INFO_WLSB_NEWCODE (arg_info) != arg_node) {
+        INFO_NEWCODE (arg_info) = LUTsearchInLutPp (INFO_CODELUT (arg_info), arg_node);
+        if (INFO_NEWCODE (arg_info) != arg_node) {
             DBUG_PRINT ("WLS", ("Code can be reused!"));
         } else {
             /*
@@ -357,8 +358,8 @@ WLSBcode (node *arg_node, info *arg_info)
              *
              * - a redefinition of the outer index vector
              */
-            array = TCids2Array (WITHID_IDS (INFO_WLSB_OUTERWITHID (arg_info)));
-            avis = IDS_AVIS (WITHID_VEC (INFO_WLSB_OUTERWITHID (arg_info)));
+            array = TCids2Array (WITHID_IDS (INFO_OUTERWITHID (arg_info)));
+            avis = IDS_AVIS (WITHID_VEC (INFO_OUTERWITHID (arg_info)));
 
             prefix = TCmakeAssignLet (avis, array);
             AVIS_SSAASSIGN (avis) = prefix;
@@ -368,15 +369,15 @@ WLSBcode (node *arg_node, info *arg_info)
              *
              * Its index scalars are the suffix of the new index scalars
              */
-            newids = WITHID_IDS (INFO_WLSB_NEWWITHID (arg_info));
-            oldids = WITHID_IDS (INFO_WLSB_OUTERWITHID (arg_info));
+            newids = WITHID_IDS (INFO_NEWWITHID (arg_info));
+            oldids = WITHID_IDS (INFO_OUTERWITHID (arg_info));
             while (oldids != NULL) {
                 newids = IDS_NEXT (newids);
                 oldids = IDS_NEXT (oldids);
             }
 
             array = TCids2Array (newids);
-            avis = IDS_AVIS (WITHID_VEC (INFO_WLSB_INNERWITHID (arg_info)));
+            avis = IDS_AVIS (WITHID_VEC (INFO_INNERWITHID (arg_info)));
 
             ASSIGN_NEXT (prefix) = TCmakeAssignLet (avis, array);
             AVIS_SSAASSIGN (avis) = ASSIGN_NEXT (prefix);
@@ -389,7 +390,7 @@ WLSBcode (node *arg_node, info *arg_info)
             /*
              * Rename all occurences of old ids
              */
-            oldids = WITHID_IDS (INFO_WLSB_INNERWITHID (arg_info));
+            oldids = WITHID_IDS (INFO_INNERWITHID (arg_info));
 
             while (oldids != NULL) {
                 LUTinsertIntoLutS (lut, IDS_NAME (oldids), IDS_NAME (newids));
@@ -417,18 +418,18 @@ WLSBcode (node *arg_node, info *arg_info)
             /*
              * Put this code into CODELUT
              */
-            LUTinsertIntoLutP (INFO_WLSB_CODELUT (arg_info), arg_node, new_code);
+            LUTinsertIntoLutP (INFO_CODELUT (arg_info), arg_node, new_code);
 
             /*
              * Put it into NEWCODES
              */
-            CODE_NEXT (new_code) = INFO_WLSB_NEWCODES (arg_info);
-            INFO_WLSB_NEWCODES (arg_info) = new_code;
+            CODE_NEXT (new_code) = INFO_NEWCODES (arg_info);
+            INFO_NEWCODES (arg_info) = new_code;
 
             /*
              * return the new code
              */
-            INFO_WLSB_NEWCODE (arg_info) = new_code;
+            INFO_NEWCODE (arg_info) = new_code;
         }
     }
     DBUG_RETURN (arg_node);
@@ -454,58 +455,58 @@ WLSBgenerator (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("WLSBgen");
 
-    outerdim = TCcountIds (WITHID_IDS (INFO_WLSB_OUTERWITHID (arg_info)));
-    innerdim = TCcountIds (WITHID_IDS (INFO_WLSB_INNERWITHID (arg_info)));
+    outerdim = TCcountIds (WITHID_IDS (INFO_OUTERWITHID (arg_info)));
+    innerdim = TCcountIds (WITHID_IDS (INFO_INNERWITHID (arg_info)));
 
     /*
      * The new bounding vectors are simply the concatenation of the
      * old bounding vectors
      */
-    newlb = ConcatVectors (GENERATOR_BOUND1 (INFO_WLSB_OUTERGEN (arg_info)),
+    newlb = ConcatVectors (GENERATOR_BOUND1 (INFO_OUTERGEN (arg_info)),
                            GENERATOR_BOUND1 (arg_node), arg_info);
 
-    newub = ConcatVectors (GENERATOR_BOUND2 (INFO_WLSB_OUTERGEN (arg_info)),
+    newub = ConcatVectors (GENERATOR_BOUND2 (INFO_OUTERGEN (arg_info)),
                            GENERATOR_BOUND2 (arg_node), arg_info);
 
     /*
      * Step and width vectors may be NULL. They must be created if needed.
      */
-    if ((GENERATOR_STEP (INFO_WLSB_OUTERGEN (arg_info)) == NULL)
+    if ((GENERATOR_STEP (INFO_OUTERGEN (arg_info)) == NULL)
         && (GENERATOR_STEP (arg_node) == NULL)) {
         newstep = NULL;
     } else {
-        if (GENERATOR_STEP (INFO_WLSB_OUTERGEN (arg_info)) == NULL) {
-            GENERATOR_STEP (INFO_WLSB_OUTERGEN (arg_info)) = CreateOneVector (outerdim);
+        if (GENERATOR_STEP (INFO_OUTERGEN (arg_info)) == NULL) {
+            GENERATOR_STEP (INFO_OUTERGEN (arg_info)) = CreateOneVector (outerdim);
         }
 
         if (GENERATOR_STEP (arg_node) == NULL) {
             GENERATOR_STEP (arg_node) = CreateOneVector (innerdim);
         }
 
-        newstep = ConcatVectors (GENERATOR_STEP (INFO_WLSB_OUTERGEN (arg_info)),
+        newstep = ConcatVectors (GENERATOR_STEP (INFO_OUTERGEN (arg_info)),
                                  GENERATOR_STEP (arg_node), arg_info);
     }
 
-    if ((GENERATOR_WIDTH (INFO_WLSB_OUTERGEN (arg_info)) == NULL)
+    if ((GENERATOR_WIDTH (INFO_OUTERGEN (arg_info)) == NULL)
         && (GENERATOR_WIDTH (arg_node) == NULL)) {
         newwidth = NULL;
     } else {
-        if (GENERATOR_WIDTH (INFO_WLSB_OUTERGEN (arg_info)) == NULL) {
-            GENERATOR_WIDTH (INFO_WLSB_OUTERGEN (arg_info)) = CreateOneVector (outerdim);
+        if (GENERATOR_WIDTH (INFO_OUTERGEN (arg_info)) == NULL) {
+            GENERATOR_WIDTH (INFO_OUTERGEN (arg_info)) = CreateOneVector (outerdim);
         }
 
         if (GENERATOR_WIDTH (arg_node) == NULL) {
             GENERATOR_WIDTH (arg_node) = CreateOneVector (innerdim);
         }
 
-        newwidth = ConcatVectors (GENERATOR_WIDTH (INFO_WLSB_OUTERGEN (arg_info)),
+        newwidth = ConcatVectors (GENERATOR_WIDTH (INFO_OUTERGEN (arg_info)),
                                   GENERATOR_WIDTH (arg_node), arg_info);
     }
 
     /*
      * Create the new generator
      */
-    INFO_WLSB_NEWGEN (arg_info)
+    INFO_NEWGEN (arg_info)
       = TBmakeGenerator (GENERATOR_OP1 (arg_node), GENERATOR_OP2 (arg_node), newlb, newub,
                          newstep, newwidth);
 
@@ -529,14 +530,14 @@ WLSBpart (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLSBpart");
 
-    if (!INFO_WLSB_INNERTRAV (arg_info)) {
+    if (!INFO_INNERTRAV (arg_info)) {
         /*
          * Traversal of outer part
          *
          * Remember outer withid and outer generator
          */
-        INFO_WLSB_OUTERWITHID (arg_info) = PART_WITHID (arg_node);
-        INFO_WLSB_OUTERGEN (arg_info) = PART_GENERATOR (arg_node);
+        INFO_OUTERWITHID (arg_info) = PART_WITHID (arg_node);
+        INFO_OUTERGEN (arg_info) = PART_GENERATOR (arg_node);
 
         /*
          * Traverse into code block
@@ -559,7 +560,7 @@ WLSBpart (node *arg_node, info *arg_info)
          * Traverse withid
          */
         PART_WITHID (arg_node) = TRAVdo (PART_WITHID (arg_node), arg_info);
-        INFO_WLSB_INNERWITHID (arg_info) = PART_WITHID (arg_node);
+        INFO_INNERWITHID (arg_info) = PART_WITHID (arg_node);
 
         /*
          * Traverse generator
@@ -572,11 +573,10 @@ WLSBpart (node *arg_node, info *arg_info)
         PART_CODE (arg_node) = TRAVdo (PART_CODE (arg_node), arg_info);
 
         /*
-         * Create new part and store it into INFO_WLSB_NEWPARTS
+         * Create new part and store it into INFO_NEWPARTS
          */
-        newpart
-          = TBmakePart (INFO_WLSB_NEWCODE (arg_info), INFO_WLSB_NEWWITHID (arg_info),
-                        INFO_WLSB_NEWGEN (arg_info));
+        newpart = TBmakePart (INFO_NEWCODE (arg_info), INFO_NEWWITHID (arg_info),
+                              INFO_NEWGEN (arg_info));
 
         /*
          * Increase code usage
@@ -586,8 +586,8 @@ WLSBpart (node *arg_node, info *arg_info)
         /*
          * Put part into NEWPARTS chain
          */
-        PART_NEXT (newpart) = INFO_WLSB_NEWPARTS (arg_info);
-        INFO_WLSB_NEWPARTS (arg_info) = newpart;
+        PART_NEXT (newpart) = INFO_NEWPARTS (arg_info);
+        INFO_NEWPARTS (arg_info) = newpart;
 
         /*
          * Traverse next part
@@ -617,7 +617,7 @@ WLSBwith (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLSBwith");
 
-    if (!INFO_WLSB_INNERTRAV (arg_info)) {
+    if (!INFO_INNERTRAV (arg_info)) {
         /*
          * Traversal of outer with-loop
          */
@@ -636,9 +636,8 @@ WLSBwith (node *arg_node, info *arg_info)
         /*
          * Finally, create a new with-loop
          */
-        new_with
-          = TBmakeWith (INFO_WLSB_NEWPARTS (arg_info), INFO_WLSB_NEWCODES (arg_info),
-                        INFO_WLSB_NEWWITHOP (arg_info));
+        new_with = TBmakeWith (INFO_NEWPARTS (arg_info), INFO_NEWCODES (arg_info),
+                               INFO_NEWWITHOP (arg_info));
 
         WITH_PARTS (new_with) = TCcountParts (WITH_PART (new_with));
         WITH_PRAGMA (new_with) = DUPdoDupNode (WITH_PRAGMA (arg_node));
@@ -651,7 +650,7 @@ WLSBwith (node *arg_node, info *arg_info)
         /*
          * Increment WLS counter
          */
-        wls_expr += 1;
+        global.optcounters.wls_expr += 1;
     } else {
         /*
          * Traversal of inner with-loop
@@ -679,10 +678,10 @@ WLSBwithid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLSBwithid");
 
-    DBUG_ASSERT (INFO_WLSB_INNERTRAV (arg_info) == TRUE,
+    DBUG_ASSERT (INFO_INNERTRAV (arg_info) == TRUE,
                  "WLSBwithid only applicable in inner with-loop");
 
-    if (INFO_WLSB_NEWWITHID (arg_info) == NULL) {
+    if (INFO_NEWWITHID (arg_info) == NULL) {
         /*
          * Create new joint withid
          */
@@ -694,7 +693,7 @@ WLSBwithid (node *arg_node, info *arg_info)
         /*
          * Create a new type for the new index vector
          */
-        dim = TCcountIds (WITHID_IDS (INFO_WLSB_OUTERWITHID (arg_info)))
+        dim = TCcountIds (WITHID_IDS (INFO_OUTERWITHID (arg_info)))
               + TCcountIds (WITHID_IDS (arg_node));
 
         vectype = TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (1, dim));
@@ -704,8 +703,8 @@ WLSBwithid (node *arg_node, info *arg_info)
          */
         avis = TBmakeAvis (ILIBtmpVar (), vectype);
 
-        FUNDEF_VARDEC (INFO_WLSB_FUNDEF (arg_info))
-          = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_WLSB_FUNDEF (arg_info)));
+        FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+          = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
 
         /*
          * Create the ids for the new index vector
@@ -715,19 +714,18 @@ WLSBwithid (node *arg_node, info *arg_info)
         /*
          * recycle the old index scalars
          */
-        scalars
-          = TCappendIds (DUPdoDupTree (WITHID_IDS (INFO_WLSB_OUTERWITHID (arg_info))),
-                         DUPdoDupTree (WITHID_IDS (arg_node)));
+        scalars = TCappendIds (DUPdoDupTree (WITHID_IDS (INFO_OUTERWITHID (arg_info))),
+                               DUPdoDupTree (WITHID_IDS (arg_node)));
 
         /*
          * Build the new withid
          */
-        INFO_WLSB_NEWWITHID (arg_info) = TBmakeWithid (vec, scalars);
+        INFO_NEWWITHID (arg_info) = TBmakeWithid (vec, scalars);
     } else {
         /*
          * Copy existing withid
          */
-        INFO_WLSB_NEWWITHID (arg_info) = DUPdoDupNode (INFO_WLSB_NEWWITHID (arg_info));
+        INFO_NEWWITHID (arg_info) = DUPdoDupNode (INFO_NEWWITHID (arg_info));
     }
 
     DBUG_RETURN (arg_node);
@@ -752,7 +750,7 @@ WLSBgenarray (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("WLSBgenarray");
 
-    DBUG_ASSERT (INFO_WLSB_INNERTRAV (arg_info) == FALSE,
+    DBUG_ASSERT (INFO_INNERTRAV (arg_info) == FALSE,
                  "WLSBgenarray only applicable for outer with-loop");
 
     /*
@@ -760,17 +758,17 @@ WLSBgenarray (node *arg_node, info *arg_info)
      *
      * iis = take( shape( inner_iv), shape( CEXPR))
      */
-    if (INFO_WLSB_INNERWITHID (arg_info) == NULL) {
-        innershape = SHshape2Array (TYgetShape (ID_NTYPE (INFO_WLSB_CEXPR (arg_info))));
+    if (INFO_INNERWITHID (arg_info) == NULL) {
+        innershape = SHshape2Array (TYgetShape (ID_NTYPE (INFO_CEXPR (arg_info))));
     } else {
         shape *tmp;
-        tmp = SHtakeFromShape (TCcountIds (WITHID_IDS (INFO_WLSB_INNERWITHID (arg_info))),
-                               TYgetShape (ID_NTYPE (INFO_WLSB_CEXPR (arg_info))));
+        tmp = SHtakeFromShape (TCcountIds (WITHID_IDS (INFO_INNERWITHID (arg_info))),
+                               TYgetShape (ID_NTYPE (INFO_CEXPR (arg_info))));
         innershape = SHshape2Array (tmp);
         tmp = SHfreeShape (tmp);
     }
 
-    INFO_WLSB_NEWWITHOP (arg_info)
+    INFO_NEWWITHOP (arg_info)
       = TBmakeGenarray (ConcatVectors (GENARRAY_SHAPE (arg_node), innershape, arg_info),
                         NULL);
 
@@ -794,10 +792,10 @@ WLSBmodarray (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLSBmodarray");
 
-    DBUG_ASSERT (INFO_WLSB_INNERTRAV (arg_info) == FALSE,
+    DBUG_ASSERT (INFO_INNERTRAV (arg_info) == FALSE,
                  "WLSBmodarray only applicable for outer with-loop");
 
-    INFO_WLSB_NEWWITHOP (arg_info) = DUPdoDupNode (arg_node);
+    INFO_NEWWITHOP (arg_info) = DUPdoDupNode (arg_node);
 
     DBUG_RETURN (arg_node);
 }

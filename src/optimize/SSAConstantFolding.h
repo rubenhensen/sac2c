@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.18  2005/09/04 12:52:11  ktr
+ * re-engineered the optimization cycle
+ *
  * Revision 1.17  2005/07/21 12:15:52  ktr
  * removed AVIS_WITHID and some structural constand folding on withids that was
  * deactivated anyways.
@@ -83,7 +86,7 @@ extern struct_constant *CFscoScalar2StructConstant (node *expr);
 extern node *CFscoDupStructConstant2Expr (struct_constant *struc_co);
 extern struct_constant *CFscoFreeStructConstant (struct_constant *struc_co);
 
-extern node *CFdoConstantFolding (node *fundef, node *modul);
+extern node *CFdoConstantFolding (node *fundef);
 
 extern node *CFfundef (node *arg_node, info *arg_info);
 extern node *CFblock (node *arg_node, info *arg_info);

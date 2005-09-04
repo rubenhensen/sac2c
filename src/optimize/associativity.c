@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2005/09/04 12:52:11  ktr
+ * re-engineered the optimization cycle
+ *
  * Revision 1.2  2005/08/20 12:08:06  ktr
  * Already sorted subtrees are no longer re-sorted.
  *
@@ -683,7 +686,7 @@ ASSOCassign (node *arg_node, info *arg_info)
     if (INFO_PREASSIGN (arg_info) != NULL) {
         arg_node = TCappendAssign (revert (INFO_PREASSIGN (arg_info), NULL), arg_node);
         INFO_PREASSIGN (arg_info) = NULL;
-        al_expr++;
+        global.optcounters.al_expr++;
     }
 
     DBUG_RETURN (arg_node);

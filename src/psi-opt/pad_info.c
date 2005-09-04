@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.7  2005/09/04 12:54:00  ktr
+ * re-engineered the optimization cycle
+ *
  * Revision 3.6  2005/01/11 13:32:21  cg
  * Converted output from Error.h to ctinfo.c
  *
@@ -72,7 +75,6 @@
 #include "free.h"
 #include "globals.h"
 #include "DupTree.h"
-#include "optimize.h"
 #include "ctinfo.h"
 #include "internal_lib.h"
 #include "convert.h"
@@ -1271,7 +1273,7 @@ PIremoveUnsupportedShapes ()
                     /* remove other element */
                     PI_NEXT (pi_prv_ptr) = RemovePadInfoElement (pi_ptr);
                 }
-                ap_unsupported++;
+                global.optcounters.ap_unsupported++;
             }
 
             pi_prv_ptr = pi_ptr;
@@ -1280,7 +1282,7 @@ PIremoveUnsupportedShapes ()
         us_ptr = US_NEXT (us_ptr);
     }
 
-    ap_padded -= ap_unsupported;
+    global.optcounters.ap_padded -= global.optcounters.ap_unsupported;
 
     DBUG_VOID_RETURN;
 }
@@ -1555,7 +1557,7 @@ PIaddInferredShape (simpletype type, int dim, shpseg *old_shape, shpseg *new_sha
     PI_NEXT (tmp) = pad_info;
     pad_info = tmp;
 
-    ap_padded++;
+    global.optcounters.ap_padded++;
 
     DBUG_VOID_RETURN;
 }

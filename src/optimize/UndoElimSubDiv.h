@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.6  2005/09/04 12:52:11  ktr
+ * re-engineered the optimization cycle
+ *
  * Revision 1.5  2004/11/22 17:58:37  khf
  * more codebrushing
  *
@@ -35,6 +38,7 @@
  *****************************************************************************/
 extern node *UESDdoUndoElimSubDiv (node *);
 
+extern node *UESDfundef (node *, info *);
 extern node *UESDblock (node *, info *);
 extern node *UESDassign (node *, info *);
 extern node *UESDlet (node *, info *);

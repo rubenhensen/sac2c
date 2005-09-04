@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.23  2005/09/04 12:52:11  ktr
+ * re-engineered the optimization cycle
+ *
  * Revision 1.22  2005/07/21 16:58:52  ktr
  * traversal is now robust against Functions without bodies
  *
@@ -110,7 +113,6 @@
 #include "free.h"
 #include "DupTree.h"
 #include "SSALUR.h"
-#include "optimize.h"
 #include "constants.h"
 #include "math.h"
 #include "ssa.h"
@@ -135,12 +137,11 @@ MakeInfo ()
 
     result = ILIBmalloc (sizeof (info));
 
-    INFO_SSALUR_ASSIGN (result) = NULL;
-    INFO_SSALUR_EXT_ASSIGN (result) = NULL;
-    INFO_SSALUR_FUNDEF (result) = NULL;
-    INFO_SSALUR_MODUL (result) = NULL;
-    INFO_SSALUR_REMASSIGN (result) = FALSE;
-    INFO_SSALUR_PREASSIGN (result) = NULL;
+    INFO_ASSIGN (result) = NULL;
+    INFO_EXT_ASSIGN (result) = NULL;
+    INFO_FUNDEF (result) = NULL;
+    INFO_REMASSIGN (result) = FALSE;
+    INFO_PREASSIGN (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -1202,10 +1203,10 @@ LURfundef (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("LURfundef");
 
-    INFO_SSALUR_FUNDEF (arg_info) = arg_node;
+    INFO_FUNDEF (arg_info) = arg_node;
     /* save start values of opt counters */
-    start_wlunr_expr = wlunr_expr;
-    start_lunr_expr = lunr_expr;
+    start_wlunr_expr = global.optcounters.wlunr_expr;
+    start_lunr_expr = global.optcounters.lunr_expr;
 
     /*
      * traverse body to get wlur (and special fundefs unrolled)
@@ -1221,14 +1222,14 @@ LURfundef (node *arg_node, info *arg_info)
     }
 
     /* analyse fundef for possible unrolling */
-    unrolling = SSALURGetDoLoopUnrolling (arg_node, INFO_SSALUR_EXT_ASSIGN (arg_info));
+    unrolling = SSALURGetDoLoopUnrolling (arg_node, INFO_EXT_ASSIGN (arg_info));
 
     if (unrolling != UNR_NONE) {
         if (unrolling <= global.unrnum) {
             DBUG_PRINT ("SSALUR", ("unrolling loop %s %d times ", FUNDEF_NAME (arg_node),
                                    unrolling));
 
-            lunr_expr++;
+            global.optcounters.lunr_expr++;
 
             /* start do-loop unrolling - this leads to non ssa form code */
             arg_node = SSALURUnrollLoopBody (arg_node, unrolling);
@@ -1244,7 +1245,8 @@ LURfundef (node *arg_node, info *arg_info)
     }
 
     /* have we done any unrolling? */
-    if ((start_lunr_expr < lunr_expr) || (start_wlunr_expr < wlunr_expr)) {
+    if ((start_lunr_expr < global.optcounters.lunr_expr)
+        || (start_wlunr_expr < global.optcounters.wlunr_expr)) {
         /* restore ssa form in this fundef for further processing */
         arg_node = SSArestoreSsaOneFundef (arg_node);
     }
@@ -1273,16 +1275,16 @@ LURassign (node *arg_node, info *arg_info)
     DBUG_ASSERT ((ASSIGN_INSTR (arg_node) != NULL), "assign node without instruction");
 
     /* stack actual assign */
-    old_assign = INFO_SSALUR_ASSIGN (arg_info);
-    INFO_SSALUR_ASSIGN (arg_info) = arg_node;
+    old_assign = INFO_ASSIGN (arg_info);
+    INFO_ASSIGN (arg_info) = arg_node;
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
-    pre_assigns = INFO_SSALUR_PREASSIGN (arg_info);
-    INFO_SSALUR_PREASSIGN (arg_info) = NULL;
+    pre_assigns = INFO_PREASSIGN (arg_info);
+    INFO_PREASSIGN (arg_info) = NULL;
 
     /* restore stacked assign */
-    INFO_SSALUR_ASSIGN (arg_info) = old_assign;
+    INFO_ASSIGN (arg_info) = old_assign;
 
     /* traverse to next assignment in chain */
     if (ASSIGN_NEXT (arg_node) != NULL) {
@@ -1323,15 +1325,14 @@ LURap (node *arg_node, info *arg_info)
 
     /* traverse special fundef without recursion */
     if ((FUNDEF_ISLACFUN (AP_FUNDEF (arg_node)))
-        && (AP_FUNDEF (arg_node) != INFO_SSALUR_FUNDEF (arg_info))) {
+        && (AP_FUNDEF (arg_node) != INFO_FUNDEF (arg_info))) {
         DBUG_PRINT ("SSALUR", ("traverse in special fundef %s",
                                FUNDEF_NAME (AP_FUNDEF (arg_node))));
 
         /* stack arg_info frame for new fundef */
         new_arg_info = MakeInfo ();
 
-        INFO_SSALUR_MODUL (new_arg_info) = INFO_SSALUR_MODUL (arg_info);
-        INFO_SSALUR_EXT_ASSIGN (new_arg_info) = INFO_SSALUR_ASSIGN (arg_info);
+        INFO_EXT_ASSIGN (new_arg_info) = INFO_ASSIGN (arg_info);
 
         /* start traversal of special fundef */
         AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), new_arg_info);
@@ -1382,14 +1383,14 @@ LURwith (node *arg_node, info *arg_info)
         WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
     }
 
-    save = INFO_SSALUR_ASSIGN (arg_info);
+    save = INFO_ASSIGN (arg_info);
 
     if (global.optimize.dowlur) {
         /* can this WL be unrolled? */
         switch (NODE_TYPE (WITH_WITHOP (arg_node))) {
         case N_modarray:
             if (WLUcheckUnrollModarray (arg_node, arg_info)) {
-                wlunr_expr++;
+                global.optcounters.wlunr_expr++;
 
                 DBUG_PRINT ("SSALUR", ("starting SSADoUnrollModarry()"));
 
@@ -1397,13 +1398,13 @@ LURwith (node *arg_node, info *arg_info)
                 tmpn = WLUdoUnrollModarray (arg_node, arg_info);
 
                 /* code will be inserted by SSALURassign */
-                INFO_SSALUR_PREASSIGN (arg_info) = tmpn;
+                INFO_PREASSIGN (arg_info) = tmpn;
             }
             break;
 
         case N_genarray:
             if (WLUcheckUnrollGenarray (arg_node, arg_info)) {
-                wlunr_expr++;
+                global.optcounters.wlunr_expr++;
 
                 DBUG_PRINT ("SSALUR", ("starting SSADoUnrollMGenarry()"));
 
@@ -1411,13 +1412,13 @@ LURwith (node *arg_node, info *arg_info)
                 tmpn = WLUdoUnrollGenarray (arg_node, arg_info);
 
                 /* code will be inserted by SSALURassign */
-                INFO_SSALUR_PREASSIGN (arg_info) = tmpn;
+                INFO_PREASSIGN (arg_info) = tmpn;
             }
             break;
 
         default:
             if (WLUcheckUnrollFold (arg_node)) {
-                wlunr_expr++;
+                global.optcounters.wlunr_expr++;
 
                 DBUG_PRINT ("SSALUR", ("starting SSADoUnrollFold()"));
 
@@ -1425,7 +1426,7 @@ LURwith (node *arg_node, info *arg_info)
                 tmpn = WLUdoUnrollFold (arg_node, arg_info);
 
                 /* code will be inserted by SSALURassign */
-                INFO_SSALUR_PREASSIGN (arg_info) = tmpn;
+                INFO_PREASSIGN (arg_info) = tmpn;
             }
             break;
         }
@@ -1437,7 +1438,7 @@ LURwith (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* SSALoopUnrolling(node* fundef, node *modul)
+ *   node* SSALoopUnrolling(node* fundef)
  *
  * description:
  *   starts the LoopUnrolling traversal for the given fundef. Does not start
@@ -1445,7 +1446,7 @@ LURwith (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 node *
-LURdoLoopUnrolling (node *fundef, node *modul)
+LURdoLoopUnrolling (node *fundef)
 {
     info *arg_info;
 
@@ -1459,7 +1460,6 @@ LURdoLoopUnrolling (node *fundef, node *modul)
     /* do not start traversal in special functions */
     if (!(FUNDEF_ISLACFUN (fundef))) {
         arg_info = MakeInfo ();
-        INFO_SSALUR_MODUL (arg_info) = modul;
 
         TRAVpush (TR_lur);
         fundef = TRAVdo (fundef, arg_info);

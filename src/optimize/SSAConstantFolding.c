@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.91  2005/09/04 12:52:11  ktr
+ * re-engineered the optimization cycle
+ *
  * Revision 1.90  2005/08/23 13:43:25  ktr
  * corrected usage of TYgetShape
  *
@@ -307,7 +310,6 @@
 #include "constants.h"
 #include "shape.h"
 #include "ctinfo.h"
-#include "optimize.h"
 #include "compare_tree.h"
 #include "namespaces.h"
 #include "SSAConstantFolding.h"
@@ -326,11 +328,11 @@ struct INFO {
 /*
  * INFO macros
  */
-#define INFO_CF_REMASSIGN(n) (n->remassign)
-#define INFO_CF_FUNDEF(n) (n->fundef)
-#define INFO_CF_POSTASSIGN(n) (n->postassign)
-#define INFO_CF_LHS(n) (n->lhs)
-#define INFO_CF_ASSIGN(n) (n->assign)
+#define INFO_REMASSIGN(n) (n->remassign)
+#define INFO_FUNDEF(n) (n->fundef)
+#define INFO_POSTASSIGN(n) (n->postassign)
+#define INFO_LHS(n) (n->lhs)
+#define INFO_ASSIGN(n) (n->assign)
 
 /*
  * INFO functions
@@ -344,11 +346,11 @@ MakeInfo ()
 
     result = ILIBmalloc (sizeof (info));
 
-    INFO_CF_REMASSIGN (result) = FALSE;
-    INFO_CF_FUNDEF (result) = NULL;
-    INFO_CF_POSTASSIGN (result) = NULL;
-    INFO_CF_LHS (result) = NULL;
-    INFO_CF_ASSIGN (result) = NULL;
+    INFO_REMASSIGN (result) = FALSE;
+    INFO_FUNDEF (result) = NULL;
+    INFO_POSTASSIGN (result) = NULL;
+    INFO_LHS (result) = NULL;
+    INFO_ASSIGN (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -1900,7 +1902,7 @@ CFfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CFfundef");
 
-    INFO_CF_FUNDEF (arg_info) = arg_node;
+    INFO_FUNDEF (arg_info) = arg_node;
 
     if ((FUNDEF_ARGS (arg_node) != NULL) && (FUNDEF_ISDOFUN (arg_node))) {
         /* traverse args of fundef */
@@ -1964,26 +1966,26 @@ CFassign (node *arg_node, info *arg_info)
     DBUG_ENTER ("CFassign");
 
     /* stack current assignment */
-    old_assign = INFO_CF_ASSIGN (arg_info);
+    old_assign = INFO_ASSIGN (arg_info);
 
     /* init flags for possible code removal/movement */
-    INFO_CF_REMASSIGN (arg_info) = FALSE;
-    INFO_CF_POSTASSIGN (arg_info) = NULL;
-    INFO_CF_ASSIGN (arg_info) = arg_node;
+    INFO_REMASSIGN (arg_info) = FALSE;
+    INFO_POSTASSIGN (arg_info) = NULL;
+    INFO_ASSIGN (arg_info) = arg_node;
     if (ASSIGN_INSTR (arg_node) != NULL) {
         ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
     }
 
     /* restore old assignment */
-    INFO_CF_ASSIGN (arg_info) = old_assign;
+    INFO_ASSIGN (arg_info) = old_assign;
 
     /* save removal flag for modifications in bottom-up traversal */
-    remove_assignment = INFO_CF_REMASSIGN (arg_info);
+    remove_assignment = INFO_REMASSIGN (arg_info);
 
     /* integrate post assignments after current assignment */
     ASSIGN_NEXT (arg_node)
-      = TCappendAssign (INFO_CF_POSTASSIGN (arg_info), ASSIGN_NEXT (arg_node));
-    INFO_CF_POSTASSIGN (arg_info) = NULL;
+      = TCappendAssign (INFO_POSTASSIGN (arg_info), ASSIGN_NEXT (arg_node));
+    INFO_POSTASSIGN (arg_info) = NULL;
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
@@ -2100,11 +2102,11 @@ CFcond (node *arg_node, info *arg_info)
             DBUG_PRINT ("CF", ("found condition with condition==true, select then part"));
 
             /* select then-part for later insertion in assignment chain */
-            INFO_CF_POSTASSIGN (arg_info) = BLOCK_INSTR (COND_THEN (arg_node));
+            INFO_POSTASSIGN (arg_info) = BLOCK_INSTR (COND_THEN (arg_node));
 
-            if (NODE_TYPE (INFO_CF_POSTASSIGN (arg_info)) == N_empty) {
+            if (NODE_TYPE (INFO_POSTASSIGN (arg_info)) == N_empty) {
                 /* empty code block must not be moved */
-                INFO_CF_POSTASSIGN (arg_info) = NULL;
+                INFO_POSTASSIGN (arg_info) = NULL;
             } else {
                 /*
                  * delete pointer to codeblock to preserve assignments from
@@ -2118,11 +2120,11 @@ CFcond (node *arg_node, info *arg_info)
                         ("found condition with condition==false, select else part"));
 
             /* select else-part for later insertion in assignment chain */
-            INFO_CF_POSTASSIGN (arg_info) = BLOCK_INSTR (COND_ELSE (arg_node));
+            INFO_POSTASSIGN (arg_info) = BLOCK_INSTR (COND_ELSE (arg_node));
 
-            if (NODE_TYPE (INFO_CF_POSTASSIGN (arg_info)) == N_empty) {
+            if (NODE_TYPE (INFO_POSTASSIGN (arg_info)) == N_empty) {
                 /* empty code block must not be moved */
-                INFO_CF_POSTASSIGN (arg_info) = NULL;
+                INFO_POSTASSIGN (arg_info) = NULL;
             } else {
                 /*
                  * delete pointer to codeblock to preserve assignments from
@@ -2136,7 +2138,7 @@ CFcond (node *arg_node, info *arg_info)
          * be inserted behind this conditional assignment and traversed
          * for constant folding.
          */
-        INFO_CF_REMASSIGN (arg_info) = TRUE;
+        INFO_REMASSIGN (arg_info) = TRUE;
 
         /*
          * because there can be only one conditional in a special function
@@ -2147,14 +2149,14 @@ CFcond (node *arg_node, info *arg_info)
          * to true we have an endless loop and will rise a warning message.
          */
         if ((BOOL_VAL (COND_COND (arg_node)) == TRUE)
-            && (FUNDEF_ISDOFUN (INFO_CF_FUNDEF (arg_info)))) {
+            && (FUNDEF_ISDOFUN (INFO_FUNDEF (arg_info)))) {
             CTIwarnLine (NODE_LINE (arg_node),
                          "Infinite loop detected, program may not terminate");
         }
 
-        FUNDEF_ISDOFUN (INFO_CF_FUNDEF (arg_info)) = FALSE;
-        FUNDEF_ISCONDFUN (INFO_CF_FUNDEF (arg_info)) = FALSE;
-        FUNDEF_ISLACINLINE (INFO_CF_FUNDEF (arg_info)) = TRUE;
+        FUNDEF_ISDOFUN (INFO_FUNDEF (arg_info)) = FALSE;
+        FUNDEF_ISCONDFUN (INFO_FUNDEF (arg_info)) = FALSE;
+        FUNDEF_ISLACINLINE (INFO_FUNDEF (arg_info)) = TRUE;
     } else {
         /*
          * no constant condition:
@@ -2188,7 +2190,7 @@ CFlet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CFlet");
 
-    INFO_CF_LHS (arg_info) = LET_IDS (arg_node);
+    INFO_LHS (arg_info) = LET_IDS (arg_node);
 
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
@@ -2214,7 +2216,7 @@ CFap (node *arg_node, info *arg_info)
 
     /* traverse special fundef without recursion */
     if ((FUNDEF_ISLACFUN (AP_FUNDEF (arg_node)))
-        && (AP_FUNDEF (arg_node) != INFO_CF_FUNDEF (arg_info))) {
+        && (AP_FUNDEF (arg_node) != INFO_FUNDEF (arg_info))) {
         /* stack arg_info frame for new fundef */
         new_arg_info = MakeInfo ();
 
@@ -2312,13 +2314,13 @@ CFprf (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("CFprf");
 
-    if (TYisAKV (IDS_NTYPE (INFO_CF_LHS (arg_info)))) {
+    if (TYisAKV (IDS_NTYPE (INFO_LHS (arg_info)))) {
         /*
          * Replace superfluous primitive function with AKV
          */
         arg_node = FREEdoFreeNode (arg_node);
-        arg_node = COconstant2AST (TYgetValue (IDS_NTYPE (INFO_CF_LHS (arg_info))));
-        cf_expr++;
+        arg_node = COconstant2AST (TYgetValue (IDS_NTYPE (INFO_LHS (arg_info))));
+        global.optcounters.cf_expr++;
     } else {
         DBUG_PRINT ("CF", ("evaluating prf %s", global.mdb_prf[PRF_PRF (arg_node)]));
 
@@ -2334,7 +2336,7 @@ CFprf (node *arg_node, info *arg_info)
             arg_node = new_node;
 
             /* increment constant folding counter */
-            cf_expr++;
+            global.optcounters.cf_expr++;
         }
     }
 
@@ -2694,7 +2696,7 @@ CFfoldPrfExpr (prf op, node **arg_expr)
 /******************************************************************************
  *
  * function:
- *   node* SSAConstantFolding(node* fundef, node* modul)
+ *   node* SSAConstantFolding(node* fundef)
  *
  * description:
  *   starts the DeadCodeRemoval for the given fundef. This fundef must not be
@@ -2703,7 +2705,7 @@ CFfoldPrfExpr (prf op, node **arg_expr)
  ******************************************************************************/
 
 node *
-CFdoConstantFolding (node *fundef, node *module)
+CFdoConstantFolding (node *fundef)
 {
     info *arg_info;
 

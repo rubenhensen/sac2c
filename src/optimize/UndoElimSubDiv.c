@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.13  2005/09/04 12:52:11  ktr
+ * re-engineered the optimization cycle
+ *
  * Revision 1.12  2005/07/03 17:11:43  ktr
  * Some codebrushing. IMHO code needs complete rewrite
  *
@@ -87,10 +90,10 @@ struct INFO {
 /*
  * INFO macros
  */
-#define INFO_UESD_FUNDEF(n) (n->fundef)
-#define INFO_UESD_POSTASSIGN(n) (n->postassign)
-#define INFO_UESD_LET(n) (n->let)
-#define INFO_UESD_TOPDOWN(n) (n->topdown)
+#define INFO_FUNDEF(n) (n->fundef)
+#define INFO_POSTASSIGN(n) (n->postassign)
+#define INFO_LET(n) (n->let)
+#define INFO_TOPDOWN(n) (n->topdown)
 /*
  * INFO functions
  */
@@ -103,10 +106,10 @@ MakeInfo ()
 
     result = ILIBmalloc (sizeof (info));
 
-    INFO_UESD_FUNDEF (result) = NULL;
-    INFO_UESD_POSTASSIGN (result) = NULL;
-    INFO_UESD_LET (result) = NULL;
-    INFO_UESD_TOPDOWN (result) = TRUE;
+    INFO_FUNDEF (result) = NULL;
+    INFO_POSTASSIGN (result) = NULL;
+    INFO_LET (result) = NULL;
+    INFO_TOPDOWN (result) = TRUE;
 
     DBUG_RETURN (result);
 }
@@ -234,7 +237,7 @@ TogglePrf (prf op)
 
 /**<!--****************************************************************-->
  *
- * @fn node *UESDdoUndoElimSubDiv(node *fundef)
+ * @fn node *UESDdoUndoElimSubDiv(node *module)
  *
  * @brief startimng function of UndoElimSubDiv
  *
@@ -244,28 +247,43 @@ TogglePrf (prf op)
  *
  ************************************************************************/
 node *
-UESDdoUndoElimSubDiv (node *fundef)
+UESDdoUndoElimSubDiv (node *arg_node)
 {
     info *info;
 
     DBUG_ENTER ("UESDdoUndoElimSubDiv");
 
-    if (fundef != NULL) {
-        DBUG_PRINT ("OPT",
-                    ("starting undo elim sub div in function %s", FUNDEF_NAME (fundef)));
+    info = MakeInfo ();
 
-        info = MakeInfo ();
+    TRAVpush (TR_uesd);
+    arg_node = TRAVdo (arg_node, info);
+    TRAVpop ();
 
-        INFO_UESD_FUNDEF (info) = fundef;
+    info = FreeInfo (info);
 
-        TRAVpush (TR_uesd);
-        FUNDEF_BODY (fundef) = TRAVdo (FUNDEF_BODY (fundef), info);
-        TRAVpop ();
+    DBUG_RETURN (arg_node);
+}
 
-        info = FreeInfo (info);
+/** <!--********************************************************************-->
+ *
+ * @fn node *UESDfundef( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+UESDfundef (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("UESDfundef");
+
+    if (FUNDEF_BODY (arg_node) != NULL) {
+        INFO_FUNDEF (arg_info) = arg_node;
+        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
     }
 
-    DBUG_RETURN (fundef);
+    if (FUNDEF_NEXT (arg_node) != NULL) {
+        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
 }
 
 /**<!--****************************************************************-->
@@ -311,20 +329,20 @@ UESDassign (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("UESDassign");
 
-    INFO_UESD_TOPDOWN (arg_info) = TRUE;
-    INFO_UESD_POSTASSIGN (arg_info) = NULL;
+    INFO_TOPDOWN (arg_info) = TRUE;
+    INFO_POSTASSIGN (arg_info) = NULL;
 
     if (ASSIGN_INSTR (arg_node) != NULL) {
         ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
     }
 
-    postassign = INFO_UESD_POSTASSIGN (arg_info);
+    postassign = INFO_POSTASSIGN (arg_info);
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
     }
 
-    INFO_UESD_TOPDOWN (arg_info) = FALSE;
+    INFO_TOPDOWN (arg_info) = FALSE;
 
     if (ASSIGN_INSTR (arg_node) != NULL) {
         ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
@@ -355,7 +373,7 @@ UESDlet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("UESDlet");
 
-    INFO_UESD_LET (arg_info) = arg_node;
+    INFO_LET (arg_info) = arg_node;
 
     if (LET_EXPR (arg_node) != NULL) {
         LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
@@ -388,7 +406,7 @@ UESDprf (node *arg_node, info *arg_info)
 
     op = PRF_PRF (arg_node);
 
-    if (INFO_UESD_TOPDOWN (arg_info)) {
+    if (INFO_TOPDOWN (arg_info)) {
         switch (op) {
 
         case F_add_SxS:
@@ -429,15 +447,13 @@ UESDprf (node *arg_node, info *arg_info)
                 node *tmp = DUPdoDupTree (id1);
                 EXPRS_NEXT (tmp) = DUPdoDupTree (id2);
                 tmp = TBmakePrf (op, tmp);
-                avis = TBmakeAvis (ILIBtmpVar (),
-                                   TYcopyType (AVIS_TYPE (
-                                     IDS_AVIS (LET_IDS (INFO_UESD_LET (arg_info))))));
-                BLOCK_VARDEC (FUNDEF_BODY (INFO_UESD_FUNDEF (arg_info)))
-                  = TBmakeVardec (avis, BLOCK_VARDEC (
-                                          FUNDEF_BODY (INFO_UESD_FUNDEF (arg_info))));
+                avis = TBmakeAvis (ILIBtmpVar (), TYcopyType (AVIS_TYPE (IDS_AVIS (
+                                                    LET_IDS (INFO_LET (arg_info))))));
+                BLOCK_VARDEC (FUNDEF_BODY (INFO_FUNDEF (arg_info)))
+                  = TBmakeVardec (avis,
+                                  BLOCK_VARDEC (FUNDEF_BODY (INFO_FUNDEF (arg_info))));
 
-                AVIS_DECL (avis)
-                  = BLOCK_VARDEC (FUNDEF_BODY (INFO_UESD_FUNDEF (arg_info)));
+                AVIS_DECL (avis) = BLOCK_VARDEC (FUNDEF_BODY (INFO_FUNDEF (arg_info)));
 
                 tmp = TCmakeAssignLet (avis, tmp);
 
@@ -454,7 +470,7 @@ UESDprf (node *arg_node, info *arg_info)
                     PRF_PRF (arg_node) = F_esd_rec;
                 }
 
-                INFO_UESD_POSTASSIGN (arg_info) = tmp;
+                INFO_POSTASSIGN (arg_info) = tmp;
             }
 
             break;
@@ -467,7 +483,7 @@ UESDprf (node *arg_node, info *arg_info)
          * bottom-up traversal
          */
 
-        type = TYcopyType (AVIS_TYPE (IDS_AVIS (LET_IDS (INFO_UESD_LET (arg_info)))));
+        type = TYcopyType (AVIS_TYPE (IDS_AVIS (LET_IDS (INFO_LET (arg_info)))));
 
         if (PRF_PRF (arg_node) == F_esd_neg) {
 

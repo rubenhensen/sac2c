@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2005/09/04 12:52:11  ktr
+ * re-engineered the optimization cycle
+ *
  * Revision 1.8  2005/08/08 17:29:08  sah
  * added some DBUG_PRINTs
  *
@@ -61,8 +64,6 @@
  */
 
 #include "globals.h"
-#include "optimize.h"
-/* for global optimization counter inl_fun */
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "node_basic.h"
@@ -261,7 +262,7 @@ INLassign (node *arg_node, info *arg_info)
         vardecs = INFO_VARDECS (arg_info);
         INFO_VARDECS (arg_info) = NULL;
         inlined = TRUE;
-        inl_fun++; /* global optimization counter */
+        global.optcounters.inl_fun++; /* global optimization counter */
     }
 
     if (ASSIGN_NEXT (arg_node) != NULL) {

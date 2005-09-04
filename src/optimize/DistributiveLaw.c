@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.22  2005/09/04 12:52:11  ktr
+ * re-engineered the optimization cycle
+ *
  * Revision 1.21  2005/08/18 16:22:12  ktr
  * removed conditional lhs expressions
  *
@@ -343,7 +346,6 @@
 #include "traverse.h"
 #include "dbug.h"
 #include "internal_lib.h"
-#include "optimize.h"
 #include "free.h"
 #include "DupTree.h"
 
@@ -373,21 +375,21 @@ struct INFO {
 /*
  * INFO macros
  */
-#define INFO_DL_TYPE(n) (n->type)
-#define INFO_DL_BLOCKNODE(n) (n->blocknode)
-#define INFO_DL_OPTLIST(n) (n->optlist)
-#define INFO_DL_NONOPTLIST(n) (n->nonoptlist)
-#define INFO_DL_OPTIMIZEDNODES(n) (n->optimizednodes)
-#define INFO_DL_LETNODE(n) (n->letnode)
-#define INFO_DL_MOSTFREQUENTNODE(n) (n->mostfreqnode)
-#define INFO_DL_OCCURENCEOFMOSTFREQUENTNODE(n) (n->occmostfreqnode)
-#define INFO_DL_MAINOPERATOR(n) (n->mainoperator)
-#define INFO_DL_STATUSSECONDOPERATOR(n) (n->statussecoperator)
-#define INFO_DL_SECONDOPERATOR(n) (n->secoperator)
-#define INFO_DL_COUNTLIST(n) (n->countlist)
-#define INFO_DL_TMPLIST(n) (n->tmplist)
-#define INFO_DL_IEEEFLAG(n) (n->ieeeflag)
-#define INFO_DL_NTYPE(n) (n->newtype)
+#define INFO_TYPE(n) (n->type)
+#define INFO_BLOCKNODE(n) (n->blocknode)
+#define INFO_OPTLIST(n) (n->optlist)
+#define INFO_NONOPTLIST(n) (n->nonoptlist)
+#define INFO_OPTIMIZEDNODES(n) (n->optimizednodes)
+#define INFO_LETNODE(n) (n->letnode)
+#define INFO_MOSTFREQUENTNODE(n) (n->mostfreqnode)
+#define INFO_OCCURENCEOFMOSTFREQUENTNODE(n) (n->occmostfreqnode)
+#define INFO_MAINOPERATOR(n) (n->mainoperator)
+#define INFO_STATUSSECONDOPERATOR(n) (n->statussecoperator)
+#define INFO_SECONDOPERATOR(n) (n->secoperator)
+#define INFO_COUNTLIST(n) (n->countlist)
+#define INFO_TMPLIST(n) (n->tmplist)
+#define INFO_IEEEFLAG(n) (n->ieeeflag)
+#define INFO_NTYPE(n) (n->newtype)
 
 /*
  * INFO functions
@@ -401,21 +403,21 @@ MakeInfo ()
 
     result = ILIBmalloc (sizeof (info));
 
-    INFO_DL_TYPE (result) = NULL;
-    INFO_DL_BLOCKNODE (result) = NULL;
-    INFO_DL_OPTLIST (result) = NULL;
-    INFO_DL_NONOPTLIST (result) = NULL;
-    INFO_DL_OPTIMIZEDNODES (result) = NULL;
-    INFO_DL_LETNODE (result) = NULL;
-    INFO_DL_MOSTFREQUENTNODE (result) = NULL;
-    INFO_DL_OCCURENCEOFMOSTFREQUENTNODE (result) = 0;
-    INFO_DL_MAINOPERATOR (result) = NULL;
-    INFO_DL_STATUSSECONDOPERATOR (result) = 0;
-    INFO_DL_SECONDOPERATOR (result) = NULL;
-    INFO_DL_COUNTLIST (result) = NULL;
-    INFO_DL_TMPLIST (result) = NULL;
-    INFO_DL_IEEEFLAG (result) = 0;
-    INFO_DL_NTYPE (result) = NULL;
+    INFO_TYPE (result) = NULL;
+    INFO_BLOCKNODE (result) = NULL;
+    INFO_OPTLIST (result) = NULL;
+    INFO_NONOPTLIST (result) = NULL;
+    INFO_OPTIMIZEDNODES (result) = NULL;
+    INFO_LETNODE (result) = NULL;
+    INFO_MOSTFREQUENTNODE (result) = NULL;
+    INFO_OCCURENCEOFMOSTFREQUENTNODE (result) = 0;
+    INFO_MAINOPERATOR (result) = NULL;
+    INFO_STATUSSECONDOPERATOR (result) = 0;
+    INFO_SECONDOPERATOR (result) = NULL;
+    INFO_COUNTLIST (result) = NULL;
+    INFO_TMPLIST (result) = NULL;
+    INFO_IEEEFLAG (result) = 0;
+    INFO_NTYPE (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -451,8 +453,8 @@ GetNeutralElement (node *op, info *arg_info)
 
     DBUG_ASSERT (NODE_TYPE (op) == N_prf, "Only N_prf node are supported!");
 
-    DBUG_ASSERT (TYisArray (INFO_DL_NTYPE (arg_info)), "Non-array type encountered!");
-    basetype = TYgetSimpleType (TYgetScalar (INFO_DL_NTYPE (arg_info)));
+    DBUG_ASSERT (TYisArray (INFO_NTYPE (arg_info)), "Non-array type encountered!");
+    basetype = TYgetSimpleType (TYgetScalar (INFO_NTYPE (arg_info)));
 
     switch (PRF_PRF (op)) {
     case F_add_SxS:
@@ -587,7 +589,7 @@ IsConstant (node *arg_node, info *arg_info)
     switch (NODE_TYPE (arg_node)) {
     case N_float:
     case N_double:
-        INFO_DL_IEEEFLAG (arg_info) = 1;
+        INFO_IEEEFLAG (arg_info) = 1;
     case N_bool:
     case N_num:
     case N_array:
@@ -840,7 +842,7 @@ IsValidSecondOperator (node *arg_node, info *arg_info)
 
     if (IsSupportedOperator (arg_node, arg_info)) {
 
-        firstop = INFO_DL_MAINOPERATOR (arg_info);
+        firstop = INFO_MAINOPERATOR (arg_info);
         secondop = GetUsedOperator (arg_node, arg_info);
 
         priority_firstop = GetPriority (firstop);
@@ -947,11 +949,11 @@ IsThirdOperatorReached (node *arg_node, info *arg_info)
 
     is_thirdop = FALSE;
 
-    if ((INFO_DL_STATUSSECONDOPERATOR (arg_info) != 0)) {
+    if ((INFO_STATUSSECONDOPERATOR (arg_info) != 0)) {
 
         operator= GetUsedOperator (arg_node, arg_info);
 
-        is_thirdop = !(IsSameOperator (operator, INFO_DL_SECONDOPERATOR (arg_info)));
+        is_thirdop = !(IsSameOperator (operator, INFO_SECONDOPERATOR (arg_info)));
     }
     DBUG_RETURN (is_thirdop);
 }
@@ -1038,7 +1040,7 @@ ResetFlags (info *arg_info)
 
     DBUG_ENTER ("ResetFlags");
 
-    list = INFO_DL_COUNTLIST (arg_info);
+    list = INFO_COUNTLIST (arg_info);
 
     while (list != NULL) {
 
@@ -1090,7 +1092,7 @@ RegisterMultipleUsableNodes (info *arg_info)
 
     DBUG_ENTER ("RegisterMultipleUsableNodes");
 
-    currentlist = INFO_DL_COUNTLIST (arg_info);
+    currentlist = INFO_COUNTLIST (arg_info);
 
     /*
      * traverse whole COUNTLIST
@@ -1100,12 +1102,12 @@ RegisterMultipleUsableNodes (info *arg_info)
         /*
          * compare operator in COUNTLIST with MAINOPERATOR
          */
-        if (IsSameOperator (INFO_DL_MAINOPERATOR (arg_info),
+        if (IsSameOperator (INFO_MAINOPERATOR (arg_info),
                             DL_NODELIST_OPERATOR (currentlist))) {
 
             currentnode = NODELIST_NODE (currentlist);
 
-            tmplist = INFO_DL_COUNTLIST (arg_info);
+            tmplist = INFO_COUNTLIST (arg_info);
 
             /*
              * traverse whole COUNTLIST again
@@ -1158,14 +1160,14 @@ AddNodeToOptimizedNodes (node *arg, info *arg_info)
 
     newlist = TBmakeNodelistNode (arg, NULL);
 
-    if (INFO_DL_OPTIMIZEDNODES (arg_info) == NULL) {
+    if (INFO_OPTIMIZEDNODES (arg_info) == NULL) {
 
-        INFO_DL_OPTIMIZEDNODES (arg_info) = newlist;
+        INFO_OPTIMIZEDNODES (arg_info) = newlist;
 
     } else {
 
-        NODELIST_NEXT (newlist) = INFO_DL_OPTIMIZEDNODES (arg_info);
-        INFO_DL_OPTIMIZEDNODES (arg_info) = newlist;
+        NODELIST_NEXT (newlist) = INFO_OPTIMIZEDNODES (arg_info);
+        INFO_OPTIMIZEDNODES (arg_info) = newlist;
     }
 
     DBUG_VOID_RETURN;
@@ -1335,13 +1337,13 @@ MakeAssignLetNodeFromCurrentNode (node *newnode, info *arg_info, int flag)
 
     DBUG_ENTER ("MakeAssignNodeFromExprsNode");
 
-    type = TYcopyType (INFO_DL_NTYPE (arg_info));
+    type = TYcopyType (INFO_NTYPE (arg_info));
 
     newavis = TBmakeAvis (ILIBtmpVar (), type);
 
-    newvardec = TBmakeVardec (newavis, (BLOCK_VARDEC (INFO_DL_BLOCKNODE (arg_info))));
+    newvardec = TBmakeVardec (newavis, (BLOCK_VARDEC (INFO_BLOCKNODE (arg_info))));
 
-    BLOCK_VARDEC (INFO_DL_BLOCKNODE (arg_info)) = newvardec;
+    BLOCK_VARDEC (INFO_BLOCKNODE (arg_info)) = newvardec;
 
     newnode = TBmakeAssign (TBmakeLet (TBmakeIds (newavis, NULL), newnode), NULL);
 
@@ -1440,11 +1442,11 @@ CreateAssignNodes (info *arg_info)
     nodelist *list;
     DBUG_ENTER ("CreateAssignNodes");
 
-    list = INFO_DL_NONOPTLIST (arg_info);
+    list = INFO_NONOPTLIST (arg_info);
 
     if (list != NULL) {
 
-        MakeAllNodelistnodesToAssignNodes (INFO_DL_NONOPTLIST (arg_info), arg_info);
+        MakeAllNodelistnodesToAssignNodes (INFO_NONOPTLIST (arg_info), arg_info);
     }
     DBUG_VOID_RETURN;
 }
@@ -1518,23 +1520,21 @@ CommitAssignNodes (nodelist *list, info *arg_info)
             if (IsAnArray (EXPRS_EXPR (newnode), arg_info))
                 if (IsAnArray (EXPRS_EXPR (tmpnode), arg_info)) {
 
-                    newnode
-                      = MakeOperatorNode (newnode, INFO_DL_MAINOPERATOR (arg_info), 3);
+                    newnode = MakeOperatorNode (newnode, INFO_MAINOPERATOR (arg_info), 3);
                     newnode = MakeAssignLetNodeFromCurrentNode (newnode, arg_info, 1);
 
                 } else {
 
-                    newnode
-                      = MakeOperatorNode (newnode, INFO_DL_MAINOPERATOR (arg_info), 2);
+                    newnode = MakeOperatorNode (newnode, INFO_MAINOPERATOR (arg_info), 2);
                     newnode = MakeAssignLetNodeFromCurrentNode (newnode, arg_info, 1);
                 }
             else if (IsAnArray (EXPRS_EXPR (tmpnode), arg_info)) {
 
-                newnode = MakeOperatorNode (newnode, INFO_DL_MAINOPERATOR (arg_info), 1);
+                newnode = MakeOperatorNode (newnode, INFO_MAINOPERATOR (arg_info), 1);
                 newnode = MakeAssignLetNodeFromCurrentNode (newnode, arg_info, 1);
             } else {
 
-                newnode = MakeOperatorNode (newnode, INFO_DL_MAINOPERATOR (arg_info), 0);
+                newnode = MakeOperatorNode (newnode, INFO_MAINOPERATOR (arg_info), 0);
                 newnode = MakeAssignLetNodeFromCurrentNode (newnode, arg_info, 0);
             }
 
@@ -1591,37 +1591,37 @@ IncludeMostFrequentNode (info *arg_info)
 
     DBUG_ENTER ("IncludeMostFrequentNode");
 
-    node1 = INFO_DL_MOSTFREQUENTNODE (arg_info);
+    node1 = INFO_MOSTFREQUENTNODE (arg_info);
     node1 = TBmakeExprs (node1, NULL);
 
-    tmpnode = NODELIST_NODE (INFO_DL_OPTLIST (arg_info));
+    tmpnode = NODELIST_NODE (INFO_OPTLIST (arg_info));
     node2 = MakeExprsNodeFromAssignNode (tmpnode);
     EXPRS_NEXT (node2) = node1;
 
     if (IsAnArray (EXPRS_EXPR (node1), arg_info))
         if (IsAnArray (EXPRS_EXPR (node2), arg_info)) {
 
-            newnode = MakeOperatorNode (node2, INFO_DL_SECONDOPERATOR (arg_info), 3);
+            newnode = MakeOperatorNode (node2, INFO_SECONDOPERATOR (arg_info), 3);
             newnode = MakeAssignLetNodeFromCurrentNode (newnode, arg_info, 1);
         } else {
 
-            newnode = MakeOperatorNode (node2, INFO_DL_SECONDOPERATOR (arg_info), 1);
+            newnode = MakeOperatorNode (node2, INFO_SECONDOPERATOR (arg_info), 1);
             newnode = MakeAssignLetNodeFromCurrentNode (newnode, arg_info, 1);
         }
     else
 
       if (IsAnArray (EXPRS_EXPR (node2), arg_info)) {
 
-        newnode = MakeOperatorNode (node2, INFO_DL_SECONDOPERATOR (arg_info), 2);
+        newnode = MakeOperatorNode (node2, INFO_SECONDOPERATOR (arg_info), 2);
         newnode = MakeAssignLetNodeFromCurrentNode (newnode, arg_info, 1);
     } else {
 
-        newnode = MakeOperatorNode (node2, INFO_DL_SECONDOPERATOR (arg_info), 0);
+        newnode = MakeOperatorNode (node2, INFO_SECONDOPERATOR (arg_info), 0);
         newnode = MakeAssignLetNodeFromCurrentNode (newnode, arg_info, 0);
     }
     AddNodeToOptimizedNodes (tmpnode, arg_info);
 
-    NODELIST_NODE (INFO_DL_OPTLIST (arg_info)) = newnode;
+    NODELIST_NODE (INFO_OPTLIST (arg_info)) = newnode;
 
     DBUG_VOID_RETURN;
 }
@@ -1654,8 +1654,8 @@ IntegrateResults (info *arg_info)
     /*
      * create exprs node from remaining node in OPTLIST
      */
-    original = INFO_DL_LETNODE (arg_info);
-    old_optnode = NODELIST_NODE (INFO_DL_OPTLIST (arg_info));
+    original = INFO_LETNODE (arg_info);
+    old_optnode = NODELIST_NODE (INFO_OPTLIST (arg_info));
     new_optnode = MakeExprsNodeFromAssignNode (old_optnode);
     AddNodeToOptimizedNodes (old_optnode, arg_info);
 
@@ -1664,12 +1664,12 @@ IntegrateResults (info *arg_info)
     /*
      * check if there is a remaining node in NONOPTLIST
      */
-    if (NULL != INFO_DL_NONOPTLIST (arg_info)) {
+    if (NULL != INFO_NONOPTLIST (arg_info)) {
 
         /*
          * create exprs node from remaining node in NONOPTLIST
          */
-        old_nonoptnode = NODELIST_NODE (INFO_DL_NONOPTLIST (arg_info));
+        old_nonoptnode = NODELIST_NODE (INFO_NONOPTLIST (arg_info));
         new_nonoptnode = MakeExprsNodeFromAssignNode (old_nonoptnode);
         AddNodeToOptimizedNodes (old_nonoptnode, arg_info);
 
@@ -1772,7 +1772,7 @@ CheckNode (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("CheckNode");
 
-    if (IsIdenticalNode (arg_node, INFO_DL_MOSTFREQUENTNODE (arg_info))) {
+    if (IsIdenticalNode (arg_node, INFO_MOSTFREQUENTNODE (arg_info))) {
 
         /*
          * one MOSTFREQUENTNODE found
@@ -1783,26 +1783,26 @@ CheckNode (node *arg_node, info *arg_info)
         /*
          * head is node with MOSTFREQUENTNODE, remove node from TMPLIST
          */
-        head = INFO_DL_TMPLIST (arg_info);
-        INFO_DL_TMPLIST (arg_info) = NODELIST_NEXT (INFO_DL_TMPLIST (arg_info));
+        head = INFO_TMPLIST (arg_info);
+        INFO_TMPLIST (arg_info) = NODELIST_NEXT (INFO_TMPLIST (arg_info));
 
         /*
          * add following nodes to PARENTNODES of head-node
-         * DL_NODELIST_PARENTNODES( head) = INFO_DL_TMPLIST( arg_info);
+         * DL_NODELIST_PARENTNODES( head) = INFO_TMPLIST( arg_info);
          */
-        NODELIST_ATTRIB2 (head) = (node *)INFO_DL_TMPLIST (arg_info);
+        NODELIST_ATTRIB2 (head) = (node *)INFO_TMPLIST (arg_info);
 
         /*
          * add head to OPTLIST
          */
-        NODELIST_NEXT (head) = INFO_DL_OPTLIST (arg_info);
-        INFO_DL_OPTLIST (arg_info) = head;
+        NODELIST_NEXT (head) = INFO_OPTLIST (arg_info);
+        INFO_OPTLIST (arg_info) = head;
 
         /*
          * prevent more registration of nodes,
          * because MOSTFREQUENTNODE is found already
          */
-        INFO_DL_STATUSSECONDOPERATOR (arg_info) = 2;
+        INFO_STATUSSECONDOPERATOR (arg_info) = 2;
     }
 
     DBUG_VOID_RETURN;
@@ -1848,25 +1848,25 @@ RemoveMostFrequentNode (info *arg_info)
 
     new_son = NULL;
 
-    current_elem = INFO_DL_MOSTFREQUENTNODE (arg_info);
+    current_elem = INFO_MOSTFREQUENTNODE (arg_info);
     current_elem = DUPdoDupTree (current_elem);
-    INFO_DL_MOSTFREQUENTNODE (arg_info) = current_elem;
+    INFO_MOSTFREQUENTNODE (arg_info) = current_elem;
     current_elem = NULL;
 
-    list = INFO_DL_OPTLIST (arg_info);
+    list = INFO_OPTLIST (arg_info);
 
     while (list != NULL) {
 
         top_elem = NODELIST_NODE (list);
 
-        if ((IsIdenticalNode (INFO_DL_MOSTFREQUENTNODE (arg_info), top_elem))
+        if ((IsIdenticalNode (INFO_MOSTFREQUENTNODE (arg_info), top_elem))
             && (EXPRS_NEXT (top_elem) == NULL)) {
             /*
              * constant node - MFN is argument of MAINOPERATOR
              * replace MFN with neutral element of MAINOPERATOR
              */
 
-            new_son = GetNeutralElement (INFO_DL_SECONDOPERATOR (arg_info), arg_info);
+            new_son = GetNeutralElement (INFO_SECONDOPERATOR (arg_info), arg_info);
             new_son = MakeAssignLetNodeFromCurrentNode (new_son, arg_info, 0);
         } else {
 
@@ -1880,7 +1880,7 @@ RemoveMostFrequentNode (info *arg_info)
             /*
              * is first_arg MOSTFREQUENTNODE?
              */
-            if (IsIdenticalNode (first_arg, INFO_DL_MOSTFREQUENTNODE (arg_info))) {
+            if (IsIdenticalNode (first_arg, INFO_MOSTFREQUENTNODE (arg_info))) {
 
                 new_son = DUPdoDupTree (second_arg);
 
@@ -1892,7 +1892,7 @@ RemoveMostFrequentNode (info *arg_info)
             /*
              * is second_arg MOSTFREQUENTNODE?
              */
-            else if (IsIdenticalNode (second_arg, INFO_DL_MOSTFREQUENTNODE (arg_info))) {
+            else if (IsIdenticalNode (second_arg, INFO_MOSTFREQUENTNODE (arg_info))) {
 
                 new_son = DUPdoDupTree (first_arg);
 
@@ -1930,10 +1930,10 @@ RemoveMostFrequentNode (info *arg_info)
                 if (!IsConstant (EXPRS_EXPR (current_elem), arg_info)
                     && !ReachedArgument (EXPRS_EXPR (current_elem))
                     && !ReachedDefinition (EXPRS_EXPR (current_elem))
-                    && ((IsSameOperator (INFO_DL_SECONDOPERATOR (arg_info),
+                    && ((IsSameOperator (INFO_SECONDOPERATOR (arg_info),
                                          LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (
                                            ID_AVIS (EXPRS_EXPR (current_elem)))))))
-                        || (IsSameOperator (INFO_DL_MAINOPERATOR (arg_info),
+                        || (IsSameOperator (INFO_MAINOPERATOR (arg_info),
                                             LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (
                                               ID_AVIS (EXPRS_EXPR (current_elem))))))))) {
 
@@ -2003,31 +2003,29 @@ RemoveMostFrequentNode (info *arg_info)
                 if (IsAnArray (EXPRS_EXPR (new_parent), arg_info))
                     if (IsAnArray (EXPRS_EXPR (EXPRS_NEXT (new_parent)), arg_info)) {
 
-                        new_parent
-                          = MakeOperatorNode (new_parent,
-                                              INFO_DL_SECONDOPERATOR (arg_info), 3);
+                        new_parent = MakeOperatorNode (new_parent,
+                                                       INFO_SECONDOPERATOR (arg_info), 3);
                         new_parent
                           = MakeAssignLetNodeFromCurrentNode (new_parent, arg_info, 1);
 
                     } else {
 
-                        new_parent
-                          = MakeOperatorNode (new_parent,
-                                              INFO_DL_SECONDOPERATOR (arg_info), 2);
+                        new_parent = MakeOperatorNode (new_parent,
+                                                       INFO_SECONDOPERATOR (arg_info), 2);
                         new_parent
                           = MakeAssignLetNodeFromCurrentNode (new_parent, arg_info, 1);
                     }
                 else if (IsAnArray (EXPRS_EXPR (EXPRS_NEXT (new_parent)), arg_info)) {
 
-                    new_parent = MakeOperatorNode (new_parent,
-                                                   INFO_DL_SECONDOPERATOR (arg_info), 1);
+                    new_parent
+                      = MakeOperatorNode (new_parent, INFO_SECONDOPERATOR (arg_info), 1);
                     new_parent
                       = MakeAssignLetNodeFromCurrentNode (new_parent, arg_info, 1);
 
                 } else {
 
-                    new_parent = MakeOperatorNode (new_parent,
-                                                   INFO_DL_SECONDOPERATOR (arg_info), 0);
+                    new_parent
+                      = MakeOperatorNode (new_parent, INFO_SECONDOPERATOR (arg_info), 0);
                     new_parent
                       = MakeAssignLetNodeFromCurrentNode (new_parent, arg_info, 0);
                 }
@@ -2065,8 +2063,8 @@ IsMainOrSecondOperator (node *id, info *arg_info)
 
     operator= GetUsedOperator (id, arg_info);
 
-    if ((IsSameOperator (operator, INFO_DL_SECONDOPERATOR (arg_info)))
-        || (IsSameOperator (operator, INFO_DL_MAINOPERATOR (arg_info))))
+    if ((IsSameOperator (operator, INFO_SECONDOPERATOR (arg_info)))
+        || (IsSameOperator (operator, INFO_MAINOPERATOR (arg_info))))
         result = TRUE;
 
     DBUG_RETURN (result);
@@ -2118,14 +2116,14 @@ OptTravElems (node *arg_node, info *arg_info)
          * termination-condition reached
          * check if MOSTFREQUENTNODE is not found till now but SECONDOPERATOR reached
          */
-        if (INFO_DL_STATUSSECONDOPERATOR (arg_info) == 1) {
+        if (INFO_STATUSSECONDOPERATOR (arg_info) == 1) {
             CheckNode (EXPRS_EXPR (arg_node), arg_info);
         }
 
         /*
          * if node is a single node connected with MAINOPERATOR
          */
-        if (INFO_DL_STATUSSECONDOPERATOR (arg_info) == 0) {
+        if (INFO_STATUSSECONDOPERATOR (arg_info) == 0) {
 
             nodelist *newlist;
             node *node_tmp;
@@ -2138,27 +2136,27 @@ OptTravElems (node *arg_node, info *arg_info)
              * check if arg_node is identical to MOSTFREQUENTNODE
              */
             if (IsIdenticalNode (EXPRS_EXPR (arg_node),
-                                 INFO_DL_MOSTFREQUENTNODE (arg_info))) {
+                                 INFO_MOSTFREQUENTNODE (arg_info))) {
 
-                if (ExistKnownNeutralElement (INFO_DL_SECONDOPERATOR (arg_info))) {
+                if (ExistKnownNeutralElement (INFO_SECONDOPERATOR (arg_info))) {
 
                     /*
                      * node is MFN and neutral element is known
                      */
-                    NODELIST_NEXT (newlist) = INFO_DL_OPTLIST (arg_info);
-                    INFO_DL_OPTLIST (arg_info) = newlist;
+                    NODELIST_NEXT (newlist) = INFO_OPTLIST (arg_info);
+                    INFO_OPTLIST (arg_info) = newlist;
                 }
             } else {
 
                 /*
                  * node is not MFN or no known neutral Element: add to NONOPTLIST
                  */
-                NODELIST_NEXT (newlist) = INFO_DL_NONOPTLIST (arg_info);
-                INFO_DL_NONOPTLIST (arg_info) = newlist;
+                NODELIST_NEXT (newlist) = INFO_NONOPTLIST (arg_info);
+                INFO_NONOPTLIST (arg_info) = newlist;
             }
         }
-    } else if ((INFO_DL_STATUSSECONDOPERATOR (arg_info) == 0)
-               && (IsSameOperator (INFO_DL_SECONDOPERATOR (arg_info),
+    } else if ((INFO_STATUSSECONDOPERATOR (arg_info) == 0)
+               && (IsSameOperator (INFO_SECONDOPERATOR (arg_info),
                                    GetUsedOperator (EXPRS_EXPR (arg_node), arg_info)))) {
 
         /*
@@ -2169,7 +2167,7 @@ OptTravElems (node *arg_node, info *arg_info)
          *    4.) Add TMPLIST to NONOPTLIST if neccessary
          */
 
-        INFO_DL_STATUSSECONDOPERATOR (arg_info) = 1;
+        INFO_STATUSSECONDOPERATOR (arg_info) = 1;
 
         /*
          * save nodes which will be traversed in TMPLIST
@@ -2178,7 +2176,7 @@ OptTravElems (node *arg_node, info *arg_info)
         list = TBmakeNodelistNode (PRF_ARGS (LET_EXPR (ASSIGN_INSTR (
                                      AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (arg_node)))))),
                                    NULL);
-        INFO_DL_TMPLIST (arg_info) = list;
+        INFO_TMPLIST (arg_info) = list;
 
         ASSIGN_ISUNUSED (AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (arg_node)))) = FALSE;
 
@@ -2190,7 +2188,7 @@ OptTravElems (node *arg_node, info *arg_info)
                                    AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (arg_node))))))),
                                  arg_info);
 
-        if (INFO_DL_STATUSSECONDOPERATOR (arg_info) == 1) {
+        if (INFO_STATUSSECONDOPERATOR (arg_info) == 1) {
 
             node *newnode, *node1, *node2;
             nodelist *newlist;
@@ -2202,7 +2200,7 @@ OptTravElems (node *arg_node, info *arg_info)
              * clear TMPLIST
              */
 
-            node1 = NODELIST_NODE (INFO_DL_TMPLIST (arg_info));
+            node1 = NODELIST_NODE (INFO_TMPLIST (arg_info));
             node2 = EXPRS_EXPR (EXPRS_NEXT (node1));
             node1 = EXPRS_EXPR (node1);
 
@@ -2216,39 +2214,37 @@ OptTravElems (node *arg_node, info *arg_info)
                 if (IsAnArray (EXPRS_EXPR (node2), arg_info)) {
 
                     newnode
-                      = MakeOperatorNode (newnode, INFO_DL_SECONDOPERATOR (arg_info), 3);
+                      = MakeOperatorNode (newnode, INFO_SECONDOPERATOR (arg_info), 3);
                     newnode = MakeAssignLetNodeFromCurrentNode (newnode, arg_info, 1);
 
                 } else {
 
                     newnode
-                      = MakeOperatorNode (newnode, INFO_DL_SECONDOPERATOR (arg_info), 2);
+                      = MakeOperatorNode (newnode, INFO_SECONDOPERATOR (arg_info), 2);
                     newnode = MakeAssignLetNodeFromCurrentNode (newnode, arg_info, 1);
                 }
             else if (IsAnArray (EXPRS_EXPR (node2), arg_info)) {
 
-                newnode
-                  = MakeOperatorNode (newnode, INFO_DL_SECONDOPERATOR (arg_info), 1);
+                newnode = MakeOperatorNode (newnode, INFO_SECONDOPERATOR (arg_info), 1);
                 newnode = MakeAssignLetNodeFromCurrentNode (newnode, arg_info, 1);
 
             } else {
 
-                newnode
-                  = MakeOperatorNode (newnode, INFO_DL_SECONDOPERATOR (arg_info), 0);
+                newnode = MakeOperatorNode (newnode, INFO_SECONDOPERATOR (arg_info), 0);
                 newnode = MakeAssignLetNodeFromCurrentNode (newnode, arg_info, 0);
             }
 
             newlist = TBmakeNodelistNode (newnode, NULL);
 
-            NODELIST_NEXT (newlist) = INFO_DL_NONOPTLIST (arg_info);
-            INFO_DL_NONOPTLIST (arg_info) = newlist;
-            INFO_DL_TMPLIST (arg_info) = NULL;
+            NODELIST_NEXT (newlist) = INFO_NONOPTLIST (arg_info);
+            INFO_NONOPTLIST (arg_info) = newlist;
+            INFO_TMPLIST (arg_info) = NULL;
         }
 
-        INFO_DL_STATUSSECONDOPERATOR (arg_info) = 0;
+        INFO_STATUSSECONDOPERATOR (arg_info) = 0;
 
-    } else if ((INFO_DL_STATUSSECONDOPERATOR (arg_info) == 1)
-               && IsSameOperator (INFO_DL_SECONDOPERATOR (arg_info),
+    } else if ((INFO_STATUSSECONDOPERATOR (arg_info) == 1)
+               && IsSameOperator (INFO_SECONDOPERATOR (arg_info),
                                   GetUsedOperator (EXPRS_EXPR (arg_node), arg_info))) {
 
         /*
@@ -2269,8 +2265,8 @@ OptTravElems (node *arg_node, info *arg_info)
          */
         list = TBmakeNodelistNode (PRF_ARGS (LET_EXPR (ASSIGN_INSTR (
                                      AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (arg_node)))))),
-                                   INFO_DL_TMPLIST (arg_info));
-        INFO_DL_TMPLIST (arg_info) = list;
+                                   INFO_TMPLIST (arg_info));
+        INFO_TMPLIST (arg_info) = list;
 
         /*
          * traverse in new arguments
@@ -2286,9 +2282,9 @@ OptTravElems (node *arg_node, info *arg_info)
          * remove traversed arguments if neccessary
          * (if no MOSTFREQUENTNODE is found till now)
          */
-        if (INFO_DL_STATUSSECONDOPERATOR (arg_info) == 1) {
-            list = INFO_DL_TMPLIST (arg_info);
-            INFO_DL_TMPLIST (arg_info) = NODELIST_NEXT (INFO_DL_TMPLIST (arg_info));
+        if (INFO_STATUSSECONDOPERATOR (arg_info) == 1) {
+            list = INFO_TMPLIST (arg_info);
+            INFO_TMPLIST (arg_info) = NODELIST_NEXT (INFO_TMPLIST (arg_info));
             NODELIST_NODE (list) = NULL;
             NODELIST_NEXT (list) = NULL;
             ILIBfree (list);
@@ -2330,8 +2326,8 @@ CreateOptLists (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("CreateOptLists");
 
-    INFO_DL_OPTLIST (arg_info) = NULL;
-    INFO_DL_NONOPTLIST (arg_info) = NULL;
+    INFO_OPTLIST (arg_info) = NULL;
+    INFO_NONOPTLIST (arg_info) = NULL;
 
     arg_info = OptTravElems (PRF_ARGS (arg_node), arg_info);
     arg_info = OptTravElems (EXPRS_NEXT (PRF_ARGS (arg_node)), arg_info);
@@ -2433,19 +2429,19 @@ FindAndSetMostFrequentNode (info *arg_info)
     RegisterMultipleUsableNodes (arg_info);
 
     maxOccurence = 0;
-    list = INFO_DL_COUNTLIST (arg_info);
+    list = INFO_COUNTLIST (arg_info);
 
     while (list != NULL) {
 
         if ((NODELIST_INT (list) > maxOccurence)
             && (!IsSameOperator (DL_NODELIST_OPERATOR (list),
-                                 INFO_DL_MAINOPERATOR (arg_info)))) {
+                                 INFO_MAINOPERATOR (arg_info)))) {
 
             maxOccurence = NODELIST_INT (list);
 
-            INFO_DL_SECONDOPERATOR (arg_info) = DL_NODELIST_OPERATOR (list);
-            INFO_DL_MOSTFREQUENTNODE (arg_info) = NODELIST_NODE (list);
-            INFO_DL_OCCURENCEOFMOSTFREQUENTNODE (arg_info) = maxOccurence;
+            INFO_SECONDOPERATOR (arg_info) = DL_NODELIST_OPERATOR (list);
+            INFO_MOSTFREQUENTNODE (arg_info) = NODELIST_NODE (list);
+            INFO_OCCURENCEOFMOSTFREQUENTNODE (arg_info) = maxOccurence;
         }
         list = NODELIST_NEXT (list);
     }
@@ -2474,12 +2470,12 @@ RegisterNode (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("RegisterNode");
 
-    if (INFO_DL_STATUSSECONDOPERATOR (arg_info) == 1)
-        lastOperator = INFO_DL_SECONDOPERATOR (arg_info);
+    if (INFO_STATUSSECONDOPERATOR (arg_info) == 1)
+        lastOperator = INFO_SECONDOPERATOR (arg_info);
     else
-        lastOperator = INFO_DL_MAINOPERATOR (arg_info);
+        lastOperator = INFO_MAINOPERATOR (arg_info);
 
-    node_in_list = FindNodeInList (INFO_DL_COUNTLIST (arg_info), arg_node, lastOperator);
+    node_in_list = FindNodeInList (INFO_COUNTLIST (arg_info), arg_node, lastOperator);
 
     if (node_in_list == NULL) {
 
@@ -2502,8 +2498,8 @@ RegisterNode (node *arg_node, info *arg_info)
 
         NODELIST_INT (newnodelistnode) = 1;
 
-        NODELIST_NEXT (newnodelistnode) = INFO_DL_COUNTLIST (arg_info);
-        INFO_DL_COUNTLIST (arg_info) = newnodelistnode;
+        NODELIST_NEXT (newnodelistnode) = INFO_COUNTLIST (arg_info);
+        INFO_COUNTLIST (arg_info) = newnodelistnode;
 
     } else {
 
@@ -2558,7 +2554,7 @@ SearchTravElems (node *arg_node, info *arg_info)
                || IsThirdOperatorReached (EXPRS_EXPR (arg_node), arg_info)
                || ((IsSupportedOperator (EXPRS_EXPR (arg_node), arg_info))
                    && (!IsValidSecondOperator (EXPRS_EXPR (arg_node), arg_info))
-                   && (!IsSameOperator (INFO_DL_MAINOPERATOR (arg_info),
+                   && (!IsSameOperator (INFO_MAINOPERATOR (arg_info),
                                         GetUsedOperator (EXPRS_EXPR (arg_node),
                                                          arg_info))))) {
 
@@ -2568,7 +2564,7 @@ SearchTravElems (node *arg_node, info *arg_info)
         RegisterNode (EXPRS_EXPR (arg_node), arg_info);
 
     } else if ((IsSupportedOperator (EXPRS_EXPR (arg_node), arg_info))
-               && (INFO_DL_STATUSSECONDOPERATOR (arg_info) == 0)
+               && (INFO_STATUSSECONDOPERATOR (arg_info) == 0)
                && IsValidSecondOperator (EXPRS_EXPR (arg_node), arg_info)) {
 
         /*
@@ -2577,9 +2573,9 @@ SearchTravElems (node *arg_node, info *arg_info)
 
         ResetFlags (arg_info);
 
-        INFO_DL_SECONDOPERATOR (arg_info)
+        INFO_SECONDOPERATOR (arg_info)
           = GetUsedOperator (EXPRS_EXPR (arg_node), arg_info);
-        INFO_DL_STATUSSECONDOPERATOR (arg_info) = 1;
+        INFO_STATUSSECONDOPERATOR (arg_info) = 1;
 
         SearchTravElems (PRF_ARGS (LET_EXPR (ASSIGN_INSTR (
                            AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (arg_node)))))),
@@ -2588,8 +2584,8 @@ SearchTravElems (node *arg_node, info *arg_info)
                            AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (arg_node))))))),
                          arg_info);
 
-        INFO_DL_SECONDOPERATOR (arg_info) = NULL;
-        INFO_DL_STATUSSECONDOPERATOR (arg_info) = 0;
+        INFO_SECONDOPERATOR (arg_info) = NULL;
+        INFO_STATUSSECONDOPERATOR (arg_info) = 0;
 
         ResetFlags (arg_info);
     } else {
@@ -2628,13 +2624,13 @@ SearchMostFrequentNode (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("SearchMostFrequentNode");
 
-    INFO_DL_COUNTLIST (arg_info) = NULL;
+    INFO_COUNTLIST (arg_info) = NULL;
 
     /*
      * Traverse through the definitions of arg_node and collect nodes
      */
 
-    INFO_DL_MAINOPERATOR (arg_info) = arg_node;
+    INFO_MAINOPERATOR (arg_info) = arg_node;
 
     SearchTravElems (PRF_ARGS (arg_node), arg_info);
     SearchTravElems (EXPRS_NEXT (PRF_ARGS (arg_node)), arg_info);
@@ -2647,8 +2643,8 @@ SearchMostFrequentNode (node *arg_node, info *arg_info)
 
     FindAndSetMostFrequentNode (arg_info);
 
-    DeleteNodelist (INFO_DL_COUNTLIST (arg_info));
-    INFO_DL_COUNTLIST (arg_info) = NULL;
+    DeleteNodelist (INFO_COUNTLIST (arg_info));
+    INFO_COUNTLIST (arg_info) = NULL;
 
     DBUG_VOID_RETURN;
 }
@@ -2680,7 +2676,7 @@ DLdoDistributiveLaw (node *arg_node)
         arg_node = TRAVdo (arg_node, arg_info);
         TRAVpop ();
 
-        INFO_DL_NTYPE (arg_info) = NULL;
+        INFO_NTYPE (arg_info) = NULL;
 
         arg_info = FreeInfo (arg_info);
     }
@@ -2710,11 +2706,11 @@ DLblock (node *arg_node, info *arg_info)
          * store pointer on actual N_block-node for append of new N_vardec nodes
          */
         if (BLOCK_VARDEC (arg_node) != NULL) {
-            INFO_DL_BLOCKNODE (arg_info) = arg_node;
+            INFO_BLOCKNODE (arg_info) = arg_node;
         }
 
-        INFO_DL_OPTLIST (arg_info) = NULL;
-        INFO_DL_NONOPTLIST (arg_info) = NULL;
+        INFO_OPTLIST (arg_info) = NULL;
+        INFO_NONOPTLIST (arg_info) = NULL;
 
         BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
     }
@@ -2750,7 +2746,7 @@ DLassign (node *arg_node, info *arg_info)
 
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
 
-        if (INFO_DL_OPTIMIZEDNODES (arg_info) != NULL) {
+        if (INFO_OPTIMIZEDNODES (arg_info) != NULL) {
 
             node *assign_next;
             nodelist *tmplist;
@@ -2767,22 +2763,22 @@ DLassign (node *arg_node, info *arg_info)
 
             assign_next = ASSIGN_NEXT (arg_node);
 
-            while (INFO_DL_OPTIMIZEDNODES (arg_info) != NULL) {
+            while (INFO_OPTIMIZEDNODES (arg_info) != NULL) {
 
-                ASSIGN_NEXT (NODELIST_NODE (INFO_DL_OPTIMIZEDNODES (arg_info)))
+                ASSIGN_NEXT (NODELIST_NODE (INFO_OPTIMIZEDNODES (arg_info)))
                   = assign_next;
-                assign_next = NODELIST_NODE (INFO_DL_OPTIMIZEDNODES (arg_info));
+                assign_next = NODELIST_NODE (INFO_OPTIMIZEDNODES (arg_info));
 
-                tmplist = INFO_DL_OPTIMIZEDNODES (arg_info);
+                tmplist = INFO_OPTIMIZEDNODES (arg_info);
 
-                INFO_DL_OPTIMIZEDNODES (arg_info) = NODELIST_NEXT (tmplist);
+                INFO_OPTIMIZEDNODES (arg_info) = NODELIST_NEXT (tmplist);
 
                 NODELIST_NEXT (tmplist) = NULL;
                 NODELIST_NODE (tmplist) = NULL;
                 tmplist = DeleteNodelist (tmplist);
             }
 
-            INFO_DL_OPTIMIZEDNODES (arg_info) = NULL;
+            INFO_OPTIMIZEDNODES (arg_info) = NULL;
 
             ASSIGN_NEXT (arg_node) = assign_next;
         }
@@ -2816,11 +2812,11 @@ DLlet (node *arg_node, info *arg_info)
     DBUG_ENTER ("DLlet");
     if (LET_EXPR (arg_node) != NULL) {
 
-        INFO_DL_LETNODE (arg_info) = arg_node;
-        INFO_DL_IEEEFLAG (arg_info) = 0;
+        INFO_LETNODE (arg_info) = arg_node;
+        INFO_IEEEFLAG (arg_info) = 0;
 
         if ((LET_IDS (arg_node) != NULL) && (IDS_AVIS (LET_IDS (arg_node)) != NULL)) {
-            INFO_DL_NTYPE (arg_info) = AVIS_TYPE (IDS_AVIS (LET_IDS (arg_node)));
+            INFO_NTYPE (arg_info) = AVIS_TYPE (IDS_AVIS (LET_IDS (arg_node)));
         }
         LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
@@ -2828,11 +2824,11 @@ DLlet (node *arg_node, info *arg_info)
          * if optimization was neccessary:
          * both remaining nodes get arguments of start-assign-node
          */
-        if ((INFO_DL_OCCURENCEOFMOSTFREQUENTNODE (arg_info) > 1)
-            && ((!global.enforce_ieee) || (INFO_DL_IEEEFLAG (arg_info) == 0))) {
+        if ((INFO_OCCURENCEOFMOSTFREQUENTNODE (arg_info) > 1)
+            && ((!global.enforce_ieee) || (INFO_IEEEFLAG (arg_info) == 0))) {
             IntegrateResults (arg_info);
         }
-        INFO_DL_OCCURENCEOFMOSTFREQUENTNODE (arg_info) = 0;
+        INFO_OCCURENCEOFMOSTFREQUENTNODE (arg_info) = 0;
     }
     DBUG_RETURN (arg_node);
 }
@@ -2862,15 +2858,15 @@ DLap (node *arg_node, info *arg_info)
         /*
          * memorize MAINOPERATOR
          */
-        INFO_DL_MAINOPERATOR (arg_info) = arg_node;
+        INFO_MAINOPERATOR (arg_info) = arg_node;
 
         /*
          * is MAINOPERATOR supported?
          */
-        if (CheckOperator (INFO_DL_MAINOPERATOR (arg_info), arg_info)) {
+        if (CheckOperator (INFO_MAINOPERATOR (arg_info), arg_info)) {
 
-            INFO_DL_OPTLIST (arg_info) = NULL;
-            INFO_DL_NONOPTLIST (arg_info) = NULL;
+            INFO_OPTLIST (arg_info) = NULL;
+            INFO_NONOPTLIST (arg_info) = NULL;
 
             /*
              * investigate the most frequent node
@@ -2880,14 +2876,16 @@ DLap (node *arg_node, info *arg_info)
             /*
              * Exist an optimization case?
              */
-            if ((INFO_DL_OCCURENCEOFMOSTFREQUENTNODE (arg_info) > 1)
-                && ((!global.enforce_ieee) || (INFO_DL_IEEEFLAG (arg_info) == 0))) {
+            if ((INFO_OCCURENCEOFMOSTFREQUENTNODE (arg_info) > 1)
+                && ((!global.enforce_ieee) || (INFO_IEEEFLAG (arg_info) == 0))) {
 
                 /*
                  * increase optimization counter
                  */
 
-                dl_expr = dl_expr + INFO_DL_OCCURENCEOFMOSTFREQUENTNODE (arg_info) - 1;
+                global.optcounters.dl_expr = global.optcounters.dl_expr
+                                             + INFO_OCCURENCEOFMOSTFREQUENTNODE (arg_info)
+                                             - 1;
 
                 /*
                  * Create OPTLIST and NONOPTLIST in regard to MOSTFREQUENTNODE
@@ -2913,10 +2911,10 @@ DLap (node *arg_node, info *arg_info)
                 /*
                  * connect node in OPTLIST / NONOPTLIST till only one assign-node remain
                  */
-                INFO_DL_NONOPTLIST (arg_info)
-                  = CommitAssignNodes (INFO_DL_NONOPTLIST (arg_info), arg_info);
-                INFO_DL_OPTLIST (arg_info)
-                  = CommitAssignNodes (INFO_DL_OPTLIST (arg_info), arg_info);
+                INFO_NONOPTLIST (arg_info)
+                  = CommitAssignNodes (INFO_NONOPTLIST (arg_info), arg_info);
+                INFO_OPTLIST (arg_info)
+                  = CommitAssignNodes (INFO_OPTLIST (arg_info), arg_info);
 
                 /*
                  * connect MFN with remaining node in OPTLIST
@@ -2925,7 +2923,7 @@ DLap (node *arg_node, info *arg_info)
             }
         }
 
-        INFO_DL_MAINOPERATOR (arg_info) = NULL;
+        INFO_MAINOPERATOR (arg_info) = NULL;
     }
 
     DBUG_RETURN (arg_node);
@@ -2956,15 +2954,15 @@ DLprf (node *arg_node, info *arg_info)
         /*
          * memorize MAINOPERATOR
          */
-        INFO_DL_MAINOPERATOR (arg_info) = arg_node;
+        INFO_MAINOPERATOR (arg_info) = arg_node;
 
         /*
          * is MAINOPERATOR supported?
          */
-        if (CheckOperator (INFO_DL_MAINOPERATOR (arg_info), arg_info)) {
+        if (CheckOperator (INFO_MAINOPERATOR (arg_info), arg_info)) {
 
-            INFO_DL_OPTLIST (arg_info) = NULL;
-            INFO_DL_NONOPTLIST (arg_info) = NULL;
+            INFO_OPTLIST (arg_info) = NULL;
+            INFO_NONOPTLIST (arg_info) = NULL;
 
             /*
              * investigate the most frequent node
@@ -2974,14 +2972,16 @@ DLprf (node *arg_node, info *arg_info)
             /*
              * Exist an optimization case?
              */
-            if ((INFO_DL_OCCURENCEOFMOSTFREQUENTNODE (arg_info) > 1)
-                && ((!global.enforce_ieee) || (INFO_DL_IEEEFLAG (arg_info) == 0))) {
+            if ((INFO_OCCURENCEOFMOSTFREQUENTNODE (arg_info) > 1)
+                && ((!global.enforce_ieee) || (INFO_IEEEFLAG (arg_info) == 0))) {
 
                 /*
                  * increase optimization counter
                  */
 
-                dl_expr = dl_expr + INFO_DL_OCCURENCEOFMOSTFREQUENTNODE (arg_info) - 1;
+                global.optcounters.dl_expr = global.optcounters.dl_expr
+                                             + INFO_OCCURENCEOFMOSTFREQUENTNODE (arg_info)
+                                             - 1;
 
                 /*
                  * Create OPTLIST and NONOPTLIST in regard to MOSTFREQUENTNODE
@@ -3007,10 +3007,10 @@ DLprf (node *arg_node, info *arg_info)
                 /*
                  * connect node in OPTLIST / NONOPTLIST till only one assign-node remain
                  */
-                INFO_DL_NONOPTLIST (arg_info)
-                  = CommitAssignNodes (INFO_DL_NONOPTLIST (arg_info), arg_info);
-                INFO_DL_OPTLIST (arg_info)
-                  = CommitAssignNodes (INFO_DL_OPTLIST (arg_info), arg_info);
+                INFO_NONOPTLIST (arg_info)
+                  = CommitAssignNodes (INFO_NONOPTLIST (arg_info), arg_info);
+                INFO_OPTLIST (arg_info)
+                  = CommitAssignNodes (INFO_OPTLIST (arg_info), arg_info);
 
                 /*
                  * connect MFN with remaining node in OPTLIST
@@ -3019,7 +3019,7 @@ DLprf (node *arg_node, info *arg_info)
             }
         }
 
-        INFO_DL_MAINOPERATOR (arg_info) = NULL;
+        INFO_MAINOPERATOR (arg_info) = NULL;
     }
 
     DBUG_RETURN (arg_node);

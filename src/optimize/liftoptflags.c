@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2005/09/04 12:52:11  ktr
+ * re-engineered the optimization cycle
+ *
  * Revision 1.2  2005/09/02 17:45:56  sah
  * switched to map_lac_funs
  *
@@ -15,6 +18,7 @@
 #include "traverse.h"
 #include "free.h"
 #include "internal_lib.h"
+#include "map_lac_funs.h"
 
 #include "liftoptflags.h"
 

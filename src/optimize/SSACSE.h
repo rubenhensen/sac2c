@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.9  2005/09/04 12:52:11  ktr
+ * re-engineered the optimization cycle
+ *
  * Revision 1.8  2004/11/26 19:43:02  khf
  * corrected traversal functions
  *
@@ -48,7 +51,8 @@
 
 #include "types.h"
 
-extern node *CSEdoCse (node *fundef, node *module);
+extern node *CSEdoCommonSubexpressionElimination (node *fundef);
+extern node *CSEdoCommonSubexpressionEliminationModule (node *module);
 
 extern node *CSEfundef (node *arg_node, info *arg_info);
 extern node *CSEarg (node *arg_node, info *arg_info);

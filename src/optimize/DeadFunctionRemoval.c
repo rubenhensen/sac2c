@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.23  2005/09/04 12:52:11  ktr
+ * re-engineered the optimization cycle
+ *
  * Revision 3.22  2005/08/19 22:58:25  sah
  * fixed an error message.
  *
@@ -44,7 +47,6 @@
 #include "globals.h"
 #include "traverse.h"
 
-#include "optimize.h"
 /*
  * INFO structure
  */
@@ -55,7 +57,7 @@ struct INFO {
 /*
  * INFO macros
  */
-#define INFO_DFR_SPINE(n) (n->flag)
+#define INFO_SPINE(n) (n->flag)
 
 /*
  * INFO functions
@@ -69,7 +71,7 @@ MakeInfo ()
 
     result = ILIBmalloc (sizeof (info));
 
-    INFO_DFR_SPINE (result) = 0;
+    INFO_SPINE (result) = 0;
 
     DBUG_RETURN (result);
 }
@@ -99,7 +101,7 @@ DFRdoDeadFunctionRemoval (node *arg_node)
 {
     info *arg_info;
 #ifndef DBUG_OFF
-    int mem_dead_fun = dead_fun;
+    int mem_dead_fun = global.optcounters.dead_fun;
 #endif
 
     DBUG_ENTER ("DFRdoDeadFunctionRemoval");
@@ -117,7 +119,8 @@ DFRdoDeadFunctionRemoval (node *arg_node)
 
     arg_info = FreeInfo (arg_info);
 
-    DBUG_PRINT ("OPT", ("                        result: %d", dead_fun - mem_dead_fun));
+    DBUG_PRINT ("OPT", ("                        result: %d",
+                        global.optcounters.dead_fun - mem_dead_fun));
     DBUG_PRINT ("OPTMEM",
                 ("mem currently allocated: %d bytes", global.current_allocated_mem));
 
@@ -166,7 +169,7 @@ DFRmodule (node *arg_node, info *arg_info)
      */
 
     if (MODULE_FUNS (arg_node) != NULL) {
-        INFO_DFR_SPINE (arg_info) = TRUE;
+        INFO_SPINE (arg_info) = TRUE;
         MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
     }
 
@@ -206,13 +209,13 @@ tagFundefAsNeeded (node *fundef, info *info)
         FUNDEF_ISNEEDED (fundef) = TRUE;
 
         if (FUNDEF_BODY (fundef) != NULL) {
-            bool oldspine = INFO_DFR_SPINE (info);
-            INFO_DFR_SPINE (info) = FALSE;
+            bool oldspine = INFO_SPINE (info);
+            INFO_SPINE (info) = FALSE;
 
             DBUG_PRINT ("DFR", (">>> inspecting body..."));
             FUNDEF_BODY (fundef) = TRAVdo (FUNDEF_BODY (fundef), info);
 
-            INFO_DFR_SPINE (info) = oldspine;
+            INFO_SPINE (info) = oldspine;
         }
     }
 
@@ -236,13 +239,13 @@ tagWrapperAsNeeded (node *wrapper, info *info)
         FUNDEF_ISNEEDED (wrapper) = TRUE;
 
         if (FUNDEF_BODY (wrapper) != NULL) {
-            bool oldspine = INFO_DFR_SPINE (info);
-            INFO_DFR_SPINE (info) = FALSE;
+            bool oldspine = INFO_SPINE (info);
+            INFO_SPINE (info) = FALSE;
 
             DBUG_PRINT ("DFR", (">>> inspecting body..."));
             FUNDEF_BODY (wrapper) = TRAVdo (FUNDEF_BODY (wrapper), info);
 
-            INFO_DFR_SPINE (info) = oldspine;
+            INFO_SPINE (info) = oldspine;
         } else if (FUNDEF_IMPL (wrapper) != NULL) {
             /*
              * we found a wrapper that has FUNDEF_IMPL set
@@ -274,7 +277,7 @@ DFRfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("DFRfundef");
 
-    if (INFO_DFR_SPINE (arg_info)) {
+    if (INFO_SPINE (arg_info)) {
         DBUG_PRINT ("DFR", ("Dead Function Removal in %s: %s",
                             (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
                             CTIitemName (arg_node)));
@@ -302,7 +305,7 @@ DFRfundef (node *arg_node, info *arg_info)
             DBUG_PRINT ("DFR", ("Going to delete %s for %s",
                                 (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
                                 CTIitemName (arg_node)));
-            dead_fun++;
+            global.optcounters.dead_fun++;
             arg_node = FREEdoFreeNode (arg_node);
         } else {
             /*

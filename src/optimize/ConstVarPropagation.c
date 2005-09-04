@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.28  2005/09/04 12:52:11  ktr
+ * re-engineered the optimization cycle
+ *
  * Revision 1.27  2005/09/01 07:10:23  ktr
  * cvp_expr is now incremented
  *
@@ -14,7 +17,6 @@
 #include "traverse.h"
 #include "dbug.h"
 #include "internal_lib.h"
-#include "optimize.h"
 #include "free.h"
 #include "DupTree.h"
 #include "new_types.h"
@@ -68,12 +70,14 @@ const int PROP_arrayconst = 4;
  */
 struct INFO {
     int propmode;
+    bool onefundef;
 };
 
 /*
  * INFO macros
  */
 #define INFO_PROPMODE(n) (n->propmode)
+#define INFO_ONEFUNDEF(n) (n->onefundef)
 
 /*
  * INFO functions
@@ -88,6 +92,7 @@ MakeInfo ()
     result = ILIBmalloc (sizeof (info));
 
     INFO_PROPMODE (result) = PROP_nothing;
+    INFO_ONEFUNDEF (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -192,12 +197,12 @@ CVPid (node *arg_node, info *arg_info)
                 && (TYgetDim (AVIS_TYPE (avis)) == 0)))) {
         arg_node = FREEdoFreeNode (arg_node);
         arg_node = COconstant2AST (TYgetValue (AVIS_TYPE (avis)));
-        cvp_expr += 1;
+        global.optcounters.cvp_expr += 1;
     } else {
         if ((INFO_PROPMODE (arg_info) & PROP_variable) && (AVIS_SSAASSIGN (avis) != NULL)
             && (NODE_TYPE (ASSIGN_RHS (AVIS_SSAASSIGN (avis))) == N_id)) {
             ID_AVIS (arg_node) = ID_AVIS (ASSIGN_RHS (AVIS_SSAASSIGN (avis)));
-            cvp_expr += 1;
+            global.optcounters.cvp_expr += 1;
         }
     }
 
@@ -556,6 +561,12 @@ CVPfundef (node *arg_node, info *arg_info)
 
     DBUG_PRINT ("OPT", ("Completed traversal of function %s", FUNDEF_NAME (arg_node)));
 
+    if (!INFO_ONEFUNDEF (arg_info)) {
+        if (FUNDEF_NEXT (arg_node) != NULL) {
+            FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+        }
+    }
+
     DBUG_RETURN (arg_node);
 }
 
@@ -578,6 +589,39 @@ CVPdoConstVarPropagation (node *arg_node)
     DBUG_ENTER ("ConstVarPropagation");
 
     arg_info = MakeInfo ();
+
+    INFO_ONEFUNDEF (arg_info) = FALSE;
+
+    TRAVpush (TR_cvp);
+    arg_node = TRAVdo (arg_node, arg_info);
+    TRAVpop ();
+
+    arg_info = FreeInfo (arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/********************************************************************
+ *
+ * function:
+ *   node* ConstVarPropagationOneFundef(node *arg_node)
+ *
+ * description:
+ *   This function is called to start this optimization.
+ *   Starting point of the traversal through the AST.
+ *
+ ********************************************************************/
+
+node *
+CVPdoConstVarPropagationOneFundef (node *arg_node)
+{
+    info *arg_info;
+
+    DBUG_ENTER ("ConstVarPropagation");
+
+    arg_info = MakeInfo ();
+
+    INFO_ONEFUNDEF (arg_info) = TRUE;
 
     TRAVpush (TR_cvp);
     arg_node = TRAVdo (arg_node, arg_info);

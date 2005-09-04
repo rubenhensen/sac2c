@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  2005/09/04 12:52:50  ktr
+ * re-engineered the optimization cycle
+ *
  * Revision 1.16  2005/09/03 08:47:28  ktr
  * CVP is now performed for all functions
  *
@@ -59,10 +62,7 @@
 #include "traverse.h"
 #include "globals.h"
 #include "dbug.h"
-#include "ConstVarPropagation.h"
-#include "deadcoderemoval.h"
 #include "print.h"
-#include <string.h>
 
 /** <!--********************************************************************-->
  *
@@ -143,17 +143,7 @@ EMAdoAllocation (node *syntax_tree)
      * !!! Only needed as long we retransform in SSA form
      */
     if (global.optimize.docvp) {
-        DBUG_PRINT ("EMM", ("Performing Constant and Varible Propagation (cvp)"));
-        fundef = MODULE_FUNS (syntax_tree);
-        while (fundef != NULL) {
-            fundef = CVPdoConstVarPropagation (fundef);
-
-            fundef = FUNDEF_NEXT (fundef);
-        }
-    }
-    if ((global.break_after == PH_alloc)
-        && (0 == strcmp (global.break_specifier, "cvp"))) {
-        goto DONE;
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_cvpemm, syntax_tree);
     }
 
     /*
@@ -162,17 +152,7 @@ EMAdoAllocation (node *syntax_tree)
      * !!! Only needed as long we retransform in SSA form
      */
     if (global.optimize.dodcr) {
-        DBUG_PRINT ("EMM", ("Applying Dead Code Removal (dcr)"));
-        fundef = MODULE_FUNS (syntax_tree);
-        while (fundef != NULL) {
-            fundef = DCRdoDeadCodeRemoval (fundef, syntax_tree);
-
-            fundef = FUNDEF_NEXT (fundef);
-        }
-    }
-    if ((global.break_after == PH_alloc)
-        && (0 == strcmp (global.break_specifier, "dcr"))) {
-        goto DONE;
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_dcremm, syntax_tree);
     }
 
     /*
@@ -194,17 +174,7 @@ EMAdoAllocation (node *syntax_tree)
      * Dead code removal
      */
     if (global.optimize.dodcr) {
-        DBUG_PRINT ("EMM", ("Applying Dead Code Removal (dcr2)"));
-        fundef = MODULE_FUNS (syntax_tree);
-        while (fundef != NULL) {
-            fundef = DCRdoDeadCodeRemoval (fundef, syntax_tree);
-
-            fundef = FUNDEF_NEXT (fundef);
-        }
-    }
-    if ((global.break_after == PH_alloc)
-        && (0 == strcmp (global.break_specifier, "dcr2"))) {
-        goto DONE;
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_dcremm2, syntax_tree);
     }
 
     /*
@@ -275,17 +245,7 @@ EMAdoAllocation (node *syntax_tree)
      * Dead code removal
      */
     if (global.optimize.dodcr) {
-        DBUG_PRINT ("EMM", ("Applying Dead Code Removal (dcr3)"));
-        fundef = MODULE_FUNS (syntax_tree);
-        while (fundef != NULL) {
-            fundef = DCRdoDeadCodeRemoval (fundef, syntax_tree);
-
-            fundef = FUNDEF_NEXT (fundef);
-        }
-    }
-    if ((global.break_after == PH_alloc)
-        && (0 == strcmp (global.break_specifier, "dcr3"))) {
-        goto DONE;
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_dcremm3, syntax_tree);
     }
 
     TRAVsetPreFun (TR_prt, NULL);

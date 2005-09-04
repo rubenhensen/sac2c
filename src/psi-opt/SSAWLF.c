@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.27  2005/09/04 12:54:00  ktr
+ * re-engineered the optimization cycle
+ *
  * Revision 1.26  2005/08/28 11:53:46  ktr
  * indented a comment
  *
@@ -157,7 +160,6 @@
 #include "ctinfo.h"
 #include "dbug.h"
 #include "traverse.h"
-#include "optimize.h"
 #include "SSAWithloopFolding.h"
 #include "SSAWLF.h"
 #include "shape.h"
@@ -1730,7 +1732,7 @@ WLFlet (node *arg_node, info *arg_info)
                                 NODE_LINE (arg_node)));
             Fold (idn, transformation, targetwln, substwln);
             DBUG_PRINT ("WLF", ("                               ...successful"));
-            wlf_expr++;
+            global.optcounters.wlf_expr++;
             /* the WL substwln is now referenced one times less*/
             (WITH_REFERENCES_FOLDED (substwln))++;
 

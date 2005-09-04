@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.29  2005/09/04 12:54:00  ktr
+ * re-engineered the optimization cycle
+ *
  * Revision 3.28  2005/01/11 13:32:21  cg
  * Converted output from Error.h to ctinfo.c
  *
@@ -166,7 +169,7 @@ AEdoArrayElimination (node *arg_node)
 {
     info *info;
 #ifndef DBUG_OFF
-    int mem_elim_arrays = elim_arrays;
+    int mem_elim_arrays = global.optcounters.elim_arrays;
 #endif
 
     DBUG_ENTER ("AEdoArrayElimination");
@@ -194,7 +197,7 @@ AEdoArrayElimination (node *arg_node)
         info = FreeInfo (info);
         /*act_tab=tmp_tab;*/
         DBUG_PRINT ("OPT", ("                        result: %d",
-                            elim_arrays - mem_elim_arrays));
+                            global.optcounters.elim_arrays - mem_elim_arrays));
     }
 
     DBUG_RETURN (arg_node);

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2005/09/04 12:52:11  ktr
+ * re-engineered the optimization cycle
+ *
  * Revision 1.2  2005/08/02 14:24:37  ktr
  * a seperate dead code inference traversal is now employed
  *
@@ -19,7 +22,8 @@
  * prefix: DCR
  *
  *****************************************************************************/
-extern node *DCRdoDeadCodeRemoval (node *fundef, node *modul);
+extern node *DCRdoDeadCodeRemoval (node *fundef);
+extern node *DCRdoDeadCodeRemovalModule (node *module);
 
 extern node *DCRfundef (node *arg_node, info *arg_info);
 extern node *DCRarg (node *arg_node, info *arg_info);

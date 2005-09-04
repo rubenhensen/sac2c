@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.47  2005/09/04 12:54:48  ktr
+# re-engineered the optimization cycle
+#
 # Revision 3.46  2005/09/02 17:45:01  sah
 # added map_lac_funs.o
 #
@@ -132,7 +135,7 @@ OBJS := tree_basic.o tree_compound.o free.o DupTree.o traverse.o \
         change_signature.o compare_tree.o wl_bounds.o \
         node_basic.o free_node.o free_attribs.o \
         traverse_tables.o traverse_helper.o check_lib.o check.o checktst.o \
-        prepare_inlining.o map_lac_funs.o
+        prepare_inlining.o map_lac_funs.o map_fun_trav.o
 
 
 all: $(OBJS)
