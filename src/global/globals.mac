@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.31  2005/09/04 12:57:11  ktr
+ * some changes relating to the new optimization phase.
+ *
  * Revision 1.30  2005/07/27 14:58:56  sah
  * added global.modulenamespace
  *
@@ -333,6 +336,11 @@ GLOBAL (int, cc_optimize, 0)
 /* C compiler level of optimization */
 
 /*
+ * Optimization counters
+ */
+GLOBAL (optimize_counter_t, optcounters, optimize_counter_init)
+
+/*
  * Command line options for triggering optimizations
  */
 
@@ -437,11 +445,6 @@ GLOBAL (int, initial_unified_heapsize, 0)
 
 /*
  * Print options
- */
-
-GLOBAL (bool, show_idx, FALSE)
-/*
- * Show index vector elimination information during printing.
  */
 
 GLOBAL (char **, prf_symbol, prf_symbol_init)
@@ -564,6 +567,11 @@ GLOBAL (char *, break_specifier, "")
 /*
  * Additional break specifier to allow breaking within a particular
  * compiler phase at any position.
+ */
+
+GLOBAL (char *, break_opt_specifier, "")
+/*
+ * Additional break specifier to allow breaking after a certain optimization
  */
 
 GLOBAL (genlib_flags_t, genlib, genlib_init)
