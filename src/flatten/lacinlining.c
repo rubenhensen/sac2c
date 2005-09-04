@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2005/09/04 12:48:54  ktr
+ * adapted to new global optimization counters
+ *
  * Revision 1.4  2005/07/21 12:00:58  sbs
  * moved freeing of lacinline functions into free
  *
@@ -17,8 +20,6 @@
  */
 
 #include "globals.h"
-#include "optimize.h"
-/* for global optimization counter inl_fun */
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "node_basic.h"
@@ -234,7 +235,7 @@ LINLassign (node *arg_node, info *arg_info)
 
         inlined = TRUE;
         INFO_CODE (arg_info) = NULL;
-        inl_fun++; /* global optimization counter */
+        global.optcounters.inl_fun++; /* global optimization counter */
 
         if (INFO_VARDECS (arg_info) != NULL) {
             BLOCK_VARDEC (FUNDEF_BODY (INFO_FUNDEF (arg_info)))
