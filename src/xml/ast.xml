@@ -120,6 +120,11 @@
           <node name="Ap" />
         </travuser>
       </traversal>
+      <traversal id="MFT" name="Map Traversal on Fundefs" default="sons" include="map_fun_trav.h" >
+        <travuser>
+          <node name="Fundef" />
+        </travuser>
+      </traversal>
       <traversal id="PINL" name="Prepare inlining" default="sons" include="prepare_inlining.h" >
         <travuser>
           <node name="Fundef" />
@@ -942,12 +947,6 @@
 	  <node name="With" />
 	</travuser>
       </traversal>
-      <traversal id="OPT" name="Optimize Traversal" default="sons" include="optimize.h" >
-	<travuser>
-	  <node name="Module" />
-	  <node name="Fundef" />
-        </travuser>
-      </traversal>
       <traversal id="TS" name="Print Type Statistics" default="sons" include="type_statistics.h" >
         <travuser>
           <node name="Fundef" />
@@ -1021,6 +1020,7 @@
       </traversal>
       <traversal id="UESD" name="UndoElimSubDiv" default="sons" include="UndoElimSubDiv.h" >
         <travuser>
+	  <node name="Fundef" />
 	  <node name="Block" />
           <node name="Let" />
 	  <node name="Assign" />
@@ -1057,7 +1057,6 @@
 	  <node name="Fundef" />
 	  <node name="Block" />
 	  <node name="Assign" />
-	  <node name="Ap" />
 	  <node name="Id" />
 	  <node name="With" />
 	  <node name="Genarray" />
@@ -4364,13 +4363,11 @@
         <attribute name="WLAA_Info" mandatory="yes">
           <type name="AccessInfo" />
           <phases>
-            <range from="wlaa" to="final" />
           </phases>
         </attribute>
         <attribute name="TSI_TileShp" mandatory="no">
           <type name="ShpSeg" />
           <phases>
-            <range from="tsi" to="final" />
           </phases>
         </attribute>
       </attributes>
