@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.23  2005/09/04 13:05:08  ktr
+ * added newline at end of file
+ *
  * Revision 1.22  2005/09/04 12:49:35  ktr
  * added new global optimization counters and made all optimizations proper subphases
  *
