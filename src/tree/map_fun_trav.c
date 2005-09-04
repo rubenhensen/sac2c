@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.2  2005/09/04 12:47:34  ktr
+ * traversal might work better with correct trav_tab
+ *
  * Revision 1.1  2005/09/04 12:10:48  ktr
  * Initial revision
  *
@@ -88,7 +91,7 @@ MFTdoMapFunTrav (node *arg_node, trav_p maptrav)
 
     INFO_MAPTRAV (localinfo) = maptrav;
 
-    TRAVpush (TR_mlf);
+    TRAVpush (TR_mft);
 
     if (MODULE_FUNS (arg_node) != NULL) {
         MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), localinfo);
