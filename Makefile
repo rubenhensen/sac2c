@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.192  2005/09/04 12:48:24  ktr
+# added map_fun_trav.o
+#
 # Revision 3.191  2005/09/02 17:45:28  sah
 # added map_lac_funs.o
 #
@@ -214,7 +217,7 @@ TREE= src/tree/traverse.o src/tree/tree_basic.o src/tree/free.o \
       src/tree/free_attribs.o src/tree/traverse_tables.o \
       src/tree/traverse_helper.o src/tree/check.o src/tree/check_lib.o \
       src/tree/checktst.o src/tree/prepare_inlining.o \
-      src/tree/map_lac_funs.o
+      src/tree/map_lac_funs.o src/tree/map_fun_trav.o
 
 SERIALIZE= src/serialize/serialize_node.o \
            src/serialize/serialize_attribs.o src/serialize/deserialize.o \
