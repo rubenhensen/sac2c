@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.39  2005/09/04 12:49:35  ktr
+ * added new global optimization counters and made all optimizations proper subphases
+ *
  * Revision 3.38  2005/08/24 10:27:02  ktr
  * added with-loop index annotation phase
  *
@@ -317,65 +320,70 @@ SUBPHASE (wlpg, "wlpg", "Generating full with-loop partitions",
 
 /***********************************************************************/
 
-PHASE (sacopt, "Running SAC optimizations", PHdummy)
+PHASE (sacopt, "Running SAC optimizations", OPTdoOptimize)
 
-SUBPHASE (inl, "inl", "Applying function inlining", PHdummy)
+SUBPHASE (inl, "inl", "Applying function inlining", INLdoInlining)
 
-SUBPHASE (dfr, "dfr", "Applying dead function removal", PHdummy)
+SUBPHASE (dfr, "dfr", "Removing dead functions", DFRdoDeadFunctionRemoval)
 
-SUBPHASE (cse, "cse", "Applying common subexpression elimination", PHdummy)
+SUBPHASE (dcr, "dcr", "Removing dead code", DCRdoDeadCodeRemovalModule)
 
-SUBPHASE (tup, "tup", "Applying type upgrade", PHdummy)
+SUBPHASE (intraopt, "cyc", "Applying intra-functional optimizations",
+          OPTdoIntraFunctionalOptimizations)
 
-SUBPHASE (cf, "cf", "Applying constant folding", PHdummy)
+SUBPHASE (cse, "cse", "Applying common subexpression elimination",
+          CSEdoCommonSubexpressionElimination)
 
-SUBPHASE (cvp, "cvp", "Propagating constants and variables", PHdummy)
+SUBPHASE (ili, "ili", "Infering loop invariant variables", ILIdoInferLoopInvariants)
 
-SUBPHASE (wlpg2, "wlpg2", "Generating full with-loop partitions", PHdummy)
+SUBPHASE (tup, "tup", "Applying type upgrade", TUPdoTypeUpgrade)
 
-SUBPHASE (wlf, "wlf", "Applying with-loop folding", PHdummy)
+SUBPHASE (ntccyc, "tup", "Applying type upgrade", NTCdoNewTypeCheckOneFunction)
 
-SUBPHASE (cf2, "cf2", "Applying constant folding again", PHdummy)
+SUBPHASE (cf, "cf", "Applying constant folding", CFdoConstantFolding)
 
-SUBPHASE (dcr, "dcr", "Applying dead code removal", PHdummy)
+SUBPHASE (cvp, "cvp", "Propagating constants and variables",
+          CVPdoConstVarPropagationOneFundef)
 
-SUBPHASE (wls, "wls", "Applying with-loop scalarization", PHdummy)
+SUBPHASE (wlpgcyc, "wlpg", "Generating full with-loop partitions",
+          WLPGdoWlPartitionGenerationOpt)
 
-SUBPHASE (lur, "lur", "Applying (with-)loop unrolling", PHdummy)
+SUBPHASE (wlf, "wlf", "Applying with-loop folding", WLFdoWLF)
 
-SUBPHASE (cf3, "cf3", "Applying constant folding again", PHdummy)
+SUBPHASE (dcrcyc, "dcr", "Applying dead code removal", DCRdoDeadCodeRemoval)
 
-SUBPHASE (lir, "lir", "Applying loop invariant removal", PHdummy)
+SUBPHASE (wls, "wls", "Applying with-loop scalarization", WLSdoWithloopScalarization)
 
-SUBPHASE (esd, "esd", "Eliminating subtraction and division operators", PHdummy)
+SUBPHASE (lur, "lur", "Applying (with-)loop unrolling", LURdoLoopUnrolling)
 
-SUBPHASE (al, "al", "Applying associative law", PHdummy)
+SUBPHASE (linlcyc, "linl", "Inlining degenerated LaC functions",
+          LINLdoLACInliningOneFundef)
 
-SUBPHASE (dl, "dl", "Applying distributive law", PHdummy)
+SUBPHASE (lir, "lir", "Applying loop invariant removal", LIRdoLoopInvariantRemoval)
 
-SUBPHASE (uesd, "uesd", "Reintroducing subtraction and division operators", PHdummy)
+SUBPHASE (etc, "etc", "Eliminating typeconv primitives", ETCdoEliminateTypeConversions)
 
-SUBPHASE (dcr2, "dcr2", "Applying dead code removal again", PHdummy)
+SUBPHASE (esd, "esd", "Eliminating subtraction and division operators", ESDdoElimSubDiv)
 
-SUBPHASE (wlfs, "wlfs", "Applying with-loop fusion", PHdummy)
+SUBPHASE (al, "al", "Applying associative law", ASSOCdoAssociativityOptimizationOneFundef)
 
-SUBPHASE (cse2, "cse2", "Applying common subexpression elimination again", PHdummy)
+SUBPHASE (dl, "dl", "Applying distributive law", DLdoDistributiveLaw)
 
-SUBPHASE (dcr3, "dcr3", "Applying dead code removal again", PHdummy)
+SUBPHASE (dfrcyc, "dfr", "Removing dead functions", DFRdoDeadFunctionRemoval)
 
-SUBPHASE (ussa, "ussa", "Converting from SSA form", USSATdoUndoSsaTransform)
+SUBPHASE (sisi, "sisi", "Simplifying function signatures", SISIdoSignatureSimplification)
 
-SUBPHASE (fun2lac, "fun2lac", "Reintroducing loops and conditionals", F2LdoFun2Lac)
+SUBPHASE (uesd, "uesd", "Reintroducing subtraction and division operators",
+          UESDdoUndoElimSubDiv)
 
-SUBPHASE (lacinl, "lacinl", "Inlining LaC functions", LINLdoLACInlining)
+SUBPHASE (dcr2, "dcr2", "Applying dead code removal again", DCRdoDeadCodeRemovalModule)
 
-SUBPHASE (wlaa, "wlaa", "Running with-loop array access analysis", PHdummy)
+SUBPHASE (wlfs, "wlfs", "Applying with-loop fusion", WLFSdoWithloopFusion)
 
-SUBPHASE (ap, "ap", "Applying array padding", PHdummy)
+SUBPHASE (cse2, "cse", "Elimininating common subexpressions",
+          CSEdoCommonSubexpressionEliminationModule)
 
-SUBPHASE (tsi, "tsi", "Applying tile size inference", PHdummy)
-
-SUBPHASE (dfr2, "dfr2", "Applying dead function removal", PHdummy)
+SUBPHASE (dcr3, "dcr3", "Removing dead code", DCRdoDeadCodeRemovalModule)
 
 SUBPHASE (ivei, "ivei", "Applying index vector elimination (inference)",
           IVEIdoIndexVectorEliminationInference)
@@ -384,6 +392,12 @@ SUBPHASE (ive, "ive", "Applying index vector elimination", IVEdoIndexVectorElimi
 
 SUBPHASE (wlidx, "wlidx", "Annoting offset variable at with-loops",
           WLIDXdoAnnotateWithloopIdxs)
+
+SUBPHASE (ussa, "ussa", "Converting from SSA form", USSATdoUndoSsaTransform)
+
+SUBPHASE (fun2lac, "fun2lac", "Reintroducing loops and conditionals", F2LdoFun2Lac)
+
+SUBPHASE (lacinl, "lacinl", "Inlining LaC functions", LINLdoLACInlining)
 
 /***********************************************************************/
 
@@ -399,10 +413,9 @@ SUBPHASE (lac2fun2, "lac2fun2", "Eliminating loops and conditionals", L2FdoLac2F
 
 SUBPHASE (ssa2, "ssa2", "Establishing static single assignment form", SSATdoTransform)
 
-SUBPHASE (cvpemm, "cvpemm", "Propagating constants and variables",
-          CVPdoConstVarPropagation)
+SUBPHASE (cvpemm, "cvp", "Propagating constants and variables", CVPdoConstVarPropagation)
 
-SUBPHASE (dcremm, "dcremm", "Removing dead code", DCRdoDeadCodeRemoval)
+SUBPHASE (dcremm, "dcr", "Removing dead code", DCRdoDeadCodeRemovalModule)
 
 SUBPHASE (asd, "asd", "AUD/SCL distinction", ASDdoAudSclDistinction)
 
@@ -410,7 +423,7 @@ SUBPHASE (copy, "copy", "Making copy operations explicit", EMECdoExplicitCopy)
 
 SUBPHASE (alloc, "alloc", "Introducing explicit allocation statements ", EMALdoAlloc)
 
-SUBPHASE (dcremm2, "dcremm2", "Removing dead code", DCRdoDeadCodeRemoval)
+SUBPHASE (dcremm2, "dcr2", "Removing dead code", DCRdoDeadCodeRemovalModule)
 
 SUBPHASE (rci, "rci", "Inferring reuse candidates", EMRIdoReuseInference)
 
@@ -430,7 +443,7 @@ SUBPHASE (ipc, "ipc", "Identfying in-place updates", EMIPdoInplaceComputation)
 
 SUBPHASE (dr, "dr", "Exploiting data reuse", EMDRdoDataReuse)
 
-SUBPHASE (dcremm3, "dcremm3", "Removing dead code", DCRdoDeadCodeRemoval)
+SUBPHASE (dcremm3, "dcr3", "Removing dead code", DCRdoDeadCodeRemovalModule)
 
 /***********************************************************************/
 

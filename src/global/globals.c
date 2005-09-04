@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.85  2005/09/04 12:49:35  ktr
+ * added new global optimization counters and made all optimizations proper subphases
+ *
  * Revision 3.84  2005/03/10 09:41:09  cg
  * Removed compiler_phase_name_init, do_lac2fun_init and do_fun2lac_init.
  *
@@ -531,6 +534,11 @@ static optimize_flags_t optimize_all_init = {
 
 static optimize_flags_t optimize_none_init = {
 #define OPTIMIZEprod(prod) FALSE,
+#include "optimize.mac"
+};
+
+static optimize_counter_t optimize_counter_init = {
+#define OPTCOUNTERid(id) 0,
 #include "optimize.mac"
 };
 

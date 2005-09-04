@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2005/09/04 12:49:35  ktr
+ * added new global optimization counters and made all optimizations proper subphases
+ *
  * Revision 1.5  2005/07/12 12:57:44  jhb
  * changed the start of the checks
  *
@@ -25,6 +28,8 @@
 #include "ctinfo.h"
 #include "globals.h"
 #include "internal_lib.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
 
 #include "phase.h"
 
@@ -63,6 +68,26 @@ static const phase_fun_p subphase_fun[] = {
 #include "phase_info.mac"
   PHdummy};
 
+static compiler_subphase_t firstoptimization;
+
+static bool
+BreakAfterEarlierOptimization (compiler_subphase_t phase)
+{
+    bool res = FALSE;
+    compiler_subphase_t sp = firstoptimization;
+
+    DBUG_ENTER ("BreakAfterEarlierOptimization");
+
+    while (sp != phase) {
+        if (ILIBstringCompare (global.break_opt_specifier, subphase_specifier[sp])) {
+            res = TRUE;
+        }
+        sp++;
+    }
+
+    DBUG_RETURN (res);
+}
+
 const char *
 PHphaseName (compiler_phase_t phase)
 {
@@ -77,6 +102,16 @@ PHsubPhaseName (compiler_subphase_t subphase)
     DBUG_ENTER ("PHsubPhaseName");
 
     DBUG_RETURN (subphase_name[subphase]);
+}
+
+void
+PHsetFirstOptimization (compiler_subphase_t subphase)
+{
+    DBUG_ENTER ("PHsetFirstOptimization");
+
+    firstoptimization = subphase;
+
+    DBUG_VOID_RETURN;
 }
 
 node *
@@ -144,6 +179,54 @@ PHrunCompilerSubPhase (compiler_subphase_t subphase, node *syntax_tree)
     }
 
     DBUG_RETURN (syntax_tree);
+}
+
+node *
+PHrunOptimizationInCycle (compiler_subphase_t subphase, int pass, node *syntax_tree)
+{
+    bool lastphase;
+
+    DBUG_ENTER ("PHrunOptimizationInCycle");
+
+    if ((!ILIBstringCompare (global.break_specifier,
+                             subphase_specifier[global.compiler_subphase]))
+        || (global.break_cycle_specifier == -1) || (pass < global.break_cycle_specifier)
+        || ((pass == global.break_cycle_specifier)
+            && (!BreakAfterEarlierOptimization (subphase)))) {
+
+        DBUG_EXECUTE ("OPT", CTIstate ("****** %s ...", PHsubPhaseName (subphase)););
+
+        syntax_tree = subphase_fun[subphase](syntax_tree);
+
+        CTIabortOnError ();
+
+        if (NODE_TYPE (syntax_tree) == N_fundef) {
+            syntax_tree = TCappendFundef (syntax_tree, DUPgetCopiedSpecialFundefs ());
+        } else {
+            MODULE_FUNS (syntax_tree)
+              = TCappendFundef (MODULE_FUNS (syntax_tree), DUPgetCopiedSpecialFundefs ());
+        }
+
+        if ((global.treecheck) && (syntax_tree != NULL)) {
+            syntax_tree = CHKdoTreeCheck (syntax_tree);
+        }
+    }
+
+    DBUG_RETURN (syntax_tree);
+}
+
+bool
+PHbreakAfterCurrentPass (int pass)
+{
+    bool res;
+
+    DBUG_ENTER ("PHbreakAfterCurrentPass");
+
+    res = (ILIBstringCompare (global.break_specifier,
+                              subphase_specifier[global.compiler_subphase])
+           && (pass == global.break_cycle_specifier));
+
+    DBUG_RETURN (res);
 }
 
 node *

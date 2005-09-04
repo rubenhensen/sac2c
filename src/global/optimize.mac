@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.22  2005/09/04 12:49:35  ktr
+ * added new global optimization counters and made all optimizations proper subphases
+ *
  * Revision 1.21  2005/08/27 19:17:58  ktr
  * re-activated wlf, wlur
  *
@@ -90,10 +93,22 @@
 #define OPTIMIZEname(name)
 #endif
 
+#ifndef OPTCOUNTERid
+#define OPTCOUNTERid(id)
+#endif
+
+#ifndef OPTCOUNTERtext
+#define OPTCOUNTERtext(text)
+#endif
+
 #ifndef OPTIMIZE
 #define OPTIMIZE(str, abbr, devl, prod, name)                                            \
     OPTIMIZEstr (str) OPTIMIZEabbr (abbr) OPTIMIZEdevl (devl) OPTIMIZEprod (prod)        \
       OPTIMIZEname (name)
+#endif
+
+#ifndef OPTCOUNTER
+#define OPTCOUNTER(id, text) OPTCOUNTERid (id) OPTCOUNTERtext (text)
 #endif
 
 OPTIMIZE ("dcr", dcr, TRUE, TRUE, "dead code removal")
@@ -138,8 +153,41 @@ OPTIMIZE ("sfd", sfd, FALSE, FALSE, "static function dispatch (tup)")
 OPTIMIZE ("fsp", fsp, FALSE, FALSE, "function specilization (tup)")
 OPTIMIZE ("esd", esd, FALSE, FALSE, "eliminate substraction and division")
 
+OPTCOUNTER (dead_expr, "dead assignment(s) removed")
+OPTCOUNTER (dead_var, "dead variable declaration(s) removed")
+OPTCOUNTER (dead_fun, "dead function(s) removed")
+OPTCOUNTER (cf_expr, "primitive function application(s) eliminated")
+OPTCOUNTER (lir_expr, "loop invariant expression(s) moved")
+OPTCOUNTER (wlir_expr, "with-loop invariant expression(s) moved")
+OPTCOUNTER (inl_fun, "function(s) inlined")
+OPTCOUNTER (elim_arrays, "array(s) eliminated")
+OPTCOUNTER (lunr_expr, "loop(s) unrolled")
+OPTCOUNTER (wlunr_expr, "with-loop(s) unrolled")
+OPTCOUNTER (cse_expr, "common subexpression(s) eliminated")
+OPTCOUNTER (wlf_expr, "with-loop(s) folded")
+OPTCOUNTER (wlt_expr, "with-loop(s) transformed")
+OPTCOUNTER (wls_expr, "with-loop(s) scalarized")
+OPTCOUNTER (wlfs_expr, "with-loop(s) fused")
+OPTCOUNTER (al_expr, "associative law optimization(s)")
+OPTCOUNTER (dl_expr, "distributive law optimization(s)")
+OPTCOUNTER (etc_expr, "type conversions eliminated")
+OPTCOUNTER (ap_padded, "array type(s) padded")
+OPTCOUNTER (ap_unsupported, "array type(s) unsupported by padding")
+OPTCOUNTER (cvp_expr, "value(s) and variable(s) propagated")
+OPTCOUNTER (tup_tu_expr, "type(s) upgraded")
+OPTCOUNTER (tup_wdp_expr, "wrapped function(s) specialized")
+OPTCOUNTER (tup_fdp_expr, "user function(s) dispatched")
+OPTCOUNTER (tup_rtu_expr, "type(s) upgraded reversely")
+OPTCOUNTER (tup_fsp_expr, "user functions(s) dispatched")
+OPTCOUNTER (sisi_expr, "constant function argument(s) removed")
+
 #undef OPTIMIZEstr
 #undef OPTIMIZEabbr
 #undef OPTIMIZEdevl
 #undef OPTIMIZEprod
+#undef OPTIMIZEname
 #undef OPTIMIZE
+
+#undef OPTCOUNTERid
+#undef OPTCOUNTERtext
+#undef OPTCOUNTER

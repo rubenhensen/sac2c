@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.94  2005/09/04 12:49:35  ktr
+ * added new global optimization counters and made all optimizations proper subphases
+ *
  * Revision 3.93  2005/06/02 15:02:37  sah
  * added -Mlib option and corresponding implementation
  *
@@ -387,43 +390,22 @@ OPTanalyseCommandline (node *syntax_tree)
 
         ARG = strtok (ARG, ":");
         ARG_RANGE (global.break_after, 1, 25);
-        switch (global.break_after) {
-        case PH_sacopt:
-            global.show_idx = TRUE;
-            break;
-        default:
-            break;
-        }
 
         ARG = strtok (NULL, ":");
         if (ARG != NULL) {
-            if (0 == strncmp (ARG, "cyc", 3)) {
-                if (strspn (ARG + 3, "0123456789") != strlen (ARG + 3)) {
-                    ARG = break_arg;
-                    ARGS_ERROR ("Break cycle specifier not a number");
-                } else {
-                    global.break_cycle_specifier = atoi (ARG + 3);
+            global.break_specifier = ILIBstringCopy (ARG);
 
-                    ARG = strtok (NULL, ":");
+            ARG = strtok (NULL, ":");
+            if (ARG != NULL) {
+                ARG_NUM (global.break_cycle_specifier);
 
-                    if (ARG == NULL) {
-                        ARG = break_arg;
-                        ARGS_ERROR ("Break specifier missing");
-                    } else {
-                        global.break_specifier = ILIBstringCopy (ARG);
-                    }
-                }
-            } else {
-                global.break_cycle_specifier = 0;
-
-                if (ARG == NULL) {
-                    ARG = break_arg;
-                    ARGS_ERROR ("Break specifier missing");
-                } else {
-                    global.break_specifier = ILIBstringCopy (ARG);
+                ARG = strtok (NULL, ":");
+                if (ARG != NULL) {
+                    global.break_opt_specifier = ILIBstringCopy (ARG);
                 }
             }
         }
+
         break_arg = ILIBfree (break_arg);
     }
     ARGS_OPTION_END ("b");
