@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.40  2005/09/05 19:20:36  ktr
+ * switched ntc, tup
+ *
  * Revision 3.39  2005/09/04 12:49:35  ktr
  * added new global optimization counters and made all optimizations proper subphases
  *
@@ -336,9 +339,9 @@ SUBPHASE (cse, "cse", "Applying common subexpression elimination",
 
 SUBPHASE (ili, "ili", "Infering loop invariant variables", ILIdoInferLoopInvariants)
 
-SUBPHASE (tup, "tup", "Applying type upgrade", TUPdoTypeUpgrade)
+SUBPHASE (ntccyc, "ntc", "Applying type upgrade", NTCdoNewTypeCheckOneFunction)
 
-SUBPHASE (ntccyc, "tup", "Applying type upgrade", NTCdoNewTypeCheckOneFunction)
+SUBPHASE (tup, "tup", "Applying type upgrade", TUPdoTypeUpgrade)
 
 SUBPHASE (cf, "cf", "Applying constant folding", CFdoConstantFolding)
 
