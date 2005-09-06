@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.142  2005/09/06 14:11:49  ktr
+ * added TCcountAssigns
+ *
  * Revision 3.141  2005/08/26 16:27:47  ktr
  * some cleanup
  *
@@ -1579,6 +1582,27 @@ TCmakeAssignInstr (node *instr, node *next)
     }
 
     return (result);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn int TCcountAssigns( node *arg_node)
+ *
+ *****************************************************************************/
+int
+TCcountAssigns (node *arg_node)
+{
+    int res;
+
+    DBUG_ENTER ("TCcountAssigns");
+
+    if (arg_node == NULL) {
+        res = 0;
+    } else {
+        res = 1 + TCcountAssigns (ASSIGN_NEXT (arg_node));
+    }
+
+    DBUG_RETURN (res);
 }
 
 /******************************************************************************

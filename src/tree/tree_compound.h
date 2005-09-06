@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.201  2005/09/06 14:11:49  ktr
+ * added TCcountAssigns
+ *
  * Revision 3.200  2005/08/26 16:27:47  ktr
  * some cleanup
  *
@@ -976,6 +979,8 @@ extern node *TCappendAssign (node *assign_chain, node *assign);
  ******************************************************************************/
 
 extern node *TCappendAssignIcm (node *assign, char *name, node *args);
+
+extern int TCcountAssigns (node *assigns);
 
 /*--------------------------------------------------------------------------*/
 
