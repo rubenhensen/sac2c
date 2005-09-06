@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2005/09/06 14:07:45  ktr
+ * Breaking after subphases now checks for the correct superphase, too.
+ *
  * Revision 1.6  2005/09/04 12:49:35  ktr
  * added new global optimization counters and made all optimizations proper subphases
  *
@@ -30,6 +33,7 @@
 #include "internal_lib.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
+#include "DupTree.h"
 
 #include "phase.h"
 
@@ -173,7 +177,8 @@ PHrunCompilerSubPhase (compiler_subphase_t subphase, node *syntax_tree)
         syntax_tree = CHKdoTreeCheck (syntax_tree);
     }
 
-    if (ILIBstringCompare (global.break_specifier, subphase_specifier[subphase])) {
+    if ((global.break_after == global.compiler_phase)
+        && (ILIBstringCompare (global.break_specifier, subphase_specifier[subphase]))) {
         CTIterminateCompilation (global.compiler_phase, global.break_specifier,
                                  syntax_tree);
     }
@@ -184,12 +189,11 @@ PHrunCompilerSubPhase (compiler_subphase_t subphase, node *syntax_tree)
 node *
 PHrunOptimizationInCycle (compiler_subphase_t subphase, int pass, node *syntax_tree)
 {
-    bool lastphase;
-
     DBUG_ENTER ("PHrunOptimizationInCycle");
 
-    if ((!ILIBstringCompare (global.break_specifier,
-                             subphase_specifier[global.compiler_subphase]))
+    if ((global.break_after != global.compiler_phase)
+        || (!ILIBstringCompare (global.break_specifier,
+                                subphase_specifier[global.compiler_subphase]))
         || (global.break_cycle_specifier == -1) || (pass < global.break_cycle_specifier)
         || ((pass == global.break_cycle_specifier)
             && (!BreakAfterEarlierOptimization (subphase)))) {
