@@ -780,10 +780,9 @@
           <node name="Assign" />
           <node name="Cond" />
           <node name="Let" />
-          <node name="Ap" />
+          <node name="Ids" />
           <node name="Array" />
           <node name="Prf" />
-          <node name="Code" />
           <node name="Funcond" />
         </travuser>
 	<travnone>
