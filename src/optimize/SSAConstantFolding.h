@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.19  2005/09/06 14:08:56  ktr
+ * Some cleanup. Right-hand sides of constant assignment will be replaced by the constant
+ *
  * Revision 1.18  2005/09/04 12:52:11  ktr
  * re-engineered the optimization cycle
  *
@@ -81,8 +84,6 @@
  * functions to handle SCOs
  */
 extern struct_constant *CFscoExpr2StructConstant (node *expr);
-extern struct_constant *CFscoArray2StructConstant (node *expr);
-extern struct_constant *CFscoScalar2StructConstant (node *expr);
 extern node *CFscoDupStructConstant2Expr (struct_constant *struc_co);
 extern struct_constant *CFscoFreeStructConstant (struct_constant *struc_co);
 
@@ -92,13 +93,10 @@ extern node *CFfundef (node *arg_node, info *arg_info);
 extern node *CFblock (node *arg_node, info *arg_info);
 extern node *CFassign (node *arg_node, info *arg_info);
 extern node *CFcond (node *arg_node, info *arg_info);
-extern node *CFap (node *arg_node, info *arg_info);
 extern node *CFlet (node *arg_node, info *arg_info);
+extern node *CFids (node *arg_node, info *arg_info);
 extern node *CFarray (node *arg_node, info *arg_info);
 extern node *CFprf (node *arg_node, info *arg_info);
-extern node *CFcode (node *arg_node, info *arg_info);
 extern node *CFfuncond (node *arg_node, info *arg_info);
-
-extern node *CFfoldPrfExpr (prf op, node **arg_expr);
 
 #endif /* SAC_ConstantFolding_h */

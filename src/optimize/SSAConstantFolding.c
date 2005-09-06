@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.92  2005/09/06 14:08:56  ktr
+ * Some cleanup. Right-hand sides of constant assignment will be replaced by the constant
+ *
  * Revision 1.91  2005/09/04 12:52:11  ktr
  * re-engineered the optimization cycle
  *
@@ -320,9 +323,7 @@
 struct INFO {
     bool remassign;
     node *fundef;
-    node *lhs;
-    node *postassign;
-    node *assign;
+    node *preassign;
 };
 
 /*
@@ -330,9 +331,7 @@ struct INFO {
  */
 #define INFO_REMASSIGN(n) (n->remassign)
 #define INFO_FUNDEF(n) (n->fundef)
-#define INFO_POSTASSIGN(n) (n->postassign)
-#define INFO_LHS(n) (n->lhs)
-#define INFO_ASSIGN(n) (n->assign)
+#define INFO_PREASSIGN(n) (n->preassign)
 
 /*
  * INFO functions
@@ -348,9 +347,7 @@ MakeInfo ()
 
     INFO_REMASSIGN (result) = FALSE;
     INFO_FUNDEF (result) = NULL;
-    INFO_POSTASSIGN (result) = NULL;
-    INFO_LHS (result) = NULL;
-    INFO_ASSIGN (result) = NULL;
+    INFO_PREASSIGN (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -364,17 +361,6 @@ FreeInfo (info *info)
 
     DBUG_RETURN (info);
 }
-
-/*
- * constant identifiers should be substituted by its constant value
- * also in the arg-chain of N_ap and N_prf nodes (not for applications
- * of special fundefs! there must always be identifers).
- */
-#define SUBST_ID_WITH_CONSTANT_IN_AP_ARGS TRUE
-
-#define SUBST_NONE 0
-#define SUBST_SCALAR 1
-#define SUBST_SCALAR_AND_ARRAY 2
 
 /* maximum of supported args for primitive functions */
 #define PRF_MAX_ARGS 3
@@ -390,14 +376,9 @@ FreeInfo (info *info)
 
 #define FIRST_CONST_ARG_OF_TWO(arg, arg_expr) ((arg[0] != NULL) && (arg_expr[1] != NULL))
 
-#define THREE_CONST_ARG(arg) ((arg[0] != NULL) && (arg[1] != NULL) && (arg[2] != NULL))
-
 #define ONE_ARG(arg_expr) (arg_expr[0] != NULL)
 
 #define TWO_ARG(arg_expr) ((arg_expr[0] != NULL) && (arg_expr[1] != NULL))
-
-#define THREE_ARG(arg)                                                                   \
-    ((arg_expr[0] != NULL) && (arg_expr[1] != NULL) && (arg_expr[2] != NULL))
 
 #define SECOND_CONST_ARG_OF_THREE(arg, arg_expr)                                         \
     ((arg_expr[0] != NULL) && (arg[1] != NULL) && (arg_expr[2] != NULL))
@@ -421,7 +402,6 @@ struct STRUCT_CONSTANT {
 #define SCO_ELEMDIM(n) (SHgetDim (SCO_SHAPE (n)) - COgetDim (SCO_HIDDENCO (n)))
 
 /* local used helper functions */
-static node *SetSsaAssign (node *chain, node *assign);
 static node **GetPrfArgs (node **array, node *prf_arg_chain, int max_args);
 static constant **Args2Const (constant **co_array, node **arg_expr, int max_args);
 static shape *GetShapeOfExpr (node *expr);
@@ -464,61 +444,6 @@ static node *Sel (node *idx_expr, node *array_expr);
 /******************************************************************************
  *
  * function:
- *   struct_constant *SCOExpr2StructConstant(node *expr)
- *
- * description:
- *   builds an constant of type T_hidden from an array or scalar in the AST.
- *   this allows to operate on structural constants like full constants.
- *
- *   this should later be integrated in a more powerful constants module.
- *
- *   be careful:
- *     the created structural constant contain pointers to elements of the
- *     array, so you MUST NEVER FREE the original expression before you
- *     have dupped the structural constant into a array!
- *
- *****************************************************************************/
-
-struct_constant *
-CFscoExpr2StructConstant (node *expr)
-{
-    struct_constant *struc_co;
-    int dim;
-
-    DBUG_ENTER ("SCOExpr2StructConstant");
-
-    struc_co = NULL;
-
-    if (NODE_TYPE (expr) == N_array) {
-        /* expression is an array */
-        struc_co = CFscoArray2StructConstant (expr);
-    } else {
-        if (NODE_TYPE (expr) == N_id) {
-            if (AVIS_SSAASSIGN (ID_AVIS (expr)) != NULL) {
-                /* expression is an identifier */
-                if (TUdimKnown (AVIS_TYPE (ID_AVIS (expr)))) {
-                    dim = TYgetDim (AVIS_TYPE (ID_AVIS (expr)));
-                } else {
-                    dim = -1;
-                }
-
-                if (dim == SCALAR) {
-                    /* id is a defined scalar */
-                    struc_co = CFscoScalar2StructConstant (expr);
-                } else if (dim > SCALAR) {
-                    /* id is a defined array */
-                    struc_co = CFscoArray2StructConstant (expr);
-                }
-            }
-        }
-    }
-
-    DBUG_RETURN (struc_co);
-}
-
-/******************************************************************************
- *
- * function:
  *   struct_constant *CFscoArray2StructConstant(node *expr)
  *
  * description:
@@ -527,8 +452,7 @@ CFscoExpr2StructConstant (node *expr)
  *   all array elements must be scalars!
  *
  *****************************************************************************/
-
-struct_constant *
+static struct_constant *
 CFscoArray2StructConstant (node *expr)
 {
     struct_constant *struc_co;
@@ -630,8 +554,7 @@ CFscoArray2StructConstant (node *expr)
  *   converts an scalar node to a structual constant (e.g. N_num, ... or N_id)
  *
  ******************************************************************************/
-
-struct_constant *
+static struct_constant *
 CFscoScalar2StructConstant (node *expr)
 {
     struct_constant *struc_co;
@@ -672,6 +595,61 @@ CFscoScalar2StructConstant (node *expr)
 
     } else {
         struc_co = NULL;
+    }
+
+    DBUG_RETURN (struc_co);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   struct_constant *SCOExpr2StructConstant(node *expr)
+ *
+ * description:
+ *   builds an constant of type T_hidden from an array or scalar in the AST.
+ *   this allows to operate on structural constants like full constants.
+ *
+ *   this should later be integrated in a more powerful constants module.
+ *
+ *   be careful:
+ *     the created structural constant contain pointers to elements of the
+ *     array, so you MUST NEVER FREE the original expression before you
+ *     have dupped the structural constant into a array!
+ *
+ *****************************************************************************/
+
+struct_constant *
+CFscoExpr2StructConstant (node *expr)
+{
+    struct_constant *struc_co;
+    int dim;
+
+    DBUG_ENTER ("SCOExpr2StructConstant");
+
+    struc_co = NULL;
+
+    if (NODE_TYPE (expr) == N_array) {
+        /* expression is an array */
+        struc_co = CFscoArray2StructConstant (expr);
+    } else {
+        if (NODE_TYPE (expr) == N_id) {
+            if (AVIS_SSAASSIGN (ID_AVIS (expr)) != NULL) {
+                /* expression is an identifier */
+                if (TUdimKnown (AVIS_TYPE (ID_AVIS (expr)))) {
+                    dim = TYgetDim (AVIS_TYPE (ID_AVIS (expr)));
+                } else {
+                    dim = -1;
+                }
+
+                if (dim == SCALAR) {
+                    /* id is a defined scalar */
+                    struc_co = CFscoScalar2StructConstant (expr);
+                } else if (dim > SCALAR) {
+                    /* id is a defined array */
+                    struc_co = CFscoArray2StructConstant (expr);
+                }
+            }
+        }
     }
 
     DBUG_RETURN (struc_co);
@@ -757,39 +735,42 @@ CFscoFreeStructConstant (struct_constant *struc_co)
  * functions for internal use only
  */
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *   node *SetSsaAssign(node *chain, node *assign)
- *
- * description:
- *   sets the AVIS_SSAASSIGN to the correct assignment.
- *   the backrefs may be wrong after Inlining, because DupTree is not able
- *   to correct them when dubbing an assignment chain only.
+ * @fn bool IsFullyConstantNode( node *arg_node)
  *
  *****************************************************************************/
-
-static node *
-SetSsaAssign (node *chain, node *assign)
+static bool
+IsFullyConstantNode (node *arg_node)
 {
-    DBUG_ENTER ("CFSetSSAASSIGN");
+    bool res;
 
-    if (chain != NULL) {
-        /* set current assign as defining assignement */
-        AVIS_SSAASSIGN (IDS_AVIS (chain)) = assign;
+    DBUG_ENTER ("IsFullyConstantNode");
 
-        /* check correct setting of SSAASSIGN() attribute */
-        if (AVIS_SSAASSIGN (IDS_AVIS (chain)) != assign) {
-            DBUG_PRINT ("WARN",
-                        ("mismatch SSAASSIGN link for %s - 1:%p - %p", IDS_NAME (chain),
-                         AVIS_SSAASSIGN (IDS_AVIS (chain)), assign));
+    switch (NODE_TYPE (arg_node)) {
+    case N_bool:
+    case N_char:
+    case N_num:
+    case N_float:
+    case N_double:
+        res = TRUE;
+        break;
+
+    case N_array: {
+        node *elems = ARRAY_AELEMS (arg_node);
+        res = TRUE;
+        while (res && (elems != NULL)) {
+            res = res && IsFullyConstantNode (EXPRS_EXPR (elems));
+            elems = EXPRS_NEXT (elems);
         }
+    } break;
 
-        /* traverse to next ids */
-        IDS_NEXT (chain) = SetSsaAssign (IDS_NEXT (chain), assign);
+    default:
+        res = FALSE;
+        break;
     }
 
-    DBUG_RETURN (chain);
+    DBUG_RETURN (res);
 }
 
 /******************************************************************************
@@ -1904,11 +1885,6 @@ CFfundef (node *arg_node, info *arg_info)
 
     INFO_FUNDEF (arg_info) = arg_node;
 
-    if ((FUNDEF_ARGS (arg_node) != NULL) && (FUNDEF_ISDOFUN (arg_node))) {
-        /* traverse args of fundef */
-        FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
-    }
-
     if (FUNDEF_BODY (arg_node) != NULL) {
         /* traverse block of fundef */
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
@@ -1959,46 +1935,31 @@ CFblock (node *arg_node, info *arg_info)
 node *
 CFassign (node *arg_node, info *arg_info)
 {
-    bool remove_assignment;
-    node *tmp;
-    node *old_assign;
+    bool remassign;
+    node *preassign;
 
     DBUG_ENTER ("CFassign");
 
-    /* stack current assignment */
-    old_assign = INFO_ASSIGN (arg_info);
-
-    /* init flags for possible code removal/movement */
-    INFO_REMASSIGN (arg_info) = FALSE;
-    INFO_POSTASSIGN (arg_info) = NULL;
-    INFO_ASSIGN (arg_info) = arg_node;
-    if (ASSIGN_INSTR (arg_node) != NULL) {
-        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
-    }
-
-    /* restore old assignment */
-    INFO_ASSIGN (arg_info) = old_assign;
+    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
     /* save removal flag for modifications in bottom-up traversal */
-    remove_assignment = INFO_REMASSIGN (arg_info);
-
-    /* integrate post assignments after current assignment */
-    ASSIGN_NEXT (arg_node)
-      = TCappendAssign (INFO_POSTASSIGN (arg_info), ASSIGN_NEXT (arg_node));
-    INFO_POSTASSIGN (arg_info) = NULL;
+    remassign = INFO_REMASSIGN (arg_info);
+    preassign = INFO_PREASSIGN (arg_info);
+    INFO_REMASSIGN (arg_info) = FALSE;
+    INFO_PREASSIGN (arg_info) = NULL;
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
     }
 
-    if (remove_assignment) {
+    if (remassign) {
         /* skip this assignment and free it */
         DBUG_PRINT ("CF", ("remove dead assignment"));
+        arg_node = FREEdoFreeNode (arg_node);
+    }
 
-        tmp = arg_node;
-        arg_node = ASSIGN_NEXT (arg_node);
-
-        tmp = FREEdoFreeNode (tmp);
+    if (preassign != NULL) {
+        arg_node = TCappendAssign (preassign, arg_node);
     }
 
     DBUG_RETURN (arg_node);
@@ -2021,34 +1982,13 @@ CFfuncond (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CFfuncond");
 
-    DBUG_ASSERT ((FUNCOND_IF (arg_node) != NULL), "missing condition in conditional");
-    DBUG_ASSERT ((FUNCOND_THEN (arg_node) != NULL), "missing then part in conditional");
-    DBUG_ASSERT ((FUNCOND_ELSE (arg_node) != NULL), "missing else part in conditional");
-
-    /*
-     * traverse condition to analyse for constant expression
-     * and substitute constants with their values to get
-     * a simple N_bool node for the condition (if constant)
-     */
-    if ((N_id == NODE_TYPE (FUNCOND_IF (arg_node)))
-        && (TYisAKV (AVIS_TYPE (ID_AVIS (FUNCOND_IF (arg_node)))))) {
-        node *tmp;
-
-        tmp = COconstant2AST (TYgetValue (AVIS_TYPE (ID_AVIS (FUNCOND_IF (arg_node)))));
-        FUNCOND_IF (arg_node) = FREEdoFreeNode (FUNCOND_IF (arg_node));
-        FUNCOND_IF (arg_node) = tmp;
-    }
-
     /* check for constant condition */
-    if (NODE_TYPE (FUNCOND_IF (arg_node)) == N_bool) {
+    if (TYisAKV (ID_NTYPE (FUNCOND_IF (arg_node)))) {
         node *tmp;
-
-        if (BOOL_VAL (FUNCOND_IF (arg_node)) == TRUE) {
-
+        if (COisTrue (TYgetValue (ID_NTYPE (FUNCOND_IF (arg_node))), TRUE)) {
             tmp = FUNCOND_THEN (arg_node);
             FUNCOND_THEN (arg_node) = NULL;
         } else {
-
             tmp = FUNCOND_ELSE (arg_node);
             FUNCOND_ELSE (arg_node) = NULL;
         }
@@ -2077,36 +2017,21 @@ CFcond (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CFcond");
 
-    DBUG_ASSERT ((COND_COND (arg_node) != NULL), "missing condition in conditional");
-    DBUG_ASSERT ((COND_THEN (arg_node) != NULL), "missing then part in conditional");
-    DBUG_ASSERT ((COND_ELSE (arg_node) != NULL), "missing else part in conditional");
-
-    /*
-     * traverse condition to analyse for constant expression
-     * and substitute constants with their values to get
-     * a simple N_bool node for the condition (if constant)
-     */
-
-    if ((N_id == NODE_TYPE (COND_COND (arg_node)))
-        && (TYisAKV (AVIS_TYPE (ID_AVIS (COND_COND (arg_node)))))) {
-        node *tmp;
-
-        tmp = COconstant2AST (TYgetValue (AVIS_TYPE (ID_AVIS (COND_COND (arg_node)))));
-        COND_COND (arg_node) = FREEdoFreeNode (COND_COND (arg_node));
-        COND_COND (arg_node) = tmp;
-    }
-
     /* check for constant condition */
-    if (NODE_TYPE (COND_COND (arg_node)) == N_bool) {
-        if (BOOL_VAL (COND_COND (arg_node)) == TRUE) {
-            DBUG_PRINT ("CF", ("found condition with condition==true, select then part"));
+    if (TYisAKV (ID_NTYPE (COND_COND (arg_node)))) {
+        if (COisTrue (TYgetValue (ID_NTYPE (COND_COND (arg_node))), TRUE)) {
+
+            /*  traverse then-part */
+            if (COND_THEN (arg_node) != NULL) {
+                COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
+            }
 
             /* select then-part for later insertion in assignment chain */
-            INFO_POSTASSIGN (arg_info) = BLOCK_INSTR (COND_THEN (arg_node));
+            INFO_PREASSIGN (arg_info) = BLOCK_INSTR (COND_THEN (arg_node));
 
-            if (NODE_TYPE (INFO_POSTASSIGN (arg_info)) == N_empty) {
+            if (NODE_TYPE (INFO_PREASSIGN (arg_info)) == N_empty) {
                 /* empty code block must not be moved */
-                INFO_POSTASSIGN (arg_info) = NULL;
+                INFO_PREASSIGN (arg_info) = NULL;
             } else {
                 /*
                  * delete pointer to codeblock to preserve assignments from
@@ -2114,17 +2039,27 @@ CFcond (node *arg_node, info *arg_info)
                  */
                 BLOCK_INSTR (COND_THEN (arg_node)) = NULL;
             }
+
+            /*
+             * if this is a do- or while function and the condition is evaluated
+             * to true we have an endless loop and will rise a warning message.
+             */
+            if (FUNDEF_ISDOFUN (INFO_FUNDEF (arg_info))) {
+                CTIwarnLine (NODE_LINE (arg_node),
+                             "Infinite loop detected, program may not terminate");
+            }
         } else {
-            /* select else part */
-            DBUG_PRINT ("CF",
-                        ("found condition with condition==false, select else part"));
+            /*  traverse else-part */
+            if (COND_ELSE (arg_node) != NULL) {
+                COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
+            }
 
             /* select else-part for later insertion in assignment chain */
-            INFO_POSTASSIGN (arg_info) = BLOCK_INSTR (COND_ELSE (arg_node));
+            INFO_PREASSIGN (arg_info) = BLOCK_INSTR (COND_ELSE (arg_node));
 
-            if (NODE_TYPE (INFO_POSTASSIGN (arg_info)) == N_empty) {
+            if (NODE_TYPE (INFO_PREASSIGN (arg_info)) == N_empty) {
                 /* empty code block must not be moved */
-                INFO_POSTASSIGN (arg_info) = NULL;
+                INFO_PREASSIGN (arg_info) = NULL;
             } else {
                 /*
                  * delete pointer to codeblock to preserve assignments from
@@ -2133,26 +2068,13 @@ CFcond (node *arg_node, info *arg_info)
                 BLOCK_INSTR (COND_ELSE (arg_node)) = NULL;
             }
         }
+
         /*
          * mark this assignment for removal, the selected code part will
          * be inserted behind this conditional assignment and traversed
          * for constant folding.
          */
         INFO_REMASSIGN (arg_info) = TRUE;
-
-        /*
-         * because there can be only one conditional in a special function
-         * now this special function contains no conditional and therefore
-         * is no special function anymore. this function can now be inlined
-         * without any problems.
-         * if this is a do- or while function and the condition is evaluated
-         * to true we have an endless loop and will rise a warning message.
-         */
-        if ((BOOL_VAL (COND_COND (arg_node)) == TRUE)
-            && (FUNDEF_ISDOFUN (INFO_FUNDEF (arg_info)))) {
-            CTIwarnLine (NODE_LINE (arg_node),
-                         "Infinite loop detected, program may not terminate");
-        }
 
         FUNDEF_ISDOFUN (INFO_FUNDEF (arg_info)) = FALSE;
         FUNDEF_ISCONDFUN (INFO_FUNDEF (arg_info)) = FALSE;
@@ -2161,16 +2083,8 @@ CFcond (node *arg_node, info *arg_info)
         /*
          * no constant condition:
          * do constant folding in conditional
-         * traverse then-part
          */
-        if (COND_THEN (arg_node) != NULL) {
-            COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
-        }
-
-        /* traverse else-part */
-        if (COND_ELSE (arg_node) != NULL) {
-            COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
-        }
+        arg_node = TRAVcont (arg_node, arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -2190,42 +2104,48 @@ CFlet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CFlet");
 
-    INFO_LHS (arg_info) = LET_IDS (arg_node);
+    if (!IsFullyConstantNode (LET_EXPR (arg_node))) {
+        if (LET_IDS (arg_node) != NULL) {
+            LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
+        }
 
-    LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
+        if (TCcountIds (LET_IDS (arg_node))
+            == TCcountAssigns (INFO_PREASSIGN (arg_info))) {
+
+            global.optcounters.cf_expr += TCcountIds (LET_IDS (arg_node));
+            INFO_REMASSIGN (arg_info) = TRUE;
+        } else {
+
+            if (INFO_PREASSIGN (arg_info) != NULL) {
+                INFO_PREASSIGN (arg_info) = FREEdoFreeTree (INFO_PREASSIGN (arg_info));
+            }
+            LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
+        }
+    }
 
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *   node* CFap(node *arg_node, info *arg_info)
- *
- * description:
- *   propagate constants and traverse in special function
+ * @fn node *CFids( node *arg_node, info *arg_info)
  *
  *****************************************************************************/
-
 node *
-CFap (node *arg_node, info *arg_info)
+CFids (node *arg_node, info *arg_info)
 {
-    info *new_arg_info;
+    DBUG_ENTER ("CFids");
 
-    DBUG_ENTER ("CFap");
+    if (TYisAKV (IDS_NTYPE (arg_node))) {
+        INFO_PREASSIGN (arg_info)
+          = TBmakeAssign (TBmakeLet (DUPdoDupNode (arg_node),
+                                     COconstant2AST (TYgetValue (IDS_NTYPE (arg_node)))),
+                          INFO_PREASSIGN (arg_info));
+        AVIS_SSAASSIGN (IDS_AVIS (arg_node)) = INFO_PREASSIGN (arg_info);
+    }
 
-    /* traverse special fundef without recursion */
-    if ((FUNDEF_ISLACFUN (AP_FUNDEF (arg_node)))
-        && (AP_FUNDEF (arg_node) != INFO_FUNDEF (arg_info))) {
-        /* stack arg_info frame for new fundef */
-        new_arg_info = MakeInfo ();
-
-        /* start traversal of special fundef */
-        AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), new_arg_info);
-
-        DBUG_PRINT ("CF", ("traversal of special fundef %s finished\n",
-                           FUNDEF_NAME (AP_FUNDEF (arg_node))));
-        new_arg_info = FreeInfo (new_arg_info);
+    if (IDS_NEXT (arg_node) != NULL) {
+        IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -2297,74 +2217,6 @@ CFarray (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* CFprf(node *arg_node, info *arg_info)
- *
- * description:
- *   evaluates primitive function with constant paramters and substitutes
- *   the function application by its value.
- *
- *****************************************************************************/
-
-node *
-CFprf (node *arg_node, info *arg_info)
-{
-    node *new_node;
-    node *arg_expr_mem[PRF_MAX_ARGS];
-    node **arg_expr = &arg_expr_mem[0];
-
-    DBUG_ENTER ("CFprf");
-
-    if (TYisAKV (IDS_NTYPE (INFO_LHS (arg_info)))) {
-        /*
-         * Replace superfluous primitive function with AKV
-         */
-        arg_node = FREEdoFreeNode (arg_node);
-        arg_node = COconstant2AST (TYgetValue (IDS_NTYPE (INFO_LHS (arg_info))));
-        global.optcounters.cf_expr++;
-    } else {
-        DBUG_PRINT ("CF", ("evaluating prf %s", global.mdb_prf[PRF_PRF (arg_node)]));
-
-        /* look up arguments */
-        arg_expr = GetPrfArgs (arg_expr, PRF_ARGS (arg_node), PRF_MAX_ARGS);
-
-        /* try some constant folding */
-        new_node = CFfoldPrfExpr (PRF_PRF (arg_node), arg_expr);
-
-        if (new_node != NULL) {
-            /* free this primitive function and substitute it with new node */
-            arg_node = FREEdoFreeTree (arg_node);
-            arg_node = new_node;
-
-            /* increment constant folding counter */
-            global.optcounters.cf_expr++;
-        }
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node* CFcode(node *arg_node, info *arg_info)
- *
- * description:
- *   traverses CODE_CBLOCK and not CEXPRS
- *
- *****************************************************************************/
-node *
-CFcode (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("CFNcode");
-
-    CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
  *   node *CFfoldPrfExpr(prf op, node **arg_expr)
  *
  * description:
@@ -2375,8 +2227,7 @@ CFcode (node *arg_node, info *arg_info)
  *   a computed result node or NULL if no computing is possible.
  *
  *****************************************************************************/
-
-node *
+static node *
 CFfoldPrfExpr (prf op, node **arg_expr)
 {
     node *new_node;
@@ -2696,11 +2547,50 @@ CFfoldPrfExpr (prf op, node **arg_expr)
 /******************************************************************************
  *
  * function:
+ *   node* CFprf(node *arg_node, info *arg_info)
+ *
+ * description:
+ *   evaluates primitive function with constant paramters and substitutes
+ *   the function application by its value.
+ *
+ *****************************************************************************/
+
+node *
+CFprf (node *arg_node, info *arg_info)
+{
+    node *new_node;
+    node *arg_expr_mem[PRF_MAX_ARGS];
+    node **arg_expr = &arg_expr_mem[0];
+
+    DBUG_ENTER ("CFprf");
+
+    DBUG_PRINT ("CF", ("evaluating prf %s", global.mdb_prf[PRF_PRF (arg_node)]));
+
+    /* look up arguments */
+    arg_expr = GetPrfArgs (arg_expr, PRF_ARGS (arg_node), PRF_MAX_ARGS);
+
+    /* try some constant folding */
+    new_node = CFfoldPrfExpr (PRF_PRF (arg_node), arg_expr);
+
+    if (new_node != NULL) {
+        /* free this primitive function and substitute it with new node */
+        arg_node = FREEdoFreeTree (arg_node);
+        arg_node = new_node;
+
+        /* increment constant folding counter */
+        global.optcounters.cf_expr++;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node* SSAConstantFolding(node* fundef)
  *
  * description:
- *   starts the DeadCodeRemoval for the given fundef. This fundef must not be
- *   a special fundef (these will be traversed in their order of application).
+ *   starts the DeadCodeRemoval for the given fundef.
  *
  ******************************************************************************/
 
@@ -2714,19 +2604,14 @@ CFdoConstantFolding (node *fundef)
     DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
                  "CFdoConstantFolding called for non-fundef node");
 
-    DBUG_PRINT ("OPT",
-                ("starting constant folding (ssa) in function %s", FUNDEF_NAME (fundef)));
-
     /* do not start traversal in special functions */
-    if (!(FUNDEF_ISLACFUN (fundef))) {
-        arg_info = MakeInfo ();
+    arg_info = MakeInfo ();
 
-        TRAVpush (TR_cf);
-        fundef = TRAVdo (fundef, arg_info);
-        TRAVpop ();
+    TRAVpush (TR_cf);
+    fundef = TRAVdo (fundef, arg_info);
+    TRAVpop ();
 
-        arg_info = FreeInfo (arg_info);
-    }
+    arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (fundef);
 }
