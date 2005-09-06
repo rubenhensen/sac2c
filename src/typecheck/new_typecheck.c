@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.88  2005/09/06 11:14:03  sbs
+ * changed NTCarray so that the first type encodes now the outer shape!!
+ *
  * Revision 3.87  2005/09/02 17:47:43  sah
  * lacfuns are now marked as not-typechecked when
  * typechecking one function
@@ -1321,37 +1324,48 @@ NTCexprs (node *arg_node, info *arg_info)
 node *
 NTCarray (node *arg_node, info *arg_info)
 {
-    int num_elems;
     ntype *type, *elems;
     te_info *info;
 
     DBUG_ENTER ("NTCarray");
 
-    /*
-     * First we collect the element types. NTCexprs puts them into a product type
-     * which is expected in INFO_NTC_TYPE( arg_info) afterwards!
-     * INFO_NTC_NUM_EXPRS_SOFAR is used to count the number of exprs "on the fly"!
-     */
-    INFO_NTC_NUM_EXPRS_SOFAR (arg_info) = 0;
-
     if (NULL != ARRAY_AELEMS (arg_node)) {
+        /*
+         * First we collect the element types. NTCexprs puts them into a product type
+         * which is expected in INFO_NTC_TYPE( arg_info) afterwards!
+         * INFO_NTC_NUM_EXPRS_SOFAR is used to count the number of exprs "on the fly"!
+         *
+         * ATTENTION!!
+         * We need to have the ARRAY_SHAPE in order to compute proper result types!
+         * In the initial type check, this is always an int[n] shape which means that
+         * it can be ignored. However, later, i.e., in TUP, this information may have
+         * changed (compare bug 111!).
+         * To cope with that situation properly, we add an artificial type
+         *   int[ARRAY_SHAPE]  which in NTCCTprf_array is combined with the element
+         * type by TYnestTypes.
+         */
+        INFO_NTC_NUM_EXPRS_SOFAR (arg_info) = 1;
+
         ARRAY_AELEMS (arg_node) = TRAVdo (ARRAY_AELEMS (arg_node), arg_info);
-    } else {
-        INFO_NTC_TYPE (arg_info) = TYmakeProductType (0);
-    }
 
-    DBUG_ASSERT (TYisProd (INFO_NTC_TYPE (arg_info)),
-                 "NTCexprs did not create a product type");
+        DBUG_ASSERT (TYisProd (INFO_NTC_TYPE (arg_info)),
+                     "NTCexprs did not create a product type");
 
-    elems = INFO_NTC_TYPE (arg_info);
-    INFO_NTC_TYPE (arg_info) = NULL;
+        /**
+         * Now, we create the type    int[ARRAY_SHAPE]:
+         */
+        INFO_NTC_NUM_EXPRS_SOFAR (arg_info)--;
+        INFO_NTC_TYPE (arg_info)
+          = TYsetProductMember (INFO_NTC_TYPE (arg_info),
+                                INFO_NTC_NUM_EXPRS_SOFAR (arg_info),
+                                TYmakeAKS (TYmakeSimpleType (T_int),
+                                           SHcopyShape (ARRAY_SHAPE (arg_node))));
+        elems = INFO_NTC_TYPE (arg_info);
+        INFO_NTC_TYPE (arg_info) = NULL;
 
-    /*
-     * Now, we built the resulting (AKS-)type type from the product type found:
-     */
-    num_elems = TYgetProductSize (elems);
-    if (num_elems > 0) {
-
+        /**
+         * Now, we built the resulting (AKS-)type type from the product type found:
+         */
         info = TEmakeInfoPrf (global.linenum, TE_prf, "array-constructor", NULL);
         type = NTCCTcomputeType (NTCCTprf_array, info, elems);
 
@@ -1360,14 +1374,14 @@ NTCarray (node *arg_node, info *arg_info)
     } else {
         /**
          * we are dealing with an empty array here!
-         * To get started, we assume all empty arrays to be of type int[0].
-         * If an other type is desired, it has to be casted to that type
-         * (which - at the time being - is not yet supported 8-)
+         * To get started, we assume all empty arrays to be of element type int.
+         * Hence, we simple create    int[ARRAY_SHAPE]{}  as result type:
          */
-        type
-          = TYmakeProductType (1, TYmakeAKV (TYmakeSimpleType (T_int),
-                                             COmakeConstant (T_int, SHcreateShape (1, 0),
-                                                             NULL)));
+        type = TYmakeProductType (1, TYmakeAKV (TYmakeSimpleType (T_int),
+                                                COmakeConstant (T_int,
+                                                                SHcopyShape (
+                                                                  ARRAY_SHAPE (arg_node)),
+                                                                NULL)));
     }
 
     INFO_NTC_TYPE (arg_info) = TYgetProductMember (type, 0);
