@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.2  2005/09/06 14:10:14  ktr
+ * the global optimization counter is now maintained
+ *
  * Revision 1.1  2005/08/20 12:11:28  ktr
  * Initial revision
  *
@@ -10,6 +13,7 @@
 #include "free.h"
 #include "traverse.h"
 #include "dbug.h"
+#include "globals.h"
 
 #include "elimtypeconv.h"
 
@@ -66,6 +70,8 @@ ETCprf (node *arg_node, info *arg_info)
             PRF_ARG2 (arg_node) = NULL;
             arg_node = FREEdoFreeNode (arg_node);
             arg_node = res;
+
+            global.optcounters.etc_expr += 1;
         }
     }
 
