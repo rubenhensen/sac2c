@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.113  2005/09/06 14:07:45  ktr
+ * introduced some calls to PHrunCompilerPhase
+ *
  * Revision 3.112  2005/08/19 17:19:33  sbs
  * added phase instc
  *
@@ -418,43 +421,22 @@ main (int argc, char *argv[])
 
     if (global.break_after == PH_elimudt)
         goto BREAK;
-    global.compiler_phase++;
 
     /*
      * withloop enhancement
      */
-    PHASE_PROLOG;
-    NOTE_COMPILER_PHASE;
-    syntax_tree = WLEdoWlEnhancement (syntax_tree); /* see WLEnhancement.c */
-    PHASE_DONE_EPILOG;
-    PHASE_EPILOG;
-
-    if (global.break_after == PH_wlenhance)
-        goto BREAK;
-    global.compiler_phase++;
+    syntax_tree = PHrunCompilerPhase (PH_wlenhance, syntax_tree);
 
     /*
      * Optimizations
      */
-    PHASE_PROLOG;
-    /*if (optimize) {*/
-    /* TODO - the new optimize flags disables the old kind of checking for
-     * optimizations */
-    NOTE_COMPILER_PHASE;
-    syntax_tree = OPTdoOptimize (syntax_tree); /* see optimize.c, Optimize() */
-    PHASE_DONE_EPILOG;
-    /*  }*/
-    PHASE_EPILOG;
-
+    syntax_tree = PHrunCompilerPhase (PH_sacopt, syntax_tree);
     syntax_tree = TSdoPrintTypeStatistics (syntax_tree);
-
-    if (global.break_after == PH_sacopt)
-        goto BREAK;
-    global.compiler_phase++;
 
     /*
      * WLtransform
      */
+    global.compiler_phase++;
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
 
@@ -465,21 +447,13 @@ main (int argc, char *argv[])
 
     if (global.break_after == PH_wltrans)
         goto BREAK;
-    global.compiler_phase++;
 
     /*
-     * Refcount I
+     * Explicit memory allocation
      */
-    PHASE_PROLOG;
-    NOTE_COMPILER_PHASE;
-    syntax_tree = EMAdoAllocation (syntax_tree); /* emalloc_tab */
-    PHASE_DONE_EPILOG;
-    PHASE_EPILOG;
+    syntax_tree = PHrunCompilerPhase (PH_alloc, syntax_tree);
 
-    if (global.break_after == PH_alloc)
-        goto BREAK;
     global.compiler_phase++;
-
     PHASE_PROLOG;
 
     /*
@@ -506,24 +480,16 @@ main (int argc, char *argv[])
 
     if (global.break_after == PH_multithread)
         goto BREAK;
-    global.compiler_phase++;
 
     /*
-     * Refcount II
+     * Reference counting
      */
-    PHASE_PROLOG;
-    NOTE_COMPILER_PHASE;
-    syntax_tree = EMRdoRefCountPhase (syntax_tree);
-    PHASE_DONE_EPILOG;
-    PHASE_EPILOG;
-
-    if (global.break_after == PH_refcnt)
-        goto BREAK;
-    global.compiler_phase++;
+    syntax_tree = PHrunCompilerPhase (PH_refcnt, syntax_tree);
 
     /*
      * MT II
      */
+    global.compiler_phase++;
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
 

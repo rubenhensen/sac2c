@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.41  2005/09/06 14:07:45  ktr
+ * introduced some calls to PHrunCompilerPhase
+ *
  * Revision 3.40  2005/09/05 19:20:36  ktr
  * switched ntc, tup
  *
@@ -312,7 +315,7 @@ SUBPHASE (eudt, "eudt", "Eliminating User-Defined Types", RCdoRemoveCasts)
 
 /***********************************************************************/
 
-PHASE (wlenhance, "Enhancing of with-loops", PHdummy)
+PHASE (wlenhance, "Enhancing of with-loops", WLEdoWlEnhancement)
 
 SUBPHASE (accu, "accu", "Introducing explicit accumulators", EAdoExplicitAccumulate)
 
@@ -410,7 +413,7 @@ SUBPHASE (wltra, "wltra", "Transforming with-loop representation", PHdummy)
 
 /***********************************************************************/
 
-PHASE (alloc, "Introducing explicit allocation instructions", PHdummy)
+PHASE (alloc, "Introducing explicit memory allocation instructions", EMAdoAllocation)
 
 SUBPHASE (lac2fun2, "lac2fun2", "Eliminating loops and conditionals", L2FdoLac2Fun)
 
@@ -474,7 +477,7 @@ SUBPHASE (concel, "concel", "Consolidating execution mode cells", PHdummy)
 
 /***********************************************************************/
 
-PHASE (refcnt, "Running explicit reference count inference system", PHdummy)
+PHASE (refcnt, "Running explicit reference count inference system", EMRdoRefCountPhase)
 
 SUBPHASE (rc, "rc", "Reference counting", RCIdoReferenceCounting)
 
