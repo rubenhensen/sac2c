@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.111  2005/09/06 11:14:38  sbs
+ * added TYisProdOfAKVafter
+ *
  * Revision 3.110  2005/09/02 17:48:30  sah
  * code for wrapper bodies is flattened
  * now correctly
@@ -3386,6 +3389,7 @@ TYisFun (ntype *type)
  *    bool TYisAKSSymb( ntype *type)
  *    bool TYisProdOfArrayOrFixedAlpha( ntype *type)
  *    bool TYisProdOfAKV( ntype *type)
+ *    bool TYisProdOfAKVafter( ntype *type, int 1)
  *    bool TYisProdContainingAKV( ntype *type)
  *    bool TYisProdOfArray( ntype *type)
  *
@@ -3452,10 +3456,30 @@ TYisProdOfAKV (ntype *args)
     ntype *arg;
     int i;
 
-    DBUG_ENTER ("TYisProdContainingAKV");
+    DBUG_ENTER ("TYisProdOfAKV");
 
     if (TYisProd (args)) {
         for (i = 0; i < TYgetProductSize (args); i++) {
+            arg = TYgetProductMember (args, i);
+            res = res && TYisAKV (arg);
+        }
+    } else {
+        res = FALSE;
+    }
+
+    DBUG_RETURN (res);
+}
+
+bool
+TYisProdOfAKVafter (ntype *args, int i)
+{
+    bool res = TRUE;
+    ntype *arg;
+
+    DBUG_ENTER ("TYisProdOfAKVafter");
+
+    if (TYisProd (args)) {
+        for (; i < TYgetProductSize (args); i++) {
             arg = TYgetProductMember (args, i);
             res = res && TYisAKV (arg);
         }

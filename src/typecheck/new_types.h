@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.35  2005/09/06 11:14:38  sbs
+ * added TYisProdOfAKVafter
+ *
  * Revision 3.34  2005/07/26 12:45:13  sah
  * added TYfoldFunctionInstances
  * added TYcontainsAlpha
@@ -376,6 +379,7 @@ extern bool TYisAKSSymb (ntype *);
 extern bool TYisProdOfArray (ntype *);
 extern bool TYisProdOfArrayOrFixedAlpha (ntype *);
 extern bool TYisProdOfAKV (ntype *);
+extern bool TYisProdOfAKVafter (ntype *, int);
 extern bool TYisProdContainingAKV (ntype *);
 
 extern int TYcountNonFixedAlpha (ntype *);
