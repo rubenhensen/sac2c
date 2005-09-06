@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.31  2005/09/06 11:13:19  sbs
+ * changed NTCCTprf_array so that the first type encodes now the outer shape!
+ *
  * Revision 1.30  2005/08/29 16:43:03  ktr
  * added support for prfs F_idx_sel, F_shape_sel, F_idx_shape_sel
  *
@@ -178,7 +181,7 @@ NTCCTprf_dummy (te_info *info, ntype *args)
 ntype *
 NTCCTprf_array (te_info *info, ntype *elems)
 {
-    ntype *elem, *elem2, *res;
+    ntype *outer, *elem, *elem2, *res;
     constant *val, *tmp;
     shape *shp;
     int num_elems;
@@ -187,10 +190,11 @@ NTCCTprf_array (te_info *info, ntype *elems)
 
     DBUG_ENTER ("NTCCTprf_array");
 
-    elem = TYcopyType (TYgetProductMember (elems, 0));
+    outer = TYgetProductMember (elems, 0);
+    elem = TYcopyType (TYgetProductMember (elems, 1));
     num_elems = TYgetProductSize (elems);
 
-    for (i = 1; i < num_elems; i++) {
+    for (i = 2; i < num_elems; i++) {
         elem2 = TYgetProductMember (elems, i);
         TEassureSameScalarType ("array element #0", elem, TEarrayElem2Obj (i), elem2);
         elem2 = TEassureSameShape ("array element #0", elem, TEarrayElem2Obj (i), elem2);
@@ -202,44 +206,23 @@ NTCCTprf_array (te_info *info, ntype *elems)
         res = TYmakeBottomType (err_msg);
 
     } else {
-        if (TYisProdOfAKV (elems)) {
-            val = COcopyConstant (TYgetValue (TYgetProductMember (elems, 0)));
-            for (i = 1; i < num_elems; i++) {
+        if (TYisProdOfAKVafter (elems, 1)) {
+            val = COcopyConstant (TYgetValue (TYgetProductMember (elems, 1)));
+            for (i = 2; i < num_elems; i++) {
                 tmp = val;
                 val = COcat (tmp, TYgetValue (TYgetProductMember (elems, i)));
                 tmp = COfreeConstant (tmp);
             }
-            shp = SHcreateShape (1, num_elems);
+            shp = TYgetShape (outer);
             tmp = COmakeConstantFromShape (SHappendShapes (shp, TYgetShape (elem)));
-            SHfreeShape (shp);
             res = TYmakeAKV (TYcopyType (TYgetScalar (elem)), COreshape (tmp, val));
             tmp = COfreeConstant (tmp);
             val = COfreeConstant (val);
         } else {
-            switch (TYgetConstr (elem)) {
-            case TC_aks:
-                shp = SHcreateShape (1, num_elems);
-                res = TYmakeAKS (TYgetScalar (elem),
-                                 SHappendShapes (shp, TYgetShape (elem)));
-                SHfreeShape (shp);
-                break;
-            case TC_akd:
-                res
-                  = TYmakeAKD (TYgetScalar (elem), TYgetDim (elem) + 1, SHmakeShape (0));
-                break;
-            case TC_audgz:
-            case TC_aud:
-                res = TYmakeAUDGZ (TYgetScalar (elem));
-                break;
-            default:
-                DBUG_ASSERT ((FALSE),
-                             "array elements of non array types not yet supported");
-                res = NULL; /* just to please gcc */
-            }
+            res = TYnestTypes (outer, elem);
         }
     }
-
-    TYfreeTypeConstructor (elem);
+    TYfreeType (elem);
 
     DBUG_RETURN (TYmakeProductType (1, res));
 }
