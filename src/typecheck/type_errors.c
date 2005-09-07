@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.27  2005/09/07 15:37:10  sbs
+ * added TEanotherArg2Obj, TEassureShpPlusDimMatchesDim, and TEassureShpIsPostfixOfShp
+ * needed for NTCCTprf_modarrayA
+ *
  * Revision 1.26  2005/08/29 16:43:03  ktr
  * added support for prfs F_idx_sel, F_shape_sel, F_idx_shape_sel
  *
@@ -587,6 +591,29 @@ TEarg2Obj (int pos)
 /******************************************************************************
  *
  * function:
+ *    char *TEanotherArg2Obj( int pos )
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+char *
+TEanotherArg2Obj (int pos)
+{
+    static char buffer[64];
+    char *tmp = &buffer[0];
+
+    DBUG_ENTER ("TEanotherArg2Obj");
+
+    tmp += sprintf (tmp, "argument #%d", pos);
+
+    DBUG_RETURN (&buffer[0]);
+}
+
+/******************************************************************************
+ *
+ * function:
  *    char *TEarrayElem2Obj( int pos )
  *
  * description:
@@ -902,6 +929,79 @@ TEassureShpMatchesDim (char *obj1, ntype *type1, char *obj2, ntype *type2)
     DBUG_VOID_RETURN;
 }
 
+/******************************************************************************
+ *
+ * function:
+ *    void TEassureShpPlusDimMatchesDim( char *obj1, ntype *type1,
+ *                                       char *obj2, ntype *type2,
+ *                                       char *obj3, ntype *type3)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+void
+TEassureShpPlusDimMatchesDim (char *obj1, ntype *type1, char *obj2, ntype *type2,
+                              char *obj3, ntype *type3)
+{
+    DBUG_ENTER ("TEassureShpPlusDimMatchesDim");
+
+    if (((TYgetConstr (type1) == TC_aks) || (TYgetConstr (type1) == TC_akv))
+        && ((TYgetConstr (type2) == TC_akv) || (TYgetConstr (type2) == TC_aks)
+            || (TYgetConstr (type2) == TC_akd))
+        && ((TYgetConstr (type3) == TC_akv) || (TYgetConstr (type3) == TC_aks)
+            || (TYgetConstr (type3) == TC_akd))
+        && (SHgetExtent (TYgetShape (type1), 0) + TYgetDim (type2) != TYgetDim (type3))) {
+        TEhandleError (global.linenum,
+                       "Shape of %s + dimensionality of %s "
+                       "should match dimensionality of %s;"
+                       " types found: %s ,  %s ,  and  %s",
+                       obj1, obj2, obj3, TYtype2String (type1, FALSE, 0),
+                       TYtype2String (type2, FALSE, 0), TYtype2String (type3, FALSE, 0));
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn void TEassureShpIsPostfixOfShp( char *obj1, ntype *type1,
+ *                                     char *obj2, ntype *type2)
+ *
+ *   @brief  makes shure, that if type1 and type2 are AKS, shape( type1)
+ *           constitutes a postfix of shape( type2).
+ *           It is assumed, that dim( type1) <= dim( type2).
+ *
+ ******************************************************************************/
+
+void
+TEassureShpIsPostfixOfShp (char *obj1, ntype *type1, char *obj2, ntype *type2)
+{
+    int i, offset;
+
+    DBUG_ENTER ("TEassureShpIsPostfixOfShp");
+
+    if (((TYgetConstr (type1) == TC_aks) || (TYgetConstr (type1) == TC_akv))
+        && ((TYgetConstr (type2) == TC_aks) || (TYgetConstr (type2) == TC_akv))) {
+        offset = TYgetDim (type2) - TYgetDim (type1);
+        for (i = 0; i < TYgetDim (type1); i++) {
+            if (SHgetExtent (TYgetShape (type1), i)
+                != SHgetExtent (TYgetShape (type2), i + offset)) {
+                TEhandleError (global.linenum,
+                               "the shape of %s should be a postfix of the shape of %s;"
+                               " types found: %s  and  %s",
+                               obj1, obj2, TYtype2String (type1, FALSE, 0),
+                               TYtype2String (type2, FALSE, 0));
+
+                i = TYgetDim (type1); /* skip the remainder */
+            }
+        }
+    }
+
+    DBUG_VOID_RETURN;
+}
+
 /** <!--********************************************************************-->
  *
  * @fn void TEassureValMatchesDim( char *obj1, ntype *type1,
@@ -943,7 +1043,7 @@ TEassureValMatchesDim (char *obj1, ntype *type1, char *obj2, ntype *type2)
  *
  *   @brief  makes shure, that if type1 is AKV and type2 is AKS, type1
  *           constitutes a legal index into type2.
- *           It is assumed, that the shape of type1 matches the dim of type2!!
+ *           It is assumed, that the shape of type1 <= the dim of type2!!
  *           NB: if type1 is scalar and type2 is a vector, that's ok too!!
  *
  ******************************************************************************/
@@ -958,7 +1058,7 @@ TEassureValMatchesShape (char *obj1, ntype *type1, char *obj2, ntype *type2)
 
     if ((TYgetConstr (type1) == TC_akv)
         && ((TYgetConstr (type2) == TC_aks) || (TYgetConstr (type2) == TC_akv))) {
-        dim = TYgetDim (type2);
+        dim = SHgetExtent (COgetShape (TYgetValue (type1)), 0);
         dv = (int *)COgetDataVec (TYgetValue (type1));
         for (i = 0; i < dim; i++) {
             if ((dv[i] < 0) || (dv[i] >= SHgetExtent (TYgetShape (type2), i))) {

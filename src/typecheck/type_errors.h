@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.19  2005/09/07 15:37:10  sbs
+ * added TEanotherArg2Obj, TEassureShpPlusDimMatchesDim, and TEassureShpIsPostfixOfShp
+ * needed for NTCCTprf_modarrayA
+ *
  * Revision 1.18  2005/08/29 16:43:03  ktr
  * added support for prfs F_idx_sel, F_shape_sel, F_idx_shape_sel
  *
@@ -68,6 +72,7 @@
 
 extern char *TEprfArg2Obj (const char *prf_str, int pos);
 extern char *TEarg2Obj (int pos);
+extern char *TEanotherArg2Obj (int pos);
 extern char *TEarrayElem2Obj (int pos);
 
 extern void TEassureScalar (char *obj, ntype *type);
@@ -82,6 +87,10 @@ extern void TEassureIntVect (char *obj, ntype *type);
 extern void TEassureIntVectLengthOne (char *obj, ntype *type);
 extern void TEassureNonNegativeValues (char *obj, ntype *type);
 extern void TEassureShpMatchesDim (char *obj1, ntype *type1, char *obj2, ntype *type2);
+extern void TEassureShpPlusDimMatchesDim (char *obj1, ntype *type1, char *obj2,
+                                          ntype *type2, char *obj3, ntype *type3);
+extern void TEassureShpIsPostfixOfShp (char *obj1, ntype *type1, char *obj2,
+                                       ntype *type2);
 extern void TEassureValMatchesDim (char *obj1, ntype *type1, char *obj2, ntype *type2);
 extern void TEassureValMatchesShape (char *obj1, ntype *type1, char *obj2, ntype *type2);
 extern void TEassureIdxMatchesShape (char *obj1, ntype *type1, char *obj2, ntype *type2);
