@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.89  2005/09/07 15:36:23  sbs
+ * now, the return type of a function is alpharized in single function mode
+ *
  * Revision 3.88  2005/09/06 11:14:03  sbs
  * changed NTCarray so that the first type encodes now the outer shape!!
  *
@@ -397,6 +400,10 @@ NTCdoNewTypeCheckOneFunction (node *arg_node)
          */
         MLFdoMapLacFuns (arg_node, TagAsUnchecked, NULL, NULL);
         arg_node = TagAsUnchecked (arg_node, NULL);
+
+        if (FUNDEF_RETS (arg_node) != NULL) {
+            FUNDEF_RETS (arg_node) = TUrettypes2alphaMax (FUNDEF_RETS (arg_node));
+        }
 
         TRAVpush (TR_ntc);
 
