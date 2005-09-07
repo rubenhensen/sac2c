@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.32  2005/09/07 15:35:47  sbs
+ * added NTCCTprf_modarrayA
+ *
  * Revision 1.31  2005/09/06 11:13:19  sbs
  * changed NTCCTprf_array so that the first type encodes now the outer shape!
  *
@@ -778,10 +781,11 @@ NTCCTprf_modarrayS (te_info *info, ntype *args)
 
     TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 3), val);
     TEassureScalar (TEprfArg2Obj (TEgetNameStr (info), 3), val);
-    TEassureSameSimpleType (TEarg2Obj (2), array, TEprfArg2Obj (TEgetNameStr (info), 3),
+    TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 1), array);
+    TEassureSameSimpleType (TEarg2Obj (1), array, TEprfArg2Obj (TEgetNameStr (info), 3),
                             val);
-    TEassureIntVect (TEprfArg2Obj (TEgetNameStr (info), 1), idx);
-    TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 2), array);
+    TEassureIntVect (TEprfArg2Obj (TEgetNameStr (info), 2), idx);
+
     err_msg = TEfetchErrors ();
     if (err_msg != NULL) {
         res = TYmakeBottomType (err_msg);
@@ -794,6 +798,75 @@ NTCCTprf_modarrayS (te_info *info, ntype *args)
             res = TYmakeBottomType (err_msg);
         } else {
 
+            TEassureValMatchesShape (TEprfArg2Obj (TEgetNameStr (info), 2), idx,
+                                     TEarg2Obj (1), array);
+            err_msg = TEfetchErrors ();
+            if (err_msg != NULL) {
+                res = TYmakeBottomType (err_msg);
+            } else {
+
+                if (TYisAKV (array)) {
+                    if (TYisAKV (idx) && TYisAKV (val)) {
+                        res = TYmakeAKV (TYcopyType (TYgetScalar (array)),
+                                         ApplyCF (info, args));
+                    } else {
+                        res = TYmakeAKS (TYcopyType (TYgetScalar (array)),
+                                         SHcopyShape (TYgetShape (array)));
+                    }
+                } else {
+                    res = TYcopyType (array);
+                }
+            }
+        }
+    }
+
+    DBUG_RETURN (TYmakeProductType (1, res));
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    ntype *NTCCTprf_modarrayA( te_info *info, ntype *args)
+ *
+ * description:
+ *
+ ******************************************************************************/
+
+ntype *
+NTCCTprf_modarrayA (te_info *info, ntype *args)
+{
+    ntype *res = NULL;
+    ntype *idx, *array, *val;
+    char *err_msg;
+
+    DBUG_ENTER ("NTCCTprf_modarrayA");
+    DBUG_ASSERT (TYgetProductSize (args) == 3,
+                 "modarrayA called with incorrect number of arguments");
+
+    array = TYgetProductMember (args, 0);
+    idx = TYgetProductMember (args, 1);
+    val = TYgetProductMember (args, 2);
+
+    TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 1), array);
+    TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 3), val);
+    TEassureSameSimpleType (TEarg2Obj (1), array, TEprfArg2Obj (TEgetNameStr (info), 3),
+                            val);
+    TEassureIntVect (TEprfArg2Obj (TEgetNameStr (info), 1), idx);
+
+    err_msg = TEfetchErrors ();
+    if (err_msg != NULL) {
+        res = TYmakeBottomType (err_msg);
+    } else {
+
+        TEassureShpPlusDimMatchesDim (TEprfArg2Obj (TEgetNameStr (info), 2), idx,
+                                      TEarg2Obj (3), val, TEanotherArg2Obj (1), array);
+        err_msg = TEfetchErrors ();
+        if (err_msg != NULL) {
+            res = TYmakeBottomType (err_msg);
+        } else {
+
+            TEassureShpIsPostfixOfShp (TEprfArg2Obj (TEgetNameStr (info), 3), val,
+                                       TEarg2Obj (1), array);
             TEassureValMatchesShape (TEprfArg2Obj (TEgetNameStr (info), 2), idx,
                                      TEarg2Obj (1), array);
             err_msg = TEfetchErrors ();

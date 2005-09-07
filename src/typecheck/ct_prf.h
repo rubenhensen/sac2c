@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.14  2005/09/07 15:35:47  sbs
+ * added NTCCTprf_modarrayA
+ *
  * Revision 1.13  2005/08/29 16:43:03  ktr
  * added support for prfs F_idx_sel, F_shape_sel, F_idx_shape_sel
  *
@@ -61,6 +64,7 @@ extern ntype *NTCCTprf_idx_selS (te_info *info, ntype *args);
 extern ntype *NTCCTprf_shape_sel (te_info *info, ntype *args);
 extern ntype *NTCCTprf_idx_shape_sel (te_info *info, ntype *args);
 extern ntype *NTCCTprf_modarrayS (te_info *info, ntype *args);
+extern ntype *NTCCTprf_modarrayA (te_info *info, ntype *args);
 extern ntype *NTCCTprf_toiS (te_info *info, ntype *args);
 extern ntype *NTCCTprf_toiA (te_info *info, ntype *args);
 extern ntype *NTCCTprf_tofS (te_info *info, ntype *args);
