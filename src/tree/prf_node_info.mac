@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.43  2005/09/07 15:38:01  sbs
+ * changed NTCCTprf_modarrayS into NTCCTprf_modarrayA for F_modarray.
+ * Later, we might want to distinguish two versions of F_modarray....
+ *
  * Revision 3.42  2005/08/30 20:24:29  ktr
  * added CF function for ids_sel
  *
@@ -207,7 +211,7 @@ PRF_IF (F_toi_S, "F_toi_S", "_toi_S_", "toi", FALSE, 1, NTCCTprf_toiS, COtoi),
           NTCCTprf_dummy, NULL),
   PRF_IF (F_sel, "F_sel", "_sel_", "sel", FALSE, 2, NTCCTprf_selS, COsel),
   PRF_IF (F_modarray, "F_modarray", "_modarray_", "modarray", FALSE, 3,
-          NTCCTprf_modarrayS, COmodarray),
+          NTCCTprf_modarrayA, COmodarray),
   PRF_IF (F_genarray, "F_genarray", "_genarray_", "genarray", FALSE, 2, NTCCTprf_dummy,
           NULL),
 
