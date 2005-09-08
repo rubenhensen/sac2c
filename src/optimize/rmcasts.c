@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.6  2005/09/08 11:05:14  sbs
+ * Now, user defined types are eliminatred from the wrapper types too.
+ *
  * Revision 1.5  2005/09/08 07:46:36  sbs
  * added RCtype
  *
@@ -40,6 +43,8 @@
 #include "new_types.h"
 #include "type_utils.h"
 #include "rmcasts.h"
+#include "update_wrapper_type.h"
+#include "new2old.h"
 
 /** <!--********************************************************************-->
  *
@@ -158,6 +163,10 @@ RCdoRemoveCasts (node *syntax_tree)
     TRAVpush (TR_rc);
     syntax_tree = TRAVdo (syntax_tree, NULL);
     TRAVpop ();
+
+    syntax_tree = UWTdoUpdateWrapperType (syntax_tree);
+
+    syntax_tree = NT2OTdoTransform (syntax_tree);
 
     DBUG_RETURN (syntax_tree);
 }
