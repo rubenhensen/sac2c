@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.107  2005/09/08 09:26:46  ktr
+ * minor brushing
+ *
  * Revision 3.106  2005/09/04 12:52:11  ktr
  * re-engineered the optimization cycle
  *
@@ -168,48 +171,45 @@
  *
  * @name Functions for optimization statistics:
  *
- * <!--
- * void ResetCounters()       : resets all global optimization counters
- * void PrintStatistics(....) : prints all counters (given as args explicitly!)
- * -->
- *
  *@{
  */
 
 /** <!--********************************************************************-->
  *
- * @fn void ResetGlobalOptCounters()
+ * @fn void GenerateOptCounters()
  *
- *   @brief sets all global optimization counters to zero.
+ *   @brief returns an optcounters structure with all elements set to 0
  *
  ******************************************************************************/
-static void
-ResetGlobalOptCounters ()
+static optimize_counter_t
+GenerateOptCounters ()
 {
-    DBUG_ENTER ("ResetGlobalOptCounters");
+    optimize_counter_t res;
 
-#define OPTCOUNTERid(id) global.optcounters.id = 0;
+    DBUG_ENTER ("GenerateOptCounters");
+
+#define OPTCOUNTERid(id) res.id = 0;
 #include "optimize.mac"
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN (res);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn bool AnyGlobalOptCounterNotZero()
+ * @fn bool AnyOptCounterNotZero( optimize_counter_t oc)
  *
  *   @brief returns whether any optimization counter is not zero.
  *
  ******************************************************************************/
 static bool
-AnyGlobalOptCounterNotZero ()
+AnyOptCounterNotZero (optimize_counter_t oc)
 {
     bool res;
 
-    DBUG_ENTER ("AnyGlobalOptCounterNotZero");
+    DBUG_ENTER ("AnyOptCounterNotZero");
 
     res = (FALSE
-#define OPTCOUNTERid(id) || (global.optcounters.id != 0)
+#define OPTCOUNTERid(id) || (oc.id != 0)
 #include "optimize.mac"
     );
 
@@ -218,45 +218,30 @@ AnyGlobalOptCounterNotZero ()
 
 /** <!--********************************************************************-->
  *
- * @fn bool AddLocalToGlobalOptCounters( optimize_counter_t oc)
+ * @fn optimize_counter_t AddOptCounters( optimize_counter_t o,
+ *                                        optimize_counter_t p)
  *
- *   @brief returns whether any optimization counter is not zero.
- *
- ******************************************************************************/
-static void
-AddLocalToGlobalOptCounters (optimize_counter_t oc)
-{
-    DBUG_ENTER ("AddLocalToGlobalOptCounters");
-
-#define OPTCOUNTERid(id) global.optcounters.id += oc.id;
-#include "optimize.mac"
-
-    DBUG_VOID_RETURN;
-}
-
-/** <!--********************************************************************-->
- *
- * @fn optimize_counter_t AddGlobalToLocalOptCounters( optimize_counter_t oc)
- *
- *   @brief returns whether any optimization counter is not zero.
+ *   @brief returns the sum of two optimization counter structures
  *
  ******************************************************************************/
 static optimize_counter_t
-AddGlobalToLocalOptCounters (optimize_counter_t oc)
+AddOptCounters (optimize_counter_t o, optimize_counter_t p)
 {
-    DBUG_ENTER ("AddGlobalToLocalOptCounters");
+    optimize_counter_t r;
 
-#define OPTCOUNTERid(id) oc.id += global.optcounters.id;
+    DBUG_ENTER ("AddOptCounters");
+
+#define OPTCOUNTERid(id) r.id = o.id + p.id;
 #include "optimize.mac"
 
-    DBUG_RETURN (oc);
+    DBUG_RETURN (r);
 }
 
 /** <!--********************************************************************-->
  *
  * @fn void PrintStatistics()
  *
- *   @brief sets all global optimization counters to zero.
+ *   @brief prints the global optimization statistic
  *
  ******************************************************************************/
 static void
@@ -315,8 +300,8 @@ PrintFundefInformation (node *fundef)
         arg = ARG_NEXT (arg);
     }
 
-    CTIstate ("****** Optimizing function:\n******  %s( %s): ...", FUNDEF_NAME (fundef),
-              argtype_buffer);
+    CTInote ("****** Optimizing function:\n******  %s( %s): ...", FUNDEF_NAME (fundef),
+             argtype_buffer);
 
     DBUG_VOID_RETURN;
 }
@@ -451,13 +436,14 @@ OPTdoOptimize (node *arg_node)
 node *
 OPTdoIntraFunctionalOptimizations (node *arg_node)
 {
-    optimize_counter_t oldoptcounters = global.optcounters;
+    optimize_counter_t oldoptcounters;
     int loop = 0;
     node *fundef;
 
     DBUG_ENTER ("OPTdoIntraFunctionalOptimizations");
 
-    ResetGlobalOptCounters ();
+    oldoptcounters = global.optcounters;
+    global.optcounters = GenerateOptCounters ();
 
     /*
      * Tell the phase subsystem where to start to look for unambigous
@@ -468,10 +454,10 @@ OPTdoIntraFunctionalOptimizations (node *arg_node)
     do {
         loop++;
         CTInote (" ");
-        CTIstate ("****** Cycle pass: %i", loop);
+        CTInote ("****** Cycle pass: %i", loop);
 
-        oldoptcounters = AddGlobalToLocalOptCounters (oldoptcounters);
-        ResetGlobalOptCounters ();
+        oldoptcounters = AddOptCounters (global.optcounters, oldoptcounters);
+        global.optcounters = GenerateOptCounters ();
 
         MODULE_FUNS (arg_node) = LOFdoLiftOptFlags (MODULE_FUNS (arg_node));
 
@@ -479,13 +465,13 @@ OPTdoIntraFunctionalOptimizations (node *arg_node)
         while (fundef != NULL) {
 
             if (!FUNDEF_ISZOMBIE (fundef)) {
-                /*
-                 * Print function name
-                 */
                 optimize_counter_t oc = global.optcounters;
-                ResetGlobalOptCounters ();
+                global.optcounters = GenerateOptCounters ();
 
                 if (FUNDEF_WASOPTIMIZED (fundef)) {
+                    /*
+                     * Print function name
+                     */
                     PrintFundefInformation (fundef);
 
                     /*
@@ -606,9 +592,9 @@ OPTdoIntraFunctionalOptimizations (node *arg_node)
                     }
                 }
 
-                FUNDEF_WASOPTIMIZED (fundef) = AnyGlobalOptCounterNotZero ();
+                FUNDEF_WASOPTIMIZED (fundef) = AnyOptCounterNotZero (global.optcounters);
                 DBUG_EXECUTE ("OPT", PrintStatistics (););
-                AddLocalToGlobalOptCounters (oc);
+                global.optcounters = AddOptCounters (global.optcounters, oc);
             }
 
             fundef = FUNDEF_NEXT (fundef);
@@ -627,14 +613,14 @@ OPTdoIntraFunctionalOptimizations (node *arg_node)
         if ((global.optimize.dosisi) && (global.optimize.dodcr)) {
             arg_node = PHrunOptimizationInCycle (SUBPH_sisi, loop, arg_node);
         }
-    } while ((AnyGlobalOptCounterNotZero ()) && (loop < global.max_optcycles)
+    } while ((AnyOptCounterNotZero (global.optcounters)) && (loop < global.max_optcycles)
              && (!PHbreakAfterCurrentPass (loop)));
 
-    if ((loop == global.max_optcycles) && AnyGlobalOptCounterNotZero ()) {
+    if ((loop == global.max_optcycles) && AnyOptCounterNotZero (global.optcounters)) {
         CTIwarn ("Maximal number of optimization cycles reached");
     }
 
-    AddLocalToGlobalOptCounters (oldoptcounters);
+    global.optcounters = AddOptCounters (global.optcounters, oldoptcounters);
 
     DBUG_RETURN (arg_node);
 }
