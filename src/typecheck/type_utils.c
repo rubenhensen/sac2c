@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.19  2005/09/08 11:03:37  sbs
+ * TUrebuildWrapperType added.
+ *
  * Revision 1.18  2005/08/19 17:25:06  sbs
  * changed TUrettypes2alpha into TUrettypes2alphaFix, etc.
  *
@@ -69,8 +72,52 @@
 
 #include "new_types.h"
 #include "new_typecheck.h"
+#include "create_wrappers.h"
 #include "ssi.h"
 #include "user_types.h"
+
+/** <!--********************************************************************-->
+ *
+ * @fn ntype *TUrebuildWrapperType( ntype *)
+ *
+ *   @brief
+ *   @param
+ *   @return
+ *
+ ******************************************************************************/
+
+static ntype *
+buildWrapper (node *fundef, ntype *type)
+{
+    DBUG_ENTER ("buildWrapper");
+
+    /*
+     * set this instances return types to AUD[*]
+     */
+    FUNDEF_RETS (fundef) = TUrettypes2alphaFix (FUNDEF_RETS (fundef));
+
+    /*
+     * add the fundef to the wrappertype
+     */
+    type = TYmakeOverloadedFunType (CRTWRPcreateFuntype (fundef), type);
+
+    DBUG_RETURN (type);
+}
+
+ntype *
+TUrebuildWrapperType (ntype *type)
+{
+    ntype *new_type;
+
+    DBUG_ENTER ("TUrebuildWrapperType");
+
+    DBUG_ASSERT (TYisFun (type), "TUrebuildWrapperType called on non-fun type!");
+
+    new_type
+      = TYfoldFunctionInstances (type, (void *(*)(node *, void *))buildWrapper, NULL);
+
+    DBUG_RETURN (new_type);
+}
 
 /** <!--********************************************************************-->
  *

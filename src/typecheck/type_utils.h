@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2005/09/08 11:03:37  sbs
+ * TUrebuildWrapperType added.
+ *
  * Revision 1.14  2005/08/19 17:25:06  sbs
  * changed TUrettypes2alpha into TUrettypes2alphaFix, etc.
  *
@@ -53,6 +56,7 @@
 
 #include "types.h"
 
+extern ntype *TUrebuildWrapperType (ntype *);
 extern node *TUcreateTmpVardecsFromRets (node *rets);
 extern ntype *TUmakeProductTypeFromRets (node *rets);
 extern node *TUreplaceRetTypes (node *rets, ntype *prodt);
