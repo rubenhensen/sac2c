@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.30  2005/09/08 16:54:29  sbs
+ * added a comment indicating why AE is important
+ *
  * Revision 3.29  2005/09/04 12:54:00  ktr
  * re-engineered the optimization cycle
  *
@@ -109,6 +112,15 @@
 
 #include "ArrayElimination.h"
 
+/**
+ *
+ * This file implements Array Elimination.
+ * It tries to convert small arrays, more precisely arrays with less than <maxae>
+ * elements, into collections of scalars. A particularily effective example is
+ * mandelbrot.sac. Here, we loop over some computation on complex numbers.
+ * Without Array Elimination this results in repetitive constructions of
+ * double[2] vectors which kills the performance.
+ */
 /*
  * INFO structure
  */
