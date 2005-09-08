@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.193  2005/09/08 11:02:12  sbs
+# update_wrapper_type.o added.
+#
 # Revision 3.192  2005/09/04 12:48:24  ktr
 # added map_fun_trav.o
 #
@@ -266,7 +269,8 @@ TYPECHECK= src/typecheck/gen_pseudo_fun.o \
            src/typecheck/resolvesymboltypes.o \
            src/typecheck/split_wrappers.o \
            src/typecheck/dispatchfuncalls.o \
-           src/typecheck/insert_type_conv.o
+           src/typecheck/insert_type_conv.o \
+           src/typecheck/update_wrapper_type.o
 
 OPTIMIZE= src/optimize/optimize.o \
           src/optimize/DeadFunctionRemoval.o \
