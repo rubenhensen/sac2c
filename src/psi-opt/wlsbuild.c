@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2005/09/08 13:52:30  ktr
+ * corrected replication of old index vectors
+ *
  * Revision 1.6  2005/09/04 12:54:00  ktr
  * re-engineered the optimization cycle
  *
@@ -350,8 +353,10 @@ WLSBcode (node *arg_node, info *arg_info)
             node *prefix;
             node *array;
             node *newids, *oldids;
-            node *avis;
+            node *oldavis, *avis;
             lut_t *lut;
+
+            lut = LUTgenerateLut ();
 
             /*
              * The new code consists of:
@@ -359,10 +364,17 @@ WLSBcode (node *arg_node, info *arg_info)
              * - a redefinition of the outer index vector
              */
             array = TCids2Array (WITHID_IDS (INFO_OUTERWITHID (arg_info)));
-            avis = IDS_AVIS (WITHID_VEC (INFO_OUTERWITHID (arg_info)));
 
+            oldavis = IDS_AVIS (WITHID_VEC (INFO_OUTERWITHID (arg_info)));
+            avis = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (oldavis)),
+                               TYcopyType (AVIS_TYPE (oldavis)));
+
+            FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+              = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
             prefix = TCmakeAssignLet (avis, array);
+
             AVIS_SSAASSIGN (avis) = prefix;
+            LUTinsertIntoLutP (lut, oldavis, avis);
 
             /*
              * - a redefinition of the inner index vector
@@ -377,15 +389,21 @@ WLSBcode (node *arg_node, info *arg_info)
             }
 
             array = TCids2Array (newids);
-            avis = IDS_AVIS (WITHID_VEC (INFO_INNERWITHID (arg_info)));
 
+            oldavis = IDS_AVIS (WITHID_VEC (INFO_INNERWITHID (arg_info)));
+            avis = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (oldavis)),
+                               TYcopyType (AVIS_TYPE (oldavis)));
+
+            FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+              = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
             ASSIGN_NEXT (prefix) = TCmakeAssignLet (avis, array);
+
             AVIS_SSAASSIGN (avis) = ASSIGN_NEXT (prefix);
+            LUTinsertIntoLutP (lut, oldavis, avis);
 
             /*
              * The old inner part's code with replaced references to old ids
              */
-            lut = LUTgenerateLut ();
 
             /*
              * Rename all occurences of old ids
@@ -393,7 +411,6 @@ WLSBcode (node *arg_node, info *arg_info)
             oldids = WITHID_IDS (INFO_INNERWITHID (arg_info));
 
             while (oldids != NULL) {
-                LUTinsertIntoLutS (lut, IDS_NAME (oldids), IDS_NAME (newids));
                 LUTinsertIntoLutP (lut, IDS_AVIS (oldids), IDS_AVIS (newids));
 
                 oldids = IDS_NEXT (oldids);
