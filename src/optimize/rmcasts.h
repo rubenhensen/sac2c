@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.7  2005/09/08 09:05:22  sbs
+ * RCfundef deleted
+ *
  * Revision 1.6  2005/09/08 08:55:34  sbs
  * RCfundef added
  *
@@ -40,7 +43,6 @@
 #include "types.h"
 
 extern node *RCdoRemoveCasts (node *ast);
-extern node *RCfundef (node *arg_node, info *arg_info);
 extern node *RCcast (node *arg_node, info *arg_info);
 extern node *RCavis (node *arg_node, info *arg_info);
 extern node *RCret (node *arg_node, info *arg_info);
