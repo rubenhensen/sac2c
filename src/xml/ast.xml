@@ -114,6 +114,11 @@
       </traversal>
       <traversal id="DUP" name="Tree duplication" default="user" include="DupTree.h" />
       <traversal id="FREE" name="Free Tree" default="user" include="free_node.h" />
+      <traversal id="UWT" name="Update Wrapper Types" default="sons" include="update_wrapper_type.h" >
+        <travuser>
+          <node name="Fundef" />
+        </travuser>
+      </traversal>
       <traversal id="MLF" name="Map Lac Functions" default="sons" include="map_lac_funs.h" >
         <travuser>
           <node name="Fundef" />
@@ -961,7 +966,6 @@
       </traversal>
       <traversal id="RC" name="Remove Cast" default="sons" include="rmcasts.h" >
         <travuser>
-          <node name="Fundef" />
           <node name="Cast" />
           <node name="Avis" />
           <node name="Ret" />
