@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2005/09/08 07:46:36  sbs
+ * added RCtype
+ *
  * Revision 1.4  2005/07/16 17:41:26  sbs
  * Now, all user types are resolved
  *
@@ -37,5 +40,6 @@ extern node *RCdoRemoveCasts (node *ast);
 extern node *RCcast (node *arg_node, info *arg_info);
 extern node *RCavis (node *arg_node, info *arg_info);
 extern node *RCret (node *arg_node, info *arg_info);
+extern node *RCtype (node *arg_node, info *arg_info);
 
 #endif /* SAC_RMCASTS_H_ */

@@ -964,6 +964,7 @@
           <node name="Cast" />
           <node name="Avis" />
           <node name="Ret" />
+          <node name="Type" />
         </travuser>
       </traversal>
       <traversal id="SISI" name="Signature Simplification" default="sons" include="signature_simplification.h" >

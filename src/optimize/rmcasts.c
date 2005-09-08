@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2005/09/08 07:46:36  sbs
+ * added RCtype
+ *
  * Revision 1.4  2005/07/16 17:41:26  sbs
  * Now, all user types are resolved
  *
@@ -103,6 +106,31 @@ RCret (node *arg_node, info *arg_info)
         new_type = TYeliminateUser (type);
         type = TYfreeType (type);
         RET_TYPE (arg_node) = new_type;
+    }
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *RCtype( node *arg_node, info *arg_info )
+ *
+ ******************************************************************************/
+
+node *
+RCtype (node *arg_node, info *arg_info)
+{
+    ntype *type, *new_type;
+
+    DBUG_ENTER ("RCtype");
+
+    type = TYPE_TYPE (arg_node);
+    if (TUisArrayOfUser (type)) {
+        new_type = TYeliminateUser (type);
+        type = TYfreeType (type);
+        TYPE_TYPE (arg_node) = new_type;
     }
 
     arg_node = TRAVcont (arg_node, arg_info);
