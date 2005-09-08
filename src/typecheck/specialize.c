@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.36  2005/09/08 11:03:55  sbs
+ * TUrebuildWrapperType utilized
+ *
  * Revision 1.35  2005/09/03 14:39:00  sah
  * on specialisation, the namespace information is propagated properly
  * into LaC funs now. Uses new MLF traversal.,
@@ -359,24 +362,6 @@ UpdateVarSignature (node *fundef, ntype *arg_ts)
 }
 
 static ntype *
-buildWrapper (node *fundef, ntype *type)
-{
-    DBUG_ENTER ("buildWrapper");
-
-    /*
-     * set this instances return types to AUD[*]
-     */
-    FUNDEF_RETS (fundef) = TUrettypes2alphaFix (FUNDEF_RETS (fundef));
-
-    /*
-     * add the fundef to the wrappertype
-     */
-    type = TYmakeOverloadedFunType (CRTWRPcreateFuntype (fundef), type);
-
-    DBUG_RETURN (type);
-}
-
-static ntype *
 checkAndRebuildWrapperType (ntype *type)
 {
     ntype *result;
@@ -390,8 +375,7 @@ checkAndRebuildWrapperType (ntype *type)
     } else {
         DBUG_PRINT ("SPEC", ("wrapper type seems to be finalized -- rebuilding"));
 
-        result
-          = TYfoldFunctionInstances (type, (void *(*)(node *, void *))buildWrapper, NULL);
+        result = TUrebuildWrapperType (type);
 
         type = TYfreeType (type);
     }
