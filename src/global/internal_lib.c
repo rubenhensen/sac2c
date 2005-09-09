@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.85  2005/09/09 17:50:28  sah
+ * added ILIBhexStringToByteArray and ILIBbyteArrayToHexString
+ *
  * Revision 3.84  2005/07/26 12:41:40  sah
  * ILIBreplaceSpecialCharacters now has a const char argument
  *
@@ -1094,6 +1097,50 @@ ILIBlcm (int x, int y)
     }
 
     DBUG_RETURN (u);
+}
+
+#define HEX2DIG(x) (((x >= '0') && (x <= '9')) ? (x - '0') : (10 + x - 'A'))
+
+char *
+ILIBhexStringToByteArray (char *array, const char *string)
+{
+    int pos;
+
+    DBUG_ENTER ("ILIBhexStringToByteArray");
+
+    pos = 0;
+
+    while (string[pos * 2] != 0) {
+        array[pos] = 16 * HEX2DIG (string[pos * 2]) + HEX2DIG (string[pos * 2 + 1]);
+        pos++;
+    }
+
+    DBUG_RETURN (array);
+}
+
+#define DIG2HEX(x) ((x < 10) ? ('0' + x) : ('A' + x - 10))
+
+char *
+ILIBbyteArrayToHexString (int len, char *array)
+{
+    int pos;
+    char *result;
+
+    DBUG_ENTER ("ILIBbyteArrayToHexString");
+
+    result = ILIBmalloc ((1 + len * 2) * sizeof (char));
+
+    for (pos = 0; pos < len; pos++) {
+        int low = array[pos] & 0x0F;
+        int high = (array[pos] & 0xF0) >> 8;
+
+        result[2 * pos] = DIG2HEX (high);
+        result[2 * pos + 1] = DIG2HEX (low);
+    }
+
+    result[2 * pos + 2] = '\0';
+
+    DBUG_RETURN (result);
 }
 
 /******************************************************************************

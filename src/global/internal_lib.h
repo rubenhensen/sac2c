@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.40  2005/09/09 17:50:28  sah
+ * added ILIBhexStringToByteArray and ILIBbyteArrayToHexString
+ *
  * Revision 3.39  2005/07/26 12:41:40  sah
  * ILIBreplaceSpecialCharacters now has a const char argument
  *
@@ -224,6 +227,9 @@ extern void *ILIBmemCopy (int size, void *mem);
 
 extern int ILIBlcm (int x, int y);
 extern char *ILIBitoa (long number);
+
+extern char *ILIBhexStringToByteArray (char *array, const char *string);
+extern char *ILIBbyteArrayToHexString (int len, char *array);
 
 extern void ILIBsystemCall (char *format, ...);
 extern int ILIBsystemCall2 (char *format, ...);
