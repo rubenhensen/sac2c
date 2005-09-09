@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2005/09/09 16:23:07  sbs
+ * added FLATcast
+ *
  * Revision 3.7  2005/06/28 21:02:52  cg
  * Moved while2do transformation into separate traversal.
  * Added calls to new traversals while2do and handle_condexpr.
@@ -98,6 +101,7 @@ extern node *FLATarray (node *arg_node, info *arg_info);
 extern node *FLATreturn (node *arg_node, info *arg_info);
 extern node *FLATspid (node *arg_node, info *arg_info);
 extern node *FLATlet (node *arg_node, info *arg_info);
+extern node *FLATcast (node *arg_node, info *arg_info);
 extern node *FLATarg (node *arg_node, info *arg_info);
 extern node *FLATprf (node *arg_node, info *arg_info);
 extern node *FLATwith (node *arg_node, info *arg_info);

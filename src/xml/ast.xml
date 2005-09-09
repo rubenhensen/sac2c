@@ -318,6 +318,7 @@
           <node name="Module" />
           <node name="Fundef" />
           <node name="Let" />
+          <node name="Cast" />
           <node name="Exprs" />
           <node name="SPAp" />
           <node name="Block" />

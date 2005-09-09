@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.55  2005/09/09 16:23:07  sbs
+ * added FLATcast
+ *
  * Revision 3.54  2005/09/09 12:10:51  ktr
  * COND_COND, DO_COND are now abstracted out
  *
@@ -963,6 +966,30 @@ FLATlet (node *arg_node, info *arg_info)
             }
         }
         ids = SPIDS_NEXT (ids);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *  node *FLATcast(node *arg_node, info *arg_info)
+ *
+ * description:
+ *
+ ******************************************************************************/
+
+node *
+FLATcast (node *arg_node, info *arg_info)
+{
+    node *expr;
+
+    DBUG_ENTER ("FLATcast");
+
+    expr = CAST_EXPR (arg_node);
+    if (NODE_TYPE (expr) != N_spid) {
+        CAST_EXPR (arg_node) = Abstract (expr, arg_info);
     }
 
     DBUG_RETURN (arg_node);
