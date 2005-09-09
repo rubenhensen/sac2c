@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.90  2005/09/09 07:58:03  sbs
+ * first try on accu support.
+ *
  * Revision 3.89  2005/09/07 15:36:23  sbs
  * now, the return type of a function is alpharized in single function mode
  *
@@ -223,6 +226,7 @@ struct INFO {
     node *last_assign;
     node *ptr_return;
     node *ptr_objdefs;
+    ntype *accu;
 };
 
 /**
@@ -233,6 +237,7 @@ struct INFO {
 #define INFO_NTC_NUM_EXPRS_SOFAR(n) (n->num_exprs_sofar)
 #define INFO_NTC_LAST_ASSIGN(n) (n->last_assign)
 #define INFO_NTC_RETURN(n) (n->ptr_return)
+#define INFO_NTC_EXP_ACCU(n) (n->accu)
 
 /**
  * INFO functions
@@ -251,6 +256,7 @@ MakeInfo ()
     INFO_NTC_NUM_EXPRS_SOFAR (result) = 0;
     INFO_NTC_LAST_ASSIGN (result) = NULL;
     INFO_NTC_RETURN (result) = NULL;
+    INFO_NTC_EXP_ACCU (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -1253,30 +1259,36 @@ NTCprf (node *arg_node, info *arg_info)
 
     prf = PRF_PRF (arg_node);
 
-    /*
-     * First we collect the argument types. NTCexprs puts them into a product type
-     * which is expected in INFO_NTC_TYPE( arg_info) afterwards!
-     * INFO_NTC_NUM_EXPRS_SOFAR is used to count the number of exprs "on the fly"!
-     */
-    INFO_NTC_NUM_EXPRS_SOFAR (arg_info) = 0;
+    if (prf == F_accu) {
+        res = TYmakeProductType (1, TYmakeAlphaType (NULL));
+        INFO_NTC_EXP_ACCU (arg_info) = res;
 
-    if (NULL != PRF_ARGS (arg_node)) {
-        PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
     } else {
-        INFO_NTC_TYPE (arg_info) = TYmakeProductType (0);
+        /*
+         * First we collect the argument types. NTCexprs puts them into a product type
+         * which is expected in INFO_NTC_TYPE( arg_info) afterwards!
+         * INFO_NTC_NUM_EXPRS_SOFAR is used to count the number of exprs "on the fly"!
+         */
+        INFO_NTC_NUM_EXPRS_SOFAR (arg_info) = 0;
+
+        if (NULL != PRF_ARGS (arg_node)) {
+            PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
+        } else {
+            INFO_NTC_TYPE (arg_info) = TYmakeProductType (0);
+        }
+
+        DBUG_ASSERT (TYisProd (INFO_NTC_TYPE (arg_info)),
+                     "NTCexprs did not create a product type");
+
+        args = INFO_NTC_TYPE (arg_info);
+        INFO_NTC_TYPE (arg_info) = NULL;
+
+        info = TEmakeInfoPrf (global.linenum, TE_prf, global.prf_string[prf],
+                              global.ntc_cffuntab[prf]);
+        res = NTCCTcomputeType (global.ntc_funtab[prf], info, args);
+
+        TYfreeType (args);
     }
-
-    DBUG_ASSERT (TYisProd (INFO_NTC_TYPE (arg_info)),
-                 "NTCexprs did not create a product type");
-
-    args = INFO_NTC_TYPE (arg_info);
-    INFO_NTC_TYPE (arg_info) = NULL;
-
-    info = TEmakeInfoPrf (global.linenum, TE_prf, global.prf_string[prf],
-                          global.ntc_cffuntab[prf]);
-    res = NTCCTcomputeType (global.ntc_funtab[prf], info, args);
-
-    TYfreeType (args);
     INFO_NTC_TYPE (arg_info) = res;
 
     DBUG_RETURN (arg_node);
@@ -1564,7 +1576,7 @@ NTCcast (node *arg_node, info *arg_info)
 node *
 NTCwith (node *arg_node, info *arg_info)
 {
-    ntype *gen, *body, *res, *tmp;
+    ntype *gen, *body, *res, *tmp, *mem_outer_accu;
 #ifndef DBUG_OFF
     char *tmp_str;
 #endif
@@ -1585,7 +1597,13 @@ NTCwith (node *arg_node, info *arg_info)
 
     /*
      * Then, we infer the type of the WL body:
+     *
+     * Since this may yield an explicit accu type in INFO_NTC_EXP_ACCU,
+     * and fold-wls may be nested, we need to stack these pointers before
+     * traversing the code of this WL.
      */
+    mem_outer_accu = INFO_NTC_EXP_ACCU (arg_info);
+
     WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
     body = INFO_NTC_TYPE (arg_info);
     INFO_NTC_TYPE (arg_info) = NULL;
@@ -1624,6 +1642,11 @@ NTCwith (node *arg_node, info *arg_info)
     DBUG_EXECUTE ("NTC", tmp_str = TYtype2String (INFO_NTC_TYPE (arg_info), FALSE, 0););
     DBUG_PRINT ("NTC", ("  WL - final type: %s", tmp_str));
     DBUG_EXECUTE ("NTC", tmp_str = ILIBfree (tmp_str););
+
+    /**
+     * eventually, we need to restore a potential outer accu for fold-wls:
+     */
+    INFO_NTC_EXP_ACCU (arg_info) = mem_outer_accu;
 
     DBUG_RETURN (arg_node);
 }
@@ -1965,8 +1988,15 @@ NTCfold (node *arg_node, info *arg_info)
          * To do so, we introduce a type variable for the accumulated parameter
          * which has to be bigger than a) the element type and b) the result
          * type.
+         * As we may be dealing with explicit accumulators, this type variable may
+         * exist already. If this is the case, it is contained in INFO_NTC_EXP_ACCU
+         * otherwise that field is NULL.
          */
-        acc = TYmakeAlphaType (NULL);
+        if (INFO_NTC_EXP_ACCU (arg_info) != NULL) {
+            acc = INFO_NTC_EXP_ACCU (arg_info);
+        } else {
+            acc = TYmakeAlphaType (NULL);
+        }
         ok = SSInewTypeRel (elems, acc);
         DBUG_ASSERT (ok, ("initialization of fold-fun in fold-wl went wrong"));
 
