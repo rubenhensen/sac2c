@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.50  2005/09/09 05:34:48  ktr
+ * Empty blocks are now correctly equipped with an N_empty node.
+ *
  * Revision 1.49  2005/09/04 12:52:11  ktr
  * re-engineered the optimization cycle
  *
@@ -1015,10 +1018,9 @@ CSEblock (node *arg_node, info *arg_info)
     /* start new cse frame */
     INFO_CSE (arg_info) = CreateNewCselayer (INFO_CSE (arg_info));
 
-    if (BLOCK_INSTR (arg_node) != NULL) {
-        /* traverse assignments of block */
-        BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
-    } else {
+    BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
+
+    if (BLOCK_INSTR (arg_node) == NULL) {
         /* insert at least the N_empty node in an empty block */
         BLOCK_INSTR (arg_node) = TBmakeEmpty ();
     }
