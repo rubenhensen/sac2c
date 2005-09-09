@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.12  2005/09/09 16:46:24  sbs
+ * NTCCTwl_multicode added
+ *
  * Revision 1.11  2005/07/19 07:20:06  sbs
  * corrected fold computation TEassureSameScalar instead of sameSimple
  *
@@ -167,6 +170,40 @@ NTCCTwl_idx (te_info *info, ntype *args)
                 }
             }
         }
+    }
+
+    DBUG_RETURN (TYmakeProductType (1, res));
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    ntype *NTCCTwl_multicode( te_info *info, ntype *args)
+ *
+ * description:
+ *
+ ******************************************************************************/
+
+ntype *
+NTCCTwl_multicode (te_info *info, ntype *args)
+{
+    ntype *expr1, *expr2, *res;
+    char *err_msg;
+
+    DBUG_ENTER ("NTCCTwl_multicode");
+
+    expr1 = TYgetProductMember (args, 0);
+    expr2 = TYgetProductMember (args, 1);
+
+    TEassureSameScalarType ("one generator body expression", expr1,
+                            "another generator body expression", expr2);
+
+    res = TEassureSameShape ("one generator body expression", expr1,
+                             "another generator body expression", expr2);
+
+    err_msg = TEfetchErrors ();
+    if (err_msg != NULL) {
+        res = TYmakeBottomType (err_msg);
     }
 
     DBUG_RETURN (TYmakeProductType (1, res));
