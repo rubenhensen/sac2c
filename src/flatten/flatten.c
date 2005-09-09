@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.54  2005/09/09 12:10:51  ktr
+ * COND_COND, DO_COND are now abstracted out
+ *
  * Revision 3.53  2005/07/15 15:57:02  sah
  * introduced namespaces
  *
@@ -1262,8 +1265,7 @@ FLATcond (node *arg_node, info *arg_info)
     DBUG_ENTER ("FltnCond");
 
     pred = COND_COND (arg_node);
-    if ((NODE_TYPE (pred) == N_spap) || (NODE_TYPE (pred) == N_prf)
-        || (NODE_TYPE (pred) == N_cast)) {
+    if (NODE_TYPE (pred) != N_spid) {
         COND_COND (arg_node) = Abstract (pred, arg_info);
     }
 
@@ -1358,8 +1360,7 @@ FLATdo (node *arg_node, info *arg_info)
     final_assign = INFO_FLAT_FINALASSIGN (arg_info);
 
     pred = DO_COND (arg_node);
-    if ((NODE_TYPE (pred) == N_spap) || (NODE_TYPE (pred) == N_prf)
-        || (NODE_TYPE (pred) == N_cast)) {
+    if (NODE_TYPE (pred) != N_spid) {
         /*
          * abstract the condition out and insert it at the end of the do-loop:
          */
