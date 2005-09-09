@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.18  2005/09/09 18:20:06  ktr
+ * removed non needed stuff
+ *
  * Revision 1.17  2005/09/04 12:52:50  ktr
  * re-engineered the optimization cycle
  *
@@ -121,7 +124,6 @@ EMAprintPreFun (node *arg_node, info *arg_info)
 node *
 EMAdoAllocation (node *syntax_tree)
 {
-    node *fundef;
     DBUG_ENTER ("ExplicitAllocation");
 
     DBUG_ASSERT ((NODE_TYPE (syntax_tree) == N_module),
@@ -250,6 +252,5 @@ EMAdoAllocation (node *syntax_tree)
 
     TRAVsetPreFun (TR_prt, NULL);
 
-DONE:
     DBUG_RETURN (syntax_tree);
 }
