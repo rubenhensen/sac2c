@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.56  2005/09/09 17:30:40  sbs
+ * now the casted expression is flatted too :-)
+ *
  * Revision 3.55  2005/09/09 16:23:07  sbs
  * added FLATcast
  *
@@ -983,13 +986,14 @@ FLATlet (node *arg_node, info *arg_info)
 node *
 FLATcast (node *arg_node, info *arg_info)
 {
-    node *expr;
+    node *expr, *expr2;
 
     DBUG_ENTER ("FLATcast");
 
     expr = CAST_EXPR (arg_node);
     if (NODE_TYPE (expr) != N_spid) {
         CAST_EXPR (arg_node) = Abstract (expr, arg_info);
+        expr2 = TRAVdo (expr, arg_info);
     }
 
     DBUG_RETURN (arg_node);
