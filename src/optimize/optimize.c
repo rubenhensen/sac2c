@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.108  2005/09/09 23:39:53  sbs
+ * added function dispatch and inlining after TUP in the cycle...
+ *
  * Revision 3.107  2005/09/08 09:26:46  ktr
  * minor brushing
  *
@@ -499,6 +502,18 @@ OPTdoIntraFunctionalOptimizations (node *arg_node)
                         fundef = PHrunOptimizationInCycle (SUBPH_tup, loop, fundef);
                     }
 #endif
+                    /*
+                     * try to dispatch further function calls
+                     */
+                    fundef = PHrunOptimizationInCycle (SUBPH_dfc, loop, fundef);
+
+                    /*
+                     * apply INL (inlining)
+                     */
+                    if (global.optimize.doinl) {
+                        FUNDEF_ISINLINECOMPLETED (fundef) = FALSE;
+                        fundef = PHrunCompilerSubPhase (SUBPH_inl, fundef);
+                    }
 
                     /*
                      * Constant folding
