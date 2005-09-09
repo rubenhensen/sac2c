@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.93  2005/09/09 05:33:52  ktr
+ * BLOCK_INSTR is now always traversed as it is mandatory
+ *
  * Revision 1.92  2005/09/06 14:08:56  ktr
  * Some cleanup. Right-hand sides of constant assignment will be replaced by the constant
  *
@@ -1908,9 +1911,7 @@ CFblock (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CFblock");
 
-    if (BLOCK_INSTR (arg_node) != NULL) {
-        BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
-    }
+    BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
 
     if (BLOCK_INSTR (arg_node) == NULL) {
         /* insert at least the N_empty node in an empty block */
