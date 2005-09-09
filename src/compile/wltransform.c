@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.116  2005/09/09 16:59:56  sbs
+ * swapped two debug prints to improve debuggin
+ *
  * Revision 3.115  2005/06/28 12:30:33  sbs
  * we assume now, that wltransform is called iff the bounds are structural constants
  * Therefore, we assert this in CurrentComponentGetNode
@@ -7151,11 +7154,11 @@ WLTRAwith (node *arg_node, info *arg_info)
         int iter_dims;   /* >= 0 */
         shape *iter_shp; /* may be NULL! */
 
-        DBUG_ASSERT ((WITH_PARTS (arg_node) > 0),
-                     "With-loop with AKS index vector is not fully partitioned!");
-
         DBUG_EXECUTE ("WLtrans", CTInote ("with-loop with AKS withid found (line %d)",
                                           global.linenum););
+
+        DBUG_ASSERT ((WITH_PARTS (arg_node) > 0),
+                     "With-loop with AKS index vector is not fully partitioned!");
 
         /*
          * check whether WITHID_VEC, WITHID_IDS of all parts have identical
