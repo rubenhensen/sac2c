@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 3.91  2005/09/09 16:46:53  sbs
+ * proper support for accu added
+ * and sufficient support for MGwls added, i.e.,
+ * TODO: generator type improvement by minimum computation
+ * over individual generators. could be done by using the
+ * shape-smuggel in idx in wl_idx....
+ *
  * Revision 3.90  2005/09/09 07:58:03  sbs
  * first try on accu support.
  *
@@ -1260,8 +1267,8 @@ NTCprf (node *arg_node, info *arg_info)
     prf = PRF_PRF (arg_node);
 
     if (prf == F_accu) {
-        res = TYmakeProductType (1, TYmakeAlphaType (NULL));
-        INFO_NTC_EXP_ACCU (arg_info) = res;
+        INFO_NTC_EXP_ACCU (arg_info) = TYmakeAlphaType (NULL);
+        res = TYmakeProductType (1, INFO_NTC_EXP_ACCU (arg_info));
 
     } else {
         /*
@@ -1608,16 +1615,6 @@ NTCwith (node *arg_node, info *arg_info)
     body = INFO_NTC_TYPE (arg_info);
     INFO_NTC_TYPE (arg_info) = NULL;
 
-    /*
-     * TODO: as the type of the body of a multi-operator withloop
-     *       is a product type, we extract the first element.
-     *       note that withloops with more than one operator are
-     *       not allowed at this stage anyways.
-     */
-
-    DBUG_ASSERT ((TYisProd (body) && (TYgetProductSize (body) == 1)),
-                 "body of withloop has none or too large product type");
-
     tmp = body;
     body = TYgetProductMember (body, 0);
     tmp = TYfreeTypeConstructor (tmp);
@@ -1815,22 +1812,36 @@ NTCwithid (node *arg_node, info *arg_info)
 node *
 NTCcode (node *arg_node, info *arg_info)
 {
+    ntype *remaining_blocks, *this_block, *blocks;
+    te_info *info;
+
     DBUG_ENTER ("NTCcode");
 
     CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
-    /*
-     * TODO: here we traverse into possibly a chain of exprs, so
-     *       the result will be a product type! In NTCwith, we will
-     *       throw away everythig except of the first element of that
-     *       type. This is no nice abstraction...
-     */
     CODE_CEXPRS (arg_node) = TRAVdo (CODE_CEXPRS (arg_node), arg_info);
 
+    DBUG_ASSERT ((TYisProd (INFO_NTC_TYPE (arg_info))
+                  && (TYgetProductSize (INFO_NTC_TYPE (arg_info)) == 1)),
+                 "multi-operator wl encountered in TC but not supported!");
+
     /**
-     * traverse into defaut expressson iff existant
+     * traverse into further code blocks iff existant
      */
     if (CODE_NEXT (arg_node) != NULL) {
+        this_block = INFO_NTC_TYPE (arg_info);
+        INFO_NTC_TYPE (arg_info) = NULL;
+
         CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
+        remaining_blocks = INFO_NTC_TYPE (arg_info);
+        INFO_NTC_TYPE (arg_info) = NULL;
+
+        info = TEmakeInfo (global.linenum, TE_with, "multi generator");
+        blocks = TYmakeProductType (2, TYgetProductMember (this_block, 0),
+                                    TYgetProductMember (remaining_blocks, 0));
+        this_block = TYfreeTypeConstructor (this_block);
+        remaining_blocks = TYfreeTypeConstructor (remaining_blocks);
+
+        INFO_NTC_TYPE (arg_info) = NTCCTcomputeType (NTCCTwl_multicode, info, blocks);
     }
 
     DBUG_RETURN (arg_node);
@@ -1993,21 +2004,44 @@ NTCfold (node *arg_node, info *arg_info)
          * otherwise that field is NULL.
          */
         if (INFO_NTC_EXP_ACCU (arg_info) != NULL) {
+            /**
+             * As the accu is explicit, we have the following situation:
+             *
+             *   {
+             *      a = accu( ...);
+             *      e = ....;
+             *      val = fun( a, e);
+             *   } : val;
+             * Therefore, it suffices to take the alpha type of a (from
+             * INFO_NTC_EXP_ACCU( arg_info)), make the neutral element a
+             * subtype of it (which triggers the initial approximation for
+             * fun( a, e) ), and then make the type of val a subtype of
+             * the alpha type again in order to ensure the fix-point calculation.
+             */
             acc = INFO_NTC_EXP_ACCU (arg_info);
+            INFO_NTC_EXP_ACCU (arg_info) = NULL;
+
+            res = TYmakeProductType (1, acc);
+
+            ok = SSInewTypeRel (shp, acc);
+            DBUG_ASSERT (ok, ("initialization of fold-fun in fold-wl went wrong"));
+
+            ok = SSInewTypeRel (elems, acc);
+
         } else {
             acc = TYmakeAlphaType (NULL);
+            ok = SSInewTypeRel (elems, acc);
+            DBUG_ASSERT (ok, ("initialization of fold-fun in fold-wl went wrong"));
+
+            args = TYmakeProductType (2, acc, elems);
+            wrapper = FOLD_FUNDEF (arg_node);
+            info = TEmakeInfoUdf (global.linenum, TE_foldf,
+                                  NSgetName (FUNDEF_NS (wrapper)), FUNDEF_NAME (wrapper),
+                                  wrapper, INFO_NTC_LAST_ASSIGN (arg_info), NULL);
+            res = NTCCTcomputeType (NTCCTudf, info, args);
+
+            ok = SSInewTypeRel (TYgetProductMember (res, 0), acc);
         }
-        ok = SSInewTypeRel (elems, acc);
-        DBUG_ASSERT (ok, ("initialization of fold-fun in fold-wl went wrong"));
-
-        args = TYmakeProductType (2, acc, elems);
-        wrapper = FOLD_FUNDEF (arg_node);
-        info = TEmakeInfoUdf (global.linenum, TE_foldf, NSgetName (FUNDEF_NS (wrapper)),
-                              FUNDEF_NAME (wrapper), wrapper,
-                              INFO_NTC_LAST_ASSIGN (arg_info), NULL);
-        res = NTCCTcomputeType (NTCCTudf, info, args);
-
-        ok = SSInewTypeRel (TYgetProductMember (res, 0), acc);
         if (!ok) {
             CTIabortLine (global.linenum, "Illegal fold function in fold with loop");
         }
