@@ -790,10 +790,9 @@
           <node name="Prf" />
           <node name="Funcond" />
         </travuser>
-	<travnone>
-	  <node name="Ids" />
-	  <node name="Arg" />
-	</travnone>
+        <travnone>
+          <node name="Withid" />
+        </travnone>
       </traversal>
       <traversal id="CSE" name="Common Subexpression Elimination" default="sons" include="SSACSE.h" >
 	<travuser>
@@ -811,6 +810,9 @@
 	  <node name="Id" />
 	  <node name="Return" />
 	</travuser>
+        <travnone>
+          <node name="Withid" />
+        </travnone>
       </traversal>
       <traversal id="CVP" name="Constant Variable Propagation" default="sons" include="ConstVarPropagation.h" >
 	<travuser>
