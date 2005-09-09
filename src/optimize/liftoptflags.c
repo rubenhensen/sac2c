@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2005/09/09 09:00:59  ktr
+ * FUNDEF_NEXT is now traversed as well
+ *
  * Revision 1.3  2005/09/04 12:52:11  ktr
  * re-engineered the optimization cycle
  *
@@ -97,7 +100,7 @@ SetOptFlag (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SetOptFlag");
 
-    FUNDEF_WASOPTIMIZED (arg_node) = INFO_OPTFLAG (arg_info);
+    FUNDEF_WASOPTIMIZED (arg_node) = TRUE;
 
     DBUG_RETURN (arg_node);
 }
@@ -116,11 +119,17 @@ LOFfundef (node *arg_node, info *arg_info)
         arg_info = MakeInfo ();
 
         INFO_OPTFLAG (arg_info) = FUNDEF_WASOPTIMIZED (arg_node);
-        arg_info = MLFdoMapLacFuns (arg_node, InferOptFlag, SetOptFlag, arg_info);
+        arg_info = MLFdoMapLacFuns (arg_node, InferOptFlag, NULL, arg_info);
 
-        FUNDEF_WASOPTIMIZED (arg_node) = INFO_OPTFLAG (arg_info);
-
+        if (INFO_OPTFLAG (arg_info)) {
+            arg_info = MLFdoMapLacFuns (arg_node, SetOptFlag, NULL, arg_info);
+            SetOptFlag (arg_node, arg_info);
+        }
         arg_info = FreeInfo (arg_info);
+    }
+
+    if (FUNDEF_NEXT (arg_node) != NULL) {
+        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
