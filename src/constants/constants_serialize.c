@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2005/09/09 17:52:00  sah
+ * floats and doubles are serialized properly now.
+ *
  * Revision 1.9  2005/06/02 20:35:27  sah
  * found a ANSI C compliant portable way to
  * print constant vectors.
@@ -38,6 +41,7 @@
 
 #include "constants.h"
 #include "constants_internal.h"
+#include "internal_lib.h"
 #include <stdio.h>
 #include "dbug.h"
 
@@ -54,29 +58,19 @@ COserializeConstant (FILE *file, constant *cnst)
     if (cnst == NULL) {
         fprintf (file, "NULL");
     } else {
-        int cnt;
         int max;
-        unsigned char *data;
+        char *data;
 
         fprintf (file, "COdeserializeConstant( %d, ", CONSTANT_TYPE (cnst));
 
         SHserializeShape (file, CONSTANT_SHAPE (cnst));
 
-        /* the data vector of a constant is serialized as a
-         * unsigned char array. the unsigned ensured proper
-         * conversion by printf.
-         */
-
-        data = (unsigned char *)CONSTANT_ELEMS (cnst);
         max = global.basetype_size[CONSTANT_TYPE (cnst)] * CONSTANT_VLEN (cnst);
+        data = ILIBbyteArrayToHexString (max, CONSTANT_ELEMS (cnst));
 
-        fprintf (file, ", %d, \"", CONSTANT_VLEN (cnst));
+        fprintf (file, ", %d, \"%s\")", CONSTANT_VLEN (cnst), data);
 
-        for (cnt = 0; cnt < max; cnt++) {
-            fprintf (file, "\\%o", data[cnt]);
-        }
-
-        fprintf (file, "\")");
+        data = ILIBfree (data);
     }
 
     DBUG_VOID_RETURN;
@@ -90,9 +84,8 @@ COdeserializeConstant (simpletype type, shape *shp, int vlen, char *vec)
 
     DBUG_ENTER ("COdeserializeConstant");
 
-    /* we have to copy the data vector as it is static */
     data = COINTallocCV (type, vlen);
-    COINTcopyElemsFromCVToCV (type, (void *)vec, 0, vlen, data, 0);
+    data = ILIBhexStringToByteArray ((char *)data, vec);
 
     result = COINTmakeConstant (type, shp, data, vlen);
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  2005/09/09 17:52:00  sah
+ * floats and doubles are serialized properly now.
+ *
  * Revision 1.15  2005/07/22 13:12:13  sah
  * small clean up
  *
@@ -73,5 +76,7 @@ extern void *DSfetchArgAvis (int i);
 extern void *NSdeserializeNamespace (int i);
 extern void *NSdeserializeView (char *s, int i, void *p);
 extern int NSaddMapping (char *s1, void *p);
+extern double DShex2Double (char *s);
+extern float DShex2Float (char *s);
 
 #endif /* _SAC_SERIALIZE_H_ */

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.30  2005/09/09 17:52:00  sah
+ * floats and doubles are serialized properly now.
+ *
  * Revision 1.29  2005/08/30 11:43:46  sah
  * deserialisation no longer relies on the signature being
  * intact. the symbolname is used instead noiw
@@ -1045,4 +1048,31 @@ DSfetchArgAvis (int pos)
     DBUG_ASSERT ((pos == 0), "Referenced arg does not exist!");
 
     DBUG_RETURN (ARG_AVIS (arg));
+}
+
+/*
+ * deserialize helpers
+ */
+double
+DShex2Double (const char *string)
+{
+    double res;
+
+    DBUG_ENTER ("DShex2Double");
+
+    ILIBhexStringToByteArray ((char *)&res, string);
+
+    DBUG_RETURN (res);
+}
+
+float
+DShex2Float (const char *string)
+{
+    float res;
+
+    DBUG_ENTER ("DShex2Float");
+
+    ILIBhexStringToByteArray ((char *)&res, string);
+
+    DBUG_RETURN (res);
 }

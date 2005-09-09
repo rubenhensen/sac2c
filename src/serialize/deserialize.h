@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2005/09/09 17:52:00  sah
+ * floats and doubles are serialized properly now.
+ *
  * Revision 1.10  2005/07/26 12:42:24  sah
  * added basic support for aliasing
  *
@@ -72,5 +75,11 @@ extern void DSremoveAliasing (const char *symbol);
 extern ntype *DSloadUserType (const char *name, const namespace_t *ns);
 extern node *DSlookupFunction (const char *module, const char *symbol);
 extern node *DSfetchArgAvis (int pos);
+
+/*
+ * deserialize helpers
+ */
+extern double DShex2Double (const char *string);
+extern float DShex2Float (const char *string);
 
 #endif /* _SAC_DESERIALIZE_H_ */

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2005/09/09 17:52:00  sah
+ * floats and doubles are serialized properly now.
+ *
  * Revision 1.10  2005/07/21 18:50:32  sah
  * made TCstat type externally visible
  *
@@ -58,6 +61,7 @@
 #include "tree_basic.h"
 #include "traverse.h"
 #include "tree_compound.h"
+#include "internal_lib.h"
 #include "new_types.h"
 #include "shape.h"
 #include "globals.h"
@@ -206,9 +210,15 @@ SATserializeBool (info *info, bool attr, node *parent)
 void
 SATserializeFloat (info *info, float attr, node *parent)
 {
+    char *data;
+
     DBUG_ENTER ("SATserializeFloat");
 
-    fprintf (INFO_SER_FILE (info), "%f", attr);
+    data = ILIBbyteArrayToHexString (sizeof (float), (char *)&attr);
+
+    fprintf (INFO_SER_FILE (info), "DShex2Float( \"%s\")", data);
+
+    data = ILIBfree (data);
 
     DBUG_VOID_RETURN;
 }
@@ -228,9 +238,15 @@ SATserializeFloat (info *info, float attr, node *parent)
 void
 SATserializeDouble (info *info, double attr, node *parent)
 {
+    char *data;
+
     DBUG_ENTER ("SATserializeDouble");
 
-    fprintf (INFO_SER_FILE (info), "%f", attr);
+    data = ILIBbyteArrayToHexString (sizeof (double), (char *)&attr);
+
+    fprintf (INFO_SER_FILE (info), "DShex2Double( \"%s\")", data);
+
+    data = ILIBfree (data);
 
     DBUG_VOID_RETURN;
 }
