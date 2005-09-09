@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.7  2005/09/09 16:44:54  sbs
+ * replaces casts by type_convs now.
+ *
  * Revision 1.6  2005/09/08 11:05:14  sbs
  * Now, user defined types are eliminatred from the wrapper types too.
  *
@@ -55,14 +58,16 @@
 node *
 RCcast (node *arg_node, info *arg_info)
 {
-    node *expr;
+    node *expr, *type;
 
     DBUG_ENTER ("RCcast");
 
     expr = TRAVdo (CAST_EXPR (arg_node), arg_info);
 
-    CAST_EXPR (arg_node) = NULL;
+    type = TBmakeType (TYeliminateUser (CAST_NTYPE (arg_node)));
+    expr = TCmakePrf2 (F_type_conv, type, expr);
 
+    CAST_EXPR (arg_node) = NULL;
     arg_node = FREEdoFreeTree (arg_node);
 
     DBUG_RETURN (expr);
