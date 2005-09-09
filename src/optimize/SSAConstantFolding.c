@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.94  2005/09/09 12:29:10  ktr
+ * Conditionals in DOFUNS are only eliminated if the predicate is FALSE.
+ *
  * Revision 1.93  2005/09/09 05:33:52  ktr
  * BLOCK_INSTR is now always traversed as it is mandatory
  *
@@ -1966,7 +1969,7 @@ CFassign (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/***********************************************************************
+/******************************************************************************
  *
  *  function:
  *    node *CFfuncond(node *arg_node, node* arg_info)
@@ -1976,15 +1979,16 @@ CFassign (node *arg_node, info *arg_info)
  *    If it is constant, than resolve all funcond nodes according
  *    to the predicate and set the inline flag.
  *
- **********************************************************************/
-
+ *****************************************************************************/
 node *
 CFfuncond (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CFfuncond");
 
     /* check for constant condition */
-    if (TYisAKV (ID_NTYPE (FUNCOND_IF (arg_node)))) {
+    if (TYisAKV (ID_NTYPE (FUNCOND_IF (arg_node)))
+        && ((!FUNDEF_ISDOFUN (INFO_FUNDEF (arg_info)))
+            || (!COisTrue (TYgetValue (ID_NTYPE (FUNCOND_IF (arg_node))), TRUE)))) {
         node *tmp;
         if (COisTrue (TYgetValue (ID_NTYPE (FUNCOND_IF (arg_node))), TRUE)) {
             tmp = FUNCOND_THEN (arg_node);
@@ -2019,7 +2023,9 @@ CFcond (node *arg_node, info *arg_info)
     DBUG_ENTER ("CFcond");
 
     /* check for constant condition */
-    if (TYisAKV (ID_NTYPE (COND_COND (arg_node)))) {
+    if (TYisAKV (ID_NTYPE (COND_COND (arg_node)))
+        && ((!FUNDEF_ISDOFUN (INFO_FUNDEF (arg_info)))
+            || (!COisTrue (TYgetValue (ID_NTYPE (COND_COND (arg_node))), TRUE)))) {
         if (COisTrue (TYgetValue (ID_NTYPE (COND_COND (arg_node))), TRUE)) {
 
             /*  traverse then-part */
