@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.83  2005/09/09 23:49:38  sbs
+ * added dfc and inl
+ *
  * Revision 3.82  2005/08/30 13:28:12  sbs
  * added break after tup
  *
@@ -260,6 +263,9 @@ USGprintUsage ()
     PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:cse",
                       "Stop in cycle <n> after common subexpression elimination.");
     PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:tup", "Stop in cycle <n> after type upgrade.");
+    PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:dfc",
+                      "Stop in cycle <n> after dispatch function calls.");
+    PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:inl", "Stop in cycle <n> after inlining.");
     PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:cf",
                       "Stop in cycle <n> after constant folding.");
     PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:sp",
