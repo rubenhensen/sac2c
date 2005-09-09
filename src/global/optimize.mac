@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.24  2005/09/09 23:42:21  sbs
+ * enabled TUP per default
+ *
  * Revision 1.23  2005/09/04 13:05:08  ktr
  * added newline at end of file
  *
@@ -149,7 +152,7 @@ OPTIMIZE ("etc", etc, TRUE, TRUE, "typeconv elimination")
 OPTIMIZE ("sp", sp, FALSE, FALSE, "selection propagation")
 OPTIMIZE ("wlfs", wlfs, FALSE, FALSE, "with-loop fusion")
 OPTIMIZE ("lro", lro, TRUE, TRUE, "loop reuse optimization")
-OPTIMIZE ("tup", tup, FALSE, FALSE, "type upgrade")
+OPTIMIZE ("tup", tup, TRUE, TRUE, "type upgrade")
 OPTIMIZE ("sisi", sisi, FALSE, FALSE, "signature simplification")
 OPTIMIZE ("rtup", rtup, FALSE, FALSE, "reverse type upgrade")
 OPTIMIZE ("sfd", sfd, FALSE, FALSE, "static function dispatch (tup)")
