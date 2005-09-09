@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.86  2005/09/09 18:55:32  sah
+ * uses unsigned char now to prevent C from doing some funny
+ * type conversions. furthermore, the code should be somewhat
+ * more architecture independent now.
+ *
  * Revision 3.85  2005/09/09 17:50:28  sah
  * added ILIBhexStringToByteArray and ILIBbyteArrayToHexString
  *
@@ -1101,8 +1106,8 @@ ILIBlcm (int x, int y)
 
 #define HEX2DIG(x) (((x >= '0') && (x <= '9')) ? (x - '0') : (10 + x - 'A'))
 
-char *
-ILIBhexStringToByteArray (char *array, const char *string)
+unsigned char *
+ILIBhexStringToByteArray (unsigned char *array, const char *string)
 {
     int pos;
 
@@ -1111,7 +1116,10 @@ ILIBhexStringToByteArray (char *array, const char *string)
     pos = 0;
 
     while (string[pos * 2] != 0) {
-        array[pos] = 16 * HEX2DIG (string[pos * 2]) + HEX2DIG (string[pos * 2 + 1]);
+        unsigned char low = HEX2DIG (string[pos * 2 + 1]);
+        unsigned char high = HEX2DIG (string[pos * 2]);
+
+        array[pos] = high * 16 + low;
         pos++;
     }
 
@@ -1121,7 +1129,7 @@ ILIBhexStringToByteArray (char *array, const char *string)
 #define DIG2HEX(x) ((x < 10) ? ('0' + x) : ('A' + x - 10))
 
 char *
-ILIBbyteArrayToHexString (int len, char *array)
+ILIBbyteArrayToHexString (int len, unsigned char *array)
 {
     int pos;
     char *result;
@@ -1131,11 +1139,11 @@ ILIBbyteArrayToHexString (int len, char *array)
     result = ILIBmalloc ((1 + len * 2) * sizeof (char));
 
     for (pos = 0; pos < len; pos++) {
-        int low = array[pos] & 0x0F;
-        int high = (array[pos] & 0xF0) >> 8;
+        unsigned char low = array[pos] % 16;
+        unsigned char high = array[pos] / 16;
 
-        result[2 * pos] = DIG2HEX (high);
-        result[2 * pos + 1] = DIG2HEX (low);
+        result[2 * pos] = (char)DIG2HEX (high);
+        result[2 * pos + 1] = (char)DIG2HEX (low);
     }
 
     result[2 * pos + 2] = '\0';

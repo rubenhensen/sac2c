@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.41  2005/09/09 18:55:32  sah
+ * uses unsigned char now to prevent C from doing some funny
+ * type conversions. furthermore, the code should be somewhat
+ * more architecture independent now.
+ *
  * Revision 3.40  2005/09/09 17:50:28  sah
  * added ILIBhexStringToByteArray and ILIBbyteArrayToHexString
  *
@@ -228,8 +233,8 @@ extern void *ILIBmemCopy (int size, void *mem);
 extern int ILIBlcm (int x, int y);
 extern char *ILIBitoa (long number);
 
-extern char *ILIBhexStringToByteArray (char *array, const char *string);
-extern char *ILIBbyteArrayToHexString (int len, char *array);
+extern unsigned char *ILIBhexStringToByteArray (unsigned char *array, const char *string);
+extern char *ILIBbyteArrayToHexString (int len, unsigned char *array);
 
 extern void ILIBsystemCall (char *format, ...);
 extern int ILIBsystemCall2 (char *format, ...);
