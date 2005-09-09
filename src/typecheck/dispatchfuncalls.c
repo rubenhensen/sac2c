@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2005/09/09 23:38:52  sbs
+ * marking newly dispatched functions as not ISINLINECOMPLETE in order to enable
+ * function based inlining.
+ *
  * Revision 1.2  2005/07/26 14:32:08  sah
  * moved creation of special fold funs to
  * dispatchfuncall as new2old is running
@@ -119,6 +123,7 @@ node *
 DispatchFunCall (node *fundef, ntype *arg_types)
 {
     dft_res *dft_res;
+    node *new_fundef = NULL;
 
     DBUG_ENTER ("DispatchFunCall");
 
@@ -148,8 +153,9 @@ DispatchFunCall (node *fundef, ntype *arg_types)
                  *
                  * fundef can be found in FUNDEF_IMPL (dirty hack!)
                  */
-                fundef = FUNDEF_IMPL (fundef);
-                DBUG_PRINT ("DFC", ("  dispatched statically %s", CTIitemName (fundef)));
+                new_fundef = FUNDEF_IMPL (fundef);
+                DBUG_PRINT ("DFC",
+                            ("  dispatched statically %s", CTIitemName (new_fundef)));
             } else if ((dft_res->num_partials == 0)
                        && (dft_res->num_deriveable_partials == 0)) {
                 /*
@@ -158,11 +164,12 @@ DispatchFunCall (node *fundef, ntype *arg_types)
                 if (dft_res->def != NULL) {
                     DBUG_ASSERT ((dft_res->deriveable == NULL),
                                  "def and deriveable found!");
-                    fundef = dft_res->def;
+                    new_fundef = dft_res->def;
                 } else {
-                    fundef = dft_res->deriveable;
+                    new_fundef = dft_res->deriveable;
                 }
-                DBUG_PRINT ("DFC", ("  dispatched statically %s", CTIitemName (fundef)));
+                DBUG_PRINT ("DFC",
+                            ("  dispatched statically %s", CTIitemName (new_fundef)));
             } else if (!CWChasWrapperCode (fundef)) {
                 /*
                  * static dispatch impossible,
@@ -172,13 +179,13 @@ DispatchFunCall (node *fundef, ntype *arg_types)
                  */
                 if ((dft_res->num_partials + dft_res->num_deriveable_partials == 1)
                     && (dft_res->def == NULL) && (dft_res->deriveable == NULL)) {
-                    fundef = (dft_res->num_partials == 1)
-                               ? dft_res->partials[0]
-                               : dft_res->deriveable_partials[0];
+                    new_fundef = (dft_res->num_partials == 1)
+                                   ? dft_res->partials[0]
+                                   : dft_res->deriveable_partials[0];
                     CTIwarnLine (global.linenum,
                                  "Application of var-arg function %s found which may"
                                  " cause a type error",
-                                 CTIitemName (fundef));
+                                 CTIitemName (new_fundef));
                     DBUG_PRINT ("DFC", ("  dispatched statically although only partial"
                                         " has been found (T_dots)!"));
                 } else {
@@ -193,8 +200,17 @@ DispatchFunCall (node *fundef, ntype *arg_types)
             }
         }
     }
+    if (new_fundef != NULL) {
+        /**
+         * reactive potential inlining!
+         * This is required for enabling inlining within the cycle!
+         */
+        FUNDEF_ISINLINECOMPLETED (new_fundef) = FALSE;
+    } else {
+        new_fundef = fundef;
+    }
 
-    DBUG_RETURN (fundef);
+    DBUG_RETURN (new_fundef);
 }
 
 /******************************************************************************
