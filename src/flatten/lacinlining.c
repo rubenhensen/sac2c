@@ -1,5 +1,11 @@
 /*
  * $Log$
+ * Revision 1.6  2005/09/09 09:30:44  sah
+ * renamed DowngradeConcreteArgs to AdaptConcreteArgs:
+ *   - if concrete arg is < than formal arg, it is downgraded
+ *   - if concrete arg is > than formal arg, a typeconv is inserted to
+ *     upgrade it
+ *
  * Revision 1.5  2005/09/04 12:48:54  ktr
  * adapted to new global optimization counters
  *
@@ -86,20 +92,25 @@ FreeInfo (info *info)
 /******************************************************************************
  *
  * Function:
- *   void DowngradeConcreteArgs( node *conc_arg, node *form_arg, node *fundef)
+ *   void AdaptConcreteArgs( node *conc_arg, node *form_arg, node *fundef)
  *
  * Description:
- *   The type of each concrete lacfun argument is downgraded to the least
- *   upper bound of the types of the formal and concrete loop arguments.
+ *   Where possible, the type of the concrete argument is downgraded
+ *   to the type of the formal argument. If that is not possible,
+ *   a type conversion is inserted.
  *
  ******************************************************************************/
 void
-DowngradeConcreteArgs (node *conc_arg, node *form_arg, node *fundef)
+AdaptConcreteArgs (node *conc_arg, node *form_arg, node *fundef)
 {
     ntype *ftype, *ctype;
     node *newavis;
+#ifndef DBUG_OFF
+    char *tmp_str;
+    char *tmp_str2;
+#endif
 
-    DBUG_ENTER ("DowngradeConcreteArgs");
+    DBUG_ENTER ("AdaptConcreteArgs");
 
     if (conc_arg != NULL) {
         DBUG_ASSERT (NODE_TYPE (conc_arg) == N_exprs,
@@ -109,7 +120,7 @@ DowngradeConcreteArgs (node *conc_arg, node *form_arg, node *fundef)
         DBUG_ASSERT (NODE_TYPE (form_arg) == N_arg,
                      "Formal function arguments must be N_arg");
 
-        DowngradeConcreteArgs (EXPRS_NEXT (conc_arg), ARG_NEXT (form_arg), fundef);
+        AdaptConcreteArgs (EXPRS_NEXT (conc_arg), ARG_NEXT (form_arg), fundef);
 
         DBUG_ASSERT (NODE_TYPE (EXPRS_EXPR (conc_arg)) == N_id,
                      "Concrete function argument must be N_id");
@@ -119,31 +130,70 @@ DowngradeConcreteArgs (node *conc_arg, node *form_arg, node *fundef)
 
         if (!TYeqTypes (ftype, ctype)) {
             /*
-             * Only formal args being more general than concrete args
-             * are acceptable
+             * We have two situations here:
+             *
+             * 1) type of concrete arg < type of formal arg
+             *
+             *    in this case we want to insert an assignment so
+             *    that the backend can compile in representational
+             *    updates (if necessary).
+             *
+             * 2) type of concrete arg > type of formal arg
+             *
+             *    in this case we insert a typeconv prf to
+             *    make sure that the concrete arg during runtime has
+             *    the type of the formal arg.
              */
-            DBUG_ASSERT (TYleTypes (ctype, ftype),
-                         "Formal type is more special than concrete type!");
 
-            if (TYisAKS (ftype)) {
+            DBUG_EXECUTE ("LINL", tmp_str = TYtype2String (ftype, 0, 0);
+                          tmp_str2 = TYtype2String (ctype, 0, 0););
+            DBUG_PRINT ("LINL", ("  >> trying to adapt %s to %s", tmp_str2, tmp_str));
+            DBUG_EXECUTE ("LINL", tmp_str = ILIBfree (tmp_str);
+                          tmp_str2 = ILIBfree (tmp_str2););
+
+            if (TYisAKS (ftype) && TYisAKV (ctype)) {
                 /*
-                 * Concrete arg is AKV while formal arg is AKS:
-                 * Downgrade concrete arg to AKS
+                 * 1a) special case where we can just downgrade the
+                 *     type as there is no representational difference
+                 *     at all.
                  */
+                DBUG_PRINT ("LINL", ("    >> downgrade AKV -> AKS"));
+
                 AVIS_TYPE (ID_AVIS (EXPRS_EXPR (conc_arg)))
                   = TYfreeType (AVIS_TYPE (ID_AVIS (EXPRS_EXPR (conc_arg))));
                 AVIS_TYPE (ID_AVIS (EXPRS_EXPR (conc_arg))) = TYcopyType (ftype);
-            } else {
+            } else if (TYleTypes (ctype, ftype)) {
                 /*
-                 * Formal arg is more general than AKS:
-                 * Insert assignment
+                 * 1b) type of concrete arg < type of formal arg
                  */
+                DBUG_PRINT ("LINL", ("    >> insert assignment to downgrade type"));
+
                 newavis
                   = TBmakeAvis (ILIBtmpVarName (ARG_NAME (form_arg)), TYcopyType (ctype));
 
                 FUNDEF_INSTR (fundef)
                   = TBmakeAssign (TBmakeLet (TBmakeIds (ARG_AVIS (form_arg), NULL),
                                              TBmakeId (newavis)),
+                                  FUNDEF_INSTR (fundef));
+
+                FUNDEF_VARDEC (fundef)
+                  = TBmakeVardec (ARG_AVIS (form_arg), FUNDEF_VARDEC (fundef));
+
+                ARG_AVIS (form_arg) = newavis;
+            } else {
+                /*
+                 * 2) type of concrete arg > type of formal arg
+                 */
+                DBUG_PRINT ("LINL", ("    >> insert typeconv to upgrade type"));
+
+                newavis
+                  = TBmakeAvis (ILIBtmpVarName (ARG_NAME (form_arg)), TYcopyType (ctype));
+
+                FUNDEF_INSTR (fundef)
+                  = TBmakeAssign (TBmakeLet (TBmakeIds (ARG_AVIS (form_arg), NULL),
+                                             TCmakePrf2 (F_type_conv,
+                                                         TBmakeType (TYcopyType (ftype)),
+                                                         TBmakeId (newavis))),
                                   FUNDEF_INSTR (fundef));
 
                 FUNDEF_VARDEC (fundef)
@@ -195,6 +245,8 @@ node *
 LINLfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("LINLfundef");
+
+    DBUG_PRINT ("LINL", ("lacinlining in %s", CTIitemName (arg_node)));
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         INFO_FUNDEF (arg_info) = arg_node;
@@ -299,12 +351,16 @@ LINLap (node *arg_node, info *arg_info)
     DBUG_ENTER ("LINLap");
 
     if (FUNDEF_ISLACINLINE (AP_FUNDEF (arg_node))) {
+
+        DBUG_PRINT ("LINL", (">> processing application of %s",
+                             CTIitemName (AP_FUNDEF (arg_node))));
+
         /*
-         * Downgrade types of the concrete loop/cond arguments to meet the
+         * Adapt types of the concrete loop/cond arguments to meet the
          * types of the potentially reassigned formal arguments.
          */
-        DowngradeConcreteArgs (AP_ARGS (arg_node), FUNDEF_ARGS (AP_FUNDEF (arg_node)),
-                               AP_FUNDEF (arg_node));
+        AdaptConcreteArgs (AP_ARGS (arg_node), FUNDEF_ARGS (AP_FUNDEF (arg_node)),
+                           AP_FUNDEF (arg_node));
 
         INFO_CODE (arg_info)
           = PINLdoPrepareInlining (&INFO_VARDECS (arg_info), AP_FUNDEF (arg_node),
