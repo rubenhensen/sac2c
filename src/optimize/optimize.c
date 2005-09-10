@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.109  2005/09/10 21:10:05  sbs
+ * adjusted cycle phase conventions
+ *
  * Revision 3.108  2005/09/09 23:39:53  sbs
  * added function dispatch and inlining after TUP in the cycle...
  *
@@ -505,14 +508,14 @@ OPTdoIntraFunctionalOptimizations (node *arg_node)
                     /*
                      * try to dispatch further function calls
                      */
-                    fundef = PHrunOptimizationInCycle (SUBPH_dfc, loop, fundef);
+                    fundef = PHrunOptimizationInCycle (SUBPH_dfccyc, loop, fundef);
 
                     /*
                      * apply INL (inlining)
                      */
                     if (global.optimize.doinl) {
                         FUNDEF_ISINLINECOMPLETED (fundef) = FALSE;
-                        fundef = PHrunCompilerSubPhase (SUBPH_inl, fundef);
+                        fundef = PHrunOptimizationInCycle (SUBPH_inlcyc, loop, fundef);
                     }
 
                     /*
