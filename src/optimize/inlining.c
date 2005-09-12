@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2005/09/12 13:56:38  ktr
+ * if applied to fundef nodes, inlining will not traverse FUNDEF_NEXT
+ *
  * Revision 1.9  2005/09/04 12:52:11  ktr
  * re-engineered the optimization cycle
  *
@@ -383,18 +386,26 @@ INLdoInlining (node *arg_node)
 
     DBUG_ENTER ("INLdoInlining");
 
-    DBUG_PRINT ("OPT", ("FUNCTION INLINING"));
-
     DBUG_PRINT ("OPTMEM",
                 ("mem currently allocated: %d bytes", global.current_allocated_mem));
 
-    arg_info = MakeInfo ();
+    if ((NODE_TYPE (arg_node) == N_module)
+        || ((NODE_TYPE (arg_node) == N_fundef) && (!FUNDEF_ISLACFUN (arg_node)))) {
+        arg_info = MakeInfo ();
 
-    TRAVpush (TR_inl);
-    arg_node = TRAVdo (arg_node, arg_info);
-    TRAVpop ();
+        if (NODE_TYPE (arg_node) == N_fundef) {
+            /*
+             * Prevent traversal of FUNDEF_NEXT by faking nested traversal
+             */
+            INFO_DEPTH (arg_info) = 1;
+        }
 
-    FreeInfo (arg_info);
+        TRAVpush (TR_inl);
+        arg_node = TRAVdo (arg_node, arg_info);
+        TRAVpop ();
+
+        FreeInfo (arg_info);
+    }
 
     DBUG_PRINT ("OPTMEM",
                 ("mem currently allocated: %d bytes", global.current_allocated_mem));
