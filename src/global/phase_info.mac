@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.45  2005/09/12 19:52:25  ktr
+ * added wli
+ *
  * Revision 3.44  2005/09/12 16:12:34  ktr
  * activated wlpg, cse and wlsimplification by default
  *
@@ -369,6 +372,8 @@ SUBPHASE (wlpgcyc, "wlpg", "Generating full with-loop partitions",
           WLPGdoWlPartitionGenerationOpt)
 
 SUBPHASE (wlsimp, "wlsimp", "Simplifying with-loops", WLSIMPdoWithloopSimplification)
+
+SUBPHASE (wli, "wli", "Infering foldable with-loops", WLIdoWLI)
 
 SUBPHASE (wlf, "wlf", "Applying with-loop folding", WLFdoWLF)
 
