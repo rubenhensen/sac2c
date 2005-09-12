@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.111  2005/09/12 16:15:06  ktr
+ * added wlpg2
+ *
  * Revision 3.110  2005/09/12 13:56:38  ktr
  * added wlsimplification.o
  *
@@ -405,6 +408,14 @@ OPTdoOptimize (node *arg_node)
     /*
      * !!! If they should ever work again, WLAA, TSI, and AP must run here
      */
+
+    /*
+     * Another MANDATORY run of WLPG. This is necessary to prevent AKSIV
+     * with-loops to arrive at wltransform
+     *
+     * with-loop partition generation
+     */
+    arg_node = PHrunCompilerSubPhase (SUBPH_wlpg2, arg_node);
 
     /*
      * annotate offset scalars on with-loops
