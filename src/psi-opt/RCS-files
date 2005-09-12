@@ -1,7 +1,6 @@
 ArrayElimination.c
 ArrayElimination.h
 Makefile
-index.c
 index.h
 pad.c
 pad.h
