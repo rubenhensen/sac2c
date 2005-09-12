@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2005/09/12 13:57:49  ktr
+ * added ...OneFundef variant
+ *
  * Revision 1.2  2005/07/26 14:32:08  sah
  * moved creation of special fold funs to
  * dispatchfuncall as new2old is running
@@ -19,6 +22,7 @@
 #include "types.h"
 
 node *DFCdoDispatchFunCalls (node *ast);
+node *DFCdoDispatchFunCallsOneFundef (node *ast);
 
 node *DFCmodule (node *arg_node, info *arg_info);
 node *DFCfundef (node *arg_node, info *arg_info);

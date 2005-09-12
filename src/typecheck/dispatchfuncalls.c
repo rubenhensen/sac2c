@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2005/09/12 13:57:49  ktr
+ * added ...OneFundef variant
+ *
  * Revision 1.3  2005/09/09 23:38:52  sbs
  * marking newly dispatched functions as not ISINLINECOMPLETE in order to enable
  * function based inlining.
@@ -41,6 +44,7 @@
  * INFO structure
  */
 struct INFO {
+    bool onefundef;
     node *with;
     node *let;
     node *foldfuns;
@@ -49,9 +53,10 @@ struct INFO {
 /**
  * INFO macros
  */
-#define INFO_DFC_WITH(n) ((n)->with)
-#define INFO_DFC_LASTLET(n) ((n)->let)
-#define INFO_DFC_FOLDFUNS(n) ((n)->foldfuns)
+#define INFO_ONEFUNDEF(n) ((n)->onefundef)
+#define INFO_WITH(n) ((n)->with)
+#define INFO_LASTLET(n) ((n)->let)
+#define INFO_FOLDFUNS(n) ((n)->foldfuns)
 
 /**
  * INFO functions
@@ -65,9 +70,10 @@ MakeInfo ()
 
     result = ILIBmalloc (sizeof (info));
 
-    INFO_DFC_WITH (result) = NULL;
-    INFO_DFC_LASTLET (result) = NULL;
-    INFO_DFC_FOLDFUNS (result) = NULL;
+    INFO_ONEFUNDEF (result) = FALSE;
+    INFO_WITH (result) = NULL;
+    INFO_LASTLET (result) = NULL;
+    INFO_FOLDFUNS (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -101,9 +107,9 @@ DFCmodule (node *arg_node, info *arg_info)
         MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
     }
 
-    if (INFO_DFC_FOLDFUNS (arg_info) != NULL) {
+    if (INFO_FOLDFUNS (arg_info) != NULL) {
         MODULE_FUNS (arg_node)
-          = TCappendFundef (INFO_DFC_FOLDFUNS (arg_info), MODULE_FUNS (arg_node));
+          = TCappendFundef (INFO_FOLDFUNS (arg_info), MODULE_FUNS (arg_node));
     }
 
     DBUG_RETURN (arg_node);
@@ -229,7 +235,7 @@ DFCfundef (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("DFCfundef");
 
-    if (FUNDEF_NEXT (arg_node) != NULL) {
+    if ((!INFO_ONEFUNDEF (arg_info)) && (FUNDEF_NEXT (arg_node) != NULL)) {
         FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
     }
 
@@ -290,14 +296,14 @@ DFCwith (node *arg_node, info *arg_info)
     node *old_with;
     DBUG_ENTER ("DFCwith");
 
-    old_with = INFO_DFC_WITH (arg_info);
-    INFO_DFC_WITH (arg_info) = arg_node;
+    old_with = INFO_WITH (arg_info);
+    INFO_WITH (arg_info) = arg_node;
 
     WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
     WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
     WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
 
-    INFO_DFC_WITH (arg_info) = old_with;
+    INFO_WITH (arg_info) = old_with;
 
     DBUG_RETURN (arg_node);
 }
@@ -334,7 +340,7 @@ buildSpecialFoldFun (node *arg_node, info *arg_info, ntype *argtype)
 
     DBUG_ENTER ("buildSpecialFoldFun");
 
-    with = INFO_DFC_WITH (arg_info);
+    with = INFO_WITH (arg_info);
     cexpr = WITH_CEXPR (with);
     neutr = FOLD_NEUTRAL (arg_node);
 
@@ -342,16 +348,16 @@ buildSpecialFoldFun (node *arg_node, info *arg_info, ntype *argtype)
     DBUG_ASSERT ((NODE_TYPE (neutr) == N_id), "WITH_NEUTRAL is not a N_id");
     DBUG_ASSERT ((NODE_TYPE (cexpr) == N_id), "WITH_CEXPR is not a N_id");
 
-    foldfun = GPFcreateFoldFun (argtype, FOLD_FUNDEF (arg_node), FOLD_PRF (arg_node),
-                                IDS_NAME (LET_IDS (INFO_DFC_LASTLET (arg_info))),
-                                ID_NAME (cexpr));
+    foldfun
+      = GPFcreateFoldFun (argtype, FOLD_FUNDEF (arg_node), FOLD_PRF (arg_node),
+                          IDS_NAME (LET_IDS (INFO_LASTLET (arg_info))), ID_NAME (cexpr));
     FOLD_FUNDEF (arg_node) = foldfun;
 
     /*
      * append foldfun to INFO_NT2OT_FOLDFUNS
      */
-    FUNDEF_NEXT (foldfun) = INFO_DFC_FOLDFUNS (arg_info);
-    INFO_DFC_FOLDFUNS (arg_info) = foldfun;
+    FUNDEF_NEXT (foldfun) = INFO_FOLDFUNS (arg_info);
+    INFO_FOLDFUNS (arg_info) = foldfun;
 
     DBUG_RETURN (arg_node);
 }
@@ -374,7 +380,7 @@ DFCfold (node *arg_node, info *arg_info)
             neutr_type
               = TYfixAndEliminateAlpha (AVIS_TYPE (ID_AVIS (FOLD_NEUTRAL (arg_node))));
             body_type = TYfixAndEliminateAlpha (
-              AVIS_TYPE (ID_AVIS (WITH_CEXPR (INFO_DFC_WITH (arg_info)))));
+              AVIS_TYPE (ID_AVIS (WITH_CEXPR (INFO_WITH (arg_info)))));
 
             arg_type = TYlubOfTypes (neutr_type, body_type);
             arg_types = TYmakeProductType (2, arg_type, TYcopyType (arg_type));
@@ -409,12 +415,12 @@ DFClet (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("DFClet");
 
-    old_lastlet = INFO_DFC_LASTLET (arg_info);
-    INFO_DFC_LASTLET (arg_info) = arg_node;
+    old_lastlet = INFO_LASTLET (arg_info);
+    INFO_LASTLET (arg_info) = arg_node;
 
     arg_node = TRAVcont (arg_node, arg_info);
 
-    INFO_DFC_LASTLET (arg_info) = old_lastlet;
+    INFO_LASTLET (arg_info) = old_lastlet;
 
     DBUG_RETURN (arg_node);
 }
@@ -447,4 +453,42 @@ DFCdoDispatchFunCalls (node *ast)
     info_node = FreeInfo (info_node);
 
     DBUG_RETURN (ast);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *DFCdoDispatchFunCallsOneFundef( node *ast)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+DFCdoDispatchFunCallsOneFundef (node *fundef)
+{
+    info *info_node;
+
+    DBUG_ENTER ("DFCdoDispatchFunCallsOneFundef");
+
+    DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef,
+                 "DFCdoDispatchFunCallsOneFundef not called with N_fundef!");
+
+    info_node = MakeInfo ();
+    INFO_ONEFUNDEF (info_node) = TRUE;
+
+    TRAVpush (TR_dfc);
+
+    fundef = TRAVdo (fundef, info_node);
+
+    TRAVpop ();
+
+    if (INFO_FOLDFUNS (info_node) != NULL) {
+        fundef = TCappendFundef (fundef, INFO_FOLDFUNS (info_node));
+    }
+
+    info_node = FreeInfo (info_node);
+
+    DBUG_RETURN (fundef);
 }
