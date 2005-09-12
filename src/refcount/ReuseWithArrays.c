@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2005/09/12 17:14:13  sah
+ * index.h is now index_eliminate.h
+ *
  * Revision 1.4  2004/12/13 18:54:49  ktr
  * Withids contain N_id/N_exprs of N_id after explicit allocation now.
  *
@@ -152,7 +155,7 @@
 #include "traverse.h"
 #include "DataFlowMask.h"
 #include "DataFlowMaskUtils.h"
-#include "index.h"
+#include "index_eliminate.h"
 #include "free.h"
 #include "internal_lib.h"
 #include "user_types.h"
