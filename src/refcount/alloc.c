@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.41  2005/09/12 15:21:57  ktr
+ * added support for idxs2offset, vect2offset
+ *
  * Revision 1.40  2005/08/24 10:20:09  ktr
  * added support for WITHID_IDXS, some brushing
  *
@@ -1479,6 +1482,18 @@ EMALprf (node *arg_node, info *arg_info)
     case F_shape_sel:
         /*
          * shape_sel always yields a scalar
+         *
+         * a = shape_sel( idx, A)
+         * alloc( 0, []);
+         */
+        als->dim = TBmakeNum (0);
+        als->shape = TCcreateZeroVector (0, T_int);
+        break;
+
+    case F_idxs2offset:
+    case F_vect2offset:
+        /*
+         * offset is always a scalar
          *
          * a = shape_sel( idx, A)
          * alloc( 0, []);
