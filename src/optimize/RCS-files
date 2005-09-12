@@ -46,3 +46,4 @@ elimtypeconv.c
 elimtypeconv.h
 liftoptflags.c
 liftoptflags.h
+wlsimplification.c
