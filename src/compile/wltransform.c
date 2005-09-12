@@ -1,5 +1,11 @@
 /*
  * $Log$
+ * Revision 3.117  2005/09/12 17:43:33  ktr
+ * Quick-fixed an issue in BuildCubes.
+ * Nevertheless: wltransform should be seriously brushed as many code situations
+ * it was designed for cannot occur any longer. It also needs to be adapted
+ * to ssa form!
+ *
  * Revision 3.116  2005/09/09 16:59:56  sbs
  * swapped two debug prints to improve debuggin
  *
@@ -4289,34 +4295,44 @@ BuildCubes (node *strides, bool has_fold, int iter_dims, shape *iter_shp,
                              ? "  multi-generator with-loop: TRUE"
                              : "  multi-generator with-loop: FALSE"););
 
-    if (WLSTRIDEX_NEXT (strides) == NULL) {
-        /*
-         * we have a single stride (generator)
-         *  -> the index-range of the stride is possibly a *proper* subset
-         *     of the index-vector-space.
-         */
-        if (!has_fold) {
-            /* no fold with-loop  ->  add missing indices (init/copy) */
-            if (all_const && (iter_shp != NULL)) {
-                cubes = GenerateCompleteDomain (strides, iter_dims, iter_shp);
-            } else {
-                cubes = GenerateCompleteDomainVar (strides, iter_dims, iter_shp);
+#if 0
+  /*
+   * The assumption below does not hold any longer. 
+   * All AKSIV with-loops have been equipped with a full partition by 
+   * WLPG already!
+   */
+  if ( WLSTRIDEX_NEXT( strides) == NULL) {
+    /*
+     * we have a single stride (generator)
+     *  -> the index-range of the stride is possibly a *proper* subset
+     *     of the index-vector-space.
+     */
+    if ( !has_fold) {
+      /* no fold with-loop  ->  add missing indices (init/copy) */
+      if (all_const && (iter_shp != NULL)) {
+        cubes = GenerateCompleteDomain( strides, iter_dims, iter_shp);
+      }
+      else {
+        cubes = GenerateCompleteDomainVar( strides, iter_dims, iter_shp);
 
-                /*
-                 * the generated cubes are already splitted and merged
-                 *  -> no naive compilation possible anymore ...
-                 */
-                if (*do_naive_comp) {
-                    *do_naive_comp = FALSE;
-                    CTIwarnLine (global.linenum,
-                                 "Wlcomp-pragma function Naive() ignored for"
-                                 " single-generator with-loops");
-                }
-            }
-        } else {
-            /* fold with-loop  ->  the missing indices represent 'noop' */
-            cubes = strides;
+        /*
+         * the generated cubes are already splitted and merged
+         *  -> no naive compilation possible anymore ...
+         */
+        if (*do_naive_comp) {
+          *do_naive_comp = FALSE;
+          CTIwarnLine( global.linenum, 
+                       "Wlcomp-pragma function Naive() ignored for"
+                       " single-generator with-loops");
         }
+      }
+    }
+    else
+#endif
+
+    if (has_fold) {
+        /* fold with-loop  ->  the missing indices represent 'noop' */
+        cubes = strides;
     } else {
         if (!all_const) {
             /*
