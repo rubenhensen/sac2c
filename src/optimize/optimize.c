@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.110  2005/09/12 13:56:38  ktr
+ * added wlsimplification.o
+ *
  * Revision 3.109  2005/09/10 21:10:05  sbs
  * adjusted cycle phase conventions
  *
@@ -537,6 +540,13 @@ OPTdoIntraFunctionalOptimizations (node *arg_node)
                      */
                     if (global.optimize.dowlpg) {
                         fundef = PHrunOptimizationInCycle (SUBPH_wlpgcyc, loop, fundef);
+                    }
+
+                    /*
+                     * With-loop simplification
+                     */
+                    if (global.optimize.dowlsimp) {
+                        fundef = PHrunOptimizationInCycle (SUBPH_wlsimp, loop, fundef);
                     }
 
                     /*

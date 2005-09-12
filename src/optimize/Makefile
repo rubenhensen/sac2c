@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.47  2005/09/12 13:56:38  ktr
+# added wlsimplification.o
+#
 # Revision 3.46  2005/09/02 14:25:45  ktr
 # added liftoptflags.o
 #
@@ -62,7 +65,8 @@ OBJS := optimize.o DeadFunctionRemoval.o deadcoderemoval.o \
         UndoElimSubDiv.o ElimSubDiv.o deadcodeinference.o \
         ConstVarPropagation.o DistributiveLaw.o type_upgrade.o \
         signature_simplification.o inlining.o associativity.o \
-        inferneedcounters.o elimtypeconv.o liftoptflags.o
+        inferneedcounters.o elimtypeconv.o liftoptflags.o \
+        wlsimplification.o
 
 all: $(OBJS)
 
