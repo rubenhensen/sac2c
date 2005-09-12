@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.25  2005/09/12 13:55:41  ktr
+ * added with-loop simplification
+ *
  * Revision 1.24  2005/09/09 23:42:21  sbs
  * enabled TUP per default
  *
@@ -124,7 +127,7 @@ OPTIMIZE ("inl", inl, TRUE, TRUE, "function inlining")
 OPTIMIZE ("lur", lur, TRUE, FALSE, "loop unrolling")
 OPTIMIZE ("wlur", wlur, TRUE, FALSE, "with-loop unrolling")
 OPTIMIZE ("lus", lus, FALSE, FALSE, "loop unswitching")
-OPTIMIZE ("cse", cse, FALSE, FALSE, "common subexpression elimination")
+OPTIMIZE ("cse", cse, TRUE, FALSE, "common subexpression elimination")
 OPTIMIZE ("dfr", dfr, TRUE, TRUE, "dead function removal")
 OPTIMIZE ("wlt", wlt, FALSE, FALSE, "with-loop transformation")
 OPTIMIZE ("wlf", wlf, TRUE, FALSE, "with-loop folding")
@@ -150,6 +153,7 @@ OPTIMIZE ("wls", wls, TRUE, TRUE, "with-loop scalarization")
 OPTIMIZE ("al", al, FALSE, FALSE, "associative law")
 OPTIMIZE ("etc", etc, TRUE, TRUE, "typeconv elimination")
 OPTIMIZE ("sp", sp, FALSE, FALSE, "selection propagation")
+OPTIMIZE ("wlsimp", wlsimp, FALSE, FALSE, "with-loop simplification")
 OPTIMIZE ("wlfs", wlfs, FALSE, FALSE, "with-loop fusion")
 OPTIMIZE ("lro", lro, TRUE, TRUE, "loop reuse optimization")
 OPTIMIZE ("tup", tup, TRUE, TRUE, "type upgrade")

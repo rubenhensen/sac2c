@@ -1074,6 +1074,15 @@
 	  <node name="Generator" />
 	</travuser>
       </traversal>
+      <traversal id="WLSIMP" name="With-Loop Simplification" default="sons" include="wlsimplification.h">
+        <travuser>
+          <node name="Fundef" />
+          <node name="With" />
+          <node name="Code" />
+          <node name="Part" />
+          <node name="Generator" />
+        </travuser>
+      </traversal>
       <traversal id="WLS" name="With-Loop Scalarization" default="sons" include="wls.h">
         <travuser>
           <node name="Ap" />

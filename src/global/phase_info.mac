@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.43  2005/09/12 13:55:41  ktr
+ * added with-loop simplification
+ *
  * Revision 3.42  2005/09/10 21:10:39  sbs
  * added dfccyc and inlcyc in the optimize cycle.
  *
@@ -349,7 +352,8 @@ SUBPHASE (ntccyc, "ntc", "Applying type upgrade", NTCdoNewTypeCheckOneFunction)
 
 SUBPHASE (tup, "tup", "Applying type upgrade", TUPdoTypeUpgrade)
 
-SUBPHASE (dfccyc, "dfc", "Applying function call dispatch", DFCdoDispatchFunCalls)
+SUBPHASE (dfccyc, "dfc", "Applying function call dispatch",
+          DFCdoDispatchFunCallsOneFundef)
 
 SUBPHASE (inlcyc, "inl", "Applying inlining", INLdoInlining)
 
@@ -360,6 +364,8 @@ SUBPHASE (cvp, "cvp", "Propagating constants and variables",
 
 SUBPHASE (wlpgcyc, "wlpg", "Generating full with-loop partitions",
           WLPGdoWlPartitionGenerationOpt)
+
+SUBPHASE (wlsimp, "wlsimp", "Simplifying with-loops", WLSIMPdoWithloopSimplification)
 
 SUBPHASE (wlf, "wlf", "Applying with-loop folding", WLFdoWLF)
 
