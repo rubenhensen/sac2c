@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2005/09/12 17:43:14  ktr
+ * removed PRTdoPrintNode
+ *
  * Revision 1.1  2005/09/12 13:56:13  ktr
  * Initial revision
  *
@@ -177,7 +180,6 @@ WLSIMPpart (node *arg_node, info *arg_info)
     PART_GENERATOR (arg_node) = TRAVdo (PART_GENERATOR (arg_node), arg_info);
 
     if (INFO_EMPTYPART (arg_info)) {
-        PRTdoPrintNode (arg_node);
         arg_node = FREEdoFreeNode (arg_node);
     }
 
