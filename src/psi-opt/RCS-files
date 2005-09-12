@@ -38,3 +38,4 @@ resolvedependencies.c
 resolvedependencies.h
 index_infer.c
 index_infer.h
+index_eliminate.c
