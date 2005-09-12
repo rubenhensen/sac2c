@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.194  2005/09/12 13:55:23  ktr
+# added wlsimplification
+#
 # Revision 3.193  2005/09/08 11:02:12  sbs
 # update_wrapper_type.o added.
 #
@@ -284,7 +287,8 @@ OPTIMIZE= src/optimize/optimize.o \
           src/optimize/ConstVarPropagation.o src/optimize/DistributiveLaw.o \
           src/optimize/signature_simplification.o src/optimize/inlining.o \
           src/optimize/inferneedcounters.o src/optimize/associativity.o \
-          src/optimize/elimtypeconv.o src/optimize/liftoptflags.o
+          src/optimize/elimtypeconv.o src/optimize/liftoptflags.o \
+          src/optimize/wlsimplification.o
 
 PROFILE= src/profile/annotate_fun_calls.o
 
