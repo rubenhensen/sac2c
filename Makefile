@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.195  2005/09/12 16:18:47  sah
+# added index_eliminate.c
+#
 # Revision 3.194  2005/09/12 13:55:23  ktr
 # added wlsimplification
 #
@@ -292,7 +295,8 @@ OPTIMIZE= src/optimize/optimize.o \
 
 PROFILE= src/profile/annotate_fun_calls.o
 
-PSIOPT= src/psi-opt/index.o src/psi-opt/index_infer.o src/psi-opt/ArrayElimination.o \
+PSIOPT= src/psi-opt/index_eliminate.o src/psi-opt/index_infer.o \
+        src/psi-opt/ArrayElimination.o \
         src/psi-opt/wl_access_analyze.o src/psi-opt/tile_size_inference.o \
         src/psi-opt/wls.o src/psi-opt/wlscheck.o \
         src/psi-opt/wlsbuild.o src/psi-opt/wlswithloopification.o \

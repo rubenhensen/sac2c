@@ -1127,14 +1127,13 @@
           <node name="Modarray" />
         </travuser>
       </traversal>
-      <traversal id="IVE" name="Index Vector Elimination" default="sons" include="index.h">
+      <traversal id="IVE" name="Index Vector Elimination" default="sons" include="index_eliminate.h">
         <travuser>
 	  <node name="Fundef" />
 	  <node name="Assign" />
 	  <node name="Let" />
 	  <node name="Prf" />
 	  <node name="Ids" />
-	  <node name="Ap" />
 	  <node name="Block" />
 	  <node name="Arg" />
 	  <node name="With" />
