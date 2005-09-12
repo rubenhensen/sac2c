@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.44  2005/09/12 16:12:34  ktr
+ * activated wlpg, cse and wlsimplification by default
+ *
  * Revision 3.43  2005/09/12 13:55:41  ktr
  * added with-loop simplification
  *
@@ -403,6 +406,9 @@ SUBPHASE (cse2, "cse", "Elimininating common subexpressions",
           CSEdoCommonSubexpressionEliminationModule)
 
 SUBPHASE (dcr3, "dcr3", "Removing dead code", DCRdoDeadCodeRemovalModule)
+
+SUBPHASE (wlpg2, "wlpg2", "Generating full with-loop partitions",
+          WLPGdoWlPartitionGeneration)
 
 SUBPHASE (ivei, "ivei", "Applying index vector elimination (inference)",
           IVEIdoIndexVectorEliminationInference)

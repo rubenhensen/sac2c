@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.26  2005/09/12 16:12:34  ktr
+ * activated wlpg, cse and wlsimplification by default
+ *
  * Revision 1.25  2005/09/12 13:55:41  ktr
  * added with-loop simplification
  *
@@ -140,7 +143,7 @@ OPTIMIZE ("dr", dr, TRUE, TRUE, "data reuse")
 OPTIMIZE ("ipc", ipc, TRUE, TRUE, "Inplace Computation")
 OPTIMIZE ("tsi", tsi, FALSE, FALSE, "with-loop tile size inference")
 OPTIMIZE ("tsp", tsp, FALSE, FALSE, "with-loop tile size pragmas")
-OPTIMIZE ("wlpg", wlpg, FALSE, FALSE, "with-loop partition generation")
+OPTIMIZE ("wlpg", wlpg, TRUE, FALSE, "with-loop partition generation")
 OPTIMIZE ("cvp", cvp, TRUE, TRUE, "constant and variable propagation")
 OPTIMIZE ("srf", srf, TRUE, TRUE, "static reuse / static free")
 OPTIMIZE ("phm", phm, TRUE, TRUE, "private heap management")
@@ -153,7 +156,7 @@ OPTIMIZE ("wls", wls, TRUE, TRUE, "with-loop scalarization")
 OPTIMIZE ("al", al, FALSE, FALSE, "associative law")
 OPTIMIZE ("etc", etc, TRUE, TRUE, "typeconv elimination")
 OPTIMIZE ("sp", sp, FALSE, FALSE, "selection propagation")
-OPTIMIZE ("wlsimp", wlsimp, FALSE, FALSE, "with-loop simplification")
+OPTIMIZE ("wlsimp", wlsimp, TRUE, FALSE, "with-loop simplification")
 OPTIMIZE ("wlfs", wlfs, FALSE, FALSE, "with-loop fusion")
 OPTIMIZE ("lro", lro, TRUE, TRUE, "loop reuse optimization")
 OPTIMIZE ("tup", tup, TRUE, TRUE, "type upgrade")
