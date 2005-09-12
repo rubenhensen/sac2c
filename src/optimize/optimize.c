@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.112  2005/09/12 20:42:03  ktr
+ * added WLI for better WLF :)
+ * Unfortunately, SSATransform is required after WLF.
+ *
  * Revision 3.111  2005/09/12 16:15:06  ktr
  * added wlpg2
  *
@@ -157,8 +161,9 @@
 #include "phase.h"
 
 #include "liftoptflags.h"
-#include "index_infer.h" /* for IVEIprintPreFun */
-#include "new_types.h"   /* for TYtype2String */
+#include "index_infer.h"  /* for IVEIprintPreFun */
+#include "new_types.h"    /* for TYtype2String */
+#include "SSATransform.h" /* needed after current WLF implementation */
 
 /**
  *
@@ -564,7 +569,9 @@ OPTdoIntraFunctionalOptimizations (node *arg_node)
                      * With-loop folding
                      */
                     if (global.optimize.dowlf) {
+                        fundef = PHrunOptimizationInCycle (SUBPH_wli, loop, fundef);
                         fundef = PHrunOptimizationInCycle (SUBPH_wlf, loop, fundef);
+                        fundef = SSATdoTransformOneFundef (fundef);
                     }
 
                     /*
