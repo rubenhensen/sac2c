@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.86  2005/09/13 14:23:47  sbs
+ * changed PRINT_BREAK_SPEC again
+ *
  * Revision 3.85  2005/09/13 14:18:43  ktr
  * changed PRINT_BREAK_SPEC
  *
@@ -86,13 +89,20 @@
 #include "phase.h"
 
 #define PRINT_BREAK_SPEC(ph, spec, comment)                                              \
-    int _i;                                                                              \
-    printf ("    -b %2i:%s", ph, spec);                                                  \
-    printf ("\t%s\n", comment);
+    {                                                                                    \
+        int _i;                                                                          \
+        printf ("    -b %2i:%s", ph, spec);                                              \
+        DBUG_ASSERT (strlen (spec) < 18, " you need to increase"                         \
+                                         " the space in PRINT_BREAK_SPEC");              \
+        for (_i = 0; (size_t)_i < (18 - strlen (spec)); _i++) {                          \
+            printf (" ");                                                                \
+        }                                                                                \
+        printf ("%s\n", comment);                                                        \
+    }
 
 #define CONT_BREAK_SPEC(comment)                                                         \
     {                                                                                    \
-        printf ("                      %s\n", comment);                                  \
+        printf ("                            %s\n", comment);                            \
     }
 
 void
