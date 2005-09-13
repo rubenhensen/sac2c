@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.20  2005/09/13 16:48:49  sah
+ * minor bugfix
+ *
  * Revision 1.19  2005/09/13 16:31:01  sah
  * removed FMGRfindLocationOfFile (not needed any more)
  * added FMGRmapPath
@@ -259,7 +262,7 @@ FMGRmapPath (pathkind_t p, void *(*mapfun) (const char *, void *), void *neutral
 
     while (path != NULL) {
         result = mapfun (path, result);
-        path = strtok (buffer, ":");
+        path = strtok (NULL, ":");
     }
 
     DBUG_RETURN (result);
