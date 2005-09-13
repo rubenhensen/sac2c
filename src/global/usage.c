@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.85  2005/09/13 14:18:43  ktr
+ * changed PRINT_BREAK_SPEC
+ *
  * Revision 3.84  2005/09/13 13:21:18  sbs
  * wanted to include the stuff on wlsimp
  * would not work properly. Commented it out again :-(
@@ -83,14 +86,9 @@
 #include "phase.h"
 
 #define PRINT_BREAK_SPEC(ph, spec, comment)                                              \
-    {                                                                                    \
-        int _i;                                                                          \
-        printf ("    -b %2i:%s", ph, spec);                                              \
-        for (_i = 0; (size_t)_i < (12 - strlen (spec)); _i++) {                          \
-            printf (" ");                                                                \
-        }                                                                                \
-        printf ("%s\n", comment);                                                        \
-    }
+    int _i;                                                                              \
+    printf ("    -b %2i:%s", ph, spec);                                                  \
+    printf ("\t%s\n", comment);
 
 #define CONT_BREAK_SPEC(comment)                                                         \
     {                                                                                    \
@@ -264,52 +262,48 @@ USGprintUsage ()
 
     printf ("\n");
 
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:cse",
+    PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:cse",
                       "Stop in cycle <n> after common subexpression elimination.");
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:tup", "Stop in cycle <n> after type upgrade.");
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:dfc",
+    PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:tup", "Stop in cycle <n> after type upgrade.");
+    PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:dfc",
                       "Stop in cycle <n> after dispatch function calls.");
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:inl", "Stop in cycle <n> after inlining.");
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:cf",
+    PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:inl", "Stop in cycle <n> after inlining.");
+    PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:cf",
                       "Stop in cycle <n> after constant folding.");
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:sp",
-                      "Stop in cycle <n> after selection propagation.");
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:wlpg",
+    PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:cvp",
+                      "Stop in cycle <n> after constant and variable propagation.");
+    PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:wlpg",
                       "Stop in cycle <n> after with-loop partition generation.");
-#if 0
-  /**
-   * why doesn't this work????
-   */
-  PRINT_BREAK_SPEC( PH_sacopt, "cyc<n>:wlsimp",
-                    "Stop in cycle <n> after with-loop simplification.");
-#endif
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:wlt",
+    PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:wlsimp",
+                      "Stop in cycle <n> after with-loop simplification.");
+    PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:wlt",
                       "Stop in cycle <n> after with-loop transformation.");
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:wli",
+    PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:wli",
                       "Stop in cycle <n> after with-loop information gathering.");
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:wlf",
+    PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:wlf",
                       "Stop in cycle <n> after with-loop folding.");
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:cf2",
+    PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:cf2",
                       "Stop in cycle <n> after second constant folding.");
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:dcr",
+    PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:dcr",
                       "Stop in cycle <n> after dead code removal.");
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:wls",
+    PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:wls",
                       "Stop in cycle <n> after with-loop scalarization.");
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:lur",
+    PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:lur",
                       "Stop in cycle <n> after (with-)loop unrolling.");
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:cf3",
+    PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:cf3",
                       "Stop in cycle <n> after third constant folding.");
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:lus",
+    PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:lus",
                       "Stop in cycle <n> after loop unswitching.");
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:lir",
+    PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:lir",
                       "Stop in cycle <n> after (with-)loop invariant removal.");
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:al", "Stop in cycle <n> after associative law.");
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:dl",
+    PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:al",
+                      "Stop in cycle <n> after associative law.");
+    PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:dl",
                       "Stop in cycle <n> after distributive law.");
 
     printf ("\n");
 
-    PRINT_BREAK_SPEC (PH_sacopt, "funopt", "Stop after fundef optimization cycle.");
+    PRINT_BREAK_SPEC (PH_sacopt, "cyc", "Stop after fundef optimization cycle.");
     PRINT_BREAK_SPEC (PH_sacopt, "ussa",
                       "Stop after undo SSA transformation (ssa only).");
     PRINT_BREAK_SPEC (PH_sacopt, "f2l",
