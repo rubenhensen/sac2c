@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.19  2005/09/13 16:31:01  sah
+ * removed FMGRfindLocationOfFile (not needed any more)
+ * added FMGRmapPath
+ *
  * Revision 1.18  2005/07/27 14:58:56  sah
  * added global.modulenamespace
  *
@@ -236,6 +240,26 @@ FMGRfindFile (pathkind_t p, const char *name)
     if (result != NULL) {
         snprintf (buffer, MAX_FILE_NAME - 1, "%s/%s", result, name);
         result = buffer;
+    }
+
+    DBUG_RETURN (result);
+}
+
+void *
+FMGRmapPath (pathkind_t p, void *(*mapfun) (const char *, void *), void *neutral)
+{
+    void *result = neutral;
+    static char buffer[MAX_FILE_NAME];
+    char *path;
+
+    DBUG_ENTER ("FMGRmapPath");
+
+    strcpy (buffer, path_bufs[p]);
+    path = strtok (buffer, ":");
+
+    while (path != NULL) {
+        result = mapfun (path, result);
+        path = strtok (buffer, ":");
     }
 
     DBUG_RETURN (result);
@@ -592,38 +616,6 @@ FMGRwriteOpen (const char *format, ...)
     }
 
     DBUG_RETURN (file);
-}
-
-/******************************************************************************
- *
- * function:
- *   locationtype FindLocationOfFile( const char *file)
- *
- * description:
- *   This function checks wether file contains "$SACBASE/stdlib/".
- *   If so, LOC_stdlib is returned, otherwise LOC_usr.
- *
- *
- ******************************************************************************/
-
-locationtype
-FindLocationOfFile (const char *file)
-{
-    static char stdlib_loc[MAX_FILE_NAME];
-    char *sacbase;
-    locationtype loc;
-
-    sacbase = getenv ("SACBASE");
-    strcpy (stdlib_loc, sacbase);
-    strcat (stdlib_loc, "/stdlib/");
-
-    if (strstr (file, stdlib_loc)) {
-        loc = LOC_stdlib;
-    } else {
-        loc = LOC_usr;
-    }
-
-    return (loc);
 }
 
 /******************************************************************************

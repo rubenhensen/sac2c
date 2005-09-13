@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2005/09/13 16:31:01  sah
+ * removed FMGRfindLocationOfFile (not needed any more)
+ * added FMGRmapPath
+ *
  * Revision 1.12  2005/07/18 15:45:59  sah
  * added findFilePath
  *
@@ -118,12 +122,13 @@
 
 extern const char *FMGRfindFile (pathkind_t p, const char *name);
 extern const char *FMGRfindFilePath (pathkind_t p, const char *name);
+extern void *FMGRmapPath (pathkind_t p, void *(*mapfun) (const char *, void *),
+                          void *neutral);
 extern void FMGRappendPath (pathkind_t p, const char *path);
 extern void FMGRsetupPaths ();
 extern const char *FMGRabsolutePathname (const char *path);
 extern FILE *FMGRwriteOpen (const char *format, ...);
 extern bool FMGRcheckExistFile (const char *dir, const char *name);
-extern locationtype FMGRfindLocationOfFile (const char *file);
 extern bool FMGRcheckSystemLibrary (const char *name);
 extern void FMGRsetFileNames (node *module);
 extern void FMGRdeleteTmpDir ();
