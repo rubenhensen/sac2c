@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2005/09/13 16:28:59  sah
+ * now, even wrong pragmas are handeled correctly
+ *
  * Revision 1.12  2005/06/27 13:44:55  sah
  * now multiple LINKOBJ and LINKMOD per file
  * function are possible and handeled correctly.
@@ -132,11 +135,12 @@ CheckRefReadNums (int line, int size, node *nums)
     DBUG_VOID_RETURN;
 }
 
-static void
+static bool
 CheckLinkSignNums (int line, int size, node *nums)
 {
     int i;
     node *tmp;
+    bool result = TRUE;
 
     DBUG_ENTER ("CheckLinkSignNums");
 
@@ -148,6 +152,7 @@ CheckLinkSignNums (int line, int size, node *nums)
                           "Invalid argument of pragma 'linksign`: "
                           "Entry no. %d does not match a valid parameter position",
                           i + 1);
+            result = FALSE;
         }
     }
 
@@ -156,6 +161,7 @@ CheckLinkSignNums (int line, int size, node *nums)
                       "Invalid argument of pragma 'linksign` :"
                       "Less entries (%d) than parameters of function (%d)",
                       i, size);
+        result = FALSE;
     }
 
     if (tmp != NULL) {
@@ -171,9 +177,10 @@ CheckLinkSignNums (int line, int size, node *nums)
                       "Invalid argument of pragma 'linksign`: "
                       "More entries (%d) than function parameters (%d)",
                       i, size);
+        result = FALSE;
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN (result);
 }
 
 /**
@@ -397,9 +404,11 @@ RSPfundef (node *arg_node, info *arg_info)
         }
 
         if (PRAGMA_LINKSIGN (pragma) != NULL) {
-            CheckLinkSignNums (NODE_LINE (arg_node), PRAGMA_NUMPARAMS (pragma),
-                               PRAGMA_LINKSIGN (pragma));
-            arg_node = AnnotateLinksign (arg_node, arg_info, PRAGMA_LINKSIGN (pragma));
+            if (CheckLinkSignNums (NODE_LINE (arg_node), PRAGMA_NUMPARAMS (pragma),
+                                   PRAGMA_LINKSIGN (pragma))) {
+                arg_node
+                  = AnnotateLinksign (arg_node, arg_info, PRAGMA_LINKSIGN (pragma));
+            }
 
             PRAGMA_LINKSIGN (pragma) = FREEdoFreeTree (PRAGMA_LINKSIGN (pragma));
         }
