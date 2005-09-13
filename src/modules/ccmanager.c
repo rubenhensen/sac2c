@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.21  2005/09/13 16:49:02  sah
+ * outsourced the decision on where to find external
+ * libraries to the c linker. I guess he known better
+ * than the sac2c compiler, anyways.
+ *
  * Revision 1.20  2005/07/18 15:54:45  sbs
  * fixed stupid bug
  *
@@ -237,12 +242,38 @@ GetLibs ()
     DBUG_RETURN (result);
 }
 
+static str_buf *
+AddExtLib (const char *path, str_buf *buf)
+{
+    DBUG_ENTER ("AddExtLibPath");
+
+    buf = ILIBstrBufPrintf (buf, "-L%s ", path);
+
+    DBUG_RETURN (buf);
+}
+
+static char *
+GetExtLibPath ()
+{
+    char *result;
+    str_buf *buffer = ILIBstrBufCreate (255);
+
+    DBUG_ENTER ("GetExtLibPath");
+
+    buffer = (str_buf *)FMGRmapPath (PK_extlib_path,
+                                     (void *(*)(const char *, void *))AddExtLib, buffer);
+
+    result = ILIBstrBuf2String (buffer);
+    buffer = ILIBstrBufFree (buffer);
+
+    DBUG_RETURN (result);
+}
+
 static void *
 BuildDepLibsStringProg (const char *lib, strstype_t kind, void *rest)
 {
     char *result;
     char *libname;
-    char *path;
 
     DBUG_ENTER ("BuildDepLibsStringProg");
 
@@ -264,20 +295,9 @@ BuildDepLibsStringProg (const char *lib, strstype_t kind, void *rest)
         libname = ILIBfree (libname);
         break;
     case STRS_extlib:
-        libname = ILIBmalloc (sizeof (char) * (strlen (lib) + 6));
-        sprintf (libname, "lib%s.a", lib);
-        path = ILIBstringCopy (FMGRfindFilePath (PK_extlib_path, libname));
+        result = ILIBmalloc (sizeof (char) * (strlen (lib) + 3));
+        sprintf (result, "-l%s", lib);
 
-        if (path != NULL) {
-            result = ILIBmalloc (sizeof (char) * (strlen (lib) + 6 + strlen (path)));
-            sprintf (result, "-L%s -l%s", path, lib);
-        } else {
-            result = ILIBmalloc (sizeof (char) * (strlen (lib) + 3));
-            sprintf (result, "-l%s", lib);
-        }
-
-        libname = ILIBfree (libname);
-        path = ILIBfree (path);
         break;
     case STRS_objfile:
         result = ILIBmalloc (sizeof (char) * (strlen (lib) + 3));
@@ -305,15 +325,19 @@ BuildDepLibsStringProg (const char *lib, strstype_t kind, void *rest)
 static void
 InvokeCCProg (char *cccall, char *ccflags, char *libs, stringset_t *deps)
 {
+    char *extpath;
     char *deplibs;
 
     DBUG_ENTER ("InvokeCCProg");
 
+    extpath = GetExtLibPath ();
+
     deplibs = (char *)STRSfold (&BuildDepLibsStringProg, deps, ILIBstringCopy (""));
 
-    ILIBsystemCall ("%s %s -o %s %s %s %s", cccall, ccflags, global.outfilename,
-                    global.cfilename, deplibs, libs);
+    ILIBsystemCall ("%s %s -o %s %s %s %s %s", cccall, ccflags, global.outfilename,
+                    global.cfilename, extpath, deplibs, libs);
 
+    extpath = ILIBfree (extpath);
     deplibs = ILIBfree (deplibs);
 
     DBUG_VOID_RETURN;
