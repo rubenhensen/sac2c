@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2005/09/13 16:31:44  sah
+ * added additional wrapper cleanup at end of phase
+ *
  * Revision 1.8  2005/08/19 18:10:00  sah
  * adapted signature of CorrectFundefPointer to new ast structure
  * simplified detection of generic wrappers
@@ -51,7 +54,8 @@
 #include "namespaces.h"
 #include "serialize.h"
 #include "deserialize.h"
-#include "DeadFunctionRemoval.h"
+#include "update_wrapper_type.h"
+#include "new2old.h"
 
 /*******************************************************************************
  *
@@ -706,9 +710,15 @@ SWRdoSplitWrappers (node *ast)
 
     TRAVpop ();
 
-#if 0
-  ast = DFRdoDeadFunctionRemoval( ast);
-#endif
+    /*
+     * for the time being, the wrapper types are
+     * not beeing split properly. See the comment
+     * for SplitWrapperType for details. To ensure
+     * that the wrappertypes are really clean, we do
+     * a UWTdoUpdateWrapperType to rebuild them.
+     */
+    ast = UWTdoUpdateWrapperType (ast);
+    ast = NT2OTdoTransform (ast);
 
     DBUG_RETURN (ast);
 }
