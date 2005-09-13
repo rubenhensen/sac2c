@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2005/09/13 17:07:48  sah
+ * fixed the annoying >preserved zero in string literal<
+ * warning bug.
+ *
  * Revision 1.11  2005/09/09 17:52:00  sah
  * floats and doubles are serialized properly now.
  *
@@ -268,7 +272,7 @@ SATserializeChar (info *info, char attr, node *parent)
 {
     DBUG_ENTER ("SATserializeChar");
 
-    fprintf (INFO_SER_FILE (info), "'%c'", attr);
+    fprintf (INFO_SER_FILE (info), "%d", (unsigned char)attr);
 
     DBUG_VOID_RETURN;
 }
