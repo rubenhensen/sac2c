@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.84  2005/09/13 13:21:18  sbs
+ * wanted to include the stuff on wlsimp
+ * would not work properly. Commented it out again :-(
+ *
  * Revision 3.83  2005/09/09 23:49:38  sbs
  * added dfc and inl
  *
@@ -272,6 +276,13 @@ USGprintUsage ()
                       "Stop in cycle <n> after selection propagation.");
     PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:wlpg",
                       "Stop in cycle <n> after with-loop partition generation.");
+#if 0
+  /**
+   * why doesn't this work????
+   */
+  PRINT_BREAK_SPEC( PH_sacopt, "cyc<n>:wlsimp",
+                    "Stop in cycle <n> after with-loop simplification.");
+#endif
     PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:wlt",
                       "Stop in cycle <n> after with-loop transformation.");
     PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:wli",
