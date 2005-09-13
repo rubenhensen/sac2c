@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2005/09/13 15:16:11  ktr
+ * with-loops with empty generators are noe replaced by simpler
+ * representations. Unfortunately, this is not yet possible with
+ * genarray with-loops. (FIX ME!)
+ *
  * Revision 1.2  2005/09/12 17:43:14  ktr
  * removed PRTdoPrintNode
  *
@@ -37,6 +42,9 @@
 #include "internal_lib.h"
 #include "new_types.h"
 #include "new_typecheck.h"
+#include "type_utils.h"
+#include "shape.h"
+#include "DupTree.h"
 #include "constants.h"
 
 /**
@@ -44,12 +52,14 @@
  */
 struct INFO {
     bool emptypart;
+    node *with; /* Needed as long as the [] problem is not ironed out */
 };
 
 /**
  * INFO macros
  */
 #define INFO_EMPTYPART(n) (n->emptypart)
+#define INFO_WITH(n) (n->with)
 
 /**
  * INFO functions
@@ -64,6 +74,7 @@ MakeInfo ()
     result = ILIBmalloc (sizeof (info));
 
     INFO_EMPTYPART (result) = FALSE;
+    INFO_WITH (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -134,8 +145,46 @@ WLSIMPwith (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLSIMPwith");
 
-    WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
-    WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
+    if (!(TUshapeKnown (IDS_NTYPE (WITH_VEC (arg_node)))
+          && (SHgetUnrLen (TYgetShape (IDS_NTYPE (WITH_VEC (arg_node)))) == 0))) {
+
+        INFO_WITH (arg_info) = arg_node;
+        WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
+        WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
+
+        if (WITH_PART (arg_node) == NULL) {
+            node *new_node = NULL;
+            switch (NODE_TYPE (WITH_WITHOP (arg_node))) {
+            case N_genarray:
+                /*
+                 * TODO: FIX ME!
+                 *
+                 * Genarray with-loops without oarts should be replaced with
+                 * reshape( cat( shp, shape(def)), (:basetype)[])
+                 *
+                 * This is currently not possible as the basetype of [] cannot be
+                 * preserved in the NTC.
+                 */
+                DBUG_ASSERT ((FALSE), "This must never happen. See comment!");
+                break;
+
+            case N_modarray:
+                new_node = DUPdoDupNode (MODARRAY_ARRAY (WITH_WITHOP (arg_node)));
+                break;
+
+            case N_fold:
+                new_node = DUPdoDupNode (FOLD_NEUTRAL (WITH_WITHOP (arg_node)));
+                break;
+
+            default:
+                DBUG_ASSERT (FALSE, "Illegal withop!");
+                break;
+            }
+
+            arg_node = FREEdoFreeNode (arg_node);
+            arg_node = new_node;
+        }
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -156,6 +205,10 @@ WLSIMPcode (node *arg_node, info *arg_info)
 
     if (CODE_USED (arg_node) == 0) {
         arg_node = FREEdoFreeNode (arg_node);
+    } else {
+        if (CODE_CBLOCK (arg_node) != NULL) {
+            CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -180,7 +233,15 @@ WLSIMPpart (node *arg_node, info *arg_info)
     PART_GENERATOR (arg_node) = TRAVdo (PART_GENERATOR (arg_node), arg_info);
 
     if (INFO_EMPTYPART (arg_info)) {
-        arg_node = FREEdoFreeNode (arg_node);
+        /*
+         * TODO: FIX ME
+         *
+         * Do not delete last part of genarray with-loop. See comment above!
+         */
+        if (!((NODE_TYPE (WITH_WITHOP (INFO_WITH (arg_info))) == N_genarray)
+              && (WITH_PART (INFO_WITH (arg_info)) == arg_node))) {
+            arg_node = FREEdoFreeNode (arg_node);
+        }
     }
 
     DBUG_RETURN (arg_node);
