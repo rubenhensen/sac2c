@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2005/09/13 15:17:20  ktr
+ * changed code duplication to DUPdoDupNodeLutSsa
+ *
  * Revision 1.7  2005/09/08 13:52:30  ktr
  * corrected replication of old index vectors
  *
@@ -417,7 +420,7 @@ WLSBcode (node *arg_node, info *arg_info)
                 newids = IDS_NEXT (newids);
             }
 
-            new_code = DUPdoDupNodeLut (arg_node, lut);
+            new_code = DUPdoDupNodeLutSsa (arg_node, lut, INFO_FUNDEF (arg_info));
 
             /*
              * The new code block must be prepended with the prefix
