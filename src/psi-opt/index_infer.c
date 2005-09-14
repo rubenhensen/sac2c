@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2005/09/14 17:23:29  sah
+ * arg3 of modarray may be constant!
+ *
  * Revision 1.4  2005/08/21 09:34:29  ktr
  * all arguments and the return value of sel and modarray must be AKS to allow conversion
  * into idx_sel and idx_modarray,respectively
@@ -303,14 +306,16 @@ IVEIprf (node *arg_node, info *arg_info)
 
         DBUG_ASSERT (((NODE_TYPE (arg1) == N_id) && (NODE_TYPE (arg2) == N_id)),
                      "wrong arg in F_modarray application");
-
+        /*
+         * arg3 of F_modarray may be a constant!
+         */
         ltype = IDS_NTYPE (lhs);
         type1 = ID_NTYPE (arg1);
         type2 = ID_NTYPE (arg2);
-        type3 = ID_NTYPE (arg3);
+        type3 = (NODE_TYPE (arg3) == N_id) ? ID_NTYPE (arg3) : NULL;
 
         if (TUshapeKnown (ltype) && TUshapeKnown (type1) && TUisIntVect (type2)
-            && TUshapeKnown (type2) && TUshapeKnown (type3)) {
+            && TUshapeKnown (type2) && ((type3 == NULL) || TUshapeKnown (type3))) {
             AddTypeToIdxTypes (ID_AVIS (arg2), type1);
         }
         break;
