@@ -41,3 +41,4 @@ index_infer.h
 index_eliminate.c
 index_eliminate.h
 index_optimize.c
+index_optimize.h
