@@ -1,5 +1,10 @@
 /*
  * $Log$
+ * Revision 1.20  2005/09/14 07:06:04  ktr
+ * Added CFwith. It creates a fake assignment of an array consisting of the
+ * index scalars to the index vector before traversing the with-loop body.
+ * This enables structural constant folding of operations of the index vector.
+ *
  * Revision 1.19  2005/09/06 14:08:56  ktr
  * Some cleanup. Right-hand sides of constant assignment will be replaced by the constant
  *
@@ -97,6 +102,7 @@ extern node *CFlet (node *arg_node, info *arg_info);
 extern node *CFids (node *arg_node, info *arg_info);
 extern node *CFarray (node *arg_node, info *arg_info);
 extern node *CFprf (node *arg_node, info *arg_info);
+extern node *CFwith (node *arg_node, info *arg_info);
 extern node *CFfuncond (node *arg_node, info *arg_info);
 
 #endif /* SAC_ConstantFolding_h */

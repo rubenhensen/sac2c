@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.95  2005/09/14 07:06:04  ktr
+ * Added CFwith. It creates a fake assignment of an array consisting of the
+ * index scalars to the index vector before traversing the with-loop body.
+ * This enables structural constant folding of operations of the index vector.
+ *
  * Revision 1.94  2005/09/09 12:29:10  ktr
  * Conditionals in DOFUNS are only eliminated if the predicate is FALSE.
  *
@@ -2586,6 +2591,35 @@ CFprf (node *arg_node, info *arg_info)
 
         /* increment constant folding counter */
         global.optcounters.cf_expr++;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *CFwith( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+CFwith (node *arg_node, info *arg_info)
+{
+    node *vecassign = NULL;
+
+    DBUG_ENTER ("CFwith");
+
+    if (WITH_IDS (arg_node) != NULL) {
+        vecassign = TBmakeAssign (TBmakeLet (DUPdoDupNode (WITH_VEC (arg_node)),
+                                             TCids2Array (WITH_IDS (arg_node))),
+                                  NULL);
+        AVIS_SSAASSIGN (IDS_AVIS (WITH_VEC (arg_node))) = vecassign;
+    }
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    if (vecassign != NULL) {
+        AVIS_SSAASSIGN (IDS_AVIS (WITH_VEC (arg_node))) = NULL;
+        vecassign = FREEdoFreeTree (vecassign);
     }
 
     DBUG_RETURN (arg_node);
