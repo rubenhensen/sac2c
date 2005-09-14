@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.65  2005/09/14 19:57:20  sah
+ * extended ND_IDXS2OFFSET to work with scalar offsets, as well.
+ *
  * Revision 3.64  2005/08/24 15:57:02  ktr
  * changed a ASSURE_TYPE_EXPR to ASSURE_TYPE_ASS
  *
@@ -1590,18 +1593,19 @@ ICMCompileND_VECT2OFFSET (char *off_NT, int from_size, char *from_NT, int shp_si
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_IDXS2OFFSET( char *off_NT, int idxs_size, char **idxs_NT,
+ *   void ICMCompileND_IDXS2OFFSET( char *off_NT, int idxs_size,
+ *                                  char **idxs_ANY,
  *                                  int shp_size, char **shp_ANY)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_IDXS2OFFSET( off_NT, idxs_size, idxs_NT, shp_size, shp_ANY)
+ *   ND_IDXS2OFFSET( off_NT, idxs_size, idxs_ANY, shp_size, shp_ANY)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_IDXS2OFFSET (char *off_NT, int idxs_size, char **idxs_NT, int shp_size,
+ICMCompileND_IDXS2OFFSET (char *off_NT, int idxs_size, char **idxs_ANY, int shp_size,
                           char **shp_ANY)
 {
     DBUG_ENTER ("ICMCompileND_IDXS2OFFSET");
@@ -1615,12 +1619,14 @@ ICMCompileND_IDXS2OFFSET (char *off_NT, int idxs_size, char **idxs_NT, int shp_s
      * CAUTION:
      * 'shp_ANY[i]' is either a tagged identifier (representing a scalar)
      * or a constant scalar!
+     * 'idxs_ANY[i]' is either a tagged identifier (representing a scalar)
+     * or a constant scalar!
      */
 
     DBUG_ASSERT ((idxs_size >= 0), "Illegal size found!");
 
-    Vect2Offset2 (off_NT, idxs_NT, idxs_size, NULL, ReadConstArray_Str, shp_ANY, shp_size,
-                  NULL, ReadConstArray_Str);
+    Vect2Offset2 (off_NT, idxs_ANY, idxs_size, NULL, ReadConstArray_Str, shp_ANY,
+                  shp_size, NULL, ReadConstArray_Str);
 
     DBUG_VOID_RETURN;
 }

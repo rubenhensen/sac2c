@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.34  2005/09/14 19:57:20  sah
+ * extended ND_IDXS2OFFSET to work with scalar offsets, as well.
+ *
  * Revision 3.33  2004/11/21 22:04:36  ktr
  * Ismop SacDevCamp 04
  *
@@ -187,7 +190,7 @@ extern void ICMCompileND_CREATE__ARRAY__DATA (char *to_NT, int to_sdim, int val_
 extern void ICMCompileND_VECT2OFFSET (char *off_NT, int from_size, char *from_NT,
                                       int shp_size, char **shp_ANY);
 
-extern void ICMCompileND_IDXS2OFFSET (char *off_NT, int idxs_size, char **idxs_NT,
+extern void ICMCompileND_IDXS2OFFSET (char *off_NT, int idxs_size, char **idxs_ANY,
                                       int shp_size, char **shpa_ANY);
 
 #endif /* _SAC_ICM2C_STD_H_ */

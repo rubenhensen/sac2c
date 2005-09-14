@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.82  2005/09/14 19:57:20  sah
+ * extended ND_IDXS2OFFSET to work with scalar offsets, as well.
+ *
  * Revision 3.81  2005/08/24 10:21:26  ktr
  * added support for explicit with-loop offsets
  *
@@ -690,10 +693,10 @@ ICM_END( ND_VECT2OFFSET, (off_NT, from_size, from_NT, shp_size, shp_ANY))
 ICM_DEF( ND_IDXS2OFFSET, ICM_TRACE(prf))
   ICM_NT( off_NT)
   ICM_INT( idxs_size)
-  ICM_VARNT( idxs_size, idxs_NT)
+  ICM_VARANY( idxs_size, idxs_ANY)
   ICM_INT( shp_size)
   ICM_VARANY( shp_size, shp_ANY)
-ICM_END( ND_IDXS2OFFSET, (off_NT, idxs_size, idxs_NT, shp_size, shp_ANY))
+ICM_END( ND_IDXS2OFFSET, (off_NT, idxs_size, idxs_ANY, shp_size, shp_ANY))
 #endif
 
 
