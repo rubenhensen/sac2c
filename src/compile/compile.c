@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.170  2005/09/14 17:23:51  sah
+ * fixed COMPPrfVect2Offset:
+ *   - during compile, the new types are not present
+ *     any more, so the old types have to be used!
+ *
  * Revision 3.169  2005/08/24 10:21:26  ktr
  * added support for explicit with-loop offsets
  *
@@ -4616,8 +4621,8 @@ COMPPrfVect2Offset (node *arg_node, info *arg_info)
     iv_vect = PRF_ARG2 (arg_node);
 
     icm = TCmakeIcm5 ("ND_VECT2OFFSET", DUPdupIdsIdNt (let_ids),
-                      TBmakeNum (SHgetUnrLen (TYgetShape (ID_NTYPE (iv_vect)))),
-                      DUPdoDupNode (iv_vect), TBmakeNum (TCcountExprs (shpexprs)),
+                      TBmakeNum (TCgetTypesLength (ID_TYPE (iv_vect))),
+                      DUPdupIdNt (iv_vect), TBmakeNum (TCcountExprs (shpexprs)),
                       DUPdoDupTree (shpexprs));
 
     DBUG_RETURN (TBmakeAssign (icm, NULL));
