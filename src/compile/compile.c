@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.171  2005/09/14 19:56:07  sah
+ * minor fix in compilation of idxs2offset prf
+ *
  * Revision 3.170  2005/09/14 17:23:51  sah
  * fixed COMPPrfVect2Offset:
  *   - during compile, the new types are not present
@@ -4592,7 +4595,7 @@ COMPPrfIdxs2Offset (node *arg_node, info *arg_info)
     idxs_exprs = EXPRS_NEXT (PRF_ARGS (arg_node));
 
     icm = TCmakeIcm5 ("ND_IDXS2OFFSET", DUPdupIdsIdNt (let_ids),
-                      TBmakeNum (TCcountExprs (idxs_exprs)), idxs_exprs,
+                      TBmakeNum (TCcountExprs (idxs_exprs)), DUPdupExprsNt (idxs_exprs),
                       TBmakeNum (TCcountExprs (shpexprs)), DUPdoDupTree (shpexprs));
 
     DBUG_RETURN (TBmakeAssign (icm, NULL));
