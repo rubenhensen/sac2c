@@ -1141,6 +1141,11 @@
 	  <node name="Code" />
         </travuser>
       </traversal>
+      <traversal id="IVEO" name="IVE - Optimization" default="sons" include="index_optimize.h">
+        <travuser>
+	  <node name="Prf" />
+        </travuser>
+      </traversal>
       <traversal id="WLIDX" name="Annotate withloop idxs" default="sons" include="wlidxs.h">
         <travuser>
           <node name="Fundef" />

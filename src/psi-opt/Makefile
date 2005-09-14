@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.28  2005/09/14 21:26:00  sah
+# added basic implementation for index_optimize
+#
 # Revision 3.27  2005/09/12 16:18:47  sah
 # added index_eliminate.c
 #
@@ -90,7 +93,8 @@ all: ArrayElimination.o wl_access_analyze.o tile_size_inference.o \
      wls.o wlscheck.o wlsbuild.o wlswithloopification.o \
      pad.o pad_info.o pad_collect.o pad_infer.o pad_transform.o \
      WithloopFusion.o detectdependencies.o tagdependencies.o \
-     resolvedependencies.o index_infer.o index_eliminate.o
+     resolvedependencies.o index_infer.o index_eliminate.o \
+     index_optimize.o
 
 
 #

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.113  2005/09/14 21:26:00  sah
+ * added basic implementation for index_optimize
+ *
  * Revision 3.112  2005/09/12 20:42:03  ktr
  * added WLI for better WLF :)
  * Unfortunately, SSATransform is required after WLF.
@@ -434,6 +437,7 @@ OPTdoOptimize (node *arg_node)
         TRAVsetPreFun (TR_prt, IVEIprintPreFun);
         arg_node = PHrunCompilerSubPhase (SUBPH_ivei, arg_node);
         arg_node = PHrunCompilerSubPhase (SUBPH_ive, arg_node);
+        arg_node = PHrunCompilerSubPhase (SUBPH_iveo, arg_node);
         TRAVsetPreFun (TR_prt, NULL);
     }
 

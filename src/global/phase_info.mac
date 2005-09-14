@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.46  2005/09/14 21:26:00  sah
+ * added basic implementation for index_optimize
+ *
  * Revision 3.45  2005/09/12 19:52:25  ktr
  * added wli
  *
@@ -419,6 +422,9 @@ SUBPHASE (ivei, "ivei", "Applying index vector elimination (inference)",
           IVEIdoIndexVectorEliminationInference)
 
 SUBPHASE (ive, "ive", "Applying index vector elimination", IVEdoIndexVectorElimination)
+
+SUBPHASE (iveo, "iveo", "Applying index vector elimination (optimisation)",
+          IVEOdoIndexVectorEliminationOptimisation)
 
 SUBPHASE (wlidx, "wlidx", "Annoting offset variable at with-loops",
           WLIDXdoAnnotateWithloopIdxs)
