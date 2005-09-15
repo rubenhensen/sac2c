@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2005/09/15 17:12:13  ktr
+ * remove ICM traversal
+ *
  * Revision 1.11  2005/08/20 12:09:09  ktr
  * typeconv introduces aliasing
  *
@@ -720,39 +723,6 @@ EMAAid (node *arg_node, info *arg_info)
     default:
         DBUG_ASSERT ((0), "Illegal context");
         break;
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @node EMAAicm( node *arg_node, info *arg_info)
- *
- * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
- *
- *****************************************************************************/
-node *
-EMAAicm (node *arg_node, info *arg_info)
-{
-    char *name;
-
-    DBUG_ENTER ("EMAAicm");
-
-    name = ICM_NAME (arg_node);
-
-    if ((strstr (name, "USE_GENVAR_OFFSET") != NULL)
-        || (strstr (name, "VECT2OFFSET") != NULL)
-        || (strstr (name, "IDXS2OFFSET") != NULL)) {
-        DFMsetMaskEntrySet (INFO_AA_LOCALMASK (arg_info), NULL,
-                            ID_AVIS (ICM_ARG1 (arg_node)));
-    } else {
-        DBUG_ASSERT ((0), "Unknown ICM found during EMRI");
     }
 
     DBUG_RETURN (arg_node);

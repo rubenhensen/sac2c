@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2005/09/15 17:12:13  ktr
+ * remove ICM traversal
+ *
  * Revision 1.7  2005/08/24 10:20:09  ktr
  * added support for WITHID_IDXS, some brushing
  *
@@ -53,7 +56,6 @@ extern node *EMALfold (node *arg_node, info *arg_info);
 extern node *EMALfuncond (node *arg_node, info *arg_info);
 extern node *EMALfundef (node *arg_node, info *arg_info);
 extern node *EMALgenarray (node *arg_node, info *arg_info);
-extern node *EMALicm (node *arg_node, info *arg_info);
 extern node *EMALid (node *arg_node, info *arg_info);
 extern node *EMALlet (node *arg_node, info *arg_info);
 extern node *EMALmodarray (node *arg_node, info *arg_info);

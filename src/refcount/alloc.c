@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.42  2005/09/15 17:12:13  ktr
+ * remove ICM traversal
+ *
  * Revision 1.41  2005/09/12 15:21:57  ktr
  * added support for idxs2offset, vect2offset
  *
@@ -1245,39 +1248,6 @@ EMALfundef (node *fundef, info *arg_info)
     }
 
     DBUG_RETURN (fundef);
-}
-
-/** <!--******************************************************************-->
- *
- * @fn EMALicm
- *
- *  @brief allocates memory for the first argument of IVE-ICMs
- *
- *  @param arg_node
- *  @param arg_info containing ALLOCLIST
- *
- *  @return arg_node (unmodified) and modified ALLOCLIST
- *
- ***************************************************************************/
-node *
-EMALicm (node *arg_node, info *arg_info)
-{
-    char *name;
-
-    DBUG_ENTER ("EMALicm");
-
-    name = ICM_NAME (arg_node);
-    if ((strstr (name, "USE_GENVAR_OFFSET") != NULL)
-        || (strstr (name, "VECT2OFFSET") != NULL)
-        || (strstr (name, "IDXS2OFFSET") != NULL)) {
-
-        INFO_ALLOCLIST (arg_info)
-          = MakeALS (INFO_ALLOCLIST (arg_info), ID_AVIS (ICM_ARG1 (arg_node)),
-                     TBmakeNum (0), TCcreateZeroVector (0, T_int));
-    } else {
-        DBUG_ASSERT ((0), "Unknown ICM found during EMAL");
-    }
-    DBUG_RETURN (arg_node);
 }
 
 /** <!--******************************************************************-->

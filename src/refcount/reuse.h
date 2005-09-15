@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2005/09/15 17:12:13  ktr
+ * remove ICM traversal
+ *
  * Revision 1.3  2004/11/21 20:42:14  ktr
  * Ismop
  *
@@ -30,7 +33,6 @@ extern node *EMRIassign (node *arg_node, info *arg_info);
 extern node *EMRIcode (node *arg_node, info *arg_info);
 extern node *EMRIcond (node *arg_node, info *arg_info);
 extern node *EMRIfundef (node *arg_node, info *arg_info);
-extern node *EMRIicm (node *arg_node, info *arg_info);
 extern node *EMRIlet (node *arg_node, info *arg_info);
 extern node *EMRIprf (node *arg_node, info *arg_info);
 extern node *EMRIwith2 (node *arg_node, info *arg_info);

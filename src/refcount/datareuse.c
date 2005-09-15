@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  2005/09/15 17:12:13  ktr
+ * remove ICM traversal
+ *
  * Revision 1.15  2005/07/16 10:07:54  sah
  * moved variable declaration to begin of block
  *
@@ -327,6 +330,7 @@ EMDRcode (node *arg_node, info *arg_info)
     while (exprs != NULL) {
         node *id = NULL;
         node *iv = NULL;
+        node *idx = NULL;
         bool inplace = FALSE;
 
         id = EXPRS_EXPR (exprs);
@@ -342,6 +346,7 @@ EMDRcode (node *arg_node, info *arg_info)
                 val = PRF_ARG1 (wlass);
                 mem = PRF_ARG2 (wlass);
                 iv = PRF_ARG3 (wlass);
+                idx = PRF_ARG4 (wlass);
 
                 valavis = ID_AVIS (val);
 
@@ -354,7 +359,7 @@ EMDRcode (node *arg_node, info *arg_info)
                      * Pattern:
                      *
                      * a = fill( B[iv], a');
-                     * r = wl_assign( a, A', iv);
+                     * r = wl_assign( a, A', iv, idx);
                      *
                      * where A' is known to be a reuse of B
                      */
@@ -373,38 +378,20 @@ EMDRcode (node *arg_node, info *arg_info)
                     /*
                      * Pattern:
                      *
-                     *     SAC_ND_USE_GENVAR_OFFSET( idx, A);
                      * a = fill( idx_sel( idx, B), a');
-                     * r = wl_assign( a, A', iv);
+                     * r = wl_assign( a, A', iv, idx);
                      *
                      * where A' is known to be a reuse of B
                      */
                     if ((NODE_TYPE (sel) == N_prf) && (PRF_PRF (sel) == F_idx_sel)) {
-                        node *idx = PRF_ARG1 (sel);
+                        node *selidx = PRF_ARG1 (sel);
                         node *arr = PRF_ARG2 (sel);
 
-                        node *idxavis = ID_AVIS (idx);
-                        if (AVIS_SSAASSIGN (idxavis) != NULL) {
-                            node *lastass = NULL;
-                            node *idxass = AVIS_SSAASSIGN (idxavis);
-                            while (idxass != NULL) {
-                                node *icm = ASSIGN_INSTR (idxass);
-                                if ((NODE_TYPE (icm) == N_icm)
-                                    && (!strcmp (ICM_NAME (icm), "ND_USE_GENVAR_OFFSET"))
-                                    && (ID_AVIS (idx) == ID_AVIS (ICM_ARG1 (icm)))
-                                    && (LUTsearchInLutPp (INFO_EMDR_REUSELUT (arg_info),
-                                                          ID_AVIS (mem))
-                                        == ID_AVIS (arr))) {
-                                    DBUG_ASSERT (lastass != NULL,
-                                                 "Write a better SSADCR, Man!");
-                                    ASSIGN_NEXT (lastass)
-                                      = FREEdoFreeNode (ASSIGN_NEXT (lastass));
-                                    inplace = TRUE;
-                                    break;
-                                }
-                                lastass = idxass;
-                                idxass = ASSIGN_NEXT (idxass);
-                            }
+                        if ((ID_AVIS (idx) == ID_AVIS (selidx))
+                            && (LUTsearchInLutPp (INFO_EMDR_REUSELUT (arg_info),
+                                                  ID_AVIS (mem))
+                                == ID_AVIS (arr))) {
+                            inplace = TRUE;
                         }
                     }
                 }

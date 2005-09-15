@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2005/09/15 17:12:13  ktr
+ * remove ICM traversal
+ *
  * Revision 1.7  2004/12/09 21:09:26  ktr
  * bugfix roundup
  *
@@ -47,7 +50,6 @@ extern node *EMAAfold (node *arg_node, info *arg_info);
 extern node *EMAAfuncond (node *arg_node, info *arg_info);
 extern node *EMAAfundef (node *arg_node, info *arg_info);
 extern node *EMAAgenarray (node *arg_node, info *arg_info);
-extern node *EMAAicm (node *arg_node, info *arg_info);
 extern node *EMAAid (node *arg_node, info *arg_info);
 extern node *EMAAlet (node *arg_node, info *arg_info);
 extern node *EMAAmodarray (node *arg_node, info *arg_info);
