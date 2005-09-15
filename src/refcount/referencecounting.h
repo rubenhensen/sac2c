@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2005/09/15 17:12:13  ktr
+ * removed ICM traversal
+ *
  * Revision 1.1  2005/07/16 09:57:27  ktr
  * Initial revision
  *
@@ -28,7 +31,6 @@ extern node *RCIfold (node *arg_node, info *arg_info);
 extern node *RCIfuncond (node *arg_node, info *arg_info);
 extern node *RCIfundef (node *arg_node, info *arg_info);
 extern node *RCIgenarray (node *arg_node, info *arg_info);
-extern node *RCIicm (node *arg_node, info *arg_info);
 extern node *RCIid (node *arg_node, info *arg_info);
 extern node *RCIids (node *arg_node, info *arg_info);
 extern node *RCIlet (node *arg_node, info *arg_info);
