@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2005/09/15 17:12:13  ktr
+ * fixed bug #113
+ * DEEP BRUSH
+ *
  * Revision 1.1  2004/11/25 19:26:56  ktr
  * Initial revision
  *
@@ -42,7 +46,6 @@
 extern node *REUSEdoGetReuseArrays (node *syntax_tree, node *fundef, node *wl_ids);
 
 extern node *REUSEfold (node *arg_node, info *arg_info);
-extern node *REUSEfundef (node *arg_node, info *arg_info);
 extern node *REUSEgenarray (node *arg_node, info *arg_info);
 extern node *REUSEid (node *arg_node, info *arg_info);
 extern node *REUSElet (node *arg_node, info *arg_info);
