@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2005/09/15 17:13:56  ktr
+ * removed IVE renaming function which was obsolete due to explicit
+ * offset variables
+ *
  * Revision 1.1  2005/09/12 16:19:20  sah
  * Initial revision
  *
@@ -12,8 +16,6 @@
 #include "types.h"
 
 extern node *IVEdoIndexVectorElimination (node *syntax_tree);
-
-extern char *IVEchangeId (char *varname, shape *shp);
 
 extern node *IVEfundef (node *arg_node, info *arg_info);
 extern node *IVEassign (node *arg_node, info *arg_info);

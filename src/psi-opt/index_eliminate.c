@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2005/09/15 17:13:56  ktr
+ * removed IVE renaming function which was obsolete due to explicit
+ * offset variables
+ *
  * Revision 1.2  2005/09/15 12:46:05  sah
  * args and ids are now properly traversed
  *
@@ -195,38 +199,6 @@ static int ive_expr;
 /**
  * helper functions
  */
-
-/** <!--********************************************************************-->
- *
- * @fn char *IVEChangeId( char *varname, shape *shp)
- *
- * @brief appends the shape given by type to the varname.
- *
- *    Example:
- *    test, int[1,4,2,3]  =>  test_1_4_2_3__
- *    does not free the argument space!
- *
- ******************************************************************************/
-
-char *
-IVEchangeId (char *varname, shape *shp)
-{
-    static char buffer[1024];
-    static char buffer2[32];
-    int i;
-
-    DBUG_ENTER ("IVEchangeId");
-
-    sprintf (buffer, "%s", varname);
-    for (i = 0; i < SHgetDim (shp); i++) {
-        sprintf (buffer2, "_%d", SHgetExtent (shp, i));
-        strcat (buffer, buffer2);
-    }
-    sprintf (buffer2, "__");
-    strcat (buffer, buffer2);
-
-    DBUG_RETURN (ILIBstringCopy (buffer));
-}
 
 static node *
 Type2IdxAssign (ntype *type, node *avis, info *info)
