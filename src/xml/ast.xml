@@ -1143,6 +1143,8 @@
       </traversal>
       <traversal id="IVEO" name="IVE - Optimization" default="sons" include="index_optimize.h">
         <travuser>
+	  <node name="Let" />
+	  <node name="With" />
 	  <node name="Prf" />
         </travuser>
       </traversal>
