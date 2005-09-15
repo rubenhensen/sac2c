@@ -1194,7 +1194,6 @@
           <node name="Funcond" />
           <node name="Fundef" />
           <node name="Genarray" />
-          <node name="Icm" />
           <node name="Id" />
           <node name="Let" />
           <node name="Modarray" />
@@ -1273,7 +1272,6 @@
           <node name="Funcond" />
           <node name="Fundef" />
           <node name="Genarray" />
-          <node name="Icm" />
           <node name="Id" />
           <node name="Let" />
           <node name="Modarray" />
@@ -1394,7 +1392,6 @@
           <node name="Code" />
           <node name="Cond" />
           <node name="Fundef" />
-          <node name="Icm" />
           <node name="Let" />
           <node name="Prf" />
           <node name="With2" />
@@ -1407,7 +1404,6 @@
       </traversal>
       <traversal id="REUSE" name="Reuse With Arrays" default="sons" include="ReuseWithArrays.h">
         <travuser>
-          <node name="Fundef" />
           <node name="Let" />
           <node name="Id" />
           <node name="Genarray" />
@@ -1728,7 +1724,6 @@
           <node name="Funcond" />
           <node name="Fundef" />
           <node name="Genarray" />
-          <node name="Icm" />
           <node name="Id" />
           <node name="Ids" />
           <node name="Let" />
@@ -4463,12 +4458,6 @@
           <type name="DFMask" />
           <phases>
             <phase name="lac2fun"/>
-          </phases>
-        </attribute>
-        <attribute name="ReUse" mandatory="no">
-          <type name="DFMask" />
-          <phases>
-            <phase name="rci" />
           </phases>
         </attribute>
       </attributes>
