@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.169  2005/09/15 17:13:07  ktr
+ * removed WITH2_REUSE
+ *
  * Revision 3.168  2005/08/24 10:17:30  ktr
  * added support for WITHID_IDXS, GENARRAY_IDX, MODARRAY_IDS
  *
@@ -2554,8 +2557,6 @@ DUPwith2 (node *arg_node, info *arg_info)
     withop = DUPTRAV (WITH2_WITHOP (arg_node));
 
     new_node = TBmakeWith2 (WITH2_DIMS (arg_node), id, segs, code, withop);
-
-    WITH2_REUSE (new_node) = DupDfmask (WITH2_REUSE (arg_node), arg_info);
 
     WITH2_IN_MASK (new_node) = DupDfmask (WITH2_IN_MASK (arg_node), arg_info);
     WITH2_OUT_MASK (new_node) = DupDfmask (WITH2_OUT_MASK (arg_node), arg_info);
