@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2005/09/15 13:23:05  sah
+ * added BUG113_SOLVED comment
+ *
  * Revision 1.5  2005/09/12 17:14:13  sah
  * index.h is now index_eliminate.h
  *
@@ -590,12 +593,13 @@ REUSElet (node *arg_node, info *arg_info)
                     arg2 = EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (EXPRS_EXPR (tmpnode))));
                     traverse = ReuseSel (arg1, arg2, arg_info);
                     break;
-
+#ifdef BUG113_SOLVED
                 case F_idx_sel:
                     arg1 = EXPRS_EXPR (PRF_ARGS (EXPRS_EXPR (tmpnode)));
                     arg2 = EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (EXPRS_EXPR (tmpnode))));
                     traverse = ReuseIdxSel (arg1, arg2, arg_info);
                     break;
+#endif
 
                 default:
                     break;
