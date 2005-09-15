@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.25  2005/09/15 11:08:52  sah
+ * added SHarray2Shape
+ *
  * Revision 1.24  2005/02/15 21:07:40  sah
  * module system fixes
  *
@@ -854,6 +857,41 @@ SHshape2Array (shape *shp)
     array = TCmakeFlatArray (SHshape2Exprs (shp));
 
     DBUG_RETURN (array);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn shape *SHarray2Shape( node *array)
+ *
+ * @brief creates a shape vector from a given simple int vector
+ *
+ ******************************************************************************/
+shape *
+SHarray2Shape (node *array)
+{
+    shape *result;
+    node *exprs;
+    int cnt;
+
+    DBUG_ENTER ("SHarray2Shape");
+
+    DBUG_ASSERT ((NODE_TYPE (array) == N_array),
+                 "SHarray2Shape called on non array node");
+
+    exprs = ARRAY_AELEMS (array);
+
+    result = SHmakeShape (TCcountExprs (exprs));
+
+    for (cnt = 0; cnt < SHAPE_DIM (result); cnt++) {
+        DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (exprs)) == N_num),
+                     "SHarray2Shape can handle constant int vectors only!");
+
+        SHAPE_EXT (result, cnt) = NUM_VAL (EXPRS_EXPR (exprs));
+
+        exprs = EXPRS_NEXT (exprs);
+    }
+
+    DBUG_RETURN (result);
 }
 
 /*@}*/ /* defgroup shape */

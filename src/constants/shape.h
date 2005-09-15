@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2005/09/15 11:08:52  sah
+ * added SHarray2Shape
+ *
  * Revision 1.12  2004/11/23 09:46:24  ktr
  * ISMOP SacDEVCamp 04
  *
@@ -83,6 +86,7 @@ extern char *SHshape2String (int dots, shape *shp);
 extern int *SHshape2IntVec (shape *shp);
 extern node *SHshape2Exprs (shape *shp);
 extern node *SHshape2Array (shape *shp);
+extern shape *SHarray2Shape (node *array);
 
 extern shape *SHoldTypes2Shape (types *shpseg);
 extern shape *SHoldShpseg2Shape (int dim, shpseg *shpseg);
