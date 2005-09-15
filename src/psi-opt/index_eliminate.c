@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2005/09/15 12:46:05  sah
+ * args and ids are now properly traversed
+ *
  * Revision 1.1  2005/09/12 16:19:19  sah
  * Initial revision
  *
@@ -462,6 +465,10 @@ IVEarg (node *arg_node, info *arg_info)
                              NULL, arg_info);
     }
 
+    if (ARG_NEXT (arg_node) != NULL) {
+        ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
+    }
+
     DBUG_RETURN (arg_node);
 }
 
@@ -518,6 +525,10 @@ IVEids (node *arg_node, info *arg_info)
         AVIS_IDXIDS (IDS_AVIS (arg_node))
           = IdxTypes2IdxIds (AVIS_IDXTYPES (IDS_AVIS (arg_node)), IDS_AVIS (arg_node),
                              ASSIGN_LHS (AVIS_SSAASSIGN (IDS_AVIS (arg_node))), arg_info);
+    }
+
+    if (IDS_NEXT (arg_node) != NULL) {
+        IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
