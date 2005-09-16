@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.46  2005/09/16 14:41:06  sbs
+ * bug resolved.
+ * Now, lacfuns that return bottom are eliminated completely
+ *
  * Revision 1.45  2005/08/30 20:23:14  ktr
  * AVIS nodes without AVIS_TYPE are now equipped with a default type (int).
  * This is important as dead variables can arise during the opt cycle.
@@ -568,10 +572,21 @@ NT2OTfundef (node *arg_node, info *arg_info)
             } else {
                 /**
                  * we transform the entire body into one 'type error' assignment
+                 *
+                 * In case of LaC funs this is more difficult. Since the signatures
+                 * of these funs are not user specified, they do not have an upper
+                 * limit which prevents from a successfull type error generation.
+                 * (cf. bug no 115).However, since this bottom has been propagated into
+                 * the calling site, we can simply eliminate these functions entirely!
                  */
-                fltype = TYliftBottomFixAndEliminateAlpha (otype);
+                if (FUNDEF_ISLACFUN (arg_node)) {
+                    /* mark this fun as xombie! */
+                    arg_node = FREEdoFreeNode (arg_node);
 
-                arg_node = ReplaceBodyByTypeError (arg_node, ftype, fltype);
+                } else {
+                    fltype = TYliftBottomFixAndEliminateAlpha (otype);
+                    arg_node = ReplaceBodyByTypeError (arg_node, ftype, fltype);
+                }
             }
 
         } else {
