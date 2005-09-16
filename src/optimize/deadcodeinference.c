@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2005/09/16 19:15:11  sah
+ * fixed bug #118: return ids of internal assignment have to be kept
+ *                 if the corresponding ids of the external assignment
+ *                 are non-dead!
+ *
  * Revision 1.2  2005/09/03 08:46:40  ktr
  * changed some DBUG_PRINTs from DCR to DCI
  *
@@ -364,6 +369,8 @@ DCIlet (node *arg_node, info *arg_info)
 node *
 DCIap (node *arg_node, info *arg_info)
 {
+    node *extids, *recids;
+
     DBUG_ENTER ("DCIap");
 
     /* traverse special fundef without recursion */
@@ -371,6 +378,30 @@ DCIap (node *arg_node, info *arg_info)
         if (AP_FUNDEF (arg_node) == INFO_FUNDEF (arg_info)) {
             /* remember internal assignment */
             INFO_INT_ASSIGN (arg_info) = INFO_ASSIGN (arg_info);
+
+            /**
+             * mark all return values that are needed at the
+             * EXT_ASSIGN needed for the INT_ASSIGN as well.
+             * this prevents the unwanted deletion of return
+             * ids in the case they are not needed within the
+             * loops body. as an example try:
+             *
+             *   while( _lt_(res, 10)) {
+             *     res = _add_SxS_(res, _sel_( iv, a));
+             *     iv = [2];
+             *   }
+             */
+            extids = ASSIGN_LHS (INFO_EXT_ASSIGN (arg_info));
+            recids = ASSIGN_LHS (INFO_INT_ASSIGN (arg_info));
+
+            while (extids != NULL) {
+                if ((!AVIS_ISDEAD (IDS_AVIS (extids)))
+                    && (AVIS_ISDEAD (IDS_AVIS (recids)))) {
+                    AVIS_ISDEAD (IDS_AVIS (recids)) = FALSE;
+                }
+                extids = IDS_NEXT (extids);
+                recids = IDS_NEXT (recids);
+            }
 
             /* do not mark the recursive parameters as needed in order not to
                create excessive demand */
