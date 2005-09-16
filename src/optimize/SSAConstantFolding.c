@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.98  2005/09/16 16:35:22  sbs
+ * some important comment on why we NEED to make CF dependent on AKV types
+ * added.
+ *
  * Revision 1.97  2005/09/16 13:12:44  ktr
  * fixed corrupted AVIS_SSAASSIGN pointers
  *
@@ -276,6 +280,15 @@
  *   constant expressions we compute primitive functions at compile time
  *   so we need not to compute them at runtime. this simplyfies the code
  *   and allows further optimizations.
+ *
+ *
+ * TODO: this comment needs to be adjusted to the changes that have been made
+ *   during post-Marielyst brushing/bugfixing!!!!
+ *
+ *   IMPORTANT: Making CF dependent on AKV types rather than constant arguments
+ *   is a VERY important design decision. Only this way we prevent CF
+ *   to be called with arguments that may violate the prf's domain restrictions
+ *   (cf. bug 61).
  *
  *   each computed constant expression is stored in the AVIS_SSACONST(avis)
  *   attribute of the assigned identifier for later access.
