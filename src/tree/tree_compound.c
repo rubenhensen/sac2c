@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.143  2005/09/16 17:04:45  sah
+ * removed TCcreateZero as it created unflattened code
+ * inlined it into SSAWLUnroll.c
+ *
  * Revision 3.142  2005/09/06 14:11:49  ktr
  * added TCcountAssigns
  *
@@ -3023,48 +3027,6 @@ TCcreateScalarWith (shape *shape, simpletype btype, node *expr, node *fundef)
     fundef = TCaddVardecs (fundef, vardecs);
 
     DBUG_RETURN (wl);
-}
-
-/******************************************************************************
- *
- * Function:
- *   node *TCcreateZero( shape *shape, simpletype btype, bool no_wl,
- *                       node *fundef)
- *
- * Description:
- *   Creates an array of zeros.
- *
- ******************************************************************************/
-
-node *
-TCcreateZero (shape *shape, simpletype btype, bool no_wl, node *fundef)
-{
-    node *zero;
-    int dim = SHgetDim (shape);
-    int length = SHgetUnrLen (shape);
-
-    DBUG_ENTER ("TCcreateZero");
-
-    if (dim == 0) {
-        zero = TCcreateZeroScalar (btype);
-    } else if (no_wl && (dim == 1)) {
-        zero = TCcreateZeroVector (length, btype);
-    } else {
-        if (no_wl) {
-            DBUG_ASSERT ((length <= global.wlunrnum),
-                         "CreateZero(): Vector is too long!");
-
-            zero
-              = TBmakePrf (F_reshape,
-                           TBmakeExprs (SHshape2Array (shape),
-                                        TBmakeExprs (TCcreateZeroVector (length, btype),
-                                                     NULL)));
-        } else {
-            zero = TCcreateScalarWith (shape, btype, TCcreateZeroScalar (btype), fundef);
-        }
-    }
-
-    DBUG_RETURN (zero);
 }
 
 /*--------------------------------------------------------------------------*/

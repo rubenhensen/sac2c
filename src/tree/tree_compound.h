@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.202  2005/09/16 17:04:45  sah
+ * removed TCcreateZero as it created unflattened code
+ * inlined it into SSAWLUnroll.c
+ *
  * Revision 3.201  2005/09/06 14:11:49  ktr
  * added TCcountAssigns
  *
@@ -1478,8 +1482,6 @@ extern node *TCmakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *a
 
 extern node *TCcreateScalarWith (shape *shape, simpletype btype, node *expr,
                                  node *fundef);
-
-extern node *TCcreateZero (shape *shape, simpletype btype, bool unroll, node *fundef);
 
 /*--------------------------------------------------------------------------*/
 
