@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.33  2005/09/16 15:49:28  sbs
+ * errorneous DBUG_ASSERT message fixed.
+ *
  * Revision 1.32  2005/09/07 15:35:47  sbs
  * added NTCCTprf_modarrayA
  *
@@ -506,7 +509,7 @@ NTCCTprf_reshape (te_info *info, ntype *args)
 
     DBUG_ENTER ("NTCCTprf_reshape");
     DBUG_ASSERT (TYgetProductSize (args) == 2,
-                 "shape called with incorrect number of arguments");
+                 "reshape called with incorrect number of arguments");
 
     new_shp = TYgetProductMember (args, 0);
     array = TYgetProductMember (args, 1);
