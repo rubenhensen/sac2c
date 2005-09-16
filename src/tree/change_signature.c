@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2005/09/16 18:27:22  sah
+ * fixed bug #117: removed sharing of ntype between ret node and ret var.
+ *
  * Revision 1.11  2004/11/26 16:20:32  cg
  * code brushed
  *
@@ -57,6 +60,7 @@
 #include "dbug.h"
 #include "free.h"
 #include "DupTree.h"
+#include "new_types.h"
 
 /******************************************************************************
  *
@@ -514,7 +518,8 @@ CSaddResult (node *fundef, node *vardec, nodelist *letlist)
     }
 
     FUNDEF_RETS (fundef)
-      = TCappendRet (TBmakeRet (AVIS_TYPE (VARDEC_OR_ARG_AVIS (vardec)), NULL),
+      = TCappendRet (TBmakeRet (TYcopyType (AVIS_TYPE (VARDEC_OR_ARG_AVIS (vardec))),
+                                NULL),
                      FUNDEF_RETS (fundef));
 
     DBUG_RETURN (fundef);
