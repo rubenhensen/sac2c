@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.27  2005/09/16 17:07:44  sah
+ * fixed bug #116: the generated code is now properly flattened
+ *
  * Revision 1.26  2005/09/04 12:52:11  ktr
  * re-engineered the optimization cycle
  *
@@ -717,10 +720,15 @@ node *
 WLUdoUnrollGenarray (node *wln, info *arg_info)
 {
     node *partn, *res;
-    node *letn, *let_expr;
+    node *reshape;
     void *arg[2];
     node *arrayname;
     ntype *type;
+    node *shp, *shpavis;
+    node *vect, *vectavis;
+    node *vardecs = NULL;
+    int length;
+    simpletype btype;
 
     DBUG_ENTER ("WLUdoUnrollGenarray");
 
@@ -739,19 +747,39 @@ WLUdoUnrollGenarray (node *wln, info *arg_info)
     }
 
     /*
-     * finally add   arrayname = reshape( ..., [0,...,0])
+     * finally add:
+     *
+     * <tmp1> = <shape>;
+     * <tmp2> = [0,...,0];
+     * <array> = _reshape_( <tmp1>, <tmp2>)
      */
     type = IDS_NTYPE (arrayname);
-    let_expr = TCcreateZero (TYgetShape (type), TYgetSimpleType (TYgetScalar (type)),
-                             TRUE, INFO_FUNDEF (arg_info));
+    btype = TYgetSimpleType (TYgetScalar (type));
+    length = SHgetUnrLen (TYgetShape (type));
+
+    shp = SHshape2Array (TYgetShape (type));
+    shpavis = TBmakeAvis (ILIBtmpVar (),
+                          TYmakeAKS (TYmakeSimpleType (T_int),
+                                     SHcreateShape (1, SHgetDim (TYgetShape (type)))));
+    vardecs = TBmakeVardec (shpavis, vardecs);
+
+    vect = TCcreateZeroVector (length, btype);
+    vectavis = TBmakeAvis (ILIBtmpVar (), TYmakeAKS (TYmakeSimpleType (btype),
+                                                     SHcreateShape (1, length)));
+    vardecs = TBmakeVardec (vectavis, vardecs);
+
+    reshape = TCmakePrf2 (F_reshape, TBmakeId (shpavis), TBmakeId (vectavis));
 
     if (TYisAKV (type)) {
         IDS_NTYPE (arrayname) = TYeliminateAKV (type);
         type = TYfreeType (type);
     }
 
-    letn = TBmakeLet (DUPdoDupNode (arrayname), let_expr);
-    res = TBmakeAssign (letn, res);
+    res = TBmakeAssign (TBmakeLet (DUPdoDupNode (arrayname), reshape), res);
+    res = TBmakeAssign (TBmakeLet (TBmakeIds (vectavis, NULL), vect), res);
+    res = TBmakeAssign (TBmakeLet (TBmakeIds (shpavis, NULL), shp), res);
+
+    INFO_FUNDEF (arg_info) = TCaddVardecs (INFO_FUNDEF (arg_info), vardecs);
 
     DBUG_RETURN (res);
 }
