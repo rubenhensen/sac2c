@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.24  2005/09/16 10:33:49  sah
+ * fixed bug #114. unrolling seems to work
+ * properly now
+ *
  * Revision 1.23  2005/09/04 12:52:11  ktr
  * re-engineered the optimization cycle
  *
@@ -1072,7 +1076,7 @@ SSALURUnrollLoopBody (node *fundef, loopc_t unrolling)
         /* unrolling */
 
         /* extract recursive call behind cond */
-        then_instr = COND_THENINSTR (cond_assign);
+        then_instr = COND_THENINSTR (ASSIGN_INSTR (cond_assign));
         DBUG_ASSERT ((NODE_TYPE (then_instr) == N_assign),
                      "cond of loop fun w/o N_assign in then body");
         DBUG_ASSERT ((NODE_TYPE (ASSIGN_INSTR (then_instr)) == N_let),
