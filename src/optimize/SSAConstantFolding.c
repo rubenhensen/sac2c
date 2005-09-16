@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.97  2005/09/16 13:12:44  ktr
+ * fixed corrupted AVIS_SSAASSIGN pointers
+ *
  * Revision 1.96  2005/09/16 13:01:30  sah
  * added support do fold _cat_( x, []) and _cat( [], x) if the
  * [] is repesented by a id of constant type
@@ -2131,6 +2134,15 @@ CFlet (node *arg_node, info *arg_info)
         if (TCcountIds (LET_IDS (arg_node))
             == TCcountAssigns (INFO_PREASSIGN (arg_info))) {
 
+            /*
+             * Set all AVIS_SSAASSIGN links
+             */
+            node *preass = INFO_PREASSIGN (arg_info);
+            while (preass != NULL) {
+                AVIS_SSAASSIGN (IDS_AVIS (ASSIGN_LHS (preass))) = preass;
+                preass = ASSIGN_NEXT (preass);
+            }
+
             global.optcounters.cf_expr += TCcountIds (LET_IDS (arg_node));
             INFO_REMASSIGN (arg_info) = TRUE;
         } else {
@@ -2160,7 +2172,11 @@ CFids (node *arg_node, info *arg_info)
           = TBmakeAssign (TBmakeLet (DUPdoDupNode (arg_node),
                                      COconstant2AST (TYgetValue (IDS_NTYPE (arg_node)))),
                           INFO_PREASSIGN (arg_info));
-        AVIS_SSAASSIGN (IDS_AVIS (arg_node)) = INFO_PREASSIGN (arg_info);
+        /*
+         * Do not yet set AVIS_SSAASSIGN to the new assignment
+         * this is done in CFlet iff it turns out the assignment chain is
+         * in fact required
+         */
     }
 
     if (IDS_NEXT (arg_node) != NULL) {
