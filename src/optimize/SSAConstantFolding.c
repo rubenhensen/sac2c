@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.96  2005/09/16 13:01:30  sah
+ * added support do fold _cat_( x, []) and _cat( [], x) if the
+ * [] is repesented by a id of constant type
+ *
  * Revision 1.95  2005/09/14 07:06:04  ktr
  * Added CFwith. It creates a fake assignment of an array consisting of the
  * index scalars to the index vector before traversing the with-loop body.
@@ -387,6 +391,8 @@ FreeInfo (info *info)
 
 #define FIRST_CONST_ARG_OF_TWO(arg, arg_expr) ((arg[0] != NULL) && (arg_expr[1] != NULL))
 
+#define SECOND_CONST_ARG_OF_TWO(arg, arg_expr) ((arg[1] != NULL) && (arg_expr[0] != NULL))
+
 #define ONE_ARG(arg_expr) (arg_expr[0] != NULL)
 
 #define TWO_ARG(arg_expr) ((arg_expr[0] != NULL) && (arg_expr[1] != NULL))
@@ -645,7 +651,8 @@ CFscoExpr2StructConstant (node *expr)
     } else {
         if (NODE_TYPE (expr) == N_id) {
             if (AVIS_SSAASSIGN (ID_AVIS (expr)) != NULL) {
-                /* expression is an identifier */
+
+                /* expression is an identifier/argument */
                 if (TUdimKnown (AVIS_TYPE (ID_AVIS (expr)))) {
                     dim = TYgetDim (AVIS_TYPE (ID_AVIS (expr)));
                 } else {
@@ -2502,6 +2509,24 @@ CFfoldPrfExpr (prf op, node **arg_expr)
             }
         break;
 
+    case F_cat_VxV:
+        if
+            TWO_CONST_ARG (arg_co)
+            {
+            }
+        else if (FIRST_CONST_ARG_OF_TWO (arg_co, arg_expr)
+                 && (SHgetUnrLen (COgetShape (arg_co[0])) == 0)) {
+
+            new_node = DUPdoDupNode (arg_expr[1]);
+        } else if (SECOND_CONST_ARG_OF_TWO (arg_co, arg_expr)
+                   && (SHgetUnrLen (COgetShape (arg_co[1])) == 0)) {
+
+            new_node = DUPdoDupNode (arg_expr[0]);
+        } else {
+            new_node = CatVxV (arg_expr[0], arg_expr[1]);
+        }
+        break;
+
         /* three-argument functions */
     case F_modarray:
         if (SECOND_CONST_ARG_OF_THREE (arg_co, arg_expr)) {
@@ -2509,16 +2534,7 @@ CFfoldPrfExpr (prf op, node **arg_expr)
         }
         break;
 
-    case F_cat_VxV:
-        if
-            TWO_CONST_ARG (arg_co)
-            {
-            }
-        else {
-            new_node = CatVxV (arg_expr[0], arg_expr[1]);
-        }
-        break;
-
+        /* not implemeneted functions */
     case F_cat:
         /* not implemented yet */
         break;
