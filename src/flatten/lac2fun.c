@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.42  2005/09/18 16:22:09  sah
+ * removed the uneccessary creation of FUNDEF_TYPES
+ *
  * Revision 3.41  2005/08/19 22:42:16  sah
  * minor fix to please gcc
  *
@@ -455,7 +458,6 @@ MakeL2fFundef (char *funname, namespace_t *ns, node *instr, node *funcall_let,
                       args, NULL, /* the block is not complete yet */
                       NULL);
 
-    FUNDEF_TYPES (fundef) = DFMUdfm2ReturnTypes (out);
     FUNDEF_RETURN (fundef) = ASSIGN_INSTR (ret);
 
     /*
