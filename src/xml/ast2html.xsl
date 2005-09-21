@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.8  2005/09/21 17:46:13  sah
+  quick adapt to new ast.xml. would need major rework.
+
   Revision 1.7  2004/12/07 16:35:49  sah
   fixed a bug
 
@@ -465,7 +468,7 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
       </tr>
       <tr>
         <td>
-          <xsl:apply-templates select="target/node" mode="table" />
+          <xsl:apply-templates select="target/node" mode="table-target" />
         </td>
       </tr>
       <tr>
@@ -527,7 +530,7 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
           </td>
         </tr>
       </xsl:if>
-      <xsl:if test="attributes/attribute[phases/all]">
+      <xsl:if test="attributes/attribute[type/targets/target/phases/all]">
         <tr>
           <td class="heading">Permanent Attributes</td>
         </tr>
@@ -540,13 +543,13 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
                 <td class="subheading">Default</td>
                 <td class="subheading">Comment</td>
               </tr>
-              <xsl:apply-templates select="attributes/attribute[phases/all]"
+              <xsl:apply-templates select="attributes/attribute[type/targets/target/phases/all]"
               mode="table" />
             </table>
           </td>
         </tr>
       </xsl:if>
-      <xsl:if test="attributes/attribute[not(phases/all)]">
+      <xsl:if test="attributes/attribute[not(type/targets/target/phases/all)]">
         <tr>
           <td class="heading">Temporary Attributes</td>
         </tr>
@@ -560,7 +563,7 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
                 <td class="subheading">Default</td>
                 <td class="subheading">Comment</td>
               </tr>
-              <xsl:apply-templates select="attributes/attribute[not( phases/all)]" mode="table" />
+              <xsl:apply-templates select="attributes/attribute[not( type/targets/target/phases/all)]" mode="table" />
             </table>
           </td>
         </tr>
@@ -607,7 +610,7 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
         <xsl:value-of select="@name" />
       </td>
       <td>
-        <xsl:apply-templates select="target" mode="table" />
+        <xsl:apply-templates select="targets/target" mode="table-target" />
       </td>
       <td class="ccode" >
         <xsl:value-of select="@default" />
@@ -619,7 +622,7 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
   </xsl:template>
 
   <!-- a target node is transformed into a reference to that node -->
-  <xsl:template match="target/node" mode="table">
+  <xsl:template match="target/node" mode="table-target">
     <xsl:value-of select="' '" />
     <xsl:element name="a">
       <xsl:attribute name="href">
@@ -635,7 +638,7 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
   </xsl:template>
 
   <!-- a target set is transformed into a reference to that node -->
-  <xsl:template match="target/set" mode="table">
+  <xsl:template match="target/set" mode="table-target">
     <xsl:element name="a">
       <xsl:attribute name="href">
         <xsl:value-of select="'#'" />
@@ -645,6 +648,11 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
       <xsl:value-of select="@name" />
       <xsl:value-of select="'}'" />
     </xsl:element>
+  </xsl:template>
+
+  <!-- a target any is transformed into any -->
+  <xsl:template match="target/any" mode="table-target">
+    <xsl:value-of select="'any'" />
   </xsl:template>
 
   <!-- attributes are transformed similar to sons -->
@@ -666,9 +674,9 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
       <td>
         <xsl:apply-templates select="type" mode="table" />
       </td>
-      <xsl:if test="not(phases/all)">
+      <xsl:if test="not(type/targets/target/phases/all)">
         <td>
-          <xsl:apply-templates select="phases" mode="table-node" />
+          <xsl:apply-templates select="type/targets/target/phases" mode="table-node" />
         </td>
       </xsl:if>
       <td class="ccode" >
@@ -690,7 +698,7 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
         </xsl:attribute>
         <xsl:value-of select="@name" />
       </xsl:element>
-      <xsl:apply-templates select="target"
+      <xsl:apply-templates select="targets/target"
       mode="attrib-table" />
     </div>
   </xsl:template>
@@ -698,7 +706,7 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
   <!-- target is transformed into a small list -->
   <xsl:template match="target" mode="attrib-table">
     <xsl:value-of select="' ( '" />
-    <xsl:apply-templates mode="table" />
+    <xsl:apply-templates match="target" mode="table-target" />
     <xsl:value-of select="' ) '" />
   </xsl:template>
 
