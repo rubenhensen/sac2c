@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.2  2005/09/21 16:52:10  sah
+  adapted xsl generators to new xml structure.
+
   Revision 1.1  2004/11/23 11:35:39  sah
   Initial revision
 
@@ -29,9 +32,9 @@ version="1.0">
   </xsl:call-template>
   <xsl:value-of select="'( '"/>
   <!-- permanent attributes without default value first -->
-  <xsl:apply-templates select="attributes/attribute[phases/all][not(@default)]" mode="make-head"/>
+  <xsl:apply-templates select="attributes/attribute[type/targets/target/phases/all][not(@default)][type/targets/target/@mandatory = &quot;yes&quot;]" mode="make-head"/>
   <!-- add a , if needed -->
-  <xsl:if test="attributes/attribute[phases/all][not( @default)]">
+  <xsl:if test="attributes/attribute[type/targets/target/phases/all][not(@default)][type/targets/target/@mandatory = &quot;yes&quot;]">
     <xsl:if test="sons/son[ not( @default)]">
       <xsl:value-of select="' ,'"/>
     </xsl:if>

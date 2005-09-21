@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.4  2005/09/21 16:52:10  sah
+  adapted xsl generators to new xml structure.
+
   Revision 1.3  2005/01/11 15:11:23  cg
   Bug fixed in output conversion.
 
@@ -83,7 +86,7 @@ version="1.0">
   </xsl:call-template>
   <xsl:value-of select="' != NULL) '"/>
   <!-- check for target types -->
-  <xsl:apply-templates select="target" mode="make-assertion-target">
+  <xsl:apply-templates select="targets/target" mode="make-assertion-target">
     <xsl:with-param name="self" select="$self" />
   </xsl:apply-templates>
   <!-- a reasonable errormessage -->
@@ -116,10 +119,10 @@ version="1.0">
       <xsl:value-of select="$self" />
     </xsl:with-param>
     <xsl:with-param name="nodetype">
-      <xsl:value-of select="../../../../@name" />
+      <xsl:value-of select="../../../../../@name" />
     </xsl:with-param>
     <xsl:with-param name="field" >
-      <xsl:value-of select="../../@name" />
+      <xsl:value-of select="../../../@name" />
     </xsl:with-param>
   </xsl:call-template>
   <xsl:value-of select="') != '" />
@@ -135,10 +138,10 @@ version="1.0">
   <xsl:param name="self"/>
   <!-- save information about current node for use in for-each loop -->
   <xsl:variable name="nodetype">
-    <xsl:value-of select="../../../../@name" />
+    <xsl:value-of select="../../../../../@name" />
   </xsl:variable>
   <xsl:variable name="field">
-    <xsl:value-of select="../../@name" />
+    <xsl:value-of select="../../../@name" />
   </xsl:variable>
   <!-- iterate over all nodeset members -->
   <xsl:for-each select="//nodesets/nodeset[@name = current()/@name]/target/node">

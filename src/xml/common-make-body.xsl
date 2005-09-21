@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.7  2005/09/21 16:52:10  sah
+  adapted xsl generators to new xml structure.
+
   Revision 1.6  2005/07/17 11:46:54  sah
   cleanup
 
@@ -241,7 +244,7 @@ version="1.0">
 <!-- no default and beeing a permanent attribute implies that this 
      attribute is passed as an argument thus the r-value is the 
      argument -->
-<xsl:template match="@name[not(../@default)][../phases/all]" mode="make-body">
+<xsl:template match="@name[not(../@default)][../type/targets/target/phases/all][../type/targets/target/@mandatory = &quot;yes&quot;]" mode="make-body">
   <xsl:value-of select="."/>
   <!-- if its an array, we have to add the selector -->
   <xsl:if test="key(&quot;arraytypes&quot;, ../type/@name)">
@@ -251,7 +254,7 @@ version="1.0">
 
 <!-- no default and beeing a temporary attribute implies using the
      init value for this attributes type -->
-<xsl:template match="@name[not(../@default)][not(../phases/all)]" mode="make-body">
+<xsl:template match="@name" mode="make-body">
   <xsl:value-of select="key(&quot;types&quot;, ../type/@name)/@init"/>
 </xsl:template>
 
