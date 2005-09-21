@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.41  2005/09/21 12:59:44  sah
+ * fixed bug #119: added a copy assignment to copy
+ *   the type of an old avis when creating a fresh one
+ *
  * Revision 3.40  2005/07/19 13:04:56  sah
  * fun2lac no longer relies on EXT/INT_ASSIGN
  * moved DowngradeConcreteArgs functionality to lacinling.c
@@ -453,9 +457,9 @@ BuildRenamingAssignsForDo (node **vardecs, node **ass1, node **ass2, node **ass3
                  * build a fresh vardec (tmp_a_i)
                  */
                 new_name = ILIBtmpVarName (ARG_NAME (ext_args));
-                (*vardecs)
-                  = TBmakeVardec (TBmakeAvis (new_name, AVIS_TYPE (ARG_AVIS (ext_args))),
-                                  *vardecs);
+                (*vardecs) = TBmakeVardec (TBmakeAvis (new_name, TYcopyType (AVIS_TYPE (
+                                                                   ARG_AVIS (ext_args)))),
+                                           *vardecs);
                 VARDEC_TYPE ((*vardecs)) = DUPdupAllTypes (ARG_TYPE (ext_args));
 
                 /*
