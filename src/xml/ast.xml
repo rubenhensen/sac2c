@@ -3714,13 +3714,7 @@
         <son name="Expr">
           <targets>
             <target mandatory="yes">
-              <node name="Exprs" />
-              <phases>
-                <all />
-              </phases>
-            </target>
-            <target mandatory="yes">
-              <node name="Exprs" />
+              <set name="Expr" />
               <phases>
                 <all />
               </phases>
