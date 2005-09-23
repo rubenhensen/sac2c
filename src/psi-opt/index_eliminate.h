@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2005/09/23 14:03:22  sah
+ * extended index_eliminate to drag index offsets across
+ * lacfun boundaries.
+ *
  * Revision 1.2  2005/09/15 17:13:56  ktr
  * removed IVE renaming function which was obsolete due to explicit
  * offset variables
@@ -26,5 +30,6 @@ extern node *IVEblock (node *arg_node, info *arg_info);
 extern node *IVEarg (node *arg_node, info *arg_info);
 extern node *IVEwith (node *arg_node, info *arg_info);
 extern node *IVEcode (node *arg_node, info *arg_info);
+extern node *IVEap (node *arg_node, info *arg_info);
 
 #endif /* _SAC_INDEX_ELIMINATE_H_ */

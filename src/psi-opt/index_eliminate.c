@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2005/09/23 14:03:22  sah
+ * extended index_eliminate to drag index offsets across
+ * lacfun boundaries.
+ *
  * Revision 1.3  2005/09/15 17:13:56  ktr
  * removed IVE renaming function which was obsolete due to explicit
  * offset variables
@@ -10,21 +14,6 @@
  *
  * Revision 1.1  2005/09/12 16:19:19  sah
  * Initial revision
- *
- * Revision 3.77  2005/08/30 11:47:29  sah
- * basic implementation
- *
- * Revision 3.76  2005/08/21 14:25:47  sah
- * IVE-rewrite: now the vardecs are created as well ;)
- *
- * Revision 3.75  2005/08/21 12:35:25  sah
- * IVE-rewrite: basic implementation
- *
- * Revision 3.74  2005/08/20 20:08:32  sah
- * IVE-rewrite: skeleton implementation
- *
- * Revision 3.73  2005/08/20 19:20:48  sah
- * IVE-rewrite: disabled old IVE code
  *
  */
 
@@ -151,6 +140,8 @@ struct INFO {
     node *vardecs;
     node *lhs;
     node *withid;
+    node *fundef;
+    node *lastap;
 };
 
 /**
@@ -160,6 +151,8 @@ struct INFO {
 #define INFO_VARDECS(n) ((n)->vardecs)
 #define INFO_LHS(n) ((n)->lhs)
 #define INFO_WITHID(n) ((n)->withid)
+#define INFO_FUNDEF(n) ((n)->fundef)
+#define INFO_LASTAP(n) ((n)->lastap)
 
 /**
  * INFO functions
@@ -177,6 +170,8 @@ MakeInfo ()
     INFO_VARDECS (result) = NULL;
     INFO_LHS (result) = NULL;
     INFO_WITHID (result) = NULL;
+    INFO_FUNDEF (result) = NULL;
+    INFO_LASTAP (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -199,71 +194,6 @@ static int ive_expr;
 /**
  * helper functions
  */
-
-static node *
-Type2IdxAssign (ntype *type, node *avis, info *info)
-{
-    node *result;
-    node *assign;
-    node *offset;
-
-    DBUG_ENTER ("Type2IdxAssign");
-
-    DBUG_ASSERT ((TYisAKS (type)), "Type2IdxAssign called with non-AKS type");
-
-    /*
-     * iv = id =>
-     *
-     * _vect2offset_( [ <shp> ], iv)
-     */
-    offset
-      = TCmakePrf2 (F_vect2offset, SHshape2Array (TYgetShape (type)), TBmakeId (avis));
-
-    result = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (avis)),
-                         TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
-
-    INFO_VARDECS (info) = TBmakeVardec (result, INFO_VARDECS (info));
-
-    assign = TBmakeAssign (TBmakeLet (TBmakeIds (result, NULL), offset), NULL);
-
-    INFO_POSTASSIGNS (info) = TCappendAssign (assign, INFO_POSTASSIGNS (info));
-
-    AVIS_SSAASSIGN (result) = assign;
-
-    DBUG_RETURN (result);
-}
-
-/** <!-- ****************************************************************** -->
- * @brief Generates idx2offset/vect2offset assignments for the given
- *        index variable and shapes.
- *
- * @param types N_exprs chain of N_type nodes containing all shapes
- *              an offset has to be built for.
- * @param avis N_avis node of the selection index
- * @param iv N_array node or N_ids chain giving the scalarized representation
- *           of the index vector or NULL of none available
- * @param info info structure
- *
- * @return N_ids chain containing all created offset ids
- ******************************************************************************/
-static node *
-IdxTypes2IdxIds (node *types, node *avis, node *iv, info *info)
-{
-    node *result = NULL;
-    node *idxavis;
-
-    DBUG_ENTER ("IdxTypes2IdxIds");
-
-    if (types != NULL) {
-        result = IdxTypes2IdxIds (EXPRS_NEXT (types), avis, iv, info);
-
-        idxavis = Type2IdxAssign (TYPE_TYPE (EXPRS_EXPR (types)), avis, info);
-
-        result = TBmakeIds (idxavis, result);
-    }
-
-    DBUG_RETURN (result);
-}
 
 /** <!-- ****************************************************************** -->
  * @brief Search iv's avis for array entry of "type"
@@ -304,6 +234,150 @@ GetAvis4Shape (node *avis, ntype *type)
     }
 
     DBUG_RETURN (result);
+}
+
+static node *
+Type2IdxAssign (ntype *type, node *avis, info *info)
+{
+    node *result;
+    node *assign;
+    node *offset;
+
+    DBUG_ENTER ("Type2IdxAssign");
+
+    DBUG_ASSERT ((TYisAKS (type)), "Type2IdxAssign called with non-AKS type");
+
+    /*
+     * iv = id =>
+     *
+     * _vect2offset_( [ <shp> ], iv)
+     */
+    offset
+      = TCmakePrf2 (F_vect2offset, SHshape2Array (TYgetShape (type)), TBmakeId (avis));
+
+    result = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (avis)),
+                         TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
+
+    INFO_VARDECS (info) = TBmakeVardec (result, INFO_VARDECS (info));
+
+    assign = TBmakeAssign (TBmakeLet (TBmakeIds (result, NULL), offset), NULL);
+
+    INFO_POSTASSIGNS (info) = TCappendAssign (assign, INFO_POSTASSIGNS (info));
+
+    AVIS_SSAASSIGN (result) = assign;
+
+    DBUG_RETURN (result);
+}
+
+/** <!-- ****************************************************************** -->
+ * @brief Generates vect2offset assignments for the given
+ *        index variable and shapes.
+ *
+ * @param types N_exprs chain of N_type nodes containing all shapes
+ *              an offset has to be built for.
+ * @param avis N_avis node of the selection index
+ * @param info info structure
+ *
+ * @return N_ids chain containing all created offset ids
+ ******************************************************************************/
+static node *
+IdxTypes2IdxIds (node *types, node *avis, info *info)
+{
+    node *result = NULL;
+    node *idxavis;
+
+    DBUG_ENTER ("IdxTypes2IdxIds");
+
+    if (types != NULL) {
+        result = IdxTypes2IdxIds (EXPRS_NEXT (types), avis, info);
+
+        idxavis = Type2IdxAssign (TYPE_TYPE (EXPRS_EXPR (types)), avis, info);
+
+        result = TBmakeIds (idxavis, result);
+    }
+
+    DBUG_RETURN (result);
+}
+
+/** <!-- ****************************************************************** -->
+ * @brief Generates new arguments for the given
+ *        index variable and shapes.
+ *
+ * @param types N_exprs chain of N_type nodes containing all shapes
+ *              an offset has to be built for.
+ * @param avis N_avis node of the selection index
+ * @param args stores the newly generated args chain
+ * @param info info structure
+ *
+ * @return N_ids chain containing all created new offset args
+ ******************************************************************************/
+static node *
+IdxTypes2IdxArgs (node *types, node *avis, node **args, info *info)
+{
+    node *result = NULL;
+    node *idxavis;
+
+    DBUG_ENTER ("IdxTypes2IdxArgs");
+
+    if (types != NULL) {
+        result = IdxTypes2IdxArgs (EXPRS_NEXT (types), avis, args, info);
+
+        idxavis = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (avis)),
+                              TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
+
+        *args = TBmakeArg (idxavis, *args);
+        result = TBmakeIds (idxavis, result);
+    }
+
+    DBUG_RETURN (result);
+}
+
+static
+  /** <!-- ****************************************************************** -->
+   * @brief Generates new concrete arguments for the given idxtypes and avis.
+   *        The avis must contain matching idxids for all given types!
+   *
+   * @param types N_exprs chain of type nodes
+   * @param avis avis node with idxids
+   * @param args N_exprs chain of concrete args
+   *
+   * @return extended N_exprs arg chain
+   ******************************************************************************/
+  node *
+  IdxTypes2ApArgs (node *types, node *avis, node *args)
+{
+    node *idxavis;
+
+    DBUG_ENTER ("IdxTypes2ApArgs");
+
+    if (types != NULL) {
+        args = IdxTypes2ApArgs (EXPRS_NEXT (types), avis, args);
+
+        idxavis = GetAvis4Shape (avis, TYPE_TYPE (EXPRS_EXPR (types)));
+
+        DBUG_ASSERT ((idxavis != NULL), "no matching index for given arg found!");
+
+        args = TBmakeExprs (TBmakeId (idxavis), args);
+    }
+
+    DBUG_RETURN (args);
+}
+
+node *
+ExtendConcreteArgs (node *concargs, node *formargs)
+{
+    DBUG_ENTER ("ExtendConcreteArgs");
+
+    if (concargs != NULL) {
+        EXPRS_NEXT (concargs)
+          = IdxTypes2ApArgs (AVIS_IDXTYPES (ARG_AVIS (formargs)),
+                             ID_AVIS (EXPRS_EXPR (concargs)), EXPRS_NEXT (concargs));
+
+        EXPRS_NEXT (concargs)
+          = ExtendConcreteArgs (EXPRS_NEXT (concargs), ARG_NEXT (formargs));
+    }
+
+    DBUG_RETURN (concargs);
 }
 
 /** <!-- ****************************************************************** -->
@@ -389,11 +463,9 @@ CheckAndReplaceModarray (node *prf, node *lhs)
  */
 
 /** <!-- ****************************************************************** -->
- * @brief First traverses into the args chain of the given fundef to append
- *        offset-arguments which are propagated into the fundef body. This
- *        is only done for LACFUNS!. Secondly it traverses into the body of
- *        the given fundef to start the generation of idx2offset/vect2offset
- *        assignments and the replacement of sel/modarray ops.
+ * @brief Starts index elimination in a given fundef node. On top-level,
+ *        only non-lac functions are processed, as lac-funs are handeled
+ *        when reaching their application.
  *
  * @param arg_node N_fundef node
  * @param arg_info info structure
@@ -403,24 +475,54 @@ CheckAndReplaceModarray (node *prf, node *lhs)
 node *
 IVEfundef (node *arg_node, info *arg_info)
 {
+    node *lastfun;
+    node *oldvardecs;
+
     DBUG_ENTER ("IVEfundef");
 
-    if (FUNDEF_ARGS (arg_node) != NULL) {
-        FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
-    }
+    if ((INFO_FUNDEF (arg_info) != NULL) || (!FUNDEF_ISLACFUN (arg_node))) {
+        DBUG_PRINT ("IVE", ("processing fundef %s", CTIitemName (arg_node)));
 
-    if (FUNDEF_BODY (arg_node) != NULL) {
-        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-    }
-
-    if (INFO_VARDECS (arg_info) != NULL) {
-        FUNDEF_VARDEC (arg_node)
-          = TCappendVardec (FUNDEF_VARDEC (arg_node), INFO_VARDECS (arg_info));
+        /*
+         * as we enter a new context here, we have to stack
+         * the current fundef and the vardecs we have created
+         * so far. This is to ensure that the vardecs are
+         * appended to the correct fundef!
+         */
+        lastfun = INFO_FUNDEF (arg_info);
+        INFO_FUNDEF (arg_info) = arg_node;
+        oldvardecs = INFO_VARDECS (arg_info);
         INFO_VARDECS (arg_info) = NULL;
+
+        if (FUNDEF_ARGS (arg_node) != NULL) {
+            FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
+        }
+
+        if (FUNDEF_BODY (arg_node) != NULL) {
+            FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+        }
+
+        if (INFO_VARDECS (arg_info) != NULL) {
+            FUNDEF_VARDEC (arg_node)
+              = TCappendVardec (FUNDEF_VARDEC (arg_node), INFO_VARDECS (arg_info));
+            INFO_VARDECS (arg_info) = NULL;
+        }
+
+        /*
+         * unstack fundef and vardecs
+         */
+
+        INFO_FUNDEF (arg_info) = lastfun;
+        INFO_VARDECS (arg_info) = oldvardecs;
     }
 
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+    if (INFO_FUNDEF (arg_info) == NULL) {
+        /*
+         * we are on top level, so continue with next fundef
+         */
+        if (FUNDEF_NEXT (arg_node) != NULL) {
+            FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -431,10 +533,24 @@ IVEarg (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("IVEarg");
 
-    if (AVIS_IDXTYPES (ARG_AVIS (arg_node)) != NULL) {
+    if (INFO_LASTAP (arg_info) == NULL) {
+        /*
+         * top-level function
+         */
         AVIS_IDXIDS (ARG_AVIS (arg_node))
           = IdxTypes2IdxIds (AVIS_IDXTYPES (ARG_AVIS (arg_node)), ARG_AVIS (arg_node),
-                             NULL, arg_info);
+                             arg_info);
+    } else {
+        /*
+         * lac-function:
+         *
+         * here, we can try to reuse the offsets that have been
+         * generated for the concrete args. to do so, we have to
+         * extend the function signature.
+         */
+        AVIS_IDXIDS (ARG_AVIS (arg_node))
+          = IdxTypes2IdxArgs (AVIS_IDXTYPES (ARG_AVIS (arg_node)), ARG_AVIS (arg_node),
+                              &ARG_NEXT (arg_node), arg_info);
     }
 
     if (ARG_NEXT (arg_node) != NULL) {
@@ -493,11 +609,9 @@ IVEids (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("IVEids");
 
-    if (AVIS_IDXTYPES (IDS_AVIS (arg_node)) != NULL) {
-        AVIS_IDXIDS (IDS_AVIS (arg_node))
-          = IdxTypes2IdxIds (AVIS_IDXTYPES (IDS_AVIS (arg_node)), IDS_AVIS (arg_node),
-                             ASSIGN_LHS (AVIS_SSAASSIGN (IDS_AVIS (arg_node))), arg_info);
-    }
+    AVIS_IDXIDS (IDS_AVIS (arg_node))
+      = IdxTypes2IdxIds (AVIS_IDXTYPES (IDS_AVIS (arg_node)), IDS_AVIS (arg_node),
+                         arg_info);
 
     if (IDS_NEXT (arg_node) != NULL) {
         IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
@@ -594,7 +708,6 @@ IVElet (node *arg_node, info *arg_info)
 node *
 IVEwith (node *arg_node, info *arg_info)
 {
-    /* This is needed because with-loops don't have index vectors? /rbe */
     node *oldwithid;
 
     DBUG_ENTER ("IVEwith");
@@ -615,14 +728,12 @@ node *
 IVEcode (node *arg_node, info *arg_info)
 {
     node *avis;
-    node *ids;
 
     DBUG_ENTER ("IVEcode");
 
     avis = IDS_AVIS (WITHID_VEC (INFO_WITHID (arg_info)));
-    ids = WITHID_IDS (INFO_WITHID (arg_info));
 
-    AVIS_IDXIDS (avis) = IdxTypes2IdxIds (AVIS_IDXTYPES (avis), avis, ids, arg_info);
+    AVIS_IDXIDS (avis) = IdxTypes2IdxIds (AVIS_IDXTYPES (avis), avis, arg_info);
 
     CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
     if (AVIS_IDXIDS (avis) != NULL) {
@@ -631,6 +742,35 @@ IVEcode (node *arg_node, info *arg_info)
 
     if (CODE_NEXT (arg_node) != NULL) {
         CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+IVEap (node *arg_node, info *arg_info)
+{
+    node *oldap;
+
+    DBUG_ENTER ("IVEap");
+
+    if (FUNDEF_ISLACFUN (AP_FUNDEF (arg_node))) {
+        if (AP_FUNDEF (arg_node) != INFO_FUNDEF (arg_info)) {
+            /* external application */
+            oldap = INFO_LASTAP (arg_info);
+            INFO_LASTAP (arg_info) = arg_node;
+
+            AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
+
+            INFO_LASTAP (arg_info) = oldap;
+        }
+
+        /*
+         * extend the arguments of the given application
+         */
+
+        AP_ARGS (arg_node)
+          = ExtendConcreteArgs (AP_ARGS (arg_node), FUNDEF_ARGS (AP_FUNDEF (arg_node)));
     }
 
     DBUG_RETURN (arg_node);
