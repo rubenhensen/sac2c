@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.9  2005/09/26 10:46:09  jhb
+  change a match to a select, bug
+
   Revision 1.8  2005/09/21 17:46:13  sah
   quick adapt to new ast.xml. would need major rework.
 
@@ -706,7 +709,7 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
   <!-- target is transformed into a small list -->
   <xsl:template match="target" mode="attrib-table">
     <xsl:value-of select="' ( '" />
-    <xsl:apply-templates match="target" mode="table-target" />
+    <xsl:apply-templates select="target" mode="table-target" />
     <xsl:value-of select="' ) '" />
   </xsl:template>
 
