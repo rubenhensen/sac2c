@@ -2,6 +2,9 @@
 
 <!--
   $Log$
+  Revision 1.20  2005/09/26 12:35:21  jhb
+  change to new ast.xml
+
   Revision 1.19  2005/08/10 14:58:07  jhb
   some little changes of the output
 
@@ -233,7 +236,7 @@ static info *FreeInfo(info *info)
 
   <!-- ckeck the sons -->
   <xsl:template match="son" mode="check">
-    <xsl:if test="string-length(@mandatory) &gt; 2">
+    <xsl:if test="string-length(targets/target/@mandatory) &gt; 2">
       <xsl:value-of select="$newline"/>
        <xsl:value-of select="'CHKexistSon( '"/>
       <xsl:call-template name="node-access">
@@ -259,7 +262,7 @@ static info *FreeInfo(info *info)
       <xsl:value-of select="'_'"/>
       <xsl:call-template name="uppercase">
         <xsl:with-param name="string" >
-          <xsl:value-of select="@name"/>
+          <xsl:value-of select="targets/target/node/@name"/>
         </xsl:with-param>
       </xsl:call-template>
       <xsl:value-of select="' is NULL   &gt;&gt;&gt;&gt;'"/>
@@ -322,16 +325,16 @@ static info *FreeInfo(info *info)
       </xsl:when>
       <xsl:otherwise>
         <xsl:choose>
-          <xsl:when test="((./phases/all) or (not(./phases/*)))">
-            <xsl:if test="string-length(@mandatory) &gt; 2">
+          <xsl:when test="((./type/targets/target/phases/all) or (not(./type/targets/target/phases/*)))">
+            <xsl:if test="string-length(./type/targets/target/@mandatory) &gt; 2">
               <xsl:call-template name="CHKexistAttribute"/>                
             </xsl:if>
           </xsl:when>
-          <xsl:when test="((./phases/range) or ( true()))">
+          <xsl:when test="((./type/targets/target/phases/range) or ( true()))">
             <xsl:value-of select="'if( ( FALSE)'"/>
-            <xsl:apply-templates select="./phases/*"/>
+            <xsl:apply-templates select="./type/targets/target/phases/*"/>
             <xsl:value-of select="') {'"/>
-            <xsl:if test="string-length(@mandatory) &gt; 2">
+            <xsl:if test="string-length(./type/targets/target/@mandatory) &gt; 2">
               <xsl:call-template name="CHKexistAttribute"/>
             </xsl:if>
             <xsl:value-of select="'}'"/>
@@ -454,7 +457,7 @@ static info *FreeInfo(info *info)
       <xsl:when test="key(&quot;types&quot;, ./type/@name)[@copy = &quot;literal&quot;]">
       </xsl:when>
       <xsl:otherwise>
-        <xsl:if test="./type/target/*">
+        <xsl:if test="not(./type/targets/target/any)">
           <xsl:value-of select="'if( '"/>
           <xsl:call-template name="nodeattributename">
             <xsl:with-param name="name1">
@@ -466,7 +469,7 @@ static info *FreeInfo(info *info)
           </xsl:call-template>
           <xsl:value-of select="'(arg_node) != NULL) {'"/>
           <xsl:value-of select="'if( !((FALSE)'"/>
-          <xsl:apply-templates select="./type/target/*" mode="correct" />
+          <xsl:apply-templates select="./type/targets/target/*" mode="correct" />
           <xsl:value-of select="'))'" />
           <xsl:value-of select="'{'" />      
           <xsl:value-of select="'CHKcorrectTypeInsertError('"/>
@@ -516,10 +519,10 @@ static info *FreeInfo(info *info)
     <xsl:value-of select="'|| ( NODE_TYPE( '"/>
     <xsl:call-template name="nodeattributename">
       <xsl:with-param name="name1">
-        <xsl:value-of select="../../../../../@name" />
+        <xsl:value-of select="../../../../../../@name" />
       </xsl:with-param>
       <xsl:with-param name="name2">
-        <xsl:value-of select="../../../@name"/>
+        <xsl:value-of select="../../../../@name"/>
       </xsl:with-param>
     </xsl:call-template>
     
@@ -540,10 +543,10 @@ static info *FreeInfo(info *info)
     <xsl:value-of select="'('"/>
     <xsl:call-template name="nodeattributename">
       <xsl:with-param name="name1">
-        <xsl:value-of select="../../../../../@name" />
+        <xsl:value-of select="../../../../../../@name" />
       </xsl:with-param>
       <xsl:with-param name="name2">
-        <xsl:value-of select="../../../@name"/>
+        <xsl:value-of select="../../../../@name"/>
       </xsl:with-param>
     </xsl:call-template>
     <xsl:value-of select="'(arg_node)'"/>
