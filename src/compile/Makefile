@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.44  2005/09/27 17:24:22  sbs
+# simd_infer.o added
+#
 # Revision 3.43  2005/08/24 10:21:26  ktr
 # added wlidx.o
 #
@@ -133,7 +136,7 @@ SAC2C_OBJS := wlpragma_funs.o precompile.o compile.o wltransform.o \
               icm2c_std.o icm2c_prf.o icm2c_wl.o icm2c_mt.o icm2c_sched.o \
               icm2c_error.o icm2c_basic.o icm2c_utils.o markmemvals.o \
               typeconv_precompile.o functionprecompile.o renameidentifiers.o \
-              setlinksign.o remove_external_code.o wlidxs.o
+              setlinksign.o remove_external_code.o wlidxs.o simd_infer.o
 
 
 all: $(SAC2C_OBJS)
