@@ -50,3 +50,4 @@ remove_external_code.h
 wlidxs.c
 wlidxs.h
 simd_infer.c
+simd_infer.h
