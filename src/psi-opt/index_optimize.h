@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2005/09/27 20:22:11  sah
+ * wlidx offsets are used now whenever possible.
+ *
  * Revision 1.3  2005/09/27 02:52:11  sah
  * hopefully, IVE is now back to its own power. Due to
  * lots of other compiler bugs, this code is not fully
@@ -21,6 +24,7 @@
 
 extern node *IVEOlet (node *arg_node, info *arg_info);
 extern node *IVEOwith (node *arg_node, info *arg_info);
+extern node *IVEOcode (node *arg_node, info *arg_info);
 extern node *IVEOprf (node *arg_node, info *arg_info);
 extern node *IVEOfundef (node *arg_node, info *arg_info);
 extern node *IVEOassign (node *arg_node, info *arg_info);

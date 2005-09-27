@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2005/09/27 20:22:11  sah
+ * wlidx offsets are used now whenever possible.
+ *
  * Revision 1.4  2005/09/27 14:25:06  sah
  * quick fix for bug Ã#120
  *
@@ -91,10 +94,12 @@ FreeInfo (info *info)
  * information to ease the lookup of matching withloop
  * offsets for a given vect2offset operation.
  *
- * IV       stores the avis of the indexvector
- * OFFSETS  contains all offsetvar avis and their corresponding shape
- * SCALARS  contains the N_ids chain of scalars that can be used instead
- *          of the index vector
+ * IV            stores the avis of the indexvector
+ * OFFSETS       contains all offsetvar avis and their corresponding shape
+ * LOCALOFFSETS  contains offset that are computed "locally" within the
+ *               current block
+ * SCALARS       contains the N_ids chain of scalars that can be used instead
+ *               of the index vector
  */
 
 struct OFFSETINFO {
@@ -106,6 +111,7 @@ struct OFFSETINFO {
 struct IVINFO {
     node *iv;
     offsetinfo *offsets;
+    offsetinfo *localoffsets;
     node *scalars;
     ivinfo *next;
 };
@@ -115,6 +121,7 @@ struct IVINFO {
  */
 #define WITHIV_IV(n) ((n)->iv)
 #define WITHIV_OFFSETS(n) ((n)->offsets)
+#define WITHIV_LOCALOFFSETS(n) ((n)->offsets)
 #define WITHIV_SCALARS(n) ((n)->scalars)
 #define WITHIV_NEXT(n) ((n)->next)
 #define WITHOFFSET_AVIS(n) ((n)->avis)
@@ -146,7 +153,7 @@ GenOffsetInfo (node *lhs, node *withops)
              */
             result = ILIBmalloc (sizeof (offsetinfo));
 
-            WITHOFFSET_SHAPE (result) = TYgetShape (IDS_NTYPE (lhs));
+            WITHOFFSET_SHAPE (result) = SHcopyShape (TYgetShape (IDS_NTYPE (lhs)));
             WITHOFFSET_AVIS (result) = WITHOP_IDX (withops);
             WITHOFFSET_NEXT (result) = next;
         } else {
@@ -165,6 +172,7 @@ FreeOffsetInfo (offsetinfo *info)
     DBUG_ENTER ("FreeOffsetInfo");
 
     if (info != NULL) {
+        WITHOFFSET_SHAPE (info) = SHfreeShape (WITHOFFSET_SHAPE (info));
         WITHOFFSET_NEXT (info) = FreeOffsetInfo (WITHOFFSET_NEXT (info));
 
         info = ILIBfree (info);
@@ -184,6 +192,7 @@ PushIV (ivinfo *info, node *withid, node *lhs, node *withops)
 
     WITHIV_IV (result) = IDS_AVIS (WITHID_VEC (withid));
     WITHIV_OFFSETS (result) = GenOffsetInfo (lhs, withops);
+    WITHIV_LOCALOFFSETS (result) = NULL;
     WITHIV_SCALARS (result) = WITHID_IDS (withid);
     WITHIV_NEXT (result) = info;
 
@@ -202,10 +211,39 @@ PopIV (ivinfo *info)
     result = WITHIV_NEXT (info);
 
     WITHIV_OFFSETS (info) = FreeOffsetInfo (WITHIV_OFFSETS (info));
+    WITHIV_LOCALOFFSETS (info) = FreeOffsetInfo (WITHIV_LOCALOFFSETS (info));
 
     info = ILIBfree (info);
 
     DBUG_RETURN (result);
+}
+
+static ivinfo *
+PushLocalOffset (ivinfo *ivinfo, node *avis, shape *shape)
+{
+    offsetinfo *newinfo;
+
+    DBUG_ENTER ("PushLocalOffset");
+
+    newinfo = ILIBmalloc (sizeof (offsetinfo));
+
+    WITHOFFSET_SHAPE (newinfo) = SHcopyShape (shape);
+    WITHOFFSET_AVIS (newinfo) = avis;
+    WITHOFFSET_NEXT (newinfo) = WITHIV_LOCALOFFSETS (ivinfo);
+
+    WITHIV_LOCALOFFSETS (ivinfo) = newinfo;
+
+    DBUG_RETURN (ivinfo);
+}
+
+static ivinfo *
+PopLocalOffsets (ivinfo *ivinfo)
+{
+    DBUG_ENTER ("PopLocalOffsets");
+
+    WITHIV_LOCALOFFSETS (ivinfo) = FreeOffsetInfo (WITHIV_LOCALOFFSETS (ivinfo));
+
+    DBUG_RETURN (ivinfo);
 }
 
 static node *
@@ -221,6 +259,9 @@ FindIVOffset (ivinfo *info, node *iv, shape *shape)
     }
 
     if (info != NULL) {
+        /*
+         * search global wl-offset-vars
+         */
         oinfo = WITHIV_OFFSETS (info);
 
         while ((oinfo != NULL) && (!SHcompareShapes (shape, WITHOFFSET_SHAPE (oinfo)))) {
@@ -229,6 +270,20 @@ FindIVOffset (ivinfo *info, node *iv, shape *shape)
 
         if (oinfo != NULL) {
             result = WITHOFFSET_AVIS (oinfo);
+        } else {
+            /*
+             * search local offsets
+             */
+            oinfo = WITHIV_LOCALOFFSETS (info);
+
+            while ((oinfo != NULL)
+                   && (!SHcompareShapes (shape, WITHOFFSET_SHAPE (oinfo)))) {
+                oinfo = WITHOFFSET_NEXT (oinfo);
+            }
+
+            if (oinfo != NULL) {
+                result = WITHOFFSET_AVIS (oinfo);
+            }
         }
     }
 
@@ -254,7 +309,7 @@ FindIVScalars (ivinfo *info, node *iv)
 }
 
 static node *
-GetAvis4Shape (node *avis, shape *shape)
+GetAvis4Shape (node *avis, shape *shape, info *arg_info)
 {
     node *result = NULL;
     node *types;
@@ -265,20 +320,26 @@ GetAvis4Shape (node *avis, shape *shape)
     types = AVIS_IDXTYPES (avis);
     ids = AVIS_IDXIDS (avis);
 
-    /*
-     * we have to be robust w.r.t. missing idxids, as during
-     * optimisation, the idxids for withids have been deleted
-     * again! see bug #120
-     */
-    while ((types != NULL) && (ids != NULL)) {
+    if ((types != NULL) && (ids == NULL)) {
+        /*
+         * we have an index vector of a withloop here! as offsets
+         * for wl-indexvectors are local w.r.t. the current code
+         * block, they are not annotated to the withiv-avis. so
+         * we need to look it up in the withiv info structure!
+         */
+        result = FindIVOffset (INFO_IVINFO (arg_info), avis, shape);
+    } else {
+        while (types != NULL) {
+            DBUG_ASSERT ((ids != NULL), "# of ids does not match # of types");
 
-        if (SHcompareShapes (shape, TYgetShape (TYPE_TYPE (EXPRS_EXPR (types))))) {
-            result = IDS_AVIS (ids);
-            break;
+            if (SHcompareShapes (shape, TYgetShape (TYPE_TYPE (EXPRS_EXPR (types))))) {
+                result = IDS_AVIS (ids);
+                break;
+            }
+
+            types = EXPRS_NEXT (types);
+            ids = IDS_NEXT (ids);
         }
-
-        types = EXPRS_NEXT (types);
-        ids = IDS_NEXT (ids);
     }
 
     DBUG_RETURN (result);
@@ -337,12 +398,17 @@ ReplaceByWithOffset (node *arg_node, info *arg_info)
 
     offset = FindIVOffset (INFO_IVINFO (arg_info), ID_AVIS (PRF_ARG2 (arg_node)), shape);
 
-    shape = SHfreeShape (shape);
-
     if (offset != NULL) {
         arg_node = FREEdoFreeNode (arg_node);
         arg_node = TBmakeId (offset);
     } else {
+        /*
+         * this offset is a non-wl-var offset but a locally
+         * generated one, so we store it within the ivinfo
+         */
+        INFO_IVINFO (arg_info) = PushLocalOffset (INFO_IVINFO (arg_info),
+                                                  IDS_AVIS (INFO_LHS (arg_info)), shape);
+
         scalars = FindIVScalars (INFO_IVINFO (arg_info), ID_AVIS (PRF_ARG2 (arg_node)));
 
         if (scalars != NULL) {
@@ -353,6 +419,8 @@ ReplaceByWithOffset (node *arg_node, info *arg_info)
             arg_node = offset;
         }
     }
+
+    shape = SHfreeShape (shape);
 
     DBUG_RETURN (arg_node);
 }
@@ -411,8 +479,8 @@ OptimizeComputation (node *arg_node, info *arg_info)
             /*
              * look up the matching offsets and replace computation
              */
-            arg1 = GetAvis4Shape (ID_AVIS (PRF_ARG1 (prf)), shape);
-            arg2 = GetAvis4Shape (ID_AVIS (PRF_ARG2 (prf)), shape);
+            arg1 = GetAvis4Shape (ID_AVIS (PRF_ARG1 (prf)), shape, arg_info);
+            arg2 = GetAvis4Shape (ID_AVIS (PRF_ARG2 (prf)), shape, arg_info);
 
             if ((arg1 != NULL) && (arg2 != NULL)) {
                 arg_node = FREEdoFreeNode (arg_node);
@@ -425,7 +493,7 @@ OptimizeComputation (node *arg_node, info *arg_info)
         case F_add_SxA:
         case F_sub_SxA:
             if (TUdimKnown (ID_NTYPE (PRF_ARG2 (prf)))) {
-                arg2 = GetAvis4Shape (ID_AVIS (PRF_ARG2 (prf)), shape);
+                arg2 = GetAvis4Shape (ID_AVIS (PRF_ARG2 (prf)), shape, arg_info);
 
                 if (arg2 != NULL) {
                     arg1 = Scalar2Offset (PRF_ARG1 (prf),
@@ -443,7 +511,7 @@ OptimizeComputation (node *arg_node, info *arg_info)
         case F_add_AxS:
         case F_sub_AxS:
             if (TUdimKnown (ID_NTYPE (PRF_ARG1 (prf)))) {
-                arg1 = GetAvis4Shape (ID_AVIS (PRF_ARG1 (prf)), shape);
+                arg1 = GetAvis4Shape (ID_AVIS (PRF_ARG1 (prf)), shape, arg_info);
 
                 if (arg1 != NULL) {
                     arg2 = Scalar2Offset (PRF_ARG1 (prf),
@@ -459,7 +527,7 @@ OptimizeComputation (node *arg_node, info *arg_info)
             break;
 
         case F_mul_SxA:
-            arg2 = GetAvis4Shape (ID_AVIS (PRF_ARG2 (prf)), shape);
+            arg2 = GetAvis4Shape (ID_AVIS (PRF_ARG2 (prf)), shape, arg_info);
 
             if (arg2 != NULL) {
                 arg1 = PRF_ARG1 (prf);
@@ -471,7 +539,7 @@ OptimizeComputation (node *arg_node, info *arg_info)
             break;
 
         case F_mul_AxS:
-            arg1 = GetAvis4Shape (ID_AVIS (PRF_ARG1 (prf)), shape);
+            arg1 = GetAvis4Shape (ID_AVIS (PRF_ARG1 (prf)), shape, arg_info);
 
             if (arg1 != NULL) {
                 arg2 = PRF_ARG2 (prf);
@@ -523,6 +591,25 @@ IVEOwith (node *arg_node, info *arg_info)
 }
 
 node *
+IVEOcode (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("IVEOcode");
+
+    CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
+
+    /*
+     * remove local withoffsets gathered within the block
+     */
+    INFO_IVINFO (arg_info) = PopLocalOffsets (INFO_IVINFO (arg_info));
+
+    if (CODE_NEXT (arg_node) != NULL) {
+        CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
 IVEOprf (node *arg_node, info *arg_info)
 {
     node *ivarg;
@@ -553,7 +640,10 @@ IVEOprf (node *arg_node, info *arg_info)
                 /*
                  * this id has no defining assignment and is no argument.
                  * the only possible reason for this is, that this id is a
-                 * withloop index vector.
+                 * withloop index vector. as this is a local vect2offset
+                 * within a withloop code block, we have to remember
+                 * the lhs avis for this shape for later use. This is done
+                 * by ReplaceByWithOffset.
                  */
                 arg_node = ReplaceByWithOffset (arg_node, arg_info);
             }
@@ -590,18 +680,21 @@ IVEOfundef (node *arg_node, info *arg_info)
 node *
 IVEOassign (node *arg_node, info *arg_info)
 {
+    node *preassigns;
+
     DBUG_ENTER ("IVEOassign");
+
+    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+
+    preassigns = INFO_PREASSIGNS (arg_info);
+    INFO_PREASSIGNS (arg_info) = NULL;
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
     }
 
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
-
-    if (INFO_PREASSIGNS (arg_info) != NULL) {
-        arg_node = TCappendAssign (INFO_PREASSIGNS (arg_info), arg_node);
-
-        INFO_PREASSIGNS (arg_info) = NULL;
+    if (preassigns != NULL) {
+        arg_node = TCappendAssign (preassigns, arg_node);
     }
 
     DBUG_RETURN (arg_node);
