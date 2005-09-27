@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.45  2005/09/27 19:19:09  sbs
+ * made some adjustments wrt. SIMD suitability
+ *
  * Revision 3.44  2005/09/27 17:19:31  sbs
  * added SIMD flag
  *
@@ -227,10 +230,10 @@ PRF_IF (F_toi_S, "F_toi_S", "_toi_S_", "toi", FALSE, 1, NTCCTprf_toiS, COtoi, FA
   PRF_IF (F_idx_shape_sel, "F_idx_shape_sel", "_idx_shape_sel_", "idx_shape_sel", FALSE,
           2, NTCCTprf_idx_shape_sel, NULL, FALSE),
   PRF_IF (F_idx_sel, "F_idx_sel", "_idx_sel_", "idx_sel", FALSE, 2, NTCCTprf_idx_selS,
-          COidxSel, FALSE),
+          COidxSel, TRUE),
   PRF_IF (F_idx_modarray, "F_idx_modarray", "_idx_modarray_", "idx_modarray", FALSE, 3,
-          NTCCTprf_dummy, NULL, FALSE),
-  PRF_IF (F_sel, "F_sel", "_sel_", "sel", FALSE, 2, NTCCTprf_selS, COsel, TRUE),
+          NTCCTprf_dummy, NULL, TRUE),
+  PRF_IF (F_sel, "F_sel", "_sel_", "sel", FALSE, 2, NTCCTprf_selS, COsel, FALSE),
   PRF_IF (F_modarray, "F_modarray", "_modarray_", "modarray", FALSE, 3,
           NTCCTprf_modarrayA, COmodarray, FALSE),
   PRF_IF (F_genarray, "F_genarray", "_genarray_", "genarray", FALSE, 2, NTCCTprf_dummy,
@@ -250,7 +253,7 @@ PRF_IF (F_toi_S, "F_toi_S", "_toi_S_", "toi", FALSE, 1, NTCCTprf_toiS, COtoi, FA
           COdrop, FALSE),
 
   PRF_IF (F_idxs2offset, "F_idxs2offset", "_idxs2offset_", "idxs2offset", FALSE, 0,
-          NTCCTprf_dummy, NULL, FALSE),
+          NTCCTprf_dummy, NULL, TRUE),
   PRF_IF (F_vect2offset, "F_vect2offset", "_vect2offset_", "vect2offset", FALSE, 0,
           NTCCTprf_dummy, NULL, FALSE),
 
