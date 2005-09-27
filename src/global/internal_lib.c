@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.88  2005/09/27 16:09:39  sbs
+ * added ILIBconcat4
+ *
  * Revision 3.87  2005/09/27 11:49:05  sah
  * added systemcall tracking facility
  *
@@ -927,6 +930,38 @@ ILIBstringConcat3 (const char *first, const char *second, const char *third)
     strcpy (result, first);
     strcat (result, second);
     strcat (result, third);
+
+    DBUG_RETURN (result);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   char *ILIBstringConcat4( const char *first, const char* second,
+ *                            const char *third, const char* fourth)
+ *
+ * description
+ *   Reserves new memory for the concatinated string first + second + third
+ *   + fourth, and returns the concatination. Does not free any memory used by
+ *   first or second.
+ *
+ ******************************************************************************/
+
+char *
+ILIBstringConcat4 (const char *first, const char *second, const char *third,
+                   const char *fourth)
+{
+    char *result;
+
+    DBUG_ENTER ("ILIBstringConcat");
+
+    result = (char *)ILIBmalloc (strlen (first) + strlen (second) + strlen (third)
+                                 + strlen (fourth) + 1);
+
+    strcpy (result, first);
+    strcat (result, second);
+    strcat (result, third);
+    strcat (result, fourth);
 
     DBUG_RETURN (result);
 }

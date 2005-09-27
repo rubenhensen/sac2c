@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.43  2005/09/27 16:09:39  sbs
+ * added ILIBconcat4
+ *
  * Revision 3.42  2005/09/27 11:49:05  sah
  * added systemcall tracking facility
  *
@@ -227,6 +230,8 @@ extern void *ILIBstrBufFree (str_buf *s);
 extern char *ILIBstringCopy (const char *source);
 extern char *ILIBstringConcat (const char *first, const char *second);
 extern char *ILIBstringConcat3 (const char *first, const char *second, const char *third);
+extern char *ILIBstringConcat4 (const char *first, const char *second, const char *third,
+                                const char *fourth);
 extern char *ILIBstrTok (char *first, char *sep);
 extern bool ILIBstringCompare (const char *first, const char *second);
 extern int ILIBnumberOfDigits (int number);
