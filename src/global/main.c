@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.114  2005/09/27 11:49:37  sah
+ * -d cccall triggers tracking of the system calls
+ * during compilation. re-added the feature on public
+ * demand
+ *
  * Revision 3.113  2005/09/06 14:07:45  ktr
  * introduced some calls to PHrunCompilerPhase
  *
@@ -610,6 +615,13 @@ main (int argc, char *argv[])
         DEPgenerateDependencyTable (dependencies);
     }
 
+    if (global.gen_cccall) {
+        /*
+         * enable system call tracking
+         */
+        ILIBsystemCallStartTracking ();
+    }
+
     CCMinvokeCC (dependencies);
 
     PHASE_DONE_EPILOG;
@@ -628,6 +640,13 @@ main (int argc, char *argv[])
         PHASE_DONE_EPILOG;
     }
     PHASE_EPILOG;
+
+    if (global.gen_cccall) {
+        /*
+         * stop tracking and close file
+         */
+        ILIBsystemCallStopTracking ();
+    }
 
     /*
      * now we can free the set of dependencies now as well
