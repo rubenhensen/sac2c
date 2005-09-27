@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.19  2005/09/27 17:25:49  sbs
+ * SUBPH_simd run
+ *
  * Revision 1.18  2005/09/09 18:20:06  ktr
  * removed non needed stuff
  *
@@ -155,6 +158,14 @@ EMAdoAllocation (node *syntax_tree)
      */
     if (global.optimize.dodcr) {
         syntax_tree = PHrunCompilerSubPhase (SUBPH_dcremm, syntax_tree);
+    }
+
+    /*
+     * SIMD inference
+     */
+
+    if (global.simd) {
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_simd, syntax_tree);
     }
 
     /*
