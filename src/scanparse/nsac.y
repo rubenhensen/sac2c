@@ -4,6 +4,9 @@
 /*
 *
 * $Log$
+* Revision 1.46  2005/09/27 17:15:19  sbs
+* checkPragma adjusted to N_spap
+*
 * Revision 1.45  2005/08/09 09:41:49  sah
 * AVIS_DECLTYPE is set for args now
 *
@@ -202,7 +205,7 @@ static node *ConstructMop( node *, node *, node *);
 static node *CheckWlcompConf( node *ap, node *exprs);
 
 static int prf_arity[] = {
-#define PRF_IF( a, b, c, d, e, f, g, h) f
+#define PRF_IF( a, b, c, d, e, f, g, h, i) f
 #include "prf_node_info.mac"
 #undef PRF_IF
 };
@@ -2269,7 +2272,7 @@ node *CheckWlcompConf( node *conf, node *exprs)
 
   DBUG_ASSERT( (conf != NULL), "wlcomp-pragma is empty!");
 
-  if (NODE_TYPE( conf) == N_id) {
+  if (NODE_TYPE( conf) == N_spid) {
     if (strcmp( SPID_NAME( conf), "Default")) {
       strcpy( yytext, SPID_NAME( conf));
       yyerror( "innermost configuration is not 'Default'");
@@ -2284,14 +2287,14 @@ node *CheckWlcompConf( node *conf, node *exprs)
      * unmodified 'exprs' is returned
      */
   }
-  else if (NODE_TYPE( conf) == N_ap) {
-    node *arg = AP_ARGS( conf);
+  else if (NODE_TYPE( conf) == N_spap) {
+    node *arg = SPAP_ARGS( conf);
 
     /*
      * look for last argument -> next 'conf'
      */
     if (arg == NULL) {
-      strcpy( yytext, AP_NAME( conf));
+      strcpy( yytext, SPAP_NAME( conf));
       yyerror( "wlcomp-function with missing configuration found");
     }
     else {
@@ -2318,7 +2321,7 @@ node *CheckWlcompConf( node *conf, node *exprs)
       EXPRS_EXPR( tmp) = NULL;
       tmp = FREEdoFreeTree( tmp);
 
-      if ((NODE_TYPE( next_conf) != N_id) && (NODE_TYPE( next_conf) != N_ap)) {
+      if ((NODE_TYPE( next_conf) != N_spid) && (NODE_TYPE( next_conf) != N_spap)) {
         strcpy( yytext, AP_NAME( conf));
         yyerror( "wlcomp-function with illegal configuration found");
       }
