@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.95  2005/09/27 16:09:39  sbs
+ * -simd added
+ *
  * Revision 3.94  2005/09/04 12:49:35  ktr
  * added new global optimization counters and made all optimizations proper subphases
  *
@@ -650,6 +653,8 @@ OPTanalyseCommandline (node *syntax_tree)
         ARG_CHOICE_END ();
     }
     ARGS_OPTION_END ("sigspec");
+
+    ARGS_FLAG ("simd", global.simd = TRUE);
 
     ARGS_OPTION_BEGIN ("specmode")
     {
