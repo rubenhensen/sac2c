@@ -1,5 +1,10 @@
 /*
  * $Log$
+ * Revision 1.3  2005/09/27 02:52:11  sah
+ * hopefully, IVE is now back to its own power. Due to
+ * lots of other compiler bugs, this code is not fully
+ * tested, yet.
+ *
  * Revision 1.2  2005/09/15 11:08:52  sah
  * now, wloffsets are used whenever possible
  *
@@ -34,6 +39,8 @@ typedef struct IVINFO ivinfo;
 struct INFO {
     ivinfo *ivinfo;
     node *lhs;
+    node *vardecs;
+    node *preassigns;
 };
 
 /**
@@ -41,6 +48,8 @@ struct INFO {
  */
 #define INFO_IVINFO(n) ((n)->ivinfo)
 #define INFO_LHS(n) ((n)->lhs)
+#define INFO_VARDECS(n) ((n)->vardecs)
+#define INFO_PREASSIGNS(n) ((n)->preassigns)
 
 /**
  * INFO functions
@@ -56,6 +65,8 @@ MakeInfo ()
 
     INFO_IVINFO (result) = NULL;
     INFO_LHS (result) = NULL;
+    INFO_VARDECS (result) = NULL;
+    INFO_PREASSIGNS (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -123,7 +134,13 @@ GenOffsetInfo (node *lhs, node *withops)
 
         next = GenOffsetInfo (IDS_NEXT (lhs), WITHOP_NEXT (withops));
 
-        if (TUshapeKnown (IDS_NTYPE (lhs))) {
+        if (((NODE_TYPE (withops) == N_genarray) || (NODE_TYPE (withops) == N_modarray))
+            && (TUshapeKnown (IDS_NTYPE (lhs)))) {
+            /*
+             * only genarray and modarray wls have a built in index.
+             * furthermore, the shape of the result must be known
+             * to be able to decide whether the offset does match
+             */
             result = ILIBmalloc (sizeof (offsetinfo));
 
             WITHOFFSET_SHAPE (result) = TYgetShape (IDS_NTYPE (lhs));
@@ -233,6 +250,71 @@ FindIVScalars (ivinfo *info, node *iv)
     DBUG_RETURN (result);
 }
 
+static node *
+GetAvis4Shape (node *avis, shape *shape)
+{
+    node *result = NULL;
+    node *types;
+    node *ids;
+
+    DBUG_ENTER ("GetAvis4Shape");
+
+    types = AVIS_IDXTYPES (avis);
+    ids = AVIS_IDXIDS (avis);
+
+    while (types != NULL) {
+        DBUG_ASSERT ((ids != NULL),
+                     "number of IDXTYPES does not match number of IDXIDS!");
+
+        if (SHcompareShapes (shape, TYgetShape (TYPE_TYPE (EXPRS_EXPR (types))))) {
+            result = IDS_AVIS (ids);
+            break;
+        }
+
+        types = EXPRS_NEXT (types);
+        ids = IDS_NEXT (ids);
+    }
+
+    DBUG_RETURN (result);
+}
+
+static node *
+Scalar2Offset (node *scalar, int dims, shape *shape, info *arg_info)
+{
+    node *args = NULL;
+    node *avis;
+    node *let;
+    int cnt;
+
+    DBUG_ENTER ("Scalar2Offset");
+
+    avis
+      = TBmakeAvis (ILIBtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
+
+    INFO_VARDECS (arg_info) = TBmakeVardec (avis, INFO_VARDECS (arg_info));
+
+    /*
+     * create a list of dims scalar arguments
+     */
+    for (cnt = 0; cnt < dims; cnt++) {
+        args = TBmakeExprs (DUPdoDupNode (scalar), args);
+    }
+
+    /*
+     * add shape array
+     */
+    args = TBmakeExprs (SHshape2Array (shape), args);
+
+    /*
+     * tmpvar = _idxs2offset( args)
+     */
+    let = TBmakeLet (TBmakeIds (avis, NULL), TBmakePrf (F_idxs2offset, args));
+
+    INFO_PREASSIGNS (arg_info) = TBmakeAssign (let, INFO_PREASSIGNS (arg_info));
+
+    DBUG_RETURN (avis);
+}
+
 /**
  * optimizer functions
  */
@@ -270,14 +352,6 @@ ReplaceByWithOffset (node *arg_node, info *arg_info)
 }
 
 static node *
-LiftOffsetOut (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("LiftOffsetOut");
-
-    DBUG_RETURN (arg_node);
-}
-
-static node *
 ReplaceByIdx2Offset (node *arg_node, info *arg_info)
 {
     node *result;
@@ -309,11 +383,112 @@ ReplaceByIdx2Offset (node *arg_node, info *arg_info)
 static node *
 OptimizeComputation (node *arg_node, info *arg_info)
 {
+    node *iv;
+    node *prf;
+    node *arg1;
+    node *arg2;
+    shape *shape;
+
     DBUG_ENTER ("OptimizeComputation");
+
+    iv = PRF_ARG2 (arg_node);
+    prf = ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (iv)));
+    shape = SHarray2Shape (PRF_ARG1 (arg_node));
+
+    if (AVIS_NEEDCOUNT (IDS_AVIS (INFO_LHS (arg_info))) == 0) {
+        /*
+         * this vector is only used as index vector!
+         */
+        switch (PRF_PRF (prf)) {
+        case F_add_AxA:
+        case F_sub_AxA:
+            /*
+             * look up the matching offsets and replace computation
+             */
+            arg1 = GetAvis4Shape (ID_AVIS (PRF_ARG1 (prf)), shape);
+            arg2 = GetAvis4Shape (ID_AVIS (PRF_ARG2 (prf)), shape);
+
+            if ((arg1 != NULL) && (arg2 != NULL)) {
+                arg_node = FREEdoFreeNode (arg_node);
+                arg_node
+                  = TCmakePrf2 ((PRF_PRF (prf) == F_add_AxA) ? F_add_SxS : F_sub_SxS,
+                                TBmakeId (arg1), TBmakeId (arg2));
+            }
+            break;
+
+        case F_add_SxA:
+        case F_sub_SxA:
+            if (TUdimKnown (ID_NTYPE (PRF_ARG2 (prf)))) {
+                arg2 = GetAvis4Shape (ID_AVIS (PRF_ARG2 (prf)), shape);
+
+                if (arg2 != NULL) {
+                    arg1 = Scalar2Offset (PRF_ARG1 (prf),
+                                          TYgetDim (ID_NTYPE (PRF_ARG2 (prf))), shape,
+                                          arg_info);
+
+                    arg_node = FREEdoFreeNode (arg_node);
+                    arg_node
+                      = TCmakePrf2 ((PRF_PRF (prf) == F_add_SxA) ? F_add_SxA : F_sub_SxA,
+                                    TBmakeId (arg1), TBmakeId (arg2));
+                }
+            }
+            break;
+
+        case F_add_AxS:
+        case F_sub_AxS:
+            if (TUdimKnown (ID_NTYPE (PRF_ARG1 (prf)))) {
+                arg1 = GetAvis4Shape (ID_AVIS (PRF_ARG1 (prf)), shape);
+
+                if (arg1 != NULL) {
+                    arg2 = Scalar2Offset (PRF_ARG1 (prf),
+                                          TYgetDim (ID_NTYPE (PRF_ARG1 (prf))), shape,
+                                          arg_info);
+
+                    arg_node = FREEdoFreeNode (arg_node);
+                    arg_node
+                      = TCmakePrf2 ((PRF_PRF (prf) == F_add_AxS) ? F_add_AxS : F_sub_AxS,
+                                    TBmakeId (arg1), TBmakeId (arg2));
+                }
+            }
+            break;
+
+        case F_mul_SxA:
+            arg2 = GetAvis4Shape (ID_AVIS (PRF_ARG2 (prf)), shape);
+
+            if (arg2 != NULL) {
+                arg1 = PRF_ARG1 (prf);
+                PRF_ARG1 (prf) = NULL;
+
+                arg_node = FREEdoFreeNode (arg_node);
+                arg_node = TCmakePrf2 (F_mul_SxS, arg1, arg2);
+            }
+            break;
+
+        case F_mul_AxS:
+            arg1 = GetAvis4Shape (ID_AVIS (PRF_ARG1 (prf)), shape);
+
+            if (arg1 != NULL) {
+                arg2 = PRF_ARG2 (prf);
+                PRF_ARG2 (prf) = NULL;
+
+                arg_node = FREEdoFreeNode (arg_node);
+                arg_node = TCmakePrf2 (F_mul_SxS, arg1, arg2);
+            }
+            break;
+
+        default:
+            break;
+        }
+    }
+
+    shape = SHfreeShape (shape);
 
     DBUG_RETURN (arg_node);
 }
 
+/**
+ * traversal functions
+ */
 node *
 IVEOlet (node *arg_node, info *arg_info)
 {
@@ -368,12 +543,7 @@ IVEOprf (node *arg_node, info *arg_info)
                 arg_node = OptimizeComputation (arg_node, arg_info);
             }
         } else {
-            if (NODE_TYPE (AVIS_DECL (ID_AVIS (ivarg))) == N_arg) {
-                /*
-                 * the index vector is an argument of this function
-                 */
-                arg_node = LiftOffsetOut (arg_node, arg_info);
-            } else {
+            if (NODE_TYPE (AVIS_DECL (ID_AVIS (ivarg))) != N_arg) {
                 /*
                  * this id has no defining assignment and is no argument.
                  * the only possible reason for this is, that this id is a
@@ -382,6 +552,50 @@ IVEOprf (node *arg_node, info *arg_info)
                 arg_node = ReplaceByWithOffset (arg_node, arg_info);
             }
         }
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+IVEOfundef (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("IVEOblock");
+
+    INFO_VARDECS (arg_info) = NULL;
+
+    if (FUNDEF_BODY (arg_node) != NULL) {
+        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+    }
+
+    if (INFO_VARDECS (arg_info) != NULL) {
+        FUNDEF_VARDEC (arg_node)
+          = TCappendVardec (INFO_VARDECS (arg_info), FUNDEF_VARDEC (arg_node));
+        INFO_VARDECS (arg_info) = NULL;
+    }
+
+    if (FUNDEF_NEXT (arg_node) != NULL) {
+        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+IVEOassign (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("IVEOassign");
+
+    if (ASSIGN_NEXT (arg_node) != NULL) {
+        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
+    }
+
+    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+
+    if (INFO_PREASSIGNS (arg_info) != NULL) {
+        arg_node = TCappendAssign (INFO_PREASSIGNS (arg_info), arg_node);
+
+        INFO_PREASSIGNS (arg_info) = NULL;
     }
 
     DBUG_RETURN (arg_node);

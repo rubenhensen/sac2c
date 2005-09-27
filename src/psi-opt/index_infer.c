@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2005/09/27 02:52:11  sah
+ * hopefully, IVE is now back to its own power. Due to
+ * lots of other compiler bugs, this code is not fully
+ * tested, yet.
+ *
  * Revision 1.6  2005/09/23 14:04:01  sah
  * added fixpoint iteration for lacfuns
  * to ensure that all index uses are
@@ -192,6 +197,22 @@ TranscribeFormalToConcrete (node *args, node *exprs)
     DBUG_VOID_RETURN;
 }
 
+static void
+TranscribeNeedToArgs (node *args, node *exprs)
+{
+    DBUG_ENTER ("TranscribeNeedToArgs");
+
+    if (args != NULL) {
+        DBUG_ASSERT ((exprs != NULL), "less conrete args than formal args!");
+
+        TranscribeNeedToArgs (ARG_NEXT (args), EXPRS_NEXT (exprs));
+
+        AVIS_NEEDCOUNT (ID_AVIS (EXPRS_EXPR (exprs))) += AVIS_NEEDCOUNT (ARG_AVIS (args));
+    }
+
+    DBUG_VOID_RETURN;
+}
+
 /*@}*/
 
 /** <!--*******************************************************************-->
@@ -235,6 +256,14 @@ IVEIap (node *arg_node, info *arg_info)
                 olduses = uses;
                 uses = CountUses (FUNDEF_ARGS (AP_FUNDEF (arg_node)));
             } while (uses != olduses);
+
+            /*
+             * As this is a do function, the need for the args
+             * generated within the do function has to be
+             * transcribed to the concrete args. (the body of
+             * lacfuns is handeled as if it had been inlined)
+             */
+            TranscribeNeedToArgs (FUNDEF_ARGS (AP_FUNDEF (arg_node)), AP_ARGS (arg_node));
         } else {
             INFO_INTAP (arg_info) = arg_node;
 
@@ -244,6 +273,14 @@ IVEIap (node *arg_node, info *arg_info)
              */
             TranscribeFormalToConcrete (FUNDEF_ARGS (AP_FUNDEF (arg_node)),
                                         AP_ARGS (arg_node));
+
+            /*
+             * as this is the internal application of a recursive
+             * do fun, the need is not added to the concrete args
+             * here. the idea is, that if an argument is not needed
+             * for the function body, but only for the recurive
+             * call, it in fact is not needed at all!
+             */
         }
     } else if (FUNDEF_ISCONDFUN (AP_FUNDEF (arg_node))) {
         /*
@@ -254,10 +291,20 @@ IVEIap (node *arg_node, info *arg_info)
 
         /*
          * Add all types annotated at the formal parameters to the corresponding
-         * concrete parameters
+         * concrete parameters. furthermore, the need information is
+         * transcribed, as well.
          */
         TranscribeFormalToConcrete (FUNDEF_ARGS (AP_FUNDEF (arg_node)),
                                     AP_ARGS (arg_node));
+        TranscribeNeedToArgs (FUNDEF_ARGS (AP_FUNDEF (arg_node)), AP_ARGS (arg_node));
+    } else {
+        /*
+         * this is a regular function application. so the need inference
+         * has to be done for the concrete args
+         */
+        if (AP_ARGS (arg_node) != NULL) {
+            AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -297,14 +344,32 @@ IVEIfundef (node *arg_node, info *arg_info)
 
     if ((!FUNDEF_ISLACFUN (arg_node)) || (INFO_FUNDEF (arg_info) != NULL)) {
 
+        /*
+         * reset the NeedCount for all args
+         */
+        if (FUNDEF_ARGS (arg_node) != NULL) {
+            FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
+        }
+
+        /*
+         * traverse the body. this will reset the NeedCount for all
+         * vardecs.
+         */
         if (FUNDEF_BODY (arg_node) != NULL) {
             oldfundef = INFO_FUNDEF (arg_info);
             INFO_FUNDEF (arg_info) = arg_node;
             FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 
+            /*
+             * traverse the intap to update the annotations
+             */
             if (FUNDEF_ISDOFUN (arg_node)) {
                 INFO_INTAP (arg_info) = TRAVdo (INFO_INTAP (arg_info), arg_info);
             }
+
+            /*
+             * now reset the current fundef pointer!
+             */
             INFO_FUNDEF (arg_info) = oldfundef;
         }
     }
@@ -312,6 +377,64 @@ IVEIfundef (node *arg_node, info *arg_info)
     if ((INFO_FUNDEF (arg_info) == NULL) && (FUNDEF_NEXT (arg_node) != NULL)) {
         FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
     }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--*******************************************************************-->
+ *
+ * @fn node *IVEIblock( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+IVEIblock (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("IVEIblock");
+
+    /*
+     * first traverse vardecs to reset use counter
+     */
+    if (BLOCK_VARDEC (arg_node) != NULL) {
+        BLOCK_VARDEC (arg_node) = TRAVdo (BLOCK_VARDEC (arg_node), arg_info);
+    }
+
+    /*
+     * then start the bottom up traversal of the instructions
+     */
+    BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--*******************************************************************-->
+ *
+ * @fn node *IVEIavis( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+IVEIavis (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("IVEIavis");
+
+    /*
+     * reset the need counter to its initial value
+     */
+    AVIS_NEEDCOUNT (arg_node) = 0;
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--*******************************************************************-->
+ *
+ * @fn node *IVEIid( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+IVEIid (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("IVEIid");
+
+    AVIS_NEEDCOUNT (ID_AVIS (arg_node))++;
 
     DBUG_RETURN (arg_node);
 }
@@ -362,6 +485,18 @@ IVEIprf (node *arg_node, info *arg_info)
         if (TUshapeKnown (ltype) && TUshapeKnown (type2) && TUisIntVect (type1)
             && TUshapeKnown (type1)) {
             AddTypeToIdxTypes (ID_AVIS (arg1), type2);
+
+            /*
+             * as arg1 is used as a indexvector, we traverse arg2
+             * only. this will mark it as non-index-vector use
+             */
+            PRF_ARG2 (arg_node) = TRAVdo (PRF_ARG2 (arg_node), arg_info);
+        } else {
+            /*
+             * as we cannot replace this usage of the indexvector, it
+             * has to be counted as a regular use. so we do this here
+             */
+            PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
         }
         break;
 
@@ -384,10 +519,102 @@ IVEIprf (node *arg_node, info *arg_info)
         if (TUshapeKnown (ltype) && TUshapeKnown (type1) && TUisIntVect (type2)
             && TUshapeKnown (type2) && ((type3 == NULL) || TUshapeKnown (type3))) {
             AddTypeToIdxTypes (ID_AVIS (arg2), type1);
+            /*
+             * argument 1 and 3 are non index-vector uses, so we
+             * have to traverse them here
+             */
+            PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
+            PRF_ARG3 (arg_node) = TRAVdo (PRF_ARG3 (arg_node), arg_info);
+        } else {
+            /*
+             * as we cannot replace the index vector, we have to count
+             * all args as uses
+             */
+            PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
+        }
+        break;
+
+    case F_add_AxA:
+    case F_add_SxA:
+    case F_add_AxS:
+    case F_sub_AxA:
+    case F_sub_SxA:
+    case F_sub_AxS:
+        lhs = INFO_LHS (arg_info);
+        arg1 = PRF_ARG1 (arg_node);
+        arg2 = PRF_ARG2 (arg_node);
+
+        ltype = IDS_NTYPE (lhs);
+        type1 = (NODE_TYPE (arg1) == N_id) ? ID_NTYPE (arg1) : NULL;
+        type2 = (NODE_TYPE (arg2) == N_id) ? ID_NTYPE (arg2) : NULL;
+
+        if ((AVIS_NEEDCOUNT (IDS_AVIS (lhs)) == 0) && TUisIntVect (ltype)
+            && TUshapeKnown (ltype) && ((type1 == NULL) || TUshapeKnown (type1))
+            && ((type2 == NULL) || TUshapeKnown (type2))) {
+            /*
+             * the result is used as an index-vector only.
+             * so we forward the infered shapes to the
+             * array arguments. We do not forward it to
+             * scalars. These are handeled in index_optimize.
+             */
+            if ((NODE_TYPE (arg1) == N_id) && TYgetDim (type1) != 0) {
+                TranscribeIdxTypes (IDS_AVIS (lhs), ID_AVIS (arg1));
+            }
+            if ((NODE_TYPE (arg2) == N_id) && TYgetDim (type2) != 0) {
+                TranscribeIdxTypes (IDS_AVIS (lhs), ID_AVIS (arg2));
+            }
+        } else {
+            /*
+             * this vector has to be calculated anyways (as it
+             * is needed somewhere), so we increase the use
+             * counter for the two args
+             */
+            PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
+        }
+        break;
+
+    case F_mul_AxS:
+    case F_mul_SxA:
+        lhs = INFO_LHS (arg_info);
+        arg1 = PRF_ARG1 (arg_node);
+        arg2 = PRF_ARG2 (arg_node);
+
+        ltype = IDS_NTYPE (lhs);
+        type1 = (NODE_TYPE (arg1) == N_id) ? ID_NTYPE (arg1) : NULL;
+        type2 = (NODE_TYPE (arg2) == N_id) ? ID_NTYPE (arg2) : NULL;
+
+        if ((AVIS_NEEDCOUNT (IDS_AVIS (lhs)) == 0) && TUisIntVect (ltype)
+            && TUshapeKnown (ltype) && ((type1 == NULL) || TUshapeKnown (type1))
+            && ((type2 == NULL) || TUshapeKnown (type2))) {
+            /*
+             * the result is used as an index-vector only.
+             * so we forward the infered shapes to the
+             * array argument.
+             */
+            if ((NODE_TYPE (arg1) == N_id) && (TYgetDim (type1) != 0)) {
+                TranscribeIdxTypes (IDS_AVIS (lhs), ID_AVIS (arg1));
+            }
+            if ((NODE_TYPE (arg2) == N_id) && (TYgetDim (type2) != 0)) {
+                TranscribeIdxTypes (IDS_AVIS (lhs), ID_AVIS (arg2));
+            }
+        } else {
+            /*
+             * this vector has to be calculated anyways (as it
+             * is needed somewhere), so we increase the use
+             * counter for the two args
+             */
+            PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
         }
         break;
 
     default:
+        /*
+         * for all other prfs we traverse the arg to ensure
+         * that we find uses of identifiers other than identifiers
+         */
+        if (PRF_ARGS (arg_node) != NULL) {
+            PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
+        }
         break;
     }
 
@@ -444,15 +671,16 @@ IVEIprintPreFun (node *arg_node, info *arg_info)
     switch (NODE_TYPE (arg_node)) {
     case N_avis:
         exprs = AVIS_IDXTYPES (arg_node);
+        printf ("/*");
         if (exprs != NULL) {
-            printf ("/*");
             while (exprs != NULL) {
                 printf (":IDX(%s)",
                         SHshape2String (0, TYgetShape (TYPE_TYPE (EXPRS_EXPR (exprs)))));
                 exprs = EXPRS_NEXT (exprs);
             }
-            printf ("*/");
         }
+        printf (":NEED(%d)", AVIS_NEEDCOUNT (arg_node));
+        printf ("*/");
         break;
 
     default:

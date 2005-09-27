@@ -1151,6 +1151,8 @@
 	  <node name="Let" />
 	  <node name="With" />
 	  <node name="Prf" />
+	  <node name="Fundef" />
+	  <node name="Assign" />
         </travuser>
       </traversal>
       <traversal id="WLIDX" name="Annotate withloop idxs" default="sons" include="wlidxs.h">
@@ -1168,6 +1170,9 @@
           <node name="Assign" />
           <node name="Prf" />
           <node name="Let" />
+          <node name="Block" />
+          <node name="Avis" />
+          <node name="Id" />
         </travuser>
       </traversal>
     </phase>

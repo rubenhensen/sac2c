@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2005/09/27 02:52:11  sah
+ * hopefully, IVE is now back to its own power. Due to
+ * lots of other compiler bugs, this code is not fully
+ * tested, yet.
+ *
  * Revision 1.4  2005/08/24 10:19:41  ktr
  * added WLIDXlet
  *
@@ -27,6 +32,9 @@ extern node *IVEIprintPreFun (node *arg_node, info *arg_info);
 extern node *IVEIprf (node *arg_node, info *arg_info);
 extern node *IVEIassign (node *arg_node, info *arg_info);
 extern node *IVEIfundef (node *arg_node, info *arg_info);
+extern node *IVEIblock (node *arg_node, info *arg_info);
+extern node *IVEIavis (node *arg_node, info *arg_info);
+extern node *IVEIid (node *arg_node, info *arg_info);
 extern node *IVEIap (node *arg_node, info *arg_info);
 extern node *IVEIlet (node *arg_node, info *arg_info);
 
