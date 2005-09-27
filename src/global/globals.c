@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.86  2005/09/27 16:09:39  sbs
+ * PRF_IF macro extended.
+ *
  * Revision 3.85  2005/09/04 12:49:35  ktr
  * added new global optimization counters and made all optimizations proper subphases
  *
@@ -275,7 +278,7 @@ static const int basetype_size_init[] = {
 };
 
 static const char *prf_string_init[] = {
-#define PRF_IF(a, b, c, d, e, f, g, h) c
+#define PRF_IF(a, b, c, d, e, f, g, h, i) c
 #include "prf_node_info.mac"
 #undef PRF_IF
 };
@@ -305,13 +308,13 @@ static char *nt_unique_string_init[] = {
 };
 
 static const ct_funptr ntc_funtab_init[] = {
-#define PRF_IF(a, b, c, d, e, f, g, h) g
+#define PRF_IF(a, b, c, d, e, f, g, h, i) g
 #include "prf_node_info.mac"
 #undef PRF_IF
 };
 
 static const void *ntc_cffuntab_init[] = {
-#define PRF_IF(a, b, c, d, e, f, g, h) (void *)h
+#define PRF_IF(a, b, c, d, e, f, g, h, i) (void *)h
 #include "prf_node_info.mac"
 #undef PRF_IF
 };
@@ -479,7 +482,7 @@ static const char *mdb_nodetype_init[] = {
 };
 
 static const char *mdb_prf_init[] = {
-#define PRF_IF(a, b, c, d, e, f, g, h) b
+#define PRF_IF(a, b, c, d, e, f, g, h, i) b
 #include "prf_node_info.mac"
 #undef PRF_IF
 };
@@ -632,13 +635,13 @@ static genlib_flags_t genlib_init = {
  */
 
 static char *prf_symbol_init[] = {
-#define PRF_IF(a, b, c, d, e, f, g, h) d
+#define PRF_IF(a, b, c, d, e, f, g, h, i) d
 #include "prf_node_info.mac"
 #undef PRF_IF
 };
 
 static bool prf_is_infix_init[] = {
-#define PRF_IF(a, b, c, d, e, f, g, h) e
+#define PRF_IF(a, b, c, d, e, f, g, h, i) e
 #include "prf_node_info.mac"
 #undef PRF_IF
 };
