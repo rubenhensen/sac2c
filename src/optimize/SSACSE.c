@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.52  2005/09/27 18:16:07  ktr
+ * assignments of an array consisting of the index scalars
+ * to a fresh variable is recognized another notation for
+ * the index vector
+ *
  * Revision 1.51  2005/09/18 21:26:22  ktr
  * minor brushing
  *
@@ -251,6 +256,7 @@ struct INFO {
     node *ext_assign;
     node *cse;
     node *assign;
+    node *withid;
     bool recfunap;
     nodelist *resultarg;
 };
@@ -263,6 +269,7 @@ struct INFO {
 #define INFO_EXT_ASSIGN(n) (n->ext_assign)
 #define INFO_CSE(n) (n->cse)
 #define INFO_ASSIGN(n) (n->assign)
+#define INFO_WITHID(n) (n->withid)
 #define INFO_RECFUNAP(n) (n->recfunap)
 #define INFO_RESULTARG(n) (n->resultarg)
 
@@ -283,6 +290,7 @@ MakeInfo ()
     INFO_EXT_ASSIGN (result) = NULL;
     INFO_CSE (result) = NULL;
     INFO_ASSIGN (result) = NULL;
+    INFO_WITHID (result) = NULL;
     INFO_RECFUNAP (result) = FALSE;
     INFO_RESULTARG (result) = NULL;
 
@@ -1011,6 +1019,9 @@ CSEarg (node *arg_node, info *arg_info)
 node *
 CSEblock (node *arg_node, info *arg_info)
 {
+    node *oldwithid = NULL;
+    node *ivlet = NULL;
+
     DBUG_ENTER ("CSEblock");
 
     if (BLOCK_VARDEC (arg_node) != NULL) {
@@ -1021,6 +1032,19 @@ CSEblock (node *arg_node, info *arg_info)
     /* start new cse frame */
     INFO_CSE (arg_info) = CreateNewCselayer (INFO_CSE (arg_info));
 
+    /* create fake let node for iv = [i,j,k] */
+    if (INFO_WITHID (arg_info) != NULL) {
+        oldwithid = INFO_WITHID (arg_info);
+        INFO_WITHID (arg_info) = NULL;
+
+        if (WITHID_IDS (oldwithid) != NULL) {
+            DBUG_PRINT ("CSE", ("add new expression to cselist"));
+            ivlet = TBmakeLet (TBmakeIds (IDS_AVIS (WITHID_VEC (oldwithid)), NULL),
+                               TCids2Array (WITHID_IDS (oldwithid)));
+            INFO_CSE (arg_info) = AddCseinfo (INFO_CSE (arg_info), ivlet);
+        }
+    }
+
     BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
 
     if (BLOCK_INSTR (arg_node) == NULL) {
@@ -1030,6 +1054,14 @@ CSEblock (node *arg_node, info *arg_info)
 
     /* remove top cse frame */
     INFO_CSE (arg_info) = RemoveTopCselayer (INFO_CSE (arg_info));
+
+    /* remove the fake assignment of the index scalars to the index vector */
+    if (oldwithid != NULL) {
+        INFO_WITHID (arg_info) = oldwithid;
+        if (ivlet != NULL) {
+            ivlet = FREEdoFreeNode (ivlet);
+        }
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -1468,7 +1500,9 @@ CSEwith (node *arg_node, info *arg_info)
     WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
 
     /* traverse and do cse in code blocks */
+    INFO_WITHID (arg_info) = WITH_WITHID (arg_node);
     WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
+    INFO_WITHID (arg_info) = NULL;
 
     DBUG_RETURN (arg_node);
 }
