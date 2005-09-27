@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.49  2005/09/27 17:18:49  sbs
+ * added DUPwlsimd
+ *
  * Revision 3.48  2005/08/20 19:19:19  sah
  * IVE-rewrite: removed N_vinfo
  *
@@ -292,6 +295,7 @@ extern node *DUPwlseg (node *arg_node, info *arg_info);
 extern node *DUPwlsegvar (node *arg_node, info *arg_info);
 extern node *DUPwlblock (node *arg_node, info *arg_info);
 extern node *DUPwlublock (node *arg_node, info *arg_info);
+extern node *DUPwlsimd (node *arg_node, info *arg_info);
 extern node *DUPwlstride (node *arg_node, info *arg_info);
 extern node *DUPwlstridevar (node *arg_node, info *arg_info);
 extern node *DUPwlgrid (node *arg_node, info *arg_info);

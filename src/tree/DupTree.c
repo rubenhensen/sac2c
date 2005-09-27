@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.170  2005/09/27 17:18:49  sbs
+ * added DUPwlsimd
+ *
  * Revision 3.169  2005/09/15 17:13:07  ktr
  * removed WITH2_REUSE
  *
@@ -2683,6 +2686,22 @@ DUPwlublock (node *arg_node, info *arg_info)
                         WLUBLOCK_STEP (arg_node), DUPTRAV (WLUBLOCK_NEXTDIM (arg_node)),
                         DUPTRAV (WLUBLOCK_CONTENTS (arg_node)),
                         DUPCONT (WLUBLOCK_NEXT (arg_node)));
+
+    CopyCommonNodeData (new_node, arg_node);
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+
+node *
+DUPwlsimd (node *arg_node, info *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DUPwlsimd");
+
+    new_node = TBmakeWlsimd (DUPCONT (WLSIMD_BODY (arg_node)));
 
     CopyCommonNodeData (new_node, arg_node);
 
