@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.172  2005/09/27 16:16:38  sbs
+ * introduction of SIMD ICMs
+ *
  * Revision 3.171  2005/09/14 19:56:07  sah
  * minor fix in compilation of idxs2offset prf
  *
@@ -6381,6 +6384,8 @@ COMPwlstridex (node *arg_node, info *arg_info)
     node *node_icms = NULL;
     node *next_icms = NULL;
 
+    static int simd_counter = 0;
+
     DBUG_ENTER ("COMPwlstridex");
 
     /*
@@ -6481,10 +6486,21 @@ COMPwlstridex (node *arg_node, info *arg_info)
     if (icm_name_begin != NULL) {
         begin_icm
           = TCmakeAssignIcm1 (icm_name_begin, MakeIcmArgs_WL_LOOP2 (arg_node), NULL);
+        if ((NODE_TYPE (arg_node) == N_wlstride) && WLSTRIDE_ISSIMDSUITABLE (arg_node)) {
+            begin_icm
+              = TCmakeAssignIcm1 ("WL_SIMD_BEGIN", TBmakeNum (simd_counter), begin_icm);
+        }
     }
 
     if (icm_name_end != NULL) {
-        end_icm = TCmakeAssignIcm1 (icm_name_end, MakeIcmArgs_WL_LOOP2 (arg_node), NULL);
+        if ((NODE_TYPE (arg_node) == N_wlstride) && WLSTRIDE_ISSIMDSUITABLE (arg_node)) {
+            end_icm = TCmakeAssignIcm1 ("WL_SIMD_END", TBmakeNum (simd_counter), NULL);
+            simd_counter++;
+        } else {
+            end_icm = NULL;
+        }
+        end_icm
+          = TCmakeAssignIcm1 (icm_name_end, MakeIcmArgs_WL_LOOP2 (arg_node), end_icm);
     }
 
     /*******************************************
