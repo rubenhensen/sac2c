@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2005/09/27 14:25:06  sah
+ * quick fix for bug Ã#120
+ *
  * Revision 1.3  2005/09/27 02:52:11  sah
  * hopefully, IVE is now back to its own power. Due to
  * lots of other compiler bugs, this code is not fully
@@ -262,9 +265,12 @@ GetAvis4Shape (node *avis, shape *shape)
     types = AVIS_IDXTYPES (avis);
     ids = AVIS_IDXIDS (avis);
 
-    while (types != NULL) {
-        DBUG_ASSERT ((ids != NULL),
-                     "number of IDXTYPES does not match number of IDXIDS!");
+    /*
+     * we have to be robust w.r.t. missing idxids, as during
+     * optimisation, the idxids for withids have been deleted
+     * again! see bug #120
+     */
+    while ((types != NULL) && (ids != NULL)) {
 
         if (SHcompareShapes (shape, TYgetShape (TYPE_TYPE (EXPRS_EXPR (types))))) {
             result = IDS_AVIS (ids);
