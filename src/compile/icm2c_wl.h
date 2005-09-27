@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.27  2005/09/27 16:20:18  sbs
+ * implementation of SIMD_BEGIN and SIMD_END added.
+ *
  * Revision 3.26  2005/08/24 10:21:26  ktr
  * added support for explicit with-loop offsets
  *
@@ -131,5 +134,9 @@ extern void ICMCompileWL_ADJUST_OFFSET (char *off_NT, int dim, char *to_NT, int 
 extern void ICMCompileWL_SET_OFFSET (char *off_NT, int dim, int first_block_dim,
                                      char *to_NT, int to_sdim, char *idx_vec_NT, int dims,
                                      char **idxa_scl_NT);
+
+extern void ICMCompileWL_SIMD_BEGIN ();
+
+extern void ICMCompileWL_SIMD_END ();
 
 #endif /* _SAC_ICM2C_WL_H_ */

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.50  2005/09/27 16:20:18  sbs
+ * implementation of SIMD_BEGIN and SIMD_END added.
+ *
  * Revision 3.49  2005/08/24 10:21:26  ktr
  * added support for explicit with-loop offsets
  *
@@ -151,6 +154,13 @@
 #include "globals.h"
 #include "print.h"
 #include "gen_startup_code.h"
+#include "internal_lib.h"
+#include "ctinfo.h"
+
+static FILE *store_global_outfile;
+static int store_global_indent;
+
+static char *simd_filename;
 
 /******************************************************************************
  *
@@ -935,6 +945,68 @@ ICMCompileWL_SET_OFFSET (char *off_NT, int dim, int first_block_dim, char *to_NT
     }
     fprintf (global.outfile, " * SAC_WL_SHAPE_FACTOR( %s, %d);\n", to_NT, dims - 1);
     global.indent--;
+
+    DBUG_VOID_RETURN;
+}
+
+void
+ICMCompileWL_SIMD_BEGIN (int cnt)
+{
+    char *tmp_name;
+    FILE *simd_file;
+
+    DBUG_ENTER ("ICMCompileWL_SIMD_BEGIN");
+
+#define WL_SIMD_BEGIN
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef WL_SIMD_BEGIN
+
+    tmp_name = ILIBitoa (cnt);
+    simd_filename = ILIBstringConcat4 (global.tmp_dirname, "/simd", tmp_name, ".c");
+
+    INDENT;
+    fprintf (global.outfile, "#include \"%s\"\n", simd_filename);
+    INDENT;
+
+    simd_file = fopen (simd_filename, "w");
+    if (simd_file == NULL) {
+        CTIabort ("Unable to open file %s", simd_filename);
+    }
+
+    tmp_name = ILIBfree (tmp_name);
+
+    store_global_outfile = global.outfile;
+    store_global_indent = global.indent;
+    global.outfile = simd_file;
+    global.indent = 0;
+
+    INDENT;
+    fprintf (global.outfile, "\n#include \"simd.h\"\n");
+
+    DBUG_VOID_RETURN;
+}
+
+void
+ICMCompileWL_SIMD_END (int cnt)
+{
+    DBUG_ENTER ("ICMCompileWL_SIMD_END");
+
+    fclose (global.outfile);
+
+    ILIBsystemCall ("gcc -E -P -I$SACBASE/runtime %s >%s2",
+                    /*     global.config.cpp_file,   */
+                    simd_filename, simd_filename);
+    ILIBsystemCall ("$SACBASE/stdlib/Tools/cb -r %s2 >%s", simd_filename, simd_filename);
+
+    simd_filename = ILIBfree (simd_filename);
+    global.outfile = store_global_outfile;
+    global.indent = store_global_indent;
+
+#define WL_SIMD_END
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef WL_SIMD_END
 
     DBUG_VOID_RETURN;
 }
