@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.27  2005/09/27 18:30:16  sah
+ * added additional CVP and DCR after IVE
+ *
  * Revision 1.26  2005/09/12 16:12:34  ktr
  * activated wlpg, cse and wlsimplification by default
  *
@@ -134,7 +137,7 @@ OPTIMIZE ("cse", cse, TRUE, FALSE, "common subexpression elimination")
 OPTIMIZE ("dfr", dfr, TRUE, TRUE, "dead function removal")
 OPTIMIZE ("wlt", wlt, FALSE, FALSE, "with-loop transformation")
 OPTIMIZE ("wlf", wlf, TRUE, FALSE, "with-loop folding")
-OPTIMIZE ("ive", ive, FALSE, FALSE, "index vector elimination")
+OPTIMIZE ("ive", ive, TRUE, TRUE, "index vector elimination")
 OPTIMIZE ("ae", ae, FALSE, FALSE, "array elimination")
 OPTIMIZE ("dl", dl, FALSE, FALSE, "distributive law")
 OPTIMIZE ("rco", rco, TRUE, TRUE, "reference count optimization")

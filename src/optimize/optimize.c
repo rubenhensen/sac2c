@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.114  2005/09/27 18:30:16  sah
+ * added additional CVP and DCR after IVE
+ *
  * Revision 3.113  2005/09/14 21:26:00  sah
  * added basic implementation for index_optimize
  *
@@ -439,6 +442,20 @@ OPTdoOptimize (node *arg_node)
         arg_node = PHrunCompilerSubPhase (SUBPH_ive, arg_node);
         arg_node = PHrunCompilerSubPhase (SUBPH_iveo, arg_node);
         TRAVsetPreFun (TR_prt, NULL);
+
+        /*
+         * Constant and variable propagation
+         */
+        if (global.optimize.docvp) {
+            arg_node = PHrunCompilerSubPhase (SUBPH_cvpive, arg_node);
+        }
+
+        /*
+         * Dead code removal after ive
+         */
+        if (global.optimize.dodcr) {
+            arg_node = PHrunCompilerSubPhase (SUBPH_dcrive, arg_node);
+        }
     }
 
     /*

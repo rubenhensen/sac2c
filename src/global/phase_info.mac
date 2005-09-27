@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.48  2005/09/27 18:30:16  sah
+ * added additional CVP and DCR after IVE
+ *
  * Revision 3.47  2005/09/27 16:09:39  sbs
  * simd_infer added.
  *
@@ -428,6 +431,11 @@ SUBPHASE (ive, "ive", "Applying index vector elimination", IVEdoIndexVectorElimi
 
 SUBPHASE (iveo, "iveo", "Applying index vector elimination (optimisation)",
           IVEOdoIndexVectorEliminationOptimisation)
+
+SUBPHASE (cvpive, "cvpive", "Propagating constants and variables",
+          CVPdoConstVarPropagation)
+
+SUBPHASE (dcrive, "dcrive", "Removing dead code", DCRdoDeadCodeRemovalModule)
 
 SUBPHASE (wlidx, "wlidx", "Annoting offset variable at with-loops",
           WLIDXdoAnnotateWithloopIdxs)
