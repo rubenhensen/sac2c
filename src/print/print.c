@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.231  2005/09/27 17:21:01  sbs
+ * PRTwlsimd added, IsSimdSuitable flags printing added
+ *
  * Revision 3.230  2005/08/24 10:26:26  ktr
  * added support for WITHID_IDXS, GENARRAY_IDX, MODARRAY_IDX
  *
@@ -383,6 +386,31 @@ FreeInfo (info *info)
     info = ILIBfree (info);
 
     DBUG_RETURN (info);
+}
+
+static void
+PrintSimdBegin ()
+{
+    DBUG_ENTER ("PrintSimdBegin");
+
+    INDENT;
+    fprintf (global.outfile, "( /* SIMD-Block begin */\n");
+    global.indent++;
+
+    DBUG_VOID_RETURN;
+}
+
+static void
+PrintSimdEnd ()
+{
+    DBUG_ENTER ("PrintSimdEnd");
+
+    fprintf (global.outfile, "\n");
+    global.indent--;
+    INDENT;
+    fprintf (global.outfile, ") /* SIMD-Block end */\n");
+
+    DBUG_VOID_RETURN;
 }
 
 #ifndef WLAA_DEACTIVATED
@@ -3666,12 +3694,20 @@ PRTcode (node *arg_node, info *arg_info)
 
     DBUG_ASSERT ((CODE_USED (arg_node) >= 0), "illegal CODE_USED value!");
 
+    if (CODE_ISSIMDSUITABLE (arg_node)) {
+        PrintSimdBegin ();
+    }
+
     /* print the code section; the body first */
     TRAVdo (CODE_CBLOCK (arg_node), arg_info);
 
     fprintf (global.outfile, " : ");
     TRAVdo (CODE_CEXPRS (arg_node), arg_info);
     fprintf (global.outfile, " ; ");
+
+    if (CODE_ISSIMDSUITABLE (arg_node)) {
+        PrintSimdEnd ();
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -4139,6 +4175,30 @@ PRTwlublock (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
+ *   node *PRTwlsimd( node *arg_node, info *arg_info)
+ *
+ * description:
+ *   prints N_wlsimd node
+ *
+ ******************************************************************************/
+
+node *
+PRTwlsimd (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("PRTwlsimd");
+
+    PrintSimdBegin ();
+
+    TRAVcont (arg_node, arg_info);
+
+    PrintSimdEnd ();
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *PRTwlstridex( node *arg_node, info *arg_info)
  *
  * description:
@@ -4157,6 +4217,10 @@ PRTwlstride (node *arg_node, info *arg_info)
 
     if (NODE_ERROR (arg_node) != NULL) {
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
+    }
+
+    if (WLSTRIDE_ISSIMDSUITABLE (arg_node)) {
+        PrintSimdBegin ();
     }
 
     INDENT;
@@ -4181,6 +4245,10 @@ PRTwlstride (node *arg_node, info *arg_info)
         global.indent++;
         TRAVdo (WLSTRIDEX_CONTENTS (arg_node), arg_info);
         global.indent--;
+    }
+
+    if (WLSTRIDE_ISSIMDSUITABLE (arg_node)) {
+        PrintSimdEnd ();
     }
 
     if (WLSTRIDEX_NEXT (arg_node) != NULL) {
