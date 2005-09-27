@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2005/09/27 17:30:23  sbs
+ * blend out several definitions iff included from simd.h
+ *
  * Revision 3.19  2005/06/30 16:41:37  ktr
  * missing , inserter into trace macro
  *
@@ -200,7 +203,11 @@
  * implementation type for hidden objects
  */
 
+#ifndef _SIMD_H_
+
 typedef void *SAC_hidden;
+
+#endif
 
 /*
  * array descriptor:
@@ -209,7 +216,11 @@ typedef void *SAC_hidden;
  *   [2]     -> # of elements
  *   [3,...] -> shape vector
  */
+#ifndef _SIMD_H_
+
 typedef int *SAC_array_descriptor_t;
+
+#endif
 
 /* size of dimension-independent parts of the descriptor */
 #define FIXED_SIZE_OF_DESC 3

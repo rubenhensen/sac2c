@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2005/09/27 17:30:23  sbs
+ * blend out several definitions iff included from simd.h
+ *
  * Revision 3.8  2003/09/22 11:59:36  dkr
  * SAC_ABS added
  *
@@ -57,7 +60,11 @@
 #ifndef _SAC_MISC_H_
 #define _SAC_MISC_H_
 
+#ifndef _SIMD_H_
+
 extern void SAC_String2Array (char *array, const char *string);
+
+#endif
 
 /*****************************************************************************
  *

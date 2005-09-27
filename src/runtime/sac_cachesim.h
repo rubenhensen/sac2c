@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2005/09/27 17:30:23  sbs
+ * blend out several definitions iff included from simd.h
+ *
  * Revision 3.3  2003/09/19 12:27:56  dkr
  * postfixes _nt, _any of varnames renamed into _NT, _ANY
  *
@@ -85,6 +88,8 @@
 
 #ifndef _SAC_CACHESIM_H
 #define _SAC_CACHESIM_H
+
+#ifndef _SIMD_H_
 
 #define SAC_CS_NONE 0
 #define SAC_CS_FILE 1
@@ -256,6 +261,8 @@ extern void (*SAC_CS_Start) (char * /*tag*/);
  *****************************************************************************/
 
 extern void (*SAC_CS_Stop) (void);
+
+#endif /* ! _SIMD_H_ */
 
 /*****************************************************************************
  *
