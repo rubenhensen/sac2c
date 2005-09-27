@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.35  2005/09/27 16:21:16  sbs
+ * ExtractPragma changed to N_spap
+ *
  * Revision 3.34  2005/01/07 19:56:38  cg
  * Converted compile time output from Error.h to ctinfo.c
  *
@@ -156,10 +159,10 @@ ExtractNaiveCompPragmaAp (bool *do_naive_comp, node *exprs, int line)
     if (exprs != NULL) {
         DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "Illegal wlcomp pragma!");
         ap = EXPRS_EXPR (exprs);
-        DBUG_ASSERT ((NODE_TYPE (ap) == N_ap), ("Illegal wlcomp pragma!"));
+        DBUG_ASSERT ((NODE_TYPE (ap) == N_spap), ("Illegal wlcomp pragma!"));
 
-        if (!strcmp (FUNDEF_NAME (AP_FUNDEF (ap)), "Naive")) {
-            if (AP_ARGS (ap) != NULL) {
+        if (!strcmp (SPAP_NAME (ap), "Naive")) {
+            if (SPAP_ARGS (ap) != NULL) {
                 CTIabortLine (line, "Illegal argument in wlcomp-pragma found;"
                                     " Naive(): Parameters found");
             }
