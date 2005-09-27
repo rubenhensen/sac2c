@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.33  2005/09/27 17:45:25  sbs
+ * adjusted PRF_IF
+ *
  * Revision 1.32  2005/09/04 12:56:17  ktr
  * added optimize_counter_t
  *
@@ -384,7 +387,7 @@ typedef enum {
 typedef struct STRINGSET_T stringset_t;
 
 typedef enum {
-#define PRF_IF(a, b, c, d, e, f, g, h) a
+#define PRF_IF(a, b, c, d, e, f, g, h, i) a
 #include "prf_node_info.mac"
 #undef PRF_IF
 } prf;
