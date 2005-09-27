@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2005/09/27 20:32:44  ktr
+ * memory reused statically by reshape is not freed
+ *
  * Revision 1.12  2004/12/10 18:41:38  ktr
  * EMRCOfundef added.
  *
@@ -368,12 +371,28 @@ EMRCOprf (node *arg_node, info *arg_info)
                                 ID_AVIS (PRF_ARG2 (arg_node)));
 
             /*
-             * Here is no break missing
+             * This node must be revisited in bottom-up traversal
              */
+            INFO_RCO_SECONDTRAV (arg_info) = TRUE;
+            break;
+
+        case F_reshape:
+            /*
+             * Mark reused variable in NOFREEMASK such that it will not be
+             * statically freed
+             */
+            DFMsetMaskEntrySet (INFO_RCO_NOFREEMASK (arg_info), NULL,
+                                ID_AVIS (PRF_ARG4 (arg_node)));
+
+            /*
+             * This node must be revisited in bottom-up traversal
+             */
+            INFO_RCO_SECONDTRAV (arg_info) = TRUE;
+            break;
+
         case F_alloc:
         case F_alloc_or_reuse:
         case F_alloc_or_reshape:
-        case F_reshape:
             /*
              * This node must be revisited in bottom-up traversal
              */
