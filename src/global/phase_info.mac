@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.47  2005/09/27 16:09:39  sbs
+ * simd_infer added.
+ *
  * Revision 3.46  2005/09/14 21:26:00  sah
  * added basic implementation for index_optimize
  *
@@ -452,6 +455,8 @@ SUBPHASE (ssa2, "ssa2", "Establishing static single assignment form", SSATdoTran
 SUBPHASE (cvpemm, "cvp", "Propagating constants and variables", CVPdoConstVarPropagation)
 
 SUBPHASE (dcremm, "dcr", "Removing dead code", DCRdoDeadCodeRemovalModule)
+
+SUBPHASE (simd, "simd", "SIMD inference", SIMDdoInferSIMD)
 
 SUBPHASE (asd, "asd", "AUD/SCL distinction", ASDdoAudSclDistinction)
 
