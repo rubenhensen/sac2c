@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.45  2005/09/27 17:22:36  sbs
+ * PRTwlsimd added.
+ *
  * Revision 3.44  2005/08/18 06:19:51  sbs
  * PRTtype added
  *
@@ -156,6 +159,7 @@ extern node *PRTwith2 (node *arg_node, info *arg_info);
 extern node *PRTwlseg (node *arg_node, info *arg_info);
 extern node *PRTwlsegvar (node *arg_node, info *arg_info);
 extern node *PRTwlxblock (node *arg_node, info *arg_info);
+extern node *PRTwlsimd (node *arg_node, info *arg_info);
 extern node *PRTwlstride (node *arg_node, info *arg_info);
 extern node *PRTwlstridevar (node *arg_node, info *arg_info);
 extern node *PRTwlgrid (node *arg_node, info *arg_info);
