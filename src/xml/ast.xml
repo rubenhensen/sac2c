@@ -1180,13 +1180,24 @@
       startfun="NULL" include=".h"
       if="true"
       breakspec="wt">
-    <traversal id="WLTRA" name="With-Loop Transformation traversal" default="sons" include="wltransform.h">
+  <traversal id="WLTRA" name="With-Loop Transformation traversal" default="sons" include="wltransform.h">
         <travuser>
           <node name="Assign" />
           <node name="Code" />
           <node name="Let" />
           <node name="With" />
         </travuser>
+      </traversal>
+      <traversal id="SIMD" name="SIMD inference" default="sons" include="simd_infer.h">
+        <travuser> 
+          <node name="Ap" />
+          <node name="Prf" />
+          <node name="Array" />
+          <node name="With2" />
+          <node name="Code" />
+          <node name="WLstride" />
+          <node name="WLgrid" />
+        </travuser> 
       </traversal>
     </phase>
     <phase id="alloc" name="Introducing explicit allocation instructions"
@@ -5645,6 +5656,7 @@
         <flag name="Visited" />
         <flag name="HasResolveableDependencies" />
 	<flag name="IsDummyCode" />
+        <flag name="IsSimdSuitable" />
       </flags>
     </node>
 <!--
@@ -6523,6 +6535,22 @@
     </node>
 <!--
 
+  N_wlsimd :
+
+-->
+    <node name="WLsimd">
+      <sons>
+        <son name="Body" mandatory="yes">
+          <target>
+            <node name="WLstride" />
+          </target>
+        </son>
+      </sons>
+      <attributes>
+      </attributes>
+    </node>
+<!--
+
   N_wlstride :
 
 -->
@@ -6642,6 +6670,7 @@
             Used in wltransform.
           </description>
         </flag>
+        <flag name="IsSimdSuitable" />
       </flags>
     </node>
 <!--
