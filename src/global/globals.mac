@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.32  2005/09/27 16:09:39  sbs
+ * simd added
+ *
  * Revision 1.31  2005/09/04 12:57:11  ktr
  * some changes relating to the new optimization phase.
  *
@@ -232,6 +235,15 @@ GLOBAL (char *, target_name, "default")
 GLOBAL (bool, dynamic_shapes, FALSE)
 /*
  * Dynamic shapes are disabled by default
+ */
+
+/*
+ * SIMD options
+ */
+
+GLOBAL (bool, simd, FALSE)
+/*
+ * SIMD code generation disabled per default
  */
 
 /*
