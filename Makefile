@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.197  2005/09/27 17:26:42  sbs
+# src/compile/simd_infer.o added
+#
 # Revision 3.196  2005/09/14 21:26:00  sah
 # added basic implementation for index_optimize
 #
@@ -360,7 +363,8 @@ COMPILE= src/compile/wlpragma_funs.o src/compile/wltransform.o \
          src/compile/icm2c_wl.o src/compile/icm2c_error.o \
          src/compile/renameidentifiers.o src/compile/functionprecompile.o \
          src/compile/typeconv_precompile.o  src/compile/setlinksign.o \
-         src/compile/remove_external_code.o src/compile/wlidxs.o
+         src/compile/remove_external_code.o src/compile/wlidxs.o \
+         src/compile/simd_infer.o
 
 CINTERFACE=
 #CINTERFACE= src/c-interface/map_cwrapper.o \
