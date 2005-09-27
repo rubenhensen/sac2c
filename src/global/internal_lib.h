@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.42  2005/09/27 11:49:05  sah
+ * added systemcall tracking facility
+ *
  * Revision 3.41  2005/09/09 18:55:32  sah
  * uses unsigned char now to prevent C from doing some funny
  * type conversions. furthermore, the code should be somewhat
@@ -239,6 +242,8 @@ extern char *ILIBbyteArrayToHexString (int len, unsigned char *array);
 extern void ILIBsystemCall (char *format, ...);
 extern int ILIBsystemCall2 (char *format, ...);
 extern int ILIBsystemTest (char *format, ...);
+extern void ILIBsystemCallStartTracking ();
+extern void ILIBsystemCallStopTracking ();
 
 extern void ILIBcreateCppCallString (const char *file, char *cccallstr,
                                      const char *cppfile);

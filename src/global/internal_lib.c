@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.87  2005/09/27 11:49:05  sah
+ * added systemcall tracking facility
+ *
  * Revision 3.86  2005/09/09 18:55:32  sah
  * uses unsigned char now to prevent C from doing some funny
  * type conversions. furthermore, the code should be somewhat
@@ -275,6 +278,7 @@
 #include "globals.h"
 #include "traverse.h"
 #include "convert.h"
+#include "filemgr.h"
 
 /*
  * experimental support for garbage collection
@@ -305,6 +309,11 @@ typedef struct {
 static int malloc_align_step = 0;
 
 #endif /* SHOW_MALLOC */
+
+/**
+ * global file handle for syscall tracking
+ */
+FILE *syscalltrack = NULL;
 
 /******************************************************************************
  *
@@ -1151,6 +1160,46 @@ ILIBbyteArrayToHexString (int len, unsigned char *array)
     DBUG_RETURN (result);
 }
 
+void
+ILIBsystemCallStartTracking ()
+{
+    DBUG_ENTER ("ILIBsystemCallStartTracking");
+
+    DBUG_ASSERT ((syscalltrack == NULL), "tracking has already been enabled!");
+
+    syscalltrack = FMGRwriteOpen ("syscall.sh");
+
+    fprintf (syscalltrack, "#! /bin/sh\n\n");
+
+    DBUG_VOID_RETURN;
+}
+
+void
+ILIBsystemCallStopTracking ()
+{
+    DBUG_ENTER ("ILIBsystemCallStopTracking");
+
+    DBUG_ASSERT ((syscalltrack != NULL), "no tracking log open!");
+
+    fclose (syscalltrack);
+
+    syscalltrack = NULL;
+
+    DBUG_VOID_RETURN;
+}
+
+static void
+trackSystemCall (const char *call)
+{
+    DBUG_ENTER ("trackSystemCall");
+
+    if (syscalltrack != NULL) {
+        fprintf (syscalltrack, "%s\n\n", call);
+    }
+
+    DBUG_VOID_RETURN;
+}
+
 /******************************************************************************
  *
  * Function:
@@ -1176,13 +1225,14 @@ ILIBsystemCall (char *format, ...)
     vsprintf (syscall, format, arg_p);
     va_end (arg_p);
 
-    /* if -dnocleanup flag is set print all syscalls !
+    /* if -d syscall flag is set print all syscalls !
      * This allows for easy C-code patches.
      */
     if (global.show_syscall) {
         CTInote ("System call:\n %s", syscall);
     }
 
+    trackSystemCall (syscall);
     exit_code = system (syscall);
 
     if (exit_code == -1) {
@@ -1239,6 +1289,8 @@ ILIBsystemCall2 (char *format, ...)
     if (global.show_syscall) {
         CTInote ("System call:\n%s", syscall);
     }
+
+    trackSystemCall (syscall);
 
     DBUG_RETURN (system (syscall));
 }
