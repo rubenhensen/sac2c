@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.118  2005/09/27 16:26:51  sbs
+ * WLP definition adjusted to N_spap
+ *
  * Revision 3.117  2005/09/12 17:43:33  ktr
  * Quick-fixed an issue in BuildCubes.
  * Nevertheless: wltransform should be seriously brushed as many code situations
@@ -4402,15 +4405,15 @@ SetSegs (node *pragma, node *cubes, int iter_dims, bool fold_float)
         while (aps != NULL) {
 
 #define WLP(fun, str, ieee)                                                              \
-    if (ILIBstringCompare (AP_NAME (EXPRS_EXPR (aps)), str)) {                           \
+    if (ILIBstringCompare (SPAP_NAME (EXPRS_EXPR (aps)), str)) {                         \
         if ((!fold_float) || (!global.enforce_ieee) || ieee) {                           \
-            segs = fun (segs, AP_ARGS (EXPRS_EXPR (aps)), cubes, iter_dims,              \
+            segs = fun (segs, SPAP_ARGS (EXPRS_EXPR (aps)), cubes, iter_dims,            \
                         global.linenum);                                                 \
         } else {                                                                         \
             CTIwarnLine (global.linenum,                                                 \
                          "Function %s of wlcomp-pragma ignored in order"                 \
                          " to meet the IEEE-754 standard",                               \
-                         AP_NAME (EXPRS_EXPR (aps)));                                    \
+                         SPAP_NAME (EXPRS_EXPR (aps)));                                  \
         }                                                                                \
     } else
 #include "wlpragma_funs.mac"
@@ -4425,7 +4428,7 @@ SetSegs (node *pragma, node *cubes, int iter_dims, bool fold_float)
                 CTIwarnLine (global.linenum,
                              "Illegal function name %s in wlcomp-pragma found."
                              " Currently supported functions are:%s",
-                             AP_NAME (EXPRS_EXPR (aps)), fun_names);
+                             SPAP_NAME (EXPRS_EXPR (aps)), fun_names);
             }
 
             aps = EXPRS_NEXT (aps);
