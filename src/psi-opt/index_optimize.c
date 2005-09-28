@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.6  2005/09/28 16:48:49  sah
+ * added loads of DBUG prints and resolved a bug
+ * this resolves bug #120 as well
+ *
  * Revision 1.5  2005/09/27 20:22:11  sah
  * wlidx offsets are used now whenever possible.
  *
@@ -121,7 +125,7 @@ struct IVINFO {
  */
 #define WITHIV_IV(n) ((n)->iv)
 #define WITHIV_OFFSETS(n) ((n)->offsets)
-#define WITHIV_LOCALOFFSETS(n) ((n)->offsets)
+#define WITHIV_LOCALOFFSETS(n) ((n)->localoffsets)
 #define WITHIV_SCALARS(n) ((n)->scalars)
 #define WITHIV_NEXT(n) ((n)->next)
 #define WITHOFFSET_AVIS(n) ((n)->avis)
@@ -136,6 +140,10 @@ GenOffsetInfo (node *lhs, node *withops)
 {
     offsetinfo *result;
     offsetinfo *next;
+    shape *shape;
+#ifndef DBUG_OFF
+    char *tmp;
+#endif
 
     DBUG_ENTER ("GenOffsetInfo");
 
@@ -151,9 +159,16 @@ GenOffsetInfo (node *lhs, node *withops)
              * furthermore, the shape of the result must be known
              * to be able to decide whether the offset does match
              */
+            shape = SHcopyShape (TYgetShape (IDS_NTYPE (lhs)));
+
+            DBUG_EXECUTE ("IVEO", tmp = SHshape2String (0, shape););
+            DBUG_PRINT ("IVEO", ("adding wl-idx %s for shape %s",
+                                 AVIS_NAME (WITHOP_IDX (withops)), tmp));
+            DBUG_EXECUTE ("IVEO", tmp = ILIBfree (tmp););
+
             result = ILIBmalloc (sizeof (offsetinfo));
 
-            WITHOFFSET_SHAPE (result) = SHcopyShape (TYgetShape (IDS_NTYPE (lhs)));
+            WITHOFFSET_SHAPE (result) = shape;
             WITHOFFSET_AVIS (result) = WITHOP_IDX (withops);
             WITHOFFSET_NEXT (result) = next;
         } else {
@@ -188,6 +203,8 @@ PushIV (ivinfo *info, node *withid, node *lhs, node *withops)
 
     DBUG_ENTER ("PushIV");
 
+    DBUG_PRINT ("IVEO", ("adding withid %s", AVIS_NAME (IDS_AVIS (WITHID_VEC (withid)))));
+
     result = ILIBmalloc (sizeof (ivinfo));
 
     WITHIV_IV (result) = IDS_AVIS (WITHID_VEC (withid));
@@ -207,6 +224,8 @@ PopIV (ivinfo *info)
     DBUG_ENTER ("PopIV");
 
     DBUG_ASSERT ((info != NULL), "IVINFO stack already empty!");
+
+    DBUG_PRINT ("IVEO", ("removing withid %s", AVIS_NAME (WITHIV_IV (info))));
 
     result = WITHIV_NEXT (info);
 
@@ -251,8 +270,15 @@ FindIVOffset (ivinfo *info, node *iv, shape *shape)
 {
     node *result = NULL;
     offsetinfo *oinfo;
+#ifndef DBUG_OFF
+    char *tmp;
+#endif
 
     DBUG_ENTER ("FindIVOffset");
+
+    DBUG_EXECUTE ("IVEO", tmp = SHshape2String (0, shape););
+    DBUG_PRINT ("IVEO", ("looking up offset for %s and shape %s", AVIS_NAME (iv), tmp));
+    DBUG_EXECUTE ("IVEO", tmp = ILIBfree (tmp););
 
     while ((info != NULL) && (WITHIV_IV (info) != iv)) {
         info = WITHIV_NEXT (info);
@@ -399,6 +425,9 @@ ReplaceByWithOffset (node *arg_node, info *arg_info)
     offset = FindIVOffset (INFO_IVINFO (arg_info), ID_AVIS (PRF_ARG2 (arg_node)), shape);
 
     if (offset != NULL) {
+        DBUG_PRINT ("IVEO", ("replacing vect2offset by wlidx %s",
+                             AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node)))));
+
         arg_node = FREEdoFreeNode (arg_node);
         arg_node = TBmakeId (offset);
     } else {
@@ -408,6 +437,8 @@ ReplaceByWithOffset (node *arg_node, info *arg_info)
          */
         INFO_IVINFO (arg_info) = PushLocalOffset (INFO_IVINFO (arg_info),
                                                   IDS_AVIS (INFO_LHS (arg_info)), shape);
+
+        DBUG_PRINT ("IVEO", ("replacing vect2offset by wl-idxs2offset"));
 
         scalars = FindIVScalars (INFO_IVINFO (arg_info), ID_AVIS (PRF_ARG2 (arg_node)));
 
@@ -443,6 +474,8 @@ ReplaceByIdx2Offset (node *arg_node, info *arg_info)
 
     DBUG_ASSERT ((NODE_TYPE (ASSIGN_RHS (ivassign)) == N_array),
                  "ReplaceByIdx2Offset with non N_array AVIS_SSAASSIGN");
+
+    DBUG_PRINT ("IVEO", ("replacing by idxs2offset"));
 
     idxs = ARRAY_AELEMS (ASSIGN_RHS (ivassign));
 
@@ -483,6 +516,8 @@ OptimizeComputation (node *arg_node, info *arg_info)
             arg2 = GetAvis4Shape (ID_AVIS (PRF_ARG2 (prf)), shape, arg_info);
 
             if ((arg1 != NULL) && (arg2 != NULL)) {
+                DBUG_PRINT ("IVEO", ("computing prf on offsets instead of idx-vects"));
+
                 arg_node = FREEdoFreeNode (arg_node);
                 arg_node
                   = TCmakePrf2 ((PRF_PRF (prf) == F_add_AxA) ? F_add_SxS : F_sub_SxS,
@@ -496,6 +531,9 @@ OptimizeComputation (node *arg_node, info *arg_info)
                 arg2 = GetAvis4Shape (ID_AVIS (PRF_ARG2 (prf)), shape, arg_info);
 
                 if (arg2 != NULL) {
+                    DBUG_PRINT ("IVEO",
+                                ("computing prf on offsets instead of idx-vects"));
+
                     arg1 = Scalar2Offset (PRF_ARG1 (prf),
                                           TYgetDim (ID_NTYPE (PRF_ARG2 (prf))), shape,
                                           arg_info);
@@ -514,6 +552,9 @@ OptimizeComputation (node *arg_node, info *arg_info)
                 arg1 = GetAvis4Shape (ID_AVIS (PRF_ARG1 (prf)), shape, arg_info);
 
                 if (arg1 != NULL) {
+                    DBUG_PRINT ("IVEO",
+                                ("computing prf on offsets instead of idx-vects"));
+
                     arg2 = Scalar2Offset (PRF_ARG1 (prf),
                                           TYgetDim (ID_NTYPE (PRF_ARG1 (prf))), shape,
                                           arg_info);
@@ -530,6 +571,8 @@ OptimizeComputation (node *arg_node, info *arg_info)
             arg2 = GetAvis4Shape (ID_AVIS (PRF_ARG2 (prf)), shape, arg_info);
 
             if (arg2 != NULL) {
+                DBUG_PRINT ("IVEO", ("computing prf on offsets instead of idx-vects"));
+
                 arg1 = PRF_ARG1 (prf);
                 PRF_ARG1 (prf) = NULL;
 
@@ -542,6 +585,8 @@ OptimizeComputation (node *arg_node, info *arg_info)
             arg1 = GetAvis4Shape (ID_AVIS (PRF_ARG1 (prf)), shape, arg_info);
 
             if (arg1 != NULL) {
+                DBUG_PRINT ("IVEO", ("computing prf on offsets instead of idx-vects"));
+
                 arg2 = PRF_ARG2 (prf);
                 PRF_ARG2 (prf) = NULL;
 
@@ -569,6 +614,8 @@ IVEOlet (node *arg_node, info *arg_info)
     DBUG_ENTER ("IVEOlet");
 
     INFO_LHS (arg_info) = LET_IDS (arg_node);
+
+    DBUG_PRINT ("IVEO", ("Looking at %s...", IDS_NAME (LET_IDS (arg_node))));
 
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
