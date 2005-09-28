@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.115  2005/09/28 15:52:17  wpc
+ * added some SHOW_MALLOC ifdefs
+ *
  * Revision 3.114  2005/09/27 11:49:37  sah
  * -d cccall triggers tracking of the system calls
  * during compilation. re-added the feature on public
@@ -181,9 +184,13 @@
     CHECK_DBUG_START;                                                                    \
     /* empty */
 
+#ifdef SHOW_MALLOC
 #define PHASE_DONE_EPILOG                                                                \
     CTIabortOnError ();                                                                  \
     DBUG_EXECUTE ("MEM_LEAK", ILIBdbugMemoryLeakCheck (););
+#else
+#define PHASE_DONE_EPILOG CTIabortOnError ();
+#endif
 
 #define PHASE_EPILOG CHECK_DBUG_STOP;
 

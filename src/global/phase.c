@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2005/09/28 15:52:17  wpc
+ * added some SHOW_MALLOC ifdefs
+ *
  * Revision 1.7  2005/09/06 14:07:45  ktr
  * Breaking after subphases now checks for the correct superphase, too.
  *
@@ -141,7 +144,9 @@ PHrunCompilerPhase (compiler_phase_t phase, node *syntax_tree)
 
     CTIabortOnError ();
 
+#ifdef SHOW_MALLOC
     DBUG_EXECUTE ("MEM_LEAK", ILIBdbugMemoryLeakCheck (););
+#endif
 
     if (global.treecheck && (syntax_tree != NULL)) {
         syntax_tree = CHKdoTreeCheck (syntax_tree);
