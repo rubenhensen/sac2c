@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.28  2005/09/28 15:48:02  wpc
+ * added several SHOW_MALLOC ifdefs
+ *
  * Revision 1.27  2005/09/04 12:54:00  ktr
  * re-engineered the optimization cycle
  *
@@ -1951,15 +1954,19 @@ WLFdoWLF (node *arg_node)
     info = MakeInfo ();
 
     DBUG_PRINT ("OPT", ("WLF"));
+#ifdef SHOW_MALLOC
     DBUG_PRINT ("OPTMEM",
                 ("mem currently allocated: %d bytes", global.current_allocated_mem));
+#endif
 
     TRAVpush (TR_wlf);
     arg_node = TRAVdo (arg_node, info);
     TRAVpop ();
 
+#ifdef SHOW_MALLOC
     DBUG_PRINT ("OPTMEM",
                 ("mem currently allocated: %d bytes", global.current_allocated_mem));
+#endif
 
     info = FreeInfo (info);
 

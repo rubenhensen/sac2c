@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.26  2005/09/28 15:48:02  wpc
+ * added several SHOW_MALLOC ifdefs
+ *
  * Revision 1.25  2005/08/26 12:29:13  ktr
  * major brushing,seams to work
  *
@@ -1173,8 +1176,10 @@ WLIdoWLI (node *arg_node)
     info = MakeInfo ();
 
     DBUG_PRINT ("OPT", ("WLIdoWLI"));
+#ifdef SHOW_MALLOC
     DBUG_PRINT ("OPTMEM",
                 ("mem currently allocated: %d bytes", global.current_allocated_mem));
+#endif
 
     TRAVpush (TR_wli);
     arg_node = TRAVdo (arg_node, info);
