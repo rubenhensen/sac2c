@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2005/09/28 19:32:19  sah
+ * when using/importing a function from the current namespace
+ * a nice errror message is now given.
+ *
  * Revision 1.8  2005/05/18 14:06:07  sah
  * fixed generation of warning message
  *
@@ -31,8 +35,6 @@
  *
  */
 
-#define NEW_INFO
-
 #include "resolveall.h"
 #include "tree_basic.h"
 #include "traverse.h"
@@ -42,6 +44,50 @@
 #include "ctinfo.h"
 #include "free.h"
 #include "internal_lib.h"
+#include "namespaces.h"
+
+/**
+ * INFO structure
+ */
+struct INFO {
+    namespace_t *currentns;
+};
+
+/**
+ * INFO macros
+ */
+#define INFO_CURRENTNS(n) ((n)->currentns)
+
+/**
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = ILIBmalloc (sizeof (info));
+
+    INFO_CURRENTNS (result) = NULL;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = ILIBfree (info);
+
+    DBUG_RETURN (info);
+}
+
+/**
+ * helper functions
+ */
 
 static void
 SubSymbols (sttable_t *table, node *symbols)
@@ -176,34 +222,48 @@ ResolveAllFlag (char *module, node *symbols, bool exportedonly)
     DBUG_RETURN (result);
 }
 
+/**
+ * traversal functions
+ */
+
 node *
 RSAuse (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("RSAuse");
 
-    USE_SYMBOL (arg_node)
-      = CheckSymbolExists (USE_MOD (arg_node), USE_SYMBOL (arg_node), FALSE);
+    if (ILIBstringCompare (USE_MOD (arg_node), NSgetModule (INFO_CURRENTNS (arg_info)))) {
+        CTIerrorLine (NODE_LINE (arg_node),
+                      "The namespace of the module being compiled cannot be "
+                      "referenced in use statements.");
 
-    if (USE_ALL (arg_node)) {
+        if (USE_NEXT (arg_node) != NULL) {
+            USE_NEXT (arg_node) = TRAVdo (USE_NEXT (arg_node), arg_info);
+        }
+    } else {
         USE_SYMBOL (arg_node)
-          = ResolveAllFlag (USE_MOD (arg_node), USE_SYMBOL (arg_node), FALSE);
-        USE_ALL (arg_node) = FALSE;
-    }
+          = CheckSymbolExists (USE_MOD (arg_node), USE_SYMBOL (arg_node), FALSE);
 
-    if (USE_NEXT (arg_node) != NULL) {
-        USE_NEXT (arg_node) = TRAVdo (USE_NEXT (arg_node), arg_info);
-    }
+        if (USE_ALL (arg_node)) {
+            USE_SYMBOL (arg_node)
+              = ResolveAllFlag (USE_MOD (arg_node), USE_SYMBOL (arg_node), FALSE);
+            USE_ALL (arg_node) = FALSE;
+        }
 
-    if (USE_SYMBOL (arg_node) == NULL) {
-        node *tmp;
+        if (USE_NEXT (arg_node) != NULL) {
+            USE_NEXT (arg_node) = TRAVdo (USE_NEXT (arg_node), arg_info);
+        }
 
-        CTIwarnLine (NODE_LINE (arg_node),
-                     "Use statement has empty set of symbols. Ignoring...");
+        if (USE_SYMBOL (arg_node) == NULL) {
+            node *tmp;
 
-        tmp = USE_NEXT (arg_node);
-        arg_node = FREEdoFreeNode (arg_node);
+            CTIwarnLine (NODE_LINE (arg_node),
+                         "Use statement has empty set of symbols. Ignoring...");
 
-        arg_node = tmp;
+            tmp = USE_NEXT (arg_node);
+            arg_node = FREEdoFreeNode (arg_node);
+
+            arg_node = tmp;
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -214,29 +274,40 @@ RSAimport (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("RSAImport");
 
-    IMPORT_SYMBOL (arg_node)
-      = CheckSymbolExists (IMPORT_MOD (arg_node), IMPORT_SYMBOL (arg_node), TRUE);
+    if (ILIBstringCompare (IMPORT_MOD (arg_node),
+                           NSgetModule (INFO_CURRENTNS (arg_info)))) {
+        CTIerrorLine (NODE_LINE (arg_node),
+                      "The namespace of the module being compiled cannot be "
+                      "referenced in import statements.");
 
-    if (IMPORT_ALL (arg_node)) {
+        if (IMPORT_NEXT (arg_node) != NULL) {
+            IMPORT_NEXT (arg_node) = TRAVdo (IMPORT_NEXT (arg_node), arg_info);
+        }
+    } else {
         IMPORT_SYMBOL (arg_node)
-          = ResolveAllFlag (IMPORT_MOD (arg_node), IMPORT_SYMBOL (arg_node), TRUE);
-        IMPORT_ALL (arg_node) = FALSE;
-    }
+          = CheckSymbolExists (IMPORT_MOD (arg_node), IMPORT_SYMBOL (arg_node), TRUE);
 
-    if (IMPORT_NEXT (arg_node) != NULL) {
-        IMPORT_NEXT (arg_node) = TRAVdo (IMPORT_NEXT (arg_node), arg_info);
-    }
+        if (IMPORT_ALL (arg_node)) {
+            IMPORT_SYMBOL (arg_node)
+              = ResolveAllFlag (IMPORT_MOD (arg_node), IMPORT_SYMBOL (arg_node), TRUE);
+            IMPORT_ALL (arg_node) = FALSE;
+        }
 
-    if (IMPORT_SYMBOL (arg_node) == NULL) {
-        node *tmp;
+        if (IMPORT_NEXT (arg_node) != NULL) {
+            IMPORT_NEXT (arg_node) = TRAVdo (IMPORT_NEXT (arg_node), arg_info);
+        }
 
-        CTIwarnLine (NODE_LINE (arg_node),
-                     "Import statement has empty set of symbols. Ignoring...");
+        if (IMPORT_SYMBOL (arg_node) == NULL) {
+            node *tmp;
 
-        tmp = IMPORT_NEXT (arg_node);
-        arg_node = FREEdoFreeNode (arg_node);
+            CTIwarnLine (NODE_LINE (arg_node),
+                         "Import statement has empty set of symbols. Ignoring...");
 
-        arg_node = tmp;
+            tmp = IMPORT_NEXT (arg_node);
+            arg_node = FREEdoFreeNode (arg_node);
+
+            arg_node = tmp;
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -271,9 +342,13 @@ RSAmodule (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("RSAmodule");
 
+    INFO_CURRENTNS (arg_info) = MODULE_NAMESPACE (arg_node);
+
     if (MODULE_IMPORTS (arg_node) != NULL) {
         MODULE_IMPORTS (arg_node) = TRAVdo (MODULE_IMPORTS (arg_node), arg_info);
     }
+
+    INFO_CURRENTNS (arg_info) = NULL;
 
     DBUG_RETURN (arg_node);
 }
@@ -281,13 +356,21 @@ RSAmodule (node *arg_node, info *arg_info)
 node *
 RSAdoResolveAll (node *modul)
 {
+    info *arg_info;
+
     DBUG_ENTER ("RSAdoResolveAll");
+
+    arg_info = MakeInfo ();
 
     TRAVpush (TR_rsa);
 
-    modul = TRAVdo (modul, NULL);
+    modul = TRAVdo (modul, arg_info);
 
     TRAVpop ();
+
+    arg_info = FreeInfo (arg_info);
+
+    CTIabortOnError ();
 
     DBUG_RETURN (modul);
 }
