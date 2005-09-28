@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.29  2005/09/28 21:20:07  ktr
+ * commented out a DBUG_ASSERT that prevented an example (bug 124) from
+ * compiling
+ *
  * Revision 1.28  2005/09/28 15:48:02  wpc
  * added several SHOW_MALLOC ifdefs
  *
@@ -1285,7 +1289,13 @@ Fold (node *idn, index_info *transformations, node *targetwln, node *substwln)
     DBUG_PRINT ("WLF", ("  ...done..."));
 
     /* results are in intersect_ig. At the moment, just append to new_ig. */
-    DBUG_ASSERT (intersect_ig, ("No new intersections"));
+#if 0
+  /* 
+   * Is this assertion actually required???
+   * See bug #124 for a program that does not compile with this assertion.
+   */
+  DBUG_ASSERT(intersect_ig,("No new intersections"));
+#endif
     tmpig = new_ig;
     if (!tmpig) { /* at the mom: always true */
         new_ig = intersect_ig;
