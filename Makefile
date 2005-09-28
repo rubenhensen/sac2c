@@ -1,6 +1,11 @@
 
 #
 # $Log$
+# Revision 3.198  2005/09/28 17:39:18  sah
+# added AddSpecialFunctions to load the sac2c::sel and sac2c::zero
+# functions prior to prepareinlining to ensure that their bodies
+# are inlined. this resolves bug #121
+#
 # Revision 3.197  2005/09/27 17:26:42  sbs
 # src/compile/simd_infer.o added
 #
@@ -321,7 +326,7 @@ MODULES= src/modules/symboltable.o \
          src/modules/annotatenamespace.o src/modules/usesymbols.o \
          src/modules/prepareinline.o src/modules/dependencies.o \
          src/modules/importsymbols.o src/modules/gatherdependencies.o \
-         src/modules/namespaces.o
+         src/modules/namespaces.o src/modules/addspecialfuns.o
 
 OBJECTS= src/objects/objinit.o src/objects/objects.o \
          src/objects/uniquecheck.o src/objects/objanalysis.o

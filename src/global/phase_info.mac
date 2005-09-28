@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.49  2005/09/28 17:39:18  sah
+ * added AddSpecialFunctions to load the sac2c::sel and sac2c::zero
+ * functions prior to prepareinlining to ensure that their bodies
+ * are inlined. this resolves bug #121
+ *
  * Revision 3.48  2005/09/27 18:30:16  sah
  * added additional CVP and DCR after IVE
  *
@@ -302,6 +307,8 @@ PHASE (export, "Processing exports", PHdummy)
 SUBPHASE (oan, "oan", "Running global object analysis", OANdoObjectAnalysis)
 
 SUBPHASE (exp, "exp", "Exporting symbols", EXPdoExport)
+
+SUBPHASE (asf, "asf", "Loading sac2c prelude functions", ASFdoAddSpecialFunctions)
 
 SUBPHASE (ppi, "ppi", "Restoring bodies of imported inline functions", PPIdoPrepareInline)
 

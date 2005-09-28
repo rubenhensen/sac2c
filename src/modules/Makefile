@@ -1,6 +1,11 @@
 #
 #
 # $Log$
+# Revision 3.31  2005/09/28 17:39:18  sah
+# added AddSpecialFunctions to load the sac2c::sel and sac2c::zero
+# functions prior to prepareinlining to ensure that their bodies
+# are inlined. this resolves bug #121
+#
 # Revision 3.30  2005/07/15 15:57:02  sah
 # introduced namespaces
 #
@@ -123,7 +128,7 @@ OBJS := symboltable.o stringset.o \
         libmanager.o modulemanager.o libstat.o export.o \
         ccmanager.o libbuilder.o resolveall.o annotatenamespace.o \
         usesymbols.o prepareinline.o dependencies.o importsymbols.o \
-        gatherdependencies.o namespaces.o
+        gatherdependencies.o namespaces.o addspecialfuns.o
 
 all: $(OBJS)
 

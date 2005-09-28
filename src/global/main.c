@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.116  2005/09/28 17:39:18  sah
+ * added AddSpecialFunctions to load the sac2c::sel and sac2c::zero
+ * functions prior to prepareinlining to ensure that their bodies
+ * are inlined. this resolves bug #121
+ *
  * Revision 3.115  2005/09/28 15:52:17  wpc
  * added some SHOW_MALLOC ifdefs
  *
@@ -379,6 +384,7 @@ main (int argc, char *argv[])
 
     syntax_tree = PHrunCompilerSubPhase (SUBPH_oan, syntax_tree);
     syntax_tree = PHrunCompilerSubPhase (SUBPH_exp, syntax_tree);
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_asf, syntax_tree);
     syntax_tree = PHrunCompilerSubPhase (SUBPH_ppi, syntax_tree);
 
     PHASE_DONE_EPILOG;
