@@ -31,3 +31,4 @@ gatherdependencies.c
 gatherdependencies.h
 namespaces.c
 namespaces.h
+addspecialfuns.c
