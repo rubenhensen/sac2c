@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.24  2005/09/28 15:43:27  wpc
+ * added some SHOW_MALLOC ifdefs
+ *
  * Revision 3.23  2005/09/04 12:52:11  ktr
  * re-engineered the optimization cycle
  *
@@ -106,8 +109,10 @@ DFRdoDeadFunctionRemoval (node *arg_node)
 
     DBUG_ENTER ("DFRdoDeadFunctionRemoval");
     DBUG_PRINT ("OPT", ("DEAD FUNCTION REMOVAL"));
+#ifdef SHOW_MALLOC
     DBUG_PRINT ("OPTMEM",
                 ("mem currently allocated: %d bytes", global.current_allocated_mem));
+#endif
 
     arg_info = MakeInfo ();
 
@@ -121,8 +126,10 @@ DFRdoDeadFunctionRemoval (node *arg_node)
 
     DBUG_PRINT ("OPT", ("                        result: %d",
                         global.optcounters.dead_fun - mem_dead_fun));
+#ifdef SHOW_MALLOC
     DBUG_PRINT ("OPTMEM",
                 ("mem currently allocated: %d bytes", global.current_allocated_mem));
+#endif
 
     DBUG_RETURN (arg_node);
 }

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.7  2005/09/28 15:35:23  wpc
+ * added some SHOW_MALLOC ifdefs
+ *
  * Revision 1.6  2005/09/09 09:30:44  sah
  * renamed DowngradeConcreteArgs to AdaptConcreteArgs:
  *   - if concrete arg is < than formal arg, it is downgraded
@@ -387,8 +390,10 @@ LINLdoLACInlining (node *arg_node)
 
     DBUG_ENTER ("LINLdoLACInlining");
 
+#ifdef SHOW_MALLOC
     DBUG_PRINT ("OPTMEM",
                 ("mem currently allocated: %d bytes", global.current_allocated_mem));
+#endif
 
     arg_info = MakeInfo ();
 
@@ -398,8 +403,10 @@ LINLdoLACInlining (node *arg_node)
 
     FreeInfo (arg_info);
 
+#ifdef SHOW_MALLOC
     DBUG_PRINT ("OPTMEM",
                 ("mem currently allocated: %d bytes", global.current_allocated_mem));
+#endif
 
     DBUG_RETURN (arg_node);
 }
@@ -421,8 +428,10 @@ LINLdoLACInliningOneFundef (node *arg_node)
 
     DBUG_ENTER ("LINLdoLACInliningOneFundef");
 
+#ifdef SHOW_MALLOC
     DBUG_PRINT ("OPTMEM",
                 ("mem currently allocated: %d bytes", global.current_allocated_mem));
+#endif
 
     arg_info = MakeInfo ();
     INFO_ONEFUNDEF (arg_info) = TRUE;
@@ -433,8 +442,10 @@ LINLdoLACInliningOneFundef (node *arg_node)
 
     FreeInfo (arg_info);
 
+#ifdef SHOW_MALLOC
     DBUG_PRINT ("OPTMEM",
                 ("mem currently allocated: %d bytes", global.current_allocated_mem));
+#endif
 
     DBUG_RETURN (arg_node);
 }

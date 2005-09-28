@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2005/09/28 15:43:27  wpc
+ * added some SHOW_MALLOC ifdefs
+ *
  * Revision 1.10  2005/09/12 13:56:38  ktr
  * if applied to fundef nodes, inlining will not traverse FUNDEF_NEXT
  *
@@ -386,8 +389,10 @@ INLdoInlining (node *arg_node)
 
     DBUG_ENTER ("INLdoInlining");
 
+#ifdef SHOW_MALLOC
     DBUG_PRINT ("OPTMEM",
                 ("mem currently allocated: %d bytes", global.current_allocated_mem));
+#endif
 
     if ((NODE_TYPE (arg_node) == N_module)
         || ((NODE_TYPE (arg_node) == N_fundef) && (!FUNDEF_ISLACFUN (arg_node)))) {
@@ -407,8 +412,10 @@ INLdoInlining (node *arg_node)
         FreeInfo (arg_info);
     }
 
+#ifdef SHOW_MALLOC
     DBUG_PRINT ("OPTMEM",
                 ("mem currently allocated: %d bytes", global.current_allocated_mem));
+#endif
 
     DBUG_RETURN (arg_node);
 }

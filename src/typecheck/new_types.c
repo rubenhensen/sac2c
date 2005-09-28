@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.112  2005/09/28 15:39:48  wpc
+ * added some SHOW_MALLOC ifdefs
+ *
  * Revision 3.111  2005/09/06 11:14:38  sbs
  * added TYisProdOfAKVafter
  *
@@ -1402,8 +1405,10 @@ TYmakeFunType (ntype *arg, ntype *res_type, node *fundef)
 #endif
 
     DBUG_ENTER ("TYmakeFunType");
+#ifdef SHOW_MALLOC
     DBUG_PRINT ("NTY_MEM", ("Allocated mem on entering TYmakeFunType: %u",
                             global.current_allocated_mem));
+#endif
 
     res = MakeNtype (TC_ires, 1);
 
@@ -1502,8 +1507,10 @@ TYmakeFunType (ntype *arg, ntype *res_type, node *fundef)
     DBUG_PRINT ("NTY", ("fun type built: %s\n", tmp));
     DBUG_EXECUTE ("NTY", tmp = ILIBfree (tmp););
 
+#ifdef SHOW_MALLOC
     DBUG_PRINT ("NTY_MEM", ("Allocated mem on leaving  TYmakeFunType: %u",
                             global.current_allocated_mem));
+#endif
 
     DBUG_RETURN (fun);
 }
@@ -4404,7 +4411,9 @@ TYcopyType (ntype *type)
 
     DBUG_ENTER ("TYcopyType");
 
+#ifdef SHOW_MALLOC
     DBUG_EXECUTE ("NTY_MEM", mem_entry = global.current_allocated_mem;);
+#endif
 
     res = CopyTypeConstructor (type, tv_id);
     if (res != NULL) {
@@ -4415,8 +4424,10 @@ TYcopyType (ntype *type)
         }
     }
 
+#ifdef SHOW_MALLOC
     DBUG_PRINT ("NTY_MEM", ("size of type copied by TYcopyType: %u",
                             global.current_allocated_mem - mem_entry));
+#endif
 
     DBUG_RETURN (res);
 }
