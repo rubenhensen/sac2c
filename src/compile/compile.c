@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.173  2005/09/28 18:46:25  sah
+ * INFO_ICMCHAIN is now stacked properly when
+ * compiling icm-wls. solves bug #123
+ *
  * Revision 3.172  2005/09/27 16:16:38  sbs
  * introduction of SIMD ICMs
  *
@@ -5444,6 +5448,7 @@ node *
 COMPwith (node *arg_node, info *arg_info)
 {
     node *icm_chain = NULL, *body_icms, *default_icms;
+    node *generator_icms;
     node *let_neutral;
     node *res_ids, *idx_id, *offs_id, *lower_id, *upper_id;
     char *sub_name;
@@ -5474,6 +5479,14 @@ COMPwith (node *arg_node, info *arg_info)
     DBUG_ASSERT (WITH_PART (arg_node) != NULL, "missing part in AUD with loop!");
     WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
 
+    /*
+     * save the icm_chain for the generators in a local variable
+     * to prevent it from being overwritten by nested with-loops
+     * when traversing the code block
+     */
+    generator_icms = INFO_ICMCHAIN (arg_info);
+    INFO_ICMCHAIN (arg_info) = NULL;
+
     idx_id = INFO_IDXVEC (arg_info);
     if (!isfold) {
         offs_id = EXPRS_EXPR (INFO_OFFSETS (arg_info));
@@ -5501,7 +5514,7 @@ COMPwith (node *arg_node, info *arg_info)
         icm_chain = TCmakeAssignIcm0 ("AUD_WL_COND_END", icm_chain);
         icm_chain = TCappendAssign (body_icms, icm_chain);
         icm_chain = TCmakeAssignIcm0 ("AUD_WL_COND_BODY", icm_chain);
-        icm_chain = TCappendAssign (INFO_ICMCHAIN (arg_info), icm_chain);
+        icm_chain = TCappendAssign (generator_icms, icm_chain);
         icm_chain
           = TCmakeAssignIcm3 ("AUD_WL_FOLD_BEGIN",
                               TCmakeIdCopyStringNt (ID_NAME (idx_id), ID_TYPE (idx_id)),
@@ -5558,7 +5571,7 @@ COMPwith (node *arg_node, info *arg_info)
         icm_chain = TCmakeAssignIcm0 ("AUD_WL_COND_DEFAULT", icm_chain);
         icm_chain = TCappendAssign (body_icms, icm_chain);
         icm_chain = TCmakeAssignIcm0 ("AUD_WL_COND_BODY", icm_chain);
-        icm_chain = TCappendAssign (INFO_ICMCHAIN (arg_info), icm_chain);
+        icm_chain = TCappendAssign (generator_icms, icm_chain);
         icm_chain
           = TCmakeAssignIcm3 ("AUD_WL_BEGIN",
                               TCmakeIdCopyStringNt (ID_NAME (idx_id), ID_TYPE (idx_id)),
@@ -5640,8 +5653,6 @@ COMPwith (node *arg_node, info *arg_info)
                                   sub_get_dim, icm_chain);
         }
     }
-
-    INFO_ICMCHAIN (arg_info) = NULL;
 
     DBUG_RETURN (icm_chain);
 }
