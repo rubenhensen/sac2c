@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.2  2005/09/28 19:14:51  sah
+ * prelude module sac2c is not loaded
+ * while compiling module sac2c ;)
+ *
  * Revision 1.1  2005/09/28 17:40:40  sah
  * Initial revision
  *
@@ -19,6 +23,9 @@
 #include "dbug.h"
 #include "tree_basic.h"
 #include "deserialize.h"
+#include "internal_lib.h"
+#include "namespaces.h"
+#include "ctinfo.h"
 
 node *
 ASFdoAddSpecialFunctions (node *syntaxtree)
@@ -32,10 +39,15 @@ ASFdoAddSpecialFunctions (node *syntaxtree)
 
     /*
      * add sac2c::sel and sac2c::zero as used by wlpg
+     * except if this already is module sac2c ;)
      */
 
-    DSaddSymbolByName ("sel", SET_wrapperhead, "sac2c");
-    DSaddSymbolByName ("zero", SET_wrapperhead, "sac2c");
+    if (!ILIBstringCompare ("sac2c", NSgetModule (MODULE_NAMESPACE (syntaxtree)))) {
+        DSaddSymbolByName ("sel", SET_wrapperhead, "sac2c");
+        DSaddSymbolByName ("zero", SET_wrapperhead, "sac2c");
+    } else {
+        CTInote ("compiling module `sac2c', no prelude functions loaded");
+    }
 
     DSfinishDeserialize (syntaxtree);
 
