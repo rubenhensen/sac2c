@@ -1,6 +1,16 @@
 /*
  *
  * $Log$
+ * Revision 3.25  2005/09/29 22:08:40  sah
+ * finally found the 'vanishing shape instance' bug! the problem
+ * occurs whenever a instance has a constant value! in that
+ * case its call within the wrapper body is replaced by that
+ * value. thus the wrapper body contains less instances than
+ * the wrapper type which then leads to an error when dispatching
+ * that call as the instance has been removed by DFR. now DFR
+ * _always_ uses the wrapper type to determine the instances
+ * needed for a wrapper!
+ *
  * Revision 3.24  2005/09/28 15:43:27  wpc
  * added some SHOW_MALLOC ifdefs
  *
@@ -245,15 +255,31 @@ tagWrapperAsNeeded (node *wrapper, info *info)
 
         FUNDEF_ISNEEDED (wrapper) = TRUE;
 
+        /*
+         * the wrapper body is no reliable source of needed
+         * instances for a wrapper! it may contain less
+         * instances than the wrapper type (e.g. one instance
+         * returns a constant value and its call within the
+         * wrapper is thus replaced by that value). but as the
+         * wrapper type is used for dispatch, all instances that
+         * are denoted within that type need to be present!
+         *
+         * the wrapper body has still to be traversed to mark
+         * functions used by that body (especially cond funs)
+         * as needed!
+         */
+
         if (FUNDEF_BODY (wrapper) != NULL) {
             bool oldspine = INFO_SPINE (info);
             INFO_SPINE (info) = FALSE;
 
-            DBUG_PRINT ("DFR", (">>> inspecting body..."));
+            DBUG_PRINT ("DFR", (">>> inspecting wrapper body..."));
             FUNDEF_BODY (wrapper) = TRAVdo (FUNDEF_BODY (wrapper), info);
 
             INFO_SPINE (info) = oldspine;
-        } else if (FUNDEF_IMPL (wrapper) != NULL) {
+        }
+
+        if (FUNDEF_IMPL (wrapper) != NULL) {
             /*
              * we found a wrapper that has FUNDEF_IMPL set
              * this is a dirty hack telling us that the function
