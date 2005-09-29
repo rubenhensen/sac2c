@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 3.92  2005/09/29 12:20:34  sah
+ * arg 1 of F_type_error is now a N_type node
+ * containing the bottom type instead of the
+ * error message. this allows to infer a
+ * proper type for F_type_error prfs on
+ * subsequent runs of the tc.
+ *
  * Revision 3.91  2005/09/09 16:46:53  sbs
  * proper support for accu added
  * and sufficient support for MGwls added, i.e.,
@@ -1269,6 +1276,12 @@ NTCprf (node *arg_node, info *arg_info)
     if (prf == F_accu) {
         INFO_NTC_EXP_ACCU (arg_info) = TYmakeAlphaType (NULL);
         res = TYmakeProductType (1, INFO_NTC_EXP_ACCU (arg_info));
+    } else if (prf == F_type_error) {
+        /*
+         * for F_type_error prfs we just return the bottom
+         * type found in arg1.
+         */
+        res = TYmakeProductType (1, TYcopyType (TYPE_TYPE (PRF_ARG1 (arg_node))));
 
     } else {
         /*

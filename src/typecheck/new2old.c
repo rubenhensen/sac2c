@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 1.47  2005/09/29 12:20:34  sah
+ * arg 1 of F_type_error is now a N_type node
+ * containing the bottom type instead of the
+ * error message. this allows to infer a
+ * proper type for F_type_error prfs on
+ * subsequent runs of the tc.
+ *
  * Revision 1.46  2005/09/16 14:41:06  sbs
  * bug resolved.
  * Now, lacfuns that return bottom are eliminated completely
@@ -300,15 +307,14 @@ AddTypeError (node *assign, node *bottom_id, ntype *other_type)
         /**
          * No errors yet : create an assignment of the form
          *
-         *   bottom_id = type_error( err_msg);
+         *   bottom_id = type_error( bottom_type);
          *
          */
-        assign
-          = TBmakeAssign (TBmakeLet (TBmakeIds (ID_AVIS (bottom_id), NULL),
-                                     TCmakePrf1 (F_type_error,
-                                                 TCmakeStrCopy (TYgetBottomError (
-                                                   AVIS_TYPE (ID_AVIS (bottom_id)))))),
-                          NULL);
+        assign = TBmakeAssign (TBmakeLet (TBmakeIds (ID_AVIS (bottom_id), NULL),
+                                          TCmakePrf1 (F_type_error,
+                                                      TBmakeType (TYcopyType (AVIS_TYPE (
+                                                        ID_AVIS (bottom_id)))))),
+                               NULL);
 
     } else {
         /**
@@ -322,6 +328,7 @@ AddTypeError (node *assign, node *bottom_id, ntype *other_type)
      * Finally, we change the type of bottom_id to other_type.
      */
     AVIS_TYPE (ID_AVIS (bottom_id)) = TYfreeType (AVIS_TYPE (ID_AVIS (bottom_id)));
+
     AVIS_TYPE (ID_AVIS (bottom_id)) = TYeliminateAKV (other_type);
     /**
      * and we eliminate the defining N_let:
@@ -376,10 +383,13 @@ ReplaceBodyByTypeError (node *fundef, ntype *inferred_type, ntype *res_type)
 
     ret = TBmakeReturn (exprs);
 
-    block = TBmakeBlock (TBmakeAssign (TBmakeLet (ids, TCmakePrf1 (F_type_error,
-                                                                   TBmakeStr (err_msg))),
-                                       TBmakeAssign (ret, NULL)),
-                         vardecs);
+    block
+      = TBmakeBlock (TBmakeAssign (TBmakeLet (ids,
+                                              TCmakePrf1 (F_type_error,
+                                                          TBmakeType (
+                                                            TYmakeBottomType (err_msg)))),
+                                   TBmakeAssign (ret, NULL)),
+                     vardecs);
 
     FUNDEF_BODY (fundef) = FREEdoFreeTree (FUNDEF_BODY (fundef));
 

@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 3.174  2005/09/29 12:20:34  sah
+ * arg 1 of F_type_error is now a N_type node
+ * containing the bottom type instead of the
+ * error message. this allows to infer a
+ * proper type for F_type_error prfs on
+ * subsequent runs of the tc.
+ *
  * Revision 3.173  2005/09/28 18:46:25  sah
  * INFO_ICMCHAIN is now stacked properly when
  * compiling icm-wls. solves bug #123
@@ -4513,16 +4520,26 @@ COMPPrfBin (char *icm_name, node *arg_node, info *arg_info)
 static node *
 COMPPrfTypeError (node *arg_node, info *arg_info)
 {
-    node *head;
+    node *bottom;
+    node *message;
     node *ret_node;
 
     DBUG_ENTER ("COMPPrfTypeError");
 
     DBUG_ASSERT ((PRF_ARGS (arg_node) != NULL),
                  "1st argument of F_type_error not found!");
-    head = EXPRS_EXPR (PRF_ARGS (arg_node));
 
-    ret_node = TCmakeAssignIcm1 ("TYPE_ERROR", DUPdoDupNode (head), NULL);
+    DBUG_ASSERT ((NODE_TYPE (PRF_ARG1 (arg_node)) == N_type),
+                 "1st argument of F_type_error  not a N_type node!");
+
+    bottom = EXPRS_EXPR (PRF_ARGS (arg_node));
+
+    DBUG_ASSERT ((TYisBottom (TYPE_TYPE (bottom))),
+                 "1st argument of F_type_error contains non bottom type!");
+
+    message = TCmakeStrCopy (TYgetBottomError (TYPE_TYPE (bottom)));
+
+    ret_node = TCmakeAssignIcm1 ("TYPE_ERROR", message, NULL);
 
     DBUG_RETURN (ret_node);
 }
