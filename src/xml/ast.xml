@@ -3733,6 +3733,7 @@
           <targets>
             <target mandatory="yes">
               <set name="Expr" />
+              <node name="Exprs" />
               <phases>
                 <all />
               </phases>
