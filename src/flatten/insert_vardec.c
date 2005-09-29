@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.26  2005/09/29 14:34:58  sah
+ * fixed accesses to free'd or uninitialised
+ * memory. came along those while using valgrind.
+ *
  * Revision 1.25  2005/07/15 15:57:02  sah
  * introduced namespaces
  *
@@ -456,6 +460,11 @@ INSVDspids (node *arg_node, info *arg_info)
 
     if (SPIDS_NEXT (arg_node) != NULL) {
         new_ids = TRAVdo (SPIDS_NEXT (arg_node), arg_info);
+        /*
+         * we have to reset SPIDS_NEXT here, as it has been
+         * freed on the traversal down!
+         */
+        SPIDS_NEXT (arg_node) = NULL;
     } else {
         new_ids = NULL;
     }

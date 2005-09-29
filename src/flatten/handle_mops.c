@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.23  2005/09/29 14:34:58  sah
+ * fixed accesses to free'd or uninitialised
+ * memory. came along those while using valgrind.
+ *
  * Revision 1.22  2005/06/09 10:47:36  sbs
  * EXPRS_EXPR forgotten in recursive call of Mop2Ap
  *
@@ -295,13 +299,26 @@ Mop2Ap (node *op, node *mop)
             SPMOP_EXPRS (mop) = TBmakeExprs (ap, exprs3);
 
             /* we have reused the id stored in the mop, so do not free it */
-            EXPRS_EXPR (SPMOP_OPS (mop)) = NULL;
-            SPMOP_OPS (mop) = FREEdoFreeNode (fun_ids);
+            EXPRS_EXPR (fun_ids) = NULL;
+            SPMOP_OPS (mop) = fun_ids = FREEdoFreeNode (fun_ids);
 
             mop = Mop2Ap (op, mop);
         } else {
+            /*
+             * be careful: when cutting a N_exprs chain
+             * into several parts, always make sure that the
+             * NEXT pointer is zero on both ends of the
+             * resulting chains. This is important as the
+             * pointer the NEXT points to may be freed.
+             * Although this code never uses this NEXT pointer,
+             * the traversal mechanism does, which leads
+             * to an memory access into an already freed
+             * heap area.
+             */
             SPMOP_EXPRS (mop) = EXPRS_NEXT (exprs);
+            EXPRS_NEXT (exprs) = NULL;
             SPMOP_OPS (mop) = EXPRS_NEXT (fun_ids);
+            EXPRS_NEXT (fun_ids) = NULL;
             mop = Mop2Ap (EXPRS_EXPR (fun_ids), mop); /* where clause! */
 
             exprs_prime = SPMOP_EXPRS (mop);
@@ -314,11 +331,16 @@ Mop2Ap (node *op, node *mop)
 
             mop = Mop2Ap (op, mop);
 
+            /*
+             * we have used the expressing stored in the exprs chain,
+             * so do not free it
+             */
             EXPRS_EXPR (exprs) = NULL;
             exprs = FREEdoFreeNode (exprs);
 
             /* we have reused the id stored in the mop, so do not free it */
             EXPRS_EXPR (fun_ids) = NULL;
+            EXPRS_NEXT (fun_ids) = NULL;
             fun_ids = FREEdoFreeNode (fun_ids);
         }
     } else {
