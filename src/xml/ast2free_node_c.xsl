@@ -1,6 +1,10 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.9  2005/09/29 22:04:36  sah
+  removed unused special cases for INT_ASSIGN
+  and cleaned up old code
+
   Revision 1.8  2005/06/06 13:17:20  jhb
   added handling of NODE_ERROR
 
@@ -171,29 +175,13 @@ version="1.0">
     <xsl:with-param name="field">Name</xsl:with-param>
   </xsl:call-template>
   <xsl:value-of select="', arg_node));'"/>
-  <!--
-  <xsl:call-template name="node-access">
-    <xsl:with-param name="node">arg_node</xsl:with-param>
-    <xsl:with-param name="nodetype">
-      <xsl:value-of select="@name"/>
-    </xsl:with-param>
-    <xsl:with-param name="field">IsZombie</xsl:with-param>
-  </xsl:call-template>
-  <xsl:value-of select="' = TRUE;'"/>
-    --> 
   <xsl:value-of select="'arg_node = FREEzombify( arg_node);'"/>
   <!-- first free everything downwards in the ast -->
   <xsl:apply-templates select="sons/son[@name = &quot;Next&quot;]"/>
-  <!-- free all attributes, except NAME, MOD, LINKMOD. IMPL, INT_ASSIGN and TYPES
-    INT_ASSIGN cannot be freed here because it is still required in 
-    FreeAttribExtLink which is called for the recursive application of a
-    do-loop inside the body of a do-function.
-    --> 
-  <xsl:apply-templates select="attributes/attribute[@name != &quot;Name&quot;][@name != &quot;Mod&quot;][@name!=&quot;LinkMod&quot;][@name != &quot;Types&quot;][@name != &quot;Type&quot;][@name!=&quot;Impl&quot;][@name != &quot;Int_Assign&quot;]"/>
+  <!-- free all attributes, except NAME, MOD, LINKMOD. IMPL, and TYPES --> 
+  <xsl:apply-templates select="attributes/attribute[@name != &quot;Name&quot;][@name != &quot;Mod&quot;][@name!=&quot;LinkMod&quot;][@name != &quot;Types&quot;][@name != &quot;Type&quot;][@name!=&quot;Impl&quot;]"/>
   <!-- call free for all other sons -->
   <xsl:apply-templates select="sons/son[not( @name= &quot;Next&quot;)]"/>
-  <!-- call free for INT_ASSIGN -->
-  <xsl:apply-templates select="attributes/attribute[@name = &quot;Int_Assign&quot;]"/>
   <!-- DBUG_RETURN call -->
   <xsl:value-of select="'DBUG_RETURN( arg_node);'"/>
   <!-- end of body -->
