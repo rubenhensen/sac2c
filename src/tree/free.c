@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.82  2005/09/29 22:04:12  sah
+ * added DBUG_PRINT message
+ *
  * Revision 3.81  2005/07/15 15:57:02  sah
  * introduced namespaces
  *
@@ -469,6 +472,8 @@ FreeZombie (node *fundef)
                  "FreeZombie() is suitable for N_fundef nodes only!");
 
     if (FUNDEF_ISZOMBIE (fundef)) {
+
+        DBUG_PRINT ("FREE", ("removing zombie at " F_PTR, fundef));
 
         /*
          * remove all the zombie data
