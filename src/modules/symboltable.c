@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2005/09/29 14:03:32  sah
+ * fixed an ugly bug...
+ * STcopy now really copies a symbol table...
+ *
  * Revision 1.11  2005/06/16 10:00:44  sah
  * fixed continue on error problem
  *
@@ -171,7 +175,7 @@ STsymbolCopy (const stsymbol_t *symbol)
 
         result->name = ILIBstringCopy (symbol->name);
         result->vis = symbol->vis;
-        result->head = STentryCopy (result->head);
+        result->head = STentryCopy (symbol->head);
         result->next = STsymbolCopy (symbol->next);
     }
 
