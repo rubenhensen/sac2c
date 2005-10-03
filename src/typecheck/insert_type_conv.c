@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2005/10/03 14:38:33  sbs
+ * added INSTCwith
+ *
  * Revision 1.2  2005/08/19 17:26:54  sbs
  * added avis and block
  *
@@ -288,6 +291,31 @@ INSTCids (node *arg_node, info *arg_info)
         ASSIGN_NEXT (assign) = INFO_INSTC_NEW_ASSIGN (arg_info);
         INFO_INSTC_NEW_ASSIGN (arg_info) = assign;
     }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *INSTCwith( node *arg_node, info *arg_info)
+ *
+ * description:
+ *
+ ******************************************************************************/
+
+node *
+INSTCwith (node *arg_node, info *arg_info)
+{
+    node *old_new_assign;
+
+    DBUG_ENTER ("INSTCwith");
+    old_new_assign = INFO_INSTC_NEW_ASSIGN (arg_info);
+    INFO_INSTC_NEW_ASSIGN (arg_info) = NULL;
+
+    TRAVcont (arg_node, arg_info);
+
+    INFO_INSTC_NEW_ASSIGN (arg_info) = old_new_assign;
 
     DBUG_RETURN (arg_node);
 }

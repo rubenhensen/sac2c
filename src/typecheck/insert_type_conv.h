@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2005/10/03 14:38:33  sbs
+ * added INSTCwith
+ *
  * Revision 1.2  2005/08/19 17:26:54  sbs
  * added avis and block
  *
@@ -31,6 +34,7 @@ extern node *INSTCavis (node *arg_node, info *arg_info);
 extern node *INSTCassign (node *arg_node, info *arg_info);
 extern node *INSTCids (node *arg_node, info *arg_info);
 extern node *INSTCid (node *arg_node, info *arg_info);
+extern node *INSTCwith (node *arg_node, info *arg_info);
 extern node *INSTCreturn (node *arg_node, info *arg_info);
 
 #endif /* _SAC_INSERT_TYPE_CONV_H_ */

@@ -485,6 +485,7 @@
           <node name="Assign" />
           <node name="Ids" />
           <node name="Id" />
+          <node name="With" />
           <node name="Return" />
         </travuser>
       </traversal>
