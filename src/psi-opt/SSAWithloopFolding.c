@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.28  2005/10/05 13:27:11  ktr
+ * removed common entrypoint for WLI, WLF which is now performed in optimize cycle
+ *
  * Revision 1.27  2005/08/26 12:29:13  ktr
  * major brushing,seams to work
  *
@@ -786,49 +789,4 @@ WLFfreeInternGenChain (intern_gen *ig)
     }
 
     DBUG_RETURN (ig);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *WLFwithloopFolding( node *arg_node, int loop)
- *
- * description:
- *   starting point for the withloop folding. it traverses the AST two times
- *     1. ssawli traversal to get needed information from tree
- *     2. ssawlf traversal to do the withloop folding
- *
- *   'loop' specifies the number of the current optimization cycle and is
- *   needed for correct handling of break specifiers.
- *
- *   after folding withloops the ssaform is restored by calling CheckAvis and
- *   WLFTransform.
- *
- ******************************************************************************/
-node *
-WLFdoWithloopFolding (node *arg_node, int loop)
-{
-    DBUG_ENTER ("WLFwithloopFolding");
-
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_fundef),
-                 "WLFwithloopFolding called for non fundef node");
-
-    if (!(FUNDEF_ISLACFUN (arg_node))) {
-
-        /* WLI traversal */
-        WLIdoWLI (arg_node);
-
-        /* break after WLI? */
-        if ((global.break_after != PH_sacopt) || (global.break_cycle_specifier != loop)
-            || strcmp (global.break_specifier, "wli")) {
-
-            /* SSAWLF traversal: fold WLs */
-            WLFdoWLF (arg_node);
-        }
-
-        /* restore ssa form */
-        arg_node = SSArestoreSsaOneFunction (arg_node);
-    }
-
-    DBUG_RETURN (arg_node);
 }

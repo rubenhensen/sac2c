@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.11  2005/10/05 13:27:11  ktr
+ * removed common entrypoint for WLI, WLF which is now performed in optimize cycle
+ *
  * Revision 1.10  2005/08/26 12:29:51  ktr
  * major brushing, seems to work
  *
@@ -51,7 +54,6 @@
  ******************************************************************************/
 
 /* general functions */
-extern node *WLFdoWithloopFolding (node *arg_node, int loop);
 extern int WLFlocateIndexVar (node *idn, node *wln);
 
 extern void WLFarrayST2ArrayInt (node *arrayn, int **iarray, int shape);
