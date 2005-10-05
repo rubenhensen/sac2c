@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2005/10/05 13:26:13  ktr
+ * AVIS_SSAASSIGN is now set for newly created assignments
+ *
  * Revision 1.7  2005/09/01 15:40:40  sah
  * fixed indenting of code to please kai
  *
@@ -210,6 +213,8 @@ PINLarg (node *arg_node, info *arg_info)
           = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL),
                                      DUPdoDupNode (EXPRS_EXPR (INFO_APARGS (arg_info)))),
                           INFO_ASSIGNS (arg_info));
+
+        AVIS_SSAASSIGN (avis) = INFO_ASSIGNS (arg_info);
 
         INFO_VARDECS (arg_info) = TBmakeVardec (avis, INFO_VARDECS (arg_info));
 
