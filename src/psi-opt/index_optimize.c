@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.7  2005/10/05 13:27:11  ktr
+ * minor bugfixing
+ *
  * Revision 1.6  2005/09/28 16:48:49  sah
  * added loads of DBUG prints and resolved a bug
  * this resolves bug #120 as well
@@ -555,7 +558,7 @@ OptimizeComputation (node *arg_node, info *arg_info)
                     DBUG_PRINT ("IVEO",
                                 ("computing prf on offsets instead of idx-vects"));
 
-                    arg2 = Scalar2Offset (PRF_ARG1 (prf),
+                    arg2 = Scalar2Offset (PRF_ARG2 (prf),
                                           TYgetDim (ID_NTYPE (PRF_ARG1 (prf))), shape,
                                           arg_info);
 
@@ -573,11 +576,10 @@ OptimizeComputation (node *arg_node, info *arg_info)
             if (arg2 != NULL) {
                 DBUG_PRINT ("IVEO", ("computing prf on offsets instead of idx-vects"));
 
-                arg1 = PRF_ARG1 (prf);
-                PRF_ARG1 (prf) = NULL;
+                arg1 = DUPdoDupNode (PRF_ARG1 (prf));
 
                 arg_node = FREEdoFreeNode (arg_node);
-                arg_node = TCmakePrf2 (F_mul_SxS, arg1, arg2);
+                arg_node = TCmakePrf2 (F_mul_SxS, arg1, TBmakeId (arg2));
             }
             break;
 
@@ -587,11 +589,10 @@ OptimizeComputation (node *arg_node, info *arg_info)
             if (arg1 != NULL) {
                 DBUG_PRINT ("IVEO", ("computing prf on offsets instead of idx-vects"));
 
-                arg2 = PRF_ARG2 (prf);
-                PRF_ARG2 (prf) = NULL;
+                arg2 = DUPdoDupNode (PRF_ARG2 (prf));
 
                 arg_node = FREEdoFreeNode (arg_node);
-                arg_node = TCmakePrf2 (F_mul_SxS, arg1, arg2);
+                arg_node = TCmakePrf2 (F_mul_SxS, TBmakeId (arg1), arg2);
             }
             break;
 
