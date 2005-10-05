@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.171  2005/10/05 13:26:13  ktr
+ * some cleanup
+ *
  * Revision 3.170  2005/09/27 17:18:49  sbs
  * added DUPwlsimd
  *
@@ -1553,42 +1556,6 @@ DUPassign (node *arg_node, info *arg_info)
 
         new_node = TBmakeAssign (NULL, NULL);
 
-#if 0
-    if (INFO_TYPE( arg_info) == DUP_SSA){
-      /*
-       * to keep the ssa-form we have to create new ids
-       * and insert them into LUT 
-       */
-
-      oldids = ASSIGN_LHS( arg_node);
-      while (oldids != NULL) {
-        nvarname = ILIBtmpVarName( IDS_NAME( oldids));
-
-        newavis = TBmakeAvis( nvarname, TYcopyType( IDS_NTYPE( oldids)));
-        AVIS_SSAASSIGN( newavis) = new_node;
-
-        newids = TBmakeIds( newavis, NULL);
-        
-        vardec =TBmakeVardec( IDS_AVIS( newids), NULL);
-
-        if ( IDS_TYPE( oldids) != NULL) {
-          VARDEC_TYPE( vardec) = DUPdupOneTypes( IDS_TYPE( oldids));
-        }
-
-        INFO_FUNDEFSSA( arg_info) 
-          = TCaddVardecs( INFO_FUNDEFSSA( arg_info), vardec);
-
-        INFO_LUT( arg_info) = LUTinsertIntoLutS( INFO_LUT( arg_info),
-                                    IDS_NAME(oldids),    IDS_NAME(newids));
-        INFO_LUT( arg_info) = LUTinsertIntoLutP( INFO_LUT( arg_info),
-                                    IDS_DECL(oldids), IDS_DECL(newids));
-        INFO_LUT( arg_info) = LUTinsertIntoLutP( INFO_LUT( arg_info),
-                                    IDS_AVIS(oldids),    IDS_AVIS(newids));
-        oldids = IDS_NEXT(oldids);
-      }      
-    }
-#endif
-
         stacked_assign = INFO_ASSIGN (arg_info);
         INFO_ASSIGN (arg_info) = new_node;
 
@@ -1596,9 +1563,16 @@ DUPassign (node *arg_node, info *arg_info)
 
         INFO_ASSIGN (arg_info) = stacked_assign;
 
+        /*
+         * ----->
+         * Is the order of execution really valid???
+         */
         ASSIGN_NEXT (new_node) = DUPCONT (ASSIGN_NEXT (arg_node));
 
         INFO_LUT (arg_info) = LUTinsertIntoLutP (INFO_LUT (arg_info), arg_node, new_node);
+        /*
+         * <----
+         */
 
         ASSIGN_FLAGSTRUCTURE (new_node) = ASSIGN_FLAGSTRUCTURE (arg_node);
 
@@ -1717,11 +1691,17 @@ DUPids (node *arg_node, info *arg_info)
             VARDEC_TYPE (AVIS_DECL (newavis)) = DUPdupOneTypes (IDS_TYPE (arg_node));
         }
 
-        INFO_LUT (arg_info) = LUTinsertIntoLutS (INFO_LUT (arg_info), IDS_NAME (arg_node),
-                                                 AVIS_NAME (newavis));
+#if 0
+    INFO_LUT( arg_info) = 
+      LUTinsertIntoLutS( INFO_LUT( arg_info),
+                         IDS_NAME( arg_node),    
+                         AVIS_NAME( newavis));
 
-        INFO_LUT (arg_info) = LUTinsertIntoLutP (INFO_LUT (arg_info), IDS_DECL (arg_node),
-                                                 AVIS_DECL (newavis));
+    INFO_LUT( arg_info) = 
+      LUTinsertIntoLutP( INFO_LUT( arg_info),
+                         IDS_DECL( arg_node), 
+                         AVIS_DECL( newavis));
+#endif
 
         INFO_LUT (arg_info)
           = LUTinsertIntoLutP (INFO_LUT (arg_info), IDS_AVIS (arg_node), newavis);
