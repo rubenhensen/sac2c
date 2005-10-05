@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.27  2005/10/05 13:27:11  ktr
+ * removed WLIap
+ *
  * Revision 1.26  2005/09/28 15:48:02  wpc
  * added several SHOW_MALLOC ifdefs
  *
@@ -764,55 +767,6 @@ WLIcond (node *arg_node, info *arg_info)
     COND_COND (arg_node) = TRAVdo (COND_COND (arg_node), arg_info);
     COND_THENINSTR (arg_node) = TRAVdo (COND_THENINSTR (arg_node), arg_info);
     COND_ELSEINSTR (arg_node) = TRAVdo (COND_ELSEINSTR (arg_node), arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *WLIap(node *arg_node, info *arg_info)
- *
- * description:
- *   traverse args
- *   traverse in applicated fundef if special one (like SSAWithloopFolding())
- *
- ******************************************************************************/
-node *
-WLIap (node *arg_node, info *arg_info)
-{
-    info *new_arg_info;
-
-    DBUG_ENTER ("SSAWLTap");
-
-    if (AP_ARGS (arg_node) != NULL) {
-        AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
-    }
-
-    /* non-recursive call of special fundef
-     */
-    if ((AP_FUNDEF (arg_node) != NULL) && (FUNDEF_ISLACFUN (AP_FUNDEF (arg_node)))
-        && (INFO_FUNDEF (arg_info) != AP_FUNDEF (arg_node))) {
-
-        /* stack arg_info frame for new fundef */
-        new_arg_info = MakeInfo ();
-
-        TRAVpush (TR_wli);
-        AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), new_arg_info);
-        TRAVpop ();
-
-        /* break after WLI? */
-        if ((global.break_after != PH_sacopt)
-            || !ILIBstringCompare (global.break_specifier, "wli")) {
-            /* SSAWLF traversal: fold WLs */
-
-            TRAVpush (TR_wlf);
-            AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), new_arg_info);
-            TRAVpop ();
-        }
-
-        new_arg_info = FreeInfo (new_arg_info);
-    }
 
     DBUG_RETURN (arg_node);
 }

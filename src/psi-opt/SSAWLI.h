@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.6  2005/10/05 13:27:11  ktr
+ * removed WLIap
+ *
  * Revision 1.5  2004/11/22 17:29:51  sbs
  * SacDevCamp04
  *
@@ -33,7 +36,6 @@ extern node *WLIassign (node *, info *);
 extern node *WLIcond (node *, info *);
 extern node *WLIwith (node *, info *);
 extern node *WLIlet (node *, info *);
-extern node *WLIap (node *, info *);
 
 extern node *WLImodarray (node *, info *);
 extern node *WLIpart (node *, info *);

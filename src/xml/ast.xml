@@ -1045,7 +1045,6 @@
 	<travuser>
 	  <node name="Fundef" />
 	  <node name="Assign" />
-	  <node name="Ap" />
 	  <node name="Id" />
           <node name="Let" />
           <node name="Cond" />
