@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.203  2005/10/06 17:00:46  ktr
+ * added TCcountVardecs
+ *
  * Revision 3.202  2005/09/16 17:04:45  sah
  * removed TCcreateZero as it created unflattened code
  * inlined it into SSAWLUnroll.c
@@ -717,6 +720,8 @@ extern node *TCmakeVardecFromArg (node *arg_node);
  ******************************************************************************/
 
 extern node *TCmakeArgFromVardec (node *vardec_node);
+
+extern int TCcountVardecs (node *vardecs);
 
 /*--------------------------------------------------------------------------*/
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.144  2005/10/06 17:00:46  ktr
+ * added TCcountVardecs
+ *
  * Revision 3.143  2005/09/16 17:04:45  sah
  * removed TCcreateZero as it created unflattened code
  * inlined it into SSAWLUnroll.c
@@ -1361,6 +1364,32 @@ TCmakeArgFromVardec (node *vardec_node)
     AVIS_DECL (ARG_AVIS (new_arg)) = new_arg;
 
     DBUG_RETURN (new_arg);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   int TCcountVardecs( node *vardecs)
+ *
+ * description:
+ *   Counts the number of N_vardec nodes.
+ *
+ ******************************************************************************/
+
+int
+TCcountVardecs (node *vardecs)
+{
+    int count = 0;
+
+    DBUG_ENTER ("TCcountVardecs");
+
+    while (vardecs != NULL) {
+        DBUG_ASSERT ((NODE_TYPE (vardecs) == N_vardec), "no N_vardec node found!");
+        count++;
+        vardecs = VARDEC_NEXT (vardecs);
+    }
+
+    DBUG_RETURN (count);
 }
 
 /*--------------------------------------------------------------------------*/
