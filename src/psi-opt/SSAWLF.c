@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.30  2005/10/06 06:12:12  ktr
+ * Now, SSAWLF produces properly flattened code.
+ *
  * Revision 1.29  2005/09/28 21:20:07  ktr
  * commented out a DBUG_ASSERT that prevented an example (bug 124) from
  * compiling
@@ -1628,6 +1631,7 @@ WLFid (node *arg_node, info *arg_info)
             subst_wl_partn = WITH_PART (ASSIGN_RHS (ID_WL (INFO_ID (arg_info))));
             subst_wl_ids = PART_IDS (subst_wl_partn);
             while (subst_wl_ids) {
+                node *arrayavisn;
                 /* Here we use masks which have been generated before WLI. These masks
                    are never modified in WLI and WLF (although new VARDECs are inserted),
                    so we can use them for variables which already existed BEFORE WLI.
@@ -1638,13 +1642,20 @@ WLFid (node *arg_node, info *arg_info)
                      (and DC-removing) some new variables. */
 
                 arrayn = TCmakeFlatArray (TBmakeExprs (TBmakeNum (count), NULL));
+                arrayavisn = TBmakeAvis (ILIBtmpVar (), NTCnewTypeCheck_Expr (arrayn));
+                FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+                  = TBmakeVardec (arrayavisn, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
 
-                argsn = TBmakeExprs (arrayn, TBmakeExprs (DUPdoDupTree (vectorn), NULL));
+                argsn = TBmakeExprs (TBmakeId (arrayavisn),
+                                     TBmakeExprs (DUPdoDupTree (vectorn), NULL));
 
                 /* keep original name */
                 _ids = DUPdoDupNode (subst_wl_ids);
 
                 letn = TBmakeLet (_ids, TBmakePrf (F_sel, argsn));
+                subst_header = TBmakeAssign (letn, subst_header);
+
+                letn = TBmakeLet (TBmakeIds (arrayavisn, NULL), arrayn);
                 subst_header = TBmakeAssign (letn, subst_header);
 
                 count++;
