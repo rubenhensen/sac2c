@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2005/10/06 16:59:06  ktr
+ * rewrite for faster access times
+ *
  * Revision 1.2  2005/07/16 09:57:55  ktr
  * enhanced functionality
  *
@@ -11,10 +14,9 @@
 #include "NumLookUpTable.h"
 
 #include "tree_basic.h"
+#include "tree_compound.h"
 #include "internal_lib.h"
 #include "dbug.h"
-#include "LookUpTable.h"
-#include "DataFlowMask.h"
 
 /******************************************************************************
  *
@@ -22,45 +24,14 @@
  *
  *****************************************************************************/
 struct NLUT_T {
-    dfmask_base_t *maskbase;
-    int *maskbase_rc;
-    dfmask_t *mask;
-    lut_t *lut;
+    int size;
+    int *nums;
+    node **avis;
 };
 
-#define NLUT_MASKBASE(n) (n->maskbase)
-#define NLUT_MASKBASE_RC(n) (n->maskbase_rc)
-#define NLUT_MASKBASE_RCVAL(n) (*NLUT_MASKBASE_RC (n))
-#define NLUT_MASK(n) (n->mask)
-#define NLUT_LUT(n) (n->lut)
-
-/******************************************************************************
- *
- * Static functions
- *
- *****************************************************************************/
-static int *
-FreeInt (int *i)
-{
-    DBUG_ENTER ("FreeInt");
-
-    i = ILIBfree (i);
-
-    DBUG_RETURN (i);
-}
-
-static int *
-DupInt (int *i)
-{
-    int *j;
-
-    DBUG_ENTER ("DupInt");
-
-    j = ILIBmalloc (sizeof (int));
-    *j = *i;
-
-    DBUG_RETURN (j);
-}
+#define NLUT_SIZE(n) (n->size)
+#define NLUT_NUMS(n) (n->nums)
+#define NLUT_AVIS(n) (n->avis)
 
 /******************************************************************************
  *
@@ -75,8 +46,8 @@ nlut_t *
 NLUTgenerateNlut (node *args, node *vardecs)
 {
     nlut_t *nlut;
-    node *avis;
-    int *z;
+    node *tmp;
+    int c;
 
     DBUG_ENTER ("NLUTgenerateNlut");
 
@@ -87,26 +58,27 @@ NLUTgenerateNlut (node *args, node *vardecs)
 
     nlut = ILIBmalloc (sizeof (nlut_t));
 
-    NLUT_MASKBASE (nlut) = DFMgenMaskBase (args, vardecs);
-    NLUT_MASKBASE_RC (nlut) = ILIBmalloc (sizeof (int));
-    NLUT_MASKBASE_RCVAL (nlut) = 1;
-    NLUT_MASK (nlut) = DFMgenMaskClear (NLUT_MASKBASE (nlut));
-    NLUT_LUT (nlut) = LUTgenerateLut ();
+    NLUT_SIZE (nlut) = TCcountArgs (args) + TCcountVardecs (vardecs);
+    NLUT_NUMS (nlut) = ILIBmalloc (NLUT_SIZE (nlut) * sizeof (int));
+    NLUT_AVIS (nlut) = ILIBmalloc (NLUT_SIZE (nlut) * sizeof (node *));
 
-    /*
-     * Insert zeroes into lut for every variable
-     */
-    avis = DFMgetMaskEntryAvisClear (NLUT_MASK (nlut));
-    while (avis != NULL) {
-        DBUG_ASSERT (LUTsearchInLutPp (NLUT_LUT (nlut), avis) == avis,
-                     "AVIS already exists in NLUT!");
+    c = 0;
+    tmp = args;
+    while (tmp != NULL) {
+        NLUT_NUMS (nlut)[c] = 0;
+        NLUT_AVIS (nlut)[c] = ARG_AVIS (tmp);
+        AVIS_VARNO (ARG_AVIS (tmp)) = c;
+        c += 1;
+        tmp = ARG_NEXT (tmp);
+    }
 
-        z = ILIBmalloc (sizeof (int));
-        *z = 0;
-
-        NLUT_LUT (nlut) = LUTinsertIntoLutP (NLUT_LUT (nlut), avis, z);
-
-        avis = DFMgetMaskEntryAvisClear (NULL);
+    tmp = vardecs;
+    while (tmp != NULL) {
+        NLUT_NUMS (nlut)[c] = 0;
+        NLUT_AVIS (nlut)[c] = VARDEC_AVIS (tmp);
+        AVIS_VARNO (VARDEC_AVIS (tmp)) = c;
+        c += 1;
+        tmp = VARDEC_NEXT (tmp);
     }
 
     DBUG_RETURN (nlut);
@@ -124,18 +96,21 @@ NLUTgenerateNlut (node *args, node *vardecs)
 nlut_t *
 NLUTduplicateNlut (nlut_t *nlut)
 {
+    int i;
     nlut_t *newnlut;
 
     DBUG_ENTER ("NLUTduplicateNlut");
 
     newnlut = ILIBmalloc (sizeof (nlut_t));
-    NLUT_MASKBASE (newnlut) = NLUT_MASKBASE (nlut);
-    NLUT_MASKBASE_RC (newnlut) = NLUT_MASKBASE_RC (nlut);
-    NLUT_MASKBASE_RCVAL (newnlut) += 1;
-    NLUT_MASK (newnlut) = DFMgenMaskCopy (NLUT_MASK (nlut));
-    NLUT_LUT (newnlut) = LUTduplicateLut (NLUT_LUT (nlut));
 
-    NLUT_LUT (newnlut) = LUTmapLutP (NLUT_LUT (newnlut), (void *(*)(void *))DupInt);
+    NLUT_SIZE (newnlut) = NLUT_SIZE (nlut);
+    NLUT_NUMS (newnlut) = ILIBmalloc (NLUT_SIZE (nlut) * sizeof (int));
+    NLUT_AVIS (newnlut) = ILIBmalloc (NLUT_SIZE (nlut) * sizeof (node *));
+
+    for (i = 0; i < NLUT_SIZE (nlut); i++) {
+        NLUT_NUMS (newnlut)[i] = NLUT_NUMS (nlut)[i];
+        NLUT_AVIS (newnlut)[i] = NLUT_AVIS (nlut)[i];
+    }
 
     DBUG_RETURN (newnlut);
 }
@@ -154,20 +129,37 @@ NLUTremoveNlut (nlut_t *nlut)
 {
     DBUG_ENTER ("NLUTremoveNlut");
 
-    NLUT_LUT (nlut) = LUTmapLutP (NLUT_LUT (nlut), (void *(*)(void *))FreeInt);
-
-    NLUT_LUT (nlut) = LUTremoveLut (NLUT_LUT (nlut));
-    NLUT_MASK (nlut) = DFMremoveMask (NLUT_MASK (nlut));
-    NLUT_MASKBASE_RCVAL (nlut) -= 1;
-
-    if (NLUT_MASKBASE_RCVAL (nlut) == 0) {
-        NLUT_MASKBASE_RC (nlut) = ILIBfree (NLUT_MASKBASE_RC (nlut));
-        NLUT_MASKBASE (nlut) = DFMremoveMaskBase (NLUT_MASKBASE (nlut));
-    }
+    NLUT_NUMS (nlut) = ILIBfree (NLUT_NUMS (nlut));
+    NLUT_AVIS (nlut) = ILIBfree (NLUT_AVIS (nlut));
 
     nlut = ILIBfree (nlut);
 
     DBUG_RETURN (nlut);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   nlut_t *NLUTaddNluts( nlut_t *nlut1, nlut_t *nlut2)
+ *
+ * description:
+ *   Adds the two given nluts
+ *
+ *****************************************************************************/
+nlut_t *
+NLUTaddNluts (nlut_t *nlut1, nlut_t *nlut2)
+{
+    int i;
+    nlut_t *res;
+
+    DBUG_ENTER ("NLUTaddNluts");
+
+    res = NLUTduplicateNlut (nlut1);
+    for (i = 0; i < NLUT_SIZE (nlut2); i++) {
+        NLUT_NUMS (res)[i] += NLUT_NUMS (nlut2)[i];
+    }
+
+    DBUG_RETURN (res);
 }
 
 /******************************************************************************
@@ -182,15 +174,13 @@ NLUTremoveNlut (nlut_t *nlut)
 int
 NLUTgetNum (nlut_t *nlut, node *avis)
 {
-    int *i;
+    int i;
 
     DBUG_ENTER ("NLUTgetNum");
 
-    i = LUTsearchInLutPp (NLUT_LUT (nlut), avis);
+    i = NLUT_NUMS (nlut)[AVIS_VARNO (avis)];
 
-    DBUG_ASSERT (((void *)i) != ((void *)avis), "AVIS does not exist in NLUT!");
-
-    DBUG_RETURN (*i);
+    DBUG_RETURN (i);
 }
 
 /******************************************************************************
@@ -205,21 +195,9 @@ NLUTgetNum (nlut_t *nlut, node *avis)
 void
 NLUTsetNum (nlut_t *nlut, node *avis, int num)
 {
-    int *i;
-
     DBUG_ENTER ("NLUTsetNum");
 
-    i = LUTsearchInLutPp (NLUT_LUT (nlut), avis);
-
-    DBUG_ASSERT ((void *)i != (void *)avis, "AVIS does not exist in NLUT!");
-
-    *i = num;
-
-    if (num != 0) {
-        DFMsetMaskEntrySet (NLUT_MASK (nlut), NULL, avis);
-    } else {
-        DFMsetMaskEntryClear (NLUT_MASK (nlut), NULL, avis);
-    }
+    NLUT_NUMS (nlut)[AVIS_VARNO (avis)] = num;
 
     DBUG_VOID_RETURN;
 }
@@ -238,7 +216,7 @@ NLUTincNum (nlut_t *nlut, node *avis, int num)
 {
     DBUG_ENTER ("NLUTincNum");
 
-    NLUTsetNum (nlut, avis, NLUTgetNum (nlut, avis) + num);
+    NLUT_NUMS (nlut)[AVIS_VARNO (avis)] += num;
 
     DBUG_VOID_RETURN;
 }
@@ -246,16 +224,32 @@ NLUTincNum (nlut_t *nlut, node *avis, int num)
 /******************************************************************************
  *
  * function:
- *   dfmaskt_t *NLUTgetNonZeroMask( nlut_t *nlut)
+ *   node *NLUTgetNonZeroAvis( nlut_t *nlut)
  *
  * description:
- *   Returns a NLUT's non zero mask
+ *
  *
  *****************************************************************************/
-dfmask_t *
-NLUTgetNonZeroMask (nlut_t *nlut)
+node *
+NLUTgetNonZeroAvis (nlut_t *nlut)
 {
-    DBUG_ENTER ("NLUTgetNonZeroMask");
+    node *res;
 
-    DBUG_RETURN (NLUT_MASK (nlut));
+    static nlut_t *store;
+    static int i;
+
+    DBUG_ENTER ("NLUTgetNonZeroAvis");
+
+    if (nlut != NULL) {
+        store = nlut;
+        i = 0;
+    }
+
+    while ((i < NLUT_SIZE (store)) && (NLUT_NUMS (store)[i] == 0)) {
+        i++;
+    }
+
+    res = (i < NLUT_SIZE (store)) ? NLUT_AVIS (store)[i++] : NULL;
+
+    DBUG_RETURN (res);
 }
