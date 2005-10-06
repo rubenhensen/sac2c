@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.52  2005/10/06 18:20:07  sbs
+ * changed ND_WRITE into SAC_ND_WRITE in ICMCompileWL_ADJUST_OFFSET
+ *
  * Revision 3.51  2005/09/29 22:47:32  sah
  * extended WL_MODARRAY_SUBSHAPE
  *
@@ -868,7 +871,7 @@ ICMCompileWL_ADJUST_OFFSET (char *off_NT, int dim, char *to_NT, int to_sdim,
 
     INDENT;
     fprintf (global.outfile,
-             "ND_WRITE( %s, 0) += SAC_WL_VAR( diff, %s)"
+             "SAC_ND_WRITE( %s, 0) += SAC_WL_VAR( diff, %s)"
              " * SAC_WL_SHAPE_FACTOR( %s, %d);\n",
              off_NT, idxs_scl_NT[dim], to_NT, dim);
 
