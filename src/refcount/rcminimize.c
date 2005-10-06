@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2005/10/06 16:59:29  ktr
+ * uses new NLUT for faster compile times
+ *
  * Revision 1.3  2005/07/18 16:31:33  ktr
  * removed FUNDEF_EXT_ASSIGN
  *
@@ -39,13 +42,13 @@ struct INFO {
 /*
  * INFO macros
  */
-#define INFO_RCM_ENV(n) (n->env)
-#define INFO_RCM_USEDMASK(n) (n->usedmask)
-#define INFO_RCM_ENV2(n) (n->env2)
-#define INFO_RCM_USEDMASK2(n) (n->usedmask2)
-#define INFO_RCM_ASSIGN(n) (n->assign)
-#define INFO_RCM_FUNDEF(n) (n->fundef)
-#define INFO_RCM_REMASSIGN(n) (n->remassign)
+#define INFO_ENV(n) (n->env)
+#define INFO_USEDMASK(n) (n->usedmask)
+#define INFO_ENV2(n) (n->env2)
+#define INFO_USEDMASK2(n) (n->usedmask2)
+#define INFO_ASSIGN(n) (n->assign)
+#define INFO_FUNDEF(n) (n->fundef)
+#define INFO_REMASSIGN(n) (n->remassign)
 
 /*
  * INFO functions
@@ -59,13 +62,13 @@ MakeInfo ()
 
     result = ILIBmalloc (sizeof (info));
 
-    INFO_RCM_ENV (result) = NULL;
-    INFO_RCM_USEDMASK (result) = NULL;
-    INFO_RCM_ENV2 (result) = NULL;
-    INFO_RCM_USEDMASK2 (result) = NULL;
-    INFO_RCM_ASSIGN (result) = NULL;
-    INFO_RCM_FUNDEF (result) = NULL;
-    INFO_RCM_REMASSIGN (result) = FALSE;
+    INFO_ENV (result) = NULL;
+    INFO_USEDMASK (result) = NULL;
+    INFO_ENV2 (result) = NULL;
+    INFO_USEDMASK2 (result) = NULL;
+    INFO_ASSIGN (result) = NULL;
+    INFO_FUNDEF (result) = NULL;
+    INFO_REMASSIGN (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -117,8 +120,8 @@ MakeRCMAssignments (nlut_t *nlut)
     DBUG_ENTER ("MakeRCMAssignments");
 
     res = NULL;
-    avis = DFMgetMaskEntryAvisSet (NLUTgetNonZeroMask (nlut));
 
+    avis = NLUTgetNonZeroAvis (nlut);
     while (avis != NULL) {
         count = NLUTgetNum (nlut, avis);
         NLUTsetNum (nlut, avis, 0);
@@ -129,7 +132,7 @@ MakeRCMAssignments (nlut_t *nlut)
 
         res = TBmakeAssign (TBmakeLet (NULL, prf), res);
 
-        avis = DFMgetMaskEntryAvisSet (NULL);
+        avis = NLUTgetNonZeroAvis (NULL);
     }
 
     DBUG_RETURN (res);
@@ -237,7 +240,7 @@ RCMarg (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("RCMarg");
 
-    n = NLUTgetNum (INFO_RCM_ENV (arg_info), ARG_AVIS (arg_node));
+    n = NLUTgetNum (INFO_ENV (arg_info), ARG_AVIS (arg_node));
 
     DBUG_ASSERT ((n == 0), "Enequal numbers of inc_rc / dec_rc removed!");
 
@@ -272,12 +275,12 @@ RCMassign (node *arg_node, info *arg_info)
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
     }
 
-    INFO_RCM_ASSIGN (arg_info) = arg_node;
+    INFO_ASSIGN (arg_info) = arg_node;
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
-    if (INFO_RCM_REMASSIGN (arg_info)) {
+    if (INFO_REMASSIGN (arg_info)) {
         arg_node = FREEdoFreeNode (arg_node);
-        INFO_RCM_REMASSIGN (arg_info) = FALSE;
+        INFO_REMASSIGN (arg_info) = FALSE;
     }
 
     DBUG_RETURN (arg_node);
@@ -303,22 +306,21 @@ RCMcode (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("RCMcode");
 
-    oldenv = INFO_RCM_ENV (arg_info);
-    oldusedmask = INFO_RCM_USEDMASK (arg_info);
+    oldenv = INFO_ENV (arg_info);
+    oldusedmask = INFO_USEDMASK (arg_info);
 
-    INFO_RCM_ENV (arg_info)
-      = NLUTgenerateNlut (FUNDEF_ARGS (INFO_RCM_FUNDEF (arg_info)),
-                          FUNDEF_VARDEC (INFO_RCM_FUNDEF (arg_info)));
-    INFO_RCM_USEDMASK (arg_info) = DFMgenMaskCopy (oldusedmask);
+    INFO_ENV (arg_info) = NLUTgenerateNlut (FUNDEF_ARGS (INFO_FUNDEF (arg_info)),
+                                            FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+    INFO_USEDMASK (arg_info) = DFMgenMaskCopy (oldusedmask);
 
     CODE_CEXPRS (arg_node) = TRAVdo (CODE_CEXPRS (arg_node), arg_info);
     CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
 
-    INFO_RCM_ENV (arg_info) = NLUTremoveNlut (INFO_RCM_ENV (arg_info));
-    INFO_RCM_USEDMASK (arg_info) = DFMremoveMask (INFO_RCM_USEDMASK (arg_info));
+    INFO_ENV (arg_info) = NLUTremoveNlut (INFO_ENV (arg_info));
+    INFO_USEDMASK (arg_info) = DFMremoveMask (INFO_USEDMASK (arg_info));
 
-    INFO_RCM_ENV (arg_info) = oldenv;
-    INFO_RCM_USEDMASK (arg_info) = oldusedmask;
+    INFO_ENV (arg_info) = oldenv;
+    INFO_USEDMASK (arg_info) = oldusedmask;
 
     if (CODE_NEXT (arg_node) != NULL) {
         CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
@@ -342,8 +344,8 @@ RCMcode (node *arg_node, info *arg_info)
 node *
 RCMcond (node *arg_node, info *arg_info)
 {
-    nlut_t *env;
-    dfmask_t *usedmask, *nzmask;
+    nlut_t *env, *nzlut;
+    dfmask_t *usedmask;
     node *avis;
 
     DBUG_ENTER ("RCMcond");
@@ -351,63 +353,62 @@ RCMcond (node *arg_node, info *arg_info)
     /*
      * Traverse both branches
      */
-    if (INFO_RCM_ENV2 (arg_info) == NULL) {
-        INFO_RCM_ENV2 (arg_info) = NLUTduplicateNlut (INFO_RCM_ENV (arg_info));
-        INFO_RCM_USEDMASK2 (arg_info) = DFMgenMaskCopy (INFO_RCM_USEDMASK (arg_info));
+    if (INFO_ENV2 (arg_info) == NULL) {
+        INFO_ENV2 (arg_info) = NLUTduplicateNlut (INFO_ENV (arg_info));
+        INFO_USEDMASK2 (arg_info) = DFMgenMaskCopy (INFO_USEDMASK (arg_info));
     }
 
     COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
 
-    env = INFO_RCM_ENV (arg_info);
-    usedmask = INFO_RCM_USEDMASK (arg_info);
-    INFO_RCM_ENV (arg_info) = INFO_RCM_ENV2 (arg_info);
-    INFO_RCM_USEDMASK (arg_info) = INFO_RCM_USEDMASK2 (arg_info);
+    env = INFO_ENV (arg_info);
+    usedmask = INFO_USEDMASK (arg_info);
+    INFO_ENV (arg_info) = INFO_ENV2 (arg_info);
+    INFO_USEDMASK (arg_info) = INFO_USEDMASK2 (arg_info);
 
     COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
 
-    INFO_RCM_ENV (arg_info) = env;
-    INFO_RCM_USEDMASK (arg_info) = usedmask;
+    INFO_ENV (arg_info) = env;
+    INFO_USEDMASK (arg_info) = usedmask;
 
     /*
      * Compute common environment and annotate missing inc_rc statements
      */
-    env = NLUTgenerateNlut (FUNDEF_ARGS (INFO_RCM_FUNDEF (arg_info)),
-                            FUNDEF_VARDEC (INFO_RCM_FUNDEF (arg_info)));
-    usedmask = DFMgenMaskOr (INFO_RCM_USEDMASK (arg_info), INFO_RCM_USEDMASK2 (arg_info));
+    env = NLUTgenerateNlut (FUNDEF_ARGS (INFO_FUNDEF (arg_info)),
+                            FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+    usedmask = DFMgenMaskOr (INFO_USEDMASK (arg_info), INFO_USEDMASK2 (arg_info));
 
-    nzmask = DFMgenMaskOr (NLUTgetNonZeroMask (INFO_RCM_ENV (arg_info)),
-                           NLUTgetNonZeroMask (INFO_RCM_ENV2 (arg_info)));
+    nzlut = NLUTaddNluts (INFO_ENV (arg_info), INFO_ENV2 (arg_info));
 
-    avis = DFMgetMaskEntryAvisSet (nzmask);
+    avis = NLUTgetNonZeroAvis (nzlut);
     while (avis != NULL) {
         int c, t, e;
 
-        t = NLUTgetNum (INFO_RCM_ENV (arg_info), avis);
-        e = NLUTgetNum (INFO_RCM_ENV2 (arg_info), avis);
+        t = NLUTgetNum (INFO_ENV (arg_info), avis);
+        e = NLUTgetNum (INFO_ENV2 (arg_info), avis);
 
         c = t > e ? t : e;
-        NLUTsetNum (INFO_RCM_ENV (arg_info), avis, c - t);
-        NLUTsetNum (INFO_RCM_ENV2 (arg_info), avis, c - e);
+        NLUTsetNum (INFO_ENV (arg_info), avis, c - t);
+        NLUTsetNum (INFO_ENV2 (arg_info), avis, c - e);
         NLUTsetNum (env, avis, c);
 
-        avis = DFMgetMaskEntryAvisSet (NULL);
+        avis = NLUTgetNonZeroAvis (NULL);
     }
 
-    nzmask = DFMremoveMask (nzmask);
+    nzlut = NLUTremoveNlut (nzlut);
 
     COND_THENINSTR (arg_node)
-      = PrependRCMAssignments (INFO_RCM_ENV (arg_info), COND_THENINSTR (arg_node));
+      = PrependRCMAssignments (INFO_ENV (arg_info), COND_THENINSTR (arg_node));
 
     COND_ELSEINSTR (arg_node)
-      = PrependRCMAssignments (INFO_RCM_ENV2 (arg_info), COND_ELSEINSTR (arg_node));
+      = PrependRCMAssignments (INFO_ENV2 (arg_info), COND_ELSEINSTR (arg_node));
 
-    INFO_RCM_ENV2 (arg_info) = NLUTremoveNlut (INFO_RCM_ENV2 (arg_info));
-    INFO_RCM_ENV (arg_info) = NLUTremoveNlut (INFO_RCM_ENV (arg_info));
-    INFO_RCM_ENV (arg_info) = env;
+    INFO_ENV2 (arg_info) = NLUTremoveNlut (INFO_ENV2 (arg_info));
+    INFO_ENV (arg_info) = NLUTremoveNlut (INFO_ENV (arg_info));
+    INFO_ENV (arg_info) = env;
 
-    INFO_RCM_USEDMASK (arg_info) = DFMremoveMask (INFO_RCM_USEDMASK (arg_info));
-    INFO_RCM_USEDMASK2 (arg_info) = DFMremoveMask (INFO_RCM_USEDMASK2 (arg_info));
-    INFO_RCM_USEDMASK (arg_info) = usedmask;
+    INFO_USEDMASK (arg_info) = DFMremoveMask (INFO_USEDMASK (arg_info));
+    INFO_USEDMASK2 (arg_info) = DFMremoveMask (INFO_USEDMASK2 (arg_info));
+    INFO_USEDMASK (arg_info) = usedmask;
 
     DBUG_RETURN (arg_node);
 }
@@ -431,9 +432,9 @@ RCMfuncond (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("RCMfuncond");
 
-    if (INFO_RCM_ENV2 (arg_info) == NULL) {
-        INFO_RCM_ENV2 (arg_info) = NLUTduplicateNlut (INFO_RCM_ENV (arg_info));
-        INFO_RCM_USEDMASK2 (arg_info) = DFMgenMaskCopy (INFO_RCM_USEDMASK (arg_info));
+    if (INFO_ENV2 (arg_info) == NULL) {
+        INFO_ENV2 (arg_info) = NLUTduplicateNlut (INFO_ENV (arg_info));
+        INFO_USEDMASK2 (arg_info) = DFMgenMaskCopy (INFO_USEDMASK (arg_info));
     }
 
     /*
@@ -441,20 +442,20 @@ RCMfuncond (node *arg_node, info *arg_info)
      * Env( b)  += Env( a);  Env( a)  = 0;
      * Env2( b) += Env2( a); Env2( a) = 0;
      */
-    lhs = ASSIGN_LHS (INFO_RCM_ASSIGN (arg_info));
+    lhs = ASSIGN_LHS (INFO_ASSIGN (arg_info));
 
-    NLUTincNum (INFO_RCM_ENV (arg_info), ID_AVIS (FUNCOND_THEN (arg_node)),
-                NLUTgetNum (INFO_RCM_ENV (arg_info), IDS_AVIS (lhs)));
-    NLUTsetNum (INFO_RCM_ENV (arg_info), IDS_AVIS (lhs), 0);
+    NLUTincNum (INFO_ENV (arg_info), ID_AVIS (FUNCOND_THEN (arg_node)),
+                NLUTgetNum (INFO_ENV (arg_info), IDS_AVIS (lhs)));
+    NLUTsetNum (INFO_ENV (arg_info), IDS_AVIS (lhs), 0);
 
-    NLUTincNum (INFO_RCM_ENV2 (arg_info), ID_AVIS (FUNCOND_ELSE (arg_node)),
-                NLUTgetNum (INFO_RCM_ENV2 (arg_info), IDS_AVIS (lhs)));
-    NLUTsetNum (INFO_RCM_ENV2 (arg_info), IDS_AVIS (lhs), 0);
+    NLUTincNum (INFO_ENV2 (arg_info), ID_AVIS (FUNCOND_ELSE (arg_node)),
+                NLUTgetNum (INFO_ENV2 (arg_info), IDS_AVIS (lhs)));
+    NLUTsetNum (INFO_ENV2 (arg_info), IDS_AVIS (lhs), 0);
 
-    if (DFMtestMaskEntry (INFO_RCM_USEDMASK (arg_info), NULL, IDS_AVIS (lhs))) {
-        DFMsetMaskEntrySet (INFO_RCM_USEDMASK (arg_info), NULL,
+    if (DFMtestMaskEntry (INFO_USEDMASK (arg_info), NULL, IDS_AVIS (lhs))) {
+        DFMsetMaskEntrySet (INFO_USEDMASK (arg_info), NULL,
                             ID_AVIS (FUNCOND_THEN (arg_node)));
-        DFMsetMaskEntrySet (INFO_RCM_USEDMASK2 (arg_info), NULL,
+        DFMsetMaskEntrySet (INFO_USEDMASK2 (arg_info), NULL,
                             ID_AVIS (FUNCOND_ELSE (arg_node)));
     }
 
@@ -486,11 +487,11 @@ RCMfundef (node *arg_node, info *arg_info)
             info *info;
 
             info = MakeInfo ();
-            INFO_RCM_FUNDEF (info) = arg_node;
-            INFO_RCM_ENV (info)
+            INFO_FUNDEF (info) = arg_node;
+            INFO_ENV (info)
               = NLUTgenerateNlut (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
             maskbase = DFMgenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
-            INFO_RCM_USEDMASK (info) = DFMgenMaskClear (maskbase);
+            INFO_USEDMASK (info) = DFMgenMaskClear (maskbase);
 
             if (FUNDEF_ISCONDFUN (arg_node)) {
                 /*
@@ -501,18 +502,18 @@ RCMfundef (node *arg_node, info *arg_info)
                 node *retexprs, *ids;
                 node *args, *argexprs;
 
-                extlet = ASSIGN_INSTR (INFO_RCM_ASSIGN (arg_info));
+                extlet = ASSIGN_INSTR (INFO_ASSIGN (arg_info));
 
                 retexprs = RETURN_EXPRS (FUNDEF_RETURN (arg_node));
                 ids = LET_IDS (extlet);
                 while (ids != NULL) {
-                    NLUTsetNum (INFO_RCM_ENV (info), ID_AVIS (EXPRS_EXPR (retexprs)),
-                                NLUTgetNum (INFO_RCM_ENV (arg_info), IDS_AVIS (ids)));
-                    NLUTsetNum (INFO_RCM_ENV (arg_info), IDS_AVIS (ids), 0);
+                    NLUTsetNum (INFO_ENV (info), ID_AVIS (EXPRS_EXPR (retexprs)),
+                                NLUTgetNum (INFO_ENV (arg_info), IDS_AVIS (ids)));
+                    NLUTsetNum (INFO_ENV (arg_info), IDS_AVIS (ids), 0);
 
-                    if (DFMtestMaskEntry (INFO_RCM_USEDMASK (arg_info), NULL,
+                    if (DFMtestMaskEntry (INFO_USEDMASK (arg_info), NULL,
                                           IDS_AVIS (ids))) {
-                        DFMsetMaskEntrySet (INFO_RCM_USEDMASK (info), NULL,
+                        DFMsetMaskEntrySet (INFO_USEDMASK (info), NULL,
                                             ID_AVIS (EXPRS_EXPR (retexprs)));
                     }
 
@@ -523,14 +524,13 @@ RCMfundef (node *arg_node, info *arg_info)
                 args = FUNDEF_ARGS (arg_node);
                 argexprs = AP_ARGS (LET_EXPR (extlet));
                 while (args != NULL) {
-                    NLUTsetNum (INFO_RCM_ENV (info), ARG_AVIS (args),
-                                NLUTgetNum (INFO_RCM_ENV (arg_info),
+                    NLUTsetNum (INFO_ENV (info), ARG_AVIS (args),
+                                NLUTgetNum (INFO_ENV (arg_info),
                                             ID_AVIS (EXPRS_EXPR (argexprs))));
 
-                    if (DFMtestMaskEntry (INFO_RCM_USEDMASK (arg_info), NULL,
+                    if (DFMtestMaskEntry (INFO_USEDMASK (arg_info), NULL,
                                           ID_AVIS (EXPRS_EXPR (argexprs)))) {
-                        DFMsetMaskEntrySet (INFO_RCM_USEDMASK (info), NULL,
-                                            ARG_AVIS (args));
+                        DFMsetMaskEntrySet (INFO_USEDMASK (info), NULL, ARG_AVIS (args));
                     }
                     args = ARG_NEXT (args);
                     argexprs = EXPRS_NEXT (argexprs);
@@ -546,18 +546,17 @@ RCMfundef (node *arg_node, info *arg_info)
                 node *extlet;
                 node *args, *argexprs;
 
-                extlet = ASSIGN_INSTR (INFO_RCM_ASSIGN (arg_info));
+                extlet = ASSIGN_INSTR (INFO_ASSIGN (arg_info));
 
                 args = FUNDEF_ARGS (arg_node);
                 argexprs = AP_ARGS (LET_EXPR (extlet));
                 while (args != NULL) {
-                    NLUTsetNum (INFO_RCM_ENV (arg_info), ID_AVIS (EXPRS_EXPR (argexprs)),
-                                NLUTgetNum (INFO_RCM_ENV (info), ARG_AVIS (args)));
-                    NLUTsetNum (INFO_RCM_ENV (info), ARG_AVIS (args), 0);
+                    NLUTsetNum (INFO_ENV (arg_info), ID_AVIS (EXPRS_EXPR (argexprs)),
+                                NLUTgetNum (INFO_ENV (info), ARG_AVIS (args)));
+                    NLUTsetNum (INFO_ENV (info), ARG_AVIS (args), 0);
 
-                    if (DFMtestMaskEntry (INFO_RCM_USEDMASK (info), NULL,
-                                          ARG_AVIS (args))) {
-                        DFMsetMaskEntrySet (INFO_RCM_USEDMASK (arg_info), NULL,
+                    if (DFMtestMaskEntry (INFO_USEDMASK (info), NULL, ARG_AVIS (args))) {
+                        DFMsetMaskEntrySet (INFO_USEDMASK (arg_info), NULL,
                                             ID_AVIS (EXPRS_EXPR (argexprs)));
                     }
                     args = ARG_NEXT (args);
@@ -569,8 +568,8 @@ RCMfundef (node *arg_node, info *arg_info)
                 FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), info);
             }
 
-            INFO_RCM_ENV (info) = NLUTremoveNlut (INFO_RCM_ENV (info));
-            INFO_RCM_USEDMASK (info) = DFMremoveMask (INFO_RCM_USEDMASK (info));
+            INFO_ENV (info) = NLUTremoveNlut (INFO_ENV (info));
+            INFO_USEDMASK (info) = DFMremoveMask (INFO_USEDMASK (info));
             maskbase = DFMremoveMaskBase (maskbase);
             info = FreeInfo (info);
         }
@@ -603,7 +602,7 @@ RCMid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("RCMid");
 
-    DFMsetMaskEntrySet (INFO_RCM_USEDMASK (arg_info), NULL, ID_AVIS (arg_node));
+    DFMsetMaskEntrySet (INFO_USEDMASK (arg_info), NULL, ID_AVIS (arg_node));
 
     DBUG_RETURN (arg_node);
 }
@@ -627,7 +626,7 @@ RCMids (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("RCMids");
 
-    n = NLUTgetNum (INFO_RCM_ENV (arg_info), IDS_AVIS (arg_node));
+    n = NLUTgetNum (INFO_ENV (arg_info), IDS_AVIS (arg_node));
 
     DBUG_ASSERT ((n == 0), "Enequal numbers of inc_rc / dec_rc removed!");
 
@@ -685,28 +684,28 @@ RCMprf (node *arg_node, info *arg_info)
 
     switch (PRF_PRF (arg_node)) {
     case F_dec_rc:
-        if (DFMtestMaskEntry (INFO_RCM_USEDMASK (arg_info), NULL,
+        if (DFMtestMaskEntry (INFO_USEDMASK (arg_info), NULL,
                               ID_AVIS (PRF_ARG1 (arg_node)))) {
             /*
              * This dec_rc( x, n) is redundant.
              * Add n to Env( x) and remove this assignment
              */
-            NLUTincNum (INFO_RCM_ENV (arg_info), ID_AVIS (PRF_ARG1 (arg_node)),
+            NLUTincNum (INFO_ENV (arg_info), ID_AVIS (PRF_ARG1 (arg_node)),
                         NUM_VAL (PRF_ARG2 (arg_node)));
 
-            INFO_RCM_REMASSIGN (arg_info) = TRUE;
+            INFO_REMASSIGN (arg_info) = TRUE;
         } else {
             /*
              * This dec_rc( x, n) is the last reference to x.
              * Mark x as used.
              */
-            DFMsetMaskEntrySet (INFO_RCM_USEDMASK (arg_info), NULL,
+            DFMsetMaskEntrySet (INFO_USEDMASK (arg_info), NULL,
                                 ID_AVIS (PRF_ARG1 (arg_node)));
 
             /*
              * Add n-1 to Env( x) and set n to 1
              */
-            NLUTincNum (INFO_RCM_ENV (arg_info), ID_AVIS (PRF_ARG1 (arg_node)),
+            NLUTincNum (INFO_ENV (arg_info), ID_AVIS (PRF_ARG1 (arg_node)),
                         NUM_VAL (PRF_ARG2 (arg_node)) - 1);
             NUM_VAL (PRF_ARG2 (arg_node)) = 1;
         }
@@ -716,14 +715,14 @@ RCMprf (node *arg_node, info *arg_info)
         /*
          * inc_rc( x, n)
          */
-        env = NLUTgetNum (INFO_RCM_ENV (arg_info), ID_AVIS (PRF_ARG1 (arg_node)));
+        env = NLUTgetNum (INFO_ENV (arg_info), ID_AVIS (PRF_ARG1 (arg_node)));
         n = NUM_VAL (PRF_ARG2 (arg_node));
         min = (env < n) ? env : n;
 
         /*
          * decrease Env( x) by min( Env( x), n)
          */
-        NLUTsetNum (INFO_RCM_ENV (arg_info), ID_AVIS (PRF_ARG1 (arg_node)), env - min);
+        NLUTsetNum (INFO_ENV (arg_info), ID_AVIS (PRF_ARG1 (arg_node)), env - min);
 
         /*
          * decrease n by min( Env( x), n)
@@ -734,7 +733,7 @@ RCMprf (node *arg_node, info *arg_info)
          * remove inc_rc( x, 0)
          */
         if (NUM_VAL (PRF_ARG2 (arg_node)) == 0) {
-            INFO_RCM_REMASSIGN (arg_info) = TRUE;
+            INFO_REMASSIGN (arg_info) = TRUE;
         }
         break;
 
@@ -774,7 +773,7 @@ RCMreturn (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("RCMreturn");
 
-    if (!FUNDEF_ISCONDFUN (INFO_RCM_FUNDEF (arg_info))) {
+    if (!FUNDEF_ISCONDFUN (INFO_FUNDEF (arg_info))) {
         if (RETURN_EXPRS (arg_node) != NULL) {
             RETURN_EXPRS (arg_node) = TRAVdo (RETURN_EXPRS (arg_node), arg_info);
         }

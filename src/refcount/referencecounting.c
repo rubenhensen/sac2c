@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2005/10/06 16:59:29  ktr
+ * uses new NLUT for faster compile times
+ *
  * Revision 1.7  2005/09/15 17:12:13  ktr
  * removed ICM traversal
  *
@@ -184,14 +187,14 @@ MakeRCAssignments (nlut_t *nlut)
 
     res = NULL;
 
-    avis = DFMgetMaskEntryAvisSet (NLUTgetNonZeroMask (nlut));
+    avis = NLUTgetNonZeroAvis (nlut);
     while (avis != NULL) {
         count = NLUTgetNum (nlut, avis);
         NLUTsetNum (nlut, avis, 0);
 
         res = AdjustRC (avis, count, res);
 
-        avis = DFMgetMaskEntryAvisSet (NULL);
+        avis = NLUTgetNonZeroAvis (NULL);
     }
 
     DBUG_RETURN (res);
@@ -806,7 +809,7 @@ node *
 RCIcode (node *arg_node, info *arg_info)
 {
     node *avis;
-    dfmask_t *withmask, *nzmask;
+    dfmask_t *withmask;
     nlut_t *old_env;
 
     DBUG_ENTER ("RCIcode");
@@ -828,11 +831,10 @@ RCIcode (node *arg_node, info *arg_info)
     /*
      * Mark the variable as used in the outer context
      */
-    nzmask = NLUTgetNonZeroMask (INFO_ENV (arg_info));
-    avis = DFMgetMaskEntryAvisSet (nzmask);
+    avis = NLUTgetNonZeroAvis (INFO_ENV (arg_info));
     while (avis != NULL) {
         DFMsetMaskEntrySet (withmask, NULL, avis);
-        avis = DFMgetMaskEntryAvisSet (NULL);
+        avis = NLUTgetNonZeroAvis (NULL);
     }
 
     /*
@@ -1058,7 +1060,7 @@ node *
 RCIcond (node *arg_node, info *arg_info)
 {
     node *avis;
-    dfmask_t *nzmask;
+    nlut_t *nzlut;
     nlut_t *env;
 
     DBUG_ENTER ("RCIcond");
@@ -1091,10 +1093,9 @@ RCIcond (node *arg_node, info *arg_info)
     env = NLUTgenerateNlut (FUNDEF_ARGS (INFO_FUNDEF (arg_info)),
                             FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
 
-    nzmask = DFMgenMaskOr (NLUTgetNonZeroMask (INFO_ENV (arg_info)),
-                           NLUTgetNonZeroMask (INFO_ENV2 (arg_info)));
+    nzlut = NLUTaddNluts (INFO_ENV (arg_info), INFO_ENV2 (arg_info));
 
-    avis = DFMgetMaskEntryAvisSet (nzmask);
+    avis = NLUTgetNonZeroAvis (nzlut);
     while (avis != NULL) {
         int t, e, m;
 
@@ -1111,10 +1112,10 @@ RCIcond (node *arg_node, info *arg_info)
         NLUTsetNum (INFO_ENV2 (arg_info), avis, e - m);
         NLUTsetNum (env, avis, m);
 
-        avis = DFMgetMaskEntryAvisSet (NULL);
+        avis = NLUTgetNonZeroAvis (NULL);
     }
 
-    nzmask = DFMremoveMask (nzmask);
+    nzlut = NLUTremoveNlut (nzlut);
 
     COND_THENINSTR (arg_node)
       = PrependAssignments (MakeRCAssignments (INFO_ENV (arg_info)),
