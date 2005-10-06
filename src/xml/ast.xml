@@ -4716,6 +4716,19 @@
             </targets>
           </type>
         </attribute>
+        <attribute name="VarNo">
+          <type name="Integer">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <phase name="rc" />
+                  <phase name="rcm" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
         <attribute name="Subst">
           <type name="Link">
             <targets>
