@@ -175,6 +175,7 @@
 #include "shape.h"
 #include "type_utils.h"
 #include "new_types.h"
+#include "new_typecheck.h"
 
 /*
  * INFO structure
