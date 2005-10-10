@@ -209,14 +209,6 @@ include $(PROJECT_ROOT)/Makefile.Config
 LIB          := lib/dbug.o lib/main_args.o
 
 #
-# Collection of source files
-#
-
-SOURCE_DIRS  := . $(shell cat RCS-directories)
-SOURCE_FILES := $(foreach dir,$(SOURCE_DIRS),$(addprefix $(dir)/,$(filter-out RCS-directories,$(shell (cd $(dir); cat RCS-files)))))
-
-
-#
 # Collection of object files
 #
 
@@ -532,8 +524,8 @@ floppy: src.tar.gz
 
 tar: src.tar.gz
 
-src.tar.gz: $(SOURCE_FILES)
-	$(TAR) -cvf src.tar $(SOURCE_FILES)
+src.tar.gz: 
+	$(TAR) -cvf src.tar $(shell svn -R list)
 	$(GZIP) src.tar
 
 distrib:
@@ -570,7 +562,7 @@ linux: src.tar.gz
             'rm -rf src;'                  \
             'gunzip -f src.tar.gz;'        \
             'tar xvf src.tar;'             \
-            'chmod 644 $(SOURCE_FILES);'   \
+            'chmod 644 $(shell svn -R list);'   \
             'make OS=LINUX_X86'
 
 
