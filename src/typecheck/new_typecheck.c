@@ -1274,8 +1274,12 @@ NTCprf (node *arg_node, info *arg_info)
     prf = PRF_PRF (arg_node);
 
     if (prf == F_accu) {
-        INFO_NTC_EXP_ACCU (arg_info) = TYmakeAlphaType (NULL);
-        res = TYmakeProductType (1, INFO_NTC_EXP_ACCU (arg_info));
+        if (INFO_NTC_EXP_ACCU (arg_info) != NULL) {
+            res = TYmakeProductType (1, TYcopyType (INFO_NTC_EXP_ACCU (arg_info)));
+        } else {
+            INFO_NTC_EXP_ACCU (arg_info) = TYmakeAlphaType (NULL);
+            res = TYmakeProductType (1, INFO_NTC_EXP_ACCU (arg_info));
+        }
     } else if (prf == F_type_error) {
         /*
          * for F_type_error prfs we just return the bottom
@@ -1623,6 +1627,7 @@ NTCwith (node *arg_node, info *arg_info)
      * traversing the code of this WL.
      */
     mem_outer_accu = INFO_NTC_EXP_ACCU (arg_info);
+    INFO_NTC_EXP_ACCU (arg_info) = NULL;
 
     WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
     body = INFO_NTC_TYPE (arg_info);
@@ -2031,7 +2036,7 @@ NTCfold (node *arg_node, info *arg_info)
              * fun( a, e) ), and then make the type of val a subtype of
              * the alpha type again in order to ensure the fix-point calculation.
              */
-            acc = INFO_NTC_EXP_ACCU (arg_info);
+            acc = TYcopyType (INFO_NTC_EXP_ACCU (arg_info));
             INFO_NTC_EXP_ACCU (arg_info) = NULL;
 
             res = TYmakeProductType (1, acc);
