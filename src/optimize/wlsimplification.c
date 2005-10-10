@@ -255,10 +255,14 @@ WLSIMPpart (node *arg_node, info *arg_info)
 node *
 WLSIMPgenerator (node *arg_node, info *arg_info)
 {
-    node *lb, *ub;
+    node *lb, *ub, *width;
+    constant *cnst;
 
     DBUG_ENTER ("WLSIMPgenerator");
 
+    /**
+     * First, we check the lower and upper bounds
+     */
     lb = GENERATOR_BOUND1 (arg_node);
     ub = GENERATOR_BOUND2 (arg_node);
 
@@ -314,6 +318,30 @@ WLSIMPgenerator (node *arg_node, info *arg_info)
 
             lb = EXPRS_NEXT (lb);
             ub = EXPRS_NEXT (ub);
+        }
+    }
+
+    /**
+     * Now, we check whether there exists a width vector
+     * and if so, whether it contains a zero
+     */
+    width = GENERATOR_WIDTH (arg_node);
+    if (width != NULL) {
+        if (NODE_TYPE (width) == N_id) {
+            if (TYisAKV (ID_NTYPE (width))
+                && COisZero (TYgetValue (ID_NTYPE (width)), FALSE)) {
+                INFO_EMPTYPART (arg_info) = TRUE;
+            }
+        } else {
+            DBUG_ASSERT ((NODE_TYPE (width) == N_array),
+                         "Width spec is neither N_id nor N_array");
+            cnst = COaST2Constant (width);
+            if (cnst != NULL) {
+                if (COisZero (cnst, FALSE)) {
+                    INFO_EMPTYPART (arg_info) = TRUE;
+                }
+                cnst = COfreeConstant (cnst);
+            }
         }
     }
 
