@@ -41,6 +41,7 @@
 #include "dbug.h"
 #include "types.h"
 #include "tree_basic.h"
+#include "tree_compound.h"
 #include "traverse.h"
 #include "free.h"
 #include "new_types.h"
