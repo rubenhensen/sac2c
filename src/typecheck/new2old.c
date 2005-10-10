@@ -685,7 +685,7 @@ NT2OTavis (node *arg_node, info *arg_info)
     char *tmp_str, *tmp_str2;
 #endif
 
-    DBUG_ENTER ("NT2OTarg");
+    DBUG_ENTER ("NT2OTavis");
 
     type = AVIS_TYPE (arg_node);
 
@@ -705,7 +705,7 @@ NT2OTavis (node *arg_node, info *arg_info)
                       tmp_str2 = ILIBfree (tmp_str2););
 
         if (!(TYisArray (type) || TYisBottom (type))) {
-            CTIabort ("Could not infer proper type for arg %s", ARG_NAME (arg_node));
+            CTIabort ("Could not infer proper type for arg %s", AVIS_NAME (arg_node));
         }
     } else {
         /*
