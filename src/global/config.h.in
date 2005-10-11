@@ -54,6 +54,18 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
+/* set to maximum allowed number of CPP includes */
+#undef MAX_CPP_INCS
+
+/* set to maximum allowed number of CPP vars */
+#undef MAX_CPP_VARS
+
+/* set to maximum file name length */
+#undef MAX_FILE_NAME
+
+/* set to maximum path length */
+#undef MAX_PATH_LEN
+
 /* set to 1 if gcc complains about unused labels */
 #undef MUST_REFERENCE_YYLABELS
 
@@ -77,6 +89,15 @@
 
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
+
+/* set to maximum number of sac functions for profiling */
+#undef PF_MAXFUN
+
+/* set to maximum number of sac function applications for profiling */
+#undef PF_MAXFUNAP
+
+/* set to maximum length of sac function names for profiling */
+#undef PF_MAXFUNNAMELEN
 
 /* set to the type of sbrk argument */
 #undef SBRK_T
