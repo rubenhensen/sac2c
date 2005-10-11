@@ -20071,7 +20071,7 @@ if  test "$GCC" = yes ; then
 
   RCLDFLAGS=""
 
-  RCCCFLAGS="-Wall -Wno-unused -fno-builtin"
+  RCCCFLAGS="-Wall -Wno-unused -fno-builtin -fPIC -DPIC"
 
   MKCCFLAGS="-Wall -g -std=c99"
 

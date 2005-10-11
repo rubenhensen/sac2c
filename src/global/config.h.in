@@ -1,4 +1,4 @@
-
+/* ./src/global/config.h.in.  Generated from configure.ac by autoheader.  */
 
 /* set to the architecture */
 #undef ARCH
@@ -8,6 +8,9 @@
 
 /* set to disable private heapmanagement */
 #undef DISABLE_PHM
+
+/* Define to 1 if you have the <dlfcn.h> header file. */
+#undef HAVE_DLFCN_H
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
@@ -51,9 +54,6 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
-/* set to 1 if ar generates a magic file */
-#undef MUST_KILL_AR_MAGIC_FILE
-
 /* set to 1 if gcc complains about unused labels */
 #undef MUST_REFERENCE_YYLABELS
 
@@ -90,28 +90,3 @@
 /* Define to 1 if `lex' declares `yytext' as a `char *' by default, not a
    `char[]'. */
 #undef YYTEXT_POINTER
-
-
-/*
- * Further sac2c settings.
- */
-
-#define MAX_PATH_LEN 1024
-#define MAX_FILE_NAME 256
-
-#define MAX_CPP_VARS 128
-#define MAX_CPP_INCS 128
-
-#define PF_MAXFUN        100
-#define PF_MAXFUNAP      100
-#define PF_MAXFUNNAMELEN 100
-
-#define MAX_BREAK_SPECIFIER 32
-
-#define MAX_ERROR_MESSAGE_LENGTH 2000
-#define MAX_LINE_LENGTH 77
-
-#define SHP_SEG_SIZE 16
-#define MAX_MASK 7
-#define MAX_SONS 6
-
