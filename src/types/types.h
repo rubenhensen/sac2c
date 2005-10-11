@@ -425,6 +425,8 @@ typedef struct DEPS {
     struct DEPS *next;
 } deps;
 
+#define SHP_SEG_SIZE 16
+
 typedef struct SHPSEG {
     int shp[SHP_SEG_SIZE];
     struct SHPSEG *next;
