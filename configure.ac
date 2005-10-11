@@ -552,6 +552,8 @@ AC_DEFINE( PF_MAXFUNAP, 100,
            [set to maximum number of sac function applications for profiling])
 AC_DEFINE( PF_MAXFUNNAMELEN, 100, 
            [set to maximum length of sac function names for profiling])
+AC_DEFINE( MAX_ERROR_MESSAGE_LENGTH, 2000, 
+           [set to maximum length of sac error messages])
 
 
 
