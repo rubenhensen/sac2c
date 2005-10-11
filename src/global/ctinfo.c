@@ -192,10 +192,13 @@ static void
 Format2Buffer (const char *format, va_list arg_p)
 {
     int len;
+    va_list arg_p_copy;
 
     DBUG_ENTER ("Format2Buffer");
 
-    len = vsnprintf (message_buffer, message_buffer_size, format, arg_p);
+    va_copy (arg_p_copy, arg_p);
+    len = vsnprintf (message_buffer, message_buffer_size, format, arg_p_copy);
+    va_end (arg_p_copy);
 
     if (len < 0) {
         DBUG_ASSERT ((message_buffer_size == 0), "message buffer corruption");
@@ -208,7 +211,9 @@ Format2Buffer (const char *format, va_list arg_p)
         message_buffer = (char *)ILIBmalloc (len + 2);
         message_buffer_size = len + 2;
 
-        len = vsnprintf (message_buffer, message_buffer_size, format, arg_p);
+        va_copy (arg_p_copy, arg_p);
+        len = vsnprintf (message_buffer, message_buffer_size, format, arg_p_copy);
+        va_end (arg_p_copy);
         DBUG_ASSERT ((len >= 0), "message buffer corruption");
     }
 
@@ -219,7 +224,9 @@ Format2Buffer (const char *format, va_list arg_p)
         message_buffer = (char *)ILIBmalloc (len + 2);
         message_buffer_size = len + 2;
 
-        len = vsnprintf (message_buffer, message_buffer_size, format, arg_p);
+        va_copy (arg_p_copy, arg_p);
+        len = vsnprintf (message_buffer, message_buffer_size, format, arg_p_copy);
+        va_end (arg_p_copy);
 
         DBUG_ASSERT ((len < message_buffer_size), "message buffer corruption");
     }
