@@ -20033,31 +20033,6 @@ else
 echo "${ECHO_T}no" >&6
 fi
 
-echo "$as_me:$LINENO: checking for ar magic file" >&5
-echo $ECHO_N "checking for ar magic file... $ECHO_C" >&6
-mkdir .ar_magic_file_test
-cd .ar_magic_file_test
-touch testfile
-ar -rc test.ar testfile
-rm testfile >& /dev/null
-ar -x test.ar
-if [ -f ________64ELEL_ ]; then
-
-cat >>confdefs.h <<\_ACEOF
-#define MUST_KILL_AR_MAGIC_FILE 1
-_ACEOF
-
-  rm ________64ELEL_
-  echo "$as_me:$LINENO: result: found" >&5
-echo "${ECHO_T}found" >&6;
-else
-  echo "$as_me:$LINENO: result: not found" >&5
-echo "${ECHO_T}not found" >&6;
-fi
-rm testfile test.ar >& /dev/null
-cd ..
-rmdir .ar_magic_file_test
-
 if test "$YACC" = "obsolete_yacc"; then
 
 cat >>confdefs.h <<\_ACEOF
@@ -20098,9 +20073,9 @@ if  test "$GCC" = yes ; then
 
   RCCCFLAGS="-Wall -Wno-unused -fno-builtin"
 
-  MKCCFLAGS="-ansi -Wall -g"
+  MKCCFLAGS="-Wall -g -std=c99"
 
-  PDCCFLAGS="-ansi -Wall -g -O3"
+  PDCCFLAGS="-Wall -g -O3 -std=c99"
 
   DEPSFLAG="-M"
 
@@ -20179,9 +20154,9 @@ elif  test "$MACC" = yes ; then
 
   RCCCFLAGS="-Wall -no-cpp-precomp -Wno-unused -fno-builtin"
 
-  MKCCFLAGS="-g -Wall -ansi"
+  MKCCFLAGS="-g -Wall -std=c99"
 
-  PDCCFLAGS="-g"
+  PDCCFLAGS="-g -std=c99"
 
   DEPSFLAG="-M"
 
@@ -20234,7 +20209,7 @@ echo $ECHO_N "checking sac2crc system flags... $ECHO_C" >&6
 OSFLAGS=""
 case "$target_os" in
   solaris*)
-    OSFLAGS="-D__EXTENSIONS__ -D__STDC__=0 -DMUST_INIT_YY -fPIC -DPIC"
+    OSFLAGS="-D__EXTENSIONS__ -DMUST_INIT_YY -fPIC -DPIC"
     LD_DYNAMIC="ld -dy -G"
     echo "$as_me:$LINENO: result: solaris settings" >&5
 echo "${ECHO_T}solaris settings" >&6

@@ -398,25 +398,6 @@ else
   AC_MSG_RESULT(no)
 fi
 
-dnl check whether to remove ar magic file
-AC_MSG_CHECKING(for ar magic file)
-mkdir .ar_magic_file_test
-cd .ar_magic_file_test
-touch testfile
-ar -rc test.ar testfile
-rm testfile >& /dev/null
-ar -x test.ar
-[if [ -f ________64ELEL_ ]; then]
-  AC_DEFINE(MUST_KILL_AR_MAGIC_FILE,1,set to 1 if ar generates a magic file)
-  rm ________64ELEL_
-  AC_MSG_RESULT(found);
-else
-  AC_MSG_RESULT(not found);
-fi
-rm testfile test.ar >& /dev/null
-cd ..
-rmdir .ar_magic_file_test
-
 dnl when not using bison, we need to
 dnl reference YYLABELS
 if test "$YACC" = "obsolete_yacc"; then
@@ -447,8 +428,8 @@ if [ test "$GCC" = yes ]; then
   AC_SUBST(OPT_g, [-g])
   AC_SUBST(RCLDFLAGS, [""])
   AC_SUBST(RCCCFLAGS, ["-Wall -Wno-unused -fno-builtin"])
-  AC_SUBST(MKCCFLAGS, ["-ansi -Wall -g"])
-  AC_SUBST(PDCCFLAGS, ["-ansi -Wall -g -O3"])
+  AC_SUBST(MKCCFLAGS, ["-Wall -g -std=c99"])
+  AC_SUBST(PDCCFLAGS, ["-Wall -g -O3 -std=c99"])
   AC_SUBST(DEPSFLAG, ["-M"])
   AC_SUBST(CPPFILE, ["gcc -E -C -x c"])
   AC_SUBST(CCMTLINK, [$GCC_PTHREADS])
@@ -489,8 +470,8 @@ elif [ test "$MACC" = yes ]; then
   AC_SUBST(OPT_g, [-g])
   AC_SUBST(RCLDFLAGS, ["-Wl,-multiply_defined,suppress"])
   AC_SUBST(RCCCFLAGS, ["-Wall -no-cpp-precomp -Wno-unused -fno-builtin"])
-  AC_SUBST(MKCCFLAGS, ["-g -Wall -ansi"])
-  AC_SUBST(PDCCFLAGS, ["-g"])
+  AC_SUBST(MKCCFLAGS, ["-g -Wall -std=c99"])
+  AC_SUBST(PDCCFLAGS, ["-g -std=c99"])
   AC_SUBST(DEPSFLAG, ["-M"])
   AC_SUBST(CPPFILE, ["cpp3 -C -traditional-cpp"])
   AC_SUBST(CCMTLINK, [""])
@@ -527,7 +508,7 @@ AC_MSG_CHECKING([sac2crc system flags])
 OSFLAGS=""
 case "$target_os" in
   solaris*)     
-    OSFLAGS=["-D__EXTENSIONS__ -D__STDC__=0 -DMUST_INIT_YY -fPIC -DPIC"]
+    OSFLAGS=["-D__EXTENSIONS__ -DMUST_INIT_YY -fPIC -DPIC"]
     LD_DYNAMIC=["ld -dy -G"]
     AC_MSG_RESULT([solaris settings])
     ;;
