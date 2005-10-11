@@ -538,11 +538,10 @@ $(PROJECT_ROOT)/Makefile.Config: $(PROJECT_ROOT)/Makefile.Config.in
 	(cd $(PROJECT_ROOT); ./configure)
 
 configure: configure.ac
-	co -l configure
-	co -l src/global/config.h.in
+	svn lock configure src/global/config.h.in
 	autoconf
 	autoheader
-	ci -u configure src/global/config.h.in
+	svn commit configure src/global/config.h.in
 
 
 LINUX_HOST = bunasera
