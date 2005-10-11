@@ -20283,6 +20283,11 @@ cat >>confdefs.h <<\_ACEOF
 _ACEOF
 
 
+cat >>confdefs.h <<\_ACEOF
+#define MAX_ERROR_MESSAGE_LENGTH 2000
+_ACEOF
+
+
 
 
 cat >confcache <<\_ACEOF
