@@ -144,7 +144,7 @@ SIMDarray (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SIMDarray");
 
-    /*   INFO_SUITABLE( arg_info) = FALSE; */
+    INFO_SUITABLE (arg_info) = FALSE;
 
     DBUG_RETURN (arg_node);
 }
