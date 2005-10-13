@@ -1,199 +1,6 @@
 
 #
-# $Log$
-# Revision 3.198  2005/09/28 17:39:18  sah
-# added AddSpecialFunctions to load the sac2c::sel and sac2c::zero
-# functions prior to prepareinlining to ensure that their bodies
-# are inlined. this resolves bug #121
-#
-# Revision 3.197  2005/09/27 17:26:42  sbs
-# src/compile/simd_infer.o added
-#
-# Revision 3.196  2005/09/14 21:26:00  sah
-# added basic implementation for index_optimize
-#
-# Revision 3.195  2005/09/12 16:18:47  sah
-# added index_eliminate.c
-#
-# Revision 3.194  2005/09/12 13:55:23  ktr
-# added wlsimplification
-#
-# Revision 3.193  2005/09/08 11:02:12  sbs
-# update_wrapper_type.o added.
-#
-# Revision 3.192  2005/09/04 12:48:24  ktr
-# added map_fun_trav.o
-#
-# Revision 3.191  2005/09/02 17:45:28  sah
-# added map_lac_funs.o
-#
-# Revision 3.190  2005/09/02 14:26:00  ktr
-# added src/optimize/liftoptargs.o
-#
-# Revision 3.189  2005/08/24 10:31:44  ktr
-# added src/compile/wlidx.o
-#
-# Revision 3.188  2005/08/20 12:05:31  ktr
-# added src/optimize/elimtypeconv.o
-#
-# Revision 3.187  2005/08/19 18:15:29  ktr
-# added src/optimize/inferneedcounters.o, src/optimize/associativity.o
-#
-# Revision 3.186  2005/08/18 07:00:57  sbs
-# insert_type_conv.o added.
-#
-# Revision 3.185  2005/08/02 14:23:38  ktr
-# added src/optimize/deadcodeinference.o
-#
-# Revision 3.184  2005/07/25 16:57:40  sbs
-# private_heap.o added.
-#
-# Revision 3.183  2005/07/22 13:10:52  sah
-# extracted some functionality from
-# deserialize into add_function_body
-#
-# Revision 3.182  2005/07/21 14:18:54  sah
-# introduced remove_external_code
-#
-# Revision 3.181  2005/07/19 16:57:40  ktr
-# replaced SSADeadCodeRemoval with deadcoderemoval.
-#
-# Revision 3.180  2005/07/17 20:12:35  sbs
-# split_wrappers.o added.
-#
-# Revision 3.179  2005/07/17 11:46:54  sah
-# added serialize_filenames.o
-#
-# Revision 3.178  2005/07/16 19:08:19  sbs
-# index_infer.o added.
-#
-# Revision 3.177  2005/07/16 18:33:36  sah
-# cleanup
-#
-# Revision 3.176  2005/07/16 10:01:12  ktr
-# added src/refcount/referencecounting.o
-#
-# Revision 3.175  2005/07/15 15:52:18  sah
-# splitted create_wrapper_code and dispatchfuncalls
-# introduced namespaces
-#
-# Revision 3.174  2005/07/03 17:00:43  ktr
-# added some files
-#
-# Revision 3.173  2005/06/30 16:39:07  ktr
-# added src/refcount/audscldist.o
-#
-# Revision 3.172  2005/06/28 20:57:36  cg
-# Added while2do.[ch] and handle_condexpr.[ch]
-#
-# Revision 3.171  2005/06/15 10:54:19  sbs
-# libsac2c rule added
-# could have deps in all, sac2c.prod but considered overhead during development
-#
-# Revision 3.170  2005/06/14 12:27:35  sah
-# use libtool to build sac2c
-#
-# Revision 3.169  2005/06/14 08:52:04  khf
-# added wldefaultpartition.o
-#
-# Revision 3.168  2005/06/06 10:18:34  jhb
-# added checktst.o
-#
-# Revision 3.167  2005/06/01 16:59:05  sah
-# separated annotating namespaces and gathering dependencies in two
-# phase to allow for reusing the gathering phase to print the
-# dependencies of a module.
-#
-# Revision 3.166  2005/05/31 18:16:14  sah
-# added resolve symbol types phase
-#
-# Revision 3.165  2005/05/22 19:45:53  sah
-# added first implementation steps for import
-#
-# Revision 3.164  2005/05/13 16:36:11  ktr
-# added flatten/lacinlining.o
-#
-# Revision 3.163  2005/04/29 20:31:11  khf
-# added src/flatten/wlanalysis.o
-#
-# Revision 3.162  2005/04/20 19:10:23  ktr
-# removed src/optimize/Inline.o
-#
-# Revision 3.161  2005/03/10 09:41:09  cg
-# Added linking of phase.o and setup.o.
-#
-# Revision 3.160  2005/02/14 11:25:52  cg
-# Added linking of prepare_inlining and inlining.
-#
-# Revision 3.159  2005/02/11 15:02:37  jhb
-# added check.o check_lib.o
-#
-# Revision 3.158  2005/02/02 18:09:03  mwe
-# signature_simplification added
-#
-# Revision 3.157  2005/01/07 16:47:26  cg
-# added linking of ctinfo.o
-#
-# Revision 3.156  2004/12/16 14:36:16  ktr
-# added src/refcount/inplacecomp.o
-#
-# Revision 3.155  2004/12/08 12:15:47  mwe
-# type_upgrade.o added
-#
-# Revision 3.154  2004/11/29 15:01:50  ktr
-# added xml-dir to target clean
-#
-# Revision 3.153  2004/11/29 14:41:57  sah
-# added setlinksign traversal
-#
-# Revision 3.152  2004/11/29 09:35:04  sbs
-# xml dir added
-#
-# Revision 3.151  2004/11/27 03:19:10  sbs
-# AEAETSCH!!!!!
-#
-# Revision 3.150  2004/11/27 02:37:33  sbs
-# typeconversions renamed .
-#
-# Revision 3.149  2004/11/27 02:22:25  sbs
-# *** empty log message ***
-#
-# Revision 3.148  2004/11/27 00:06:54  sbs
-# *** empty log message ***
-#
-# Revision 3.147  2004/11/27 00:03:05  sbs
-# traverse_tables.o added
-#
-# Revision 3.146  2004/11/26 23:00:13  sbs
-# adjusted to the SacDevCamp changes
-#
-# Revision 3.145  2004/11/24 09:52:25  sbs
-# type_utils.o added
-#
-# Revision 3.144  2004/11/23 12:34:08  cg
-# Removed some files.
-#
-# Revision 3.143  2004/11/21 11:22:03  sah
-# removed some old ast infos
-#
-# Revision 3.142  2004/11/19 21:01:58  sah
-# added objanalysis.o
-#
-# Revision 3.141  2004/11/18 15:18:03  mwe
-# ChackAvis changed to ToNewTypes
-#
-# Revision 3.140  2004/11/17 19:50:56  sah
-# made src/modules/implicittypes.o invisible in
-# new ast mode
-#
-# Revision 3.139  2004/11/14 13:42:15  ktr
-# added src/refcount/reusebranching.o
-#
-#
-# ... [eliminated] 
-#
-# Revision 1.81  1998/05/13 07:12:25  cg
-# added linking of file icm2c_mt.o
+# $Id$
 #
 #
 
@@ -477,7 +284,7 @@ sac2c.efence: $(OBJ) $(LIB)
 	$(LIBTOOL) $(CC) $(CCFLAGS) $(CFLAGS) -o sac2c.efence $(OBJ) $(LIB) $(LIBS) $(EFLIBS) $(LDDYNFLAG)
 
 sac2c.prod:  $(OBJ) $(LIB)
-	$(LIBTOOL) $(CCPROD) $(CCPROD_FLAGS) $(CPROD_FLAGS) -o sac2c $(OBJ) $(LIB) $(LIBS)
+	$(LIBTOOL) $(CCPROD) $(CCPROD_FLAGS) $(CPROD_FLAGS) -o sac2c $(OBJ) $(LIB) $(LIBS) $(LDDYNFLAG)
 
 doxygen:
 	doxygen sac2cdoxy
@@ -515,12 +322,6 @@ clean:
 	$(RM) -r .sb SunWS_cache
 	$(RM) src.tar.gz
 
-clean_sb:
-	$(RM) -r .sb SunWS_cache
-	$(RM) -r src/*/.sb src/*/SunWS_cache
-
-floppy: src.tar.gz
-	$(TAR) -cvf /dev/rfd0c src.tar.gz
 
 tar: src.tar.gz
 
@@ -543,25 +344,5 @@ configure: configure.ac
 	autoheader
 	svn commit configure src/global/config.h.in
 
-
-LINUX_HOST = bunasera
-LINUX_USER = sac
-LINUX_DIR  = sac2c
-
-linux: src.tar.gz
-	@ ping $@ >/dev/null; \
-          if [ $${?} -ne 0 ]; then \
-            echo "Host $@ is down !"; \
-            exit 1; \
-          fi
-	rsh -l $(LINUX_USER) $(LINUX_HOST) 'mkdir -p $(LINUX_DIR)'
-	rcp src.tar.gz $(LINUX_USER)@$(LINUX_HOST):$(LINUX_DIR)
-	rsh -l $(LINUX_USER) $(LINUX_HOST) \
-            'cd $(LINUX_DIR);'             \
-            'rm -rf src;'                  \
-            'gunzip -f src.tar.gz;'        \
-            'tar xvf src.tar;'             \
-            'chmod 644 $(shell svn -R list);'   \
-            'make OS=LINUX_X86'
 
 
