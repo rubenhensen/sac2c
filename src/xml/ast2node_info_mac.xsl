@@ -28,7 +28,7 @@
         <xsl:value-of select="'This file defines the node to nodename mapping.'"/>
       </xsl:with-param>
       <xsl:with-param name="xslt">
-        <xsl:value-of select="'$Id$'"/>
+        <xsl:value-of select="'$Id: ast2node_info_mac.xsl 14294 2005-10-10 12:40:03Z sah $'"/>
       </xsl:with-param>
     </xsl:call-template>
     <xsl:text>

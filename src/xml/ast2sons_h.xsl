@@ -32,7 +32,7 @@
         <xsl:value-of select="'Defines the NodesUnion and node structures.'"/>
       </xsl:with-param>
       <xsl:with-param name="xslt">
-        <xsl:value-of select="'$Id$'"/>
+        <xsl:value-of select="'$Id: ast2sons_h.xsl 14294 2005-10-10 12:40:03Z sah $'"/>
       </xsl:with-param>
     </xsl:call-template>
     <xsl:text>

@@ -32,7 +32,7 @@ version="1.0">
       <xsl:value-of select="'Functions to free the attributes of node structures'"/>
     </xsl:with-param>
     <xsl:with-param name="xslt">
-      <xsl:value-of select="'$Id$'"/>
+      <xsl:value-of select="'$Id: ast2free_attribs_h.xsl 14294 2005-10-10 12:40:03Z sah $'"/>
     </xsl:with-param>
   </xsl:call-template>
   <xsl:text>
