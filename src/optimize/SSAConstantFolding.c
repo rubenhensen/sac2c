@@ -2139,7 +2139,14 @@ CFlet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CFlet");
 
-    if (!IsFullyConstantNode (LET_EXPR (arg_node))) {
+    /*
+     * Try to replace the rhs with a constant (given by the lhs type) if
+     * - RHS node IS NOT an N_funcond node (this would violate fun-form
+     * - RHS is not yet constant
+     */
+    if ((NODE_TYPE (LET_EXPR (arg_node)) != N_funcond)
+        && (!IsFullyConstantNode (LET_EXPR (arg_node)))) {
+
         if (LET_IDS (arg_node) != NULL) {
             LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
         }
