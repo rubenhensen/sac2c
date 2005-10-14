@@ -1,6 +1,6 @@
 
 #
-# $Id: Makefile 14313 2005-10-13 16:19:20Z sbs $
+# $Id$
 #
 #
 
@@ -106,7 +106,7 @@ OPTIMIZE= src/optimize/optimize.o \
 PROFILE= src/profile/annotate_fun_calls.o
 
 PSIOPT= src/psi-opt/index_eliminate.o src/psi-opt/index_infer.o \
-        src/psi-opt/index_optimize.o src/psi-opt/ArrayElimination.o \
+        src/psi-opt/index_optimize.o \
         src/psi-opt/wl_access_analyze.o src/psi-opt/tile_size_inference.o \
         src/psi-opt/wls.o src/psi-opt/wlscheck.o \
         src/psi-opt/wlsbuild.o src/psi-opt/wlswithloopification.o \

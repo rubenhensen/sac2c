@@ -1,76 +1,6 @@
 #
 #
-# $Log$
-# Revision 3.28  2005/09/14 21:26:00  sah
-# added basic implementation for index_optimize
-#
-# Revision 3.27  2005/09/12 16:18:47  sah
-# added index_eliminate.c
-#
-# Revision 3.26  2005/07/16 19:02:42  sbs
-# index_infer.o added
-#
-# Revision 3.25  2004/11/24 15:00:20  ktr
-# removed INCS
-#
-# Revision 3.24  2004/10/20 08:10:29  khf
-# added resolvedependencies.o
-#
-# Revision 3.23  2004/10/07 12:37:32  ktr
-# Replaced the old With-Loop Scalarization with a new implementation.
-#
-# Revision 3.22  2004/08/26 15:02:08  khf
-# detectdependencies.o and tagdependencies.o added
-#
-# Revision 3.21  2004/07/14 23:23:37  sah
-# removed all old ssa optimizations and the use_ssaform flag
-#
-# Revision 3.20  2004/04/08 08:09:55  khf
-# WithloopFusion.o added
-#
-# Revision 3.19  2004/01/29 13:06:05  skt
-# some adaptions because of moving ssa-files
-# from src/tree to src/flatten
-#
-# Revision 3.18  2002/09/09 19:18:47  dkr
-# dependencies for prf_node_info.mac removed
-#
-# Revision 3.17  2002/06/06 19:56:03  dkr
-# target clean modified
-#
-# Revision 3.16  2002/03/13 16:00:18  ktr
-# WithloopScalarization.c added for compilation
-#
-# Revision 3.15  2001/11/15 15:36:48  sacbase
-# CLOCK_SKEW_ELIMINATION and PROJECT_ROOT added.
-#
-# Revision 3.14  2001/11/14 12:59:48  sbs
-# deps line replaced by inclusion of Makefile.Deps
-# ( .xxx.d mechanism)
-# global setup included via Makefile.Config
-#
-# Revision 3.13  2001/11/13 20:32:45  dkr
-# make deps done
-#
-# Revision 3.12  2001/07/18 13:08:19  cg
-# make deps done
-#
-# Revision 3.11  2001/05/15 16:38:38  nmw
-# SSAWLI.o and SSAWLF.o added
-#
-# Revision 3.10  2001/05/14 15:58:50  nmw
-# SSAWLT.o and SSAWithloopFolding.o added
-#
-# Revision 3.9  2001/04/26 21:09:48  dkr
-# make deps done
-#
-# Revision 3.8  2001/03/27 11:12:49  nmw
-# include of directory ../constants added
-#
-# ... [eliminated] ...
-#
-# Revision 1.1  1995/06/02  10:09:27  sbs
-# Initial revision
+# $Id$
 #
 #
 
@@ -88,7 +18,7 @@ include $(PROJECT_ROOT)/Makefile.Config
 #
 # local settings:
 #
-all: ArrayElimination.o wl_access_analyze.o tile_size_inference.o \
+all: wl_access_analyze.o tile_size_inference.o \
      SSAWithloopFolding.o SSAWLT.o SSAWLI.o SSAWLF.o \
      wls.o wlscheck.o wlsbuild.o wlswithloopification.o \
      pad.o pad_info.o pad_collect.o pad_infer.o pad_transform.o \
