@@ -471,7 +471,7 @@ TUisHidden (ntype *ty)
 
     DBUG_ENTER ("TUisHidden");
 
-    if (TYisUser (TYgetScalar (ty))) {
+    if (!TYisBottom (ty) && TYisUser (TYgetScalar (ty))) {
         ntype *base = UTgetBaseType (TYgetUserType (TYgetScalar (ty)));
 
         DBUG_EXECUTE ("TU", tmp = TYtype2DebugString (base, FALSE, 0););
@@ -503,7 +503,7 @@ TUisArrayOfUser (ntype *type)
 
     DBUG_ENTER ("TUisArrayOfUser");
 
-    res = (TYisUser (TYgetScalar (type)));
+    res = (!TYisBottom (type) && TYisUser (TYgetScalar (type)));
 
     DBUG_RETURN (res);
 }
