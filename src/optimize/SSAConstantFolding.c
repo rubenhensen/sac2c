@@ -2147,10 +2147,17 @@ CFlet (node *arg_node, info *arg_info)
     if ((NODE_TYPE (LET_EXPR (arg_node)) != N_funcond)
         && (!IsFullyConstantNode (LET_EXPR (arg_node)))) {
 
+        /*
+         * Traverse into LHS
+         * This yields an assignment for each ids node with constant type
+         */
         if (LET_IDS (arg_node) != NULL) {
             LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
         }
 
+        /*
+         * If ALL ids nodes are constant, the current assignment can be eliminated
+         */
         if (TCcountIds (LET_IDS (arg_node))
             == TCcountAssigns (INFO_PREASSIGN (arg_info))) {
 
@@ -2166,12 +2173,17 @@ CFlet (node *arg_node, info *arg_info)
             global.optcounters.cf_expr += TCcountIds (LET_IDS (arg_node));
             INFO_REMASSIGN (arg_info) = TRUE;
         } else {
-
             if (INFO_PREASSIGN (arg_info) != NULL) {
                 INFO_PREASSIGN (arg_info) = FREEdoFreeTree (INFO_PREASSIGN (arg_info));
             }
-            LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
         }
+    }
+
+    /*
+     * Traverse rhs only if it has not been replaced by constants
+     */
+    if (INFO_PREASSIGN (arg_info) == NULL) {
+        LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
