@@ -10,8 +10,8 @@
  * Loop scalarization (LS) is the successor of array elimination (AE).
  * It is based on the observation that most simple cases of AE are covered
  * by the other optimizations, most notably Constant Folding.
- * The only case left is a case, where small arrays are passed through
- * and modified wihin loop functions, i.e., we have a situation of the form:
+ * The only case left is the case where small arrays are passed through
+ * and modified by loop functions, i.e., we have a situation of the form:
  *
  * <pre>
  *   ...
@@ -153,3 +153,86 @@
    IVE cannot transform *i into a single scalar index anymore.As a net result,
    we will *obtain a superfluous multiplication and a superfluous addition.*Note here,
    that the drawback increases as the length of i increases.* /
+
+     /** <!--*******************************************************************-->
+      *
+      * @fn node *LSfundef( node *arg_node, info *arg_info)
+      *
+      *****************************************************************************/
+     node *
+     LSfundef (node *arg_node, info *arg_info)
+ {
+
+     DBUG_ENTER ("LSfundef");
+     DBUG_RETURN (arg_node);
+ }
+
+ /** <!--*******************************************************************-->
+  *
+  * @fn node *LSap( node *arg_node, info *arg_info)
+  *
+  *****************************************************************************/
+ node *
+ LSap (node *arg_node, info *arg_info)
+ {
+
+     DBUG_ENTER ("LSap");
+     DBUG_RETURN (arg_node);
+ }
+
+ /** <!--*******************************************************************-->
+  *
+  * @fn node *LSprf( node *arg_node, info *arg_info)
+  *
+  *****************************************************************************/
+ node *
+ LSprf (node *arg_node, info *arg_info)
+ {
+
+     DBUG_ENTER ("LSprf");
+     DBUG_RETURN (arg_node);
+ }
+
+ /** <!--*******************************************************************-->
+  *
+  * @fn node *LSid( node *arg_node, info *arg_info)
+  *
+  *****************************************************************************/
+ node *
+ LSid (node *arg_node, info *arg_info)
+ {
+
+     DBUG_ENTER ("LSid");
+     DBUG_RETURN (arg_node);
+ }
+
+ /** <!--********************************************************************-->
+  *
+  * @fn  node *LSdoLoopScalarization( node *syntax_tree)
+  *
+  *   @brief call this function for eliminating arrays within loops
+  *   @param part of the AST (usually the entire tree) IVE is to be applied on.
+  *   @return modified AST.
+  *
+  *****************************************************************************/
+ node *
+ LSdoLoopScalarization (node *syntax_tree)
+ {
+     info *info;
+
+     DBUG_ENTER ("LSdoLoopScalarization");
+
+     DBUG_PRINT ("OPT", ("Starting Loop Scalarization ...."));
+
+     TRAVpush (TR_ls);
+
+     info = MakeInfo ();
+     syntax_tree = TRAVdo (syntax_tree, info);
+
+     info = FreeInfo (info);
+     TRAVpop ();
+
+     DBUG_PRINT ("OPT", ("Loop Scalarization done!"));
+
+     DBUG_RETURN (syntax_tree);
+ }
