@@ -1,14 +1,5 @@
 /*
- * $Log$
- * Revision 1.3  2005/09/04 12:52:11  ktr
- * re-engineered the optimization cycle
- *
- * Revision 1.2  2005/08/20 12:08:06  ktr
- * Already sorted subtrees are no longer re-sorted.
- *
- * Revision 1.1  2005/08/19 18:18:01  ktr
- * Initial revision
- *
+ * $Id$
  */
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -103,15 +94,11 @@ ASSOCdoAssociativityOptimization (node *syntax_tree)
 
     DBUG_ENTER ("ASSOCdoAssociativityOptimization");
 
-    DBUG_PRINT ("OPT", ("Starting associativity optimization..."));
-
     info = MakeInfo ();
 
     TRAVpush (TR_assoc);
     syntax_tree = TRAVdo (syntax_tree, info);
     TRAVpop ();
-
-    DBUG_PRINT ("OPT", ("Associativity optimization complete."));
 
     info = FreeInfo (info);
 
@@ -139,13 +126,9 @@ ASSOCdoAssociativityOptimizationOneFundef (node *syntax_tree)
     info = MakeInfo ();
     INFO_ONEFUNDEF (info) = TRUE;
 
-    DBUG_PRINT ("OPT", ("Starting associativity optimization..."));
-
     TRAVpush (TR_assoc);
-    syntax_tree = TRAVdo (syntax_tree, NULL);
+    syntax_tree = TRAVdo (syntax_tree, info);
     TRAVpop ();
-
-    DBUG_PRINT ("OPT", ("Associativity optimization complete."));
 
     info = FreeInfo (info);
 
@@ -369,8 +352,6 @@ getPrf (prf prf, node *e1, node *e2)
         DBUG_ASSERT (FALSE, "Illegal prf!");
     }
 
-    printf ("%s\n", global.prf_string[prf]);
-
     DBUG_RETURN (prf);
 }
 
@@ -479,13 +460,9 @@ CombineExprs2Prf (prf prf, node *expr1, node *expr2, info *arg_info)
 
     rhs = TCmakePrf2 (getPrf (prf, expr1, expr2), expr1, expr2);
 
-    PRTdoPrint (rhs);
-
     prod = NTCnewTypeCheck_Expr (rhs);
     avis = TBmakeAvis (ILIBtmpVar (), TYcopyType (TYgetProductMember (prod, 0)));
     prod = TYfreeType (prod);
-
-    printf ("%s\n", TYtype2String (AVIS_TYPE (avis), FALSE, 0));
 
     BLOCK_VARDEC (INFO_TOPBLOCK (arg_info))
       = TBmakeVardec (avis, BLOCK_VARDEC (INFO_TOPBLOCK (arg_info)));
@@ -578,16 +555,11 @@ CollectExprs (prf prf, node *a, bool sclprf, dfmask_t *localmask)
                 right = CollectExprs (prf, PRF_ARG2 (rhs), isArg2Scl (PRF_PRF (rhs)),
                                       localmask);
 
-                PRTdoPrint (left);
-                PRTdoPrint (right);
-
                 if (!isSingleton (left) || !isSingleton (right)
                     || !eqClass (EXPRS_EXPR (left), EXPRS_EXPR (right))) {
-                    printf ("tree\n");
                     res = FREEdoFreeTree (res);
                     res = TCappendExprs (left, right);
                 } else {
-                    printf ("node\n");
                     left = FREEdoFreeTree (left);
                     right = FREEdoFreeTree (right);
                 }

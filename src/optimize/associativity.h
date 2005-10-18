@@ -1,8 +1,5 @@
 /*
- * $Log$
- * Revision 1.1  2005/08/19 18:18:15  ktr
- * Initial revision
- *
+ * $Id$
  */
 #ifndef _SAC_ASSOCIATIVITY_H_
 #define _SAC_ASSOCIATIVITY_H_
@@ -11,9 +8,9 @@
 
 /******************************************************************************
  *
- * Needcount inference traversal
+ * Associativity optimization
  *
- * prefix: INC
+ * prefix: ASSOC
  *
  *****************************************************************************/
 extern node *ASSOCdoAssociativityOptimization (node *arg_node);
