@@ -344,13 +344,15 @@ AddTypeError (node *assign, node *bottom_id, ntype *other_type)
     ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (bottom_id)))
       = FREEdoFreeTree (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (bottom_id))));
 
+    AVIS_SSAASSIGN (ID_AVIS (bottom_id)) = assign;
+
     DBUG_RETURN (assign);
 }
 
 static node *
 ReplaceBodyByTypeError (node *fundef, ntype *inferred_type, ntype *res_type)
 {
-    node *block, *avis;
+    node *block, *avis, *tmpnode;
     node *vardecs = NULL;
     node *ids = NULL;
     node *exprs = NULL;
@@ -390,6 +392,12 @@ ReplaceBodyByTypeError (node *fundef, ntype *inferred_type, ntype *res_type)
                                                             TYmakeBottomType (err_msg)))),
                                    TBmakeAssign (ret, NULL)),
                      vardecs);
+
+    tmpnode = ids;
+    while (tmpnode != NULL) {
+        AVIS_SSAASSIGN (IDS_AVIS (tmpnode)) = BLOCK_INSTR (block);
+        tmpnode = IDS_NEXT (tmpnode);
+    }
 
     FUNDEF_BODY (fundef) = FREEdoFreeTree (FUNDEF_BODY (fundef));
 
@@ -1005,8 +1013,8 @@ NT2OTwithid (node *arg_node, info *arg_info)
         }
     } else {
         /**
-         * we are dealing with a default partition here => Duplicate those of the real
-         * one!
+         * we are dealing with a default partition here
+         *  => Duplicate those of the real one!
          */
         WITHID_IDS (arg_node) = DUPdoDupTree (INFO_WLIDS (arg_info));
     }
