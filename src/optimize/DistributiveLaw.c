@@ -1860,7 +1860,7 @@ RemoveMostFrequentNode (info *arg_info)
         top_elem = NODELIST_NODE (list);
 
         if ((IsIdenticalNode (INFO_MOSTFREQUENTNODE (arg_info), top_elem))
-            && (EXPRS_NEXT (top_elem) == NULL)) {
+            && (!(NODE_TYPE (top_elem) == N_exprs) || (EXPRS_NEXT (top_elem) == NULL))) {
             /*
              * constant node - MFN is argument of MAINOPERATOR
              * replace MFN with neutral element of MAINOPERATOR
