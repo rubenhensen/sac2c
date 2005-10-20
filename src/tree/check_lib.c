@@ -1,42 +1,6 @@
 /*
- *
- * $Log$
- * Revision 1.14  2005/07/13 11:53:42  jhb
- * some little fixes
- *
- * Revision 1.13  2005/06/15 12:43:03  jhb
- * little fixes
- *
- * Revision 1.12  2005/06/08 13:37:08  jhb
- * attribute are now check correctly
- *
- * Revision 1.11  2005/05/19 13:34:44  jhb
- * begin to add the ranges for the attributes
- *
- * Revision 1.10  2005/03/03 16:44:01  jhb
- * cosmetics
- *
- * Revision 1.9  2005/02/16 14:35:23  jhb
- * test something at the three functions
- *
- * Revision 1.8  2005/02/14 14:08:48  jhb
- * change name
- *
- * Revision 1.7  2005/02/11 15:03:00  jhb
- * fix some bugs
- *
- * Revision 1.6  2005/02/11 14:48:56  jhb
- * change CHKdoCheck in CHKdoTreeCheck
- *
- * Revision 1.5  2005/02/10 14:08:49  jhb
- * change the revisionslog
- *
- * Revision 1.0  2004/11/22 13:50:34  jhb
- * first functions inserted
- *
+ * $Id$
  */
-
-#define NEW_INFO
 
 #include "check_lib.h"
 
@@ -48,6 +12,7 @@
 #include "types.h"
 #include "tree_compound.h"
 #include "checktst.h"
+#include "globals.h"
 
 struct INFO {
 };
@@ -188,6 +153,33 @@ CHKcorrectTypeInsertError (node *arg_node, char *string)
     DBUG_ENTER ("CHKcorrectType");
 
     NODE_ERROR (arg_node) = CHKinsertError (NODE_ERROR (arg_node), string);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *CHKassignAvisSSAAssign( node *arg_node)
+ *
+ *****************************************************************************/
+node *
+CHKassignAvisSSAAssign (node *arg_node)
+{
+    DBUG_ENTER ("CHKassignAvisSSAAssign");
+
+    if (global.valid_ssaform) {
+        if (NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_let) {
+            node *ids = LET_IDS (ASSIGN_INSTR (arg_node));
+            while (ids != NULL) {
+                if (AVIS_SSAASSIGN (IDS_AVIS (ids)) != arg_node) {
+                    NODE_ERROR (IDS_AVIS (ids))
+                      = CHKinsertError (NODE_ERROR (IDS_AVIS (ids)),
+                                        "Invalid AVIS_SSAASSIGN");
+                }
+                ids = IDS_NEXT (ids);
+            }
+        }
+    }
 
     DBUG_RETURN (arg_node);
 }
