@@ -3233,9 +3233,7 @@
         <flag name="IsUnused" />
       </flags>
       <checks>
-        <check>
-          CHKassignAvisSSAAssign
-        </check>
+        <check name="CHKassignAvisSSAAssign" />
       </checks>
     </node>
 <!--
