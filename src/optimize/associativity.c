@@ -596,10 +596,6 @@ ASSOCfundef (node *arg_node, info *arg_info)
         INFO_DFMBASE (arg_info)
           = DFMgenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
 
-        if (FUNDEF_ARGS (arg_node) != NULL) {
-            FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
-        }
-
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 
         INFO_DFMBASE (arg_info) = DFMremoveMaskBase (INFO_DFMBASE (arg_info));
