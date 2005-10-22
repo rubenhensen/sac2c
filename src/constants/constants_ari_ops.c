@@ -668,3 +668,28 @@ COneg (constant *a)
     DBUG_EXECUTE ("COOPS", COINTdbugPrintUnaryOp ("COneg", a, res););
     DBUG_RETURN (res);
 }
+
+/** <!--********************************************************************-->
+ *
+ * @fn constant *COrec( constant *a)
+ *
+ *   @brief  yields reciprocal of all elements of a
+ *
+ *   @param a   array whose elements are to be made reciprocal
+ *   @return    the result of the negation
+ *
+ ******************************************************************************/
+
+constant *
+COrec (constant *a)
+{
+    constant *one;
+    constant *res;
+
+    DBUG_ENTER ("COrec");
+    one = COmakeOne (COgetType (a), COgetShape (a));
+    res = COzip (global.zipcv_div, one, a, T_unknown);
+    one = COfreeConstant (one);
+    DBUG_EXECUTE ("COOPS", COINTdbugPrintUnaryOp ("COrec", a, res););
+    DBUG_RETURN (res);
+}

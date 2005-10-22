@@ -293,7 +293,7 @@ PRF_IF (F_toi_S, "F_toi_S", "_toi_S_", "toi", FALSE, 1, NTCCTprf_toiS, COtoi, FA
 
   PRF_IF (F_phi, "F_phi", "_phi_", "phi", FALSE, 2, NTCCTprf_dummy, NULL, FALSE),
 
-  PRF_IF (F_esd_neg, "F_esd_neg", "_esd_neg_", "esd_neg", FALSE, 1, NTCCTprf_dummy, NULL,
-          FALSE),
-  PRF_IF (F_esd_rec, "F_esd_rec", "_esd_rec_", "esd_rec", FALSE, 1, NTCCTprf_dummy, NULL,
-          FALSE)
+  PRF_IF (F_esd_neg, "F_esd_neg", "_esd_neg_", "esd_neg", FALSE, 1, NTCCTprf_ari_op_A,
+          COneg, FALSE),
+  PRF_IF (F_esd_rec, "F_esd_rec", "_esd_rec_", "esd_rec", FALSE, 1, NTCCTprf_ari_op_A,
+          COrec, FALSE)

@@ -239,5 +239,6 @@ extern constant *COtof (constant *a);
 extern constant *COtod (constant *a);
 extern constant *COabs (constant *a);
 extern constant *COneg (constant *a);
+extern constant *COrec (constant *a);
 
 #endif /* _SAC_CONSTANTS_H_ */
