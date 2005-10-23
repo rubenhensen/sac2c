@@ -2269,7 +2269,7 @@ PRTprf (node *arg_node, info *arg_info)
     DBUG_PRINT ("PRINT",
                 ("%s (%s)" F_PTR, NODE_TEXT (arg_node), global.mdb_prf[prf], arg_node));
 
-    if (global.prf_is_infix[prf]) {
+    if (global.prf_is_infix[prf] && (TCcountExprs (PRF_ARGS (arg_node)) < 3)) {
         /* primitive functions in infix notation */
         fprintf (global.outfile, "(");
         if (PRF_EXPRS2 (arg_node) == NULL) {
@@ -2279,7 +2279,6 @@ PRTprf (node *arg_node, info *arg_info)
         if (PRF_EXPRS2 (arg_node) != NULL) {
             PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
             fprintf (global.outfile, " %s ", prf_str);
-            DBUG_ASSERT ((PRF_EXPRS3 (arg_node) == NULL), "more than two args found");
             PRF_ARG2 (arg_node) = TRAVdo (PRF_ARG2 (arg_node), arg_info);
         }
         fprintf (global.outfile, ")");
