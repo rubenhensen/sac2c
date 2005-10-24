@@ -13,6 +13,7 @@
 #include "tree_compound.h"
 #include "checktst.h"
 #include "globals.h"
+#include "ctinfo.h"
 
 struct INFO {
 };
@@ -79,7 +80,7 @@ CHKinsertError (node *arg_node, char *string)
 
     if (arg_node == NULL) {
 
-        printf ("%s\n", string);
+        CTIwarn ("%s", string);
         arg_node = TBmakeError (ILIBstringCopy (string), arg_node);
     } else {
 
@@ -174,7 +175,8 @@ CHKassignAvisSSAAssign (node *arg_node)
                 if (AVIS_SSAASSIGN (IDS_AVIS (ids)) != arg_node) {
                     NODE_ERROR (IDS_AVIS (ids))
                       = CHKinsertError (NODE_ERROR (IDS_AVIS (ids)),
-                                        "Invalid AVIS_SSAASSIGN");
+                                        "AVIS_SSAASSIGN does not point to correct "
+                                        "N_assign node.");
                 }
                 ids = IDS_NEXT (ids);
             }
