@@ -180,7 +180,6 @@ static info *FreeInfo(info *info)
   <!-- the isfun functions to check if a son is a part of the nodeset--> 
   <xsl:template match="nodeset">
     <xsl:value-of select="$newline"/>        
-    <xsl:value-of select="$newline"/>        
     <xsl:value-of select="'static bool is'"/>
     <xsl:value-of select="@name"/>
     <xsl:value-of select="'( node *arg_node)'"/>
@@ -217,12 +216,9 @@ static info *FreeInfo(info *info)
       </xsl:with-param>
     </xsl:call-template>
     <xsl:value-of select="'&quot;);'"/>
-    <xsl:value-of select="$newline" />
-    <xsl:value-of select="$newline" />
      <xsl:apply-templates select="./sons/son" mode="check">
       <xsl:sort select="@name"/>
     </xsl:apply-templates>
-    <xsl:value-of select="$newline" />
     <xsl:apply-templates select="./attributes/attribute" mode="exist">
       <xsl:sort select="@name"/>
     </xsl:apply-templates>
@@ -232,11 +228,9 @@ static info *FreeInfo(info *info)
     <xsl:apply-templates select="./checks/check" mode="customise">
       <xsl:sort select="@name"/>
     </xsl:apply-templates>
-    <xsl:value-of select="$newline"/>
     <xsl:apply-templates select="./sons/son" mode="trav">
       <xsl:sort select="@name"/>
     </xsl:apply-templates>
-    <xsl:value-of select="$newline"/>
     <xsl:value-of select="'DBUG_RETURN( arg_node);'"/>
     <xsl:value-of select="'}'"/>
   </xsl:template>
@@ -258,8 +252,8 @@ static info *FreeInfo(info *info)
       <xsl:value-of select="','"/>
       <xsl:value-of select="'arg_node'"/>
       <xsl:value-of select="','"/>
-      <xsl:value-of select="'&quot;\n'"/>
-      <xsl:value-of select="'&lt;&lt;&lt;&lt;   mandatory son '"/>
+      <xsl:value-of select="'&quot;'"/>
+      <xsl:value-of select="'mandatory son '"/>
       <xsl:call-template name="uppercase">
         <xsl:with-param name="string" >
           <xsl:value-of select="../../@name"/>
@@ -268,11 +262,11 @@ static info *FreeInfo(info *info)
       <xsl:value-of select="'_'"/>
       <xsl:call-template name="uppercase">
         <xsl:with-param name="string" >
-          <xsl:value-of select="targets/target/node/@name"/>
+          <xsl:value-of select="@name"/>
         </xsl:with-param>
       </xsl:call-template>
-      <xsl:value-of select="' is NULL   &gt;&gt;&gt;&gt;'"/>
-      <xsl:value-of select="'\n&quot;'"/>
+      <xsl:value-of select="' is NULL'"/>
+      <xsl:value-of select="'&quot;'"/>
       <xsl:value-of select="');'"/>
     </xsl:if>
   </xsl:template>
@@ -341,13 +335,11 @@ static info *FreeInfo(info *info)
             <xsl:value-of select="'else {'"/>
             <xsl:call-template name="CHKnotExistAttribute"/>
             <xsl:value-of select="'}'"/>
-            <xsl:value-of select="$newline"/>
           </xsl:when>
           <xsl:otherwise>
             <xsl:call-template name="CHKnotExistAttribute"/>                
           </xsl:otherwise>
         </xsl:choose>
-        <xsl:value-of select="$newline"/>
       </xsl:otherwise> 
     </xsl:choose>
   </xsl:template>
@@ -377,13 +369,21 @@ static info *FreeInfo(info *info)
     <xsl:value-of select="', '"/>
     <xsl:value-of select="'arg_node'"/>
     <xsl:value-of select="', '"/>
-    <xsl:value-of select="'&quot;\n'"/>
-    <xsl:value-of select="'&lt;&lt;&lt;&lt;   mandatory attribute '"/>
-    <xsl:apply-templates select="../../@name" mode="uppercase"/>
+    <xsl:value-of select="'&quot;'"/>
+    <xsl:value-of select="'mandatory attribute '"/>
+    <xsl:call-template name="uppercase">
+      <xsl:with-param name="string" >
+        <xsl:value-of select="../../@name"/>
+      </xsl:with-param>
+    </xsl:call-template>
     <xsl:value-of select="'_'"/>
-    <xsl:apply-templates select="@name" mode="uppercase"/>
-    <xsl:value-of select="' is NULL   &gt;&gt;&gt;&gt;'"/>
-    <xsl:value-of select="'\n&quot;'"/>
+    <xsl:call-template name="uppercase">
+      <xsl:with-param name="string" >
+        <xsl:value-of select="@name"/>
+      </xsl:with-param>
+    </xsl:call-template>
+    <xsl:value-of select="' is NULL'"/>
+    <xsl:value-of select="'&quot;'"/>
     <xsl:value-of select="');'"/>
     <xsl:if test="key(&quot;arraytypes&quot;, ./type/@name)">
       <xsl:value-of select="'}'"/>
@@ -415,8 +415,22 @@ static info *FreeInfo(info *info)
     <xsl:value-of select="', '"/>
     <xsl:value-of select="'arg_node'"/>
     <xsl:value-of select="', '"/>
-    <xsl:value-of select="'&quot;\n'"/>
-    <xsl:value-of select="'&lt;&lt;&lt;&lt;   attribute '"/>
+    <xsl:value-of select="'&quot;'"/>
+    <xsl:value-of select="'attribute '"/>
+
+   <xsl:call-template name="uppercase">
+        <xsl:with-param name="string" >
+          <xsl:value-of select="../../@name"/>
+        </xsl:with-param>
+      </xsl:call-template>
+      <xsl:value-of select="'_'"/>
+      <xsl:call-template name="uppercase">
+        <xsl:with-param name="string" >
+          <xsl:value-of select="@name"/>
+        </xsl:with-param>
+      </xsl:call-template>
+
+      <!-- wieso habe ich das genommen?
     <xsl:call-template name="node-access">
       <xsl:with-param name="node">arg_node</xsl:with-param>
       <xsl:with-param name="nodetype">
@@ -431,8 +445,10 @@ static info *FreeInfo(info *info)
         </xsl:if>
       </xsl:with-param>
     </xsl:call-template>
-    <xsl:value-of select="'must be NULL   &gt;&gt;&gt;&gt; '"/>
-    <xsl:value-of select="'\n&quot;'"/>
+    -->
+
+    <xsl:value-of select="' must be NULL'"/>
+    <xsl:value-of select="'&quot;'"/>
     <xsl:value-of select="');'"/>
     <xsl:if test="key(&quot;arraytypes&quot;, ./type/@name)">
       <xsl:value-of select="'}'"/>
@@ -464,7 +480,7 @@ static info *FreeInfo(info *info)
           <xsl:value-of select="'{'" />      
           <xsl:value-of select="'CHKcorrectTypeInsertError('"/>
           <xsl:value-of select="'arg_node,'"/>
-          <xsl:value-of select="'&quot;\n&lt;&lt;&lt;&lt;   '"/>
+          <xsl:value-of select="'&quot;'"/>
           <xsl:call-template name="nodeattributename">
             <xsl:with-param name="name1">
               <xsl:value-of select="../../@name" />
@@ -473,8 +489,8 @@ static info *FreeInfo(info *info)
               <xsl:value-of select="@name"/>
             </xsl:with-param>
           </xsl:call-template>
-          <xsl:value-of select="' hasnt the right type.   &gt;&gt;&gt;&gt;'"/>
-          <xsl:value-of select="'\n&quot;'"/>
+          <xsl:value-of select="' hasnt the right type.'"/>
+          <xsl:value-of select="'&quot;'"/>
           <xsl:value-of select="');'"/>
           <xsl:value-of select="'}'" />      
           <xsl:value-of select="'}'" />      
@@ -566,13 +582,12 @@ static info *FreeInfo(info *info)
       <xsl:if test="not(position() =last())">
         <xsl:value-of select="','"/>     
       </xsl:if>
-      <xsl:value-of select="$newline"/>    
+      <xsl:value-of select="$newline" />
     </xsl:if>
   </xsl:template>
   
   
   <xsl:template match="node" mode="isfun">
-    <xsl:value-of select="$newline"/>
     <xsl:value-of select="'('"/>
     <xsl:value-of select="'NODE_TYPE'"/>
     <xsl:value-of select="'( arg_node) == N_'"/>
@@ -585,7 +600,6 @@ static info *FreeInfo(info *info)
       <xsl:value-of select="') ||'"/>
       <xsl:value-of select="$newline"/>
     </xsl:if>        
-    <xsl:value-of select="$newline"/>
   </xsl:template>
   
 
