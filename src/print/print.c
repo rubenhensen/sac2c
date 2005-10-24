@@ -235,6 +235,7 @@ struct INFO {
     nodelist *etypes;
     nodelist *efuns;
     nodelist *eobjs;
+    bool firstError;
 };
 
 /* access macros print */
@@ -249,6 +250,7 @@ struct INFO {
 #define INFO_PRINT_DIM(n) (n->dim)
 #define INFO_PRINT_SHAPE(n) (n->shape)
 #define INFO_PRINT_SHAPE_COUNTER(n) (n->shapecnt)
+#define INFO_PRINT_FIRSTERROR(n) (n->firstError)
 
 /*
  * This global variable is used to detect inside of PrintIcm() whether
@@ -365,6 +367,7 @@ MakeInfo ()
     INFO_PRINT_DIM (result) = 0;
     INFO_PRINT_SHAPE (result) = NULL;
     INFO_PRINT_SHAPE_COUNTER (result) = NULL;
+    INFO_PRINT_FIRSTERROR (result) = TRUE;
 
     DBUG_RETURN (result);
 }
@@ -4918,16 +4921,30 @@ PRTdataflownode (node *arg_node, info *arg_info)
 node *
 PRTerror (node *arg_node, info *arg_info)
 {
+    bool firstError;
+
     DBUG_ENTER ("PRTerror");
 
     if (NODE_ERROR (arg_node) != NULL) {
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
     }
 
-    fprintf (global.outfile, "\n/* %s */", ERROR_MESSAGE (arg_node));
+    firstError = INFO_PRINT_FIRSTERROR (arg_info);
+
+    if (firstError) {
+        fprintf (global.outfile, "\n/******* BEGIN TREE CORRUPTION ********\n");
+        INFO_PRINT_FIRSTERROR (arg_info) = FALSE;
+    }
+
+    fprintf (global.outfile, "%s\n", ERROR_MESSAGE (arg_node));
 
     if (ERROR_NEXT (arg_node) != NULL) {
         PRINT_CONT (TRAVdo (ERROR_NEXT (arg_node), arg_info), ;);
+    }
+
+    if (firstError) {
+        fprintf (global.outfile, "********  END TREE CORRUPTION  *******/\n");
+        INFO_PRINT_FIRSTERROR (arg_info) = TRUE;
     }
 
     DBUG_RETURN (arg_node);
