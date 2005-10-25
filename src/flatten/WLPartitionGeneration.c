@@ -1,190 +1,9 @@
-/*
- *
- * $Log$
- * Revision 1.52  2005/08/26 12:24:34  ktr
- * WLPG will only transform with-loops with AKS index vector
- *
- * Revision 1.51  2005/07/03 17:05:42  ktr
- * Initialized a varible
- *
- * Revision 1.50  2005/06/27 19:28:58  cg
- * Partition Generation now supports empty vectors in with-loop boundaries
- * even if they are AKS and not AKV.
- *
- * Revision 1.49  2005/06/19 11:05:35  sbs
- * now, cut slices sets WITH_PARTS to 1 if the initial generator covered the entire range
- * already
- *
- * Revision 1.48  2005/06/18 18:03:52  sah
- * now the default element is never freed
- *
- * Revision 1.47  2005/06/15 17:52:14  ktr
- * with-loops with AUD results and AKS index vector are now equipped with a full
- * partition
- *
- * Revision 1.46  2005/06/15 16:43:58  ktr
- * Some brushing. Modarray with-loops with AUD result and AKS index vector
- * are not yet equipped with full partition.
- *
- * Revision 1.45  2005/06/15 08:43:46  ktr
- * some bugfixing
- *
- * Revision 1.44  2005/06/14 08:52:04  khf
- * moved adding of default partitions in wldefaultpartition
- *
- * Revision 1.43  2005/06/10 19:17:05  khf
- * corrected type checks
- *
- * Revision 1.42  2005/06/10 16:41:05  khf
- * using of sac2c:sel for modarray wls added
- * bugfix
- *
- * Revision 1.41  2005/06/03 17:17:41  khf
- * type setting corrected
- *
- * Revision 1.40  2005/04/29 20:31:11  khf
- * removed call of CF
- * generation of default partitions inserted
- * sourced out preparation and analysation of WLs
- * bugfix
- *
- * Revision 1.39  2005/04/19 17:11:37  ktr
- * Corrected a type access error.
- *
- * Revision 1.38  2005/04/15 08:47:35  ktr
- * replaced TYcopyType with TYeliminateAKV
- *
- * Revision 1.37  2005/03/19 23:11:53  sbs
- * AUD support added; default partitions are eliminated if a WL is identified as nonAUD.
- *
- * Revision 1.36  2005/01/26 10:32:10  mwe
- * only edit last log message ...
- *
- * Revision 1.35  2005/01/26 10:24:38  mwe
- * AVIS_SSACONST removed and replaced by usage of akv types
- *
- * Revision 1.34  2005/01/11 11:19:19  cg
- * Converted output from Error.h to ctinfo.c
- *
- * Revision 1.33  2004/12/16 17:47:10  ktr
- * TYisAKV inserted.
- *
- * Revision 1.32  2004/12/16 14:10:07  khf
- * added check on AKVs
- *
- * Revision 1.31  2004/12/10 17:40:37  khf
- * corrected test on shape extent
- *
- * Revision 1.30  2004/12/09 16:57:20  sbs
- * calls to TBmakePart adjusted.
- *
- * Revision 1.29  2004/12/08 17:59:15  ktr
- * removed ARRAY_TYPE/ARRAY_NTYPE
- *
- * Revision 1.28  2004/12/07 20:32:19  ktr
- * eliminated CONSTVEC which is superseded by ntypes.
- *
- * Revision 1.27  2004/11/27 00:41:57  khf
- * adjusted startfunctions
- *
- * Revision 1.26  2004/11/26 20:57:34  khf
- * corrected function names fron CF
- *
- * Revision 1.25  2004/11/25 23:28:04  khf
- * ccorrected error message :)
- *
- * Revision 1.24  2004/11/24 17:32:14  khf
- * SacDevCamp04
- *
- * Revision 1.23  2004/11/24 13:29:55  khf
- * SacDevCamp04: Compiles
- *
- * Revision 1.22  2004/10/22 10:29:32  khf
- * fixed bug 73
- *
- * Revision 1.21  2004/10/07 12:12:45  sah
- * added NCODE_INC_USED macro
- *
- * Revision 1.20  2004/09/30 10:56:25  khf
- * generate a scalar WL instead of a vector of zeros
- * to fill a genarray WL
- *
- * Revision 1.19  2004/09/28 11:37:47  khf
- * changed to new types
- *
- * Revision 1.18  2004/09/27 14:28:30  khf
- * CreateFullPartition() can now handle AUD modarray WLs
- *
- * Revision 1.17  2004/09/21 16:33:52  khf
- * NewIds() accepts N_num also, adapted creation of ntyes,
- * changed prf F_shape_sel to F_idx_sel
- *
- * Revision 1.16  2004/08/25 15:45:34  khf
- * Bug 44: faulty wlgenerator property for empty bounds resolved.
- * In ComputeGeneratorProperties only check for emptiness of
- * generator with non empty bounds
- *
- * Revision 1.15  2004/08/10 16:07:03  khf
- * CreateStructConstants(): expr can be NULL
- * CreateEmptyGenWLReplacement(): assign of freed LET_EXPR corrected
- *
- * Revision 1.14  2004/08/09 13:12:31  khf
- * some comments added
- *
- * Revision 1.13  2004/08/06 16:09:31  khf
- * CompleteGrid: determination of steps corrected
- *
- * Revision 1.12  2004/08/04 12:39:05  khf
- * by appliance of Constant Folding: the result of TRAV must not
- * be stored in MODUL_FUNS
- *
- * Revision 1.11  2004/08/03 11:15:02  khf
- * corrected size of array_shape
- *
- * Revision 1.10  2004/08/03 09:05:36  khf
- * some code brushing done
- * call of MakeNCode adjusted, corrected type of new struct constants
- * and identifiers
- * corrected inference of generator properties
- *
- * Revision 1.9  2004/07/22 17:26:23  khf
- * Special functions are now traversed when they are used
- *
- * Revision 1.8  2004/07/21 16:05:00  khf
- * no traverse in FUNDEF_NEXT in phase sacopt assured
- *
- * Revision 1.7  2004/07/21 12:48:33  khf
- * switch to new INFO structure
- * take changes of sbs in SSAWLT.c over
- *
- * Revision 1.6  2004/06/30 12:20:07  khf
- * WLPGfundef(): application of Constant Folding added
- * (PH_wlpartgen)
- *
- * Revision 1.5  2004/05/28 16:30:10  sbs
- * *** empty log message ***
- *
- * Revision 1.4  2004/04/08 08:13:25  khf
- * some corrections and new startfunction WLPartitionGenerationOPT
- * added
- *
- * Revision 1.3  2004/03/02 09:21:43  khf
- * some corrections and WLPGlet added
- *
- * Revision 1.2  2004/02/26 13:11:01  khf
- * WLPartitionGeneration implemented in parts (but not tested)
- *
- * Revision 1.1  2004/02/25 13:16:58  khf
- * Initial revision
- *
- *
- */
-
 /**
+ *
+ * $Id$
  *
  * @file WLPartition Generation.c
  *
- * ATTENTION: This travesal works completly with new types
  *
  * In this traversal AKS and AKD genarray/modarray withloops
  * with non-full partitions of the considered array are
@@ -240,14 +59,9 @@
  *
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include "new_types.h"
 #include "type_utils.h"
 #include "tree_basic.h"
-#include "node_basic.h"
 #include "tree_compound.h"
 #include "internal_lib.h"
 #include "shape.h"
@@ -258,9 +72,9 @@
 #include "dbug.h"
 #include "traverse.h"
 #include "constants.h"
-#include "ssa.h"
 #include "wlanalysis.h"
 #include "wldefaultpartition.h"
+
 #include "WLPartitionGeneration.h"
 
 typedef enum { SP_mod, SP_func } sub_phase_t;
@@ -273,7 +87,6 @@ struct INFO {
     node *fundef;
     node *let;
     node *nassign;
-    node *module;
     sub_phase_t subphase;
 };
 
@@ -282,18 +95,17 @@ struct INFO {
  *  - node : WL      : reference to base node of current WL (N_Nwith)
  *  - node : FUNDEF  : pointer to last fundef node. needed to access vardecs.
  *  - node : LET     : pointer to N_let node of current WL.
- *                     LET_EXPR(ID) == INFO_WLPG_WL.
+ *                     LET_EXPR(ID) == INFO_WL.
  *  - node : NASSIGNS: pointer to a list of new assigns, which where needed
  *                     to build structural constants and had to be inserted
  *                     in front of the considered with-loop.
  *
  ******************************************************************************/
-#define INFO_WLPG_WL(n) (n->wl)
-#define INFO_WLPG_FUNDEF(n) (n->fundef)
-#define INFO_WLPG_LET(n) (n->let)
-#define INFO_WLPG_NASSIGNS(n) (n->nassign)
-#define INFO_WLPG_MODULE(n) (n->module)
-#define INFO_WLPG_SUBPHASE(n) (n->subphase)
+#define INFO_WL(n) (n->wl)
+#define INFO_FUNDEF(n) (n->fundef)
+#define INFO_LET(n) (n->let)
+#define INFO_NASSIGNS(n) (n->nassign)
+#define INFO_SUBPHASE(n) (n->subphase)
 
 /**
  * INFO functions
@@ -307,12 +119,11 @@ MakeInfo ()
 
     result = ILIBmalloc (sizeof (info));
 
-    INFO_WLPG_WL (result) = NULL;
-    INFO_WLPG_FUNDEF (result) = NULL;
-    INFO_WLPG_LET (result) = NULL;
-    INFO_WLPG_NASSIGNS (result) = NULL;
-    INFO_WLPG_MODULE (result) = NULL;
-    INFO_WLPG_SUBPHASE (result) = SP_mod;
+    INFO_WL (result) = NULL;
+    INFO_FUNDEF (result) = NULL;
+    INFO_LET (result) = NULL;
+    INFO_NASSIGNS (result) = NULL;
+    INFO_SUBPHASE (result) = SP_mod;
 
     DBUG_RETURN (result);
 }
@@ -891,7 +702,7 @@ CompleteGrid (node *ls, node *us, node *step, node *width, int dim, node *wln,
                     NUM_VAL (EXPRS_EXPR (lbn)) = NUM_VAL (EXPRS_EXPR (lbn)) + wthnum;
                 } else {
 
-                    _ids = NewIds (EXPRS_EXPR (lbn), INFO_WLPG_FUNDEF (arg_info));
+                    _ids = NewIds (EXPRS_EXPR (lbn), INFO_FUNDEF (arg_info));
 
                     /* the identifier to add wthnum to */
                     tmp1 = DUPdoDupTree (EXPRS_EXPR (lbn));
@@ -904,8 +715,8 @@ CompleteGrid (node *ls, node *us, node *step, node *width, int dim, node *wln,
                     /* set correct backref to defining assignment */
                     AVIS_SSAASSIGN (IDS_AVIS (_ids)) = nassign;
 
-                    INFO_WLPG_NASSIGNS (arg_info)
-                      = TCappendAssign (INFO_WLPG_NASSIGNS (arg_info), nassign);
+                    INFO_NASSIGNS (arg_info)
+                      = TCappendAssign (INFO_NASSIGNS (arg_info), nassign);
 
                     EXPRS_EXPR (lbn) = FREEdoFreeTree (EXPRS_EXPR (lbn));
                     EXPRS_EXPR (lbn) = DUPdupIdsId (_ids);
@@ -932,7 +743,7 @@ CompleteGrid (node *ls, node *us, node *step, node *width, int dim, node *wln,
                   = NUM_VAL (EXPRS_EXPR (lbn)) + NUM_VAL (EXPRS_EXPR (wthe));
             } else {
 
-                _ids = NewIds (EXPRS_EXPR (lbn), INFO_WLPG_FUNDEF (arg_info));
+                _ids = NewIds (EXPRS_EXPR (lbn), INFO_FUNDEF (arg_info));
 
                 /* the identifier to add current width to */
                 tmp1 = DUPdoDupTree (EXPRS_EXPR (lbn));
@@ -945,8 +756,8 @@ CompleteGrid (node *ls, node *us, node *step, node *width, int dim, node *wln,
                 /* set correct backref to defining assignment */
                 AVIS_SSAASSIGN (IDS_AVIS (_ids)) = nassign;
 
-                INFO_WLPG_NASSIGNS (arg_info)
-                  = TCappendAssign (INFO_WLPG_NASSIGNS (arg_info), nassign);
+                INFO_NASSIGNS (arg_info)
+                  = TCappendAssign (INFO_NASSIGNS (arg_info), nassign);
 
                 EXPRS_EXPR (lbn) = FREEdoFreeTree (EXPRS_EXPR (lbn));
                 EXPRS_EXPR (lbn) = DUPdupIdsId (_ids);
@@ -958,7 +769,7 @@ CompleteGrid (node *ls, node *us, node *step, node *width, int dim, node *wln,
                   = NUM_VAL (EXPRS_EXPR (stpe)) - NUM_VAL (EXPRS_EXPR (wthe));
             } else {
 
-                _ids = NewIds (EXPRS_EXPR (wthn), INFO_WLPG_FUNDEF (arg_info));
+                _ids = NewIds (EXPRS_EXPR (wthn), INFO_FUNDEF (arg_info));
 
                 /* the first identifier */
                 tmp1 = DUPdoDupTree (EXPRS_EXPR (stpe));
@@ -971,8 +782,8 @@ CompleteGrid (node *ls, node *us, node *step, node *width, int dim, node *wln,
                 /* set correct backref to defining assignment */
                 AVIS_SSAASSIGN (IDS_AVIS (_ids)) = nassign;
 
-                INFO_WLPG_NASSIGNS (arg_info)
-                  = TCappendAssign (INFO_WLPG_NASSIGNS (arg_info), nassign);
+                INFO_NASSIGNS (arg_info)
+                  = TCappendAssign (INFO_NASSIGNS (arg_info), nassign);
 
                 EXPRS_EXPR (wthn) = FREEdoFreeTree (EXPRS_EXPR (wthn));
                 EXPRS_EXPR (wthn) = DUPdupIdsId (_ids);
@@ -1064,12 +875,11 @@ CreateFullPartition (node *wln, info *arg_info)
                 SHfreeShape (mshape);
             }
         } else {
-            nassigns
-              = CreateIdxShapeSelAssigns (MODARRAY_ARRAY (WITH_WITHOP (wln)), 0,
-                                          (gen_shape - 1), INFO_WLPG_FUNDEF (arg_info));
+            nassigns = CreateIdxShapeSelAssigns (MODARRAY_ARRAY (WITH_WITHOP (wln)), 0,
+                                                 (gen_shape - 1), INFO_FUNDEF (arg_info));
             array_shape = CreateStructConstant (array_shape, nassigns);
-            INFO_WLPG_NASSIGNS (arg_info)
-              = TCappendAssign (INFO_WLPG_NASSIGNS (arg_info), nassigns);
+            INFO_NASSIGNS (arg_info)
+              = TCappendAssign (INFO_NASSIGNS (arg_info), nassigns);
         }
     } break;
 
@@ -1164,7 +974,7 @@ CreateEmptyGenWLReplacement (node *wl, info *arg_info)
         /*
          * First, we change the generator to full scope.
          */
-        let_ids = LET_IDS (INFO_WLPG_LET (arg_info));
+        let_ids = LET_IDS (INFO_LET (arg_info));
         dim = SHgetDim (TYgetShape (AVIS_TYPE (IDS_AVIS (let_ids))));
         lb = WITH_BOUND1 (wl);
         ub = WITH_BOUND2 (wl);
@@ -1210,10 +1020,10 @@ CreateEmptyGenWLReplacement (node *wl, info *arg_info)
 
             if (N_empty == NODE_TYPE (tmpn)) {
                 /* there is no instruction in the block right now. */
-                _ids = NewIds (cexpr, INFO_WLPG_FUNDEF (arg_info));
+                _ids = NewIds (cexpr, INFO_FUNDEF (arg_info));
 
                 if (TYisAKV (array_type) || TYisAKS (array_type)) {
-                    tmpn = CreateZeros (array_type, INFO_WLPG_FUNDEF (arg_info));
+                    tmpn = CreateZeros (array_type, INFO_FUNDEF (arg_info));
                 } else {
                     CTIabortLine (global.linenum,
                                   "Cexpr of Genarray with-loop is not AKV/AKS."
@@ -1230,7 +1040,7 @@ CreateEmptyGenWLReplacement (node *wl, info *arg_info)
                 AVIS_SSAASSIGN (IDS_AVIS (_ids)) = assignn;
 
                 /* replace CEXPR */
-                tmpn = WITH_CODE (INFO_WLPG_WL (arg_info));
+                tmpn = WITH_CODE (INFO_WL (arg_info));
                 EXPRS_EXPR (CODE_CEXPRS (tmpn))
                   = FREEdoFreeTree (EXPRS_EXPR (CODE_CEXPRS (tmpn)));
                 EXPRS_EXPR (CODE_CEXPRS (tmpn)) = DUPdupIdsId (_ids);
@@ -1245,7 +1055,7 @@ CreateEmptyGenWLReplacement (node *wl, info *arg_info)
                   = FREEdoFreeTree (LET_EXPR (ASSIGN_INSTR (assignn)));
 
                 if (TYisAKV (array_type) || TYisAKS (array_type)) {
-                    tmpn = CreateZeros (array_type, INFO_WLPG_FUNDEF (arg_info));
+                    tmpn = CreateZeros (array_type, INFO_FUNDEF (arg_info));
                 } else {
                     CTIabortLine (global.linenum,
                                   "Cexpr of Genarray with-loop is not AKV/AKS."
@@ -1293,8 +1103,6 @@ WLPGmodule (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLPGmodule");
 
-    INFO_WLPG_MODULE (arg_info) = arg_node;
-
     DBUG_PRINT ("WLPG", ("WLPartitionGeneration module-wise"));
 
     if (MODULE_FUNS (arg_node) != NULL) {
@@ -1320,10 +1128,12 @@ WLPGfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLPGfundef");
 
-    INFO_WLPG_WL (arg_info) = NULL;
-    INFO_WLPG_FUNDEF (arg_info) = arg_node;
+    INFO_WL (arg_info) = NULL;
+    INFO_FUNDEF (arg_info) = arg_node;
+    INFO_NASSIGNS (arg_info) = NULL;
+    INFO_LET (arg_info) = NULL;
 
-    if (INFO_WLPG_SUBPHASE (arg_info) == SP_mod) {
+    if (INFO_SUBPHASE (arg_info) == SP_mod) {
 
         if (FUNDEF_BODY (arg_node)) {
             FUNDEF_INSTR (arg_node) = TRAVdo (FUNDEF_INSTR (arg_node), arg_info);
@@ -1332,7 +1142,7 @@ WLPGfundef (node *arg_node, info *arg_info)
         if (FUNDEF_NEXT (arg_node) != NULL) {
             FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
         }
-    } else if (INFO_WLPG_SUBPHASE (arg_info) == SP_func) {
+    } else if (INFO_SUBPHASE (arg_info) == SP_func) {
         /* compiler_phase == PH_sacopt */
         if (FUNDEF_BODY (arg_node)) {
             FUNDEF_INSTR (arg_node) = TRAVdo (FUNDEF_INSTR (arg_node), arg_info);
@@ -1347,7 +1157,7 @@ WLPGfundef (node *arg_node, info *arg_info)
  * @fn node *WLPGassign(node *arg_node, info *arg_info)
  *
  *   @brief traverse instruction. If this creates new assignments in
- *          INFO_WLPG_NASSIGNS these are inserted in front of the actual one.
+ *          INFO_NASSIGNS these are inserted in front of the actual one.
  *
  *   @param  node *arg_node:  N_assign
  *           info *arg_info:  N_info
@@ -1365,8 +1175,8 @@ WLPGassign (node *arg_node, info *arg_info)
 
     iterator = NULL;
 
-    if (INFO_WLPG_NASSIGNS (arg_info) != NULL) {
-        iterator = INFO_WLPG_NASSIGNS (arg_info);
+    if (INFO_NASSIGNS (arg_info) != NULL) {
+        iterator = INFO_NASSIGNS (arg_info);
         while (ASSIGN_NEXT (iterator)) {
             iterator = ASSIGN_NEXT (iterator);
         }
@@ -1374,8 +1184,8 @@ WLPGassign (node *arg_node, info *arg_info)
         /* to traverse not in circle */
         iterator = ASSIGN_NEXT (iterator);
 
-        arg_node = INFO_WLPG_NASSIGNS (arg_info);
-        INFO_WLPG_NASSIGNS (arg_info) = NULL;
+        arg_node = INFO_NASSIGNS (arg_info);
+        INFO_NASSIGNS (arg_info) = NULL;
 
         if (ASSIGN_NEXT (iterator) != NULL) {
             ASSIGN_NEXT (iterator) = TRAVdo (ASSIGN_NEXT (iterator), arg_info);
@@ -1408,7 +1218,7 @@ WLPGlet (node *arg_node, info *arg_info)
 
     DBUG_ASSERT ((LET_EXPR (arg_node) != NULL), "N_let with empty EXPR attribute.");
 
-    INFO_WLPG_LET (arg_info) = arg_node;
+    INFO_LET (arg_info) = arg_node;
 
     /*
      * Only ids nodes with one entry are considered.
@@ -1458,18 +1268,18 @@ WLPGap (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("WLPGap");
 
-    if ((INFO_WLPG_SUBPHASE (arg_info) == SP_func)
+    if ((INFO_SUBPHASE (arg_info) == SP_func)
         && (FUNDEF_ISLACFUN (AP_FUNDEF (arg_node)))) {
         /*
          * special functions must be traversed when they are used
          */
-        if (AP_FUNDEF (arg_node) != INFO_WLPG_FUNDEF (arg_info)) {
+        if (AP_FUNDEF (arg_node) != INFO_FUNDEF (arg_info)) {
 
             /* stack arg_info */
             tmp = arg_info;
             arg_info = MakeInfo ();
             /* take current flag SUBPHASE */
-            INFO_WLPG_SUBPHASE (arg_info) = INFO_WLPG_SUBPHASE (tmp);
+            INFO_SUBPHASE (arg_info) = INFO_SUBPHASE (tmp);
 
             AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
 
@@ -1508,7 +1318,7 @@ WLPGwith (node *arg_node, info *arg_info)
     /*
      * Information about last N_let has to be stacked before traversal
      */
-    let_tmp = INFO_WLPG_LET (arg_info);
+    let_tmp = INFO_LET (arg_info);
 
     /*
      * The CODEs have to be traversed as they may contain further (nested) WLs
@@ -1519,7 +1329,7 @@ WLPGwith (node *arg_node, info *arg_info)
     }
 
     /* Pop N_let */
-    INFO_WLPG_LET (arg_info) = let_tmp;
+    INFO_LET (arg_info) = let_tmp;
 
     /*
      * Once a full partition has been created, we do not need to inspect
@@ -1532,7 +1342,7 @@ WLPGwith (node *arg_node, info *arg_info)
         /*
          * initialize WL traversal
          */
-        INFO_WLPG_WL (arg_info) = arg_node; /* store the current node for later */
+        INFO_WL (arg_info) = arg_node; /* store the current node for later */
 
         /*
          * analyse and prepare WL for generating a full partition
@@ -1540,13 +1350,12 @@ WLPGwith (node *arg_node, info *arg_info)
          * during this traversal:
          */
         DBUG_PRINT ("WLPG", ("call WLAdoWlAnalysis"));
-        arg_node = WLAdoWlAnalysis (arg_node, INFO_WLPG_FUNDEF (arg_info),
-                                    INFO_WLPG_LET (arg_info), &(nassigns), &genprop);
+        arg_node = WLAdoWlAnalysis (arg_node, INFO_FUNDEF (arg_info), INFO_LET (arg_info),
+                                    &(nassigns), &genprop);
 
         DBUG_PRINT ("WLPG", ("WLAdoWlAnalysis ended"));
 
-        INFO_WLPG_NASSIGNS (arg_info)
-          = TCappendAssign (INFO_WLPG_NASSIGNS (arg_info), nassigns);
+        INFO_NASSIGNS (arg_info) = TCappendAssign (INFO_NASSIGNS (arg_info), nassigns);
 
         switch (genprop) {
         case GPT_empty:
@@ -1614,11 +1423,14 @@ WLPGwith (node *arg_node, info *arg_info)
 
     /*
      * Remove unused codes (former default codes)
+     * This can only be performed iff the wl has not been replaced
      */
-    WITH_CODE (arg_node) = RemoveUnusedCodes (WITH_CODE (arg_node));
+    if (NODE_TYPE (arg_node) == N_with) {
+        WITH_CODE (arg_node) = RemoveUnusedCodes (WITH_CODE (arg_node));
+    }
 
-    INFO_WLPG_WL (arg_info) = NULL;
-    INFO_WLPG_LET (arg_info) = NULL;
+    INFO_WL (arg_info) = NULL;
+    INFO_LET (arg_info) = NULL;
 
     DBUG_RETURN (arg_node);
 }
@@ -1647,7 +1459,7 @@ WLPGdoWlPartitionGeneration (node *arg_node)
     DBUG_PRINT ("WLPG", ("starting WLPGdoWlPartitionGeneration"));
 
     arg_info = MakeInfo ();
-    INFO_WLPG_SUBPHASE (arg_info) = SP_mod;
+    INFO_SUBPHASE (arg_info) = SP_mod;
 
     TRAVpush (TR_wlpg);
     arg_node = TRAVdo (arg_node, arg_info);
@@ -1682,7 +1494,7 @@ WLPGdoWlPartitionGenerationOpt (node *arg_node)
     DBUG_PRINT ("WLPG", ("starting WLPGdoWlPartitionGenerationOpt"));
 
     arg_info = MakeInfo ();
-    INFO_WLPG_SUBPHASE (arg_info) = SP_func;
+    INFO_SUBPHASE (arg_info) = SP_func;
 
     TRAVpush (TR_wlpg);
     arg_node = TRAVdo (arg_node, arg_info);
