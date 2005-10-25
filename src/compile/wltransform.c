@@ -1,84 +1,6 @@
-/*
- * $Log$
- * Revision 3.118  2005/09/27 16:26:51  sbs
- * WLP definition adjusted to N_spap
- *
- * Revision 3.117  2005/09/12 17:43:33  ktr
- * Quick-fixed an issue in BuildCubes.
- * Nevertheless: wltransform should be seriously brushed as many code situations
- * it was designed for cannot occur any longer. It also needs to be adapted
- * to ssa form!
- *
- * Revision 3.116  2005/09/09 16:59:56  sbs
- * swapped two debug prints to improve debuggin
- *
- * Revision 3.115  2005/06/28 12:30:33  sbs
- * we assume now, that wltransform is called iff the bounds are structural constants
- * Therefore, we assert this in CurrentComponentGetNode
- *
- * Revision 3.114  2005/06/14 10:49:46  ktr
- * changed GRID_MODIFIED and STRIDE_MODIFIED into flags X_ISMODIFIED
- *
- * Revision 3.113  2005/06/06 13:59:48  ktr
- * Fixed implementation of StridesDisjointAllDims
- *
- * Revision 3.112  2005/05/31 11:52:58  ktr
- * Rewrote the predicate deciding which with-loops can be converted into
- * with2 representation.
- * Only with-loops with AKS index vectors and a full partition will be
- * converted.
- * Especially, with-loops with AKS index vector WITHOUT a full partition are
- * rejected as they must be provided with a full partition by WLPG.
- *
- * Revision 3.111  2005/05/30 05:41:29  ktr
- * With-loop transformation is now performed for only those with-loops
- * with full partitions.
- * This means all AKD with-loops must be converted into full partitions prior
- * to wltransform.
- *
- * Revision 3.110  2005/05/27 20:30:23  ktr
- * Wltransform now uses new types
- *
- * Revision 3.109  2005/04/12 15:16:58  sah
- * replaced strcmp by ILIBstringCompare
- *
- * Revision 3.108  2005/01/12 15:49:05  cg
- * Bugs fixed in output conversion.
- *
- * Revision 3.107  2004/12/20 12:46:10  ktr
- * call to TBmakeWlgridvar corrected.
- *
- * Revision 3.106  2004/12/14 14:37:40  ktr
- * Calls to TBmakeWlgridX corrected.
- *
- * Revision 3.105  2004/12/08 18:01:17  ktr
- * removed ARRAY_TYPE/ARRAY_NTYPE
- *
- * Revision 3.104  2004/11/26 20:19:30  khf
- * compiles!
- *
- * Revision 3.103  2004/11/25 22:18:51  khf
- * use PRTprintHomsv
- *
- * Revision 3.102  2004/11/25 21:45:00  khf
- * SacDevCamp04: COMPILES!!!!!!!
- *
- * Revision 3.101  2004/11/25 15:24:13  skt
- * moved two macros from wl_bounds
- *
- * Revision 3.100  2004/11/25 15:15:07  skt
- * some code brushing - lookfor HERE to go on
- *
- * Revision 3.99  2004/10/27 14:13:57  khf
- * EmptyWl2Expr: added definition of iv in front of assigns
- *
- * [...]
- *
- */
-
 /******************************************************************************
  *
- * file: wltransform.c
+ * $Id$
  *
  * description:
  *
@@ -3928,6 +3850,7 @@ ComputeCubes (node *strides)
  **
  **/
 
+#if 0
 /******************************************************************************
  *
  * Function:
@@ -3976,180 +3899,196 @@ ComputeCubes (node *strides)
  *
  ******************************************************************************/
 
-static node *
-GenerateCompleteDomain (node *stride, int iter_dims, shape *iter_shp)
+static
+node *GenerateCompleteDomain( node *stride, int iter_dims, shape *iter_shp)
 {
-    node *new_strides, *new_stride, *new_grid;
-    node *next_dim;
-    node *compl_stride;
-    node *act_stride, *act_grid;
-    node *act_compl_stride, *last_compl_grid;
-    int lb, shpdim;
-    node *act_compl_grid = NULL;
-    node *dup_strides = NULL;
-    node *last_dup_grid = NULL;
+  node *new_strides, *new_stride, *new_grid;
+  node *next_dim;
+  node *compl_stride;
+  node *act_stride, *act_grid;
+  node *act_compl_stride, *last_compl_grid;
+  int lb, shpdim;
+  node *act_compl_grid = NULL;
+  node *dup_strides = NULL;
+  node *last_dup_grid = NULL;
 
-    DBUG_ENTER ("GenerateCompleteDomain");
+  DBUG_ENTER( "GenerateCompleteDomain");
 
-    DBUG_ASSERT ((stride != NULL), "no stride found");
-    DBUG_ASSERT ((NODE_TYPE (stride) == N_wlstride), "var. stride found");
-    DBUG_ASSERT ((WLSTRIDE_NEXT (stride) == NULL), "more than one stride found");
-    DBUG_ASSERT ((iter_shp != NULL), "no shape information found!");
+  DBUG_ASSERT( (stride != NULL), "no stride found");
+  DBUG_ASSERT( (NODE_TYPE( stride) == N_wlstride), "var. stride found");
+  DBUG_ASSERT( (WLSTRIDE_NEXT( stride) == NULL), "more than one stride found");
+  DBUG_ASSERT( (iter_shp != NULL), "no shape information found!");
+
+  /*
+   * we duplicate 'strides'
+   *  -> later on we use this to generate complement strides
+   */
+  compl_stride = DUPdoDupNode( stride);
+  /*
+   * set all steps to '1' and remove the code in the duplicated chain
+   */
+  act_compl_stride = compl_stride;
+  while (act_compl_stride != NULL) {
+    act_compl_stride = NormalizeGrids( act_compl_stride);
+    WLSTRIDE_STEP( act_compl_stride) = 1;
+    act_compl_grid = WLSTRIDE_CONTENTS( act_compl_stride);
+    WLGRID_BOUND2( act_compl_grid) = 1;
+    act_compl_stride = WLGRID_NEXTDIM( act_compl_grid);
+  }
+  WLGRID_CODE( act_compl_grid) = NULL;
+
+  new_strides = NULL;
+  act_stride = stride;
+  act_compl_stride = compl_stride;
+  last_compl_grid = NULL;
+  while (act_stride != NULL) {
+    act_grid = WLSTRIDE_CONTENTS( act_stride);
+    act_compl_grid = WLSTRIDE_CONTENTS( act_compl_stride);
+    DBUG_ASSERT( (NODE_TYPE( act_stride) == N_wlstride), "var. stride found");
+    DBUG_ASSERT( (NODE_TYPE( act_grid) == N_wlgrid), "var. grid found");
 
     /*
-     * we duplicate 'strides'
-     *  -> later on we use this to generate complement strides
+     * normalize the bounds
      */
-    compl_stride = DUPdoDupNode (stride);
+    act_stride = NormalizeGrids( act_stride);
+
     /*
-     * set all steps to '1' and remove the code in the duplicated chain
+     * insert lower part of complement
      */
-    act_compl_stride = compl_stride;
-    while (act_compl_stride != NULL) {
-        act_compl_stride = NormalizeGrids (act_compl_stride);
-        WLSTRIDE_STEP (act_compl_stride) = 1;
-        act_compl_grid = WLSTRIDE_CONTENTS (act_compl_stride);
-        WLGRID_BOUND2 (act_compl_grid) = 1;
-        act_compl_stride = WLGRID_NEXTDIM (act_compl_grid);
-    }
-    WLGRID_CODE (act_compl_grid) = NULL;
+    shpdim = SHgetExtent( iter_shp, WLSTRIDE_DIM( act_stride));
+    new_stride = GenerateNodeForGap(
+                   act_stride,
+                   N_wlstride,
+                     &( WLSTRIDE_BOUND2( act_stride)),
+                   N_wlstride,
+                     &shpdim,
+                   FALSE);
 
-    new_strides = NULL;
-    act_stride = stride;
-    act_compl_stride = compl_stride;
-    last_compl_grid = NULL;
-    while (act_stride != NULL) {
-        act_grid = WLSTRIDE_CONTENTS (act_stride);
-        act_compl_grid = WLSTRIDE_CONTENTS (act_compl_stride);
-        DBUG_ASSERT ((NODE_TYPE (act_stride) == N_wlstride), "var. stride found");
-        DBUG_ASSERT ((NODE_TYPE (act_grid) == N_wlgrid), "var. grid found");
+    if ( new_stride != NULL) {
+      WLSTRIDE_CONTENTS( new_stride) = 
+	TBmakeWlgrid( 0, WLGRID_DIM( act_grid),
+		      0, 1,
+		      NULL,
+		      GenerateShapeStrides( WLGRID_DIM( act_grid) + 1,
+					    iter_dims, iter_shp),
+		      NULL);
 
+      if (last_compl_grid != NULL) {
         /*
-         * normalize the bounds
+         * duplicate 'compl_stride' from root til 'last_compl_grid'.
          */
-        act_stride = NormalizeGrids (act_stride);
-
+        next_dim = WLGRID_NEXTDIM( last_compl_grid);
+        WLGRID_NEXTDIM( last_compl_grid) = NULL;
+	dup_strides = DUPdoDupNode( compl_stride);
+	WLGRID_NEXTDIM( last_compl_grid) = next_dim;
         /*
-         * insert lower part of complement
+         * go to duplicated 'last_compl_grid'
          */
-        shpdim = SHgetExtent (iter_shp, WLSTRIDE_DIM (act_stride));
-        new_stride
-          = GenerateNodeForGap (act_stride, N_wlstride, &(WLSTRIDE_BOUND2 (act_stride)),
-                                N_wlstride, &shpdim, FALSE);
+        last_dup_grid = WLSTRIDE_CONTENTS( dup_strides);
+        while (WLGRID_NEXTDIM( last_dup_grid) != NULL) {
+          last_dup_grid = WLSTRIDE_CONTENTS( WLGRID_NEXTDIM( last_dup_grid));
+	}
+      }
 
-        if (new_stride != NULL) {
-            WLSTRIDE_CONTENTS (new_stride)
-              = TBmakeWlgrid (0, WLGRID_DIM (act_grid), 0, 1, NULL,
-                              GenerateShapeStrides (WLGRID_DIM (act_grid) + 1, iter_dims,
-                                                    iter_shp),
-                              NULL);
+      /*
+       * append new stride/grid to duplicated 'compl_stride'
+       */
+      if (last_compl_grid != NULL) {
+        WLGRID_NEXTDIM( last_dup_grid) = new_stride;
+      }
+      else {
+	dup_strides = new_stride;
+      }
 
-            if (last_compl_grid != NULL) {
-                /*
-                 * duplicate 'compl_stride' from root til 'last_compl_grid'.
-                 */
-                next_dim = WLGRID_NEXTDIM (last_compl_grid);
-                WLGRID_NEXTDIM (last_compl_grid) = NULL;
-                dup_strides = DUPdoDupNode (compl_stride);
-                WLGRID_NEXTDIM (last_compl_grid) = next_dim;
-                /*
-                 * go to duplicated 'last_compl_grid'
-                 */
-                last_dup_grid = WLSTRIDE_CONTENTS (dup_strides);
-                while (WLGRID_NEXTDIM (last_dup_grid) != NULL) {
-                    last_dup_grid = WLSTRIDE_CONTENTS (WLGRID_NEXTDIM (last_dup_grid));
-                }
-            }
-
-            /*
-             * append new stride/grid to duplicated 'compl_stride'
-             */
-            if (last_compl_grid != NULL) {
-                WLGRID_NEXTDIM (last_dup_grid) = new_stride;
-            } else {
-                dup_strides = new_stride;
-            }
-
-            /*
-             * insert 'dup_strides' into 'new_strides'
-             */
-            new_strides = WLTRAinsertWlNodes (new_strides, dup_strides);
-        }
-
-        /*
-         * insert upper part of complement
-         */
-        lb = 0;
-        new_stride = GenerateNodeForGap (act_stride, N_wlstride, &lb, N_wlstride,
-                                         &(WLSTRIDE_BOUND1 (act_stride)), FALSE);
-        if (new_stride != NULL) {
-            WLSTRIDE_CONTENTS (new_stride)
-              = TBmakeWlgrid (0, WLGRID_DIM (act_grid), 0, 1, NULL,
-                              GenerateShapeStrides (WLGRID_DIM (act_grid) + 1, iter_dims,
-                                                    iter_shp),
-                              NULL);
-
-            if (last_compl_grid != NULL) {
-                /*
-                 * duplicate 'compl_stride' from root til 'last_compl_grid'.
-                 */
-                next_dim = WLGRID_NEXTDIM (last_compl_grid);
-                WLGRID_NEXTDIM (last_compl_grid) = NULL;
-                dup_strides = DUPdoDupNode (compl_stride);
-                WLGRID_NEXTDIM (last_compl_grid) = next_dim;
-                /*
-                 * go to duplicated 'last_compl_grid'
-                 */
-                last_dup_grid = WLSTRIDE_CONTENTS (dup_strides);
-                while (WLGRID_NEXTDIM (last_dup_grid) != NULL) {
-                    last_dup_grid = WLSTRIDE_CONTENTS (WLGRID_NEXTDIM (last_dup_grid));
-                }
-            }
-
-            /*
-             * append new stride/grid to duplicated 'compl_stride'
-             */
-            if (last_compl_grid != NULL) {
-                WLGRID_NEXTDIM (last_dup_grid) = new_stride;
-            } else {
-                dup_strides = new_stride;
-            }
-
-            /*
-             * insert 'dup_strides' into 'new_strides'
-             */
-            new_strides = WLTRAinsertWlNodes (new_strides, dup_strides);
-        }
-
-        /*
-         * is the grid incomplete?
-         */
-        lb = WLGRID_BOUND2 (act_grid) - WLGRID_BOUND1 (act_grid);
-        act_grid = FillGapSucc (&new_grid, act_grid, N_wlgrid, &lb, N_wlstride,
-                                &(WLSTRIDE_STEP (act_stride)), FALSE);
-        if (new_grid != NULL) {
-            WLGRID_NEXTDIM (new_grid) = DUPdoDupNode (WLGRID_NEXTDIM (act_compl_grid));
-        }
-
-        /*
-         * next dim
-         */
-        act_stride = WLGRID_NEXTDIM (act_grid);
-        act_compl_stride = WLGRID_NEXTDIM (act_compl_grid);
-        last_compl_grid = act_compl_grid;
+      /*
+       * insert 'dup_strides' into 'new_strides'
+       */
+      new_strides = WLTRAinsertWlNodes( new_strides, dup_strides);
     }
 
     /*
-     * insert completed stride/grid into 'new_strides'
+     * insert upper part of complement
      */
-    new_strides = WLTRAinsertWlNodes (new_strides, stride);
+    lb = 0;
+    new_stride = 
+      GenerateNodeForGap( act_stride,
+			  N_wlstride, &lb,
+			  N_wlstride, &(WLSTRIDE_BOUND1( act_stride)),
+			  FALSE);
+    if (new_stride != NULL) {
+      WLSTRIDE_CONTENTS( new_stride) = 
+	TBmakeWlgrid( 0, WLGRID_DIM( act_grid),
+		      0, 1,
+		      NULL,
+		      GenerateShapeStrides( WLGRID_DIM( act_grid) + 1,
+					    iter_dims, iter_shp),
+		      NULL);
+
+      if (last_compl_grid != NULL) {
+	/*
+	 * duplicate 'compl_stride' from root til 'last_compl_grid'.
+	 */
+        next_dim = WLGRID_NEXTDIM( last_compl_grid);
+        WLGRID_NEXTDIM( last_compl_grid) = NULL;
+	dup_strides = DUPdoDupNode( compl_stride);
+	WLGRID_NEXTDIM( last_compl_grid) = next_dim;
+        /*
+         * go to duplicated 'last_compl_grid'
+         */
+        last_dup_grid = WLSTRIDE_CONTENTS( dup_strides);
+        while (WLGRID_NEXTDIM( last_dup_grid) != NULL) {
+          last_dup_grid = WLSTRIDE_CONTENTS( WLGRID_NEXTDIM( last_dup_grid));
+	}
+      }
+
+      /*
+       * append new stride/grid to duplicated 'compl_stride'
+       */
+      if (last_compl_grid != NULL) {
+        WLGRID_NEXTDIM( last_dup_grid) = new_stride;
+      }
+      else {
+	dup_strides = new_stride;
+      }
+
+      /*
+       * insert 'dup_strides' into 'new_strides'
+       */
+      new_strides = WLTRAinsertWlNodes( new_strides, dup_strides);
+    }
 
     /*
-     * the copy of 'strides' is useless now
+     * is the grid incomplete?
      */
-    compl_stride = FREEdoFreeTree (compl_stride);
+    lb = WLGRID_BOUND2( act_grid) - WLGRID_BOUND1( act_grid);
+    act_grid = FillGapSucc(
+                 &new_grid, act_grid,
+                 N_wlgrid,   &lb,
+                 N_wlstride, &(WLSTRIDE_STEP( act_stride)),
+                 FALSE);
+    if (new_grid != NULL) {
+      WLGRID_NEXTDIM( new_grid) = DUPdoDupNode( WLGRID_NEXTDIM( act_compl_grid));
+    }
 
-    DBUG_RETURN (new_strides);
+    /*
+     * next dim
+     */
+    act_stride = WLGRID_NEXTDIM( act_grid);
+    act_compl_stride = WLGRID_NEXTDIM( act_compl_grid);
+    last_compl_grid = act_compl_grid;
+  }
+
+  /*
+   * insert completed stride/grid into 'new_strides'
+   */
+  new_strides = WLTRAinsertWlNodes( new_strides, stride);
+
+  /*
+   * the copy of 'strides' is useless now
+   */
+  compl_stride = FREEdoFreeTree( compl_stride);
+
+  DBUG_RETURN( new_strides);
 }
 
 /******************************************************************************
@@ -4193,76 +4132,89 @@ GenerateCompleteDomain (node *stride, int iter_dims, shape *iter_shp)
  *
  ******************************************************************************/
 
-static node *
-GenerateCompleteDomainVar (node *stride, int iter_dims, shape *iter_shp)
+static
+node *GenerateCompleteDomainVar( node *stride, int iter_dims, shape *iter_shp)
 {
-    node *grid;
-    int lb, shp_idx;
-    node *new_node;
+  node *grid;
+  int lb, shp_idx;
+  node *new_node;
 
-    DBUG_ENTER ("GenerateCompleteDomainVar");
+  DBUG_ENTER( "GenerateCompleteDomainVar");
 
-    if (stride != NULL) {
-        grid = WLSTRIDEX_CONTENTS (stride);
-        /*
-         * CAUTION: the grid can be a N_wlgrid *or* N_wlgridvar node!!
-         */
+  if (stride != NULL) {
+    grid = WLSTRIDEX_CONTENTS( stride);
+    /*
+     * CAUTION: the grid can be a N_wlgrid *or* N_wlgridvar node!!
+     */
 
-        /*
-         * complete grid if needed
-         */
-        grid = FillGapSucc (&new_node, grid, NODE_TYPE (grid),
-                            WLGRIDX_GET_ADDR (grid, BOUND2), NODE_TYPE (stride),
-                            WLSTRIDEX_GET_ADDR (stride, STEP), FALSE);
-        if (new_node != NULL) {
-            L_WLGRIDX_NEXTDIM (new_node, GenerateShapeStrides (WLGRID_DIM (grid) + 1,
-                                                               iter_dims, iter_shp));
-        }
-
-        /*
-         * next dim
-         */
-        L_WLGRIDX_NEXTDIM (grid, GenerateCompleteDomainVar (WLGRIDX_NEXTDIM (grid),
-                                                            iter_dims, iter_shp));
-
-        /*
-         * append lower part of complement
-         */
-        shp_idx = GET_SHAPE_IDX (iter_shp, WLSTRIDEX_DIM (stride));
-        stride = FillGapSucc (&new_node, stride, NODE_TYPE (stride),
-                              WLSTRIDEX_GET_ADDR (stride, BOUND2), N_wlstride, &shp_idx,
-                              FALSE);
-        if (new_node != NULL) {
-            L_WLSTRIDEX_CONTENTS (new_node,
-                                  TBmakeWlgrid (0, WLSTRIDEX_DIM (stride), 0, 1, NULL,
-                                                GenerateShapeStrides (WLSTRIDEX_DIM (
-                                                                        stride)
-                                                                        + 1,
-                                                                      iter_dims,
-                                                                      iter_shp),
-                                                NULL));
-        }
-
-        /*
-         * insert upper part of complement
-         */
-        lb = 0;
-        stride = FillGapPred (&new_node, stride, N_wlstride, &lb, NODE_TYPE (stride),
-                              WLSTRIDEX_GET_ADDR (stride, BOUND1), FALSE);
-        if (new_node != NULL) {
-            L_WLSTRIDEX_CONTENTS (new_node,
-                                  TBmakeWlgrid (0, WLSTRIDEX_DIM (stride), 0, 1, NULL,
-                                                GenerateShapeStrides (WLSTRIDEX_DIM (
-                                                                        stride)
-                                                                        + 1,
-                                                                      iter_dims,
-                                                                      iter_shp),
-                                                NULL));
-        }
+    /*
+     * complete grid if needed
+     */
+    grid = FillGapSucc( &new_node,
+                        grid,
+                        NODE_TYPE( grid),   WLGRIDX_GET_ADDR( grid, BOUND2),
+                        NODE_TYPE( stride), WLSTRIDEX_GET_ADDR( stride, STEP),
+                        FALSE);
+    if (new_node != NULL) {
+      L_WLGRIDX_NEXTDIM( new_node,
+                         GenerateShapeStrides( WLGRID_DIM( grid) + 1, 
+                                               iter_dims, iter_shp));
     }
 
-    DBUG_RETURN (stride);
+    /*
+     * next dim
+     */
+    L_WLGRIDX_NEXTDIM( grid,
+                       GenerateCompleteDomainVar( WLGRIDX_NEXTDIM( grid), 
+                                                  iter_dims, iter_shp));
+
+    /*
+     * append lower part of complement
+     */
+    shp_idx = GET_SHAPE_IDX( iter_shp, WLSTRIDEX_DIM( stride));
+    stride = FillGapSucc( &new_node,
+                          stride,
+                          NODE_TYPE( stride),
+                            WLSTRIDEX_GET_ADDR( stride, BOUND2),
+                          N_wlstride,
+                            &shp_idx,
+                          FALSE);
+    if (new_node != NULL) {
+      L_WLSTRIDEX_CONTENTS( new_node, 
+	TBmakeWlgrid( 0, WLSTRIDEX_DIM( stride),
+		      0, 1,
+		      NULL,
+		      GenerateShapeStrides( WLSTRIDEX_DIM( stride) + 1,
+					    iter_dims, iter_shp),
+		      NULL));
+    }
+
+    /*
+     * insert upper part of complement
+     */
+    lb = 0;
+    stride = FillGapPred( &new_node,
+                          stride,
+                          N_wlstride,
+                            &lb,
+                          NODE_TYPE( stride),
+                            WLSTRIDEX_GET_ADDR( stride, BOUND1),
+                          FALSE);
+    if (new_node != NULL) {
+      L_WLSTRIDEX_CONTENTS( new_node, 
+	TBmakeWlgrid( 0, WLSTRIDEX_DIM( stride),
+		      0, 1,
+		      NULL,
+		      GenerateShapeStrides( WLSTRIDEX_DIM( stride) + 1,
+					    iter_dims, iter_shp),
+		      NULL));
+    }
+  }
+
+  DBUG_RETURN( stride);
 }
+
+#endif
 
 /******************************************************************************
  *

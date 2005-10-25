@@ -341,6 +341,7 @@ getPrf (prf prf, node *e1, node *e2)
             else
                 prf = F_mul_AxA;
         }
+        break;
 
     case F_min:
     case F_max:
