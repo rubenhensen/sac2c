@@ -1871,6 +1871,18 @@
           <node name="Ap" />
         </travuser>
       </traversal>
+      <traversal id="MNG" name="Mark NoOp Grids" default="sons" include="mark_noop_grids.h">
+        <travuser>
+          <node name="WLgrid" />
+          <node name="WLgridVar" />
+          <node name="WLstride" />
+          <node name="WLstrideVar" />
+          <node name="WLblock" />
+          <node name="WLublock" />
+          <node name="Code" />
+          <node name="Let" />
+        </travuser>
+      </traversal>
       <traversal id="RID" name="Rename Identifiers" default="sons" include="renameidentifiers.h">
         <travuser>
 	  <node name="Module" />

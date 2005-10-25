@@ -106,6 +106,11 @@ PRECdoPrecompile (node *syntax_tree)
 #endif
 
     /*
+     * Mark Noop Grids
+     */
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_mng, syntax_tree);
+
+    /*
      * Rename identifiers
      */
     syntax_tree = PHrunCompilerSubPhase (SUBPH_rid, syntax_tree);

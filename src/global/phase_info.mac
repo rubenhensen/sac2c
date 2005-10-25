@@ -580,6 +580,8 @@ SUBPHASE (tcp, "tcp", "Applying type conversions", TCPdoTypeConversions)
 
 SUBPHASE (aff, "aff", "Adjusting fold functions", PHdummy)
 
+SUBPHASE (mng, "mng", "Mark NoOp Grids", MNGdoMarkNoopGrids)
+
 SUBPHASE (rid, "rid", "Consistently renaming identifiers", RIDdoRenameIdentifiers)
 
 /***********************************************************************/

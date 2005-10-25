@@ -1,110 +1,6 @@
 #
 #
-# $Log$
-# Revision 3.44  2005/09/27 17:24:22  sbs
-# simd_infer.o added
-#
-# Revision 3.43  2005/08/24 10:21:26  ktr
-# added wlidx.o
-#
-# Revision 3.42  2005/07/21 14:18:54  sah
-# introduced remove_external_code
-#
-# Revision 3.41  2004/11/29 14:41:57  sah
-# added setlinksign traversal
-#
-# Revision 3.40  2004/11/27 02:36:35  sbs
-# *** empty log message ***
-#
-# Revision 3.39  2004/11/27 02:10:26  ktr
-# renameidentifiers.o
-#
-# Revision 3.38  2004/11/27 00:18:24  ktr
-# dependencies reactivated
-#
-# Revision 3.37  2004/11/27 00:16:00  ktr
-# added type_conversions.
-#
-# Revision 3.36  2004/11/26 21:21:39  sbs
-# BEtest temporarily disabled
-#
-# Revision 3.35  2004/11/26 21:16:09  sah
-# pour Bodo *<8-)
-#
-# Revision 3.34  2004/11/25 19:30:50  ktr
-# removed ReuseWithArrays.o, PatchWith.o
-#
-# Revision 3.33  2004/11/24 15:18:11  jhb
-# deleted INC
-#
-# Revision 3.32  2004/10/04 17:18:29  sah
-# a different subset of files is compiled, depending
-# on the compiler version to create
-#
-# Revision 3.31  2004/09/30 20:01:26  sah
-# added a switch to compile a subset of
-# the compiler only
-#
-# Revision 3.30  2004/07/21 16:53:43  ktr
-# added markmemvals.o
-#
-# Revision 3.29  2004/03/10 00:19:00  dkrHH
-# compile.tagged.o removed
-#
-# Revision 3.28  2003/09/20 14:21:48  dkr
-# icm2c_prf.o added
-#
-# Revision 3.27  2003/03/12 17:24:35  dkr
-# INCS modified
-#
-# Revision 3.26  2003/03/09 17:15:26  ktr
-# added blir.o
-#
-# Revision 3.25  2002/09/09 14:19:32  dkr
-# icm2c_error.o
-#
-# Revision 3.24  2002/07/02 13:01:57  dkr
-# icm2c_basic.o added
-#
-# Revision 3.22  2002/06/06 19:56:03  dkr
-# target clean modified
-#
-# Revision 3.21  2002/05/31 17:19:55  dkr
-# icm2c_utils.o and NameTuples.o added for target BEtest
-#
-# Revision 3.20  2001/12/10 15:33:03  dkr
-# compile.tagged.o added
-#
-# Revision 3.19  2001/11/21 11:04:43  dkr
-# target 'all': BEtest added
-#
-# Revision 3.18  2001/11/21 10:32:04  dkr
-# rules simplified
-#
-# Revision 3.17  2001/11/15 15:36:48  sacbase
-# CLOCK_SKEW_ELIMINATION and PROJECT_ROOT added.
-#
-# Revision 3.16  2001/11/14 12:59:48  sbs
-# deps line replaced by inclusion of Makefile.Deps
-# (.xxx.d mechanism)
-# global setup included via Makefile.Config
-#
-# Revision 3.13  2001/05/17 13:17:19  dkr
-# minor changes done
-#
-# Revision 3.12  2001/05/11 14:36:56  cg
-# Added compilation of new source file icm2c_sched.c
-#
-# Revision 3.7  2001/03/02 10:36:30  dkr
-# /home/dkr/sac/BASE/sac2c/src/compile/RCS/Makefile,v used in touch-rules
-#
-# Revision 3.1  2000/11/20 18:01:00  sacbase
-# new release made
-#
-# [...]
-#
-# Revision 1.1  1995/03/29  12:12:52  hw
-# Initial revision
+# $Id$
 #
 # 
 
@@ -136,7 +32,8 @@ SAC2C_OBJS := wlpragma_funs.o precompile.o compile.o wltransform.o \
               icm2c_std.o icm2c_prf.o icm2c_wl.o icm2c_mt.o icm2c_sched.o \
               icm2c_error.o icm2c_basic.o icm2c_utils.o markmemvals.o \
               typeconv_precompile.o functionprecompile.o renameidentifiers.o \
-              setlinksign.o remove_external_code.o wlidxs.o simd_infer.o
+              setlinksign.o remove_external_code.o wlidxs.o simd_infer.o \
+              mark_noop_grids.o
 
 
 all: $(SAC2C_OBJS)

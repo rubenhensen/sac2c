@@ -168,7 +168,7 @@ COMPILE= src/compile/wlpragma_funs.o src/compile/wltransform.o \
          src/compile/renameidentifiers.o src/compile/functionprecompile.o \
          src/compile/typeconv_precompile.o  src/compile/setlinksign.o \
          src/compile/remove_external_code.o src/compile/wlidxs.o \
-         src/compile/simd_infer.o
+         src/compile/simd_infer.o src/compile/mark_noop_grids.o
 
 CINTERFACE=
 #CINTERFACE= src/c-interface/map_cwrapper.o \
