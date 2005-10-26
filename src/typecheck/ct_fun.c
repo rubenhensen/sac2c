@@ -299,3 +299,28 @@ NTCCTudf (te_info *info, ntype *args)
 
     DBUG_RETURN (res);
 }
+
+/******************************************************************************
+ *
+ * function:
+ *    ntype *NTCCTudfDispatched( te_info info, ntype *args)
+ *
+ * description:
+ *    Here, we assume that all argument types are either array types or
+ *    type variables with identical Min and Max!
+ *
+ ******************************************************************************/
+
+ntype *
+NTCCTudfDispatched (te_info *info, ntype *args)
+{
+    node *fundef;
+    ntype *res;
+
+    DBUG_ENTER ("NTCCTudfDispatched");
+
+    fundef = TEgetWrapper (info);
+    res = TUmakeProductTypeFromRets (FUNDEF_RETS (fundef));
+
+    DBUG_RETURN (res);
+}

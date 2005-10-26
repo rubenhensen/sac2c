@@ -17,5 +17,6 @@
 extern dft_res *NTCCTdispatchFunType (node *wrapper, ntype *args);
 
 extern ntype *NTCCTudf (te_info *info, ntype *args);
+extern ntype *NTCCTudfDispatched (te_info *info, ntype *args);
 
 #endif /* _SAC_CT_FUN_H_ */
