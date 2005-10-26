@@ -549,12 +549,5 @@ USSATdoUndoSsaTransform (node *module)
     /* ast is no longer in ssaform */
     global.valid_ssaform = FALSE;
 
-    /*
-     * finally, we increase the ssaform_phase counter, in order to avoid
-     * name clashes if the ast is transformed into ssa-form at a later stage
-     * of the compiler again. cf. SSANewVardec in SSATransform.c !
-     */
-    global.ssaform_phase++;
-
     DBUG_RETURN (module);
 }

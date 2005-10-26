@@ -1,148 +1,5 @@
 /*
- * $Log$
- * Revision 1.39  2005/08/24 10:31:27  ktr
- * added support for WITHID_IDXS
- *
- * Revision 1.38  2005/08/19 17:18:41  sbs
- * eliminated some hair-raising stuff from old types
- *
- * Revision 1.37  2005/07/21 12:01:57  ktr
- * removed AVIS_WITHID
- *
- * Revision 1.36  2005/07/03 17:04:54  ktr
- * removed references to PH_flatten
- *
- * Revision 1.35  2005/06/06 13:21:00  jhb
- * removed SSATransformExplicitAllocs
- *
- * Revision 1.34  2005/04/21 06:34:40  ktr
- * Made SSATnewVardec static
- *
- * Revision 1.33  2005/04/20 19:11:01  ktr
- * SSA form no longer leaves information in the syntax tree that must be
- * maintained. Instead, SSACounter and SSAStack nodes are removed after
- * SSATransform
- *
- * Revision 1.32  2005/02/01 17:50:32  mwe
- * some changes in creation of fungroups
- *
- * Revision 1.31  2005/01/27 16:37:30  mwe
- * no fungroups for lacfuns are created now
- *
- * Revision 1.30  2005/01/26 17:32:20  mwe
- * initialization of fungroups added
- *
- * Revision 1.29  2005/01/11 13:05:10  cg
- * Added notification of SSA transform
- *
- * Revision 1.28  2005/01/07 18:05:21  cg
- * Updated usage of ctinfo
- *
- * Revision 1.27  2005/01/07 17:32:55  cg
- * Converted compile time output from Error.h to ctinfo.c
- *
- * Revision 1.26  2004/12/12 07:55:02  ktr
- * Corrected node usage.
- *
- * Revision 1.25  2004/11/30 21:58:09  ktr
- * Should work with new vardec/arg/avis constellation and ntypes now.
- *
- * Revision 1.24  2004/11/29 20:44:49  sah
- * post-DK bugfixing
- *
- * Revision 1.23  2004/11/27 03:07:40  cg
- * Functions renamed.
- *
- * Revision 1.22  2004/11/27 00:41:46  mwe
- * function renaming
- *
- * Revision 1.21  2004/11/26 12:50:08  mwe
- * changes according to changes in tree_compound.h
- *
- * Revision 1.20  2004/11/25 22:50:01  mwe
- * changes according to changes in ast.xml
- *
- * Revision 1.19  2004/11/25 14:04:33  mwe
- * SacDevCamp Dk: Compiles!!
- *
- * Revision 1.18  2004/08/08 14:02:08  sbs
- * some doxygenic added
- *
- * Revision 1.17  2004/08/07 16:01:43  sbs
- * SSAwith2 added for N_Nwith2 support
- *
- * Revision 1.16  2004/08/07 13:20:11  sbs
- * code brushing finished for now. WL treatment redone.
- *
- * Revision 1.15  2004/08/07 10:10:27  sbs
- * SSANwithXXX renamed into SSAwithXXXX
- * further code brushing made
- * bug in SSAfuncond fixed;now, we can deal with funconds that are
- * not preceeded by if-then-elses! This may happen due to optimization
- * An example is gcd!
- *
- * Revision 1.14  2004/08/06 21:05:45  sbs
- * maior code brushing and additional commenting done.
- * In particular, Funcond generation rewritten.
- *
- * Revision 1.13  2004/08/05 20:58:08  sbs
- * some maior code brushing and implementation description added
- * AND
- * variable renaming changed into <varname>__SSA<x>_<Y>
- * (for explaination see comments 8-)
- * this should be a proper fix for bug 42 (hopefully 8-)
- *
- * Revision 1.12  2004/08/04 17:13:12  khf
- * quick fix for bug #42
- * new variable name created by TmpVarName()
- *
- * Revision 1.11  2004/07/16 17:36:23  sah
- * switch to new INFO structure
- * PHASE I
- *
- * Revision 1.10  2004/07/14 15:20:57  ktr
- * WITHID is treated as RHS if the variables were allocated using alloc, too.
- *
- * Revision 1.9  2004/06/21 19:01:15  mwe
- * check compiler phase before creating new types (create no types before PH_typecheck)
- *
- * Revision 1.8  2004/06/10 14:46:53  mwe
- * after usage of SSANewVardec a ntype added to new avis node
- *
- * Revision 1.7  2004/06/08 14:30:46  ktr
- * WithIDs are treated as RHS-expressions iff the Index vector has been
- * allocated using F_alloc_or_reuse before.
- *
- * Revision 1.6  2004/05/12 12:59:40  ktr
- * Code for NCODE_EPILOGUE added
- *
- * Revision 1.5  2004/05/11 13:25:21  khf
- * NCODE_CEXPR in SSANcode() replaced by NCODE_CEXPRS
- *
- * Revision 1.4  2004/03/05 19:14:27  mwe
- * representation of conditional changed
- * using N_funcond node instead of phi
- *
- * Revision 1.3  2004/02/25 08:22:32  cg
- * Elimination of while-loops by conversion into do-loops with
- * leading conditional integrated into flatten.
- * Separate compiler phase while2do eliminated.
- *
- * Revision 1.2  2004/02/06 14:19:33  mwe
- * replace usage of PHITARGET with primitive phi function
- *
- * Revision 1.1  2004/01/28 16:53:48  skt
- * Initial revision
- *
- *
- ************ Attention! ************
- * File was moved from ../tree
- * following older Revisions can be found there
- *
- *  [eliminated...]
- *
- * Revision 1.1  2001/02/13 15:16:15  nmw
- * Initial revision
+ * $Id$
  *
  */
 
@@ -287,6 +144,7 @@
  *****************************************************************************/
 
 #include <string.h>
+#include <limits.h>
 
 #include "types.h"
 #include "tree_basic.h"
@@ -432,6 +290,63 @@ FreeInfo (info *info)
     info = ILIBfree (info);
 
     DBUG_RETURN (info);
+}
+
+/*@}*/
+
+/**
+ * @name SSAT traversal counter
+ */
+/*@{*/
+
+/**
+ * This static variable counts the number of renamings that
+ * have been performed. The value is used to increment the
+ * global.ssa_phase counter only of there was a renaming in
+ * a SSAT traversal. The variable is incremented by
+ * SSATnewVardec and checked/resetted by the different
+ * traversal start functions using CheckSSATCounter.
+ */
+static int ssat_renamings = 0;
+
+/** <!-- ****************************************************************** -->
+ * @fn void CheckSSATCounter()
+ *
+ * @brief Checks whether the global SSAT renaming counter is non zero
+ *        and increases the ssa-phase counter in that case. This is done
+ *        to ensure disjoint names for all renamings even across multiple
+ *        traversals of SSA transform.
+ ******************************************************************************/
+static void
+CheckSSATCounter ()
+{
+    DBUG_ENTER ("CheckSSATCounter");
+
+    if (ssat_renamings != 0) {
+        DBUG_ASSERT ((global.ssaform_phase < INT_MAX),
+                     "global.ssaform_phase overflow detected!");
+
+        global.ssaform_phase++;
+        ssat_renamings = 0;
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn void IncSSATCounter()
+ *
+ * @brief Increases the global SSAT renaming counter.
+ ******************************************************************************/
+static void
+IncSSATCounter ()
+{
+    DBUG_ENTER ("IncSSATCounter");
+
+    DBUG_ASSERT ((ssat_renamings < INT_MAX), "SSATCounter overflow!");
+    ssat_renamings++;
+
+    DBUG_VOID_RETURN;
 }
 
 /*@}*/
@@ -655,6 +570,8 @@ SSATnewVardec (node *old_vardec_or_arg)
     ILIBfree (VARDEC_NAME (new_vardec));
     VARDEC_NAME (new_vardec) = ILIBstringConcat (SSACNT_BASEID (ssacnt), tmpstring);
     ;
+
+    IncSSATCounter ();
 
     DBUG_RETURN (new_vardec);
 }
@@ -1878,6 +1795,7 @@ SSATdoTransform (node *syntax_tree)
     arg_info = FreeInfo (arg_info);
 
     global.valid_ssaform = TRUE;
+    CheckSSATCounter ();
 
     DBUG_RETURN (syntax_tree);
 }
@@ -1920,6 +1838,7 @@ SSATdoTransformAllowGOs (node *syntax_tree)
     arg_info = FreeInfo (arg_info);
 
     global.valid_ssaform = TRUE;
+    CheckSSATCounter ();
 
     DBUG_RETURN (syntax_tree);
 }
@@ -1961,6 +1880,8 @@ SSATdoTransformOneFunction (node *fundef)
         arg_info = FreeInfo (arg_info);
     }
 
+    CheckSSATCounter ();
+
     DBUG_RETURN (fundef);
 }
 
@@ -1996,6 +1917,8 @@ SSATdoTransformOneFundef (node *fundef)
     TRAVpop ();
 
     arg_info = FreeInfo (arg_info);
+
+    CheckSSATCounter ();
 
     DBUG_RETURN (fundef);
 }
