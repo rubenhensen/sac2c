@@ -1564,7 +1564,6 @@ CSEdoCommonSubexpressionElimination (node *fundef)
 
     /* do not start traversal in special functions */
     if (!(FUNDEF_ISLACFUN (fundef))) {
-        DBUG_ASSERT ((global.optimize.dodcr), "CSE requieres DCR");
 
         arg_info = MakeInfo ();
 
