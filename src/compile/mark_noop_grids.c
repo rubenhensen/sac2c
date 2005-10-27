@@ -254,13 +254,14 @@ MNGwlgrid (node *arg_node, info *arg_info)
     INFO_ISNOOP (arg_info) = TRUE;
 
     /*
-     * there are two possibilities here:
+     * there are three possibilities here:
      * - CODE != NULL: innermost dimension. check the code
      * - NEXTDIM != NULL: check inner dimensions
+     * - both NULL: this is already a noop, thus nothing to check
      */
     if (WLGRID_CODE (arg_node) != NULL) {
         WLGRID_CODE (arg_node) = TRAVdo (WLGRID_CODE (arg_node), arg_info);
-    } else {
+    } else if (WLGRID_NEXTDIM (arg_node) != NULL) {
         WLGRID_NEXTDIM (arg_node) = TRAVdo (WLGRID_NEXTDIM (arg_node), arg_info);
     }
 
@@ -275,8 +276,15 @@ MNGwlgrid (node *arg_node, info *arg_info)
 
     WLGRID_ISNOOP (arg_node) = WLGRID_ISNOOP (arg_node) || INFO_ISNOOP (arg_info);
 
-    if (WLGRID_ISNOOP (arg_node) && (WLGRID_NEXTDIM (arg_node) != NULL)) {
-        WLGRID_NEXTDIM (arg_node) = FREEdoFreeTree (WLGRID_NEXTDIM (arg_node));
+    if (WLGRID_ISNOOP (arg_node)) {
+        if (WLGRID_NEXTDIM (arg_node) != NULL) {
+            WLGRID_NEXTDIM (arg_node) = FREEdoFreeTree (WLGRID_NEXTDIM (arg_node));
+        }
+
+        if (WLGRID_CODE (arg_node) != NULL) {
+            CODE_USED (WLGRID_CODE (arg_node))--;
+            WLGRID_CODE (arg_node) = NULL;
+        }
     }
 
     /*
@@ -312,10 +320,11 @@ MNGwlgridvar (node *arg_node, info *arg_info)
      * there are two possibilities here:
      * - CODE != NULL: innermost dimension. check the code
      * - NEXTDIM != NULL: check inner dimensions
+     * - both NULL: this is already a noop, thus nothing to check
      */
     if (WLGRIDVAR_CODE (arg_node) != NULL) {
         WLGRIDVAR_CODE (arg_node) = TRAVdo (WLGRIDVAR_CODE (arg_node), arg_info);
-    } else {
+    } else if (WLGRIDVAR_NEXTDIM (arg_node) != NULL) {
         WLGRIDVAR_NEXTDIM (arg_node) = TRAVdo (WLGRIDVAR_NEXTDIM (arg_node), arg_info);
     }
 
@@ -330,8 +339,15 @@ MNGwlgridvar (node *arg_node, info *arg_info)
 
     WLGRIDVAR_ISNOOP (arg_node) = WLGRIDVAR_ISNOOP (arg_node) || INFO_ISNOOP (arg_info);
 
-    if (WLGRIDVAR_ISNOOP (arg_node) && (WLGRIDVAR_NEXTDIM (arg_node) != NULL)) {
-        WLGRIDVAR_NEXTDIM (arg_node) = FREEdoFreeTree (WLGRIDVAR_NEXTDIM (arg_node));
+    if (WLGRIDVAR_ISNOOP (arg_node)) {
+        if (WLGRIDVAR_NEXTDIM (arg_node) != NULL) {
+            WLGRIDVAR_NEXTDIM (arg_node) = FREEdoFreeTree (WLGRIDVAR_NEXTDIM (arg_node));
+        }
+
+        if (WLGRIDVAR_CODE (arg_node) != NULL) {
+            CODE_USED (WLGRIDVAR_CODE (arg_node))--;
+            WLGRIDVAR_CODE (arg_node) = NULL;
+        }
     }
 
     /*
