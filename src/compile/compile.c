@@ -5467,7 +5467,8 @@ COMPwith (node *arg_node, info *arg_info)
     node *icm_chain = NULL, *body_icms, *default_icms;
     node *generator_icms;
     node *let_neutral;
-    node *res_ids, *idx_id, *offs_id, *lower_id, *upper_id;
+    node *res_ids, *idx_id, *lower_id, *upper_id;
+    node *offs_id = NULL;
     char *sub_name;
     node *sub_vardec, *sub_get_dim, *sub_set_shape;
     bool isfold;
@@ -6669,8 +6670,8 @@ COMPwlgridx (node *arg_node, info *arg_info)
              * create ICMs for code block              *
              *******************************************/
 
-            node *icm_args;
-            char *icm_name;
+            node *icm_args = NULL;
+            char *icm_name = NULL;
             node *cexpr;
             node *tmp_ids;
             node *withop;

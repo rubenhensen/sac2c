@@ -114,6 +114,12 @@ TogglePrf (prf op)
 
     default:
         DBUG_ASSERT ((0), "Illegal argument prf!");
+        /*
+         * the following line initialises result, as the product
+         * version will continue execution (the DBUG_ASSERT is
+         * ignored!)
+         */
+        result = F_unknown;
     }
 
     DBUG_RETURN (result);

@@ -198,10 +198,18 @@ containsLocalInstances (node *wrapper)
     if (FUNDEF_IMPL (wrapper) != NULL) {
         result = FUNDEF_ISLOCAL (FUNDEF_IMPL (wrapper));
     } else {
-        result
-          = (bool)TYfoldFunctionInstances (FUNDEF_WRAPPERTYPE (wrapper),
-                                           (void *(*)(node *, void *))isLocalInstance,
-                                           (void *)FALSE);
+        void *fold;
+
+        fold = TYfoldFunctionInstances (FUNDEF_WRAPPERTYPE (wrapper),
+                                        (void *(*)(node *, void *))isLocalInstance,
+                                        (void *)FALSE);
+
+        /*
+         * we have to use this instead of casting fold to bool
+         * as they may be of different sizes which would lead to
+         * a compiler warning
+         */
+        result = (fold != NULL);
     }
 
     DBUG_RETURN (result);

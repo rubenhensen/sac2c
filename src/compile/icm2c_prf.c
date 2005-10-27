@@ -474,7 +474,9 @@ PrfSel_Data (char *to_NT, int to_sdim, char *from_NT, int from_sdim, void *idx,
              int idx_size, void (*idx_size_fun) (void *),
              void (*idx_read_fun) (void *, char *, int), char *copyfun)
 {
+#ifndef DBUG_OFF
     int to_dim = DIM_NO_OFFSET (to_sdim);
+#endif
     int from_dim = DIM_NO_OFFSET (from_sdim);
 
     DBUG_ENTER ("PrfSel_Data");

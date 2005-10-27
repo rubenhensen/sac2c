@@ -620,7 +620,6 @@ EMRIwith2 (node *arg_node, info *arg_info)
     node *wlids;
     node *rhc = NULL;
     node *withop;
-    node *avis;
 
     DBUG_ENTER ("EMRIwith2");
 

@@ -2120,6 +2120,8 @@ GenerateNodeForGap (node *wlnode, nodetype nt1, void *pnode1, nodetype nt2, void
     DBUG_RETURN (gap_node);
 }
 
+#if 0 /* not used at the moment */
+
 /******************************************************************************
  *
  * Function:
@@ -2130,34 +2132,40 @@ GenerateNodeForGap (node *wlnode, nodetype nt1, void *pnode1, nodetype nt2, void
  *                      bool is_noop)
  *
  * Description:
- *
+ *   
  *
  ******************************************************************************/
 
-static node *
-FillGapPred (node **new_node, /* a return value!! */
-             node *wlnode, nodetype nt1, void *pnode1, nodetype nt2, void *pnode2,
-             bool is_noop)
+static
+node *FillGapPred( node **new_node,   /* a return value!! */
+                   node *wlnode,
+                   nodetype nt1, void *pnode1,
+                   nodetype nt2, void *pnode2,
+                   bool is_noop)
 {
-    node *gap_node;
+  node *gap_node;
 
-    DBUG_ENTER ("FillGapPred");
+  DBUG_ENTER( "FillGapPred");
 
-    DBUG_ASSERT ((wlnode != NULL), "no WL node found!");
+  DBUG_ASSERT( (wlnode != NULL), "no WL node found!");
 
-    gap_node = GenerateNodeForGap (wlnode, nt1, pnode1, nt2, pnode2, is_noop);
+  gap_node = GenerateNodeForGap( wlnode,
+                                 nt1, pnode1, nt2, pnode2,
+                                 is_noop);
 
-    if (gap_node != NULL) {
-        L_WLNODE_NEXT (gap_node, wlnode);
-        wlnode = gap_node;
-    }
+  if (gap_node != NULL) {
+    L_WLNODE_NEXT( gap_node, wlnode);
+    wlnode = gap_node;
+  }
 
-    if (new_node != NULL) {
-        (*new_node) = gap_node;
-    }
+  if (new_node != NULL) {
+    (*new_node) = gap_node;
+  }
 
-    DBUG_RETURN (wlnode);
+  DBUG_RETURN( wlnode);
 }
+
+#endif
 
 /******************************************************************************
  *

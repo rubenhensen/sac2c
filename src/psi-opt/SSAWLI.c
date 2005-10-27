@@ -559,7 +559,7 @@ CreateIndexInfoA (node *prfn, info *arg_info)
     int val = 0;
     node *idn = NULL;
     node *assignn, *wln;
-    index_info *iinfo, *tmpinfo;
+    index_info *iinfo, *tmpinfo = NULL;
     constant *const1, *const2, *constn = NULL;
     int *const_elems;
 

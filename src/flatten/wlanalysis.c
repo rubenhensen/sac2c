@@ -453,8 +453,6 @@ WLAwith (node *arg_node, info *arg_info)
 node *
 WLApart (node *arg_node, info *arg_info)
 {
-    node *withidvec;
-
     DBUG_ENTER ("WLApart");
 
     PART_GENERATOR (arg_node) = TRAVdo (PART_GENERATOR (arg_node), arg_info);

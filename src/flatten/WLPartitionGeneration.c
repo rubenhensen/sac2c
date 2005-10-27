@@ -447,7 +447,8 @@ NormalizeStepWidth (node **step, node **width)
                 is_1 = is_1 && 1 == stpnum;
             } else if ((NODE_TYPE (EXPRS_EXPR (stp)) == N_id)
                        && (NODE_TYPE (EXPRS_EXPR (wth)) == N_id)) {
-                if (!strcmp (ID_NAME (EXPRS_EXPR (stp)), ID_NAME (EXPRS_EXPR (wth)))) {
+                if (ILIBstringCompare (ID_NAME (EXPRS_EXPR (stp)),
+                                       ID_NAME (EXPRS_EXPR (wth)))) {
                     EXPRS_EXPR (stp) = FREEdoFreeTree (EXPRS_EXPR (stp));
                     EXPRS_EXPR (stp) = TBmakeNum (1);
                     EXPRS_EXPR (wth) = FREEdoFreeTree (EXPRS_EXPR (wth));

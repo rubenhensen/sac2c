@@ -228,6 +228,8 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
+#ifndef DBUG_OFF
+
 /******************************************************************************
  *
  * function:
@@ -265,6 +267,8 @@ IsRecursiveCall (node *assign, node *fundef)
 
     DBUG_RETURN (res);
 }
+
+#endif
 
 /******************************************************************************
  *
