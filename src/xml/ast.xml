@@ -4748,6 +4748,20 @@
             </targets>
           </type>
         </attribute>
+        <attribute name="Alt">
+          <type name="Link">
+            <targets>
+              <target mandatory="no">
+                <node name="Avis" />
+                <phases>
+                </phases>
+              </target>
+            </targets>
+          </type>
+          <description>
+            Used by CompareTree to remember alpha conversion
+          </description>
+        </attribute>
         <attribute name="DefDepth">
           <type name="Integer">
             <targets>
