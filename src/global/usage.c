@@ -970,8 +970,9 @@ USGprintVersion ()
 {
     DBUG_ENTER ("USGprintVersion");
 
-    printf ("sac2c %s %s  (%s %s)\n",
+    printf ("sac2c %s rev %s %s  (%s %s)\n",
             (global.version_id[0] == '\0') ? "???" : global.version_id,
+            (build_rev[0] == '\0') ? "???" : build_rev,
             (global.target_platform[0] == '\0') ? "???" : global.target_platform,
             (build_date[0] == '\0') ? "???" : build_date,
             (build_user[0] == '\0') ? "???" : build_user);

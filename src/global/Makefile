@@ -86,6 +86,7 @@ include $(PROJECT_ROOT)/Makefile.Config
 # local settings:
 #
 
+REV = $(shell svn info | grep Revision: | sed -e 's/Revision: //g')
 
 all: main.o usage.o internal_lib.o globals.o resource.o \
      build.o options.o NameTuplesUtils.o filemgr.o \
@@ -96,6 +97,7 @@ build.c:
 	echo "char build_user[] = \"$(USER)\";" >> build.c
 	echo "char build_host[] = \"`hostname`\";" >> build.c
 	echo "char build_os[]   = \"$(OS)\";"   >> build.c
+	echo "char build_rev[]  = \"$(REV)\";"  >> build.c
 	cat build.c
 	$(CLOCK_SKEW_ELIMINATION) $@
 

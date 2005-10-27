@@ -38,5 +38,6 @@ extern char build_date[];
 extern char build_user[];
 extern char build_host[];
 extern char build_os[];
+extern char build_rev[];
 
 #endif /* _SAC_BUILD_H_ */

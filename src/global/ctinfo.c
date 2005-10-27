@@ -391,8 +391,8 @@ InternalCompilerErrorBreak (int sig)
         error_file = fopen ("SACbugreport", "a");
 
         fprintf (error_file, " *\n");
-        fprintf (error_file, " * using sac2c %s for %s\n", global.version_id,
-                 global.target_platform);
+        fprintf (error_file, " * using sac2c %s rev %s for %s\n", global.version_id,
+                 build_rev, global.target_platform);
         fprintf (error_file, " * built %s.\n", build_date);
         fprintf (error_file, " * by user %s on host %s for %s.\n", build_user, build_host,
                  build_os);
@@ -409,7 +409,9 @@ InternalCompilerErrorBreak (int sig)
         if (global.sacfilename != NULL) {
             fprintf (error_file, " * The contents of %s is:\n", global.sacfilename);
             fprintf (error_file, " */\n\n");
+            fclose (error_file);
             ILIBsystemCall2 ("cat %s >> SACbugreport", global.sacfilename);
+            error_file = fopen ("SACbugreport", "a");
         } else {
             fprintf (error_file, " * Compiler crashed before SAC file name could be "
                                  "determined!\n");
