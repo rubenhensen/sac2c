@@ -129,6 +129,7 @@ DFMUdfm2Vardecs (dfmask_t *mask, lut_t *lut)
     avis = DFMgetMaskEntryAvisSet (mask);
     while (avis != NULL) {
         vardecs = TBmakeVardec (DUPdoDupNode (avis), vardecs);
+        AVIS_SSAASSIGN (VARDEC_AVIS (vardecs)) = NULL;
 
         lut = LUTinsertIntoLutP (lut, avis, VARDEC_AVIS (vardecs));
 
@@ -160,6 +161,7 @@ DFMUdfm2Args (dfmask_t *mask, lut_t *lut)
     avis = DFMgetMaskEntryAvisSet (mask);
     while (avis != NULL) {
         args = TBmakeArg (DUPdoDupNode (avis), args);
+        AVIS_SSAASSIGN (ARG_AVIS (args)) = NULL;
 
         DBUG_ASSERT ((NODE_TYPE (args) == N_arg), "AAAHHH");
 

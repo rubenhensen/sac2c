@@ -1,89 +1,5 @@
 /*
- *
- * $Log$
- * Revision 1.25  2005/09/04 12:54:00  ktr
- * re-engineered the optimization cycle
- *
- * Revision 1.24  2005/08/18 16:22:12  ktr
- * removed conditional lhs expressions
- *
- * Revision 1.23  2005/01/11 13:32:21  cg
- * Converted output from Error.h to ctinfo.c
- *
- * Revision 1.22  2004/12/16 17:47:47  ktr
- * TYisAKV inserted.
- *
- * Revision 1.21  2004/12/08 18:02:10  ktr
- * removed ARRAY_TYPE/ARRAY_NTYPE
- *
- * Revision 1.20  2004/12/07 20:34:45  ktr
- * eliminated CONSTVEC which is superseded by ntypes.
- *
- * Revision 1.19  2004/11/24 19:08:51  khf
- * SacDevCamp04: Compiles!
- *
- * Revision 1.18  2004/11/07 19:26:35  khf
- * now consider every N_block disjoined
- *
- * Revision 1.17  2004/10/28 16:58:43  khf
- * support for max_newgens and no_fold_fusion added
- *
- * Revision 1.16  2004/10/27 15:50:19  khf
- * some debugging
- *
- * Revision 1.15  2004/10/20 08:10:29  khf
- * added resolving of special dependencies,
- * intersection with fold-WLs who have a full partition
- * and some DBUG_PRINTs
- * some code brushing done
- *
- * Revision 1.14  2004/10/07 15:50:07  khf
- * added NCODE_INC_USED macro
- *
- * Revision 1.13  2004/10/03 16:10:54  khf
- * debugging of intersection
- *
- * Revision 1.12  2004/09/30 17:02:22  khf
- * added intersection of generators with steps and width
- *
- * Revision 1.11  2004/09/24 15:10:17  khf
- * initialised some pointers to NULL
- * to please the compiler
- *
- * Revision 1.10  2004/09/23 17:25:41  khf
- * proceeding implementation (intersection of generators
- * without step and width)
- *
- * Revision 1.9  2004/08/31 19:33:21  khf
- * proproceeding implementation
- *
- * Revision 1.8  2004/08/29 11:00:40  khf
- * proceeding implementation
- *
- * Revision 1.7  2004/08/26 15:06:52  khf
- * detection and tag of dependencies are sourced out into
- * detectdependencies.c and tagdependencies.c
- *
- * Revision 1.6  2004/07/22 17:28:37  khf
- * Special functions are now traversed when they are used
- *
- * Revision 1.5  2004/07/21 12:47:35  khf
- * switch to new INFO structure
- *
- * Revision 1.4  2004/06/30 12:24:54  khf
- * Only WLs with non-empty iteration space are considered
- *
- * Revision 1.3  2004/05/07 13:07:08  khf
- * some debugging
- *
- * Revision 1.2  2004/05/04 17:06:49  khf
- * some debugging
- *
- * Revision 1.1  2004/04/08 08:15:56  khf
- * Initial revision
- *
- *
- *
+ * $Id$
  */
 
 #include <stdio.h>
@@ -1658,16 +1574,21 @@ WLFSfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLFSfundef");
 
-    DBUG_PRINT ("WLFS", ("Fusioning With-Loops in function %s", FUNDEF_NAME (arg_node)));
-
-    INFO_FUNDEF (arg_info) = arg_node;
-
     if (FUNDEF_BODY (arg_node)) {
+        DBUG_PRINT ("WLFS",
+                    ("Fusioning With-Loops in function %s", FUNDEF_NAME (arg_node)));
+
+        INFO_FUNDEF (arg_info) = arg_node;
+
         FUNDEF_INSTR (arg_node) = TRAVdo (FUNDEF_INSTR (arg_node), arg_info);
+
+        DBUG_PRINT ("WLFS", ("Fusioning With-Loops in function %s complete",
+                             FUNDEF_NAME (arg_node)));
     }
 
-    DBUG_PRINT ("WLFS",
-                ("Fusioning With-Loops in function %s complete", FUNDEF_NAME (arg_node)));
+    if (FUNDEF_NEXT (arg_node) != NULL) {
+        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }

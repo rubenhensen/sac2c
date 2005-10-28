@@ -1,79 +1,6 @@
-/*
- *
- * $Log$
- * Revision 1.22  2005/07/18 16:31:33  ktr
- * removed FUNDEF_EXT_ASSIGN
- *
- * Revision 1.21  2005/07/15 15:57:02  sah
- * introduced namespaces
- *
- * Revision 1.20  2005/04/27 07:55:32  ktr
- * bugfix
- *
- * Revision 1.19  2005/04/12 15:53:12  ktr
- * Reusebranching can now cope with fold-withloops
- *
- * Revision 1.18  2005/03/04 21:21:42  cg
- * Creation of names for new cond functions made local to this
- * compiler module in order to reduce unnecessary and counter-intuitive
- * cross dependencies.
- *
- * Revision 1.17  2005/01/08 09:54:07  ktr
- * Fixed some issues related to loops.
- *
- * Revision 1.16  2004/12/16 14:37:30  ktr
- * added InplaceComputation
- *
- * Revision 1.15  2004/12/14 12:51:44  ktr
- * added EMRBwithid
- *
- * Revision 1.14  2004/12/13 18:54:49  ktr
- * Withids contain N_id/N_exprs of N_id after explicit allocation now.
- *
- * Revision 1.13  2004/12/13 13:55:59  ktr
- * added functionality to branch over with-loops (work in progress)
- *
- * Revision 1.12  2004/12/01 16:36:22  ktr
- * post DK bugfix
- *
- * ,
- *
- * Revision 1.11  2004/11/26 16:33:58  jhb
- * compile
- *
- * Revision 1.10  2004/11/25 18:04:36  jhb
- * INFDFMSdoInterInDFMAssignChain changed to INFDFMSdoInterInDfmAssignChain
- *
- * Revision 1.9  2004/11/24 14:06:43  ktr
- * MakeLet permutation.
- *
- * Revision 1.8  2004/11/24 12:57:12  ktr
- * COMPILES!!!
- *
- * Revision 1.7  2004/11/24 11:26:46  jhb
- * ismop
- *
- * Revision 1.6  2004/11/19 15:42:41  ktr
- * Support for F_alloc_or_reshape added.
- *
- * Revision 1.5  2004/11/18 17:05:18  ktr
- * ongoing work
- *
- * Revision 1.4  2004/11/17 11:38:14  ktr
- * ongoing implementation
- *
- * Revision 1.3  2004/11/17 09:06:01  ktr
- * Ongoing implementation
- *
- * Revision 1.2  2004/11/15 12:29:30  ktr
- * ongoing implementation
- *
- * Revision 1.1  2004/11/14 13:43:35  ktr
- * Initial revision
- *
- */
-
 /**
+ * $Id$
+ *
  * @defgroup rb Reuse Branching
  * @ingroup emm
  *
@@ -122,13 +49,13 @@ struct INFO {
 /*
  * INFO macros
  */
-#define INFO_RB_FUNDEF(n) ((n)->fundef)
-#define INFO_RB_BRANCHES(n) ((n)->branches)
-#define INFO_RB_MEMVARS(n) ((n)->memvars)
-#define INFO_RB_MASKBASE(n) ((n)->maskbase)
-#define INFO_RB_DRCS(n) ((n)->drcs)
-#define INFO_RB_LOCALVARS(n) ((n)->localvars)
-#define INFO_RB_PRECODE(n) ((n)->precode)
+#define INFO_FUNDEF(n) ((n)->fundef)
+#define INFO_BRANCHES(n) ((n)->branches)
+#define INFO_MEMVARS(n) ((n)->memvars)
+#define INFO_MASKBASE(n) ((n)->maskbase)
+#define INFO_DRCS(n) ((n)->drcs)
+#define INFO_LOCALVARS(n) ((n)->localvars)
+#define INFO_PRECODE(n) ((n)->precode)
 
 /*
  * INFO functions
@@ -142,13 +69,13 @@ MakeInfo ()
 
     result = ILIBmalloc (sizeof (info));
 
-    INFO_RB_FUNDEF (result) = NULL;
-    INFO_RB_BRANCHES (result) = NULL;
-    INFO_RB_MEMVARS (result) = NULL;
-    INFO_RB_MASKBASE (result) = NULL;
-    INFO_RB_DRCS (result) = NULL;
-    INFO_RB_LOCALVARS (result) = NULL;
-    INFO_RB_PRECODE (result) = NULL;
+    INFO_FUNDEF (result) = NULL;
+    INFO_BRANCHES (result) = NULL;
+    INFO_MEMVARS (result) = NULL;
+    INFO_MASKBASE (result) = NULL;
+    INFO_DRCS (result) = NULL;
+    INFO_LOCALVARS (result) = NULL;
+    INFO_PRECODE (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -589,7 +516,7 @@ EMRBassign (node *arg_node, info *arg_info)
     } else {
         ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
-        if (INFO_RB_BRANCHES (arg_info) != NULL) {
+        if (INFO_BRANCHES (arg_info) != NULL) {
             node *next, *newass, *lastass;
             node *lhs;
             dfmask_t *inmask;
@@ -598,26 +525,24 @@ EMRBassign (node *arg_node, info *arg_info)
             next = ASSIGN_NEXT (arg_node);
             ASSIGN_NEXT (arg_node) = NULL;
 
-            INFO_RB_PRECODE (arg_info)
-              = TCappendAssign (INFO_RB_PRECODE (arg_info), arg_node);
+            INFO_PRECODE (arg_info) = TCappendAssign (INFO_PRECODE (arg_info), arg_node);
 
             /*
              * Determine in parameters of the assignment
              */
             lut = LUTgenerateLut ();
-            inmask = INFDFMSdoInferInDfmAssignChain (INFO_RB_PRECODE (arg_info),
-                                                     INFO_RB_FUNDEF (arg_info));
+            inmask = INFDFMSdoInferInDfmAssignChain (INFO_PRECODE (arg_info),
+                                                     INFO_FUNDEF (arg_info));
 
-            newass
-              = BuildCondTree (INFO_RB_PRECODE (arg_info), INFO_RB_BRANCHES (arg_info),
-                               INFO_RB_MEMVARS (arg_info), INFO_RB_FUNDEF (arg_info),
-                               FUNDEF_NAME (INFO_RB_FUNDEF (arg_info)), inmask, lut);
+            newass = BuildCondTree (INFO_PRECODE (arg_info), INFO_BRANCHES (arg_info),
+                                    INFO_MEMVARS (arg_info), INFO_FUNDEF (arg_info),
+                                    FUNDEF_NAME (INFO_FUNDEF (arg_info)), inmask, lut);
 
-            INFO_RB_BRANCHES (arg_info) = FREEdoFreeTree (INFO_RB_BRANCHES (arg_info));
-            INFO_RB_MEMVARS (arg_info) = FREEdoFreeTree (INFO_RB_MEMVARS (arg_info));
+            INFO_BRANCHES (arg_info) = FREEdoFreeTree (INFO_BRANCHES (arg_info));
+            INFO_MEMVARS (arg_info) = FREEdoFreeTree (INFO_MEMVARS (arg_info));
 
-            FUNDEF_DFM_BASE (INFO_RB_FUNDEF (arg_info))
-              = DFMremoveMaskBase (FUNDEF_DFM_BASE (INFO_RB_FUNDEF (arg_info)));
+            FUNDEF_DFM_BASE (INFO_FUNDEF (arg_info))
+              = DFMremoveMaskBase (FUNDEF_DFM_BASE (INFO_FUNDEF (arg_info)));
             inmask = DFMremoveMask (inmask);
             lut = LUTremoveLut (lut);
 
@@ -644,7 +569,7 @@ EMRBassign (node *arg_node, info *arg_info)
             /*
              * Put new assignments into assignment chain
              */
-            INFO_RB_PRECODE (arg_info) = FREEdoFreeTree (INFO_RB_PRECODE (arg_info));
+            INFO_PRECODE (arg_info) = FREEdoFreeTree (INFO_PRECODE (arg_info));
             arg_node = TCappendAssign (newass, next);
         }
     }
@@ -676,13 +601,13 @@ EMRBfundef (node *arg_node, info *arg_info)
     if (FUNDEF_BODY (arg_node) != NULL) {
         DBUG_PRINT ("EMRB", ("Traversing function %s", FUNDEF_NAME (arg_node)));
 
-        INFO_RB_FUNDEF (arg_info) = arg_node;
-        INFO_RB_MASKBASE (arg_info)
+        INFO_FUNDEF (arg_info) = arg_node;
+        INFO_MASKBASE (arg_info)
           = DFMgenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
 
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 
-        INFO_RB_MASKBASE (arg_info) = DFMremoveMaskBase (INFO_RB_MASKBASE (arg_info));
+        INFO_MASKBASE (arg_info) = DFMremoveMaskBase (INFO_MASKBASE (arg_info));
 
         DBUG_PRINT ("EMRB",
                     ("Traversal of function %s complete", FUNDEF_NAME (arg_node)));
@@ -711,8 +636,8 @@ EMRBids (node *arg_node, info *arg_info)
     /*
      * Mark declared variables in LOCALMASK
      */
-    if (INFO_RB_LOCALVARS (arg_info) != NULL) {
-        DFMsetMaskEntrySet (INFO_RB_LOCALVARS (arg_info), NULL, IDS_AVIS (arg_node));
+    if (INFO_LOCALVARS (arg_info) != NULL) {
+        DFMsetMaskEntrySet (INFO_LOCALVARS (arg_info), NULL, IDS_AVIS (arg_node));
     }
 
     if (IDS_NEXT (arg_node) != NULL) {
@@ -757,7 +682,7 @@ EMRBprf (node *arg_node, info *arg_info)
                  *
                  * b is the only data reuse candidate
                  */
-                drcs = DFMgenMaskClear (INFO_RB_MASKBASE (arg_info));
+                drcs = DFMgenMaskClear (INFO_MASKBASE (arg_info));
                 DFMsetMaskEntrySet (drcs, NULL, ID_AVIS (PRF_ARG1 (prf)));
 
                 branches
@@ -766,14 +691,14 @@ EMRBprf (node *arg_node, info *arg_info)
                 drcs = DFMremoveMask (drcs);
 
                 /*
-                 * Add branches to INFO_RB_BRANCHES if there are any
+                 * Add branches to INFO_BRANCHES if there are any
                  */
                 if (branches != NULL) {
-                    INFO_RB_BRANCHES (arg_info)
-                      = TBmakeExprs (branches, INFO_RB_BRANCHES (arg_info));
+                    INFO_BRANCHES (arg_info)
+                      = TBmakeExprs (branches, INFO_BRANCHES (arg_info));
 
-                    INFO_RB_MEMVARS (arg_info)
-                      = TBmakeExprs (DUPdoDupNode (mem), INFO_RB_MEMVARS (arg_info));
+                    INFO_MEMVARS (arg_info)
+                      = TBmakeExprs (DUPdoDupNode (mem), INFO_MEMVARS (arg_info));
                 }
                 break;
 
@@ -816,8 +741,8 @@ EMRBcode (node *arg_node, info *arg_info)
     /*
      * stack local indentifiers
      */
-    oldlocals = INFO_RB_LOCALVARS (arg_info);
-    INFO_RB_LOCALVARS (arg_info) = DFMgenMaskClear (INFO_RB_MASKBASE (arg_info));
+    oldlocals = INFO_LOCALVARS (arg_info);
+    INFO_LOCALVARS (arg_info) = DFMgenMaskClear (INFO_MASKBASE (arg_info));
 
     if (CODE_CBLOCK (arg_node) != NULL) {
         CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
@@ -851,7 +776,7 @@ EMRBcode (node *arg_node, info *arg_info)
                     cval = PRF_ARG1 (val);
                     memop = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (mem))));
                     if ((PRF_PRF (memop) == F_suballoc)
-                        && (DFMtestMaskEntry (INFO_RB_LOCALVARS (arg_info), NULL,
+                        && (DFMtestMaskEntry (INFO_LOCALVARS (arg_info), NULL,
                                               ID_AVIS (cval)))
                         && ((NODE_TYPE (ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (cval))))
                              == N_with)
@@ -860,7 +785,7 @@ EMRBcode (node *arg_node, info *arg_info)
                         /*
                          * Full branch in order to be able to move suballoc upwards
                          */
-                        DFMsetMaskSet (INFO_RB_DRCS (arg_info));
+                        DFMsetMaskSet (INFO_DRCS (arg_info));
                     }
                 }
                 break;
@@ -885,7 +810,7 @@ EMRBcode (node *arg_node, info *arg_info)
                         && (NODE_TYPE (PRF_ARG1 (memval)) == N_prf)
                         && ((PRF_PRF (PRF_ARG1 (memval)) == F_sel)
                             || (PRF_PRF (PRF_ARG1 (memval)) == F_idx_sel))) {
-                        DFMsetMaskEntrySet (INFO_RB_DRCS (arg_info), NULL,
+                        DFMsetMaskEntrySet (INFO_DRCS (arg_info), NULL,
                                             ID_AVIS (PRF_ARG2 (PRF_ARG1 (memval))));
                     }
                 }
@@ -902,8 +827,8 @@ EMRBcode (node *arg_node, info *arg_info)
     /*
      * restore local identifiers
      */
-    INFO_RB_LOCALVARS (arg_info) = DFMremoveMask (INFO_RB_LOCALVARS (arg_info));
-    INFO_RB_LOCALVARS (arg_info) = oldlocals;
+    INFO_LOCALVARS (arg_info) = DFMremoveMask (INFO_LOCALVARS (arg_info));
+    INFO_LOCALVARS (arg_info) = oldlocals;
 
     /*
      * Traverse next code
@@ -937,8 +862,8 @@ EMRBwith (node *arg_node, info *arg_info)
     /*
      * Stack outer data reuse candidates
      */
-    olddrcs = INFO_RB_DRCS (arg_info);
-    INFO_RB_DRCS (arg_info) = DFMgenMaskClear (INFO_RB_MASKBASE (arg_info));
+    olddrcs = INFO_DRCS (arg_info);
+    INFO_DRCS (arg_info) = DFMgenMaskClear (INFO_MASKBASE (arg_info));
 
     WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
     WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
@@ -946,10 +871,10 @@ EMRBwith (node *arg_node, info *arg_info)
     /*
      * restore outer data reuse candidates
      */
-    INFO_RB_DRCS (arg_info) = DFMremoveMask (INFO_RB_DRCS (arg_info));
-    INFO_RB_DRCS (arg_info) = olddrcs;
+    INFO_DRCS (arg_info) = DFMremoveMask (INFO_DRCS (arg_info));
+    INFO_DRCS (arg_info) = olddrcs;
 
-    if (INFO_RB_BRANCHES (arg_info) != NULL) {
+    if (INFO_BRANCHES (arg_info) != NULL) {
         WITH_WITHID (arg_node) = TRAVdo (WITH_WITHID (arg_node), arg_info);
     }
 
@@ -978,8 +903,8 @@ EMRBwith2 (node *arg_node, info *arg_info)
     /*
      * Stack outer data reuse candidates
      */
-    olddrcs = INFO_RB_DRCS (arg_info);
-    INFO_RB_DRCS (arg_info) = DFMgenMaskClear (INFO_RB_MASKBASE (arg_info));
+    olddrcs = INFO_DRCS (arg_info);
+    INFO_DRCS (arg_info) = DFMgenMaskClear (INFO_MASKBASE (arg_info));
 
     WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
     WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
@@ -987,10 +912,10 @@ EMRBwith2 (node *arg_node, info *arg_info)
     /*
      * restore outer data reuse candidates
      */
-    INFO_RB_DRCS (arg_info) = DFMremoveMask (INFO_RB_DRCS (arg_info));
-    INFO_RB_DRCS (arg_info) = olddrcs;
+    INFO_DRCS (arg_info) = DFMremoveMask (INFO_DRCS (arg_info));
+    INFO_DRCS (arg_info) = olddrcs;
 
-    if (INFO_RB_BRANCHES (arg_info) != NULL) {
+    if (INFO_BRANCHES (arg_info) != NULL) {
         WITH2_WITHID (arg_node) = TRAVdo (WITH2_WITHID (arg_node), arg_info);
     }
 
@@ -1046,15 +971,14 @@ EMRBwithid (node *arg_node, info *arg_info)
     DBUG_ENTER ("EMRBwithid");
 
     id = WITHID_VEC (arg_node);
-    INFO_RB_PRECODE (arg_info)
-      = TCappendAssign (INFO_RB_PRECODE (arg_info),
-                        StealLet (AVIS_SSAASSIGN (ID_AVIS (id))));
+    INFO_PRECODE (arg_info) = TCappendAssign (INFO_PRECODE (arg_info),
+                                              StealLet (AVIS_SSAASSIGN (ID_AVIS (id))));
 
     exprs = WITHID_IDS (arg_node);
     while (exprs != NULL) {
         id = EXPRS_EXPR (exprs);
-        INFO_RB_PRECODE (arg_info)
-          = TCappendAssign (INFO_RB_PRECODE (arg_info),
+        INFO_PRECODE (arg_info)
+          = TCappendAssign (INFO_PRECODE (arg_info),
                             StealLet (AVIS_SSAASSIGN (ID_AVIS (id))));
 
         exprs = EXPRS_NEXT (exprs);
@@ -1082,17 +1006,17 @@ MakeWithopReuseBranches (node *mem, info *arg_info)
 
     DBUG_ENTER ("MakeWithopReuseBranches");
 
-    branches = GetReuseBranches (INFO_RB_DRCS (arg_info),
+    branches = GetReuseBranches (INFO_DRCS (arg_info),
                                  ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (mem))));
 
     /*
-     * Add branches to INFO_RB_BRANCHES if there are any
+     * Add branches to INFO_BRANCHES if there are any
      */
     if (branches != NULL) {
-        INFO_RB_BRANCHES (arg_info) = TBmakeExprs (branches, INFO_RB_BRANCHES (arg_info));
+        INFO_BRANCHES (arg_info) = TBmakeExprs (branches, INFO_BRANCHES (arg_info));
 
-        INFO_RB_MEMVARS (arg_info)
-          = TBmakeExprs (DUPdoDupNode (mem), INFO_RB_MEMVARS (arg_info));
+        INFO_MEMVARS (arg_info)
+          = TBmakeExprs (DUPdoDupNode (mem), INFO_MEMVARS (arg_info));
     }
 
     DBUG_VOID_RETURN;

@@ -1,253 +1,7 @@
 /*
+ * $Id$
  *
- * $Log$
- * Revision 3.174  2005/09/29 12:20:34  sah
- * arg 1 of F_type_error is now a N_type node
- * containing the bottom type instead of the
- * error message. this allows to infer a
- * proper type for F_type_error prfs on
- * subsequent runs of the tc.
- *
- * Revision 3.173  2005/09/28 18:46:25  sah
- * INFO_ICMCHAIN is now stacked properly when
- * compiling icm-wls. solves bug #123
- *
- * Revision 3.172  2005/09/27 16:16:38  sbs
- * introduction of SIMD ICMs
- *
- * Revision 3.171  2005/09/14 19:56:07  sah
- * minor fix in compilation of idxs2offset prf
- *
- * Revision 3.170  2005/09/14 17:23:51  sah
- * fixed COMPPrfVect2Offset:
- *   - during compile, the new types are not present
- *     any more, so the old types have to be used!
- *
- * Revision 3.169  2005/08/24 10:21:26  ktr
- * added support for explicit with-loop offsets
- *
- * Revision 3.168  2005/08/21 09:32:20  ktr
- * added implementations for F_idxs2offset, F_vect2offset
- *
- * Revision 3.167  2005/08/09 18:55:15  ktr
- * F_shape_sel and F_idx_shape_sel are implemented by means of C-ICMs now
- *
- * Revision 3.166  2005/07/15 15:57:02  sah
- * introduced namespaces
- *
- * Revision 3.165  2005/06/23 09:06:38  sah
- * added correct handling of named tuples
- * to COMPPrfDispatchError
- *
- * Revision 3.164  2005/06/21 23:39:39  sah
- * added setting of modarray wls subvar descriptors
- * using new C-icm WL_MODARRAY_SUBSHAPE
- *
- * Revision 3.163  2005/06/21 13:30:00  sah
- * shape of sub-vars in aud withloops is
- * calculated based on the default values shape
- * now
- *
- * Revision 3.162  2005/06/21 10:01:24  sah
- * for AKS/AKD wls the descriptor of the suballoc var
- * is built based upon the default values descriptor.
- *
- * Revision 3.161  2005/06/18 13:11:22  sah
- * fixed a dbug message
- *
- * Revision 3.160  2005/06/16 09:47:15  sbs
- * changed TYPE_ERROR into DISPATCH_ERROR
- * added TYPE_ERROR :-)
- *
- * Revision 3.159  2005/06/15 18:22:31  ktr
- * -check tb: Descriptor for subarray is only built iff there actually is a
- * subarray (i.e. a Vardec named X_sub exists). Otherwise, no descriptor
- * is built instead of aborting the compilation.
- *
- * Revision 3.158  2005/06/15 12:41:12  sah
- * fixed handling of ... args
- *
- * Revision 3.157  2005/06/11 20:52:24  ktr
- * WL_SUB_SHAPE is now used to initialize the descriptor of the generic subarrayy
- *
- * Revision 3.156  2005/05/31 18:14:19  sah
- * added dbug print
- *
- * Revision 3.155  2005/05/27 20:30:23  ktr
- * Changed WLGRIDX_FITTED into WLGRIDX_ISFITTED
- *
- * Revision 3.154  2005/03/19 23:19:45  sbs
- * AUD support added!!!!!!
- *
- * Revision 3.153  2005/02/24 15:53:47  cg
- * Removed obsolete code for handling LaC funs.
- *
- * Revision 3.152  2005/01/14 09:57:50  cg
- * Converted compile time output from Error.h to ctinfo.c
- *
- * Revision 3.151  2004/12/18 15:29:48  sbs
- * initial AUD wl support added.
- *
- * Revision 3.150  2004/12/15 11:40:01  sbs
- * started implementing AUDwl
- *
- * Revision 3.149  2004/12/13 18:45:45  ktr
- * works with WITHID containing of N_id and N_exprs of N_id now.
- *
- * Revision 3.148  2004/12/11 14:47:26  ktr
- * some bugfixes
- *
- * Revision 3.147  2004/11/29 10:27:41  sah
- * renamed some functions
- *
- * Revision 3.146  2004/11/26 17:35:58  ktr
- * COMPILES!!!
- *
- * Revision 3.145  2004/11/19 15:41:05  ktr
- * F_reshape and F_alloc_or_reshape are now implemented differently.
- *
- * Revision 3.144  2004/11/08 14:49:56  ktr
- * added COMPPrfNoop.
- *
- * Revision 3.143  2004/10/28 17:54:20  khf
- * splitted building of offset_icms into offset_icms
- * and offset_shp_icms to avoid mixed declarations and code
- *
- * Revision 3.142  2004/10/22 15:41:06  ktr
- * Added support for F_reuse.
- *
- * Revision 3.141  2004/10/10 09:54:10  ktr
- * dec_rc has a second argument now
- *
- * Revision 3.140  2004/10/07 15:45:00  khf
- * COMPSync(): added support of multioperator WLs
- *
- * Revision 3.139  2004/10/05 17:42:05  khf
- * only removing of fold-functions if Inlining was applied
- * MakeIcm_MT_ADJUST_SCHEDULER(): added support of
- * multiple offsets
- *
- * Revision 3.138  2004/10/04 17:16:22  sah
- * removed MT/ST/EX-Identifier
- * added a NEW_AST define
- *
- * Revision 3.137  2004/09/30 20:02:07  sah
- * fixed type of DFMmask_t arguments
- *
- * Revision 3.136  2004/09/28 14:08:45  ktr
- * removed old refcount and generatemasks
- *
- * Revision 3.135  2004/09/22 19:11:24  khf
- * fixed bug in MakeIcm_WL_ADJUST_OFFSET (infinite loop)
- *
- * Revision 3.134  2004/09/21 17:29:33  ktr
- * Added support for F_idx_shape_sel, F_shape_sel
- *
- * Revision 3.133  2004/09/20 15:51:24  ktr
- * Fixed a nasty bug related to new WL_ icms and multithreading.
- *
- * Revision 3.132  2004/08/27 08:13:55  ktr
- * Removed a DBUG_ASSERT in MakeSetShapeIcm after creation of ND_WL_GENARRAY
- * _SHAPE_id_arr.
- * However this icm needs testing in context of AUD-with-loops.
- *
- * Revision 3.131  2004/08/19 10:28:22  khf
- * fixed bug in COMPWLgridx: used wrong cexpr
- *
- * Revision 3.130  2004/08/16 17:47:12  khf
- * some code brushing done
- *
- * Revision 3.129  2004/08/13 16:38:37  khf
- * added support for multioperator WLs:
- * - create own offset for every operator (if needed)
- * - adjusted offset-functions
- *
- * Revision 3.128  2004/08/09 15:06:41  khf
- * code brushing done in COMPWITH2
- *
- * Revision 3.127  2004/08/08 15:50:00  ktr
- * Descriptors of external functions not yielding a descriptor are now
- * initialized with rc==1 in EMM.
- *
- * Revision 3.126  2004/08/07 09:32:57  ktr
- * fixed emm bug in COMPIdFromUnique
- *
- * Revision 3.125  2004/08/06 13:12:58  ktr
- * COMPIdToUnq works entirely different in EMM
- *
- * Revision 3.124  2004/08/05 16:11:24  ktr
- * Scalar with-loops are now treated as they always were. By using the
- * F_wl_assign abstraction we can now explicitly refcount this case.
- *
- * Revision 3.123  2004/08/05 11:39:33  ktr
- * index vector is maintained throughout the with-loop iff NWITHID_VECNEEDED
- * is set.
- *
- * Revision 3.122  2004/08/04 17:10:04  ktr
- * Descriptor of A_sub is now only built if some runtimechecks are done
- *
- * Revision 3.121  2004/08/04 12:04:58  ktr
- * substituted eacc by emm
- *
- * Revision 3.120  2004/08/04 10:29:57  ktr
- * - MakeGetDimIcm now accepts N_id nodes, too
- * - Descriptors for external function are built with rc = 1 (EMM)
- * - Subarrays do have a descriptor now (needed for shape checks) (EMM)
- *
- * Revision 3.119  2004/08/02 16:19:50  ktr
- * adjusted MakeSetShapeIcm to modified with-loop allocation in alloc.c
- *
- * Revision 3.118  2004/07/31 21:31:43  ktr
- * fixed some master run warnings
- * scalar genarray/modarray withloops should work with emm now.
- *
- * Revision 3.117  2004/07/29 12:13:50  ktr
- * compile no longer inserts RC-Instructions for not refcounting c-functions.
- * DO_SKIP is treated more correctly now.
- * COMPPrfCopy implemented.
- *
- * Revision 3.116  2004/07/28 12:23:39  ktr
- * accu compiles into NOOP now
- *
- * Revision 3.115  2004/07/28 10:01:50  khf
- * turned off some parts for fold withloops if eacc is turned on
- *
- * Revision 3.114  2004/07/28 09:33:49  ktr
- * even loops work with emm now.
- *
- * Revision 3.113  2004/07/28 08:47:59  ktr
- * NULL pointer problem in COMPPrfReshape resolved
- *
- * Revision 3.112  2004/07/27 20:11:46  ktr
- * minor bugfix in MakeSetShapeIcm
- * ,
- *
- * Revision 3.111  2004/07/27 17:21:47  ktr
- * completed MakeSetShapeIcm
- *
- * Revision 3.110  2004/07/26 18:44:58  ktr
- * Completed implementation if MakeGetDim.
- *
- * Revision 3.109  2004/07/25 20:36:46  ktr
- * turned off various parts if emm is turned on.
- *
- * Revision 3.108  2004/07/17 17:07:16  sah
- * switch to new INFO structure
- * PHASE I
- *
- * Revision 3.107  2004/03/09 23:51:45  dkrHH
- * file compile.tagged.c renamed into compile.c
- * old backend removed
- *
- * [...eliminated ...]
- *
- * Revision 1.1  2001/12/10 15:34:14  dkr
- * Initial revision
- *
- */
-
-/*
- * @file
+ * @file compile.c
  *
  * This file implements the code generation (SAC code -> C code with ICMs) for
  * the new backend
@@ -762,28 +516,37 @@ COMPgetFoldCode (node *fundef)
 
 /** <!--*******************************************************************-->
  *
- * @fn bool IsNextOffset( node *withop, node *cur_idx, node *all_idxs)
+ * @fn node *RemoveIdxDuplicates( node *withop)
  *
  ****************************************************************************/
-static bool
-IsNextOffset (node *withop, node *cur_idx, node *all_idxs)
+static node *
+RemoveIdxDuplicates (node *arg_node)
 {
-    bool res;
+    node *withop;
 
-    DBUG_ENTER ("IsNextOffset");
+    DBUG_ENTER ("RemoveIdxDuplicates");
 
-    res = ((NODE_TYPE (withop) == N_genarray) || (NODE_TYPE (withop) == N_modarray));
+    withop = arg_node;
+    while (withop != NULL) {
+        if ((NODE_TYPE (withop) == N_genarray) || (NODE_TYPE (withop) == N_modarray)) {
+            node *w2 = WITHOP_NEXT (withop);
 
-    if (res) {
-        while (EXPRS_EXPR (all_idxs) != cur_idx) {
-            if (ID_AVIS (EXPRS_EXPR (all_idxs)) == WITHOP_IDX (withop)) {
-                res = FALSE;
+            while (w2 != NULL) {
+                if (((NODE_TYPE (w2) == N_genarray) || (NODE_TYPE (w2) == N_modarray))
+                    && (WITHOP_IDX (w2) == WITHOP_IDX (withop))) {
+                    if (NODE_TYPE (w2) == N_genarray) {
+                        GENARRAY_IDX (w2) = NULL;
+                    } else {
+                        MODARRAY_IDX (w2) = NULL;
+                    }
+                }
+                w2 = WITHOP_NEXT (w2);
             }
-            all_idxs = EXPRS_NEXT (all_idxs);
         }
+        withop = WITHOP_NEXT (withop);
     }
 
-    DBUG_RETURN (res);
+    DBUG_RETURN (arg_node);
 }
 
 static /* forward declaration */
@@ -5207,14 +4970,12 @@ MakeIcm_MT_ADJUST_SCHEDULER (node *arg_node, node *assigns)
         idxs_exprs = WITH2_IDXS (wlnode);
         withop = WITH2_WITHOP (wlnode);
 
-        while (idxs_exprs != NULL) {
-            node *idxid = EXPRS_EXPR (idxs_exprs);
-            if (IsNextOffset (withop, idxid, WITH2_IDXS (wlnode))) {
-                offset_icms
-                  = TCmakeAssignIcm3 ("MT_ADJUST_SCHEDULER__OFFSET", DUPdupIdNt (idxid),
-                                      DUPdupIdsIdNt (tmp_ids), TBmakeNum (dim),
-                                      offset_icms);
-
+        while (withop != NULL) {
+            if (WITHOP_IDX (withop) != NULL) {
+                offset_icms = TCmakeAssignIcm3 ("MT_ADJUST_SCHEDULER__OFFSET",
+                                                DUPdupIdNt (EXPRS_EXPR (idxs_exprs)),
+                                                DUPdupIdsIdNt (tmp_ids), TBmakeNum (dim),
+                                                offset_icms);
                 idxs_exprs = EXPRS_NEXT (idxs_exprs);
             }
 
@@ -5266,11 +5027,11 @@ MakeIcm_WL_INIT_OFFSET (node *arg_node, node *assigns)
     tmp_ids = wlids;
     withop = WITH2_WITHOP (wlnode);
 
-    while (idxs_exprs != NULL) {
-        node *idxid = EXPRS_EXPR (idxs_exprs);
-        if (IsNextOffset (withop, idxid, WITH2_IDXS (wlnode))) {
-            assigns = TCmakeAssignIcm2 ("WL_INIT_OFFSET", DUPdupIdNt (idxid),
-                                        MakeIcmArgs_WL_OP1 (arg_node, tmp_ids), assigns);
+    while (withop != NULL) {
+        if (WITHOP_IDX (withop) != NULL) {
+            assigns
+              = TCmakeAssignIcm2 ("WL_INIT_OFFSET", DUPdupIdNt (EXPRS_EXPR (idxs_exprs)),
+                                  MakeIcmArgs_WL_OP1 (arg_node, tmp_ids), assigns);
 
             idxs_exprs = EXPRS_NEXT (idxs_exprs);
         }
@@ -5304,10 +5065,10 @@ MakeIcm_WL_ADJUST_OFFSET (node *arg_node, node *assigns)
     idxs_exprs = WITH2_IDXS (wlnode);
     withop = WITH2_WITHOP (wlnode);
 
-    while (idxs_exprs != NULL) {
-        node *idxid = EXPRS_EXPR (idxs_exprs);
-        if (IsNextOffset (withop, idxid, WITH2_IDXS (wlnode))) {
-            assigns = TCmakeAssignIcm3 ("WL_ADJUST_OFFSET", DUPdupIdNt (idxid),
+    while (withop != NULL) {
+        if (WITHOP_IDX (withop) != NULL) {
+            assigns = TCmakeAssignIcm3 ("WL_ADJUST_OFFSET",
+                                        DUPdupIdNt (EXPRS_EXPR (idxs_exprs)),
                                         TBmakeNum (WLNODE_DIM (arg_node)),
                                         MakeIcmArgs_WL_OP2 (arg_node, tmp_ids), assigns);
 
@@ -5357,9 +5118,8 @@ MakeIcm_WL_SET_OFFSET (node *arg_node, node *assigns)
     withop = WITH2_WITHOP (wlnode);
     idxs_exprs = WITH2_IDXS (wlnode);
 
-    while (idxs_exprs != NULL) {
-        node *idxid = EXPRS_EXPR (idxs_exprs);
-        if (IsNextOffset (withop, idxid, WITH2_IDXS (wlnode))) {
+    while (withop != NULL) {
+        if (WITHOP_IDX (withop) != NULL) {
             dim = WLNODE_DIM (arg_node);
             dims = WLSEGX_DIMS (wlseg);
 
@@ -5438,7 +5198,8 @@ MakeIcm_WL_SET_OFFSET (node *arg_node, node *assigns)
 
             if (icm_dim >= 0) {
                 assigns
-                  = TCmakeAssignIcm4 ("WL_SET_OFFSET", DUPdupIdNt (idxid),
+                  = TCmakeAssignIcm4 ("WL_SET_OFFSET",
+                                      DUPdupIdNt (EXPRS_EXPR (idxs_exprs)),
                                       TBmakeNum (dim), TBmakeNum (icm_dim),
                                       MakeIcmArgs_WL_OP2 (arg_node, tmp_ids), assigns);
             }
@@ -5496,6 +5257,8 @@ COMPwith (node *arg_node, info *arg_info)
     INFO_ISFOLD (arg_info) = isfold;
     DBUG_ASSERT (WITH_PART (arg_node) != NULL, "missing part in AUD with loop!");
     WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
+
+    WITH_WITHOP (arg_node) = RemoveIdxDuplicates (WITH_WITHOP (arg_node));
 
     /*
      * save the icm_chain for the generators in a local variable
@@ -5840,6 +5603,8 @@ COMPwith2 (node *arg_node, info *arg_info)
      * build arguments for  'WL_SCHEDULE__BEGIN'-ICM and 'WL_SCHEDULE__END'-ICM
      */
 
+    WITH2_WITHOP (arg_node) = RemoveIdxDuplicates (WITH2_WITHOP (arg_node));
+
     /*
      * build all required(!) shape factors
      */
@@ -5847,9 +5612,8 @@ COMPwith2 (node *arg_node, info *arg_info)
     idxs_exprs = WITH2_IDXS (wlnode);
     withop = WITH2_WITHOP (wlnode);
 
-    while (idxs_exprs != NULL) {
-        node *idxid = EXPRS_EXPR (idxs_exprs);
-        if (IsNextOffset (withop, idxid, WITH2_IDXS (wlnode))) {
+    while (withop != NULL) {
+        if (WITHOP_IDX (withop) != NULL) {
             shpfac_decl_icms
               = TCmakeAssignIcm3 ("WL_DECLARE_SHAPE_FACTOR",
                                   MakeTypeArgs (IDS_NAME (tmp_ids), IDS_TYPE (tmp_ids),
@@ -6676,7 +6440,6 @@ COMPwlgridx (node *arg_node, info *arg_info)
             node *tmp_ids;
             node *withop;
             node *idxs_exprs;
-            node *idxid;
             node *cexprs;
 
             DBUG_ASSERT (WLGRIDX_CODE (arg_node) != NULL,
@@ -6714,10 +6477,9 @@ COMPwlgridx (node *arg_node, info *arg_info)
                 case N_modarray:
                     DBUG_ASSERT ((NODE_TYPE (cexpr) == N_id), "code expr is not a id");
 
-                    idxid = EXPRS_EXPR (idxs_exprs);
-                    if (IsNextOffset (withop, idxid, WITH2_IDXS (wlnode))) {
+                    if (WITHOP_IDX (withop) != NULL) {
                         icm_name = "WL_INC_OFFSET";
-                        icm_args = TBmakeExprs (DUPdupIdNt (idxid),
+                        icm_args = TBmakeExprs (DUPdupIdNt (EXPRS_EXPR (idxs_exprs)),
                                                 TBmakeExprs (DUPdupIdNt (cexpr), NULL));
                         idxs_exprs = EXPRS_NEXT (idxs_exprs);
                     }
@@ -6739,6 +6501,7 @@ COMPwlgridx (node *arg_node, info *arg_info)
                     node_icms
                       = TCappendAssign (node_icms,
                                         TCmakeAssignIcm1 (icm_name, icm_args, NULL));
+                    icm_name = NULL;
                 }
 
                 cexprs = EXPRS_NEXT (cexprs);

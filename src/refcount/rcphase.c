@@ -1,42 +1,5 @@
-/*
- *
- * $Log$
- * Revision 1.11  2005/07/03 16:59:18  ktr
- * Switched to phase.h
- *
- * Revision 1.10  2004/12/16 14:37:30  ktr
- * added InplaceComputation
- *
- * Revision 1.9  2004/11/28 18:14:21  ktr
- * Changed name of starting function to EMRdoRefCountPhase
- *
- * Revision 1.8  2004/11/26 23:56:06  jhb
- * fixed DBUG_Enter Statement of EMRdoRefcounting
- *
- * Revision 1.7  2004/11/26 23:49:23  jhb
- * same function name header and c-file
- *
- * Revision 1.6  2004/11/26 23:34:25  ktr
- * EMRCdoRefcounting changed to EMRdoRefcounting
- *
- * Revision 1.5  2004/11/23 22:22:51  ktr
- * COMPILES!!!
- *
- * Revision 1.4  2004/11/23 20:23:28  jhb
- * compile
- *
- * Revision 1.3  2004/11/19 15:42:41  ktr
- * Support for F_alloc_or_reshape added.
- *
- * Revision 1.2  2004/10/12 10:24:55  ktr
- * added Filter reuse candidates traversal.
- *
- * Revision 1.1  2004/10/11 14:45:07  ktr
- * Initial revision
- *
- */
-
 /**
+ * $Id$
  *
  * @defgroup rcp Reference Counting
  *

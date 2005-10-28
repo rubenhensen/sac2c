@@ -1,177 +1,5 @@
-/*
- *
- * $Log$
- * Revision 3.114  2005/09/27 18:30:16  sah
- * added additional CVP and DCR after IVE
- *
- * Revision 3.113  2005/09/14 21:26:00  sah
- * added basic implementation for index_optimize
- *
- * Revision 3.112  2005/09/12 20:42:03  ktr
- * added WLI for better WLF :)
- * Unfortunately, SSATransform is required after WLF.
- *
- * Revision 3.111  2005/09/12 16:15:06  ktr
- * added wlpg2
- *
- * Revision 3.110  2005/09/12 13:56:38  ktr
- * added wlsimplification.o
- *
- * Revision 3.109  2005/09/10 21:10:05  sbs
- * adjusted cycle phase conventions
- *
- * Revision 3.108  2005/09/09 23:39:53  sbs
- * added function dispatch and inlining after TUP in the cycle...
- *
- * Revision 3.107  2005/09/08 09:26:46  ktr
- * minor brushing
- *
- * Revision 3.106  2005/09/04 12:52:11  ktr
- * re-engineered the optimization cycle
- *
- * Revision 3.105  2005/09/02 17:48:59  sah
- * removed ALWAYSMAXOPT again
- *
- * Revision 3.104  2005/09/02 14:25:26  ktr
- * uses liftoptflags
- *
- * Revision 3.103  2005/08/29 11:27:02  ktr
- * As long as TUP is not fixed, the NTC is applied in the opt cycle
- *
- * Revision 3.102  2005/08/26 12:27:31  ktr
- * removed WLT (superseded by WLPG)
- *
- * Revision 3.101  2005/08/24 10:26:01  ktr
- * added wlidxs traversal
- *
- * Revision 3.100  2005/08/20 23:42:47  ktr
- * added IVEI
- *
- * Revision 3.99  2005/08/20 12:06:50  ktr
- * added TypeConvElimination
- *
- * Revision 3.98  2005/07/19 17:08:26  ktr
- * replaced SSADeadCodeRemoval with deadcoderemoval
- *
- * Revision 3.97  2005/07/16 21:14:24  sbs
- * moved dispatch and rmcasts into WLEnhancement.c
- *
- * Revision 3.96  2005/07/15 15:57:02  sah
- * introduced namespaces
- *
- * Revision 3.95  2005/07/15 15:23:08  ktr
- * removed type conversions before and after IVE
- *
- * Revision 3.94  2005/06/28 15:38:25  jhb
- * added phase.h by the includes
- *
- * Revision 3.93  2005/06/06 13:28:40  jhb
- * added PHrunCompilerSubPhase
- *
- * Revision 3.92  2005/06/02 13:42:48  mwe
- * rerun optimization cycle if sisi found optimization cases
- *
- * Revision 3.91  2005/05/31 13:41:38  mwe
- * run sisi only when dcr activated
- *
- * Revision 3.90  2005/05/25 09:52:33  khf
- * optimize normal functions instead of zombie functions
- *
- * Revision 3.89  2005/05/13 16:46:15  ktr
- * lacinlining is now performed in the cycle
- *
- * Revision 3.88  2005/04/20 19:14:31  ktr
- * removed SSArestoreSsaOneFunction after LIR
- *
- * Revision 3.87  2005/04/19 17:59:10  khf
- * removed transformation in ssa-form
- *
- * Revision 3.86  2005/04/19 17:26:09  ktr
- * "lacinl" break specifier introduced
- *
- * Revision 3.85  2005/03/17 19:05:17  sbs
- * IVE still runs on old types.....
- *
- * Revision 3.84  2005/03/17 14:03:11  sah
- * removed global check for function body
- *
- * Revision 3.83  2005/03/10 09:41:09  cg
- * Added #include "DupTree.h"
- *
- * Revision 3.82  2005/03/04 21:21:42  cg
- * Useless conditional eliminated.
- * Integration of silently duplicated LaC funs at the end of the
- * fundef chain added.
- *
- * Revision 3.81  2005/02/16 14:11:09  mwe
- * some renaming done, corrected break specifier
- *
- * Revision 3.80  2005/02/15 14:53:00  mwe
- * changes for esd and uesd
- *
- * Revision 3.79  2005/02/14 11:18:34  cg
- * Old inlining replaced by complete re-implementation.
- *
- * Revision 3.78  2005/02/11 12:13:11  mwe
- * position of sisi changed
- *
- * Revision 3.77  2005/02/03 18:28:22  mwe
- * new counter added
- * order of intrafunctional optimization changed
- * optimization output changed
- * some code beautifying
- *
- * Revision 3.76  2005/02/02 18:09:50  mwe
- * new counter added
- * signature simplification added
- *
- * Revision 3.75  2005/01/27 18:20:30  mwe
- * new counter for type_upgrade added
- *
- * Revision 3.74  2005/01/11 12:58:15  cg
- * Converted output from Error.h to ctinfo.c
- *
- * Revision 3.73  2004/12/09 13:08:54  mwe
- * type_upgrade now running before constant folding
- *
- * Revision 3.72  2004/12/09 10:59:30  mwe
- * support for type_upgrade added
- *
- * Revision 3.71  2004/11/27 01:48:24  jhb
- * comment out WLAdoAccessAnalysis and ApdoArrayPadding
- *
- * Revision 3.70  2004/11/26 18:14:35  mwe
- * change prefix of IVE
- *
- * Revision 3.69  2004/11/26 16:27:36  mwe
- * SacDevCamp
- *
- * ... [elminated] ...
- *
- * Revision 1.1  1994/12/09  10:47:40  sbs
- * Initial revision
- *
- */
-
-#include "optimize.h"
-
-#include <string.h>
-
-#include "tree_basic.h"
-#include "internal_lib.h"
-#include "free.h"
-#include "globals.h"
-#include "ctinfo.h"
-#include "dbug.h"
-#include "traverse.h"
-#include "phase.h"
-
-#include "liftoptflags.h"
-#include "index_infer.h"  /* for IVEIprintPreFun */
-#include "new_types.h"    /* for TYtype2String */
-#include "SSATransform.h" /* needed after current WLF implementation */
-
 /**
+ * $Id$
  *
  * @defgroup opt Optimizations
  *
@@ -196,6 +24,24 @@
  *
  *@{
  */
+
+#include "optimize.h"
+
+#include <string.h>
+
+#include "tree_basic.h"
+#include "internal_lib.h"
+#include "free.h"
+#include "globals.h"
+#include "ctinfo.h"
+#include "dbug.h"
+#include "traverse.h"
+#include "phase.h"
+
+#include "liftoptflags.h"
+#include "index_infer.h"  /* for IVEIprintPreFun */
+#include "new_types.h"    /* for TYtype2String */
+#include "SSATransform.h" /* needed after current WLF implementation */
 
 /** <!--********************************************************************-->
  *
