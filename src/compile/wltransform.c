@@ -5011,13 +5011,14 @@ BlockWl (node *stride, int iter_dims, int *bv, bool unroll)
                      *  -> append contents of block
                      */
                     DBUG_ASSERT ((lastdim != NULL), "block node of last dim not found");
-                    WLBLOCK_CONTENTS (lastdim) = curr_stride;
+                    L_WLXBLOCK_CONTENTS (lastdim, curr_stride);
                     curr_stride = WLSTRIDE_NEXT (curr_stride);
                     /* successor is in next block -> no 'next' anymore! */
-                    WLSTRIDE_NEXT (WLBLOCK_CONTENTS (lastdim)) = NULL;
+                    WLSTRIDE_NEXT (WLXBLOCK_CONTENTS (lastdim)) = NULL;
                     /* correct the bounds and blocking level in contents of block */
-                    WLBLOCK_CONTENTS (lastdim)
-                      = BlockStride (WLBLOCK_CONTENTS (lastdim), bv, unroll);
+                    L_WLXBLOCK_CONTENTS (lastdim,
+                                         BlockStride (WLXBLOCK_CONTENTS (lastdim), bv,
+                                                      unroll));
                 }
             }
             break;
