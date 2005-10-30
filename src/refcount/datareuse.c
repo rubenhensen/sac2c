@@ -1,59 +1,5 @@
-/*
- *
- * $Log$
- * Revision 1.16  2005/09/15 17:12:13  ktr
- * remove ICM traversal
- *
- * Revision 1.15  2005/07/16 10:07:54  sah
- * moved variable declaration to begin of block
- *
- * Revision 1.14  2005/07/07 17:54:25  ktr
- * added some DBUG_PRINTs
- *
- * Revision 1.13  2004/12/16 14:37:30  ktr
- * added InplaceComputation
- *
- * Revision 1.12  2004/12/13 18:54:49  ktr
- * Withids contain N_id/N_exprs of N_id after explicit allocation now.
- *
- * Revision 1.11  2004/12/01 16:36:22  ktr
- * post DK bugfix
- *
- * ,
- *
- * Revision 1.10  2004/11/24 14:04:08  ktr
- * MakeLet permutation.
- *
- * Revision 1.9  2004/11/24 14:00:58  ktr
- * MakeLet permuted
- *
- * Revision 1.8  2004/11/23 22:14:15  ktr
- * some renaming done.
- *
- * Revision 1.7  2004/11/23 17:35:36  ktr
- * COMPILES!!!
- *
- * Revision 1.6  2004/11/23 15:43:21  jhb
- * compile
- *
- * Revision 1.5  2004/11/23 15:00:04  jhb
- * SACDevCamp 04
- *
- * Revision 1.4  2004/11/19 15:42:41  ktr
- * Support for F_alloc_or_reshape added.
- *
- * Revision 1.3  2004/11/15 12:28:16  ktr
- * insignificant change
- *
- * Revision 1.2  2004/11/09 19:39:37  ktr
- * ongoing implementation
- *
- * Revision 1.1  2004/11/02 14:27:05  ktr
- * Initial revision
- *
- */
-
 /**
+ * $Id$
  *
  * @defgroup dro Data reuse optimization
  * @ingroup rcp
@@ -100,12 +46,12 @@ struct INFO {
 /*
  * INFO macros
  */
-#define INFO_EMDR_FUNDEF(n) ((n)->fundef)
-#define INFO_EMDR_LHS(n) ((n)->lhs)
-#define INFO_EMDR_REUSELUT(n) ((n)->reuselut)
-#define INFO_EMDR_PREDAVIS(n) ((n)->predavis)
-#define INFO_EMDR_MEMAVIS(n) ((n)->memavis)
-#define INFO_EMDR_RCAVIS(n) ((n)->rcavis)
+#define INFO_FUNDEF(n) ((n)->fundef)
+#define INFO_LHS(n) ((n)->lhs)
+#define INFO_REUSELUT(n) ((n)->reuselut)
+#define INFO_PREDAVIS(n) ((n)->predavis)
+#define INFO_MEMAVIS(n) ((n)->memavis)
+#define INFO_RCAVIS(n) ((n)->rcavis)
 
 /*
  * INFO functions
@@ -119,12 +65,12 @@ MakeInfo (node *fundef)
 
     result = ILIBmalloc (sizeof (info));
 
-    INFO_EMDR_FUNDEF (result) = fundef;
-    INFO_EMDR_LHS (result) = NULL;
-    INFO_EMDR_REUSELUT (result) = NULL;
-    INFO_EMDR_PREDAVIS (result) = NULL;
-    INFO_EMDR_MEMAVIS (result) = NULL;
-    INFO_EMDR_RCAVIS (result) = NULL;
+    INFO_FUNDEF (result) = fundef;
+    INFO_LHS (result) = NULL;
+    INFO_REUSELUT (result) = NULL;
+    INFO_PREDAVIS (result) = NULL;
+    INFO_MEMAVIS (result) = NULL;
+    INFO_RCAVIS (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -155,13 +101,9 @@ EMDRdoDataReuse (node *syntax_tree)
 {
     DBUG_ENTER ("EMDRdoDataReuse");
 
-    DBUG_PRINT ("EMDR", ("Data reuse optimization..."));
-
     TRAVpush (TR_emdr);
     syntax_tree = TRAVdo (syntax_tree, NULL);
     TRAVpop ();
-
-    DBUG_PRINT ("EMDR", ("Data reuse optimization complete."));
 
     DBUG_RETURN (syntax_tree);
 }
@@ -205,14 +147,14 @@ EMDRap (node *arg_node, info *arg_info)
 
             while (apargs != NULL) {
 
-                if (ID_AVIS (EXPRS_EXPR (apargs)) == INFO_EMDR_PREDAVIS (arg_info)) {
-                    INFO_EMDR_PREDAVIS (arg_info) = ARG_AVIS (funargs);
+                if (ID_AVIS (EXPRS_EXPR (apargs)) == INFO_PREDAVIS (arg_info)) {
+                    INFO_PREDAVIS (arg_info) = ARG_AVIS (funargs);
                 }
-                if (ID_AVIS (EXPRS_EXPR (apargs)) == INFO_EMDR_MEMAVIS (arg_info)) {
-                    INFO_EMDR_MEMAVIS (arg_info) = ARG_AVIS (funargs);
+                if (ID_AVIS (EXPRS_EXPR (apargs)) == INFO_MEMAVIS (arg_info)) {
+                    INFO_MEMAVIS (arg_info) = ARG_AVIS (funargs);
                 }
-                if (ID_AVIS (EXPRS_EXPR (apargs)) == INFO_EMDR_RCAVIS (arg_info)) {
-                    INFO_EMDR_RCAVIS (arg_info) = ARG_AVIS (funargs);
+                if (ID_AVIS (EXPRS_EXPR (apargs)) == INFO_RCAVIS (arg_info)) {
+                    INFO_RCAVIS (arg_info) = ARG_AVIS (funargs);
                 }
 
                 apargs = EXPRS_NEXT (apargs);
@@ -273,23 +215,23 @@ EMDRcond (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("EMDRcond");
 
-    oldlut = INFO_EMDR_REUSELUT (arg_info);
-    INFO_EMDR_REUSELUT (arg_info) = LUTduplicateLut (oldlut);
+    oldlut = INFO_REUSELUT (arg_info);
+    INFO_REUSELUT (arg_info) = LUTduplicateLut (oldlut);
 
     if ((NODE_TYPE (COND_COND (arg_node)) == N_id)
-        && (ID_AVIS (COND_COND (arg_node)) == INFO_EMDR_PREDAVIS (arg_info))) {
+        && (ID_AVIS (COND_COND (arg_node)) == INFO_PREDAVIS (arg_info))) {
         /*
          * b = reuse( a);
          *
          * Insert (memavis, rcavis) into REUSELUT
          */
-        LUTinsertIntoLutP (INFO_EMDR_REUSELUT (arg_info), INFO_EMDR_MEMAVIS (arg_info),
-                           INFO_EMDR_RCAVIS (arg_info));
+        LUTinsertIntoLutP (INFO_REUSELUT (arg_info), INFO_MEMAVIS (arg_info),
+                           INFO_RCAVIS (arg_info));
     }
     COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
 
-    INFO_EMDR_REUSELUT (arg_info) = LUTremoveLut (INFO_EMDR_REUSELUT (arg_info));
-    INFO_EMDR_REUSELUT (arg_info) = oldlut;
+    INFO_REUSELUT (arg_info) = LUTremoveLut (INFO_REUSELUT (arg_info));
+    INFO_REUSELUT (arg_info) = oldlut;
 
     COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
 
@@ -368,8 +310,7 @@ EMDRcode (node *arg_node, info *arg_info)
                         node *arr = PRF_ARG2 (sel);
 
                         if ((ID_AVIS (iv) == ID_AVIS (vec))
-                            && (LUTsearchInLutPp (INFO_EMDR_REUSELUT (arg_info),
-                                                  ID_AVIS (mem))
+                            && (LUTsearchInLutPp (INFO_REUSELUT (arg_info), ID_AVIS (mem))
                                 == ID_AVIS (arr))) {
                             inplace = TRUE;
                         }
@@ -388,8 +329,7 @@ EMDRcode (node *arg_node, info *arg_info)
                         node *arr = PRF_ARG2 (sel);
 
                         if ((ID_AVIS (idx) == ID_AVIS (selidx))
-                            && (LUTsearchInLutPp (INFO_EMDR_REUSELUT (arg_info),
-                                                  ID_AVIS (mem))
+                            && (LUTsearchInLutPp (INFO_REUSELUT (arg_info), ID_AVIS (mem))
                                 == ID_AVIS (arr))) {
                             inplace = TRUE;
                         }
@@ -408,8 +348,8 @@ EMDRcode (node *arg_node, info *arg_info)
              */
             avis = TBmakeAvis (ILIBtmpVar (), TYeliminateAKV (AVIS_TYPE (ID_AVIS (id))));
 
-            FUNDEF_VARDEC (INFO_EMDR_FUNDEF (arg_info))
-              = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_EMDR_FUNDEF (arg_info)));
+            FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+              = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
 
             /*
              * Create noop
@@ -470,16 +410,16 @@ EMDRfundef (node *arg_node, info *arg_info)
             info = MakeInfo (arg_node);
 
             if (arg_info != NULL) {
-                INFO_EMDR_PREDAVIS (info) = INFO_EMDR_PREDAVIS (arg_info);
-                INFO_EMDR_MEMAVIS (info) = INFO_EMDR_MEMAVIS (arg_info);
-                INFO_EMDR_RCAVIS (info) = INFO_EMDR_RCAVIS (arg_info);
+                INFO_PREDAVIS (info) = INFO_PREDAVIS (arg_info);
+                INFO_MEMAVIS (info) = INFO_MEMAVIS (arg_info);
+                INFO_RCAVIS (info) = INFO_RCAVIS (arg_info);
             }
 
-            INFO_EMDR_REUSELUT (info) = LUTgenerateLut ();
+            INFO_REUSELUT (info) = LUTgenerateLut ();
 
             FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), info);
 
-            INFO_EMDR_REUSELUT (info) = LUTremoveLut (INFO_EMDR_REUSELUT (info));
+            INFO_REUSELUT (info) = LUTremoveLut (INFO_REUSELUT (info));
 
             info = FreeInfo (info);
         }
@@ -514,7 +454,7 @@ EMDRlet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EMDRlet");
 
-    INFO_EMDR_LHS (arg_info) = LET_IDS (arg_node);
+    INFO_LHS (arg_info) = LET_IDS (arg_node);
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -544,8 +484,7 @@ EMDRprf (node *arg_node, info *arg_info)
          *
          * Insert (b, a) into REUSELUT
          */
-        LUTinsertIntoLutP (INFO_EMDR_REUSELUT (arg_info),
-                           IDS_AVIS (INFO_EMDR_LHS (arg_info)),
+        LUTinsertIntoLutP (INFO_REUSELUT (arg_info), IDS_AVIS (INFO_LHS (arg_info)),
                            ID_AVIS (PRF_ARG1 (arg_node)));
         break;
 
@@ -555,8 +494,7 @@ EMDRprf (node *arg_node, info *arg_info)
          *
          * Insert (b, a) into REUSELUT
          */
-        LUTinsertIntoLutP (INFO_EMDR_REUSELUT (arg_info),
-                           IDS_AVIS (INFO_EMDR_LHS (arg_info)),
+        LUTinsertIntoLutP (INFO_REUSELUT (arg_info), IDS_AVIS (INFO_LHS (arg_info)),
                            ID_AVIS (PRF_ARG3 (arg_node)));
         break;
 
@@ -574,7 +512,7 @@ EMDRprf (node *arg_node, info *arg_info)
                  * If ( b, a) is in REUSELUT:
                  *   convert copy( a) into noop( a)
                  */
-                if (LUTsearchInLutPp (INFO_EMDR_REUSELUT (arg_info),
+                if (LUTsearchInLutPp (INFO_REUSELUT (arg_info),
                                       ID_AVIS (PRF_ARG2 (arg_node)))
                     == ID_AVIS (PRF_ARG1 (prf))) {
                     DBUG_PRINT ("EMDR", ("Inplace copy situation recognized!"));
@@ -588,9 +526,9 @@ EMDRprf (node *arg_node, info *arg_info)
                  *
                  * put ( c, mem, rc) into ( predavis, memavis, rcavis)
                  */
-                INFO_EMDR_PREDAVIS (arg_info) = IDS_AVIS (INFO_EMDR_LHS (arg_info));
-                INFO_EMDR_MEMAVIS (arg_info) = ID_AVIS (PRF_ARG1 (prf));
-                INFO_EMDR_RCAVIS (arg_info) = ID_AVIS (PRF_ARG2 (prf));
+                INFO_PREDAVIS (arg_info) = IDS_AVIS (INFO_LHS (arg_info));
+                INFO_MEMAVIS (arg_info) = ID_AVIS (PRF_ARG1 (prf));
+                INFO_RCAVIS (arg_info) = ID_AVIS (PRF_ARG2 (prf));
                 break;
 
             default:
