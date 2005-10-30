@@ -1575,14 +1575,17 @@ WLFSfundef (node *arg_node, info *arg_info)
     DBUG_ENTER ("WLFSfundef");
 
     if (FUNDEF_BODY (arg_node)) {
-        DBUG_PRINT ("WLFS",
-                    ("Fusioning With-Loops in function %s", FUNDEF_NAME (arg_node)));
+        DBUG_PRINT ("WLFS", ("Fusing With-Loops in function %s", FUNDEF_NAME (arg_node)));
+
+        arg_info = MakeInfo ();
 
         INFO_FUNDEF (arg_info) = arg_node;
 
         FUNDEF_INSTR (arg_node) = TRAVdo (FUNDEF_INSTR (arg_node), arg_info);
 
-        DBUG_PRINT ("WLFS", ("Fusioning With-Loops in function %s complete",
+        arg_info = FreeInfo (arg_info);
+
+        DBUG_PRINT ("WLFS", ("Fusing of With-Loops in function %s complete",
                              FUNDEF_NAME (arg_node)));
     }
 
@@ -2308,17 +2311,9 @@ WLFSdoWithloopFusion (node *arg_node)
 
     DBUG_ENTER ("WLFSdoWithloopFusion");
 
-    DBUG_PRINT ("WLFS", ("Starting to fusion With-Loops ..."));
-
-    arg_info = MakeInfo ();
-
     TRAVpush (TR_wlfs);
-    arg_node = TRAVdo (arg_node, arg_info);
+    arg_node = TRAVdo (arg_node, NULL);
     TRAVpop ();
-
-    arg_info = FreeInfo (arg_info);
-
-    DBUG_PRINT ("WLFS", ("Fusioning of With-Loops complete."));
 
     DBUG_RETURN (arg_node);
 }
