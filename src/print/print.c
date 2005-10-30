@@ -1,170 +1,5 @@
 /*
- *
- * $Log$
- * Revision 3.231  2005/09/27 17:21:01  sbs
- * PRTwlsimd added, IsSimdSuitable flags printing added
- *
- * Revision 3.230  2005/08/24 10:26:26  ktr
- * added support for WITHID_IDXS, GENARRAY_IDX, MODARRAY_IDX
- *
- * Revision 3.229  2005/08/19 10:04:50  sbs
- * fixed error in PRTtype
- *
- * Revision 3.228  2005/08/18 16:22:12  ktr
- * removed conditional lhs expressions
- *
- * Revision 3.227  2005/08/18 06:19:51  sbs
- * PRTtype added
- *
- * Revision 3.226  2005/08/11 13:48:37  sbs
- * changed PRTstr so that C compliant strings will be printed including proper escape
- * characters. However, currently only quotes are supported :-)
- *
- * Revision 3.225  2005/07/18 17:49:38  sbs
- * output of FUNDEF_INT and FUNDEF_EXT eliminated
- *
- * Revision 3.224  2005/07/17 21:14:59  sah
- * dummy fun is created for empty modules
- *
- * Revision 3.223  2005/07/15 15:57:02  sah
- * introduced namespaces
- *
- * Revision 3.222  2005/06/28 20:51:52  ktr
- * changed printing of funcond into ?: notation
- *
- * Revision 3.221  2005/06/15 12:42:15  sah
- * added printing of ...
- *
- * Revision 3.220  2005/06/15 07:27:17  sah
- * fixed PRTfundef to avoid segfault on linux
- * this entire thing needs a cleanup!
- *
- * Revision 3.219  2005/06/08 09:48:32  ktr
- * Tweaked Argtab2Fundef to introduce shared RETS. But it is still ugly
- *
- * Revision 3.218  2005/06/06 15:26:05  jhb
- * added a if statement to each function to print the NODE_ERROR
- *
- * Revision 3.217  2005/06/06 13:29:40  jhb
- * added error print function
- *
- * Revision 3.216  2005/06/06 10:22:01  jhb
- * printing of obsolete attributes removed
- *
- * Revision 3.215  2005/06/01 15:51:08  sah
- * this needs to be rewritten. ASAP!
- *
- * Revision 3.214  2005/05/27 20:53:29  ktr
- * chenged WLGRIDX_FITTED to WLGRIDX_ISFITTED
- *
- * Revision 3.213  2005/05/26 20:31:46  sah
- * enabled printing of c-headers for external wrapper functions
- *
- * Revision 3.212  2005/05/17 10:58:48  sacbase
- * Eliminated nested comments in RCS header section and restored
- * compilability.
- *
- * Revision 3.211  2005/05/13 16:45:25  ktr
- * "lacinline" is now printed as well
- *
- * Revision 3.210  2005/05/11 14:23:15  sbs
- * Now, the wrapper type is printed as a comment.
- *
- * Revision 3.209  2005/04/16 14:17:15  khf
- * print functions for N_default added
- *
- * Revision 3.208  2005/04/11 05:33:46  ktr
- * Printing of external and internal assignments of special functions fixed.
- *
- * Revision 3.207  2005/03/20 00:20:49  sbs
- * AUD required proper printing of default partitions
- *
- * Revision 3.206  2005/03/04 21:21:42  cg
- * Added printing of EXT-/INT-ASSIGN of LaC-functions.
- * Adjusted zombification of fundefs.
- *
- * Revision 3.205  2005/03/01 13:21:13  jhb
- * fix bug in PRTerror
- *
- * Revision 3.204  2005/02/16 22:29:13  sah
- * pragmas are not printed when generating c code
- *
- * Revision 3.203  2005/02/10 14:27:23  jhb
- * added PRTerror
- *
- * Revision 3.202  2005/01/11 13:09:05  cg
- * Converted output from Error.h to ctinfo.c
- *
- * Revision 3.201  2004/12/19 13:31:49  sbs
- * PRTfold brushed!
- *
- * Revision 3.200  2004/12/13 18:43:22  ktr
- * PRTid corrected once more
- *
- * Revision 3.199  2004/12/09 21:04:57  ktr
- * Argtab2Let corrected.
- *
- * Revision 3.198  2004/12/08 11:20:43  sah
- * fixed printing of Id nodes
- *
- * Revision 3.197  2004/12/05 21:03:24  sah
- * enabled printing of global objects
- *
- * Revision 3.196  2004/12/05 20:15:01  sah
- * beautified print
- *
- * Revision 3.195  2004/12/05 20:12:44  sah
- * fixed printing of withids
- *
- * Revision 3.194  2004/12/05 16:45:38  sah
- * added SPIds SPId SPAp in frontend
- *
- * Revision 3.193  2004/12/02 15:12:29  sah
- * added support for ops node
- *
- * Revision 3.192  2004/12/01 19:18:08  sbs
- * moved PRTvectinfo into index.c
- * some further brushing
- *
- * Revision 3.191  2004/11/29 19:13:33  ktr
- * Better support for named tuples. In the long run, we need a node N_nt which
- * could directly be printed as a named tuple.
- *
- * Revision 3.190  2004/11/29 16:42:13  sah
- * reactivated printing of old types
- *
- * Revision 3.189  2004/11/29 09:57:57  sah
- * removed nested comment
- *
- * Revision 3.188  2004/11/29 09:35:35  sbs
- * some further brushing
- *
- * Revision 3.187  2004/11/27 05:03:19  ktr
- * blah
- *
- * Revision 3.186  2004/11/27 02:25:56  mwe
- * renaiming
- *
- * Revision 3.184  2004/11/27 02:17:09  mwe
- * function renaming
- *
- * Revision 3.183  2004/11/27 00:14:38  cg
- * New types are printed whenever available.
- *
- * Revision 3.182  2004/11/26 23:23:31  khf
- * SacDevCamp04: COMPILES!!
- *
- * Revision 3.181  2004/11/26 22:31:13  sbs
- * construction site reopened 8-)
- *
- * Revision 3.180  2004/11/26 19:47:32  sbs
- * compiles but has some TODO left
- *
- * Revision 3.179  2004/11/25 22:17:50  khf
- * added PRTprintHomsv (moved from wltransform.h)
- *
- * [ eliminated ]
- *
+ * $Id$
  */
 
 #include <stdio.h>
@@ -3142,46 +2977,43 @@ PRTpragma (node *arg_node, info *arg_info)
     }
     fprintf (global.outfile, "]\n");
   }
-
-  if (PRAGMA_EFFECT (arg_node) != NULL) {
-    fprintf (global.outfile, "#pragma effect ");
-    TRAVdo (PRAGMA_EFFECT (arg_node), arg_info);
-    fprintf (global.outfile, "\n");
-  }
-
-  if (PRAGMA_TOUCH (arg_node) != NULL) {
-    fprintf (global.outfile, "#pragma touch ");
-    TRAVdo (PRAGMA_TOUCH (arg_node), arg_info);
-    fprintf (global.outfile, "\n");
-  }
-
-  if (PRAGMA_COPYFUN (arg_node) != NULL) {
-    fprintf (global.outfile, "#pragma copyfun \"%s\"\n",
-             PRAGMA_COPYFUN (arg_node));
-  }
-
-  if (PRAGMA_FREEFUN (arg_node) != NULL) {
-    fprintf (global.outfile, "#pragma freefun \"%s\"\n",
-             PRAGMA_FREEFUN (arg_node));
-  }
-
-  if (PRAGMA_INITFUN (arg_node) != NULL) {
-    fprintf (global.outfile, "#pragma initfun \"%s\"\n",
-             PRAGMA_INITFUN (arg_node));
-  }
-
-  if (PRAGMA_WLCOMP_APS (arg_node) != NULL) {
-    fprintf (global.outfile, "#pragma wlcomp ");
-    TRAVdo (PRAGMA_WLCOMP_APS (arg_node), arg_info);
-    fprintf (global.outfile, "\n");
-  }
-
-  if (PRAGMA_APL (arg_node) != NULL) {
-    fprintf (global.outfile, "#pragma wlcomp ");
-    TRAVdo (PRAGMA_APL (arg_node), arg_info);
-    fprintf (global.outfile, "\n");
-  }
 #endif
+
+    if (PRAGMA_EFFECT (arg_node) != NULL) {
+        fprintf (global.outfile, "#pragma effect ");
+        TRAVdo (PRAGMA_EFFECT (arg_node), arg_info);
+        fprintf (global.outfile, "\n");
+    }
+
+    if (PRAGMA_TOUCH (arg_node) != NULL) {
+        fprintf (global.outfile, "#pragma touch ");
+        TRAVdo (PRAGMA_TOUCH (arg_node), arg_info);
+        fprintf (global.outfile, "\n");
+    }
+
+    if (PRAGMA_COPYFUN (arg_node) != NULL) {
+        fprintf (global.outfile, "#pragma copyfun \"%s\"\n", PRAGMA_COPYFUN (arg_node));
+    }
+
+    if (PRAGMA_FREEFUN (arg_node) != NULL) {
+        fprintf (global.outfile, "#pragma freefun \"%s\"\n", PRAGMA_FREEFUN (arg_node));
+    }
+
+    if (PRAGMA_INITFUN (arg_node) != NULL) {
+        fprintf (global.outfile, "#pragma initfun \"%s\"\n", PRAGMA_INITFUN (arg_node));
+    }
+
+    if (PRAGMA_WLCOMP_APS (arg_node) != NULL) {
+        fprintf (global.outfile, "#pragma wlcomp ");
+        TRAVdo (PRAGMA_WLCOMP_APS (arg_node), arg_info);
+        fprintf (global.outfile, "\n");
+    }
+
+    if (PRAGMA_APL (arg_node) != NULL) {
+        fprintf (global.outfile, "#pragma wlcomp ");
+        TRAVdo (PRAGMA_APL (arg_node), arg_info);
+        fprintf (global.outfile, "\n");
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -3925,7 +3757,7 @@ PRTfold (node *arg_node, info *arg_info)
         /*
          * continue with other withops
          */
-        PRINT_CONT (TRAVdo (GENARRAY_NEXT (arg_node), arg_info), ;);
+        PRINT_CONT (TRAVdo (FOLD_NEXT (arg_node), arg_info), ;);
     }
 
     DBUG_RETURN (arg_node);
