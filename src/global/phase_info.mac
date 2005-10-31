@@ -113,12 +113,12 @@ SUBPHASE (rst, "rst", "Processing user defined types", RSTdoResolveSymbolTypes)
 
 SUBPHASE (insvd, "ivd", "Inserting variable declarations", INSVDdoInsertVardec)
 
+SUBPHASE (instc, "itc", "Converting type decls in type conversions",
+          INSTCdoInsertTypeConv)
+
 SUBPHASE (crtwrp, "cwr", "Creating wrapper functions", CRTWRPdoCreateWrappers)
 
 SUBPHASE (lac2fun, "l2f", "Eliminating loops and conditionals", L2FdoLac2Fun)
-
-SUBPHASE (instc, "itc", "Converting type decls in type conversions",
-          INSTCdoInsertTypeConv)
 
 SUBPHASE (ssa, "ssa", "Establishing static single assignment form",
           SSATdoTransformAllowGOs)

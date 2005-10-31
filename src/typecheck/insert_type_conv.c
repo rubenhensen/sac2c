@@ -339,18 +339,24 @@ INSTCid (node *arg_node, info *arg_info)
 
     if (INFO_INSTC_RETURN (arg_info) != NULL) {
 
-        old_type = RET_TYPE (INFO_INSTC_RETS (arg_info));
-        if (!TYisAUD (old_type)) {
-            assign = CreateTypeConv (ID_AVIS (arg_node), old_type);
+        if (INFO_INSTC_RETS (arg_info) == NULL) {
+            CTIerrorLine (NODE_LINE (arg_node),
+                          "more expressions returned than return types specified!");
+        } else {
+            old_type = RET_TYPE (INFO_INSTC_RETS (arg_info));
+            if (!TYisAUD (old_type)) {
+                assign = CreateTypeConv (ID_AVIS (arg_node), old_type);
 
-            ASSIGN_NEXT (assign) = INFO_INSTC_NEW_ASSIGN (arg_info);
-            INFO_INSTC_NEW_ASSIGN (arg_info) = assign;
+                ASSIGN_NEXT (assign) = INFO_INSTC_NEW_ASSIGN (arg_info);
+                INFO_INSTC_NEW_ASSIGN (arg_info) = assign;
 
-            RET_TYPE (INFO_INSTC_RETS (arg_info)) = TYmakeAUD (TYgetScalar (old_type));
-            old_type = TYfreeTypeConstructor (old_type);
+                RET_TYPE (INFO_INSTC_RETS (arg_info))
+                  = TYmakeAUD (TYgetScalar (old_type));
+                old_type = TYfreeTypeConstructor (old_type);
+            }
+
+            INFO_INSTC_RETS (arg_info) = RET_NEXT (INFO_INSTC_RETS (arg_info));
         }
-
-        INFO_INSTC_RETS (arg_info) = RET_NEXT (INFO_INSTC_RETS (arg_info));
     }
 
     DBUG_RETURN (arg_node);
@@ -374,6 +380,13 @@ INSTCreturn (node *arg_node, info *arg_info)
 
     if (RETURN_EXPRS (arg_node) != NULL) {
         RETURN_EXPRS (arg_node) = TRAVdo (RETURN_EXPRS (arg_node), arg_info);
+    }
+
+    if (INFO_INSTC_RETS (arg_info) != NULL) {
+        CTIerrorLine (NODE_LINE (arg_node),
+                      "fewer expressions returned than return types specified in line "
+                      "%d!",
+                      NODE_LINE (INFO_INSTC_RETS (arg_info)));
     }
 
     DBUG_RETURN (arg_node);
@@ -402,6 +415,7 @@ INSTCdoInsertTypeConv (node *arg_node)
     arg_info = FreeInfo (arg_info);
 
     TRAVpop ();
+    CTIabortOnError ();
 
     DBUG_RETURN (arg_node);
 }
