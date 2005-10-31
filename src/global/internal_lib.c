@@ -1199,7 +1199,7 @@ ILIBbyteArrayToHexString (int len, unsigned char *array)
         result[2 * pos + 1] = (char)DIG2HEX (low);
     }
 
-    result[2 * pos + 2] = '\0';
+    result[2 * len] = '\0';
 
     DBUG_RETURN (result);
 }
