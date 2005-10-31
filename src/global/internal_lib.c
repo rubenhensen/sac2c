@@ -309,6 +309,15 @@ typedef struct {
     malloc_align_type align;
 } malloc_header_type;
 
+typedef struct MEMOBJ {
+    int size;
+    void *ptr;
+    int subphase;
+    int traversal;
+    int type;
+    int bit;
+} memobj;
+
 static int malloc_align_step = 0;
 
 #endif /* SHOW_MALLOC */
