@@ -179,7 +179,7 @@ RemoveUnusedCodes (node *codes)
  *   @return node *         :  updated expr
  ******************************************************************************/
 
-node *
+static node *
 CreateStructConstant (node *expr, node *nassigns)
 {
     node *tmp1, *tmp2, *idn, *iterator;
@@ -379,7 +379,7 @@ CreateNewPart (node *lb, node *ub, node *step, node *width, node *withid, node *
 
 /** <!--********************************************************************-->
  *
- * @fn int NormalizeStepWidth(node **step, node **width)
+ * @fn int WLPGnormalizeStepWidth(node **step, node **width)
  *
  *   @brief normalizes step and width. There are several forbidden and
  *          ambiguous combinations of bounds, step (s) and width (w).
@@ -406,13 +406,13 @@ CreateNewPart (node *lb, node *ub, node *step, node *width, node *withid, node *
  ******************************************************************************/
 
 int
-NormalizeStepWidth (node **step, node **width)
+WLPGnormalizeStepWidth (node **step, node **width)
 {
     node *stp, *wth;
     int stpnum, wthnum, veclen;
     int error = 0, is_1 = 1;
 
-    DBUG_ENTER ("NormalizeStepWidth");
+    DBUG_ENTER ("WLPGnormalizeStepWidth");
 
     if ((*width) != NULL && (*step) == NULL) {
         error = 3;
@@ -723,7 +723,7 @@ CompleteGrid (node *ls, node *us, node *step, node *width, int dim, node *wln,
                     EXPRS_EXPR (lbn) = DUPdupIdsId (_ids);
                 }
                 NUM_VAL (EXPRS_EXPR (wthn)) = stpnum - wthnum;
-                i = NormalizeStepWidth (&(PART_STEP (partn)), &(PART_WIDTH (partn)));
+                i = WLPGnormalizeStepWidth (&(PART_STEP (partn)), &(PART_WIDTH (partn)));
                 DBUG_ASSERT (!i, ("internal normalization failure"));
 
                 wln = AppendPart2WL (wln, partn);
@@ -790,7 +790,7 @@ CompleteGrid (node *ls, node *us, node *step, node *width, int dim, node *wln,
                 EXPRS_EXPR (wthn) = DUPdupIdsId (_ids);
             }
 
-            i = NormalizeStepWidth (&(PART_STEP (partn)), &(PART_WIDTH (partn)));
+            i = WLPGnormalizeStepWidth (&(PART_STEP (partn)), &(PART_WIDTH (partn)));
             DBUG_ASSERT (!i, ("internal normalization failure"));
 
             wln = AppendPart2WL (wln, partn);

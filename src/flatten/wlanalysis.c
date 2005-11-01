@@ -1,27 +1,6 @@
 /*
  *
- * $Log$
- * Revision 1.6  2005/08/26 12:26:35  ktr
- * wlanalysis may only be applied on AKS index vector with-loops
- *
- * Revision 1.5  2005/06/15 17:50:55  ktr
- * removed WLAmodarray as it only restricted with-loops with AUD result from
- * obtaining a full partition.
- *
- * Revision 1.4  2005/06/15 16:47:36  ktr
- * Some brushing. Modarray with-loops with AUD result and AKS index vector
- * are not yet equipped with full partition.
- *
- * Revision 1.3  2005/06/03 17:18:09  khf
- * shape information of indexvector rules
- *
- * Revision 1.2  2005/05/25 17:41:03  khf
- * corrected test on empty generators
- *
- * Revision 1.1  2005/04/29 20:51:52  khf
- * Initial revision
- *
- *
+ * $Id$
  *
  */
 
@@ -54,10 +33,10 @@
 #include "wlanalysis.h"
 
 typedef enum {
-    GV_constant,
-    GV_struct_constant,
-    GV_known_shape,
-    GV_unknown_shape
+    GV_constant = 0,
+    GV_struct_constant = 1,
+    GV_known_shape = 2,
+    GV_unknown_shape = 3
 } gen_shape_t;
 
 /**
@@ -121,7 +100,7 @@ static char *gen_prop_str[] = {"GPT_empty", "GPT_full", "GPT_partial", "GPT_unkn
 
 /** <!--********************************************************************-->
  *
- * @fn node *CreateNewAssigns( node *expr, node *fundef, int shpext)
+ * @fn node *VectVar2StructConst( node **expr, node *fundef, int shpext)
  *
  *   @brief expects (expr) to point to an identifier and generates as many
  *          new assigns as (shpext) indicates.
@@ -132,37 +111,51 @@ static char *gen_prop_str[] = {"GPT_empty", "GPT_full", "GPT_partial", "GPT_unkn
  *   @return node *       :  a chained list of N_assign nodes
  ******************************************************************************/
 static node *
-CreateNewAssigns (node *expr, node *fundef, int shpext)
+VectVar2StructConst (node **expr, node *fundef, int shpext)
 {
     int i;
-    node *prf, *nassigns, *vardec, *_ids;
-    char *nvarname;
+    node *idx_avis, *res_avis, *nassigns, *exprs;
 
-    DBUG_ENTER ("CreateNewAssigns");
+    DBUG_ENTER ("VectVar2StructConst");
 
-    DBUG_ASSERT ((expr != NULL), "Expr is empty");
-    DBUG_ASSERT ((NODE_TYPE (expr) == N_id), "CreateNewAssigns not called with N_id");
-    DBUG_ASSERT ((TYisSimple (ID_NTYPE (expr)) == FALSE), "Id is a Scalar!!");
+    DBUG_ASSERT ((*expr != NULL), "Expr is empty");
+    DBUG_ASSERT ((NODE_TYPE (*expr) == N_id), "VectVar2StructConst not called with N_id");
+    DBUG_ASSERT ((TYisSimple (ID_NTYPE (*expr)) == FALSE), "Id is a Scalar!!");
 
     nassigns = NULL;
+    exprs = NULL;
 
     for (i = shpext - 1; i >= 0; i--) {
-        nvarname = ILIBtmpVarName (ID_NAME (expr));
-        _ids = TBmakeIds (TBmakeAvis (nvarname, TYmakeAKS (TYmakeSimpleType (T_int),
-                                                           SHmakeShape (0))),
-                          NULL);
+        idx_avis = TBmakeAvis (ILIBtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int),
+                                                         SHcreateShape (1, 1)));
+        res_avis = TBmakeAvis (ILIBtmpVarName (ID_NAME (*expr)),
+                               TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
+        fundef
+          = TCaddVardecs (fundef, TBmakeVardec (idx_avis, TBmakeVardec (res_avis, NULL)));
+        /**
+         * res_avis = F_sel( idx_avis, expr);
+         */
+        nassigns = TBmakeAssign (TBmakeLet (TBmakeIds (res_avis, NULL),
+                                            TCmakePrf2 (F_sel, TBmakeId (idx_avis),
+                                                        DUPdoDupNode (*expr))),
+                                 nassigns);
+        AVIS_SSAASSIGN (res_avis) = nassigns;
 
-        vardec = TBmakeVardec (IDS_AVIS (_ids), NULL);
+        /**
+         * idx_avis = [i];
+         */
+        nassigns = TBmakeAssign (TBmakeLet (TBmakeIds (idx_avis, NULL),
+                                            TCmakeFlatArray (TCmakeExprsNum (i))),
+                                 nassigns);
+        AVIS_SSAASSIGN (idx_avis) = nassigns;
 
-        fundef = TCaddVardecs (fundef, vardec);
-
-        prf = TCmakePrf2 (F_idx_sel, TBmakeNum (i), DUPdoDupNode (expr));
-
-        nassigns = TBmakeAssign (TBmakeLet (_ids, prf), nassigns);
-
-        /* set correct backref to defining assignment */
-        AVIS_SSAASSIGN (IDS_AVIS (_ids)) = nassigns;
+        /**
+         * Now, we build the exprs chain:
+         */
+        exprs = TBmakeExprs (TBmakeId (res_avis), exprs);
     }
+    *expr = FREEdoFreeTree (*expr);
+    *expr = TCmakeFlatArray (exprs);
 
     DBUG_RETURN (nassigns);
 }
@@ -516,10 +509,8 @@ WLAgenerator (node *arg_node, info *arg_info)
      */
     current_shape = PropagateArrayConstants (&(GENERATOR_BOUND1 (arg_node)));
     if (current_shape >= GV_known_shape) {
-        nassigns
-          = CreateNewAssigns (GENERATOR_BOUND1 (arg_node), f_def, INFO_SHPEXT (arg_info));
-        GENERATOR_BOUND1 (arg_node)
-          = CreateStructConstant (GENERATOR_BOUND1 (arg_node), nassigns);
+        nassigns = VectVar2StructConst (&(GENERATOR_BOUND1 (arg_node)), f_def,
+                                        INFO_SHPEXT (arg_info));
         gshape = GV_struct_constant;
         INFO_NASSIGNS (arg_info) = TCappendAssign (INFO_NASSIGNS (arg_info), nassigns);
     } else {
@@ -528,10 +519,8 @@ WLAgenerator (node *arg_node, info *arg_info)
 
     current_shape = PropagateArrayConstants (&(GENERATOR_BOUND2 (arg_node)));
     if (current_shape >= GV_known_shape) {
-        nassigns
-          = CreateNewAssigns (GENERATOR_BOUND2 (arg_node), f_def, INFO_SHPEXT (arg_info));
-        GENERATOR_BOUND2 (arg_node)
-          = CreateStructConstant (GENERATOR_BOUND2 (arg_node), nassigns);
+        nassigns = VectVar2StructConst (&GENERATOR_BOUND2 (arg_node), f_def,
+                                        INFO_SHPEXT (arg_info));
         current_shape = GV_struct_constant;
         INFO_NASSIGNS (arg_info) = TCappendAssign (INFO_NASSIGNS (arg_info), nassigns);
     }
@@ -542,10 +531,8 @@ WLAgenerator (node *arg_node, info *arg_info)
 
     current_shape = PropagateArrayConstants (&(GENERATOR_STEP (arg_node)));
     if (current_shape >= GV_known_shape) {
-        nassigns
-          = CreateNewAssigns (GENERATOR_STEP (arg_node), f_def, INFO_SHPEXT (arg_info));
-        GENERATOR_STEP (arg_node)
-          = CreateStructConstant (GENERATOR_STEP (arg_node), nassigns);
+        nassigns = VectVar2StructConst (&GENERATOR_STEP (arg_node), f_def,
+                                        INFO_SHPEXT (arg_info));
         current_shape = GV_struct_constant;
         INFO_NASSIGNS (arg_info) = TCappendAssign (INFO_NASSIGNS (arg_info), nassigns);
     }
@@ -557,10 +544,8 @@ WLAgenerator (node *arg_node, info *arg_info)
 
     current_shape = PropagateArrayConstants (&(GENERATOR_WIDTH (arg_node)));
     if (current_shape >= GV_known_shape) {
-        nassigns
-          = CreateNewAssigns (GENERATOR_WIDTH (arg_node), f_def, INFO_SHPEXT (arg_info));
-        GENERATOR_WIDTH (arg_node)
-          = CreateStructConstant (GENERATOR_WIDTH (arg_node), nassigns);
+        nassigns = VectVar2StructConst (&GENERATOR_WIDTH (arg_node), f_def,
+                                        INFO_SHPEXT (arg_info));
         current_shape = GV_struct_constant;
         INFO_NASSIGNS (arg_info) = TCappendAssign (INFO_NASSIGNS (arg_info), nassigns);
     }
@@ -598,8 +583,8 @@ WLAgenerator (node *arg_node, info *arg_info)
 
     if (check_stepwidth) {
         /* normalize step and width */
-        switch (
-          NormalizeStepWidth (&GENERATOR_STEP (arg_node), &GENERATOR_WIDTH (arg_node))) {
+        switch (WLPGnormalizeStepWidth (&GENERATOR_STEP (arg_node),
+                                        &GENERATOR_WIDTH (arg_node))) {
         case 1:
             CTIabortLine (NODE_LINE (wln), "Component of width greater than step");
             break;
@@ -646,10 +631,8 @@ WLAgenarray (node *arg_node, info *arg_info)
     current_shape = PropagateArrayConstants (&(GENARRAY_SHAPE (arg_node)));
 
     if (current_shape >= GV_known_shape) {
-        nassigns
-          = CreateNewAssigns (GENARRAY_SHAPE (arg_node), f_def, INFO_SHPEXT (arg_info));
-        GENARRAY_SHAPE (arg_node)
-          = CreateStructConstant (GENARRAY_SHAPE (arg_node), nassigns);
+        nassigns = VectVar2StructConst (&GENARRAY_SHAPE (arg_node), f_def,
+                                        INFO_SHPEXT (arg_info));
         current_shape = GV_struct_constant;
         INFO_NASSIGNS (arg_info) = TCappendAssign (INFO_NASSIGNS (arg_info), nassigns);
     }
