@@ -1,21 +1,6 @@
-/*
- *
- * $Log$
- * Revision 1.7  2005/09/15 17:12:13  ktr
- * fixed bug #113
- * DEEP BRUSH
- *
- * Revision 1.6  2005/09/15 13:23:05  sah
- * added BUG113_SOLVED comment
- *
- * Revision 1.1  1998/06/07 18:43:10  dkr
- * Initial revision
- *
- */
-
 /******************************************************************************
  *
- * This module contains 'GetReuseArray'.
+ * $Id$
  *
  * 'GetReuseArray' searchs in the given with-loop for possibly reuseable
  * arrays:

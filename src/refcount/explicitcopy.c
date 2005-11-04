@@ -1,24 +1,6 @@
-/*
- *
- * $Log$
- * Revision 1.5  2004/11/24 14:05:19  ktr
- * MakeLet permutation.
- *
- * Revision 1.4  2004/11/23 22:15:12  ktr
- * renaming done.
- *
- * Revision 1.3  2004/11/23 20:33:20  ktr
- * COMPILES!!!
- *
- * Revision 1.2  2004/11/19 15:42:41  ktr
- * Support for F_alloc_or_reshape added.
- *
- * Revision 1.1  2004/11/09 22:15:04  ktr
- * Initial revision
- *
- */
-
 /**
+ *
+ * $Id$
  *
  * @defgroup ec Explicit Copy
  * @ingroup rc
