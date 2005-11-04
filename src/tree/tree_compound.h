@@ -1276,6 +1276,24 @@ extern int TCcountParts (node *parts);
        ? GENARRAY_IDX (n)                                                                \
        : (NODE_TYPE (n) == N_modarray) ? MODARRAY_IDX (n) : NULL)
 
+#define WITHOP_SUB(n)                                                                    \
+    ((NODE_TYPE (n) == N_genarray)                                                       \
+       ? GENARRAY_SUB (n)                                                                \
+       : (NODE_TYPE (n) == N_modarray) ? MODARRAY_SUB (n) : NULL)
+
+#define L_WITHOP_SUB(n, rhs)                                                             \
+    switch                                                                               \
+        NODE_TYPE (n)                                                                    \
+        {                                                                                \
+        case N_genarray:                                                                 \
+            GENARRAY_SUB (n) = rhs;                                                      \
+            break;                                                                       \
+        case N_modarray:                                                                 \
+            MODARRAY_SUB (n) = rhs;                                                      \
+            break;                                                                       \
+        default:                                                                         \
+            DBUG_ASSERT (FALSE, "Illegal node type");                                    \
+        }
 /*--------------------------------------------------------------------------*/
 
 /***

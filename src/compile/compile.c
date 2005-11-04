@@ -5230,8 +5230,6 @@ COMPwith (node *arg_node, info *arg_info)
     node *let_neutral;
     node *res_ids, *idx_id, *lower_id, *upper_id;
     node *offs_id = NULL;
-    char *sub_name;
-    node *sub_vardec, *sub_get_dim, *sub_set_shape;
     bool isfold;
 
     DBUG_ENTER ("COMPwith");
@@ -5312,23 +5310,13 @@ COMPwith (node *arg_node, info *arg_info)
     } else {
 
         /*
-         * The descriptor of A_sub must only be built if
-         * there actually IS a subarray
-         */
-        sub_name = ILIBstringConcat (IDS_NAME (res_ids), "_sub");
-        sub_vardec = FUNDEF_VARDEC (INFO_FUNDEF (arg_info));
-        while ((sub_vardec != NULL) && (strcmp (sub_name, VARDEC_NAME (sub_vardec)))) {
-            sub_vardec = VARDEC_NEXT (sub_vardec);
-        }
-        ILIBfree (sub_name);
-
-        /*
          * Free descriptor of subarray (IF it exists)
          */
-        if (sub_vardec != NULL) {
+        if (WITHOP_SUB (WITH_WITHOP (arg_node)) != NULL) {
+            node *sub_id = WITHOP_SUB (WITH_WITHOP (arg_node));
             icm_chain = TCmakeAssignIcm1 ("ND_FREE__DESC",
-                                          TCmakeIdCopyStringNt (VARDEC_NAME (sub_vardec),
-                                                                VARDEC_TYPE (sub_vardec)),
+                                          TCmakeIdCopyStringNt (ID_NAME (sub_id),
+                                                                ID_TYPE (sub_id)),
                                           icm_chain);
         }
 
@@ -5361,7 +5349,13 @@ COMPwith (node *arg_node, info *arg_info)
                                                     IDS_TYPE (res_ids)),
                               icm_chain);
 
-        if (sub_vardec != NULL) {
+        if (WITHOP_SUB (WITH_WITHOP (arg_node)) != NULL) {
+            node *sub_get_dim;
+            node *sub_set_shape;
+            node *sub_id;
+
+            sub_id = WITHOP_SUB (WITH_WITHOP (arg_node));
+
             /*
              * Calculate dimension of subarray
              *
@@ -5381,7 +5375,7 @@ COMPwith (node *arg_node, info *arg_info)
              * (genarray only)
              */
             if ((NODE_TYPE (WITH_WITHOP (arg_node)) == N_genarray)
-                && (TCgetShapeDim (VARDEC_TYPE (sub_vardec)) < 0)) {
+                && (TCgetShapeDim (ID_TYPE (sub_id)) < 0)) {
                 if (GENARRAY_DEFAULT (WITH_WITHOP (arg_node)) != NULL) {
                     DBUG_PRINT ("COMP", ("creating COPY__SHAPE for SUBALLOC var"));
                     /*
@@ -5389,9 +5383,8 @@ COMPwith (node *arg_node, info *arg_info)
                      */
                     sub_set_shape
                       = TCmakeIcm1 ("ND_COPY__SHAPE",
-                                    MakeTypeArgs (VARDEC_NAME (sub_vardec),
-                                                  VARDEC_TYPE (sub_vardec), FALSE, TRUE,
-                                                  FALSE,
+                                    MakeTypeArgs (ID_NAME (sub_id), ID_TYPE (sub_id),
+                                                  FALSE, TRUE, FALSE,
                                                   MakeTypeArgs (ID_NAME (
                                                                   GENARRAY_DEFAULT (
                                                                     WITH_WITHOP (
@@ -5410,7 +5403,7 @@ COMPwith (node *arg_node, info *arg_info)
                                     "cannot create subvar shape");
                 }
             } else if ((NODE_TYPE (WITH_WITHOP (arg_node)) == N_modarray)
-                       && (TCgetShapeDim (VARDEC_TYPE (sub_vardec)) < 0)) {
+                       && (TCgetShapeDim (ID_TYPE (sub_id)) < 0)) {
                 DBUG_PRINT ("COMP", ("creating WL_MODARRAY_SUBSHAPE for SUBALLOC var"));
                 /*
                  * set shape in modarray case based upon result
@@ -5418,10 +5411,9 @@ COMPwith (node *arg_node, info *arg_info)
                  */
                 sub_set_shape
                   = TCmakeIcm4 ("WL_MODARRAY_SUBSHAPE",
-                                TCmakeIdCopyStringNt (VARDEC_NAME (sub_vardec),
-                                                      VARDEC_TYPE (sub_vardec)),
+                                TCmakeIdCopyStringNt (ID_NAME (sub_id), ID_TYPE (sub_id)),
                                 DUPdupIdNt (WITHID_VEC (WITH_WITHID (arg_node))),
-                                TBmakeNum (TCgetDim (VARDEC_TYPE (sub_vardec))),
+                                TBmakeNum (TCgetDim (ID_TYPE (sub_id))),
                                 DUPdupIdsIdNt (res_ids));
                 icm_chain = TBmakeAssign (sub_set_shape, icm_chain);
             }
@@ -5429,9 +5421,8 @@ COMPwith (node *arg_node, info *arg_info)
             /*
              * Allocate descriptor of subarray
              */
-            icm_chain
-              = MakeAllocDescIcm (VARDEC_NAME (sub_vardec), VARDEC_TYPE (sub_vardec), 1,
-                                  sub_get_dim, icm_chain);
+            icm_chain = MakeAllocDescIcm (ID_NAME (sub_id), ID_TYPE (sub_id), 1,
+                                          sub_get_dim, icm_chain);
         }
     }
 
@@ -5578,10 +5569,6 @@ COMPwith2 (node *arg_node, info *arg_info)
     node *tmp_ids;
     node *idxs_exprs;
     node *withop;
-    char *sub_name;
-    node *sub_vardec;
-    node *sub_get_dim;
-    node *sub_set_shape;
     node *let_neutral;
 
     DBUG_ENTER ("COMPwith2");
@@ -5649,15 +5636,11 @@ COMPwith2 (node *arg_node, info *arg_info)
          */
         if ((NODE_TYPE (withop) == N_genarray) || (NODE_TYPE (withop) == N_modarray)) {
 
-            sub_name = ILIBstringConcat (IDS_NAME (tmp_ids), "_sub");
-            sub_vardec = FUNDEF_VARDEC (INFO_FUNDEF (arg_info));
-            while ((sub_vardec != NULL)
-                   && (strcmp (sub_name, VARDEC_NAME (sub_vardec)))) {
-                sub_vardec = VARDEC_NEXT (sub_vardec);
-            }
-            ILIBfree (sub_name);
+            if (WITHOP_SUB (withop) != NULL) {
+                node *sub_id = WITHOP_SUB (withop);
+                node *sub_get_dim;
+                node *sub_set_shape;
 
-            if (sub_vardec != NULL) {
                 /*
                  * Calculate dimension of subarray
                  *
@@ -5674,7 +5657,7 @@ COMPwith2 (node *arg_node, info *arg_info)
                  * (genarray only)
                  */
                 if ((NODE_TYPE (withop) == N_genarray)
-                    && (TCgetShapeDim (VARDEC_TYPE (sub_vardec)) < 0)) {
+                    && (TCgetShapeDim (ID_TYPE (sub_id)) < 0)) {
                     if (GENARRAY_DEFAULT (withop) != NULL) {
                         DBUG_PRINT ("COMP", ("creating COPY__SHAPE for SUBALLOC var"));
                         /*
@@ -5682,9 +5665,8 @@ COMPwith2 (node *arg_node, info *arg_info)
                          */
                         sub_set_shape
                           = TCmakeIcm1 ("ND_COPY__SHAPE",
-                                        MakeTypeArgs (VARDEC_NAME (sub_vardec),
-                                                      VARDEC_TYPE (sub_vardec), FALSE,
-                                                      TRUE, FALSE,
+                                        MakeTypeArgs (ID_NAME (sub_id), ID_TYPE (sub_id),
+                                                      FALSE, TRUE, FALSE,
                                                       MakeTypeArgs (ID_NAME (
                                                                       GENARRAY_DEFAULT (
                                                                         withop)),
@@ -5701,7 +5683,7 @@ COMPwith2 (node *arg_node, info *arg_info)
                                         "cannot create subvar shape");
                     }
                 } else if ((NODE_TYPE (withop) == N_modarray)
-                           && (TCgetShapeDim (VARDEC_TYPE (sub_vardec)) < 0)) {
+                           && (TCgetShapeDim (ID_TYPE (sub_id)) < 0)) {
                     DBUG_PRINT ("COMP",
                                 ("creating WL_MODARRAY_SUBSHAPE for SUBALLOC var"));
                     /*
@@ -5710,10 +5692,10 @@ COMPwith2 (node *arg_node, info *arg_info)
                      */
                     sub_set_shape
                       = TCmakeIcm4 ("WL_MODARRAY_SUBSHAPE",
-                                    TCmakeIdCopyStringNt (VARDEC_NAME (sub_vardec),
-                                                          VARDEC_TYPE (sub_vardec)),
+                                    TCmakeIdCopyStringNt (ID_NAME (sub_id),
+                                                          ID_TYPE (sub_id)),
                                     DUPdupIdNt (WITHID_VEC (WITH2_WITHID (arg_node))),
-                                    TBmakeNum (TCgetDim (VARDEC_TYPE (sub_vardec))),
+                                    TBmakeNum (TCgetDim (ID_TYPE (sub_id))),
                                     DUPdupIdsIdNt (tmp_ids));
 
                     alloc_icms = TBmakeAssign (sub_set_shape, alloc_icms);
@@ -5722,18 +5704,16 @@ COMPwith2 (node *arg_node, info *arg_info)
                 /*
                  * Allocate descriptor of subarray
                  */
-                alloc_icms
-                  = MakeAllocDescIcm (VARDEC_NAME (sub_vardec), VARDEC_TYPE (sub_vardec),
-                                      1, sub_get_dim, alloc_icms);
+                alloc_icms = MakeAllocDescIcm (ID_NAME (sub_id), ID_TYPE (sub_id), 1,
+                                               sub_get_dim, alloc_icms);
 
                 /*
                  * Free descriptor of subarray
                  */
-                free_icms
-                  = TCmakeAssignIcm1 ("ND_FREE__DESC",
-                                      TCmakeIdCopyStringNt (VARDEC_NAME (sub_vardec),
-                                                            VARDEC_TYPE (sub_vardec)),
-                                      free_icms);
+                free_icms = TCmakeAssignIcm1 ("ND_FREE__DESC",
+                                              TCmakeIdCopyStringNt (ID_NAME (sub_id),
+                                                                    ID_TYPE (sub_id)),
+                                              free_icms);
             }
         }
 

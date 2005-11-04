@@ -5856,10 +5856,20 @@
         </son>
         <son name="Mem" default="NULL">
           <targets>
+            <target mandatory="yes">
+              <node name="Id" />
+              <phases>
+                <range from="alloc" to="final" />
+              </phases>
+            </target>
+          </targets>
+        </son>
+        <son name="Sub" default="NULL">
+          <targets>
             <target mandatory="no">
               <node name="Id" />
               <phases>
-                <all />
+                <range from="mmv" to="final" />
               </phases>
             </target>
           </targets>
@@ -5923,10 +5933,20 @@
         </son>
         <son name="Mem" default="NULL">
           <targets>
+            <target mandatory="yes">
+              <node name="Id" />
+              <phases>
+                <range from="alloc" to="final" />
+              </phases>
+            </target>
+          </targets>
+        </son>
+        <son name="Sub" default="NULL">
+          <targets>
             <target mandatory="no">
               <node name="Id" />
               <phases>
-                <all />
+                <range from="mmv" to="final" />
               </phases>
             </target>
           </targets>
