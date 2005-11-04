@@ -2307,8 +2307,6 @@ WLFSgenerator (node *arg_node, info *arg_info)
 node *
 WLFSdoWithloopFusion (node *arg_node)
 {
-    info *arg_info;
-
     DBUG_ENTER ("WLFSdoWithloopFusion");
 
     TRAVpush (TR_wlfs);
