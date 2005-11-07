@@ -66,8 +66,6 @@ FILE *syscalltrack = NULL;
  *
  ******************************************************************************/
 
-#ifdef SHOW_MALLOC
-
 void *
 ILIBmalloc (int size)
 {
@@ -89,7 +87,7 @@ ILIBmalloc (int size)
                       global.current_allocated_mem);
         }
 
-        *(int *)tmp = size;
+        /**(int *) tmp = size;*/
         tmp = (char *)tmp + global.malloc_align_step;
 
 #ifdef CLEANMEM
@@ -174,70 +172,6 @@ ILIBfree (void *address)
 }
 
 #endif /* NOFREE */
-
-#else /* SHOW_MALLOC */
-
-void *
-ILIBmalloc (int size)
-{
-    void *tmp;
-
-    DBUG_ENTER ("ILIBmalloc");
-
-    DBUG_ASSERT ((size >= 0), "ILIBmalloc called with negative size!");
-
-    if (size > 0) {
-        tmp = malloc (size);
-
-        /*
-         * Since some UNIX system (e.g. ALPHA) do return NULL for size 0 as well
-         * we do complain for ((NULL == tmp) && (size > 0)) only!!
-         */
-        if (tmp == NULL) {
-            CTIabort ("Out of memory");
-        }
-    } else {
-        tmp = NULL;
-    }
-
-    DBUG_PRINT ("MEM_ALLOC", ("Alloc memory: %d Bytes at adress: " F_PTR, size, tmp));
-
-    DBUG_RETURN (tmp);
-}
-
-#ifdef NOFREE
-
-void *
-ILIBfree (void *address)
-{
-    DBUG_ENTER ("ILIBfree");
-
-    address = NULL;
-
-    DBUG_RETURN (address);
-}
-
-#else /* NOFREE */
-
-void *
-ILIBfree (void *address)
-{
-    DBUG_ENTER ("ILIBfree");
-
-    if (address != NULL) {
-        free (address);
-
-        DBUG_PRINT ("MEM_ALLOC", ("Free memory: ??? Bytes at adress: " F_PTR, address));
-
-        address = NULL;
-    }
-
-    DBUG_RETURN (address);
-}
-
-#endif /* NOFREE */
-
-#endif /* SHOW_MALLOC */
 
 struct PTR_BUF {
     void **buf;
