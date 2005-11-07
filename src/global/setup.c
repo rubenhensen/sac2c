@@ -32,9 +32,9 @@ SETUPdoSetupCompiler (int argc, char *argv[])
 
     setlocale (LC_ALL, "en_US");
 
-    GLOBinitializeGlobal ();
-
     ILIBcomputeMallocAlignStep ();
+
+    GLOBinitializeGlobal ();
 
     CTIinstallInterruptHandlers ();
 
