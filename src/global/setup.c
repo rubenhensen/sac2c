@@ -32,11 +32,10 @@ SETUPdoSetupCompiler (int argc, char *argv[])
 
     setlocale (LC_ALL, "en_US");
 
-#ifdef SHOW_MALLOC
-    ILIBcomputeMallocAlignStep ();
-#endif
-
     GLOBinitializeGlobal ();
+
+    ILIBcomputeMallocAlignStep ();
+
     CTIinstallInterruptHandlers ();
 
     global.argc = argc;
