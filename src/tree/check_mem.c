@@ -21,7 +21,7 @@ int memindex = 0;
 int memtabsize = 0;
 
 void
-CHKmalloc (int bsize, void *aptr)
+CHKregister (int bsize, void *aptr)
 {
 
     if (memindex == memtabsize) {
@@ -61,12 +61,14 @@ CHKmalloc (int bsize, void *aptr)
     memtab[memindex].ptr = aptr;
     memtab[memindex].bit = 0;
 
+    /*bsize = *memtab[memindex];*/
+
     memfreeslots = -1;
     memindex = -1;
 }
 
 void *
-CHKfree (void *bptr)
+CHKunregister (void *bptr)
 {
 
     memtab[memindex].size = 0;
