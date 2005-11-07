@@ -1,267 +1,5 @@
 /*
- *
- * $Log$
- * Revision 3.88  2005/09/27 16:09:39  sbs
- * added ILIBconcat4
- *
- * Revision 3.87  2005/09/27 11:49:05  sah
- * added systemcall tracking facility
- *
- * Revision 3.86  2005/09/09 18:55:32  sah
- * uses unsigned char now to prevent C from doing some funny
- * type conversions. furthermore, the code should be somewhat
- * more architecture independent now.
- *
- * Revision 3.85  2005/09/09 17:50:28  sah
- * added ILIBhexStringToByteArray and ILIBbyteArrayToHexString
- *
- * Revision 3.84  2005/07/26 12:41:40  sah
- * ILIBreplaceSpecialCharacters now has a const char argument
- *
- * Revision 3.83  2005/06/28 15:46:19  sah
- * malloc_align_step hidden if SHOW_MALLOC undefined
- *
- * Revision 3.82  2005/04/13 20:48:36  ktr
- * signal.h included (required on OS X).
- *
- * Revision 3.81  2005/04/13 19:57:54  sah
- * added , to special characeters and
- * made the error handling in ILIBsytemCall
- * more POSIX like
- *
- * Revision 3.80  2005/04/12 15:13:27  sah
- * updated signature of ILIBcreateCppCallString.
- *
- * Revision 3.79  2005/02/16 22:29:13  sah
- * extended set of special characters
- *
- * Revision 3.78  2005/01/11 15:10:54  cg
- * Bug fixed in output conversion.
- *
- * Revision 3.77  2005/01/11 11:28:11  cg
- * Converted output from Error.h to ctinfo.c
- *
- * Revision 3.76  2004/12/11 17:38:25  ktr
- * added memmory initialization iff CLEANMEM is set.
- *
- * Revision 3.75  2004/12/01 18:46:37  sah
- * added some code to get notified in gdb
- * whenever a watched memory address is freed
- * however it is commented out
- *
- * Revision 3.74  2004/11/30 14:50:42  sah
- * fixed a segfault in ILIBcreateCppCallString
- *
- * Revision 3.73  2004/11/27 00:47:56  cg
- * function name typos fixed
- *
- * Revision 3.72  2004/11/27 00:36:39  cg
- * functions adapted to new naming conventions.
- *
- * Revision 3.71  2004/11/26 23:55:16  sbs
- * further renamings
- *
- * Revision 3.70  2004/11/26 23:36:01  sbs
- * *** empty log message ***
- *
- * Revision 3.69  2004/11/26 23:16:36  sbs
- * *** empty log message ***
- *
- * Revision 3.68  2004/11/26 23:01:36  ktr
- * From denmark with love.
- *
- * Revision 3.67  2004/11/24 22:43:37  cg
- * Moved NumberOfDigits() from Error.c.
- *
- * Revision 3.66  2004/11/24 22:30:02  ktr
- * replaceSpecialCharacters moved from precompile.
- *
- * Revision 3.65  2004/11/24 22:19:44  cg
- * SacDevCamp approved.
- *
- * Revision 3.64  2004/11/14 13:45:43  ktr
- * added support for reuse branching (emrb_tab)
- *
- * Revision 3.63  2004/11/09 22:18:07  ktr
- * Added Explicit Copy (emec_tab)
- *
- * Revision 3.62  2004/11/07 16:10:51  ktr
- * added -o parameter to CPP syscall.
- *
- * Revision 3.61  2004/11/07 14:31:34  ktr
- * CreateCppCallString now needs a third parameter for the temporary file
- * created in /tmp that is used for CPP's output.
- *
- * Revision 3.60  2004/11/02 14:58:36  sah
- * added MemCopy
- *
- * Revision 3.59  2004/11/02 14:22:22  ktr
- * Added emlr_tab, emdr_tab.
- *
- * Revision 3.58  2004/10/28 22:08:39  sah
- * stringbuffers are now initialised properly!
- *
- * Revision 3.57  2004/10/07 12:38:37  ktr
- * Replaced the old With-Loop Scalarization with a new implementation.
- *
- * Revision 3.56  2004/10/05 13:48:50  sah
- * added some more funtabs to TmpVar in
- * NEW_AST mode
- *
- * Revision 3.55  2004/09/29 16:42:33  sbs
- * fixed a memory leak in StrBufprint
- *
- * Revision 3.54  2004/09/28 16:32:19  ktr
- * cleaned up concurrent (removed everything not working / not working with emm)
- *
- * Revision 3.53  2004/09/28 14:07:30  ktr
- * removed old refcount and generatemasks
- *
- * Revision 3.52  2004/09/23 21:13:47  sah
- * TmpVar(): added set traversal
- *
- * Revision 3.51  2004/09/22 13:19:11  sah
- * changed argument to StringCopy to const char*
- * as the functions does not modify it
- *
- * Revision 3.50  2004/09/02 12:23:49  skt
- * added repfun_tab into PrefixForTmpVar
- *
- * Revision 3.49  2004/08/26 14:17:00  skt
- * added crwiw_tab into PrefixForTmpVar
- *
- * Revision 3.48  2004/08/13 18:02:34  skt
- * removed blkli_tab
- *
- * Revision 3.47  2004/08/06 14:41:32  sah
- * adding support for new ast
- *
- * Revision 3.46  2004/07/21 12:40:38  khf
- * TmpVar(): ea_tab added
- *
- * Revision 3.45  2004/07/14 23:23:37  sah
- * removed all old ssa optimizations and the use_ssaform flag
- *
- * Revision 3.44  2004/07/14 15:29:54  ktr
- * Nothing really changed.
- *
- * Revision 3.43  2004/04/08 08:17:45  khf
- * TmpVar(): wlfs_tab added
- *
- * Revision 3.42  2004/03/10 00:10:17  dkrHH
- * old backend removed
- *
- * Revision 3.41  2004/02/26 13:07:46  khf
- * TmpVar(): wlpg_tab added
- *
- * Revision 3.40  2003/09/30 22:44:44  dkrHH
- * Free(): DBUG_ASSERT put into if-clause to ease debugging
- *
- * Revision 3.39  2003/09/30 22:39:52  dkrHH
- * Malloc(): DBUG_ASSERT put into if-clause to ease debugging
- *
- * Revision 3.38  2003/09/09 14:57:23  sbs
- * PtrBuf support added.
- *
- * Revision 3.37  2003/08/16 08:38:03  ktr
- * SelectionPropagation added. Must currently be activated with -dosp.
- *
- * Revision 3.36  2003/05/18 13:36:43  ktr
- * removed printing of new variable name in TmpVarName.
- *
- * Revision 3.35  2003/05/14 20:00:39  ktr
- * TmpVarName now avoids to prepend the same prefix twice.
- *
- * Revision 3.34  2003/04/26 20:48:47  mwe
- * esd_tab added
- *
- * Revision 3.33  2003/03/24 16:36:16  sbs
- * CreateCppCallString added.
- *
- * Revision 3.32  2003/03/20 20:48:18  sah
- * DbugMemoryLeakCheck only works
- * if SHOW_MALLOC is set, as it
- * depends on current_allocated_mem.
- *
- * Revision 3.31  2003/02/08 15:58:00  mwe
- * (TmpVar) dl_tab added
- *
- * Revision 3.30  2002/10/08 00:59:22  dkr
- * TmpVar(): nt2ot_tab added
- *
- * Revision 3.29  2002/09/11 23:19:24  dkr
- * NumberOfDigits() used
- *
- * Revision 3.28  2002/09/05 21:17:40  dkr
- * TmpVar() modified
- *
- * Revision 3.27  2002/09/05 20:29:23  dkr
- * PrefixForTmpVar() added
- *
- * Revision 3.26  2002/09/03 14:40:28  sbs
- * ntc prefix for tmp_var added
- *
- * Revision 3.25  2002/09/03 13:18:06  sbs
- * StrBuf support added
- *
- * Revision 3.24  2002/08/25 14:21:46  mwe
- * AssociativeLaw.h added
- *
- * Revision 3.23  2002/08/14 09:53:22  dkr
- * - DBUG_ASSERT for overflow in allocation counter corrected
- * - Malloc(0) returns NULL on all architectures now
- *
- * Revision 3.22  2002/08/13 17:19:46  dkr
- * Free(): DBUG_ASSERT for overflow in allocation counter added
- *
- * Revision 3.21  2002/08/12 20:58:24  dkr
- * TmpVar(): cwc_tab added
- *
- * Revision 3.20  2002/07/23 12:08:58  sah
- * hd_tab added to TmpVar known tables.
- *
- * Revision 3.19  2002/07/12 16:57:27  dkr
- * TmpVar(): modification for new backend done
- *
- * Revision 3.18  2002/04/09 08:22:17  dkr
- * TmpVar(): some trav-tables added, DBUG_ASSERT added.
- *
- * Revision 3.17  2002/04/09 08:03:43  ktr
- * Support for WithloopScalarization added at TmpVar()
- *
- * Revision 3.16  2002/04/05 10:27:18  dkr
- * TmpVar(): precomp3_tab added
- *
- * Revision 3.15  2001/07/13 13:23:41  cg
- * Some useless DBUG_PRINTs eliminated, memory management DBUG_PRINTs
- * converted to some standardized form.
- *
- * Revision 3.14  2001/06/21 11:04:40  ben
- * one bug fixed in StrTok
- *
- * Revision 3.13  2001/06/20 11:33:59  ben
- * StrTok implemented
- *
- * Revision 3.12  2001/05/17 13:29:29  cg
- * Moved de-allocation function Free() from free.c to internal_lib.c
- *
- * Revision 3.11  2001/05/17 11:15:59  sbs
- * return value of Free used now 8-()
- *
- * Revision 3.10  2001/05/17 10:04:16  nmw
- * missing include of convert.h added
- *
- * Revision 3.9  2001/05/17 08:36:25  sbs
- * DbugMemoryLeakCheck added.
- *
- * Revision 3.8  2001/05/15 15:53:08  nmw
- * new ssawlX phases added to TmpVar
- *
- * Revision 3.7  2001/04/26 15:51:44  dkr
- * rmvoidfun removed from TmpVar()
- *
- * [...]
- *
+ * $Id$
  */
 #include "internal_lib.h"
 
@@ -294,7 +32,6 @@
 
 #define MAX_SYSCALL 1000
 
-#ifdef SHOW_MALLOC
 /*
  * These types are only used to compute malloc_align_step.
  * No instances are raised.
@@ -308,19 +45,6 @@ typedef struct {
     int size;
     malloc_align_type align;
 } malloc_header_type;
-
-typedef struct MEMOBJ {
-    int size;
-    void *ptr;
-    int subphase;
-    int traversal;
-    int type;
-    int bit;
-} memobj;
-
-static int malloc_align_step = 0;
-
-#endif /* SHOW_MALLOC */
 
 /**
  * global file handle for syscall tracking
@@ -354,7 +78,7 @@ ILIBmalloc (int size)
     DBUG_ASSERT ((size >= 0), "ILIBmalloc called with negative size!");
 
     if (size > 0) {
-        tmp = malloc (size + malloc_align_step);
+        tmp = malloc (size + global.malloc_align_step);
 
         /*
          * Since some UNIX system (e.g. ALPHA) do return NULL for size 0 as well
@@ -366,7 +90,7 @@ ILIBmalloc (int size)
         }
 
         *(int *)tmp = size;
-        tmp = (char *)tmp + malloc_align_step;
+        tmp = (char *)tmp + global.malloc_align_step;
 
 #ifdef CLEANMEM
         /*
@@ -417,7 +141,7 @@ ILIBfree (void *address)
     DBUG_ENTER ("ILIBfree");
 
     if (address != NULL) {
-        orig_address = (void *)((char *)address - malloc_align_step);
+        orig_address = (void *)((char *)address - global.malloc_align_step);
         size = *(int *)orig_address;
         DBUG_ASSERT ((size >= 0), "illegal size found!");
         DBUG_PRINT ("MEM_ALLOC",
@@ -1653,8 +1377,6 @@ ILIBreplaceSpecialCharacters (const char *name)
     DBUG_RETURN (new_name);
 }
 
-#ifdef SHOW_MALLOC
-
 /* -------------------------------------------------------------------------- *
  * task: calculates the number of bytes for a safe alignment (used in ILIBmalloc)
  * initializes global variable malloc_align_step
@@ -1668,12 +1390,12 @@ ILIBcomputeMallocAlignStep (void)
     DBUG_ENTER ("ComputeMallocAlignStep");
 
     /* calculate memory alignment steps for this machine */
-    malloc_align_step = sizeof (malloc_header_type) - sizeof (malloc_align_type);
+    global.malloc_align_step = sizeof (malloc_header_type) - sizeof (malloc_align_type);
+
+    printf ("global.malloc_align_step: %d\n", global.malloc_align_step);
 
     DBUG_VOID_RETURN;
 }
-
-#endif /* SHOW_MALLOC */
 
 #ifndef DBUG_OFF
 #ifdef SHOW_MALLOC
