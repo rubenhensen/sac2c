@@ -4,5 +4,5 @@
 
 #include "internal_lib.h"
 
-extern void *CHKmalloc (int size, void *aptr);
-extern void *CHKfree (void *bptr);
+extern void *CHKregister (int size, void *aptr);
+extern void *CHKunregister (void *bptr);
