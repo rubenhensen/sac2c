@@ -4,5 +4,7 @@
 
 #include "internal_lib.h"
 
-extern void *CHKregister (int size, void *aptr);
-extern void *CHKunregister (void *bptr);
+extern void *CMregisterMem (int size, void *aptr);
+extern void *CMunregisterMem (void *bptr);
+
+extern int *CMgetSize ();
