@@ -26,13 +26,15 @@
 struct INFO {
     node *fundef;
     node *newassign;
+    node *lhs;
 };
 
 /*
  * INFO macros
  */
-#define INFO_FUNDEF(n) (n->fundef)
-#define INFO_NEWASSIGN(n) (n->newassign)
+#define INFO_FUNDEF(n) ((n)->fundef)
+#define INFO_LHS(n) ((n)->lhs)
+#define INFO_NEWASSIGN(n) ((n)->newassign)
 
 /*
  * INFO functions
@@ -47,6 +49,7 @@ MakeInfo ()
     result = ILIBmalloc (sizeof (info));
 
     INFO_FUNDEF (result) = NULL;
+    INFO_LHS (result) = NULL;
     INFO_NEWASSIGN (result) = NULL;
 
     DBUG_RETURN (result);
@@ -239,6 +242,7 @@ ESDlet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ESDlet");
 
+    INFO_LHS (arg_info) = LET_IDS (arg_node);
     if (LET_EXPR (arg_node) != NULL) {
         LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
     }
@@ -262,9 +266,12 @@ ESDlet (node *arg_node, info *arg_info)
 node *
 ESDprf (node *arg_node, info *arg_info)
 {
+    simpletype st;
     prf op = F_noop;
 
     DBUG_ENTER ("ESDprf");
+
+    st = TYgetSimpleType (TYgetScalar (IDS_NTYPE (INFO_LHS (arg_info))));
 
     /*
      * Determine inverse prf
@@ -275,14 +282,24 @@ ESDprf (node *arg_node, info *arg_info)
     case F_sub_AxS:
     case F_sub_SxA:
     case F_sub_AxA:
-        op = F_esd_neg;
+        if ((st == T_int) || (st == T_float) || (st == T_double)) {
+            op = F_esd_neg;
+        }
         break;
-    case F_div_SxS:
-    case F_div_AxS:
-    case F_div_SxA:
-    case F_div_AxA:
-        op = F_esd_rec;
-        break;
+
+#if 0
+    /*
+     * Deactivated for the time being as this might lead to
+     * errornous results especially when evaluated by the TC
+     */
+  case F_div_SxS:
+  case F_div_AxS:
+  case F_div_SxA:
+  case F_div_AxA:
+    op = F_esd_rec;
+    break;
+#endif
+
     default:
         break;
     }

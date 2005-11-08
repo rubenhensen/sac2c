@@ -1,277 +1,6 @@
-/*
- *
- * $Log$
- * Revision 1.98  2005/09/16 16:35:22  sbs
- * some important comment on why we NEED to make CF dependent on AKV types
- * added.
- *
- * Revision 1.97  2005/09/16 13:12:44  ktr
- * fixed corrupted AVIS_SSAASSIGN pointers
- *
- * Revision 1.96  2005/09/16 13:01:30  sah
- * added support do fold _cat_( x, []) and _cat( [], x) if the
- * [] is repesented by a id of constant type
- *
- * Revision 1.95  2005/09/14 07:06:04  ktr
- * Added CFwith. It creates a fake assignment of an array consisting of the
- * index scalars to the index vector before traversing the with-loop body.
- * This enables structural constant folding of operations of the index vector.
- *
- * Revision 1.94  2005/09/09 12:29:10  ktr
- * Conditionals in DOFUNS are only eliminated if the predicate is FALSE.
- *
- * Revision 1.93  2005/09/09 05:33:52  ktr
- * BLOCK_INSTR is now always traversed as it is mandatory
- *
- * Revision 1.92  2005/09/06 14:08:56  ktr
- * Some cleanup. Right-hand sides of constant assignment will be replaced by the constant
- *
- * Revision 1.91  2005/09/04 12:52:11  ktr
- * re-engineered the optimization cycle
- *
- * Revision 1.90  2005/08/23 13:43:25  ktr
- * corrected usage of TYgetShape
- *
- * Revision 1.89  2005/07/21 12:15:52  ktr
- * removed AVIS_WITHID and some structural constand folding on withids that was
- * deactivated anyways.
- *
- * Revision 1.88  2005/07/15 15:57:02  sah
- * introduced namespaces
- *
- * Revision 1.87  2005/05/13 16:46:36  ktr
- * some code brushing
- *
- * Revision 1.86  2005/04/27 07:52:25  ktr
- * Stripped out superfluous rules
- *
- * Revision 1.85  2005/04/20 19:15:29  ktr
- * removed CFarg, CFlet. Codebrushing.
- *
- * Revision 1.84  2005/03/04 21:21:42  cg
- * Useless conditional eliminated.
- * Integration of silently duplicated LaC funs at the end of the
- * fundef chain added.
- *
- * Revision 1.83  2005/02/14 15:51:48  mwe
- * CFids moved to cvp
- *
- * Revision 1.82  2005/02/01 17:40:26  mwe
- * evaluations of primitive operations done by typechecker via typeupgrade removed from
- * CFfoldPrfExpr
- *
- * Revision 1.81  2005/01/31 15:28:04  mwe
- * reimplement folding of conditionals
- *
- * Revision 1.80  2005/01/26 10:25:40  mwe
- * AVIS_SSACONST removed and replaced by usage of akv types
- * traversals changed: now constant values are infered when type is akv
- *
- * Revision 1.79  2005/01/11 12:58:15  cg
- * Converted output from Error.h to ctinfo.c
- *
- * Revision 1.78  2004/12/08 18:00:42  ktr
- * removed ARRAY_TYPE/ARRAY_NTYPE
- *
- * Revision 1.77  2004/11/27 02:55:25  ktr
- * YO!
- *
- * Revision 1.76  2004/11/26 19:46:41  khf
- * SacDevCamp04: COMPILES!!!
- *
- * Revision 1.75  2004/11/16 14:39:17  mwe
- * ntype-support for ID_TYPE added
- *
- * Revision 1.74  2004/11/10 18:27:29  mwe
- * code for type upgrade added
- * use ntype-structure instead of type-structure
- * new code deactivated by MWE_NTYPE_READY
- *
- * Revision 1.73  2004/10/15 11:39:04  ktr
- * Reactived constant propagation.
- *
- * Revision 1.72  2004/10/07 12:38:00  ktr
- * Replaced the old With-Loop Scalarization with a new implementation.
- *
- * Revision 1.71  2004/09/27 08:37:57  ktr
- * yet another silly bug fixed.
- *
- * Revision 1.70  2004/09/26 13:00:20  ktr
- * bugfix
- *
- * Revision 1.69  2004/09/26 12:08:43  ktr
- * Constant index scalars are now known inside the with-loop body as well.
- *
- * Revision 1.68  2004/09/25 14:35:52  ktr
- * Whenever a generator is known to cover just one index, the withid is assumed
- * to be constant inside thate corresponding code.
- *
- * Revision 1.67  2004/09/24 17:05:46  ktr
- * Bug #60: Deactivated propagation of constant PRF-Arguments as this was not
- * always allowed.
- *
- * Revision 1.66  2004/09/22 22:14:09  ktr
- * SSACFShapeSel is now called correctly.
- *
- * Revision 1.65  2004/09/22 12:00:19  ktr
- * F_idx_shape_sel and F_shape_sel are now evaluated as well
- *
- * Revision 1.64  2004/09/22 10:06:58  ktr
- * Shape structures obtained via COGetShape are not freed any longer.
- *
- * Revision 1.63  2004/09/21 17:32:20  ktr
- * sel( iv, shape(A)) is now compiled into shape_sel(iv, A);
- * However, shape_sel itself is not yet treated by the CF.
- *
- * Revision 1.62  2004/09/21 16:07:21  ktr
- * Replaced bloated StructOpWrapper with seperate functions for
- * Sel, Reshape, idx_sel, Take, Drop
- *
- * Revision 1.61  2004/08/25 20:22:03  sbs
- * bad bug in SSACFCatVxV fixed!
- * result structural constant was NEVER allocated.
- * Now, it is reused and the constant is taken care of
- * by vec2_hidden_co.
- *
- * Revision 1.60  2004/08/25 16:28:19  ktr
- * ...now it even works :)
- *
- * Revision 1.59  2004/08/25 16:07:29  ktr
- * cat_VxV of an empty vector now yields the other vector.
- *
- * Revision 1.58  2004/07/23 13:59:13  ktr
- * AP arguments are no longer replaced by constants as this is now done
- * by ConstVarPropagation.
- *
- * Revision 1.57  2004/07/18 19:54:54  sah
- * switch to new INFO structure
- * PHASE I
- * (as well some code cleanup)
- *
- * Revision 1.56  2004/06/03 09:03:31  khf
- * Added support for prf F_idx_sel
- *
- * Revision 1.55  2004/03/10 00:10:17  dkrHH
- * old backend removed
- *
- * Revision 1.54  2004/03/05 19:14:27  mwe
- * representation of conditional changed
- * using N_funcond node instead of phi
- *
- * Revision 1.53  2004/03/02 09:17:07  khf
- * setting of AVIS_SSACONST in SSACFlet modified
- *
- * Revision 1.52  2004/02/06 14:19:33  mwe
- * remove usage of PHIASSIGN and ASSIGN2
- * implement usage of primitive phi function instead
- *
- * Revision 1.51  2003/11/28 10:25:21  sbs
- * L_VARDEC_OR_ARG_TYPE(IDS_VARDEC( ids), expr) used instead of IDS_TYPE( ids) = expr
- *
- * Revision 1.50  2003/11/25 14:30:23  sbs
- * type improvement after CF (newTC only) added.
- *
- * Revision 1.49  2003/11/06 15:24:10  ktr
- * SSACFStructOpWrapper now annotates correct shape information
- *
- * Revision 1.48  2003/09/26 10:25:16  sbs
- * new optimization for F_modarray added: if the index vector is an
- * empty vector, simply the element value constituts the result!
- *
- * Revision 1.47  2003/09/16 18:15:26  ktr
- * Index vectors are now treated as structural constants.
- *
- * Revision 1.46  2003/07/29 07:31:07  ktr
- * Added support for structural CF of cat_VxV and A[idx1][idx2] == A[idx1++idx2]
- *
- * Revision 1.45  2003/06/15 22:04:59  ktr
- * result is now initialized
- *
- * Revision 1.44  2003/06/13 09:26:15  ktr
- * Fixed bugs about missing calls of SHCopyShape
- *
- * Revision 1.43  2003/06/11 21:47:29  ktr
- * Added support for multidimensional arrays.
- *
- * Revision 1.42  2003/05/23 16:24:59  ktr
- * A multidimensional array is created if an array is found that contains
- * arrays itself.
- *
- * Revision 1.41  2003/04/07 14:22:01  sbs
- * F_drop_SxV and F_take_SxV mapped on the general versions (which have been extended
- * accordingly 8-)
- *
- * COCat used for F_cat_VxV now.
- *
- * Revision 1.40  2003/03/18 16:30:34  sah
- * added new prf cat_VxV, take_SxV, drop_SxV
- *
- * Revision 1.39  2002/10/09 21:58:22  dkr
- * optimization for 'reshape(shape(a),a)' added
- *
- * Revision 1.38  2002/10/09 12:44:04  dkr
- * structural constants exported now
- * (someone should move this stuff to constants.[ch] ...)
- *
- * Revision 1.37  2002/09/17 15:07:05  dkr
- * SSACFlet(): support for prfs with multiple return values added
- *
- * Revision 1.36  2002/09/13 22:13:44  dkr
- * detects (. % 0) now -> division by zero
- *
- * Revision 1.35  2002/09/11 23:07:59  dkr
- * rf_node_info.mac modified.
- *
- * Revision 1.34  2002/09/09 19:16:09  dkr
- * prf_string removed (mdb_prf used instead)
- *
- * Revision 1.33  2002/09/09 17:47:07  dkr
- * F_{add,sub,mul,div} replaced by F_{add,sub,mul,div}_SxS
- *
- * Revision 1.32  2002/09/05 20:51:23  dkr
- * SSACFGetShapeOfExpr(): DBUG_ASSERTs about unknown shapes removed
- *
- * Revision 1.31  2002/09/03 18:47:43  dkr
- * - new backend: constants propagation for N_ap activated again
- * - SSACFid(): support for dynamic types added
- *
- * Revision 1.29  2002/07/29 12:12:53  sbs
- * PRF_IF macro extended by z.
- *
- * Revision 1.28  2002/07/12 19:37:24  dkr
- * new backend: constants propagation for N_ap deactivated
- *
- * Revision 1.26  2002/04/08 19:58:14  dkr
- * debug code removed
- *
- * Revision 1.24  2001/12/14 16:37:54  dkr
- * bug in SSACFExpr2StructConstant() fixed
- *
- * Revision 1.23  2001/12/11 15:57:12  dkr
- * SSACFDim(): GetDim() used instead of GetShapeDim()
- *
- * Revision 1.22  2001/12/11 15:52:39  dkr
- * GetDim() replaced by GetShapeDim()
- *
- * Revision 1.21  2001/06/28 07:46:51  cg
- * Primitive function psi() renamed to sel().
- *
- * Revision 1.20  2001/06/01 11:35:01  nmw
- * handling for infinite loops improoved
- *
- * Revision 1.19  2001/06/01 10:00:34  nmw
- * insert N_empty node in empty blocks
- *
- * [...]
- *
- * Revision 1.1  2001/03/20 16:16:54  nmw
- * Initial revision
- *
- */
-
 /*****************************************************************************
  *
- * file:   SSAConstantFolding.c
+ * $Id$
  *
  * prefix: SSACF
  *
@@ -283,7 +12,7 @@
  *
  *
  * TODO: this comment needs to be adjusted to the changes that have been made
- *   during post-Marielyst brushing/bugfixing!!!!
+ *       during post-Marielyst brushing/bugfixing!!!!
  *
  *   IMPORTANT: Making CF dependent on AKV types rather than constant arguments
  *   is a VERY important design decision. Only this way we prevent CF
@@ -424,6 +153,7 @@ struct STRUCT_CONSTANT {
     const namespace_t *name_ns; /* namespace belonging to 'name' */
     shape *shape;               /* shape of struct constant */
     constant *hidden_co;        /* pointer to constant of pointers */
+    node *tmpast;               /* pointer to temporary ast representation */
 };
 
 /* access macros for structural constant type */
@@ -433,6 +163,7 @@ struct STRUCT_CONSTANT {
 #define SCO_SHAPE(n) (n->shape)
 #define SCO_HIDDENCO(n) (n->hidden_co)
 #define SCO_ELEMDIM(n) (SHgetDim (SCO_SHAPE (n)) - COgetDim (SCO_HIDDENCO (n)))
+#define SCO_TMPAST(n) (n->tmpast)
 
 /* local used helper functions */
 static node **GetPrfArgs (node **array, node *prf_arg_chain, int max_args);
@@ -466,6 +197,7 @@ static node *ArithmOpWrapper (prf op, constant **arg_co, node **arg_expr);
  * generic cases
  */
 static node *Eq (node *expr1, node *expr2);
+static node *Add (node *expr1, node *expr2);
 static node *Sub (node *expr1, node *expr2);
 static node *Modarray (node *a, constant *idx, node *elem);
 static node *Sel (node *idx_expr, node *array_expr);
@@ -477,19 +209,18 @@ static node *Sel (node *idx_expr, node *array_expr);
 /******************************************************************************
  *
  * function:
- *   struct_constant *CFscoArray2StructConstant(node *expr)
+ *   struct_constant *CFscoArray2StructConstant(node *array)
  *
  * description:
- *   converts an N_array node (or a N_id of a defined array) from AST to
- *   a structural constant. To convert an array to a structural constant
- *   all array elements must be scalars!
+ *   converts an N_array node from AST to a structural constant.
+ *   To convert an array to a structural constant all array elements must be
+ *   scalars!
  *
  *****************************************************************************/
 static struct_constant *
-CFscoArray2StructConstant (node *expr)
+CFscoArray2StructConstant (node *array)
 {
     struct_constant *struc_co;
-    node *array;
     ntype *atype;
     shape *realshape;
     shape *ashape;
@@ -501,32 +232,14 @@ CFscoArray2StructConstant (node *expr)
 
     DBUG_ENTER ("CFscoArray2StructConstant");
 
-    DBUG_ASSERT (((NODE_TYPE (expr) == N_array) || (NODE_TYPE (expr) == N_id)),
-                 "CFscoArray2StructConstant supports only N_array and N_id nodes");
+    DBUG_ASSERT ((array != NULL) && (NODE_TYPE (array) == N_array),
+                 "CFscoArray2StructConstant supports only N_array nodes");
 
-    atype = NULL;
-
-    if (NODE_TYPE (expr) == N_array) {
-        /* explicit array as N_array node */
-        array = expr;
-        /* shape of the given array */
-        atype = NTCnewTypeCheck_Expr (array);
-    } else if ((NODE_TYPE (expr) == N_id) && (AVIS_SSAASSIGN (ID_AVIS (expr)) != NULL)
-               && (NODE_TYPE (LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (expr)))))
-                   == N_array)) {
-        /* indirect array via defined vardec */
-
-        array = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (expr))));
-
-        /* shape of the given array */
-        atype = AVIS_TYPE (ID_AVIS (expr));
-    } else {
-        /* unsupported node type */
-        array = NULL;
-    }
+    /* shape of the given array */
+    atype = NTCnewTypeCheck_Expr (array);
 
     /* build an abstract structural constant of type (void*) T_hidden */
-    if ((array != NULL) && TUshapeKnown (atype)) {
+    if (TUshapeKnown (atype)) {
         /* alloc hidden vector */
         realshape = SHcopyShape (TYgetShape (atype));
         ashape = SHcopyShape (ARRAY_SHAPE (array));
@@ -561,6 +274,7 @@ CFscoArray2StructConstant (node *expr)
         SCO_SHAPE (struc_co) = realshape;
 
         SCO_HIDDENCO (struc_co) = COmakeConstant (T_hidden, ashape, node_vec);
+        SCO_TMPAST (struc_co) = NULL;
 
         /* remove invalid structural arrays */
         if (!valid_const) {
@@ -571,9 +285,7 @@ CFscoArray2StructConstant (node *expr)
         struc_co = NULL;
     }
 
-    if (NODE_TYPE (expr) == N_array) {
-        atype = TYfreeType (atype);
-    }
+    atype = TYfreeType (atype);
 
     DBUG_RETURN (struc_co);
 }
@@ -601,6 +313,7 @@ CFscoScalar2StructConstant (node *expr)
     nt = NODE_TYPE (expr);
 
     if ((nt == N_num) || (nt == N_float) || (nt == N_double) || (nt == N_bool)
+        || (nt == N_char)
         || ((nt == N_id) && (TUdimKnown (ID_NTYPE (expr)))
             && (TYgetDim (ID_NTYPE (expr)) == 0))) {
         /* create structural constant as scalar */
@@ -625,6 +338,7 @@ CFscoScalar2StructConstant (node *expr)
         }
         SCO_SHAPE (struc_co) = SHcopyShape (cshape);
         SCO_HIDDENCO (struc_co) = COmakeConstant (T_hidden, cshape, elem);
+        SCO_TMPAST (struc_co) = NULL;
 
     } else {
         struc_co = NULL;
@@ -655,35 +369,43 @@ struct_constant *
 CFscoExpr2StructConstant (node *expr)
 {
     struct_constant *struc_co;
-    int dim;
 
     DBUG_ENTER ("SCOExpr2StructConstant");
 
     struc_co = NULL;
 
-    if (NODE_TYPE (expr) == N_array) {
+    switch (NODE_TYPE (expr)) {
+    case N_array:
         /* expression is an array */
         struc_co = CFscoArray2StructConstant (expr);
-    } else {
-        if (NODE_TYPE (expr) == N_id) {
-            if (AVIS_SSAASSIGN (ID_AVIS (expr)) != NULL) {
+        break;
 
-                /* expression is an identifier/argument */
-                if (TUdimKnown (AVIS_TYPE (ID_AVIS (expr)))) {
-                    dim = TYgetDim (AVIS_TYPE (ID_AVIS (expr)));
-                } else {
-                    dim = -1;
-                }
+    case N_bool:
+    case N_char:
+    case N_float:
+    case N_double:
+    case N_num:
+        struc_co = CFscoScalar2StructConstant (expr);
+        break;
 
-                if (dim == SCALAR) {
-                    /* id is a defined scalar */
-                    struc_co = CFscoScalar2StructConstant (expr);
-                } else if (dim > SCALAR) {
-                    /* id is a defined array */
-                    struc_co = CFscoArray2StructConstant (expr);
+    case N_id:
+        if ((TUdimKnown (ID_NTYPE (expr))) && (TYgetDim (ID_NTYPE (expr)) == 0)) {
+            struc_co = CFscoScalar2StructConstant (expr);
+        } else {
+            if (TYisAKV (ID_NTYPE (expr))) {
+                node *array = COconstant2AST (TYgetValue (ID_NTYPE (expr)));
+                struc_co = CFscoExpr2StructConstant (array);
+                SCO_TMPAST (struc_co) = array;
+            } else {
+                node *ass = AVIS_SSAASSIGN (ID_AVIS (expr));
+                if (ass != NULL) {
+                    struc_co = CFscoExpr2StructConstant (ASSIGN_RHS (ass));
                 }
             }
         }
+        break;
+    default:
+        break;
     }
 
     DBUG_RETURN (struc_co);
@@ -752,6 +474,11 @@ CFscoFreeStructConstant (struct_constant *struc_co)
 
     DBUG_ASSERT ((SCO_SHAPE (struc_co) != NULL),
                  "CFscoFreeStructConstant: SCO_SHAPE is NULL");
+
+    /* free temporary ast representation */
+    if (SCO_TMPAST (struc_co) != NULL) {
+        SCO_TMPAST (struc_co) = FREEdoFreeTree (SCO_TMPAST (struc_co));
+    }
 
     /* free shape */
     SCO_SHAPE (struc_co) = SHfreeShape (SCO_SHAPE (struc_co));
@@ -1528,6 +1255,53 @@ Eq (node *expr1, node *expr2)
 /******************************************************************************
  *
  * function:
+ *   node *Add(node *expr1, node *expr2)
+ *
+ * description:
+ *   implements special optimization for x + _esd_neg_(x) -> 0
+ *                                       _esd_neg_(x) + x -> 0
+ *
+ *****************************************************************************/
+
+static node *
+Add (node *expr1, node *expr2)
+{
+    node *result;
+    constant *tmp_co;
+    shape *target_shp;
+
+    DBUG_ENTER ("Add");
+
+    result = NULL;
+
+    if ((NODE_TYPE (expr1) == N_id) && (NODE_TYPE (expr2) == N_id)
+        && (TUshapeKnown (AVIS_TYPE (ID_AVIS (expr1))))
+        && (TUshapeKnown (AVIS_TYPE (ID_AVIS (expr2))))) {
+        node *ass1 = AVIS_SSAASSIGN (ID_AVIS (expr1));
+        node *ass2 = AVIS_SSAASSIGN (ID_AVIS (expr2));
+
+        if (((ass1 != NULL) && (NODE_TYPE (ASSIGN_RHS (ass1)) == N_prf)
+             && (PRF_PRF (ASSIGN_RHS (ass1)) == F_esd_neg)
+             && (ID_AVIS (PRF_ARG1 (ASSIGN_RHS (ass1))) == ID_AVIS (expr2)))
+            || ((ass2 != NULL) && (NODE_TYPE (ASSIGN_RHS (ass2)) == N_prf)
+                && (PRF_PRF (ASSIGN_RHS (ass2)) == F_esd_neg)
+                && (ID_AVIS (PRF_ARG1 (ASSIGN_RHS (ass2))) == ID_AVIS (expr1)))) {
+            target_shp = GetShapeOfExpr (expr1);
+            if (target_shp != NULL) {
+                /* Create ZeroConstant of same type and shape as expression */
+                tmp_co = COmakeZero (GetBasetypeOfExpr (expr1), target_shp);
+                result = COconstant2AST (tmp_co);
+                tmp_co = COfreeConstant (tmp_co);
+            }
+        }
+    }
+
+    DBUG_RETURN (result);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *Sub(node *expr1, node *expr2)
  *
  * description:
@@ -1565,7 +1339,7 @@ Sub (node *expr1, node *expr2)
  *   node *Modarray( node *a, constant *idx, node *elem)
  *
  * description:
- *   implement Modarray on gerneric structural constant arrays with given
+ *   implement Modarray on generic structural constant arrays with given
  *   full constant index vector. This works like CFStructOpWrapper() but
  *   has been moved to a separate function because of different function
  *   signature.
@@ -1575,7 +1349,7 @@ Sub (node *expr1, node *expr2)
 static node *
 Modarray (node *a, constant *idx, node *elem)
 {
-    node *result;
+    node *result = NULL;
     struct_constant *struc_a;
     struct_constant *struc_elem;
     constant *old_hidden_co;
@@ -1600,13 +1374,6 @@ Modarray (node *a, constant *idx, node *elem)
 
         /* given expressession could be converted to struct_constant */
         if ((struc_a != NULL) && (struc_elem != NULL)) {
-
-            if (SCO_ELEMDIM (struc_a) != SCO_ELEMDIM (struc_elem)) {
-                newarray = TCmakeFlatArray (TBmakeExprs (elem, NULL));
-                struc_elem = CFscoFreeStructConstant (struc_elem);
-                struc_elem = CFscoArray2StructConstant (newarray);
-            }
-
             if (SCO_ELEMDIM (struc_a) == SCO_ELEMDIM (struc_elem)) {
                 /* save internal hidden constant */
                 old_hidden_co = SCO_HIDDENCO (struc_a);
@@ -1622,10 +1389,7 @@ Modarray (node *a, constant *idx, node *elem)
 
                 /* free internal constant */
                 old_hidden_co = COfreeConstant (old_hidden_co);
-            } else
-                result = NULL;
-        } else {
-            result = NULL;
+            }
         }
 
         /* free struct constants */
@@ -2366,6 +2130,11 @@ CFfoldPrfExpr (prf op, node **arg_expr)
             ONE_CONST_ARG_OF_TWO (arg_co, arg_expr)
             {
                 new_node = ArithmOpWrapper (F_add_SxS, arg_co, arg_expr);
+            }
+        else if
+            TWO_ARG (arg_expr)
+            {
+                new_node = Add (arg_expr[0], arg_expr[1]);
             }
         break;
 

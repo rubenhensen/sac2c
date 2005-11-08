@@ -1,20 +1,6 @@
-/*
- *
- * $Log$
- * Revision 1.3  2005/09/13 15:16:11  ktr
- * with-loops with empty generators are noe replaced by simpler
- * representations. Unfortunately, this is not yet possible with
- * genarray with-loops. (FIX ME!)
- *
- * Revision 1.2  2005/09/12 17:43:14  ktr
- * removed PRTdoPrintNode
- *
- * Revision 1.1  2005/09/12 13:56:13  ktr
- * Initial revision
- *
- */
-
 /**
+ *
+ * $Id$
  *
  * @defgroup wlsimp With-loop simplification
  * @ingroup opt
@@ -46,13 +32,23 @@
 #include "shape.h"
 #include "DupTree.h"
 #include "constants.h"
+#include "globals.h"
 
 /**
  * INFO structure
  */
 struct INFO {
+    /*
+     * elements for identifying empty generators
+     */
     bool emptypart;
     node *with; /* Needed as long as the [] problem is not ironed out */
+
+    /*
+     * elements for inserting GENRATOR_GENWIDTH
+     */
+    node *fundef;
+    node *preassign;
 };
 
 /**
@@ -60,6 +56,8 @@ struct INFO {
  */
 #define INFO_EMPTYPART(n) (n->emptypart)
 #define INFO_WITH(n) (n->with)
+#define INFO_FUNDEF(n) (n->fundef)
+#define INFO_PREASSIGN(n) (n->preassign)
 
 /**
  * INFO functions
@@ -75,6 +73,8 @@ MakeInfo ()
 
     INFO_EMPTYPART (result) = FALSE;
     INFO_WITH (result) = NULL;
+    INFO_FUNDEF (result) = NULL;
+    INFO_PREASSIGN (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -129,7 +129,32 @@ WLSIMPfundef (node *arg_node, info *arg_info)
     DBUG_ENTER ("WLSIMPfundef");
 
     if (FUNDEF_BODY (arg_node) != NULL) {
+        INFO_FUNDEF (arg_info) = arg_node;
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *WLSIMPassign( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+WLSIMPassign (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("WLSIMPassign");
+
+    if (ASSIGN_NEXT (arg_node) != NULL) {
+        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
+    }
+
+    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+
+    if (INFO_PREASSIGN (arg_info) != NULL) {
+        arg_node = TCappendAssign (INFO_PREASSIGN (arg_info), arg_node);
+        INFO_PREASSIGN (arg_info) = NULL;
     }
 
     DBUG_RETURN (arg_node);
@@ -197,6 +222,8 @@ WLSIMPwith (node *arg_node, info *arg_info)
 node *
 WLSIMPcode (node *arg_node, info *arg_info)
 {
+    node *preass;
+
     DBUG_ENTER ("WLSIMPcode");
 
     if (CODE_NEXT (arg_node) != NULL) {
@@ -207,7 +234,10 @@ WLSIMPcode (node *arg_node, info *arg_info)
         arg_node = FREEdoFreeNode (arg_node);
     } else {
         if (CODE_CBLOCK (arg_node) != NULL) {
+            preass = INFO_PREASSIGN (arg_info);
+            INFO_PREASSIGN (arg_info) = NULL;
             CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
+            INFO_PREASSIGN (arg_info) = preass;
         }
     }
 
@@ -261,6 +291,8 @@ WLSIMPgenerator (node *arg_node, info *arg_info)
     DBUG_ENTER ("WLSIMPgenerator");
 
     /**
+     * Remove empty generators
+     *
      * First, we check the lower and upper bounds
      */
     lb = GENERATOR_BOUND1 (arg_node);
@@ -342,6 +374,45 @@ WLSIMPgenerator (node *arg_node, info *arg_info)
                 }
                 cnst = COfreeConstant (cnst);
             }
+        }
+    }
+
+    /**
+     * Annotate GENERATOR_GENWIDTH
+     */
+    if ((global.optimize.douip) && (GENERATOR_GENWIDTH (arg_node) == NULL)) {
+
+        if ((NODE_TYPE (GENERATOR_BOUND1 (arg_node)) == N_array)
+            && (NODE_TYPE (GENERATOR_BOUND2 (arg_node)) == N_array)) {
+            node *ub, *lb;
+            node *exprs = NULL;
+
+            lb = ARRAY_AELEMS (GENERATOR_BOUND1 (arg_node));
+            ub = ARRAY_AELEMS (GENERATOR_BOUND2 (arg_node));
+
+            while (lb != NULL) {
+                node *diffavis;
+                diffavis = TBmakeAvis (ILIBtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int),
+                                                                 SHmakeShape (0)));
+
+                FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+                  = TBmakeVardec (diffavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+
+                INFO_PREASSIGN (arg_info)
+                  = TBmakeAssign (TBmakeLet (TBmakeIds (diffavis, NULL),
+                                             TCmakePrf2 (F_sub_SxS,
+                                                         DUPdoDupNode (EXPRS_EXPR (ub)),
+                                                         DUPdoDupNode (EXPRS_EXPR (lb)))),
+                                  INFO_PREASSIGN (arg_info));
+                AVIS_SSAASSIGN (diffavis) = INFO_PREASSIGN (arg_info);
+
+                exprs = TCappendExprs (exprs, TBmakeExprs (TBmakeId (diffavis), NULL));
+
+                lb = EXPRS_NEXT (lb);
+                ub = EXPRS_NEXT (ub);
+            }
+
+            GENERATOR_GENWIDTH (arg_node) = TCmakeFlatArray (exprs);
         }
     }
 

@@ -275,6 +275,13 @@ OPTdoOptimize (node *arg_node)
     arg_node = PHrunCompilerSubPhase (SUBPH_wlpg2, arg_node);
 
     /*
+     * Withloop reuse candidate inference
+     */
+    if (global.optimize.douip) {
+        arg_node = PHrunCompilerSubPhase (SUBPH_wrci, arg_node);
+    }
+
+    /*
      * annotate offset scalars on with-loops
      */
     arg_node = PHrunCompilerSubPhase (SUBPH_wlidx, arg_node);
@@ -453,6 +460,13 @@ OPTdoIntraFunctionalOptimizations (node *arg_node)
                      */
                     if (global.optimize.dowls) {
                         fundef = PHrunOptimizationInCycle (SUBPH_wls, loop, fundef);
+                    }
+
+                    /*
+                     * Prf unrolling
+                     */
+                    if (global.optimize.doprfunr) {
+                        fundef = PHrunOptimizationInCycle (SUBPH_prfunr, loop, fundef);
                     }
 
                     /*

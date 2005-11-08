@@ -66,7 +66,7 @@ OBJS := optimize.o DeadFunctionRemoval.o deadcoderemoval.o \
         ConstVarPropagation.o DistributiveLaw.o type_upgrade.o \
         signature_simplification.o inlining.o associativity.o \
         inferneedcounters.o elimtypeconv.o liftoptflags.o \
-        wlsimplification.o
+        wlsimplification.o prfunroll.o
 
 all: $(OBJS)
 

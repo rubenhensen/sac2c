@@ -234,6 +234,8 @@ SUBPHASE (wls, "wls", "Applying with-loop scalarization", WLSdoWithloopScalariza
 
 SUBPHASE (lur, "lur", "Applying (with-)loop unrolling", LURdoLoopUnrolling)
 
+SUBPHASE (prfunr, "prfunr", "Applying prf unrolling", UPRFdoUnrollPRFs)
+
 SUBPHASE (linlcyc, "linl", "Inlining degenerated LaC functions",
           LINLdoLACInliningOneFundef)
 
@@ -265,6 +267,9 @@ SUBPHASE (dcr3, "dcr3", "Removing dead code", DCRdoDeadCodeRemovalModule)
 
 SUBPHASE (wlpg2, "wlpg2", "Generating full with-loop partitions",
           WLPGdoWlPartitionGeneration)
+
+SUBPHASE (wrci, "wrci", "Inferencing with-loop reuse candidates",
+          WRCIdoWithloopReuseCandidateInference)
 
 SUBPHASE (ivei, "ivei", "Applying index vector elimination (inference)",
           IVEIdoIndexVectorEliminationInference)

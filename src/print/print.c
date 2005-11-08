@@ -3462,6 +3462,10 @@ PRTgenerator (node *arg_node, info *arg_info)
         TRAVdo (GENERATOR_WIDTH (arg_node), arg_info);
     }
 
+    if (GENERATOR_GENWIDTH (arg_node) != NULL) {
+        fprintf (global.outfile, " genwidth ");
+        TRAVdo (GENERATOR_GENWIDTH (arg_node), arg_info);
+    }
     fprintf (global.outfile, ")\n");
 
     DBUG_RETURN (arg_node);
@@ -3628,11 +3632,16 @@ PRTgenarray (node *arg_node, info *arg_info)
         TRAVdo (GENARRAY_MEM (arg_node), arg_info);
     }
 
-    fprintf (global.outfile, ")");
+    if (GENARRAY_RC (arg_node) != NULL) {
+        fprintf (global.outfile, " ,RC(");
+        TRAVdo (GENARRAY_RC (arg_node), arg_info);
+        fprintf (global.outfile, ")");
+    }
 
     if (GENARRAY_IDX (arg_node) != NULL) {
-        fprintf (global.outfile, " /* IDX: %s */", AVIS_NAME (GENARRAY_IDX (arg_node)));
+        fprintf (global.outfile, " ,IDX(%s)", AVIS_NAME (GENARRAY_IDX (arg_node)));
     }
+    fprintf (global.outfile, ")");
 
     if (GENARRAY_NEXT (arg_node) != NULL) {
         fprintf (global.outfile, ",\n");
@@ -3670,16 +3679,22 @@ PRTmodarray (node *arg_node, info *arg_info)
     fprintf (global.outfile, "modarray( ");
 
     TRAVdo (MODARRAY_ARRAY (arg_node), arg_info);
+
     if (MODARRAY_MEM (arg_node) != NULL) {
         fprintf (global.outfile, " , ");
         TRAVdo (MODARRAY_MEM (arg_node), arg_info);
     }
 
-    fprintf (global.outfile, ")");
-
-    if (MODARRAY_IDX (arg_node) != NULL) {
-        fprintf (global.outfile, " /* IDX: %s */", AVIS_NAME (MODARRAY_IDX (arg_node)));
+    if (MODARRAY_RC (arg_node) != NULL) {
+        fprintf (global.outfile, " ,RC(");
+        TRAVdo (MODARRAY_RC (arg_node), arg_info);
+        fprintf (global.outfile, ")");
     }
+    if (MODARRAY_IDX (arg_node) != NULL) {
+        fprintf (global.outfile, " ,IDX(%s)", AVIS_NAME (MODARRAY_IDX (arg_node)));
+    }
+
+    fprintf (global.outfile, ")");
 
     if (MODARRAY_NEXT (arg_node) != NULL) {
         fprintf (global.outfile, ",\n");

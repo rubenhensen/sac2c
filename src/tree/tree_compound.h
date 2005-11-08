@@ -1294,6 +1294,26 @@ extern int TCcountParts (node *parts);
         default:                                                                         \
             DBUG_ASSERT (FALSE, "Illegal node type");                                    \
         }
+
+#define WITHOP_RC(n)                                                                     \
+    ((NODE_TYPE (n) == N_genarray)                                                       \
+       ? GENARRAY_RC (n)                                                                 \
+       : (NODE_TYPE (n) == N_modarray) ? MODARRAY_RC (n) : NULL)
+
+#define L_WITHOP_RC(n, rhs)                                                              \
+    switch                                                                               \
+        NODE_TYPE (n)                                                                    \
+        {                                                                                \
+        case N_genarray:                                                                 \
+            GENARRAY_RC (n) = rhs;                                                       \
+            break;                                                                       \
+        case N_modarray:                                                                 \
+            MODARRAY_RC (n) = rhs;                                                       \
+            break;                                                                       \
+        default:                                                                         \
+            DBUG_ASSERT (FALSE, "Illegal node type");                                    \
+        }
+
 /*--------------------------------------------------------------------------*/
 
 /***

@@ -101,7 +101,7 @@ OPTIMIZE= src/optimize/optimize.o \
           src/optimize/signature_simplification.o src/optimize/inlining.o \
           src/optimize/inferneedcounters.o src/optimize/associativity.o \
           src/optimize/elimtypeconv.o src/optimize/liftoptflags.o \
-          src/optimize/wlsimplification.o
+          src/optimize/wlsimplification.o src/optimize/prfunroll.o
 
 PROFILE= src/profile/annotate_fun_calls.o
 
@@ -139,7 +139,8 @@ REFCOUNT= src/refcount/allocation.o src/refcount/rcopt.o \
           src/refcount/datareuse.o src/refcount/explicitcopy.o \
           src/refcount/reusebranching.o src/refcount/ReuseWithArrays.o \
           src/refcount/inplacecomp.o src/refcount/audscldist.o \
-          src/refcount/rcminimize.o src/refcount/NumLookUpTable.o
+          src/refcount/rcminimize.o src/refcount/NumLookUpTable.o \
+          src/refcount/wrci.o src/refcount/reusewithoffset.o
 
 CONCURRENT= src/concurrent/concurrent.o src/concurrent/spmd_init.o  \
             src/concurrent/spmd_lift.o src/concurrent/sync_init.o \

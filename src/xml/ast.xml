@@ -829,6 +829,14 @@
 	  <node name="Funcond" />
 	</travuser>
       </traversal>
+      <traversal id="UPRF" name="Unroll PRFs" default="sons" include="prfunroll.h">
+        <travuser>
+	  <node name="Fundef" />
+	  <node name="Assign" />
+	  <node name="Let" />
+	  <node name="Prf" />
+        </travuser>
+      </traversal>
     <traversal id="DCR" name="Dead Code Removal" default="sons" include="deadcoderemoval.h" >
 	<travuser>
 	  <node name="Fundef" />
@@ -1071,6 +1079,7 @@
       <traversal id="WLSIMP" name="With-Loop Simplification" default="sons" include="wlsimplification.h">
         <travuser>
           <node name="Fundef" />
+          <node name="Assign" />
           <node name="With" />
           <node name="Code" />
           <node name="Part" />
@@ -1413,14 +1422,35 @@
           <node name="Block" />
         </travsons>
       </traversal>
+      <traversal id="WRCI" name="With-loop reuse candidate inference" default="sons" include="wrci.h">
+        <travuser>
+          <node name="Fundef" />
+          <node name="Assign" />
+          <node name="Let" />
+          <node name="With" />     
+          <node name="Genarray" />     
+          <node name="Modarray" />     
+          <node name="Fold" />     
+          <node name="Generator" />
+        </travuser>
+      </traversal>
+      <traversal id="RWO" name="Reuse With-loop arrays with offsets" default="sons" include="reusewithoffset.h">
+        <travuser>
+          <node name="Prf" />
+          <node name="Id" />
+          <node name="Ids" />
+        </travuser>
+      </traversal>
       <traversal id="REUSE" name="Reuse With Arrays" default="sons" include="ReuseWithArrays.h">
         <travuser>
           <node name="Let" />
+          <node name="Prf" />
           <node name="Id" />
+          <node name="Ids" />
           <node name="Genarray" />
           <node name="Modarray" />
           <node name="Fold" />
-          <node name="With2" />
+          <node name="With" />
         </travuser>
       </traversal>
       <traversal id="EMSR" name="Static Reuse" default="none" include="staticreuse.h" >
@@ -5533,6 +5563,16 @@
             </target>
           </targets>
         </son>
+        <son name="GenWidth" default="NULL">
+          <targets>
+            <target mandatory="no" >
+              <set name="Expr" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
       </sons>
       <attributes>
         <attribute name="Op1">
@@ -5874,6 +5914,16 @@
             </target>
           </targets>
         </son>
+        <son name="RC" default="NULL">
+          <targets>
+            <target mandatory="no">
+              <node name="Exprs" />
+              <phases>
+                <range from="rwo" to="rci" />
+              </phases>
+            </target>
+          </targets>
+        </son>
         <son name="Next" default="NULL">
           <targets>
             <target mandatory="no">
@@ -5947,6 +5997,16 @@
               <node name="Id" />
               <phases>
                 <range from="mmv" to="final" />
+              </phases>
+            </target>
+          </targets>
+        </son>
+        <son name="RC" default="NULL">
+          <targets>
+            <target mandatory="no">
+              <node name="Exprs" />
+              <phases>
+                <range from="rwo" to="rci" />
               </phases>
             </target>
           </targets>

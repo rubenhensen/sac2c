@@ -376,6 +376,11 @@ CVPgenerator (node *arg_node, info *arg_info)
         GENERATOR_WIDTH (arg_node) = TRAVdo (GENERATOR_WIDTH (arg_node), arg_info);
     }
 
+    if (GENERATOR_GENWIDTH (arg_node) != NULL) {
+        INFO_PROPMODE (arg_info) = PROP_variable;
+        GENERATOR_GENWIDTH (arg_node) = TRAVdo (GENERATOR_GENWIDTH (arg_node), arg_info);
+    }
+
     DBUG_RETURN (arg_node);
 }
 
