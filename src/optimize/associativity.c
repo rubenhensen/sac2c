@@ -533,9 +533,8 @@ CollectExprs (prf prf, node *a, bool sclprf, dfmask_t *localmask)
         ID_ISSCLPRF (EXPRS_EXPR (res)) = sclprf;
     }
 
-    if ((NODE_TYPE (a) == N_id) && (AVIS_SSAASSIGN (ID_AVIS (a)) != NULL)
-        && (DFMtestMaskEntry (localmask, NULL, ID_AVIS (a)))
-        && (AVIS_NEEDCOUNT (ID_AVIS (a)) == 1)) {
+    if ((NODE_TYPE (a) == N_id) && (DFMtestMaskEntry (localmask, NULL, ID_AVIS (a)))
+        && (AVIS_SSAASSIGN (ID_AVIS (a)) != NULL)) {
 
         node *rhs = ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (a)));
 
@@ -555,7 +554,6 @@ CollectExprs (prf prf, node *a, bool sclprf, dfmask_t *localmask)
                                      localmask);
                 right = CollectExprs (prf, PRF_ARG2 (rhs), isArg2Scl (PRF_PRF (rhs)),
                                       localmask);
-
                 if (!isSingleton (left) || !isSingleton (right)
                     || !eqClass (EXPRS_EXPR (left), EXPRS_EXPR (right))) {
                     res = FREEdoFreeTree (res);
