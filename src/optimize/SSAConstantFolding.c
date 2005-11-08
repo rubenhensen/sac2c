@@ -302,7 +302,7 @@ CFscoArray2StructConstant (node *array)
 static struct_constant *
 CFscoScalar2StructConstant (node *expr)
 {
-    struct_constant *struc_co;
+    struct_constant *struc_co = NULL;
     shape *cshape;
     ntype *ctype;
     node **elem;
@@ -312,12 +312,14 @@ CFscoScalar2StructConstant (node *expr)
 
     nt = NODE_TYPE (expr);
 
-    if ((nt == N_num) || (nt == N_float) || (nt == N_double) || (nt == N_bool)
-        || (nt == N_char)
-        || ((nt == N_id) && (TUdimKnown (ID_NTYPE (expr)))
-            && (TYgetDim (ID_NTYPE (expr)) == 0))) {
-        /* create structural constant as scalar */
-        ctype = ID_NTYPE (expr);
+    switch (nt) {
+    case N_num:
+    case N_float:
+    case N_double:
+    case N_bool:
+    case N_char:
+        /* determin type */
+        ctype = NTCnewTypeCheck_Expr (expr);
 
         /* alloc hidden vector */
         cshape = SHmakeShape (0);
@@ -329,19 +331,46 @@ CFscoScalar2StructConstant (node *expr)
         /* create struct_constant */
         struc_co = (struct_constant *)ILIBmalloc (sizeof (struct_constant));
         SCO_BASETYPE (struc_co) = TYgetSimpleType (TYgetScalar (ctype));
-        if (TYisUser (ctype)) {
-            SCO_NAME (struc_co) = TYgetName (ctype);
-            SCO_NS (struc_co) = TYgetNamespace (ctype);
-        } else {
-            SCO_NAME (struc_co) = NULL;
-            SCO_NS (struc_co) = NULL;
-        }
+        SCO_NAME (struc_co) = NULL;
+        SCO_NS (struc_co) = NULL;
+
         SCO_SHAPE (struc_co) = SHcopyShape (cshape);
         SCO_HIDDENCO (struc_co) = COmakeConstant (T_hidden, cshape, elem);
         SCO_TMPAST (struc_co) = NULL;
 
-    } else {
-        struc_co = NULL;
+        ctype = TYfreeType (ctype);
+        break;
+
+    case N_id:
+        if ((TUdimKnown (ID_NTYPE (expr))) && (TYgetDim (ID_NTYPE (expr)) == 0)) {
+            /* create structural constant as scalar */
+            ctype = ID_NTYPE (expr);
+
+            /* alloc hidden vector */
+            cshape = SHmakeShape (0);
+            elem = (node **)ILIBmalloc (sizeof (node *));
+
+            /* copy element pointers from array to vector */
+            *elem = expr;
+
+            /* create struct_constant */
+            struc_co = (struct_constant *)ILIBmalloc (sizeof (struct_constant));
+            SCO_BASETYPE (struc_co) = TYgetSimpleType (TYgetScalar (ctype));
+            if (TYisUser (ctype)) {
+                SCO_NAME (struc_co) = TYgetName (ctype);
+                SCO_NS (struc_co) = TYgetNamespace (ctype);
+            } else {
+                SCO_NAME (struc_co) = NULL;
+                SCO_NS (struc_co) = NULL;
+            }
+            SCO_SHAPE (struc_co) = SHcopyShape (cshape);
+            SCO_HIDDENCO (struc_co) = COmakeConstant (T_hidden, cshape, elem);
+            SCO_TMPAST (struc_co) = NULL;
+        }
+        break;
+
+    default:
+        break;
     }
 
     DBUG_RETURN (struc_co);
@@ -1353,7 +1382,6 @@ Modarray (node *a, constant *idx, node *elem)
     struct_constant *struc_a;
     struct_constant *struc_elem;
     constant *old_hidden_co;
-    node *newarray;
 
     DBUG_ENTER ("Modarray");
 
