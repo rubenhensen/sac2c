@@ -208,6 +208,7 @@
  * Prefix: ILIB
  *
  *********************************/
+extern int malloc_align_step;
 
 extern void *ILIBmalloc (int size);
 extern void *ILIBfree (void *address);

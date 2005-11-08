@@ -8,9 +8,11 @@
 typedef struct MEMOBJ {
     int size;
     void *ptr;
-    //  int subphase;
-    //  int traversal;
-    //  int type;
+#if 0
+    int subphase;
+    int traversal;
+    int type;
+#endif
     int bit;
 } memobj;
 
@@ -42,8 +44,7 @@ CHKregister (int bsize, void *aptr)
                 if (memtab[i].ptr != NULL) {
 
                     newtab[newindex] = memtab[i];
-                    memobj **tmpptr
-                      = (memobj **)(memtab[i].ptr - global.malloc_align_step);
+                    memobj **tmpptr = (memobj **)(memtab[i].ptr - malloc_align_step);
                     *tmpptr = &memtab[newindex];
                     newindex++;
                 }

@@ -656,10 +656,6 @@ GLOBAL (min_array_rep_t, min_array_rep, MAR_scl_aks)
  * array representations used by the backend
  */
 
-GLOBAL (int, malloc_align_step, 0);
-/*
- * This global variable is a offest for malloc
- */
 /*
  * Name tuples
  */

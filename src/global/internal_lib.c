@@ -46,6 +46,8 @@ typedef struct {
     malloc_align_type align;
 } malloc_header_type;
 
+int malloc_align_step;
+
 /**
  * global file handle for syscall tracking
  */
@@ -76,7 +78,7 @@ ILIBmalloc (int size)
     DBUG_ASSERT ((size >= 0), "ILIBmalloc called with negative size!");
 
     if (size > 0) {
-        tmp = malloc (size + global.malloc_align_step);
+        tmp = malloc (size + malloc_align_step);
 
         /*
          * Since some UNIX system (e.g. ALPHA) do return NULL for size 0 as well
@@ -87,8 +89,10 @@ ILIBmalloc (int size)
                       global.current_allocated_mem);
         }
 
-        /**(int *) tmp = size;*/
-        tmp = (char *)tmp + global.malloc_align_step;
+#if 0
+    *(int *) tmp = size;
+#endif
+        tmp = (char *)tmp + malloc_align_step;
 
 #ifdef CLEANMEM
         /*
@@ -97,21 +101,27 @@ ILIBmalloc (int size)
         tmp = memset (tmp, 0, size);
 #endif
 
-        if (global.current_allocated_mem + size < global.current_allocated_mem) {
-            DBUG_ASSERT ((0), "counter for allocated memory: overflow detected");
-        }
-        global.current_allocated_mem += size;
-        if (global.max_allocated_mem < global.current_allocated_mem) {
-            global.max_allocated_mem = global.current_allocated_mem;
-        }
+#if 0
+    if (global.current_allocated_mem + size < global.current_allocated_mem) {
+      DBUG_ASSERT( (0), "counter for allocated memory: overflow detected");
+    }
+    global.current_allocated_mem += size;
+    if (global.max_allocated_mem < global.current_allocated_mem) {
+      global.max_allocated_mem = global.current_allocated_mem;
+    }
+#endif
+
     } else {
         tmp = NULL;
     }
 
-    DBUG_PRINT ("MEM_ALLOC", ("Alloc memory: %d Bytes at adress: " F_PTR, size, tmp));
+#if 0
+  DBUG_PRINT( "MEM_ALLOC", ("Alloc memory: %d Bytes at adress: " F_PTR,
+                            size, tmp));
 
-    DBUG_PRINT ("MEM_TOTAL",
-                ("Currently allocated memory: %u", global.current_allocated_mem));
+  DBUG_PRINT( "MEM_TOTAL", ("Currently allocated memory: %u",
+                            global.current_allocated_mem));
+#endif
 
     DBUG_RETURN (tmp);
 }
@@ -134,16 +144,19 @@ void *
 ILIBfree (void *address)
 {
     void *orig_address;
-    int size;
-
+#if 0
+  int size;
+#endif
     DBUG_ENTER ("ILIBfree");
 
     if (address != NULL) {
-        orig_address = (void *)((char *)address - global.malloc_align_step);
-        size = *(int *)orig_address;
-        DBUG_ASSERT ((size >= 0), "illegal size found!");
-        DBUG_PRINT ("MEM_ALLOC",
-                    ("Free memory: %d Bytes at adress: " F_PTR, size, address));
+        orig_address = (void *)((char *)address - malloc_align_step);
+#if 0
+    size = *(int *) orig_address;
+    DBUG_ASSERT( (size >= 0), "illegal size found!");
+    DBUG_PRINT( "MEM_ALLOC", ("Free memory: %d Bytes at adress: " F_PTR,
+                              size, address));
+#endif
 
 #if CLEANMEM
         /*
@@ -151,19 +164,24 @@ ILIBfree (void *address)
          * is very useful when watching a memory address in gdb, as
          * one gets notified as soon as it is freed
          */
-
-        orig_address = memset (orig_address, 0, size);
+#if 0    
+    orig_address = memset( orig_address, 0, size);
+#endif
 #endif
 
-        if (global.current_allocated_mem < global.current_allocated_mem - size) {
-            DBUG_ASSERT ((0), "counter for allocated memory: overflow detected");
-        }
-        global.current_allocated_mem -= size;
+#if 0
+    if (global.current_allocated_mem < global.current_allocated_mem - size) {
+      DBUG_ASSERT( (0), "counter for allocated memory: overflow detected");
+    }
+    global.current_allocated_mem -= size;
+#endif
 
         free (orig_address);
 
-        DBUG_PRINT ("MEM_TOTAL",
-                    ("Currently allocated memory: %u", global.current_allocated_mem));
+#if 0
+    DBUG_PRINT( "MEM_TOTAL", ("Currently allocated memory: %u",
+                              global.current_allocated_mem));
+#endif
 
         address = NULL;
     }
@@ -1324,9 +1342,7 @@ ILIBcomputeMallocAlignStep (void)
     DBUG_ENTER ("ComputeMallocAlignStep");
 
     /* calculate memory alignment steps for this machine */
-    global.malloc_align_step = sizeof (malloc_header_type) - sizeof (malloc_align_type);
-
-    printf ("global.malloc_align_step: %d\n", global.malloc_align_step);
+    malloc_align_step = sizeof (malloc_header_type) - sizeof (malloc_align_type);
 
     DBUG_VOID_RETURN;
 }
