@@ -36,7 +36,8 @@ TREE= src/tree/traverse.o src/tree/tree_basic.o src/tree/free.o \
       src/tree/free_attribs.o src/tree/traverse_tables.o \
       src/tree/traverse_helper.o src/tree/check.o src/tree/check_lib.o \
       src/tree/checktst.o src/tree/prepare_inlining.o \
-      src/tree/map_lac_funs.o src/tree/map_fun_trav.o
+      src/tree/map_lac_funs.o src/tree/map_fun_trav.o \
+      src/tree/check_mem.o
 
 SERIALIZE= src/serialize/serialize_node.o \
            src/serialize/serialize_attribs.o src/serialize/deserialize.o \
