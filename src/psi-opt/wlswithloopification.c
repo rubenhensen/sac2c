@@ -1,24 +1,7 @@
-/*
- *
- * $Log$
- * Revision 1.5  2005/07/21 12:03:21  ktr
- * removed AVIS_WITHID
- *
- * Revision 1.4  2005/07/03 17:18:17  ktr
- * Fixed a pointer type problem
- *
- * Revision 1.3  2005/06/06 14:01:07  ktr
- * Withloopification now builds copy with-loops for functions arguments as well
- *
- * Revision 1.2  2004/11/24 18:51:58  ktr
- * COMPILES!
- *
- * Revision 1.1  2004/10/07 12:36:03  ktr
- * Initial revision
- *
- */
-
 /**
+ *
+ * $Id$
+ *
  * @defgroup wlsw WLSWithloopification
  * @ingroup wls
  *
@@ -110,14 +93,14 @@ struct INFO {
 /**
  * INFO macros
  */
-#define INFO_WLSW_FUNDEF(n) (n->fundef)
-#define INFO_WLSW_INNERDIMS(n) (n->innerdims)
-#define INFO_WLSW_OUTERWITHID(n) (n->outerwithid)
-#define INFO_WLSW_INNERTRAV(n) (n->innertrav)
-#define INFO_WLSW_DEPSTACK(n) (n->depstack)
-#define INFO_WLSW_DEPMASK(n) (n->depmask)
-#define INFO_WLSW_CEXPR(n) (n->cexpr)
-#define INFO_WLSW_MUSTCOPY(n) (n->mustcopy)
+#define INFO_FUNDEF(n) (n->fundef)
+#define INFO_INNERDIMS(n) (n->innerdims)
+#define INFO_OUTERWITHID(n) (n->outerwithid)
+#define INFO_INNERTRAV(n) (n->innertrav)
+#define INFO_DEPSTACK(n) (n->depstack)
+#define INFO_DEPMASK(n) (n->depmask)
+#define INFO_CEXPR(n) (n->cexpr)
+#define INFO_MUSTCOPY(n) (n->mustcopy)
 
 /**
  * INFO functions
@@ -131,14 +114,14 @@ MakeInfo (node *fundef, int innerdims)
 
     result = ILIBmalloc (sizeof (info));
 
-    INFO_WLSW_FUNDEF (result) = fundef;
-    INFO_WLSW_INNERDIMS (result) = innerdims;
-    INFO_WLSW_OUTERWITHID (result) = NULL;
-    INFO_WLSW_INNERTRAV (result) = FALSE;
-    INFO_WLSW_DEPSTACK (result) = NULL;
-    INFO_WLSW_DEPMASK (result) = NULL;
-    INFO_WLSW_CEXPR (result) = NULL;
-    INFO_WLSW_MUSTCOPY (result) = FALSE;
+    INFO_FUNDEF (result) = fundef;
+    INFO_INNERDIMS (result) = innerdims;
+    INFO_OUTERWITHID (result) = NULL;
+    INFO_INNERTRAV (result) = FALSE;
+    INFO_DEPSTACK (result) = NULL;
+    INFO_DEPMASK (result) = NULL;
+    INFO_CEXPR (result) = NULL;
+    INFO_MUSTCOPY (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -279,7 +262,7 @@ MakeSelCodes (node *part, node *iv, node *arr, node *fundef)
     node *code = NULL;
     node *avis = NULL;
     node *vardecs = NULL;
-    node *id;
+    node *ass;
     ntype *new_type;
     int dim;
 
@@ -297,15 +280,13 @@ MakeSelCodes (node *part, node *iv, node *arr, node *fundef)
 
         fundef = TCaddVardecs (fundef, vardecs);
 
-        id = TBmakeId (avis);
+        ass = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL),
+                                       TCmakePrf2 (F_sel, TBmakeId (IDS_AVIS (iv)),
+                                                   DUPdoDupNode (arr))),
+                            NULL);
+        AVIS_SSAASSIGN (avis) = ass;
 
-        code = TBmakeCode (TBmakeBlock (TCmakeAssignLet (avis,
-                                                         TCmakePrf2 (F_sel,
-                                                                     TBmakeId (
-                                                                       IDS_AVIS (iv)),
-                                                                     DUPdoDupNode (arr))),
-                                        NULL),
-                           TBmakeExprs (id, NULL));
+        code = TBmakeCode (TBmakeBlock (ass, NULL), TBmakeExprs (TBmakeId (avis), NULL));
 
         PART_CODE (part) = code;
         CODE_USED (code) = 1;
@@ -495,7 +476,7 @@ WLSWcode (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("WLSWcode");
 
-    if (!INFO_WLSW_INNERTRAV (arg_info)) {
+    if (!INFO_INNERTRAV (arg_info)) {
         /*
          * 1. Traverse block to determine whether a copy with-loop is required
          */
@@ -503,44 +484,43 @@ WLSWcode (node *arg_node, info *arg_info)
         /*
          * Build a maskbase and DEPMASK
          */
-        maskbase = DFMgenMaskBase (FUNDEF_ARGS (INFO_WLSW_FUNDEF (arg_info)),
-                                   FUNDEF_VARDEC (INFO_WLSW_FUNDEF (arg_info)));
-        INFO_WLSW_DEPMASK (arg_info) = DFMgenMaskClear (maskbase);
+        maskbase = DFMgenMaskBase (FUNDEF_ARGS (INFO_FUNDEF (arg_info)),
+                                   FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+        INFO_DEPMASK (arg_info) = DFMgenMaskClear (maskbase);
 
         /*
          * Mark all variables in OUTERWITHID as the inner generators
          * must not depend on them
          */
-        DFMsetMaskEntrySet (INFO_WLSW_DEPMASK (arg_info), NULL,
-                            IDS_AVIS (WITHID_VEC (INFO_WLSW_OUTERWITHID (arg_info))));
+        DFMsetMaskEntrySet (INFO_DEPMASK (arg_info), NULL,
+                            IDS_AVIS (WITHID_VEC (INFO_OUTERWITHID (arg_info))));
 
-        ids = WITHID_IDS (INFO_WLSW_OUTERWITHID (arg_info));
+        ids = WITHID_IDS (INFO_OUTERWITHID (arg_info));
         while (ids != NULL) {
-            DFMsetMaskEntrySet (INFO_WLSW_DEPMASK (arg_info), NULL, IDS_AVIS (ids));
+            DFMsetMaskEntrySet (INFO_DEPMASK (arg_info), NULL, IDS_AVIS (ids));
             ids = IDS_NEXT (ids);
         }
 
         /*
          * Traverse into CBLOCK
          */
-        INFO_WLSW_CEXPR (arg_info) = CODE_CEXPR (arg_node);
-        INFO_WLSW_MUSTCOPY (arg_info) = TRUE;
-        INFO_WLSW_INNERTRAV (arg_info) = TRUE;
+        INFO_CEXPR (arg_info) = CODE_CEXPR (arg_node);
+        INFO_MUSTCOPY (arg_info) = TRUE;
+        INFO_INNERTRAV (arg_info) = TRUE;
         CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
-        INFO_WLSW_INNERTRAV (arg_info) = FALSE;
+        INFO_INNERTRAV (arg_info) = FALSE;
 
         /*
          * Remove mask and maskbase
          */
-        INFO_WLSW_DEPMASK (arg_info) = DFMremoveMask (INFO_WLSW_DEPMASK (arg_info));
+        INFO_DEPMASK (arg_info) = DFMremoveMask (INFO_DEPMASK (arg_info));
         maskbase = DFMremoveMaskBase (maskbase);
 
         /*
          * 2. Insert copy with-loop (if required)
          */
         DBUG_EXECUTE ("WLS", PRTdoPrintNode (arg_node););
-        if (INFO_WLSW_MUSTCOPY (arg_info)) {
-            node *id;
+        if (INFO_MUSTCOPY (arg_info)) {
             node *avis;
             node *vardecs = NULL;
             node *ass;
@@ -550,23 +530,22 @@ WLSWcode (node *arg_node, info *arg_info)
             avis
               = TBmakeAvis (ILIBtmpVar (), TYcopyType (ID_NTYPE (CODE_CEXPR (arg_node))));
 
-            id = TBmakeId (avis);
             vardecs = TBmakeVardec (avis, vardecs);
 
-            INFO_WLSW_FUNDEF (arg_info)
-              = TCaddVardecs (INFO_WLSW_FUNDEF (arg_info), vardecs);
+            INFO_FUNDEF (arg_info) = TCaddVardecs (INFO_FUNDEF (arg_info), vardecs);
 
-            ass
-              = TCmakeAssignLet (avis, CreateCopyWithloop (CODE_CEXPR (arg_node),
-                                                           INFO_WLSW_INNERDIMS (arg_info),
-                                                           INFO_WLSW_FUNDEF (arg_info)));
-            AVIS_SSAASSIGN (ID_AVIS (id)) = ass;
+            ass = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL),
+                                           CreateCopyWithloop (CODE_CEXPR (arg_node),
+                                                               INFO_INNERDIMS (arg_info),
+                                                               INFO_FUNDEF (arg_info))),
+                                NULL);
+            AVIS_SSAASSIGN (avis) = ass;
 
             BLOCK_INSTR (CODE_CBLOCK (arg_node))
               = TCappendAssign (BLOCK_INSTR (CODE_CBLOCK (arg_node)), ass);
 
             CODE_CEXPRS (arg_node) = FREEdoFreeTree (CODE_CEXPRS (arg_node));
-            CODE_CEXPRS (arg_node) = TBmakeExprs (id, NULL);
+            CODE_CEXPRS (arg_node) = TBmakeExprs (TBmakeId (avis), NULL);
 
             DBUG_PRINT ("WLS", ("New code after insertion of copy with-loop"));
             DBUG_EXECUTE ("WLS", PRTdoPrintNode (arg_node););
@@ -638,7 +617,7 @@ WLSWcode (node *arg_node, info *arg_info)
                 ASSIGN_NEXT (last) = BLOCK_INSTR (CODE_CBLOCK (innercode));
                 BLOCK_INSTR (CODE_CBLOCK (innercode)) = first;
 
-                newcode = DUPdoDupTreeSsa (innercode, INFO_WLSW_FUNDEF (arg_info));
+                newcode = DUPdoDupTreeSsa (innercode, INFO_FUNDEF (arg_info));
 
                 /*
                  * Restore old state of inner code
@@ -707,15 +686,15 @@ WLSWid (node *arg_node, info *arg_info)
     /*
      * If the current id is marked in DEPMASK, all LHS identifiers depend on it
      */
-    if (DFMtestMaskEntry (INFO_WLSW_DEPMASK (arg_info), NULL, ID_AVIS (arg_node))) {
+    if (DFMtestMaskEntry (INFO_DEPMASK (arg_info), NULL, ID_AVIS (arg_node))) {
         node *tmp;
 
         /*
          * Mark them as dependent
          */
-        tmp = INFO_WLSW_DEPSTACK (arg_info);
+        tmp = INFO_DEPSTACK (arg_info);
         while (tmp != NULL) {
-            DFMsetMaskEntrySet (INFO_WLSW_DEPMASK (arg_info), NULL,
+            DFMsetMaskEntrySet (INFO_DEPMASK (arg_info), NULL,
                                 ID_AVIS (EXPRS_EXPR (tmp)));
 
             tmp = EXPRS_NEXT (tmp);
@@ -750,8 +729,8 @@ WLSWlet (node *arg_node, info *arg_info)
      */
     ids = LET_IDS (arg_node);
     while (ids != NULL) {
-        INFO_WLSW_DEPSTACK (arg_info)
-          = TBmakeExprs (TBmakeId (IDS_AVIS (ids)), INFO_WLSW_DEPSTACK (arg_info));
+        INFO_DEPSTACK (arg_info)
+          = TBmakeExprs (TBmakeId (IDS_AVIS (ids)), INFO_DEPSTACK (arg_info));
         ids = IDS_NEXT (ids);
     }
 
@@ -765,7 +744,7 @@ WLSWlet (node *arg_node, info *arg_info)
      */
     ids = LET_IDS (arg_node);
     while (ids != NULL) {
-        INFO_WLSW_DEPSTACK (arg_info) = FREEdoFreeNode (INFO_WLSW_DEPSTACK (arg_info));
+        INFO_DEPSTACK (arg_info) = FREEdoFreeNode (INFO_DEPSTACK (arg_info));
         ids = IDS_NEXT (ids);
     }
 
@@ -789,7 +768,7 @@ WLSWpart (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLSWpart");
 
-    if (INFO_WLSW_INNERTRAV (arg_info)) {
+    if (INFO_INNERTRAV (arg_info)) {
         /*
          * Traversal of inner with-loop part
          */
@@ -820,7 +799,7 @@ WLSWwith (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLSWwith");
 
-    if (!INFO_WLSW_INNERTRAV (arg_info)) {
+    if (!INFO_INNERTRAV (arg_info)) {
         /*
          * Traversal of outer with-loop
          */
@@ -852,17 +831,17 @@ WLSWwith (node *arg_node, info *arg_info)
          */
         WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
 
-        if (ID_AVIS (EXPRS_EXPR (INFO_WLSW_DEPSTACK (arg_info)))
-            == ID_AVIS (INFO_WLSW_CEXPR (arg_info))) {
+        if (ID_AVIS (EXPRS_EXPR (INFO_DEPSTACK (arg_info)))
+            == ID_AVIS (INFO_CEXPR (arg_info))) {
             /*
              * No copy with-loop is required iff we have the base case:
              *  A perfect nesting of with-loops
              */
             if (((WITH_TYPE (arg_node) == N_genarray)
                  || (WITH_TYPE (arg_node) == N_modarray))
-                && (!DFMtestMaskEntry (INFO_WLSW_DEPMASK (arg_info), NULL,
-                                       ID_AVIS (INFO_WLSW_CEXPR (arg_info))))) {
-                INFO_WLSW_MUSTCOPY (arg_info) = FALSE;
+                && (!DFMtestMaskEntry (INFO_DEPMASK (arg_info), NULL,
+                                       ID_AVIS (INFO_CEXPR (arg_info))))) {
+                INFO_MUSTCOPY (arg_info) = FALSE;
             }
         } else {
             /*
@@ -892,7 +871,7 @@ WLSWwithid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLSWwithid");
 
-    INFO_WLSW_OUTERWITHID (arg_info) = arg_node;
+    INFO_OUTERWITHID (arg_info) = arg_node;
 
     DBUG_RETURN (arg_node);
 }

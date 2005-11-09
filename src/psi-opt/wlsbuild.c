@@ -1,33 +1,6 @@
-/*
- *
- * $Log$
- * Revision 1.8  2005/09/13 15:17:20  ktr
- * changed code duplication to DUPdoDupNodeLutSsa
- *
- * Revision 1.7  2005/09/08 13:52:30  ktr
- * corrected replication of old index vectors
- *
- * Revision 1.6  2005/09/04 12:54:00  ktr
- * re-engineered the optimization cycle
- *
- * Revision 1.5  2005/07/21 12:03:21  ktr
- * removed AVIS_WITHID
- *
- * Revision 1.4  2005/04/13 15:27:21  ktr
- * ConcatVectors concatenates N_array vectors and AKV N_id vectors.
- *
- * Revision 1.3  2004/11/27 03:09:47  khf
- * adjusted name
- *
- * Revision 1.2  2004/11/24 18:51:58  ktr
- * COMPILES!
- *
- * Revision 1.1  2004/10/07 12:35:57  ktr
- * Initial revision
- *
- */
-
 /**
+ *
+ * $Id$
  *
  * @defgroup wlsb WLSBuild
  * @ingroup wls
@@ -374,9 +347,10 @@ WLSBcode (node *arg_node, info *arg_info)
 
             FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
               = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
-            prefix = TCmakeAssignLet (avis, array);
 
+            prefix = TCmakeAssignLet (avis, array);
             AVIS_SSAASSIGN (avis) = prefix;
+
             LUTinsertIntoLutP (lut, oldavis, avis);
 
             /*
@@ -399,9 +373,10 @@ WLSBcode (node *arg_node, info *arg_info)
 
             FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
               = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
-            ASSIGN_NEXT (prefix) = TCmakeAssignLet (avis, array);
 
+            ASSIGN_NEXT (prefix) = TCmakeAssignLet (avis, array);
             AVIS_SSAASSIGN (avis) = ASSIGN_NEXT (prefix);
+
             LUTinsertIntoLutP (lut, oldavis, avis);
 
             /*

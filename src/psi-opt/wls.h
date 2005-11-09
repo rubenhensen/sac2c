@@ -1,21 +1,5 @@
 /*
- *
- * $Log$
- * Revision 1.5  2005/04/22 10:09:12  ktr
- * wls containing default generators cannot be scalarized
- *
- * Revision 1.4  2005/04/13 15:27:21  ktr
- * WLSCgenerator added.
- *
- * Revision 1.3  2004/11/24 15:21:03  ktr
- * COMPILES!
- *
- * Revision 1.2  2004/11/22 17:29:51  sbs
- * SacDevCamp04
- *
- * Revision 1.1  2004/10/07 12:35:54  ktr
- * Initial revision
- *
+ * $Id$
  */
 #ifndef _SAC_WLS_H_
 #define _SAC_WLS_H_

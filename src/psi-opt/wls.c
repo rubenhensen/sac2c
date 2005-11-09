@@ -1,21 +1,6 @@
-/*
- *
- * $Log$
- * Revision 1.4  2004/11/24 15:22:31  ktr
- * renaming
- *
- * Revision 1.3  2004/11/24 15:21:03  ktr
- * COMPILES!
- *
- * Revision 1.2  2004/10/11 19:08:05  ktr
- * removed an unused variable.
- *
- * Revision 1.1  2004/10/07 12:35:45  ktr
- * Initial revision
- *
- */
-
 /**
+ *
+ * $Id$
  *
  * @defgroup wls With-Loop Scalarization
  * @ingroup opt
@@ -108,7 +93,7 @@ struct INFO {
 /**
  * INFO macros
  */
-#define INFO_WLS_FUNDEF(n) (n->fundef)
+#define INFO_FUNDEF(n) (n->fundef)
 
 /**
  * INFO functions
@@ -122,7 +107,7 @@ MakeInfo (node *fundef)
 
     result = ILIBmalloc (sizeof (info));
 
-    INFO_WLS_FUNDEF (result) = fundef;
+    INFO_FUNDEF (result) = fundef;
 
     DBUG_RETURN (result);
 }
@@ -195,7 +180,7 @@ WLSap (node *arg_node, info *arg_info)
      * special functions must be traversed when they are used
      */
     if ((FUNDEF_ISLACFUN (AP_FUNDEF (arg_node)))
-        && (AP_FUNDEF (arg_node) != INFO_WLS_FUNDEF (arg_info))) {
+        && (AP_FUNDEF (arg_node) != INFO_FUNDEF (arg_info))) {
 
         AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
     }
@@ -327,12 +312,12 @@ WLSwith (node *arg_node, info *arg_info)
         /*
          * Apply withloopification
          */
-        arg_node = WLSWdoWithloopify (arg_node, INFO_WLS_FUNDEF (arg_info), innerdims);
+        arg_node = WLSWdoWithloopify (arg_node, INFO_FUNDEF (arg_info), innerdims);
 
         /*
          * Build the new with-loop
          */
-        arg_node = WLSBdoBuild (arg_node, INFO_WLS_FUNDEF (arg_info));
+        arg_node = WLSBdoBuild (arg_node, INFO_FUNDEF (arg_info));
     }
 
     DBUG_RETURN (arg_node);
