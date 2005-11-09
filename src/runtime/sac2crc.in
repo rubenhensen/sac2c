@@ -107,6 +107,26 @@ SYSTEM_LIBPATH :=  "/usr/ccs/bin:"
                    "/lib:"
                    "/usr/lib"
 
+/*******************************************************************************
+ *
+ * Target intelcc: use the Intel C compiler instead of gcc
+ *
+ */
+
+target intelcc:
+
+CC             := icc
+CCFLAGS        := -static
+
+target intelcc_sse2::intelcc:
+
+CCFLAGS        += -msse2
+
+target intelcc_fast::intelcc:
+
+CCFLAGS        += -fast
+
+
 
 /*******************************************************************************
  *******************************************************************************
