@@ -107,6 +107,11 @@ SYSTEM_LIBPATH :=  "/usr/ccs/bin:"
                    "/lib:"
                    "/usr/lib"
 
+target suncc_fast::suncc:
+
+CCFLAGS        += -fast
+
+
 /*******************************************************************************
  *
  * Target intelcc: use the Intel C compiler instead of gcc
