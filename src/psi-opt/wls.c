@@ -161,35 +161,6 @@ WLSdoWithloopScalarization (node *fundef)
 
 /** <!--********************************************************************-->
  *
- * @fn node *WLSap(node *arg_node, info *arg_info)
- *
- * @brief traverses into special fundefs when they are applied.
- *
- * @param arg_node
- * @param arg_info
- *
- * @return arg_node
- *
- *****************************************************************************/
-node *
-WLSap (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("WLSap");
-
-    /*
-     * special functions must be traversed when they are used
-     */
-    if ((FUNDEF_ISLACFUN (AP_FUNDEF (arg_node)))
-        && (AP_FUNDEF (arg_node) != INFO_FUNDEF (arg_info))) {
-
-        AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
  * @fn node *WLSassign(node *arg_node, info *arg_info)
  *
  * @brief performs a bottom-up traversal.
@@ -239,9 +210,6 @@ WLSfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLSfundef");
 
-    DBUG_PRINT ("OPT", ("starting WithloopScalarization in function %s",
-                        FUNDEF_NAME (arg_node)));
-
     if (FUNDEF_BODY (arg_node) != NULL) {
         /*
          * Create new INFO structure
@@ -258,9 +226,6 @@ WLSfundef (node *arg_node, info *arg_info)
          */
         arg_info = FreeInfo (arg_info);
     }
-
-    DBUG_PRINT ("OPT", ("WithloopScalarization in function %s completed.",
-                        FUNDEF_NAME (arg_node)));
 
     DBUG_RETURN (arg_node);
 }

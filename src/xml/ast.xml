@@ -1088,7 +1088,6 @@
       </traversal>
       <traversal id="WLS" name="With-Loop Scalarization" default="sons" include="wls.h">
         <travuser>
-          <node name="Ap" />
           <node name="Assign" />
           <node name="Fundef" />
           <node name="With" />
