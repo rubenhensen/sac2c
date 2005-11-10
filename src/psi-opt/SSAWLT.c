@@ -1,143 +1,5 @@
 /*
- *
- * $Log$
- * Revision 1.42  2005/01/11 13:32:21  cg
- * Converted output from Error.h to ctinfo.c
- *
- * Revision 1.41  2004/11/27 01:48:09  khf
- * crossed fingers
- *
- * Revision 1.40  2004/11/27 01:35:14  khf
- * *** empty log message ***
- *
- * Revision 1.39  2004/11/27 01:02:41  khf
- * call of other Functions possible
- *
- * Revision 1.38  2004/11/27 00:51:53  khf
- * call of WLTdoWLT possible
- *
- * Revision 1.37  2004/11/26 17:38:36  khf
- * shutdown WLT
- *
- * Revision 1.36  2004/11/26 17:03:05  jhb
- * on the road again
- *
- * Revision 1.35  2004/11/26 00:12:54  jhb
- * added really importend TODO! CreateVardec!
- *
- * Revision 1.34  2004/10/05 13:50:58  sah
- * lifted start of WLI/WLT traversal to the
- * defining source files to allow for local
- * info structures
- *
- * Revision 1.33  2004/08/25 16:04:57  khf
- * In ComputeGeneratorProperties only check for emptiness for
- * generator with non empty bounds
- *
- * Revision 1.32  2004/07/31 13:44:44  sah
- * removed function MakeNCodeExprs. Instead, MakeNCode now expects
- * an exprs node as its second argument!
- *
- * Revision 1.31  2004/07/19 14:19:38  sah
- * switch to new INFO structure
- * PHASE I
- *
- * Revision 1.30  2004/05/11 14:27:44  ktr
- * bug fix of the bug fix :)
- *
- * Revision 1.29  2004/05/11 12:46:57  ktr
- * Bug 35: COZip called with args of different shape!
- * resolved. In ComputeGeneratorProperties only the prefix of
- * shpc having the length of ubc is compared to ubc.
- *
- * Revision 1.28  2004/04/14 10:33:06  sbs
- * bug 35 - errorneous wlgenerator property resolved
- *
- * Revision 1.27  2003/11/28 13:53:14  sbs
- * sco's created by SCOExpr2StructConstant may SHARE the array components!!
- * Therefore, we have to make sure these are copied BEFORE deletion!
- *
- * Revision 1.26  2003/11/28 09:33:41  sbs
- * major code rewrite. Now, code inspection and code modification are better separated.
- * However, since the tricky code modification sections are copied from the old
- * code, some functions are stll pretty ugly. Furthermore, CreateFullPartition
- * contains some redundancy as the "full range" case is taken care of separately.
- * The major contribution of the code is the proper (hopefully 8-) treatment
- * of the default case in genarray WLs!!!
- *
- * Revision 1.25  2003/09/25 18:37:16  dkr
- * some code brushing done
- *
- * Revision 1.24  2003/04/14 14:53:41  sbs
- * initialization of genshape adjusted to its type, i.e., to int 8-)
- *
- * Revision 1.23  2003/04/11 17:48:35  sbs
- * genshape in CreateFullPartition initialized to NULL, just to please gcc 8-)
- *
- * Revision 1.22  2003/04/10 15:43:50  dkr
- * bug in CheckOptimizeArray() fixed
- *
- * Revision 1.21  2003/04/10 12:02:01  dkr
- * CreateFullPartition(): code reordered. the checks which determine the
- * correct value for the variable do_create are performed in correct
- * order now.
- *
- * Revision 1.20  2003/03/14 13:19:32  dkr
- * SSAWLTNwithop(): NWITHOP_ARRAY no longer inlined
- *
- * Revision 1.19  2003/03/13 00:06:42  dkr
- * SSAWLTNwithop() added
- *
- * Revision 1.18  2002/10/11 14:09:47  dkr
- * SSAWLTNgenerator() works correctly now (really!)
- *
- * Revision 1.17  2002/10/09 22:07:40  dkr
- * fixed a bug in SSAWLTNgenerator()
- *
- * Revision 1.16  2002/10/09 12:44:44  dkr
- * SSAWLTNgenerator(): *structural* constants used now
- *
- * Revision 1.15  2002/10/09 02:11:31  dkr
- * constants modul used instead of ID/ARRAY_CONSTVEC
- *
- * Revision 1.14  2002/10/08 10:33:47  dkr
- * CreateFullPartition(): modifications for dynamic shapes done
- *
- * Revision 1.11  2002/09/13 20:16:41  dkr
- * genarray-wls with empty index sets allow again... #@%&
- *
- * Revision 1.10  2002/09/13 19:05:11  dkr
- * genarray-wls with empty index sets are no longer allowed
- *
- * Revision 1.9  2002/06/27 17:01:41  dkr
- * - CheckOptimize...() works also for nested WLs now
- * - CreateSel() used now
- *
- * Revision 1.8  2002/06/25 23:58:04  ktr
- * CreateFullPartition now creates a full partition if OPT_WLS is activated.
- *
- * Revision 1.7  2002/06/21 14:03:32  dkr
- * Zero-Arrays are build correctly now (by CreateZero...())
- *
- * Revision 1.6  2001/06/28 07:46:51  cg
- * Primitive function psi() renamed to sel().
- *
- * Revision 1.5  2001/05/17 13:40:26  nmw
- * MALLOC/FREE replaced by Malloc/Free, using result of Free()
- *
- * Revision 1.4  2001/05/16 19:52:47  nmw
- * reverted Free() to FREE() due to segfaults when used with linux :-(
- *
- * Revision 1.3  2001/05/16 13:41:44  nmw
- * unused old code removed, comments corrected
- * MALLOC/FREE changed to Malloc/Free
- *
- * Revision 1.2  2001/05/15 16:39:21  nmw
- * SSAWithloopFolding implemented (but not tested)
- *
- *
- * created from WLT.c, Revision 3.9 on 2001/05/14 by  nmw
- *
+ * $Id$
  */
 
 /*
@@ -1768,7 +1630,6 @@ WLTdoWLT (node *arg_node)
 
   info = MakeInfo();
 
-  DBUG_PRINT("OPT",("SSAWLF"));
   DBUG_PRINT("OPTMEM",("mem currently allocated: %d bytes",
                                     current_allocated_mem));
   TRAVpush( TR_ssawlf);
@@ -1779,7 +1640,6 @@ WLTdoWLT (node *arg_node)
 
   expr = (wlt_expr - old_wlt_expr);
 
-  DBUG_PRINT("OPT",("                        result: %d",expr));
   DBUG_PRINT("OPTMEM",("mem currently allocated: %d bytes",
                                              current_allocated_mem));
 

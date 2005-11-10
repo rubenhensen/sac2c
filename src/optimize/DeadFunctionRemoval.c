@@ -1,54 +1,5 @@
 /*
- *
- * $Log$
- * Revision 3.25  2005/09/29 22:08:40  sah
- * finally found the 'vanishing shape instance' bug! the problem
- * occurs whenever a instance has a constant value! in that
- * case its call within the wrapper body is replaced by that
- * value. thus the wrapper body contains less instances than
- * the wrapper type which then leads to an error when dispatching
- * that call as the instance has been removed by DFR. now DFR
- * _always_ uses the wrapper type to determine the instances
- * needed for a wrapper!
- *
- * Revision 3.24  2005/09/28 15:43:27  wpc
- * added some SHOW_MALLOC ifdefs
- *
- * Revision 3.23  2005/09/04 12:52:11  ktr
- * re-engineered the optimization cycle
- *
- * Revision 3.22  2005/08/19 22:58:25  sah
- * fixed an error message.
- *
- * Revision 3.21  2005/07/21 16:18:12  sah
- * now all instances get tagged correctly
- *
- * Revision 3.20  2005/07/21 14:22:33  sah
- * improved DFR on external functions
- *
- * Revision 3.19  2005/07/15 17:41:49  sah
- * prevented the deletion of instances that might be
- * used for dispatch later on
- *
- * Revision 3.18  2005/07/15 17:34:14  sah
- * added some better debugging facilities
- *
- * Revision 3.17  2005/03/04 21:21:42  cg
- * Optimization completely streamlined.
- * Removal of zombie functions automatized.
- *
- * Revision 3.16  2005/01/11 12:58:15  cg
- * Converted output from Error.h to ctinfo.c
- *
- * Revision 3.15  2004/11/26 03:16:20  sah
- * COMPILES!
- *
- * Revision 3.14  2004/11/19 10:17:34  sah
- * objinitfuns are never removed
- *
- * Revision 1.1  1999/01/07 17:36:51  sbs
- * Initial revision
- *
+ * $Id$
  */
 
 #include "DeadFunctionRemoval.h"
@@ -113,12 +64,9 @@ node *
 DFRdoDeadFunctionRemoval (node *arg_node)
 {
     info *arg_info;
-#ifndef DBUG_OFF
-    int mem_dead_fun = global.optcounters.dead_fun;
-#endif
 
     DBUG_ENTER ("DFRdoDeadFunctionRemoval");
-    DBUG_PRINT ("OPT", ("DEAD FUNCTION REMOVAL"));
+
 #ifdef SHOW_MALLOC
     DBUG_PRINT ("OPTMEM",
                 ("mem currently allocated: %d bytes", global.current_allocated_mem));
@@ -134,8 +82,6 @@ DFRdoDeadFunctionRemoval (node *arg_node)
 
     arg_info = FreeInfo (arg_info);
 
-    DBUG_PRINT ("OPT", ("                        result: %d",
-                        global.optcounters.dead_fun - mem_dead_fun));
 #ifdef SHOW_MALLOC
     DBUG_PRINT ("OPTMEM",
                 ("mem currently allocated: %d bytes", global.current_allocated_mem));

@@ -1,107 +1,6 @@
-/*
- *
- * $Log$
- * Revision 1.30  2005/10/06 06:12:12  ktr
- * Now, SSAWLF produces properly flattened code.
- *
- * Revision 1.29  2005/09/28 21:20:07  ktr
- * commented out a DBUG_ASSERT that prevented an example (bug 124) from
- * compiling
- *
- * Revision 1.28  2005/09/28 15:48:02  wpc
- * added several SHOW_MALLOC ifdefs
- *
- * Revision 1.27  2005/09/04 12:54:00  ktr
- * re-engineered the optimization cycle
- *
- * Revision 1.26  2005/08/28 11:53:46  ktr
- * indented a comment
- *
- * Revision 1.25  2005/08/26 12:29:13  ktr
- * major brushing,seams to work
- *
- * Revision 1.24  2005/08/19 13:08:30  ktr
- * removed SSAINDEX macro
- *
- * Revision 1.23  2005/01/11 13:32:21  cg
- * Converted output from Error.h to ctinfo.c
- *
- * Revision 1.22  2004/12/08 18:02:10  ktr
- * removed ARRAY_TYPE/ARRAY_NTYPE
- *
- * Revision 1.21  2004/11/26 23:16:29  jhb
- * the ONE before the LASt
- *
- * Revision 1.20  2004/11/26 21:43:51  sbs
- * change run
- *
- * Revision 1.19  2004/11/26 18:14:29  skt
- * inclusion of my_debug.h removed
- *
- * Revision 1.18  2004/07/31 13:44:44  sah
- * removed function MakeNCodeExprs. Instead, MakeNCode now expects
- * an exprs node as its second argument!
- *
- * Revision 1.17  2004/07/19 14:19:38  sah
- * switch to new INFO structure
- * PHASE I
- *
- * Revision 1.16  2003/06/11 21:52:05  ktr
- * Added support for multidimensional arrays.
- *
- * Revision 1.15  2003/03/03 13:56:18  ktr
- * SSAWLFassign now only applies its "DCR" if the withloop's basetype is not a
- * Usertype.
- *
- * Revision 1.14  2002/10/09 02:12:48  dkr
- * code for ID/ARRAY_CONSTVEC removed
- *
- * Revision 1.13  2002/09/09 17:56:33  dkr
- * F_{add,sub,mul,div} replaced by F_{add,sub,mul,div}_SxS
- *
- * Revision 1.12  2002/06/20 23:03:15  dkr
- * no changes done
- *
- * Revision 1.11  2002/06/20 15:23:13  dkr
- * signature of MakeNWithOp modified
- *
- * Revision 1.10  2001/06/28 07:46:51  cg
- * Primitive function psi() renamed to sel().
- *
- * Revision 1.9  2001/05/25 20:32:17  dkr
- * all global vars are static now
- *
- * Revision 1.8  2001/05/22 14:57:03  nmw
- * comments corrected
- *
- * Revision 1.7  2001/05/18 12:43:02  nmw
- * all unused code removed, comments modified
- *
- * Revision 1.6  2001/05/17 14:09:32  nmw
- * MALLOC/FREE replaced by ILIBmalloc/Free, using result of ILIBfree()
- *
- * Revision 1.5  2001/05/17 13:29:29  cg
- * De-allocation macros FREE_INTERN_GEN and FREE_INDEX_INFO
- * converted to functions.
- *
- * Revision 1.4  2001/05/16 19:52:47  nmw
- * reverted ILIBfree() to FREE() due to segfaults when used with linux :-(
- *
- * Revision 1.3  2001/05/16 13:42:45  nmw
- * MALLOC/FREE changed to ILIBmalloc/Free
- *
- * Revision 1.2  2001/05/15 16:39:21  nmw
- * SSAWithloopFolding implemented (but not tested)
- *
- * Revision 1.1  2001/05/15 15:41:17  nmw
- * Initial revision
- *
- *
- * created from WLF.c, Revision 3.8 on 2001/05/15 by nmw
- *
- */
-
 /*******************************************************************************
+
+ $Id$
 
  This file realizes the withlop folding for a code in ssa form. it uses no
  masks anymore. Most code is unchanged from the original implementation in
@@ -1975,7 +1874,6 @@ WLFdoWLF (node *arg_node)
 
     info = MakeInfo ();
 
-    DBUG_PRINT ("OPT", ("WLF"));
 #ifdef SHOW_MALLOC
     DBUG_PRINT ("OPTMEM",
                 ("mem currently allocated: %d bytes", global.current_allocated_mem));

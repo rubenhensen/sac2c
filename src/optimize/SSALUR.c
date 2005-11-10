@@ -1,89 +1,6 @@
-/*
- *
- * $Log$
- * Revision 1.24  2005/09/16 10:33:49  sah
- * fixed bug #114. unrolling seems to work
- * properly now
- *
- * Revision 1.23  2005/09/04 12:52:11  ktr
- * re-engineered the optimization cycle
- *
- * Revision 1.22  2005/07/21 16:58:52  ktr
- * traversal is now robust against Functions without bodies
- *
- * Revision 1.21  2005/07/19 17:02:40  sbs
- * FUNDEF_INT and FUNDEF_EXT eliminated.
- *
- * Revision 1.20  2005/04/22 10:08:04  ktr
- * Works with Marielyst compiler.
- *
- * Revision 1.19  2005/03/04 21:21:42  cg
- * FUNDEF_USED counter etc removed.
- * Handling of FUNDEF_EXT_ASSIGNS drastically simplified.
- *
- * Revision 1.18  2005/01/11 12:58:15  cg
- * Converted output from Error.h to ctinfo.c
- *
- * Revision 1.17  2004/11/26 20:07:41  mwe
- * SacDevCamp: Compiles!
- *
- * Revision 1.16  2004/07/18 19:54:54  sah
- * switch to new INFO structure
- * PHASE I
- * (as well some code cleanup)
- *
- * Revision 1.15  2004/02/25 15:53:06  cg
- * New functions RestoreSSAOneFunction and RestoreSSAOneFundef
- * now provide access to SSA transformations on a per function
- * basis.
- * Only functions from ssa.[ch] should be used to initiate the
- * transformation process in either direction!
- *
- * Revision 1.14  2002/10/09 02:08:27  dkr
- * SSAWLUnroll.c instead of WLUnroll.c used
- *
- * Revision 1.13  2002/09/09 19:16:20  dkr
- * prf_string removed (mdb_prf used instead)
- *
- * Revision 1.12  2002/09/09 17:53:04  dkr
- * F_{add,sub,mul,div} replaced by F_{add,sub,mul,div}_SxS
- *
- * Revision 1.11  2002/07/29 12:12:53  sbs
- * PRF_IF macro extended by z.
- *
- * Revision 1.10  2001/06/28 10:09:19  sbs
- * colon inserted in empty default case of switch.
- *
- * Revision 1.9  2001/05/25 08:42:18  nmw
- * comments added, code beautyfied
- *
- * Revision 1.8  2001/05/17 12:05:53  nmw
- * MALLOC/FREE changed to Malloc/Free (using Free() result)
- *
- * Revision 1.7  2001/05/09 12:26:01  nmw
- * debug prints for WLUnroll calls added
- *
- * Revision 1.6  2001/05/07 09:03:00  nmw
- * withloop unrolling by WLUnroll integrated in traversal
- *
- * Revision 1.5  2001/05/04 11:55:12  nmw
- * added support for AVIS_ASSIGN checks
- *
- * Revision 1.4  2001/04/30 12:08:54  nmw
- * remove internal call to Unroll()
- *
- * Revision 1.3  2001/04/26 13:30:20  nmw
- * loop unrolling for predicate != added
- *
- * Revision 1.2  2001/04/24 16:10:23  nmw
- * ssa loop unrolling implemented
- *
- * Revision 1.1  2001/04/20 11:20:56  nmw
- * Initial revision
- *
- */
-
 /*****************************************************************************
+ *
+ * $Id$
  *
  * file:   SSALUR.c
  *
@@ -1457,9 +1374,6 @@ LURdoLoopUnrolling (node *fundef)
     DBUG_ENTER ("SSALoopUnrolling");
 
     DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef), "SSALUR called for non-fundef node");
-
-    DBUG_PRINT ("OPT",
-                ("starting loop unrolling (ssa) in function %s", FUNDEF_NAME (fundef)));
 
     /* do not start traversal in special functions */
     if (!(FUNDEF_ISLACFUN (fundef))) {

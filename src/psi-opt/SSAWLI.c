@@ -1,94 +1,6 @@
-/*
- *
- * $Log$
- * Revision 1.27  2005/10/05 13:27:11  ktr
- * removed WLIap
- *
- * Revision 1.26  2005/09/28 15:48:02  wpc
- * added several SHOW_MALLOC ifdefs
- *
- * Revision 1.25  2005/08/26 12:29:13  ktr
- * major brushing,seams to work
- *
- * Revision 1.24  2005/08/19 13:08:30  ktr
- * removed SSAINDEX macro
- *
- * Revision 1.23  2005/01/11 13:32:21  cg
- * Converted output from Error.h to ctinfo.c
- *
- * Revision 1.22  2004/12/08 18:02:10  ktr
- * removed ARRAY_TYPE/ARRAY_NTYPE
- *
- * Revision 1.21  2004/11/26 22:27:38  khf
- * FUNZT!!!
- *
- * Revision 1.20  2004/11/26 18:14:29  skt
- * inclusion of my_debug.h removed
- *
- * Revision 1.19  2004/10/13 14:03:36  sbs
- * bixed bug 68 by allowing two constants in CreateIndexInfoA
- * added some more comments
- *
- * Revision 1.18  2004/10/05 13:50:58  sah
- * lifted start of WLI/WLT traversal to the
- * defining source files to allow for local
- * info structures
- *
- * Revision 1.17  2004/08/06 15:16:59  khf
- * corrected setting of NWITH_FOLDABLE
- *
- * Revision 1.16  2004/08/05 11:15:12  khf
- * earlier setting of NWITH_FOLDABLE
- *
- * Revision 1.15  2004/07/19 14:19:38  sah
- * switch to new INFO structure
- * PHASE I
- *
- * Revision 1.14  2004/03/26 13:02:12  khf
- * Attribute NWITH_FOLDABLE is set in SSAWLI now,
- * therefor SSAWLINgenerator added
- *
- * Revision 1.13  2002/10/09 02:11:26  dkr
- * constants modul used instead of ID/ARRAY_CONSTVEC
- *
- * Revision 1.12  2002/10/07 04:51:05  dkr
- * some modifications for dynamic shapes added
- *
- * Revision 1.9  2001/06/28 07:46:51  cg
- * Primitive function psi() renamed to sel().
- *
- * Revision 1.8  2001/05/23 15:55:18  nmw
- * buggy call to SSACFFoldPrfExpr() fixed
- *
- * Revision 1.7  2001/05/18 12:42:14  nmw
- * some discriptive comments added
- *
- * Revision 1.6  2001/05/17 14:09:32  nmw
- * MALLOC/FREE replaced by Malloc/Free, using result of Free()
- *
- * Revision 1.5  2001/05/17 13:29:29  cg
- * De-allocation macros FREE_INTERN_GEN and FREE_INDEX_INFO
- * converted to functions.
- *
- * Revision 1.4  2001/05/16 19:52:47  nmw
- * reverted Free() to FREE() due to segfaults when used with linux :-(
- *
- * Revision 1.3  2001/05/16 13:42:25  nmw
- * unused old code removed, comments corrected
- * MALLOC/FREE changed to Malloc/Free
- *
- * Revision 1.2  2001/05/16 09:24:40  nmw
- * bug fixed that calls wrong traversal functions
- *
- * Revision 1.1  2001/05/15 15:41:11  nmw
- * Initial revision
- *
- *
- * created from WLI.c, Revision 3.6 on 2001/05/15 by nmw
- *
- */
-
 /*******************************************************************************
+
+ $Id$
 
  This file realizes the information gathering for the SAC-WLs (SSAWLI phase).
  The decision to fold or not to fold (SSAWLF) is based on these informations.
@@ -1129,7 +1041,6 @@ WLIdoWLI (node *arg_node)
 
     info = MakeInfo ();
 
-    DBUG_PRINT ("OPT", ("WLIdoWLI"));
 #ifdef SHOW_MALLOC
     DBUG_PRINT ("OPTMEM",
                 ("mem currently allocated: %d bytes", global.current_allocated_mem));

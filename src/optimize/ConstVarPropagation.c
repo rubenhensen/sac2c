@@ -1,15 +1,5 @@
 /*
- *
- * $Log$
- * Revision 1.28  2005/09/04 12:52:11  ktr
- * re-engineered the optimization cycle
- *
- * Revision 1.27  2005/09/01 07:10:23  ktr
- * cvp_expr is now incremented
- *
- * Revision 1.26  2005/08/31 17:12:39  ktr
- * Major simplification
- *
+ * $Id$
  */
 #include "types.h"
 #include "tree_basic.h"
@@ -557,14 +547,9 @@ CVPfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CVPfundef");
 
-    DBUG_PRINT ("OPT", ("Performing ConstVarPropagation in function %s",
-                        FUNDEF_NAME (arg_node)));
-
     if (FUNDEF_BODY (arg_node) != NULL) {
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
     }
-
-    DBUG_PRINT ("OPT", ("Completed traversal of function %s", FUNDEF_NAME (arg_node)));
 
     if (!INFO_ONEFUNDEF (arg_info)) {
         if (FUNDEF_NEXT (arg_node) != NULL) {

@@ -1,30 +1,6 @@
-/*
- *
- * $Log$
- * Revision 1.7  2005/09/04 12:52:11  ktr
- * re-engineered the optimization cycle
- *
- * Revision 1.6  2005/08/02 14:24:37  ktr
- * a seperate dead code inference traversal is now employed
- *
- * Revision 1.5  2005/07/22 11:48:31  ktr
- * *** empty log message ***
- *
- * Revision 1.4  2005/07/22 07:33:25  ktr
- * intermediate conservative solution
- *
- * Revision 1.3  2005/07/20 13:13:30  ktr
- * LaC functions whose conditional has been eliminated are now marked LACINLINE
- *
- * Revision 1.2  2005/07/19 22:47:53  sbs
- * deadcoderemoval and - more importantly - DFmask generation
- * suppressed for body-less fundefs
- *
- * Revision 1.1  2005/07/19 16:56:48  ktr
- * Initial revision
- *
- */
 /*****************************************************************************
+ *
+ * $Id$
  *
  * file:   deadcoderemoval.c
  *
@@ -151,9 +127,6 @@ DCRdoDeadCodeRemoval (node *fundef)
 
     DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
                  "DCRdoDeadCodeRemovalOneFunction called for non-fundef node");
-
-    DBUG_PRINT ("OPT", ("starting dead code removal (ssa) in function %s",
-                        FUNDEF_NAME (fundef)));
 
     TRAVpush (TR_dcr);
     fundef = TRAVdo (fundef, NULL);
