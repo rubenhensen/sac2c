@@ -20,7 +20,7 @@
  * INFO structure
  */
 struct INFO {
-    node *topblock;
+    node *fundef;
     dfmask_base_t *dfmbase;
     dfmask_t *localmask;
     node *preassign;
@@ -33,7 +33,7 @@ struct INFO {
 /*
  * INFO macros
  */
-#define INFO_TOPBLOCK(n) ((n)->topblock)
+#define INFO_FUNDEF(n) ((n)->fundef)
 #define INFO_DFMBASE(n) ((n)->dfmbase)
 #define INFO_LOCALMASK(n) ((n)->localmask)
 #define INFO_PREASSIGN(n) ((n)->preassign)
@@ -54,7 +54,7 @@ MakeInfo ()
 
     result = ILIBmalloc (sizeof (info));
 
-    INFO_TOPBLOCK (result) = NULL;
+    INFO_FUNDEF (result) = NULL;
     INFO_DFMBASE (result) = NULL;
     INFO_LOCALMASK (result) = NULL;
     INFO_PREASSIGN (result) = NULL;
@@ -465,8 +465,8 @@ CombineExprs2Prf (prf prf, node *expr1, node *expr2, info *arg_info)
     avis = TBmakeAvis (ILIBtmpVar (), TYcopyType (TYgetProductMember (prod, 0)));
     prod = TYfreeType (prod);
 
-    BLOCK_VARDEC (INFO_TOPBLOCK (arg_info))
-      = TBmakeVardec (avis, BLOCK_VARDEC (INFO_TOPBLOCK (arg_info)));
+    FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+      = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
 
     assign
       = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), rhs), INFO_PREASSIGN (arg_info));
@@ -591,7 +591,7 @@ ASSOCfundef (node *arg_node, info *arg_info)
          */
         arg_node = INFNCdoInferNeedCountersOneFundef (arg_node);
 
-        INFO_TOPBLOCK (arg_info) = FUNDEF_BODY (arg_node);
+        INFO_FUNDEF (arg_info) = arg_node;
         INFO_DFMBASE (arg_info)
           = DFMgenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
 
@@ -754,6 +754,14 @@ ASSOCprf (node *arg_node, info *arg_info)
 
                     arg_node = FREEdoFreeNode (arg_node);
                     arg_node = Exprs2PrfTree (p, exprs, arg_info);
+
+                    /*
+                     * update the maskbase
+                     */
+                    INFO_DFMBASE (arg_info)
+                      = DFMupdateMaskBase (INFO_DFMBASE (arg_info),
+                                           FUNDEF_ARGS (INFO_FUNDEF (arg_info)),
+                                           FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
                 }
             } else {
                 exprs = FREEdoFreeTree (exprs);
