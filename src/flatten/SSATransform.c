@@ -571,6 +571,19 @@ SSATnewVardec (node *old_vardec_or_arg)
     VARDEC_NAME (new_vardec) = ILIBstringConcat (SSACNT_BASEID (ssacnt), tmpstring);
     ;
 
+    /**
+     * reset ssa stack
+     * This is required since the new variable in fact has no renaming yet.
+     * Bug 150 showed that this consistency actually is required.
+     * If the predicate of a conditional has been renamed when the funcond is build,
+     * the old version of the predicate variable is chosen for the funcond predicate.
+     * Although this could be avoided by NOT traversing the funcond predicates
+     * this solution is cleaner as it keeps consistency of the AVIS atributes.
+     */
+    AVIS_SSASTACK_TOP (VARDEC_AVIS (new_vardec)) = NULL;
+    AVIS_SSATHEN (VARDEC_AVIS (new_vardec)) = NULL;
+    AVIS_SSAELSE (VARDEC_AVIS (new_vardec)) = NULL;
+
     IncSSATCounter ();
 
     DBUG_RETURN (new_vardec);
