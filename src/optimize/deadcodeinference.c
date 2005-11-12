@@ -1,16 +1,6 @@
 /*
  *
- * $Log$
- * Revision 1.3  2005/09/16 19:15:11  sah
- * fixed bug #118: return ids of internal assignment have to be kept
- *                 if the corresponding ids of the external assignment
- *                 are non-dead!
- *
- * Revision 1.2  2005/09/03 08:46:40  ktr
- * changed some DBUG_PRINTs from DCR to DCI
- *
- * Revision 1.1  2005/08/02 14:19:16  ktr
- * Initial revision
+ * $Id$
  *
  */
 #include "deadcodeinference.h"
@@ -133,6 +123,8 @@ DCIfundef (node *arg_node, info *arg_info)
                         if ((!AVIS_ISDEAD (ARG_AVIS (args)))
                             && (AVIS_ISDEAD (ID_AVIS (EXPRS_EXPR (recexprs))))) {
                             AVIS_ISDEAD (ID_AVIS (EXPRS_EXPR (recexprs))) = FALSE;
+                            DBUG_PRINT ("DCI", ("marking var %s as alive",
+                                                ID_NAME (EXPRS_EXPR (recexprs))));
                             fixedpointreached = FALSE;
                         }
                         args = ARG_NEXT (args);
@@ -163,8 +155,10 @@ DCIarg (node *arg_node, info *arg_info)
 
     if (FUNDEF_ISLACFUN (INFO_FUNDEF (arg_info))) {
         AVIS_ISDEAD (ARG_AVIS (arg_node)) = TRUE;
+        DBUG_PRINT ("DCI", ("marking argument %s as dead", ARG_NAME (arg_node)));
     } else {
         AVIS_ISDEAD (ARG_AVIS (arg_node)) = FALSE;
+        DBUG_PRINT ("DCI", ("marking argument %s as alive", ARG_NAME (arg_node)));
     }
 
     if (ARG_NEXT (arg_node) != NULL) {
@@ -188,6 +182,7 @@ DCIvardec (node *arg_node, info *arg_info)
     DBUG_ENTER ("DCIvardec");
 
     AVIS_ISDEAD (VARDEC_AVIS (arg_node)) = TRUE;
+    DBUG_PRINT ("DCI", ("marking vardec %s as dead", VARDEC_NAME (arg_node)));
 
     if (VARDEC_NEXT (arg_node) != NULL) {
         VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
@@ -265,6 +260,8 @@ DCIreturn (node *arg_node, info *arg_info)
         while (extids != NULL) {
             if (!AVIS_ISDEAD (IDS_AVIS (extids))) {
                 AVIS_ISDEAD (ID_AVIS (EXPRS_EXPR (retexprs))) = FALSE;
+                DBUG_PRINT ("DCI",
+                            ("marking var %s as alive", ID_NAME (EXPRS_EXPR (retexprs))));
             }
             extids = IDS_NEXT (extids);
             retexprs = EXPRS_NEXT (retexprs);
@@ -398,6 +395,7 @@ DCIap (node *arg_node, info *arg_info)
                 if ((!AVIS_ISDEAD (IDS_AVIS (extids)))
                     && (AVIS_ISDEAD (IDS_AVIS (recids)))) {
                     AVIS_ISDEAD (IDS_AVIS (recids)) = FALSE;
+                    DBUG_PRINT ("DCI", ("marking var %s as alive", IDS_NAME (recids)));
                 }
                 extids = IDS_NEXT (extids);
                 recids = IDS_NEXT (recids);
@@ -426,6 +424,8 @@ DCIap (node *arg_node, info *arg_info)
             while (args != NULL) {
                 if (!AVIS_ISDEAD (ARG_AVIS (args))) {
                     AVIS_ISDEAD (ID_AVIS (EXPRS_EXPR (argexprs))) = FALSE;
+                    DBUG_PRINT ("DCI", ("marking var %s as alive",
+                                        ID_NAME (EXPRS_EXPR (argexprs))));
                 }
 
                 args = ARG_NEXT (args);
@@ -458,6 +458,7 @@ DCIid (node *arg_node, info *arg_info)
 
     /* Mark identifier as needed */
     AVIS_ISDEAD (ID_AVIS (arg_node)) = FALSE;
+    DBUG_PRINT ("DCI", ("marking var %s as alive", ID_NAME (arg_node)));
 
     DBUG_RETURN (arg_node);
 }
@@ -479,6 +480,7 @@ DCIids (node *arg_node, info *arg_info)
     if (INFO_ALLIDSNEEDED (arg_info)) {
         /* Mark identifier as needed */
         AVIS_ISDEAD (IDS_AVIS (arg_node)) = FALSE;
+        DBUG_PRINT ("DCI", ("marking var %s as alive", IDS_NAME (arg_node)));
     }
 
     if (!AVIS_ISDEAD (IDS_AVIS (arg_node))) {
