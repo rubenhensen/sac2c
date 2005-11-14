@@ -1001,33 +1001,38 @@
 	  <node name="With" />
    	</travuser>
       </traversal>
-      <traversal id="TUP" name="Type Upgrade" default="sons" include="type_upgrade.h" >
+      <traversal id="RTUP" name="Reverse Type Upgrade" default="sons" include="reverse_type_upgrade.h" >
 	<travuser>
 	  <node name="Assign" />
           <node name="Fundef" />
-          <node name="Cond" />
-          <node name="Funcond" />
-	  <node name="Block" />
 	  <node name="With" />
 	  <node name="Let" />
-	  <node name="Return" />
-	  <node name="Code" />
 	  <node name="Generator" />
 	  <node name="Part" /> 
-          <node name="Ap" />
           <node name="Ids" />
-          <node name="Fold" />
-          <node name="Modarray" />
-          <node name="Genarray" />
-          <node name="Num" />
-          <node name="Double" />
-          <node name="Char" />
-          <node name="Bool" />
-          <node name="Prf" />
-          <node name="Array" />
           <node name="Id" />
-          <node name="Exprs" />
-   	</travuser>
+        </travuser>
+      </traversal>
+      <traversal id="WLPROP" name="With-Loop Propagation" default="sons" include="wlpropagation.h" >
+	<travuser>
+	  <node name="Assign" />
+          <node name="Fundef" />
+	  <node name="Block" />
+	  <node name="Let" />
+	  <node name="Ap" />
+	  <node name="Exprs" /> 
+          <node name="Id" />
+        </travuser>
+      </traversal>
+       <traversal id="WLSELC" name="With-Loop Selections Counter" default="sons" include="wlselcount.h" >
+	<travuser>
+	  <node name="With" />
+          <node name="Fundef" />
+	  <node name="Block" />
+	  <node name="Code" />
+	  <node name="Ap" />
+	  <node name="Prf" /> 
+        </travuser>
       </traversal>
       <traversal id="UESD" name="UndoElimSubDiv" default="sons" include="UndoElimSubDiv.h" >
         <travuser>
@@ -5353,6 +5358,19 @@
             </targets>
           </type>
         </attribute>
+        <attribute name="SelMax">
+          <type name="Integer">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <phase name="wlprop" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+
       </attributes>
       <flags>
         <flag name="IsFoldable" />

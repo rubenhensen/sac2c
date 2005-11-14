@@ -96,13 +96,15 @@ OPTIMIZE= src/optimize/optimize.o \
           src/optimize/SSAConstantFolding.o src/optimize/SSALIR.o \
           src/optimize/SSALUR.o src/optimize/SSAInferLI.o \
           src/optimize/SSAWLUnroll.o src/optimize/rmcasts.o \
-          src/optimize/ElimSubDiv.o \
-          src/optimize/UndoElimSubDiv.o src/optimize/type_upgrade.o \
+          src/optimize/ElimSubDiv.o src/optimize/wlpropagation.o \
+          src/optimize/UndoElimSubDiv.o src/optimize/reverse_type_upgrade.o \
           src/optimize/ConstVarPropagation.o src/optimize/DistributiveLaw.o \
           src/optimize/signature_simplification.o src/optimize/inlining.o \
           src/optimize/inferneedcounters.o src/optimize/associativity.o \
           src/optimize/elimtypeconv.o src/optimize/liftoptflags.o \
-          src/optimize/wlsimplification.o src/optimize/prfunroll.o
+          src/optimize/wlsimplification.o src/optimize/prfunroll.o \
+          src/optimize/wlselcount.o
+
 
 PROFILE= src/profile/annotate_fun_calls.o
 

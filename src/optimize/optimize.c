@@ -398,6 +398,14 @@ OPTdoIntraFunctionalOptimizations (node *arg_node)
                         fundef = PHrunOptimizationInCycle (SUBPH_tup, loop, fundef);
                     }
 #endif
+
+                    /*
+                     * Reverse type upgrade
+                     */
+                    if (global.optimize.dortup) {
+                        fundef = PHrunOptimizationInCycle (SUBPH_rtup, loop, fundef);
+                    }
+
                     /*
                      * try to dispatch further function calls
                      */
@@ -409,6 +417,13 @@ OPTdoIntraFunctionalOptimizations (node *arg_node)
                     if (global.optimize.doinl) {
                         FUNDEF_ISINLINECOMPLETED (fundef) = FALSE;
                         fundef = PHrunOptimizationInCycle (SUBPH_inlcyc, loop, fundef);
+                    }
+
+                    /*
+                     * Withloop Propagation
+                     */
+                    if (global.optimize.dowlprop) {
+                        fundef = PHrunOptimizationInCycle (SUBPH_wlprop, loop, fundef);
                     }
 
                     /*

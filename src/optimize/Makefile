@@ -63,10 +63,11 @@ OBJS := optimize.o DeadFunctionRemoval.o deadcoderemoval.o \
         SSACSE.o SSAConstantFolding.o SSALIR.o SSALUR.o \
         SSAWLUnroll.o SSAInferLI.o AssociativeLaw.o rmcasts.o \
         UndoElimSubDiv.o ElimSubDiv.o deadcodeinference.o \
-        ConstVarPropagation.o DistributiveLaw.o type_upgrade.o \
+        ConstVarPropagation.o DistributiveLaw.o \
+				reverse_type_upgrade.o wlpropagation.o \
         signature_simplification.o inlining.o associativity.o \
         inferneedcounters.o elimtypeconv.o liftoptflags.o \
-        wlsimplification.o prfunroll.o
+        wlsimplification.o prfunroll.o wlselcount.o
 
 all: $(OBJS)
 

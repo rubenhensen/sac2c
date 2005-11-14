@@ -207,7 +207,9 @@ SUBPHASE (ili, "ili", "Infering loop invariant variables", ILIdoInferLoopInvaria
 
 SUBPHASE (ntccyc, "ntc", "Applying type upgrade", NTCdoNewTypeCheckOneFunction)
 
-SUBPHASE (tup, "tup", "Applying type upgrade", TUPdoTypeUpgrade)
+SUBPHASE (rtup, "rtup", "Applying reverse type upgrade", RTUPdoReverseTypeUpgrade)
+
+SUBPHASE (wlprop, "wlprop", "Applying with-loop propagation", WLPROPdoWithloopPropagation)
 
 SUBPHASE (dfccyc, "dfc", "Applying function call dispatch",
           DFCdoDispatchFunCallsOneFundef)
