@@ -376,7 +376,7 @@ InternalCompilerErrorBreak (int sig)
 
     fprintf (stderr, "\n\n"
                      "OOOPS your program crashed the compiler 8-((\n"
-                     "Please send a bug report to bug@sac-home.org.\n\n");
+                     "Please send a bug report to bugs@sac-home.org.\n\n");
 
     error_file = fopen ("SACbugreport", "w");
 
