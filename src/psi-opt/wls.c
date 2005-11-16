@@ -128,8 +128,7 @@ FreeInfo (info *info)
  *
  * @brief starting point of WithloopScalarization.
  *
- * @param fundef Fundef-Node to start WLS in. Note that special functions
- *               (LAC-Function) are traversed in order of appearance.
+ * @param fundef Fundef-Node to start WLS in.
  *
  * @return modified fundef.
  *
@@ -142,11 +141,9 @@ WLSdoWithloopScalarization (node *fundef)
     DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
                  "WLSdoWithloopScalarization called for non-fundef node");
 
-    if (!FUNDEF_ISLACFUN (fundef)) {
-        TRAVpush (TR_wls);
-        fundef = TRAVdo (fundef, NULL);
-        TRAVpop ();
-    }
+    TRAVpush (TR_wls);
+    fundef = TRAVdo (fundef, NULL);
+    TRAVpop ();
 
     DBUG_RETURN (fundef);
 }
