@@ -95,7 +95,7 @@ WLSELCdoWithloopSelectionCount (node *fundef)
     fundef = TRAVdo (fundef, arg_info);
     TRAVpop ();
 
-    fundef = FREEdoFreeTree (fundef);
+    arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (fundef);
 }

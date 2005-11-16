@@ -93,22 +93,23 @@ UpdateGeneratorElement (node *elem, ntype *type)
 {
     DBUG_ENTER ("UpdateGeneratorElement");
 
-    DBUG_ASSERT ((N_id == NODE_TYPE (elem)), "N_id node expected!");
+    if (N_id == NODE_TYPE (elem)) {
 
-    DBUG_ASSERT ((NULL != ID_AVIS (elem)), "Missing AVIS node!");
+        DBUG_ASSERT ((NULL != ID_AVIS (elem)), "Missing AVIS node!");
 
-    if (N_vardec == NODE_TYPE (AVIS_DECL (ID_AVIS (elem)))) {
+        if (N_vardec == NODE_TYPE (AVIS_DECL (ID_AVIS (elem)))) {
 
-        /*
-         * elem is a local identifier an no input argument
-         * check if type in id is less special as type to be assigned
-         */
-        if (TY_lt == TYcmpTypes (type, AVIS_TYPE (ID_AVIS (elem)))) {
+            /*
+             * elem is a local identifier an no input argument
+             * check if type in id is less special as type to be assigned
+             */
+            if (TY_lt == TYcmpTypes (type, AVIS_TYPE (ID_AVIS (elem)))) {
 
-            global.optcounters.tup_rtu_expr++;
+                global.optcounters.tup_rtu_expr++;
 
-            AVIS_TYPE (ID_AVIS (elem)) = TYfreeType (AVIS_TYPE (ID_AVIS (elem)));
-            AVIS_TYPE (ID_AVIS (elem)) = TYcopyType (type);
+                AVIS_TYPE (ID_AVIS (elem)) = TYfreeType (AVIS_TYPE (ID_AVIS (elem)));
+                AVIS_TYPE (ID_AVIS (elem)) = TYcopyType (type);
+            }
         }
     }
     DBUG_RETURN (elem);
@@ -160,7 +161,9 @@ RTUPfundef (node *arg_node, info *arg_info)
 
     INFO_FUNDEF (arg_info) = arg_node;
 
-    FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+    if (NULL != FUNDEF_BODY (arg_node)) {
+        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -208,8 +211,10 @@ RTUPassign (node *arg_node, info *arg_info)
 node *
 RTUPlet (node *arg_node, info *arg_info)
 {
+    node *old_idstypes;
     DBUG_ENTER ("RTUPlet");
 
+    old_idstypes = INFO_IDSTYPES (arg_info);
     INFO_IDSTYPES (arg_info) = NULL;
     LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
 
@@ -221,6 +226,7 @@ RTUPlet (node *arg_node, info *arg_info)
 
     INFO_ORIGIN (arg_info) = undef;
     INFO_IDSTYPES (arg_info) = FREEdoFreeTree (INFO_IDSTYPES (arg_info));
+    INFO_IDSTYPES (arg_info) = old_idstypes;
 
     DBUG_RETURN (arg_node);
 }
@@ -391,6 +397,7 @@ RTUPgenerator (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("TUPgenerator");
 
+    withid = INFO_WITHID (arg_info);
     current = TYcopyType (AVIS_TYPE (IDS_AVIS (WITHID_VEC (withid))));
 
     /*
