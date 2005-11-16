@@ -74,7 +74,6 @@
 #include "constants.h"
 #include "wlanalysis.h"
 #include "wldefaultpartition.h"
-#include "reverse_type_upgrade.h"
 
 #include "WLPartitionGeneration.h"
 
@@ -1130,7 +1129,6 @@ WLPGfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLPGfundef");
 
-    arg_node = RTUPdoReverseTypeUpgrade (arg_node);
     INFO_WL (arg_info) = NULL;
     INFO_FUNDEF (arg_info) = arg_node;
     INFO_NASSIGNS (arg_info) = NULL;
