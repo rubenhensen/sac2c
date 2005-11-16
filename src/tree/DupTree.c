@@ -1881,6 +1881,7 @@ DUPwith (node *arg_node, info *arg_info)
 
             INFO_LUT (arg_info)
               = LUTinsertIntoLutP (INFO_LUT (arg_info), IDS_AVIS (oldids), newavis);
+            oldids = IDS_NEXT (oldids);
         }
     }
 
