@@ -2344,6 +2344,7 @@
         <flag name="IsProvided" />
         <flag name="IsLocal" default="TRUE"/>
         <flag name="IsUnique" />
+        <flag name="IsAlias" />
       </flags>
     </node>
 <!--
