@@ -1,9 +1,6 @@
-/* *
- * $Log$
- *
- */
-
 /**<!--******************************************************************-->
+ *
+ * $Id$
  *
  * @file wlpropagation.c
  *
@@ -16,25 +13,13 @@
 
 #include "tree_basic.h"
 #include "traverse.h"
-#include "node_basic.h"
 #include "new_types.h"
-#include "new_typecheck.h"
 #include "dbug.h"
 #include "internal_lib.h"
 #include "free.h"
 #include "DupTree.h"
 #include "globals.h"
-#include "type_utils.h"
-#include "ct_with.h"
-#include "type_errors.h"
-#include "ct_prf.h"
-#include "ct_with.h"
-#include "ct_fun.h"
-#include "constants.h"
-#include "shape.h"
-#include "ct_basic.h"
 #include "tree_compound.h"
-#include "ctinfo.h"
 #include "inferneedcounters.h"
 #include "wlselcount.h"
 #include "LookUpTable.h"
@@ -96,13 +81,30 @@ FreeInfo (info *arg_info)
     return (arg_info);
 }
 
+/**
+ *-- Local Helper Functions ---------------------------------------
+ */
+
+/**<!--*************************************************************-->
+ *
+ * @fn static bool IdIsDefinedByWL(node *arg_node)
+ *
+ * @brief: returns TRUE if arg_node (=>N_id) is defined by
+ *         with-loop
+ *
+ *  <+long description+>
+ * @param arg_node
+ *
+ * @result
+ *
+ ********************************************************************/
 static bool
-ArgIsDefinedByWL (node *arg_node)
+IdIsDefinedByWL (node *arg_node)
 {
     bool result = FALSE;
     node *tmp;
 
-    DBUG_ENTER ("ArgIsDefinedByWL");
+    DBUG_ENTER ("IdIsDefinedByWL");
 
     tmp = AVIS_SSAASSIGN (ID_AVIS (arg_node));
     if (NULL != tmp) {
@@ -111,20 +113,35 @@ ArgIsDefinedByWL (node *arg_node)
         }
     }
 
-    if (result) {
-        DBUG_PRINT ("WLPROP", ("Argument is defined by WL"));
-    } else {
-        DBUG_PRINT ("WLPROP", ("Argument is not defined by WL"));
-    }
     DBUG_RETURN (result);
 }
 
+/**<!--*************************************************************-->
+ *
+ * @fn static node *GetRecursiveFunctionApplication(node *fundef)
+ *
+ * @brief: returns the N_assign-node conatining the
+ *         recursive function call of 'fundef'
+ *
+ *
+ *  <+long description+>
+ * @param fundef is a N_fundef node, defining a do-function
+ *
+ * @result
+ *
+ ********************************************************************/
 static node *
 GetRecursiveFunctionApplication (node *fundef)
 {
     node *chain;
     DBUG_ENTER ("GetRecursiveFunctionApplication");
 
+    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef), "N_fundef node expected.");
+    DBUG_ASSERT ((FUNDEF_ISDOFUN (fundef)), "Loop-Function expected.");
+
+    /**
+     * search for recursive fun call
+     */
     chain = BLOCK_INSTR (FUNDEF_BODY (fundef));
 
     while ((chain != NULL) && (NODE_TYPE (ASSIGN_INSTR (chain)) != N_cond)) {
@@ -137,6 +154,22 @@ GetRecursiveFunctionApplication (node *fundef)
     DBUG_RETURN (chain);
 }
 
+/**<!--*************************************************************-->
+ *
+ * @fn static bool ArgIsLoopInvariant(node *fundef, node *arg, int pos)
+ *
+ * @brief: Returns 'TRUE' if 'arg' is loop-invariant in 'fundef'.
+ *         'arg' is at position 'pos' in the arg-chain of 'fundef'.
+ *
+ *
+ *  <+long description+>
+ * @param fundef is a N_fundef node, defining a do-function
+ * @param arg is a N_arg node somewhere in the arg-chain of 'fundef'
+ * @param pos is the position of 'arg' in the arg-chain of 'fundef'
+ *
+ * @result
+ *
+ ********************************************************************/
 static bool
 ArgIsLoopInvariant (node *fundef, node *arg, int pos)
 {
@@ -146,29 +179,48 @@ ArgIsLoopInvariant (node *fundef, node *arg, int pos)
 
     DBUG_ENTER ("ArgIsLoopInvariant");
 
+    /**
+     * get the recursive function application
+     */
     chain = GetRecursiveFunctionApplication (fundef);
 
     DBUG_ASSERT ((N_ap == NODE_TYPE (chain)) && (FUNDEF_ISDOFUN (AP_FUNDEF (chain))),
                  "No recursive function application found!");
 
+    /**
+     * get the corresponding funcation application argument
+     */
     chain = AP_ARGS (chain);
 
     for (j = 0; j < pos; j++) {
         chain = EXPRS_NEXT (chain);
     }
 
-    if (ARG_AVIS (arg) == ID_AVIS (EXPRS_EXPR (chain))) {
-        result = TRUE;
-    }
-    if (result) {
-        DBUG_PRINT ("WLPROP", ("Argument is loop invariant"));
-    } else {
-        DBUG_PRINT ("WLPROP", ("Argument is not loop invariant"));
-    }
+    /**
+     * compare if both avis nodes of the argument of
+     * applied and applying function are identical
+     */
+    result = (ARG_AVIS (arg) == ID_AVIS (EXPRS_EXPR (chain)));
 
     DBUG_RETURN (result);
 }
 
+/**
+ *--Global traversal functions -------------------------------
+ */
+
+/**<!--*************************************************************-->
+ *
+ * @fn node *WLPROPdoWithloopPropagation(node *arg_node)
+ *
+ * @brief: Starting routine of with-loop propagation traversal
+ *
+ *  <+long description+>
+ * @param arg_node
+ *
+ * @result
+ *
+ ********************************************************************/
 node *
 WLPROPdoWithloopPropagation (node *arg_node)
 {
@@ -213,35 +265,24 @@ WLPROPfundef (node *arg_node, info *arg_info)
     INFO_ISDOFUN (arg_info) = FUNDEF_ISDOFUN (arg_node);
 
     DBUG_PRINT ("WLPROP", ("Starting WLPROP for %s", FUNDEF_NAME (arg_node)));
+
+    /**
+     * Infer before actual traversal:
+     *   - number of applications (appearence on rhs)
+     *     of identifiers
+     *   - count applications of N_sel operations in
+     *     withloop, as well as function application
+     *     in with-loops
+     */
     arg_node = INFNCdoInferNeedCountersOneFundef (arg_node);
     arg_node = WLSELCdoWithloopSelectionCount (arg_node);
 
+    /**
+     * do actual traversal
+     */
     if (FUNDEF_BODY (arg_node) != NULL) {
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
     }
-
-    DBUG_RETURN (arg_node);
-}
-
-/**<!--*************************************************************-->
- *
- * @fn node *WLPROPblock(node *arg_node, info *arg_info)
- *
- * @brief: handles block nodes
- *
- *  <+long description+>
- * @param arg_node
- * @param arg_info
- *
- * @result
- *
- ********************************************************************/
-node *
-WLPROPblock (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("WLPROPblock");
-
-    BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -277,29 +318,6 @@ WLPROPassign (node *arg_node, info *arg_info)
 
 /**<!--*************************************************************-->
  *
- * @fn node *WLPROPlet(node *arg_node, info *arg_info)
- *
- * @brief: handles let nodes
- *
- *  <+long description+>
- * @param arg_node
- * @param arg_info
- *
- * @result
- *
- ********************************************************************/
-node *
-WLPROPlet (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("WLPROPlet");
-
-    LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/**<!--*************************************************************-->
- *
  * @fn node *WLPROPap(node *arg_node, info *arg_info)
  *
  * @brief: handles ap nodes
@@ -322,29 +340,36 @@ WLPROPap (node *arg_node, info *arg_info)
     if ((FUNDEF_ISDOFUN (AP_FUNDEF (arg_node)))
         && (AP_FUNDEF (arg_node) != INFO_FUNDEF (arg_info))) {
 
+        /**
+         * We apply a do-function, which is not the
+         * recursive application of the current function
+         */
+
+        /**
+         * set info structure
+         */
         INFO_TRAVSTATE (arg_info) = S_withloop_prop;
         INFO_AP (arg_info) = arg_node;
         INFO_ARGNUM (arg_info) = 0;
         INFO_CORRESPONDINGFUNARG (arg_info) = FUNDEF_ARGS (AP_FUNDEF (arg_node));
 
-        /*
-         * propagate withloops into applied function
-         */
         DBUG_PRINT ("WLPROP", ("Checking function arguments of %s",
                                FUNDEF_NAME (AP_FUNDEF (arg_node))));
 
+        /**
+         * traverse into argument chain and try to
+         * propagate withloops into applied function
+         */
         AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
 
-        /*
-         * traverse into do-funs and apply with-loop propagation again
+        /**
+         * traverse into applied do-fun and do
+         * with-loop propagation again
          */
-        newinfo = MakeInfo ();
-
         DBUG_PRINT ("WLPROP", ("Checking function application of %s",
                                FUNDEF_NAME (AP_FUNDEF (arg_node))));
-
+        newinfo = MakeInfo ();
         AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), newinfo);
-
         newinfo = FreeInfo (newinfo);
     }
 
@@ -380,11 +405,18 @@ WLPROPexprs (node *arg_node, info *arg_info)
     EXPRS_EXPR (arg_node) = TRAVdo (EXPRS_EXPR (arg_node), arg_info);
 
     if (S_withloop_prop == INFO_TRAVSTATE (arg_info)) {
+        /**
+         * since we are trying to propagate withloops into
+         * do-funs, set the arg-node of the
+         * applied do-fun to correspond to the id-node of the
+         * applying function which will be traversed next.
+         */
         INFO_CORRESPONDINGFUNARG (arg_info)
           = ARG_NEXT (INFO_CORRESPONDINGFUNARG (arg_info));
 
         INFO_ARGNUM (arg_info) = INFO_ARGNUM (arg_info) + 1;
     }
+
     if (EXPRS_NEXT (arg_node) != NULL) {
         EXPRS_NEXT (arg_node) = TRAVdo (EXPRS_NEXT (arg_node), arg_info);
     }
@@ -418,12 +450,20 @@ WLPROPid (node *arg_node, info *arg_info)
 
         DBUG_PRINT ("WLPROP", ("Checking argument number %i", INFO_ARGNUM (arg_info)));
 
-        if ((ArgIsDefinedByWL (arg_node))
+        /**
+         * is the argument defined by an with-loop
+         * which is loop independent?
+         */
+        if ((IdIsDefinedByWL (arg_node))
             && (ArgIsLoopInvariant (AP_FUNDEF (INFO_AP (arg_info)), correspond_arg,
                                     INFO_ARGNUM (arg_info)))) {
             node *withloop
               = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (arg_node))));
 
+            /**
+             * Does the with-loop fulfil the required selection
+             * conditions?
+             */
             if ((WITH_SELMAX (withloop) == 0)
                 || ((AVIS_NEEDCOUNT (ID_AVIS (arg_node)) == 1)
                     && (WITH_SELMAX (withloop) == 1))) {
@@ -454,35 +494,20 @@ WLPROPid (node *arg_node, info *arg_info)
                   = INFDFMSdoInferInDfmAssignChain (old_withloop, INFO_FUNDEF (arg_info));
 
                 ASSIGN_NEXT (old_withloop) = next;
-                /*
+
+                /**
                  * create new identifiers for identifiers marked in dfm
+                 * and append them to corresponding arg/exprs chains and insert
+                 * them into the lut.
                  */
 
                 next = DFMgetMaskEntryAvisSet (inmask);
-
-                /*
-                 * find last element of argument chain
-                 * of applied fundef and applying ap.
-                 * mark current and corresponding argument as dead
-                 */
 
                 argchain_applied = FUNDEF_ARGS (AP_FUNDEF (INFO_AP (arg_info)));
                 argchain_applying = AP_ARGS (INFO_AP (arg_info));
                 argchain_recapp
                   = GetRecursiveFunctionApplication (AP_FUNDEF (INFO_AP (arg_info)));
                 argchain_recapp = AP_ARGS (argchain_recapp);
-
-                /**
-                 * TODO: replace following by TCappendArg/Epxr
-                 */
-                while (ARG_NEXT (argchain_applied) != NULL) {
-
-                    DBUG_ASSERT ((NULL != argchain_applying), "Argument is missing!");
-
-                    argchain_applying = EXPRS_NEXT (argchain_applying);
-                    argchain_applied = ARG_NEXT (argchain_applied);
-                    argchain_recapp = EXPRS_NEXT (argchain_recapp);
-                }
 
                 while (next != NULL) {
                     node *avis, *copy, *origin;
@@ -496,15 +521,14 @@ WLPROPid (node *arg_node, info *arg_info)
                     avis = TBmakeAvis (ILIBtmpVar (), TYcopyType (AVIS_TYPE (origin)));
                     copy = TBmakeArg (avis, NULL);
 
-                    ARG_NEXT (argchain_applied) = copy;
-                    argchain_applied = ARG_NEXT (argchain_applied);
+                    argchain_applied = TCappendArgs (argchain_applied, copy);
 
-                    EXPRS_NEXT (argchain_recapp) = TBmakeExprs (TBmakeId (avis), NULL);
-                    argchain_recapp = EXPRS_NEXT (argchain_recapp);
+                    argchain_recapp = TCappendExprs (argchain_recapp,
+                                                     TBmakeExprs (TBmakeId (avis), NULL));
 
-                    id = TBmakeExprs (TBmakeId (origin), NULL);
-                    EXPRS_NEXT (argchain_applying) = id;
-                    argchain_applying = EXPRS_NEXT (argchain_applying);
+                    argchain_applying
+                      = TCappendExprs (argchain_applying,
+                                       TBmakeExprs (TBmakeId (origin), NULL));
 
                     lut = LUTinsertIntoLutP (lut, origin, avis);
 
@@ -526,20 +550,19 @@ WLPROPid (node *arg_node, info *arg_info)
                 new_withloop
                   = TBmakeLet (TBmakeIds (ARG_AVIS (witharg), NULL), new_withloop);
                 new_withloop
-                  = TBmakeAssign (new_withloop, BLOCK_INSTR (FUNDEF_BODY (
-                                                  AP_FUNDEF (INFO_AP (arg_info)))));
-                BLOCK_INSTR (FUNDEF_BODY (AP_FUNDEF (INFO_AP (arg_info)))) = new_withloop;
-                AVIS_SSAASSIGN (IDS_AVIS (LET_IDS (ASSIGN_INSTR (new_withloop))))
-                  = new_withloop;
+                  = TBmakeAssign (new_withloop,
+                                  FUNDEF_INSTR (AP_FUNDEF (INFO_AP (arg_info))));
+
+                FUNDEF_INSTR (AP_FUNDEF (INFO_AP (arg_info))) = new_withloop;
+
+                AVIS_SSAASSIGN (ARG_AVIS (witharg)) = new_withloop;
 
                 /*
                  * Now the withloop definition was moved into the body
                  * of the applied function.
                  * Still missing: Transforming former withloop-arg to vardec
-                 *                Adjust the recursive function call accordingly
-                 *                Remove the withloop-arg from all signatures
-                 *                is (done after whole function arguments are
-                 *                checked)
+                 *                Replace the withloop-arg in signature
+                 *                by dummy identifier
                  */
 
                 withvardec
@@ -548,10 +571,10 @@ WLPROPid (node *arg_node, info *arg_info)
                                     FUNDEF_BODY (AP_FUNDEF (INFO_AP (arg_info)))));
 
                 BLOCK_VARDEC (FUNDEF_BODY (AP_FUNDEF (INFO_AP (arg_info)))) = withvardec;
-                AVIS_DECL (IDS_AVIS (LET_IDS (ASSIGN_INSTR (new_withloop)))) = withvardec;
 
                 /**
-                 * change corresponding argument of current id to dummy identifier
+                 * change corresponding argument of current id to dummy
+                 * identifier
                  */
                 ARG_AVIS (INFO_CORRESPONDINGFUNARG (arg_info))
                   = TBmakeAvis (ILIBtmpVar (), TYcopyType (AVIS_TYPE (ARG_AVIS (

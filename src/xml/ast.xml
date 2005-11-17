@@ -1017,8 +1017,6 @@
 	<travuser>
 	  <node name="Assign" />
           <node name="Fundef" />
-	  <node name="Block" />
-	  <node name="Let" />
 	  <node name="Ap" />
 	  <node name="Exprs" /> 
           <node name="Id" />
@@ -1028,7 +1026,6 @@
 	<travuser>
 	  <node name="With" />
           <node name="Fundef" />
-	  <node name="Block" />
 	  <node name="Code" />
 	  <node name="Ap" />
 	  <node name="Prf" /> 

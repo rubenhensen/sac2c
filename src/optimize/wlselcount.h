@@ -1,7 +1,11 @@
-/*
+/**<!--******************************************************************-->
  *
- * $Log$
- */
+ * $Id$
+ *
+ * @file wlselcount.h
+ *
+ *
+ **************************************************************************/
 
 #ifndef _SAC_WLSELCOUNT_H_
 #define _SAC_WLSELCOUNT_H_
@@ -10,7 +14,6 @@
 
 extern node *WLSELCdoWithloopSelectionCount (node *fundef);
 extern node *WLSELCfundef (node *arg_node, info *arg_info);
-extern node *WLSELCblock (node *arg_node, info *arg_info);
 extern node *WLSELCwith (node *arg_node, info *arg_info);
 extern node *WLSELCcode (node *arg_node, info *arg_info);
 extern node *WLSELCprf (node *arg_node, info *arg_info);
