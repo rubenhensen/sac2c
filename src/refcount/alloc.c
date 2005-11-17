@@ -1249,7 +1249,17 @@ EMALprf (node *arg_node, info *arg_info)
          */
         als->dim = MakeSizeArg (PRF_ARG1 (arg_node));
         als->shape = TCmakePrf1 (F_shape, DUPdoDupTree (arg_node));
-        als->reshape = DUPdoDupNode (PRF_ARG2 (arg_node));
+
+        /*
+         * For reshaping to work, both RHS and LHS must be non-scalar
+         * This caused bug #145
+         */
+        if (((!TUdimKnown (ID_NTYPE (PRF_ARG2 (arg_node))))
+             || (TYgetDim (ID_NTYPE (PRF_ARG2 (arg_node))) > 0))
+            && ((!TUdimKnown (AVIS_TYPE (als->avis)))
+                || (TYgetDim (AVIS_TYPE (als->avis)) > 0))) {
+            als->reshape = DUPdoDupNode (PRF_ARG2 (arg_node));
+        }
 
         new_node = TCmakePrf1 (F_copy, DUPdoDupNode (PRF_ARG2 (arg_node)));
         arg_node = FREEdoFreeNode (arg_node);

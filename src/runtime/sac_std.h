@@ -1,160 +1,6 @@
-/*
- *
- * $Log$
- * Revision 3.20  2005/09/27 17:30:23  sbs
- * blend out several definitions iff included from simd.h
- *
- * Revision 3.19  2005/06/30 16:41:37  ktr
- * missing , inserter into trace macro
- *
- * Revision 3.18  2005/06/28 12:42:08  ktr
- * removed invalid DEC_RC in ND_ASSIGN__DATA
- *
- * Revision 3.17  2004/03/09 23:53:27  dkrHH
- * file sac_std.tagged.h renamed into sac_std.h
- * old backend removed
- *
- * Revision 3.54  2003/11/10 20:22:56  dkrHH
- * debug output: NT objs are converted into strings correctly now
- *
- * Revision 3.53  2003/10/20 18:15:12  dkr
- * some comments added
- *
- * Revision 3.52  2003/10/15 17:25:01  dkrHH
- * some comments corrected
- *
- * Revision 3.51  2003/10/14 14:56:30  cg
- * some superfluous calls of SAC_TR_REF_PRINT_RC removed.
- * some calls of SAC_TR_MEM_PRINT corrected.
- *
- * Revision 3.50  2003/10/08 15:50:23  cg
- * De-allocation of descriptors is now done using tailor-made ICM.
- *
- * Revision 3.49  2003/09/29 23:46:27  dkr
- * SAC_IS_REUSED__BLOCK_BEGIN__SCL corrected
- *
- * Revision 3.48  2003/09/29 22:52:18  dkr
- * some icms removed/renamed/added.
- * some comments corrected
- *
- * Revision 3.47  2003/09/25 14:03:13  dkr
- * ND_WRITE_READ corrected
- *
- * Revision 3.46  2003/09/25 13:45:25  dkr
- * ND_WRITE_READ added.
- * some bugs fixed.
- *
- * Revision 3.45  2003/09/19 12:26:49  dkr
- * postfixes _nt, _any of varnames renamed into _NT, _ANY
- *
- * Revision 3.44  2003/09/18 15:11:38  dkr
- * nesting of CAT?? macros for ALLOC ICMs corrected
- *
- * Revision 3.43  2003/09/18 12:23:37  dkr
- * BYTE_SIZE_OF_DESC added.
- * some bugs fixed.
- *
- * Revision 3.42  2003/09/18 11:38:48  dkr
- * ND_ALLOC__DESC_AND_DATA added (for DAO)
- *
- * Revision 3.41  2003/09/17 18:13:39  dkr
- * ALLOC_FIXED_SIZE, FREE_FIXED_SIZE used for arrays with statically
- * known size only
- *
- * Revision 3.40  2003/09/17 14:18:16  dkr
- * definition of SAC_ND_A_RC__SCL_NUQ corrected
- *
- * Revision 3.39  2003/09/16 15:57:57  dkr
- * some comments modified
- *
- * Revision 3.38  2003/08/04 14:01:59  dkr
- * comment for SAC_ND_PARAM_ added
- *
- * Revision 3.37  2003/06/12 17:21:54  dkr
- * ICMs CREATE__VECT__... renamed into CREATE__ARRAY__...
- *
- * Revision 3.36  2003/04/15 17:57:10  dkr
- * implementation of ALLOC/FREE-ICMs modified: test for SIZE==0 removed
- *
- * Revision 3.35  2003/04/15 14:39:49  dkr
- * workaround for (dim < 0) in ND_ALLOC__DESC__AUD removed
- *
- * Revision 3.34  2003/04/14 15:15:33  dkr
- * IS_LASTREF__THEN, IS_LASTREF__ELSE removed
- * IS_REUSED__BLOCK_... added
- *
- * Revision 3.33  2003/03/09 21:31:31  dkr
- * , moved from SAC_ND_WRITE__AKS to SAC_TR_AA_PRINT
- *
- * Revision 3.32  2003/03/09 21:26:48  dkr
- * SAC_TR_AA_PRINT added
- *
- * Revision 3.31  2002/11/26 00:17:43  dkr
- * several superfluous concat-operators removed in macro definitions
- *
- * Revision 3.30  2002/10/29 19:07:41  dkr
- * definition of ND_A_DESC_... modified
- *
- * Revision 3.29  2002/10/10 23:53:20  dkr
- * syntax error fixed
- *
- * Revision 3.28  2002/10/08 01:53:54  dkr
- * collisions with CAT?? macros removed
- *
- * Revision 3.26  2002/08/05 18:57:20  dkr
- * SAC_ND_A_MIRROR_... added
- *
- * Revision 3.25  2002/08/03 03:17:16  dkr
- * bug in SAC_ND_ALLOC__DATA__AKD fixed
- *
- * Revision 3.24  2002/08/02 20:58:54  dkr
- * bug in SAC_ND_ALLOC__DESC__AKS fixed
- *
- * Revision 3.23  2002/08/02 20:48:56  dkr
- * ..__DIM.. icms added
- *
- * Revision 3.22  2002/08/01 12:08:41  dkr
- * macros DESC_... added
- *
- * Revision 3.21  2002/07/31 16:35:28  dkr
- * tags reorganized: HID/NHD are seperate classes now
- *
- * Revision 3.20  2002/07/24 13:48:46  dkr
- * use of CAT? macros reorganized
- *
- * Revision 3.19  2002/07/23 16:22:04  dkr
- * minor changes done
- *
- * Revision 3.18  2002/07/15 19:44:06  dkr
- * bug with use of CAT? macros fixed
- *
- * Revision 3.17  2002/07/15 12:44:42  dkr
- * SAC_ND_PRF_... macros moved to sac_prf.h
- *
- * Revision 3.16  2002/07/12 20:43:53  dkr
- * bug in ND_PARAM_..., ND_ARG_..., ND_RET_... icms fixed
- *
- * Revision 3.15  2002/07/12 19:32:10  dkr
- * bug in SAC_IS_LASTREF__BLOCK_... fixed
- *
- * Revision 3.14  2002/07/12 19:11:15  dkr
- * ND_PARAM_() added
- *
- * Revision 3.13  2002/07/12 16:58:42  dkr
- * some comments corrected
- *
- * Revision 3.12  2002/07/12 15:50:27  dkr
- * first complete revision 8-))
- *
- * Revision 3.3  2002/05/03 13:57:09  dkr
- * macros updated
- *
- * Revision 3.1  2000/11/20 18:02:21  sacbase
- * new release made
- *
- */
-
 /*****************************************************************************
+ *
+ * $Id$
  *
  * file:   sac_std.h
  *
@@ -1382,8 +1228,10 @@ typedef int *SAC_array_descriptor_t;
           ("ND_COPY__DATA( %s, %s, %s)", NT_STR (to_NT), #from_NT, #copyfun))            \
         SAC_ND_WRITE_READ_COPY (to_NT, 0, from_NT, 0, copyfun)                           \
     }
-#define SAC_ND_COPY__DATA__SCL__AKS(to_NT, from_NT, copyfun) SAC_ICM_UNDEF ();
-#define SAC_ND_COPY__DATA__SCL__AKD(to_NT, from_NT, copyfun) SAC_ICM_UNDEF ();
+#define SAC_ND_COPY__DATA__SCL__AKS(to_NT, from_NT, copyfun)                             \
+    SAC_ND_COPY__DATA__SCL__SCL (to_NT, from_NT, copyfun)
+#define SAC_ND_COPY__DATA__SCL__AKD(to_NT, from_NT, copyfun)                             \
+    SAC_ND_COPY__DATA__SCL__SCL (to_NT, from_NT, copyfun)
 #define SAC_ND_COPY__DATA__SCL__AUD(to_NT, from_NT, copyfun)                             \
     SAC_ND_COPY__DATA__SCL__SCL (to_NT, from_NT, copyfun)
 
@@ -1401,7 +1249,8 @@ typedef int *SAC_array_descriptor_t;
 #define SAC_ND_ASSIGN__DATA__AKS__AUD(to_NT, from_NT, copyfun)                           \
     SAC_ND_ASSIGN__DATA__AKS__AKS (to_NT, from_NT, copyfun)
 
-#define SAC_ND_COPY__DATA__AKS__SCL(to_NT, from_NT, copyfun) SAC_ICM_UNDEF ();
+#define SAC_ND_COPY__DATA__AKS__SCL(to_NT, from_NT, copyfun)                             \
+    SAC_ND_COPY__DATA__SCL__SCL (to_NT, from_NT, copyfun)
 #define SAC_ND_COPY__DATA__AKS__AKS(to_NT, from_NT, copyfun)                             \
     {                                                                                    \
         int SAC_i;                                                                       \
@@ -1430,7 +1279,8 @@ typedef int *SAC_array_descriptor_t;
 #define SAC_ND_ASSIGN__DATA__AKD__AUD(to_NT, from_NT, copyfun)                           \
     SAC_ND_ASSIGN__DATA__AKS__AKS (to_NT, from_NT, copyfun)
 
-#define SAC_ND_COPY__DATA__AKD__SCL(to_NT, from_NT, copyfun) SAC_ICM_UNDEF ();
+#define SAC_ND_COPY__DATA__AKD__SCL(to_NT, from_NT, copyfun)                             \
+    SAC_ND_COPY__DATA__SCL__SCL (to_NT, from_NT, copyfun)
 #define SAC_ND_COPY__DATA__AKD__AKS(to_NT, from_NT, copyfun)                             \
     SAC_ND_COPY__DATA__AKS__AKS (to_NT, from_NT, copyfun)
 #define SAC_ND_COPY__DATA__AKD__AKD(to_NT, from_NT, copyfun)                             \
@@ -1473,9 +1323,7 @@ typedef int *SAC_array_descriptor_t;
     SAC_ND_ASSIGN__DATA__AKS__AKS (to_NT, from_NT, copyfun)
 
 #define SAC_ND_COPY__DATA__AUD__SCL(to_NT, from_NT, copyfun)                             \
-    {                                                                                    \
-        SAC_ND_WRITE_READ_COPY (to_NT, 0, from_NT, 0, copyfun)                           \
-    }
+    SAC_ND_COPY__DATA__SCL__SCL (to_NT, from_NT, copyfun)
 #define SAC_ND_COPY__DATA__AUD__AKS(to_NT, from_NT, copyfun)                             \
     SAC_ND_COPY__DATA__AKS__AKS (to_NT, from_NT, copyfun)
 #define SAC_ND_COPY__DATA__AUD__AKD(to_NT, from_NT, copyfun)                             \

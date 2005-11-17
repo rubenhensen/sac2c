@@ -1,85 +1,6 @@
-/*
- *
- * $Log$
- * Revision 1.25  2005/09/15 11:08:52  sah
- * added SHarray2Shape
- *
- * Revision 1.24  2005/02/15 21:07:40  sah
- * module system fixes
- *
- * Revision 1.23  2004/12/08 18:03:14  ktr
- * removed ARRAY_TYPE/ARRAY_NTYPE
- *
- * Revision 1.22  2004/11/27 00:14:41  sbs
- * some further renamings
- *
- * Revision 1.21  2004/11/26 15:48:40  jhb
- * compile
- *
- * Revision 1.20  2004/11/26 14:50:40  sbs
- * some ismop
- *
- * Revision 1.19  2004/11/26 14:27:02  sbs
- * change run
- *
- * Revision 1.18  2004/11/26 14:14:29  sbs
- * change run
- *
- * Revision 1.17  2004/11/09 14:03:00  mwe
- * code for type upgrade added
- * use ntype-structure instead of types-structure
- * new code deactivated by MWE_NTYPE_READY macro
- *
- * Revision 1.16  2004/10/14 22:36:57  sbs
- * DBUG_assert in SHcopySHape split over two lines for easier debugging.
- *
- * Revision 1.15  2004/10/14 11:47:49  sbs
- * SHshape2Exprs added
- *
- * Revision 1.14  2004/09/27 13:15:20  sah
- * added serialization support
- *
- * Revision 1.13  2004/09/22 20:07:57  sah
- * added SHSerializeShape
- *
- * Revision 1.12  2003/06/13 09:28:23  ktr
- * Fixed a bug in SHTakeFromShape which caused a call of SHmakeShape with a
- * negative argument.
- *
- * Revision 1.11  2003/06/11 22:05:36  ktr
- * Added support for multidimensional arrays
- *
- * Revision 1.10  2002/11/04 17:41:31  sbs
- * split off SHOldShpseg2Shape from SHOldTypes2Shape in order
- * to alow preventing flattening of user defined types much better now.
- *
- * Revision 1.9  2002/11/04 13:22:08  sbs
- * SHDropFromShape added.
- *
- * Revision 1.8  2002/06/21 14:04:13  dkr
- * SHshape2Array() added
- *
- * Revision 1.6  2001/05/22 14:59:08  nmw
- * OldTypes2Shape is now aware of user defined types
- *
- * Revision 1.5  2001/05/17 12:57:46  nmw
- * MALLOC/FREE replaced by ILIBmalloc/Free, using result of ILIBfree()
- *
- * Revision 1.4  2001/05/03 16:55:13  nmw
- * COTypes2OldShapes can handle scalars correctly now
- *
- * Revision 1.3  2001/04/30 12:31:34  nmw
- * SHshape2IntVec added
- *
- * Revision 1.2  2001/03/05 16:57:04  sbs
- * SHcompareShapes added
- *
- * Revision 1.1  2001/03/02 14:33:07  sbs
- * Initial revision
- *
- */
-
 /**
+ *
+ * $Id$
  *
  * @defgroup shape Shape
  *
@@ -735,12 +656,16 @@ SHcompareWithCArray (shape *shp, int *shpdata, int dim)
     DBUG_ENTER ("SHcompareWithCArray");
 
     flag = TRUE;
-    DBUG_ASSERT ((shp != NULL && shpdata != NULL),
+
+    DBUG_ASSERT (((shp != NULL) && ((dim == 0) || (shpdata != NULL))),
                  ("SHcompareWithCArray called with NULL pointer(s)!\n"));
+
     if (dim == SHAPE_DIM (shp)) {
-        for (i = 0; i < dim; i++)
-            if (SHAPE_EXT (shp, i) != shpdata[i])
+        for (i = 0; i < dim; i++) {
+            if (SHAPE_EXT (shp, i) != shpdata[i]) {
                 flag = FALSE;
+            }
+        }
     } else {
         flag = FALSE;
     }
