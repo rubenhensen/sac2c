@@ -451,6 +451,7 @@ extern int TCcountVardecs (node *vardecs);
 #define ARG_TMOD(n) (TYPES_MOD (ARG_TYPE (n)))
 
 extern int TCcountArgs (node *args);
+extern node *TCappendArgs (node *arg_chain, node *arg);
 
 /*--------------------------------------------------------------------------*/
 

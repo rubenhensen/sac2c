@@ -1424,6 +1424,33 @@ TCcountArgs (node *args)
     DBUG_RETURN (count);
 }
 
+/******************************************************************************
+ *
+ * function:
+ *   node *TCappendArgs( node *exprs1, node *exprs2)
+ *
+ * description:
+ *   This function concatenates two N_arg chains of nodes.
+ *
+ ******************************************************************************/
+
+node *
+TCappendArgs (node *arg_chain, node *arg)
+{
+    node *ret;
+
+    DBUG_ENTER ("TCappendExprs");
+
+    DBUG_ASSERT (((arg_chain == NULL) || (NODE_TYPE (arg_chain) == N_arg)),
+                 ("First argument of TCappendArgs() has wrong node type."));
+    DBUG_ASSERT (((arg == NULL) || (NODE_TYPE (arg) == N_arg)),
+                 ("Second argument of TCappendArgs() has wrong node type."));
+
+    APPEND (ret, node *, ARG, arg_chain, arg);
+
+    DBUG_RETURN (ret);
+}
+
 /*--------------------------------------------------------------------------*/
 
 /***
