@@ -1,27 +1,6 @@
-/*
- *
- * $Log$
- * Revision 1.5  2005/07/20 13:12:05  ktr
- * Slight brushing
- *
- * Revision 1.4  2005/07/19 16:53:08  sah
- * removed INT/EXT_ASSIGN
- *
- * Revision 1.3  2004/11/26 17:20:43  mwe
- * SacDevCamp: Compiles!
- *
- * Revision 1.2  2004/07/18 19:54:54  sah
- * switch to new INFO structure
- * PHASE I
- * (as well some code cleanup)
- *
- * Revision 1.1  2001/05/30 13:48:36  nmw
- * Initial revision
- *
- *
- */
-
 /*****************************************************************************
+ *
+ * $Id$
  *
  * file:   SSAInferLI.c
  *
