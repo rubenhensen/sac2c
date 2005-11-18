@@ -20,6 +20,7 @@
 #include "traverse.h"
 #include "convert.h"
 #include "filemgr.h"
+#include "check_mem.h"
 
 /*
  * experimental support for garbage collection
@@ -85,14 +86,33 @@ ILIBmalloc (int size)
          * we do complain for ((NULL == tmp) && (size > 0)) only!!
          */
         if (tmp == NULL) {
+
+#ifdef SHOW_MALLOC
+
             CTIabort ("Out of memory: %u Bytes already allocated",
                       global.current_allocated_mem);
+#else
+            CTIabort ("Out of memory");
+#endif
+        }
+        tmp = CMregisterMem (size, tmp);
+
+#ifdef SHOW_MALLOC
+
+        if (global.current_allocated_mem + size < global.current_allocated_mem) {
+            DBUG_ASSERT ((0), "counter for allocated memory: overflow detected");
+        }
+        global.current_allocated_mem += size;
+        if (global.max_allocated_mem < global.current_allocated_mem) {
+            global.max_allocated_mem = global.current_allocated_mem;
         }
 
-#if 0
-    *(int *) tmp = size;
-#endif
-        tmp = (char *)tmp + malloc_align_step;
+        DBUG_PRINT ("MEM_ALLOC", ("Alloc memory: %d Bytes at adress: " F_PTR, size, tmp));
+
+        DBUG_PRINT ("MEM_TOTAL",
+                    ("Currently allocated memory: %u", global.current_allocated_mem));
+
+#endif /* SHOW_MALLOC */
 
 #ifdef CLEANMEM
         /*
@@ -101,27 +121,9 @@ ILIBmalloc (int size)
         tmp = memset (tmp, 0, size);
 #endif
 
-#if 0
-    if (global.current_allocated_mem + size < global.current_allocated_mem) {
-      DBUG_ASSERT( (0), "counter for allocated memory: overflow detected");
-    }
-    global.current_allocated_mem += size;
-    if (global.max_allocated_mem < global.current_allocated_mem) {
-      global.max_allocated_mem = global.current_allocated_mem;
-    }
-#endif
-
     } else {
         tmp = NULL;
     }
-
-#if 0
-  DBUG_PRINT( "MEM_ALLOC", ("Alloc memory: %d Bytes at adress: " F_PTR,
-                            size, tmp));
-
-  DBUG_PRINT( "MEM_TOTAL", ("Currently allocated memory: %u",
-                            global.current_allocated_mem));
-#endif
 
     DBUG_RETURN (tmp);
 }
@@ -144,44 +146,42 @@ void *
 ILIBfree (void *address)
 {
     void *orig_address;
-#if 0
-  int size;
-#endif
+    int size;
+
     DBUG_ENTER ("ILIBfree");
 
     if (address != NULL) {
-        orig_address = (void *)((char *)address - malloc_align_step);
-#if 0
-    size = *(int *) orig_address;
-    DBUG_ASSERT( (size >= 0), "illegal size found!");
-    DBUG_PRINT( "MEM_ALLOC", ("Free memory: %d Bytes at adress: " F_PTR,
-                              size, address));
-#endif
 
-#if CLEANMEM
+        size = CMgetSize (address);
+
+        orig_address = CMunregisterMem (address);
+
+        DBUG_ASSERT ((size >= 0), "illegal size found!");
+        DBUG_PRINT ("MEM_ALLOC",
+                    ("Free memory: %d Bytes at adress: " F_PTR, size, address));
+#ifdef CLEANMEM
         /*
          * this code overwrites the memory prior to freeing it. This
          * is very useful when watching a memory address in gdb, as
          * one gets notified as soon as it is freed
          */
-#if 0    
-    orig_address = memset( orig_address, 0, size);
-#endif
+        orig_address = memset (orig_address, 0, size);
+
 #endif
 
-#if 0
-    if (global.current_allocated_mem < global.current_allocated_mem - size) {
-      DBUG_ASSERT( (0), "counter for allocated memory: overflow detected");
-    }
-    global.current_allocated_mem -= size;
-#endif
+#ifdef SHOW_MALLOC
+        if (global.current_allocated_mem < global.current_allocated_mem - size) {
+            DBUG_ASSERT ((0), "counter for allocated memory: overflow detected");
+        }
+        global.current_allocated_mem -= size;
+#endif /* SHOW_MALLOC */
 
         free (orig_address);
 
-#if 0
-    DBUG_PRINT( "MEM_TOTAL", ("Currently allocated memory: %u",
-                              global.current_allocated_mem));
-#endif
+#ifdef SHOW_MALLOC
+        DBUG_PRINT ("MEM_TOTAL",
+                    ("Currently allocated memory: %u", global.current_allocated_mem));
+#endif /* SHOW_MALLOC */
 
         address = NULL;
     }

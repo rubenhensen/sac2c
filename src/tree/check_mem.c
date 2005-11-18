@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * $Id$ check_mem.c
  */
 
 #include <stdlib.h>
@@ -22,20 +22,25 @@ int memfreeslots = 0;
 int memindex = 0;
 int memtabsize = 0;
 
-void
-CHKregister (int bsize, void *aptr)
+void *
+CMregisterMem (int bsize, void *aptr)
 {
+    DBUG_ENTER ("CMregisterMem");
+
+    void *bptr = NULL;
+
+    bptr = (char *)aptr + malloc_align_step;
 
     if (memindex == memtabsize) {
 
         if (memtabsize == 0) {
 
-            memtab = (memobj *)malloc (100000 * sizeof (memobj));
-            memtabsize = 100000;
-            memfreeslots = 100000;
+            memtab = (memobj *)malloc (1000 * sizeof (memobj));
+            memtabsize = 1000;
+            memfreeslots = 1000;
         } else {
 
-            int newtabsize = memtabsize * 2;
+            int newtabsize = (memtabsize - memfreeslots) * 2;
             int newindex = 0;
             memobj *newtab = (memobj *)malloc (newtabsize * sizeof (memobj));
 
@@ -44,37 +49,59 @@ CHKregister (int bsize, void *aptr)
                 if (memtab[i].ptr != NULL) {
 
                     newtab[newindex] = memtab[i];
-                    memobj **tmpptr = (memobj **)(memtab[i].ptr - malloc_align_step);
-                    *tmpptr = &memtab[newindex];
+                    memobj **tmpptr = (memobj **)newtab[newindex].ptr;
+                    *tmpptr = newtab + newindex;
                     newindex++;
                 }
-
-                memtab = newtab;
-                memindex = newindex;
-                memfreeslots = newtabsize - newindex;
-                memtabsize = newtabsize;
-                free (memtab);
             }
+
+            free (memtab);
+            memtab = newtab;
+            memindex = newindex;
+            memfreeslots = newtabsize - newindex;
+            memtabsize = newtabsize;
         }
     }
-
     memtab[memindex].size = bsize;
     memtab[memindex].ptr = aptr;
     memtab[memindex].bit = 0;
 
-    /*bsize = *memtab[memindex];*/
+    *(memobj **)aptr = memtab + memindex;
 
-    memfreeslots = -1;
-    memindex = -1;
+    memfreeslots = memfreeslots - 1;
+    memindex = memindex + 1;
+
+    DBUG_RETURN (bptr);
 }
 
 void *
-CHKunregister (void *bptr)
+CMunregisterMem (void *bptr)
 {
+    memobj **aptr;
 
-    memtab[memindex].size = 0;
-    memtab[memindex].ptr = NULL;
+    DBUG_ENTER (" CMunregisterMEM");
 
-    memfreeslots = +1;
-    memindex = +1;
+    aptr = (memobj **)((char *)bptr - malloc_align_step);
+
+    (**aptr).size = 0;
+    (**aptr).ptr = NULL;
+
+    memfreeslots = memfreeslots + 1;
+
+    DBUG_RETURN ((void *)aptr);
+}
+
+int
+CMgetSize (void *bptr)
+{
+    DBUG_ENTER ("CMgetSize");
+
+    int tmpsize = 0;
+    memobj **tmpobj;
+
+    tmpobj = (memobj **)((char *)bptr - malloc_align_step);
+
+    tmpsize = (**tmpobj).size;
+
+    DBUG_RETURN (tmpsize);
 }
