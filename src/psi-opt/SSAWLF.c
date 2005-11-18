@@ -75,6 +75,7 @@
 #include "type_utils.h"
 #include "new_types.h"
 #include "new_typecheck.h"
+#include "constants.h"
 
 /*
  * INFO structure
@@ -1074,9 +1075,10 @@ TransformationRangeCheck (index_info *transformations, node *substwln,
                           intern_gen *target_ig)
 {
     int result, dim, i;
-    node *tmpn;
     shape *s;
     intern_gen *whole_ig;
+    ntype *shtype;
+    int *shvec;
 
     DBUG_ENTER ("TransformationRangeCheck");
 
@@ -1085,12 +1087,14 @@ TransformationRangeCheck (index_info *transformations, node *substwln,
     whole_ig = WLFcreateInternGen (dim, 0);
     switch (NODE_TYPE (WITH_WITHOP (substwln))) {
     case N_genarray:
-        tmpn = ARRAY_AELEMS (GENARRAY_SHAPE (WITH_WITHOP (substwln)));
+        shtype = NTCnewTypeCheck_Expr (GENARRAY_SHAPE (WITH_WITHOP (substwln)));
+        DBUG_ASSERT (TYisAKV (shtype), "WL shape description must be constant!");
+        shvec = (int *)COgetDataVec (TYgetValue (shtype));
         for (i = 0; i < dim; i++) {
             whole_ig->l[i] = 0;
-            whole_ig->u[i] = NUM_VAL (EXPRS_EXPR (tmpn));
-            tmpn = EXPRS_NEXT (tmpn);
+            whole_ig->u[i] = shvec[i];
         }
+        shtype = TYfreeType (shtype);
         break;
 
     case N_modarray:
