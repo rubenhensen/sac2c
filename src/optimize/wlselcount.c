@@ -172,8 +172,6 @@ WLSELCwith (node *arg_node, info *arg_info)
 node *
 WLSELCcode (node *arg_node, info *arg_info)
 {
-    bool iswlcode_old;
-
     DBUG_ENTER ("WLSELCcode");
 
     /**

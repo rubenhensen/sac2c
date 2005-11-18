@@ -25,6 +25,7 @@
 #include "LookUpTable.h"
 #include "DataFlowMask.h"
 #include "InferDFMs.h"
+#include "SSAInferLI.h"
 
 #include "wlpropagation.h"
 
@@ -35,8 +36,6 @@ typedef enum { S_undef, S_withloop_prop } travstate;
  */
 struct INFO {
     node *fundef;
-    bool isdofun;
-    node *assign;
     travstate travstate;
     node *ap;
     node *corr;
@@ -44,8 +43,6 @@ struct INFO {
 };
 
 #define INFO_FUNDEF(n) (n->fundef)
-#define INFO_ISDOFUN(n) (n->isdofun)
-#define INFO_ASSIGN(n) (n->assign)
 #define INFO_TRAVSTATE(n) (n->travstate)
 #define INFO_AP(n) (n->ap)
 #define INFO_CORRESPONDINGFUNARG(n) (n->corr)
@@ -61,8 +58,6 @@ MakeInfo ()
     result = ILIBmalloc (sizeof (info));
 
     INFO_FUNDEF (result) = NULL;
-    INFO_ISDOFUN (result) = FALSE;
-    INFO_ASSIGN (result) = NULL;
     INFO_TRAVSTATE (result) = S_undef;
     INFO_AP (result) = NULL;
     INFO_CORRESPONDINGFUNARG (result) = NULL;
@@ -154,57 +149,6 @@ GetRecursiveFunctionApplication (node *fundef)
     DBUG_RETURN (chain);
 }
 
-/**<!--*************************************************************-->
- *
- * @fn static bool ArgIsLoopInvariant(node *fundef, node *arg, int pos)
- *
- * @brief: Returns 'TRUE' if 'arg' is loop-invariant in 'fundef'.
- *         'arg' is at position 'pos' in the arg-chain of 'fundef'.
- *
- *
- *  <+long description+>
- * @param fundef is a N_fundef node, defining a do-function
- * @param arg is a N_arg node somewhere in the arg-chain of 'fundef'
- * @param pos is the position of 'arg' in the arg-chain of 'fundef'
- *
- * @result
- *
- ********************************************************************/
-static bool
-ArgIsLoopInvariant (node *fundef, node *arg, int pos)
-{
-    bool result = FALSE;
-    node *chain;
-    int j;
-
-    DBUG_ENTER ("ArgIsLoopInvariant");
-
-    /**
-     * get the recursive function application
-     */
-    chain = GetRecursiveFunctionApplication (fundef);
-
-    DBUG_ASSERT ((N_ap == NODE_TYPE (chain)) && (FUNDEF_ISDOFUN (AP_FUNDEF (chain))),
-                 "No recursive function application found!");
-
-    /**
-     * get the corresponding funcation application argument
-     */
-    chain = AP_ARGS (chain);
-
-    for (j = 0; j < pos; j++) {
-        chain = EXPRS_NEXT (chain);
-    }
-
-    /**
-     * compare if both avis nodes of the argument of
-     * applied and applying function are identical
-     */
-    result = (ARG_AVIS (arg) == ID_AVIS (EXPRS_EXPR (chain)));
-
-    DBUG_RETURN (result);
-}
-
 /**
  *--Global traversal functions -------------------------------
  */
@@ -262,8 +206,6 @@ WLPROPfundef (node *arg_node, info *arg_info)
 
     INFO_FUNDEF (arg_info) = arg_node;
 
-    INFO_ISDOFUN (arg_info) = FUNDEF_ISDOFUN (arg_node);
-
     DBUG_PRINT ("WLPROP", ("Starting WLPROP for %s", FUNDEF_NAME (arg_node)));
 
     /**
@@ -273,9 +215,11 @@ WLPROPfundef (node *arg_node, info *arg_info)
      *   - count applications of N_sel operations in
      *     withloop, as well as function application
      *     in with-loops
+     *   - infer loop invariant arguments
      */
     arg_node = INFNCdoInferNeedCountersOneFundef (arg_node);
     arg_node = WLSELCdoWithloopSelectionCount (arg_node);
+    arg_node = ILIdoInferLoopInvariants (arg_node);
 
     /**
      * do actual traversal
@@ -304,8 +248,6 @@ node *
 WLPROPassign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLPROPassign");
-
-    INFO_ASSIGN (arg_info) = arg_node;
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
@@ -384,6 +326,7 @@ WLPROPap (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
 /**<!--*************************************************************-->
  *
  * @fn node *WLPROPexprs(node *arg_node, info *arg_info)
@@ -454,9 +397,7 @@ WLPROPid (node *arg_node, info *arg_info)
          * is the argument defined by an with-loop
          * which is loop independent?
          */
-        if ((IdIsDefinedByWL (arg_node))
-            && (ArgIsLoopInvariant (AP_FUNDEF (INFO_AP (arg_info)), correspond_arg,
-                                    INFO_ARGNUM (arg_info)))) {
+        if ((IdIsDefinedByWL (arg_node)) && (AVIS_SSALPINV (ARG_AVIS (correspond_arg)))) {
             node *withloop
               = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (arg_node))));
 
@@ -470,7 +411,7 @@ WLPROPid (node *arg_node, info *arg_info)
 
                 dfmask_t *inmask;
                 lut_t *lut;
-                node *next, *id;
+                node *next;
                 node *argchain_applying, *argchain_applied, *argchain_recapp;
                 node *new_withloop, *old_withloop;
                 node *witharg, *withvardec;
@@ -537,6 +478,7 @@ WLPROPid (node *arg_node, info *arg_info)
                      */
                     next = DFMgetMaskEntryAvisSet (NULL);
                 }
+
                 /*
                  * now all needed identifiers were created
                  * the lut was filled

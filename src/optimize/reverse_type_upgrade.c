@@ -1,9 +1,6 @@
-/* *
- * $Log$
- *
- */
-
 /**<!--******************************************************************-->
+ *
+ * $Id$
  *
  * @file reverse_type_upgrade.c
  *
@@ -14,25 +11,15 @@
 
 #include "tree_basic.h"
 #include "traverse.h"
-#include "node_basic.h"
 #include "new_types.h"
 #include "new_typecheck.h"
 #include "dbug.h"
 #include "internal_lib.h"
 #include "free.h"
-#include "DupTree.h"
 #include "globals.h"
-#include "type_utils.h"
-#include "ct_with.h"
-#include "type_errors.h"
-#include "ct_prf.h"
-#include "ct_with.h"
-#include "ct_fun.h"
 #include "constants.h"
 #include "shape.h"
-#include "ct_basic.h"
 #include "tree_compound.h"
-#include "ctinfo.h"
 
 #include "reverse_type_upgrade.h"
 
