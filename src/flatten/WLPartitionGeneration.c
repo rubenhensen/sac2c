@@ -243,7 +243,6 @@ CreateIdxShapeSelAssigns (node *array, int begin, int end, node *fundef)
     DBUG_ASSERT ((array != NULL), "array is empty");
     DBUG_ASSERT ((NODE_TYPE (array) == N_id),
                  "CreateIdxShapeSelAssigns not called with N_id");
-    DBUG_ASSERT ((end >= begin), "illegal length found!");
 
     nassigns = NULL;
 
