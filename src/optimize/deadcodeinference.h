@@ -1,21 +1,17 @@
-/*
- * $Log$
- * Revision 1.1  2005/08/02 14:19:21  ktr
- * Initial revision
- *
- */
-#ifndef _SAC_DEADCODEINFERENCE_H_
-#define _SAC_DEADCODEINFERENCE_H_
-
-#include "types.h"
-
 /******************************************************************************
+ *
+ * $Id$
  *
  * Dead code inference traversal (dci_tab)
  *
  * prefix: DCI
  *
  *****************************************************************************/
+
+#ifndef _SAC_DEADCODEINFERENCE_H_
+#define _SAC_DEADCODEINFERENCE_H_
+
+#include "types.h"
 
 extern node *DCIfundef (node *arg_node, info *arg_info);
 extern node *DCIarg (node *arg_node, info *arg_info);
@@ -30,5 +26,6 @@ extern node *DCIid (node *arg_node, info *arg_info);
 extern node *DCIids (node *arg_node, info *arg_info);
 extern node *DCIcode (node *arg_node, info *arg_info);
 extern node *DCIwithid (node *arg_node, info *arg_info);
+extern node *DCIwlsegvar (node *arg_node, info *arg_info);
 
 #endif /* _SAC_DEADCODEINFERENCE_H_ */

@@ -550,3 +550,34 @@ DCIwithid (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+/******************************************************************************
+ *
+ * function:
+ *   node *DCIwlsegvar(node *arg_node , info *arg_info)
+ *
+ * description:
+ *   Traverses sons and additionally all IDX_MIN and IDX_MAX attributes
+ *
+ *****************************************************************************/
+node *
+DCIwlsegvar (node *arg_node, info *arg_info)
+{
+    int d;
+
+    DBUG_ENTER ("DCIwlsegvar");
+
+    DBUG_ASSERT ((WLSEGVAR_IDX_MIN (arg_node) != NULL), "WLSEGVAR_IDX_MIN not found!");
+    DBUG_ASSERT ((WLSEGVAR_IDX_MAX (arg_node) != NULL), "WLSEGVAR_IDX_MAX not found!");
+    for (d = 0; d < WLSEGVAR_DIMS (arg_node); d++) {
+        (WLSEGVAR_IDX_MIN (arg_node))[d]
+          = TRAVdo ((WLSEGVAR_IDX_MIN (arg_node))[d], arg_info);
+        (WLSEGVAR_IDX_MAX (arg_node))[d]
+          = TRAVdo ((WLSEGVAR_IDX_MAX (arg_node))[d], arg_info);
+    }
+
+    /* Traverse sons */
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
+}

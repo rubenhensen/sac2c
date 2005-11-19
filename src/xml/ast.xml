@@ -868,6 +868,7 @@
 	  <node name="Ids" />
 	  <node name="Code" />
 	  <node name="Withid" />
+          <node name="WLsegVar" />
 	</travuser>
       </traversal>
       <traversal id="DDEPEND" name="Detect Dependencies" default="sons" include="detectdependencies.h" >
