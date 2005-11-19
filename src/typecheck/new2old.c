@@ -1,175 +1,6 @@
 /*
  *
- * $Log$
- * Revision 1.47  2005/09/29 12:20:34  sah
- * arg 1 of F_type_error is now a N_type node
- * containing the bottom type instead of the
- * error message. this allows to infer a
- * proper type for F_type_error prfs on
- * subsequent runs of the tc.
- *
- * Revision 1.46  2005/09/16 14:41:06  sbs
- * bug resolved.
- * Now, lacfuns that return bottom are eliminated completely
- *
- * Revision 1.45  2005/08/30 20:23:14  ktr
- * AVIS nodes without AVIS_TYPE are now equipped with a default type (int).
- * This is important as dead variables can arise during the opt cycle.
- *
- * Revision 1.44  2005/08/29 11:25:21  ktr
- * NTC may now run in the optimization cycle
- *
- * Revision 1.43  2005/08/11 13:50:39  sbs
- * changed the lifting of bottom types when type_error applications are built
- * Now, the result type is at least AKS
- *
- * Revision 1.42  2005/08/10 19:08:46  sbs
- * frees now te_infos as well.
- *
- * Revision 1.41  2005/07/26 16:03:07  sbs
- * frees the tvar and sig_dep heaps now.
- *
- * Revision 1.40  2005/07/26 14:32:08  sah
- * moved creation of special fold funs to
- * dispatchfuncall as new2old is running
- * prior to the module system which again relies
- * on the fact that no foldfuns have been
- * created, yet.
- *
- * Revision 1.39  2005/07/26 12:43:21  sah
- * new2old no longer removes casts
- *
- * Revision 1.38  2005/07/20 14:31:25  sbs
- * reflagged lac funs into lacinline funs whenever the code is transformed
- * due to bottom types
- *
- * Revision 1.37  2005/07/12 10:22:48  sah
- * renamed CreateTypeErrorBody to ReplaceBodyByTypeError
- * as it now handles an entire fundef and sets the
- * FUNDEF_RETURN properly.
- *
- * Revision 1.36  2005/06/27 22:28:10  sacbase
- * another typo fixed
- *
- * Revision 1.35  2005/06/14 23:40:58  sbs
- * CreateTypeErrorBody bigs fixed
- *
- * Revision 1.34  2005/06/14 09:55:10  sbs
- * support for bottom types integrated.
- *
- * Revision 1.33  2005/06/04 20:11:42  sbs
- * type conversion from new to old type disabled by if 0's
- *
- * Revision 1.32  2005/03/20 00:22:16  sbs
- * NT2OTpart added.
- * insertion of scalarised index vectors corrected for default partitions.
- *
- * Revision 1.31  2005/01/14 12:31:57  cg
- * Converted error handling to ctinfo.c
- *
- * Revision 1.30  2004/12/19 13:32:56  sbs
- * now, new2old is called on the lifted fold funs as well
- *
- * Revision 1.29  2004/12/13 18:43:47  ktr
- * NT2OTwithid will only perform syntax tree modification as long as
- * withid is given by N_ids nodes ( before explicit allocation)
- *
- * Revision 1.28  2004/12/08 18:00:11  ktr
- * removed ARRAY_TYPE/ARRAY_NTYPE
- *
- * Revision 1.27  2004/12/07 15:47:38  sbs
- * NT2OTwithid fixed.
- *
- * Revision 1.26  2004/11/27 01:25:32  khf
- * adjusted name of start function
- *
- * Revision 1.25  2004/11/24 17:42:48  sbs
- * not yet
- *
- * Revision 1.24  2004/11/22 13:54:09  sbs
- * changed NT2OTwithop into NT2OTfold
- *
- * Revision 1.23  2004/10/26 09:38:38  sah
- * TYFixAndEliminateAlpha is called on funtion types now as well
- *
- * Revision 1.22  2004/09/27 19:07:18  sbs
- * FUNDEF_RET_TYPES can be replaced by fixed types as all sharing
- * has been eliminated (cf. create_wrapper_code.c)
- *
- * Revision 1.21  2004/09/27 14:07:33  sbs
- * tried to replace FUNDEF_RET_TYPE with fixed type - wont work
- * => commented out again....
- *
- * Revision 1.20  2004/08/26 18:15:01  sbs
- * fixed a bug in CreateFoldFun:
- * now, the correct signature is created.
- * => bug48.
- *
- * Revision 1.19  2004/08/08 13:30:50  sbs
- * some debugging information added.
- *
- * Revision 1.18  2004/07/30 17:29:21  sbs
- * switch to new INFO structure
- * PHASE I
- *
- * Revision 1.17  2004/07/05 17:23:43  sbs
- * now, we do not only compute old types from ntypes, but we also
- * fix the ntype type variables for proper use later on.
- * Unfortunately, at the time being, cwc introduces some strange sharing
- * which requires the type var's not to be freed (UGLY!!) these places
- * are marked by CWC_WOULD_BE_PROPER macros 8-)
- *
- * Revision 1.16  2004/02/20 08:14:00  mwe
- * now functions with and without body are separated
- * changed tree traversal (added traverse of MODUL_FUNDECS)
- *
- * Revision 1.15  2003/09/25 15:20:14  dkr
- * no changes done
- *
- * Revision 1.14  2002/10/31 16:15:26  sbs
- * ... for return values now is preserved 8-)))
- *
- * Revision 1.13  2002/10/30 13:23:59  sbs
- * handling of dot args introduced.
- *
- * Revision 1.12  2002/10/29 19:06:28  dkr
- * bug in NT2OTwithid() fixed: TYFixAndEliminateAlpha() used now
- *
- * Revision 1.11  2002/10/28 14:54:55  sbs
- * NT2OTcast added.
- *
- * Revision 1.10  2002/10/24 14:09:35  sbs
- * bug in vardec handling fixed
- *
- * Revision 1.9  2002/10/23 06:35:39  sbs
- * NT2OTwithid added. It inserts scalar index variables whenever possible now.
- *
- * Revision 1.8  2002/10/08 16:36:24  dkr
- * NT2OTreturn() removed
- *
- * Revision 1.7  2002/10/08 16:32:45  dkr
- * FUNDEF_RETURN is inferned by new_typecheck.c already...
- *
- * Revision 1.6  2002/10/08 10:35:35  dkr
- * - infers FUNDEF_RETURN now
- * - pseudo fold funs are created
- *
- * Revision 1.5  2002/09/04 16:19:01  dkr
- * NT2OTfundef: DBUG_ASSERT added
- *
- * Revision 1.4  2002/09/02 12:38:55  dkr
- * new_typecheck.h included
- *
- * Revision 1.3  2002/08/31 04:56:27  dkr
- * NT2OTarray added: ARRAY_TYPE is set now
- *
- * Revision 1.2  2002/08/13 12:19:04  dkr
- * NT2OTarg added
- * NT2OTfundef modified: wrapper funs are handled like normal functions
- * now
- *
- * Revision 1.1  2002/08/05 16:58:31  sbs
- * Initial revision
+ * $Id$
  *
  */
 
@@ -688,7 +519,7 @@ NT2OTap (node *arg_node, info *arg_info)
 node *
 NT2OTavis (node *arg_node, info *arg_info)
 {
-    ntype *type;
+    ntype *type, *scalar;
 #ifndef DBUG_OFF
     char *tmp_str, *tmp_str2;
 #endif
@@ -703,6 +534,19 @@ NT2OTavis (node *arg_node, info *arg_info)
         DBUG_PRINT ("FIXNT", ("replacing argument/vardec %s\'s type %s by ...",
                               AVIS_NAME (arg_node), tmp_str));
         type = TYfixAndEliminateAlpha (type);
+        /**
+         * we try to avoid AKD(0) types and replace them by AKS([]) types
+         * I'm not 100% sure whether this is the right thing to do here.
+         * I think that there is a similar mechanism somewhere else in the
+         * TC or in new_types.c but I cannot recall where...:-(
+         * However, print( reshape([], 3)) would lead to pointer problems
+         * when linking due to an AKD specialization rather than an AKS one.
+         */
+        if (TYisAKD (type) && (TYgetDim (type) == 0)) {
+            scalar = TYgetScalar (type);
+            type = TYfreeTypeConstructor (type);
+            type = TYmakeAKS (scalar, SHmakeShape (0));
+        }
         DBUG_EXECUTE ("FIXNT", tmp_str2 = TYtype2String (type, FALSE, 0););
 #if CWC_WOULD_BE_PROPER
         AVIS_TYPE (arg_node) = TYfreeType (AVIS_TYPE (arg_node));
@@ -718,6 +562,8 @@ NT2OTavis (node *arg_node, info *arg_info)
     } else {
         /*
          * AVIS_TYPE CAN BE NULL iff nt2ot is run in the opt cycle
+         * AVIS nodes without AVIS_TYPE are now equipped with a default type (int).
+         * This is important as dead variables can arise during the opt cycle.
          */
         AVIS_TYPE (arg_node) = TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0));
     }
