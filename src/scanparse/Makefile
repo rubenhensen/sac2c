@@ -89,8 +89,8 @@ include $(PROJECT_ROOT)/Makefile.Config
 
 LIBS      := -ly -ll
 
-SAC_L := nsac.l
-SAC_Y := nsac.y
+SAC_L := sac.l
+SAC_Y := sac.y
 
 OBJS := resolvepragma.o y.tab.o lex.yy.o scnprs.o handle_dots.o
 
