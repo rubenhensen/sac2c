@@ -1,23 +1,6 @@
 /*
  *
- * $Log$
- * Revision 1.6  2005/08/23 14:23:42  sbs
- * introduced the Char versions
- *
- * Revision 1.5  2004/11/26 16:09:53  jhb
- * compile
- *
- * Revision 1.4  2004/11/22 18:55:29  cg
- * Moved all definitions/declarations of global variables to globals.mac
- *
- * Revision 1.3  2003/04/09 15:37:16  sbs
- * zipcv_neg added.
- *
- * Revision 1.2  2001/03/22 14:28:07  nmw
- * macros and function tables for primitive ari functions added
- *
- * Revision 1.1  2001/03/05 16:59:14  sbs
- * Initial revision
+ * $Id$
  *
  *
  */
@@ -275,13 +258,13 @@ MAP_NUMxNUM_NUM (+, Plus)
 
                     MAP_ANYxANY_BOOL (!=, Neq)
 
-                      MAP_NUMxNUM_BOOL (<=, Le)
+                      MAP_ANYxANY_BOOL (<=, Le)
 
-                        MAP_NUMxNUM_BOOL (<, Lt)
+                        MAP_ANYxANY_BOOL (<, Lt)
 
-                          MAP_NUMxNUM_BOOL (>, Gt)
+                          MAP_ANYxANY_BOOL (>, Gt)
 
-                            MAP_NUMxNUM_BOOL (>=, Ge)
+                            MAP_ANYxANY_BOOL (>=, Ge)
 
                               MAP_BOOL_BOOL (!, Not)
 
