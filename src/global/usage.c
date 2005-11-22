@@ -269,6 +269,7 @@ USGprintUsage ()
                       "Stop after initial SSA transformation (ssa only).");
     PRINT_BREAK_SPEC (PH_sacopt, "ae", "Stop after array elimination.");
     PRINT_BREAK_SPEC (PH_sacopt, "dcr", "Stop after dead code removal.");
+    PRINT_BREAK_SPEC (PH_sacopt, "lir", "Stop after (with-)loop invariant removal.");
 
     printf ("\n");
 
@@ -304,8 +305,8 @@ USGprintUsage ()
                       "Stop in cycle <n> after third constant folding.");
     PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:lus",
                       "Stop in cycle <n> after loop unswitching.");
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:lir",
-                      "Stop in cycle <n> after (with-)loop invariant removal.");
+    PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:wlir",
+                      "Stop in cycle <n> after with-loop invariant removal.");
     PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:al",
                       "Stop in cycle <n> after associative law.");
     PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:dl",
@@ -314,6 +315,7 @@ USGprintUsage ()
     printf ("\n");
 
     PRINT_BREAK_SPEC (PH_sacopt, "cyc", "Stop after fundef optimization cycle.");
+    PRINT_BREAK_SPEC (PH_sacopt, "lir2", "Stop after (with-)loop invariant removal.");
     PRINT_BREAK_SPEC (PH_sacopt, "ussa",
                       "Stop after undo SSA transformation (ssa only).");
     PRINT_BREAK_SPEC (PH_sacopt, "f2l",

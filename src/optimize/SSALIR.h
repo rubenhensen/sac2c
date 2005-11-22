@@ -48,6 +48,7 @@
  *
  *****************************************************************************/
 extern node *LIRdoLoopInvariantRemoval (node *fundef);
+extern node *LIRdoWithLoopInvariantRemovalOneFundef (node *fundef);
 
 extern node *LIRfundef (node *arg_node, info *arg_info);
 extern node *LIRarg (node *arg_node, info *arg_info);

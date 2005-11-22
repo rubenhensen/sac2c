@@ -222,10 +222,24 @@ OPTdoOptimize (node *arg_node)
         arg_node = PHrunCompilerSubPhase (SUBPH_dcr, arg_node);
     }
 
+    /**
+     * Loop invariant removal
+     */
+    if (global.optimize.dolir) {
+        arg_node = PHrunCompilerSubPhase (SUBPH_lir, arg_node);
+    }
+
     /*
      * Intra-functional optimizations
      */
     arg_node = PHrunCompilerSubPhase (SUBPH_intraopt, arg_node);
+
+    /**
+     * Loop invariant removal
+     */
+    if (global.optimize.dolir) {
+        arg_node = PHrunCompilerSubPhase (SUBPH_lir2, arg_node);
+    }
 
     /*
      * UESD
@@ -499,10 +513,10 @@ OPTdoIntraFunctionalOptimizations (node *arg_node)
                     }
 
                     /*
-                     * Loop invariant removal
+                     * In optimization cycle: just with-loop invariant removal
                      */
                     if (global.optimize.dolir) {
-                        fundef = PHrunOptimizationInCycle (SUBPH_lir, loop, fundef);
+                        fundef = PHrunOptimizationInCycle (SUBPH_wlir, loop, fundef);
                     }
 
                     /*

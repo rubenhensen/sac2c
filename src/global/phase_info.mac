@@ -243,6 +243,11 @@ SUBPHASE (linlcyc, "linl", "Inlining degenerated LaC functions",
 
 SUBPHASE (lir, "lir", "Applying loop invariant removal", LIRdoLoopInvariantRemoval)
 
+SUBPHASE (lir2, "lir2", "Applying loop invariant removal", LIRdoLoopInvariantRemoval)
+
+SUBPHASE (wlir, "wlir", "Applying with-loop invariant removal",
+          LIRdoWithLoopInvariantRemovalOneFundef)
+
 SUBPHASE (etc, "etc", "Eliminating typeconv primitives", ETCdoEliminateTypeConversions)
 
 SUBPHASE (esd, "esd", "Eliminating subtraction and division operators", ESDdoElimSubDiv)

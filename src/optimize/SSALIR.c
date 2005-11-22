@@ -144,6 +144,9 @@
 /*
  * INFO structure
  */
+
+typedef enum { TS_fundef, TS_module } travstart;
+
 struct INFO {
     node *fundef;
     bool remassign;
@@ -167,6 +170,8 @@ struct INFO {
     nodelist *inslist;
     node *fundefextassign;
     node *fundefintassign;
+    travstart travstart;
+    bool travinlac;
 };
 
 /*
@@ -194,6 +199,8 @@ struct INFO {
 #define INFO_INSLIST(n) (n->inslist)
 #define INFO_FUNDEFEXTASSIGN(n) (n->fundefextassign)
 #define INFO_FUNDEFINTASSIGN(n) (n->fundefintassign)
+#define INFO_TRAVSTART(n) (n->travstart)
+#define INFO_TRAVINLAC(n) (n->travinlac)
 
 /*
  * INFO functions
@@ -229,6 +236,8 @@ MakeInfo ()
     INFO_INSLIST (result) = NULL;
     INFO_FUNDEFEXTASSIGN (result) = NULL;
     INFO_FUNDEFINTASSIGN (result) = NULL;
+    INFO_TRAVSTART (result) = TS_fundef;
+    INFO_TRAVINLAC (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -789,68 +798,91 @@ LIRfundef (node *arg_node, info *arg_info)
 
     DBUG_PRINT ("LIR", ("loop invariant removal in fundef %s", FUNDEF_NAME (arg_node)));
 
-    info = MakeInfo ();
-    INFO_FUNDEF (info) = arg_node;
-    if (arg_info != NULL) {
-        INFO_EXTFUNDEF (info) = INFO_FUNDEF (arg_info);
-        INFO_FUNDEFEXTASSIGN (info) = INFO_ASSIGN (arg_info);
+    if (((FUNDEF_ISLACFUN (arg_node))
+         && ((INFO_TRAVINLAC (arg_info)) || (INFO_TRAVSTART (arg_info) == TS_fundef)))
+        || (!FUNDEF_ISLACFUN (arg_node))) {
+        /**
+         * only traverse fundef node if fundef is no lacfun or traversal
+         * was initialized in ap-node (travinlac == TRUE)
+         */
+        info = MakeInfo ();
+
+        INFO_TRAVSTART (info) = INFO_TRAVSTART (arg_info);
+        INFO_FUNDEF (info) = arg_node;
+        if (INFO_TRAVINLAC (arg_info)) {
+            INFO_EXTFUNDEF (info) = INFO_FUNDEF (arg_info);
+            INFO_FUNDEFEXTASSIGN (info) = INFO_ASSIGN (arg_info);
+        }
+
+        /* build up LUT for vardec move/rename operartions */
+        /* also obtain assignment of recursive call */
+        if (FUNDEF_ISDOFUN (arg_node)) {
+            if (INFO_TRAVSTART (info) == TS_module) {
+                INFO_MOVELUT (info) = LUTgenerateLut ();
+                INFO_FUNDEFINTASSIGN (info) = GetRecursiveCallAssignment (arg_node);
+            }
+        }
+
+        /* init empty result map */
+        INFO_RESULTMAP (info) = NULL;
+
+        /* save pointer to archain of external function application */
+        if ((FUNDEF_ARGS (arg_node) != NULL) && (FUNDEF_ISDOFUN (arg_node))
+            && (INFO_TRAVSTART (info) == TS_module)) {
+            INFO_APARGCHAIN (info) = AP_ARGS (ASSIGN_RHS (INFO_FUNDEFEXTASSIGN (info)));
+        }
+
+        /* traverse args */
+        if (FUNDEF_ARGS (arg_node) != NULL) {
+            FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), info);
+        }
+
+        /* top level (not [directly] contained in any withloop) */
+        INFO_WITHDEPTH (info) = 0;
+
+        /* init InsertList for with-loop independed removal */
+        INFO_INSLIST (info) = InsListPushFrame (NULL);
+
+        /* traverse function body */
+        if (FUNDEF_BODY (arg_node) != NULL) {
+            FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), info);
+
+            if (INFO_TRAVSTART (arg_info) == TS_module) {
+                /* start LIRMOV traversal of BODY to move out marked assignments */
+                TRAVpush (TR_lirmov);
+                FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), info);
+                TRAVpop ();
+            }
+        }
+
+        /* clean up insert list */
+        INFO_INSLIST (info) = InsListPopFrame (INFO_INSLIST (info));
+
+        /* clean up LUT */
+        if (INFO_MOVELUT (info) != NULL) {
+            INFO_MOVELUT (info) = LUTremoveLut (INFO_MOVELUT (info));
+        }
+
+        /* clean up result map nodelist */
+        if (INFO_RESULTMAP (info) != NULL) {
+            INFO_RESULTMAP (info) = TCnodeListFree (INFO_RESULTMAP (info), 0);
+        }
+
+        if (INFO_TRAVINLAC (arg_info)) {
+            INFO_PREASSIGN (arg_info) = INFO_EXTPREASSIGN (info);
+            INFO_POSTASSIGN (arg_info) = INFO_EXTPOSTASSIGN (info);
+        }
+
+        info = FreeInfo (info);
     }
-
-    /* build up LUT for vardec move/rename operartions */
-    /* also obtain assignment of recursive call */
-    if (FUNDEF_ISDOFUN (arg_node)) {
-        INFO_MOVELUT (info) = LUTgenerateLut ();
-        INFO_FUNDEFINTASSIGN (info) = GetRecursiveCallAssignment (arg_node);
+    /**
+     * traverse only in next fundef if traversal started in module node
+     */
+    if ((INFO_TRAVSTART (arg_info) == TS_module) && (!FUNDEF_ISLACFUN (arg_node))) {
+        if (FUNDEF_NEXT (arg_node) != NULL) {
+            FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+        }
     }
-
-    /* init empty result map */
-    INFO_RESULTMAP (info) = NULL;
-
-    /* save pointer to archain of external function application */
-    if ((FUNDEF_ARGS (arg_node) != NULL) && (FUNDEF_ISDOFUN (arg_node))) {
-        INFO_APARGCHAIN (info) = AP_ARGS (ASSIGN_RHS (INFO_FUNDEFEXTASSIGN (info)));
-    }
-
-    /* traverse args */
-    if (FUNDEF_ARGS (arg_node) != NULL) {
-        FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), info);
-    }
-
-    /* top level (not [directly] contained in any withloop) */
-    INFO_WITHDEPTH (info) = 0;
-
-    /* init InsertList for with-loop independed removal */
-    INFO_INSLIST (info) = InsListPushFrame (NULL);
-
-    /* traverse function body */
-    if (FUNDEF_BODY (arg_node) != NULL) {
-        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), info);
-
-        /* start LIRMOV traversal of BODY to move out marked assignments */
-        TRAVpush (TR_lirmov);
-        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), info);
-        TRAVpop ();
-    }
-
-    /* clean up insert list */
-    INFO_INSLIST (info) = InsListPopFrame (INFO_INSLIST (info));
-
-    /* clean up LUT */
-    if (INFO_MOVELUT (info) != NULL) {
-        INFO_MOVELUT (info) = LUTremoveLut (INFO_MOVELUT (info));
-    }
-
-    /* clean up result map nodelist */
-    if (INFO_RESULTMAP (info) != NULL) {
-        INFO_RESULTMAP (info) = TCnodeListFree (INFO_RESULTMAP (info), 0);
-    }
-
-    if (arg_info != NULL) {
-        INFO_PREASSIGN (arg_info) = INFO_EXTPREASSIGN (info);
-        INFO_POSTASSIGN (arg_info) = INFO_EXTPOSTASSIGN (info);
-    }
-
-    info = FreeInfo (info);
 
     DBUG_RETURN (arg_node);
 }
@@ -1351,18 +1383,28 @@ LIRid (node *arg_node, info *arg_info)
 node *
 LIRap (node *arg_node, info *arg_info)
 {
+    bool old_trav;
     DBUG_ENTER ("LIRap");
 
     DBUG_ASSERT ((AP_FUNDEF (arg_node) != NULL), "missing fundef in ap-node");
 
-    /* traverse special fundef without recursion */
+    /*
+     * traverse special fundef without recursion when doing module-wise
+     * optimization
+     */
     if ((FUNDEF_ISLACFUN (AP_FUNDEF (arg_node)))
-        && (AP_FUNDEF (arg_node) != INFO_FUNDEF (arg_info))) {
+        && (AP_FUNDEF (arg_node) != INFO_FUNDEF (arg_info))
+        && (INFO_TRAVSTART (arg_info) == TS_module)) {
         DBUG_PRINT ("LIR", ("traverse in special fundef %s",
                             FUNDEF_NAME (AP_FUNDEF (arg_node))));
 
+        old_trav = INFO_TRAVINLAC (arg_info);
+        INFO_TRAVINLAC (arg_info) = TRUE;
+
         /* start traversal of special fundef */
         AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
+
+        INFO_TRAVINLAC (arg_info) = old_trav;
 
         DBUG_PRINT ("LIR", ("traversal of special fundef %s finished\n",
                             FUNDEF_NAME (AP_FUNDEF (arg_node))));
@@ -1432,7 +1474,8 @@ LIRreturn (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("LIRreturn");
 
-    if (FUNDEF_ISDOFUN (INFO_FUNDEF (arg_info))) {
+    if (FUNDEF_ISDOFUN (INFO_FUNDEF (arg_info))
+        && (INFO_TRAVSTART (arg_info) == TS_module)) {
         /* init INFO_APRESCHAIN with external result chain */
         DBUG_ASSERT ((INFO_FUNDEFEXTASSIGN (arg_info) != NULL),
                      "missing link to external calling fundef");
@@ -2003,26 +2046,62 @@ LIRMOVids (node *arg_ids, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* LIRdoLoopInvariantRemoval(node* fundef)
+ *   node* LIRdoLoopInvariantRemovalOneFundef(node* fundef)
  *
  * description:
- *   starts the loop invariant removal for non special fundefs.
+ *   starts the with-loop invariant removal for fundef nodes.
  *
  *****************************************************************************/
 node *
-LIRdoLoopInvariantRemoval (node *fundef)
+LIRdoWithLoopInvariantRemovalOneFundef (node *fundef)
 {
-    DBUG_ENTER ("LIRdoLoopInvariantRemoval");
+    info *info;
+    DBUG_ENTER ("LIRdoWithLoopInvariantRemovalOneFundef");
 
     DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
-                 "LIRdoLoopInvariantRemoval called for non-fundef node");
+                 "LIRdoWithLoopInvariantRemovalOneFundef called for non-fundef node");
 
-    /* do not start traversal in special functions */
-    if (!(FUNDEF_ISLACFUN (fundef))) {
-        TRAVpush (TR_lir);
-        fundef = TRAVdo (fundef, NULL);
-        TRAVpop ();
-    }
+    info = MakeInfo ();
+
+    INFO_TRAVSTART (info) = TS_fundef;
+
+    TRAVpush (TR_lir);
+    fundef = TRAVdo (fundef, info);
+    TRAVpop ();
+
+    info = FreeInfo (info);
 
     DBUG_RETURN (fundef);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node* LIRdoLoopInvariantRemoval(node* module)
+ *
+ * description:
+ *   starts the loop invariant removal for module nodes.
+ *
+ *****************************************************************************/
+node *
+LIRdoLoopInvariantRemoval (node *module)
+{
+    info *info;
+
+    DBUG_ENTER ("LIRdoLoopInvariantRemoval");
+
+    DBUG_ASSERT ((NODE_TYPE (module) == N_module),
+                 "LIRdoLoopInvariantRemoval called for non-module node");
+
+    info = MakeInfo ();
+
+    INFO_TRAVSTART (info) = TS_module;
+
+    TRAVpush (TR_lir);
+    module = TRAVdo (module, info);
+    TRAVpop ();
+
+    info = FreeInfo (info);
+
+    DBUG_RETURN (module);
 }
