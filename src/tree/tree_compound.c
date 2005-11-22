@@ -1,151 +1,5 @@
 /*
- *
- * $Log$
- * Revision 3.144  2005/10/06 17:00:46  ktr
- * added TCcountVardecs
- *
- * Revision 3.143  2005/09/16 17:04:45  sah
- * removed TCcreateZero as it created unflattened code
- * inlined it into SSAWLUnroll.c
- *
- * Revision 3.142  2005/09/06 14:11:49  ktr
- * added TCcountAssigns
- *
- * Revision 3.141  2005/08/26 16:27:47  ktr
- * some cleanup
- *
- * Revision 3.140  2005/08/20 19:19:19  sah
- * IVE-rewrite: removed N_vinfo
- *
- * Revision 3.139  2005/08/20 12:10:03  ktr
- * corrected TCfilterExprs
- *
- * Revision 3.138  2005/08/19 18:21:47  ktr
- * Added N_exprs functions
- *
- * Revision 3.137  2005/07/15 15:57:02  sah
- * introduced namespaces
- *
- * Revision 3.136  2005/06/23 09:02:44  sah
- * added TCids2ExprsNt
- *
- * Revision 3.135  2005/06/02 18:57:26  sah
- * fixed a denmark fubar function
- *
- * Revision 3.134  2005/06/01 20:12:26  sah
- * made TCgetTypesLine aware of new types and
- * removed Denmark TODO
- *
- * Revision 3.133  2005/04/22 10:10:26  ktr
- * Removed CreateZeroFromType and code brushing
- *
- * Revision 3.132  2005/04/20 19:19:17  ktr
- * removed TCadjustAvisData and brushed the code
- *
- * Revision 3.131  2005/04/19 17:34:57  ktr
- * removed AVIS_SSAASSIGN2, AVIS_SUBSTUSSA
- *
- * Revision 3.130  2005/01/11 14:06:14  cg
- * Converted output from Error.h to ctinfo.c
- *
- * Revision 3.129  2004/12/19 23:16:37  ktr
- * removed TCcountFunctionParams
- *
- * Revision 3.128  2004/12/17 18:58:58  ktr
- * TCgetNthExpr reverted to old counting (n=1 yields the first expression).
- *
- * Revision 3.127  2004/12/17 09:27:20  khf
- * TCgetNthExpr corrected
- *
- * Revision 3.126  2004/12/08 18:15:24  ktr
- * usage of SHmakeShape corrected.
- *
- * Revision 3.125  2004/12/08 18:02:40  ktr
- * removed ARRAY_TYPE/ARRAY_NTYPE
- *
- * Revision 3.124  2004/12/08 11:40:50  ktr
- * nothing really changed.
- *
- * Revision 3.123  2004/12/07 20:35:53  ktr
- * eliminated CONSTVEC which is superseded by ntypes.
- *
- * Revision 3.122  2004/12/06 17:31:50  sbs
- * eliminated infinite recursion ....
- *
- * Revision 3.121  2004/12/05 16:45:38  sah
- * added SPIds SPId SPAp in frontend
- *
- * Revision 3.120  2004/12/01 16:31:18  ktr
- * Some cleanup
- *
- * Revision 3.119  2004/11/30 21:44:20  ktr
- * TCappendVardecs fixed.
- *
- * Revision 3.118  2004/11/27 01:42:07  mwe
- * SearchDecl to TCsearchDecl
- *
- * Revision 3.117  2004/11/27 00:40:03  khf
- * adjusted names of TCmakePrf*
- *
- * Revision 3.116  2004/11/26 21:52:28  ktr
- * LiftArg removed.
- *
- * Revision 3.115  2004/11/26 16:59:19  skt
- * some includes removed
- *
- * Revision 3.114  2004/11/26 16:53:42  skt
- * killed TCgetArgtabIndexOut/In during SDC2k4
- *
- * Revision 3.113  2004/11/26 14:11:47  skt
- * made it compilable during SACDevCampDK 2k4
- *
- * Revision 3.112  2004/11/26 02:17:26  sah
- * fixed a comment
- *
- * Revision 3.111  2004/11/26 00:04:56  skt
- * some changes during SACDevCampDK 2k4 - go on at HERE
- *
- * Revision 3.110  2004/11/25 15:43:26  skt
- * some brushing, incl. removing of node_compat.h
- *
- * Revision 3.109  2004/11/25 12:13:08  mwe
- * *** empty log message ***
- *
- * Revision 3.108  2004/11/24 17:24:46  ktr
- * Added TCcountParts
- *
- * Revision 3.107  2004/11/24 16:41:56  skt
- * FindVardec_Name deleted
- *
- * Revision 3.106  2004/11/24 16:27:42  ktr
- * Changed signature of MakeAssignLet
- *
- * Revision 3.105  2004/11/24 12:33:33  ktr
- * TCappendRets added.
- *
- * Revision 3.104  2004/11/24 11:45:14  sah
- * added TCgetNthExpr
- *
- * Revision 3.103  2004/11/24 10:56:11  sah
- * *** empty log message ***
- *
- * Revision 3.102  2004/11/24 10:50:14  sbs
- * TCmakeIdsFromVardecs added
- *
- * Revision 3.101  2004/11/23 22:36:58  sbs
- * TCcountRets added.
- *
- * Revision 3.100  2004/11/23 22:27:57  khf
- * added TCmakeFlatArray
- *
- * Revision 3.99  2004/11/23 22:18:50  skt
- * code brushing during SACDevCampDK 2k4
- *
- * Revision 3.98  2004/11/21 11:22:03  sah
- * removed some old ast infos
- *
- * [...]
- *
+ * $Id$
  */
 
 #include "tree_basic.h"
@@ -369,7 +223,7 @@ TCshpseg2Array (shpseg *shape, int dim)
         next = TBmakeExprs (TBmakeNum (SHPSEG_SHAPE (shape, i)), next);
     }
 
-    array_node = TCmakeFlatArray (next);
+    array_node = TCmakeIntVector (next);
 
     DBUG_RETURN (array_node);
 }
@@ -2268,18 +2122,36 @@ TCnodeBehindCast (node *arg_node)
 /******************************************************************************
  *
  * function:
- *   node *TCmakeFlatArray( node *aelems)
+ *   node *TCmakeVector( ntype *basetype, node *aelems)
  *
  * description:
  *   Returns a vector.
  *
  *****************************************************************************/
 node *
-TCmakeFlatArray (node *aelems)
+TCmakeVector (ntype *basetype, node *aelems)
 {
-    DBUG_ENTER ("MakeFlatArray");
+    DBUG_ENTER ("TCmakeVector");
 
-    DBUG_RETURN (TBmakeArray (SHcreateShape (1, TCcountExprs (aelems)), aelems));
+    DBUG_RETURN (
+      TBmakeArray (basetype, SHcreateShape (1, TCcountExprs (aelems)), aelems));
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *TCmakeIntVector( node *aelems)
+ *
+ * description:
+ *   Returns an integer vector.
+ *
+ *****************************************************************************/
+node *
+TCmakeIntVector (node *aelems)
+{
+    DBUG_ENTER ("TCmakeIntVector");
+
+    DBUG_RETURN (TCmakeVector (TYmakeSimpleType (T_int), aelems));
 }
 
 /******************************************************************************
@@ -2351,7 +2223,7 @@ TCcreateZeroVector (int length, simpletype btype)
         exprs_node = TBmakeExprs (TCcreateZeroScalar (btype), exprs_node);
     }
 
-    ret_node = TCmakeFlatArray (exprs_node);
+    ret_node = TCmakeVector (TYmakeSimpleType (btype), exprs_node);
 
     DBUG_RETURN (ret_node);
 }
@@ -2406,224 +2278,6 @@ TCids2ExprsNt (node *ids_arg)
     }
 
     DBUG_RETURN (exprs);
-}
-
-/*****************************************************************************
- *
- * function:
- *   node *Ids2Array( ids *ids_arg)
- *
- * description:
- *   convert ids into array
- *
- *****************************************************************************/
-
-node *
-TCids2Array (node *ids_arg)
-{
-    node *array;
-
-    DBUG_ENTER ("TCids2Array");
-
-    if (ids_arg != NULL) {
-        array = TCmakeFlatArray (TCids2Exprs (ids_arg));
-    } else {
-        array = TCmakeFlatArray (NULL);
-    }
-
-    DBUG_RETURN (array);
-}
-
-int *
-TCarray2IntVec (node *aelems, int *length)
-{
-    int *intvec;
-    int j;
-    node *tmp = aelems;
-    int i = 0;
-
-    DBUG_ENTER ("TCarray2IntVec");
-
-    while (aelems != NULL) {
-        DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (aelems)) == N_num),
-                     "constant integer array exspected !");
-        aelems = EXPRS_NEXT (aelems);
-        i++;
-    }
-    /*
-     *  if the length of the vector is not of interrest length may be NULL
-     */
-    if (length != NULL) {
-        *length = i;
-    }
-
-    intvec = ILIBmalloc (i * sizeof (int));
-
-    for (j = 0; j < i; j++) {
-        intvec[j] = NUM_VAL (EXPRS_EXPR (tmp));
-        tmp = EXPRS_NEXT (tmp);
-    }
-
-    DBUG_RETURN (intvec);
-}
-
-int *
-TCarray2BoolVec (node *aelems, int *length)
-{
-    int *intvec, i = 0, j;
-    node *tmp = aelems;
-
-    DBUG_ENTER ("TCarray2IntVec");
-
-    while (aelems != NULL) {
-        DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (aelems)) == N_bool),
-                     "constant bool array exspected !");
-        aelems = EXPRS_NEXT (aelems);
-        i++;
-    }
-    /*
-     *  if the length of the vector is not of interrest length may be NULL
-     */
-    if (length != NULL) {
-        *length = i;
-    }
-
-    intvec = ILIBmalloc (i * sizeof (int));
-
-    for (j = 0; j < i; j++) {
-        intvec[j] = BOOL_VAL (EXPRS_EXPR (tmp));
-        tmp = EXPRS_NEXT (tmp);
-    }
-
-    DBUG_RETURN (intvec);
-}
-
-char *
-TCarray2CharVec (node *aelems, int *length)
-{
-    char *charvec;
-    int i = 0, j;
-    node *tmp = aelems;
-
-    DBUG_ENTER ("TCarray2CharVec");
-
-    while (aelems != NULL) {
-        DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (aelems)) == N_char),
-                     "constant integer array exspected !");
-        aelems = EXPRS_NEXT (aelems);
-        i++;
-    }
-    /*
-     *  if the length of the vector is not of interrest length may be NULL
-     */
-    if (length != NULL) {
-        *length = i;
-    }
-
-    charvec = ILIBmalloc (i * sizeof (char));
-
-    for (j = 0; j < i; j++) {
-        charvec[j] = CHAR_VAL (EXPRS_EXPR (tmp));
-        tmp = EXPRS_NEXT (tmp);
-    }
-
-    DBUG_RETURN (charvec);
-}
-
-float *
-TCarray2FloatVec (node *aelems, int *length)
-{
-    float *floatvec;
-    int i = 0, j;
-    node *tmp = aelems;
-
-    DBUG_ENTER ("TCarray2FloatVec");
-
-    while (aelems != NULL) {
-        DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (aelems)) == N_float),
-                     "constant float array exspected !");
-        aelems = EXPRS_NEXT (aelems);
-        i++;
-    }
-    /*
-     *  if the length of the vector is not of interrest length may be NULL
-     */
-    if (length != NULL) {
-        *length = i;
-    }
-
-    floatvec = ILIBmalloc (i * sizeof (float));
-
-    for (j = 0; j < i; j++) {
-        floatvec[j] = FLOAT_VAL (EXPRS_EXPR (tmp));
-        tmp = EXPRS_NEXT (tmp);
-    }
-
-    DBUG_RETURN (floatvec);
-}
-
-double *
-TCarray2DblVec (node *aelems, int *length)
-{
-    int i = 0, j;
-    double *dblvec;
-    node *tmp = aelems;
-
-    DBUG_ENTER ("TCarray2DblVec");
-
-    while (aelems != NULL) {
-        DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (aelems)) == N_double),
-                     "constant double array exspected !");
-        aelems = EXPRS_NEXT (aelems);
-        i++;
-    }
-    /*
-     *  if the length of the vector is not of interrest length may be NULL
-     */
-    if (length != NULL) {
-        *length = i;
-    }
-
-    dblvec = ILIBmalloc (i * sizeof (double));
-
-    for (j = 0; j < i; j++) {
-        dblvec[j] = DOUBLE_VAL (EXPRS_EXPR (tmp));
-        tmp = EXPRS_NEXT (tmp);
-    }
-
-    DBUG_RETURN (dblvec);
-}
-
-/* type dispatch for some standard simpletypes */
-void *
-TCarray2Vec (simpletype t, node *aelems, int *length)
-{
-    void *res;
-
-    DBUG_ENTER ("TCarray2Vec");
-
-    switch (t) {
-    case T_int:
-        res = (void *)TCarray2IntVec (aelems, length);
-        break;
-    case T_float:
-        res = (void *)TCarray2FloatVec (aelems, length);
-        break;
-    case T_double:
-        res = (void *)TCarray2DblVec (aelems, length);
-        break;
-    case T_bool:
-        res = (void *)TCarray2BoolVec (aelems, length);
-        break;
-    case T_char:
-        res = (void *)TCarray2CharVec (aelems, length);
-        break;
-    default:
-        DBUG_ASSERT ((0), "unknown type for array");
-        res = NULL;
-    }
-
-    DBUG_RETURN (res);
 }
 
 /*--------------------------------------------------------------------------*/

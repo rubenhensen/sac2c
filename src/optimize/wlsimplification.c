@@ -412,7 +412,7 @@ WLSIMPgenerator (node *arg_node, info *arg_info)
                 ub = EXPRS_NEXT (ub);
             }
 
-            GENERATOR_GENWIDTH (arg_node) = TCmakeFlatArray (exprs);
+            GENERATOR_GENWIDTH (arg_node) = TCmakeIntVector (exprs);
         }
     }
 

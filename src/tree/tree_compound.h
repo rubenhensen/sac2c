@@ -884,53 +884,14 @@ extern node *TCnodeBehindCast (node *arg_node);
 /*
  *  function declarations
  */
-extern node *TCmakeFlatArray (node *aelems);
+extern node *TCmakeVector (ntype *basetype, node *aelems);
+extern node *TCmakeIntVector (node *aelems);
+
 extern node *TCcreateZeroScalar (simpletype btype);
 extern node *TCcreateZeroVector (int length, simpletype btype);
 
 extern node *TCids2Exprs (node *ids_arg);
 extern node *TCids2ExprsNt (node *ids_arg);
-extern node *TCids2Array (node *ids_arg);
-
-/******************************************************************************
- *
- * Function:
- *   node *TCintVec2Array( int length, int *intvec);
- *
- * Description:
- *   Returns an N_exprs node containing the elements of intvec.
- *
- ******************************************************************************/
-
-extern node *TCintVec2Array (int length, int *intvec);
-
-/******************************************************************************
- *
- * Function:
- *   int    *TCarray2IntVec( node *aelems, int *length);
- *   int    *TCarray2BoolVec( node *aelems, int *length);
- *   char   *TCarray2CharVec( node *aelems, int *length);
- *   float  *TCarray2FloatVec( node *aelems, int *length);
- *   double *TCarray2DblVec( node *aelems, int *length);
- *
- *   void   *TCarray2Vec( simpletype t, node *aelems, int *length);
- *
- * Description:
- *   Returns an iteger (char | float | double) vector and stores the number of
- *   constant integer (char | float | double) elements in *length if first
- *   argument is an N_exprs and all its elements are N_num otherwise the
- *   result is not defined.
- *   If the length of the vector is not of interest, length may be NULL.
- *   The TCarray2Vec function is a dispatching wrapper for all above.
- *
- ******************************************************************************/
-
-extern int *TCarray2IntVec (node *aelems, int *length);
-extern int *TCarray2BoolVec (node *aelems, int *length);
-extern char *TCarray2CharVec (node *aelems, int *length);
-extern float *TCarray2FloatVec (node *aelems, int *length);
-extern double *TCarray2DblVec (node *aelems, int *length);
-extern void *TCarray2Vec (simpletype t, node *aelems, int *length);
 
 /*--------------------------------------------------------------------------*/
 

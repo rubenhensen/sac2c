@@ -779,7 +779,7 @@ SHshape2Array (shape *shp)
 
     DBUG_ENTER ("SHshape2Array");
 
-    array = TCmakeFlatArray (SHshape2Exprs (shp));
+    array = TCmakeIntVector (SHshape2Exprs (shp));
 
     DBUG_RETURN (array);
 }

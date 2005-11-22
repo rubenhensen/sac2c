@@ -479,7 +479,8 @@ CFscoDupStructConstant2Expr (struct_constant *struc_co)
         }
 
         /* build array node */
-        expr = TBmakeArray (SHcopyShape (COgetShape (SCO_HIDDENCO (struc_co))), aelems);
+        expr = TBmakeArray (TYmakeSimpleType (SCO_BASETYPE (struc_co)),
+                            SHcopyShape (COgetShape (SCO_HIDDENCO (struc_co))), aelems);
     }
     DBUG_RETURN (expr);
 }
@@ -2026,6 +2027,7 @@ CFarray (node *arg_node, info *arg_info)
     node *newelems = NULL;
     node *oldelems, *tmp;
     shape *shp = NULL, *newshp;
+    ntype *basetype;
 
     DBUG_ENTER ("CFarray");
 
@@ -2062,11 +2064,13 @@ CFarray (node *arg_node, info *arg_info)
                                                ID_SSAASSIGN (EXPRS_EXPR (tmp))))));
                 tmp = EXPRS_NEXT (tmp);
             }
+
+            basetype = TYcopyType (ARRAY_BASETYPE (arg_node));
             newshp = SHappendShapes (ARRAY_SHAPE (arg_node), shp);
 
             arg_node = FREEdoFreeNode (arg_node);
 
-            arg_node = TBmakeArray (newshp, newelems);
+            arg_node = TBmakeArray (basetype, newshp, newelems);
         }
     }
 
@@ -2470,9 +2474,10 @@ CFwith (node *arg_node, info *arg_info)
     DBUG_ENTER ("CFwith");
 
     if (WITH_IDS (arg_node) != NULL) {
-        vecassign = TBmakeAssign (TBmakeLet (DUPdoDupNode (WITH_VEC (arg_node)),
-                                             TCids2Array (WITH_IDS (arg_node))),
-                                  NULL);
+        vecassign
+          = TBmakeAssign (TBmakeLet (DUPdoDupNode (WITH_VEC (arg_node)),
+                                     TCmakeIntVector (TCids2Exprs (WITH_IDS (arg_node)))),
+                          NULL);
         AVIS_SSAASSIGN (IDS_AVIS (WITH_VEC (arg_node))) = vecassign;
     }
 

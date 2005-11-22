@@ -2,152 +2,8 @@
 
 
 /*
-*
-* $Log$
-* Revision 1.46  2005/09/27 17:15:19  sbs
-* checkPragma adjusted to N_spap
-*
-* Revision 1.45  2005/08/09 09:41:49  sah
-* AVIS_DECLTYPE is set for args now
-*
-* Revision 1.44  2005/07/15 15:57:02  sah
-* introduced namespaces
-*
-* Revision 1.43  2005/07/04 11:02:09  sbs
-* adjusted imported types to DCOLON too
-*
-* Revision 1.42  2005/07/04 10:42:26  sbs
-* string.h included
-*
-* Revision 1.41  2005/07/04 10:31:04  sbs
-* changed name-space-identifyer-separation to double colon.
-*
-* Revision 1.40  2005/06/29 10:18:13  cg
-* Corrected precedence and associativity rules for &&, || and ?:
-*
-* Revision 1.39  2005/06/28 20:58:02  cg
-* The boolean operators && and || now support lazy evaluation of the
-* second argument. Therefore, they are not scanned/parsed as function,
-* but as special constructs represented as funconds.
-*
-* Revision 1.38  2005/06/27 13:44:55  sah
-* now multiple LINKOBJ and LINKMOD per file
-* function are possible and handeled correctly.
-*
-* Revision 1.37  2005/06/21 19:46:56  sah
-* call of make for setwl fixed
-*
-* Revision 1.36  2005/06/18 18:08:13  sah
-* fixed a set notation parsing problem
-*
-* Revision 1.35  2005/06/09 08:16:48  ktr
-* Corrected application of TBmakeLet
-*
-* Revision 1.34  2005/06/01 20:34:21  sah
-* fixed creation of to_string call
-*
-* Revision 1.33  2005/06/01 18:05:04  sbs
-* now, pragmas on erxternal fundecs follow the fundec rather than being
-* notated before the SEMIC!!!!
-*
-* Revision 1.32  2005/05/31 18:13:50  sah
-* removed sharing of module names
-*
-* Revision 1.31  2005/01/11 13:52:12  cg
-* Converted output from Error.h to ctinfo.c
-*
-* Revision 1.30  2004/12/06 20:44:56  sah
-* fixed withlop withid rule
-*
-* Revision 1.29  2004/12/05 21:05:00  sah
-* fixed objdefs rule
-*
-* Revision 1.28  2004/12/05 16:45:38  sah
-* added SPIds SPId SPAp in frontend
-*
-* Revision 1.27  2004/12/02 15:13:20  sah
-* fixed mopsification
-*
-* Revision 1.26  2004/11/29 20:44:49  sah
-* post-DK bugfixing
-*
-* Revision 1.25  2004/11/27 02:49:06  cg
-* include of my_debug.h removed.
-*
-* Revision 1.24  2004/11/26 23:57:50  sbs
-* *** empty log message ***
-*
-* Revision 1.23  2004/11/25 22:37:57  sbs
-* for Stephan
-*
-* Revision 1.22  2004/11/25 22:28:51  sbs
-* compiles
-*
-* Revision 1.21  2004/11/25 16:26:17  cg
-* parsing of resourcefiles done without ids structure
-*
-* Revision 1.20  2004/11/25 15:37:40  sbs
-* some maior changes
-*
-* Revision 1.19  2004/11/23 11:14:06  sbs
-* next
-*
-* Revision 1.18  2004/11/23 01:28:37  sbs
-* next one
-*
-* Revision 1.17  2004/11/22 21:34:29  sbs
-* SacDevCamp04
-*
-* Revision 1.15  2004/11/21 11:22:03  sah
-* removed some old ast infos
-*
-* Revision 1.14  2004/11/19 10:14:30  sah
-* updated objdefs
-*
-* Revision 1.13  2004/11/18 10:28:20  sah
-* corrected handling of simple types
-*
-* Revision 1.12  2004/11/17 19:45:53  sah
-* fixed external typedefs
-*
-* Revision 1.11  2004/11/17 17:05:29  sah
-* added external typedefs
-*
-* Revision 1.10  2004/11/14 15:20:00  sah
-* fixed a bug
-*
-* Revision 1.9  2004/11/11 10:43:39  sah
-* intermediate checkin
-*
-* Revision 1.8  2004/11/09 20:03:06  sah
-* fixed q bug
-*
-* Revision 1.7  2004/11/09 18:16:05  sah
-* noew fundefs and fundecs can be mixed
-*
-* Revision 1.6  2004/11/09 15:22:34  sah
-* aadded missing ;...
-*
-* Revision 1.5  2004/11/08 19:07:05  sah
-* added typedef for pragmalist
-*
-* Revision 1.4  2004/11/07 18:03:59  sah
-* added external functions support
-*
-* Revision 1.3  2004/10/22 13:22:31  sah
-* removed all artificial namespaces
-* added during parsing
-*
-* Revision 1.2  2004/10/17 14:52:30  sah
-* added support for except
-* in interface descriptions
-*
-* Revision 1.1  2004/10/15 15:04:27  sah
-* Initial revision
-*
-*
-*
-*/
+ * $Log$
+ */
 
 
 #include <stdio.h>
@@ -1164,7 +1020,7 @@ let:       ids LET { $<cint>$ = global.linenum; } expr
            { node *id, *ids, *ap;
 
              if( TCcountExprs( $3) > 1) {
-               $3 = TCmakeFlatArray( $3);
+               $3 = TCmakeVector( TYmakeSimpleType( T_unknown), $3);
              } else {
                node * tmp;
 
@@ -1440,12 +1296,16 @@ expr_sel: expr SQBR_L exprs SQBR_R
               $3 = FREEdoFreeNode( $3);
             } else {
               $$ = TCmakeSpap2( NULL, ILIBstringCopy( "sel"),
-                                TCmakeFlatArray( $3), $1);
+                                TCmakeVector( TYmakeSimpleType( T_unknown), 
+                                              $3), 
+                                $1);
             }
           }
         | expr SQBR_L SQBR_R
           { $$ = TCmakeSpap2( NULL, ILIBstringCopy( "sel"),
-                 TCmakeFlatArray( NULL), $1);
+                              TCmakeVector( TYmakeSimpleType( T_unknown),
+                                            NULL), 
+                              $1);
           }
         ;
 
@@ -1474,11 +1334,11 @@ opt_arguments: exprs         { $$ = $1;   }
              ;
 
 expr_ar: SQBR_L { $<cint>$ = global.linenum; } exprs SQBR_R
-         { $$ = TCmakeFlatArray( $3);
+         { $$ = TCmakeVector( TYmakeSimpleType( T_unknown), $3);
            NODE_LINE( $$) = $<cint>2;
          }
        | SQBR_L { $<cint>$ = global.linenum; } SQBR_R
-         { $$ = TCmakeFlatArray( NULL);
+         { $$ = TCmakeVector( TYmakeSimpleType( T_unknown), NULL);
            NODE_LINE( $$) = $<cint>2;
          }
        ;
@@ -2087,7 +1947,7 @@ node *String2Array(char *str)
   }
 
   len_expr = TBmakeNum( cnt);
-  array = TCmakeFlatArray( new_exprs);
+  array = TCmakeVector( TYmakeSimpleType( T_unknown), new_exprs);
 
 #ifndef CHAR_ARRAY_NOT_AS_STRING
   ARRAY_STRING(array)=str;

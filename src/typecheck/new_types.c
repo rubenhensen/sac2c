@@ -5967,7 +5967,7 @@ BuildCondAssign (node *prf_ass, prf rel_prf, node *expr, node *then_ass, node *e
             flt_prf4 = TBmakeBool (TRUE);
             while (aexprs != NULL) {
                 id = DUPdupIdsId (prf_ids);
-                array = TCmakeFlatArray (TBmakeExprs (TBmakeNum (dim), NULL));
+                array = TCmakeIntVector (TBmakeExprs (TBmakeNum (dim), NULL));
                 flt_array = BuildTmpId (TYmakeAKV (TYmakeSimpleType (T_int),
                                                    COaST2Constant (array)),
                                         new_vardecs);

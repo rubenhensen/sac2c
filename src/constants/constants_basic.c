@@ -1,68 +1,5 @@
 /*
- *
- * $Log$
- * Revision 1.39  2005/08/26 16:28:05  ktr
- * some cleanup
- *
- * Revision 1.38  2005/08/26 12:41:36  ktr
- * COast2Constant now uses AKV type returned from NTCnewTypeCheckExpr
- *
- * Revision 1.37  2005/08/23 14:22:47  sbs
- * introduced the recognition of char constants
- *
- * Revision 1.36  2005/01/26 10:34:45  mwe
- * just edited last log message...
- *
- * Revision 1.35  2005/01/26 10:24:38  mwe
- * AVIS_SSACONST removed and replaced by usage of akv types
- *
- * Revision 1.34  2004/12/14 17:05:43  ktr
- * COAST2constant corrected.
- *
- * Revision 1.33  2004/12/09 14:46:09  sah
- * fixed a not copied shape! this caused
- * lots of unpredicted behaviour!
- *
- * Revision 1.32  2004/12/08 18:03:14  ktr
- * removed ARRAY_TYPE/ARRAY_NTYPE
- *
- * Revision 1.31  2004/12/07 20:36:16  ktr
- * eliminated CONSTVEC which is superseded by ntypes.
- *
- * Revision 1.30  2004/11/27 01:18:05  ktr
- * Fixed some things.
- *
- * Revision 1.29  2004/11/27 00:17:33  jhb
- * functionsname fixed with the header names
- *
- * Revision 1.28  2004/11/26 23:52:43  mwe
- * *** empty log message ***
- *
- * Revision 1.27  2004/11/26 23:46:57  mwe
- * changes according to fit header file
- *
- * Revision 1.26  2004/11/26 16:09:53  jhb
- * compile
- *
- * Revision 1.25  2004/11/26 14:25:47  sbs
- * change run
- *
- * Revision 1.24  2004/11/09 14:03:00  mwe
- * code for type upgrade added
- * use ntype-structure instead of types-structure
- * new code deactivated by MWE_NTYPE_READY macro
- *
- * Revision 1.23  2004/07/23 15:23:45  ktr
- * unnecessary comment removed.
- *
- * Revision 1.22  2003/09/26 10:14:23  sbs
- * COisEmptyVect added
- *
- * [eliminated]
- *
- * Revision 1.1  2001/03/02 14:32:55  sbs
- * Initial revision
- *
+ * $Id$
  */
 
 /*
@@ -718,7 +655,8 @@ COconstant2AST (constant *a)
                              exprs);
         }
         /* Finally, the N_array node is created! */
-        res = TBmakeArray (SHcopyShape (COgetShape (a)), exprs);
+        res = TBmakeArray (TYmakeSimpleType (CONSTANT_TYPE (a)),
+                           SHcopyShape (COgetShape (a)), exprs);
     }
 
     DBUG_RETURN (res);

@@ -1,103 +1,5 @@
 /*
- * $Log$
- * Revision 1.28  2005/10/05 13:27:11  ktr
- * removed common entrypoint for WLI, WLF which is now performed in optimize cycle
- *
- * Revision 1.27  2005/08/26 12:29:13  ktr
- * major brushing,seams to work
- *
- * Revision 1.26  2005/08/19 13:08:30  ktr
- * removed SSAINDEX macro
- *
- * Revision 1.25  2005/01/26 10:34:45  mwe
- * just edited last log message...
- *
- * Revision 1.24  2005/01/26 10:24:38  mwe
- * AVIS_SSACONST removed and replaced by usage of akv types
- *
- * Revision 1.23  2005/01/11 13:32:21  cg
- * Converted output from Error.h to ctinfo.c
- *
- * Revision 1.22  2004/12/08 18:02:10  ktr
- * removed ARRAY_TYPE/ARRAY_NTYPE
- *
- * Revision 1.21  2004/11/27 02:32:32  mwe
- * function renaming
- *
- * Revision 1.20  2004/11/26 15:51:50  jhb
- * WLFwithloopFoldingWLT changed WLFwithloopFoldingWlt
- *
- * Revision 1.19  2004/11/25 23:11:10  jhb
- * on the road again
- *
- * Revision 1.18  2004/11/16 16:35:08  mwe
- * code for type upgrade added
- * use ntype-structure instead of type-structure
- * new code deactivated by MWE_NTYPE_READY
- *
- * Revision 1.17  2004/10/07 12:12:45  sah
- * added NCODE_INC_USED macro
- *
- * Revision 1.16  2004/10/05 13:50:58  sah
- * lifted start of WLI/WLT traversal to the
- * defining source files to allow for local
- * info structures
- *
- * Revision 1.15  2004/07/14 14:17:36  sah
- * added SSADbugIndexInfo as a replacement for DebugIndexInfo
- * from old WithloopFolding, as that will be gone soon
- *
- * Revision 1.14  2004/02/25 15:53:06  cg
- * New functions RestoreSSAOneFunction and RestoreSSAOneFundef
- * now provide access to SSA transformations on a per function
- * basis.
- * Only functions from ssa.[ch] should be used to initiate the
- * transformation process in either direction!
- *
- * Revision 1.13  2003/06/11 21:52:05  ktr
- * Added support for multidimensional arrays.
- *
- * Revision 1.12  2003/04/10 11:56:03  dkr
- * SSAArrayST2ArrayInt modified: returns NULL if argument is a structural
- * constant only
- *
- * Revision 1.11  2002/10/09 02:11:39  dkr
- * constants modul used instead of ID/ARRAY_CONSTVEC
- *
- * Revision 1.10  2002/10/08 10:32:29  dkr
- * SSAArrayST2ArrayInt(): AVIS_SSACONST(ID_AVIS()) used instead of ID_CONSTVEC
- *
- * Revision 1.9  2002/09/11 23:17:23  dkr
- * prf_string replaced by mdb_prf
- *
- * Revision 1.8  2002/02/20 14:40:40  dkr
- * function DupTypes() renamed into DupAllTypes()
- *
- * Revision 1.7  2001/05/22 14:57:19  nmw
- *  comments corrected
- *
- * Revision 1.6  2001/05/17 14:09:32  nmw
- * MALLOC/FREE replaced by Malloc/Free, using result of Free()
- *
- * Revision 1.5  2001/05/17 13:29:29  cg
- * De-allocation macros FREE_INTERN_GEN and FREE_INDEX_INFO
- * converted to functions.
- *
- * Revision 1.4  2001/05/16 19:52:47  nmw
- * reverted Free() to FREE() due to segfaults when used with linux :-(
- *
- * Revision 1.3  2001/05/16 13:43:08  nmw
- * unused old code removed, comments corrected
- * MALLOC/FREE changed to Malloc/Free
- *
- * Revision 1.2  2001/05/15 16:39:21  nmw
- * SSAWithloopFolding implemented (but not tested)
- *
- * Revision 1.1  2001/05/14 15:55:15  nmw
- * Initial revision
- *
- *
- * created from WithloopFolding.c, Revision 3.6  on 2001/05/14 by nmw
+ * $Id$
  */
 
 /*
@@ -680,7 +582,7 @@ WLFcreateArrayFromInternGen (int *source, int number)
     for (i = number - 1; i >= 0; i--) {
         tmpn = TBmakeExprs (TBmakeNum (source[i]), tmpn);
     }
-    arrayn = TCmakeFlatArray (tmpn);
+    arrayn = TCmakeIntVector (tmpn);
 
     DBUG_RETURN (arrayn);
 }

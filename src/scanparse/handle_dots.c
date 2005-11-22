@@ -1,51 +1,5 @@
 /*
- *
- * $Log$
- * Revision 1.50  2005/07/15 15:57:02  sah
- * introduced namespaces
- *
- * Revision 1.49  2005/07/06 12:50:39  sah
- * rewrote default value creation
- *
- * Revision 1.48  2005/06/28 14:50:01  sah
- * new default values
- *
- * Revision 1.47  2005/06/27 20:29:12  sah
- * removed a small bug
- *
- * Revision 1.46  2005/06/21 15:33:04  sah
- * adapted handledots to new ast and
- * fixed default value creation.
- * reenabled vectors in setwl
- *
- * Revision 1.45  2005/06/18 18:09:13  sah
- * bugfixing
- *
- * Revision 1.44  2005/01/10 16:59:45  cg
- * Converted error messages from Error.h to ctinfo.c
- *
- * Revision 1.43  2004/12/05 17:51:24  sah
- * bugfix
- *
- * Revision 1.42  2004/12/05 16:45:38  sah
- * added SPIds SPId SPAp in frontend
- *
- * Revision 1.41  2004/12/02 15:14:49  sah
- * intermediate fix
- *
- * Revision 1.40  2004/12/01 18:49:01  sah
- * post DK bugfixing
- *
- * Revision 1.39  2004/12/01 14:17:41  sah
- * fixed usage of AP_NAME
- *
- * Revision 1.38  2004/11/25 22:26:47  sah
- * COMPILES!
- *
- *
- * Revision 1.1  2002/07/09 12:54:25  sbs
- * Initial revision
- *
+ * $Id$
  */
 
 #include "handle_dots.h"
@@ -569,20 +523,22 @@ BuildLeftShape (node *array, dotinfo *info)
         maxdot = info->tripledot - 1;
 
     for (cnt = maxdot; cnt > 0; cnt--) {
-        result = TBmakeExprs (MAKE_BIN_PRF (F_sel,
-                                            TCmakeFlatArray (
-                                              TBmakeExprs (TBmakeNum (LDot2Pos (cnt, info)
-                                                                      - 1),
-                                                           NULL)),
-                                            TBmakePrf (F_shape,
-                                                       TBmakeExprs (DUPdoDupTree (array),
-                                                                    NULL))),
-                              result);
+        result
+          = TBmakeExprs (MAKE_BIN_PRF (F_sel,
+                                       TCmakeVector (TYmakeSimpleType (T_unknown),
+                                                     TBmakeExprs (TBmakeNum (
+                                                                    LDot2Pos (cnt, info)
+                                                                    - 1),
+                                                                  NULL)),
+                                       TBmakePrf (F_shape,
+                                                  TBmakeExprs (DUPdoDupTree (array),
+                                                               NULL))),
+                         result);
     }
 
     /* do not create empty array */
     if (result != NULL) {
-        result = TCmakeFlatArray (result);
+        result = TCmakeVector (TYmakeSimpleType (T_unknown), result);
     }
 
     DBUG_RETURN (result);
@@ -644,25 +600,29 @@ BuildRightShape (node *array, dotinfo *info)
         result = TBmakeExprs (
           MAKE_BIN_PRF (
             F_sel,
-            TCmakeFlatArray (TBmakeExprs (
-              MAKE_BIN_PRF (
-                F_sub_SxS,
-                MAKE_BIN_PRF (F_sel, TCmakeFlatArray (TBmakeExprs (TBmakeNum (0), NULL)),
-                              TBmakePrf (F_shape,
-                                         TBmakeExprs (TBmakePrf (F_shape,
-                                                                 TBmakeExprs (DUPdoDupTree (
-                                                                                array),
-                                                                              NULL)),
-                                                      NULL))),
-                TBmakeNum (RDot2Pos (cnt, info))),
-              NULL)),
+            TCmakeVector (
+              TYmakeSimpleType (T_unknown),
+              TBmakeExprs (
+                MAKE_BIN_PRF (
+                  F_sub_SxS,
+                  MAKE_BIN_PRF (
+                    F_sel,
+                    TCmakeVector (TYmakeSimpleType (T_unknown),
+                                  TBmakeExprs (TBmakeNum (0), NULL)),
+                    TBmakePrf (F_shape,
+                               TBmakeExprs (TBmakePrf (F_shape,
+                                                       TBmakeExprs (DUPdoDupTree (array),
+                                                                    NULL)),
+                                            NULL))),
+                  TBmakeNum (RDot2Pos (cnt, info))),
+                NULL)),
             TBmakePrf (F_shape, TBmakeExprs (DUPdoDupTree (array), NULL))),
           result);
     }
 
     /* do not create empty array */
     if (result != NULL) {
-        result = TCmakeFlatArray (result);
+        result = TCmakeVector (TYmakeSimpleType (T_unknown), result);
     }
 
     DBUG_RETURN (result);
@@ -751,19 +711,21 @@ BuildLeftIndex (node *args, node *iv, dotinfo *info)
     for (cnt = maxcnt; cnt > 0; cnt--) {
         if (LIsDot (cnt, info)) {
             /* Make selection iv[ldot(cnt)-1] */
-            result = TBmakeExprs (MAKE_BIN_PRF (F_sel,
-                                                TCmakeFlatArray (
-                                                  TBmakeExprs (TBmakeNum (
-                                                                 LIsDot (cnt, info) - 1),
-                                                               NULL)),
-                                                DUPdoDupTree (iv)),
-                                  result);
+            result
+              = TBmakeExprs (MAKE_BIN_PRF (F_sel,
+                                           TCmakeVector (TYmakeSimpleType (T_unknown),
+                                                         TBmakeExprs (TBmakeNum (
+                                                                        LIsDot (cnt, info)
+                                                                        - 1),
+                                                                      NULL)),
+                                           DUPdoDupTree (iv)),
+                             result);
         } else {
             result = TBmakeExprs (DUPdoDupTree (TCgetNthExpr (cnt, args)), result);
         }
     }
 
-    result = TCmakeFlatArray (result);
+    result = TCmakeVector (TYmakeSimpleType (T_unknown), result);
 
     DBUG_RETURN (result);
 }
@@ -824,16 +786,19 @@ BuildRightIndex (node *args, node *iv, dotinfo *info)
             result = TBmakeExprs (
               MAKE_BIN_PRF (
                 F_sel,
-                TCmakeFlatArray (TBmakeExprs (
-                  MAKE_BIN_PRF (F_sub_SxS,
-                                MAKE_BIN_PRF (F_sel,
-                                              TCmakeFlatArray (
-                                                TBmakeExprs (TBmakeNum (0), NULL)),
-                                              TBmakePrf (F_shape,
-                                                         TBmakeExprs (DUPdoDupTree (iv),
-                                                                      NULL))),
-                                TBmakeNum (RIsDot (cnt, info))),
-                  NULL)),
+                TCmakeVector (
+                  TYmakeSimpleType (T_unknown),
+                  TBmakeExprs (MAKE_BIN_PRF (
+                                 F_sub_SxS,
+                                 MAKE_BIN_PRF (F_sel,
+                                               TCmakeVector (TYmakeSimpleType (T_unknown),
+                                                             TBmakeExprs (TBmakeNum (0),
+                                                                          NULL)),
+                                               TBmakePrf (F_shape,
+                                                          TBmakeExprs (DUPdoDupTree (iv),
+                                                                       NULL))),
+                                 TBmakeNum (RIsDot (cnt, info))),
+                               NULL)),
                 DUPdoDupTree (iv)),
               result);
         } else {
@@ -843,7 +808,7 @@ BuildRightIndex (node *args, node *iv, dotinfo *info)
         }
     }
 
-    result = TCmakeFlatArray (result);
+    result = TCmakeVector (TYmakeSimpleType (T_unknown), result);
 
     DBUG_RETURN (result);
 }
@@ -1237,7 +1202,8 @@ ScanVector (node *vector, node **array, info *arg_info)
 
                     shape
                       = MAKE_BIN_PRF (F_sel,
-                                      TCmakeFlatArray (TBmakeExprs (position, NULL)),
+                                      TCmakeVector (TYmakeSimpleType (T_unknown),
+                                                    TBmakeExprs (position, NULL)),
                                       TBmakePrf (F_shape,
                                                  TBmakeExprs (DUPdoDupTree (id), NULL)));
                     chain = ILIBmalloc (sizeof (shpchain));
@@ -1405,7 +1371,7 @@ BuildWLShape (idtable *table, idtable *end)
             table = table->next;
         }
 
-        result = TCmakeFlatArray (result);
+        result = TCmakeVector (TYmakeSimpleType (T_unknown), result);
     }
 #ifdef HD_SETWL_VECTOR
     else if (table->type == ID_vector) {
@@ -1555,7 +1521,8 @@ BuildPermutatedVector (node *ids, node *vect)
         if (NODE_TYPE (EXPRS_EXPR (trav)) != N_dot) {
             node *entry
               = MAKE_BIN_PRF (F_sel,
-                              TCmakeFlatArray (TBmakeExprs (TBmakeNum (pos), NULL)),
+                              TCmakeVector (TYmakeSimpleType (T_unknown),
+                                            TBmakeExprs (TBmakeNum (pos), NULL)),
                               DUPdoDupTree (vect));
 
             if (result == NULL) {
@@ -1580,7 +1547,8 @@ BuildPermutatedVector (node *ids, node *vect)
         if (NODE_TYPE (EXPRS_EXPR (trav)) == N_dot) {
             node *entry
               = MAKE_BIN_PRF (F_sel,
-                              TCmakeFlatArray (TBmakeExprs (TBmakeNum (pos), NULL)),
+                              TCmakeVector (TYmakeSimpleType (T_unknown),
+                                            TBmakeExprs (TBmakeNum (pos), NULL)),
                               DUPdoDupTree (vect));
 
             if (result == NULL) {
@@ -1596,7 +1564,7 @@ BuildPermutatedVector (node *ids, node *vect)
         pos++;
     }
 
-    result = TCmakeFlatArray (result);
+    result = TCmakeVector (TYmakeSimpleType (T_unknown), result);
 
     DBUG_RETURN (result);
 }
@@ -1955,20 +1923,22 @@ HDspap (node *arg_node, info *arg_info)
             dotlist *dots = info->right;
 
             while ((dots != NULL) && (dots->dottype == 1)) {
-                defshape = TBmakeExprs (TCmakePrf2 (F_sel,
-                                                    TCmakeFlatArray (
-                                                      TBmakeExprs (TBmakeNum (
-                                                                     dots->position - 1),
-                                                                   NULL)),
-                                                    TCmakePrf1 (F_shape,
-                                                                DUPdoDupTree (
-                                                                  SPAP_ARG2 (arg_node)))),
-                                        defshape);
+                defshape
+                  = TBmakeExprs (TCmakePrf2 (F_sel,
+                                             TCmakeVector (TYmakeSimpleType (T_unknown),
+                                                           TBmakeExprs (TBmakeNum (
+                                                                          dots->position
+                                                                          - 1),
+                                                                        NULL)),
+                                             TCmakePrf1 (F_shape,
+                                                         DUPdoDupTree (
+                                                           SPAP_ARG2 (arg_node)))),
+                                 defshape);
 
                 dots = dots->prev;
             }
 
-            defshape = TCmakeFlatArray (defshape);
+            defshape = TCmakeVector (TYmakeSimpleType (T_unknown), defshape);
 
             /*
              * LEVEL II: handle the ... in the middle, if it exists
@@ -2014,10 +1984,13 @@ HDspap (node *arg_node, info *arg_info)
                 while ((dots != NULL) && (dots->dottype == 1)) {
                     leftshape
                       = TBmakeExprs (TCmakePrf2 (F_sel,
-                                                 TCmakeFlatArray (
-                                                   TBmakeExprs (TBmakeNum (dots->position
-                                                                           - 1),
-                                                                NULL)),
+                                                 TCmakeVector (TYmakeSimpleType (
+                                                                 T_unknown),
+                                                               TBmakeExprs (TBmakeNum (
+                                                                              dots
+                                                                                ->position
+                                                                              - 1),
+                                                                            NULL)),
                                                  TCmakePrf1 (F_shape,
                                                              DUPdoDupTree (
                                                                SPAP_ARG2 (arg_node)))),
@@ -2026,7 +1999,7 @@ HDspap (node *arg_node, info *arg_info)
                     dots = dots->prev;
                 }
 
-                leftshape = TCmakeFlatArray (leftshape);
+                leftshape = TCmakeVector (TYmakeSimpleType (T_unknown), leftshape);
 
                 defshape = TCmakePrf2 (F_cat_VxV, leftshape, defshape);
             }
@@ -2065,8 +2038,9 @@ HDspap (node *arg_node, info *arg_info)
                 node *wlshape
                   = TCmakePrf2 (F_drop_SxV,
                                 TCmakePrf2 (F_sel,
-                                            TCmakeFlatArray (
-                                              TBmakeExprs (TBmakeNum (0), NULL)),
+                                            TCmakeVector (TYmakeSimpleType (T_unknown),
+                                                          TBmakeExprs (TBmakeNum (0),
+                                                                       NULL)),
                                             TCmakePrf1 (F_shape,
                                                         DUPdoDupTree (
                                                           INFO_HD_WLSHAPE (arg_info)))),

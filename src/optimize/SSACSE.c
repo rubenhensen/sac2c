@@ -869,7 +869,7 @@ CSEblock (node *arg_node, info *arg_info)
         if (WITHID_IDS (oldwithid) != NULL) {
             DBUG_PRINT ("CSE", ("add new expression to cselist"));
             ivlet = TBmakeLet (TBmakeIds (IDS_AVIS (WITHID_VEC (oldwithid)), NULL),
-                               TCids2Array (WITHID_IDS (oldwithid)));
+                               TCmakeIntVector (TCids2Exprs (WITHID_IDS (oldwithid))));
             INFO_CSE (arg_info) = AddCseinfo (INFO_CSE (arg_info), ivlet);
         }
     }

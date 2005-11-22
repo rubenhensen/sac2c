@@ -964,7 +964,7 @@ CreateEntryFlatArray (int entry, int number)
     for (i = 0; i < number; i++) {
         tmp = TBmakeExprs (TBmakeNum (entry), tmp);
     }
-    tmp = TCmakeFlatArray (tmp);
+    tmp = TCmakeIntVector (tmp);
 
     DBUG_RETURN (tmp);
 }

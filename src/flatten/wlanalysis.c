@@ -120,7 +120,6 @@ VectVar2StructConst (node **expr, node *fundef, int shpext)
 
     DBUG_ASSERT ((*expr != NULL), "Expr is empty");
     DBUG_ASSERT ((NODE_TYPE (*expr) == N_id), "VectVar2StructConst not called with N_id");
-    DBUG_ASSERT ((TYisSimple (ID_NTYPE (*expr)) == FALSE), "Id is a Scalar!!");
 
     nassigns = NULL;
     exprs = NULL;
@@ -145,7 +144,7 @@ VectVar2StructConst (node **expr, node *fundef, int shpext)
          * idx_avis = [i];
          */
         nassigns = TBmakeAssign (TBmakeLet (TBmakeIds (idx_avis, NULL),
-                                            TCmakeFlatArray (TCmakeExprsNum (i))),
+                                            TCmakeIntVector (TCmakeExprsNum (i))),
                                  nassigns);
         AVIS_SSAASSIGN (idx_avis) = nassigns;
 
@@ -155,7 +154,7 @@ VectVar2StructConst (node **expr, node *fundef, int shpext)
         exprs = TBmakeExprs (TBmakeId (res_avis), exprs);
     }
     *expr = FREEdoFreeTree (*expr);
-    *expr = TCmakeFlatArray (exprs);
+    *expr = TCmakeIntVector (exprs);
 
     DBUG_RETURN (nassigns);
 }

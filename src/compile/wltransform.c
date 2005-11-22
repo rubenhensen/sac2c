@@ -6951,7 +6951,7 @@ EmptyWl2Expr (node *wl, info *arg_info)
         else
             assigns = NULL;
 
-        tmp = TCmakeFlatArray (NULL);
+        tmp = TCmakeIntVector (NULL);
 
         assigns
           = TBmakeAssign (TBmakeLet (DUPdoDupNode (WITHID_VEC (WITH_WITHID (wl))), tmp),
@@ -6963,7 +6963,7 @@ EmptyWl2Expr (node *wl, info *arg_info)
 
     case N_fold:
 
-        tmp = TCmakeFlatArray (NULL);
+        tmp = TCmakeIntVector (NULL);
         assigns
           = TBmakeAssign (TBmakeLet (DUPdoDupNode (WITHID_VEC (WITH_WITHID (wl))), tmp),
                           DUPdoDupTree (BLOCK_INSTR (WITH_CBLOCK (wl))));

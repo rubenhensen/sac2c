@@ -1,90 +1,5 @@
 /*
- * $Log$
- * Revision 1.27  2005/09/16 17:07:44  sah
- * fixed bug #116: the generated code is now properly flattened
- *
- * Revision 1.26  2005/09/04 12:52:11  ktr
- * re-engineered the optimization cycle
- *
- * Revision 1.25  2005/08/26 16:38:33  ktr
- * small bugfix
- *
- * Revision 1.24  2005/07/03 17:13:14  ktr
- * All variables are initialized.
- * Bool used instead of int where appropriate
- *
- * Revision 1.23  2005/05/03 09:47:07  khf
- * reduced specialisation of type when unrolling a genarray wl
- *
- * Revision 1.22  2005/04/29 22:54:33  khf
- * replaced macro IDS_SHAPE
- *
- * Revision 1.21  2005/04/27 07:53:22  ktr
- * default nodes are now handled as well
- *
- * Revision 1.20  2005/04/22 10:08:04  ktr
- * Works with Marielyst compiler.
- *
- * Revision 1.19  2005/04/20 19:16:22  ktr
- * removed Inline.h
- *
- * Revision 1.18  2005/01/14 08:45:14  cg
- * Replaced strcmp by ILIBstringCompare.
- *
- * Revision 1.17  2005/01/11 12:58:15  cg
- * Converted output from Error.h to ctinfo.c
- *
- * Revision 1.16  2004/12/08 18:00:42  ktr
- * removed ARRAY_TYPE/ARRAY_NTYPE
- *
- * Revision 1.15  2004/11/26 18:26:53  mwe
- * bug fix
- *
- * Revision 1.13  2004/11/11 18:57:15  khf
- * CreateFold(): removed non emm part,
- *               add new assign instead of replace cexpr
- *
- * Revision 1.12  2004/11/10 18:27:29  mwe
- * code for type upgrade added
- * use ntype-structure instead of type-structure
- * new code deactivated by MWE_NTYPE_READY
- *
- * Revision 1.11  2004/08/04 12:03:27  ktr
- * substituted eacc by emm
- *
- * Revision 1.10  2004/07/23 15:24:04  khf
- * changed flag for explicit accumulation from ktr to eacc
- *
- * Revision 1.9  2004/07/22 17:36:31  khf
- * support for explicit accumulate (only if ktr is activated) added
- *
- * Revision 1.8  2004/07/18 19:54:54  sah
- * switch to new INFO structure
- * PHASE I
- * (as well some code cleanup)
- *
- * Revision 1.7  2004/07/07 15:43:36  mwe
- * last changes undone (all changes connected to new type representation with ntype*)
- *
- * Revision 1.5  2003/06/17 13:36:42  dkr
- * bug in ForEachElement() fixed:
- * WLUR works for empty WL-shape as well now
- *
- * Revision 1.4  2003/06/11 21:47:29  ktr
- * Added support for multidimensional arrays.
- *
- * Revision 1.3  2002/10/10 23:55:46  dkr
- * another bug in CountElements() fixed ...
- *
- * Revision 1.2  2002/10/09 02:05:34  dkr
- * bug in CountElements() fixed
- *
- * Revision 1.1  2002/10/08 22:10:04  dkr
- * Initial revision
- *
- *
- * created from WLUnroll.c, Revision 3.11 on 2002/10/10 by dkr
- *
+ * $Id$
  */
 
 /*******************************************************************************
@@ -348,7 +263,7 @@ ForEachElementHelp (int *l, int *u, int *s, int *w, int dim, int maxdim, node *a
             for (i = maxdim; i > 0; i--) {
                 index = TBmakeExprs (TBmakeNum (ind[i - 1]), index);
             }
-            index = TCmakeFlatArray (index);
+            index = TCmakeIntVector (index);
 
             assignn = opfun (assignn, index);
         } else {
@@ -402,7 +317,7 @@ ForEachElement (node *partn, node *assignn)
 
     if (maxdim == 0) {
         /* create index */
-        index = TCmakeFlatArray (NULL);
+        index = TCmakeIntVector (NULL);
         /* nums struct is freed inside MakeShpseg() */
 
         res = opfun (assignn, index);

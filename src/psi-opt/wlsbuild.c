@@ -256,7 +256,7 @@ ConcatVectors (node *vec1, node *vec2, info *arg_info)
     /*
      * concatenate the elements,
      */
-    res = TCmakeFlatArray (
+    res = TCmakeIntVector (
       TCappendExprs (DUPdoDupTree (ARRAY_AELEMS (t1)), DUPdoDupTree (ARRAY_AELEMS (t2))));
 
     /*
@@ -339,7 +339,8 @@ WLSBcode (node *arg_node, info *arg_info)
              *
              * - a redefinition of the outer index vector
              */
-            array = TCids2Array (WITHID_IDS (INFO_OUTERWITHID (arg_info)));
+            array
+              = TCmakeIntVector (TCids2Exprs (WITHID_IDS (INFO_OUTERWITHID (arg_info))));
 
             oldavis = IDS_AVIS (WITHID_VEC (INFO_OUTERWITHID (arg_info)));
             avis = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (oldavis)),
@@ -365,7 +366,7 @@ WLSBcode (node *arg_node, info *arg_info)
                 oldids = IDS_NEXT (oldids);
             }
 
-            array = TCids2Array (newids);
+            array = TCmakeIntVector (TCids2Exprs (newids));
 
             oldavis = IDS_AVIS (WITHID_VEC (INFO_INNERWITHID (arg_info)));
             avis = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (oldavis)),

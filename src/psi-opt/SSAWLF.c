@@ -1545,7 +1545,7 @@ WLFid (node *arg_node, info *arg_info)
                      but I guess that would cost more time than speculatively inserting
                      (and DC-removing) some new variables. */
 
-                arrayn = TCmakeFlatArray (TBmakeExprs (TBmakeNum (count), NULL));
+                arrayn = TCmakeIntVector (TBmakeExprs (TBmakeNum (count), NULL));
                 arrayavisn = TBmakeAvis (ILIBtmpVar (), NTCnewTypeCheck_Expr (arrayn));
                 FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
                   = TBmakeVardec (arrayavisn, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));

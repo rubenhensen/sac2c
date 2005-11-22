@@ -1445,7 +1445,8 @@ DUParray (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("DUParray");
 
-    new_node = TBmakeArray (SHcopyShape (ARRAY_SHAPE (arg_node)),
+    new_node = TBmakeArray (TYcopyType (ARRAY_BASETYPE (arg_node)),
+                            SHcopyShape (ARRAY_SHAPE (arg_node)),
                             DUPTRAV (ARRAY_AELEMS (arg_node)));
 
     ARRAY_STRING (new_node) = ILIBstringCopy (ARRAY_STRING (arg_node));

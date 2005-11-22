@@ -74,8 +74,6 @@
     copy="function" />
     <type name="MTExecMode" ctype="mtexecmode_t" init="MUTH_ANY"
     copy="literal" />
-    <type name="RCCounter" ctype="rc_counter*" init="NULL"
-    copy="function" persist="no" />
     <type name="StringSet" ctype="stringset_t*" init="NULL"
     copy="function" persist="no" />
     <type name="IndexInfo" ctype="index_info*" init="NULL"
@@ -3851,6 +3849,18 @@
         </son>
       </sons>
       <attributes>
+        <attribute name="Basetype">
+          <type name="NewType">
+            <targets>
+              <target mandatory="yes">
+                <any />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
         <attribute name="Shape">
           <type name="Shape">
             <targets>

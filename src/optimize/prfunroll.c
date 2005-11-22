@@ -389,7 +389,7 @@ UPRFprf (node *arg_node, info *arg_info)
                     INFO_VARDEC (arg_info)
                       = TBmakeVardec (selarravis, INFO_VARDEC (arg_info));
                     ass = TBmakeAssign (TBmakeLet (TBmakeIds (selarravis, NULL),
-                                                   TCmakeFlatArray (
+                                                   TCmakeIntVector (
                                                      TBmakeExprs (TBmakeNum (i), NULL))),
                                         ass);
                     AVIS_SSAASSIGN (selarravis) = ass;
@@ -414,7 +414,7 @@ UPRFprf (node *arg_node, info *arg_info)
                     INFO_VARDEC (arg_info)
                       = TBmakeVardec (selarravis, INFO_VARDEC (arg_info));
                     ass = TBmakeAssign (TBmakeLet (TBmakeIds (selarravis, NULL),
-                                                   TCmakeFlatArray (
+                                                   TCmakeIntVector (
                                                      TBmakeExprs (TBmakeNum (i), NULL))),
                                         ass);
                     AVIS_SSAASSIGN (selarravis) = ass;
@@ -446,7 +446,9 @@ UPRFprf (node *arg_node, info *arg_info)
             scl = TYfreeType (scl);
 
             arg_node = FREEdoFreeNode (arg_node);
-            arg_node = TCmakeFlatArray (RevertExprs (elems, NULL));
+            arg_node
+              = TCmakeVector (TYcopyType (TYgetScalar (IDS_NTYPE (INFO_LHS (arg_info)))),
+                              RevertExprs (elems, NULL));
 
             INFO_PREASSIGN (arg_info) = RevertAssignments (ass, NULL);
         }
