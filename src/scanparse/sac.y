@@ -2,7 +2,7 @@
 
 
 /*
- * $Log$
+ * $Id$
  */
 
 
@@ -1296,15 +1296,13 @@ expr_sel: expr SQBR_L exprs SQBR_R
               $3 = FREEdoFreeNode( $3);
             } else {
               $$ = TCmakeSpap2( NULL, ILIBstringCopy( "sel"),
-                                TCmakeVector( TYmakeSimpleType( T_unknown), 
-                                              $3), 
+                                TCmakeVector( TYmakeSimpleType(T_unknown), $3),
                                 $1);
             }
           }
         | expr SQBR_L SQBR_R
           { $$ = TCmakeSpap2( NULL, ILIBstringCopy( "sel"),
-                              TCmakeVector( TYmakeSimpleType( T_unknown),
-                                            NULL), 
+                              TCmakeVector( TYmakeSimpleType(T_unknown), NULL), 
                               $1);
           }
         ;
