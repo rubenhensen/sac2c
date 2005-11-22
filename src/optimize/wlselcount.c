@@ -131,28 +131,38 @@ WLSELCfundef (node *arg_node, info *arg_info)
 node *
 WLSELCwith (node *arg_node, info *arg_info)
 {
+    int old;
     DBUG_ENTER ("WLSELCwith");
 
-    if (INFO_ISWLCODE (arg_info)) {
+    INFO_WLFUNAPPS (arg_info) = FALSE;
 
-        INFO_WLFUNAPPS (arg_info) = TRUE;
+    /**
+     * reset counter for max-value
+     */
+    old = INFO_WLSELSMAX (arg_info);
+    INFO_WLSELSMAX (arg_info) = 0;
+
+    /**
+     * traverse into with-loop
+     */
+
+    WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
+
+    /**
+     * assign max-value to with-loop
+     */
+    WITH_SELMAX (arg_node) = INFO_WLSELSMAX (arg_info);
+    INFO_WLSELSMAX (arg_info) = old;
+    if (WITH_SELMAX (arg_node) >= 0) {
+        INFO_WLSELS (arg_info) = INFO_WLSELS (arg_info) + WITH_SELMAX (arg_node);
     } else {
-        /**
-         * reset counter for max-value
-         */
-        INFO_WLSELSMAX (arg_info) = 0;
-
-        /**
-         * traverse into with-loop
-         */
-
-        WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
-
-        /**
-         * assign max-value to with-loop
-         */
-        WITH_SELMAX (arg_node) = INFO_WLSELSMAX (arg_info);
+        INFO_WLSELS (arg_info) = -1;
     }
+
+    if (INFO_ISWLCODE (arg_info)) {
+        INFO_WLFUNAPPS (arg_info) = TRUE;
+    }
+
     DBUG_RETURN (arg_node);
 }
 
@@ -172,13 +182,17 @@ WLSELCwith (node *arg_node, info *arg_info)
 node *
 WLSELCcode (node *arg_node, info *arg_info)
 {
+    int old_wlsels;
+    bool old_iswlcode;
     DBUG_ENTER ("WLSELCcode");
 
     /**
      * reset 'local' counters
      */
+    old_wlsels = INFO_WLSELS (arg_info);
+    old_iswlcode = INFO_ISWLCODE (arg_info);
     INFO_WLSELS (arg_info) = 0;
-    INFO_WLFUNAPPS (arg_info) = FALSE;
+    INFO_WLFUNAPPS (arg_info) = FALSE && INFO_WLFUNAPPS (arg_info);
     INFO_ISWLCODE (arg_info) = TRUE;
 
     /**
@@ -204,7 +218,10 @@ WLSELCcode (node *arg_node, info *arg_info)
      * traverse into other sub-structures
      */
 
-    if ((NULL != CODE_NEXT (arg_node)) && (INFO_WLSELSMAX (arg_info) != -1)) {
+    INFO_WLSELS (arg_info) = old_wlsels;
+    INFO_ISWLCODE (arg_info) = old_iswlcode;
+
+    if ((NULL != CODE_NEXT (arg_node))) {
         CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
     }
 
