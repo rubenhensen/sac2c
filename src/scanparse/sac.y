@@ -1335,8 +1335,12 @@ expr_ar: SQBR_L { $<cint>$ = global.linenum; } exprs SQBR_R
          { $$ = TCmakeVector( TYmakeSimpleType( T_unknown), $3);
            NODE_LINE( $$) = $<cint>2;
          }
+       | SQBR_L { $<cint>$ = global.linenum; } COLON ntype SQBR_R
+         { $$ = TCmakeVector( $4, NULL);
+           NODE_LINE( $$) = $<cint>2;
+         }
        | SQBR_L { $<cint>$ = global.linenum; } SQBR_R
-         { $$ = TCmakeVector( TYmakeSimpleType( T_unknown), NULL);
+         { $$ = TCmakeVector( TYmakeAKS( TYmakeSimpleType( T_int), SHmakeShape(0)), NULL);
            NODE_LINE( $$) = $<cint>2;
          }
        ;

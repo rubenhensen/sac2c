@@ -2341,7 +2341,7 @@ node *
 PRTarray (node *arg_node, info *arg_info)
 {
     int i;
-
+    char *type_str;
     int old_print_dim = INFO_PRINT_DIM (arg_info);
     shpseg *old_print_shape = INFO_PRINT_SHAPE (arg_info);
     shpseg *old_print_shape_counter = INFO_PRINT_SHAPE_COUNTER (arg_info);
@@ -2368,7 +2368,9 @@ PRTarray (node *arg_node, info *arg_info)
             fprintf (global.outfile, " ]");
 
     } else {
-        fprintf (global.outfile, "[]");
+        type_str = TYtype2String (ARRAY_BASETYPE (arg_node), FALSE, 0);
+        fprintf (global.outfile, "[:%s]", type_str);
+        type_str = ILIBfree (type_str);
     }
 
     if (INFO_PRINT_SHAPE (arg_info) != NULL)
