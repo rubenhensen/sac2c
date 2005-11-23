@@ -60,6 +60,7 @@
  */
 
 #include "new_types.h"
+#include "new_typecheck.h"
 #include "type_utils.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -136,34 +137,6 @@ FreeInfo (info *info)
     info = ILIBfree (info);
 
     DBUG_RETURN (info);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node RemoveUnusedCodes(node *codes)
- *
- *   @brief removes all unused N_codes recursively
- *
- *   @param  node *codes : N_code chain
- *   @return node *      : modified N_code chain
- ******************************************************************************/
-
-static node *
-RemoveUnusedCodes (node *codes)
-{
-    DBUG_ENTER ("RemoveUnusedCodes");
-    DBUG_ASSERT ((codes != NULL), "no codes available!");
-    DBUG_ASSERT ((NODE_TYPE (codes) == N_code), "type of codes is not N_code!");
-
-    if (CODE_NEXT (codes) != NULL) {
-        CODE_NEXT (codes) = RemoveUnusedCodes (CODE_NEXT (codes));
-    }
-
-    if (CODE_USED (codes) == 0) {
-        codes = FREEdoFreeNode (codes);
-    }
-
-    DBUG_RETURN (codes);
 }
 
 /** <!--********************************************************************-->
@@ -1089,6 +1062,35 @@ CreateEmptyGenWLReplacement (node *wl, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn node RemoveUnusedCodes(node *codes)
+ *
+ *   @brief removes all unused N_codes recursively
+ *
+ *   @param  node *codes : N_code chain
+ *   @return node *      : modified N_code chain
+ ******************************************************************************/
+static node *
+RemoveUnusedCodes (node *codes)
+{
+    DBUG_ENTER ("RemoveUnusedCodes");
+
+    DBUG_ASSERT ((codes != NULL), "no codes available!");
+
+    DBUG_ASSERT ((NODE_TYPE (codes) == N_code), "type of codes is not N_code!");
+
+    if (CODE_NEXT (codes) != NULL) {
+        CODE_NEXT (codes) = RemoveUnusedCodes (CODE_NEXT (codes));
+    }
+
+    if (CODE_USED (codes) == 0) {
+        codes = FREEdoFreeNode (codes);
+    }
+
+    DBUG_RETURN (codes);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *WLPGmodule(node *arg_node, info *arg_info)
  *
  *   @brief first traversal of function definitions of WLPartitionGeneration
@@ -1419,6 +1421,163 @@ WLPGwith (node *arg_node, info *arg_info)
             DBUG_ASSERT ((FALSE), "WLPG failure: IV is AKS and GPT_unknown was inferred");
             break;
         }
+    }
+
+    /*
+     * Replace with-loops generating empty arrays with an equivalent reshape
+     *   reshape( shp++shape(def), [:basetype]);
+     *
+     * This can only be performed iff the wl has not been replaced already
+     */
+    if ((NODE_TYPE (arg_node) == N_with)
+        && (NODE_TYPE (WITH_WITHOP (arg_node)) == N_genarray)) {
+        node *genarray = WITH_WITHOP (arg_node);
+        ntype *shptype;
+        ntype *exprtype;
+        shape *shpshape = NULL;
+        shape *exprshape = NULL;
+
+        shptype = NTCnewTypeCheck_Expr (GENARRAY_SHAPE (genarray));
+        if (GENARRAY_DEFAULT (genarray) != NULL) {
+            exprtype = NTCnewTypeCheck_Expr (GENARRAY_DEFAULT (genarray));
+        } else {
+            exprtype = NTCnewTypeCheck_Expr (WITH_CEXPR (arg_node));
+            DBUG_ASSERT (TUshapeKnown (exprtype),
+                         "With-loop with non-AKS elements encountered.\n"
+                         "Default-element is required!");
+        }
+
+        if (TYisAKV (shptype)) {
+            shpshape = COconstant2Shape (TYgetValue (shptype));
+        }
+
+        if (TUshapeKnown (exprtype)) {
+            exprshape = SHcopyShape (TYgetShape (exprtype));
+        }
+
+        if (((shpshape != NULL) && (SHgetUnrLen (shpshape) == 0))
+            || ((exprshape != NULL) && (SHgetUnrLen (exprshape) == 0))) {
+            ntype *scalar;
+            node *rhs;
+            node *ass;
+
+            node *shpavis;
+            node *defshpavis;
+            node *newshpavis;
+            node *arrayavis;
+
+            /*
+             * The generated array is empty. Build an alternative representation.
+             */
+            if (exprshape != NULL) {
+                /*
+                 * defshp = [[exprshape]];
+                 *
+                 * shp'   = shp;
+                 * newshp = cat( shp', defshp);
+                 * array  = [:BASETYPE]
+                 * result = reshape( newshp, array);
+                 */
+                defshpavis = TBmakeAvis (ILIBtmpVar (),
+                                         TYmakeAKV (TYmakeSimpleType (T_int),
+                                                    COmakeConstantFromShape (exprshape)));
+                FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+                  = TBmakeVardec (defshpavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+
+                ass = TBmakeAssign (TBmakeLet (TBmakeIds (defshpavis, NULL),
+                                               SHshape2Array (exprshape)),
+                                    NULL);
+                AVIS_SSAASSIGN (defshpavis) = ass;
+
+                INFO_NASSIGNS (arg_info) = TCappendAssign (INFO_NASSIGNS (arg_info), ass);
+            } else {
+                /*
+                 * defshp = shape( def);
+                 *
+                 * shp'   = shp;
+                 * newshp = cat( shp', defshp);
+                 * array  = [:BASETYPE]
+                 * result = reshape( newshp, array);
+                 */
+                rhs = TCmakePrf1 (F_shape,
+                                  TBmakeId (ID_AVIS (GENARRAY_DEFAULT (genarray))));
+
+                defshpavis = TBmakeAvis (ILIBtmpVar (), NTCnewTypeCheck_Expr (rhs));
+
+                FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+                  = TBmakeVardec (defshpavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+
+                ass = TBmakeAssign (TBmakeLet (TBmakeIds (defshpavis, NULL), rhs), NULL);
+                AVIS_SSAASSIGN (defshpavis) = ass;
+
+                INFO_NASSIGNS (arg_info) = TCappendAssign (INFO_NASSIGNS (arg_info), ass);
+            }
+
+            /*
+             * shp' = shp;
+             */
+            shpavis = TBmakeAvis (ILIBtmpVar (), TYcopyType (shptype));
+
+            FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+              = TBmakeVardec (shpavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+
+            ass = TBmakeAssign (TBmakeLet (TBmakeIds (shpavis, NULL),
+                                           DUPdoDupNode (GENARRAY_SHAPE (genarray))),
+                                NULL);
+            AVIS_SSAASSIGN (shpavis) = ass;
+
+            INFO_NASSIGNS (arg_info) = TCappendAssign (INFO_NASSIGNS (arg_info), ass);
+
+            /*
+             * newshp = cat( shp', defshp);
+             */
+            rhs = TCmakePrf2 (F_cat_VxV, TBmakeId (shpavis), TBmakeId (defshpavis));
+
+            newshpavis = TBmakeAvis (ILIBtmpVar (), NTCnewTypeCheck_Expr (rhs));
+
+            FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+              = TBmakeVardec (newshpavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+
+            ass = TBmakeAssign (TBmakeLet (TBmakeIds (newshpavis, NULL), rhs), NULL);
+            AVIS_SSAASSIGN (newshpavis) = ass;
+
+            INFO_NASSIGNS (arg_info) = TCappendAssign (INFO_NASSIGNS (arg_info), ass);
+
+            /*
+             * array = [:BASETYPE]
+             */
+            scalar = TYgetScalar (IDS_NTYPE (LET_IDS (INFO_LET (arg_info))));
+            rhs = TCmakeVector (TYmakeAKS (TYcopyType (scalar), SHmakeShape (0)), NULL);
+
+            arrayavis = TBmakeAvis (ILIBtmpVar (), NTCnewTypeCheck_Expr (rhs));
+
+            FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+              = TBmakeVardec (arrayavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+
+            ass = TBmakeAssign (TBmakeLet (TBmakeIds (arrayavis, NULL), rhs), NULL);
+            AVIS_SSAASSIGN (newshpavis) = ass;
+
+            INFO_NASSIGNS (arg_info) = TCappendAssign (INFO_NASSIGNS (arg_info), ass);
+
+            /*
+             * replace with-loop with
+             * reshape( newshp, array);
+             */
+            arg_node = FREEdoFreeNode (arg_node);
+            arg_node
+              = TCmakePrf2 (F_reshape, TBmakeId (newshpavis), TBmakeId (arrayavis));
+        }
+
+        if (shpshape != NULL) {
+            shpshape = SHfreeShape (shpshape);
+        }
+
+        if (exprshape != NULL) {
+            exprshape = SHfreeShape (exprshape);
+        }
+
+        shptype = TYfreeType (shptype);
+        exprtype = TYfreeType (exprtype);
     }
 
     /*

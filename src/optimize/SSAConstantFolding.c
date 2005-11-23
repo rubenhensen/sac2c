@@ -2065,7 +2065,7 @@ CFarray (node *arg_node, info *arg_info)
                 tmp = EXPRS_NEXT (tmp);
             }
 
-            basetype = TYcopyType (ARRAY_BASETYPE (arg_node));
+            basetype = TYcopyType (ARRAY_ELEMTYPE (arg_node));
             newshp = SHappendShapes (ARRAY_SHAPE (arg_node), shp);
 
             arg_node = FREEdoFreeNode (arg_node);

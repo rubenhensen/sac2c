@@ -2368,7 +2368,7 @@ PRTarray (node *arg_node, info *arg_info)
             fprintf (global.outfile, " ]");
 
     } else {
-        type_str = TYtype2String (ARRAY_BASETYPE (arg_node), FALSE, 0);
+        type_str = TYtype2String (ARRAY_ELEMTYPE (arg_node), FALSE, 0);
         fprintf (global.outfile, "[:%s]", type_str);
         type_str = ILIBfree (type_str);
     }

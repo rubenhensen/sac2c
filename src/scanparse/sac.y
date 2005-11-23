@@ -1020,7 +1020,9 @@ let:       ids LET { $<cint>$ = global.linenum; } expr
            { node *id, *ids, *ap;
 
              if( TCcountExprs( $3) > 1) {
-               $3 = TCmakeVector( TYmakeSimpleType( T_unknown), $3);
+               $3 = TCmakeVector( TYmakeAKS( TYmakeSimpleType( T_unknown), 
+                                             SHmakeShape(0)),
+                                  $3);
              } else {
                node * tmp;
 
@@ -1295,15 +1297,21 @@ expr_sel: expr SQBR_L exprs SQBR_R
               EXPRS_EXPR( $3) = NULL;
               $3 = FREEdoFreeNode( $3);
             } else {
-              $$ = TCmakeSpap2( NULL, ILIBstringCopy( "sel"),
-                                TCmakeVector( TYmakeSimpleType(T_unknown), $3),
-                                $1);
+              $$ = 
+                TCmakeSpap2(NULL, ILIBstringCopy( "sel"),
+                            TCmakeVector(TYmakeAKS(TYmakeSimpleType(T_unknown),
+                                                   SHmakeShape(0)),
+                                         $3),
+                            $1);
             }
           }
         | expr SQBR_L SQBR_R
-          { $$ = TCmakeSpap2( NULL, ILIBstringCopy( "sel"),
-                              TCmakeVector( TYmakeSimpleType(T_unknown), NULL), 
-                              $1);
+          { $$ = 
+              TCmakeSpap2( NULL, ILIBstringCopy( "sel"),
+                           TCmakeVector(TYmakeAKS( TYmakeSimpleType(T_unknown), 
+                                                   SHmakeShape(0)),
+                                        NULL), 
+                           $1);
           }
         ;
 
@@ -1332,15 +1340,22 @@ opt_arguments: exprs         { $$ = $1;   }
              ;
 
 expr_ar: SQBR_L { $<cint>$ = global.linenum; } exprs SQBR_R
-         { $$ = TCmakeVector( TYmakeSimpleType( T_unknown), $3);
+         { $$ = TCmakeVector( TYmakeAKS( TYmakeSimpleType( T_unknown), 
+                                         SHmakeShape(0)),
+                              $3);
            NODE_LINE( $$) = $<cint>2;
          }
        | SQBR_L { $<cint>$ = global.linenum; } COLON ntype SQBR_R
-         { $$ = TCmakeVector( $4, NULL);
+         { if ( !TYisAKS( $4)) {
+             yyerror("Empty array with non-constant shape found.");
+           }
+           $$ = TCmakeVector( $4, NULL);
            NODE_LINE( $$) = $<cint>2;
          }
        | SQBR_L { $<cint>$ = global.linenum; } SQBR_R
-         { $$ = TCmakeVector( TYmakeAKS( TYmakeSimpleType( T_int), SHmakeShape(0)), NULL);
+         { $$ = TCmakeVector( TYmakeAKS( TYmakeSimpleType( T_int), 
+                                         SHmakeShape(0)), 
+                              NULL);
            NODE_LINE( $$) = $<cint>2;
          }
        ;

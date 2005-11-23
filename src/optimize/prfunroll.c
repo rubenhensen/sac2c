@@ -446,9 +446,10 @@ UPRFprf (node *arg_node, info *arg_info)
             scl = TYfreeType (scl);
 
             arg_node = FREEdoFreeNode (arg_node);
-            arg_node
-              = TCmakeVector (TYcopyType (TYgetScalar (IDS_NTYPE (INFO_LHS (arg_info)))),
-                              RevertExprs (elems, NULL));
+            arg_node = TCmakeVector (TYmakeAKS (TYcopyType (TYgetScalar (
+                                                  IDS_NTYPE (INFO_LHS (arg_info)))),
+                                                SHmakeShape (0)),
+                                     RevertExprs (elems, NULL));
 
             INFO_PREASSIGN (arg_info) = RevertAssignments (ass, NULL);
         }

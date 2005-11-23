@@ -3849,7 +3849,7 @@
         </son>
       </sons>
       <attributes>
-        <attribute name="Basetype">
+        <attribute name="Elemtype">
           <type name="NewType">
             <targets>
               <target mandatory="yes">
@@ -5913,7 +5913,7 @@
         <son name="Default">
           <targets>
             <target mandatory="no">
-              <set name="Expr" />
+              <node name="Id" />
               <phases>
                 <all />
               </phases>

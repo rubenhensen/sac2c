@@ -2129,12 +2129,12 @@ TCnodeBehindCast (node *arg_node)
  *
  *****************************************************************************/
 node *
-TCmakeVector (ntype *basetype, node *aelems)
+TCmakeVector (ntype *elemtype, node *aelems)
 {
     DBUG_ENTER ("TCmakeVector");
 
     DBUG_RETURN (
-      TBmakeArray (basetype, SHcreateShape (1, TCcountExprs (aelems)), aelems));
+      TBmakeArray (elemtype, SHcreateShape (1, TCcountExprs (aelems)), aelems));
 }
 
 /******************************************************************************
@@ -2151,7 +2151,8 @@ TCmakeIntVector (node *aelems)
 {
     DBUG_ENTER ("TCmakeIntVector");
 
-    DBUG_RETURN (TCmakeVector (TYmakeSimpleType (T_int), aelems));
+    DBUG_RETURN (
+      TCmakeVector (TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)), aelems));
 }
 
 /******************************************************************************
@@ -2223,7 +2224,8 @@ TCcreateZeroVector (int length, simpletype btype)
         exprs_node = TBmakeExprs (TCcreateZeroScalar (btype), exprs_node);
     }
 
-    ret_node = TCmakeVector (TYmakeSimpleType (btype), exprs_node);
+    ret_node
+      = TCmakeVector (TYmakeAKS (TYmakeSimpleType (btype), SHmakeShape (0)), exprs_node);
 
     DBUG_RETURN (ret_node);
 }
