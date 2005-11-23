@@ -132,8 +132,10 @@ node *
 WLSELCwith (node *arg_node, info *arg_info)
 {
     int old;
+    bool old_funapps;
     DBUG_ENTER ("WLSELCwith");
 
+    old_funapps = INFO_WLFUNAPPS (arg_info);
     INFO_WLFUNAPPS (arg_info) = FALSE;
 
     /**
@@ -151,6 +153,9 @@ WLSELCwith (node *arg_node, info *arg_info)
     /**
      * assign max-value to with-loop
      */
+    if (INFO_WLFUNAPPS (arg_info)) {
+        INFO_WLSELSMAX (arg_info) = -1;
+    }
     WITH_SELMAX (arg_node) = INFO_WLSELSMAX (arg_info);
     INFO_WLSELSMAX (arg_info) = old;
     if (WITH_SELMAX (arg_node) >= 0) {
@@ -159,6 +164,7 @@ WLSELCwith (node *arg_node, info *arg_info)
         INFO_WLSELS (arg_info) = -1;
     }
 
+    INFO_WLFUNAPPS (arg_info) = old_funapps;
     if (INFO_ISWLCODE (arg_info)) {
         INFO_WLFUNAPPS (arg_info) = TRUE;
     }
@@ -192,7 +198,6 @@ WLSELCcode (node *arg_node, info *arg_info)
     old_wlsels = INFO_WLSELS (arg_info);
     old_iswlcode = INFO_ISWLCODE (arg_info);
     INFO_WLSELS (arg_info) = 0;
-    INFO_WLFUNAPPS (arg_info) = FALSE && INFO_WLFUNAPPS (arg_info);
     INFO_ISWLCODE (arg_info) = TRUE;
 
     /**
@@ -204,13 +209,9 @@ WLSELCcode (node *arg_node, info *arg_info)
     /**
      * set max-counter according to values of 'local' counters
      */
-    if (INFO_WLFUNAPPS (arg_info)) {
-        INFO_WLSELSMAX (arg_info) = -1;
-    } else {
-        INFO_WLSELSMAX (arg_info) = (INFO_WLSELS (arg_info) < INFO_WLSELSMAX (arg_info))
-                                      ? (INFO_WLSELSMAX (arg_info))
-                                      : (INFO_WLSELS (arg_info));
-    }
+    INFO_WLSELSMAX (arg_info) = (INFO_WLSELS (arg_info) < INFO_WLSELSMAX (arg_info))
+                                  ? (INFO_WLSELSMAX (arg_info))
+                                  : (INFO_WLSELS (arg_info));
 
     INFO_ISWLCODE (arg_info) = FALSE;
 
