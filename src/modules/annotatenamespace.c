@@ -493,6 +493,20 @@ ANSavis (node *arg_node, info *arg_info)
 }
 
 node *
+ANSarray (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("ANSarray");
+
+    if (ARRAY_ELEMTYPE (arg_node) != NULL) {
+        ARRAY_ELEMTYPE (arg_node) = ANSntype (ARRAY_ELEMTYPE (arg_node), arg_info);
+    }
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
 ANScast (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ANScast");

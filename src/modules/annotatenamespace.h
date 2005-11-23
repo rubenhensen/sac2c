@@ -64,6 +64,7 @@ extern node *ANSspap (node *arg_node, info *arg_info);
 extern node *ANSwhile (node *arg_node, info *arg_info);
 extern node *ANSdo (node *arg_node, info *arg_info);
 extern node *ANSavis (node *arg_node, info *arg_info);
+extern node *ANSarray (node *arg_node, info *arg_info);
 extern node *ANSarg (node *arg_node, info *arg_info);
 extern node *ANSret (node *arg_node, info *arg_info);
 extern node *ANSspids (node *arg_node, info *arg_info);

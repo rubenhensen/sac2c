@@ -479,7 +479,8 @@ CFscoDupStructConstant2Expr (struct_constant *struc_co)
         }
 
         /* build array node */
-        expr = TBmakeArray (TYmakeSimpleType (SCO_BASETYPE (struc_co)),
+        expr = TBmakeArray (TYmakeAKS (TYmakeSimpleType (SCO_BASETYPE (struc_co)),
+                                       SHmakeShape (0)),
                             SHcopyShape (COgetShape (SCO_HIDDENCO (struc_co))), aelems);
     }
     DBUG_RETURN (expr);

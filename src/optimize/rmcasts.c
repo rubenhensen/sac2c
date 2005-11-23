@@ -1,28 +1,5 @@
 /*
- * $Log$
- * Revision 1.7  2005/09/09 16:44:54  sbs
- * replaces casts by type_convs now.
- *
- * Revision 1.6  2005/09/08 11:05:14  sbs
- * Now, user defined types are eliminatred from the wrapper types too.
- *
- * Revision 1.5  2005/09/08 07:46:36  sbs
- * added RCtype
- *
- * Revision 1.4  2005/07/16 17:41:26  sbs
- * Now, all user types are resolved
- *
- * Revision 1.3  2004/11/26 14:36:47  mwe
- * SacDevCamp: compiles!
- *
- * Revision 1.2  2004/07/18 19:54:54  sah
- * switch to new INFO structure
- * PHASE I
- * (as well some code cleanup)
- *
- * Revision 1.1  2001/05/22 09:09:45  nmw
- * Initial revision
- *
+ * $Id$
  *
  */
 
@@ -92,6 +69,31 @@ RCavis (node *arg_node, info *arg_info)
         new_type = TYeliminateUser (type);
         type = TYfreeType (type);
         AVIS_TYPE (arg_node) = new_type;
+    }
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *RCarray( node *arg_node, info *arg_info )
+ *
+ ******************************************************************************/
+
+node *
+RCarray (node *arg_node, info *arg_info)
+{
+    ntype *type, *new_type;
+
+    DBUG_ENTER ("RCarray");
+
+    type = ARRAY_ELEMTYPE (arg_node);
+    if (TUisArrayOfUser (type)) {
+        new_type = TYeliminateUser (type);
+        type = TYfreeType (type);
+        ARRAY_ELEMTYPE (arg_node) = new_type;
     }
 
     arg_node = TRAVcont (arg_node, arg_info);

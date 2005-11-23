@@ -416,7 +416,8 @@ extern char *TYtype2String (ntype *new, bool multiline, int offset);
 extern char *TYtype2DebugString (ntype *new, bool multiline, int offset);
 extern char *TYargs2FunTypeString (node *args, ntype *rettype);
 extern ntype *TYnestTypes (ntype *outer, ntype *inner);
-extern ntype *TYdeNestTypes (ntype *nested, ntype *inner);
+extern ntype *TYdeNestTypeFromInner (ntype *nested, ntype *inner);
+extern ntype *TYdeNestTypeFromOuter (ntype *nested, ntype *outer);
 
 extern ntype *TYoldType2ScalarType (types *old);
 extern ntype *TYoldType2Type (types *old);

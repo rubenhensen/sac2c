@@ -1,154 +1,8 @@
 /*
  *
- * $Log$
- * Revision 3.92  2005/09/29 12:20:34  sah
- * arg 1 of F_type_error is now a N_type node
- * containing the bottom type instead of the
- * error message. this allows to infer a
- * proper type for F_type_error prfs on
- * subsequent runs of the tc.
- *
- * Revision 3.91  2005/09/09 16:46:53  sbs
- * proper support for accu added
- * and sufficient support for MGwls added, i.e.,
- * TODO: generator type improvement by minimum computation
- * over individual generators. could be done by using the
- * shape-smuggel in idx in wl_idx....
- *
- * Revision 3.90  2005/09/09 07:58:03  sbs
- * first try on accu support.
- *
- * Revision 3.89  2005/09/07 15:36:23  sbs
- * now, the return type of a function is alpharized in single function mode
- *
- * Revision 3.88  2005/09/06 11:14:03  sbs
- * changed NTCarray so that the first type encodes now the outer shape!!
- *
- * Revision 3.87  2005/09/02 17:47:43  sah
- * lacfuns are now marked as not-typechecked when
- * typechecking one function
- *
- * Revision 3.86  2005/08/30 14:40:03  sbs
- * NTCap can deal with dispatched function calls now.
- *
- * Revision 3.85  2005/08/29 11:25:21  ktr
- * NTC may now run in the optimization cycle
- *
- * Revision 3.84  2005/08/19 17:28:42  sbs
- * changed for proper type_conv handling
- *
- * Revision 3.83  2005/08/10 19:09:16  sbs
- * changed handling of conds
- * branches are checked in new_typecheck.c since SDcontradictions would
- * lead to re-checking of those (cf. bug no 105)
- *
- * Revision 3.82  2005/07/25 10:22:58  sah
- * single phases of tc are now triggered in main.c
- *
- * Revision 3.81  2005/07/24 20:01:50  sah
- * moved all the preparations for typechecking
- * into a different phase
- *
- * Revision 3.80  2005/07/21 18:50:32  sah
- * made TCstat type externally visible
- *
- * Revision 3.79  2005/07/17 20:11:48  sbs
- * the wrapper body creation has been moved into a separate phase now.
- *
- * Revision 3.78  2005/07/15 17:34:50  sah
- * fixed a DBUG_PRINT
- *
- * Revision 3.77  2005/07/15 15:57:02  sah
- * introduced namespaces
- *
- * Revision 3.76  2005/06/14 09:55:10  sbs
- * support for bottom types integrated.
- *
- * Revision 3.75  2005/06/06 13:22:05  jhb
- * added usage of PHrunCompilerSubPhase
- *
- * Revision 3.74  2005/05/31 19:26:12  sah
- * moved usertype handling to resolvesymboltypes.c
- *
- * Revision 3.73  2005/05/24 08:34:33  sbs
- * some log messages eliminated
- *
- * Revision 3.72  2005/04/12 11:07:26  sah
- * fixed call of TEmakeInfo
- *
- * Revision 3.71  2005/03/19 23:16:24  sbs
- * AUD AUD support requires traversal of CODE_NEXT
- *
- * Revision 3.70  2005/02/16 22:29:13  sah
- * fixed handling of external funs
- *
- * Revision 3.69  2005/01/10 17:27:06  cg
- * Converted error messages from Error.h to ctinfo.c
- *
- * Revision 3.68  2004/12/19 15:48:27  sbs
- * calls to TNTdoToNewTypes eliminated
- *
- * Revision 3.67  2004/12/06 12:55:30  sbs
- * some debugging of NTCarg
- *
- * Revision 3.66  2004/12/05 19:19:55  sbs
- * return type of LaC funs changed into alphas.
- *
- * Revision 3.65  2004/12/03 18:10:29  sbs
- * funcond rep eliminated EXPRS
- *
- * Revision 3.64  2004/12/01 18:43:28  sah
- * renamed a function
- *
- * Revision 3.63  2004/11/30 15:24:34  sah
- * added a fix to handle CODE_CEXPRS correctly
- *
- * Revision 3.62  2004/11/27 05:07:00  ktr
- * bugfix
- *
- * Revision 3.61  2004/11/27 02:31:32  cg
- * Function name corrected
- *
- * Revision 3.60  2004/11/27 01:34:45  jhb
- * fixed bug
- *
- * Revision 3.59  2004/11/27 00:23:44  sbs
- * *** empty log message ***
- *
- * Revision 3.58  2004/11/25 17:52:55  sbs
- * compiles
- *
- * Revision 3.57  2004/11/24 17:42:48  sbs
- * not yet
- *
- * Revision 3.56  2004/11/23 21:49:39  cg
- * brushed usage of genlib
- * min_array_rep_t turned into enum type.
- *
- * Revision 3.55  2004/11/19 21:05:39  sah
- * removed some unused code
- *
- * Revision 3.54  2004/11/19 10:16:28  sah
- * removed T_classtype
- *
- * Revision 3.53  2004/11/18 14:34:31  mwe
- * changed CheckAvis and chkavis to ToNewTypes and to tonewtypes
- *
- * Revision 3.52  2004/11/14 15:20:16  sah
- * added support for import of udts
- *
- * Revision 3.51  2004/11/11 15:20:30  sah
- * in new ast mode a typedef now has a ntype after parsing
- * changed NTCtypedef accordingly
- *
- * ... [eliminated] ....
- *
- * Revision 1.1  1999/10/20 12:51:11  sbs
- * Initial revision
+ * $Id$
  *
  */
-
-#define NEW_INFO
 
 #include <stdio.h>
 #include <string.h>
@@ -1390,15 +1244,16 @@ NTCarray (node *arg_node, info *arg_info)
 
     if (NULL != ARRAY_AELEMS (arg_node)) {
         /*
-         * First we collect the element types. NTCexprs puts them into a product type
-         * which is expected in INFO_NTC_TYPE( arg_info) afterwards!
-         * INFO_NTC_NUM_EXPRS_SOFAR is used to count the number of exprs "on the fly"!
+         * First we collect the element types. NTCexprs puts them into a product
+         * type which is expected in INFO_NTC_TYPE( arg_info) afterwards!
+         * INFO_NTC_NUM_EXPRS_SOFAR is used to count the number of exprs
+         * "on the fly"!
          *
          * ATTENTION!!
          * We need to have the ARRAY_SHAPE in order to compute proper result types!
-         * In the initial type check, this is always an int[n] shape which means that
-         * it can be ignored. However, later, i.e., in TUP, this information may have
-         * changed (compare bug 111!).
+         * In the initial type check, this is always an int[n] shape which means
+         * that it can be ignored. However, later, i.e., in TUP, this
+         * information may have changed (compare bug 111!).
          * To cope with that situation properly, we add an artificial type
          *   int[ARRAY_SHAPE]  which in NTCCTprf_array is combined with the element
          * type by TYnestTypes.
@@ -1431,16 +1286,40 @@ NTCarray (node *arg_node, info *arg_info)
         TYfreeType (elems);
 
     } else {
+        ntype *scalar;
+
         /**
          * we are dealing with an empty array here!
-         * To get started, we assume all empty arrays to be of element type int.
-         * Hence, we simple create    int[ARRAY_SHAPE]{}  as result type:
+         * so we use the base element information from ARRAY_ELEMTYPE
+         * to construct the type.
          */
-        type = TYmakeProductType (1, TYmakeAKV (TYmakeSimpleType (T_int),
-                                                COmakeConstant (T_int,
-                                                                SHcopyShape (
-                                                                  ARRAY_SHAPE (arg_node)),
-                                                                NULL)));
+        DBUG_ASSERT (TYisArray (ARRAY_ELEMTYPE (arg_node)),
+                     "found non-array type as elemtype!");
+
+        scalar = TYgetScalar (ARRAY_ELEMTYPE (arg_node));
+
+        DBUG_ASSERT (TUshapeKnown (ARRAY_ELEMTYPE (arg_node)),
+                     "found an array constructor for an empty array with non "
+                     "AKS element type!");
+
+        /*
+         * the the time being, we only build AKV empty arrays
+         * for user defined types!
+         */
+        if (TYisSimple (scalar)) {
+            type = TYmakeAKV (TYcopyType (scalar),
+                              COmakeConstant (TYgetSimpleType (scalar),
+                                              SHappendShapes (ARRAY_SHAPE (arg_node),
+                                                              TYgetShape (ARRAY_ELEMTYPE (
+                                                                arg_node))),
+                                              NULL));
+        } else {
+            type = TYmakeAKS (TYcopyType (scalar),
+                              SHappendShapes (ARRAY_SHAPE (arg_node),
+                                              TYgetShape (ARRAY_ELEMTYPE (arg_node))));
+        }
+
+        type = TYmakeProductType (1, type);
     }
 
     INFO_NTC_TYPE (arg_info) = TYgetProductMember (type, 0);

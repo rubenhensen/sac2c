@@ -417,6 +417,7 @@
 	  <node name="SPAp" />
 	  <node name="SPMop" />
 	  <node name="Avis" />
+	  <node name="Array" />
 	  <node name="Arg" />
 	  <node name="Ret" />
 	  <node name="Vardec" />
@@ -434,6 +435,7 @@
 	  <node name="Typedef" />
 	  <node name="Fold" />
 	  <node name="Avis" />
+	  <node name="Array" />
 	  <node name="Ret" />
 	  <node name="SPAp" />
 	  <node name="SPId" />
@@ -565,6 +567,7 @@
           <node name="Arg" />
           <node name="Ret" />
           <node name="Avis" />
+          <node name="Array" />
           <node name="Typedef" />
           <node name="Cast" />
         </travuser>
@@ -575,6 +578,7 @@
           <node name="Fundef" />
           <node name="Ap" />
           <node name="Avis" />
+          <node name="Array" />
           <node name="Block" />
           <node name="Vardec" />
           <node name="Assign" />
@@ -973,6 +977,7 @@
         <travuser>
           <node name="Cast" />
           <node name="Avis" />
+          <node name="Array" />
           <node name="Ret" />
           <node name="Type" />
         </travuser>

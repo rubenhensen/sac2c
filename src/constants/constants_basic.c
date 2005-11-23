@@ -655,7 +655,8 @@ COconstant2AST (constant *a)
                              exprs);
         }
         /* Finally, the N_array node is created! */
-        res = TBmakeArray (TYmakeSimpleType (CONSTANT_TYPE (a)),
+        res = TBmakeArray (TYmakeAKS (TYmakeSimpleType (CONSTANT_TYPE (a)),
+                                      SHmakeShape (0)),
                            SHcopyShape (COgetShape (a)), exprs);
     }
 

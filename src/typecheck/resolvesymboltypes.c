@@ -380,6 +380,20 @@ RSTavis (node *arg_node, info *arg_info)
 }
 
 node *
+RSTarray (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("RSTarray");
+
+    if (ARRAY_ELEMTYPE (arg_node) != NULL) {
+        ARRAY_ELEMTYPE (arg_node) = RSTntype (ARRAY_ELEMTYPE (arg_node), arg_info);
+    }
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
 RSTcast (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("RSTcast");

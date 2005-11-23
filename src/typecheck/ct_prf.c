@@ -351,7 +351,8 @@ NTCCTprf_cast (te_info *info, ntype *elems)
 
     if (TYisArray (cast_t) && TYisUser (TYgetScalar (cast_t))) {
         res
-          = TYdeNestTypes (res_bt, UTgetBaseType (TYgetUserType (TYgetScalar (cast_t))));
+          = TYdeNestTypeFromInner (res_bt,
+                                   UTgetBaseType (TYgetUserType (TYgetScalar (cast_t))));
         res = TYsetScalar (res, TYcopyType (TYgetScalar (cast_t)));
         res_bt = TYfreeType (res_bt);
     } else {

@@ -51,6 +51,7 @@
  *   INFO_WLIDS      -   WITHID_VEC of first partition
  *   INFO_THENBOTTS  -   type_error let
  *   INFO_ELSEBOTTS  -   type_error let
+ *   INFO_LHS        -   left hand side of current let node
  *   INFO_ONEFUNCTION - traverse one function only (and associated lacfuns)
  *   INFO_FUNDEF     - pointer to current fundef to prevent infinite recursion
  *   INFO_VARDECMODE -   M_fix / M_filter
@@ -64,6 +65,7 @@ struct INFO {
     node *wlids;
     node *then_botts;
     node *else_botts;
+    node *lhs;
     bool onefunction;
     node *fundef;
     enum { M_fix, M_filter } mode;
@@ -72,13 +74,14 @@ struct INFO {
 /**
  * INFO macros
  */
-#define INFO_VARDECS(n) (n->vardecs)
-#define INFO_WLIDS(n) (n->wlids)
-#define INFO_THENBOTTS(n) (n->then_botts)
-#define INFO_ELSEBOTTS(n) (n->else_botts)
-#define INFO_ONEFUNCTION(n) (n->onefunction)
-#define INFO_FUNDEF(n) (n->fundef)
-#define INFO_VARDECMODE(n) (n->mode)
+#define INFO_VARDECS(n) ((n)->vardecs)
+#define INFO_WLIDS(n) ((n)->wlids)
+#define INFO_THENBOTTS(n) ((n)->then_botts)
+#define INFO_ELSEBOTTS(n) ((n)->else_botts)
+#define INFO_LHS(n) ((n)->lhs)
+#define INFO_ONEFUNCTION(n) ((n)->onefunction)
+#define INFO_FUNDEF(n) ((n)->fundef)
+#define INFO_VARDECMODE(n) ((n)->mode)
 
 /**
  * INFO functions
@@ -96,6 +99,7 @@ MakeInfo ()
     INFO_WLIDS (result) = NULL;
     INFO_THENBOTTS (result) = NULL;
     INFO_ELSEBOTTS (result) = NULL;
+    INFO_LHS (result) = NULL;
     INFO_ONEFUNCTION (result) = FALSE;
     INFO_FUNDEF (result) = NULL;
     INFO_VARDECMODE (result) = M_fix;
@@ -574,6 +578,57 @@ NT2OTavis (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
+ *   node *NT2OTarray( node *arg_node, info *arg_info)
+ *
+ * description:
+ *
+ ******************************************************************************/
+
+node *
+NT2OTarray (node *arg_node, info *arg_info)
+{
+    ntype *elemtype;
+    ntype *outer;
+    ntype *nested;
+    ntype *arrayelem;
+
+    DBUG_ENTER ("NT2OTarray");
+
+    /*
+     * first do the clean up in the sons
+     */
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    /*
+     * construct the new elemtype
+     */
+    nested = AVIS_TYPE (IDS_AVIS (INFO_LHS (arg_info)));
+    outer = TYmakeAKS (TYcopyType (TYgetScalar (nested)),
+                       SHcopyShape (ARRAY_SHAPE (arg_node)));
+
+    elemtype = TYdeNestTypeFromOuter (nested, outer);
+    arrayelem = ARRAY_ELEMTYPE (arg_node);
+
+#ifndef DBUG_OFF
+    if (!TYisSimple (TYgetScalar (arrayelem))
+        || (TYgetSimpleType (TYgetScalar (arrayelem)) != T_unknown)) {
+
+        DBUG_ASSERT (TYleTypes (elemtype, arrayelem),
+                     "new element type of array does not match old type!");
+    }
+#endif
+
+    ARRAY_ELEMTYPE (arg_node) = TYfreeType (ARRAY_ELEMTYPE (arg_node));
+    ARRAY_ELEMTYPE (arg_node) = elemtype;
+
+    outer = TYfreeType (outer);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *NT2OTblock( node *arg_node, info *arg_info)
  *
  * description:
@@ -665,7 +720,9 @@ NT2OTlet (node *arg_node, info *arg_info)
                               IDS_NAME (LET_IDS (arg_node))));
         arg_node = FREEdoFreeTree (arg_node);
     } else {
+        INFO_LHS (arg_info) = LET_IDS (arg_node);
         LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
+        INFO_LHS (arg_info) = NULL;
     }
 
     DBUG_RETURN (arg_node);
