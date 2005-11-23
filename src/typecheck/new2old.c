@@ -602,7 +602,12 @@ NT2OTarray (node *arg_node, info *arg_info)
     /*
      * construct the new elemtype
      */
-    nested = AVIS_TYPE (IDS_AVIS (INFO_LHS (arg_info)));
+    if (INFO_LHS (arg_info) != NULL) {
+        nested = TYcopyType (AVIS_TYPE (IDS_AVIS (INFO_LHS (arg_info))));
+    } else {
+        nested = NTCnewTypeCheck_Expr (arg_node);
+    }
+
     outer = TYmakeAKS (TYcopyType (TYgetScalar (nested)),
                        SHcopyShape (ARRAY_SHAPE (arg_node)));
 
@@ -622,6 +627,7 @@ NT2OTarray (node *arg_node, info *arg_info)
     ARRAY_ELEMTYPE (arg_node) = elemtype;
 
     outer = TYfreeType (outer);
+    nested = TYfreeType (nested);
 
     DBUG_RETURN (arg_node);
 }
