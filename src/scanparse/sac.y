@@ -1964,7 +1964,9 @@ node *String2Array(char *str)
   }
 
   len_expr = TBmakeNum( cnt);
-  array = TCmakeVector( TYmakeSimpleType( T_unknown), new_exprs);
+  array = TCmakeVector( TYmakeAKS( TYmakeSimpleType( T_char),
+                                   SHmakeShape( 0)), 
+                        new_exprs);
 
 #ifndef CHAR_ARRAY_NOT_AS_STRING
   ARRAY_STRING(array)=str;

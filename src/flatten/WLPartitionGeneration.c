@@ -1464,6 +1464,7 @@ WLPGwith (node *arg_node, info *arg_info)
             node *shpavis;
             node *defshpavis;
             node *newshpavis;
+            ntype *newshptype;
             node *arrayavis;
 
             /*
@@ -1533,7 +1534,19 @@ WLPGwith (node *arg_node, info *arg_info)
              */
             rhs = TCmakePrf2 (F_cat_VxV, TBmakeId (shpavis), TBmakeId (defshpavis));
 
-            newshpavis = TBmakeAvis (ILIBtmpVar (), NTCnewTypeCheck_Expr (rhs));
+            /*
+             * ATTENTION!
+             *
+             * the type of a function is a product type as it potentially
+             * may return multiple results. As we need the type of the singe
+             * result the F_cat_VxV prf yields, we have to grab it from
+             * the returned product type!
+             */
+            newshptype = NTCnewTypeCheck_Expr (rhs);
+
+            newshpavis = TBmakeAvis (ILIBtmpVar (),
+                                     TYcopyType (TYgetProductMember (newshptype, 0)));
+            newshptype = TYfreeType (newshptype);
 
             FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
               = TBmakeVardec (newshpavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));

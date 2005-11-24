@@ -172,6 +172,8 @@ USSarray (node *arg_node, info *arg_info)
         ARRAY_ELEMTYPE (arg_node) = USSntype (ARRAY_ELEMTYPE (arg_node), arg_info);
     }
 
+    arg_node = TRAVcont (arg_node, arg_info);
+
     DBUG_RETURN (arg_node);
 }
 

@@ -23,6 +23,7 @@ extern node *NT2OTlet (node *arg_node, info *arg_info);
 extern node *NT2OTassign (node *arg_node, info *arg_info);
 extern node *NT2OTpart (node *arg_node, info *arg_info);
 extern node *NT2OTwithid (node *arg_node, info *arg_info);
+extern node *NT2OTwith (node *arg_node, info *arg_info);
 extern node *NT2OTcond (node *arg_node, info *arg_info);
 extern node *NT2OTfuncond (node *arg_node, info *arg_info);
 

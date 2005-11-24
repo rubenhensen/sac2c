@@ -1239,6 +1239,9 @@ NTCarray (node *arg_node, info *arg_info)
 {
     ntype *type, *elems;
     te_info *info;
+#ifndef DBUG_OFF
+    char *tmp_str1, *tmp_str2;
+#endif
 
     DBUG_ENTER ("NTCarray");
 
@@ -1306,6 +1309,14 @@ NTCarray (node *arg_node, info *arg_info)
          * the the time being, we only build AKV empty arrays
          * for user defined types!
          */
+        DBUG_EXECUTE ("NTC", tmp_str1 = SHshape2String (0, ARRAY_SHAPE (arg_node));
+                      tmp_str2 = TYtype2String (ARRAY_ELEMTYPE (arg_node), FALSE, 0););
+        DBUG_PRINT ("NTC", ("computing type of empty array-constructor with outer "
+                            "shape %s and element type %s",
+                            tmp_str1, tmp_str2));
+        DBUG_EXECUTE ("NTC", tmp_str1 = ILIBfree (tmp_str1);
+                      tmp_str2 = ILIBfree (tmp_str2););
+
         if (TYisSimple (scalar)) {
             type = TYmakeAKV (TYcopyType (scalar),
                               COmakeConstant (TYgetSimpleType (scalar),
@@ -1320,6 +1331,10 @@ NTCarray (node *arg_node, info *arg_info)
         }
 
         type = TYmakeProductType (1, type);
+
+        DBUG_EXECUTE ("NTC", tmp_str1 = TYtype2String (type, FALSE, 0););
+        DBUG_PRINT ("NTC", ("yields %s", tmp_str1));
+        DBUG_EXECUTE ("NTC", tmp_str1 = ILIBfree (tmp_str1););
     }
 
     INFO_NTC_TYPE (arg_info) = TYgetProductMember (type, 0);

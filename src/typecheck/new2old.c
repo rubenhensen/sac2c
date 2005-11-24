@@ -610,9 +610,9 @@ NT2OTarray (node *arg_node, info *arg_info)
 
     outer = TYmakeAKS (TYcopyType (TYgetScalar (nested)),
                        SHcopyShape (ARRAY_SHAPE (arg_node)));
+    arrayelem = ARRAY_ELEMTYPE (arg_node);
 
     elemtype = TYdeNestTypeFromOuter (nested, outer);
-    arrayelem = ARRAY_ELEMTYPE (arg_node);
 
 #ifndef DBUG_OFF
     if (!TYisSimple (TYgetScalar (arrayelem))
@@ -927,6 +927,43 @@ NT2OTwithid (node *arg_node, info *arg_info)
          */
         WITHID_IDS (arg_node) = DUPdoDupTree (INFO_WLIDS (arg_info));
     }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *NT2OTwith( node *arg_node, info *arg_info)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+NT2OTwith (node *arg_node, info *arg_info)
+{
+    node *oldlhs;
+
+    DBUG_ENTER ("NT2OTwith");
+
+    /*
+     * unfortunately, withloops may contain unflattened array constructors.
+     * when updating the element type inf NT2OTarray, we rely on the type
+     * of the LHS ids stored in INFO_LHS if it is present.
+     * As the current LHS is that of the WL and the unflattened array
+     * constructors do not have any LHS they are assigned to, we set the
+     * LHS to NULL here. This will trigger a typecheck of the
+     * array constructor in NT2OTarray (which is the only way to obtain
+     * correct type information for it)...
+     */
+    oldlhs = INFO_LHS (arg_info);
+    INFO_LHS (arg_info) = NULL;
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    INFO_LHS (arg_info) = oldlhs;
 
     DBUG_RETURN (arg_node);
 }

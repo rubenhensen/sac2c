@@ -587,6 +587,7 @@
           <node name="Funcond" />
           <node name="Part" />
           <node name="Withid" />
+          <node name="With" />
         </travuser>
       </traversal>
       <traversal id="PF" name="Annotate Function Calls " default="sons" include="annotate_fun_calls.h">
@@ -5918,7 +5919,7 @@
         <son name="Default">
           <targets>
             <target mandatory="no">
-              <node name="Id" />
+              <set name="Expr" />
               <phases>
                 <all />
               </phases>
