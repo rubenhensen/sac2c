@@ -1568,7 +1568,7 @@ WLPGwith (node *arg_node, info *arg_info)
               = TBmakeVardec (arrayavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
 
             ass = TBmakeAssign (TBmakeLet (TBmakeIds (arrayavis, NULL), rhs), NULL);
-            AVIS_SSAASSIGN (newshpavis) = ass;
+            AVIS_SSAASSIGN (arrayavis) = ass;
 
             INFO_NASSIGNS (arg_info) = TCappendAssign (INFO_NASSIGNS (arg_info), ass);
 
