@@ -247,7 +247,9 @@ RTUPlet (node *arg_node, info *arg_info)
 
     old_idstypes = INFO_IDSTYPES (arg_info);
     INFO_IDSTYPES (arg_info) = NULL;
-    LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
+    if (LET_IDS (arg_node) != NULL) {
+        LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
+    }
 
     if (N_id == NODE_TYPE (LET_EXPR (arg_node))) {
         INFO_ORIGIN (arg_info) = let;
@@ -256,7 +258,9 @@ RTUPlet (node *arg_node, info *arg_info)
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
     INFO_ORIGIN (arg_info) = undef;
-    INFO_IDSTYPES (arg_info) = FREEdoFreeTree (INFO_IDSTYPES (arg_info));
+    if (INFO_IDSTYPES (arg_info) != NULL) {
+        INFO_IDSTYPES (arg_info) = FREEdoFreeTree (INFO_IDSTYPES (arg_info));
+    }
     INFO_IDSTYPES (arg_info) = old_idstypes;
 
     DBUG_RETURN (arg_node);
@@ -370,19 +374,12 @@ RTUPwith (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("RTUPwith");
 
-    if (WITH_PART (arg_node) != NULL) {
+    INFO_WITHID (arg_info) = PART_WITHID (WITH_PART (arg_node));
+    WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
 
-        INFO_WITHID (arg_info) = PART_WITHID (WITH_PART (arg_node));
-        WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
-    }
+    WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
 
-    if (WITH_CODE (arg_node) != NULL) {
-        WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
-    }
-
-    if (WITH_WITHOP (arg_node) != NULL) {
-        WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
-    }
+    WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
