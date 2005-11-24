@@ -1,42 +1,6 @@
 /*
  *
- * $Log$
- * Revision 3.122  2005/03/10 09:41:09  cg
- * Added some necessary includes.
- *
- * Revision 3.121  2005/03/04 21:21:42  cg
- * Whenever the traversal reaches an N_module node, the
- * situation is considered save to add silently duplicated
- * LaC functions and to remove zombified functions from the
- * fundef chain. This is done once here and reliefs all other
- * compiler modules from caring about the issue.
- *
- * Revision 3.120  2004/12/01 15:23:53  sah
- * fixed pre/posttables
- *
- * Revision 3.119  2004/12/01 14:33:07  sah
- * added support for TRAVsetPreFun TRAVsetPostFun
- *
- * Revision 3.118  2004/11/28 22:15:57  ktr
- * NODE_TYPE is rescued before traversal as it might return NULL.
- *
- * Revision 3.117  2004/11/27 05:05:25  ktr
- * bugfix.
- *
- * Revision 3.116  2004/11/27 01:33:21  sah
- * implemented TRAVgetName
- *
- * Revision 3.115  2004/11/26 11:56:41  sah
- * *** empty log message ***
- *
- * Revision 3.114  2004/11/23 22:22:03  sah
- * rewrite
- *
- *
- * ... [eliminated] ...
- *
- * Revision 1.2  1994/11/10  15:44:34  sbs
- * RCS-header inserted
+ * $Id$
  *
  */
 
@@ -67,8 +31,6 @@ TRAVdo (node *arg_node, info *arg_info)
     nodetype arg_node_type;
     int old_linenum = global.linenum;
     char *old_filename = global.filename;
-
-    DBUG_ENTER ("TRAVdo");
 
     DBUG_ASSERT ((arg_node != NULL), "Trav: tried to traverse into subtree NULL !");
 
@@ -127,17 +89,15 @@ TRAVdo (node *arg_node, info *arg_info)
         }
     }
 
-    DBUG_RETURN (arg_node);
+    return (arg_node);
 }
 
 node *
 TRAVcont (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("TRAVcont");
-
     arg_node = TRAVsons (arg_node, arg_info);
 
-    DBUG_RETURN (arg_node);
+    return (arg_node);
 }
 
 void

@@ -1487,6 +1487,8 @@ TCmakeAssignInstr (node *instr, node *next)
 {
     node *result;
 
+    DBUG_ENTER ("TCmakeAssignInstr");
+
     if (instr == NULL) {
         result = next;
     } else if (NODE_TYPE (instr) == N_assign) {
@@ -1495,7 +1497,7 @@ TCmakeAssignInstr (node *instr, node *next)
         result = TBmakeAssign (instr, next);
     }
 
-    return (result);
+    DBUG_RETURN (result);
 }
 
 /** <!--********************************************************************-->

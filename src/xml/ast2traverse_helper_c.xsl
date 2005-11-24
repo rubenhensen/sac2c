@@ -39,7 +39,7 @@
         <xsl:value-of select="'Defines the helper function needed by the traversal system'" />
       </xsl:with-param>
       <xsl:with-param name="xslt">
-        <xsl:value-of select="'$Id: ast2traverse_helper_c.xsl 14294 2005-10-10 12:40:03Z sah $'"/>
+        <xsl:value-of select="'$Id$'"/>
       </xsl:with-param>
     </xsl:call-template>
     <xsl:text>
@@ -53,23 +53,18 @@
 
 node *TRAVnone(node *arg_node, info *arg_info)
 {
-   DBUG_ENTER("TRAVnone");
-   DBUG_RETURN(arg_node);
+   return(arg_node);
 }
 
 node *TRAVerror(node *arg_node, info *arg_info)
 {
-  DBUG_ENTER("TRAVerror");
-
   DBUG_ASSERT( (FALSE), "Illegal node type found.");
 
-  DBUG_RETURN( arg_node);
+  return( arg_node);
 }
 
 node *TRAVsons(node *arg_node, info *arg_info)
 { 
-  DBUG_ENTER("TRAVsons");
-
   switch (NODE_TYPE( arg_node)) {
   </xsl:text>
   <xsl:apply-templates select="/definition/syntaxtree" mode="travsons" />
@@ -80,7 +75,7 @@ node *TRAVsons(node *arg_node, info *arg_info)
       break;
   }
 
-  DBUG_RETURN( arg_node);
+  return( arg_node);
 }
 
 int TRAVnumSons( node *node)

@@ -73,7 +73,7 @@ FreeInfo (info *arg_info)
 
     arg_info = ILIBfree (arg_info);
 
-    return (arg_info);
+    DBUG_RETURN (arg_info);
 }
 
 /**
