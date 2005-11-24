@@ -9,7 +9,8 @@
 
 #include "types.h"
 
-extern node *RTUPdoReverseTypeUpgrade (node *fundef);
+extern node *RTUPdoReverseTypeUpgrade (node *module);
+extern node *RTUPdoReverseTypeUpgradeOneFundef (node *fundef);
 
 extern node *RTUPfundef (node *arg_node, info *arg_info);
 extern node *RTUPassign (node *arg_node, info *arg_info);

@@ -86,6 +86,11 @@ WLEdoWlEnhancement (node *syntax_tree)
      */
     syntax_tree = PHrunCompilerSubPhase (SUBPH_wldp, syntax_tree);
 
+    /**
+     * Reverse Type Upgrade
+     */
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_rtup, syntax_tree);
+
     /*
      * With-loop partition generation
      */

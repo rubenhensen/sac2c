@@ -417,7 +417,7 @@ OPTdoIntraFunctionalOptimizations (node *arg_node)
                      * Reverse type upgrade
                      */
                     if (global.optimize.dortup) {
-                        fundef = PHrunOptimizationInCycle (SUBPH_rtup, loop, fundef);
+                        fundef = PHrunOptimizationInCycle (SUBPH_rtupcyc, loop, fundef);
                     }
 
                     /*

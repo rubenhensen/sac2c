@@ -24,6 +24,7 @@
 #include "reverse_type_upgrade.h"
 
 typedef enum { let, undef } origin;
+typedef enum { fundef, module } travstart;
 
 /*<!--*************************************************************-->
  *
@@ -36,12 +37,14 @@ struct INFO {
     node *idstypes;
     node *withid;
     origin origin;
+    travstart travstart;
 };
 
 #define INFO_FUNDEF(n) (n->fundef)
 #define INFO_IDSTYPES(n) (n->idstypes)
 #define INFO_WITHID(n) (n->withid)
 #define INFO_ORIGIN(n) (n->origin)
+#define INFO_TRAVSTART(n) (n->travstart)
 
 static info *
 MakeInfo ()
@@ -55,6 +58,7 @@ MakeInfo ()
     INFO_IDSTYPES (result) = NULL;
     INFO_WITHID (result) = NULL;
     INFO_ORIGIN (result) = undef;
+    INFO_TRAVSTART (result) = fundef;
 
     DBUG_RETURN (result);
 }
@@ -96,6 +100,12 @@ UpdateGeneratorElement (node *elem, ntype *type)
 
                 AVIS_TYPE (ID_AVIS (elem)) = TYfreeType (AVIS_TYPE (ID_AVIS (elem)));
                 AVIS_TYPE (ID_AVIS (elem)) = TYcopyType (type);
+
+                if (AVIS_DECLTYPE (ID_AVIS (elem)) != NULL) {
+                    AVIS_DECLTYPE (ID_AVIS (elem))
+                      = TYfreeType (AVIS_DECLTYPE (ID_AVIS (elem)));
+                    AVIS_DECLTYPE (ID_AVIS (elem)) = TYcopyType (type);
+                }
             }
         }
     }
@@ -113,10 +123,38 @@ RTUPdoReverseTypeUpgrade (node *arg_node)
 {
     DBUG_ENTER ("RTUPdoReverseTypeUpgrade");
 
+    DBUG_ASSERT ((N_module == NODE_TYPE (arg_node)), "N_module node expected!");
+
     if (arg_node != NULL) {
         info *arg_info;
 
         arg_info = MakeInfo ();
+
+        INFO_TRAVSTART (arg_info) = module;
+
+        TRAVpush (TR_rtup);
+        arg_node = TRAVdo (arg_node, arg_info);
+        TRAVpop ();
+
+        arg_info = FreeInfo (arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+RTUPdoReverseTypeUpgradeOneFundef (node *arg_node)
+{
+    DBUG_ENTER ("RTUPdoReverseTypeUpgradeOneFundef");
+
+    DBUG_ASSERT ((N_fundef == NODE_TYPE (arg_node)), "N_fundef node expected!");
+
+    if (arg_node != NULL) {
+        info *arg_info;
+
+        arg_info = MakeInfo ();
+
+        INFO_TRAVSTART (arg_info) = fundef;
 
         TRAVpush (TR_rtup);
         arg_node = TRAVdo (arg_node, arg_info);
@@ -150,6 +188,12 @@ RTUPfundef (node *arg_node, info *arg_info)
 
     if (NULL != FUNDEF_BODY (arg_node)) {
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+    }
+
+    if (module == INFO_TRAVSTART (arg_info)) {
+        if (FUNDEF_NEXT (arg_node) != NULL) {
+            FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -284,6 +328,13 @@ RTUPid (node *arg_node, info *arg_info)
                   = TYfreeType (AVIS_TYPE (ID_AVIS (arg_node)));
                 AVIS_TYPE (ID_AVIS (arg_node))
                   = TYcopyType (TYPE_TYPE (LINKLIST_LINK (INFO_IDSTYPES (arg_info))));
+
+                if (AVIS_DECLTYPE (ID_AVIS (arg_node)) != NULL) {
+                    AVIS_DECLTYPE (ID_AVIS (arg_node))
+                      = TYfreeType (AVIS_DECLTYPE (ID_AVIS (arg_node)));
+                    AVIS_DECLTYPE (ID_AVIS (arg_node))
+                      = TYcopyType (TYPE_TYPE (LINKLIST_LINK (INFO_IDSTYPES (arg_info))));
+                }
 
                 /*
                  * update counter

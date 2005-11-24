@@ -184,6 +184,8 @@ SUBPHASE (accu, "accu", "Introducing explicit accumulators", EAdoExplicitAccumul
 
 SUBPHASE (wldp, "wldp", "Adding default partitions", WLDPdoWlDefaultPartition)
 
+SUBPHASE (rtup, "rtup", "Applying reverse type upgrade", RTUPdoReverseTypeUpgrade)
+
 SUBPHASE (wlpg, "wlpg", "Generating full with-loop partitions",
           WLPGdoWlPartitionGeneration)
 
@@ -207,7 +209,8 @@ SUBPHASE (ili, "ili", "Infering loop invariant variables", ILIdoInferLoopInvaria
 
 SUBPHASE (ntccyc, "ntc", "Applying type upgrade", NTCdoNewTypeCheckOneFunction)
 
-SUBPHASE (rtup, "rtup", "Applying reverse type upgrade", RTUPdoReverseTypeUpgrade)
+SUBPHASE (rtupcyc, "rtupcyc", "Applying reverse type upgrade",
+          RTUPdoReverseTypeUpgradeOneFundef)
 
 SUBPHASE (wlprop, "wlprop", "Applying with-loop propagation", WLPROPdoWithloopPropagation)
 
