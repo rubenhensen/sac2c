@@ -39,9 +39,8 @@
 #include "phase.h"
 
 #include "liftoptflags.h"
-#include "index_infer.h"  /* for IVEIprintPreFun */
-#include "new_types.h"    /* for TYtype2String */
-#include "SSATransform.h" /* needed after current WLF implementation */
+#include "index_infer.h" /* for IVEIprintPreFun */
+#include "new_types.h"   /* for TYtype2String */
 
 /** <!--********************************************************************-->
  *
@@ -474,7 +473,7 @@ OPTdoIntraFunctionalOptimizations (node *arg_node)
                     if (global.optimize.dowlf) {
                         fundef = PHrunOptimizationInCycle (SUBPH_wli, loop, fundef);
                         fundef = PHrunOptimizationInCycle (SUBPH_wlf, loop, fundef);
-                        fundef = SSATdoTransformOneFundef (fundef);
+                        fundef = PHrunOptimizationInCycle (SUBPH_ssawlf, loop, fundef);
                     }
 
                     /*

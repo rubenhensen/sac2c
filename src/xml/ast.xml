@@ -358,7 +358,6 @@
           <node name="Block" />
           <node name="Code" />
           <node name="Let" />
-          <node name="Icm" />
           <node name="Arg" />
           <node name="Vardec" />
           <node name="Id" />
