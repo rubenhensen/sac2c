@@ -107,7 +107,6 @@
           <node name="Linklist" />
           <node name="Nums" />
           <node name="CWrapper" />
-          <node name="Fungroup" />
         </travsons>
       </traversal>
       <traversal id="DUP" name="Tree duplication" default="user" include="DupTree.h" />
@@ -2803,18 +2802,6 @@
                 <any />
                 <phases>
                   <!-- <range from="BuildMultithread" to="crece"/> TODO -->
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-        <attribute name="FunGroup" default="NULL">
-          <type name="Link">
-            <targets>
-              <target mandatory="yes">
-                <node name="Fungroup" />
-                <phases>
-                  <range from="tc" to="final" />
                 </phases>
               </target>
             </targets>
@@ -7957,83 +7944,6 @@
       <flags></flags>
     </node>
 
-<!--
-
-  N_fungroup :
-
--->
-    <node name="Fungroup">
-      <sons></sons>
-      <attributes>
-        <attribute name="Funlist">
-          <description>Pointerlist to all function instances</description>
-          <type name="Link">
-            <targets>
-              <target mandatory="yes">
-                <node name="Linklist" />
-                <phases>
-                  <range from="tc" to="final" />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-        <attribute name="SpecCounter" default="0">
-          <description>Number of specialized function instances</description>
-          <type name="Integer">
-            <targets>
-              <target mandatory="yes">
-                <any />
-                <phases>
-                  <range from="tc" to="final" />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-        <attribute name="RefCounter" default="0">
-          <description>Number of all (known) function instances</description>
-          <type name="Integer">
-            <targets>
-              <target mandatory="yes">
-                <any />
-                <phases>
-                  <range from="tc" to="final" />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-        <attribute name="InlCounter" default="0">
-          <description>Number of inlined function instances</description>
-          <type name="Integer">
-            <targets>
-              <target mandatory="yes" >
-                <any />
-                <phases>
-                  <range from="tc" to="final" />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-        <attribute name="AkvCounter" default="0">
-          <description>Used in type_upgrade for counting created function instances 
-            with AKV-arguments.</description>
-          <type name="Integer">
-            <targets>
-              <target mandatory="yes" >
-                <any />
-                <phases>
-                  <range from="tc" to="final" />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-      </attributes>
-      <flags></flags>
-    </node>
   </syntaxtree>
 </definition>
 <!-- Keep this comment at the end of the file

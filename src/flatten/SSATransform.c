@@ -164,8 +164,6 @@
 
 /* helper functions for internal usage */
 static node *CreateFuncondAssign (node *cond, node *id, node *assign);
-static node *GetSsacnt (char *baseid, int initvalue, node *block);
-static node *TreatIdAsLhs (node *arg_node, info *arg_info);
 static node *TreatIdsAsRhs (node *, info *);
 static node *InitSSAT (node *avis);
 static node *TearDownSSAT (node *avis);
@@ -220,7 +218,6 @@ struct INFO {
     bool funcond_found;
     node *withid;
     node *first_withid;
-    node *fungroup;
 };
 
 /**
@@ -252,7 +249,6 @@ struct INFO {
 #define INFO_CONDSTMT(n) (n->condstmt)
 #define INFO_FUNCOND_FOUND(n) (n->funcond_found)
 #define INFO_FIRST_WITHID(n) (n->first_withid)
-#define INFO_FUNGROUP(n) (n->fungroup)
 
 /*
  * INFO functions:
@@ -277,7 +273,6 @@ MakeInfo ()
     INFO_CONDSTMT (result) = NULL;
     INFO_FUNCOND_FOUND (result) = FALSE;
     INFO_FIRST_WITHID (result) = NULL;
-    INFO_FUNGROUP (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -477,7 +472,6 @@ SaveTopSsastackElse (node *avis)
  * <!--
  * node *SSANewVardec(node *old_vardec_or_arg)
  * node *CreateFuncondAssign( node *cond, node *id, node *assign)
- * node* GetSsacnt(char *baseid, int initvalue, node *block)
  * node* InitializeFungroup(node *arg_node, info* arg_info)
  * node *InitSSAT( node *avis)
  * node *TearDownSSAT( node *avis)
@@ -621,99 +615,6 @@ CreateFuncondAssign (node *cond, node *id, node *assign)
     DBUG_RETURN (new_assign);
 }
 
-/** <!--********************************************************************-->
- *
- * @fn static node* GetSsacnt(char *baseid, int initvalue, node *block)
- *
- *   @brief looks in list of available ssacounter (in block) for matching
- *          baseid and returns the corresponding ssacnt node.
- *          if search fails it will create a new ssacnt in list (counter
- *          will be initialized with initvalue)
- *
- ******************************************************************************/
-static node *
-GetSsacnt (char *baseid, int initvalue, node *block)
-{
-    node *ssacnt;
-    node *tmp;
-
-    DBUG_ENTER ("GetSsacnt");
-
-    ssacnt = NULL;
-
-    if (BLOCK_SSACOUNTER (block) != NULL) {
-        /* look for existing ssacnt to this base_id */
-
-        tmp = BLOCK_SSACOUNTER (block);
-        do {
-            if (strcmp (SSACNT_BASEID (tmp), baseid) == 0) {
-                /* matching baseid */
-                ssacnt = tmp;
-            }
-
-            tmp = SSACNT_NEXT (tmp);
-        } while ((tmp != NULL) && (ssacnt == NULL));
-    }
-
-    if (ssacnt == NULL) {
-        /* insert NEW ssa-counter to this baseid */
-        ssacnt
-          = TBmakeSsacnt (initvalue, ILIBstringCopy (baseid), BLOCK_SSACOUNTER (block));
-
-        /* add to list of ssacnt nodes */
-        BLOCK_SSACOUNTER (block) = ssacnt;
-    }
-
-    DBUG_RETURN (ssacnt);
-}
-
-/**<!--**********************************************************************
- *
- * @fn static node *InitializeFungroup(node *fundef, info *arg_info)
- *
- * @brief This function looks for existing fungroups or creates a
- *        fungroup-node from corresponding fundef-node.
- *        Do-funs and Cond-funs did not need a fungroup.
- *
- ************************************************************************/
-static node *
-InitializeFungroup (node *arg_node, info *arg_info)
-{
-    node *tmp, *fg;
-    DBUG_ENTER ("InitializeFungroup");
-
-    if ((!FUNDEF_ISDOFUN (arg_node)) && (!FUNDEF_ISCONDFUN (arg_node))
-        && (FUNDEF_FUNGROUP (arg_node) == NULL)) {
-        tmp = INFO_FUNGROUP (arg_info);
-
-        /*
-         * search for corresponding fungroup in grouplist
-         * nothing found: create new fungroup
-         */
-
-        while (tmp != NULL) {
-            if (ILIBstringCompare (FUNDEF_NAME (arg_node),
-                                   FUNDEF_NAME (LINKLIST_LINK (
-                                     FUNGROUP_FUNLIST (LINKLIST_LINK (tmp)))))) {
-                FUNGROUP_FUNLIST (LINKLIST_LINK (tmp))
-                  = TBmakeLinklist (arg_node, FUNGROUP_FUNLIST (LINKLIST_LINK (tmp)));
-                (FUNGROUP_REFCOUNTER (LINKLIST_LINK (tmp))) += 1;
-                FUNDEF_FUNGROUP (arg_node) = LINKLIST_LINK (tmp);
-                break;
-            }
-            tmp = LINKLIST_NEXT (tmp);
-        }
-        if (tmp == NULL) {
-            fg = TBmakeFungroup ();
-            FUNGROUP_FUNLIST (fg) = TBmakeLinklist (arg_node, NULL);
-            FUNGROUP_REFCOUNTER (fg) = 1;
-            INFO_FUNGROUP (arg_info) = TBmakeLinklist (fg, INFO_FUNGROUP (arg_info));
-            FUNDEF_FUNGROUP (arg_node) = fg;
-        }
-    }
-    DBUG_RETURN (arg_node);
-}
-
 /*@}*/
 
 /**
@@ -740,8 +641,6 @@ SSATfundef (node *arg_node, info *arg_info)
 
     INFO_CONDSTMT (arg_info) = NULL;
     INFO_FUNCOND_FOUND (arg_info) = FALSE;
-
-    arg_node = InitializeFungroup (arg_node, arg_info);
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         /* stores access points for later insertions in this fundef */
@@ -903,9 +802,11 @@ SSATarg (node *arg_node, info *arg_info)
     DBUG_PRINT ("SSA", ("working on arg %s", ARG_NAME (arg_node)));
 
     if (AVIS_SSACOUNT (ARG_AVIS (arg_node)) == NULL) {
-        /* insert ssa-counter to this baseid */
-        AVIS_SSACOUNT (ARG_AVIS (arg_node))
-          = GetSsacnt (ARG_NAME (arg_node), 0, FUNDEF_BODY (INFO_FUNDEF (arg_info)));
+        node *topblock = FUNDEF_BODY (INFO_FUNDEF (arg_info));
+        BLOCK_SSACOUNTER (topblock)
+          = TBmakeSsacnt (0, ILIBstringCopy (ARG_NAME (arg_node)),
+                          BLOCK_SSACOUNTER (topblock));
+        AVIS_SSACOUNT (ARG_AVIS (arg_node)) = BLOCK_SSACOUNTER (topblock);
     }
 
     /* actual rename-to target on stack*/
@@ -952,9 +853,11 @@ SSATvardec (node *arg_node, info *arg_info)
     DBUG_ENTER ("SSATvardec");
 
     if (AVIS_SSACOUNT (VARDEC_AVIS (arg_node)) == NULL) {
-        /* insert ssa-counter to this baseid */
-        AVIS_SSACOUNT (VARDEC_AVIS (arg_node))
-          = GetSsacnt (VARDEC_NAME (arg_node), 0, FUNDEF_BODY (INFO_FUNDEF (arg_info)));
+        node *topblock = FUNDEF_BODY (INFO_FUNDEF (arg_info));
+        BLOCK_SSACOUNTER (topblock)
+          = TBmakeSsacnt (0, ILIBstringCopy (VARDEC_NAME (arg_node)),
+                          BLOCK_SSACOUNTER (topblock));
+        AVIS_SSACOUNT (VARDEC_AVIS (arg_node)) = BLOCK_SSACOUNTER (topblock);
     }
 
     /* jet undefined on stack */
@@ -1323,7 +1226,6 @@ SSATcode (node *arg_node, info *arg_info)
     }
 
     /* traverse expressions */
-    DBUG_ASSERT ((CODE_CEXPRS (arg_node) != NULL), "Ncode without Ncexprs node!");
     CODE_CEXPRS (arg_node) = TRAVdo (CODE_CEXPRS (arg_node), arg_info);
 
     /* restore old rename stack !!! */
@@ -1522,8 +1424,9 @@ SSATids (node *arg_ids, info *arg_info)
     } else {
         /* redefinition - create new unique variable/vardec */
         new_vardec = SSATnewVardec (AVIS_DECL (IDS_AVIS (arg_ids)));
-        FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-          = TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)), new_vardec);
+        VARDEC_NEXT (new_vardec) = FUNDEF_VARDEC (INFO_FUNDEF (arg_info));
+        FUNDEF_VARDEC (INFO_FUNDEF (arg_info)) = new_vardec;
+
         DBUG_PRINT ("SSA", ("re-definition, renaming: %s (" F_PTR ") -> %s",
                             AVIS_NAME (IDS_AVIS (arg_ids)), IDS_AVIS (arg_ids),
                             AVIS_NAME (VARDEC_AVIS (new_vardec))));
@@ -1554,64 +1457,6 @@ SSATids (node *arg_ids, info *arg_info)
     }
 
     DBUG_RETURN (arg_ids);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *TreatIdAsLhs(node *arg_ids, info *arg_info)
- *
- *   @brief creates new (renamed) instance of defined variables.
- *          is an identical copy from SSATids, here N_id nodes are
- *          used instead of N_ids.
- *
- ******************************************************************************/
-
-node *
-TreatIdAsLhs (node *arg_node, info *arg_info)
-{
-    node *new_vardec;
-
-    DBUG_ENTER ("TreatIdAsLhs");
-
-    if (!AVIS_SSADEFINED (ID_AVIS (arg_node))) {
-        /* first definition of variable (no renaming) */
-        AVIS_SSASTACK_TOP (ID_AVIS (arg_node)) = ID_AVIS (arg_node);
-        /* SSACNT_COUNT(AVIS_SSACOUNT(ID_AVIS(arg_node))) = 0; */
-        AVIS_SSADEFINED (ID_AVIS (arg_node)) = TRUE;
-        DBUG_PRINT ("SSA", ("first definition, no renaming: %s (" F_PTR ")",
-                            AVIS_NAME (ID_AVIS (arg_node)), ID_AVIS (arg_node)));
-
-        AVIS_SSAASSIGN (ID_AVIS (arg_node)) = INFO_ASSIGN (arg_info);
-
-    } else {
-        /* redefinition - create new unique variable/vardec */
-        new_vardec = SSATnewVardec (AVIS_DECL (ID_AVIS (arg_node)));
-        FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-          = TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)), new_vardec);
-        DBUG_PRINT ("SSA", ("re-definition, renaming: %s (" F_PTR ") -> %s",
-                            AVIS_NAME (ID_AVIS (arg_node)), ID_AVIS (arg_node),
-                            AVIS_NAME (VARDEC_AVIS (new_vardec))));
-
-        /* new rename-to target for old vardec */
-        AVIS_SSASTACK_TOP (ID_AVIS (arg_node)) = VARDEC_AVIS (new_vardec);
-
-        /* rename this ids */
-        ID_AVIS (arg_node) = VARDEC_AVIS (new_vardec);
-
-        /*
-         * mark this avis for undo ssa transform:
-         * all global objects and artificial identifier must
-         * be mapped back to their original name in undossa.
-         */
-        if (((NODE_TYPE (ID_DECL (arg_node)) == N_arg)
-             && (ARG_ISARTIFICIAL (ID_DECL (arg_node))))
-            || (AVIS_ISUNIQUE (ID_AVIS (arg_node)))) {
-            AVIS_SSAUNDOFLAG (ID_AVIS (arg_node)) = TRUE;
-        }
-        AVIS_SSAASSIGN (ID_AVIS (arg_node)) = INFO_ASSIGN (arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
 }
 
 /** <!--********************************************************************-->

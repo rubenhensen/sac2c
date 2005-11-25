@@ -1,48 +1,5 @@
 /*
- *
- * $Log$
- * Revision 3.82  2005/09/29 22:04:12  sah
- * added DBUG_PRINT message
- *
- * Revision 3.81  2005/07/15 15:57:02  sah
- * introduced namespaces
- *
- * Revision 3.80  2005/06/27 18:15:50  sah
- * fixed bug #90
- *
- * Revision 3.79  2005/06/14 14:54:29  sah
- * some cleanup
- *
- * Revision 3.78  2005/03/04 21:21:42  cg
- * LaC functions are immediately zombified when their single
- * application is deleted.
- *
- * Revision 3.77  2005/01/11 16:04:43  mwe
- * FUNGROUP_REFCOUNTER added
- *
- * Revision 3.76  2005/01/11 15:55:07  mwe
- * support for N_fungroup added (remove references to ZombieFuns)
- *
- * Revision 3.75  2004/12/12 08:00:49  ktr
- * removed sons.any, attribs.any, NODE_ISALIVE because they were incompatible
- * with CLEANMEM.
- *
- * Revision 3.74  2004/11/29 15:05:30  sah
- * minor change.
- *
- * Revision 3.73  2004/11/24 20:23:57  sah
- * COMPILES.
- *
- * Revision 3.72  2004/11/23 10:04:04  sah
- * SaC DevCamp 04
- *
- * Revision 3.71  2004/11/08 16:35:23  sah
- * as I found out today, FUNDEF_IMPL is needed for zombie funs as
- * well in order to dispatch correctly in create_wrapper_code.c.
- * So now that attribute is not freed as well.
- *
- * [...]
- *
+ * $Id$
  */
 
 #include "free.h"
@@ -390,7 +347,7 @@ FREEdoFreeTree (node *free_node)
 /******************************************************************************
  *
  * Function:
- *   node *FREEfreeZombie( node *fundef)
+ *   node *FreeZombie( node *fundef)
  *
  * Description:
  *   - if head of 'fundef' is a zombie:
@@ -399,68 +356,6 @@ FREEdoFreeTree (node *free_node)
  *       Returns 'fundef' in unmodified form.
  *
  ******************************************************************************/
-
-static void
-RemoveFromFungroup (node *fundef)
-{
-    node *group = FUNDEF_FUNGROUP (fundef);
-    node *list;
-    node *tofree = NULL;
-
-    DBUG_ENTER ("RemoveFromFungroup");
-
-    if (group != NULL) {
-        list = FUNGROUP_FUNLIST (group);
-
-        if (list != NULL) {
-            if (LINKLIST_LINK (list) == fundef) {
-                /*
-                 * first function in FUNLIST will be freed
-                 */
-                tofree = list;
-                FUNGROUP_FUNLIST (group) = LINKLIST_NEXT (FUNGROUP_FUNLIST (group));
-                LINKLIST_NEXT (tofree) = NULL;
-                LINKLIST_LINK (tofree) = NULL;
-                tofree = FREEdoFreeNode (tofree);
-                (FUNGROUP_REFCOUNTER (group))--;
-
-            } else {
-                /*
-                 * function to be freed is not first function in
-                 * FUNLIST
-                 */
-                while ((NULL != LINKLIST_NEXT (list))
-                       && (fundef != LINKLIST_LINK (LINKLIST_NEXT (list)))) {
-                    list = LINKLIST_NEXT (list);
-                }
-                if (list != NULL) {
-                    /*
-                     * LINKLIST_NEXT(list) contains fundef
-                     */
-                    tofree = LINKLIST_NEXT (list);
-                    LINKLIST_NEXT (list) = LINKLIST_NEXT (LINKLIST_NEXT (list));
-                    LINKLIST_NEXT (tofree) = NULL;
-                    LINKLIST_LINK (tofree) = NULL;
-                    tofree = FREEdoFreeNode (tofree);
-                    (FUNGROUP_REFCOUNTER (group))--;
-                }
-            }
-        }
-
-        if (FUNGROUP_REFCOUNTER (group) == 0) {
-            /*
-             * free the fungroup as it is referenced no more
-             */
-            DBUG_ASSERT ((FUNGROUP_FUNLIST (group) == NULL),
-                         "FunGroup refcnt == 0, but still functions in funlist!");
-
-            group = FREEdoFreeNode (group);
-        }
-    }
-
-    DBUG_VOID_RETURN;
-}
-
 static node *
 FreeZombie (node *fundef)
 {
@@ -489,11 +384,6 @@ FreeZombie (node *fundef)
         if (FUNDEF_WRAPPERTYPE (fundef) != NULL) {
             FUNDEF_WRAPPERTYPE (fundef) = TYfreeType (FUNDEF_WRAPPERTYPE (fundef));
         }
-
-        /*
-         * remove the fungroup entry
-         */
-        RemoveFromFungroup (fundef);
 
         tmp = fundef;
         fundef = FUNDEF_NEXT (fundef);

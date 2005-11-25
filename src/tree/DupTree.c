@@ -913,20 +913,6 @@ DUPfundef (node *arg_node, info *arg_info)
         FUNDEF_WRAPPERTYPE (new_node) = TYcopyType (FUNDEF_WRAPPERTYPE (arg_node));
     }
 
-    if ((!FUNDEF_ISLACFUN (arg_node)) && (FUNDEF_FUNGROUP (arg_node) != NULL)) {
-
-        FUNDEF_FUNGROUP (new_node) = FUNDEF_FUNGROUP (arg_node);
-        /*
-         * increse reference counter in fungroup and add new_node to funlist
-         */
-        (FUNGROUP_REFCOUNTER (FUNDEF_FUNGROUP (new_node))) += 1;
-
-        FUNGROUP_FUNLIST (FUNDEF_FUNGROUP (new_node))
-          = TBmakeLinklist (new_node, FUNGROUP_FUNLIST (FUNDEF_FUNGROUP (new_node)));
-    } else {
-        FUNDEF_FUNGROUP (new_node) = NULL;
-    }
-
     INFO_FUNDEF (arg_info) = old_fundef;
 
     DBUG_RETURN (new_node);
@@ -2554,36 +2540,6 @@ DUPerror (node *arg_node, info *arg_info)
         ERROR_NEXT (new_node) = DUPerror (ERROR_NEXT (arg_node), NULL);
     }
 
-    DBUG_RETURN (new_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *DUPfungroup( node *arg_node, info *arg_info)
- *
- * description:
- *   Duplicates a N_fungroup node.
- *
- ******************************************************************************/
-
-node *
-DUPfungroup (node *arg_node, info *arg_info)
-{
-    node *new_node;
-
-    DBUG_ENTER ("DUPfungroup");
-
-    new_node = TBmakeFungroup ();
-
-    CopyCommonNodeData (new_node, arg_node);
-
-    FUNGROUP_SPECCOUNTER (new_node) = FUNGROUP_SPECCOUNTER (arg_node);
-    FUNGROUP_REFCOUNTER (new_node) = FUNGROUP_REFCOUNTER (arg_node);
-    FUNGROUP_INLCOUNTER (new_node) = FUNGROUP_INLCOUNTER (arg_node);
-    if (FUNGROUP_FUNLIST (new_node) != NULL) {
-        FUNGROUP_FUNLIST (new_node) = DUPTRAV (FUNGROUP_FUNLIST (arg_node));
-    }
     DBUG_RETURN (new_node);
 }
 

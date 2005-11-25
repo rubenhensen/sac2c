@@ -396,14 +396,13 @@ CreateNewResult (node *avis, info *arg_info)
 
     /* 1. create new vardec in external (calling) fundef */
     new_name = ILIBtmpVarName (AVIS_NAME (avis));
-    new_ext_vardec
-      = TBmakeVardec (TBmakeAvis (new_name, TYcopyType (AVIS_TYPE (avis))), NULL);
-
-    DBUG_PRINT ("LIR", ("create external vardec %s for %s", new_name, AVIS_NAME (avis)));
+    new_ext_vardec = TBmakeVardec (TBmakeAvis (new_name, TYcopyType (AVIS_TYPE (avis))),
+                                   FUNDEF_VARDEC (INFO_EXTFUNDEF (arg_info)));
 
     /* add vardec to chain of vardecs (ext. fundef) */
-    FUNDEF_VARDEC (INFO_EXTFUNDEF (arg_info))
-      = TCappendVardec (FUNDEF_VARDEC (INFO_EXTFUNDEF (arg_info)), new_ext_vardec);
+    FUNDEF_VARDEC (INFO_EXTFUNDEF (arg_info)) = new_ext_vardec;
+
+    DBUG_PRINT ("LIR", ("create external vardec %s for %s", new_name, AVIS_NAME (avis)));
 
     /* 2. add [avis -> new_ext_avis] to RESULTMAP nodelist */
     INFO_RESULTMAP (arg_info)
@@ -415,17 +414,16 @@ CreateNewResult (node *avis, info *arg_info)
     /* 3. create new vardec in local fundef (as result in recursive call) */
     new_int_vardec = TBmakeVardec (TBmakeAvis (ILIBtmpVarName (AVIS_NAME (avis)),
                                                TYcopyType (AVIS_TYPE (avis))),
-                                   NULL);
+                                   FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
 
-    FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-      = TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)), new_int_vardec);
+    FUNDEF_VARDEC (INFO_FUNDEF (arg_info)) = new_int_vardec;
 
     /* 4. create new vardec in local fundef (as PhiCopyTarget) */
     new_pct_vardec = TBmakeVardec (TBmakeAvis (ILIBtmpVarName (AVIS_NAME (avis)),
                                                TYcopyType (AVIS_TYPE (avis))),
-                                   NULL);
-    FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-      = TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)), new_pct_vardec);
+                                   FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+
+    FUNDEF_VARDEC (INFO_FUNDEF (arg_info)) = new_pct_vardec;
 
     /* 5. modify functions signature (AddResult) */
     /* recursive call */
@@ -561,10 +559,9 @@ AdjustExternalResult (node *new_assigns, node *ext_assign, node *ext_fundef)
                     /* matching ids found - create new vardec and rename result_ids */
                     new_avis = TBmakeAvis (ILIBtmpVarName (IDS_NAME (result_chain)),
                                            TYcopyType (IDS_NTYPE (result_chain)));
-                    new_vardec = TBmakeVardec (new_avis, NULL);
-                    BLOCK_VARDEC (FUNDEF_BODY (ext_fundef))
-                      = TCappendVardec (BLOCK_VARDEC (FUNDEF_BODY (ext_fundef)),
-                                        new_vardec);
+                    new_vardec
+                      = TBmakeVardec (new_avis, BLOCK_VARDEC (FUNDEF_BODY (ext_fundef)));
+                    BLOCK_VARDEC (FUNDEF_BODY (ext_fundef)) = new_vardec;
 
                     /* rename ids */
                     IDS_AVIS (result_chain) = new_avis;
@@ -1984,15 +1981,15 @@ LIRMOVids (node *arg_ids, info *arg_info)
         /* create new vardec */
         new_avis = TBmakeAvis (ILIBtmpVarName (IDS_NAME (arg_ids)),
                                TYcopyType (IDS_NTYPE (arg_ids)));
-        new_vardec = TBmakeVardec (new_avis, NULL);
+        new_vardec
+          = TBmakeVardec (new_avis,
+                          BLOCK_VARDEC (FUNDEF_BODY (INFO_EXTFUNDEF (arg_info))));
 
         DBUG_PRINT ("LIR", ("create external vardec %s for %s", (AVIS_NAME (new_avis)),
                             (IDS_NAME (arg_ids))));
 
         /* add vardec to chain of vardecs (ext. fundef) */
-        BLOCK_VARDEC (FUNDEF_BODY (INFO_EXTFUNDEF (arg_info)))
-          = TCappendVardec (BLOCK_VARDEC (FUNDEF_BODY (INFO_EXTFUNDEF (arg_info))),
-                            new_vardec);
+        BLOCK_VARDEC (FUNDEF_BODY (INFO_EXTFUNDEF (arg_info))) = new_vardec;
 
         /*
          * setup LUT for later DupTree:
