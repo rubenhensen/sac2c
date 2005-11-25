@@ -423,6 +423,10 @@ ReplaceByWithOffset (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("ReplaceByWithOffset");
 
+    DBUG_ASSERT ((INFO_IVINFO (arg_info) != NULL),
+                 "found an id which was identified as a withid (no SSAASSIGN "
+                 "and not N_arg) although not inside a withloop.");
+
     shape = SHarray2Shape (PRF_ARG1 (arg_node));
 
     offset = FindIVOffset (INFO_IVINFO (arg_info), ID_AVIS (PRF_ARG2 (arg_node)), shape);

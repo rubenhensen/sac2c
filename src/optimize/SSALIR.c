@@ -1771,6 +1771,11 @@ LIRMOVassign (node *arg_node, info *arg_info)
               = TCappendAssign (INFO_EXTPREASSIGN (arg_info),
                                 DUPdoDupNodeLut (arg_node, move_table));
 
+            DBUG_ASSERT ((AVIS_SSAASSIGN (IDS_AVIS (
+                            LET_IDS (ASSIGN_INSTR (INFO_EXTPREASSIGN (arg_info)))))
+                          != NULL),
+                         "duptree returned an assign with missing SSAASSIGN in avis");
+
             /* free temp. LUT */
             move_table = LUTremoveLut (move_table);
 
@@ -1991,9 +1996,16 @@ LIRMOVids (node *arg_ids, info *arg_info)
 
         /*
          * setup LUT for later DupTree:
-         *   subst local vardec with external vardec
+         *   subst local avis with external avis
+         *
+         * NOTE: For DupTree to set the AVIS_SSAASSIGN correctly,
+         *       we have to annotate the current SSAASSIGN here.
+         *       When later duplicating this assignment, the SSAASSIGN
+         *       will then be set to the corresponding new N_assign node.
+         *       Details can be found in DUPids and LIRMOVassign.
          */
-        /* avis */
+        AVIS_SSAASSIGN (new_avis) = AVIS_SSAASSIGN (IDS_AVIS (arg_ids));
+
         INFO_MOVELUT (arg_info)
           = LUTinsertIntoLutP (INFO_MOVELUT (arg_info), IDS_AVIS (arg_ids), new_avis);
 
