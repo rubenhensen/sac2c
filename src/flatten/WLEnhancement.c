@@ -51,6 +51,7 @@
 #include "dbug.h"
 #include "dispatchfuncalls.h"
 #include "rmcasts.h"
+#include "globals.h"
 
 /** <!--********************************************************************-->
  *
@@ -89,7 +90,9 @@ WLEdoWlEnhancement (node *syntax_tree)
     /**
      * Reverse Type Upgrade
      */
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_rtup, syntax_tree);
+    if (global.optimize.dortup) {
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_rtup, syntax_tree);
+    }
 
     /*
      * With-loop partition generation
