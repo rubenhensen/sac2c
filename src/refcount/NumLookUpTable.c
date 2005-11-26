@@ -87,6 +87,37 @@ NLUTgenerateNlut (node *args, node *vardecs)
 /******************************************************************************
  *
  * function:
+ *   nlut_t *NLUTgenerateNlutFromNlut( nlut_t *nlut)
+ *
+ * description:
+ *   Duplicates an Nlut
+ *
+ *****************************************************************************/
+nlut_t *
+NLUTgenerateNlutFromNlut (nlut_t *nlut)
+{
+    int i;
+    nlut_t *newnlut;
+
+    DBUG_ENTER ("NLUTgenerateNlutFromNlut");
+
+    newnlut = ILIBmalloc (sizeof (nlut_t));
+
+    NLUT_SIZE (newnlut) = NLUT_SIZE (nlut);
+    NLUT_NUMS (newnlut) = ILIBmalloc (NLUT_SIZE (nlut) * sizeof (int));
+    NLUT_AVIS (newnlut) = ILIBmalloc (NLUT_SIZE (nlut) * sizeof (node *));
+
+    for (i = 0; i < NLUT_SIZE (nlut); i++) {
+        NLUT_NUMS (newnlut)[i] = 0;
+        NLUT_AVIS (newnlut)[i] = NLUT_AVIS (nlut)[i];
+    }
+
+    DBUG_RETURN (newnlut);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   nlut_t *NLUTduplicateNlut( nlut_t *nlut)
  *
  * description:

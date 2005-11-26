@@ -1,18 +1,5 @@
 /*
- *
- * $Log$
- * Revision 1.4  2005/10/06 16:59:29  ktr
- * uses new NLUT for faster compile times
- *
- * Revision 1.3  2005/07/18 16:31:33  ktr
- * removed FUNDEF_EXT_ASSIGN
- *
- * Revision 1.2  2005/07/16 09:57:55  ktr
- * maintenance
- *
- * Revision 1.1  2005/07/03 16:58:08  ktr
- * Initial revision
- *
+ * $Id$
  */
 #include "rcminimize.h"
 
@@ -309,8 +296,7 @@ RCMcode (node *arg_node, info *arg_info)
     oldenv = INFO_ENV (arg_info);
     oldusedmask = INFO_USEDMASK (arg_info);
 
-    INFO_ENV (arg_info) = NLUTgenerateNlut (FUNDEF_ARGS (INFO_FUNDEF (arg_info)),
-                                            FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+    INFO_ENV (arg_info) = NLUTgenerateNlutFromNlut (oldenv);
     INFO_USEDMASK (arg_info) = DFMgenMaskCopy (oldusedmask);
 
     CODE_CEXPRS (arg_node) = TRAVdo (CODE_CEXPRS (arg_node), arg_info);
@@ -373,8 +359,7 @@ RCMcond (node *arg_node, info *arg_info)
     /*
      * Compute common environment and annotate missing inc_rc statements
      */
-    env = NLUTgenerateNlut (FUNDEF_ARGS (INFO_FUNDEF (arg_info)),
-                            FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+    env = NLUTgenerateNlutFromNlut (env);
     usedmask = DFMgenMaskOr (INFO_USEDMASK (arg_info), INFO_USEDMASK2 (arg_info));
 
     nzlut = NLUTaddNluts (INFO_ENV (arg_info), INFO_ENV2 (arg_info));

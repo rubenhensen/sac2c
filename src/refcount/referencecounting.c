@@ -1,33 +1,6 @@
-/*
- *
- * $Log$
- * Revision 1.8  2005/10/06 16:59:29  ktr
- * uses new NLUT for faster compile times
- *
- * Revision 1.7  2005/09/15 17:12:13  ktr
- * removed ICM traversal
- *
- * Revision 1.6  2005/08/24 10:20:09  ktr
- * added support for WITHID_IDXS, some brushing
- *
- * Revision 1.5  2005/08/20 12:09:09  ktr
- * typeconv introduces aliasing
- *
- * Revision 1.4  2005/07/18 16:31:33  ktr
- * removed FUNDEF_EXT_ASSIGN
- *
- * Revision 1.3  2005/07/17 07:29:37  ktr
- * eliminated USE and DEF Nluts and  introduced a post assignment chain
- *
- * Revision 1.2  2005/07/16 12:23:52  ktr
- * shape descriptors are not corrupted any longer
- *
- * Revision 1.1  2005/07/16 09:57:19  ktr
- * Initial revision
- *
- */
-
 /**
+ * $Id$
+ *
  * @defgroup rci Reference Counting Inference
  * @ingroup rcp
  *
@@ -71,6 +44,7 @@ struct INFO {
     nlut_t *env2;
     node *postassign;
     node *fundef;
+    dfmask_base_t *maskbase;
     dfmask_t *withmask;
     bool withvecneeded;
     node *assign;
@@ -85,6 +59,7 @@ struct INFO {
 #define INFO_ENV2(n) (n->env2)
 #define INFO_POSTASSIGN(n) (n->postassign)
 #define INFO_FUNDEF(n) (n->fundef)
+#define INFO_MASKBASE(n) (n->maskbase)
 #define INFO_WITHMASK(n) (n->withmask)
 #define INFO_WITHVECNEEDED(n) (n->withvecneeded)
 #define INFO_ASSIGN(n) (n->assign)
@@ -107,6 +82,7 @@ MakeInfo ()
     INFO_ENV2 (result) = NULL;
     INFO_POSTASSIGN (result) = NULL;
     INFO_FUNDEF (result) = NULL;
+    INFO_MASKBASE (result) = NULL;
     INFO_WITHMASK (result) = NULL;
     INFO_ASSIGN (result) = NULL;
     INFO_MUSTCOUNT (result) = FALSE;
@@ -255,6 +231,9 @@ RCIfundef (node *arg_node, info *arg_info)
 
             info = MakeInfo ();
             INFO_FUNDEF (info) = arg_node;
+            INFO_MASKBASE (info)
+              = DFMgenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
+
             INFO_ENV (info)
               = NLUTgenerateNlut (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
 
@@ -315,7 +294,7 @@ RCIfundef (node *arg_node, info *arg_info)
             }
 
             INFO_ENV (info) = NLUTremoveNlut (INFO_ENV (info));
-
+            INFO_MASKBASE (info) = DFMremoveMaskBase (INFO_MASKBASE (info));
             info = FreeInfo (info);
         }
 
@@ -688,14 +667,11 @@ RCIarray (node *arg_node, info *arg_info)
 node *
 RCIwith (node *arg_node, info *arg_info)
 {
-    dfmask_base_t *maskbase;
     node *avis;
 
     DBUG_ENTER ("RCIwith");
 
-    maskbase = DFMgenMaskBase (FUNDEF_ARGS (INFO_FUNDEF (arg_info)),
-                               FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
-    INFO_WITHMASK (arg_info) = DFMgenMaskClear (maskbase);
+    INFO_WITHMASK (arg_info) = DFMgenMaskClear (INFO_MASKBASE (arg_info));
 
     if (WITH_CODE (arg_node) != NULL) {
         WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
@@ -717,7 +693,6 @@ RCIwith (node *arg_node, info *arg_info)
     }
 
     INFO_WITHMASK (arg_info) = DFMremoveMask (INFO_WITHMASK (arg_info));
-    maskbase = DFMremoveMaskBase (maskbase);
 
     /*
      * In AKD-IV-Withloops, the IV is always needed
@@ -748,14 +723,11 @@ RCIwith (node *arg_node, info *arg_info)
 node *
 RCIwith2 (node *arg_node, info *arg_info)
 {
-    dfmask_base_t *maskbase;
     node *avis;
 
     DBUG_ENTER ("RCIwith2");
 
-    maskbase = DFMgenMaskBase (FUNDEF_ARGS (INFO_FUNDEF (arg_info)),
-                               FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
-    INFO_WITHMASK (arg_info) = DFMgenMaskClear (maskbase);
+    INFO_WITHMASK (arg_info) = DFMgenMaskClear (INFO_MASKBASE (arg_info));
 
     if (WITH2_CODE (arg_node) != NULL) {
         WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
@@ -777,7 +749,6 @@ RCIwith2 (node *arg_node, info *arg_info)
     }
 
     INFO_WITHMASK (arg_info) = DFMremoveMask (INFO_WITHMASK (arg_info));
-    maskbase = DFMremoveMaskBase (maskbase);
 
     /*
      * In with2-loops ( AKS-IV), the index vector is not always required
@@ -818,8 +789,7 @@ RCIcode (node *arg_node, info *arg_info)
     INFO_WITHMASK (arg_info) = NULL;
 
     old_env = INFO_ENV (arg_info);
-    INFO_ENV (arg_info) = NLUTgenerateNlut (FUNDEF_ARGS (INFO_FUNDEF (arg_info)),
-                                            FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+    INFO_ENV (arg_info) = NLUTgenerateNlutFromNlut (old_env);
 
     /*
      * Traverse CEXPRS like funaps
@@ -1090,8 +1060,7 @@ RCIcond (node *arg_node, info *arg_info)
 
     INFO_ENV (arg_info) = env;
 
-    env = NLUTgenerateNlut (FUNDEF_ARGS (INFO_FUNDEF (arg_info)),
-                            FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+    env = NLUTgenerateNlutFromNlut (env);
 
     nzlut = NLUTaddNluts (INFO_ENV (arg_info), INFO_ENV2 (arg_info));
 
