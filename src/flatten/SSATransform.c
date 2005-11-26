@@ -1412,17 +1412,18 @@ SSATids (node *arg_ids, info *arg_info)
     DBUG_ENTER ("SSATids");
 
     if (!AVIS_SSADEFINED (IDS_AVIS (arg_ids))) {
-        /* first definition of variable (no renaming) */
+        /*
+         * first definition of variable (no renaming)
+         */
         AVIS_SSASTACK_TOP (IDS_AVIS (arg_ids)) = IDS_AVIS (arg_ids);
-        /* SSACNT_COUNT(AVIS_SSACOUNT(IDS_AVIS(arg_ids))) = 0; */
         AVIS_SSADEFINED (IDS_AVIS (arg_ids)) = TRUE;
         DBUG_PRINT ("SSA", ("first definition, no renaming: %s (" F_PTR ")",
                             AVIS_NAME (IDS_AVIS (arg_ids)), IDS_AVIS (arg_ids)));
 
-        AVIS_SSAASSIGN (IDS_AVIS (arg_ids)) = INFO_ASSIGN (arg_info);
-
     } else {
-        /* redefinition - create new unique variable/vardec */
+        /*
+         * redefinition - create new unique variable/vardec
+         */
         new_vardec = SSATnewVardec (AVIS_DECL (IDS_AVIS (arg_ids)));
         VARDEC_NEXT (new_vardec) = FUNDEF_VARDEC (INFO_FUNDEF (arg_info));
         FUNDEF_VARDEC (INFO_FUNDEF (arg_info)) = new_vardec;
@@ -1436,20 +1437,9 @@ SSATids (node *arg_ids, info *arg_info)
 
         /* rename this ids */
         IDS_AVIS (arg_ids) = VARDEC_AVIS (new_vardec);
-
-        /*
-         * mark this avis for undo ssa transform:
-         * all global objects and artificial identifier must
-         * be mapped back to their original name in undossa.
-         */
-        if (((NODE_TYPE (AVIS_DECL (IDS_AVIS (arg_ids))) == N_arg)
-             && (ARG_ISARTIFICIAL (AVIS_DECL (IDS_AVIS (arg_ids)))))
-            || (AVIS_ISUNIQUE (IDS_AVIS (arg_ids)))) {
-
-            AVIS_SSAUNDOFLAG (IDS_AVIS (arg_ids)) = TRUE;
-        }
-        AVIS_SSAASSIGN (IDS_AVIS (arg_ids)) = INFO_ASSIGN (arg_info);
     }
+
+    AVIS_SSAASSIGN (IDS_AVIS (arg_ids)) = INFO_ASSIGN (arg_info);
 
     /* traverese next ids */
     if (IDS_NEXT (arg_ids) != NULL) {

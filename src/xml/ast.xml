@@ -4873,7 +4873,6 @@
 	</attribute>
       </attributes>
       <flags>
-        <flag name="SSAUndoFLag" />
         <flag name="SSADefined" />
         <flag name="SSALPINV" />
         <flag name="IsAlias" default="TRUE" >

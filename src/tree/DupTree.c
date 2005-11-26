@@ -2451,7 +2451,6 @@ DUPavis (node *arg_node, info *arg_info)
     AVIS_DECLTYPE (new_node) = TYcopyType (AVIS_DECLTYPE (arg_node));
     AVIS_SSALPINV (new_node) = AVIS_SSALPINV (arg_node);
     AVIS_SSASTACK (new_node) = DUPTRAV (AVIS_SSASTACK (arg_node));
-    AVIS_SSAUNDOFLAG (new_node) = AVIS_SSAUNDOFLAG (arg_node);
 
     AVIS_SSADEFINED (new_node) = AVIS_SSADEFINED (arg_node);
     AVIS_SSATHEN (new_node) = AVIS_SSATHEN (arg_node);
