@@ -22,7 +22,7 @@
  * prefix: DCR
  *
  *****************************************************************************/
-extern node *DCRdoDeadCodeRemoval (node *fundef);
+extern node *DCRdoDeadCodeRemovalOneFundef (node *fundef);
 extern node *DCRdoDeadCodeRemovalModule (node *module);
 
 extern node *DCRfundef (node *arg_node, info *arg_info);

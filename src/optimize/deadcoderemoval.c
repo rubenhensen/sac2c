@@ -51,12 +51,13 @@
 #include "dbug.h"
 #include "traverse.h"
 #include "free.h"
-#include "map_fun_trav.h"
+#include "deadcodeinference.h"
 
 /*
  * INFO structure
  */
 struct INFO {
+    enum { TS_module, TS_fundef } travscope;
     bool remassign;
     node *assign;
     node *fundef;
@@ -68,6 +69,7 @@ struct INFO {
 /*
  * INFO macros
  */
+#define INFO_TRAVSCOPE(n) (n->travscope)
 #define INFO_REMASSIGN(n) (n->remassign)
 #define INFO_ASSIGN(n) (n->assign)
 #define INFO_FUNDEF(n) (n->fundef)
@@ -87,6 +89,7 @@ MakeInfo ()
 
     result = ILIBmalloc (sizeof (info));
 
+    INFO_TRAVSCOPE (result) = TS_module;
     INFO_REMASSIGN (result) = FALSE;
     INFO_ASSIGN (result) = NULL;
     INFO_FUNDEF (result) = NULL;
@@ -110,27 +113,31 @@ FreeInfo (info *info)
 /******************************************************************************
  *
  * function:
- *   node *DCRdoDeadCodeRemoval(node *fundef)
+ *   node *DCRdoDeadCodeRemovalOneFundef(node *fundef)
  *
  * description:
- *   starting point of DeadCodeRemoval for SSA form. DCR will only be performed
- *   if fundef is not a special fundef (do, while, cond) created by
- *   lac2fun transformation. These "inline" functions will be traversed in
- *   their order of usage. The traversal mode (on toplevel, in special
- *   function) is annotated in the stacked INFO_DEPTH attribute.
+ *   starting point of dead code removal.
+ *   applies dead code removal to the designated function only.
  *
  *****************************************************************************/
 node *
-DCRdoDeadCodeRemoval (node *fundef)
+DCRdoDeadCodeRemovalOneFundef (node *fundef)
 {
+    info *info;
+
     DBUG_ENTER ("DCRdoDeadCodeRemoval");
 
     DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
                  "DCRdoDeadCodeRemovalOneFunction called for non-fundef node");
 
+    info = MakeInfo ();
+    INFO_TRAVSCOPE (info) = TS_fundef;
+
     TRAVpush (TR_dcr);
-    fundef = TRAVdo (fundef, NULL);
+    fundef = TRAVdo (fundef, info);
     TRAVpop ();
+
+    info = FreeInfo (info);
 
     DBUG_RETURN (fundef);
 }
@@ -141,15 +148,25 @@ DCRdoDeadCodeRemoval (node *fundef)
  *   node *DCRdoDeadCodeRemovalModule(node *module)
  *
  * description:
- *   applies dead code removal to all functions of the given module
+ *   applies dead code removal to all functions of the given module.
+ *   Thereby, unnecessary arguments of LAC functions are removed.
  *
  *****************************************************************************/
 node *
 DCRdoDeadCodeRemovalModule (node *module)
 {
+    info *info;
+
     DBUG_ENTER ("DCRdoDeadCodeRemovalModule");
 
-    module = MFTdoMapFunTrav (module, DCRdoDeadCodeRemoval);
+    info = MakeInfo ();
+    INFO_TRAVSCOPE (info) = TS_module;
+
+    TRAVpush (TR_dcr);
+    module = TRAVdo (module, info);
+    TRAVpop ();
+
+    info = FreeInfo (info);
 
     DBUG_RETURN (module);
 }
@@ -195,26 +212,32 @@ DCRfundef (node *arg_node, info *arg_info)
     DBUG_PRINT ("DCR",
                 ("\nstarting dead code removal in fundef %s.", FUNDEF_NAME (arg_node)));
 
-    if ((!FUNDEF_ISLACFUN (arg_node)) || (arg_info != NULL)) {
+    if ((INFO_TRAVSCOPE (arg_info) == TS_fundef)
+        || ((INFO_TRAVSCOPE (arg_info) == TS_module)
+            && (((!FUNDEF_ISLACFUN (arg_node)) || (INFO_FUNDEF (arg_info) != NULL))))) {
 
         if (FUNDEF_BODY (arg_node) != NULL) {
             info *info;
 
-            if (!FUNDEF_ISLACFUN (arg_node)) {
-                /*
-                 * Infere dead variables
-                 */
-                TRAVpush (TR_dci);
-                arg_node = TRAVdo (arg_node, NULL);
-                TRAVpop ();
+            /*
+             * Infere dead variables
+             */
+            if (INFO_TRAVSCOPE (arg_info) == TS_fundef) {
+                arg_node = DCIdoDeadCodeInferenceOneFundef (arg_node);
+            }
+
+            if ((INFO_TRAVSCOPE (arg_info) == TS_module)
+                && (!FUNDEF_ISLACFUN (arg_node))) {
+                arg_node = DCIdoDeadCodeInferenceOneFunction (arg_node);
             }
 
             info = MakeInfo ();
+            INFO_TRAVSCOPE (info) = INFO_TRAVSCOPE (arg_info);
             INFO_FUNDEF (info) = arg_node;
 
             FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), info);
 
-            if (FUNDEF_ISLACFUN (arg_node)) {
+            if ((INFO_TRAVSCOPE (info) == TS_module) && (FUNDEF_ISLACFUN (arg_node))) {
                 /*
                  * traverse args and rets to remove unused ones from signature
                  */
@@ -238,6 +261,12 @@ DCRfundef (node *arg_node, info *arg_info)
             }
 
             info = FreeInfo (info);
+        }
+    }
+
+    if ((INFO_TRAVSCOPE (arg_info) == TS_module) && (INFO_FUNDEF (arg_info) == NULL)) {
+        if (FUNDEF_NEXT (arg_node) != NULL) {
+            FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
         }
     }
 
@@ -556,22 +585,26 @@ DCRap (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("DCRap");
 
-    /* traverse special fundef without recursion */
-    if (FUNDEF_ISLACFUN (AP_FUNDEF (arg_node))) {
-        if (AP_FUNDEF (arg_node) == INFO_FUNDEF (arg_info)) {
-            /* remember internal assignment */
-            INFO_INT_ASSIGN (arg_info) = INFO_ASSIGN (arg_info);
-        } else {
-            DBUG_PRINT ("DCR", ("traverse in special fundef %s",
-                                FUNDEF_NAME (AP_FUNDEF (arg_node))));
+    if (INFO_TRAVSCOPE (arg_info) == TS_module) {
+        /*
+         * traverse special fundef without recursion
+         */
+        if (FUNDEF_ISLACFUN (AP_FUNDEF (arg_node))) {
+            if (AP_FUNDEF (arg_node) == INFO_FUNDEF (arg_info)) {
+                /* remember internal assignment */
+                INFO_INT_ASSIGN (arg_info) = INFO_ASSIGN (arg_info);
+            } else {
+                DBUG_PRINT ("DCR", ("traverse in special fundef %s",
+                                    FUNDEF_NAME (AP_FUNDEF (arg_node))));
 
-            /* start traversal of special fundef (and maybe reduce parameters!) */
-            AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
+                /* start traversal of special fundef (and maybe reduce parameters!) */
+                AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
 
-            DBUG_PRINT ("DCR", ("traversal of special fundef %s finished"
-                                "continue in fundef %s\n",
-                                FUNDEF_NAME (AP_FUNDEF (arg_node)),
-                                FUNDEF_NAME (INFO_FUNDEF (arg_info))));
+                DBUG_PRINT ("DCR", ("traversal of special fundef %s finished"
+                                    "continue in fundef %s\n",
+                                    FUNDEF_NAME (AP_FUNDEF (arg_node)),
+                                    FUNDEF_NAME (INFO_FUNDEF (arg_info))));
+            }
         }
     }
 

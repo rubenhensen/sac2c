@@ -13,6 +13,9 @@
 
 #include "types.h"
 
+extern node *DCIdoDeadCodeInferenceOneFundef (node *arg_node);
+extern node *DCIdoDeadCodeInferenceOneFunction (node *arg_node);
+
 extern node *DCIfundef (node *arg_node, info *arg_info);
 extern node *DCIarg (node *arg_node, info *arg_info);
 extern node *DCIvardec (node *arg_node, info *arg_info);

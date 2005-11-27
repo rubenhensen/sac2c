@@ -477,10 +477,10 @@ OPTdoIntraFunctionalOptimizations (node *arg_node)
                     }
 
                     /*
-                     * Dead code removal
+                     * Dead code removal (Just the current FUNDEF)
                      */
                     if (global.optimize.dodcr) {
-                        fundef = PHrunOptimizationInCycle (SUBPH_dcrcyc, loop, fundef);
+                        fundef = PHrunOptimizationInCycle (SUBPH_dcrcycfun, loop, fundef);
                     }
 
                     /*
@@ -560,6 +560,13 @@ OPTdoIntraFunctionalOptimizations (node *arg_node)
          */
         if (global.optimize.dodfr) {
             arg_node = PHrunOptimizationInCycle (SUBPH_dfrcyc, loop, arg_node);
+        }
+
+        /*
+         * Dead code removal
+         */
+        if (global.optimize.dodcr) {
+            arg_node = PHrunOptimizationInCycle (SUBPH_dcrcyc, loop, arg_node);
         }
 
         /*

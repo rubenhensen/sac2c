@@ -236,7 +236,8 @@ SUBPHASE (wlf, "wlf", "Applying with-loop folding", WLFdoWLF)
 SUBPHASE (ssawlf, "ssawlf", "Restoring SSA form after with-loop folding",
           SSATdoTransformOneFundef)
 
-SUBPHASE (dcrcyc, "dcr", "Applying dead code removal", DCRdoDeadCodeRemoval)
+SUBPHASE (dcrcycfun, "dcrfun", "Applying dead code removal",
+          DCRdoDeadCodeRemovalOneFundef)
 
 SUBPHASE (wls, "wls", "Applying with-loop scalarization", WLSdoWithloopScalarization)
 
@@ -263,6 +264,8 @@ SUBPHASE (al, "al", "Applying associative law", ASSOCdoAssociativityOptimization
 SUBPHASE (dl, "dl", "Applying distributive law", DLdoDistributiveLaw)
 
 SUBPHASE (dfrcyc, "dfr", "Removing dead functions", DFRdoDeadFunctionRemoval)
+
+SUBPHASE (dcrcyc, "dcr", "Applying dead code removal", DCRdoDeadCodeRemovalModule)
 
 SUBPHASE (sisi, "sisi", "Simplifying function signatures", SISIdoSignatureSimplification)
 

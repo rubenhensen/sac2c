@@ -16,6 +16,7 @@
  * INFO structure
  */
 struct INFO {
+    enum { TS_function, TS_fundef } travscope;
     node *assign;
     node *fundef;
     node *int_assign;
@@ -27,6 +28,7 @@ struct INFO {
 /*
  * INFO macros
  */
+#define INFO_TRAVSCOPE(n) (n->travscope)
 #define INFO_ASSIGN(n) (n->assign)
 #define INFO_FUNDEF(n) (n->fundef)
 #define INFO_INT_ASSIGN(n) (n->int_assign)
@@ -46,6 +48,7 @@ MakeInfo ()
 
     result = ILIBmalloc (sizeof (info));
 
+    INFO_TRAVSCOPE (result) = TS_fundef;
     INFO_ASSIGN (result) = NULL;
     INFO_FUNDEF (result) = NULL;
     INFO_INT_ASSIGN (result) = NULL;
@@ -69,6 +72,68 @@ FreeInfo (info *info)
 /******************************************************************************
  *
  * function:
+ *   node *DCIdoDeadCodeInferenceOneFundef(node *fundef)
+ *
+ * description:
+ *   starting point of dead code inference for one fundef
+ *
+ *****************************************************************************/
+node *
+DCIdoDeadCodeInferenceOneFundef (node *fundef)
+{
+    info *info;
+
+    DBUG_ENTER ("DCIdoDeadCodeInferenceOneFundef");
+
+    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
+                 "DCIdoDeadCodeInferenceOneFunction called for non-fundef node");
+
+    info = MakeInfo ();
+    INFO_TRAVSCOPE (info) = TS_fundef;
+
+    TRAVpush (TR_dci);
+    fundef = TRAVdo (fundef, info);
+    TRAVpop ();
+
+    info = FreeInfo (info);
+
+    DBUG_RETURN (fundef);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *DCIdoDeadCodeInferenceOneFunction(node *fundef)
+ *
+ * description:
+ *   starting point of dead code inference for one function (including lacfuns)
+ *
+ *****************************************************************************/
+node *
+DCIdoDeadCodeInferenceOneFunction (node *fundef)
+{
+    info *info;
+
+    DBUG_ENTER ("DCIdoDeadCodeInferenceOneFunction");
+
+    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
+                 "DCIdoDeadCodeInferenceOneFunction called for non-fundef node");
+
+    info = MakeInfo ();
+    INFO_TRAVSCOPE (info) = TS_function;
+
+    TRAVpush (TR_dci);
+    fundef = TRAVdo (fundef, info);
+    TRAVpop ();
+
+    info = FreeInfo (info);
+
+    DBUG_RETURN (fundef);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *DCIfundef(node *arg_node , info *arg_info)
  *
  * description:
@@ -86,13 +151,17 @@ DCIfundef (node *arg_node, info *arg_info)
 
     if (FUNDEF_BODY (arg_node) != NULL) {
 
-        if ((!FUNDEF_ISLACFUN (arg_node)) || (arg_info != NULL)) {
+        if ((INFO_TRAVSCOPE (arg_info) == TS_fundef)
+            || ((INFO_TRAVSCOPE (arg_info) == TS_function)
+                && (((!FUNDEF_ISLACFUN (arg_node))
+                     || (INFO_FUNDEF (arg_info) != NULL))))) {
             info *info;
             bool fixedpointreached = FALSE;
 
             info = MakeInfo ();
 
             INFO_FUNDEF (info) = arg_node;
+            INFO_TRAVSCOPE (info) = INFO_TRAVSCOPE (arg_info);
 
             /*
              * Traverse ARGS and VARDECS to initialize AVIS_ISDEAD
@@ -114,7 +183,8 @@ DCIfundef (node *arg_node, info *arg_info)
 
                 fixedpointreached = TRUE;
 
-                if (FUNDEF_ISDOFUN (arg_node)) {
+                if ((INFO_TRAVSCOPE (info) == TS_function)
+                    && (FUNDEF_ISDOFUN (arg_node))) {
                     node *args, *recexprs;
                     args = FUNDEF_ARGS (arg_node);
                     recexprs = AP_ARGS (ASSIGN_RHS (INFO_INT_ASSIGN (info)));
@@ -249,7 +319,8 @@ DCIreturn (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("DCIreturn");
 
-    if (FUNDEF_ISLACFUN (INFO_FUNDEF (arg_info))) {
+    if ((INFO_TRAVSCOPE (arg_info) == TS_function)
+        && (FUNDEF_ISLACFUN (INFO_FUNDEF (arg_info)))) {
         node *extids, *retexprs;
 
         /* mark only those return values as needed that are required in the
@@ -330,7 +401,8 @@ DCIlet (node *arg_node, info *arg_info)
 
     if (INFO_ONEIDSNEEDED (arg_info)) {
 
-        if (!((NODE_TYPE (LET_EXPR (arg_node)) == N_ap)
+        if (!((INFO_TRAVSCOPE (arg_info) == TS_function)
+              && (NODE_TYPE (LET_EXPR (arg_node)) == N_ap)
               && (FUNDEF_ISLACFUN (AP_FUNDEF (LET_EXPR (arg_node)))))) {
             /*
              * IDS can only be removed individually if they are returned from
@@ -371,7 +443,8 @@ DCIap (node *arg_node, info *arg_info)
     DBUG_ENTER ("DCIap");
 
     /* traverse special fundef without recursion */
-    if (FUNDEF_ISLACFUN (AP_FUNDEF (arg_node))) {
+    if ((INFO_TRAVSCOPE (arg_info) == TS_function)
+        && (FUNDEF_ISLACFUN (AP_FUNDEF (arg_node)))) {
         if (AP_FUNDEF (arg_node) == INFO_FUNDEF (arg_info)) {
             /* remember internal assignment */
             INFO_INT_ASSIGN (arg_info) = INFO_ASSIGN (arg_info);
