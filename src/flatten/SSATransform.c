@@ -169,10 +169,9 @@ static node *InitSSAT (node *avis);
 static node *TearDownSSAT (node *avis);
 
 /* special ssastack operations for ONE avis-node */
-static node *PopSsastack (node *avis);
 static node *DupTopSsastack (node *avis);
-static node *SaveTopSsastackThen (node *avis);
-static node *SaveTopSsastackElse (node *avis);
+static node *PopSsastackThen (node *avis);
+static node *PopSsastackElse (node *avis);
 
 /**
  *
@@ -350,10 +349,9 @@ IncSSATCounter ()
  * FOR_ALL_AVIS( fun , fundef )          : higher order function; maps "fun"
  *                                         to all avis nodes in the args/
  *                                         vardecs of "fundef"
- * node *PopSsastack(node *avis)         : pop top elem
  * node *DupTopSsastack(node *avis)      : push a copy of the top elem
- * node *SaveTopSsastackThen(node *avis) : save top elem in AVIS_SSA_THEN
- * node *SaveTopSsastackElse(node *avis) : save top elem in AVIS_SSA_ELSE
+ * node *PopSsastackThen(node *avis)     : move top elem to AVIS_SSATHEN
+ * node *PopSsastackElse(node *avis)     : move top elem to AVIS_SSAELSE
  * -->
  *
  */
@@ -400,6 +398,25 @@ RemoveOldSsaStackElements (node *avis, int nestlevel)
 
 /** <!--********************************************************************-->
  *
+ * @fn static node *RemoveSsaStackElementsGreaterZero(node *avis)
+ *
+ *   @brief Removes stack elements with NESTLEVEL greater than 0
+ *
+ ******************************************************************************/
+static node *
+RemoveSsaStackElementsGreaterZero (node *avis)
+{
+    DBUG_ENTER ("RemoveSsaStackElementsGreaterZero");
+
+    while (SSASTACK_NESTLEVEL (AVIS_SSASTACK (avis)) > 0) {
+        AVIS_SSASTACK (avis) = FREEdoFreeNode (AVIS_SSASTACK (avis));
+    }
+
+    DBUG_RETURN (avis);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn static node *EnsureSsaStackElement(node *avis, int nestlevel)
  *
  *   @brief Ensures SSASTACK refers to an element with NESTLEVEL == nestlevel
@@ -415,26 +432,6 @@ EnsureSsaStackElement (node *avis, int nestlevel)
     if (SSASTACK_NESTLEVEL (AVIS_SSASTACK (avis)) < nestlevel) {
         avis = DupTopSsastack (avis);
         SSASTACK_NESTLEVEL (AVIS_SSASTACK (avis)) = nestlevel;
-    }
-
-    DBUG_RETURN (avis);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn static node *PopSsastack(node *avis)
- *
- *   @brief frees top of SSAstack
- *          if stack is not in use to nothing
- *
- ******************************************************************************/
-static node *
-PopSsastack (node *avis)
-{
-    DBUG_ENTER ("PopSsastack");
-
-    if (AVIS_SSASTACK_INUSE (avis)) {
-        AVIS_SSASTACK (avis) = FREEdoFreeNode (AVIS_SSASTACK (avis));
     }
 
     DBUG_RETURN (avis);
@@ -466,34 +463,36 @@ DupTopSsastack (node *avis)
 
 /** <!--********************************************************************-->
  *
- * @fn static  node *SaveTopSsastackThen(node *avis)
+ * @fn static  node *PopSsastackThen(node *avis)
  *
- *   @brief Saves Top-Value of stack to AVIS_SSATHEN
+ *   @brief Moves Top-Value of stack to AVIS_SSATHEN
  *
  ******************************************************************************/
 static node *
-SaveTopSsastackThen (node *avis)
+PopSsastackThen (node *avis)
 {
-    DBUG_ENTER ("SaveTopSsastackThen");
+    DBUG_ENTER ("PopSsastackThen");
 
     AVIS_SSATHEN (avis) = AVIS_SSASTACK_TOP (avis);
+    AVIS_SSASTACK (avis) = FREEdoFreeNode (AVIS_SSASTACK (avis));
 
     DBUG_RETURN (avis);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn static  node *SaveTopSsastackElse(node *avis)
+ * @fn static  node *PopSsastackElse(node *avis)
  *
- *   @brief Saves Top-Value of stack to AVIS_SSATHEN
+ *   @brief Moves Top-Value of stack to AVIS_SSATHEN
  *
  ******************************************************************************/
 static node *
-SaveTopSsastackElse (node *avis)
+PopSsastackElse (node *avis)
 {
-    DBUG_ENTER ("SaveTopSsastackElse");
+    DBUG_ENTER ("PopSsastackElse");
 
     AVIS_SSAELSE (avis) = AVIS_SSASTACK_TOP (avis);
+    AVIS_SSASTACK (avis) = FREEdoFreeNode (AVIS_SSASTACK (avis));
 
     DBUG_RETURN (avis);
 }
@@ -1246,9 +1245,8 @@ SSATwithid (node *arg_node, info *arg_info)
  *
  * @fn node *SSATcode(node *arg_node, info *arg_info)
  *
- *   @brief traverses block and expr and potentially epilogue in this order.
- *          While doing so, create new scope by pushing renaming stacks.
- *          Before traversing further code nodes reset the scope by popping.
+ *   @brief traverses block and expr
+ *          While doing so, create new scope by increasing NESTLEVEL
  *
  ******************************************************************************/
 node *
@@ -1295,36 +1293,28 @@ SSATcond (node *arg_node, info *arg_info)
     INFO_CONDSTMT (arg_info) = arg_node;
 
     /* traverse conditional */
-    DBUG_ASSERT ((COND_COND (arg_node) != NULL), "Ncond without cond node!");
     COND_COND (arg_node) = TRAVdo (COND_COND (arg_node), arg_info);
+
+    /* remove all ssastack elements with NESTLEVEL greater than 0 */
+    FOR_ALL_AVIS (RemoveSsaStackElementsGreaterZero, INFO_FUNDEF (arg_info));
 
     /* do stacking of current renaming status */
     FOR_ALL_AVIS (DupTopSsastack, INFO_FUNDEF (arg_info));
 
     /* traverse then */
-    if (COND_THEN (arg_node) != NULL) {
-        COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
-    }
+    COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
 
     /* save to then for later merging */
-    FOR_ALL_AVIS (SaveTopSsastackThen, INFO_FUNDEF (arg_info));
-
-    /* so some status restauration */
-    FOR_ALL_AVIS (PopSsastack, INFO_FUNDEF (arg_info));
+    FOR_ALL_AVIS (PopSsastackThen, INFO_FUNDEF (arg_info));
 
     /* do stacking of current renaming status */
     FOR_ALL_AVIS (DupTopSsastack, INFO_FUNDEF (arg_info));
 
     /* traverse else */
-    if (COND_ELSE (arg_node) != NULL) {
-        COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
-    }
+    COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
 
     /* save to else for later merging */
-    FOR_ALL_AVIS (SaveTopSsastackElse, INFO_FUNDEF (arg_info));
-
-    /* so some status restauration */
-    FOR_ALL_AVIS (PopSsastack, INFO_FUNDEF (arg_info));
+    FOR_ALL_AVIS (PopSsastackElse, INFO_FUNDEF (arg_info));
 
     DBUG_RETURN (arg_node);
 }
