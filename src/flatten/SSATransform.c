@@ -928,7 +928,7 @@ node *
 SSATid (node *arg_node, info *arg_info)
 {
 
-    node *new_avis;
+    node *new_avis = NULL;
     DBUG_ENTER ("SSATid");
 
     ID_AVIS (arg_node)
