@@ -191,17 +191,17 @@ static node *SaveTopSsastackElse (node *avis);
  *                    contained in the code to be reformed
  * GENERATE_FUNCOND : indicates funcond generation mode rather than
  *                    renaming mode (toggled by SSAreturn)
- * RENAMING_MODE    : used in funconds only; steers renaming in SSArightids;
- *                    legal values are defined below.
  *
  * FUNDEF        : ptr to the actual fundef
  * ASSIGN        : ptr to the actual assign; if modified during RHS traversal
  *                 the new ptr has to be inserted and traversed again!
  * CONDSTMT      : ptr to the cond node passed by if any
  * FUNCOND_FOUND : flag indicating presence of funcond node
+ * RENAME        : Triggers whether SSAid uses
+ *                 AVIS_SSASTACK_TOP, AVIS_SSATHEN, or AVIS_SSAELSE
  * WITHID        : ptr to actual withid node
  * FIRST_WITHID  : ptr to the first withid node of a mgWL
- *
+ * NESTLEVEL     : counter to keep track of the degree of With-loop nesting
  */
 /*@{*/
 
@@ -210,14 +210,15 @@ struct INFO {
     bool allow_gos;
 
     bool generate_funcond;
-    int renaming_mode;
 
     node *fundef;
     node *assign;
     node *condstmt;
     bool funcond_found;
+    enum { RN_top, RN_then, RN_else } rename;
     node *withid;
     node *first_withid;
+    int nestlevel;
 };
 
 /**
@@ -228,13 +229,6 @@ struct INFO {
 #define SSA_TRAV_SPECIALS 1
 #define SSA_TRAV_NONE 2
 
-/**
- * legal values for RENAMING_MODE:
- */
-#define SSA_USE_TOP 0
-#define SSA_USE_THEN 1
-#define SSA_USE_ELSE 2
-
 /*
  * access macros:
  */
@@ -242,13 +236,14 @@ struct INFO {
 #define INFO_ALLOW_GOS(n) (n->allow_gos)
 
 #define INFO_GENERATE_FUNCOND(n) (n->generate_funcond)
-#define INFO_RENAMING_MODE(n) (n->renaming_mode)
 
 #define INFO_FUNDEF(n) (n->fundef)
 #define INFO_ASSIGN(n) (n->assign)
 #define INFO_CONDSTMT(n) (n->condstmt)
 #define INFO_FUNCOND_FOUND(n) (n->funcond_found)
+#define INFO_RENAME(n) (n->rename)
 #define INFO_FIRST_WITHID(n) (n->first_withid)
+#define INFO_NESTLEVEL(n) (n->nestlevel)
 
 /*
  * INFO functions:
@@ -266,13 +261,14 @@ MakeInfo ()
     INFO_ALLOW_GOS (result) = FALSE;
 
     INFO_GENERATE_FUNCOND (result) = FALSE;
-    INFO_RENAMING_MODE (result) = SSA_USE_TOP;
 
     INFO_FUNDEF (result) = NULL;
     INFO_ASSIGN (result) = NULL;
     INFO_CONDSTMT (result) = NULL;
     INFO_FUNCOND_FOUND (result) = FALSE;
+    INFO_RENAME (result) = RN_top;
     INFO_FIRST_WITHID (result) = NULL;
+    INFO_NESTLEVEL (result) = 0;
 
     DBUG_RETURN (result);
 }
@@ -385,6 +381,47 @@ IncSSATCounter ()
 
 /** <!--********************************************************************-->
  *
+ * @fn static node *RemoveOldSsaStackElements(node *avis, int nestlevel)
+ *
+ *   @brief Removes stack elements with NESTLEVEL greater than nestlevel
+ *
+ ******************************************************************************/
+static node *
+RemoveOldSsaStackElements (node *avis, int nestlevel)
+{
+    DBUG_ENTER ("RemoveOldSsaStackElements");
+
+    while (SSASTACK_NESTLEVEL (AVIS_SSASTACK (avis)) > nestlevel) {
+        AVIS_SSASTACK (avis) = FREEdoFreeNode (AVIS_SSASTACK (avis));
+    }
+
+    DBUG_RETURN (avis);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn static node *EnsureSsaStackElement(node *avis, int nestlevel)
+ *
+ *   @brief Ensures SSASTACK refers to an element with NESTLEVEL == nestlevel
+ *
+ ******************************************************************************/
+static node *
+EnsureSsaStackElement (node *avis, int nestlevel)
+{
+    DBUG_ENTER ("EnsureSsaStackElement");
+
+    avis = RemoveOldSsaStackElements (avis, nestlevel);
+
+    if (SSASTACK_NESTLEVEL (AVIS_SSASTACK (avis)) < nestlevel) {
+        avis = DupTopSsastack (avis);
+        SSASTACK_NESTLEVEL (AVIS_SSASTACK (avis)) = nestlevel;
+    }
+
+    DBUG_RETURN (avis);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn static node *PopSsastack(node *avis)
  *
  *   @brief frees top of SSAstack
@@ -394,14 +431,10 @@ IncSSATCounter ()
 static node *
 PopSsastack (node *avis)
 {
-    node *ssastack;
-
     DBUG_ENTER ("PopSsastack");
 
     if (AVIS_SSASTACK_INUSE (avis)) {
-        ssastack = AVIS_SSASTACK (avis);
-        AVIS_SSASTACK (avis) = SSASTACK_NEXT (ssastack);
-        ssastack = FREEdoFreeNode (ssastack);
+        AVIS_SSASTACK (avis) = FREEdoFreeNode (AVIS_SSASTACK (avis));
     }
 
     DBUG_RETURN (avis);
@@ -423,7 +456,8 @@ DupTopSsastack (node *avis)
 
     if (AVIS_SSASTACK_INUSE (avis)) {
         ssastack = AVIS_SSASTACK (avis);
-        AVIS_SSASTACK (avis) = TBmakeSsastack (SSASTACK_AVIS (ssastack), ssastack);
+        AVIS_SSASTACK (avis) = TBmakeSsastack (SSASTACK_AVIS (ssastack),
+                                               SSASTACK_NESTLEVEL (ssastack), ssastack);
         AVIS_SSASTACK_INUSE (avis) = TRUE;
     }
 
@@ -491,7 +525,7 @@ InitSSAT (node *avis)
 {
     DBUG_ENTER ("InitSSAT");
 
-    AVIS_SSASTACK (avis) = TBmakeSsastack (NULL, NULL);
+    AVIS_SSASTACK (avis) = TBmakeSsastack (NULL, 0, NULL);
 
     DBUG_RETURN (avis);
 }
@@ -894,30 +928,35 @@ SSATvardec (node *arg_node, info *arg_info)
 node *
 SSATid (node *arg_node, info *arg_info)
 {
+
     node *new_avis;
     DBUG_ENTER ("SSATid");
 
+    ID_AVIS (arg_node)
+      = RemoveOldSsaStackElements (ID_AVIS (arg_node), INFO_NESTLEVEL (arg_info));
+
     if (INFO_GENERATE_FUNCOND (arg_info)) {
-        /* check for different assignments in then and else part */
+
+        /*
+         * check for different assignments in then and else part
+         */
         if (AVIS_SSATHEN (ID_AVIS (arg_node)) != AVIS_SSAELSE (ID_AVIS (arg_node))) {
-            DBUG_ASSERT ((AVIS_SSATHEN (ID_AVIS (arg_node))),
-                         "undefined variable in then part");
-            DBUG_ASSERT ((AVIS_SSATHEN (ID_AVIS (arg_node))),
-                         "undefined variable in then part");
             INFO_ASSIGN (arg_info)
               = CreateFuncondAssign (INFO_CONDSTMT (arg_info), arg_node,
                                      INFO_ASSIGN (arg_info));
         }
     } else {
 
-        if (INFO_RENAMING_MODE (arg_info) == SSA_USE_TOP) {
+        switch (INFO_RENAME (arg_info)) {
+        case RN_top:
             new_avis = AVIS_SSASTACK_TOP (ID_AVIS (arg_node));
-        } else if (INFO_RENAMING_MODE (arg_info) == SSA_USE_THEN) {
+            break;
+        case RN_then:
             new_avis = AVIS_SSATHEN (ID_AVIS (arg_node));
-        } else {
-            DBUG_ASSERT ((INFO_RENAMING_MODE (arg_info) == SSA_USE_ELSE),
-                         "illegal value for INFO_RENAMING_MODE");
+            break;
+        case RN_else:
             new_avis = AVIS_SSAELSE (ID_AVIS (arg_node));
+            break;
         }
 
         /* do renaming to new ssa vardec */
@@ -1217,8 +1256,7 @@ SSATcode (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSATcode");
 
-    /* do stacking of current renaming status */
-    FOR_ALL_AVIS (DupTopSsastack, INFO_FUNDEF (arg_info));
+    INFO_NESTLEVEL (arg_info) += 1;
 
     /* traverse block */
     if (CODE_CBLOCK (arg_node) != NULL) {
@@ -1228,8 +1266,7 @@ SSATcode (node *arg_node, info *arg_info)
     /* traverse expressions */
     CODE_CEXPRS (arg_node) = TRAVdo (CODE_CEXPRS (arg_node), arg_info);
 
-    /* restore old rename stack !!! */
-    FOR_ALL_AVIS (PopSsastack, INFO_FUNDEF (arg_info));
+    INFO_NESTLEVEL (arg_info) -= 1;
 
     if (CODE_NEXT (arg_node) != NULL) {
         /* traverse next part */
@@ -1306,28 +1343,21 @@ SSATfuncond (node *arg_node, info *arg_info)
 
     INFO_FUNCOND_FOUND (arg_info) = TRUE;
 
-    if (FUNCOND_IF (arg_node) != NULL) {
-        FUNCOND_IF (arg_node) = TRAVdo (FUNCOND_IF (arg_node), arg_info);
-    }
+    FUNCOND_IF (arg_node) = TRAVdo (FUNCOND_IF (arg_node), arg_info);
 
-    if (FUNCOND_THEN (arg_node) != NULL) {
-        /**
-         * iff there was a cond-instruction before, the correct renaming info
-         * is found in the AVIS_SSATHEN node! Otherwise AVIS_SSASTACK_TOP can
-         * be used as usual.
-         */
-        INFO_RENAMING_MODE (arg_info)
-          = (INFO_CONDSTMT (arg_info) ? SSA_USE_THEN : SSA_USE_TOP);
-        FUNCOND_THEN (arg_node) = TRAVdo (FUNCOND_THEN (arg_node), arg_info);
-        INFO_RENAMING_MODE (arg_info) = SSA_USE_TOP;
-    }
+    DBUG_ASSERT (INFO_CONDSTMT (arg_info) != NULL,
+                 "Funcond without corresponding N_cond node found!");
 
-    if (FUNCOND_ELSE (arg_node) != NULL) {
-        INFO_RENAMING_MODE (arg_info)
-          = (INFO_CONDSTMT (arg_info) ? SSA_USE_ELSE : SSA_USE_TOP);
-        FUNCOND_ELSE (arg_node) = TRAVdo (FUNCOND_ELSE (arg_node), arg_info);
-        INFO_RENAMING_MODE (arg_info) = SSA_USE_TOP;
-    }
+    /*
+     * Perform renaming according to the two branches
+     */
+    INFO_RENAME (arg_info) = RN_then;
+    FUNCOND_THEN (arg_node) = TRAVdo (FUNCOND_THEN (arg_node), arg_info);
+
+    INFO_RENAME (arg_info) = RN_else;
+    FUNCOND_ELSE (arg_node) = TRAVdo (FUNCOND_ELSE (arg_node), arg_info);
+
+    INFO_RENAME (arg_info) = RN_top;
 
     DBUG_RETURN (arg_node);
 }
@@ -1382,17 +1412,9 @@ SSATreturn (node *arg_node, info *arg_info)
  * @name IDS traversal functions:
  *
  * <!--
- * ids *TravLeftIDS(ids *arg_ids, info *arg_info)
- * ids *SSAleftids(ids *arg_ids, info *arg_info)
- *
- * ids *TravRightIDS(ids *arg_ids, info *arg_info)
- * ids *SSArightids(ids *arg_ids, info *arg_info)
+ * node *SSATids(node *arg_ids, info *arg_info)
+ * node *TreatIdsAsRhs(node* arg_ids, info *arg_info)
  * -->
- *
- * while the Travxxxxx versions are merely wrappers, SSAleftids and SSArightids
- * constitute the core of the entire renaming mechanism!! SSAleftids is called
- * for ALL defining occurances of variables( i.e. LHSs), and SSArightids
- * is applied to all RHS occurances!
  *
  */
 /*@{*/
@@ -1411,6 +1433,9 @@ SSATids (node *arg_ids, info *arg_info)
 
     DBUG_ENTER ("SSATids");
 
+    IDS_AVIS (arg_ids)
+      = EnsureSsaStackElement (IDS_AVIS (arg_ids), INFO_NESTLEVEL (arg_info));
+
     if (!AVIS_SSADEFINED (IDS_AVIS (arg_ids))) {
         /*
          * first definition of variable (no renaming)
@@ -1425,6 +1450,7 @@ SSATids (node *arg_ids, info *arg_info)
          * redefinition - create new unique variable/vardec
          */
         new_vardec = SSATnewVardec (AVIS_DECL (IDS_AVIS (arg_ids)));
+
         VARDEC_NEXT (new_vardec) = FUNDEF_VARDEC (INFO_FUNDEF (arg_info));
         FUNDEF_VARDEC (INFO_FUNDEF (arg_info)) = new_vardec;
 
@@ -1451,11 +1477,11 @@ SSATids (node *arg_ids, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *SSArightids(ids *arg_ids, info *arg_info)
+ * @fn node *TreatIdsAsRhs(ids *arg_ids, info *arg_info)
  *
- *   @brief rename variable to actual ssa renaming counter. Depending on
- *          INFO_RENAMING_MODE, this is either AVIS_SSASTACK_TOP,
- *          AVIS_SSATHEN, or AVIS_SSAELSE.
+ *   @brief rename variable to actual ssa renaming counter.
+ *          This function is only to used in the context of multiple WITHID
+ *          node where only the first WITHID actually defines a variable.
  *
  ******************************************************************************/
 static node *
@@ -1465,18 +1491,13 @@ TreatIdsAsRhs (node *arg_ids, info *arg_info)
 
     DBUG_ENTER ("TreatIdsAsRhs");
 
-    if (INFO_RENAMING_MODE (arg_info) == SSA_USE_TOP) {
-        new_avis = AVIS_SSASTACK_TOP (IDS_AVIS (arg_ids));
-    } else if (INFO_RENAMING_MODE (arg_info) == SSA_USE_THEN) {
-        new_avis = AVIS_SSATHEN (IDS_AVIS (arg_ids));
-    } else {
-        DBUG_ASSERT ((INFO_RENAMING_MODE (arg_info) == SSA_USE_ELSE),
-                     "illegal value for INFO_RENAMING_MODE");
-        new_avis = AVIS_SSAELSE (IDS_AVIS (arg_ids));
-    }
+    IDS_AVIS (arg_ids)
+      = RemoveOldSsaStackElements (IDS_AVIS (arg_ids), INFO_NESTLEVEL (arg_info));
+
+    new_avis = AVIS_SSASTACK_TOP (IDS_AVIS (arg_ids));
 
     /* do renaming to new ssa vardec */
-    if (!AVIS_SSADEFINED (IDS_AVIS (arg_ids)) || (new_avis == NULL)) {
+    if ((!AVIS_SSADEFINED (IDS_AVIS (arg_ids))) || (new_avis == NULL)) {
         /**
          * One may think, that it would suffice to check AVIS_SSADEFINED here.
          * However, it may happen that despite AVIS_SSADEFINED being set

@@ -2482,8 +2482,8 @@ DUPssastack (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("DUPssastack");
 
-    new_node
-      = TBmakeSsastack (SSASTACK_AVIS (arg_node), DUPCONT (SSASTACK_NEXT (arg_node)));
+    new_node = TBmakeSsastack (SSASTACK_AVIS (arg_node), SSASTACK_NESTLEVEL (arg_node),
+                               DUPCONT (SSASTACK_NEXT (arg_node)));
 
     SSASTACK_FLAGSTRUCTURE (new_node) = SSASTACK_FLAGSTRUCTURE (arg_node);
 
