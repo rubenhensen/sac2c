@@ -875,7 +875,7 @@ LIRfundef (node *arg_node, info *arg_info)
     /**
      * traverse only in next fundef if traversal started in module node
      */
-    if ((INFO_TRAVSTART (arg_info) == TS_module) && (!FUNDEF_ISLACFUN (arg_node))) {
+    if ((INFO_TRAVSTART (arg_info) == TS_module) && (INFO_FUNDEF (arg_info) == NULL)) {
         if (FUNDEF_NEXT (arg_node) != NULL) {
             FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
         }
