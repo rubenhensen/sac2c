@@ -1877,7 +1877,7 @@ node *
 NTCfold (node *arg_node, info *arg_info)
 {
     ntype *gen, *body, *res, *elems, *acc;
-    ntype *shp, *args;
+    ntype *neutr, *args;
     node *wrapper;
     te_info *info;
     bool ok;
@@ -1906,13 +1906,13 @@ NTCfold (node *arg_node, info *arg_info)
                           "Missing neutral element for user-defined fold function");
         }
         FOLD_NEUTRAL (arg_node) = TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
-        shp = INFO_NTC_TYPE (arg_info);
+        neutr = INFO_NTC_TYPE (arg_info);
         INFO_NTC_TYPE (arg_info) = NULL;
 
         /*
          * Then, we compute the type of the elements to be folded:
          */
-        args = TYmakeProductType (2, shp, body);
+        args = TYmakeProductType (3, gen, neutr, body);
         info = TEmakeInfo (global.linenum, TE_with, "fold");
         res = NTCCTcomputeType (NTCCTwl_fold, info, args);
         elems = TYgetProductMember (res, 0);
@@ -1951,7 +1951,7 @@ NTCfold (node *arg_node, info *arg_info)
 
             res = TYmakeProductType (1, acc);
 
-            ok = SSInewTypeRel (shp, acc);
+            ok = SSInewTypeRel (neutr, acc);
             DBUG_ASSERT (ok, ("initialization of fold-fun in fold-wl went wrong"));
 
             ok = SSInewTypeRel (elems, acc);

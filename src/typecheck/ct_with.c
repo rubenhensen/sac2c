@@ -1,41 +1,5 @@
 /*
- * $Log$
- * Revision 1.12  2005/09/09 16:46:24  sbs
- * NTCCTwl_multicode added
- *
- * Revision 1.11  2005/07/19 07:20:06  sbs
- * corrected fold computation TEassureSameScalar instead of sameSimple
- *
- * Revision 1.10  2005/06/14 09:55:10  sbs
- * support for bottom types integrated.
- *
- * Revision 1.9  2005/06/01 08:12:15  sbs
- * ct on modarray wls lacked some essential checks.
- *
- * Revision 1.8  2004/11/24 17:42:07  sbs
- * compiles
- *
- * Revision 1.7  2004/03/05 12:08:00  sbs
- * avoided the creation of AKD of dimensionality 0.
- *
- * Revision 1.6  2003/12/02 09:53:22  sbs
- * genarray Wls with non-negative entries will be rejected by the TC now!
- *
- * Revision 1.5  2003/11/26 14:22:44  sbs
- * default value of new genarray WLs now is checked as well.
- *
- * Revision 1.4  2003/04/11 17:55:59  sbs
- * COConstant2Shape used in Idx2Outer.
- *
- * Revision 1.3  2003/04/07 14:33:41  sbs
- * genarray variant and Idx2Outer extended for AKV types.
- *
- * Revision 1.2  2002/08/06 08:26:49  sbs
- * some vars initialized to please gcc for the product version.
- *
- * Revision 1.1  2002/08/05 16:57:53  sbs
- * Initial revision
- *
+ * $Id$
  *
  */
 
@@ -317,14 +281,16 @@ NTCCTwl_mod (te_info *info, ntype *args)
 ntype *
 NTCCTwl_fold (te_info *info, ntype *args)
 {
-    ntype *neutr, *expr, *res;
+    ntype *idx, *neutr, *expr, *res;
     char *err_msg;
 
     DBUG_ENTER ("NTCCTwl_foldfun");
 
-    neutr = TYgetProductMember (args, 0);
-    expr = TYgetProductMember (args, 1);
+    idx = TYgetProductMember (args, 0);
+    neutr = TYgetProductMember (args, 1);
+    expr = TYgetProductMember (args, 2);
 
+    TEassureIntVect ("index expression of fold with loop", idx);
     TEassureSameScalarType ("neutral element", neutr, "body expression of fold with loop",
                             expr);
     err_msg = TEfetchErrors ();
