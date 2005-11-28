@@ -1187,7 +1187,7 @@ NTCCTprf_ari_op_SxA (te_info *info, ntype *args)
         if (TYisAKV (array1) && TYisAKV (array2)) {
             res = TYmakeAKV (TYcopyType (TYgetScalar (array1)), ApplyCF (info, args));
         } else {
-            res = TYcopyType (array2);
+            res = TYeliminateAKV (array2);
         }
     }
 
@@ -1231,7 +1231,7 @@ NTCCTprf_ari_op_AxS (te_info *info, ntype *args)
         if (TYisAKV (array1) && TYisAKV (array2)) {
             res = TYmakeAKV (TYcopyType (TYgetScalar (array1)), ApplyCF (info, args));
         } else {
-            res = TYcopyType (array1);
+            res = TYeliminateAKV (array1);
         }
     }
 

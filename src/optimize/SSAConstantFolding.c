@@ -2156,9 +2156,6 @@ CFfoldPrfExpr (prf op, node **arg_expr)
         break;
 
     case F_add_SxS:
-    case F_add_AxS:
-    case F_add_SxA:
-    case F_add_AxA:
         if
             ONE_CONST_ARG_OF_TWO (arg_co, arg_expr)
             {
@@ -2170,11 +2167,18 @@ CFfoldPrfExpr (prf op, node **arg_expr)
                 new_node = Add (arg_expr[0], arg_expr[1]);
             }
         break;
+    case F_add_AxA:
+        if
+            TWO_ARG (arg_expr)
+            {
+                new_node = Add (arg_expr[0], arg_expr[1]);
+            }
+        break;
+    case F_add_AxS:
+    case F_add_SxA:
+        break;
 
     case F_sub_SxS:
-    case F_sub_AxS:
-    case F_sub_SxA:
-    case F_sub_AxA:
         if
             ONE_CONST_ARG_OF_TWO (arg_co, arg_expr)
             {
@@ -2186,22 +2190,30 @@ CFfoldPrfExpr (prf op, node **arg_expr)
                 new_node = Sub (arg_expr[0], arg_expr[1]);
             }
         break;
+    case F_sub_AxA:
+        if
+            TWO_ARG (arg_expr)
+            {
+                new_node = Sub (arg_expr[0], arg_expr[1]);
+            }
+        break;
+    case F_sub_AxS:
+    case F_sub_SxA:
+        break;
 
     case F_mul_SxS:
-    case F_mul_AxS:
-    case F_mul_SxA:
-    case F_mul_AxA:
         if
             ONE_CONST_ARG_OF_TWO (arg_co, arg_expr)
             {
                 new_node = ArithmOpWrapper (F_mul_SxS, arg_co, arg_expr);
             }
         break;
+    case F_mul_AxS:
+    case F_mul_SxA:
+    case F_mul_AxA:
+        break;
 
     case F_div_SxS:
-    case F_div_SxA:
-    case F_div_AxS:
-    case F_div_AxA:
         if
             TWO_CONST_ARG (arg_co)
             {
@@ -2209,11 +2221,15 @@ CFfoldPrfExpr (prf op, node **arg_expr)
                     CTIabortLine (NODE_LINE (arg_expr[1]), "Division by zero expected");
                 }
             }
-        if
+        else if
             ONE_CONST_ARG_OF_TWO (arg_co, arg_expr)
             {
                 new_node = ArithmOpWrapper (F_div_SxS, arg_co, arg_expr);
             }
+        break;
+    case F_div_SxA:
+    case F_div_AxS:
+    case F_div_AxA:
         break;
 
     case F_mod:

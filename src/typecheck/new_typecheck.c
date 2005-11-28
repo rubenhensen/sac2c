@@ -1949,7 +1949,7 @@ NTCfold (node *arg_node, info *arg_info)
             acc = TYcopyType (INFO_NTC_EXP_ACCU (arg_info));
             INFO_NTC_EXP_ACCU (arg_info) = NULL;
 
-            res = TYmakeProductType (1, acc);
+            res = TYmakeProductType (1, elems);
 
             ok = SSInewTypeRel (neutr, acc);
             DBUG_ASSERT (ok, ("initialization of fold-fun in fold-wl went wrong"));
@@ -1958,7 +1958,7 @@ NTCfold (node *arg_node, info *arg_info)
 
         } else {
             acc = TYmakeAlphaType (NULL);
-            ok = SSInewTypeRel (elems, acc);
+            ok = SSInewTypeRel (neutr, acc);
             DBUG_ASSERT (ok, ("initialization of fold-fun in fold-wl went wrong"));
 
             args = TYmakeProductType (2, acc, elems);

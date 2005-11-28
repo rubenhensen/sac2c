@@ -3742,16 +3742,16 @@ PRTfold (node *arg_node, info *arg_info)
         if (FUNDEF_NS (fundef) != NULL) {
             fprintf (global.outfile, " %s::", NSgetName (FUNDEF_NS (fundef)));
         }
-        fprintf (global.outfile, "%s", FUNDEF_NAME (fundef));
+        fprintf (global.outfile, "%s, ", FUNDEF_NAME (fundef));
         TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
     } else if (FOLD_FUN (arg_node) != NULL) {
         /**
          * udf-case prior to TC!
          */
         if (FOLD_NS (arg_node) == NULL) {
-            fprintf (global.outfile, "fold/*udf*/( %s", FOLD_FUN (arg_node));
+            fprintf (global.outfile, "fold/*udf-symb*/( %s, ", FOLD_FUN (arg_node));
         } else {
-            fprintf (global.outfile, "fold/*udf*/( %s::%s",
+            fprintf (global.outfile, "fold/*udf-symb*/( %s::%s, ",
                      NSgetName (FOLD_NS (arg_node)), FOLD_FUN (arg_node));
         }
         TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
@@ -3761,10 +3761,6 @@ PRTfold (node *arg_node, info *arg_info)
          */
         fprintf (global.outfile, "fold/*prf*/( %s",
                  global.prf_string[FOLD_PRF (arg_node)]);
-    }
-    if (FOLD_NEUTRAL (arg_node)) {
-        fprintf (global.outfile, ", ");
-        TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
     }
 
     fprintf (global.outfile, ")");
