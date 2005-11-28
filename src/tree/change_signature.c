@@ -1,42 +1,6 @@
 /*
  *
- * $Log$
- * Revision 1.12  2005/09/16 18:27:22  sah
- * fixed bug #117: removed sharing of ntype between ret node and ret var.
- *
- * Revision 1.11  2004/11/26 16:20:32  cg
- * code brushed
- *
- * Revision 1.10  2004/11/07 18:08:26  sah
- * disabled LINKMOD in NEW_AST mode
- *
- * Revision 1.9  2002/02/22 14:28:54  dkr
- * CSAddResult: workaround for FUNDEF_NAME as a part of TYPES is no
- * longer needed :-)
- *
- * Revision 1.8  2002/02/20 14:36:55  dkr
- * function DupTypes() renamed into DupAllTypes()
- *
- * Revision 1.7  2001/04/17 15:48:35  nmw
- * AddResult implemented
- *
- * Revision 1.6  2001/04/10 15:20:09  nmw
- * wrong macro access eliminated
- *
- * Revision 1.5  2001/04/09 15:54:19  nmw
- * CSAddArg implemented
- *
- * Revision 1.4  2001/03/29 09:19:09  nmw
- * tabs2spaces done
- *
- * Revision 1.3  2001/03/22 20:00:46  dkr
- * include of tree.h eliminated
- *
- * Revision 1.2  2001/03/02 15:50:21  nmw
- * missing includes added
- *
- * Revision 1.1  2001/03/02 15:46:04  nmw
- * Initial revision
+ * $Id$
  *
  */
 

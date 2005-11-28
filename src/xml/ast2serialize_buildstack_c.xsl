@@ -59,7 +59,7 @@ version="1.0">
       <xsl:value-of select="'Functions needed by serialize buildstack traversal.'"/>
     </xsl:with-param>
     <xsl:with-param name="xslt">
-      <xsl:value-of select="'$Id: ast2serialize_buildstack_c.xsl 14294 2005-10-10 12:40:03Z sah $'"/>
+      <xsl:value-of select="'$Id$'"/>
     </xsl:with-param>
   </xsl:call-template>
   <xsl:call-template name="travfun-group-begin">
@@ -75,8 +75,6 @@ version="1.0">
   </xsl:call-template>
   <!-- includes -->
   <xsl:text>
-
-#define NEW_INFO
 
 #include &lt;stdio.h&gt;
 #include "serialize_buildstack.h"

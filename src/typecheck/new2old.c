@@ -312,6 +312,9 @@ NT2OTdoTransformOneFunction (node *arg_node)
                  "NT2OTdoTransformOneFunction can only be applied to fundefs");
 
     if (!FUNDEF_ISLACFUN (arg_node)) {
+
+        DBUG_EXECUTE ("NT2OTPRT", PRTdoPrint (arg_node););
+
         TRAVpush (TR_nt2ot);
 
         info_node = MakeInfo ();
@@ -328,6 +331,8 @@ NT2OTdoTransformOneFunction (node *arg_node)
         SSIfreeAllTvars ();
         SDfreeAllSignatureDependencies ();
         TEfreeAllTypeErrorInfos ();
+
+        DBUG_EXECUTE ("NT2OTPRT", PRTdoPrint (arg_node););
     }
 
     DBUG_RETURN (arg_node);
@@ -921,11 +926,15 @@ NT2OTwithid (node *arg_node, info *arg_info)
             INFO_WLIDS (arg_info) = WITHID_IDS (arg_node);
         }
     } else {
-        /**
-         * we are dealing with a default partition here
-         *  => Duplicate those of the real one!
-         */
-        WITHID_IDS (arg_node) = DUPdoDupTree (INFO_WLIDS (arg_info));
+        if (WITHID_IDS (arg_node) == NULL) {
+            /**
+             * we are dealing with a default partition here
+             *  => Duplicate those of the real one!
+             */
+            DBUG_PRINT ("NT2OT", ("duplicating withids for non-first partition"));
+
+            WITHID_IDS (arg_node) = DUPdoDupTree (INFO_WLIDS (arg_info));
+        }
     }
 
     DBUG_RETURN (arg_node);

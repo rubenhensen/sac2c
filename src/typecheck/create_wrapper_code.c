@@ -1,24 +1,6 @@
 /*
- *
- * $Log$
- * Revision 1.44  2005/08/19 18:08:16  sah
- * added DBUG message
- *
- * Revision 1.43  2005/07/17 20:10:47  sbs
- * inserts bodies only; the splitted has been outsourced to split_wrappers
- *
- * Revision 1.42  2005/07/15 15:52:18  sah
- * splitted create_wrapper_code and dispatchfuncalls
- * introduced namespaces
- *
- * ... [eliminated] .....
- *
- * Revision 1.1  2002/08/09 13:00:02  dkr
- * Initial revision
- *
+ * $Id$
  */
-
-#define NEW_INFO
 
 #include "create_wrapper_code.h"
 #include "tree_basic.h"

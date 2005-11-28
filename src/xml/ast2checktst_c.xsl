@@ -1,19 +1,6 @@
 <?xml version="1.0"?>
 
-<!--
-  $Log$
-  Revision 1.2  2005/07/13 12:10:13  jhb
-  bug fixed
-
-  Revision 1.1  2005/06/06 10:14:55  jhb
-  Initial revision
-
-  Revision 1.1  2005/05/19 13:34:02  jhb
-  added the rangequery for the attributes
-
-  Revision 1.1 2004/09/29 15:15:00 jhb
-  Initial revision
--->
+<!-- $Id$ -->
 
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
 version="1.0">
@@ -43,7 +30,7 @@ version="1.0">
         <xsl:value-of select="'Functions needed by test check environment.'"/>
       </xsl:with-param>
       <xsl:with-param name="xslt">
-        <xsl:value-of select="'$Id: ast2checktst_c.xsl 14294 2005-10-10 12:40:03Z sah $'"/>
+        <xsl:value-of select="'$Id$'"/>
       </xsl:with-param>
     </xsl:call-template>
     <xsl:call-template name="travfun-group-begin">
@@ -59,8 +46,6 @@ version="1.0">
     </xsl:call-template>
     <!-- includes -->
     <xsl:text>
-
-#define NEW_INFO
 
 #include "checktst.h"
 #include "check.h"

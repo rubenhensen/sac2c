@@ -1,18 +1,5 @@
 <?xml version="1.0"?>
-<!--
-  $Log$
-  Revision 1.3  2005/06/27 18:15:50  sah
-  fixed bug #90
-
-  Revision 1.2  2004/11/23 22:52:12  sah
-  COMPILES!
-
-  Revision 1.1  2004/11/23 11:31:53  sah
-  Initial revision
-
-
-
--->
+<!-- $Id$ -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
 version="1.0">
 
@@ -59,7 +46,7 @@ version="1.0">
       <xsl:value-of select="'Functions needed by serialize link traversal.'"/>
     </xsl:with-param>
     <xsl:with-param name="xslt">
-      <xsl:value-of select="'$Id: ast2serialize_link_c.xsl 14294 2005-10-10 12:40:03Z sah $'"/>
+      <xsl:value-of select="'$Id$'"/>
     </xsl:with-param>
   </xsl:call-template>
   <xsl:call-template name="travfun-group-begin">
@@ -75,8 +62,6 @@ version="1.0">
   </xsl:call-template>
   <!-- includes -->
   <xsl:text>
-
-#define NEW_INFO
 
 #include &lt;stdio.h&gt;
 #include "serialize_node.h"

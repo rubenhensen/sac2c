@@ -1,79 +1,8 @@
 /*
  *
- * $Log$
- * Revision 1.23  2005/09/29 14:34:58  sah
- * fixed accesses to free'd or uninitialised
- * memory. came along those while using valgrind.
- *
- * Revision 1.22  2005/06/09 10:47:36  sbs
- * EXPRS_EXPR forgotten in recursive call of Mop2Ap
- *
- * Revision 1.21  2005/01/11 11:19:19  cg
- * Converted output from Error.h to ctinfo.c
- *
- * Revision 1.20  2004/12/05 16:45:38  sah
- * added SPIds SPId SPAp in frontend
- *
- * Revision 1.19  2004/11/25 14:17:53  khf
- * SacDevCamp04
- *
- * Revision 1.18  2004/11/25 10:58:49  khf
- * SacDecCamp04: COMPILES!
- *
- * Revision 1.17  2004/07/16 14:41:34  sah
- * switch to new INFO structure
- * PHASE I
- *
- * Revision 1.16  2002/09/13 14:22:57  dkr
- * Mop2Ap() corrected
- *
- * Revision 1.15  2002/09/13 12:47:58  sbs
- * Mop2Ap redone...
- *
- * Revision 1.14  2002/09/11 23:22:47  dkr
- * HMAdjustFunNames() removed
- *
- * Revision 1.13  2002/09/09 19:31:30  dkr
- * prf_name_str renamed into prf_name_string
- *
- * Revision 1.12  2002/09/03 15:27:16  sbs
- * F_mod supported.
- *
- * Revision 1.11  2002/08/15 11:46:26  dkr
- * function ApplyToEach_S() renamed into MapLUT_S()
- *
- * Revision 1.10  2002/08/14 13:49:43  sbs
- * handling of unary minus for old type checker adopted
- * more closely to the old solution 8-(((
- *
- * Revision 1.9  2002/08/14 12:09:17  sbs
- * HMap transforma unary minus for old tc better now....
- *
- * Revision 1.8  2002/08/14 11:51:08  sbs
- * HMAdjustFunNames debugged....
- *
- * Revision 1.7  2002/08/14 09:27:41  sbs
- * HMNwithop debugged and calls to TravSons inserted.
- *
- * Revision 1.6  2002/08/13 17:17:24  sbs
- * bug eliminated
- *
- * Revision 1.5  2002/08/13 17:14:17  sbs
- * HMfundef changed into HMAdjustFundef
- *
- * Revision 1.3  2002/08/13 15:16:11  sbs
- * now, unary +, - are handles in the same way the old ugly
- * type checker wants it to be ....
- *
- * Revision 1.2  2002/08/13 14:40:14  sbs
- * HMNwithop added.
- *
- * Revision 1.1  2002/08/13 10:22:39  sbs
- * Initial revision
+ * $Id$
  *
  */
-
-#define NEW_INFO
 
 #include "handle_mops.h"
 #include "traverse.h"

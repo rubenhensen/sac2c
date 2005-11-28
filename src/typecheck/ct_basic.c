@@ -1,43 +1,6 @@
 /*
- *
  * $Log$
- * Revision 1.10  2005/08/10 19:09:16  sbs
- * changed handling of conds
- * branches are checked in new_typecheck.c since SDcontradictions would
- * lead to re-checking of those (cf. bug no 105)
- *
- * Revision 1.9  2005/07/03 17:09:04  ktr
- * Initialized a variable.
- *
- * Revision 1.8  2005/06/14 09:55:10  sbs
- * support for bottom types integrated.
- *
- * Revision 1.7  2005/04/12 11:03:35  sah
- * added printing of module names for functions
- *
- * Revision 1.6  2004/11/27 02:47:27  sbs
- * *** empty log message ***
- *
- * Revision 1.5  2004/11/24 18:57:29  sbs
- * compiles
- *
- * Revision 1.4  2004/08/08 16:05:08  sah
- * fixed some includes.
- *
- * Revision 1.3  2004/07/30 17:25:29  sbs
- * UGLY trick for smuggling through info * node instead of node * node:
- * casted. Compare UGLY counterpart in NTCcond (new_typecheck.c).
- *
- * Revision 1.2  2004/03/05 12:06:44  sbs
- * NTCCond added.
- *
- * Revision 1.1  2002/08/05 16:57:45  sbs
- * Initial revision
- *
- *
  */
-
-#define NEW_INFO
 
 #include <stdio.h>
 #include <string.h>

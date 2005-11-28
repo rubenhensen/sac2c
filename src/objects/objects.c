@@ -1,174 +1,8 @@
 /*
  *
- * $Log$
- * Revision 3.18  2005/06/16 08:01:45  sbs
- * F_dispatch_error supported
- *
- * Revision 3.17  2005/01/11 12:35:07  cg
- * Removed superfluous include of Error.h
- *
- * Revision 3.16  2005/01/07 19:50:35  cg
- * Converted compile time output from Error.h to ctinfo.c
- *
- * Revision 3.15  2004/11/26 20:27:30  jhb
- * ccompile
- *
- * Revision 3.14  2004/11/20 17:32:46  sah
- * removed some garbage
- *
- * Revision 3.13  2004/11/19 21:02:52  sah
- * adapted travwersal to new linkist structure
- *
- * Revision 3.12  2004/11/18 14:34:31  mwe
- * changed CheckAvis and chkavis to ToNewTypes and to tonewtypes
- *
- * Revision 3.11  2004/07/17 14:30:09  sah
- * switch to INFO structure
- * PHASE I
- *
- * Revision 3.10  2004/02/20 08:27:38  mwe
- * now functions with (MODUL_FUNS) and without (MODUL_FUNDECS) body are separated
- * changed tree traversal according to that
- *
- * Revision 3.9  2003/05/30 16:25:55  dkr
- * bug in OBJlet() fixed: read-only references are NOT propagated to the
- * LHS
- *
- * Revision 3.8  2002/10/22 13:26:25  sbs
- * bug in setting flags for reference_only functions solved.
- * Now, ListIO should compile correctly 8-)
- *
- * Revision 3.7  2002/10/18 13:41:42  sbs
- * handling of the various ID-ATTRIBUTES changed to the new
- * FLAG system.
- * Furthermore, support for the correct handling of the
- * prf F_type_error_ as used by the new TC incorporated.
- *
- * Revision 3.6  2002/02/20 14:54:06  dkr
- * fundef DupTypes() renamed into DupAllTypes()
- *
- * Revision 3.5  2002/02/12 16:28:32  dkr
- * OBJarg(), OBJlet(): non-unique reference parameters cause an error now
- *
- * Revision 3.4  2001/04/24 09:39:41  dkr
- * CHECK_NULL renamed into STR_OR_EMPTY
- *
- * Revision 3.3  2001/02/14 10:19:30  dkr
- * no changes done
- *
- * Revision 3.2  2000/12/06 19:22:16  cg
- * Removed compiler warnings in production mode.
- *
- * Revision 3.1  2000/11/20 18:01:59  sacbase
- * new release made
- *
- * Revision 2.7  2000/10/30 19:24:06  dkr
- * OBJarg:
- * new_return_type->attrib is set explicitly in order to get smarter
- * output
- *
- * Revision 2.6  2000/10/26 13:58:13  dkr
- * CopyShpseg replaced by DupShpseg (DupTree.[ch])
- *
- * Revision 2.5  2000/10/24 12:55:06  dkr
- * AppendIdsChain renamed into AppendIds
- *
- * Revision 2.4  2000/07/10 14:24:53  cg
- * Artificial return types of functions that are inserted during the
- * resolution of reference parameters and global objects are now
- * tagged ST_artificial.
- *
- * Revision 2.3  2000/06/23 14:00:16  dkr
- * nodetype N_with removed
- *
- * Revision 2.2  2000/02/23 17:27:01  cg
- * The entry TYPES_TDEF of the TYPES data structure now contains a
- * reference to the corresponding N_typedef node for all user-defined
- * types.
- * Therefore, most calls to LookupType() are eliminated.
- * Please, keep the back references up to date!!
- *
- * Revision 2.1  1999/02/23 12:43:21  sacbase
- * new release made
- *
- * Revision 1.19  1998/06/05 15:27:49  cg
- * global variable mod_name_con and macros MOD_NAME_CON MOD MOD_NAME MOD_CON
- * removed
- * Now, module name and symbol name are combined correctly by ':'.
- * Only when it really comes to the generation of C code, the ':' is
- * replaced by '__'. This is done by the renaming of all identifiers
- * during the precompilation phase.
- *
- * Revision 1.18  1998/02/05 11:14:02  srs
- * OBJlet(): added traversal of new withloop analogous to old withloops.
- *
- * Revision 1.17  1997/11/25 08:41:27  cg
- * bug fixed in OBJlet.
- * OBJlet can now handle cast expressions in front of with-loops
- * or function applications.
- *
- * Revision 1.16  1997/11/07 14:46:17  dkr
- * eliminated another nnode
- *
- * Revision 1.15  1997/03/18 14:43:08  cg
- * The attribute of N_id nodes is now set correctly:
- * ST_regular, ST_global, ST_reference, ST_readonly_reference
- *
- * Revision 1.14  1996/04/25  11:31:36  cg
- * bug fixed, now even in bodies of with-loops new return values are bound to new
- * variables.
- *
- * Revision 1.13  1996/04/02  19:39:25  cg
- * bug fixed in function OBJlet:
- * runs now with functions with variable argument lists.
- *
- * Revision 1.12  1996/01/22  18:40:07  cg
- * All object definitions are rearranged in a sequence that allows their
- * sequential initialization. If this is not possible, then an error
- * message occurrs.
- *
- * Revision 1.11  1996/01/21  16:02:47  cg
- * bug fixed in OBJobjdef
- *
- * Revision 1.10  1995/12/28  10:28:10  cg
- * bug fixed in OBJarg: names of artificial return types won't be shared
- * in any situation now.
- *
- * Revision 1.9  1995/12/01  17:23:56  cg
- * now shape segments and strings are always copied when generated
- * from existing nodes.
- *
- * Revision 1.8  1995/11/16  19:45:50  cg
- * Some bug fixes
- *
- * Revision 1.7  1995/11/06  14:20:20  cg
- * bug fixed in generating correct references of identifiers
- * to their respective vardec or arg nodes
- *
- * Revision 1.6  1995/11/02  13:14:40  cg
- * Now, the necessary references to variable declarations or
- * function parameters respectively are generated for all
- * additional identifiers.
- *
- * Revision 1.5  1995/11/01  16:33:55  cg
- * Now, additional parameters and return values are concerned in
- * function applications as well as in function definitions.
- *
- * Revision 1.4  1995/11/01  09:38:08  cg
- * Now, the special meaning of the return type T_void is considered.
- *
- * Revision 1.3  1995/11/01  08:30:25  cg
- * some bug fixes in using nnode.
- *
- * Revision 1.2  1995/10/31  17:39:12  cg
- * first compilable revision.
- *
- * Revision 1.1  1995/10/31  17:22:05  cg
- * Initial revision
+ * $Id$
  *
  */
-
-#define NEW_INFO
 
 #include "types.h"
 #include "tree_basic.h"
@@ -278,133 +112,6 @@ OBJdoHandleObjects (node *syntax_tree)
 
 #ifndef OBJ_DEACTIVATED
 
-#ifndef NEW_AST
-
-/*
- *
- *  functionname  : InsertIntoInitlist
- *
- */
-
-int
-InsertIntoInitlist (node *objdef, nodelist **already_done)
-{
-    nodelist *needed, *tmp;
-    int success = 1;
-
-    DBUG_ENTER ("InsertIntoInitlist");
-
-    if (OBJDEF_NEEDOBJS (objdef) != NULL) {
-        needed = OBJDEF_NEEDOBJS (objdef);
-    } else {
-        needed = FUNDEF_NEEDOBJS (AP_FUNDEF (OBJDEF_EXPR (objdef)));
-    }
-
-    while (needed != NULL) {
-        tmp = *already_done;
-
-        while (tmp != NULL) {
-            if (NODELIST_NODE (needed) == NODELIST_NODE (tmp)) {
-                break;
-            }
-
-            tmp = NODELIST_NEXT (tmp);
-        }
-
-        if (tmp == NULL) {
-            success = 0;
-            break;
-        }
-
-        needed = NODELIST_NEXT (needed);
-    }
-
-    if (success) {
-        *already_done = MakeNodelist (objdef, ST_regular, *already_done);
-    }
-
-    DBUG_RETURN (success);
-}
-
-/*
- *
- *  functionname  : RearrangeObjdefs
- *
- */
-
-node *
-RearrangeObjdefs (node *objects)
-{
-    node *tmp, *first, *last;
-    nodelist *already_done = NULL;
-    int inserted, not_ready;
-
-    DBUG_ENTER ("RearrangeObjdefs");
-
-    do {
-        inserted = 0;
-        not_ready = 0;
-        tmp = objects;
-
-        while (tmp != NULL) {
-            if (OBJDEF_ATTRIB (tmp) == ST_regular) {
-                not_ready = 1;
-
-                if (1 == InsertIntoInitlist (tmp, &already_done)) {
-                    inserted = 1;
-                    OBJDEF_ATTRIB (tmp) = ST_resolved;
-
-                    DBUG_PRINT ("OBJ", ("Object %s added to init list", ItemName (tmp)));
-                }
-            }
-
-            tmp = OBJDEF_NEXT (tmp);
-        }
-    } while (inserted);
-
-    if (not_ready) {
-        CTIerror ("The following global objects cannot be initialized due "
-                  "to mutual dependencies: ");
-
-        tmp = objects;
-
-        while (tmp != NULL) {
-            if (OBJDEF_ATTRIB (tmp) == ST_regular) {
-                CTIerrorContinued ("%s:%s", OBJDEF_MOD (tmp), OBJDEF_NAME (tmp));
-            }
-
-            tmp = OBJDEF_NEXT (tmp);
-        }
-
-        CTIabortOnError ();
-    }
-
-    DBUG_ASSERT (already_done != NULL, "RearrangeObjdefs called with 0 objects");
-
-    last = NODELIST_NODE (already_done);
-    OBJDEF_NEXT (last) = NULL;
-    already_done = NODELIST_NEXT (already_done);
-    first = last;
-
-    DBUG_PRINT ("OBJ", ("Rearranging object %s", ItemName (first)));
-
-    while (already_done != NULL) {
-        first = NODELIST_NODE (already_done);
-
-        DBUG_PRINT ("OBJ", ("Rearranging object %s", ItemName (first)));
-
-        OBJDEF_NEXT (first) = last;
-
-        last = first;
-
-        already_done = NODELIST_NEXT (already_done);
-    }
-
-    DBUG_RETURN (first);
-}
-
-#else
-
 node *
 RearrangeObjdefs (node *objects)
 {
@@ -491,8 +198,6 @@ RearrangeObjdefs (node *objects)
     DBUG_RETURN (objects);
 }
 
-#endif /* NEW_AST */
-
 /*
  *
  *  functionname  : OBJmodul
@@ -565,11 +270,7 @@ OBJmodul (node *arg_node, info *arg_info)
 node *
 OBJfundef (node *arg_node, info *arg_info)
 {
-#ifndef NEW_AST
-    nodelist *need_objs;
-#else
     node *need_objs;
-#endif
     node *obj, *new_arg;
     types *new_type;
     char *keep_name, *keep_mod;
@@ -579,18 +280,10 @@ OBJfundef (node *arg_node, info *arg_info)
 
     DBUG_PRINT ("OBJ", ("Handling function %s", ItemName (arg_node)));
 
-#ifndef NEW_AST
-    need_objs = FUNDEF_NEEDOBJS (arg_node);
-#else
     need_objs = FUNDEF_OBJECTS (arg_node);
-#endif
 
     while (need_objs != NULL) {
-#ifndef NEW_AST
-        obj = NODELIST_NODE (need_objs);
-#else
         obj = LINKLIST_LINK (need_objs);
-#endif
         new_type = DupAllTypes (OBJDEF_TYPE (obj));
 
         new_arg = MakeArg (StringCopy (OBJDEF_VARNAME (obj)), new_type, ST_artificial,
@@ -602,11 +295,7 @@ OBJfundef (node *arg_node, info *arg_info)
         FUNDEF_ARGS (arg_node) = new_arg;
         OBJDEF_ARG (obj) = new_arg;
 
-#ifndef NEW_AST
-        need_objs = NODELIST_NEXT (need_objs);
-#else
         need_objs = LINKLIST_NEXT (need_objs);
-#endif
     }
 
     /*
@@ -829,11 +518,7 @@ OBJarg (node *arg_node, info *arg_info)
 node *
 OBJap (node *arg_node, info *arg_info)
 {
-#ifndef NEW_AST
-    nodelist *need_objs;
-#else
     node *need_objs;
-#endif
     node *obj, *new_arg;
 
     DBUG_ENTER ("OBJap");
@@ -844,18 +529,10 @@ OBJap (node *arg_node, info *arg_info)
         AP_ARGS (arg_node) = Trav (AP_ARGS (arg_node), NULL);
     }
 
-#ifndef NEW_AST
-    need_objs = FUNDEF_NEEDOBJS (AP_FUNDEF (arg_node));
-#else
     need_objs = FUNDEF_OBJECTS (AP_FUNDEF (arg_node));
-#endif
 
     while (need_objs != NULL) {
-#ifndef NEW_AST
-        obj = NODELIST_NODE (need_objs);
-#else
         obj = LINKLIST_LINK (need_objs);
-#endif
 
         new_arg = MakeId (StringCopy (OBJDEF_VARNAME (obj)), NULL, ST_artificial);
         ID_VARDEC (new_arg) = OBJDEF_ARG (obj);
@@ -870,11 +547,7 @@ OBJap (node *arg_node, info *arg_info)
 
         AP_ARGS (arg_node) = new_arg;
 
-#ifndef NEW_AST
-        need_objs = NODELIST_NEXT (need_objs);
-#else
         need_objs = LINKLIST_NEXT (need_objs);
-#endif
     }
 
     DBUG_RETURN (arg_node);

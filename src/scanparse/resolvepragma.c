@@ -1,53 +1,9 @@
 /*
  *
- * $Log$
- * Revision 1.13  2005/09/13 16:28:59  sah
- * now, even wrong pragmas are handeled correctly
- *
- * Revision 1.12  2005/06/27 13:44:55  sah
- * now multiple LINKOBJ and LINKMOD per file
- * function are possible and handeled correctly.
- *
- * Revision 1.11  2005/06/04 12:59:43  sbs
- * as FUNDEF_RETS and FUNDEF_ARGS are optional we should never
- * traverse them w/o checking whether they exist.
- *
- * Revision 1.10  2005/02/18 10:37:23  sah
- * module system fixes
- *
- * Revision 1.9  2005/02/16 22:29:13  sah
- * fixed handling of pragmas
- *
- * Revision 1.8  2005/01/10 16:59:45  cg
- * Converted error messages from Error.h to ctinfo.c
- *
- * Revision 1.7  2004/12/19 23:16:52  sbs
- * TCcountFunctionParams replaced by TCcountArgs and TCcountRets
- *
- * Revision 1.6  2004/11/26 19:18:30  skt
- * renamed RSPmodul into RSPmodule
- *
- * Revision 1.5  2004/11/25 18:12:34  sah
- * added proper initialisation of REFCOUNTED and LINKSIGN for
- * args and rets
- *
- * Revision 1.4  2004/11/24 11:29:33  sah
- * COMPILES
- *
- * Revision 1.3  2004/11/21 22:45:20  sbs
- * SacDevCamp04
- *
- * Revision 1.2  2004/11/08 14:20:38  sah
- * moved some code
- *
- * Revision 1.1  2004/11/07 18:04:33  sah
- * Initial revision
- *
+ * $Id$
  *
  *
  */
-
-#define NEW_INFO
 
 #include "resolvepragma.h"
 #include "internal_lib.h"

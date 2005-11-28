@@ -1,111 +1,6 @@
 /*
  *
- * $Log$
- * Revision 3.116  2005/09/28 17:39:18  sah
- * added AddSpecialFunctions to load the sac2c::sel and sac2c::zero
- * functions prior to prepareinlining to ensure that their bodies
- * are inlined. this resolves bug #121
- *
- * Revision 3.115  2005/09/28 15:52:17  wpc
- * added some SHOW_MALLOC ifdefs
- *
- * Revision 3.114  2005/09/27 11:49:37  sah
- * -d cccall triggers tracking of the system calls
- * during compilation. re-added the feature on public
- * demand
- *
- * Revision 3.113  2005/09/06 14:07:45  ktr
- * introduced some calls to PHrunCompilerPhase
- *
- * Revision 3.112  2005/08/19 17:19:33  sbs
- * added phase instc
- *
- * Revision 3.111  2005/08/10 11:57:46  sbs
- * added breaking facility after PH_pretypecheck
- *
- * Revision 3.110  2005/07/25 10:22:33  sah
- * phase system is used for import/export and tc now
- *
- * Revision 3.109  2005/07/24 20:01:50  sah
- * moved all the preparations for typechecking
- * into a different phase
- *
- * Revision 3.108  2005/07/17 20:14:29  sbs
- * added new phase PH_elimudt
- *
- * Revision 3.107  2005/07/15 17:41:30  sah
- * removed interrupt.h
- *
- * Revision 3.106  2005/07/03 17:07:10  ktr
- * Replaced FLATdoFlatten with CSdoCodeSimplification
- *
- * Revision 3.105  2005/06/18 18:06:00  sah
- * moved entire dependency handling to dependencies.c
- * the dependency table is now created shortly prior
- * to c code generation
- *
- * Revision 3.104  2005/06/06 13:26:40  jhb
- * added PHrunCompilerSubPhase
- *
- * Revision 3.103  2005/06/01 18:01:24  sah
- * finished printing of dependencies
- *
- * Revision 3.102  2005/06/01 16:59:05  sah
- * separated annotating namespaces and gathering dependencies in two
- * phase to allow for reusing the gathering phase to print the
- * dependencies of a module.
- *
- * Revision 3.101  2005/05/27 20:34:11  ktr
- * removed conversion fto and from old types around application of
- * WLTransform
- *
- * Revision 3.100  2005/05/22 19:45:53  sah
- * added first implementation steps for import
- *
- * Revision 3.99  2005/04/24 15:19:10  sah
- * modified option handling slightly to allow
- * for the setup phase to run prior to libstat
- *
- * Revision 3.98  2005/04/20 07:25:18  cg
- * CheckTree is now only called if syntax tree actually exists.
- *
- * Revision 3.97  2005/04/12 15:14:09  sah
- * added missing include
- *
- * Revision 3.96  2005/03/10 09:41:09  cg
- * Reorganized compiler setup phase.
- * This is just the first step towards reorganizing the triggering
- * of the entire compilation process.
- *
- * Revision 3.95  2005/03/04 21:21:42  cg
- * Locale set to en_US to avoid strange effects on German or
- * other internationized installations.
- *
- * Revision 3.94  2004/12/19 19:55:42  sbs
- * TNT called prior refconting now
- *
- * Revision 3.93  2004/12/19 14:29:51  sbs
- * TOT header included
- *
- * Revision 3.92  2004/12/19 13:35:07  sbs
- * replaced NT2OT traversals by TOT traversals
- *
- * Revision 3.91  2004/12/08 20:01:08  ktr
- * added some NT2OT traversals (before wltransform, compile)
- *
- * Revision 3.90  2004/12/01 16:33:04  ktr
- * Call to SSAundoSsa corrected.
- *
- * Revision 3.89  2004/11/30 16:11:40  sah
- * enabled phase pro/epilogue for object phase
- *
- * Revision 3.88  2004/11/29 19:10:02  sah
- * removed old phases
- *
- * Revision 3.87  2004/11/28 18:13:40  ktr
- * changed call to EMRdoRefCountPhase
- *
- * ... [eliminated]
+ * $Id$
  *
  */
 
@@ -365,11 +260,11 @@ main (int argc, char *argv[])
     syntax_tree = PHrunCompilerSubPhase (SUBPH_swr, syntax_tree);
 
     PHASE_DONE_EPILOG;
-#ifndef NEW_AST
-    if (profileflag != 0) {
-        syntax_tree = PFdoProfileFunCalls (syntax_tree); /* profile_tab */
-    }
-#endif /* NEW_AST */
+#if 0
+  if( profileflag != 0) {
+    syntax_tree = PFdoProfileFunCalls( syntax_tree);  /* profile_tab */
+  }
+#endif
     PHASE_EPILOG;
 
     if (global.break_after == PH_typecheck)

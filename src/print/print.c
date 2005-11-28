@@ -4619,12 +4619,12 @@ PRTdoPrint (node *syntax_tree)
 
     arg_info = FreeInfo (arg_info);
 
-#ifndef NEW_AST
-    /* if generating c library, invoke the headerfile generator */
-    if (global.genlib.c && (global.compiler_phase == PH_genccode)) {
-        PrintInterface (syntax_tree);
-    }
-#endif /* NEW_AST */
+#if 0
+  /* if generating c library, invoke the headerfile generator */
+  if (global.genlib.c && (global.compiler_phase == PH_genccode)) {
+    PrintInterface (syntax_tree);
+  }
+#endif
 
     DBUG_RETURN (syntax_tree);
 }

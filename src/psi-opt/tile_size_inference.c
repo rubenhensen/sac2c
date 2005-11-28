@@ -1,105 +1,6 @@
 /*
  *
- * $Log$
- * Revision 3.9  2004/11/27 01:12:25  jhb
- * fixed bug in TravFunction aÂsyncronize header daand compile
- *
- * Revision 3.8  2004/11/26 20:36:07  jhb
- * compile
- *
- * Revision 3.7  2004/07/19 14:19:38  sah
- * switch to new INFO structure
- * PHASE I
- *
- * Revision 3.6  2003/06/11 21:52:05  ktr
- * Added support for multidimensional arrays.
- *
- * Revision 3.5  2001/11/19 15:32:13  sbs
- * fixed some wrong comments concerning access macros 8-((
- *
- * Revision 3.4  2001/05/17 13:41:26  nmw
- * MALLOC/FREE replaced by Malloc/Free, using result of Free()
- *
- * Revision 3.3  2001/05/16 19:52:47  nmw
- * reverted Free() to FREE() due to segfaults when used with linux :-(
- *
- * Revision 3.2  2001/05/16 13:43:34  nmw
- * MALLOC/FREE changed to Malloc/Free
- *
- * Revision 3.1  2000/11/20 18:01:55  sacbase
- * new release made
- *
- * Revision 2.21  2000/10/26 13:35:37  dkr
- * Malloc replaced by MALLOC
- *
- * Revision 2.20  2000/10/26 13:00:50  dkr
- * DupShpSeg renamed into DupShpseg
- *
- * Revision 2.19  2000/10/24 10:18:06  dkr
- * dtype_size[] removed and replaced by global basetype_size[]
- *
- * Revision 2.18  2000/08/23 16:49:13  bs
- * Some really big bugs fixed. Two new functions added: ComputeEnhAccess and
- * ComputeVaddr. CreateEnhAccesslist and RecreateEnhAccesslist modified.
- *
- * Revision 2.17  2000/07/05 15:21:23  bs
- * Unused expression changed into DBUG_PRINT.
- *
- * Revision 2.16  2000/07/04 17:47:31  bs
- * Bug fixed in RecreateEnhAccesslist.
- * Bug fixed in InSortByCLine.
- * TSIfundef modified (WLAA and TSI lifted on module level).
- *
- * Revision 2.15  2000/02/02 16:28:24  bs
- * unused variable declaration erased
- *
- * Revision 2.14  2000/01/31 19:35:21  bs
- * Function CalcTSOuterDims modified.
- *
- * Revision 2.13  2000/01/26 17:26:12  dkr
- * type of traverse-function-table changed.
- *
- * Revision 2.12  1999/11/24 15:38:25  bs
- * tilesizing mechanism splitted into CalcTSInnerDim and CalcTSOuterDims.
- *
- * Revision 2.11  1999/11/09 09:58:49  bs
- * New function added: MakePragmaWLComp()
- * TYP_ID changed.
- *
- * Revision 2.10  1999/08/30 18:31:15  bs
- * Bugs fixed.
- *
- * Revision 2.9  1999/08/30 14:06:24  bs
- * TSInwith and TSIncode modified:
- * Now a #pragma wlcomp will be created in TSIncode. In TSInwith this #pragma will
- * be added to the syntax tree.
- *
- * Revision 2.8  1999/08/04 14:35:47  bs
- * reinitial revision
- *
- * Revision 2.7  1999/05/10 11:11:40  bs
- * All functions of the tsi moved to wl_access_analyze.c
- *
- * Revision 2.6  1999/05/03 15:24:14  bs
- * The TSI is printing detailed information about array accesses within a WL.
- *
- * Revision 2.5  1999/04/29 08:00:56  bs
- * print routines modified.
- *
- * Revision 2.4  1999/04/12 18:00:54  bs
- * Two functions added: TSIprintAccesses and TSIprintFeatures.
- *
- * Revision 2.3  1999/04/08 12:49:37  bs
- * The TSI is analysing withloops now.
- *
- * Revision 2.2  1999/03/15 15:49:54  bs
- * access macros changed
- *
- * Revision 2.1  1999/02/23 12:43:17  sacbase
- * new release made
- *
- * Revision 1.1  1999/01/15 15:31:06  cg
- * Initial revision
+ * $Id$
  *
  */
 
@@ -125,8 +26,6 @@
  *      INFO_TSI_WLARRAY(n)
  *
  *****************************************************************************/
-
-#define NEW_INFO
 
 #include <stdlib.h>
 #include <limits.h>

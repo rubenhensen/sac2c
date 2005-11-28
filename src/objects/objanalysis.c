@@ -1,20 +1,8 @@
 /*
  *
- * $Log$
- * Revision 1.3  2005/05/22 18:37:17  sah
- * added missing static to Make/FreeInfo
- *
- * Revision 1.2  2004/11/26 20:27:30  jhb
- * ccompile
- *
- * Revision 1.1  2004/11/20 17:19:36  sah
- * Initial revision
- *
- *
+ * $Id$
  *
  */
-
-#define NEW_INFO
 
 #include "objanalysis.h"
 #include "traverse.h"

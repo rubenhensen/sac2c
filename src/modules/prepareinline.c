@@ -1,38 +1,8 @@
 /*
  *
- * $Log$
- * Revision 1.9  2005/09/01 12:19:51  sah
- * streamlined it a bit
- *
- * Revision 1.8  2005/08/09 12:18:01  sah
- * fixed a DBUG message
- *
- * Revision 1.7  2005/07/22 13:11:39  sah
- * interface changes
- *
- * Revision 1.6  2005/07/15 15:57:02  sah
- * introduced namespaces
- *
- * Revision 1.5  2005/05/25 20:27:16  sah
- * bodies of lacfuns are fetched now as well
- *
- * Revision 1.4  2005/05/25 19:11:35  sah
- * prepareinline disabled if inline disabled as well
- *
- * Revision 1.3  2005/05/17 16:20:50  sah
- * added some reasonable error messages
- *
- * Revision 1.2  2004/11/25 12:00:27  sah
- * COMPILES
- *
- * Revision 1.1  2004/10/28 17:53:50  sah
- * Initial revision
- *
- *
+ * $Id$
  *
  */
-
-#define NEW_INFO
 
 #include "prepareinline.h"
 #include "tree_basic.h"

@@ -1,26 +1,6 @@
 /*
  *
- * $Log$
- * Revision 1.7  2004/12/10 18:41:38  ktr
- * EMRCOfundef added.
- *
- * Revision 1.6  2004/11/23 22:28:38  ktr
- * renaming done.
- *
- * Revision 1.5  2004/11/23 17:45:07  ktr
- * COMPILES!
- *
- * Revision 1.4  2004/11/23 17:38:25  jhb
- * compile
- *
- * Revision 1.3  2004/11/19 15:42:41  ktr
- * Support for F_alloc_or_reshape added.
- *
- * Revision 1.2  2004/10/22 15:38:19  ktr
- * Ongoing implementation.
- *
- * Revision 1.1  2004/10/21 16:18:17  ktr
- * Initial revision
+ * $Id$
  *
  */
 
@@ -40,7 +20,6 @@
  *
  *
  */
-#define NEW_INFO
 
 #include "staticreuse.h"
 
