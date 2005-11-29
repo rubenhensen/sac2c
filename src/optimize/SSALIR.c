@@ -805,6 +805,7 @@ LIRfundef (node *arg_node, info *arg_info)
         info = MakeInfo ();
 
         INFO_TRAVSTART (info) = INFO_TRAVSTART (arg_info);
+        INFO_TRAVINLAC (info) = INFO_TRAVINLAC (arg_info);
         INFO_FUNDEF (info) = arg_node;
         if (INFO_TRAVINLAC (arg_info)) {
             INFO_EXTFUNDEF (info) = INFO_FUNDEF (arg_info);
