@@ -11,6 +11,7 @@
 #include "tree_compound.h"
 #include "user_types.h"
 #include "new_types.h"
+#include "shape.h"
 #include "type_utils.h"
 #include "new_typecheck.h"
 #include "LookUpTable.h"
@@ -148,7 +149,7 @@ makeAliasing (node *target, ds_aliasing_t *next)
 static void
 InsertIntoState (node *item)
 {
-    usertype udt;
+    usertype udt, alias;
 
     DBUG_ENTER ("InsertIntoState");
 
@@ -182,18 +183,31 @@ InsertIntoState (node *item)
         TYPEDEF_ISEXPORTED (item) = FALSE;
 
         /*
-         * first add the type to the UDT repository
+         * first add the type to the UDT repository. We have to
+         * check for aliases here, as these are handeled differently
+         * by the udt database.
          */
-        udt = UTaddUserType (ILIBstringCopy (TYPEDEF_NAME (item)),
-                             NSdupNamespace (TYPEDEF_NS (item)),
-                             TYcopyType (TYPEDEF_NTYPE (item)),
-                             TYcopyType (TYPEDEF_NTYPE (item)), NODE_LINE (item), item);
-#if 0
-      /*
-       * now compute the basetype
-       */
-      NTCcheckUdtAndSetBaseType( udt, NULL);
-#endif
+        if (TYPEDEF_ISALIAS (item)) {
+            DBUG_ASSERT (TYisAKSUdt (TYPEDEF_NTYPE (item)), "invalid type alias found!");
+            DBUG_ASSERT ((TYgetDim (TYPEDEF_NTYPE (item)) == 0),
+                         "non scalar type as type alias found");
+
+            alias = TYgetUserType (TYgetScalar (TYPEDEF_NTYPE (item)));
+
+            udt = UTaddAlias (ILIBstringCopy (TYPEDEF_NAME (item)),
+                              NSdupNamespace (TYPEDEF_NS (item)), alias, NODE_LINE (item),
+                              item);
+        } else {
+            udt = UTaddUserType (ILIBstringCopy (TYPEDEF_NAME (item)),
+                                 NSdupNamespace (TYPEDEF_NS (item)),
+                                 TYcopyType (TYPEDEF_NTYPE (item)), NULL,
+                                 NODE_LINE (item), item);
+        }
+
+        /*
+         * now compute the basetype
+         */
+        TUcheckUdtAndSetBaseType (udt, NULL);
 
         INFO_DS_TYPEDEFS (DSstate) = TCappendTypedef (INFO_DS_TYPEDEFS (DSstate), item);
         break;
@@ -717,13 +731,13 @@ DSimportInstancesByName (const char *name, const char *module)
             entryp = serfun (DSstate);
 
             /*
-             * as the wrapper itself was not imported, make sure it has
-             * the right state. That way we can just leave it within
-             * the ast and do not have to decide whether it needs to
-             * be deleted or not. The deserialisation process has marked
-             * it as used anyways.
+             * free wrapper: as we only loaded the wrapper to make sure
+             *               the instances are fetched, we can now free
+             *               it again. note here, that it never was inserted
+             *               into the ast, as we called the deserialiser function
+             *               directly.
              */
-            FUNDEF_WASIMPORTED (entryp) = FALSE;
+            entryp = FREEdoFreeTree (entryp);
 
             INFO_DS_IMPORTMODE (DSstate) = FALSE;
         }
@@ -731,6 +745,57 @@ DSimportInstancesByName (const char *name, const char *module)
 
     it = STentryIteratorRelease (it);
     mod = MODMunLoadModule (mod);
+
+    DBUG_VOID_RETURN;
+}
+
+void
+DSimportTypedefByName (const char *name, const char *module)
+{
+    node *orig_tdef;
+
+    DBUG_ENTER ("DSimportTypedefByName");
+
+    /*
+     * first make sure the typedef to be imported is available
+     */
+    orig_tdef = DSaddSymbolByName (name, SET_typedef, module);
+
+    /*
+     * we allow the original typedef not to exist. This is mainly
+     * to allow this function to be called without checking
+     * whether a typedef by that name really exists. as we
+     * always import entire symbols, it does not matter whether
+     * we in fact imported a typedef or not.
+     */
+    if (orig_tdef != NULL) {
+        node *new_tdef;
+        usertype orig_udt;
+        ntype *alias;
+
+        orig_udt = UTfindUserType (TYPEDEF_NAME (orig_tdef), TYPEDEF_NS (orig_tdef));
+
+        /*
+         * as this is an alias, we set the declared type to
+         * alias[]
+         */
+        alias = TYmakeAKS (TYmakeUserType (orig_udt), SHmakeShape (0));
+
+        /*
+         * construct the new typedef and mark it as an alias
+         */
+        new_tdef = TBmakeTypedef (ILIBstringCopy (TYPEDEF_NAME (orig_tdef)),
+                                  NSdupNamespace (global.modulenamespace), alias, NULL);
+        TYPEDEF_ISALIAS (new_tdef) = TRUE;
+
+        /*
+         * insert it into the state. we cannot use InsertIntoState here, as we
+         * have created a new local typedef and InsertIntoState is meant for
+         * adding non-local items to the AST only.
+         */
+        INFO_DS_TYPEDEFS (DSstate)
+          = TCappendTypedef (INFO_DS_TYPEDEFS (DSstate), new_tdef);
+    }
 
     DBUG_VOID_RETURN;
 }

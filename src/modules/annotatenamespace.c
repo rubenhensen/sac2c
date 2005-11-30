@@ -487,6 +487,10 @@ ANSavis (node *arg_node, info *arg_info)
         AVIS_TYPE (arg_node) = ANSntype (AVIS_TYPE (arg_node), arg_info);
     }
 
+    if (AVIS_DECLTYPE (arg_node) != NULL) {
+        AVIS_DECLTYPE (arg_node) = ANSntype (AVIS_DECLTYPE (arg_node), arg_info);
+    }
+
     arg_node = TRAVcont (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);

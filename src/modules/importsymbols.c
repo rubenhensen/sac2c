@@ -131,6 +131,7 @@ IMPsymbol (node *arg_node, info *arg_info)
     DBUG_ENTER ("IMPsymbol");
 
     DSimportInstancesByName (SYMBOL_ID (arg_node), INFO_IMP_CURRENT (arg_info));
+    DSimportTypedefByName (SYMBOL_ID (arg_node), INFO_IMP_CURRENT (arg_info));
 
     if (SYMBOL_NEXT (arg_node) != NULL) {
         SYMBOL_NEXT (arg_node) = TRAVdo (SYMBOL_NEXT (arg_node), arg_info);

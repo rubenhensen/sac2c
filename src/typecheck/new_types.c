@@ -3080,6 +3080,7 @@ TYisFun (ntype *type)
  *
  * function:
  *    bool TYisAKSSymb( ntype *type)
+ *    bool TYisAKSUdt( ntype *type)
  *    bool TYisProdOfArrayOrFixedAlpha( ntype *type)
  *    bool TYisProdOfAKV( ntype *type)
  *    bool TYisProdOfAKVafter( ntype *type, int 1)
@@ -3098,6 +3099,14 @@ TYisAKSSymb (ntype *type)
     DBUG_ENTER ("TYisAKSSymb");
     DBUG_RETURN (
       ((NTYPE_CON (type) == TC_aks) && (NTYPE_CON (AKS_BASE (type)) == TC_symbol)));
+}
+
+bool
+TYisAKSUdt (ntype *type)
+{
+    DBUG_ENTER ("TYisAKSUdt");
+    DBUG_RETURN (
+      ((NTYPE_CON (type) == TC_aks) && (NTYPE_CON (AKS_BASE (type)) == TC_user)));
 }
 
 bool
@@ -3359,7 +3368,7 @@ TYcmpTypes (ntype *t1, ntype *t2)
         }
         break;
     case TC_user:
-        if ((NTYPE_CON (t2) == TC_user) && (USER_TYPE (t1) == USER_TYPE (t2))) {
+        if ((NTYPE_CON (t2) == TC_user) && UTeq (USER_TYPE (t1), USER_TYPE (t2))) {
             res = TY_eq;
         } else if (NTYPE_CON (t2) == TC_bottom) {
             res = TY_gt;

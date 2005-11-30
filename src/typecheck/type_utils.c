@@ -691,3 +691,131 @@ TUsignatureMatches (node *formal, ntype *actual_prod_type)
 
     DBUG_RETURN (match);
 }
+
+/*******************************************************************************
+ *
+ * function:
+ *   ntype *CheckUdtAndSetBaseType( usertype udt, int* visited)
+ *
+ * description:
+ *
+ ******************************************************************************/
+
+/** <!-- ****************************************************************** -->
+ * @fn ntype *TUcheckUdtAndSetBaseType( usertype udt, int* visited)
+ *
+ * @brief
+ *  This function checks the integrity of a user defined type, and while doing
+ *  so it converts Symb{} types into Udt{} types, it computes its base-type,
+ *  AND stores it in the udt-repository!
+ *  At the time being, the following restrictions apply:
+ *  - the defining type has to be one of AKS{ Symb{}}, AKS{ Udt{}}
+ *    or AKS{ Simple{}}.
+ *  - if the defining type contains a Symb{} type, this type and all further
+ *    decendents must be defined without any recursion in type definitions!
+ *
+ *  We ASSUME, that the existence of a basetype indicates that the udt has
+ *  been checked already!!!
+ *  Furthermore, we ASSUME that iff basetype is not yet set, the defining
+ *  type either is a user- or a symbol-type.
+ *
+ * @param udt udt# to infer the basetype for
+ * @param visited The second parameter ("visited") is needed for detecting
+ *        recusive definitions only. Therefore, the initial call should be
+ *        made with (visited == NULL)!
+ *
+ * @return
+ ******************************************************************************/
+ntype *
+TUcheckUdtAndSetBaseType (usertype udt, int *visited)
+{
+    ntype *base, *base_elem;
+    usertype inner_udt;
+    ntype *inner_base;
+    ntype *new_base, *new_base_elem;
+    int num_udt, i;
+
+    DBUG_ENTER ("TUcheckUdtandSetBaseType");
+
+    base = UTgetBaseType (udt);
+    if (base == NULL) {
+        base = UTgetTypedef (udt);
+        if (!TYisAKS (base)) {
+            CTIerrorLine (global.linenum,
+                          "Typedef of %s::%s is illegal; should be either"
+                          " scalar type or array type of fixed shape",
+                          NSgetName (UTgetNamespace (udt)), UTgetName (udt));
+        } else {
+            /*
+             * Here, we know that we are either dealing with
+             * AKS{ User{}}, AKS{ Symb{}}, or AKS{ Simple{}}.
+             */
+            if (TYisAKSUdt (base) || TYisAKSSymb (base)) {
+                base_elem = TYgetScalar (base);
+                inner_udt = TYisAKSUdt (base)
+                              ? TYgetUserType (base_elem)
+                              : UTfindUserType (TYgetName (base_elem),
+                                                TYgetNamespace (base_elem));
+                if (inner_udt == UT_NOT_DEFINED) {
+                    CTIerrorLine (global.linenum,
+                                  "Typedef of %s::%s is illegal; type %s::%s unknown",
+                                  NSgetName (UTgetNamespace (udt)), UTgetName (udt),
+                                  NSgetName (TYgetNamespace (base_elem)),
+                                  TYgetName (base_elem));
+                } else {
+                    /*
+                     * First, we replace the defining symbol type by the appropriate
+                     * user-defined-type, i.e., inner_udt!
+                     */
+                    new_base_elem = TYmakeUserType (inner_udt);
+                    new_base = TYmakeAKS (new_base_elem, SHcopyShape (TYgetShape (base)));
+                    UTsetTypedef (udt, new_base);
+                    TYfreeType (base);
+                    base = new_base;
+
+                    /*
+                     * If this is the initial call, we have to allocate and
+                     * initialize our recursion detection mask "visited".
+                     */
+                    if (visited == NULL) {
+                        /* This is the initial call, so visited has to be initialized! */
+                        num_udt = UTgetNumberOfUserTypes ();
+                        visited = (int *)ILIBmalloc (sizeof (int) * num_udt);
+                        for (i = 0; i < num_udt; i++)
+                            visited[i] = 0;
+                    }
+                    /*
+                     * if we have not yet checked the inner_udt, recursively call
+                     * CheckUdtAndSetBaseType!
+                     */
+                    if (visited[inner_udt] == 1) {
+                        CTIerrorLine (global.linenum, "Type %s:%s recursively defined",
+                                      NSgetName (UTgetNamespace (udt)), UTgetName (udt));
+                    } else {
+                        visited[udt] = 1;
+                        inner_base = TUcheckUdtAndSetBaseType (inner_udt, visited);
+                        /*
+                         * Finally, we compute the resulting base-type by nesting
+                         * the inner base type with the actual typedef!
+                         */
+                        base = TYnestTypes (base, inner_base);
+                    }
+                }
+            } else {
+                /*
+                 * Here, we deal with AKS{ Simple{}}. Hence
+                 * base is the base type. Therefore, there will be no further
+                 * recursice call. This allows us to free "visited".
+                 * To be precise, we would have to free "visited in all ERROR-cases
+                 * as well, but we neglect that since in case of an error the
+                 * program will terminate soon anyways!
+                 */
+                if (visited != NULL)
+                    visited = ILIBfree (visited);
+            }
+        }
+        UTsetBaseType (udt, base);
+    }
+
+    DBUG_RETURN (base);
+}

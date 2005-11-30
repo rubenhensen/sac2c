@@ -312,9 +312,6 @@ NT2OTdoTransformOneFunction (node *arg_node)
                  "NT2OTdoTransformOneFunction can only be applied to fundefs");
 
     if (!FUNDEF_ISLACFUN (arg_node)) {
-
-        DBUG_EXECUTE ("NT2OTPRT", PRTdoPrint (arg_node););
-
         TRAVpush (TR_nt2ot);
 
         info_node = MakeInfo ();
@@ -331,8 +328,6 @@ NT2OTdoTransformOneFunction (node *arg_node)
         SSIfreeAllTvars ();
         SDfreeAllSignatureDependencies ();
         TEfreeAllTypeErrorInfos ();
-
-        DBUG_EXECUTE ("NT2OTPRT", PRTdoPrint (arg_node););
     }
 
     DBUG_RETURN (arg_node);

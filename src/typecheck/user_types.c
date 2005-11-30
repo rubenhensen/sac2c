@@ -1,39 +1,5 @@
 /*
- * $Log$
- * Revision 3.10  2005/07/15 15:57:02  sah
- * introduced namespaces
- *
- * Revision 3.9  2005/01/11 14:20:44  cg
- * Converted output generation from Error.h to ctinfo.c
- *
- * Revision 3.8  2005/01/10 17:27:06  cg
- * Converted error messages from Error.h to ctinfo.c
- *
- * Revision 3.7  2004/11/27 02:12:28  sah
- * ...
- *
- * Revision 3.6  2004/11/23 13:25:10  sbs
- * SacDevCamp04: compiles again
- *
- * Revision 3.5  2004/11/17 19:46:19  sah
- * changed arguments from char to const char
- *
- * Revision 3.4  2002/10/18 14:30:12  sbs
- * made the type definition node part of the repository record
- *
- * Revision 3.3  2002/08/05 17:01:02  sbs
- * minor bugs fixed
- *
- * Revision 3.2  2001/05/17 09:20:42  sbs
- * MALLOC FREE aliminated
- *
- * Revision 3.1  2000/11/20 18:00:23  sacbase
- * new release made
- *
- * Revision 1.1  1999/10/12 15:38:15  sbs
- * Initial revision
- *
- *
+ * $Id$
  */
 
 #include <string.h>
@@ -44,6 +10,7 @@
 #include "internal_lib.h"
 #include "namespaces.h"
 #include "new_types.h"
+#include "shape.h"
 #include "user_types.h"
 
 /*
@@ -51,7 +18,8 @@
  *
  * The repository keeps entries of the following kind:
  *
- *  udt# | type-name | type-module | defining type | base type | line#
+ *  udt# | type-name | type-module | defining type | base type | alias
+ *    | line# | typedef
  *
  * All interfacing to that repository has to be made through the functions
  * defined in this module!
@@ -72,6 +40,7 @@ typedef struct UDT_ENTRY {
     namespace_t *mod;
     ntype *type;
     ntype *base;
+    usertype alias;
     int line;
     node *tdef;
 } udt_entry;
@@ -81,12 +50,13 @@ typedef struct UDT_ENTRY {
  * access macros:
  */
 
-#define ENTRY_NAME(e) (e->name)
-#define ENTRY_NS(e) (e->mod)
-#define ENTRY_DEF(e) (e->type)
-#define ENTRY_BASE(e) (e->base)
-#define ENTRY_LINE(e) (e->line)
-#define ENTRY_TDEF(e) (e->tdef)
+#define ENTRY_NAME(e) ((e)->name)
+#define ENTRY_NS(e) ((e)->mod)
+#define ENTRY_DEF(e) ((e)->type)
+#define ENTRY_BASE(e) ((e)->base)
+#define ENTRY_ALIAS(e) ((e)->alias)
+#define ENTRY_LINE(e) ((e)->line)
+#define ENTRY_TDEF(e) ((e)->tdef)
 
 /*
  * We use a global datastructure "udt_rep", in order to keep all the information
@@ -111,38 +81,23 @@ static int udt_no = 0;
 
 #define CHUNKSIZE 20
 
-/******************************************************************************
+/** <!-- ****************************************************************** -->
+ * @fn usertype InsertIntoRepository( udt_entry *entry)
  *
- * function:
- *    usertype UTaddUserType( char *name, namespace_t *ns, ntype *type,
- *                            ntype *base, int lineno, node *tdef)
+ * @brief inserts the given udt_entry in the repository. the repository
+ *        is enlarged whenever (udt_no % CHUNKSIZE) is 0.
  *
- * description:
- *   adds a udt to the repository and enlarges it whenever (udt_no % CHUNKSIZE)
- *   equals 0. It returns the index of the udt_entry generated.
+ * @param entry a new entry to be inserted
  *
+ * @return the udt# that was assigned to the udt_entry
  ******************************************************************************/
-
-usertype
-UTaddUserType (char *name, namespace_t *ns, ntype *type, ntype *base, int lineno,
-               node *tdef)
+static usertype
+InsertIntoRepository (udt_entry *entry)
 {
-    udt_entry *entry;
     udt_entry **new_rep;
     int i;
 
-    DBUG_ENTER ("UTaddUserType");
-
-    /*
-     * First, we generate the desired entry:
-     */
-    entry = (udt_entry *)ILIBmalloc (sizeof (udt_entry));
-    ENTRY_NAME (entry) = name;
-    ENTRY_NS (entry) = ns;
-    ENTRY_DEF (entry) = type;
-    ENTRY_BASE (entry) = base;
-    ENTRY_LINE (entry) = lineno;
-    ENTRY_TDEF (entry) = tdef;
+    DBUG_ENTER ("InsertIntoRepository");
 
     /*
      * Before putting the new entry into the repository, we have to make sure
@@ -161,6 +116,82 @@ UTaddUserType (char *name, namespace_t *ns, ntype *type, ntype *base, int lineno
     udt_rep[udt_no] = entry;
 
     DBUG_RETURN (udt_no++);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    usertype UTaddUserType( char *name, namespace_t *ns, ntype *type,
+ *                            ntype *base, int lineno, node *tdef)
+ *
+ * description:
+ *   adds a udt to the repository and enlarges it whenever (udt_no % CHUNKSIZE)
+ *   equals 0. It returns the index of the udt_entry generated.
+ *
+ ******************************************************************************/
+
+usertype
+UTaddUserType (char *name, namespace_t *ns, ntype *type, ntype *base, int lineno,
+               node *tdef)
+{
+    udt_entry *entry;
+    usertype result;
+
+    DBUG_ENTER ("UTaddUserType");
+
+    /*
+     * First, we generate the desired entry:
+     */
+    entry = (udt_entry *)ILIBmalloc (sizeof (udt_entry));
+    ENTRY_NAME (entry) = name;
+    ENTRY_NS (entry) = ns;
+    ENTRY_DEF (entry) = type;
+    ENTRY_BASE (entry) = base;
+    ENTRY_LINE (entry) = lineno;
+    ENTRY_TDEF (entry) = tdef;
+    ENTRY_ALIAS (entry) = UT_NOT_DEFINED;
+
+    result = InsertIntoRepository (entry);
+
+    DBUG_RETURN (result);
+}
+
+/** <!-- ****************************************************************** -->
+ * @brief adds a udt alias to the repository and  enlarges it whenever
+ *        (udt_no % CHUNKSIZE) equals 0. It returns the index of the
+ *        udt_entry generated.
+ *        the defining type of the alias is set to AKS{ UDT{ alias} []
+ *        and the basetype is taken from the alias.
+ *
+ * @param name name of alias
+ * @param ns namespace of alias
+ * @param alias type this is aliasing
+ * @param lineno line number where the alias is defined
+ * @param tdef the corresponding typedef node
+ *
+ * @return
+ ******************************************************************************/
+usertype
+UTaddAlias (char *name, namespace_t *ns, usertype alias, int lineno, node *tdef)
+{
+    udt_entry *entry;
+    int result;
+
+    DBUG_ENTER ("UTaddAlias");
+    DBUG_ASSERT ((alias < udt_no), "alias in UTaddAlias out of range");
+
+    entry = (udt_entry *)ILIBmalloc (sizeof (udt_entry));
+    ENTRY_NAME (entry) = name;
+    ENTRY_NS (entry) = ns;
+    ENTRY_DEF (entry) = TYmakeAKS (TYmakeUserType (alias), SHmakeShape (0));
+    ENTRY_BASE (entry) = TYcopyType (UTgetBaseType (alias));
+    ENTRY_LINE (entry) = lineno;
+    ENTRY_TDEF (entry) = tdef;
+    ENTRY_ALIAS (entry) = alias;
+
+    result = InsertIntoRepository (entry);
+
+    DBUG_RETURN (result);
 }
 
 /******************************************************************************
@@ -300,6 +331,36 @@ UTgetTdef (usertype udt)
     DBUG_RETURN (ENTRY_TDEF (udt_rep[udt]));
 }
 
+usertype
+UTgetAlias (usertype udt)
+{
+    usertype alias;
+
+    DBUG_ENTER ("UTgetAlias");
+    DBUG_ASSERT ((udt < udt_no), "UTgetAlias called with illegal udt!");
+
+    alias = ENTRY_ALIAS (udt_rep[udt]);
+
+    DBUG_RETURN (alias);
+}
+
+usertype
+UTgetUnAliasedType (usertype udt)
+{
+    usertype result;
+
+    DBUG_ENTER ("UTgetUnAliasedType");
+    DBUG_ASSERT ((udt < udt_no), "UTgetUnAliasedType called with illegal udt!");
+
+    if (ENTRY_ALIAS (udt_rep[udt]) != UT_NOT_DEFINED) {
+        result = UTgetUnAliasedType (ENTRY_ALIAS (udt_rep[udt]));
+    } else {
+        result = udt;
+    }
+
+    DBUG_RETURN (result);
+}
+
 /******************************************************************************
  *
  * function:
@@ -355,6 +416,47 @@ UTsetNamespace (usertype udt, const namespace_t *ns)
     DBUG_VOID_RETURN;
 }
 
+/** <!-- ****************************************************************** -->
+ * @fn bool UTeq( usertype udt1, usertype udt2)
+ *
+ * @brief Checks whether the two udts are equal. This function takes
+ *        aliasing of user defined types into account!
+ *
+ * @param udt1 first user-defined type
+ * @param udt2 second user-defined type
+ *
+ * @return
+ ******************************************************************************/
+bool
+UTeq (usertype udt1, usertype udt2)
+{
+    bool result;
+
+    DBUG_ENTER ("UTeq");
+
+    result = (UTgetUnAliasedType (udt1) == UTgetUnAliasedType (udt2));
+
+    DBUG_RETURN (result);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn bool UTisAlias( usertype udt)
+ *
+ * @brief checks whether the passed udt is an aliasing.
+ *
+ * @param udt
+ *
+ * @return
+ ******************************************************************************/
+bool
+UTisAlias (usertype udt)
+{
+    DBUG_ENTER ("UTisAlias");
+    DBUG_ASSERT ((udt < udt_no), "UTisAlias called with illegal udt!");
+
+    DBUG_RETURN (ENTRY_ALIAS (udt_rep[udt]) != UT_NOT_DEFINED);
+}
+
 /******************************************************************************
  *
  * function:
@@ -374,14 +476,14 @@ UTprintRepository (FILE *outfile)
 
     DBUG_ENTER ("UTprintRepository");
 
-    fprintf (outfile, "\n %4.4s " UTPRINT_FORMAT " %6s | %9s\n", "udt:", "module:",
-             "name:", "defining type:", "base type:", "line:", "def node:");
+    fprintf (outfile, "\n %4.4s " UTPRINT_FORMAT " %6s | %9s | %7s\n", "udt:", "module:",
+             "name:", "defining type:", "base type:", "line:", "def node:", "alias:");
     for (i = 0; i < udt_no; i++) {
-        fprintf (outfile, " %4d " UTPRINT_FORMAT " %6d |  %8p\n", i,
+        fprintf (outfile, " %4d " UTPRINT_FORMAT " %6d |  %8p | %7d\n", i,
                  NSgetName (UTgetNamespace (i)), UTgetName (i),
                  TYtype2String (UTgetTypedef (i), TRUE, 0),
-                 TYtype2String (UTgetBaseType (i), TRUE, 0), UTgetLine (i),
-                 UTgetTdef (i));
+                 TYtype2String (UTgetBaseType (i), TRUE, 0), UTgetLine (i), UTgetTdef (i),
+                 UTgetAlias (i));
     }
 
     DBUG_VOID_RETURN;

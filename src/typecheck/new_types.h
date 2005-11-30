@@ -376,6 +376,7 @@ extern bool TYisProd (ntype *);
 extern bool TYisFun (ntype *);
 
 extern bool TYisAKSSymb (ntype *);
+extern bool TYisAKSUdt (ntype *);
 extern bool TYisProdOfArray (ntype *);
 extern bool TYisProdOfArrayOrFixedAlpha (ntype *);
 extern bool TYisProdOfAKV (ntype *);

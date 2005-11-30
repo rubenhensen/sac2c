@@ -698,6 +698,7 @@
         <travuser>
 	  <node name="Fundef" />
 	  <node name="Module" />
+	  <node name="Ap" />
 	</travuser>
       </traversal>
       <traversal id="DFR" name="Dead Function Removal" default="sons" include="DeadFunctionRemoval.h" >

@@ -1026,10 +1026,14 @@ PRTtypedef (node *arg_node, info *arg_info)
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
     }
 
-    if ((TYPEDEF_ICM (arg_node) == NULL)
-        || (NODE_TYPE (TYPEDEF_ICM (arg_node)) != N_icm)) {
+    if (TYPEDEF_ICM (arg_node) == NULL) {
+        if (TYPEDEF_ISALIAS (arg_node)) {
+            fprintf (global.outfile, "typealias ");
+        } else {
+            fprintf (global.outfile, "typedef ");
+        }
         type_str = TYtype2String (TYPEDEF_NTYPE (arg_node), 0, TRUE);
-        fprintf (global.outfile, "typedef %s ", type_str);
+        fprintf (global.outfile, "%s ", type_str);
         type_str = ILIBfree (type_str);
 
         if (TYPEDEF_NS (arg_node) != NULL) {

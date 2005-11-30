@@ -12,6 +12,7 @@
 #include "deserialize.h"
 #include "internal_lib.h"
 #include "type_utils.h"
+#include "new_types.h"
 #include "namespaces.h"
 
 /*
@@ -20,6 +21,7 @@
 struct INFO {
     node *module;
     int fetched;
+    namespace_t *prelude;
 };
 
 /*
@@ -27,6 +29,7 @@ struct INFO {
  */
 #define INFO_PPI_MODULE(n) ((n)->module)
 #define INFO_PPI_FETCHED(n) ((n)->fetched)
+#define INFO_PPI_PRELUDE(n) ((n)->prelude)
 
 /*
  * INFO functions
@@ -42,6 +45,7 @@ MakeInfo ()
 
     INFO_PPI_MODULE (result) = NULL;
     INFO_PPI_FETCHED (result) = 0;
+    INFO_PPI_PRELUDE (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -56,18 +60,91 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
+/*
+ * Helper functions
+ */
+static node *
+tagFundefAsNeeded (node *fundef, info *info)
+{
+    DBUG_ENTER ("tagFundefAsNeeded");
+
+    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
+                 "tagFundefAsNeeded applied to non fundef node");
+
+    DBUG_ASSERT ((!FUNDEF_ISWRAPPERFUN (fundef)),
+                 "tagFundefAsNeeded called on wrapper fun");
+
+    FUNDEF_ISNEEDED (fundef) = TRUE;
+
+    DBUG_RETURN (fundef);
+}
+
+static node *
+tagWrapperAsNeeded (node *wrapper, info *info)
+{
+    DBUG_ENTER ("tagWrapperAsNeeded");
+
+    if (FUNDEF_IMPL (wrapper) != NULL) {
+        /*
+         * we found a wrapper that has FUNDEF_IMPL set
+         * this is a dirty hack telling us that the function
+         * has no arguments and thus only one instance!
+         * so we tag that instance
+         */
+        FUNDEF_IMPL (wrapper) = tagFundefAsNeeded (FUNDEF_IMPL (wrapper), info);
+    } else if (FUNDEF_WRAPPERTYPE (wrapper) != NULL) {
+        FUNDEF_WRAPPERTYPE (wrapper)
+          = TYmapFunctionInstances (FUNDEF_WRAPPERTYPE (wrapper), &tagFundefAsNeeded,
+                                    info);
+    }
+
+    FUNDEF_ISNEEDED (wrapper) = TRUE;
+
+    DBUG_RETURN (wrapper);
+}
+
 node *
 PPIfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PPIfundef");
 
-    DBUG_PRINT ("PPI", ("processing '%s'", CTIitemName (arg_node)));
     /*
-     * we fetch bodies for functions which are inline,
-     * thus the body is needed for inlining
+     * traverse the body to mark functions that are needed.
+     * as wrapper functions always and only contain applications
+     * of their instances, we skip those. instead, PPIap will mark
+     * all instances of a wrapper if it find an application of a
+     * wrapper function.
      */
+
+    DBUG_PRINT ("PPI", ("processing down '%s'", CTIitemName (arg_node)));
+
+    if ((!FUNDEF_ISWRAPPERFUN (arg_node)) && (FUNDEF_BODY (arg_node) != NULL)) {
+        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+    }
+
+    /*
+     * tag special prelude funs as needed
+     */
+    if (NSequals (FUNDEF_NS (arg_node), INFO_PPI_PRELUDE (arg_info))) {
+        FUNDEF_ISNEEDED (arg_node) = TRUE;
+    }
+
+    /*
+     * move down the fundef chain
+     */
+    if (FUNDEF_NEXT (arg_node) != NULL) {
+        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+    }
+
+    /*
+     * On our way up we fetch the body of every inline function
+     * that appears at a rhs postion within the ast.
+     */
+
+    DBUG_PRINT ("PPI", ("processing up '%s'", CTIitemName (arg_node)));
+
     if ((FUNDEF_BODY (arg_node) == NULL) && (FUNDEF_ISINLINE (arg_node))
-        && (FUNDEF_SYMBOLNAME (arg_node) != NULL)) {
+        && (FUNDEF_ISNEEDED (arg_node)) && (FUNDEF_SYMBOLNAME (arg_node) != NULL)) {
         arg_node = AFBdoAddFunctionBody (arg_node);
 
         if (FUNDEF_BODY (arg_node) != NULL) {
@@ -85,8 +162,25 @@ PPIfundef (node *arg_node, info *arg_info)
         }
     }
 
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+    /*
+     * finally, reset the needed flag
+     */
+    FUNDEF_ISNEEDED (arg_node) = FALSE;
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+PPIap (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("PPIap");
+
+    DBUG_PRINT ("PPI", ("marking %s as needed", CTIitemName (AP_FUNDEF (arg_node))));
+
+    if (FUNDEF_ISWRAPPERFUN (AP_FUNDEF (arg_node))) {
+        AP_FUNDEF (arg_node) = tagWrapperAsNeeded (AP_FUNDEF (arg_node), arg_info);
+    } else {
+        AP_FUNDEF (arg_node) = tagFundefAsNeeded (AP_FUNDEF (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -120,6 +214,13 @@ PPIdoPrepareInline (node *syntax_tree)
 
     info = MakeInfo ();
 
+    /*
+     * we want to fetch the body of our special prelude
+     * sac2c module always. For performance reasons, we
+     * hold a copy of that namespace in the info node.
+     */
+    INFO_PPI_PRELUDE (info) = NSgetNamespace ("sac2c");
+
     TRAVpush (TR_ppi);
 
     if (global.optimize.doinl) {
@@ -145,6 +246,7 @@ PPIdoPrepareInline (node *syntax_tree)
 
     TRAVpop ();
 
+    INFO_PPI_PRELUDE (info) = NSfreeNamespace (INFO_PPI_PRELUDE (info));
     info = FreeInfo (info);
 
     DBUG_RETURN (syntax_tree);
