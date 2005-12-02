@@ -2859,6 +2859,7 @@
         <flag name="HasDotArgs" />
         <flag name="HasDotRets" />
         <flag name="IsSpecialisation" />
+        <flag name="IsTypeError" />
         <flag name="WasOptimized" default="TRUE">
           <description>TRUE if function should be accounted for next optimization cycle again</description>
         </flag>

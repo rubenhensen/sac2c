@@ -1,87 +1,5 @@
 #
-#
-# $Log$
-# Revision 3.33  2005/09/08 11:02:50  sbs
-# update_wrapper_type.o added.
-#
-# Revision 3.32  2005/08/18 07:01:23  sbs
-# insert_type_conv.o added.
-#
-# Revision 3.31  2005/07/17 20:35:52  sah
-# split_wrappers.o
-#
-# Revision 3.30  2005/07/15 15:52:18  sah
-# splitted create_wrapper_code and dispatchfuncalls
-# introduced namespaces
-#
-# Revision 3.29  2005/05/31 18:16:14  sah
-# added resolve symbol types phase
-#
-# Revision 3.28  2004/11/24 09:52:43  sbs
-# type_utils.o added
-#
-# Revision 3.27  2004/11/23 12:49:07  sbs
-# INCS eliminated
-#
-# Revision 3.26  2004/11/21 11:22:03  sah
-# removed some old ast infos
-#
-# Revision 3.25  2004/10/05 13:54:49  sah
-# changed subset of files used in NEW_AST mode
-#
-# Revision 3.24  2004/09/30 20:01:26  sah
-# added a switch to compile a subset of
-# the compiler only
-#
-# Revision 3.23  2003/09/17 12:34:25  sbs
-# type_statistics.o added
-#
-# Revision 3.22  2003/09/09 12:58:38  sbs
-# -I. added
-#
-# Revision 3.21  2002/08/09 13:01:37  dkr
-# create_wrapper_code.o added
-#
-# Revision 3.20  2002/08/07 20:14:10  dkr
-# some .mac dependencies added
-#
-# Revision 3.19  2002/08/05 17:00:38  sbs
-# first alpha version of the new type checker !!
-#
-# Revision 3.18  2002/06/06 19:56:03  dkr
-# target clean modified
-#
-# Revision 3.17  2002/03/12 15:12:59  sbs
-# ssi.o added
-#
-# Revision 3.16  2002/03/05 15:52:56  sbs
-# create_wrappers.o added
-#
-# Revision 3.15  2002/02/21 12:30:21  sbs
-# flatten added as include path
-#
-# Revision 3.14  2001/11/15 15:36:48  sacbase
-# CLOCK_SKEW_ELIMINATION and PROJECT_ROOT added.
-#
-# Revision 3.13  2001/11/14 12:59:48  sbs
-# deps line replaced by inclusion of Makefile.Deps
-# ( .xxx.d mechanism)
-# global setup included via Makefile.Config
-#
-# Revision 3.12  2001/11/13 20:32:42  dkr
-# make deps done
-#
-# Revision 3.11  2001/07/18 13:08:17  cg
-# make deps done
-#
-# Revision 3.10  2001/04/26 21:09:43  dkr
-# make deps done
-#
-# ... [ eliminated ]
-#
-# Revision 1.1  1994/12/02  10:13:42  hw
-# Initial revision
-# 
+# $Id$
 #
 
 
@@ -105,7 +23,7 @@ OBJS:=gen_pseudo_fun.o new_typecheck.o new_types.o user_types.o \
       ct_with.o type_errors.o specialize.o new2old.o create_wrapper_code.o \
       type_statistics.o type_utils.o resolvesymboltypes.o \
       dispatchfuncalls.o split_wrappers.o insert_type_conv.o \
-      update_wrapper_type.o
+      update_wrapper_type.o free_dispatch_information.o
 
 all: $(OBJS)
 

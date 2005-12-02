@@ -1,44 +1,5 @@
 /*
- *
- * $Log$
- * Revision 1.11  2005/09/28 15:43:27  wpc
- * added some SHOW_MALLOC ifdefs
- *
- * Revision 1.10  2005/09/12 13:56:38  ktr
- * if applied to fundef nodes, inlining will not traverse FUNDEF_NEXT
- *
- * Revision 1.9  2005/09/04 12:52:11  ktr
- * re-engineered the optimization cycle
- *
- * Revision 1.8  2005/08/08 17:29:08  sah
- * added some DBUG_PRINTs
- *
- * Revision 1.7  2005/07/15 15:57:02  sah
- * introduced namespaces
- *
- * Revision 1.6  2005/05/30 13:09:13  cg
- * Inlining into wrapper functions is now prevented.
- * Inlining is made ready to be applied repeatedly in
- * the optimization cycle.
- *
- * Revision 1.5  2005/05/17 11:36:46  cg
- * Inlining completely re-organized in order to handle system of mutually
- * recursive inline functions correctly.
- *
- * Revision 1.4  2005/05/13 16:46:54  ktr
- * removed lacinlining functionality
- *
- * Revision 1.3  2005/04/12 15:50:16  ktr
- * Travsersal invocation function INLdoLACInlining added. Only former loop
- * and conditional functions will be inlined.
- *
- * Revision 1.2  2005/03/04 21:21:42  cg
- * First working revision.
- *
- * Revision 1.1  2005/02/14 11:17:24  cg
- * Initial revision
- *
- *
+ * $Id$
  */
 
 /**
@@ -78,6 +39,7 @@
 #include "free.h"
 #include "ctinfo.h" /* for CTIitemName */
 #include "internal_lib.h"
+#include "type_utils.h"
 #include "prepare_inlining.h"
 
 #include "inlining.h"
@@ -103,7 +65,7 @@ struct INFO {
 #define INFO_DEPTH(n) (n->depth)
 
 /*
- * INFO functions
+  INFO functions
  */
 static info *
 MakeInfo ()
@@ -335,8 +297,9 @@ INLap (node *arg_node, info *arg_info)
     DBUG_PRINT ("INL", ("Processing call of fun %s", CTIitemName (AP_FUNDEF (arg_node))));
 
     if (AP_CONSIDERINLINE (arg_node)
-        && (FUNDEF_INLINECOUNTER (AP_FUNDEF (arg_node))
-            <= global.max_recursive_inlining)) {
+        && (FUNDEF_INLINECOUNTER (AP_FUNDEF (arg_node)) <= global.max_recursive_inlining)
+        && !TUretsContainBottom (FUNDEF_RETS (AP_FUNDEF (arg_node)))
+        && !TUretsAreConstant (FUNDEF_RETS (AP_FUNDEF (arg_node)))) {
 
         if (FUNDEF_ISLACFUN (AP_FUNDEF (arg_node))
             || (FUNDEF_ISINLINE (AP_FUNDEF (arg_node)))) {
@@ -358,10 +321,29 @@ INLap (node *arg_node, info *arg_info)
         }
     } else {
         /*
+         * There are three possible reasons to reach this code:
+         *
+         * I)
+         *
          * Maximum number of recursive inlinings is exceeded, so we mark the ap
-         * node and will never try again to inline here. This precaution is necessary
-         * to enforce the limit on recursive inlinigs through multiple applications
-         * of the function inlining optimization.
+         * node and will never try again to inline here. This precaution is
+         * necessary to enforce the limit on recursive inlinigs through multiple
+         * applications of the function inlining optimization.
+         *
+         * II)
+         *
+         * The return types contain a bottom. Therefore, we will never want to
+         * inline this function, as a bottom type basically is a constant that
+         * has been propagated into the calling function anyways. As a
+         * function that has been typed as bottom cannot get any other return
+         * type in later runs, we can preserve this decision here.
+         *
+         * III)
+         *
+         * The return type is fully constant. In that case, there is no need
+         * to inline as the constant has been propagated into the calling
+         * context anyways. Furthermore, as the type cannot get coarser in
+         * future runs of the TC, we can preserve this decision here.
          */
         AP_CONSIDERINLINE (arg_node) = FALSE;
     }

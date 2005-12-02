@@ -183,74 +183,103 @@ AddTypeError (node *assign, node *bottom_id, ntype *other_type)
 
     DBUG_RETURN (assign);
 }
+#if 0
+static node *ReplaceBodyByTypeError( node *fundef, ntype *inferred_type)
+{
+  node *block, *avis, *tmpnode;
+  node *vardecs = NULL;
+  node *ids = NULL;
+  node *exprs = NULL;
+  node *ret = NULL;
+  ntype *bottom = NULL;
+  int i,n;
+
+  DBUG_ENTER("ReplaceBodyByTypeError");
+
+  n = TYgetProductSize( inferred_type);
+  for( i=n-1; i>=0; i--) {
+    avis = TBmakeAvis( ILIBtmpVar(),
+                       TYcopyType( TYgetProductMember( inferred_type, i)));
+    if( TYisBottom( TYgetProductMember( inferred_type, i))) {
+      if( bottom == NULL) {
+        bottom = TYcopyType(
+                      TYgetProductMember( inferred_type, i));
+      } else {
+        TYextendBottomError( 
+          bottom,
+          TYgetBottomError(
+            TYgetProductMember( inferred_type, i)));
+      }
+    }
+    vardecs = TBmakeVardec( avis, vardecs);
+    ids = TBmakeIds( avis, ids);
+    exprs = TBmakeExprs( TBmakeId( avis), exprs);
+  }
+
+  ret = TBmakeReturn( exprs);
+
+  block = TBmakeBlock( 
+            TBmakeAssign(
+              TBmakeLet( ids, 
+                TCmakePrf1( F_type_error, 
+                  TBmakeType( bottom))),
+              TBmakeAssign( ret, NULL)),
+            vardecs);
+
+  tmpnode = ids;
+  while ( tmpnode != NULL) {
+    AVIS_SSAASSIGN( IDS_AVIS( tmpnode)) = BLOCK_INSTR( block);
+    tmpnode = IDS_NEXT( tmpnode);
+  }
+
+  FUNDEF_BODY( fundef) = FREEdoFreeTree( FUNDEF_BODY( fundef));
+        
+  FUNDEF_BODY( fundef) = block;
+  FUNDEF_RETURN( fundef) = ret;
+
+  /**
+   * finally, we need to make sure that this function is tagged appropriately
+   * As it does not have a body anymore, we need to remove potential LAC flags
+   * and ensure the code will be inlined.
+   */
+  if( FUNDEF_ISLACFUN( fundef)) {
+    FUNDEF_ISDOFUN( fundef) = FALSE;
+    FUNDEF_ISCONDFUN( fundef) = FALSE;
+    FUNDEF_ISLACINLINE( fundef) = TRUE;
+  }
+  
+
+  DBUG_RETURN( fundef);
+}
+#endif
 
 static node *
-ReplaceBodyByTypeError (node *fundef, ntype *inferred_type, ntype *res_type)
+TransformIntoTypeError (node *fundef)
 {
-    node *block, *avis, *tmpnode;
-    node *vardecs = NULL;
-    node *ids = NULL;
-    node *exprs = NULL;
-    node *ret = NULL;
-    char *err_msg = NULL;
-    int i, n;
-    char *tmp;
+    DBUG_ENTER ("TransformIntoTypeError");
 
-    DBUG_ENTER ("ReplaceBodyByTypeError");
+    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef), "cannot transform non fundef node");
 
-    n = TYgetProductSize (res_type);
-    for (i = n - 1; i >= 0; i--) {
-        avis = TBmakeAvis (ILIBtmpVar (), TYcopyType (TYgetProductMember (res_type, i)));
-        if (TYisBottom (TYgetProductMember (inferred_type, i))) {
-            if (err_msg == NULL) {
-                err_msg = ILIBstringCopy (
-                  TYgetBottomError (TYgetProductMember (inferred_type, i)));
-            } else {
-                tmp
-                  = ILIBstringConcat (err_msg, TYgetBottomError (
-                                                 TYgetProductMember (inferred_type, i)));
-                err_msg = ILIBfree (err_msg);
-                err_msg = tmp;
-            }
-        }
-        vardecs = TBmakeVardec (avis, vardecs);
-        ids = TBmakeIds (avis, ids);
-        exprs = TBmakeExprs (TBmakeId (avis), exprs);
+    DBUG_ASSERT (TUretsContainBottom (FUNDEF_RETS (fundef)),
+                 "cannot transform a fundef without bottom return types!");
+
+    if (FUNDEF_BODY (fundef) != NULL) {
+        FUNDEF_BODY (fundef) = FREEdoFreeNode (FUNDEF_BODY (fundef));
     }
 
-    ret = TBmakeReturn (exprs);
-
-    block
-      = TBmakeBlock (TBmakeAssign (TBmakeLet (ids,
-                                              TCmakePrf1 (F_type_error,
-                                                          TBmakeType (
-                                                            TYmakeBottomType (err_msg)))),
-                                   TBmakeAssign (ret, NULL)),
-                     vardecs);
-
-    tmpnode = ids;
-    while (tmpnode != NULL) {
-        AVIS_SSAASSIGN (IDS_AVIS (tmpnode)) = BLOCK_INSTR (block);
-        tmpnode = IDS_NEXT (tmpnode);
-    }
-
-    FUNDEF_BODY (fundef) = FREEdoFreeTree (FUNDEF_BODY (fundef));
-
-    FUNDEF_BODY (fundef) = block;
-    FUNDEF_RETURN (fundef) = ret;
-
-    FUNDEF_RETS (fundef) = TUreplaceRetTypes (FUNDEF_RETS (fundef), res_type);
-
-    /**
-     * finally, we need to make sure that this function is tagged appropriately
-     * As it does not have a body anymore, we need to remove potential LAC flags
-     * and ensure the code will be inlined.
+    /*
+     * we mark the function as a special type error function. this
+     * is done to ease the detection of these functions. otherwise
+     * one would have to traverse through all the return types to
+     * check, which would be a noticeable performance drawback.
      */
-    if (FUNDEF_ISLACFUN (fundef)) {
-        FUNDEF_ISDOFUN (fundef) = FALSE;
-        FUNDEF_ISCONDFUN (fundef) = FALSE;
-        FUNDEF_ISLACINLINE (fundef) = TRUE;
-    }
+    FUNDEF_ISTYPEERROR (fundef) = TRUE;
+
+    /*
+     * furthermore we set the function to non-inline. as it has no
+     * body, it cannot be inlined anyways but better make sure.
+     */
+    FUNDEF_ISINLINE (fundef) = FALSE;
 
     DBUG_RETURN (fundef);
 }
@@ -384,7 +413,7 @@ NT2OTmodule (node *arg_node, info *arg_info)
 node *
 NT2OTfundef (node *arg_node, info *arg_info)
 {
-    ntype *otype, *ftype, *fltype, *bottom;
+    ntype *otype, *ftype, *bottom;
 
     DBUG_ENTER ("NT2OTfundef");
 
@@ -433,12 +462,11 @@ NT2OTfundef (node *arg_node, info *arg_info)
                  * the calling site, we can simply eliminate these functions entirely!
                  */
                 if (FUNDEF_ISLACFUN (arg_node)) {
-                    /* mark this fun as xombie! */
+                    /* mark this fun as zombie! */
                     arg_node = FREEdoFreeNode (arg_node);
 
                 } else {
-                    fltype = TYliftBottomFixAndEliminateAlpha (otype);
-                    arg_node = ReplaceBodyByTypeError (arg_node, ftype, fltype);
+                    arg_node = TransformIntoTypeError (arg_node);
                 }
             }
 

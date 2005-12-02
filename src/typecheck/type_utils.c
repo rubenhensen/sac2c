@@ -228,6 +228,8 @@ TUtype2alphaMax (ntype *type)
         } else {
             new = TYmakeAlphaType (NULL);
         }
+    } else if (TYisBottom (type)) {
+        new = TYmakeAlphaType (TYcopyType (type));
     } else {
         scalar = TYgetScalar (type);
         if ((TYisSimple (scalar) && (TYgetSimpleType (scalar) == T_unknown))) {
@@ -290,12 +292,19 @@ TUrettypes2alphaFix (node *rets)
 
     while (tmp != NULL) {
         if (!TYisAlpha (RET_TYPE (tmp))) {
-            scalar = TYgetScalar (RET_TYPE (tmp));
+            if (TYisBottom (RET_TYPE (tmp))) {
+                scalar = RET_TYPE (tmp);
+            } else {
+                scalar = TYgetScalar (RET_TYPE (tmp));
+            }
+
             DBUG_ASSERT ((!TYisSimple (scalar)
                           || (TYgetSimpleType (scalar) != T_unknown)),
                          "TUrettypes2alphaFix applied to rettype with T_unknown");
+
             new = TYmakeAlphaType (TYcopyType (RET_TYPE (tmp)));
             SSInewMin (TYgetAlpha (new), RET_TYPE (tmp));
+
             RET_TYPE (tmp) = new;
         } else {
             DBUG_ASSERT (TYisFixedAlpha (RET_TYPE (tmp)),
@@ -632,14 +641,85 @@ TUsignatureMatches (node *formal, ntype *actual_prod_type)
     DBUG_RETURN (match);
 }
 
-/*******************************************************************************
+/** <!-- ****************************************************************** -->
+ * @fn bool TUretsContainBottom( node *rets)
  *
- * function:
- *   ntype *CheckUdtAndSetBaseType( usertype udt, int* visited)
+ * @brief Returns true iff at least one return has a bottom type assigned.
  *
- * description:
+ * @param rets rets chain
  *
+ * @return true if at least one rets has bottom type
  ******************************************************************************/
+bool
+TUretsContainBottom (node *rets)
+{
+    bool result;
+
+    DBUG_ENTER ("TUretsContainConstantOrBottom");
+
+    if (rets == NULL) {
+        result = FALSE;
+    } else {
+        result = TYisBottom (RET_TYPE (rets)) || TUretsContainBottom (RET_NEXT (rets));
+    }
+
+    DBUG_RETURN (result);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn bool TUretsAreConstant( node *rets)
+ *
+ * @brief Returns true iff all rets have an akv type assigned.
+ *
+ * @param rets rets chain
+ *
+ * @return true iff all rets have akv type
+ ******************************************************************************/
+bool
+TUretsAreConstant (node *rets)
+{
+    bool result;
+
+    DBUG_ENTER ("TUretsAreConstant");
+
+    result = (rets == NULL) && TYisAKV (RET_TYPE (rets))
+             && TUretsAreConstant (RET_NEXT (rets));
+
+    DBUG_RETURN (result);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn ntype *TUcombineBottomsFromRets( node *rets)
+ *
+ * @brief resturns a new bottom ntype containing the concatenation of all
+ *        error messages of the given rets chain. if the chain does not
+ *        contain any bottom type, NULL is returned.
+ *
+ * @param rets a N_ret chain
+ *
+ * @return freshly allocated bottom type or NULL
+ ******************************************************************************/
+ntype *
+TUcombineBottomsFromRets (node *rets)
+{
+    ntype *result = NULL;
+
+    DBUG_ENTER ("TUcombineBottomsFromRets");
+
+    if (rets != NULL) {
+        result = TUcombineBottomsFromRets (RET_NEXT (rets));
+
+        if (TYisBottom (RET_TYPE (rets))) {
+            if (result == NULL) {
+                result = TYcopyType (RET_TYPE (rets));
+            } else {
+                TYextendBottomError (result, TYgetBottomError (RET_TYPE (rets)));
+            }
+        }
+    }
+
+    DBUG_RETURN (result);
+}
 
 /** <!-- ****************************************************************** -->
  * @fn ntype *TUcheckUdtAndSetBaseType( usertype udt, int* visited)

@@ -87,7 +87,8 @@ TYPECHECK= src/typecheck/gen_pseudo_fun.o \
            src/typecheck/split_wrappers.o \
            src/typecheck/dispatchfuncalls.o \
            src/typecheck/insert_type_conv.o \
-           src/typecheck/update_wrapper_type.o
+           src/typecheck/update_wrapper_type.o \
+           src/typecheck/free_dispatch_information.o
 
 OPTIMIZE= src/optimize/optimize.o \
           src/optimize/DeadFunctionRemoval.o \

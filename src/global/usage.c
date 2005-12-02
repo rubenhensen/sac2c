@@ -1,80 +1,5 @@
 /*
- *
- * $Log$
- * Revision 3.86  2005/09/13 14:23:47  sbs
- * changed PRINT_BREAK_SPEC again
- *
- * Revision 3.85  2005/09/13 14:18:43  ktr
- * changed PRINT_BREAK_SPEC
- *
- * Revision 3.84  2005/09/13 13:21:18  sbs
- * wanted to include the stuff on wlsimp
- * would not work properly. Commented it out again :-(
- *
- * Revision 3.83  2005/09/09 23:49:38  sbs
- * added dfc and inl
- *
- * Revision 3.82  2005/08/30 13:28:12  sbs
- * added break after tup
- *
- * Revision 3.81  2005/08/11 13:00:30  sbs
- * adjusted the description of the break specifiers prior the optimizations
- * to the reality
- *
- * Revision 3.80  2005/07/03 17:08:18  ktr
- * changed PH_flatten to PH_simplify
- *
- * Revision 3.79  2005/06/02 15:02:37  sah
- * added -Mlib option and corresponding implementation
- *
- * Revision 3.78  2005/06/01 12:47:45  sah
- * added lots of runtime paths
- *
- * Revision 3.77  2005/05/17 11:36:46  cg
- * Option -maxinl replace by -maxrecinl.
- *
- * Revision 3.76  2005/04/26 18:10:05  cg
- * Usage text for disabling/enabling optimizations is now generated
- * from optimize.mac automatically.
- *
- * Revision 3.75  2005/04/15 13:23:26  ktr
- * added Documentation for -d nolacinline
- *
- * Revision 3.74  2005/04/12 15:16:15  sah
- * cleaned up module system arguments and
- * changed copyright notice to something more
- * reasonable.
- *
- * Revision 3.73  2005/03/10 09:41:09  cg
- * -lac2fun and -fun2lac eliminated.
- * Compiler phase names are now retrieved via function.
- *
- * Revision 3.72  2005/02/11 14:40:30  jhb
- * added usage for treecheck -d INTERNAL DEBUG
- *
- * Revision 3.71  2005/01/29 21:40:38  mwe
- * sigspec compiler switch added
- *
- * Revision 3.70  2004/12/19 23:31:50  sbs
- * cha break speciiers eliminated
- *
- * Revision 3.69  2004/12/16 14:36:40  ktr
- * enhanced break spcifiers.
- *
- * Revision 3.68  2004/11/26 21:23:54  skt
- * final version from SACDevCampDk 2k4
- *
- * Revision 3.67  2004/11/25 14:49:37  skt
- * solved last naming problems
- *
- * Revision 3.66  2004/11/25 13:34:29  skt
- * big compiler brush during SACDevCampDK 2k4
- *
- * Revision 3.65  2004/10/28 16:58:43  khf
- * support for max_newgens and no_fold_fusion added
- *
- * [...]
- *
+ * $Id$
  */
 
 #include <stdio.h>
@@ -262,11 +187,6 @@ USGprintUsage ()
 
     PRINT_BREAK_SPEC (PH_sacopt, "inl", "Stop after function inlining.");
     PRINT_BREAK_SPEC (PH_sacopt, "dfr", "Stop after initial dead function removal.");
-    PRINT_BREAK_SPEC (PH_sacopt, "l2f",
-                      "Stop after converting loops and conditionals into");
-    CONT_BREAK_SPEC ("functions (ssa only).");
-    PRINT_BREAK_SPEC (PH_sacopt, "ssa",
-                      "Stop after initial SSA transformation (ssa only).");
     PRINT_BREAK_SPEC (PH_sacopt, "ae", "Stop after array elimination.");
     PRINT_BREAK_SPEC (PH_sacopt, "dcr", "Stop after dead code removal.");
     PRINT_BREAK_SPEC (PH_sacopt, "lir", "Stop after (with-)loop invariant removal.");
@@ -316,15 +236,31 @@ USGprintUsage ()
 
     PRINT_BREAK_SPEC (PH_sacopt, "cyc", "Stop after fundef optimization cycle.");
     PRINT_BREAK_SPEC (PH_sacopt, "lir2", "Stop after (with-)loop invariant removal.");
-    PRINT_BREAK_SPEC (PH_sacopt, "ussa",
-                      "Stop after undo SSA transformation (ssa only).");
-    PRINT_BREAK_SPEC (PH_sacopt, "f2l",
-                      "Stop after transf. into LaC representation (ssa only).");
-    PRINT_BREAK_SPEC (PH_sacopt, "wlaa", "Stop after with loop array access inference.");
-    PRINT_BREAK_SPEC (PH_sacopt, "ap", "Stop after array padding.");
-    PRINT_BREAK_SPEC (PH_sacopt, "tsi", "Stop after tile size inference.");
-    PRINT_BREAK_SPEC (PH_sacopt, "dfr2", "Stop after final dead function removal.");
+    PRINT_BREAK_SPEC (PH_sacopt, "uesd",
+                      "Stop after reintroducing subtraction and division operators.");
+    PRINT_BREAK_SPEC (PH_sacopt, "dcr2", "Stop after dead code removal.");
+    PRINT_BREAK_SPEC (PH_sacopt, "wlfs", "Stop after with loop fusion.");
+    PRINT_BREAK_SPEC (PH_sacopt, "cse2", "Stop after common subexpression elimination.");
+    PRINT_BREAK_SPEC (PH_sacopt, "dcr3", "Stop after dead code removal.");
+    PRINT_BREAK_SPEC (PH_sacopt, "wlpg2",
+                      "Stop after with-loop default partition generation.");
+    PRINT_BREAK_SPEC (PH_sacopt, "wrci",
+                      "Stop after with-loop reuse candidates inference.");
+    PRINT_BREAK_SPEC (PH_sacopt, "wlidx",
+                      "Stop after annotating offset variables at with-loops.");
+    PRINT_BREAK_SPEC (PH_sacopt, "ivei",
+                      "Stop after index vector elimination inference.");
     PRINT_BREAK_SPEC (PH_sacopt, "ive", "Stop after index vector elimination.");
+    PRINT_BREAK_SPEC (PH_sacopt, "iveo",
+                      "Stop after index vector elimination optimisation.");
+    PRINT_BREAK_SPEC (PH_sacopt, "cvpive",
+                      "Stop after constant and variable propagation after ive.");
+    PRINT_BREAK_SPEC (PH_sacopt, "dcrive", "Stop after dead code removal after ive.");
+    PRINT_BREAK_SPEC (PH_sacopt, "fdi", "Stop after freeing dispatch information.");
+    PRINT_BREAK_SPEC (PH_sacopt, "ussa", "Stop after undo ssa transform.");
+    PRINT_BREAK_SPEC (PH_sacopt, "fun2lac",
+                      "Stop after reintroducing loops and conditionals");
+    PRINT_BREAK_SPEC (PH_sacopt, "lacinl", "Stop after inlining LaC functions");
 
     printf ("\n");
 

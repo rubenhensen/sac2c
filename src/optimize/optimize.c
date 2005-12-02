@@ -325,6 +325,11 @@ OPTdoOptimize (node *arg_node)
     }
 
     /*
+     * apply FDI (free dispatch information)
+     */
+    arg_node = PHrunCompilerSubPhase (SUBPH_fdi, arg_node);
+
+    /*
      * apply USSA (undo ssa transformation)
      */
     arg_node = PHrunCompilerSubPhase (SUBPH_ussa, arg_node);
@@ -376,7 +381,11 @@ OPTdoIntraFunctionalOptimizations (node *arg_node)
         fundef = MODULE_FUNS (arg_node);
         while (fundef != NULL) {
 
-            if (!FUNDEF_ISZOMBIE (fundef)) {
+            /*
+             * Zombies and Type Error functions need not to be optimised
+             * as they have no body anyways...
+             */
+            if ((!FUNDEF_ISZOMBIE (fundef) && !FUNDEF_ISTYPEERROR (fundef))) {
                 optimize_counter_t oc = global.optcounters;
                 global.optcounters = GenerateOptCounters ();
 
@@ -401,16 +410,9 @@ OPTdoIntraFunctionalOptimizations (node *arg_node)
                     /*
                      * Type upgrade
                      */
-#ifndef TUPFIXED
                     if (global.optimize.dotup) {
                         fundef = PHrunOptimizationInCycle (SUBPH_ntccyc, loop, fundef);
                     }
-#else
-                    if (global.optimize.dotup || global.optimize.dortup
-                        || global.optimize.dofsp || global.optimize.dosfd) {
-                        fundef = PHrunOptimizationInCycle (SUBPH_tup, loop, fundef);
-                    }
-#endif
 
                     /*
                      * Reverse type upgrade

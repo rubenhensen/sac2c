@@ -6249,16 +6249,30 @@ BuildApAssign (node *fundef, node *args, node *vardecs, node **new_vardecs)
 }
 
 static node *
-BuildErrorAssign (char *funname, node *args, node *vardecs)
+BuildDispatchErrorAssign (char *funname, node *args, node *vardecs)
 {
     node *assigns;
 
-    DBUG_ENTER ("BuildErrorAssign");
+    DBUG_ENTER ("BuildDispatchErrorAssign");
 
     assigns = TBmakeAssign (TBmakeLet (TCmakeIdsFromVardecs (vardecs),
                                        TBmakePrf (F_dispatch_error,
                                                   TBmakeExprs (TCmakeStrCopy (funname),
                                                                Args2Exprs (args)))),
+                            NULL);
+
+    DBUG_RETURN (assigns);
+}
+
+static node *
+BuildTypeErrorAssign (ntype *bottom, node *vardecs)
+{
+    node *assigns;
+
+    DBUG_ENTER ("BuildTypeErrorAssign");
+
+    assigns = TBmakeAssign (TBmakeLet (TCmakeIdsFromVardecs (vardecs),
+                                       TCmakePrf1 (F_type_error, TBmakeType (bottom))),
                             NULL);
 
     DBUG_RETURN (assigns);
@@ -6436,7 +6450,7 @@ CreateWrapperCode (ntype *type, dft_state *state, int lower, char *funname, node
         }
 
         if (state->cnt_funs <= 0) {
-            assigns = BuildErrorAssign (funname, args, vardecs);
+            assigns = BuildDispatchErrorAssign (funname, args, vardecs);
         } else if (TYisProd (IRES_TYPE (type))) {
             dft_res *res;
             node *fundef;
@@ -6454,7 +6468,11 @@ CreateWrapperCode (ntype *type, dft_state *state, int lower, char *funname, node
             }
 
             if (fundef == NULL) {
-                assigns = BuildErrorAssign (funname, args, vardecs);
+                assigns = BuildDispatchErrorAssign (funname, args, vardecs);
+            } else if (FUNDEF_ISTYPEERROR (fundef)) {
+                ntype *bottom = TUcombineBottomsFromRets (FUNDEF_RETS (fundef));
+
+                assigns = BuildTypeErrorAssign (bottom, vardecs);
             } else {
                 assigns = BuildApAssign (fundef, args, vardecs, new_vardecs);
             }

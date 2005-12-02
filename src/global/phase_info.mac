@@ -309,6 +309,8 @@ SUBPHASE (fun2lac, "fun2lac", "Reintroducing loops and conditionals", F2LdoFun2L
 
 SUBPHASE (lacinl, "lacinl", "Inlining LaC functions", LINLdoLACInlining)
 
+SUBPHASE (fdi, "fdi", "Freeing dispatch information", FDIdoFreeDispatchInformation)
+
 /***********************************************************************/
 
 PHASE (wltrans, "Transforming with-loop representation", PHdummy)

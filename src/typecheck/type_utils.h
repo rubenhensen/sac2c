@@ -27,6 +27,9 @@ extern ntype *TUcomputeImplementationType (ntype *ty);
 extern char *TUtypeSignature2String (node *fundef);
 extern ntype *TUactualArgs2Ntype (node *actual);
 extern bool TUsignatureMatches (node *formal, ntype *actual_prod_type);
+extern bool TUretsContainBottom (node *rets);
+extern bool TUretsAreConstant (node *rets);
+extern ntype *TUcombineBottomsFromRets (node *rets);
 extern ntype *TUcheckUdtAndSetBaseType (usertype udt, int *visited);
 
 #endif /* _SAC_TYPE_UTILS_H_*/
