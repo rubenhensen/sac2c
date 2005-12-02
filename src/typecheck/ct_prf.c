@@ -1,112 +1,6 @@
 /*
  *
- * $Log$
- * Revision 1.33  2005/09/16 15:49:28  sbs
- * errorneous DBUG_ASSERT message fixed.
- *
- * Revision 1.32  2005/09/07 15:35:47  sbs
- * added NTCCTprf_modarrayA
- *
- * Revision 1.31  2005/09/06 11:13:19  sbs
- * changed NTCCTprf_array so that the first type encodes now the outer shape!
- *
- * Revision 1.30  2005/08/29 16:43:03  ktr
- * added support for prfs F_idx_sel, F_shape_sel, F_idx_shape_sel
- *
- * Revision 1.29  2005/08/23 14:25:51  sbs
- * extended _toi_S_ _tof_S_ and _tod_S_ for all types
- * including bool and char!
- *
- * Revision 1.28  2005/08/19 17:27:33  sbs
- * added NTCCTprf_type_conv
- *
- * Revision 1.27  2005/06/14 09:55:10  sbs
- * support for bottom types integrated.
- *
- * Revision 1.26  2005/01/10 17:27:06  cg
- * Converted error messages from Error.h to ctinfo.c
- *
- * Revision 1.25  2004/11/26 23:48:22  sbs
- * some renamings fixed
- *
- * Revision 1.24  2004/11/24 18:14:46  sbs
- * compiles
- *
- * Revision 1.23  2004/08/08 16:05:08  sah
- * fixed some includes.
- *
- * Revision 1.22  2004/03/05 12:07:07  sbs
- * nasty sharing error in NTCCTarray eliminated.
- *
- * Revision 1.21  2004/02/27 11:49:15  sbs
- * NTCPRF_phi deleted
- *
- * Revision 1.20  2004/02/03 11:25:44  sbs
- * NTCPRF_phi added.
- *
- * Revision 1.19  2003/09/10 09:42:35  sbs
- * NTCPRF_drop_SxV improved /
- * NTCPRF_take_SxV added.
- *
- * Revision 1.18  2003/09/09 14:56:11  sbs
- * extended type error reporting added
- *
- * Revision 1.17  2003/05/27 09:33:02  sbs
- * error in NTCPRF_modarrayS eliminated.
- *
- * Revision 1.16  2003/04/14 10:49:49  sbs
- * no double usage of TEprfArg2Obj anymore as this fun uses static buffers 8-)
- *
- * Revision 1.15  2003/04/11 17:56:37  sbs
- * implementation of NTCPRF_reshape extended for akv types.
- *
- * Revision 1.14  2003/04/09 15:35:57  sbs
- * NTCPRF_toiS, NTCPRF_toiA, NTCPRF_tofS, NTCPRF_tofA, NTCPRF_todS, NTCPRF_todA,
- * NTCPRF_ari_op_A, NTCPRF_log_op_A added.
- *
- * Revision 1.13  2003/04/08 12:26:19  sbs
- * ApplyCF extended for non-binary functions;
- * modarray now folds as well 8-)
- *
- * Revision 1.12  2003/04/07 14:34:41  sbs
- * (most) type computations extended for AKV types 8-)
- *
- * Revision 1.11  2003/03/19 10:34:30  sbs
- * NTCPRF_drop_SxV and NTCPRF_cat_VxV added.
- *
- * Revision 1.10  2002/11/04 17:40:11  sbs
- * computation of cast further improved; incompatibilities of
- * user defined types are recognized much better now!
- *
- * Revision 1.9  2002/11/04 13:18:11  sbs
- * cast computation improved:  (:xx[*])expr   now yields
- * most specific subtype of xx[*] that may be derived from the
- * type of expr. E.g., ((:complex[*])expr::double[5,2)) :: complex[5]  now!!
- *
- * Revision 1.8  2002/10/30 12:11:56  sbs
- * cast modified; now casts between defined type and its base definition type are
- * legal as well ;-)
- *
- * Revision 1.7  2002/10/28 14:04:15  sbs
- * NTCPRF_cast added
- *
- * Revision 1.6  2002/10/10 12:17:51  sbs
- * PRF_IF macro definition adjusted to changes made in prf_node_info.mac
- *
- * Revision 1.5  2002/09/25 11:38:26  sbs
- * some minor warnings eliminated
- *
- * Revision 1.4  2002/09/11 23:18:22  dkr
- * prf_node_info.mac modified
- *
- * Revision 1.3  2002/09/04 12:59:46  sbs
- * type checking of arrays changed; now sig deps will be created as well.
- *
- * Revision 1.2  2002/08/07 09:49:58  sbs
- * modulo added
- *
- * Revision 1.1  2002/08/05 16:57:50  sbs
- * Initial revision
+ * $Id$
  *
  */
 
@@ -1129,13 +1023,16 @@ NTCCTprf_ari_op_SxS (te_info *info, ntype *args)
     array1 = TYgetProductMember (args, 0);
     array2 = TYgetProductMember (args, 1);
 
-    TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
-    TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+    TEassureNumS (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
+    TEassureNumS (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
     TEassureSameSimpleType (TEarg2Obj (1), array1, TEprfArg2Obj (TEgetNameStr (info), 2),
                             array2);
-    TEassureScalar (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
-    TEassureScalar (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
     err_msg = TEfetchErrors ();
+    if ((err_msg == NULL) && TEgetPrf (info) == F_div_SxS) {
+        TEassureValNonZero (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+        err_msg = TEfetchErrors ();
+    }
+
     if (err_msg != NULL) {
         res = TYmakeBottomType (err_msg);
     } else {
@@ -1174,12 +1071,16 @@ NTCCTprf_ari_op_SxA (te_info *info, ntype *args)
     array1 = TYgetProductMember (args, 0);
     array2 = TYgetProductMember (args, 1);
 
-    TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
-    TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+    TEassureNumS (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
+    TEassureNumA (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
     TEassureSameSimpleType (TEarg2Obj (1), array1, TEprfArg2Obj (TEgetNameStr (info), 2),
                             array2);
-    TEassureScalar (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
     err_msg = TEfetchErrors ();
+    if ((err_msg == NULL) && TEgetPrf (info) == F_div_SxA) {
+        TEassureValNonZero (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+        err_msg = TEfetchErrors ();
+    }
+
     if (err_msg != NULL) {
         res = TYmakeBottomType (err_msg);
     } else {
@@ -1218,12 +1119,16 @@ NTCCTprf_ari_op_AxS (te_info *info, ntype *args)
     array1 = TYgetProductMember (args, 0);
     array2 = TYgetProductMember (args, 1);
 
-    TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
-    TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+    TEassureNumA (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
+    TEassureNumS (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
     TEassureSameSimpleType (TEarg2Obj (1), array1, TEprfArg2Obj (TEgetNameStr (info), 2),
                             array2);
-    TEassureScalar (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
     err_msg = TEfetchErrors ();
+    if ((err_msg == NULL) && TEgetPrf (info) == F_div_AxS) {
+        TEassureValNonZero (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+        err_msg = TEfetchErrors ();
+    }
+
     if (err_msg != NULL) {
         res = TYmakeBottomType (err_msg);
     } else {
@@ -1262,13 +1167,18 @@ NTCCTprf_ari_op_AxA (te_info *info, ntype *args)
     array1 = TYgetProductMember (args, 0);
     array2 = TYgetProductMember (args, 1);
 
-    TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
-    TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+    TEassureNumA (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
+    TEassureNumA (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
     TEassureSameSimpleType (TEarg2Obj (1), array1, TEprfArg2Obj (TEgetNameStr (info), 2),
                             array2);
     res = TEassureSameShape (TEarg2Obj (1), array1, TEprfArg2Obj (TEgetNameStr (info), 2),
                              array2);
     err_msg = TEfetchErrors ();
+    if ((err_msg == NULL) && TEgetPrf (info) == F_div_AxA) {
+        TEassureValNonZero (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+        err_msg = TEfetchErrors ();
+    }
+
     if (err_msg != NULL) {
         res = TYmakeBottomType (err_msg);
     } else {
@@ -1475,10 +1385,14 @@ NTCCTprf_int_op_SxS (te_info *info, ntype *args)
     TEassureIntS (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
     TEassureIntS (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
     err_msg = TEfetchErrors ();
+    if ((err_msg == NULL) && TEgetPrf (info) == F_mod) {
+        TEassureValNonZero (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+        err_msg = TEfetchErrors ();
+    }
+
     if (err_msg != NULL) {
         res = TYmakeBottomType (err_msg);
     } else {
-
         if (TYisAKV (array1) && TYisAKV (array2)) {
             res = TYmakeAKV (TYmakeSimpleType (T_int), ApplyCF (info, args));
         } else {

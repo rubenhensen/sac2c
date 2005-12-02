@@ -1,94 +1,5 @@
 /*
- * $Log$
- * Revision 1.27  2005/09/07 15:37:10  sbs
- * added TEanotherArg2Obj, TEassureShpPlusDimMatchesDim, and TEassureShpIsPostfixOfShp
- * needed for NTCCTprf_modarrayA
- *
- * Revision 1.26  2005/08/29 16:43:03  ktr
- * added support for prfs F_idx_sel, F_shape_sel, F_idx_shape_sel
- *
- * Revision 1.25  2005/08/16 14:41:33  sbs
- * added assignment in TEgetNumRets just to please gcc
- *
- * Revision 1.24  2005/08/10 19:10:32  sbs
- * changed type of te_info
- * changed ILIBmalloc to PHPmalloc
- * added variants of TEmakeInfo
- *
- * Revision 1.23  2005/07/15 15:57:02  sah
- * introduced namespaces
- *
- * Revision 1.22  2005/06/14 23:40:08  sbs
- * proper error message retrieval installed.
- *
- * Revision 1.21  2005/06/14 17:58:53  sbs
- * used CTIgetErrorMessageVA
- *
- * Revision 1.20  2005/06/14 09:55:10  sbs
- * support for bottom types integrated.
- *
- * Revision 1.19  2005/04/12 10:00:11  sbs
- * tracing did not work properly through fold-WLs
- * this is fixed now...
- *
- * Revision 1.18  2005/01/10 17:27:06  cg
- * Converted error messages from Error.h to ctinfo.c
- *
- * Revision 1.17  2004/11/24 18:14:46  sbs
- * compiles
- *
- * Revision 1.16  2004/11/24 17:42:48  sbs
- * not yet
- *
- * Revision 1.15  2004/11/23 20:53:52  sbs
- * SacDevCamp 04 done
- *
- * Revision 1.14  2004/10/26 10:46:59  sbs
- * type_info now holds the module name as well.
- *
- * Revision 1.13  2003/12/02 09:53:02  sbs
- * TEAssureNonNegativeValues added.
- *
- * Revision 1.12  2003/09/10 09:42:13  sbs
- * TEAssureAbsValFitsShape added.
- *
- * Revision 1.11  2003/09/09 14:56:11  sbs
- * extended type error reporting added
- *
- * Revision 1.10  2003/04/14 10:50:29  sbs
- * the dimensionality of the result of _Reshape_ is determined by its first
- * arguments shape component rather than its dimensionality (which always
- * should be 1 8-).
- *
- * Revision 1.9  2003/04/11 17:59:01  sbs
- * TEAssureProdValMatchesProdShape added.
- *
- * Revision 1.8  2003/04/09 15:35:34  sbs
- * TEAssureNumS and TEAssureNumA added.
- *
- * Revision 1.7  2003/04/07 14:32:39  sbs
- * type assertions extended for AKV types.
- * signature of TEMakeInfo extended
- * TEAssureValMatchesShape and TEGetCFFun added.
- *
- * Revision 1.6  2003/03/19 10:34:10  sbs
- * TEAssureVect added.
- *
- * Revision 1.5  2002/09/04 12:59:46  sbs
- * TEArrayElem2Obj and TEAssureSameScalarType added.
- *
- * Revision 1.4  2002/09/03 14:41:45  sbs
- * DupTree machanism for duplicating condi funs established
- *
- * Revision 1.3  2002/08/07 09:51:07  sbs
- * TEAssureIntS added.
- *
- * Revision 1.2  2002/08/06 08:26:49  sbs
- * some vars initialized to please gcc for the product version.
- *
- * Revision 1.1  2002/08/05 16:58:39  sbs
- * Initial revision
- *
+ * $Id$
  *
  */
 
@@ -117,8 +28,7 @@ struct TE_INFO_UDF {
 };
 
 struct TE_INFO_PRF {
-    const void *cffun;
-    ; /* pointer to the CF function of the prf */
+    prf prf_no; /* pointer to the CF function of the prf */
 };
 
 struct TE_INFO {
@@ -138,7 +48,7 @@ struct TE_INFO {
 #define TI_FUNDEF(n) (n->info.udf.wrapper)
 #define TI_ASSIGN(n) (n->info.udf.assign)
 #define TI_CHN(n) (n->info.udf.chn)
-#define TI_CFFUN(n) (n->info.prf.cffun)
+#define TI_PRF(n) (n->info.prf.prf_no)
 
 #define TI_KIND_STR(n) (kind_str[TI_KIND (n)])
 
@@ -308,14 +218,14 @@ TEmakeInfoUdf (int linenum, te_kind_t kind, const char *mod_str, const char *nam
 }
 
 te_info *
-TEmakeInfoPrf (int linenum, te_kind_t kind, const char *name_str, const void *cffun)
+TEmakeInfoPrf (int linenum, te_kind_t kind, const char *name_str, prf prf_no)
 {
     te_info *res;
 
     DBUG_ENTER ("TEmakeInfo");
 
     res = TEmakeInfo (linenum, kind, name_str);
-    TI_CFFUN (res) = cffun;
+    TI_PRF (res) = prf_no;
 
     DBUG_RETURN (res);
 }
@@ -378,11 +288,18 @@ TEgetAssign (te_info *info)
     DBUG_RETURN (TI_ASSIGN (info));
 }
 
+prf
+TEgetPrf (te_info *info)
+{
+    DBUG_ENTER ("TEgetPrf");
+    DBUG_RETURN (TI_PRF (info));
+}
+
 const void *
 TEgetCFFun (te_info *info)
 {
     DBUG_ENTER ("TEgetCFFun");
-    DBUG_RETURN (TI_CFFUN (info));
+    DBUG_RETURN (global.ntc_cffuntab[TI_PRF (info)]);
 }
 
 te_info *
@@ -1068,6 +985,33 @@ TEassureValMatchesShape (char *obj1, ntype *type1, char *obj2, ntype *type2)
                                obj1, obj2, TYtype2String (type1, FALSE, 0),
                                TYtype2String (type2, FALSE, 0));
             }
+        }
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn void TEassureValNonZero( char *obj1, ntype *type1)
+ *
+ *   @brief  makes shure, that if type1 is AKV, the value is neither
+ *           zero itself nor an array that contains a zero.
+ *           It is assumed, that the element type is a built-in numerical one.
+ *
+ ******************************************************************************/
+
+void
+TEassureValNonZero (char *obj1, ntype *type1)
+{
+    DBUG_ENTER ("TEassureValNonZero");
+
+    if (TYgetConstr (type1) == TC_akv) {
+        if (COisZero (TYgetValue (type1), FALSE)) {
+            TEhandleError (global.linenum,
+                           "%s must not contain a zero;"
+                           " type found: %s",
+                           obj1, TYtype2String (type1, FALSE, 0));
         }
     }
 
