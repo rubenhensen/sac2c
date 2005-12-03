@@ -1579,9 +1579,9 @@ PRTannotate (node *arg_node, info *arg_info)
     strcpy (strbuffer1, strbuffer2);
   }
 
-  fprintf (global.outfile, "%s;", strbuffer1);
-
 #endif
+
+    fprintf (global.outfile, "%s;", strbuffer1);
 
     DBUG_RETURN (arg_node);
 }

@@ -260,10 +260,10 @@ main (int argc, char *argv[])
     syntax_tree = PHrunCompilerSubPhase (SUBPH_swr, syntax_tree);
 
     PHASE_DONE_EPILOG;
-#if 0
-  if( profileflag != 0) {
-    syntax_tree = PFdoProfileFunCalls( syntax_tree);  /* profile_tab */
-  }
+#if 1
+    if (global.doprofile) {
+        syntax_tree = PFdoProfileFunCalls (syntax_tree); /* profile_tab */
+    }
 #endif
     PHASE_EPILOG;
 

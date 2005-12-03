@@ -1,40 +1,6 @@
 /*
  *
- * $Log$
- * Revision 1.13  2005/01/11 13:12:54  cg
- * Converted output from Error.h to ctinfo.c
- *
- * Revision 1.12  2004/11/25 11:57:33  skt
- * kicked ST_generic
- *
- * Revision 1.11  2004/11/25 01:01:07  skt
- * code brushing during SACDevCampDK 2k4
- *
- * Revision 1.10  2004/07/17 14:52:03  sah
- * switch to INFO structure
- * PHASE I
- *
- * Revision 1.9  2001/05/18 09:43:28  cg
- * MALLOC replaced by Malloc.
- *
- * Revision 1.8  2001/05/17 11:49:40  dkr
- * FREE eliminated
- *
- * Revision 1.7  2001/03/22 19:33:54  dkr
- * include of tree.h eliminated
- *
- * Revision 1.6  2001/03/15 20:39:48  dkr
- * Fundef2ProfileString: '&' for reference objects is no longer printed
- * by Type2String()
- *
- * Revision 1.5  2001/03/15 15:48:47  dkr
- * signature of Type2String modified
- *
- * Revision 1.2  2001/03/09 11:12:12  sbs
- * some typos corrected
- *
- * Revision 1.1  2001/03/09 11:08:07  sbs
- * Initial revision
+ * $Id$
  *
  */
 
@@ -88,6 +54,7 @@
 #include "ctinfo.h"
 #include "globals.h"
 #include "convert.h"
+#include "new_types.h"
 
 #include <string.h>
 
@@ -272,8 +239,10 @@ node *
 PFfundef (node *arg_node, info *arg_info)
 {
     char *str_buff;
+    ntype *wrappertype;
 
     DBUG_ENTER ("PFfundef");
+
     if (FUNDEF_FUNNO (arg_node) == 0) { /* this function is not yet counted! */
         str_buff = Fundef2ProfileString (arg_node);
         DBUG_PRINT ("PFFUN", ("annotating \"%s\"", str_buff));
@@ -290,6 +259,16 @@ PFfundef (node *arg_node, info *arg_info)
         }
         if (FUNDEF_BODY (arg_node) != NULL) { /* library funs do have no body! */
             FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+        } else if (FUNDEF_ISWRAPPERFUN (arg_node)) {
+            wrappertype = FUNDEF_WRAPPERTYPE (arg_node);
+            if (TYisProd (wrappertype)) {
+                DBUG_ASSERT (FUNDEF_IMPL (arg_node) != NULL,
+                             "product wrapper type without IMPL found!");
+                FUNDEF_IMPL (arg_node) = TRAVdo (FUNDEF_IMPL (arg_node), arg_info);
+            } else {
+                FUNDEF_WRAPPERTYPE (arg_node)
+                  = TYmapFunctionInstances (wrappertype, PFfundef, arg_info);
+            }
         }
     }
 
