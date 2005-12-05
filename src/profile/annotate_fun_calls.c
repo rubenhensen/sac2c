@@ -157,20 +157,28 @@ Fundef2ProfileString (node *fundef)
     str_spc = MAX (str_spc, 0);
     arg = FUNDEF_ARGS (fundef);
     while (arg != NULL) {
-        tmp_str = CVtype2String (ARG_TYPE (arg), 0, TRUE);
-        if (ARG_ISREFERENCE (arg) && !ARG_ISREADONLY (arg)) {
-            tmp_str = strcat (tmp_str, " &");
-        } else if (ARG_ISREFERENCE (arg) && ARG_ISREADONLY (arg)) {
-            tmp_str = strcat (tmp_str, " (&)");
-        } else {
-            tmp_str = strcat (tmp_str, " ");
-        }
-        if (ARG_NAME (arg) != NULL) {
-            tmp_str = strcat (tmp_str, ARG_NAME (arg));
-        }
+        tmp_str = TYtype2String (ARG_NTYPE (arg), FALSE, 0);
         str_buff = strncat (str_buff, tmp_str, str_spc);
         str_spc -= strlen (tmp_str);
         str_spc = MAX (str_spc, 0);
+        if (ARG_ISREFERENCE (arg) && !ARG_ISREADONLY (arg)) {
+            str_buff = strncat (str_buff, " &", str_spc);
+            str_spc -= 2;
+            str_spc = MAX (str_spc, 0);
+        } else if (ARG_ISREFERENCE (arg) && ARG_ISREADONLY (arg)) {
+            str_buff = strncat (str_buff, " (&)", str_spc);
+            str_spc -= 4;
+            str_spc = MAX (str_spc, 0);
+        } else {
+            str_buff = strncat (str_buff, " ", str_spc);
+            str_spc--;
+            str_spc = MAX (str_spc, 0);
+        }
+        if (ARG_NAME (arg) != NULL) {
+            str_buff = strncat (str_buff, ARG_NAME (arg), str_spc);
+            str_spc - +strlen (ARG_NAME (arg));
+            str_spc = MAX (str_spc, 0);
+        }
         tmp_str = ILIBfree (tmp_str);
         arg = ARG_NEXT (arg);
         if (arg != NULL) {

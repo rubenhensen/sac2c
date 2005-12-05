@@ -1506,8 +1506,6 @@ DUPannotate (node *arg_node, info *arg_info)
     new_node = TBmakeAnnotate (ANNOTATE_TAG (arg_node), ANNOTATE_FUNNUMBER (arg_node),
                                ANNOTATE_FUNAPNUMBER (arg_node));
 
-    DBUG_ASSERT ((FALSE), "DUPannotate not implemented!! :-(");
-
     DBUG_RETURN (new_node);
 }
 
