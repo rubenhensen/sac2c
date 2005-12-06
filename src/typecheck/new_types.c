@@ -3332,6 +3332,7 @@ TYcmpTypes (ntype *t1, ntype *t2)
     char *tmp_str, *tmp_str2;
 #endif
 
+    int cnt;
     ct_res res = TY_dis;
 
     DBUG_ENTER ("TYcmpTypes");
@@ -3343,6 +3344,40 @@ TYcmpTypes (ntype *t1, ntype *t2)
                   tmp_str2 = ILIBfree (tmp_str2););
 
     switch (NTYPE_CON (t1)) {
+    case TC_prod:
+        if ((NTYPE_CON (t2) == TC_prod) && (NTYPE_ARITY (t1) == NTYPE_ARITY (t2))) {
+            res = TY_eq;
+            for (cnt = 0; cnt < NTYPE_ARITY (t1); cnt++) {
+                ct_res local = TYcmpTypes (NTYPE_SON (t1, cnt), NTYPE_SON (t2, cnt));
+                switch (res) {
+                case TY_eq:
+                    res = local;
+                    break;
+                case TY_lt:
+                    if ((local == TY_gt) || (local == TY_hcs)) {
+                        res = TY_hcs;
+                    } else if (local == TY_dis) {
+                        res = TY_dis;
+                    }
+                    break;
+                case TY_gt:
+                    if ((local == TY_lt) || (local == TY_hcs)) {
+                        res = TY_hcs;
+                    } else if (local == TY_dis) {
+                        res = TY_dis;
+                    }
+                    break;
+                case TY_hcs:
+                    if (local == TY_dis) {
+                        res = TY_dis;
+                    }
+                    break;
+                case TY_dis:
+                    break;
+                }
+            }
+        }
+        break;
     case TC_bottom:
         if (NTYPE_CON (t2) == TC_bottom) {
             res = TY_eq;

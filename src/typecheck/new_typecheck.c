@@ -276,6 +276,11 @@ NTCdoNewTypeCheckOneFunction (node *arg_node)
         arg_node = TagAsUnchecked (arg_node, NULL);
 
         if (FUNDEF_RETS (arg_node) != NULL) {
+            /**
+             * collect the old return types for later comparison
+             */
+            old_rets = TUmakeProductTypeFromRets (FUNDEF_RETS (arg_node));
+
             FUNDEF_RETS (arg_node) = TUrettypes2alphaMax (FUNDEF_RETS (arg_node));
         }
 
@@ -292,6 +297,17 @@ NTCdoNewTypeCheckOneFunction (node *arg_node)
          */
         arg_node = NT2OTdoTransformOneFunction (arg_node);
 
+        /**
+         * check for return type upgrades:
+         */
+        if (FUNDEF_RETS (arg_node) != NULL) {
+            new_rets = TUmakeProductTypeFromRets (FUNDEF_RETS (arg_node));
+            FUNDEF_WASUPGRADED (arg_node) = !TYeqTypes (old_rets, new_rets);
+            old_rets = TYfreeType (old_rets);
+            new_rets = TYfreeType (new_rets);
+        } else {
+            FUNDEF_WASUPGRADED (arg_node) == FALSE;
+        }
         /*
          * Restore FUNDEF_NEXT and global.maxspec
          */
