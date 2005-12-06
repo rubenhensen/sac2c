@@ -246,6 +246,8 @@ TagAsUnchecked (node *fundef, info *info)
 node *
 NTCdoNewTypeCheckOneFunction (node *arg_node)
 {
+    ntype *old_rets, *new_rets;
+
     DBUG_ENTER ("NTCdoNewTypeCheckOneFunction");
 
     DBUG_ASSERT (NODE_TYPE (arg_node) == N_fundef,
@@ -306,7 +308,7 @@ NTCdoNewTypeCheckOneFunction (node *arg_node)
             old_rets = TYfreeType (old_rets);
             new_rets = TYfreeType (new_rets);
         } else {
-            FUNDEF_WASUPGRADED (arg_node) == FALSE;
+            FUNDEF_WASUPGRADED (arg_node) = FALSE;
         }
         /*
          * Restore FUNDEF_NEXT and global.maxspec
