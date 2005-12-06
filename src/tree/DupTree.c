@@ -751,8 +751,6 @@ DUPmodule (node *arg_node, info *arg_info)
                       DUPTRAV (MODULE_FUNS (arg_node)),
                       DUPTRAV (MODULE_FUNDECS (arg_node)));
 
-    MODULE_CLASSTYPE (new_node) = TYcopyType (MODULE_CLASSTYPE (arg_node));
-
     CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);

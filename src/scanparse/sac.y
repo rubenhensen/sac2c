@@ -59,6 +59,7 @@ static node *String2Array( char *str);
 static ntype *Exprs2NType( ntype *basetype, node *exprs);
 static node *ConstructMop( node *, node *, node *);
 static node *CheckWlcompConf( node *ap, node *exprs);
+static node *SetClassType( node *module, ntype *type);
 
 static int prf_arity[] = {
 #define PRF_IF( a, b, c, d, e, f, g, h, i) f
@@ -1683,7 +1684,7 @@ class: CLASS { file_kind = F_classimp; } ID SEMIC
        { $$ = $8;
          MODULE_NAMESPACE( $$) = NSgetNamespace( $3);
          MODULE_FILETYPE( $$) = file_kind;
-         MODULE_CLASSTYPE( $$) = $6;
+         $$ = SetClassType( $$, $6);
        }
      ;
 
@@ -2317,5 +2318,24 @@ static ntype *Exprs2NType( ntype *basetype, node *exprs)
   exprs = FREEdoFreeTree( exprs);
 
   DBUG_RETURN( result);
+}
+
+static
+node *SetClassType( node *module, ntype *type)
+{
+  node *tdef;
+
+  DBUG_ENTER("SetClassType");
+
+  tdef = TBmakeTypedef( 
+           ILIBstringCopy( NSgetModule( MODULE_NAMESPACE( module))),
+           NSdupNamespace( MODULE_NAMESPACE( module)),
+           type,
+           MODULE_TYPES( module));
+
+  TYPEDEF_ISUNIQUE( tdef) = TRUE;
+  MODULE_TYPES( module) = tdef;
+
+  DBUG_RETURN( module);
 }
       

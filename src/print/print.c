@@ -802,8 +802,6 @@ PRTspids (node *arg_node, info *arg_info)
 node *
 PRTmodule (node *arg_node, info *arg_info)
 {
-    char *type_str;
-
     DBUG_ENTER ("PRTmodule");
 
     DBUG_PRINT ("PRINT", ("%s " F_PTR, NODE_TEXT (arg_node), arg_node));
@@ -914,11 +912,6 @@ PRTmodule (node *arg_node, info *arg_info)
                      "/*\n"
                      " *  Class %s :\n",
                      NSgetName (MODULE_NAMESPACE (arg_node)));
-            if (MODULE_CLASSTYPE (arg_node) != NULL) {
-                type_str = TYtype2String (MODULE_CLASSTYPE (arg_node), 0, TRUE);
-                fprintf (global.outfile, " *  classtype %s;\n", type_str);
-                type_str = ILIBfree (type_str);
-            }
             fprintf (global.outfile, " */\n");
             break;
         case F_prog:
@@ -1029,6 +1022,8 @@ PRTtypedef (node *arg_node, info *arg_info)
     if (TYPEDEF_ICM (arg_node) == NULL) {
         if (TYPEDEF_ISALIAS (arg_node)) {
             fprintf (global.outfile, "typealias ");
+        } else if (TYPEDEF_ISUNIQUE (arg_node)) {
+            fprintf (global.outfile, "classtype ");
         } else {
             fprintf (global.outfile, "typedef ");
         }
