@@ -588,6 +588,57 @@ OPTdoIntraFunctionalOptimizations (node *arg_node)
         CTIwarn ("Maximal number of optimization cycles reached");
     }
 
+    /*
+     * to ensure that typeerrors are propagated properly,
+     * we continue with a smaller stabilisation cycle
+     * until the type information gets stable
+     */
+    while ((AnyOptCounterNotZero (global.optcounters))
+           && (!PHbreakAfterCurrentPass (loop))) {
+        loop++;
+        CTInote (" ");
+        CTInote ("****** Cycle pass (stabilisation): %i", loop);
+
+        fundef = MODULE_FUNS (arg_node);
+        while (fundef != NULL) {
+            /*
+             * Zombies and Type Error functions need not to be optimised
+             * as they have no body anyways...
+             */
+            if ((!FUNDEF_ISZOMBIE (fundef) && !FUNDEF_ISTYPEERROR (fundef))) {
+                optimize_counter_t oc = global.optcounters;
+                global.optcounters = GenerateOptCounters ();
+                /*
+                 * Print function name
+                 */
+                PrintFundefInformation (fundef);
+
+                /*
+                 * Type upgrade
+                 */
+                if (global.optimize.dotup) {
+                    fundef = PHrunOptimizationInCycle (SUBPH_ntccyc, loop, fundef);
+                }
+
+                /*
+                 * try to dispatch further function calls
+                 */
+                fundef = PHrunOptimizationInCycle (SUBPH_dfccyc, loop, fundef);
+
+                FUNDEF_WASOPTIMIZED (fundef) = AnyOptCounterNotZero (global.optcounters);
+                DBUG_EXECUTE ("OPT", PrintStatistics (););
+                global.optcounters = AddOptCounters (global.optcounters, oc);
+            }
+
+            fundef = FUNDEF_NEXT (fundef);
+        }
+
+        /*
+         * Lift Optimise and Type Upgrade Flags
+         */
+        MODULE_FUNS (arg_node) = LOFdoLiftOptFlags (MODULE_FUNS (arg_node));
+    }
+
     global.optcounters = AddOptCounters (global.optcounters, oldoptcounters);
 
     DBUG_RETURN (arg_node);

@@ -398,9 +398,13 @@ USGprintUsage ()
       "     conditions. They are controlled by the following options:\n"
       "\n");
 
-    printf ("    -maxoptcyc <n>  Repeat optimization cycle <n> times.\n"
-            "                      (default: %d)\n\n",
-            global.max_optcycles);
+    printf (
+      "    -maxoptcyc <n>  Repeat optimization cycle max <n> times. After <n> cycles\n"
+      "                    all optimisations except for type upgrade and function "
+      "dispatch\n"
+      "                    are disabled.\n"
+      "                      (default: %d)\n\n",
+      global.max_optcycles);
 
     printf ("    -maxoptvar <n>  Reserve <n> variables for optimization.\n"
             "                      (default: %d)\n\n",
