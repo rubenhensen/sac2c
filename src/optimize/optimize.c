@@ -599,6 +599,9 @@ OPTdoIntraFunctionalOptimizations (node *arg_node)
         CTInote (" ");
         CTInote ("****** Cycle pass (stabilisation): %i", loop);
 
+        oldoptcounters = AddOptCounters (global.optcounters, oldoptcounters);
+        global.optcounters = GenerateOptCounters ();
+
         fundef = MODULE_FUNS (arg_node);
         while (fundef != NULL) {
             /*
