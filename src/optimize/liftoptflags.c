@@ -1,17 +1,5 @@
 /*
- * $Log$
- * Revision 1.4  2005/09/09 09:00:59  ktr
- * FUNDEF_NEXT is now traversed as well
- *
- * Revision 1.3  2005/09/04 12:52:11  ktr
- * re-engineered the optimization cycle
- *
- * Revision 1.2  2005/09/02 17:45:56  sah
- * switched to map_lac_funs
- *
- * Revision 1.1  2005/09/02 14:25:16  ktr
- * Initial revision
- *
+ * $Id$
  */
 
 #include "tree_basic.h"
@@ -21,7 +9,7 @@
 #include "traverse.h"
 #include "free.h"
 #include "internal_lib.h"
-#include "map_lac_funs.h"
+#include "map_call_graph.h"
 
 #include "liftoptflags.h"
 
@@ -91,6 +79,7 @@ InferOptFlag (node *arg_node, info *arg_info)
     DBUG_ENTER ("InferOptFlag");
 
     INFO_OPTFLAG (arg_info) |= FUNDEF_WASOPTIMIZED (arg_node);
+    INFO_OPTFLAG (arg_info) |= FUNDEF_WASUPGRADED (arg_node);
 
     DBUG_RETURN (arg_node);
 }
@@ -119,10 +108,14 @@ LOFfundef (node *arg_node, info *arg_info)
         arg_info = MakeInfo ();
 
         INFO_OPTFLAG (arg_info) = FUNDEF_WASOPTIMIZED (arg_node);
-        arg_info = MLFdoMapLacFuns (arg_node, InferOptFlag, NULL, arg_info);
+        arg_info = MCGdoMapCallGraph (arg_node, InferOptFlag, NULL,
+                                      MCGcontLacFunAndOneLevel, arg_info);
 
         if (INFO_OPTFLAG (arg_info)) {
-            arg_info = MLFdoMapLacFuns (arg_node, SetOptFlag, NULL, arg_info);
+            DBUG_PRINT ("LOF", ("setting opt flag on fundef %s", CTIitemName (arg_node)));
+
+            arg_info
+              = MCGdoMapCallGraph (arg_node, SetOptFlag, NULL, MCGcontLacFun, arg_info);
             SetOptFlag (arg_node, arg_info);
         }
         arg_info = FreeInfo (arg_info);

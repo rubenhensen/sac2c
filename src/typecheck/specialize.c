@@ -1,127 +1,5 @@
 /*
- *
- * $Log$
- * Revision 1.36  2005/09/08 11:03:55  sbs
- * TUrebuildWrapperType utilized
- *
- * Revision 1.35  2005/09/03 14:39:00  sah
- * on specialisation, the namespace information is propagated properly
- * into LaC funs now. Uses new MLF traversal.,
- *
- * Revision 1.34  2005/09/01 12:17:26  sah
- * modified function body fetching slightly
- *
- * Revision 1.33  2005/08/30 11:43:46  sah
- * deserialisation no longer relies on the signature being
- * intact. the symbolname is used instead noiw
- *
- * Revision 1.32  2005/08/19 17:23:16  sbs
- * changed from TUrettypes2alpha to TUrettypes2alphaFix, etc
- * changed the relataion of lacfuns (varupdate) if there exists a non-alpha type
- * eliminated seemingly superfluous TUrettypes2alphaAUD for lacfuns as well....
- *
- * Revision 1.31  2005/08/09 09:48:59  sah
- * added a comment
- *
- * Revision 1.30  2005/08/09 09:42:09  sah
- * AVIS_DECLTYPE is updated now as well
- *
- * Revision 1.29  2005/07/27 14:59:39  sah
- * a wrapper may have ISLOCAL set, but be from
- * another namespace. changed checks accordingly
- *
- * Revision 1.28  2005/07/26 12:44:24  sah
- * made specialisation work with new MS
- *
- * Revision 1.27  2005/07/22 13:11:39  sah
- * interface changes
- *
- * Revision 1.26  2005/07/15 15:57:02  sah
- * introduced namespaces
- *
- * Revision 1.25  2005/06/06 07:02:52  sbs
- * UpdateVarSignature now is aware of user types as well
- *
- * Revision 1.24  2005/05/12 08:44:00  sbs
- * Now, vars are indtroduced for COND funs as well.
- * See SPEChandleLaCFuns for details
- *
- * Revision 1.23  2005/03/04 21:21:42  cg
- * FUNDEF_USED counter etc removed.
- * LaC functions are now always duplicated along with the
- * corresponding application.
- *
- * Revision 1.22  2004/12/09 12:33:10  sbs
- * when specializing LaCfuns we have to call TUrettypes2alphaAUD as well rather than
- * TUrettypes2AUD
- *
- * Revision 1.21  2004/12/09 00:37:35  sbs
- * UpdateVarSignature debugged
- *
- * Revision 1.20  2004/12/07 16:49:30  sbs
- * FixSignature now handles unknown[*] args of LaCfuns properly
- *
- * Revision 1.19  2004/12/07 14:36:54  sbs
- * UpdateFixSignature now expects new rather than old types on the N_arg's
- *
- * Revision 1.18  2004/12/01 18:43:28  sah
- * renamed a function
- *
- * Revision 1.17  2004/11/27 02:15:19  sbs
- * *** empty log message ***
- *
- * Revision 1.16  2004/11/27 02:14:16  sbs
- * *** empty log message ***
- *
- * Revision 1.15  2004/11/25 17:52:55  sbs
- * compiles
- *
- * Revision 1.14  2004/11/23 21:56:54  sbs
- * SacDevCamp04 done
- *
- * Revision 1.13  2004/10/28 16:11:21  sah
- * added support for used functions
- * and deserialisation
- *
- * Revision 1.12  2004/10/26 17:18:50  sbs
- * added rudementary support for spec_mode:
- * in case of SS_aud, specialization will be suppressed.
- *
- * Revision 1.11  2004/09/30 15:12:35  sbs
- * eliminated FunTypes from ALL but wrapper functions
- * (memory concerns!)
- * Now, the function signatures of individual instances are
- * stored in the AVIS_TYPE and FUNDEF_RET_TYPE only!!!!!
- *
- * Revision 1.10  2004/03/05 12:09:20  sbs
- * UpdateVarSignature added. Loops are the only functions where the arguments
- * have to be type vars!!!
- *
- * Revision 1.8  2003/09/11 15:26:44  sbs
- * function specialization now bound by max_overload!
- *
- * Revision 1.7  2003/04/07 14:30:31  sbs
- * specialization oracle now does not at all specialize for AKVs!
- *
- * Revision 1.6  2003/04/01 16:37:37  sbs
- * some doxygen added.
- *
- * Revision 1.5  2002/10/18 14:28:45  sbs
- * specialization of external functions suppressed 8-))
- *
- * Revision 1.4  2002/09/04 12:59:46  sbs
- * SpecializationOracle changed so that part deriveables are not specialized anymore 8-((
- *
- * Revision 1.3  2002/09/03 15:02:53  sbs
- * bug in SPECHandleLacFun eliminated
- *
- * Revision 1.2  2002/09/03 14:41:45  sbs
- * DupTree machanism for duplicating condi funs established
- *
- * Revision 1.1  2002/08/05 16:58:37  sbs
- * Initial revision
- *
- *
+ * $Id$
  */
 
 #include "specialize.h"
@@ -140,7 +18,7 @@
 #include "ssi.h"
 #include "ctinfo.h"
 #include "namespaces.h"
-#include "map_lac_funs.h"
+#include "map_call_graph.h"
 
 /**
  *
@@ -384,7 +262,7 @@ checkAndRebuildWrapperType (ntype *type)
 }
 
 /** <!-- ****************************************************************** -->
- * @brief Helper functions for MLF traversal. Resets some flags of LaC-funs
+ * @brief Helper functions for MCG traversal. Resets some flags of LaC-funs
  *        as they become local during specialisation.
  *
  * @param arg_node N_fundef node of a LaC-fun
@@ -405,7 +283,7 @@ ResetLaCFlags (node *arg_node, info *arg_info)
 }
 
 /** <!-- ****************************************************************** -->
- * @brief Helper function for MLF traversal. Sets the namespace of all LaC-funs
+ * @brief Helper function for MCG traversal. Sets the namespace of all LaC-funs
  *        to the given namespace.
  *
  * @param arg_node N_fundef node of LaC-fun
@@ -480,7 +358,7 @@ DoSpecialize (node *wrapper, node *fundef, ntype *args)
     /*
      * reset flags of contained lac funs as well
      */
-    MLFdoMapLacFuns (res, ResetLaCFlags, NULL, NULL);
+    MCGdoMapCallGraph (res, ResetLaCFlags, NULL, MCGcontLacFun, NULL);
 
     /*
      * if it is a used function, we have to make up a new
@@ -521,7 +399,8 @@ DoSpecialize (node *wrapper, node *fundef, ntype *args)
     /*
      * propagate namespace information into lac funs
      */
-    MLFdoMapLacFuns (res, (travfun_p)SetLaCNamespace, NULL, (info *)FUNDEF_NS (res));
+    MCGdoMapCallGraph (res, (travfun_p)SetLaCNamespace, NULL, MCGcontLacFun,
+                       (info *)FUNDEF_NS (res));
 
     /*
      * store the fundef in the specchain

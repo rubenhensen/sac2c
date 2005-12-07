@@ -114,7 +114,7 @@
           <node name="Fundef" />
         </travuser>
       </traversal>
-      <traversal id="MLF" name="Map Lac Functions" default="sons" include="map_lac_funs.h" >
+      <traversal id="MCG" name="Map Call Graph" default="sons" include="map_call_graph.h" >
         <travuser>
           <node name="Fundef" />
           <node name="Ap" />

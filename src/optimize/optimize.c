@@ -376,8 +376,6 @@ OPTdoIntraFunctionalOptimizations (node *arg_node)
         oldoptcounters = AddOptCounters (global.optcounters, oldoptcounters);
         global.optcounters = GenerateOptCounters ();
 
-        MODULE_FUNS (arg_node) = LOFdoLiftOptFlags (MODULE_FUNS (arg_node));
-
         fundef = MODULE_FUNS (arg_node);
         while (fundef != NULL) {
 
@@ -577,6 +575,12 @@ OPTdoIntraFunctionalOptimizations (node *arg_node)
         if ((global.optimize.dosisi) && (global.optimize.dodcr)) {
             arg_node = PHrunOptimizationInCycle (SUBPH_sisi, loop, arg_node);
         }
+
+        /*
+         * Lift Optimise and Type Upgrade Flags
+         */
+        MODULE_FUNS (arg_node) = LOFdoLiftOptFlags (MODULE_FUNS (arg_node));
+
     } while ((AnyOptCounterNotZero (global.optcounters)) && (loop < global.max_optcycles)
              && (!PHbreakAfterCurrentPass (loop)));
 

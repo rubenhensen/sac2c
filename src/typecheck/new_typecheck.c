@@ -1,7 +1,5 @@
 /*
- *
  * $Id$
- *
  */
 
 #include <stdio.h>
@@ -42,7 +40,7 @@
 #include "deserialize.h"
 #include "namespaces.h"
 #include "resolvesymboltypes.h"
-#include "map_lac_funs.h"
+#include "map_call_graph.h"
 
 /*
  * OPEN PROBLEMS:
@@ -274,7 +272,7 @@ NTCdoNewTypeCheckOneFunction (node *arg_node)
         /*
          * Apply typechecker
          */
-        MLFdoMapLacFuns (arg_node, TagAsUnchecked, NULL, NULL);
+        MCGdoMapCallGraph (arg_node, TagAsUnchecked, NULL, MCGcontLacFun, NULL);
         arg_node = TagAsUnchecked (arg_node, NULL);
 
         if (FUNDEF_RETS (arg_node) != NULL) {
@@ -310,6 +308,15 @@ NTCdoNewTypeCheckOneFunction (node *arg_node)
         } else {
             FUNDEF_WASUPGRADED (arg_node) = FALSE;
         }
+
+        /**
+         * increase global optimisation counter
+         * if function was upgraded
+         */
+        if (FUNDEF_WASUPGRADED (arg_node)) {
+            global.optcounters.tup_upgrades++;
+        }
+
         /*
          * Restore FUNDEF_NEXT and global.maxspec
          */
