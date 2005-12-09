@@ -75,7 +75,7 @@ version="1.0">
       <xsl:value-of select="'Functions needed by de-serialization code.'"/>
     </xsl:with-param>
     <xsl:with-param name="xslt">
-      <xsl:value-of select="'$Id: ast2serialize_helper_c.xsl 14294 2005-10-10 12:40:03Z sah $'"/>
+      <xsl:value-of select="'$Id$'"/>
     </xsl:with-param>
   </xsl:call-template>
   <xsl:call-template name="travfun-group-begin">
@@ -240,6 +240,13 @@ version="1.0">
 -->
 <xsl:template match="@ctype[. = &quot;char&quot;]" mode="gen-fill-fun">
   <xsl:value-of select="'(char) va_arg( args, int)'" />
+</xsl:template>
+
+<!-- special treatment for unsigned char types beeing passed through ...
+     because they are promoted to unsigned int by the c compiler
+-->
+<xsl:template match="@ctype[. = &quot;unsigned char&quot;]" mode="gen-fill-fun">
+  <xsl:value-of select="'(unsigned char) va_arg( args, unsigned int)'" />
 </xsl:template>
 
 <!-- special treatment for float types beeing passed through ...

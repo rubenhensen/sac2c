@@ -155,7 +155,7 @@
                   COzipCvTEMPLATE (fun, fname, double, Double, bool)                     \
                     COzipCvTEMPLATE (fun, fname, long double, LongDouble, bool)          \
                       COzipCvTEMPLATE (fun, fname, bool, Bool, bool)                     \
-                        COzipCvTEMPLATE (fun, fname, char, Char, bool)                   \
+                        COzipCvTEMPLATE (fun, fname, unsigned char, Char, bool)          \
                           COzipCvDUMMYTEMP (Dummy, fname)
 
 #define MAP_NUMxNUM_BOOL(fun, fname)                                                     \
@@ -204,7 +204,7 @@
                   COzipCvUNARYTEMPLATE (fun, fname, double, Double, target_t)            \
                     COzipCvUNARYTEMPLATE (fun, fname, long double, LongDouble, target_t) \
                       COzipCvUNARYTEMPLATE (fun, fname, bool, Bool, target_t)            \
-                        COzipCvUNARYTEMPLATE (fun, fname, char, Char, target_t)          \
+                        COzipCvUNARYTEMPLATE (fun, fname, unsigned char, Char, target_t) \
                           COzipCvDUMMYTEMP (Dummy, fname)
 
 #define MAP_NUM_NUM(fun, fname)                                                          \

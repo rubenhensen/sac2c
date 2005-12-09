@@ -1,43 +1,6 @@
 /*
  *
- * $Log$
- * Revision 1.12  2005/09/13 17:07:48  sah
- * fixed the annoying >preserved zero in string literal<
- * warning bug.
- *
- * Revision 1.11  2005/09/09 17:52:00  sah
- * floats and doubles are serialized properly now.
- *
- * Revision 1.10  2005/07/21 18:50:32  sah
- * made TCstat type externally visible
- *
- * Revision 1.9  2005/07/15 15:57:02  sah
- * introduced namespaces
- *
- * Revision 1.8  2005/06/27 18:15:50  sah
- * fixed bug #90
- *
- * Revision 1.7  2005/06/18 13:14:42  sah
- * fixed incompatiblity
- *
- * Revision 1.6  2005/02/16 22:29:13  sah
- * changed link handling
- *
- * Revision 1.5  2005/02/15 21:07:40  sah
- * module system fixes
- *
- * Revision 1.4  2004/12/19 18:09:33  sah
- * post dk fixes
- *
- * Revision 1.3  2004/12/07 20:36:58  ktr
- * eliminated CONSTVEC which is superseded by ntypes.
- *
- * Revision 1.2  2004/11/26 21:18:50  sah
- * pour Bodo *<8-)
- *
- * Revision 1.1  2004/11/23 22:40:58  sah
- * Initial revision
- *
+ * $Id$
  *
  *
  */
@@ -268,11 +231,11 @@ SATserializeDouble (info *info, double attr, node *parent)
  ***************************************************************************/
 
 void
-SATserializeChar (info *info, char attr, node *parent)
+SATserializeChar (info *info, unsigned char attr, node *parent)
 {
     DBUG_ENTER ("SATserializeChar");
 
-    fprintf (INFO_SER_FILE (info), "%d", (unsigned char)attr);
+    fprintf (INFO_SER_FILE (info), "%u", attr);
 
     DBUG_VOID_RETURN;
 }

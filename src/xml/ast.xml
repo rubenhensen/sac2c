@@ -12,7 +12,7 @@
     <type name="Bool" ctype="bool" init="FALSE" copy="literal" />
     <type name="Float" ctype="float" init="0.0" copy="literal" />
     <type name="Double" ctype="double" init="0.0" copy="literal" />
-    <type name="Char" ctype="char" init="'\0'" copy="literal" />
+    <type name="Char" ctype="unsigned char" init="'\0'" copy="literal" />
     <type name="OldType" ctype="types*" init="NULL"
     copy="function" persist="no" />
     <type name="Node" ctype="node*" init="NULL" copy="function" />
