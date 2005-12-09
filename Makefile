@@ -88,7 +88,8 @@ TYPECHECK= src/typecheck/gen_pseudo_fun.o \
            src/typecheck/dispatchfuncalls.o \
            src/typecheck/insert_type_conv.o \
            src/typecheck/update_wrapper_type.o \
-           src/typecheck/free_dispatch_information.o
+           src/typecheck/free_dispatch_information.o \
+           src/typecheck/pre_typecheck.o
 
 OPTIMIZE= src/optimize/optimize.o \
           src/optimize/DeadFunctionRemoval.o \
@@ -131,7 +132,7 @@ MODULES= src/modules/symboltable.o \
          src/modules/importsymbols.o src/modules/gatherdependencies.o \
          src/modules/namespaces.o src/modules/addspecialfuns.o
 
-OBJECTS= src/objects/objinit.o src/objects/objects.o \
+OBJECTS= src/objects/objinit.o src/objects/resolve_reference_args.o \
          src/objects/uniquecheck.o src/objects/objanalysis.o
 
 REFCOUNT= src/refcount/allocation.o src/refcount/rcopt.o \

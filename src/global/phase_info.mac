@@ -88,9 +88,7 @@ SUBPHASE (dep, "dep", "Resolving dependencies", DEPdoResolveDependencies)
 
 /***********************************************************************/
 
-PHASE (objinit, "Generating generic types and functions", PHdummy)
-
-SUBPHASE (objinit, "objinit", "Generating generic types and functions", PHdummy)
+PHASE (objinit, "Generating generic types and functions", OIdoObjectInit)
 
 /***********************************************************************/
 
@@ -107,7 +105,7 @@ SUBPHASE (flat, "flat", "Flattening nested expressions", FLATdoFlatten)
 
 /***********************************************************************/
 
-PHASE (pretypecheck, "Converting to static single assignment form", PHdummy)
+PHASE (pretypecheck, "Converting to static single assignment form", PTCdoPreTypecheck)
 
 SUBPHASE (rst, "rst", "Processing user defined types", RSTdoResolveSymbolTypes)
 
@@ -117,6 +115,8 @@ SUBPHASE (instc, "itc", "Converting type decls in type conversions",
           INSTCdoInsertTypeConv)
 
 SUBPHASE (crtwrp, "cwr", "Creating wrapper functions", CRTWRPdoCreateWrappers)
+
+SUBPHASE (rra, "rra", "Resolving reference arguments", RRAdoResolveReferenceArgs)
 
 SUBPHASE (lac2fun, "l2f", "Eliminating loops and conditionals", L2FdoLac2Fun)
 

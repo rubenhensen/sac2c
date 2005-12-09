@@ -98,6 +98,10 @@ RSTmodule (node *arg_node, info *arg_info)
     /*
      * resolve symbol types
      */
+    if (MODULE_OBJS (arg_node) != NULL) {
+        MODULE_OBJS (arg_node) = TRAVdo (MODULE_OBJS (arg_node), arg_info);
+    }
+
     if (MODULE_FUNDECS (arg_node) != NULL) {
         MODULE_FUNDECS (arg_node) = TRAVdo (MODULE_FUNDECS (arg_node), arg_info);
     }
@@ -213,6 +217,18 @@ RSTtypedef (node *arg_node, info *arg_info)
 }
 
 node *
+RSTobjdef (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("RSTobjdef");
+
+    OBJDEF_TYPE (arg_node) = RSTntype (OBJDEF_TYPE (arg_node), arg_info);
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
 RSTfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("RSTfundef");
@@ -315,6 +331,16 @@ RSTcast (node *arg_node, info *arg_info)
     }
 
     arg_node = TRAVcont (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+RSTtype (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("RSTtype");
+
+    TYPE_TYPE (arg_node) = RSTntype (TYPE_TYPE (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

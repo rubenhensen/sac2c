@@ -429,6 +429,7 @@
       <traversal id="USS" name="Use Symbols" default="sons" include="usesymbols.h" >
         <travuser>
 	  <node name="Typedef" />
+	  <node name="Objdef" />
 	  <node name="Fold" />
 	  <node name="Avis" />
 	  <node name="Array" />
@@ -455,8 +456,8 @@
       if="true"
       breakspec="oi">
     </phase>
-    <phase id="typecheck" name="Running type inference system"
-      startfun="NTCdoNewTypeCheck" include="new_typecheck.h"
+    <phase id="pretypecheck" name="Converting to static single assignment form"
+      startfun="PTCdoPreTypecheck" include="pre_typecheck.h"
       if="true"
       breakspec="tc">
       <traversal id="INSVD" name="Insert Vardecs" default="sons" include="insert_vardec.h" >
@@ -495,6 +496,33 @@
           <node name="Fold" />
         </travuser>  
       </traversal>
+      <traversal id="RST" name="Resolve Symbol Types" default="sons" include="resolvesymboltypes.h" >
+        <travuser>
+          <node name="Module" />
+          <node name="Fundef" />
+          <node name="Arg" />
+          <node name="Ret" />
+          <node name="Avis" />
+          <node name="Array" />
+          <node name="Typedef" />
+          <node name="Objdef" />
+          <node name="Type" />
+          <node name="Cast" />
+        </travuser>
+      </traversal>
+      <traversal id="RRA" name="Resolve Reference Args" default="sons" include="resolve_reference_args.h" >
+        <travuser>
+	  <node name="Fundef" />
+	  <node name="Return" />
+	  <node name="Let" />
+	  <node name="Ap" />
+	</travuser>
+      </traversal>
+    </phase>
+    <phase id="typecheck" name="Running type inference system"
+      startfun="NTCdoNewTypeCheck" include="new_typecheck.h"
+      if="true"
+      breakspec="tc">
       <traversal id="NTC" name="New Type Inference" default="sons" include="new_typecheck.h" >
         <travuser> 
           <node name="Module" />
@@ -554,18 +582,6 @@
           <node name="Genarray" />
           <node name="Fold" />
           <node name="Let" />
-        </travuser>
-      </traversal>
-      <traversal id="RST" name="Resolve Symbol Types" default="sons" include="resolvesymboltypes.h" >
-        <travuser>
-          <node name="Module" />
-          <node name="Fundef" />
-          <node name="Arg" />
-          <node name="Ret" />
-          <node name="Avis" />
-          <node name="Array" />
-          <node name="Typedef" />
-          <node name="Cast" />
         </travuser>
       </traversal>
       <traversal id="NT2OT" name="Convert from new to old types and do some cleanup" default="sons" include="new2old.h" >
@@ -702,6 +718,7 @@
       <traversal id="DFR" name="Dead Function Removal" default="sons" include="DeadFunctionRemoval.h" >
         <travuser>
 	  <node name="Module" />
+	  <node name="Objdef" />
 	  <node name="Fundef" />
 	  <node name="Ap" />
 	  <node name="Fold" />

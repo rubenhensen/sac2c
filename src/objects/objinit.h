@@ -16,7 +16,4 @@
  *****************************************************************************/
 extern node *OIdoObjectInit (node *syntax_tree);
 
-extern node *OImodule (node *arg_node, info *arg_info);
-extern node *OIobjdef (node *arg_node, info *arg_info);
-
 #endif /* _SAC_OBJINIT_H_  */

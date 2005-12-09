@@ -206,9 +206,7 @@ main (int argc, char *argv[])
      */
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
-#if 0
-  syntax_tree = OIdoObjInit( syntax_tree);  /* objinit_tab */
-#endif
+    syntax_tree = OIdoObjectInit (syntax_tree); /* objinit_tab */
     PHASE_DONE_EPILOG;
     PHASE_EPILOG;
 
@@ -232,26 +230,12 @@ main (int argc, char *argv[])
     /*
      * creating SSA form
      */
-    PHASE_PROLOG;
-    NOTE_COMPILER_PHASE;
-
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_rst, syntax_tree);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_insvd, syntax_tree);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_instc, syntax_tree);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_crtwrp, syntax_tree);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_lac2fun, syntax_tree);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_ssa, syntax_tree);
-
-    PHASE_DONE_EPILOG;
-    PHASE_EPILOG;
-
-    if (global.break_after == PH_pretypecheck)
-        goto BREAK;
-    global.compiler_phase++;
+    syntax_tree = PHrunCompilerPhase (PH_pretypecheck, syntax_tree);
 
     /*
      * typecheck
      */
+    global.compiler_phase++;
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
 
@@ -295,7 +279,9 @@ main (int argc, char *argv[])
      */
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
-    syntax_tree = OBJdoHandleObjects (syntax_tree); /* obj_tab */
+#if 0
+  syntax_tree = OBJdoHandleObjects( syntax_tree);  /* obj_tab */
+#endif
     PHASE_DONE_EPILOG;
     PHASE_EPILOG;
 

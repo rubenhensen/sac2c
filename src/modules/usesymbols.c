@@ -1,7 +1,5 @@
 /*
- *
  * $Id$
- *
  */
 
 #include "usesymbols.h"
@@ -152,6 +150,26 @@ USStypedef (node *arg_node, info *arg_info)
 }
 
 node *
+USSobjdef (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("USSobjdef");
+
+    if (OBJDEF_TYPE (arg_node) != NULL) {
+        OBJDEF_TYPE (arg_node) = USSntype (OBJDEF_TYPE (arg_node), arg_info);
+    }
+
+    if (OBJDEF_EXPR (arg_node) != NULL) {
+        OBJDEF_EXPR (arg_node) = TRAVdo (OBJDEF_EXPR (arg_node), arg_info);
+    }
+
+    if (OBJDEF_NEXT (arg_node) != NULL) {
+        OBJDEF_NEXT (arg_node) = TRAVdo (OBJDEF_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
 USSavis (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("USSavis");
@@ -269,6 +287,10 @@ USSmodule (node *arg_node, info *arg_info)
 
     if (MODULE_TYPES (arg_node) != NULL) {
         MODULE_TYPES (arg_node) = TRAVdo (MODULE_TYPES (arg_node), arg_info);
+    }
+
+    if (MODULE_OBJS (arg_node) != NULL) {
+        MODULE_OBJS (arg_node) = TRAVdo (MODULE_OBJS (arg_node), arg_info);
     }
 
     if (MODULE_FUNDECS (arg_node) != NULL) {

@@ -460,7 +460,7 @@ objdefs: objdef objdefs
          }
        ;
 
-objdef: OBJDEF ntype ID LET expr SEMIC 
+objdef: OBJDEF ntype ID LET expr_ap SEMIC 
         { $$ = TBmakeObjdef( $2, NULL, $3, $5, NULL);
 
           DBUG_PRINT( "PARSE",

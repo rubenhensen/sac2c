@@ -1,53 +1,5 @@
 /*
- *
- * $Log$
- * Revision 1.20  2005/08/30 18:16:27  sah
- * DFR is now disabled after export when compiling
- * a module
- *
- * Revision 1.19  2005/07/27 14:57:31  sah
- * added better DBUG messages
- *
- * Revision 1.18  2005/07/27 13:42:49  sah
- * functions contained in a view are never
- * exported or provided now
- *
- * Revision 1.17  2005/07/21 14:21:55  sah
- * cond funs are not visible anymore
- *
- * Revision 1.16  2005/07/19 11:52:43  sah
- * introduced ILIBstringCompare
- *
- * Revision 1.15  2005/07/15 15:57:02  sah
- * introduced namespaces
- *
- * Revision 1.14  2005/02/15 21:07:40  sah
- * module system fixes
- *
- * Revision 1.13  2005/01/11 12:32:52  cg
- * Converted output from Error.h to ctinfo.c
- *
- * Revision 1.12  2004/12/19 17:54:26  sah
- * bugfix
- *
- * Revision 1.11  2004/11/29 13:34:36  sah
- * dfr is now switchable
- *
- * Revision 1.10  2004/11/26 23:41:58  jhb
- * cchanged type from void to node of EXPdoExport
- *
- * Revision 1.9  2004/11/26 23:29:39  jhb
- * DoExport changed to EXPdoExport
- *
- * Revision 1.8  2004/11/25 21:14:38  sah
- * COMPILES
- *
- *
- * Revision 1.1  2004/10/17 14:51:07  sah
- * Initial revision
- *
- *
- *
+ * $Id$
  */
 
 #include "dbug.h"
@@ -209,12 +161,13 @@ EXPexport (node *arg_node, info *arg_info)
         EXPORT_NEXT (arg_node) = TRAVdo (EXPORT_NEXT (arg_node), arg_info);
     }
 
-    if (INFO_EXP_FILETYPE (arg_info) != F_prog) {
+    if (INFO_EXP_FILETYPE (arg_info) == F_modimp) {
         if (CheckExport (EXPORT_ALL (arg_node), EXPORT_SYMBOL (arg_node), arg_info)) {
             INFO_EXP_EXPORTED (arg_info) = TRUE;
         }
     } else {
-        CTIwarnLine (NODE_LINE (arg_node), "Export is only allowed in modules");
+        CTIwarnLine (NODE_LINE (arg_node),
+                     "The export directive is only allowed in modules. Ignoring...");
 
         arg_node = FREEdoFreeNode (arg_node);
     }

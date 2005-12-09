@@ -15,13 +15,13 @@
  * INFO structure
  */
 struct INFO {
-    int flag;
+    bool flag;
 };
 
 /*
  * INFO macros
  */
-#define INFO_SPINE(n) (n->flag)
+#define INFO_SPINE(n) ((n)->flag)
 
 /*
  * INFO functions
@@ -35,7 +35,7 @@ MakeInfo ()
 
     result = ILIBmalloc (sizeof (info));
 
-    INFO_SPINE (result) = 0;
+    INFO_SPINE (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -50,111 +50,9 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
-/******************************************************************************
- *
- * Function:
- *   node *DeadFunctionRemoval( node *arg_node, info *arg_info)
- *
- * Description:
- *
- *
- ******************************************************************************/
-
-node *
-DFRdoDeadFunctionRemoval (node *arg_node)
-{
-    info *arg_info;
-
-    DBUG_ENTER ("DFRdoDeadFunctionRemoval");
-
-#ifdef SHOW_MALLOC
-    DBUG_PRINT ("OPTMEM",
-                ("mem currently allocated: %d bytes", global.current_allocated_mem));
-#endif
-
-    arg_info = MakeInfo ();
-
-    TRAVpush (TR_dfr);
-
-    arg_node = TRAVdo (arg_node, arg_info);
-
-    TRAVpop ();
-
-    arg_info = FreeInfo (arg_info);
-
-#ifdef SHOW_MALLOC
-    DBUG_PRINT ("OPTMEM",
-                ("mem currently allocated: %d bytes", global.current_allocated_mem));
-#endif
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * Function:
- *   node *DFRmodule(node *arg_node,info *arg_info)
- *
- * Description:
- *   Prevents DFR in modules
- *   in programs the DFR starts in fundef main.
- *
- ******************************************************************************/
-
-node *
-DFRmodule (node *arg_node, info *arg_info)
-{
-    node *fun;
-
-    DBUG_ENTER ("DFRmodul");
-
-    /*
-     * Step 1: Clear dfr flag in fundec and fundef chain.
-     */
-    if (MODULE_FUNDECS (arg_node) != NULL) {
-        fun = MODULE_FUNDECS (arg_node);
-        while (fun != NULL) {
-            FUNDEF_ISNEEDED (fun) = FALSE;
-            fun = FUNDEF_NEXT (fun);
-        }
-    }
-
-    if (MODULE_FUNS (arg_node) != NULL) {
-        fun = MODULE_FUNS (arg_node);
-        while (fun != NULL) {
-            FUNDEF_ISNEEDED (fun) = FALSE;
-            fun = FUNDEF_NEXT (fun);
-        }
-    }
-
-    /*
-     * Step 2: Search for needed fundecs and fundefs in fundef bodies.
-     */
-
-    if (MODULE_FUNS (arg_node) != NULL) {
-        INFO_SPINE (arg_info) = TRUE;
-        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
-    }
-
-    /*
-     * Step 3: Remove all zombies from fundec and fundef chain.
-     *
-     *  Done implicitly when leaving N_module node.
-     */
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * Function:
- *   node *DFRfundef( node *arg_node, info *arg_info)
- *
- * Description:
- *   Traverses instruction- and function-chain in this order.
- *
- ******************************************************************************/
-
+/*
+ * helper functions
+ */
 static node *
 tagFundefAsNeeded (node *fundef, info *info)
 {
@@ -250,6 +148,150 @@ tagWrapperAsNeeded (node *wrapper, info *info)
 
     DBUG_RETURN (wrapper);
 }
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *DeadFunctionRemoval( node *arg_node, info *arg_info)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+DFRdoDeadFunctionRemoval (node *arg_node)
+{
+    info *arg_info;
+
+    DBUG_ENTER ("DFRdoDeadFunctionRemoval");
+
+#ifdef SHOW_MALLOC
+    DBUG_PRINT ("OPTMEM",
+                ("mem currently allocated: %d bytes", global.current_allocated_mem));
+#endif
+
+    arg_info = MakeInfo ();
+
+    TRAVpush (TR_dfr);
+
+    arg_node = TRAVdo (arg_node, arg_info);
+
+    TRAVpop ();
+
+    arg_info = FreeInfo (arg_info);
+
+#ifdef SHOW_MALLOC
+    DBUG_PRINT ("OPTMEM",
+                ("mem currently allocated: %d bytes", global.current_allocated_mem));
+#endif
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *DFRmodule(node *arg_node,info *arg_info)
+ *
+ * Description:
+ *   Prevents DFR in modules
+ *   in programs the DFR starts in fundef main.
+ *
+ ******************************************************************************/
+
+node *
+DFRmodule (node *arg_node, info *arg_info)
+{
+    node *fun;
+
+    DBUG_ENTER ("DFRmodul");
+
+    /*
+     * Step 1: Clear dfr flag in fundec and fundef chain.
+     */
+    if (MODULE_FUNDECS (arg_node) != NULL) {
+        fun = MODULE_FUNDECS (arg_node);
+        while (fun != NULL) {
+            FUNDEF_ISNEEDED (fun) = FALSE;
+            fun = FUNDEF_NEXT (fun);
+        }
+    }
+
+    if (MODULE_FUNS (arg_node) != NULL) {
+        fun = MODULE_FUNS (arg_node);
+        while (fun != NULL) {
+            FUNDEF_ISNEEDED (fun) = FALSE;
+            fun = FUNDEF_NEXT (fun);
+        }
+    }
+
+    /*
+     * Step 2a: Search for needed fundecs and fundefs in objdef init exprs.
+     */
+    if (MODULE_OBJS (arg_node) != NULL) {
+        INFO_SPINE (arg_info) = TRUE;
+        MODULE_OBJS (arg_node) = TRAVdo (MODULE_OBJS (arg_node), arg_info);
+    }
+
+    /*
+     * Step 2b: Search for needed fundecs and fundefs in fundef bodies.
+     */
+
+    if (MODULE_FUNS (arg_node) != NULL) {
+        INFO_SPINE (arg_info) = TRUE;
+        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
+    }
+
+    /*
+     * Step 3: Remove all zombies from fundec and fundef chain.
+     *
+     *  Done implicitly when leaving N_module node.
+     */
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn node *DFRobjdef( node *arg_node, info *arg_info)
+ *
+ * @brief tags all fundefs which are used as Objdef init expression as needed.
+ *
+ * @param arg_node N_objdef node
+ * @param arg_info info structure
+ *
+ * @return unmodified N_objdef node
+ ******************************************************************************/
+
+node *
+DFRobjdef (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("DFRobjdef");
+
+    if (OBJDEF_NEXT (arg_node) != NULL) {
+        OBJDEF_NEXT (arg_node) = TRAVdo (OBJDEF_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_ASSERT ((NODE_TYPE (OBJDEF_EXPR (arg_node)) == N_ap),
+                 "found non N_ap node as objdef init expr.");
+
+    DBUG_PRINT ("DFR", ("Dead Function Removal for Objdef %s", CTIitemName (arg_node)));
+
+    AP_FUNDEF (OBJDEF_EXPR (arg_node))
+      = tagFundefAsNeeded (AP_FUNDEF (OBJDEF_EXPR (arg_node)), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *DFRfundef( node *arg_node, info *arg_info)
+ *
+ * Description:
+ *   Traverses instruction- and function-chain in this order.
+ *
+ ******************************************************************************/
 
 node *
 DFRfundef (node *arg_node, info *arg_info)

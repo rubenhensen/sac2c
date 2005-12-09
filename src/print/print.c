@@ -1610,19 +1610,19 @@ PRTarg (node *arg_node, info *arg_info)
     } else {
         type_str = CVtype2String (ARG_TYPE (arg_node), 0, TRUE);
     }
-    fprintf (global.outfile, " %s", type_str);
+    fprintf (global.outfile, " %s ", type_str);
     type_str = ILIBfree (type_str);
 
     if (ARG_ISREFERENCE (arg_node)) {
         if (ARG_ISREADONLY (arg_node)) {
-            fprintf (global.outfile, " (&)");
+            fprintf (global.outfile, "(&)");
         } else {
-            fprintf (global.outfile, " &");
+            fprintf (global.outfile, "&");
         }
     }
 
     if ((!INFO_PRINT_OMIT_FORMAL_PARAMS (arg_info)) && (ARG_NAME (arg_node) != NULL)) {
-        fprintf (global.outfile, " %s", ARG_NAME (arg_node));
+        fprintf (global.outfile, "%s", ARG_NAME (arg_node));
     }
 
     TRAVdo (ARG_AVIS (arg_node), arg_info);

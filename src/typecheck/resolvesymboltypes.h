@@ -14,12 +14,14 @@
 
 extern node *RSTmodule (node *arg_node, info *arg_info);
 extern node *RSTtypedef (node *arg_node, info *arg_info);
+extern node *RSTobjdef (node *arg_node, info *arg_info);
 extern node *RSTfundef (node *arg_node, info *arg_info);
 extern node *RSTarg (node *arg_node, info *arg_info);
 extern node *RSTret (node *arg_node, info *arg_info);
 extern node *RSTavis (node *arg_node, info *arg_info);
 extern node *RSTarray (node *arg_node, info *arg_info);
 extern node *RSTcast (node *arg_node, info *arg_info);
+extern node *RSTtype (node *arg_node, info *arg_info);
 
 extern node *RSTdoResolveSymbolTypes (node *syntax_tree);
 #endif

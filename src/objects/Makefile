@@ -1,54 +1,5 @@
 #
-#
-# $Log$
-# Revision 3.13  2004/11/26 16:17:15  cg
-# INCS removed.
-# compilation of restore.c added.
-#
-# Revision 3.12  2004/11/21 11:22:03  sah
-# removed some old ast infos
-#
-# Revision 3.11  2004/11/19 21:05:12  sah
-# added objanalysis
-#
-# Revision 3.10  2004/01/29 13:06:05  skt
-# some adaptions because of moving ssa-files
-# from src/tree to src/flatten
-#
-# Revision 3.9  2003/06/11 21:52:51  ktr
-# included ../constants
-#
-# Revision 3.8  2002/06/06 19:56:03  dkr
-# target clean modified
-#
-# Revision 3.7  2001/11/15 15:36:48  sacbase
-# CLOCK_SKEW_ELIMINATION and PROJECT_ROOT added.
-#
-# Revision 3.6  2001/11/14 12:59:48  sbs
-# deps line replaced by inclusion of Makefile.Deps
-# ( .xxx.d mechanism)
-# global setup included via Makefile.Config
-#
-# Revision 3.5  2001/11/13 20:32:46  dkr
-# make deps done
-#
-# Revision 3.4  2001/04/26 17:07:49  dkr
-# rmvoidfun.o removed
-#
-# Revision 3.3  2001/01/17 10:13:06  dkr
-# make deps done
-#
-# Revision 3.2  2000/12/06 20:09:06  dkr
-# make deps done
-#
-# Revision 3.1  2000/11/20 18:01:58  sacbase
-# new release made
-#
-# ... [eliminated] ...
-#
-# Revision 1.1  1995/10/16  12:07:18  cg
-# Initial revision
-#
+# $Id$
 #
 
 
@@ -66,7 +17,8 @@ include $(PROJECT_ROOT)/Makefile.Config
 # local settings:
 #
 
-OBJS := objinit.o objects.o uniquecheck.o objanalysis.o restore.o
+OBJS := objinit.o resolve_reference_args.o \
+        uniquecheck.o objanalysis.o restore.o
 
 all: $(OBJS)
 

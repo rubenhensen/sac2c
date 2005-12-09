@@ -23,7 +23,8 @@ OBJS:=gen_pseudo_fun.o new_typecheck.o new_types.o user_types.o \
       ct_with.o type_errors.o specialize.o new2old.o create_wrapper_code.o \
       type_statistics.o type_utils.o resolvesymboltypes.o \
       dispatchfuncalls.o split_wrappers.o insert_type_conv.o \
-      update_wrapper_type.o free_dispatch_information.o
+      update_wrapper_type.o free_dispatch_information.o \
+      pre_typecheck.o
 
 all: $(OBJS)
 

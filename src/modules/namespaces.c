@@ -193,6 +193,42 @@ AddNamespaceToPool (const char *module, view_t *view)
     DBUG_RETURN (new);
 }
 
+static view_t *
+dupView (const view_t *src)
+{
+    view_t *result;
+
+    DBUG_ENTER ("dupView");
+
+    if (src == NULL) {
+        result = NULL;
+    } else {
+        result = ILIBmalloc (sizeof (view_t));
+
+        result->id = src->id;
+        result->name = ILIBstringCopy (src->name);
+        result->next = dupView (src->next);
+    }
+
+    DBUG_RETURN (result);
+}
+
+static view_t *
+makeView (const char *name, const view_t *views)
+{
+    view_t *result;
+
+    DBUG_ENTER ("makeView");
+
+    result = ILIBmalloc (sizeof (view_t));
+
+    result->name = ILIBstringCopy (name);
+    result->id = nextviewid++;
+    result->next = dupView (views);
+
+    DBUG_RETURN (result);
+}
+
 namespace_t *
 NSgetNamespace (const char *module)
 {
@@ -229,7 +265,21 @@ NSgetRootNamespace ()
         result = NSgetNamespace ("_MAIN");
     }
 
-    DBUG_RETURN (result);
+    DBUG_RETURN (NSdupNamespace (result));
+}
+
+namespace_t *
+NSgetInitNamespace ()
+{
+    static namespace_t *initns;
+
+    DBUG_ENTER ("NSgetInitNamespace");
+
+    if (initns == NULL) {
+        initns = AddNamespaceToPool (global.modulename, makeView ("_INIT", NULL));
+    }
+
+    DBUG_RETURN (NSdupNamespace (initns));
 }
 
 namespace_t *
@@ -292,26 +342,6 @@ NSgetModule (const namespace_t *ns)
     DBUG_RETURN (ns->module);
 }
 
-view_t *
-dupView (view_t *src)
-{
-    view_t *result;
-
-    DBUG_ENTER ("dupView");
-
-    if (src == NULL) {
-        result = NULL;
-    } else {
-        result = ILIBmalloc (sizeof (view_t));
-
-        result->id = src->id;
-        result->name = ILIBstringCopy (src->name);
-        result->next = dupView (src->next);
-    }
-
-    DBUG_RETURN (result);
-}
-
 namespace_t *
 NSbuildView (const namespace_t *orig)
 {
@@ -320,11 +350,7 @@ NSbuildView (const namespace_t *orig)
 
     DBUG_ENTER ("NSbuildView");
 
-    view = ILIBmalloc (sizeof (view_t));
-
-    view->name = ILIBstringCopy (orig->name);
-    view->id = nextviewid++;
-    view->next = dupView (orig->view);
+    view = makeView (orig->name, orig->view);
 
     result = AddNamespaceToPool (global.modulename, view);
 
