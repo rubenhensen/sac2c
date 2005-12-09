@@ -135,7 +135,7 @@ CreateTypeConversions (node *typedefs, node *funs)
 }
 
 /** <!-- ****************************************************************** -->
- * @fn node *BuildInitFun( const char *name, namespace_t *ns,
+ * @fn node *BuildInitFun( char *name, namespace_t *ns,
  *                         ntype *objtype, node *expr)
  *
  * @brief builds an init function. Consumes ALL its arguments!
@@ -148,7 +148,7 @@ CreateTypeConversions (node *typedefs, node *funs)
  * @return N_fundef node
  ******************************************************************************/
 static node *
-BuildInitFun (const char *name, namespace_t *ns, ntype *objtype, node *expr)
+BuildInitFun (char *name, namespace_t *ns, ntype *objtype, node *expr)
 {
     node *result;
     node *assign;
