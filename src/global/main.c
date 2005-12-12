@@ -29,7 +29,6 @@
 #include "rcphase.h"
 #include "scnprs.h"
 #include "objinit.h"
-#include "objects.h"
 #include "uniquecheck.h"
 #include "wltransform.h"
 #include "concurrent.h"
@@ -261,7 +260,6 @@ main (int argc, char *argv[])
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
 
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_oan, syntax_tree);
     syntax_tree = PHrunCompilerSubPhase (SUBPH_exp, syntax_tree);
     syntax_tree = PHrunCompilerSubPhase (SUBPH_asf, syntax_tree);
     syntax_tree = PHrunCompilerSubPhase (SUBPH_ppi, syntax_tree);

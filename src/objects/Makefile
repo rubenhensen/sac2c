@@ -18,7 +18,9 @@ include $(PROJECT_ROOT)/Makefile.Config
 #
 
 OBJS := objinit.o resolve_reference_args.o \
-        uniquecheck.o objanalysis.o restore.o
+        uniquecheck.o objanalysis.o restore_reference_args.o \
+        extend_wrapper_types.o resolve_objects.o \
+        restore_objects.o
 
 all: $(OBJS)
 

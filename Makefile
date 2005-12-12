@@ -133,7 +133,11 @@ MODULES= src/modules/symboltable.o \
          src/modules/namespaces.o src/modules/addspecialfuns.o
 
 OBJECTS= src/objects/objinit.o src/objects/resolve_reference_args.o \
-         src/objects/uniquecheck.o src/objects/objanalysis.o
+         src/objects/uniquecheck.o src/objects/objanalysis.o \
+         src/objects/extend_wrapper_types.o \
+         src/objects/resolve_objects.o \
+         src/objects/restore_reference_args.o \
+         src/objects/restore_objects.o
 
 REFCOUNT= src/refcount/allocation.o src/refcount/rcopt.o \
           src/refcount/rcphase.o src/refcount/filterrc.o \

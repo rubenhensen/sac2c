@@ -116,7 +116,13 @@ SUBPHASE (instc, "itc", "Converting type decls in type conversions",
 
 SUBPHASE (crtwrp, "cwr", "Creating wrapper functions", CRTWRPdoCreateWrappers)
 
+SUBPHASE (oan, "oan", "Running global object analysis", OANdoObjectAnalysis)
+
+SUBPHASE (rso, "rso", "Resolving global objects", RSOdoResolveObjects)
+
 SUBPHASE (rra, "rra", "Resolving reference arguments", RRAdoResolveReferenceArgs)
+
+SUBPHASE (ewt, "ewt", "Extending dispatch information", EWTdoExtendWrapperTypes)
 
 SUBPHASE (lac2fun, "l2f", "Eliminating loops and conditionals", L2FdoLac2Fun)
 
@@ -138,8 +144,6 @@ SUBPHASE (swr, "swr", "Splitting Wrappers", SWRdoSplitWrappers)
 /***********************************************************************/
 
 PHASE (export, "Processing exports", PHdummy)
-
-SUBPHASE (oan, "oan", "Running global object analysis", OANdoObjectAnalysis)
 
 SUBPHASE (exp, "exp", "Exporting symbols", EXPdoExport)
 
@@ -425,6 +429,10 @@ SUBPHASE (fun2lac2, "fun2lac2", "Reintroducing loops and conditionals", F2LdoFun
 SUBPHASE (lacinl2, "lacinl2", "Inlining LaC functions", LINLdoLACInlining)
 
 SUBPHASE (rec, "rec", "Removing external code", RECdoRemoveExternalCode)
+
+SUBPHASE (rera, "rera", "Restoring reference arguments", RERAdoRestoreReferenceArguments)
+
+SUBPHASE (reso, "reso", "Restoring global objects", RESOdoRestoreObjects)
 
 SUBPHASE (sls, "sls", "Applying linksign pragma", SLSdoSetLinksign)
 

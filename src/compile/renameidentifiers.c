@@ -1,58 +1,4 @@
-/*
- *
- * $Log$
- * Revision 1.16  2005/08/09 09:43:18  sah
- * AVIS_DECLTYPE is now used to rename fundefs
- *
- * Revision 1.15  2005/07/26 12:43:52  sah
- * : in ns-names are replaced by _CL now
- *
- * Revision 1.14  2005/07/15 15:57:02  sah
- * introduced namespaces
- *
- * Revision 1.13  2005/07/03 17:16:37  ktr
- * Initialized a variable.
- *
- * Revision 1.12  2005/05/31 18:11:51  sah
- * fixed a typoe
- *
- * Revision 1.11  2005/02/02 18:14:17  mwe
- * naming for functions with akv-types changed
- *
- * Revision 1.10  2004/12/11 14:47:26  ktr
- * some bugfixes
- *
- * Revision 1.9  2004/12/08 18:01:17  ktr
- * removed ARRAY_TYPE/ARRAY_NTYPE
- *
- * Revision 1.8  2004/11/29 17:34:54  sah
- * fixed a mini bug
- *
- * Revision 1.7  2004/11/29 17:29:49  sah
- * fixed a traversal bug
- *
- * Revision 1.6  2004/11/29 15:03:57  sah
- * made it more obust wrt missing old types.
- *
- * Revision 1.5  2004/11/27 02:31:00  jhb
- * maybe fixed the multiple FreeInfo definition
- *
- * Revision 1.4  2004/11/27 02:15:54  sah
- * ...
- *
- * Revision 1.3  2004/11/27 01:41:11  ktr
- * RID
- *
- * Revision 1.2  2004/11/27 01:40:13  ktr
- * typo
- *
- * Revision 1.1  2004/11/27 01:19:20  sah
- * Initial revision
- *
- *
- * [...]
- *
- */
+/* $Id$ */
 
 /******************************************************************************
  *
@@ -482,12 +428,6 @@ RIDobjdef (node *arg_node, info *arg_info)
          * SAC objdef
          */
 
-        OBJDEF_VARNAME (arg_node) = ILIBfree (OBJDEF_VARNAME (arg_node));
-        /*
-         * OBJDEF_VARNAME is no longer used for the generation of the final C code
-         * identifier of a global object.
-         */
-
         new_name
           = (char *)ILIBmalloc (sizeof (char)
                                 * (strlen (OBJDEF_NAME (arg_node))
@@ -504,14 +444,10 @@ RIDobjdef (node *arg_node, info *arg_info)
          * imported C objdef
          */
 
-        /*
-         * TODO: why are the external objects not renamed ?!?
-         */
         if (OBJDEF_LINKNAME (arg_node) != NULL) {
             OBJDEF_NAME (arg_node) = ILIBfree (OBJDEF_NAME (arg_node));
             OBJDEF_NAME (arg_node) = OBJDEF_LINKNAME (arg_node);
             OBJDEF_PRAGMA (arg_node) = ILIBfree (OBJDEF_PRAGMA (arg_node));
-        } else {
         }
 
         if (OBJDEF_NEXT (arg_node) != NULL) {

@@ -510,6 +510,22 @@
           <node name="Cast" />
         </travuser>
       </traversal>
+      <traversal id="OAN" name="Object Analysis" default="sons" include="objanalysis.h">
+        <travuser>
+          <node name="Module" />
+          <node name="Globobj" />
+          <node name="Fundef" />
+          <node name="Ap" />
+        </travuser>
+      </traversal>
+      <traversal id="RSO" name="Resolve Objects" default="sons" include="resolve_objects.h" >
+        <travuser>
+	  <node name="Module" />
+	  <node name="Fundef" />
+	  <node name="Globobj" />
+	  <node name="Ap" />
+	</travuser>
+      </traversal>
       <traversal id="RRA" name="Resolve Reference Args" default="sons" include="resolve_reference_args.h" >
         <travuser>
 	  <node name="Fundef" />
@@ -517,6 +533,11 @@
 	  <node name="Let" />
 	  <node name="Ap" />
 	</travuser>
+      </traversal>
+      <traversal id="EWT" name="Extend Wrapper Types" default="sons" include="extend_wrapper_types.h" >
+        <travuser>
+          <node name="Fundef" />
+        </travuser>
       </traversal>
     </phase>
     <phase id="typecheck" name="Running type inference system"
@@ -643,14 +664,6 @@
         <travsons>
           <node name="Module" />
           <node name="Objdef" />
-        </travsons>
-      </traversal>
-      <traversal id="OAN" name="Object Analysis" default="sons" include="objanalysis.h">
-        <travsons>
-          <node name="Module" />
-          <node name="Globobj" />
-          <node name="Fundef" />
-          <node name="Ap" />
         </travsons>
       </traversal>
     </phase>
@@ -1874,6 +1887,26 @@
 	  <node name="Fundef" />
 	</travuser>
       </traversal>
+      <traversal id="RERA" name="Restore Reference Args" default="sons" include="restore_reference_args.h">
+        <travuser>
+	  <node name="Ap" />
+	  <node name="Block" />
+	  <node name="Assign" />
+	  <node name="Let" />
+	  <node name="Return" />
+	  <node name="Id" />
+	  <node name="Fundef" />
+	  <node name="Module" />
+	</travuser>
+      </traversal>
+      <traversal id="RESO" name="Restore Global Objects" default="sons" include="restore_objects.h">
+        <travuser>
+	  <node name="Ap" />
+	  <node name="Id" />
+	  <node name="Fundef" />
+	  <node name="Module" />
+	</travuser>
+      </traversal>
       <traversal id="SLS" name="Set Linksign" default="sons" include="setlinksign.h" >
         <travuser>
 	  <node name="Module" />
@@ -2428,18 +2461,6 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="VarName">
-          <type name="String">
-            <targets>
-              <target mandatory="no">
-                <any />
-                <phases>
-                  <!-- <phase name="objdects" /> TODO -->
-                </phases>
-              </target>
-             </targets>
-          </type>
-        </attribute>
         <attribute name="Pragma">
           <type name="Node">
             <targets>
@@ -2452,13 +2473,13 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="Arg">
+        <attribute name="ArgAvis">
           <type name="Link">
             <targets>
               <target mandatory="yes">
                 <node name="Id" />
                 <phases>
-                  <phase name="obj" />
+                  <phase name="pretypecheck" />
                 </phases>
               </target>
             </targets>
@@ -4787,6 +4808,7 @@
                   <phase name="lir" />
                   <phase name="ussa" />
                   <phase name="ussa2" />
+		  <phase name="rera" />
                 </phases>
               </target>
             </targets>
