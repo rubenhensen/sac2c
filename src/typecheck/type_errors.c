@@ -17,7 +17,7 @@
 #include "new_typecheck.h"
 #include "private_heap.h"
 
-static char *kind_str[] = {"udf", "prf", "cond", "wl", "with", "fold_fun"};
+static char *kind_str[] = {"udf", "prf", "cond", "funcond", "wl", "with", "fold_fun"};
 static heap *tinfo_heap = NULL;
 
 struct TE_INFO_UDF {
@@ -327,6 +327,9 @@ TEgetNumRets (te_info *info)
         break;
     case TE_cond:
         num_res = 0;
+        break;
+    case TE_funcond:
+        num_res = 1;
         break;
     case TE_generator:
         num_res = 1;

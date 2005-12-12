@@ -808,77 +808,43 @@ NTCcond (node *arg_node, info *arg_info)
 node *
 NTCfuncond (node *arg_node, info *arg_info)
 {
-    node *rhs1, *rhs2;
-    ntype *rhs1_type, *rhs2_type, *res;
-    bool ok;
-
-#ifndef DBUG_OFF
-    char *tmp_str, *tmp2_str;
-#endif
+    ntype *pred, *rhs1, *rhs2;
+    ntype *args, *res;
+    te_info *info;
 
     DBUG_ENTER ("NTCfuncond");
 
-    rhs1 = FUNCOND_THEN (arg_node);
-    rhs2 = FUNCOND_ELSE (arg_node);
+    FUNCOND_IF (arg_node) = TRAVdo (FUNCOND_IF (arg_node), arg_info);
+    pred = INFO_NTC_TYPE (arg_info);
+    INFO_NTC_TYPE (arg_info) = NULL;
+
+    FUNCOND_THEN (arg_node) = TRAVdo (FUNCOND_THEN (arg_node), arg_info);
+    rhs1 = INFO_NTC_TYPE (arg_info);
+    INFO_NTC_TYPE (arg_info) = NULL;
+
+    FUNCOND_ELSE (arg_node) = TRAVdo (FUNCOND_ELSE (arg_node), arg_info);
+    rhs2 = INFO_NTC_TYPE (arg_info);
+    INFO_NTC_TYPE (arg_info) = NULL;
+
+    args = TYmakeProductType (3, pred, rhs1, rhs2);
+
+    info = TEmakeInfo (global.linenum, TE_funcond, "conditional");
 
     /**
-     * collect the first phi-type => rhs1_type!
-     *
-     * Since this usually is a variable that is defined within a conditional
-     * (might be constant due to const propagation though) it may not have been
-     * assigned a proper type yet. Therefore, we cannot simply traverse the rhs,
-     * but we may have to insert a type variable instead. However, this may have
-     * happened due to a vardec already...
+     * Here, we need to be able to approximate the result type from
+     * less that ALL argument types, as we may deal with recursion
+     * which means we need to get an approximation from ONE branch
+     * of a conditional to be able to get one for the other branch.
+     * This is achieved by using
+     *    NTCCTcomputeTypeNonStrict   instead of
+     *    NTCCTcomputeType:
      */
-    if (NODE_TYPE (rhs1) == N_id) {
-        rhs1_type = AVIS_TYPE (ID_AVIS (rhs1));
-        if (rhs1_type == NULL) {
-            rhs1_type = TYmakeAlphaType (NULL);
-            AVIS_TYPE (ID_AVIS (rhs1)) = rhs1_type;
-        }
-    } else {
-        PRF_ARG1 (LET_EXPR (arg_node)) = TRAVdo (rhs1, arg_info);
-        rhs1_type = INFO_NTC_TYPE (arg_info);
-    }
+    res = NTCCTcomputeTypeNonStrict (NTCCTfuncond, info, args);
 
-    /**
-     * collect the second phi-type => rhs2_type!
-     */
-    if (NODE_TYPE (rhs2) == N_id) {
-        rhs2_type = AVIS_TYPE (ID_AVIS (rhs2));
-        if (rhs2_type == NULL) {
-            rhs2_type = TYmakeAlphaType (NULL);
-            AVIS_TYPE (ID_AVIS (rhs2)) = rhs2_type;
-        }
-    } else {
-        PRF_ARG1 (LET_EXPR (arg_node)) = TRAVdo (rhs2, arg_info);
-        rhs2_type = INFO_NTC_TYPE (arg_info);
-    }
+    args = TYfreeType (args);
 
-    /**
-     * Now, we compute the result type, i.e., lub( rhs1_type, rhs2_type)
-     */
-    res = TYmakeAlphaType (NULL);
-
-    DBUG_EXECUTE ("NTC", tmp_str = TYtype2String (res, FALSE, 0);
-                  tmp2_str = TYtype2String (rhs1_type, FALSE, 0););
-    DBUG_PRINT ("NTC", ("  making %s bigger than %s", tmp_str, tmp2_str));
-    DBUG_EXECUTE ("NTC", tmp_str = ILIBfree (tmp_str); tmp2_str = ILIBfree (tmp_str););
-
-    ok = SSInewTypeRel (rhs1_type, res);
-
-    DBUG_EXECUTE ("NTC", tmp_str = TYtype2String (res, FALSE, 0);
-                  tmp2_str = TYtype2String (rhs2_type, FALSE, 0););
-    DBUG_PRINT ("NTC", ("  making %s bigger than %s", tmp_str, tmp2_str));
-    DBUG_EXECUTE ("NTC", tmp_str = ILIBfree (tmp_str); tmp2_str = ILIBfree (tmp_str););
-
-    ok = ok && SSInewTypeRel (rhs2_type, res);
-
-    if (!ok) {
-        CTIabortLine (global.linenum, "Nasty type error");
-    }
-
-    INFO_NTC_TYPE (arg_info) = res;
+    INFO_NTC_TYPE (arg_info) = TYgetProductMember (res, 0);
+    res = TYfreeTypeConstructor (res);
 
     DBUG_RETURN (arg_node);
 }

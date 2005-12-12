@@ -563,7 +563,15 @@ typedef enum { TY_symb, TY_user } type_conversion_flag;
  * moved from type_errors.h
  */
 
-typedef enum { TE_udf, TE_prf, TE_cond, TE_generator, TE_with, TE_foldf } te_kind_t;
+typedef enum {
+    TE_udf,
+    TE_prf,
+    TE_cond,
+    TE_funcond,
+    TE_generator,
+    TE_with,
+    TE_foldf
+} te_kind_t;
 
 typedef struct TE_INFO te_info;
 

@@ -1,33 +1,5 @@
 /*
- *
- * $Log$
- * Revision 1.9  2005/07/26 16:03:51  sbs
- * added SDfreeAllSignature Dependencies
- *
- * Revision 1.8  2005/07/25 17:14:25  sbs
- * changed to private heap in order to be able to collectively free sig_deps
- *
- * Revision 1.7  2005/06/14 09:55:10  sbs
- * support for bottom types integrated.
- *
- * Revision 1.6  2004/12/09 12:31:15  sbs
- * several bug eliminated
- *
- * Revision 1.5  2004/12/09 00:39:01  sbs
- * wrapper reuse in CTcond improved....
- *
- * Revision 1.4  2004/11/23 22:41:11  sbs
- * SacDevCamp 04 done
- *
- * Revision 1.3  2003/04/01 16:40:25  sbs
- * some doxygen stuff added.
- *
- * Revision 1.2  2002/08/06 08:26:49  sbs
- * some vars initialized to please gcc for the product version.
- *
- * Revision 1.1  2002/08/05 16:58:34  sbs
- * Initial revision
- *
+ * $Id$
  *
  */
 
@@ -78,6 +50,8 @@ struct SIG_DEP {
     ct_funptr ct_fun; /* function for computing the return type */
     te_info *info;    /* information about the creation of the sig dep */
     ntype *args;      /* product type of the actual argument types */
+    bool strict;      /* when true, contradictions will only be handled when
+                         ALL argument types have at least one approximation */
     ntype *res;       /* product type containing the result type variables */
     int rc;           /* refererence counter for this sig_dep structure */
 };
@@ -85,6 +59,7 @@ struct SIG_DEP {
 #define SD_FUN(n) (n->ct_fun)
 #define SD_INFO(n) (n->info)
 #define SD_ARGS(n) (n->args)
+#define SD_STRICT(n) (n->strict)
 #define SD_RES(n) (n->res)
 #define SD_RC(n) (n->rc)
 
@@ -100,7 +75,11 @@ static heap *sig_dep_heap = NULL;
 /******************************************************************************
  *
  * function:
- *    sig_dep *MakeSig( ct_funptr ct_fun, te_info *info, ntype *args, ntype *res, int rc)
+ *    sig_dep *MakeSig( ct_funptr ct_fun,
+ *                      te_info *info,
+ *                      ntype *args,
+ *                      bool   strict,
+ *                      ntype *res, int rc)
  *
  * description:
  *    constructor function for signature dependencies
@@ -108,7 +87,8 @@ static heap *sig_dep_heap = NULL;
  ******************************************************************************/
 
 static sig_dep *
-MakeSig (ct_funptr ct_fun, te_info *info, ntype *args, ntype *results, int rc)
+MakeSig (ct_funptr ct_fun, te_info *info, ntype *args, bool strict, ntype *results,
+         int rc)
 {
     sig_dep *res;
 
@@ -122,6 +102,7 @@ MakeSig (ct_funptr ct_fun, te_info *info, ntype *args, ntype *results, int rc)
     SD_FUN (res) = ct_fun;
     SD_INFO (res) = info;
     SD_ARGS (res) = args;
+    SD_STRICT (res) = strict;
     SD_RES (res) = results;
     SD_RC (res) = rc;
 
@@ -148,7 +129,10 @@ SDfreeAllSignatureDependencies ()
 /******************************************************************************
  *
  * function:
- *    ntype *SDcreateSignatureDependency( ct_funptr CtFun, te_info *info, ntype *args)
+ *    ntype *SDcreateSignatureDependency( ct_funptr CtFun,
+ *                                        te_info *info,
+ *                                        ntype *args
+ *                                        bool strict)
  *
  * description:
  *    from a given argument type (product type of the argument types) and a
@@ -159,11 +143,16 @@ SDfreeAllSignatureDependencies ()
  *    another product type) are created and returned.
  *    Last not least, HandleContradiction is called in order to trigger a
  *    (potential) first approximation to the return type.
+ *    The argument "strict" indicates when approximations are to be computed:
+ *      - if TRUE, approximations are only made if ALL args have at least
+ *        one approximation.
+ *      - if FLASE, approximations are made whenever new argument information
+ *        is added.
  *
  ******************************************************************************/
 
 ntype *
-SDcreateSignatureDependency (ct_funptr CtFun, te_info *info, ntype *args)
+SDcreateSignatureDependency (ct_funptr CtFun, te_info *info, ntype *args, bool strict)
 {
     sig_dep *sig;
     ntype *arg_t, *res_t;
@@ -188,7 +177,8 @@ SDcreateSignatureDependency (ct_funptr CtFun, te_info *info, ntype *args)
     /*
      * Now, we create the structure itself:
      */
-    sig = MakeSig (CtFun, info, TYcopyType (args), res_t, TYcountNonFixedAlpha (args));
+    sig = MakeSig (CtFun, info, TYcopyType (args), strict, res_t,
+                   TYcountNonFixedAlpha (args));
 
     /*
      * Inserting the dependency into the non fixed vars:
@@ -242,7 +232,7 @@ SDhandleContradiction (sig_dep *fun_sig)
      * First, we check whether there is enough information available for
      * making a (new) result type approximation.
      */
-    if (TYcountNoMinAlpha (SD_ARGS (fun_sig)) > 0) {
+    if (SD_STRICT (fun_sig) && (TYcountNoMinAlpha (SD_ARGS (fun_sig)) > 0)) {
         ok = TRUE;
     } else {
         info = SD_INFO (fun_sig);
@@ -265,32 +255,35 @@ SDhandleContradiction (sig_dep *fun_sig)
 
         } else {
 
-            res_t = SD_FUN (fun_sig) (info, args);
-            res_t = TYeliminateAlpha (res_t);
+            if ((TYcountNoMinAlpha (SD_ARGS (fun_sig)) == 0) || !SD_STRICT (fun_sig)) {
 
-            DBUG_EXECUTE ("SSI", tmp_str = TYtype2String (args, FALSE, 0););
-            DBUG_EXECUTE ("SSI", tmp2_str = TYtype2String (res_t, FALSE, 0););
-            DBUG_PRINT ("SSI",
-                        ("approximating %s \"%s\" for %s yields %s", TEgetKindStr (info),
-                         TEgetNameStr (info), tmp_str, tmp2_str));
-            DBUG_EXECUTE ("SSI", tmp_str = ILIBfree (tmp_str););
-            DBUG_EXECUTE ("SSI", tmp2_str = ILIBfree (tmp_str););
+                res_t = SD_FUN (fun_sig) (info, args);
+                res_t = TYeliminateAlpha (res_t);
 
-            /*
-             * and insert the findings into the return types:
-             */
-            res_vars = SD_RES (fun_sig);
-            ok = TRUE;
-            for (i = 0; i < TYgetProductSize (res_vars); i++) {
-                res = TYgetProductMember (res_t, i);
-                if (TYisAlpha (res)) {
-                    ok = ok
-                         && SSInewRel (TYgetAlpha (res),
-                                       TYgetAlpha (TYgetProductMember (res_vars, i)));
-                } else {
-                    ok
-                      = ok
-                        && SSInewMin (TYgetAlpha (TYgetProductMember (res_vars, i)), res);
+                DBUG_EXECUTE ("SSI", tmp_str = TYtype2String (args, FALSE, 0););
+                DBUG_EXECUTE ("SSI", tmp2_str = TYtype2String (res_t, FALSE, 0););
+                DBUG_PRINT ("SSI", ("approximating %s \"%s\" for %s yields %s",
+                                    TEgetKindStr (info), TEgetNameStr (info), tmp_str,
+                                    tmp2_str));
+                DBUG_EXECUTE ("SSI", tmp_str = ILIBfree (tmp_str););
+                DBUG_EXECUTE ("SSI", tmp2_str = ILIBfree (tmp_str););
+
+                /*
+                 * and insert the findings into the return types:
+                 */
+                res_vars = SD_RES (fun_sig);
+                ok = TRUE;
+                for (i = 0; i < TYgetProductSize (res_vars); i++) {
+                    res = TYgetProductMember (res_t, i);
+                    if (TYisAlpha (res)) {
+                        ok = ok
+                             && SSInewRel (TYgetAlpha (res),
+                                           TYgetAlpha (TYgetProductMember (res_vars, i)));
+                    } else {
+                        ok = ok
+                             && SSInewMin (TYgetAlpha (TYgetProductMember (res_vars, i)),
+                                           res);
+                    }
                 }
             }
         }

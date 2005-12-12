@@ -29,22 +29,24 @@
  *
  * function:
  *    ntype *NTCCTcomputeType( ct_funptr CtFun, te_info *info, ntype *args)
+ *    ntype *NTCCTcomputeTypeNonStrict( ct_funptr CtFun, te_info *info,
+ *                                      ntype *args)
  *
  * description:
  *   Either computes a return type or establishes a signature dependency.
+ *   The non-strict version creates a non-strict signature dependency
+ *   rather than a strict one.
  *
  ******************************************************************************/
 
-ntype *
-NTCCTcomputeType (ct_funptr CtFun, te_info *info, ntype *args)
+static ntype *
+ComputeType (ct_funptr CtFun, te_info *info, ntype *args, bool strict)
 {
     ntype *res, *bottom;
     int i, num_res;
 #ifndef DBUG_OFF
     char *tmp_str;
 #endif
-
-    DBUG_ENTER ("NTCCTcomputeType");
 
     DBUG_EXECUTE ("NTC", tmp_str = TYtype2String (args, 0, 0););
     DBUG_PRINT ("NTC",
@@ -91,14 +93,28 @@ NTCCTcomputeType (ct_funptr CtFun, te_info *info, ntype *args)
             }
         }
     } else {
-        res = SDcreateSignatureDependency (CtFun, info, args);
+        res = SDcreateSignatureDependency (CtFun, info, args, strict);
     }
 
     DBUG_EXECUTE ("NTC", tmp_str = TYtype2String (res, FALSE, 0););
     DBUG_PRINT ("NTC", ("yields %s", tmp_str));
     DBUG_EXECUTE ("NTC", ILIBfree (tmp_str););
 
-    DBUG_RETURN (res);
+    return (res);
+}
+
+ntype *
+NTCCTcomputeType (ct_funptr CtFun, te_info *info, ntype *args)
+{
+    DBUG_ENTER ("NTCCTcomputeType");
+    DBUG_RETURN (ComputeType (CtFun, info, args, TRUE));
+}
+
+ntype *
+NTCCTcomputeTypeNonStrict (ct_funptr CtFun, te_info *info, ntype *args)
+{
+    DBUG_ENTER ("NTCCTcomputeType");
+    DBUG_RETURN (ComputeType (CtFun, info, args, FALSE));
 }
 
 /******************************************************************************
@@ -137,6 +153,64 @@ NTCCTcond (te_info *err_info, ntype *args)
         CTIabort (err_msg);
     } else {
         res = TYmakeProductType (0);
+    }
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    ntype *NTCCTfuncond( te_info info, ntype *args)
+ *
+ * description:
+ *    Here, we assume that the argument types (i.e. ONLY the predicate type!!)
+ *    are either array types or type variables with identical Min and Max!
+ *
+ ******************************************************************************/
+
+ntype *
+NTCCTfuncond (te_info *err_info, ntype *args)
+{
+    ntype *pred, *rhs1, *rhs2;
+    ntype *res = NULL;
+    char *err_msg;
+
+    DBUG_ENTER ("NTCCTfuncond");
+
+    pred = TYgetProductMember (args, 0);
+    rhs1 = TYgetProductMember (args, 1);
+    rhs2 = TYgetProductMember (args, 2);
+
+    if (TYisArray (pred)) {
+        TEassureBoolS ("predicate", pred);
+        err_msg = TEfetchErrors ();
+
+        if (err_msg != NULL) {
+            CTIabort (err_msg);
+        }
+
+        if (TYisArray (rhs1)) {
+            if (TYisArray (rhs2)) {
+                TEassureSameScalarType ("then branch", rhs1, "else branch", rhs2);
+                err_msg = TEfetchErrors ();
+
+                if (err_msg != NULL) {
+                    CTIabort (err_msg);
+
+                } else {
+                    res = TYmakeProductType (1, TYlubOfTypes (rhs1, rhs2));
+                }
+            } else {
+                res = TYmakeProductType (1, TYcopyType (rhs1));
+            }
+        } else {
+            if (TYisArray (rhs2)) {
+                res = TYmakeProductType (1, TYcopyType (rhs2));
+            } else {
+                res = TYmakeProductType (0);
+            }
+        }
     }
 
     DBUG_RETURN (res);
