@@ -682,8 +682,8 @@ TUretsAreConstant (node *rets)
 
     DBUG_ENTER ("TUretsAreConstant");
 
-    result = (rets == NULL) && TYisAKV (RET_TYPE (rets))
-             && TUretsAreConstant (RET_NEXT (rets));
+    result = ((rets == NULL)
+              || (TYisAKV (RET_TYPE (rets)) && TUretsAreConstant (RET_NEXT (rets))));
 
     DBUG_RETURN (result);
 }
