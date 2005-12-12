@@ -132,8 +132,8 @@ MODULES= src/modules/symboltable.o \
          src/modules/importsymbols.o src/modules/gatherdependencies.o \
          src/modules/namespaces.o src/modules/addspecialfuns.o
 
-OBJECTS= src/objects/objinit.o src/objects/resolve_reference_args.o \
-         src/objects/uniquecheck.o src/objects/objanalysis.o \
+OBJECTS= src/objects/object_init.o src/objects/resolve_reference_args.o \
+         src/objects/object_analysis.o \
          src/objects/extend_wrapper_types.o \
          src/objects/resolve_objects.o \
          src/objects/restore_reference_args.o \

@@ -4,6 +4,8 @@
  *
  */
 
+#include "object_init.h"
+
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"

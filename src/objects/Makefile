@@ -17,8 +17,8 @@ include $(PROJECT_ROOT)/Makefile.Config
 # local settings:
 #
 
-OBJS := objinit.o resolve_reference_args.o \
-        uniquecheck.o objanalysis.o restore_reference_args.o \
+OBJS := object_init.o resolve_reference_args.o \
+        object_analysis.o restore_reference_args.o \
         extend_wrapper_types.o resolve_objects.o \
         restore_objects.o
 

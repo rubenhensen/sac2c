@@ -2,8 +2,8 @@
  * $Id$
  */
 
-#ifndef _SAC_OBJINIT_H_
-#define _SAC_OBJINIT_H_
+#ifndef _SAC_OBJECT_INIT_H_
+#define _SAC_OBJECT_INIT_H_
 
 #include "types.h"
 
@@ -16,4 +16,4 @@
  *****************************************************************************/
 extern node *OIdoObjectInit (node *syntax_tree);
 
-#endif /* _SAC_OBJINIT_H_  */
+#endif /* _SAC_OBJECT_INIT_H_  */

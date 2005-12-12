@@ -451,11 +451,6 @@
         </travuser>
       </traversal>
     </phase>
-    <phase id="objinit" name="Generating generic types and functions"
-      startfun="OIdoObjInit" include="objinit.h"
-      if="true"
-      breakspec="oi">
-    </phase>
     <phase id="pretypecheck" name="Converting to static single assignment form"
       startfun="PTCdoPreTypecheck" include="pre_typecheck.h"
       if="true"
@@ -510,7 +505,7 @@
           <node name="Cast" />
         </travuser>
       </traversal>
-      <traversal id="OAN" name="Object Analysis" default="sons" include="objanalysis.h">
+      <traversal id="OAN" name="Object Analysis" default="sons" include="object_analysis.h">
         <travuser>
           <node name="Module" />
           <node name="Globobj" />
@@ -654,17 +649,6 @@
 	  <node name="Typedef" />
 	  <node name="Objdef" />
 	</travuser>
-      </traversal>
-    </phase>
-    <phase id="state" name="Resolving state system"
-      startfun="NULL" include=".h"
-      if="true"
-      breakspec="st">
-      <traversal id="OBJINI" name="Object Initialisation" default="sons" include="objinit.h">
-        <travsons>
-          <node name="Module" />
-          <node name="Objdef" />
-        </travsons>
       </traversal>
     </phase>
     <phase id="wlenhance" name="Enhancement of With-Loops"
@@ -2479,7 +2463,7 @@
               <target mandatory="yes">
                 <node name="Id" />
                 <phases>
-                  <phase name="pretypecheck" />
+                  <phase name="rso" />
                 </phases>
               </target>
             </targets>
@@ -2967,14 +2951,11 @@
               <target mandatory="no">
                 <node name="Objdef" />
                 <phases>
-                  <!-- <range from="obj-handling" to="precompile" /> TODO -->
+                  <range from="rso" to="reso" />
                 </phases>
               </target>
             </targets>
           </type>
-          <description>
-            Deprecated. TODO: This should be eliminated.
-          </description>
         </attribute>
 	<attribute name="Linksign">
 	  <type name="Integer">

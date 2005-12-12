@@ -27,6 +27,6 @@ extern node *RSPfundef (node *arg_node, info *info);
 extern node *RSParg (node *arg_node, info *info);
 extern node *RSPret (node *arg_node, info *info);
 
-extern void RSPdoResolvePragmas (node *syntax_tree);
+extern node *RSPdoResolvePragmas (node *syntax_tree);
 
 #endif /* _SAC_RESOLVE_PRAGMAS_H */

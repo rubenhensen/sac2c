@@ -458,7 +458,7 @@ RSPmodule (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-void
+node *
 RSPdoResolvePragmas (node *syntax_tree)
 {
     info *info;
@@ -475,5 +475,5 @@ RSPdoResolvePragmas (node *syntax_tree)
 
     info = FreeInfo (info);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN (syntax_tree);
 }

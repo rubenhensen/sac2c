@@ -68,7 +68,9 @@ SUBPHASE (sp, "sp", "Parsing input file", PHdummy)
 
 SUBPHASE (acn, "acn", "Resolving axis control and dot notation", PHdummy)
 
-SUBPHASE (pragma, "pramga", "Resolving pragma annotations", PHdummy)
+SUBPHASE (pragma, "pramga", "Resolving pragma annotations", RSPdoResolvePragmas)
+
+SUBPHASE (objinit, "objinit", "Generating generic types and functions", OIdoObjectInit)
 
 /***********************************************************************/
 
@@ -85,10 +87,6 @@ SUBPHASE (imp, "imp", "Getting imported symbols", IMPdoImportSymbols)
 SUBPHASE (uss, "uss", "Getting used symbols", USSdoUseSymbols)
 
 SUBPHASE (dep, "dep", "Resolving dependencies", DEPdoResolveDependencies)
-
-/***********************************************************************/
-
-PHASE (objinit, "Generating generic types and functions", OIdoObjectInit)
 
 /***********************************************************************/
 

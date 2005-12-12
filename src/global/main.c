@@ -28,8 +28,6 @@
 #include "allocation.h"
 #include "rcphase.h"
 #include "scnprs.h"
-#include "objinit.h"
-#include "uniquecheck.h"
 #include "wltransform.h"
 #include "concurrent.h"
 #include "precompile.h"
@@ -47,7 +45,6 @@
 #include "prepareinline.h"
 #include "dependencies.h"
 #include "resolvepragma.h"
-#include "objanalysis.h"
 #include "resource.h"
 #include "options.h"
 #include "multithread.h"
@@ -160,8 +157,8 @@ main (int argc, char *argv[])
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
     syntax_tree = SPdoScanParse ();
-
-    RSPdoResolvePragmas (syntax_tree);
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_pragma, syntax_tree);
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_objinit, syntax_tree);
 
     PHASE_DONE_EPILOG;
     PHASE_EPILOG;
@@ -197,19 +194,6 @@ main (int argc, char *argv[])
     PHASE_EPILOG;
 
     if (global.break_after == PH_module)
-        goto BREAK;
-    global.compiler_phase++;
-
-    /*
-     * Object init phase
-     */
-    PHASE_PROLOG;
-    NOTE_COMPILER_PHASE;
-    syntax_tree = OIdoObjectInit (syntax_tree); /* objinit_tab */
-    PHASE_DONE_EPILOG;
-    PHASE_EPILOG;
-
-    if (global.break_after == PH_objinit)
         goto BREAK;
     global.compiler_phase++;
 
@@ -292,7 +276,9 @@ main (int argc, char *argv[])
      */
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
-    syntax_tree = UNQdoUniquenessCheck (syntax_tree); /* unique_tab */
+#if 0
+  syntax_tree = UNQdoUniquenessCheck( syntax_tree);  /* unique_tab */
+#endif
     PHASE_DONE_EPILOG;
     PHASE_EPILOG;
 
