@@ -8,6 +8,46 @@
 #include "new_types.h"
 #include "type_utils.h"
 #include "create_wrappers.h"
+#include "internal_lib.h"
+
+/*
+ * INFO structure
+ */
+struct INFO {
+    bool finalise;
+};
+
+/*
+ * INFO macros
+ */
+#define INFO_FINALISE(n) ((n)->finalise)
+
+/*
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = ILIBmalloc (sizeof (info));
+
+    INFO_FINALISE (result) = FALSE;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = ILIBfree (info);
+
+    DBUG_RETURN (info);
+}
 
 /*
  * helper functions
@@ -34,8 +74,11 @@ buildWrapper (node *fundef, ntype *type)
      * depending on whether this function has already been
      * typechecked or not, we transform its return types into
      * fixed or non-fixed alphas...
+     * furthermore, for external funs the type has always to
+     * be fixed, as no more precise type can be infered by the
+     * typechecker.
      */
-    if (FUNDEF_TCSTAT (fundef) == NTC_checked) {
+    if ((FUNDEF_TCSTAT (fundef) == NTC_checked) || (FUNDEF_ISEXTERN (fundef))) {
         FUNDEF_RETS (fundef) = TUrettypes2alphaFix (FUNDEF_RETS (fundef));
     } else {
         FUNDEF_RETS (fundef) = TUrettypes2alphaMax (FUNDEF_RETS (fundef));
@@ -49,7 +92,7 @@ buildWrapper (node *fundef, ntype *type)
     DBUG_RETURN (type);
 }
 
-ntype *
+static ntype *
 ExtendWrapperType (ntype *type)
 {
     ntype *new_type;
@@ -60,6 +103,55 @@ ExtendWrapperType (ntype *type)
 
     new_type
       = TYfoldFunctionInstances (type, (void *(*)(node *, void *))buildWrapper, NULL);
+
+    DBUG_RETURN (new_type);
+}
+
+static ntype *
+buildProductType (node *fundef, ntype *type)
+{
+    DBUG_ENTER ("buildProductType");
+
+    /*
+     * there should be only one instance
+     */
+    DBUG_ASSERT ((type == NULL), "function with no args but multiple instances found");
+
+    /*
+     * set this instances return types to AUD[*]
+     *
+     * depending on whether this function has already been
+     * typechecked or not, we transform its return types into
+     * fixed or non-fixed alphas...
+     * furthermore, for external funs the type has always to
+     * be fixed, as no more precise type can be infered by the
+     * typechecker.
+     */
+    if ((FUNDEF_TCSTAT (fundef) == NTC_checked) || (FUNDEF_ISEXTERN (fundef))) {
+        FUNDEF_RETS (fundef) = TUrettypes2alphaFix (FUNDEF_RETS (fundef));
+    } else {
+        FUNDEF_RETS (fundef) = TUrettypes2alphaMax (FUNDEF_RETS (fundef));
+    }
+
+    /*
+     * generate a product type
+     */
+    type = TUmakeProductTypeFromRets (FUNDEF_RETS (fundef));
+
+    DBUG_RETURN (type);
+}
+
+static ntype *
+WrapperType2ProductType (ntype *type)
+{
+    ntype *new_type;
+
+    DBUG_ENTER ("WrapperType2ProductType");
+
+    DBUG_ASSERT (TYisFun (type), "WrapperType2ProductType called on non-fun type!");
+
+    new_type
+      = TYfoldFunctionInstances (type, (void *(*)(node *, void *))buildProductType, NULL);
 
     DBUG_RETURN (new_type);
 }
@@ -78,38 +170,83 @@ EWTfundef (node *arg_node, info *arg_info)
 
     if (FUNDEF_ISWRAPPERFUN (arg_node)) {
         type = FUNDEF_WRAPPERTYPE (arg_node);
-        if (TYisFun (type)) {
-            new_type = ExtendWrapperType (type);
-        } else {
-            fundef = FUNDEF_IMPL (arg_node);
 
-            /*
-             * depending on whether this function has already been typechecked,
-             * we transform the return vars into fixed or non-fixed alphas here
-             */
-            if (FUNDEF_TCSTAT (fundef) == NTC_checked) {
-                FUNDEF_RETS (fundef) = TUrettypes2alphaFix (FUNDEF_RETS (fundef));
+        /*
+         * as we may have added/removed some args, we must check whether
+         * we have some args. In that case we have to build a proper
+         * funtype instead of a product type!
+         */
+        if (FUNDEF_ARGS (arg_node) != NULL) {
+            if (TYisFun (type)) {
+                new_type = ExtendWrapperType (type);
             } else {
-                FUNDEF_RETS (fundef) = TUrettypes2alphaMax (FUNDEF_RETS (fundef));
-            }
+                fundef = FUNDEF_IMPL (arg_node);
 
-            /*
-             * as we may have added some new args, we must check whether
-             * we have some args. In that case we have to build a proper
-             * funtype instead of a product type!
-             */
-            if (FUNDEF_ARGS (fundef) != NULL) {
+                /*
+                 * depending on whether this function has already been typechecked,
+                 * we transform the return vars into fixed or non-fixed alphas here
+                 * furthermore, if the function is extern, we have to generate a
+                 * fixed type as well as none can be infered!
+                 */
+                if ((FUNDEF_TCSTAT (fundef) == NTC_checked)
+                    || (FUNDEF_ISEXTERN (fundef))) {
+                    FUNDEF_RETS (fundef) = TUrettypes2alphaFix (FUNDEF_RETS (fundef));
+                } else {
+                    FUNDEF_RETS (fundef) = TUrettypes2alphaMax (FUNDEF_RETS (fundef));
+                }
+
                 new_type = CRTWRPcreateFuntype (fundef);
+            }
+        } else {
+            if (TYisFun (type)) {
+                new_type = WrapperType2ProductType (type);
             } else {
+                fundef = FUNDEF_IMPL (arg_node);
+
+                /*
+                 * depending on whether this function has already been typechecked,
+                 * we transform the return vars into fixed or non-fixed alphas here
+                 * furthermore, if the function is extern, we have to generate a
+                 * fixed type as well as none can be infered!
+                 */
+                if ((FUNDEF_TCSTAT (fundef) == NTC_checked)
+                    || (FUNDEF_ISEXTERN (fundef))) {
+                    FUNDEF_RETS (fundef) = TUrettypes2alphaFix (FUNDEF_RETS (fundef));
+                } else {
+                    FUNDEF_RETS (fundef) = TUrettypes2alphaMax (FUNDEF_RETS (fundef));
+                }
+
                 new_type = TUmakeProductTypeFromRets (FUNDEF_RETS (fundef));
             }
         }
-        FUNDEF_WRAPPERTYPE (arg_node) = TYfreeType (type);
+        FUNDEF_WRAPPERTYPE (arg_node) = TYfreeType (FUNDEF_WRAPPERTYPE (arg_node));
         FUNDEF_WRAPPERTYPE (arg_node) = new_type;
+
+        if (INFO_FINALISE (arg_info)) {
+            /*
+             * fix the wrapper type
+             */
+            new_type = TYfixAndEliminateAlpha (FUNDEF_WRAPPERTYPE (arg_node));
+            FUNDEF_WRAPPERTYPE (arg_node) = TYfreeType (FUNDEF_WRAPPERTYPE (arg_node));
+            FUNDEF_WRAPPERTYPE (arg_node) = new_type;
+        }
     }
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+    }
+
+    if (INFO_FINALISE (arg_info)) {
+        /*
+         * fix the ret nodes
+         */
+        if (FUNDEF_RETS (arg_node) != NULL) {
+            type = TUmakeProductTypeFromRets (FUNDEF_RETS (arg_node));
+            new_type = TYfixAndEliminateAlpha (type);
+            FUNDEF_RETS (arg_node) = TUreplaceRetTypes (FUNDEF_RETS (arg_node), new_type);
+            type = TYfreeType (type);
+            new_type = TYfreeType (new_type);
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -121,13 +258,36 @@ EWTfundef (node *arg_node, info *arg_info)
 node *
 EWTdoExtendWrapperTypes (node *arg_node)
 {
+    info *info;
+
     DBUG_ENTER ("EWTdoExtendWrapperTypes");
 
+    info = MakeInfo ();
     TRAVpush (TR_ewt);
 
-    arg_node = TRAVdo (arg_node, NULL);
+    arg_node = TRAVdo (arg_node, info);
 
     TRAVpop ();
+    info = FreeInfo (info);
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+EWTdoExtendWrapperTypesAfterTC (node *arg_node)
+{
+    info *info;
+
+    DBUG_ENTER ("EWTdoExtendWrapperTypes");
+
+    info = MakeInfo ();
+    TRAVpush (TR_ewt);
+
+    INFO_FINALISE (info) = TRUE;
+    arg_node = TRAVdo (arg_node, info);
+
+    TRAVpop ();
+    info = FreeInfo (info);
 
     DBUG_RETURN (arg_node);
 }
