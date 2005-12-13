@@ -1,136 +1,4 @@
-/*
- *
- * $Log$
- * Revision 1.41  2005/08/19 17:20:40  sbs
- * changed from TUrettypes2alphaAUD to TUrettypes2alphaMax
- * and from TUrettypes2alpha to TUrettypes2alphaFix
- *
- * Revision 1.40  2005/07/27 10:39:55  sah
- * modified joining and splitting of wrappers
- * to allow for non-joined wrappers as are
- * created by the specialisations
- *
- * Revision 1.39  2005/07/26 12:46:15  sah
- * on joining wrappers, aliases are created
- *
- * Revision 1.38  2005/07/15 15:57:02  sah
- * introduced namespaces
- *
- * Revision 1.37  2005/06/28 16:26:21  sah
- * fixed a warning message
- *
- * Revision 1.36  2005/05/30 13:08:22  cg
- * Wrapper functions are now NEVER tagged inline.
- *
- * Revision 1.35  2005/05/24 18:17:50  sbs
- * now, externals are treated in the same way as wasimported ones ;-)
- *
- * Revision 1.34  2005/05/24 08:25:17  sbs
- * some code brushing and lower bound inserted into imported instances.
- *
- * Revision 1.33  2005/05/23 07:41:33  sah
- * import now creates correct wrappers
- * except for the return types!
- *
- * Revision 1.32  2005/05/22 19:45:53  sah
- * added first implementation steps for import
- *
- * Revision 1.31  2005/03/04 21:21:42  cg
- * Removal of zombie functions automatized.
- *
- * Revision 1.30  2005/02/16 22:29:13  sah
- * fixed CreateWrapperFor
- *
- * Revision 1.29  2005/01/11 14:20:44  cg
- * Converted output generation from Error.h to ctinfo.c
- *
- * Revision 1.28  2004/12/08 22:52:07  sbs
- * FindWrapper call corrected in CRTWRPfold
- *
- * Revision 1.27  2004/12/05 16:45:38  sah
- * added SPIds SPId SPAp in frontend
- *
- * Revision 1.26  2004/12/01 18:43:28  sah
- * fixed the nasty bug of mystically freed ntype!
- *
- * Revision 1.25  2004/12/01 15:49:17  sah
- * bugfixing
- *
- * Revision 1.24  2004/12/01 14:16:59  sah
- * fixed handling op SPNAME and SPMOD for AP nodes
- *
- * Revision 1.23  2004/11/27 03:04:59  sbs
- * *** empty log message ***
- *
- * Revision 1.22  2004/11/25 17:52:55  sbs
- * compiles
- *
- * Revision 1.21  2004/11/25 14:51:22  sbs
- * compiles
- *
- * Revision 1.20  2004/11/08 14:39:41  sah
- * some new module system extensions
- *
- * Revision 1.19  2004/09/30 15:12:35  sbs
- * eliminated FunTypes from ALL but wrapper functions
- * (memory concerns!)
- * Now, the function signatures of individual instances are
- * stored in the AVIS_TYPE and FUNDEF_RET_TYPE only!!!!!
- *
- * Revision 1.18  2004/07/30 17:29:21  sbs
- * switch to new INFO structure
- * PHASE I
- *
- * Revision 1.17  2004/03/05 12:05:15  sbs
- * Now, the wrapper function headers are inserted in to the fundefs immediately
- *
- * Revision 1.16  2004/02/20 08:14:00  mwe
- * now functions with and without body are separated
- * changed tree traversal (added traverse of MODUL_FUNDECS)
- *
- * Revision 1.15  2003/11/18 17:21:57  dkr
- * NWITHOP_DEFAULT added
- *
- * Revision 1.14  2003/09/08 13:14:33  sbs
- * some more debug prints added
- *
- * Revision 1.13  2002/10/31 13:41:51  sbs
- * ... args are tagged IS_REFERENCE FALSE now.
- *
- * Revision 1.12  2002/10/30 12:13:38  sbs
- * handling of ... args / rets corrected..
- *
- * Revision 1.11  2002/10/28 19:04:06  dkr
- * CreateWrapperFor(): wrapper functions are never external now
- *
- * Revision 1.10  2002/10/18 14:32:04  sbs
- * create wrappers now is responsible for setting IS_REFERENCE flags
- * appropriately ! This information will be used by the object/reference
- * parameter
- * resolution in objects.c
- *
- * Revision 1.8  2002/09/06 15:16:40  sbs
- * FUNDEF_RETURN now set properly?!
- *
- * Revision 1.7  2002/08/15 18:47:11  dkr
- * uses LUT now
- *
- * Revision 1.6  2002/08/05 17:00:38  sbs
- * first alpha version of the new type checker!!
- *
- * Revision 1.5  2002/05/31 14:43:06  sbs
- * CRTWRPlet added
- *
- * Revision 1.4  2002/03/12 15:13:32  sbs
- * CRTWRPxxxx traversal function added.
- *
- * Revision 1.2  2002/03/05 15:40:40  sbs
- * CRTWRP traversal embedded.
- *
- * Revision 1.1  2002/03/05 13:59:27  sbs
- * Initial revision
- *
- */
+/* $Id$ */
 
 #include <stdio.h>
 #include <string.h>
@@ -242,6 +110,23 @@ CRTWRPdoCreateWrappers (node *arg_node)
     TRAVpop ();
 
     DBUG_RETURN (arg_node);
+}
+
+static bool
+RefArgMatch (node *arg1, node *arg2)
+{
+    bool result = TRUE;
+
+    DBUG_ENTER ("RefArgMatch");
+
+    if ((arg1 != NULL) && (arg2 != NULL)) {
+        result = result && (ARG_ISREFERENCE (arg1) == ARG_ISREFERENCE (arg2))
+                 && RefArgMatch (ARG_NEXT (arg1), ARG_NEXT (arg2));
+    } else {
+        result = (arg1 == arg2);
+    }
+
+    DBUG_RETURN (result);
 }
 
 /******************************************************************************
@@ -640,11 +525,24 @@ CRTWRPfundef (node *arg_node, info *arg_info)
                               "and %s %d return value(s)",
                               CTIitemName (wrapper),
                               (FUNDEF_HASDOTARGS (wrapper) ? ">=" : ""),
-                              TCcountArgs (wrapper),
+                              TCcountArgs (FUNDEF_ARGS (wrapper)),
                               (FUNDEF_HASDOTRETS (wrapper) ? ">=" : ""),
-                              TCcountRets (wrapper), (dot_args ? ">=" : ""), num_args,
-                              (dot_rets ? ">=" : ""), num_rets);
+                              TCcountRets (FUNDEF_ARGS (wrapper)), (dot_args ? ">=" : ""),
+                              num_args, (dot_rets ? ">=" : ""), num_rets);
             }
+        }
+
+        /*
+         * check whether the signatures match wrt reference args
+         */
+        if (!RefArgMatch (FUNDEF_ARGS (wrapper), FUNDEF_ARGS (arg_node))) {
+            CTIabortLine (NODE_LINE (arg_node),
+                          "Trying to overload function \"%s\" that expects %d "
+                          "argument(s) "
+                          "and %d return value(s) with a version that has a signature "
+                          "differing in the number or position of reference args only.",
+                          CTIitemName (wrapper), TCcountArgs (FUNDEF_ARGS (wrapper)),
+                          TCcountRets (FUNDEF_RETS (wrapper)));
         }
 
         if (FUNDEF_ISLOCAL (arg_node) && !(FUNDEF_ISEXTERN (arg_node))) {
