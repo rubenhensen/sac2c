@@ -34,7 +34,9 @@ TRAVdo (node *arg_node, info *arg_info)
 
     DBUG_ASSERT ((arg_node != NULL), "Trav: tried to traverse into subtree NULL !");
 
-    DBUG_ASSERT ((NODE_TYPE (arg_node) <= MAX_NODES), "Trav: illegal node type !");
+    if (NODE_TYPE (arg_node) > MAX_NODES) {
+        DBUG_ASSERT ((NODE_TYPE (arg_node) <= MAX_NODES), "Trav: illegal node type !");
+    }
 
     DBUG_ASSERT ((travstack != NULL), "no traversal on stack!");
 

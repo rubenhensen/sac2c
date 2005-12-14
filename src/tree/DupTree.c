@@ -853,7 +853,6 @@ DUPfundef (node *arg_node, info *arg_info)
     /* now we copy all the other things ... */
     FUNDEF_FUNNO (new_node) = FUNDEF_FUNNO (arg_node);
     FUNDEF_PRAGMA (new_node) = DUPTRAV (FUNDEF_PRAGMA (arg_node));
-    FUNDEF_VARNO (new_node) = FUNDEF_VARNO (arg_node);
     FUNDEF_FLAGSTRUCTURE (new_node) = FUNDEF_FLAGSTRUCTURE (arg_node);
 
     CopyCommonNodeData (new_node, arg_node);
@@ -929,7 +928,6 @@ DUParg (node *arg_node, info *arg_info)
 
     ARG_TYPE (new_node) = DupTypes (ARG_TYPE (arg_node), arg_info);
 
-    ARG_VARNO (new_node) = ARG_VARNO (arg_node);
     ARG_OBJDEF (new_node) = ARG_OBJDEF (arg_node);
     ARG_LINKSIGN (new_node) = ARG_LINKSIGN (arg_node);
     ARG_FLAGSTRUCTURE (new_node) = ARG_FLAGSTRUCTURE (arg_node);
@@ -1048,7 +1046,6 @@ DUPvardec (node *arg_node, info *arg_info)
 
     VARDEC_TYPE (new_node) = DupTypes (VARDEC_TYPE (arg_node), arg_info);
 
-    VARDEC_VARNO (new_node) = VARDEC_VARNO (arg_node);
     VARDEC_OBJDEF (new_node) = VARDEC_OBJDEF (arg_node);
     VARDEC_FLAGSTRUCTURE (new_node) = VARDEC_FLAGSTRUCTURE (arg_node);
 

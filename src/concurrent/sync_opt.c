@@ -1,70 +1,6 @@
-/*
- *
- * $Log$
- * Revision 3.8  2005/01/11 11:03:23  cg
- * Converted output from Error.h to ctinfo.c
- *
- * Revision 3.7  2004/12/07 20:35:21  ktr
- * eliminated CONSTVEC which is superseded by ntypes.
- *
- * Revision 3.6  2004/11/24 19:29:17  skt
- * Compiler Switch during SACDevCampDK 2k4
- *
- * Revision 3.5  2004/11/21 17:54:54  skt
- * moved functions from concurrent_lib into sync_opt to remove concurrent_lib
- *
- * Revision 3.4  2004/11/21 17:32:02  skt
- * make it runable with the new info structure
- *
- * Revision 3.3  2001/03/29 14:04:10  dkr
- * no changes done
- *
- * Revision 3.2  2000/12/06 19:22:16  cg
- * Removed compiler warnings in production mode.
- *
- * Revision 3.1  2000/11/20 18:02:36  sacbase
- * new release made
- *
- * Revision 2.12  2000/06/23 15:29:48  dkr
- * signature of DupTree changed
- *
- * Revision 2.10  1999/08/03 11:46:49  jhs
- * Added missing end of comment.
- *
- * Revision 2.9  1999/08/03 11:44:38  jhs
- * Some comments added.
- *
- * Revision 2.8  1999/08/02 09:48:35  jhs
- * Moved MeltBlocks[OnCopies] from spmd_opt.[ch] to concurrent_lib.[ch].
- *
- * Revision 2.7  1999/07/30 13:49:12  jhs
- * Removed old warnings, added comments.
- *
- * Revision 2.6  1999/07/28 13:08:17  jhs
- * Bug fixed: Allsync-blocks are melted (erarlier versions left the
- * first synd-block out).
- *
- * Revision 2.5  1999/07/21 16:30:27  jhs
- * needed_sync_fold introduced, max_sync_fold_adjusted.
- *
- * Revision 2.4  1999/07/21 12:28:56  jhs
- * Checking of max_sync_fold adjusted.
- *
- * Revision 2.3  1999/07/20 16:59:44  jhs
- * Added counting and checking of FOLDCOUNT.
- *
- * Revision 2.2  1999/07/07 15:55:57  jhs
- * Added SYNCO[sync|assign], first steps to melt sync-blocks.
- *
- * Revision 2.1  1999/02/23 12:44:21  sacbase
- * new release made
- *
- * Revision 1.1  1998/06/18 14:35:53  cg
- * Initial revision
- *
- */
-
 /*****************************************************************************
+ *
+ * $Id$
  *
  * file:   sync_opt.c
  *
@@ -100,8 +36,8 @@ struct INFO {
 };
 
 /* INFO macros */
-#define INFO_SYNCO_THISASSIGN(n) (n->thisassign)
-#define INFO_SYNCO_NEXTASSIGN(n) (n->nextassign)
+#define INFO_THISASSIGN(n) (n->thisassign)
+#define INFO_NEXTASSIGN(n) (n->nextassign)
 
 /*
  * INFO functions
@@ -115,8 +51,8 @@ MakeInfo ()
 
     result = ILIBmalloc (sizeof (info));
 
-    INFO_SYNCO_THISASSIGN (result) = NULL;
-    INFO_SYNCO_NEXTASSIGN (result) = NULL;
+    INFO_THISASSIGN (result) = NULL;
+    INFO_NEXTASSIGN (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -433,7 +369,7 @@ SYNCOsync (node *arg_node, info *arg_info)
 
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_sync), "Wrong NODE_TYPE: N_sync expected");
     DBUG_ASSERT ((arg_info != NULL), ("arg_info is NULL"));
-    DBUG_ASSERT ((arg_node == ASSIGN_INSTR (INFO_SYNCO_THISASSIGN (arg_info))),
+    DBUG_ASSERT ((arg_node == ASSIGN_INSTR (INFO_THISASSIGN (arg_info))),
                  "arg_node differs from thisasssign");
 
     result = arg_node;
@@ -443,15 +379,14 @@ SYNCOsync (node *arg_node, info *arg_info)
      *  blocks are melted together here.
      */
     DBUG_PRINT ("SYNCO", ("try melting sync-blocks"));
-    while (
-      (INFO_SYNCO_NEXTASSIGN (arg_info) != NULL)
-      && (NODE_TYPE (ASSIGN_INSTR (INFO_SYNCO_NEXTASSIGN (arg_info))) == N_sync)
-      && (MeltableSYNCs (arg_node, ASSIGN_INSTR (INFO_SYNCO_NEXTASSIGN (arg_info))))) {
+    while ((INFO_NEXTASSIGN (arg_info) != NULL)
+           && (NODE_TYPE (ASSIGN_INSTR (INFO_NEXTASSIGN (arg_info))) == N_sync)
+           && (MeltableSYNCs (arg_node, ASSIGN_INSTR (INFO_NEXTASSIGN (arg_info))))) {
         DBUG_PRINT ("SYNCO", ("melting sync-blocks"));
         /*
          *  The actual optimazation of SYNC-blocks takes place here.
          */
-        result = MeltSYNCs (arg_node, ASSIGN_INSTR (INFO_SYNCO_NEXTASSIGN (arg_info)));
+        result = MeltSYNCs (arg_node, ASSIGN_INSTR (INFO_NEXTASSIGN (arg_info)));
 
         DBUG_PRINT ("SYNCO", ("rearranging assigments around sync-blocks"));
         /*
@@ -459,14 +394,14 @@ SYNCOsync (node *arg_node, info *arg_info)
          *  who's spmd-block (ASSIGN_INSTR) has been deleted by melting.
          *  Cut of connections between assignment and the block and delete it.
          */
-        ASSIGN_NEXT (INFO_SYNCO_THISASSIGN (arg_info))
-          = ASSIGN_NEXT (INFO_SYNCO_NEXTASSIGN (arg_info));
-        ASSIGN_NEXT (INFO_SYNCO_NEXTASSIGN (arg_info)) = NULL;
-        ASSIGN_INSTR (INFO_SYNCO_NEXTASSIGN (arg_info)) = NULL;
+        ASSIGN_NEXT (INFO_THISASSIGN (arg_info))
+          = ASSIGN_NEXT (INFO_NEXTASSIGN (arg_info));
+        ASSIGN_NEXT (INFO_NEXTASSIGN (arg_info)) = NULL;
+        ASSIGN_INSTR (INFO_NEXTASSIGN (arg_info)) = NULL;
 
-        FREEdoFreeTree (INFO_SYNCO_NEXTASSIGN (arg_info));
+        FREEdoFreeTree (INFO_NEXTASSIGN (arg_info));
 
-        INFO_SYNCO_NEXTASSIGN (arg_info) = ASSIGN_NEXT (INFO_SYNCO_THISASSIGN (arg_info));
+        INFO_NEXTASSIGN (arg_info) = ASSIGN_NEXT (INFO_THISASSIGN (arg_info));
     } /* while */
 
     DBUG_RETURN (result);
@@ -507,12 +442,12 @@ SYNCOassign (node *arg_node, info *arg_info)
         arg_info = MakeInfo ();
     } else {
         own_arg_info = FALSE;
-        old_thisassign = INFO_SYNCO_THISASSIGN (arg_info);
-        old_nextassign = INFO_SYNCO_NEXTASSIGN (arg_info);
+        old_thisassign = INFO_THISASSIGN (arg_info);
+        old_nextassign = INFO_NEXTASSIGN (arg_info);
     }
 
-    INFO_SYNCO_THISASSIGN (arg_info) = arg_node;
-    INFO_SYNCO_NEXTASSIGN (arg_info) = ASSIGN_NEXT (arg_node);
+    INFO_THISASSIGN (arg_info) = arg_node;
+    INFO_NEXTASSIGN (arg_info) = ASSIGN_NEXT (arg_node);
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
     /*
@@ -525,8 +460,8 @@ SYNCOassign (node *arg_node, info *arg_info)
     if (own_arg_info) {
         FreeInfo (arg_info);
     } else {
-        INFO_SYNCO_THISASSIGN (arg_info) = old_thisassign;
-        INFO_SYNCO_NEXTASSIGN (arg_info) = old_nextassign;
+        INFO_THISASSIGN (arg_info) = old_thisassign;
+        INFO_NEXTASSIGN (arg_info) = old_nextassign;
     }
 
     DBUG_RETURN (arg_node);

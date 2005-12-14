@@ -1,107 +1,6 @@
-/*
- *
- * $Log$
- * Revision 3.15  2005/01/11 11:03:23  cg
- * Converted output from Error.h to ctinfo.c
- *
- * Revision 3.14  2004/11/25 14:25:09  khf
- * SacDevCamp04
- *
- * Revision 3.13  2004/11/24 19:29:17  skt
- * Compiler Switch during SACDevCampDK 2k4
- *
- * Revision 3.12  2004/11/23 23:09:06  skt
- * codebrushing during SACDevCampDK 2k4
- *
- * Revision 3.11  2004/11/21 17:32:02  skt
- * make it runable with the new info structure
- *
- * Revision 3.10  2004/09/28 16:33:12  ktr
- * cleaned up concurrent (removed everything not working / not working with emm)
- *
- * Revision 3.9  2004/09/18 16:01:04  ktr
- * Moved old multithread to phase 21 and added spmdemm traversal.
- * Although EMM and old MT work for genarray-wls, further work is needed
- * for fold-wls.
- *
- * Revision 3.8  2004/03/26 14:36:23  khf
- * OPT_MTO deaktivated
- *
- * Revision 3.7  2004/03/02 16:51:22  mwe
- * OPT_SBE deactivated
- *
- * Revision 3.6  2001/05/17 11:41:33  dkr
- * FREE replaced by FreeTree
- *
- * Revision 3.5  2001/01/25 10:18:01  dkr
- * PH_spmdregions renamed into PH_multithread
- *
- * Revision 3.4  2000/12/15 18:24:54  dkr
- * infer_dfms.h renamed into InferDFMs.h
- *
- * Revision 3.3  2000/12/15 10:43:06  dkr
- * signature of InferDFMs() modified
- *
- * Revision 3.2  2000/12/12 12:13:15  dkr
- * call of InferDFMs added
- *
- * Revision 3.1  2000/11/20 18:02:24  sacbase
- * new release made
- *
- * Revision 2.11  2000/01/21 13:22:44  jhs
- * Added some comments ...
- *
- * Revision 2.10  1999/11/11 10:30:36  jhs
- * Added some DBUG_PRINTs to check which phases fail (if they do).
- *
- * Revision 2.9  1999/08/27 11:55:09  jhs
- * Added DBUG_PRINTS.
- *
- * Revision 2.8  1999/08/09 11:32:20  jhs
- * Cleaned up info-macros for concurrent-phase.
- *
- * Revision 2.7  1999/08/05 13:36:25  jhs
- * Added optimization of sequential assignments between spmd-blocks, main work
- * happens in spmdinit and ist steered by OPT_MTI (default now: off), some
- * traversals were needed and added in spmd_trav.
- *
- * Revision 2.6  1999/07/30 13:46:40  jhs
- * Brushed some Notes.
- *
- * Revision 2.5  1999/07/28 13:03:35  jhs
- * Added seventh phase: spmd-constraining.
- *
- * Revision 2.4  1999/07/21 16:30:27  jhs
- * needed_sync_fold introduced, max_sync_fold_adjusted.
- *
- * Revision 2.3  1999/07/01 13:01:02  jhs
- * Inserted handling of INFO_SYNCI_LAST.
- *
- * Revision 2.2  1999/05/26 14:32:23  jhs
- * Added options MTO and SBE for multi-thread optimsation and
- * synchronisation barrier elimination, both options are by
- * default disabled.
- *
- * Revision 2.1  1999/02/23 12:44:04  sacbase
- * new release made
- *
- * Revision 1.4  1999/02/15 15:13:02  cg
- * Reordering of functions corrected: Fodfuns remain in front
- * of N_fundef chain.
- *
- * Revision 1.3  1998/06/25 08:04:18  cg
- * sequence of fundefs will now be reordered so that spmd-functions
- * appear before the original functions they are lifted from.
- *
- * Revision 1.2  1998/06/23 12:56:32  cg
- * added handling of new attribute NWITH2_MT
- *
- * Revision 1.1  1998/06/18 14:35:53  cg
- * Initial revision
- *
- */
-
 /*****************************************************************************
+ *
+ * $Id$
  *
  * file:   concurrent.c
  *
@@ -185,7 +84,6 @@ FreeInfo (info *info)
 node *
 CONCdoConcurrent (node *syntax_tree)
 {
-    trav_t traversaltable;
     info *arg_info;
 
     DBUG_ENTER ("CONCdoConcurrent");
@@ -195,11 +93,8 @@ CONCdoConcurrent (node *syntax_tree)
     arg_info = MakeInfo ();
 
     TRAVpush (TR_conc);
-
     syntax_tree = TRAVdo (syntax_tree, arg_info);
-
-    traversaltable = TRAVpop ();
-    DBUG_ASSERT ((traversaltable == TR_conc), "Popped incorrect traversal table");
+    TRAVpop ();
 
     arg_info = FreeInfo (arg_info);
 
@@ -262,29 +157,24 @@ node *
 CONCfundef (node *arg_node, info *arg_info)
 {
     node *first_spmdfun, *last_spmdfun, *current_fun;
-    trav_t traversaltable;
 
     DBUG_ENTER ("CONCfundef");
 
     INFO_CONC_FUNDEF (arg_info) = arg_node;
 
-    if ((FUNDEF_BODY (arg_node) != NULL) && FUNDEF_ISFOLDFUN (arg_node)) {
+    if ((FUNDEF_BODY (arg_node) != NULL) && (!FUNDEF_ISFOLDFUN (arg_node))) {
         if (!FUNDEF_ISSPMDFUN (arg_node)) {
 
             /*
              * First, spmd-blocks are built around with-loops.
              */
-            TRAVpush (TR_spmdi);
-
             DBUG_PRINT ("CONC", ("--- begin a SPMDI traversal ---"));
             DBUG_PRINT ("SPMDI", ("--- begin a SPMDI traversal ---"));
+            TRAVpush (TR_spmdi);
             FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+            TRAVpop ();
             DBUG_PRINT ("SPMDI", ("--- end a SPMDI traversal ---"));
             DBUG_PRINT ("CONC", ("--- end a SPMDI traversal ---"));
-
-            traversaltable = TRAVpop ();
-            DBUG_ASSERT ((traversaltable == TR_spmdi),
-                         "Popped incorrect traversal table");
 
             if ((global.break_after == PH_multithread_finish)
                 && (0 == strcmp ("spmdinit", global.break_specifier))) {
@@ -310,18 +200,15 @@ CONCfundef (node *arg_node, info *arg_info)
              * the contents of each spmd-block are copied into a separate function,
              * called spmd-function.
              */
-            TRAVpush (TR_spmdl);
 
             INFO_SPMDL_MT (arg_info) = 0;
             DBUG_PRINT ("CONC", ("--- begin a SPMDL (mt = 0) traversal ---"));
             DBUG_PRINT ("SPMDL", ("--- begin a SPMDL (mt = 0) traversal ---"));
+            TRAVpush (TR_spmdl);
             FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+            TRAVpop ();
             DBUG_PRINT ("SPMDL", ("--- end a SPMDL (mt = 0) traversal ---"));
             DBUG_PRINT ("CONC", ("--- end a SPMDL (mt = 0) traversal ---"));
-
-            traversaltable = TRAVpop ();
-            DBUG_ASSERT ((traversaltable == TR_spmdl),
-                         "Popped incorrect traversal table");
 
             if ((global.break_after == PH_multithread_finish)
                 && (0 == strcmp ("spmdlift", global.break_specifier))) {
@@ -331,17 +218,14 @@ CONCfundef (node *arg_node, info *arg_info)
             /*
              * scheduling specifications outside from spmd-functions are removed.
              */
-            TRAVpush (TR_sched);
-
             DBUG_PRINT ("CONC", ("--- begin a SCHED traversal ---"));
             DBUG_PRINT ("SCHED", ("--- begin a SCHED traversal ---"));
+            TRAVpush (TR_sched);
             FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), NULL);
+            TRAVpop ();
             DBUG_PRINT ("SCHED", ("--- end a SCHED traversal ---"));
             DBUG_PRINT ("CONC", ("--- end a SCHED traversal ---"));
 
-            traversaltable = TRAVpop ();
-            DBUG_ASSERT ((traversaltable == TR_sched),
-                         "Popped incorrect traversal table");
         } else {
 
             if ((global.break_after == PH_multithread_finish)
@@ -354,18 +238,14 @@ CONCfundef (node *arg_node, info *arg_info)
              * Third, local back references within spmd-functions are adjusted, e.g.
              * references to identifer declarations or data flow masks.
              */
-            TRAVpush (TR_spmdl);
-
             INFO_SPMDL_MT (arg_info) = 1;
             DBUG_PRINT ("CONC", ("--- begin a SPMDL (mt = 1) traversal ---"));
             DBUG_PRINT ("SPMDL", ("--- begin a SPMDL (mt = 1) traversal ---"));
+            TRAVpush (TR_spmdl);
             FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+            TRAVpop ();
             DBUG_PRINT ("SPMDL", ("--- end a SPMDL (mt = 1) traversal ---"));
             DBUG_PRINT ("CONC", ("--- end a SPMDL (mt = 1) traversal ---"));
-
-            traversaltable = TRAVpop ();
-            DBUG_ASSERT ((traversaltable == TR_spmdi),
-                         "Popped incorrect traversal table");
 
             if ((global.break_after == PH_multithread_finish)
                 && (0 == strcmp ("spmdlift", global.break_specifier))) {
@@ -376,19 +256,15 @@ CONCfundef (node *arg_node, info *arg_info)
              * Fourth, synchronisation blocks are built around each assignment within
              * the body of an spmd-function.
              */
-            TRAVpush (TR_synci);
-
             INFO_SYNCI_FIRST (arg_info) = 1;
             INFO_SYNCI_LAST (arg_info) = 1;
             DBUG_PRINT ("CONC", ("--- begin a SYNCI traversal ---"));
             DBUG_PRINT ("SYNCI", ("--- begin a SYNCI traversal ---"));
+            TRAVpush (TR_synci);
             FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+            TRAVpop ();
             DBUG_PRINT ("SYNCI", ("--- end a SYNCI traversal ---"));
             DBUG_PRINT ("CONC", ("--- end a SYNCI traversal ---"));
-
-            traversaltable = TRAVpop ();
-            DBUG_ASSERT ((traversaltable == TR_synci),
-                         "Popped incorrect traversal table");
 
             if ((global.break_after == PH_multithread_finish)
                 && (0 == strcmp ("syncinit", global.break_specifier))) {
@@ -399,17 +275,13 @@ CONCfundef (node *arg_node, info *arg_info)
              * synchronisation blocks are optimized, i.e. two or several adjacent
              * synchronisation blocks are combined into a single larger one.
              */
-            TRAVpush (TR_synco);
-
             DBUG_PRINT ("CONC", ("--- begin a SYNCO traversal ---"));
             DBUG_PRINT ("SYNCO", ("--- begin a SYNCO traversal ---"));
+            TRAVpush (TR_synco);
             FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+            TRAVpop ();
             DBUG_PRINT ("SYNCO", ("--- end a SYNCO traversal ---"));
             DBUG_PRINT ("CONC", ("--- end a SYNCO traversal ---"));
-
-            traversaltable = TRAVpop ();
-            DBUG_ASSERT ((traversaltable == TR_synco),
-                         "Popped incorrect traversal table");
 
             if ((global.break_after == PH_multithread_finish)
                 && (0 == strcmp ("syncopt", global.break_specifier))) {
@@ -423,17 +295,13 @@ CONCfundef (node *arg_node, info *arg_info)
              * wlcomp pragma information. Scheduling specifications
              * outside of the context of a synchronisation block are removed.
              */
-            TRAVpush (TR_sched);
-
             DBUG_PRINT ("CONC", ("--- begin a SCHED traversal ---"));
             DBUG_PRINT ("SCHED", ("--- begin a SCHED traversal ---"));
+            TRAVpush (TR_sched);
             FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+            TRAVpop ();
             DBUG_PRINT ("SCHED", ("--- end a SCHED traversal ---"));
             DBUG_PRINT ("CONC", ("--- end a SCHED traversal ---"));
-
-            traversaltable = TRAVpop ();
-            DBUG_ASSERT ((traversaltable == TR_sched),
-                         "Popped incorrect traversal table");
         }
 
         /*
@@ -444,12 +312,7 @@ CONCfundef (node *arg_node, info *arg_info)
 cont:
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
-        TRAVpush (TR_conc);
-
         FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-
-        traversaltable = TRAVpop ();
-        DBUG_ASSERT ((traversaltable == TR_conc), "Popped incorrect traversal table");
     }
 
     /*

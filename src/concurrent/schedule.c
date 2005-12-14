@@ -1,65 +1,6 @@
-/*
- *
- * $Log$
- * Revision 3.10  2004/11/29 10:56:00  sah
- * fixed naming convention bug
- *
- * Revision 3.9  2004/11/25 15:20:21  jhb
- * WLSEGX_TASKSEL achanged to L_WLSEGX_TASKSEL
- *
- * Revision 3.8  2004/11/24 19:29:17  skt
- * Compiler Switch during SACDevCampDK 2k4
- *
- * Revision 3.7  2004/08/08 16:05:08  sah
- * fixed some includes.
- *
- * Revision 3.6  2001/07/10 09:30:49  ben
- * SCHRemoveTasksel inserted
- *
- * Revision 3.5  2001/03/29 14:46:06  dkr
- * NWITH2_SCHEDULING removed
- *
- * Revision 3.4  2001/03/29 14:03:15  dkr
- * no changes done
- *
- * Revision 3.3  2001/03/14 15:58:54  ben
- * MakeDefaultSchedulingVarSegment() modified (assertion deleted)
- *
- * Revision 3.2  2000/12/15 13:07:13  dkr
- * DBUG_ASSERT for BlockVar scheduler added
- *
- * Revision 3.1  2000/11/20 18:02:27  sacbase
- * new release made
- *
- * Revision 2.6  2000/10/31 23:18:50  dkr
- * Trav: NWITH2_CODE might be NULL
- *
- * Revision 2.4  1999/07/23 12:44:08  cg
- * Bug fixed in compilation of multi-threaded nested with-loops.
- * Now, schedulings for inner with-loops in with-loop nestings
- * are succesfully removed.
- *
- * Revision 2.3  1999/07/07 15:50:38  jhs
- * Corrected some copypasted bugs in some assertions.
- *
- * Revision 2.2  1999/07/07 14:29:45  jhs
- * Removed SYNC_WITH_PTRS from routine SCHEDsync.
- *
- * Revision 2.1  1999/02/23 12:44:07  sacbase
- * new release made
- *
- * Revision 1.3  1998/08/07 15:28:27  dkr
- * SCHEDwlsegVar added
- *
- * Revision 1.2  1998/08/06 20:57:53  dkr
- * SCHEDwlseg, SCHEDwlsegvar must traverse NEXT-nodes
- *
- * Revision 1.1  1998/06/18 14:37:17  cg
- * Initial revision
- *
- */
-
 /*****************************************************************************
+ *
+ * $Id$
  *
  * file:   schedule.c
  *
@@ -74,10 +15,10 @@
  *
  *   During this traversal, all scheduling specifications outside spmd-functions
  *   are removed. Within spmd-functions existing segment scheduling information
- *   is checked for suitability and missing schedulings are supplied on the basis
- *   of an inference scheme. All scheduling information of with-loops within
- *   a single synchronisation block is gathered, combined, checked, and tied
- *   to the synchronisation block. Missing scheduling information is again
+ *   is checked for suitability and missing schedulings are supplied on the
+ *   basis of an inference scheme. All scheduling information of with-loops
+ *   within a single synchronisation block is gathered, combined, checked, and
+ *   tied to the synchronisation block. Missing scheduling information is again
  *   supplied by applying an inference scheme.
  *
  *****************************************************************************/
@@ -194,8 +135,8 @@ SCHEDwlseg (node *arg_node, info *arg_info)
 
     if (arg_info == NULL) {
         /*
-         * Here, we are not within an spmd-function, so schedulings derived from wlcomp
-         * pragmas must be removed.
+         * Here, we are not within an spmd-function, so schedulings derived from
+         * wlcomp pragmas must be removed.
          */
         if (WLSEG_SCHEDULING (arg_node) != NULL) {
             WLSEG_SCHEDULING (arg_node)
@@ -207,9 +148,9 @@ SCHEDwlseg (node *arg_node, info *arg_info)
 
     } else {
         /*
-         * Here, we are within an spmd-function, so if no scheduling is already present,
-         * the inference strategy is used. Otherwise a scheduling derived froma wlcomp
-         * pragma is checked for suitability for constant segments.
+         * Here, we are within an spmd-function, so if no scheduling is already
+         * present, the inference strategy is used. Otherwise a scheduling derived
+         * froma wlcomp pragma is checked for suitability for constant segments.
          */
         if (WLSEG_SCHEDULING (arg_node) == NULL) {
             WLSEG_SCHEDULING (arg_node)
@@ -247,8 +188,8 @@ SCHEDwlsegvar (node *arg_node, info *arg_info)
 
     if (arg_info == NULL) {
         /*
-         * Here, we are not within an spmd-function, so schedulings derived from wlcomp
-         * pragmas must be removed.
+         * Here, we are not within an spmd-function, so schedulings derived from
+         * wlcomp pragmas must be removed.
          */
         if (WLSEGVAR_SCHEDULING (arg_node) != NULL) {
             WLSEGVAR_SCHEDULING (arg_node)

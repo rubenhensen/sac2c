@@ -1,70 +1,3 @@
-/*
- *
- * $Log$
- * Revision 3.11  2004/11/24 19:29:17  skt
- * Compiler Switch during SACDevCampDK 2k4
- *
- * Revision 3.10  2004/11/21 17:32:02  skt
- * make it runable with the new info structure
- *
- * Revision 3.9  2004/09/28 16:33:12  ktr
- * cleaned up concurrent (removed everything not working / not working with emm)
- *
- * Revision 3.8  2004/09/28 14:09:59  ktr
- * removed old refcount and generatemasks
- *
- * Revision 3.7  2004/02/25 08:17:44  cg
- * Elimination of while-loops by conversion into do-loops with
- * leading conditional integrated into flatten.
- * Separate compiler phase while2do eliminated.
- * NO while-loops may occur after flatten.
- * While-loop specific code eliminated.
- *
- * Revision 3.6  2001/05/08 12:49:42  dkr
- * new RC macros used
- *
- * Revision 3.3  2000/12/12 12:12:45  dkr
- * NWITH_INOUT removed
- * interpretation of NWITH_IN changed:
- * the LHS of a with-loop assignment is now longer included in
- * NWITH_IN!!!
- *
- * Revision 3.1  2000/11/20 18:02:33  sacbase
- * new release made
- *
- * Revision 2.10  2000/01/26 17:25:08  dkr
- * type of traverse-function-table changed.
- *
- * Revision 2.9  2000/01/25 13:42:25  dkr
- * function FindVardec moved to tree_compound.h and renamed to
- * FindVardec_Varno
- *
- * Revision 2.8  1999/08/27 12:46:43  jhs
- * Added Traversal for CountOccurences.
- * Commented and rearranged functions.
- *
- * Revision 2.7  1999/08/09 11:32:20  jhs
- * Cleaned up info-macros for concurrent-phase.
- *
- * Revision 2.6  1999/08/05 13:36:25  jhs
- * Added optimization of sequential assignments between spmd-blocks, main work
- * happens in spmdinit and ist steered by OPT_MTI (default now: off), some
- * traversals were needed and added in spmd_trav.
- *
- * Revision 2.5  1999/08/03 11:44:02  jhs
- * Added comments.
- *
- * Revision 2.3  1999/07/28 13:07:45  jhs
- * CountOccurences gets fundef now.
- *
- * Revision 2.2  1999/06/25 15:36:33  jhs
- * Checked these in just to provide compileabilty.
- *
- * Revision 2.1  1999/06/15 14:15:23  jhs
- * Initial revision generated.
- *
- */
-
 /*****************************************************************************
  *
  * file:     spmd_trav.c
@@ -177,23 +110,19 @@ node *
 SPMDDNdoDeleteNested (node *arg_node)
 {
     info *arg_info;
-    trav_t traversaltable;
 
     DBUG_ENTER ("SPMDDNdoDeleteNested");
-
-    TRAVpush (TR_spmddn);
 
     arg_info = MakeInfo ();
     INFO_SPMDDN_NESTED (arg_info) = FALSE;
 
     DBUG_PRINT ("SPMDDN", ("trav into"));
+    TRAVpush (TR_spmddn);
     arg_node = TRAVdo (arg_node, arg_info);
+    TRAVpop ();
     DBUG_PRINT ("SPMDDN", ("trav from"));
 
     arg_info = FreeInfo (arg_info);
-
-    traversaltable = TRAVpop ();
-    DBUG_ASSERT ((traversaltable == TR_spmddn), "Popped incorrect traversal table");
 
     DBUG_RETURN (arg_node);
 }
@@ -335,15 +264,9 @@ SPMDPMassign (node *arg_node, info *arg_info)
             DFMsetMaskEntryClear (INFO_SPMDPM_INOUT (arg_info), NULL,
                                   IDS_AVIS (LET_IDS (ASSIGN_INSTR (arg_node))));
         }
-    } else if (NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_while) {
-        DBUG_PRINT ("SPMDPM", ("while pm"));
-        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
     } else if (NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_do) {
         DBUG_PRINT ("SPMDPM", ("while pm"));
         ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
-    } else {
-        DBUG_PRINT ("SPMDPM",
-                    ("for pm -> %i", FUNDEF_VARNO (INFO_SPMDPM_FUNDEF (arg_info))));
     }
 
     if (ASSIGN_NEXT (arg_node) != NULL) {

@@ -597,7 +597,7 @@ GSCicm (node *arg_node, info *arg_info)
             DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR1 (icm_arg)) == N_id),
                          "ICM MT_SPMD_SETUP has wrong format (tag no N_id)");
 
-            tag = ID_NAME (EXPRS_EXPR1 (icm_arg));
+            tag = ID_ICMTEXT (EXPRS_EXPR1 (icm_arg));
 
             DBUG_ASSERT ((EXPRS_EXPRS2 (icm_arg) != NULL),
                          "ICM MT_SPMD_SETUP has wrong format (type missing)");
@@ -606,7 +606,7 @@ GSCicm (node *arg_node, info *arg_info)
             DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR2 (icm_arg)) == N_id),
                          "ICM MT_SPMD_SETUP has wrong format (type no N_id)");
 
-            type = ID_NAME (EXPRS_EXPR2 (icm_arg));
+            type = ID_ICMTEXT (EXPRS_EXPR2 (icm_arg));
 
             DBUG_ASSERT ((EXPRS_EXPRS3 (icm_arg) != NULL),
                          "ICM MT_SPMD_SETUP has wrong format (parameter missing)");

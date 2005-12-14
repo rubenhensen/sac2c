@@ -1553,19 +1553,9 @@
       </traversal>
       <traversal id="SPMDL" name="SPMD Lift" default="sons" include="spmd_lift.h">
         <travuser>
-          <node name="Id" />
-          <node name="Ids" />
-          <node name="Let" />
           <node name="Spmd" />
           <node name="With2" />
-          <node name="Withid" />
         </travuser>
-        <travsons>
-        </travsons>
-        <travnone>
-        </travnone>
-        <traverror>
-        </traverror>
       </traversal>
       <traversal id="SCHED" name="Schedule" default="sons" include="schedule.h">
         <travuser>
@@ -2714,21 +2704,6 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="VarNo">
-          <type name="Integer">
-            <targets>
-              <target mandatory="no">
-                <any />
-                <phases>
-                  <range from="sacopt" to="final"/>
-                </phases>
-              </target>
-            </targets>
-          </type>
-          <description>
-            Deprecated. TODO: This should be eliminated.
-          </description>
-        </attribute>
         <attribute name="TCStat">
           <type name="TypeCheckingStatus">
             <targets>
@@ -2917,21 +2892,6 @@
               </target>
             </targets>
           </type>
-        </attribute>
-        <attribute name="VarNo">
-          <type name="Integer">
-            <targets>
-              <target mandatory="yes">
-                <any />
-                <phases>
-                  <range from="sacopt" to="final" />
-                </phases>
-              </target>
-            </targets>
-          </type>
-          <description>
-            Deprecated. TODO: This should be eliminated.
-          </description>
         </attribute>
         <attribute name="TypeString">
           <type name="String">
@@ -3137,21 +3097,6 @@
               </target>
             </targets>
           </type>
-        </attribute>
-        <attribute name="VarNo">
-          <type name="Integer">
-            <targets>
-              <target mandatory="yes">
-                <any />
-                <phases>
-                  <range from="sacopt" to="final" />
-                </phases>
-              </target>
-            </targets>
-          </type>
-          <description>
-            Deprecated. TODO: This should be eliminated.
-          </description>
         </attribute>
         <attribute name="Icm">
           <type name="Node">

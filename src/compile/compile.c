@@ -6694,63 +6694,60 @@ COMPcode (node *arg_node, info *arg_info)
 node *
 COMPspmd (node *arg_node, info *arg_info)
 {
-    node *fundef, *icm_args, *assigns;
+    node *spmdfun, *icm_args, *assigns;
     int num_args;
 
     DBUG_ENTER ("COMPspmd");
+
+    spmdfun = SPMD_FUNDEF (arg_node);
 
     /*
      * Compile original code within spmd-block in order to produce sequential
      * code version.
      */
     SPMD_ICM_SEQUENTIAL (arg_node) = TRAVdo (SPMD_REGION (arg_node), arg_info);
+    SPMD_REGION (arg_node) = NULL;
 
     /*
      * build ICM for SPMD-region
      */
     SPMD_ICM_BEGIN (arg_node)
-      = TCmakeIcm1 ("MT_SPMD_BEGIN",
-                    TCmakeIdCopyString (FUNDEF_NAME (SPMD_FUNDEF (arg_node))));
+      = TCmakeIcm1 ("MT_SPMD_BEGIN", TCmakeIdCopyString (FUNDEF_NAME (spmdfun)));
     SPMD_ICM_ALTSEQ (arg_node)
-      = TCmakeIcm1 ("MT_SPMD_ALTSEQ",
-                    TCmakeIdCopyString (FUNDEF_NAME (SPMD_FUNDEF (arg_node))));
+      = TCmakeIcm1 ("MT_SPMD_ALTSEQ", TCmakeIdCopyString (FUNDEF_NAME (spmdfun)));
     SPMD_ICM_END (arg_node)
-      = TCmakeIcm1 ("MT_SPMD_END",
-                    TCmakeIdCopyString (FUNDEF_NAME (SPMD_FUNDEF (arg_node))));
+      = TCmakeIcm1 ("MT_SPMD_END", TCmakeIdCopyString (FUNDEF_NAME (spmdfun)));
 
     /*
      * Now, build up the ICMs of the parallel block.
      */
-    fundef = INFO_FUNDEF (arg_info);
     assigns = NULL;
     assigns = TCmakeAssignIcm1 ("MT_SPMD_EXECUTE",
-                                TCmakeIdCopyString (FUNDEF_NAME (SPMD_FUNDEF (arg_node))),
-                                assigns);
+                                TCmakeIdCopyString (FUNDEF_NAME (spmdfun)), assigns);
 
     /*
      * Now, build up the arguments for MT_SPMD_SETUP ICM.
      */
-    DBUG_ASSERT ((NODE_TYPE (FUNDEF_ICM (SPMD_FUNDEF (arg_node))) == N_icm),
+    DBUG_ASSERT ((NODE_TYPE (FUNDEF_ICM (spmdfun)) == N_icm),
                  "SPMD function MUST be compiled prior to compilation of "
                  "corresponding SMPD block.");
 
     num_args = 0;
-    icm_args = NULL; /* dkr: should be FREEdoFreeTree( icm_args) ?!? */
+    icm_args = NULL;
     icm_args = MakeParamsByDFM (SPMD_IN (arg_node), "in", &num_args, icm_args);
     icm_args = MakeParamsByDFM (SPMD_OUT (arg_node), "out", &num_args, icm_args);
     icm_args = MakeParamsByDFM (SPMD_SHARED (arg_node), "shared", &num_args, icm_args);
 
-    icm_args = TBmakeExprs (TCmakeIdCopyString (FUNDEF_NAME (SPMD_FUNDEF (arg_node))),
+    icm_args = TBmakeExprs (TCmakeIdCopyString (FUNDEF_NAME (spmdfun)),
                             TBmakeExprs (TBmakeNum (num_args), icm_args));
 
     assigns = TCmakeAssignIcm1 ("MT_SPMD_SETUP", icm_args, assigns);
 
-    assigns
-      = TCappendAssign (BLOCK_SPMD_PROLOG_ICMS (FUNDEF_BODY (SPMD_FUNDEF (arg_node))),
-                        assigns);
+    assigns = TCappendAssign (BLOCK_SPMD_PROLOG_ICMS (FUNDEF_BODY (spmdfun)), assigns);
+    BLOCK_SPMD_PROLOG_ICMS (FUNDEF_BODY (spmdfun)) = NULL;
 
-    assigns = TCappendAssign (BLOCK_SCHEDULER_INIT (FUNDEF_BODY (SPMD_FUNDEF (arg_node))),
-                              assigns);
+    assigns = TCappendAssign (BLOCK_SCHEDULER_INIT (FUNDEF_BODY (spmdfun)), assigns);
+    BLOCK_SCHEDULER_INIT (FUNDEF_BODY (spmdfun)) = NULL;
 
     SPMD_ICM_PARALLEL (arg_node) = TBmakeBlock (assigns, NULL);
 

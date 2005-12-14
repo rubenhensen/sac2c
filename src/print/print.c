@@ -60,7 +60,6 @@ struct INFO {
     node *nwith2;
     int sib;
     int ofp;
-    int varno;
     int prototype;
     int separate;
     int dim;
@@ -79,7 +78,6 @@ struct INFO {
 #define INFO_PRINT_NPART(n) (n->npart)
 #define INFO_PRINT_NWITH2(n) (n->nwith2)
 #define INFO_PRINT_OMIT_FORMAL_PARAMS(n) (n->ofp)
-#define INFO_PRINT_VARNO(n) (n->varno)
 #define INFO_PRINT_PROTOTYPE(n) (n->prototype)
 #define INFO_PRINT_SEPARATE(n) (n->separate)
 #define INFO_PRINT_DIM(n) (n->dim)
@@ -196,7 +194,6 @@ MakeInfo ()
     INFO_PRINT_NPART (result) = NULL;
     INFO_PRINT_NWITH2 (result) = NULL;
     INFO_PRINT_OMIT_FORMAL_PARAMS (result) = 0;
-    INFO_PRINT_VARNO (result) = 0;
     INFO_PRINT_PROTOTYPE (result) = 0;
     INFO_PRINT_SEPARATE (result) = 0;
     INFO_PRINT_DIM (result) = 0;
@@ -1381,8 +1378,6 @@ PRTfundef (node *arg_node, info *arg_info)
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
     }
 
-    INFO_PRINT_VARNO (arg_info) = FUNDEF_VARNO (arg_node);
-
     /*
      * needed for the introduction of PROFILE_... MACROS in the
      *  function body.
@@ -1597,9 +1592,6 @@ PRTarg (node *arg_node, info *arg_info)
     char *type_str;
 
     DBUG_ENTER ("PRTarg");
-
-    DBUG_EXECUTE ("PRINT_MASKS",
-                  fprintf (global.outfile, " **%d:", ARG_VARNO (arg_node)););
 
     if (NODE_ERROR (arg_node) != NULL) {
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);

@@ -1,95 +1,6 @@
-/*
- *
- * $Log$
- * Revision 3.14  2005/07/15 15:57:02  sah
- * introduced namespaces
- *
- * Revision 3.13  2004/11/25 15:36:04  khf
- * removed IS_REFERENCED, IS_GLOBAl
- *
- * Revision 3.12  2004/11/25 15:13:14  khf
- * SacDevCamp04
- *
- * Revision 3.11  2004/11/24 19:29:17  skt
- * Compiler Switch during SACDevCampDK 2k4
- *
- * Revision 3.10  2004/11/21 17:59:37  skt
- * moved 2 defines from concurrent_lib.h into here
- *
- * Revision 3.9  2004/11/21 17:32:02  skt
- * make it runable with the new info structure
- *
- * Revision 3.8  2002/10/18 13:28:16  sbs
- * ID_ATTRIB replaced by accesses to the FLAGS of N_id
- *
- * Revision 3.7  2002/08/15 11:47:33  dkr
- * type LUT_t* replaced by LUT_t
- *
- * Revision 3.6  2002/08/13 13:46:29  dkr
- * SearchInLUT_PP used instead of SearchInLUT_P
- *
- * Revision 3.5  2002/02/20 14:58:58  dkr
- * fundef DupTypes() renamed into DupAllTypes()
- *
- * Revision 3.4  2001/04/26 09:23:18  dkr
- * - DFMs for lifted function are explicitly rebuild now
- *   (DupTree no longer duplicates DFMs)
- * - For adjusting decl pointers in the lifted code DupTreeLUT is used
- *   instead of FindVardec_...()  :-))
- *
- * Revision 3.3  2000/12/12 12:11:51  dkr
- * NWITH_INOUT removed
- * interpretation of NWITH_IN changed:
- * the LHS of a with-loop assignment is now longer included in
- * NWITH_IN!!!
- *
- * Revision 3.2  2000/12/07 12:56:56  dkr
- * nothing changed
- *
- * Revision 3.1  2000/11/20 18:02:30  sacbase
- * new release made
- *
- * Revision 2.10  2000/10/31 23:19:34  dkr
- * Trav: NWITH2_CODE might be NULL
- *
- * Revision 2.9  2000/10/24 11:51:31  dkr
- * MakeTypes renamed into MakeTypes1
- *
- * Revision 2.8  2000/07/12 15:15:06  dkr
- * function DuplicateTypes renamed into DupTypes
- *
- * Revision 2.7  2000/06/23 15:13:19  dkr
- * signature of DupTree changed
- *
- * Revision 2.6  2000/01/25 13:42:57  dkr
- * function GetVardec moved to tree_compound.h and renamed to
- * FindVardec_Name
- *
- * Revision 2.5  1999/08/27 11:57:37  jhs
- * Added copying of varnos (fundef and vardecs) while lifting the
- * spmd-blocks to spmd-functions.
- *
- * Revision 2.4  1999/08/09 11:32:20  jhs
- * Cleaned up info-macros for concurrent-phase.
- *
- * Revision 2.3  1999/07/30 13:47:41  jhs
- * Clean sweep, deleted unused parts.
- *
- * Revision 2.2  1999/06/25 15:36:33  jhs
- * Checked these in just to provide compileabilty.
- *
- * Revision 2.1  1999/02/23 12:44:14  sacbase
- * new release made
- *
- * Revision 1.2  1998/06/23 12:56:32  cg
- * added handling of new attribute NWITH2_MT
- *
- * Revision 1.1  1998/06/18 14:35:53  cg
- * Initial revision
- *
- */
-
 /*****************************************************************************
+ *
+ * $Id$
  *
  * file:   spmd_lift.c
  *
@@ -117,40 +28,7 @@
 #include "InferDFMs.h"
 #include "namespaces.h"
 #include "concurrent_info.h"
-
-/******************************************************************************
- *
- * function:
- *   node *SPMDLids( node *arg_node, info *arg_info)
- *
- * description:
- *
- *
- ******************************************************************************/
-
-node *
-SPMDLids (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("SPMDLids");
-
-    DBUG_RETURN (arg_node);
-}
-
-static node *
-MakeRetsFromTypes (types *rettypes)
-{
-    node *result;
-
-    DBUG_ENTER ("MakeRetsFromTypes");
-
-    result = NULL;
-    while (rettypes != NULL) {
-        result = TBmakeRet (NULL, result);
-        rettypes = TYPES_NEXT (rettypes);
-    }
-
-    DBUG_RETURN (result);
-}
+#include "new_types.h"
 
 /******************************************************************************
  *
@@ -168,12 +46,12 @@ MakeRetsFromTypes (types *rettypes)
 node *
 SPMDLspmd (node *arg_node, info *arg_info)
 {
-    node *vardec, *fundef, *new_fundef, *body;
-    node *fvardecs, *new_fvardec;
-    node *fargs, *new_farg;
-    node *retexprs, *new_retexpr;
-    node *tmp;
-    types *rettypes, *new_rettype;
+    node *avis, *fundef, *new_fundef, *body;
+    node *fvardecs;
+    node *fargs;
+    node *retexprs;
+    node *rets;
+    types *rettypes;
     lut_t *lut;
 
     DBUG_ENTER (" SPMDLspmd");
@@ -185,7 +63,7 @@ SPMDLspmd (node *arg_node, info *arg_info)
      */
 
     /*
-     * generate LUT (needed to get correct decl pointers during DupTree)
+     * generate LUT (needed to get correct avis pointers during DupTree)
      */
     lut = LUTgenerateLut ();
 
@@ -193,148 +71,77 @@ SPMDLspmd (node *arg_node, info *arg_info)
      * build vardecs of SPMD_OUT/LOCAL-vars for SPMD function and fill LUT
      */
     fvardecs = NULL;
-    vardec = DFMgetMaskEntryDeclSet (SPMD_OUT (arg_node));
-    while (vardec != NULL) {
+    avis = DFMgetMaskEntryAvisSet (SPMD_OUT (arg_node));
+    while (avis != NULL) {
         /* reduce outs by ins */
-        if (!(DFMtestMaskEntry (SPMD_IN (arg_node), NULL, vardec))) {
-            if (NODE_TYPE (vardec) == N_vardec) {
-                new_fvardec = DUPdoDupNode (vardec);
-                VARDEC_NEXT (new_fvardec) = fvardecs;
+        if (!DFMtestMaskEntry (SPMD_IN (arg_node), NULL, avis)) {
+            node *newavis = DUPdoDupNode (avis);
 
-                DBUG_PRINT ("SPMDL", ("inserted vardec out %s", VARDEC_NAME (vardec)));
-            } else {
-                /* old */
-                /*
-                 * new_fvardec = TBmakeVardec( StringCopy(ARG_NAME( vardec)),
-                 *                             DupAllTypes( ARG_TYPE( vardec)),
-                 *                             fvardecs);
-                 */
+            fvardecs = TBmakeVardec (newavis, fvardecs);
+            DBUG_PRINT ("SPMDL", ("inserted out variable %s", AVIS_NAME (avis)));
 
-                /* new */
-                new_fvardec
-                  = TBmakeVardec (TBmakeAvis (ILIBstringCopy (ARG_NAME (vardec)), NULL),
-                                  fvardecs);
-                VARDEC_TYPE (new_fvardec) = DUPdupAllTypes (ARG_TYPE (vardec));
-
-                DBUG_PRINT ("SPMDL", ("inserted arg out %s", ARG_NAME (vardec)));
-            }
-            lut = LUTinsertIntoLutP (lut, vardec, new_fvardec);
-
-            fvardecs = new_fvardec;
+            lut = LUTinsertIntoLutP (lut, avis, newavis);
         }
-        vardec = DFMgetMaskEntryDeclSet (NULL);
+        avis = DFMgetMaskEntryAvisSet (NULL);
     }
 
-    vardec = DFMgetMaskEntryDeclSet (SPMD_LOCAL (arg_node));
-    while (vardec != NULL) {
-        if (NODE_TYPE (vardec) == N_vardec) {
-            new_fvardec = DUPdoDupNode (vardec);
-            VARDEC_NEXT (new_fvardec) = fvardecs;
-        } else {
-            new_fvardec
-              = TBmakeVardec (TBmakeAvis (ILIBstringCopy (ARG_NAME (vardec)), NULL),
-                              fvardecs);
-            VARDEC_TYPE (new_fvardec) = DUPdupAllTypes (ARG_TYPE (vardec));
-        }
-        lut = LUTinsertIntoLutP (lut, vardec, new_fvardec);
+    avis = DFMgetMaskEntryAvisSet (SPMD_LOCAL (arg_node));
+    while (avis != NULL) {
+        node *newavis = DUPdoDupNode (avis);
 
-        fvardecs = new_fvardec;
-        vardec = DFMgetMaskEntryDeclSet (NULL);
+        fvardecs = TBmakeVardec (newavis, fvardecs);
+
+        lut = LUTinsertIntoLutP (lut, avis, newavis);
+
+        avis = DFMgetMaskEntryAvisSet (NULL);
     }
 
-    vardec = DFMgetMaskEntryDeclSet (SPMD_SHARED (arg_node));
-    while (vardec != NULL) {
+    avis = DFMgetMaskEntryAvisSet (SPMD_SHARED (arg_node));
+    while (avis != NULL) {
         /* reduce shareds by ins and outs */
-        if ((!(DFMtestMaskEntry (SPMD_IN (arg_node), NULL, vardec)))
-            && (!(DFMtestMaskEntry (SPMD_OUT (arg_node), NULL, vardec)))) {
-            if (NODE_TYPE (vardec) == N_vardec) {
-                new_fvardec = DUPdoDupNode (vardec);
-                VARDEC_NEXT (new_fvardec) = fvardecs;
+        if ((!DFMtestMaskEntry (SPMD_IN (arg_node), NULL, avis))
+            && (!DFMtestMaskEntry (SPMD_OUT (arg_node), NULL, avis))) {
+            node *newavis = DUPdoDupNode (avis);
 
-                DBUG_PRINT ("SPMDL", ("inserted vardec shared %s", VARDEC_NAME (vardec)));
-            } else {
-                new_fvardec
-                  = TBmakeVardec (TBmakeAvis (ILIBstringCopy (ARG_NAME (vardec)), NULL),
-                                  fvardecs);
-                VARDEC_TYPE (new_fvardec) = DUPdupAllTypes (ARG_TYPE (vardec));
+            fvardecs = TBmakeVardec (newavis, fvardecs);
 
-                DBUG_PRINT ("SPMDL", ("inserted arg shared %s", ARG_NAME (vardec)));
-            }
-            lut = LUTinsertIntoLutP (lut, vardec, new_fvardec);
+            DBUG_PRINT ("SPMDL", ("inserted shared variable%s", AVIS_NAME (avis)));
 
-            fvardecs = new_fvardec;
+            lut = LUTinsertIntoLutP (lut, avis, newavis);
         }
-        vardec = DFMgetMaskEntryDeclSet (NULL);
+        avis = DFMgetMaskEntryAvisSet (NULL);
     }
 
     /*
      * build formal parameters (SPMD_IN/INOUT) of SPMD function and fill LUT
      */
     fargs = NULL;
-    vardec = DFMgetMaskEntryDeclSet (SPMD_IN (arg_node));
-    while (vardec != NULL) {
-        if (NODE_TYPE (vardec) == N_arg) {
-            new_farg = DUPdoDupNode (vardec);
-            ARG_NEXT (new_farg) = fargs;
-        } else {
-            new_farg
-              = TBmakeArg (TBmakeAvis (ILIBstringCopy (ARG_NAME (vardec)), NULL), fargs);
+    avis = DFMgetMaskEntryAvisSet (SPMD_IN (arg_node));
+    while (avis != NULL) {
+        node *newavis = DUPdoDupNode (avis);
 
-            VARDEC_TYPE (new_farg) = DUPdupAllTypes (ARG_TYPE (vardec));
+        fargs = TBmakeArg (newavis, fargs);
 
-            /* varno also need corrections */
-            ARG_VARNO (new_farg) = VARDEC_VARNO (vardec);
+        DBUG_PRINT ("SPMDL", ("inserted arg %s", AVIS_NAME (avis)));
 
-            DBUG_PRINT ("SPMDL", ("inserted arg %s", ARG_NAME (vardec)));
-        }
-        lut = LUTinsertIntoLutP (lut, vardec, new_farg);
+        lut = LUTinsertIntoLutP (lut, avis, newavis);
 
-        fargs = new_farg;
-        vardec = DFMgetMaskEntryDeclSet (NULL);
+        avis = DFMgetMaskEntryAvisSet (NULL);
     }
 
     /*
      * build return types, return exprs (use SPMD_OUT).
      */
-    rettypes = NULL;
+    rets = NULL;
     retexprs = NULL;
-    vardec = DFMgetMaskEntryDeclSet (SPMD_OUT (arg_node));
-    while (vardec != NULL) {
-        if (NODE_TYPE (vardec) == N_arg) {
-            new_rettype = DUPdupAllTypes (ARG_TYPE (vardec));
+    rettypes = NULL;
+    avis = DFMgetMaskEntryAvisSet (SPMD_OUT (arg_node));
+    while (avis != NULL) {
+        retexprs = TBmakeExprs (TBmakeId (LUTsearchInLutPp (lut, avis)), retexprs);
+        rets = TBmakeRet (TYeliminateAKV (AVIS_TYPE (avis)), rets);
+        rettypes = TCappendTypes (TYtype2OldType (AVIS_TYPE (avis)), rettypes);
 
-            new_retexpr
-              = TBmakeExprs (TBmakeId (
-                               TBmakeAvis (ILIBstringCopy (ARG_NAME (vardec)), NULL)),
-                             retexprs);
-        } else {
-            new_rettype = DUPdupAllTypes (VARDEC_TYPE (vardec));
-
-            new_retexpr
-              = TBmakeExprs (TBmakeId (
-                               TBmakeAvis (ILIBstringCopy (VARDEC_NAME (vardec)), NULL)),
-                             retexprs);
-        }
-
-        tmp = LUTsearchInLutPp (lut, vardec);
-        DBUG_ASSERT ((tmp != NULL), "no decl for return value found in LUT!");
-
-        ID_DECL (EXPRS_EXPR (new_retexpr)) = tmp;
-
-        TYPES_NEXT (new_rettype) = rettypes;
-
-        rettypes = new_rettype;
-        retexprs = new_retexpr;
-
-        vardec = DFMgetMaskEntryDeclSet (NULL);
-    }
-
-    /*
-     * CAUTION: FUNDEF_NAME is for the time being a part of FUNDEF_TYPES!!
-     *          That's why we must build a void-type, when ('rettypes' == NULL).
-     */
-    if (rettypes == NULL) {
-        rettypes = TBmakeTypes1 (T_void);
+        avis = DFMgetMaskEntryAvisSet (NULL);
     }
 
     /*
@@ -349,15 +156,13 @@ SPMDLspmd (node *arg_node, info *arg_info)
      * SPMD functions should go to a view _SPMD,
      * not a module!
      */
-    new_fundef
-      = TBmakeFundef (ILIBtmpVarName (FUNDEF_NAME (fundef)), NSgetNamespace ("_SPMD"),
-                      MakeRetsFromTypes (rettypes), fargs, body, NULL);
+    new_fundef = TBmakeFundef (ILIBtmpVarName (FUNDEF_NAME (fundef)),
+                               NSgetNamespace ("_SPMD"), rets, fargs, body, NULL);
 
     FUNDEF_TYPES (new_fundef) = rettypes;
 
     FUNDEF_ISSPMDFUN (new_fundef) = TRUE;
     FUNDEF_LIFTEDFROM (new_fundef) = fundef;
-    FUNDEF_VARNO (new_fundef) = FUNDEF_VARNO (fundef);
 
     SPMD_FUNDEF (arg_node) = new_fundef;
 
@@ -394,68 +199,7 @@ SPMDLspmd (node *arg_node, info *arg_info)
 
     /*
      * build fundef for this spmd region
-     ****************************************************************************/
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *SPMDLid( node *arg_node, info *arg_info)
- *
- * description:
- *
- *
- ******************************************************************************/
-
-node *
-SPMDLid (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("SPMDLid");
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *SPMDLlet( node *arg_node, info *arg_info)
- *
- * description:
- *   Corrects the vardec-pointers of 'LET_IDS( arg_node)' in SPMD-funs
- *    and traverses the let-expr.
- *
- ******************************************************************************/
-
-node *
-SPMDLlet (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("SPMDLlet");
-
-    LET_IDS (arg_node) = SPMDLids (LET_IDS (arg_node), arg_info);
-    LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *SPMDLwithid( node *arg_node, info *arg_info)
- *
- * description:
- *   Corrects the vardec-pointers of the with-ids in SPMD-funs.
- *
- ******************************************************************************/
-
-node *
-SPMDLwithid (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("SPMDLnwithid");
-
-    WITHID_IDS (arg_node) = SPMDLids (WITHID_IDS (arg_node), arg_info);
-    WITHID_VEC (arg_node) = SPMDLids (WITHID_VEC (arg_node), arg_info);
+     ***************************************************************************/
 
     DBUG_RETURN (arg_node);
 }
@@ -493,7 +237,6 @@ SPMDLwith2 (node *arg_node, info *arg_info)
     /*
      * traverse sons
      */
-    WITH2_WITHID (arg_node) = TRAVdo (WITH2_WITHID (arg_node), arg_info);
     WITH2_SEGS (arg_node) = TRAVdo (WITH2_SEGS (arg_node), arg_info);
     INFO_SPMDL_MT (arg_info) = 0;
 

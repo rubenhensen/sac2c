@@ -1,47 +1,5 @@
 /*
- *
- * $Log$
- * Revision 3.244  2005/08/18 16:22:12  ktr
- * removed conditional lhs expressions
- *
- * Revision 3.243  2005/01/20 14:16:06  ktr
- * some bugfixing
- *
- * Revision 3.242  2005/01/19 12:52:20  jhb
- * added the attribute ERROR with the nodetype error
- *
- * Revision 3.241  2004/12/11 17:39:12  ktr
- * sons/attribs are structs iff CLEANMEM is set.
- *
- * Revision 3.240  2004/11/24 16:45:28  sah
- * changed internal node representation
- *
- * Revision 3.239  2004/11/23 23:01:11  khf
- * added global.mdb..
- *
- * Revision 3.238  2004/11/23 12:58:16  ktr
- * invalid storage specifier removed.
- *
- * Revision 3.237  2004/11/23 10:30:03  sah
- * SaC DevCamp DK
- *
- * Revision 3.236  2004/11/23 10:05:24  sah
- * SaC DevCamp 04
- *
- * Revision 3.235  2004/11/21 20:31:16  sah
- * SaCDevCamp 04 ISMOP II
- *
- * Revision 3.234  2004/11/21 20:28:52  sah
- * SaCDevCamp 04 ISMOP
- *
- * Revision 3.233  2004/11/18 14:34:31  mwe
- * changed CheckAvis and chkavis to ToNewTypes and to tonewtypes
- *
- * Revision 3.232  2004/11/07 15:50:02  sah
- * added CreateNums and CreateIntegerArray
- *
- * [...]
- *
+ * $Id$
  */
 
 #ifndef _SAC_TREE_BASIC_H_

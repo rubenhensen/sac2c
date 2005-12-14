@@ -196,7 +196,11 @@ AddSacLibs (str_buf *buffer)
         }
     }
 
-    ILIBstrBufPrint (buffer, "-lsac ");
+    if (global.mtmode == MT_none) {
+        ILIBstrBufPrint (buffer, "-lsac ");
+    } else {
+        ILIBstrBufPrint (buffer, "-lsac_mt -lpthread");
+    }
 
     DBUG_VOID_RETURN;
 }
