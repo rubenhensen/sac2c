@@ -1,72 +1,7 @@
 <?xml version="1.0"?>
 
 <!--
-  $Log$
-  Revision 1.20  2005/09/26 12:35:21  jhb
-  change to new ast.xml
-
-  Revision 1.19  2005/08/10 14:58:07  jhb
-  some little changes of the output
-
-  Revision 1.18  2005/08/09 14:16:39  jhb
-  set the is* function to the begin
-
-  Revision 1.17  2005/07/13 11:48:29  jhb
-  some bugs fixed
-
-  Revision 1.16  2005/06/29 11:37:05  jhb
-  compile nice :)
-
-  Revision 1.15  2005/06/15 12:42:30  jhb
-  little fixes
-
-  Revision 1.14  2005/06/08 13:33:03  jhb
-  attribute are now check correctly
-
-  Revision 1.13  2005/05/19 13:34:02  jhb
-  added the rangequery for the attributes
-
-  Revision 1.12  2005/05/17 13:00:37  jhb
-  added the isfun
-
-  Revision 1.11  2005/02/16 14:33:36  jhb
-  divide the attributecode to exist and correct
-
-  Revision 1.10  2005/02/14 14:09:42  jhb
-  right = correct
-
-  Revision 1.9  2005/02/11 14:48:26  jhb
-  added enum attr_list all attributes
-
-  Revision 1.8  2005/02/10 12:57:33  jhb
-  added to the compiler, changed some bugfixes
-
-  Revision 1.7  2005/02/08 18:40:51  jhb
-  matched to the functions of Stephan - no redundance
-
-  Revision 1.6  2005/02/07 16:09:09  jhb
-  little things changed
-
-  Revision 1.5  2005/02/03 16:08:33  jhb
-  change Name  of function
-
-  Revision 1.4  2005/01/21 13:45:48  jhb
-  some little things
-
-  Revision 1.3  2005/01/18 14:08:52  jhb
-  added enums and fix some bugs
-
-  Revision 1.2  2005/01/11 13:32:08  jhb
-  changed some little things
-
-  Revision 1.1  2004/11/23 11:29:56  sah
-  Initial revision
-
-  Revision 1.1  2004/11/19 13:54:26  jhb
-  Initial revision
-
-  Revision 1.1 2004/09/29 15:15:00 jhb
-  Initial revision
+  $Id$
 -->
 
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
@@ -160,6 +95,8 @@ static info *FreeInfo(info *info)
     <xsl:apply-templates select="//nodesets/nodeset">
       <xsl:sort select="@name"/>
     </xsl:apply-templates>
+
+    <xsl:apply-templates select="//nodesets" />
     
     <!-- all the check functions for the nodes -->
     <xsl:apply-templates select="//syntaxtree/node" mode="function">
@@ -192,7 +129,22 @@ static info *FreeInfo(info *info)
     <xsl:value-of select="'return( res);'"/>    
     <xsl:value-of select="'}'"/>
   </xsl:template>
+
+  <xsl:template match="nodeset" mode="dummy">
+    <xsl:value-of select="'is'" />
+    <xsl:value-of select="@name"/>
+    <xsl:value-of select="'( NULL);'" />
+  </xsl:template>
  
+  <xsl:template match="nodesets">
+    <xsl:value-of select="$newline" />        
+    <xsl:value-of select="'void isDummy()'"/>
+    <xsl:value-of select="'{'" />
+    <xsl:apply-templates select="nodeset" mode="dummy">
+      <xsl:sort select="@name"/>
+    </xsl:apply-templates>
+    <xsl:value-of select="'}'"/>    
+  </xsl:template>
 
   <xsl:template match="node" mode="function">
     <xsl:call-template name="travfun-comment">
