@@ -1,30 +1,8 @@
 <?xml version="1.0"?>
 <!--
-  $Log$
-  Revision 1.7  2005/09/21 16:52:10  sah
-  adapted xsl generators to new xml structure.
+  $Id$
+ -->
 
-  Revision 1.6  2005/07/17 11:46:54  sah
-  cleanup
-
-  Revision 1.5  2004/11/29 10:54:09  ktr
-  added newline.
-
-  Revision 1.4  2004/11/29 10:43:09  sah
-  added handling of AVIS backlink to DECL
-
-  Revision 1.3  2004/11/29 09:36:32  sbs
-  dbug-printing enhanced
-
-  Revision 1.2  2004/11/24 19:37:53  sah
-  COMPILES
-
-  Revision 1.1  2004/11/23 11:35:32  sah
-  Initial revision
-
-
-
--->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
 version="1.0">
 
@@ -61,6 +39,15 @@ version="1.0">
   <!-- allocate new node this -->
   <xsl:value-of select="'DBUG_PRINT( &quot;MAKE&quot;, (&quot;allocating node structure&quot;));'"/>
   <xsl:value-of select="'this = MakeEmptyNode();'" />
+
+  <xsl:value-of select="'CMsetNodeType(this, N_'" />
+  <xsl:call-template name="lowercase" >
+    <xsl:with-param name="string" >
+      <xsl:value-of select="@name" />
+    </xsl:with-param>
+  </xsl:call-template>
+  <xsl:value-of select="');'" />
+
   <xsl:value-of select="'DBUG_PRINT( &quot;MAKE&quot;, (&quot;address: &quot;F_PTR, this));'"/>
   <!-- allocate the sons structure -->
   <xsl:value-of select="'DBUG_PRINT( &quot;MAKE&quot;, (&quot;allocating sons structure&quot;));'"/>
