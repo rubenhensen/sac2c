@@ -8,10 +8,10 @@
 typedef struct MEMOBJ {
     int size;
     void *ptr;
+    nodetype nodetype;
 #if 0
     int subphase;
     int traversal;
-    int type;
 #endif
     int bit;
 } memobj;
@@ -83,6 +83,11 @@ CMunregisterMem (void *bptr)
 
     aptr = (memobj **)((char *)bptr - malloc_align_step);
 
+    if (((**aptr).size == 0) && ((**aptr).ptr = NULL)) {
+
+        CTIwarn ("%s", "double free"); /* miss where */
+    }
+
     (**aptr).size = 0;
     (**aptr).ptr = NULL;
 
@@ -104,4 +109,22 @@ CMgetSize (void *bptr)
     tmpsize = (**tmpobj).size;
 
     DBUG_RETURN (tmpsize);
+}
+
+void
+CMtreewalker ()
+{
+
+    /* durch den Baum traversieren und die Nodes die besucht werden, das bit flippen */
+}
+
+void
+CMsetNodeType (node *bptr, nodetype newnodetype)
+{
+
+    memobj **tmpobj;
+
+    tmpobj = (memobj **)((char *)bptr - malloc_align_step);
+
+    (**tmpobj).nodetype = newnodetype;
 }
