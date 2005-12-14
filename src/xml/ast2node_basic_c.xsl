@@ -1,23 +1,6 @@
 <?xml version="1.0"?>
 <!--
-  $Log$
-  Revision 1.5  2005/06/28 14:14:53  sah
-  NODE_ERROR is intitialised with NULL now!
-
-  Revision 1.4  2005/01/11 14:23:48  cg
-  Removed useless #include Error.h
-
-  Revision 1.3  2004/11/26 16:32:06  sah
-  *** empty log message ***
-
-  Revision 1.2  2004/11/24 19:37:53  sah
-  COMPILES
-
-  Revision 1.1  2004/11/23 11:30:42  sah
-  Initial revision
-
-
-
+  $Id$
 -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
 version="1.0">
@@ -42,7 +25,7 @@ version="1.0">
       <xsl:value-of select="'Functions to allocate node structures'"/>
     </xsl:with-param>
     <xsl:with-param name="xslt">
-      <xsl:value-of select="'$Id: ast2node_basic_c.xsl 14294 2005-10-10 12:40:03Z sah $'"/>
+      <xsl:value-of select="'$Id$'"/>
     </xsl:with-param>
   </xsl:call-template>
   <xsl:text>
@@ -50,6 +33,7 @@ version="1.0">
 #include "tree_basic.h"
 #include "internal_lib.h"
 #include "dbug.h"
+#include "check_mem.h"
 
 static node *MakeEmptyNode()
 {
