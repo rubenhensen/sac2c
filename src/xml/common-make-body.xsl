@@ -40,13 +40,13 @@ version="1.0">
   <xsl:value-of select="'DBUG_PRINT( &quot;MAKE&quot;, (&quot;allocating node structure&quot;));'"/>
   <xsl:value-of select="'this = MakeEmptyNode();'" />
 
-  <xsl:value-of select="'CMsetNodeType(this, N_'" />
+  <xsl:value-of select="'NODE_TYPE( this) = N_'" />
   <xsl:call-template name="lowercase" >
     <xsl:with-param name="string" >
       <xsl:value-of select="@name" />
     </xsl:with-param>
   </xsl:call-template>
-  <xsl:value-of select="');'" />
+  <xsl:value-of select="';'" />
 
   <xsl:value-of select="'DBUG_PRINT( &quot;MAKE&quot;, (&quot;address: &quot;F_PTR, this));'"/>
   <!-- allocate the sons structure -->
