@@ -991,6 +991,7 @@
           <node name="Avis" />
           <node name="Array" />
           <node name="Ret" />
+          <node name="Objdef" />
           <node name="Type" />
         </travuser>
       </traversal>
@@ -2459,6 +2460,17 @@
             </targets>
           </type>
         </attribute>
+	<attribute name="NT_Tag">
+	  <type name="String">
+	    <targets>
+	      <target mandatory="no">
+	        <phases>
+                  <range from="comp" to="final" />
+		</phases>
+              </target>
+	    </targets>
+	  </type>
+	</attribute>
         <attribute name="Icm">
           <type name="Link">
             <targets>
