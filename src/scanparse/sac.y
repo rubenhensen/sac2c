@@ -23,6 +23,7 @@
 #include "globals.h"
 #include "handle_mops.h"
 #include "new_types.h"
+#include "type_utils.h"
 #include "shape.h"
 #include "stringset.h"
 #include "namespaces.h"
@@ -165,6 +166,7 @@ PRF_CAT_VxV  PRF_TAKE_SxV  PRF_DROP_SxV
 * module implementations
 */
 %type <node> module class
+%type <ntype> classtype
 %type <node> import use export provide interface
 %type <node> symbolset symbolsetentries
 
@@ -1679,15 +1681,19 @@ module: MODULE { file_kind = F_modimp; } ID SEMIC defs
         }
         ;
 
-class: CLASS { file_kind = F_classimp; } ID SEMIC
-       CLASSTYPE ntype SEMIC defs
-       { $$ = $8;
+class: CLASS { file_kind = F_classimp; } ID SEMIC classtype defs
+       { $$ = $6;
          MODULE_NAMESPACE( $$) = NSgetNamespace( $3);
          MODULE_FILETYPE( $$) = file_kind;
-         $$ = SetClassType( $$, $6);
+         $$ = SetClassType( $$, $5);
        }
-     ;
+       ;
 
+classtype: CLASSTYPE ntype SEMIC { $$ = $2; }
+         | EXTERN CLASSTYPE SEMIC { $$ = TYmakeAKS(
+                                           TYmakeSimpleType( T_hidden),
+                                           SHmakeShape( 0)); }
+         ;
 
 
 
