@@ -17,7 +17,7 @@ include $(PROJECT_ROOT)/Makefile.Config
 #
 # local settings:
 #
-all: allocation.o alloc.o referencecounting.o reuse.o rcopt.o rcphase.o \
+all: emm.o alloc.o referencecounting.o reuse.o rcopt.o \
      filterrc.o aliasanalysis.o staticreuse.o reuseelimination.o \
      interfaceanalysis.o loopreuseopt.o datareuse.o explicitcopy.o \
      reusebranching.o ReuseWithArrays.o inplacecomp.o audscldist.o \

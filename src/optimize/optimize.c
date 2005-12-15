@@ -329,13 +329,6 @@ OPTdoOptimize (node *arg_node)
      */
     arg_node = PHrunCompilerSubPhase (SUBPH_fdi, arg_node);
 
-    /*
-     * apply USSA (undo ssa transformation)
-     */
-    arg_node = PHrunCompilerSubPhase (SUBPH_ussa, arg_node);
-    arg_node = PHrunCompilerSubPhase (SUBPH_fun2lac, arg_node);
-    arg_node = PHrunCompilerSubPhase (SUBPH_lacinl, arg_node);
-
     CTInote (" ");
     CTInote ("Overall optimization statistics:");
     PrintStatistics ();

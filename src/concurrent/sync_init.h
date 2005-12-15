@@ -12,6 +12,9 @@
  * Prefix: SYNCI
  *
  *****************************************************************************/
+extern node *SYNCIdoSyncInit (node *arg_node);
+
+extern node *SYNCIfundef (node *arg_node, info *arg_info);
 extern node *SYNCIassign (node *arg_node, info *arg_info);
 
 #endif /* _SAC_SYNC_INIT_H_ */

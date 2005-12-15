@@ -20,7 +20,108 @@
 #include "DataFlowMask.h"
 #include "globals.h"
 #include "internal_lib.h"
-#include "concurrent_info.h"
+
+/**
+ * INFO structure
+ */
+struct INFO {
+    node *fundef;
+    bool first;
+    bool last;
+};
+
+/**
+ * INFO macros
+ */
+#define INFO_FUNDEF(n) (n->fundef)
+#define INFO_FIRST(n) (n->first)
+#define INFO_LAST(n) (n->last)
+
+/**
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = ILIBmalloc (sizeof (info));
+
+    INFO_FUNDEF (result) = NULL;
+    INFO_FIRST (result) = FALSE;
+    INFO_LAST (result) = FALSE;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = ILIBfree (info);
+
+    DBUG_RETURN (info);
+}
+
+/******************************************************************************
+ *
+ * @fn SYNCIdoSyncInit
+ *
+ *  @brief
+ *
+ *  @param syntax_tree
+ *
+ *  @return
+ *
+ *****************************************************************************/
+node *
+SYNCIdoSyncInit (node *syntax_tree)
+{
+    info *info;
+
+    DBUG_ENTER ("SYNCIdoSyncInit");
+
+    DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_module, "Illegal argument node!!!");
+
+    info = MakeInfo ();
+
+    TRAVpush (TR_synci);
+    syntax_tree = TRAVdo (syntax_tree, info);
+    TRAVpop ();
+
+    info = FreeInfo (info);
+
+    DBUG_RETURN (syntax_tree);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SYNCIfundef( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+SYNCIfundef (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("SYNCIfundef");
+
+    INFO_FUNDEF (arg_info) = arg_node;
+
+    if ((FUNDEF_BODY (arg_node) != NULL) && (!FUNDEF_ISFOLDFUN (arg_node))
+        && (FUNDEF_ISSPMDFUN (arg_node))) {
+        INFO_FIRST (arg_info) = TRUE;
+        INFO_LAST (arg_info) = TRUE;
+        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+    }
+
+    if (FUNDEF_NEXT (arg_node) != NULL) {
+        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
 
 /******************************************************************************
  *
@@ -33,7 +134,7 @@
  *   sync-region are stored.
  *
  * remarks:
- *   INFO_SYNCI_(FIRST|LAST)( arg_info) show, whether the next sync-region
+ *   INFO_(FIRST|LAST)( arg_info) show, whether the next sync-region
  *   would be the (first|last) one of the spmd-region or not.
  *
  ******************************************************************************/
@@ -53,7 +154,7 @@ SYNCIassign (node *arg_node, info *arg_info)
      *  the maskbase is needed at several spots, and does not change, so one
      *  can initialize it here.
      */
-    maskbase = FUNDEF_DFM_BASE (INFO_CONC_FUNDEF (arg_info));
+    maskbase = FUNDEF_DFM_BASE (INFO_FUNDEF (arg_info));
 
     sync_let = ASSIGN_INSTR (arg_node);
 
@@ -71,7 +172,7 @@ SYNCIassign (node *arg_node, info *arg_info)
          *     and insert it into the syntaxtree.
          */
         sync = TBmakeSync (TBmakeBlock (TBmakeAssign (sync_let, NULL), NULL));
-        SYNC_FIRST (sync) = INFO_SYNCI_FIRST (arg_info);
+        SYNC_FIRST (sync) = INFO_FIRST (arg_info);
         ASSIGN_INSTR (arg_node) = sync;
 
         withop = WITH2_WITHOP (with);
@@ -95,31 +196,20 @@ SYNCIassign (node *arg_node, info *arg_info)
         SYNC_LOCAL (sync) = DFMgenMaskCopy (WITH2_LOCAL_MASK (with));
         SYNC_OUTREP (sync) = DFMgenMaskClear (maskbase);
 
-        withop = WITH2_WITHOP (with);
         with_ids = LET_IDS (sync_let);
-        while (withop != NULL) {
+        while (with_ids != NULL) {
             /*
              * add vars from LHS of with-loop assignment
              */
-            if ((NODE_TYPE (withop) == N_genarray)
-                || (NODE_TYPE (withop) == N_modarray)) {
-
-                DFMsetMaskEntrySet (SYNC_INOUT (sync), NULL,
-                                    ID_AVIS (WITHOP_MEM (withop)));
-                DFMsetMaskEntryClear (SYNC_IN (sync), NULL,
-                                      ID_AVIS (WITHOP_MEM (withop)));
-            } else {
-                DFMsetMaskEntrySet (SYNC_OUT (sync), NULL, IDS_AVIS (with_ids));
-            }
-            withop = WITHOP_NEXT (withop);
+            DFMsetMaskEntrySet (SYNC_OUT (sync), NULL, IDS_AVIS (with_ids));
             with_ids = IDS_NEXT (with_ids);
         }
 
         /*
          * unset flag: next N_sync node is not the first one in SPMD-region
          */
-        INFO_SYNCI_FIRST (arg_info) = 0;
-    } else if ((NODE_TYPE (sync_let) == N_while) || (NODE_TYPE (sync_let) == N_do)) {
+        INFO_FIRST (arg_info) = 0;
+    } else if (NODE_TYPE (sync_let) == N_do) {
         DBUG_PRINT ("SYNCI", ("trav into loop"));
         ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
         DBUG_PRINT ("SYNCI", ("trav from loop"));
@@ -130,9 +220,9 @@ SYNCIassign (node *arg_node, info *arg_info)
     } else {
         DBUG_PRINT ("SYNCI", ("build sync-block around non with-loop"));
         sync = TBmakeSync (TBmakeBlock (TBmakeAssign (sync_let, NULL), NULL));
-        SYNC_FIRST (sync) = INFO_SYNCI_FIRST (arg_info);
+        SYNC_FIRST (sync) = INFO_FIRST (arg_info);
         ASSIGN_INSTR (arg_node) = sync;
-        INFO_SYNCI_FIRST (arg_info) = 0;
+        INFO_FIRST (arg_info) = 0;
 
         SYNC_IN (sync) = DFMgenMaskClear (maskbase);
         SYNC_INOUT (sync) = DFMgenMaskClear (maskbase);
@@ -143,7 +233,7 @@ SYNCIassign (node *arg_node, info *arg_info)
         /*
          * unset flag: next N_sync node is not the first one in SPMD-region
          */
-        INFO_SYNCI_FIRST (arg_info) = 0;
+        INFO_FIRST (arg_info) = 0;
     }
     DBUG_PRINT ("SYNCI", ("inbetween"));
 
@@ -153,9 +243,9 @@ SYNCIassign (node *arg_node, info *arg_info)
         DBUG_PRINT ("SYNCI", ("from assign next"));
 
         if (sync != NULL) {
-            SYNC_LAST (sync) = INFO_SYNCI_LAST (arg_info);
+            SYNC_LAST (sync) = INFO_LAST (arg_info);
         }
-        INFO_SYNCI_LAST (arg_info) = 0;
+        INFO_LAST (arg_info) = 0;
     } else {
         DBUG_PRINT ("SYNCI", ("turnaround"));
     }

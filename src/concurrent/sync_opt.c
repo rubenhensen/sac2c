@@ -23,8 +23,9 @@
 #include "DupTree.h"
 #include "DataFlowMask.h"
 #include "sync_opt.h"
-#include "internal_lib.h"
 #include "ctinfo.h"
+#include "dbug.h"
+#include "internal_lib.h"
 
 /*
  * INFO structure
@@ -65,6 +66,59 @@ FreeInfo (info *info)
     info = ILIBfree (info);
 
     DBUG_RETURN (info);
+}
+
+/******************************************************************************
+ *
+ * @fn SYNCOdoSyncOpt
+ *
+ *  @brief
+ *
+ *  @param syntax_tree
+ *
+ *  @return
+ *
+ *****************************************************************************/
+node *
+SYNCOdoSyncOpt (node *syntax_tree)
+{
+    info *info;
+
+    DBUG_ENTER ("SYNCOdoSyncOpt");
+
+    DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_module, "Illegal argument node!!!");
+
+    info = MakeInfo ();
+
+    TRAVpush (TR_synco);
+    syntax_tree = TRAVdo (syntax_tree, info);
+    TRAVpop ();
+
+    info = FreeInfo (info);
+
+    DBUG_RETURN (syntax_tree);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SYNCOfundef( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+SYNCOfundef (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("SYNCOfundef");
+
+    if ((FUNDEF_BODY (arg_node) != NULL) && (!FUNDEF_ISFOLDFUN (arg_node))
+        && (FUNDEF_ISSPMDFUN (arg_node))) {
+        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+    }
+
+    if (FUNDEF_NEXT (arg_node) != NULL) {
+        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
 }
 
 /******************************************************************************
@@ -425,7 +479,6 @@ SYNCOsync (node *arg_node, info *arg_info)
 node *
 SYNCOassign (node *arg_node, info *arg_info)
 {
-    bool own_arg_info;
     node *old_thisassign = NULL;
     node *old_nextassign = NULL;
 
@@ -433,23 +486,14 @@ SYNCOassign (node *arg_node, info *arg_info)
 
     DBUG_ASSERT (NODE_TYPE (arg_node) == N_assign, "Wrong NODE_TYPE");
 
-    /*
-     *  check if there is an arg_info, else create one, and set variable
-     *  to remember the arg_info has to be destroyed later.
-     */
-    if (arg_info == NULL) {
-        own_arg_info = TRUE;
-        arg_info = MakeInfo ();
-    } else {
-        own_arg_info = FALSE;
-        old_thisassign = INFO_THISASSIGN (arg_info);
-        old_nextassign = INFO_NEXTASSIGN (arg_info);
-    }
+    old_thisassign = INFO_THISASSIGN (arg_info);
+    old_nextassign = INFO_NEXTASSIGN (arg_info);
 
     INFO_THISASSIGN (arg_info) = arg_node;
     INFO_NEXTASSIGN (arg_info) = ASSIGN_NEXT (arg_node);
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+
     /*
      *  NEXT might have changed during traversal of instruction!
      */
@@ -457,12 +501,8 @@ SYNCOassign (node *arg_node, info *arg_info)
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
     }
 
-    if (own_arg_info) {
-        FreeInfo (arg_info);
-    } else {
-        INFO_THISASSIGN (arg_info) = old_thisassign;
-        INFO_NEXTASSIGN (arg_info) = old_nextassign;
-    }
+    INFO_THISASSIGN (arg_info) = old_thisassign;
+    INFO_NEXTASSIGN (arg_info) = old_nextassign;
 
     DBUG_RETURN (arg_node);
 }

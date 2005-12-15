@@ -22,10 +22,103 @@
 #include "DataFlowMask.h"
 #include "globals.h"
 #include "spmd_trav.h"
-#include "concurrent_info.h"
 #include "shape.h"
 #include "new_types.h"
 #include "type_utils.h"
+#include "internal_lib.h"
+
+/**
+ * INFO structure
+ */
+struct INFO {
+    node *fundef;
+};
+
+/**
+ * INFO macros
+ */
+#define INFO_FUNDEF(n) (n->fundef)
+
+/**
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = ILIBmalloc (sizeof (info));
+
+    INFO_FUNDEF (result) = NULL;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = ILIBfree (info);
+
+    DBUG_RETURN (info);
+}
+
+/******************************************************************************
+ *
+ * @fn SPMDIdoSpmdInit
+ *
+ *  @brief
+ *
+ *  @param syntax_tree
+ *
+ *  @return
+ *
+ *****************************************************************************/
+node *
+SPMDIdoSpmdInit (node *syntax_tree)
+{
+    info *info;
+
+    DBUG_ENTER ("SPMDIdoSpmdInit");
+
+    DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_module, "Illegal argument node!!!");
+
+    info = MakeInfo ();
+
+    TRAVpush (TR_spmdi);
+    syntax_tree = TRAVdo (syntax_tree, info);
+    TRAVpop ();
+
+    info = FreeInfo (info);
+
+    DBUG_RETURN (syntax_tree);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SPMDIfundef( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+SPMDIfundef (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("SPMDIfundef");
+
+    INFO_FUNDEF (arg_info) = arg_node;
+
+    if ((FUNDEF_BODY (arg_node) != NULL) && (!FUNDEF_ISFOLDFUN (arg_node))) {
+        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+    }
+
+    if (FUNDEF_NEXT (arg_node) != NULL) {
+        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
 
 /******************************************************************************
  *
@@ -126,8 +219,7 @@ WithLoopIsAllowedConcurrentExecution (node *withloop)
  *   all the masks are inferred and attached to this new spmd-block.
  *
  ******************************************************************************/
-
-node *
+static node *
 InsertSPMD (node *assign, node *fundef)
 {
     node *instr;
@@ -140,6 +232,8 @@ InsertSPMD (node *assign, node *fundef)
 
     DBUG_ASSERT ((NODE_TYPE (assign) == N_assign), ("N_assign expected"));
     DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef), ("N_fundef expected"));
+    DBUG_ASSERT ((NODE_TYPE (ASSIGN_INSTR (assign)) == N_let), "N_let expected");
+    DBUG_ASSERT ((NODE_TYPE (ASSIGN_RHS (assign)) == N_with2), "N_with2 expected");
 
     instr = ASSIGN_INSTR (assign);
 
@@ -154,56 +248,30 @@ InsertSPMD (node *assign, node *fundef)
     DBUG_PRINT ("SPMDI", ("after delete nested"));
     ASSIGN_INSTR (assign) = spmd;
 
-    if (NODE_TYPE (instr) == N_let) {
-        if (NODE_TYPE (LET_EXPR (instr)) == N_with2) {
-            /*
-             * current assignment contains a with-loop
-             *  -> create a SPMD-region containing the current assignment only
-             *      and insert it into the syntaxtree.
-             */
+    /*
+     * current assignment contains a with-loop
+     *  -> create a SPMD-region containing the current assignment only
+     *      and insert it into the syntaxtree.
+     */
 
-            /*
-             * get masks from the N_with2 node.
-             */
-            with = LET_EXPR (instr);
-            SPMD_IN (spmd) = DFMgenMaskCopy (WITH2_IN_MASK (with));
-            SPMD_OUT (spmd) = DFMgenMaskCopy (WITH2_OUT_MASK (with));
-            SPMD_INOUT (spmd) = DFMgenMaskClear (FUNDEF_DFM_BASE (fundef));
-            SPMD_LOCAL (spmd) = DFMgenMaskCopy (WITH2_LOCAL_MASK (with));
-            SPMD_SHARED (spmd) = DFMgenMaskClear (FUNDEF_DFM_BASE (fundef));
+    /*
+     * get masks from the N_with2 node.
+     */
+    with = LET_EXPR (instr);
+    SPMD_IN (spmd) = DFMgenMaskCopy (WITH2_IN_MASK (with));
+    SPMD_OUT (spmd) = DFMgenMaskCopy (WITH2_OUT_MASK (with));
+    SPMD_INOUT (spmd) = DFMgenMaskClear (FUNDEF_DFM_BASE (fundef));
+    SPMD_LOCAL (spmd) = DFMgenMaskCopy (WITH2_LOCAL_MASK (with));
+    SPMD_SHARED (spmd) = DFMgenMaskClear (FUNDEF_DFM_BASE (fundef));
 
-            /*
-             * add vars from LHS of with-loop assignment
-             */
-            with_ids = LET_IDS (instr);
-            while (with_ids != NULL) {
-                DFMsetMaskEntrySet (SPMD_OUT (spmd), NULL, IDS_AVIS (with_ids));
-                with_ids = IDS_NEXT (with_ids);
-            }
-
-        } else {
-            /* #### ins outs missing ... */
-            SPMD_IN (spmd) = DFMgenMaskClear (FUNDEF_DFM_BASE (fundef));
-            SPMD_OUT (spmd) = DFMgenMaskClear (FUNDEF_DFM_BASE (fundef));
-            SPMD_INOUT (spmd) = DFMgenMaskClear (FUNDEF_DFM_BASE (fundef));
-            SPMD_LOCAL (spmd) = DFMgenMaskClear (FUNDEF_DFM_BASE (fundef));
-            SPMD_SHARED (spmd) = DFMgenMaskClear (FUNDEF_DFM_BASE (fundef));
-
-            DBUG_PRINT ("SPMDI", ("call pm let not with"));
-            SPMDPMdoProduceMasks (spmd, spmd, fundef);
-            DBUG_PRINT ("SPMDI", ("leave pm let not with"));
-        }
-    } else {
-        /* #### ins outs missing ... */
-        SPMD_IN (spmd) = DFMgenMaskClear (FUNDEF_DFM_BASE (fundef));
-        SPMD_OUT (spmd) = DFMgenMaskClear (FUNDEF_DFM_BASE (fundef));
-        SPMD_INOUT (spmd) = DFMgenMaskClear (FUNDEF_DFM_BASE (fundef));
-        SPMD_LOCAL (spmd) = DFMgenMaskClear (FUNDEF_DFM_BASE (fundef));
-        SPMD_SHARED (spmd) = DFMgenMaskClear (FUNDEF_DFM_BASE (fundef));
-
-        DBUG_PRINT ("SPMDI", ("call pm not let"));
-        SPMDPMdoProduceMasks (spmd, spmd, fundef);
-        DBUG_PRINT ("SPMDI", ("leave pm not let"));
+    /*
+     * add vars from LHS of with-loop assignment
+     */
+    with_ids = LET_IDS (instr);
+    while (with_ids != NULL) {
+        DFMsetMaskEntrySet (SPMD_OUT (spmd), NULL, IDS_AVIS (with_ids));
+        AVIS_SSAASSIGN (IDS_AVIS (with_ids)) = newassign;
+        with_ids = IDS_NEXT (with_ids);
     }
 
     DBUG_PRINT ("SPMDI", ("inserted new spmd-block"));
@@ -240,7 +308,7 @@ SPMDIassign (node *arg_node, info *arg_info)
         && WithLoopIsAllowedConcurrentExecution (LET_EXPR (spmd_let))
         && WithLoopIsWorthConcurrentExecution (LET_EXPR (spmd_let), LET_IDS (spmd_let))) {
 
-        arg_node = InsertSPMD (arg_node, INFO_CONC_FUNDEF (arg_info));
+        arg_node = InsertSPMD (arg_node, INFO_FUNDEF (arg_info));
         DBUG_PRINT ("SPMDI", ("inserted spmd"));
 
     } else if ((NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_let)

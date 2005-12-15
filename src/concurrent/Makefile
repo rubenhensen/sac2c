@@ -1,75 +1,9 @@
 #
-#
-# $Log$
-# Revision 3.19  2004/11/24 19:31:11  skt
-# deleted concurrent_lib.o
-#
-# Revision 3.18  2004/11/21 11:22:03  sah
-# removed some old ast infos
-#
-# Revision 3.17  2004/09/30 20:01:26  sah
-# added a switch to compile a subset of
-# the compiler only
-#
-# Revision 3.16  2004/09/28 16:33:12  ktr
-# cleaned up concurrent (removed everything not working / not working with emm)
-#
-# Revision 3.15  2004/09/18 16:03:29  ktr
-# added spmd_emm.o
-#
-# Revision 3.14  2003/06/11 21:53:26  ktr
-# included ../constants
-#
-# Revision 3.13  2002/06/06 19:56:03  dkr
-# target clean modified
-#
-# Revision 3.12  2001/11/15 15:36:48  sacbase
-# CLOCK_SKEW_ELIMINATION and PROJECT_ROOT added.
-#
-# Revision 3.11  2001/11/14 12:59:48  sbs
-# deps line replaced by inclusion of Makefile.Deps
-# ( .xxx.d mechanism)
-# global setup included via Makefile.Config
-#
-# Revision 3.10  2001/11/13 20:32:47  dkr
-# make deps done
-#
-# Revision 3.9  2001/07/18 13:08:20  cg
-# make deps done
-#
-# Revision 3.8  2001/05/08 13:29:40  dkr
-# make deps done
-#
-# Revision 3.7  2001/04/26 21:09:52  dkr
-# make deps done
-#
-# Revision 3.6  2001/01/17 10:13:08  dkr
-# make deps done
-#
-# Revision 3.5  2000/12/15 18:18:04  dkr
-# make deps done
-#
-# Revision 3.4  2000/12/12 15:09:15  dkr
-# make deps done
-#
-# Revision 3.3  2000/12/08 15:21:10  dkr
-# include path extended
-#
-# Revision 3.2  2000/12/06 20:09:08  dkr
-# make deps done
-#
-# Revision 3.1  2000/11/20 18:02:23  sacbase
-# new release made
-#
-# ... [eliminated] ...
-#
-# Revision 1.1  1998/04/03 11:47:26  dkr
-# Initial revision
-#
+# $Id$
 #
 
 
-#######################################################################################
+###############################################################################
 #
 # include general setup:
 #
@@ -78,7 +12,7 @@ PROJECT_ROOT := ../..
 include $(PROJECT_ROOT)/Makefile.Config
 
 
-#######################################################################################
+###############################################################################
 #
 # local settings:
 #
@@ -88,7 +22,7 @@ include $(PROJECT_ROOT)/Makefile.Config
  #      -I../flatten -I../print -I../compile -I../constants
 
 OBJS := concurrent.o spmd_init.o spmd_lift.o sync_init.o \
-        sync_opt.o schedule.o spmd_trav.o spmd_emm.o
+        sync_opt.o schedule.o spmd_trav.o 
 
 all: $(OBJS)
 

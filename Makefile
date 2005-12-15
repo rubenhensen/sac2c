@@ -139,8 +139,7 @@ OBJECTS= src/objects/object_init.o src/objects/resolve_reference_args.o \
          src/objects/restore_reference_args.o \
          src/objects/restore_objects.o
 
-REFCOUNT= src/refcount/allocation.o src/refcount/rcopt.o \
-          src/refcount/rcphase.o src/refcount/filterrc.o \
+REFCOUNT= src/refcount/emm.o src/refcount/rcopt.o src/refcount/filterrc.o \
           src/refcount/alloc.o src/refcount/referencecounting.o \
           src/refcount/reuse.o src/refcount/aliasanalysis.o \
           src/refcount/staticreuse.o src/refcount/reuseelimination.o \
@@ -154,10 +153,9 @@ REFCOUNT= src/refcount/allocation.o src/refcount/rcopt.o \
 CONCURRENT= src/concurrent/concurrent.o src/concurrent/spmd_init.o  \
             src/concurrent/spmd_lift.o src/concurrent/sync_init.o \
             src/concurrent/sync_opt.o src/concurrent/schedule.o \
-            src/concurrent/spmd_trav.o src/concurrent/spmd_emm.o
+            src/concurrent/spmd_trav.o
 
-MULTITHREAD= src/multithread/multithread.o \
-             src/multithread/multithread_lib.o \
+MULTITHREAD= src/multithread/multithread_lib.o \
              src/multithread/tag_executionmode.o \
              src/multithread/propagate_executionmode.o \
              src/multithread/create_cells.o \

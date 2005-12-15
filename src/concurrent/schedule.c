@@ -29,6 +29,96 @@
 #include "tree_compound.h"
 #include "traverse.h"
 #include "scheduling.h"
+#include "internal_lib.h"
+
+/**
+ * INFO structure
+ */
+struct INFO {
+    int dummy;
+};
+
+/**
+ * INFO macros
+ */
+
+/**
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = ILIBmalloc (sizeof (info));
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = ILIBfree (info);
+
+    DBUG_RETURN (info);
+}
+
+/******************************************************************************
+ *
+ * @fn SCHEDdoScheduleTrav
+ *
+ *  @brief
+ *
+ *  @param syntax_tree
+ *
+ *  @return
+ *
+ *****************************************************************************/
+node *
+SCHEDdoScheduleTrav (node *syntax_tree)
+{
+    info *info;
+
+    DBUG_ENTER ("SCHEDdoScheduleTrav");
+
+    DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_module, "Illegal argument node!!!");
+
+    info = MakeInfo ();
+
+    TRAVpush (TR_sched);
+    syntax_tree = TRAVdo (syntax_tree, info);
+    TRAVpop ();
+
+    info = FreeInfo (info);
+
+    DBUG_RETURN (syntax_tree);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SCHEDfundef( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+SCHEDfundef (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("SCHEDfundef");
+
+    if ((FUNDEF_BODY (arg_node) != NULL) && (!FUNDEF_ISFOLDFUN (arg_node))) {
+        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node),
+                                         FUNDEF_ISSPMDFUN (arg_node) ? arg_info : NULL);
+    }
+
+    if (FUNDEF_NEXT (arg_node) != NULL) {
+        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
 
 /******************************************************************************
  *

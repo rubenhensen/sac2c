@@ -12,6 +12,9 @@
  * prefix: SPMDL
  *
  *****************************************************************************/
+extern node *SPMDLdoSpmdLift (node *syntax_tree);
+
+extern node *SPMDLfundef (node *arg_node, info *arg_info);
 extern node *SPMDLspmd (node *arg_node, info *arg_info);
 extern node *SPMDLwith2 (node *arg_node, info *arg_info);
 

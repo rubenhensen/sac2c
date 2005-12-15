@@ -12,6 +12,9 @@
  * Prefix: SYNCO
  *
  *****************************************************************************/
+extern node *SYNCOdoSyncOpt (node *arg_node);
+
+extern node *SYNCOfundef (node *arg_node, info *arg_info);
 extern node *SYNCOassign (node *arg_node, info *arg_info);
 extern node *SYNCOsync (node *arg_node, info *arg_info);
 

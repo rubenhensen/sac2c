@@ -1,4 +1,6 @@
-/* $Id$ */
+/*
+ * $Id$
+ */
 
 #include "precompile.h"
 
@@ -23,6 +25,13 @@ node *
 PRECdoPrecompile (node *syntax_tree)
 {
     DBUG_ENTER ("Precompile");
+
+    /*
+     * restore non-ssa form
+     */
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_ussa, syntax_tree);
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_fun2lac, syntax_tree);
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_lacinl, syntax_tree);
 
     /*
      * Remove External Code

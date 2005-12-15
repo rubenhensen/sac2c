@@ -20,51 +20,14 @@
  *    - scheduling synchronisation blocks and with-loop segments
  *    - constraining spmd-blocks/spmd-functions
  *
- *   This process may be interruppted after each step by using one of the
- *   break specifiers "spmdinit", "syncemm", "spmdopt", "spmdlift",
- *   "syncinit", or "syncopt".
  *
  *****************************************************************************/
 
 #include "dbug.h"
-#include "tree_basic.h"
-#include "traverse.h"
 #include "ctinfo.h"
 #include "InferDFMs.h"
-#include "spmd_emm.h"
-#include "concurrent_info.h"
-#include "internal_lib.h"
-#include <string.h>
-
-/*
- * INFO functions
- */
-static info *
-MakeInfo ()
-{
-    info *result;
-
-    DBUG_ENTER ("MakeInfo");
-
-    result = ILIBmalloc (sizeof (info));
-
-    INFO_CONC_FUNDEF (result) = NULL;
-    INFO_SPMDL_MT (result) = 0;
-    INFO_SYNCI_FIRST (result) = 0;
-    INFO_SYNCI_LAST (result) = 0;
-
-    DBUG_RETURN (result);
-}
-
-static info *
-FreeInfo (info *info)
-{
-    DBUG_ENTER ("FreeInfo");
-
-    info = ILIBfree (info);
-
-    DBUG_RETURN (info);
-}
+#include "phase.h"
+#include "globals.h"
 
 /******************************************************************************
  *
@@ -84,277 +47,119 @@ FreeInfo (info *info)
 node *
 CONCdoConcurrent (node *syntax_tree)
 {
-    info *arg_info;
-
     DBUG_ENTER ("CONCdoConcurrent");
 
-    syntax_tree = INFDFMSdoInferDfms (syntax_tree, HIDE_LOCALS_NEVER);
+    switch (global.mtmode) {
+    case MT_none:
+        CTIstate ("  Multithreaded execution deactivated");
+        break;
 
-    arg_info = MakeInfo ();
-
-    TRAVpush (TR_conc);
-    syntax_tree = TRAVdo (syntax_tree, arg_info);
-    TRAVpop ();
-
-    arg_info = FreeInfo (arg_info);
-
-    DBUG_RETURN (syntax_tree);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *CONCmodule(node *arg_node, info *arg_info)
- *
- * description:
- *
- *   conc_tab traversal function for N_fundef node.
- *
- *   This function assures that only function definitions are traversed
- *   during the process of exploiting concurrency.
- *
- *****************************************************************************/
-
-node *
-CONCmodule (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("CONCmodule");
-
-    if (MODULE_FUNS (arg_node) != NULL) {
-        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
-    }
-
-    if (global.max_sync_fold == -1) {
-        CTInote ("(Inferred) maximum folds per sync-block is set to %i",
-                 global.needed_sync_fold);
-    } else {
-        CTInote ("Maximum folds per sync-block is set to %i", global.max_sync_fold);
-    }
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *CONCfundef(node *arg_node, info *arg_info)
- *
- * description:
- *
- *   conc_tab traversal function for N_fundef node.
- *
- *   This function traverses the function definitions and controls the
- *   entire 7 step process of exploiting concurrency:
- *    - building spmd-blocks
- *    - optimizing/enlarging spmd-blocks
- *    - lifting spmd-blocks to spmd-functions
- *    - building synchronisation blocks
- *    - optimizing/enlarging synchronisation blocks
- *    - scheduling synchronisation blocks and with-loop segments
- *    - constraining spmd-blocks/spmd-functions
- *
- *****************************************************************************/
-node *
-CONCfundef (node *arg_node, info *arg_info)
-{
-    node *first_spmdfun, *last_spmdfun, *current_fun;
-
-    DBUG_ENTER ("CONCfundef");
-
-    INFO_CONC_FUNDEF (arg_info) = arg_node;
-
-    if ((FUNDEF_BODY (arg_node) != NULL) && (!FUNDEF_ISFOLDFUN (arg_node))) {
-        if (!FUNDEF_ISSPMDFUN (arg_node)) {
-
-            /*
-             * First, spmd-blocks are built around with-loops.
-             */
-            DBUG_PRINT ("CONC", ("--- begin a SPMDI traversal ---"));
-            DBUG_PRINT ("SPMDI", ("--- begin a SPMDI traversal ---"));
-            TRAVpush (TR_spmdi);
-            FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-            TRAVpop ();
-            DBUG_PRINT ("SPMDI", ("--- end a SPMDI traversal ---"));
-            DBUG_PRINT ("CONC", ("--- end a SPMDI traversal ---"));
-
-            if ((global.break_after == PH_multithread_finish)
-                && (0 == strcmp ("spmdinit", global.break_specifier))) {
-                goto cont;
-            }
-
-            /*
-             * For EMM it is necessary to move alloc and dec_rc operations of
-             * local variables into SPMD blocks
-             */
-            DBUG_PRINT ("CONC", ("--- begin a SPMDEMM traversal ---"));
-            DBUG_PRINT ("SPMDEMM", ("--- begin a SPMDEMM traversal ---"));
-            arg_node = SPMDEMMdoSpmdEmm (arg_node);
-            DBUG_PRINT ("SPMDEMM", ("--- end a SPMDEMM traversal ---"));
-            DBUG_PRINT ("CONC", ("--- end a SPMDEMM traversal ---"));
-
-            if ((global.break_after == PH_multithread_finish)
-                && (0 == strcmp ("spmdemm", global.break_specifier))) {
-                goto cont;
-            }
-
-            /*
-             * the contents of each spmd-block are copied into a separate function,
-             * called spmd-function.
-             */
-
-            INFO_SPMDL_MT (arg_info) = 0;
-            DBUG_PRINT ("CONC", ("--- begin a SPMDL (mt = 0) traversal ---"));
-            DBUG_PRINT ("SPMDL", ("--- begin a SPMDL (mt = 0) traversal ---"));
-            TRAVpush (TR_spmdl);
-            FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-            TRAVpop ();
-            DBUG_PRINT ("SPMDL", ("--- end a SPMDL (mt = 0) traversal ---"));
-            DBUG_PRINT ("CONC", ("--- end a SPMDL (mt = 0) traversal ---"));
-
-            if ((global.break_after == PH_multithread_finish)
-                && (0 == strcmp ("spmdlift", global.break_specifier))) {
-                goto cont;
-            }
-
-            /*
-             * scheduling specifications outside from spmd-functions are removed.
-             */
-            DBUG_PRINT ("CONC", ("--- begin a SCHED traversal ---"));
-            DBUG_PRINT ("SCHED", ("--- begin a SCHED traversal ---"));
-            TRAVpush (TR_sched);
-            FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), NULL);
-            TRAVpop ();
-            DBUG_PRINT ("SCHED", ("--- end a SCHED traversal ---"));
-            DBUG_PRINT ("CONC", ("--- end a SCHED traversal ---"));
-
+    case MT_createjoin:
+    case MT_startstop:
+        if (global.mtmode == MT_createjoin) {
+            CTIstate ("  Using create-join version of multithreading (MT1)");
         } else {
-
-            if ((global.break_after == PH_multithread_finish)
-                && ((0 == strcmp ("spmdinit", global.break_specifier))
-                    || (0 == strcmp ("spmdopt", global.break_specifier)))) {
-                goto cont;
-            }
-
-            /*
-             * Third, local back references within spmd-functions are adjusted, e.g.
-             * references to identifer declarations or data flow masks.
-             */
-            INFO_SPMDL_MT (arg_info) = 1;
-            DBUG_PRINT ("CONC", ("--- begin a SPMDL (mt = 1) traversal ---"));
-            DBUG_PRINT ("SPMDL", ("--- begin a SPMDL (mt = 1) traversal ---"));
-            TRAVpush (TR_spmdl);
-            FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-            TRAVpop ();
-            DBUG_PRINT ("SPMDL", ("--- end a SPMDL (mt = 1) traversal ---"));
-            DBUG_PRINT ("CONC", ("--- end a SPMDL (mt = 1) traversal ---"));
-
-            if ((global.break_after == PH_multithread_finish)
-                && (0 == strcmp ("spmdlift", global.break_specifier))) {
-                goto cont;
-            }
-
-            /*
-             * Fourth, synchronisation blocks are built around each assignment within
-             * the body of an spmd-function.
-             */
-            INFO_SYNCI_FIRST (arg_info) = 1;
-            INFO_SYNCI_LAST (arg_info) = 1;
-            DBUG_PRINT ("CONC", ("--- begin a SYNCI traversal ---"));
-            DBUG_PRINT ("SYNCI", ("--- begin a SYNCI traversal ---"));
-            TRAVpush (TR_synci);
-            FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-            TRAVpop ();
-            DBUG_PRINT ("SYNCI", ("--- end a SYNCI traversal ---"));
-            DBUG_PRINT ("CONC", ("--- end a SYNCI traversal ---"));
-
-            if ((global.break_after == PH_multithread_finish)
-                && (0 == strcmp ("syncinit", global.break_specifier))) {
-                goto cont;
-            }
-
-            /*
-             * synchronisation blocks are optimized, i.e. two or several adjacent
-             * synchronisation blocks are combined into a single larger one.
-             */
-            DBUG_PRINT ("CONC", ("--- begin a SYNCO traversal ---"));
-            DBUG_PRINT ("SYNCO", ("--- begin a SYNCO traversal ---"));
-            TRAVpush (TR_synco);
-            FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-            TRAVpop ();
-            DBUG_PRINT ("SYNCO", ("--- end a SYNCO traversal ---"));
-            DBUG_PRINT ("CONC", ("--- end a SYNCO traversal ---"));
-
-            if ((global.break_after == PH_multithread_finish)
-                && (0 == strcmp ("syncopt", global.break_specifier))) {
-                goto cont;
-            }
-
-            /*
-             * each synchronisation block and each segment specification within are
-             * given scheduling specifications.
-             * These are either infered from the context or extracted from
-             * wlcomp pragma information. Scheduling specifications
-             * outside of the context of a synchronisation block are removed.
-             */
-            DBUG_PRINT ("CONC", ("--- begin a SCHED traversal ---"));
-            DBUG_PRINT ("SCHED", ("--- begin a SCHED traversal ---"));
-            TRAVpush (TR_sched);
-            FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-            TRAVpop ();
-            DBUG_PRINT ("SCHED", ("--- end a SCHED traversal ---"));
-            DBUG_PRINT ("CONC", ("--- end a SCHED traversal ---"));
+            CTIstate ("  Using start-stop version of multithreading (MT2)");
         }
 
         /*
-         * The compilation continues with the next function definition.
+         * Infer data flow masks
          */
+        syntax_tree = INFDFMSdoInferDfms (syntax_tree, HIDE_LOCALS_NEVER);
+
+        /*
+         * Init SPMD blocks around with-loops
+         */
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_spmdinit, syntax_tree);
+
+        /*
+         * Lift SPMD blocks to SPMD functions
+         */
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_spmdlift, syntax_tree);
+
+        /*
+         * Build synchronization blocks around each assignment within the
+         * body of an SPMD function
+         */
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_syncinit, syntax_tree);
+
+        /*
+         * synchronisation blocks are optimized, i.e. two or several adjacent
+         * synchronisation blocks are combined into a single larger one.
+         */
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_syncopt, syntax_tree);
+
+        /*
+         * Remove scheduling informations outside of SPMD functions ANS
+         * give each synchronization block and each segment specification
+         * within scheduling specifications.
+         * These are either infered from the context or extracted from
+         * wlcomp pragma information. Scheduling specifications
+         * outside of the context of a synchronisation block are removed.
+         */
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_sched, syntax_tree);
+
+        break;
+
+#ifndef PRODUCTION
+    case MT_mtstblock:
+        CTIstate ("  Using mt/st-block version of multithreading (MT3)");
+        global.executionmodes_available = TRUE;
+
+        /*
+         * Tagging execution modes
+         */
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_tem, syntax_tree);
+
+        /*
+         * Create with in with
+         */
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_crwiw, syntax_tree);
+
+        /*
+         * Propagate execution modes
+         */
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_pem, syntax_tree);
+
+        /*
+         * Create data flow graph
+         */
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_cdfg, syntax_tree);
+
+        /*
+         * Rearrange assignments
+         */
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_asmra, syntax_tree);
+
+        /*
+         * Create cells
+         */
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_crece, syntax_tree);
+
+        /*
+         * Cell growth
+         */
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_cegro, syntax_tree);
+
+        /*
+         * Replicate functions
+         */
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_repfun, syntax_tree);
+
+        /*
+         * Consolidate execution mode cells
+         */
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_concel, syntax_tree);
+
+        global.executionmodes_available = FALSE;
+        CTIabort ("MT mode 3 cannot be compiled any further!");
+        break;
+#endif
+
+    default:
+        CTIabort ("Illegal multithreading mode!");
+        break;
     }
 
-cont:
-
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-    }
-
-    /*
-     *  On the back direction of the recursion we do some extra work:
-     */
-    if ((FUNDEF_BODY (arg_node) != NULL) && FUNDEF_ISFOLDFUN (arg_node)) {
-
-        if ((global.break_after == PH_multithread_finish)
-            && ((0 == strcmp ("spmdinit", global.break_specifier))
-                || (0 == strcmp ("spmdemm", global.break_specifier))
-                || (0 == strcmp ("spmdlift", global.break_specifier))
-                || (0 == strcmp ("syncinit", global.break_specifier))
-                || (0 == strcmp ("syncopt", global.break_specifier))
-                || (0 == strcmp ("scheduling", global.break_specifier)))) {
-        }
-    }
-
-    /*
-     * For several purposes it is advantageous for the remaining compilation
-     * process to have the spmd-functions stored in front of the original function
-     * from which they have been lifted.
-     * Therefore, the sequence of N_fundef nodes is reordered at the end of this
-     * compiler phase.
-     */
-
-    if (!FUNDEF_ISSPMDFUN (arg_node) && (FUNDEF_NEXT (arg_node) != NULL)
-        && (FUNDEF_ISSPMDFUN (FUNDEF_NEXT (arg_node)))
-        && (FUNDEF_LIFTEDFROM (FUNDEF_NEXT (arg_node)) == arg_node)) {
-        current_fun = arg_node;
-        first_spmdfun = FUNDEF_NEXT (arg_node);
-        last_spmdfun = first_spmdfun;
-
-        while ((FUNDEF_NEXT (last_spmdfun) != NULL)
-               && FUNDEF_ISSPMDFUN (FUNDEF_NEXT (last_spmdfun))
-               && (FUNDEF_LIFTEDFROM (FUNDEF_NEXT (last_spmdfun)) == arg_node)) {
-            last_spmdfun = FUNDEF_NEXT (last_spmdfun);
-        }
-
-        arg_node = first_spmdfun;
-        FUNDEF_NEXT (current_fun) = FUNDEF_NEXT (last_spmdfun);
-        FUNDEF_NEXT (last_spmdfun) = current_fun;
-    }
-
-    DBUG_RETURN (arg_node);
+    DBUG_RETURN (syntax_tree);
 }

@@ -305,31 +305,69 @@ SUBPHASE (dcrive, "dcrive", "Removing dead code", DCRdoDeadCodeRemovalModule)
 SUBPHASE (wlidx, "wlidx", "Annoting offset variable at with-loops",
           WLIDXdoAnnotateWithloopIdxs)
 
-SUBPHASE (ussa, "ussa", "Converting from SSA form", USSATdoUndoSsaTransform)
-
-SUBPHASE (fun2lac, "fun2lac", "Reintroducing loops and conditionals", F2LdoFun2Lac)
-
-SUBPHASE (lacinl, "lacinl", "Inlining LaC functions", LINLdoLACInlining)
-
 SUBPHASE (fdi, "fdi", "Freeing dispatch information", FDIdoFreeDispatchInformation)
 
 /***********************************************************************/
 
-PHASE (wltrans, "Transforming with-loop representation", PHdummy)
+PHASE (wltrans, "Transforming with-loop representation", WLTRAdoWlTransformPhase)
 
-SUBPHASE (wltra, "wltra", "Transforming with-loop representation", PHdummy)
+SUBPHASE (wltussa, "ussa", "Converting from SSA form", USSATdoUndoSsaTransform)
+
+SUBPHASE (wltfun2lac, "fun2lac", "Reintroducing loops and conditionals", F2LdoFun2Lac)
+
+SUBPHASE (wltlacinl, "lacinl", "Inlining LaC functions", LINLdoLACInlining)
+
+SUBPHASE (wltra, "wltra", "Transforming with-loop representation", WLTRAdoWlTransform)
+
+SUBPHASE (wltlac2fun, "lac2fun", "Eliminating loops and conditionals", L2FdoLac2Fun)
+
+SUBPHASE (wltssa, "ssa", "Establishing static single assignment form", SSATdoTransform)
+
+SUBPHASE (wltcvp, "cvp", "Propagating constants and variables", CVPdoConstVarPropagation)
+
+SUBPHASE (wltdcr, "dcr", "Removing dead code", DCRdoDeadCodeRemovalModule)
 
 /***********************************************************************/
 
-PHASE (alloc, "Introducing explicit memory allocation instructions", EMAdoAllocation)
+PHASE (multithread, "Generating annotations for multithreaded execution",
+       CONCdoConcurrent)
 
-SUBPHASE (lac2fun2, "lac2fun2", "Eliminating loops and conditionals", L2FdoLac2Fun)
+SUBPHASE (spmdinit, "spmdinit", "Building SPMD blocks around with-loops", SPMDIdoSpmdInit)
 
-SUBPHASE (ssa2, "ssa2", "Establishing static single assignment form", SSATdoTransform)
+SUBPHASE (spmdlift, "spmdlift", "Lifting SPMD blocks to functions", SPMDLdoSpmdLift)
 
-SUBPHASE (cvpemm, "cvp", "Propagating constants and variables", CVPdoConstVarPropagation)
+SUBPHASE (syncinit, "syncinit", "Building synchronisation blocks in SPMD functions",
+          SYNCIdoSyncInit)
 
-SUBPHASE (dcremm, "dcr", "Removing dead code", DCRdoDeadCodeRemovalModule)
+SUBPHASE (syncopt, "syncopt", "Optmizing synchronisation blocks", SYNCOdoSyncOpt)
+
+SUBPHASE (sched, "sched", "Annotating scheduling informations", SCHEDdoScheduleTrav)
+
+SUBPHASE (tem, "tem", "Tagging execution modes", TEMdoTagExecutionmode)
+
+SUBPHASE (crwiw, "crwiw", "Creating with in with", CRWIWdoCreateWithinwith)
+
+SUBPHASE (pem, "pem", "Propagating execution modes", PEMdoPropagateExecutionmode)
+
+SUBPHASE (cdfg, "cdfg", "Creating data flow graph", CDFGdoCreateDataflowgraph)
+
+SUBPHASE (asmra, "asmra", "Rearringing assignments", ASMRAdoAssignmentsRearrange)
+
+SUBPHASE (crece, "crece", "Creating execution mode cells", CRECEdoCreateCells)
+
+SUBPHASE (cegro, "cegro", "Extending execution mode cells", CEGROdoCellGrowth)
+
+SUBPHASE (repfun, "repfun", "Replicating functions", REPFUNdoReplicateFunctions)
+
+SUBPHASE (mtdfr, "dfr", "Removing superfluos functions", DFRdoDeadFunctionRemoval)
+
+SUBPHASE (concel, "concel", "Consolidating execution mode cells",
+          CONCELdoConsolidateCells)
+
+/***********************************************************************/
+
+PHASE (memory, "Introducing explicit memory management instructions",
+       EMMdoMemoryManagement)
 
 SUBPHASE (simd, "simd", "SIMD inference", SIMDdoInferSIMD)
 
@@ -339,7 +377,7 @@ SUBPHASE (copy, "copy", "Making copy operations explicit", EMECdoExplicitCopy)
 
 SUBPHASE (alloc, "alloc", "Introducing explicit allocation statements ", EMALdoAlloc)
 
-SUBPHASE (dcremm2, "dcr2", "Removing dead code", DCRdoDeadCodeRemovalModule)
+SUBPHASE (emmdcr, "dcr", "Removing dead code", DCRdoDeadCodeRemovalModule)
 
 SUBPHASE (rci, "rci", "Inferring reuse candidates", EMRIdoReuseInference)
 
@@ -359,35 +397,7 @@ SUBPHASE (ipc, "ipc", "Identfying in-place updates", EMIPdoInplaceComputation)
 
 SUBPHASE (dr, "dr", "Exploiting data reuse", EMDRdoDataReuse)
 
-SUBPHASE (dcremm3, "dcr3", "Removing dead code", DCRdoDeadCodeRemovalModule)
-
-/***********************************************************************/
-
-PHASE (multithread, "Generating annotations for MT", PHdummy)
-
-SUBPHASE (mtinit, "mtinit", "Initializing multithreading system", PHdummy)
-
-SUBPHASE (tem, "tem", "Tagging execution modes", PHdummy)
-
-SUBPHASE (crwiw, "crwiw", "Creating with in with", PHdummy)
-
-SUBPHASE (pem, "pem", "Prpagating execution modes", PHdummy)
-
-SUBPHASE (cdfg, "cdfg", "Creating data flow graph", PHdummy)
-
-SUBPHASE (asmra, "asmra", "Rearringing assignments", PHdummy)
-
-SUBPHASE (crece, "crece", "Creating execution mode cells", PHdummy)
-
-SUBPHASE (cegro, "cegro", "Extending execution mode cells", PHdummy)
-
-SUBPHASE (repfun, "repfun", "Replicatinmg functions", PHdummy)
-
-SUBPHASE (concel, "concel", "Consolidating execution mode cells", PHdummy)
-
-/***********************************************************************/
-
-PHASE (refcnt, "Running explicit reference count inference system", EMRdoRefCountPhase)
+SUBPHASE (emmdcr2, "dcr2", "Removing dead code", DCRdoDeadCodeRemovalModule)
 
 SUBPHASE (rc, "rc", "Reference counting", RCIdoReferenceCounting)
 
@@ -399,32 +409,13 @@ SUBPHASE (re, "re", "Removing reuse instructions", EMREdoReuseElimination)
 
 /***********************************************************************/
 
-PHASE (multithread_finish, "Finishing MT annotations", PHdummy)
+PHASE (precompile, "Preparing C code generation", PRECdoPrecompile)
 
-SUBPHASE (spmdinit, "spmdinit", "Building SPMD blocks around with-loops", PHdummy)
+SUBPHASE (ussa, "ussa", "Converting from SSA form", USSATdoUndoSsaTransform)
 
-SUBPHASE (spmdemm, "spmdemm", "Moving memory management instructions of local variables",
-          PHdummy)
+SUBPHASE (fun2lac, "fun2lac", "Reintroducing loops and conditionals", F2LdoFun2Lac)
 
-SUBPHASE (spmdlift, "spmdlift", "Lifting SPMD blocks to functions", PHdummy)
-
-SUBPHASE (scheduling, "scheduling", "Removing scheduling informations from SPMD blocks",
-          PHdummy)
-
-SUBPHASE (syncinit, "syncinit", "Building synchronisation blocks in SPMD functions",
-          PHdummy)
-
-SUBPHASE (syncopt, "syncopt", "Optmizing synchronisation blocks", PHdummy)
-
-/***********************************************************************/
-
-PHASE (precompile, "Preparing C code generation", PHdummy)
-
-SUBPHASE (ussa2, "ussa2", "Converting from SSA form", USSATdoUndoSsaTransform)
-
-SUBPHASE (fun2lac2, "fun2lac2", "Reintroducing loops and conditionals", F2LdoFun2Lac)
-
-SUBPHASE (lacinl2, "lacinl2", "Inlining LaC functions", LINLdoLACInlining)
+SUBPHASE (lacinl, "lacinl", "Inlining LaC functions", LINLdoLACInlining)
 
 SUBPHASE (rec, "rec", "Removing external code", RECdoRemoveExternalCode)
 

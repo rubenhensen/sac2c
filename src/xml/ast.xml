@@ -1515,126 +1515,57 @@
       startfun="NULL" include=".h"
       if="true"
       breakspec="co">
-      <traversal id="CONC" name="Build SPMD Regions (MT2)" default="sons" include="concurrent.h">
-        <travuser>
-          <node name="Fundef" />
-          <node name="Module" />
-        </travuser>
-        <travsons>
-        </travsons>
-        <travnone>
-        </travnone>
-        <traverror>
-        </traverror>
-      </traversal>
       <traversal id="SPMDI" name="SPMD Init" default="sons" include="spmd_init.h">
         <travuser>
+          <node name="Fundef" />
           <node name="Assign" />
         </travuser>
-        <travsons>
-        </travsons>
-        <travnone>
-        </travnone>
-        <traverror>
-        </traverror>
-      </traversal>
-      <traversal id="SPMDEMM" name="SPMD Explicit Memory Management" default="sons" include="spmd_emm.h">
-        <travuser>
-          <node name="Assign" />
-          <node name="Let" />
-          <node name="Prf" />
-          <node name="Spmd" />
-        </travuser>
-        <travsons>
-        </travsons>
-        <travnone>
-        </travnone>
-        <traverror>
-        </traverror>
       </traversal>
       <traversal id="SPMDL" name="SPMD Lift" default="sons" include="spmd_lift.h">
         <travuser>
+          <node name="Fundef" />
           <node name="Spmd" />
           <node name="With2" />
         </travuser>
       </traversal>
+      <traversal id="SYNCI" name="SYNC-Block Init" default="sons" include="sync_init.h">
+        <travuser>
+          <node name="Fundef" />
+          <node name="Assign" />
+        </travuser>
+      </traversal>
+      <traversal id="SYNCO" name="Synchronisation Optimization" default="sons" include="sync_opt.h">
+        <travuser>
+          <node name="Fundef" />
+          <node name="Assign" />
+          <node name="Sync" />
+        </travuser>
+      </traversal>
       <traversal id="SCHED" name="Schedule" default="sons" include="schedule.h">
         <travuser>
+          <node name="Fundef" />
           <node name="WLsegVar" />
           <node name="Sync" />
           <node name="With2" />
           <node name="WLseg" />
         </travuser>
-        <travsons>
-        </travsons>
-        <travnone>
-        </travnone>
-        <traverror>
-        </traverror>
-      </traversal>
-      <traversal id="SYNCI" name="SYNC-Block Init" default="sons" include="sync_init.h">
-        <travuser>
-          <node name="Assign" />
-        </travuser>
-        <travsons>
-        </travsons>
-        <travnone>
-        </travnone>
-        <traverror>
-        </traverror>
-      </traversal>
-      <traversal id="SYNCO" name="Synchronisation Optimization" default="sons" include="sync_opt.h">
-        <travuser>
-          <node name="Assign" />
-          <node name="Sync" />
-        </travuser>
-        <travsons>
-        </travsons>
-        <travnone>
-        </travnone>
-        <traverror>
-        </traverror>
       </traversal>
       <traversal id="SPMDDN" name="SPMD Delete Nested Traversal"  default="sons" include="spmd_trav.h">
         <travuser>
           <node name="Spmd" />
         </travuser>
-        <travsons>
-        </travsons>
-        <travnone>
-        </travnone>
-        <traverror>
-        </traverror>
       </traversal>
       <traversal id="SPMDPM" name="SPMD Produce Masks" default="sons" include="spmd_trav.h">
         <travuser>
           <node name="Assign" />
         </travuser>
-        <travsons>
-        </travsons>
-        <travnone>
-        </travnone>
-        <traverror>
-        </traverror>
       </traversal>
     </phase>
+
     <phase id="multithread" name="Generating annotations for MT3"
       startfun="NULL" include=".h"
       if="true"
       breakspec="mt">
-      <traversal id="MUTH" name="Build Multithread (MT3)" default="sons" include="multithread.h">
-        <travuser>
-          <node name="Assign" />
-          <node name="Fundef" />
-          <node name="Module" />
-        </travuser>
-        <travsons>
-        </travsons>
-        <travnone>
-        </travnone>
-        <traverror>
-        </traverror>
-      </traversal>
       <traversal id="TEM" name="Tag Executionmode" default="sons" include="tag_executionmode.h">
         <travuser>
           <node name="Ap" />
@@ -3035,7 +2966,7 @@
                 <node name="SSAcnt" />
                 <phases>
                   <phase name="ssa" />
-                  <phase name="ssa2" />
+                  <phase name="wltssa" />
                   <phase name="ssawc" />
                 </phases>
               </target>
@@ -3417,7 +3348,7 @@
                 <any />
                 <phases>
                   <phase name="lac2fun" />
-                  <phase name="lac2fun2" />
+                  <phase name="wltlac2fun" />
                 </phases>
               </target>
             </targets>
@@ -3430,7 +3361,7 @@
                 <any />
                 <phases>
                   <phase name="lac2fun" />
-                  <phase name="lac2fun2" />
+                  <phase name="wltlac2fun" />
                 </phases>
               </target>
             </targets>
@@ -3443,7 +3374,7 @@
                 <any />
                 <phases>
                   <phase name="lac2fun" />
-                  <phase name="lac2fun2" />
+                  <phase name="wltlac2fun" />
                 </phases>
               </target>
             </targets>
@@ -3497,7 +3428,7 @@
               <target mandatory="yes">
                 <any />
                 <phases>
-                  <range from="fun2lac2" to="final" />
+                  <range from="fun2lac" to="final" />
                 </phases>
               </target>
             </targets>
@@ -3510,7 +3441,7 @@
                 <any />
                 <phases>
                   <phase name="lac2fun" />
-                  <phase name="lac2fun2" />
+                  <phase name="wltlac2fun" />
                 </phases>
               </target>
             </targets>
@@ -3523,7 +3454,7 @@
                 <any />
                 <phases>
                   <phase name="lac2fun" />
-                  <phase name="lac2fun2" />
+                  <phase name="wltlac2fun" />
                 </phases>
               </target>
             </targets>
@@ -3536,7 +3467,7 @@
                 <any />
                 <phases>
                   <phase name="lac2fun" />
-                  <phase name="lac2fun2" />
+                  <phase name="wltlac2fun" />
                 </phases>
               </target>
             </targets>
@@ -4648,7 +4579,7 @@
                 <node name="SSAcnt" />
                 <phases>
                   <phase name="ssa" />
-                  <phase name="ssa2" />
+                  <phase name="wltssa" />
                   <phase name="ssawc" />
                 </phases>
               </target>
@@ -4661,8 +4592,8 @@
               <target mandatory="yes">
                 <node name="Assign" />
                 <phases>
-                  <range from="ssa" to="ussa" />
-                  <range from="ssa2" to="ussa2" />
+                  <range from="ssa" to="wltussa" />
+                  <range from="wltssa" to="ussa" />
                 </phases>
               </target>
             </targets>
@@ -4675,7 +4606,7 @@
                 <node name="SSAstack" />
                 <phases>
                   <phase name="ssa" />
-                  <phase name="ssa2" />
+                  <phase name="wltssa" />
                   <phase name="ssawc" />
                 </phases>
               </target>
@@ -4689,7 +4620,7 @@
                 <node name="Avis" />
                 <phases>
                   <phase name="ssa" />
-                  <phase name="ssa2" />
+                  <phase name="wltssa" />
                   <phase name="ssawc" />
                 </phases>
               </target>
@@ -4703,7 +4634,7 @@
                 <node name="Avis" />
                 <phases>
                   <phase name="ssa" />
-                  <phase name="ssa2" />
+                  <phase name="wltssa" />
                   <phase name="ssawc" />
                 </phases>
               </target>
@@ -4745,7 +4676,7 @@
                   <phase name="cse" />
                   <phase name="lir" />
                   <phase name="ussa" />
-                  <phase name="ussa2" />
+                  <phase name="wltussa" />
 		  <phase name="rera" />
                 </phases>
               </target>

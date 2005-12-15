@@ -17,20 +17,12 @@
 #include "tree_compound.h"
 #include "internal_lib.h"
 #include "free.h"
-#include "DupTree.h"
 #include "globals.h"
 #include "usage.h"
 #include "print.h"
-#include "new_typecheck.h"
 #include "type_statistics.h"
-#include "optimize.h"
 #include "filemgr.h"
-#include "allocation.h"
-#include "rcphase.h"
 #include "scnprs.h"
-#include "wltransform.h"
-#include "concurrent.h"
-#include "precompile.h"
 #include "compile.h"
 #include "annotate_fun_calls.h"
 #include "libstat.h"
@@ -47,8 +39,6 @@
 #include "resolvepragma.h"
 #include "resource.h"
 #include "options.h"
-#include "multithread.h"
-#include "WLEnhancement.h"
 #include "export.h"
 #include "traverse.h"
 #include "ToOldTypes.h"
@@ -319,124 +309,27 @@ main (int argc, char *argv[])
     /*
      * WLtransform
      */
-    global.compiler_phase++;
-    PHASE_PROLOG;
-    NOTE_COMPILER_PHASE;
-
-    syntax_tree = WLTRAdoWlTransform (syntax_tree); /* wltrans_tab */
-
-    PHASE_DONE_EPILOG;
-    PHASE_EPILOG;
-
-    if (global.break_after == PH_wltrans)
-        goto BREAK;
+    syntax_tree = PHrunCompilerPhase (PH_wltrans, syntax_tree);
 
     /*
-     * Explicit memory allocation
+     * Multithreading
      */
-    syntax_tree = PHrunCompilerPhase (PH_alloc, syntax_tree);
-
-    global.compiler_phase++;
-    PHASE_PROLOG;
+    syntax_tree = PHrunCompilerPhase (PH_multithread, syntax_tree);
 
     /*
-     * MT I
+     * Explicit memory managment
      */
-    switch (global.mtmode) {
-    case MT_none:
-        break;
-    case MT_createjoin:
-        break;
-    case MT_startstop:
-        break;
-    case MT_mtstblock:
-        NOTE_COMPILER_PHASE;
-        NOTE (("Using mt/st-block version of multithreading (MT3)"));
-        /* this version of multithreading is only for code in SSA-form */
-
-        syntax_tree = MUTHdoMultiThread (syntax_tree);
-
-        PHASE_DONE_EPILOG;
-        break;
-    }
-    PHASE_EPILOG;
-
-    if (global.break_after == PH_multithread)
-        goto BREAK;
-
-    /*
-     * Reference counting
-     */
-    syntax_tree = PHrunCompilerPhase (PH_refcnt, syntax_tree);
-
-    /*
-     * MT II
-     */
-    global.compiler_phase++;
-    PHASE_PROLOG;
-    NOTE_COMPILER_PHASE;
-
-    switch (global.mtmode) {
-    case MT_none:
-        syntax_tree = PHrunCompilerSubPhase (SUBPH_ussa2, syntax_tree);
-        syntax_tree = PHrunCompilerSubPhase (SUBPH_fun2lac2, syntax_tree);
-        syntax_tree = PHrunCompilerSubPhase (SUBPH_lacinl2, syntax_tree);
-        break;
-    case MT_createjoin:
-        NOTE (("Using create-join version of multithreading (MT1)"));
-        /* spmd..._tab, sync..._tab */
-        syntax_tree = PHrunCompilerSubPhase (SUBPH_ussa2, syntax_tree);
-        syntax_tree = PHrunCompilerSubPhase (SUBPH_fun2lac2, syntax_tree);
-        syntax_tree = PHrunCompilerSubPhase (SUBPH_lacinl2, syntax_tree);
-        syntax_tree = CONCdoConcurrent (syntax_tree);
-        break;
-    case MT_startstop:
-        NOTE (("Using start-stop version of multithreading (MT2)"));
-        /* spmd..._tab, sync..._tab */
-        syntax_tree = PHrunCompilerSubPhase (SUBPH_ussa2, syntax_tree);
-        syntax_tree = PHrunCompilerSubPhase (SUBPH_fun2lac2, syntax_tree);
-        syntax_tree = PHrunCompilerSubPhase (SUBPH_lacinl2, syntax_tree);
-        syntax_tree = CONCdoConcurrent (syntax_tree);
-        break;
-    case MT_mtstblock:
-        CTIabort ("Mt/st-block version of multithreading de-activated !!");
-        /* following comment concerning for mt/st-block version:
-         * The core problem is that new-mt reuses the FUNDEF ATTRIB attribute
-         * and thereby destroys its old contents. Unfortunately, it has turned
-         * that this information is vital for precompile.
-         */
-
-        /* something's missing... */
-
-        syntax_tree = PHrunCompilerSubPhase (SUBPH_ussa2, syntax_tree);
-        syntax_tree = PHrunCompilerSubPhase (SUBPH_fun2lac2, syntax_tree);
-        syntax_tree = PHrunCompilerSubPhase (SUBPH_lacinl2, syntax_tree);
-        break;
-    }
-
-    PHASE_DONE_EPILOG;
-    PHASE_EPILOG;
-
-    if (global.break_after == PH_multithread_finish)
-        goto BREAK;
-    global.compiler_phase++;
+    syntax_tree = PHrunCompilerPhase (PH_memory, syntax_tree);
 
     /*
      * Precompile
      */
-    PHASE_PROLOG;
-    NOTE_COMPILER_PHASE;
-    syntax_tree = PRECdoPrecompile (syntax_tree); /* precomp_tab */
-    PHASE_DONE_EPILOG;
-    PHASE_EPILOG;
-
-    if (global.break_after == PH_precompile)
-        goto BREAK;
-    global.compiler_phase++;
+    syntax_tree = PHrunCompilerPhase (PH_precompile, syntax_tree);
 
     /*
      * Compile
      */
+    global.compiler_phase++;
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
     /*

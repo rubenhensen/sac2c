@@ -27,8 +27,104 @@
 #include "LookUpTable.h"
 #include "InferDFMs.h"
 #include "namespaces.h"
-#include "concurrent_info.h"
 #include "new_types.h"
+
+/**
+ * INFO structure
+ */
+struct INFO {
+    bool mt;
+    node *fundef;
+};
+
+/**
+ * INFO macros
+ */
+#define INFO_MT(n) (n->mt)
+#define INFO_FUNDEF(n) (n->fundef)
+
+/**
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = ILIBmalloc (sizeof (info));
+
+    INFO_MT (result) = FALSE;
+    INFO_FUNDEF (result) = NULL;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = ILIBfree (info);
+
+    DBUG_RETURN (info);
+}
+
+/******************************************************************************
+ *
+ * @fn SPMDLdoSpmdLift
+ *
+ *  @brief
+ *
+ *  @param syntax_tree
+ *
+ *  @return
+ *
+ *****************************************************************************/
+node *
+SPMDLdoSpmdLift (node *syntax_tree)
+{
+    info *info;
+
+    DBUG_ENTER ("SPMDLdoSpmdLift");
+
+    DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_module, "Illegal argument node!!!");
+
+    info = MakeInfo ();
+
+    TRAVpush (TR_spmdl);
+    syntax_tree = TRAVdo (syntax_tree, info);
+    TRAVpop ();
+
+    info = FreeInfo (info);
+
+    DBUG_RETURN (syntax_tree);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SPMDLfundef( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+SPMDLfundef (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("SPMDLfundef");
+
+    INFO_FUNDEF (arg_info) = arg_node;
+
+    if ((FUNDEF_BODY (arg_node) != NULL) && (!FUNDEF_ISFOLDFUN (arg_node))) {
+        INFO_MT (arg_info) = FUNDEF_ISSPMDFUN (arg_node);
+        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+    }
+
+    if (FUNDEF_NEXT (arg_node) != NULL) {
+        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
 
 /******************************************************************************
  *
@@ -39,7 +135,7 @@
  *   lifts a SPMD-region into a function.
  *
  * remarks:
- *   - 'INFO_CONC_FUNDEF( arg_info)' points to the current fundef-node.
+ *   - 'INFO_FUNDEF( arg_info)' points to the current fundef-node.
  *
  ******************************************************************************/
 
@@ -56,7 +152,7 @@ SPMDLspmd (node *arg_node, info *arg_info)
 
     DBUG_ENTER (" SPMDLspmd");
 
-    fundef = INFO_CONC_FUNDEF (arg_info);
+    fundef = INFO_FUNDEF (arg_info);
 
     /****************************************************************************
      * build fundef for this spmd region
@@ -232,54 +328,54 @@ SPMDLwith2 (node *arg_node, info *arg_info)
      * mark with-loop as being multi-threaded or not depending on arg_info
      */
 
-    WITH2_MT (arg_node) = INFO_SPMDL_MT (arg_info);
+    WITH2_MT (arg_node) = INFO_MT (arg_info);
 
     /*
      * traverse sons
      */
     WITH2_SEGS (arg_node) = TRAVdo (WITH2_SEGS (arg_node), arg_info);
-    INFO_SPMDL_MT (arg_info) = 0;
+    INFO_MT (arg_info) = FALSE;
 
     if (WITH2_CODE (arg_node) != NULL) {
         WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
     }
 
-    INFO_SPMDL_MT (arg_info) = WITH2_MT (arg_node);
+    INFO_MT (arg_info) = WITH2_MT (arg_node);
     WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
 
     /*
      * generate new DFMasks
      */
 
-    in = DFMgenMaskClear (FUNDEF_DFM_BASE (INFO_CONC_FUNDEF (arg_info)));
-    out = DFMgenMaskClear (FUNDEF_DFM_BASE (INFO_CONC_FUNDEF (arg_info)));
-    local = DFMgenMaskClear (FUNDEF_DFM_BASE (INFO_CONC_FUNDEF (arg_info)));
+    in = DFMgenMaskClear (FUNDEF_DFM_BASE (INFO_FUNDEF (arg_info)));
+    out = DFMgenMaskClear (FUNDEF_DFM_BASE (INFO_FUNDEF (arg_info)));
+    local = DFMgenMaskClear (FUNDEF_DFM_BASE (INFO_FUNDEF (arg_info)));
 
     /*
      * traverse all args and vardecs
      */
-    args = FUNDEF_ARGS (INFO_CONC_FUNDEF (arg_info));
+    args = FUNDEF_ARGS (INFO_FUNDEF (arg_info));
     while (args != NULL) {
         if (DFMtestMaskEntry (WITH2_IN_MASK (arg_node), NULL, ARG_AVIS (args))) {
             DFMsetMaskEntrySet (in, NULL, ARG_AVIS (args));
         }
-        if (DFMtestMaskEntry (WITH2_IN_MASK (arg_node), NULL, ARG_AVIS (args))) {
+        if (DFMtestMaskEntry (WITH2_OUT_MASK (arg_node), NULL, ARG_AVIS (args))) {
             DFMsetMaskEntrySet (out, NULL, ARG_AVIS (args));
         }
-        if (DFMtestMaskEntry (WITH2_IN_MASK (arg_node), NULL, ARG_AVIS (args))) {
+        if (DFMtestMaskEntry (WITH2_LOCAL_MASK (arg_node), NULL, ARG_AVIS (args))) {
             DFMsetMaskEntrySet (local, NULL, ARG_AVIS (args));
         }
         args = ARG_NEXT (args);
     }
-    vardec = FUNDEF_VARDEC (INFO_CONC_FUNDEF (arg_info));
+    vardec = FUNDEF_VARDEC (INFO_FUNDEF (arg_info));
     while (vardec != NULL) {
         if (DFMtestMaskEntry (WITH2_IN_MASK (arg_node), NULL, VARDEC_AVIS (vardec))) {
             DFMsetMaskEntrySet (in, NULL, VARDEC_AVIS (vardec));
         }
-        if (DFMtestMaskEntry (WITH2_IN_MASK (arg_node), NULL, VARDEC_AVIS (vardec))) {
+        if (DFMtestMaskEntry (WITH2_OUT_MASK (arg_node), NULL, VARDEC_AVIS (vardec))) {
             DFMsetMaskEntrySet (out, NULL, VARDEC_AVIS (vardec));
         }
-        if (DFMtestMaskEntry (WITH2_IN_MASK (arg_node), NULL, VARDEC_AVIS (vardec))) {
+        if (DFMtestMaskEntry (WITH2_LOCAL_MASK (arg_node), NULL, VARDEC_AVIS (vardec))) {
             DFMsetMaskEntrySet (local, NULL, VARDEC_AVIS (vardec));
         }
         vardec = VARDEC_NEXT (vardec);

@@ -45,6 +45,7 @@
 #include "ctinfo.h"
 #include "new_types.h"
 #include "shape.h"
+#include "phase.h"
 
 /*
  * moved from wl_bounds.h
@@ -7398,6 +7399,55 @@ WLTRAdoWlTransform (node *syntax_tree)
     TRAVpop ();
 
     info = FreeInfo (info);
+
+    DBUG_RETURN (syntax_tree);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *WLTRAdoWlTransformPhase( node *syntax_tree)
+ *
+ * Description:
+ *
+ *****************************************************************************/
+
+node *
+WLTRAdoWlTransformPhase (node *syntax_tree)
+{
+    DBUG_ENTER ("WLTRAdoWlTransformPhase");
+
+    /*
+     * convert back from ssa form
+     */
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_wltussa, syntax_tree);
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_wltfun2lac, syntax_tree);
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_wltlacinl, syntax_tree);
+
+    /*
+     * apply WLTransform
+     */
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_wltra, syntax_tree);
+
+    /*
+     * convert into ssa form
+     */
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_wltlac2fun, syntax_tree);
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_wltssa, syntax_tree);
+
+    /*
+     * Constant and variable propagation
+     */
+    if (global.optimize.docvp) {
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_wltcvp, syntax_tree);
+    }
+
+    /*
+     * Dead code removal
+     */
+    if (global.optimize.dodcr) {
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_wltdcr, syntax_tree);
+    }
 
     DBUG_RETURN (syntax_tree);
 }

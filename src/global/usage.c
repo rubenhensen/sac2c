@@ -257,13 +257,13 @@ USGprintUsage ()
                       "Stop after constant and variable propagation after ive.");
     PRINT_BREAK_SPEC (PH_sacopt, "dcrive", "Stop after dead code removal after ive.");
     PRINT_BREAK_SPEC (PH_sacopt, "fdi", "Stop after freeing dispatch information.");
-    PRINT_BREAK_SPEC (PH_sacopt, "ussa", "Stop after undo ssa transform.");
-    PRINT_BREAK_SPEC (PH_sacopt, "fun2lac",
-                      "Stop after reintroducing loops and conditionals");
-    PRINT_BREAK_SPEC (PH_sacopt, "lacinl", "Stop after inlining LaC functions");
 
     printf ("\n");
 
+    PRINT_BREAK_SPEC (PH_wltrans, "ussa", "Stop after undo ssa transform.");
+    PRINT_BREAK_SPEC (PH_wltrans, "fun2lac",
+                      "Stop after reintroducing loops and conditionals");
+    PRINT_BREAK_SPEC (PH_wltrans, "lacinl", "Stop after inlining LaC functions");
     PRINT_BREAK_SPEC (PH_wltrans, "conv", "Stop after converting.");
     PRINT_BREAK_SPEC (PH_wltrans, "cubes", "Stop after cube-building.");
     PRINT_BREAK_SPEC (PH_wltrans, "fill1", "Stop after gap filling (grids only).");
@@ -276,31 +276,10 @@ USGprintUsage ()
     PRINT_BREAK_SPEC (PH_wltrans, "fit", "Stop after fitting.");
     PRINT_BREAK_SPEC (PH_wltrans, "norm", "Stop after normalization.");
     PRINT_BREAK_SPEC (PH_wltrans, "fill2", "Stop after gap filling (all nodes).");
-
-    printf ("\n");
-
-    PRINT_BREAK_SPEC (PH_alloc, "l2f", "Stop after Lac To Fun conversion.");
-    PRINT_BREAK_SPEC (PH_alloc, "ssa", "Stop after conversion into SSA form.");
-    PRINT_BREAK_SPEC (PH_alloc, "cvp", "Stop after Constant and variable Propagation.");
-    PRINT_BREAK_SPEC (PH_alloc, "dcr", "Stop after Dead Code Removal.");
-    PRINT_BREAK_SPEC (PH_alloc, "copy", "Stop after Explicit Copy Inference.");
-    PRINT_BREAK_SPEC (PH_alloc, "alloc", "Stop after Explicit Allocation Inference.");
-    PRINT_BREAK_SPEC (PH_alloc, "dcr2", "Stop after Dead Code Removal (2).");
-    PRINT_BREAK_SPEC (PH_alloc, "ri", "Stop after Reuse Inference.");
-    PRINT_BREAK_SPEC (PH_alloc, "ia", "Stop after Interface Analysis.");
-    PRINT_BREAK_SPEC (PH_alloc, "lro", "Stop after Loop Reuse Optimization.");
-    PRINT_BREAK_SPEC (PH_alloc, "frc", "Stop after Filtering Reuse Candidates.");
-    PRINT_BREAK_SPEC (PH_alloc, "sr", "Stop after Static Reuse.");
-    PRINT_BREAK_SPEC (PH_alloc, "rb", "Stop after Reuse Branching..");
-    PRINT_BREAK_SPEC (PH_alloc, "ipc", "Stop after Inplace Computation.");
-    PRINT_BREAK_SPEC (PH_alloc, "dr", "Stop after Data Reuse.");
-    PRINT_BREAK_SPEC (PH_alloc, "dcr2", "Stop after Dead Code Removal (3).");
-
-    printf ("\n");
-
-    PRINT_BREAK_SPEC (PH_refcnt, "rc", "Stop after Reference Counting Inference.");
-    PRINT_BREAK_SPEC (PH_refcnt, "rco", "Stop after Reference Counting Optimizations.");
-    PRINT_BREAK_SPEC (PH_refcnt, "re", "Stop after Reuse Elimination.");
+    PRINT_BREAK_SPEC (PH_wltrans, "l2f", "Stop after Lac To Fun conversion.");
+    PRINT_BREAK_SPEC (PH_wltrans, "ssa", "Stop after conversion into SSA form.");
+    PRINT_BREAK_SPEC (PH_wltrans, "cvp", "Stop after Constant and variable Propagation.");
+    PRINT_BREAK_SPEC (PH_wltrans, "dcr", "Stop after Dead Code Removal.");
 
     printf ("\n");
     printf ("    with \"-mt [-mtmode 2]\"\n");
@@ -328,6 +307,24 @@ USGprintUsage ()
     PRINT_BREAK_SPEC (PH_multithread, "cegro", "Stop after cell growing.");
     PRINT_BREAK_SPEC (PH_multithread, "repfun", "Stop after replicating functions.");
     PRINT_BREAK_SPEC (PH_multithread, "concel", "Stop after consolidating the cells.");
+
+    printf ("\n");
+
+    PRINT_BREAK_SPEC (PH_memory, "copy", "Stop after Explicit Copy Inference.");
+    PRINT_BREAK_SPEC (PH_memory, "alloc", "Stop after Explicit Allocation Inference.");
+    PRINT_BREAK_SPEC (PH_memory, "dcr", "Stop after Dead Code Removal.");
+    PRINT_BREAK_SPEC (PH_memory, "ri", "Stop after Reuse Inference.");
+    PRINT_BREAK_SPEC (PH_memory, "ia", "Stop after Interface Analysis.");
+    PRINT_BREAK_SPEC (PH_memory, "lro", "Stop after Loop Reuse Optimization.");
+    PRINT_BREAK_SPEC (PH_memory, "frc", "Stop after Filtering Reuse Candidates.");
+    PRINT_BREAK_SPEC (PH_memory, "sr", "Stop after Static Reuse.");
+    PRINT_BREAK_SPEC (PH_memory, "rb", "Stop after Reuse Branching..");
+    PRINT_BREAK_SPEC (PH_memory, "ipc", "Stop after Inplace Computation.");
+    PRINT_BREAK_SPEC (PH_memory, "dr", "Stop after Data Reuse.");
+    PRINT_BREAK_SPEC (PH_memory, "dcr2", "Stop after Dead Code Removal (2).");
+    PRINT_BREAK_SPEC (PH_memory, "rc", "Stop after Reference Counting Inference.");
+    PRINT_BREAK_SPEC (PH_memory, "rco", "Stop after Reference Counting Optimizations.");
+    PRINT_BREAK_SPEC (PH_memory, "re", "Stop after Reuse Elimination.");
 
     printf ("\n");
 
