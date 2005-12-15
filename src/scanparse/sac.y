@@ -579,7 +579,7 @@ args: arg COMMA args
       }
     ;
 
-varargs: arg COMMA args
+varargs: arg COMMA varargs
          { ARG_NEXT($1) = $3;
            $$ = $1;
          }
