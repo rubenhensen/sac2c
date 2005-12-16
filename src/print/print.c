@@ -11,6 +11,7 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "new_types.h"
+#include "type_utils.h"
 #include "DupTree.h"
 #include "dbug.h"
 #include "traverse.h"
@@ -1007,6 +1008,7 @@ node *
 PRTtypedef (node *arg_node, info *arg_info)
 {
     char *type_str;
+    bool ishidden;
 
     DBUG_ENTER ("PRTtypedef");
 
@@ -1017,6 +1019,12 @@ PRTtypedef (node *arg_node, info *arg_info)
     }
 
     if (TYPEDEF_ICM (arg_node) == NULL) {
+        ishidden = TUisHidden (TYPEDEF_NTYPE (arg_node));
+
+        if (ishidden) {
+            fprintf (global.outfile, "external ");
+        }
+
         if (TYPEDEF_ISALIAS (arg_node)) {
             fprintf (global.outfile, "typealias ");
         } else if (TYPEDEF_ISUNIQUE (arg_node)) {
@@ -1024,9 +1032,12 @@ PRTtypedef (node *arg_node, info *arg_info)
         } else {
             fprintf (global.outfile, "typedef ");
         }
-        type_str = TYtype2String (TYPEDEF_NTYPE (arg_node), 0, TRUE);
-        fprintf (global.outfile, "%s ", type_str);
-        type_str = ILIBfree (type_str);
+
+        if (!ishidden) {
+            type_str = TYtype2String (TYPEDEF_NTYPE (arg_node), 0, TRUE);
+            fprintf (global.outfile, "%s ", type_str);
+            type_str = ILIBfree (type_str);
+        }
 
         if (TYPEDEF_NS (arg_node) != NULL) {
             fprintf (global.outfile, "%s::", NSgetName (TYPEDEF_NS (arg_node)));
