@@ -5829,7 +5829,8 @@ TYcorrectWrapperArgTypes (node *args, ntype *type)
 
         AVIS_TYPE (ARG_AVIS (args)) = TYfreeType (AVIS_TYPE (ARG_AVIS (args)));
 
-        if (ARG_ISARTIFICIAL (args) || ARG_ISREFERENCE (args)) {
+        if (ARG_ISARTIFICIAL (args) || ARG_ISREFERENCE (args)
+            || ARG_WASREFERENCE (args)) {
             AVIS_TYPE (ARG_AVIS (args))
               = TYmakeAKS (TYcopyType (IBASE_BASE (FUN_IBASE (type, 0))),
                            SHcreateShape (0));
@@ -6010,8 +6011,11 @@ BuildDimAssign (node *arg, node **new_vardecs)
      * assign = _sub_SxS( _dim_( A), _dim_( base( A)))
      *
      * where _dim_( base( A)) is statically known
+     *
+     * As the userdefined types might have been resolved by now,
+     * we have to use the declared type here!
      */
-    type = AVIS_TYPE (ARG_AVIS (arg));
+    type = AVIS_DECLTYPE (ARG_AVIS (arg));
 
     if (TYisArray (type)) {
         type = TYgetScalar (type);
@@ -6073,8 +6077,11 @@ BuildShapeAssign (node *arg, node **new_vardecs)
      * yield the shape of the udt:
      *
      * assign = drop( - _dim_( base( A)), _shape_( A))
+     *
+     * As the user types might have been resolved by now,
+     * we have to use the declared type here!
      */
-    type = AVIS_TYPE (ARG_AVIS (arg));
+    type = AVIS_DECLTYPE (ARG_AVIS (arg));
 
     if (TYisArray (type)) {
         type = TYgetScalar (type);
@@ -6381,7 +6388,7 @@ CreateWrapperCode (ntype *type, dft_state *state, int lower, char *funname, node
         break;
 
     case TC_ibase:
-        if (ARG_ISREFERENCE (arg) || ARG_ISARTIFICIAL (arg)) {
+        if (ARG_ISREFERENCE (arg) || ARG_ISARTIFICIAL (arg) || ARG_WASREFERENCE (arg)) {
             /*
              * this should identify all legal unique argument types!
              */

@@ -478,7 +478,16 @@ TCPap (node *arg_node, info *arg_info)
 
             DBUG_ASSERT (id != NULL, "Malformed argtab!");
 
-            actual_cls = NTUgetShapeClassFromNType (ID_NTYPE (id));
+            /*
+             * global objects might appear in argument position here
+             * so ensure they are handeled correctly!
+             */
+            if (NODE_TYPE (id) == N_globobj) {
+                actual_cls
+                  = NTUgetShapeClassFromNType (OBJDEF_TYPE (GLOBOBJ_OBJDEF (id)));
+            } else {
+                actual_cls = NTUgetShapeClassFromNType (ID_NTYPE (id));
+            }
             formal_cls = NTUgetShapeClassFromNType (ARG_NTYPE (arg));
 
             if ((actual_cls != formal_cls)
@@ -486,6 +495,9 @@ TCPap (node *arg_node, info *arg_info)
                     || (formal_cls == C_scl))) {
                 DBUG_ASSERT ((actual_cls != C_scl) && (formal_cls != C_scl),
                              "Conversion from or to scalar encountered!");
+
+                DBUG_ASSERT ((NODE_TYPE (id) != N_globobj),
+                             "possible lifting of global object encountered!");
 
                 DBUG_PRINT ("TCP", ("Argument with inappropriate shape class found:"));
                 DBUG_PRINT ("TCP", ("   ... = %s( ... %s ...), %s instead of %s",

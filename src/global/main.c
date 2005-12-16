@@ -247,39 +247,15 @@ main (int argc, char *argv[])
     global.compiler_phase++;
 
     /*
-     * Object handling
-     */
-    PHASE_PROLOG;
-    NOTE_COMPILER_PHASE;
-#if 0
-  syntax_tree = OBJdoHandleObjects( syntax_tree);  /* obj_tab */
-#endif
-    PHASE_DONE_EPILOG;
-    PHASE_EPILOG;
-
-    if (global.break_after == PH_objects)
-        goto BREAK;
-    global.compiler_phase++;
-
-    /*
      * uniqueness checks
      */
-    PHASE_PROLOG;
-    NOTE_COMPILER_PHASE;
-#if 0
-  syntax_tree = UNQdoUniquenessCheck( syntax_tree);  /* unique_tab */
-#endif
-    PHASE_DONE_EPILOG;
-    PHASE_EPILOG;
-
-    if (global.break_after == PH_uniquecheck)
-        goto BREAK;
-    global.compiler_phase++;
+    syntax_tree = PHrunCompilerPhase (PH_uniquecheck, syntax_tree);
 
     /*
      * user-type elimination and wrapper code creation
      */
 
+    global.compiler_phase++;
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
 

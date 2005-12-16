@@ -696,6 +696,35 @@
          </travuser>
       </traversal>
     </phase>
+    <phase id="unq" name="Checking uniqueness properties"
+      startfun="NULL" include="NULL"
+      if="true"
+      breakspec="op">
+      <traversal id="CUA" name="Check uniqueness annotations" default="sons" include="check_uniqueness_annotations.h">
+        <travuser>
+	  <node name="Objdef" />
+	  <node name="Arg" />
+	  <node name="Ret" />
+	</travuser>
+      </traversal>
+      <traversal id="IUQ" name="Infering uniqueness property" default="sons" include="infer_uniqueness.h">
+        <travuser>
+	  <node name="Arg" />
+	  <node name="Vardec" />
+	  <node name="Fundef" />
+	  <node name="Block" />
+	  <node name="Assign" />
+	  <node name="Let" />
+	  <node name="Ap" />
+	  <node name="Prf" />
+	  <node name="Id" />
+	  <node name="Funcond" />
+	  <node name="Cond" />
+	  <node name="Return" />
+	  <node name="With" />
+	</travuser>
+      </traversal>
+    </phase>
     <phase id="sacopt" name="Running SAC optimizations"
       startfun="NULL" include=".h"
       if="true"
@@ -2882,6 +2911,7 @@
         <flag name="IsAliasing" default="TRUE" />
         <flag name="IsRefcounted" default="TRUE" />
         <flag name="HasLinksignInfo" />
+	<flag name="IsUnique" />
 	<flag name="IsInUse" default="FALSE" >
 	  <description> Used to mark unused function arguments in DeadCodeRemoval. Marked arguments are removed in signature simplification.
 	  </description>
@@ -7612,6 +7642,7 @@
         <flag name="HasLinksignInfo" />
         <flag name="IsCReturn" />
         <flag name="WasRemoved" default="FALSE" />
+        <flag name="IsUnique" default="FALSE" />
       </flags>
     </node>
 <!--

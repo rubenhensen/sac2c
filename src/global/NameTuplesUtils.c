@@ -396,3 +396,38 @@ NTUgetUniqueClassFromNType (ntype *ntype)
 
     DBUG_RETURN (z);
 }
+
+/** <!-- ****************************************************************** -->
+ * @brief Creates the tag of an object (usually an array) from its type.
+ *
+ * @param name name of the id/object to create a tag for
+ * @param ntype type of the id/object
+ *
+ * @return tag
+ ******************************************************************************/
+char *
+NTUcreateNtTagFromNType (const char *name, ntype *ntype)
+{
+    shape_class_t sc;
+    hidden_class_t hc;
+    unique_class_t uc;
+    char *res;
+
+    DBUG_ENTER ("NTUcreateNtTagFromNType");
+
+    DBUG_ASSERT ((ntype != NULL), "No type found!");
+
+    sc = NTUgetShapeClassFromNType (ntype);
+    hc = NTUgetHiddenClassFromNType (ntype);
+    uc = NTUgetUniqueClassFromNType (ntype);
+
+    res = (char *)ILIBmalloc ((strlen (name) + strlen (global.nt_shape_string[sc])
+                               + strlen (global.nt_hidden_string[hc])
+                               + strlen (global.nt_unique_string[uc]) + 16)
+                              * sizeof (char));
+
+    sprintf (res, "(%s, (%s, (%s, (%s,))))", name, global.nt_shape_string[sc],
+             global.nt_hidden_string[hc], global.nt_unique_string[uc]);
+
+    DBUG_RETURN (res);
+}

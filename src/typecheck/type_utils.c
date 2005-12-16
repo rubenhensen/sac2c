@@ -414,22 +414,15 @@ bool
 TUisHidden (ntype *ty)
 {
     bool res = FALSE;
-#ifndef DBUG_OFF
-    char *tmp;
-#endif
 
     DBUG_ENTER ("TUisHidden");
 
-    if (!TYisBottom (ty) && TYisUser (TYgetScalar (ty))) {
-        ntype *base = UTgetBaseType (TYgetUserType (TYgetScalar (ty)));
+    if (!TYisBottom (ty)) {
+        if (TYisUser (TYgetScalar (ty))) {
+            ty = UTgetBaseType (TYgetUserType (TYgetScalar (ty)));
+        }
 
-        DBUG_EXECUTE ("TU", tmp = TYtype2DebugString (base, FALSE, 0););
-
-        DBUG_PRINT ("TU", ("found basetype %s", tmp));
-
-        DBUG_EXECUTE ("TU", tmp = ILIBfree (tmp););
-
-        res = (TYgetSimpleType (TYgetScalar (base)) == T_hidden);
+        res = (TYgetSimpleType (TYgetScalar (ty)) == T_hidden);
     }
 
     DBUG_RETURN (res);

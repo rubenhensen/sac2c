@@ -302,6 +302,30 @@ GetNextId (char **ret, node *exprs)
 }
 
 static node *
+GetNextGlobobj (char **ret, node *exprs)
+{
+    node *expr;
+
+    DBUG_ENTER ("GetNextGlobobj");
+
+    DBUG_ASSERT ((ret != NULL), "no return value found!");
+
+    DBUG_ASSERT ((exprs != NULL), "wrong icm-arg: NULL found!");
+    DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "wrong icm-arg: N_exprs expected");
+    expr = EXPRS_EXPR (exprs);
+
+    DBUG_ASSERT ((NODE_TYPE (expr) == N_globobj), "wrong icm-arg: N_globobj expected");
+
+    (*ret) = ILIBstringCopy (OBJDEF_NT_TAG (GLOBOBJ_OBJDEF (expr)));
+
+    DBUG_PRINT ("PRINT", ("icm-arg found: %s", (*ret)));
+
+    exprs = EXPRS_NEXT (exprs);
+
+    DBUG_RETURN (exprs);
+}
+
+static node *
 GetNextString (char **ret, node *exprs)
 {
     node *expr;
@@ -470,6 +494,9 @@ GetNextAny (char **ret, node *exprs)
         } else {
             exprs = GetNextId (ret, exprs);
         }
+        break;
+    case N_globobj:
+        exprs = GetNextGlobobj (ret, exprs);
         break;
     case N_str:
         exprs = GetNextString (ret, exprs);

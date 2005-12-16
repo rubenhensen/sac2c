@@ -20,7 +20,8 @@ include $(PROJECT_ROOT)/Makefile.Config
 OBJS := object_init.o resolve_reference_args.o \
         object_analysis.o restore_reference_args.o \
         extend_wrapper_types.o resolve_objects.o \
-        restore_objects.o
+        restore_objects.o check_uniqueness_annotations.o \
+        uniqueness_phase.o infer_uniqueness.o
 
 all: $(OBJS)
 

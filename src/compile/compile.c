@@ -1679,10 +1679,17 @@ MakeIcm_ND_FUN_AP (node *ap, node *fundef, node *assigns)
             DBUG_ASSERT ((argtab->ptr_in[i] != NULL), "argtab is uncompressed!");
             DBUG_ASSERT ((NODE_TYPE (argtab->ptr_in[i]) == N_exprs),
                          "no N_exprs node found in argtab");
-            DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (argtab->ptr_in[i])) == N_id),
-                         "argument of application must be a N_id node!");
-
-            exprs = TBmakeExprs (DUPdupIdNt (EXPRS_EXPR (argtab->ptr_in[i])), icm_args);
+            if (NODE_TYPE (EXPRS_EXPR (argtab->ptr_in[i])) == N_id) {
+                exprs
+                  = TBmakeExprs (DUPdupIdNt (EXPRS_EXPR (argtab->ptr_in[i])), icm_args);
+            } else if (NODE_TYPE (EXPRS_EXPR (argtab->ptr_in[i])) == N_globobj) {
+                exprs
+                  = TBmakeExprs (DUPdoDupNode (EXPRS_EXPR (argtab->ptr_in[i])), icm_args);
+#ifndef DBUG_OFF
+            } else {
+                DBUG_ASSERT (0, "arguments of N_ap should be either N_id or N_globobj!");
+#endif
+            }
         }
         icm_args = TBmakeExprs (TCmakeIdCopyString (global.argtag_string[argtab->tag[i]]),
                                 exprs);
@@ -1914,6 +1921,7 @@ COMPtypedef (node *arg_node, info *arg_info)
  * @fn  node *COMPobjdef( node *arg_node, info *arg_info)
  *
  * @brief  If needed an appropriate ICM is generated and stored in OBJDEF_ICM.
+ *         Furthermore, the NT TAG is added to the objdef node.
  *         The rest of the N_objdef node ist left untouched!
  *
  ******************************************************************************/
@@ -1937,6 +1945,9 @@ COMPobjdef (node *arg_node, info *arg_info)
                                         TRUE, TRUE, NULL));
     }
     OBJDEF_ICM (arg_node) = icm;
+
+    OBJDEF_NT_TAG (arg_node)
+      = NTUcreateNtTagFromNType (OBJDEF_NAME (arg_node), OBJDEF_TYPE (arg_node));
 
     if (OBJDEF_NEXT (arg_node) != NULL) {
         OBJDEF_NEXT (arg_node) = TRAVdo (OBJDEF_NEXT (arg_node), arg_info);

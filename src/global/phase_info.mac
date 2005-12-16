@@ -151,17 +151,11 @@ SUBPHASE (ppi, "ppi", "Restoring bodies of imported inline functions", PPIdoPrep
 
 /***********************************************************************/
 
-PHASE (objects, "Resolving global objects and reference parameters", PHdummy)
+PHASE (uniquecheck, "Checking uniqueness property of objects", UPdoUniquenessInference)
 
-SUBPHASE (obj, "obj", "Resolving global objects", PHdummy)
+SUBPHASE (cua, "cua", "Checking uniqueness annotations", CUAdoCheckUniquenessAnnotations)
 
-SUBPHASE (ref, "ref", "Resolving reference parameters", PHdummy)
-
-SUBPHASE (unq, "unq", "Checking uniqueness property", PHdummy)
-
-/***********************************************************************/
-
-PHASE (uniquecheck, "Checking uniqueness property of objects", PHdummy)
+SUBPHASE (iuq, "iuq", "Infering uniqueness properties", IUQdoInferUniqueness)
 
 /***********************************************************************/
 

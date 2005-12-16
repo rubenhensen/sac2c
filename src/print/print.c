@@ -1156,6 +1156,10 @@ PRTret (node *arg_node, info *arg_info)
         fprintf (global.outfile, "%s", type_str);
         type_str = ILIBfree (type_str);
 
+        if (RET_ISUNIQUE (arg_node)) {
+            fprintf (global.outfile, " *");
+        }
+
         if (RET_NEXT (arg_node) != NULL) {
             fprintf (global.outfile, ", ");
             RET_NEXT (arg_node) = TRAVdo (RET_NEXT (arg_node), arg_info);
@@ -1613,6 +1617,10 @@ PRTarg (node *arg_node, info *arg_info)
         }
     }
 
+    if (ARG_ISUNIQUE (arg_node)) {
+        fprintf (global.outfile, "*");
+    }
+
     if ((!INFO_PRINT_OMIT_FORMAL_PARAMS (arg_info)) && (ARG_NAME (arg_node) != NULL)) {
         fprintf (global.outfile, "%s", ARG_NAME (arg_node));
     }
@@ -1654,6 +1662,10 @@ PRTvardec (node *arg_node, info *arg_info)
         type_str = TYtype2String (VARDEC_NTYPE (arg_node), FALSE, 0);
         fprintf (global.outfile, "%s ", type_str);
         type_str = ILIBfree (type_str);
+
+        if (AVIS_ISUNIQUE (VARDEC_AVIS (arg_node))) {
+            fprintf (global.outfile, "*");
+        }
 
         fprintf (global.outfile, "%s", VARDEC_NAME (arg_node));
 
@@ -2519,12 +2531,19 @@ PRTglobobj (node *arg_node, info *arg_info)
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
     }
 
-    if (OBJDEF_NS (GLOBOBJ_OBJDEF (arg_node)) != NULL) {
-        fprintf (global.outfile,
-                 "%s::", NSgetName (OBJDEF_NS (GLOBOBJ_OBJDEF (arg_node))));
-    }
+    if (global.compiler_phase == PH_genccode) {
+        DBUG_ASSERT ((OBJDEF_NT_TAG (GLOBOBJ_OBJDEF (arg_node)) != NULL),
+                     "found objdef without NT TAG");
 
-    fprintf (global.outfile, "%s", OBJDEF_NAME (GLOBOBJ_OBJDEF (arg_node)));
+        fprintf (global.outfile, "%s", OBJDEF_NT_TAG (GLOBOBJ_OBJDEF (arg_node)));
+    } else {
+        if (OBJDEF_NS (GLOBOBJ_OBJDEF (arg_node)) != NULL) {
+            fprintf (global.outfile,
+                     "%s::", NSgetName (OBJDEF_NS (GLOBOBJ_OBJDEF (arg_node))));
+        }
+
+        fprintf (global.outfile, "%s", OBJDEF_NAME (GLOBOBJ_OBJDEF (arg_node)));
+    }
 
     DBUG_RETURN (arg_node);
 }

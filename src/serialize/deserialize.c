@@ -288,6 +288,9 @@ DSfinishDeserialize (node *module)
     MODULE_TYPES (module)
       = TCappendTypedef (MODULE_TYPES (module), INFO_DS_TYPEDEFS (DSstate));
 
+    MODULE_OBJS (module)
+      = TCappendObjdef (MODULE_OBJS (module), INFO_DS_OBJDEFS (DSstate));
+
     MODULE_DEPENDENCIES (module)
       = STRSjoin (MODULE_DEPENDENCIES (module), INFO_DS_DEPS (DSstate));
 

@@ -137,7 +137,10 @@ OBJECTS= src/objects/object_init.o src/objects/resolve_reference_args.o \
          src/objects/extend_wrapper_types.o \
          src/objects/resolve_objects.o \
          src/objects/restore_reference_args.o \
-         src/objects/restore_objects.o
+         src/objects/restore_objects.o \
+         src/objects/check_uniqueness_annotations.o \
+         src/objects/uniqueness_phase.o \
+         src/objects/infer_uniqueness.o
 
 REFCOUNT= src/refcount/emm.o src/refcount/rcopt.o src/refcount/filterrc.o \
           src/refcount/alloc.o src/refcount/referencecounting.o \

@@ -9,6 +9,7 @@
 #include "traverse.h"
 #include "internal_lib.h"
 #include "new_types.h"
+#include "type_utils.h"
 
 /**
  * INFO structure
@@ -73,6 +74,7 @@ ExpandArgsToRets (node *rets, node *args)
 
         rets = TBmakeRet (TYcopyType (AVIS_TYPE (ARG_AVIS (args))), rets);
         RET_ISARTIFICIAL (rets) = TRUE;
+        RET_ISUNIQUE (rets) = ARG_ISUNIQUE (args);
     }
 
     DBUG_RETURN (rets);
