@@ -1329,6 +1329,8 @@ ILIBreplaceSpecialCharacters (const char *name)
     DBUG_RETURN (new_name);
 }
 
+#ifdef SHOW_MALLOC
+
 /* -------------------------------------------------------------------------- *
  * task: calculates the number of bytes for a safe alignment (used in ILIBmalloc)
  * initializes global variable malloc_align_step
@@ -1347,8 +1349,9 @@ ILIBcomputeMallocAlignStep (void)
     DBUG_VOID_RETURN;
 }
 
+#endif /* SHOW_MALLOC */
+
 #ifndef DBUG_OFF
-#ifdef SHOW_MALLOC
 
 /******************************************************************************
  *
@@ -1384,5 +1387,4 @@ ILIBdbugMemoryLeakCheck (void)
     DBUG_VOID_RETURN;
 }
 
-#endif /* SHOW_MALLOC */
 #endif /* DBUG_OFF */
