@@ -334,6 +334,10 @@ ANStypedef (node *arg_node, info *arg_info)
                          NODE_LINE (arg_node));
 
     if (TYPEDEF_NS (arg_node) == NULL) {
+        DBUG_PRINT ("ANS",
+                    ("Updated namespace for typedef %s to %s", CTIitemName (arg_node),
+                     NSgetName (MODULE_NAMESPACE (INFO_ANS_MODULE (arg_info)))));
+
         TYPEDEF_NS (arg_node)
           = NSdupNamespace (MODULE_NAMESPACE (INFO_ANS_MODULE (arg_info)));
     }
@@ -343,7 +347,7 @@ ANStypedef (node *arg_node, info *arg_info)
     }
 
     if (TYPEDEF_NEXT (arg_node) != NULL) {
-        TYPEDEF_NEXT (arg_node) = TRAVcont (TYPEDEF_NEXT (arg_node), arg_info);
+        TYPEDEF_NEXT (arg_node) = TRAVdo (TYPEDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
