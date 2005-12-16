@@ -47,7 +47,7 @@ typedef struct {
     malloc_align_type align;
 } malloc_header_type;
 
-int malloc_align_step;
+int malloc_align_step = 0;
 
 /**
  * global file handle for syscall tracking
@@ -79,7 +79,11 @@ ILIBmalloc (int size)
     DBUG_ASSERT ((size >= 0), "ILIBmalloc called with negative size!");
 
     if (size > 0) {
+#ifdef SHOW_MALLOC
         tmp = malloc (size + malloc_align_step);
+#else  /* SHOW_MALLOC */
+        tmp = malloc (size);
+#endif /* SHOW_MALLOC */
 
         /*
          * Since some UNIX system (e.g. ALPHA) do return NULL for size 0 as well
@@ -88,16 +92,14 @@ ILIBmalloc (int size)
         if (tmp == NULL) {
 
 #ifdef SHOW_MALLOC
-
             CTIabort ("Out of memory: %u Bytes already allocated",
                       global.current_allocated_mem);
 #else
             CTIabort ("Out of memory");
 #endif
         }
-        tmp = CMregisterMem (size, tmp);
-
 #ifdef SHOW_MALLOC
+        tmp = CMregisterMem (size, tmp);
 
         if (global.current_allocated_mem + size < global.current_allocated_mem) {
             DBUG_ASSERT ((0), "counter for allocated memory: overflow detected");
@@ -145,42 +147,44 @@ ILIBfree (void *address)
 void *
 ILIBfree (void *address)
 {
+#ifdef SHOW_MALLOC
     void *orig_address;
     int size;
+#endif /* SHOW_MALLOC */
 
     DBUG_ENTER ("ILIBfree");
 
     if (address != NULL) {
+#ifdef SHOW_MALLOC
+        orig_address = CMunregisterMem (address);
 
         size = CMgetSize (address);
-
-        orig_address = CMunregisterMem (address);
 
         DBUG_ASSERT ((size >= 0), "illegal size found!");
         DBUG_PRINT ("MEM_ALLOC",
                     ("Free memory: %d Bytes at adress: " F_PTR, size, address));
+
 #ifdef CLEANMEM
         /*
          * this code overwrites the memory prior to freeing it. This
          * is very useful when watching a memory address in gdb, as
-         * one gets notified as soon as it is freed
+         * one gets notified as soon as it is freed. Needs SHOW_MALLOC
+         * to get the size of the freed memory chunk.
          */
         orig_address = memset (orig_address, 0, size);
+#endif /* CLEANMEM */
 
-#endif
-
-#ifdef SHOW_MALLOC
         if (global.current_allocated_mem < global.current_allocated_mem - size) {
             DBUG_ASSERT ((0), "counter for allocated memory: overflow detected");
         }
         global.current_allocated_mem -= size;
-#endif /* SHOW_MALLOC */
 
         free (orig_address);
 
-#ifdef SHOW_MALLOC
         DBUG_PRINT ("MEM_TOTAL",
                     ("Currently allocated memory: %u", global.current_allocated_mem));
+#else  /* SHOW_MALLOC */
+        free (address);
 #endif /* SHOW_MALLOC */
 
         address = NULL;
