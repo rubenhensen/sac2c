@@ -1272,6 +1272,8 @@
         <travsons>
           <node name="Module" />
           <node name="Block" />
+          <node name="Sync" />
+          <node name="Spmd" />
         </travsons>
       </traversal>
       <traversal id="EMLR" name="Loop reuse" default="none" include="loopreuseopt.h">
@@ -1288,6 +1290,8 @@
           <node name="Cond" />
           <node name="Code" />
           <node name="Block" />
+          <node name="Sync" />
+          <node name="Spmd" />
         </travsons>
       </traversal>
       <traversal id="EMLRO" name="Loop reuse optimization" default="none" include="loopreuseopt.h">
@@ -1308,6 +1312,8 @@
           <node name="Cond" />
           <node name="Code" />
           <node name="Block" />
+          <node name="Sync" />
+          <node name="Spmd" />
         </travsons>
       </traversal>
       <traversal id="ASD" name="AUD SCL distinction" 
@@ -1351,6 +1357,8 @@
           <node name="Module" />
           <node name="Cond" />
           <node name="Block" />
+          <node name="Sync" />
+          <node name="Spmd" />
         </travsons>
       </traversal>
       <traversal id="EMDR" name="Data reuse" default="none" include="datareuse.h" >
@@ -1368,6 +1376,8 @@
           <node name="With" />
           <node name="With2" />
           <node name="Block" />
+          <node name="Sync" />
+          <node name="Spmd" />
         </travsons>
       </traversal>
       <traversal id="EMEC" name="Explicit Copy" default="none" include="explicitcopy.h" >
@@ -1384,6 +1394,8 @@
           <node name="Cond" />
           <node name="Code" />
           <node name="Block" />
+          <node name="Sync" />
+          <node name="Spmd" />
         </travsons>
       </traversal>
       <traversal id="EMFRC" name="Filter Reuse Candidates" default="sons" include="filterrc.h" >
@@ -1429,6 +1441,8 @@
         <travsons>
           <node name="Module" />
           <node name="Exprs" />
+          <node name="Sync" />
+          <node name="Spmd" />
         </travsons>
       </traversal>
       <traversal id="EMRB" name="Reuse branching" default="none" include="reusebranching.h" >
@@ -1450,6 +1464,8 @@
           <node name="Cond" />
           <node name="Block" />
           <node name="Fold" />
+          <node name="Sync" />
+          <node name="Spmd" />
         </travsons>
       </traversal>
       <traversal id="EMRI" name="Reuse inference" default="none" include="reuse.h" >
@@ -1467,6 +1483,8 @@
           <node name="Module" />
           <node name="With" />
           <node name="Block" />
+          <node name="Sync" />
+          <node name="Spmd" />
         </travsons>
       </traversal>
       <traversal id="WRCI" name="With-loop reuse candidate inference" default="sons" include="wrci.h">
@@ -1514,6 +1532,8 @@
           <node name="Code" />
           <node name="Block" />
           <node name="Cond" />
+          <node name="Sync" />
+          <node name="Spmd" />
         </travsons>
       </traversal>
       <traversal id="EMIP" name="Inplace Computation" default="sons" include="inplacecomp.h">
@@ -1538,6 +1558,96 @@
         <travnone>
           <node name="Objdef" />
         </travnone>
+      </traversal>
+      <traversal id="RCI" name="Reference Counting Inference" default="sons" include="referencecounting.h" >
+        <travuser>
+          <node name="Ap" />
+          <node name="Array" />
+          <node name="Assign" />
+          <node name="Code" />
+          <node name="Cond" />
+          <node name="Fold" />
+          <node name="Funcond" />
+          <node name="Fundef" />
+          <node name="Genarray" />
+          <node name="Id" />
+          <node name="Ids" />
+          <node name="Let" />
+          <node name="Modarray" />
+          <node name="Prf" />
+          <node name="Return" />
+          <node name="With" />
+          <node name="With2" />
+          <node name="Withid" />
+        </travuser>
+        <travnone>
+          <node name="Objdef" />
+          <node name="Arg" />
+          <node name="Vardec" />
+        </travnone>
+      </traversal>
+      <traversal id="RCM" name="Reference counting minimization" default="sons" include="rcminimize.h" >
+        <travuser>
+          <node name="Ap" />
+          <node name="Arg" />
+          <node name="Assign" />
+          <node name="Code" />
+          <node name="Cond" />
+          <node name="Funcond" />
+          <node name="Fundef" />
+          <node name="Id" />
+          <node name="Ids" />
+          <node name="Let" />
+          <node name="Prf" />
+          <node name="Return" />
+        </travuser>
+        <travnone>
+          <node name="Objdef" />
+          <node name="Withid" />
+        </travnone>
+      </traversal>
+      <traversal id="EMRCO" name="Reference counting optimizations" default="none" include="rcopt.h" >
+        <travuser>
+          <node name="Assign" />
+          <node name="Block" />
+          <node name="Fold" />
+          <node name="Fundef" />
+          <node name="Genarray" />
+          <node name="Let" />
+          <node name="Modarray" />
+          <node name="Prf" />
+        </travuser>
+        <travsons>
+          <node name="Module" />
+          <node name="Cond" />
+          <node name="With" />
+          <node name="With2" />
+          <node name="Code" />
+          <node name="Sync" />
+          <node name="Spmd" />
+        </travsons>
+      </traversal>
+      <traversal id="EMRE" name="Reuse elimination" default="none" include="reuseelimination.h" >
+        <travuser>
+          <node name="Assign" />
+          <node name="Block" />
+          <node name="Cond" />
+          <node name="Fundef" />
+          <node name="Genarray" />
+          <node name="Let" />
+          <node name="Modarray" />
+          <node name="Prf" />
+          <node name="Vardec" />
+        </travuser>
+        <travsons>
+          <node name="Module" />
+          <node name="With" />
+          <node name="With2" />
+          <node name="Fold" />
+          <node name="Code" />
+          <node name="Sync" />
+          <node name="Spmd" />
+        </travsons>
       </traversal>
     </phase>
     <phase id="concurrent" name="Generating annotations for MT 2"
@@ -1713,99 +1823,6 @@
           <node name="ST" />
         </travuser>
         <travsons>
-        </travsons>
-        <travnone>
-        </travnone>
-        <traverror>
-        </traverror>
-      </traversal>
-    </phase>
-    <phase id="refcnt" name="Introducing explicit allocation instructions" 
-      startfun="NULL" include=".h" if="true" breakspec="rc">
-      <traversal id="RCI" name="Reference Counting Inference" default="sons" include="referencecounting.h" >
-        <travuser>
-          <node name="Ap" />
-          <node name="Array" />
-          <node name="Assign" />
-          <node name="Code" />
-          <node name="Cond" />
-          <node name="Fold" />
-          <node name="Funcond" />
-          <node name="Fundef" />
-          <node name="Genarray" />
-          <node name="Id" />
-          <node name="Ids" />
-          <node name="Let" />
-          <node name="Modarray" />
-          <node name="Prf" />
-          <node name="Return" />
-          <node name="With" />
-          <node name="With2" />
-          <node name="Withid" />
-        </travuser>
-        <travnone>
-          <node name="Objdef" />
-          <node name="Arg" />
-          <node name="Vardec" />
-        </travnone>
-      </traversal>
-      <traversal id="RCM" name="Reference counting minimization" default="sons" include="rcminimize.h" >
-        <travuser>
-          <node name="Ap" />
-          <node name="Arg" />
-          <node name="Assign" />
-          <node name="Code" />
-          <node name="Cond" />
-          <node name="Funcond" />
-          <node name="Fundef" />
-          <node name="Id" />
-          <node name="Ids" />
-          <node name="Let" />
-          <node name="Prf" />
-          <node name="Return" />
-        </travuser>
-        <travnone>
-          <node name="Objdef" />
-          <node name="Withid" />
-        </travnone>
-      </traversal>
-      <traversal id="EMRCO" name="Reference counting optimizations" default="none" include="rcopt.h" >
-        <travuser>
-          <node name="Assign" />
-          <node name="Block" />
-          <node name="Fold" />
-          <node name="Fundef" />
-          <node name="Genarray" />
-          <node name="Let" />
-          <node name="Modarray" />
-          <node name="Prf" />
-        </travuser>
-        <travsons>
-          <node name="Module" />
-          <node name="Cond" />
-          <node name="With" />
-          <node name="With2" />
-          <node name="Code" />
-        </travsons>
-      </traversal>
-      <traversal id="EMRE" name="Reuse elimination" default="none" include="reuseelimination.h" >
-        <travuser>
-          <node name="Assign" />
-          <node name="Block" />
-          <node name="Cond" />
-          <node name="Fundef" />
-          <node name="Genarray" />
-          <node name="Let" />
-          <node name="Modarray" />
-          <node name="Prf" />
-          <node name="Vardec" />
-        </travuser>
-        <travsons>
-          <node name="Module" />
-          <node name="With" />
-          <node name="With2" />
-          <node name="Fold" />
-          <node name="Code" />
         </travsons>
         <travnone>
         </travnone>
