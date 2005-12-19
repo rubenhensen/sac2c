@@ -97,8 +97,8 @@ K_MAIN  RETURN  IF  ELSE  DO  WHILE  FOR  NWITH  FOLD
 MODULE  IMPORT  EXPORT  PROVIDE  USE  CLASS  ALL  EXCEPT
 MODSPEC
 SC  TRUETOKEN  FALSETOKEN  EXTERN  C_KEYWORD 
-HASH  PRAGMA  LINKNAME  LINKSIGN  EFFECT  READONLY  REFCOUNTING 
-TOUCH  COPYFUN  FREEFUN  INITFUN  LINKWITH LINKOBJ
+HASH  PRAGMA  LINKNAME  LINKSIGN  EFFECT  REFCOUNTING 
+COPYFUN  FREEFUN  INITFUN  LINKWITH LINKOBJ
 WLCOMP  CACHESIM  SPECIALIZE 
 TARGET  STEP  WIDTH  GENARRAY  MODARRAY 
 LE  LT  GT LAZYAND LAZYOR
@@ -807,19 +807,6 @@ pragma: hash_pragma LINKNAME string
           }
           PRAGMA_REFCOUNTING( store_pragma) = $4;
         }
-      | hash_pragma READONLY SQBR_L nums SQBR_R
-        { if( !was_fundec) {
-            yyerror( "pragma \"readonly\" not allowed here");
-          }
-          if (store_pragma == NULL) {
-            store_pragma = TBmakePragma();
-          }
-          if (PRAGMA_READONLY( store_pragma) != NULL) {
-            CTIwarnLine( global.linenum,
-                         "Conflicting definitions of pragma 'readonly`");
-          }
-          PRAGMA_READONLY( store_pragma) = $4;
-        }
       | hash_pragma EFFECT qual_ext_ids
         { if( !was_fundec) {
             yyerror( "pragma \"effect\" not allowed here");
@@ -832,19 +819,6 @@ pragma: hash_pragma LINKNAME string
                          "Conflicting definitions of pragma 'effect`");
           }
           PRAGMA_EFFECT( store_pragma) = $3;
-        }
-      | hash_pragma TOUCH qual_ext_ids
-        { if( !was_fundec) {
-            yyerror( "pragma \"touch\" not allowed here");
-          }
-          if (store_pragma == NULL) {
-            store_pragma = TBmakePragma();
-          }
-          if (PRAGMA_TOUCH( store_pragma) != NULL) {
-            CTIwarnLine( global.linenum, 
-                         "Conflicting definitions of pragma 'touch`");
-          }
-          PRAGMA_TOUCH( store_pragma) = $3;
         }
       | hash_pragma COPYFUN string
         { if( !was_fundec) {

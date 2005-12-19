@@ -97,8 +97,9 @@ LIBBcreateLibrary (stringset_t *deps)
 
     deplibs = STRSfold (&BuildDepLibsStringMod, deps, ILIBstringCopy (""));
 
-    ILIBsystemCall ("%s %slib%s.a %s/fun*.o %s", global.config.ar_create,
-                    global.targetdir, global.modulename, global.tmp_dirname, deplibs);
+    ILIBsystemCall ("%s %slib%s.a %s/fun*.o %s/globals.o %s", global.config.ar_create,
+                    global.targetdir, global.modulename, global.tmp_dirname,
+                    global.tmp_dirname, deplibs);
 
     if (global.config.ranlib[0] != '\0') {
         ILIBsystemCall ("%s %slib%s.a", global.config.ranlib, global.targetdir,

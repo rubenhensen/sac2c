@@ -139,56 +139,6 @@ CheckLinkSignNums (int line, int size, node *nums)
     DBUG_RETURN (result);
 }
 
-/**
- *
- * The following code is pre SacDevCamp04. Due to its limited effect, we
- * decided to (at least temporarily) disable these pragmas.
- * In case a later re-activtion is desired, the code still resides here....
-
-static
-node *ResolvePragmaReadonly(node *arg_node, node *pragma)
-{
-  int cnt;
-  node *tmp_args;
-  types *tmp_types;
-
-  DBUG_ENTER("ResolvePragmaReadonly");
-
-  DBUG_PRINT("PRAGMA",("Resolving pragma readonly for function %s",
-                       ItemName(arg_node)));
-
-  CheckRefReadNums(NODE_LINE(arg_node), PRAGMA_NUMPARAMS(pragma),
-PRAGMA_READONLY(pragma));
-
-  tmp_types=FUNDEF_TYPES(arg_node);
-  cnt=CountTypes(tmp_types);
-
-  tmp_args=FUNDEF_ARGS(arg_node);
-
-  while (tmp_args!=NULL) {
-    if (PRAGMA_READONLY(pragma)[cnt]) {
-      if (ARG_ATTRIB(tmp_args)==ST_reference) {
-        ARG_ATTRIB(tmp_args)=ST_readonly_reference;
-      }
-      else {
-        WARN(NODE_LINE(arg_node),
-             ("Parameter no. %d of function '%s` is not a reference "
-              "parameter, so pragma 'readonly` has no effect on it",
-              cnt, ItemName(arg_node)));
-      }
-    }
-
-    tmp_args=ARG_NEXT(tmp_args);
-    cnt++;
-  }
-
-  PRAGMA_READONLY(pragma) = ILIBfree(PRAGMA_READONLY(pragma));
-
-  DBUG_RETURN(arg_node);
-}
- *
- */
-
 static node *
 InitFundefRetsForExtern (node *rets)
 {
@@ -379,11 +329,6 @@ RSPfundef (node *arg_node, info *arg_info)
             PRAGMA_REFCOUNTING (pragma) = FREEdoFreeTree (PRAGMA_REFCOUNTING (pragma));
         }
 
-        if (PRAGMA_READONLY (pragma) != NULL) {
-            CTIwarnLine (NODE_LINE (arg_node), "Pragma 'readonly` has been disabled");
-            PRAGMA_INITFUN (pragma) = ILIBfree (PRAGMA_INITFUN (pragma));
-        }
-
         /*
          * if this function needs an external module, add it to
          * the external dependencies of this module.
@@ -406,12 +351,6 @@ RSPfundef (node *arg_node, info *arg_info)
                           MODULE_DEPENDENCIES (INFO_RSP_MODULE (arg_info)));
 
             PRAGMA_LINKOBJ (pragma) = NULL;
-        }
-
-        if (PRAGMA_TOUCH (pragma) != NULL) {
-            CTIwarnLine (NODE_LINE (arg_node),
-                         "Pragma 'touch` has no effect on function");
-            PRAGMA_TOUCH (pragma) = ILIBfree (PRAGMA_TOUCH (pragma));
         }
 
         if (PRAGMA_EFFECT (pragma) != NULL) {

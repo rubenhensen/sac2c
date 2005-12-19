@@ -388,8 +388,17 @@ SATserializeExtLink (info *info, node *attr, node *parent)
     DBUG_ENTER ("SATserializeExtink");
 
     if (attr != NULL) {
-        if (NODE_TYPE (attr) == N_fundef) {
+        switch (NODE_TYPE (attr)) {
+        case N_fundef:
             SERserializeFundefLink (attr, INFO_SER_FILE (info));
+            break;
+        case N_objdef:
+            SERserializeObjdefLink (attr, INFO_SER_FILE (info));
+            break;
+        default:
+            DBUG_ASSERT (0, "unknown target for ExtLink found!");
+            fprintf (INFO_SER_FILE (info), "NULL");
+            break;
         }
     } else {
         fprintf (INFO_SER_FILE (info), "NULL");

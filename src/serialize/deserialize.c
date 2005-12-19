@@ -518,6 +518,25 @@ FindSymbolInTypedefChain (const char *symbol, node *typedefs)
 }
 
 static node *
+FindSymbolInObjdefChain (const char *symbol, node *objdefs)
+{
+    node *result = NULL;
+
+    DBUG_ENTER ("FindSymbolInObjdefChain");
+
+    while ((result == NULL) && (objdefs != NULL)) {
+        if (OBJDEF_SYMBOLNAME (objdefs) != NULL) {
+            if (ILIBstringCompare (OBJDEF_SYMBOLNAME (objdefs), symbol)) {
+                result = objdefs;
+            }
+        }
+        objdefs = OBJDEF_NEXT (objdefs);
+    }
+
+    DBUG_RETURN (result);
+}
+
+static node *
 FindSymbolInAst (const char *symbol)
 {
     node *result = NULL;
@@ -561,6 +580,10 @@ FindSymbolInAst (const char *symbol)
     if (result == NULL) {
         result
           = FindSymbolInTypedefChain (symbol, MODULE_TYPES (INFO_DS_MODULE (DSstate)));
+    }
+
+    if (result == NULL) {
+        result = FindSymbolInObjdefChain (symbol, MODULE_OBJS (INFO_DS_MODULE (DSstate)));
     }
 
     DBUG_RETURN (result);
@@ -987,6 +1010,42 @@ DSlookupFunction (const char *module, const char *symbol)
         DBUG_ASSERT ((serfun != NULL),
                      "inconsistency in serialized module found. referenced "
                      "function does not exist");
+
+        result = serfun ();
+        mod = MODMunLoadModule (mod);
+
+        InsertIntoState (result);
+    }
+
+    DBUG_ASSERT ((result != NULL), "lookup failed.");
+
+    updateContextInformation (result);
+
+    DBUG_RETURN (result);
+}
+
+node *
+DSlookupObject (const char *module, const char *symbol)
+{
+    node *result = NULL;
+    serfun_p serfun;
+    module_t *mod;
+
+    DBUG_ENTER ("DSlookupObjdef");
+
+    DBUG_PRINT ("DS", ("Looking up objdef `%s:%s' in ast.", module, symbol));
+
+    result = FindSymbolInAst (symbol);
+
+    if (result == NULL) {
+        DBUG_PRINT ("DS", ("Looking up objdef `%s:%s' in `%s'.", module, symbol, module));
+
+        mod = MODMloadModule (module);
+        serfun = MODMgetDeSerializeFunction (symbol, mod);
+
+        DBUG_ASSERT ((serfun != NULL),
+                     "inconsistency in serialized module found. referenced "
+                     "objdef does not exist");
 
         result = serfun ();
         mod = MODMunLoadModule (mod);

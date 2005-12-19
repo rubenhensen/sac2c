@@ -154,19 +154,29 @@ BuildInitFun (char *name, namespace_t *ns, ntype *objtype, node *expr)
 {
     node *result;
     node *assign;
+    node *argavis;
 
     DBUG_ENTER ("BuildInitFun");
 
-    /*
-     * return( expr);
-     */
-    assign = TBmakeAssign (TBmakeReturn (TBmakeExprs (expr, NULL)), NULL);
+    argavis = TBmakeAvis (ILIBstringCopy ("_OI_object"), objtype);
+    AVIS_DECLTYPE (argavis) = TYcopyType (AVIS_TYPE (argavis));
 
     /*
-     * <objtype> <ns>::<name> ()
+     * return( );
      */
-    result = TBmakeFundef (name, ns, TBmakeRet (objtype, NULL), NULL,
+    assign = TBmakeAssign (TBmakeReturn (NULL), NULL);
+
+    /*
+     * arg = <expr>
+     */
+    assign = TBmakeAssign (TBmakeLet (TBmakeIds (argavis, NULL), expr), assign);
+
+    /*
+     * void <ns>::<name> (<objtype> &arg)
+     */
+    result = TBmakeFundef (name, ns, NULL, TBmakeArg (argavis, NULL),
                            TBmakeBlock (assign, NULL), NULL);
+    ARG_ISREFERENCE (FUNDEF_ARGS (result)) = TRUE;
 
     DBUG_RETURN (result);
 }
@@ -187,7 +197,8 @@ CreateInitFuns (node *objdefs, node *funs)
                                 NSgetInitNamespace (), TYcopyType (OBJDEF_TYPE (objdefs)),
                                 OBJDEF_EXPR (objdefs));
 
-        OBJDEF_EXPR (objdefs) = TBmakeAp (initfun, NULL);
+        OBJDEF_EXPR (objdefs) = NULL;
+        OBJDEF_INITFUN (objdefs) = initfun;
 
         FUNDEF_NEXT (initfun) = funs;
         funs = initfun;

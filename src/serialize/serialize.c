@@ -285,7 +285,7 @@ SERgenerateSerFunName (stentrytype_t type, node *node)
                           TYPEDEF_NAME (node));
         break;
     case SET_objdef:
-        size -= snprintf (result, size, "SOD_%s_%s_", NSgetName (OBJDEF_NS (node)),
+        size -= snprintf (result, size, "SOD_%s_%s", NSgetName (OBJDEF_NS (node)),
                           OBJDEF_NAME (node));
         break;
     default:
@@ -661,6 +661,17 @@ SERserializeFundefLink (node *fundef, FILE *file)
 
     fprintf (file, "DSlookupFunction( \"%s\", \"%s\")", NSgetModule (FUNDEF_NS (fundef)),
              SERgenerateSerFunName (SET_funhead, fundef));
+
+    DBUG_VOID_RETURN;
+}
+
+void
+SERserializeObjdefLink (node *objdef, FILE *file)
+{
+    DBUG_ENTER ("SERserializeObjdefLink");
+
+    fprintf (file, "DSlookupObject( \"%s\", \"%s\")", NSgetModule (OBJDEF_NS (objdef)),
+             SERgenerateSerFunName (SET_objdef, objdef));
 
     DBUG_VOID_RETURN;
 }

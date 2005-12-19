@@ -112,9 +112,13 @@ SUBPHASE (insvd, "ivd", "Inserting variable declarations", INSVDdoInsertVardec)
 SUBPHASE (instc, "itc", "Converting type decls in type conversions",
           INSTCdoInsertTypeConv)
 
+SUBPHASE (ses, "ses", "Stripping external signatures", SESdoStripExternalSignatures)
+
 SUBPHASE (crtwrp, "cwr", "Creating wrapper functions", CRTWRPdoCreateWrappers)
 
 SUBPHASE (oan, "oan", "Running global object analysis", OANdoObjectAnalysis)
+
+SUBPHASE (goi, "goi", "Generating object initialiser", GOIdoGenerateObjectInitialiser)
 
 SUBPHASE (rso, "rso", "Resolving global objects", RSOdoResolveObjects)
 

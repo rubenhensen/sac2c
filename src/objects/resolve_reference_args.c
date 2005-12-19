@@ -112,6 +112,9 @@ ExpandApArgsToResult (node *ids, node *args, node *exprs)
         DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (exprs)) == N_id),
                      "non N_id node at reference arg position!");
 
+        DBUG_PRINT ("RRA",
+                    ("...expanding %s to ret", AVIS_NAME (ID_AVIS (EXPRS_EXPR (exprs)))));
+
         ids = TBmakeIds (ID_AVIS (EXPRS_EXPR (exprs)), ids);
     }
 
@@ -122,6 +125,8 @@ node *
 RRAfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("RRAfundef");
+
+    DBUG_PRINT ("RRA", ("Entering fundef %s...", CTIitemName (arg_node)));
 
     /*
      * expand reference parameters to parameters + return value
@@ -135,6 +140,8 @@ RRAfundef (node *arg_node, info *arg_info)
      * expand the return statement and function applications
      */
     if (FUNDEF_BODY (arg_node) != NULL) {
+        DBUG_PRINT ("RRA", ("...processing body"));
+
         INFO_ARGS (arg_info) = FUNDEF_ARGS (arg_node);
         INFO_RETS (arg_info) = FUNDEF_RETS (arg_node);
 
@@ -143,6 +150,8 @@ RRAfundef (node *arg_node, info *arg_info)
         INFO_ARGS (arg_info) = NULL;
         INFO_RETS (arg_info) = NULL;
     }
+
+    DBUG_PRINT ("RRA", ("Completed fundef %s...", CTIitemName (arg_node)));
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
@@ -191,6 +200,22 @@ RRAap (node *arg_node, info *arg_info)
         INFO_LHS (arg_info)
           = ExpandApArgsToResult (INFO_LHS (arg_info), FUNDEF_ARGS (AP_FUNDEF (arg_node)),
                                   AP_ARGS (arg_node));
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+RRAmodule (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("RRAmodule");
+
+    if (MODULE_FUNS (arg_node) != NULL) {
+        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
+    }
+
+    if (MODULE_FUNDECS (arg_node) != NULL) {
+        MODULE_FUNDECS (arg_node) = TRAVdo (MODULE_FUNDECS (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);

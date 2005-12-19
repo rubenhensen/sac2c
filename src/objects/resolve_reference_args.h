@@ -7,6 +7,7 @@
 
 #include "types.h"
 
+extern node *RRAmodule (node *arg_node, info *arg_info);
 extern node *RRAfundef (node *arg_node, info *arg_info);
 extern node *RRAreturn (node *arg_node, info *arg_info);
 extern node *RRAlet (node *arg_node, info *arg_info);

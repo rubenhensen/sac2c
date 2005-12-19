@@ -271,6 +271,11 @@ USSspid (node *arg_node, info *arg_info)
 
         MakeSymbolAvailable (SPID_NS (arg_node), SPID_NAME (arg_node), SET_wrapperhead,
                              arg_info);
+    } else {
+        if (SPID_NS (arg_node) != NULL) {
+            MakeSymbolAvailable (SPID_NS (arg_node), SPID_NAME (arg_node), SET_objdef,
+                                 arg_info);
+        }
     }
 
     DBUG_RETURN (arg_node);

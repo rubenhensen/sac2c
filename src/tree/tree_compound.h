@@ -249,9 +249,6 @@ extern node *TCappendTypedef (node *tdef_chain, node *tdef);
  *  compound access macros
  */
 
-#define OBJDEF_INITFUN(n)                                                                \
-    (OBJDEF_PRAGMA (n) == NULL ? NULL : PRAGMA_INITFUN (OBJDEF_PRAGMA (n)))
-
 #define OBJDEF_EFFECT(n)                                                                 \
     (OBJDEF_PRAGMA (n) == NULL ? NULL : PRAGMA_EFFECT (OBJDEF_PRAGMA (n)))
 

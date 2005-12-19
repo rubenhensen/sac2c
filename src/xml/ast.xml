@@ -513,6 +513,12 @@
           <node name="Ap" />
         </travuser>
       </traversal>
+      <traversal id="GOI" name="Generating Object Initialiser" default="sons" include="generate_object_initialiser.h" >
+        <travuser>
+	  <node name="Fundef" />
+	  <node name="Module" />
+	</travuser>
+      </traversal>
       <traversal id="RSO" name="Resolve Objects" default="sons" include="resolve_objects.h" >
         <travuser>
 	  <node name="Module" />
@@ -527,6 +533,7 @@
 	  <node name="Return" />
 	  <node name="Let" />
 	  <node name="Ap" />
+	  <node name="Module" />
 	</travuser>
       </traversal>
       <traversal id="EWT" name="Extend Wrapper Types" default="sons" include="extend_wrapper_types.h" >
@@ -2345,7 +2352,7 @@
       <sons>
         <son name="Expr">
           <targets>
-            <target mandatory="yes">
+            <target mandatory="no">
               <set name="Expr" />
               <phases>
                 <all />
@@ -2455,6 +2462,18 @@
                 <node name="Icm" />
                 <phases>
                   <range from="comp" to="final" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="InitFun">
+          <type name="ExtLink">
+            <targets>
+              <target mandatory="no">
+                <node name="Fundef" />
+                <phases>
+                  <all />
                 </phases>
               </target>
             </targets>

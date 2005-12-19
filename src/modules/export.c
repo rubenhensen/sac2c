@@ -144,7 +144,9 @@ EXPprovide (node *arg_node, info *arg_info)
             INFO_EXP_PROVIDED (arg_info) = TRUE;
         }
     } else {
-        CTIwarnLine (NODE_LINE (arg_node), "Provide is only allowed in modules");
+        CTIwarnLine (NODE_LINE (arg_node),
+                     "The provide directive is only allowed in modules and "
+                     "classes. Ignoring...");
 
         arg_node = FREEdoFreeNode (arg_node);
     }
@@ -161,13 +163,14 @@ EXPexport (node *arg_node, info *arg_info)
         EXPORT_NEXT (arg_node) = TRAVdo (EXPORT_NEXT (arg_node), arg_info);
     }
 
-    if (INFO_EXP_FILETYPE (arg_info) == F_modimp) {
+    if (INFO_EXP_FILETYPE (arg_info) != F_prog) {
         if (CheckExport (EXPORT_ALL (arg_node), EXPORT_SYMBOL (arg_node), arg_info)) {
             INFO_EXP_EXPORTED (arg_info) = TRUE;
         }
     } else {
         CTIwarnLine (NODE_LINE (arg_node),
-                     "The export directive is only allowed in modules. Ignoring...");
+                     "The export directive is only allowed in modules and classes. "
+                     "Ignoring...");
 
         arg_node = FREEdoFreeNode (arg_node);
     }

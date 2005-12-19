@@ -272,13 +272,24 @@ DFRobjdef (node *arg_node, info *arg_info)
         OBJDEF_NEXT (arg_node) = TRAVdo (OBJDEF_NEXT (arg_node), arg_info);
     }
 
-    DBUG_ASSERT ((NODE_TYPE (OBJDEF_EXPR (arg_node)) == N_ap),
-                 "found non N_ap node as objdef init expr.");
+    if (OBJDEF_EXPR (arg_node) != NULL) {
+        DBUG_ASSERT ((NODE_TYPE (OBJDEF_EXPR (arg_node)) == N_ap),
+                     "found non N_ap node as objdef init expr.");
 
-    DBUG_PRINT ("DFR", ("Dead Function Removal for Objdef %s", CTIitemName (arg_node)));
+        DBUG_PRINT ("DFR",
+                    ("Dead Function Removal for Objdef %s", CTIitemName (arg_node)));
 
-    AP_FUNDEF (OBJDEF_EXPR (arg_node))
-      = tagFundefAsNeeded (AP_FUNDEF (OBJDEF_EXPR (arg_node)), arg_info);
+        AP_FUNDEF (OBJDEF_EXPR (arg_node))
+          = tagFundefAsNeeded (AP_FUNDEF (OBJDEF_EXPR (arg_node)), arg_info);
+    }
+
+    if (OBJDEF_INITFUN (arg_node) != NULL) {
+        DBUG_PRINT ("DFR",
+                    ("Dead Function Removal for Objdef %s", CTIitemName (arg_node)));
+
+        OBJDEF_INITFUN (arg_node)
+          = tagFundefAsNeeded (OBJDEF_INITFUN (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }

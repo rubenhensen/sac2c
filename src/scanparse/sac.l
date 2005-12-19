@@ -1,35 +1,6 @@
 %{
 
-/*
- *
- * $Log$
- * Revision 1.7  2005/07/04 10:26:36  sbs
- * introduced DCOLON (double colon)
- *
- * Revision 1.6  2005/06/28 20:58:02  cg
- * The boolean operators && and || now support lazy evaluation of the
- * second argument. Therefore, they are not scanned/parsed as function,
- * but as special constructs represented as funconds.
- *
- * Revision 1.5  2005/01/11 13:52:12  cg
- * Converted output from Error.h to ctinfo.c
- *
- * Revision 1.4  2004/11/25 22:28:51  sbs
- * compiles
- *
- * Revision 1.3  2004/11/07 18:03:59  sah
- * added external functions support
- *
- * Revision 1.2  2004/10/17 14:52:30  sah
- * added support for except
- * in interface descriptions
- *
- * Revision 1.1  2004/10/15 15:04:20  sah
- * Initial revision
- *
- *
- *
- */
+/* $Id$ */
 
 
 
@@ -216,9 +187,7 @@ int charpos = 0;
 "linkname"                 { FILTER( LINKNAME); }
 "linksign"                 { FILTER( LINKSIGN); }
 "effect"                   { FILTER( EFFECT); }
-"touch"                    { FILTER( TOUCH); }
 "refcounting"              { FILTER( REFCOUNTING); }
-"readonly"                 { FILTER( READONLY); }
 "copyfun"                  { FILTER( COPYFUN); }
 "freefun"                  { FILTER( FREEFUN); }
 "initfun"                  { FILTER( INITFUN); }

@@ -2909,11 +2909,11 @@ TClinklistContains (node *set, node *link)
 }
 
 bool
-TClinklistisSubset (node *super, node *sub)
+TClinklistIsSubset (node *super, node *sub)
 {
     bool result = TRUE;
 
-    DBUG_ENTER ("TClinklistisSubset");
+    DBUG_ENTER ("TClinklistIsSubset");
 
     while ((sub != NULL) && result) {
         DBUG_ASSERT ((NODE_TYPE (sub) == N_linklist),
