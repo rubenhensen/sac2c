@@ -531,8 +531,9 @@ DCRreturn (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("DCRreturn");
 
-    RETURN_EXPRS (arg_node) = RemoveUnusedReturnValues (RETURN_EXPRS (arg_node));
-
+    if (RETURN_EXPRS (arg_node) != NULL) {
+        RETURN_EXPRS (arg_node) = RemoveUnusedReturnValues (RETURN_EXPRS (arg_node));
+    }
     /* do not remove return instruction */
     INFO_REMASSIGN (arg_info) = FALSE;
 

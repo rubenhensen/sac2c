@@ -153,12 +153,13 @@ REFCOUNT= src/refcount/emm.o src/refcount/rcopt.o src/refcount/filterrc.o \
           src/refcount/reusebranching.o src/refcount/ReuseWithArrays.o \
           src/refcount/inplacecomp.o src/refcount/audscldist.o \
           src/refcount/rcminimize.o src/refcount/NumLookUpTable.o \
-          src/refcount/wrci.o src/refcount/reusewithoffset.o
+          src/refcount/wrci.o src/refcount/reusewithoffset.o \
+          src/refcount/movesharedmeminstr.o
 
 CONCURRENT= src/concurrent/concurrent.o src/concurrent/spmd_init.o  \
             src/concurrent/spmd_lift.o src/concurrent/sync_init.o \
             src/concurrent/sync_opt.o src/concurrent/schedule.o \
-            src/concurrent/spmd_trav.o
+            src/concurrent/spmd_trav.o src/concurrent/removespmd.o
 
 MULTITHREAD= src/multithread/multithread_lib.o \
              src/multithread/tag_executionmode.o \

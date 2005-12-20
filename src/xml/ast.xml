@@ -1279,8 +1279,6 @@
         <travsons>
           <node name="Module" />
           <node name="Block" />
-          <node name="Sync" />
-          <node name="Spmd" />
         </travsons>
       </traversal>
       <traversal id="EMLR" name="Loop reuse" default="none" include="loopreuseopt.h">
@@ -1297,8 +1295,6 @@
           <node name="Cond" />
           <node name="Code" />
           <node name="Block" />
-          <node name="Sync" />
-          <node name="Spmd" />
         </travsons>
       </traversal>
       <traversal id="EMLRO" name="Loop reuse optimization" default="none" include="loopreuseopt.h">
@@ -1319,8 +1315,6 @@
           <node name="Cond" />
           <node name="Code" />
           <node name="Block" />
-          <node name="Sync" />
-          <node name="Spmd" />
         </travsons>
       </traversal>
       <traversal id="ASD" name="AUD SCL distinction" 
@@ -1364,8 +1358,6 @@
           <node name="Module" />
           <node name="Cond" />
           <node name="Block" />
-          <node name="Sync" />
-          <node name="Spmd" />
         </travsons>
       </traversal>
       <traversal id="EMDR" name="Data reuse" default="none" include="datareuse.h" >
@@ -1383,8 +1375,6 @@
           <node name="With" />
           <node name="With2" />
           <node name="Block" />
-          <node name="Sync" />
-          <node name="Spmd" />
         </travsons>
       </traversal>
       <traversal id="EMEC" name="Explicit Copy" default="none" include="explicitcopy.h" >
@@ -1401,8 +1391,6 @@
           <node name="Cond" />
           <node name="Code" />
           <node name="Block" />
-          <node name="Sync" />
-          <node name="Spmd" />
         </travsons>
       </traversal>
       <traversal id="EMFRC" name="Filter Reuse Candidates" default="sons" include="filterrc.h" >
@@ -1448,8 +1436,6 @@
         <travsons>
           <node name="Module" />
           <node name="Exprs" />
-          <node name="Sync" />
-          <node name="Spmd" />
         </travsons>
       </traversal>
       <traversal id="EMRB" name="Reuse branching" default="none" include="reusebranching.h" >
@@ -1471,8 +1457,6 @@
           <node name="Cond" />
           <node name="Block" />
           <node name="Fold" />
-          <node name="Sync" />
-          <node name="Spmd" />
         </travsons>
       </traversal>
       <traversal id="EMRI" name="Reuse inference" default="none" include="reuse.h" >
@@ -1490,8 +1474,6 @@
           <node name="Module" />
           <node name="With" />
           <node name="Block" />
-          <node name="Sync" />
-          <node name="Spmd" />
         </travsons>
       </traversal>
       <traversal id="WRCI" name="With-loop reuse candidate inference" default="sons" include="wrci.h">
@@ -1539,8 +1521,6 @@
           <node name="Code" />
           <node name="Block" />
           <node name="Cond" />
-          <node name="Sync" />
-          <node name="Spmd" />
         </travsons>
       </traversal>
       <traversal id="EMIP" name="Inplace Computation" default="sons" include="inplacecomp.h">
@@ -1630,9 +1610,33 @@
           <node name="With" />
           <node name="With2" />
           <node name="Code" />
-          <node name="Sync" />
-          <node name="Spmd" />
         </travsons>
+      </traversal>
+      <traversal id="MVSMI" name="Move shared memory management instructions" 
+        default="sons" include="movesharedmeminstr.h" >
+        <travuser>
+          <node name="Assign" />
+          <node name="Fundef" />
+          <node name="Ap" />
+        </travuser>
+      </traversal>
+      <traversal id="COSMI" name="Collect shared memory management instructions"
+        default="sons" include="movesharedmeminstr.h" >
+        <travuser>
+          <node name="Fundef" />
+          <node name="Block" />
+          <node name="Vardec" />
+          <node name="Assign" />
+          <node name="Let" />
+          <node name="Prf" />
+          <node name="With2" />
+          <node name="Genarray" />
+          <node name="Modarray" />
+          <node name="Fold" />
+        </travuser>
+        <traverror>
+          <node name="With" />
+        </traverror>
       </traversal>
       <traversal id="EMRE" name="Reuse elimination" default="none" include="reuseelimination.h" >
         <travuser>
@@ -1652,8 +1656,6 @@
           <node name="With2" />
           <node name="Fold" />
           <node name="Code" />
-          <node name="Sync" />
-          <node name="Spmd" />
         </travsons>
       </traversal>
     </phase>
@@ -1694,6 +1696,13 @@
           <node name="Sync" />
           <node name="With2" />
           <node name="WLseg" />
+        </travuser>
+      </traversal>
+      <traversal id="RMSPMD" name="Remove Spmd blocks traversal"  default="sons" include="removespmd.h">
+        <travuser>
+          <node name="Fundef" />
+          <node name="Assign" />
+          <node name="Spmd" />
         </travuser>
       </traversal>
       <traversal id="SPMDDN" name="SPMD Delete Nested Traversal"  default="sons" include="spmd_trav.h">
@@ -1886,7 +1895,6 @@
           <node name="Let" />
           <node name="Modarray" />
           <node name="Prf" />
-          <node name="Spmd" />
           <node name="Vardec" />
           <node name="With" />
           <node name="With2" />

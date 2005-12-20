@@ -1,27 +1,6 @@
-/*
- * $Log$
- * Revision 3.7  2004/11/26 14:13:50  mwe
- * char* arguments of external functions are now declared as const
- *
- * Revision 3.6  2004/11/25 18:17:42  mwe
- * SacDevCamp Dk: compiles!!
- *
- * Revision 3.5  2004/11/24 14:54:15  skt
- * changed DFMtestMaskEntry from int to bool
- *
- * Revision 3.4  2004/11/23 10:05:24  sah
- * SaC DevCamp 04
- *
- * Revision 3.3  2004/08/02 14:07:58  sah
- * added lots of ugly defines to remove
- * compiler warning when using the old
- * ast;)
- *
- * Revision 1.1  1998/05/04 15:53:12  cg
- * Initial revision
- */
-
 /*****************************************************************************
+ *
+ * $Id$
  *
  * file:   DataFlowMask.h
  *

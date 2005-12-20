@@ -1,27 +1,11 @@
-/*
- *
- * $Log$
- * Revision 1.4  2004/12/01 16:36:22  ktr
- * post DK bugfix
- *
- * ,
- *
- * Revision 1.3  2004/11/21 20:42:14  ktr
- * Ismop
- *
- * Revision 1.2  2004/11/09 19:39:37  ktr
- * ongoing implementation
- *
- * Revision 1.1  2004/11/02 14:27:11  ktr
- * Initial revision
- *
- */
 #ifndef _SAC_DATAREUSE_H_
 #define _SAC_DATAREUSE_H_
 
 #include "types.h"
 
 /******************************************************************************
+ *
+ * $Id$
  *
  * Data reuse traversal
  *

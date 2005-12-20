@@ -1,28 +1,5 @@
 /*
- *
- * $Log$
- * Revision 3.20  2005/02/16 22:29:13  sah
- * minor change
- *
- * Revision 3.19  2004/11/30 21:57:31  ktr
- * exxxtreme codebrushing.
- *
- * Revision 3.18  2004/11/30 16:14:39  sah
- * converted DFMUdfm2ReturnExprs to avis nodes
- * made DFMUdfm2ReturnTypes robust
- *
- * Revision 3.17  2004/11/25 22:33:12  mwe
- * SacDevCamp Dk: Compiles!
- *
- * Revision 3.16  2004/11/23 10:05:24  sah
- * SaC DevCamp 04
- *
- * Revision 3.15  2004/11/21 11:22:03  sah
- * removed some old ast infos
- *
- * Revision 1.1  2000/01/21 16:52:08  dkr
- * Initial revision
- *
+ * $Id$
  */
 
 #include "DataFlowMaskUtils.h"

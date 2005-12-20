@@ -72,7 +72,6 @@
 #include "DupTree.h"
 #include "free.h"
 #include "scheduling.h"
-#include "DataFlowMask.h"
 #include "new_types.h"
 
 #include <string.h>
@@ -124,41 +123,6 @@ FreeInfo (info *info)
     info = ILIBfree (info);
 
     DBUG_RETURN (info);
-}
-
-/** <!--******************************************************************-->
- *
- * @fn UpdateDFM
- *
- *  @brief Updates a DFM accoring to INFO_LUT
- *
- *  @param DFM
- *  @param arg_info
- *
- *  @return modified DFM
- *
- ***************************************************************************/
-static dfmask_t *
-UpdateDFM (dfmask_t *dfm, info *arg_info)
-{
-    node *vardec;
-
-    DBUG_ENTER ("UpdateDFM");
-
-    vardec = FUNDEF_VARDEC (INFO_FUNDEF (arg_info));
-
-    while (vardec != NULL) {
-        node *avis = VARDEC_AVIS (vardec);
-
-        if (DFMtestMaskEntry (dfm, NULL, avis)) {
-            DFMsetMaskEntryClear (dfm, NULL, avis);
-            DFMsetMaskEntrySet (dfm, NULL, LUTsearchInLutPp (INFO_LUT (arg_info), avis));
-        }
-
-        vardec = VARDEC_NEXT (vardec);
-    }
-
-    DBUG_RETURN (dfm);
 }
 
 /**
@@ -245,69 +209,21 @@ MMVfundef (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("MMVfundef");
 
-    if (FUNDEF_ISSPMDFUN (arg_node)) {
-        if (arg_info != NULL) {
+    /*
+     * Regular functions are simply traversed
+     */
+    info = MakeInfo ();
+    INFO_FUNDEF (info) = arg_node;
 
-            /*
-             * SPMD-Functions: Arguments must be renamed
-             */
-            info = MakeInfo ();
-            INFO_FUNDEF (info) = arg_node;
+    if (FUNDEF_BODY (arg_node) != NULL) {
+        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), info);
+    }
 
-            arg = FUNDEF_ARGS (arg_node);
-            while (arg != NULL) {
-                if (ARG_NAME (arg) != NULL) {
-                    newname = LUTsearchInLutSs (INFO_LUT (arg_info), ARG_NAME (arg));
-                    if (newname != ARG_NAME (arg)) {
-                        LUTinsertIntoLutS (INFO_LUT (info), ARG_NAME (arg),
-                                           ILIBstringCopy (newname));
+    INFO_LUT (info) = LUTremoveContentLut (INFO_LUT (info));
+    info = FreeInfo (info);
 
-                        ARG_NAME (arg) = ILIBfree (ARG_NAME (arg));
-                        ARG_NAME (arg) = ILIBstringCopy (newname);
-                    }
-                }
-                arg = ARG_NEXT (arg);
-            }
-
-            /*
-             * After renaming, DFM mask base must be updated
-             */
-            FUNDEF_DFM_BASE (arg_node)
-              = DFMupdateMaskBaseAfterRenaming (FUNDEF_DFM_BASE (arg_node),
-                                                FUNDEF_ARGS (arg_node),
-                                                FUNDEF_VARDEC (arg_node));
-
-            /*
-             * Traverse function body
-             */
-            if (FUNDEF_BODY (arg_node) != NULL) {
-                FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), info);
-            }
-
-            INFO_LUT (info) = LUTremoveContentLut (INFO_LUT (info));
-            info = FreeInfo (info);
-        } else {
-            if (FUNDEF_NEXT (arg_node) != NULL) {
-                FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-            }
-        }
-    } else {
-        /*
-         * Regular functions are simply traversed
-         */
-        info = MakeInfo ();
-        INFO_FUNDEF (info) = arg_node;
-
-        if (FUNDEF_BODY (arg_node) != NULL) {
-            FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), info);
-        }
-
-        INFO_LUT (info) = LUTremoveContentLut (INFO_LUT (info));
-        info = FreeInfo (info);
-
-        if (FUNDEF_NEXT (arg_node) != NULL) {
-            FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-        }
+    if (FUNDEF_NEXT (arg_node) != NULL) {
+        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -650,38 +566,6 @@ MMVprf (node *arg_node, info *arg_info)
             PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
         }
     }
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--******************************************************************-->
- *
- * @fn MMVspmd
- *
- *  @brief Corrects the dataflow masks in SPMD blocks
- *
- *  @param arg_node
- *  @param arg_info
- *
- *  @return
- *
- ***************************************************************************/
-node *
-MMVspmd (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("MMVspmd");
-
-    SPMD_REGION (arg_node) = TRAVdo (SPMD_REGION (arg_node), arg_info);
-
-    DBUG_EXECUTE ("MMV", PRTdoPrintNode (INFO_FUNDEF (arg_info)););
-
-    SPMD_IN (arg_node) = UpdateDFM (SPMD_IN (arg_node), arg_info);
-    SPMD_OUT (arg_node) = UpdateDFM (SPMD_OUT (arg_node), arg_info);
-    SPMD_INOUT (arg_node) = UpdateDFM (SPMD_INOUT (arg_node), arg_info);
-    SPMD_LOCAL (arg_node) = UpdateDFM (SPMD_LOCAL (arg_node), arg_info);
-    SPMD_SHARED (arg_node) = UpdateDFM (SPMD_SHARED (arg_node), arg_info);
-
-    SPMD_FUNDEF (arg_node) = TRAVdo (SPMD_FUNDEF (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

@@ -1342,6 +1342,14 @@ EMALprf (node *arg_node, info *arg_info)
         als->shape = TCcreateZeroVector (0, T_int);
         break;
 
+    case F_singlethread:
+        /*
+         * boolean predicate
+         */
+        als->dim = TBmakeNum (0);
+        als->shape = TCcreateZeroVector (0, T_int);
+        break;
+
     case F_add_SxS:
     case F_sub_SxS:
     case F_mul_SxS:

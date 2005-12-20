@@ -42,13 +42,13 @@
     SUBPHASEelement (it_element) SUBPHASEspec (it_spec) SUBPHASEtext (it_text)           \
       SUBPHASEfun (it_fun)
 
-/***********************************************************************/
+/******************************************************************************/
 
 PHASE (initial, "Irregular compiler phase", PHdummy)
 
 SUBPHASE (initial, "initial", "Irregular compiler subphase", PHdummy)
 
-/***********************************************************************/
+/******************************************************************************/
 
 PHASE (setup, "Setting up sac2c compiler environment", SETUPdriveSetup)
 
@@ -58,7 +58,7 @@ SUBPHASE (rsc, "rsc", "Processing sac2c configuration file", RSCevaluateConfigur
 
 SUBPHASE (init, "init", "Initializing data structures", SETUPdoInitializations)
 
-/***********************************************************************/
+/******************************************************************************/
 
 PHASE (scanparse, "Loading SAC program", PHdummy)
 
@@ -72,7 +72,7 @@ SUBPHASE (pragma, "pramga", "Resolving pragma annotations", RSPdoResolvePragmas)
 
 SUBPHASE (objinit, "objinit", "Generating generic types and functions", OIdoObjectInit)
 
-/***********************************************************************/
+/******************************************************************************/
 
 PHASE (module, "Running module system", PHdummy)
 
@@ -88,7 +88,7 @@ SUBPHASE (uss, "uss", "Getting used symbols", USSdoUseSymbols)
 
 SUBPHASE (dep, "dep", "Resolving dependencies", DEPdoResolveDependencies)
 
-/***********************************************************************/
+/******************************************************************************/
 
 PHASE (simplify, "Simplifying source code", CSdoCodeSimplification)
 
@@ -101,7 +101,7 @@ SUBPHASE (hm, "hm", "Handling multiple operator expressions", HMdoHandleMops)
 
 SUBPHASE (flat, "flat", "Flattening nested expressions", FLATdoFlatten)
 
-/***********************************************************************/
+/******************************************************************************/
 
 PHASE (pretypecheck, "Converting to static single assignment form", PTCdoPreTypecheck)
 
@@ -131,7 +131,7 @@ SUBPHASE (lac2fun, "l2f", "Eliminating loops and conditionals", L2FdoLac2Fun)
 SUBPHASE (ssa, "ssa", "Establishing static single assignment form",
           SSATdoTransformAllowGOs)
 
-/***********************************************************************/
+/******************************************************************************/
 
 PHASE (typecheck, "Running type inference system", PHdummy)
 
@@ -143,7 +143,7 @@ SUBPHASE (nt2ot, "n2o", "Finalising infered type information", NT2OTdoTransform)
 
 SUBPHASE (swr, "swr", "Splitting Wrappers", SWRdoSplitWrappers)
 
-/***********************************************************************/
+/******************************************************************************/
 
 PHASE (export, "Processing exports", PHdummy)
 
@@ -153,7 +153,7 @@ SUBPHASE (asf, "asf", "Loading sac2c prelude functions", ASFdoAddSpecialFunction
 
 SUBPHASE (ppi, "ppi", "Restoring bodies of imported inline functions", PPIdoPrepareInline)
 
-/***********************************************************************/
+/******************************************************************************/
 
 PHASE (uniquecheck, "Checking uniqueness property of objects", UPdoUniquenessInference)
 
@@ -161,7 +161,7 @@ SUBPHASE (cua, "cua", "Checking uniqueness annotations", CUAdoCheckUniquenessAnn
 
 SUBPHASE (iuq, "iuq", "Infering uniqueness properties", IUQdoInferUniqueness)
 
-/***********************************************************************/
+/******************************************************************************/
 
 PHASE (elimudt, "Eliminating User-Defined Types and Creating Wrapper Code", PHdummy)
 
@@ -176,7 +176,7 @@ SUBPHASE (dfc, "dfc", "Trying to dispatch staticly", DFCdoDispatchFunCalls)
 
 SUBPHASE (eudt, "eudt", "Eliminating User-Defined Types", RCdoRemoveCasts)
 
-/***********************************************************************/
+/******************************************************************************/
 
 PHASE (wlenhance, "Enhancing of with-loops", WLEdoWlEnhancement)
 
@@ -189,7 +189,7 @@ SUBPHASE (rtup, "rtup", "Applying reverse type upgrade", RTUPdoReverseTypeUpgrad
 SUBPHASE (wlpg, "wlpg", "Generating full with-loop partitions",
           WLPGdoWlPartitionGeneration)
 
-/***********************************************************************/
+/******************************************************************************/
 
 PHASE (sacopt, "Running SAC optimizations", OPTdoOptimize)
 
@@ -305,7 +305,7 @@ SUBPHASE (wlidx, "wlidx", "Annoting offset variable at with-loops",
 
 SUBPHASE (fdi, "fdi", "Freeing dispatch information", FDIdoFreeDispatchInformation)
 
-/***********************************************************************/
+/******************************************************************************/
 
 PHASE (wltrans, "Transforming with-loop representation", WLTRAdoWlTransformPhase)
 
@@ -325,7 +325,7 @@ SUBPHASE (wltcvp, "cvp", "Propagating constants and variables", CVPdoConstVarPro
 
 SUBPHASE (wltdcr, "dcr", "Removing dead code", DCRdoDeadCodeRemovalModule)
 
-/***********************************************************************/
+/******************************************************************************/
 
 PHASE (multithread, "Generating annotations for multithreaded execution",
        CONCdoConcurrent)
@@ -340,6 +340,14 @@ SUBPHASE (syncinit, "syncinit", "Building synchronisation blocks in SPMD functio
 SUBPHASE (syncopt, "syncopt", "Optmizing synchronisation blocks", SYNCOdoSyncOpt)
 
 SUBPHASE (sched, "sched", "Annotating scheduling informations", SCHEDdoScheduleTrav)
+
+SUBPHASE (rmspmd, "rmspmd", "Removing SPMD blocks", RMSPMDdoRemoveSpmdBlocks)
+
+SUBPHASE (conclac2fun, "l2f", "Lifting SPMD conditionals", L2FdoLac2Fun)
+
+SUBPHASE (concssa, "ssa",
+          "Establishing static single assignment form in SPMD conditionals",
+          SSATdoTransform)
 
 SUBPHASE (tem, "tem", "Tagging execution modes", TEMdoTagExecutionmode)
 
@@ -362,7 +370,7 @@ SUBPHASE (mtdfr, "dfr", "Removing superfluos functions", DFRdoDeadFunctionRemova
 SUBPHASE (concel, "concel", "Consolidating execution mode cells",
           CONCELdoConsolidateCells)
 
-/***********************************************************************/
+/******************************************************************************/
 
 PHASE (memory, "Introducing explicit memory management instructions",
        EMMdoMemoryManagement)
@@ -403,9 +411,13 @@ SUBPHASE (rcm, "rcm", "Reference counting minimization", RCMdoRefcountMinimizati
 
 SUBPHASE (rco, "rco", "Optimizing reference counting instructions", EMRCOdoRefCountOpt)
 
+SUBPHASE (mvsmi, "mvsmi",
+          "Moving shared memory management instructions out of SPMD functions",
+          MVSMIdoMoveSharedMemoryManagementInstructions)
+
 SUBPHASE (re, "re", "Removing reuse instructions", EMREdoReuseElimination)
 
-/***********************************************************************/
+/******************************************************************************/
 
 PHASE (precompile, "Preparing C code generation", PRECdoPrecompile)
 
@@ -437,7 +449,7 @@ SUBPHASE (mng, "mng", "Mark NoOp Grids", MNGdoMarkNoopGrids)
 
 SUBPHASE (rid, "rid", "Consistently renaming identifiers", RIDdoRenameIdentifiers)
 
-/***********************************************************************/
+/******************************************************************************/
 
 PHASE (compile, "Generating C code", PHdummy)
 
@@ -445,29 +457,29 @@ SUBPHASE (tot, "tot", "Converting to old type representation", PHdummy)
 
 SUBPHASE (comp, "comp", "Generating C code", PHdummy)
 
-/***********************************************************************/
+/******************************************************************************/
 
 PHASE (genccode, "Creating C file", PHdummy)
 
-/***********************************************************************/
+/******************************************************************************/
 
 PHASE (invokecc, "Invoking C compiler", PHdummy)
 
-/***********************************************************************/
+/******************************************************************************/
 
 PHASE (createlib, "Creating library", PHdummy)
 
-/***********************************************************************/
+/******************************************************************************/
 
 PHASE (writedeps, "Writing dependencies to stdout", PHdummy)
 
-/***********************************************************************/
+/******************************************************************************/
 
 PHASE (final, "Irregular compiler phase", PHdummy)
 
 SUBPHASE (final, "final", "Irregular compiler subphase", PHdummy)
 
-/***********************************************************************/
+/******************************************************************************/
 
 #undef PHASE
 

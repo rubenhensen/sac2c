@@ -77,28 +77,54 @@ CONCdoConcurrent (node *syntax_tree)
          */
         syntax_tree = PHrunCompilerSubPhase (SUBPH_spmdlift, syntax_tree);
 
-        /*
-         * Build synchronization blocks around each assignment within the
-         * body of an SPMD function
-         */
-        syntax_tree = PHrunCompilerSubPhase (SUBPH_syncinit, syntax_tree);
+#if 0
+    /*
+     * Build synchronization blocks around each assignment within the
+     * body of an SPMD function
+     */
+    syntax_tree = PHrunCompilerSubPhase( SUBPH_syncinit, syntax_tree);
+    
+    /*
+     * synchronisation blocks are optimized, i.e. two or several adjacent 
+     * synchronisation blocks are combined into a single larger one.
+     */
+    syntax_tree = PHrunCompilerSubPhase( SUBPH_syncopt, syntax_tree);
+
+    /*
+     * Remove scheduling informations outside of SPMD functions AND
+     * give each synchronization block and each segment specification
+     * within scheduling specifications.
+     * These are either infered from the context or extracted from 
+     * wlcomp pragma information. Scheduling specifications 
+     * outside of the context of a synchronisation block are removed.
+     */
+    syntax_tree = PHrunCompilerSubPhase( SUBPH_sched, syntax_tree);
+#else
 
         /*
-         * synchronisation blocks are optimized, i.e. two or several adjacent
-         * synchronisation blocks are combined into a single larger one.
-         */
-        syntax_tree = PHrunCompilerSubPhase (SUBPH_syncopt, syntax_tree);
-
-        /*
-         * Remove scheduling informations outside of SPMD functions ANS
-         * give each synchronization block and each segment specification
-         * within scheduling specifications.
+         * Remove scheduling informations outside of SPMD functions AND
+         * give each segment specification within an SPMD function scheduling
+         * specifications.
          * These are either infered from the context or extracted from
-         * wlcomp pragma information. Scheduling specifications
-         * outside of the context of a synchronisation block are removed.
+         * wlcomp pragma information.
          */
         syntax_tree = PHrunCompilerSubPhase (SUBPH_sched, syntax_tree);
 
+        /*
+         * Replace SPMD blocks with explicit conditionals
+         */
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_rmspmd, syntax_tree);
+
+        /*
+         * Lift SPMD conditionals to special fundefs
+         */
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_conclac2fun, syntax_tree);
+
+        /*
+         * Establish SSA form in SPMD conditional functions
+         */
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_concssa, syntax_tree);
+#endif
         break;
 
 #ifndef PRODUCTION

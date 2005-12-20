@@ -46,13 +46,15 @@
 struct INFO {
     node *fundef;
     node *funs;
+    node *lastcond;
 };
 
 /*
  * INFO macros
  */
-#define INFO_L2F_FUNDEF(n) (n->fundef)
-#define INFO_L2F_FUNS(n) (n->funs)
+#define INFO_FUNDEF(n) (n->fundef)
+#define INFO_FUNS(n) (n->funs)
+#define INFO_LASTCOND(n) (n->lastcond)
 
 /*
  * INFO functions
@@ -66,8 +68,9 @@ MakeInfo ()
 
     result = ILIBmalloc (sizeof (info));
 
-    INFO_L2F_FUNDEF (result) = NULL;
-    INFO_L2F_FUNS (result) = NULL;
+    INFO_FUNDEF (result) = NULL;
+    INFO_FUNS (result) = NULL;
+    INFO_LASTCOND (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -333,8 +336,8 @@ DoLifting (char *suffix, dfmask_t *in, dfmask_t *out, dfmask_t *local, node *arg
     /*
      * build call of the new LaC function
      */
-    funname = CreateLacFunName (FUNDEF_NAME (INFO_L2F_FUNDEF (arg_info)), suffix);
-    funns = FUNDEF_NS (INFO_L2F_FUNDEF (arg_info));
+    funname = CreateLacFunName (FUNDEF_NAME (INFO_FUNDEF (arg_info)), suffix);
+    funns = FUNDEF_NS (INFO_FUNDEF (arg_info));
 
     DBUG_ASSERT ((funns != NULL), "modul name for LAC function is NULL!");
 
@@ -355,10 +358,10 @@ DoLifting (char *suffix, dfmask_t *in, dfmask_t *out, dfmask_t *local, node *arg
     AP_FUNDEF (LET_EXPR (let)) = fundef;
 
     /*
-     * insert new LaC function into INFO_L2F_FUNS
+     * insert new LaC function into INFO_FUNS
      */
-    FUNDEF_NEXT (fundef) = INFO_L2F_FUNS (arg_info);
-    INFO_L2F_FUNS (arg_info) = fundef;
+    FUNDEF_NEXT (fundef) = INFO_FUNS (arg_info);
+    INFO_FUNS (arg_info) = fundef;
 
     /*
      * replace the instruction by a call of the new LaC function
@@ -387,10 +390,11 @@ L2Ffundef (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("L2Ffundef");
 
-    if ((FUNDEF_BODY (arg_node) != NULL) && (!FUNDEF_ISCONDFUN (arg_node))
-        && (!FUNDEF_ISDOFUN (arg_node))) {
-        INFO_L2F_FUNDEF (arg_info) = arg_node;
-        INFO_L2F_FUNS (arg_info) = NULL;
+    if (FUNDEF_BODY (arg_node) != NULL) {
+
+        INFO_FUNDEF (arg_info) = arg_node;
+        INFO_FUNS (arg_info) = NULL;
+        INFO_LASTCOND (arg_info) = NULL;
 
         DBUG_PRINT ("L2F", ("processing body of `%s'", FUNDEF_NAME (arg_node)));
 
@@ -400,14 +404,14 @@ L2Ffundef (node *arg_node, info *arg_info)
         /*
          * insert LaC fundefs into the AST
          */
-        tmp = INFO_L2F_FUNS (arg_info);
+        tmp = INFO_FUNS (arg_info);
         if (tmp != NULL) {
             while (FUNDEF_NEXT (tmp) != NULL) {
                 tmp = FUNDEF_NEXT (tmp);
             }
             FUNDEF_NEXT (tmp) = arg_node;
-            ret = INFO_L2F_FUNS (arg_info);
-            INFO_L2F_FUNS (arg_info) = NULL;
+            ret = INFO_FUNS (arg_info);
+            INFO_FUNS (arg_info) = NULL;
         } else {
             ret = arg_node;
         }
@@ -461,11 +465,18 @@ L2Fcond (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("L2Fcond");
 
+    if (INFO_LASTCOND (arg_info) == NULL) {
+        INFO_LASTCOND (arg_info) = arg_node;
+    }
+
     COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
     COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
 
-    arg_node = DoLifting ("Cond", COND_IN_MASK (arg_node), COND_OUT_MASK (arg_node),
-                          COND_LOCAL_MASK (arg_node), arg_node, arg_info);
+    if ((!FUNDEF_ISLACFUN (INFO_FUNDEF (arg_info)))
+        || (INFO_LASTCOND (arg_info) != arg_node)) {
+        arg_node = DoLifting ("Cond", COND_IN_MASK (arg_node), COND_OUT_MASK (arg_node),
+                              COND_LOCAL_MASK (arg_node), arg_node, arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }

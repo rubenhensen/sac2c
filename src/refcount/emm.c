@@ -193,6 +193,14 @@ EMMdoMemoryManagement (node *syntax_tree)
     }
 
     /*
+     * Lift memory management instructions for shared variables from SPMD
+     * functions
+     */
+    if ((global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop)) {
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_mvsmi, syntax_tree);
+    }
+
+    /*
      * Reuse elimination
      */
     syntax_tree = PHrunCompilerSubPhase (SUBPH_re, syntax_tree);

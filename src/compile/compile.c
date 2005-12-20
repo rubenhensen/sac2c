@@ -4431,6 +4431,37 @@ COMPPrfVect2Offset (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn  node *COMPPrfSingleThread( node *arg_node, info *arg_info)
+ *
+ * @brief  Compiles N_prf node of type F_singlethread.
+ *   The return value is a N_assign chain of ICMs.
+ *   Note, that the old 'arg_node' is removed by COMPLet.
+ *
+ * Remarks:
+ *   INFO_LASTIDS contains name of assigned variable.
+ *
+ ******************************************************************************/
+
+static node *
+COMPPrfSingleThread (node *arg_node, info *arg_info)
+{
+    node *let_ids;
+    node *ret_node;
+
+    DBUG_ENTER ("COMPPrfSingelThread");
+
+    let_ids = INFO_LASTIDS (arg_info);
+
+    ret_node = TCmakeAssignIcm1 ("ND_PRF_SINGLETHREAD__DATA",
+                                 MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                               FALSE, TRUE, FALSE, NULL),
+                                 NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn  node *COMPprf( node *arg_node, info *arg_info)
  *
  * @brief  Compilation of a N_prf node.
@@ -4667,6 +4698,13 @@ COMPprf (node *arg_node, info *arg_info)
 
     case F_vect2offset:
         ret_node = COMPPrfVect2Offset (arg_node, arg_info);
+        break;
+
+        /*
+         * MT predicate
+         */
+    case F_singlethread:
+        ret_node = COMPPrfSingleThread (arg_node, arg_info);
         break;
 
         /*

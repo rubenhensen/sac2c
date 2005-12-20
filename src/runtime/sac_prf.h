@@ -313,4 +313,8 @@
 #define SAC_ND_PRF_IS_REUSED__AUD(to_NT, from_NT, from2_NT)                              \
     SAC_ND_PRF_IS_REUSED__AKS (to_NT, from_NT, from2_NT)
 
+#define SAC_ND_PRF_SINGLETHREAD__DATA(to_NT, to_sdim)                                    \
+    SAC_TR_PRF_PRINT (("ND_PRF_SINGLETHREAD__...( %s, %d)\n", NT_STR (to_NT), to_sdim)); \
+    SAC_ND_CREATE__SCALAR__DATA (to_NT, SAC_MT_not_yet_parallel)
+
 #endif /* _SAC_PRF_H_ */
