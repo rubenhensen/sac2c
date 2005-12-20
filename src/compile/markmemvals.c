@@ -204,8 +204,6 @@ node *
 MMVfundef (node *arg_node, info *arg_info)
 {
     info *info;
-    node *arg;
-    char *newname;
 
     DBUG_ENTER ("MMVfundef");
 
