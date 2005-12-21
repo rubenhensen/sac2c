@@ -223,8 +223,12 @@
 #define HASH_KEYS_STRING 17  /* should be a prime number */
 #define HASH_KEYS ((HASH_KEYS_POINTER) + (HASH_KEYS_STRING))
 
+#define HASH_KEY_T unsigned long int
+#define HASH_KEY_CONV "%lu"
+#define HASH_KEY_CONVT "%4lu"
+
 typedef int lut_size_t;
-typedef int hash_key_t;
+typedef HASH_KEY_T hash_key_t;
 
 /*
  * collision table fragment:
@@ -393,9 +397,10 @@ ComputeHashStat (lut_t *lut, char *note, hash_key_t min_key, hash_key_t max_key)
 
     if (lut != NULL) {
         DBUG_PRINT ("LUT", ("lut " F_PTR ", %s ---", lut, note));
-        DBUG_EXECUTE ("LUT", fprintf (stderr, "  key:  ");
-                      for (k = min_key; k < max_key;
-                           k++) { fprintf (stderr, "%4i ", k); } fprintf (stderr, "\n");
+        DBUG_EXECUTE ("LUT", fprintf (stderr, "  key:  "); for (
+                        k = min_key; k < max_key;
+                        k++) { fprintf (stderr, HASH_KEY_CONVT " ", k); } fprintf (stderr,
+                                                                                   "\n");
                       fprintf (stderr, "  size: "); for (k = min_key; k < max_key; k++) {
                           DBUG_EXECUTE ("LUT", fprintf (stderr, "%4i ", lut[k].size););
                       } fprintf (stderr, "\n"););
@@ -434,7 +439,8 @@ ComputeHashStat (lut_t *lut, char *note, hash_key_t min_key, hash_key_t max_key)
         DBUG_EXECUTE ("LUT",
                       fprintf (stderr, "  sum = %i, LUTsize = %i\n", sum_size, LUT_SIZE);
                       fprintf (stderr,
-                               "  min (key %i) = %i, max (key %i) = %i,"
+                               "  min (key " HASH_KEY_CONV
+                               ") = %i, max (key " HASH_KEY_CONV ") = %i,"
                                " mean = %1.1f, sdev = %1.1f, sdev/mean^2 = %1.2f\n",
                                min_k, min_size, max_k, max_size, mean_size, sdev_size,
                                sdev_mean););
@@ -491,11 +497,14 @@ SearchInLUT_ (lut_size_t size, lut_size_t i, void **entry, void *old_item,
     }
 
     if (new_item_p == NULL) {
-        DBUG_EXECUTE ("LUT",
-                      fprintf (stderr, "  data (hash key %i) *not* found: ", hash_key);
+        DBUG_EXECUTE ("LUT", fprintf (stderr,
+                                      "  data (hash key " HASH_KEY_CONV ") *not* found: ",
+                                      hash_key);
                       fprintf (stderr, old_format, old_item); fprintf (stderr, "\n"););
     } else {
-        DBUG_EXECUTE ("LUT", fprintf (stderr, "  data (hash key %i) found: [ ", hash_key);
+        DBUG_EXECUTE ("LUT",
+                      fprintf (stderr, "  data (hash key " HASH_KEY_CONV ") found: [ ",
+                               hash_key);
                       fprintf (stderr, old_format, old_item); fprintf (stderr, " -> ");
                       fprintf (stderr, new_format, *new_item_p);
                       fprintf (stderr, " ]\n"););
@@ -1500,7 +1509,7 @@ LUTprintLut (FILE *handle, lut_t *lut)
 
     if (lut != NULL) {
         for (k = 0; k < (HASH_KEYS_POINTER); k++) {
-            fprintf (handle, "*** pointers: hash key %i ***\n", k);
+            fprintf (handle, "*** pointers: hash key " HASH_KEY_CONV " ***\n", k);
             DBUG_ASSERT ((lut[k].size >= 0), "illegal LUT size found!");
             tmp = lut[k].first;
             for (i = 0; i < lut[k].size; i++) {
@@ -1514,7 +1523,7 @@ LUTprintLut (FILE *handle, lut_t *lut)
             fprintf (handle, "number of entries: %i\n", lut[k].size);
         }
         for (k = (HASH_KEYS_POINTER); k < (HASH_KEYS); k++) {
-            fprintf (handle, "*** strings: hash key %i ***\n", k);
+            fprintf (handle, "*** strings: hash key " HASH_KEY_CONV " ***\n", k);
             DBUG_ASSERT ((lut[k].size >= 0), "illegal LUT size found!");
             tmp = lut[k].first;
             for (i = 0; i < lut[k].size; i++) {
