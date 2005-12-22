@@ -219,7 +219,7 @@ bool
 SDhandleContradiction (sig_dep *fun_sig)
 {
     ntype *res_vars, *res_t, *res, *args, *bottom;
-    bool ok;
+    bool ok = FALSE;
     te_info *info;
     int i;
 #ifndef DBUG_OFF

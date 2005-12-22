@@ -596,7 +596,7 @@ SAC_MT1_Setup (int cache_line_max, int barrier_offset, int num_schedulers)
 static void
 ThreadControl_MT1 (void *arg)
 {
-    const unsigned int my_thread_id = (unsigned int)arg;
+    const unsigned int my_thread_id = (unsigned long int)arg;
     unsigned int worker_flag = 0;
 
     SAC_MT_ACQUIRE_LOCK (SAC_MT_init_lock);
@@ -611,7 +611,7 @@ ThreadControl_MT1 (void *arg)
 void
 SAC_MT1_StartWorkers ()
 {
-    unsigned int i;
+    unsigned long int i;
 
     for (i = 1; i < SAC_MT_threads; i++) {
         if (0

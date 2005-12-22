@@ -1671,7 +1671,7 @@ MakeIcm_ND_FUN_AP (node *ap, node *fundef, node *assigns)
 
     /* arguments */
     for (i = argtab->size - 1; i >= 1; i--) {
-        node *exprs;
+        node *exprs = NULL;
 
         if (argtab->ptr_out[i] != NULL) {
             exprs = TBmakeExprs (DUPdupIdsIdNt (argtab->ptr_out[i]), icm_args);

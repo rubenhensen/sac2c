@@ -1613,7 +1613,7 @@ void postmortem (s) char *s;
 
 #else /* DBUG_OFF */
 
-static int almost_useless_dummy_var;
+int DBUG_almost_useless_dummy_var = 0;
 
 /*
  * This dummy variable avoids the compilation of an entirely empty file in the

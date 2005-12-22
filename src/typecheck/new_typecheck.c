@@ -244,7 +244,7 @@ TagAsUnchecked (node *fundef, info *info)
 node *
 NTCdoNewTypeCheckOneFunction (node *arg_node)
 {
-    ntype *old_rets, *new_rets;
+    ntype *old_rets = NULL, *new_rets = NULL;
 
     DBUG_ENTER ("NTCdoNewTypeCheckOneFunction");
 
