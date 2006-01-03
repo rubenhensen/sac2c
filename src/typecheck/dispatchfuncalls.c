@@ -371,7 +371,9 @@ DFCfold (node *arg_node, info *arg_info)
     DBUG_ENTER ("DFCfold");
 
     if (FOLD_FUN (arg_node) != NULL) {
-        if (FOLD_FUNDEF (arg_node) == NULL) {
+        DBUG_ASSERT (FOLD_FUNDEF (arg_node) != NULL, "fold-wl inconsistency");
+
+        if (FOLD_FUNDEF (arg_node) != NULL) {
             /*
              * first dispatch the function call
              */
@@ -390,7 +392,9 @@ DFCfold (node *arg_node, info *arg_info)
             /*
              * second, create a special foldfun
              */
-            arg_node = buildSpecialFoldFun (arg_node, arg_info, arg_type);
+#if 0
+      arg_node = buildSpecialFoldFun( arg_node, arg_info, arg_type);
+#endif
 
             /*
              * cleanup
