@@ -17,7 +17,6 @@ extern node *SCHEDdoScheduleTrav (node *syntax_tree);
 extern node *SCHEDfundef (node *arg_node, info *arg_info);
 extern node *SCHEDwlseg (node *arg_node, info *arg_info);
 extern node *SCHEDwlsegvar (node *arg_node, info *arg_info);
-extern node *SCHEDsync (node *arg_node, info *arg_info);
 extern node *SCHEDwith2 (node *arg_node, info *arg_info);
 
 #endif /* _SAC_SCHEDULE_H_ */

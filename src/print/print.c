@@ -74,17 +74,17 @@ struct INFO {
 };
 
 /* access macros print */
-#define INFO_PRINT_CONT(n) (n->cont)
-#define INFO_PRINT_FUNDEF(n) (n->fundef)
-#define INFO_PRINT_NPART(n) (n->npart)
-#define INFO_PRINT_NWITH2(n) (n->nwith2)
-#define INFO_PRINT_OMIT_FORMAL_PARAMS(n) (n->ofp)
-#define INFO_PRINT_PROTOTYPE(n) (n->prototype)
-#define INFO_PRINT_SEPARATE(n) (n->separate)
-#define INFO_PRINT_DIM(n) (n->dim)
-#define INFO_PRINT_SHAPE(n) (n->shape)
-#define INFO_PRINT_SHAPE_COUNTER(n) (n->shapecnt)
-#define INFO_PRINT_FIRSTERROR(n) (n->firstError)
+#define INFO_CONT(n) (n->cont)
+#define INFO_FUNDEF(n) (n->fundef)
+#define INFO_NPART(n) (n->npart)
+#define INFO_NWITH2(n) (n->nwith2)
+#define INFO_OMIT_FORMAL_PARAMS(n) (n->ofp)
+#define INFO_PROTOTYPE(n) (n->prototype)
+#define INFO_SEPARATE(n) (n->separate)
+#define INFO_DIM(n) (n->dim)
+#define INFO_SHAPE(n) (n->shape)
+#define INFO_SHAPE_COUNTER(n) (n->shapecnt)
+#define INFO_FIRSTERROR(n) (n->firstError)
 
 /*
  * This global variable is used to detect inside of PrintIcm() whether
@@ -93,16 +93,16 @@ struct INFO {
 static node *last_assignment_icm = NULL;
 
 /*
- * PrintNode(): INFO_PRINT_CONT(arg_info) contains the root of syntaxtree.
+ * PrintNode(): INFO_CONT(arg_info) contains the root of syntaxtree.
  *  -> traverses next-node if and only if its parent is not the root.
- * Print(): INFO_PRINT_CONT(arg_info) is NULL.
+ * Print(): INFO_CONT(arg_info) is NULL.
  *  -> traverses all next-nodes.
  *
  * This behaviour is implemented with the macro PRINT_CONT.
  */
 
 #define PRINT_CONT(code_then, code_else)                                                 \
-    if ((arg_info != NULL) && (INFO_PRINT_CONT (arg_info) == arg_node)) {                \
+    if ((arg_info != NULL) && (INFO_CONT (arg_info) == arg_node)) {                      \
         code_else;                                                                       \
     } else {                                                                             \
         code_then;                                                                       \
@@ -190,17 +190,17 @@ MakeInfo ()
     /* initialise own fields. remember to update dependent phases
      * as well!
      */
-    INFO_PRINT_CONT (result) = NULL;
-    INFO_PRINT_FUNDEF (result) = NULL;
-    INFO_PRINT_NPART (result) = NULL;
-    INFO_PRINT_NWITH2 (result) = NULL;
-    INFO_PRINT_OMIT_FORMAL_PARAMS (result) = 0;
-    INFO_PRINT_PROTOTYPE (result) = 0;
-    INFO_PRINT_SEPARATE (result) = 0;
-    INFO_PRINT_DIM (result) = 0;
-    INFO_PRINT_SHAPE (result) = NULL;
-    INFO_PRINT_SHAPE_COUNTER (result) = NULL;
-    INFO_PRINT_FIRSTERROR (result) = TRUE;
+    INFO_CONT (result) = NULL;
+    INFO_FUNDEF (result) = NULL;
+    INFO_NPART (result) = NULL;
+    INFO_NWITH2 (result) = NULL;
+    INFO_OMIT_FORMAL_PARAMS (result) = 0;
+    INFO_PROTOTYPE (result) = 0;
+    INFO_SEPARATE (result) = 0;
+    INFO_DIM (result) = 0;
+    INFO_SHAPE (result) = NULL;
+    INFO_SHAPE_COUNTER (result) = NULL;
+    INFO_FIRSTERROR (result) = TRUE;
 
     DBUG_RETURN (result);
 }
@@ -808,7 +808,7 @@ PRTmodule (node *arg_node, info *arg_info)
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
     }
 
-    if (INFO_PRINT_SEPARATE (arg_info)) {
+    if (INFO_SEPARATE (arg_info)) {
         /*
          * In this case, we print a module or class implementation and we want
          * each function to appear in a separate file to create a real archive
@@ -834,18 +834,18 @@ PRTmodule (node *arg_node, info *arg_info)
 
         if (NULL != MODULE_FUNDECS (arg_node)) {
             fprintf (global.outfile, "\n\n");
-            INFO_PRINT_PROTOTYPE (arg_info) = TRUE;
+            INFO_PROTOTYPE (arg_info) = TRUE;
             /* print function declarations */
             TRAVdo (MODULE_FUNDECS (arg_node), arg_info);
-            INFO_PRINT_PROTOTYPE (arg_info) = FALSE;
+            INFO_PROTOTYPE (arg_info) = FALSE;
         }
 
         if (NULL != MODULE_FUNS (arg_node)) {
             fprintf (global.outfile, "\n\n");
-            INFO_PRINT_PROTOTYPE (arg_info) = TRUE;
+            INFO_PROTOTYPE (arg_info) = TRUE;
             /* print function declarations */
             TRAVdo (MODULE_FUNS (arg_node), arg_info);
-            INFO_PRINT_PROTOTYPE (arg_info) = FALSE;
+            INFO_PROTOTYPE (arg_info) = FALSE;
         }
 
         if (NULL != MODULE_OBJS (arg_node)) {
@@ -946,10 +946,10 @@ PRTmodule (node *arg_node, info *arg_info)
                                      "/*\n"
                                      " *  prototypes for externals (FUNDECS)\n"
                                      " */\n\n");
-            INFO_PRINT_PROTOTYPE (arg_info) = TRUE;
+            INFO_PROTOTYPE (arg_info) = TRUE;
             /* print function declarations */
             TRAVdo (MODULE_FUNDECS (arg_node), arg_info);
-            INFO_PRINT_PROTOTYPE (arg_info) = FALSE;
+            INFO_PROTOTYPE (arg_info) = FALSE;
         }
 
         if (MODULE_FUNS (arg_node) != NULL) {
@@ -957,10 +957,10 @@ PRTmodule (node *arg_node, info *arg_info)
                                      "/*\n"
                                      " *  prototypes for locals (FUNDEFS)\n"
                                      " */\n\n");
-            INFO_PRINT_PROTOTYPE (arg_info) = TRUE;
+            INFO_PROTOTYPE (arg_info) = TRUE;
             /* print function declarations */
             TRAVdo (MODULE_FUNS (arg_node), arg_info);
-            INFO_PRINT_PROTOTYPE (arg_info) = FALSE;
+            INFO_PROTOTYPE (arg_info) = FALSE;
         }
 
         if (MODULE_OBJS (arg_node) != NULL) {
@@ -970,6 +970,14 @@ PRTmodule (node *arg_node, info *arg_info)
                                      " */\n\n");
             /* print objdefs */
             TRAVdo (MODULE_OBJS (arg_node), arg_info);
+        }
+
+        if (MODULE_SPMDSTORE (arg_node) != NULL) {
+            fprintf (global.outfile, "\n\n"
+                                     "/*\n"
+                                     " *  SPMD infrastructure\n"
+                                     " */\n\n");
+            TRAVdo (MODULE_SPMDSTORE (arg_node), arg_info);
         }
 
         if (MODULE_FUNS (arg_node) != NULL) {
@@ -1397,9 +1405,9 @@ PRTfundef (node *arg_node, info *arg_info)
      * needed for the introduction of PROFILE_... MACROS in the
      *  function body.
      */
-    INFO_PRINT_FUNDEF (arg_info) = arg_node;
+    INFO_FUNDEF (arg_info) = arg_node;
 
-    if (INFO_PRINT_PROTOTYPE (arg_info)) {
+    if (INFO_PROTOTYPE (arg_info)) {
         /*
          * print function declaration
          */
@@ -1460,7 +1468,7 @@ PRTfundef (node *arg_node, info *arg_info)
              */
 
             if (FUNDEF_BODY (arg_node) != NULL) {
-                if (INFO_PRINT_SEPARATE (arg_info)) {
+                if (INFO_SEPARATE (arg_info)) {
                     global.outfile = FMGRwriteOpen ("%s/fun%d.c", global.tmp_dirname,
                                                     global.function_counter);
                     fprintf (global.outfile, "#include \"header.h\"\n\n");
@@ -1506,7 +1514,7 @@ PRTfundef (node *arg_node, info *arg_info)
                     fprintf (global.outfile, "\n\n");
                 }
 
-                if (INFO_PRINT_SEPARATE (arg_info)) {
+                if (INFO_SEPARATE (arg_info)) {
                     fclose (global.outfile);
                     global.function_counter++;
                 }
@@ -1516,7 +1524,7 @@ PRTfundef (node *arg_node, info *arg_info)
 
     if (global.indent != old_indent) {
 #ifdef WARN_INDENT
-        if (FUNDEF_ISSPMDFUN (INFO_PRINT_FUNDEF (arg_info))) {
+        if (FUNDEF_ISSPMDFUN (INFO_FUNDEF (arg_info))) {
             /*
              * for the time being, indentation of MT funs is always unbalanced :-(
              */
@@ -1632,7 +1640,7 @@ PRTarg (node *arg_node, info *arg_info)
         fprintf (global.outfile, "*");
     }
 
-    if ((!INFO_PRINT_OMIT_FORMAL_PARAMS (arg_info)) && (ARG_NAME (arg_node) != NULL)) {
+    if ((!INFO_OMIT_FORMAL_PARAMS (arg_info)) && (ARG_NAME (arg_node) != NULL)) {
         fprintf (global.outfile, "%s", ARG_NAME (arg_node));
     }
 
@@ -1757,15 +1765,14 @@ PRTblock (node *arg_node, info *arg_info)
 
     if (global.indent != old_indent) {
 #ifdef WARN_INDENT
-        if (FUNDEF_ISSPMDFUN (INFO_PRINT_FUNDEF (arg_info))) {
+        if (FUNDEF_ISSPMDFUN (INFO_FUNDEF (arg_info))) {
             /*
              * for the time being, indentation of MT funs is always unbalanced :-(
              */
             CTIwarn ("Indentation unbalanced while printing block of function %s."
                      " Indentation at beginning of block: %i."
                      " Indentation at end of block: %i",
-                     FUNDEF_NAME (INFO_PRINT_FUNDEF (arg_info)), old_indent,
-                     global.indent);
+                     FUNDEF_NAME (INFO_FUNDEF (arg_info)), old_indent, global.indent);
         }
 #endif
         global.indent = old_indent;
@@ -2356,9 +2363,9 @@ PRTarray (node *arg_node, info *arg_info)
 {
     int i;
     char *type_str;
-    int old_print_dim = INFO_PRINT_DIM (arg_info);
-    shpseg *old_print_shape = INFO_PRINT_SHAPE (arg_info);
-    shpseg *old_print_shape_counter = INFO_PRINT_SHAPE_COUNTER (arg_info);
+    int old_print_dim = INFO_DIM (arg_info);
+    shpseg *old_print_shape = INFO_SHAPE (arg_info);
+    shpseg *old_print_shape_counter = INFO_SHAPE_COUNTER (arg_info);
 
     DBUG_ENTER ("PRTarray");
 
@@ -2368,17 +2375,17 @@ PRTarray (node *arg_node, info *arg_info)
 
     if (ARRAY_AELEMS (arg_node) != NULL) {
 
-        INFO_PRINT_DIM (arg_info) = ARRAY_DIM (arg_node);
-        INFO_PRINT_SHAPE (arg_info) = SHshape2OldShpseg (ARRAY_SHAPE (arg_node));
-        INFO_PRINT_SHAPE_COUNTER (arg_info)
+        INFO_DIM (arg_info) = ARRAY_DIM (arg_node);
+        INFO_SHAPE (arg_info) = SHshape2OldShpseg (ARRAY_SHAPE (arg_node));
+        INFO_SHAPE_COUNTER (arg_info)
           = TCarray2Shpseg (TCcreateZeroVector (ARRAY_DIM (arg_node), T_int), NULL);
 
-        for (i = 0; i < INFO_PRINT_DIM (arg_info); i++)
+        for (i = 0; i < INFO_DIM (arg_info); i++)
             fprintf (global.outfile, "[ ");
 
         TRAVdo (ARRAY_AELEMS (arg_node), arg_info);
 
-        for (i = 0; i < INFO_PRINT_DIM (arg_info); i++)
+        for (i = 0; i < INFO_DIM (arg_info); i++)
             fprintf (global.outfile, " ]");
 
     } else {
@@ -2387,15 +2394,15 @@ PRTarray (node *arg_node, info *arg_info)
         type_str = ILIBfree (type_str);
     }
 
-    if (INFO_PRINT_SHAPE (arg_info) != NULL)
-        FREEfreeShpseg (INFO_PRINT_SHAPE (arg_info));
+    if (INFO_SHAPE (arg_info) != NULL)
+        FREEfreeShpseg (INFO_SHAPE (arg_info));
 
-    if (INFO_PRINT_SHAPE_COUNTER (arg_info) != NULL)
-        FREEfreeShpseg (INFO_PRINT_SHAPE_COUNTER (arg_info));
+    if (INFO_SHAPE_COUNTER (arg_info) != NULL)
+        FREEfreeShpseg (INFO_SHAPE_COUNTER (arg_info));
 
-    INFO_PRINT_DIM (arg_info) = old_print_dim;
-    INFO_PRINT_SHAPE (arg_info) = old_print_shape;
-    INFO_PRINT_SHAPE_COUNTER (arg_info) = old_print_shape_counter;
+    INFO_DIM (arg_info) = old_print_dim;
+    INFO_SHAPE (arg_info) = old_print_shape;
+    INFO_SHAPE_COUNTER (arg_info) = old_print_shape_counter;
 
     DBUG_RETURN (arg_node);
 }
@@ -2426,16 +2433,16 @@ PRTexprs (node *arg_node, info *arg_info)
 
     if (EXPRS_NEXT (arg_node) != NULL) {
         if (arg_info != NULL) {
-            for (i = INFO_PRINT_DIM (arg_info) - 1;
+            for (i = INFO_DIM (arg_info) - 1;
                  (i >= 0)
-                 && (++SHPSEG_SHAPE (INFO_PRINT_SHAPE_COUNTER (arg_info), i)
-                     >= SHPSEG_SHAPE (INFO_PRINT_SHAPE (arg_info), i));
+                 && (++SHPSEG_SHAPE (INFO_SHAPE_COUNTER (arg_info), i)
+                     >= SHPSEG_SHAPE (INFO_SHAPE (arg_info), i));
                  i--)
-                SHPSEG_SHAPE (INFO_PRINT_SHAPE_COUNTER (arg_info), i) = 0;
-            for (j = INFO_PRINT_DIM (arg_info) - 1; j > i; j--)
+                SHPSEG_SHAPE (INFO_SHAPE_COUNTER (arg_info), i) = 0;
+            for (j = INFO_DIM (arg_info) - 1; j > i; j--)
                 fprintf (global.outfile, " ]");
             fprintf (global.outfile, ", ");
-            for (j = INFO_PRINT_DIM (arg_info) - 1; j > i; j--)
+            for (j = INFO_DIM (arg_info) - 1; j > i; j--)
                 fprintf (global.outfile, "[ ");
             PRINT_CONT (TRAVdo (EXPRS_NEXT (arg_node), arg_info), ;);
         } else {
@@ -3129,67 +3136,6 @@ PRTspmd (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PRTsync( node *arg_node, info *arg_info)
- *
- * Description:
- *
- *
- ******************************************************************************/
-
-node *
-PRTsync (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("PRTsync");
-
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
-
-    fprintf (global.outfile, "\n");
-    INDENT;
-
-    fprintf (global.outfile, "/*** begin of sync region ***\n");
-
-    INDENT;
-    fprintf (global.outfile, " * in:");
-    DFMprintMask (global.outfile, " %s", SYNC_IN (arg_node));
-    fprintf (global.outfile, "\n");
-
-    INDENT;
-    fprintf (global.outfile, " * inout:");
-    DFMprintMask (global.outfile, " %s", SYNC_INOUT (arg_node));
-    fprintf (global.outfile, "\n");
-
-    INDENT;
-    fprintf (global.outfile, " * out:");
-    DFMprintMask (global.outfile, " %s", SYNC_OUT (arg_node));
-    fprintf (global.outfile, "\n");
-
-    INDENT;
-    fprintf (global.outfile, " * outrep:");
-    DFMprintMask (global.outfile, " %s", SYNC_OUTREP (arg_node));
-    fprintf (global.outfile, "\n");
-
-    INDENT;
-    fprintf (global.outfile, " * local:");
-    DFMprintMask (global.outfile, " %s", SYNC_LOCAL (arg_node));
-    fprintf (global.outfile, "\n");
-
-    INDENT;
-    fprintf (global.outfile, " */\n");
-
-    TRAVdo (SYNC_REGION (arg_node), arg_info);
-
-    fprintf (global.outfile, "\n");
-    INDENT;
-    fprintf (global.outfile, "/*** end of sync region ***/\n");
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * Function:
  *   node *PRTmt(node *arg_node, info *arg_info)
  *
  * Description:
@@ -3430,7 +3376,7 @@ PRTwithid (node *arg_node, info *arg_info)
  * description:
  *   prints a generator.
  *
- *   The index variable is found in NPART_WITHID( INFO_PRINT_NPART( arg_info)).
+ *   The index variable is found in NPART_WITHID( INFO_NPART( arg_info)).
  *
  ******************************************************************************/
 
@@ -3455,13 +3401,13 @@ PRTgenerator (node *arg_node, info *arg_info)
     fprintf (global.outfile, " %s ", global.prf_symbol[GENERATOR_OP1 (arg_node)]);
 
     /* print indices */
-    if (INFO_PRINT_NPART (arg_info) != NULL) {
-        DBUG_ASSERT ((NODE_TYPE (INFO_PRINT_NPART (arg_info)) == N_part),
-                     "INFO_PRINT_NPART is no N_part node");
+    if (INFO_NPART (arg_info) != NULL) {
+        DBUG_ASSERT ((NODE_TYPE (INFO_NPART (arg_info)) == N_part),
+                     "INFO_NPART is no N_part node");
 
-        DBUG_ASSERT ((PART_WITHID (INFO_PRINT_NPART (arg_info)) != NULL),
+        DBUG_ASSERT ((PART_WITHID (INFO_NPART (arg_info)) != NULL),
                      "PART_WITHID not found!");
-        TRAVdo (PART_WITHID (INFO_PRINT_NPART (arg_info)), arg_info);
+        TRAVdo (PART_WITHID (INFO_NPART (arg_info)), arg_info);
     } else {
         fprintf (global.outfile, "?");
     }
@@ -3502,7 +3448,7 @@ PRTgenerator (node *arg_node, info *arg_info)
  * description:
  *   prints a default node.
  *
- *   The index variable is found in NPART_WITHID( INFO_PRINT_NPART( arg_info)).
+ *   The index variable is found in NPART_WITHID( INFO_NPART( arg_info)).
  *
  ******************************************************************************/
 
@@ -3518,13 +3464,13 @@ PRTdefault (node *arg_node, info *arg_info)
     fprintf (global.outfile, "default partition( ");
 
     /* print indices */
-    if (INFO_PRINT_NPART (arg_info) != NULL) {
-        DBUG_ASSERT ((NODE_TYPE (INFO_PRINT_NPART (arg_info)) == N_part),
-                     "INFO_PRINT_NPART is no N_part node");
+    if (INFO_NPART (arg_info) != NULL) {
+        DBUG_ASSERT ((NODE_TYPE (INFO_NPART (arg_info)) == N_part),
+                     "INFO_NPART is no N_part node");
 
-        DBUG_ASSERT ((PART_WITHID (INFO_PRINT_NPART (arg_info)) != NULL),
+        DBUG_ASSERT ((PART_WITHID (INFO_NPART (arg_info)) != NULL),
                      "PART_WITHID not found!");
-        TRAVdo (PART_WITHID (INFO_PRINT_NPART (arg_info)), arg_info);
+        TRAVdo (PART_WITHID (INFO_NPART (arg_info)), arg_info);
     } else {
         fprintf (global.outfile, "?");
     }
@@ -3594,8 +3540,8 @@ PRTpart (node *arg_node, info *arg_info)
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
     }
 
-    tmp_npart = INFO_PRINT_NPART (arg_info);
-    INFO_PRINT_NPART (arg_info) = arg_node;
+    tmp_npart = INFO_NPART (arg_info);
+    INFO_NPART (arg_info) = arg_node;
 
     /* print generator */
     INDENT; /* each gen in a new line. */
@@ -3616,7 +3562,7 @@ PRTpart (node *arg_node, info *arg_info)
         fprintf (global.outfile, "\n");
     }
 
-    INFO_PRINT_NPART (arg_info) = tmp_npart;
+    INFO_NPART (arg_info) = tmp_npart;
 
     DBUG_RETURN (arg_node);
 }
@@ -3819,8 +3765,8 @@ PRTwith2 (node *arg_node, info *arg_info)
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
     }
 
-    tmp_nwith2 = INFO_PRINT_NWITH2 (arg_info);
-    INFO_PRINT_NWITH2 (arg_info) = arg_node;
+    tmp_nwith2 = INFO_NWITH2 (arg_info);
+    INFO_NWITH2 (arg_info) = arg_node;
 
     global.indent++;
 
@@ -3876,7 +3822,7 @@ PRTwith2 (node *arg_node, info *arg_info)
 
     global.indent--;
 
-    INFO_PRINT_NWITH2 (arg_info) = tmp_nwith2;
+    INFO_NWITH2 (arg_info) = tmp_nwith2;
 
     DBUG_RETURN (arg_node);
 }
@@ -4192,11 +4138,11 @@ PRTwlcode (node *arg_node, info *arg_info)
 
         fprintf (global.outfile, "op_%d", CODE_ID (arg_node));
     } else {
-        if (INFO_PRINT_NWITH2 (arg_info) != NULL) {
-            DBUG_ASSERT ((NODE_TYPE (INFO_PRINT_NWITH2 (arg_info)) == N_with2),
-                         "INFO_PRINT_NWITH2 is no N_with2 node");
+        if (INFO_NWITH2 (arg_info) != NULL) {
+            DBUG_ASSERT ((NODE_TYPE (INFO_NWITH2 (arg_info)) == N_with2),
+                         "INFO_NWITH2 is no N_with2 node");
 
-            switch (WITH2_TYPE (INFO_PRINT_NWITH2 (arg_info))) {
+            switch (WITH2_TYPE (INFO_NWITH2 (arg_info))) {
             case N_genarray:
                 fprintf (global.outfile, "init");
                 break;
@@ -4552,9 +4498,9 @@ PrintTRAVdo (node *syntax_tree, info *arg_info)
              * header file is generated for global variable and type declarations
              * as well as function prototypes.
              */
-            INFO_PRINT_SEPARATE (arg_info) = 1;
+            INFO_SEPARATE (arg_info) = 1;
             TRAVdo (syntax_tree, arg_info);
-            INFO_PRINT_SEPARATE (arg_info) = 0;
+            INFO_SEPARATE (arg_info) = 0;
         }
     } else {
         global.outfile = stdout;
@@ -4634,7 +4580,7 @@ PRTdoPrint (node *syntax_tree)
 
     arg_info = MakeInfo ();
     /* we want to duplicate all sons */
-    INFO_PRINT_CONT (arg_info) = NULL;
+    INFO_CONT (arg_info) = NULL;
 
     syntax_tree = PrintTRAVdo (syntax_tree, arg_info);
 
@@ -4669,7 +4615,7 @@ PRTdoPrintNode (node *syntax_tree)
 
     arg_info = MakeInfo ();
     /* we want to duplicate all sons */
-    INFO_PRINT_CONT (arg_info) = syntax_tree;
+    INFO_CONT (arg_info) = syntax_tree;
 
     syntax_tree = PrintTRAVdo (syntax_tree, arg_info);
 
@@ -4795,11 +4741,11 @@ PRTerror (node *arg_node, info *arg_info)
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
     }
 
-    firstError = INFO_PRINT_FIRSTERROR (arg_info);
+    firstError = INFO_FIRSTERROR (arg_info);
 
     if (firstError) {
         fprintf (global.outfile, "\n/******* BEGIN TREE CORRUPTION ********\n");
-        INFO_PRINT_FIRSTERROR (arg_info) = FALSE;
+        INFO_FIRSTERROR (arg_info) = FALSE;
     }
 
     fprintf (global.outfile, "%s\n", ERROR_MESSAGE (arg_node));
@@ -4810,7 +4756,7 @@ PRTerror (node *arg_node, info *arg_info)
 
     if (firstError) {
         fprintf (global.outfile, "********  END TREE CORRUPTION  *******/\n");
-        INFO_PRINT_FIRSTERROR (arg_info) = TRUE;
+        INFO_FIRSTERROR (arg_info) = TRUE;
     }
 
     DBUG_RETURN (arg_node);

@@ -33,6 +33,7 @@ struct INFO {
     node *postassign;
     node *ap;
 
+    int linksign;
     node *spmdfun;
     lut_t *lut;
     node *lhs;
@@ -48,6 +49,7 @@ struct INFO {
 #define INFO_POSTASSIGN(n) ((n)->postassign)
 #define INFO_AP(n) ((n)->ap)
 
+#define INFO_LINKSIGN(n) ((n)->linksign)
 #define INFO_SPMDFUN(n) ((n)->spmdfun)
 #define INFO_LUT(n) ((n)->lut)
 #define INFO_LHS(n) ((n)->lhs)
@@ -71,6 +73,7 @@ MakeInfo ()
     INFO_POSTASSIGN (result) = NULL;
     INFO_AP (result) = NULL;
 
+    INFO_LINKSIGN (result) = 0;
     INFO_SPMDFUN (result) = NULL;
     INFO_LUT (result) = NULL;
     INFO_LHS (result) = NULL;
@@ -220,6 +223,19 @@ COSMIfundef (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("COSMIfundef");
 
+    /*
+     * annotate initial linksign information
+     */
+    INFO_LINKSIGN (arg_info) = 1;
+
+    if (FUNDEF_RETS (arg_node) != NULL) {
+        FUNDEF_RETS (arg_node) = TRAVdo (FUNDEF_RETS (arg_node), arg_info);
+    }
+
+    if (FUNDEF_ARGS (arg_node) != NULL) {
+        FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
+    }
+
     INFO_SPMDFUN (arg_info) = arg_node;
     INFO_LUT (arg_info) = LUTgenerateLut ();
 
@@ -240,6 +256,48 @@ COSMIfundef (node *arg_node, info *arg_info)
 
     INFO_LUT (arg_info) = LUTremoveLut (INFO_LUT (arg_info));
     INFO_SPMDFUN (arg_info) = NULL;
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *COSMIret( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+COSMIret (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("COSMIret");
+
+    RET_LINKSIGN (arg_node) = INFO_LINKSIGN (arg_info);
+    RET_HASLINKSIGNINFO (arg_node) = TRUE;
+    INFO_LINKSIGN (arg_info) += 1;
+
+    if (RET_NEXT (arg_node) != NULL) {
+        RET_NEXT (arg_node) = TRAVdo (RET_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *COSMIarg( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+COSMIarg (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("COSMIarg");
+
+    ARG_LINKSIGN (arg_node) = INFO_LINKSIGN (arg_info);
+    ARG_HASLINKSIGNINFO (arg_node) = TRUE;
+    INFO_LINKSIGN (arg_info) += 1;
+
+    if (ARG_NEXT (arg_node) != NULL) {
+        ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -393,26 +451,28 @@ COSMIwith2 (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *IsOutVar( node *fundef, node *avis)
+ * @fn int IsOutVar( node *fundef, node *avis)
  *
  *****************************************************************************/
-static bool
+static int
 IsOutVar (node *fundef, node *avis)
 {
-    bool res;
+    int res;
+    int count = 0;
     node *retexprs;
 
     DBUG_ENTER ("IsOutVar");
 
     retexprs = RETURN_EXPRS (FUNDEF_RETURN (fundef));
     while (retexprs != NULL) {
+        count += 1;
         if (ID_AVIS (EXPRS_EXPR (retexprs)) == avis) {
             break;
         }
         retexprs = EXPRS_NEXT (retexprs);
     }
 
-    res = (retexprs != NULL);
+    res = (retexprs != NULL) ? count : 0;
 
     DBUG_RETURN (res);
 }
@@ -420,13 +480,15 @@ IsOutVar (node *fundef, node *avis)
 /** <!--********************************************************************-->
  *
  * @fn void MakeMemArg( node *memavis, node *extfundef, node *extap,
- *                      node *spmdfun, lut_t *lut)
+ *                      node *spmdfun, lut_t *lut, int linksign)
  *
  *****************************************************************************/
 static void
-MakeMemArg (node *memavis, node *extfundef, node *extap, node *spmdfun, lut_t *lut)
+MakeMemArg (node *memavis, node *extfundef, node *extap, node *spmdfun, lut_t *lut,
+            int linksign)
 {
     node *avis;
+    node *arg;
 
     DBUG_ENTER ("MakeMemArg");
 
@@ -437,7 +499,12 @@ MakeMemArg (node *memavis, node *extfundef, node *extap, node *spmdfun, lut_t *l
 
     AP_ARGS (extap) = TBmakeExprs (TBmakeId (avis), AP_ARGS (extap));
 
-    FUNDEF_ARGS (spmdfun) = TBmakeArg (memavis, FUNDEF_ARGS (spmdfun));
+    arg = TBmakeArg (memavis, FUNDEF_ARGS (spmdfun));
+
+    ARG_LINKSIGN (arg) = linksign;
+    ARG_HASLINKSIGNINFO (arg) = TRUE;
+
+    FUNDEF_ARGS (spmdfun) = arg;
 
     AVIS_SSAASSIGN (memavis) = NULL;
 
@@ -454,11 +521,16 @@ MakeMemArg (node *memavis, node *extfundef, node *extap, node *spmdfun, lut_t *l
 node *
 COSMIgenarray (node *arg_node, info *arg_info)
 {
+    int linksign;
+
     DBUG_ENTER ("COSMIgenarray");
 
-    if (IsOutVar (INFO_SPMDFUN (arg_info), IDS_AVIS (INFO_LHS (arg_info)))) {
+    linksign = IsOutVar (INFO_SPMDFUN (arg_info), IDS_AVIS (INFO_LHS (arg_info)));
+
+    if (linksign != 0) {
         MakeMemArg (ID_AVIS (GENARRAY_MEM (arg_node)), INFO_FUNDEF (arg_info),
-                    INFO_AP (arg_info), INFO_SPMDFUN (arg_info), INFO_LUT (arg_info));
+                    INFO_AP (arg_info), INFO_SPMDFUN (arg_info), INFO_LUT (arg_info),
+                    linksign);
     }
 
     INFO_LHS (arg_info) = IDS_NEXT (INFO_LHS (arg_info));
@@ -478,11 +550,16 @@ COSMIgenarray (node *arg_node, info *arg_info)
 node *
 COSMImodarray (node *arg_node, info *arg_info)
 {
+    int linksign;
+
     DBUG_ENTER ("COSMImodarray");
 
-    if (IsOutVar (INFO_SPMDFUN (arg_info), IDS_AVIS (INFO_LHS (arg_info)))) {
+    linksign = IsOutVar (INFO_SPMDFUN (arg_info), IDS_AVIS (INFO_LHS (arg_info)));
+
+    if (linksign != 0) {
         MakeMemArg (ID_AVIS (MODARRAY_MEM (arg_node)), INFO_FUNDEF (arg_info),
-                    INFO_AP (arg_info), INFO_SPMDFUN (arg_info), INFO_LUT (arg_info));
+                    INFO_AP (arg_info), INFO_SPMDFUN (arg_info), INFO_LUT (arg_info),
+                    linksign);
     }
 
     INFO_LHS (arg_info) = IDS_NEXT (INFO_LHS (arg_info));

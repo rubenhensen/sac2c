@@ -1779,30 +1779,6 @@ DUPspmd (node *arg_node, info *arg_info)
 /******************************************************************************/
 
 node *
-DUPsync (node *arg_node, info *arg_info)
-{
-    node *new_node;
-
-    DBUG_ENTER ("DUPsync");
-
-    new_node = TBmakeSync (DUPTRAV (SYNC_REGION (arg_node)));
-
-    SYNC_IN (new_node) = DupDfmask (SYNC_IN (arg_node), arg_info);
-    SYNC_INOUT (new_node) = DupDfmask (SYNC_INOUT (arg_node), arg_info);
-    SYNC_OUT (new_node) = DupDfmask (SYNC_OUT (arg_node), arg_info);
-    SYNC_OUTREP (new_node) = DupDfmask (SYNC_OUTREP (arg_node), arg_info);
-    SYNC_LOCAL (new_node) = DupDfmask (SYNC_LOCAL (arg_node), arg_info);
-
-    SYNC_FLAGSTRUCTURE (new_node) = SYNC_FLAGSTRUCTURE (arg_node);
-
-    CopyCommonNodeData (new_node, arg_node);
-
-    DBUG_RETURN (new_node);
-}
-
-/******************************************************************************/
-
-node *
 DUPwith (node *arg_node, info *arg_info)
 {
     node *new_node, *partn, *coden, *withopn, *vardec, *oldids;

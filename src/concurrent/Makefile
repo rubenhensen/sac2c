@@ -18,11 +18,8 @@ include $(PROJECT_ROOT)/Makefile.Config
 #
 
 
-#INCS = -I../global -I../tree -I../../inc -I../optimize -I../typecheck -I../refcount \
- #      -I../flatten -I../print -I../compile -I../constants
-
-OBJS := concurrent.o spmd_init.o spmd_lift.o sync_init.o \
-        sync_opt.o schedule.o spmd_trav.o removespmd.o
+OBJS := concurrent.o spmd_init.o spmd_lift.o schedule.o spmd_trav.o \
+        removespmd.o
 
 all: $(OBJS)
 

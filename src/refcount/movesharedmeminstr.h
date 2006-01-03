@@ -19,6 +19,8 @@ extern node *MVSMIap (node *arg_node, info *arg_info);
 extern node *MVSMIassign (node *arg_node, info *arg_info);
 
 extern node *COSMIfundef (node *arg_node, info *arg_info);
+extern node *COSMIret (node *arg_node, info *arg_info);
+extern node *COSMIarg (node *arg_node, info *arg_info);
 extern node *COSMIblock (node *arg_node, info *arg_info);
 extern node *COSMIvardec (node *arg_node, info *arg_info);
 extern node *COSMIassign (node *arg_node, info *arg_info);

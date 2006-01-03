@@ -1,53 +1,5 @@
 /*
- *
- * $Log$
- * Revision 3.45  2005/09/27 17:22:36  sbs
- * PRTwlsimd added.
- *
- * Revision 3.44  2005/08/18 06:19:51  sbs
- * PRTtype added
- *
- * Revision 3.43  2005/04/16 14:17:15  khf
- * print functions for N_default added
- *
- * Revision 3.42  2005/02/10 14:27:23  jhb
- * added PRTerror
- *
- * Revision 3.41  2004/12/05 21:03:24  sah
- * enabled printing of global objects
- *
- * Revision 3.40  2004/12/05 16:45:38  sah
- * added SPIds SPId SPAp in frontend
- *
- * Revision 3.39  2004/12/02 15:12:29  sah
- * added support for ops node
- *
- * Revision 3.38  2004/11/29 15:31:34  ktr
- * PRTprf corrected
- *
- * Revision 3.37  2004/11/27 05:03:19  ktr
- * blah
- *
- * Revision 3.36  2004/11/27 01:59:16  mwe
- * new funs added
- *
- * Revision 3.35  2004/11/27 00:52:54  sbs
- * *** empty log message ***
- *
- * Revision 3.34  2004/11/27 00:14:38  cg
- * New types are printed whenever available.
- *
- * Revision 3.33  2004/11/26 22:31:33  sbs
- * *** empty log message ***
- *
- * Revision 3.32  2004/11/25 22:17:50  khf
- * added PRTprintHomsv (moved from wltransform.h)
- *
- * Revision 3.31  2004/11/24 17:22:59  jhb
- * changed outfile and indent to global.
- *
- * [ eliminated ]
- *
+ * $Id$
  */
 
 #ifndef _SAC_PRINT_H_
@@ -128,7 +80,6 @@ extern node *PRTvectinfo (node *arg_node, info *arg_info);
 extern node *PRTicm (node *arg_node, info *arg_info);
 extern node *PRTpragma (node *arg_node, info *arg_info);
 extern node *PRTspmd (node *arg_node, info *arg_info);
-extern node *PRTsync (node *arg_node, info *arg_info);
 extern node *PRTex (node *arg_node, info *arg_info);
 extern node *PRTmt (node *arg_node, info *arg_info);
 extern node *PRTst (node *arg_node, info *arg_info);

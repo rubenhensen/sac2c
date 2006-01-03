@@ -1,57 +1,7 @@
-/*
- * $Log$
- * Revision 1.15  2005/07/15 15:57:02  sah
- * introduced namespaces
- *
- * Revision 1.14  2005/06/15 12:41:12  sah
- * fixed handling of ... args
- *
- * Revision 1.13  2005/06/01 22:02:32  sah
- * fixed InsertIntoOut. the FUNDEF_RETURN is only set if
- * the function has a body and this will be compiled.
- * In all other cases the FUNDEF_RETURN does not exist and
- * is not needed!
- *
- * Revision 1.12  2005/02/16 22:29:13  sah
- * added some DBUGS and fixed a small bug
- *
- * Revision 1.11  2005/01/07 18:01:31  cg
- * Updated usage of ctinfo
- *
- * Revision 1.10  2005/01/07 17:24:50  cg
- * Converted compile time output from Error.h to ctinfo.c
- *
- * Revision 1.9  2004/12/19 23:15:42  ktr
- * removed TCcountFunctionParams
- *
- * Revision 1.8  2004/12/13 18:45:45  ktr
- * LET_EXPR is now always traversed in order to handle nested code.
- *
- * Revision 1.7  2004/12/08 11:20:06  sah
- * bugfix
- *
- * Revision 1.6  2004/12/07 18:01:15  sah
- * fixed stupid bug
- *
- * Revision 1.5  2004/11/29 15:04:51  sah
- * fixed-a-bug(tm)
- *
- * Revision 1.4  2004/11/29 14:43:20  sah
- * bugfixes
- *
- * Revision 1.3  2004/11/27 00:16:00  ktr
- * New barebones precompile.
- *
- * Revision 1.2  2004/11/26 23:13:36  sah
- * *** empty log message ***
- * Revision 1.1  2004/11/26 22:10:23  sah Initial
- * revision
- *
- *
- *
- */
-
 /**
+ *
+ * $Id$
+ *
  * @defgroup fpc Function Precompile
  * @ingroup prec Precompile
  *
@@ -414,18 +364,30 @@ InsertIntoIn (argtab_t *argtab, node *fundef, node *arg)
                     /*
                      * there is already an outptr, so both must have no descriptor and
                      * the types must be equal
+                     *
+                     * Attention: The absence of the descriptors seems to enforced in
+                     * order to avoid sac style reference counting in side-effecting C
+                     * functions
+                     *
+                     * We intentionally reused the linksign mechanism for SPMD code
+                     * generation without this restriction.
                      */
-                    if ((argtab->tag[idx] == ATG_out_nodesc)
-                        && (argtag == ATG_in_nodesc)) {
+                    if ((FUNDEF_ISSPMDFUN (fundef))
+                        || ((argtab->tag[idx] == ATG_out_nodesc)
+                            && (argtag == ATG_in_nodesc))) {
                         /*
                          * merge 'argtab->ptr_out[idx]' and 'arg'
                          */
                         if (TYeqTypes (RET_TYPE (argtab->ptr_out[idx]),
                                        ARG_NTYPE (arg))) {
-                            if (TUisBoxed (ARG_NTYPE (arg))) {
-                                argtag = ATG_inout_nodesc_bx;
+                            if (FUNDEF_ISSPMDFUN (fundef)) {
+                                argtag = ATG_inout;
                             } else {
-                                argtag = ATG_inout_nodesc;
+                                if (TUisBoxed (ARG_NTYPE (arg))) {
+                                    argtag = ATG_inout_nodesc_bx;
+                                } else {
+                                    argtag = ATG_inout_nodesc;
+                                }
                             }
 
                             argtab->ptr_in[idx] = arg;

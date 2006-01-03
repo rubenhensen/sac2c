@@ -313,26 +313,6 @@ SCHEDwlsegvar (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SCHEDsync(node *arg_node, info *arg_info)
- *
- * description:
- *
- *
- ******************************************************************************/
-
-node *
-SCHEDsync (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("SCHEDsync");
-
-    SYNC_REGION (arg_node) = TRAVdo (SYNC_REGION (arg_node), arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
  *   node *SCHEDwith2(node *arg_node, info *arg_info)
  *
  * description:

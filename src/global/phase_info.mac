@@ -334,11 +334,6 @@ SUBPHASE (spmdinit, "spmdinit", "Building SPMD blocks around with-loops", SPMDId
 
 SUBPHASE (spmdlift, "spmdlift", "Lifting SPMD blocks to functions", SPMDLdoSpmdLift)
 
-SUBPHASE (syncinit, "syncinit", "Building synchronisation blocks in SPMD functions",
-          SYNCIdoSyncInit)
-
-SUBPHASE (syncopt, "syncopt", "Optmizing synchronisation blocks", SYNCOdoSyncOpt)
-
 SUBPHASE (sched, "sched", "Annotating scheduling informations", SCHEDdoScheduleTrav)
 
 SUBPHASE (rmspmd, "rmspmd", "Removing SPMD blocks", RMSPMDdoRemoveSpmdBlocks)

@@ -93,7 +93,6 @@
       <traversal id="GSC" name="Generate Startup Code" default="sons" include="gen_startup_code.h" >
         <travuser>
           <node name="Fundef" />
-          <node name="Spmd" />
           <node name="Icm" />
         </travuser>
       </traversal>
@@ -1624,6 +1623,8 @@
         default="sons" include="movesharedmeminstr.h" >
         <travuser>
           <node name="Fundef" />
+          <node name="Ret" />
+          <node name="Arg" />
           <node name="Block" />
           <node name="Vardec" />
           <node name="Assign" />
@@ -1676,24 +1677,10 @@
           <node name="With2" />
         </travuser>
       </traversal>
-      <traversal id="SYNCI" name="SYNC-Block Init" default="sons" include="sync_init.h">
-        <travuser>
-          <node name="Fundef" />
-          <node name="Assign" />
-        </travuser>
-      </traversal>
-      <traversal id="SYNCO" name="Synchronisation Optimization" default="sons" include="sync_opt.h">
-        <travuser>
-          <node name="Fundef" />
-          <node name="Assign" />
-          <node name="Sync" />
-        </travuser>
-      </traversal>
       <traversal id="SCHED" name="Schedule" default="sons" include="schedule.h">
         <travuser>
           <node name="Fundef" />
           <node name="WLsegVar" />
-          <node name="Sync" />
           <node name="With2" />
           <node name="WLseg" />
         </travuser>
@@ -1992,9 +1979,6 @@
           <node name="WLgrid" />
           <node name="WLgridVar" />
           <node name="Code" />
-
-          <node name="Spmd" />
-          <node name="Sync" />
         </travuser>
         <travnone>
           <node name="Icm">
@@ -2157,6 +2141,16 @@
               <node name="CWrapper" />
               <phases>
                 <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+        <son name="SPMDStore" default="NULL" >
+          <targets>
+            <target mandatory="no">
+              <node name="Assign" />
+              <phases>
+                <range from="compile" to="final" />
               </phases>
             </target>
           </targets>
@@ -5015,109 +5009,6 @@
         </attribute>
       </attributes>
       <flags></flags>
-    </node>
-<!--
-
-  N_sync :
-
--->
-    <node name="Sync">
-      <sons>
-        <son name="Region">
-          <targets>
-            <target mandatory="yes">
-              <node name="Block" />
-              <phases>
-                <all />
-              </phases>
-            </target>
-          </targets>
-        </son>
-      </sons>
-      <attributes>
-        <attribute name="FoldCount" default="0">
-          <type name="Integer">
-            <targets>
-              <target mandatory="yes">
-                <any />
-                <phases>
-                  <all />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-        <attribute name="In" default="NULL">
-          <type name="DFMask">
-            <targets>
-              <target mandatory="yes">
-                <any />
-                <phases>
-                  <all />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-        <attribute name="Out" default="NULL">
-          <type name="DFMask">
-            <targets>
-              <target mandatory="yes">
-                <any />
-                <phases>
-                  <all />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-        <attribute name="InOut" default="NULL">
-          <type name="DFMask">
-            <targets>
-              <target mandatory="yes">
-                <any />
-                <phases>
-                  <all />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-        <attribute name="OutRep" default="NULL">
-          <type name="DFMask">
-            <targets>
-              <target mandatory="yes">
-                <any />
-                <phases>
-                  <all />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-        <attribute name="Local" default="NULL">
-          <type name="DFMask">
-            <targets>
-              <target mandatory="yes">
-                <any />
-                <phases>
-                  <all />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-      </attributes>
-      <flags>
-         <flag name="First">
-          <description>Flag whether the sync-region is the first
-          one of the current SMPD-region</description>
-         </flag>
-         <flag name="Last">
-          <description>Flag whether the sync-region is the last one
-          of the current SMPD-region</description>
-        </flag>
-      </flags>
     </node>
 <!--
 

@@ -385,11 +385,7 @@ typedef union {
 
 #define SAC_MT_TASKCOUNT(sched_id) SAC_MT_Taskcount[sched_id]
 
-#define SAC_MT_FUN_FRAME(name, blocks) struct blocks name;
-
-#define SAC_MT_BLOCK_FRAME(name, args) struct args name;
-
-#define SAC_MT_BLOCK_FRAME_DUMMY() int dummy;
+#define SAC_MT_FRAME(name, args) struct args name;
 
 #define O_POST(name) CAT0 (name, _out)
 #define S_POST(name) CAT0 (name, _shared)

@@ -30,6 +30,7 @@
 #include "new_types.h"
 #include "user_types.h"
 #include "shape.h"
+#include "LookUpTable.h"
 
 /*
  * arg_info
@@ -41,7 +42,6 @@
  *   INFO_FUNDEF      : pointer to current fundef
  *
  *   INFO_LASTIDS     : pointer to IDS of current let
- *   INFO_LASTSYNC    : pointer to ... ???
  *
  *   INFO_FOLDFUNS    : [flag]
  *     In order to guarantee that the special fold-funs are compiled *before*
@@ -57,7 +57,6 @@
 struct INFO {
     node *modul;
     node *fundef;
-    node *lastsync;
     node *lastids;
     node *assign;
     int schedid;
@@ -68,13 +67,16 @@ struct INFO {
     node *uppervec;
     node *icmchain;
     bool isfold;
+    node *spmdframe;
+    node *spmdbarrier;
+    lut_t *foldlut;
 };
+
 /*
  * INFO macros
  */
 #define INFO_MODUL(n) (n->modul)
 #define INFO_FUNDEF(n) (n->fundef)
-#define INFO_LASTSYNC(n) (n->lastsync)
 #define INFO_LASTIDS(n) (n->lastids)
 #define INFO_ASSIGN(n) (n->assign)
 #define INFO_SCHEDULERID(n) (n->schedid)
@@ -85,6 +87,9 @@ struct INFO {
 #define INFO_UPPERVEC(n) (n->uppervec)
 #define INFO_ICMCHAIN(n) (n->icmchain)
 #define INFO_ISFOLD(n) (n->isfold)
+#define INFO_SPMDFRAME(n) (n->spmdframe)
+#define INFO_SPMDBARRIER(n) (n->spmdbarrier)
+#define INFO_FOLDLUT(n) (n->foldlut)
 
 /*
  * INFO functions
@@ -100,14 +105,19 @@ MakeInfo ()
 
     INFO_MODUL (result) = NULL;
     INFO_FUNDEF (result) = NULL;
-    INFO_LASTSYNC (result) = NULL;
     INFO_LASTIDS (result) = NULL;
     INFO_ASSIGN (result) = NULL;
     INFO_SCHEDULERID (result) = 0;
     INFO_SCHEDULERINIT (result) = NULL;
     INFO_IDXVEC (result) = NULL;
     INFO_OFFSETS (result) = NULL;
+    INFO_LOWERVEC (result) = NULL;
+    INFO_UPPERVEC (result) = NULL;
     INFO_ICMCHAIN (result) = NULL;
+    INFO_ISFOLD (result) = FALSE;
+    INFO_SPMDFRAME (result) = NULL;
+    INFO_SPMDBARRIER (result) = NULL;
+    INFO_FOLDLUT (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -144,20 +154,6 @@ FreeInfo (info *info)
 
 #define RC_IS_ZERO(rc) ((rc) == 0)
 #define RC_IS_VITAL(rc) ((rc) > 0)
-
-/******************************************************************************
- *
- * global variable:  int barrier_id
- *
- * Description:
- *   An unambigious barrier identification is required because of the use of
- *   labels in the barrier implementation and the fact that several
- *   synchronisation blocks may be found within a single spmd block which
- *   means that several synchronisation barriers are situated in one function.
- *
- ******************************************************************************/
-
-static int barrier_id = 0;
 
 /******************************************************************************
  *
@@ -1645,21 +1641,21 @@ MakeFundefIcm (node *fundef, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *MakeIcm_ND_FUN_AP( node *ap, node *fundef, node *assigns)
+ * @fn  node *MakeIcm_FUN_AP( node *ap, node *fundef, node *assigns)
  *
  * @brief  Builds a N_assign node with the ND_FUN_AP icm.
  *
  ******************************************************************************/
 
 static node *
-MakeIcm_ND_FUN_AP (node *ap, node *fundef, node *assigns)
+MakeIcm_FUN_AP (node *ap, node *fundef, node *assigns)
 {
     node *ret_node;
     argtab_t *argtab;
     int i;
     node *icm_args = NULL;
 
-    DBUG_ENTER ("MakeIcm_ND_FUN_AP");
+    DBUG_ENTER ("MakeIcm_FUN_AP");
 
     DBUG_ASSERT (((fundef != NULL) && (NODE_TYPE (fundef) == N_fundef)),
                  "no fundef node found!");
@@ -1705,8 +1701,9 @@ MakeIcm_ND_FUN_AP (node *ap, node *fundef, node *assigns)
         icm_args = TBmakeExprs (DUPdupIdsId (argtab->ptr_out[0]), icm_args);
     }
 
-    ret_node = TCmakeAssignIcm2 ("ND_FUN_AP", TCmakeIdCopyString (FUNDEF_NAME (fundef)),
-                                 icm_args, assigns);
+    ret_node
+      = TCmakeAssignIcm2 (FUNDEF_ISSPMDFUN (fundef) ? "MT_SPMD_FUN_AP" : "ND_FUN_AP",
+                          TCmakeIdCopyString (FUNDEF_NAME (fundef)), icm_args, assigns);
 
     /* insert pointer to fundef */
     ICM_FUNDEF (ASSIGN_INSTR (ret_node)) = fundef;
@@ -1714,7 +1711,7 @@ MakeIcm_ND_FUN_AP (node *ap, node *fundef, node *assigns)
     /*
      * add the thread id
      */
-    if (FUNDEF_BODY (fundef) != NULL) {
+    if ((FUNDEF_BODY (fundef) != NULL) && (!FUNDEF_ISSPMDFUN (fundef))) {
         ret_node = AddThreadIdIcm_ND_FUN_AP (ret_node);
     }
 
@@ -1779,46 +1776,6 @@ CheckAp (node *ap, info *arg_info)
 
 #endif
 
-/** <!--********************************************************************-->
- *
- * @fn  node *MakeParamsByDFM( DFMmask_t *mask,
- *                             char *tag, int *num_args, node *icm_args)
- *
- * @brief  Builds tuple-chain (tag, name) from dfm-mask mask,
- *         'tag' is used as tag,
- *         'num_args' will be incremented for each triplet added (maybe NULL),
- *         at the end of this chain icm_args will be concatenated.
- *
- * ### CODE NOT BRUSHED YET ###
- * ### USED BY MT ONLY ####
- *
- ******************************************************************************/
-
-static node *
-MakeParamsByDFM (dfmask_t *mask, char *tag, int *num_args, node *icm_args)
-{
-    node *vardec;
-
-    DBUG_ENTER ("MakeParamsByDFM");
-
-    vardec = DFMgetMaskEntryDeclSet (mask);
-    while (vardec != NULL) {
-        icm_args = TBmakeExprs (
-          TCmakeIdCopyString (tag),
-          TBmakeExprs (MakeBasetypeArg (VARDEC_OR_ARG_TYPE (vardec)),
-                       TBmakeExprs (TCmakeIdCopyStringNt (VARDEC_OR_ARG_NAME (vardec),
-                                                          VARDEC_OR_ARG_TYPE (vardec)),
-                                    icm_args)));
-        if (num_args != NULL) {
-            (*num_args)++;
-        }
-
-        vardec = DFMgetMaskEntryDeclSet (NULL);
-    }
-
-    DBUG_RETURN (icm_args);
-}
-
 /******************************************************************************
  *
  * COMPILE traversal functions
@@ -1841,9 +1798,13 @@ COMPdoCompile (node *arg_node)
 
     info = MakeInfo ();
 
+    INFO_FOLDLUT (info) = LUTgenerateLut ();
+
     TRAVpush (TR_comp);
     arg_node = TRAVdo (arg_node, info);
     TRAVpop ();
+
+    INFO_FOLDLUT (info) = LUTremoveLut (INFO_FOLDLUT (info));
 
     info = FreeInfo (info);
 
@@ -1865,6 +1826,13 @@ COMPmodule (node *arg_node, info *arg_info)
 
     INFO_MODUL (arg_info) = arg_node;
 
+    if (global.mtmode != MT_none) {
+        INFO_SPMDFRAME (arg_info)
+          = TBmakeAssign (TCmakeIcm0 ("MT_SPMD_FRAME_END"), INFO_SPMDFRAME (arg_info));
+        INFO_SPMDBARRIER (arg_info) = TBmakeAssign (TCmakeIcm0 ("MT_SPMD_BARRIER_END"),
+                                                    INFO_SPMDBARRIER (arg_info));
+    }
+
     if (MODULE_OBJS (arg_node) != NULL) {
         MODULE_OBJS (arg_node) = TRAVdo (MODULE_OBJS (arg_node), arg_info);
     }
@@ -1879,6 +1847,19 @@ COMPmodule (node *arg_node, info *arg_info)
 
     if (MODULE_TYPES (arg_node) != NULL) {
         MODULE_TYPES (arg_node) = TRAVdo (MODULE_TYPES (arg_node), arg_info);
+    }
+
+    if (global.mtmode != MT_none) {
+        INFO_SPMDFRAME (arg_info)
+          = TBmakeAssign (TCmakeIcm0 ("MT_SPMD_FRAME_BEGIN"), INFO_SPMDFRAME (arg_info));
+        INFO_SPMDBARRIER (arg_info) = TBmakeAssign (TCmakeIcm0 ("MT_SPMD_BARRIER_BEGIN"),
+                                                    INFO_SPMDBARRIER (arg_info));
+
+        MODULE_SPMDSTORE (arg_node)
+          = TCappendAssign (INFO_SPMDFRAME (arg_info), INFO_SPMDBARRIER (arg_info));
+
+        INFO_SPMDFRAME (arg_info) = NULL;
+        INFO_SPMDBARRIER (arg_info) = NULL;
     }
 
     DBUG_RETURN (arg_node);
@@ -2056,16 +2037,6 @@ COMPfundef (node *arg_node, info *arg_info)
         /********** begin: traverse body **********/
 
         /*
-         * During compilation of a N_sync, the prior N_sync (if exists) is needed.
-         * INFO_LASTSYNC provides these information, it is initialized here
-         * with NULL and will be updated by each compilation of a N_sync (one needs
-         * to compile them ordered!), this includes the destruction of such a
-         * N_sync-tree.
-         * After compilation of the function the last known sync is destroyed then.
-         */
-        INFO_LASTSYNC (arg_info) = NULL;
-
-        /*
          * Each scheduler within a single SPMD function must be associated with a
          * unique segment ID. This is realized by means of the following counter.
          */
@@ -2095,14 +2066,6 @@ COMPfundef (node *arg_node, info *arg_info)
             }
         }
 
-        /*
-         * Destruction of last known N_sync is done here, all others have been
-         * killed while traversing.
-         */
-        if (INFO_LASTSYNC (arg_info) != NULL) {
-            INFO_LASTSYNC (arg_info) = FREEdoFreeTree (INFO_LASTSYNC (arg_info));
-        }
-
         /********** end: traverse body **********/
 
         /*
@@ -2126,26 +2089,18 @@ COMPfundef (node *arg_node, info *arg_info)
         }
 
         /*
-         * Remove fold-function from list of functions.
-         * However, it cannot be freed since it is still needed by several ICM
-         * implementations. Therefore, all fold-functions are stored in a special
-         * fundef-chain fixed to the N_modul node. So, they still exist, but
-         * won't be printed.
-         *
-         * When ExplicitAccumulation was applied the fold-function call
-         * is made explicit in CODE and therefore removing of fold-functions
-         * is only permitted when Inlining was also applied.
+         * Create entries in SPMD frame and SPMD barrier
          */
-        if (global.optimize.doinl) {
+        if (FUNDEF_ISSPMDFUN (arg_node)) {
+            node *icm;
 
-            if (FUNDEF_ISFOLDFUN (arg_node)) {
-                node *tmp;
+            icm = DUPdoDupNode (FUNDEF_ICM (arg_node));
+            ICM_NAME (icm) = "MT_SPMD_FRAME_ELEMENT";
+            INFO_SPMDFRAME (arg_info) = TBmakeAssign (icm, INFO_SPMDFRAME (arg_info));
 
-                tmp = FUNDEF_NEXT (arg_node);
-                FUNDEF_NEXT (arg_node) = MODULE_FOLDFUNS (INFO_MODUL (arg_info));
-                MODULE_FOLDFUNS (INFO_MODUL (arg_info)) = arg_node;
-                arg_node = tmp;
-            }
+            icm = DUPdoDupNode (FUNDEF_ICM (arg_node));
+            ICM_NAME (icm) = "MT_SPMD_BARRIER_ELEMENT";
+            INFO_SPMDBARRIER (arg_info) = TBmakeAssign (icm, INFO_SPMDBARRIER (arg_info));
         }
 
         /*
@@ -2452,20 +2407,31 @@ COMPSpmdFunReturn (node *arg_node, info *arg_info)
     ret_cnt = 0;
     for (i = 0; i < argtab->size; i++) {
         if (argtab->ptr_out[i] != NULL) {
+            char *foldfunname;
+
             DBUG_ASSERT ((ret_exprs != NULL), "not enough return values found!");
             DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (ret_exprs)) == N_id),
                          "no N_id node found!");
 
+            foldfunname = LUTsearchInLutSs (INFO_FOLDLUT (arg_info),
+                                            ID_NAME (EXPRS_EXPR (ret_exprs)));
+
+            foldfunname
+              = (foldfunname == ID_NAME (EXPRS_EXPR (ret_exprs)) ? "NONE" : foldfunname);
+
             new_args
               = TBmakeExprs (TCmakeIdCopyString (global.argtag_string[argtab->tag[i]]),
-                             TBmakeExprs (DUPdupIdNt (EXPRS_EXPR (ret_exprs)), NULL));
+                             TBmakeExprs (TCmakeIdCopyString (foldfunname),
+                                          TBmakeExprs (DUPdupIdNt (
+                                                         EXPRS_EXPR (ret_exprs)),
+                                                       NULL)));
 
             if (last_arg == NULL) {
                 icm_args = new_args;
             } else {
                 EXPRS_NEXT (last_arg) = new_args;
             }
-            last_arg = EXPRS_EXPRS2 (new_args) /* EXPRS_EXPR3( new_args) */;
+            last_arg = EXPRS_EXPRS3 (new_args);
 
             ret_exprs = EXPRS_NEXT (ret_exprs);
             ret_cnt++;
@@ -2475,8 +2441,9 @@ COMPSpmdFunReturn (node *arg_node, info *arg_info)
         }
     }
 
-    arg_node = TCmakeIcm3 ("MT_SPMD_FUN_RET", TBmakeNum (barrier_id), TBmakeNum (ret_cnt),
-                           icm_args);
+    arg_node = TCmakeIcm3 ("MT_SPMD_FUN_RET",
+                           TCmakeIdCopyString (FUNDEF_NAME (INFO_FUNDEF (arg_info))),
+                           TBmakeNum (ret_cnt), icm_args);
 
     FUNDEF_RETURN (fundef) = arg_node;
 
@@ -2685,8 +2652,8 @@ COMPap (node *arg_node, info *arg_info)
 {
     node *let_ids;
     node *fundef;
-    node *assigns1, *assigns2;
     node *ret_node;
+    node *assigns1, *assigns2;
 
     DBUG_ENTER ("COMPap");
 
@@ -2694,8 +2661,8 @@ COMPap (node *arg_node, info *arg_info)
     fundef = AP_FUNDEF (arg_node);
 
     DBUG_ASSERT ((CheckAp (arg_node, arg_info)),
-                 "application of a user-defined function without own refcounting:"
-                 " refcounted argument occurs also on LHS!");
+                 "application of a user-defined function without own"
+                 " refcounting: refcounted argument occurs also on LHS!");
 
     /*
      * traverse ids on LHS of application
@@ -2710,7 +2677,7 @@ COMPap (node *arg_node, info *arg_info)
     ret_node = TCappendAssign (assigns1, assigns2);
 
     /* insert ND_FUN_AP icm at head of assignment chain */
-    ret_node = MakeIcm_ND_FUN_AP (arg_node, fundef, ret_node);
+    ret_node = MakeIcm_FUN_AP (arg_node, fundef, ret_node);
 
     DBUG_RETURN (ret_node);
 }
@@ -4448,7 +4415,7 @@ COMPPrfSingleThread (node *arg_node, info *arg_info)
     node *let_ids;
     node *ret_node;
 
-    DBUG_ENTER ("COMPPrfSingelThread");
+    DBUG_ENTER ("COMPPrfSingleThread");
 
     let_ids = INFO_LASTIDS (arg_info);
 
@@ -5767,7 +5734,14 @@ COMPwith2 (node *arg_node, info *arg_info)
         }
 
         if (NODE_TYPE (withop) == N_fold) {
-            /****************************************
+            /*
+             * put (tmp_ids, foldop) into FOLDLUT
+             */
+            INFO_FOLDLUT (arg_info)
+              = LUTinsertIntoLutS (INFO_FOLDLUT (arg_info), IDS_NAME (tmp_ids),
+                                   FUNDEF_NAME (FOLD_FUNDEF (withop)));
+
+            /*
              * compile 'tmp_ids = neutral' !!!
              */
             let_neutral
@@ -6724,706 +6698,4 @@ COMPcode (node *arg_node, info *arg_info)
     }
 
     DBUG_RETURN (arg_node);
-}
-
-/****************************************************************************
- *
- *  Concurrent ( MTMODE 2 )
- *
- ****************************************************************************/
-
-/** <!--********************************************************************-->
- *
- * @fn  node *COMPspmd( node *arg_node, info *arg_info)
- *
- * @brief  Compiles a N_spmd node.
- *
- ******************************************************************************/
-
-node *
-COMPspmd (node *arg_node, info *arg_info)
-{
-    node *spmdfun, *icm_args, *assigns;
-    int num_args;
-
-    DBUG_ENTER ("COMPspmd");
-
-    spmdfun = SPMD_FUNDEF (arg_node);
-
-    /*
-     * Compile original code within spmd-block in order to produce sequential
-     * code version.
-     */
-    SPMD_ICM_SEQUENTIAL (arg_node) = TRAVdo (SPMD_REGION (arg_node), arg_info);
-    SPMD_REGION (arg_node) = NULL;
-
-    /*
-     * build ICM for SPMD-region
-     */
-    SPMD_ICM_BEGIN (arg_node)
-      = TCmakeIcm1 ("MT_SPMD_BEGIN", TCmakeIdCopyString (FUNDEF_NAME (spmdfun)));
-    SPMD_ICM_ALTSEQ (arg_node)
-      = TCmakeIcm1 ("MT_SPMD_ALTSEQ", TCmakeIdCopyString (FUNDEF_NAME (spmdfun)));
-    SPMD_ICM_END (arg_node)
-      = TCmakeIcm1 ("MT_SPMD_END", TCmakeIdCopyString (FUNDEF_NAME (spmdfun)));
-
-    /*
-     * Now, build up the ICMs of the parallel block.
-     */
-    assigns = NULL;
-    assigns = TCmakeAssignIcm1 ("MT_SPMD_EXECUTE",
-                                TCmakeIdCopyString (FUNDEF_NAME (spmdfun)), assigns);
-
-    /*
-     * Now, build up the arguments for MT_SPMD_SETUP ICM.
-     */
-    DBUG_ASSERT ((NODE_TYPE (FUNDEF_ICM (spmdfun)) == N_icm),
-                 "SPMD function MUST be compiled prior to compilation of "
-                 "corresponding SMPD block.");
-
-    num_args = 0;
-    icm_args = NULL;
-    icm_args = MakeParamsByDFM (SPMD_IN (arg_node), "in", &num_args, icm_args);
-    icm_args = MakeParamsByDFM (SPMD_OUT (arg_node), "out", &num_args, icm_args);
-    icm_args = MakeParamsByDFM (SPMD_SHARED (arg_node), "shared", &num_args, icm_args);
-
-    icm_args = TBmakeExprs (TCmakeIdCopyString (FUNDEF_NAME (spmdfun)),
-                            TBmakeExprs (TBmakeNum (num_args), icm_args));
-
-    assigns = TCmakeAssignIcm1 ("MT_SPMD_SETUP", icm_args, assigns);
-
-    assigns = TCappendAssign (BLOCK_SPMD_PROLOG_ICMS (FUNDEF_BODY (spmdfun)), assigns);
-    BLOCK_SPMD_PROLOG_ICMS (FUNDEF_BODY (spmdfun)) = NULL;
-
-    assigns = TCappendAssign (BLOCK_SCHEDULER_INIT (FUNDEF_BODY (spmdfun)), assigns);
-    BLOCK_SCHEDULER_INIT (FUNDEF_BODY (spmdfun)) = NULL;
-
-    SPMD_ICM_PARALLEL (arg_node) = TBmakeBlock (assigns, NULL);
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn  char *GetFoldTypeTag( node *with_ids)
- *
- * @brief  ...
- *
- ******************************************************************************/
-
-static const char *
-GetFoldTypeTag (node *with_ids)
-{
-    const char *fold_type;
-    types *type;
-    simpletype btype;
-
-    DBUG_ENTER ("GetFoldTypeTag");
-
-    type = IDS_TYPE (with_ids);
-    btype = TCgetBasetype (type);
-    if (btype == T_user) {
-        fold_type = "hidden";
-    } else {
-        fold_type = global.type_string[btype];
-    }
-
-    DBUG_RETURN (fold_type);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn  node *COMPsync( node *arg_node, info *arg_info)
- *
- * @brief  Compiles a N_sync node:
- *
- *     < malloc-ICMs >                   // if (FIRST == 0) only
- *     MT_CONTINUE( ...)                 // if (FIRST == 0) only
- *     MT_SYNCBLOCK_BEGIN( ...)
- *     < with-loop code without malloc/free-ICMs >
- *     MT_SYNCBLOCK_CLEANUP( ...)
- *     MT_SYNC...( ...)
- *     MT_SYNCBLOCK_END( ...)
- *     < free-ICMs >
- *
- ******************************************************************************/
-
-node *
-COMPsync (node *arg_node, info *arg_info)
-{
-    node *icm_args, *icm_args3, *vardec, *with, *block, *instr, *assign, *last_assign,
-      *prolog_icms, *epilog_icms, *move_icm;
-
-    node *assigns = NULL;
-    node *withop = NULL;
-    node *cexprs = NULL;
-    node *with_ids;
-    argtag_t tag;
-    char *icm_name, *var_name;
-    const char *fold_type;
-    int num_args, count_nesting;
-
-    bool prolog;
-    bool epilog;
-    bool inside_alloc_icm;
-
-    node *backup;
-    node *let;
-    node *last_sync;
-
-    int num_fold_args;
-    node *fold_args;
-
-    int num_sync_args;
-    node *sync_args;
-
-    int num_barrier_args;
-    node *barrier_args;
-
-    DBUG_ENTER ("COMPSync");
-
-    /*
-     * build arguments of ICMs 'MT_SYNCBLOCK_...'
-     */
-    icm_args3 = NULL;
-    num_args = 0;
-    vardec = DFMgetMaskEntryDeclSet (SYNC_IN (arg_node));
-    while (vardec != NULL) {
-        tag = ATG_in;
-        icm_args3 = TCappendExprs (
-          icm_args3,
-          TBmakeExprs (TCmakeIdCopyString (global.argtag_string[tag]),
-                       TBmakeExprs (TCmakeIdCopyStringNt (VARDEC_OR_ARG_NAME (vardec),
-                                                          VARDEC_OR_ARG_TYPE (vardec)),
-                                    TBmakeExprs (TBmakeNum (TCgetDim (
-                                                   VARDEC_OR_ARG_TYPE (vardec))),
-                                                 NULL))));
-        num_args++;
-
-        vardec = DFMgetMaskEntryDeclSet (NULL);
-    }
-    icm_args3 = TBmakeExprs (TBmakeNum (num_args), icm_args3);
-
-    DBUG_PRINT ("COMP_MT", ("--- Enter sync ---"));
-
-    DBUG_PRINT ("COMP_MT", ("Enter sync-args"));
-
-    /* inter-thread sync parameters */
-    sync_args = NULL;
-    num_sync_args = 0;
-    vardec = DFMgetMaskEntryDeclSet (SYNC_INOUT (arg_node));
-    while (vardec != NULL) {
-        sync_args
-          = TCappendExprs (sync_args,
-                           TBmakeExprs (TCmakeIdCopyStringNt (VARDEC_OR_ARG_NAME (vardec),
-                                                              VARDEC_OR_ARG_TYPE (
-                                                                vardec)),
-                                        NULL));
-
-        DBUG_PRINT ("COMP_MT", ("%s", VARDEC_OR_ARG_NAME (vardec)));
-
-        num_sync_args++;
-        vardec = DFMgetMaskEntryDeclSet (NULL);
-    }
-    sync_args = TBmakeExprs (TBmakeNum (num_sync_args), sync_args);
-
-    DBUG_PRINT ("COMP_MT", ("Enter fold-args"));
-
-    last_sync = INFO_LASTSYNC (arg_info);
-    fold_args = NULL;
-    num_fold_args = 0;
-    if (last_sync != NULL) {
-        DBUG_PRINT ("COMP_MT", ("last-sync found"));
-        /*
-         *  Traverse assignments
-         */
-        assign = BLOCK_INSTR (SYNC_REGION (last_sync));
-
-        while (assign != NULL) {
-            DBUG_PRINT ("COMP_MT", ("assign found"));
-
-            DBUG_ASSERT ((NODE_TYPE (assign) == N_assign), ("wrong node type"));
-
-            let = ASSIGN_INSTR (assign);
-            DBUG_ASSERT ((NODE_TYPE (let) == N_let), ("wrong node type"));
-
-            with = LET_EXPR (let);
-            /* #### comments missing */
-            if (NODE_TYPE (with) == N_with2) {
-
-                withop = WITH2_WITHOP (with);
-                with_ids = LET_IDS (let);
-
-                while (with_ids != NULL) {
-                    if (NODE_TYPE (withop) == N_fold) {
-                        num_fold_args++;
-
-                        fold_type = GetFoldTypeTag (with_ids);
-
-                        /*
-                         * <fold_type>, <accu_NT>
-                         */
-                        fold_args = TBmakeExprs (TCmakeIdCopyString (fold_type),
-                                                 TBmakeExprs (DUPdupIdsIdNt (with_ids),
-                                                              fold_args));
-
-                        DBUG_PRINT ("COMP_MT", ("last's folds %s is %s",
-                                                IDS_NAME (with_ids), fold_type));
-                    }
-                    with_ids = IDS_NEXT (with_ids);
-                    withop = WITHOP_NEXT (withop);
-                }
-            }
-            assign = ASSIGN_NEXT (assign);
-        } /* while (assign != NULL) */
-    }
-
-    DBUG_PRINT ("COMP_MT", ("--- end ---"));
-
-    /*
-     * build arguments of ICMs
-     */
-
-    block = SYNC_REGION (arg_node);
-    assign = BLOCK_INSTR (block);
-
-    /*
-     *  assign browses over the assignments of the sync_region
-     */
-
-    num_barrier_args = 0;
-    barrier_args = NULL;
-    while (assign != NULL) {
-        let = ASSIGN_INSTR (assign);
-        /*
-         *  One does not know if this really is a with-loop!
-         */
-        with = LET_EXPR (let);
-        with_ids = LET_IDS (let);
-
-        /*
-         *  Is this assignment a with-loop with fold-operators?
-         *  If so, one needs some arguments for the barrier from it.
-         */
-        if (NODE_TYPE (with) == N_with2) {
-
-            withop = WITH2_WITHOP (with);
-            /*
-             * take only cexprs of first CODE because the special fold-functions
-             * used for syncronisation are adapted (in precompile) on those cexprs
-             */
-            cexprs = CODE_CEXPRS (WITH2_CODE (with));
-
-            while (with_ids != NULL) {
-                if (NODE_TYPE (withop) == N_fold) {
-                    /*
-                     *  Increase the number of fold-with-loops.
-                     */
-                    num_barrier_args++;
-
-                    /*
-                     * create fold_type-tag
-                     */
-                    fold_type = GetFoldTypeTag (with_ids);
-
-                    /*
-                     * <fold_type>, <accu_var>
-                     */
-                    icm_args = TBmakeExprs (TCmakeIdCopyString (fold_type),
-                                            TBmakeExprs (DUPdupIdsIdNt (with_ids), NULL));
-
-                    barrier_args = TCappendExprs (barrier_args, icm_args);
-
-                    DBUG_PRINT ("COMP_MT", ("%s", IDS_NAME (with_ids)));
-
-                    /*
-                     * <tmp_var>, <fold_op>
-                     */
-                    DBUG_ASSERT ((FOLD_FUNDEF (withop) != NULL), "no fundef found");
-                    DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (cexprs)) == N_id),
-                                 "CEXPR is no N_id node");
-                    barrier_args
-                      = TCappendExprs (barrier_args,
-                                       TBmakeExprs (DUPdupIdNt (EXPRS_EXPR (cexprs)),
-                                                    TBmakeExprs (TCmakeIdCopyString (
-                                                                   FUNDEF_NAME (
-                                                                     FOLD_FUNDEF (
-                                                                       withop))),
-                                                                 NULL)));
-                }
-                cexprs = EXPRS_NEXT (cexprs);
-                with_ids = IDS_NEXT (with_ids);
-                withop = WITHOP_NEXT (withop);
-            }
-        }
-
-        assign = ASSIGN_NEXT (assign);
-    }
-
-    /*
-     * finish arguments of ICM 'MT_CONTINUE'
-     */
-    fold_args = TBmakeExprs (TBmakeNum (num_fold_args), fold_args);
-
-    /*
-     *  compile the sync-region
-     *  backup is needed, so one could use the block while compiling the next
-     *  N_sync. One needs to copy that here, because further compiling
-     *  is destructive.
-     */
-    backup = DUPdoDupTree (BLOCK_INSTR (SYNC_REGION (arg_node)));
-    SYNC_REGION (arg_node) = TRAVdo (SYNC_REGION (arg_node), arg_info);
-
-    /*
-     *  now we extract all ICMs for memory-management concerning the
-     *  IN/INOUT/OUT-vars of the current sync-region.
-     *  (they must be moved into the sync-barrier!)
-     */
-
-    prolog_icms = NULL;
-    epilog_icms = NULL;
-    assign = BLOCK_INSTR (SYNC_REGION (arg_node));
-    last_assign = NULL;
-    /*
-     * prolog == TRUE:
-     *   current assignment is in front of WL_..._BEGIN-ICM (part of prolog)
-     * epilog == TRUE:
-     *   current assignment is behind WL_..._END-ICM (part of epilog)
-     */
-    var_name = NULL;
-    prolog = TRUE;
-    epilog = FALSE;
-    inside_alloc_icm = FALSE;
-    count_nesting = 0; /* # of inner WLs */
-    while (assign != NULL) {
-
-        DBUG_ASSERT ((NODE_TYPE (assign) == N_assign), "no assign found");
-        instr = ASSIGN_INSTR (assign);
-        DBUG_ASSERT ((instr != NULL), "no instr found");
-
-        if (NODE_TYPE (instr) == N_icm) {
-
-            if (!strcmp (ICM_NAME (instr), "WL_SCHEDULE__BEGIN")) {
-                /*
-                 *  begin of with-loop code found
-                 *  -> skip with-loop code
-                 *  -> stack nested with-loops
-                 */
-                var_name = NULL;
-                count_nesting++;
-                DBUG_PRINT ("COMP_MT", ("ICM: %s is ++", ICM_NAME (instr)));
-            } else if (!strcmp (ICM_NAME (instr), "WL_SCHEDULE__END")) {
-                /*
-                 *  end of with-loop code found?
-                 *  -> end of one (possibly nested) with loop
-                 */
-                DBUG_ASSERT ((count_nesting > 0),
-                             "WL_..._BEGIN/END-ICMs non-balanced (too much ENDs)");
-                var_name = NULL;
-                count_nesting--;
-                DBUG_PRINT ("COMP_MT", ("ICM: %s is --", ICM_NAME (instr)));
-            } else if (count_nesting == 0) {
-                /*
-                 *  not within any (possibly nested) with-loop
-                 *  is this a 'prolog-icm' or 'epilog-icm' for memory management?
-                 *
-                 *  prolog == TRUE: current icm (assignment) is part of prolog
-                 *  epilog == TRUE: current icm (assignment) is part of epilog
-                 */
-
-                if (!strcmp (ICM_NAME (instr), "ND_ALLOC_BEGIN")) {
-                    var_name = ID_NAME (ICM_ARG1 (instr));
-                    prolog = TRUE;
-                    epilog = FALSE;
-                    inside_alloc_icm = TRUE;
-                    DBUG_PRINT ("COMP_MT", ("ICM: %s( %s) is prolog", ICM_NAME (instr),
-                                            STR_OR_EMPTY (var_name)));
-                } else if (!strcmp (ICM_NAME (instr), "ND_ALLOC_END")) {
-                    var_name = ID_NAME (ICM_ARG1 (instr));
-                    prolog = TRUE;
-                    epilog = FALSE;
-                    inside_alloc_icm = FALSE;
-                    DBUG_PRINT ("COMP_MT", ("ICM: %s( %s) is prolog", ICM_NAME (instr),
-                                            STR_OR_EMPTY (var_name)));
-                } else if (inside_alloc_icm) {
-                    /* keep the old 'var_name' from the ND_ALLOC_BEGIN icm */
-                    prolog = TRUE;
-                    epilog = FALSE;
-                    DBUG_PRINT ("COMP_MT", ("ICM: %s( %s) is prolog (inside ALLOC)",
-                                            ICM_NAME (instr), STR_OR_EMPTY (var_name)));
-                } else if (!strcmp (ICM_NAME (instr), "ND_CHECK_REUSE")) {
-                    var_name = ID_NAME (ICM_ARG1 (instr));
-                    prolog = TRUE;
-                    epilog = FALSE;
-                    DBUG_PRINT ("COMP_MT", ("ICM: %s( %s) is prolog", ICM_NAME (instr),
-                                            STR_OR_EMPTY (var_name)));
-                } else if (!strcmp (ICM_NAME (instr), "ND_INC_RC")) {
-                    var_name = ID_NAME (ICM_ARG1 (instr));
-                    prolog = TRUE;
-                    epilog = FALSE;
-                    DBUG_PRINT ("COMP_MT", ("ICM: %s( %s) is prolog", ICM_NAME (instr),
-                                            STR_OR_EMPTY (var_name)));
-                } else if ((!strcmp (ICM_NAME (instr), "ND_DEC_RC_FREE"))
-                           || (!strcmp (ICM_NAME (instr), "ND_DEC_RC"))) {
-                    var_name = ID_NAME (ICM_ARG1 (instr));
-                    prolog = FALSE;
-                    epilog = TRUE;
-                    DBUG_PRINT ("COMP_MT", ("ICM: %s( %s) is epilog", ICM_NAME (instr),
-                                            STR_OR_EMPTY (var_name)));
-                } else {
-                    var_name = NULL;
-                    prolog = FALSE;
-                    epilog = FALSE;
-                    DBUG_PRINT ("COMP_MT", ("ICM: %s() is neither epilog nor prolog",
-                                            ICM_NAME (instr)));
-                }
-            } else {
-                var_name = NULL;
-                prolog = FALSE;
-                epilog = FALSE;
-                DBUG_PRINT ("COMP_MT", ("ICM: %s() is ignored for epilog/prolog!!!",
-                                        ICM_NAME (instr)));
-            }
-
-            if (var_name != NULL) {
-                /*
-                 * The assignment (icm) is moved before/behind the the sync-block
-                 * if it is necessary to do it before the sync-block.
-                 * That copes icm's working on in(out)-variables with memory to be
-                 * reserved before of gen- or modarray with-loops, but *not*
-                 * fold-results (out-variables).
-                 * Also outrep-varibale-icm's are not touched.
-                 */
-                if (DFMtestMaskEntry (SYNC_IN (arg_node), var_name, NULL)
-                    || DFMtestMaskEntry (SYNC_INOUT (arg_node), var_name, NULL)) {
-                    /*
-                     * since we still might need the content of 'var_name',
-                     * we better *move* the ICM instead of copying/freeing it!
-                     */
-                    move_icm = assign;
-                    if (last_assign == NULL) {
-                        assign = BLOCK_INSTR (SYNC_REGION (arg_node))
-                          = ASSIGN_NEXT (assign);
-                    } else {
-                        assign = ASSIGN_NEXT (last_assign) = ASSIGN_NEXT (assign);
-                    }
-                    ASSIGN_NEXT (move_icm) = NULL;
-
-                    DBUG_ASSERT ((prolog || epilog), ("icm has to be prolog or epilog"));
-                    DBUG_ASSERT ((!(prolog && epilog)),
-                                 ("icm cannot be in prolog and epilog at the same time"));
-                    if (prolog) {
-                        prolog_icms = TCappendAssign (prolog_icms, move_icm);
-                        DBUG_PRINT ("COMP_MT",
-                                    ("ICM: %s( %s) is moved to prolog", ICM_NAME (instr),
-                                     STR_OR_EMPTY (var_name)));
-                    }
-                    if (epilog) {
-                        epilog_icms = TCappendAssign (epilog_icms, move_icm);
-                        DBUG_PRINT ("COMP_MT",
-                                    ("ICM: %s( %s) is moved to epilog", ICM_NAME (instr),
-                                     STR_OR_EMPTY (var_name)));
-                    }
-                } else {
-                    /*
-                     *  we want to test (var_name == NULL) later
-                     *  to decide whether the current assignment was removed or not!
-                     */
-                    DBUG_PRINT ("COMP_MT",
-                                ("ICM: %s( %s) is *not* moved to prolog/epilog",
-                                 ICM_NAME (instr), STR_OR_EMPTY (var_name)));
-                    var_name = NULL;
-                }
-            } else {
-                DBUG_PRINT ("COMP_MT", ("ICM: %s() is *not* moved to prolog/epilog",
-                                        ICM_NAME (instr)));
-            }
-        }
-
-        /*
-         * if current assignment was left untouched, goto next one
-         */
-        if (var_name == NULL) {
-            last_assign = assign;
-            assign = ASSIGN_NEXT (assign);
-        }
-    } /* while (assign != NULL) */
-
-    /*
-     * if this sync-region is *not* the first one of the current SPMD-region
-     *  -> insert extracted prolog-ICMs (MALLOC).
-     *  -> insert ICM (MT_CONTINUE),
-     */
-    if (!SYNC_FIRST (arg_node)) {
-        assigns = TCappendAssign (assigns, prolog_icms);
-        assigns = TCappendAssign (assigns, TCmakeAssignIcm1 ("MT_MASTER_SEND_FOLDRESULTS",
-                                                             fold_args, NULL));
-        assigns = TCappendAssign (assigns, TCmakeAssignIcm1 ("MT_MASTER_SEND_SYNCARGS",
-                                                             sync_args, NULL));
-        assigns = TCappendAssign (assigns, TCmakeAssignIcm0 ("MT_START_WORKERS", NULL));
-        assigns = TCappendAssign (assigns,
-                                  TCmakeAssignIcm1 ("MT_MASTER_END",
-                                                    TCmakeExprsNum (barrier_id), NULL));
-        assigns = TCappendAssign (assigns,
-                                  TCmakeAssignIcm1 ("MT_WORKER_BEGIN",
-                                                    TCmakeExprsNum (barrier_id), NULL));
-        assigns = TCappendAssign (assigns, TCmakeAssignIcm0 ("MT_WORKER_WAIT", NULL));
-        assigns
-          = TCappendAssign (assigns, TCmakeAssignIcm1 ("MT_MASTER_RECEIVE_FOLDRESULTS",
-                                                       DUPdoDupTree (fold_args), NULL));
-        assigns
-          = TCappendAssign (assigns, TCmakeAssignIcm1 ("MT_MASTER_RECEIVE_SYNCARGS",
-                                                       DUPdoDupTree (sync_args), NULL));
-        assigns = TCappendAssign (assigns,
-                                  TCmakeAssignIcm1 ("MT_WORKER_END",
-                                                    TCmakeExprsNum (barrier_id), NULL));
-        assigns = TCappendAssign (assigns,
-                                  TCmakeAssignIcm1 ("MT_RESTART",
-                                                    TCmakeExprsNum (barrier_id), NULL));
-    } else {
-        /*
-         * this sync-region is the first one of the current SPMD-region.
-         *  -> remove already built arguments for ICMs SEND and RECEIVE
-         *  -> store prolog ICMs for subsequent compilation of corresponding
-         *     spmd-block.
-         */
-        if (sync_args != NULL) {
-            sync_args = FREEdoFreeTree (sync_args);
-        }
-        if (fold_args != NULL) {
-            fold_args = FREEdoFreeTree (fold_args);
-        }
-
-        BLOCK_SPMD_PROLOG_ICMS (FUNDEF_BODY (INFO_FUNDEF (arg_info))) = prolog_icms;
-    }
-    barrier_id++;
-
-    /*
-     * insert ICM 'MT_SYNCBLOCK_BEGIN' and contents of modified sync-region block
-     */
-    assigns
-      = TCappendAssign (assigns, TCmakeAssignIcm2 ("MT_SYNCBLOCK_BEGIN",
-                                                   TBmakeNum (barrier_id), icm_args3,
-                                                   BLOCK_INSTR (SYNC_REGION (arg_node))));
-
-    /*
-     * insert ICM 'MT_SYNCBLOCK_CLEANUP'
-     */
-    assigns = TCappendAssign (assigns, TCmakeAssignIcm2 ("MT_SYNCBLOCK_CLEANUP",
-                                                         TBmakeNum (barrier_id),
-                                                         DUPdoDupTree (icm_args3), NULL));
-
-    /*
-     *  see comment on setting backup!
-     *  the modified code is now attached to another tree-part.
-     */
-    BLOCK_INSTR (SYNC_REGION (arg_node)) = backup;
-
-    /*
-     * insert ICM 'MT_SYNC_...'
-     *
-     * MT_SYNC_FOLD needs number of folds, MT_SYNC_NONFOLD and MT_SYNC_ONEFOLD
-     * do not need this number, so it is only added at the MT_SYNC_FOLD arguments.
-     */
-
-    if (DFMtestMask (SYNC_INOUT (arg_node)) > 0) {
-        if (DFMtestMask (SYNC_OUT (arg_node)) > 0) {
-            if (DFMtestMask (SYNC_OUT (arg_node)) > 1) {
-                /*
-                 * possible, but not implemented:
-                 *   icm_name = "MT_SYNC_FOLD_NONFOLD";
-                 */
-                barrier_args = TBmakeExprs (TBmakeNum (num_barrier_args), barrier_args);
-                barrier_args = TBmakeExprs (TBmakeNum (barrier_id), barrier_args);
-                icm_name = "MT_SYNC_FOLD";
-
-                DBUG_PRINT ("COMP_MT",
-                            ("MT_SYNC_FOLD (instead of MT_SYNC_FOLD_NONFOLD)"));
-            } else {
-                /*
-                 * DFMtestMask( SYNC_OUT( arg_node)) == 1
-                 *
-                 * possible, but not implemented:
-                 *   icm_name = "MT_SYNC_ONEFOLD_NONFOLD";
-                 */
-                barrier_args = TBmakeExprs (TBmakeNum (num_barrier_args), barrier_args);
-                barrier_args = TBmakeExprs (TBmakeNum (barrier_id), barrier_args);
-                icm_name = "MT_SYNC_FOLD";
-
-                DBUG_PRINT ("COMP_MT",
-                            ("MT_SYNC_FOLD (instead of MT_SYNC_ONEFOLD_NONFOLD)"));
-            }
-        } else {
-            barrier_args = TBmakeExprs (TBmakeNum (barrier_id), barrier_args);
-            icm_name = "MT_SYNC_NONFOLD";
-
-            DBUG_PRINT ("COMP_MT", (" MT_SYNC_NONFOLD"));
-        }
-    } else {
-        DBUG_ASSERT ((DFMtestMask (SYNC_OUT (arg_node)) > 0), "no target found");
-
-        DBUG_PRINT ("COMP_MT",
-                    ("DFMtestMask( OUT ): %i", DFMtestMask (SYNC_OUT (arg_node))));
-
-        if (DFMtestMask (SYNC_OUT (arg_node)) > 1) {
-            barrier_args = TBmakeExprs (TBmakeNum (num_barrier_args), barrier_args);
-            barrier_args = TBmakeExprs (TBmakeNum (barrier_id), barrier_args);
-            icm_name = "MT_SYNC_FOLD";
-
-            DBUG_PRINT ("COMP_MT", (" MT_SYNC_FOLD"));
-        } else {
-            /* DFMTestMask( SYNC_OUT( arg_node)) == 1 */
-            barrier_args = TBmakeExprs (TBmakeNum (num_barrier_args), barrier_args);
-            barrier_args = TBmakeExprs (TBmakeNum (barrier_id), barrier_args);
-            icm_name = "MT_SYNC_FOLD";
-
-            DBUG_PRINT ("COMP_MT", (" MT_SYNC_ONEFOLD"));
-        }
-    }
-
-    DBUG_PRINT ("COMP_MT",
-                ("using syncronisation: %s barrier: %i", icm_name, barrier_id));
-
-    assigns = TCappendAssign (assigns, TCmakeAssignIcm1 (icm_name, barrier_args, NULL));
-
-    /*
-     * insert ICM 'MT_SYNCBLOCK_END'
-     */
-    assigns = TCappendAssign (assigns, TCmakeAssignIcm2 ("MT_SYNCBLOCK_END",
-                                                         TBmakeNum (barrier_id),
-                                                         DUPdoDupTree (icm_args3), NULL));
-
-    /*
-     * insert extracted epilog-ICMs (free).
-     */
-
-    /*
-     *  Begins Block structure of value exchanges blocks or function return
-     *  This has to be done, before epilogs ar inserted, which belong to the
-     *  master-part of this blocks.
-     */
-    if (!SYNC_LAST (arg_node)) {
-        assigns = TCappendAssign (assigns,
-                                  TCmakeAssignIcm1 ("MT_MASTER_BEGIN",
-                                                    TCmakeExprsNum (barrier_id), NULL));
-    } else {
-        assigns
-          = TCappendAssign (assigns,
-                            TCmakeAssignIcm1 ("MT_MASTER_BEGIN", /* use other name? */
-                                              TCmakeExprsNum (barrier_id), NULL));
-    }
-
-    assigns = TCappendAssign (assigns, epilog_icms);
-
-    /*
-     *  Exchanging LASTSYNC, a free the last one.
-     *  Will be needed for next N_sync, if no next N_sync exists,
-     *  COMPFundef() will take care of this tree.
-     */
-    if (INFO_LASTSYNC (arg_info) != NULL) {
-        INFO_LASTSYNC (arg_info) = FREEdoFreeTree (INFO_LASTSYNC (arg_info));
-    }
-    INFO_LASTSYNC (arg_info) = arg_node;
-
-    DBUG_RETURN (assigns);
 }

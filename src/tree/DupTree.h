@@ -109,7 +109,6 @@ extern node *DUPfundef (node *arg_node, info *arg_info);
 extern node *DUPpragma (node *arg_node, info *arg_info);
 extern node *DUPicm (node *arg_node, info *arg_info);
 extern node *DUPspmd (node *arg_node, info *arg_info);
-extern node *DUPsync (node *arg_node, info *arg_info);
 extern node *DUPmt (node *arg_node, info *arg_info);
 extern node *DUPst (node *arg_node, info *arg_info);
 extern node *DUPavis (node *arg_node, info *arg_info);

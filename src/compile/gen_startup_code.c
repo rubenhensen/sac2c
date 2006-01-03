@@ -1,96 +1,6 @@
-/*
- *
- * $Log$
- * Revision 3.48  2005/07/15 15:57:02  sah
- * introduced namespaces
- *
- * Revision 3.47  2005/04/20 20:45:12  sah
- * renamed errno to checkerrno as the identifier
- * errno is reserved (cf. ISO C Standard) and may
- * not be used for own definitions!
- * the use of errno results in compilation failures
- * with GNU libc version 6!
- *
- * Revision 3.46  2004/12/08 11:20:21  sah
- * profiling code is pnly generated if profiling is enabled
- *
- * Revision 3.45  2004/11/29 19:30:08  sah
- * added namespace for function main
- *
- * Revision 3.44  2004/11/29 17:43:32  sah
- * objinit disabled
- *
- * Revision 3.43  2004/11/27 02:15:40  sah
- * fixed it.
- *
- * Revision 3.42  2004/11/26 12:01:16  cg
- * Brushed function symbols.
- *
- * Revision 3.41  2004/11/25 10:37:56  jhb
- * maybe compile
- *
- * Revision 3.40  2004/11/23 23:08:54  cg
- * removed CACHESIM_YES.
- *
- * Revision 3.39  2004/11/23 21:49:39  cg
- * brushed usage of genlib
- * min_array_rep_t turned into enum type.
- *
- * Revision 3.38  2004/07/17 17:07:16  sah
- * switch to new INFO structure
- * PHASE I
- *
- * Revision 3.37  2004/03/10 00:10:17  dkrHH
- * old backend removed
- *
- * Revision 3.36  2004/02/05 10:39:30  cg
- * Implementation for MT mode 1 (thread create/join) added.
- *
- * Revision 3.35  2003/12/10 16:07:14  skt
- * changed compiler flag from -mtn to -mtmode and expanded mt-versions by one
- *
- * Revision 3.34  2003/09/30 22:35:57  dkrHH
- * GSCPrintMain(): indentation corrected
- *
- * Revision 3.33  2003/09/19 15:33:28  dkr
- * postfix _nt of varnames renamed into _NT
- *
- * Revision 3.32  2003/09/17 19:04:30  dkr
- * RCAO renamed into DAO for new backend
- *
- * Revision 3.30  2003/09/13 13:43:56  dkr
- * GSCicm(): NT-tags added for new backend
- *
- * Revision 3.29  2003/08/05 16:16:18  dkr
- * fixed a bug in  GSCPrintMain()
- *
- * Revision 3.28  2003/08/04 18:03:59  dkr
- * GSCPrintMain(): tags for SAC_MT_mythread added
- *
- * Revision 3.27  2003/08/04 14:30:52  dkr
- * GSCicm(): error messages for MT_SPMD_SETUP corrected
- *
- * Revision 3.26  2003/04/14 14:55:54  sbs
- * num_threads casted to unsigned int for correct comparison.
- *
- * Revision 3.25  2003/03/21 18:05:29  sbs
- * PrintTargetPlatform eliminated.
- *
- * Revision 3.24  2003/03/13 17:10:49  dkr
- * support for the -minarrayrep flag added to GSCPrintMain()
- *
- * Revision 3.23  2003/03/09 19:15:59  dkr
- * TRACE_AA added
- *
- *
- * [...]
- *
- * Revision 1.1  1998/03/24 14:33:35  cg
- * Initial revision
- *
- */
-
 /*****************************************************************************
+ *
+ * $Id$
  *
  * file:   gen_startup_code.c
  *
@@ -126,19 +36,6 @@
 #include "internal_lib.h"
 #include "renameidentifiers.h"
 #include "namespaces.h"
-
-/******************************************************************************
- *
- * global variable: static int spmd_block_counter
- *
- * description:
- *   This variable is used to detect whether a given function definition
- *   contains any SPMD blocks. If not, a dummy entry has to be inserted at
- *   the respective position of the global SPMD frame.
- *
- ******************************************************************************/
-
-static int spmd_block_counter;
 
 /******************************************************************************
  *
@@ -581,83 +478,17 @@ GSCicm (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("GSCicm");
 
-    if (!strcmp (ICM_NAME (arg_node), "MT_SPMD_SETUP")) {
+    icm_arg = ICM_EXPRS4 (arg_node);
+    while (icm_arg != NULL) {
+        tag = ID_ICMTEXT (EXPRS_EXPR1 (icm_arg));
+        type = ID_ICMTEXT (EXPRS_EXPR2 (icm_arg));
+        name = ID_NT_TAG (EXPRS_EXPR3 (icm_arg));
 
-        DBUG_ASSERT ((ICM_EXPRS1 (arg_node) != NULL),
-                     "ICM MT_SPMD_SETUP has wrong format (args missing)");
-        DBUG_ASSERT ((ICM_EXPRS2 (arg_node) != NULL),
-                     "ICM MT_SPMD_SETUP has wrong format (name missing)");
-        DBUG_ASSERT ((ICM_EXPRS3 (arg_node) != NULL),
-                     "ICM MT_SPMD_SETUP has wrong format (numargs missing)");
+        fprintf (global.outfile, "        SAC_MT_SPMD_ARG_%s( %s, %s)    \\\n", tag, type,
+                 name);
 
-        icm_arg = ICM_EXPRS3 (arg_node);
-        while (icm_arg != NULL) {
-            DBUG_ASSERT ((EXPRS_EXPR1 (icm_arg) != NULL),
-                         "ICM MT_SPMD_SETUP has wrong format (tag missing)");
-            DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR1 (icm_arg)) == N_id),
-                         "ICM MT_SPMD_SETUP has wrong format (tag no N_id)");
-
-            tag = ID_ICMTEXT (EXPRS_EXPR1 (icm_arg));
-
-            DBUG_ASSERT ((EXPRS_EXPRS2 (icm_arg) != NULL),
-                         "ICM MT_SPMD_SETUP has wrong format (type missing)");
-            DBUG_ASSERT ((EXPRS_EXPR2 (icm_arg) != NULL),
-                         "ICM MT_SPMD_SETUP has wrong format (type missing)");
-            DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR2 (icm_arg)) == N_id),
-                         "ICM MT_SPMD_SETUP has wrong format (type no N_id)");
-
-            type = ID_ICMTEXT (EXPRS_EXPR2 (icm_arg));
-
-            DBUG_ASSERT ((EXPRS_EXPRS3 (icm_arg) != NULL),
-                         "ICM MT_SPMD_SETUP has wrong format (parameter missing)");
-            DBUG_ASSERT ((EXPRS_EXPR3 (icm_arg) != NULL),
-                         "ICM MT_SPMD_SETUP has wrong format (parameter missing)");
-            DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR3 (icm_arg)) == N_id),
-                         "ICM MT_SPMD_SETUP has wrong format (parameter no N_id)");
-            DBUG_ASSERT ((ID_NT_TAG (EXPRS_EXPR3 (icm_arg)) != NULL),
-                         "ICM MT_SPMD_SETUP has wrong format (parameter has no NT-tag)");
-
-            name = ID_NT_TAG (EXPRS_EXPR3 (icm_arg));
-
-            fprintf (global.outfile, "        SAC_MT_SPMD_ARG_%s( %s, %s)    \\\n", tag,
-                     type, name);
-
-            icm_arg = EXPRS_EXPRS4 (icm_arg);
-        }
+        icm_arg = EXPRS_EXPRS4 (icm_arg);
     }
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *GSCspmd( node *arg_node, info *arg_info)
- *
- * description:
- *
- *
- ******************************************************************************/
-
-node *
-GSCspmd (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("GSCspmd");
-
-    spmd_block_counter++;
-
-    fprintf (global.outfile, "      SAC_MT_BLOCK_FRAME( %s,  {  \\\n",
-             FUNDEF_NAME (SPMD_FUNDEF (arg_node)));
-
-    /*
-     * The layout of the SPMD-frame is derived from the MT_SPMD_SETUP ICM.
-     * Therefore, we have to traverse the respective block.
-     */
-    if (SPMD_ICM_PARALLEL (arg_node) != NULL) {
-        TRAVdo (SPMD_ICM_PARALLEL (arg_node), arg_info);
-    }
-
-    fprintf (global.outfile, "      })     \\\n");
 
     DBUG_RETURN (arg_node);
 }
@@ -677,22 +508,14 @@ GSCfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("GSCfundef");
 
-    if (FUNDEF_BODY (arg_node) != NULL) {
+    if (FUNDEF_ISSPMDFUN (arg_node)) {
         /*
          * Here, we want to check all functions which may contain an SPMD-block.
          */
-        fprintf (global.outfile, "    SAC_MT_FUN_FRAME( %s, {   \\\n",
+        fprintf (global.outfile, "    SAC_MT_FRAME( %s, {   \\\n",
                  FUNDEF_NAME (arg_node));
-        spmd_block_counter = 0;
 
-        TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-
-        /*
-         *  if there is no dummy frame, one is inserted in front here
-         */
-        if (spmd_block_counter == 0) {
-            fprintf (global.outfile, "      SAC_MT_BLOCK_FRAME_DUMMY()    \\\n");
-        }
+        TRAVdo (FUNDEF_ICM (arg_node), arg_info);
 
         fprintf (global.outfile, "    })    \\\n");
     }
