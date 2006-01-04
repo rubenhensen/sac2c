@@ -458,7 +458,6 @@ extern node *TCappendArgs (node *arg_chain, node *arg);
 
 extern int TCcountRets (node *rets);
 extern node *TCappendRet (node *chain, node *item);
-extern node *TCreturnTypes2Ret (types *type);
 
 /*--------------------------------------------------------------------------*/
 

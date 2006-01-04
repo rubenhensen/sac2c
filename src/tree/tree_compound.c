@@ -1364,45 +1364,6 @@ TCcountRets (node *rets)
     DBUG_RETURN (count);
 }
 
-/****************************************************************************
- *
- * function:
- *   node *TCreturnTypes2Ret(types* type)
- *
- * description:
- *   returns a chain of N_ret nodes according to type
- *
- ***************************************************************************/
-
-node *
-TCreturnTypes2Ret (types *type)
-{
-    node *rets, *tmp, *tmp2;
-
-    DBUG_ENTER ("TCreturnTypes2Ret");
-
-    rets = NULL;
-
-    if (type != NULL) {
-        tmp2 = rets = TBmakeRet (TYoldType2Type (type), NULL);
-        if (TYPES_STATUS (type) == ST_artificial) {
-            RET_ISARTIFICIAL (rets) = TRUE;
-        }
-        type = TYPES_NEXT (type);
-        while (type != NULL) {
-            tmp = TBmakeRet (TYoldType2Type (type), NULL);
-            if (TYPES_STATUS (type) == ST_artificial) {
-                RET_ISARTIFICIAL (tmp) = TRUE;
-            }
-            RET_NEXT (tmp2) = tmp;
-            tmp2 = tmp;
-            type = TYPES_NEXT (type);
-        }
-    }
-
-    DBUG_RETURN (rets);
-}
-
 /*--------------------------------------------------------------------------*/
 
 /***

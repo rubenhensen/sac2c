@@ -47,8 +47,6 @@
     copy="function" />
     <type name="SimpleType" ctype="simpletype" init="T_unknown" 
     copy="literal" />
-    <type name="UseFlag" ctype="useflag" init="DOLLAR"
-    copy="literal" />
     <type name="AccessInfo" ctype="access_info_t*" init="NULL"
     copy="function" persist="no" />
     <type name="AccessFeature" ctype="feature_t" init="0"
@@ -65,8 +63,6 @@
     copy="function" persist="no" />
     <type name="NodePointer" ctype="node**" init="NULL"
     copy="function" />
-    <type name="SSAPhi" ctype="ssaphit_t" init="PHIT_NONE"
-    copy="literal" />
     <type name="BitField" ctype="int" init="0" copy="literal" />
     <type name="Constant" ctype="constant*" init="NULL"
     copy="function" />

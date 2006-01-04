@@ -70,19 +70,6 @@ typedef enum {
  */
 typedef int usertype;
 
-typedef enum { ARG_int, ARG_float, ARG_id } argtype;
-
-typedef enum {
-    /* type of Ids within generator parts of a withloops (N_Nwithid).
-     * WI_vector : e.g. [0,0] <= i < [5,5]
-     * WI_scalars: e.g. [0,0] <= [i,j] <= [5,5]
-     */
-    WI_vector,
-    WI_scalars
-} withid_t;
-
-typedef enum { M_uses_only, M_uses_and_transform } ive_mode;
-
 typedef enum {
 #define PHASEelement(it_element) PH_##it_element,
 #include "phase_info.mac"
@@ -97,15 +84,6 @@ typedef enum {
     SUBPH_dummy
 } compiler_subphase_t;
 
-/* use mdb_statustype to get corresponding char* to print etc. */
-typedef enum {
-#define SELECTelement(it_element) it_element
-#include "status_info.mac"
-#undef SELECTelement
-} statustype;
-
-typedef enum { DOLLAR, VECT, IDX } useflag;
-
 typedef enum { F_prog, F_modimp, F_classimp, F_modspec, F_unknown } file_type;
 
 typedef enum { CT_normal, CT_ap, CT_array, CT_return, CT_wl } contextflag;
@@ -119,8 +97,6 @@ typedef enum { NO_UNQCONV, TO_UNQ, FROM_UNQ } unqconv_t;
 typedef enum { LOC_usr, LOC_stdlib } locationtype;
 
 typedef enum { CMPT_EQ, CMPT_NEQ, CMPT_UKNWN } cmptree_t;
-
-typedef enum { PHIT_NONE, PHIT_COND, PHIT_DO, PHIT_WHILE } ssaphit_t;
 
 typedef enum { SS_aks, SS_akd, SS_aud } spec_mode_t;
 
@@ -162,22 +138,11 @@ typedef enum {
 
 typedef struct NODELIST {
     struct NODE *node;
-    statustype attrib;
-    statustype status;
+    int status;
     int num;
     struct NODE *attrib2;
     struct NODELIST *next;
 } nodelist;
-
-typedef struct DEPS {
-    char *name;
-    char *decname;
-    char *libname;
-    statustype status;
-    locationtype location;
-    struct DEPS *sub;
-    struct DEPS *next;
-} deps;
 
 #define SHP_SEG_SIZE 16
 
@@ -209,15 +174,14 @@ typedef struct ACCESS_INFO_T {
 
 typedef struct TYPES {
     simpletype simpletype;
-    char *name;             /* only used for T_user !! */
-    char *name_mod;         /* name of modul belonging to 'name' */
-    struct NODE *tdef;      /* typedef of user-defined type */
-    int dim;                /* if (dim == 0) => simpletype */
-    bool poly;              /* only needed for type templates (newTC !) */
-    shpseg *shpseg;         /* pointer to shape specification */
-    statustype type_status; /* regular/artificial/crettype */
-    struct TYPES *next;     /* only needed for fun-results  */
-                            /* and implementation of implicit types */
+    char *name;         /* only used for T_user !! */
+    char *name_mod;     /* name of modul belonging to 'name' */
+    struct NODE *tdef;  /* typedef of user-defined type */
+    int dim;            /* if (dim == 0) => simpletype */
+    bool poly;          /* only needed for type templates (newTC !) */
+    shpseg *shpseg;     /* pointer to shape specification */
+    struct TYPES *next; /* only needed for fun-results  */
+                        /* and implementation of implicit types */
 } types;
 
 /*
@@ -293,25 +257,6 @@ typedef struct {
     int tag; /* tag for return type */
     int tc;  /* type class */
 } prf_tag;
-
-typedef union INFOTYPE {
-    struct NODE *ids;     /* list  of identifiers               */
-    char *id;             /* identifier                         */
-    types *types;         /* type information                   */
-    int cint;             /* integer value                      */
-    float cfloat;         /* float value                        */
-    double cdbl;          /* double value                       */
-    char cchar;           /* char value                         */
-    prf prf;              /* tag for primitive functions        */
-    fun_name fun_name;    /* used in N_ap nodes                 */
-    useflag use;          /* used in N_vect_info nodes          */
-    prf_tag prf_dec;      /* used for declaration of primitive functions
-                           * this declarations are used to look for argument
-                           * and result type of primitive functions
-                           */
-    withid_t withid;      /* used in N_Nwithid node */
-    generator_rel genrel; /* used in N_Ngenerator node */
-} infotype;
 
 /*
  * The NEW node structure of the SAC syntax tree
@@ -411,12 +356,6 @@ typedef struct ARGTAB_T {
     node **ptr_out; /* N_ret or N_ids node */
     argtag_t *tag;
 } argtab_t;
-
-/*
- * used in emm
- */
-
-typedef struct RC_COUNTER rc_counter;
 
 /*
  * The following defines indicate the position of tags within name tuples.

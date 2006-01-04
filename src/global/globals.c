@@ -299,12 +299,6 @@ static const char *mdb_type_init[] = {
 #undef TYP_IFdb_str
 };
 
-static const char *mdb_statustype_init[] = {
-#define SELECTtext(it_text) it_text
-#include "status_info.mac"
-#undef SELECTtext
-};
-
 static const char *type_string_init[] = {
 #define TYP_IFpr_str(str) str
 #include "type_info.mac"

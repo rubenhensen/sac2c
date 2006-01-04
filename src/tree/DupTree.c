@@ -430,7 +430,6 @@ DupTypes (types *arg_types, info *arg_info)
                                  ILIBstringCopy (TYPES_MOD (arg_types)));
 
         TYPES_TDEF (new_types) = TYPES_TDEF (arg_types);
-        TYPES_STATUS (new_types) = TYPES_STATUS (arg_types);
 
         DBUG_PRINT ("TYPE", ("new type" F_PTR ",old " F_PTR, new_types, arg_types));
         DBUG_PRINT ("TYPE", ("new name" F_PTR ", old name" F_PTR, TYPES_NAME (new_types),
@@ -468,11 +467,10 @@ DupNodelist (nodelist *nl, info *arg_info)
     DBUG_ENTER ("DupNodelist");
 
     if (nl != NULL) {
-        new_nl
-          = TBmakeNodelist (LUTsearchInLutPp (INFO_LUT (arg_info), NODELIST_NODE (nl)),
-                            NODELIST_STATUS (nl),
-                            DupNodelist (NODELIST_NEXT (nl), arg_info));
-        NODELIST_ATTRIB (new_nl) = NODELIST_ATTRIB (nl);
+        new_nl = TBmakeNodelistNode (LUTsearchInLutPp (INFO_LUT (arg_info),
+                                                       NODELIST_NODE (nl)),
+                                     DupNodelist (NODELIST_NEXT (nl), arg_info));
+        NODELIST_STATUS (new_nl) = NODELIST_STATUS (nl);
     } else {
         new_nl = NULL;
     }

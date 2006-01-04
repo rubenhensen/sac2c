@@ -733,7 +733,6 @@ GLOBAL (const cv2strfunptr *, cv2str, cv2str_init)
 GLOBAL (const char **, mdb_nodetype, mdb_nodetype_init)
 GLOBAL (const char **, mdb_prf, mdb_prf_init)
 GLOBAL (const char **, mdb_type, mdb_type_init)
-GLOBAL (const char **, mdb_statustype, mdb_statustype_init)
 
 /*
  * Type to string conversion tables

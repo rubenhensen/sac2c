@@ -79,7 +79,6 @@ static int prf_arity[] = {
  char               cchar;
  float              cfloat;
  double             cdbl;
- deps               *deps;
  prf                prf;
  shape              *shape;
  resource_list_t    *resource_list_t;

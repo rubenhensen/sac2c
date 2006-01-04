@@ -526,50 +526,6 @@ SATserializeMask (info *info, int pos, long *attr, node *parent)
 
 /** <!--******************************************************************-->
  *
- * @fn SATserializeDeps
- *
- * @brief generates code to de-serialize the given attribute
- *
- * @param info   info structure of serialize traversal
- * @param attr   the attribute itself
- * @param parent the parent node
- *
- ***************************************************************************/
-
-void
-SATserializeDeps (info *info, deps *attr, node *parent)
-{
-    DBUG_ENTER ("SATserializeDeps");
-
-    fprintf (INFO_SER_FILE (info), "NULL");
-
-    DBUG_VOID_RETURN;
-}
-
-/** <!--******************************************************************-->
- *
- * @fn SATserializeStatusType
- *
- * @brief generates code to de-serialize the given attribute
- *
- * @param info   info structure of serialize traversal
- * @param attr   the attribute itself
- * @param parent the parent node
- *
- ***************************************************************************/
-
-void
-SATserializeStatusType (info *info, statustype attr, node *parent)
-{
-    DBUG_ENTER ("SATserializeStatusType");
-
-    fprintf (INFO_SER_FILE (info), "%d", attr);
-
-    DBUG_VOID_RETURN;
-}
-
-/** <!--******************************************************************-->
- *
  * @fn SATserializeNodeList
  *
  * @brief generates code to de-serialize the given attribute
@@ -794,28 +750,6 @@ SATserializeSimpleType (info *info, simpletype attr, node *parent)
 
 /** <!--******************************************************************-->
  *
- * @fn SATserializeUseFlag
- *
- * @brief generates code to de-serialize the given attribute
- *
- * @param info   info structure of serialize traversal
- * @param attr   the attribute itself
- * @param parent the parent node
- *
- ***************************************************************************/
-
-void
-SATserializeUseFlag (info *info, useflag attr, node *parent)
-{
-    DBUG_ENTER ("SATserializeUseFlag");
-
-    fprintf (INFO_SER_FILE (info), "%d", attr);
-
-    DBUG_VOID_RETURN;
-}
-
-/** <!--******************************************************************-->
- *
  * @fn SATserializeAccessInfo
  *
  * @brief generates code to de-serialize the given attribute
@@ -965,28 +899,6 @@ SATserializeNodePointer (info *info, node **attr, node *parent)
     DBUG_ENTER ("SATserializeNodePointer");
 
     fprintf (INFO_SER_FILE (info), "NULL");
-
-    DBUG_VOID_RETURN;
-}
-
-/** <!--******************************************************************-->
- *
- * @fn SATserializeSSAPhi
- *
- * @brief generates code to de-serialize the given attribute
- *
- * @param info   info structure of serialize traversal
- * @param attr   the attribute itself
- * @param parent the parent node
- *
- ***************************************************************************/
-
-void
-SATserializeSSAPhi (info *info, ssaphit_t attr, node *parent)
-{
-    DBUG_ENTER ("SATserializeSSAPhi");
-
-    fprintf (INFO_SER_FILE (info), "%d", attr);
 
     DBUG_VOID_RETURN;
 }

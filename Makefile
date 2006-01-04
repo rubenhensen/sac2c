@@ -29,7 +29,7 @@ GLOBAL= src/global/main.o src/global/setup.o src/global/usage.o \
 TREE= src/tree/traverse.o src/tree/tree_basic.o src/tree/free.o \
       src/tree/tree_compound.o src/tree/DupTree.o src/tree/LookUpTable.o \
       src/tree/DataFlowMask.o src/tree/DataFlowMaskUtils.o \
-      src/tree/InferDFMs.o src/tree/cleanup_decls.o src/tree/adjust_ids.o \
+      src/tree/InferDFMs.o src/tree/cleanup_decls.o \
       src/tree/change_signature.o src/tree/compare_tree.o \
       src/tree/scheduling.o src/tree/wl_bounds.o \
       src/tree/node_basic.o src/tree/free_node.o \

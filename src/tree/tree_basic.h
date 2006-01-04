@@ -102,7 +102,6 @@ extern types *TBmakeTypes (simpletype btype, int dim, shpseg *shpseg, char *name
 #define TYPES_SHPSEG(t) (t->shpseg)
 #define TYPES_NAME(t) (t->name)
 #define TYPES_MOD(t) (t->name_mod)
-#define TYPES_STATUS(t) (t->type_status)
 #define TYPES_TDEF(t) (t->tdef)
 #define TYPES_NEXT(t) (t->next)
 
@@ -116,28 +115,10 @@ extern types *TBmakeTypes (simpletype btype, int dim, shpseg *shpseg, char *name
  ***  permanent attributes:
  ***
  ***    node*       NODE
- ***    statustype  ATTRIB
  ***    void*       ATTRIB2
- ***    statustype  STATUS
+ ***    int         STATUS
  ***    nodelist*   NEXT    (O)
  ***/
-
-/*
- * STATUS:
- *   ST_regular
- *   ST_artificial
- *
- * ATTRIB: (in function node lists)
- *   ST_resolved
- *   ST_unresolved
- *
- * ATTRIB: (in object node lists)
- *   ST_reference
- *   ST_readonly_reference
- *
- * ATTRIB: (in typedef node lists)
- *   ST_regular
- */
 
 /*
  * srs:
@@ -149,11 +130,9 @@ extern types *TBmakeTypes (simpletype btype, int dim, shpseg *shpseg, char *name
  * node list.
  */
 
-extern nodelist *TBmakeNodelist (node *node, statustype status, nodelist *next);
 extern nodelist *TBmakeNodelistNode (node *node, nodelist *next);
 
 #define NODELIST_NODE(n) (n->node)
-#define NODELIST_ATTRIB(n) (n->attrib)
 #define NODELIST_ATTRIB2(n) (n->attrib2)
 #define NODELIST_STATUS(n) (n->status)
 #define NODELIST_NEXT(n) (n->next)

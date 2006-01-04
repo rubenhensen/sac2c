@@ -110,41 +110,9 @@ TBmakeTypes (simpletype btype, int dim, shpseg *shpseg, char *name, char *mod)
     TYPES_SHPSEG (tmp) = shpseg;
     TYPES_DIM (tmp) = dim;
     TYPES_POLY (tmp) = FALSE;
-    TYPES_STATUS (tmp) = ST_regular;
 
     TYPES_TDEF (tmp) = NULL;
     TYPES_NEXT (tmp) = NULL;
-
-    DBUG_RETURN (tmp);
-}
-
-/*--------------------------------------------------------------------------*/
-
-nodelist *
-TBmakeNodelist (node *node, statustype status, nodelist *next)
-{
-    nodelist *tmp;
-
-    DBUG_ENTER ("TBmakeNodelist");
-
-    tmp = (nodelist *)ILIBmalloc (sizeof (nodelist));
-    NODELIST_NODE (tmp) = node;
-    NODELIST_STATUS (tmp) = status;
-    NODELIST_NEXT (tmp) = next;
-
-    switch (NODE_TYPE (node)) {
-    case N_fundef:
-        NODELIST_ATTRIB (tmp) = ST_unresolved;
-        break;
-    case N_objdef:
-        NODELIST_ATTRIB (tmp) = ST_reference;
-        break;
-    case N_typedef:
-        NODELIST_ATTRIB (tmp) = ST_regular;
-        break;
-    default:
-        DBUG_ASSERT ((0), ("Wrong node type in TBmakeNodelist"));
-    }
 
     DBUG_RETURN (tmp);
 }
