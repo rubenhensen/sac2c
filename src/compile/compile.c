@@ -477,7 +477,6 @@ COMPgetFoldCode (node *fundef)
 
     DBUG_ASSERT ((fundef != NULL), "no fundef found!");
     DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef), "fold-fun corrupted!");
-    DBUG_ASSERT ((FUNDEF_ISFOLDFUN (fundef)), "no fold-fun found!");
 
     /*
      * get code of the special fold-fun
@@ -1976,31 +1975,24 @@ COMPFundefArgs (node *fundef, info *arg_info)
                              "no N_arg node found in argtab!");
 
                 /*
-                 * fundef is a fold-fun?
-                 *   -> generate no declarations (its code will be inlined anyways!)
+                 * put "ND_DECL__MIRROR_PARAM" ICMs at beginning of function block
+                 *   AND IN FRONT OF THE DECLARATION ICMs!!!
                  */
-                if (!FUNDEF_ISFOLDFUN (fundef)) {
-                    /*
-                     * put "ND_DECL__MIRROR_PARAM" ICMs at beginning of function block
-                     *   AND IN FRONT OF THE DECLARATION ICMs!!!
-                     */
-                    assigns
-                      = TCmakeAssignIcm1 ("ND_DECL__MIRROR_PARAM",
-                                          MakeTypeArgs (ARG_NAME (arg), ARG_TYPE (arg),
-                                                        FALSE, TRUE, TRUE, NULL),
-                                          assigns);
+                assigns = TCmakeAssignIcm1 ("ND_DECL__MIRROR_PARAM",
+                                            MakeTypeArgs (ARG_NAME (arg), ARG_TYPE (arg),
+                                                          FALSE, TRUE, TRUE, NULL),
+                                            assigns);
 
-                    /*
-                     * put "ND_DECL_PARAM_inout" ICM at beginning of function block
-                     *   AND IN FRONT OF THE DECLARATION ICMs!!!
-                     */
-                    if (argtab->tag[i] == ATG_inout) {
-                        assigns = TCmakeAssignIcm1 ("ND_DECL_PARAM_inout",
-                                                    MakeTypeArgs (ARG_NAME (arg),
-                                                                  ARG_TYPE (arg), TRUE,
-                                                                  FALSE, FALSE, NULL),
-                                                    assigns);
-                    }
+                /*
+                 * put "ND_DECL_PARAM_inout" ICM at beginning of function block
+                 *   AND IN FRONT OF THE DECLARATION ICMs!!!
+                 */
+                if (argtab->tag[i] == ATG_inout) {
+                    assigns
+                      = TCmakeAssignIcm1 ("ND_DECL_PARAM_inout",
+                                          MakeTypeArgs (ARG_NAME (arg), ARG_TYPE (arg),
+                                                        TRUE, FALSE, FALSE, NULL),
+                                          assigns);
                 }
             }
         }

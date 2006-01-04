@@ -1,25 +1,7 @@
 /*
- *
- * $Log$
- * Revision 1.4  2005/09/12 13:57:49  ktr
- * added ...OneFundef variant
- *
- * Revision 1.3  2005/09/09 23:38:52  sbs
- * marking newly dispatched functions as not ISINLINECOMPLETE in order to enable
- * function based inlining.
- *
- * Revision 1.2  2005/07/26 14:32:08  sah
- * moved creation of special fold funs to
- * dispatchfuncall as new2old is running
- * prior to the module system which again relies
- * on the fact that no foldfuns have been
- * created, yet.
- *
- * Revision 1.1  2005/07/15 15:53:33  sah
- * Initial revision
- *
- *
+ * $Id$
  */
+
 #include "dispatchfuncalls.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -32,7 +14,6 @@
 #include "type_utils.h"
 #include "create_wrapper_code.h"
 #include "namespaces.h"
-#include "gen_pseudo_fun.h"
 #include "ct_fun.h"
 
 /*******************************************************************************
@@ -331,37 +312,6 @@ DFCgenarray (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-static node *
-buildSpecialFoldFun (node *arg_node, info *arg_info, ntype *argtype)
-{
-    node *foldfun;
-    node *cexpr, *neutr;
-    node *with;
-
-    DBUG_ENTER ("buildSpecialFoldFun");
-
-    with = INFO_WITH (arg_info);
-    cexpr = WITH_CEXPR (with);
-    neutr = FOLD_NEUTRAL (arg_node);
-
-    DBUG_ASSERT ((neutr != NULL), "WITH_NEUTRAL does not exist");
-    DBUG_ASSERT ((NODE_TYPE (neutr) == N_id), "WITH_NEUTRAL is not a N_id");
-    DBUG_ASSERT ((NODE_TYPE (cexpr) == N_id), "WITH_CEXPR is not a N_id");
-
-    foldfun
-      = GPFcreateFoldFun (argtype, FOLD_FUNDEF (arg_node), FOLD_PRF (arg_node),
-                          IDS_NAME (LET_IDS (INFO_LASTLET (arg_info))), ID_NAME (cexpr));
-    FOLD_FUNDEF (arg_node) = foldfun;
-
-    /*
-     * append foldfun to INFO_NT2OT_FOLDFUNS
-     */
-    FUNDEF_NEXT (foldfun) = INFO_FOLDFUNS (arg_info);
-    INFO_FOLDFUNS (arg_info) = foldfun;
-
-    DBUG_RETURN (arg_node);
-}
-
 node *
 DFCfold (node *arg_node, info *arg_info)
 {
@@ -388,13 +338,6 @@ DFCfold (node *arg_node, info *arg_info)
             arg_types = TYmakeProductType (2, arg_type, TYcopyType (arg_type));
 
             FOLD_FUNDEF (arg_node) = DispatchFunCall (FOLD_FUNDEF (arg_node), arg_types);
-
-            /*
-             * second, create a special foldfun
-             */
-#if 0
-      arg_node = buildSpecialFoldFun( arg_node, arg_info, arg_type);
-#endif
 
             /*
              * cleanup

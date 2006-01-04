@@ -1935,8 +1935,6 @@ DUPfold (node *arg_node, info *arg_info)
     FOLD_FUNDEF (new_node)
       = LUTsearchInLutPp (INFO_LUT (arg_info), FOLD_FUNDEF (arg_node));
 
-    FOLD_PRF (new_node) = FOLD_PRF (arg_node);
-
     FOLD_NEXT (new_node) = DUPCONT (FOLD_NEXT (arg_node));
 
     CopyCommonNodeData (new_node, arg_node);

@@ -1,113 +1,5 @@
 /*
- *
- * $Log$
- * Revision 3.56  2005/09/09 17:30:40  sbs
- * now the casted expression is flatted too :-)
- *
- * Revision 3.55  2005/09/09 16:23:07  sbs
- * added FLATcast
- *
- * Revision 3.54  2005/09/09 12:10:51  ktr
- * COND_COND, DO_COND are now abstracted out
- *
- * Revision 3.53  2005/07/15 15:57:02  sah
- * introduced namespaces
- *
- * Revision 3.52  2005/07/03 17:03:03  ktr
- * moved application of other traversals to code simplification
- *
- * Revision 3.51  2005/06/28 21:02:52  cg
- * Moved while2do transformation into separate traversal.
- * Added calls to new traversals while2do and handle_condexpr.
- *
- * Revision 3.50  2005/04/29 20:31:11  khf
- * shifted generation of default partitions into WLPartitionGeneration
- *
- * Revision 3.49  2005/04/16 14:20:58  khf
- * changed TBmakeEmpty to TBmakeDefault in FLATpart
- *
- * Revision 3.48  2005/03/19 23:06:07  sbs
- * AUD support added by inserting default partition. However, after three other approaches
- * to thi very idea, Cleens and myself think it would be a good idea to put this stuff
- * into wlpartition_generation rather than flatten.... This reason for this insight is the
- * observation that we CANNOT generate defaut partitions for genarray-WLs that lack a
- * default specification. However, after TC and - possibly - after several optimisations
- * enough information may be present to generate these even though the WL still may be AUD
- * ( unknown outer but known inner shape!).
- *
- * Revision 3.47  2005/03/12 15:56:13  ktr
- * bugfix
- *
- * Revision 3.46  2005/01/11 11:19:19  cg
- * Converted output from Error.h to ctinfo.c
- *
- * Revision 3.45  2005/01/07 18:05:21  cg
- * Updated usage of ctinfo
- *
- * Revision 3.44  2005/01/07 17:32:55  cg
- * Converted compile time output from Error.h to ctinfo.c
- *
- * Revision 3.43  2004/12/08 17:58:25  ktr
- * removed ARRAY_TYPE/ARRAY_NTYPE
- *
- * Revision 3.42  2004/12/07 20:32:19  ktr
- * eliminated CONSTVEC which is superseded by ntypes.
- *
- * Revision 3.41  2004/12/07 14:54:24  sah
- * Spap nodes are flattened now
- *
- * Revision 3.40  2004/12/05 16:45:38  sah
- * added SPIds SPId SPAp in frontend
- *
- * Revision 3.39  2004/11/29 20:44:49  sah
- * post-DK bugfixing
- *
- * Revision 3.38  2004/11/29 10:56:46  sah
- * fixed naming convention bug
- *
- * Revision 3.37  2004/11/27 05:11:03  ktr
- * late night fix
- *
- * Revision 3.36  2004/11/27 03:08:01  ktr
- * pup
- *
- * Revision 3.35  2004/11/27 03:02:59  sbs
- * *** empty log message ***
- *
- * Revision 3.34  2004/11/26 13:04:14  ktr
- * Comment of FLATprf enhanced.
- *
- * Revision 3.33  2004/11/25 14:09:55  khf
- * changed AP_NAME to AP_SPNAME
- *
- * Revision 3.32  2004/11/25 10:58:04  khf
- * SacDevCamp04: COMPILES!
- *
- * Revision 3.31  2004/07/29 12:05:15  ktr
- * Constants are now always abstracted out of function applications
- * as they would be abstracted out later by precompile anyways.
- *
- * Revision 3.30  2004/07/23 14:14:25  ktr
- * NWITHOP_NEUTRAL is now always flattened out as it must later be reference
- * counted like a variable.
- *
- * Revision 3.29  2004/07/16 14:41:34  sah
- * switch to new INFO structure
- * PHASE I
- *
- * Revision 3.28  2004/03/10 00:10:17  dkrHH
- * old backend removed
- *
- * Revision 3.27  2004/02/25 08:22:32  cg
- * Elimination of while-loops by conversion into do-loops with
- * leading conditional integrated into flatten.
- * Separate compiler phase while2do eliminated.
- *
- * Revision 3.26  2003/11/14 15:40:47  sbs
- * mechanism for flattening MG WLs corrected.
- *
- * ... [eliminated] ...
- *
+ * $Id$
  */
 
 #include <stdio.h>
@@ -560,7 +452,6 @@ FltnMgwith (node *wloop)
             WITH_WITHOP (wloop) = TBmakeFold (first_wl);
             FOLD_NS (WITH_WITHOP (wloop)) = NSdupNamespace (FOLD_NS (withop));
             FOLD_FUN (WITH_WITHOP (wloop)) = ILIBstringCopy (FOLD_FUN (withop));
-            FOLD_PRF (WITH_WITHOP (wloop)) = FOLD_PRF (withop);
         } else {
             WITH_WITHOP (wloop) = TBmakeModarray (first_wl);
         }

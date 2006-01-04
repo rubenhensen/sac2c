@@ -463,11 +463,6 @@ CMPTfold (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CMPTfold");
 
-    /* compare attributes */
-    INFO_EQFLAG (arg_info)
-      = CMPT_TEST (INFO_EQFLAG (arg_info),
-                   FOLD_PRF (arg_node) == FOLD_PRF (INFO_TREE (arg_info)));
-
     INFO_EQFLAG (arg_info)
       = CMPT_TEST (INFO_EQFLAG (arg_info),
                    FOLD_FUNDEF (arg_node) == FOLD_FUNDEF (INFO_TREE (arg_info)));

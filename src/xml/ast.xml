@@ -2193,18 +2193,6 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="FoldFuns">
-          <type name="Link">
-            <targets>
-              <target mandatory="yes">
-                <node name="Fundef" />
-                <phases>
-                  <range from="comp" to="final" />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
         <attribute name="Dependencies">
           <type name="StringSet">
             <targets>
@@ -2837,7 +2825,6 @@
         <flag name="WasUsed" />
         <flag name="IsLocal" default="TRUE" />
         <flag name="IsNeeded" />
-        <flag name="IsFoldfun" />
         <flag name="IsCondfun" />
         <flag name="IsDoFun" />
         <flag name="IsSpmdfun" />
@@ -5983,18 +5970,6 @@
                   <all />
                 </phases>
               </target>          
-            </targets>
-          </type>
-        </attribute>
-        <attribute name="Prf" default="0">
-          <type name="Prf">
-            <targets>
-              <target mandatory="yes">
-                <any />
-                <phases>
-                  <all />
-                </phases>
-              </target>
             </targets>
           </type>
         </attribute>

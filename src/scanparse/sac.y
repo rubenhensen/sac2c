@@ -144,7 +144,7 @@ PRF_CAT_VxV  PRF_TAKE_SxV  PRF_DROP_SxV
 %type <node> exprs  expr  expr_ap  opt_arguments  expr_ar  expr_sel  with 
      generator  steps  width  nwithop  withop  wlassignblock  genidx 
      part  parts nums returntypes returndectypes ntypes varntypes
-%type <prf> genop  foldop  prf
+%type <prf> genop prf
 
 %type <id> reservedid  string ext_id
 
@@ -1449,11 +1449,6 @@ withop: GENARRAY BRACKET_L expr COMMA expr BRACKET_R
         { $$ = TBmakeModarray( $3);
           MODARRAY_SPEXPR( $$) = $7;
         }
-      | FOLD BRACKET_L foldop COMMA expr COMMA expr BRACKET_R
-        { $$ = TBmakeFold( $5);
-          FOLD_PRF( $$) = $3;
-          FOLD_SPEXPR( $$) = $7;
-        }
       | FOLD BRACKET_L qual_ext_id COMMA expr COMMA expr BRACKET_R
         { $$ = TBmakeFold( $5);
           FOLD_FUN( $$) = ILIBstringCopy( SPID_NAME( $3));
@@ -1463,32 +1458,24 @@ withop: GENARRAY BRACKET_L expr COMMA expr BRACKET_R
         }
       ;
 
-foldop: PRF_ADD_SxS   { $$ = F_add_SxS; }
-      | PRF_ADD_AxA   { $$ = F_add_AxA; }
-      | PRF_MUL_SxS   { $$ = F_mul_SxS; }
-      | PRF_MUL_AxA   { $$ = F_mul_AxA; }
-      | PRF_MIN       { $$ = F_min;     }
-      | PRF_MAX       { $$ = F_max;     }
-      | PRF_EQ        { $$ = F_eq;      }
-      | PRF_AND       { $$ = F_and;     }
-      | PRF_OR        { $$ = F_or;      }
-      ;
-
-prf: foldop        { $$ = $1;        }
-   | PRF_DIM       { $$ = F_dim;     }
+prf: PRF_DIM       { $$ = F_dim;     }
    | PRF_SHAPE     { $$ = F_shape;   }
    | PRF_RESHAPE   { $$ = F_reshape; }
    | PRF_SEL       { $$ = F_sel;     }
    | PRF_GENARRAY  { $$ = F_genarray;}
    | PRF_MODARRAY  { $$ = F_modarray;}
+   | PRF_ADD_SxS   { $$ = F_add_SxS; }
    | PRF_ADD_SxA   { $$ = F_add_SxA; }
    | PRF_ADD_AxS   { $$ = F_add_AxS; }
+   | PRF_ADD_AxA   { $$ = F_add_AxA; }
    | PRF_SUB_SxS   { $$ = F_sub_SxS; }
    | PRF_SUB_SxA   { $$ = F_sub_SxA; }
    | PRF_SUB_AxS   { $$ = F_sub_AxS; }
    | PRF_SUB_AxA   { $$ = F_sub_AxA; }
+   | PRF_MUL_SxS   { $$ = F_mul_SxS; }
    | PRF_MUL_SxA   { $$ = F_mul_SxA; }
    | PRF_MUL_AxS   { $$ = F_mul_AxS; }
+   | PRF_MUL_AxA   { $$ = F_mul_AxA; }
    | PRF_DIV_SxS   { $$ = F_div_SxS; }
    | PRF_DIV_SxA   { $$ = F_div_SxA; }
    | PRF_DIV_AxS   { $$ = F_div_AxS; }
@@ -1496,12 +1483,17 @@ prf: foldop        { $$ = $1;        }
    | PRF_MOD       { $$ = F_mod;     }
    | PRF_ABS       { $$ = F_abs;     }
    | PRF_NEG       { $$ = F_neg;     }
+   | PRF_MIN       { $$ = F_min;     }
+   | PRF_MAX       { $$ = F_max;     }
+   | PRF_EQ        { $$ = F_eq;      }
    | PRF_NEQ       { $$ = F_neq;     }
    | PRF_LT        { $$ = F_lt;      }
    | PRF_LE        { $$ = F_le;      }
    | PRF_GT        { $$ = F_gt;      }
    | PRF_GE        { $$ = F_ge;      }
    | PRF_NOT       { $$ = F_not;     }
+   | PRF_AND       { $$ = F_and;     }
+   | PRF_OR        { $$ = F_or;      }
    | PRF_TOI_S     { $$ = F_toi_S;   }
    | PRF_TOI_A     { $$ = F_toi_A;   }
    | PRF_TOF_S     { $$ = F_tof_S;   }

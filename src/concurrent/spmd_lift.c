@@ -114,7 +114,7 @@ SPMDLfundef (node *arg_node, info *arg_info)
 
     INFO_FUNDEF (arg_info) = arg_node;
 
-    if ((FUNDEF_BODY (arg_node) != NULL) && (!FUNDEF_ISFOLDFUN (arg_node))) {
+    if (FUNDEF_BODY (arg_node) != NULL) {
         INFO_MT (arg_info) = FUNDEF_ISSPMDFUN (arg_node);
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
     }
@@ -246,14 +246,9 @@ SPMDLspmd (node *arg_node, info *arg_info)
     body = DUPdoDupTreeLut (SPMD_REGION (arg_node), lut);
     BLOCK_VARDEC (body) = fvardecs;
 
-    /*
-     * TODO: sah
-     *
-     * SPMD functions should go to a view _SPMD,
-     * not a module!
-     */
-    new_fundef = TBmakeFundef (ILIBtmpVarName (FUNDEF_NAME (fundef)),
-                               NSgetNamespace ("_SPMD"), rets, fargs, body, NULL);
+    new_fundef
+      = TBmakeFundef (ILIBtmpVarName (FUNDEF_NAME (fundef)),
+                      NSdupNamespace (FUNDEF_NS (fundef)), rets, fargs, body, NULL);
 
     FUNDEF_TYPES (new_fundef) = rettypes;
 

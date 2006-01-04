@@ -73,8 +73,7 @@ CONSTANTS= src/constants/shape.o src/constants/constants_basic.o \
            src/constants/zipcv.o src/constants/basecv.o \
            src/constants/constants_serialize.o
 
-TYPECHECK= src/typecheck/gen_pseudo_fun.o \
-           src/typecheck/new_typecheck.o src/typecheck/new_types.o \
+TYPECHECK= src/typecheck/new_typecheck.o src/typecheck/new_types.o \
            src/typecheck/user_types.o src/typecheck/create_wrappers.o \
            src/typecheck/ssi.o src/typecheck/sig_deps.o src/typecheck/ct_prf.o \
            src/typecheck/ct_basic.o src/typecheck/ct_fun.o \

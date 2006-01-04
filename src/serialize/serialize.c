@@ -398,8 +398,7 @@ SerializeFundefHead (node *fundef, info *info)
      * cannot be directly referenced.
      */
 
-    if (!(FUNDEF_ISDOFUN (fundef) || FUNDEF_ISCONDFUN (fundef)
-          || FUNDEF_ISFOLDFUN (fundef))) {
+    if (!(FUNDEF_ISDOFUN (fundef) || FUNDEF_ISCONDFUN (fundef))) {
         stvisibility_t vis;
 
         if (FUNDEF_ISEXPORTED (fundef)) {

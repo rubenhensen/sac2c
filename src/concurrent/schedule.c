@@ -108,7 +108,7 @@ SCHEDfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SCHEDfundef");
 
-    if ((FUNDEF_BODY (arg_node) != NULL) && (!FUNDEF_ISFOLDFUN (arg_node))) {
+    if (FUNDEF_BODY (arg_node) != NULL) {
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node),
                                          FUNDEF_ISSPMDFUN (arg_node) ? arg_info : NULL);
     }

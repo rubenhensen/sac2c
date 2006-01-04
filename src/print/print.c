@@ -3705,13 +3705,14 @@ PRTfold (node *arg_node, info *arg_info)
          * * udf-case after TC!
          */
         fundef = FOLD_FUNDEF (arg_node);
-        fprintf (global.outfile, "fold/*udf*/(");
+        fprintf (global.outfile, "fold(");
         if (FUNDEF_NS (fundef) != NULL) {
             fprintf (global.outfile, " %s::", NSgetName (FUNDEF_NS (fundef)));
         }
         fprintf (global.outfile, "%s, ", FUNDEF_NAME (fundef));
         TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
-    } else if (FOLD_FUN (arg_node) != NULL) {
+    } else {
+        DBUG_ASSERT ((FOLD_FUN (arg_node) != NULL), "Missing fold function symbol");
         /**
          * udf-case prior to TC!
          */
@@ -3722,12 +3723,6 @@ PRTfold (node *arg_node, info *arg_info)
                      NSgetName (FOLD_NS (arg_node)), FOLD_FUN (arg_node));
         }
         TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
-    } else {
-        /**
-         * prf-case!
-         */
-        fprintf (global.outfile, "fold/*prf*/( %s",
-                 global.prf_string[FOLD_PRF (arg_node)]);
     }
 
     fprintf (global.outfile, ")");

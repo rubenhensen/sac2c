@@ -18,7 +18,7 @@ include $(PROJECT_ROOT)/Makefile.Config
 #
 
 
-OBJS:=gen_pseudo_fun.o new_typecheck.o new_types.o user_types.o \
+OBJS:=new_typecheck.o new_types.o user_types.o \
       create_wrappers.o ssi.o sig_deps.o ct_basic.o ct_fun.o ct_prf.o \
       ct_with.o type_errors.o specialize.o new2old.o create_wrapper_code.o \
       type_statistics.o type_utils.o resolvesymboltypes.o \

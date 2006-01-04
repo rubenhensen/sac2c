@@ -20,7 +20,6 @@
 #include "tree_compound.h"
 #include "traverse_helper.h"
 
-#include "gen_pseudo_fun.h"
 #include "new_typecheck.h"
 #include "new_types.h"
 #include "type_utils.h"

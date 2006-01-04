@@ -107,9 +107,8 @@ SPMDIfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SPMDIfundef");
 
-    INFO_FUNDEF (arg_info) = arg_node;
-
-    if ((FUNDEF_BODY (arg_node) != NULL) && (!FUNDEF_ISFOLDFUN (arg_node))) {
+    if (FUNDEF_BODY (arg_node) != NULL) {
+        INFO_FUNDEF (arg_info) = arg_node;
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
     }
 
