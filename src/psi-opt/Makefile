@@ -19,7 +19,7 @@ include $(PROJECT_ROOT)/Makefile.Config
 # local settings:
 #
 all: wl_access_analyze.o tile_size_inference.o \
-     SSAWithloopFolding.o SSAWLT.o SSAWLI.o SSAWLF.o \
+     SSAWithloopFolding.o SSAWLI.o SSAWLF.o \
      wls.o wlscheck.o wlsbuild.o wlswithloopification.o \
      pad.o pad_info.o pad_collect.o pad_infer.o pad_transform.o \
      WithloopFusion.o detectdependencies.o tagdependencies.o \

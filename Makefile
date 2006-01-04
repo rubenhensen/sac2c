@@ -114,7 +114,7 @@ PSIOPT= src/psi-opt/index_eliminate.o src/psi-opt/index_infer.o \
         src/psi-opt/wl_access_analyze.o src/psi-opt/tile_size_inference.o \
         src/psi-opt/wls.o src/psi-opt/wlscheck.o \
         src/psi-opt/wlsbuild.o src/psi-opt/wlswithloopification.o \
-        src/psi-opt/SSAWithloopFolding.o src/psi-opt/SSAWLT.o \
+        src/psi-opt/SSAWithloopFolding.o \
         src/psi-opt/SSAWLI.o src/psi-opt/SSAWLF.o \
         src/psi-opt/pad.o src/psi-opt/pad_collect.o src/psi-opt/pad_infer.o \
         src/psi-opt/pad_transform.o src/psi-opt/pad_info.o \
