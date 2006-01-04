@@ -137,6 +137,7 @@ extern node *DUPwith (node *arg_node, info *arg_info);
 extern node *DUPgenarray (node *arg_node, info *arg_info);
 extern node *DUPmodarray (node *arg_node, info *arg_info);
 extern node *DUPfold (node *arg_node, info *arg_info);
+extern node *DUPspfold (node *arg_node, info *arg_info);
 extern node *DUPpart (node *arg_node, info *arg_info);
 extern node *DUPcode (node *arg_node, info *arg_info);
 extern node *DUPwithid (node *arg_node, info *arg_info);

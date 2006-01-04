@@ -210,16 +210,12 @@ USSret (node *arg_node, info *arg_info)
 }
 
 node *
-USSfold (node *arg_node, info *arg_info)
+USSspfold (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("USSfold");
+    DBUG_ENTER ("USSspfold");
 
-    if (FOLD_FUN (arg_node) != NULL) {
-        /* fold uses udf */
-
-        MakeSymbolAvailable (FOLD_NS (arg_node), FOLD_FUN (arg_node), SET_wrapperhead,
-                             arg_info);
-    }
+    MakeSymbolAvailable (SPFOLD_NS (arg_node), SPFOLD_FUN (arg_node), SET_wrapperhead,
+                         arg_info);
 
     arg_node = TRAVcont (arg_node, arg_info);
 

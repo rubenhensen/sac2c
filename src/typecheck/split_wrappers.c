@@ -669,26 +669,19 @@ SWRfold (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("SWRfold");
 
-    if (FOLD_FUN (arg_node) != NULL) {
-        FOLD_NEUTRAL (arg_node) = TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
+    FOLD_NEUTRAL (arg_node) = TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
 
-        neutr_type
-          = TYfixAndEliminateAlpha (AVIS_TYPE (ID_AVIS (FOLD_NEUTRAL (arg_node))));
-        body_type = TYfixAndEliminateAlpha (
-          AVIS_TYPE (ID_AVIS (WITH_CEXPR (INFO_SWR_WITH (arg_info)))));
+    neutr_type = TYfixAndEliminateAlpha (AVIS_TYPE (ID_AVIS (FOLD_NEUTRAL (arg_node))));
+    body_type = TYfixAndEliminateAlpha (
+      AVIS_TYPE (ID_AVIS (WITH_CEXPR (INFO_SWR_WITH (arg_info)))));
 
-        arg_type = TYlubOfTypes (neutr_type, body_type);
-        arg_types = TYmakeProductType (2, arg_type, TYcopyType (arg_type));
+    arg_type = TYlubOfTypes (neutr_type, body_type);
+    arg_types = TYmakeProductType (2, arg_type, TYcopyType (arg_type));
 
-        FOLD_FUNDEF (arg_node) = CorrectFundefPointer (FOLD_FUNDEF (arg_node), arg_types);
-        arg_types = TYfreeType (arg_types);
-        body_type = TYfreeType (body_type);
-        neutr_type = TYfreeType (neutr_type);
-    } else {
-        if (FOLD_NEUTRAL (arg_node) != NULL) {
-            FOLD_NEUTRAL (arg_node) = TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
-        }
-    }
+    FOLD_FUNDEF (arg_node) = CorrectFundefPointer (FOLD_FUNDEF (arg_node), arg_types);
+    arg_types = TYfreeType (arg_types);
+    body_type = TYfreeType (body_type);
+    neutr_type = TYfreeType (neutr_type);
 
     DBUG_RETURN (arg_node);
 }

@@ -695,7 +695,7 @@ CRTWRPgenarray (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node  *CRTWRPfold( node *arg_node, info *arg_info)
+ * @fn node  *CRTWRPspfold( node *arg_node, info *arg_info)
  *
  *   @brief
  *   @param
@@ -704,33 +704,34 @@ CRTWRPgenarray (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 node *
-CRTWRPfold (node *arg_node, info *arg_info)
+CRTWRPspfold (node *arg_node, info *arg_info)
 {
     int num_args;
     node *wrapper;
+    node *new_node = NULL;
 
-    DBUG_ENTER ("CRTWRPfold");
+    DBUG_ENTER ("CRTWRPspfold");
 
-    if (FOLD_FUN (arg_node) != NULL) {
-        FOLD_NEUTRAL (arg_node) = TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
+    DBUG_ASSERT (SPFOLD_FUN (arg_node) != NULL, "N_spfold node wo FUN");
+    DBUG_ASSERT (SPFOLD_NEUTRAL (arg_node) != NULL, "N_spfold node wo NEUTRAL");
 
-        num_args = 2;
-        wrapper = FindWrapper (FOLD_NS (arg_node), FOLD_FUN (arg_node), 2, 1,
-                               INFO_CRTWRP_WRAPPERFUNS (arg_info));
+    FOLD_NEUTRAL (arg_node) = TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
 
-        if (wrapper == NULL) {
-            CTIabortLine (NODE_LINE (arg_node),
-                          "No definition found for a function \"%s:%s\" that expects"
-                          " 2 arguments and yields 1 return value",
-                          NSgetName (FOLD_NS (arg_node)), FOLD_FUN (arg_node));
-        } else {
-            FOLD_FUNDEF (arg_node) = wrapper;
-        }
+    num_args = 2;
+    wrapper = FindWrapper (SPFOLD_NS (arg_node), SPFOLD_FUN (arg_node), 2, 1,
+                           INFO_CRTWRP_WRAPPERFUNS (arg_info));
+
+    if (wrapper == NULL) {
+        CTIabortLine (NODE_LINE (arg_node),
+                      "No definition found for a function \"%s:%s\" that expects"
+                      " 2 arguments and yields 1 return value",
+                      NSgetName (SPFOLD_NS (arg_node)), SPFOLD_FUN (arg_node));
     } else {
-        if (FOLD_NEUTRAL (arg_node) != NULL) {
-            FOLD_NEUTRAL (arg_node) = TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
-        }
+        new_node = TBmakeFold (wrapper, SPFOLD_NEUTRAL (arg_node));
+
+        SPFOLD_NEUTRAL (arg_node) = NULL;
+        arg_node = FREEdoFreeNode (arg_node);
     }
 
-    DBUG_RETURN (arg_node);
+    DBUG_RETURN (new_node);
 }

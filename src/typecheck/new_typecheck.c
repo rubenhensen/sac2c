@@ -1878,91 +1878,82 @@ NTCfold (node *arg_node, info *arg_info)
     INFO_NTC_GEN_TYPE (arg_info) = NULL;
     body = INFO_NTC_TYPE (arg_info);
 
-    if (FOLD_FUN (arg_node) == NULL) {
+    /**
+     * we are dealing with a udf-fold-wl here!
+     *
+     * First, we check the neutral expression:
+     */
+    if (FOLD_NEUTRAL (arg_node) == NULL) {
+        CTIabortLine (global.linenum,
+                      "Missing neutral element for user-defined fold function");
+    }
+    FOLD_NEUTRAL (arg_node) = TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
+    neutr = INFO_NTC_TYPE (arg_info);
+    INFO_NTC_TYPE (arg_info) = NULL;
+
+    /*
+     * Then, we compute the type of the elements to be folded:
+     */
+    args = TYmakeProductType (3, gen, neutr, body);
+    info = TEmakeInfo (global.linenum, TE_with, "fold");
+    res = NTCCTcomputeType (NTCCTwl_fold, info, args);
+    elems = TYgetProductMember (res, 0);
+    res = TYfreeTypeConstructor (res);
+
+    /*
+     * Followed by a computation of the type of the fold fun:
+     *
+     * Since the entire fold-wl is a recursive function that in each
+     * iteration applies the foldfun, we need to establish a fix-point
+     * iteration here (cf. bug no.18).
+     * To do so, we introduce a type variable for the accumulated parameter
+     * which has to be bigger than a) the element type and b) the result
+     * type.
+     * As we may be dealing with explicit accumulators, this type variable may
+     * exist already. If this is the case, it is contained in INFO_NTC_EXP_ACCU
+     * otherwise that field is NULL.
+     */
+    if (INFO_NTC_EXP_ACCU (arg_info) != NULL) {
         /**
-         * we are dealing with a prf-fold-wl here!
+         * As the accu is explicit, we have the following situation:
+         *
+         *   {
+         *      a = accu( ...);
+         *      e = ....;
+         *      val = fun( a, e);
+         *   } : val;
+         * Therefore, it suffices to take the alpha type of a (from
+         * INFO_NTC_EXP_ACCU( arg_info)), make the neutral element a
+         * subtype of it (which triggers the initial approximation for
+         * fun( a, e) ), and then make the type of val a subtype of
+         * the alpha type again in order to ensure the fix-point calculation.
          */
-        DBUG_ASSERT (FALSE, "fold WL with prf not yet implemented");
-        res = NULL; /* just to please gcc 8-) */
+        acc = TYcopyType (INFO_NTC_EXP_ACCU (arg_info));
+        INFO_NTC_EXP_ACCU (arg_info) = NULL;
+
+        res = TYmakeProductType (1, elems);
+
+        ok = SSInewTypeRel (neutr, acc);
+        DBUG_ASSERT (ok, ("initialization of fold-fun in fold-wl went wrong"));
+
+        ok = SSInewTypeRel (elems, acc);
 
     } else {
-        /**
-         * we are dealing with a udf-fold-wl here!
-         *
-         * First, we check the neutral expression:
-         */
-        if (FOLD_NEUTRAL (arg_node) == NULL) {
-            CTIabortLine (global.linenum,
-                          "Missing neutral element for user-defined fold function");
-        }
-        FOLD_NEUTRAL (arg_node) = TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
-        neutr = INFO_NTC_TYPE (arg_info);
-        INFO_NTC_TYPE (arg_info) = NULL;
+        acc = TYmakeAlphaType (NULL);
+        ok = SSInewTypeRel (neutr, acc);
+        DBUG_ASSERT (ok, ("initialization of fold-fun in fold-wl went wrong"));
 
-        /*
-         * Then, we compute the type of the elements to be folded:
-         */
-        args = TYmakeProductType (3, gen, neutr, body);
-        info = TEmakeInfo (global.linenum, TE_with, "fold");
-        res = NTCCTcomputeType (NTCCTwl_fold, info, args);
-        elems = TYgetProductMember (res, 0);
-        res = TYfreeTypeConstructor (res);
+        args = TYmakeProductType (2, acc, elems);
+        wrapper = FOLD_FUNDEF (arg_node);
+        info = TEmakeInfoUdf (global.linenum, TE_foldf, NSgetName (FUNDEF_NS (wrapper)),
+                              FUNDEF_NAME (wrapper), wrapper,
+                              INFO_NTC_LAST_ASSIGN (arg_info), NULL);
+        res = NTCCTcomputeType (NTCCTudf, info, args);
 
-        /*
-         * Followed by a computation of the type of the fold fun:
-         *
-         * Since the entire fold-wl is a recursive function that in each
-         * iteration applies the foldfun, we need to establish a fix-point
-         * iteration here (cf. bug no.18).
-         * To do so, we introduce a type variable for the accumulated parameter
-         * which has to be bigger than a) the element type and b) the result
-         * type.
-         * As we may be dealing with explicit accumulators, this type variable may
-         * exist already. If this is the case, it is contained in INFO_NTC_EXP_ACCU
-         * otherwise that field is NULL.
-         */
-        if (INFO_NTC_EXP_ACCU (arg_info) != NULL) {
-            /**
-             * As the accu is explicit, we have the following situation:
-             *
-             *   {
-             *      a = accu( ...);
-             *      e = ....;
-             *      val = fun( a, e);
-             *   } : val;
-             * Therefore, it suffices to take the alpha type of a (from
-             * INFO_NTC_EXP_ACCU( arg_info)), make the neutral element a
-             * subtype of it (which triggers the initial approximation for
-             * fun( a, e) ), and then make the type of val a subtype of
-             * the alpha type again in order to ensure the fix-point calculation.
-             */
-            acc = TYcopyType (INFO_NTC_EXP_ACCU (arg_info));
-            INFO_NTC_EXP_ACCU (arg_info) = NULL;
-
-            res = TYmakeProductType (1, elems);
-
-            ok = SSInewTypeRel (neutr, acc);
-            DBUG_ASSERT (ok, ("initialization of fold-fun in fold-wl went wrong"));
-
-            ok = SSInewTypeRel (elems, acc);
-
-        } else {
-            acc = TYmakeAlphaType (NULL);
-            ok = SSInewTypeRel (neutr, acc);
-            DBUG_ASSERT (ok, ("initialization of fold-fun in fold-wl went wrong"));
-
-            args = TYmakeProductType (2, acc, elems);
-            wrapper = FOLD_FUNDEF (arg_node);
-            info = TEmakeInfoUdf (global.linenum, TE_foldf,
-                                  NSgetName (FUNDEF_NS (wrapper)), FUNDEF_NAME (wrapper),
-                                  wrapper, INFO_NTC_LAST_ASSIGN (arg_info), NULL);
-            res = NTCCTcomputeType (NTCCTudf, info, args);
-
-            ok = SSInewTypeRel (TYgetProductMember (res, 0), acc);
-        }
-        if (!ok) {
-            CTIabortLine (global.linenum, "Illegal fold function in fold with loop");
-        }
+        ok = SSInewTypeRel (TYgetProductMember (res, 0), acc);
+    }
+    if (!ok) {
+        CTIabortLine (global.linenum, "Illegal fold function in fold with loop");
     }
 
     INFO_NTC_TYPE (arg_info) = res;

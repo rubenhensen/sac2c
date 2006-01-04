@@ -11,7 +11,7 @@
 #include "types.h"
 
 extern node *GDPspid (node *arg_node, info *arg_info);
-extern node *GDPfold (node *arg_node, info *arg_info);
+extern node *GDPspfold (node *arg_node, info *arg_info);
 extern node *GDPtypedef (node *arg_node, info *arg_info);
 extern node *GDPret (node *arg_node, info *arg_info);
 extern node *GDParg (node *arg_node, info *arg_info);

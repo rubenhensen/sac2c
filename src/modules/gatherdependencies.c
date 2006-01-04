@@ -1,4 +1,6 @@
 /**
+ * $Id$
+ *
  * @file gatherdependencies.c
  * @brief gathers the dependencies of a sac file
  * @author Stephan Herhut
@@ -152,11 +154,11 @@ GDPspid (node *arg_node, info *arg_info)
 }
 
 node *
-GDPfold (node *arg_node, info *arg_info)
+GDPspfold (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("GDPfold");
+    DBUG_ENTER ("GDPspfold");
 
-    AddNamespaceToDependencies (FOLD_NS (arg_node), arg_info);
+    AddNamespaceToDependencies (SPFOLD_NS (arg_node), arg_info);
 
     arg_node = TRAVcont (arg_node, arg_info);
 

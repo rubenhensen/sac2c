@@ -1245,8 +1245,8 @@ with: BRACKET_L generator BRACKET_R wlassignblock withop
           cexpr = MODARRAY_SPEXPR($5);
           MODARRAY_SPEXPR($5) = NULL;
         } else {
-          cexpr = FOLD_SPEXPR($5);
-          FOLD_SPEXPR($5) = NULL;
+          cexpr = SPFOLD_SPEXPR($5);
+          SPFOLD_SPEXPR($5) = NULL;
         }
         $$ = TBmakeWith( $2, TBmakeCode( $4, TBmakeExprs( cexpr, NULL)), $5);
         CODE_USED( WITH_CODE( $$))++;
@@ -1430,9 +1430,9 @@ nwithop: GENARRAY BRACKET_L expr COMMA expr BRACKET_R
          { $$ = TBmakeModarray( $3);
          }
        | FOLD BRACKET_L qual_ext_id COMMA expr BRACKET_R
-         { $$ = TBmakeFold( $5);
-           FOLD_FUN( $$) = ILIBstringCopy( SPID_NAME( $3));
-           FOLD_NS( $$) = NSdupNamespace( SPID_NS( $3));
+         { $$ = TBmakeSpfold( $5);
+           SPFOLD_FUN( $$) = ILIBstringCopy( SPID_NAME( $3));
+           SPFOLD_NS( $$) = NSdupNamespace( SPID_NS( $3));
            $3 = FREEdoFreeTree( $3);
          }
        ;
@@ -1450,11 +1450,11 @@ withop: GENARRAY BRACKET_L expr COMMA expr BRACKET_R
           MODARRAY_SPEXPR( $$) = $7;
         }
       | FOLD BRACKET_L qual_ext_id COMMA expr COMMA expr BRACKET_R
-        { $$ = TBmakeFold( $5);
-          FOLD_FUN( $$) = ILIBstringCopy( SPID_NAME( $3));
-          FOLD_NS( $$) = NSdupNamespace( SPID_NS( $3));
+        { $$ = TBmakeSpfold( $5);
+          SPFOLD_FUN( $$) = ILIBstringCopy( SPID_NAME( $3));
+          SPFOLD_NS( $$) = NSdupNamespace( SPID_NS( $3));
           $3 = FREEdoFreeTree( $3);
-          FOLD_SPEXPR( $$) = $7;
+          SPFOLD_SPEXPR( $$) = $7;
         }
       ;
 

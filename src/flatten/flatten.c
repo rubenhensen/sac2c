@@ -448,10 +448,10 @@ FltnMgwith (node *wloop)
         /**
          * Finally, we construct the resulting WL:
          */
-        if (NODE_TYPE (WITH_WITHOP (wloop)) == N_fold) {
-            WITH_WITHOP (wloop) = TBmakeFold (first_wl);
-            FOLD_NS (WITH_WITHOP (wloop)) = NSdupNamespace (FOLD_NS (withop));
-            FOLD_FUN (WITH_WITHOP (wloop)) = ILIBstringCopy (FOLD_FUN (withop));
+        if (NODE_TYPE (WITH_WITHOP (wloop)) == N_spfold) {
+            WITH_WITHOP (wloop) = TBmakeSpfold (first_wl);
+            SPFOLD_NS (WITH_WITHOP (wloop)) = NSdupNamespace (SPFOLD_NS (withop));
+            SPFOLD_FUN (WITH_WITHOP (wloop)) = ILIBstringCopy (SPFOLD_FUN (withop));
         } else {
             WITH_WITHOP (wloop) = TBmakeModarray (first_wl);
         }
@@ -1432,25 +1432,25 @@ FLATmodarray (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *FLATfold(node *arg_node, info *arg_info)
+ *   node *FLATspfold(node *arg_node, info *arg_info)
  *
  * description:
- *   flattens N_fold
+ *   flattens N_spfold
  *   - fold: the neutral element has to be an id  or is flattened otherwise.
  *           It is optional.
  *
  ******************************************************************************/
 
 node *
-FLATfold (node *arg_node, info *arg_info)
+FLATspfold (node *arg_node, info *arg_info)
 {
     node *expr, *expr2;
 
-    DBUG_ENTER ("FLATfold");
+    DBUG_ENTER ("FLATspfold");
 
-    expr = FOLD_NEUTRAL (arg_node);
+    expr = SPFOLD_NEUTRAL (arg_node);
     if ((expr != NULL) && (NODE_TYPE (expr) != N_id)) {
-        FOLD_NEUTRAL (arg_node) = Abstract (expr, arg_info);
+        SPFOLD_NEUTRAL (arg_node) = Abstract (expr, arg_info);
         expr2 = TRAVdo (expr, arg_info);
 
         DBUG_ASSERT ((expr == expr2),

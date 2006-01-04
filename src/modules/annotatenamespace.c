@@ -653,16 +653,16 @@ ANSwith (node *arg_node, info *arg_info)
 }
 
 node *
-ANSfold (node *arg_node, info *arg_info)
+ANSspfold (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ANSfold");
+    DBUG_ENTER ("ANSspfold");
 
-    if ((FOLD_NS (arg_node) == NULL) && (FOLD_FUN (arg_node) != NULL)) {
+    if ((SPFOLD_NS (arg_node) == NULL) && (SPFOLD_FUN (arg_node) != NULL)) {
         /*
          * look up the correct namespace
          */
 
-        FOLD_NS (arg_node) = LookupNamespaceForSymbol (FOLD_FUN (arg_node), arg_info);
+        SPFOLD_NS (arg_node) = LookupNamespaceForSymbol (SPFOLD_FUN (arg_node), arg_info);
     }
 
     arg_node = TRAVcont (arg_node, arg_info);

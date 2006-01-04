@@ -36,7 +36,7 @@ extern node *ANSspid (node *arg_node, info *arg_info);
 extern node *ANSspmop (node *arg_node, info *arg_info);
 extern node *ANSlet (node *arg_node, info *arg_info);
 extern node *ANSwith (node *arg_node, info *arg_info);
-extern node *ANSfold (node *arg_node, info *arg_info);
+extern node *ANSspfold (node *arg_node, info *arg_info);
 extern node *ANSvardec (node *arg_node, info *arg_info);
 extern node *ANScast (node *arg_node, info *arg_info);
 extern node *ANSmodule (node *arg_node, info *arg_info);

@@ -333,7 +333,7 @@
           <node name="Generator" />
           <node name="Genarray" />
           <node name="Modarray" />
-          <node name="Fold" />
+          <node name="SPFold" />
           <node name="Code" />
         </travuser>
       </traversal>
@@ -392,7 +392,7 @@
 	  <node name="Ret" />
 	  <node name="Vardec" />
 	  <node name="SPId" />
-	  <node name="Fold" />
+	  <node name="SPFold" />
 	  <node name="Cast" />
 	  <node name="Module" />
 	</travuser>
@@ -420,7 +420,7 @@
 	  <node name="SPId" />
 	  <node name="Let" />
 	  <node name="With" />
-	  <node name="Fold" />
+	  <node name="SPFold" />
 	  <node name="Module" />
 	  <node name="Cast" />
 	</travuser>
@@ -429,7 +429,7 @@
         <travuser>
 	  <node name="Typedef" />
 	  <node name="Objdef" />
-	  <node name="Fold" />
+	  <node name="SPFold" />
 	  <node name="Avis" />
 	  <node name="Array" />
 	  <node name="Ret" />
@@ -487,7 +487,7 @@
           <node name="Let" />
           <node name="SPAp" />
           <node name="Genarray" />
-          <node name="Fold" />
+          <node name="SPFold" />
         </travuser>  
       </traversal>
       <traversal id="RST" name="Resolve Symbol Types" default="sons" include="resolvesymboltypes.h" >
@@ -2070,6 +2070,7 @@
       <target>
         <node name="Genarray" />
 	<node name="Modarray" />
+	<node name="SPFold" />
 	<node name="Fold" />
       </target>
     </nodeset>
@@ -5921,11 +5922,11 @@
     </node>
 <!--
 
-  N_fold :
+  N_spfold :
 
 -->
-    <node name="Fold">
-      <description>withloop operation</description>
+    <node name="SPFold">
+      <description>withloop operationi (SP version)</description>
       <sons>
         <son name="Neutral">
           <targets>
@@ -5973,18 +5974,6 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="Fundef">
-          <type name="ExtLink">
-            <targets>
-              <target mandatory="yes">
-                <node name="Fundef" />
-                <phases>
-                  <range from="tc" to="final" />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
         <attribute name="SPEXPR">
           <type name="Link">
             <targets>
@@ -5992,6 +5981,51 @@
                 <any />
                 <phases>
                   <phase name="sp" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+      </attributes>
+      <flags></flags>
+    </node>
+<!--
+
+  N_fold :
+
+-->
+    <node name="Fold">
+      <description>withloop operation</description>
+      <sons>
+        <son name="Neutral">
+          <targets>
+            <target mandatory="yes">
+              <set name="Expr" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+        <son name="Next" default="NULL">
+          <targets>
+            <target mandatory="no">
+              <set name="WithOp" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+      </sons>
+      <attributes>
+        <attribute name="Fundef">
+          <type name="ExtLink">
+            <targets>
+              <target mandatory="yes">
+                <node name="Fundef" />
+                <phases>
+                  <all />
                 </phases>
               </target>
             </targets>

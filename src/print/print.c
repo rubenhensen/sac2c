@@ -3678,6 +3678,53 @@ PRTmodarray (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *PRTspfold( node *arg_node, info *arg_info)
+ *
+ *   @brief
+ *   @param
+ *   @return
+ *
+ *
+ ******************************************************************************/
+
+node *
+PRTspfold (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("PRTspfold");
+
+    if (NODE_ERROR (arg_node) != NULL) {
+        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
+    }
+
+    INDENT;
+
+    DBUG_ASSERT ((SPFOLD_FUN (arg_node) != NULL), "Missing fold function symbol");
+    /**
+     * udf-case prior to TC!
+     */
+    if (SPFOLD_NS (arg_node) == NULL) {
+        fprintf (global.outfile, "fold/*udf-symb*/( %s, ", SPFOLD_FUN (arg_node));
+    } else {
+        fprintf (global.outfile, "fold/*udf-symb*/( %s::%s, ",
+                 NSgetName (SPFOLD_NS (arg_node)), SPFOLD_FUN (arg_node));
+    }
+    TRAVdo (SPFOLD_NEUTRAL (arg_node), arg_info);
+
+    fprintf (global.outfile, ")");
+
+    if (SPFOLD_NEXT (arg_node) != NULL) {
+        fprintf (global.outfile, ",\n");
+        /*
+         * continue with other withops
+         */
+        PRINT_CONT (TRAVdo (SPFOLD_NEXT (arg_node), arg_info), ;);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *PRTfold( node *arg_node, info *arg_info)
  *
  *   @brief
@@ -3700,30 +3747,17 @@ PRTfold (node *arg_node, info *arg_info)
 
     INDENT;
 
-    if (FOLD_FUNDEF (arg_node) != NULL) {
-        /**
-         * * udf-case after TC!
-         */
-        fundef = FOLD_FUNDEF (arg_node);
-        fprintf (global.outfile, "fold(");
-        if (FUNDEF_NS (fundef) != NULL) {
-            fprintf (global.outfile, " %s::", NSgetName (FUNDEF_NS (fundef)));
-        }
-        fprintf (global.outfile, "%s, ", FUNDEF_NAME (fundef));
-        TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
-    } else {
-        DBUG_ASSERT ((FOLD_FUN (arg_node) != NULL), "Missing fold function symbol");
-        /**
-         * udf-case prior to TC!
-         */
-        if (FOLD_NS (arg_node) == NULL) {
-            fprintf (global.outfile, "fold/*udf-symb*/( %s, ", FOLD_FUN (arg_node));
-        } else {
-            fprintf (global.outfile, "fold/*udf-symb*/( %s::%s, ",
-                     NSgetName (FOLD_NS (arg_node)), FOLD_FUN (arg_node));
-        }
-        TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
+    DBUG_ASSERT (FOLD_FUNDEF (arg_node) != NULL, "Missing fold function link");
+    /**
+     * * udf-case after TC!
+     */
+    fundef = FOLD_FUNDEF (arg_node);
+    fprintf (global.outfile, "fold(");
+    if (FUNDEF_NS (fundef) != NULL) {
+        fprintf (global.outfile, " %s::", NSgetName (FUNDEF_NS (fundef)));
     }
+    fprintf (global.outfile, "%s, ", FUNDEF_NAME (fundef));
+    TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
 
     fprintf (global.outfile, ")");
 

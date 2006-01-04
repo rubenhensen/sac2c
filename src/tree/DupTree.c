@@ -1927,15 +1927,32 @@ DUPfold (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("DUPfold");
 
-    new_node = TBmakeFold (DUPTRAV (FOLD_NEUTRAL (arg_node)));
-
-    FOLD_FUN (new_node) = ILIBstringCopy (FOLD_FUN (arg_node));
-    FOLD_NS (new_node) = NSdupNamespace (FOLD_NS (arg_node));
+    new_node = TBmakeFold (FOLD_FUNDEF (arg_node), DUPTRAV (FOLD_NEUTRAL (arg_node)));
 
     FOLD_FUNDEF (new_node)
       = LUTsearchInLutPp (INFO_LUT (arg_info), FOLD_FUNDEF (arg_node));
 
     FOLD_NEXT (new_node) = DUPCONT (FOLD_NEXT (arg_node));
+
+    CopyCommonNodeData (new_node, arg_node);
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+node *
+DUPspfold (node *arg_node, info *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DUPspfold");
+
+    new_node = TBmakeSpfold (DUPTRAV (SPFOLD_NEUTRAL (arg_node)));
+
+    SPFOLD_FUN (new_node) = ILIBstringCopy (SPFOLD_FUN (arg_node));
+    SPFOLD_NS (new_node) = NSdupNamespace (SPFOLD_NS (arg_node));
+
+    SPFOLD_NEXT (new_node) = DUPCONT (SPFOLD_NEXT (arg_node));
 
     CopyCommonNodeData (new_node, arg_node);
 
