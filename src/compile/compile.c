@@ -1607,8 +1607,7 @@ MakeIcm_MT_SPMD_FUN_DEC (node *fundef)
         size++;
     }
 
-    icm = TCmakeIcm4 ("MT_SPMD_FUN_DEC", TCmakeIdCopyString (FUNDEF_NAME (fundef)),
-                      TCmakeIdCopyString (FUNDEF_NAME (FUNDEF_LIFTEDFROM (fundef))),
+    icm = TCmakeIcm3 ("MT_SPMD_FUN_DEC", TCmakeIdCopyString (FUNDEF_NAME (fundef)),
                       TBmakeNum (size), icm_args);
 
     DBUG_RETURN (icm);
