@@ -650,20 +650,63 @@ ICM_END( WL_SIMD_END, ( cnt))
 
 #if defined(MT_SPMD_FUN_DEC) || defined(ICM_ALL)
 ICM_DEF( MT_SPMD_FUN_DEC, ICM_TRACE_NONE)
-  ICM_ID( name)
-  ICM_ID( from)
+  ICM_ID( funname)
   ICM_INT( vararg_cnt)
   ICM_VARANY( (3*vararg_cnt), vararg)
-ICM_END( MT_SPMD_FUN_DEC, (name, from, vararg_cnt, vararg))
+ICM_END( MT_SPMD_FUN_DEC, (funname, vararg_cnt, vararg))
 #endif
 
 #if defined(MT_SPMD_FUN_RET) || defined(ICM_ALL)
 ICM_DEF( MT_SPMD_FUN_RET, ICM_TRACE_NONE)
-  ICM_INT( barrier_id)
+  ICM_ID( funname)
   ICM_INT( vararg_cnt)
-  ICM_VARANY( (2*vararg_cnt), vararg)
-ICM_END( MT_SPMD_FUN_RET, (barrier_id, vararg_cnt, vararg))
+  ICM_VARANY( (3*vararg_cnt), vararg)
+ICM_END( MT_SPMD_FUN_RET, (funname, vararg_cnt, vararg))
 #endif
+
+#if defined(MT_SPMD_FUN_AP) || defined(ICM_ALL)
+ICM_DEF( MT_SPMD_FUN_AP, ICM_TRACE_NONE)
+  ICM_ID( funname)
+  ICM_INT( vararg_cnt)
+  ICM_VARANY( (3*vararg_cnt), vararg)
+ICM_END( MT_SPMD_FUN_AP, (funname, vararg_cnt, vararg))
+#endif
+
+#if 0
+
+#if defined(MT_SPMD_FRAME_ELEMENT) || defined(ICM_ALL)
+ICM_DEF( MT_SPMD_FRAME_ELEMENT, ICM_TRACE_NONE)
+  ICM_ID( funname)
+  ICM_INT( vararg_cnt)
+  ICM_VARANY( (3*vararg_cnt), vararg)
+ICM_END( MT_SPMD_FRAME_ELEMENT, (funname, vararg_cnt, vararg))
+#endif
+
+#if defined(MT_SPMD_BARRIER_ELEMENT) || defined(ICM_ALL)
+ICM_DEF( MT_SPMD_BARRIER_ELEMENT, ICM_TRACE_NONE)
+  ICM_ID( funname)
+  ICM_INT( vararg_cnt)
+  ICM_VARANY( (3*vararg_cnt), vararg)
+ICM_END( MT_SPMD_BARRIER_ELEMENT, (funname, vararg_cnt, vararg))
+#endif
+
+#endif
+
+#if defined(MT_CREATE_LOCAL_DESC) || defined(ICM_ALL)
+ICM_DEF( MT_CREATE_LOCAL_DESC, ICM_TRACE_NONE)
+  ICM_ID( var_NT)
+  ICM_INT( dim)
+ICM_END( MT_CREATE_LOCAL_DESC, (var_NT, dim))
+#endif
+
+
+
+
+/*
+ *  Probably obsolete
+ */
+
+#if 0
 
 #if defined(MT_SYNCBLOCK_BEGIN) || defined(ICM_ALL)
 ICM_DEF( MT_SYNCBLOCK_BEGIN, ICM_TRACE_NONE)
@@ -785,12 +828,9 @@ ICM_END( MT_SPMD_SETUP, (name, vararg_cnt, vararg))
 #endif
 
 
-#if defined(MT_CREATE_LOCAL_DESC) || defined(ICM_ALL)
-ICM_DEF( MT_CREATE_LOCAL_DESC, ICM_TRACE_NONE)
-  ICM_ID( var_NT)
-  ICM_INT( dim)
-ICM_END( MT_CREATE_LOCAL_DESC, (var_NT, dim))
+
 #endif
+
 
 
 /*
@@ -1009,3 +1049,4 @@ ICM_DEF( DISPATCH_ERROR, ICM_TRACE_NONE)
   ICM_VARANY( (cnt_from), from_ANY)
 ICM_END( DISPATCH_ERROR, (cnt_to, to_ANY, funname, cnt_from, from_ANY))
 #endif
+
