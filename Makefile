@@ -170,17 +170,21 @@ MULTITHREAD= src/multithread/multithread_lib.o \
              src/multithread/replicate_functions.o \
              src/multithread/consolidate_cells.o
 
-COMPILE= src/compile/wlpragma_funs.o src/compile/wltransform.o \
-         src/compile/precompile.o src/compile/gen_startup_code.o \
+PRECOMPILE= src/precompile/precompile.o src/precompile/markmemvals.o \
+            src/precompile/renameidentifiers.o src/precompile/functionprecompile.o \
+            src/precompile/typeconv_precompile.o src/precompile/setlinksign.o \
+            src/precompile/remove_external_code.o src/precompile/mark_noop_grids.o
+
+WLTRANSFORM= src/wltransform/wlpragma_funs.o src/wltransform/wltransform.o \
+             src/wltransform/wlidxs.o 
+
+COMPILE= src/compile/gen_startup_code.o \
          src/compile/compile.o src/compile/icm2c.o src/compile/icm2c_basic.o \
          src/compile/icm2c_utils.o src/compile/icm2c_std.o \
-         src/compile/icm2c_prf.o src/compile/markmemvals.o \
+         src/compile/icm2c_prf.o \
          src/compile/icm2c_mt.o src/compile/icm2c_sched.o \
          src/compile/icm2c_wl.o src/compile/icm2c_error.o \
-         src/compile/renameidentifiers.o src/compile/functionprecompile.o \
-         src/compile/typeconv_precompile.o  src/compile/setlinksign.o \
-         src/compile/remove_external_code.o src/compile/wlidxs.o \
-         src/compile/simd_infer.o src/compile/mark_noop_grids.o
+         src/compile/simd_infer.o 
 
 CINTERFACE=
 #CINTERFACE= src/c-interface/map_cwrapper.o \
@@ -191,13 +195,15 @@ CINTERFACE=
 
 OBJ:= $(GLOBAL) $(TREE) $(SCANP) $(PRINT) $(FLATTEN) $(TYPECHECK) $(OPTIMIZE) \
      $(MODULES) $(OBJECTS) $(REFCOUNT) $(COMPILE) $(PSIOPT) $(CONCURRENT) \
-     $(MULTITHREAD) $(CINTERFACE) $(CONSTANTS) $(PROFILE) $(SERIALIZE)
+     $(MULTITHREAD) $(CINTERFACE) $(CONSTANTS) $(PROFILE) $(SERIALIZE) \
+     $(PRECOMPILE) $(WLTRANSFORM)
 
 #
 #  Rules section
 #
 
-.PHONY: all efence product check_os dummy prod clean tar floppy distrib distrib_product linux 
+.PHONY: all efence product check_os dummy prod clean tar floppy distrib \
+        distrib_product linux 
 
 all: check_os tools/bin/cse dummy sac2c
 
@@ -239,6 +245,8 @@ dummy:
 	(cd src/refcount; $(MAKE_NORM) )       
 	(cd src/concurrent; $(MAKE_NORM) )
 	(cd src/multithread; $(MAKE_NORM) )
+	(cd src/wltransform; $(MAKE_NORM) )
+	(cd src/precompile; $(MAKE_NORM) )
 	(cd src/compile; $(MAKE_NORM) )
 	(cd src/profile; $(MAKE_NORM) )
 	(cd src/psi-opt; $(MAKE_NORM) )
@@ -275,6 +283,8 @@ prod:
 	(cd src/refcount; $(MAKE_PROD) )  
 	(cd src/concurrent; $(MAKE_PROD) )
 	(cd src/multithread; $(MAKE_PROD) )
+	(cd src/wltransform; $(MAKE_PROD) )
+	(cd src/precompile; $(MAKE_PROD) )
 	(cd src/compile; $(MAKE_PROD) )
 	(cd src/profile; $(MAKE_PROD) )
 	(cd src/psi-opt; $(MAKE_PROD) )
@@ -321,6 +331,8 @@ clean:
 	(cd src/refcount; $(MAKE_CLEAN) )
 	(cd src/concurrent; $(MAKE_CLEAN) )
 	(cd src/multithread; $(MAKE_CLEAN) )
+	(cd src/wltransform; $(MAKE_CLEAN) )
+	(cd src/precompile; $(MAKE_CLEAN) )
 	(cd src/compile; $(MAKE_CLEAN) )
 	(cd src/profile; $(MAKE_CLEAN) )
 	(cd src/psi-opt; $(MAKE_CLEAN) )
