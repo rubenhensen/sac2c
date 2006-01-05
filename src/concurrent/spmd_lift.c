@@ -251,10 +251,7 @@ SPMDLspmd (node *arg_node, info *arg_info)
                       NSdupNamespace (FUNDEF_NS (fundef)), rets, fargs, body, NULL);
 
     FUNDEF_TYPES (new_fundef) = rettypes;
-
     FUNDEF_ISSPMDFUN (new_fundef) = TRUE;
-    FUNDEF_LIFTEDFROM (new_fundef) = fundef;
-
     SPMD_FUNDEF (arg_node) = new_fundef;
 
     /*

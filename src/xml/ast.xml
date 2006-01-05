@@ -2735,32 +2735,6 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="LiftedFrom">
-          <description>only for ST_spmdfun</description>
-          <type name="Link">
-            <targets>
-              <target mandatory="no">
-                <node name="Fundef" />
-                <phases>
-                  <range from="spmdlift" to="comp" />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-        <attribute name="Worker">
-          <description>only for ST_spmdfun</description>
-          <type name="Link">
-            <targets>
-              <target mandatory="no">
-                <unknown />
-                <phases>
-                  <all />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
         <attribute name="Companion">
           <description>only for ST_spmdfun</description>
           <type name="Link">
