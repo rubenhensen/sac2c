@@ -173,42 +173,6 @@ PrintGlobalSwitches ()
 /******************************************************************************
  *
  * function:
- *   void PrintSpmdData( node *syntax_tree)
- *
- * description:
- *   This function initializes an additional traversal of the syntax tree
- *   during which the so-called SPMD-frame is infered and printed. This
- *   SPMD-frame is required as temporary storage for arguments in the
- *   specialized parameter passing mechanism of SPMD functions. Actually,
- *   a union type is built over all SPMD functions. For each SPMD function
- *   it contains a struct of all parameters. The SPMD frame itself is nothing
- *   but a global variable of this type. This simple solution exploits the
- *   fact that SPMD functions may never be called in a nested way.
- *
- ******************************************************************************/
-
-static void
-PrintSpmdData (node *syntax_tree)
-{
-    DBUG_ENTER ("PrintSpmdData");
-
-    fprintf (global.outfile, "#define SAC_SET_SPMD_FRAME    \\\n");
-    fprintf (global.outfile, "  {    \\\n");
-
-    if (MODULE_FUNS (syntax_tree) != NULL) {
-        TRAVpush (TR_gsc);
-        TRAVdo (MODULE_FUNS (syntax_tree), NULL);
-        TRAVpop ();
-    }
-
-    fprintf (global.outfile, "  }\n\n");
-
-    DBUG_VOID_RETURN;
-}
-
-/******************************************************************************
- *
- * function:
  *   void PrintProfileData()
  *
  * description:
@@ -400,10 +364,6 @@ PrintGlobalSettings (node *syntax_tree)
         PrintProfileData ();
     }
 
-    if (global.mtmode != MT_none) {
-        PrintSpmdData (syntax_tree);
-    }
-
     DBUG_VOID_RETURN;
 }
 
@@ -462,74 +422,6 @@ PrintDefines ()
 /******************************************************************************
  *
  * function:
- *   node *GSCicm( node *arg_node, info *arg_info)
- *
- * description:
- *   filters the variables needed for the spmd-frame of a specific function
- *   from an MT_SPMD_SETUP-icm.
- *
- ******************************************************************************/
-
-node *
-GSCicm (node *arg_node, info *arg_info)
-{
-    node *icm_arg;
-    char *tag, *type, *name;
-
-    DBUG_ENTER ("GSCicm");
-
-    icm_arg = ICM_EXPRS4 (arg_node);
-    while (icm_arg != NULL) {
-        tag = ID_ICMTEXT (EXPRS_EXPR1 (icm_arg));
-        type = ID_ICMTEXT (EXPRS_EXPR2 (icm_arg));
-        name = ID_NT_TAG (EXPRS_EXPR3 (icm_arg));
-
-        fprintf (global.outfile, "        SAC_MT_SPMD_ARG_%s( %s, %s)    \\\n", tag, type,
-                 name);
-
-        icm_arg = EXPRS_EXPRS4 (icm_arg);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *GSCfundef( node *arg_node, info *arg_info)
- *
- * description:
- *
- *
- ******************************************************************************/
-
-node *
-GSCfundef (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("GSCfundef");
-
-    if (FUNDEF_ISSPMDFUN (arg_node)) {
-        /*
-         * Here, we want to check all functions which may contain an SPMD-block.
-         */
-        fprintf (global.outfile, "    SAC_MT_FRAME( %s, {   \\\n",
-                 FUNDEF_NAME (arg_node));
-
-        TRAVdo (FUNDEF_ICM (arg_node), arg_info);
-
-        fprintf (global.outfile, "    })    \\\n");
-    }
-
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
  *   void GSCprintFileHeader( node *syntax_tree)
  *
  * description:
@@ -544,7 +436,6 @@ GSCprintFileHeader (node *syntax_tree)
 
     PrintGlobalSwitches ();
     PrintGlobalSettings (syntax_tree);
-
     PrintIncludes ();
 
     DBUG_VOID_RETURN;

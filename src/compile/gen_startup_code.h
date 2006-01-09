@@ -25,15 +25,4 @@ extern void GSCprintMain ();
 extern void GSCprintMainBegin ();
 extern void GSCprintMainEnd ();
 
-/******************************************************************************
- *
- * Generate startup code traversal ( gsc_tab)
- *
- * Prefix: GSC
- *
- *****************************************************************************/
-
-extern node *GSCfundef (node *arg_node, info *arg_info);
-extern node *GSCicm (node *arg_node, info *arg_info);
-
 #endif /* _SAC_GEN_STARTUP_CODE_H_ */
