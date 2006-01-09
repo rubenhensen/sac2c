@@ -2987,15 +2987,8 @@ COMParray (node *arg_node, info *arg_info)
                                      TBmakeStr (ILIBstringCopy (ARRAY_STRING (arg_node))),
                                      ret_node);
     } else {
-        shape *shp;
-        int dim;
-        node *icm_args, *icm_args2;
-        int val0_sdim;
+        node *icm_args;
         char *copyfun;
-        int i;
-
-        shp = ARRAY_SHAPE (arg_node);
-        dim = SHgetDim (shp);
 
         icm_args = TBmakeExprs (MakeSizeArg (arg_node, TRUE),
                                 DUPdupExprsNt (ARRAY_AELEMS (arg_node)));
@@ -3003,30 +2996,17 @@ COMParray (node *arg_node, info *arg_info)
         if (ARRAY_AELEMS (arg_node) != NULL) {
             node *val0 = EXPRS_EXPR (ARRAY_AELEMS (arg_node));
             if (NODE_TYPE (val0) == N_id) {
-                val0_sdim = TCgetShapeDim (ID_TYPE (val0));
                 copyfun = GenericFun (0, ID_TYPE (val0));
             } else {
-                val0_sdim = 0; /* scalar */
                 copyfun = NULL;
             }
         } else {
             /*
-             * A = [];
-             *
-             * The dimension of the right-hand-side is unknown
-             *   -> A has to be a AKD array!
+             * A = [:type];
+             * where type \in AKS
              */
-            val0_sdim = -815; /* array is empty */
             copyfun = NULL;
-            DBUG_ASSERT ((TCgetShapeDim (IDS_TYPE (let_ids)) >= 0),
-                         "assignment  A = [];  found, where A has unknown shape!");
         }
-
-        icm_args2 = NULL;
-        for (i = dim - 1; i >= 0; i--) {
-            icm_args2 = TBmakeExprs (TBmakeNum (SHgetExtent (shp, i)), icm_args2);
-        }
-        icm_args2 = TBmakeExprs (TBmakeNum (dim), icm_args2);
 
         ret_node
           = TCmakeAssignIcm2 ("ND_CREATE__ARRAY__DATA",

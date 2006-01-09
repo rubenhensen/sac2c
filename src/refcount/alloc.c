@@ -502,7 +502,25 @@ EMALarray (node *arg_node, info *arg_info)
         als->dim = TBmakeNum (1);
         als->shape = MakeShapeArg (arg_node);
     } else {
-        if (ARRAY_AELEMS (arg_node) != NULL) {
+        if (ARRAY_AELEMS (arg_node) == NULL) {
+            /*
+             * [:type]
+             * alloc( outer_dim + dim( type), outer_shape ++ shape( type))
+             */
+            shape *sh;
+
+            DBUG_ASSERT (TUshapeKnown (ARRAY_ELEMTYPE (arg_node)),
+                         "assignment  A = [:basetype];  found, "
+                         "where basetype has non-constant shape!");
+
+            sh = SHappendShapes (ARRAY_SHAPE (arg_node),
+                                 TYgetShape (ARRAY_ELEMTYPE (arg_node)));
+
+            als->dim = TBmakeNum (SHgetDim (sh));
+            als->shape = SHshape2Array (sh);
+
+            sh = SHfreeShape (sh);
+        } else {
             /*
              * [ a, ... ]
              * alloc( outer_dim + dim(a), shape( [a, ...]))
@@ -511,22 +529,11 @@ EMALarray (node *arg_node, info *arg_info)
                 als->dim = TCmakePrf2 (F_add_SxS, MakeDimArg (arg_node),
                                        MakeDimArg (EXPRS_EXPR (ARRAY_AELEMS (arg_node))));
             } else {
+                /*
+                 * Elements MUST be constant scalars
+                 */
                 als->dim = MakeDimArg (arg_node);
             }
-
-            als->shape = TCmakePrf1 (F_shape, DUPdoDupTree (arg_node));
-        } else {
-            /*
-             * []: empty array
-             * alloc_or_reuse( 1, outer_dim, shape( []))
-             *
-             * The dimension of the right-hand-side is unknown
-             *   -> A has to be a AKD array!
-             */
-            DBUG_ASSERT (TUshapeKnown (AVIS_TYPE (als->avis)),
-                         "assignment  A = [];  found, where A has unknown shape!");
-
-            als->dim = TBmakeNum (TYgetDim (AVIS_TYPE (als->avis)));
 
             als->shape = TCmakePrf1 (F_shape, DUPdoDupTree (arg_node));
         }
@@ -909,147 +916,36 @@ EMALcode (node *arg_node, info *arg_info)
 
 /** <!--******************************************************************-->
  *
- * @fn EMALconst
- *
- *  @brief updates ALLOCLIST with shape information about the given constant
- *
- *  @param constant
- *  @param arg_info
- *
- *  @return constant
+ * @fn EMAL<name>(node *arg_node, info *arg_info)
  *
  ***************************************************************************/
-static node *
-EMALconst (node *arg_node, info *arg_info)
-{
-    alloclist_struct *als;
-
-    DBUG_ENTER ("EMALconst");
-
-    als = INFO_ALLOCLIST (arg_info);
-
-    if (als != NULL) {
-        als->dim = TBmakeNum (0);
-        als->shape = TCcreateZeroVector (0, T_int);
-
-        /*
-         * Signal EMALlet to wrap this RHS in a fill operation
-         */
-        INFO_MUSTFILL (arg_info) = TRUE;
+#define EMALCONST(name)                                                                  \
+    node *EMAL##name (node *arg_node, info *arg_info)                                    \
+    {                                                                                    \
+        alloclist_struct *als;                                                           \
+                                                                                         \
+        DBUG_ENTER ("EMAL" #name);                                                       \
+                                                                                         \
+        als = INFO_ALLOCLIST (arg_info);                                                 \
+                                                                                         \
+        if (als != NULL) {                                                               \
+            als->dim = TBmakeNum (0);                                                    \
+            als->shape = TCcreateZeroVector (0, T_int);                                  \
+                                                                                         \
+            /*                                                                           \
+             * Signal EMALlet to wrap this RHS in a fill operation                       \
+             */                                                                          \
+            INFO_MUSTFILL (arg_info) = TRUE;                                             \
+        }                                                                                \
+                                                                                         \
+        DBUG_RETURN (arg_node);                                                          \
     }
 
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--******************************************************************-->
- *
- * @fn EMALbool
- *
- *  @brief
- *
- *  @param arg_node N_bool
- *  @param arg_info
- *
- *  @return
- *
- ***************************************************************************/
-node *
-EMALbool (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("EMALbool");
-
-    arg_node = EMALconst (arg_node, arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--******************************************************************-->
- *
- * @fn EMALchar
- *
- *  @brief
- *
- *  @param arg_node N_char
- *  @param arg_info
- *
- *  @return
- *
- ***************************************************************************/
-node *
-EMALchar (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("EMALchar");
-
-    arg_node = EMALconst (arg_node, arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--******************************************************************-->
- *
- * @fn EMALdouble
- *
- *  @brief
- *
- *  @param arg_node N_double
- *  @param arg_info
- *
- *  @return
- *
- ***************************************************************************/
-node *
-EMALdouble (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("EMALdouble");
-
-    arg_node = EMALconst (arg_node, arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--******************************************************************-->
- *
- * @fn EMALfloat
- *
- *  @brief
- *
- *  @param arg_node N_float
- *  @param arg_info
- *
- *  @return
- *
- ***************************************************************************/
-node *
-EMALfloat (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("EMALfloat");
-
-    arg_node = EMALconst (arg_node, arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--******************************************************************-->
- *
- * @fn EMALnum
- *
- *  @brief
- *
- *  @param arg_node N_num
- *  @param arg_info
- *
- *  @return
- *
- ***************************************************************************/
-node *
-EMALnum (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("EMALnum");
-
-    arg_node = EMALconst (arg_node, arg_info);
-
-    DBUG_RETURN (arg_node);
-}
+EMALCONST (bool)
+EMALCONST (char)
+EMALCONST (float)
+EMALCONST (double)
+EMALCONST (num)
 
 /** <!--******************************************************************-->
  *
