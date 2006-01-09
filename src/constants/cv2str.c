@@ -1,36 +1,6 @@
 /*
  *
- * $Log$
- * Revision 1.8  2004/11/26 14:47:03  sbs
- * compiles
- *
- * Revision 1.7  2004/11/26 14:41:17  sbs
- * compiles
- *
- * Revision 1.6  2004/11/22 18:55:29  cg
- * Moved all definitions/declarations of global variables to globals.mac
- *
- * Revision 1.5  2003/04/07 14:24:41  sbs
- * new printing mechanism built and correct format strings inserted
- * for longs etcpp.
- *
- * Revision 1.4  2001/05/17 10:04:56  nmw
- * missing include of internal_lib.h added
- *
- * Revision 1.3  2001/05/16 13:43:58  nmw
- * MALLOC/FREE changed to Malloc/Free
- *
- * Revision 1.2  2001/04/04 10:00:02  nmw
- *  missing convert functions for basetype char added
- *
- * Revision 1.1  2001/03/02 14:33:05  sbs
- * Initial revision
- *
- * Revision 1.2  2001/02/27 11:27:07  dkr
- * no changes done
- *
- * Revision 1.1  2001/02/23 18:07:49  sbs
- * Initial revision
+ * $Id$
  *
  */
 
@@ -78,12 +48,14 @@
                                                                                          \
         if (len > 0) {                                                                   \
             buffer_act += sprintf (buffer_act, form, ((type *)src)[off]);                \
-        }                                                                                \
-        for (i = 1; (i < len) && (buffer_act - buffer < max_char); i++) {                \
-            buffer_act += sprintf (buffer_act, format, ((type *)src)[i + off]);          \
-        }                                                                                \
-        if ((i < len) || (buffer_act > buffer + max_char)) {                             \
-            sprintf (buffer + max_char, "...");                                          \
+            for (i = 1; (i < len) && (buffer_act - buffer < max_char); i++) {            \
+                buffer_act += sprintf (buffer_act, format, ((type *)src)[i + off]);      \
+            }                                                                            \
+            if ((i < len) || (buffer_act > buffer + max_char)) {                         \
+                sprintf (buffer + max_char, "...");                                      \
+            }                                                                            \
+        } else {                                                                         \
+            sprintf (buffer_act, "");                                                    \
         }                                                                                \
         DBUG_RETURN (buffer);                                                            \
     }
