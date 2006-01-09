@@ -74,7 +74,19 @@ tagFundefAsNeeded (node *fundef, info *info)
     DBUG_ASSERT ((!FUNDEF_ISWRAPPERFUN (fundef)),
                  "tagFundefAsNeeded called on wrapper fun");
 
-    FUNDEF_ISNEEDED (fundef) = TRUE;
+    if (!FUNDEF_ISNEEDED (fundef)) {
+        /*
+         * mark it as needed first to avoid recursion
+         */
+        DBUG_PRINT ("PPI", ("marking fundef %s as needed", CTIitemName (fundef)));
+
+        FUNDEF_ISNEEDED (fundef) = TRUE;
+#ifndef DBUG_OFF
+    } else {
+        DBUG_PRINT ("PPI",
+                    ("!!! fundef %s already marked as needed...", CTIitemName (fundef)));
+#endif /* DBUG_OFF */
+    }
 
     DBUG_RETURN (fundef);
 }
@@ -84,21 +96,30 @@ tagWrapperAsNeeded (node *wrapper, info *info)
 {
     DBUG_ENTER ("tagWrapperAsNeeded");
 
-    if (FUNDEF_IMPL (wrapper) != NULL) {
-        /*
-         * we found a wrapper that has FUNDEF_IMPL set
-         * this is a dirty hack telling us that the function
-         * has no arguments and thus only one instance!
-         * so we tag that instance
-         */
-        FUNDEF_IMPL (wrapper) = tagFundefAsNeeded (FUNDEF_IMPL (wrapper), info);
-    } else if (FUNDEF_WRAPPERTYPE (wrapper) != NULL) {
-        FUNDEF_WRAPPERTYPE (wrapper)
-          = TYmapFunctionInstances (FUNDEF_WRAPPERTYPE (wrapper), &tagFundefAsNeeded,
-                                    info);
-    }
+    if (!FUNDEF_ISNEEDED (wrapper)) {
+        DBUG_PRINT ("PPI", ("marking wrapper %s as needed", CTIitemName (wrapper)));
 
-    FUNDEF_ISNEEDED (wrapper) = TRUE;
+        FUNDEF_ISNEEDED (wrapper) = TRUE;
+
+        if (FUNDEF_IMPL (wrapper) != NULL) {
+            /*
+             * we found a wrapper that has FUNDEF_IMPL set
+             * this is a dirty hack telling us that the function
+             * has no arguments and thus only one instance!
+             * so we tag that instance
+             */
+            FUNDEF_IMPL (wrapper) = tagFundefAsNeeded (FUNDEF_IMPL (wrapper), info);
+        } else if (FUNDEF_WRAPPERTYPE (wrapper) != NULL) {
+            FUNDEF_WRAPPERTYPE (wrapper)
+              = TYmapFunctionInstances (FUNDEF_WRAPPERTYPE (wrapper), &tagFundefAsNeeded,
+                                        info);
+        }
+#ifndef DBUG_OFF
+    } else {
+        DBUG_PRINT ("PPI", ("!!! wrapper %s already marked as needed...",
+                            CTIitemName (wrapper)));
+#endif /* DBUG_OFF */
+    }
 
     DBUG_RETURN (wrapper);
 }
@@ -175,12 +196,24 @@ PPIap (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PPIap");
 
-    DBUG_PRINT ("PPI", ("marking %s as needed", CTIitemName (AP_FUNDEF (arg_node))));
-
     if (FUNDEF_ISWRAPPERFUN (AP_FUNDEF (arg_node))) {
         AP_FUNDEF (arg_node) = tagWrapperAsNeeded (AP_FUNDEF (arg_node), arg_info);
     } else {
         AP_FUNDEF (arg_node) = tagFundefAsNeeded (AP_FUNDEF (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+PPIfold (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("PPIfold");
+
+    if (FUNDEF_ISWRAPPERFUN (FOLD_FUNDEF (arg_node))) {
+        FOLD_FUNDEF (arg_node) = tagWrapperAsNeeded (FOLD_FUNDEF (arg_node), arg_info);
+    } else {
+        FOLD_FUNDEF (arg_node) = tagFundefAsNeeded (FOLD_FUNDEF (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
