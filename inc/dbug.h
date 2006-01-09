@@ -71,19 +71,21 @@
 #include <stdlib.h>
 
 #ifndef DBUG_OFF
-extern int _db_on_;          /* TRUE if debug currently enabled */
-extern int _db_dummy_;       /* dummy for fooling macro preprocessor */
-extern FILE *_db_fp_;        /* Current debug output stream */
-extern char *_db_process_;   /* Name of current process */
-extern int _db_keyword_ ();  /* Accept/reject keyword */
-extern void _db_push_ ();    /* Push state, set up new state */
-extern void _db_pop_ ();     /* Pop previous debug state */
-extern void _db_enter_ ();   /* New user function entered */
-extern void _db_return_ ();  /* User function return */
-extern void _db_pargs_ ();   /* Remember args for line */
-extern void _db_doprnt_ ();  /* Print debug output */
-extern void _db_setjmp_ ();  /* Save debugger environment */
-extern void _db_longjmp_ (); /* Restore debugger environment */
+extern int _db_on_;                  /* TRUE if debug currently enabled */
+extern int _db_dummy_;               /* dummy for fooling macro preprocessor */
+extern FILE *_db_fp_;                /* Current debug output stream */
+extern char *_db_process_;           /* Name of current process */
+extern int _db_keyword_ ();          /* Accept/reject keyword */
+extern void _db_push_ ();            /* Push state, set up new state */
+extern void _db_pop_ ();             /* Pop previous debug state */
+extern void _db_enter_ ();           /* New user function entered */
+extern void _db_return_ ();          /* User function return */
+extern void _db_pargs_ ();           /* Remember args for line */
+extern void _db_doprnt_ ();          /* Print debug output */
+extern void _db_doprnt_assert_1_ (); /* Print debug output */
+extern void _db_doprnt_assert_2_ (); /* Print debug output */
+extern void _db_setjmp_ ();          /* Save debugger environment */
+extern void _db_longjmp_ ();         /* Restore debugger environment */
 #endif
 
 /*
@@ -115,6 +117,7 @@ extern void _db_longjmp_ (); /* Restore debugger environment */
 #define DBUG_SETJMP setjmp
 #define DBUG_LONGJMP longjmp
 #define DBUG_ASSERT(p, q)
+#define DBUG_ASSERTF(p, q)
 #define DBUG_ASSERT_EXPR(p, q, r) (r)
 #define DBUG_LPRINT(key1, key2, arglist)
 #define DBUG_PRINTE(keyword, arglist)                                                    \
@@ -169,11 +172,17 @@ extern void _db_longjmp_ (); /* Restore debugger environment */
 #define DBUG_SETJMP(a1) (_db_setjmp_ (), setjmp (a1))
 #define DBUG_LONGJMP(a1, a2) (_db_longjmp_ (), longjmp (a1, a2))
 
+#define DBUG_ASSERTF(expr, text)                                                         \
+    if (!(expr)) {                                                                       \
+        _db_doprnt_assert_1_ (__FILE__, __LINE__, NULL);                                 \
+        _db_doprnt_assert_2_ text;                                                       \
+        abort ();                                                                        \
+    } else                                                                               \
+        NOOP
+
 #define DBUG_ASSERT(expr, text)                                                          \
     if (!(expr)) {                                                                       \
-        fprintf (stderr, "Assertion 'expr' failed: file '%s', line %d\n** %s\n",         \
-                 __FILE__, __LINE__, text);                                              \
-        abort ();                                                                        \
+        _db_doprnt_assert_1_ (__FILE__, __LINE__, text);                                 \
     } else                                                                               \
         NOOP
 

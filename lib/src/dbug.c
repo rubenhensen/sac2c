@@ -711,6 +711,27 @@ long ARGLIST;
     }
 }
 
+VOID _db_doprnt_assert_1_ (file, line, text) char *file;
+int line;
+char *text;
+{
+    fprintf (_db_fp_, "ASSERTION FAILED: file '%s', line %d\n", file, line);
+    if (text != NULL) {
+        fprintf (_db_fp_, "%s\n", text);
+        fprintf (_db_fp_, "EXECUTION TERMINATED\n");
+        fflush (_db_fp_);
+    }
+}
+
+VOID _db_doprnt_assert_2_ (format, ARGLIST) char *format;
+long ARGLIST;
+{
+    fprintf (_db_fp_, format, ARGLIST);
+    fprintf (_db_fp_, "\n");
+    fprintf (_db_fp_, "EXECUTION TERMINATED\n");
+    fflush (_db_fp_);
+}
+
 /*
  *  FUNCTION
  *
