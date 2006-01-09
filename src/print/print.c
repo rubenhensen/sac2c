@@ -1742,7 +1742,12 @@ PRTblock (node *arg_node, info *arg_info)
     INDENT;
     fprintf (global.outfile, "}");
 
-    if (FUNDEF_ISSPMDFUN (INFO_FUNDEF (arg_info)) && (BLOCK_VARDEC (arg_node) != NULL)) {
+    if (FUNDEF_ISSPMDFUN (INFO_FUNDEF (arg_info)) && (BLOCK_VARDEC (arg_node) != NULL)
+        && (global.compiler_phase == PH_genccode)) {
+        /*
+         * After resolving C-ICMs, there is an intended mismatch in the ordering of
+         * explicit and implicit (hidden in h-ICMS) parentheses in SPMD functions.
+         */
         DBUG_ASSERTF (
           global.indent - old_indent == -1,
           ("Indentation unbalanced while printing block of SPMD function '%s`.\n"

@@ -214,7 +214,7 @@ ICMCompileMT_SPMD_FUN_RET (char *funname, int vararg_cnt, char **vararg)
 
     global.indent--;
     INDENT;
-    fprintf (global.outfile, "}\n\n");
+    fprintf (global.outfile, "}\n");
 
     DBUG_VOID_RETURN;
 }
