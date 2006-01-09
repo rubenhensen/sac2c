@@ -183,6 +183,7 @@ extern void _db_longjmp_ ();         /* Restore debugger environment */
 #define DBUG_ASSERT(expr, text)                                                          \
     if (!(expr)) {                                                                       \
         _db_doprnt_assert_1_ (__FILE__, __LINE__, text);                                 \
+        abort ();                                                                        \
     } else                                                                               \
         NOOP
 
