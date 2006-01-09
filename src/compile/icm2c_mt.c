@@ -84,11 +84,13 @@ ICMCompileMT_SPMD_FUN_DEC (char *funname, int vararg_cnt, char **vararg)
 #include "icm_trace.c"
 #undef MT_SPMD_FUN_DEC
 
+    INDENT;
     fprintf (global.outfile,
              "SAC_MT_SPMD_FUN_REAL_RETTYPE()"
              " %s( SAC_MT_SPMD_FUN_REAL_PARAM_LIST())\n",
              funname);
 
+    INDENT;
     fprintf (global.outfile, "{\n");
 
     global.indent++;
@@ -113,7 +115,7 @@ ICMCompileMT_SPMD_FUN_DEC (char *funname, int vararg_cnt, char **vararg)
  * description:
  *   implements the compilation of the following ICM:
  *
- *   MT_SPMD_FUN_AP( name, vararg_cnt, [ TAG, type, param_NT ]* )
+ *   MT_SPMD_FUN_AP( name, vararg_cnt, [ TAG, param_NT ]* )
  *
  *   This ICM implements the application of an spmd function. The first
  *   parameter specifies the name of this function.
@@ -134,12 +136,13 @@ ICMCompileMT_SPMD_FUN_AP (char *funname, int vararg_cnt, char **vararg)
 #include "icm_trace.c"
 #undef MT_SPMD_FUN_AP
 
-    for (i = 0; i < 3 * vararg_cnt; i += 3) {
+    for (i = 0; i < 2 * vararg_cnt; i += 2) {
         INDENT;
-        fprintf (global.outfile, "SAC_MT_SEND_PARAM_%s( %s, %d, %s, %s)\n", vararg[i],
-                 funname, cnt[tag (vararg[i])]++, vararg[i + 1], vararg[i + 2]);
+        fprintf (global.outfile, "SAC_MT_SEND_PARAM_%s( %s, %d, %s)\n", vararg[i],
+                 funname, cnt[tag (vararg[i])]++, vararg[i + 1]);
     }
 
+    INDENT;
     fprintf (global.outfile, "SAC_MT_SPMD_EXECUTE( funname);");
 
     DBUG_VOID_RETURN;
@@ -154,7 +157,7 @@ ICMCompileMT_SPMD_FUN_AP (char *funname, int vararg_cnt, char **vararg)
  * description:
  *   implements the compilation of the following ICM:
  *
- *   MT_SPMD_FUN_RET( barrier_id, vararg_cnt, [ tag, param_NT ]* )
+ *   MT_SPMD_FUN_RET( barrier_id, vararg_cnt, [ tag, foldfun, param_NT ]* )
  *
  *   This ICM implements the return statement of an spmd-function,
  *   i.e. it has to realize the return of several out parameters.
@@ -165,7 +168,7 @@ ICMCompileMT_SPMD_FUN_AP (char *funname, int vararg_cnt, char **vararg)
 void
 ICMCompileMT_SPMD_FUN_RET (char *funname, int vararg_cnt, char **vararg)
 {
-    int i;
+    int i, cnt;
 
     DBUG_ENTER ("ICMCompileMT_SPMD_FUN_RET");
 
@@ -174,38 +177,132 @@ ICMCompileMT_SPMD_FUN_RET (char *funname, int vararg_cnt, char **vararg)
 #include "icm_trace.c"
 #undef MT_SPMD_FUN_RET
 
-    for (i = 0; i < 2 * vararg_cnt; i += 2) {
-        INDENT;
-        fprintf (global.outfile, "SAC_MT_SPMD_RET_%s( %s);\n", vararg[i], vararg[i + 1]);
+    INDENT;
+    fprintf (global.outfile, "SAC_MT_SYNC_WORKER_BEGIN();\n");
+
+    cnt = 0;
+
+    for (i = 0; i < 3 * vararg_cnt; i += 3) {
+        if (ILIBstringCompare (vararg[i], "out")) {
+            INDENT;
+            fprintf (global.outfile, "SAC_MT_SPMD_FOLD_RETURN_WORKER( %s, %d, %s, %s);\n",
+                     funname, cnt, vararg[i + 1], vararg[i + 2]);
+        }
     }
 
     INDENT;
-    fprintf (global.outfile, "SAC_MT_SPMD_FUN_REAL_RETURN();\n"),
-
-      global.indent--;
-    INDENT;
-    fprintf (global.outfile, "}\n");
+    fprintf (global.outfile, "SAC_MT_SYNC_WORKER_END();\n");
 
     INDENT;
-    fprintf (global.outfile, "{\n");
+    fprintf (global.outfile, "SAC_MT_SYNC_MASTER_BEGIN();\n");
 
-    global.indent++;
-#if 0
-  INDENT;
-  fprintf( global.outfile, "label_worker_continue_%d:\n", barrier_id);
-#endif
+    cnt = 0;
+
+    for (i = 0; i < 3 * vararg_cnt; i += 3) {
+        if (ILIBstringCompare (vararg[i], "out")) {
+            INDENT;
+            fprintf (global.outfile, "SAC_MT_SPMD_FOLD_RETURN_MASTER( %s, %d, %s, %s);\n",
+                     funname, cnt, vararg[i + 1], vararg[i + 2]);
+        }
+    }
+
+    INDENT;
+    fprintf (global.outfile, "SAC_MT_SYNC_MASTER_END();\n");
+
     INDENT;
     fprintf (global.outfile, "SAC_MT_SPMD_FUN_REAL_RETURN();\n");
 
     global.indent--;
     INDENT;
-    fprintf (global.outfile, "}\n");
+    fprintf (global.outfile, "}\n\n");
 
-    global.indent--;
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileMT_SPMD_FRAME_ELEMENT( char *name, int vararg_cnt, char **vararg)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   MT_SPMD_FRAME_ELEMENT( name, vararg_cnt, [ TAG, type, param_NT ]* )
+ *
+ *   This ICM implements the protoype of an spmd function. The first parameter
+ *   specifies the name of this function.
+ *   TAG may be from the set { in, out, inout }.
+ *
+ ******************************************************************************/
+
+void
+ICMCompileMT_SPMD_FRAME_ELEMENT (char *funname, int vararg_cnt, char **vararg)
+{
+    int i;
+    int cnt[3] = {0, 0, 0};
+
+    DBUG_ENTER ("ICMCompileMT_SPMD_FRAME_ELEMENT");
+
+#define MT_SPMD_FRAME_ELEMENT
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef MT_SPMD_FRAME_ELEMENT
+
     INDENT;
-    fprintf (global.outfile, "}\n");
+    fprintf (global.outfile, "SAC_MT_SPMD_FRAME_ELEMENT_BEGIN( %s)\n", funname);
 
-    fprintf (global.outfile, "\n");
+    for (i = 0; i < 3 * vararg_cnt; i += 3) {
+        INDENT;
+        fprintf (global.outfile, "SAC_MT_FRAME_ELEMENT_%s( %s, %d, %s)\n", vararg[i],
+                 funname, cnt[tag (vararg[i])]++, vararg[i + 1]);
+    }
+
+    INDENT;
+    fprintf (global.outfile, "SAC_MT_SPMD_FRAME_ELEMENT_END( %s)\n", funname);
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileMT_SPMD_BARRIER_ELEMENT( char *name, int vararg_cnt, char **vararg)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   MT_SPMD_BARRIER_ELEMENT( name, vararg_cnt, [ TAG, type, param_NT ]* )
+ *
+ *   This ICM implements the protoype of an spmd function. The first parameter
+ *   specifies the name of this function.
+ *   TAG may be from the set { in, out, inout }.
+ *
+ ******************************************************************************/
+
+void
+ICMCompileMT_SPMD_BARRIER_ELEMENT (char *funname, int vararg_cnt, char **vararg)
+{
+    int i;
+    int cnt[3] = {0, 0, 0};
+
+    DBUG_ENTER ("ICMCompileMT_SPMD_BARRIER_ELEMENT");
+
+#define MT_SPMD_BARRIER_ELEMENT
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef MT_SPMD_BARRIER_ELEMENT
+
+    INDENT;
+    fprintf (global.outfile, "SAC_MT_SPMD_BARRIER_ELEMENT_BEGIN( %s)\n", funname);
+
+    for (i = 0; i < 3 * vararg_cnt; i += 3) {
+        INDENT;
+        fprintf (global.outfile, "SAC_MT_BARRIER_ELEMENT_%s( %s, %d, %s)\n", vararg[i],
+                 funname, cnt[tag (vararg[i])]++, vararg[i + 1]);
+    }
+
+    INDENT;
+    fprintf (global.outfile, "SAC_MT_SPMD_BARRIER_ELEMENT_END( %s)\n", funname);
 
     DBUG_VOID_RETURN;
 }

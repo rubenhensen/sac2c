@@ -668,11 +668,9 @@ ICM_END( MT_SPMD_FUN_RET, (funname, vararg_cnt, vararg))
 ICM_DEF( MT_SPMD_FUN_AP, ICM_TRACE_NONE)
   ICM_ID( funname)
   ICM_INT( vararg_cnt)
-  ICM_VARANY( (3*vararg_cnt), vararg)
+  ICM_VARANY( (2*vararg_cnt), vararg)
 ICM_END( MT_SPMD_FUN_AP, (funname, vararg_cnt, vararg))
 #endif
-
-#if 0
 
 #if defined(MT_SPMD_FRAME_ELEMENT) || defined(ICM_ALL)
 ICM_DEF( MT_SPMD_FRAME_ELEMENT, ICM_TRACE_NONE)
@@ -688,8 +686,6 @@ ICM_DEF( MT_SPMD_BARRIER_ELEMENT, ICM_TRACE_NONE)
   ICM_INT( vararg_cnt)
   ICM_VARANY( (3*vararg_cnt), vararg)
 ICM_END( MT_SPMD_BARRIER_ELEMENT, (funname, vararg_cnt, vararg))
-#endif
-
 #endif
 
 #if defined(MT_CREATE_LOCAL_DESC) || defined(ICM_ALL)

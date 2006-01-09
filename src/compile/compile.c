@@ -1693,15 +1693,21 @@ MakeIcm_FUN_AP (node *ap, node *fundef, node *assigns)
 
     /* return value */
     DBUG_ASSERT ((argtab->ptr_in[0] == NULL), "argtab inconsistent!");
-    if (argtab->ptr_out[0] == NULL) {
-        icm_args = TBmakeExprs (TCmakeIdCopyString (NULL), icm_args);
-    } else {
-        icm_args = TBmakeExprs (DUPdupIdsId (argtab->ptr_out[0]), icm_args);
-    }
 
-    ret_node
-      = TCmakeAssignIcm2 (FUNDEF_ISSPMDFUN (fundef) ? "MT_SPMD_FUN_AP" : "ND_FUN_AP",
-                          TCmakeIdCopyString (FUNDEF_NAME (fundef)), icm_args, assigns);
+    if (FUNDEF_ISSPMDFUN (fundef)) {
+        ret_node
+          = TCmakeAssignIcm2 ("MT_SPMD_FUN_AP", TCmakeIdCopyString (FUNDEF_NAME (fundef)),
+                              icm_args, assigns);
+    } else {
+        if (argtab->ptr_out[0] == NULL) {
+            icm_args = TBmakeExprs (TCmakeIdCopyString (NULL), icm_args);
+        } else {
+            icm_args = TBmakeExprs (DUPdupIdsId (argtab->ptr_out[0]), icm_args);
+        }
+        ret_node
+          = TCmakeAssignIcm2 ("ND_FUN_AP", TCmakeIdCopyString (FUNDEF_NAME (fundef)),
+                              icm_args, assigns);
+    }
 
     /* insert pointer to fundef */
     ICM_FUNDEF (ASSIGN_INSTR (ret_node)) = fundef;
