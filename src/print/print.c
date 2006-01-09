@@ -33,8 +33,6 @@
 #include "namespaces.h"
 #include "shape.h"
 
-#define WARN_INDENT
-
 /*
  * use of arg_info in this file:
  * - node[0]: is used for storing the current fundef node.
@@ -1483,11 +1481,6 @@ PRTfundef (node *arg_node, info *arg_info)
                     fprintf (global.outfile, "/* Loop function */\n");
                 }
 
-                if ((FUNDEF_ISSPMDFUN (arg_node))
-                    && (global.compiler_phase == PH_genccode)) {
-                    fprintf (global.outfile, "#if SAC_DO_MULTITHREAD\n\n");
-                }
-
                 if ((FUNDEF_ICM (arg_node) == NULL)
                     || (NODE_TYPE (FUNDEF_ICM (arg_node)) != N_icm)) {
                     PrintFunctionHeader (arg_node, arg_info, FALSE);
@@ -1507,12 +1500,7 @@ PRTfundef (node *arg_node, info *arg_info)
                     }
                 }
 
-                if ((FUNDEF_ISSPMDFUN (arg_node))
-                    && (global.compiler_phase == PH_genccode)) {
-                    fprintf (global.outfile, "\n#endif  /* SAC_DO_MULTITHREAD */\n\n");
-                } else {
-                    fprintf (global.outfile, "\n\n");
-                }
+                fprintf (global.outfile, "\n\n");
 
                 if (INFO_SEPARATE (arg_info)) {
                     fclose (global.outfile);
@@ -1522,20 +1510,11 @@ PRTfundef (node *arg_node, info *arg_info)
         }
     }
 
-    if (global.indent != old_indent) {
-#ifdef WARN_INDENT
-        if (FUNDEF_ISSPMDFUN (INFO_FUNDEF (arg_info))) {
-            /*
-             * for the time being, indentation of MT funs is always unbalanced :-(
-             */
-            CTIwarn ("Indentation unbalanced while printing function %s."
-                     " Indentation at beginning of function: %i."
-                     " Indentation at end of function: %i",
-                     FUNDEF_NAME (arg_node), old_indent, global.indent);
-        }
-#endif
-        global.indent = old_indent;
-    }
+    DBUG_ASSERTF (global.indent == old_indent,
+                  ("Indentation unbalanced while printing function '%s`.\n"
+                   " Indentation at beginning of function: %i.\n"
+                   " Indentation at end of function: %i\n",
+                   FUNDEF_NAME (arg_node), old_indent, global.indent));
 
     if (FUNDEF_NEXT (arg_node) != NULL) { /* traverse next function */
         PRINT_CONT (TRAVdo (FUNDEF_NEXT (arg_node), arg_info), ;);
@@ -1763,19 +1742,20 @@ PRTblock (node *arg_node, info *arg_info)
     INDENT;
     fprintf (global.outfile, "}");
 
-    if (global.indent != old_indent) {
-#ifdef WARN_INDENT
-        if (FUNDEF_ISSPMDFUN (INFO_FUNDEF (arg_info))) {
-            /*
-             * for the time being, indentation of MT funs is always unbalanced :-(
-             */
-            CTIwarn ("Indentation unbalanced while printing block of function %s."
-                     " Indentation at beginning of block: %i."
-                     " Indentation at end of block: %i",
-                     FUNDEF_NAME (INFO_FUNDEF (arg_info)), old_indent, global.indent);
-        }
-#endif
-        global.indent = old_indent;
+    if (FUNDEF_ISSPMDFUN (INFO_FUNDEF (arg_info)) && (BLOCK_VARDEC (arg_node) != NULL)) {
+        DBUG_ASSERTF (
+          global.indent - old_indent == -1,
+          ("Indentation unbalanced while printing block of SPMD function '%s`.\n"
+           " Indentation at beginning of block: %i.\n"
+           " Indentation at end of block: %i.\n"
+           " Indentation at end should be one less than at beginning.",
+           FUNDEF_NAME (INFO_FUNDEF (arg_info)), old_indent, global.indent));
+    } else {
+        DBUG_ASSERTF (global.indent == old_indent,
+                      ("Indentation unbalanced while printing function '%s`.\n"
+                       " Indentation at beginning of function: %i.\n"
+                       " Indentation at end of function: %i\n",
+                       FUNDEF_NAME (arg_node), old_indent, global.indent));
     }
 
     DBUG_RETURN (arg_node);
