@@ -132,7 +132,7 @@ MarkSubstitutionCandidates (node *exprs, node *args)
     DBUG_ENTER ("MarkSubstitutionCandidates");
 
     while (args != NULL) {
-        if (ARG_WASREFERENCE (arg_node)) {
+        if (ARG_WASREFERENCE (args)) {
             /*
              * we found a reference arg, so we set the AVIS_SUBST
              * of the current expression to the AVIS of that arg
@@ -145,7 +145,7 @@ MarkSubstitutionCandidates (node *exprs, node *args)
                                  AVIS_NAME (ID_AVIS (EXPRS_EXPR (exprs))),
                                  AVIS_NAME (ARG_AVIS (args))));
 
-            AVIST_SUBST (ID_AVIS (EXPRS_EXPR (exprs))) = ARG_AVIS (args);
+            AVIS_SUBST (ID_AVIS (EXPRS_EXPR (exprs))) = ARG_AVIS (args);
 
             exprs = EXPRS_NEXT (exprs);
         }
@@ -212,9 +212,6 @@ RERAblock (node *arg_node, info *arg_info)
 node *
 RERAassign (node *arg_node, info *arg_info)
 {
-    node *avis;
-    node *new_node;
-
     DBUG_ENTER ("RERAassign");
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
@@ -226,7 +223,7 @@ RERAassign (node *arg_node, info *arg_info)
      */
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
-    DBUG_RETURN (new_node);
+    DBUG_RETURN (arg_node);
 }
 
 node *
@@ -280,7 +277,7 @@ RERAreturn (node *arg_node, info *arg_info)
      * first mark the return id avis nodes
      * for substitution
      */
-    MarkSubstitutionCandidates (RETURN_EXPRS (arg_node), INFO_ARGS (arg_node));
+    MarkSubstitutionCandidates (RETURN_EXPRS (arg_node), INFO_ARGS (arg_info));
 
     /*
      * now remove all aritificial returns
