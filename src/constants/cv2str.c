@@ -55,7 +55,7 @@
                 sprintf (buffer + max_char, "...");                                      \
             }                                                                            \
         } else {                                                                         \
-            sprintf (buffer_act, "");                                                    \
+            *buffer_act = '\0';                                                          \
         }                                                                                \
         DBUG_RETURN (buffer);                                                            \
     }
