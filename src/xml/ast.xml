@@ -1840,6 +1840,7 @@
 	  <node name="Assign" />
 	  <node name="Let" />
 	  <node name="Return" />
+  	  <node name="Ids" />
 	  <node name="Id" />
 	  <node name="Fundef" />
 	  <node name="Module" />
