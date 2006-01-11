@@ -1836,12 +1836,9 @@
       <traversal id="RERA" name="Restore Reference Args" default="sons" include="restore_reference_args.h">
         <travuser>
 	  <node name="Ap" />
-	  <node name="Block" />
 	  <node name="Assign" />
 	  <node name="Let" />
 	  <node name="Return" />
-  	  <node name="Ids" />
-	  <node name="Id" />
 	  <node name="Fundef" />
 	  <node name="Module" />
 	</travuser>
