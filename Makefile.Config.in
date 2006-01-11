@@ -11,6 +11,7 @@
 OS=@OS@
 ARCH=@ARCH@
 
+
 ################################################################################
 #
 # MT & PHM Setup:
@@ -19,11 +20,19 @@ ARCH=@ARCH@
 DISABLE_MT   := @DISABLE_MT@
 DISABLE_PHM  := @DISABLE_PHM@
 
+
+################################################################################
+#
+# svn setup:
+#
+
+REV := $(shell svn info | grep Revision: | sed -e 's/Revision: //g')
+
+
 ################################################################################
 #
 # general setup:
 #
-
 CC           := @CC@
 CCPROD       := @CC@
 CCFLAGS      := @MKCCFLAGS@ @OSFLAGS@
@@ -58,9 +67,9 @@ LEX          :=@LEX@ -n
 YACC         :=@YACC@ -dv
 
 ifeq ($(OS),solaris2.8)
-  YYFLAGS   := -DYYDEBUG=1
+  YYFLAGS   := -DYYDEBUG=1 -DYYLMAX=8192
 else
-  YYFLAGS   :=
+  YYFLAGS   := -DYYLMAX=8192
 endif
 
 CLOCK_SKEW_ELIMINATION   := $(PROJECT_ROOT)/tools/bin/cse
