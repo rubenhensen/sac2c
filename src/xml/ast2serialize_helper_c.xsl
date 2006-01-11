@@ -117,7 +117,8 @@ version="1.0">
   <xsl:apply-templates select="//syntaxtree/node" mode="gen-case" />
   <xsl:value-of select="'default: /* error */ '" />
   <xsl:value-of select="'break;'" />
-  <xsl:value-of select="'} return(this);}'" />
+  <xsl:value-of select="'} '" />
+  <xsl:value-of select="'return(this);}'" />
 </xsl:template>
 
 <xsl:template match="node" mode="gen-case">
@@ -130,6 +131,15 @@ version="1.0">
   <xsl:value-of select="': '" />
   <xsl:apply-templates select="." mode="gen-alloc-fun" />
   <xsl:apply-templates select="." mode="gen-fill-fun" />
+
+  <xsl:value-of select="'CMsetNodeType(this, N_'" />
+  <xsl:call-template name="lowercase" >
+    <xsl:with-param name="string" >
+      <xsl:value-of select="@name" />
+    </xsl:with-param>
+  </xsl:call-template>
+  <xsl:value-of select="');'" />
+
   <xsl:value-of select="'break;'" />
 </xsl:template>
 
@@ -298,7 +308,9 @@ version="1.0">
   <xsl:value-of select="'top = SSlookup( to, stack); }'" />
   <xsl:value-of select="'switch (NODE_TYPE( fromp)) {'" />
   <xsl:apply-templates select="//syntaxtree/node" mode="gen-fixlink-fun" />
-  <xsl:value-of select="'default: break; } } }'" />
+  <xsl:value-of select="'default: break; } }'" />
+  <xsl:value-of select="'}'" />
+
 </xsl:template>
 
 <xsl:template match="node" mode="gen-fixlink-fun">
