@@ -58,12 +58,10 @@ PRECdoPrecompile (node *syntax_tree)
      */
     syntax_tree = PHrunCompilerSubPhase (SUBPH_mmv, syntax_tree);
 
-#if 0
-  /*
-   * Object precompilation
-   */
-  syntax_tree = PHrunCompilerSubPhase( SUBPH_opc, syntax_tree);
-#endif
+    /*
+     * Manage Object Initialisers
+     */
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_moi, syntax_tree);
 
     /*
      * Function precompilation

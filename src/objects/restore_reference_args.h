@@ -8,6 +8,7 @@
 extern node *RERAassign (node *arg_node, info *arg_info);
 extern node *RERAlet (node *arg_node, info *arg_info);
 extern node *RERAap (node *arg_node, info *arg_info);
+extern node *RERAid (node *arg_node, info *arg_info);
 extern node *RERAreturn (node *arg_node, info *arg_info);
 extern node *RERAfundef (node *arg_node, info *arg_info);
 extern node *RERAmodule (node *arg_node, info *arg_info);

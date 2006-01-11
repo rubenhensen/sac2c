@@ -207,23 +207,31 @@ MakeL2fFundef (char *funname, namespace_t *ns, node *instr, node *funcall_let,
      * 'stack' is not an out-var of this function!!
      */
     tmp = args;
-    while (tmp != NULL) {
-        if (ARG_ISREFERENCE (tmp)) {
-            /*
-             * CAUTION:
-             * the arg-node is a new one not contained in the relevant DFM-base!
-             * Therefore we must search for ARG_NAME instead of the pointer itself!
-             */
-            if (!DFMtestMaskEntry (out, ARG_NAME (tmp), NULL)) {
-                AVIS_ISUNIQUE (ARG_AVIS (tmp)) = TRUE;
-            }
 
-            DBUG_PRINT ("L2F", ("ARG_ATTRIB[ .. %s( .. %s ..) { .. } ]: "
-                                " ST_was_reference -> ST_unique",
-                                funname, ARG_NAME (tmp)));
-        }
-        tmp = ARG_NEXT (tmp);
+#if 0  
+  /*
+   * as we do not annotate uniqueness to avises anymore,
+   * this code is no longer needed. It just remains here for the
+   * case that it becomes necessary again...
+   */
+  while (tmp != NULL) {
+    if (ARG_ISREFERENCE( tmp)) {
+      /*
+       * CAUTION:
+       * the arg-node is a new one not contained in the relevant DFM-base!
+       * Therefore we must search for ARG_NAME instead of the pointer itself!
+       */
+      if (! DFMtestMaskEntry( out, ARG_NAME( tmp), NULL)) {
+        AVIS_ISUNIQUE( ARG_AVIS( tmp)) = TRUE;
+      }
+
+      DBUG_PRINT( "L2F", ("ARG_ATTRIB[ .. %s( .. %s ..) { .. } ]: "
+                          " ST_was_reference -> ST_unique",
+                          funname, ARG_NAME( tmp)));
     }
+    tmp = ARG_NEXT( tmp);
+  }
+#endif
 
     ret = TBmakeAssign (TBmakeReturn (DFMUdfm2ReturnExprs (out, lut)), NULL);
 

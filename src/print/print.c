@@ -1661,10 +1661,6 @@ PRTvardec (node *arg_node, info *arg_info)
         fprintf (global.outfile, "%s ", type_str);
         type_str = ILIBfree (type_str);
 
-        if (AVIS_ISUNIQUE (VARDEC_AVIS (arg_node))) {
-            fprintf (global.outfile, "*");
-        }
-
         fprintf (global.outfile, "%s", VARDEC_NAME (arg_node));
 
         fprintf (global.outfile, "; ");

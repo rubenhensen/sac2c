@@ -300,6 +300,9 @@ static nodelist *InsListGetFrame (nodelist *il, int depth);
  *   we should better not move it out of withloops to avoid problems with
  *   global objects.
  *
+ *   This functionality is disabled right now as ids are not yet marked
+ *   as unique
+ *
  *****************************************************************************/
 static bool
 ForbiddenMovement (node *chain)
@@ -308,10 +311,13 @@ ForbiddenMovement (node *chain)
 
     DBUG_ENTER ("ForbiddenMovement");
     res = FALSE;
-    while ((chain != NULL) && (res == FALSE)) {
-        res |= AVIS_ISUNIQUE (IDS_AVIS (chain));
-        chain = IDS_NEXT (chain);
-    }
+
+#if 0
+  while ((chain != NULL) && (res == FALSE)) {
+    res |= AVIS_ISUNIQUE(IDS_AVIS(chain));
+    chain = IDS_NEXT(chain);
+  }
+#endif
 
     DBUG_RETURN (res);
 }

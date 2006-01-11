@@ -139,9 +139,9 @@ OBJECTS= src/objects/object_init.o src/objects/resolve_reference_args.o \
          src/objects/restore_objects.o \
          src/objects/check_uniqueness_annotations.o \
          src/objects/uniqueness_phase.o \
-         src/objects/infer_uniqueness.o \
          src/objects/generate_object_initialiser.o \
-         src/objects/strip_external_signatures.o
+         src/objects/strip_external_signatures.o \
+         src/objects/manage_object_initialisers.o
 
 REFCOUNT= src/refcount/emm.o src/refcount/rcopt.o src/refcount/filterrc.o \
           src/refcount/alloc.o src/refcount/referencecounting.o \

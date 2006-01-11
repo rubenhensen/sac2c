@@ -703,24 +703,7 @@
 	  <node name="Ret" />
 	</travuser>
       </traversal>
-      <traversal id="IUQ" name="Infering uniqueness property" default="sons" include="infer_uniqueness.h">
-        <travuser>
-	  <node name="Arg" />
-	  <node name="Vardec" />
-	  <node name="Fundef" />
-	  <node name="Block" />
-	  <node name="Assign" />
-	  <node name="Let" />
-	  <node name="Ap" />
-	  <node name="Prf" />
-	  <node name="Id" />
-	  <node name="Funcond" />
-	  <node name="Cond" />
-	  <node name="Return" />
-	  <node name="With" />
-	</travuser>
-      </traversal>
-    </phase>
+     </phase>
     <phase id="sacopt" name="Running SAC optimizations"
       startfun="NULL" include=".h"
       if="true"
@@ -1840,6 +1823,7 @@
 	  <node name="Let" />
 	  <node name="Return" />
 	  <node name="Fundef" />
+ 	  <node name="Id" />
 	  <node name="Module" />
 	</travuser>
       </traversal>
@@ -1876,6 +1860,13 @@
           <node name="With2" />
           <node name="WLseg" />
           <node name="WLsegVar" />
+        </travuser>
+      </traversal>
+      <traversal id="MOI" name="Manage object initialisers" default="sons" include="manage_object_initialisers.h" >
+        <travuser>
+          <node name="Assign" />
+          <node name="Id" />
+          <node name="Fundef" />
         </travuser>
       </traversal>
       <traversal id="FPC" name="Function Precompilation" default="sons" include="functionprecompile.h">
@@ -4799,7 +4790,6 @@
             denotes whether there can be more than one identifier for a 
             given data object.</description>
         </flag>
-        <flag name="IsUnique" />
         <flag name="IsDead" >
           <description>Used by MarkMemVals traversal in order to indicate 
             which VARDECS are no longer needed and can thus be eliminated.

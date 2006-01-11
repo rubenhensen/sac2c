@@ -630,22 +630,26 @@ NTCarg (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("NTCarg");
 
-    type = ARG_NTYPE (arg_node);
-    if (TUisArrayOfUser (type) && TUisUniqueUserType (type) && !ARG_ISREFERENCE (arg_node)
-        && !ARG_ISARTIFICIAL (arg_node)) {
-
-        DBUG_EXECUTE ("UNQ", tmp_str = TYtype2String (type, FALSE, 0););
-        DBUG_PRINT ("UNQ", ("argument \"%s\" of type \"%s\" marked as unique",
-                            ARG_NAME (arg_node), tmp_str));
-        DBUG_EXECUTE ("UNQ", tmp_str = ILIBfree (tmp_str););
-
-        AVIS_ISUNIQUE (ARG_AVIS (arg_node)) = TRUE;
-        if (!TYisAKS (type) || (TYisAKS (type) && TYgetDim (type) != 0)) {
-            CTIerrorLine (NODE_LINE (arg_node),
-                          "Unique type \"%s\" used in non-scalar form",
-                          TYtype2String (TYgetScalar (type), FALSE, 0));
-        }
+#if 0
+  type = ARG_NTYPE( arg_node);
+  if( TUisArrayOfUser( type) && TUisUniqueUserType( type)
+      && !ARG_ISREFERENCE(arg_node) && !ARG_ISARTIFICIAL(arg_node) ) {
+  
+    DBUG_EXECUTE( "UNQ", tmp_str = TYtype2String( type, FALSE, 0););
+    DBUG_PRINT( "UNQ", ("argument \"%s\" of type \"%s\" marked as unique",
+                       ARG_NAME( arg_node), 
+                       tmp_str));
+    DBUG_EXECUTE( "UNQ", tmp_str = ILIBfree( tmp_str););
+  
+    AVIS_ISUNIQUE( ARG_AVIS(arg_node))=TRUE;
+    if( !TYisAKS( type)
+        || (TYisAKS( type) && TYgetDim( type) != 0)) {
+      CTIerrorLine( NODE_LINE( arg_node),
+                    "Unique type \"%s\" used in non-scalar form",
+                    TYtype2String( TYgetScalar(type), FALSE, 0));
     }
+  }
+#endif
 
     if (ARG_NEXT (arg_node) != NULL) {
         ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);

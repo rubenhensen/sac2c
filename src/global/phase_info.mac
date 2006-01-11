@@ -159,8 +159,6 @@ PHASE (uniquecheck, "Checking uniqueness property of objects", UPdoUniquenessInf
 
 SUBPHASE (cua, "cua", "Checking uniqueness annotations", CUAdoCheckUniquenessAnnotations)
 
-SUBPHASE (iuq, "iuq", "Infering uniqueness properties", IUQdoInferUniqueness)
-
 /******************************************************************************/
 
 PHASE (elimudt, "Eliminating User-Defined Types and Creating Wrapper Code", PHdummy)
@@ -432,7 +430,7 @@ SUBPHASE (sls, "sls", "Applying linksign pragma", SLSdoSetLinksign)
 
 SUBPHASE (mmv, "mmv", "Marking memval identifiers", MMVdoMarkMemVals)
 
-SUBPHASE (opc, "opc", "Restoring global objects and reference parameters", PHdummy)
+SUBPHASE (moi, "moi", "Manage object initialisers", MOIdoManageObjectInitialisers)
 
 SUBPHASE (fpc, "fpc", "Reorganizing function prototypes", FPCdoFunctionPrecompile)
 
