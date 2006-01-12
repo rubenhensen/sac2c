@@ -277,41 +277,6 @@ RenameFun (node *fun)
 /******************************************************************************
  *
  * function:
- *   char *RIDobjInitFunctionName( bool before_rename)
- *
- * description:
- *   Returns new allocated string with objinitfunction name
- *
- * parameters:
- *   uses global variable modulename!
- *
- ******************************************************************************/
-
-char *
-RIDobjInitFunctionName (bool before_rename)
-{
-    char *name = "GlobalObjInit";
-    char *new_name;
-
-    DBUG_ENTER ("RIDobjInitFunctionName");
-
-    if (before_rename) {
-        new_name = (char *)ILIBmalloc (strlen (name) + 1);
-
-        strcpy (new_name, name);
-    } else {
-        new_name
-          = ILIBmalloc (strlen (name) + strlen (NSgetName (NSgetRootNamespace ())) + 8);
-
-        sprintf (new_name, "SACf_%s__%s", NSgetName (NSgetRootNamespace ()), name);
-    }
-
-    DBUG_RETURN (new_name);
-}
-
-/******************************************************************************
- *
- * function:
  *   node *RIDmodule( node *arg_node, info *arg_info)
  *
  * description:

@@ -505,18 +505,12 @@ GSCprintDefines ()
 void
 GSCprintMainBegin ()
 {
-    char *funname;
-
     DBUG_ENTER ("GSCprintMainBegin");
 
-    funname = RIDobjInitFunctionName (FALSE);
-    /* TODO: move the entire creation of objinitfun to gen startupcode ... */
-
-    /* call init function for a c library - no command line available */
+    /* for a c function there is no command line available */
     if (global.genlib.c) {
-        /* only call obj init function - runtimesystem already initialized */
         INDENT;
-        fprintf (global.outfile, "%s( 0 , NULL);\n\n", funname);
+        fprintf (global.outfile, "SAC_COMMANDLINE_SET( 0 , NULL);\n\n");
     } else {
         INDENT;
         fprintf (global.outfile, "SAC_MT_SETUP_INITIAL();\n");
@@ -528,12 +522,9 @@ GSCprintMainBegin ()
         fprintf (global.outfile, "SAC_MT_SETUP();\n");
         INDENT;
         fprintf (global.outfile, "SAC_CS_SETUP();\n");
-#ifndef OBJR_DEACTIVATED
         INDENT;
-        fprintf (global.outfile, "%s( __argc, __argv);\n\n", funname);
-#endif
+        fprintf (global.outfile, "SAC_COMMANDLINE_SET( __argc, __argv);\n\n");
     }
-    funname = ILIBfree (funname);
 
     DBUG_VOID_RETURN;
 }

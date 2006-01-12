@@ -35,6 +35,5 @@ extern node *RIDwlseg (node *arg_node, info *arg_info);
 extern node *RIDwlsegvar (node *arg_node, info *arg_info);
 extern node *RIDavis (node *arg_node, info *arg_info);
 
-extern char *RIDobjInitFunctionName (bool before_rename);
 extern char *RIDrenameLocalIdentifier (char *id);
 #endif /* _SAC_RENAMEIDENTIFIERS_H_ */

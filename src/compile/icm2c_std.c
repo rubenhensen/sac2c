@@ -1,97 +1,4 @@
-/*
- *
- * $Log$
- * Revision 3.65  2005/09/14 19:57:20  sah
- * extended ND_IDXS2OFFSET to work with scalar offsets, as well.
- *
- * Revision 3.64  2005/08/24 15:57:02  ktr
- * changed a ASSURE_TYPE_EXPR to ASSURE_TYPE_ASS
- *
- * Revision 3.63  2005/08/23 13:43:48  ktr
- * corrected ICMCompileND_CREATE__ARRAY__DATA
- *
- * Revision 3.62  2004/11/25 10:26:46  jhb
- * compile SACdevCamp 2k4
- *
- * Revision 3.61  2004/11/24 15:48:08  jhb
- * removed include my_dbug.h
- *
- * Revision 3.60  2004/03/10 00:10:17  dkrHH
- * old backend removed
- *
- * Revision 3.59  2003/12/01 18:29:41  dkrHH
- * DBUG_ASSERT for ND_DECL__MIRROR_PARAM added:
- * checks whether array size >=0
- *
- * Revision 3.58  2003/12/01 18:27:46  dkrHH
- * DBUG_ASSERT for ND_DECL__MIRROR added:
- * checks whether array size >=0
- *
- * Revision 3.57  2003/11/11 19:11:18  dkr
- * ND_ASSIGN__DESC: SAC_NOOP added
- *
- * Revision 3.56  2003/10/02 06:28:49  dkrHH
- * unused variable removedunused variable removed
- *
- * Revision 3.55  2003/09/30 19:29:30  dkr
- * code brushed: Set_Shape() used
- *
- * Revision 3.54  2003/09/30 00:04:33  dkr
- * minor modification in Set_Shape()
- *
- * Revision 3.53  2003/09/29 23:45:48  dkr
- * ND_CHECK_REUSE: unique objects are reused as well now
- *
- * Revision 3.52  2003/09/29 22:54:24  dkr
- * code brushing done.
- * several icms renamed/removed/added.
- *
- * Revision 3.51  2003/09/25 13:43:46  dkr
- * new argument 'copyfun' added to some ICMs.
- * ND_WRITE replaced by ND_WRITE_READ_COPY.
- *
- * Revision 3.50  2003/09/20 14:22:58  dkr
- * prf ICMs moved to icm2c_prf.c
- *
- * Revision 3.49  2003/09/19 15:39:10  dkr
- * postfix _nt of varnames renamed into _NT
- *
- * Revision 3.48  2003/09/17 14:17:20  dkr
- * some function parameters renamed
- *
- * Revision 3.47  2003/09/17 13:03:12  dkr
- * postfixes _nt, _any renamed into _NT, _ANY
- *
- * Revision 3.46  2003/06/12 17:23:12  dkr
- * support for multi-dimensional constant arrays added:
- * ICMs CREATE__VECT__... renamed into CREATE__ARRAY__... and modified
- *
- * Revision 3.45  2003/04/15 19:05:50  dkr
- * macro SET_SHAPES_AUD__XXX used. now it is possible to implement AKS,
- * AKD arrays as AUD arrays (sac2c flag -minarrayrep)
- *
- * Revision 3.44  2003/04/15 14:17:44  dkr
- * ICMCompileND_CHECK_REUSE(): \n added
- *
- * Revision 3.43  2003/04/14 15:16:50  dkr
- * IS_REUSED__BLOCK_... icms used
- *
- * Revision 3.42  2003/03/14 13:23:37  dkr
- * ND_PRF_SEL__SHAPE, ND_PRF_IDX_SEL__SHAPE modified
- *
- * Revision 3.41  2002/10/30 14:20:22  dkr
- * some new macros used
- *
- * Revision 3.40  2002/10/29 19:10:56  dkr
- * several bugs removed,
- * new macros for code generation used.
- *
- * Revision 3.39  2002/10/28 09:24:28  dkr
- * some \n for output added
- *
- * [...]
- *
- */
+/* $Id$ */
 
 #include <stdio.h>
 #include <ctype.h>
@@ -159,17 +66,12 @@ ICMCompileND_FUN_DEC (char *name, char *rettype_NT, int vararg_cnt, char **varar
     } else {
         fprintf (global.outfile, "void ");
     }
-    if (strcmp (name, "create_TheCommandLine") == 0) {
-        fprintf (global.outfile, "%s( int __argc, char *__argv[])", name);
-    } else if (strcmp (name, "SACf_GlobalObjInit") == 0) {
-        fprintf (global.outfile, "%s( int __argc, char *__argv[])", name);
-    } else {
-        fprintf (global.outfile, "%s(", name);
-        ScanArglist (vararg_cnt, 3, ",", ,
-                     fprintf (global.outfile, " SAC_ND_PARAM_%s( %s, %s)", vararg[i],
-                              vararg[i + 2], vararg[i + 1]));
-        fprintf (global.outfile, ")");
-    }
+
+    fprintf (global.outfile, "%s(", name);
+    ScanArglist (vararg_cnt, 3, ",", ,
+                 fprintf (global.outfile, " SAC_ND_PARAM_%s( %s, %s)", vararg[i],
+                          vararg[i + 2], vararg[i + 1]));
+    fprintf (global.outfile, ")");
 
     DBUG_VOID_RETURN;
 }
@@ -200,18 +102,16 @@ ICMCompileND_FUN_AP (char *name, char *retname, int vararg_cnt, char **vararg)
 #undef ND_FUN_AP
 
     INDENT;
-    if (0 != strcmp (retname, "")) {
+    if (!ILIBstringCompare (retname, "")) {
         fprintf (global.outfile, "%s = ", retname);
     }
-    if (strcmp (name, "create_TheCommandLine") == 0) {
-        fprintf (global.outfile, "%s( __argc, __argv);", name);
-    } else {
-        fprintf (global.outfile, "%s(", name);
-        ScanArglist (vararg_cnt, 2, ",", ,
-                     fprintf (global.outfile, " SAC_ND_ARG_%s( %s)", vararg[i],
-                              vararg[i + 1]));
-        fprintf (global.outfile, ");");
-    }
+
+    fprintf (global.outfile, "%s(", name);
+    ScanArglist (vararg_cnt, 2, ",", ,
+                 fprintf (global.outfile, " SAC_ND_ARG_%s( %s)", vararg[i],
+                          vararg[i + 1]));
+    fprintf (global.outfile, ");");
+
     fprintf (global.outfile, "\n");
 
     DBUG_VOID_RETURN;
