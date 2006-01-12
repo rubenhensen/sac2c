@@ -1464,7 +1464,7 @@ WLPGwith (node *arg_node, info *arg_info)
             node *shpavis;
             node *defshpavis;
             node *newshpavis;
-            ntype *newshptype;
+            ntype *newshptype, *rhs_type;
             node *arrayavis;
 
             /*
@@ -1503,7 +1503,11 @@ WLPGwith (node *arg_node, info *arg_info)
                 rhs = TCmakePrf1 (F_shape,
                                   TBmakeId (ID_AVIS (GENARRAY_DEFAULT (genarray))));
 
-                defshpavis = TBmakeAvis (ILIBtmpVar (), NTCnewTypeCheck_Expr (rhs));
+                rhs_type = NTCnewTypeCheck_Expr (rhs);
+
+                defshpavis = TBmakeAvis (ILIBtmpVar (), TYgetProductMember (rhs_type, 0));
+
+                rhs_type = TYfreeTypeConstructor (rhs_type);
 
                 FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
                   = TBmakeVardec (defshpavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
@@ -1544,9 +1548,8 @@ WLPGwith (node *arg_node, info *arg_info)
              */
             newshptype = NTCnewTypeCheck_Expr (rhs);
 
-            newshpavis = TBmakeAvis (ILIBtmpVar (),
-                                     TYcopyType (TYgetProductMember (newshptype, 0)));
-            newshptype = TYfreeType (newshptype);
+            newshpavis = TBmakeAvis (ILIBtmpVar (), TYgetProductMember (newshptype, 0));
+            newshptype = TYfreeTypeConstructor (newshptype);
 
             FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
               = TBmakeVardec (newshpavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
