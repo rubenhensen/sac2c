@@ -675,6 +675,7 @@ RCIwith (node *arg_node, info *arg_info)
 
     if (WITH_CODE (arg_node) != NULL) {
         WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
+        INFO_MUSTCOUNT (arg_info) = TRUE;
     }
 
     /*
@@ -731,6 +732,7 @@ RCIwith2 (node *arg_node, info *arg_info)
 
     if (WITH2_CODE (arg_node) != NULL) {
         WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
+        INFO_MUSTCOUNT (arg_info) = TRUE;
     }
 
     /*

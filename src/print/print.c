@@ -1738,25 +1738,28 @@ PRTblock (node *arg_node, info *arg_info)
     INDENT;
     fprintf (global.outfile, "}");
 
-    if (FUNDEF_ISSPMDFUN (INFO_FUNDEF (arg_info)) && (BLOCK_VARDEC (arg_node) != NULL)
-        && (global.compiler_phase == PH_genccode)) {
-        /*
-         * After resolving C-ICMs, there is an intended mismatch in the ordering of
-         * explicit and implicit (hidden in h-ICMS) parentheses in SPMD functions.
-         */
-        DBUG_ASSERTF (
-          global.indent - old_indent == -1,
-          ("Indentation unbalanced while printing block of SPMD function '%s`.\n"
-           " Indentation at beginning of block: %i.\n"
-           " Indentation at end of block: %i.\n"
-           " Indentation at end should be one less than at beginning.",
-           FUNDEF_NAME (INFO_FUNDEF (arg_info)), old_indent, global.indent));
-    } else {
-        DBUG_ASSERTF (global.indent == old_indent,
-                      ("Indentation unbalanced while printing function '%s`.\n"
-                       " Indentation at beginning of function: %i.\n"
-                       " Indentation at end of function: %i\n",
-                       FUNDEF_NAME (arg_node), old_indent, global.indent));
+    if (INFO_FUNDEF (arg_info) != NULL) {
+        if (FUNDEF_ISSPMDFUN (INFO_FUNDEF (arg_info)) && (BLOCK_VARDEC (arg_node) != NULL)
+            && (global.compiler_phase == PH_genccode)) {
+            /*
+             * After resolving C-ICMs, there is an intended mismatch in the ordering
+             * of explicit and implicit (hidden in h-ICMS) parentheses in SPMD
+             * functions.
+             */
+            DBUG_ASSERTF (
+              global.indent - old_indent == -1,
+              ("Indentation unbalanced while printing block of SPMD function '%s`.\n"
+               " Indentation at beginning of block: %i.\n"
+               " Indentation at end of block: %i.\n"
+               " Indentation at end should be one less than at beginning.",
+               FUNDEF_NAME (INFO_FUNDEF (arg_info)), old_indent, global.indent));
+        } else {
+            DBUG_ASSERTF (global.indent == old_indent,
+                          ("Indentation unbalanced while printing function '%s`.\n"
+                           " Indentation at beginning of function: %i.\n"
+                           " Indentation at end of function: %i\n",
+                           FUNDEF_NAME (arg_node), old_indent, global.indent));
+        }
     }
 
     DBUG_RETURN (arg_node);
