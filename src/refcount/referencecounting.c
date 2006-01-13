@@ -194,6 +194,21 @@ PrependAssignments (node *ass1, node *ass2)
     DBUG_RETURN (ass1);
 }
 
+static bool
+ArgIsInout (node *arg, node *rets)
+{
+    bool res;
+
+    DBUG_ENTER ("ArgIsInout");
+
+    res
+      = ((ARG_HASLINKSIGNINFO (arg)) && (rets != NULL)
+         && (((RET_HASLINKSIGNINFO (rets)) && (RET_LINKSIGN (rets) == ARG_LINKSIGN (arg)))
+             || ArgIsInout (arg, RET_NEXT (rets))));
+
+    DBUG_RETURN (res);
+}
+
 /** <!--********************************************************************-->
  *
  *  TRAVERSAL FUNCTIONS
@@ -516,7 +531,8 @@ RCIap (node *arg_node, info *arg_info)
 
         while (apargs != NULL) {
 
-            if ((funargs == NULL) || (!ARG_ISREFCOUNTED (funargs))) {
+            if ((!ArgIsInout (funargs, FUNDEF_RETS (AP_FUNDEF (arg_node))))
+                && ((funargs == NULL) || (!ARG_ISREFCOUNTED (funargs)))) {
                 INFO_MODE (arg_info) = rc_prfuse;
             } else {
                 INFO_MODE (arg_info) = rc_apuse;
