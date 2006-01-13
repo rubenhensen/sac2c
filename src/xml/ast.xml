@@ -1853,6 +1853,8 @@
           <node name="Fundef" />
           <node name="Genarray" />
           <node name="Id" />
+          <node name="Ids" />
+          <node name="Ap" />
           <node name="Let" />
           <node name="Modarray" />
           <node name="Prf" />

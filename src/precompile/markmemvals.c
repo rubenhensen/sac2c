@@ -229,6 +229,66 @@ MMVfundef (node *arg_node, info *arg_info)
 
 /** <!--******************************************************************-->
  *
+ * @fn MMVlet
+ *
+ *  @brief Traverses right hand side and substitutes left hand side
+ *         identifiers. If a substitution is made, the old vardec is marked
+ *         ST_artificial as the new left hand side.
+ *
+ *  @param arg_node
+ *  @param arg_info
+ *
+ *  @return modified let node.
+ *
+ ***************************************************************************/
+node *
+MMVlet (node *arg_node, info *arg_info)
+{
+    node *i;
+    node *newavis;
+
+    DBUG_ENTER ("MMVlet");
+
+    INFO_LHS (arg_info) = LET_IDS (arg_node);
+
+    if (LET_EXPR (arg_node) != NULL) {
+        LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
+    }
+
+    if (LET_IDS (arg_node) != NULL) {
+        LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *MMVids( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+MMVids (node *arg_node, info *arg_info)
+{
+    node *newavis;
+
+    DBUG_ENTER ("MMVids");
+
+    newavis = LUTsearchInLutPp (INFO_LUT (arg_info), IDS_AVIS (arg_node));
+    if (newavis != IDS_AVIS (arg_node)) {
+        AVIS_ISDEAD (IDS_AVIS (arg_node)) = TRUE;
+        IDS_AVIS (arg_node) = newavis;
+    }
+
+    if (IDS_NEXT (arg_node) != NULL) {
+        IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--******************************************************************-->
+ *
  * @fn MMVid
  *
  *  @brief Substitutes the current reference with a reference from the
@@ -256,49 +316,54 @@ MMVid (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--******************************************************************-->
+/** <!--********************************************************************-->
  *
- * @fn MMVlet
+ * @fn node *MMVap( node *arg_node, info *arg_info)
  *
- *  @brief Traverses right hand side and substitutes left hand side
- *         identifiers. If a substitution is made, the old vardec is marked
- *         ST_artificial as the new left hand side.
- *
- *  @param arg_node
- *  @param arg_info
- *
- *  @return modified let node.
- *
- ***************************************************************************/
+ *****************************************************************************/
 node *
-MMVlet (node *arg_node, info *arg_info)
+MMVap (node *arg_node, info *arg_info)
 {
-    node *i;
-    node *newavis;
+    node *exprs, *args;
 
-    DBUG_ENTER ("MMVlet");
+    DBUG_ENTER ("MMVap");
 
-    INFO_LHS (arg_info) = LET_IDS (arg_node);
-
-    if (LET_EXPR (arg_node) != NULL) {
-        LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
+    if (AP_ARGS (arg_node) != NULL) {
+        AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
     }
 
-    i = LET_IDS (arg_node);
+    exprs = AP_ARGS (arg_node);
+    args = FUNDEF_ARGS (AP_FUNDEF (arg_node));
 
-    while (i != NULL) {
-        newavis = LUTsearchInLutPp (INFO_LUT (arg_info), IDS_AVIS (i));
+    while (args != NULL) {
+        if (ARG_HASLINKSIGNINFO (args)) {
+            node *rets, *ids;
 
-        if (newavis != IDS_AVIS (i)) {
-            /*
-             * Mark the old lhs avis dead such that it will be removed
-             */
-            AVIS_ISDEAD (IDS_AVIS (i)) = TRUE;
+            rets = FUNDEF_RETS (AP_FUNDEF (arg_node));
+            ids = INFO_LHS (arg_info);
 
-            IDS_AVIS (i) = newavis;
+            while (rets != NULL) {
+                if (RET_HASLINKSIGNINFO (rets)
+                    && (RET_LINKSIGN (rets) == ARG_LINKSIGN (args))) {
+                    /*
+                     * a = f( b)   where a === b
+                     *
+                     * rename: a -> b
+                     */
+                    LUTinsertIntoLutS (INFO_LUT (arg_info), IDS_NAME (ids),
+                                       ID_NAME (EXPRS_EXPR (exprs)));
+
+                    LUTinsertIntoLutP (INFO_LUT (arg_info), IDS_AVIS (ids),
+                                       ID_AVIS (EXPRS_EXPR (exprs)));
+                }
+
+                rets = RET_NEXT (rets);
+                ids = IDS_NEXT (ids);
+            }
         }
 
-        i = IDS_NEXT (i);
+        args = ARG_NEXT (args);
+        exprs = EXPRS_NEXT (exprs);
     }
 
     DBUG_RETURN (arg_node);
