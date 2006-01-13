@@ -2528,6 +2528,16 @@
             </target>
           </targets>
         </son>
+        <son name="AffectedObjects" default="NULL">
+          <targets>
+            <target mandatory="no">
+              <node name="Exprs" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
       </sons>
       <attributes>
         <attribute name="Name">
@@ -4217,16 +4227,6 @@
           </targets>
 	</son>
 	<son name="Effect" default="NULL">
-          <targets>
-            <target mandatory="no">
-              <node name="Exprs" />
-              <phases>
-                <all />
-              </phases>
-            </target>
-          </targets>
-	</son>
-	<son name="Touch" default="NULL">
           <targets>
             <target mandatory="no">
               <node name="Exprs" />

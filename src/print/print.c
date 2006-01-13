@@ -2999,12 +2999,6 @@ PRTpragma (node *arg_node, info *arg_info)
         fprintf (global.outfile, "\n");
     }
 
-    if (PRAGMA_TOUCH (arg_node) != NULL) {
-        fprintf (global.outfile, "#pragma touch ");
-        TRAVdo (PRAGMA_TOUCH (arg_node), arg_info);
-        fprintf (global.outfile, "\n");
-    }
-
     if (PRAGMA_COPYFUN (arg_node) != NULL) {
         fprintf (global.outfile, "#pragma copyfun \"%s\"\n", PRAGMA_COPYFUN (arg_node));
     }

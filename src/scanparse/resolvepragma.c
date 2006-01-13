@@ -369,8 +369,7 @@ RSPfundef (node *arg_node, info *arg_info)
 
         if ((PRAGMA_LINKNAME (pragma) == NULL) && (PRAGMA_LINKOBJ (pragma) == NULL)
             && (PRAGMA_LINKSIGN (pragma) == NULL) && (PRAGMA_LINKMOD (pragma) == NULL)
-            && (PRAGMA_LINKSIGN (pragma) == NULL) && (PRAGMA_TOUCH (pragma) == NULL)
-            && (PRAGMA_EFFECT (pragma) == NULL)
+            && (PRAGMA_LINKSIGN (pragma) == NULL) && (PRAGMA_EFFECT (pragma) == NULL)
             && (PRAGMA_REFCOUNTING (pragma) == NULL)) {
             FUNDEF_PRAGMA (arg_node) = FREEdoFreeNode (pragma);
         }
