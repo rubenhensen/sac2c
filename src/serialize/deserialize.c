@@ -1089,7 +1089,7 @@ DShex2Double (const char *string)
 
     DBUG_ENTER ("DShex2Double");
 
-    ILIBhexStringToByteArray ((char *)&res, string);
+    ILIBhexStringToByteArray ((unsigned char *)&res, string);
 
     DBUG_RETURN (res);
 }
@@ -1101,7 +1101,7 @@ DShex2Float (const char *string)
 
     DBUG_ENTER ("DShex2Float");
 
-    ILIBhexStringToByteArray ((char *)&res, string);
+    ILIBhexStringToByteArray ((unsigned char *)&res, string);
 
     DBUG_RETURN (res);
 }
