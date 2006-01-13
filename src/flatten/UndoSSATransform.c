@@ -1,22 +1,6 @@
-/*
- * $Log$
- * Revision 1.25  2005/06/06 13:21:00  jhb
- * removed SSATransformExplicitAllocs
- *
- * Revision 1.24  2005/06/01 14:02:02  ktr
- * Extended criteria for copy assignment insertion
- *
- * Revision 1.23  2005/05/13 16:43:20  ktr
- * Copy assignments are now inserted if conditional results are given by fill-
- * operations. This is necessary for the consistent top-down renaming performed
- * by PREC:MMV
- *
- * Revision 1.22  2005/04/19 17:36:18  ktr
- * Complete rewrite
- *
- */
-
 /*****************************************************************************
+ *
+ * $Id$
  *
  * file:   UndoSSATransform.c
  *
@@ -50,12 +34,12 @@ struct INFO {
 /*
  * INFO macros
  */
-#define INFO_USSA_FUNDEF(n) (n->fundef)
-#define INFO_USSA_LHS(n) (n->lhs)
-#define INFO_USSA_REMASSIGN(n) (n->remassign)
-#define INFO_USSA_APPENDELSE(n) (n->appendelse)
-#define INFO_USSA_THENASS(n) (n->thenass)
-#define INFO_USSA_ELSEASS(n) (n->elseass)
+#define INFO_FUNDEF(n) (n->fundef)
+#define INFO_LHS(n) (n->lhs)
+#define INFO_REMASSIGN(n) (n->remassign)
+#define INFO_APPENDELSE(n) (n->appendelse)
+#define INFO_THENASS(n) (n->thenass)
+#define INFO_ELSEASS(n) (n->elseass)
 
 /*
  * INFO functions
@@ -69,11 +53,11 @@ MakeInfo ()
 
     result = ILIBmalloc (sizeof (info));
 
-    INFO_USSA_FUNDEF (result) = NULL;
-    INFO_USSA_LHS (result) = NULL;
-    INFO_USSA_REMASSIGN (result) = FALSE;
-    INFO_USSA_THENASS (result) = NULL;
-    INFO_USSA_ELSEASS (result) = NULL;
+    INFO_FUNDEF (result) = NULL;
+    INFO_LHS (result) = NULL;
+    INFO_REMASSIGN (result) = FALSE;
+    INFO_THENASS (result) = NULL;
+    INFO_ELSEASS (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -141,11 +125,11 @@ USSATfundef (node *arg_node, info *arg_info)
 
         arg_node = UssaInitAvisFlags (arg_node);
 
-        INFO_USSA_FUNDEF (arg_info) = arg_node;
-        INFO_USSA_LHS (arg_info) = NULL;
-        INFO_USSA_REMASSIGN (arg_info) = FALSE;
-        INFO_USSA_THENASS (arg_info) = NULL;
-        INFO_USSA_ELSEASS (arg_info) = NULL;
+        INFO_FUNDEF (arg_info) = arg_node;
+        INFO_LHS (arg_info) = NULL;
+        INFO_REMASSIGN (arg_info) = FALSE;
+        INFO_THENASS (arg_info) = NULL;
+        INFO_ELSEASS (arg_info) = NULL;
 
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 
@@ -289,19 +273,19 @@ USSATassign (node *arg_node, info *arg_info)
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
     }
 
-    INFO_USSA_REMASSIGN (arg_info) = FALSE;
+    INFO_REMASSIGN (arg_info) = FALSE;
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
-    if ((INFO_USSA_REMASSIGN (arg_info))) {
+    if ((INFO_REMASSIGN (arg_info))) {
         arg_node = FREEdoFreeNode (arg_node);
-        INFO_USSA_REMASSIGN (arg_info) = FALSE;
+        INFO_REMASSIGN (arg_info) = FALSE;
     }
 
-    if ((INFO_USSA_APPENDELSE (arg_info))) {
-        arg_node = TCappendAssign (INFO_USSA_ELSEASS (arg_info), arg_node);
-        INFO_USSA_ELSEASS (arg_info) = NULL;
-        INFO_USSA_APPENDELSE (arg_info) = FALSE;
+    if ((INFO_APPENDELSE (arg_info))) {
+        arg_node = TCappendAssign (INFO_ELSEASS (arg_info), arg_node);
+        INFO_ELSEASS (arg_info) = NULL;
+        INFO_APPENDELSE (arg_info) = FALSE;
     }
 
     DBUG_RETURN (arg_node);
@@ -325,7 +309,7 @@ USSATlet (node *arg_node, info *arg_info)
         LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
     }
 
-    INFO_USSA_LHS (arg_info) = LET_IDS (arg_node);
+    INFO_LHS (arg_info) = LET_IDS (arg_node);
 
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
@@ -349,12 +333,12 @@ USSATcond (node *arg_node, info *arg_info)
      * After all informations from the funconds have been annotated,
      * perform renaming in the THENASS, ELSEASS assigment chains
      */
-    if (INFO_USSA_THENASS (arg_info) != NULL) {
-        INFO_USSA_THENASS (arg_info) = TRAVdo (INFO_USSA_THENASS (arg_info), arg_info);
+    if (INFO_THENASS (arg_info) != NULL) {
+        INFO_THENASS (arg_info) = TRAVdo (INFO_THENASS (arg_info), arg_info);
     }
 
-    if (INFO_USSA_ELSEASS (arg_info) != NULL) {
-        INFO_USSA_ELSEASS (arg_info) = TRAVdo (INFO_USSA_ELSEASS (arg_info), arg_info);
+    if (INFO_ELSEASS (arg_info) != NULL) {
+        INFO_ELSEASS (arg_info) = TRAVdo (INFO_ELSEASS (arg_info), arg_info);
     }
 
     /*
@@ -367,30 +351,29 @@ USSATcond (node *arg_node, info *arg_info)
     /*
      * Attach THENASS to the THEN-branch
      */
-    if (INFO_USSA_THENASS (arg_info) != NULL) {
-        DBUG_ASSERT (FUNDEF_ISCONDFUN (INFO_USSA_FUNDEF (arg_info)),
+    if (INFO_THENASS (arg_info) != NULL) {
+        DBUG_ASSERT (FUNDEF_ISCONDFUN (INFO_FUNDEF (arg_info)),
                      "Then branch of loop function must not be extended!");
 
         BLOCK_INSTR (COND_THEN (arg_node))
-          = TCappendAssign (BLOCK_INSTR (COND_THEN (arg_node)),
-                            INFO_USSA_THENASS (arg_info));
-        INFO_USSA_THENASS (arg_info) = NULL;
+          = TCappendAssign (BLOCK_INSTR (COND_THEN (arg_node)), INFO_THENASS (arg_info));
+        INFO_THENASS (arg_info) = NULL;
     }
 
     /*
      * In cond-functions only:
      * Attach ELSEASS to the ELSE-branch
      */
-    if (FUNDEF_ISCONDFUN (INFO_USSA_FUNDEF (arg_info))) {
-        if (INFO_USSA_ELSEASS (arg_info) != NULL) {
+    if (FUNDEF_ISCONDFUN (INFO_FUNDEF (arg_info))) {
+        if (INFO_ELSEASS (arg_info) != NULL) {
 
             BLOCK_INSTR (COND_ELSE (arg_node))
               = TCappendAssign (BLOCK_INSTR (COND_ELSE (arg_node)),
-                                INFO_USSA_ELSEASS (arg_info));
-            INFO_USSA_ELSEASS (arg_info) = NULL;
+                                INFO_ELSEASS (arg_info));
+            INFO_ELSEASS (arg_info) = NULL;
         }
     } else {
-        INFO_USSA_APPENDELSE (arg_info) = TRUE;
+        INFO_APPENDELSE (arg_info) = TRUE;
     }
 
     DBUG_RETURN (arg_node);
@@ -417,27 +400,52 @@ IdGivenByFillOperation (node *idavis)
         ids = ASSIGN_LHS (AVIS_SSAASSIGN (idavis));
         expr = ASSIGN_RHS (AVIS_SSAASSIGN (idavis));
 
-        if (NODE_TYPE (expr) == N_prf) {
+        switch (NODE_TYPE (expr)) {
+        case N_prf: {
             res = (PRF_PRF (expr) == F_fill);
-        } else {
-            if ((NODE_TYPE (expr) == N_with) || (NODE_TYPE (expr) == N_with2)) {
-                node *ops;
+        } break;
 
-                if (NODE_TYPE (expr) == N_with) {
-                    ops = WITH_WITHOP (expr);
-                } else {
-                    ops = WITH2_WITHOP (expr);
-                }
+        case N_with:
+        case N_with2: {
+            node *ops;
 
-                while (IDS_AVIS (ids) != idavis) {
-                    ids = IDS_NEXT (ids);
-                    ops = WITHOP_NEXT (ops);
-                }
-
-                res
-                  = (((NODE_TYPE (ops) == N_genarray) || (NODE_TYPE (ops) == N_modarray))
-                     && (WITHOP_MEM (ops) != NULL));
+            if (NODE_TYPE (expr) == N_with) {
+                ops = WITH_WITHOP (expr);
+            } else {
+                ops = WITH2_WITHOP (expr);
             }
+
+            while (IDS_AVIS (ids) != idavis) {
+                ids = IDS_NEXT (ids);
+                ops = WITHOP_NEXT (ops);
+            }
+
+            res = (((NODE_TYPE (ops) == N_genarray) || (NODE_TYPE (ops) == N_modarray))
+                   && (WITHOP_MEM (ops) != NULL));
+        } break;
+
+        case N_ap: {
+            node *rets = FUNDEF_RETS (AP_FUNDEF (expr));
+
+            while (IDS_AVIS (ids) != idavis) {
+                ids = IDS_NEXT (ids);
+                rets = RET_NEXT (rets);
+            }
+
+            if (RET_HASLINKSIGNINFO (rets)) {
+                node *args = FUNDEF_ARGS (AP_FUNDEF (expr));
+                while (args != NULL) {
+                    if (ARG_HASLINKSIGNINFO (args)
+                        && (ARG_LINKSIGN (args) == RET_LINKSIGN (rets))) {
+                        res = TRUE;
+                    }
+                    args = ARG_NEXT (args);
+                }
+            }
+        } break;
+
+        default:
+            break;
         }
     }
 
@@ -460,7 +468,7 @@ USSATfuncond (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("USSATfuncond");
 
-    lhsavis = IDS_AVIS (INFO_USSA_LHS (arg_info));
+    lhsavis = IDS_AVIS (INFO_LHS (arg_info));
 
     /*
      * Ex.: r = funcond( c, t, e);
@@ -493,9 +501,9 @@ USSATfuncond (node *arg_node, info *arg_info)
         /*
          * At least one criterium is not met => insert copy assignment
          */
-        INFO_USSA_THENASS (arg_info)
+        INFO_THENASS (arg_info)
           = TBmakeAssign (TBmakeLet (TBmakeIds (lhsavis, NULL), TBmakeId (rhsavis)),
-                          INFO_USSA_THENASS (arg_info));
+                          INFO_THENASS (arg_info));
     } else {
         AVIS_SUBST (rhsavis) = lhsavis;
     }
@@ -510,14 +518,14 @@ USSATfuncond (node *arg_node, info *arg_info)
         /*
          * At least one criterium is not met => insert copy assignment
          */
-        INFO_USSA_ELSEASS (arg_info)
+        INFO_ELSEASS (arg_info)
           = TBmakeAssign (TBmakeLet (TBmakeIds (lhsavis, NULL), TBmakeId (rhsavis)),
-                          INFO_USSA_ELSEASS (arg_info));
+                          INFO_ELSEASS (arg_info));
     } else {
         AVIS_SUBST (rhsavis) = lhsavis;
     }
 
-    INFO_USSA_REMASSIGN (arg_info) = TRUE;
+    INFO_REMASSIGN (arg_info) = TRUE;
 
     DBUG_RETURN (arg_node);
 }
