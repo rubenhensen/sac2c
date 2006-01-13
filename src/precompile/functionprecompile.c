@@ -52,10 +52,10 @@ struct INFO {
  * INFO macros
  */
 
-#define INFO_FPC_FUNDEF(n) ((n)->fundef)
-#define INFO_FPC_ARGTAB(n) ((n)->argtab)
-#define INFO_FPC_PREASSIGNS(n) ((n)->preassigns)
-#define INFO_FPC_POSTASSIGNS(n) ((n)->postassigns)
+#define INFO_FUNDEF(n) ((n)->fundef)
+#define INFO_ARGTAB(n) ((n)->argtab)
+#define INFO_PREASSIGNS(n) ((n)->preassigns)
+#define INFO_POSTASSIGNS(n) ((n)->postassigns)
 
 /*
  * INFO functions
@@ -70,10 +70,10 @@ MakeInfo ()
 
     result = ILIBmalloc (sizeof (info));
 
-    INFO_FPC_FUNDEF (result) = NULL;
-    INFO_FPC_ARGTAB (result) = NULL;
-    INFO_FPC_PREASSIGNS (result) = NULL;
-    INFO_FPC_POSTASSIGNS (result) = NULL;
+    INFO_FUNDEF (result) = NULL;
+    INFO_ARGTAB (result) = NULL;
+    INFO_PREASSIGNS (result) = NULL;
+    INFO_POSTASSIGNS (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -447,10 +447,10 @@ FPCfundef (node *arg_node, info *arg_info)
     DBUG_PRINT ("FPC", ("processing fundef %s:%s...", NSgetName (FUNDEF_NS (arg_node)),
                         FUNDEF_NAME (arg_node)));
 
-    INFO_FPC_FUNDEF (arg_info) = arg_node;
+    INFO_FUNDEF (arg_info) = arg_node;
 
     if (!FUNDEF_ISZOMBIE (arg_node)) {
-        INFO_FPC_ARGTAB (arg_info)
+        INFO_ARGTAB (arg_info)
           = TBmakeArgtab (TCcountRets (FUNDEF_RETS (arg_node))
                           + TCcountArgs (FUNDEF_ARGS (arg_node)) + 1);
 
@@ -466,7 +466,7 @@ FPCfundef (node *arg_node, info *arg_info)
         /*
          * assign the argtab to the function
          */
-        FUNDEF_ARGTAB (arg_node) = INFO_FPC_ARGTAB (arg_info);
+        FUNDEF_ARGTAB (arg_node) = INFO_ARGTAB (arg_info);
 
         FUNDEF_ARGTAB (arg_node) = CompressArgtab (FUNDEF_ARGTAB (arg_node));
 
@@ -479,8 +479,8 @@ FPCfundef (node *arg_node, info *arg_info)
         /*
          * all FUNDEF_ARGTABs are build now -> traverse body
          */
-        INFO_FPC_POSTASSIGNS (arg_info) = NULL;
-        INFO_FPC_PREASSIGNS (arg_info) = NULL;
+        INFO_POSTASSIGNS (arg_info) = NULL;
+        INFO_PREASSIGNS (arg_info) = NULL;
         if (FUNDEF_BODY (arg_node) != NULL) {
             FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
         }
@@ -503,8 +503,8 @@ FPCret (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FPCret");
 
-    INFO_FPC_ARGTAB (arg_info)
-      = InsertIntoOut (INFO_FPC_ARGTAB (arg_info), INFO_FPC_FUNDEF (arg_info), arg_node);
+    INFO_ARGTAB (arg_info)
+      = InsertIntoOut (INFO_ARGTAB (arg_info), INFO_FUNDEF (arg_info), arg_node);
 
     arg_node = TRAVcont (arg_node, arg_info);
 
@@ -526,8 +526,8 @@ FPCarg (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("FPCret");
 
-    INFO_FPC_ARGTAB (arg_info)
-      = InsertIntoIn (INFO_FPC_ARGTAB (arg_info), INFO_FPC_FUNDEF (arg_info), arg_node);
+    INFO_ARGTAB (arg_info)
+      = InsertIntoIn (INFO_ARGTAB (arg_info), INFO_FUNDEF (arg_info), arg_node);
 
     arg_node = TRAVcont (arg_node, arg_info);
 
@@ -540,7 +540,7 @@ FPCarg (node *arg_node, info *arg_info)
  *   node *FPCassign( node *arg_node, info *arg_info)
  *
  * Description:
- *   Inserts the assignments found in INFO_FPC_PRE/POSTASSIGNS into the AST.
+ *   Inserts the assignments found in INFO_PRE/POSTASSIGNS into the AST.
  *
  ******************************************************************************/
 
@@ -554,14 +554,14 @@ FPCassign (node *arg_node, info *arg_info)
     }
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
-    if (INFO_FPC_POSTASSIGNS (arg_info) != NULL) {
+    if (INFO_POSTASSIGNS (arg_info) != NULL) {
         ASSIGN_NEXT (arg_node)
-          = TCappendAssign (INFO_FPC_POSTASSIGNS (arg_info), ASSIGN_NEXT (arg_node));
-        INFO_FPC_POSTASSIGNS (arg_info) = NULL;
+          = TCappendAssign (INFO_POSTASSIGNS (arg_info), ASSIGN_NEXT (arg_node));
+        INFO_POSTASSIGNS (arg_info) = NULL;
     }
-    if (INFO_FPC_PREASSIGNS (arg_info) != NULL) {
-        arg_node = TCappendAssign (INFO_FPC_PREASSIGNS (arg_info), arg_node);
-        INFO_FPC_PREASSIGNS (arg_info) = NULL;
+    if (INFO_PREASSIGNS (arg_info) != NULL) {
+        arg_node = TCappendAssign (INFO_PREASSIGNS (arg_info), arg_node);
+        INFO_PREASSIGNS (arg_info) = NULL;
     }
     DBUG_RETURN (arg_node);
 }

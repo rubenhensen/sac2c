@@ -24,7 +24,6 @@
 #include "traverse.h"
 #include "dbug.h"
 #include "print.h"
-#include "DupTree.h"
 #include "new_types.h"
 #include "internal_lib.h"
 
@@ -39,8 +38,8 @@ struct INFO {
 /**
  * INFO macros
  */
-#define INFO_EMEC_PREASSIGN(n) (n->preassign)
-#define INFO_EMEC_FUNDEF(n) (n->fundef)
+#define INFO_PREASSIGN(n) (n->preassign)
+#define INFO_FUNDEF(n) (n->fundef)
 
 /**
  * INFO functions
@@ -54,8 +53,8 @@ MakeInfo ()
 
     result = ILIBmalloc (sizeof (info));
 
-    INFO_EMEC_PREASSIGN (result) = NULL;
-    INFO_EMEC_FUNDEF (result) = NULL;
+    INFO_PREASSIGN (result) = NULL;
+    INFO_FUNDEF (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -112,13 +111,8 @@ EMECdoExplicitCopy (node *syntax_tree)
  *
  * @fn node *CreateCopyId(node *arg_node, info *arg_info)
  *
- * @brief CreateCopyId( a, arg_info) will append INFO_EMEC_PREASSIGN with
+ * @brief CreateCopyId( a, arg_info) will append INFO_PREASSIGN with
  *        a' = copy( a); and returns a'.
- *
- * @param arg_node
- * @param arg_info
- *
- * @return arg_node
  *
  *****************************************************************************/
 static node *
@@ -134,16 +128,16 @@ CreateCopyId (node *oldid, info *arg_info)
     avis = TBmakeAvis (ILIBtmpVarName (ID_NAME (oldid)),
                        TYcopyType (AVIS_TYPE (ID_AVIS (oldid))));
 
-    FUNDEF_VARDEC (INFO_EMEC_FUNDEF (arg_info))
-      = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_EMEC_FUNDEF (arg_info)));
+    FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+      = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
 
     /*
      * Create copy operation
      */
-    INFO_EMEC_PREASSIGN (arg_info)
+    INFO_PREASSIGN (arg_info)
       = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), TCmakePrf1 (F_copy, oldid)),
-                      INFO_EMEC_PREASSIGN (arg_info));
-    AVIS_SSAASSIGN (avis) = INFO_EMEC_PREASSIGN (arg_info);
+                      INFO_PREASSIGN (arg_info));
+    AVIS_SSAASSIGN (avis) = INFO_PREASSIGN (arg_info);
 
     /*
      * Replace oldid with newid
@@ -164,13 +158,6 @@ CreateCopyId (node *oldid, info *arg_info)
  *
  * @fn node *EMECassign(node *arg_node, info *arg_info)
  *
- * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return arg_node
- *
  *****************************************************************************/
 node *
 EMECassign (node *arg_node, info *arg_info)
@@ -183,9 +170,9 @@ EMECassign (node *arg_node, info *arg_info)
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
-    if (INFO_EMEC_PREASSIGN (arg_info) != NULL) {
-        arg_node = TCappendAssign (INFO_EMEC_PREASSIGN (arg_info), arg_node);
-        INFO_EMEC_PREASSIGN (arg_info) = NULL;
+    if (INFO_PREASSIGN (arg_info) != NULL) {
+        arg_node = TCappendAssign (INFO_PREASSIGN (arg_info), arg_node);
+        INFO_PREASSIGN (arg_info) = NULL;
     }
 
     DBUG_RETURN (arg_node);
@@ -195,13 +182,6 @@ EMECassign (node *arg_node, info *arg_info)
  *
  * @fn node *EMECfundef(node *arg_node, info *arg_info)
  *
- * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return arg_node
- *
  *****************************************************************************/
 node *
 EMECfundef (node *arg_node, info *arg_info)
@@ -209,13 +189,8 @@ EMECfundef (node *arg_node, info *arg_info)
     DBUG_ENTER ("EMECfundef");
 
     if (FUNDEF_BODY (arg_node) != NULL) {
-        DBUG_PRINT ("EMEC", ("Traversing function %s", FUNDEF_NAME (arg_node)));
-
-        INFO_EMEC_FUNDEF (arg_info) = arg_node;
-
+        INFO_FUNDEF (arg_info) = arg_node;
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-
-        DBUG_PRINT ("EMEC", ("Traversing function %s complete.", FUNDEF_NAME (arg_node)));
     }
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
@@ -227,14 +202,41 @@ EMECfundef (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *EMECap( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+EMECap (node *arg_node, info *arg_info)
+{
+    node *args, *exprs;
+
+    DBUG_ENTER ("EMECap");
+
+    exprs = AP_ARGS (arg_node);
+    args = FUNDEF_ARGS (AP_FUNDEF (arg_node));
+
+    while (args != NULL) {
+        if (ARG_HASLINKSIGNINFO (args)) {
+            node *rets = FUNDEF_RETS (AP_FUNDEF (arg_node));
+            while (rets != NULL) {
+                if ((RET_HASLINKSIGNINFO (rets))
+                    && (RET_LINKSIGN (rets) == ARG_LINKSIGN (args))) {
+                    EXPRS_EXPR (exprs) = CreateCopyId (EXPRS_EXPR (exprs), arg_info);
+                }
+                rets = RET_NEXT (rets);
+            }
+        }
+
+        args = ARG_NEXT (args);
+        exprs = EXPRS_NEXT (exprs);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *EMECprf(node *arg_node, info *arg_info)
- *
- * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return arg_node
  *
  *****************************************************************************/
 node *
