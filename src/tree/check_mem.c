@@ -65,6 +65,7 @@ CMregisterMem (int bsize, void *aptr)
     memtab[memindex].size = bsize;
     memtab[memindex].ptr = aptr;
     memtab[memindex].bit = 0;
+    memtab[memindex].nodetype = N_undefined;
 
     *(memobj **)aptr = memtab + memindex;
 
