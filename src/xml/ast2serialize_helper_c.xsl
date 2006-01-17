@@ -1,38 +1,6 @@
 <?xml version="1.0"?>
 <!--
-  $Log$
-  Revision 1.9  2005/07/17 11:46:54  sah
-  added fancy filename serialisation
-
-  Revision 1.8  2005/07/05 14:36:10  sah
-  NODE_ERROR is now initialised properly
-  when deserialising code
-
-  Revision 1.7  2005/06/27 18:15:50  sah
-  fixed bug #90
-
-  Revision 1.6  2005/04/22 08:03:59  sah
-  added missing stringcopy
-
-  Revision 1.5  2005/03/17 12:41:21  sah
-  added special handling of char and float during deserialisation
-  as they are promoted to int and double by the c compiler when passing
-  them through an ... arg
-
-  Revision 1.4  2005/02/16 22:29:13  sah
-  flags are processed correctly now
-
-  Revision 1.3  2004/11/25 22:32:51  sah
-  adapted
-
-  Revision 1.2  2004/11/23 22:24:47  sah
-  removed .h files
-
-  Revision 1.1  2004/11/23 11:31:45  sah
-  Initial revision
-
-
-
+  $Id$
 -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
 version="1.0">
@@ -113,6 +81,7 @@ version="1.0">
   <xsl:value-of select="'NODE_LINE( this) = lineno;'" />
   <xsl:value-of select="'NODE_FILE( this) = sfile;'" />
   <xsl:value-of select="'NODE_ERROR( this) = NULL;'" />
+  <xsl:value-of select="'CMsetNodeType (this, node_type);'" />
   <xsl:value-of select="'switch (node_type) {'" />
   <xsl:apply-templates select="//syntaxtree/node" mode="gen-case" />
   <xsl:value-of select="'default: /* error */ '" />
@@ -131,15 +100,6 @@ version="1.0">
   <xsl:value-of select="': '" />
   <xsl:apply-templates select="." mode="gen-alloc-fun" />
   <xsl:apply-templates select="." mode="gen-fill-fun" />
-
-  <xsl:value-of select="'CMsetNodeType(this, N_'" />
-  <xsl:call-template name="lowercase" >
-    <xsl:with-param name="string" >
-      <xsl:value-of select="@name" />
-    </xsl:with-param>
-  </xsl:call-template>
-  <xsl:value-of select="');'" />
-
   <xsl:value-of select="'break;'" />
 </xsl:template>
 
