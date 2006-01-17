@@ -2,6 +2,7 @@
  * $Id$
  */
 #include "internal_lib.h"
+#undef ILIBmalloc
 
 #include <math.h>
 #include <string.h>
@@ -99,7 +100,7 @@ ILIBmalloc (int size)
 #endif
         }
 #ifdef SHOW_MALLOC
-        tmp = CMregisterMem (size, tmp);
+        tmp = CHKMregisterMem (size, tmp);
 
         if (global.current_allocated_mem + size < global.current_allocated_mem) {
             DBUG_ASSERT ((0), "counter for allocated memory: overflow detected");
@@ -130,6 +131,22 @@ ILIBmalloc (int size)
     DBUG_RETURN (tmp);
 }
 
+#ifdef SHOW_MALLOC
+
+void *
+ILIBmallocAt (int size, char *file, int line)
+{
+    void *pointer;
+
+    DBUG_ENTER ("ILIBmallocAt");
+
+    pointer = ILIBmalloc (size);
+
+    DBUG_RETURN (pointer);
+}
+
+#endif /* SHOW_MALLOC */
+
 #ifdef NOFREE
 
 void *
@@ -156,9 +173,9 @@ ILIBfree (void *address)
 
     if (address != NULL) {
 #ifdef SHOW_MALLOC
-        orig_address = CMunregisterMem (address);
+        orig_address = CHKMunregisterMem (address);
 
-        size = CMgetSize (address);
+        size = CHKMgetSize (address);
 
         DBUG_ASSERT ((size >= 0), "illegal size found!");
         DBUG_PRINT ("MEM_ALLOC",

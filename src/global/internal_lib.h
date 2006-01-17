@@ -99,6 +99,14 @@ extern void ILIBdbugMemoryLeakCheck (void);
 #define MAX(a, b) ((a < b) ? b : a)
 #define MIN(a, b) ((a < b) ? a : b)
 
+/* special check_mem malloc-call to get more informations */
+#ifdef SHOW_MALLOC
+extern void *ILIBmallocAt (int size, char *file, int line);
+#define ILIBmalloc(size) ILIBmallocAt (size, __FILE__, __LINE__)
+#else
+extern void *ILIBmalloc (int size);
+#endif /* SHOW_MALLOC */
+
 /*
  * THE FOLLOWING MACROS ARE DEPRECATED!!  DO NOT USE!!!
  */
