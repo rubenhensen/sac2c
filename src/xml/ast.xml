@@ -238,7 +238,7 @@
       </traversal>
       <traversal id="CHK" name="Check the Tree" default="user" include="check.h" />
       <traversal id="CHKTST" name="Check the TreeTest" default="user" include="checktst.h" />
-      <traversal id="CM" name="Check the memspace" default="sons" prefun="CMspaceleaks" include="check_mem.h" />
+      <traversal id="CHKM" name="Check the memspace" default="sons" prefun="CHKMspaceLeaks" include="check_mem.h" />
     </general>
     
     <phase id="setup" name="Setting up sac2c compiler environment"
