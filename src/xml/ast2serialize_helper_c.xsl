@@ -81,7 +81,7 @@ version="1.0">
   <xsl:value-of select="'NODE_LINE( this) = lineno;'" />
   <xsl:value-of select="'NODE_FILE( this) = sfile;'" />
   <xsl:value-of select="'NODE_ERROR( this) = NULL;'" />
-  <xsl:value-of select="'CMsetNodeType (this, node_type);'" />
+  <xsl:value-of select="'CHKMsetNodeType (this, node_type);'" />
   <xsl:value-of select="'switch (node_type) {'" />
   <xsl:apply-templates select="//syntaxtree/node" mode="gen-case" />
   <xsl:value-of select="'default: /* error */ '" />
