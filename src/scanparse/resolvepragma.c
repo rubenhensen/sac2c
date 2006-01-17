@@ -28,10 +28,10 @@ struct INFO {
 /*
  * INFO macros
  */
-#define INFO_RSP_MODULE(n) ((n)->module)
-#define INFO_RSP_NUMS(n) ((n)->nums)
-#define INFO_RSP_COUNTER(n) ((n)->counter)
-#define INFO_RSP_TRAVMODE(n) ((n)->travmode)
+#define INFO_MODULE(n) ((n)->module)
+#define INFO_NUMS(n) ((n)->nums)
+#define INFO_COUNTER(n) ((n)->counter)
+#define INFO_TRAVMODE(n) ((n)->travmode)
 
 /*
  * INFO functions
@@ -45,10 +45,10 @@ MakeInfo ()
 
     result = ILIBmalloc (sizeof (info));
 
-    INFO_RSP_MODULE (result) = NULL;
-    INFO_RSP_NUMS (result) = NULL;
-    INFO_RSP_COUNTER (result) = 0;
-    INFO_RSP_TRAVMODE (result) = RSP_default;
+    INFO_MODULE (result) = NULL;
+    INFO_NUMS (result) = NULL;
+    INFO_COUNTER (result) = 0;
+    INFO_TRAVMODE (result) = RSP_default;
 
     DBUG_RETURN (result);
 }
@@ -176,9 +176,9 @@ AnnotateRefcounting (node *arg_node, info *arg_info, node *nums)
 {
     DBUG_ENTER ("AnnotateRefcounting");
 
-    INFO_RSP_COUNTER (arg_info) = 0;
-    INFO_RSP_NUMS (arg_info) = nums;
-    INFO_RSP_TRAVMODE (arg_info) = RSP_refcnt;
+    INFO_COUNTER (arg_info) = 0;
+    INFO_NUMS (arg_info) = nums;
+    INFO_TRAVMODE (arg_info) = RSP_refcnt;
 
     if (FUNDEF_RETS (arg_node) != NULL) {
         FUNDEF_RETS (arg_node) = TRAVdo (FUNDEF_RETS (arg_node), arg_info);
@@ -187,9 +187,9 @@ AnnotateRefcounting (node *arg_node, info *arg_info, node *nums)
         FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
     }
 
-    INFO_RSP_COUNTER (arg_info) = 0;
-    INFO_RSP_NUMS (arg_info) = NULL;
-    INFO_RSP_TRAVMODE (arg_info) = RSP_default;
+    INFO_COUNTER (arg_info) = 0;
+    INFO_NUMS (arg_info) = NULL;
+    INFO_TRAVMODE (arg_info) = RSP_default;
 
     DBUG_RETURN (arg_node);
 }
@@ -199,8 +199,8 @@ AnnotateLinksign (node *arg_node, info *arg_info, node *nums)
 {
     DBUG_ENTER ("AnnotateLinksign");
 
-    INFO_RSP_NUMS (arg_info) = nums;
-    INFO_RSP_TRAVMODE (arg_info) = RSP_linksign;
+    INFO_NUMS (arg_info) = nums;
+    INFO_TRAVMODE (arg_info) = RSP_linksign;
 
     if (FUNDEF_RETS (arg_node) != NULL) {
         FUNDEF_RETS (arg_node) = TRAVdo (FUNDEF_RETS (arg_node), arg_info);
@@ -209,8 +209,8 @@ AnnotateLinksign (node *arg_node, info *arg_info, node *nums)
         FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
     }
 
-    INFO_RSP_NUMS (arg_info) = NULL;
-    INFO_RSP_TRAVMODE (arg_info) = RSP_default;
+    INFO_NUMS (arg_info) = NULL;
+    INFO_TRAVMODE (arg_info) = RSP_default;
 
     DBUG_RETURN (arg_node);
 }
@@ -220,18 +220,18 @@ RSPret (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("RSPret");
 
-    if (INFO_RSP_TRAVMODE (arg_info) == RSP_refcnt) {
-        if (TCnumsContains (INFO_RSP_COUNTER (arg_info), INFO_RSP_NUMS (arg_info))) {
+    if (INFO_TRAVMODE (arg_info) == RSP_refcnt) {
+        if (TCnumsContains (INFO_COUNTER (arg_info), INFO_NUMS (arg_info))) {
 
             RET_ISREFCOUNTED (arg_node) = TRUE;
         }
 
-        INFO_RSP_COUNTER (arg_info)++;
-    } else if (INFO_RSP_TRAVMODE (arg_info) == RSP_linksign) {
-        RET_LINKSIGN (arg_node) = NUMS_VAL (INFO_RSP_NUMS (arg_info));
+        INFO_COUNTER (arg_info)++;
+    } else if (INFO_TRAVMODE (arg_info) == RSP_linksign) {
+        RET_LINKSIGN (arg_node) = NUMS_VAL (INFO_NUMS (arg_info));
         RET_HASLINKSIGNINFO (arg_node) = TRUE;
 
-        INFO_RSP_NUMS (arg_info) = NUMS_NEXT (INFO_RSP_NUMS (arg_info));
+        INFO_NUMS (arg_info) = NUMS_NEXT (INFO_NUMS (arg_info));
     }
 
     if (RET_NEXT (arg_node) != 0) {
@@ -246,18 +246,18 @@ RSParg (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("RSParg");
 
-    if (INFO_RSP_TRAVMODE (arg_info) == RSP_refcnt) {
-        if (TCnumsContains (INFO_RSP_COUNTER (arg_info), INFO_RSP_NUMS (arg_info))) {
+    if (INFO_TRAVMODE (arg_info) == RSP_refcnt) {
+        if (TCnumsContains (INFO_COUNTER (arg_info), INFO_NUMS (arg_info))) {
 
             ARG_ISREFCOUNTED (arg_node) = TRUE;
         }
 
-        INFO_RSP_COUNTER (arg_info)++;
-    } else if (INFO_RSP_TRAVMODE (arg_info) == RSP_linksign) {
-        ARG_LINKSIGN (arg_node) = NUMS_VAL (INFO_RSP_NUMS (arg_info));
+        INFO_COUNTER (arg_info)++;
+    } else if (INFO_TRAVMODE (arg_info) == RSP_linksign) {
+        ARG_LINKSIGN (arg_node) = NUMS_VAL (INFO_NUMS (arg_info));
         ARG_HASLINKSIGNINFO (arg_node) = TRUE;
 
-        INFO_RSP_NUMS (arg_info) = NUMS_NEXT (INFO_RSP_NUMS (arg_info));
+        INFO_NUMS (arg_info) = NUMS_NEXT (INFO_NUMS (arg_info));
     }
 
     if (ARG_NEXT (arg_node) != 0) {
@@ -334,9 +334,9 @@ RSPfundef (node *arg_node, info *arg_info)
          * the external dependencies of this module.
          */
         if (PRAGMA_LINKMOD (pragma) != NULL) {
-            MODULE_DEPENDENCIES (INFO_RSP_MODULE (arg_info))
+            MODULE_DEPENDENCIES (INFO_MODULE (arg_info))
               = STRSjoin (PRAGMA_LINKMOD (pragma),
-                          MODULE_DEPENDENCIES (INFO_RSP_MODULE (arg_info)));
+                          MODULE_DEPENDENCIES (INFO_MODULE (arg_info)));
 
             PRAGMA_LINKMOD (pragma) = NULL;
         }
@@ -346,9 +346,9 @@ RSPfundef (node *arg_node, info *arg_info)
          * add it to the dependencies
          */
         if (PRAGMA_LINKOBJ (pragma) != NULL) {
-            MODULE_DEPENDENCIES (INFO_RSP_MODULE (arg_info))
+            MODULE_DEPENDENCIES (INFO_MODULE (arg_info))
               = STRSjoin (PRAGMA_LINKOBJ (pragma),
-                          MODULE_DEPENDENCIES (INFO_RSP_MODULE (arg_info)));
+                          MODULE_DEPENDENCIES (INFO_MODULE (arg_info)));
 
             PRAGMA_LINKOBJ (pragma) = NULL;
         }
@@ -387,7 +387,7 @@ RSPmodule (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("RSPModule");
 
-    INFO_RSP_MODULE (arg_info) = arg_node;
+    INFO_MODULE (arg_info) = arg_node;
 
     if (MODULE_FUNDECS (arg_node) != NULL) {
         MODULE_FUNDECS (arg_node) = TRAVdo (MODULE_FUNDECS (arg_node), arg_info);
