@@ -11,10 +11,13 @@
 
 #include "internal_lib.h"
 
-extern void *CMregisterMem (int size, void *aptr);
-extern void *CMunregisterMem (void *bptr);
+extern void *CHKMregisterMem (int size, void *aptr);
+extern void *CHKMunregisterMem (void *bptr);
 
-extern int CMgetSize (void *orig_address);
-extern void CMsetNodyType (node *bptr, nodetype newnodetype);
+extern node *CHKMdoTreeWalk (node *syntax_tree, info *arg_info);
+extern void CHKMspaceLeaks ();
+
+extern void CHKMsetNodyType (node *bptr, nodetype newnodetype);
+extern int CHKMgetSize (void *orig_address);
 
 #endif /*  _SAC_CHECK_MEM_H_ */

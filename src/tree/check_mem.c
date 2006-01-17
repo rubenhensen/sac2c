@@ -5,6 +5,11 @@
 #include <stdlib.h>
 #include "internal_lib.h"
 
+#include "types.h"
+#include "traverse.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+
 typedef struct MEMOBJ {
     int size;
     void *ptr;
@@ -23,9 +28,9 @@ int memindex = 0;
 int memtabsize = 0;
 
 void *
-CMregisterMem (int bsize, void *aptr)
+CHKMregisterMem (int bsize, void *aptr)
 {
-    DBUG_ENTER ("CMregisterMem");
+    DBUG_ENTER ("CHKMregisterMem");
 
     void *bptr = NULL;
 
@@ -76,11 +81,11 @@ CMregisterMem (int bsize, void *aptr)
 }
 
 void *
-CMunregisterMem (void *bptr)
+CHKMunregisterMem (void *bptr)
 {
     memobj **aptr;
 
-    DBUG_ENTER (" CMunregisterMEM");
+    DBUG_ENTER (" CHKMunregisterMEM");
 
     aptr = (memobj **)((char *)bptr - malloc_align_step);
 
@@ -97,8 +102,45 @@ CMunregisterMem (void *bptr)
     DBUG_RETURN ((void *)aptr);
 }
 
+node *
+CHKMdoTreeWalk (node *syntax_tree, info *arg_info)
+{
+
+    DBUG_ENTER ("CHKMdoTreewalk");
+
+    DBUG_PRINT ("CHKM", ("Starting the CheckSpacemechanism"));
+
+    TRAVpush (TR_chkm);
+    syntax_tree = TRAVdo (syntax_tree, arg_info);
+    TRAVpop ();
+
+    DBUG_PRINT ("CHKM", ("CheckSpacemechanism complete"));
+
+    DBUG_RETURN (syntax_tree);
+}
+
+void
+CHKMspaceLeaks ()
+{
+
+    DBUG_ENTER ("CHKMspaceLeaks");
+
+    /* durch den Baum traversieren und die Nodes die besucht werden, das bit flippen */
+}
+
+void
+CHKMsetNodeType (node *bptr, nodetype newnodetype)
+{
+
+    memobj **tmpobj;
+
+    tmpobj = (memobj **)((char *)bptr - malloc_align_step);
+
+    (**tmpobj).nodetype = newnodetype;
+}
+
 int
-CMgetSize (void *bptr)
+CHKMgetSize (void *bptr)
 {
     DBUG_ENTER ("CMgetSize");
 
@@ -110,22 +152,4 @@ CMgetSize (void *bptr)
     tmpsize = (**tmpobj).size;
 
     DBUG_RETURN (tmpsize);
-}
-
-void
-CMtreewalker ()
-{
-
-    /* durch den Baum traversieren und die Nodes die besucht werden, das bit flippen */
-}
-
-void
-CMsetNodeType (node *bptr, nodetype newnodetype)
-{
-
-    memobj **tmpobj;
-
-    tmpobj = (memobj **)((char *)bptr - malloc_align_step);
-
-    (**tmpobj).nodetype = newnodetype;
 }
