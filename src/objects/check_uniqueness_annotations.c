@@ -30,7 +30,8 @@ CUAarg (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CUAarg");
 
-    if (TUisUniqueUserType (TYgetScalar (AVIS_TYPE (ARG_AVIS (arg_node))))) {
+    if (TYisArray (AVIS_TYPE (ARG_AVIS (arg_node)))
+        && TUisUniqueUserType (TYgetScalar (AVIS_TYPE (ARG_AVIS (arg_node))))) {
         ARG_ISUNIQUE (arg_node) = TRUE;
     }
 
@@ -49,7 +50,8 @@ CUAret (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CUAret");
 
-    if (TUisUniqueUserType (TYgetScalar (RET_TYPE (arg_node)))) {
+    if (TYisArray (RET_TYPE (arg_node))
+        && TUisUniqueUserType (TYgetScalar (RET_TYPE (arg_node)))) {
         RET_ISUNIQUE (arg_node) = TRUE;
     }
 
