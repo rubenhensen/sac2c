@@ -14,6 +14,8 @@ typedef struct MEMOBJ {
     int size;
     void *ptr;
     nodetype nodetype;
+    char *file;
+    int line;
 #if 0
     int subphase;
     int traversal;
@@ -137,6 +139,19 @@ CHKMsetNodeType (node *bptr, nodetype newnodetype)
     tmpobj = (memobj **)((char *)bptr - malloc_align_step);
 
     (**tmpobj).nodetype = newnodetype;
+}
+
+void
+CHKMsetLocation (node *bptr, char *file, int line)
+{
+
+    memobj **tmpobj;
+
+    tmpobj = (memobj **)((char *)bptr - malloc_align_step);
+
+    (**tmpobj).file = file;
+
+    (**tmpobj).line = line;
 }
 
 int
