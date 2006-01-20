@@ -525,7 +525,7 @@ TypeCheckFunctionBody (node *fundef, info *arg_info)
 
     DBUG_EXECUTE ("NTC", tmp_str = TYtype2String (spec_type, FALSE, 0););
     DBUG_PRINT ("NTC",
-                ("final return type of \"%s:%s\" is: %s", CTIitemName (fundef), tmp_str));
+                ("final return type of \"%s\" is: %s", CTIitemName (fundef), tmp_str));
     DBUG_EXECUTE ("NTC", tmp_str = ILIBfree (tmp_str););
 
     /* now the functions is entirely typechecked, so we mark it as checked */

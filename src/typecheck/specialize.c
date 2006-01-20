@@ -83,8 +83,15 @@ SpecializationOracle (node *wrapper, node *fundef, ntype *args, dft_res *dft)
     ntype *type, *res;
     node *arg;
     int i;
+#ifndef DBUG_OFF
+    char *tmp_str;
+#endif
 
     DBUG_ENTER ("SpecializationOracle");
+
+    DBUG_EXECUTE ("SPEC", tmp_str = TYtype2String (args, FALSE, 0););
+    DBUG_PRINT ("SPEC", ("spec %s for %s?", CTIitemName (fundef), tmp_str));
+    DBUG_EXECUTE ("SPEC", tmp_str = ILIBfree (tmp_str););
 
     if ((dft->num_deriveable_partials > 1)
         || ((dft->num_deriveable_partials == 1) && (dft->deriveable != NULL))
@@ -102,7 +109,9 @@ SpecializationOracle (node *wrapper, node *fundef, ntype *args, dft_res *dft)
             } else {
                 type = TYcopyType (type);
             }
-            res = TYsetProductMember (res, i, type);
+            res = TYsetProductMember (res, i,
+                                      TYlubOfTypes (TYgetProductMember (args, i), type));
+            type = TYfreeType (type);
             arg = ARG_NEXT (arg);
             i++;
         }
@@ -111,6 +120,10 @@ SpecializationOracle (node *wrapper, node *fundef, ntype *args, dft_res *dft)
     } else {
         res = NULL;
     }
+
+    DBUG_EXECUTE ("SPEC", tmp_str = TYtype2String (res, FALSE, 0););
+    DBUG_PRINT ("SPEC", ("oracle: %s%s!", (res == NULL ? "yes" : "try with"), tmp_str));
+    DBUG_EXECUTE ("SPEC", tmp_str = ILIBfree (tmp_str););
 
     DBUG_RETURN (res);
 }
