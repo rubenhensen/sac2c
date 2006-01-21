@@ -531,8 +531,9 @@ RCIap (node *arg_node, info *arg_info)
 
         while (apargs != NULL) {
 
-            if ((!ArgIsInout (funargs, FUNDEF_RETS (AP_FUNDEF (arg_node))))
-                && ((funargs == NULL) || (!ARG_ISREFCOUNTED (funargs)))) {
+            if ((funargs == NULL)
+                || ((!ArgIsInout (funargs, FUNDEF_RETS (AP_FUNDEF (arg_node))))
+                    && (!ARG_ISREFCOUNTED (funargs)))) {
                 INFO_MODE (arg_info) = rc_prfuse;
             } else {
                 INFO_MODE (arg_info) = rc_apuse;
