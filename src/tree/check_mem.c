@@ -32,10 +32,11 @@ int memtabsize = 0;
 void *
 CHKMregisterMem (int bsize, void *aptr)
 {
-    DBUG_ENTER ("CHKMregisterMem");
-
     void *bptr = NULL;
 
+    DBUG_ENTER ("CHKMregisterMem");
+
+#ifdef SHOW_MALLOC
     bptr = (char *)aptr + malloc_align_step;
 
     if (memindex == memtabsize) {
@@ -78,6 +79,9 @@ CHKMregisterMem (int bsize, void *aptr)
 
     memfreeslots = memfreeslots - 1;
     memindex = memindex + 1;
+#else  /* SHOW_MALLOC */
+    bptr = aptr;
+#endif /* SHOW_MALLOC */
 
     DBUG_RETURN (bptr);
 }
@@ -89,6 +93,7 @@ CHKMunregisterMem (void *bptr)
 
     DBUG_ENTER (" CHKMunregisterMEM");
 
+#ifdef SHOW_MALLOC
     aptr = (memobj **)((char *)bptr - malloc_align_step);
 
     if (((**aptr).size == 0) && ((**aptr).ptr = NULL)) {
@@ -100,6 +105,9 @@ CHKMunregisterMem (void *bptr)
     (**aptr).ptr = NULL;
 
     memfreeslots = memfreeslots + 1;
+#else  /* SHOW_MALLOC */
+    aptr = (memobj **)bptr;
+#endif /* SHOW_MALLOC */
 
     DBUG_RETURN ((void *)aptr);
 }
@@ -133,18 +141,19 @@ CHKMspaceLeaks ()
 void
 CHKMsetNodeType (node *bptr, nodetype newnodetype)
 {
-
+#ifdef SHOW_MALLOC
     memobj **tmpobj;
 
     tmpobj = (memobj **)((char *)bptr - malloc_align_step);
 
     (**tmpobj).nodetype = newnodetype;
+#endif /* SHOW_MALLOC */
 }
 
 void
 CHKMsetLocation (node *bptr, char *file, int line)
 {
-
+#ifdef SHOW_MALLOC
     memobj **tmpobj;
 
     tmpobj = (memobj **)((char *)bptr - malloc_align_step);
@@ -152,19 +161,23 @@ CHKMsetLocation (node *bptr, char *file, int line)
     (**tmpobj).file = file;
 
     (**tmpobj).line = line;
+#endif /* SHOW_MALLOC */
 }
 
 int
 CHKMgetSize (void *bptr)
 {
+    int tmpsize = 0;
+
     DBUG_ENTER ("CMgetSize");
 
-    int tmpsize = 0;
+#ifdef SHOW_MALLOC
     memobj **tmpobj;
 
     tmpobj = (memobj **)((char *)bptr - malloc_align_step);
 
     tmpsize = (**tmpobj).size;
+#endif /* SHOW_MALLOC */
 
     DBUG_RETURN (tmpsize);
 }
