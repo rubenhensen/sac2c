@@ -129,13 +129,20 @@ CHKMdoTreeWalk (node *syntax_tree, info *arg_info)
     DBUG_RETURN (syntax_tree);
 }
 
-void
-CHKMspaceLeaks ()
+node *
+CHKMspaceLeaks (node *arg_node, info *arg_info)
 {
 
     DBUG_ENTER ("CHKMspaceLeaks");
 
-    /* durch den Baum traversieren und die Nodes die besucht werden, das bit flippen */
+    /*
+     * THIS SHOULD BE IN ENGLISH ;)
+     *
+     * durch den Baum traversieren und die Nodes die besucht werden,
+     * das bit flippen
+     * */
+
+    DBUG_RETURN (arg_node);
 }
 
 void

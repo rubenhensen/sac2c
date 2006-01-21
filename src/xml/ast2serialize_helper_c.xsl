@@ -65,6 +65,7 @@ version="1.0">
 #include "tree_basic.h"
 #include "serialize.h"
 #include "stdarg.h"
+#include "check_mem.h"
 
   </xsl:text>
   <xsl:apply-templates select="." mode="gen-make-fun" />
