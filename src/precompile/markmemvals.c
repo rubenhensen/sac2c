@@ -244,9 +244,6 @@ MMVfundef (node *arg_node, info *arg_info)
 node *
 MMVlet (node *arg_node, info *arg_info)
 {
-    node *i;
-    node *newavis;
-
     DBUG_ENTER ("MMVlet");
 
     INFO_LHS (arg_info) = LET_IDS (arg_node);
