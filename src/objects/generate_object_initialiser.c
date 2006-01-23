@@ -121,20 +121,22 @@ AddInitFunDependencies (node *objlist)
 
     DBUG_ENTER ("AddInitFunDependencies");
 
-    do {
-        new = DUPdoDupTree (objlist);
-        pos = objlist;
-        changes = 0;
+    if (objlist != NULL) {
+        do {
+            new = DUPdoDupTree (objlist);
+            pos = objlist;
+            changes = 0;
 
-        while (pos != NULL) {
-            changes += TCaddLinksToLinks (&new, FUNDEF_OBJECTS (
-                                                  OBJDEF_INITFUN (LINKLIST_LINK (pos))));
-            pos = LINKLIST_NEXT (pos);
-        }
+            while (pos != NULL) {
+                changes += TCaddLinksToLinks (&new, FUNDEF_OBJECTS (OBJDEF_INITFUN (
+                                                      LINKLIST_LINK (pos))));
+                pos = LINKLIST_NEXT (pos);
+            }
 
-        objlist = FREEdoFreeTree (objlist);
-        objlist = new;
-    } while (changes != 0);
+            objlist = FREEdoFreeTree (objlist);
+            objlist = new;
+        } while (changes != 0);
+    }
 
     DBUG_RETURN (objlist);
 }
@@ -246,10 +248,12 @@ GOIfundef (node *arg_node, info *arg_info)
          * finally update the wrapper. see below for comment...
          */
         if (INFO_DEPS (arg_info) != NULL) {
-            *INFO_DEPS (arg_info) = FREEdoFreeTree (*INFO_DEPS (arg_info));
-            *INFO_DEPS (arg_info) = DUPdoDupTree (FUNDEF_OBJECTS (arg_node));
-        } else {
-            INFO_DEPS (arg_info) = &FUNDEF_OBJECTS (arg_node);
+            if (*INFO_DEPS (arg_info) != NULL) {
+                *INFO_DEPS (arg_info) = FREEdoFreeTree (*INFO_DEPS (arg_info));
+                *INFO_DEPS (arg_info) = DUPdoDupTree (FUNDEF_OBJECTS (arg_node));
+            } else {
+                INFO_DEPS (arg_info) = &FUNDEF_OBJECTS (arg_node);
+            }
         }
     } else {
 
@@ -266,8 +270,11 @@ GOIfundef (node *arg_node, info *arg_info)
             if (INFO_DEPS (arg_info) == NULL) {
                 INFO_DEPS (arg_info) = &FUNDEF_OBJECTS (arg_node);
             } else {
-                FUNDEF_OBJECTS (arg_node) = FREEdoFreeTree (FUNDEF_OBJECTS (arg_node));
-                FUNDEF_OBJECTS (arg_node) = DUPdoDupTree (*INFO_DEPS (arg_info));
+                if (*INFO_DEPS (arg_info) != NULL) {
+                    FUNDEF_OBJECTS (arg_node)
+                      = FREEdoFreeTree (FUNDEF_OBJECTS (arg_node));
+                    FUNDEF_OBJECTS (arg_node) = DUPdoDupTree (*INFO_DEPS (arg_info));
+                }
             }
         }
     }
