@@ -130,7 +130,7 @@ PRF_CAT_VxV  PRF_TAKE_SxV  PRF_DROP_SxV
  * SAC programs
  */
 
-%type <node> prg  defs  def2  def3  def4 def5 def6
+%type <node> prg  defs  def2  def3  def4 def5
 
 %type <node> typedef exttypedef
 
@@ -305,38 +305,32 @@ def3: objdef def3
       { $$ = $1; }
     ;
 
-def4: wlcomp_pragma_global def5
-      { $$ = $2; }
-    | def5
-      { $$ = $1; }
-    ;
-
-def5: fundec {  pragma_type = PRAG_fundec; } pragmas def5
+def4: fundec {  pragma_type = PRAG_fundec; } pragmas def4
       { $$ = $4;
         FUNDEF_PRAGMA( $1) = $3;
         MODULE_FUNDECS( $$) = TCappendFundef( MODULE_FUNDECS( $$), $1);
       }
-    | fundec def5
+    | fundec def4
       { $$ = $2;
         MODULE_FUNDECS( $$) = TCappendFundef( MODULE_FUNDECS( $$), $1);
       }
-    | fundef { pragma_type = PRAG_fundef; } pragmas def5
+    | fundef { pragma_type = PRAG_fundef; } pragmas def4
       { $$ = $4;
         MODULE_FUNS( $$) = TCappendFundef( MODULE_FUNS( $$), $1);
       }
-    | fundef def5
+    | fundef def4
       { $$ = $2;
         MODULE_FUNS( $$) = TCappendFundef( MODULE_FUNS( $$), $1);
       }
-    | main def5
+    | main def4
       { $$ = $2;
         MODULE_FUNS( $$) = TCappendFundef( MODULE_FUNS( $$), $1);
       } 
-    | def6
+    | def5
       { $$ = $1; }
     ;
 
-def6: { $$ = TBmakeModule( NULL, F_prog, NULL, NULL, NULL, NULL, NULL);
+def5: { $$ = TBmakeModule( NULL, F_prog, NULL, NULL, NULL, NULL, NULL);
 
         DBUG_PRINT( "PARSE",
 	            ("%s:"F_PTR,
