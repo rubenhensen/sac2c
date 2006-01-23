@@ -3071,12 +3071,29 @@ COMPPrfDecRC (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("COMPPrfDecRC");
 
-    name = ID_NAME (PRF_ARG1 (arg_node));
-    type = ID_TYPE (PRF_ARG1 (arg_node));
+    switch (NODE_TYPE (PRF_ARG1 (arg_node))) {
+    case N_id:
+        name = ID_NAME (PRF_ARG1 (arg_node));
+        type = DUPdupAllTypes (ID_TYPE (PRF_ARG1 (arg_node)));
+        break;
+
+    case N_globobj:
+        name = OBJDEF_NAME (GLOBOBJ_OBJDEF (PRF_ARG1 (arg_node)));
+        type = TYtype2OldType (OBJDEF_TYPE (GLOBOBJ_OBJDEF (PRF_ARG1 (arg_node))));
+        break;
+
+    default:
+        DBUG_ASSERT (0, "unexpected nodetype found...");
+        name = NULL;
+        type = NULL;
+    }
+
     num = NUM_VAL (PRF_ARG2 (arg_node));
 
     ret_node = MakeDecRcIcm (name, type, num, /* One argument is superflouos */
                              NULL);
+
+    type = FREEfreeAllTypes (type);
 
     DBUG_RETURN (ret_node);
 }
