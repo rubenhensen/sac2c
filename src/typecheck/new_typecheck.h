@@ -13,7 +13,6 @@ extern ntype *NTCnewTypeCheck_Expr (node *arg_node);
 
 extern node *NTCmodule (node *arg_node, info *arg_info);
 extern node *NTCfundef (node *arg_node, info *arg_info);
-extern node *NTCarg (node *arg_node, info *arg_info);
 extern node *NTCblock (node *arg_node, info *arg_info);
 extern node *NTCvardec (node *arg_node, info *arg_info);
 extern node *NTCassign (node *arg_node, info *arg_info);

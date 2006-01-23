@@ -540,7 +540,6 @@
         <travuser> 
           <node name="Module" />
           <node name="Fundef" />
-          <node name="Arg" />
           <node name="Block" />
           <node name="Vardec" />
           <node name="Assign" />

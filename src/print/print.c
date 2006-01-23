@@ -1389,7 +1389,9 @@ PRTprintHomsv (FILE *handle, int *vect, int dims)
 node *
 PRTfundef (node *arg_node, info *arg_info)
 {
+#ifndef DBUG_OFF
     int old_indent = global.indent;
+#endif
 
     DBUG_ENTER ("PRTfundef");
 
@@ -1697,7 +1699,9 @@ PRTvardec (node *arg_node, info *arg_info)
 node *
 PRTblock (node *arg_node, info *arg_info)
 {
+#ifndef DBUG_OFF
     int old_indent = global.indent;
+#endif
 
     DBUG_ENTER ("PRTblock");
 
