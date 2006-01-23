@@ -238,6 +238,10 @@ RERAlet (node *arg_node, info *arg_info)
     LET_IDS (arg_node) = INFO_LHS (arg_info);
     INFO_LHS (arg_info) = oldlhs;
 
+    if (LET_IDS (arg_node) != NULL) {
+        LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
+    }
+
     /*
      * check whether this let is of form <id> = <id>
      * and thus superflouus
@@ -271,6 +275,31 @@ RERAid (node *arg_node, info *arg_info)
 
     while (AVIS_SUBST (ID_AVIS (arg_node)) != NULL) {
         ID_AVIS (arg_node) = AVIS_SUBST (ID_AVIS (arg_node));
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+RERAids (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("RERAids");
+
+    if (IDS_NEXT (arg_node) != NULL) {
+        IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
+    }
+
+    if (AVIS_SUBST (IDS_AVIS (arg_node)) != NULL) {
+        /*
+         * this ids node was replaced by a reference arg but is
+         * still in the return-ids chain. The only reason for
+         * this to happen is that the ids is a return value of
+         * a compiler introduced prf like type_error or
+         * dispatch_error. As prfs do not support reference args,
+         * we silently remove the ids node. As both prfs do stop
+         * the execution, this does not change the semantics.
+         */
+        arg_node = FREEdoFreeNode (arg_node);
     }
 
     DBUG_RETURN (arg_node);

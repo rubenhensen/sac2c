@@ -354,9 +354,8 @@ RSPfundef (node *arg_node, info *arg_info)
         }
 
         if (PRAGMA_EFFECT (pragma) != NULL) {
-            CTIwarnLine (NODE_LINE (arg_node),
-                         "Pragma 'effect` has no effect on function");
-            PRAGMA_EFFECT (pragma) = ILIBfree (PRAGMA_EFFECT (pragma));
+            FUNDEF_AFFECTEDOBJECTS (arg_node) = PRAGMA_EFFECT (pragma);
+            PRAGMA_EFFECT (pragma) = NULL;
         }
 
         /*

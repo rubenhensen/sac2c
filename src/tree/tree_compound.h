@@ -249,20 +249,6 @@ extern node *TCappendTypedef (node *tdef_chain, node *tdef);
  *  compound access macros
  */
 
-#define OBJDEF_EFFECT(n)                                                                 \
-    (OBJDEF_PRAGMA (n) == NULL ? NULL : PRAGMA_EFFECT (OBJDEF_PRAGMA (n)))
-
-extern node *TCsearchObjdef (const char *name, char *mod, node *implementations);
-
-/*
- *  functionname  : TCobjList2ArgList
- *  arguments     : 1) pointer to chain of objdef nodes
- *  description   : makes an argument list from an objdef chain
- *
- */
-
-extern void TCobjList2ArgList (node *objdef);
-
 /*****************************************************************************
  *
  * function:

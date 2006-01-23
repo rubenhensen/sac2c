@@ -5,6 +5,7 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "free.h"
+#include "namespaces.h"
 #include "new_types.h"
 #include "DupTree.h"
 #include "internal_lib.h"
@@ -14,6 +15,7 @@
  */
 struct INFO {
     node *objects;
+    node *objdefs;
     int changes;
 };
 
@@ -21,6 +23,7 @@ struct INFO {
  * INFO macros
  */
 #define INFO_OBJECTS(n) ((n)->objects)
+#define INFO_OBJDEFS(n) ((n)->objdefs)
 #define INFO_CHANGES(n) ((n)->changes)
 
 /*
@@ -36,6 +39,7 @@ MakeInfo ()
     result = ILIBmalloc (sizeof (info));
 
     INFO_OBJECTS (result) = NULL;
+    INFO_OBJDEFS (result) = NULL;
     INFO_CHANGES (result) = 0;
 
     DBUG_RETURN (result);
@@ -116,6 +120,58 @@ UnifyOverloadedFunctions (node *funs, info *info)
     DBUG_VOID_RETURN;
 }
 
+static node *
+LookupObjdef (namespace_t *ns, const char *name, node *objs)
+{
+    node *result;
+
+    DBUG_ENTER ("LookupObjdef");
+
+    if (objs == NULL) {
+        result = NULL;
+    } else {
+        if (NSequals (OBJDEF_NS (objs), ns)
+            && ILIBstringCompare (OBJDEF_NAME (objs), name)) {
+            result = objs;
+        } else {
+            result = LookupObjdef (ns, name, OBJDEF_NEXT (objs));
+        }
+    }
+
+    DBUG_RETURN (result);
+}
+
+static node *
+AddAffectedObjects (node **exprs, node *list, info *info)
+{
+    node *objdef;
+    node *spid;
+
+    DBUG_ENTER ("AddAffectedObjects");
+
+    if (*exprs != NULL) {
+        spid = EXPRS_EXPR (*exprs);
+
+        objdef = LookupObjdef (SPID_NS (spid), SPID_NAME (spid), INFO_OBJDEFS (info));
+
+        if (objdef == NULL) {
+            CTIerrorLine (NODE_LINE (spid),
+                          "Objdef %s:%s referenced in effect pragma is undefined",
+                          NSgetName (SPID_NS (spid)), SPID_NAME (spid));
+        } else {
+            DBUG_PRINT ("OAN", (">>> adding effect on %s...", CTIitemName (objdef)));
+
+            INFO_CHANGES (info) += TCaddLinkToLinks (&list, objdef);
+        }
+
+        *exprs = FREEdoFreeNode (*exprs);
+
+        list = AddAffectedObjects (exprs, list, info);
+    }
+
+    DBUG_RETURN (list);
+}
+
 /*
  * start of traversal
  */
@@ -146,6 +202,8 @@ node *
 OANmodule (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("OANModule");
+
+    INFO_OBJDEFS (arg_info) = MODULE_OBJS (arg_node);
 
     /*
      * iterate until the set of objects does not
@@ -241,6 +299,13 @@ OANfundef (node *arg_node, info *arg_info)
      */
     if (FUNDEF_ISLOCAL (arg_node)) {
         DBUG_PRINT ("OAN", ("entering fundef %s", CTIitemName (arg_node)));
+
+        /*
+         * first add the objects from affectedobjects if any present
+         */
+        FUNDEF_OBJECTS (arg_node)
+          = AddAffectedObjects (&FUNDEF_AFFECTEDOBJECTS (arg_node),
+                                FUNDEF_OBJECTS (arg_node), arg_info);
 
         INFO_OBJECTS (arg_info) = FUNDEF_OBJECTS (arg_node);
 

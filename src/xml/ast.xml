@@ -1826,6 +1826,7 @@
 	  <node name="Return" />
 	  <node name="Fundef" />
  	  <node name="Id" />
+ 	  <node name="Ids" />
 	  <node name="Module" />
 	</travuser>
       </traversal>
@@ -1833,6 +1834,9 @@
         <travuser>
 	  <node name="Ap" />
 	  <node name="Id" />
+	  <node name="Assign" />
+	  <node name="Let" />
+	  <node name="Block" />
 	  <node name="Fundef" />
 	  <node name="Module" />
 	</travuser>
@@ -4693,6 +4697,12 @@
                   <phase name="wltussa" />
 		  <phase name="rera" />
                 </phases>
+              </target>
+	      <target mandatory="no">
+	        <node name="Objdef" />
+		<phases>
+		  <phase name="reso" />
+		</phases>
               </target>
             </targets>
           </type>

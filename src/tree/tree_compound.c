@@ -987,23 +987,6 @@ TCappendTypedef (node *tdef_chain, node *tdef)
  ***  N_objdef :
  ***/
 
-void
-TCobjList2ArgList (node *objdef)
-{
-    node *tmp;
-
-    DBUG_ENTER ("TCobjList2ArgList");
-
-    tmp = objdef;
-    while (tmp != NULL) {
-        NODE_TYPE (tmp) = N_arg;
-        ARG_NEXT (tmp) = OBJDEF_NEXT (tmp);
-        tmp = ARG_NEXT (tmp);
-    }
-
-    DBUG_VOID_RETURN;
-}
-
 node *
 TCappendObjdef (node *objdef_chain, node *objdef)
 {

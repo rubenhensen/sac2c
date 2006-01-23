@@ -813,10 +813,6 @@ pragma: hash_pragma LINKNAME string
           if (store_pragma == NULL) {
             store_pragma = TBmakePragma();
           }
-          if (PRAGMA_EFFECT( store_pragma) != NULL) {
-            CTIwarnLine( global.linenum, 
-                         "Conflicting definitions of pragma 'effect`");
-          }
           PRAGMA_EFFECT( store_pragma) = $3;
         }
       | hash_pragma COPYFUN string

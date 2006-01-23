@@ -908,6 +908,12 @@ DUPfundef (node *arg_node, info *arg_info)
         FUNDEF_WRAPPERTYPE (new_node) = TYcopyType (FUNDEF_WRAPPERTYPE (arg_node));
     }
 
+    /*
+     * copy the object information
+     */
+    FUNDEF_OBJECTS (new_node) = DUPTRAV (FUNDEF_OBJECTS (arg_node));
+    FUNDEF_AFFECTEDOBJECTS (new_node) = DUPTRAV (FUNDEF_AFFECTEDOBJECTS (arg_node));
+
     INFO_FUNDEF (arg_info) = old_fundef;
 
     DBUG_RETURN (new_node);

@@ -25,16 +25,18 @@ struct INFO {
     node *module;
     stringset_t *ids;
     bool insidemop;
+    bool insideobjlist;
 };
 
 /*
  * INFO macros
  */
-#define INFO_ANS_SYMBOLS(info) ((info)->symbols)
-#define INFO_ANS_CURRENT(info) ((info)->current)
-#define INFO_ANS_MODULE(info) ((info)->module)
-#define INFO_ANS_IDS(info) ((info)->ids)
-#define INFO_ANS_INSIDEMOP(info) ((info)->insidemop)
+#define INFO_SYMBOLS(info) ((info)->symbols)
+#define INFO_CURRENT(info) ((info)->current)
+#define INFO_MODULE(info) ((info)->module)
+#define INFO_IDS(info) ((info)->ids)
+#define INFO_INSIDEMOP(info) ((info)->insidemop)
+#define INFO_INSIDEOBJLIST(info) ((info)->insideobjlist)
 
 /*
  * INFO functions
@@ -48,11 +50,12 @@ MakeInfo ()
 
     result = ILIBmalloc (sizeof (info));
 
-    INFO_ANS_SYMBOLS (result) = STinit ();
-    INFO_ANS_CURRENT (result) = NULL;
-    INFO_ANS_MODULE (result) = NULL;
-    INFO_ANS_IDS (result) = NULL;
-    INFO_ANS_INSIDEMOP (result) = FALSE;
+    INFO_SYMBOLS (result) = STinit ();
+    INFO_CURRENT (result) = NULL;
+    INFO_MODULE (result) = NULL;
+    INFO_IDS (result) = NULL;
+    INFO_INSIDEMOP (result) = FALSE;
+    INFO_INSIDEOBJLIST (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -62,7 +65,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    INFO_ANS_SYMBOLS (info) = STdestroy (INFO_ANS_SYMBOLS (info));
+    INFO_SYMBOLS (info) = STdestroy (INFO_SYMBOLS (info));
 
     info = ILIBfree (info);
 
@@ -126,19 +129,19 @@ LookupNamespaceForSymbol (const char *name, info *info)
 
     DBUG_ENTER ("LookupNamespaceForSymbol");
 
-    if (STcontains (name, INFO_ANS_SYMBOLS (info))) {
+    if (STcontains (name, INFO_SYMBOLS (info))) {
         /*
          * There is a namespace annotated to this symbolname, e.g. it was used
          * -> use that namespace
          */
-        stentry_t *entry = STgetFirstEntry (name, INFO_ANS_SYMBOLS (info));
+        stentry_t *entry = STgetFirstEntry (name, INFO_SYMBOLS (info));
 
         result = NSgetNamespace (STentryName (entry));
     } else {
         /*
          * this symbol is local
          */
-        result = NSdupNamespace (MODULE_NAMESPACE (INFO_ANS_MODULE (info)));
+        result = NSdupNamespace (MODULE_NAMESPACE (INFO_MODULE (info)));
     }
 
     DBUG_RETURN (result);
@@ -205,8 +208,8 @@ ANSsymbol (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ANSsymbol");
 
-    STadd (SYMBOL_ID (arg_node), SVT_local, INFO_ANS_CURRENT (arg_info), SET_namespace,
-           INFO_ANS_SYMBOLS (arg_info));
+    STadd (SYMBOL_ID (arg_node), SVT_local, INFO_CURRENT (arg_info), SET_namespace,
+           INFO_SYMBOLS (arg_info));
 
     if (SYMBOL_NEXT (arg_node) != NULL) {
         SYMBOL_NEXT (arg_node) = TRAVdo (SYMBOL_NEXT (arg_node), arg_info);
@@ -222,11 +225,11 @@ ANSuse (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("ANSuse");
 
-    INFO_ANS_CURRENT (arg_info) = USE_MOD (arg_node);
+    INFO_CURRENT (arg_info) = USE_MOD (arg_node);
 
     USE_SYMBOL (arg_node) = TRAVdo (USE_SYMBOL (arg_node), arg_info);
 
-    INFO_ANS_CURRENT (arg_info) = NULL;
+    INFO_CURRENT (arg_info) = NULL;
 
     if (USE_NEXT (arg_node) != NULL) {
         USE_NEXT (arg_node) = TRAVdo (USE_NEXT (arg_node), arg_info);
@@ -290,14 +293,13 @@ ANSfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ANSfundef");
 
-    DBUG_ASSERT ((INFO_ANS_IDS (arg_info) == NULL), "found leftover ids in ans info");
+    DBUG_ASSERT ((INFO_IDS (arg_info) == NULL), "found leftover ids in ans info");
 
-    CheckLocalNameClash (FUNDEF_NAME (arg_node), INFO_ANS_SYMBOLS (arg_info),
+    CheckLocalNameClash (FUNDEF_NAME (arg_node), INFO_SYMBOLS (arg_info),
                          NODE_LINE (arg_node));
 
     if (FUNDEF_NS (arg_node) == NULL) {
-        FUNDEF_NS (arg_node)
-          = NSdupNamespace (MODULE_NAMESPACE (INFO_ANS_MODULE (arg_info)));
+        FUNDEF_NS (arg_node) = NSdupNamespace (MODULE_NAMESPACE (INFO_MODULE (arg_info)));
     }
 
     if (FUNDEF_TYPES (arg_node) != NULL) {
@@ -312,11 +314,18 @@ ANSfundef (node *arg_node, info *arg_info)
         FUNDEF_RETS (arg_node) = TRAVdo (FUNDEF_RETS (arg_node), arg_info);
     }
 
+    if (FUNDEF_AFFECTEDOBJECTS (arg_node) != NULL) {
+        INFO_INSIDEOBJLIST (arg_info) = TRUE;
+        FUNDEF_AFFECTEDOBJECTS (arg_node)
+          = TRAVdo (FUNDEF_AFFECTEDOBJECTS (arg_node), arg_info);
+        INFO_INSIDEOBJLIST (arg_info) = FALSE;
+    }
+
     if (FUNDEF_BODY (arg_node) != NULL) {
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
     }
 
-    INFO_ANS_IDS (arg_info) = STRSfree (INFO_ANS_IDS (arg_info));
+    INFO_IDS (arg_info) = STRSfree (INFO_IDS (arg_info));
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
@@ -330,16 +339,16 @@ ANStypedef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ANStypedef");
 
-    CheckLocalNameClash (TYPEDEF_NAME (arg_node), INFO_ANS_SYMBOLS (arg_info),
+    CheckLocalNameClash (TYPEDEF_NAME (arg_node), INFO_SYMBOLS (arg_info),
                          NODE_LINE (arg_node));
 
     if (TYPEDEF_NS (arg_node) == NULL) {
         DBUG_PRINT ("ANS",
                     ("Updated namespace for typedef %s to %s", CTIitemName (arg_node),
-                     NSgetName (MODULE_NAMESPACE (INFO_ANS_MODULE (arg_info)))));
+                     NSgetName (MODULE_NAMESPACE (INFO_MODULE (arg_info)))));
 
         TYPEDEF_NS (arg_node)
-          = NSdupNamespace (MODULE_NAMESPACE (INFO_ANS_MODULE (arg_info)));
+          = NSdupNamespace (MODULE_NAMESPACE (INFO_MODULE (arg_info)));
     }
 
     if (TYPEDEF_NTYPE (arg_node) != NULL) {
@@ -358,12 +367,11 @@ ANSobjdef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ANSobjdef");
 
-    CheckLocalNameClash (OBJDEF_NAME (arg_node), INFO_ANS_SYMBOLS (arg_info),
+    CheckLocalNameClash (OBJDEF_NAME (arg_node), INFO_SYMBOLS (arg_info),
                          NODE_LINE (arg_node));
 
     if (OBJDEF_NS (arg_node) == NULL) {
-        OBJDEF_NS (arg_node)
-          = NSdupNamespace (MODULE_NAMESPACE (INFO_ANS_MODULE (arg_info)));
+        OBJDEF_NS (arg_node) = NSdupNamespace (MODULE_NAMESPACE (INFO_MODULE (arg_info)));
     }
 
     if (OBJDEF_TYPE (arg_node) != NULL) {
@@ -478,8 +486,8 @@ ANSarg (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ANSarg");
 
-    INFO_ANS_IDS (arg_info)
-      = STRSadd (ARG_NAME (arg_node), STRS_unknown, INFO_ANS_IDS (arg_info));
+    INFO_IDS (arg_info)
+      = STRSadd (ARG_NAME (arg_node), STRS_unknown, INFO_IDS (arg_info));
 
     if (ARG_TYPE (arg_node) != NULL) {
         ARG_TYPE (arg_node) = ANStypes (ARG_TYPE (arg_node), arg_info);
@@ -536,8 +544,8 @@ ANSspids (node *arg_node, info *arg_info)
     /*
      * mark this id as locally defined
      */
-    INFO_ANS_IDS (arg_info)
-      = STRSadd (SPIDS_NAME (arg_node), STRS_unknown, INFO_ANS_IDS (arg_info));
+    INFO_IDS (arg_info)
+      = STRSadd (SPIDS_NAME (arg_node), STRS_unknown, INFO_IDS (arg_info));
 
     DBUG_PRINT ("ANS", ("found local id '%s'", SPIDS_NAME (arg_node)));
 
@@ -551,16 +559,16 @@ ANSspmop (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ANSspmop");
 
-    DBUG_ASSERT ((INFO_ANS_INSIDEMOP (arg_info) == FALSE), "found illegal mop stacking!");
+    DBUG_ASSERT ((INFO_INSIDEMOP (arg_info) == FALSE), "found illegal mop stacking!");
     /*
      * process ops in special mop-mode
      */
     if (SPMOP_OPS (arg_node) != NULL) {
-        INFO_ANS_INSIDEMOP (arg_info) = TRUE;
+        INFO_INSIDEMOP (arg_info) = TRUE;
 
         SPMOP_OPS (arg_node) = TRAVdo (SPMOP_OPS (arg_node), arg_info);
 
-        INFO_ANS_INSIDEMOP (arg_info) = FALSE;
+        INFO_INSIDEMOP (arg_info) = FALSE;
     }
 
     if (SPMOP_EXPRS (arg_node) != NULL) {
@@ -575,10 +583,19 @@ ANSspid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ANSspid");
 
-    if (INFO_ANS_INSIDEMOP (arg_info)) {
+    if (INFO_INSIDEMOP (arg_info)) {
         /*
          * in special mop-mode, all SPID represent function calls,
          * so no need for a locality check
+         */
+        if (SPID_NS (arg_node) == NULL) {
+            SPID_NS (arg_node)
+              = LookupNamespaceForSymbol (SPID_NAME (arg_node), arg_info);
+        }
+    } else if (INFO_INSIDEOBJLIST (arg_info)) {
+        /*
+         * in special objlist mode, all SPID represent objdefs,
+         * so we may need to add a namespace.
          */
         if (SPID_NS (arg_node) == NULL) {
             SPID_NS (arg_node)
@@ -589,7 +606,7 @@ ANSspid (node *arg_node, info *arg_info)
             /*
              * check whether this id is local
              */
-            if (!STRScontains (SPID_NAME (arg_node), INFO_ANS_IDS (arg_info))) {
+            if (!STRScontains (SPID_NAME (arg_node), INFO_IDS (arg_info))) {
                 /*
                  * look up the correct namespace
                  */
@@ -675,7 +692,7 @@ ANSmodule (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ANSmodule");
 
-    INFO_ANS_MODULE (arg_info) = arg_node;
+    INFO_MODULE (arg_info) = arg_node;
 
     /*
      * traverse use/import statements
@@ -689,7 +706,7 @@ ANSmodule (node *arg_node, info *arg_info)
      * check uniqueness property of symbols refernced by use statements
      */
 
-    CheckUseUnique (INFO_ANS_SYMBOLS (arg_info));
+    CheckUseUnique (INFO_SYMBOLS (arg_info));
 
     /*
      * traverse fundecs
