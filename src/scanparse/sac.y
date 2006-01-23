@@ -128,11 +128,11 @@ PRF_CAT_VxV  PRF_TAKE_SxV  PRF_DROP_SxV
  * SAC programs
  */
 
-%type <node> prg  defs  def2  def3  def4 def5 
+%type <node> prg  defs  def2  def3  def4 def5 def6
 
 %type <node> typedef
 
-%type <node> objdefs  objdef
+%type <node> objdef
 
 %type <node> fundef  fundef1  fundef2  main
 %type <node> fundec fundec2
@@ -268,34 +268,39 @@ def2: typedef def2
         TYPEDEF_NEXT( $1) = MODULE_TYPES( $$);
         MODULE_TYPES( $$) = $1;
       }
-    | objdefs def3
-      { $$ = $2;
-        MODULE_OBJS( $$) = $1;
-      }
     | def3
       { $$ = $1; }
     ;
 
-def3: wlcomp_pragma_global def4
-      { $$ = $2; }
+def3: objdef def3
+      { $$ = $2;
+        OBJDEF_NEXT( $1) = $2;
+        MODULE_OBJS( $$) = $1;
+      }
     | def4
       { $$ = $1; }
     ;
 
-def4: fundec { was_fundec = TRUE; } pragmas def4
+def4: wlcomp_pragma_global def5
+      { $$ = $2; }
+    | def5
+      { $$ = $1; }
+    ;
+
+def5: fundec { was_fundec = TRUE; } pragmas def5
       { $$ = $4;
         FUNDEF_PRAGMA( $1) = $3;
         MODULE_FUNDECS( $$) = TCappendFundef( MODULE_FUNDECS( $$), $1);
       }
-    | fundec def4
+    | fundec def5
       { $$ = $2;
         MODULE_FUNDECS( $$) = TCappendFundef( MODULE_FUNDECS( $$), $1);
       }
-    | fundef { was_fundec = FALSE; } pragmas def4
+    | fundef { was_fundec = FALSE; } pragmas def5
       { $$ = $4;
         MODULE_FUNS( $$) = TCappendFundef( MODULE_FUNS( $$), $1);
       }
-    | fundef def4
+    | fundef def5
       { $$ = $2;
         MODULE_FUNS( $$) = TCappendFundef( MODULE_FUNS( $$), $1);
       }
@@ -303,11 +308,11 @@ def4: fundec { was_fundec = TRUE; } pragmas def4
       { $$ = $2;
         MODULE_FUNS( $$) = TCappendFundef( MODULE_FUNS( $$), $1);
       } 
-    | def5
+    | def6
       { $$ = $1; }
     ;
 
-def5: { $$ = TBmakeModule( NULL, F_prog, NULL, NULL, NULL, NULL, NULL);
+def6: { $$ = TBmakeModule( NULL, F_prog, NULL, NULL, NULL, NULL, NULL);
 
         DBUG_PRINT( "PARSE",
 	            ("%s:"F_PTR,
@@ -447,15 +452,6 @@ typedef: TYPEDEF ntype ID SEMIC
 *
 *********************************************************************
 */
-
-objdefs: objdef objdefs
-         { $$ = $1;
-           OBJDEF_NEXT( $$) = $2;
-         }
-       | objdef
-         { $$ = $1;
-         }
-       ;
 
 objdef: OBJDEF ntype ID LET expr_ap SEMIC 
         { $$ = TBmakeObjdef( $2, NULL, $3, $5, NULL);
