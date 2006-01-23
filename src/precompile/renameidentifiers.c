@@ -414,10 +414,10 @@ RIDobjdef (node *arg_node, info *arg_info)
             OBJDEF_NAME (arg_node) = OBJDEF_LINKNAME (arg_node);
             OBJDEF_PRAGMA (arg_node) = ILIBfree (OBJDEF_PRAGMA (arg_node));
         }
+    }
 
-        if (OBJDEF_NEXT (arg_node) != NULL) {
-            OBJDEF_NEXT (arg_node) = TRAVdo (OBJDEF_NEXT (arg_node), arg_info);
-        }
+    if (OBJDEF_NEXT (arg_node) != NULL) {
+        OBJDEF_NEXT (arg_node) = TRAVdo (OBJDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);

@@ -583,6 +583,10 @@ FindSymbolInAst (const char *symbol)
     }
 
     if (result == NULL) {
+        result = FindSymbolInObjdefChain (symbol, INFO_DS_OBJDEFS (DSstate));
+    }
+
+    if (result == NULL) {
         result = FindSymbolInObjdefChain (symbol, MODULE_OBJS (INFO_DS_MODULE (DSstate)));
     }
 

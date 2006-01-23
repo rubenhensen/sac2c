@@ -206,6 +206,16 @@ OANmodule (node *arg_node, info *arg_info)
     INFO_OBJDEFS (arg_info) = MODULE_OBJS (arg_node);
 
     /*
+     * first we iterate the FUNDECS once to add the
+     * affectedobjects to the object list
+     */
+    DBUG_PRINT ("OAN", ("!!! processing fundecs..."));
+
+    if (MODULE_FUNDECS (arg_node) != NULL) {
+        MODULE_FUNDECS (arg_node) = TRAVdo (MODULE_FUNDECS (arg_node), arg_info);
+    }
+
+    /*
      * iterate until the set of objects does not
      * change any more
      */

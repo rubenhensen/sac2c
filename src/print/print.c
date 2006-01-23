@@ -1406,7 +1406,11 @@ PRTfundef (node *arg_node, info *arg_info)
      *  function body.
      */
     INFO_FUNDEF (arg_info) = arg_node;
-
+    /*
+      if (FUNDEF_OBJECTS( arg_node) != NULL) {
+        FUNDEF_OBJECTS( arg_node) = TRAVdo( FUNDEF_OBJECTS( arg_node), arg_info);
+      }
+    */
     if (INFO_PROTOTYPE (arg_info)) {
         /*
          * print function declaration
@@ -4899,6 +4903,24 @@ PRTsymbol (node *arg_node, info *arg_info)
     if (SYMBOL_NEXT (arg_node) != NULL) {
         fprintf (global.outfile, ", ");
         SYMBOL_NEXT (arg_node) = TRAVdo (SYMBOL_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+PRTlinklist (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("PRTlinklist");
+
+    if (NODE_ERROR (arg_node) != NULL) {
+        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
+    }
+
+    fprintf (global.outfile, "%s\n", CTIitemName (LINKLIST_LINK (arg_node)));
+
+    if (LINKLIST_NEXT (arg_node) != NULL) {
+        LINKLIST_NEXT (arg_node) = TRAVdo (LINKLIST_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);

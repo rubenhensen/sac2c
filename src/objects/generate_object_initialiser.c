@@ -16,7 +16,7 @@
  * INFO structure
  */
 struct INFO {
-    node *main;
+    node **deps;
     namespace_t *ns;
 };
 
@@ -24,6 +24,7 @@ struct INFO {
  * INFO macros
  */
 #define INFO_NS(n) ((n)->ns)
+#define INFO_DEPS(n) ((n)->deps)
 
 /*
  * INFO functions
@@ -38,6 +39,7 @@ MakeInfo ()
     result = ILIBmalloc (sizeof (info));
 
     INFO_NS (result) = NULL;
+    INFO_DEPS (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -68,18 +70,23 @@ SortObjdefList (node *objlist)
 
     list = DUPdoDupTree (objlist);
     sorted = NULL;
-    last = NULL;
 
     while (list != NULL) {
         pos = list;
+        last = NULL;
         changes = 0;
 
         while (pos != NULL) {
+            DBUG_PRINT ("GOI", ("trying %s ...", CTIitemName (LINKLIST_LINK (pos))));
+
             if (TClinklistIsSubset (sorted, FUNDEF_OBJECTS (
                                               OBJDEF_INITFUN (LINKLIST_LINK (pos))))) {
                 /*
                  * move the link to the sorted list
                  */
+                DBUG_PRINT ("GOI", ("...adding %s to initlist",
+                                    CTIitemName (LINKLIST_LINK (pos))));
+
                 node *tmp = pos;
                 pos = LINKLIST_NEXT (pos);
                 if (last != NULL) {
@@ -106,6 +113,33 @@ SortObjdefList (node *objlist)
 }
 
 static node *
+AddInitFunDependencies (node *objlist)
+{
+    node *pos;
+    node *new;
+    int changes;
+
+    DBUG_ENTER ("AddInitFunDependencies");
+
+    do {
+        new = DUPdoDupTree (objlist);
+        pos = objlist;
+        changes = 0;
+
+        while (pos != NULL) {
+            changes += TCaddLinksToLinks (&new, FUNDEF_OBJECTS (
+                                                  OBJDEF_INITFUN (LINKLIST_LINK (pos))));
+            pos = LINKLIST_NEXT (pos);
+        }
+
+        objlist = FREEdoFreeTree (objlist);
+        objlist = new;
+    } while (changes != 0);
+
+    DBUG_RETURN (objlist);
+}
+
+static node *
 ObjdefsToInitAssigns (node *objdefs, node *assigns)
 {
     node *result;
@@ -120,7 +154,7 @@ ObjdefsToInitAssigns (node *objdefs, node *assigns)
                                                TBmakeExprs (TBmakeGlobobj (
                                                               LINKLIST_LINK (objdefs)),
                                                             NULL))),
-                          assigns);
+                          result);
     } else {
         result = assigns;
     }
@@ -178,19 +212,68 @@ GOIfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("GOIfundef");
 
+    /*
+     * check for function _MAIN::main
+     */
     if (!FUNDEF_ISWRAPPERFUN (arg_node)
         && (NSequals (FUNDEF_NS (arg_node), INFO_NS (arg_info)))
         && (ILIBstringCompare (FUNDEF_NAME (arg_node), "main"))) {
-        node *initfun = GenerateObjectInitFun (FUNDEF_OBJECTS (arg_node));
+        node *initfun;
 
+        /*
+         * first add all objects that are needed by the initfuns themselves
+         * to the dependency list of main
+         */
+        FUNDEF_OBJECTS (arg_node) = AddInitFunDependencies (FUNDEF_OBJECTS (arg_node));
+
+        /*
+         * next create the init function itself
+         */
+        initfun = GenerateObjectInitFun (FUNDEF_OBJECTS (arg_node));
+
+        /*
+         * insert the call into main
+         */
         arg_node = InsertInitFunCall (arg_node, initfun);
 
-        FUNDEF_NEXT (initfun) = arg_node;
-        arg_node = initfun;
-    } else {
-        if (FUNDEF_NEXT (arg_node) != NULL) {
-            FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+        /*
+         * and append the function to the fundef chain
+         */
+        FUNDEF_NEXT (initfun) = FUNDEF_NEXT (arg_node);
+        FUNDEF_NEXT (arg_node) = initfun;
+
+        /*
+         * finally update the wrapper. see below for comment...
+         */
+        if (INFO_DEPS (arg_info) != NULL) {
+            *INFO_DEPS (arg_info) = FREEdoFreeTree (*INFO_DEPS (arg_info));
+            *INFO_DEPS (arg_info) = DUPdoDupTree (FUNDEF_OBJECTS (arg_node));
+        } else {
+            INFO_DEPS (arg_info) = &FUNDEF_OBJECTS (arg_node);
         }
+    } else {
+
+        if (FUNDEF_ISWRAPPERFUN (arg_node)
+            && (NSequals (FUNDEF_NS (arg_node), INFO_NS (arg_info)))
+            && (ILIBstringCompare (FUNDEF_NAME (arg_node), "main"))) {
+            /*
+             * we need to correct the wrapper object dependencies as well.
+             * if INFO_DEPS is NULL, we have not passed the main function
+             * yet, so we store a reference to the wrappers object dependencies.
+             * Otherwise we passed main already, so we copy the stored dependencies
+             * to the wrapper
+             */
+            if (INFO_DEPS (arg_info) == NULL) {
+                INFO_DEPS (arg_info) = &FUNDEF_OBJECTS (arg_node);
+            } else {
+                FUNDEF_OBJECTS (arg_node) = FREEdoFreeTree (FUNDEF_OBJECTS (arg_node));
+                FUNDEF_OBJECTS (arg_node) = DUPdoDupTree (*INFO_DEPS (arg_info));
+            }
+        }
+    }
+
+    if (FUNDEF_NEXT (arg_node) != NULL) {
+        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);

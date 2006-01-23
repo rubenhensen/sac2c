@@ -127,5 +127,6 @@ extern node *PRTexport (node *arg_node, info *arg_info);
 extern node *PRTuse (node *arg_node, info *arg_info);
 extern node *PRTprovide (node *arg_node, info *arg_info);
 extern node *PRTsymbol (node *arg_node, info *arg_info);
+extern node *PRTlinklist (node *arg_node, info *arg_info);
 
 #endif /* _SAC_PRINT_H_ */
