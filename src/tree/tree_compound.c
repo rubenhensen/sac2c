@@ -1307,6 +1307,33 @@ TCappendArgs (node *arg_chain, node *arg)
     DBUG_RETURN (ret);
 }
 
+/** <!-- ****************************************************************** -->
+ * @fn node *TCmakeExprsFromArgs( node *args)
+ *
+ * @brief Returns an N_exprs chain containing N_id nodes with
+ *        the avis given by the given args.
+ *
+ * @param args N_arg chain
+ *
+ * @return created N_exprs chain
+ ******************************************************************************/
+node *
+TCmakeExprsFromArgs (node *args)
+{
+    node *result;
+
+    DBUG_ENTER ("TCmakeExprsFromArgs");
+
+    if (args != NULL) {
+        result = TBmakeExprs (TBmakeId (ARG_AVIS (args)),
+                              TCmakeExprsFromArgs (ARG_NEXT (args)));
+    } else {
+        result = NULL;
+    }
+
+    DBUG_RETURN (result);
+}
+
 /*--------------------------------------------------------------------------*/
 
 /***
@@ -1364,6 +1391,40 @@ TCcountRets (node *rets)
     }
 
     DBUG_RETURN (count);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn node *TCcreateIdsFromRets( node *rets, node **vardecs)
+ *
+ * @brief Creates a N_ids chain with the types given by the N_rets chain.
+ *        Vardecs for the created N_ids are appended to the given vardecs
+ *        chain.
+ *
+ * @param rets N_rets chain
+ * @param vardecs address of a N_vardec chain
+ *
+ * @return created N_ids chain
+ ******************************************************************************/
+node *
+TCcreateIdsFromRets (node *rets, node **vardecs)
+{
+    node *vardec;
+    node *result;
+
+    DBUG_ENTER ("TCcreateIdsFromRets");
+
+    if (rets != NULL) {
+        vardec
+          = TBmakeVardec (TBmakeAvis (ILIBtmpVar (), TYcopyType (RET_TYPE (rets))), NULL);
+        result = TBmakeIds (VARDEC_AVIS (vardec),
+                            TCcreateIdsFromRets (RET_NEXT (rets), vardecs));
+
+        *vardecs = TCappendVardec (vardec, *vardecs);
+    } else {
+        result = NULL;
+    }
+
+    DBUG_RETURN (result);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -1947,6 +2008,60 @@ TCcountExprs (node *exprs)
     }
 
     DBUG_RETURN (count);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn node *TCcreateExprsFromIds( node *ids)
+ *
+ * @brief Creates a N_exprs chain containing N_id nodes corresponding to the
+ *        given N_ids chain.
+ *
+ * @param ids N_ids chain
+ *
+ * @return created N_exprs chain
+ ******************************************************************************/
+node *
+TCcreateExprsFromIds (node *ids)
+{
+    node *result;
+
+    DBUG_ENTER ("TCcreateExprsFromIds");
+
+    if (ids != NULL) {
+        result = TBmakeExprs (TBmakeId (IDS_AVIS (ids)),
+                              TCcreateExprsFromIds (IDS_NEXT (ids)));
+    } else {
+        result = NULL;
+    }
+
+    DBUG_RETURN (result);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn node *TCcreateExprsFromArgs( node *args)
+ *
+ * @brief Creates a N_exprs chain containing N_id nodes corresponding to the
+ *        given N_arg chain.
+ *
+ * @param args N_arg chain
+ *
+ * @return created N_exprs chain
+ ******************************************************************************/
+node *
+TCcreateExprsFromArgs (node *args)
+{
+    node *result;
+
+    DBUG_ENTER ("TCcreateExprsFromArgs");
+
+    if (args != NULL) {
+        result = TBmakeExprs (TBmakeId (ARG_AVIS (args)),
+                              TCcreateExprsFromArgs (ARG_NEXT (args)));
+    } else {
+        result = NULL;
+    }
+
+    DBUG_RETURN (result);
 }
 
 node *

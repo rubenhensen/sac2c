@@ -437,6 +437,7 @@ extern int TCcountVardecs (node *vardecs);
 
 extern int TCcountArgs (node *args);
 extern node *TCappendArgs (node *arg_chain, node *arg);
+extern node *TCmakeExprsFromArgs (node *args);
 
 /*--------------------------------------------------------------------------*/
 
@@ -446,6 +447,8 @@ extern node *TCappendArgs (node *arg_chain, node *arg);
 
 extern int TCcountRets (node *rets);
 extern node *TCappendRet (node *chain, node *item);
+extern node *TCcreateIdsFromRets (node *rets, node **vardecs);
+extern node *TCcreateExprsFromArgs (node *args);
 
 /*--------------------------------------------------------------------------*/
 
@@ -736,6 +739,8 @@ extern node *TCmakeExprsNum (int num);
 extern int TCcountExprs (node *exprs);
 
 extern node *TCgetNthExpr (int n, node *exprs);
+
+extern node *TCcreateExprsFromIds (node *ids);
 
 #define EXPRS_EXPRS1(n) (n)
 #define EXPRS_EXPRS2(n) EXPRS_NEXT (n)

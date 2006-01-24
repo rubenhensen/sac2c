@@ -16,7 +16,9 @@
 struct INFO {
     node *objects;
     node *objdefs;
+    node *fundefs;
     int changes;
+    bool islocal;
 };
 
 /*
@@ -24,7 +26,9 @@ struct INFO {
  */
 #define INFO_OBJECTS(n) ((n)->objects)
 #define INFO_OBJDEFS(n) ((n)->objdefs)
+#define INFO_FUNDEFS(n) ((n)->fundefs)
 #define INFO_CHANGES(n) ((n)->changes)
+#define INFO_ISLOCAL(n) ((n)->islocal)
 
 /*
  * INFO functions
@@ -40,7 +44,9 @@ MakeInfo ()
 
     INFO_OBJECTS (result) = NULL;
     INFO_OBJDEFS (result) = NULL;
+    INFO_FUNDEFS (result) = NULL;
     INFO_CHANGES (result) = 0;
+    INFO_ISLOCAL (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -58,6 +64,41 @@ FreeInfo (info *info)
 /*
  * Local helper function
  */
+static node *
+CreateObjectWrapper (node *fundef)
+{
+    node *result;
+    node *block;
+    node *ids;
+    node *vardecs = NULL;
+
+    DBUG_ENTER ("CreateObjectWrapper");
+
+    result = TBmakeFundef (ILIBstringCopy (FUNDEF_NAME (fundef)),
+                           NSdupNamespace (global.modulenamespace),
+                           DUPdoDupTree (FUNDEF_RETS (fundef)),
+                           DUPdoDupTree (FUNDEF_ARGS (fundef)), NULL, NULL);
+
+    ids = TCcreateIdsFromRets (FUNDEF_RETS (result), &vardecs);
+
+    block
+      = TBmakeBlock (TBmakeAssign (TBmakeLet (ids,
+                                              TBmakeAp (fundef, TCcreateExprsFromArgs (
+                                                                  FUNDEF_ARGS (result)))),
+                                   TBmakeAssign (TBmakeReturn (
+                                                   TCcreateExprsFromIds (ids)),
+                                                 NULL)),
+                     NULL);
+
+    BLOCK_VARDEC (block) = vardecs;
+    FUNDEF_BODY (result) = block;
+
+    FUNDEF_ISOBJECTWRAPPER (result) = TRUE;
+    FUNDEF_ISINLINE (result) = FUNDEF_ISINLINE (fundef);
+    FUNDEF_IMPL (result) = fundef;
+
+    DBUG_RETURN (result);
+}
 
 static node *
 CollectObjects (node *fundef, info *info)
@@ -74,11 +115,35 @@ ProjectObjects (node *fundef, info *info)
 {
     DBUG_ENTER ("ProjectObjects");
 
-    if (FUNDEF_OBJECTS (fundef) != NULL) {
-        FUNDEF_OBJECTS (fundef) = FREEdoFreeTree (FUNDEF_OBJECTS (fundef));
-    }
-    if (INFO_OBJECTS (info) != NULL) {
-        FUNDEF_OBJECTS (fundef) = DUPdoDupTree (INFO_OBJECTS (info));
+    if (FUNDEF_ISLOCAL (fundef) || !INFO_ISLOCAL (info)) {
+        /*
+         * this is either a local instance or the entire
+         * wrapper is not local and thus all its instances.
+         * In both cases we can safely modify the instances.
+         */
+        if (FUNDEF_OBJECTS (fundef) != NULL) {
+            FUNDEF_OBJECTS (fundef) = FREEdoFreeTree (FUNDEF_OBJECTS (fundef));
+        }
+        if (INFO_OBJECTS (info) != NULL) {
+            FUNDEF_OBJECTS (fundef) = DUPdoDupTree (INFO_OBJECTS (info));
+        }
+    } else {
+        /*
+         * we cannot modify the object dependencies for non local functions
+         * as these might be shared between multiple wrappers. Thus, we
+         * insert special object wrappers.
+         */
+        if (INFO_OBJECTS (info) != NULL) {
+            fundef = CreateObjectWrapper (fundef);
+            INFO_FUNDEFS (info) = TCappendFundef (INFO_FUNDEFS (info), fundef);
+
+            if (FUNDEF_OBJECTS (fundef) != NULL) {
+                FUNDEF_OBJECTS (fundef) = FREEdoFreeTree (FUNDEF_OBJECTS (fundef));
+            }
+            if (INFO_OBJECTS (info) != NULL) {
+                FUNDEF_OBJECTS (fundef) = DUPdoDupTree (INFO_OBJECTS (info));
+            }
+        }
     }
 
     DBUG_RETURN (fundef);
@@ -93,6 +158,7 @@ UnifyOverloadedFunctions (node *funs, info *info)
         if (FUNDEF_ISWRAPPERFUN (funs)) {
             if (TYisFun (FUNDEF_WRAPPERTYPE (funs))) {
                 INFO_OBJECTS (info) = FUNDEF_OBJECTS (funs);
+                INFO_ISLOCAL (info) = FUNDEF_ISLOCAL (funs);
 
                 FUNDEF_WRAPPERTYPE (funs)
                   = TYmapFunctionInstances (FUNDEF_WRAPPERTYPE (funs), CollectObjects,
@@ -259,6 +325,15 @@ OANmodule (node *arg_node, info *arg_info)
 
         DBUG_PRINT ("OAN", ("unifying completed."));
     } while (INFO_CHANGES (arg_info) != 0);
+
+    /*
+     * append the created object wrappers
+     */
+    if (INFO_FUNDEFS (arg_info) != NULL) {
+        MODULE_FUNS (arg_node)
+          = TCappendFundef (MODULE_FUNS (arg_node), INFO_FUNDEFS (arg_info));
+        INFO_FUNDEFS (arg_info) = NULL;
+    }
 
     DBUG_RETURN (arg_node);
 }

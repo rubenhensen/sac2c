@@ -195,6 +195,15 @@ RESOap (node *arg_node, info *arg_info)
     AP_ARGS (arg_node)
       = StripArtificialArgExprs (FUNDEF_ARGS (AP_FUNDEF (arg_node)), AP_ARGS (arg_node));
 
+    /*
+     * unwrap function if neccessary
+     */
+    if (FUNDEF_ISOBJECTWRAPPER (AP_FUNDEF (arg_node))) {
+        DBUG_ASSERT ((FUNDEF_IMPL (AP_FUNDEF (arg_node)) != NULL),
+                     "found object wrapper with FUNDEF_IMPL not set!");
+        AP_FUNDEF (arg_node) = FUNDEF_IMPL (AP_FUNDEF (arg_node));
+    }
+
     arg_node = TRAVcont (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
@@ -291,6 +300,13 @@ RESOfundef (node *arg_node, info *arg_info)
      * then clean up the signatures
      */
     FUNDEF_ARGS (arg_node) = StripArtificialArgs (FUNDEF_ARGS (arg_node));
+
+    /*
+     * finally delete object wrapper functions
+     */
+    if (FUNDEF_ISOBJECTWRAPPER (arg_node)) {
+        arg_node = FREEdoFreeNode (arg_node);
+    }
 
     DBUG_RETURN (arg_node);
 }
