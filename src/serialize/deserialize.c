@@ -866,7 +866,7 @@ DSimportObjdefByName (const char *name, const char *module)
          * adding non-local items to the AST only.
          */
         INFO_DS_OBJDEFS (DSstate)
-          = TCappendObjdef (INFO_DS_TYPEDEFS (DSstate), new_objdef);
+          = TCappendObjdef (INFO_DS_OBJDEFS (DSstate), new_objdef);
     }
 
     DBUG_VOID_RETURN;
