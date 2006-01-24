@@ -2033,6 +2033,7 @@
 	<node name="Str" />
         <node name="Icm" />
         <node name="Type" />
+        <node name="Globobj" />
       </target>
     </nodeset>
     <nodeset name="Instr">
