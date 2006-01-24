@@ -150,13 +150,16 @@ ObjdefsToInitAssigns (node *objdefs, node *assigns)
 
     if (objdefs != NULL) {
         result = ObjdefsToInitAssigns (LINKLIST_NEXT (objdefs), assigns);
-        result
-          = TBmakeAssign (TBmakeLet (NULL,
-                                     TBmakeAp (OBJDEF_INITFUN (LINKLIST_LINK (objdefs)),
-                                               TBmakeExprs (TBmakeGlobobj (
-                                                              LINKLIST_LINK (objdefs)),
-                                                            NULL))),
-                          result);
+        if (OBJDEF_INITFUN (LINKLIST_LINK (objdefs)) != NULL) {
+            result
+              = TBmakeAssign (TBmakeLet (NULL, TBmakeAp (OBJDEF_INITFUN (
+                                                           LINKLIST_LINK (objdefs)),
+                                                         TBmakeExprs (TBmakeGlobobj (
+                                                                        LINKLIST_LINK (
+                                                                          objdefs)),
+                                                                      NULL))),
+                              result);
+        }
     } else {
         result = assigns;
     }

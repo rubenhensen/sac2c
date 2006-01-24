@@ -411,8 +411,7 @@ RIDobjdef (node *arg_node, info *arg_info)
 
         if (OBJDEF_LINKNAME (arg_node) != NULL) {
             OBJDEF_NAME (arg_node) = ILIBfree (OBJDEF_NAME (arg_node));
-            OBJDEF_NAME (arg_node) = OBJDEF_LINKNAME (arg_node);
-            OBJDEF_PRAGMA (arg_node) = ILIBfree (OBJDEF_PRAGMA (arg_node));
+            OBJDEF_NAME (arg_node) = ILIBstringCopy (OBJDEF_LINKNAME (arg_node));
         }
     }
 

@@ -268,11 +268,61 @@ RSParg (node *arg_node, info *arg_info)
 }
 
 node *
+RSPtypedef (node *arg_node, info *arg_info)
+{
+    node *pragma;
+
+    DBUG_ENTER ("RSPtypedef");
+
+    DBUG_PRINT ("RSP", ("Processing typedef '%s'...", CTIitemName (arg_node)));
+
+    if (TYPEDEF_PRAGMA (arg_node) != NULL) {
+        pragma = TYPEDEF_PRAGMA (arg_node);
+
+        TYPEDEF_FREEFUN (arg_node) = ILIBstringCopy (PRAGMA_FREEFUN (pragma));
+        TYPEDEF_INITFUN (arg_node) = ILIBstringCopy (PRAGMA_INITFUN (pragma));
+        TYPEDEF_COPYFUN (arg_node) = ILIBstringCopy (PRAGMA_COPYFUN (pragma));
+
+        TYPEDEF_PRAGMA (arg_node) = FREEdoFreeNode (TYPEDEF_PRAGMA (arg_node));
+    }
+
+    if (TYPEDEF_NEXT (arg_node) != NULL) {
+        TYPEDEF_NEXT (arg_node) = TRAVdo (TYPEDEF_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+RSPobjdef (node *arg_node, info *arg_info)
+{
+    node *pragma;
+
+    DBUG_ENTER ("RSPobjdef");
+
+    DBUG_PRINT ("RSP", ("Processing objdef '%s'...", CTIitemName (arg_node)));
+
+    if (OBJDEF_PRAGMA (arg_node) != NULL) {
+        pragma = OBJDEF_PRAGMA (arg_node);
+
+        OBJDEF_LINKNAME (arg_node) = ILIBstringCopy (PRAGMA_LINKNAME (pragma));
+
+        OBJDEF_PRAGMA (arg_node) = FREEdoFreeNode (OBJDEF_PRAGMA (arg_node));
+    }
+
+    if (OBJDEF_NEXT (arg_node) != NULL) {
+        OBJDEF_NEXT (arg_node) = TRAVdo (OBJDEF_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
 RSPfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("RSPFundef");
 
-    DBUG_PRINT ("RSP", ("Processing function '%s'...", FUNDEF_NAME (arg_node)));
+    DBUG_PRINT ("RSP", ("Processing function '%s'...", CTIitemName (arg_node)));
 
     /*
      * first we set an initial state for all external
@@ -296,6 +346,12 @@ RSPfundef (node *arg_node, info *arg_info)
 
         PRAGMA_NUMPARAMS (pragma)
           = TCcountArgs (FUNDEF_ARGS (arg_node)) + TCcountRets (FUNDEF_RETS (arg_node));
+
+        if (PRAGMA_COPYFUN (pragma) != NULL) {
+            CTIwarnLine (NODE_LINE (arg_node),
+                         "Pragma 'copyfun` has no effect on function");
+            PRAGMA_COPYFUN (pragma) = ILIBfree (PRAGMA_COPYFUN (pragma));
+        }
 
         if (PRAGMA_FREEFUN (pragma) != NULL) {
             CTIwarnLine (NODE_LINE (arg_node),
@@ -387,6 +443,14 @@ RSPmodule (node *arg_node, info *arg_info)
     DBUG_ENTER ("RSPModule");
 
     INFO_MODULE (arg_info) = arg_node;
+
+    if (MODULE_OBJS (arg_node) != NULL) {
+        MODULE_OBJS (arg_node) = TRAVdo (MODULE_OBJS (arg_node), arg_info);
+    }
+
+    if (MODULE_TYPES (arg_node) != NULL) {
+        MODULE_TYPES (arg_node) = TRAVdo (MODULE_TYPES (arg_node), arg_info);
+    }
 
     if (MODULE_FUNDECS (arg_node) != NULL) {
         MODULE_FUNDECS (arg_node) = TRAVdo (MODULE_FUNDECS (arg_node), arg_info);

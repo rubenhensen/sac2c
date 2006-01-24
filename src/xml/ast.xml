@@ -245,7 +245,7 @@
       if="true"
       breakspec="su">
     </phase>
-    <phase id="scanparse" name="Loading SAC source file"
+    <phase id="sp" name="Loading SAC source file"
       startfun="NULL" include=".h"
       if="true"
       breakspec="sp">
@@ -273,10 +273,12 @@
       </traversal>
       <traversal id="RSP" name="Resolve pragmas" default="sons" include="resolvepragma.h">
         <travuser>
-          <node name="Arg" />
+          <node name="Typedef" />
+          <node name="Objdef" />
           <node name="Fundef" />
           <node name="Module" />
           <node name="Ret" />
+          <node name="Arg" />
         </travuser>
       </traversal>
     </phase>
@@ -2257,7 +2259,7 @@
               <target mandatory="no">
                 <node name="Pragma" />
                 <phases>
-                  <range from="imp" to="exp" />
+                  <range from="sp" to="pragma" />
                 </phases>
               </target>
             </targets>
@@ -2275,6 +2277,18 @@
             </targets>
           </type>
         </attribute>
+        <attribute name="InitFun">
+          <type name="String">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <range from="pragma" to="final" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+	</attribute>
         <attribute name="FreeFun">
           <type name="String">
             <targets>
@@ -2403,7 +2417,7 @@
               <target mandatory="yes">
                 <node name="Pragma" />
                 <phases>
-                  <range from="sp" to="final" />
+                  <range from="sp" to="pragma" />
                 </phases>
               </target>
             </targets>

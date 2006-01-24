@@ -834,7 +834,7 @@ pragma: hash_pragma LINKNAME string
           PRAGMA_REFCOUNTING( store_pragma) = $4;
         }
       | hash_pragma EFFECT qual_ext_ids
-        { if( (pragma_type != PRAG_fundec) && (pragma_type != PRAG_objdef) ) {
+        { if( pragma_type != PRAG_fundec)  {
             yyerror( "pragma \"effect\" not allowed here");
           }
           if (store_pragma == NULL) {
