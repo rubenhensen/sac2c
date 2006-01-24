@@ -5970,10 +5970,12 @@ BranchesAreEquivalent (node *assigns1, node *assigns2)
     if ((prf_or_fundef1 != NULL) && (prf_or_fundef2 != NULL)) {
         if ((NODE_TYPE (prf_or_fundef1) == N_prf)
             && (NODE_TYPE (prf_or_fundef2) == N_prf)) {
-            DBUG_ASSERT (((PRF_PRF (prf_or_fundef1) == F_dispatch_error)
-                          && (PRF_PRF (prf_or_fundef2) == F_dispatch_error)),
+            DBUG_ASSERT ((((PRF_PRF (prf_or_fundef1) == F_dispatch_error)
+                           || (PRF_PRF (prf_or_fundef1) == F_type_error))
+                          && ((PRF_PRF (prf_or_fundef2) == F_dispatch_error)
+                              || (PRF_PRF (prf_or_fundef2) == F_type_error))),
                          "illegal prf found!");
-            res = TRUE;
+            res = PRF_PRF (prf_or_fundef1) == PRF_PRF (prf_or_fundef2);
         } else if ((NODE_TYPE (prf_or_fundef1) == N_fundef)
                    && (NODE_TYPE (prf_or_fundef2) == N_fundef)) {
             res = (prf_or_fundef1 == prf_or_fundef2);
