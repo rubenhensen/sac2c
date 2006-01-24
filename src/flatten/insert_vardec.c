@@ -1,91 +1,4 @@
-/*
- *
- * $Log$
- * Revision 1.26  2005/09/29 14:34:58  sah
- * fixed accesses to free'd or uninitialised
- * memory. came along those while using valgrind.
- *
- * Revision 1.25  2005/07/15 15:57:02  sah
- * introduced namespaces
- *
- * Revision 1.24  2005/06/15 13:03:46  sbs
- * improved error messages.
- *
- * Revision 1.23  2005/06/09 15:16:17  sbs
- * added support for void functions, i.e., LHS of let is not mendatory
- * anymore ;-)
- *
- * Revision 1.22  2005/03/19 23:05:26  sbs
- * AUD support requires PART_NEXT and CODE_NEXT to be traversed too.
- *
- * Revision 1.21  2005/01/07 18:05:21  cg
- * Updated usage of ctinfo
- *
- * Revision 1.20  2005/01/07 17:32:55  cg
- * Converted compile time output from Error.h to ctinfo.c
- *
- * Revision 1.19  2004/12/14 16:38:15  sbs
- * INSVDspids now traverses the NEXT son as well (iff it exists)
- *
- * Revision 1.18  2004/12/13 11:10:38  sah
- * fixed a bug
- *
- * Revision 1.17  2004/12/12 07:55:02  ktr
- * Corrected node usage.
- *
- * Revision 1.16  2004/12/07 17:24:30  sah
- * added INSVDdo to fix dependency on ast
- * defined traversal order
- *
- * Revision 1.15  2004/12/05 20:12:26  sah
- * fixes
- *
- * Revision 1.14  2004/12/05 16:45:38  sah
- * added SPIds SPId SPAp in frontend
- *
- * Revision 1.13  2004/12/01 15:01:03  sah
- * modified handling of SPxxx attributes
- *
- * Revision 1.12  2004/11/25 16:32:54  khf
- * added ABORT_ON_ERROR
- *
- * Revision 1.11  2004/11/25 15:23:07  khf
- * more codebrushing
- *
- * Revision 1.10  2004/11/25 14:14:35  khf
- * SacDevCamp04: COMPILES!
- *
- * Revision 1.9  2004/08/29 18:08:38  sah
- * added some DBUG_PRINTS
- *
- * Revision 1.8  2004/07/16 17:36:23  sah
- * switch to new INFO structure
- * PHASE I
- *
- * Revision 1.7  2002/10/18 13:35:22  sbs
- * Now, this phase also detects all references to global objects and marks the according
- * N_id nodes as IS_GLOBAL.
- *
- * Revision 1.6  2002/04/29 14:30:21  sbs
- * Now, identifier are copied when creating new vardecs 8-))))
- *
- * Revision 1.5  2002/03/12 15:11:12  sbs
- * dummy vardecs now have a T_unknown rather than a null type pointer.
- *
- * Revision 1.4  2002/02/22 14:07:45  sbs
- * access macros to INFO nodes moved into tree_basic
- *
- * Revision 1.3  2002/02/22 12:30:46  sbs
- * insvd_tab moved into traverse.c
- *
- * Revision 1.2  2002/02/22 09:26:19  sbs
- * INSVDwithid added .
- *
- * Revision 1.1  2002/02/21 15:12:36  sbs
- * Initial revision
- *
- *
- */
+/* $Id$ */
 
 /*****************************************************************************
  *
@@ -390,6 +303,11 @@ INSVDspid (node *arg_node, info *arg_info)
                               "Identifier '%s` used without previous definition",
                               SPID_NAME (arg_node));
             } else {
+                /*
+                 * we have to unalias it first!
+                 */
+                vardec = TCunAliasObjdef (vardec);
+
                 arg_node = FREEdoFreeNode (arg_node);
                 arg_node = TBmakeGlobobj (vardec);
             }

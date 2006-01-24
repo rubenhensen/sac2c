@@ -1111,6 +1111,10 @@ PRTobjdef (node *arg_node, info *arg_info)
             fprintf (global.outfile, "extern ");
         }
 
+        if (OBJDEF_ISALIAS (arg_node)) {
+            fprintf (global.outfile, "alias ");
+        }
+
         type_str = TYtype2String (OBJDEF_TYPE (arg_node), FALSE, 0);
         fprintf (global.outfile, "%s ", type_str);
         type_str = ILIBfree (type_str);

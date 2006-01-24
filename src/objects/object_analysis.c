@@ -159,6 +159,12 @@ AddAffectedObjects (node **exprs, node *list, info *info)
                           "Objdef %s:%s referenced in effect pragma is undefined",
                           NSgetName (SPID_NS (spid)), SPID_NAME (spid));
         } else {
+            /*
+             * remove all aliasings first. We do this here for
+             * the sake of a better error message above!
+             */
+            objdef = TCunAliasObjdef (objdef);
+
             DBUG_PRINT ("OAN", (">>> adding effect on %s...", CTIitemName (objdef)));
 
             INFO_CHANGES (info) += TCaddLinkToLinks (&list, objdef);

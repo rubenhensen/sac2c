@@ -24,6 +24,7 @@ extern node *DSaddSymbolByName (const char *symbol, stentrytype_t type,
 extern node *DSaddSymbolById (const char *symbid, const char *module);
 extern void DSimportInstancesByName (const char *name, const char *module);
 extern void DSimportTypedefByName (const char *name, const char *module);
+extern void DSimportObjdefByName (const char *name, const char *module);
 extern node *DSloadFunctionBody (node *fundef);
 
 extern void DSaddAliasing (const char *symbol, node *target);

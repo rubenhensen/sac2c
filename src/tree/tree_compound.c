@@ -1004,6 +1004,25 @@ TCappendObjdef (node *objdef_chain, node *objdef)
     DBUG_RETURN (ret);
 }
 
+node *
+TCunAliasObjdef (node *objdef)
+{
+    node *result;
+
+    DBUG_ENTER ("TCunAliasObjdef");
+
+    result = objdef;
+
+    while (OBJDEF_ISALIAS (result)) {
+        DBUG_ASSERT ((NODE_TYPE (OBJDEF_EXPR (result)) == N_globobj),
+                     "found objdef alias without proper init expression!");
+
+        result = GLOBOBJ_OBJDEF (OBJDEF_EXPR (result));
+    }
+
+    DBUG_RETURN (result);
+}
+
 /*--------------------------------------------------------------------------*/
 
 /***

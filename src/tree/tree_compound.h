@@ -262,6 +262,8 @@ extern node *TCappendTypedef (node *tdef_chain, node *tdef);
 
 extern node *TCappendObjdef (node *objdef_chain, node *objdef);
 
+extern node *TCunAliasObjdef (node *objdef);
+
 /*--------------------------------------------------------------------------*/
 
 /***

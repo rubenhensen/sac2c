@@ -192,7 +192,8 @@ CreateInitFuns (node *objdefs, node *funs)
         funs = CreateInitFuns (OBJDEF_NEXT (objdefs), funs);
     }
 
-    if (OBJDEF_ISLOCAL (objdefs) && !OBJDEF_ISEXTERN (objdefs)) {
+    if (OBJDEF_ISLOCAL (objdefs) && !OBJDEF_ISEXTERN (objdefs)
+        && !OBJDEF_ISALIAS (objdefs)) {
         initfun = BuildInitFun (ILIBstringConcat ("init_", OBJDEF_NAME (objdefs)),
                                 NSgetInitNamespace (), TYcopyType (OBJDEF_TYPE (objdefs)),
                                 OBJDEF_EXPR (objdefs));

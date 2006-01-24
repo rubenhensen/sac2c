@@ -830,6 +830,48 @@ DSimportTypedefByName (const char *name, const char *module)
     DBUG_VOID_RETURN;
 }
 
+void
+DSimportObjdefByName (const char *name, const char *module)
+{
+    node *orig_objdef;
+
+    DBUG_ENTER ("DSimportObjdefByName");
+
+    /*
+     * first make sure the objdef to be imported is available
+     */
+    orig_objdef = DSaddSymbolByName (name, SET_objdef, module);
+
+    /*
+     * we allow the original objdef not to exist. This is mainly
+     * to allow this function to be called without checking
+     * whether an objdef by that name really exists. as we
+     * always import entire symbols, it does not matter whether
+     * we in fact imported an objdef or not.
+     */
+    if (orig_objdef != NULL) {
+        node *new_objdef;
+        /*
+         * construct the new objdef and mark it as an alias
+         */
+        new_objdef = TBmakeObjdef (TYcopyType (OBJDEF_TYPE (orig_objdef)),
+                                   NSdupNamespace (global.modulenamespace),
+                                   ILIBstringCopy (OBJDEF_NAME (orig_objdef)),
+                                   TBmakeGlobobj (orig_objdef), NULL);
+        OBJDEF_ISALIAS (new_objdef) = TRUE;
+
+        /*
+         * insert it into the state. we cannot use InsertIntoState here, as we
+         * have created a new local objdef and InsertIntoState is meant for
+         * adding non-local items to the AST only.
+         */
+        INFO_DS_OBJDEFS (DSstate)
+          = TCappendObjdef (INFO_DS_TYPEDEFS (DSstate), new_objdef);
+    }
+
+    DBUG_VOID_RETURN;
+}
+
 node *
 DSloadFunctionBody (node *fundef)
 {

@@ -1,21 +1,4 @@
-/*
- * $Log$
- * Revision 1.4  2005/07/15 15:57:02  sah
- * introduced namespaces
- *
- * Revision 1.3  2005/05/26 18:26:04  sah
- * import statements are now removed after
- * processing
- *
- * Revision 1.2  2005/05/26 07:47:44  sah
- * modules used by imports are added to the
- * dependencies now, as well
- *
- * Revision 1.1  2005/05/22 19:46:39  sah
- * Initial revision
- *
- *
- */
+/* $Id$ */
 
 /**
  * @file importsymbols.c
@@ -132,6 +115,7 @@ IMPsymbol (node *arg_node, info *arg_info)
 
     DSimportInstancesByName (SYMBOL_ID (arg_node), INFO_IMP_CURRENT (arg_info));
     DSimportTypedefByName (SYMBOL_ID (arg_node), INFO_IMP_CURRENT (arg_info));
+    DSimportObjdefByName (SYMBOL_ID (arg_node), INFO_IMP_CURRENT (arg_info));
 
     if (SYMBOL_NEXT (arg_node) != NULL) {
         SYMBOL_NEXT (arg_node) = TRAVdo (SYMBOL_NEXT (arg_node), arg_info);
