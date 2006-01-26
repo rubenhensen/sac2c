@@ -1825,6 +1825,7 @@
 	  <node name="Let" />
 	  <node name="Return" />
 	  <node name="Fundef" />
+	  <node name="Prf" />
  	  <node name="Id" />
  	  <node name="Ids" />
 	  <node name="Module" />
@@ -1838,6 +1839,7 @@
 	  <node name="Let" />
 	  <node name="Block" />
 	  <node name="Fundef" />
+	  <node name="Prf" />
 	  <node name="Module" />
 	</travuser>
       </traversal>

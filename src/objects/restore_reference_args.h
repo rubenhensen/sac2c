@@ -12,6 +12,7 @@ extern node *RERAid (node *arg_node, info *arg_info);
 extern node *RERAids (node *arg_node, info *arg_info);
 extern node *RERAreturn (node *arg_node, info *arg_info);
 extern node *RERAfundef (node *arg_node, info *arg_info);
+extern node *RERAprf (node *arg_node, info *arg_info);
 extern node *RERAmodule (node *arg_node, info *arg_info);
 
 extern node *RERAdoRestoreReferenceArgs (node *syntax_tree);

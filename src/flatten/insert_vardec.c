@@ -330,6 +330,11 @@ INSVDspid (node *arg_node, info *arg_info)
             CTIerrorLine (global.linenum, "No definition for global object %s:%s found",
                           NSgetName (SPID_NS (arg_node)), SPID_NAME (arg_node));
         } else {
+            /*
+             * we have to unalias it first!
+             */
+            vardec = TCunAliasObjdef (vardec);
+
             arg_node = FREEdoFreeNode (arg_node);
             arg_node = TBmakeGlobobj (vardec);
         }

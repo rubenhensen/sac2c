@@ -238,6 +238,9 @@ RERAlet (node *arg_node, info *arg_info)
     LET_IDS (arg_node) = INFO_LHS (arg_info);
     INFO_LHS (arg_info) = oldlhs;
 
+    /*
+     * substitute LHS ids
+     */
     if (LET_IDS (arg_node) != NULL) {
         LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
     }
@@ -289,17 +292,8 @@ RERAids (node *arg_node, info *arg_info)
         IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
     }
 
-    if (AVIS_SUBST (IDS_AVIS (arg_node)) != NULL) {
-        /*
-         * this ids node was replaced by a reference arg but is
-         * still in the return-ids chain. The only reason for
-         * this to happen is that the ids is a return value of
-         * a compiler introduced prf like type_error or
-         * dispatch_error. As prfs do not support reference args,
-         * we silently remove the ids node. As both prfs do stop
-         * the execution, this does not change the semantics.
-         */
-        arg_node = FREEdoFreeNode (arg_node);
+    while (AVIS_SUBST (IDS_AVIS (arg_node)) != NULL) {
+        IDS_AVIS (arg_node) = AVIS_SUBST (IDS_AVIS (arg_node));
     }
 
     DBUG_RETURN (arg_node);
@@ -362,6 +356,36 @@ RERAfundef (node *arg_node, info *arg_info)
      */
     FUNDEF_ARGS (arg_node) = ReintroduceReferenceArgs (FUNDEF_ARGS (arg_node));
     FUNDEF_RETS (arg_node) = RemoveArtificialRets (FUNDEF_RETS (arg_node));
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+RERAprf (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("RERAprf");
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    switch (PRF_PRF (arg_node)) {
+    case F_dispatch_error:
+    case F_type_error:
+        /*
+         * for these prfs we have to remove all LHS return vars that
+         * have a subst flag set (e.g. they are artificial return
+         * values). In fact this is a bad hack, as it only works, if
+         * the return value has been used in a regular function call.
+         * At least for wrappers this is true...
+         */
+        while ((INFO_LHS (arg_info) != NULL)
+               && (AVIS_SUBST (IDS_AVIS (INFO_LHS (arg_info))) != NULL)) {
+            INFO_LHS (arg_info) = FREEdoFreeNode (INFO_LHS (arg_info));
+        }
+        break;
+
+    default:
+        break;
+    }
 
     DBUG_RETURN (arg_node);
 }
