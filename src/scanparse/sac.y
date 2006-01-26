@@ -44,7 +44,8 @@ static node *store_pragma = NULL;
 static 
   enum {PRAG_fundef, PRAG_fundec, PRAG_objdef, PRAG_typedef} 
   pragma_type = PRAG_fundef;
-static bool have_seen_dots = FALSE;
+static bool has_dot_rets = FALSE;
+static bool has_dot_args = FALSE;
 
 /*
 * used to distinguish the different kinds of files
@@ -592,7 +593,7 @@ fundefargs: args        { $$ = $1;   }
 
 fundecargs: varargs     { $$ = $1;   }
           | TYPE_VOID   { $$ = NULL; }
-          | DOT DOT DOT { $$ = NULL; have_seen_dots = TRUE; }
+          | DOT DOT DOT { $$ = NULL; has_dot_args = TRUE; }
           ;
 
 
@@ -614,7 +615,7 @@ varargs: arg COMMA varargs
          }
        | arg COMMA DOT DOT DOT
          { $$ = $1;
-           have_seen_dots = TRUE;
+           has_dot_args = TRUE;
          }
        ;
 
@@ -684,9 +685,9 @@ fundec: EXTERN returndectypes ext_id BRACKET_L fundec2
           FUNDEF_RETS( $$) = $2;
           FUNDEF_NAME( $$) = $3;  /* function name */
           FUNDEF_ISEXTERN( $$) = TRUE;
-          if( have_seen_dots) {
-             FUNDEF_HASDOTARGS( $$) = TRUE;
-             have_seen_dots = FALSE;
+          if( has_dot_rets) {
+             FUNDEF_HASDOTRETS( $$) = TRUE;
+             has_dot_rets = FALSE;
            }
         }
       ;
@@ -694,9 +695,9 @@ fundec: EXTERN returndectypes ext_id BRACKET_L fundec2
 fundec2: fundecargs BRACKET_R { $<cint>$ = global.linenum; } SEMIC
          { $$ = TBmakeFundef( NULL, NULL, NULL, $1, NULL, NULL);
            NODE_LINE( $$) = $<cint>3;
-           if( have_seen_dots) {
+           if( has_dot_args) {
              FUNDEF_HASDOTARGS( $$) = TRUE;
-             have_seen_dots = FALSE;
+             has_dot_args = FALSE;
            }
          }
        | BRACKET_R { $<cint>$ = global.linenum; } SEMIC
@@ -1587,7 +1588,7 @@ returntypes: TYPE_VOID   { $$ = NULL; }
 
 returndectypes: TYPE_VOID   { $$ = NULL; }
               | varntypes      { $$ = $1;   }
-              | DOT DOT DOT { $$ = NULL; have_seen_dots = TRUE; }
+              | DOT DOT DOT { $$ = NULL; has_dot_rets = TRUE; }
               ;
 
 ntypes: ntype COMMA ntypes { $$ = TBmakeRet( $1, $3); }
@@ -1598,7 +1599,7 @@ varntypes: ntype COMMA ntypes { $$ = TBmakeRet( $1, $3); }
          | ntype { $$ = TBmakeRet( $1,NULL); }
          | ntype COMMA DOT DOT DOT
          { $$ = TBmakeRet( $1,NULL);
-           have_seen_dots = TRUE;
+           has_dot_rets = TRUE;
          }
          ;
 
