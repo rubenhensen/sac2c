@@ -529,6 +529,8 @@ ANSvardec (node *arg_node, info *arg_info)
         VARDEC_TYPE (arg_node) = ANStypes (VARDEC_TYPE (arg_node), arg_info);
     }
 
+    VARDEC_AVIS (arg_node) = TRAVdo (VARDEC_AVIS (arg_node), arg_info);
+
     if (VARDEC_NEXT (arg_node) != NULL) {
         VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
     }
