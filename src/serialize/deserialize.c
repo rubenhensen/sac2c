@@ -819,6 +819,11 @@ DSimportTypedefByName (const char *name, const char *module)
         TYPEDEF_ISALIAS (new_tdef) = TRUE;
 
         /*
+         * we have to propagate the uniqueness property as well
+         */
+        TYPEDEF_ISUNIQUE (new_tdef) = TYPEDEF_ISUNIQUE (orig_tdef);
+
+        /*
          * insert it into the state. we cannot use InsertIntoState here, as we
          * have created a new local typedef and InsertIntoState is meant for
          * adding non-local items to the AST only.
