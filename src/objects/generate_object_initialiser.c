@@ -79,8 +79,17 @@ SortObjdefList (node *objlist)
         while (pos != NULL) {
             DBUG_PRINT ("GOI", ("trying %s ...", CTIitemName (LINKLIST_LINK (pos))));
 
-            if (TClinklistIsSubset (sorted, FUNDEF_OBJECTS (
-                                              OBJDEF_INITFUN (LINKLIST_LINK (pos))))) {
+            /*
+             * if all dependencies of this object are already satiesfied,
+             * we can add it to the list. This is try if either
+             *
+             * A) the object has no initfun at all!
+             * B) its set of dependence objects is a subset of the already
+             *    initialised objects!
+             */
+            if ((OBJDEF_INITFUN (LINKLIST_LINK (pos)) == NULL)
+                || TClinklistIsSubset (sorted, FUNDEF_OBJECTS (
+                                                 OBJDEF_INITFUN (LINKLIST_LINK (pos))))) {
                 /*
                  * move the link to the sorted list
                  */
@@ -128,8 +137,15 @@ AddInitFunDependencies (node *objlist)
             changes = 0;
 
             while (pos != NULL) {
-                changes += TCaddLinksToLinks (&new, FUNDEF_OBJECTS (OBJDEF_INITFUN (
-                                                      LINKLIST_LINK (pos))));
+                /*
+                 * external objects may not have a initfun as they are externally
+                 * initialised. For all others, we have to add the dependencies
+                 * of their initfuns, as well!
+                 */
+                if (OBJDEF_INITFUN (LINKLIST_LINK (pos)) != NULL) {
+                    changes += TCaddLinksToLinks (&new, FUNDEF_OBJECTS (OBJDEF_INITFUN (
+                                                          LINKLIST_LINK (pos))));
+                }
                 pos = LINKLIST_NEXT (pos);
             }
 
