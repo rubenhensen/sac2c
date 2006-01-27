@@ -1679,6 +1679,12 @@ PRTvardec (node *arg_node, info *arg_info)
         fprintf (global.outfile, "/* %s */", type_str);
         type_str = ILIBfree (type_str);
 
+        if (AVIS_DECLTYPE (VARDEC_AVIS (arg_node)) != NULL) {
+            type_str = TYtype2String (AVIS_DECLTYPE (VARDEC_AVIS (arg_node)), FALSE, 0);
+            fprintf (global.outfile, " /* declared: %s */", type_str);
+            type_str = ILIBfree (type_str);
+        }
+
         TRAVdo (VARDEC_AVIS (arg_node), arg_info);
 
         fprintf (global.outfile, "\n");

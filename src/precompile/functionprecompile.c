@@ -676,8 +676,6 @@ FPClet (node *arg_node, info *arg_info)
         idx = ap_argtab->size; /* to avoid a CC warning */
 
         while (ids != NULL) {
-            DBUG_ASSERT ((rets != NULL), "application is inconsistent");
-
             if (dots_offset == 0) {
                 /*
                  * while handling true return values, get index
@@ -689,7 +687,11 @@ FPClet (node *arg_node, info *arg_info)
             DBUG_ASSERT ((idx < argtab->size), "illegal index");
 
             ap_argtab->ptr_out[idx + dots_offset] = ids;
-            ap_argtab->tag[idx + dots_offset] = argtab->tag[idx];
+            if (dots_offset == 0) {
+                ap_argtab->tag[idx] = argtab->tag[idx];
+            } else {
+                ap_argtab->tag[idx + dots_offset] = ATG_out_nodesc;
+            }
 
             ids = IDS_NEXT (ids);
 
@@ -724,7 +726,11 @@ FPClet (node *arg_node, info *arg_info)
             DBUG_ASSERT ((idx < argtab->size), "illegal index");
 
             ap_argtab->ptr_in[idx + dots_offset] = exprs;
-            ap_argtab->tag[idx + dots_offset] = argtab->tag[idx];
+            if (dots_offset == 0) {
+                ap_argtab->tag[idx] = argtab->tag[idx];
+            } else {
+                ap_argtab->tag[idx + dots_offset] = ATG_in_nodesc;
+            }
 
             exprs = EXPRS_NEXT (exprs);
 

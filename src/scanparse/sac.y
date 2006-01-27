@@ -915,6 +915,12 @@ exprblock2: ntype ids SEMIC exprblock2
                                TBmakeAvis( ILIBstringCopy( SPIDS_NAME( $2)),
                                            TYcopyType( $1)),
                                vardec_ptr);
+
+                /*
+                 * set the DECL_TYPE as well!
+                 */
+                AVIS_DECLTYPE( VARDEC_AVIS( vardec_ptr)) = TYcopyType( $1);
+
                 /*
                  * Now, we want to "push" $2 one IDS further
                  * and we want to FREE the current SPIDS node.
@@ -933,6 +939,12 @@ exprblock2: ntype ids SEMIC exprblock2
                                     TBmakeAvis( 
                                       ILIBstringCopy( SPIDS_NAME( $2)), $1),
                                                 vardec_ptr);
+              /*
+               * set the DECL_TYPE for the last vardec!
+               */
+              AVIS_DECLTYPE( VARDEC_AVIS( BLOCK_VARDEC( $$))) 
+                = TYcopyType( $1);
+
               /* 
                * Finally, we free the last SPIDS-node! 
                */

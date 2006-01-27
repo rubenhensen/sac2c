@@ -820,7 +820,7 @@ NTCfuncond (node *arg_node, info *arg_info)
 node *
 NTClet (node *arg_node, info *arg_info)
 {
-    ntype *rhs_type, *existing_type, *inferred_type, *max;
+    ntype *rhs_type, *existing_type, *declared_type, *inferred_type, *max;
     node *lhs;
     int i;
     bool ok;
@@ -864,6 +864,7 @@ NTClet (node *arg_node, info *arg_info)
         i = 0;
         while (lhs) {
             existing_type = AVIS_TYPE (IDS_AVIS (lhs));
+            declared_type = AVIS_DECLTYPE (IDS_AVIS (lhs));
             if (i < TYgetProductSize (rhs_type)) {
 
                 inferred_type = TYgetProductMember (rhs_type, i);
@@ -889,21 +890,37 @@ NTClet (node *arg_node, info *arg_info)
                 DBUG_EXECUTE ("NTC", tmp_str = ILIBfree (tmp_str););
             } else {
                 if (existing_type == NULL) {
-                    CTIabortLine (global.linenum,
-                                  "Cannot infer type of \"%s\" as it corresponds to "
-                                  "\"...\" "
-                                  "return type -- missing type declaration",
-                                  IDS_NAME (lhs));
+                    if (declared_type == NULL) {
+                        CTIabortLine (global.linenum,
+                                      "Cannot infer type of \"%s\" as it corresponds to "
+                                      "\"...\" "
+                                      "return type -- missing type declaration",
+                                      IDS_NAME (lhs));
+                    } else {
+                        /**
+                         * ' commented out the following warning as it was issued to often
+                        with
+                         * StdIO; left it here as I do not know whether a warning in
+                        principle
+                         * would be the better way to go for anyways....
+                         *
+                        CTIwarnLine( global.linenum,
+                                     "Cannot infer type of \"%s\" as it corresponds to
+                        \"...\" " "return type -- relying on type declaration", IDS_NAME(
+                        lhs));
+                         */
+
+                        /*
+                         * we use the declared type...
+                         */
+                        inferred_type = TYmakeAlphaType (TYcopyType (declared_type));
+                        ok = SSInewMin (TYgetAlpha (inferred_type),
+                                        TYcopyType (declared_type));
+                        AVIS_TYPE (IDS_AVIS (lhs)) = inferred_type;
+                    }
                 } else {
-                    /**
-                     * ' commented out the following warning as it was issued to often
-                    with
-                     * StdIO; left it here as I do not know whether a warning in principle
-                     * would be the better way to go for anyways....
-                     *
-                    CTIwarnLine( global.linenum,
-                                 "Cannot infer type of \"%s\" as it corresponds to \"...\"
-                    " "return type -- relying on type declaration", IDS_NAME( lhs));
+                    /*
+                     * reuse the type we have infered earlier...
                      */
                     DBUG_ASSERT (TYisAlpha (existing_type),
                                  "non-alpha type for LHS found!");
