@@ -80,6 +80,7 @@ ILIBmalloc (int size)
     DBUG_ASSERT ((size >= 0), "ILIBmalloc called with negative size!");
 
     if (size > 0) {
+
 #ifdef SHOW_MALLOC
         tmp = malloc (size + malloc_align_step);
 #else  /* SHOW_MALLOC */

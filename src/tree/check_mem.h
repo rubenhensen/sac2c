@@ -10,8 +10,8 @@
 extern void *CHKMregisterMem (int size, void *aptr);
 extern void *CHKMunregisterMem (void *bptr);
 
-extern node *CHKMdoTreeWalk (node *syntax_tree, info *arg_info);
-extern node *CHKMspaceLeaks (node *arg_node, info *arg_info);
+extern node *CHKMdoCheckMemory (node *syntax_tree, info *arg_info);
+extern node *CHKMilliminateSpaceLeaks (node *arg_node, info *arg_info);
 
 extern void CHKMsetNodeType (node *bptr, nodetype newnodetype);
 extern int CHKMgetSize (void *orig_address);

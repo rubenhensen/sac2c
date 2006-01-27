@@ -20,14 +20,14 @@ typedef struct MEMOBJ {
     int subphase;
     int traversal;
 #endif
-    int bit;
+    bool used_bit;
+    bool shared_bit;
 } memobj;
 
-memobj *memtab = NULL;
-
-int memfreeslots = 0;
-int memindex = 0;
-int memtabsize = 0;
+static memobj *memtab = NULL;
+static int memfreeslots = 0;
+static int memindex = 0;
+static int memtabsize = 0;
 
 void *
 CHKMregisterMem (int bsize, void *aptr)
@@ -36,7 +36,6 @@ CHKMregisterMem (int bsize, void *aptr)
 
     DBUG_ENTER ("CHKMregisterMem");
 
-#ifdef SHOW_MALLOC
     bptr = (char *)aptr + malloc_align_step;
 
     if (memindex == memtabsize) {
@@ -72,17 +71,20 @@ CHKMregisterMem (int bsize, void *aptr)
     }
     memtab[memindex].size = bsize;
     memtab[memindex].ptr = aptr;
-    memtab[memindex].bit = 0;
+    memtab[memindex].used_bit = 0;
+    memtab[memindex].shared_bit = 0;
     memtab[memindex].nodetype = N_undefined;
 
     *(memobj **)aptr = memtab + memindex;
 
     memfreeslots = memfreeslots - 1;
     memindex = memindex + 1;
-#else  /* SHOW_MALLOC */
-    bptr = aptr;
-#endif /* SHOW_MALLOC */
 
+    /*
+  #else
+    bptr = aptr;
+  #endif
+  */
     DBUG_RETURN (bptr);
 }
 
@@ -93,7 +95,6 @@ CHKMunregisterMem (void *bptr)
 
     DBUG_ENTER (" CHKMunregisterMEM");
 
-#ifdef SHOW_MALLOC
     aptr = (memobj **)((char *)bptr - malloc_align_step);
 
     if (((**aptr).size == 0) && ((**aptr).ptr = NULL)) {
@@ -105,18 +106,20 @@ CHKMunregisterMem (void *bptr)
     (**aptr).ptr = NULL;
 
     memfreeslots = memfreeslots + 1;
-#else  /* SHOW_MALLOC */
-    aptr = (memobj **)bptr;
-#endif /* SHOW_MALLOC */
 
+    /*
+    #else
+      aptr = (memobj **) bptr;
+    #endif
+    */
     DBUG_RETURN ((void *)aptr);
 }
 
 node *
-CHKMdoTreeWalk (node *syntax_tree, info *arg_info)
+CHKMdoCheckMemory (node *syntax_tree, info *arg_info)
 {
 
-    DBUG_ENTER ("CHKMdoTreewalk");
+    DBUG_ENTER ("CHKMdoCheckMemory");
 
     DBUG_PRINT ("CHKM", ("Starting the CheckSpacemechanism"));
 
@@ -130,10 +133,22 @@ CHKMdoTreeWalk (node *syntax_tree, info *arg_info)
 }
 
 node *
-CHKMspaceLeaks (node *arg_node, info *arg_info)
+CHKMilliminateSpaceLeaks (node *arg_node, info *arg_info)
 {
 
-    DBUG_ENTER ("CHKMspaceLeaks");
+    DBUG_ENTER ("CHKMilliminateSpaceLeaks");
+
+    memobj **tmpobj;
+
+    tmpobj = (memobj **)((char *)arg_node - malloc_align_step);
+
+    (**tmpobj).used_bit = 1;
+
+    for (int i = 0; i < memtabsize; i++) {
+
+        if (memtab[i].ptr != NULL) {
+        }
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -142,19 +157,17 @@ void
 CHKMsetNodeType (node *bptr, nodetype newnodetype)
 {
 
-#ifdef SHOW_MALLOC
     memobj **tmpobj;
 
     tmpobj = (memobj **)((char *)bptr - malloc_align_step);
 
     (**tmpobj).nodetype = newnodetype;
-#endif /* SHOW_MALLOC */
 }
 
 void
 CHKMsetLocation (node *bptr, char *file, int line)
 {
-#ifdef SHOW_MALLOC
+
     memobj **tmpobj;
 
     tmpobj = (memobj **)((char *)bptr - malloc_align_step);
@@ -162,7 +175,6 @@ CHKMsetLocation (node *bptr, char *file, int line)
     (**tmpobj).file = file;
 
     (**tmpobj).line = line;
-#endif /* SHOW_MALLOC */
 }
 
 int
@@ -172,13 +184,11 @@ CHKMgetSize (void *bptr)
 
     DBUG_ENTER ("CMgetSize");
 
-#ifdef SHOW_MALLOC
     memobj **tmpobj;
 
     tmpobj = (memobj **)((char *)bptr - malloc_align_step);
 
     tmpsize = (**tmpobj).size;
-#endif /* SHOW_MALLOC */
 
     DBUG_RETURN (tmpsize);
 }
