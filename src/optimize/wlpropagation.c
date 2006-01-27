@@ -522,6 +522,9 @@ WLPROPid (node *arg_node, info *arg_info)
                   = TBmakeAvis (ILIBtmpVar (), TYcopyType (AVIS_TYPE (ARG_AVIS (
                                                  INFO_CORRESPONDINGFUNARG (arg_info)))));
 
+                AVIS_DECL (ARG_AVIS (INFO_CORRESPONDINGFUNARG (arg_info)))
+                  = INFO_CORRESPONDINGFUNARG (arg_info);
+
                 /*
                  * increase optimization counter
                  */
