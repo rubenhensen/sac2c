@@ -233,6 +233,10 @@ SDhandleContradiction (sig_dep *fun_sig)
      * making a (new) result type approximation.
      */
     if (SD_STRICT (fun_sig) && (TYcountNoMinAlpha (SD_ARGS (fun_sig)) > 0)) {
+        /**
+         * we cannot approximate yet, as the function is strict AND
+         * some arguments are missing!
+         */
         ok = TRUE;
     } else {
         info = SD_INFO (fun_sig);
@@ -241,7 +245,7 @@ SDhandleContradiction (sig_dep *fun_sig)
          */
         args = TYfixAndEliminateAlpha (SD_ARGS (fun_sig));
         bottom = TYgetBottom (args);
-        if (bottom != NULL) {
+        if (bottom != NULL && SD_STRICT (fun_sig)) {
             /**
              * insert copies of bottom into the return types:
              */
@@ -254,36 +258,38 @@ SDhandleContradiction (sig_dep *fun_sig)
             }
 
         } else {
+            /**
+             * Compute an approximation!
+             * BEWARE: in case of !SD_STRICT( fun_sig), we may have
+             *         bottom args as well as noMIN args!!!
+             */
 
-            if ((TYcountNoMinAlpha (SD_ARGS (fun_sig)) == 0) || !SD_STRICT (fun_sig)) {
+            res_t = SD_FUN (fun_sig) (info, args);
+            res_t = TYeliminateAlpha (res_t);
 
-                res_t = SD_FUN (fun_sig) (info, args);
-                res_t = TYeliminateAlpha (res_t);
+            DBUG_EXECUTE ("SSI", tmp_str = TYtype2String (args, FALSE, 0););
+            DBUG_EXECUTE ("SSI", tmp2_str = TYtype2String (res_t, FALSE, 0););
+            DBUG_PRINT ("SSI",
+                        ("approximating %s \"%s\" for %s yields %s", TEgetKindStr (info),
+                         TEgetNameStr (info), tmp_str, tmp2_str));
+            DBUG_EXECUTE ("SSI", tmp_str = ILIBfree (tmp_str););
+            DBUG_EXECUTE ("SSI", tmp2_str = ILIBfree (tmp_str););
 
-                DBUG_EXECUTE ("SSI", tmp_str = TYtype2String (args, FALSE, 0););
-                DBUG_EXECUTE ("SSI", tmp2_str = TYtype2String (res_t, FALSE, 0););
-                DBUG_PRINT ("SSI", ("approximating %s \"%s\" for %s yields %s",
-                                    TEgetKindStr (info), TEgetNameStr (info), tmp_str,
-                                    tmp2_str));
-                DBUG_EXECUTE ("SSI", tmp_str = ILIBfree (tmp_str););
-                DBUG_EXECUTE ("SSI", tmp2_str = ILIBfree (tmp_str););
-
-                /*
-                 * and insert the findings into the return types:
-                 */
-                res_vars = SD_RES (fun_sig);
-                ok = TRUE;
-                for (i = 0; i < TYgetProductSize (res_vars); i++) {
-                    res = TYgetProductMember (res_t, i);
-                    if (TYisAlpha (res)) {
-                        ok = ok
-                             && SSInewRel (TYgetAlpha (res),
-                                           TYgetAlpha (TYgetProductMember (res_vars, i)));
-                    } else {
-                        ok = ok
-                             && SSInewMin (TYgetAlpha (TYgetProductMember (res_vars, i)),
-                                           res);
-                    }
+            /*
+             * and insert the findings into the return types:
+             */
+            res_vars = SD_RES (fun_sig);
+            ok = TRUE;
+            for (i = 0; i < TYgetProductSize (res_vars); i++) {
+                res = TYgetProductMember (res_t, i);
+                if (TYisAlpha (res)) {
+                    ok = ok
+                         && SSInewRel (TYgetAlpha (res),
+                                       TYgetAlpha (TYgetProductMember (res_vars, i)));
+                } else {
+                    ok
+                      = ok
+                        && SSInewMin (TYgetAlpha (TYgetProductMember (res_vars, i)), res);
                 }
             }
         }

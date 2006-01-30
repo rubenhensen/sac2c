@@ -10,6 +10,7 @@
 #include "internal_lib.h"
 
 #include "new_types.h"
+#include "type_utils.h"
 #include "sig_deps.h"
 #include "traverse.h"
 #include "tree_basic.h"
@@ -78,7 +79,7 @@ ComputeType (ct_funptr CtFun, te_info *info, ntype *args, bool strict)
      */
 
     if (TYcountNonFixedAlpha (args) == 0) {
-        if (TYisProdOfArray (args)) {
+        if (TYisProdOfArray (args) || !strict) {
             res = CtFun (info, args);
         } else {
             /**
@@ -208,7 +209,19 @@ NTCCTfuncond (te_info *err_info, ntype *args)
             if (TYisArray (rhs2)) {
                 res = TYmakeProductType (1, TYcopyType (rhs2));
             } else {
-                res = TYmakeProductType (0);
+                if (TYisBottom (rhs1)) {
+                    if (TYisBottom (rhs2)) {
+                        res = TYmakeProductType (1, TUcombineBottom (rhs1, rhs2));
+                    } else {
+                        res = TYmakeProductType (1, TYcopyType (rhs1));
+                    }
+                } else {
+                    if (TYisBottom (rhs2)) {
+                        res = TYmakeProductType (1, TYcopyType (rhs2));
+                    } else {
+                        res = TYmakeProductType (1, TYmakeAlphaType (NULL));
+                    }
+                }
             }
         }
     }

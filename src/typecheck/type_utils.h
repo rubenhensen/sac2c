@@ -29,6 +29,7 @@ extern ntype *TUactualArgs2Ntype (node *actual);
 extern bool TUsignatureMatches (node *formal, ntype *actual_prod_type);
 extern bool TUretsContainBottom (node *rets);
 extern bool TUretsAreConstant (node *rets);
+extern ntype *TUcombineBottom (ntype *left, ntype *right);
 extern ntype *TUcombineBottomsFromRets (node *rets);
 extern ntype *TUcheckUdtAndSetBaseType (usertype udt, int *visited);
 

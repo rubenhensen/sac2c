@@ -682,6 +682,31 @@ TUretsAreConstant (node *rets)
 }
 
 /** <!-- ****************************************************************** -->
+ * @fn ntype *TUcombineBottom( ntype *left, ntype *right)
+ *
+ * @brief resturns a new bottom ntype containing the concatenation of
+ *        the error messages of the given two bottom types.
+ *
+ * @param left bottom type
+ * @param right bottom type
+ *
+ * @return freshly allocated bottom type
+ ******************************************************************************/
+
+ntype *
+TUcombineBottom (ntype *left, ntype *right)
+{
+    ntype *result = NULL;
+
+    DBUG_ENTER ("TUcombineBottom");
+
+    result = TYcopyType (left);
+    TYextendBottomError (result, TYgetBottomError (right));
+
+    DBUG_RETURN (result);
+}
+
+/** <!-- ****************************************************************** -->
  * @fn ntype *TUcombineBottomsFromRets( node *rets)
  *
  * @brief resturns a new bottom ntype containing the concatenation of all
