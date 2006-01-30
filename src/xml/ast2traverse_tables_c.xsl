@@ -1,29 +1,6 @@
 <?xml version="1.0"?>
 <!--
-  $Log$
-  Revision 1.7  2004/11/27 02:29:07  sah
-  fubar
-
-  Revision 1.6  2004/11/27 02:19:28  sah
-  ..
-
-  Revision 1.5  2004/11/27 01:33:56  sah
-  implemented TRAVgetName
-
-  Revision 1.4  2004/11/26 19:58:50  sah
-  bugfix
-
-  Revision 1.3  2004/11/26 11:58:04  sah
-  implemented pre/post tables
-
-  Revision 1.2  2004/11/26 11:00:39  sah
-  added default traversal function
-
-  Revision 1.1  2004/11/23 22:18:52  sah
-  Initial revision
-
-
-
+  $Id: ast2travers_tables.c.xsl$
 -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
   
@@ -44,7 +21,7 @@
         <xsl:value-of select="'This file defines the function tables for traversal.'"/>
       </xsl:with-param>
       <xsl:with-param name="xslt">
-        <xsl:value-of select="'$Id: ast2traverse_tables_c.xsl 14294 2005-10-10 12:40:03Z sah $'"/>
+        <xsl:value-of select="'$Id$'"/>
       </xsl:with-param>
     </xsl:call-template>
     <xsl:text>
@@ -57,7 +34,7 @@
 
 travtables_t travtables = {
     /* TR_undefined */
-    { &amp;TRAVerror
+      { &amp;TRAVerror
     </xsl:text>
     <xsl:apply-templates select="/definition/syntaxtree/node" mode="errortraversal" />
     <xsl:value-of select="'} '" />
@@ -97,14 +74,31 @@ const char *travnames[ </xsl:text><xsl:value-of select="count(/definition/phases
     <xsl:variable name="phase">
       <xsl:value-of select="@id" />
     </xsl:variable>
+    <xsl:variable name="ifdef">
+      <xsl:value-of select="@ifdef" />
+    </xsl:variable>
+    <xsl:text>
+
+    </xsl:text>
     <xsl:value-of select="'/* TR_'" />
     <xsl:call-template name="lowercase" >
       <xsl:with-param name="string" select="@id" />
     </xsl:call-template>
     <xsl:value-of select="' */'" />
+    <xsl:text>
+    </xsl:text>
+    <xsl:if test="@ifdef">
+      <xsl:value-of select="'#ifdef '" />
+      <xsl:call-template name="uppercase" >
+        <xsl:with-param name="string" select="@ifdef" />          
+      </xsl:call-template>
+      <xsl:text>
+      </xsl:text>
+    </xsl:if>
     <xsl:value-of select="', { &amp;TRAVerror'" />
     <xsl:for-each select="/definition/syntaxtree/node" >
-      <xsl:value-of select="', &amp;'" />
+      <xsl:value-of select="', '" />
+      <xsl:value-of select="'&amp;'" />
       <xsl:choose>
         <xsl:when test="key( &quot;traversals&quot;, $phase)/travuser/node/@name = ./@name" >
           <xsl:call-template name="travtab-to-travname">
@@ -165,13 +159,27 @@ const char *travnames[ </xsl:text><xsl:value-of select="count(/definition/phases
         </xsl:otherwise>
       </xsl:choose>
     </xsl:for-each>
-    <xsl:value-of select="' }'" />
+    <xsl:value-of select="' }'" />  
+    <xsl:if test="@ifdef">
+      <xsl:text>
+      </xsl:text>
+      <xsl:value-of select="'#else'" />
+      <xsl:text>
+        , { &amp;TRAVerror
+      </xsl:text>
+      <xsl:apply-templates select="/definition/syntaxtree/node" mode="errortraversal" />
+      <xsl:value-of select="'} '" />
+      <xsl:text>
+      </xsl:text>
+      <xsl:value-of select="'#endif '" />
+    </xsl:if>
   </xsl:template>
 
   <xsl:template name="travtab-to-travname">
     <xsl:param name="phase" />
     <xsl:param name="node" />
     <xsl:param name="style" />
+    <xsl:param name="ifdef" />
    
     <xsl:choose>
       <xsl:when test="$style = &quot;user&quot;">
@@ -207,8 +215,26 @@ const char *travnames[ </xsl:text><xsl:value-of select="count(/definition/phases
   </xsl:template>
 
   <xsl:template match="traversal[@prefun]" mode="pretable">
-    <xsl:value-of select="', &amp;'" />
+    <xsl:value-of select="', '" />
+    <xsl:if test="@ifdef">
+      <xsl:value-of select="$newline" />    
+      <xsl:value-of select="'#ifdef '"/>
+      <xsl:call-template name="uppercase" >
+        <xsl:with-param name="string" select="@ifdef" />          
+      </xsl:call-template>
+      <xsl:value-of select="$newline" />    
+    </xsl:if>
+    <xsl:value-of select="'&amp;'" />
     <xsl:value-of select="@prefun" />
+    <xsl:if test="@ifdef">
+      <xsl:value-of select="$newline" />    
+      <xsl:value-of select="'#else '"/>
+      <xsl:value-of select="$newline" />    
+      <xsl:value-of select="'NULL'" />
+      <xsl:value-of select="$newline" />    
+      <xsl:value-of select="'#endif'" />
+      <xsl:value-of select="$newline" />            
+    </xsl:if>
   </xsl:template>
  
   <xsl:template match="traversal" mode="pretable">
@@ -216,8 +242,26 @@ const char *travnames[ </xsl:text><xsl:value-of select="count(/definition/phases
   </xsl:template>
 
   <xsl:template match="traversal[@postfun]" mode="posttable">
-    <xsl:value-of select="', &amp;'" />
+    <xsl:value-of select="', '" />
+    <xsl:if test="@ifdef">
+      <xsl:value-of select="$newline" />    
+      <xsl:value-of select="'#ifdef '"/>
+      <xsl:call-template name="uppercase" >
+        <xsl:with-param name="string" select="@ifdef" />          
+      </xsl:call-template>
+      <xsl:value-of select="$newline" />    
+    </xsl:if>
+    <xsl:value-of select="'&amp;'" />
     <xsl:value-of select="@postfun" />
+    <xsl:if test="@ifdef">
+      <xsl:value-of select="$newline" />    
+      <xsl:value-of select="'#else '"/>
+      <xsl:value-of select="$newline" />    
+      <xsl:value-of select="'NULL'" />
+      <xsl:value-of select="$newline" />    
+      <xsl:value-of select="'#endif'" /> 
+      <xsl:value-of select="$newline" />    
+    </xsl:if>
   </xsl:template>
 
   <xsl:template match="traversal" mode="posttable">
@@ -231,5 +275,10 @@ const char *travnames[ </xsl:text><xsl:value-of select="count(/definition/phases
     </xsl:call-template>
     <xsl:value-of select="'&quot;'" />
   </xsl:template>
+
+  <xsl:variable name="newline">
+    <xsl:text>
+    </xsl:text>
+  </xsl:variable>
 
 </xsl:stylesheet>
