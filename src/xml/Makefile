@@ -1,40 +1,6 @@
 #
 #
-# $Log$
-# Revision 1.11  2005/06/06 10:15:41  jhb
-# added ast2checktst_c.xsl and ast2checktst_h.xsl
-#
-# Revision 1.10  2005/02/16 11:35:08  sah
-# removed TABs
-#
-# Revision 1.9  2005/02/16 11:28:47  jhb
-# kill freespace
-#
-# Revision 1.8  2005/02/10 12:58:44  jhb
-# added ast2check_c.xsl and ast2check_h.xsl
-#
-# Revision 1.7  2004/12/07 14:12:35  sah
-# added generation of static html
-#
-# Revision 1.6  2004/11/29 10:29:32  sah
-# added target check
-#
-# Revision 1.5  2004/11/24 17:47:01  sah
-# added some files
-#
-# Revision 1.4  2004/11/24 16:46:06  sah
-# changed node representation
-#
-# Revision 1.3  2004/11/23 22:22:29  sah
-# added traverse*
-#
-# Revision 1.2  2004/11/23 12:27:00  sah
-# added node_info.mac
-#
-# Revision 1.1  2004/11/23 11:38:05  sah
-# Initial revision
-#
-#
+# $Id$
 #
 #
 
