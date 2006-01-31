@@ -1,17 +1,16 @@
 #
-#
 # $Id$
 #
-#
 
 
-#######################################################################################
+###############################################################################
 #
 # include general setup:
 #
 
 PROJECT_ROOT := ../..
-include $(PROJECT_ROOT)/Makefile.Config
+
+# include $(PROJECT_ROOT)/Makefile.Source
 
 
 #######################################################################################
@@ -33,7 +32,16 @@ TARGETS = ../tree/attribs.h ../tree/node_basic.h ../tree/node_basic.c \
           ../tree/check.h ../tree/check.c \
           ../tree/checktst.h ../tree/checktst.c
 
+
+.PHONY: all make_devel make_prod html check
+
+
 all: $(TARGETS) html
+
+make_devel: all
+
+make_prod: all
+
 
 check:
 	$(XSLTENGINE) check-integrity.xsl ast.xml
