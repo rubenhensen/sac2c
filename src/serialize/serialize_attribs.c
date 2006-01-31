@@ -181,7 +181,7 @@ SATserializeFloat (info *info, float attr, node *parent)
 
     DBUG_ENTER ("SATserializeFloat");
 
-    data = ILIBbyteArrayToHexString (sizeof (float), (char *)&attr);
+    data = ILIBbyteArrayToHexString (sizeof (float), (unsigned char *)&attr);
 
     fprintf (INFO_SER_FILE (info), "DShex2Float( \"%s\")", data);
 
@@ -209,7 +209,7 @@ SATserializeDouble (info *info, double attr, node *parent)
 
     DBUG_ENTER ("SATserializeDouble");
 
-    data = ILIBbyteArrayToHexString (sizeof (double), (char *)&attr);
+    data = ILIBbyteArrayToHexString (sizeof (double), (unsigned char *)&attr);
 
     fprintf (INFO_SER_FILE (info), "DShex2Double( \"%s\")", data);
 

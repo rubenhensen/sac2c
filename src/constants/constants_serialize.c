@@ -85,7 +85,7 @@ COdeserializeConstant (simpletype type, shape *shp, int vlen, char *vec)
     DBUG_ENTER ("COdeserializeConstant");
 
     data = COINTallocCV (type, vlen);
-    data = ILIBhexStringToByteArray ((char *)data, vec);
+    data = ILIBhexStringToByteArray ((unsigned char *)data, vec);
 
     result = COINTmakeConstant (type, shp, data, vlen);
 
