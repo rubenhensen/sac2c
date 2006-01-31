@@ -11,9 +11,9 @@
 
 DEPS = $(patsubst %.c,.%.d, $(wildcard *.c))
 
-ifneq ($(DEPS),)
-  ifneq ($(TARGET),clean)
-include $(DEPS)
+ifeq ($(CHECK_DEPS),yes)
+  ifneq ($(DEPS),)
+   -include $(DEPS)
   endif
 endif
 
@@ -37,15 +37,16 @@ XML_FILES      := $(wildcard $(PROJECT_ROOT)/src/xml/*.xml)
 # Thus, these have to be generated prior to generating the dependencies.
 #
 .%.d: %.c $(YACC_H_FILES) $(XML_FILES) $(XSL_FILES) $(PROJECT_ROOT)/tools/bin/cb
-	@$(MAKE) -C $(PROJECT_ROOT)/src/xml
-	@$(ECHO) "$(CC) $(CCDEPS_FLAGS) $(CFLAGS) $(INCS) $<  > $@"
+	$(MAKE) -C $(PROJECT_ROOT)/src/xml
+	@$(ECHO) "  Checking dependencies of $<"
 	@if $(CC) $(CCDEPS_FLAGS) $(CFLAGS) $(INCS) $<  > $@d ; \
 	 then sed 's/\($*\)\.o[ :]*/$*\.o $@\: $$\(PROJECT_ROOT\)\/Makefile.Config /'  <$@d >$@; \
 	      $(RM) $@d ; \
 	 else $(RM) $@d ; \
 	      exit 1 ;  \
 	 fi
+	@$(CLOCK_SKEW_ELIMINATION) $@
 
 $(PROJECT_ROOT)/tools/bin/cb: 
-	@$(MAKE) -C $(PROJECT_ROOT)/tools/src/code_beautifier
+	$(MAKE) -C $(PROJECT_ROOT)/tools/src/code_beautifier
 	

@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!--
   $Log$
-  Revision 1.1  2004/11/23 11:32:01  sah
+  Revision 1.1  2004/11/23 11:31:20  sah
   Initial revision
 
 
@@ -10,7 +10,7 @@
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
 version="1.0">
 
-<xsl:import href="common-travfun.xsl"/>
+<xsl:import href="../xml/common-travfun.xsl"/>
 
 <xsl:output method="text" indent="no"/>
 <xsl:strip-space elements="*"/>
@@ -18,18 +18,18 @@ version="1.0">
 <xsl:template match="/">
   <xsl:call-template name="travfun-file">
     <xsl:with-param name="file">
-      <xsl:value-of select="'serialize_link.h'"/>
+      <xsl:value-of select="'serialize_buildstack.h'"/>
     </xsl:with-param>
     <xsl:with-param name="desc">
-      <xsl:value-of select="'Functions to serialize links in node structures'"/>
+      <xsl:value-of select="'Functions to build a serialize stack'"/>
     </xsl:with-param>
     <xsl:with-param name="xslt">
-      <xsl:value-of select="'$Id: ast2serialize_link_h.xsl 14294 2005-10-10 12:40:03Z sah $'"/>
+      <xsl:value-of select="'$Id$'"/>
     </xsl:with-param>
   </xsl:call-template>
   <xsl:text>
-#ifndef _SAC_SERIALIZE_LINK_H_
-#define _SAC_SERIALIZE_LINK_H_
+#ifndef _SAC_SERIALIZE_BUILDSTACK_H_
+#define _SAC_SERIALIZE_BUILDSTACK_H_
 
 #include "types.h"
 
@@ -38,14 +38,14 @@ version="1.0">
     <xsl:sort select="@name"/>
   </xsl:apply-templates>
   <xsl:text>
-#endif /* _SAC_SERIALIZE_LINK_H_ */
+#endif /* _SAC_SERIALIZE_BUILDSTACK_H_ */
   </xsl:text>
 </xsl:template>
 
 <xsl:template match="node">
   <xsl:value-of select="'extern '" />
   <xsl:call-template name="travfun-head">
-    <xsl:with-param name="prefix">SEL</xsl:with-param>
+    <xsl:with-param name="prefix">SBT</xsl:with-param>
     <xsl:with-param name="name"><xsl:value-of select="@name" /></xsl:with-param>
   </xsl:call-template>
   <xsl:value-of select="';'" />

@@ -10,7 +10,7 @@
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
 version="1.0">
 
-<xsl:import href="common-travfun.xsl"/>
+<xsl:import href="../xml/common-travfun.xsl"/>
 
 <xsl:output method="text" indent="no"/>
 <xsl:strip-space elements="*"/>
@@ -27,7 +27,7 @@ version="1.0">
       <xsl:value-of select="'Functions to serialize the attributes of node structures'"/>
     </xsl:with-param>
     <xsl:with-param name="xslt">
-      <xsl:value-of select="'$Id: ast2serialize_attribs_h.xsl 14294 2005-10-10 12:40:03Z sah $'"/>
+      <xsl:value-of select="'$Id$'"/>
     </xsl:with-param>
   </xsl:call-template>
   <xsl:text>

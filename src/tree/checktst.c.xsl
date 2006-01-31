@@ -5,10 +5,10 @@
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
 version="1.0">
   
-  <xsl:import href="common-travfun.xsl"/>
-  <xsl:import href="common-node-access.xsl"/>
-  <xsl:import href="common-c-code.xsl"/>
-  <xsl:import href="common-key-tables.xsl"/>
+  <xsl:import href="../xml/common-travfun.xsl"/>
+  <xsl:import href="../xml/common-node-access.xsl"/>
+  <xsl:import href="../xml/common-c-code.xsl"/>
+  <xsl:import href="../xml/common-key-tables.xsl"/>
   
   <xsl:output method="text" indent="no"/>
   <xsl:strip-space elements="*"/>

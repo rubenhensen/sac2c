@@ -19,8 +19,8 @@
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
 version="1.0">
 
-<xsl:import href="common-c-code.xsl"/>
-<xsl:import href="common-name-to-nodeenum.xsl"/>
+<xsl:import href="../xml/common-c-code.xsl"/>
+<xsl:import href="../xml/common-name-to-nodeenum.xsl"/>
 
 <xsl:output method="text" indent="no"/>
 <xsl:strip-space elements="*"/>

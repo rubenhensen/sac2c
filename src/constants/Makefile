@@ -1,115 +1,24 @@
 #
-#
-# $Log$
-# Revision 1.16  2004/11/26 14:15:06  sbs
-# INCS eliminated
-#
-# Revision 1.15  2004/09/27 13:19:17  sah
-# added serialization file
-#
-# Revision 1.14  2003/09/09 12:58:16  sbs
-# -I../typecheck added
-#
-# Revision 1.13  2003/06/11 22:05:36  ktr
-# included ../constants
-#
-# Revision 1.12  2002/06/06 19:56:03  dkr
-# target clean modified
-#
-# Revision 1.11  2001/11/15 15:36:48  sacbase
-# CLOCK_SKEW_ELIMINATION and PROJECT_ROOT added.
-#
-# Revision 1.10  2001/11/14 12:59:48  sbs
-# deps line replaced by inclusion of Makefile.Deps
-# ( .xxx.d mechanism)
-# global setup included via Makefile.Config
-#
-# Revision 1.9  2001/11/13 20:32:52  dkr
-# make deps done
-#
-# Revision 1.8  2001/07/18 13:08:22  cg
-# make deps done
-#
-# Revision 1.7  2001/05/08 13:29:47  dkr
-# make deps done
-#
-# Revision 1.6  2001/05/02 07:58:49  nmw
-# basecv.o added
-#
-# Revision 1.5  2001/04/26 21:09:59  dkr
-# make deps done
-#
-# Revision 1.4  2001/03/22 20:20:22  dkr
-# make deps done
-#
-# Revision 1.3  2001/03/05 16:57:04  sbs
-# zipcv.o added
-#
-# Revision 1.2  2001/03/02 14:46:05  sbs
-# make deps done
-#
-# Revision 1.1  2001/03/02 14:32:50  sbs
-# Initial revision
-# 
+# $Id$
 #
 
 
-#######################################################################################
+###############################################################################
 #
 # include general setup:
 #
 
 PROJECT_ROOT := ../..
-include $(PROJECT_ROOT)/Makefile.Config
+
+include $(PROJECT_ROOT)/Makefile.Source
 
 
-#######################################################################################
+
+###############################################################################
 #
-# local settings:
-#
-
-all: shape.o \
-     constants_basic.o constants_struc_ops.o constants_ari_ops.o \
-     cv2scalar.o cv2cv.o cv2str.o zipcv.o basecv.o \
-     constants_serialize.o
-
-
-#
-# the *.[ch] objects are to fool makedepend which does not
-# recognize the dependency between *.[ch] and the .mac files!
+# subdirectory specific aspects
 #
 
-cv2cv.c: ../tree/type_info.mac
-	touch $@
-	$(CLOCK_SKEW_ELIMINATION) $@
-
-cv2scalar.c: ../tree/type_info.mac
-	touch $@
-	$(CLOCK_SKEW_ELIMINATION) $@
-
-cv2str.c: ../tree/type_info.mac
-	touch $@
-	$(CLOCK_SKEW_ELIMINATION) $@
-
-zipcv.c: ../tree/type_info.mac
-	touch $@
-	$(CLOCK_SKEW_ELIMINATION) $@
 
 
-%.o: %.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o $@ -c $< $(INCS)
-	$(CLOCK_SKEW_ELIMINATION) $@
 
-clean:
-	$(RM) *.o *.a *.bak *~ .*.d
-	$(RM) -r .sb SunWS_cache
-
-
-#######################################################################################
-#
-# include automatic dependency mechanism
-#
-# - relies on INCS to be set appropriately
-#
-
-include ../../Makefile.Deps

@@ -44,9 +44,9 @@ CFLAGS       := -DSHOW_MALLOC -DWLAA_DEACTIVATED -DAE_DEACTIVATED \
 CPROD_FLAGS  := -DDBUG_OFF -DPRODUCTION -DWLAA_DEACTIVATED -DAE_DEACTIVATED \
                 -DTSI_DEACTIVATED -DPADT_DEACTIVATED -DOBJUC_DEACTIVATED \
                 -DOBJR_DEACTIVATED -DOBJ_DEACTIVATED -DOBJI_DEACTIVATED
-LIBTOOL      := $(PROJECT_ROOT)/libtool --mode=link 
+LIBTOOL      := $(PROJECT_ROOT)/libtool --silent --mode=link 
 
-XSLTENGINE := @XSLT@
+XSLTENGINE   := @XSLT@
 
 MAKE_NORM    := $(MAKE) CC="$(CC)" CCFLAGS="$(CCFLAGS)" CFLAGS="$(CFLAGS)"
 MAKE_PROD    := $(MAKE) CC="$(CCPROD)" CCFLAGS="$(CCPROD_FLAGS)" CFLAGS="$(CPROD_FLAGS)"
@@ -54,9 +54,10 @@ MAKE_CLEAN   := $(MAKE) TARGET="clean" clean
 MAKEFLAGS    += --no-print-directory
 LDDYNFLAG    := -export-dynamic
 
-TAR          :=tar
-EXCLUDE_INCS :=libsac runtime xml tools
-INCS         :=-I../../inc $(patsubst %,-I../%,$(filter-out $(EXCLUDE_INCS),\
+TAR          := tar
+EXCLUDE_INCS := libsac runtime xml tools
+INCS         := -I../../inc \
+                $(patsubst %,-I../%,$(filter-out $(EXCLUDE_INCS),\
                                   $(notdir $(wildcard ../*))))
 LIBS         :=@LIBS@@LEXLIB@
 EFLIBS       :=-L/usr2/sacware/lib -lefence

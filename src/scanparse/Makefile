@@ -1,136 +1,31 @@
 #
-#
-# $Log$
-# Revision 3.20  2004/11/23 12:08:38  sbs
-# INCS eliminated
-#
-# Revision 3.19  2004/11/21 11:22:03  sah
-# removed some old ast infos
-#
-# Revision 3.18  2004/11/08 16:15:31  sah
-# resolvepragma only visible in newast mode now
-#
-# Revision 3.17  2004/11/07 18:03:59  sah
-# added external functions support
-#
-# Revision 3.16  2004/10/15 12:06:03  sah
-# added switch to choose between two alternative
-# scanner/parser implementations
-#
-# Revision 3.15  2003/06/11 21:42:54  ktr
-# included ../constants
-#
-# Revision 3.14  2002/08/13 17:11:28  sbs
-# flatten for includes added.
-#
-# Revision 3.13  2002/07/09 12:45:37  sbs
-# handle_dots.o added
-#
-# Revision 3.12  2002/06/06 19:56:03  dkr
-# target clean modified
-#
-# Revision 3.11  2001/11/15 15:18:35  sacbase
-# CLOCK_SKEW_ELIMINATION inserted.
-#
-# Revision 3.10  2001/11/15 15:12:46  sacbase
-# PROJECT_ROOT added
-#
-# Revision 3.9  2001/11/14 12:59:48  sbs
-# deps line replaced by inclusion of Makefile.Deps
-# ( .xxx.d mechanism)
-# global setup included via Makefile.Config
-#
-# Revision 3.8  2001/11/13 20:32:42  dkr
-# make deps done
-#
-# Revision 3.7  2001/07/18 13:08:16  cg
-# make deps done
-#
-# Revision 3.6  2001/04/26 21:09:43  dkr
-# make deps done
-#
-# Revision 3.5  2001/03/22 20:19:58  dkr
-# make deps done
-#
-# Revision 3.4  2001/01/17 10:13:02  dkr
-# make deps done
-#
-# Revision 3.3  2000/12/15 15:08:42  sbs
-# YYDEBUG disabled for non-solaris machines
-# => avoids warning on alpha.
-#
-# Revision 3.2  2000/12/06 20:09:01  dkr
-# make deps done
-#
-# Revision 3.1  2000/11/20 17:59:47  sacbase
-# new release made
-#
-#  ... [eliminated] ...
-#
-# Revision 1.2  1994/11/10  15:22:47  sbs
-# RCS-header inserted
-#
+# $Id$
 #
 
 
-#######################################################################################
+###############################################################################
 #
 # include general setup:
 #
 
 PROJECT_ROOT := ../..
-include $(PROJECT_ROOT)/Makefile.Config
+
+include $(PROJECT_ROOT)/Makefile.Source
 
 
-#######################################################################################
+
+###############################################################################
 #
-# local settings:
-#
-
-LIBS      := -ly -ll
-
-SAC_L := sac.l
-SAC_Y := sac.y
-
-OBJS := resolvepragma.o y.tab.o lex.yy.o scnprs.o handle_dots.o
-
-all: $(OBJS)
-
-
-y.tab.o: y.tab.c
-	$(CC) $(CCL_FLAGS) $(CCFLAGS) $(CFLAGS) $(YYFLAGS) -o y.tab.o -c y.tab.c $(INCS)
-	$(CLOCK_SKEW_ELIMINATION) $@
-
-lex.yy.o: lex.yy.c y.tab.h
-	$(CC) $(CCL_FLAGS) $(CCFLAGS) $(CFLAGS) -DYYLMAX=8192 -o lex.yy.o -c lex.yy.c $(INCS)
-	$(CLOCK_SKEW_ELIMINATION) $@
-
-lex.yy.c: $(SAC_L)
-	$(LEX) $(SAC_L)
-	$(CLOCK_SKEW_ELIMINATION) $@
-
-y.tab.c y.tab.h: $(SAC_Y)
-	$(YACC) $(SAC_Y)
-	$(CLOCK_SKEW_ELIMINATION) y.tab.c y.tab.h
-
-
-%.o: %.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o $@ -c $< $(INCS)
-	$(CLOCK_SKEW_ELIMINATION) $@
-
-
-clean:
-	$(RM) y.tab.h y.tab.c lex.yy.c
-	$(RM) *.o *.a *.bak *~ .*.d
-	$(RM) -r .sb SunWS_cache
-
-
-
-#######################################################################################
-#
-# include automatic dependency mechanism
-#
-# - relies on INCS to be set appropriately
+# subdirectory specific aspects
 #
 
-include ../../Makefile.Deps
+lex.yy.c: sac.l
+	@echo "Lexing $<"
+	@$(LEX) $<
+	@$(CLOCK_SKEW_ELIMINATION) $@
+
+y.tab.c y.tab.h: sac.y
+	@echo "Yaccing $<"
+	@$(YACC) $<
+	@$(CLOCK_SKEW_ELIMINATION) y.tab.c y.tab.h
+

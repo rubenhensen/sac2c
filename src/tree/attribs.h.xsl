@@ -25,9 +25,9 @@
 -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
   
-  <xsl:import href="common-key-tables.xsl"/>
-  <xsl:import href="common-travfun.xsl"/>
-  <xsl:import href="common-name-to-nodeenum.xsl"/>
+  <xsl:import href="../xml/common-key-tables.xsl"/>
+  <xsl:import href="../xml/common-travfun.xsl"/>
+  <xsl:import href="../xml/common-name-to-nodeenum.xsl"/>
 
   <xsl:output method="text" indent="no"/>
   <xsl:strip-space elements="*"/>
@@ -42,7 +42,7 @@
         <xsl:value-of select="'Defines the AttribUnion and attrib structures.'"/>
       </xsl:with-param>
       <xsl:with-param name="xslt">
-        <xsl:value-of select="'$Id: ast2attribs_h.xsl 14294 2005-10-10 12:40:03Z sah $'"/>
+        <xsl:value-of select="'$Id$'"/>
       </xsl:with-param>
     </xsl:call-template>
     <xsl:text>

@@ -1,0 +1,125 @@
+#
+# $Id$
+#
+#
+
+###############################################################################
+#
+# Collection of source directories
+#
+
+
+SOURCE_DIRS = global tree serialize \
+              scanparse flatten constants typecheck \
+              modules objects optimize psi-opt wltransform \
+              concurrent multithread profile \
+              refcount precompile compile print 
+             
+
+
+###############################################################################
+#
+# Collection of object files
+#
+#  Note that the variable names must coincide with the directory names above.
+
+
+global      = main.o setup.o usage.o internal_lib.o globals.o \
+              resource.o build.o options.o NameTuplesUtils.o \
+              filemgr.o ctinfo.o phase.o private_heap.o
+
+tree        = traverse.o tree_basic.o free.o tree_compound.o DupTree.o \
+              LookUpTable.o DataFlowMask.o DataFlowMaskUtils.o check_mem.o \
+              InferDFMs.o cleanup_decls.o change_signature.o compare_tree.o \
+              scheduling.o wl_bounds.o node_basic.o free_node.o \
+              free_attribs.o traverse_tables.o traverse_helper.o check.o \
+              check_lib.o checktst.o prepare_inlining.o map_call_graph.o \
+              map_fun_trav.o 
+     
+
+serialize   = serialize_node.o serialize_attribs.o deserialize.o \
+              serialize_buildstack.o serialize_helper.o \
+              serialize_link.o serialize.o \
+              serialize_stack.o serialize_symboltable.o \
+              serialize_filenames.o add_function_body.o
+
+scanparse   = y.tab.o lex.yy.o scnprs.o handle_dots.o resolvepragma.o
+
+
+flatten     = flatten.o lac2fun.o fun2lac.o insert_vardec.o \
+              handle_mops.o UndoSSATransform.o ToNewTypes.o SSATransform.o \
+              WLPartitionGeneration.o WLEnhancement.o ExplicitAccumulate.o \
+              ToOldTypes.o wlanalysis.o lacinlining.o wldefaultpartition.o \
+              while2do.o handle_condexpr.o codesimplification.o ssa.o
+
+constants   = shape.o constants_basic.o constants_struc_ops.o \
+              constants_ari_ops.o cv2cv.o cv2scalar.o cv2str.o \
+              zipcv.o basecv.o constants_serialize.o
+
+typecheck   = new_typecheck.o new_types.o user_types.o create_wrappers.o \
+              ssi.o sig_deps.o ct_prf.o ct_basic.o ct_fun.o ct_with.o \
+              type_errors.o specialize.o new2old.o create_wrapper_code.o \
+              type_statistics.o type_utils.o resolvesymboltypes.o \
+              split_wrappers.o dispatchfuncalls.o insert_type_conv.o \
+              update_wrapper_type.o free_dispatch_information.o \
+              pre_typecheck.o
+
+modules     = symboltable.o stringset.o libstat.o modulemanager.o libmanager.o \
+              export.o ccmanager.o libbuilder.o resolveall.o \
+              annotatenamespace.o usesymbols.o prepareinline.o dependencies.o \
+              importsymbols.o gatherdependencies.o namespaces.o addspecialfuns.o
+
+objects     = object_init.o resolve_reference_args.o object_analysis.o \
+              extend_wrapper_types.o resolve_objects.o restore_reference_args.o \
+              restore_objects.o check_uniqueness_annotations.o \
+              uniqueness_phase.o  \
+              generate_object_initialiser.o strip_external_signatures.o \
+              manage_object_initialisers.o
+
+optimize    = optimize.o \
+              DeadFunctionRemoval.o AssociativeLaw.o deadcodeinference.o \
+              deadcoderemoval.o SSACSE.o SSAConstantFolding.o SSALIR.o \
+              SSALUR.o SSAInferLI.o SSAWLUnroll.o rmcasts.o \
+              ElimSubDiv.o wlpropagation.o UndoElimSubDiv.o \
+              reverse_type_upgrade.o ConstVarPropagation.o DistributiveLaw.o \
+              signature_simplification.o inlining.o inferneedcounters.o \
+              associativity.o elimtypeconv.o liftoptflags.o wlsimplification.o \
+              prfunroll.o wlselcount.o
+
+psi-opt     = index_eliminate.o index_infer.o index_optimize.o \
+              wl_access_analyze.o tile_size_inference.o wls.o wlscheck.o \
+              wlsbuild.o wlswithloopification.o SSAWithloopFolding.o \
+              SSAWLI.o SSAWLF.o WithloopFusion.o detectdependencies.o \
+              pad.o pad_collect.o pad_infer.o pad_transform.o pad_info.o \
+              tagdependencies.o resolvedependencies.o
+
+wltransform = wlpragma_funs.o wltransform.o wlidxs.o 
+
+concurrent  = concurrent.o spmd_init.o spmd_lift.o schedule.o \
+              spmd_trav.o removespmd.o
+
+multithread = multithread_lib.o tag_executionmode.o \
+              propagate_executionmode.o create_cells.o \
+              create_dataflowgraph.o assignments_rearrange.o \
+              cell_growth.o create_withinwith.o replicate_functions.o \
+              consolidate_cells.o
+
+profile     = annotate_fun_calls.o
+
+refcount    = emm.o rcopt.o filterrc.o alloc.o referencecounting.o \
+              reuse.o aliasanalysis.o staticreuse.o reuseelimination.o \
+              interfaceanalysis.o loopreuseopt.o datareuse.o explicitcopy.o \
+              reusebranching.o ReuseWithArrays.o inplacecomp.o audscldist.o \
+              rcminimize.o NumLookUpTable.o wrci.o reusewithoffset.o \
+              movesharedmeminstr.o
+
+precompile  = precompile.o markmemvals.o \
+              renameidentifiers.o functionprecompile.o \
+              typeconv_precompile.o setlinksign.o \
+              remove_external_code.o mark_noop_grids.o
+
+compile     = gen_startup_code.o compile.o icm2c.o icm2c_basic.o \
+              icm2c_utils.o icm2c_std.o icm2c_prf.o icm2c_mt.o icm2c_sched.o \
+              icm2c_wl.o icm2c_error.o simd_infer.o 
+
+print       = print.o convert.o

@@ -34,9 +34,9 @@
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
 xmlns="http://www.w3.org/1999/xhtml" version="1.0">
 
-  <xsl:import href="common-key-tables.xsl" />
-  <xsl:import href="common-make-head.xsl" />
-  <xsl:import href="common-name-to-nodeenum.xsl" />
+  <xsl:import href="../xml/common-key-tables.xsl" />
+  <xsl:import href="../xml/common-make-head.xsl" />
+  <xsl:import href="../xml/common-name-to-nodeenum.xsl" />
 
   <!-- this xslt script generates a nice html view given the ast xml
        definition file. It is no good example to get an overview, as 
