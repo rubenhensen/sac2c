@@ -1,0 +1,103 @@
+#
+# $Id$
+#
+#
+
+###############################################################################
+#
+# Template Makefile for individual source directories
+#
+#   Note that this Makefile is included by a Makefile in a source directory.
+
+
+include $(PROJECT_ROOT)/Makefile.Config
+include $(PROJECT_ROOT)/Makefile.Targets
+
+XML_DIR = $(PROJECT_ROOT)/src/xml
+XML_COMMONS = $(wildcard $(XML_DIR)/common-*.xsl)
+
+TARGET = $(notdir $(PWD))
+DEVEL = $($(TARGET))
+PROD  = $(patsubst .o,.prod.o,$(DEVEL))
+
+.PHONY: clean all devel prod make_devel make_prod
+.PRECIOUS: %.c %.h %.o %.prod.o .%.d %.c %.mac
+
+all: devel
+
+devel:
+	@$(MAKE) CHECK_DEPS="yes" make_devel
+
+prod:
+	@$(MAKE) CHECK_DEPS="yes" make_prod
+
+
+make_devel: $(DEVEL) 
+
+make_prod: $(PROD)
+
+
+%.prod.o: %.c
+	@echo "  Compiling product code:  $<"
+	@$(CCPROD) $(CCPROD_FLAGS) $(CPROD_FLAGS) $(YYFLAGS) $(INCS) -o $@ -c $<
+	@$(CLOCK_SKEW_ELIMINATION) $@
+
+
+%.o: %.c
+	@echo "  Compiling developer code:  $<"
+	@$(CC) $(CCFLAGS) $(CFLAGS) $(YYFLAGS) $(INCS) -o $@ -c $<
+	@$(CLOCK_SKEW_ELIMINATION) $@
+
+
+
+clean:
+	$(RM) *.o *.a *.bak *~ .*.d
+	$(RM) $(patsubst %.xsl,%,$(wildcard *.xsl))
+	$(RM) -r .sb SunWS_cache
+	$(RM) BEtest
+
+
+
+#######################################################################################
+#
+# automatic dependency updating mechanism:
+#   gmake implicitly remakes all files that are included!
+#
+
+DEPS = $(patsubst %.c,.%.d,$(wildcard *.c)) $(patsubst %.c.xsl,.%.d,$(wildcard *.c.xsl))
+
+GENERATED_INCLUDE_FILES = $(patsubst %.xsl,%,$(wildcard ../*/*.h.xsl)) \
+                          $(patsubst %.xsl,%,$(wildcard ../*/*.mac.xsl)) # ../scanparse/y.tab.h
+
+
+%.h: %.h.xsl $(XML_DIR)/ast.xml $(XML_COMMONS)
+	@$(ECHO) "  Generating code from XML specification:  $@"
+	@$(XSLTENGINE) $< $(XML_DIR)/ast.xml | $(CODE_BEAUTIFIER) >$@
+
+%.mac: %.mac.xsl $(XML_DIR)/ast.xml $(XML_COMMONS)
+	@$(ECHO) "  Generating code from XML specification:  $@"
+	@$(XSLTENGINE) $< $(XML_DIR)/ast.xml | $(CODE_BEAUTIFIER) >$@
+
+%.c: %.c.xsl $(XML_DIR)/ast.xml $(XML_COMMONS)
+	@$(ECHO) "  Generating code from XML specification:  $@"
+	@$(XSLTENGINE) $< $(XML_DIR)/ast.xml | $(CODE_BEAUTIFIER) >$@
+
+.%.d: %.c $(GENERATED_INCLUDE_FILES)
+	@$(ECHO) "  Checking dependencies of source file: $<"
+	@if $(CC) $(CCDEPS_FLAGS) $(CFLAGS) $(INCS) $<  > $@d ; \
+	 then sed 's/\($*\)\.o[ :]*/$*\.o $@\: $$\(PROJECT_ROOT\)\/Makefile.Config /'  <$@d >$@; \
+	      $(RM) $@d ; \
+	 else $(RM) $@d ; \
+	      exit 1 ;  \
+	 fi
+	@$(CLOCK_SKEW_ELIMINATION) $@
+
+
+
+ifeq ($(CHECK_DEPS),yes)
+  ifneq ($(DEPS),)
+   -include $(DEPS)
+  endif
+endif
+
+
