@@ -3,46 +3,22 @@
 #
 
 
-#######################################################################################
+###############################################################################
 #
 # include general setup:
 #
 
 PROJECT_ROOT := ../..
-include $(PROJECT_ROOT)/Makefile.Config
+
+include $(PROJECT_ROOT)/Makefile.Source
 
 
-#######################################################################################
+
+###############################################################################
 #
-# local settings:
-#
-
-OBJS := object_init.o resolve_reference_args.o \
-        object_analysis.o restore_reference_args.o \
-        extend_wrapper_types.o resolve_objects.o \
-        restore_objects.o check_uniqueness_annotations.o \
-        uniqueness_phase.o \
-        generate_object_initialiser.o \
-        strip_external_signatures.o \
-        manage_object_initialisers.o
-
-all: $(OBJS)
-
-%.o: %.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o $@ -c $< $(INCS)
-	$(CLOCK_SKEW_ELIMINATION) $@
-
-
-clean:
-	$(RM) *.o *.a *.bak *~ .*.d
-	$(RM) -r .sb SunWS_cache
-
-
-#######################################################################################
-#
-# include automatic dependency mechanism
-#
-# - relies on INCS to be set appropriately
+# subdirectory specific aspects
 #
 
-include ../../Makefile.Deps
+
+
+
