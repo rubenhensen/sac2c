@@ -14,9 +14,8 @@ PROJECT_ROOT := .
 include $(PROJECT_ROOT)/Makefile.Config
 include $(PROJECT_ROOT)/Makefile.Targets
 
-LINK := $(foreach dir,$(SOURCE_DIRS),$(addprefix src/$(dir)/,$($(dir))))
-
-LINK_PROD := $(patsubst .o,.prod.o,$(LINK))
+LINK_DEVEL := $(foreach dir,$(SOURCE_DIRS),$(addprefix src/$(dir)/,$($(dir))))
+LINK_PROD  := $(patsubst .o,.prod.o,$(LINK))
 
 SOURCE_DIRS_DEVEL    := $(addsuffix .devel,$(SOURCE_DIRS))
 SOURCE_DIRS_PROD     := $(addsuffix .prod,$(SOURCE_DIRS))
@@ -53,8 +52,6 @@ check_os:
 
 maketools:
 	$(MAKE) -C tools
-	$(CLOCK_SKEW_ELIMINATION) Makefile.Config
-	$(CLOCK_SKEW_ELIMINATION) src/global/config.h
 
 makefiles: $(SOURCE_MAKEFILES)
 
@@ -65,7 +62,7 @@ src/%/Makefile: Makefile.Source
 sac2c: $(SOURCE_DIRS_DEVEL)
 	@echo ""
 	@echo "Linking sac2c (developer version)"
-	@$(LIBTOOL) $(CC) $(CCLINKFLAGS) -o $@ $(LINK) $(LIB) $(LIBS) $(LDDYNFLAG)
+	@$(LIBTOOL) $(CC) $(CCLINKFLAGS) -o $@ $(LINK_DEVEL) $(LIB) $(LIBS) $(LDDYNFLAG)
 
 
 %.devel:
@@ -77,7 +74,7 @@ sac2c: $(SOURCE_DIRS_DEVEL)
 sac2c.prod: $(SOURCE_DIRS_PROD)
 	@echo ""
 	@echo "Linking sac2c (product version)"
-	@$(LIBTOOL) $(CC) $(CCLINKFLAGS) -o $@ $(LINK) $(LIB) $(LIBS) $(LDDYNFLAG)
+	@$(LIBTOOL) $(CC) $(CCLINKFLAGS) -o $@ $(LINK_PROD) $(LIB) $(LIBS) $(LDDYNFLAG)
 
 %.prod:
 	@echo ""
