@@ -29,7 +29,8 @@ LIB          := lib/dbug.o lib/main_args.o
 #  Rules section
 #
 
-.PHONY: all efence product check_os maketools prod clean libsac heapmgr distrib ctags runtime tools lib
+.PHONY: all efence product check_os maketools prod clean libsac libsac2c heapmgr \
+        distrib ctags runtime tools lib
 
 all: devel
 
@@ -116,6 +117,9 @@ runtime:
 
 tools: 
 	$(MAKE) CHECK_DEPS="no" -C src/tools
+
+libsac2c: 
+	$(MAKE) -C src/libsac libsac2c.so
 
 distrib:
 	(cd distrib/src; $(MAKE))
