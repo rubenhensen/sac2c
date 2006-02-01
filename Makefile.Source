@@ -1,27 +1,66 @@
 #
-# $Id$
+# $Id:$
 #
 #
 
 ###############################################################################
 #
-# Template Makefile for individual source directories
+# Makefile for sac2c source directories
 #
-#   Note that this Makefile is included by a Makefile in a source directory.
+# This Makefile is copied on demand into source directories.
+# Be sure not to edit these copies.
+#
+###############################################################################
 
+
+
+###############################################################################
+#
+# General settings
+#
+
+PROJECT_ROOT = ../..
+
+REVISION = $(shell svn info | grep Revision: | sed -e 's/Revision: //g')
 
 include $(PROJECT_ROOT)/Makefile.Config
 include $(PROJECT_ROOT)/Makefile.Targets
 
-XML_DIR = $(PROJECT_ROOT)/src/xml
+XML_DIR     = $(PROJECT_ROOT)/src/xml
 XML_COMMONS = $(wildcard $(XML_DIR)/common-*.xsl)
 
-TARGET = $(notdir $(PWD))
-DEVEL = $($(TARGET))
-PROD  = $(patsubst .o,.prod.o,$(DEVEL))
+TARGET        = $(notdir $(PWD))
+TARGETS_DEVEL = $($(TARGET))
+TARGETS_PROD  = $(patsubst .o,.prod.o,$(TARGETS_DEVEL))
 
-.PHONY: clean all devel prod make_devel make_prod
-.PRECIOUS: %.c %.h %.o %.prod.o .%.d %.c %.mac
+GENERATED_INCLUDE_FILES = $(patsubst %.xsl,%,$(wildcard ../*/*.h.xsl)) \
+                          $(patsubst %.xsl,%,$(wildcard ../*/*.mac.xsl)) \
+                          ../scanparse/sac.tab.h
+
+GENERATED_SOURCE_FILES = $(patsubst %.xsl,%,$(wildcard *.c.xsl)) \
+                         $(patsubst %.y,%.tab.c,$(wildcard *.y)) \
+                         $(patsubst %.l,%.lex.c,$(wildcard *.l)) 
+
+ORIGINAL_SOURCE_FILES = $(filter-out $(GENERATED_SOURCE_FILES),$(wildcard *.c))
+
+DEPS = $(patsubst %.c,.%.d,$(ORIGINAL_SOURCE_FILES) $(GENERATED_SOURCE_FILES))
+
+
+
+###############################################################################
+#
+# Dummy rules
+#
+
+.PHONY: clean all devel prod make_devel make_prod build.c
+.PRECIOUS: %.c %.h %.o %.prod.o .%.d %.c %.mac %.lex.c %.tab.c %.tab.h
+
+
+
+###############################################################################
+#
+# Start rules
+#
 
 all: devel
 
@@ -32,42 +71,54 @@ prod:
 	@$(MAKE) CHECK_DEPS="yes" make_prod
 
 
-make_devel: $(DEVEL) 
+make_devel: $(TARGETS_DEVEL) 
 
-make_prod: $(PROD)
+make_prod: $(TARGETS_PROD)
 
+
+
+###############################################################################
+#
+# Rules for generating Makefiles
+#
+
+Makefile: $(PROJECT_ROOT)/Makefile.Source
+	@echo "  Creating makefile: $@" 
+	@cp $< $@
+
+
+
+###############################################################################
+#
+# Pattern rules for compilation
+#
 
 %.prod.o: %.c
-	@echo "  Compiling product code:  $<"
+	@$(ECHO) "  Compiling product code:  $<"
 	@$(CCPROD) $(CCPROD_FLAGS) $(CPROD_FLAGS) $(YYFLAGS) $(INCS) -o $@ -c $<
 	@$(CLOCK_SKEW_ELIMINATION) $@
 
 
 %.o: %.c
-	@echo "  Compiling developer code:  $<"
+	@$(ECHO) "  Compiling developer code:  $<"
 	@$(CC) $(CCFLAGS) $(CFLAGS) $(YYFLAGS) $(INCS) -o $@ -c $<
 	@$(CLOCK_SKEW_ELIMINATION) $@
 
 
 
-clean:
-	$(RM) *.o *.a *.bak *~ .*.d
-	$(RM) $(patsubst %.xsl,%,$(wildcard *.xsl))
-	$(RM) -r .sb SunWS_cache
-	$(RM) BEtest
-
-
-
-#######################################################################################
+###############################################################################
 #
-# automatic dependency updating mechanism:
-#   gmake implicitly remakes all files that are included!
+# Pattern rules for source code generation
 #
 
-DEPS = $(patsubst %.c,.%.d,$(wildcard *.c)) $(patsubst %.c.xsl,.%.d,$(wildcard *.c.xsl))
-
-GENERATED_INCLUDE_FILES = $(patsubst %.xsl,%,$(wildcard ../*/*.h.xsl)) \
-                          $(patsubst %.xsl,%,$(wildcard ../*/*.mac.xsl)) # ../scanparse/y.tab.h
+build.c:
+	@$(ECHO) "  Creating revision information:  $@"
+	@$(ECHO) "char build_date[] = \"`date`\";"  >  build.c
+	@$(ECHO) "char build_user[] = \"$(USER)\";" >> build.c
+	@$(ECHO) "char build_host[] = \"`hostname`\";" >> build.c
+	@$(ECHO) "char build_os[]   = \"$(OS)\";"   >> build.c
+	@$(ECHO) "char build_rev[]  = \"$(REVISION)\";"  >> build.c
+	@$(CLOCK_SKEW_ELIMINATION) $@
 
 
 %.h: %.h.xsl $(XML_DIR)/ast.xml $(XML_COMMONS)
@@ -82,6 +133,54 @@ GENERATED_INCLUDE_FILES = $(patsubst %.xsl,%,$(wildcard ../*/*.h.xsl)) \
 	@$(ECHO) "  Generating code from XML specification:  $@"
 	@$(XSLTENGINE) $< $(XML_DIR)/ast.xml | $(CODE_BEAUTIFIER) >$@
 
+
+%.lex.c: %.l
+	@$(ECHO) "  Generating code from LEX specification:  $<"
+	@$(LEX) $<
+	@mv lex.yy.c $@
+	@$(CLOCK_SKEW_ELIMINATION) $@
+
+%.tab.c: %.y
+	@$(ECHO) "  Generating code from YACC specification:  $<"
+	@$(YACC) $<
+	@mv y.tab.c $@
+	@$(CLOCK_SKEW_ELIMINATION) $@
+
+%.tab.h: %.y
+	@$(ECHO) "  Generating header file from YACC specification:  $<"
+	@$(YACC) $<
+	@mv y.tab.h $@
+	@$(CLOCK_SKEW_ELIMINATION) $@
+
+
+
+###############################################################################
+#
+# Rules for debugging 
+#
+
+MACS = icm.data icm_comment.c icm_trace.c
+
+BETEST_OBJS = icm2c_std.BEtest.o icm2c_prf.BEtest.o icm2c_wl.BEtest.o \
+              icm2c_mt.BEtest.o icm2c_sched.BEtest.o icm2c_error.BEtest.o \
+              icm2c_basic.o icm2c_utils.o \
+              ../global/NameTuples.o ../global/globals.o ../../lib/dbug.o
+
+BEtest: BEtest.c icm_vars.c icm_betest.c icm.data $(BETEST_OBJS)
+	$(CC) $(CCFLAGS) $(CFLAGS) -o BEtest $(INCS) BEtest.c $(BETEST_OBJS)
+	$(CLOCK_SKEW_ELIMINATION) $@
+
+%.BEtest.o: %.c $(MACS)
+	$(CC) $(CCFLAGS) $(CFLAGS) -DBEtest -o $@ -c $< $(INCS)
+	$(CLOCK_SKEW_ELIMINATION) $@
+
+
+
+#######################################################################################
+#
+# Pattern rules for dependency tracking mechanism:
+#
+
 .%.d: %.c $(GENERATED_INCLUDE_FILES)
 	@$(ECHO) "  Checking dependencies of source file: $<"
 	@if $(CC) $(CCDEPS_FLAGS) $(CFLAGS) $(INCS) $<  > $@d ; \
@@ -94,10 +193,29 @@ GENERATED_INCLUDE_FILES = $(patsubst %.xsl,%,$(wildcard ../*/*.h.xsl)) \
 
 
 
+###############################################################################
+#
+# Includes for dependency tracking mechanism
+#
+
 ifeq ($(CHECK_DEPS),yes)
   ifneq ($(DEPS),)
    -include $(DEPS)
   endif
 endif
 
+
+
+
+###############################################################################
+#
+# Pattern rules for directory cleaning
+#
+
+clean:
+	@$(RM) *.o *.a *.bak *~ .*.d
+	@$(RM) $(patsubst %.xsl,%,$(wildcard *.xsl))
+	@$(RM) -r .sb SunWS_cache
+	@$(RM) BEtest
+	@$(RM) *.lex.c *.tab.c *.tab.h y.output
 

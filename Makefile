@@ -18,9 +18,11 @@ LINK := $(foreach dir,$(SOURCE_DIRS),$(addprefix src/$(dir)/,$($(dir))))
 
 LINK_PROD := $(patsubst .o,.prod.o,$(LINK))
 
-SOURCE_DIRS_DEVEL := $(addsuffix .devel,$(SOURCE_DIRS))
-SOURCE_DIRS_PROD := $(addsuffix .prod,$(SOURCE_DIRS))
-SOURCE_DIRS_CLEAN := $(addsuffix .clean,$(SOURCE_DIRS))
+SOURCE_DIRS_DEVEL    := $(addsuffix .devel,$(SOURCE_DIRS))
+SOURCE_DIRS_PROD     := $(addsuffix .prod,$(SOURCE_DIRS))
+SOURCE_DIRS_CLEAN    := $(addsuffix .clean,$(SOURCE_DIRS))
+
+SOURCE_MAKEFILES := $(addprefix src/,$(addsuffix /Makefile,$(SOURCE_DIRS)))
 
 LIB          := lib/dbug.o lib/main_args.o
 
@@ -29,14 +31,14 @@ LIB          := lib/dbug.o lib/main_args.o
 #  Rules section
 #
 
-.PHONY: all efence product check_os maketools prod clean libsac libsac2c heapmgr \
+.PHONY: all efence product check_os maketools makefiles prod clean libsac libsac2c heapmgr \
         distrib ctags runtime tools lib
 
 all: devel
 
-devel: check_os lib maketools sac2c libsac heapmgr runtime tools
+devel: check_os lib maketools makefiles sac2c libsac heapmgr runtime tools
 
-prod: check_os lib maketools sac2c.prod libsac heapmgr runtime tools 
+prod: check_os lib maketools makefiles sac2c.prod libsac heapmgr runtime tools 
 
 efence: check_os maketools sac2c.efence
 
@@ -54,6 +56,11 @@ maketools:
 	$(CLOCK_SKEW_ELIMINATION) Makefile.Config
 	$(CLOCK_SKEW_ELIMINATION) src/global/config.h
 
+makefiles: $(SOURCE_MAKEFILES)
+
+src/%/Makefile: Makefile.Source
+	@echo "Creating makefile: $@"
+	@cp $< $@
 
 sac2c: $(SOURCE_DIRS_DEVEL)
 	@echo ""
@@ -98,7 +105,8 @@ clean: $(SOURCE_DIRS_CLEAN)
 	$(MAKE) -C src/tools clean
 
 %.clean:
-	$(MAKE) CHECK_DEPS="no" -C src/$* clean
+	@$(ECHO) "Cleaning directory $*"
+	@$(MAKE) CHECK_DEPS="no" -C src/$* clean
 
 
 lib: 

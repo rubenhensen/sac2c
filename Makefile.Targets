@@ -1,5 +1,5 @@
 #
-# $Id$
+# $Id:$
 #
 #
 
@@ -43,7 +43,7 @@ serialize   = serialize_node.o serialize_attribs.o deserialize.o \
               serialize_stack.o serialize_symboltable.o \
               serialize_filenames.o add_function_body.o
 
-scanparse   = y.tab.o lex.yy.o scnprs.o handle_dots.o resolvepragma.o
+scanparse   = sac.tab.o sac.lex.o scnprs.o handle_dots.o resolvepragma.o
 
 
 flatten     = flatten.o lac2fun.o fun2lac.o insert_vardec.o \

@@ -14,7 +14,7 @@
 #include "internal_lib.h"
 #include "free.h"
 #include "resource.h"
-#include "y.tab.h"
+#include "sac.tab.h"
 #include "ctinfo.h"
 #include "globals.h"
 

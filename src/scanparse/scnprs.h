@@ -1,55 +1,5 @@
 /*
- *
- * $Log$
- * Revision 3.4  2004/11/21 20:25:08  sbs
- * SACDevCamp2004
- *
- * Revision 3.3  2001/02/02 10:00:56  dkr
- * no changes done
- *
- * Revision 3.2  2000/11/24 11:57:56  sbs
- * export of yyparse eliminated My_yyparse should be used instead.
- *
- * Revision 3.1  2000/11/20 17:59:52  sacbase
- * new release made
- *
- * Revision 2.4  2000/07/21 14:48:52  nmw
- * global var spec_tree added
- *
- * Revision 2.3  1999/10/04 09:24:07  sbs
- * linenum moved to globals.[ch]
- *
- * Revision 2.2  1999/05/12 14:37:48  cg
- * MAX_CPP_VARS moved to globals.h
- * added external declaration of  My_yyparse()
- *
- * Revision 2.1  1999/02/23 12:40:38  sacbase
- * new release made
- *
- * Revision 1.8  1998/02/27 10:49:01  cg
- * added  #include "types.h" before #include "y.tab.h"
- *
- * Revision 1.7  1997/06/03 08:57:58  sbs
- * MAX_CPP_VARS defined
- *
- * Revision 1.6  1996/01/02  15:59:58  cg
- * added external declaration of function ScanParse()
- *
- * Revision 1.5  1995/07/26  08:41:02  cg
- * extern declaration of node *sib_tree added.
- *
- * Revision 1.4  1994/12/20  13:49:27  sbs
- * linenum exported...
- *
- * Revision 1.3  1994/12/20  11:24:29  sbs
- * decl_tree inserted
- *
- * Revision 1.2  1994/12/16  14:34:28  sbs
- * moddec  and start_token inserted
- *
- * Revision 1.1  1994/11/22  13:47:03  sbs
- * Initial revision
- *
+ * $Id:$
  */
 
 /*
@@ -61,7 +11,7 @@
 #define _SAC_SCNPRS_H_
 
 #include "types.h"
-#include "y.tab.h"
+#include "sac.tab.h"
 
 extern node *SPdoScanParse ();
 extern int SPmyYyparse ();
