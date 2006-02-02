@@ -312,28 +312,6 @@ RESOfundef (node *arg_node, info *arg_info)
 }
 
 node *
-RESOprf (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("RESOprf");
-
-    arg_node = TRAVcont (arg_node, arg_info);
-
-    /*
-     * filter out reference counting ops on objects
-     */
-    switch (PRF_PRF (arg_node)) {
-    case F_dec_rc:
-        INFO_DELETE (arg_info) = TRUE;
-        break;
-
-    default:
-        break;
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-node *
 RESOmodule (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("RESOmodule");

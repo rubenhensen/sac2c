@@ -11,7 +11,6 @@ extern node *RESOlet (node *arg_node, info *arg_info);
 extern node *RESOassign (node *arg_node, info *arg_info);
 extern node *RESOblock (node *arg_node, info *arg_info);
 extern node *RESOfundef (node *arg_node, info *arg_info);
-extern node *RESOprf (node *arg_node, info *arg_info);
 extern node *RESOmodule (node *arg_node, info *arg_info);
 
 extern node *RESOdoRestoreObjects (node *syntax_tree);

@@ -592,6 +592,7 @@ RCIprf (node *arg_node, info *arg_info)
         PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
         break;
 
+    case F_dispatch_error:
     case F_type_conv:
         /*
          * type_conv( type, a);
@@ -600,7 +601,7 @@ RCIprf (node *arg_node, info *arg_info)
          * - a must be counted like a funap use of a
          */
         INFO_MODE (arg_info) = rc_apuse;
-        PRF_ARG2 (arg_node) = TRAVdo (PRF_ARG2 (arg_node), arg_info);
+        PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
         break;
 
     case F_fill:
