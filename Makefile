@@ -14,35 +14,27 @@ PROJECT_ROOT := .
 include $(PROJECT_ROOT)/Makefile.Config
 include $(PROJECT_ROOT)/Makefile.Targets
 
-SOURCE_DIRS = $(addprefix src/,$(src))
+ALL_SOURCE_DIRS = $(addprefix src/,$(src))
+SOURCE_DIRS     = $(addprefix src/,$(TARGET))
 
-LINK_DEVEL = $(addprefix src/,$(foreach dir,$(src),$(addprefix $(dir)/,$($(dir)))))
-LINK_PROD  = $(patsubst .o,.prod.o,$(LINK))
+TARGETS_DEVEL = $(addprefix src/,$(foreach target,$(TARGET),$(addprefix $(target)/,$($(target)))))
+TARGETS_PROD  = $(patsubst .o,.prod.o,$(TARGETS_DEVEL))
 
 ifeq ($(MODE),prod)
-  LINK = $(LINK_PROD)
+  TARGETS = $(TARGETS_PROD)
 else
-  LINK = $(LINK_DEVEL)
+  TARGETS = $(TARGETS_DEVEL)
 endif
-
-SOURCE_DIRS_DEVEL    = $(addsuffix .devel,$(SOURCE_DIRS))
-SOURCE_DIRS_PROD     = $(addsuffix .prod,$(SOURCE_DIRS))
-SOURCE_DIRS_CLEAN    = $(addsuffix .clean,$(SOURCE_DIRS))
 
 SOURCE_MAKEFILES = $(addsuffix /Makefile,$(SOURCE_DIRS))
 
 LIB          = lib/dbug.o lib/main_args.o
-
-INCS         = -Iinc $(patsubst %,-I%,$(SOURCE_DIRS))
+INCS         = -Iinc $(patsubst %,-I%,$(ALL_SOURCE_DIRS))
 
 REVISION = $(shell svn info | grep Revision: | sed -e 's/Revision: //g')
 
 XML_DIR     = $(PROJECT_ROOT)/src/xml
 XML_COMMONS = $(wildcard $(XML_DIR)/common-*.xsl)
-
-TARGET        = $(notdir $(PWD))
-TARGETS_DEVEL = $($(TARGET))
-TARGETS_PROD  = $(patsubst .o,.prod.o,$(TARGETS_DEVEL))
 
 GENERATED_INCLUDE_FILES = $(patsubst %.xsl,%,$(foreach dir,$(SOURCE_DIRS),$(wildcard $(dir)/*.h.xsl))) \
                           $(patsubst %.xsl,%,$(foreach dir,$(SOURCE_DIRS),$(wildcard $(dir)/*.mac.xsl))) \
@@ -54,7 +46,7 @@ GENERATED_SOURCE_FILES = $(patsubst %.xsl,%,$(foreach dir,$(SOURCE_DIRS),$(wildc
 
 GENERATED_FILES = $(GENERATED_INCLUDE_FILES) $(GENERATED_SOURCE_FILES)
 
-DEPENDENCY_FILES = $(patsubst %.c,%.d,$(patsubst %.o,%.c,$(LINK_DEVEL)))
+DEPENDENCY_FILES = $(patsubst %.o,%.d,$(TARGETS_DEVEL))
 
 DEPS = $(foreach file,$(DEPENDENCY_FILES),$(dir $(file)).$(notdir $(file)))
 
@@ -67,7 +59,7 @@ DEPS = $(foreach file,$(DEPENDENCY_FILES),$(dir $(file)).$(notdir $(file)))
 
 .PHONY: clean all devel prod make_devel make_prod %.track
 .PHONY: efence check_os maketools makefiles libsac libsac2c heapmgr 
-.PHONY: distrib ctags runtime tools lib %.go makesubdir %.devel %.prod
+.PHONY: distrib ctags runtime tools lib %.go makesubdir 
 
 .PRECIOUS: %.c %.h %.o %.prod.o .%.d %.c %.mac %.lex.c %.tab.c %.tab.h
 
@@ -117,16 +109,16 @@ src/%/Makefile: Makefile.Source
 	@echo "* Making $*"
 	@echo "************************************"
 	@touch make_track
-	@$(MAKE) CHECK_DEPS="yes" MODE="$(suffix $*)" $*
+	@$(MAKE) CHECK_DEPS="yes" MODE="$(suffix $*)" TARGET="$(src)" $*
 
 sac2c.prod sac2c: src/global/build.o
 	@echo ""
 	@echo "Linking sac2c (developer version)"
-	@$(LIBTOOL) $(CC) $(CCLINKFLAGS) -o $@ $(LINK) $< $(LIB) $(LIBS) $(LDDYNFLAG)
+	@$(LIBTOOL) $(CC) $(CCLINKFLAGS) -o $@ $(TARGETS) $< $(LIB) $(LIBS) $(LDDYNFLAG)
 	@$(RM) make_track
 
-src/global/build.c: $(LINK)
-	@echo ""
+src/global/build.c: $(TARGETS)
+	@$(ECHO) ""
 	@$(ECHO) "Creating revision information file:  $@"
 	@$(ECHO) "char build_date[] = \"`date`\";"  >  $@
 	@$(ECHO) "char build_user[] = \"$(USER)\";" >> $@
@@ -137,10 +129,10 @@ src/global/build.c: $(LINK)
 	@$(ECHO) "$(dir $@)" > make_track
 
 
-sac2c.efence: $(SOURCE_DIRS_DEVEL)
+sac2c.efence: $(TARGETS_DEVEL)
 	@echo ""
 	@echo "Linking sac2c (efence version)"
-	@$(LIBTOOL) $(CC) $(CCLINKFLAGS) -o sac2c.efence $(LINK) $(LIBS) $(EFLIBS) $(LDDYNFLAG)
+	@$(LIBTOOL) $(CC) $(CCLINKFLAGS) -o sac2c.efence $(TARGETS_DEVEL) $(LIBS) $(EFLIBS) $(LDDYNFLAG)
 
 doxygen:
 	doxygen sac2cdoxy
@@ -152,16 +144,6 @@ doxygen:
 # Rules for making subdirectories
 #
 
-%.devel: 
-	@touch make_track
-	@$(MAKE) CHECK_DEPS="yes" TARGETS="$(addprefix src/$*/,$($*))" DEPS="$(filter src/$*/%,$(DEPS))" makesubdir
-	@$(RM) make_track
-
-%.prod:
-	@touch make_track
-	@$(MAKE) CHECK_DEPS="yes" $(addprefix src/$*/,$(patsubst %.o,%.prod.o,$($*)))
-	@$(RM) make_track
-
 makesubdir: $(TARGETS)
 	@$(ECHO) ""
 
@@ -171,7 +153,7 @@ makesubdir: $(TARGETS)
 # Rules for cleaning directories
 #
 
-clean: makefiles $(SOURCE_DIRS_CLEAN)
+clean: makefiles $(addsuffix .clean,$(SOURCE_DIRS))
 	$(RM) sac2c
 	$(RM) sac2c.efence
 	$(RM) -r .sb SunWS_cache
@@ -231,17 +213,6 @@ configure: configure.ac
 
 ###############################################################################
 #
-# Rules for generating Makefiles
-#
-
-Makefile: $(PROJECT_ROOT)/Makefile.Source
-	@echo "  Creating makefile: $@" 
-	@cp $< $@
-
-
-
-###############################################################################
-#
 # Pattern rules for compilation
 #
 
@@ -269,26 +240,26 @@ Makefile: $(PROJECT_ROOT)/Makefile.Source
 #
 
 %.h: %.h.xsl $(XML_DIR)/ast.xml $(XML_COMMONS) %.track
-	@$(ECHO) "  Generating header file from XML specification:  $@"
+	@$(ECHO) "  Generating header file from XML specification:  $(notdir $@)"
 	@$(XSLTENGINE) $< $(XML_DIR)/ast.xml | $(CODE_BEAUTIFIER) >$@
 
 %.mac: %.mac.xsl $(XML_DIR)/ast.xml $(XML_COMMONS) %.track
-	@$(ECHO) "  Generating macro file from XML specification:  $@"
+	@$(ECHO) "  Generating macro file from XML specification:  $(notdir $@)"
 	@$(XSLTENGINE) $< $(XML_DIR)/ast.xml | $(CODE_BEAUTIFIER) >$@
 
 %.c: %.c.xsl $(XML_DIR)/ast.xml $(XML_COMMONS) %.track
-	@$(ECHO) "  Generating source code from XML specification:  $@"
+	@$(ECHO) "  Generating source code from XML specification:  $(notdir $@)"
 	@$(XSLTENGINE) $< $(XML_DIR)/ast.xml | $(CODE_BEAUTIFIER) >$@
 
 
 %.lex.c: %.l %.track
-	@$(ECHO) "  Generating source code from LEX specification:  $<"
+	@$(ECHO) "  Generating source code from LEX specification:  $(notdir $<)"
 	@$(LEX) $<
 	@mv lex.yy.c $@
 	@$(CLOCK_SKEW_ELIMINATION) $@
 
 %.tab.c: %.y %.track
-	@$(ECHO) "  Generating source code from YACC specification:  $<"
+	@$(ECHO) "  Generating source code from YACC specification:  $(notdir $<)"
 	@$(YACC) $<
 	@mv y.tab.c $@
 	@$(RM) y.tab.h
@@ -296,7 +267,7 @@ Makefile: $(PROJECT_ROOT)/Makefile.Source
 	@$(CLOCK_SKEW_ELIMINATION) $@
 
 %.tab.h: %.y %.track
-	@$(ECHO) "  Generating header file from YACC specification:  $<"
+	@$(ECHO) "  Generating header file from YACC specification:  $(notdir $<)"
 	@$(YACC) $<
 	@mv y.tab.h $@
 	@$(RM) y.tab.c 
@@ -331,7 +302,6 @@ Makefile: $(PROJECT_ROOT)/Makefile.Source
 	      exit 1 ;  \
 	 fi
 	@$(CLOCK_SKEW_ELIMINATION) $@
-
 
 
 

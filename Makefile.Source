@@ -21,6 +21,8 @@
 
 PROJECT_ROOT = ../..
 
+include $(PROJECT_ROOT)/Makefile.Config
+
 TARGET = $(notdir $(PWD))
 
 
@@ -31,7 +33,6 @@ TARGET = $(notdir $(PWD))
 #
 
 .PHONY: clean all devel prod 
-.PRECIOUS: %.c %.h %.o %.prod.o .%.d %.c %.mac %.lex.c %.tab.c %.tab.h
 
 
 
@@ -43,10 +44,14 @@ TARGET = $(notdir $(PWD))
 all: devel
 
 devel:
-	@$(MAKE) -C $(PROJECT_ROOT) $(TARGET).devel
+	@$(ECHO) ""
+	@$(ECHO) "Making current subdirectory (developer version)"
+	@$(MAKE) -C $(PROJECT_ROOT) TARGET="$(TARGET)" MODE="" CHECK_DEPS="yes" makesubdir
 
 prod:
-	@$(MAKE) -C $(PROJECT_ROOT) $(TARGET).prod
+	@$(ECHO) ""
+	@$(ECHO) "Making current subdirectory (product version)"
+	@$(MAKE) -C $(PROJECT_ROOT) TARGET="$(TARGET)" MODE="prod" CHECK_DEPS="yes"makesubdir
 
 
 
