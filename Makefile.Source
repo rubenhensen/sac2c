@@ -21,29 +21,7 @@
 
 PROJECT_ROOT = ../..
 
-REVISION = $(shell svn info | grep Revision: | sed -e 's/Revision: //g')
-
-include $(PROJECT_ROOT)/Makefile.Config
-include $(PROJECT_ROOT)/Makefile.Targets
-
-XML_DIR     = $(PROJECT_ROOT)/src/xml
-XML_COMMONS = $(wildcard $(XML_DIR)/common-*.xsl)
-
-TARGET        = $(notdir $(PWD))
-TARGETS_DEVEL = $($(TARGET))
-TARGETS_PROD  = $(patsubst .o,.prod.o,$(TARGETS_DEVEL))
-
-GENERATED_INCLUDE_FILES = $(patsubst %.xsl,%,$(wildcard ../*/*.h.xsl)) \
-                          $(patsubst %.xsl,%,$(wildcard ../*/*.mac.xsl)) \
-                          ../scanparse/sac.tab.h
-
-GENERATED_SOURCE_FILES = $(patsubst %.xsl,%,$(wildcard *.c.xsl)) \
-                         $(patsubst %.y,%.tab.c,$(wildcard *.y)) \
-                         $(patsubst %.l,%.lex.c,$(wildcard *.l)) 
-
-ORIGINAL_SOURCE_FILES = $(filter-out $(GENERATED_SOURCE_FILES),$(wildcard *.c))
-
-DEPS = $(patsubst %.c,.%.d,$(ORIGINAL_SOURCE_FILES) $(GENERATED_SOURCE_FILES))
+TARGET = $(notdir $(PWD))
 
 
 
@@ -52,7 +30,7 @@ DEPS = $(patsubst %.c,.%.d,$(ORIGINAL_SOURCE_FILES) $(GENERATED_SOURCE_FILES))
 # Dummy rules
 #
 
-.PHONY: clean all devel prod make_devel make_prod build.c
+.PHONY: clean all devel prod 
 .PRECIOUS: %.c %.h %.o %.prod.o .%.d %.c %.mac %.lex.c %.tab.c %.tab.h
 
 
@@ -65,15 +43,11 @@ DEPS = $(patsubst %.c,.%.d,$(ORIGINAL_SOURCE_FILES) $(GENERATED_SOURCE_FILES))
 all: devel
 
 devel:
-	@$(MAKE) CHECK_DEPS="yes" make_devel
+	@$(MAKE) -C $(PROJECT_ROOT) $(TARGET).devel
 
 prod:
-	@$(MAKE) CHECK_DEPS="yes" make_prod
+	@$(MAKE) -C $(PROJECT_ROOT) $(TARGET).prod
 
-
-make_devel: $(TARGETS_DEVEL) 
-
-make_prod: $(TARGETS_PROD)
 
 
 
@@ -87,70 +61,6 @@ Makefile: $(PROJECT_ROOT)/Makefile.Source
 	@cp $< $@
 
 
-
-###############################################################################
-#
-# Pattern rules for compilation
-#
-
-%.prod.o: %.c
-	@$(ECHO) "  Compiling product code:  $<"
-	@$(CCPROD) $(CCPROD_FLAGS) $(CPROD_FLAGS) $(YYFLAGS) $(INCS) -o $@ -c $<
-	@$(CLOCK_SKEW_ELIMINATION) $@
-
-
-%.o: %.c
-	@$(ECHO) "  Compiling developer code:  $<"
-	@$(CC) $(CCFLAGS) $(CFLAGS) $(YYFLAGS) $(INCS) -o $@ -c $<
-	@$(CLOCK_SKEW_ELIMINATION) $@
-
-
-
-###############################################################################
-#
-# Pattern rules for source code generation
-#
-
-build.c:
-	@$(ECHO) "  Creating revision information:  $@"
-	@$(ECHO) "char build_date[] = \"`date`\";"  >  build.c
-	@$(ECHO) "char build_user[] = \"$(USER)\";" >> build.c
-	@$(ECHO) "char build_host[] = \"`hostname`\";" >> build.c
-	@$(ECHO) "char build_os[]   = \"$(OS)\";"   >> build.c
-	@$(ECHO) "char build_rev[]  = \"$(REVISION)\";"  >> build.c
-	@$(CLOCK_SKEW_ELIMINATION) $@
-
-
-%.h: %.h.xsl $(XML_DIR)/ast.xml $(XML_COMMONS)
-	@$(ECHO) "  Generating code from XML specification:  $@"
-	@$(XSLTENGINE) $< $(XML_DIR)/ast.xml | $(CODE_BEAUTIFIER) >$@
-
-%.mac: %.mac.xsl $(XML_DIR)/ast.xml $(XML_COMMONS)
-	@$(ECHO) "  Generating code from XML specification:  $@"
-	@$(XSLTENGINE) $< $(XML_DIR)/ast.xml | $(CODE_BEAUTIFIER) >$@
-
-%.c: %.c.xsl $(XML_DIR)/ast.xml $(XML_COMMONS)
-	@$(ECHO) "  Generating code from XML specification:  $@"
-	@$(XSLTENGINE) $< $(XML_DIR)/ast.xml | $(CODE_BEAUTIFIER) >$@
-
-
-%.lex.c: %.l
-	@$(ECHO) "  Generating code from LEX specification:  $<"
-	@$(LEX) $<
-	@mv lex.yy.c $@
-	@$(CLOCK_SKEW_ELIMINATION) $@
-
-%.tab.c: %.y
-	@$(ECHO) "  Generating code from YACC specification:  $<"
-	@$(YACC) $<
-	@mv y.tab.c $@
-	@$(CLOCK_SKEW_ELIMINATION) $@
-
-%.tab.h: %.y
-	@$(ECHO) "  Generating header file from YACC specification:  $<"
-	@$(YACC) $<
-	@mv y.tab.h $@
-	@$(CLOCK_SKEW_ELIMINATION) $@
 
 
 
@@ -176,40 +86,10 @@ BEtest: BEtest.c icm_vars.c icm_betest.c icm.data $(BETEST_OBJS)
 
 
 
-#######################################################################################
-#
-# Pattern rules for dependency tracking mechanism:
-#
-
-.%.d: %.c $(GENERATED_INCLUDE_FILES)
-	@$(ECHO) "  Checking dependencies of source file: $<"
-	@if $(CC) $(CCDEPS_FLAGS) $(CFLAGS) $(INCS) $<  > $@d ; \
-	 then sed 's/\($*\)\.o[ :]*/$*\.o $@\: $$\(PROJECT_ROOT\)\/Makefile.Config /'  <$@d >$@; \
-	      $(RM) $@d ; \
-	 else $(RM) $@d ; \
-	      exit 1 ;  \
-	 fi
-	@$(CLOCK_SKEW_ELIMINATION) $@
-
-
 
 ###############################################################################
 #
-# Includes for dependency tracking mechanism
-#
-
-ifeq ($(CHECK_DEPS),yes)
-  ifneq ($(DEPS),)
-   -include $(DEPS)
-  endif
-endif
-
-
-
-
-###############################################################################
-#
-# Pattern rules for directory cleaning
+# Rules for directory cleaning
 #
 
 clean:

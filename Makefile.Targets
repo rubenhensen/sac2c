@@ -9,11 +9,11 @@
 #
 
 
-SOURCE_DIRS = global tree serialize \
-              scanparse flatten constants typecheck \
-              modules objects optimize psi-opt wltransform \
-              concurrent multithread profile \
-              refcount precompile compile print 
+src = global tree serialize \
+      scanparse flatten constants typecheck types \
+      modules objects optimize psi-opt wltransform \
+      concurrent multithread profile \
+      refcount precompile compile print 
              
 
 
@@ -25,7 +25,7 @@ SOURCE_DIRS = global tree serialize \
 
 
 global      = main.o setup.o usage.o internal_lib.o globals.o \
-              resource.o build.o options.o NameTuplesUtils.o \
+              resource.o options.o NameTuplesUtils.o \
               filemgr.o ctinfo.o phase.o private_heap.o
 
 tree        = traverse.o tree_basic.o free.o tree_compound.o DupTree.o \
@@ -63,6 +63,8 @@ typecheck   = new_typecheck.o new_types.o user_types.o create_wrappers.o \
               split_wrappers.o dispatchfuncalls.o insert_type_conv.o \
               update_wrapper_type.o free_dispatch_information.o \
               pre_typecheck.o
+
+types       = 
 
 modules     = symboltable.o stringset.o libstat.o modulemanager.o libmanager.o \
               export.o ccmanager.o libbuilder.o resolveall.o \
