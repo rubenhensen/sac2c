@@ -21,7 +21,6 @@
 #include "create_wrappers.h"
 #include "split_wrappers.h"
 #include "new2old.h"
-#include "import_specialization.h"
 
 #include "user_types.h"
 #include "new_types.h"
