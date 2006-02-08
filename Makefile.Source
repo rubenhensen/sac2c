@@ -62,8 +62,8 @@ prod:
 #
 
 Makefile: $(PROJECT_ROOT)/Makefile.Source
-	@echo "  Creating makefile: $@" 
-	@cp $< $@
+	@$(ECHO) "  Creating makefile: $@" 
+	@cp -f $< $@
 
 
 

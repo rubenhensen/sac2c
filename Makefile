@@ -100,20 +100,20 @@ maketools:
 makefiles: $(SOURCE_MAKEFILES)
 
 src/%/Makefile: Makefile.Source
-	@echo "Creating makefile: $@"
-	@cp $< $@
+	@$(ECHO) "Creating makefile: $@"
+	@cp -f $< $@
 
 %.go: 
-	@echo ""
-	@echo "************************************"
-	@echo "* Making $*"
-	@echo "************************************"
+	@$(ECHO) ""
+	@$(ECHO) "************************************"
+	@$(ECHO) "* Making $*"
+	@$(ECHO) "************************************"
 	@touch make_track
 	@$(MAKE) CHECK_DEPS="yes" MODE="$(suffix $*)" TARGET="$(src)" $*
 
 sac2c.prod sac2c: src/global/build.o
-	@echo ""
-	@echo "Linking sac2c (developer version)"
+	@$(ECHO) ""
+	@$(ECHO) "Linking sac2c (developer version)"
 	@$(LIBTOOL) $(CC) $(CCLINKFLAGS) -o $@ $(TARGETS) $< $(LIB) $(LIBS) $(LDDYNFLAG)
 	@$(RM) make_track
 
@@ -130,8 +130,8 @@ src/global/build.c: $(TARGETS)
 
 
 sac2c.efence: $(TARGETS_DEVEL)
-	@echo ""
-	@echo "Linking sac2c (efence version)"
+	@$(ECHO) ""
+	@$(ECHO) "Linking sac2c (efence version)"
 	@$(LIBTOOL) $(CC) $(CCLINKFLAGS) -o sac2c.efence $(TARGETS_DEVEL) $(LIBS) $(EFLIBS) $(LDDYNFLAG)
 
 doxygen:
