@@ -46,6 +46,7 @@ char c;
 static void
 usage (char *args)
 {
+    fprintf (stderr, VERS);
     fprintf (stderr, "\nUsage:\n");
     fprintf (stderr, "   %s [<filename>] [-i<indent>] [-r] [-t]\n", PGM);
     fprintf (stderr, "   %s [-h]\n", PGM);
@@ -694,12 +695,12 @@ main (int argc, char *argv[])
     bool use_tabs = FALSE;
     int ret;
 
-    fprintf (stderr, VERS); /* tell the world about version */
-
     /* process arguments */
 
     ARGS_BEGIN (argc, argv);
     ARGS_FLAG ("h", usage (argv[0]); exit (0););
+    ARGS_FLAG ("V", printf (VERS); /* tell the world about version */
+               exit (0););
     ARGS_OPTION ("i", ARG_RANGE (indent, 1, 8));
     ARGS_FLAG ("r", remove_newlines = TRUE;);
     ARGS_FLAG ("t", use_tabs = TRUE;);
