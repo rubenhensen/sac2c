@@ -26,7 +26,7 @@ else
   TARGETS = $(TARGETS_DEVEL)
 endif
 
-SOURCE_MAKEFILES = $(addsuffix /Makefile,$(SOURCE_DIRS))
+SOURCE_MAKEFILES = $(addsuffix /Makefile,$(ALL_SOURCE_DIRS))
 
 LIB          = lib/dbug.o lib/main_args.o
 INCS         = -Iinc $(patsubst %,-I%,$(ALL_SOURCE_DIRS))
