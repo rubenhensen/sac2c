@@ -57,7 +57,7 @@ DEPS = $(foreach file,$(DEPENDENCY_FILES),$(dir $(file)).$(notdir $(file)))
 # Dummy rules
 #
 
-.PHONY: clean all devel prod make_devel make_prod %.track
+.PHONY: clean %.clean all devel prod make_devel make_prod %.track
 .PHONY: efence check_os maketools makefiles libsac libsac2c heapmgr 
 .PHONY: distrib ctags runtime tools lib %.go makesubdir 
 
@@ -153,7 +153,7 @@ makesubdir: $(TARGETS)
 # Rules for cleaning directories
 #
 
-clean: makefiles $(addsuffix .clean,$(SOURCE_DIRS))
+clean: makefiles $(addsuffix .clean,$(ALL_SOURCE_DIRS))
 	$(RM) sac2c
 	$(RM) sac2c.efence
 	$(RM) -r .sb SunWS_cache
