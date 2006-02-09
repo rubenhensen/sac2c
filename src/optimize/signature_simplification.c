@@ -76,8 +76,11 @@
 #include "shape.h"
 #include "namespaces.h"
 #include "tree_compound.h"
+#include "inferneedcounters.h"
 
 #include "signature_simplification.h"
+
+typedef enum { infer, simplify } travphases;
 
 /*
  * INFO structure
@@ -92,6 +95,7 @@ struct INFO {
     bool remassign;
     bool idslet;
     node *postassign;
+    travphases travphase;
 };
 
 #define INFO_FUNDEF(n) (n->fundef)
@@ -102,6 +106,8 @@ struct INFO {
 #define INFO_APFUNRETS(n) (n->apfunrets)
 #define INFO_IDSLET(n) (n->idslet)
 #define INFO_POSTASSIGN(n) (n->postassign)
+
+#define INFO_TRAVPHASE(n) (n->travphase)
 
 static info *
 MakeInfo ()
@@ -119,6 +125,8 @@ MakeInfo ()
     INFO_APFUNRETS (result) = NULL;
     INFO_IDSLET (result) = FALSE;
     INFO_POSTASSIGN (result) = NULL;
+
+    INFO_TRAVPHASE (result) = infer;
 
     DBUG_RETURN (result);
 }
@@ -178,6 +186,14 @@ SISImodule (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SISImodule");
 
+    INFO_TRAVPHASE (arg_info) = infer;
+
+    if (MODULE_FUNS (arg_node) != NULL) {
+        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
+    }
+
+    INFO_TRAVPHASE (arg_info) = simplify;
+
     if (MODULE_FUNS (arg_node) != NULL) {
         MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
     }
@@ -202,31 +218,40 @@ SISIfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SISIfundef");
 
-    INFO_FUNDEF (arg_info) = arg_node;
+    if (INFO_TRAVPHASE (arg_info) == infer) {
 
-    if (FUNDEF_BODY (arg_node) != NULL) {
-        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+        arg_node = INFNCdoInferNeedCountersOneFundef (arg_node);
+
+    } else if (INFO_TRAVPHASE (arg_info) == simplify) {
+        INFO_FUNDEF (arg_info) = arg_node;
+
+        INFO_RETS (arg_info) = FUNDEF_RETS (arg_node);
+
+        if (FUNDEF_BODY (arg_node) != NULL) {
+            FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+        }
+
+        if (FUNDEF_NEXT (arg_node) != NULL) {
+            FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+        }
+
+        INFO_FUNDEF (arg_info) = arg_node;
+
+        if ((FUNDEF_RETS (arg_node) != NULL) && (!FUNDEF_ISLACFUN (arg_node))
+            && (!ILIBstringCompare ("main", FUNDEF_NAME (arg_node)))
+            && (!NSequals (NSgetRootNamespace (), FUNDEF_NS (arg_node)))
+            && (!FUNDEF_ISEXPORTED (arg_node)) && (!FUNDEF_ISPROVIDED (arg_node))) {
+            FUNDEF_RETS (arg_node) = TRAVdo (FUNDEF_RETS (arg_node), arg_info);
+        }
+
+        if ((FUNDEF_BODY (arg_node) != NULL) && (FUNDEF_ARGS (arg_node) != NULL)
+            && (!FUNDEF_ISLACFUN (arg_node)) && (!FUNDEF_ISEXPORTED (arg_node))
+            && (!FUNDEF_ISPROVIDED (arg_node))) {
+            FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
+        }
+    } else {
+        DBUG_ASSERT ((FALSE), "Unexpected traversal phase!");
     }
-
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-    }
-
-    INFO_FUNDEF (arg_info) = arg_node;
-
-    if ((FUNDEF_RETS (arg_node) != NULL) && (!FUNDEF_ISLACFUN (arg_node))
-        && (!ILIBstringCompare ("main", FUNDEF_NAME (arg_node)))
-        && (!NSequals (NSgetRootNamespace (), FUNDEF_NS (arg_node)))
-        && (!FUNDEF_ISEXPORTED (arg_node)) && (!FUNDEF_ISPROVIDED (arg_node))) {
-        FUNDEF_RETS (arg_node) = TRAVdo (FUNDEF_RETS (arg_node), arg_info);
-    }
-
-    if ((FUNDEF_BODY (arg_node) != NULL) && (FUNDEF_ARGS (arg_node) != NULL)
-        && (!FUNDEF_ISLACFUN (arg_node)) && (!FUNDEF_ISEXPORTED (arg_node))
-        && (!FUNDEF_ISPROVIDED (arg_node))) {
-        FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
-    }
-
     DBUG_RETURN (arg_node);
 }
 
@@ -258,7 +283,7 @@ SISIarg (node *arg_node, info *arg_info)
      * now bottom-up traversal
      */
 
-    if (!ARG_ISINUSE (arg_node)) {
+    if (AVIS_NEEDCOUNT (ARG_AVIS (arg_node)) == 0) {
 
         node *tmp;
 
@@ -390,7 +415,7 @@ SISIap (node *arg_node, info *arg_info)
     fundef = AP_FUNDEF (arg_node);
 
     if ((!FUNDEF_ISLACFUN (fundef)) && (!FUNDEF_ISPROVIDED (fundef))
-        && (!FUNDEF_ISEXPORTED (fundef))) {
+        && (!FUNDEF_ISEXPORTED (fundef)) && (!FUNDEF_ISEXTERN (fundef))) {
 
         INFO_APFUNRETS (arg_info) = FUNDEF_RETS (AP_FUNDEF (arg_node));
         fun_args = FUNDEF_ARGS (fundef);
@@ -400,7 +425,7 @@ SISIap (node *arg_node, info *arg_info)
 
         while (fun_args != NULL) {
 
-            if (ARG_ISINUSE (fun_args)) {
+            if (AVIS_NEEDCOUNT (ARG_AVIS (fun_args)) > 0) {
                 if (NULL == new_args) {
                     new_args = curr_args;
                     AP_ARGS (arg_node) = new_args;
@@ -414,6 +439,7 @@ SISIap (node *arg_node, info *arg_info)
                 /*
                  * argument is marked as not needed
                  */
+
                 tmp = curr_args;
                 curr_args = EXPRS_NEXT (curr_args);
                 EXPRS_NEXT (tmp) = NULL;
