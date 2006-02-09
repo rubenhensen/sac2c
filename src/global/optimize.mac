@@ -106,7 +106,7 @@ OPTCOUNTER (ap_unsupported, "array type(s) unsupported by padding")
 OPTCOUNTER (cvp_expr, "value(s) and variable(s) propagated")
 OPTCOUNTER (tup_upgrades, "type(s) upgraded")
 OPTCOUNTER (tup_rtu_expr, "type(s) upgraded reversely")
-OPTCOUNTER (sisi_expr, "constant function argument(s) removed")
+OPTCOUNTER (sisi_expr, "unused or constant function argument(s) removed")
 OPTCOUNTER (wlprop_expr, "withloop(s) propagated")
 
 #undef OPTIMIZEstr
