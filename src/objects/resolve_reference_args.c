@@ -75,6 +75,18 @@ ExpandArgsToRets (node *rets, node *args)
         rets = TBmakeRet (TYcopyType (AVIS_TYPE (ARG_AVIS (args))), rets);
         RET_ISARTIFICIAL (rets) = TRUE;
         RET_ISUNIQUE (rets) = ARG_ISUNIQUE (args);
+
+        /*
+         * we have to tag the ARG as ISREFCOUNTED here to prevent from any
+         * RC operations to be generated for it. In most cases it will be set
+         * to ISREFCOUNTED anyways, just for external functions it might not be
+         * the case. To be sure, we set it for all of them.
+         *
+         * Setting ISREFCOUNTED to prevent reference counting might sound
+         * strange, but the flag is TRUE if the function does the refcounting
+         * itself (thus no further refcounting is needed.).
+         */
+        ARG_ISREFCOUNTED (args) = TRUE;
     }
 
     DBUG_RETURN (rets);
