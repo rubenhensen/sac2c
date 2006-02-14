@@ -426,7 +426,7 @@ InternalCompilerErrorBreak (int sig)
                  "Besides some infos concerning the compiler version and its\n"
                  "usage it contains the specified source file.\n"
                  "If you want to send that bug report to us you may simply use\n\n"
-                 "  mail bug@sac-home.org < SACbugreport\n\n");
+                 "  mail bugs@sac-home.org < SACbugreport\n\n");
     } else {
         fprintf (stderr, "Sorry, sac2c is unable to create a bug report file.\n");
     }
