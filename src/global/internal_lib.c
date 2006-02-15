@@ -73,7 +73,7 @@ FILE *syscalltrack = NULL;
 void *
 ILIBmalloc (int size)
 {
-    void *tmp;
+    void *size_ptr;
 
     DBUG_ENTER ("ILIBmalloc");
 
@@ -81,55 +81,44 @@ ILIBmalloc (int size)
 
     if (size > 0) {
 
-#ifdef SHOW_MALLOC
-        tmp = malloc (size + malloc_align_step);
-#else  /* SHOW_MALLOC */
-        tmp = malloc (size);
-#endif /* SHOW_MALLOC */
-
         /*
          * Since some UNIX system (e.g. ALPHA) do return NULL for size 0 as well
          * we do complain for ((NULL == tmp) && (size > 0)) only!!
          */
-        if (tmp == NULL) {
 
 #ifdef SHOW_MALLOC
+        size_ptr = malloc (size + malloc_align_step);
+
+        if (size_ptr == NULL) {
+
             CTIabort ("Out of memory: %u Bytes already allocated",
                       global.current_allocated_mem);
-#else
+
+            size_ptr = CHKMregisterMem (size, size_ptr);
+        }
+
+#else  /* SHOW_MALLOC */
+
+        if (size_ptr == NULL) {
+
+            size_ptr = malloc (size);
+
             CTIabort ("Out of memory");
-#endif
         }
-#ifdef SHOW_MALLOC
-        tmp = CHKMregisterMem (size, tmp);
-
-        if (global.current_allocated_mem + size < global.current_allocated_mem) {
-            DBUG_ASSERT ((0), "counter for allocated memory: overflow detected");
-        }
-        global.current_allocated_mem += size;
-        if (global.max_allocated_mem < global.current_allocated_mem) {
-            global.max_allocated_mem = global.current_allocated_mem;
-        }
-
-        DBUG_PRINT ("MEM_ALLOC", ("Alloc memory: %d Bytes at adress: " F_PTR, size, tmp));
-
-        DBUG_PRINT ("MEM_TOTAL",
-                    ("Currently allocated memory: %u", global.current_allocated_mem));
-
 #endif /* SHOW_MALLOC */
 
 #ifdef CLEANMEM
         /*
          * Initialize memory
          */
-        tmp = memset (tmp, 0, size);
+        size_ptr = memset (size_ptr, 0, size);
 #endif
 
     } else {
-        tmp = NULL;
+        size_ptr = NULL;
     }
 
-    DBUG_RETURN (tmp);
+    DBUG_RETURN (size_ptr);
 }
 
 #ifdef SHOW_MALLOC
