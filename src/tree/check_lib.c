@@ -73,7 +73,7 @@ CHKdoTreeCheck (node *syntax_tree)
  *
  * @fn node *CHKinsertError( node *arg_node, char *string)
  *****************************************************************************/
-static node *
+node *
 CHKinsertError (node *arg_node, char *string)
 {
     DBUG_ENTER ("CHKinsertError");

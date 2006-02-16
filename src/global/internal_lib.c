@@ -70,10 +70,13 @@ FILE *syscalltrack = NULL;
  *
  ******************************************************************************/
 
+#ifdef SHOW_MALLOC
+
 void *
 ILIBmalloc (int size)
 {
-    void *size_ptr;
+    void *orig_ptr;
+    void *shifted_ptr;
 
     DBUG_ENTER ("ILIBmalloc");
 
@@ -85,43 +88,43 @@ ILIBmalloc (int size)
          * Since some UNIX system (e.g. ALPHA) do return NULL for size 0 as well
          * we do complain for ((NULL == tmp) && (size > 0)) only!!
          */
+        orig_ptr = malloc (size + malloc_align_step);
 
-#ifdef SHOW_MALLOC
-        size_ptr = malloc (size + malloc_align_step);
-
-        if (size_ptr == NULL) {
-
+        if (orig_ptr == NULL) {
             CTIabort ("Out of memory: %u Bytes already allocated",
                       global.current_allocated_mem);
-
-            size_ptr = CHKMregisterMem (size, size_ptr);
         }
 
-#else  /* SHOW_MALLOC */
+        shifted_ptr = CHKMregisterMem (size, orig_ptr);
 
-        if (size_ptr == NULL) {
+        if (global.current_allocated_mem + size < global.current_allocated_mem) {
 
-            size_ptr = malloc (size);
-
-            CTIabort ("Out of memory");
+            DBUG_ASSERT ((0), "counter for allocated memory: overflow detected");
         }
-#endif /* SHOW_MALLOC */
+        global.current_allocated_mem += size;
+        if (global.max_allocated_mem < global.current_allocated_mem) {
+            global.max_allocated_mem = global.current_allocated_mem;
+        }
+
+        DBUG_PRINT ("MEM_ALLOC",
+                    ("Alloc memory: %d Bytes at adress: " F_PTR, size, shifted_ptr));
+
+        DBUG_PRINT ("MEM_TOTAL",
+                    ("Currently allocated memory: %u", global.current_allocated_mem));
 
 #ifdef CLEANMEM
         /*
          * Initialize memory
          */
-        size_ptr = memset (size_ptr, 0, size);
+        shifted_ptr = memset (shifted_ptr, 0, size);
 #endif
 
     } else {
-        size_ptr = NULL;
+        shifted_ptr = NULL;
     }
 
-    DBUG_RETURN (size_ptr);
+    DBUG_RETURN (shifted_ptr);
 }
-
-#ifdef SHOW_MALLOC
 
 void *
 ILIBmallocAt (int size, char *file, int line)
@@ -136,8 +139,6 @@ ILIBmallocAt (int size, char *file, int line)
 
     DBUG_RETURN (pointer);
 }
-
-#endif /* SHOW_MALLOC */
 
 #ifdef NOFREE
 
@@ -154,24 +155,27 @@ ILIBfree (void *address)
 #else /* NOFREE */
 
 void *
-ILIBfree (void *address)
+ILIBfree (void *shifted_ptr)
 {
-#ifdef SHOW_MALLOC
-    void *orig_address;
+    void *orig_ptr = NULL;
     int size;
-#endif /* SHOW_MALLOC */
 
     DBUG_ENTER ("ILIBfree");
 
-    if (address != NULL) {
-#ifdef SHOW_MALLOC
-        orig_address = CHKMunregisterMem (address);
-
-        size = CHKMgetSize (address);
+    if (shifted_ptr != NULL) {
+        size = CHKMgetSize (shifted_ptr);
 
         DBUG_ASSERT ((size >= 0), "illegal size found!");
         DBUG_PRINT ("MEM_ALLOC",
-                    ("Free memory: %d Bytes at adress: " F_PTR, size, address));
+                    ("Free memory: %d Bytes at adress: " F_PTR, size, shifted_ptr));
+
+        if (global.current_allocated_mem < global.current_allocated_mem - size) {
+            DBUG_ASSERT ((0), "counter for allocated memory: overflow detected");
+        }
+        global.current_allocated_mem -= size;
+
+        DBUG_PRINT ("MEM_TOTAL",
+                    ("Currently allocated memory: %u", global.current_allocated_mem));
 
 #ifdef CLEANMEM
         /*
@@ -180,29 +184,61 @@ ILIBfree (void *address)
          * one gets notified as soon as it is freed. Needs SHOW_MALLOC
          * to get the size of the freed memory chunk.
          */
-        orig_address = memset (orig_address, 0, size);
+        shifted_ptr = memset (shifted_ptr, 0, size);
 #endif /* CLEANMEM */
 
-        if (global.current_allocated_mem < global.current_allocated_mem - size) {
-            DBUG_ASSERT ((0), "counter for allocated memory: overflow detected");
+        orig_ptr = CHKMunregisterMem (shifted_ptr);
+        free (orig_ptr);
+        orig_ptr = NULL;
+    }
+
+    DBUG_RETURN (orig_ptr);
+}
+
+#endif /* NOFREE */
+
+#else /*SHOW_MALLOC */
+
+void *
+ILIBmalloc (int size)
+{
+    void *ptr;
+
+    DBUG_ENTER ("ILIBmalloc");
+
+    DBUG_ASSERT ((size >= 0), "ILIBmalloc called with negative size!");
+
+    if (size > 0) {
+        /*
+         * Since some UNIX system (e.g. ALPHA) do return NULL for size 0 as well
+         * we do complain for ((NULL == tmp) && (size > 0)) only!!
+         */
+        ptr = malloc (size);
+
+        if (ptr == NULL) {
+            CTIabort ("Out of memory");
         }
-        global.current_allocated_mem -= size;
+    } else {
+        ptr = NULL;
+    }
 
-        free (orig_address);
+    DBUG_RETURN (ptr);
+}
 
-        DBUG_PRINT ("MEM_TOTAL",
-                    ("Currently allocated memory: %u", global.current_allocated_mem));
-#else  /* SHOW_MALLOC */
+void *
+ILIBfree (void *address)
+{
+    DBUG_ENTER ("ILIBfree");
+
+    if (address != NULL) {
         free (address);
-#endif /* SHOW_MALLOC */
-
         address = NULL;
     }
 
     DBUG_RETURN (address);
 }
 
-#endif /* NOFREE */
+#endif /* SHOW_MALLOC */
 
 struct PTR_BUF {
     void **buf;
