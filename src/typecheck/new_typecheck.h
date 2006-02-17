@@ -8,6 +8,7 @@
 #include "types.h"
 
 extern node *NTCdoNewTypeCheck (node *arg_node);
+extern node *NTCdoNewReTypeCheck (node *arg_node);
 extern node *NTCdoNewTypeCheckOneFunction (node *arg_node);
 extern ntype *NTCnewTypeCheck_Expr (node *arg_node);
 

@@ -276,6 +276,16 @@ OPTdoOptimize (node *arg_node)
     }
 
     /*
+     * apply RTC (final type inference)
+     */
+    arg_node = PHrunCompilerSubPhase (SUBPH_rtc, arg_node);
+
+    /*
+     * apply FINT2OT (final type finalisation)
+     */
+    arg_node = PHrunCompilerSubPhase (SUBPH_finnt2ot, arg_node);
+
+    /*
      * !!! If they should ever work again, WLAA, TSI, and AP must run here
      */
 

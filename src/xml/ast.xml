@@ -615,6 +615,13 @@
           <node name="With" />
         </travuser>
       </traversal>
+      <traversal id="FDI" name="Free Dispatch Information" default="sons" include="free_dispatch_information.h">
+        <travuser>
+          <node name="Ap" />
+          <node name="Module" />
+          <node name="Fundef" />
+        </travuser>  
+      </traversal>
       <traversal id="PF" name="Annotate Function Calls " default="sons" include="annotate_fun_calls.h">
         <travuser>
           <node name="Ap" />

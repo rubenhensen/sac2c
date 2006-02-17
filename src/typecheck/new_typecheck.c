@@ -224,6 +224,58 @@ NTCdoNewTypeCheck (node *arg_node)
     DBUG_RETURN (arg_node);
 }
 
+/******************************************************************************
+ *
+ * function:
+ *    node *NTCdoNewReTypeCheck( node *arg_node)
+ *
+ * description:
+ *    starts the new type checking traversal and rechecks the entire tree.
+ *
+ ******************************************************************************/
+
+node *
+NTCdoNewReTypeCheck (node *arg_node)
+{
+    info *arg_info;
+    int oldmaxspec;
+    node *fundef;
+
+    DBUG_ENTER ("NTCdoNewTypeCheck");
+
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module),
+                 "NTCdoNewReTypeCheck() not called with N_module node!");
+
+    /*
+     * mark all functions that can be rechecked as not checked
+     */
+    fundef = MODULE_FUNS (arg_node);
+    while (fundef != NULL) {
+        if (!FUNDEF_ISWRAPPERFUN (fundef) && (FUNDEF_BODY (fundef) != NULL)) {
+            FUNDEF_TCSTAT (fundef) = NTC_not_checked;
+        }
+        fundef = FUNDEF_NEXT (fundef);
+    }
+
+    /*
+     * De-activate specialising
+     */
+    oldmaxspec = global.maxspec;
+    global.maxspec = 0;
+
+    TRAVpush (TR_ntc);
+
+    arg_info = MakeInfo ();
+    arg_node = TRAVdo (arg_node, arg_info);
+    arg_info = FreeInfo (arg_info);
+
+    TRAVpop ();
+
+    global.maxspec = oldmaxspec;
+
+    DBUG_RETURN (arg_node);
+}
+
 /** <!--********************************************************************-->
  *
  * @fn node *NTCdoNewTypeCheckOneFunction( node *arg_node)

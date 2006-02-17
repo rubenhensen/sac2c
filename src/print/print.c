@@ -2219,6 +2219,9 @@ PRTap (node *arg_node, info *arg_info)
     if ((FUNDEF_ISWRAPPERFUN (fundef))) {
         fprintf (global.outfile, "wrapper:");
     }
+    if ((FUNDEF_ISTYPEERROR (fundef))) {
+        fprintf (global.outfile, "typeerror:");
+    }
     if (FUNDEF_NS (fundef) != NULL) {
         fprintf (global.outfile, "%s::", NSgetName (FUNDEF_NS (fundef)));
     }

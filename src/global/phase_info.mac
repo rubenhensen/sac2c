@@ -301,6 +301,10 @@ SUBPHASE (dcrive, "dcrive", "Removing dead code", DCRdoDeadCodeRemovalModule)
 SUBPHASE (wlidx, "wlidx", "Annoting offset variable at with-loops",
           WLIDXdoAnnotateWithloopIdxs)
 
+SUBPHASE (rtc, "rct", "Runnging final type inference", NTCdoNewReTypeCheck)
+
+SUBPHASE (finnt2ot, "finn2o", "Finalising infered type information", NT2OTdoTransform)
+
 SUBPHASE (fdi, "fdi", "Freeing dispatch information", FDIdoFreeDispatchInformation)
 
 /******************************************************************************/

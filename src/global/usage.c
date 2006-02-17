@@ -242,6 +242,8 @@ USGprintUsage ()
     PRINT_BREAK_SPEC (PH_sacopt, "wlfs", "Stop after with loop fusion.");
     PRINT_BREAK_SPEC (PH_sacopt, "cse2", "Stop after common subexpression elimination.");
     PRINT_BREAK_SPEC (PH_sacopt, "dcr3", "Stop after dead code removal.");
+    PRINT_BREAK_SPEC (PH_sacopt, "rtc", "Stop after final type inference.");
+    PRINT_BREAK_SPEC (PH_sacopt, "finn2o", "Stop after final type finalisation.");
     PRINT_BREAK_SPEC (PH_sacopt, "wlpg2",
                       "Stop after with-loop default partition generation.");
     PRINT_BREAK_SPEC (PH_sacopt, "wrci",
