@@ -152,7 +152,7 @@ CHKMdoCheckMemory (node *syntax_tree, info *arg_info)
 }
 
 node *
-CHKMeliminateSpaceLeaks (node *arg_node, info *arg_info)
+CHKMassignSpaceLeaks (node *arg_node, info *arg_info)
 {
 
     DBUG_ENTER ("CHKMeliminateSpaceLeaks");
@@ -166,20 +166,38 @@ CHKMeliminateSpaceLeaks (node *arg_node, info *arg_info)
     } else {
         MEMOBJ_USEDBIT (memobj_ptr) = 1;
     }
-    /*
-    for (int i = 0; i < memtabsize; i++){
 
-      if( memtab[i].ptr != NULL && (**tmpobj).used_bit == 1)
-        {
-          char *string = NULL;
-
-          NODE_ERROR( arg_node) = CHKinsertError( NODE_ERROR( arg_node),
-                                                  string);
-        }
-    }
-    */
     DBUG_RETURN (arg_node);
 }
+
+/*
+void *CHKMeliminateSpaceLeaks() {
+
+  DBUG_ENTER( "CHKMeliminateSpaceLeaks");
+
+  for (int i = 0; i < memtabsize; i++){
+
+    if( MEMOBJ_PTR( memtab[i]) != NULL && MEMOBJ_USEDBIT( memtab[i]) == 1)
+      {
+        char *string = NULL;
+
+        NODE_ERROR( arg_node) = CHKinsertError( NODE_ERROR( arg_node),
+                                                string);
+        MEMOBJ_USEDBIT( memtab[i]) == 1);
+      }
+
+    if( MEMOBJ_PTR( memtab[i]) != NULL && MEMOBJ_SHAREDBIT( memtab[i]) == 1)
+      {
+        char *string = NULL;
+
+        NODE_ERROR( arg_node) = CHKinsertError( NODE_ERROR( arg_node),
+                                                string);
+        MEMOBJ_SHAREDBIT( memtab[i]) == 1);
+      }
+  }
+  DBUG_VOID_RETURN;
+}
+*/
 
 void
 CHKMsetNodeType (node *shifted_ptr, nodetype newnodetype)
