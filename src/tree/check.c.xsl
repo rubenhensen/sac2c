@@ -47,6 +47,7 @@ version="1.0">
       </xsl:with-param>
     </xsl:call-template>
     <!-- includes -->
+
     <xsl:text>
 #include "check.h"
 #include "globals.h"
@@ -55,20 +56,18 @@ version="1.0">
 #include "dbug.h"
 #include "print.h"
 #include "check_lib.h"
-#include "types.h"
-
+#include "check_mem.h"
+#include "checktst.h"
+      
 #include "tree_compound.h"
 #include "DupTree.h"
 #include "free.h"
 #include "internal_lib.h"
 
-
-
 struct INFO
 {
 };
 
-/*
 static info *MakeInfo()
 {
   info *result;
@@ -88,10 +87,40 @@ static info *FreeInfo(info *info)
 
   DBUG_RETURN(info);
 }
-*/
-    </xsl:text>
-    
-    <!-- first the nodeset-functions --> 
+
+
+/*****************************************************************************
+ *
+ * @fn node *CHKdoTreeCheck( node *syntax_tree)
+ *
+ *****************************************************************************/
+node *CHKdoTreeCheck( node *syntax_tree)
+{
+  info *info;
+
+  DBUG_ENTER( "CHKdoTreeCheck");
+
+  syntax_tree = CHKMdoCheckMemory( syntax_tree);
+
+  DBUG_PRINT( "CHK", ("Starting the check mechanism"));
+
+  syntax_tree = CHKTSTdoTreeCheckTest( syntax_tree);
+
+  info = MakeInfo();
+  
+  TRAVpush( TR_chk);
+  syntax_tree = TRAVdo( syntax_tree, info);
+  TRAVpop();
+
+  info = FreeInfo( info);
+
+  DBUG_PRINT( "CHK", ("Checkmechanism complete"));
+
+  DBUG_RETURN( syntax_tree);
+}
+  </xsl:text>
+  
+  <!-- first the nodeset-functions --> 
     <xsl:apply-templates select="//nodesets/nodeset">
       <xsl:sort select="@name"/>
     </xsl:apply-templates>

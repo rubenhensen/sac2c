@@ -15,60 +15,6 @@
 #include "globals.h"
 #include "ctinfo.h"
 
-struct INFO {
-};
-
-static info *
-MakeInfo ()
-{
-    info *result;
-
-    DBUG_ENTER ("MakeInfo");
-
-    result = ILIBmalloc (sizeof (info));
-
-    DBUG_RETURN (result);
-}
-
-static info *
-FreeInfo (info *info)
-{
-    DBUG_ENTER ("FreeInfo");
-
-    info = ILIBfree (info);
-
-    DBUG_RETURN (info);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *CHKdoTreeCheck( node *syntax_tree)
- *
- *****************************************************************************/
-node *
-CHKdoTreeCheck (node *syntax_tree)
-{
-    info *info;
-
-    DBUG_ENTER ("CHKdoTreeCheck");
-
-    DBUG_PRINT ("CHK", ("Starting the Checkmechanism"));
-
-    info = MakeInfo ();
-
-    syntax_tree = CHKTSTdoTreeCheckTest (syntax_tree);
-
-    TRAVpush (TR_chk);
-    syntax_tree = TRAVdo (syntax_tree, info);
-    TRAVpop ();
-
-    info = FreeInfo (info);
-
-    DBUG_PRINT ("CHK", ("Checkmechanism complete"));
-
-    DBUG_RETURN (syntax_tree);
-}
-
 /** <!--********************************************************************-->
  *
  * @fn node *CHKinsertError( node *arg_node, char *string)

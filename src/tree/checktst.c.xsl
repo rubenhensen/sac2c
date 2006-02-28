@@ -54,8 +54,6 @@ version="1.0">
 #include "traverse.h"
 #include "dbug.h"
 #include "print.h"
-#include "check_lib.h"
-#include "types.h"
 
 #include "tree_compound.h"
 #include "DupTree.h"
@@ -88,7 +86,7 @@ static info *FreeInfo(info *info)
   DBUG_RETURN(info);
 }
 
-/** <!--********************************************************************-->
+/*****************************************************************************
  *
  * @fn node *CHKTSTdoTreeCheckTest( node *syntax_tree)
  *

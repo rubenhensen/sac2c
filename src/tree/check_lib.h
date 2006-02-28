@@ -16,8 +16,6 @@
  * Prefix: CHK
  *
  *****************************************************************************/
-extern node *CHKdoTreeCheck (node *syntax_tree);
-
 extern node *CHKinsertError (node *arg_node, char *string);
 extern node *CHKexistSon (node *son, node *arg_node, char *string);
 extern node *CHKexistAttribute (void *attribute, node *arg_node, char *string);

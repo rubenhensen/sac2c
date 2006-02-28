@@ -10,7 +10,6 @@
 #include "types.h"
 #include "dbug.h"
 #include "globals.h"
-#include "check_lib.h"
 #include "ctinfo.h"
 
 /*********************************

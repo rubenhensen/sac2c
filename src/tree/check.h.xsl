@@ -1,25 +1,7 @@
 <?xml version="1.0"?>
 
 <!--
-  $Log$
-  Revision 1.4  2005/07/13 11:48:59  jhb
-  insert the CHKinserterror function
-
-  Revision 1.3  2005/06/08 13:33:03  jhb
-  attribute are now check correctly
-
-  Revision 1.2  2005/05/17 13:00:37  jhb
-  added the isfun
-
-  Revision 1.1  2005/02/10 12:59:58  jhb
-  Initial revision
-
-  Revision 1.1  2004/11/19 13:55:29  jhb
-  Initial revision
-
-  Revision 1.1 2004/09/29 15:15:00 jhb
-  Initial revision
-
+  $Id$
 -->
 
   <!-- This stylesheet generates a check.h file implementing all functions needed to check a node -->
@@ -55,6 +37,8 @@ version="1.0">
 #define _SAC_CHECK_H_
 
 #include "types.h"
+
+extern node *CHKdoTreeCheck  ( node *syntax_tree);
 
 </xsl:text> 
 <xsl:value-of select="$newline"/>

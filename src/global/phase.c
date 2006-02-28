@@ -1,32 +1,5 @@
 /*
- *
- * $Log$
- * Revision 1.8  2005/09/28 15:52:17  wpc
- * added some SHOW_MALLOC ifdefs
- *
- * Revision 1.7  2005/09/06 14:07:45  ktr
- * Breaking after subphases now checks for the correct superphase, too.
- *
- * Revision 1.6  2005/09/04 12:49:35  ktr
- * added new global optimization counters and made all optimizations proper subphases
- *
- * Revision 1.5  2005/07/12 12:57:44  jhb
- * changed the start of the checks
- *
- * Revision 1.4  2005/06/06 13:26:40  jhb
- * added the check traversal after each subphase
- *
- * Revision 1.3  2005/04/20 07:25:18  cg
- * CheckTree is now only called if syntax tree actually exists.
- *
- * Revision 1.2  2005/03/10 09:41:09  cg
- * External declarations of phase driver functions are now created
- * automatically from phase_info.mac
- *
- * Revision 1.1  2005/03/07 13:40:22  cg
- * Initial revision
- *
- *
+ * $Id$
  */
 
 #include "types.h"
@@ -37,6 +10,7 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "DupTree.h"
+#include "check.h"
 
 #include "phase.h"
 
