@@ -54,6 +54,7 @@ static int memtabsize = 0;
 void *
 CHKMregisterMem (int size, void *orig_ptr)
 {
+
     void *shifted_ptr = NULL;
     memobj *memobj_ptr;
 
@@ -62,14 +63,11 @@ CHKMregisterMem (int size, void *orig_ptr)
     shifted_ptr = ORIG2SHIFT (orig_ptr);
 
     if (memindex == memtabsize) {
-
         if (memtabsize == 0) {
-
             memtab = (memobj *)malloc (1000 * sizeof (memobj));
             memtabsize = 1000;
             memfreeslots = 1000;
         } else {
-
             int newtabsize = (memtabsize - memfreeslots) * 2;
             int newindex = 0;
             memobj *newtab = (memobj *)malloc (newtabsize * sizeof (memobj));
@@ -77,7 +75,6 @@ CHKMregisterMem (int size, void *orig_ptr)
             for (int i = 0; i < memtabsize; i++) {
 
                 if (memtab[i].ptr != NULL) {
-
                     newtab[newindex] = memtab[i];
                     memobj **tmpptr = (memobj **)newtab[newindex].ptr;
                     *tmpptr = newtab + newindex;
@@ -111,6 +108,7 @@ CHKMregisterMem (int size, void *orig_ptr)
 void *
 CHKMunregisterMem (void *shifted_ptr)
 {
+
     memobj *memobj_ptr;
     void *orig_ptr;
 
@@ -155,9 +153,9 @@ node *
 CHKMassignSpaceLeaks (node *arg_node, info *arg_info)
 {
 
-    DBUG_ENTER ("CHKMeliminateSpaceLeaks");
-
     memobj *memobj_ptr;
+
+    DBUG_ENTER ("CHKMassignSpaceLeaks");
 
     memobj_ptr = SHIFT2MEMOBJ (arg_node);
 
@@ -166,7 +164,6 @@ CHKMassignSpaceLeaks (node *arg_node, info *arg_info)
     } else {
         MEMOBJ_USEDBIT (memobj_ptr) = 1;
     }
-
     DBUG_RETURN (arg_node);
 }
 
@@ -175,7 +172,8 @@ void *CHKMeliminateSpaceLeaks() {
 
   DBUG_ENTER( "CHKMeliminateSpaceLeaks");
 
-  for (int i = 0; i < memtabsize; i++){
+  for (int i = 0; i < memtabsize; i++)
+  {
 
     if( MEMOBJ_PTR( memtab[i]) != NULL && MEMOBJ_USEDBIT( memtab[i]) == 1)
       {
@@ -183,7 +181,6 @@ void *CHKMeliminateSpaceLeaks() {
 
         NODE_ERROR( arg_node) = CHKinsertError( NODE_ERROR( arg_node),
                                                 string);
-        MEMOBJ_USEDBIT( memtab[i]) == 1);
       }
 
     if( MEMOBJ_PTR( memtab[i]) != NULL && MEMOBJ_SHAREDBIT( memtab[i]) == 1)
@@ -202,6 +199,7 @@ void *CHKMeliminateSpaceLeaks() {
 void
 CHKMsetNodeType (node *shifted_ptr, nodetype newnodetype)
 {
+
     memobj *memobj_ptr;
 
     DBUG_ENTER ("CHKMsetNodeType");
@@ -216,6 +214,7 @@ CHKMsetNodeType (node *shifted_ptr, nodetype newnodetype)
 void
 CHKMsetLocation (node *shifted_ptr, char *file, int line)
 {
+
     memobj *memobj_ptr;
 
     DBUG_ENTER ("CHKMsetLocation");
@@ -232,6 +231,7 @@ CHKMsetLocation (node *shifted_ptr, char *file, int line)
 int
 CHKMgetSize (node *shifted_ptr)
 {
+
     memobj *memobj_ptr;
     int size;
 
