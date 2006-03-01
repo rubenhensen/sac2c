@@ -133,9 +133,13 @@ ILIBmallocAt (int size, char *file, int line)
 
     DBUG_ENTER ("ILIBmallocAt");
 
-    /*  CHKMsetLocation(size, file, line); */
+    if (size > 0) {
+        pointer = ILIBmalloc (size);
 
-    pointer = ILIBmalloc (size);
+        CHKMsetLocation (pointer, file, line);
+    } else {
+        pointer = NULL;
+    }
 
     DBUG_RETURN (pointer);
 }
