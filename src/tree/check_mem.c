@@ -58,6 +58,8 @@ static int memtabsize = 0;
  *
  * @fn node *CHKMdoCheckMemory( node *syntax_tree)
  *
+ * the traversal start function
+ *
  *****************************************************************************/
 node *
 CHKMdoCheckMemory (node *syntax_tree)
@@ -97,8 +99,10 @@ CHKMregisterMem (int size, void *orig_ptr)
 
     shifted_ptr = ORIG2SHIFT (orig_ptr);
 
+    /* change the memtabsize if the memtab is full or empty */
     if (memindex == memtabsize) {
 
+        /* at beginning the memtab ist empty so: */
         if (memtabsize == 0) {
 
             DBUG_PRINT ("CHKM", ("Allocating memtab for 1000 memory objects"
@@ -108,7 +112,10 @@ CHKMregisterMem (int size, void *orig_ptr)
             memtab = (memobj *)malloc (1000 * sizeof (memobj));
             memtabsize = 1000;
             memfreeslots = 1000;
-        } else {
+        }
+
+        /* expand or reduce mechanismn for the memtab */
+        else {
             int newtabsize = (memtabsize - memfreeslots) * 2;
             int newindex = 0;
             memobj *newtab;
@@ -119,6 +126,8 @@ CHKMregisterMem (int size, void *orig_ptr)
 
             newtab = (memobj *)malloc (newtabsize * sizeof (memobj));
 
+            /* copy the old memtab to new (smaller or bigger) memtab. All gaps
+               will ignore */
             for (int i = 0; i < memtabsize; i++) {
 
                 if (memtab[i].ptr != NULL) {
@@ -158,7 +167,7 @@ CHKMregisterMem (int size, void *orig_ptr)
 
 /** <!--********************************************************************-->
  *
- * @fn void *CHKMunregisterMem( voidstatic memobj *CHKManalyzeMemtab( memobj *memtab)
+ * @fn void *CHKMunregisterMem( void *shiftet_ptr)
  *
  *****************************************************************************/
 void *
@@ -220,19 +229,23 @@ CHKManalyzeMemtab (memobj *memtab, int memindex)
     memobj *memobj_ptr;
     memobj *copy_memtab;
     int copy_index;
+    node *arg_node;
 
     DBUG_ENTER ("CHKManalyzeMemtab");
+
+    /************************************
+       must copy the memtab(!) to freeze, because Node_Error expand again the
+       memtab and so can possibly change the back pointers
+    **********************************/
 
     copy_memtab = memtab;
     copy_index = memindex;
 
+    arg_node = (node *)ORIG2SHIFT (MEMOBJ_PTR (memtab));
+
     for (i = 0; i < copy_index - 1; i++) {
 
         memobj_ptr = copy_memtab + i;
-
-        node *arg_node = (node *)ORIG2SHIFT (MEMOBJ_PTR (memobj_ptr));
-
-        /* char *string = NULL;*/
 
         if (MEMOBJ_PTR (memobj_ptr) == NULL) {
 
@@ -240,8 +253,11 @@ CHKManalyzeMemtab (memobj *memtab, int memindex)
                 /* =========== Nodetypes =========== */
                 if (MEMOBJ_USEDBIT (memobj_ptr) || MEMOBJ_SHAREDBIT (memobj_ptr)) {
 
-                    /*    NODE_ERROR( arg_node) = CHKinsertError( NODE_ERROR( arg_node),
-                          "dangling Pointer: ");*/
+                    CTIwarn ("dangling Ptr: File: %s Line: %d", MEMOBJ_FILE (memobj_ptr),
+                             MEMOBJ_LINE (memobj_ptr));
+
+                    NODE_ERROR (arg_node)
+                      = CHKinsertError (NODE_ERROR (arg_node), "dangling Pointer: ");
                 }
             }
         } else {
@@ -249,18 +265,30 @@ CHKManalyzeMemtab (memobj *memtab, int memindex)
             if (MEMOBJ_NODETYPE (memobj_ptr) != N_undefined) {
                 /* =========== Nodetypes =========== */
                 if (!MEMOBJ_USEDBIT (memobj_ptr)) {
-                    /* NODE_ERROR( arg_node) = CHKinsertError( NODE_ERROR( arg_node),
-                       "spaceleak(node): ");*/
+
+                    NODE_ERROR (arg_node)
+                      = CHKinsertError (NODE_ERROR (arg_node), "spaceleak(node): ");
+
+                    CTIwarn ("spaceleak: File: %s Line: %d Used_Bit: %d",
+                             MEMOBJ_FILE (memobj_ptr), MEMOBJ_LINE (memobj_ptr),
+                             MEMOBJ_USEDBIT (memobj_ptr));
                 } else {
                     if (MEMOBJ_SHAREDBIT (memobj_ptr)) {
-                        /*  NODE_ERROR( arg_node) = CHKinsertError( NODE_ERROR( arg_node),
-                            "shared memory: ");*/
+
+                        NODE_ERROR (arg_node)
+                          = CHKinsertError (NODE_ERROR (arg_node), "shared memory: ");
+
+                        CTIwarn ("shared memory: File: %s Line: %d",
+                                 MEMOBJ_FILE (memobj_ptr), MEMOBJ_LINE (memobj_ptr));
                     }
                 }
             } else {
                 /* =========== not Nodetypes =========== */
                 if ((MEMOBJ_PTR (memobj_ptr) != NULL) && (!MEMOBJ_USEDBIT (memobj_ptr))) {
-                    CTIwarn ("%s", "spaceleak: ");
+
+                    CTIwarn ("spaceleak: File: %s Line: %d Used_Bit: %d",
+                             MEMOBJ_FILE (memobj_ptr), MEMOBJ_LINE (memobj_ptr),
+                             MEMOBJ_USEDBIT (memobj_ptr));
                 }
             }
         }
