@@ -253,8 +253,8 @@ ICMCompileMT_SPMD_FRAME_ELEMENT (char *funname, int vararg_cnt, char **vararg)
 
     for (i = 0; i < 3 * vararg_cnt; i += 3) {
         INDENT;
-        fprintf (global.outfile, "SAC_MT_FRAME_ELEMENT_%s( %s, %d, %s)\n", vararg[i],
-                 funname, cnt[tag (vararg[i])]++, vararg[i + 1]);
+        fprintf (global.outfile, "SAC_MT_FRAME_ELEMENT_%s( %s, %d, %s, %s)\n", vararg[i],
+                 funname, cnt[tag (vararg[i])]++, vararg[i + 1], vararg[i + 2]);
     }
 
     INDENT;
@@ -297,8 +297,9 @@ ICMCompileMT_SPMD_BARRIER_ELEMENT (char *funname, int vararg_cnt, char **vararg)
 
     for (i = 0; i < 3 * vararg_cnt; i += 3) {
         INDENT;
-        fprintf (global.outfile, "SAC_MT_BARRIER_ELEMENT_%s( %s, %d, %s)\n", vararg[i],
-                 funname, cnt[tag (vararg[i])]++, vararg[i + 1]);
+        fprintf (global.outfile, "SAC_MT_BARRIER_ELEMENT_%s( %s, %d, %s, %s)\n",
+                 vararg[i], funname, cnt[tag (vararg[i])]++, vararg[i + 1],
+                 vararg[i + 2]);
     }
 
     INDENT;

@@ -1579,7 +1579,7 @@ MakeIcm_MT_SPMD_FUN_DEC (node *fundef)
 
         if (argtab->ptr_out[i] != NULL) {
             type = TYtype2OldType (RET_TYPE (argtab->ptr_out[i]));
-            id = MakeArgNode (i, NULL);
+            id = MakeArgNode (i, type);
         } else {
             DBUG_ASSERT ((argtab->ptr_in[i] != NULL), "argtab is uncompressed!");
             DBUG_ASSERT ((NODE_TYPE (argtab->ptr_in[i]) == N_arg),
@@ -1599,11 +1599,12 @@ MakeIcm_MT_SPMD_FUN_DEC (node *fundef)
     /* return value */
     DBUG_ASSERT ((argtab->ptr_in[0] == NULL), "argtab is inconsistent!");
     if (argtab->ptr_out[0] != NULL) {
+        types *type;
+        type = TYtype2OldType (RET_TYPE (argtab->ptr_out[0]));
         icm_args
           = TBmakeExprs (TCmakeIdCopyString (global.argtag_string[argtab->tag[0]]),
-                         TBmakeExprs (MakeBasetypeArg (
-                                        TYtype2OldType (RET_TYPE (argtab->ptr_out[0]))),
-                                      TBmakeExprs (MakeArgNode (0, NULL), icm_args)));
+                         TBmakeExprs (MakeBasetypeArg (type),
+                                      TBmakeExprs (MakeArgNode (0, type), icm_args)));
         size++;
     }
 
