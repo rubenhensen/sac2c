@@ -1,47 +1,5 @@
 /*
- *
- * $Log$
- * Revision 3.9  2005/09/27 17:30:23  sbs
- * blend out several definitions iff included from simd.h
- *
- * Revision 3.8  2003/09/22 11:59:36  dkr
- * SAC_ABS added
- *
- * Revision 3.7  2003/09/15 13:02:40  dkr
- * SAC_MIN, SAC_MAX added
- *
- * Revision 3.6  2002/07/03 15:32:41  dkr
- * comments beautyfied
- *
- * Revision 3.5  2002/07/02 14:04:34  dkr
- * SAC_BLOCK_BEGIN, SAC_BLOCK_END added
- *
- * Revision 3.4  2002/06/28 13:22:17  dkr
- * ICM_UNDEF -> SAC_ICM_UNDEF()
- * ICM_NOOP -> SAC_NOOP()
- * ICM_NOTHING -> SAC_NOTHING()
- *
- * Revision 3.3  2002/06/28 12:58:32  dkr
- * ICM_UNDEF, ICM_NOOP, ICM_NOTHING added
- *
- * Revision 3.2  2002/04/30 08:39:34  dkr
- * no changes done
- *
- * Revision 3.1  2000/11/20 18:02:16  sacbase
- * new release made
- *
- * Revision 2.2  2000/09/25 15:14:13  dkr
- * ICM ND_TYPEDEF_ARRAY moved to sac_std.h
- *
- * Revision 2.1  1999/02/23 12:43:54  sacbase
- * new release made
- *
- * Revision 1.2  1998/05/07 08:17:51  cg
- * SAC header files converted to new naming conventions.
- *
- * Revision 1.1  1998/03/19 16:54:34  cg
- * Initial revision
- *
+ * $Id:$
  */
 
 /*****************************************************************************
@@ -62,7 +20,7 @@
 
 #ifndef _SIMD_H_
 
-extern void SAC_String2Array (char *array, const char *string);
+extern void SAC_String2Array (unsigned char *array, const char *string);
 
 #endif
 
