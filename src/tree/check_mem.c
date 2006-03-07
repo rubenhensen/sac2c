@@ -269,7 +269,7 @@ CHKManalyzeMemtab (memobj *memtab, int memindex)
                     NODE_ERROR (arg_node)
                       = CHKinsertError (NODE_ERROR (arg_node), "spaceleak(node): ");
 
-                    CTIwarn ("spaceleak: File: %s Line: %d Used_Bit: %d",
+                    CTIwarn ("spaceleak(node): File: %s Line: %d Used_Bit: %d",
                              MEMOBJ_FILE (memobj_ptr), MEMOBJ_LINE (memobj_ptr),
                              MEMOBJ_USEDBIT (memobj_ptr));
                 } else {
@@ -282,14 +282,16 @@ CHKManalyzeMemtab (memobj *memtab, int memindex)
                                  MEMOBJ_FILE (memobj_ptr), MEMOBJ_LINE (memobj_ptr));
                     }
                 }
-            } else {
-                /* =========== not Nodetypes =========== */
-                if ((MEMOBJ_PTR (memobj_ptr) != NULL) && (!MEMOBJ_USEDBIT (memobj_ptr))) {
+            } else { /*
+                  =========== not Nodetypes ===========
+                 if (( MEMOBJ_PTR( memobj_ptr) != NULL) &&
+                     ( !MEMOBJ_USEDBIT( memobj_ptr))) {
 
-                    CTIwarn ("spaceleak: File: %s Line: %d Used_Bit: %d",
-                             MEMOBJ_FILE (memobj_ptr), MEMOBJ_LINE (memobj_ptr),
-                             MEMOBJ_USEDBIT (memobj_ptr));
-                }
+                   CTIwarn( "spaceleak: File: %s Line: %d Used_Bit: %d",
+                            MEMOBJ_FILE( memobj_ptr),
+                            MEMOBJ_LINE( memobj_ptr),
+                            MEMOBJ_USEDBIT( memobj_ptr));
+                 }*/
             }
         }
     }
