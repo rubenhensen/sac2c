@@ -6,7 +6,7 @@
 
 PROJECT_ROOT := ../..
 
-include (PROJECT_ROOT)/Makefile.Config
+include $(PROJECT_ROOT)/Makefile.Config
 
 .PHONY: all check clean
 
