@@ -59,7 +59,7 @@ DEPS = $(foreach file,$(DEPENDENCY_FILES),$(dir $(file)).$(notdir $(file)))
 
 .PHONY: clean %.clean all devel prod make_devel make_prod %.track
 .PHONY: efence check_os maketools makefiles libsac libsac2c heapmgr 
-.PHONY: distrib ctags runtime tools lib %.go makesubdir 
+.PHONY: distrib ctags runtime tools lib %.go makesubdir xml
 
 .PRECIOUS: %.c %.h %.o %.prod.o .%.d %.c %.mac %.lex.c %.tab.c %.tab.h
 
@@ -79,9 +79,9 @@ prod:
 	@$(MAKE) CHECK_DEPS="yes" make_prod
 
 
-make_devel: check_os lib maketools makefiles sac2c.go libsac heapmgr runtime tools
+make_devel: check_os lib maketools makefiles xml sac2c.go libsac heapmgr runtime tools
 
-make_prod: check_os lib maketools makefiles sac2c.prod.go libsac heapmgr runtime tools 
+make_prod: check_os lib maketools makefiles xml sac2c.prod.go libsac heapmgr runtime tools 
 
 efence: check_os maketools sac2c.efence
 
@@ -98,6 +98,9 @@ maketools:
 	$(MAKE) -C tools
 
 makefiles: $(SOURCE_MAKEFILES)
+
+xml:
+	$(MAKE) -C src/xml
 
 src/%/Makefile: Makefile.Source
 	@$(ECHO) "Creating makefile: $@"
