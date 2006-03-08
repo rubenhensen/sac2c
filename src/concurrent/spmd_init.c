@@ -21,11 +21,11 @@
 #include "DupTree.h"
 #include "DataFlowMask.h"
 #include "globals.h"
-#include "spmd_trav.h"
 #include "shape.h"
 #include "new_types.h"
 #include "type_utils.h"
 #include "internal_lib.h"
+#include "InferDFMs.h"
 
 /**
  * INFO structure
@@ -102,13 +102,20 @@ SPMDIdoSpmdInit (node *syntax_tree)
  * @fn node *SPMDIfundef( node *arg_node, info *arg_info)
  *
  *****************************************************************************/
+
 node *
 SPMDIfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SPMDIfundef");
 
-    if (FUNDEF_BODY (arg_node) != NULL) {
+    if (!FUNDEF_ISMTFUN (arg_node) && (FUNDEF_BODY (arg_node) != NULL)) {
+        /*
+         * Infer data flow masks
+         */
+        arg_node = INFDFMSdoInferDfms (arg_node, HIDE_LOCALS_NEVER);
+
         INFO_FUNDEF (arg_info) = arg_node;
+
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
     }
 
@@ -241,10 +248,14 @@ InsertSPMD (node *assign, node *fundef)
      *  - delete nested N_spmds
      */
     newassign = TBmakeAssign (instr, NULL);
-    spmd = TBmakeSpmd (TBmakeBlock (newassign, NULL));
-    DBUG_PRINT ("SPMDI", ("before delete nested"));
-    spmd = SPMDDNdoDeleteNested (spmd);
-    DBUG_PRINT ("SPMDI", ("after delete nested"));
+
+#if 0
+  spmd = TBmakeSpmd( TBmakeBlock( newassign, NULL));
+  DBUG_PRINT( "SPMDI", ("before delete nested"));
+  spmd = SPMDDNdoDeleteNested (spmd);
+  DBUG_PRINT( "SPMDI", ("after delete nested"));
+#endif
+
     ASSIGN_INSTR (assign) = spmd;
 
     /*
