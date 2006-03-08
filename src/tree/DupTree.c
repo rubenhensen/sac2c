@@ -1766,13 +1766,14 @@ DUPspmd (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("DUPspmd");
 
-    new_node = TBmakeSpmd (DUPTRAV (SPMD_REGION (arg_node)));
+    new_node
+      = TBmakeSpmd (DUPTRAV (SPMD_COND (arg_node)), DUPTRAV (SPMD_REGION (arg_node)),
+                    DUPTRAV (SPMD_SEQUENTIAL (arg_node)));
 
     SPMD_IN (new_node) = DupDfmask (SPMD_IN (arg_node), arg_info);
     SPMD_INOUT (new_node) = DupDfmask (SPMD_INOUT (arg_node), arg_info);
     SPMD_OUT (new_node) = DupDfmask (SPMD_OUT (arg_node), arg_info);
     SPMD_LOCAL (new_node) = DupDfmask (SPMD_LOCAL (arg_node), arg_info);
-    SPMD_SHARED (new_node) = DupDfmask (SPMD_SHARED (arg_node), arg_info);
 
     CopyCommonNodeData (new_node, arg_node);
 

@@ -531,6 +531,8 @@ USGprintUsage ()
             "                    number is determined at runtime.\n"
             "                      (default: %d)\n"
             "\n"
+            "    -nofoldparallel Disable parallelization of fold with-loops.\n"
+            "\n"
             "    -maxsync <n>    Specify maximum number of fold with-loops to be "
             "combined\n"
             "                    into a single synchronisation block.\n"

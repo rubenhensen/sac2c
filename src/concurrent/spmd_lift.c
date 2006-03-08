@@ -192,21 +192,23 @@ SPMDLspmd (node *arg_node, info *arg_info)
         avis = DFMgetMaskEntryAvisSet (NULL);
     }
 
-    avis = DFMgetMaskEntryAvisSet (SPMD_SHARED (arg_node));
-    while (avis != NULL) {
-        /* reduce shareds by ins and outs */
-        if ((!DFMtestMaskEntry (SPMD_IN (arg_node), NULL, avis))
-            && (!DFMtestMaskEntry (SPMD_OUT (arg_node), NULL, avis))) {
-            node *newavis = DUPdoDupNode (avis);
+#if 0
+  avis = DFMgetMaskEntryAvisSet( SPMD_SHARED( arg_node));
+  while (avis != NULL) {
+    /* reduce shareds by ins and outs */
+    if ( ( !DFMtestMaskEntry( SPMD_IN( arg_node), NULL, avis)) &&
+         ( !DFMtestMaskEntry( SPMD_OUT( arg_node), NULL, avis))) {
+      node *newavis = DUPdoDupNode( avis);
 
-            fvardecs = TBmakeVardec (newavis, fvardecs);
+      fvardecs = TBmakeVardec( newavis, fvardecs);
 
-            DBUG_PRINT ("SPMDL", ("inserted shared variable%s", AVIS_NAME (avis)));
+      DBUG_PRINT("SPMDL", ("inserted shared variable%s", AVIS_NAME( avis)));
 
-            lut = LUTinsertIntoLutP (lut, avis, newavis);
-        }
-        avis = DFMgetMaskEntryAvisSet (NULL);
+      lut = LUTinsertIntoLutP( lut, avis, newavis);
     }
+    avis = DFMgetMaskEntryAvisSet( NULL);
+  }
+#endif
 
     /*
      * build formal parameters (SPMD_IN/INOUT) of SPMD function and fill LUT

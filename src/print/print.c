@@ -3091,11 +3091,6 @@ PRTspmd (node *arg_node, info *arg_info)
         fprintf (global.outfile, "\n");
 
         INDENT;
-        fprintf (global.outfile, " * shared:");
-        DFMprintMask (global.outfile, " %s", SPMD_SHARED (arg_node));
-        fprintf (global.outfile, "\n");
-
-        INDENT;
         fprintf (global.outfile, " * local:");
         DFMprintMask (global.outfile, " %s", SPMD_LOCAL (arg_node));
         fprintf (global.outfile, "\n");
@@ -3103,7 +3098,19 @@ PRTspmd (node *arg_node, info *arg_info)
         INDENT;
         fprintf (global.outfile, " */\n");
 
-        TRAVdo (SPMD_REGION (arg_node), arg_info);
+        if (SPMD_COND (arg_node) == NULL) {
+            TRAVdo (SPMD_REGION (arg_node), arg_info);
+        } else {
+            fprintf (global.outfile, "\n");
+            INDENT;
+            fprintf (global.outfile, "if (");
+            TRAVdo (SPMD_COND (arg_node), arg_info);
+            fprintf (global.outfile, ")\n");
+            TRAVdo (SPMD_REGION (arg_node), arg_info);
+            INDENT;
+            fprintf (global.outfile, "else\n");
+            TRAVdo (SPMD_SEQUENTIAL (arg_node), arg_info);
+        }
 
         fprintf (global.outfile, "\n");
         INDENT;

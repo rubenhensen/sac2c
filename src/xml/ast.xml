@@ -1655,8 +1655,15 @@
       </traversal>
       <traversal id="SPMDI" name="SPMD Init" default="sons" include="spmd_init.h">
         <travuser>
+          <node name="Module" />
           <node name="Fundef" />
           <node name="Assign" />
+          <node name="Let" />
+          <node name="Ids" />
+          <node name="With2" />
+          <node name="Fold" />
+          <node name="Genarray" />
+          <node name="Modarray" />
         </travuser>
       </traversal>
       <traversal id="SPMDL" name="SPMD Lift" default="sons" include="spmd_lift.h">
@@ -2760,7 +2767,7 @@
         </attribute>
         <attribute name="Companion">
           <description>only for ST_spmdfun</description>
-          <type name="Link">
+          <type name="ExtLink">
             <targets>
               <target mandatory="no">
                 <node name="Fundef" />
@@ -2773,7 +2780,7 @@
         </attribute>
         <attribute name="MtVariant">
           <description>Reference to MT variant of regular function</description>
-          <type name="Link">
+          <type name="ExtLink">
             <targets>
               <target mandatory="no">
                 <node name="Fundef" />
@@ -4856,9 +4863,29 @@
 -->
     <node name="Spmd">
       <sons>
+        <son name="Cond">
+          <targets>
+            <target mandatory="no">
+              <set name="Expr" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
         <son name="Region">
           <targets>
             <target mandatory="yes">
+              <node name="Block" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+        <son name="SEQUENTIAL">
+          <targets>
+            <target mandatory="no">
               <node name="Block" />
               <phases>
                 <all />
@@ -4905,18 +4932,6 @@
           </type>
         </attribute>
         <attribute name="Local" default="NULL">
-          <type name="DFMask">
-            <targets>
-              <target mandatory="yes">
-                <any />
-                <phases>
-                  <all />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-        <attribute name="Shared" default="NULL">
           <type name="DFMask">
             <targets>
               <target mandatory="yes">

@@ -30,18 +30,41 @@
 /**
  * INFO structure
  */
+
 struct INFO {
     node *fundef;
+    node *let;
+    bool parallelize;
+    bool hasfoldop;
+    node *condition;
+    node *sequential;
+
+    dfmask_t *in_mask;
+    dfmask_t *inout_mask;
+    dfmask_t *out_mask;
+    dfmask_t *local_mask;
 };
 
 /**
  * INFO macros
  */
+
 #define INFO_FUNDEF(n) (n->fundef)
+#define INFO_LET(n) (n->let)
+#define INFO_PARALLELIZE(n) (n->parallelize)
+#define INFO_HASFOLDOP(n) (n->hasfoldop)
+#define INFO_CONDITION(n) (n->condition)
+#define INFO_SEQUENTIAL(n) (n->sequential)
+
+#define INFO_IN_MASK(n) (n->in_mask)
+#define INFO_INOUT_MASK(n) (n->inout_mask)
+#define INFO_OUT_MASK(n) (n->out_mask)
+#define INFO_LOCAL_MASK(n) (n->local_mask)
 
 /**
  * INFO functions
  */
+
 static info *
 MakeInfo ()
 {
@@ -52,6 +75,16 @@ MakeInfo ()
     result = ILIBmalloc (sizeof (info));
 
     INFO_FUNDEF (result) = NULL;
+    INFO_LET (result) = NULL;
+    INFO_PARALLELIZE (result) = FALSE;
+    INFO_HASFOLDOP (result) = FALSE;
+    INFO_CONDITION (result) = NULL;
+    INFO_SEQUENTIAL (result) = NULL;
+
+    INFO_IN_MASK (result) = NULL;
+    INFO_INOUT_MASK (result) = NULL;
+    INFO_OUT_MASK (result) = NULL;
+    INFO_LOCAL_MASK (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -77,6 +110,7 @@ FreeInfo (info *info)
  *  @return
  *
  *****************************************************************************/
+
 node *
 SPMDIdoSpmdInit (node *syntax_tree)
 {
@@ -95,6 +129,91 @@ SPMDIdoSpmdInit (node *syntax_tree)
     info = FreeInfo (info);
 
     DBUG_RETURN (syntax_tree);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   bool IsWorthParallel(node *wl, ids *let_var)
+ *
+ * description:
+ *   This function decides whether a with-loop is actually worth to be executed
+ *   concurrenly. This is necessary because for small with-loops the most
+ *   efficient way of execution is just sequential.
+ *
+ ******************************************************************************/
+
+static bool
+IsWorthParallel (node *withloop, node *let_var)
+{
+    node *withop;
+    bool res;
+    int size;
+
+    DBUG_ENTER ("IsWorthParallel");
+
+    res = FALSE;
+    withop = WITH2_WITHOP (withloop);
+    while (let_var != NULL) {
+        if (NODE_TYPE (withop) == N_fold) {
+            res = TRUE;
+        } else {
+            if (TUshapeKnown (IDS_NTYPE (let_var))) {
+                size = SHgetUnrLen (TYgetShape (IDS_NTYPE (let_var)));
+                if (size < global.min_parallel_size) {
+                    res = FALSE;
+                } else {
+                    res = TRUE;
+                    break;
+                }
+            } else {
+                res = TRUE;
+                break;
+            }
+        }
+        let_var = IDS_NEXT (let_var);
+        withop = WITHOP_NEXT (withop);
+    }
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   int MaybeWorthParallel(node *wl, ids *let_var)
+ *
+ * description:
+ *
+ *
+ *
+ *
+ ******************************************************************************/
+
+static node *
+MaybeWorthParallel (node *withloop, node *let_var)
+{
+    DBUG_ENTER ("MaybeWorthParallel");
+
+    DBUG_RETURN (NULL);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SPMDImodule( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+
+node *
+SPMDImodule (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("SPMDImodule");
+
+    if (MODULE_FUNS (arg_node) != NULL) {
+        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
 }
 
 /** <!--********************************************************************-->
@@ -129,169 +248,6 @@ SPMDIfundef (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   int WithLoopIsWorthConcurrentExecution(node *wl, ids *let_var)
- *
- * description:
- *   This function decides whether a with-loop is actually worth to be executed
- *   concurrenly. This is necessary because for small with-loops the most
- *   efficient way of execution is just sequential.
- *
- * attention:
- *   Each test whether a with-loop is worth to be executed concurrently
- *   has to follow a test, whether the with-loop is allowed to be executed
- *   concurrently (by WithLoopIsAllowedConcurrentExecution, see below).
- *
- ******************************************************************************/
-static bool
-WithLoopIsWorthConcurrentExecution (node *withloop, node *let_var)
-{
-    node *withop;
-    bool res;
-    int size;
-
-    DBUG_ENTER ("WithLoopIsWorthConcurrentExecution");
-
-    res = FALSE;
-    withop = WITH2_WITHOP (withloop);
-    while (let_var != NULL) {
-        if (NODE_TYPE (withop) == N_fold) {
-            res = TRUE;
-        } else {
-            if (TUshapeKnown (IDS_NTYPE (let_var))) {
-                size = SHgetUnrLen (TYgetShape (IDS_NTYPE (let_var)));
-                if (size < global.min_parallel_size) {
-                    res = FALSE;
-                } else {
-                    res = TRUE;
-                    break;
-                }
-            } else {
-                res = TRUE;
-                break;
-            }
-        }
-        let_var = IDS_NEXT (let_var);
-        withop = WITHOP_NEXT (withop);
-    }
-
-    DBUG_RETURN (res);
-}
-
-/******************************************************************************
- *
- * function:
- *   int WithLoopIsAllowedConcurrentExecution(node *withloop)
- *
- * description:
- *   This function decides whether a with-loop is actually allowed to be
- *   executed concurrently.
- *
- * attention:
- *   Each test whether a with-loop is allowed to be executed concurrently
- *   should follow a test, whether the with-loop is worth to be executed
- *   concurrently (by WithLoopIsWorthConcurrentExecution, above).
- *
- ******************************************************************************/
-
-static bool
-WithLoopIsAllowedConcurrentExecution (node *withloop)
-{
-    node *withop;
-    bool res = TRUE;
-
-    DBUG_ENTER ("WithLoopIsAllowedConcurrentExecution");
-
-    withop = WITH2_WITHOP (withloop);
-    while (withop != NULL) {
-        if (NODE_TYPE (withop) == N_fold) {
-            if (global.max_sync_fold == 0) {
-                res = FALSE;
-                break;
-            }
-        }
-        withop = WITHOP_NEXT (withop);
-    }
-
-    DBUG_RETURN (res);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *InsertSPMD (node *assign, node *fundef)
- *
- * description:
- *   Inserts an spmd-block between assign and it's instruction (ASSIGN_INSTR),
- *   all the masks are inferred and attached to this new spmd-block.
- *
- ******************************************************************************/
-static node *
-InsertSPMD (node *assign, node *fundef)
-{
-    node *instr;
-    node *spmd;
-    node *with;
-    node *newassign;
-    node *with_ids;
-
-    DBUG_ENTER ("InsertSPMD");
-
-    DBUG_ASSERT ((NODE_TYPE (assign) == N_assign), ("N_assign expected"));
-    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef), ("N_fundef expected"));
-    DBUG_ASSERT ((NODE_TYPE (ASSIGN_INSTR (assign)) == N_let), "N_let expected");
-    DBUG_ASSERT ((NODE_TYPE (ASSIGN_RHS (assign)) == N_with2), "N_with2 expected");
-
-    instr = ASSIGN_INSTR (assign);
-
-    /*
-     *  - insert spmd between assign and instruction
-     *  - delete nested N_spmds
-     */
-    newassign = TBmakeAssign (instr, NULL);
-
-#if 0
-  spmd = TBmakeSpmd( TBmakeBlock( newassign, NULL));
-  DBUG_PRINT( "SPMDI", ("before delete nested"));
-  spmd = SPMDDNdoDeleteNested (spmd);
-  DBUG_PRINT( "SPMDI", ("after delete nested"));
-#endif
-
-    ASSIGN_INSTR (assign) = spmd;
-
-    /*
-     * current assignment contains a with-loop
-     *  -> create a SPMD-region containing the current assignment only
-     *      and insert it into the syntaxtree.
-     */
-
-    /*
-     * get masks from the N_with2 node.
-     */
-    with = LET_EXPR (instr);
-    SPMD_IN (spmd) = DFMgenMaskCopy (WITH2_IN_MASK (with));
-    SPMD_OUT (spmd) = DFMgenMaskCopy (WITH2_OUT_MASK (with));
-    SPMD_INOUT (spmd) = DFMgenMaskClear (FUNDEF_DFM_BASE (fundef));
-    SPMD_LOCAL (spmd) = DFMgenMaskCopy (WITH2_LOCAL_MASK (with));
-    SPMD_SHARED (spmd) = DFMgenMaskClear (FUNDEF_DFM_BASE (fundef));
-
-    /*
-     * add vars from LHS of with-loop assignment
-     */
-    with_ids = LET_IDS (instr);
-    while (with_ids != NULL) {
-        DFMsetMaskEntrySet (SPMD_OUT (spmd), NULL, IDS_AVIS (with_ids));
-        AVIS_SSAASSIGN (IDS_AVIS (with_ids)) = newassign;
-        with_ids = IDS_NEXT (with_ids);
-    }
-
-    DBUG_PRINT ("SPMDI", ("inserted new spmd-block"));
-
-    DBUG_RETURN (assign);
-}
-
-/******************************************************************************
- *
- * function:
  *   node *SPMDIassign( node *arg_node, info *arg_info)
  *
  * description:
@@ -304,41 +260,202 @@ InsertSPMD (node *assign, node *fundef)
 node *
 SPMDIassign (node *arg_node, info *arg_info)
 {
-    node *spmd_let;
+    node *spmd;
 
     DBUG_ENTER ("SPMDIassign");
 
-    spmd_let = ASSIGN_INSTR (arg_node);
+    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
-    /*
-     *  Contains the current assignment a with-loop that should be executed
-     *  concurrently??
-     */
-    if ((NODE_TYPE (spmd_let) == N_let) && (NODE_TYPE (LET_EXPR (spmd_let)) == N_with2)
-        && WithLoopIsAllowedConcurrentExecution (LET_EXPR (spmd_let))
-        && WithLoopIsWorthConcurrentExecution (LET_EXPR (spmd_let), LET_IDS (spmd_let))) {
+    if (INFO_PARALLELIZE (arg_info)) {
+        spmd
+          = TBmakeSpmd (INFO_CONDITION (arg_info),
+                        TBmakeBlock (TBmakeAssign (ASSIGN_INSTR (arg_node), NULL), NULL),
+                        INFO_SEQUENTIAL (arg_info));
 
-        arg_node = InsertSPMD (arg_node, INFO_FUNDEF (arg_info));
-        DBUG_PRINT ("SPMDI", ("inserted spmd"));
+        SPMD_IN (spmd) = INFO_IN_MASK (arg_info);
+        SPMD_OUT (spmd) = INFO_OUT_MASK (arg_info);
+        SPMD_INOUT (spmd) = INFO_INOUT_MASK (arg_info);
+        SPMD_LOCAL (spmd) = INFO_LOCAL_MASK (arg_info);
 
-    } else if ((NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_let)
-               || (NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_return)) {
-        DBUG_PRINT ("SPMDI",
-                    ("ignoring traversal of %s", NODE_TEXT (ASSIGN_INSTR (arg_node))));
-    } else {
-        DBUG_PRINT ("SPMDI", ("traverse into instruction %s",
-                              NODE_TEXT (ASSIGN_INSTR (arg_node))));
+        INFO_CONDITION (arg_info) = NULL;
+        INFO_SEQUENTIAL (arg_info) = NULL;
+        INFO_PARALLELIZE (arg_info) = FALSE;
 
-        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+        INFO_IN_MASK (arg_info) = NULL;
+        INFO_OUT_MASK (arg_info) = NULL;
+        INFO_INOUT_MASK (arg_info) = NULL;
+        INFO_LOCAL_MASK (arg_info) = NULL;
 
-        DBUG_PRINT ("SPMDI", ("traverse from instruction %s",
-                              NODE_TEXT (ASSIGN_INSTR (arg_node))));
+        ASSIGN_INSTR (arg_node) = spmd;
     }
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    } else {
-        DBUG_PRINT ("SPMDI", ("turnaround"));
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SPMDIlet( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+
+node *
+SPMDIlet (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("SPMDIlet");
+
+    INFO_LET (arg_info) = arg_node;
+
+    LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
+
+    if (INFO_PARALLELIZE (arg_info) && (LET_IDS (arg_node) != NULL)) {
+        LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
+    }
+
+    INFO_LET (arg_info) = NULL;
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SPMDIids( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+
+node *
+SPMDIids (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("SPMDIids");
+
+    DBUG_ASSERT (INFO_IN_MASK (arg_info) != NULL, "IN mask missing in arg_info node.");
+    DBUG_ASSERT (INFO_INOUT_MASK (arg_info) != NULL,
+                 "INOUT mask missing in arg_info node.");
+    DBUG_ASSERT (INFO_OUT_MASK (arg_info) != NULL, "OUT mask missing in arg_info node.");
+    DBUG_ASSERT (INFO_LOCAL_MASK (arg_info) != NULL,
+                 "LOCAL mask missing in arg_info node.");
+
+    DFMsetMaskEntrySet (INFO_OUT_MASK (arg_info), NULL, IDS_AVIS (arg_node));
+
+    if (IDS_NEXT (arg_node) != NULL) {
+        IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SPMDIwith2( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+
+node *
+SPMDIwith2 (node *arg_node, info *arg_info)
+{
+    bool may_parallelize = TRUE;
+
+    DBUG_ENTER ("SPMDIwith2");
+
+    INFO_HASFOLDOP (arg_info) = FALSE;
+
+    if (global.no_fold_parallel) {
+        WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
+        if (INFO_HASFOLDOP (arg_info)) {
+            may_parallelize = FALSE;
+        }
+    }
+
+    if (may_parallelize) {
+
+        INFO_PARALLELIZE (arg_info)
+          = IsWorthParallel (arg_node, LET_IDS (INFO_LET (arg_info)));
+        if (!INFO_PARALLELIZE (arg_info)) {
+            INFO_CONDITION (arg_info)
+              = MaybeWorthParallel (arg_node, LET_IDS (INFO_LET (arg_info)));
+            if (INFO_CONDITION (arg_info) != NULL) {
+                INFO_PARALLELIZE (arg_info) = TRUE;
+                INFO_SEQUENTIAL (arg_info)
+                  = TBmakeAssign (DUPdoDupTree (INFO_LET (arg_info)), NULL);
+            }
+        }
+    }
+
+    if (!INFO_PARALLELIZE (arg_info)) {
+        WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
+    } else if (INFO_CONDITION (arg_info) != NULL) {
+        node *stack_condition = INFO_CONDITION (arg_info);
+
+        INFO_PARALLELIZE (arg_info) = FALSE;
+        INFO_CONDITION (arg_info) = NULL;
+
+        INFO_SEQUENTIAL (arg_info) = TRAVdo (INFO_SEQUENTIAL (arg_info), arg_info);
+
+        INFO_PARALLELIZE (arg_info) = TRUE;
+        INFO_CONDITION (arg_info) = stack_condition;
+    }
+
+    if (INFO_PARALLELIZE (arg_info)) {
+        INFO_IN_MASK (arg_info) = DFMgenMaskCopy (WITH2_IN_MASK (arg_node));
+        INFO_INOUT_MASK (arg_info)
+          = DFMgenMaskClear (FUNDEF_DFM_BASE (INFO_FUNDEF (arg_info)));
+        INFO_OUT_MASK (arg_info) = DFMgenMaskCopy (WITH2_OUT_MASK (arg_node));
+        INFO_LOCAL_MASK (arg_info) = DFMgenMaskCopy (WITH2_LOCAL_MASK (arg_node));
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SPMDIfold( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+
+node *
+SPMDIfold (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("SPMDIfold");
+
+    INFO_HASFOLDOP (arg_info) = TRUE;
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SPMDIgenarray( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+
+node *
+SPMDIgenarray (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("SPMDIgenarray");
+
+    if (GENARRAY_NEXT (arg_node) != NULL) {
+        GENARRAY_NEXT (arg_node) = TRAVdo (GENARRAY_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SPMDImodarray( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+
+node *
+SPMDImodarray (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("SPMDImodarray");
+
+    if (MODARRAY_NEXT (arg_node) != NULL) {
+        MODARRAY_NEXT (arg_node) = TRAVdo (MODARRAY_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);

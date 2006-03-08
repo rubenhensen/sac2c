@@ -1,207 +1,6 @@
 /*
+ * $Id$
  *
- * $Log$
- * Revision 3.95  2005/09/27 16:09:39  sbs
- * -simd added
- *
- * Revision 3.94  2005/09/04 12:49:35  ktr
- * added new global optimization counters and made all optimizations proper subphases
- *
- * Revision 3.93  2005/06/02 15:02:37  sah
- * added -Mlib option and corresponding implementation
- *
- * Revision 3.92  2005/06/01 12:47:45  sah
- * added lots of runtime paths
- *
- * Revision 3.91  2005/05/30 13:07:55  cg
- * Option -maxrecinl de-activated temporarily.
- *
- * Revision 3.90  2005/05/17 11:36:46  cg
- * Option -maxinl replace by -maxrecinl.
- *
- * Revision 3.89  2005/04/25 15:03:51  sah
- * should work noew
- *
- * Revision 3.88  2005/04/24 15:19:10  sah
- * modified option handling slightly to allow
- * for the setup phase to run prior to libstat
- *
- * Revision 3.87  2005/04/15 13:23:04  ktr
- * added switch -d nolacinline
- *
- * Revision 3.86  2005/04/12 15:15:36  sah
- * cleaned up module system compiler args
- * and sac2crc parameters
- *
- * Revision 3.85  2005/04/07 16:16:27  cg
- * Textual arguments to command line options are now parsed case insensitive.
- * This allows us to write -noopt or -noOPT without specifying two different
- * options in options.c
- *
- * Revision 3.84  2005/03/10 09:41:09  cg
- * Removed options to control application of fun2lac and lac2fun
- * conversion.
- *
- * Revision 3.83  2005/02/18 15:52:38  sbs
- * strgcpy changed into ILIBstringCopy
- * i.e., no more SEGFAULT on -o option
- *
- * Revision 3.82  2005/02/11 14:40:30  jhb
- * added options for treecheck
- *
- * Revision 3.81  2005/01/29 21:40:38  mwe
- * sigspec compiler switch added
- *
- * Revision 3.80  2005/01/07 19:54:13  cg
- * Converted compile time output from Error.h to ctinfo.c
- *
- * Revision 3.79  2004/11/25 17:53:48  cg
- * SacDevCamp 04
- *
- * Revision 3.78  2004/11/24 16:02:03  cg
- * file streamlined.
- *
- * Revision 3.77  2004/10/28 16:58:43  khf
- * support for max_newgens and no_fold_fusion added
- *
- * Revision 3.76  2004/10/23 12:00:31  ktr
- * Added switches for static reuse / static free.
- *
- * Revision 3.75  2004/09/28 16:32:19  ktr
- * cleaned up concurrent (removed everything not working / not working with emm)
- *
- * Revision 3.74  2004/09/28 14:07:30  ktr
- * removed old refcount and generatemasks
- *
- * Revision 3.73  2004/09/24 12:53:00  ktr
- * MT&EMM reactivated (Once more, fingers crossing).
- *
- * Revision 3.72  2004/09/24 11:25:20  ktr
- * Combination of EMM/MT deactivated again (due to to new problems).
- *
- * Revision 3.71  2004/09/22 18:41:24  ktr
- * EMM is now activated for MT, too. (crossing fingers)
- *
- * Revision 3.70  2004/08/30 13:02:12  skt
- * enabled emm for MT_mtstblock
- *
- * Revision 3.69  2004/08/26 14:02:36  cg
- * Enabled emm (new refcounting) by default.
- *
- * Revision 3.68  2004/08/12 12:04:46  ktr
- * replaced flag reuse with flag noreuse.
- *
- * Revision 3.67  2004/08/10 16:13:42  ktr
- * reuse inference in EMM can now be activated using -reuse.
- *
- * Revision 3.66  2004/08/04 12:04:20  ktr
- * substituted eacc by emm
- *
- * Revision 3.65  2004/07/23 15:53:50  ktr
- * - removed OPT_BLIR
- * - removed -ktr
- * - added -emm -do/noeacc
- *
- * Revision 3.64  2004/07/19 13:08:04  ktr
- * adjusted break specifiers arg range to 1..25
- *
- * Revision 3.63  2004/07/15 13:36:59  ktr
- * show_refcount is only true during PH_oldrefcount
- *
- * Revision 3.62  2004/07/14 23:23:37  sah
- * removed all old ssa optimizations and the use_ssaform flag
- *
- * Revision 3.61  2004/04/30 13:21:03  ktr
- * Nothing really changed.
- *
- * Revision 3.60  2004/03/26 14:36:23  khf
- * support for wlpg added
- *
- * Revision 3.59  2004/03/10 00:10:17  dkrHH
- * old backend removed
- *
- * Revision 3.58  2004/03/02 16:49:15  mwe
- * support for cvp added
- *
- * Revision 3.57  2004/02/25 13:02:15  khf
- * added option -khf
- *
- * Revision 3.56  2004/02/05 10:37:14  cg
- * Re-factorized handling of different modes in multithreaded code
- * generation:
- * - Added enumeration type for representation of modes
- * - Renamed mode identifiers to more descriptive names.
- *
- * Revision 3.55  2003/12/10 17:33:16  khf
- * OPT_WLFS added for with-loop fusion
- *
- * Revision 3.54  2003/12/10 16:07:14  skt
- * changed compiler flag from -mtn to -mtmode and expanded mt-versions by one
- *
- * Revision 3.53  2003/10/14 12:21:51  cg
- * -mt for new backend activated (for testing only!!)
- *
- * Revision 3.52  2003/10/09 16:52:12  dkrHH
- * DAO for new backend activated
- *
- * Revision 3.51  2003/09/30 21:56:49  dkrHH
- * no changes done
- *
- * Revision 3.50  2003/09/17 18:54:32  dkr
- * RCAO renamed into DAO for new backend
- *
- * Revision 3.48  2003/09/16 16:10:49  sbs
- * specmode option added.
- *
- * Revision 3.47  2003/08/21 17:01:31  cg
- * Detection of tagged arrays backend now uses the dedicated
- * compiler option -has_tagged_backend.
- *
- * Revision 3.46  2003/08/16 08:38:03  ktr
- * SelectionPropagation added. Must currently be activated with -dosp.
- *
- * Revision 3.45  2003/08/05 11:36:19  ktr
- * Support for maxwls added.
- *
- * Revision 3.44  2003/08/04 18:07:31  dkr
- * -mt reactivated for new backend
- *
- * Revision 3.43  2003/07/28 15:35:06  cg
- * Added short version identification option (-V).
- * Full version information is now available with -VV
- * (verbose version).
- *
- * Revision 3.42  2003/05/21 16:38:02  ktr
- * added option -ktr
- *
- * Revision 3.41  2003/04/15 21:16:15  dkr
- * -DTAGGED_ARRAYS created only once
- *
- * Revision 3.40  2003/04/15 14:16:05  dkr
- * -DTAGGED_ARRAYS added for new backend
- *
- * Revision 3.39  2003/03/24 16:36:52  sbs
- * cppI added
- *
- * Revision 3.38  2003/03/20 14:02:29  sbs
- * config.h included; DISABLE_MT and DISABLE_PHM used.
- *
- * Revision 3.37  2003/03/13 17:18:26  dkr
- * -minarrayrep activated for new backend only
- *
- * Revision 3.36  2003/03/13 17:02:21  dkr
- * flags ordered correctly now
- *
- * Revision 3.35  2003/03/13 15:48:57  dkr
- * option -minarrayrep added
- *
- * Revision 3.34  2003/03/09 19:15:43  dkr
- * TRACE_AA added
- *
- * Revision 3.33  2003/03/09 17:13:54  ktr
- * added basic support for BLIR.
- *
- *  [...]
  *
  * Revision 2.1  1999/05/12 14:27:24  cg
  * initial revision
@@ -210,9 +9,9 @@
 
 /*****************************************************************************
  *
- * file:    options.c
+ * file:   options.c
  *
- * prefix:
+ * prefix: OPT
  *
  * description:
  *  This file provides means for the analysis of sac2c command line arguments.
@@ -381,11 +180,19 @@ OPTanalyseCommandline (node *syntax_tree)
 
     ARGS_BEGIN (global.argc, global.argv);
 
+    /*
+     * Options starting with aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+     */
+
     ARGS_FLAG ("apdiag", global.apdiag = TRUE);
 
     ARGS_OPTION ("aplimit", { ARG_RANGE (global.padding_overhead_limit, 0, 100); });
 
     ARGS_OPTION ("apdiagsize", ARG_NUM (global.apdiag_limit));
+
+    /*
+     * Options starting with bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+     */
 
     ARGS_OPTION_BEGIN ("b")
     {
@@ -412,6 +219,10 @@ OPTanalyseCommandline (node *syntax_tree)
         break_arg = ILIBfree (break_arg);
     }
     ARGS_OPTION_END ("b");
+
+    /*
+     * Options starting with ccccccccccccccccccccccccccccccccccccccccccc
+     */
 
     ARGS_OPTION_BEGIN ("check")
     {
@@ -456,6 +267,10 @@ OPTanalyseCommandline (node *syntax_tree)
 
     ARGS_FLAG ("c", global.break_after = PH_genccode);
 
+    /*
+     * Options starting with ddddddddddddddddddddddddddddddddddddddddddd
+     */
+
     ARGS_FLAG ("ds", global.dynamic_shapes = TRUE);
 
     ARGS_OPTION_BEGIN ("do")
@@ -489,7 +304,21 @@ OPTanalyseCommandline (node *syntax_tree)
 
     ARGS_OPTION ("D", global.cpp_vars[global.num_cpp_vars++] = ILIBstringCopy (ARG));
 
+    /*
+     * Options starting with eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+     */
+
+    ARGS_OPTION_BEGIN ("E")
+    {
+        FMGRappendPath (PK_extlib_path, FMGRabsolutePathname (ARG));
+    }
+    ARGS_OPTION_END ("E");
+
     ARGS_FLAG ("enforceIEEE", global.enforce_ieee = TRUE);
+
+    /*
+     * Options starting with ggggggggggggggggggggggggggggggggggggggggggg
+     */
 
     ARGS_OPTION_BEGIN ("genlib")
     {
@@ -504,15 +333,17 @@ OPTanalyseCommandline (node *syntax_tree)
 
     ARGS_FLAG ("g", global.cc_debug = TRUE);
 
+    /*
+     * Options starting with hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh
+     */
+
+    /*
+     * Options starting with iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii
+     */
+
     ARGS_OPTION ("initmheap", ARG_NUM (global.initial_master_heapsize));
     ARGS_OPTION ("initwheap", ARG_NUM (global.initial_worker_heapsize));
     ARGS_OPTION ("inituheap", ARG_NUM (global.initial_unified_heapsize));
-
-    ARGS_OPTION_BEGIN ("L")
-    {
-        FMGRappendPath (PK_lib_path, FMGRabsolutePathname (ARG));
-    }
-    ARGS_OPTION_END ("L");
 
     ARGS_OPTION_BEGIN ("I")
     {
@@ -520,11 +351,23 @@ OPTanalyseCommandline (node *syntax_tree)
     }
     ARGS_OPTION_END ("I");
 
-    ARGS_OPTION_BEGIN ("E")
+    /*
+     * Options starting with kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+     */
+
+    /*
+     * Options starting with lllllllllllllllllllllllllllllllllllllllllll
+     */
+
+    ARGS_OPTION_BEGIN ("L")
     {
-        FMGRappendPath (PK_extlib_path, FMGRabsolutePathname (ARG));
+        FMGRappendPath (PK_lib_path, FMGRabsolutePathname (ARG));
     }
-    ARGS_OPTION_END ("E");
+    ARGS_OPTION_END ("L");
+
+    /*
+     * Options starting with mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
+     */
 
     ARGS_FLAG ("mt", {
         if (store_mtmode == MT_none) {
@@ -549,8 +392,6 @@ OPTanalyseCommandline (node *syntax_tree)
     ARGS_OPTION_END ("mtmode");
 
     ARGS_OPTION ("maxnewgens", ARG_NUM (global.max_newgens));
-
-    ARGS_FLAG ("nofoldfusion", global.no_fold_fusion = TRUE);
 
     ARGS_OPTION ("maxoptcyc", ARG_NUM (global.max_optcycles));
 
@@ -591,6 +432,14 @@ OPTanalyseCommandline (node *syntax_tree)
     ARGS_FLAG ("M", global.makedeps = TRUE);
     ARGS_FLAG ("Mlib", global.makedeps = global.makelibdeps = TRUE);
 
+    /*
+     * Options starting with nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn
+     */
+
+    ARGS_FLAG ("nofoldfusion", global.no_fold_fusion = TRUE);
+
+    ARGS_FLAG ("nofoldparallel", global.no_fold_parallel = TRUE);
+
     ARGS_OPTION_BEGIN ("numthreads")
     {
         ARG_RANGE (store_num_threads, 1, global.max_threads);
@@ -616,6 +465,10 @@ OPTanalyseCommandline (node *syntax_tree)
     }
     ARGS_OPTION_END ("no");
 
+    /*
+     * Options starting with ooooooooooooooooooooooooooooooooooooooooooo
+     */
+
     ARGS_OPTION ("o", global.outfilename = ILIBstringCopy (ARG));
     /*
      * The option is only stored in outfilename,
@@ -627,6 +480,10 @@ OPTanalyseCommandline (node *syntax_tree)
      */
 
     ARGS_OPTION ("O", ARG_RANGE (global.cc_optimize, 0, 3));
+
+    /*
+     * Options starting with ppppppppppppppppppppppppppppppppppppppppppp
+     */
 
     ARGS_OPTION_BEGIN ("profile")
     {
@@ -640,6 +497,10 @@ OPTanalyseCommandline (node *syntax_tree)
         ARG_FLAGMASK_END ();
     }
     ARGS_OPTION_END ("profile");
+
+    /*
+     * Options starting with sssssssssssssssssssssssssssssssssssssssssss
+     */
 
     ARGS_OPTION_BEGIN ("sigspec")
     {
@@ -668,6 +529,10 @@ OPTanalyseCommandline (node *syntax_tree)
     }
     ARGS_OPTION_END ("specmode");
 
+    /*
+     * Options starting with ttttttttttttttttttttttttttttttttttttttttttt
+     */
+
     ARGS_OPTION ("target", global.target_name = ARG);
 
     ARGS_OPTION_BEGIN ("trace")
@@ -683,11 +548,19 @@ OPTanalyseCommandline (node *syntax_tree)
     }
     ARGS_OPTION_END ("trace");
 
+    /*
+     * Options starting with vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+     */
+
     ARGS_OPTION ("v", );
     /*
      * The -v option has allready been processed by OPTcheckSpecialOptions().
      * However, it must be repeated here with empty action part to avoid an
      * illegal command line option error.
+     */
+
+    /*
+     * Options starting with wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
      */
 
     ARGS_FLAG ("wls_aggressive", global.wls_aggressive = TRUE);
