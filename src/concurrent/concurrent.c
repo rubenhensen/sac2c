@@ -63,6 +63,11 @@ CONCdoConcurrent (node *syntax_tree)
         }
 
         /*
+         * Create MT-funs for exported and provided functions in modules
+         */
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_createmtfuns, syntax_tree);
+
+        /*
          * Infer data flow masks
          */
         syntax_tree = INFDFMSdoInferDfms (syntax_tree, HIDE_LOCALS_NEVER);

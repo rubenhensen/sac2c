@@ -97,7 +97,7 @@ psi-opt     = index_eliminate.o index_infer.o index_optimize.o \
 
 wltransform = wlpragma_funs.o wltransform.o wlidxs.o 
 
-concurrent  = concurrent.o spmd_init.o spmd_lift.o schedule.o \
+concurrent  = concurrent.o create_mtfuns.o spmd_init.o spmd_lift.o schedule.o \
               spmd_trav.o removespmd.o
 
 multithread = multithread_lib.o tag_executionmode.o \
