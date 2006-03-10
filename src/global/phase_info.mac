@@ -332,10 +332,10 @@ SUBPHASE (wltdcr, "dcr", "Removing dead code", DCRdoDeadCodeRemovalModule)
 PHASE (multithread, "Generating annotations for multithreaded execution",
        CONCdoConcurrent)
 
+SUBPHASE (spmdinit, "spmdinit", "Building SPMD blocks around with-loops", SPMDIdoSpmdInit)
+
 SUBPHASE (createmtfuns, "createmtfuns",
           "Creating MT variants of exported and provided functions", CMTFdoCreateMtFuns)
-
-SUBPHASE (spmdinit, "spmdinit", "Building SPMD blocks around with-loops", SPMDIdoSpmdInit)
 
 SUBPHASE (spmdlift, "spmdlift", "Lifting SPMD blocks to functions", SPMDLdoSpmdLift)
 

@@ -1647,13 +1647,7 @@
       startfun="NULL" include=".h"
       if="true"
       breakspec="co">
-      <traversal id="CMTF" name="Create MT functions" default="sons" include="create_mtfuns.h">
-        <travuser>
-          <node name="Module" />
-          <node name="Fundef" />
-        </travuser>
-      </traversal>
-      <traversal id="SPMDI" name="SPMD Init" default="sons" include="spmd_init.h">
+     <traversal id="SPMDI" name="SPMD Init" default="sons" include="spmd_init.h">
         <travuser>
           <node name="Module" />
           <node name="Fundef" />
@@ -1666,7 +1660,16 @@
           <node name="Modarray" />
         </travuser>
       </traversal>
-      <traversal id="SPMDL" name="SPMD Lift" default="sons" include="spmd_lift.h">
+      <traversal id="CMTF" name="Create MT functions" default="sons" include="create_mtfuns.h">
+        <travuser>
+          <node name="Module" />
+          <node name="Fundef" />
+          <node name="Assign" />
+          <node name="Spmd" />
+          <node name="Ap" />
+        </travuser>
+      </traversal>
+       <traversal id="SPMDL" name="SPMD Lift" default="sons" include="spmd_lift.h">
         <travuser>
           <node name="Fundef" />
           <node name="Spmd" />
@@ -2766,20 +2769,7 @@
           </type>
         </attribute>
         <attribute name="Companion">
-          <description>only for ST_spmdfun</description>
-          <type name="ExtLink">
-            <targets>
-              <target mandatory="no">
-                <node name="Fundef" />
-                <phases>
-                  <range from="repfun" to="final" /> 
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-        <attribute name="MtVariant">
-          <description>Reference to MT variant of regular function</description>
+          <description>used in both implementations of MT</description>
           <type name="ExtLink">
             <targets>
               <target mandatory="no">
@@ -2843,6 +2833,7 @@
         <flag name="IsDoFun" />
         <flag name="IsSpmdfun" />
         <flag name="IsMtfun" />
+        <flag name="IsStfun" />
         <flag name="IsWrapperfun" />
         <flag name="IsZombie" />
         <flag name="IsExtern" />

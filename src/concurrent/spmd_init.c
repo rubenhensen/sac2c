@@ -227,7 +227,7 @@ SPMDIfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SPMDIfundef");
 
-    if (!FUNDEF_ISMTFUN (arg_node) && (FUNDEF_BODY (arg_node) != NULL)) {
+    if (FUNDEF_BODY (arg_node) != NULL) {
         /*
          * Infer data flow masks
          */
@@ -384,19 +384,41 @@ SPMDIwith2 (node *arg_node, info *arg_info)
         }
     }
 
-    if (!INFO_PARALLELIZE (arg_info)) {
-        WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
-    } else if (INFO_CONDITION (arg_info) != NULL) {
-        node *stack_condition = INFO_CONDITION (arg_info);
+#if 0
 
-        INFO_PARALLELIZE (arg_info) = FALSE;
-        INFO_CONDITION (arg_info) = NULL;
+  /*
+   * The idea of this code is the following: If an outer with-loop is found not
+   * to be worth parallelization or if we decide at runtime not to parallelize
+   * it, we may still want to parallelize a nested with-loop within the first
+   * or outer one.
+   *
+   * However, this does not make too much sense. If we find a statically
+   * nested with-loop which we want to parallelize, it would make certainly
+   * more sense in this case to parallelize the outer coarse-grained with-loop
+   * rather than the inner with-loop and the decision not to parallelize the
+   * outer with-loop must be considered wrong.
+   *
+   * To cope with these cases we need decision criterion that reflects the
+   * computational weight of the code in addition to the size of the iteration
+   * space or the shape of arrays to be created. However, such a more complex
+   * criterion is left subject to future work for the time being.
+   */
 
-        INFO_SEQUENTIAL (arg_info) = TRAVdo (INFO_SEQUENTIAL (arg_info), arg_info);
-
-        INFO_PARALLELIZE (arg_info) = TRUE;
-        INFO_CONDITION (arg_info) = stack_condition;
-    }
+  if (!INFO_PARALLELIZE( arg_info)) {
+    WITH2_CODE( arg_node) = TRAVdo( WITH2_CODE( arg_node), arg_info);
+  }
+  else if (INFO_CONDITION( arg_info) != NULL) {
+    node *stack_condition = INFO_CONDITION( arg_info);
+      
+    INFO_PARALLELIZE( arg_info) = FALSE;
+    INFO_CONDITION( arg_info) = NULL;
+      
+    INFO_SEQUENTIAL( arg_info) = TRAVdo( INFO_SEQUENTIAL( arg_info), arg_info);
+      
+    INFO_PARALLELIZE( arg_info) = TRUE;
+    INFO_CONDITION( arg_info) = stack_condition;
+  }
+#endif
 
     if (INFO_PARALLELIZE (arg_info)) {
         INFO_IN_MASK (arg_info) = DFMgenMaskCopy (WITH2_IN_MASK (arg_node));

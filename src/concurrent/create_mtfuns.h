@@ -17,5 +17,8 @@ extern node *CMTFdoCreateMtFuns (node *syntax_tree);
 
 extern node *CMTFmodule (node *arg_node, info *arg_info);
 extern node *CMTFfundef (node *arg_node, info *arg_info);
+extern node *CMTFassign (node *arg_node, info *arg_info);
+extern node *CMTFap (node *arg_node, info *arg_info);
+extern node *CMTFspmd (node *arg_node, info *arg_info);
 
 #endif /* _SAC_CREATE_MTFUNS_H_ */

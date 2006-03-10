@@ -62,14 +62,14 @@ CONCdoConcurrent (node *syntax_tree)
         }
 
         /*
-         * Create MT-funs for exported and provided functions in modules
-         */
-        syntax_tree = PHrunCompilerSubPhase (SUBPH_createmtfuns, syntax_tree);
-
-        /*
          * Init SPMD blocks around with-loops
          */
         syntax_tree = PHrunCompilerSubPhase (SUBPH_spmdinit, syntax_tree);
+
+        /*
+         * Create MT-funs for exported and provided functions in modules
+         */
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_createmtfuns, syntax_tree);
 
         /*
          * Lift SPMD blocks to SPMD functions
