@@ -715,7 +715,7 @@ CRTWRPspfold (node *arg_node, info *arg_info)
     DBUG_ASSERT (SPFOLD_FUN (arg_node) != NULL, "N_spfold node wo FUN");
     DBUG_ASSERT (SPFOLD_NEUTRAL (arg_node) != NULL, "N_spfold node wo NEUTRAL");
 
-    FOLD_NEUTRAL (arg_node) = TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
+    SPFOLD_NEUTRAL (arg_node) = TRAVdo (SPFOLD_NEUTRAL (arg_node), arg_info);
 
     num_args = 2;
     wrapper = FindWrapper (SPFOLD_NS (arg_node), SPFOLD_FUN (arg_node), 2, 1,
