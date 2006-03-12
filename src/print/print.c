@@ -3067,73 +3067,44 @@ PRTspmd (node *arg_node, info *arg_info)
 
     fprintf (global.outfile, "\n");
 
-    if (SPMD_ICM_BEGIN (arg_node) == NULL) {
-        /*
-         * The SPMD-block has not yet been compiled.
-         */
+    INDENT;
+    fprintf (global.outfile, "/*** begin of SPMD region ***\n");
 
-        INDENT;
-        fprintf (global.outfile, "/*** begin of SPMD region ***\n");
+    INDENT;
+    fprintf (global.outfile, " * in:");
+    DFMprintMask (global.outfile, " %s", SPMD_IN (arg_node));
+    fprintf (global.outfile, "\n");
 
-        INDENT;
-        fprintf (global.outfile, " * in:");
-        DFMprintMask (global.outfile, " %s", SPMD_IN (arg_node));
-        fprintf (global.outfile, "\n");
+    INDENT;
+    fprintf (global.outfile, " * out:");
+    DFMprintMask (global.outfile, " %s", SPMD_OUT (arg_node));
+    fprintf (global.outfile, "\n");
 
-        INDENT;
-        fprintf (global.outfile, " * inout:");
-        DFMprintMask (global.outfile, " %s", SPMD_INOUT (arg_node));
-        fprintf (global.outfile, "\n");
+    INDENT;
+    fprintf (global.outfile, " * local:");
+    DFMprintMask (global.outfile, " %s", SPMD_LOCAL (arg_node));
+    fprintf (global.outfile, "\n");
 
-        INDENT;
-        fprintf (global.outfile, " * out:");
-        DFMprintMask (global.outfile, " %s", SPMD_OUT (arg_node));
-        fprintf (global.outfile, "\n");
+    INDENT;
+    fprintf (global.outfile, " */\n");
 
-        INDENT;
-        fprintf (global.outfile, " * local:");
-        DFMprintMask (global.outfile, " %s", SPMD_LOCAL (arg_node));
-        fprintf (global.outfile, "\n");
-
-        INDENT;
-        fprintf (global.outfile, " */\n");
-
-        if (SPMD_COND (arg_node) == NULL) {
-            TRAVdo (SPMD_REGION (arg_node), arg_info);
-        } else {
-            fprintf (global.outfile, "\n");
-            INDENT;
-            fprintf (global.outfile, "if (");
-            TRAVdo (SPMD_COND (arg_node), arg_info);
-            fprintf (global.outfile, ")\n");
-            TRAVdo (SPMD_REGION (arg_node), arg_info);
-            INDENT;
-            fprintf (global.outfile, "else\n");
-            TRAVdo (SPMD_SEQUENTIAL (arg_node), arg_info);
-        }
-
-        fprintf (global.outfile, "\n");
-        INDENT;
-        fprintf (global.outfile, "/*** end of SPMD region ***/\n");
+    if (SPMD_COND (arg_node) == NULL) {
+        TRAVdo (SPMD_REGION (arg_node), arg_info);
     } else {
-        /*
-         * print ICMs
-         */
-        INDENT;
-        TRAVdo (SPMD_ICM_BEGIN (arg_node), arg_info);
-        fprintf (global.outfile, "\n");
-        TRAVdo (SPMD_ICM_PARALLEL (arg_node), arg_info);
-        INDENT;
         fprintf (global.outfile, "\n");
         INDENT;
-        TRAVdo (SPMD_ICM_ALTSEQ (arg_node), arg_info);
-        fprintf (global.outfile, "\n");
-        TRAVdo (SPMD_ICM_SEQUENTIAL (arg_node), arg_info);
-        fprintf (global.outfile, "\n");
+        fprintf (global.outfile, "if (");
+        TRAVdo (SPMD_COND (arg_node), arg_info);
+        fprintf (global.outfile, ")\n");
+        TRAVdo (SPMD_REGION (arg_node), arg_info);
         INDENT;
-        TRAVdo (SPMD_ICM_END (arg_node), arg_info);
-        fprintf (global.outfile, "\n");
+        fprintf (global.outfile, "else\n");
+        TRAVdo (SPMD_SEQUENTIAL (arg_node), arg_info);
     }
+
+    fprintf (global.outfile, "\n");
+    INDENT;
+    fprintf (global.outfile, "/*** end of SPMD region ***/\n");
 
     DBUG_RETURN (arg_node);
 }

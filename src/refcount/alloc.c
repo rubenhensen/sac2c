@@ -1238,7 +1238,9 @@ EMALprf (node *arg_node, info *arg_info)
         als->shape = TCcreateZeroVector (0, T_int);
         break;
 
-    case F_singlethread:
+    case F_run_mt_genarray:
+    case F_run_mt_modarray:
+    case F_run_mt_fold:
         /*
          * boolean predicate
          */

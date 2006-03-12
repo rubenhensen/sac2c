@@ -288,12 +288,15 @@ USGprintUsage ()
 
     PRINT_BREAK_SPEC (PH_multithread, "spmdinit", "Stop after building SPMD blocks.");
     PRINT_BREAK_SPEC (PH_multithread, "spmdopt", "Stop after optimizing SPMD blocks.");
+    PRINT_BREAK_SPEC (PH_multithread, "createmtfuns",
+                      "Stop after creating MT/ST functions.");
     PRINT_BREAK_SPEC (PH_multithread, "spmdlift", "Stop after lifting SPMD blocks.");
-    PRINT_BREAK_SPEC (PH_multithread, "syncinit", "Stop after building SYNC blocks.");
-    PRINT_BREAK_SPEC (PH_multithread, "syncopt", "Stop after optimizing SYNC blocks.");
-    PRINT_BREAK_SPEC (PH_multithread, "scheduling",
-                      "Stop after scheduling SYNC blocks and with-loop segments.");
-    PRINT_BREAK_SPEC (PH_multithread, "spmdcons", "Stop after constraining SPMD blocks.");
+    PRINT_BREAK_SPEC (PH_multithread, "sched",
+                      "Stop after creating scheduling annotations.");
+    PRINT_BREAK_SPEC (PH_multithread, "rmspmd", "Stop after eliminating SPMD blocks.");
+    PRINT_BREAK_SPEC (PH_multithread, "l2f", "Stop after lifting SPMD conditionals.");
+    PRINT_BREAK_SPEC (PH_multithread, "ssa",
+                      "Stop after restoring SSA form in SPMD conditionals.");
 
     printf ("\n");
     printf ("    with \"-mt -mtmode 3\" (UNDER CONSTRUCTION!!!)\n");

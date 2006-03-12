@@ -144,12 +144,14 @@ PRF_IF (F_toi_S, "F_toi_S", "_toi_S_", "toi", FALSE, 1, NTCCTprf_toiS, COtoi, FA
   PRF_IF (F_dispatch_error, "F_dispatch_error", "_dispatch_error_", "dispatch_error",
           FALSE, 1, NTCCTprf_dummy, NULL, FALSE),
 
-  PRF_IF (F_phi, "F_phi", "_phi_", "phi", FALSE, 2, NTCCTprf_dummy, NULL, FALSE),
-
-  PRF_IF (F_singlethread, "F_singlethread", "_singlethread_", "singlethread", FALSE, 0,
-          NTCCTprf_dummy, NULL, FALSE),
-
   PRF_IF (F_esd_neg, "F_esd_neg", "_esd_neg_", "esd_neg", FALSE, 1, NTCCTprf_ari_op_A,
           COneg, FALSE),
   PRF_IF (F_esd_rec, "F_esd_rec", "_esd_rec_", "esd_rec", FALSE, 1, NTCCTprf_ari_op_A,
-          COrec, FALSE)
+          COrec, FALSE),
+
+  PRF_IF (F_run_mt_genarray, "F_run_mt_genarray", "_run_mt_genarray_", "run_mt_genarray",
+          FALSE, 1, NTCCTprf_dummy, NULL, FALSE),
+  PRF_IF (F_run_mt_modarray, "F_run_mt_modarray", "_run_mt_modarray_", "run_mt_modarray",
+          FALSE, 1, NTCCTprf_dummy, NULL, FALSE),
+  PRF_IF (F_run_mt_fold, "F_run_mt_fold", "_run_mt_fold_", "run_mt_fold", FALSE, 0,
+          NTCCTprf_dummy, NULL, FALSE)

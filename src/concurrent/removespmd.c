@@ -1,23 +1,22 @@
 /**
  *
- * $Id: datareuse.c 14355 2005-10-30 10:32:28Z ktr $
+ * $Id: $
  *
  * @file removespmd.c
  *
  */
+
 #include "removespmd.h"
 
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
 #include "dbug.h"
-#include "print.h"
 #include "internal_lib.h"
 #include "free.h"
 #include "shape.h"
 #include "new_types.h"
 #include "DataFlowMask.h"
-#include "DataFlowMaskUtils.h"
 
 /*
  * INFO structure
@@ -97,17 +96,40 @@ RMSPMDdoRemoveSpmdBlocks (node *syntax_tree)
  * prefix: RMSPMD
  *
  *****************************************************************************/
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *RMSPMDmodule( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+
+node *
+RMSPMDmodule (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("RMSPMDmodule");
+
+    if (MODULE_FUNS (arg_node) != NULL) {
+        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
 /** <!--********************************************************************-->
  *
  * @fn node *RMSPMDfundef( node *arg_node, info *arg_info)
  *
  *****************************************************************************/
+
 node *
 RMSPMDfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("RMSPMDfundef");
 
-    if (FUNDEF_BODY (arg_node) != NULL) {
+    if (FUNDEF_ISSTFUN (arg_node) && (FUNDEF_BODY (arg_node) != NULL)) {
+        /*
+         * Only ST funs may contain SPMD blocks.
+         */
         INFO_FUNDEF (arg_info) = arg_node;
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
     }
@@ -128,6 +150,7 @@ RMSPMDfundef (node *arg_node, info *arg_info)
  * @fn node *RMSPMDassign( node *arg_node, info *arg_info)
  *
  *****************************************************************************/
+
 node *
 RMSPMDassign (node *arg_node, info *arg_info)
 {
@@ -152,6 +175,7 @@ RMSPMDassign (node *arg_node, info *arg_info)
  * @fn node *RMSPMDspmd( node *arg_node, info *arg_info)
  *
  *****************************************************************************/
+
 node *
 RMSPMDspmd (node *arg_node, info *arg_info)
 {
@@ -161,34 +185,67 @@ RMSPMDspmd (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("RMSPMDspmd");
 
-    letap = TBmakeLet (DFMUdfm2LetIds (SPMD_OUT (arg_node), NULL),
-                       TBmakeAp (SPMD_FUNDEF (arg_node),
-                                 DFMUdfm2ApArgs (SPMD_IN (arg_node), NULL)));
-    thenblock = TBmakeBlock (TBmakeAssign (letap, NULL), NULL);
+    if (SPMD_COND (arg_node) == NULL) {
+        /*
+         * The spmd block is unconditional.
+         * We replace the entire block by the application of the corresponding
+         * spmd function.
+         */
+        letap = ASSIGN_INSTR (BLOCK_INSTR (SPMD_REGION (arg_node)));
 
-    elseblock = SPMD_REGION (arg_node);
-    SPMD_REGION (arg_node) = NULL;
+        DBUG_ASSERT (NODE_TYPE (letap) == N_let,
+                     "First assignment in spmd block is *not* application of spmd "
+                     "function.");
 
-    predavis = TBmakeAvis (ILIBtmpVar (),
-                           TYmakeAKS (TYmakeSimpleType (T_bool), SHmakeShape (0)));
-    FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-      = TBmakeVardec (predavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+        DBUG_ASSERT (NODE_TYPE (LET_EXPR (letap)) == N_ap,
+                     "First assignment in spmd block is *not* application of spmd "
+                     "function.");
 
-    INFO_PREASSIGN (arg_info)
-      = TBmakeAssign (TBmakeLet (TBmakeIds (predavis, NULL),
-                                 TBmakePrf (F_singlethread, NULL)),
-                      NULL);
-    pred = TBmakeId (predavis);
+        DBUG_ASSERT (FUNDEF_ISSPMDFUN (AP_FUNDEF (LET_EXPR (letap))),
+                     "First assignment in spmd block is *not* application of spmd "
+                     "function.");
 
-    /*
-     * Free spmd block
-     */
-    arg_node = FREEdoFreeNode (arg_node);
+        SPMD_REGION (arg_node) = TBmakeBlock (TBmakeEmpty (), NULL);
+        /*
+         * We must restore a correct N_spmd node for later de-allocation.
+         */
 
-    /*
-     * return conditional
-     */
-    arg_node = TBmakeCond (pred, thenblock, elseblock);
+        arg_node = FREEdoFreeNode (arg_node);
+
+        arg_node = letap;
+    } else {
+        predavis = TBmakeAvis (ILIBtmpVar (),
+                               TYmakeAKS (TYmakeSimpleType (T_bool), SHmakeShape (0)));
+        FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+          = TBmakeVardec (predavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+
+        INFO_PREASSIGN (arg_info)
+          = TBmakeAssign (TBmakeLet (TBmakeIds (predavis, NULL), SPMD_COND (arg_node)),
+                          NULL);
+        SPMD_COND (arg_node) = NULL;
+
+        pred = TBmakeId (predavis);
+
+        thenblock = SPMD_REGION (arg_node);
+        elseblock = SPMD_SEQUENTIAL (arg_node);
+
+        SPMD_REGION (arg_node) = TBmakeBlock (TBmakeEmpty (), NULL);
+        /*
+         * We must restore a correct N_spmd node for later de-allocation.
+         */
+
+        SPMD_SEQUENTIAL (arg_node) = NULL;
+
+        /*
+         * Free spmd block
+         */
+        arg_node = FREEdoFreeNode (arg_node);
+
+        /*
+         * return conditional
+         */
+        arg_node = TBmakeCond (pred, thenblock, elseblock);
+    }
 
     DBUG_RETURN (arg_node);
 }

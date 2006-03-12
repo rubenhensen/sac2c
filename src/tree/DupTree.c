@@ -1771,7 +1771,6 @@ DUPspmd (node *arg_node, info *arg_info)
                     DUPTRAV (SPMD_SEQUENTIAL (arg_node)));
 
     SPMD_IN (new_node) = DupDfmask (SPMD_IN (arg_node), arg_info);
-    SPMD_INOUT (new_node) = DupDfmask (SPMD_INOUT (arg_node), arg_info);
     SPMD_OUT (new_node) = DupDfmask (SPMD_OUT (arg_node), arg_info);
     SPMD_LOCAL (new_node) = DupDfmask (SPMD_LOCAL (arg_node), arg_info);
 

@@ -14,18 +14,20 @@
  *
  *****************************************************************************/
 
+#include "spmd_init.h"
+
 #include "dbug.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
 #include "DupTree.h"
+#include "free.h"
 #include "DataFlowMask.h"
 #include "globals.h"
 #include "shape.h"
 #include "new_types.h"
 #include "type_utils.h"
 #include "internal_lib.h"
-#include "InferDFMs.h"
 
 /**
  * INFO structure
@@ -34,13 +36,15 @@
 struct INFO {
     node *fundef;
     node *let;
+    node *letids;
     bool parallelize;
-    bool hasfoldop;
+    bool belowwith;
+    bool maypar;
+    bool isworth;
     node *condition;
     node *sequential;
 
     dfmask_t *in_mask;
-    dfmask_t *inout_mask;
     dfmask_t *out_mask;
     dfmask_t *local_mask;
 };
@@ -51,13 +55,15 @@ struct INFO {
 
 #define INFO_FUNDEF(n) (n->fundef)
 #define INFO_LET(n) (n->let)
+#define INFO_LETIDS(n) (n->letids)
 #define INFO_PARALLELIZE(n) (n->parallelize)
-#define INFO_HASFOLDOP(n) (n->hasfoldop)
+#define INFO_BELOWWITH(n) (n->belowwith)
+#define INFO_ISWORTH(n) (n->isworth)
+#define INFO_MAYPAR(n) (n->maypar)
 #define INFO_CONDITION(n) (n->condition)
 #define INFO_SEQUENTIAL(n) (n->sequential)
 
 #define INFO_IN_MASK(n) (n->in_mask)
-#define INFO_INOUT_MASK(n) (n->inout_mask)
 #define INFO_OUT_MASK(n) (n->out_mask)
 #define INFO_LOCAL_MASK(n) (n->local_mask)
 
@@ -76,13 +82,15 @@ MakeInfo ()
 
     INFO_FUNDEF (result) = NULL;
     INFO_LET (result) = NULL;
+    INFO_LETIDS (result) = NULL;
     INFO_PARALLELIZE (result) = FALSE;
-    INFO_HASFOLDOP (result) = FALSE;
+    INFO_BELOWWITH (result) = FALSE;
+    INFO_ISWORTH (result) = FALSE;
+    INFO_MAYPAR (result) = FALSE;
     INFO_CONDITION (result) = NULL;
     INFO_SEQUENTIAL (result) = NULL;
 
     INFO_IN_MASK (result) = NULL;
-    INFO_INOUT_MASK (result) = NULL;
     INFO_OUT_MASK (result) = NULL;
     INFO_LOCAL_MASK (result) = NULL;
 
@@ -131,20 +139,14 @@ SPMDIdoSpmdInit (node *syntax_tree)
     DBUG_RETURN (syntax_tree);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *   bool IsWorthParallel(node *wl, ids *let_var)
+ * @fn bool IsWorthParallel(node *withloop, node *let_var)
  *
- * description:
- *   This function decides whether a with-loop is actually worth to be executed
- *   concurrenly. This is necessary because for small with-loops the most
- *   efficient way of execution is just sequential.
- *
- ******************************************************************************/
+ *****************************************************************************/
 
 static bool
-IsWorthParallel (node *withloop, node *let_var)
+IsWorthParallel (node *withloop, node *let_ids)
 {
     node *withop;
     bool res;
@@ -154,12 +156,12 @@ IsWorthParallel (node *withloop, node *let_var)
 
     res = FALSE;
     withop = WITH2_WITHOP (withloop);
-    while (let_var != NULL) {
+    while (let_ids != NULL) {
         if (NODE_TYPE (withop) == N_fold) {
             res = TRUE;
         } else {
-            if (TUshapeKnown (IDS_NTYPE (let_var))) {
-                size = SHgetUnrLen (TYgetShape (IDS_NTYPE (let_var)));
+            if (TUshapeKnown (IDS_NTYPE (let_ids))) {
+                size = SHgetUnrLen (TYgetShape (IDS_NTYPE (let_ids)));
                 if (size < global.min_parallel_size) {
                     res = FALSE;
                 } else {
@@ -171,27 +173,21 @@ IsWorthParallel (node *withloop, node *let_var)
                 break;
             }
         }
-        let_var = IDS_NEXT (let_var);
+        let_ids = IDS_NEXT (let_ids);
         withop = WITHOP_NEXT (withop);
     }
 
     DBUG_RETURN (res);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *   int MaybeWorthParallel(node *wl, ids *let_var)
+ * @fn node *MaybeWorthParallel(node *withloop, node *let_ids)
  *
- * description:
- *
- *
- *
- *
- ******************************************************************************/
+ *****************************************************************************/
 
 static node *
-MaybeWorthParallel (node *withloop, node *let_var)
+MaybeWorthParallel (node *withloop, node *let_ids)
 {
     DBUG_ENTER ("MaybeWorthParallel");
 
@@ -228,10 +224,12 @@ SPMDIfundef (node *arg_node, info *arg_info)
     DBUG_ENTER ("SPMDIfundef");
 
     if (FUNDEF_BODY (arg_node) != NULL) {
-        /*
-         * Infer data flow masks
-         */
-        arg_node = INFDFMSdoInferDfms (arg_node, HIDE_LOCALS_NEVER);
+        if (FUNDEF_DFM_BASE (arg_node) != NULL) {
+            FUNDEF_DFM_BASE (arg_node) = DFMremoveMaskBase (FUNDEF_DFM_BASE (arg_node));
+        }
+
+        FUNDEF_DFM_BASE (arg_node)
+          = DFMgenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
 
         INFO_FUNDEF (arg_info) = arg_node;
 
@@ -252,7 +250,7 @@ SPMDIfundef (node *arg_node, info *arg_info)
  *
  * description:
  *   Generates a SPMD-region for each first level with-loop.
- *   Then in SPMD_IN/OUT/INOUT/LOCAL the in/out/inout/local-vars of the
+ *   Then in SPMD_IN/OUT/LOCAL the in/out/local-vars of the
  *   SPMD-region are stored.
  *
  ******************************************************************************/
@@ -266,24 +264,23 @@ SPMDIassign (node *arg_node, info *arg_info)
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
-    if (INFO_PARALLELIZE (arg_info)) {
+    if (INFO_PARALLELIZE (arg_info) && !INFO_BELOWWITH (arg_info)) {
         spmd
           = TBmakeSpmd (INFO_CONDITION (arg_info),
                         TBmakeBlock (TBmakeAssign (ASSIGN_INSTR (arg_node), NULL), NULL),
-                        INFO_SEQUENTIAL (arg_info));
-
-        SPMD_IN (spmd) = INFO_IN_MASK (arg_info);
-        SPMD_OUT (spmd) = INFO_OUT_MASK (arg_info);
-        SPMD_INOUT (spmd) = INFO_INOUT_MASK (arg_info);
-        SPMD_LOCAL (spmd) = INFO_LOCAL_MASK (arg_info);
+                        TBmakeBlock (TBmakeAssign (INFO_SEQUENTIAL (arg_info), NULL),
+                                     NULL));
 
         INFO_CONDITION (arg_info) = NULL;
         INFO_SEQUENTIAL (arg_info) = NULL;
         INFO_PARALLELIZE (arg_info) = FALSE;
 
+        SPMD_IN (spmd) = INFO_IN_MASK (arg_info);
+        SPMD_OUT (spmd) = INFO_OUT_MASK (arg_info);
+        SPMD_LOCAL (spmd) = INFO_LOCAL_MASK (arg_info);
+
         INFO_IN_MASK (arg_info) = NULL;
         INFO_OUT_MASK (arg_info) = NULL;
-        INFO_INOUT_MASK (arg_info) = NULL;
         INFO_LOCAL_MASK (arg_info) = NULL;
 
         ASSIGN_INSTR (arg_node) = spmd;
@@ -311,7 +308,7 @@ SPMDIlet (node *arg_node, info *arg_info)
 
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
-    if (INFO_PARALLELIZE (arg_info) && (LET_IDS (arg_node) != NULL)) {
+    if (LET_IDS (arg_node) != NULL) {
         LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
     }
 
@@ -331,17 +328,52 @@ SPMDIids (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SPMDIids");
 
-    DBUG_ASSERT (INFO_IN_MASK (arg_info) != NULL, "IN mask missing in arg_info node.");
-    DBUG_ASSERT (INFO_INOUT_MASK (arg_info) != NULL,
-                 "INOUT mask missing in arg_info node.");
-    DBUG_ASSERT (INFO_OUT_MASK (arg_info) != NULL, "OUT mask missing in arg_info node.");
-    DBUG_ASSERT (INFO_LOCAL_MASK (arg_info) != NULL,
-                 "LOCAL mask missing in arg_info node.");
+    if (INFO_BELOWWITH (arg_info)) {
 
-    DFMsetMaskEntrySet (INFO_OUT_MASK (arg_info), NULL, IDS_AVIS (arg_node));
+        DBUG_ASSERT (INFO_IN_MASK (arg_info) != NULL,
+                     "IN mask missing in arg_info node.");
+        DBUG_ASSERT (INFO_OUT_MASK (arg_info) != NULL,
+                     "OUT mask missing in arg_info node.");
+        DBUG_ASSERT (INFO_LOCAL_MASK (arg_info) != NULL,
+                     "LOCAL mask missing in arg_info node.");
+
+        DFMsetMaskEntrySet (INFO_LOCAL_MASK (arg_info), NULL, IDS_AVIS (arg_node));
+    } else {
+        if (INFO_OUT_MASK (arg_info) != NULL) {
+            DFMsetMaskEntrySet (INFO_OUT_MASK (arg_info), NULL, IDS_AVIS (arg_node));
+        }
+    }
 
     if (IDS_NEXT (arg_node) != NULL) {
         IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SPMDIid( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+
+node *
+SPMDIid (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("SPMDIid");
+
+    if (INFO_BELOWWITH (arg_info)) {
+
+        DBUG_ASSERT (INFO_IN_MASK (arg_info) != NULL,
+                     "IN mask missing in arg_info node.");
+        DBUG_ASSERT (INFO_OUT_MASK (arg_info) != NULL,
+                     "OUT mask missing in arg_info node.");
+        DBUG_ASSERT (INFO_LOCAL_MASK (arg_info) != NULL,
+                     "LOCAL mask missing in arg_info node.");
+
+        if (!DFMtestMaskEntry (INFO_LOCAL_MASK (arg_info), NULL, ID_AVIS (arg_node))) {
+            DFMsetMaskEntrySet (INFO_IN_MASK (arg_info), NULL, ID_AVIS (arg_node));
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -360,72 +392,90 @@ SPMDIwith2 (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("SPMDIwith2");
 
-    INFO_HASFOLDOP (arg_info) = FALSE;
+    if (INFO_BELOWWITH (arg_info)) {
+        /*
+         * We are already below a parallel with-loop. Hence, we only collect
+         * data flow information.
+         */
 
-    if (global.no_fold_parallel) {
+        WITH2_WITHID (arg_node) = TRAVdo (WITH2_WITHID (arg_node), arg_info);
+        WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
+    } else {
+
+        INFO_MAYPAR (arg_info) = TRUE;
+        INFO_ISWORTH (arg_info) = FALSE;
+        INFO_CONDITION (arg_info) = NULL;
+        INFO_LETIDS (arg_info) = LET_IDS (INFO_LET (arg_info));
+
         WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
-        if (INFO_HASFOLDOP (arg_info)) {
-            may_parallelize = FALSE;
-        }
-    }
 
-    if (may_parallelize) {
+        if (may_parallelize) {
 
-        INFO_PARALLELIZE (arg_info)
-          = IsWorthParallel (arg_node, LET_IDS (INFO_LET (arg_info)));
-        if (!INFO_PARALLELIZE (arg_info)) {
-            INFO_CONDITION (arg_info)
-              = MaybeWorthParallel (arg_node, LET_IDS (INFO_LET (arg_info)));
-            if (INFO_CONDITION (arg_info) != NULL) {
-                INFO_PARALLELIZE (arg_info) = TRUE;
-                INFO_SEQUENTIAL (arg_info)
-                  = TBmakeAssign (DUPdoDupTree (INFO_LET (arg_info)), NULL);
+            INFO_PARALLELIZE (arg_info)
+              = IsWorthParallel (arg_node, LET_IDS (INFO_LET (arg_info)));
+            if (!INFO_PARALLELIZE (arg_info)) {
+                INFO_CONDITION (arg_info)
+                  = MaybeWorthParallel (arg_node, LET_IDS (INFO_LET (arg_info)));
+                if (INFO_CONDITION (arg_info) != NULL) {
+                    INFO_PARALLELIZE (arg_info) = TRUE;
+                    INFO_SEQUENTIAL (arg_info) = DUPdoDupTree (INFO_LET (arg_info));
+                }
             }
         }
-    }
 
 #if 0
 
-  /*
-   * The idea of this code is the following: If an outer with-loop is found not
-   * to be worth parallelization or if we decide at runtime not to parallelize
-   * it, we may still want to parallelize a nested with-loop within the first
-   * or outer one.
-   *
-   * However, this does not make too much sense. If we find a statically
-   * nested with-loop which we want to parallelize, it would make certainly
-   * more sense in this case to parallelize the outer coarse-grained with-loop
-   * rather than the inner with-loop and the decision not to parallelize the
-   * outer with-loop must be considered wrong.
-   *
-   * To cope with these cases we need decision criterion that reflects the
-   * computational weight of the code in addition to the size of the iteration
-   * space or the shape of arrays to be created. However, such a more complex
-   * criterion is left subject to future work for the time being.
-   */
+    /*
+     * The idea of this code is the following: If an outer with-loop is found not
+     * to be worth parallelization or if we decide at runtime not to parallelize
+     * it, we may still want to parallelize a nested with-loop within the first
+     * or outer one.
+     *
+     * However, this does not make too much sense. If we find a statically
+     * nested with-loop which we want to parallelize, it would make certainly
+     * more sense in this case to parallelize the outer coarse-grained with-loop
+     * rather than the inner with-loop and the decision not to parallelize the
+     * outer with-loop must be considered wrong.
+     *
+     * To cope with these cases we need decision criterion that reflects the
+     * computational weight of the code in addition to the size of the iteration
+     * space or the shape of arrays to be created. However, such a more complex
+     * criterion is left subject to future work for the time being.
+     */
 
-  if (!INFO_PARALLELIZE( arg_info)) {
-    WITH2_CODE( arg_node) = TRAVdo( WITH2_CODE( arg_node), arg_info);
-  }
-  else if (INFO_CONDITION( arg_info) != NULL) {
-    node *stack_condition = INFO_CONDITION( arg_info);
+    if (!INFO_PARALLELIZE( arg_info)) {
+      WITH2_CODE( arg_node) = TRAVdo( WITH2_CODE( arg_node), arg_info);
+    }
+    else if (INFO_CONDITION( arg_info) != NULL) {
+      node *stack_condition = INFO_CONDITION( arg_info);
       
-    INFO_PARALLELIZE( arg_info) = FALSE;
-    INFO_CONDITION( arg_info) = NULL;
+      INFO_PARALLELIZE( arg_info) = FALSE;
+      INFO_CONDITION( arg_info) = NULL;
       
-    INFO_SEQUENTIAL( arg_info) = TRAVdo( INFO_SEQUENTIAL( arg_info), arg_info);
+      INFO_SEQUENTIAL( arg_info) = TRAVdo( INFO_SEQUENTIAL( arg_info), arg_info);
       
-    INFO_PARALLELIZE( arg_info) = TRUE;
-    INFO_CONDITION( arg_info) = stack_condition;
-  }
+      INFO_PARALLELIZE( arg_info) = TRUE;
+      INFO_CONDITION( arg_info) = stack_condition;
+    }
 #endif
 
-    if (INFO_PARALLELIZE (arg_info)) {
-        INFO_IN_MASK (arg_info) = DFMgenMaskCopy (WITH2_IN_MASK (arg_node));
-        INFO_INOUT_MASK (arg_info)
-          = DFMgenMaskClear (FUNDEF_DFM_BASE (INFO_FUNDEF (arg_info)));
-        INFO_OUT_MASK (arg_info) = DFMgenMaskCopy (WITH2_OUT_MASK (arg_node));
-        INFO_LOCAL_MASK (arg_info) = DFMgenMaskCopy (WITH2_LOCAL_MASK (arg_node));
+        if (INFO_PARALLELIZE (arg_info)) {
+            WITH2_MT (arg_node) = TRUE;
+
+            INFO_IN_MASK (arg_info)
+              = DFMgenMaskClear (FUNDEF_DFM_BASE (INFO_FUNDEF (arg_info)));
+            INFO_OUT_MASK (arg_info)
+              = DFMgenMaskClear (FUNDEF_DFM_BASE (INFO_FUNDEF (arg_info)));
+            INFO_LOCAL_MASK (arg_info)
+              = DFMgenMaskClear (FUNDEF_DFM_BASE (INFO_FUNDEF (arg_info)));
+
+            INFO_BELOWWITH (arg_info) = TRUE;
+
+            WITH2_WITHID (arg_node) = TRAVdo (WITH2_WITHID (arg_node), arg_info);
+            WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
+
+            INFO_BELOWWITH (arg_info) = FALSE;
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -442,7 +492,32 @@ SPMDIfold (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SPMDIfold");
 
-    INFO_HASFOLDOP (arg_info) = TRUE;
+    if (global.no_fold_parallel) {
+        /*
+         * We decided not to parallelize fold-with-loops.
+         * Therefore, we stop traversal of with-ops, reset the flags and delete
+         * a potential conditions derived from a previous with-op.
+         */
+        INFO_MAYPAR (arg_info) = FALSE;
+        INFO_ISWORTH (arg_info) = FALSE;
+        if (INFO_CONDITION (arg_info) != NULL) {
+            INFO_CONDITION (arg_info) = FREEdoFreeTree (INFO_CONDITION (arg_info));
+        }
+    } else {
+        if (FOLD_NEXT (arg_node) != NULL) {
+            INFO_LETIDS (arg_info) = IDS_NEXT (INFO_LETIDS (arg_info));
+            FOLD_NEXT (arg_node) = TRAVdo (FOLD_NEXT (arg_node), arg_info);
+        } else {
+            if (INFO_MAYPAR (arg_info) && !INFO_ISWORTH (arg_info)) {
+                /*
+                 * This with-loop only consists of fold operations. As long as we do
+                 * not have a proper condition on fold-with-loops, we parallelize
+                 * always.
+                 */
+                INFO_ISWORTH (arg_info) = TRUE;
+            }
+        }
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -456,10 +531,69 @@ SPMDIfold (node *arg_node, info *arg_info)
 node *
 SPMDIgenarray (node *arg_node, info *arg_info)
 {
+    int size;
+    bool size_static;
+    node *arg1, *arg2;
+
     DBUG_ENTER ("SPMDIgenarray");
 
+    size_static = TUshapeKnown (IDS_NTYPE (INFO_LETIDS (arg_info)));
+
+    if (size_static) {
+        size = SHgetUnrLen (TYgetShape (IDS_NTYPE (INFO_LETIDS (arg_info))));
+        if (size >= global.min_parallel_size) {
+            /*
+             * We statically know the size of the result array and its beyond the
+             * threshold. We parallelize unconditionally and eliminate a condition
+             * created before.
+             */
+            INFO_ISWORTH (arg_info) = TRUE;
+            if (INFO_CONDITION (arg_info) != NULL) {
+                INFO_CONDITION (arg_info) = FREEdoFreeTree (INFO_CONDITION (arg_info));
+            }
+        } else {
+            /*
+             * We statically know the size of the result array and its *not* beyond
+             * the threshold.
+             */
+            if (INFO_ISWORTH (arg_info)) {
+                /*
+                 * We previously considered the with-loop to be worth parallelization.
+                 * We stick to this initial decision.
+                 */
+            } else {
+                /*
+                 * We now know that the with-loop is not worth parallelization.
+                 * So, we eliminate a potential condition.
+                 */
+                if (INFO_CONDITION (arg_info) != NULL) {
+                    INFO_CONDITION (arg_info)
+                      = FREEdoFreeTree (INFO_CONDITION (arg_info));
+                }
+            }
+        }
+    } else {
+        /*
+         * We do not know the size statically.
+         * Nevertheless, we do not construct a condition here. We first continue
+         * the with-op traversal because we may find a modarray with-loop, which
+         * allows us to build a simpler condition.
+         */
+    }
+
     if (GENARRAY_NEXT (arg_node) != NULL) {
+        INFO_LETIDS (arg_info) = IDS_NEXT (INFO_LETIDS (arg_info));
         GENARRAY_NEXT (arg_node) = TRAVdo (GENARRAY_NEXT (arg_node), arg_info);
+    }
+
+    if (!size_static && (INFO_CONDITION (arg_info) == NULL)) {
+        /*
+         * We would like to give this with-loop a try and obviously there have been
+         * no modarray with-ops. So we must build a genarray parallelization criterion.
+         */
+        arg1 = TBmakeId (ID_AVIS (GENARRAY_SHAPE (arg_node)));
+        arg1 = TBmakeId (ID_AVIS (GENARRAY_DEFAULT (arg_node)));
+        INFO_CONDITION (arg_info) = TCmakePrf2 (F_run_mt_genarray, arg1, arg2);
     }
 
     DBUG_RETURN (arg_node);
@@ -474,9 +608,58 @@ SPMDIgenarray (node *arg_node, info *arg_info)
 node *
 SPMDImodarray (node *arg_node, info *arg_info)
 {
+    node *arg;
+    int size;
+
     DBUG_ENTER ("SPMDImodarray");
 
+    if (TUshapeKnown (IDS_NTYPE (INFO_LETIDS (arg_info)))) {
+        size = SHgetUnrLen (TYgetShape (IDS_NTYPE (INFO_LETIDS (arg_info))));
+        if (size >= global.min_parallel_size) {
+            /*
+             * We statically know the size of the result array and its beyond the
+             * threshold. We parallelize unconditionally and eliminate a condition
+             * created before.
+             */
+            INFO_ISWORTH (arg_info) = TRUE;
+            if (INFO_CONDITION (arg_info) != NULL) {
+                INFO_CONDITION (arg_info) = FREEdoFreeTree (INFO_CONDITION (arg_info));
+            }
+        } else {
+            /*
+             * We statically know the size of the result array and its *not* beyond
+             * the threshold.
+             */
+            if (INFO_ISWORTH (arg_info)) {
+                /*
+                 * We previously considered the with-loop to be worth parallelization.
+                 * We stick to this initial decision.
+                 */
+            } else {
+                /*
+                 * We now know that the with-loop is not worth parallelization.
+                 * So, we eliminate a potential condition.
+                 */
+                if (INFO_CONDITION (arg_info) != NULL) {
+                    INFO_CONDITION (arg_info)
+                      = FREEdoFreeTree (INFO_CONDITION (arg_info));
+                }
+            }
+        }
+    } else {
+        /*
+         * We do not know the size statically. So, we give it a try and generate
+         * a condition if no condition exists so far. Otherwise, we stick to the
+         * existing condition.
+         */
+        if (INFO_CONDITION (arg_info) == NULL) {
+            arg = TBmakeId (ID_AVIS (MODARRAY_ARRAY (arg_node)));
+            INFO_CONDITION (arg_info) = TCmakePrf1 (F_run_mt_modarray, arg);
+        }
+    }
+
     if (MODARRAY_NEXT (arg_node) != NULL) {
+        INFO_LETIDS (arg_info) = IDS_NEXT (INFO_LETIDS (arg_info));
         MODARRAY_NEXT (arg_node) = TRAVdo (MODARRAY_NEXT (arg_node), arg_info);
     }
 

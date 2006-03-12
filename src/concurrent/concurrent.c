@@ -10,18 +10,19 @@
  *
  *   This file initiates and guides the compilation process of building
  *   SPMD regions within the compiled SAC code. This entire process consists
- *   of 7 consecutive steps:
+ *   of 8 consecutive steps:
  *    - building spmd-blocks
- *    - EMM: Move alloc and dec_rc operations of local vars into spmd-blocks
- *    - optimizing/enlarging spmd-blocks
+ *    - optimizing/enlarging spmd-blocks (not yet implemented)
+ *    - creating ST/MT functions
  *    - lifting spmd-blocks to spmd-functions
- *    - building synchronisation blocks
- *    - optimizing/enlarging synchronisation blocks
- *    - scheduling synchronisation blocks and with-loop segments
- *    - constraining spmd-blocks/spmd-functions
- *
+ *    - consolidating scheduling information
+ *    - eliminating spmd-blocks
+ *    - lifting conditionals into separate functions (restore SSA form)
+ *    - eliminating multiple assignments (restore SSA form)
  *
  *****************************************************************************/
+
+#include "concurrent.h"
 
 #include "dbug.h"
 #include "ctinfo.h"
@@ -77,7 +78,7 @@ CONCdoConcurrent (node *syntax_tree)
         syntax_tree = PHrunCompilerSubPhase (SUBPH_spmdlift, syntax_tree);
 
         /*
-         * Remove scheduling informations outside of SPMD functions AND
+         * Remove scheduling information outside of SPMD functions AND
          * give each segment specification within an SPMD function scheduling
          * specifications.
          * These are either infered from the context or extracted from

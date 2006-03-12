@@ -179,6 +179,73 @@ MakeCompanion (node *fundef)
 
 /******************************************************************************
  *
+ * @fn node *HandleApFold( node *arg_node, info *arg_info)
+ *
+ *  @brief Joint traversal function for N_ap and N_fold nodes.
+ *
+ *  @param arg_node
+ *  @param arg_info
+ *
+ *  @return arg_node
+ *
+ *****************************************************************************/
+
+static node *
+HandleApFold (node *callee, info *arg_info)
+{
+    DBUG_ENTER ("HandleApFold");
+
+    if (FUNDEF_ISMTFUN (callee) || FUNDEF_ISSTFUN (callee)) {
+        /*
+         * This function has already been processed before.
+         */
+        if ((FUNDEF_ISMTFUN (callee) && INFO_MTCONTEXT (arg_info))
+            || (FUNDEF_ISSTFUN (callee) && !INFO_MTCONTEXT (arg_info))) {
+            /*
+             * The called function is already in the right mode.
+             * Hence, we do nothing.
+             */
+        } else {
+            /*
+             * The called function is in the wrong mode.
+             */
+            if (FUNDEF_COMPANION (callee) == NULL) {
+                /*
+                 * There is no companion yet, so we must create one,
+                 * exchange the callee with its companion, traverse
+                 * the new companion to recursively bring it into the right mode,
+                 * and eventually append it to the list of companions.
+                 */
+
+                callee = TRAVdo (MakeCompanion (callee), arg_info);
+
+                FUNDEF_NEXT (callee) = INFO_COMPANIONS (arg_info);
+                INFO_COMPANIONS (arg_info) = callee;
+            } else {
+                /*
+                 * The companion already exists. So, we simply exchange the called
+                 * function.
+                 */
+                callee = FUNDEF_COMPANION (callee);
+            }
+        }
+    } else {
+        /*
+         * This function has not yet been processed at all.
+         * We turn it into the right mode and continue traversal in the callee.
+         */
+
+        FUNDEF_ISMTFUN (callee) = INFO_MTCONTEXT (arg_info);
+        FUNDEF_ISSTFUN (callee) = !INFO_MTCONTEXT (arg_info);
+
+        callee = TRAVdo (callee, arg_info);
+    }
+
+    DBUG_RETURN (callee);
+}
+
+/******************************************************************************
+ *
  * @fn node *CMTFmodule( node *arg_node, info *arg_info)
  *
  *  @brief CMTF traversal function for N_module node
@@ -410,62 +477,35 @@ CMTFassign (node *arg_node, info *arg_info)
 node *
 CMTFap (node *arg_node, info *arg_info)
 {
+    DBUG_ENTER ("CMTFap");
+
+    AP_FUNDEF (arg_node) = HandleApFold (AP_FUNDEF (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * @fn node *CMTFfold( node *arg_node, info *arg_info)
+ *
+ *  @brief CMTF traversal function for N_fold node
+ *
+ *  @param arg_node
+ *  @param arg_info
+ *
+ *  @return arg_node
+ *
+ *****************************************************************************/
+
+node *
+CMTFfold (node *arg_node, info *arg_info)
+{
     node *companion;
     node *callee;
 
-    DBUG_ENTER ("CMTFap");
+    DBUG_ENTER ("CMTFfold");
 
-    //  if (FUNDEF_ISLACFUN( AP_FUNDEF( arg_node))) {
-
-    callee = AP_FUNDEF (arg_node);
-
-    if (FUNDEF_ISMTFUN (callee) || FUNDEF_ISSTFUN (callee)) {
-        /*
-         * This function has already been processed before.
-         */
-        if ((FUNDEF_ISMTFUN (callee) && INFO_MTCONTEXT (arg_info))
-            || (FUNDEF_ISSTFUN (callee) && !INFO_MTCONTEXT (arg_info))) {
-            /*
-             * The called function is already in the right mode.
-             * Hence, we do nothing.
-             */
-        } else {
-            /*
-             * The called function is in the wrong mode.
-             */
-            if (FUNDEF_COMPANION (callee) == NULL) {
-                /*
-                 * There is no companion yet, so we must create one,
-                 * exchange the callee with its companion, traverse
-                 * the new companion to recursively bring it into the right mode,
-                 * and eventually append it to the list of companions.
-                 */
-
-                companion = MakeCompanion (callee);
-                FUNDEF_COMPANION (callee) = TRAVdo (companion, arg_info);
-                AP_FUNDEF (arg_node) = companion;
-
-                FUNDEF_NEXT (companion) = INFO_COMPANIONS (arg_info);
-                INFO_COMPANIONS (arg_info) = companion;
-            } else {
-                /*
-                 * The companion already exists. So, we simply exchange the called
-                 * function.
-                 */
-                AP_FUNDEF (arg_node) = FUNDEF_COMPANION (callee);
-            }
-        }
-    } else {
-        /*
-         * This function has not yet been processed at all.
-         * We turn it into the right mode and continue traversal in the callee.
-         */
-
-        FUNDEF_ISMTFUN (callee) = INFO_MTCONTEXT (arg_info);
-        FUNDEF_ISSTFUN (callee) = !INFO_MTCONTEXT (arg_info);
-
-        AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
-    }
+    FOLD_FUNDEF (arg_node) = HandleApFold (FOLD_FUNDEF (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

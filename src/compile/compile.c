@@ -274,7 +274,7 @@ MakeTypeArgs (char *name, types *type, bool add_type, bool add_dim, bool add_sha
 
     /*
      * CAUTION:
-     * It is important that (dim <= 0) is hold for AKD and AUD arrays
+     * It is important that (dim <= 0) holds for AKD and AUD arrays
      * otherwise the VARINT-interpretation of the shape-args would fail
      * during icm2c!!
      */
@@ -4380,9 +4380,10 @@ COMPPrfVect2Offset (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPPrfSingleThread( node *arg_node, info *arg_info)
+ * @fn  node *COMPPrfRunMt( node *arg_node, info *arg_info)
  *
- * @brief  Compiles N_prf node of type F_singlethread.
+ * @brief  Compiles N_prf node of type F_run_mt_genarray, F_run_mt_modarray
+ *   and F_run_mt_fold.
  *   The return value is a N_assign chain of ICMs.
  *   Note, that the old 'arg_node' is removed by COMPLet.
  *
@@ -4392,16 +4393,16 @@ COMPPrfVect2Offset (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 static node *
-COMPPrfSingleThread (node *arg_node, info *arg_info)
+COMPPrfRunMt (node *arg_node, info *arg_info, char *icm_name)
 {
     node *let_ids;
     node *ret_node;
 
-    DBUG_ENTER ("COMPPrfSingleThread");
+    DBUG_ENTER ("COMPPrfRunMt");
 
     let_ids = INFO_LASTIDS (arg_info);
 
-    ret_node = TCmakeAssignIcm1 ("ND_PRF_SINGLETHREAD__DATA",
+    ret_node = TCmakeAssignIcm1 (icm_name,
                                  MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
                                                FALSE, TRUE, FALSE, NULL),
                                  NULL);
@@ -4441,10 +4442,10 @@ COMPprf (node *arg_node, info *arg_info)
         ret_node = COMPPrfDispatchError (arg_node, arg_info);
         break;
     case F_to_unq:
-        ret_node = COMPIdToUnique (AP_ARG1 (arg_node), arg_info);
+        ret_node = COMPIdToUnique (PRF_ARG1 (arg_node), arg_info);
         break;
     case F_from_unq:
-        ret_node = COMPIdFromUnique (AP_ARG1 (arg_node), arg_info);
+        ret_node = COMPIdFromUnique (PRF_ARG1 (arg_node), arg_info);
 
         /*
          *  explicit memory management instructions
@@ -4652,8 +4653,14 @@ COMPprf (node *arg_node, info *arg_info)
         /*
          * MT predicate
          */
-    case F_singlethread:
-        ret_node = COMPPrfSingleThread (arg_node, arg_info);
+    case F_run_mt_genarray:
+        ret_node = COMPPrfRunMt (arg_node, arg_info, "ND_PRF_RUNMTGENARRAY__DATA");
+        break;
+    case F_run_mt_modarray:
+        ret_node = COMPPrfRunMt (arg_node, arg_info, "ND_PRF_RUNMTMODARRAY__DATA");
+        break;
+    case F_run_mt_fold:
+        ret_node = COMPPrfRunMt (arg_node, arg_info, "ND_PRF_RUNMTFOLD__DATA");
         break;
 
         /*

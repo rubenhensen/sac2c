@@ -1654,6 +1654,7 @@
           <node name="Assign" />
           <node name="Let" />
           <node name="Ids" />
+          <node name="Id" />
           <node name="With2" />
           <node name="Fold" />
           <node name="Genarray" />
@@ -1667,13 +1668,14 @@
           <node name="Assign" />
           <node name="Spmd" />
           <node name="Ap" />
+          <node name="Fold" />
         </travuser>
       </traversal>
        <traversal id="SPMDL" name="SPMD Lift" default="sons" include="spmd_lift.h">
         <travuser>
+          <node name="Module" />
           <node name="Fundef" />
           <node name="Spmd" />
-          <node name="With2" />
         </travuser>
       </traversal>
       <traversal id="SCHED" name="Schedule" default="sons" include="schedule.h">
@@ -1686,6 +1688,7 @@
       </traversal>
       <traversal id="RMSPMD" name="Remove Spmd blocks traversal"  default="sons" include="removespmd.h">
         <travuser>
+          <node name="Module" />
           <node name="Fundef" />
           <node name="Assign" />
           <node name="Spmd" />
@@ -4874,7 +4877,7 @@
             </target>
           </targets>
         </son>
-        <son name="SEQUENTIAL">
+        <son name="Sequential">
           <targets>
             <target mandatory="no">
               <node name="Block" />
@@ -4910,18 +4913,6 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="InOut" default="NULL">
-          <type name="DFMask">
-            <targets>
-              <target mandatory="yes">
-                <any />
-                <phases>
-                  <all />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
         <attribute name="Local" default="NULL">
           <type name="DFMask">
             <targets>
@@ -4929,78 +4920,6 @@
                 <any />
                 <phases>
                   <all />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-        <attribute name="Fundef" default="NULL">
-          <type name="ExtLink">
-            <targets>
-              <target mandatory="yes">
-              <node name="Fundef" />
-                <phases>
-                  <all />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-        <attribute name="ICM_Begin">
-          <type name="Node">
-            <targets>
-              <target mandatory="yes">
-                <node name="Icm" />
-                <phases>
-                  <range from="comp" to="final" />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-        <attribute name="ICM_Parallel">
-          <type name="Node">
-            <targets>
-              <target mandatory="yes">
-                <node name="Block" />
-                <phases>
-                  <range from="comp" to="final" />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-        <attribute name="ICM_AltSeq">
-          <type name="Node">
-            <targets>
-              <target mandatory="yes">
-                <node name="Icm" />
-                <phases>
-                  <range from="comp" to="final" />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-        <attribute name="ICM_Sequential">
-          <type name="Node">
-            <targets>
-              <target mandatory="yes">
-                <node name="Block" />
-                <phases>
-                  <range from="comp" to="final" />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-        <attribute name="ICM_End">
-          <type name="Node">
-            <targets>
-              <target mandatory="yes">
-                <node name="Icm" />
-                <phases>
-                  <range from="comp" to="final" />
                 </phases>
               </target>
             </targets>
