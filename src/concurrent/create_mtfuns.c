@@ -511,9 +511,6 @@ CMTFap (node *arg_node, info *arg_info)
 node *
 CMTFfold (node *arg_node, info *arg_info)
 {
-    node *companion;
-    node *callee;
-
     DBUG_ENTER ("CMTFfold");
 
     FOLD_FUNDEF (arg_node) = HandleApFold (FOLD_FUNDEF (arg_node), arg_info);
