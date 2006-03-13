@@ -141,61 +141,6 @@ SPMDIdoSpmdInit (node *syntax_tree)
 
 /** <!--********************************************************************-->
  *
- * @fn bool IsWorthParallel(node *withloop, node *let_var)
- *
- *****************************************************************************/
-
-static bool
-IsWorthParallel (node *withloop, node *let_ids)
-{
-    node *withop;
-    bool res;
-    int size;
-
-    DBUG_ENTER ("IsWorthParallel");
-
-    res = FALSE;
-    withop = WITH2_WITHOP (withloop);
-    while (let_ids != NULL) {
-        if (NODE_TYPE (withop) == N_fold) {
-            res = TRUE;
-        } else {
-            if (TUshapeKnown (IDS_NTYPE (let_ids))) {
-                size = SHgetUnrLen (TYgetShape (IDS_NTYPE (let_ids)));
-                if (size < global.min_parallel_size) {
-                    res = FALSE;
-                } else {
-                    res = TRUE;
-                    break;
-                }
-            } else {
-                res = TRUE;
-                break;
-            }
-        }
-        let_ids = IDS_NEXT (let_ids);
-        withop = WITHOP_NEXT (withop);
-    }
-
-    DBUG_RETURN (res);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *MaybeWorthParallel(node *withloop, node *let_ids)
- *
- *****************************************************************************/
-
-static node *
-MaybeWorthParallel (node *withloop, node *let_ids)
-{
-    DBUG_ENTER ("MaybeWorthParallel");
-
-    DBUG_RETURN (NULL);
-}
-
-/** <!--********************************************************************-->
- *
  * @fn node *SPMDImodule( node *arg_node, info *arg_info)
  *
  *****************************************************************************/
@@ -388,8 +333,6 @@ SPMDIid (node *arg_node, info *arg_info)
 node *
 SPMDIwith2 (node *arg_node, info *arg_info)
 {
-    bool may_parallelize = TRUE;
-
     DBUG_ENTER ("SPMDIwith2");
 
     if (INFO_BELOWWITH (arg_info)) {
@@ -409,72 +352,30 @@ SPMDIwith2 (node *arg_node, info *arg_info)
 
         WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
 
-        if (may_parallelize) {
+        if (INFO_MAYPAR (arg_info)) {
 
-            INFO_PARALLELIZE (arg_info)
-              = IsWorthParallel (arg_node, LET_IDS (INFO_LET (arg_info)));
-            if (!INFO_PARALLELIZE (arg_info)) {
-                INFO_CONDITION (arg_info)
-                  = MaybeWorthParallel (arg_node, LET_IDS (INFO_LET (arg_info)));
-                if (INFO_CONDITION (arg_info) != NULL) {
-                    INFO_PARALLELIZE (arg_info) = TRUE;
-                    INFO_SEQUENTIAL (arg_info) = DUPdoDupTree (INFO_LET (arg_info));
-                }
+            if (INFO_ISWORTH (arg_info) || (INFO_CONDITION (arg_info) != NULL)) {
+                INFO_PARALLELIZE (arg_info) = TRUE;
+                INFO_SEQUENTIAL (arg_info) = DUPdoDupTree (INFO_LET (arg_info));
+
+                WITH2_MT (arg_node) = TRUE;
+
+                INFO_IN_MASK (arg_info)
+                  = DFMgenMaskClear (FUNDEF_DFM_BASE (INFO_FUNDEF (arg_info)));
+                INFO_OUT_MASK (arg_info)
+                  = DFMgenMaskClear (FUNDEF_DFM_BASE (INFO_FUNDEF (arg_info)));
+                INFO_LOCAL_MASK (arg_info)
+                  = DFMgenMaskClear (FUNDEF_DFM_BASE (INFO_FUNDEF (arg_info)));
+
+                INFO_BELOWWITH (arg_info) = TRUE;
+
+                WITH2_WITHID (arg_node) = TRAVdo (WITH2_WITHID (arg_node), arg_info);
+                WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
+
+                INFO_BELOWWITH (arg_info) = FALSE;
             }
-        }
-
-#if 0
-
-    /*
-     * The idea of this code is the following: If an outer with-loop is found not
-     * to be worth parallelization or if we decide at runtime not to parallelize
-     * it, we may still want to parallelize a nested with-loop within the first
-     * or outer one.
-     *
-     * However, this does not make too much sense. If we find a statically
-     * nested with-loop which we want to parallelize, it would make certainly
-     * more sense in this case to parallelize the outer coarse-grained with-loop
-     * rather than the inner with-loop and the decision not to parallelize the
-     * outer with-loop must be considered wrong.
-     *
-     * To cope with these cases we need decision criterion that reflects the
-     * computational weight of the code in addition to the size of the iteration
-     * space or the shape of arrays to be created. However, such a more complex
-     * criterion is left subject to future work for the time being.
-     */
-
-    if (!INFO_PARALLELIZE( arg_info)) {
-      WITH2_CODE( arg_node) = TRAVdo( WITH2_CODE( arg_node), arg_info);
-    }
-    else if (INFO_CONDITION( arg_info) != NULL) {
-      node *stack_condition = INFO_CONDITION( arg_info);
-      
-      INFO_PARALLELIZE( arg_info) = FALSE;
-      INFO_CONDITION( arg_info) = NULL;
-      
-      INFO_SEQUENTIAL( arg_info) = TRAVdo( INFO_SEQUENTIAL( arg_info), arg_info);
-      
-      INFO_PARALLELIZE( arg_info) = TRUE;
-      INFO_CONDITION( arg_info) = stack_condition;
-    }
-#endif
-
-        if (INFO_PARALLELIZE (arg_info)) {
-            WITH2_MT (arg_node) = TRUE;
-
-            INFO_IN_MASK (arg_info)
-              = DFMgenMaskClear (FUNDEF_DFM_BASE (INFO_FUNDEF (arg_info)));
-            INFO_OUT_MASK (arg_info)
-              = DFMgenMaskClear (FUNDEF_DFM_BASE (INFO_FUNDEF (arg_info)));
-            INFO_LOCAL_MASK (arg_info)
-              = DFMgenMaskClear (FUNDEF_DFM_BASE (INFO_FUNDEF (arg_info)));
-
-            INFO_BELOWWITH (arg_info) = TRUE;
-
-            WITH2_WITHID (arg_node) = TRAVdo (WITH2_WITHID (arg_node), arg_info);
+        } else {
             WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
-
-            INFO_BELOWWITH (arg_info) = FALSE;
         }
     }
 
