@@ -3,6 +3,13 @@
 #include <string.h>
 #include <stdarg.h>
 
+#include "../../../src/global/config.h"
+/*
+ * This construction is rather ugly since it incorporates the directory
+ * structure into the code. However, the only solution would be to abandon
+ * config.h entirely and move the configuration data to Makefile.Config.
+ */
+
 #define DBUG 0
 #define USE_CB 1
 
@@ -303,11 +310,52 @@ ProcessCFile (char *prefix, int use_shp, int use_hid, int use_unq)
     }
 }
 
+char *
+CreateTmpFileName ()
+{
+    char *tmp_file;
+
+#ifdef HAVE_MKDTEMP
+    /* mkdtemp is safer than tempnam and recommended */
+    /* on linux/bsd platforms.                       */
+
+    tmp_file = (char *)malloc (12);
+
+    if (tmp_file == NULL) {
+        fprintf (stderr, "System failed to create temporary file.");
+    }
+
+    tmp_file = strcpy (tmp_file, "SAC_XXXXXX");
+
+    tmp_file = mkdtemp (tmp_file);
+
+    if (tmp_file == NULL) {
+        fprintf (stderr, "System failed to create temporary file.");
+    }
+
+#else /* HAVE_MKDTEMP */
+
+    /* the old way for platforms not */
+    /* supporting mkdtemp            */
+
+    tmp_file = tempnam (NULL, "SAC_");
+
+    if (tmp_file == NULL) {
+        fprintf (stderr, "System failed to create temporary file.");
+    }
+
+#endif /* HAVE_MKDTEMP */
+
+    return (tmp_file);
+}
+
 int
 main ()
 {
     int use_shp, use_hid, use_unq;
-    char *tmpfileprefix = tempnam (NULL, "SAC_");
+    char *tmpfileprefix;
+
+    tmpfileprefix = CreateTmpFileName ();
 
     fprintf (stdout, "Enter the H-ICM call to be tested:\n");
     fprintf (stdout,
