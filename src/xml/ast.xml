@@ -1675,6 +1675,8 @@
         <travuser>
           <node name="Module" />
           <node name="Fundef" />
+          <node name="Block" />
+          <node name="Vardec" />
           <node name="Spmd" />
         </travuser>
       </traversal>
@@ -4845,6 +4847,11 @@
         </flag>
         <flag name="IsDead" >
           <description>Used by MarkMemVals traversal in order to indicate 
+            which VARDECS are no longer needed and can thus be eliminated.
+          </description>
+        </flag>
+        <flag name="IsLifted" >
+          <description>Used by SpmdLift traversal in order to indicate 
             which VARDECS are no longer needed and can thus be eliminated.
           </description>
         </flag>

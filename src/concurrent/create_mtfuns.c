@@ -344,6 +344,17 @@ CMTFfundef (node *arg_node, info *arg_info)
             FUNDEF_NEXT (arg_node) = INFO_COMPANIONS (arg_info);
             INFO_COMPANIONS (arg_info) = NULL;
         }
+
+        if (!FUNDEF_ISMTFUN (arg_node) && !FUNDEF_ISSTFUN (arg_node)) {
+            FUNDEF_ISSTFUN (arg_node) = TRUE;
+            /*
+             * We have now processed all functions. If functions are left that are
+             * neither tagged ST nor MT, they are neither exported/provided nor used
+             * internally. They should have been removed by DFR, but maybe DFR was
+             * disabled. To continue compilation in an ordered manner, we tag these
+             * functions ST.
+             */
+        }
     } else {
         /*
          * We are *not* at the spine of the fundef chain.

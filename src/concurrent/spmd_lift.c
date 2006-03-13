@@ -140,6 +140,16 @@ CreateVardecs (node *spmd, lut_t *lut)
         lut = LUTinsertIntoLutP (lut, avis, newavis);
         DBUG_PRINT ("SPMDL", ("inserted local variable %s", AVIS_NAME (avis)));
 
+        if (SPMD_COND (spmd) == NULL) {
+            /*
+             * If this spmd block is unconditional, the local variables no longer
+             * occur in the original function after we have lifted them to the
+             * spmd function. They are marked here, and the corresponding vardec
+             * nodes are removed later on.
+             */
+            AVIS_ISLIFTED (avis) = TRUE;
+        }
+
         avis = DFMgetMaskEntryAvisSet (NULL);
     }
 
@@ -254,6 +264,48 @@ SPMDLfundef (node *arg_node, info *arg_info)
          */
         FUNDEF_NEXT (arg_node) = INFO_SPMDFUNS (arg_info);
         INFO_SPMDFUNS (arg_info) = NULL;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SPMDLblock( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+
+node *
+SPMDLblock (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("SPMDLblock");
+
+    BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
+
+    if (BLOCK_VARDEC (arg_node) != NULL) {
+        BLOCK_VARDEC (arg_node) = TRAVdo (BLOCK_VARDEC (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SPMDLvardec( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+
+node *
+SPMDLvardec (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("SPMDLvardec");
+
+    if (VARDEC_NEXT (arg_node) != NULL) {
+        VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
+    }
+
+    if (AVIS_ISLIFTED (VARDEC_AVIS (arg_node))) {
+        arg_node = FREEdoFreeNode (arg_node);
     }
 
     DBUG_RETURN (arg_node);
