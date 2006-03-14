@@ -426,6 +426,11 @@ GLOBAL (bool, treecheck, FALSE)
  * check syntaxtree for consistency with xml specification
  */
 
+GLOBAL (bool, memcheck, FALSE)
+/*
+ * check syntaxtree for memoryproblems with xml specification
+ */
+
 GLOBAL (bool, use_efence, FALSE)
 /*
  * link executable with ElectricFence (Malloc Debugger)

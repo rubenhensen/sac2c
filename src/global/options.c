@@ -293,6 +293,7 @@ OPTanalyseCommandline (node *syntax_tree)
     {
         ARG_CHOICE_BEGIN ();
         ARG_CHOICE ("treecheck", global.treecheck = TRUE);
+        ARG_CHOICE ("memcheck", global.memcheck = TRUE);
         ARG_CHOICE ("efence", global.use_efence = TRUE);
         ARG_CHOICE ("nocleanup", global.cleanup = FALSE);
         ARG_CHOICE ("nolacinline", global.lacinline = FALSE);

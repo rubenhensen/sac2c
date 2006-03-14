@@ -11,6 +11,7 @@
 #include "tree_compound.h"
 #include "DupTree.h"
 #include "check.h"
+#include "check_mem.h"
 
 #include "phase.h"
 
@@ -126,6 +127,10 @@ PHrunCompilerPhase (compiler_phase_t phase, node *syntax_tree)
         syntax_tree = CHKdoTreeCheck (syntax_tree);
     }
 
+    if (global.memcheck && (syntax_tree != NULL)) {
+        syntax_tree = CHKMdoMemCheck (syntax_tree);
+    }
+
     if ((global.my_dbug) && (global.my_dbug_active)
         && (global.compiler_phase >= global.my_dbug_to)) {
         DBUG_POP ();
@@ -154,6 +159,10 @@ PHrunCompilerSubPhase (compiler_subphase_t subphase, node *syntax_tree)
 
     if ((global.treecheck) && (syntax_tree != NULL)) {
         syntax_tree = CHKdoTreeCheck (syntax_tree);
+    }
+
+    if (global.memcheck && (syntax_tree != NULL)) {
+        syntax_tree = CHKMdoMemCheck (syntax_tree);
     }
 
     if ((global.break_after == global.compiler_phase)
@@ -192,6 +201,10 @@ PHrunOptimizationInCycle (compiler_subphase_t subphase, int pass, node *syntax_t
 
         if ((global.treecheck) && (syntax_tree != NULL)) {
             syntax_tree = CHKdoTreeCheck (syntax_tree);
+        }
+
+        if (global.memcheck && (syntax_tree != NULL)) {
+            syntax_tree = CHKMdoMemCheck (syntax_tree);
         }
     }
 

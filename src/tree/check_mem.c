@@ -19,6 +19,7 @@
 #include "tree_compound.h"
 #include "check_lib.h"
 #include "types_trav.h"
+#include "phase.h"
 
 typedef struct MEMOBJ {
     int size;
@@ -27,7 +28,7 @@ typedef struct MEMOBJ {
     char *file;
     int line;
     compiler_subphase_t subphase;
-    trav_t traversal;
+    const char *traversal;
     bool used_bit;
     bool shared_bit;
 } memobj;
@@ -49,6 +50,8 @@ typedef struct MEMOBJ {
 
 static void CHKManalyzeMemtab (memobj *, int);
 
+static char *CHKMtoString (memobj *);
+
 static memobj *memtab = NULL;
 static int memfreeslots = 0;
 static int memindex = 0;
@@ -56,16 +59,16 @@ static int memtabsize = 0;
 
 /** <!--********************************************************************-->
  *
- * @fn node *CHKMdoCheckMemory( node *syntax_tree)
+ * @fn node *CHKMdoMemCheck( node *syntax_tree)
  *
  * the traversal start function
  *
  *****************************************************************************/
 node *
-CHKMdoCheckMemory (node *syntax_tree)
+CHKMdoMemCheck (node *syntax_tree)
 {
 
-    DBUG_ENTER ("CHKMdoCheckMemory");
+    DBUG_ENTER ("CHKMdoMemCheck");
 
     DBUG_PRINT ("CHKM", ("Traversing heap..."));
 
@@ -154,8 +157,8 @@ CHKMregisterMem (int size, void *orig_ptr)
     MEMOBJ_USEDBIT (memobj_ptr) = 0;
     MEMOBJ_SHAREDBIT (memobj_ptr) = 0;
     MEMOBJ_NODETYPE (memobj_ptr) = N_undefined;
-    MEMOBJ_SUBPHASE (memobj_ptr) = SUBPH_final;
-    MEMOBJ_TRAVERSAL (memobj_ptr) = TR_undefined;
+    MEMOBJ_SUBPHASE (memobj_ptr) = global.compiler_subphase;
+    MEMOBJ_TRAVERSAL (memobj_ptr) = TRAVgetName ();
 
     *(memobj **)orig_ptr = memobj_ptr;
 
@@ -230,6 +233,8 @@ CHKManalyzeMemtab (memobj *memtab, int memindex)
     memobj *copy_memtab;
     int copy_index;
     node *arg_node;
+    char *string;
+    char *memtab_info;
 
     DBUG_ENTER ("CHKManalyzeMemtab");
 
@@ -237,9 +242,9 @@ CHKManalyzeMemtab (memobj *memtab, int memindex)
        must copy the memtab(!) to freeze, because Node_Error expand again the
        memtab and so can possibly change the back pointers
     **********************************/
-
     copy_memtab = memtab;
     copy_index = memindex;
+    string = NULL;
 
     arg_node = (node *)ORIG2SHIFT (MEMOBJ_PTR (memtab));
 
@@ -253,11 +258,11 @@ CHKManalyzeMemtab (memobj *memtab, int memindex)
                 /* =========== Nodetypes =========== */
                 if (MEMOBJ_USEDBIT (memobj_ptr) || MEMOBJ_SHAREDBIT (memobj_ptr)) {
 
-                    CTIwarn ("dangling Ptr: File: %s Line: %d", MEMOBJ_FILE (memobj_ptr),
-                             MEMOBJ_LINE (memobj_ptr));
+                    memtab_info = CHKMtoString (memobj_ptr);
+                    string = ILIBstringConcat ("dangling Ptr:", memtab_info);
 
                     NODE_ERROR (arg_node)
-                      = CHKinsertError (NODE_ERROR (arg_node), "dangling Pointer: ");
+                      = CHKinsertError (NODE_ERROR (arg_node), string);
                 }
             }
         } else {
@@ -266,26 +271,28 @@ CHKManalyzeMemtab (memobj *memtab, int memindex)
                 /* =========== Nodetypes =========== */
                 if (!MEMOBJ_USEDBIT (memobj_ptr)) {
 
-                    NODE_ERROR (arg_node)
-                      = CHKinsertError (NODE_ERROR (arg_node), "spaceleak(node): ");
+                    memtab_info = CHKMtoString (memobj_ptr);
+                    string = ILIBstringConcat ("Spaceleak(node):", memtab_info);
 
-                    CTIwarn ("spaceleak(node): File: %s Line: %d Used_Bit: %d",
-                             MEMOBJ_FILE (memobj_ptr), MEMOBJ_LINE (memobj_ptr),
-                             MEMOBJ_USEDBIT (memobj_ptr));
+                    NODE_ERROR (arg_node)
+                      = CHKinsertError (NODE_ERROR (arg_node), string);
                 } else {
                     if (MEMOBJ_SHAREDBIT (memobj_ptr)) {
 
-                        NODE_ERROR (arg_node)
-                          = CHKinsertError (NODE_ERROR (arg_node), "shared memory: ");
+                        memtab_info = CHKMtoString (memobj_ptr);
+                        string = ILIBstringConcat ("shared memory:", memtab_info);
 
-                        CTIwarn ("shared memory: File: %s Line: %d",
-                                 MEMOBJ_FILE (memobj_ptr), MEMOBJ_LINE (memobj_ptr));
+                        NODE_ERROR (arg_node)
+                          = CHKinsertError (NODE_ERROR (arg_node), memtab_info);
                     }
                 }
             } else { /*
                   =========== not Nodetypes ===========
                  if (( MEMOBJ_PTR( memobj_ptr) != NULL) &&
                      ( !MEMOBJ_USEDBIT( memobj_ptr))) {
+
+                   memtab_info = CHKMtoString( memobj_ptr);
+                   string = ILIBstringConcat( "Spaceleak:", memtab_info);
 
                    CTIwarn( "spaceleak: File: %s Line: %d Used_Bit: %d",
                             MEMOBJ_FILE( memobj_ptr),
@@ -295,7 +302,6 @@ CHKManalyzeMemtab (memobj *memtab, int memindex)
             }
         }
     }
-
     DBUG_VOID_RETURN;
 }
 
@@ -364,7 +370,7 @@ CHKMsetSubphase (node *shifted_ptr, compiler_subphase_t subphase)
  *
  *****************************************************************************/
 void
-CHKMsetTraversal (node *shifted_ptr, trav_t traversal)
+CHKMsetTraversal (node *shifted_ptr)
 {
     memobj *memobj_ptr;
 
@@ -372,7 +378,7 @@ CHKMsetTraversal (node *shifted_ptr, trav_t traversal)
 
     memobj_ptr = SHIFT2MEMOBJ (shifted_ptr);
 
-    MEMOBJ_TRAVERSAL (memobj_ptr) = traversal;
+    MEMOBJ_TRAVERSAL (memobj_ptr) = TRAVgetName ();
 
     DBUG_VOID_RETURN;
 }
@@ -396,5 +402,34 @@ CHKMgetSize (node *shifted_ptr)
 
     DBUG_RETURN (size);
 }
+
+static char *
+CHKMtoString (memobj *memobj_ptr)
+{
+    char *str;
+    int test = 0;
+
+    DBUG_ENTER ("CHKMtoString");
+
+    str = (char *)ILIBmalloc (sizeof (char) * 512);
+
+    CTIwarn ("File:%s, Line:%d, Traversal:%s, Subphase:%s", MEMOBJ_FILE (memobj_ptr),
+             MEMOBJ_LINE (memobj_ptr), MEMOBJ_TRAVERSAL (memobj_ptr),
+             PHsubPhaseName (MEMOBJ_SUBPHASE (memobj_ptr)));
+
+    test = snprintf (str, 512, "File:%s, Line:%d, Traversal:%s, Subphase:%s",
+                     MEMOBJ_FILE (memobj_ptr), MEMOBJ_LINE (memobj_ptr),
+                     MEMOBJ_TRAVERSAL (memobj_ptr),
+                     PHsubPhaseName (MEMOBJ_SUBPHASE (memobj_ptr)));
+
+    if (test >= 512) {
+        snprintf (str, test, "File:%s, Line:%d, Traversal:%s, Subphase:%s",
+                  MEMOBJ_FILE (memobj_ptr), MEMOBJ_LINE (memobj_ptr),
+                  MEMOBJ_TRAVERSAL (memobj_ptr),
+                  PHsubPhaseName (MEMOBJ_SUBPHASE (memobj_ptr)));
+    }
+
+    DBUG_RETURN (str);
+};
 
 #endif /* SHOW_MALLOC */

@@ -9,7 +9,7 @@
 
 #include "types.h"
 
-extern node *CHKMdoCheckMemory (node *syntax_tree);
+extern node *CHKMdoMemCheck (node *syntax_tree);
 extern node *CHKMassignSpaceLeaks (node *arg_node, info *arg_info);
 
 extern void *CHKMregisterMem (int size, void *orig_ptr);
