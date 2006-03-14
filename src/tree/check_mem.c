@@ -235,6 +235,8 @@ CHKManalyzeMemtab (memobj *memtab, int memindex)
     node *arg_node;
     char *string;
     char *memtab_info;
+    int *cnt_sharedmem;
+    int *cnt_spaceleaks;
 
     DBUG_ENTER ("CHKManalyzeMemtab");
 
@@ -245,6 +247,8 @@ CHKManalyzeMemtab (memobj *memtab, int memindex)
     copy_memtab = memtab;
     copy_index = memindex;
     string = NULL;
+    cnt_sharedmem = 0;
+    cnt_spaceleaks = 0;
 
     arg_node = (node *)ORIG2SHIFT (MEMOBJ_PTR (memtab));
 
@@ -259,7 +263,7 @@ CHKManalyzeMemtab (memobj *memtab, int memindex)
                 if (MEMOBJ_USEDBIT (memobj_ptr) || MEMOBJ_SHAREDBIT (memobj_ptr)) {
 
                     memtab_info = CHKMtoString (memobj_ptr);
-                    string = ILIBstringConcat ("dangling Ptr:", memtab_info);
+                    string = ILIBstringConcat ("dangling Ptr: ", memtab_info);
 
                     NODE_ERROR (arg_node)
                       = CHKinsertError (NODE_ERROR (arg_node), string);
@@ -272,18 +276,20 @@ CHKManalyzeMemtab (memobj *memtab, int memindex)
                 if (!MEMOBJ_USEDBIT (memobj_ptr)) {
 
                     memtab_info = CHKMtoString (memobj_ptr);
-                    string = ILIBstringConcat ("Spaceleak(node):", memtab_info);
+                    string = ILIBstringConcat ("Spaceleak(node): ", memtab_info);
 
                     NODE_ERROR (arg_node)
                       = CHKinsertError (NODE_ERROR (arg_node), string);
+                    cnt_spaceleaks++;
                 } else {
                     if (MEMOBJ_SHAREDBIT (memobj_ptr)) {
 
                         memtab_info = CHKMtoString (memobj_ptr);
-                        string = ILIBstringConcat ("shared memory:", memtab_info);
+                        string = ILIBstringConcat ("shared memory: ", memtab_info);
 
                         NODE_ERROR (arg_node)
-                          = CHKinsertError (NODE_ERROR (arg_node), memtab_info);
+                          = CHKinsertError (NODE_ERROR (arg_node), string);
+                        cnt_sharedmem++;
                     }
                 }
             } else { /*
@@ -302,6 +308,9 @@ CHKManalyzeMemtab (memobj *memtab, int memindex)
             }
         }
     }
+    CTIwarn (">>>>> Counter Spaceleaks: %d Counter Shared Memory: %d", cnt_spaceleaks,
+             cnt_sharedmem);
+
     DBUG_VOID_RETURN;
 }
 
@@ -412,21 +421,32 @@ CHKMtoString (memobj *memobj_ptr)
     DBUG_ENTER ("CHKMtoString");
 
     str = (char *)ILIBmalloc (sizeof (char) * 512);
-
-    CTIwarn ("File:%s, Line:%d, Traversal:%s, Subphase:%s", MEMOBJ_FILE (memobj_ptr),
-             MEMOBJ_LINE (memobj_ptr), MEMOBJ_TRAVERSAL (memobj_ptr),
-             PHsubPhaseName (MEMOBJ_SUBPHASE (memobj_ptr)));
-
-    test = snprintf (str, 512, "File:%s, Line:%d, Traversal:%s, Subphase:%s",
+    /*
+    CTIwarn( "File:%s, Line:%d, Traversal:%s, Subphase:%s, "
+             "Used_bit: %d, Shared_bit: %d",
+             MEMOBJ_FILE( memobj_ptr),
+             MEMOBJ_LINE( memobj_ptr),
+             MEMOBJ_TRAVERSAL( memobj_ptr),
+             PHsubPhaseName( MEMOBJ_SUBPHASE( memobj_ptr)),
+             MEMOBJ_USEDBIT( memobj_ptr),
+             MEMOBJ_SHAREDBIT( memobj_ptr));
+    */
+    test = snprintf (str, 512,
+                     "File: %s, Line: %d, Traversal: %s, Subphase: %s, "
+                     "Used_bit: %d, Shared_bit: %d",
                      MEMOBJ_FILE (memobj_ptr), MEMOBJ_LINE (memobj_ptr),
                      MEMOBJ_TRAVERSAL (memobj_ptr),
-                     PHsubPhaseName (MEMOBJ_SUBPHASE (memobj_ptr)));
+                     PHsubPhaseName (MEMOBJ_SUBPHASE (memobj_ptr)),
+                     MEMOBJ_USEDBIT (memobj_ptr), MEMOBJ_SHAREDBIT (memobj_ptr));
 
     if (test >= 512) {
-        snprintf (str, test, "File:%s, Line:%d, Traversal:%s, Subphase:%s",
+        snprintf (str, test,
+                  "File:%s, Line:%d, Traversal:%s, Subphase:%s, "
+                  "Used_bit: %d, Shared_bit: %d",
                   MEMOBJ_FILE (memobj_ptr), MEMOBJ_LINE (memobj_ptr),
                   MEMOBJ_TRAVERSAL (memobj_ptr),
-                  PHsubPhaseName (MEMOBJ_SUBPHASE (memobj_ptr)));
+                  PHsubPhaseName (MEMOBJ_SUBPHASE (memobj_ptr)),
+                  MEMOBJ_USEDBIT (memobj_ptr), MEMOBJ_SHAREDBIT (memobj_ptr));
     }
 
     DBUG_RETURN (str);
