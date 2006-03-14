@@ -979,7 +979,7 @@ CreateEmptyGenWLReplacement (node *wl, info *arg_info)
         code = WITH_CODE (wl);
         if (GENARRAY_DEFAULT (WITH_WITHOP (wl)) != NULL) {
             CODE_CBLOCK (code) = FREEdoFreeTree (CODE_CBLOCK (code));
-            CODE_CBLOCK (code) = TBmakeEmpty ();
+            CODE_CBLOCK (code) = TBmakeBlock (TBmakeEmpty (), NULL);
 
             EXPRS_EXPR (CODE_CEXPRS (code))
               = FREEdoFreeTree (EXPRS_EXPR (CODE_CEXPRS (code)));
