@@ -14,6 +14,7 @@
 #include "checktst.h"
 #include "globals.h"
 #include "ctinfo.h"
+#include "phase.h"
 
 /** <!--********************************************************************-->
  *

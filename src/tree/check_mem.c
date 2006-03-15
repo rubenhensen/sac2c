@@ -420,29 +420,20 @@ CHKMtoString (memobj *memobj_ptr)
 
     DBUG_ENTER ("CHKMtoString");
 
-    str = (char *)ILIBmalloc (sizeof (char) * 512);
-    /*
-    CTIwarn( "File:%s, Line:%d, Traversal:%s, Subphase:%s, "
-             "Used_bit: %d, Shared_bit: %d",
-             MEMOBJ_FILE( memobj_ptr),
-             MEMOBJ_LINE( memobj_ptr),
-             MEMOBJ_TRAVERSAL( memobj_ptr),
-             PHsubPhaseName( MEMOBJ_SUBPHASE( memobj_ptr)),
-             MEMOBJ_USEDBIT( memobj_ptr),
-             MEMOBJ_SHAREDBIT( memobj_ptr));
-    */
-    test = snprintf (str, 512,
+    str = (char *)ILIBmalloc (sizeof (char) * 1024);
+
+    test = snprintf (str, 1024,
                      "File: %s, Line: %d, Traversal: %s, Subphase: %s, "
-                     "Used_bit: %d, Shared_bit: %d",
+                     "Used_bit: %d, Shared_bit: %d \n",
                      MEMOBJ_FILE (memobj_ptr), MEMOBJ_LINE (memobj_ptr),
                      MEMOBJ_TRAVERSAL (memobj_ptr),
                      PHsubPhaseName (MEMOBJ_SUBPHASE (memobj_ptr)),
                      MEMOBJ_USEDBIT (memobj_ptr), MEMOBJ_SHAREDBIT (memobj_ptr));
 
-    if (test >= 512) {
+    if (test >= 1024) {
         snprintf (str, test,
                   "File:%s, Line:%d, Traversal:%s, Subphase:%s, "
-                  "Used_bit: %d, Shared_bit: %d",
+                  "Used_bit: %d, Shared_bit: %d \n",
                   MEMOBJ_FILE (memobj_ptr), MEMOBJ_LINE (memobj_ptr),
                   MEMOBJ_TRAVERSAL (memobj_ptr),
                   PHsubPhaseName (MEMOBJ_SUBPHASE (memobj_ptr)),
