@@ -389,7 +389,8 @@ RemoveOldSsaStackElements (node *avis, int nestlevel)
 {
     DBUG_ENTER ("RemoveOldSsaStackElements");
 
-    while (SSASTACK_NESTLEVEL (AVIS_SSASTACK (avis)) > nestlevel) {
+    while ((AVIS_SSASTACK (avis) != NULL)
+           && (SSASTACK_NESTLEVEL (AVIS_SSASTACK (avis)) > nestlevel)) {
         AVIS_SSASTACK (avis) = FREEdoFreeNode (AVIS_SSASTACK (avis));
     }
 
@@ -408,7 +409,8 @@ RemoveSsaStackElementsGreaterZero (node *avis)
 {
     DBUG_ENTER ("RemoveSsaStackElementsGreaterZero");
 
-    while (SSASTACK_NESTLEVEL (AVIS_SSASTACK (avis)) > 0) {
+    while ((AVIS_SSASTACK (avis) != NULL)
+           && (SSASTACK_NESTLEVEL (AVIS_SSASTACK (avis)) > 0)) {
         AVIS_SSASTACK (avis) = FREEdoFreeNode (AVIS_SSASTACK (avis));
     }
 
@@ -429,7 +431,10 @@ EnsureSsaStackElement (node *avis, int nestlevel)
 
     avis = RemoveOldSsaStackElements (avis, nestlevel);
 
-    if (SSASTACK_NESTLEVEL (AVIS_SSASTACK (avis)) < nestlevel) {
+    if (AVIS_SSASTACK (avis) == NULL) {
+        avis = InitSSAT (avis);
+        SSASTACK_NESTLEVEL (AVIS_SSASTACK (avis)) = nestlevel;
+    } else if (SSASTACK_NESTLEVEL (AVIS_SSASTACK (avis)) < nestlevel) {
         avis = DupTopSsastack (avis);
         SSASTACK_NESTLEVEL (AVIS_SSASTACK (avis)) = nestlevel;
     }
@@ -523,6 +528,8 @@ static node *
 InitSSAT (node *avis)
 {
     DBUG_ENTER ("InitSSAT");
+
+    DBUG_PRINT ("SSA", ("Initialising stack for %s.", AVIS_NAME (avis)));
 
     AVIS_SSASTACK (avis) = TBmakeSsastack (NULL, 0, NULL);
 

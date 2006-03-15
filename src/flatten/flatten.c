@@ -594,8 +594,11 @@ FLATfundef (node *arg_node, info *arg_info)
      * flattened and if this is done again there may arise name clashes.
      * A new temp variable __flat42 may conflict with __flat42 which was
      * inserted in the first flatten phase (module compiliation).
+     * Furthermore, imported code contains IDS nodes instead of SPIDS nodes!
+     * This may lead to problems when this traversal is run.
      */
-    if ((FUNDEF_BODY (arg_node) != NULL)) {
+    if ((FUNDEF_BODY (arg_node) != NULL) && !FUNDEF_WASIMPORTED (arg_node)
+        && FUNDEF_ISLOCAL (arg_node)) {
         DBUG_PRINT ("FLATTEN", ("flattening function %s:", FUNDEF_NAME (arg_node)));
         if (FUNDEF_ARGS (arg_node)) {
             FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);

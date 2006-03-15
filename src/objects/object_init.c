@@ -35,28 +35,29 @@ static node *
 BuildTypeConversion (const char *name, const namespace_t *ns, ntype *from, ntype *to)
 {
     node *result;
-    node *avisarg, *avisres;
+    node *avisarg;
     node *assign;
     node *block;
 
     DBUG_ENTER ("BuildTypeConversion");
 
     avisarg = TBmakeAvis (ILIBstringCopy ("from"), TYcopyType (from));
-    avisres = TBmakeAvis (ILIBstringCopy ("result"), TYcopyType (to));
-
     AVIS_DECLTYPE (avisarg) = TYcopyType (AVIS_TYPE (avisarg));
 
     /*
      * return( res);
      */
-    assign = TBmakeAssign (TBmakeReturn (TBmakeExprs (TBmakeId (avisres), NULL)), NULL);
+    assign
+      = TBmakeAssign (TBmakeReturn (
+                        TBmakeExprs (TBmakeSpid (NULL, ILIBstringCopy ("result")), NULL)),
+                      NULL);
 #if 0
   /*
    * res = type_conv( restype, arg);
    */
   assign = TBmakeAssign(
              TBmakeLet(
-               TBmakeIds( avisres, NULL),
+               TBmakeSpids( ILIBstringCopy( "result"), NULL),
                TCmakePrf2(
                  F_type_conv,
                  TBmakeType( 
@@ -67,7 +68,7 @@ BuildTypeConversion (const char *name, const namespace_t *ns, ntype *from, ntype
     /*
      * res = (:restype) arg;
      */
-    assign = TBmakeAssign (TBmakeLet (TBmakeIds (avisres, NULL),
+    assign = TBmakeAssign (TBmakeLet (TBmakeSpids (ILIBstringCopy ("result"), NULL),
                                       TBmakeCast (TYcopyType (to), TBmakeId (avisarg))),
                            assign);
 #endif
@@ -75,7 +76,7 @@ BuildTypeConversion (const char *name, const namespace_t *ns, ntype *from, ntype
     /*
      * create the fundef body block
      */
-    block = TBmakeBlock (assign, TBmakeVardec (avisres, NULL));
+    block = TBmakeBlock (assign, NULL);
 
     /*
      * create the fundef node
@@ -168,8 +169,13 @@ BuildInitFun (char *name, namespace_t *ns, ntype *objtype, node *expr)
 
     /*
      * arg = <expr>
+     *
+     * we have to use a SPIDS here, as this code is added prior to
+     * insert vardec!
      */
-    assign = TBmakeAssign (TBmakeLet (TBmakeIds (argavis, NULL), expr), assign);
+    assign
+      = TBmakeAssign (TBmakeLet (TBmakeSpids (ILIBstringCopy ("_OI_object"), NULL), expr),
+                      assign);
 
     /*
      * void <ns>::<name> (<objtype> &arg)
