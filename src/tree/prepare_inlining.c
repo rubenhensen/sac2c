@@ -143,6 +143,8 @@ FreeInfo (info *info)
 node *
 PINLfundef (node *arg_node, info *arg_info)
 {
+    node *keep_letids;
+
     DBUG_ENTER ("PINLfundef");
 
     DBUG_ASSERT ((FUNDEF_BODY (arg_node) != NULL),
@@ -162,7 +164,11 @@ PINLfundef (node *arg_node, info *arg_info)
 #endif
     }
 
+    keep_letids = INFO_LETIDS (arg_info);
+
     FUNDEF_RETURN (arg_node) = TRAVdo (FUNDEF_RETURN (arg_node), arg_info);
+
+    INFO_LETIDS (arg_info) = keep_letids;
 
     FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 
@@ -286,6 +292,8 @@ PINLblock (node *arg_node, info *arg_info)
 #ifndef BUG110_FIXED
     INFO_ASSIGNS (arg_info) = TCappendAssign (assigns, INFO_ASSIGNS (arg_info));
 #endif
+
+    INFO_LETIDS (arg_info) = TRAVdo (INFO_LETIDS (arg_info), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -509,6 +517,52 @@ PINLid (node *arg_node, info *arg_info)
     }
 
     INFO_LETIDS (arg_info) = IDS_NEXT (INFO_LETIDS (arg_info));
+
+    DBUG_RETURN (arg_node);
+}
+
+/**<!--***********************************************************************-->
+ *
+ * @fn node *PINLids( node *arg_node, info *arg_info)
+ *
+ * @brief adjusts the SSAASSIGN pointers of external let ids to the copies
+ *        of the assignments from the body of the current function.
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return arg_node
+ *
+ *****************************************************************************/
+
+node *
+PINLids (node *arg_node, info *arg_info)
+{
+    node *new_ssaassign, *old_ssaassign;
+
+    DBUG_ENTER ("PINLids");
+
+    old_ssaassign = AVIS_SSAASSIGN (IDS_AVIS (arg_node));
+    new_ssaassign = LUTsearchInLutPp (inline_lut, old_ssaassign);
+
+#if 0
+  DBUG_ASSERT( new_ssaassign != old_ssaassign,
+               "Somehow the ssaassign has not been copied.");
+#endif
+
+    if (new_ssaassign != old_ssaassign) {
+        DBUG_PRINT ("PINL",
+                    ("SSA_ASSIGN corrected for %s.\n", AVIS_NAME (IDS_AVIS (arg_node))));
+    } else {
+        DBUG_PRINT ("PINL", ("SSA_ASSIGN not corrected for %s.\n",
+                             AVIS_NAME (IDS_AVIS (arg_node))));
+    }
+
+    AVIS_SSAASSIGN (IDS_AVIS (arg_node)) = new_ssaassign;
+
+    if (IDS_NEXT (arg_node) != NULL) {
+        IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }

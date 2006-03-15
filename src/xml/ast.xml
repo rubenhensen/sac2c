@@ -122,6 +122,7 @@
           <node name="Assign" />
           <node name="Arg" />
           <node name="Id" />
+          <node name="Ids" />
         </travuser>
       </traversal>
       <traversal id="SBT" name="Serialize Build Stack" default="user" include="serialize_buildstack.h" />

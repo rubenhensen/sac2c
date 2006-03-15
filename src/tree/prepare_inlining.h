@@ -21,6 +21,7 @@ extern node *PINLavis (node *arg_node, info *arg_info);
 extern node *PINLblock (node *arg_node, info *arg_info);
 extern node *PINLassign (node *arg_node, info *arg_info);
 extern node *PINLid (node *arg_node, info *arg_info);
+extern node *PINLids (node *arg_node, info *arg_info);
 extern node *PINLarg (node *arg_node, info *arg_info);
 
 #endif
