@@ -255,7 +255,20 @@ OPTdoOptimize (node *arg_node)
     }
 
     /*
+     * apply RTC (final type inference)
+     */
+    arg_node = PHrunCompilerSubPhase (SUBPH_rtc, arg_node);
+
+    /*
+     * apply FINT2OT (final type finalisation)
+     */
+    arg_node = PHrunCompilerSubPhase (SUBPH_finnt2ot, arg_node);
+
+    /*
      * With-loop fusion
+     *
+     * Fusion must run after final type inference because the type system
+     * cannot handle multi-operator with-loops.
      */
     if (global.optimize.dowlfs) {
         arg_node = PHrunCompilerSubPhase (SUBPH_wlfs, arg_node);
@@ -274,16 +287,6 @@ OPTdoOptimize (node *arg_node)
             arg_node = PHrunCompilerSubPhase (SUBPH_dcr3, arg_node);
         }
     }
-
-    /*
-     * apply RTC (final type inference)
-     */
-    arg_node = PHrunCompilerSubPhase (SUBPH_rtc, arg_node);
-
-    /*
-     * apply FINT2OT (final type finalisation)
-     */
-    arg_node = PHrunCompilerSubPhase (SUBPH_finnt2ot, arg_node);
 
     /*
      * !!! If they should ever work again, WLAA, TSI, and AP must run here

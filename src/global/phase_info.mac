@@ -272,6 +272,10 @@ SUBPHASE (uesd, "uesd", "Reintroducing subtraction and division operators",
 
 SUBPHASE (dcr2, "dcr2", "Applying dead code removal again", DCRdoDeadCodeRemovalModule)
 
+SUBPHASE (rtc, "rct", "Running final type inference", NTCdoNewReTypeCheck)
+
+SUBPHASE (finnt2ot, "finn2o", "Finalising infered type information", NT2OTdoTransform)
+
 SUBPHASE (wlfs, "wlfs", "Applying with-loop fusion", WLFSdoWithloopFusion)
 
 SUBPHASE (cse2, "cse", "Elimininating common subexpressions",
@@ -285,6 +289,9 @@ SUBPHASE (wlpg2, "wlpg2", "Generating full with-loop partitions",
 SUBPHASE (wrci, "wrci", "Inferencing with-loop reuse candidates",
           WRCIdoWithloopReuseCandidateInference)
 
+SUBPHASE (wlidx, "wlidx", "Annoting offset variable at with-loops",
+          WLIDXdoAnnotateWithloopIdxs)
+
 SUBPHASE (ivei, "ivei", "Applying index vector elimination (inference)",
           IVEIdoIndexVectorEliminationInference)
 
@@ -297,13 +304,6 @@ SUBPHASE (cvpive, "cvpive", "Propagating constants and variables",
           CVPdoConstVarPropagation)
 
 SUBPHASE (dcrive, "dcrive", "Removing dead code", DCRdoDeadCodeRemovalModule)
-
-SUBPHASE (wlidx, "wlidx", "Annoting offset variable at with-loops",
-          WLIDXdoAnnotateWithloopIdxs)
-
-SUBPHASE (rtc, "rct", "Runnging final type inference", NTCdoNewReTypeCheck)
-
-SUBPHASE (finnt2ot, "finn2o", "Finalising infered type information", NT2OTdoTransform)
 
 SUBPHASE (fdi, "fdi", "Freeing dispatch information", FDIdoFreeDispatchInformation)
 
