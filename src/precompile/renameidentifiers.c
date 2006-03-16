@@ -553,10 +553,6 @@ RIDreturn (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("RIDreturn");
 
-    if (RETURN_REFERENCE (arg_node) != NULL) {
-        RETURN_REFERENCE (arg_node) = TRAVdo (RETURN_REFERENCE (arg_node), arg_info);
-    }
-
     if (RETURN_EXPRS (arg_node) != NULL) {
         RETURN_EXPRS (arg_node) = TRAVdo (RETURN_EXPRS (arg_node), arg_info);
     }

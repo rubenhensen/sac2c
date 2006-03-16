@@ -2268,6 +2268,8 @@ COMPNormalFunReturn (node *arg_node, info *arg_info)
     node *fundef;
     argtab_t *argtab;
     node *ret_exprs;
+    node *funargs;
+    node *newid;
     node *new_args;
     int i;
     int ret_cnt;
@@ -2331,26 +2333,32 @@ COMPNormalFunReturn (node *arg_node, info *arg_info)
     }
 
     /* reference parameters */
-    ret_exprs = RETURN_REFERENCE (arg_node);
-    while (ret_exprs != NULL) {
-        DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (ret_exprs)) == N_id),
-                     "argument of return-statement must be a N_id node!");
+    funargs = FUNDEF_ARGS (fundef);
+    while (funargs != NULL) {
+        if (ARG_ISREFERENCE (funargs)) {
+            /*
+             * this is not the most elegant way to do it, but I do
+             * not want to change too much of the backend here.
+             */
+            newid = TBmakeId (ARG_AVIS (funargs));
 
-        new_args
-          = TBmakeExprs (TCmakeIdCopyString (global.argtag_string[ATG_inout]),
-                         TBmakeExprs (DUPdupIdNt (EXPRS_EXPR (ret_exprs)),
-                                      TBmakeExprs (DUPdupIdNt (EXPRS_EXPR (ret_exprs)),
-                                                   NULL)));
+            new_args = TBmakeExprs (TCmakeIdCopyString (global.argtag_string[ATG_inout]),
+                                    TBmakeExprs (DUPdupIdNt (newid),
+                                                 TBmakeExprs (DUPdupIdNt (newid), NULL)));
 
-        if (last_arg == NULL) {
-            icm_args = new_args;
-        } else {
-            EXPRS_NEXT (last_arg) = new_args;
+            newid = FREEdoFreeNode (newid);
+
+            if (last_arg == NULL) {
+                icm_args = new_args;
+            } else {
+                EXPRS_NEXT (last_arg) = new_args;
+            }
+            last_arg = EXPRS_EXPRS3 (new_args);
+
+            ret_cnt++;
         }
-        last_arg = EXPRS_EXPRS3 (new_args);
 
-        ret_exprs = EXPRS_NEXT (ret_exprs);
-        ret_cnt++;
+        funargs = ARG_NEXT (funargs);
     }
 
     /*

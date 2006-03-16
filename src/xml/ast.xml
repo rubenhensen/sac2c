@@ -3343,20 +3343,6 @@
         </son>
       </sons>
       <attributes>
-        <attribute name="Reference">
-          <description>List of artificial return values which
-            correspond to reference parameters</description>
-          <type name="Link">
-            <targets>
-              <target mandatory="no">
-                <set name="Expr" />
-                <phases>
-                  <!-- <range from="precompile" to="final" /> TODO -->
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
         <attribute name="CRet">
           <type name="Link">
             <targets>

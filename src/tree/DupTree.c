@@ -1073,8 +1073,6 @@ DUPreturn (node *arg_node, info *arg_info)
 
     new_node = TBmakeReturn (DUPTRAV (RETURN_EXPRS (arg_node)));
 
-    RETURN_REFERENCE (new_node) = DUPTRAV (RETURN_REFERENCE (arg_node));
-
     RETURN_CRET (new_node)
       = LUTsearchInLutPp (INFO_LUT (arg_info), RETURN_CRET (arg_node));
 
