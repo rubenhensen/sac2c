@@ -38,13 +38,13 @@ version="1.0">
   <xsl:value-of select="'&quot;);'"/>
   <!-- allocate new node this -->
   <xsl:value-of select="'DBUG_PRINT( &quot;MAKE&quot;, (&quot;allocating node structure&quot;));'"/>
-  <xsl:value-of select="'this = MakeEmptyNode();'" />
 
-  <!-- CMsetNodeType-call for Memorycheck -->
+  <!-- Part for Memorycheck START -->
 
   <xsl:value-of select="'#ifdef SHOW_MALLOC'"/>
   <xsl:text>
   </xsl:text>
+  <xsl:value-of select="'this = MakeEmptyNodeAt( file, line);'" />
   <xsl:value-of select="'CHKMsetNodeType(this, N_'" />
   <xsl:call-template name="lowercase" >
     <xsl:with-param name="string" >
@@ -54,9 +54,14 @@ version="1.0">
   <xsl:value-of select="');'" />
   <xsl:text>
   </xsl:text>
+  <xsl:value-of select="'#else '" />
+  <xsl:value-of select="$newline" />
+  <xsl:value-of select="'this = MakeEmptyNode();'" />
+  <xsl:value-of select="$newline" />
   <xsl:value-of select="'#endif /* SHOW_MALLOC */'" />
-  <xsl:text>
-  </xsl:text>
+  <xsl:value-of select="$newline" />
+
+  <!-- Part for Memorycheck END -->
 
   <xsl:value-of select="'NODE_TYPE( this) = N_'" />
   <xsl:call-template name="lowercase" >

@@ -19,6 +19,7 @@ version="1.0">
 <xsl:import href="../xml/common-key-tables.xsl"/>
 <xsl:import href="../xml/common-accessor-macros.xsl"/>
 <xsl:import href="../xml/common-make-head.xsl"/>
+<xsl:import href="../xml/common-make-head-checkmem.xsl"/>
 <xsl:import href="../xml/common-travfun.xsl"/>
 <xsl:import href="../xml/common-name-to-nodeenum.xsl"/>
 
@@ -51,6 +52,7 @@ version="1.0">
   <xsl:apply-templates select="//syntaxtree/node"/>
   <xsl:text>
 
+
     #endif /* _SAC_NODE_BASIC_H_ */
   </xsl:text>
 </xsl:template>
@@ -79,13 +81,25 @@ version="1.0">
   <xsl:apply-templates select="sons/son" mode="accessor-macros"/>
   <xsl:apply-templates select="attributes/attribute" mode="accessor-macros"/>
   <xsl:apply-templates select="flags" mode="accessor-macros"/>
+  <xsl:apply-templates select="." mode="make-head-checkmem-ifdef"/>
+  <xsl:value-of select="'extern '"/>
+  <xsl:apply-templates select="." mode="make-head-checkmem"/>
+  <xsl:value-of select="';'"/>
+  <xsl:apply-templates select="." mode="make-head-checkmem-define"/>
+  <xsl:apply-templates select="." mode="make-head-checkmem-else"/>
+  <xsl:value-of select="'extern '"/>
   <xsl:apply-templates select="." mode="make-head"/>
+  <xsl:value-of select="';'"/>
+  <xsl:apply-templates select="." mode="make-head-checkmem-endif"/>
 </xsl:template>
 
+
+<!-- 
 <xsl:template match="node" mode="make-head">
+  <xsl:value-of select="$newline"/>
   <xsl:value-of select="'extern '"/>
   <xsl:apply-imports/>
   <xsl:value-of select="';'"/>
 </xsl:template>
-
+-->
 </xsl:stylesheet>

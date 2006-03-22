@@ -1709,10 +1709,12 @@ DUPpragma (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("DUPpragma");
 
-    new_node = TBmakePragma (DUPTRAV (PRAGMA_READONLY (arg_node)),
-                             DUPTRAV (PRAGMA_REFCOUNTING (arg_node)),
-                             DUPTRAV (PRAGMA_EFFECT (arg_node)),
-                             DUPTRAV (PRAGMA_LINKSIGN (arg_node)));
+    new_node = TBmakePragma ();
+
+    PRAGMA_READONLY (new_node) = DUPTRAV (PRAGMA_READONLY (arg_node));
+    PRAGMA_REFCOUNTING (new_node) = DUPTRAV (PRAGMA_REFCOUNTING (arg_node));
+    PRAGMA_EFFECT (new_node) = DUPTRAV (PRAGMA_EFFECT (arg_node));
+    PRAGMA_LINKSIGN (new_node) = DUPTRAV (PRAGMA_LINKSIGN (arg_node));
 
     PRAGMA_LINKNAME (new_node) = ILIBstringCopy (PRAGMA_LINKNAME (arg_node));
 

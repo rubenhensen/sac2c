@@ -7,6 +7,7 @@ version="1.0">
 
 <xsl:import href="../xml/common-key-tables.xsl"/>
 <xsl:import href="../xml/common-make-head.xsl"/>
+<xsl:import href="../xml/common-make-head-checkmem.xsl"/>
 <xsl:import href="../xml/common-make-body.xsl"/>
 <xsl:import href="../xml/common-travfun.xsl"/>
 
@@ -35,6 +36,7 @@ version="1.0">
 #include "dbug.h"
 #include "check_mem.h"
 
+#ifndef SHOW_MALLOC
 static node *MakeEmptyNode()
 {
   node *result;
@@ -47,6 +49,24 @@ static node *MakeEmptyNode()
 
   DBUG_RETURN( result);
 }
+
+#else
+static node *MakeEmptyNodeAt( char *file, int line)
+{
+  node *result;
+
+  DBUG_ENTER("MakeEmptyNodeAt");
+
+  result = (node *) ILIBmallocAt( sizeof( node), file, line);
+
+  NODE_ERROR( result) = NULL;
+
+  DBUG_RETURN( result);
+}    
+
+#define MakeEmptyNode() MakeEmptyNodeAt( __FILE__, __LINE__)
+
+#endif /* SHOW_MALLOC */
 
   </xsl:text>
   <xsl:apply-templates select="//syntaxtree/node"/>
@@ -64,7 +84,11 @@ static node *MakeEmptyNode()
  *****************************************************************************/
 
   </xsl:text>
+  <xsl:apply-templates select="." mode="make-head-checkmem-ifdef"/>
+  <xsl:apply-templates select="." mode="make-head-checkmem"/>
+  <xsl:apply-templates select="." mode="make-head-checkmem-else"/>
   <xsl:apply-templates select="." mode="make-head"/>
+  <xsl:apply-templates select="." mode="make-head-checkmem-endif"/>
   <xsl:apply-templates select="." mode="make-body"/>
 </xsl:template>
 

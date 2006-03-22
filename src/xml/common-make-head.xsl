@@ -17,6 +17,7 @@ version="1.0">
 <xsl:output method="text" indent="no"/>
 <xsl:strip-space elements="*"/>
 
+
 <!-- generate a make function head -->
 <xsl:template match="node" mode="make-head">
   <xsl:value-of select="'node *TBmake'"/>
@@ -66,5 +67,10 @@ version="1.0">
   <xsl:value-of select="' '"/>
   <xsl:value-of select="@name"/>
 </xsl:template>
+
+<xsl:variable name="newline">
+  <xsl:text>
+  </xsl:text>
+</xsl:variable>
 
 </xsl:stylesheet>

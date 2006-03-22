@@ -20,6 +20,46 @@
 #include "check_lib.h"
 #include "types_trav.h"
 #include "phase.h"
+#include "print.h"
+
+/**
+ * INFO structure
+ */
+struct INFO {
+    node *error;
+};
+
+/**
+ * INFO macros
+ */
+#define INFO_ERROR(n) (n->error)
+
+/**
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = ILIBmalloc (sizeof (info));
+
+    INFO_ERROR (result) = NULL;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = ILIBfree (info);
+
+    DBUG_RETURN (info);
+}
 
 typedef struct MEMOBJ {
     int size;
@@ -68,13 +108,18 @@ node *
 CHKMdoMemCheck (node *syntax_tree)
 {
 
+    info *info;
+
     DBUG_ENTER ("CHKMdoMemCheck");
 
     DBUG_PRINT ("CHKM", ("Traversing heap..."));
 
+    info = MakeInfo ();
+
     TRAVpush (TR_chkm);
-    syntax_tree = TRAVdo (syntax_tree, NULL);
+    syntax_tree = TRAVdo (syntax_tree, info);
     TRAVpop ();
+    info = FreeInfo (info);
 
     DBUG_PRINT ("CHKM", ("Heap traversal complete"));
 
@@ -150,6 +195,9 @@ CHKMregisterMem (int size, void *orig_ptr)
             memtabsize = newtabsize;
         }
     }
+
+    /* <<<<<<<<  default entry for the memtab  >>>>>>>>> */
+
     memobj_ptr = memtab + memindex;
 
     MEMOBJ_SIZE (memobj_ptr) = size;
@@ -197,26 +245,60 @@ CHKMunregisterMem (void *shifted_ptr)
 
 /** <!--********************************************************************-->
  *
- * @fn node *CHKMassignSpaceLeaks( node *arg_node, info *arg_info)
+ * @fn node *CHKMpreffun( node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-CHKMassignSpaceLeaks (node *arg_node, info *arg_info)
+CHKMprefun (node *arg_node, info *arg_info)
 {
-    memobj *memobj_ptr;
+    memobj *ptr_to_memobj;
 
-    DBUG_ENTER ("CHKMassignSpaceLeaks");
+    DBUG_ENTER ("CHKMprefun");
 
-    memobj_ptr = SHIFT2MEMOBJ (arg_node);
+    ptr_to_memobj = SHIFT2MEMOBJ (arg_node);
 
-    if ((memtab <= memobj_ptr) && (memobj_ptr < memtab + memtabsize)) {
+    if ((memtab <= ptr_to_memobj) && (ptr_to_memobj < memtab + memtabsize)
+        && (MEMOBJ_PTR (ptr_to_memobj) == arg_node)) {
 
-        if (MEMOBJ_USEDBIT (memobj_ptr) == 1) {
-            MEMOBJ_SHAREDBIT (memobj_ptr) = 1;
+        if (MEMOBJ_USEDBIT (ptr_to_memobj)) {
+            MEMOBJ_SHAREDBIT (ptr_to_memobj) = TRUE;
         } else {
-            MEMOBJ_USEDBIT (memobj_ptr) = 1;
+            MEMOBJ_USEDBIT (ptr_to_memobj) = TRUE;
+        }
+    } else {
+        /*
+         * Zombie
+         */
+        if (INFO_ERROR (arg_info) == NULL) {
+            INFO_ERROR (arg_info)
+              = CHKinsertError (INFO_ERROR (arg_info), "Dangling Pointer");
         }
     }
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *CHKMpostfun() node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+CHKMpostfun (node *arg_node, info *arg_info)
+{
+    memobj *ptr_to_memobj;
+
+    DBUG_ENTER ("CHKMpostfun");
+
+    ptr_to_memobj = SHIFT2MEMOBJ (arg_node);
+
+    if ((memtab <= ptr_to_memobj) && (ptr_to_memobj < memtab + memtabsize)
+        && (MEMOBJ_PTR (ptr_to_memobj) == arg_node) && (INFO_ERROR (arg_info) != NULL)) {
+
+        ERROR_NEXT (INFO_ERROR (arg_info)) = NODE_ERROR (arg_node);
+        NODE_ERROR (arg_node) = INFO_ERROR (arg_info);
+        INFO_ERROR (arg_info) = NULL;
+    }
+
     DBUG_RETURN (arg_node);
 }
 
@@ -235,8 +317,8 @@ CHKManalyzeMemtab (memobj *memtab, int memindex)
     node *arg_node;
     char *string;
     char *memtab_info;
-    int *cnt_sharedmem;
-    int *cnt_spaceleaks;
+    int cnt_sharedmem;
+    int cnt_spaceleaks;
 
     DBUG_ENTER ("CHKManalyzeMemtab");
 
@@ -244,51 +326,66 @@ CHKManalyzeMemtab (memobj *memtab, int memindex)
        must copy the memtab(!) to freeze, because Node_Error expand again the
        memtab and so can possibly change the back pointers
     **********************************/
-    copy_memtab = memtab;
+
+    copy_memtab = malloc (sizeof (memobj) * memindex);
+
+    for (int i = 0; i < memindex; i++) {
+        copy_memtab[i] = memtab[i];
+        MEMOBJ_USEDBIT (memtab + i) = FALSE;
+        MEMOBJ_SHAREDBIT (memtab + i) = FALSE;
+    }
+
     copy_index = memindex;
     string = NULL;
     cnt_sharedmem = 0;
     cnt_spaceleaks = 0;
-
-    arg_node = (node *)ORIG2SHIFT (MEMOBJ_PTR (memtab));
 
     for (i = 0; i < copy_index - 1; i++) {
 
         memobj_ptr = copy_memtab + i;
 
         if (MEMOBJ_PTR (memobj_ptr) == NULL) {
-
-            if (MEMOBJ_NODETYPE (memobj_ptr) != N_undefined) {
-                /* =========== Nodetypes =========== */
-                if (MEMOBJ_USEDBIT (memobj_ptr) || MEMOBJ_SHAREDBIT (memobj_ptr)) {
-
-                    memtab_info = CHKMtoString (memobj_ptr);
-                    string = ILIBstringConcat ("dangling Ptr: ", memtab_info);
-
-                    NODE_ERROR (arg_node)
-                      = CHKinsertError (NODE_ERROR (arg_node), string);
-                }
-            }
+#if 0
+      if ( MEMOBJ_NODETYPE( memobj_ptr) != N_undefined) {
+ 
+       /* =========== Nodetypes =========== */ 
+        if ( MEMOBJ_USEDBIT( memobj_ptr) || 
+             MEMOBJ_SHAREDBIT( memobj_ptr)) {
+          
+          memtab_info = CHKMtoString( memobj_ptr);
+          string = ILIBstringConcat( "dangling Ptr: ", memtab_info);
+          memtab_info = ILIBfree( memtab_info);
+                                     
+        }
+      }
+#endif
         } else {
 
             if (MEMOBJ_NODETYPE (memobj_ptr) != N_undefined) {
+
+                arg_node = (node *)ORIG2SHIFT (MEMOBJ_PTR (memobj_ptr));
+
                 /* =========== Nodetypes =========== */
                 if (!MEMOBJ_USEDBIT (memobj_ptr)) {
 
                     memtab_info = CHKMtoString (memobj_ptr);
                     string = ILIBstringConcat ("Spaceleak(node): ", memtab_info);
+                    memtab_info = ILIBfree (memtab_info);
 
-                    NODE_ERROR (arg_node)
-                      = CHKinsertError (NODE_ERROR (arg_node), string);
+                    CTIwarn ("%s", string);
+                    PRTdoPrint (arg_node);
                     cnt_spaceleaks++;
+                    string = ILIBfree (string);
                 } else {
                     if (MEMOBJ_SHAREDBIT (memobj_ptr)) {
 
                         memtab_info = CHKMtoString (memobj_ptr);
                         string = ILIBstringConcat ("shared memory: ", memtab_info);
+                        memtab_info = ILIBfree (memtab_info);
 
                         NODE_ERROR (arg_node)
                           = CHKinsertError (NODE_ERROR (arg_node), string);
+                        string = ILIBfree (string);
                         cnt_sharedmem++;
                     }
                 }
@@ -308,6 +405,8 @@ CHKManalyzeMemtab (memobj *memtab, int memindex)
             }
         }
     }
+    free (copy_memtab);
+
     CTIwarn (">>>>> Counter Spaceleaks: %d Counter Shared Memory: %d", cnt_spaceleaks,
              cnt_sharedmem);
 
@@ -430,15 +529,7 @@ CHKMtoString (memobj *memobj_ptr)
                      PHsubPhaseName (MEMOBJ_SUBPHASE (memobj_ptr)),
                      MEMOBJ_USEDBIT (memobj_ptr), MEMOBJ_SHAREDBIT (memobj_ptr));
 
-    if (test >= 1024) {
-        snprintf (str, test,
-                  "File:%s, Line:%d, Traversal:%s, Subphase:%s, "
-                  "Used_bit: %d, Shared_bit: %d \n",
-                  MEMOBJ_FILE (memobj_ptr), MEMOBJ_LINE (memobj_ptr),
-                  MEMOBJ_TRAVERSAL (memobj_ptr),
-                  PHsubPhaseName (MEMOBJ_SUBPHASE (memobj_ptr)),
-                  MEMOBJ_USEDBIT (memobj_ptr), MEMOBJ_SHAREDBIT (memobj_ptr));
-    }
+    DBUG_ASSERT (test < 1024, "buffer is too small");
 
     DBUG_RETURN (str);
 };

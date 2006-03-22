@@ -290,7 +290,7 @@ ExtractAplPragma (node *pragma, int line)
         PRAGMA_WLCOMP_APS (pragma)
           = ExtractAplPragmaAp (PRAGMA_WLCOMP_APS (pragma), pragma, line);
         if (PRAGMA_APL (pragma) != NULL) {
-            res = TBmakePragma (NULL, NULL, NULL, NULL, NULL);
+            res = TBmakePragma ();
             /* TODO check arguments of TBmakePragma - former call was MakePragma();*/
             PRAGMA_APL (res) = PRAGMA_APL (pragma);
             PRAGMA_APL (pragma) = NULL;

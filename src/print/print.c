@@ -2383,6 +2383,7 @@ PRTarray (node *arg_node, info *arg_info)
     int old_print_dim = INFO_DIM (arg_info);
     shpseg *old_print_shape = INFO_SHAPE (arg_info);
     shpseg *old_print_shape_counter = INFO_SHAPE_COUNTER (arg_info);
+    node *shpcounter;
 
     DBUG_ENTER ("PRTarray");
 
@@ -2394,8 +2395,10 @@ PRTarray (node *arg_node, info *arg_info)
 
         INFO_DIM (arg_info) = ARRAY_DIM (arg_node);
         INFO_SHAPE (arg_info) = SHshape2OldShpseg (ARRAY_SHAPE (arg_node));
-        INFO_SHAPE_COUNTER (arg_info)
-          = TCarray2Shpseg (TCcreateZeroVector (ARRAY_DIM (arg_node), T_int), NULL);
+
+        shpcounter = TCcreateZeroVector (ARRAY_DIM (arg_node), T_int);
+        INFO_SHAPE_COUNTER (arg_info) = TCarray2Shpseg (shpcounter, NULL);
+        shpcounter = FREEdoFreeTree (shpcounter);
 
         for (i = 0; i < INFO_DIM (arg_info); i++)
             fprintf (global.outfile, "[ ");
