@@ -128,7 +128,7 @@ PINLfundef (node *arg_node, info *arg_info)
         FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
     }
 
-    DBUG_EXECUTE ("PINL", LUTprintLut (stderr, inline_lut););
+    DBUG_EXECUTE ("PINL_LUT", LUTprintLut (stderr, inline_lut););
 
     if (FUNDEF_VARDEC (arg_node) != NULL) {
 #ifdef BUG110_FIXED
@@ -140,7 +140,7 @@ PINLfundef (node *arg_node, info *arg_info)
 #endif
     }
 
-    DBUG_EXECUTE ("PINL", LUTprintLut (stderr, inline_lut););
+    DBUG_EXECUTE ("PINL_LUT", LUTprintLut (stderr, inline_lut););
 
     keep_letids = INFO_LETIDS (arg_info);
 
@@ -148,7 +148,7 @@ PINLfundef (node *arg_node, info *arg_info)
 
     INFO_LETIDS (arg_info) = keep_letids;
 
-    DBUG_EXECUTE ("PINL", LUTprintLut (stderr, inline_lut););
+    DBUG_EXECUTE ("PINL_LUT", LUTprintLut (stderr, inline_lut););
 
     FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 
@@ -525,7 +525,7 @@ PINLid (node *arg_node, info *arg_info)
 
     INFO_LETIDS (arg_info) = IDS_NEXT (INFO_LETIDS (arg_info));
 
-    DBUG_EXECUTE ("PINL", LUTprintLut (stderr, inline_lut););
+    DBUG_EXECUTE ("PINL_LUT", LUTprintLut (stderr, inline_lut););
 
     DBUG_RETURN (arg_node);
 }
