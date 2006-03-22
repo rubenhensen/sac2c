@@ -1139,6 +1139,8 @@ DUPassign (node *arg_node, info *arg_info)
         new_node = NULL;
     }
 
+    DBUG_PRINT ("DUP", ("Duplicating N_assign node %p to %p", arg_node, new_node));
+
     DBUG_RETURN (new_node);
 }
 

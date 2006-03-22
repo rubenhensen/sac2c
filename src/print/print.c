@@ -743,6 +743,10 @@ PRTids (node *arg_node, info *arg_info)
 
         fprintf (global.outfile, "%s", IDS_NAME (arg_node));
 
+        DBUG_EXECUTE ("PRINT_AVIS", if (IDS_AVIS (arg_node) != NULL) {
+            fprintf (global.outfile, "/* avis: %p */", IDS_AVIS (arg_node));
+        });
+
         if (NULL != IDS_NEXT (arg_node)) {
             fprintf (global.outfile, ", ");
             IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
@@ -1684,6 +1688,11 @@ PRTvardec (node *arg_node, info *arg_info)
             type_str = ILIBfree (type_str);
         }
 
+        DBUG_EXECUTE ("PRINT_AVIS",
+                      fprintf (global.outfile, "/* avis %p  SSA assign: %p */",
+                               VARDEC_AVIS (arg_node),
+                               AVIS_SSAASSIGN (VARDEC_AVIS (arg_node))););
+
         TRAVdo (VARDEC_AVIS (arg_node), arg_info);
 
         fprintf (global.outfile, "\n");
@@ -1854,6 +1863,10 @@ PRTassign (node *arg_node, info *arg_info)
             last_assignment_icm = instr;
         }
         TRAVdo (instr, arg_info);
+
+        DBUG_EXECUTE ("PRINT_AVIS",
+                      fprintf (global.outfile, "/* addr: %p */", arg_node););
+
         fprintf (global.outfile, "\n");
     }
 
@@ -2503,6 +2516,10 @@ PRTid (node *arg_node, info *arg_info)
     }
 
     fprintf (global.outfile, "%s", text);
+
+    DBUG_EXECUTE ("PRINT_AVIS", if (ID_AVIS (arg_node) != NULL) {
+        fprintf (global.outfile, "/* avis: %p */", ID_AVIS (arg_node));
+    });
 
     DBUG_RETURN (arg_node);
 }
@@ -4405,8 +4422,6 @@ PRTcseinfo (node *arg_node, info *arg_info)
 node *
 PRTavis (node *arg_node, info *arg_info)
 {
-    bool do_it = FALSE;
-
     DBUG_ENTER ("PRTavis");
 
     if (NODE_ERROR (arg_node) != NULL) {
@@ -4415,26 +4430,23 @@ PRTavis (node *arg_node, info *arg_info)
 
     /* to be implemented */
 
-    DBUG_EXECUTE ("PRINT_AVIS", do_it = TRUE;);
+    DBUG_EXECUTE (
+      "PRINT_AVIS", fprintf (global.outfile, " /* AVIS:");
 
-    if (do_it) {
-        fprintf (global.outfile, " /* AVIS:");
+      fprintf (global.outfile, " TYPE   = %s,",
+               TYtype2String (AVIS_TYPE (arg_node), FALSE, 0));
+      fprintf (global.outfile, " SSACNT = ");
+      PRINT_POINTER_BRACKETS (global.outfile, AVIS_SSACOUNT (arg_node));
 
-        fprintf (global.outfile, " TYPE   = %s,",
-                 TYtype2String (AVIS_TYPE (arg_node), FALSE, 0));
-        fprintf (global.outfile, " SSACNT = ");
-        PRINT_POINTER_BRACKETS (global.outfile, AVIS_SSACOUNT (arg_node));
-#if 1
-        if (global.valid_ssaform && (AVIS_SSACOUNT (arg_node) != NULL)) {
-            node *cnt = AVIS_SSACOUNT (arg_node);
+      if (global.valid_ssaform && (AVIS_SSACOUNT (arg_node) != NULL)) {
+          node *cnt = AVIS_SSACOUNT (arg_node);
 
-            fprintf (global.outfile, " (baseid = %s, counter = %d)", SSACNT_BASEID (cnt),
-                     SSACNT_COUNT (cnt));
-        }
-#endif
+          fprintf (global.outfile, " (baseid = %s, counter = %d)", SSACNT_BASEID (cnt),
+                   SSACNT_COUNT (cnt));
+      }
 
-        fprintf (global.outfile, " */ ");
-    }
+      fprintf (global.outfile, " SSAASSIGN = %p ", AVIS_SSAASSIGN (arg_node));
+      fprintf (global.outfile, " */ "););
 
     DBUG_RETURN (arg_node);
 }
