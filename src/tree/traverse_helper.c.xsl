@@ -65,6 +65,8 @@ node *TRAVerror(node *arg_node, info *arg_info)
 
 node *TRAVsons(node *arg_node, info *arg_info)
 { 
+  TRAV( NODE_ERROR( arg_node), arg_info);
+
   switch (NODE_TYPE( arg_node)) {
   </xsl:text>
   <xsl:apply-templates select="/definition/syntaxtree" mode="travsons" />

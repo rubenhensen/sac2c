@@ -149,6 +149,9 @@ PHrunCompilerSubPhase (compiler_subphase_t subphase, node *syntax_tree)
 {
     DBUG_ENTER ("PHrunCompilerSubPhase");
 
+    DBUG_ASSERT ((syntax_tree == NULL) || (NODE_TYPE (syntax_tree) == N_module),
+                 "PHrunCompilerSubPhase called with non N_module node");
+
     global.compiler_subphase = subphase;
 
     CTIstate ("**** %s ...", PHsubPhaseName (subphase));
@@ -197,14 +200,6 @@ PHrunOptimizationInCycle (compiler_subphase_t subphase, int pass, node *syntax_t
         } else {
             MODULE_FUNS (syntax_tree)
               = TCappendFundef (MODULE_FUNS (syntax_tree), DUPgetCopiedSpecialFundefs ());
-        }
-
-        if ((global.treecheck) && (syntax_tree != NULL)) {
-            syntax_tree = CHKdoTreeCheck (syntax_tree);
-        }
-
-        if (global.memcheck && (syntax_tree != NULL)) {
-            syntax_tree = CHKMdoMemCheck (syntax_tree);
         }
     }
 

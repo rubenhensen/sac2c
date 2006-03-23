@@ -37,6 +37,8 @@
 #include "dbug.h"
 #include "traverse.h"
 #include "phase.h"
+#include "check.h"
+#include "check_mem.h"
 
 #include "liftoptflags.h"
 #include "index_infer.h" /* for IVEIprintPreFun */
@@ -587,6 +589,16 @@ OPTdoIntraFunctionalOptimizations (node *arg_node)
          */
         MODULE_FUNS (arg_node) = LOFdoLiftOptFlags (MODULE_FUNS (arg_node));
 
+        /*
+         *
+         */
+        if ((global.treecheck) && (arg_node != NULL)) {
+            arg_node = CHKdoTreeCheck (arg_node);
+        }
+
+        if (global.memcheck && (arg_node != NULL)) {
+            arg_node = CHKMdoMemCheck (arg_node);
+        }
     } while ((AnyOptCounterNotZero (global.optcounters)) && (loop < global.max_optcycles)
              && (!PHbreakAfterCurrentPass (loop)));
 

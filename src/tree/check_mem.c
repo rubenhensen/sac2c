@@ -274,6 +274,7 @@ CHKMprefun (node *arg_node, info *arg_info)
               = CHKinsertError (INFO_ERROR (arg_info), "Dangling Pointer");
         }
     }
+
     DBUG_RETURN (arg_node);
 }
 
