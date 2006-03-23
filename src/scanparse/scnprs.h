@@ -1,5 +1,5 @@
 /*
- * $Id:$
+ * $Id$
  */
 
 /*
@@ -13,7 +13,7 @@
 #include "types.h"
 #include "sac.tab.h"
 
-extern node *SPdoScanParse ();
+extern node *SPdoScanParse (node *syntax_tree);
 extern int SPmyYyparse ();
 
 #endif /* _SAC_SCNPRS_H_ */

@@ -21,8 +21,6 @@
 #include "usage.h"
 #include "print.h"
 #include "type_statistics.h"
-#include "filemgr.h"
-#include "scnprs.h"
 #include "compile.h"
 #include "annotate_fun_calls.h"
 #include "libstat.h"
@@ -146,7 +144,8 @@ main (int argc, char *argv[])
      */
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
-    syntax_tree = SPdoScanParse ();
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_sp, syntax_tree);
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_acn, syntax_tree);
     syntax_tree = PHrunCompilerSubPhase (SUBPH_pragma, syntax_tree);
     syntax_tree = PHrunCompilerSubPhase (SUBPH_objinit, syntax_tree);
 
