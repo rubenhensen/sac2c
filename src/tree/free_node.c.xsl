@@ -1,41 +1,6 @@
 <?xml version="1.0"?>
 <!--
-  $Log$
-  Revision 1.9  2005/09/29 22:04:36  sah
-  removed unused special cases for INT_ASSIGN
-  and cleaned up old code
-
-  Revision 1.8  2005/06/06 13:17:20  jhb
-  added handling of NODE_ERROR
-
-  Revision 1.7  2005/03/10 09:41:09  cg
-  Added some necessary includes.
-
-  Revision 1.6  2005/03/04 21:21:42  cg
-  Setting of zombie flag is hidden behind function FREEzombify.
-  This allows us to recall the existence of zombie functions
-  in a static global varibale in free.c and to check for removal
-  of zombie functions only if some actually exist.
-
-  Revision 1.5  2005/01/08 09:55:24  ktr
-  Fixed some issues related to loops.
-
-  Revision 1.4  2004/12/09 18:53:05  sah
-  extended signature of free functions for
-  attributes so that they contain a link
-  to the parent node, now
-
-  Revision 1.3  2004/11/28 22:12:49  ktr
-  NEXT is rescued now before removing sons union.
-
-  Revision 1.2  2004/11/25 22:00:41  sah
-  ...
-
-  Revision 1.1  2004/11/23 11:30:11  sah
-  Initial revision
-
-
-
+  $Id$
 -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
 version="1.0">
@@ -238,7 +203,7 @@ version="1.0">
   <xsl:value-of select="'&quot;);'"/>
   <!-- give hint we start to free now -->
   <xsl:value-of select="'DBUG_PRINT( &quot;FREE&quot;, (&quot;Processing node %s at &quot; F_PTR, NODE_TEXT( arg_node), arg_node));'"/>
-  <xsl:value-of select="'NODE_ERROR( arg_node) = FREECOND( NODE_ERROR( arg_node), arg_info);'"/>
+  <xsl:value-of select="'NODE_ERROR( arg_node) = FREETRAV( NODE_ERROR( arg_node), arg_info);'"/>
   <!-- first free everything downwards in the ast -->
   <xsl:apply-templates select="sons/son[@name = &quot;Next&quot;]"/>
   <!-- call free for attributes -->
