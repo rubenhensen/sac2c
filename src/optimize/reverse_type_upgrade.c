@@ -243,10 +243,12 @@ node *
 RTUPlet (node *arg_node, info *arg_info)
 {
     node *old_idstypes;
+
     DBUG_ENTER ("RTUPlet");
 
     old_idstypes = INFO_IDSTYPES (arg_info);
     INFO_IDSTYPES (arg_info) = NULL;
+
     if (LET_IDS (arg_node) != NULL) {
         LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
     }
@@ -258,9 +260,14 @@ RTUPlet (node *arg_node, info *arg_info)
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
     INFO_ORIGIN (arg_info) = undef;
-    if (INFO_IDSTYPES (arg_info) != NULL) {
-        INFO_IDSTYPES (arg_info) = FREEdoFreeTree (INFO_IDSTYPES (arg_info));
+
+    while (INFO_IDSTYPES (arg_info) != NULL) {
+        LINKLIST_LINK (INFO_IDSTYPES (arg_info))
+          = FREEdoFreeTree (LINKLIST_LINK (INFO_IDSTYPES (arg_info)));
+
+        INFO_IDSTYPES (arg_info) = FREEdoFreeNode (INFO_IDSTYPES (arg_info));
     }
+
     INFO_IDSTYPES (arg_info) = old_idstypes;
 
     DBUG_RETURN (arg_node);
