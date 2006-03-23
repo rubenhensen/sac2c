@@ -258,7 +258,7 @@ CHKMprefun (node *arg_node, info *arg_info)
     ptr_to_memobj = SHIFT2MEMOBJ (arg_node);
 
     if ((memtab <= ptr_to_memobj) && (ptr_to_memobj < memtab + memtabsize)
-        && (MEMOBJ_PTR (ptr_to_memobj) == arg_node)) {
+        && (MEMOBJ_PTR (ptr_to_memobj) == SHIFT2ORIG (arg_node))) {
 
         if (MEMOBJ_USEDBIT (ptr_to_memobj)) {
             MEMOBJ_SHAREDBIT (ptr_to_memobj) = TRUE;
@@ -292,7 +292,8 @@ CHKMpostfun (node *arg_node, info *arg_info)
     ptr_to_memobj = SHIFT2MEMOBJ (arg_node);
 
     if ((memtab <= ptr_to_memobj) && (ptr_to_memobj < memtab + memtabsize)
-        && (MEMOBJ_PTR (ptr_to_memobj) == arg_node) && (INFO_ERROR (arg_info) != NULL)) {
+        && (MEMOBJ_PTR (ptr_to_memobj) == SHIFT2ORIG (arg_node))
+        && (INFO_ERROR (arg_info) != NULL)) {
 
         ERROR_NEXT (INFO_ERROR (arg_info)) = NODE_ERROR (arg_node);
         NODE_ERROR (arg_node) = INFO_ERROR (arg_info);
