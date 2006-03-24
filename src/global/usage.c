@@ -213,6 +213,9 @@ USGprintUsage ()
                       "Stop in cycle <n> after with-loop information gathering.");
     PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:wlf",
                       "Stop in cycle <n> after with-loop folding.");
+    PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:ssawlf",
+                      "Stop in cycle <n> after restoring SSA form after with-loop "
+                      "folding.");
     PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:cf2",
                       "Stop in cycle <n> after second constant folding.");
     PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:dcr",
@@ -221,6 +224,9 @@ USGprintUsage ()
                       "Stop in cycle <n> after with-loop scalarization.");
     PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:lur",
                       "Stop in cycle <n> after (with-)loop unrolling.");
+    PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:ssalur",
+                      "Stop in cycle <n> after restoring SSA form after (with-)loop "
+                      "unrolling.");
     PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:cf3",
                       "Stop in cycle <n> after third constant folding.");
     PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:lus",

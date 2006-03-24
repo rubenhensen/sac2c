@@ -241,6 +241,9 @@ SUBPHASE (wls, "wls", "Applying with-loop scalarization", WLSdoWithloopScalariza
 
 SUBPHASE (lur, "lur", "Applying (with-)loop unrolling", LURdoLoopUnrolling)
 
+SUBPHASE (ssalur, "ssalur", "Restoring SSA form after (with-)loop unrolling",
+          SSATdoTransformOneFunction)
+
 SUBPHASE (prfunr, "prfunr", "Applying prf unrolling", UPRFdoUnrollPRFs)
 
 SUBPHASE (linlcyc, "linl", "Inlining degenerated LaC functions",

@@ -36,7 +36,6 @@
 #include "SSALUR.h"
 #include "constants.h"
 #include "math.h"
-#include "ssa.h"
 #include "ctinfo.h"
 #include "SSAWLUnroll.h"
 
@@ -1159,17 +1158,15 @@ LURfundef (node *arg_node, info *arg_info)
             DBUG_PRINT ("SSALUR",
                         ("no unrolling of %s: should be %d (but set to maxlur %d)",
                          FUNDEF_NAME (arg_node), unrolling, global.unrnum));
+
             if (unrolling <= 32) {
                 CTInote ("LUR: -maxlur %d would unroll loop", unrolling);
+                /*
+                 * We use the hard-wired constant 32 here because otherwise we become
+                 * annoyed by messages like "-maxlur 1000000000 would unroll loop".
+                 */
             }
         }
-    }
-
-    /* have we done any unrolling? */
-    if ((start_lunr_expr < global.optcounters.lunr_expr)
-        || (start_wlunr_expr < global.optcounters.wlunr_expr)) {
-        /* restore ssa form in this fundef for further processing */
-        arg_node = SSArestoreSsaOneFundef (arg_node);
     }
 
     DBUG_RETURN (arg_node);
@@ -1374,6 +1371,8 @@ LURdoLoopUnrolling (node *fundef)
     DBUG_ENTER ("SSALoopUnrolling");
 
     DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef), "SSALUR called for non-fundef node");
+
+    global.valid_ssaform = FALSE;
 
     /* do not start traversal in special functions */
     if (!(FUNDEF_ISLACFUN (fundef))) {
