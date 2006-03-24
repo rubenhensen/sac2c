@@ -80,6 +80,13 @@ RMSPMDdoRemoveSpmdBlocks (node *syntax_tree)
 
     info = MakeInfo ();
 
+    global.valid_ssaform = FALSE;
+    /*
+     * Wrapper code is created in non-SSA form and later on transformed into
+     * SSA form using the standard transformation modules lac2fun and
+     * ssa_transform. Therefore, we adjust the global control flag.
+     */
+
     TRAVpush (TR_rmspmd);
     syntax_tree = TRAVdo (syntax_tree, info);
     TRAVpop ();

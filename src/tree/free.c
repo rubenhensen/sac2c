@@ -292,6 +292,7 @@ node *
 FREEdoFreeNode (node *free_node)
 {
     info *arg_info;
+    bool store_valid_ssaform;
 
     DBUG_ENTER ("FREEfreeNode");
 
@@ -299,11 +300,19 @@ FREEdoFreeNode (node *free_node)
 
     INFO_FREE_FLAG (arg_info) = free_node;
 
+    /*
+     * During the free traversal we may temporarily violate SSA form.
+     */
+    store_valid_ssaform = global.valid_ssaform;
+    global.valid_ssaform = FALSE;
+
     TRAVpush (TR_free);
 
     free_node = TRAVdo (free_node, arg_info);
 
     TRAVpop ();
+
+    global.valid_ssaform = store_valid_ssaform;
 
     arg_info = FreeInfo (arg_info);
 
@@ -327,17 +336,26 @@ node *
 FREEdoFreeTree (node *free_node)
 {
     info *arg_info;
+    bool store_valid_ssaform;
 
     DBUG_ENTER ("FREEfreeTree");
 
     arg_info = MakeInfo ();
     INFO_FREE_FLAG (arg_info) = NULL;
 
+    /*
+     * During the free traversal we may temporarily violate SSA form.
+     */
+    store_valid_ssaform = global.valid_ssaform;
+    global.valid_ssaform = FALSE;
+
     TRAVpush (TR_free);
 
     free_node = TRAVdo (free_node, arg_info);
 
-    TRAVpop (TR_free);
+    TRAVpop ();
+
+    global.valid_ssaform = store_valid_ssaform;
 
     arg_info = FreeInfo (arg_info);
 

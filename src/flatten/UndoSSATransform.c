@@ -546,6 +546,9 @@ USSATdoUndoSsaTransform (node *module)
 
     DBUG_ENTER ("USSATdoUndoSSATransform");
 
+    /* ast is no longer in ssaform */
+    global.valid_ssaform = FALSE;
+
     arg_info = MakeInfo ();
 
     TRAVpush (TR_ussat);
@@ -553,9 +556,6 @@ USSATdoUndoSsaTransform (node *module)
     TRAVpop ();
 
     arg_info = FreeInfo (arg_info);
-
-    /* ast is no longer in ssaform */
-    global.valid_ssaform = FALSE;
 
     DBUG_RETURN (module);
 }

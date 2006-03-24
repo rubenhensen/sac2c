@@ -50,7 +50,6 @@
 #include "traverse.h"
 #include "optimize.h"
 #include "constants.h"
-#include "ssa.h"
 #include "SSAWithloopFolding.h"
 #include "SSAWLI.h"
 #include "SSAWLF.h"

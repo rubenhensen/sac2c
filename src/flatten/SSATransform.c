@@ -1678,6 +1678,8 @@ SSATdoTransformOneFunction (node *fundef)
         arg_info = FreeInfo (arg_info);
     }
 
+    global.valid_ssaform = TRUE;
+
     CheckSSATCounter ();
 
     DBUG_RETURN (fundef);
@@ -1715,6 +1717,8 @@ SSATdoTransformOneFundef (node *fundef)
     TRAVpop ();
 
     arg_info = FreeInfo (arg_info);
+
+    global.valid_ssaform = TRUE;
 
     CheckSSATCounter ();
 

@@ -907,7 +907,9 @@ DSloadFunctionBody (node *fundef)
     DBUG_ASSERT ((serfun != NULL),
                  "deserializer not found. module seems to be inconsistent!");
 
+    global.valid_ssaform = FALSE;
     result = serfun ();
+    global.valid_ssaform = TRUE;
 
     SetCurrentFundefHead (NULL);
 
