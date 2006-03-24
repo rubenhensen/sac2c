@@ -1,21 +1,5 @@
 /*
- *
- * $Log$
- * Revision 1.5  2005/08/31 17:09:06  ktr
- * AAVIS_SSAASSIGN is now set for copy assignment
- *
- * Revision 1.4  2005/08/11 07:40:56  ktr
- * funcond nodes are now handled correctly as well
- *
- * Revision 1.3  2005/07/15 15:57:02  sah
- * introduced namespaces
- *
- * Revision 1.2  2005/07/03 16:59:18  ktr
- * Superfluous variable removed
- *
- * Revision 1.1  2005/06/30 16:40:23  ktr
- * Initial revision
- *
+ *  $Id$
  */
 
 /**
@@ -37,6 +21,7 @@
  *       b = fun( a);   =>   _tmp_b = fun( a); b = copy(_tmp_b);
  *
  ******************************************************************************/
+
 #include "audscldist.h"
 
 #include "tree_basic.h"
@@ -62,10 +47,10 @@ struct INFO {
 /*
  * INFO macros
  */
-#define INFO_ASD_FUNDEF(n) ((n)->fundef)
-#define INFO_ASD_ASSIGN(n) ((n)->assign)
-#define INFO_ASD_PREASSIGNS(n) ((n)->preassigns)
-#define INFO_ASD_POSTASSIGNS(n) ((n)->postassigns)
+#define INFO_FUNDEF(n) ((n)->fundef)
+#define INFO_ASSIGN(n) ((n)->assign)
+#define INFO_PREASSIGNS(n) ((n)->preassigns)
+#define INFO_POSTASSIGNS(n) ((n)->postassigns)
 
 /*
  * INFO functions
@@ -79,10 +64,10 @@ MakeInfo ()
 
     result = ILIBmalloc (sizeof (info));
 
-    INFO_ASD_FUNDEF (result) = NULL;
-    INFO_ASD_ASSIGN (result) = NULL;
-    INFO_ASD_PREASSIGNS (result) = NULL;
-    INFO_ASD_POSTASSIGNS (result) = NULL;
+    INFO_FUNDEF (result) = NULL;
+    INFO_ASSIGN (result) = NULL;
+    INFO_PREASSIGNS (result) = NULL;
+    INFO_POSTASSIGNS (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -133,8 +118,7 @@ ASDdoAudSclDistinction (node *syntax_tree)
 /******************************************************************************
  *
  * Function:
- *   node *LiftId( node *id, node *fundef,
- *                 ntype *ntype, node **new_assigns)
+ *   node *LiftId(  node *id, ntype *new_type, info *arg_info)
  *
  * Description:
  *   Lifts the given id of a expr position
@@ -145,43 +129,45 @@ ASDdoAudSclDistinction (node *syntax_tree)
  *    - Builds a new copy assignment and inserts it into the assignment chain
  *      'new_assigns'.
  *
+ *   Abstract the given argument out:
+ *     ... = fun( A, ...);
+ *   is transformed into
+ *     A' = expr( A);
+ *     ... = fun( A', ...);
+ *
  ******************************************************************************/
+
 static void
-LiftId (node *id, node *fundef, ntype *new_type, node **new_assigns)
+LiftId (node *id, ntype *new_type, info *arg_info)
 {
     char *new_name;
     node *new_ids;
     node *new_avis;
+    node *fundef;
 
     DBUG_ENTER ("LiftId");
 
     new_name = ILIBtmpVarName (ID_NAME (id));
 
-    /*
-     * Insert vardec for new var
-     */
     if (new_type == NULL) {
         new_type = ID_NTYPE (id);
     }
 
     new_avis = TBmakeAvis (new_name, TYcopyType (new_type));
 
+    /*
+     * Insert vardec for new var
+     */
+    fundef = INFO_FUNDEF (arg_info);
     FUNDEF_VARDEC (fundef) = TBmakeVardec (new_avis, FUNDEF_VARDEC (fundef));
 
-    /*
-     * Abstract the given argument out:
-     *   ... = expr( A, ...);
-     * is transformed into
-     *   A' = expr( A);
-     *   ... = fun( A', ...);
-     */
     new_ids = TBmakeIds (new_avis, NULL);
 
-    (*new_assigns)
+    INFO_PREASSIGNS (arg_info)
       = TBmakeAssign (TBmakeLet (new_ids, TCmakePrf1 (F_copy, TBmakeId (ID_AVIS (id)))),
-                      *new_assigns);
+                      INFO_PREASSIGNS (arg_info));
 
-    AVIS_SSAASSIGN (new_avis) = (*new_assigns);
+    AVIS_SSAASSIGN (new_avis) = INFO_PREASSIGNS (arg_info);
 
     ID_AVIS (id) = new_avis;
 
@@ -191,8 +177,7 @@ LiftId (node *id, node *fundef, ntype *new_type, node **new_assigns)
 /******************************************************************************
  *
  * Function:
- *   void LiftIds( ids *ids_arg, node *fundef,
- *                 types *new_type, node **new_assigns)
+ *   void LiftIds( node *ids_arg, ntype *new_type, info *arg_info)
  *
  * Description:
  *   Lifts the given return value of a function application:
@@ -204,15 +189,29 @@ LiftId (node *id, node *fundef, ntype *new_type, node **new_assigns)
  *      'new_assigns'.
  *    - Adjusts the name and vardec of 'ids_arg'.
  *
+ *   Abstract the found return value out:
+ *     A = fun( ...);
+ *     ... A ... A ...    // n references of A
+ *   is transformed into
+ *     A' = fun( ...);
+ *     A = copy( A');
+ *     ... A ... A ...    // n references of A
+ *
  ******************************************************************************/
+
 static void
-LiftIds (node *ids_arg, node *fundef, ntype *new_type, node **new_assigns)
+LiftIds (node *ids_arg, ntype *new_type, info *arg_info)
 {
     char *new_name;
     node *new_id;
     node *new_avis;
+    node *fundef;
+    node *assign;
 
     DBUG_ENTER ("LiftIds");
+
+    fundef = INFO_FUNDEF (arg_info);
+    assign = INFO_ASSIGN (arg_info);
 
     new_name = ILIBtmpVarName (IDS_NAME (ids_arg));
 
@@ -227,23 +226,17 @@ LiftIds (node *ids_arg, node *fundef, ntype *new_type, node **new_assigns)
 
     FUNDEF_VARDEC (fundef) = TBmakeVardec (new_avis, FUNDEF_VARDEC (fundef));
 
-    /*
-     * Abstract the found return value out:
-     *   A = fun( ...);
-     *   ... A ... A ...    // n references of A
-     * is transformed into
-     *   A' = fun( ...);
-     *   A = copy( A');
-     *   ... A ... A ...    // n references of A
-     */
     new_id = TBmakeId (new_avis);
-    (*new_assigns) = TBmakeAssign (TBmakeLet (TBmakeIds (IDS_AVIS (ids_arg), NULL),
-                                              TCmakePrf1 (F_copy, new_id)),
-                                   *new_assigns);
+    INFO_POSTASSIGNS (arg_info)
+      = TBmakeAssign (TBmakeLet (TBmakeIds (IDS_AVIS (ids_arg), NULL),
+                                 TCmakePrf1 (F_copy, new_id)),
+                      INFO_POSTASSIGNS (arg_info));
 
-    AVIS_SSAASSIGN (IDS_AVIS (ids_arg)) = (*new_assigns);
+    AVIS_SSAASSIGN (IDS_AVIS (ids_arg)) = INFO_POSTASSIGNS (arg_info);
 
     IDS_AVIS (ids_arg) = new_avis;
+
+    AVIS_SSAASSIGN (new_avis) = assign;
 
     DBUG_VOID_RETURN;
 }
@@ -290,10 +283,10 @@ ASDfundef (node *arg_node, info *arg_info)
         FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
     }
 
-    INFO_ASD_FUNDEF (arg_info) = arg_node;
+    INFO_FUNDEF (arg_info) = arg_node;
 
-    INFO_ASD_POSTASSIGNS (arg_info) = NULL;
-    INFO_ASD_PREASSIGNS (arg_info) = NULL;
+    INFO_POSTASSIGNS (arg_info) = NULL;
+    INFO_PREASSIGNS (arg_info) = NULL;
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
@@ -308,7 +301,7 @@ ASDfundef (node *arg_node, info *arg_info)
  *   node *ASDassign( node *arg_node, info *arg_info)
  *
  * Description:
- *   Inserts the assignments found in INFO_ASD_PRE/POSTASSIGNS into the AST.
+ *   Inserts the assignments found in INFO_PRE/POSTASSIGNS into the AST.
  *
  ******************************************************************************/
 node *
@@ -320,19 +313,19 @@ ASDassign (node *arg_node, info *arg_info)
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
     }
 
-    INFO_ASD_ASSIGN (arg_info) = arg_node;
+    INFO_ASSIGN (arg_info) = arg_node;
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
-    if (INFO_ASD_POSTASSIGNS (arg_info) != NULL) {
+    if (INFO_POSTASSIGNS (arg_info) != NULL) {
         ASSIGN_NEXT (arg_node)
-          = TCappendAssign (INFO_ASD_POSTASSIGNS (arg_info), ASSIGN_NEXT (arg_node));
-        INFO_ASD_POSTASSIGNS (arg_info) = NULL;
+          = TCappendAssign (INFO_POSTASSIGNS (arg_info), ASSIGN_NEXT (arg_node));
+        INFO_POSTASSIGNS (arg_info) = NULL;
     }
 
-    if (INFO_ASD_PREASSIGNS (arg_info) != NULL) {
-        arg_node = TCappendAssign (INFO_ASD_PREASSIGNS (arg_info), arg_node);
-        INFO_ASD_PREASSIGNS (arg_info) = NULL;
+    if (INFO_PREASSIGNS (arg_info) != NULL) {
+        arg_node = TCappendAssign (INFO_PREASSIGNS (arg_info), arg_node);
+        INFO_PREASSIGNS (arg_info) = NULL;
     }
 
     DBUG_RETURN (arg_node);
@@ -361,7 +354,7 @@ ASDap (node *arg_node, info *arg_info)
                         CTIitemName (AP_FUNDEF (arg_node))));
 
     ret = FUNDEF_RETS (AP_FUNDEF (arg_node));
-    ids = ASSIGN_LHS (INFO_ASD_ASSIGN (arg_info));
+    ids = ASSIGN_LHS (INFO_ASSIGN (arg_info));
 
     while (ret != NULL) {
         actual_cls = NTUgetShapeClassFromNType (IDS_NTYPE (ids));
@@ -371,11 +364,10 @@ ASDap (node *arg_node, info *arg_info)
             && ((actual_cls == C_scl) || (formal_cls == C_scl))) {
             DBUG_PRINT ("ASD", ("Return value with inappropriate shape class found:"));
             DBUG_PRINT ("ASD", ("   ... %s ... = %s( ... ), %s instead of %s",
-                                FUNDEF_NAME (INFO_ASD_FUNDEF (arg_info)), IDS_NAME (ids),
+                                FUNDEF_NAME (INFO_FUNDEF (arg_info)), IDS_NAME (ids),
                                 global.nt_shape_string[actual_cls],
                                 global.nt_shape_string[formal_cls]));
-            LiftIds (ids, INFO_ASD_FUNDEF (arg_info), RET_TYPE (ret),
-                     &(INFO_ASD_POSTASSIGNS (arg_info)));
+            LiftIds (ids, RET_TYPE (ret), arg_info);
         }
 
         ret = RET_NEXT (ret);
@@ -395,11 +387,11 @@ ASDap (node *arg_node, info *arg_info)
             && ((actual_cls == C_scl) || (formal_cls == C_scl))) {
             DBUG_PRINT ("ASD", ("Argument with inappropriate shape class found:"));
             DBUG_PRINT ("ASD", ("   ... = %s( ... %s ...), %s instead of %s",
-                                FUNDEF_NAME (INFO_ASD_FUNDEF (arg_info)), ID_NAME (id),
+                                FUNDEF_NAME (INFO_FUNDEF (arg_info)), ID_NAME (id),
                                 global.nt_shape_string[actual_cls],
                                 global.nt_shape_string[formal_cls]));
-            LiftId (id, INFO_ASD_FUNDEF (arg_info), ARG_NTYPE (arg),
-                    &(INFO_ASD_PREASSIGNS (arg_info)));
+
+            LiftId (id, ARG_NTYPE (arg), arg_info);
         }
 
         arg = ARG_NEXT (arg);
@@ -428,7 +420,7 @@ ASDcond (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("ASDcond");
 
-    funcond_ass = ASSIGN_NEXT (INFO_ASD_ASSIGN (arg_info));
+    funcond_ass = ASSIGN_NEXT (INFO_ASSIGN (arg_info));
 
     /*
      * first traverse the two blocks
@@ -454,9 +446,9 @@ ASDcond (node *arg_node, info *arg_info)
              * type assertion and make sure that
              * the cond is a scalar
              */
-            LiftId (COND_COND (arg_node), INFO_ASD_FUNDEF (arg_info),
+            LiftId (COND_COND (arg_node),
                     TYmakeAKS (TYcopyType (TYgetScalar (cond_type)), SHmakeShape (0)),
-                    &(INFO_ASD_PREASSIGNS (arg_info)));
+                    arg_info);
 
             /*
              * Exchange predicate identifier in all subsequent funcond nodes
