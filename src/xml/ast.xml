@@ -2655,12 +2655,14 @@
         </attribute>
         <attribute name="Pragma" default="NULL">
           <type name="Node" >
-            <target mandatory="no">
-              <node name="Pragma" />
-              <phases>
-                <all />
-              </phases>
-            </target>
+            <targets>
+              <target mandatory="no">
+                <node name="Pragma" />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
           </type>
         </attribute>
         <attribute name="Types">
