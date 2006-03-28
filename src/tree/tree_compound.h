@@ -568,6 +568,7 @@ extern node *TCsearchDecl (const char *name, node *decl_node);
  *
  * description:
  *   returns a assign-node with let-node: var_name = expr;
+ *   AVIS_SSAASSIGN( avis) is set to the new assign node
  *
  * remarks:
  *   ASSIGN_NEXT is set to NULL
@@ -579,22 +580,10 @@ extern node *TCmakeAssignLet (node *avis, node *let_expr);
 /******************************************************************************
  *
  * Function:
- *   node *TCmakeAssignInstr( node *instr, node *next)
+ *   node *TCmakeAssigns?( node *part?, ...)
  *
  * Description:
- *
- *
- ******************************************************************************/
-
-extern node *TCmakeAssignInstr (node *instr, node *next);
-
-/******************************************************************************
- *
- * Function:
- *   node *TCmakeAssign?( node *part?, ...)
- *
- * Description:
- *
+ *   * DEPRECATED * USED ONLY IN compile.c
  *
  ******************************************************************************/
 

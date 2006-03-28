@@ -1484,16 +1484,23 @@ TCsearchDecl (const char *name, node *decl_node)
  *   node *TCmakeAssignLet( node *avis, node *let_expr)
  *
  * Description:
- *
+ *   Yields an assignment ids( avis) = let_expr.
+ *   AVIS_SSAASSIGN( avis) is set to the new assignment.
  *
  ******************************************************************************/
 
 node *
 TCmakeAssignLet (node *avis, node *let_expr)
 {
+    node *ass;
+
     DBUG_ENTER ("TCmakeAssignLet");
 
-    DBUG_RETURN (TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), let_expr), NULL));
+    ass = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), let_expr), NULL);
+
+    AVIS_SSAASSIGN (avis) = ass;
+
+    DBUG_RETURN (ass);
 }
 
 /******************************************************************************
@@ -1505,8 +1512,7 @@ TCmakeAssignLet (node *avis, node *let_expr)
  *
  *
  ******************************************************************************/
-
-node *
+static node *
 TCmakeAssignInstr (node *instr, node *next)
 {
     node *result;
