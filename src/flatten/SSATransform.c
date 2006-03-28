@@ -648,9 +648,8 @@ CreateFuncondAssign (node *cond, node *id, node *assign)
     funcond = TBmakeFuncond (DUPdoDupTree (COND_COND (cond)), DUPdoDupTree (id),
                              DUPdoDupTree (id));
 
-    new_assign = TCmakeAssignLet (ID_AVIS (id), funcond);
-
-    ASSIGN_NEXT (new_assign) = assign;
+    new_assign
+      = TBmakeAssign (TBmakeLet (TBmakeIds (ID_AVIS (id), NULL), funcond), assign);
 
     DBUG_RETURN (new_assign);
 }
