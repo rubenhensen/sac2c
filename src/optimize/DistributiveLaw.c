@@ -1347,6 +1347,8 @@ MakeAssignLetNodeFromCurrentNode (node *newnode, info *arg_info, int flag)
 
     newnode = TBmakeAssign (TBmakeLet (TBmakeIds (newavis, NULL), newnode), NULL);
 
+    AVIS_SSAASSIGN (newavis) = newnode;
+
     DBUG_RETURN (newnode);
 }
 
