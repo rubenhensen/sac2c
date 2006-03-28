@@ -797,14 +797,6 @@
 	  <node name="Prf" />
 	</travuser>
       </traversal>
-      <traversal id="AL" name="AssociativeLaw" default="sons" include="AssociativeLaw.h" >
-	<travuser>
-	  <node name="Block" />
-	  <node name="Assign" />
-	  <node name="Let" />
-	  <node name="Prf" />
-	</travuser>
-      </traversal>
       <traversal id="CF" name="Constant Folding" default="sons" include="SSAConstantFolding.h" >
         <travuser>
           <node name="Fundef" />

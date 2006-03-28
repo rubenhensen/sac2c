@@ -79,7 +79,7 @@ objects     = object_init.o resolve_reference_args.o object_analysis.o \
               manage_object_initialisers.o
 
 optimize    = optimize.o \
-              DeadFunctionRemoval.o AssociativeLaw.o deadcodeinference.o \
+              DeadFunctionRemoval.o deadcodeinference.o \
               deadcoderemoval.o SSACSE.o SSAConstantFolding.o SSALIR.o \
               SSALUR.o SSAInferLI.o SSAWLUnroll.o rmcasts.o \
               ElimSubDiv.o wlpropagation.o UndoElimSubDiv.o \
