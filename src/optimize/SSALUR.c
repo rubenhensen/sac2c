@@ -1025,10 +1025,9 @@ SSALURUnrollLoopBody (node *fundef, loopc_t unrolling)
 
     FUNDEF_VARDEC (fundef) = TBmakeVardec (predavis, FUNDEF_VARDEC (fundef));
 
-    predass = TCmakeAssignLet (predavis, TBmakeBool (FALSE));
+    predass = TBmakeAssign (TBmakeLet (TBmakeIds (predavis, NULL), TBmakeBool (FALSE)),
+                            cond_assign);
     AVIS_SSAASSIGN (predavis) = predass;
-
-    ASSIGN_NEXT (predass) = cond_assign;
 
     COND_COND (ASSIGN_INSTR (cond_assign))
       = FREEdoFreeTree (COND_COND (ASSIGN_INSTR (cond_assign)));
@@ -1072,7 +1071,6 @@ static node *
 SSALURCreateCopyAssignments (node *arg_chain, node *rec_chain)
 {
     node *copy_assigns;
-    node *assignment;
     node *right_id;
 
     DBUG_ENTER ("SSALURCreateCopyAssignments");
@@ -1088,11 +1086,9 @@ SSALURCreateCopyAssignments (node *arg_chain, node *rec_chain)
         right_id = TBmakeId (ID_AVIS (EXPRS_EXPR (rec_chain)));
 
         /* make copy assignment */
-        assignment = TCmakeAssignLet (ARG_AVIS (arg_chain), right_id);
-
-        /* append to assignment chain */
-        copy_assigns = TCappendAssign (assignment, copy_assigns);
-
+        copy_assigns
+          = TBmakeAssign (TBmakeLet (TBmakeIds (ARG_AVIS (arg_chain), NULL), right_id),
+                          copy_assigns);
     } else {
         DBUG_ASSERT ((rec_chain == NULL),
                      "different chains of args and calling parameters");

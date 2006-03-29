@@ -505,7 +505,9 @@ SISIids (node *arg_node, info *arg_info)
              * create one let assign for constant definition,
              * reuse old avis/vardec
              */
-            assign_let = TCmakeAssignLet (IDS_AVIS (arg_node), COconstant2AST (new_co));
+            assign_let = TBmakeAssign (TBmakeLet (TBmakeIds (IDS_AVIS (arg_node), NULL),
+                                                  COconstant2AST (new_co)),
+                                       NULL);
             AVIS_SSAASSIGN (IDS_AVIS (arg_node)) = assign_let;
 
             /*

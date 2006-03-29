@@ -396,7 +396,7 @@ CreateNewResult (node *avis, info *arg_info)
     nodelist *letlist;
     node *tmp;
     node *cond;
-    node *assign_let;
+    node *funcond;
 
     DBUG_ENTER ("CreateNewResult");
 
@@ -459,16 +459,15 @@ CreateNewResult (node *avis, info *arg_info)
     cond = ASSIGN_INSTR (tmp);
 
     /* create one let assign for then part */
-    assign_let = TCmakeAssignLet (VARDEC_AVIS (new_pct_vardec),
-                                  TBmakeFuncond (DUPdoDupNode (COND_COND (cond)),
-                                                 TBmakeId (VARDEC_AVIS (new_int_vardec)),
-                                                 TBmakeId (avis)));
-
-    AVIS_SSAASSIGN (VARDEC_AVIS (new_pct_vardec)) = assign_let;
+    funcond = TBmakeFuncond (DUPdoDupNode (COND_COND (cond)),
+                             TBmakeId (VARDEC_AVIS (new_int_vardec)), TBmakeId (avis));
 
     /* append new phi function behind cond block */
-    ASSIGN_NEXT (assign_let) = ASSIGN_NEXT (tmp);
-    ASSIGN_NEXT (tmp) = assign_let;
+    ASSIGN_NEXT (tmp)
+      = TBmakeAssign (TBmakeLet (TBmakeIds (VARDEC_AVIS (new_pct_vardec), NULL), funcond),
+                      ASSIGN_NEXT (tmp));
+
+    AVIS_SSAASSIGN (VARDEC_AVIS (new_pct_vardec)) = ASSIGN_NEXT (tmp);
 
     DBUG_VOID_RETURN;
 }

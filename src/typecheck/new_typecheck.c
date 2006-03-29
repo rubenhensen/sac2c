@@ -97,12 +97,12 @@ struct INFO {
 /**
  * INFO macros
  */
-#define INFO_NTC_TYPE(n) (n->type)
-#define INFO_NTC_GEN_TYPE(n) (n->gen_type)
-#define INFO_NTC_NUM_EXPRS_SOFAR(n) (n->num_exprs_sofar)
-#define INFO_NTC_LAST_ASSIGN(n) (n->last_assign)
-#define INFO_NTC_RETURN(n) (n->ptr_return)
-#define INFO_NTC_EXP_ACCU(n) (n->accu)
+#define INFO_TYPE(n) (n->type)
+#define INFO_GEN_TYPE(n) (n->gen_type)
+#define INFO_NUM_EXPRS_SOFAR(n) (n->num_exprs_sofar)
+#define INFO_LAST_ASSIGN(n) (n->last_assign)
+#define INFO_RETURN(n) (n->ptr_return)
+#define INFO_EXP_ACCU(n) (n->accu)
 
 /**
  * INFO functions
@@ -116,12 +116,12 @@ MakeInfo ()
 
     result = ILIBmalloc (sizeof (info));
 
-    INFO_NTC_TYPE (result) = NULL;
-    INFO_NTC_GEN_TYPE (result) = NULL;
-    INFO_NTC_NUM_EXPRS_SOFAR (result) = 0;
-    INFO_NTC_LAST_ASSIGN (result) = NULL;
-    INFO_NTC_RETURN (result) = NULL;
-    INFO_NTC_EXP_ACCU (result) = NULL;
+    INFO_TYPE (result) = NULL;
+    INFO_GEN_TYPE (result) = NULL;
+    INFO_NUM_EXPRS_SOFAR (result) = 0;
+    INFO_LAST_ASSIGN (result) = NULL;
+    INFO_RETURN (result) = NULL;
+    INFO_EXP_ACCU (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -401,7 +401,7 @@ NTCnewTypeCheck_Expr (node *arg_node)
 
     arg_info = MakeInfo ();
     arg_node = TRAVdo (arg_node, arg_info);
-    type = INFO_NTC_TYPE (arg_info);
+    type = INFO_TYPE (arg_info);
     type = TYfixAndEliminateAlpha (type);
     arg_info = FreeInfo (arg_info);
 
@@ -478,12 +478,12 @@ TypeCheckFunctionBody (node *fundef, info *arg_info)
         FUNDEF_BODY (fundef) = TRAVdo (FUNDEF_BODY (fundef), arg_info);
 
         /*
-         * A pointer to the return node is available in INFO_NTC_RETURN( arg_info)
+         * A pointer to the return node is available in INFO_RETURN( arg_info)
          * now (cf. NTCreturn).
          */
 
-        FUNDEF_RETURN (fundef) = INFO_NTC_RETURN (arg_info);
-        INFO_NTC_RETURN (arg_info) = NULL;
+        FUNDEF_RETURN (fundef) = INFO_RETURN (arg_info);
+        INFO_RETURN (arg_info) = NULL;
 
     } else {
         DBUG_ASSERT (FUNDEF_ISEXTERN (fundef),
@@ -493,17 +493,17 @@ TypeCheckFunctionBody (node *fundef, info *arg_info)
         /*
          * We simply accept the type found in the external. declaration here:
          */
-        INFO_NTC_TYPE (arg_info) = TUmakeProductTypeFromRets (FUNDEF_RETS (fundef));
+        INFO_TYPE (arg_info) = TUmakeProductTypeFromRets (FUNDEF_RETS (fundef));
 
         DBUG_PRINT ("NTC", ("trusting imported return type"));
     }
 
     /*
-     * The inferred result type is now available in INFO_NTC_TYPE( arg_info).
+     * The inferred result type is now available in INFO_TYPE( arg_info).
      * Iff legal, we insert it into the specified result type.
      */
 
-    inf_type = INFO_NTC_TYPE (arg_info);
+    inf_type = INFO_TYPE (arg_info);
     inf_n = TYgetProductSize (inf_type);
 
     DBUG_EXECUTE ("NTC", tmp_str = TYtype2String (inf_type, FALSE, 0););
@@ -572,7 +572,7 @@ TypeCheckFunctionBody (node *fundef, info *arg_info)
         }
     }
     TYfreeType (inf_type);
-    INFO_NTC_TYPE (arg_info) = NULL;
+    INFO_TYPE (arg_info) = NULL;
 
     DBUG_EXECUTE ("NTC", tmp_str = TYtype2String (spec_type, FALSE, 0););
     DBUG_PRINT ("NTC",
@@ -747,11 +747,11 @@ NTCassign (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("NTCassign");
 
-    tmp = INFO_NTC_LAST_ASSIGN (arg_info);
+    tmp = INFO_LAST_ASSIGN (arg_info);
 
-    INFO_NTC_LAST_ASSIGN (arg_info) = arg_node;
+    INFO_LAST_ASSIGN (arg_info) = arg_node;
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
-    INFO_NTC_LAST_ASSIGN (arg_info) = tmp;
+    INFO_LAST_ASSIGN (arg_info) = tmp;
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
@@ -782,10 +782,10 @@ NTCcond (node *arg_node, info *arg_info)
     DBUG_ENTER ("NTCcond");
 
     COND_COND (arg_node) = TRAVdo (COND_COND (arg_node), arg_info);
-    args = TYmakeProductType (1, INFO_NTC_TYPE (arg_info));
+    args = TYmakeProductType (1, INFO_TYPE (arg_info));
 
     context_info = MakeInfo ();
-    INFO_NTC_LAST_ASSIGN (context_info) = INFO_NTC_LAST_ASSIGN (arg_info);
+    INFO_LAST_ASSIGN (context_info) = INFO_LAST_ASSIGN (arg_info);
 
     info = TEmakeInfo (global.linenum, TE_cond, "predicate");
 
@@ -823,16 +823,16 @@ NTCfuncond (node *arg_node, info *arg_info)
     DBUG_ENTER ("NTCfuncond");
 
     FUNCOND_IF (arg_node) = TRAVdo (FUNCOND_IF (arg_node), arg_info);
-    pred = INFO_NTC_TYPE (arg_info);
-    INFO_NTC_TYPE (arg_info) = NULL;
+    pred = INFO_TYPE (arg_info);
+    INFO_TYPE (arg_info) = NULL;
 
     FUNCOND_THEN (arg_node) = TRAVdo (FUNCOND_THEN (arg_node), arg_info);
-    rhs1 = INFO_NTC_TYPE (arg_info);
-    INFO_NTC_TYPE (arg_info) = NULL;
+    rhs1 = INFO_TYPE (arg_info);
+    INFO_TYPE (arg_info) = NULL;
 
     FUNCOND_ELSE (arg_node) = TRAVdo (FUNCOND_ELSE (arg_node), arg_info);
-    rhs2 = INFO_NTC_TYPE (arg_info);
-    INFO_NTC_TYPE (arg_info) = NULL;
+    rhs2 = INFO_TYPE (arg_info);
+    INFO_TYPE (arg_info) = NULL;
 
     args = TYmakeProductType (3, pred, rhs1, rhs2);
 
@@ -851,7 +851,7 @@ NTCfuncond (node *arg_node, info *arg_info)
 
     args = TYfreeType (args);
 
-    INFO_NTC_TYPE (arg_info) = TYgetProductMember (res, 0);
+    INFO_TYPE (arg_info) = TYgetProductMember (res, 0);
     res = TYfreeTypeConstructor (res);
 
     DBUG_RETURN (arg_node);
@@ -886,8 +886,8 @@ NTClet (node *arg_node, info *arg_info)
      * Infer the RHS type :
      */
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
-    rhs_type = INFO_NTC_TYPE (arg_info);
-    INFO_NTC_TYPE (arg_info) = NULL;
+    rhs_type = INFO_TYPE (arg_info);
+    INFO_TYPE (arg_info) = NULL;
 
     /**
      * attach the RHS type(s) to the var(s) on the LHS:
@@ -1032,27 +1032,27 @@ NTCreturn (node *arg_node, info *arg_info)
 
     /*
      * First we collect the return types. NTCexprs puts them into a product type
-     * which is expected in INFO_NTC_TYPE( arg_info) afterwards (cf. NTCfundef)!
-     * INFO_NTC_NUM_EXPRS_SOFAR is used to count the number of exprs "on the fly"!
+     * which is expected in INFO_TYPE( arg_info) afterwards (cf. NTCfundef)!
+     * INFO_NUM_EXPRS_SOFAR is used to count the number of exprs "on the fly"!
      */
-    INFO_NTC_NUM_EXPRS_SOFAR (arg_info) = 0;
+    INFO_NUM_EXPRS_SOFAR (arg_info) = 0;
 
     if (RETURN_EXPRS (arg_node) == NULL) {
         /* we are dealing with a void function here! */
-        INFO_NTC_TYPE (arg_info) = TYmakeProductType (0);
+        INFO_TYPE (arg_info) = TYmakeProductType (0);
     } else {
         RETURN_EXPRS (arg_node) = TRAVdo (RETURN_EXPRS (arg_node), arg_info);
     }
 
-    DBUG_ASSERT (TYisProd (INFO_NTC_TYPE (arg_info)),
+    DBUG_ASSERT (TYisProd (INFO_TYPE (arg_info)),
                  "NTCexprs did not create a product type");
 
     /*
      * Finally, we send the return node back to the fundef to fill FUNDEF_RETURN
-     * properly !! We use INFO_NTC_RETURN( arg_info) for this purpose.
+     * properly !! We use INFO_RETURN( arg_info) for this purpose.
      */
 
-    INFO_NTC_RETURN (arg_info) = arg_node;
+    INFO_RETURN (arg_info) = arg_node;
 
     DBUG_RETURN (arg_node);
 }
@@ -1078,22 +1078,22 @@ NTCap (node *arg_node, info *arg_info)
 
     /*
      * First we collect the argument types. NTCexprs puts them into a product type
-     * which is expected in INFO_NTC_TYPE( arg_info) afterwards!
-     * INFO_NTC_NUM_EXPRS_SOFAR is used to count the number of exprs "on the fly"!
+     * which is expected in INFO_TYPE( arg_info) afterwards!
+     * INFO_NUM_EXPRS_SOFAR is used to count the number of exprs "on the fly"!
      */
-    INFO_NTC_NUM_EXPRS_SOFAR (arg_info) = 0;
+    INFO_NUM_EXPRS_SOFAR (arg_info) = 0;
 
     if (NULL != AP_ARGS (arg_node)) {
         AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
     } else {
-        INFO_NTC_TYPE (arg_info) = TYmakeProductType (0);
+        INFO_TYPE (arg_info) = TYmakeProductType (0);
     }
 
-    DBUG_ASSERT (TYisProd (INFO_NTC_TYPE (arg_info)),
+    DBUG_ASSERT (TYisProd (INFO_TYPE (arg_info)),
                  "NTCexprs did not create a product type");
 
-    args = INFO_NTC_TYPE (arg_info);
-    INFO_NTC_TYPE (arg_info) = NULL;
+    args = INFO_TYPE (arg_info);
+    INFO_TYPE (arg_info) = NULL;
 
     /**
      * Now, we investigate the pointer to the function definition:
@@ -1124,7 +1124,7 @@ NTCap (node *arg_node, info *arg_info)
     old_info_chn = global.act_info_chn;
     global.act_info_chn
       = TEmakeInfoUdf (global.linenum, TE_udf, NSgetName (FUNDEF_NS (wrapper)),
-                       FUNDEF_NAME (wrapper), wrapper, INFO_NTC_LAST_ASSIGN (arg_info),
+                       FUNDEF_NAME (wrapper), wrapper, INFO_LAST_ASSIGN (arg_info),
                        global.act_info_chn);
     DBUG_PRINT ("TEINFO",
                 ("TE info %p created for udf ap %p", global.act_info_chn, arg_node));
@@ -1134,7 +1134,7 @@ NTCap (node *arg_node, info *arg_info)
     DBUG_PRINT ("NTC_INFOCHN", ("global.act_info_chn set back to %p", old_info_chn));
 
     TYfreeType (args);
-    INFO_NTC_TYPE (arg_info) = res;
+    INFO_TYPE (arg_info) = res;
 
     DBUG_RETURN (arg_node);
 }
@@ -1160,11 +1160,11 @@ NTCprf (node *arg_node, info *arg_info)
     prf = PRF_PRF (arg_node);
 
     if (prf == F_accu) {
-        if (INFO_NTC_EXP_ACCU (arg_info) != NULL) {
-            res = TYmakeProductType (1, TYcopyType (INFO_NTC_EXP_ACCU (arg_info)));
+        if (INFO_EXP_ACCU (arg_info) != NULL) {
+            res = TYmakeProductType (1, TYcopyType (INFO_EXP_ACCU (arg_info)));
         } else {
-            INFO_NTC_EXP_ACCU (arg_info) = TYmakeAlphaType (NULL);
-            res = TYmakeProductType (1, INFO_NTC_EXP_ACCU (arg_info));
+            INFO_EXP_ACCU (arg_info) = TYmakeAlphaType (NULL);
+            res = TYmakeProductType (1, INFO_EXP_ACCU (arg_info));
         }
     } else if (prf == F_type_error) {
         /*
@@ -1176,29 +1176,29 @@ NTCprf (node *arg_node, info *arg_info)
     } else {
         /*
          * First we collect the argument types. NTCexprs puts them into a product type
-         * which is expected in INFO_NTC_TYPE( arg_info) afterwards!
-         * INFO_NTC_NUM_EXPRS_SOFAR is used to count the number of exprs "on the fly"!
+         * which is expected in INFO_TYPE( arg_info) afterwards!
+         * INFO_NUM_EXPRS_SOFAR is used to count the number of exprs "on the fly"!
          */
-        INFO_NTC_NUM_EXPRS_SOFAR (arg_info) = 0;
+        INFO_NUM_EXPRS_SOFAR (arg_info) = 0;
 
         if (NULL != PRF_ARGS (arg_node)) {
             PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
         } else {
-            INFO_NTC_TYPE (arg_info) = TYmakeProductType (0);
+            INFO_TYPE (arg_info) = TYmakeProductType (0);
         }
 
-        DBUG_ASSERT (TYisProd (INFO_NTC_TYPE (arg_info)),
+        DBUG_ASSERT (TYisProd (INFO_TYPE (arg_info)),
                      "NTCexprs did not create a product type");
 
-        args = INFO_NTC_TYPE (arg_info);
-        INFO_NTC_TYPE (arg_info) = NULL;
+        args = INFO_TYPE (arg_info);
+        INFO_TYPE (arg_info) = NULL;
 
         info = TEmakeInfoPrf (global.linenum, TE_prf, global.prf_string[prf], prf);
         res = NTCCTcomputeType (global.ntc_funtab[prf], info, args);
 
         TYfreeType (args);
     }
-    INFO_NTC_TYPE (arg_info) = res;
+    INFO_TYPE (arg_info) = res;
 
     DBUG_RETURN (arg_node);
 }
@@ -1221,21 +1221,19 @@ NTCexprs (node *arg_node, info *arg_info)
 
     if (NULL != EXPRS_EXPR (arg_node)) {
         EXPRS_EXPR (arg_node) = TRAVdo (EXPRS_EXPR (arg_node), arg_info);
-        type = INFO_NTC_TYPE (arg_info);
+        type = INFO_TYPE (arg_info);
     }
-    INFO_NTC_NUM_EXPRS_SOFAR (arg_info)++;
+    INFO_NUM_EXPRS_SOFAR (arg_info)++;
 
     if (NULL != EXPRS_NEXT (arg_node)) {
         EXPRS_NEXT (arg_node) = TRAVdo (EXPRS_NEXT (arg_node), arg_info);
     } else {
-        INFO_NTC_TYPE (arg_info)
-          = TYmakeEmptyProductType (INFO_NTC_NUM_EXPRS_SOFAR (arg_info));
+        INFO_TYPE (arg_info) = TYmakeEmptyProductType (INFO_NUM_EXPRS_SOFAR (arg_info));
     }
 
-    INFO_NTC_NUM_EXPRS_SOFAR (arg_info)--;
-    INFO_NTC_TYPE (arg_info)
-      = TYsetProductMember (INFO_NTC_TYPE (arg_info), INFO_NTC_NUM_EXPRS_SOFAR (arg_info),
-                            type);
+    INFO_NUM_EXPRS_SOFAR (arg_info)--;
+    INFO_TYPE (arg_info)
+      = TYsetProductMember (INFO_TYPE (arg_info), INFO_NUM_EXPRS_SOFAR (arg_info), type);
 
     DBUG_RETURN (arg_node);
 }
@@ -1263,8 +1261,8 @@ NTCarray (node *arg_node, info *arg_info)
     if (NULL != ARRAY_AELEMS (arg_node)) {
         /*
          * First we collect the element types. NTCexprs puts them into a product
-         * type which is expected in INFO_NTC_TYPE( arg_info) afterwards!
-         * INFO_NTC_NUM_EXPRS_SOFAR is used to count the number of exprs
+         * type which is expected in INFO_TYPE( arg_info) afterwards!
+         * INFO_NUM_EXPRS_SOFAR is used to count the number of exprs
          * "on the fly"!
          *
          * ATTENTION!!
@@ -1276,24 +1274,23 @@ NTCarray (node *arg_node, info *arg_info)
          *   int[ARRAY_SHAPE]  which in NTCCTprf_array is combined with the element
          * type by TYnestTypes.
          */
-        INFO_NTC_NUM_EXPRS_SOFAR (arg_info) = 1;
+        INFO_NUM_EXPRS_SOFAR (arg_info) = 1;
 
         ARRAY_AELEMS (arg_node) = TRAVdo (ARRAY_AELEMS (arg_node), arg_info);
 
-        DBUG_ASSERT (TYisProd (INFO_NTC_TYPE (arg_info)),
+        DBUG_ASSERT (TYisProd (INFO_TYPE (arg_info)),
                      "NTCexprs did not create a product type");
 
         /**
          * Now, we create the type    int[ARRAY_SHAPE]:
          */
-        INFO_NTC_NUM_EXPRS_SOFAR (arg_info)--;
-        INFO_NTC_TYPE (arg_info)
-          = TYsetProductMember (INFO_NTC_TYPE (arg_info),
-                                INFO_NTC_NUM_EXPRS_SOFAR (arg_info),
+        INFO_NUM_EXPRS_SOFAR (arg_info)--;
+        INFO_TYPE (arg_info)
+          = TYsetProductMember (INFO_TYPE (arg_info), INFO_NUM_EXPRS_SOFAR (arg_info),
                                 TYmakeAKS (TYmakeSimpleType (T_int),
                                            SHcopyShape (ARRAY_SHAPE (arg_node))));
-        elems = INFO_NTC_TYPE (arg_info);
-        INFO_NTC_TYPE (arg_info) = NULL;
+        elems = INFO_TYPE (arg_info);
+        INFO_TYPE (arg_info) = NULL;
 
         /**
          * Now, we built the resulting (AKS-)type type from the product type found:
@@ -1352,7 +1349,7 @@ NTCarray (node *arg_node, info *arg_info)
         DBUG_EXECUTE ("NTC", tmp_str1 = ILIBfree (tmp_str1););
     }
 
-    INFO_NTC_TYPE (arg_info) = TYgetProductMember (type, 0);
+    INFO_TYPE (arg_info) = TYgetProductMember (type, 0);
     TYfreeTypeConstructor (type);
 
     DBUG_RETURN (arg_node);
@@ -1384,7 +1381,7 @@ NTCid (node *arg_node, info *arg_info)
                       " used without a previous definition",
                       ID_NAME (arg_node));
     } else {
-        INFO_NTC_TYPE (arg_info) = TYcopyType (type);
+        INFO_TYPE (arg_info) = TYcopyType (type);
     }
 
     DBUG_RETURN (arg_node);
@@ -1411,7 +1408,7 @@ NTCglobobj (node *arg_node, info *arg_info)
 
     DBUG_ASSERT (type != NULL, "N_objdef wo type found in NTCglobobj");
 
-    INFO_NTC_TYPE (arg_info) = TYcopyType (type);
+    INFO_TYPE (arg_info) = TYcopyType (type);
 
     DBUG_RETURN (arg_node);
 }
@@ -1434,10 +1431,10 @@ NTCglobobj (node *arg_node, info *arg_info)
                                                                                          \
         cv = COaST2Constant (arg_node);                                                  \
         if (cv == NULL) {                                                                \
-            INFO_NTC_TYPE (arg_info)                                                     \
+            INFO_TYPE (arg_info)                                                         \
               = TYmakeAKS (TYmakeSimpleType (base), SHcreateShape (0));                  \
         } else {                                                                         \
-            INFO_NTC_TYPE (arg_info) = TYmakeAKV (TYmakeSimpleType (base), cv);          \
+            INFO_TYPE (arg_info) = TYmakeAKV (TYmakeSimpleType (base), cv);              \
         }                                                                                \
         DBUG_RETURN (arg_node);                                                          \
     }
@@ -1462,7 +1459,7 @@ node *
 NTCtype (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("NTCtype");
-    INFO_NTC_TYPE (arg_info) = TYcopyType (TYPE_TYPE (arg_node));
+    INFO_TYPE (arg_info) = TYcopyType (TYPE_TYPE (arg_node));
     DBUG_RETURN (arg_node);
 }
 
@@ -1485,7 +1482,7 @@ NTCcast (node *arg_node, info *arg_info)
     DBUG_ENTER ("NTCcast");
 
     CAST_EXPR (arg_node) = TRAVdo (CAST_EXPR (arg_node), arg_info);
-    expr_t = INFO_NTC_TYPE (arg_info);
+    expr_t = INFO_TYPE (arg_info);
     if (TYisProd (expr_t)) {
         /*
          * The expression we are dealing with here is a function application.
@@ -1504,7 +1501,7 @@ NTCcast (node *arg_node, info *arg_info)
     info = TEmakeInfoPrf (global.linenum, TE_prf, "type-cast", 0);
     type = NTCCTcomputeType (NTCCTprf_cast, info, TYmakeProductType (2, cast_t, expr_t));
 
-    INFO_NTC_TYPE (arg_info) = TYgetProductMember (type, 0);
+    INFO_TYPE (arg_info) = TYgetProductMember (type, 0);
     TYfreeTypeConstructor (type);
 
     DBUG_RETURN (arg_node);
@@ -1536,9 +1533,9 @@ NTCwith (node *arg_node, info *arg_info)
      * First, we infer the generator type
      */
     WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
-    gen = TYgetProductMember (INFO_NTC_TYPE (arg_info), 0);
-    TYfreeTypeConstructor (INFO_NTC_TYPE (arg_info));
-    INFO_NTC_TYPE (arg_info) = NULL;
+    gen = TYgetProductMember (INFO_TYPE (arg_info), 0);
+    TYfreeTypeConstructor (INFO_TYPE (arg_info));
+    INFO_TYPE (arg_info) = NULL;
 
     DBUG_EXECUTE ("NTC", tmp_str = TYtype2String (gen, FALSE, 0););
     DBUG_PRINT ("NTC", ("  WL - generator type: %s", tmp_str));
@@ -1547,16 +1544,16 @@ NTCwith (node *arg_node, info *arg_info)
     /*
      * Then, we infer the type of the WL body:
      *
-     * Since this may yield an explicit accu type in INFO_NTC_EXP_ACCU,
+     * Since this may yield an explicit accu type in INFO_EXP_ACCU,
      * and fold-wls may be nested, we need to stack these pointers before
      * traversing the code of this WL.
      */
-    mem_outer_accu = INFO_NTC_EXP_ACCU (arg_info);
-    INFO_NTC_EXP_ACCU (arg_info) = NULL;
+    mem_outer_accu = INFO_EXP_ACCU (arg_info);
+    INFO_EXP_ACCU (arg_info) = NULL;
 
     WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
-    body = INFO_NTC_TYPE (arg_info);
-    INFO_NTC_TYPE (arg_info) = NULL;
+    body = INFO_TYPE (arg_info);
+    INFO_TYPE (arg_info) = NULL;
 
     tmp = body;
     body = TYgetProductMember (body, 0);
@@ -1569,24 +1566,24 @@ NTCwith (node *arg_node, info *arg_info)
     /*
      * Finally, we compute the return type from "gen" and "body".
      * This is done in NTCNwithop. The two types are transferred via
-     * INFO_NTC_GEN_TYPE and INFO_NTC_TYPE, respectively.
+     * INFO_GEN_TYPE and INFO_TYPE, respectively.
      */
-    INFO_NTC_GEN_TYPE (arg_info) = gen;
-    INFO_NTC_TYPE (arg_info) = body;
+    INFO_GEN_TYPE (arg_info) = gen;
+    INFO_TYPE (arg_info) = body;
 
     WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
-    res = TYgetProductMember (INFO_NTC_TYPE (arg_info), 0);
-    TYfreeTypeConstructor (INFO_NTC_TYPE (arg_info));
-    INFO_NTC_TYPE (arg_info) = res;
+    res = TYgetProductMember (INFO_TYPE (arg_info), 0);
+    TYfreeTypeConstructor (INFO_TYPE (arg_info));
+    INFO_TYPE (arg_info) = res;
 
-    DBUG_EXECUTE ("NTC", tmp_str = TYtype2String (INFO_NTC_TYPE (arg_info), FALSE, 0););
+    DBUG_EXECUTE ("NTC", tmp_str = TYtype2String (INFO_TYPE (arg_info), FALSE, 0););
     DBUG_PRINT ("NTC", ("  WL - final type: %s", tmp_str));
     DBUG_EXECUTE ("NTC", tmp_str = ILIBfree (tmp_str););
 
     /**
      * eventually, we need to restore a potential outer accu for fold-wls:
      */
-    INFO_NTC_EXP_ACCU (arg_info) = mem_outer_accu;
+    INFO_EXP_ACCU (arg_info) = mem_outer_accu;
 
     DBUG_RETURN (arg_node);
 }
@@ -1626,7 +1623,7 @@ NTCpart (node *arg_node, info *arg_info)
      * Then, we infer the best possible type of the generator specification
      * and from the idx information gained from the Nwithid node:
      */
-    INFO_NTC_TYPE (arg_info) = idx;
+    INFO_TYPE (arg_info) = idx;
     PART_GENERATOR (arg_node) = TRAVdo (PART_GENERATOR (arg_node), arg_info);
 
     /*
@@ -1638,7 +1635,7 @@ NTCpart (node *arg_node, info *arg_info)
     /*
      * AND (!!) we hand the type back to NTCNwith!
      */
-    DBUG_ASSERT (INFO_NTC_TYPE (arg_info) != NULL,
+    DBUG_ASSERT (INFO_TYPE (arg_info) != NULL,
                  "inferred generator type corrupted in NTCNwithid");
 
     DBUG_RETURN (arg_node);
@@ -1665,26 +1662,26 @@ NTCgenerator (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("NTCgenerator");
 
-    idx = INFO_NTC_TYPE (arg_info); /* generated in NTCNpart !*/
-    INFO_NTC_TYPE (arg_info) = NULL;
+    idx = INFO_TYPE (arg_info); /* generated in NTCNpart !*/
+    INFO_TYPE (arg_info) = NULL;
 
     GENERATOR_BOUND1 (arg_node) = TRAVdo (GENERATOR_BOUND1 (arg_node), arg_info);
-    lb = INFO_NTC_TYPE (arg_info);
-    INFO_NTC_TYPE (arg_info) = NULL;
+    lb = INFO_TYPE (arg_info);
+    INFO_TYPE (arg_info) = NULL;
 
     GENERATOR_BOUND2 (arg_node) = TRAVdo (GENERATOR_BOUND2 (arg_node), arg_info);
-    ub = INFO_NTC_TYPE (arg_info);
-    INFO_NTC_TYPE (arg_info) = NULL;
+    ub = INFO_TYPE (arg_info);
+    INFO_TYPE (arg_info) = NULL;
 
     if (GENERATOR_STEP (arg_node) != NULL) {
         GENERATOR_STEP (arg_node) = TRAVdo (GENERATOR_STEP (arg_node), arg_info);
-        s = INFO_NTC_TYPE (arg_info);
-        INFO_NTC_TYPE (arg_info) = NULL;
+        s = INFO_TYPE (arg_info);
+        INFO_TYPE (arg_info) = NULL;
 
         if (GENERATOR_WIDTH (arg_node) != NULL) {
             GENERATOR_WIDTH (arg_node) = TRAVdo (GENERATOR_WIDTH (arg_node), arg_info);
-            w = INFO_NTC_TYPE (arg_info);
-            INFO_NTC_TYPE (arg_info) = NULL;
+            w = INFO_TYPE (arg_info);
+            INFO_TYPE (arg_info) = NULL;
 
             gen = TYmakeProductType (5, lb, idx, ub, s, w);
         } else {
@@ -1698,7 +1695,7 @@ NTCgenerator (node *arg_node, info *arg_info)
     res = NTCCTcomputeType (NTCCTwl_idx, info, gen);
     TYfreeType (gen);
 
-    INFO_NTC_TYPE (arg_info) = res;
+    INFO_TYPE (arg_info) = res;
 
     DBUG_RETURN (arg_node);
 }
@@ -1736,7 +1733,7 @@ NTCwithid (node *arg_node, info *arg_info)
          * we have to leave the generator type intact, therefore, we copy it:
          */
         AVIS_TYPE (IDS_AVIS (vec))
-          = TYcopyType (TYgetProductMember (INFO_NTC_TYPE (arg_info), 0));
+          = TYcopyType (TYgetProductMember (INFO_TYPE (arg_info), 0));
     }
 
     DBUG_RETURN (arg_node);
@@ -1763,20 +1760,20 @@ NTCcode (node *arg_node, info *arg_info)
     CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
     CODE_CEXPRS (arg_node) = TRAVdo (CODE_CEXPRS (arg_node), arg_info);
 
-    DBUG_ASSERT ((TYisProd (INFO_NTC_TYPE (arg_info))
-                  && (TYgetProductSize (INFO_NTC_TYPE (arg_info)) == 1)),
+    DBUG_ASSERT ((TYisProd (INFO_TYPE (arg_info))
+                  && (TYgetProductSize (INFO_TYPE (arg_info)) == 1)),
                  "multi-operator wl encountered in TC but not supported!");
 
     /**
      * traverse into further code blocks iff existant
      */
     if (CODE_NEXT (arg_node) != NULL) {
-        this_block = INFO_NTC_TYPE (arg_info);
-        INFO_NTC_TYPE (arg_info) = NULL;
+        this_block = INFO_TYPE (arg_info);
+        INFO_TYPE (arg_info) = NULL;
 
         CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
-        remaining_blocks = INFO_NTC_TYPE (arg_info);
-        INFO_NTC_TYPE (arg_info) = NULL;
+        remaining_blocks = INFO_TYPE (arg_info);
+        INFO_TYPE (arg_info) = NULL;
 
         info = TEmakeInfo (global.linenum, TE_with, "multi generator");
         blocks = TYmakeProductType (2, TYgetProductMember (this_block, 0),
@@ -1784,7 +1781,7 @@ NTCcode (node *arg_node, info *arg_info)
         this_block = TYfreeTypeConstructor (this_block);
         remaining_blocks = TYfreeTypeConstructor (remaining_blocks);
 
-        INFO_NTC_TYPE (arg_info) = NTCCTcomputeType (NTCCTwl_multicode, info, blocks);
+        INFO_TYPE (arg_info) = NTCCTcomputeType (NTCCTwl_multicode, info, blocks);
     }
 
     DBUG_RETURN (arg_node);
@@ -1809,23 +1806,23 @@ NTCgenarray (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("NTCNgenarray");
 
-    gen = INFO_NTC_GEN_TYPE (arg_info);
-    INFO_NTC_GEN_TYPE (arg_info) = NULL;
-    body = INFO_NTC_TYPE (arg_info);
+    gen = INFO_GEN_TYPE (arg_info);
+    INFO_GEN_TYPE (arg_info) = NULL;
+    body = INFO_TYPE (arg_info);
 
     /*
      * First, we check the shape expression:
      */
     GENARRAY_SHAPE (arg_node) = TRAVdo (GENARRAY_SHAPE (arg_node), arg_info);
-    shp = INFO_NTC_TYPE (arg_info);
-    INFO_NTC_TYPE (arg_info) = NULL;
+    shp = INFO_TYPE (arg_info);
+    INFO_TYPE (arg_info) = NULL;
     /*
      * Then, we check the shape of the default value, if available:
      */
     if (GENARRAY_DEFAULT (arg_node) != NULL) {
         GENARRAY_DEFAULT (arg_node) = TRAVdo (GENARRAY_DEFAULT (arg_node), arg_info);
-        dexpr = INFO_NTC_TYPE (arg_info);
-        INFO_NTC_TYPE (arg_info) = NULL;
+        dexpr = INFO_TYPE (arg_info);
+        INFO_TYPE (arg_info) = NULL;
     } else {
         dexpr = TYcopyType (body);
     }
@@ -1834,7 +1831,7 @@ NTCgenarray (node *arg_node, info *arg_info)
     info = TEmakeInfo (global.linenum, TE_with, "genarray");
     res = NTCCTcomputeType (NTCCTwl_gen, info, args);
 
-    INFO_NTC_TYPE (arg_info) = res;
+    INFO_TYPE (arg_info) = res;
 
     DBUG_RETURN (arg_node);
 }
@@ -1858,22 +1855,22 @@ NTCmodarray (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("NTCmodarray");
 
-    gen = INFO_NTC_GEN_TYPE (arg_info);
-    INFO_NTC_GEN_TYPE (arg_info) = NULL;
-    body = INFO_NTC_TYPE (arg_info);
+    gen = INFO_GEN_TYPE (arg_info);
+    INFO_GEN_TYPE (arg_info) = NULL;
+    body = INFO_TYPE (arg_info);
 
     /*
      * First, we check the array expression:
      */
     MODARRAY_ARRAY (arg_node) = TRAVdo (MODARRAY_ARRAY (arg_node), arg_info);
-    shp = INFO_NTC_TYPE (arg_info);
-    INFO_NTC_TYPE (arg_info) = NULL;
+    shp = INFO_TYPE (arg_info);
+    INFO_TYPE (arg_info) = NULL;
 
     args = TYmakeProductType (3, gen, shp, body);
     info = TEmakeInfo (global.linenum, TE_with, "modarray");
     res = NTCCTcomputeType (NTCCTwl_mod, info, args);
 
-    INFO_NTC_TYPE (arg_info) = res;
+    INFO_TYPE (arg_info) = res;
 
     DBUG_RETURN (arg_node);
 }
@@ -1899,9 +1896,9 @@ NTCfold (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("NTCfold");
 
-    gen = INFO_NTC_GEN_TYPE (arg_info);
-    INFO_NTC_GEN_TYPE (arg_info) = NULL;
-    body = INFO_NTC_TYPE (arg_info);
+    gen = INFO_GEN_TYPE (arg_info);
+    INFO_GEN_TYPE (arg_info) = NULL;
+    body = INFO_TYPE (arg_info);
 
     /**
      * we are dealing with a udf-fold-wl here!
@@ -1913,8 +1910,8 @@ NTCfold (node *arg_node, info *arg_info)
                       "Missing neutral element for user-defined fold function");
     }
     FOLD_NEUTRAL (arg_node) = TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
-    neutr = INFO_NTC_TYPE (arg_info);
-    INFO_NTC_TYPE (arg_info) = NULL;
+    neutr = INFO_TYPE (arg_info);
+    INFO_TYPE (arg_info) = NULL;
 
     /*
      * Then, we compute the type of the elements to be folded:
@@ -1935,10 +1932,10 @@ NTCfold (node *arg_node, info *arg_info)
      * which has to be bigger than a) the element type and b) the result
      * type.
      * As we may be dealing with explicit accumulators, this type variable may
-     * exist already. If this is the case, it is contained in INFO_NTC_EXP_ACCU
+     * exist already. If this is the case, it is contained in INFO_EXP_ACCU
      * otherwise that field is NULL.
      */
-    if (INFO_NTC_EXP_ACCU (arg_info) != NULL) {
+    if (INFO_EXP_ACCU (arg_info) != NULL) {
         /**
          * As the accu is explicit, we have the following situation:
          *
@@ -1948,13 +1945,13 @@ NTCfold (node *arg_node, info *arg_info)
          *      val = fun( a, e);
          *   } : val;
          * Therefore, it suffices to take the alpha type of a (from
-         * INFO_NTC_EXP_ACCU( arg_info)), make the neutral element a
+         * INFO_EXP_ACCU( arg_info)), make the neutral element a
          * subtype of it (which triggers the initial approximation for
          * fun( a, e) ), and then make the type of val a subtype of
          * the alpha type again in order to ensure the fix-point calculation.
          */
-        acc = TYcopyType (INFO_NTC_EXP_ACCU (arg_info));
-        INFO_NTC_EXP_ACCU (arg_info) = NULL;
+        acc = TYcopyType (INFO_EXP_ACCU (arg_info));
+        INFO_EXP_ACCU (arg_info) = NULL;
 
         res = TYmakeProductType (1, elems);
 
@@ -1971,8 +1968,8 @@ NTCfold (node *arg_node, info *arg_info)
         args = TYmakeProductType (2, acc, elems);
         wrapper = FOLD_FUNDEF (arg_node);
         info = TEmakeInfoUdf (global.linenum, TE_foldf, NSgetName (FUNDEF_NS (wrapper)),
-                              FUNDEF_NAME (wrapper), wrapper,
-                              INFO_NTC_LAST_ASSIGN (arg_info), NULL);
+                              FUNDEF_NAME (wrapper), wrapper, INFO_LAST_ASSIGN (arg_info),
+                              NULL);
         res = NTCCTcomputeType (NTCCTudf, info, args);
 
         ok = SSInewTypeRel (TYgetProductMember (res, 0), acc);
@@ -1981,7 +1978,7 @@ NTCfold (node *arg_node, info *arg_info)
         CTIabortLine (global.linenum, "Illegal fold function in fold with loop");
     }
 
-    INFO_NTC_TYPE (arg_info) = res;
+    INFO_TYPE (arg_info) = res;
 
     DBUG_RETURN (arg_node);
 }

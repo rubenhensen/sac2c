@@ -123,6 +123,9 @@ CreateScalarWL (int dim, node *array_shape, simpletype btype, node *expr, node *
     node *tmp_ids;
     int i;
 
+    node *ass;
+    node *code, *part, *withop;
+
     DBUG_ENTER ("CreateScalarWL");
 
     DBUG_ASSERT ((dim >= 0), "CreateScalarWl() used with unknown shape!");
@@ -148,16 +151,20 @@ CreateScalarWL (int dim, node *array_shape, simpletype btype, node *expr, node *
       TBmakeAvis (ILIBtmpVar (), TYmakeAKS (TYmakeSimpleType (btype), SHmakeShape (0))));
     vardecs = TBmakeVardec (ID_AVIS (id), vardecs);
 
-    wl
-      = TBmakeWith (TBmakePart (NULL, TBmakeWithid (vec_ids, scl_ids),
-                                TBmakeGenerator (F_le, F_lt,
-                                                 TCcreateZeroVector (dim, T_int),
-                                                 DUPdoDupNode (array_shape), NULL, NULL)),
-                    TBmakeCode (TBmakeBlock (TCmakeAssignLet (ID_AVIS (id), expr), NULL),
-                                TBmakeExprs (id, NULL)),
-                    TBmakeGenarray (DUPdoDupNode (array_shape), NULL));
+    ass = TBmakeAssign (TBmakeLet (ID_AVIS (id), expr), NULL);
+    AVIS_SSAASSIGN (ID_AVIS (id)) = ass;
+
+    code = TBmakeCode (TBmakeBlock (ass, NULL), TBmakeExprs (id, NULL));
+
+    part = TBmakePart (code, TBmakeWithid (vec_ids, scl_ids),
+                       TBmakeGenerator (F_le, F_lt, TCcreateZeroVector (dim, T_int),
+                                        DUPdoDupNode (array_shape), NULL, NULL));
+
+    withop = TBmakeGenarray (DUPdoDupNode (array_shape), NULL);
+
+    wl = TBmakeWith (part, code, withop);
+
     CODE_USED (WITH_CODE (wl))++;
-    PART_CODE (WITH_PART (wl)) = WITH_CODE (wl);
     WITH_PARTS (wl) = 1;
 
     fundef = TCaddVardecs (fundef, vardecs);

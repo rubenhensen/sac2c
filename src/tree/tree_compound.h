@@ -559,26 +559,6 @@ extern node *TCsearchDecl (const char *name, node *decl_node);
 
 /******************************************************************************
  *
- * function:
- *   node *TCmakeAssignLet( node *avis, node *let_expr);
- *
- * arguments: 1) avis for the LHS variable
- *            2) let-expression
- *            R) assign-node with complete let-subtree
- *
- * description:
- *   returns a assign-node with let-node: var_name = expr;
- *   AVIS_SSAASSIGN( avis) is set to the new assign node
- *
- * remarks:
- *   ASSIGN_NEXT is set to NULL
- *
- ******************************************************************************/
-
-extern node *TCmakeAssignLet (node *avis, node *let_expr);
-
-/******************************************************************************
- *
  * Function:
  *   node *TCmakeAssigns?( node *part?, ...)
  *
@@ -1128,9 +1108,6 @@ extern node *TCmakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *a
 #define WITH_CBLOCK(n) (CODE_CBLOCK (WITH_CODE (n)))
 #define WITH_CEXPRS(n) (CODE_CEXPRS (WITH_CODE (n)))
 #define WITH_CEXPR(n) (EXPRS_EXPR (WITH_CEXPRS (n)))
-
-extern node *TCcreateScalarWith (shape *shape, simpletype btype, node *expr,
-                                 node *fundef);
 
 /*--------------------------------------------------------------------------*/
 

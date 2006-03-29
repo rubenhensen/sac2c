@@ -258,8 +258,6 @@ BuildRenamingAssignsForDo (node **vardecs, node **ass1, node **ass2, node **ass3
                            node *ext_args, node *int_args, node *ret_args)
 {
     node *int_expr;
-    node *assign;
-    node *new_id;
     char *new_name;
 
     DBUG_ENTER ("BuildRenamingAssignsForDo");
@@ -306,32 +304,30 @@ BuildRenamingAssignsForDo (node **vardecs, node **ass1, node **ass2, node **ass3
                 /*
                  * tmp_a_i = a_i;
                  */
-                new_id = TBmakeId (ARG_AVIS (ext_args));
-                assign = TCmakeAssignLet (DECL_AVIS (*vardecs), new_id);
-                ASSIGN_NEXT (assign) = (*ass1);
-                (*ass1) = assign;
+                *ass1 = TBmakeAssign (TBmakeLet (TBmakeIds (DECL_AVIS (*vardecs), NULL),
+                                                 TBmakeId (ARG_AVIS (ext_args))),
+                                      *ass1);
 
                 /*
                  * a_i = tmp_a_i;
                  */
-                new_id = TBmakeId (VARDEC_AVIS (*vardecs));
-                assign = TCmakeAssignLet (DECL_AVIS (ext_args), new_id);
-                ASSIGN_NEXT (assign) = (*ass2);
-                (*ass2) = assign;
+                *ass2 = TBmakeAssign (TBmakeLet (TBmakeIds (DECL_AVIS (ext_args), NULL),
+                                                 TBmakeId (VARDEC_AVIS (*vardecs))),
+                                      *ass2);
 
                 /*
                  * tmp_a_i = A_i;
                  */
-                assign = TCmakeAssignLet (DECL_AVIS (*vardecs), DUPdoDupNode (int_expr));
-                ASSIGN_NEXT (assign) = (*ass3);
-                (*ass3) = assign;
+                *ass3 = TBmakeAssign (TBmakeLet (TBmakeIds (DECL_AVIS (*vardecs), NULL),
+                                                 DUPdoDupNode (int_expr)),
+                                      *ass3);
             } else {
                 /*
                  * a_i = A_i;
                  */
-                assign = TCmakeAssignLet (DECL_AVIS (ext_args), DUPdoDupNode (int_expr));
-                ASSIGN_NEXT (assign) = (*ass3);
-                (*ass3) = assign;
+                *ass3 = TBmakeAssign (TBmakeLet (TBmakeIds (DECL_AVIS (ext_args), NULL),
+                                                 DUPdoDupNode (int_expr)),
+                                      *ass3);
             }
         }
     } else {

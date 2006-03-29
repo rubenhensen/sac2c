@@ -447,22 +447,22 @@ UESDprf (node *arg_node, info *arg_info)
                 node *tmp = DUPdoDupTree (id1);
                 EXPRS_NEXT (tmp) = DUPdoDupTree (id2);
                 tmp = TBmakePrf (op, tmp);
-                avis = TBmakeAvis (ILIBtmpVar (), TYcopyType (AVIS_TYPE (IDS_AVIS (
-                                                    LET_IDS (INFO_LET (arg_info))))));
-                BLOCK_VARDEC (FUNDEF_BODY (INFO_FUNDEF (arg_info)))
-                  = TBmakeVardec (avis,
-                                  BLOCK_VARDEC (FUNDEF_BODY (INFO_FUNDEF (arg_info))));
 
-                AVIS_DECL (avis) = BLOCK_VARDEC (FUNDEF_BODY (INFO_FUNDEF (arg_info)));
+                avis
+                  = TBmakeAvis (ILIBtmpVar (),
+                                TYcopyType (IDS_NTYPE (LET_IDS (INFO_LET (arg_info)))));
+                FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+                  = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
 
-                tmp = TCmakeAssignLet (avis, tmp);
+                tmp = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), tmp), NULL);
 
                 /*
                  * change current prf
                  */
                 PRF_ARGS (arg_node) = FREEdoFreeTree (PRF_ARGS (arg_node));
                 PRF_ARGS (arg_node)
-                  = TBmakeExprs (DUPdupIdsId (LET_IDS (ASSIGN_INSTR (tmp))), NULL);
+                  = TBmakeExprs (TBmakeId (IDS_AVIS (LET_IDS (ASSIGN_INSTR (tmp)))),
+                                 NULL);
 
                 if (add) {
                     PRF_PRF (arg_node) = F_esd_neg;

@@ -317,7 +317,8 @@ ESDprf (node *arg_node, info *arg_info)
         avis = TBmakeAvis (ILIBtmpVar (),
                            TYgetProductMember (NTCnewTypeCheck_Expr (prf), 0));
 
-        INFO_NEWASSIGN (arg_info) = TCmakeAssignLet (avis, prf);
+        INFO_NEWASSIGN (arg_info)
+          = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), prf), NULL);
         AVIS_SSAASSIGN (avis) = INFO_NEWASSIGN (arg_info);
 
         /*

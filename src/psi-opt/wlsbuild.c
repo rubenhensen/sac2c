@@ -349,7 +349,7 @@ WLSBcode (node *arg_node, info *arg_info)
             FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
               = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
 
-            prefix = TCmakeAssignLet (avis, array);
+            prefix = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), array), NULL);
             AVIS_SSAASSIGN (avis) = prefix;
 
             LUTinsertIntoLutP (lut, oldavis, avis);
@@ -375,7 +375,8 @@ WLSBcode (node *arg_node, info *arg_info)
             FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
               = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
 
-            ASSIGN_NEXT (prefix) = TCmakeAssignLet (avis, array);
+            ASSIGN_NEXT (prefix)
+              = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), array), NULL);
             AVIS_SSAASSIGN (avis) = ASSIGN_NEXT (prefix);
 
             LUTinsertIntoLutP (lut, oldavis, avis);

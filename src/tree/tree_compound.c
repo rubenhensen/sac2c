@@ -1481,31 +1481,6 @@ TCsearchDecl (const char *name, node *decl_node)
 /******************************************************************************
  *
  * Function:
- *   node *TCmakeAssignLet( node *avis, node *let_expr)
- *
- * Description:
- *   Yields an assignment ids( avis) = let_expr.
- *   AVIS_SSAASSIGN( avis) is set to the new assignment.
- *
- ******************************************************************************/
-
-node *
-TCmakeAssignLet (node *avis, node *let_expr)
-{
-    node *ass;
-
-    DBUG_ENTER ("TCmakeAssignLet");
-
-    ass = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), let_expr), NULL);
-
-    AVIS_SSAASSIGN (avis) = ass;
-
-    DBUG_RETURN (ass);
-}
-
-/******************************************************************************
- *
- * Function:
  *   node *TCmakeAssignInstr( node *instr, node *next)
  *
  * Description:
@@ -2763,69 +2738,6 @@ TCmakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg4, node *ar
 /***
  ***  N_with :
  ***/
-
-/******************************************************************************
- *
- * Function:
- *   node *TCcreateScalarWith( shape *shape, simpletype btype,
- *                             node *expr, node *fundef)
- *
- * Description:
- *   Creates an array of zeros.
- *
- ******************************************************************************/
-
-node *
-TCcreateScalarWith (shape *shape, simpletype btype, node *expr, node *fundef)
-{
-    node *wl;
-    node *id;
-    node *vardecs = NULL;
-    node *vec_ids;
-    node *scl_ids = NULL;
-    node *new_avis;
-    int i;
-    int dim;
-
-    DBUG_ENTER ("TCcreateScalarWith");
-
-    dim = SHgetDim (shape);
-    DBUG_ASSERT ((dim >= 0), "TCcreateScalarWith() used with unknown shape!");
-
-    new_avis = TBmakeAvis (ILIBtmpVar (),
-                           TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (1, dim)));
-    vardecs = TBmakeVardec (new_avis, vardecs);
-    vec_ids = TBmakeIds (new_avis, NULL);
-
-    for (i = 0; i < dim; i++) {
-        new_avis = TBmakeAvis (ILIBtmpVar (),
-                               TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
-        vardecs = TBmakeVardec (new_avis, vardecs);
-        scl_ids = TBmakeIds (new_avis, scl_ids);
-    }
-
-    new_avis
-      = TBmakeAvis (ILIBtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
-    id = TBmakeId (new_avis);
-    vardecs = TBmakeVardec (new_avis, vardecs);
-
-    /* BORDER */
-
-    wl = TBmakeWith (TBmakePart (NULL, TBmakeWithid (vec_ids, scl_ids),
-                                 TBmakeGenerator (F_le, F_lt,
-                                                  TCcreateZeroVector (dim, T_int),
-                                                  SHshape2Array (shape), NULL, NULL)),
-                     TBmakeCode (TBmakeBlock (TCmakeAssignLet (new_avis, expr), NULL),
-                                 TBmakeExprs (id, NULL)),
-                     TBmakeGenarray (SHshape2Array (shape), NULL));
-    CODE_USED (WITH_CODE (wl))++;
-    PART_CODE (WITH_PART (wl)) = WITH_CODE (wl);
-    WITH_PARTS (wl) = 1;
-
-    fundef = TCaddVardecs (fundef, vardecs);
-
-    DBUG_RETURN (wl);
-}
 
 /*--------------------------------------------------------------------------*/
 
