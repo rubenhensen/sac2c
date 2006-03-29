@@ -78,10 +78,28 @@ CHKexistAttribute (void *attribute, node *arg_node, char *string)
 
 /** <!--********************************************************************-->
  *
- * @fn node *CHKnotExistAttribute( node *attribute, node *arg_node, char *string)
+ * @fn node *CHKnotExist( node *son_attribute, node *arg_node, char *string)
  *
  *****************************************************************************/
 
+node *
+CHKnotExist (void *son_attribute, node *arg_node, char *string)
+{
+    DBUG_ENTER ("CHKnotExist");
+
+    if (son_attribute != NULL) {
+
+        NODE_ERROR (arg_node) = CHKinsertError (NODE_ERROR (arg_node), string);
+    }
+
+    DBUG_RETURN (son_attribute);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *CHKnotExistAttribute( node *attribute, node *arg_node, char *string)
+ *
+ *****************************************************************************/
 node *
 CHKnotExistAttribute (void *attribute, node *arg_node, char *string)
 {
@@ -95,6 +113,11 @@ CHKnotExistAttribute (void *attribute, node *arg_node, char *string)
     DBUG_RETURN (attribute);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn node *CHKcorrectTypeInsertError( node *arg_node, char *string)
+ *
+ *****************************************************************************/
 node *
 CHKcorrectTypeInsertError (node *arg_node, char *string)
 {

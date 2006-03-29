@@ -2152,7 +2152,7 @@
             <target mandatory="no">
               <node name="Assign" />
               <phases>
-                <range from="compile" to="final" />
+                <range from="comp" to="final" />
               </phases>
             </target>
           </targets>
@@ -3244,15 +3244,15 @@
         <son name="Ids">
           <targets>
             <target mandatory="no">
-              <node name="Ids" />
+              <node name="SPIds" />
               <phases>
-                <all />
+                <range from="initial" to="insvd" />
               </phases>
             </target>
             <target mandatory="no">
-              <node name="SPIds" />
+              <node name="Ids" />
               <phases>
-                <all />
+                <range from="insvd" to="final" />
               </phases>
             </target>
           </targets>
@@ -4629,7 +4629,7 @@
         <attribute name="SSAAssign">
           <type name="Link">
             <targets>
-              <target mandatory="yes">
+              <target mandatory="no">
                 <node name="Assign" />
                 <phases>
                   <range from="ssa" to="wltussa" />
@@ -5707,7 +5707,7 @@
             <target mandatory="no">
               <node name="Exprs" />
               <phases>
-                <range from="rwo" to="rci" />
+                <range from="wrci" to="rci" />
               </phases>
             </target>
           </targets>
@@ -5794,7 +5794,7 @@
             <target mandatory="no">
               <node name="Exprs" />
               <phases>
-                <range from="rwo" to="rci" />
+                <range from="wrci" to="rci" />
               </phases>
             </target>
           </targets>

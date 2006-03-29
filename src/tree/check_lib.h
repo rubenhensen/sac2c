@@ -20,6 +20,7 @@ extern node *CHKinsertError (node *arg_node, char *string);
 extern node *CHKexistSon (node *son, node *arg_node, char *string);
 extern node *CHKexistAttribute (void *attribute, node *arg_node, char *string);
 extern node *CHKnotExistAttribute (void *attribute, node *arg_node, char *string);
+extern node *CHKnotExist (void *son_attribute, node *arg_node, char *string);
 extern node *CHKcorrectTypeInsertError (node *arg_node, char *string);
 
 extern node *CHKassignAvisSSAAssign (node *arg_node);
