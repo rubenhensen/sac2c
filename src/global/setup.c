@@ -4,6 +4,8 @@
 
 #include <locale.h>
 
+#include "setup.h"
+
 #include "types.h"
 #include "dbug.h"
 #include "phase.h"
@@ -13,8 +15,7 @@
 #include "DupTree.h"
 #include "filemgr.h"
 #include "options.h"
-
-#include "setup.h"
+#include "check_mem.h"
 
 void
 SETUPdoSetupCompiler (int argc, char *argv[])
@@ -25,6 +26,7 @@ SETUPdoSetupCompiler (int argc, char *argv[])
 
 #ifdef SHOW_MALLOC
     ILIBcomputeMallocAlignStep ();
+    CHKMinitialize (argc, argv);
 #endif
 
     GLOBinitializeGlobal ();

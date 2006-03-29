@@ -34,6 +34,7 @@
 #include "cv2cv.h"
 #include "cv2scalar.h"
 #include "cv2str.h"
+#include "check_mem.h"
 
 static bool argtag_has_shp_init[] = {
 #define SELECTshp(it_shp) it_shp

@@ -1,59 +1,5 @@
-/*
- *
- * $Log$
- * Revision 1.16  2005/07/16 10:08:26  sah
- * made a local var static to preserve its state
- *
- * Revision 1.15  2005/07/15 15:57:02  sah
- * introduced namespaces
- *
- * Revision 1.14  2005/06/14 23:39:03  sbs
- * CTIabortOnBottom added for reporting bottom types
- *
- * Revision 1.13  2005/06/14 17:58:19  sbs
- * added CTIgetErrorMessageVA
- *
- * Revision 1.12  2005/06/03 10:10:07  sbs
- * OOOOps
- *
- * Revision 1.11  2005/06/03 10:09:20  sbs
- * CTIerrorLineVA added
- *
- * Revision 1.10  2005/06/03 09:34:16  cg
- * Bug fixed in handling of error message buffer.
- *
- * Revision 1.9  2005/03/10 09:41:09  cg
- * Added CTIterminateCompilation() which is always called upon
- * successful termination whether or not a break option was used.
- *
- * Revision 1.8  2005/02/14 14:15:04  cg
- * Layout bug fixed.
- *
- * Revision 1.7  2005/02/07 16:35:04  cg
- * Adapted usage of vsnprintf Solaris.
- *
- * Revision 1.6  2005/01/21 18:05:09  cg
- * Layout bug fixed in error messages.
- *
- * Revision 1.5  2005/01/14 08:46:31  cg
- * Bug fixed in application of variable argument list functions.
- *
- * Revision 1.4  2005/01/12 15:50:46  cg
- * Added CTIterminateCompilation.
- *
- * Revision 1.3  2005/01/11 15:11:46  cg
- * Added some useful functionality.
- *
- * Revision 1.2  2005/01/07 19:54:13  cg
- * Some streamlining done.
- *
- * Revision 1.1  2005/01/07 16:48:21  cg1
- * Initial revision
- *
- *
- */
-
 /**
+ * $Id$
  *
  * @file
  *
@@ -91,6 +37,8 @@
 #include <string.h>
 #include <signal.h>
 
+#include "ctinfo.h"
+
 #include "dbug.h"
 #include "filemgr.h"
 #include "internal_lib.h"
@@ -103,8 +51,7 @@
 #include "phase.h"
 #include "namespaces.h"
 #include "tree_basic.h"
-
-#include "ctinfo.h"
+#include "check_mem.h"
 
 static char *message_buffer = NULL;
 static int message_buffer_size = 0;
@@ -950,6 +897,8 @@ CTIterminateCompilation (compiler_phase_t phase, char *break_specifier, node *sy
     }
 
 #ifdef SHOW_MALLOC
+    CHKMdeinitialize ();
+
     CTIstate ("*** Maximum allocated memory (bytes):   %s",
               CVintBytes2String (global.max_allocated_mem));
     CTIstate ("*** Currently allocated memory (bytes): %s",

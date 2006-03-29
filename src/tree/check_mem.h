@@ -9,6 +9,10 @@
 
 #include "types.h"
 
+extern void CHKMinitialize (int argc, char *argv[]);
+extern bool CHKMisMemcheckActive ();
+extern void CHKMdeinitialize ();
+
 extern node *CHKMdoMemCheck (node *syntax_tree);
 extern node *CHKMprefun (node *arg_node, info *arg_info);
 extern node *CHKMpostfun (node *arg_node, info *arg_info);

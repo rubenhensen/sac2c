@@ -11,9 +11,11 @@
  ******************************************************************************/
 
 #include <stdlib.h>
-#include "internal_lib.h"
+#include <string.h>
 
-#include "types.h"
+#include "check_mem.h"
+
+#include "internal_lib.h"
 #include "traverse.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -92,10 +94,137 @@ static void CHKManalyzeMemtab (memobj *, int);
 
 static char *CHKMtoString (memobj *);
 
+static bool memcheck = FALSE;
 static memobj *memtab = NULL;
 static int memfreeslots = 0;
 static int memindex = 0;
 static int memtabsize = 0;
+
+/** <!--********************************************************************-->
+ *
+ * @fn memobj *AllocateMemtab( int memtabsize)
+ *
+ *
+ *
+ *****************************************************************************/
+static memobj *
+AllocateMemtab (int memtabsize)
+{
+    memobj *memtab;
+    int size;
+
+    DBUG_ENTER ("AllocateMemtab");
+
+    size = memtabsize * sizeof (memobj);
+
+    if (global.current_allocated_mem + size < global.current_allocated_mem) {
+        DBUG_ASSERT ((0), "counter for allocated memory: overflow detected");
+    }
+
+    global.current_allocated_mem += size;
+
+    if (global.max_allocated_mem < global.current_allocated_mem) {
+        global.max_allocated_mem = global.current_allocated_mem;
+    }
+
+    memtab = (memobj *)malloc (size);
+
+    DBUG_PRINT ("MEM_ALLOC", ("Alloc memory: %d Bytes at adress: " F_PTR, size, memtab));
+
+    DBUG_PRINT ("MEM_TOTAL",
+                ("Currently allocated memory: %u", global.current_allocated_mem));
+
+    DBUG_RETURN (memtab);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn memobj *FreeMemtab( memobj *memtab, int memtabsize)
+ *
+ *
+ *
+ *****************************************************************************/
+static memobj *
+FreeMemtab (memobj *memtab, int memtabsize)
+{
+    int size;
+
+    DBUG_ENTER ("FreeMemtab");
+
+    size = memtabsize * sizeof (memobj);
+
+    DBUG_PRINT ("MEM_ALLOC", ("Free memory: %d Bytes at adress: " F_PTR, size, memtab));
+
+    if (global.current_allocated_mem < global.current_allocated_mem - size) {
+        DBUG_ASSERT ((0), "counter for allocated memory: overflow detected");
+    }
+
+    global.current_allocated_mem -= size;
+
+    DBUG_PRINT ("MEM_TOTAL",
+                ("Currently allocated memory: %u", global.current_allocated_mem));
+    free (memtab);
+
+    DBUG_RETURN (NULL);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn void CHKMinitialize( int argc, char *argv[])
+ *
+ * the initial function
+ *
+ *****************************************************************************/
+void
+CHKMinitialize (int argc, char *argv[])
+{
+    int i;
+
+    DBUG_ENTER ("CHKMinitialize");
+
+    for (i = 0; i < (argc - 1); i++) {
+        if (strcmp (argv[i], "-d") == 0) {
+            if (strcmp (argv[i + 1], "memcheck") == 0) {
+                memcheck = TRUE;
+            }
+        }
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn bool CHKMisMemcheckActive()
+ *
+ * the initial function
+ *
+ *****************************************************************************/
+bool
+CHKMisMemcheckActive ()
+{
+    DBUG_ENTER ("CHKMisMemcheckActive");
+    DBUG_RETURN (memcheck);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn void *CHKMdeinitialize()
+ *
+ * the initial function
+ *
+ *****************************************************************************/
+void
+CHKMdeinitialize ()
+{
+    DBUG_ENTER ("CHKMdeinitialize");
+
+    if (memcheck) {
+        global.current_allocated_mem -= memtabsize * sizeof (memobj);
+    }
+
+    DBUG_VOID_RETURN;
+}
 
 /** <!--********************************************************************-->
  *
@@ -141,77 +270,84 @@ void *
 CHKMregisterMem (int size, void *orig_ptr)
 {
     void *shifted_ptr = NULL;
-    memobj *memobj_ptr;
+    memobj *ptr_to_memobj;
 
     DBUG_ENTER ("CHKMregisterMem");
 
-    shifted_ptr = ORIG2SHIFT (orig_ptr);
+    if (memcheck) {
 
-    /* change the memtabsize if the memtab is full or empty */
-    if (memindex == memtabsize) {
+        shifted_ptr = ORIG2SHIFT (orig_ptr);
 
-        /* at beginning the memtab ist empty so: */
-        if (memtabsize == 0) {
+        /* change the memtabsize if the memtab is full or empty */
+        if (memindex == memtabsize) {
 
-            DBUG_PRINT ("CHKM", ("Allocating memtab for 1000 memory objects"
-                                 " size: %d bytes",
-                                 1000 * sizeof (memobj)));
+            /* at beginning the memtab ist empty so: */
+            if (memtabsize == 0) {
 
-            memtab = (memobj *)malloc (1000 * sizeof (memobj));
-            memtabsize = 1000;
-            memfreeslots = 1000;
-        }
+                DBUG_PRINT ("CHKM", ("Allocating memtab for 1000 memory objects"
+                                     " size: %d bytes",
+                                     1000 * sizeof (memobj)));
 
-        /* expand or reduce mechanismn for the memtab */
-        else {
-            int newtabsize = (memtabsize - memfreeslots) * 2;
-            int newindex = 0;
-            memobj *newtab;
-
-            DBUG_PRINT ("CHKM", ("Allocating memtab for %d memory objects"
-                                 " size: %d bytes",
-                                 newtabsize, newtabsize * sizeof (memobj)));
-
-            newtab = (memobj *)malloc (newtabsize * sizeof (memobj));
-
-            /* copy the old memtab to new (smaller or bigger) memtab. All gaps
-               will ignore */
-            for (int i = 0; i < memtabsize; i++) {
-
-                if (memtab[i].ptr != NULL) {
-                    memobj **tmpptr;
-
-                    newtab[newindex] = memtab[i];
-                    tmpptr = (memobj **)newtab[newindex].ptr;
-                    *tmpptr = newtab + newindex;
-                    newindex++;
-                }
+                memtab = AllocateMemtab (1000);
+                memtabsize = 1000;
+                memfreeslots = 1000;
             }
 
-            free (memtab);
-            memtab = newtab;
-            memindex = newindex;
-            memfreeslots = newtabsize - newindex;
-            memtabsize = newtabsize;
+            /* expand or reduce mechanismn for the memtab */
+            else {
+                int newtabsize = (memtabsize - memfreeslots) * 2;
+                int newindex = 0;
+                memobj *newtab;
+
+                DBUG_PRINT ("CHKM", ("Allocating memtab for %d memory objects"
+                                     " size: %d bytes",
+                                     newtabsize, newtabsize * sizeof (memobj)));
+
+                newtab = AllocateMemtab (newtabsize);
+
+                /* copy the old memtab to new (smaller or bigger) memtab. All gaps
+                   will ignore */
+                for (int i = 0; i < memtabsize; i++) {
+
+                    if (memtab[i].ptr != NULL) {
+                        memobj **tmpptr;
+
+                        newtab[newindex] = memtab[i];
+                        tmpptr = (memobj **)newtab[newindex].ptr;
+                        *tmpptr = newtab + newindex;
+                        newindex++;
+                    }
+                }
+                memtab = FreeMemtab (memtab, memtabsize);
+                memtab = newtab;
+                memindex = newindex;
+                memfreeslots = newtabsize - newindex;
+                memtabsize = newtabsize;
+            }
         }
+
+        /* <<<<<<<<  default entry for the memtab  >>>>>>>>> */
+
+        ptr_to_memobj = memtab + memindex;
+
+        MEMOBJ_SIZE (ptr_to_memobj) = size;
+        MEMOBJ_PTR (ptr_to_memobj) = orig_ptr;
+        MEMOBJ_USEDBIT (ptr_to_memobj) = 0;
+        MEMOBJ_SHAREDBIT (ptr_to_memobj) = 0;
+        MEMOBJ_NODETYPE (ptr_to_memobj) = N_undefined;
+        MEMOBJ_SUBPHASE (ptr_to_memobj) = global.compiler_subphase;
+        MEMOBJ_TRAVERSAL (ptr_to_memobj) = TRAVgetName ();
+
+        *(memobj **)orig_ptr = ptr_to_memobj;
+
+        memfreeslots = memfreeslots - 1;
+        memindex = memindex + 1;
+    } else {
+
+        *(int *)orig_ptr = size;
+
+        shifted_ptr = ORIG2SHIFT (orig_ptr);
     }
-
-    /* <<<<<<<<  default entry for the memtab  >>>>>>>>> */
-
-    memobj_ptr = memtab + memindex;
-
-    MEMOBJ_SIZE (memobj_ptr) = size;
-    MEMOBJ_PTR (memobj_ptr) = orig_ptr;
-    MEMOBJ_USEDBIT (memobj_ptr) = 0;
-    MEMOBJ_SHAREDBIT (memobj_ptr) = 0;
-    MEMOBJ_NODETYPE (memobj_ptr) = N_undefined;
-    MEMOBJ_SUBPHASE (memobj_ptr) = global.compiler_subphase;
-    MEMOBJ_TRAVERSAL (memobj_ptr) = TRAVgetName ();
-
-    *(memobj **)orig_ptr = memobj_ptr;
-
-    memfreeslots = memfreeslots - 1;
-    memindex = memindex + 1;
 
     DBUG_RETURN (shifted_ptr);
 }
@@ -224,21 +360,24 @@ CHKMregisterMem (int size, void *orig_ptr)
 void *
 CHKMunregisterMem (void *shifted_ptr)
 {
-    memobj *memobj_ptr;
+    memobj *ptr_to_memobj;
     void *orig_ptr;
 
     DBUG_ENTER ("CHKMunregisterMEM");
 
     orig_ptr = SHIFT2ORIG (shifted_ptr);
-    memobj_ptr = SHIFT2MEMOBJ (shifted_ptr);
 
-    if ((MEMOBJ_SIZE (memobj_ptr) == 0) && (MEMOBJ_PTR (memobj_ptr) == NULL)) {
-        CTIwarn ("%s", "double free"); /* miss where */
+    if (memcheck) {
+        ptr_to_memobj = SHIFT2MEMOBJ (shifted_ptr);
+
+        if ((MEMOBJ_SIZE (ptr_to_memobj) == 0) && (MEMOBJ_PTR (ptr_to_memobj) == NULL)) {
+            CTIwarn ("%s", "double free"); /* miss where */
+        }
+
+        MEMOBJ_SIZE (ptr_to_memobj) = 0;
+        MEMOBJ_PTR (ptr_to_memobj) = NULL;
+        memfreeslots = memfreeslots + 1;
     }
-
-    MEMOBJ_SIZE (memobj_ptr) = 0;
-    MEMOBJ_PTR (memobj_ptr) = NULL;
-    memfreeslots = memfreeslots + 1;
 
     DBUG_RETURN ((void *)orig_ptr);
 }
@@ -328,8 +467,7 @@ CHKManalyzeMemtab (memobj *memtab, int memindex)
        must copy the memtab(!) to freeze, because Node_Error expand again the
        memtab and so can possibly change the back pointers
     **********************************/
-
-    copy_memtab = malloc (sizeof (memobj) * memindex);
+    copy_memtab = AllocateMemtab (memindex);
 
     for (int i = 0; i < memindex; i++) {
         copy_memtab[i] = memtab[i];
@@ -407,7 +545,7 @@ CHKManalyzeMemtab (memobj *memtab, int memindex)
             }
         }
     }
-    free (copy_memtab);
+    copy_memtab = FreeMemtab (copy_memtab, copy_index);
 
     CTIwarn (">>>>> Counter Spaceleaks: %d Counter Shared Memory: %d", cnt_spaceleaks,
              cnt_sharedmem);
@@ -427,9 +565,12 @@ CHKMsetNodeType (node *shifted_ptr, nodetype newnodetype)
 
     DBUG_ENTER ("CHKMsetNodeType");
 
-    memobj_ptr = SHIFT2MEMOBJ (shifted_ptr);
+    if (memcheck) {
 
-    MEMOBJ_NODETYPE (memobj_ptr) = newnodetype;
+        memobj_ptr = SHIFT2MEMOBJ (shifted_ptr);
+
+        MEMOBJ_NODETYPE (memobj_ptr) = newnodetype;
+    }
 
     DBUG_VOID_RETURN;
 }
@@ -446,49 +587,14 @@ CHKMsetLocation (node *shifted_ptr, char *file, int line)
 
     DBUG_ENTER ("CHKMsetLocation");
 
-    memobj_ptr = SHIFT2MEMOBJ (shifted_ptr);
+    if (memcheck) {
 
-    MEMOBJ_FILE (memobj_ptr) = file;
+        memobj_ptr = SHIFT2MEMOBJ (shifted_ptr);
 
-    MEMOBJ_LINE (memobj_ptr) = line;
+        MEMOBJ_FILE (memobj_ptr) = file;
 
-    DBUG_VOID_RETURN;
-}
-
-/** <!--********************************************************************-->
- *
- * @fn void CHKMsetSubPhase( node *shiftet_ptr, compiler_subphase_t subphase)
- *
- *****************************************************************************/
-void
-CHKMsetSubphase (node *shifted_ptr, compiler_subphase_t subphase)
-{
-    memobj *memobj_ptr;
-
-    DBUG_ENTER ("CHKMsetSubPhase");
-
-    memobj_ptr = SHIFT2MEMOBJ (shifted_ptr);
-
-    MEMOBJ_SUBPHASE (memobj_ptr) = subphase;
-
-    DBUG_VOID_RETURN;
-}
-
-/** <!--********************************************************************-->
- *
- * @fn void CHKMsetTraversal( node *shiftet_ptr, trav_t *traversal)
- *
- *****************************************************************************/
-void
-CHKMsetTraversal (node *shifted_ptr)
-{
-    memobj *memobj_ptr;
-
-    DBUG_ENTER ("CHKMsetTraversal");
-
-    memobj_ptr = SHIFT2MEMOBJ (shifted_ptr);
-
-    MEMOBJ_TRAVERSAL (memobj_ptr) = TRAVgetName ();
+        MEMOBJ_LINE (memobj_ptr) = line;
+    }
 
     DBUG_VOID_RETURN;
 }
@@ -501,14 +607,23 @@ CHKMsetTraversal (node *shifted_ptr)
 int
 CHKMgetSize (node *shifted_ptr)
 {
-    memobj *memobj_ptr;
+    memobj *ptr_to_memobj;
+    int *ptr_to_size;
     int size;
 
     DBUG_ENTER ("CHKMgetSize");
 
-    memobj_ptr = SHIFT2MEMOBJ (shifted_ptr);
+    if (memcheck) {
 
-    size = MEMOBJ_SIZE (memobj_ptr);
+        ptr_to_memobj = SHIFT2MEMOBJ (shifted_ptr);
+
+        size = MEMOBJ_SIZE (ptr_to_memobj);
+    } else {
+
+        ptr_to_size = (int *)SHIFT2ORIG (shifted_ptr);
+
+        size = *ptr_to_size;
+    }
 
     DBUG_RETURN (size);
 }
