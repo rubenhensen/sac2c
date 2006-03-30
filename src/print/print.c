@@ -4763,20 +4763,23 @@ PRTerror (node *arg_node, info *arg_info)
 
     firstError = INFO_FIRSTERROR (arg_info);
 
-    if (firstError) {
-        fprintf (global.outfile, "\n/******* BEGIN TREE CORRUPTION ********\n");
-        INFO_FIRSTERROR (arg_info) = FALSE;
-    }
+    if (global.outfile != NULL) {
 
-    fprintf (global.outfile, "%s\n", ERROR_MESSAGE (arg_node));
+        if (firstError) {
+            fprintf (global.outfile, "\n/******* BEGIN TREE CORRUPTION ********\n");
+            INFO_FIRSTERROR (arg_info) = FALSE;
+        }
 
-    if (ERROR_NEXT (arg_node) != NULL) {
-        PRINT_CONT (TRAVdo (ERROR_NEXT (arg_node), arg_info), ;);
-    }
+        fprintf (global.outfile, "%s\n", ERROR_MESSAGE (arg_node));
 
-    if (firstError) {
-        fprintf (global.outfile, "********  END TREE CORRUPTION  *******/\n");
-        INFO_FIRSTERROR (arg_info) = TRUE;
+        if (ERROR_NEXT (arg_node) != NULL) {
+            PRINT_CONT (TRAVdo (ERROR_NEXT (arg_node), arg_info), ;);
+        }
+
+        if (firstError) {
+            fprintf (global.outfile, "********  END TREE CORRUPTION  *******/\n");
+            INFO_FIRSTERROR (arg_info) = TRUE;
+        }
     }
 
     DBUG_RETURN (arg_node);

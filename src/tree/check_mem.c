@@ -144,7 +144,7 @@ AllocateMemtab (int memtabsize)
  *
  *
  *****************************************************************************/
-static memobj *
+static void *
 FreeMemtab (memobj *memtab, int memtabsize)
 {
     int size;
