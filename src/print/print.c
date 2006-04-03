@@ -1517,6 +1517,7 @@ PRTfundef (node *arg_node, info *arg_info)
 
                 if (INFO_SEPARATE (arg_info)) {
                     fclose (global.outfile);
+                    global.outfile = NULL;
                     global.function_counter++;
                 }
             }

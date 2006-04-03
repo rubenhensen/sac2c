@@ -1710,9 +1710,6 @@ MakeIcm_FUN_AP (node *ap, node *fundef, node *assigns)
                               icm_args, assigns);
     }
 
-    /* insert pointer to fundef */
-    ICM_FUNDEF (ASSIGN_INSTR (ret_node)) = fundef;
-
     /*
      * add the thread id
      */

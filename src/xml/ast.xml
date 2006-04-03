@@ -4210,19 +4210,6 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="Fundef">
-          <description>please delete me!</description>
-          <type name="Link">
-            <targets>
-              <target mandatory="yes">
-                <node name="Fundef" />
-                <phases>
-                  <range from="comp" to="final" />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
       </attributes>
       <flags>
         <flag name="IsEndOfStatement" />

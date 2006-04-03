@@ -1750,7 +1750,6 @@ DUPicm (node *arg_node, info *arg_info)
 
     ICM_INDENT_BEFORE (new_node) = ICM_INDENT_BEFORE (arg_node);
     ICM_INDENT_AFTER (new_node) = ICM_INDENT_AFTER (arg_node);
-    ICM_FUNDEF (new_node) = LUTsearchInLutPp (INFO_LUT (arg_info), ICM_FUNDEF (arg_node));
 
     ICM_FLAGSTRUCTURE (new_node) = ICM_FLAGSTRUCTURE (arg_node);
 
