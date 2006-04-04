@@ -71,8 +71,11 @@ typedef struct MEMOBJ {
     int line;
     compiler_subphase_t subphase;
     const char *traversal;
-    bool used_bit;
-    bool shared_bit;
+    struct {
+        unsigned int IsUsed : 1;
+        unsigned int IsShared : 1;
+        unsigned int IsReported : 1;
+    } flags;
 } memobj;
 
 #define MEMOBJ_SIZE(n) ((n)->size)
@@ -82,8 +85,9 @@ typedef struct MEMOBJ {
 #define MEMOBJ_LINE(n) ((n)->line)
 #define MEMOBJ_SUBPHASE(n) ((n)->subphase)
 #define MEMOBJ_TRAVERSAL(n) ((n)->traversal)
-#define MEMOBJ_USEDBIT(n) ((n)->used_bit)
-#define MEMOBJ_SHAREDBIT(n) ((n)->shared_bit)
+#define MEMOBJ_USEDBIT(n) ((n)->flags.IsUsed)
+#define MEMOBJ_SHAREDBIT(n) ((n)->flags.IsShared)
+#define MEMOBJ_REPORTED(n) ((n)->flags.IsReported)
 
 #define SHIFT2ORIG(n) ((memobj **)((char *)n - malloc_align_step))
 #define SHIFT2MEMOBJ(n) (*(SHIFT2ORIG (n)))
@@ -92,13 +96,17 @@ typedef struct MEMOBJ {
 
 static void CHKManalyzeMemtab (memobj *, int);
 
-static char *CHKMtoString (memobj *);
+static char *MemobjToErrorMessage (char *, memobj *);
 
 static bool memcheck = FALSE;
 static memobj *memtab = NULL;
 static int memfreeslots = 0;
 static int memindex = 0;
 static int memtabsize = 0;
+
+static int all_cnt_sharedmem = 0;
+static int all_cnt_node_spaceleaks = 0;
+static int all_cnt_non_node_spaceleaks = 0;
 
 /** <!--********************************************************************-->
  *
@@ -330,13 +338,14 @@ CHKMregisterMem (int size, void *orig_ptr)
 
         ptr_to_memobj = memtab + memindex;
 
-        MEMOBJ_SIZE (ptr_to_memobj) = size;
         MEMOBJ_PTR (ptr_to_memobj) = orig_ptr;
-        MEMOBJ_USEDBIT (ptr_to_memobj) = 0;
-        MEMOBJ_SHAREDBIT (ptr_to_memobj) = 0;
+        MEMOBJ_SIZE (ptr_to_memobj) = size;
         MEMOBJ_NODETYPE (ptr_to_memobj) = N_undefined;
         MEMOBJ_SUBPHASE (ptr_to_memobj) = global.compiler_subphase;
         MEMOBJ_TRAVERSAL (ptr_to_memobj) = TRAVgetName ();
+        MEMOBJ_USEDBIT (ptr_to_memobj) = FALSE;
+        MEMOBJ_SHAREDBIT (ptr_to_memobj) = FALSE;
+        MEMOBJ_REPORTED (ptr_to_memobj) = FALSE;
 
         *(memobj **)orig_ptr = ptr_to_memobj;
 
@@ -406,7 +415,7 @@ CHKMprefun (node *arg_node, info *arg_info)
         }
     } else {
         /*
-         * Zombie
+         * this is a Zombie --> dangling pointer
          */
         if (INFO_ERROR (arg_info) == NULL) {
             INFO_ERROR (arg_info)
@@ -445,21 +454,27 @@ CHKMpostfun (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn static void *CHKManalyzeMemtab( memobj *memtab)
+ * @fn static void *CHKManalyzeMemtab( memobj *arg_memtab, int memindex)
  *
  *****************************************************************************/
 static void
-CHKManalyzeMemtab (memobj *memtab, int memindex)
+CHKManalyzeMemtab (memobj *arg_memtab, int arg_memindex)
 {
-    int i;
-    memobj *memobj_ptr;
+    int index;
+    int orig_tab_index;
+    memobj *ptr_to_memobj;
     memobj *copy_memtab;
+
+    memobj *orig_ptr_to_memobj;
+    memobj *copy_ptr_to_memobj;
+
     int copy_index;
     node *arg_node;
-    char *string;
     char *memtab_info;
+
     int cnt_sharedmem;
-    int cnt_spaceleaks;
+    int cnt_node_spaceleaks;
+    int cnt_non_node_spaceleaks;
 
     DBUG_ENTER ("CHKManalyzeMemtab");
 
@@ -467,88 +482,126 @@ CHKManalyzeMemtab (memobj *memtab, int memindex)
        must copy the memtab(!) to freeze, because Node_Error expand again the
        memtab and so can possibly change the back pointers
     **********************************/
-    copy_memtab = AllocateMemtab (memindex);
+    copy_memtab = AllocateMemtab (arg_memindex);
 
-    for (int i = 0; i < memindex; i++) {
-        copy_memtab[i] = memtab[i];
-        MEMOBJ_USEDBIT (memtab + i) = FALSE;
-        MEMOBJ_SHAREDBIT (memtab + i) = FALSE;
+    for (index = 0; index < arg_memindex; index++) {
+        copy_memtab[index] = arg_memtab[index];
+        MEMOBJ_USEDBIT (arg_memtab + index) = FALSE;
+        MEMOBJ_SHAREDBIT (arg_memtab + index) = FALSE;
     }
 
-    copy_index = memindex;
-    string = NULL;
+    copy_index = arg_memindex;
     cnt_sharedmem = 0;
-    cnt_spaceleaks = 0;
+    cnt_node_spaceleaks = 0;
+    cnt_non_node_spaceleaks = 0;
 
-    for (i = 0; i < copy_index - 1; i++) {
+    for (index = 0; index < copy_index; index++) {
 
-        memobj_ptr = copy_memtab + i;
+        ptr_to_memobj = copy_memtab + index;
 
-        if (MEMOBJ_PTR (memobj_ptr) == NULL) {
-#if 0
-      if ( MEMOBJ_NODETYPE( memobj_ptr) != N_undefined) {
- 
-       /* =========== Nodetypes =========== */ 
-        if ( MEMOBJ_USEDBIT( memobj_ptr) || 
-             MEMOBJ_SHAREDBIT( memobj_ptr)) {
-          
-          memtab_info = CHKMtoString( memobj_ptr);
-          string = ILIBstringConcat( "dangling Ptr: ", memtab_info);
-          memtab_info = ILIBfree( memtab_info);
-                                     
-        }
-      }
-#endif
-        } else {
+        if (MEMOBJ_PTR (ptr_to_memobj) != NULL) {
 
-            if (MEMOBJ_NODETYPE (memobj_ptr) != N_undefined) {
+            if (MEMOBJ_NODETYPE (ptr_to_memobj) != N_undefined) {
 
-                arg_node = (node *)ORIG2SHIFT (MEMOBJ_PTR (memobj_ptr));
+                arg_node = (node *)ORIG2SHIFT (MEMOBJ_PTR (ptr_to_memobj));
 
-                /* =========== Nodetypes =========== */
-                if (!MEMOBJ_USEDBIT (memobj_ptr)) {
+                /*
+                 * Nodetypes
+                 */
+                if (!MEMOBJ_USEDBIT (ptr_to_memobj)) {
 
-                    memtab_info = CHKMtoString (memobj_ptr);
-                    string = ILIBstringConcat ("Spaceleak(node): ", memtab_info);
-                    memtab_info = ILIBfree (memtab_info);
+                    if (!MEMOBJ_REPORTED (ptr_to_memobj)) {
 
-                    CTIwarn ("%s", string);
-                    PRTdoPrint (arg_node);
-                    cnt_spaceleaks++;
-                    string = ILIBfree (string);
-                } else {
-                    if (MEMOBJ_SHAREDBIT (memobj_ptr)) {
+                        MEMOBJ_REPORTED (ptr_to_memobj) = TRUE;
+                        memtab_info
+                          = MemobjToErrorMessage ("Node spaceleak:", ptr_to_memobj);
 
-                        memtab_info = CHKMtoString (memobj_ptr);
-                        string = ILIBstringConcat ("shared memory: ", memtab_info);
+                        CTIwarn ("%s", memtab_info);
+                        PRTdoPrint (arg_node);
+
                         memtab_info = ILIBfree (memtab_info);
+                    }
+                    cnt_node_spaceleaks++;
+                } else {
+                    if (MEMOBJ_SHAREDBIT (ptr_to_memobj)) {
 
-                        NODE_ERROR (arg_node)
-                          = CHKinsertError (NODE_ERROR (arg_node), string);
-                        string = ILIBfree (string);
+                        if (!MEMOBJ_REPORTED (ptr_to_memobj)) {
+
+                            MEMOBJ_REPORTED (ptr_to_memobj) = TRUE;
+                            memtab_info = MemobjToErrorMessage ("illegal memory sharing:",
+                                                                ptr_to_memobj);
+
+                            NODE_ERROR (arg_node)
+                              = CHKinsertError (NODE_ERROR (arg_node), memtab_info);
+                            memtab_info = ILIBfree (memtab_info);
+                        }
                         cnt_sharedmem++;
                     }
                 }
-            } else { /*
-                  =========== not Nodetypes ===========
-                 if (( MEMOBJ_PTR( memobj_ptr) != NULL) &&
-                     ( !MEMOBJ_USEDBIT( memobj_ptr))) {
+            } else {
+                /*
+                 * not Nodetypes
+                 */
+                if (!MEMOBJ_USEDBIT (ptr_to_memobj)) {
 
-                   memtab_info = CHKMtoString( memobj_ptr);
-                   string = ILIBstringConcat( "Spaceleak:", memtab_info);
+                    if (!MEMOBJ_REPORTED (ptr_to_memobj)) {
 
-                   CTIwarn( "spaceleak: File: %s Line: %d Used_Bit: %d",
-                            MEMOBJ_FILE( memobj_ptr),
-                            MEMOBJ_LINE( memobj_ptr),
-                            MEMOBJ_USEDBIT( memobj_ptr));
-                 }*/
+                        MEMOBJ_REPORTED (ptr_to_memobj) = TRUE;
+
+                        memtab_info
+                          = MemobjToErrorMessage ("Non-node spaceleak:", ptr_to_memobj);
+
+                        CTIwarn ("%s", memtab_info);
+
+                        memtab_info = ILIBfree (memtab_info);
+                    }
+                    cnt_non_node_spaceleaks++;
+                }
             }
         }
     }
+
+    /*
+     * transfer
+     */
+    orig_tab_index = 0;
+
+    for (index = 0; index < copy_index; index++) {
+
+        copy_ptr_to_memobj = copy_memtab + index;
+
+        if (MEMOBJ_REPORTED (copy_ptr_to_memobj)) {
+
+            while ((orig_tab_index < memindex)
+                   && (MEMOBJ_PTR (copy_ptr_to_memobj)
+                       != MEMOBJ_PTR (memtab + orig_tab_index))) {
+                orig_tab_index++;
+            }
+
+            if (orig_tab_index < memindex) {
+                MEMOBJ_REPORTED (orig_ptr_to_memobj) = TRUE;
+                orig_tab_index++;
+            }
+        }
+    }
+
     copy_memtab = FreeMemtab (copy_memtab, copy_index);
 
-    CTIwarn (">>>>> Counter Spaceleaks: %d Counter Shared Memory: %d", cnt_spaceleaks,
-             cnt_sharedmem);
+    if ((cnt_node_spaceleaks != 0) || (cnt_sharedmem != 0) || (cnt_non_node_spaceleaks)) {
+
+        CTIwarn (">>>>> counter node spaceleaks: %d , "
+                 "counter non-node spaceleaks: %d, "
+                 "counter illegal memory sharing: %d",
+                 cnt_node_spaceleaks, cnt_non_node_spaceleaks, cnt_sharedmem);
+
+        CTIwarn (">>>>> Counter all node spaceleaks: %d , "
+                 "counter all non-node spaceleaks: %d, "
+                 "all illegal memory sharing: %d",
+                 all_cnt_node_spaceleaks, all_cnt_non_node_spaceleaks, all_cnt_sharedmem);
+    }
+    all_cnt_node_spaceleaks += cnt_node_spaceleaks;
+    all_cnt_non_node_spaceleaks += cnt_non_node_spaceleaks;
+    all_cnt_sharedmem += cnt_sharedmem;
 
     DBUG_VOID_RETURN;
 }
@@ -561,15 +614,15 @@ CHKManalyzeMemtab (memobj *memtab, int memindex)
 void
 CHKMsetNodeType (node *shifted_ptr, nodetype newnodetype)
 {
-    memobj *memobj_ptr;
+    memobj *ptr_to_memobj;
 
     DBUG_ENTER ("CHKMsetNodeType");
 
     if (memcheck) {
 
-        memobj_ptr = SHIFT2MEMOBJ (shifted_ptr);
+        ptr_to_memobj = SHIFT2MEMOBJ (shifted_ptr);
 
-        MEMOBJ_NODETYPE (memobj_ptr) = newnodetype;
+        MEMOBJ_NODETYPE (ptr_to_memobj) = newnodetype;
     }
 
     DBUG_VOID_RETURN;
@@ -583,17 +636,17 @@ CHKMsetNodeType (node *shifted_ptr, nodetype newnodetype)
 void
 CHKMsetLocation (node *shifted_ptr, char *file, int line)
 {
-    memobj *memobj_ptr;
+    memobj *ptr_to_memobj;
 
     DBUG_ENTER ("CHKMsetLocation");
 
     if (memcheck) {
 
-        memobj_ptr = SHIFT2MEMOBJ (shifted_ptr);
+        ptr_to_memobj = SHIFT2MEMOBJ (shifted_ptr);
 
-        MEMOBJ_FILE (memobj_ptr) = file;
+        MEMOBJ_FILE (ptr_to_memobj) = file;
 
-        MEMOBJ_LINE (memobj_ptr) = line;
+        MEMOBJ_LINE (ptr_to_memobj) = line;
     }
 
     DBUG_VOID_RETURN;
@@ -629,7 +682,7 @@ CHKMgetSize (node *shifted_ptr)
 }
 
 static char *
-CHKMtoString (memobj *memobj_ptr)
+MemobjToErrorMessage (char *kind_of_error, memobj *ptr_to_memobj)
 {
     char *str;
     int test = 0;
@@ -639,12 +692,12 @@ CHKMtoString (memobj *memobj_ptr)
     str = (char *)ILIBmalloc (sizeof (char) * 1024);
 
     test = snprintf (str, 1024,
-                     "File: %s, Line: %d, Traversal: %s, Subphase: %s, "
-                     "Used_bit: %d, Shared_bit: %d \n",
-                     MEMOBJ_FILE (memobj_ptr), MEMOBJ_LINE (memobj_ptr),
-                     MEMOBJ_TRAVERSAL (memobj_ptr),
-                     PHsubPhaseName (MEMOBJ_SUBPHASE (memobj_ptr)),
-                     MEMOBJ_USEDBIT (memobj_ptr), MEMOBJ_SHAREDBIT (memobj_ptr));
+                     "%s Address: 0x%x, allocated at: %s:%d, "
+                     "Traversal: %s, Subphase: %s\n",
+                     kind_of_error, (unsigned int)MEMOBJ_PTR (ptr_to_memobj),
+                     MEMOBJ_FILE (ptr_to_memobj), MEMOBJ_LINE (ptr_to_memobj),
+                     MEMOBJ_TRAVERSAL (ptr_to_memobj),
+                     PHsubPhaseName (MEMOBJ_SUBPHASE (ptr_to_memobj)));
 
     DBUG_ASSERT (test < 1024, "buffer is too small");
 

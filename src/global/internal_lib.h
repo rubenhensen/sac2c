@@ -6,11 +6,13 @@
 #define _SAC_INTERNAL_LIB_H_
 
 #include <stdio.h>
+
 #include "config.h"
 #include "types.h"
 #include "dbug.h"
 #include "globals.h"
 #include "ctinfo.h"
+#include "memory.h"
 
 /*********************************
  *
@@ -19,10 +21,12 @@
  * Prefix: ILIB
  *
  *********************************/
-extern int malloc_align_step;
+#ifdef SHOW_MALLOC
+#define ILIBmallocAt(size, file, line) MEMmallocAt (size, file, line)
+#endif
+#define ILIBmalloc(size) MEMmalloc (size)
 
-extern void *ILIBmalloc (int size);
-extern void *ILIBfree (void *address);
+#define ILIBfree(n) MEMfree (n)
 
 extern ptr_buf *ILIBptrBufCreate (int size);
 extern ptr_buf *ILIBptrBufAdd (ptr_buf *s, void *ptr);
@@ -82,13 +86,6 @@ extern void ILIBdbugMemoryLeakCheck (void);
  * macro definitions
  *********************************/
 
-/* format string for pointers */
-#ifdef NEED_PTR_PREFIX
-#define F_PTR "0x%p"
-#else
-#define F_PTR "%p"
-#endif
-
 /* handling of strings */
 #define STR_OR_NULL(str, null_str) (((str) != NULL) ? (str) : (null_str))
 #define STR_OR_EMPTY(str) STR_OR_NULL ((str), "")
@@ -97,14 +94,6 @@ extern void ILIBdbugMemoryLeakCheck (void);
 /* min, max */
 #define MAX(a, b) ((a < b) ? b : a)
 #define MIN(a, b) ((a < b) ? a : b)
-
-/* special check_mem malloc-call to get more informations */
-#ifdef SHOW_MALLOC
-extern void *ILIBmallocAt (int size, char *file, int line);
-#define ILIBmalloc(size) ILIBmallocAt (size, __FILE__, __LINE__)
-#else
-extern void *ILIBmalloc (int size);
-#endif /* SHOW_MALLOC */
 
 /*
  * THE FOLLOWING MACROS ARE DEPRECATED!!  DO NOT USE!!!
