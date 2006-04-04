@@ -550,14 +550,14 @@ CHKManalyzeMemtab (memobj *arg_memtab, int arg_memindex)
 
                     if (!MEMOBJ_REPORTED (ptr_to_memobj)) {
 
-                        MEMOBJ_REPORTED (ptr_to_memobj) = TRUE;
-
                         memtab_info
                           = MemobjToErrorMessage ("Non-node spaceleak:", ptr_to_memobj);
 
                         CTIwarn ("%s", memtab_info);
 
                         memtab_info = ILIBfree (memtab_info);
+
+                        MEMOBJ_REPORTED (ptr_to_memobj) = TRUE;
                     }
                     cnt_non_node_spaceleaks++;
                 }
@@ -600,14 +600,14 @@ CHKManalyzeMemtab (memobj *arg_memtab, int arg_memindex)
         all_cnt_non_node_spaceleaks += cnt_non_node_spaceleaks;
         all_cnt_sharedmem += cnt_sharedmem;
 
-        CTIwarn (">>>>> counter node spaceleaks: %d , "
-                 "counter non-node spaceleaks: %d, "
-                 "counter illegal memory sharing: %d",
+        CTIwarn (">>>>> node spaceleaks:        %d\n"
+                 ">>>>> non-node spaceleaks:    %d\n"
+                 ">>>>> illegal memory sharing: %d\n",
                  cnt_node_spaceleaks, cnt_non_node_spaceleaks, cnt_sharedmem);
 
-        CTIwarn (">>>>> Counter all node spaceleaks: %d , "
-                 "counter all non-node spaceleaks: %d, "
-                 "all illegal memory sharing: %d",
+        CTIwarn (">>>>> node spaceleaks        (cumulative): %d\n"
+                 ">>>>> non-node spaceleaks    (cumulative): %d\n"
+                 ">>>>> illegal memory sharing (cumulative): %d\n",
                  all_cnt_node_spaceleaks, all_cnt_non_node_spaceleaks, all_cnt_sharedmem);
 
         control_value = 0;
@@ -704,12 +704,11 @@ MemobjToErrorMessage (char *kind_of_error, memobj *ptr_to_memobj)
 
     test = snprintf (str, 1024,
                      "%s Address: 0x%x, allocated at: %s:%d, "
-                     "Traversal: %s, Subphase: %s, IsReported: %d \n",
+                     "Traversal: %s, Subphase: %s\n",
                      kind_of_error, (unsigned int)MEMOBJ_PTR (ptr_to_memobj),
                      MEMOBJ_FILE (ptr_to_memobj), MEMOBJ_LINE (ptr_to_memobj),
                      MEMOBJ_TRAVERSAL (ptr_to_memobj),
-                     PHsubPhaseName (MEMOBJ_SUBPHASE (ptr_to_memobj)),
-                     MEMOBJ_REPORTED (ptr_to_memobj));
+                     PHsubPhaseName (MEMOBJ_SUBPHASE (ptr_to_memobj)));
 
     DBUG_ASSERT (test < 1024, "buffer is too small");
 
