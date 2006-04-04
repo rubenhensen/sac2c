@@ -140,7 +140,9 @@ version="1.0">
     <xsl:with-param name="field">Name</xsl:with-param>
   </xsl:call-template>
   <xsl:value-of select="', arg_node));'"/>
+  <!--
   <xsl:value-of select="'NODE_ERROR( arg_node) = FREETRAV( NODE_ERROR( arg_node), arg_info);'"/>
+  -->
   <xsl:value-of select="'arg_node = FREEzombify( arg_node);'"/>
   <!-- first free everything downwards in the ast -->
   <xsl:apply-templates select="sons/son[@name = &quot;Next&quot;]"/>

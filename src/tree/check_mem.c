@@ -539,24 +539,27 @@ CHKManalyzeMemtab (memobj *arg_memtab, int arg_memindex)
                     }
                 }
             } else {
+
                 /*
                  * not Nodetypes
                  */
-                if (!MEMOBJ_USEDBIT (ptr_to_memobj)) {
+                /*
+                if ( !MEMOBJ_USEDBIT( ptr_to_memobj)) {
 
-                    if (!MEMOBJ_REPORTED (ptr_to_memobj)) {
+                  if ( !MEMOBJ_REPORTED( ptr_to_memobj)) {
 
-                        MEMOBJ_REPORTED (ptr_to_memobj) = TRUE;
+                    MEMOBJ_REPORTED( ptr_to_memobj) = TRUE;
 
-                        memtab_info
-                          = MemobjToErrorMessage ("Non-node spaceleak:", ptr_to_memobj);
+                    memtab_info = MemobjToErrorMessage( "Non-node spaceleak:",
+                                                        ptr_to_memobj);
 
-                        CTIwarn ("%s", memtab_info);
+                    CTIwarn( "%s", memtab_info);
 
-                        memtab_info = ILIBfree (memtab_info);
-                    }
-                    cnt_non_node_spaceleaks++;
+                    memtab_info = ILIBfree( memtab_info);
+                  }
+                  cnt_non_node_spaceleaks++;
                 }
+                */
             }
         }
     }
@@ -580,6 +583,7 @@ CHKManalyzeMemtab (memobj *arg_memtab, int arg_memindex)
 
             if (orig_tab_index < memindex) {
                 MEMOBJ_REPORTED (orig_ptr_to_memobj) = TRUE;
+                CTIwarn ("comes here");
                 orig_tab_index++;
             }
         }
