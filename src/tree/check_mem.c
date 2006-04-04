@@ -107,6 +107,7 @@ static int memtabsize = 0;
 static int all_cnt_sharedmem = 0;
 static int all_cnt_node_spaceleaks = 0;
 static int all_cnt_non_node_spaceleaks = 0;
+static int control_value = 0;
 
 /** <!--********************************************************************-->
  *
@@ -512,14 +513,14 @@ CHKManalyzeMemtab (memobj *arg_memtab, int arg_memindex)
 
                     if (!MEMOBJ_REPORTED (ptr_to_memobj)) {
 
-                        MEMOBJ_REPORTED (ptr_to_memobj) = TRUE;
                         memtab_info
                           = MemobjToErrorMessage ("Node spaceleak:", ptr_to_memobj);
 
                         CTIwarn ("%s", memtab_info);
                         PRTdoPrint (arg_node);
-
                         memtab_info = ILIBfree (memtab_info);
+
+                        MEMOBJ_REPORTED (ptr_to_memobj) = TRUE;
                     }
                     cnt_node_spaceleaks++;
                 } else {
@@ -527,13 +528,14 @@ CHKManalyzeMemtab (memobj *arg_memtab, int arg_memindex)
 
                         if (!MEMOBJ_REPORTED (ptr_to_memobj)) {
 
-                            MEMOBJ_REPORTED (ptr_to_memobj) = TRUE;
                             memtab_info = MemobjToErrorMessage ("illegal memory sharing:",
                                                                 ptr_to_memobj);
 
                             NODE_ERROR (arg_node)
                               = CHKinsertError (NODE_ERROR (arg_node), memtab_info);
                             memtab_info = ILIBfree (memtab_info);
+
+                            MEMOBJ_REPORTED (ptr_to_memobj) = TRUE;
                         }
                         cnt_sharedmem++;
                     }
@@ -543,23 +545,22 @@ CHKManalyzeMemtab (memobj *arg_memtab, int arg_memindex)
                 /*
                  * not Nodetypes
                  */
-                /*
-                if ( !MEMOBJ_USEDBIT( ptr_to_memobj)) {
 
-                  if ( !MEMOBJ_REPORTED( ptr_to_memobj)) {
+                if (!MEMOBJ_USEDBIT (ptr_to_memobj)) {
 
-                    MEMOBJ_REPORTED( ptr_to_memobj) = TRUE;
+                    if (!MEMOBJ_REPORTED (ptr_to_memobj)) {
 
-                    memtab_info = MemobjToErrorMessage( "Non-node spaceleak:",
-                                                        ptr_to_memobj);
+                        MEMOBJ_REPORTED (ptr_to_memobj) = TRUE;
 
-                    CTIwarn( "%s", memtab_info);
+                        memtab_info
+                          = MemobjToErrorMessage ("Non-node spaceleak:", ptr_to_memobj);
 
-                    memtab_info = ILIBfree( memtab_info);
-                  }
-                  cnt_non_node_spaceleaks++;
+                        CTIwarn ("%s", memtab_info);
+
+                        memtab_info = ILIBfree (memtab_info);
+                    }
+                    cnt_non_node_spaceleaks++;
                 }
-                */
             }
         }
     }
@@ -582,8 +583,8 @@ CHKManalyzeMemtab (memobj *arg_memtab, int arg_memindex)
             }
 
             if (orig_tab_index < memindex) {
+                orig_ptr_to_memobj = memtab + orig_tab_index;
                 MEMOBJ_REPORTED (orig_ptr_to_memobj) = TRUE;
-                CTIwarn ("comes here");
                 orig_tab_index++;
             }
         }
@@ -591,7 +592,13 @@ CHKManalyzeMemtab (memobj *arg_memtab, int arg_memindex)
 
     copy_memtab = FreeMemtab (copy_memtab, copy_index);
 
-    if ((cnt_node_spaceleaks != 0) || (cnt_sharedmem != 0) || (cnt_non_node_spaceleaks)) {
+    if (((cnt_node_spaceleaks != 0) || (cnt_sharedmem != 0) || (cnt_non_node_spaceleaks))
+        && ((cnt_node_spaceleaks + cnt_sharedmem + cnt_non_node_spaceleaks)
+            != control_value)) {
+
+        all_cnt_node_spaceleaks += cnt_node_spaceleaks;
+        all_cnt_non_node_spaceleaks += cnt_non_node_spaceleaks;
+        all_cnt_sharedmem += cnt_sharedmem;
 
         CTIwarn (">>>>> counter node spaceleaks: %d , "
                  "counter non-node spaceleaks: %d, "
@@ -602,10 +609,10 @@ CHKManalyzeMemtab (memobj *arg_memtab, int arg_memindex)
                  "counter all non-node spaceleaks: %d, "
                  "all illegal memory sharing: %d",
                  all_cnt_node_spaceleaks, all_cnt_non_node_spaceleaks, all_cnt_sharedmem);
+
+        control_value = 0;
+        control_value = cnt_node_spaceleaks + cnt_sharedmem + cnt_non_node_spaceleaks;
     }
-    all_cnt_node_spaceleaks += cnt_node_spaceleaks;
-    all_cnt_non_node_spaceleaks += cnt_non_node_spaceleaks;
-    all_cnt_sharedmem += cnt_sharedmem;
 
     DBUG_VOID_RETURN;
 }
@@ -697,11 +704,12 @@ MemobjToErrorMessage (char *kind_of_error, memobj *ptr_to_memobj)
 
     test = snprintf (str, 1024,
                      "%s Address: 0x%x, allocated at: %s:%d, "
-                     "Traversal: %s, Subphase: %s\n",
+                     "Traversal: %s, Subphase: %s, IsReported: %d \n",
                      kind_of_error, (unsigned int)MEMOBJ_PTR (ptr_to_memobj),
                      MEMOBJ_FILE (ptr_to_memobj), MEMOBJ_LINE (ptr_to_memobj),
                      MEMOBJ_TRAVERSAL (ptr_to_memobj),
-                     PHsubPhaseName (MEMOBJ_SUBPHASE (ptr_to_memobj)));
+                     PHsubPhaseName (MEMOBJ_SUBPHASE (ptr_to_memobj)),
+                     MEMOBJ_REPORTED (ptr_to_memobj));
 
     DBUG_ASSERT (test < 1024, "buffer is too small");
 
