@@ -253,31 +253,6 @@ FREEattribLUT (lut_t *attr, node *parent)
 
 /** <!--******************************************************************-->
  *
- * @fn FREEattribMask
- *
- * @brief Frees Mask attribute
- *
- * @param attr Mask node to process
- * @param parent parent node
- *
- * @return result of Free call, usually NULL
- *
- ***************************************************************************/
-long *
-FREEattribMask (long *attr, node *parent)
-{
-    DBUG_ENTER ("FREEattribMask");
-
-    if (attr != NULL) {
-        DBUG_PRINT ("FREE", ("Freeing element of mask at " F_PTR, attr));
-        attr = ILIBfree (attr);
-    }
-
-    DBUG_RETURN (attr);
-}
-
-/** <!--******************************************************************-->
- *
  * @fn FREEattribNodeList
  *
  * @brief Frees NodeList attribute

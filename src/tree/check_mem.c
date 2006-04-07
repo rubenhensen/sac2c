@@ -23,6 +23,8 @@
 #include "types_trav.h"
 #include "phase.h"
 #include "print.h"
+#include "check_node.h"
+#include "check_attribs.h"
 
 /**
  * INFO structure
@@ -394,50 +396,58 @@ CHKMunregisterMem (void *shifted_ptr)
 
 /** <!--********************************************************************-->
  *
- * @fn node *CHKMpreffun( node *arg_node, info *arg_info)
+ * @fn node *CHKMtouch( node *arg_node, info *arg_info)
  *
  *****************************************************************************/
-node *
-CHKMprefun (node *arg_node, info *arg_info)
+void
+CHKMtouch (void *shifted_ptr, info *arg_info)
 {
     memobj *ptr_to_memobj;
 
     DBUG_ENTER ("CHKMprefun");
 
-    ptr_to_memobj = SHIFT2MEMOBJ (arg_node);
+    if (shifted_ptr != NULL) {
 
-    if ((memtab <= ptr_to_memobj) && (ptr_to_memobj < memtab + memtabsize)
-        && (MEMOBJ_PTR (ptr_to_memobj) == SHIFT2ORIG (arg_node))) {
+        ptr_to_memobj = SHIFT2MEMOBJ (shifted_ptr);
 
-        if (MEMOBJ_USEDBIT (ptr_to_memobj)) {
-            MEMOBJ_SHAREDBIT (ptr_to_memobj) = TRUE;
+        if ((memtab <= ptr_to_memobj) && (ptr_to_memobj < memtab + memtabsize)
+            && (MEMOBJ_PTR (ptr_to_memobj) == SHIFT2ORIG (shifted_ptr))) {
+
+            if (MEMOBJ_USEDBIT (ptr_to_memobj)) {
+                MEMOBJ_SHAREDBIT (ptr_to_memobj) = TRUE;
+            } else {
+                MEMOBJ_USEDBIT (ptr_to_memobj) = TRUE;
+            }
         } else {
-            MEMOBJ_USEDBIT (ptr_to_memobj) = TRUE;
-        }
-    } else {
-        /*
-         * this is a Zombie --> dangling pointer
-         */
-        if (INFO_ERROR (arg_info) == NULL) {
-            INFO_ERROR (arg_info)
-              = CHKinsertError (INFO_ERROR (arg_info), "Dangling Pointer");
+            /*
+             * this is a Zombie --> dangling pointer
+             */
+            if (INFO_ERROR (arg_info) == NULL) {
+                INFO_ERROR (arg_info)
+                  = CHKinsertError (INFO_ERROR (arg_info), "Dangling Pointer");
+            }
         }
     }
-
-    DBUG_RETURN (arg_node);
+    DBUG_VOID_RETURN;
 }
 
 /** <!--********************************************************************-->
  *
- * @fn node *CHKMpostfun() node *arg_node, info *arg_info)
+ * @fn node *CHKMappendErrorNodes() node *arg_node, info *arg_info)
+ *
+ * This function is the true postfun of the CHKM Traversal. Called in
+ * CHKMpostfun.
+ *
+ * If a node is a spaceleak, the error nodes of his sons and attributes will
+ * be transfer to the next legal upper node.
  *
  *****************************************************************************/
 node *
-CHKMpostfun (node *arg_node, info *arg_info)
+CHKMappendErrorNodes (node *arg_node, info *arg_info)
 {
     memobj *ptr_to_memobj;
 
-    DBUG_ENTER ("CHKMpostfun");
+    DBUG_ENTER ("CHKMappendErrorNodes");
 
     ptr_to_memobj = SHIFT2MEMOBJ (arg_node);
 
@@ -445,8 +455,8 @@ CHKMpostfun (node *arg_node, info *arg_info)
         && (MEMOBJ_PTR (ptr_to_memobj) == SHIFT2ORIG (arg_node))
         && (INFO_ERROR (arg_info) != NULL)) {
 
-        ERROR_NEXT (INFO_ERROR (arg_info)) = NODE_ERROR (arg_node);
-        NODE_ERROR (arg_node) = INFO_ERROR (arg_info);
+        NODE_ERROR (arg_node)
+          = TCappendError (NODE_ERROR (arg_node), INFO_ERROR (arg_info));
         INFO_ERROR (arg_info) = NULL;
     }
 

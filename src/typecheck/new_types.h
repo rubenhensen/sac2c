@@ -408,6 +408,8 @@ extern ntype *TYeliminateAKV (ntype *t1);
  */
 extern ntype *TYfreeTypeConstructor (ntype *type);
 extern ntype *TYfreeType (ntype *type);
+extern void TYtouchTypeConstructor (ntype *type, info *arg_info);
+extern void TYtouchType (ntype *type, info *arg_info);
 
 extern ntype *TYcopyType (ntype *type);
 extern ntype *TYcopyTypeConstructor (ntype *type);

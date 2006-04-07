@@ -1,9 +1,5 @@
 /*
- * $Log$
- * Revision 1.5  2005/07/27 13:42:18  sah
- * fixed a typoe
- *
- *
+ * $Id$
  */
 
 /**
@@ -23,6 +19,8 @@ extern namespace_t *NSgetInitNamespace ();
 
 extern namespace_t *NSdupNamespace (const namespace_t *ns);
 extern namespace_t *NSfreeNamespace (namespace_t *ns);
+extern namespace_t *NSfreeNamespace (namespace_t *ns);
+extern void NStouchNamespace (namespace_t *ns, info *arg_info);
 
 extern bool NSequals (const namespace_t *one, const namespace_t *two);
 

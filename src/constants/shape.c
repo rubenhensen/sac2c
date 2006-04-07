@@ -39,6 +39,7 @@
 #include "tree_compound.h"
 #include "internal_lib.h"
 #include "free.h"
+#include "check_mem.h"
 
 /*
  * Now, we include the own interface! The reason for this is twofold:
@@ -218,6 +219,43 @@ SHfreeShape (shape *shp)
     DBUG_RETURN (shp);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn void SHtouchShape( shape *shp, info *arg_info)
+ *
+ * @brief touches the given shape structure.
+ *
+ * @param *shp
+ *
+ * @param *arg_info
+ *
+ ******************************************************************************/
+
+void
+SHtouchShape (shape *shp, info *arg_info)
+{
+    DBUG_ENTER ("SHtouchShape");
+    DBUG_ASSERT ((shp != NULL), ("SHtouchShape called with NULL shape!"));
+
+    if (SHAPE_DIM (shp) > 0) {
+        CHKMtouch (SHAPE_ELEMS (shp), arg_info);
+    }
+    CHKMtouch (shp, arg_info);
+
+    DBUG_VOID_RETURN;
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn void SHserializeShape( FILE *file, shape *shp)
+ *
+ * @brief
+ *
+ * @param *file
+ *
+ * @param *shp
+ *
+ ******************************************************************************/
 void
 SHserializeShape (FILE *file, shape *shp)
 {

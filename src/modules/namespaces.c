@@ -1,4 +1,6 @@
 /**
+ * $Id$
+ *
  * @file namespaces.c
  * @brief function and type definitions for namespaces as uses throughout
  *        the compiler.
@@ -302,6 +304,14 @@ NSfreeNamespace (namespace_t *ns)
     ns = NULL;
 
     DBUG_RETURN (ns);
+}
+
+void
+NStouchNamespace (namespace_t *ns, info *arg_info)
+{
+    DBUG_ENTER ("NStouchNamespace");
+
+    DBUG_VOID_RETURN;
 }
 
 bool

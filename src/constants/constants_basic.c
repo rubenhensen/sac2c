@@ -40,6 +40,8 @@
 
 #include <stdlib.h>
 
+#include "constants.h"
+
 #include "globals.h"
 #include "free.h"
 #include "dbug.h"
@@ -53,8 +55,8 @@
 #include "internal_lib.h"
 #include "new_types.h"
 #include "new_typecheck.h"
+#include "check_mem.h"
 
-#include "constants.h"
 /*
  * Now, we include the own interface! The reason fot this is twofold:
  * First, it ensures consistency betweeen the interface and the
@@ -616,6 +618,28 @@ COfreeConstant (constant *a)
     a = ILIBfree (a);
 
     DBUG_RETURN (a);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    void COtouchConstant( constant *a, info *arg_info)
+ *
+ * description:
+ *    touch a including all of its sub-structures.
+ *
+ ******************************************************************************/
+
+void
+COtouchConstant (constant *a, info *arg_info)
+{
+    DBUG_ENTER ("COtouchConstant");
+
+    SHtouchShape (CONSTANT_SHAPE (a), arg_info);
+    CHKMtouch (CONSTANT_ELEMS (a), arg_info);
+    CHKMtouch (a, arg_info);
+
+    DBUG_VOID_RETURN;
 }
 
 /******************************************************************************

@@ -1844,4 +1844,12 @@ extern int TCaddLinksToLinks (node **links, node *add);
 extern bool TClinklistContains (node *set, node *link);
 extern bool TClinklistIsSubset (node *super, node *sub);
 
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_ids :
+ ***/
+
+extern node *TCappendError (node *chain, node *item);
+
 #endif /* _SAC_TREE_COMPOUND_H_ */

@@ -2922,3 +2922,21 @@ TClinklistIsSubset (node *super, node *sub)
 
     DBUG_RETURN (result);
 }
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  ERROR :
+ ***/
+
+node *
+TCappendError (node *chain, node *item)
+{
+    node *ret;
+
+    DBUG_ENTER ("TCappendError");
+
+    APPEND (ret, node *, IDS, chain, item);
+
+    DBUG_RETURN (ret);
+}

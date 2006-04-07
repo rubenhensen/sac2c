@@ -106,6 +106,7 @@ extern dfmask_base_t *DFMupdateMaskBaseAfterRenaming (dfmask_base_t *mask_base,
 extern dfmask_base_t *DFMupdateMaskBaseAfterCompiling (dfmask_base_t *mask_base,
                                                        node *arguments, node *vardecs);
 extern dfmask_base_t *DFMremoveMaskBase (dfmask_base_t *mask_base);
+extern void DFMtouchMaskBase (dfmask_base_t *mask_base, info *arg_info);
 
 extern dfmask_base_t *DFMgetMaskBase (dfmask_t *mask);
 
@@ -130,6 +131,7 @@ extern int DFMtest2Masks (dfmask_t *mask1, dfmask_t *mask2);
 extern int DFMtest3Masks (dfmask_t *mask1, dfmask_t *mask2, dfmask_t *mask3);
 
 extern dfmask_t *DFMremoveMask (dfmask_t *mask);
+extern void DFMtouchMask (dfmask_t *mask, info *arg_info);
 
 extern void DFMprintMask (FILE *handle, const char *format, dfmask_t *mask);
 extern void DFMprintMaskDetailed (FILE *handle, dfmask_t *mask);

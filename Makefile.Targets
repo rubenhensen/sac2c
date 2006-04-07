@@ -34,7 +34,7 @@ tree        = traverse.o tree_basic.o free.o tree_compound.o DupTree.o \
               scheduling.o wl_bounds.o node_basic.o free_node.o \
               free_attribs.o traverse_tables.o traverse_helper.o check.o \
               check_lib.o checktst.o prepare_inlining.o map_call_graph.o \
-              map_fun_trav.o 
+              map_fun_trav.o check_node.o check_attribs.o
      
 
 serialize   = serialize_node.o serialize_attribs.o deserialize.o \

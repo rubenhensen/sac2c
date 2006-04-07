@@ -1,37 +1,11 @@
 /*
- *
- * $Log$
- * Revision 1.8  2005/06/27 21:23:15  sah
- * added STRSduplicate
- *
- * Revision 1.7  2004/11/24 17:57:18  sah
- * COMPILES.
- *
- * Revision 1.6  2004/11/07 18:06:28  sah
- * added support for different stringkinds
- *
- * Revision 1.5  2004/11/04 14:53:43  sah
- * implemented dependencies between modules
- *
- * Revision 1.4  2004/11/01 21:49:59  sah
- * added SSPrint
- *
- * Revision 1.3  2004/10/28 22:07:43  sah
- * added missing include
- *
- * Revision 1.2  2004/10/28 17:22:37  sah
- * now, internally a copy of the string is used
- *
- * Revision 1.1  2004/10/27 13:10:38  sah
- * Initial revision
- *
- *
- *
+ * $Id$
  */
 
 #include "stringset.h"
 #include "dbug.h"
 #include "internal_lib.h"
+#include "check_mem.h"
 
 #include <string.h>
 
@@ -135,6 +109,20 @@ STRSfree (stringset_t *set)
     }
 
     DBUG_RETURN (set);
+}
+
+void
+STRStouch (stringset_t *set, info *arg_info)
+{
+    DBUG_ENTER ("STRStouch");
+
+    if (set != NULL) {
+        CHKMtouch (set->val, arg_info);
+        STRStouch (set->next, arg_info);
+        CHKMtouch (set, arg_info);
+    }
+
+    DBUG_VOID_RETURN;
 }
 
 void *

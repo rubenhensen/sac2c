@@ -1,78 +1,5 @@
 /*
- *
- * $Log$
- * Revision 3.28  2005/01/11 14:06:14  cg
- * Converted output from Error.h to ctinfo.c
- *
- * Revision 3.27  2004/11/25 20:10:51  ktr
- * COMPILES!
- *
- * Revision 3.26  2002/09/13 19:04:35  dkr
- * bug in UpdateLUT() fixed: 'old_item' is duplicated if it is a string!
- *
- * Revision 3.25  2002/08/15 20:58:30  dkr
- * comment about implementation modified
- *
- * Revision 3.24  2002/08/15 18:46:45  dkr
- * functions SearchInLUT_Next?() added
- *
- * Revision 3.23  2002/08/15 11:45:40  dkr
- * - functions ApplyToEach_?() renamed into MapLUT_?()
- * - functions FoldLUT_?() added
- *
- * Revision 3.22  2002/08/14 15:03:54  dkr
- * ComputeHashDiff() expanded and renamed into ComputeHashStat()
- *
- * Revision 3.21  2002/08/14 13:43:44  dkr
- * hash key calculation for pointers optimized
- *
- * Revision 3.20  2002/08/14 11:59:51  dkr
- * DBUG-output in ComputeHashDiff() modified
- *
- * Revision 3.18  2002/08/13 13:21:15  dkr
- * - !!!! string support modified !!!!
- *   Now, only the compare-data is a string, the associated-data is always
- *   a (void*) pointer!
- * - functions ApplyToEach_?() added
- *
- * Revision 3.17  2001/11/22 08:48:56  sbs
- * ComputeHashDiff compiled only if DBUG is active
- *
- * Revision 3.16  2001/05/18 11:40:11  dkr
- * function IsEmptyLUT() added
- *
- * Revision 3.15  2001/05/17 11:39:01  dkr
- * MALLOC FREE aliminated
- *
- * Revision 3.14  2001/05/17 09:41:36  nmw
- * some bugs in UpdateLUT functions fixed
- * wrong hashkeytype, illegal pointer sharing resolved
- *
- * Revision 3.13  2001/04/19 07:47:25  dkr
- * macro F_PTR used as format string for pointers
- *
- * Revision 3.12  2001/04/11 09:43:38  dkr
- * fixed a bug in DuplicateLUT(): StringCopy() used :-/
- *
- * Revision 3.11  2001/04/10 09:59:34  dkr
- * DuplicateLUT added
- *
- * Revision 3.10  2001/04/06 15:55:31  dkr
- * number of hash keys reduced
- *
- * Revision 3.9  2001/04/06 15:29:09  dkr
- * function RemoveContentLUT added
- *
- * Revision 3.8  2001/04/04 14:55:09  sbs
- * pointer casted into long rather than int
- * (for generating hash-keys). This pleases
- * SUN LINUX and ALPHA as well 8-)
- *
- * [...]
- *
- * Revision 1.1  2000/01/28 12:33:14  dkr
- * Initial revision
- *
+ * $Id$
  */
 
 /*
@@ -208,6 +135,7 @@
 #include "free.h"
 #include "dbug.h"
 #include "ctinfo.h"
+#include "check_mem.h"
 
 /*
  * size of a collision table fragment
@@ -1065,6 +993,106 @@ LUTremoveLut (lut_t *lut)
     }
 
     DBUG_RETURN (lut);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   lut_t *LUTtouchContentLut( lut_t *lut, arg_info)
+ *
+ * description:
+ *   touches the content of the given LUT from memory.
+ *
+ ******************************************************************************/
+
+void
+LUTtouchContentLut (lut_t *lut, info *arg_info)
+{
+    void **first, **tmp;
+    hash_key_t k;
+    lut_size_t i;
+
+    DBUG_ENTER ("LUTtouchContentLut");
+
+    DBUG_PRINT ("LUT", ("> lut (" F_PTR ")", lut));
+
+    if (lut != NULL) {
+        /* init LUT for pointers */
+        for (k = 0; k < (HASH_KEYS_POINTER); k++) {
+            DBUG_ASSERT ((lut[k].size >= 0), "illegal LUT size found!");
+            /* touch all but the first collision table fragments */
+            for (i = 1; i <= lut[k].size / (LUT_SIZE); i++) {
+                tmp = lut[k].first;
+                lut[k].first = lut[k].first[2 * (LUT_SIZE)];
+                CHKMtouch (tmp, arg_info);
+            }
+            lut[k].next = lut[k].first;
+            lut[k].size = 0;
+        }
+        /* init LUT for strings */
+        for (k = (HASH_KEYS_POINTER); k < (HASH_KEYS); k++) {
+            DBUG_ASSERT ((lut[k].size >= 0), "illegal LUT size found!");
+            tmp = lut[k].first;
+            first = tmp;
+            /* touch all strings and all but the first collision table fragments */
+            for (i = 0; i < lut[k].size; i++) {
+                CHKMtouch (tmp[0], arg_info);
+                tmp += 2;
+                if ((i + 1) % (LUT_SIZE) == 0) {
+                    /* last table entry is reached -> enter next table of the chain */
+                    tmp = *tmp;
+                    CHKMtouch (first, arg_info);
+                    first = tmp;
+                }
+            }
+            lut[k].first = lut[k].next = first;
+            lut[k].size = 0;
+        }
+
+        DBUG_PRINT ("LUT", ("< finished"));
+    } else {
+        DBUG_PRINT ("LUT", ("< FAILED: lut is NULL"));
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   lut_t *LUTtouchLut( lut_t *lut, info *arg_info)
+ *
+ * description:
+ *   touches the given LUT from memory.
+ *
+ ******************************************************************************/
+
+void
+LUTtouchLut (lut_t *lut, info *arg_info)
+{
+    hash_key_t k;
+
+    DBUG_ENTER ("LUTtouchLut");
+
+    DBUG_PRINT ("LUT", ("> lut (" F_PTR ")", lut));
+
+    if (lut != NULL) {
+        /* touch content of LUT */
+        LUTtouchContentLut (lut, arg_info);
+
+        /* touch empty LUT */
+        for (k = 0; k < (HASH_KEYS); k++) {
+            DBUG_ASSERT ((lut[k].size == 0), "LUT not empty!");
+            CHKMtouch (lut[k].first, arg_info);
+        }
+        CHKMtouch (lut, arg_info);
+
+        DBUG_PRINT ("LUT", ("< finished"));
+    } else {
+        DBUG_PRINT ("LUT", ("< FAILED: lut is NULL"));
+    }
+
+    DBUG_VOID_RETURN;
 }
 
 /******************************************************************************

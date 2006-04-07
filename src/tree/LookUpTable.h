@@ -1,71 +1,5 @@
 /*
- *
- * $Log$
- * Revision 3.14  2004/11/23 11:06:20  khf
- * ismop 2004
- *
- * Revision 3.13  2004/11/22 21:29:55  ktr
- * Big Switch Header! SacDevCamp 04
- *
- * Revision 3.12  2004/08/01 16:27:45  sah
- * added import of types.h as bool
- * is defined there
- *
- * Revision 3.11  2004/08/01 15:51:35  sah
- * changed the type of LUT_t from void*
- * to struct LUT_T *. This change is
- * necessary as the new ast uses no
- * void pointers.
- *
- * Revision 3.10  2002/08/15 18:46:39  dkr
- * functions SearchInLUT_Next?() added
- *
- * Revision 3.9  2002/08/15 11:45:58  dkr
- * - functions ApplyToEach_?() renamed into MapLUT_?()
- * - functions FoldLUT_?() added
- *
- * Revision 3.8  2002/08/13 13:21:49  dkr
- * - !!!! string support modified !!!!
- *   Now, only the compare-data is a string, the associated-data is always
- *   a (void*) pointer!
- * - functions ApplyToEach_?() added.
- *
- * Revision 3.7  2001/05/18 11:39:45  dkr
- * function IsEmptyLUT added
- *
- * Revision 3.6  2001/04/10 09:38:26  dkr
- * DuplicateLUT added
- *
- * Revision 3.5  2001/04/06 15:29:19  dkr
- * function RemoveContentLUT added
- *
- * Revision 3.4  2001/04/06 14:56:20  dkr
- * minor changes done
- *
- * Revision 3.3  2001/03/23 17:59:34  dkr
- * functions UpdateLUT_? added
- *
- * Revision 3.2  2001/03/22 13:30:39  dkr
- * Support for strings added:
- * InsertIntoLUT renamed into InsertIntoLUT_P,
- * SearchInLUT renamed into SearchInLUT_P,
- * InsertIntoLUT_S, SearchInLUT_S added.
- *
- * Revision 3.1  2000/11/20 18:03:21  sacbase
- * new release made
- *
- * Revision 1.4  2000/03/17 18:31:06  dkr
- * type lut_t* replaced by LUT_t
- *
- * Revision 1.3  2000/02/03 08:35:10  dkr
- * GenLUT renamed to GenerateLUT
- *
- * Revision 1.2  2000/01/31 20:18:48  dkr
- * support for hashing added
- *
- * Revision 1.1  2000/01/28 12:33:16  dkr
- * Initial revision
- *
+ * $Id$
  */
 
 /*
@@ -152,6 +86,8 @@ extern lut_t *LUTgenerateLut (void);
 extern lut_t *LUTduplicateLut (lut_t *lut);
 extern lut_t *LUTremoveContentLut (lut_t *lut);
 extern lut_t *LUTremoveLut (lut_t *lut);
+extern void LUTtouchContentLut (lut_t *lut, info *arg_info);
+extern void LUTtouchLut (lut_t *lut, info *arg_info);
 
 extern bool LUTisEmptyLut (lut_t *lut);
 

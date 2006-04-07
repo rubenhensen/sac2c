@@ -79,6 +79,7 @@
 #include "free.h"
 #include "convert.h"
 #include "constants.h"
+#include "check_mem.h"
 
 #include "user_types.h"
 #include "type_utils.h"
@@ -3994,6 +3995,89 @@ TYfreeType (ntype *type)
     type = TYfreeTypeConstructor (type);
 
     DBUG_RETURN (type);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    void TYtouchTypeConstructor( ntype *type, info *arg_info)
+ *    void TYtouchType( ntype *type, info *arg_info)
+ *
+ * description:
+ *   functions for touching types. While TYtouchTypeConstructor only touch the
+ *   topmost type constructor, TYtouchType touch the entire type including all
+ *   sons!
+ *
+ ******************************************************************************/
+
+void
+TYtouchTypeConstructor (ntype *type, info *arg_info)
+{
+    DBUG_ENTER ("TYtouchTypeConstructor");
+
+    DBUG_ASSERT ((type != NULL), "argument is NULL");
+
+    switch (NTYPE_CON (type)) {
+    case TC_bottom:
+        CHKMtouch (BOTTOM_MSG (type), arg_info);
+        break;
+    case TC_symbol:
+        NStouchNamespace (SYMBOL_NS (type), arg_info);
+        CHKMtouch (SYMBOL_NAME (type), arg_info);
+        break;
+    case TC_akv:
+        COtouchConstant (AKV_CONST (type), arg_info);
+        break;
+    case TC_aks:
+        SHtouchShape (AKS_SHP (type), arg_info);
+        break;
+    case TC_akd:
+        SHtouchShape (AKD_SHP (type), arg_info);
+        break;
+    case TC_ibase:
+        TYtouchType (IBASE_BASE (type), arg_info);
+        break;
+    case TC_ishape:
+        SHtouchShape (ISHAPE_SHAPE (type), arg_info);
+        break;
+    case TC_alpha:
+        /* type variables are never freed since they are used in sharing! */
+    case TC_fun:
+    case TC_iarr:
+    case TC_idim:
+    case TC_ires:
+    case TC_aud:
+    case TC_audgz:
+    case TC_union:
+    case TC_prod:
+    case TC_simple:
+    case TC_user:
+        break;
+    default:
+        DBUG_ASSERT ((0), "trying to free illegal type constructor!");
+    }
+    CHKMtouch (type, arg_info);
+
+    DBUG_VOID_RETURN;
+}
+
+void
+TYtouchType (ntype *type, info *arg_info)
+{
+    int i;
+
+    DBUG_ENTER ("TYtouchType");
+
+    DBUG_ASSERT ((type != NULL), "argument is NULL");
+
+    for (i = 0; i < NTYPE_ARITY (type); i++) {
+        if (NTYPE_SON (type, i) != NULL) {
+            TYtouchType (NTYPE_SON (type, i), arg_info);
+        }
+    }
+    TYtouchTypeConstructor (type, arg_info);
+
+    DBUG_VOID_RETURN;
 }
 
 /******************************************************************************

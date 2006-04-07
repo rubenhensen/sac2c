@@ -1,7 +1,5 @@
 /*
- *
  * $Id$
- *
  */
 
 /*****************************************************************************
@@ -41,6 +39,7 @@
 #include "wl_bounds.h"
 #include "dbug.h"
 #include "renameidentifiers.h"
+#include "check_mem.h"
 
 /******************************************************************************
  *
@@ -467,6 +466,55 @@ SCHremoveScheduling (sched_t *sched)
     sched = ILIBfree (sched);
 
     DBUG_RETURN (sched);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   sched_t *SCHtouchScheduling( sched_t *sched, info *arg_info)
+ *
+ * description:
+ *   This function may be used to touch the resources bound to a data object
+ *   of the abstract data type for the representation of schedulings.
+ *
+ ******************************************************************************/
+
+void
+SCHtouchScheduling (sched_t *sched, info *arg_info)
+{
+    int i;
+
+    DBUG_ENTER ("SCHtouchScheduling");
+
+    /*
+     * The discipline string must not be freed since it is only a pointer
+     * to the respective entry of the scheduler table.
+     */
+
+    if (sched->num_args > 0) {
+        for (i = 0; i < sched->num_args; i++) {
+            switch (sched->args[i].arg_type) {
+            case AT_num_vec:
+                /* here is no break missing! */
+            case AT_num_for_id_vec:
+                CHKMtouch (sched->args[i].arg.num_vec, arg_info);
+                break;
+
+            case AT_id_vec:
+                CHKMtouch (sched->args[i].arg.id_vec, arg_info);
+                break;
+
+            default:
+                break;
+            }
+        }
+
+        CHKMtouch (sched->args, arg_info);
+    }
+
+    CHKMtouch (sched, arg_info);
+
+    DBUG_VOID_RETURN;
 }
 
 /******************************************************************************
@@ -1197,6 +1245,35 @@ SCHremoveTasksel (tasksel_t *tasksel)
     tasksel = ILIBfree (tasksel);
 
     DBUG_RETURN (tasksel);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void SCHtouchTasksel( tasksel_t *tasksel, info *arg_info)
+ *
+ * description:
+ *   This function may be used to touch the resources bound to a data object
+ *   of the abstract data type for the representation of a taskselctor.
+ *
+ ******************************************************************************/
+
+void
+SCHtouchTasksel (tasksel_t *tasksel, info *arg_info)
+{
+    DBUG_ENTER ("SCHtouchTasksel");
+
+    /*
+     * The discipline string must not be freed since it is only a pointer
+     * to the respective entry of the taskselector table.
+     */
+    if (tasksel->num_args > 0) {
+        CHKMtouch (tasksel->arg, arg_info);
+    }
+
+    CHKMtouch (tasksel, arg_info);
+
+    DBUG_VOID_RETURN;
 }
 
 /******************************************************************************

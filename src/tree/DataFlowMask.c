@@ -27,6 +27,7 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "internal_lib.h"
+#include "check_mem.h"
 
 /*
  * definition of static data
@@ -331,6 +332,20 @@ DFMremoveMaskBase (mask_base_t *mask_base)
     mask_base = ILIBfree (mask_base);
 
     DBUG_RETURN (mask_base);
+}
+
+void
+DFMtouchMaskBase (mask_base_t *mask_base, info *arg_info)
+{
+    DBUG_ENTER ("DFMtouchMaskBase");
+
+    DBUG_ASSERT ((mask_base != NULL), "DFMtouchMaskBase() called with mask_base NULL");
+
+    CHKMtouch (mask_base->ids, arg_info);
+    CHKMtouch (mask_base->decls, arg_info);
+    CHKMtouch (mask_base, arg_info);
+
+    DBUG_VOID_RETURN;
 }
 
 mask_base_t *
@@ -924,6 +939,23 @@ DFMremoveMask (mask_t *mask)
     mask = ILIBfree (mask);
 
     DBUG_RETURN (mask);
+}
+
+/*
+ * functions for touching data flow masks
+ */
+
+void
+DFMtouchMask (mask_t *mask, info *arg_info)
+{
+    DBUG_ENTER ("DFMtouchMask");
+
+    DBUG_ASSERT ((mask != NULL), "DFMtouchMask() called with mask NULL");
+
+    CHKMtouch (mask->bitfield, arg_info);
+    CHKMtouch (mask, arg_info);
+
+    DBUG_VOID_RETURN;
 }
 
 /*

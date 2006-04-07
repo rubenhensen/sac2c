@@ -1,96 +1,5 @@
 /*
- * $Log$
- * Revision 1.24  2004/12/08 18:03:14  ktr
- * removed ARRAY_TYPE/ARRAY_NTYPE
- *
- * Revision 1.23  2004/11/23 00:46:20  ktr
- * Ismop SacDEVCamp
- *
- * Revision 1.22  2004/11/22 11:27:04  ktr
- * Ismop SacDevCamp 04
- *
- * Revision 1.21  2004/09/27 13:15:20  sah
- * added serialization support
- *
- * Revision 1.20  2004/09/22 10:03:58  ktr
- * Modified the comment to point out the common pitfall that COGetDim does
- * not return a freshly allocated shape structure
- *
- * Revision 1.19  2004/05/30 13:03:43  khf
- * COIdxSel added
- *
- * Revision 1.18  2003/09/26 10:14:23  sbs
- * COIsEmptyVect added
- *
- * Revision 1.17  2003/06/11 22:05:36  ktr
- * Added support for multidimensional arrays
- *
- * Revision 1.16  2003/04/11 17:55:41  sbs
- * COConstant2Shape added.
- *
- * Revision 1.15  2003/04/09 15:37:35  sbs
- * CONeg added.
- *
- * Revision 1.14  2003/04/08 12:27:09  sbs
- * new typedefs monCF and triCF added.
- *
- * Revision 1.13  2003/04/07 14:23:27  sbs
- * COMakeConstantFromShape, COCopyScalar2OneElementVector, COConstantData2String, and
- * COConstant2String added.
- * COCat implemented as a binary operation (on the outermost axis!).
- *
- * Revision 1.12  2002/10/07 23:45:03  dkr
- * signature of COGetDataVec() corrected
- *
- * Revision 1.11  2001/06/28 07:46:51  cg
- * Primitive function psi() renamed to sel().
- *
- * Revision 1.10  2001/05/09 15:53:03  nmw
- * COCompareConstants() added
- *
- * Revision 1.9  2001/05/08 13:15:09  nmw
- * signature for IsZero... changed
- *
- * Revision 1.8  2001/05/03 16:52:55  nmw
- *
- * Revision 1.7  2001/05/02 08:00:46  nmw
- * COIsZero, COIsOne, ... and COMakeZero, COMakeOne, ... added
- *
- * Revision 1.6  2001/04/30 12:28:43  nmw
- * GetDataVec added
- *
- * Revision 1.4  2001/03/23 12:49:02  nmw
- * CODim/COShape implemented
- *
- * Revision 1.3  2001/03/22 14:24:37  nmw
- * primitove ari ops implemented
- *
- * Revision 1.2  2001/03/05 16:57:04  sbs
- * COAdd, COSub, COMul, and CODiv added
- *
- * Revision 1.1  2001/03/02 14:32:52  sbs
- * Initial revision
- *
- * Revision 3.2  2001/02/23 18:04:22  sbs
- * extended for negative take's and drop's
- * added print facility
- *
- * Revision 3.1  2000/11/20 18:00:03  sacbase
- * new release made
- *
- * Revision 1.3  2000/05/03 16:49:17  dkr
- * COFreeConstant returns NULL now
- *
- * Revision 1.2  1999/10/22 14:12:24  sbs
- * inserted comments and added reshape, take, drop, and psi with non
- * scalar results.
- * ..
- *
- * Revision 1.1  1999/10/19 13:02:59  sacbase
- * Initial revision
- *
- *
- *
+ * $Id$
  */
 
 #ifndef _SAC_CONSTANTS_H_
@@ -173,6 +82,7 @@ extern char *COconstant2String (constant *a);
 extern shape *COconstant2Shape (constant *a);
 extern void COprintConstant (FILE *file, constant *a);
 extern constant *COfreeConstant (constant *a);
+extern void COtouchConstant (constant *a, info *arg_info);
 extern node *COconstant2AST (constant *a);
 extern constant *COaST2Constant (node *a);
 extern bool COisConstant (node *a);

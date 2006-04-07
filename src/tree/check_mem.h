@@ -14,8 +14,8 @@ extern bool CHKMisMemcheckActive ();
 extern void CHKMdeinitialize ();
 
 extern node *CHKMdoMemCheck (node *syntax_tree);
-extern node *CHKMprefun (node *arg_node, info *arg_info);
-extern node *CHKMpostfun (node *arg_node, info *arg_info);
+extern void CHKMtouch (void *shifted_ptr, info *arg_info);
+extern node *CHKMappendErrorNodes (node *arg_node, info *arg_info);
 
 extern void *CHKMregisterMem (int size, void *orig_ptr);
 extern void *CHKMunregisterMem (void *shifted_ptr);
