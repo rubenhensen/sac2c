@@ -531,8 +531,8 @@ CHKManalyzeMemtab (memobj *arg_memtab, int arg_memindex)
                         memtab_info = ILIBfree (memtab_info);
 
                         MEMOBJ_REPORTED (ptr_to_memobj) = TRUE;
+                        cnt_node_spaceleaks++;
                     }
-                    cnt_node_spaceleaks++;
                 } else {
                     if (MEMOBJ_SHAREDBIT (ptr_to_memobj)) {
 
@@ -546,8 +546,8 @@ CHKManalyzeMemtab (memobj *arg_memtab, int arg_memindex)
                             memtab_info = ILIBfree (memtab_info);
 
                             MEMOBJ_REPORTED (ptr_to_memobj) = TRUE;
+                            cnt_sharedmem++;
                         }
-                        cnt_sharedmem++;
                     }
                 }
             } else {
@@ -568,8 +568,8 @@ CHKManalyzeMemtab (memobj *arg_memtab, int arg_memindex)
                         memtab_info = ILIBfree (memtab_info);
 
                         MEMOBJ_REPORTED (ptr_to_memobj) = TRUE;
+                        cnt_non_node_spaceleaks++;
                     }
-                    cnt_non_node_spaceleaks++;
                 }
             }
         }

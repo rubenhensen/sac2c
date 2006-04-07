@@ -3992,6 +3992,9 @@ TYfreeType (ntype *type)
             NTYPE_SON (type, i) = TYfreeType (NTYPE_SON (type, i));
         }
     }
+    if (NTYPE_SONS (type) != NULL) {
+        NTYPE_SONS (type) = ILIBfree (NTYPE_SONS (type));
+    }
     type = TYfreeTypeConstructor (type);
 
     DBUG_RETURN (type);
@@ -4075,6 +4078,11 @@ TYtouchType (ntype *type, info *arg_info)
             TYtouchType (NTYPE_SON (type, i), arg_info);
         }
     }
+
+    if (NTYPE_SONS (type) != NULL) {
+        CHKMtouch (NTYPE_SONS (type), arg_info);
+    }
+
     TYtouchTypeConstructor (type, arg_info);
 
     DBUG_VOID_RETURN;
