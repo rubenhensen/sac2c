@@ -37,7 +37,6 @@ CHKMattribString (char *attr, info *arg_info)
     DBUG_ENTER ("CHKMattribString");
 
     if (attr != NULL) {
-        DBUG_PRINT ("CHKM", ("Touching string '%s' at " F_PTR, attr, attr));
         CHKMtouch (attr, arg_info);
     }
 
@@ -108,8 +107,6 @@ CHKMattribNode (node *attr, info *arg_info)
     DBUG_ENTER ("CHKMattribNode");
 
     if (attr != NULL) {
-        DBUG_PRINT ("CHKM", ("Starting to touch %s node attribute at " F_PTR,
-                             NODE_TEXT (attr), attr));
         attr = TRAVdo (attr, arg_info);
     }
 
@@ -348,7 +345,6 @@ CHKMattribNewType (ntype *attr, info *arg_info)
     DBUG_ENTER ("CHKMattribNewType");
 
     if (attr != NULL) {
-        DBUG_PRINT ("CHKM", ("Touching ntype at " F_PTR, attr));
         TYtouchType (attr, arg_info);
     }
 

@@ -27,7 +27,18 @@ CHKinsertError (node *arg_node, char *string)
 
     if (arg_node == NULL) {
 
-        CTIwarn ("%s", string);
+        /*
+         * CTIwarn internaly frees memory that was allocated before the
+         * memtab has been copied in CHKMdoAnalyzeMemtab. Therefore it must
+         * not be used to print the error string when the memcheck mechanism
+         * is active
+         */
+        if (global.memcheck) {
+            fprintf (stderr, "WARNING: %s\n", string);
+        } else {
+            CTIwarn ("%s", string);
+        }
+
         arg_node = TBmakeError (ILIBstringCopy (string), arg_node);
     } else {
 

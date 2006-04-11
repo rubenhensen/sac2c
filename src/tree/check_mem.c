@@ -91,10 +91,11 @@ typedef struct MEMOBJ {
 #define MEMOBJ_SHAREDBIT(n) ((n)->flags.IsShared)
 #define MEMOBJ_REPORTED(n) ((n)->flags.IsReported)
 
-#define SHIFT2ORIG(n) ((memobj **)((char *)n - malloc_align_step))
+#define SHIFT2ORIG(n) ((memobj **)(((char *)(n)) - malloc_align_step))
 #define SHIFT2MEMOBJ(n) (*(SHIFT2ORIG (n)))
 
-#define ORIG2SHIFT(n) ((char *)n + malloc_align_step)
+#define ORIG2SHIFT(n) (((char *)(n)) + malloc_align_step)
+#define ORIG2MEMOBJ(n) (*(memobj **)(n))
 
 static void CHKManalyzeMemtab (memobj *, int);
 
@@ -252,22 +253,23 @@ CHKMdoMemCheck (node *syntax_tree)
 
     DBUG_ENTER ("CHKMdoMemCheck");
 
-    DBUG_PRINT ("CHKM", ("Traversing heap..."));
+    DBUG_PRINT ("CHKM", ("Traversing syntax tree..."));
 
     info = MakeInfo ();
 
     TRAVpush (TR_chkm);
     syntax_tree = TRAVdo (syntax_tree, info);
     TRAVpop ();
+
     info = FreeInfo (info);
 
-    DBUG_PRINT ("CHKM", ("Heap traversal complete"));
+    DBUG_PRINT ("CHKM", ("Syntax tree traversal complete"));
 
-    DBUG_PRINT ("CHKM", ("Analyzing"));
+    DBUG_PRINT ("CHKM", ("Analyzing memory table..."));
 
     CHKManalyzeMemtab (memtab, memindex);
 
-    DBUG_PRINT ("CHKM", ("CheckSpacemechanism complete"));
+    DBUG_PRINT ("CHKM", ("Analysis of memory table complete."));
 
     DBUG_RETURN (syntax_tree);
 }
@@ -289,10 +291,14 @@ CHKMregisterMem (int size, void *orig_ptr)
 
         shifted_ptr = ORIG2SHIFT (orig_ptr);
 
-        /* change the memtabsize if the memtab is full or empty */
+        /*
+         * change the memtabsize if the memtab is full or empty
+         */
         if (memindex == memtabsize) {
 
-            /* at beginning the memtab ist empty so: */
+            /*
+             * at beginning the memtab ist empty so:
+             */
             if (memtabsize == 0) {
 
                 DBUG_PRINT ("CHKM", ("Allocating memtab for 1000 memory objects"
@@ -304,7 +310,9 @@ CHKMregisterMem (int size, void *orig_ptr)
                 memfreeslots = 1000;
             }
 
-            /* expand or reduce mechanismn for the memtab */
+            /*
+             * expand or reduce mechanismn for the memtab
+             */
             else {
                 int newtabsize = (memtabsize - memfreeslots) * 2;
                 int newindex = 0;
@@ -316,8 +324,10 @@ CHKMregisterMem (int size, void *orig_ptr)
 
                 newtab = AllocateMemtab (newtabsize);
 
-                /* copy the old memtab to new (smaller or bigger) memtab. All gaps
-                   will ignore */
+                /*
+                 * copy the old memtab to new (smaller or bigger) memtab. All gaps
+                 * will ignore
+                 */
                 for (int i = 0; i < memtabsize; i++) {
 
                     if (memtab[i].ptr != NULL) {
@@ -337,7 +347,9 @@ CHKMregisterMem (int size, void *orig_ptr)
             }
         }
 
-        /* <<<<<<<<  default entry for the memtab  >>>>>>>>> */
+        /*
+         * <<<<<<<<  default entry for the memtab  >>>>>>>>>
+         */
 
         ptr_to_memobj = memtab + memindex;
 
@@ -348,7 +360,14 @@ CHKMregisterMem (int size, void *orig_ptr)
         MEMOBJ_TRAVERSAL (ptr_to_memobj) = TRAVgetName ();
         MEMOBJ_USEDBIT (ptr_to_memobj) = FALSE;
         MEMOBJ_SHAREDBIT (ptr_to_memobj) = FALSE;
-        MEMOBJ_REPORTED (ptr_to_memobj) = FALSE;
+
+        if ((global.compiler_subphase >= SUBPH_initial)
+            && (global.compiler_subphase <= SUBPH_init)) {
+
+            MEMOBJ_REPORTED (ptr_to_memobj) = TRUE;
+        } else {
+            MEMOBJ_REPORTED (ptr_to_memobj) = FALSE;
+        }
 
         *(memobj **)orig_ptr = ptr_to_memobj;
 
@@ -368,7 +387,12 @@ CHKMregisterMem (int size, void *orig_ptr)
  *
  * @fn void *CHKMunregisterMem( void *shiftet_ptr)
  *
- *****************************************************************************/
+ *   @brief
+ *
+ *   @param *shifted_ptr
+ *   @return (void *) orig_ptr
+ *
+ ******************************************************************************/
 void *
 CHKMunregisterMem (void *shifted_ptr)
 {
@@ -383,7 +407,7 @@ CHKMunregisterMem (void *shifted_ptr)
         ptr_to_memobj = SHIFT2MEMOBJ (shifted_ptr);
 
         if ((MEMOBJ_SIZE (ptr_to_memobj) == 0) && (MEMOBJ_PTR (ptr_to_memobj) == NULL)) {
-            CTIwarn ("%s", "double free"); /* miss where */
+            printf ("MEMORY WARNING: %s", "double free"); /* miss where */
         }
 
         MEMOBJ_SIZE (ptr_to_memobj) = 0;
@@ -466,18 +490,20 @@ CHKMappendErrorNodes (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  *
  * @fn static void *CHKManalyzeMemtab( memobj *arg_memtab, int memindex)
+ * @brief
+ *
+ * @param *arg_memtab
+ * @param arg_memindex
+ *
+ * @return void
  *
  *****************************************************************************/
 static void
 CHKManalyzeMemtab (memobj *arg_memtab, int arg_memindex)
 {
     int index;
-    int orig_tab_index;
     memobj *ptr_to_memobj;
     memobj *copy_memtab;
-
-    memobj *orig_ptr_to_memobj;
-    memobj *copy_ptr_to_memobj;
 
     int copy_index;
     node *arg_node;
@@ -489,10 +515,11 @@ CHKManalyzeMemtab (memobj *arg_memtab, int arg_memindex)
 
     DBUG_ENTER ("CHKManalyzeMemtab");
 
-    /************************************
-       must copy the memtab(!) to freeze, because Node_Error expand again the
-       memtab and so can possibly change the back pointers
-    **********************************/
+    /*
+     *  must copy the memtab(!) to freeze, because Node_Error expand again the
+     *  memtab and so can possibly change the back pointers
+     *
+     */
     copy_memtab = AllocateMemtab (arg_memindex);
 
     for (index = 0; index < arg_memindex; index++) {
@@ -506,6 +533,16 @@ CHKManalyzeMemtab (memobj *arg_memtab, int arg_memindex)
     cnt_node_spaceleaks = 0;
     cnt_non_node_spaceleaks = 0;
 
+    /*
+     *  traverse the copy memtab an the check any entry
+     *
+     * - 1. query: is it a legal entry?
+     * - 2. query: is the entry of type Node or not
+     * - 3. query: the object, where the entry point,
+     *             will be apperent not (longer) used, but isn't freed
+     * - 4. query: the entry (error message) is reported yet
+     *
+     */
     for (index = 0; index < copy_index; index++) {
 
         ptr_to_memobj = copy_memtab + index;
@@ -516,36 +553,46 @@ CHKManalyzeMemtab (memobj *arg_memtab, int arg_memindex)
 
                 arg_node = (node *)ORIG2SHIFT (MEMOBJ_PTR (ptr_to_memobj));
 
-                /*
-                 * Nodetypes
-                 */
                 if (!MEMOBJ_USEDBIT (ptr_to_memobj)) {
 
                     if (!MEMOBJ_REPORTED (ptr_to_memobj)) {
 
                         memtab_info
-                          = MemobjToErrorMessage ("Node spaceleak:", ptr_to_memobj);
+                          = MemobjToErrorMessage ("NODE SPACELEAK:", ptr_to_memobj);
 
-                        CTIwarn ("%s", memtab_info);
+                        /*
+                         * CTIwarn internaly frees memory that was allocated before the
+                         * memtab has been copied in CHKMdoAnalyzeMemtab. Therefore it
+                         * must not be used to print the error string here.
+                         */
+                        fprintf (stderr, "WARNING: %s\n", memtab_info);
+
                         PRTdoPrint (arg_node);
                         memtab_info = ILIBfree (memtab_info);
 
-                        MEMOBJ_REPORTED (ptr_to_memobj) = TRUE;
+                        MEMOBJ_REPORTED (ORIG2MEMOBJ (MEMOBJ_PTR (ptr_to_memobj))) = TRUE;
                         cnt_node_spaceleaks++;
                     }
-                } else {
+                }
+                /*
+                 * - 3. query: the object, where the entry point,
+                 *             will shared
+                 * - 4. query: the entry (error message) is reported yet
+                 */
+                else {
                     if (MEMOBJ_SHAREDBIT (ptr_to_memobj)) {
 
                         if (!MEMOBJ_REPORTED (ptr_to_memobj)) {
 
-                            memtab_info = MemobjToErrorMessage ("illegal memory sharing:",
-                                                                ptr_to_memobj);
+                            memtab_info
+                              = MemobjToErrorMessage ("SHARED MEMORY:", ptr_to_memobj);
 
                             NODE_ERROR (arg_node)
                               = CHKinsertError (NODE_ERROR (arg_node), memtab_info);
                             memtab_info = ILIBfree (memtab_info);
 
-                            MEMOBJ_REPORTED (ptr_to_memobj) = TRUE;
+                            MEMOBJ_REPORTED (ORIG2MEMOBJ (MEMOBJ_PTR (ptr_to_memobj)))
+                              = TRUE;
                             cnt_sharedmem++;
                         }
                     }
@@ -553,7 +600,12 @@ CHKManalyzeMemtab (memobj *arg_memtab, int arg_memindex)
             } else {
 
                 /*
-                 * not Nodetypes
+                 *  all entries of non node type:
+                 *
+                 * - 3. query: the object, where the entry point,
+                 *             will be apperent not (longer) used, but isn't freed
+                 * - 4. query: the entry (error message) is reported yet
+
                  */
 
                 if (!MEMOBJ_USEDBIT (ptr_to_memobj)) {
@@ -561,41 +613,21 @@ CHKManalyzeMemtab (memobj *arg_memtab, int arg_memindex)
                     if (!MEMOBJ_REPORTED (ptr_to_memobj)) {
 
                         memtab_info
-                          = MemobjToErrorMessage ("Non-node spaceleak:", ptr_to_memobj);
+                          = MemobjToErrorMessage ("NON-NODE SPACELEAK:", ptr_to_memobj);
 
-                        CTIwarn ("%s", memtab_info);
+                        /*
+                         * CTIwarn internaly frees memory that was allocated before the
+                         * memtab has been copied in CHKMdoAnalyzeMemtab. Therefore it
+                         * must not be used to print the error string here.
+                         */
+                        fprintf (stderr, "WARNING: %s\n", memtab_info);
 
                         memtab_info = ILIBfree (memtab_info);
 
-                        MEMOBJ_REPORTED (ptr_to_memobj) = TRUE;
+                        MEMOBJ_REPORTED (ORIG2MEMOBJ (MEMOBJ_PTR (ptr_to_memobj))) = TRUE;
                         cnt_non_node_spaceleaks++;
                     }
                 }
-            }
-        }
-    }
-
-    /*
-     * transfer
-     */
-    orig_tab_index = 0;
-
-    for (index = 0; index < copy_index; index++) {
-
-        copy_ptr_to_memobj = copy_memtab + index;
-
-        if (MEMOBJ_REPORTED (copy_ptr_to_memobj)) {
-
-            while ((orig_tab_index < memindex)
-                   && (MEMOBJ_PTR (copy_ptr_to_memobj)
-                       != MEMOBJ_PTR (memtab + orig_tab_index))) {
-                orig_tab_index++;
-            }
-
-            if (orig_tab_index < memindex) {
-                orig_ptr_to_memobj = memtab + orig_tab_index;
-                MEMOBJ_REPORTED (orig_ptr_to_memobj) = TRUE;
-                orig_tab_index++;
             }
         }
     }
@@ -622,6 +654,27 @@ CHKManalyzeMemtab (memobj *arg_memtab, int arg_memindex)
 
         control_value = 0;
         control_value = cnt_node_spaceleaks + cnt_sharedmem + cnt_non_node_spaceleaks;
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn void CHKMdoNotReport( void *shifted_ptr)
+ *
+ *****************************************************************************/
+void
+CHKMdoNotReport (void *shifted_ptr)
+{
+    memobj *ptr_to_memobj;
+
+    DBUG_ENTER ("CHKMdoNotReport");
+
+    if (memcheck) {
+        ptr_to_memobj = SHIFT2MEMOBJ (shifted_ptr);
+
+        MEMOBJ_REPORTED (ptr_to_memobj) = TRUE;
     }
 
     DBUG_VOID_RETURN;
@@ -714,7 +767,7 @@ MemobjToErrorMessage (char *kind_of_error, memobj *ptr_to_memobj)
 
     test = snprintf (str, 1024,
                      "%s Address: 0x%x, allocated at: %s:%d, "
-                     "Traversal: %s, Subphase: %s\n",
+                     "Traversal: %s, Subphase: %s",
                      kind_of_error, (unsigned int)MEMOBJ_PTR (ptr_to_memobj),
                      MEMOBJ_FILE (ptr_to_memobj), MEMOBJ_LINE (ptr_to_memobj),
                      MEMOBJ_TRAVERSAL (ptr_to_memobj),

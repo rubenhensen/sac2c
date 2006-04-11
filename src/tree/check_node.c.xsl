@@ -14,17 +14,15 @@ version="1.0">
 <xsl:strip-space elements="*"/>
 
 <!-- 
-     This stylesheet generates a free_node.c file implementing all
-     functions needed to free a specific node
+     This stylesheet generates a check_node.c file implementing all
+     functions needed to touch a specific node
 
      templates:
 
      traversals:
 
-     main         generates the complete file. see templates for
-                  details.
+     main generates the complete file. see templates for details.
 -->
-
 <!--
      traversal main /
 
@@ -104,80 +102,11 @@ DBUG_RETURN( arg_node);
   <xsl:call-template name="travfun-group-end"/>
 </xsl:template>
 
-<!-- 
-     traversal main node[@name = "Fundef"]
-
-     generates a touch functions for Fundef nodes
-
-     layout of output:
-
-     - function head and comment
-       - call templates for @name
-     - function body
-       - call templates for sons
-       - call templates for attributes except those needed for zombies
-
-     remarks:
-
-     see generic template.
-
-     Fundef nodes are never freed. Instead, they are zombiealised, thus
-     their status is set to zombie and all attributes and sons are
-     freed, except for NAME, MOD, LINKMOD, TYPE and TYPES. Furthermore,
-     the node structure itself is not freed. This has to be done by a
-     cal of FreeAllZombies.
-     
--->
-<xsl:template match="node[@name = &quot;Fundef&quot;]">
-  <!-- generate head and comment -->
-  <xsl:apply-templates select="@name"/>
-  <!-- start of body -->
-  <xsl:value-of select="'{'"/>
-  <!-- if there is a for loop for initialising attributes, we 
-       need a variable cnt, which is created here -->
-  <xsl:if test="attributes/attribute[key(&quot;arraytypes&quot;, ./type/@name)]">
-    <xsl:value-of select="'int cnt;'" />
-  </xsl:if>
-  <!-- DBUG_ENTER statement -->
-  <xsl:value-of select="'DBUG_ENTER( &quot;CHKM'"/>
-  <xsl:call-template name="lowercase" >
-    <xsl:with-param name="string" >
-      <xsl:value-of select="@name"/>
-    </xsl:with-param>
-  </xsl:call-template>
-  <xsl:value-of select="'&quot;);'"/>
-  <!-- set status of Fundef to zombie -->
-  <xsl:value-of select="'DBUG_PRINT(&quot;CHKM&quot;, (&quot;transforming %s at &quot; F_PTR &quot; into a zombie&quot;, '"/>
-  <xsl:call-template name="node-access">
-    <xsl:with-param name="node">arg_node</xsl:with-param>
-    <xsl:with-param name="nodetype">
-      <xsl:value-of select="@name"/>
-    </xsl:with-param>
-    <xsl:with-param name="field">Name</xsl:with-param>
-  </xsl:call-template>
-  <xsl:value-of select="', arg_node));'"/>
-  <xsl:value-of select="'NODE_ERROR( arg_node) = CHKMTRAV( NODE_ERROR( arg_node), arg_info);'"/>
-
-  <!--
-  <xsl:value-of select="'arg_node = FREEzombify( arg_node);'"/>
-  -->
-
-  <!-- first touch everything downwards in the ast -->
-  <xsl:apply-templates select="sons/son[@name = &quot;Next&quot;]"/>
-  <!-- touch all attributes, except NAME, MOD, LINKMOD. IMPL, and TYPES --> 
-  <xsl:apply-templates select="attributes/attribute[@name != &quot;Name&quot;][@name != &quot;Mod&quot;][@name!=&quot;LinkMod&quot;][@name != &quot;Types&quot;][@name != &quot;Type&quot;][@name!=&quot;Impl&quot;]"/>
-  <!-- call touch for all other sons -->
-  <xsl:apply-templates select="sons/son[not( @name= &quot;Next&quot;)]"/>
-  <!-- DBUG_RETURN call -->
-  <xsl:value-of select="'DBUG_RETURN( arg_node);'"/>
-  <!-- end of body -->
-  <xsl:value-of select="'}'"/>
-</xsl:template>
 
 <!--
      traversal main node
 
-     generates a generic free function for any node
+     generates a generic touch function for any node
 
      layout of output:
 
@@ -189,17 +118,14 @@ DBUG_RETURN( arg_node);
      
      remarks:
 
-     the body contains calls to free for all nodes and attributes.
-     For each attribute a unique free function is called. This function
-     has to decide whether to free an attribute or not. This includes
+     the body contains calls to touch for all nodes and attributes.
+     For each attribute a unique touch function is called. This function
+     has to decide whether to touch an attribute or not. This includes
      a test for non-null if the attribute is a pointer type!
-     Attribute arrays are iterated by this function, thus the free
-     function for array attributes has to free one element only!
+     Attribute arrays are iterated by this function, thus the touch
+     function for array attributes has to touch one element only!
 
-     The return value is the value of the NEXT son, or if no NEXT son
-     is present the result of Free. This way, depending on the 
-     TRAVCOND macro, the full chain of nodes or only one node can
-     be freed.
+     The return value is the arg_node, who was called in the function call.
 -->
 
 <xsl:template match="node">
@@ -220,10 +146,11 @@ DBUG_RETURN( arg_node);
     </xsl:with-param>
   </xsl:call-template>
   <xsl:value-of select="'&quot;);'"/>
-  <!-- give hint we start to free now -->
-  <xsl:value-of select="'DBUG_PRINT( &quot;CHKM&quot;, (&quot;Processing node %s at &quot; F_PTR, NODE_TEXT( arg_node), arg_node));'"/>
+
+  <!-- touch the arg_node -->
   <xsl:value-of select="'CHKMtouch( arg_node, arg_info);'"/>
 
+  <!-- touch the son and the attributs structure -->
   <xsl:value-of select="'CHKMtouch( '"/>
   <xsl:value-of select="'arg_node->sons.'"/>
   <xsl:call-template name="name-to-nodeenum" >
@@ -238,12 +165,13 @@ DBUG_RETURN( arg_node);
   </xsl:call-template>
   <xsl:value-of select="', arg_info);'"/>
 
+  <!-- trav the node error -->
   <xsl:value-of select="'NODE_ERROR( arg_node) = CHKMTRAV( NODE_ERROR( arg_node), arg_info);'"/>
 
   <xsl:apply-templates select="sons/son[@name = &quot;Next&quot;]"/>
-  <!-- call free for attributes -->
+  <!-- call touch for attributes -->
   <xsl:apply-templates select="attributes/attribute"/>
-  <!-- call free for all other sons -->
+  <!-- call touch for all other sons -->
   <xsl:apply-templates select="sons/son[not( @name= &quot;Next&quot;)]"/>
 
   <!-- DBUG_RETURN call -->
@@ -251,6 +179,7 @@ DBUG_RETURN( arg_node);
   <!-- end of body -->
   <xsl:value-of select="'}'"/>
 </xsl:template>
+
 
 <!--
      traversal main @name
@@ -275,10 +204,11 @@ DBUG_RETURN( arg_node);
   </xsl:call-template>
 </xsl:template>
 
+
 <!--
      traversal main son
 
-     calls the free function for a specific son
+     calls the touch function for a specific son
 
      example:
 
@@ -286,9 +216,7 @@ DBUG_RETURN( arg_node);
 
      remarks:
  
-     for sons named NEXT, the macro CHKMCONT is called, for all other
-     sons CHKMTRAV is called. This allows to delete only one son in
-     a chain of nodes.
+     for all sons, the macro CHKTRAV is called.x
 -->
      
 <xsl:template match="son">
@@ -312,33 +240,13 @@ DBUG_RETURN( arg_node);
     </xsl:with-param>
   </xsl:call-template>
   <xsl:value-of select="' , arg_info);'"/>
-
-  <!--
-  <xsl:choose>
-    <xsl:when test="@name = &quot;Next&quot;">
-      <xsl:value-of select="' = CHKMCOND( '"/>
-    </xsl:when>
-    <xsl:otherwise>
-      <xsl:value-of select="' = CHKMTRAV( '"/>
-    </xsl:otherwise>
-  </xsl:choose>
-  <xsl:call-template name="node-access">
-    <xsl:with-param name="node">arg_node</xsl:with-param>
-    <xsl:with-param name="nodetype">
-      <xsl:value-of select="../../@name"/>
-    </xsl:with-param>
-    <xsl:with-param name="field">
-      <xsl:value-of select="@name"/>
-    </xsl:with-param>
-  </xsl:call-template>
-  <xsl:value-of select="', arg_info);'"/>
-  -->
 </xsl:template>
+
 
 <!--
      traversal main attribute
 
-     calls the free function for a specific attribute
+     calls the touch function for a specific attribute
 
      example:
 
@@ -351,7 +259,7 @@ DBUG_RETURN( arg_node);
      remark:
 
      Array attributes are iterated by the generated code using a for loop.
-     Free functions for attributes are always called with one element!
+     Touch functions for attributes are always called with one element!
 
 -->
 <xsl:template match="attribute">
