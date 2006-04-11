@@ -1585,8 +1585,9 @@ TYmakeOverloadedFunType (ntype *fun1, ntype *fun2)
      * iff this is the very first call, instantiate rel. free vars 8-))
      *
      * we need max num rets many LUTs here.
-     * Since we do not statically now, we start with 5 LUTs. If it turns out during
-     * overloading that these are not enough, we simply allocate further ones...
+     * Since we do not statically now, we start with 5 LUTs. If it turns
+     * out during overloading that these are not enough, we simply allocate
+     * further ones...
      */
     if (overload_num_luts == 0) {
         overload_num_luts = 5;
@@ -1610,14 +1611,16 @@ TYmakeOverloadedFunType (ntype *fun1, ntype *fun2)
     res = MakeOverloadedFunType (fun1, fun2);
 
     /*
-     * reset the rel free vars for next usage!
+     * remove rel free vars
      */
     for (i = 0; i < overload_num_luts; i++) {
 #ifndef DBUG_OFF
         overload_fun1_alphas[i] = NULL;
 #endif
-        overload_luts[i] = LUTremoveContentLut (overload_luts[i]);
+        overload_luts[i] = LUTremoveLut (overload_luts[i]);
     }
+    overload_luts = ILIBfree (overload_luts);
+    overload_num_luts = 0;
 
     DBUG_EXECUTE ("NTY", tmp = TYtype2DebugString (res, TRUE, 0););
     DBUG_PRINT ("NTY", ("overloaded into : %s", tmp));

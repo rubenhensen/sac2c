@@ -156,6 +156,7 @@ Format2Buffer (const char *format, va_list arg_p)
         len = 120;
 
         message_buffer = (char *)ILIBmalloc (len + 2);
+        CHKMdoNotReport (message_buffer);
         message_buffer_size = len + 2;
 
         va_copy (arg_p_copy, arg_p);
@@ -169,6 +170,7 @@ Format2Buffer (const char *format, va_list arg_p)
 
         ILIBfree (message_buffer);
         message_buffer = (char *)ILIBmalloc (len + 2);
+        CHKMdoNotReport (message_buffer);
         message_buffer_size = len + 2;
 
         va_copy (arg_p_copy, arg_p);

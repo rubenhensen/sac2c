@@ -17,7 +17,7 @@
 #include "sac.tab.h"
 #include "ctinfo.h"
 #include "globals.h"
-
+#include "check_mem.h"
 
 #define FILTER(token) \
   charpos += yyleng;  \
@@ -402,7 +402,12 @@ int charpos = 0;
                                  start += 2;
                                  len -= 2;
                                }
+                               /* 
+                                * global.filename will be used as a shared 
+                                * string in all node structures
+                                */
                                global.filename = (char *)ILIBmalloc( (len+1)*sizeof(char));
+                               CHKMdoNotReport( global.filename);
                                strncpy( global.filename , yytext + start, len);
                                global.filename[len] = '\0';
                                DBUG_PRINT( "PARSE", ("# %i %s" , global.linenum, global.filename));
@@ -422,7 +427,12 @@ int charpos = 0;
                                  start += 2;
                                  len -= 2;
                                }
+                               /* 
+                                * global.filename will be used as a shared 
+                                * string in all node structures
+                                */
                                global.filename = (char *)ILIBmalloc( (len+1)*sizeof(char));
+                               CHKMdoNotReport( global.filename);
                                strncpy( global.filename , yytext + start, len);
                                global.filename[len] = '\0';
                                DBUG_PRINT( "PARSE", ("# %i %s" , global.linenum, global.filename));

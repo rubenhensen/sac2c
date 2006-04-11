@@ -1008,7 +1008,7 @@ LUTremoveLut (lut_t *lut)
 void
 LUTtouchContentLut (lut_t *lut, info *arg_info)
 {
-    void **first, **tmp;
+    void **tmp;
     hash_key_t k;
     lut_size_t i;
 
@@ -1020,33 +1020,29 @@ LUTtouchContentLut (lut_t *lut, info *arg_info)
         /* init LUT for pointers */
         for (k = 0; k < (HASH_KEYS_POINTER); k++) {
             DBUG_ASSERT ((lut[k].size >= 0), "illegal LUT size found!");
-            /* touch all but the first collision table fragments */
-            for (i = 1; i <= lut[k].size / (LUT_SIZE); i++) {
-                tmp = lut[k].first;
-                lut[k].first = lut[k].first[2 * (LUT_SIZE)];
+            tmp = lut[k].first;
+            for (i = 0; i < lut[k].size; i++) {
                 CHKMtouch (tmp, arg_info);
+                tmp += 2;
+                if ((i + 1) % (LUT_SIZE) == 0) {
+                    /* last table entry is reached -> enter next table of the chain */
+                    tmp = *tmp;
+                }
             }
-            lut[k].next = lut[k].first;
-            lut[k].size = 0;
         }
         /* init LUT for strings */
         for (k = (HASH_KEYS_POINTER); k < (HASH_KEYS); k++) {
             DBUG_ASSERT ((lut[k].size >= 0), "illegal LUT size found!");
             tmp = lut[k].first;
-            first = tmp;
             /* touch all strings and all but the first collision table fragments */
             for (i = 0; i < lut[k].size; i++) {
-                CHKMtouch (tmp[0], arg_info);
+                CHKMtouch (tmp, arg_info);
                 tmp += 2;
                 if ((i + 1) % (LUT_SIZE) == 0) {
                     /* last table entry is reached -> enter next table of the chain */
                     tmp = *tmp;
-                    CHKMtouch (first, arg_info);
-                    first = tmp;
                 }
             }
-            lut[k].first = lut[k].next = first;
-            lut[k].size = 0;
         }
 
         DBUG_PRINT ("LUT", ("< finished"));
@@ -1080,9 +1076,8 @@ LUTtouchLut (lut_t *lut, info *arg_info)
         /* touch content of LUT */
         LUTtouchContentLut (lut, arg_info);
 
-        /* touch empty LUT */
+        /* touch LUT */
         for (k = 0; k < (HASH_KEYS); k++) {
-            DBUG_ASSERT ((lut[k].size == 0), "LUT not empty!");
             CHKMtouch (lut[k].first, arg_info);
         }
         CHKMtouch (lut, arg_info);

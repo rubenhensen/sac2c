@@ -38,9 +38,9 @@ struct INFO {
  * INFO macros
  */
 
-#define INFO_CRTWRP_WRAPPERFUNS(n) ((n)->wrapperfuns)
-#define INFO_CRTWRP_EXPRETS(n) ((n)->exprets)
-#define INFO_CRTWRP_MODULE(n) ((n)->module)
+#define INFO_WRAPPERFUNS(n) ((n)->wrapperfuns)
+#define INFO_EXPRETS(n) ((n)->exprets)
+#define INFO_MODULE(n) ((n)->module)
 
 /**
  * INFO functions
@@ -54,9 +54,9 @@ MakeInfo ()
 
     result = ILIBmalloc (sizeof (info));
 
-    INFO_CRTWRP_WRAPPERFUNS (result) = NULL;
-    INFO_CRTWRP_EXPRETS (result) = 0;
-    INFO_CRTWRP_MODULE (result) = NULL;
+    INFO_WRAPPERFUNS (result) = NULL;
+    INFO_EXPRETS (result) = 0;
+    INFO_MODULE (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -306,8 +306,7 @@ CreateWrapperFor (node *fundef, info *info)
          * wrapper has to be local!
          */
         FUNDEF_NS (wrapper) = NSfreeNamespace (FUNDEF_NS (wrapper));
-        FUNDEF_NS (wrapper)
-          = NSdupNamespace (MODULE_NAMESPACE (INFO_CRTWRP_MODULE (info)));
+        FUNDEF_NS (wrapper) = NSdupNamespace (MODULE_NAMESPACE (INFO_MODULE (info)));
     }
 
     /*
@@ -400,9 +399,10 @@ CRTWRPmodule (node *arg_node, info *arg_info)
 
     DBUG_ASSERT ((MODULE_WRAPPERFUNS (arg_node) == NULL),
                  "MODULE_WRAPPERFUNS is not NULL!");
-    INFO_CRTWRP_WRAPPERFUNS (arg_info) = MODULE_WRAPPERFUNS (arg_node)
-      = LUTgenerateLut ();
-    INFO_CRTWRP_MODULE (arg_info) = arg_node;
+    MODULE_WRAPPERFUNS (arg_node) = LUTgenerateLut ();
+    INFO_WRAPPERFUNS (arg_info) = MODULE_WRAPPERFUNS (arg_node);
+
+    INFO_MODULE (arg_info) = arg_node;
 
     /**
      * First, we traverse the external functions. As these per definition
@@ -423,7 +423,7 @@ CRTWRPmodule (node *arg_node, info *arg_info)
      * Finally, we insert the wrapper functions into the fundef chain:
      */
     MODULE_FUNS (arg_node)
-      = LUTfoldLutS (INFO_CRTWRP_WRAPPERFUNS (arg_info), MODULE_FUNS (arg_node),
+      = LUTfoldLutS (INFO_WRAPPERFUNS (arg_info), MODULE_FUNS (arg_node),
                      (void *(*)(void *, void *))ConsFundefs);
 
     DBUG_RETURN (arg_node);
@@ -477,7 +477,7 @@ CRTWRPfundef (node *arg_node, info *arg_info)
          */
         if (FUNDEF_ISWRAPPERFUN (arg_node)) {
             wrapper = FindWrapper (FUNDEF_NS (arg_node), FUNDEF_NAME (arg_node), num_args,
-                                   num_rets, INFO_CRTWRP_WRAPPERFUNS (arg_info));
+                                   num_rets, INFO_WRAPPERFUNS (arg_info));
             if (wrapper == NULL) {
                 /**
                  * There is no wrapper for this function yet.
@@ -485,8 +485,8 @@ CRTWRPfundef (node *arg_node, info *arg_info)
                  * its arg / return types.
                  */
                 wrapper = CreateWrapperFor (arg_node, arg_info);
-                INFO_CRTWRP_WRAPPERFUNS (arg_info)
-                  = LUTinsertIntoLutS (INFO_CRTWRP_WRAPPERFUNS (arg_info),
+                INFO_WRAPPERFUNS (arg_info)
+                  = LUTinsertIntoLutS (INFO_WRAPPERFUNS (arg_info),
                                        FUNDEF_NAME (arg_node), wrapper);
             } else {
                 /* integrate this wrapper into the existing one */
@@ -506,14 +506,14 @@ CRTWRPfundef (node *arg_node, info *arg_info)
         /**
          * ISLOCAL or WASIMPORTED fundef !
          */
-        wrapper = FindWrapper (MODULE_NAMESPACE (INFO_CRTWRP_MODULE (arg_info)),
+        wrapper = FindWrapper (MODULE_NAMESPACE (INFO_MODULE (arg_info)),
                                FUNDEF_NAME (arg_node), num_args, num_rets,
-                               INFO_CRTWRP_WRAPPERFUNS (arg_info));
+                               INFO_WRAPPERFUNS (arg_info));
         if (wrapper == NULL) {
             wrapper = CreateWrapperFor (arg_node, arg_info);
-            INFO_CRTWRP_WRAPPERFUNS (arg_info)
-              = LUTinsertIntoLutS (INFO_CRTWRP_WRAPPERFUNS (arg_info),
-                                   FUNDEF_NAME (arg_node), wrapper);
+            INFO_WRAPPERFUNS (arg_info)
+              = LUTinsertIntoLutS (INFO_WRAPPERFUNS (arg_info), FUNDEF_NAME (arg_node),
+                                   wrapper);
         } else {
             if ((dot_args != FUNDEF_HASDOTARGS (wrapper))
                 || (dot_rets != FUNDEF_HASDOTRETS (wrapper))) {
@@ -568,11 +568,11 @@ CRTWRPfundef (node *arg_node, info *arg_info)
 
     /*
      * Usually, we expect all functions applied in the function body to return a
-     * single value. Therefore, INFO_CRTWRP_EXPRETS is set to 1.
+     * single value. Therefore, INFO_EXPRETS is set to 1.
      * Only on RHSs of N_let nodes with more than one Id on the LHS, this
      * value is changed (and reset afterwards!) -> CRTWRPlet.
      */
-    INFO_CRTWRP_EXPRETS (arg_info) = 1;
+    INFO_EXPRETS (arg_info) = 1;
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         DBUG_PRINT ("CRTWRP",
@@ -611,13 +611,13 @@ CRTWRPlet (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("CRTWRPlet");
 
-    old_exprets = INFO_CRTWRP_EXPRETS (arg_info);
-    INFO_CRTWRP_EXPRETS (arg_info) = TCcountIds (LET_IDS (arg_node));
+    old_exprets = INFO_EXPRETS (arg_info);
+    INFO_EXPRETS (arg_info) = TCcountIds (LET_IDS (arg_node));
 
     if (LET_EXPR (arg_node) != NULL) {
         LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
     }
-    INFO_CRTWRP_EXPRETS (arg_info) = old_exprets;
+    INFO_EXPRETS (arg_info) = old_exprets;
 
     DBUG_RETURN (arg_node);
 }
@@ -642,9 +642,8 @@ CRTWRPspap (node *arg_node, info *arg_info)
     DBUG_ENTER ("CRTWRPspap");
 
     num_args = TCcountExprs (SPAP_ARGS (arg_node));
-    wrapper
-      = FindWrapper (SPAP_NS (arg_node), SPAP_NAME (arg_node), num_args,
-                     INFO_CRTWRP_EXPRETS (arg_info), INFO_CRTWRP_WRAPPERFUNS (arg_info));
+    wrapper = FindWrapper (SPAP_NS (arg_node), SPAP_NAME (arg_node), num_args,
+                           INFO_EXPRETS (arg_info), INFO_WRAPPERFUNS (arg_info));
 
     DBUG_PRINT ("CRTWRP",
                 ("Adding backreference to %s:%s as " F_PTR ".",
@@ -655,7 +654,7 @@ CRTWRPspap (node *arg_node, info *arg_info)
                       "No definition found for a function \"%s:%s\" that expects"
                       " %i argument(s) and yields %i return value(s)",
                       NSgetName (SPAP_NS (arg_node)), SPAP_NAME (arg_node), num_args,
-                      INFO_CRTWRP_EXPRETS (arg_info));
+                      INFO_EXPRETS (arg_info));
     } else {
         /*
          * as the function is dispatched now, we can create a real
@@ -719,7 +718,7 @@ CRTWRPspfold (node *arg_node, info *arg_info)
 
     num_args = 2;
     wrapper = FindWrapper (SPFOLD_NS (arg_node), SPFOLD_FUN (arg_node), 2, 1,
-                           INFO_CRTWRP_WRAPPERFUNS (arg_info));
+                           INFO_WRAPPERFUNS (arg_info));
 
     if (wrapper == NULL) {
         CTIabortLine (NODE_LINE (arg_node),

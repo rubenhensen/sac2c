@@ -27,6 +27,7 @@
 #include "shape.h"
 #include "stringset.h"
 #include "namespaces.h"
+#include "check_mem.h"
 
 #include "resource.h"
 
@@ -1808,6 +1809,7 @@ int SPmyYyparse()
    * all subsequent nodes...
    */
   tmp = (char *) ILIBmalloc( (strlen(global.filename)+1) * sizeof( char));
+  CHKMdoNotReport( tmp);
   strcpy( tmp, global.filename);
   global.filename = tmp;
 
