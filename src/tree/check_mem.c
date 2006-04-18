@@ -565,9 +565,8 @@ CHKManalyzeMemtab (memobj *arg_memtab, int arg_memindex)
                          * memtab has been copied in CHKMdoAnalyzeMemtab. Therefore it
                          * must not be used to print the error string here.
                          */
-                        fprintf (stderr, "WARNING: %s\n", memtab_info);
+                        fprintf (stderr, "MEMORY LEAK: %s\n", memtab_info);
 
-                        PRTdoPrint (arg_node);
                         memtab_info = ILIBfree (memtab_info);
 
                         MEMOBJ_REPORTED (ORIG2MEMOBJ (MEMOBJ_PTR (ptr_to_memobj))) = TRUE;
@@ -620,7 +619,7 @@ CHKManalyzeMemtab (memobj *arg_memtab, int arg_memindex)
                          * memtab has been copied in CHKMdoAnalyzeMemtab. Therefore it
                          * must not be used to print the error string here.
                          */
-                        fprintf (stderr, "WARNING: %s\n", memtab_info);
+                        fprintf (stderr, "MEMORY LEAK: %s\n", memtab_info);
 
                         memtab_info = ILIBfree (memtab_info);
 
@@ -647,9 +646,9 @@ CHKManalyzeMemtab (memobj *arg_memtab, int arg_memindex)
                  ">>>>> illegal memory sharing: %d\n",
                  cnt_node_spaceleaks, cnt_non_node_spaceleaks, cnt_sharedmem);
 
-        CTIwarn (">>>>> node spaceleaks        (cumulative): %d\n"
-                 ">>>>> non-node spaceleaks    (cumulative): %d\n"
-                 ">>>>> illegal memory sharing (cumulative): %d\n",
+        CTIwarn (">>>>> node spaceleaks        (overall memory statistics): %d\n"
+                 ">>>>> non-node spaceleaks    (overall memory statistics): %d\n"
+                 ">>>>> illegal memory sharing (overall memory statistics): %d\n",
                  all_cnt_node_spaceleaks, all_cnt_non_node_spaceleaks, all_cnt_sharedmem);
 
         control_value = 0;
@@ -766,9 +765,11 @@ MemobjToErrorMessage (char *kind_of_error, memobj *ptr_to_memobj)
     str = (char *)ILIBmalloc (sizeof (char) * 1024);
 
     test = snprintf (str, 1024,
-                     "%s Address: 0x%x, allocated at: %s:%d, "
-                     "Traversal: %s, Subphase: %s",
+                     "%s Address: 0x%x, Nodetype: %s,\n"
+                     "             allocated at: %s:%d, \n"
+                     "             Traversal: %s, Subphase: %s",
                      kind_of_error, (unsigned int)MEMOBJ_PTR (ptr_to_memobj),
+                     global.mdb_nodetype[MEMOBJ_NODETYPE (ptr_to_memobj)],
                      MEMOBJ_FILE (ptr_to_memobj), MEMOBJ_LINE (ptr_to_memobj),
                      MEMOBJ_TRAVERSAL (ptr_to_memobj),
                      PHsubPhaseName (MEMOBJ_SUBPHASE (ptr_to_memobj)));
