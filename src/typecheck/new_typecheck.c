@@ -906,10 +906,10 @@ NTClet (node *arg_node, info *arg_info)
             DBUG_ASSERT ((TCcountIds (lhs) >= TYgetProductSize (rhs_type)),
                          "fun ap yields more return values  than lhs vars available!");
         } else {
-            if (TCcountIds (lhs) != 1) {
-                CTIabortLine (global.linenum, "%s yields 1 instead of %d return values",
+            if (TCcountIds (lhs) != TYgetProductSize (rhs_type)) {
+                CTIabortLine (global.linenum, "%s yields %d instead of %d return values",
                               global.prf_string[PRF_PRF (LET_EXPR (arg_node))],
-                              TCcountIds (lhs));
+                              TYgetProductSize (rhs_type), TCcountIds (lhs));
             }
         }
         i = 0;
@@ -1152,6 +1152,8 @@ node *
 NTCprf (node *arg_node, info *arg_info)
 {
     ntype *args, *res;
+    node *argexprs;
+    int pos;
     prf prf;
     te_info *info;
 
@@ -1168,11 +1170,20 @@ NTCprf (node *arg_node, info *arg_info)
         }
     } else if (prf == F_type_error) {
         /*
-         * for F_type_error prfs we just return the bottom
-         * type found in arg1.
+         * for F_type_error prfs we return the types found at the argument
+         * positions.
          */
-        res = TYmakeProductType (1, TYcopyType (TYPE_TYPE (PRF_ARG1 (arg_node))));
+        argexprs = PRF_ARGS (arg_node);
+        pos = 0;
 
+        res = TYmakeEmptyProductType (TCcountExprs (argexprs));
+
+        while (argexprs != NULL) {
+            res = TYsetProductMember (res, pos,
+                                      TYcopyType (TYPE_TYPE (EXPRS_EXPR (argexprs))));
+            pos++;
+            argexprs = EXPRS_NEXT (argexprs);
+        }
     } else {
         /*
          * First we collect the argument types. NTCexprs puts them into a product type
