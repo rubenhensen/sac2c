@@ -26,9 +26,9 @@ typedef struct TRAVSTACK_T travstack_t;
 
 static travstack_t *travstack = NULL;
 
-static node *fundef = NULL;
-
 #ifdef SANITYCHECKS
+
+static node *fundef = NULL;
 
 static void
 DoSanityChecksPreTraversal (node *arg_node, info *arg_info)
@@ -116,6 +116,12 @@ TRAVdo (node *arg_node, info *arg_info)
     nodetype arg_node_type;
     int old_linenum = global.linenum;
     char *old_filename = global.filename;
+
+    /*
+     * check whether the node is non null as this
+     * is a common reason for segfaults
+     */
+    DBUG_ASSERT ((arg_node != NULL), "tried to traverse a node which is NULL!");
 
 #ifdef SANITYCHECKS
     DoSanityChecksPreTraversal (arg_node, arg_info);

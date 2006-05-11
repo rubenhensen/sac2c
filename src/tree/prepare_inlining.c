@@ -273,7 +273,9 @@ PINLblock (node *arg_node, info *arg_info)
     INFO_ASSIGNS (arg_info) = TCappendAssign (assigns, INFO_ASSIGNS (arg_info));
 #endif
 
-    INFO_LETIDS (arg_info) = TRAVdo (INFO_LETIDS (arg_info), arg_info);
+    if (INFO_LETIDS (arg_info) != NULL) {
+        INFO_LETIDS (arg_info) = TRAVdo (INFO_LETIDS (arg_info), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
