@@ -17,7 +17,7 @@ include $(PROJECT_ROOT)/Makefile.Config
 # local settings:
 #
 
-MTFLAGS   := -DMT -D_POSIX_C_SOURCE=199506L
+MTFLAGS   := -DMT -D_POSIX_C_SOURCE=200112L
 
 INCS := -I../tree -I../runtime -I../../inc -I../global
 LIBS := -L.
