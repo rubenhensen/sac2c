@@ -2936,9 +2936,18 @@
       </attributes>
       <flags>
         <flag name="IsReadonly" />
-        <flag name="IsReference" />
-        <flag name="WasReference" />
-        <flag name="IsArtificial" />
+        <flag name="IsReference" >
+	  <description> Set to true if the given argument is a reference argument. The flag is reset to false when resolving reference arguments and WasReference is set to true instead. For all other kinds of arguments it is set to false.
+	  </description>
+	</flag>
+        <flag name="WasReference" >
+	  <description> Set to true after resolving reference args if the given argument was a reference argument before. Set to false otherwise.
+	  </description>
+	</flag>
+        <flag name="IsArtificial" >
+	  <description> Set to true after resolving objects if the given argument was introduced by an object dependency and thus will be removed once the objects are reintroduced in precompile. Set to false otherwise.
+	  </description>
+	</flag>
         <flag name="IsPadded" />
         <flag name="IsAliasing" default="TRUE" />
         <flag name="IsRefcounted" default="TRUE" />
@@ -7484,7 +7493,10 @@
       </attributes>
       <flags>
         <flag name="IsAliasing" default="TRUE" />
-        <flag name="IsArtificial" />
+        <flag name="IsArtificial" >
+	  <description> Set to true if the given return value was introduced when resolving reference arguments and thus will be removed again later on. Set to false for all other return values.
+	  </description>
+	</flag>
         <flag name="IsRefcounted" default="TRUE" />
         <flag name="HasLinksignInfo" />
         <flag name="IsCReturn" />
