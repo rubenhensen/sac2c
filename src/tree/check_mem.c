@@ -177,7 +177,7 @@ FreeMemtab (memobj *memtab, int memtabsize)
                 ("Currently allocated memory: %u", global.current_allocated_mem));
     free (memtab);
 
-    DBUG_RETURN (NULL);
+    DBUG_RETURN ((void *)NULL);
 }
 
 /** <!--********************************************************************-->
