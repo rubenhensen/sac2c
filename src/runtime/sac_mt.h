@@ -1,52 +1,5 @@
 /*
- *
- * $Log$
- * Revision 3.54  2005/08/24 10:18:16  ktr
- * added support for explicit offset variables
- *
- * Revision 3.53  2004/10/05 17:38:20  khf
- * splitted SAC_MT_ADJUST_SCHEDULER__OFFSET into
- * SAC_MT_ADJUST_SCHEDULER__BEGIN ..__OFFSET
- * and ..__END to support multiple offsets
- *
- * Revision 3.52  2004/03/09 23:54:41  dkrHH
- * file sac_mt.tagged.h renamed into sac_mt.h
- * old backend removed
- *
- * Revision 1.11  2004/02/05 10:39:30  cg
- * Implementation for MT mode 1 (thread create/join) added.
- *
- * Revision 1.10  2003/10/20 14:35:30  dkr
- * bug in SAC_MT_FREE_LOCAL_DESC fixed
- *
- * Revision 1.9  2003/10/15 17:31:09  dkrHH
- * MT_CREATE_LOCAL_DESC is a C-ICM now
- *
- * Revision 1.8  2003/10/15 12:32:15  dkrHH
- * MT_FREE_LOCAL_DESC added
- *
- * Revision 1.7  2003/10/15 01:09:39  dkrHH
- * MT_DECL_LOCAL_DESC, MT_INIT_DESC modified
- *
- * Revision 1.6  2003/10/14 08:51:01  cg
- * comment corrected
- *
- * Revision 1.5  2003/09/19 12:26:45  dkr
- * postfixes _nt, _any of varnames renamed into _NT, _ANY
- *
- * Revision 1.4  2003/09/17 17:18:36  dkr
- * MT_DECL_LOCAL_DESC, MT_INIT_DESC added.
- * This revision is not working correctly yet :(
- *
- * Revision 1.3  2003/09/15 16:45:06  dkr
- * all NT-tags added. This revision is still incomplete!
- *
- * Revision 1.2  2003/09/13 13:48:05  dkr
- * NT-tags added. This revision is still incomplete!
- *
- * Revision 1.1  2003/08/04 12:24:51  dkr
- * Initial revision
- *
+ * $Id$
  */
 
 /*****************************************************************************
@@ -1540,8 +1493,14 @@ extern unsigned int SAC_MT_threads;
 
 extern pthread_t *SAC_MT1_internal_id;
 
-extern volatile unsigned int (*SAC_MT_spmd_function) (const unsigned int,
-                                                      const unsigned int, unsigned int);
+/*
+ * REMARK:
+ *
+ * no volatile for the function return value here, as volatile has
+ * no effect for rvalues! And a function return value is a rvalue.
+ */
+extern unsigned int (*SAC_MT_spmd_function) (const unsigned int, const unsigned int,
+                                             unsigned int);
 
 extern void SAC_MT_Setup (int cache_line_max, int barrier_offset, int num_schedulers);
 

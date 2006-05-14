@@ -1,102 +1,5 @@
 /*
- *
- * $Log$
- * Revision 3.16  2004/02/23 11:02:35  cg
- * ThreadControl_MT1 not compiled in TRACE version.
- *
- * Revision 3.15  2004/02/05 10:39:30  cg
- * Implementation for MT mode 1 (thread create/join) added.
- *
- * Revision 3.14  2003/09/17 17:22:59  dkr
- * a typo in trace message corrected
- *
- * Revision 3.13  2003/09/15 15:03:48  dkr
- * sac_misc.h included
- *
- * Revision 3.12  2003/04/29 11:55:05  cg
- * If the detach state or the scope of threads cannot be set correctly,
- * a warning is now issued instead of raiing an error and terminating
- * program execution.
- *
- * Revision 3.11  2003/04/14 15:16:51  sbs
- * cast from int into unsigned int added for safe comparisons.
- *
- * Revision 3.10  2003/03/21 13:17:10  sbs
- * emptied iff DISABLE_MT is set.
- *
- * Revision 3.9  2001/06/15 12:34:44  ben
- * SAC_MT_TS_Tasklock[] initialaztion added
- *
- * Revision 3.8  2001/05/21 12:41:17  ben
- * SAC_MT_Setup modified for initilization of SAC_MT_TASK_LOCKS depending on
- * SAC_MT_SET_NUM_SCHEDULERS
- *
- * Revision 3.7  2001/04/19 07:54:56  dkr
- * no changes done
- *
- * Revision 3.6  2001/04/12 12:18:37  sbs
- * two further volatiles added...
- *
- * Revision 3.5  2001/04/12 10:15:03  sbs
- * volatile declarations have to be added to external decls as well!!!!!!
- * otherwise new gcc version on bunasera fails 8-(((((
- *
- * Revision 3.4  2001/03/23 13:34:06  ben
- * in  SAC_MT_Setup SAC_MT_TASKLOCK initialization modified
- *
- * Revision 3.3  2001/03/22 17:37:47  ben
- * Initialisation of the Scheduler Mutexlocks SAC_MT_TASKLOCKS in SAC_MT_Setup
- *
- * Revision 3.2  2001/01/25 12:21:27  cg
- * Used unsigned long int instead of unsigned int for converting
- * pointers into numerical data.
- *
- * Revision 3.1  2000/11/20 18:02:45  sacbase
- * new release made
- *
- * Revision 2.4  2000/02/07 09:51:59  cg
- * Changed setting of semicolons in definitions and declarations of
- * mutex locks in order to avoid nasty warnings from cc.
- *
- * Revision 2.3  2000/01/17 16:25:58  cg
- * Reorganized implementation of the runtime system for
- * multi-threaded execution.
- *
- * Revision 2.2  1999/07/08 12:30:02  cg
- * File moved to new directory src/libsac.
- *
- * Revision 2.1  1999/02/23 12:43:40  sacbase
- * new release made
- *
- * Revision 1.12  1999/02/19 09:28:44  cg
- * bug fixed in creation of worker threads: a dummy threadid variable is
- * provided when calling pthread_create. This is not required under Solaris
- * but Linux does not like the NULL pointer here although the internal thread
- * ID is never to be used.
- * Support for MIT-threads discarded.
- *
- * Revision 1.11  1998/12/10 12:39:05  cg
- * Bug fixed in definition of _MIT_POSIX_THREADS.
- *
- * Revision 1.10  1998/12/07 10:00:11  cg
- * added #define _MIT_POSIX_THREADS to please Linux
- *
- * Revision 1.9  1998/10/23 13:14:56  cg
- * added explanation for some nasty warnings during compilation
- *
- * Revision 1.8  1998/07/10 15:21:15  cg
- * bug fixed in vararg macro usage
- *
- * Revision 1.7  1998/07/10 08:08:25  cg
- * header file stdarg.h used instead of varargs.h which is not
- * available under Linux.
- *
- * Revision 1.6  1998/07/02 09:27:04  cg
- * tracing capabilities improved
- *
- * Revision 1.5  1998/06/29 08:57:13  cg
- * added tracing facilities
- *
+ * $Id$
  */
 
 /*****************************************************************************
@@ -205,8 +108,14 @@ unsigned int SAC_MT_threads;
 
 pthread_t *SAC_MT1_internal_id;
 
-volatile unsigned int (*SAC_MT_spmd_function) (const unsigned int, const unsigned int,
-                                               unsigned int);
+/*
+ * REMARK:
+ *
+ * The volatile qualifier cannot be applied to function return values
+ * as function return values are rvalues! cf. ANSI specs for details.
+ */
+unsigned int (*SAC_MT_spmd_function) (const unsigned int, const unsigned int,
+                                      unsigned int);
 
 #endif /* TRACE */
 
@@ -597,7 +506,7 @@ static void
 ThreadControl_MT1 (void *arg)
 {
     const unsigned int my_thread_id = (unsigned long int)arg;
-    unsigned int worker_flag = 0;
+    volatile unsigned int worker_flag = 0;
 
     SAC_MT_ACQUIRE_LOCK (SAC_MT_init_lock);
 
