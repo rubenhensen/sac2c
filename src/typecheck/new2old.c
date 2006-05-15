@@ -811,16 +811,15 @@ NT2OTlet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("NT2OTlet");
 
-    /*
-     * here, all bottoms should be gone already as they are
-     * handeled in NT2OTfuncond!
-     */
-    DBUG_ASSERT (!IdsContainBottom (LET_IDS (arg_node)),
-                 "found a left ofter bottom type at lhs of let!");
-
-    INFO_LHS (arg_info) = LET_IDS (arg_node);
-    LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
-    INFO_LHS (arg_info) = NULL;
+    if (IdsContainBottom (LET_IDS (arg_node))) {
+        DBUG_PRINT ("FIXNT", ("bottom LHS found; eliminating N_let \"%s...\"",
+                              IDS_NAME (LET_IDS (arg_node))));
+        arg_node = FREEdoFreeTree (arg_node);
+    } else {
+        INFO_LHS (arg_info) = LET_IDS (arg_node);
+        LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
+        INFO_LHS (arg_info) = NULL;
+    }
 
     DBUG_RETURN (arg_node);
 }
