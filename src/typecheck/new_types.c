@@ -1828,6 +1828,10 @@ mapFunctionInstances (ntype *type, node *(*mapfun) (node *, info *), info *info)
              * as long as SplitWrapperType does not delete the outdated
              * possibilities, we have to visit all instances and thus
              * use the first [*] we find.
+             *
+             * BE CAREFUL: the traversal has to be the same as for
+             *             the fold function to ensure that the same
+             *             instances are traversed by both functions!
              */
             for (cnt = 0; cnt < IRES_NUMFUNS (type); cnt++) {
                 IRES_FUNDEF (type, cnt) = mapfun (IRES_FUNDEF (type, cnt), info);
@@ -1900,19 +1904,36 @@ foldFunctionInstances (ntype *type, void *(*foldfun) (node *, void *), void *res
 
     switch (NTYPE_CON (type)) {
     case TC_ires:
-        /*
-         * we want to walk down until we reach the leaf (which is
-         * a product type). Once we arrived there, we know that
-         * this IRES node contains all instances for the
-         * given basetype combination.
-         */
-        if (TYisProd (IRES_TYPE (type))) {
-            for (cnt = 0; cnt < IRES_NUMFUNS (type); cnt++) {
-                result = foldfun (IRES_FUNDEF (type, cnt), result);
-            }
-        } else {
-            result = foldFunctionInstances (IRES_TYPE (type), foldfun, result);
+#if 0
+      /*
+       * we want to walk down until we reach the leaf (which is
+       * a product type). Once we arrived there, we know that
+       * this IRES node contains all instances for the
+       * given basetype combination.
+       */
+      if (TYisProd( IRES_TYPE( type))) {
+        for (cnt = 0; cnt < IRES_NUMFUNS( type); cnt++) {
+          result = foldfun( IRES_FUNDEF( type, cnt), result);
         }
+      } else {
+        result = foldFunctionInstances( IRES_TYPE( type), foldfun, result);
+      }
+#else
+        /*
+         * TODO: HACK: sah
+         * as long as SplitWrapperType does not delete the outdated
+         * possibilities, we have to visit all instances and thus
+         * use the first [*] we find.
+         *
+         * BE CAREFUL: the traversal has to be the same as for
+         *             the map function to ensure that the same
+         *             instances are traversed by both functions!
+         */
+        for (cnt = 0; cnt < IRES_NUMFUNS (type); cnt++) {
+            result = foldfun (IRES_FUNDEF (type, cnt), result);
+        }
+#endif
+        break;
         break;
 
     case TC_fun:

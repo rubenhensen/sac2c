@@ -74,6 +74,8 @@ CreateObjectWrapper (node *fundef)
 
     DBUG_ENTER ("CreateObjectWrapper");
 
+    DBUG_PRINT ("OAN", ("Creating object wrapper for %s...", CTIitemName (fundef)));
+
     result = TBmakeFundef (ILIBstringCopy (FUNDEF_NAME (fundef)),
                            NSdupNamespace (global.modulenamespace),
                            DUPdoDupTree (FUNDEF_RETS (fundef)),
@@ -115,7 +117,7 @@ ProjectObjects (node *fundef, info *info)
 {
     DBUG_ENTER ("ProjectObjects");
 
-    if (FUNDEF_ISLOCAL (fundef) || !INFO_ISLOCAL (info)) {
+    if (!FUNDEF_WASIMPORTED (fundef) && !INFO_ISLOCAL (info)) {
         /*
          * this is either a local instance or the entire
          * wrapper is not local and thus all its instances.
@@ -156,6 +158,9 @@ UnifyOverloadedFunctions (node *funs, info *info)
 
     while (funs != NULL) {
         if (FUNDEF_ISWRAPPERFUN (funs)) {
+            DBUG_PRINT ("OAN",
+                        ("Unifying objects of function %s...", CTIitemName (funs)));
+
             if (TYisFun (FUNDEF_WRAPPERTYPE (funs))) {
                 INFO_OBJECTS (info) = FUNDEF_OBJECTS (funs);
                 INFO_ISLOCAL (info) = FUNDEF_ISLOCAL (funs);
