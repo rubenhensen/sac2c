@@ -227,6 +227,7 @@ node *
 RERAlet (node *arg_node, info *arg_info)
 {
     node *oldlhs;
+    node *arg;
 
     DBUG_ENTER ("RERAlet");
 
@@ -237,6 +238,19 @@ RERAlet (node *arg_node, info *arg_info)
 
     LET_IDS (arg_node) = INFO_LHS (arg_info);
     INFO_LHS (arg_info) = oldlhs;
+
+    /*
+     * check whether rhs is a reference arg and in that case substitute
+     * the lhs by the rhs.
+     */
+    if ((NODE_TYPE (LET_EXPR (arg_node)) == N_id)
+        && (NODE_TYPE (AVIS_DECL (ID_AVIS (LET_EXPR (arg_node)))) == N_arg)) {
+        arg = AVIS_DECL (ID_AVIS (LET_EXPR (arg_node)));
+
+        if (ARG_WASREFERENCE (arg) || ARG_ISREFERENCE (arg)) {
+            AVIS_SUBST (IDS_AVIS (LET_IDS (arg_node))) = ARG_AVIS (arg);
+        }
+    }
 
     /*
      * substitute LHS ids
