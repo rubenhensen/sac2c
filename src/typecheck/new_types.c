@@ -1807,36 +1807,19 @@ mapFunctionInstances (ntype *type, node *(*mapfun) (node *, info *), info *info)
     if (type != NULL) {
         switch (NTYPE_CON (type)) {
         case TC_ires:
-#if 0
-        /*
-         * we want to walk down until we reach the leaf (which is
-         * a product type). Once we arrived there, we know that
-         * this IRES node contains all instances for the
-         * given basetype combination.
-         */
-        if (TYisProd( IRES_TYPE( type))) {
-          for (cnt = 0; cnt < IRES_NUMFUNS( type); cnt++) {
-            IRES_FUNDEF( type, cnt) = mapfun( IRES_FUNDEF( type, cnt), info);
-          }
-        } else {
-          IRES_TYPE( type) = 
-            mapFunctionInstances( IRES_TYPE( type), mapfun, info);
-        }
-#else
             /*
-             * TODO: HACK: sah
-             * as long as SplitWrapperType does not delete the outdated
-             * possibilities, we have to visit all instances and thus
-             * use the first [*] we find.
-             *
-             * BE CAREFUL: the traversal has to be the same as for
-             *             the fold function to ensure that the same
-             *             instances are traversed by both functions!
+             * we want to walk down until we reach the leaf (which is
+             * a product type). Once we arrived there, we know that
+             * this IRES node contains all instances for the
+             * given basetype combination.
              */
-            for (cnt = 0; cnt < IRES_NUMFUNS (type); cnt++) {
-                IRES_FUNDEF (type, cnt) = mapfun (IRES_FUNDEF (type, cnt), info);
+            if (TYisProd (IRES_TYPE (type))) {
+                for (cnt = 0; cnt < IRES_NUMFUNS (type); cnt++) {
+                    IRES_FUNDEF (type, cnt) = mapfun (IRES_FUNDEF (type, cnt), info);
+                }
+            } else {
+                IRES_TYPE (type) = mapFunctionInstances (IRES_TYPE (type), mapfun, info);
             }
-#endif
             break;
 
         case TC_fun:
@@ -1873,7 +1856,11 @@ mapFunctionInstances (ntype *type, node *(*mapfun) (node *, info *), info *info)
  *                                    info *info)
  *
  * @brief Maps the given function mapfun to all N_fundef nodes
- *        that are contained within the given funtype.
+ *        that are contained within the given funtype. Be aware that
+ *        only the instances in the leafs are reached. This should be
+ *        all instances anyways, but if some code (e.g. SplitWrappers)
+ *        messes the set of instances up, this may cause unexpected
+ *        behaviour!
  *
  * @param funtype a function type
  * @param mapfun the function to map to the instances
@@ -1904,35 +1891,19 @@ foldFunctionInstances (ntype *type, void *(*foldfun) (node *, void *), void *res
 
     switch (NTYPE_CON (type)) {
     case TC_ires:
-#if 0
-      /*
-       * we want to walk down until we reach the leaf (which is
-       * a product type). Once we arrived there, we know that
-       * this IRES node contains all instances for the
-       * given basetype combination.
-       */
-      if (TYisProd( IRES_TYPE( type))) {
-        for (cnt = 0; cnt < IRES_NUMFUNS( type); cnt++) {
-          result = foldfun( IRES_FUNDEF( type, cnt), result);
-        }
-      } else {
-        result = foldFunctionInstances( IRES_TYPE( type), foldfun, result);
-      }
-#else
         /*
-         * TODO: HACK: sah
-         * as long as SplitWrapperType does not delete the outdated
-         * possibilities, we have to visit all instances and thus
-         * use the first [*] we find.
-         *
-         * BE CAREFUL: the traversal has to be the same as for
-         *             the map function to ensure that the same
-         *             instances are traversed by both functions!
+         * we want to walk down until we reach the leaf (which is
+         * a product type). Once we arrived there, we know that
+         * this IRES node contains all instances for the
+         * given basetype combination.
          */
-        for (cnt = 0; cnt < IRES_NUMFUNS (type); cnt++) {
-            result = foldfun (IRES_FUNDEF (type, cnt), result);
+        if (TYisProd (IRES_TYPE (type))) {
+            for (cnt = 0; cnt < IRES_NUMFUNS (type); cnt++) {
+                result = foldfun (IRES_FUNDEF (type, cnt), result);
+            }
+        } else {
+            result = foldFunctionInstances (IRES_TYPE (type), foldfun, result);
         }
-#endif
         break;
         break;
 
@@ -1964,6 +1935,22 @@ foldFunctionInstances (ntype *type, void *(*foldfun) (node *, void *), void *res
     DBUG_RETURN (result);
 }
 
+/** <!-- ****************************************************************** -->
+ * @fn void *TYfoldFunctionInstances( ntype *funtype,
+ *                                    void *(*foldfun)(node *, void*),
+ *                                    void *initial)
+ *
+ * @brief Folds the given function mapfun to all N_fundef nodes
+ *        that are contained within the given funtype. Be aware that
+ *        only the instances in the leafs are reached. This should be
+ *        all instances anyways, but if some code (e.g. SplitWrappers)
+ *        messes the set of instances up, this may cause unexpected
+ *        behaviour!
+ *
+ * @param funtype a function type
+ * @param foldfun the fold function
+ * @param initial neutral element of the fold operation
+ ******************************************************************************/
 void *
 TYfoldFunctionInstances (ntype *funtype, void *(*foldfun) (node *, void *), void *initial)
 {
