@@ -117,7 +117,8 @@ ProjectObjects (node *fundef, info *info)
 {
     DBUG_ENTER ("ProjectObjects");
 
-    if (!FUNDEF_WASIMPORTED (fundef) && !INFO_ISLOCAL (info)) {
+    if ((FUNDEF_ISLOCAL (fundef) && !FUNDEF_WASIMPORTED (fundef))
+        || !INFO_ISLOCAL (info)) {
         /*
          * this is either a local instance or the entire
          * wrapper is not local and thus all its instances.
