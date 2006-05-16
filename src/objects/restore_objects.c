@@ -197,8 +197,10 @@ RESOap (node *arg_node, info *arg_info)
 
     /*
      * unwrap function if neccessary
+     * be aware that functions may get wrapped multiple times
+     * if they are imported more than once!
      */
-    if (FUNDEF_ISOBJECTWRAPPER (AP_FUNDEF (arg_node))) {
+    while (FUNDEF_ISOBJECTWRAPPER (AP_FUNDEF (arg_node))) {
         DBUG_ASSERT ((FUNDEF_IMPL (AP_FUNDEF (arg_node)) != NULL),
                      "found object wrapper with FUNDEF_IMPL not set!");
         AP_FUNDEF (arg_node) = FUNDEF_IMPL (AP_FUNDEF (arg_node));
