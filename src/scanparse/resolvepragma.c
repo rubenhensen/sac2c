@@ -283,6 +283,30 @@ RSPtypedef (node *arg_node, info *arg_info)
         TYPEDEF_INITFUN (arg_node) = ILIBstringCopy (PRAGMA_INITFUN (pragma));
         TYPEDEF_COPYFUN (arg_node) = ILIBstringCopy (PRAGMA_COPYFUN (pragma));
 
+        /*
+         * if this typedef depends on any external object files,
+         * add them to the dependencies
+         */
+        if (PRAGMA_LINKOBJ (pragma) != NULL) {
+            MODULE_DEPENDENCIES (INFO_MODULE (arg_info))
+              = STRSjoin (PRAGMA_LINKOBJ (pragma),
+                          MODULE_DEPENDENCIES (INFO_MODULE (arg_info)));
+
+            PRAGMA_LINKOBJ (pragma) = NULL;
+        }
+
+        /*
+         * if this typedef needs an external module, add it to
+         * the external dependencies of this module.
+         */
+        if (PRAGMA_LINKMOD (pragma) != NULL) {
+            MODULE_DEPENDENCIES (INFO_MODULE (arg_info))
+              = STRSjoin (PRAGMA_LINKMOD (pragma),
+                          MODULE_DEPENDENCIES (INFO_MODULE (arg_info)));
+
+            PRAGMA_LINKMOD (pragma) = NULL;
+        }
+
         TYPEDEF_PRAGMA (arg_node) = FREEdoFreeNode (TYPEDEF_PRAGMA (arg_node));
     }
 

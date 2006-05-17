@@ -790,7 +790,7 @@ pragma: hash_pragma LINKNAME string
           PRAGMA_LINKNAME( store_pragma) = $3;
         }
       | hash_pragma LINKWITH string
-        { if( pragma_type != PRAG_fundec) {
+        { if( (pragma_type != PRAG_fundec) && (pragma_type != PRAG_typedef) ) {
             yyerror( "pragma \"linkwith\" not allowed here");
           }
           if (store_pragma == NULL) {
@@ -800,7 +800,7 @@ pragma: hash_pragma LINKNAME string
                                             PRAGMA_LINKMOD( store_pragma));
         }
       | hash_pragma LINKOBJ string
-        { if( pragma_type != PRAG_fundec) {
+        { if( (pragma_type != PRAG_fundec) && (pragma_type != PRAG_typedef) ) {
             yyerror( "pragma \"linkobj\" not allowed here");
           }
           if (store_pragma == NULL) {
