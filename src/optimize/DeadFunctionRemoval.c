@@ -78,6 +78,17 @@ tagFundefAsNeeded (node *fundef, info *info)
 
             INFO_SPINE (info) = oldspine;
         }
+
+        if (FUNDEF_ISOBJECTWRAPPER (fundef)) {
+            /*
+             * if this is an external object wrapper, we have to make sure that
+             * its implementation is not removed, as all object wrappers
+             * are stripped out in the backend.
+             */
+            DBUG_PRINT ("DFR", (">>> tagging implementation of objectwrapper..."));
+
+            FUNDEF_IMPL (fundef) = tagFundefAsNeeded (FUNDEF_IMPL (fundef), info);
+        }
     }
 
     DBUG_RETURN (fundef);
