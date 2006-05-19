@@ -142,6 +142,15 @@ USGprintUsage ()
 
     printf ("\n");
 
+    PRINT_BREAK_SPEC (PH_scanparse, "rsa", "Stop after resolving all flag.");
+    PRINT_BREAK_SPEC (PH_scanparse, "ans", "Stop after annotating namespaces.");
+    PRINT_BREAK_SPEC (PH_scanparse, "gdp", "Stop after gathering dependencies.");
+    PRINT_BREAK_SPEC (PH_scanparse, "imp", "Stop after importing instances.");
+    PRINT_BREAK_SPEC (PH_scanparse, "uss", "Stop after fetching used symbols.");
+    PRINT_BREAK_SPEC (PH_scanparse, "dep", "Stop after resolving dependencies.");
+
+    printf ("\n");
+
     PRINT_BREAK_SPEC (PH_simplify, "mop",
                       "Stop after resolving (multiple) applications of infix");
     CONT_BREAK_SPEC ("operations.");
@@ -150,7 +159,16 @@ USGprintUsage ()
 
     PRINT_BREAK_SPEC (PH_pretypecheck, "rst", "Stop after resolving symbol types.");
     PRINT_BREAK_SPEC (PH_pretypecheck, "ivd", "Stop after inserting vardecs.");
+    PRINT_BREAK_SPEC (PH_pretypecheck, "itc", "Stop after inserting type conversions.");
+    PRINT_BREAK_SPEC (PH_pretypecheck, "ses",
+                      "Stop after stripping external signatures.");
     PRINT_BREAK_SPEC (PH_pretypecheck, "cwr", "Stop after creating wrappers.");
+    PRINT_BREAK_SPEC (PH_pretypecheck, "oan", "Stop after analysing objects.");
+    PRINT_BREAK_SPEC (PH_pretypecheck, "goi", "Stop after creating object initialisers.");
+    PRINT_BREAK_SPEC (PH_pretypecheck, "rso", "Stop after resolving global objects.");
+    PRINT_BREAK_SPEC (PH_pretypecheck, "rra",
+                      "Stop after resolving reference arguments.");
+    PRINT_BREAK_SPEC (PH_pretypecheck, "ewt", "Stop after extending wrapper types.");
     PRINT_BREAK_SPEC (PH_pretypecheck, "l2f",
                       "Stop after converting loops and conditionals into");
     CONT_BREAK_SPEC ("functions.");

@@ -196,6 +196,7 @@ RERAassign (node *arg_node, info *arg_info)
     INFO_DELETE (arg_info) = FALSE;
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
     delete = INFO_DELETE (arg_info);
+    INFO_DELETE (arg_info) = FALSE;
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
