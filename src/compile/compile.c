@@ -3046,6 +3046,9 @@ COMPPrfIncRC (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("COMPPrfIncRC");
 
+    DBUG_ASSERT ((NODE_TYPE (PRF_ARG1 (arg_node)) == N_id),
+                 "found non N_id node as arg1 of inc_rc (maybe object?)");
+
     name = ID_NAME (PRF_ARG1 (arg_node));
     type = ID_TYPE (PRF_ARG1 (arg_node));
     num = NUM_VAL (PRF_ARG2 (arg_node));
@@ -3078,7 +3081,7 @@ COMPPrfDecRC (node *arg_node, info *arg_info)
     DBUG_ENTER ("COMPPrfDecRC");
 
     DBUG_ASSERT ((NODE_TYPE (PRF_ARG1 (arg_node)) == N_id),
-                 "found non N_id node as arg1 of decrc (maybe object?)");
+                 "found non N_id node as arg1 of dec_rc (maybe object?)");
 
     name = ID_NAME (PRF_ARG1 (arg_node));
     type = ID_TYPE (PRF_ARG1 (arg_node));
