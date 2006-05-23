@@ -28,7 +28,6 @@
 #include "globals.h"
 #include "dbug.h"
 #include "print.h"
-#include "DataFlowMask.h"
 #include "internal_lib.h"
 
 #include <string.h>
@@ -42,21 +41,15 @@ typedef enum { ri_default, ri_annotate } ri_mode;
  * INFO structure
  */
 struct INFO {
-    dfmask_t *candidates;
     node *rhscand;
     node *lhs;
-    node *fundef;
-    bool addlhs;
     ri_mode travmode;
 };
 
 /**
  * INFO macros
  */
-#define INFO_CANDIDATES(n) (n->candidates)
 #define INFO_LHS(n) (n->lhs)
-#define INFO_ADDLHS(n) (n->addlhs)
-#define INFO_FUNDEF(n) (n->fundef)
 #define INFO_TRAVMODE(n) (n->travmode)
 #define INFO_RHSCAND(n) (n->rhscand)
 
@@ -72,11 +65,8 @@ MakeInfo ()
 
     result = ILIBmalloc (sizeof (info));
 
-    INFO_CANDIDATES (result) = NULL;
     INFO_RHSCAND (result) = NULL;
     INFO_LHS (result) = NULL;
-    INFO_FUNDEF (result) = NULL;
-    INFO_ADDLHS (result) = FALSE;
     INFO_TRAVMODE (result) = ri_default;
 
     DBUG_RETURN (result);
@@ -90,34 +80,6 @@ FreeInfo (info *info)
     info = ILIBfree (info);
 
     DBUG_RETURN (info);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn CutExprs
- *
- *  @brief
- *
- *  @param ref
- *  @param list
- *
- *  @param arg_info
- *
- *****************************************************************************/
-static node *
-CutExprs (dfmask_t *candidates, node *list)
-{
-    DBUG_ENTER ("CutExprs");
-
-    if (list != NULL) {
-        EXPRS_NEXT (list) = CutExprs (candidates, EXPRS_NEXT (list));
-
-        if (!DFMtestMaskEntry (candidates, NULL, ID_AVIS (EXPRS_EXPR (list)))) {
-            list = FREEdoFreeNode (list);
-        }
-    }
-
-    DBUG_RETURN (list);
 }
 
 /** <!--********************************************************************-->
@@ -195,32 +157,6 @@ EMRIdoReuseInference (node *arg_node)
 
 /** <!--********************************************************************-->
  *
- * @fn EMRIarg
- *
- *  @brief
- *
- *  @param arg_node
- *  @param arg_info
- *
- *****************************************************************************/
-node *
-EMRIarg (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("EMRIarg");
-
-    if (ARG_NEXT (arg_node) != NULL) {
-        ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
-    }
-
-    if (!ARG_ISARTIFICIAL (arg_node)) {
-        DFMsetMaskEntrySet (INFO_CANDIDATES (arg_info), NULL, ARG_AVIS (arg_node));
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
  * @fn EMRIassign
  *
  *  @brief
@@ -255,145 +191,6 @@ EMRIassign (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn EMRIcode
- *
- *  @brief
- *
- *  @param arg_node
- *  @param arg_info
- *
- *****************************************************************************/
-node *
-EMRIcode (node *arg_node, info *arg_info)
-{
-    dfmask_t *oldcands;
-
-    DBUG_ENTER ("EMRIcode");
-
-    /*
-     * Inside a code block a new candidate list is needed
-     */
-    oldcands = INFO_CANDIDATES (arg_info);
-    INFO_CANDIDATES (arg_info)
-      = DFMgenMaskClear (FUNDEF_DFM_BASE (INFO_FUNDEF (arg_info)));
-
-    /*
-     * Traverse CBLOCK
-     */
-    CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
-
-    /*
-     * Erase the code block's candidate list before traversing on
-     */
-    INFO_CANDIDATES (arg_info) = DFMremoveMask (INFO_CANDIDATES (arg_info));
-    INFO_CANDIDATES (arg_info) = oldcands;
-
-    if (CODE_NEXT (arg_node) != NULL) {
-        CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn EMRIcond
- *
- *  @brief
- *
- *  @param arg_node
- *  @param arg_info
- *
- *****************************************************************************/
-node *
-EMRIcond (node *arg_node, info *arg_info)
-{
-    dfmask_t *oldcands;
-    DBUG_ENTER ("EMRIcond");
-
-    /*
-     * Rescue reuse candidates
-     */
-    oldcands = DFMgenMaskCopy (INFO_CANDIDATES (arg_info));
-    COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
-
-    /*
-     * Restore reuse candidates for traversal of else-Branch
-     */
-    INFO_CANDIDATES (arg_info) = DFMremoveMask (INFO_CANDIDATES (arg_info));
-    INFO_CANDIDATES (arg_info) = oldcands;
-    COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
-
-    /*
-     * After a conditional, nothing can be reused
-     */
-    DFMsetMaskClear (INFO_CANDIDATES (arg_info));
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn EMRIfundef
- *
- *  @brief
- *
- *  @param arg_node
- *  @param arg_info
- *
- *****************************************************************************/
-node *
-EMRIfundef (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("EMRIfundef");
-
-    if (FUNDEF_BODY (arg_node) != NULL) {
-
-        INFO_FUNDEF (arg_info) = arg_node;
-
-        /*
-         * Generate DFM-base
-         */
-        FUNDEF_DFM_BASE (arg_node)
-          = DFMgenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
-
-        INFO_CANDIDATES (arg_info) = DFMgenMaskClear (FUNDEF_DFM_BASE (arg_node));
-
-        /*
-         * FUNDEF args are the initial reuse candidates
-         */
-        if (FUNDEF_ARGS (arg_node) != NULL) {
-            FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
-        }
-
-        /*
-         * Traverse body
-         */
-        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-
-        /*
-         * Remove reuse candidates mask
-         */
-        INFO_CANDIDATES (arg_info) = DFMremoveMask (INFO_CANDIDATES (arg_info));
-
-        /*
-         * Remove DFM-base
-         */
-        FUNDEF_DFM_BASE (arg_node) = DFMremoveMaskBase (FUNDEF_DFM_BASE (arg_node));
-    }
-
-    /*
-     * Traverse other fundefs
-     */
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
  * @fn EMRIlet
  *
  *  @brief
@@ -408,19 +205,8 @@ EMRIlet (node *arg_node, info *arg_info)
     DBUG_ENTER ("EMRIlet");
 
     INFO_LHS (arg_info) = LET_IDS (arg_node);
-    INFO_ADDLHS (arg_info) = TRUE;
 
-    if (LET_EXPR (arg_node) != NULL) {
-        LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
-    }
-
-    if (INFO_ADDLHS (arg_info)) {
-        node *_ids = LET_IDS (arg_node);
-        while (_ids != NULL) {
-            DFMsetMaskEntrySet (INFO_CANDIDATES (arg_info), NULL, IDS_AVIS (_ids));
-            _ids = IDS_NEXT (_ids);
-        }
-    }
+    LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -471,7 +257,6 @@ EMRIprf (node *arg_node, info *arg_info)
         if (INFO_TRAVMODE (arg_info) == ri_annotate) {
             INFO_RHSCAND (arg_info) = FREEdoFreeTree (INFO_RHSCAND (arg_info));
         }
-        INFO_ADDLHS (arg_info) = FALSE;
         break;
 
     case F_alloc:
@@ -482,7 +267,6 @@ EMRIprf (node *arg_node, info *arg_info)
               = TCappendExprs (PRF_ARGS (arg_node), INFO_RHSCAND (arg_info));
             INFO_RHSCAND (arg_info) = NULL;
         }
-        INFO_ADDLHS (arg_info) = FALSE;
         break;
 
     case F_fill:
@@ -494,7 +278,6 @@ EMRIprf (node *arg_node, info *arg_info)
               = TRAVdo (AVIS_SSAASSIGN (ID_AVIS (PRF_ARG2 (arg_node))), arg_info);
             INFO_TRAVMODE (arg_info) = ri_default;
         }
-        INFO_ADDLHS (arg_info) = TRUE;
         break;
 
     case F_copy:
@@ -505,13 +288,10 @@ EMRIprf (node *arg_node, info *arg_info)
         lt = TYeliminateAKV (IDS_NTYPE (INFO_LHS (arg_info)));
 
         if (TYeqTypes (lt, rt)) {
-            rhc = DUPdoDupTree (PRF_ARGS (arg_node));
-            INFO_RHSCAND (arg_info) = CutExprs (INFO_CANDIDATES (arg_info), rhc);
+            INFO_RHSCAND (arg_info) = DUPdoDupTree (PRF_ARGS (arg_node));
 
-            if (INFO_RHSCAND (arg_info) != NULL) {
-                DBUG_PRINT ("RI", ("RHSCAND"));
-                DBUG_EXECUTE ("RI", PRTdoPrint (INFO_RHSCAND (arg_info)););
-            }
+            DBUG_PRINT ("RI", ("RHSCAND"));
+            DBUG_EXECUTE ("RI", PRTdoPrint (INFO_RHSCAND (arg_info)););
         }
 
         rt = TYfreeType (rt);
@@ -528,12 +308,10 @@ EMRIprf (node *arg_node, info *arg_info)
 
         if (rhc != NULL) {
             DBUG_PRINT ("RI", ("rhc"));
-            DBUG_EXECUTE ("RI", PRTdoPrint (rhc);
-                          DFMprintMask (global.outfile, "%s",
-                                        INFO_CANDIDATES (arg_info)););
+            DBUG_EXECUTE ("RI", PRTdoPrint (rhc););
         }
 
-        INFO_RHSCAND (arg_info) = CutExprs (INFO_CANDIDATES (arg_info), rhc);
+        INFO_RHSCAND (arg_info) = rhc;
 
         if (INFO_RHSCAND (arg_info) != NULL) {
             DBUG_PRINT ("RI", ("RHSCAND"));
@@ -545,52 +323,54 @@ EMRIprf (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn EMRIwith2
- *
- *  @brief
- *
- *  @param arg_node
- *  @param arg_info
+ * @fn node *EMRIgenarray( node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-EMRIwith2 (node *arg_node, info *arg_info)
+EMRIgenarray (node *arg_node, info *arg_info)
 {
-    node *wlids;
-    node *rhc = NULL;
-    node *withop;
+    DBUG_ENTER ("EMRIgenarray");
 
-    DBUG_ENTER ("EMRIwith2");
+    INFO_RHSCAND (arg_info) = GENARRAY_RC (arg_node);
+    GENARRAY_RC (arg_node) = NULL;
 
-    wlids = INFO_LHS (arg_info);
-    withop = WITH2_WITHOP (arg_node);
-
-    while (withop != NULL) {
-        if ((NODE_TYPE (withop) == N_genarray) || (NODE_TYPE (withop) == N_modarray)) {
-
-            rhc = WITHOP_RC (withop);
-            L_WITHOP_RC (withop, NULL);
-
-            INFO_RHSCAND (arg_info) = CutExprs (INFO_CANDIDATES (arg_info), rhc);
-
-            if (INFO_RHSCAND (arg_info) != NULL) {
-                node *mem = WITHOP_MEM (withop);
-
-                INFO_TRAVMODE (arg_info) = ri_annotate;
-                AVIS_SSAASSIGN (ID_AVIS (mem))
-                  = TRAVdo (AVIS_SSAASSIGN (ID_AVIS (mem)), arg_info);
-                INFO_TRAVMODE (arg_info) = ri_default;
-            }
-        }
-        wlids = IDS_NEXT (wlids);
-        withop = WITHOP_NEXT (withop);
+    if (INFO_RHSCAND (arg_info) != NULL) {
+        INFO_TRAVMODE (arg_info) = ri_annotate;
+        AVIS_SSAASSIGN (ID_AVIS (GENARRAY_MEM (arg_node)))
+          = TRAVdo (AVIS_SSAASSIGN (ID_AVIS (GENARRAY_MEM (arg_node))), arg_info);
+        INFO_TRAVMODE (arg_info) = ri_default;
     }
 
-    if (WITH2_CODE (arg_node) != NULL) {
-        WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
+    if (GENARRAY_NEXT (arg_node) != NULL) {
+        GENARRAY_NEXT (arg_node) = TRAVdo (GENARRAY_NEXT (arg_node), arg_info);
     }
 
-    INFO_ADDLHS (arg_info) = TRUE;
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *EMRImodarray( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+EMRImodarray (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("EMRImodarray");
+
+    INFO_RHSCAND (arg_info) = MODARRAY_RC (arg_node);
+    MODARRAY_RC (arg_node) = NULL;
+
+    if (INFO_RHSCAND (arg_info) != NULL) {
+        INFO_TRAVMODE (arg_info) = ri_annotate;
+        AVIS_SSAASSIGN (ID_AVIS (MODARRAY_MEM (arg_node)))
+          = TRAVdo (AVIS_SSAASSIGN (ID_AVIS (MODARRAY_MEM (arg_node))), arg_info);
+        INFO_TRAVMODE (arg_info) = ri_default;
+    }
+
+    if (MODARRAY_NEXT (arg_node) != NULL) {
+        MODARRAY_NEXT (arg_node) = TRAVdo (MODARRAY_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
