@@ -1,18 +1,3 @@
-/*
- *
- * $Log$
- * Revision 1.3  2004/11/21 20:42:14  ktr
- * Ismop
- *
- * Revision 1.2  2004/11/02 14:34:59  ktr
- * Better support for conditionals.
- * AP_ARGS are now actually traversed.
- *
- * Revision 1.1  2004/10/12 10:08:05  ktr
- * Initial revision
- *
- */
-
 #ifndef _SAC_FILTERRC_H_
 #define _SAC_FILTERRC_H_
 
@@ -22,23 +7,23 @@
  *
  * Filter reuse candidates traversal (emfrc_tab)
  *
- * prefix: EMFRC
+ * prefix: FRC
  *
  *****************************************************************************/
-extern node *EMFRCdoFilterReuseCandidates (node *syntax_tree);
+extern node *FRCdoFilterReuseCandidates (node *syntax_tree);
 
-extern node *EMFRCap (node *arg_node, info *arg_info);
-extern node *EMFRCarg (node *arg_node, info *arg_info);
-extern node *EMFRCassign (node *arg_node, info *arg_info);
-extern node *EMFRCcond (node *arg_node, info *arg_info);
-extern node *EMFRCfold (node *arg_node, info *arg_info);
-extern node *EMFRCfuncond (node *arg_node, info *arg_info);
-extern node *EMFRCfundef (node *arg_node, info *arg_info);
-extern node *EMFRCgenarray (node *arg_node, info *arg_info);
-extern node *EMFRCid (node *arg_node, info *arg_info);
-extern node *EMFRCmodarray (node *arg_node, info *arg_info);
-extern node *EMFRCprf (node *arg_node, info *arg_info);
-extern node *EMFRCwith (node *arg_node, info *arg_info);
-extern node *EMFRCwith2 (node *arg_node, info *arg_info);
+extern node *FRCap (node *arg_node, info *arg_info);
+extern node *FRCarg (node *arg_node, info *arg_info);
+extern node *FRCassign (node *arg_node, info *arg_info);
+extern node *FRCcond (node *arg_node, info *arg_info);
+extern node *FRCfold (node *arg_node, info *arg_info);
+extern node *FRCfuncond (node *arg_node, info *arg_info);
+extern node *FRCfundef (node *arg_node, info *arg_info);
+extern node *FRCgenarray (node *arg_node, info *arg_info);
+extern node *FRCid (node *arg_node, info *arg_info);
+extern node *FRCmodarray (node *arg_node, info *arg_info);
+extern node *FRCprf (node *arg_node, info *arg_info);
+extern node *FRCwith (node *arg_node, info *arg_info);
+extern node *FRCwith2 (node *arg_node, info *arg_info);
 
 #endif /* _SAC_FILTERRC_H_ */

@@ -1366,7 +1366,20 @@
           <node name="Block" />
         </travsons>
       </traversal>
-      <traversal id="EMFRC" name="Filter Reuse Candidates" default="sons" include="filterrc.h" >
+      <traversal id="SRCE" name="Scope-based reuse-candidate elimination" default="sons" include="scoperce.h" >
+        <travuser>
+          <node name="Fundef" />
+          <node name="Arg" />
+          <node name="Assign" />
+          <node name="Let" />
+          <node name="Ids" />
+          <node name="Ap" />
+          <node name="Code" />
+          <node name="Prf" />
+          <node name="Exprs" />
+        </travuser>
+      </traversal>
+      <traversal id="FRC" name="Filter Reuse Candidates" default="sons" include="filterrc.h" >
         <travuser>
           <node name="Ap" />
           <node name="Arg" />

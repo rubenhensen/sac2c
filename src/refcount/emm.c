@@ -132,6 +132,13 @@ EMMdoMemoryManagement (node *syntax_tree)
     }
 
     /*
+     * Scope-based reuse candidates elimination
+     */
+    if (global.optimize.douip) {
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_srce, syntax_tree);
+    }
+
+    /*
      * Filter reuse candidates
      */
     if (global.optimize.douip) {

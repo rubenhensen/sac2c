@@ -396,7 +396,10 @@ SUBPHASE (lro, "lro", "Applying loop reuse optimization", EMLRdoLoopReuseOptimiz
 
 SUBPHASE (aa, "aa", "Aliasing analysis", EMAAdoAliasAnalysis)
 
-SUBPHASE (frc, "frc", "Filtering reuse candidates", EMFRCdoFilterReuseCandidates)
+SUBPHASE (srce, "srce", "Removing non-local reuse-candidates",
+          SRCEdoRemoveReuseCandidates)
+
+SUBPHASE (frc, "frc", "Removing invalid reuse candidates", FRCdoFilterReuseCandidates)
 
 SUBPHASE (sr, "sr", "Static reuse", EMSRdoStaticReuse)
 

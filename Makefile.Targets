@@ -113,7 +113,7 @@ refcount    = emm.o rcopt.o filterrc.o alloc.o referencecounting.o \
               interfaceanalysis.o loopreuseopt.o datareuse.o explicitcopy.o \
               reusebranching.o ReuseWithArrays.o inplacecomp.o audscldist.o \
               rcminimize.o NumLookUpTable.o wrci.o reusewithoffset.o \
-              movesharedmeminstr.o
+              movesharedmeminstr.o scoperce.o
 
 precompile  = precompile.o markmemvals.o \
               renameidentifiers.o functionprecompile.o \

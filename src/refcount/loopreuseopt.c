@@ -538,7 +538,7 @@ EMLROfundef (node *arg_node, info *arg_info)
          * Filter reuse candidates
          */
         FUNDEF_NEXT (arg_node) = NULL;
-        arg_node = EMFRCdoFilterReuseCandidates (arg_node);
+        arg_node = FRCdoFilterReuseCandidates (arg_node);
 
         /*
          * Initialize arguments' AVIS_ALIAS with values from REUSEMASK
