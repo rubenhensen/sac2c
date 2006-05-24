@@ -1,32 +1,3 @@
-/*
- *
- * $Log$
- * Revision 1.8  2005/09/15 17:12:13  ktr
- * remove ICM traversal
- *
- * Revision 1.7  2004/12/09 21:09:26  ktr
- * bugfix roundup
- *
- * Revision 1.6  2004/11/21 20:43:42  ktr
- * Ismop 2004
- *
- * Revision 1.5  2004/11/21 18:07:02  ktr
- * the big 2004 codebrushing event
- *
- * Revision 1.4  2004/11/12 10:18:49  ktr
- * Alias property of inner identifiers is no longer ignored.
- *
- * Revision 1.3  2004/11/02 14:31:11  ktr
- * Aliasanalysis is now performed seperately for each branch of a
- * conditional.
- *
- * Revision 1.2  2004/10/26 11:19:38  ktr
- * Intermediate update for stephan
- *
- * Revision 1.1  2004/10/15 09:05:14  ktr
- * Initial revision
- *
- */
 #ifndef _SAC_ALIASANALYSIS_H_
 #define _SAC_ALIASANALYSIS_H_
 

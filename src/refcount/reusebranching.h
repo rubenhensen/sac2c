@@ -1,19 +1,3 @@
-/*
- *
- * $Log$
- * Revision 1.4  2004/12/14 12:51:44  ktr
- * added EMRBwithid
- *
- * Revision 1.3  2004/12/13 13:55:59  ktr
- * added functionality to branch over with-loops (work in progress)
- *
- * Revision 1.2  2004/11/21 20:42:14  ktr
- * Ismop
- *
- * Revision 1.1  2004/11/14 13:43:42  ktr
- * Initial revision
- *
- */
 #ifndef _SAC_REUSEBRANCHING_H_
 #define _SAC_REUSEBRANCHING_H_
 

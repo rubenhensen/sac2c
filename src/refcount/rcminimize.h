@@ -1,13 +1,3 @@
-/*
- *
- * $Log$
- * Revision 1.2  2005/07/16 09:57:55  ktr
- * maintenance
- *
- * Revision 1.1  2005/07/03 16:58:16  ktr
- * Initial revision
- *
- */
 #ifndef _SAC_RCMINIMIZE_H_
 #define _SAC_RCMINIMIZE_H_
 
@@ -39,4 +29,4 @@ extern node *RCMlet (node *arg_node, info *arg_info);
 extern node *RCMprf (node *arg_node, info *arg_info);
 extern node *RCMreturn (node *arg_node, info *arg_info);
 
-#endif /* _SAC_ALLOC_H_ */
+#endif /* _SAC_RCMINIMIZE_H_ */

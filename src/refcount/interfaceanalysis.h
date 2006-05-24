@@ -1,25 +1,3 @@
-/*
- *
- * $Log$
- * Revision 1.6  2004/12/09 21:09:26  ktr
- * bugfix roundup
- *
- * Revision 1.5  2004/11/24 15:05:23  ktr
- * added EMIAret.
- *
- * Revision 1.4  2004/11/24 13:11:01  ktr
- * ismop^2
- *
- * Revision 1.3  2004/11/21 20:42:14  ktr
- * Ismop
- *
- * Revision 1.2  2004/11/02 14:28:44  ktr
- * Better loop support.
- *
- * Revision 1.1  2004/10/26 11:18:22  ktr
- * Initial revision
- *
- */
 #ifndef _SAC_INTERFACEANALYSIS_H_
 #define _SAC_INTERFACEANALYSIS_H_
 

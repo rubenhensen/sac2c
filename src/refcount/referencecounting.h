@@ -1,13 +1,3 @@
-/*
- *
- * $Log$
- * Revision 1.2  2005/09/15 17:12:13  ktr
- * removed ICM traversal
- *
- * Revision 1.1  2005/07/16 09:57:27  ktr
- * Initial revision
- *
- */
 #ifndef _SAC_REFERENCECOUNTING_H_
 #define _SAC_REFERENCECOUNTING_H_
 

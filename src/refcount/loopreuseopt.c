@@ -1,26 +1,3 @@
-/*
- *
- * $Log$
- * Revision 1.7  2005/01/08 09:54:07  ktr
- * Fixed some issues related to loops.
- *
- * Revision 1.6  2004/12/13 18:54:49  ktr
- * Withids contain N_id/N_exprs of N_id after explicit allocation now.
- *
- * Revision 1.5  2004/11/24 14:04:08  ktr
- * MakeLet permutation.
- *
- * Revision 1.4  2004/11/23 22:20:18  ktr
- * COMPILES!!!
- *
- * Revision 1.3  2004/11/09 19:38:11  ktr
- * ongoing implementation
- *
- * Revision 1.1  2004/11/02 14:26:48  ktr
- * Initial revision
- *
- */
-
 /**
  *
  * @defgroup lr Loop Reuse
@@ -73,12 +50,12 @@ struct INFO {
 /*
  * INFO macros
  */
-#define INFO_EMLR_CONTEXT(n) (n->context)
-#define INFO_EMLR_PREASSIGN(n) (n->preassign)
-#define INFO_EMLR_FUNDEF(n) (n->fundef)
-#define INFO_EMLR_REUSEMASK(n) (n->reusemask)
-#define INFO_EMLR_APARGS(n) (n->apargs)
-#define INFO_EMLR_APMASK(n) (n->apmask)
+#define INFO_CONTEXT(n) (n->context)
+#define INFO_PREASSIGN(n) (n->preassign)
+#define INFO_FUNDEF(n) (n->fundef)
+#define INFO_REUSEMASK(n) (n->reusemask)
+#define INFO_APARGS(n) (n->apargs)
+#define INFO_APMASK(n) (n->apmask)
 
 /*
  * INFO functions
@@ -92,12 +69,12 @@ MakeInfo (node *fundef)
 
     result = ILIBmalloc (sizeof (info));
 
-    INFO_EMLR_CONTEXT (result) = LR_undef;
-    INFO_EMLR_PREASSIGN (result) = NULL;
-    INFO_EMLR_FUNDEF (result) = fundef;
-    INFO_EMLR_REUSEMASK (result) = NULL;
-    INFO_EMLR_APARGS (result) = NULL;
-    INFO_EMLR_APMASK (result) = NULL;
+    INFO_CONTEXT (result) = LR_undef;
+    INFO_PREASSIGN (result) = NULL;
+    INFO_FUNDEF (result) = fundef;
+    INFO_REUSEMASK (result) = NULL;
+    INFO_APARGS (result) = NULL;
+    INFO_APMASK (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -191,7 +168,7 @@ EMLRap (node *arg_node, info *arg_info)
      * Traverse into special functions
      */
     if ((FUNDEF_ISLACFUN (AP_FUNDEF (arg_node)))
-        && (AP_FUNDEF (arg_node) != INFO_EMLR_FUNDEF (arg_info))) {
+        && (AP_FUNDEF (arg_node) != INFO_FUNDEF (arg_info))) {
         AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
     }
 
@@ -199,7 +176,7 @@ EMLRap (node *arg_node, info *arg_info)
      * Optimize loops
      */
     if ((FUNDEF_ISDOFUN (AP_FUNDEF (arg_node)))
-        && (AP_FUNDEF (arg_node) != INFO_EMLR_FUNDEF (arg_info))) {
+        && (AP_FUNDEF (arg_node) != INFO_FUNDEF (arg_info))) {
         node *doargs;
         node *apargs;
 
@@ -242,8 +219,8 @@ EMLRap (node *arg_node, info *arg_info)
                 memavis = TBmakeAvis (ILIBtmpVarName (ID_NAME (oldarg)),
                                       TYeliminateAKV (AVIS_TYPE (oldavis)));
 
-                FUNDEF_VARDEC (INFO_EMLR_FUNDEF (arg_info))
-                  = TBmakeVardec (memavis, FUNDEF_VARDEC (INFO_EMLR_FUNDEF (arg_info)));
+                FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+                  = TBmakeVardec (memavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
 
                 /*
                  * Create a new value variable
@@ -252,8 +229,8 @@ EMLRap (node *arg_node, info *arg_info)
                 valavis = TBmakeAvis (ILIBtmpVarName (ID_NAME (oldarg)),
                                       TYcopyType (AVIS_TYPE (oldavis)));
 
-                FUNDEF_VARDEC (INFO_EMLR_FUNDEF (arg_info))
-                  = TBmakeVardec (valavis, FUNDEF_VARDEC (INFO_EMLR_FUNDEF (arg_info)));
+                FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+                  = TBmakeVardec (valavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
 
                 /*
                  * Create fill operation
@@ -262,15 +239,15 @@ EMLRap (node *arg_node, info *arg_info)
                  *   ...
                  *   a_val = fill( copy( a), a_mem);
                  */
-                INFO_EMLR_PREASSIGN (arg_info)
+                INFO_PREASSIGN (arg_info)
                   = TBmakeAssign (TBmakeLet (TBmakeIds (valavis, NULL),
                                              TCmakePrf2 (F_fill,
                                                          TCmakePrf1 (F_copy,
                                                                      DUPdoDupNode (
                                                                        oldarg)),
                                                          TBmakeId (memavis))),
-                                  INFO_EMLR_PREASSIGN (arg_info));
-                AVIS_SSAASSIGN (valavis) = INFO_EMLR_PREASSIGN (arg_info);
+                                  INFO_PREASSIGN (arg_info));
+                AVIS_SSAASSIGN (valavis) = INFO_PREASSIGN (arg_info);
 
                 /*
                  * Substitute application argument
@@ -290,7 +267,7 @@ EMLRap (node *arg_node, info *arg_info)
                  *   a_val = fill( copy( a), a_mem);
                  *   b     = do( a_val);
                  */
-                INFO_EMLR_PREASSIGN (arg_info)
+                INFO_PREASSIGN (arg_info)
                   = TBmakeAssign (TBmakeLet (TBmakeIds (memavis, NULL),
                                              TCmakePrf3 (F_alloc_or_reuse,
                                                          TCmakePrf1 (F_dim, DUPdoDupNode (
@@ -299,8 +276,8 @@ EMLRap (node *arg_node, info *arg_info)
                                                                      DUPdoDupNode (
                                                                        oldarg)),
                                                          oldarg)),
-                                  INFO_EMLR_PREASSIGN (arg_info));
-                AVIS_SSAASSIGN (memavis) = INFO_EMLR_PREASSIGN (arg_info);
+                                  INFO_PREASSIGN (arg_info));
+                AVIS_SSAASSIGN (memavis) = INFO_PREASSIGN (arg_info);
             }
 
             doargs = ARG_NEXT (doargs);
@@ -337,12 +314,11 @@ EMLRassign (node *arg_node, info *arg_info)
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
-    if (INFO_EMLR_PREASSIGN (arg_info) != NULL) {
-        INFO_EMLR_PREASSIGN (arg_info)
-          = TCappendAssign (INFO_EMLR_PREASSIGN (arg_info), arg_node);
+    if (INFO_PREASSIGN (arg_info) != NULL) {
+        INFO_PREASSIGN (arg_info) = TCappendAssign (INFO_PREASSIGN (arg_info), arg_node);
 
-        arg_node = INFO_EMLR_PREASSIGN (arg_info);
-        INFO_EMLR_PREASSIGN (arg_info) = NULL;
+        arg_node = INFO_PREASSIGN (arg_info);
+        INFO_PREASSIGN (arg_info) = NULL;
     }
 
     DBUG_RETURN (arg_node);
@@ -412,23 +388,23 @@ EMLROap (node *arg_node, info *arg_info)
     DBUG_ENTER ("EMLROap");
 
     if (FUNDEF_ISCONDFUN (AP_FUNDEF (arg_node))) {
-        INFO_EMLR_APARGS (arg_info) = AP_ARGS (arg_node);
+        INFO_APARGS (arg_info) = AP_ARGS (arg_node);
         AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
     }
 
     if ((FUNDEF_ISDOFUN (AP_FUNDEF (arg_node)))
-        && (AP_FUNDEF (arg_node) == INFO_EMLR_FUNDEF (arg_info))) {
+        && (AP_FUNDEF (arg_node) == INFO_FUNDEF (arg_info))) {
         /*
          * Clean up reusable arguments
          */
-        if (FUNDEF_ARGS (INFO_EMLR_FUNDEF (arg_info)) != NULL) {
-            INFO_EMLR_CONTEXT (arg_info) = LR_recap;
-            INFO_EMLR_APARGS (arg_info) = AP_ARGS (arg_node);
+        if (FUNDEF_ARGS (INFO_FUNDEF (arg_info)) != NULL) {
+            INFO_CONTEXT (arg_info) = LR_recap;
+            INFO_APARGS (arg_info) = AP_ARGS (arg_node);
 
-            FUNDEF_ARGS (INFO_EMLR_FUNDEF (arg_info))
-              = TRAVdo (FUNDEF_ARGS (INFO_EMLR_FUNDEF (arg_info)), arg_info);
+            FUNDEF_ARGS (INFO_FUNDEF (arg_info))
+              = TRAVdo (FUNDEF_ARGS (INFO_FUNDEF (arg_info)), arg_info);
 
-            INFO_EMLR_CONTEXT (arg_info) = LR_undef;
+            INFO_CONTEXT (arg_info) = LR_undef;
         }
     }
 
@@ -452,34 +428,31 @@ EMLROarg (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EMLROarg");
 
-    switch (INFO_EMLR_CONTEXT (arg_info)) {
+    switch (INFO_CONTEXT (arg_info)) {
     case LR_doargs:
-        if (INFO_EMLR_REUSEMASK (arg_info) == NULL) {
+        if (INFO_REUSEMASK (arg_info) == NULL) {
             AVIS_ISALIAS (ARG_AVIS (arg_node)) = FALSE;
         } else {
             AVIS_ISALIAS (ARG_AVIS (arg_node))
-              = !DFMtestMaskEntry (INFO_EMLR_REUSEMASK (arg_info), NULL,
-                                   ARG_AVIS (arg_node));
+              = !DFMtestMaskEntry (INFO_REUSEMASK (arg_info), NULL, ARG_AVIS (arg_node));
         }
         break;
 
     case LR_condargs:
-        if (DFMtestMaskEntry (INFO_EMLR_REUSEMASK (arg_info), NULL,
-                              ARG_AVIS (arg_node))) {
-            DFMsetMaskEntrySet (INFO_EMLR_APMASK (arg_info), NULL,
-                                ID_AVIS (EXPRS_EXPR (INFO_EMLR_APARGS (arg_info))));
+        if (DFMtestMaskEntry (INFO_REUSEMASK (arg_info), NULL, ARG_AVIS (arg_node))) {
+            DFMsetMaskEntrySet (INFO_APMASK (arg_info), NULL,
+                                ID_AVIS (EXPRS_EXPR (INFO_APARGS (arg_info))));
         }
 
-        INFO_EMLR_APARGS (arg_info) = EXPRS_NEXT (INFO_EMLR_APARGS (arg_info));
+        INFO_APARGS (arg_info) = EXPRS_NEXT (INFO_APARGS (arg_info));
         break;
 
     case LR_recap:
-        if (AVIS_ISALIAS (ID_AVIS (EXPRS_EXPR (INFO_EMLR_APARGS (arg_info))))) {
-            DFMsetMaskEntryClear (INFO_EMLR_REUSEMASK (arg_info), NULL,
-                                  ARG_AVIS (arg_node));
+        if (AVIS_ISALIAS (ID_AVIS (EXPRS_EXPR (INFO_APARGS (arg_info))))) {
+            DFMsetMaskEntryClear (INFO_REUSEMASK (arg_info), NULL, ARG_AVIS (arg_node));
         }
 
-        INFO_EMLR_APARGS (arg_info) = EXPRS_NEXT (INFO_EMLR_APARGS (arg_info));
+        INFO_APARGS (arg_info) = EXPRS_NEXT (INFO_APARGS (arg_info));
         break;
 
     default:
@@ -544,9 +517,9 @@ EMLROfundef (node *arg_node, info *arg_info)
          * Initialize arguments' AVIS_ALIAS with values from REUSEMASK
          */
         if (FUNDEF_ARGS (arg_node) != NULL) {
-            INFO_EMLR_CONTEXT (info) = LR_doargs;
+            INFO_CONTEXT (info) = LR_doargs;
             FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), info);
-            INFO_EMLR_CONTEXT (info) = LR_undef;
+            INFO_CONTEXT (info) = LR_undef;
         }
 
         /*
@@ -554,18 +527,18 @@ EMLROfundef (node *arg_node, info *arg_info)
          */
         arg_node = EMAAdoAliasAnalysis (arg_node);
 
-        INFO_EMLR_REUSEMASK (info) = DFMgenMaskClear (maskbase);
+        INFO_REUSEMASK (info) = DFMgenMaskClear (maskbase);
         oldmask = DFMgenMaskClear (maskbase);
 
         while (TRUE) {
-            DFMsetMaskCopy (oldmask, INFO_EMLR_REUSEMASK (info));
+            DFMsetMaskCopy (oldmask, INFO_REUSEMASK (info));
 
             /*
              * Traverse body in order to determine REUSEMASK
              */
             FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), info);
 
-            if (DFMequalMasks (oldmask, INFO_EMLR_REUSEMASK (info))) {
+            if (DFMequalMasks (oldmask, INFO_REUSEMASK (info))) {
                 break;
             }
 
@@ -580,15 +553,15 @@ EMLROfundef (node *arg_node, info *arg_info)
          */
         DBUG_PRINT ("EMLR", ("The following variables can be statically reused:"));
         DBUG_EXECUTE ("EMLR",
-                      DFMprintMask (global.outfile, "%s\n", INFO_EMLR_REUSEMASK (info)););
+                      DFMprintMask (global.outfile, "%s\n", INFO_REUSEMASK (info)););
 
         /*
          * Initialize arguments' AVIS_ALIAS with values from REUSEMASK
          */
         if (FUNDEF_ARGS (arg_node) != NULL) {
-            INFO_EMLR_CONTEXT (info) = LR_doargs;
+            INFO_CONTEXT (info) = LR_doargs;
             FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), info);
-            INFO_EMLR_CONTEXT (info) = LR_undef;
+            INFO_CONTEXT (info) = LR_undef;
         }
 
         /*
@@ -597,7 +570,7 @@ EMLROfundef (node *arg_node, info *arg_info)
         FUNDEF_NEXT (arg_node) = fundef_next;
 
         oldmask = DFMremoveMask (oldmask);
-        INFO_EMLR_REUSEMASK (info) = DFMremoveMask (INFO_EMLR_REUSEMASK (info));
+        INFO_REUSEMASK (info) = DFMremoveMask (INFO_REUSEMASK (info));
         maskbase = DFMremoveMaskBase (maskbase);
         info = FreeInfo (info);
     } else {
@@ -609,7 +582,7 @@ EMLROfundef (node *arg_node, info *arg_info)
          */
         info = MakeInfo (arg_node);
         maskbase = DFMgenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
-        INFO_EMLR_REUSEMASK (info) = DFMgenMaskClear (maskbase);
+        INFO_REUSEMASK (info) = DFMgenMaskClear (maskbase);
 
         /*
          * Traverse function body
@@ -620,15 +593,15 @@ EMLROfundef (node *arg_node, info *arg_info)
          * Transcribe REUSEMASK
          */
         if (FUNDEF_ARGS (arg_node) != NULL) {
-            INFO_EMLR_APMASK (info) = INFO_EMLR_REUSEMASK (arg_info);
-            INFO_EMLR_APARGS (info) = INFO_EMLR_APARGS (arg_info);
-            INFO_EMLR_APARGS (arg_info) = NULL;
-            INFO_EMLR_CONTEXT (info) = LR_condargs;
+            INFO_APMASK (info) = INFO_REUSEMASK (arg_info);
+            INFO_APARGS (info) = INFO_APARGS (arg_info);
+            INFO_APARGS (arg_info) = NULL;
+            INFO_CONTEXT (info) = LR_condargs;
             FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), info);
-            INFO_EMLR_CONTEXT (info) = LR_undef;
+            INFO_CONTEXT (info) = LR_undef;
         }
 
-        INFO_EMLR_REUSEMASK (info) = DFMremoveMask (INFO_EMLR_REUSEMASK (info));
+        INFO_REUSEMASK (info) = DFMremoveMask (INFO_REUSEMASK (info));
         maskbase = DFMremoveMaskBase (maskbase);
         info = FreeInfo (info);
     }
@@ -653,10 +626,10 @@ EMLROid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EMLROid");
 
-    switch (INFO_EMLR_CONTEXT (arg_info)) {
+    switch (INFO_CONTEXT (arg_info)) {
     case LR_allocorreuse:
         if (!AVIS_ISALIAS (ID_AVIS (arg_node))) {
-            DFMsetMaskEntrySet (INFO_EMLR_REUSEMASK (arg_info), NULL, ID_AVIS (arg_node));
+            DFMsetMaskEntrySet (INFO_REUSEMASK (arg_info), NULL, ID_AVIS (arg_node));
         }
         break;
 
@@ -690,9 +663,9 @@ EMLROprf (node *arg_node, info *arg_info)
 
     if (PRF_PRF (arg_node) == F_alloc_or_reuse) {
         if (PRF_EXPRS3 (arg_node) != NULL) {
-            INFO_EMLR_CONTEXT (arg_info) = LR_allocorreuse;
+            INFO_CONTEXT (arg_info) = LR_allocorreuse;
             PRF_EXPRS3 (arg_node) = TRAVdo (PRF_EXPRS3 (arg_node), arg_info);
-            INFO_EMLR_CONTEXT (arg_info) = LR_undef;
+            INFO_CONTEXT (arg_info) = LR_undef;
         }
     }
 

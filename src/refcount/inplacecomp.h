@@ -1,10 +1,3 @@
-/*
- *
- * $Log$
- * Revision 1.1  2004/12/16 14:38:36  ktr
- * Initial revision
- *
- */
 #ifndef _SAC_INPLACECOMP_H_
 #define _SAC_INPLACECOMP_H_
 

@@ -1,14 +1,3 @@
-/*
- *
- * $Log$
- * Revision 1.2  2005/04/12 15:53:38  ktr
- * In-Place-Computation can now cope with fold-withloops.
- *
- * Revision 1.1  2004/12/16 14:38:26  ktr
- * Initial revision
- *
- */
-
 /**
  *
  * @defgroup icp Inplace computation traversal
@@ -61,16 +50,16 @@ struct INFO {
 /*
  * INFO macros
  */
-#define INFO_EMIP_FUNDEF(n) ((n)->fundef)
-#define INFO_EMIP_LHS(n) ((n)->lhs)
-#define INFO_EMIP_REUSELUT(n) ((n)->reuselut)
-#define INFO_EMIP_PREDAVIS(n) ((n)->predavis)
-#define INFO_EMIP_MEMAVIS(n) ((n)->memavis)
-#define INFO_EMIP_RCAVIS(n) ((n)->rcavis)
-#define INFO_EMIP_OK(n) ((n)->ok)
-#define INFO_EMIP_NOUSE(n) ((n)->nouse)
-#define INFO_EMIP_NOAP(n) ((n)->noap)
-#define INFO_EMIP_LASTSAFE(n) ((n)->lastsafe)
+#define INFO_FUNDEF(n) ((n)->fundef)
+#define INFO_LHS(n) ((n)->lhs)
+#define INFO_REUSELUT(n) ((n)->reuselut)
+#define INFO_PREDAVIS(n) ((n)->predavis)
+#define INFO_MEMAVIS(n) ((n)->memavis)
+#define INFO_RCAVIS(n) ((n)->rcavis)
+#define INFO_OK(n) ((n)->ok)
+#define INFO_NOUSE(n) ((n)->nouse)
+#define INFO_NOAP(n) ((n)->noap)
+#define INFO_LASTSAFE(n) ((n)->lastsafe)
 
 /*
  * INFO functions
@@ -84,16 +73,16 @@ MakeInfo (node *fundef)
 
     result = ILIBmalloc (sizeof (info));
 
-    INFO_EMIP_FUNDEF (result) = fundef;
-    INFO_EMIP_LHS (result) = NULL;
-    INFO_EMIP_REUSELUT (result) = NULL;
-    INFO_EMIP_PREDAVIS (result) = NULL;
-    INFO_EMIP_MEMAVIS (result) = NULL;
-    INFO_EMIP_RCAVIS (result) = NULL;
-    INFO_EMIP_OK (result) = FALSE;
-    INFO_EMIP_NOUSE (result) = NULL;
-    INFO_EMIP_NOAP (result) = NULL;
-    INFO_EMIP_LASTSAFE (result) = NULL;
+    INFO_FUNDEF (result) = fundef;
+    INFO_LHS (result) = NULL;
+    INFO_REUSELUT (result) = NULL;
+    INFO_PREDAVIS (result) = NULL;
+    INFO_MEMAVIS (result) = NULL;
+    INFO_RCAVIS (result) = NULL;
+    INFO_OK (result) = FALSE;
+    INFO_NOUSE (result) = NULL;
+    INFO_NOAP (result) = NULL;
+    INFO_LASTSAFE (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -174,14 +163,14 @@ EMIPap (node *arg_node, info *arg_info)
 
             while (apargs != NULL) {
 
-                if (ID_AVIS (EXPRS_EXPR (apargs)) == INFO_EMIP_PREDAVIS (arg_info)) {
-                    INFO_EMIP_PREDAVIS (arg_info) = ARG_AVIS (funargs);
+                if (ID_AVIS (EXPRS_EXPR (apargs)) == INFO_PREDAVIS (arg_info)) {
+                    INFO_PREDAVIS (arg_info) = ARG_AVIS (funargs);
                 }
-                if (ID_AVIS (EXPRS_EXPR (apargs)) == INFO_EMIP_MEMAVIS (arg_info)) {
-                    INFO_EMIP_MEMAVIS (arg_info) = ARG_AVIS (funargs);
+                if (ID_AVIS (EXPRS_EXPR (apargs)) == INFO_MEMAVIS (arg_info)) {
+                    INFO_MEMAVIS (arg_info) = ARG_AVIS (funargs);
                 }
-                if (ID_AVIS (EXPRS_EXPR (apargs)) == INFO_EMIP_RCAVIS (arg_info)) {
-                    INFO_EMIP_RCAVIS (arg_info) = ARG_AVIS (funargs);
+                if (ID_AVIS (EXPRS_EXPR (apargs)) == INFO_RCAVIS (arg_info)) {
+                    INFO_RCAVIS (arg_info) = ARG_AVIS (funargs);
                 }
 
                 apargs = EXPRS_NEXT (apargs);
@@ -213,23 +202,23 @@ EMIPcond (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("EMIPcond");
 
-    oldlut = INFO_EMIP_REUSELUT (arg_info);
-    INFO_EMIP_REUSELUT (arg_info) = LUTduplicateLut (oldlut);
+    oldlut = INFO_REUSELUT (arg_info);
+    INFO_REUSELUT (arg_info) = LUTduplicateLut (oldlut);
 
     if ((NODE_TYPE (COND_COND (arg_node)) == N_id)
-        && (ID_AVIS (COND_COND (arg_node)) == INFO_EMIP_PREDAVIS (arg_info))) {
+        && (ID_AVIS (COND_COND (arg_node)) == INFO_PREDAVIS (arg_info))) {
         /*
          * b = reuse( a);
          *
          * Insert (memavis, rcavis) into REUSELUT
          */
-        LUTinsertIntoLutP (INFO_EMIP_REUSELUT (arg_info), INFO_EMIP_MEMAVIS (arg_info),
-                           INFO_EMIP_RCAVIS (arg_info));
+        LUTinsertIntoLutP (INFO_REUSELUT (arg_info), INFO_MEMAVIS (arg_info),
+                           INFO_RCAVIS (arg_info));
     }
     COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
 
-    INFO_EMIP_REUSELUT (arg_info) = LUTremoveLut (INFO_EMIP_REUSELUT (arg_info));
-    INFO_EMIP_REUSELUT (arg_info) = oldlut;
+    INFO_REUSELUT (arg_info) = LUTremoveLut (INFO_REUSELUT (arg_info));
+    INFO_REUSELUT (arg_info) = oldlut;
 
     COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
 
@@ -318,14 +307,13 @@ EMIPcode (node *arg_node, info *arg_info)
                  * Situation recognized, find highest position for suballoc
                  */
                 node *def = AVIS_SSAASSIGN (ID_AVIS (cval));
-                INFO_EMIP_LASTSAFE (arg_info) = NULL;
-                INFO_EMIP_NOUSE (arg_info)
-                  = LUTsearchInLutPp (INFO_EMIP_REUSELUT (arg_info),
-                                      ID_AVIS (PRF_ARG1 (memop)));
-                if (INFO_EMIP_NOUSE (arg_info) == ID_AVIS (PRF_ARG1 (memop))) {
-                    INFO_EMIP_NOUSE (arg_info) = NULL;
+                INFO_LASTSAFE (arg_info) = NULL;
+                INFO_NOUSE (arg_info) = LUTsearchInLutPp (INFO_REUSELUT (arg_info),
+                                                          ID_AVIS (PRF_ARG1 (memop)));
+                if (INFO_NOUSE (arg_info) == ID_AVIS (PRF_ARG1 (memop))) {
+                    INFO_NOUSE (arg_info) = NULL;
                 }
-                INFO_EMIP_NOAP (arg_info) = NULL;
+                INFO_NOAP (arg_info) = NULL;
 
                 /*
                  * BETWEEN def and LASTSAFE:
@@ -333,14 +321,14 @@ EMIPcode (node *arg_node, info *arg_info)
                  * NOUSE must not be used at all!!!
                  * NOAP must not be used in function applications
                  */
-                INFO_EMIP_OK (arg_info) = TRUE;
+                INFO_OK (arg_info) = TRUE;
 
-                while (INFO_EMIP_OK (arg_info)) {
+                while (INFO_OK (arg_info)) {
                     TRAVpush (TR_emiph);
                     ASSIGN_NEXT (def) = TRAVdo (ASSIGN_NEXT (def), arg_info);
                     TRAVpop ();
 
-                    if (INFO_EMIP_OK (arg_info)) {
+                    if (INFO_OK (arg_info)) {
                         node *defrhs = ASSIGN_RHS (def);
                         node *withop, *ids;
                         switch (NODE_TYPE (defrhs)) {
@@ -352,20 +340,19 @@ EMIPcode (node *arg_node, info *arg_info)
                                 if ((PRF_PRF (memop) == F_alloc)
                                     || (PRF_PRF (memop) == F_reuse)
                                     || (PRF_PRF (memop) == F_alloc_or_reuse)) {
-                                    INFO_EMIP_LASTSAFE (arg_info) = memass;
+                                    INFO_LASTSAFE (arg_info) = memass;
                                     if (PRF_PRF (memop) == F_reuse) {
                                         avis = ID_AVIS (PRF_ARG1 (memop));
                                         def = AVIS_SSAASSIGN (ID_AVIS (PRF_ARG1 (memop)));
-                                        INFO_EMIP_NOAP (arg_info)
-                                          = ID_AVIS (PRF_ARG1 (memop));
+                                        INFO_NOAP (arg_info) = ID_AVIS (PRF_ARG1 (memop));
                                     } else {
-                                        INFO_EMIP_OK (arg_info) = FALSE;
+                                        INFO_OK (arg_info) = FALSE;
                                     }
                                 } else {
-                                    INFO_EMIP_OK (arg_info) = FALSE;
+                                    INFO_OK (arg_info) = FALSE;
                                 }
                             } else {
-                                INFO_EMIP_OK (arg_info) = FALSE;
+                                INFO_OK (arg_info) = FALSE;
                             }
                             break;
 
@@ -385,39 +372,38 @@ EMIPcode (node *arg_node, info *arg_info)
                                 if ((PRF_PRF (memop) == F_alloc)
                                     || (PRF_PRF (memop) == F_reuse)
                                     || (PRF_PRF (memop) == F_alloc_or_reuse)) {
-                                    INFO_EMIP_LASTSAFE (arg_info) = memass;
+                                    INFO_LASTSAFE (arg_info) = memass;
                                     if (PRF_PRF (memop) == F_reuse) {
                                         avis = ID_AVIS (PRF_ARG1 (memop));
                                         def = AVIS_SSAASSIGN (ID_AVIS (PRF_ARG1 (memop)));
-                                        INFO_EMIP_NOAP (arg_info)
-                                          = ID_AVIS (PRF_ARG1 (memop));
+                                        INFO_NOAP (arg_info) = ID_AVIS (PRF_ARG1 (memop));
                                     } else {
-                                        INFO_EMIP_OK (arg_info) = FALSE;
+                                        INFO_OK (arg_info) = FALSE;
                                     }
                                 } else {
-                                    INFO_EMIP_OK (arg_info) = FALSE;
+                                    INFO_OK (arg_info) = FALSE;
                                 }
                             } else {
-                                INFO_EMIP_OK (arg_info) = FALSE;
+                                INFO_OK (arg_info) = FALSE;
                             }
                             break;
 
                         default:
-                            INFO_EMIP_OK (arg_info) = FALSE;
+                            INFO_OK (arg_info) = FALSE;
                             break;
                         }
                     }
                 }
 
-                if (INFO_EMIP_LASTSAFE (arg_info) != NULL) {
+                if (INFO_LASTSAFE (arg_info) != NULL) {
                     node *n;
                     /*
                      * Replace some alloc or reuse or alloc_or_reuse with
                      * suballoc
                      */
-                    ASSIGN_RHS (INFO_EMIP_LASTSAFE (arg_info))
-                      = FREEdoFreeNode (ASSIGN_RHS (INFO_EMIP_LASTSAFE (arg_info)));
-                    ASSIGN_RHS (INFO_EMIP_LASTSAFE (arg_info)) = DUPdoDupNode (memop);
+                    ASSIGN_RHS (INFO_LASTSAFE (arg_info))
+                      = FREEdoFreeNode (ASSIGN_RHS (INFO_LASTSAFE (arg_info)));
+                    ASSIGN_RHS (INFO_LASTSAFE (arg_info)) = DUPdoDupNode (memop);
 
                     /*
                      * Replace CEXPR
@@ -478,16 +464,16 @@ EMIPfundef (node *arg_node, info *arg_info)
             info *info = MakeInfo (arg_node);
 
             if (arg_info != NULL) {
-                INFO_EMIP_PREDAVIS (info) = INFO_EMIP_PREDAVIS (arg_info);
-                INFO_EMIP_MEMAVIS (info) = INFO_EMIP_MEMAVIS (arg_info);
-                INFO_EMIP_RCAVIS (info) = INFO_EMIP_RCAVIS (arg_info);
+                INFO_PREDAVIS (info) = INFO_PREDAVIS (arg_info);
+                INFO_MEMAVIS (info) = INFO_MEMAVIS (arg_info);
+                INFO_RCAVIS (info) = INFO_RCAVIS (arg_info);
             }
 
-            INFO_EMIP_REUSELUT (info) = LUTgenerateLut ();
+            INFO_REUSELUT (info) = LUTgenerateLut ();
 
             FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), info);
 
-            INFO_EMIP_REUSELUT (info) = LUTremoveLut (INFO_EMIP_REUSELUT (info));
+            INFO_REUSELUT (info) = LUTremoveLut (INFO_REUSELUT (info));
 
             info = FreeInfo (info);
         }
@@ -522,7 +508,7 @@ EMIPlet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EMIPlet");
 
-    INFO_EMIP_LHS (arg_info) = LET_IDS (arg_node);
+    INFO_LHS (arg_info) = LET_IDS (arg_node);
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -552,8 +538,7 @@ EMIPprf (node *arg_node, info *arg_info)
          *
          * Insert (b, a) into REUSELUT
          */
-        LUTinsertIntoLutP (INFO_EMIP_REUSELUT (arg_info),
-                           IDS_AVIS (INFO_EMIP_LHS (arg_info)),
+        LUTinsertIntoLutP (INFO_REUSELUT (arg_info), IDS_AVIS (INFO_LHS (arg_info)),
                            ID_AVIS (PRF_ARG1 (arg_node)));
         break;
 
@@ -571,9 +556,9 @@ EMIPprf (node *arg_node, info *arg_info)
                  *
                  * put ( c, mem, rc) into ( predavis, memavis, rcavis)
                  */
-                INFO_EMIP_PREDAVIS (arg_info) = IDS_AVIS (INFO_EMIP_LHS (arg_info));
-                INFO_EMIP_MEMAVIS (arg_info) = ID_AVIS (PRF_ARG1 (prf));
-                INFO_EMIP_RCAVIS (arg_info) = ID_AVIS (PRF_ARG2 (prf));
+                INFO_PREDAVIS (arg_info) = IDS_AVIS (INFO_LHS (arg_info));
+                INFO_MEMAVIS (arg_info) = ID_AVIS (PRF_ARG1 (prf));
+                INFO_RCAVIS (arg_info) = ID_AVIS (PRF_ARG2 (prf));
                 break;
 
             default:
@@ -618,10 +603,10 @@ EMIPHap (node *arg_node, info *arg_info)
     if (AP_ARGS (arg_node) != NULL) {
         AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
 
-        tmp = INFO_EMIP_NOUSE (arg_info);
-        INFO_EMIP_NOUSE (arg_info) = INFO_EMIP_NOAP (arg_info);
+        tmp = INFO_NOUSE (arg_info);
+        INFO_NOUSE (arg_info) = INFO_NOAP (arg_info);
         AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
-        INFO_EMIP_NOUSE (arg_info) = tmp;
+        INFO_NOUSE (arg_info) = tmp;
     }
 
     DBUG_RETURN (arg_node);
@@ -644,7 +629,7 @@ EMIPHassign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EMIPHaassign");
 
-    if (arg_node != INFO_EMIP_LASTSAFE (arg_info)) {
+    if (arg_node != INFO_LASTSAFE (arg_info)) {
         ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
         if (ASSIGN_NEXT (arg_node) != NULL) {
@@ -672,8 +657,8 @@ EMIPHid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EMIPHid");
 
-    if (ID_AVIS (arg_node) == INFO_EMIP_NOUSE (arg_info)) {
-        INFO_EMIP_OK (arg_info) = FALSE;
+    if (ID_AVIS (arg_node) == INFO_NOUSE (arg_info)) {
+        INFO_OK (arg_info) = FALSE;
     }
 
     DBUG_RETURN (arg_node);

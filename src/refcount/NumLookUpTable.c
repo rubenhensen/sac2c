@@ -1,16 +1,3 @@
-/*
- *
- * $Log$
- * Revision 1.3  2005/10/06 16:59:06  ktr
- * rewrite for faster access times
- *
- * Revision 1.2  2005/07/16 09:57:55  ktr
- * enhanced functionality
- *
- * Revision 1.1  2005/07/03 16:57:39  ktr
- * Initial revision
- *
- */
 #include "NumLookUpTable.h"
 
 #include "tree_basic.h"

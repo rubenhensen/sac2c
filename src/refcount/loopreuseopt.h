@@ -1,16 +1,3 @@
-/*
- *
- * $Log$
- * Revision 1.3  2004/11/21 20:42:14  ktr
- * Ismop
- *
- * Revision 1.2  2004/11/09 20:54:20  ktr
- * Typo corrected.
- *
- * Revision 1.1  2004/11/02 14:26:57  ktr
- * Initial revision
- *
- */
 #ifndef _SAC_LOOPREUSEOPT_H_
 #define _SAC_LOOPREUSEOPT_H_
 

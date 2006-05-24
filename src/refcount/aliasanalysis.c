@@ -1,45 +1,3 @@
-/*
- *
- * $Log$
- * Revision 1.12  2005/09/15 17:12:13  ktr
- * remove ICM traversal
- *
- * Revision 1.11  2005/08/20 12:09:09  ktr
- * typeconv introduces aliasing
- *
- * Revision 1.10  2004/12/09 21:09:26  ktr
- * bugfix roundup
- *
- * Revision 1.9  2004/11/23 15:04:02  ktr
- * COMPILES!!!
- *
- * Revision 1.8  2004/11/21 18:07:02  ktr
- * the big 2004 codebrushing event
- *
- * Revision 1.7  2004/11/19 15:42:41  ktr
- * Support for F_alloc_or_reshape added.
- *
- * Revision 1.6  2004/11/12 10:18:49  ktr
- * Alias property of inner identifiers is no longer ignored.
- *
- * Revision 1.5  2004/11/02 14:31:11  ktr
- * Aliasanalysis is now performed seperately for each branch of a
- * conditional.
- *
- * Revision 1.4  2004/10/26 11:19:38  ktr
- * Intermediate update for stephan
- *
- * Revision 1.3  2004/10/22 17:10:04  ktr
- * moved a declaration.
- *
- * Revision 1.2  2004/10/22 15:38:19  ktr
- * Ongoing implementation.
- *
- * Revision 1.1  2004/10/15 09:05:08  ktr
- * Initial revision
- *
- */
-
 /**
  *
  * @defgroup aa Alias analysis
@@ -92,14 +50,14 @@ struct INFO {
 /*
  * INFO macros
  */
-#define INFO_AA_CONTEXT(n) (n->context)
-#define INFO_AA_FUNDEF(n) (n->fundef)
-#define INFO_AA_LHS(n) (n->lhs)
-#define INFO_AA_MASK(n) (n->mask)
-#define INFO_AA_LOCALMASK(n) (n->localmask)
-#define INFO_AA_APMASK(n) (n->apmask)
-#define INFO_AA_APARGS(n) (n->apargs)
-#define INFO_AA_FUNARGS(n) (n->funargs)
+#define INFO_CONTEXT(n) (n->context)
+#define INFO_FUNDEF(n) (n->fundef)
+#define INFO_LHS(n) (n->lhs)
+#define INFO_MASK(n) (n->mask)
+#define INFO_LOCALMASK(n) (n->localmask)
+#define INFO_APMASK(n) (n->apmask)
+#define INFO_APARGS(n) (n->apargs)
+#define INFO_FUNARGS(n) (n->funargs)
 
 /*
  * Convergence counter
@@ -118,14 +76,14 @@ MakeInfo (node *fundef)
 
     result = ILIBmalloc (sizeof (info));
 
-    INFO_AA_CONTEXT (result) = AA_undef;
-    INFO_AA_FUNDEF (result) = fundef;
-    INFO_AA_LHS (result) = NULL;
-    INFO_AA_MASK (result) = NULL;
-    INFO_AA_LOCALMASK (result) = NULL;
-    INFO_AA_APARGS (result) = NULL;
-    INFO_AA_APMASK (result) = NULL;
-    INFO_AA_FUNARGS (result) = NULL;
+    INFO_CONTEXT (result) = AA_undef;
+    INFO_FUNDEF (result) = fundef;
+    INFO_LHS (result) = NULL;
+    INFO_MASK (result) = NULL;
+    INFO_LOCALMASK (result) = NULL;
+    INFO_APARGS (result) = NULL;
+    INFO_APMASK (result) = NULL;
+    INFO_FUNARGS (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -265,16 +223,16 @@ EMAAap (node *arg_node, info *arg_info)
         /*
          * Traverse conditional functions in order of appearance
          */
-        INFO_AA_APARGS (arg_info) = AP_ARGS (arg_node);
+        INFO_APARGS (arg_info) = AP_ARGS (arg_node);
         AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
-        INFO_AA_APARGS (arg_info) = NULL;
+        INFO_APARGS (arg_info) = NULL;
     }
 
     /*
      * Check whether arguments could have been aliased
      */
-    INFO_AA_CONTEXT (arg_info) = AA_ap;
-    INFO_AA_FUNARGS (arg_info) = FUNDEF_ARGS (AP_FUNDEF (arg_node));
+    INFO_CONTEXT (arg_info) = AA_ap;
+    INFO_FUNARGS (arg_info) = FUNDEF_ARGS (AP_FUNDEF (arg_node));
     if (AP_ARGS (arg_node) != NULL) {
         AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
     }
@@ -283,11 +241,11 @@ EMAAap (node *arg_node, info *arg_info)
      * Check whether return values are alias-free
      */
     argc = 0;
-    _ids = INFO_AA_LHS (arg_info);
+    _ids = INFO_LHS (arg_info);
 
     while (_ids != NULL) {
         if (GetRetAlias (AP_FUNDEF (arg_node), argc)) {
-            DFMsetMaskEntrySet (INFO_AA_MASK (arg_info), NULL, IDS_AVIS (_ids));
+            DFMsetMaskEntrySet (INFO_MASK (arg_info), NULL, IDS_AVIS (_ids));
         }
         _ids = IDS_NEXT (_ids);
         argc += 1;
@@ -313,27 +271,27 @@ EMAAarg (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EMAAarg");
 
-    switch (INFO_AA_CONTEXT (arg_info)) {
+    switch (INFO_CONTEXT (arg_info)) {
 
     case AA_begin:
-        if (INFO_AA_APARGS (arg_info) != NULL) {
-            node *id = EXPRS_EXPR (INFO_AA_APARGS (arg_info));
-            if (DFMtestMaskEntry (INFO_AA_APMASK (arg_info), NULL, ID_AVIS (id))) {
+        if (INFO_APARGS (arg_info) != NULL) {
+            node *id = EXPRS_EXPR (INFO_APARGS (arg_info));
+            if (DFMtestMaskEntry (INFO_APMASK (arg_info), NULL, ID_AVIS (id))) {
 
-                DFMsetMaskEntrySet (INFO_AA_MASK (arg_info), NULL, ARG_AVIS (arg_node));
+                DFMsetMaskEntrySet (INFO_MASK (arg_info), NULL, ARG_AVIS (arg_node));
             }
-            INFO_AA_APARGS (arg_info) = EXPRS_NEXT (INFO_AA_APARGS (arg_info));
+            INFO_APARGS (arg_info) = EXPRS_NEXT (INFO_APARGS (arg_info));
         } else {
             if (AVIS_ISALIAS (ARG_AVIS (arg_node))) {
-                DFMsetMaskEntrySet (INFO_AA_MASK (arg_info), NULL, ARG_AVIS (arg_node));
+                DFMsetMaskEntrySet (INFO_MASK (arg_info), NULL, ARG_AVIS (arg_node));
             }
         }
         break;
 
     case AA_end:
         ARG_AVIS (arg_node) = SetAvisAlias (ARG_AVIS (arg_node),
-                                            DFMtestMaskEntry (INFO_AA_MASK (arg_info),
-                                                              NULL, ARG_AVIS (arg_node)));
+                                            DFMtestMaskEntry (INFO_MASK (arg_info), NULL,
+                                                              ARG_AVIS (arg_node)));
         break;
 
     default:
@@ -364,7 +322,7 @@ EMAAassign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EMAAassign");
 
-    INFO_AA_CONTEXT (arg_info) = AA_undef;
+    INFO_CONTEXT (arg_info) = AA_undef;
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
@@ -394,24 +352,24 @@ EMAAcode (node *arg_node, info *arg_info)
     if (CODE_CBLOCK (arg_node) != NULL) {
         dfmask_t *oldmask, *oldlocalmask;
 
-        oldmask = INFO_AA_MASK (arg_info);
-        oldlocalmask = INFO_AA_LOCALMASK (arg_info);
+        oldmask = INFO_MASK (arg_info);
+        oldlocalmask = INFO_LOCALMASK (arg_info);
 
-        INFO_AA_MASK (arg_info) = DFMgenMaskCopy (oldmask);
-        INFO_AA_LOCALMASK (arg_info) = DFMgenMaskCopy (oldlocalmask);
-        DFMsetMaskClear (INFO_AA_LOCALMASK (arg_info));
+        INFO_MASK (arg_info) = DFMgenMaskCopy (oldmask);
+        INFO_LOCALMASK (arg_info) = DFMgenMaskCopy (oldlocalmask);
+        DFMsetMaskClear (INFO_LOCALMASK (arg_info));
 
         CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
 
-        DFMsetMaskAnd (INFO_AA_MASK (arg_info), INFO_AA_LOCALMASK (arg_info));
-        DFMsetMaskOr (oldmask, INFO_AA_MASK (arg_info));
-        DFMsetMaskOr (oldlocalmask, INFO_AA_LOCALMASK (arg_info));
+        DFMsetMaskAnd (INFO_MASK (arg_info), INFO_LOCALMASK (arg_info));
+        DFMsetMaskOr (oldmask, INFO_MASK (arg_info));
+        DFMsetMaskOr (oldlocalmask, INFO_LOCALMASK (arg_info));
 
-        INFO_AA_MASK (arg_info) = DFMremoveMask (INFO_AA_MASK (arg_info));
-        INFO_AA_LOCALMASK (arg_info) = DFMremoveMask (INFO_AA_LOCALMASK (arg_info));
+        INFO_MASK (arg_info) = DFMremoveMask (INFO_MASK (arg_info));
+        INFO_LOCALMASK (arg_info) = DFMremoveMask (INFO_LOCALMASK (arg_info));
 
-        INFO_AA_LOCALMASK (arg_info) = oldlocalmask;
-        INFO_AA_MASK (arg_info) = oldmask;
+        INFO_LOCALMASK (arg_info) = oldlocalmask;
+        INFO_MASK (arg_info) = oldmask;
     }
 
     if (CODE_NEXT (arg_node) != NULL) {
@@ -440,14 +398,14 @@ EMAAcond (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("EMAAcond");
 
-    oldmask = INFO_AA_MASK (arg_info);
+    oldmask = INFO_MASK (arg_info);
     thenmask = DFMgenMaskCopy (oldmask);
     elsemask = DFMgenMaskCopy (oldmask);
 
-    INFO_AA_MASK (arg_info) = thenmask;
+    INFO_MASK (arg_info) = thenmask;
     COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
 
-    INFO_AA_MASK (arg_info) = elsemask;
+    INFO_MASK (arg_info) = elsemask;
     COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
 
     DFMsetMaskOr (oldmask, thenmask);
@@ -455,7 +413,7 @@ EMAAcond (node *arg_node, info *arg_info)
 
     thenmask = DFMremoveMask (thenmask);
     elsemask = DFMremoveMask (elsemask);
-    INFO_AA_MASK (arg_info) = oldmask;
+    INFO_MASK (arg_info) = oldmask;
 
     DBUG_RETURN (arg_node);
 }
@@ -477,11 +435,11 @@ EMAAfold (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EMAAfold");
 
-    DFMsetMaskEntrySet (INFO_AA_MASK (arg_info), NULL, IDS_AVIS (INFO_AA_LHS (arg_info)));
-    DFMsetMaskEntrySet (INFO_AA_MASK (arg_info), NULL, ID_AVIS (FOLD_NEUTRAL (arg_node)));
+    DFMsetMaskEntrySet (INFO_MASK (arg_info), NULL, IDS_AVIS (INFO_LHS (arg_info)));
+    DFMsetMaskEntrySet (INFO_MASK (arg_info), NULL, ID_AVIS (FOLD_NEUTRAL (arg_node)));
 
     if (FOLD_NEXT (arg_node) != NULL) {
-        INFO_AA_LHS (arg_info) = IDS_NEXT (INFO_AA_LHS (arg_info));
+        INFO_LHS (arg_info) = IDS_NEXT (INFO_LHS (arg_info));
         FOLD_NEXT (arg_node) = TRAVdo (FOLD_NEXT (arg_node), arg_info);
     }
 
@@ -506,7 +464,7 @@ EMAAgenarray (node *arg_node, info *arg_info)
     DBUG_ENTER ("EMAAgenarray");
 
     if (GENARRAY_NEXT (arg_node) != NULL) {
-        INFO_AA_LHS (arg_info) = IDS_NEXT (INFO_AA_LHS (arg_info));
+        INFO_LHS (arg_info) = IDS_NEXT (INFO_LHS (arg_info));
         GENARRAY_NEXT (arg_node) = TRAVdo (GENARRAY_NEXT (arg_node), arg_info);
     }
 
@@ -531,7 +489,7 @@ EMAAmodarray (node *arg_node, info *arg_info)
     DBUG_ENTER ("EMAAmodarray");
 
     if (MODARRAY_NEXT (arg_node) != NULL) {
-        INFO_AA_LHS (arg_info) = IDS_NEXT (INFO_AA_LHS (arg_info));
+        INFO_LHS (arg_info) = IDS_NEXT (INFO_LHS (arg_info));
         MODARRAY_NEXT (arg_node) = TRAVdo (MODARRAY_NEXT (arg_node), arg_info);
     }
 
@@ -563,11 +521,10 @@ EMAAfuncond (node *arg_node, info *arg_info)
     /*
      * Arguments must themselves not be aliases
      */
-    if ((DFMtestMaskEntry (INFO_AA_MASK (arg_info), NULL, ID_AVIS (thenid)))
-        || (DFMtestMaskEntry (INFO_AA_MASK (arg_info), NULL, ID_AVIS (elseid)))) {
+    if ((DFMtestMaskEntry (INFO_MASK (arg_info), NULL, ID_AVIS (thenid)))
+        || (DFMtestMaskEntry (INFO_MASK (arg_info), NULL, ID_AVIS (elseid)))) {
 
-        DFMsetMaskEntrySet (INFO_AA_MASK (arg_info), NULL,
-                            IDS_AVIS (INFO_AA_LHS (arg_info)));
+        DFMsetMaskEntrySet (INFO_MASK (arg_info), NULL, IDS_AVIS (INFO_LHS (arg_info)));
     }
 
     DBUG_RETURN (arg_node);
@@ -602,18 +559,18 @@ EMAAfundef (node *arg_node, info *arg_info)
 
             maskbase = DFMgenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
 
-            INFO_AA_MASK (info) = DFMgenMaskClear (maskbase);
-            INFO_AA_LOCALMASK (info) = DFMgenMaskClear (maskbase);
+            INFO_MASK (info) = DFMgenMaskClear (maskbase);
+            INFO_LOCALMASK (info) = DFMgenMaskClear (maskbase);
 
             if (arg_info != NULL) {
-                INFO_AA_APARGS (info) = INFO_AA_APARGS (arg_info);
-                INFO_AA_APMASK (info) = INFO_AA_MASK (arg_info);
+                INFO_APARGS (info) = INFO_APARGS (arg_info);
+                INFO_APMASK (info) = INFO_MASK (arg_info);
             }
 
             /*
              * Traverse function args to mark them as ALIAS in MASK
              */
-            INFO_AA_CONTEXT (info) = AA_begin;
+            INFO_CONTEXT (info) = AA_begin;
             if (FUNDEF_ARGS (arg_node) != NULL) {
                 FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), info);
             }
@@ -623,16 +580,16 @@ EMAAfundef (node *arg_node, info *arg_info)
              */
             if (arg_info != NULL) {
                 node *funargs = FUNDEF_ARGS (arg_node);
-                node *apargs = INFO_AA_APARGS (arg_info);
+                node *apargs = INFO_APARGS (arg_info);
 
                 while (funargs != NULL) {
-                    node *apargs2 = INFO_AA_APARGS (arg_info);
+                    node *apargs2 = INFO_APARGS (arg_info);
 
                     while (apargs2 != NULL) {
                         if (apargs != apargs2) {
                             if (ID_AVIS (EXPRS_EXPR (apargs))
                                 == ID_AVIS (EXPRS_EXPR (apargs2))) {
-                                DFMsetMaskEntrySet (INFO_AA_MASK (info), NULL,
+                                DFMsetMaskEntrySet (INFO_MASK (info), NULL,
                                                     ARG_AVIS (funargs));
                             }
                         }
@@ -644,8 +601,8 @@ EMAAfundef (node *arg_node, info *arg_info)
                 }
             }
 
-            INFO_AA_APARGS (info) = NULL;
-            INFO_AA_APMASK (info) = NULL;
+            INFO_APARGS (info) = NULL;
+            INFO_APMASK (info) = NULL;
 
             /*
              * Traverse function body
@@ -655,7 +612,7 @@ EMAAfundef (node *arg_node, info *arg_info)
             /*
              * Traverse args to annotate AVIS_ISALIAS
              */
-            INFO_AA_CONTEXT (info) = AA_end;
+            INFO_CONTEXT (info) = AA_end;
             if (FUNDEF_ARGS (arg_node) != NULL) {
                 FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), info);
             }
@@ -663,8 +620,8 @@ EMAAfundef (node *arg_node, info *arg_info)
             /*
              * Clean up
              */
-            INFO_AA_MASK (info) = DFMremoveMask (INFO_AA_MASK (info));
-            INFO_AA_LOCALMASK (info) = DFMremoveMask (INFO_AA_LOCALMASK (info));
+            INFO_MASK (info) = DFMremoveMask (INFO_MASK (info));
+            INFO_LOCALMASK (info) = DFMremoveMask (INFO_LOCALMASK (info));
 
             maskbase = DFMremoveMaskBase (maskbase);
 
@@ -698,25 +655,24 @@ EMAAid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EMAAid");
 
-    switch (INFO_AA_CONTEXT (arg_info)) {
+    switch (INFO_CONTEXT (arg_info)) {
     case AA_let:
         /*
          * ALIASING OPERATION a = b
          * mark a and b as aliases
          */
-        DFMsetMaskEntrySet (INFO_AA_MASK (arg_info), NULL, ID_AVIS (arg_node));
-        DFMsetMaskEntrySet (INFO_AA_MASK (arg_info), NULL,
-                            IDS_AVIS (INFO_AA_LHS (arg_info)));
+        DFMsetMaskEntrySet (INFO_MASK (arg_info), NULL, ID_AVIS (arg_node));
+        DFMsetMaskEntrySet (INFO_MASK (arg_info), NULL, IDS_AVIS (INFO_LHS (arg_info)));
         break;
 
     case AA_ap:
-        if (INFO_AA_FUNARGS (arg_info) != NULL) {
-            if (ARG_ISALIASING (INFO_AA_FUNARGS (arg_info))) {
-                DFMsetMaskEntrySet (INFO_AA_MASK (arg_info), NULL, ID_AVIS (arg_node));
+        if (INFO_FUNARGS (arg_info) != NULL) {
+            if (ARG_ISALIASING (INFO_FUNARGS (arg_info))) {
+                DFMsetMaskEntrySet (INFO_MASK (arg_info), NULL, ID_AVIS (arg_node));
             }
-            INFO_AA_FUNARGS (arg_info) = ARG_NEXT (INFO_AA_FUNARGS (arg_info));
+            INFO_FUNARGS (arg_info) = ARG_NEXT (INFO_FUNARGS (arg_info));
         } else {
-            DFMsetMaskEntrySet (INFO_AA_MASK (arg_info), NULL, ID_AVIS (arg_node));
+            DFMsetMaskEntrySet (INFO_MASK (arg_info), NULL, ID_AVIS (arg_node));
         }
         break;
 
@@ -746,15 +702,15 @@ EMAAlet (node *arg_node, info *arg_info)
     node *_ids;
     DBUG_ENTER ("EMAAlet");
 
-    INFO_AA_CONTEXT (arg_info) = AA_let;
-    INFO_AA_LHS (arg_info) = LET_IDS (arg_node);
+    INFO_CONTEXT (arg_info) = AA_let;
+    INFO_LHS (arg_info) = LET_IDS (arg_node);
 
     /*
      * Mark LHS identifiers as local
      */
     _ids = LET_IDS (arg_node);
     while (_ids != NULL) {
-        DFMsetMaskEntrySet (INFO_AA_LOCALMASK (arg_info), NULL, IDS_AVIS (_ids));
+        DFMsetMaskEntrySet (INFO_LOCALMASK (arg_info), NULL, IDS_AVIS (_ids));
         _ids = IDS_NEXT (_ids);
     }
 
@@ -790,20 +746,20 @@ EMAAprf (node *arg_node, info *arg_info)
     switch (PRF_PRF (arg_node)) {
 
     case F_accu:
-        MarkAllIdsAliasing (INFO_AA_LHS (arg_info), INFO_AA_MASK (arg_info));
+        MarkAllIdsAliasing (INFO_LHS (arg_info), INFO_MASK (arg_info));
         break;
 
     case F_type_conv:
-        MarkAllIdsAliasing (INFO_AA_LHS (arg_info), INFO_AA_MASK (arg_info));
-        MarkIdAliasing (PRF_ARG2 (arg_node), INFO_AA_MASK (arg_info));
+        MarkAllIdsAliasing (INFO_LHS (arg_info), INFO_MASK (arg_info));
+        MarkIdAliasing (PRF_ARG2 (arg_node), INFO_MASK (arg_info));
         break;
 
     case F_reshape:
-        MarkIdAliasing (PRF_ARG3 (arg_node), INFO_AA_MASK (arg_info));
+        MarkIdAliasing (PRF_ARG3 (arg_node), INFO_MASK (arg_info));
         break;
 
     case F_reuse:
-        MarkIdAliasing (PRF_ARG1 (arg_node), INFO_AA_MASK (arg_info));
+        MarkIdAliasing (PRF_ARG1 (arg_node), INFO_MASK (arg_info));
         break;
 
     default:
@@ -876,14 +832,13 @@ EMAAvardec (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EMAAvardec");
 
-    if (DFMtestMaskEntry (INFO_AA_MASK (arg_info), NULL, VARDEC_AVIS (arg_node))) {
+    if (DFMtestMaskEntry (INFO_MASK (arg_info), NULL, VARDEC_AVIS (arg_node))) {
         DBUG_PRINT ("EMAA", ("%s could not be unaliased", VARDEC_NAME (arg_node)));
     }
 
-    VARDEC_AVIS (arg_node)
-      = SetAvisAlias (VARDEC_AVIS (arg_node),
-                      DFMtestMaskEntry (INFO_AA_MASK (arg_info), NULL,
-                                        VARDEC_AVIS (arg_node)));
+    VARDEC_AVIS (arg_node) = SetAvisAlias (VARDEC_AVIS (arg_node),
+                                           DFMtestMaskEntry (INFO_MASK (arg_info), NULL,
+                                                             VARDEC_AVIS (arg_node)));
 
     if (VARDEC_NEXT (arg_node) != NULL) {
         VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
