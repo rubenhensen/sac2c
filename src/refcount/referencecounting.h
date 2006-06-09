@@ -1,9 +1,12 @@
+/*
+ * $Id$
+ */
 #ifndef _SAC_REFERENCECOUNTING_H_
 #define _SAC_REFERENCECOUNTING_H_
 
 #include "types.h"
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
  * Reference counting inference traversal (rci_tab)
  *

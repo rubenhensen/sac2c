@@ -2,23 +2,35 @@
  *  $Id$
  */
 
-/**
+/** <!--*********************************************************************-->
+ *
  * @defgroup asd AUD SCL distincion
- * @ingroup emm
+ *
+ *   Disambiguates AUD variables and scalars which have different
+ *   representations.
+ *
+ *   Arguments of function applications are lifted if formal and actual types
+ *   differ:
+ *   <pre>
+ *       b = fun( a);   =>   _tmp_a = copy(a); b = fun( _tmp_a);
+ *   </pre>
+ *   Return values of function applications are lifted if formal and actual
+ *   types differ:
+ *   <pre>
+ *       b = fun( a);   =>   _tmp_b = fun( a); b = copy(_tmp_b);
+ *   </pre>
+ *
+ * @ingroup mm
  *
  * @{
- */
+ *
+ ******************************************************************************/
 
-/** <!-- ****************************************************************** -->
+/** <!--*********************************************************************-->
  *
  * @file audscldist.c
  *
- *   - Arguments of function applications are lifted if formal and actual types
- *     differ:
- *       b = fun( a);   =>   _tmp_a = copy(a); b = fun( _tmp_a);
- *     Return values of function applications are lifted if formal and actual
- *     types differ:
- *       b = fun( a);   =>   _tmp_b = fun( a); b = copy(_tmp_b);
+ * Prefix: ASD
  *
  ******************************************************************************/
 
@@ -34,9 +46,12 @@
 #include "new_types.h"
 #include "shape.h"
 
-/*
- * INFO structure
- */
+/** <!--********************************************************************-->
+ *
+ * @name INFO structure
+ * @{
+ *
+ *****************************************************************************/
 struct INFO {
     node *fundef;
     node *assign;
@@ -44,17 +59,11 @@ struct INFO {
     node *postassigns;
 };
 
-/*
- * INFO macros
- */
 #define INFO_FUNDEF(n) ((n)->fundef)
 #define INFO_ASSIGN(n) ((n)->assign)
 #define INFO_PREASSIGNS(n) ((n)->preassigns)
 #define INFO_POSTASSIGNS(n) ((n)->postassigns)
 
-/*
- * INFO functions
- */
 static info *
 MakeInfo ()
 {
@@ -83,6 +92,17 @@ FreeInfo (info *info)
 }
 
 /** <!--********************************************************************-->
+ * @}  <!-- INFO structure -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ *
+ * @name Entry functions
+ * @{
+ *
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
  *
  * @fn node *ASDdoAudSclDistinction( node *syntax_tree)
  *
@@ -109,34 +129,41 @@ ASDdoAudSclDistinction (node *syntax_tree)
     DBUG_RETURN (syntax_tree);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
+ * @}  <!-- Entry functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
  *
- * Helper functions
+ * @name Static helper funcions
+ * @{
  *
  *****************************************************************************/
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * Function:
- *   node *LiftId(  node *id, ntype *new_type, info *arg_info)
+ *  @fn node *LiftId(  node *id, ntype *new_type, info *arg_info)
  *
- * Description:
- *   Lifts the given id of a expr position
+ *  @brief Lifts the given id of a expr position
+ *
  *    - Generates a new and fresh varname.
+ *
  *    - Generates a new vardec and inserts it into the vardec chain of 'fundef'.
  *      If 'new_type' is not NULL, 'new_type' is used as VARDEC_TYPE instead
  *      of ID_TYPE(arg).
+ *
  *    - Builds a new copy assignment and inserts it into the assignment chain
  *      'new_assigns'.
  *
  *   Abstract the given argument out:
+ *   <pre>
  *     ... = fun( A, ...);
  *   is transformed into
  *     A' = expr( A);
  *     ... = fun( A', ...);
+ *   </pre>
  *
  ******************************************************************************/
-
 static void
 LiftId (node *id, ntype *new_type, info *arg_info)
 {
@@ -174,31 +201,34 @@ LiftId (node *id, ntype *new_type, info *arg_info)
     DBUG_VOID_RETURN;
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * Function:
- *   void LiftIds( node *ids_arg, ntype *new_type, info *arg_info)
+ * @fn void LiftIds( node *ids_arg, ntype *new_type, info *arg_info)
  *
- * Description:
- *   Lifts the given return value of a function application:
+ * @brief Lifts the given return value of a function application:
+ *
  *    - Generates a new and fresh varname.
+ *
  *    - Generates a new vardec and inserts it into the vardec chain of 'fundef'.
  *      If 'new_type' is not NULL, 'new_type' is used as VARDEC_TYPE instead
  *      of IDS_VARDEC(ids_arg).
+ *
  *    - Builds a new copy assignment and inserts it into the assignment chain
  *      'new_assigns'.
+ *
  *    - Adjusts the name and vardec of 'ids_arg'.
  *
  *   Abstract the found return value out:
+ *   <pre>
  *     A = fun( ...);
  *     ... A ... A ...    // n references of A
  *   is transformed into
  *     A' = fun( ...);
  *     A = copy( A');
  *     ... A ... A ...    // n references of A
+ *   </pre>
  *
  ******************************************************************************/
-
 static void
 LiftIds (node *ids_arg, ntype *new_type, info *arg_info)
 {
@@ -241,9 +271,16 @@ LiftIds (node *ids_arg, ntype *new_type, info *arg_info)
     DBUG_VOID_RETURN;
 }
 
-/*
- * traversal functions
- */
+/** <!--********************************************************************-->
+ * @}  <!-- Static helper functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ *
+ * @name Traversal functions
+ * @{
+ *
+ *****************************************************************************/
 
 /******************************************************************************
  *
@@ -466,4 +503,10 @@ ASDcond (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/* @} */
+/** <!--********************************************************************-->
+ * @}  <!-- Traversal functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ * @}  <!-- AUD SCL Distinction -->
+ *****************************************************************************/

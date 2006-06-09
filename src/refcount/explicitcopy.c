@@ -1,21 +1,36 @@
-/**
- *
+/*
  * $Id$
- *
- * @defgroup ec Explicit Copy
- * @ingroup rc
- *
- * <pre>
- * </pre>
- * @{
  */
 
-/**
+/** <!--********************************************************************-->
+ *
+ * @defgroup ec Explicit Copy
+ *
+ * Makes the conceptual data copying in modarray and idx_modarray explicit.
+ * Thus the arguments are protected from being destructively updated illegaly.
+ * The copy overhead can hopefully be avoided at a later stage.
+ *
+ * <pre>
+ *   a = modarray( b, iv, val);
+ * </pre>
+ *   becomes
+ * <pre>
+ *   b'= copy( b);
+ *   a = modarray( b', iv, val);
+ * </pre>
+ *
+ * @ingroup mm
+ *
+ * @{
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
  *
  * @file explicitcopy.c
  *
+ * Prefix: EMEC
  *
- */
+ *****************************************************************************/
 #include "explicitcopy.h"
 
 #include "globals.h"
@@ -27,23 +42,28 @@
 #include "new_types.h"
 #include "internal_lib.h"
 
-/**
- * INFO structure
- */
+/** <!--********************************************************************-->
+ *
+ * @name INFO structure
+ * @{
+ *
+ *****************************************************************************/
 struct INFO {
     node *preassign;
     node *fundef;
 };
 
 /**
- * INFO macros
+ * A list of N_assign nodes of the form b' = copy(b) that will be prepended
+ * to the an assignment in EMECassign().
  */
 #define INFO_PREASSIGN(n) (n->preassign)
-#define INFO_FUNDEF(n) (n->fundef)
 
 /**
- * INFO functions
+ * Points to the currently traversed N_fundef node.
  */
+#define INFO_FUNDEF(n) (n->fundef)
+
 static info *
 MakeInfo ()
 {
@@ -68,16 +88,19 @@ FreeInfo (info *info)
 
     DBUG_RETURN (info);
 }
+/** <!--********************************************************************-->
+ * @}  <!-- INFO structure -->
+ *****************************************************************************/
 
 /** <!--********************************************************************-->
  *
+ * @name Entry functions
+ * @{
+ *
+ *****************************************************************************/
+/** <!--********************************************************************-->
+ *
  * @fn node *EMECdoExplicitCopy( node *syntax_tree)
- *
- * @brief
- *
- * @param syntax_tree
- *
- * @return modified syntax_tree.
  *
  *****************************************************************************/
 node *
@@ -102,17 +125,22 @@ EMECdoExplicitCopy (node *syntax_tree)
     DBUG_RETURN (syntax_tree);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
+ * @}  <!-- Entry functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
  *
- * Static helper funcions
+ * @name Static helper funcions
+ * @{
  *
  *****************************************************************************/
 /** <!--********************************************************************-->
  *
  * @fn node *CreateCopyId(node *arg_node, info *arg_info)
  *
- * @brief CreateCopyId( a, arg_info) will append INFO_PREASSIGN with
- *        a' = copy( a); and returns a'.
+ * @brief CreateCopyId( a, arg_info) creates a new variable a' in INFO_FUNDEF,
+          appends INFO_PREASSIGN with a' = copy( a); and returns a'.
  *
  *****************************************************************************/
 static node *
@@ -147,16 +175,22 @@ CreateCopyId (node *oldid, info *arg_info)
     DBUG_RETURN (oldid);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
+ * @}  <!-- Static helper functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
  *
- * Explicit copy traversal (emec_tab)
- *
- * prefix: EMEC
+ * @name Explicit copy traversal functions (emec_tab)
+ * @{
  *
  *****************************************************************************/
 /** <!--********************************************************************-->
  *
  * @fn node *EMECassign(node *arg_node, info *arg_info)
+ *
+ * @brief performs a bottom-up traversal and prepends nodes stored
+ *        in INFO_PREASSIGN( arg_info) to the current node.
  *
  *****************************************************************************/
 node *
@@ -182,6 +216,8 @@ EMECassign (node *arg_node, info *arg_info)
  *
  * @fn node *EMECfundef(node *arg_node, info *arg_info)
  *
+ * @brief Sets INFO_FUNDEF to the current function and traverses BODY and NEXT.
+ *
  *****************************************************************************/
 node *
 EMECfundef (node *arg_node, info *arg_info)
@@ -203,6 +239,9 @@ EMECfundef (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  *
  * @fn node *EMECap( node *arg_node, info *arg_info)
+ *
+ * @brief Performs explicit copying for external functions applications
+ *        with reference args.
  *
  *****************************************************************************/
 node *
@@ -238,6 +277,18 @@ EMECap (node *arg_node, info *arg_info)
  *
  * @fn node *EMECprf(node *arg_node, info *arg_info)
  *
+ * @brief Performs explicit copying in order to protect the arguments of
+ *        modarray and idx_modarray from being detructively updated.
+ *
+ * <pre>
+ * a = modarray( b, iv, val);
+ *
+ * is transformed info
+ *
+ * b' = copy( b);
+ * a  = modarray( b', iv, val);
+ * </pre>
+ *
  *****************************************************************************/
 node *
 EMECprf (node *arg_node, info *arg_info)
@@ -247,16 +298,6 @@ EMECprf (node *arg_node, info *arg_info)
     switch (PRF_PRF (arg_node)) {
     case F_modarray:
     case F_idx_modarray:
-        /*
-         * Example:
-         *
-         * a = modarray( b, iv, val);
-         *
-         * is transformed info
-         *
-         * b' = copy( b);
-         * a  = modarray( b', iv, val);
-         */
         PRF_ARG1 (arg_node) = CreateCopyId (PRF_ARG1 (arg_node), arg_info);
         break;
 
@@ -267,4 +308,10 @@ EMECprf (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/* @} */
+/** <!--********************************************************************-->
+ * @}  <!-- EMEC traversal functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ * @}  <!-- Explicit copy -->
+ *****************************************************************************/

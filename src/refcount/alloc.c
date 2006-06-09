@@ -1,22 +1,23 @@
-/**
- *
+/*
  * $Id$
+ */
+
+/**
+ * @defgroup alloc Memory Allocation
  *
- * @defgroup emm Explicit Memory Management
+ * Introduces explicit instructions for allocating memory.
+ * This effectively converts functional SAC programs into imperative programs
+ * that perform state changes.
  *
- * This group includes all the files needed by explicit memory management
+ * @ingroup mm
  *
  * @{
  */
 
 /**
- *
  * @file alloc.c
  *
- * SAC -> SAC-MemVal.
- *
- * much more text needed
- *
+ * Prefix: EMAL
  */
 
 #include "alloc.h"
@@ -33,9 +34,8 @@
 #include "shape.h"
 #include "string.h"
 
-/*
- * The following switch controls wheter AKS-Information should be used
- * when possible
+/**
+ * Controls wheter AKS-Information should be used when possible
  */
 #define USEAKS
 
@@ -83,7 +83,9 @@ struct INFO {
 #define INFO_WITHOPMODE(n) ((n)->withopmode)
 
 /**
- * INFO functions
+ * @name INFO functions
+ *
+ * @{
  */
 static info *
 MakeInfo ()
@@ -114,24 +116,29 @@ FreeInfo (info *info)
 }
 
 /**
+ * @}
+ */
+
+/** <!--******************************************************************-->
  *
- *  ALLOCLIST FUNCTIONS
+ * @name Functions for manipulating alloclist structures
  *
  * @{
  ****************************************************************************/
 
 /** <!--******************************************************************-->
  *
- * @fn MakeALS
+ *  @fn alloclist_struct *MakeALS( alloclist_struct *als, node *avis,
+                                   node *dim, node *shape)
  *
- *  @brief creates an ALLOCLIST_STRUCT for allocation
+ *  @brief Creates an ALLOCLIST_STRUCT for allocation.
  *
- *  @param ALLOCLIST
- *  @param avis
- *  @param dim
- *  @param shape
- *
- *  @return ALLOCLIST_STRUCT
+ *  @param als   An alloclist that will be appended to the new element.
+ *  @param avis  N_avis node of the variable memory must be allocated for.
+ *  @param dim   A suitable description of the rank of the array to
+ *               be stored.
+ *  @param shape A suitable description of the shape of the array to
+ *               be stored.
  *
  ***************************************************************************/
 static alloclist_struct *
@@ -155,11 +162,11 @@ MakeALS (alloclist_struct *als, node *avis, node *dim, node *shape)
 
 /** <!--******************************************************************-->
  *
- * @fn FreeALS
+ * @fn alloclist_struct *FreeALS( alloclist_struct *als)
  *
- *  @brief frees all elements of the given ALLOCLIST
+ *  @brief Frees all elements of the given ALLOCLIST
  *
- *  @param als ALLOCLIST
+ *  @param als The alloclist to be freed
  *
  *  @return NULL
  *
@@ -190,24 +197,22 @@ FreeALS (alloclist_struct *als)
 
 /** <!--******************************************************************-->
  *
- * @fn Ids2ALS
+ * @fn alloclist_struct *Ids2ALS( node *ids)
  *
- *  @brief
+ *  @brief Converts a list of N_ids nodes to an alloclist.
  *
- *  @param ids
- *
- *  @return alloclist_struct
+ *  @param ids N_ids chain to be converted.
  *
  ***************************************************************************/
 static alloclist_struct *
-Ids2ALS (node *i)
+Ids2ALS (node *ids)
 {
     alloclist_struct *res;
 
-    if (i == NULL) {
+    if (ids == NULL) {
         res = NULL;
     } else {
-        res = MakeALS (Ids2ALS (IDS_NEXT (i)), IDS_AVIS (i), NULL, NULL);
+        res = MakeALS (Ids2ALS (IDS_NEXT (ids)), IDS_AVIS (ids), NULL, NULL);
     }
 
     return (res);
@@ -215,14 +220,10 @@ Ids2ALS (node *i)
 
 /** <!--******************************************************************-->
  *
- * @fn AlloclistContains
+ * @fn bool AlloclistContains( alloclist_struct *als, node *avis)
  *
- *  @brief
- *
- *  @param ALLOCLIST
- *  @param avis
- *
- *  @return bool
+ *  @brief Checks wheter the given alloclist contains an entry for the
+ *         designated element.
  *
  ***************************************************************************/
 static bool
@@ -247,12 +248,14 @@ AlloclistContains (alloclist_struct *als, node *avis)
 
 /** <!--******************************************************************-->
  *
- * @fn MakeAllocAssignment
+ * @fn node *MakeAllocAssignment( alloclist_struct *als, node *next_node)
  *
- *  @brief converts an ALLOCLIST_STRUCT into an allocation assignment.
+ *  @brief Provides an allocation assignment corresponding to an alloclist
+ *         element
  *
- *  @param als
- *  @param next_node
+ *  @param als The alloclist
+ *  @param next_node An N_assign node that will be appended to the
+ *         allocation assignment.
  *
  *  @return An allocation assignment for the given als
  *
@@ -307,14 +310,12 @@ MakeAllocAssignment (alloclist_struct *als, node *next_node)
 
 /** <!--******************************************************************-->
  *
- * @fn MakeDimArg
+ * @fn node *MakeDimArg( node *arg)
  *
- *  @brief returns MakeNum( 0) for primitive data types and dim( a) for N_ids
+ *  @brief returns MakeNum( 0) for primitive data types,
+ *         the frame dim of a given N_array node and dim( a) for N_id nodes.
  *
- *  @param arg
- *  @param
- *
- *  @return
+ *  @param arg A N_num, N_float, N_char, N_bool, N_double, N_array, or N_id
  *
  ***************************************************************************/
 static node *
@@ -349,14 +350,12 @@ MakeDimArg (node *arg)
 
 /** <!--******************************************************************-->
  *
- * @fn MakeShapeArg
+ * @fn node *MakeShapeArg( node *arg)
  *
- *  @brief returns [] for primitive data types and shape( a) for N_ids
+ *  @brief returns [] for primitive data types,
+ *         the frame shape for N_array nodes and shape( a) for N_id nodes.
  *
- *  @param arg
- *  @param
- *
- *  @return
+ *  @param arg A N_num, N_float, N_char, N_bool, N_double, N_array, or N_id
  *
  ***************************************************************************/
 static node *
@@ -391,14 +390,14 @@ MakeShapeArg (node *arg)
 
 /** <!--******************************************************************-->
  *
- * @fn MakeSizeArg
+ * @fn node *MakeSizeArg( node *arg)
  *
- *  @brief
+ *  @brief returns 1 for primitive data types,
+ *         the product of the frame shape for N_array nodes and
+ *         shape( a)[0] for N_id nodes representing VECTORS.
  *
- *  @param arg
- *  @param
- *
- *  @return
+ *  @param arg A N_num, N_float, N_char, N_bool, N_double, N_array, or N_id
+ *             nodes representing VECTORS.
  *
  ***************************************************************************/
 static node *
@@ -437,14 +436,14 @@ MakeSizeArg (node *arg)
 
 /**
  *
- *  TRAVERSAL FUNCTIONS
+ * @name Traversal functions
  *
  * @{
  ****************************************************************************/
 
 /** <!--******************************************************************-->
  *
- * @fn EMALap
+ * @fn node *EMALap( node *arg_node, info *arg_info)
  *
  *  @brief removes all elements from ALLOCLIST.
  *
@@ -469,7 +468,7 @@ EMALap (node *arg_node, info *arg_info)
 
 /** <!--******************************************************************-->
  *
- * @fn EMALarray
+ * @fn node *EMALarray( node *arg_node, info *arg_info)
  *
  *  @brief updates ALLOCLIST with shape information about the given array.
  *
@@ -549,7 +548,7 @@ EMALarray (node *arg_node, info *arg_info)
 
 /** <!--******************************************************************-->
  *
- * @fn EMALassign
+ * @fn node *EMALassign( node *arg_node, info *arg_info)
  *
  *  @brief performs a bottom-up traversal and inserts alloc-statements.
  *
@@ -598,7 +597,7 @@ EMALassign (node *arg_node, info *arg_info)
 
 /** <!--******************************************************************-->
  *
- * @fn EMALcode
+ * @fn node *EMALcode( node *arg_node, info *arg_info)
  *
  *  @brief appends codeblocks with necessary suballoc/fill combinations
  *
@@ -916,7 +915,8 @@ EMALcode (node *arg_node, info *arg_info)
 
 /** <!--******************************************************************-->
  *
- * @fn EMAL<name>(node *arg_node, info *arg_info)
+ * Macro for defining the traversal of nodes representing the primitive
+ * data types.
  *
  ***************************************************************************/
 #define EMALCONST(name)                                                                  \
@@ -941,6 +941,15 @@ EMALcode (node *arg_node, info *arg_info)
         DBUG_RETURN (arg_node);                                                          \
     }
 
+/** <!--******************************************************************-->
+ *
+ * @fn node *EMALbool( node *arg_node, info *arg_info)
+ * @fn node *EMALchar( node *arg_node, info *arg_info)
+ * @fn node *EMALfloat( node *arg_node, info *arg_info)
+ * @fn node *EMALdouble( node *arg_node, info *arg_info)
+ * @fn node *EMALnum( node *arg_node, info *arg_info)
+ *
+ ***************************************************************************/
 EMALCONST (bool)
 EMALCONST (char)
 EMALCONST (float)
@@ -949,7 +958,7 @@ EMALCONST (num)
 
 /** <!--******************************************************************-->
  *
- * @fn EMALfuncond
+ * @fn node *EMALfuncond( node *arg_node, info *arg_info)
  *
  *  @brief removes all elements from ALLOCLIST.
  *
@@ -971,7 +980,7 @@ EMALfuncond (node *arg_node, info *arg_info)
 
 /** <!--******************************************************************-->
  *
- * @fn EMALfundef
+ * @fn node *EMALfundef( node *fundef, info *arg_info)
  *
  *  @brief traverses a fundef node by traversing the functions body.
  *         After that, SSA form is restored.
@@ -1008,7 +1017,7 @@ EMALfundef (node *fundef, info *arg_info)
 
 /** <!--******************************************************************-->
  *
- * @fn EMALid
+ * @fn node *EMALid( node *arg_node, info *arg_info)
  *
  *  @brief removes all elements from ALLOCLIST.
  *
@@ -1030,7 +1039,7 @@ EMALid (node *arg_node, info *arg_info)
 
 /** <!--******************************************************************-->
  *
- * @fn EMALlet
+ * @fn node *EMALlet( node *arg_node, info *arg_info)
  *
  *  @brief
  *
@@ -1093,7 +1102,7 @@ EMALlet (node *arg_node, info *arg_info)
 
 /** <!--******************************************************************-->
  *
- * @fn EMALprf
+ * @fn node *EMALprf( node *arg_node, info *arg_info)
  *
  *  @brief updates ALLOCLIST with shape information about the given prf
  *
@@ -1362,7 +1371,7 @@ EMALprf (node *arg_node, info *arg_info)
 
 /** <!--******************************************************************-->
  *
- * @fn EMALwith
+ * @fn node *EMALwith( node *arg_node, info *arg_info)
  *
  *  @brief
  *
@@ -1447,7 +1456,7 @@ EMALwith (node *arg_node, info *arg_info)
 
 /** <!--******************************************************************-->
  *
- * @fn EMALwith2
+ * @fn node *EMALwith2( node *arg_node, info *arg_info)
  *
  *  @brief
  *
@@ -1584,7 +1593,7 @@ EMALwithid (node *arg_node, info *arg_info)
 
 /** <!--******************************************************************-->
  *
- * @fn EMALgenarray
+ * @fn node *EMALgenarray( node *arg_node, info *arg_info)
  *
  *  @brief
  *
@@ -1678,7 +1687,7 @@ EMALgenarray (node *arg_node, info *arg_info)
 
 /** <!--******************************************************************-->
  *
- * @fn EMALmodarray
+ * @fn node *EMALmodarray( node *arg_node, info *arg_info)
  *
  *  @brief
  *
@@ -1757,7 +1766,7 @@ EMALmodarray (node *arg_node, info *arg_info)
 
 /** <!--******************************************************************-->
  *
- * @fn EMALfold
+ * @fn node *EMALfold( node *arg_node, info *arg_info)
  *
  *  @brief
  *
@@ -1811,9 +1820,15 @@ EMALfold (node *arg_node, info *arg_info)
  * @}
  */
 
+/**
+ * @name Entry functions.
+ *
+ * @{
+ */
+
 /** <!--******************************************************************-->
  *
- * @fn EMALdoAlloc
+ * @fn node *EMALdoAlloc( node *syntax_tree)
  *
  *  @brief Starting function of transformation SAC -> SAC-MemVal.
  *
@@ -1839,6 +1854,10 @@ EMALdoAlloc (node *syntax_tree)
 
     DBUG_RETURN (syntax_tree);
 }
+
+/**
+ * @}
+ */
 
 /**
  * @}

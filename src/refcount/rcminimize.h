@@ -1,9 +1,12 @@
+/*
+ * $Id$
+ */
 #ifndef _SAC_RCMINIMIZE_H_
 #define _SAC_RCMINIMIZE_H_
 
 #include "types.h"
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
  * Refcount minimization traversal ( rcm_tab)
  *

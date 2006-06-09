@@ -1,6 +1,27 @@
 /*
  * $Id$
  */
+
+/** <!--********************************************************************-->
+ *
+ * @defgroup rcm Reference Counting Minimization
+ *
+ * Removes obviously unnecessary reference counting instructions.
+ *
+ * @ingroup mm
+ *
+ * @{
+ *
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ *
+ * @file rcminimize.c
+ *
+ * Prefix: RCM
+ *
+ *****************************************************************************/
+
 #include "rcminimize.h"
 
 #include "tree_basic.h"
@@ -13,9 +34,12 @@
 #include "DataFlowMask.h"
 #include "NumLookUpTable.h"
 
-/*
- * INFO structure
- */
+/** <!--********************************************************************-->
+ *
+ * @name INFO structure
+ * @{
+ *
+ *****************************************************************************/
 struct INFO {
     nlut_t *env;
     dfmask_t *usedmask;
@@ -26,9 +50,6 @@ struct INFO {
     bool remassign;
 };
 
-/*
- * INFO macros
- */
 #define INFO_ENV(n) (n->env)
 #define INFO_USEDMASK(n) (n->usedmask)
 #define INFO_ENV2(n) (n->env2)
@@ -37,9 +58,6 @@ struct INFO {
 #define INFO_FUNDEF(n) (n->fundef)
 #define INFO_REMASSIGN(n) (n->remassign)
 
-/*
- * INFO functions
- */
 static info *
 MakeInfo ()
 {
@@ -69,6 +87,16 @@ FreeInfo (info *info)
 
     DBUG_RETURN (info);
 }
+/** <!--********************************************************************-->
+ * @}  <!-- INFO structure -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ *
+ * @name Entry functions
+ * @{
+ *
+ *****************************************************************************/
 
 /** <!--********************************************************************-->
  *
@@ -93,11 +121,17 @@ RCMdoRefcountMinimization (node *syntax_tree)
     DBUG_RETURN (syntax_tree);
 }
 
-/*****************************************************************************
+/** <!--********************************************************************-->
+ * @}  <!-- Entry functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
  *
- * HELPER FUNCTIONS
+ * @name Static helper funcions
+ * @{
  *
- ****************************************************************************/
+ *****************************************************************************/
+
 static node *
 MakeRCMAssignments (nlut_t *nlut)
 {
@@ -173,23 +207,22 @@ PrependRCMAssignments (nlut_t *nlut, node *ass)
     DBUG_RETURN (ass);
 }
 
-/******************************************************************************
- *
- * Reference counting minimization traversal (rcm_tab)
- *
- * prefix: RCM
- *
+/** <!--********************************************************************-->
+ * @}  <!-- Static helper functions -->
  *****************************************************************************/
+
 /** <!--********************************************************************-->
  *
- * @node RCMap( node *arg_node, info *arg_info)
+ * @name Traversal functions
+ * @{
+ *
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ *
+ * @node *RCMap( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 node *
@@ -210,14 +243,9 @@ RCMap (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @node RCMarg( node *arg_node, info *arg_info)
+ * @node *RCMarg( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 node *
@@ -240,14 +268,9 @@ RCMarg (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @node RCMassign( node *arg_node, info *arg_info)
+ * @node *RCMassign( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 node *
@@ -275,14 +298,9 @@ RCMassign (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @node RCMcode( node *arg_node, info *arg_info)
+ * @node *RCMcode( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 node *
@@ -317,14 +335,9 @@ RCMcode (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @node RCMcond( node *arg_node, info *arg_info)
+ * @node *RCMcond( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 node *
@@ -400,14 +413,9 @@ RCMcond (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @node RCMfuncond( node *arg_node, info *arg_info)
+ * @node *RCMfuncond( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 node *
@@ -449,14 +457,9 @@ RCMfuncond (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @node RCMfundef( node *arg_node, info *arg_info)
+ * @node *RCMfundef( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 node *
@@ -572,14 +575,9 @@ RCMfundef (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @node RCMid( node *arg_node, info *arg_info)
+ * @node *RCMid( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 node *
@@ -594,14 +592,9 @@ RCMid (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @node RCMids( node *arg_node, info *arg_info)
+ * @node *RCMids( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 node *
@@ -624,14 +617,9 @@ RCMids (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @node RCMlet( node *arg_node, info *arg_info)
+ * @node *RCMlet( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 node *
@@ -650,14 +638,9 @@ RCMlet (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @node RCMprf( node *arg_node, info *arg_info)
+ * @node *RCMprf( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 node *
@@ -743,14 +726,9 @@ RCMprf (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @node RCMreturn( node *arg_node, info *arg_info)
+ * @node *RCMreturn( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 node *
@@ -766,3 +744,11 @@ RCMreturn (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+/** <!--********************************************************************-->
+ * @}  <!-- Traversal functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ * @}  <!-- Reference counting minimization template -->
+ *****************************************************************************/

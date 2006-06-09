@@ -1,6 +1,25 @@
 /*
  * $Id$
  */
+
+/** <!--********************************************************************-->
+ *
+ * @defgroup mm Memory Management
+ *
+ * This group includes all the files needed for introducing explicit
+ * memory management instructions and optimizing that representation.
+ *
+ * @{
+ *
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ *
+ * @file emm.c
+ *
+ * Prefix: EMM
+ *
+ *****************************************************************************/
 #include "emm.h"
 
 #include "phase.h"
@@ -13,20 +32,16 @@
 
 /** <!--********************************************************************-->
  *
- * @fn EMAprintPreFun
+ * @fn node *EMMprintPreFun( node *arg_node, info *arg_info)
  *
- *   @brief
- *
- *   @param  node *arg_node
- *   @param  info *arg_info
- *
- *   @return node *           :  the transformed syntax tree
+ * Printing prefun that prints informations about aliasing if the compilation
+ * is aborted during memory management.
  *
  *****************************************************************************/
 node *
-EMAprintPreFun (node *arg_node, info *arg_info)
+EMMprintPreFun (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMAprintPreFun");
+    DBUG_ENTER ("EMMprintPreFun");
 
     switch (NODE_TYPE (arg_node)) {
     case N_arg:
@@ -57,12 +72,9 @@ EMAprintPreFun (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn EMMdoMemoryManagement
+ * @fn node *EMMdoMemoryManagement( node *syntax_tree)
  *
- *   @brief
- *
- *   @param  node *syntax_tree:  the whole syntax tree
- *   @return node *           :  the transformed syntax tree
+ * Driver function for the various stages of memory management.
  *
  *****************************************************************************/
 node *
@@ -112,7 +124,7 @@ EMMdoMemoryManagement (node *syntax_tree)
     /*
      * Interface analysis
      */
-    TRAVsetPreFun (TR_prt, EMAprintPreFun);
+    TRAVsetPreFun (TR_prt, EMMprintPreFun);
     if (global.optimize.dosrf) {
         syntax_tree = PHrunCompilerSubPhase (SUBPH_ia, syntax_tree);
     }
@@ -214,3 +226,7 @@ EMMdoMemoryManagement (node *syntax_tree)
 
     DBUG_RETURN (syntax_tree);
 }
+
+/** <!--********************************************************************-->
+ * @}  <!-- Memory Management -->
+ *****************************************************************************/

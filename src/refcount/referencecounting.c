@@ -1,21 +1,26 @@
-/**
+/*
  * $Id$
- *
- * @defgroup rci Reference Counting Inference
- * @ingroup rcp
- *
- * This group includes all the files needed by reference counting
- *
- * @{
  */
 
-/**
+/** <!--********************************************************************-->
+ *
+ * @defgroup rci Reference Counting Inference
+ *
+ * Annotes reference counting instructions throughout the syntax tree.
+ *
+ * @ingroup mm
+ *
+ * @{
+ *
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
  *
  * @file referencecounting.c
  *
- * This file implements explicit reference counting in SSA form
+ * Prefix: RCI
  *
- */
+ *****************************************************************************/
 #include "referencecounting.h"
 
 #include "tree_basic.h"
@@ -28,16 +33,19 @@
 #include "DataFlowMask.h"
 #include <string.h>
 
-/** <!--******************************************************************-->
+/** <!--********************************************************************-->
  *
  *  Enumeration of the different counting modes for N_id nodes.
  *
- ***************************************************************************/
+ *****************************************************************************/
 typedef enum { rc_prfuse, rc_apuse } rc_countmode;
 
-/**
- * INFO structure
- */
+/** <!--********************************************************************-->
+ *
+ * @name INFO structure
+ * @{
+ *
+ *****************************************************************************/
 struct INFO {
     rc_countmode mode;
     nlut_t *env;
@@ -51,9 +59,6 @@ struct INFO {
     bool mustcount;
 };
 
-/**
- * INFO macros
- */
 #define INFO_MODE(n) (n->mode)
 #define INFO_ENV(n) (n->env)
 #define INFO_ENV2(n) (n->env2)
@@ -65,9 +70,6 @@ struct INFO {
 #define INFO_ASSIGN(n) (n->assign)
 #define INFO_MUSTCOUNT(n) (n->mustcount)
 
-/**
- * INFO functions
- */
 static info *
 MakeInfo ()
 {
@@ -101,6 +103,17 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
+/** <!--********************************************************************-->
+ * @}  <!-- INFO structure -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ *
+ * @name Entry functions
+ * @{
+ *
+ *****************************************************************************/
+
 /** <!--******************************************************************-->
  *
  * @fn RCIdoRefCounting
@@ -129,11 +142,16 @@ RCIdoReferenceCounting (node *syntax_tree)
     DBUG_RETURN (syntax_tree);
 }
 
-/*****************************************************************************
+/** <!--********************************************************************-->
+ * @}  <!-- Entry functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
  *
- * HELPER FUNCTIONS
+ * @name Static helper funcions
+ * @{
  *
- ****************************************************************************/
+ *****************************************************************************/
 static node *
 AdjustRC (node *avis, int count, node *arg_node)
 {
@@ -210,11 +228,13 @@ ArgIsInout (node *arg, node *rets)
 }
 
 /** <!--********************************************************************-->
+ * @}  <!-- Static helper functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
  *
- *  TRAVERSAL FUNCTIONS
- *
- *  TR_rci
- *  Prefix: RCI
+ *  @name Traversal functions
+ *  @{
  *
  *****************************************************************************/
 
@@ -224,11 +244,6 @@ ArgIsInout (node *arg, node *rets)
  *
  *  @brief traverses a fundef node by traversing the functions block.
  *         After that, adjust_rc operations for the arguments are inserted.
- *
- *  @param fundef
- *  @param arg_info
- *
- *  @return fundef
  *
  *****************************************************************************/
 node *
@@ -333,11 +348,6 @@ RCIfundef (node *arg_node, info *arg_info)
  *
  *  @brief traverses bottom-up, the RHS and subsequently appends USE and DEFs
  *
- *  @param arg_node
- *  @param arg_info
- *
- *  @return arg_node
- *
  *****************************************************************************/
 node *
 RCIassign (node *arg_node, info *arg_info)
@@ -363,11 +373,6 @@ RCIassign (node *arg_node, info *arg_info)
  * @fn RCIlet
  *
  *  @brief traverses the RHS and subsequently adds LHS identifiers to DEFLIST
- *
- *  @param arg_node
- *  @param arg_info
- *
- *  @return arg_node
  *
  *****************************************************************************/
 node *
@@ -396,11 +401,6 @@ RCIlet (node *arg_node, info *arg_info)
  *  @brief traverses the returned identifiers
  *         each environment will be increased by one
  *
- *  @param arg_node
- *  @param arg_info
- *
- *  @return arg_node
- *
  *****************************************************************************/
 node *
 RCIreturn (node *arg_node, info *arg_info)
@@ -424,11 +424,6 @@ RCIreturn (node *arg_node, info *arg_info)
  *
  *  @brief traverses RHS identifiers.
  *
- *  @param arg_node
- *  @param arg_info
- *
- *  @return arg_node
- *
  *****************************************************************************/
 node *
 RCIid (node *arg_node, info *arg_info)
@@ -450,11 +445,6 @@ RCIid (node *arg_node, info *arg_info)
  * @fn RCIids
  *
  *  @brief traverses LHS identifiers.
- *
- *  @param arg_node
- *  @param arg_info
- *
- *  @return arg_node
  *
  *****************************************************************************/
 node *
@@ -485,11 +475,6 @@ RCIids (node *arg_node, info *arg_info)
  *
  *  By definition, a function application consumes a reference from each
  *  of its arguments.
- *
- *  @param arg_node
- *  @param arg_info
- *
- *  @return arg_node
  *
  *****************************************************************************/
 node *
@@ -557,11 +542,6 @@ RCIap (node *arg_node, info *arg_info)
  * @fn RCIprf
  *
  *  @brief traverses a prf's arguments
- *
- *  @param arg_node
- *  @param arg_info
- *
- *  @return arg_node
  *
  *****************************************************************************/
 node *
@@ -650,11 +630,6 @@ RCIprf (node *arg_node, info *arg_info)
  *
  *  @brief
  *
- *  @param arg_node
- *  @param arg_info
- *
- *  @return arg_node
- *
  ***************************************************************************/
 node *
 RCIarray (node *arg_node, info *arg_info)
@@ -676,11 +651,6 @@ RCIarray (node *arg_node, info *arg_info)
  *
  *  @brief traverses a withloop and thereby allocates memory for the index
  *         variables and the result
- *
- *  @param arg_node
- *  @param arg_info
- *
- *  @return arg_node
  *
  *****************************************************************************/
 node *
@@ -734,11 +704,6 @@ RCIwith (node *arg_node, info *arg_info)
  *  @brief traverses a withloop and thereby allocates memory for the index
  *         variables and the result
  *
- *  @param arg_node
- *  @param arg_info
- *
- *  @return arg_node
- *
  *****************************************************************************/
 node *
 RCIwith2 (node *arg_node, info *arg_info)
@@ -790,11 +755,6 @@ RCIwith2 (node *arg_node, info *arg_info)
  *
  *  @brief traverses a with-loop's code and inserts ADJUST_RCs at the
  *         beginning of the code block
- *
- *  @param arg_node
- *  @param arg_ino
- *
- *  @return arg_node
  *
  *****************************************************************************/
 node *
@@ -855,11 +815,6 @@ RCIcode (node *arg_node, info *arg_info)
  *
  *  @brief
  *
- *  @param arg_node
- *  @param arg_info
- *
- *  @return arg_node
- *
  ***************************************************************************/
 node *
 RCIwithid (node *arg_node, info *arg_info)
@@ -896,11 +851,6 @@ RCIwithid (node *arg_node, info *arg_info)
  * @fn RCIgenarray
  *
  *  @brief
- *
- *  @param arg_node
- *  @param arg_info
- *
- *  @return arg_node
  *
  *****************************************************************************/
 node *
@@ -971,11 +921,6 @@ RCImodarray (node *arg_node, info *arg_info)
  *
  *  @brief
  *
- *  @param arg_node
- *  @param arg_info
- *
- *  @return arg_node
- *
  *****************************************************************************/
 node *
 RCIfold (node *arg_node, info *arg_info)
@@ -1003,11 +948,6 @@ RCIfold (node *arg_node, info *arg_info)
  * @fn RCIfuncond
  *
  *  @brief
- *
- *  @param arg_node
- *  @param arg_info
- *
- *  @return arg_node
  *
  *****************************************************************************/
 node *
@@ -1040,11 +980,6 @@ RCIfuncond (node *arg_node, info *arg_info)
  * @fn RCIcond
  *
  *  @brief
- *
- *  @param arg_node
- *  @param arg_info
- *
- *  @return arg_node
  *
  *****************************************************************************/
 node *
@@ -1120,4 +1055,11 @@ RCIcond (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
-/*@}*/ /* defgroup rc */
+
+/** <!--********************************************************************-->
+ * @}  <!-- Traversal functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ * @}  <!-- Reference counting -->
+ *****************************************************************************/
