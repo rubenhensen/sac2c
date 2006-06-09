@@ -1,19 +1,24 @@
-/**
- *
- * @defgroup icp Inplace computation traversal
- * @ingroup alloc
- *
- * <pre>
- * </pre>
- * @{
+/*
+ * $Id$
  */
 
-/**
+/** <!--********************************************************************-->
+ *
+ * @defgroup icp Inplace Computation
+ *
+ * @ingroup mm
+ *
+ * @{
+ *
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
  *
  * @file inplacecomp.c
  *
+ * Prefix: IPC
  *
- */
+ *****************************************************************************/
 #include "inplacecomp.h"
 
 #include "globals.h"
@@ -30,9 +35,12 @@
 
 #include <string.h>
 
-/*
- * INFO structure
- */
+/** <!--********************************************************************-->
+ *
+ * @name INFO structure
+ * @{
+ *
+ *****************************************************************************/
 struct INFO {
     node *fundef;
     node *lhs;
@@ -47,9 +55,6 @@ struct INFO {
     node *lastsafe;
 };
 
-/*
- * INFO macros
- */
 #define INFO_FUNDEF(n) ((n)->fundef)
 #define INFO_LHS(n) ((n)->lhs)
 #define INFO_REUSELUT(n) ((n)->reuselut)
@@ -61,9 +66,6 @@ struct INFO {
 #define INFO_NOAP(n) ((n)->noap)
 #define INFO_LASTSAFE(n) ((n)->lastsafe)
 
-/*
- * INFO functions
- */
 static info *
 MakeInfo (node *fundef)
 {
@@ -98,6 +100,16 @@ FreeInfo (info *info)
 }
 
 /** <!--********************************************************************-->
+ * @}  <!-- INFO structure -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ *
+ * @name Entry functions
+ * @{
+ *
+ *****************************************************************************/
+/** <!--********************************************************************-->
  *
  * @fn node *EMIPdoInplaceComputation( node *syntax_tree)
  *
@@ -124,23 +136,22 @@ EMIPdoInplaceComputation (node *syntax_tree)
     DBUG_RETURN (syntax_tree);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
+ * @}  <!-- Entry functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
  *
- * Inplace Computation optimization traversal (emip_tab)
- *
- * prefix: EMIP
+ * @name Traversal functions
+ * @{
  *
  *****************************************************************************/
+
 /** <!--********************************************************************-->
  *
  * @fn node *EMIPap( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 node *
@@ -189,11 +200,6 @@ EMIPap (node *arg_node, info *arg_info)
  *
  * @brief
  *
- * @param arg_node
- * @param arg_info
- *
- * @return
- *
  *****************************************************************************/
 node *
 EMIPcond (node *arg_node, info *arg_info)
@@ -230,11 +236,6 @@ EMIPcond (node *arg_node, info *arg_info)
  * @fn node *EMIPcode( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 node *
@@ -444,11 +445,6 @@ EMIPcode (node *arg_node, info *arg_info)
  *
  * @brief
  *
- * @param arg_node
- * @param arg_info
- *
- * @return
- *
  *****************************************************************************/
 node *
 EMIPfundef (node *arg_node, info *arg_info)
@@ -497,11 +493,6 @@ EMIPfundef (node *arg_node, info *arg_info)
  *
  * @brief
  *
- * @param arg_node
- * @param arg_info
- *
- * @return
- *
  *****************************************************************************/
 node *
 EMIPlet (node *arg_node, info *arg_info)
@@ -519,11 +510,6 @@ EMIPlet (node *arg_node, info *arg_info)
  * @fn node *EMIPprf( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 node *
@@ -574,11 +560,15 @@ EMIPprf (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/** <!--********************************************************************-->
+ * @}  <!-- Traversal functions -->
+ *****************************************************************************/
+
 /******************************************************************************
  *
- * Inplace Computation optimization helper traversal (emiph_tab)
+ * @name IPC helper traversal
  *
- * prefix: EMIPH
+ * @{
  *
  *****************************************************************************/
 /** <!--********************************************************************-->
@@ -586,11 +576,6 @@ EMIPprf (node *arg_node, info *arg_info)
  * @fn node *EMIPHap( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 node *
@@ -618,11 +603,6 @@ EMIPHap (node *arg_node, info *arg_info)
  *
  * @brief
  *
- * @param arg_node
- * @param arg_info
- *
- * @return
- *
  *****************************************************************************/
 node *
 EMIPHassign (node *arg_node, info *arg_info)
@@ -646,11 +626,6 @@ EMIPHassign (node *arg_node, info *arg_info)
  *
  * @brief
  *
- * @param arg_node
- * @param arg_info
- *
- * @return
- *
  *****************************************************************************/
 node *
 EMIPHid (node *arg_node, info *arg_info)
@@ -664,4 +639,10 @@ EMIPHid (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/* @} */
+/** <!--********************************************************************-->
+ * @}  <!-- Traversal functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ * @}  <!-- Inplace Computation -->
+ *****************************************************************************/

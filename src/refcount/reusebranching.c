@@ -1,17 +1,19 @@
-/**
+/*
  * $Id$
- *
+ */
+
+/**
  * @defgroup rb Reuse Branching
- * @ingroup emm
+ *
+ * @ingroup mm
  *
  * @{
  */
 
 /**
- *
  * @file reusebranching.c
  *
- *
+ * Prefix: EMRB
  */
 #include "reusebranching.h"
 

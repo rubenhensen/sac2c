@@ -1,8 +1,10 @@
-/**
+/*
  * $Id$
- *
+ */
+
+/**
  * @defgroup rco Reference Counting Optimizations
- * @ingroup rcp
+ * @ingroup mm
  *
  * <pre>
  * </pre>

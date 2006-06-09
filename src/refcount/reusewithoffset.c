@@ -1,11 +1,13 @@
-/**
+/*
  * $Id$
+ */
+
+/**
  *
- * @defgroup rwo Offset-aware With-Loop reuse candidate inference
- * @ingroup rcp
+ * @defgroup rwo Offset-Aware With-Loop Reuse Candidate Inference
  *
- * <pre>
- * </pre>
+ * @ingroup mm
+ *
  * @{
  */
 
@@ -13,7 +15,7 @@
  *
  * @file reusewithoffset.c
  *
- *
+ * Prefix: RWO
  */
 #include "reusewithoffset.h"
 

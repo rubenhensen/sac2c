@@ -1,19 +1,24 @@
-/**
- *
- * @defgroup frc Filter reuse candidates
- * @ingroup rcp
- *
- * <pre>
- * </pre>
- * @{
+/*
+ * $Id$
  */
 
-/**
+/** <!--********************************************************************-->
+ *
+ * @defgroup frc Filter Reuse Candidates
+ *
+ * @ingroup mm
+ *
+ * @{
+ *
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
  *
  * @file filterrc.c
  *
+ * Prefix: FRC
  *
- */
+ *****************************************************************************/
 #include "filterrc.h"
 
 #include "globals.h"
@@ -26,9 +31,12 @@
 #include "internal_lib.h"
 #include "free.h"
 
-/**
- * INFO structure
- */
+/** <!--********************************************************************-->
+ *
+ * @name INFO structure
+ * @{
+ *
+ *****************************************************************************/
 struct INFO {
     dfmask_t *usemask;
     dfmask_t *oldmask;
@@ -37,18 +45,12 @@ struct INFO {
     node *condargs;
 };
 
-/**
- * INFO macros
- */
 #define INFO_USEMASK(n) (n->usemask)
 #define INFO_OLDMASK(n) (n->oldmask)
 #define INFO_THENMASK(n) (n->thenmask)
 #define INFO_ELSEMASK(n) (n->elsemask)
 #define INFO_CONDARGS(n) (n->condargs)
 
-/**
- * INFO functions
- */
 static info *
 MakeInfo ()
 {
@@ -76,6 +78,17 @@ FreeInfo (info *info)
 
     DBUG_RETURN (info);
 }
+
+/** <!--********************************************************************-->
+ * @}  <!-- INFO structure -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ *
+ * @name Entry functions
+ * @{
+ *
+ *****************************************************************************/
 
 /** <!--********************************************************************-->
  *
@@ -110,21 +123,22 @@ FRCdoFilterReuseCandidates (node *syntax_tree)
     DBUG_RETURN (syntax_tree);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
+ * @}  <!-- Entry functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
  *
- * Helper functions
+ * @name Static helper funcions
+ * @{
  *
  *****************************************************************************/
+
 /** <!--********************************************************************-->
  *
  * @fn node *FilterTrav( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 static node *
@@ -153,11 +167,6 @@ FilterTrav (node *arg_node, info *arg_info)
  * @fn node *FilterRCs( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 static node *
@@ -193,11 +202,14 @@ FilterRCs (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
+ * @}  <!-- Static helper functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
  *
- * Filter reuse candidates traversal (emfrc_tab)
- *
- * prefix: FRC
+ * @name Traversal functions
+ * @{
  *
  *****************************************************************************/
 /** <!--********************************************************************-->
@@ -205,11 +217,6 @@ FilterRCs (node *arg_node, info *arg_info)
  * @fn node *FRCap( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 node *
@@ -234,11 +241,6 @@ FRCap (node *arg_node, info *arg_info)
  * @fn node *FRCarg( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 node *
@@ -267,11 +269,6 @@ FRCarg (node *arg_node, info *arg_info)
  *
  * @brief
  *
- * @param arg_node
- * @param arg_info
- *
- * @return
- *
  *****************************************************************************/
 node *
 FRCassign (node *arg_node, info *arg_info)
@@ -295,11 +292,6 @@ FRCassign (node *arg_node, info *arg_info)
  * @fn node *FRCcond( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 node *
@@ -341,11 +333,6 @@ FRCcond (node *arg_node, info *arg_info)
  *
  * @brief
  *
- * @param arg_node
- * @param arg_info
- *
- * @return
- *
  *****************************************************************************/
 node *
 FRCfuncond (node *arg_node, info *arg_info)
@@ -373,11 +360,6 @@ FRCfuncond (node *arg_node, info *arg_info)
  * @fn node *FRCfundef( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 node *
@@ -440,11 +422,6 @@ FRCfundef (node *arg_node, info *arg_info)
  *
  * @brief
  *
- * @param arg_node
- * @param arg_info
- *
- * @return
- *
  *****************************************************************************/
 node *
 FRCid (node *arg_node, info *arg_info)
@@ -466,11 +443,6 @@ FRCid (node *arg_node, info *arg_info)
  * @fn node *FRCprf( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 node *
@@ -495,11 +467,6 @@ FRCprf (node *arg_node, info *arg_info)
  *
  * @brief
  *
- * @param arg_node
- * @param arg_info
- *
- * @return
- *
  *****************************************************************************/
 node *
 FRCwith (node *arg_node, info *arg_info)
@@ -518,11 +485,6 @@ FRCwith (node *arg_node, info *arg_info)
  * @fn node *FRCwith2( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 node *
@@ -544,11 +506,6 @@ FRCwith2 (node *arg_node, info *arg_info)
  *
  * @brief
  *
- * @param arg_node
- * @param arg_info
- *
- * @return
- *
  *****************************************************************************/
 node *
 FRCfold (node *arg_node, info *arg_info)
@@ -569,11 +526,6 @@ FRCfold (node *arg_node, info *arg_info)
  * @fn node *FRCgenarray( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 node *
@@ -601,11 +553,6 @@ FRCgenarray (node *arg_node, info *arg_info)
  *
  * @brief
  *
- * @param arg_node
- * @param arg_info
- *
- * @return
- *
  *****************************************************************************/
 node *
 FRCmodarray (node *arg_node, info *arg_info)
@@ -622,4 +569,10 @@ FRCmodarray (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/*@}*/
+/** <!--********************************************************************-->
+ * @}  <!-- Traversal functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ * @}  <!-- Filter Reuse Candidates -->
+ *****************************************************************************/

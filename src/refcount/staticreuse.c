@@ -1,24 +1,19 @@
 /*
- *
  * $Id$
- *
  */
 
 /**
- *
  * @defgroup strf Static reuse inference
- * @ingroup rcsr
  *
- * <pre>
- * </pre>
+ * @ingroup mm
+ *
  * @{
  */
 
 /**
- *
  * @file staticreuse.c
  *
- *
+ * Prefix: EMSR
  */
 
 #include "staticreuse.h"

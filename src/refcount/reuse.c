@@ -1,20 +1,19 @@
-/**
- *
+/*
  * $Id$
- *
+ */
+
+/**
  * @defgroup emri Reuse Inference
- * @ingroup emm
  *
- * <pre>
- * </pre>
+ * @ingroup mm
+ *
  * @{
  */
 
 /**
- *
  * @file reuse inference
  *
- *
+ * Prefix: EMRI
  */
 #include "reuse.h"
 

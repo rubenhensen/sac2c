@@ -1,20 +1,24 @@
-/**
+/*
  * $Id$
- *
- * @defgroup dro Data reuse optimization
- * @ingroup rcp
- *
- * <pre>
- * </pre>
- * @{
  */
 
-/**
+/** <!--********************************************************************-->
+ *
+ * @defgroup dro Data Reuse Optimization
+ *
+ * @ingroup mm
+ *
+ * @{
+ *
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
  *
  * @file datareuse.c
  *
+ * Prefix: EMDR
  *
- */
+ *****************************************************************************/
 #include "datareuse.h"
 
 #include "globals.h"
@@ -31,9 +35,12 @@
 
 #include <string.h>
 
-/*
- * INFO structure
- */
+/** <!--********************************************************************-->
+ *
+ * @name INFO structure
+ * @{
+ *
+ *****************************************************************************/
 struct INFO {
     node *fundef;
     node *lhs;
@@ -43,9 +50,6 @@ struct INFO {
     node *rcavis;
 };
 
-/*
- * INFO macros
- */
 #define INFO_FUNDEF(n) ((n)->fundef)
 #define INFO_LHS(n) ((n)->lhs)
 #define INFO_REUSELUT(n) ((n)->reuselut)
@@ -53,9 +57,6 @@ struct INFO {
 #define INFO_MEMAVIS(n) ((n)->memavis)
 #define INFO_RCAVIS(n) ((n)->rcavis)
 
-/*
- * INFO functions
- */
 static info *
 MakeInfo (node *fundef)
 {
@@ -86,6 +87,17 @@ FreeInfo (info *info)
 }
 
 /** <!--********************************************************************-->
+ * @}  <!-- INFO structure -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ *
+ * @name Entry functions
+ * @{
+ *
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
  *
  * @fn node *EMDRdoDataReuse( node *syntax_tree)
  *
@@ -108,23 +120,22 @@ EMDRdoDataReuse (node *syntax_tree)
     DBUG_RETURN (syntax_tree);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
+ * @}  <!-- Entry functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
  *
- * Data reuse optimization traversal (emdr_tab)
- *
- * prefix: EMDR
+ * @name Traversal functions
+ * @{
  *
  *****************************************************************************/
+
 /** <!--********************************************************************-->
  *
  * @fn node *EMDRap( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 node *
@@ -173,11 +184,6 @@ EMDRap (node *arg_node, info *arg_info)
  *
  * @brief
  *
- * @param arg_node
- * @param arg_info
- *
- * @return
- *
  *****************************************************************************/
 node *
 EMDRassign (node *arg_node, info *arg_info)
@@ -201,11 +207,6 @@ EMDRassign (node *arg_node, info *arg_info)
  * @fn node *EMDRcond( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 node *
@@ -243,11 +244,6 @@ EMDRcond (node *arg_node, info *arg_info)
  * @fn node *EMDRcode( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 node *
@@ -385,11 +381,6 @@ EMDRcode (node *arg_node, info *arg_info)
  *
  * @brief
  *
- * @param arg_node
- * @param arg_info
- *
- * @return
- *
  *****************************************************************************/
 node *
 EMDRfundef (node *arg_node, info *arg_info)
@@ -443,11 +434,6 @@ EMDRfundef (node *arg_node, info *arg_info)
  *
  * @brief
  *
- * @param arg_node
- * @param arg_info
- *
- * @return
- *
  *****************************************************************************/
 node *
 EMDRlet (node *arg_node, info *arg_info)
@@ -465,11 +451,6 @@ EMDRlet (node *arg_node, info *arg_info)
  * @fn node *EMDRprf( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 node *
@@ -544,4 +525,10 @@ EMDRprf (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/* @} */
+/** <!--********************************************************************-->
+ * @}  <!-- Traversal functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ * @}  <!-- Data Reuse Optimisation -->
+ *****************************************************************************/

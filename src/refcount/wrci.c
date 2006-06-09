@@ -1,19 +1,19 @@
-/**
+/*
  * $Id$
- *
+ */
+
+/**
  * @defgroup wrci With-loop reuse candidate inference
- * @ingroup rcp
  *
- * <pre>
- * </pre>
+ * @ingroup mm
+ *
  * @{
  */
 
 /**
- *
  * @file wrci.c
  *
- *
+ * Prefix: WRCI
  */
 #include "wrci.h"
 

@@ -1,19 +1,26 @@
-/**
- *
- * @defgroup aa Alias analysis
- * @ingroup rcp
- *
- * <pre>
- * </pre>
- * @{
+/*
+ * $Id$
  */
 
-/**
+/** <!--********************************************************************-->
+ *
+ * @defgroup aa Alias Analysis
+ *
+ * Annotates potentially aliased variables with the AVIS_ALIAS flag.
+ *
+ * @ingroup mm
+ *
+ * @{
+ *
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
  *
  * @file aliasanalysis.c
  *
+ * Prefix: EMAA
  *
- */
+ *****************************************************************************/
 #include "aliasanalysis.h"
 
 #include "globals.h"
@@ -33,9 +40,17 @@
  */
 typedef enum { AA_undef, AA_begin, AA_end, AA_let, AA_ap } aa_context;
 
-/*
- * INFO structure
+/**
+ * Convergence counter
  */
+int unaliased;
+
+/** <!--********************************************************************-->
+ *
+ * @name INFO structure
+ * @{
+ *
+ *****************************************************************************/
 struct INFO {
     aa_context context;
     node *fundef;
@@ -47,9 +62,6 @@ struct INFO {
     node *funargs;
 };
 
-/*
- * INFO macros
- */
 #define INFO_CONTEXT(n) (n->context)
 #define INFO_FUNDEF(n) (n->fundef)
 #define INFO_LHS(n) (n->lhs)
@@ -59,14 +71,6 @@ struct INFO {
 #define INFO_APARGS(n) (n->apargs)
 #define INFO_FUNARGS(n) (n->funargs)
 
-/*
- * Convergence counter
- */
-int unaliased;
-
-/*
- * INFO functions
- */
 static info *
 MakeInfo (node *fundef)
 {
@@ -99,6 +103,17 @@ FreeInfo (info *info)
 }
 
 /** <!--********************************************************************-->
+ * @}  <!-- INFO structure -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ *
+ * @name Entry functions
+ * @{
+ *
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
  *
  * @fn node *EMAAdoAliasAnalysis( node *arg_node)
  *
@@ -127,11 +142,17 @@ EMAAdoAliasAnalysis (node *syntax_tree)
     DBUG_RETURN (syntax_tree);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
+ * @}  <!-- Entry functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
  *
- * Helper functions
+ * @name Static helper funcions
+ * @{
  *
  *****************************************************************************/
+
 static node *
 SetAvisAlias (node *avis, bool newval)
 {
@@ -192,23 +213,22 @@ MarkIdAliasing (node *id, dfmask_t *mask)
     DBUG_VOID_RETURN;
 }
 
-/******************************************************************************
- *
- * Alias analysis traversal (emaa_tab)
- *
- * prefix: EMAA
- *
+/** <!--********************************************************************-->
+ * @}  <!-- Static helper functions -->
  *****************************************************************************/
+
 /** <!--********************************************************************-->
  *
- * @node EMAAap( node *arg_node, info *arg_info)
+ * @name Traversal functions
+ * @{
+ *
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *EMAAap( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 node *
@@ -256,14 +276,9 @@ EMAAap (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @node EMAAarg( node *arg_node, info *arg_info)
+ * @fn node *EMAAarg( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 node *
@@ -307,14 +322,9 @@ EMAAarg (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @node EMAAassign( node *arg_node, info *arg_info)
+ * @fn node *EMAAassign( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 node *
@@ -334,14 +344,9 @@ EMAAassign (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @node EMAAcode( node *arg_node, info *arg_info)
+ * @fn node *EMAAcode( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 node *
@@ -381,14 +386,9 @@ EMAAcode (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @node EMAAcond( node *arg_node, info *arg_info)
+ * @fn node *EMAAcond( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 node *
@@ -420,14 +420,9 @@ EMAAcond (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @node EMAAfold( node *arg_node, info *arg_info)
+ * @fn node *EMAAfold( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 node *
@@ -448,14 +443,9 @@ EMAAfold (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @node EMAAgenarray( node *arg_node, info *arg_info)
+ * @fn node *EMAAgenarray( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 node *
@@ -473,14 +463,9 @@ EMAAgenarray (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @node EMAAmodarray( node *arg_node, info *arg_info)
+ * @fn node *EMAAmodarray( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 node *
@@ -498,14 +483,9 @@ EMAAmodarray (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @node EMAAfuncond( node *arg_node, info *arg_info)
+ * @fn node *EMAAfuncond( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 node *
@@ -532,14 +512,9 @@ EMAAfuncond (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @node EMAAfundef( node *arg_node, info *arg_info)
+ * @fn node *EMAAfundef( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 node *
@@ -640,14 +615,9 @@ EMAAfundef (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @node EMAAid( node *arg_node, info *arg_info)
+ * @fn node *EMAAid( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 node *
@@ -686,14 +656,9 @@ EMAAid (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @node EMAAlet( node *arg_node, info *arg_info)
+ * @fn node *EMAAlet( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 node *
@@ -721,14 +686,9 @@ EMAAlet (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @node EMAAprf( node *arg_node, info *arg_info)
+ * @fn node *EMAAprf( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 node *
@@ -771,14 +731,9 @@ EMAAprf (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @node EMAAwith( node *arg_node, info *arg_info)
+ * @fn node *EMAAwith( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 node *
@@ -794,14 +749,9 @@ EMAAwith (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @node EMAAwith2( node *arg_node, info *arg_info)
+ * @fn node *EMAAwith2( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 node *
@@ -817,14 +767,9 @@ EMAAwith2 (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @node EMAAvardec( node *arg_node, info *arg_info)
+ * @fn node *EMAAvardec( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 node *
@@ -847,4 +792,10 @@ EMAAvardec (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/*@}*/
+/** <!--********************************************************************-->
+ * @}  <!-- Traversal functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ * @}  <!-- Alias Analysis -->
+ *****************************************************************************/

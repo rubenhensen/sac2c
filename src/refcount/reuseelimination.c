@@ -1,18 +1,19 @@
+/*
+ * $Id$
+ */
+
 /**
- *
  * @defgroup stre Reuse elimination
- * @ingroup rc
  *
- * <pre>
- * </pre>
+ * @ingroup mm
+ *
  * @{
  */
 
 /**
- *
  * @file reuseelimination.c
  *
- *
+ * Prefix: EMRE
  */
 #include "reuseelimination.h"
 

@@ -1,9 +1,10 @@
+/*
+ * $Id$
+ */
+
 /**
- *
- * $Id: explicitcopy.c 14536 2006-01-13 14:39:57Z ktr $
- *
- * @defgroup scre scope-based reuse candidate elimination
- * @ingroup rc
+ * @defgroup scre Scope-Based Reuse Candidate Elimination
+ * @ingroup mm
  *
  * <pre>
  * </pre>
@@ -11,10 +12,9 @@
  */
 
 /**
- *
  * @file scoperce.c
  *
- *
+ * Prefix: SRCE
  */
 #include "scoperce.h"
 

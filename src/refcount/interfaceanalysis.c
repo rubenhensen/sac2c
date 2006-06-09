@@ -1,19 +1,24 @@
-/**
- *
- * @defgroup ia Interface analysis
- * @ingroup rcp
- *
- * <pre>
- * </pre>
- * @{
+/*
+ * $Id$
  */
 
-/**
+/** <!--********************************************************************-->
+ *
+ * @defgroup ia Interface analysis
+ *
+ * @ingroup mm
+ *
+ * @{
+ *
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
  *
  * @file interfaceanalysis.c
  *
+ * Prefix: IA
  *
- */
+ *****************************************************************************/
 #include "interfaceanalysis.h"
 
 #include "globals.h"
@@ -27,6 +32,11 @@
 #include "free.h"
 #include "internal_lib.h"
 #include "type_utils.h"
+
+/**
+ * Convergence counter
+ */
+int unaliased;
 
 /**
  * CONTEXT enumeration: ia_context_t
@@ -43,9 +53,12 @@ typedef enum {
     IA_argnoalias
 } ia_context_t;
 
-/*
- * INFO structure
- */
+/** <!--********************************************************************-->
+ *
+ * @name INFO structure
+ * @{
+ *
+ *****************************************************************************/
 struct INFO {
     ia_context_t context;
     node *fundef;
@@ -56,9 +69,6 @@ struct INFO {
     bool retalias;
 };
 
-/*
- * INFO macros
- */
 #define INFO_CONTEXT(n) (n->context)
 #define INFO_FUNDEF(n) (n->fundef)
 #define INFO_LHS(n) (n->lhs)
@@ -67,9 +77,6 @@ struct INFO {
 #define INFO_APFUNARGS(n) (n->apfunargs)
 #define INFO_RETALIAS(n) (n->retalias)
 
-/*
- * INFO functions
- */
 static info *
 MakeInfo (node *fundef)
 {
@@ -100,10 +107,16 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
-/**
- * Convergence counter
- */
-int unaliased;
+/** <!--********************************************************************-->
+ * @}  <!-- INFO structure -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ *
+ * @name Entry functions
+ * @{
+ *
+ *****************************************************************************/
 
 /** <!--********************************************************************-->
  *
@@ -144,11 +157,17 @@ EMIAdoInterfaceAnalysis (node *syntax_tree)
     DBUG_RETURN (syntax_tree);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
+ * @}  <!-- Entry functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
  *
- * Helper functions
+ * @name Static helper funcions
+ * @{
  *
  *****************************************************************************/
+
 static node *
 SetArgAlias (node *arg, bool newval)
 {
@@ -205,23 +224,21 @@ SetRetAlias (node *fundef, int num, bool newval)
     DBUG_RETURN (fundef);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
+ * @}  <!-- Static helper functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
  *
- * Interface alias analysis traversal (emia_tab)
- *
- * prefix: EMIA
+ * @name Traversal functions
+ * @{
  *
  *****************************************************************************/
 /** <!--********************************************************************-->
  *
- * @node EMIAap( node *arg_node, info *arg_info)
+ * @fn node* EMIAap( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 node *
@@ -245,14 +262,9 @@ EMIAap (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @node EMIAarg( node *arg_node, info *arg_info)
+ * @fn node* EMIAarg( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 node *
@@ -305,14 +317,9 @@ EMIAarg (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @node EMIAassign( node *arg_node, info *arg_info)
+ * @fn node* EMIAassign( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 node *
@@ -335,14 +342,9 @@ EMIAassign (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @node EMIAblock( node *arg_node, info *arg_info)
+ * @fn node* EMIAblock( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 node *
@@ -357,14 +359,9 @@ EMIAblock (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @node EMIAcond( node *arg_node, info *arg_info)
+ * @fn node* EMIAcond( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 node *
@@ -380,14 +377,9 @@ EMIAcond (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @node EMIAfuncond( node *arg_node, info *arg_info)
+ * @fn node* EMIAfuncond( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 node *
@@ -411,14 +403,9 @@ EMIAfuncond (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @node EMIAfundef( node *arg_node, info *arg_info)
+ * @fn node* EMIAfundef( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 node *
@@ -493,14 +480,9 @@ EMIAfundef (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @node EMIAid( node *arg_node, info *arg_info)
+ * @fn node* EMIAid( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 node *
@@ -553,14 +535,9 @@ EMIAid (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @node EMIAlet( node *arg_node, info *arg_info)
+ * @fn node* EMIAlet( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 node *
@@ -578,14 +555,9 @@ EMIAlet (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @node EMIAret( node *arg_node, info *arg_info)
+ * @fn node* EMIAret( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 node *
@@ -611,14 +583,9 @@ EMIAret (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @node EMIAreturn( node *arg_node, info *arg_info)
+ * @fn node* EMIAreturn( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 node *
@@ -695,14 +662,9 @@ EMIAreturn (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @node EMIAvardec( node *arg_node, info *arg_info)
+ * @fn node* EMIAvardec( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 node *
@@ -744,14 +706,9 @@ EMIAvardec (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @node EMIAwith( node *arg_node, info *arg_info)
+ * @fn node* EMIAwith( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 node *
@@ -766,14 +723,9 @@ EMIAwith (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @node EMIAwith2( node *arg_node, info *arg_info)
+ * @fn node* EMIAwith2( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 node *
@@ -788,14 +740,9 @@ EMIAwith2 (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @node EMIAfold( node *arg_node, info *arg_info)
+ * @fn node* EMIAfold( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 node *
@@ -817,14 +764,9 @@ EMIAfold (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @node EMIAgenarray( node *arg_node, info *arg_info)
+ * @fn node* EMIAgenarray( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 node *
@@ -843,14 +785,9 @@ EMIAgenarray (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @node EMIAmodarray( node *arg_node, info *arg_info)
+ * @fn node* EMIAmodarray( node *arg_node, info *arg_info)
  *
  * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
  *
  *****************************************************************************/
 node *
@@ -867,4 +804,10 @@ EMIAmodarray (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/* @} */
+/** <!--********************************************************************-->
+ * @}  <!-- Traversal functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ * @}  <!-- Interface analysis -->
+ *****************************************************************************/

@@ -1,13 +1,22 @@
+/*
+ * $Id$
+ */
 #ifndef _SAC_ALIASANALYSIS_H_
 #define _SAC_ALIASANALYSIS_H_
 
 #include "types.h"
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
  * Alias analysis traversal (emaa_tab)
  *
  * prefix: EMAA
+ *
+ * Nodes which MUST NOT be traversed
+ *
+ * - N_return
+ * - N_array
+ * - N_objdef
  *
  *****************************************************************************/
 extern node *EMAAdoAliasAnalysis (node *syntax_tree);
@@ -28,15 +37,5 @@ extern node *EMAAprf (node *arg_node, info *arg_info);
 extern node *EMAAwith (node *arg_node, info *arg_info);
 extern node *EMAAwith2 (node *arg_node, info *arg_info);
 extern node *EMAAvardec (node *arg_node, info *arg_info);
-
-/****************************************************************************
- *
- * Nodes which MUST NOT be traversed
- *
- * - N_return
- * - N_array
- * - N_objdef
- *
- ****************************************************************************/
 
 #endif /* _SAC_ALIASANALYSIS_H_ */

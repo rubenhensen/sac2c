@@ -1,10 +1,15 @@
-/******************************************************************************
- *
+/*
  * $Id$
+ */
+
+/** <!--********************************************************************-->
  *
- * 'GetReuseArray' searchs in the given with-loop for possibly reuseable
- * arrays:
+ * @defgroup REUSE Reusable With-loop Argument Inference
  *
+ * Provides an inference for searching a given with-loop for possibly reuseable
+ * arrays.
+ *
+ * <pre>
  *     A = with (... <= idx < ...) {       A = with (... <= idx < ...) {
  *           <assigns>                           <assigns>
  *         }                                   }
@@ -20,9 +25,21 @@
  *   +) If "C" occurs on a right side, it always looks like
  *          "sel( idx, C)"
  *      [Otherwise reuse might miss data dependencies!]
+ * </pre>
+ *
+ * @ingroup mm
+ *
+ * @{
  *
  ******************************************************************************/
 
+/** <!--********************************************************************-->
+ *
+ * @file ReuseWithArrays.c
+ *
+ * Prefix: REUSE
+ *
+ *****************************************************************************/
 #include "ReuseWithArrays.h"
 
 #include "dbug.h"
@@ -39,25 +56,22 @@
 
 #include <string.h>
 
-/*
- * INFO structure
- */
+/** <!--********************************************************************-->
+ *
+ * @name INFO structure
+ * @{
+ *
+ *****************************************************************************/
 struct INFO {
     node *iv;
     void *mask;
     void *negmask;
 };
 
-/*
- * INFO macros
- */
 #define INFO_IV(n) (n->iv)
 #define INFO_MASK(n) (n->mask)
 #define INFO_NEGMASK(n) (n->negmask)
 
-/*
- * INFO functions
- */
 static info *
 MakeInfo ()
 {
@@ -83,6 +97,73 @@ FreeInfo (info *info)
 
     DBUG_RETURN (info);
 }
+
+/** <!--********************************************************************-->
+ * @}  <!-- INFO structure -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ *
+ * @name Entry functions
+ * @{
+ *
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *REUSEdoGetReuseArrays( node *with-loop, node *fundef)
+ *
+ * @brief starts the traversal to search for reuseable arrays.
+ *
+ *****************************************************************************/
+node *
+REUSEdoGetReuseArrays (node *with, node *fundef)
+{
+    info *info;
+    node *cand = NULL, *avis;
+    dfmask_base_t *maskbase;
+
+    DBUG_ENTER ("REUSEdoGetReuseArrays");
+
+    DBUG_ASSERT (NODE_TYPE (with) == N_with, "Illegal Argument!");
+
+    maskbase = DFMgenMaskBase (FUNDEF_ARGS (fundef), FUNDEF_VARDEC (fundef));
+
+    info = MakeInfo ();
+
+    INFO_MASK (info) = DFMgenMaskClear (maskbase);
+    INFO_NEGMASK (info) = DFMgenMaskClear (maskbase);
+    INFO_IV (info) = WITH_VEC (with);
+
+    TRAVpush (TR_reuse);
+    with = TRAVdo (with, info);
+    TRAVpop ();
+
+    avis = DFMgetMaskEntryAvisSet (INFO_MASK (info));
+    while (avis != NULL) {
+        cand = TBmakeExprs (TBmakeId (avis), cand);
+        avis = DFMgetMaskEntryAvisSet (NULL);
+    }
+
+    INFO_MASK (info) = DFMremoveMask (INFO_MASK (info));
+    INFO_NEGMASK (info) = DFMremoveMask (INFO_NEGMASK (info));
+    maskbase = DFMremoveMaskBase (maskbase);
+
+    info = FreeInfo (info);
+
+    DBUG_RETURN (cand);
+}
+
+/** <!--********************************************************************-->
+ * @}  <!-- Entry functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ *
+ * @name Traversal functions
+ * @{
+ *
+ *****************************************************************************/
 
 /******************************************************************************
  *
@@ -306,50 +387,10 @@ REUSEid (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************
- *
- * function:
- *   node *REUSEdoGetReuseArrays( node *syntax_tree, node *fundef)
- *
- * description:
- *   starts the traversal to search for reuseable arrays.
- *
+/** <!--********************************************************************-->
+ * @}  <!-- Traversal functions -->
  *****************************************************************************/
 
-node *
-REUSEdoGetReuseArrays (node *with, node *fundef)
-{
-    info *info;
-    node *cand = NULL, *avis;
-    dfmask_base_t *maskbase;
-
-    DBUG_ENTER ("REUSEdoGetReuseArrays");
-
-    DBUG_ASSERT (NODE_TYPE (with) == N_with, "Illegal Argument!");
-
-    maskbase = DFMgenMaskBase (FUNDEF_ARGS (fundef), FUNDEF_VARDEC (fundef));
-
-    info = MakeInfo ();
-
-    INFO_MASK (info) = DFMgenMaskClear (maskbase);
-    INFO_NEGMASK (info) = DFMgenMaskClear (maskbase);
-    INFO_IV (info) = WITH_VEC (with);
-
-    TRAVpush (TR_reuse);
-    with = TRAVdo (with, info);
-    TRAVpop ();
-
-    avis = DFMgetMaskEntryAvisSet (INFO_MASK (info));
-    while (avis != NULL) {
-        cand = TBmakeExprs (TBmakeId (avis), cand);
-        avis = DFMgetMaskEntryAvisSet (NULL);
-    }
-
-    INFO_MASK (info) = DFMremoveMask (INFO_MASK (info));
-    INFO_NEGMASK (info) = DFMremoveMask (INFO_NEGMASK (info));
-    maskbase = DFMremoveMaskBase (maskbase);
-
-    info = FreeInfo (info);
-
-    DBUG_RETURN (cand);
-}
+/** <!--********************************************************************-->
+ * @}  <!-- Reuseable with-loop argument inference -->
+ *****************************************************************************/
