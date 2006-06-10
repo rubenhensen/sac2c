@@ -1,17 +1,17 @@
-/**
- *
+/*
  * $Id$
+ */
+
+/** <!--********************************************************************-->
  *
  * @defgroup wlsc WLSCheck
- * @ingroup wls
  *
  * @brief checks whether all criteria necessary for applying With-Loop
  *        Scalarization are met.
  *
- * <pre>
- *
  * Example:
  *
+ * <pre>
  * A = with (iv)
  *       ( lb_1 <= iv < ub_1) {
  *          block_1
@@ -21,6 +21,7 @@
  *          block_n
  *       }: res_n,
  *     genarray( shp);
+ * </pre>
  *
  * The following criteria must be met in order to apply With-Loop
  * Scalarization to the above with-loop:
@@ -42,6 +43,7 @@
  *   - The first (and only) assignment inside each block must have a
  *     with-loop on the right hand side.
  *
+ *   <pre>
  *     (lb_i <= iv < ub_i) {
  *       res_i = with (jv)
  *                 ( lj_1 <= jv < uj_1): expr( iv, jv),
@@ -55,6 +57,7 @@
  *                 ( lk_m <= kv < uk_m): expr( iv, kv),
  *               genarray( shp_j);
  *     }: res_j,
+ *   </pre>
  *
  *   - Inner with-loops must either be genarray or modarray with-loops
  *
@@ -62,18 +65,19 @@
  *
  *   - All inner index vectors must have equal length
  *
- * </pre>
+ * @ingroup wls
  *
  * @{
- */
+ *
+ *****************************************************************************/
 
-/**
+/** <!--********************************************************************-->
  *
  * @file wlscheck.c
  *
- * Contains a traversal to check whether all criteria necessary for applying
- * With-Loop Scalarization are met.
- */
+ * Prefix: WLSC
+ *
+ *****************************************************************************/
 #include "wls.h"
 
 #include "globals.h"
@@ -87,9 +91,12 @@
 #include "shape.h"
 #include "internal_lib.h"
 
-/**
- * INFO structure
- */
+/** <!--********************************************************************-->
+ *
+ * @name INFO structure
+ * @{
+ *
+ *****************************************************************************/
 struct INFO {
     bool possible;
     bool innertrav;
@@ -98,18 +105,12 @@ struct INFO {
     node *outerwithid;
 };
 
-/**
- * INFO macros
- */
 #define INFO_POSSIBLE(n) (n->possible)
 #define INFO_INNERTRAV(n) (n->innertrav)
 #define INFO_CEXPR(n) (n->cexpr)
 #define INFO_INNERWITHID(n) (n->innerwithid)
 #define INFO_OUTERWITHID(n) (n->outerwithid)
 
-/**
- * INFO functions
- */
 static info *
 MakeInfo ()
 {
@@ -137,6 +138,17 @@ FreeInfo (info *info)
 
     DBUG_RETURN (info);
 }
+
+/** <!--********************************************************************-->
+ * @}  <!-- INFO structure -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ *
+ * @name Entry functions
+ * @{
+ *
+ *****************************************************************************/
 
 /** <!--********************************************************************-->
  *
@@ -197,11 +209,14 @@ WLSCdoCheck (node *with)
     DBUG_RETURN (res);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
+ * @}  <!-- Entry functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
  *
- * WLS check traversal (wlsc_tab)
- *
- * prefix: WLSC
+ * @name Traversal functions
+ * @{
  *
  *****************************************************************************/
 
@@ -700,4 +715,10 @@ WLSCfold (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/*@}*/ /* defgroup wlsc */
+/** <!--********************************************************************-->
+ * @}  <!-- Traversal functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ * @}  <!-- WLSC -->
+ *****************************************************************************/

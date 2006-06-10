@@ -1,15 +1,14 @@
-/**
- *
+/*
  * $Id$
+ */
+
+/** <!--********************************************************************-->
  *
  * @defgroup wls With-Loop Scalarization
- * @ingroup opt
  *
  * @brief With-Loop Scalarization is a high-level optimization which composes
  *        a single withloop from nested ones in order to minimize memory-
  *        transactions and thereby improving program efficiency.
- *
- * <pre>
  *
  * A bottom-up traversal of the SAC-program is performed.
  * When a with-loop is met, its codes are traversed first in order to
@@ -29,6 +28,7 @@
  *
  * An example for with-loop scalarization is given below:
  *
+ * <pre>
  *   A = with ( lb_1 <= iv < ub_1 ) {
  *         B = with ( lb_2 <= jv < ub_2 ) {
  *               val = expr( iv, jv);
@@ -36,42 +36,32 @@
  *             genarray( shp_2);
  *       } : B
  *       genarray( shp_1);
+ * </pre>
  *
  *   is transformed into
  *
+ * <pre>
  *   A = with ( lb_1++lb_2 <= kv < ub_1++ub_2) {
  *         iv = take( shape( lb_1), kv);
  *         jv = drop( shape( lb_1), kv);
  *         val = expr( iv, jv);
  *       } : val
  *       genarray( shp_1++shp_2);
- *
  * </pre>
  *
+ * @ingroup opt
+ *
  * @{
- */
+ *
+ *****************************************************************************/
 
-/**
+/** <!--********************************************************************-->
  *
  * @file wls.c
  *
- * Implements the top-level traversal of Withloop-Scalarization.
- * A bottom-up traversal of the SAC-program is performed.
- * When a with-loop is met, its codes are traversed first in order to
- * scalarize nested with-loops inside of these codes.
+ * Prefix: WLS
  *
- * Scalarization is then performed by means of three seperate traversals:
- *
- *  - WLSCheck checks whether all criteria are met to scalarize the current WL.
- *    These criteria are described in wlscheck.c
- *
- *  - WLSWithloopifification modifies a with-loop's codes in order to create
- *    the pattern of perferctly nested with-loops as seen in the example above.
- *
- *  - WLSBuild then finally replaces the with-loop nesting with a new,
- *    scalarized version of that with-loop
- *
- */
+ *****************************************************************************/
 #include "wls.h"
 
 #include "globals.h"
@@ -83,21 +73,18 @@
 #include "print.h"
 #include "internal_lib.h"
 
-/**
- * INFO structure
- */
+/** <!--********************************************************************-->
+ *
+ * @name INFO structure
+ * @{
+ *
+ *****************************************************************************/
 struct INFO {
     node *fundef;
 };
 
-/**
- * INFO macros
- */
 #define INFO_FUNDEF(n) (n->fundef)
 
-/**
- * INFO functions
- */
 static info *
 MakeInfo (node *fundef)
 {
@@ -121,6 +108,17 @@ FreeInfo (info *info)
 
     DBUG_RETURN (info);
 }
+
+/** <!--********************************************************************-->
+ * @}  <!-- INFO structure -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ *
+ * @name Entry functions
+ * @{
+ *
+ *****************************************************************************/
 
 /** <!--********************************************************************-->
  *
@@ -147,12 +145,14 @@ WLSdoWithloopScalarization (node *fundef)
 
     DBUG_RETURN (fundef);
 }
+/** <!--********************************************************************-->
+ * @}  <!-- Entry functions -->
+ *****************************************************************************/
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * WLS traversal (wls_tab)
- *
- * prefix: WLS
+ * @name Traversal functions
+ * @{
  *
  *****************************************************************************/
 
@@ -161,11 +161,6 @@ WLSdoWithloopScalarization (node *fundef)
  * @fn node *WLSassign(node *arg_node, info *arg_info)
  *
  * @brief performs a bottom-up traversal.
- *
- * @param arg_node
- * @param arg_info
- *
- * @return arg_node
  *
  *****************************************************************************/
 node *
@@ -195,11 +190,6 @@ WLSassign (node *arg_node, info *arg_info)
  * @brief applies WLS to a given fundef.
  *        An INFO-structure containing a pointer to the current fundef is
  *        created before traversal of the function body.
- *
- * @param arg_node
- * @param arg_info
- *
- * @return arg_node
  *
  ******************************************************************************/
 node *
@@ -239,11 +229,6 @@ WLSfundef (node *arg_node, info *arg_info)
  *        If it is, the base case of scalarization (perfectly nested
  *        with-loops) is created using WLSWithloopification.
  *        Thereafter, a new with-loop is built using the WLSBuild traversal.
- *
- * @param arg_node
- * @param arg_info
- *
- * @return a new with-loop with scalar elements
  *
  *****************************************************************************/
 node *
@@ -285,4 +270,10 @@ WLSwith (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/*@}*/ /* defgroup wls */
+/** <!--********************************************************************-->
+ * @}  <!-- Traversal functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ * @}  <!-- WLS -->
+ *****************************************************************************/

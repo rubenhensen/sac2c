@@ -1,23 +1,24 @@
-/**
- *
+/*
  * $Id$
+ */
+
+/** <!--********************************************************************-->
  *
  * @defgroup wlsw WLSWithloopification
- * @ingroup wls
  *
  * @brief modifies a with-loop's codes in order to create the pattern of
  *        perfectly nested with-loops needed by WLSBuild.
- *
- * <pre>
  *
  * Withloopification of a with-loop's codes works in three steps:
  *
  * 1) Traverse inner code to check whether a copy with-loop is required
  *
+ * <pre>
  *    {
  *      ass;
  *      CEXPR = expr( ass, iv);
  *    } : CEXPR;
+ * </pre>
  *
  *    No copy with-loop is required if and only if expr(ass, iv) denotes
  *    a genarray/modarray with-loop whose generators/withop do not depend
@@ -25,6 +26,7 @@
  *
  * 2) Insert a copy with-loop
  *
+ * <pre>
  *    {
  *      ass;
  *      CEXPR = expr( ass, iv);
@@ -33,9 +35,11 @@
  *              } : res;
  *              genarray( shape( CEXPR) )
  *    } : copy
+ * </pre>
  *
  * 3) Move code from before the inner with-loop inside the inner with-loop
  *
+ * <pre>
  *    {
  *      copy  = with ( . <= jv <= . ) {
  *                ass;
@@ -44,22 +48,25 @@
  *              } : res;
  *              genarray( shape( CEXPR) )
  *    } : copy
+ * </pre>
  *
  *    NOTE: This can only happen if -wls_aggressive or maxwls are specified!
  *
  * </pre>
  *
+ * @ingroup wls
+ *
  * @{
- */
+ *
+ *****************************************************************************/
 
-/**
+/** <!--********************************************************************-->
  *
  * @file wlswithloopfication.c
  *
- * Implements a traversal to modify a with-loop's codes in order to create the
- * pattern of perfectly nested with-loops needed by WLSBuild.
+ * Prefix: WLSW
  *
- */
+ *****************************************************************************/
 
 #include "wls.h"
 
@@ -76,9 +83,12 @@
 #include "internal_lib.h"
 #include "shape.h"
 
-/**
- * INFO structure
- */
+/** <!--********************************************************************-->
+ *
+ * @name INFO structure
+ * @{
+ *
+ *****************************************************************************/
 struct INFO {
     node *fundef;
     int innerdims;
@@ -90,9 +100,6 @@ struct INFO {
     bool mustcopy;
 };
 
-/**
- * INFO macros
- */
 #define INFO_FUNDEF(n) (n->fundef)
 #define INFO_INNERDIMS(n) (n->innerdims)
 #define INFO_OUTERWITHID(n) (n->outerwithid)
@@ -102,9 +109,6 @@ struct INFO {
 #define INFO_CEXPR(n) (n->cexpr)
 #define INFO_MUSTCOPY(n) (n->mustcopy)
 
-/**
- * INFO functions
- */
 static info *
 MakeInfo (node *fundef, int innerdims)
 {
@@ -136,6 +140,16 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
+/** <!--********************************************************************-->
+ * @}  <!-- INFO structure -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ *
+ * @name Entry functions
+ * @{
+ *
+ *****************************************************************************/
 /** <!--********************************************************************-->
  *
  * @fn node *WLSWdoWithloopify( node *arg_node, node *fundef, int innerdims)
@@ -172,9 +186,14 @@ WLSWdoWithloopify (node *with, node *fundef, int innerdims)
     DBUG_RETURN (with);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
+ * @}  <!-- Entry functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
  *
- * Helper functions
+ * @name Static helper funcions
+ * @{
  *
  *****************************************************************************/
 /** <!--********************************************************************-->
@@ -448,11 +467,14 @@ CreateCopyWithloop (node *array, int dim, node *fundef)
     DBUG_RETURN (wl);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
+ * @}  <!-- Static helper functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
  *
- * WLS withloopification traversal (wlsw_tab)
- *
- * prefix: WLSW
+ * @name Traversal functions
+ * @{
  *
  *****************************************************************************/
 
@@ -876,4 +898,10 @@ WLSWwithid (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/*@}*/ /* defgroup wlsw */
+/** <!--********************************************************************-->
+ * @}  <!-- Traversal functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ * @}  <!-- WLSW -->
+ *****************************************************************************/
