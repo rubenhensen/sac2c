@@ -57,7 +57,7 @@ DEPS = $(foreach file,$(DEPENDENCY_FILES),$(dir $(file)).$(notdir $(file)))
 # Dummy rules
 #
 
-.PHONY: clean %.clean all devel prod make_devel make_prod %.track
+.PHONY: clean %.clean all devel prod %.track
 .PHONY: efence check_os maketools makefiles libsac libsac2c heapmgr 
 .PHONY: distrib ctags runtime tools lib %.go makesubdir xml
 
@@ -70,18 +70,11 @@ DEPS = $(foreach file,$(DEPENDENCY_FILES),$(dir $(file)).$(notdir $(file)))
 # Start rules
 #
 
-all: make_devel
+all: devel
 
-devel:
-	@$(MAKE) CHECK_DEPS="yes" make_devel
+devel: check_os lib maketools makefiles xml sac2c.go libsac heapmgr runtime tools
 
-prod:
-	@$(MAKE) CHECK_DEPS="yes" make_prod
-
-
-make_devel: check_os lib maketools makefiles xml sac2c.go libsac heapmgr runtime tools
-
-make_prod: check_os lib maketools makefiles xml sac2c.prod.go libsac heapmgr runtime tools 
+prod: check_os lib maketools makefiles xml sac2c.prod.go libsac heapmgr runtime tools 
 
 efence: check_os maketools sac2c.efence
 
