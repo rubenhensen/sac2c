@@ -13,6 +13,8 @@
 #include "internal_lib.h"
 #include "filemgr.h"
 
+#define BLOCKSIZE 100
+
 struct VIEW {
     char *name;
     int id;
@@ -27,7 +29,7 @@ struct NAMESPACE {
 };
 
 struct NSPOOL {
-    namespace_t *block[100];
+    namespace_t *block[BLOCKSIZE];
     struct NSPOOL *next;
 };
 
@@ -88,7 +90,7 @@ PutInPool (namespace_t *ns)
      */
     pos = pool;
 
-    for (cnt = 0; cnt < (ns->id / 100); cnt++) {
+    for (cnt = 0; cnt < (ns->id / BLOCKSIZE); cnt++) {
         if (pos->next == NULL) {
             pos->next = ILIBmalloc (sizeof (nspool_t));
         }
@@ -99,7 +101,7 @@ PutInPool (namespace_t *ns)
     /*
      * insert ns
      */
-    pos->block[ns->id % 100] = ns;
+    pos->block[ns->id % BLOCKSIZE] = ns;
 
     DBUG_VOID_RETURN;
 }
@@ -115,11 +117,11 @@ GetFromPool (int id)
 
     pos = pool;
 
-    for (cnt = 0; cnt < (id / 100); cnt++) {
+    for (cnt = 0; cnt < (id / BLOCKSIZE); cnt++) {
         pos = pos->next;
     }
 
-    result = pos->block[id % 100];
+    result = pos->block[id % BLOCKSIZE];
 
     DBUG_RETURN (result);
 }
@@ -136,13 +138,13 @@ FindInPool (const char *module, view_t *view)
     pos = pool;
 
     for (cnt = 0; cnt < nextid; cnt++) {
-        if ((ILIBstringCompare (pos->block[cnt]->module, module))
-            && (equalsView (pos->block[cnt]->view, view))) {
-            result = pos->block[cnt];
+        if ((ILIBstringCompare (pos->block[cnt % BLOCKSIZE]->module, module))
+            && (equalsView (pos->block[cnt % BLOCKSIZE]->view, view))) {
+            result = pos->block[cnt % BLOCKSIZE];
             break;
         }
 
-        if ((cnt % 100) == 99) {
+        if ((cnt % BLOCKSIZE) == 99) {
             pos = pos->next;
         }
     }
@@ -508,13 +510,13 @@ GenerateNamespaceMappingConstructor (FILE *file)
 
     for (cnt = 0; cnt < nextid; cnt++) {
         fprintf (file, "MAPNS(%d) = NSaddMapping( \"%s\",", cnt,
-                 NSgetModule (pool->block[cnt % 100]));
+                 NSgetModule (pool->block[cnt % BLOCKSIZE]));
 
-        GenerateViewConstructor (file, pool->block[cnt % 100]->view);
+        GenerateViewConstructor (file, pool->block[cnt % BLOCKSIZE]->view);
 
         fprintf (file, ");\n");
 
-        if ((cnt % 100) == 99) {
+        if ((cnt % BLOCKSIZE) == 99) {
             pos = pos->next;
         }
     }
