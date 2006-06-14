@@ -549,6 +549,8 @@ TearDownSSAT (node *avis)
     DBUG_ENTER ("TearDownSSAT");
 
     AVIS_SSASTACK (avis) = FREEdoFreeTree (AVIS_SSASTACK (avis));
+    AVIS_SSATHEN (avis) = NULL;
+    AVIS_SSAELSE (avis) = NULL;
     AVIS_SSACOUNT (avis) = NULL;
 
     DBUG_RETURN (avis);
