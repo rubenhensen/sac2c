@@ -1,35 +1,6 @@
 <?xml version="1.0"?>
 <!--
-  $Log$
-  Revision 1.9  2005/09/26 10:46:09  jhb
-  change a match to a select, bug
-
-  Revision 1.8  2005/09/21 17:46:13  sah
-  quick adapt to new ast.xml. would need major rework.
-
-  Revision 1.7  2004/12/07 16:35:49  sah
-  fixed a bug
-
-  Revision 1.6  2004/12/07 14:19:38  sah
-  mac OS X compatible version
-
-  Revision 1.5  2004/12/06 21:43:12  sah
-  added entirely useless favicon
-
-  Revision 1.4  2004/12/05 20:11:38  sah
-  made QuickNav less annoying
-
-  Revision 1.3  2004/12/03 15:25:09  sah
-  added QuickNav
-
-  Revision 1.2  2004/11/23 19:52:12  sah
-  adapted to new structure
-
-  Revision 1.1  2004/11/23 11:30:34  sah
-  Initial revision
-
-
-
+  $Id$
 -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
 xmlns="http://www.w3.org/1999/xhtml" version="1.0">
@@ -709,7 +680,7 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
   <!-- target is transformed into a small list -->
   <xsl:template match="target" mode="attrib-table">
     <xsl:value-of select="' ( '" />
-    <xsl:apply-templates select="target" mode="table-target" />
+    <xsl:apply-templates select="." mode="table-target" />
     <xsl:value-of select="' ) '" />
   </xsl:template>
 
