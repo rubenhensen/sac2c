@@ -126,7 +126,6 @@ SCIid (node *arg_node, info *arg_info)
 node *
 SCIprf (node *arg_node, info *arg_info)
 {
-    int junk;
     node *lhs, *arg1, *arg2, *lhsavis, *arg1avis, *arg2avis;
 
     DBUG_ENTER ("SCIprf");
@@ -151,6 +150,16 @@ SCIprf (node *arg_node, info *arg_info)
     case F_mul_AxS:
     case F_div_AxS:
     case F_modarray: /* the modarray primitive function */
+        /* Place lhs id and arg1 in same shape clique */
+        lhs = INFO_LHS (arg_info);
+        arg1 = PRF_ARG1 (arg_node);
+        lhsavis = IDS_AVIS (lhs);
+        arg1avis = ID_AVIS (arg1);
+        DBUG_ASSERT ((AVIS_SHAPECLIQUEID (lhsavis) == SHAPECLIQUEIDNONE),
+                     "PRF AxSshape clique lhs not NONE");
+        SCIAppendAvisToShapeClique (lhsavis, arg1avis, arg_info);
+        break;
+    /* Various fns which we are confused about */
     case F_mod:
     case F_max:
     case F_min:
@@ -162,20 +171,12 @@ SCIprf (node *arg_node, info *arg_info)
     case F_toi_A: /* Monadic type coercion functions */
     case F_tof_A:
     case F_tod_A:
-        /* Place lhs id and arg1 in same shape clique */
-        lhs = INFO_LHS (arg_info);
-        arg1 = PRF_ARG1 (arg_node);
-        lhsavis = IDS_AVIS (lhs);
-        arg1avis = ID_AVIS (arg1);
-        DBUG_ASSERT ((AVIS_SHAPECLIQUEID (lhsavis) == SHAPECLIQUEIDNONE),
-                     "PRF AxSshape clique lhs not NONE");
-        SCIAppendAvisToShapeClique (lhsavis, arg1avis, arg_info);
         break;
-    case F_add_AxA: /* Dyadic scalar functions */
+
+    case F_add_AxA: /* Dyadic scalar functions. These need shape clique guards. .*/
     case F_sub_AxA:
     case F_mul_AxA:
     case F_div_AxA:
-        junk = 4;
         break;
 
     default:
