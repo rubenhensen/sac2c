@@ -1288,6 +1288,10 @@ PrintFunctionHeader (node *arg_node, info *arg_info, bool in_comment)
                     }
                 }
             }
+
+            if (FUNDEF_HASDOTRETS (arg_node)) {
+                fprintf (global.outfile, ", ...");
+            }
         }
 
         fprintf (global.outfile, " ");
@@ -1306,7 +1310,7 @@ PrintFunctionHeader (node *arg_node, info *arg_info, bool in_comment)
             TRAVdo (FUNDEF_ARGS (arg_node), arg_info); /* print args of function */
         }
 
-        if (FUNDEF_HASDOTARGS (arg_node) || FUNDEF_HASDOTRETS (arg_node)) {
+        if (FUNDEF_HASDOTARGS (arg_node)) {
             fprintf (global.outfile, ", ...");
         }
 

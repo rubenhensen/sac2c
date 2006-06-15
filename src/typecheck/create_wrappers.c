@@ -527,7 +527,7 @@ CRTWRPfundef (node *arg_node, info *arg_info)
                               (FUNDEF_HASDOTARGS (wrapper) ? ">=" : ""),
                               TCcountArgs (FUNDEF_ARGS (wrapper)),
                               (FUNDEF_HASDOTRETS (wrapper) ? ">=" : ""),
-                              TCcountRets (FUNDEF_ARGS (wrapper)), (dot_args ? ">=" : ""),
+                              TCcountRets (FUNDEF_RETS (wrapper)), (dot_args ? ">=" : ""),
                               num_args, (dot_rets ? ">=" : ""), num_rets);
             }
         }

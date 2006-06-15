@@ -68,6 +68,7 @@ static node *
 CreateObjectWrapper (node *fundef)
 {
     node *result;
+    node *body;
     node *block;
     node *ids;
     node *vardecs = NULL;
@@ -76,27 +77,48 @@ CreateObjectWrapper (node *fundef)
 
     DBUG_PRINT ("OAN", ("Creating object wrapper for %s...", CTIitemName (fundef)));
 
-    result = TBmakeFundef (ILIBstringCopy (FUNDEF_NAME (fundef)),
-                           NSdupNamespace (global.modulenamespace),
-                           DUPdoDupTree (FUNDEF_RETS (fundef)),
-                           DUPdoDupTree (FUNDEF_ARGS (fundef)), NULL, NULL);
+    /*
+     * remove body for copying
+     */
+    body = FUNDEF_BODY (fundef);
+    FUNDEF_BODY (fundef) = NULL;
 
-    ids = TCcreateIdsFromRets (FUNDEF_RETS (result), &vardecs);
+    /*
+     * create a localized copy of the function header
+     */
+    result = DUPdoDupNode (fundef);
+    FUNDEF_NS (result) = NSfreeNamespace (FUNDEF_NS (result));
+    FUNDEF_NS (result) = NSdupNamespace (global.modulenamespace),
+              FUNDEF_WASIMPORTED (result) = FALSE;
+    FUNDEF_WASUSED (result) = FALSE;
+    FUNDEF_ISLOCAL (result) = TRUE;
 
-    block
-      = TBmakeBlock (TBmakeAssign (TBmakeLet (ids,
-                                              TBmakeAp (fundef, TCcreateExprsFromArgs (
+    /*
+     * add body again
+     */
+    FUNDEF_BODY (fundef) = body;
+
+    /*
+     * for non external funs we create an appropriate
+     * function body calling the original function
+     */
+    if (!FUNDEF_ISEXTERN (fundef)) {
+        ids = TCcreateIdsFromRets (FUNDEF_RETS (result), &vardecs);
+
+        block = TBmakeBlock (TBmakeAssign (TBmakeLet (ids,
+                                                      TBmakeAp (fundef,
+                                                                TCcreateExprsFromArgs (
                                                                   FUNDEF_ARGS (result)))),
-                                   TBmakeAssign (TBmakeReturn (
-                                                   TCcreateExprsFromIds (ids)),
-                                                 NULL)),
-                     NULL);
+                                           TBmakeAssign (TBmakeReturn (
+                                                           TCcreateExprsFromIds (ids)),
+                                                         NULL)),
+                             NULL);
 
-    BLOCK_VARDEC (block) = vardecs;
-    FUNDEF_BODY (result) = block;
+        BLOCK_VARDEC (block) = vardecs;
+        FUNDEF_BODY (result) = block;
+    }
 
     FUNDEF_ISOBJECTWRAPPER (result) = TRUE;
-    FUNDEF_ISINLINE (result) = FUNDEF_ISINLINE (fundef);
     FUNDEF_IMPL (result) = fundef;
 
     DBUG_RETURN (result);
