@@ -150,6 +150,9 @@ SCIprf (node *arg_node, info *arg_info)
     case F_mul_AxS:
     case F_div_AxS:
     case F_modarray: /* the modarray primitive function */
+    case F_toi_A:    /* Monadic type coercion functions */
+    case F_tof_A:
+    case F_tod_A:
         /* Place lhs id and arg1 in same shape clique */
         lhs = INFO_LHS (arg_info);
         arg1 = PRF_ARG1 (arg_node);
@@ -168,9 +171,6 @@ SCIprf (node *arg_node, info *arg_info)
     case F_neg: /* Monadic scalar functions */
     case F_abs:
     case F_not:
-    case F_toi_A: /* Monadic type coercion functions */
-    case F_tof_A:
-    case F_tod_A:
         break;
 
     case F_add_AxA: /* Dyadic scalar functions. These need shape clique guards. .*/
