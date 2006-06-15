@@ -3923,6 +3923,7 @@
 
 -->
     <node name="Num">
+     <description>  Integer scalar </description>
       <sons></sons>
       <attributes>
         <attribute name="Val">
@@ -7578,6 +7579,7 @@
 
 -->
     <node name="Nums">
+     <description>  Linked list of Integers, used only in scanner/parser </description>
       <sons>
         <son name="Next">
           <targets>
