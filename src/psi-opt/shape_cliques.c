@@ -22,9 +22,24 @@
  * I) not yet solved:
  *
  * II) to be fixed here:
+ *  1. New shape clique representation to ease choosing of a
+ *     typical clique element.
+ *  2. Support shape cliques for genarray in withloops.
  *
  * III) to be fixed somewhere else:
+ *  1. How to make shape cliques for dyadic scalar functions, e.g.:
+ *         C = _add_AxA_( A,B).
+ *     We probably want to place a guard before
+ *     this operation, asserting that A and B have matching shapes.
+ *     Once that is done, we can place (A,B,C) in the same shape clique.
  *
+ *  2. We want to support shape cliques for mod, max, min, and, or, eq, neq,
+ *     le, lt, and perhaps a few others. The right way to do this is to
+ *     create new primitives for those functions, e.g.:
+ *        _mod_SxS_, _mod_SxA_, _mod_AxS, _mod_AxA_
+ *     and then treat them the same as _add_AxS_, etc.
+ *     Stephan says this is a several days work spread all over the compiler,
+ *     so I'm deferring it.
  */
 
 /**
@@ -135,6 +150,7 @@ SCIprf (node *arg_node, info *arg_info)
     case F_sub_SxA:
     case F_mul_SxA:
     case F_div_SxA:
+    case F_rotate:
         /* Place lhs and arg2 in same shape clique */
         lhs = INFO_LHS (arg_info);
         arg2 = PRF_ARG2 (arg_node);
@@ -163,14 +179,31 @@ SCIprf (node *arg_node, info *arg_info)
         SCIAppendAvisToShapeClique (lhsavis, arg1avis, arg_info);
         break;
     /* Various fns which we are confused about */
+    /* The right solution is to invent F_mod_AxS_, etc., for all these */
     case F_mod:
     case F_max:
     case F_min:
     case F_and:
     case F_or:
+    case F_eq:
+    case F_neq:
+    case F_le:
+    case F_ge:
+    case F_gt:
+    case F_lt:
+        break;
+
     case F_neg: /* Monadic scalar functions */
     case F_abs:
     case F_not:
+        /* Place lhs id and arg1 in same shape clique */
+        lhs = INFO_LHS (arg_info);
+        arg1 = PRF_ARG1 (arg_node);
+        lhsavis = IDS_AVIS (lhs);
+        arg1avis = ID_AVIS (arg1);
+        DBUG_ASSERT ((AVIS_SHAPECLIQUEID (lhsavis) == SHAPECLIQUEIDNONE),
+                     "PRF AxSshape clique lhs not NONE");
+        SCIAppendAvisToShapeClique (lhsavis, arg1avis, arg_info);
         break;
 
     case F_add_AxA: /* Dyadic scalar functions. These need shape clique guards. .*/
@@ -179,8 +212,60 @@ SCIprf (node *arg_node, info *arg_info)
     case F_div_AxA:
         break;
 
-    default:
+    case F_toi_S: /* Functions that we don't put to any use */
+    case F_tof_S:
+    case F_tod_S:
+    case F_add_SxS: /* Scalar-Scalar dyadic scalar functions */
+    case F_sub_SxS:
+    case F_mul_SxS:
+    case F_div_SxS:
+    case F_shape:
+    case F_reshape:
+    case F_shape_sel:
+    case F_run_mt_fold:
+    case F_noop:
+    case F_copy:
+    case F_dim:
+    case F_idx_shape_sel:
+    case F_idx_sel:
+    case F_idx_modarray:
+    case F_sel:
+    case F_take:
+    case F_drop:
+    case F_cat:
+    case F_take_SxV:
+    case F_drop_SxV:
+    case F_vect2offset:
+    case F_idxs2offset:
+    case F_cat_VxV:
+    case F_accu:
+    case F_alloc:
+    case F_reuse:
+    case F_alloc_or_reuse:
+    case F_alloc_or_reshape:
+    case F_isreused:
+    case F_suballoc:
+    case F_wl_assign:
+    case F_fill:
+    case F_inc_rc:
+    case F_dec_rc:
+    case F_free:
+    case F_to_unq:
+    case F_from_unq:
+    case F_type_conv:
+    case F_dispatch_error:
+    case F_type_error:
+    case F_esd_neg:
+    case F_esd_rec:
+    /* the following are in the land of the living dead. */
+    case F_run_mt_genarray:
+    case F_run_mt_modarray:
+    case F_genarray:
         break;
+        /* TEMP
+            default:
+              break;
+              */
     }
 
     DBUG_RETURN (arg_node);
@@ -246,19 +331,21 @@ SCIgenarray (node *arg_node, info *arg_info)
     DBUG_ENTER ("SCIgenarray");
     /* For a WL of the form:
      *    S = shape(B);
-     *    C = with() genarray( S, def),
+     *    C = with() genarray( S, defaultelement),
      * place C in same shape clique as B, IFF def is a scalar.
-     * It may be possible to get fancier with non-scalar def, but
+     * It may be possible to get fancier with non-scalar default element, but
      * you gotta start somewhere.
      */
 
-    node *lhs, *shp;
-    int junk;
+    node *shp, *def;
     shp = GENARRAY_SHAPE (arg_node);
+    def = GENARRAY_DEFAULT (arg_node);
     if (N_id == NODE_TYPE (shp)) { /* S may be an N_id or an N_array */
-        junk = 4;
         DBUG_PRINT ("SCI", ("found genarray shape N_id"));
     }
+    if (NULL == def) /* No default cell or scalar cell is good! */
+        /* If def non-null, have to check exprs for scalar default element! */
+        def = def;
 
     DBUG_RETURN (arg_node);
 }
@@ -305,6 +392,7 @@ SCIdoShapeCliqueInference (node *syntax_tree)
 node *
 SCIlet (node *arg_node, info *arg_info)
 {
+    node *oldids;
 
     DBUG_ENTER ("SCIlet");
     /* Place lhs in same clique as rhs. If rhs is not in a clique already,
@@ -312,8 +400,10 @@ SCIlet (node *arg_node, info *arg_info)
      * We tuck the lhs into the arg_info and pass it down to whoever
      * finds the rhs avis; they will do the dirty work. */
 
+    oldids = INFO_LHS (arg_info); /* with within with can cause recursion */
     INFO_LHS (arg_info) = LET_IDS (arg_node);
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
+    INFO_LHS (arg_info) = oldids;
 
     DBUG_RETURN (arg_node);
 }
@@ -351,6 +441,8 @@ SCIfundef (node *arg_node, info *arg_info)
  *   * @fn int SCIAppendAvisToShapeClique( node *avis1, node *avis2, info *arg_info)
  *   @brief This function appends avis1 to the shape clique of avis2.
  *          If avis2 is not in a shape clique, a new shape clique will be built,
+ *          break;
+ *
  *          containing avis1 and avis2.
  *          The result is the shape clique id (it happens to be an address,
  *          but it's basically any unique integer).
