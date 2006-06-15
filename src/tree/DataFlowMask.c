@@ -99,7 +99,7 @@ DFMgenMaskBase (node *arguments, node *vardecs)
     unsigned int access_mask;
     node *tmp;
 
-    DBUG_ENTER ("DFMGenMaskBase");
+    DBUG_ENTER ("DFMgenMaskBase");
 
     if (access_mask_table == NULL) {
         /*
@@ -799,6 +799,16 @@ DFMsetMaskMinus (mask_t *mask, mask_t *mask2)
 /*
  * functions for analyzing data flow masks
  */
+
+int
+DFMnumIds (mask_base_t *mask)
+{
+    DBUG_ENTER ("DFMnumIds");
+
+    DBUG_ASSERT ((mask != NULL), "DFMnumIds() called with mask NULL");
+
+    DBUG_RETURN (mask->num_ids);
+}
 
 int
 DFMtestMask (mask_t *mask)

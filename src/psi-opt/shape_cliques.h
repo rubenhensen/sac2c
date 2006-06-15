@@ -23,4 +23,9 @@ extern void SCIDestroyShapeCliques (node *arg_node, info *arg_info);
 extern void SCIInitializeShapeCliques (node *arg_node, info *arg_info);
 extern dfmask_t *SCIShapeCliqueIDToCliquePtr (int ShapeCliqueID, info *arg_info);
 
+/* utility functions potentially used by other phases */
+
+extern void SCIShapeCliquePrintIDs (node *arg_node, info *arg_info);
+extern bool SCIAreInSameShapeClique (node *avis1, node *avis2);
+
 #endif /* _SAC_SHAPE_CLIQUE_H */

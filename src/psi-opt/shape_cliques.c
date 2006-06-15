@@ -14,6 +14,7 @@
 #include "type_utils.h"
 #include "shape_cliques.h"
 #include "DataFlowMask.h"
+#include "ctinfo.h"
 
 /*
  * OPEN PROBLEMS:
@@ -140,7 +141,8 @@ SCIprf (node *arg_node, info *arg_info)
         arg2 = PRF_ARG2 (arg_node);
         lhsavis = IDS_AVIS (lhs);
         arg2avis = ID_AVIS (arg2);
-        DBUG_ASSERT ((AVIS_SHAPECLIQUEID (lhsavis) == NULL), "Bobbo kant kode");
+        DBUG_ASSERT ((AVIS_SHAPECLIQUEID (lhsavis) == SHAPECLIQUEIDNONE),
+                     "PRF SxA shape clique lhs not NONE");
         SCIAppendAvisToShapeClique (lhsavis, arg2avis, arg_info);
         break;
 
@@ -165,7 +167,8 @@ SCIprf (node *arg_node, info *arg_info)
         arg1 = PRF_ARG1 (arg_node);
         lhsavis = IDS_AVIS (lhs);
         arg1avis = ID_AVIS (arg1);
-        DBUG_ASSERT ((AVIS_SHAPECLIQUEID (lhsavis) == NULL), "Bobbo kant kode");
+        DBUG_ASSERT ((AVIS_SHAPECLIQUEID (lhsavis) == SHAPECLIQUEIDNONE),
+                     "PRF AxSshape clique lhs not NONE");
         SCIAppendAvisToShapeClique (lhsavis, arg1avis, arg_info);
         break;
     case F_add_AxA: /* Dyadic scalar functions */
@@ -197,11 +200,29 @@ SCIprf (node *arg_node, info *arg_info)
 node *
 SCImodarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SCImodarray");
-    int junk;
-    junk = 4;
+    node *lhs, *rhs, *lhsavis, *rhsavis;
 
-    /* FIXME */
+    DBUG_ENTER ("SCImodarray");
+
+    /* For a WL of the form:
+     *           *    C = with() modarray( B, iv, val),
+     *                * place C in same shape clique as B.
+     */
+
+    rhs = MODARRAY_ARRAY (arg_node);
+    if (N_id == NODE_TYPE (rhs)) {
+        DBUG_PRINT ("SCI", ("found modarray N_id"));
+        /* Place C in same shape clique as B */
+        lhs = INFO_LHS (arg_info);
+        lhsavis = IDS_AVIS (lhs);
+        rhsavis = ID_AVIS (rhs);
+        DBUG_ASSERT ((AVIS_SHAPECLIQUEID (lhsavis) == SHAPECLIQUEIDNONE),
+                     "modarray shape clique lhs not NONE");
+        SCIAppendAvisToShapeClique (lhsavis, rhsavis, arg_info);
+    } else {
+        DBUG_PRINT ("SCI", ("found modarray non- N_id"));
+    }
+
     DBUG_RETURN (arg_node);
 }
 
@@ -209,7 +230,8 @@ SCImodarray (node *arg_node, info *arg_info)
  *  *
  *   * @fn node *SCIgenarray(node *arg_node, info *arg_info)
  *    *
- *     * @brief  FIXME
+ *     * @brief  node *SCIgenarray( node *arg_node, info *arg_info)
+ *     * With-loop genarray shape clique inference
  *      *
  *       * @param arg_node
  *        * @param arg_info
@@ -221,9 +243,22 @@ node *
 SCIgenarray (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SCIgenarray");
+    /* For a WL of the form:
+     *    S = shape(B);
+     *    C = with() genarray( S, def),
+     * place C in same shape clique as B, IFF def is a scalar.
+     * It may be possible to get fancier with non-scalar def, but
+     * you gotta start somewhere.
+     */
+
+    node *lhs, *shp;
     int junk;
-    junk = 4;
-    /* FIXME */
+    shp = GENARRAY_SHAPE (arg_node);
+    if (N_id == NODE_TYPE (shp)) { /* S may be an N_id or an N_array */
+        junk = 4;
+        DBUG_PRINT ("SCI", ("found genarray shape N_id"));
+    }
+
     DBUG_RETURN (arg_node);
 }
 
@@ -298,8 +333,10 @@ SCIfundef (node *arg_node, info *arg_info)
         && (!FUNDEF_ISCONDFUN (arg_node)) && (!FUNDEF_ISDOFUN (arg_node))) {
 
         SCIInitializeShapeCliques (arg_node, arg_info);
+        SCIShapeCliquePrintIDs (arg_node, arg_info);
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
         SCIDestroyShapeCliques (arg_node, arg_info);
+        SCIShapeCliquePrintIDs (arg_node, arg_info);
     }
 
     if (NULL != FUNDEF_NEXT (arg_node))
@@ -349,7 +386,7 @@ SCICreateShapeClique (node *avis1, info *arg_info)
     dfmask_t *CliquePtr, **CliquePtrs;
     int numids, i;
 
-    if (AVIS_SHAPECLIQUEID (avis1) == NULL) {
+    if (AVIS_SHAPECLIQUEID (avis1) == SHAPECLIQUEIDNONE) {
         /* build new shape clique for avis1 */
         fundef = INFO_FUNDEF (arg_info);
         BasePtr = FUNDEF_DFM_BASE (fundef);
@@ -367,11 +404,20 @@ SCICreateShapeClique (node *avis1, info *arg_info)
             }
         }
     }
+    DBUG_PRINT ("SCI",
+                ("Adding new element to shape clique #%d", AVIS_SHAPECLIQUEID (avis1)));
     CliquePtr = SCIShapeCliqueIDToCliquePtr (AVIS_SHAPECLIQUEID (avis1), arg_info);
 
     return (CliquePtr);
 }
 
+/** <!--*******************************************************************-->
+ *  *
+ *   * @fn void *SCIInitializeShapeCliques( node *avis1, info *arg_info)
+ *   @brief This function creates the dataflow mask data base for
+ *          shape clique inference use.
+ *    *
+ *     ****************************************************************************/
 void
 SCIInitializeShapeCliques (node *arg_node, info *arg_info)
 {
@@ -380,14 +426,17 @@ SCIInitializeShapeCliques (node *arg_node, info *arg_info)
     int numids;
 
     INFO_FUNDEF (arg_info) = arg_node;
+    DBUG_PRINT ("SCI",
+                ("Initializing shape cliques for function: %s", CTIitemName (arg_node)));
     /* Shape clique sets are represented as dataflow masks */
     BasePtr = DFMgenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
     FUNDEF_DFM_BASE (arg_node) = BasePtr;
-    /* Allocate and clear an array of pointers to the maxium number of
+    /* Allocate and clear an array of pointers to the maximum number of
      * sets we may require.
      */
     numids = DFMnumIds (BasePtr);
-    DBUG_PRINT ("SCI", ("Inferring %d identifiers", numids));
+    DBUG_PRINT ("SCI", ("Inferring %d identifiers in function %s", numids,
+                        CTIitemName (arg_node)));
     CliquePtrs = (dfmask_t **)ILIBmalloc (numids * sizeof (dfmask_t *));
     INFO_CLIQUEMASKS (arg_info) = CliquePtrs;
     {
@@ -397,6 +446,14 @@ SCIInitializeShapeCliques (node *arg_node, info *arg_info)
     }
     return;
 }
+
+/** <!--*******************************************************************-->
+ *  *
+ *   * @fn void *SCIDestroyShapeCliques( node *avis1, info *arg_info)
+ *   @brief This function destroys the dataflow mask data base used by
+ *          shape clique inference use.
+ *    *
+ *     ****************************************************************************/
 void
 SCIDestroyShapeCliques (node *arg_node, info *arg_info)
 {
@@ -413,6 +470,8 @@ SCIDestroyShapeCliques (node *arg_node, info *arg_info)
      */
     fundef = INFO_FUNDEF (arg_info);
     BasePtr = FUNDEF_DFM_BASE (fundef);
+    DBUG_PRINT ("SCI",
+                ("Destroying shape cliques for function: %s", CTIitemName (arg_node)));
     numids = DFMnumIds (BasePtr);
     CliquePtrs = INFO_CLIQUEMASKS (arg_info);
     for (i = 0; i < numids; i++) { /* Print and remove each clique */
@@ -432,6 +491,13 @@ SCIDestroyShapeCliques (node *arg_node, info *arg_info)
     return;
 }
 
+/** <!--*******************************************************************-->
+ *  *
+ *   * @fn dfmask_t *SCIShapeCliqueIDToCliquePtrs( int ShapeCliqueID, info *arg_info)
+ *   @brief This function computes a pointer to a shape clique's dataflow mask
+ *          entry from a shape clique ID.
+ *    *
+ *     ****************************************************************************/
 dfmask_t *
 SCIShapeCliqueIDToCliquePtr (int ShapeCliqueID, info *arg_info)
 {
@@ -441,6 +507,56 @@ SCIShapeCliqueIDToCliquePtr (int ShapeCliqueID, info *arg_info)
     CliquePtrs = INFO_CLIQUEMASKS (arg_info);
     CliquePtr = CliquePtrs[ShapeCliqueID];
     return (CliquePtr);
+}
+
+/** <!--*******************************************************************-->
+ *  *
+ *   * @fn void SCIShapeCliquePrintIDs(  node *arg_node, info *arg_info)
+ *   @brief This function is a debugging function, which is intended to print
+ *          all names and ShapeCliqueIDs for this function.
+ *    *
+ *     ****************************************************************************/
+void
+SCIShapeCliquePrintIDs (node *arg_node, info *arg_info)
+{
+    node *arg, *argavis;
+
+    /* print all arguments */
+    arg = FUNDEF_ARGS (arg_node);
+    while (arg != NULL) {
+        argavis = ARG_AVIS (arg);
+        DBUG_PRINT ("SCI", ("ShapeCliqueID %d for Argument %s",
+                            AVIS_SHAPECLIQUEID (argavis), AVIS_NAME (argavis)));
+        arg = ARG_NEXT (arg);
+    }
+
+    /* print all locals */
+    arg = FUNDEF_BODY (arg_node); /* maybe N_block */
+    if (NULL != arg) {
+        arg = BLOCK_VARDEC (arg);
+        while (arg != NULL) {
+            argavis = VARDEC_AVIS (arg);
+            DBUG_PRINT ("SCI", ("ShapeCliqueID %d for Local %s",
+                                AVIS_SHAPECLIQUEID (argavis), AVIS_NAME (argavis)));
+            arg = VARDEC_NEXT (arg);
+        }
+    }
+    return;
+}
+
+/** <!--*******************************************************************-->
+ *  *
+ *   * @fn bool SCIAreInSameShapeClique( node *avis1, node *avis2)
+ *   @brief Predicate for determining if two avis nodes are in same
+ *          shape clique. The main reason for having a function to do this
+ *          today is that I am contemplating a very different representation
+ *          for shape clique membership.
+ *    *
+ *     ****************************************************************************/
+bool
+SCIAreInSameShapeClique (node *avis1, node *avis2)
+{
+    return (AVIS_SHAPECLIQUEID (avis1) == AVIS_SHAPECLIQUEID (avis2));
 }
 
 /*@}*/

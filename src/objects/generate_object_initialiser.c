@@ -77,7 +77,7 @@ SortObjdefList (node *objlist)
         changes = 0;
 
         while (pos != NULL) {
-            DBUG_PRINT ("GOI", ("trying %s ...", CTIitemName (LINKLIST_LINK (pos))));
+            DBUG_PRINT ("GOI", ("trying %s ...", CTIitemName (SET_MEMBER (pos))));
 
             /*
              * if all dependencies of this object are already satiesfied,
@@ -87,29 +87,29 @@ SortObjdefList (node *objlist)
              * B) its set of dependence objects is a subset of the already
              *    initialised objects!
              */
-            if ((OBJDEF_INITFUN (LINKLIST_LINK (pos)) == NULL)
-                || TClinklistIsSubset (sorted, FUNDEF_OBJECTS (
-                                                 OBJDEF_INITFUN (LINKLIST_LINK (pos))))) {
+            if ((OBJDEF_INITFUN (SET_MEMBER (pos)) == NULL)
+                || TCSetIsSubset (sorted,
+                                  FUNDEF_OBJECTS (OBJDEF_INITFUN (SET_MEMBER (pos))))) {
                 /*
-                 * move the link to the sorted list
+                 * move the member to the sorted list
                  */
-                DBUG_PRINT ("GOI", ("...adding %s to initlist",
-                                    CTIitemName (LINKLIST_LINK (pos))));
+                DBUG_PRINT ("GOI",
+                            ("...adding %s to initlist", CTIitemName (SET_MEMBER (pos))));
 
                 node *tmp = pos;
-                pos = LINKLIST_NEXT (pos);
+                pos = SET_NEXT (pos);
                 if (last != NULL) {
-                    LINKLIST_NEXT (last) = pos;
+                    SET_NEXT (last) = pos;
                 } else {
                     list = pos;
                 }
-                LINKLIST_NEXT (tmp) = NULL;
+                SET_NEXT (tmp) = NULL;
 
-                TCaddLinksToLinks (&sorted, tmp);
+                TCSetUnion (&sorted, tmp);
                 changes++;
             } else {
                 last = pos;
-                pos = LINKLIST_NEXT (pos);
+                pos = SET_NEXT (pos);
             }
         }
         if (changes == 0) {
@@ -142,11 +142,12 @@ AddInitFunDependencies (node *objlist)
                  * initialised. For all others, we have to add the dependencies
                  * of their initfuns, as well!
                  */
-                if (OBJDEF_INITFUN (LINKLIST_LINK (pos)) != NULL) {
-                    changes += TCaddLinksToLinks (&new, FUNDEF_OBJECTS (OBJDEF_INITFUN (
-                                                          LINKLIST_LINK (pos))));
+                if (OBJDEF_INITFUN (SET_MEMBER (pos)) != NULL) {
+                    changes
+                      += TCSetUnion (&new,
+                                     FUNDEF_OBJECTS (OBJDEF_INITFUN (SET_MEMBER (pos))));
                 }
-                pos = LINKLIST_NEXT (pos);
+                pos = SET_NEXT (pos);
             }
 
             objlist = FREEdoFreeTree (objlist);
@@ -165,15 +166,14 @@ ObjdefsToInitAssigns (node *objdefs, node *assigns)
     DBUG_ENTER ("ObjdefsToInitAssigns");
 
     if (objdefs != NULL) {
-        result = ObjdefsToInitAssigns (LINKLIST_NEXT (objdefs), assigns);
-        if (OBJDEF_INITFUN (LINKLIST_LINK (objdefs)) != NULL) {
+        result = ObjdefsToInitAssigns (SET_NEXT (objdefs), assigns);
+        if (OBJDEF_INITFUN (SET_MEMBER (objdefs)) != NULL) {
             result
-              = TBmakeAssign (TBmakeLet (NULL, TBmakeAp (OBJDEF_INITFUN (
-                                                           LINKLIST_LINK (objdefs)),
-                                                         TBmakeExprs (TBmakeGlobobj (
-                                                                        LINKLIST_LINK (
-                                                                          objdefs)),
-                                                                      NULL))),
+              = TBmakeAssign (TBmakeLet (NULL,
+                                         TBmakeAp (OBJDEF_INITFUN (SET_MEMBER (objdefs)),
+                                                   TBmakeExprs (TBmakeGlobobj (
+                                                                  SET_MEMBER (objdefs)),
+                                                                NULL))),
                               result);
         }
     } else {

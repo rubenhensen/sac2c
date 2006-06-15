@@ -315,6 +315,16 @@ OPTdoOptimize (node *arg_node)
     arg_node = PHrunCompilerSubPhase (SUBPH_wlidx, arg_node);
 
     /*
+     * Shape clique inference
+     */
+    if (global.optimize.dosci) {
+        arg_node = PHrunCompilerSubPhase (SUBPH_sci, arg_node);
+        /* ive is dependent upon this phase running, as is
+         * some of ktr's memory management stuff.
+         */
+    }
+
+    /*
      * apply index vector elimination
      */
     if (global.optimize.doive) {

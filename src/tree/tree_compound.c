@@ -2844,80 +2844,80 @@ TCmakeStrCopy (const char *str)
 /*--------------------------------------------------------------------------*/
 
 /***
- *** N_linklist
+ *** N_set
  ***/
 
 int
-TCaddLinkToLinks (node **links, node *link)
+TCSetAdd (node **links, node *link)
 {
     int result = 0;
 
-    DBUG_ENTER ("TCaddLinkToLinks");
+    DBUG_ENTER ("TCSetAdd");
 
     if (*links == NULL) {
         /*
          * it has not been found so far, so append it
          */
-        *links = TBmakeLinklist (link, NULL);
+        *links = TBmakeSet (link, NULL);
         result = 1;
-    } else if (LINKLIST_LINK (*links) != link) {
+    } else if (SET_MEMBER (*links) != link) {
         /*
          * its not the current one, so go on
          */
-        result = TCaddLinkToLinks (&LINKLIST_NEXT (*links), link);
+        result = TCSetAdd (&SET_NEXT (*links), link);
     }
 
     DBUG_RETURN (result);
 }
 
 int
-TCaddLinksToLinks (node **links, node *add)
+TCSetUnion (node **links, node *add)
 {
     int result = 0;
 
-    DBUG_ENTER ("TCaddLinksToLinks");
+    DBUG_ENTER ("TCSetUnion");
 
     while (add != NULL) {
-        result += TCaddLinkToLinks (links, LINKLIST_LINK (add));
-        add = LINKLIST_NEXT (add);
+        result += TCSetAdd (links, SET_MEMBER (add));
+        add = SET_NEXT (add);
     }
 
     DBUG_RETURN (result);
 }
 
 bool
-TClinklistContains (node *set, node *link)
+TCSetContains (node *set, node *link)
 {
     bool result = FALSE;
 
-    DBUG_ENTER ("TClinklistContains");
+    DBUG_ENTER ("TCSetContains");
 
     while ((set != NULL) && (!result)) {
-        DBUG_ASSERT ((NODE_TYPE (set) == N_linklist),
-                     "called TClinklistContains with non N_linklist node!");
+        DBUG_ASSERT ((NODE_TYPE (set) == N_set),
+                     "called TCSetContains with non N_set node!");
 
-        result = (LINKLIST_LINK (set) == link);
+        result = (SET_MEMBER (set) == link);
 
-        set = LINKLIST_NEXT (set);
+        set = SET_NEXT (set);
     }
 
     DBUG_RETURN (result);
 }
 
 bool
-TClinklistIsSubset (node *super, node *sub)
+TCSetIsSubset (node *super, node *sub)
 {
     bool result = TRUE;
 
     DBUG_ENTER ("TClinklistIsSubset");
 
     while ((sub != NULL) && result) {
-        DBUG_ASSERT ((NODE_TYPE (sub) == N_linklist),
-                     "called TClinklistTCisSubset with non N_linklist node!");
+        DBUG_ASSERT ((NODE_TYPE (sub) == N_set),
+                     "called TCSetIsSubset with non N_set node!");
 
-        result = result && TClinklistContains (super, LINKLIST_LINK (sub));
+        result = result && TCSetContains (super, SET_MEMBER (sub));
 
-        sub = LINKLIST_NEXT (sub);
+        sub = SET_NEXT (sub);
     }
 
     DBUG_RETURN (result);

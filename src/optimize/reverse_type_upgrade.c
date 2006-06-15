@@ -262,8 +262,8 @@ RTUPlet (node *arg_node, info *arg_info)
     INFO_ORIGIN (arg_info) = undef;
 
     while (INFO_IDSTYPES (arg_info) != NULL) {
-        LINKLIST_LINK (INFO_IDSTYPES (arg_info))
-          = FREEdoFreeTree (LINKLIST_LINK (INFO_IDSTYPES (arg_info)));
+        SET_MEMBER (INFO_IDSTYPES (arg_info))
+          = FREEdoFreeTree (SET_MEMBER (INFO_IDSTYPES (arg_info)));
 
         INFO_IDSTYPES (arg_info) = FREEdoFreeNode (INFO_IDSTYPES (arg_info));
     }
@@ -291,8 +291,8 @@ RTUPids (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("RTUPids");
 
-    TCaddLinkToLinks (&(INFO_IDSTYPES (arg_info)),
-                      TBmakeType (TYcopyType (AVIS_TYPE (IDS_AVIS (arg_node)))));
+    TCSetAdd (&(INFO_IDSTYPES (arg_info)),
+              TBmakeType (TYcopyType (AVIS_TYPE (IDS_AVIS (arg_node)))));
 
     if (IDS_NEXT (arg_node) != NULL) {
         IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
@@ -321,8 +321,8 @@ RTUPid (node *arg_node, info *arg_info)
 
     if (INFO_ORIGIN (arg_info) == let) {
 
-        DBUG_ASSERT ((LINKLIST_NEXT (INFO_IDSTYPES (arg_info)) == NULL),
-                     "LINKLIST contains more than one list element!");
+        DBUG_ASSERT ((SET_NEXT (INFO_IDSTYPES (arg_info)) == NULL),
+                     "SET contains more than one list element!");
 
         if (N_vardec == NODE_TYPE (AVIS_DECL (ID_AVIS (arg_node)))) {
 
@@ -331,20 +331,20 @@ RTUPid (node *arg_node, info *arg_info)
              * get type of local identifier
              */
 
-            if (TYcmpTypes (TYPE_TYPE (LINKLIST_LINK (INFO_IDSTYPES (arg_info))),
+            if (TYcmpTypes (TYPE_TYPE (SET_MEMBER (INFO_IDSTYPES (arg_info))),
                             AVIS_TYPE (ID_AVIS (arg_node)))
                 == TY_lt) {
 
                 AVIS_TYPE (ID_AVIS (arg_node))
                   = TYfreeType (AVIS_TYPE (ID_AVIS (arg_node)));
                 AVIS_TYPE (ID_AVIS (arg_node))
-                  = TYcopyType (TYPE_TYPE (LINKLIST_LINK (INFO_IDSTYPES (arg_info))));
+                  = TYcopyType (TYPE_TYPE (SET_MEMBER (INFO_IDSTYPES (arg_info))));
 
                 if (AVIS_DECLTYPE (ID_AVIS (arg_node)) != NULL) {
                     AVIS_DECLTYPE (ID_AVIS (arg_node))
                       = TYfreeType (AVIS_DECLTYPE (ID_AVIS (arg_node)));
                     AVIS_DECLTYPE (ID_AVIS (arg_node))
-                      = TYcopyType (TYPE_TYPE (LINKLIST_LINK (INFO_IDSTYPES (arg_info))));
+                      = TYcopyType (TYPE_TYPE (SET_MEMBER (INFO_IDSTYPES (arg_info))));
                 }
 
                 /*

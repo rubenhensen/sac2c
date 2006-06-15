@@ -93,7 +93,11 @@
           <node name="CWrapper" />
         </travsons>
       </traversal>
-      <traversal id="DUP" name="Tree duplication" default="user" include="DupTree.h" />
+      <traversal id="DUP" name="Tree duplication" default="user" include="DupTree.h">
+      <traverror> 
+      	<node name="ShapeClique" />
+      </traverror>
+      </traversal>
       <traversal id="FREE" name="Free Tree" default="user" include="free_node.h" />
       <traversal id="UWT" name="Update Wrapper Types" default="sons" include="update_wrapper_type.h" >
         <travuser>
@@ -1154,6 +1158,15 @@
           <node name="Withid" />
           <node name="Genarray" />
           <node name="Modarray" />
+        </travuser>
+      </traversal>
+      <traversal id="SCI" name="Shape Clique Inference" default="sons" include="shape_cliques.h" >
+        <travuser>
+          <node name="Fundef" />
+          <node name="Genarray" />
+          <node name="Let" />
+          <node name="Modarray" />
+          <node name="Prf" />
         </travuser>
       </traversal>
       <traversal id="IVE" name="Index Vector Elimination" default="sons" include="index_eliminate.h">
@@ -2557,7 +2570,7 @@
         <son name="Objects" default="NULL">
           <targets>
             <target mandatory="no">
-              <node name="Linklist" />
+              <node name="Set" />
               <phases>
                 <all />
               </phases>
@@ -3143,6 +3156,7 @@
 
 -->
     <node name="Assign">
+    <description>Spine of an N_block</description>
       <sons>
         <son name="Instr">
           <targets>
@@ -3252,6 +3266,7 @@
 
 -->
     <node name="Let">
+    <description>Assignment of value to identifier</description> 
       <sons>
         <son name="Ids">
           <targets>
@@ -3777,6 +3792,7 @@
 
 -->
     <node name="Array">
+    <description>Constant array, or array of arrays, which may NOT be constant</description>
       <sons>
         <son name="AElems">
           <targets>
@@ -4547,6 +4563,7 @@
 
 -->
     <node name="Avis">
+    <description>Arg and vardec information structure</description> 
       <sons>
       </sons>
       <attributes>
@@ -4811,6 +4828,18 @@
                 <node name="Ids" />
                 <phases>
                   <phase name="ive" />
+                </phases>
+              </target>
+            </targets>
+	  </type>
+	</attribute>
+	<attribute name="ShapeCliqueID" default="SHAPECLIQUEIDNONE">
+	  <description>shape clique to which this array belongs</description>
+	  <type name="Integer">
+            <targets>
+              <target mandatory="no">
+                <phases>
+		  <range from="sci" to="ive" />
                 </phases>
               </target>
             </targets>
@@ -7408,15 +7437,15 @@
     </node>
 <!--
 
-  N_linklist :
+  N_set :
 
 -->
-    <node name="Linklist">
+    <node name="Set">
       <sons>
         <son name="Next">
           <targets>
             <target mandatory="no">
-              <node name="Linklist" />
+              <node name="Set" />
               <phases>
                 <all />
               </phases>
@@ -7425,7 +7454,7 @@
         </son>
       </sons>
       <attributes>
-        <attribute name="Link">
+        <attribute name="Member">
           <type name="ExtLink" >
             <targets>
               <target mandatory="yes" >
@@ -7735,6 +7764,38 @@
           </type>
         </attribute>
       </attributes>
+      <flags></flags>
+    </node>
+<!--
+
+  N_shapeclique :
+
+-->
+    <node name="ShapeClique" default="0">
+      <description>Head of one shape clique set</description>
+      <sons>
+        <son name="Next">
+          <targets>
+            <target mandatory="no">
+              <node name="ShapeClique" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+        <son name="Members" default="NULL">
+          <targets>
+            <target mandatory="no">
+              <node name="Set" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+      </sons>
+      <attributes> </attributes>
       <flags></flags>
     </node>
 

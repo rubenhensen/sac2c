@@ -21,18 +21,18 @@ AppendObjdefsToArgs (node *args, node *objlist)
     DBUG_ENTER ("AppendObjdefsToArgs");
 
     if (objlist != NULL) {
-        args = AppendObjdefsToArgs (args, LINKLIST_NEXT (objlist));
+        args = AppendObjdefsToArgs (args, SET_NEXT (objlist));
 
-        avis = TBmakeAvis (ILIBtmpVarName (OBJDEF_NAME (LINKLIST_LINK (objlist))),
-                           TYcopyType (OBJDEF_TYPE (LINKLIST_LINK (objlist))));
+        avis = TBmakeAvis (ILIBtmpVarName (OBJDEF_NAME (SET_MEMBER (objlist))),
+                           TYcopyType (OBJDEF_TYPE (SET_MEMBER (objlist))));
         AVIS_DECLTYPE (avis) = TYcopyType (AVIS_TYPE (avis));
 
-        OBJDEF_ARGAVIS (LINKLIST_LINK (objlist)) = avis;
+        OBJDEF_ARGAVIS (SET_MEMBER (objlist)) = avis;
 
         args = TBmakeArg (avis, args);
         ARG_ISARTIFICIAL (args) = TRUE;
         ARG_ISREFERENCE (args) = TRUE;
-        ARG_OBJDEF (args) = LINKLIST_LINK (objlist);
+        ARG_OBJDEF (args) = SET_MEMBER (objlist);
     }
 
     DBUG_RETURN (args);
@@ -44,12 +44,12 @@ AppendObjdefsToArgExprs (node *exprs, node *objlist)
     DBUG_ENTER ("AppendObjdefsToArgExprs");
 
     if (objlist != NULL) {
-        exprs = AppendObjdefsToArgExprs (exprs, LINKLIST_NEXT (objlist));
+        exprs = AppendObjdefsToArgExprs (exprs, SET_NEXT (objlist));
 
-        DBUG_ASSERT ((OBJDEF_ARGAVIS (LINKLIST_LINK (objlist)) != NULL),
+        DBUG_ASSERT ((OBJDEF_ARGAVIS (SET_MEMBER (objlist)) != NULL),
                      "found objdef required for fun-ap but without argarvis!");
 
-        exprs = TBmakeExprs (TBmakeId (OBJDEF_ARGAVIS (LINKLIST_LINK (objlist))), exprs);
+        exprs = TBmakeExprs (TBmakeId (OBJDEF_ARGAVIS (SET_MEMBER (objlist))), exprs);
     }
 
     DBUG_RETURN (exprs);
@@ -61,9 +61,9 @@ CleanUpObjlist (node *list)
     DBUG_ENTER ("CleanUpObjlist");
 
     if (list != NULL) {
-        LINKLIST_NEXT (list) = CleanUpObjlist (LINKLIST_NEXT (list));
+        SET_NEXT (list) = CleanUpObjlist (SET_NEXT (list));
 
-        OBJDEF_ARGAVIS (LINKLIST_LINK (list)) = NULL;
+        OBJDEF_ARGAVIS (SET_MEMBER (list)) = NULL;
     }
 
     DBUG_RETURN (list);

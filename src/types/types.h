@@ -851,4 +851,10 @@ typedef struct TASKSEL_T tasksel_t;
 
 typedef struct SERSTACK_T serstack_t;
 
+/******************************************************************************
+ * N_avis attributes
+ */
+
+#define SHAPECLIQUEIDNONE (-1)
+
 #endif /* _SAC_TYPES_H_ */

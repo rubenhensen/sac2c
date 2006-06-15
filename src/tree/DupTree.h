@@ -125,7 +125,7 @@ extern node *DUPimport (node *arg_node, info *arg_info);
 extern node *DUPexport (node *arg_node, info *arg_info);
 extern node *DUPuse (node *arg_node, info *arg_info);
 extern node *DUPprovide (node *arg_node, info *arg_info);
-extern node *DUPlinklist (node *arg_node, info *arg_info);
+extern node *DUPset (node *arg_node, info *arg_info);
 extern node *DUPnums (node *arg_node, info *arg_info);
 extern node *DUPsymbol (node *arg_node, info *arg_info);
 extern node *DUPglobobj (node *arg_node, info *arg_info);

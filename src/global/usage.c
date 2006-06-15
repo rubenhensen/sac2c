@@ -908,7 +908,8 @@ USGprintUsage ()
             "      Stephan Herhut\n"
             "      Karsten Hinckfuss\n"
             "      Steffen Kuthe\n"
-            "      Jan-Henrik Baumgarten\n");
+            "      Jan-Henrik Baumgarten\n"
+            "      Robert Bernecky\n");
 
     printf ("\n\nCONTACT:\n\n"
 

@@ -107,7 +107,7 @@ CollectObjects (node *fundef, info *info)
 {
     DBUG_ENTER ("CollectObjects");
 
-    TCaddLinksToLinks (&INFO_OBJECTS (info), FUNDEF_OBJECTS (fundef));
+    TCSetUnion (&INFO_OBJECTS (info), FUNDEF_OBJECTS (fundef));
 
     DBUG_RETURN (fundef);
 }
@@ -239,7 +239,7 @@ AddAffectedObjects (node **exprs, node *list, info *info)
 
             DBUG_PRINT ("OAN", (">>> adding effect on %s...", CTIitemName (objdef)));
 
-            INFO_CHANGES (info) += TCaddLinkToLinks (&list, objdef);
+            INFO_CHANGES (info) += TCSetAdd (&list, objdef);
         }
 
         *exprs = FREEdoFreeNode (*exprs);
@@ -355,7 +355,7 @@ OANglobobj (node *arg_node, info *arg_info)
     DBUG_PRINT ("OAN", (">>> adding object %s", CTIitemName (GLOBOBJ_OBJDEF (arg_node))));
 
     INFO_CHANGES (arg_info)
-      += TCaddLinkToLinks (&INFO_OBJECTS (arg_info), GLOBOBJ_OBJDEF (arg_node));
+      += TCSetAdd (&INFO_OBJECTS (arg_info), GLOBOBJ_OBJDEF (arg_node));
 
     DBUG_RETURN (arg_node);
 }
@@ -370,8 +370,8 @@ OANap (node *arg_node, info *arg_info)
     DBUG_PRINT ("OAN",
                 (">>> adding dependencies of %s", CTIitemName (AP_FUNDEF (arg_node))));
 
-    newdeps = TCaddLinksToLinks (&INFO_OBJECTS (arg_info),
-                                 FUNDEF_OBJECTS (AP_FUNDEF (arg_node)));
+    newdeps
+      = TCSetUnion (&INFO_OBJECTS (arg_info), FUNDEF_OBJECTS (AP_FUNDEF (arg_node)));
 
     DBUG_PRINT ("OAN", (">>> %d dependencies added", newdeps));
 

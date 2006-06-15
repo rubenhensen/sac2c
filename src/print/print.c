@@ -4918,18 +4918,36 @@ PRTsymbol (node *arg_node, info *arg_info)
 }
 
 node *
-PRTlinklist (node *arg_node, info *arg_info)
+PRTset (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("PRTlinklist");
+    DBUG_ENTER ("PRTset");
 
     if (NODE_ERROR (arg_node) != NULL) {
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
     }
 
-    fprintf (global.outfile, "%s\n", CTIitemName (LINKLIST_LINK (arg_node)));
+    fprintf (global.outfile, "%s\n", CTIitemName (SET_MEMBER (arg_node)));
 
-    if (LINKLIST_NEXT (arg_node) != NULL) {
-        LINKLIST_NEXT (arg_node) = TRAVdo (LINKLIST_NEXT (arg_node), arg_info);
+    if (SET_NEXT (arg_node) != NULL) {
+        SET_NEXT (arg_node) = TRAVdo (SET_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+PRTshapeclique (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("PRTshapeclique");
+    /* Print a shape clique as:  (A B C) */
+    if (NODE_ERROR (arg_node) != NULL) {
+        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
+    }
+
+    fprintf (global.outfile, "%s\n", CTIitemName (SET_MEMBER (arg_node)));
+
+    if (SET_NEXT (arg_node) != NULL) {
+        SET_NEXT (arg_node) = TRAVdo (SET_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);

@@ -1632,20 +1632,20 @@ DUPprovide (node *arg_node, info *arg_info)
 /*******************************************************************************/
 
 node *
-DUPlinklist (node *arg_node, info *arg_info)
+DUPset (node *arg_node, info *arg_info)
 {
     node *new_node;
     node *link;
 
-    DBUG_ENTER ("DUPlinklist");
+    DBUG_ENTER ("DUPset");
 
-    link = LUTsearchInLutPp (INFO_LUT (arg_info), LINKLIST_LINK (arg_node));
+    link = LUTsearchInLutPp (INFO_LUT (arg_info), SET_MEMBER (arg_node));
 
     if (link == NULL) {
-        link = LINKLIST_LINK (arg_node);
+        link = SET_MEMBER (arg_node);
     }
 
-    new_node = TBmakeLinklist (link, DUPCONT (LINKLIST_NEXT (arg_node)));
+    new_node = TBmakeSet (link, DUPCONT (SET_NEXT (arg_node)));
 
     DBUG_RETURN (new_node);
 }
