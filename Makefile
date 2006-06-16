@@ -121,6 +121,7 @@ src/global/build.c: $(TARGETS)
 	@$(ECHO) "char build_host[] = \"`hostname`\";" >> $@
 	@$(ECHO) "char build_os[]   = \"$(OS)\";"   >> $@
 	@$(ECHO) "char build_rev[]  = \"$(REVISION)\";"  >> $@
+	@$(ECHO) "char build_ast[]  = \"`$(XSLTENGINE) src/xml/ast2fingerprint.xsl src/xml/ast.xml | $(FINGERPRINTER)`\";" >> $@
 	@$(CLOCK_SKEW_ELIMINATION) $@ 
 	@$(ECHO) "$(dir $@)" > make_track
 

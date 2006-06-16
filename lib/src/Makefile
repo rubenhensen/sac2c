@@ -59,13 +59,16 @@ include $(PROJECT_ROOT)/Makefile.Config
 
 INCS= -I../../inc -I../../src/global
 
-all: ../dbug.o ../main_args.o 
+all: ../dbug.o ../main_args.o ../md5.o
 
 ../dbug.o: dbug.c
 	$(CC) $(CFLAGS) $(CCFLAGS) -o ../dbug.o -c dbug.c $(INCS)
 
 ../main_args.o: main_args.c
 	$(CC) $(CFLAGS) $(CCFLAGS) -o ../main_args.o -c main_args.c $(INCS)
+
+../md5.o: md5.c
+	 $(CC) $(CFLAGS) $(CCFLAGS) -o ../md5.o -c md5.c $(INCS)
 
 clean:
 	$(RM) ../dbug.o ../main_args.o *.bak *~ .*.d

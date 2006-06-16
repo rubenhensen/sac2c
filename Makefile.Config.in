@@ -75,5 +75,6 @@ else
 endif
 
 CLOCK_SKEW_ELIMINATION   := $(PROJECT_ROOT)/tools/bin/cse
+FINGERPRINTER            := $(PROJECT_ROOT)/tools/bin/fingerprinter
 CODE_BEAUTIFIER          := @CB@
 ICM_TESTER               := $(PROJECT_ROOT)/tools/bin/icm_tester

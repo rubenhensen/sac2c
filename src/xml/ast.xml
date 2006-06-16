@@ -1,5 +1,6 @@
 <?xml-stylesheet href="ast2html.xsl" type="text/xsl" name="HTML" media="screen"?>
-<definition version="$Id$">
+<!-- $Id$ -->
+<definition>
   <attributetypes>
     <type name="String" ctype="char*" init="NULL"
     copy="function" />

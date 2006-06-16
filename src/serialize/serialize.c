@@ -5,6 +5,7 @@
 #include "serialize.h"
 #include "serialize_info.h"
 #include "dbug.h"
+#include "build.h"
 #include "internal_lib.h"
 #include "symboltable.h"
 #include "stringset.h"
@@ -136,8 +137,8 @@ GenerateSerFileVersionInfo (node *module, FILE *file)
 
     fprintf (file,
              "const char *__%s_VERSION() {\n"
-             "  return( \"" _SAC_AST_VERSION_ "\"); \n}\n\n",
-             NSgetName (MODULE_NAMESPACE (module)));
+             "  return( \"%s\"); \n}\n\n",
+             NSgetName (MODULE_NAMESPACE (module)), build_ast);
 
     DBUG_VOID_RETURN;
 }

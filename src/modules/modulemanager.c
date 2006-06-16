@@ -1,56 +1,6 @@
 /*
  *
- * $Log$
- * Revision 1.20  2005/07/16 21:11:29  sah
- * implemented serialisation of namespaces
- * based on a namespace mapping instead
- * of a LUT
- *
- * Revision 1.19  2005/06/15 12:41:38  sah
- * made error message more explanatory
- *
- * Revision 1.18  2005/06/01 15:57:57  sah
- * fixed an error message
- *
- * Revision 1.17  2005/06/01 12:47:45  sah
- * added lots of runtime paths
- *
- * Revision 1.16  2005/05/25 20:27:45  sah
- * modified error propagation
- *
- * Revision 1.15  2005/05/25 19:06:16  sah
- * added check for AST version
- *
- * Revision 1.14  2005/05/18 13:56:51  sah
- * enabled caching of symboltables which
- * leads to a huge speedup when analysing use and import
- * from big modules
- *
- * Revision 1.13  2005/04/26 17:11:46  sah
- * errors are now propagated from libmanager to modmanager
- * and handele there. This allows for more precise error
- * messages.
- *
- * Revision 1.12  2005/04/12 15:15:36  sah
- * cleaned up module system compiler args
- * and sac2crc parameters
- *
- * Revision 1.11  2005/04/12 13:57:00  sah
- * now, MODIMP_PATH is used to find module
- * libraries
- *
- * Revision 1.10  2005/03/10 09:41:09  cg
- * Added #include "internal_lib.h"
- *
- * Revision 1.9  2005/01/11 12:32:52  cg
- * Converted output from Error.h to ctinfo.c
- *
- * Revision 1.8  2004/11/25 21:57:09  sah
- * COMPILES
- *
- *
- * Revision 1.1  2004/09/21 20:37:57  sah
- * Initial revision
+ * $Id$
  *
  */
 
@@ -59,6 +9,7 @@
 #include "filemgr.h"
 #include "ctinfo.h"
 #include "dbug.h"
+#include "build.h"
 #include "internal_lib.h"
 #include "tree_basic.h"
 
@@ -101,7 +52,7 @@ hasSameASTVersion (module_t *module)
 
     name = ILIBfree (name);
 
-    DBUG_RETURN (ILIBstringCompare (verfun (), _SAC_AST_VERSION_));
+    DBUG_RETURN (ILIBstringCompare (verfun (), build_ast));
 }
 
 static void
