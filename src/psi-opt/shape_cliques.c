@@ -4,6 +4,31 @@
  *
  */
 
+/** <!--********************************************************************-->
+ *
+ * @defgroup sci Shape Clique Inference
+ *
+ *  This file implements inference of shape cliques
+ *  for IVE (index vector elimination) and potentially other optimizations, such
+ *  as array memory reuse.
+ *
+ * @ingroup sci
+ *
+ * @{
+ *
+ **************************************************************************/
+
+/**
+ *
+ * @file shape_cliques.c
+ *
+ *  This file contains code to implement inference of shape cliques
+ *  for IVE (index vector elimination) and potentially other optimizations.
+ *
+ */
+
+#include "shape_cliques.h"
+
 #include "tree_basic.h"
 #include "dbug.h"
 #include "tree_compound.h"
@@ -12,7 +37,6 @@
 #include "shape.h"
 #include "new_types.h"
 #include "type_utils.h"
-#include "shape_cliques.h"
 #include "DataFlowMask.h"
 #include "ctinfo.h"
 
@@ -42,22 +66,6 @@
  *     so I'm deferring it.
  */
 
-/**
- *
- * @defgroup sci SCI
- * @ingroup opt
- *
- * @{
- */
-
-/**
- *
- * @file shape_cliques.c
- *
- *  This file contains the implementation of the inference of shape cliques
- *  for IVE (index vector elimination) and potentially other optimizations.
- *
- */
 /**
  *
  * @name Some utility functions:
