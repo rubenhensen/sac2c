@@ -468,12 +468,15 @@ TUisBoxed (ntype *type)
 
     DBUG_ENTER ("TUisBoxed");
 
-    if (TUisHidden (type)) {
+    if (!TUisHidden (type)) {
+        /*
+         * all types except for scalars are boxed */
         impl = TUcomputeImplementationType (type);
-        DBUG_ASSERT (!TYisAUD (impl),
-                     "TUisBoxed called with type of unknown dimensionality");
-        res = (TYisAUDGZ (impl) ? TRUE : TYgetDim (type) > 0);
+        res = ((TYisAUD (impl) || TYisAUDGZ (impl)) ? TRUE : TYgetDim (type) > 0);
         impl = TYfreeType (impl);
+    } else {
+        /* hidden types are _always_ boxed */
+        res = TRUE;
     }
 
     DBUG_RETURN (res);
