@@ -83,11 +83,11 @@ FreeInfo (info *info)
  *
  *****************************************************************************/
 node *
-EMECdoExplicitCopy (node *syntax_tree)
+TEMPdoTemplateTraversal (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("EMECdoExplicitCopy");
+    DBUG_ENTER ("TEMPdoTemplateTraversal");
 
     info = MakeInfo ();
 
