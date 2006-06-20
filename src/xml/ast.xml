@@ -4835,9 +4835,9 @@
             </targets>
 	  </type>
 	</attribute>
-	<attribute name="ShapeCliqueID" default="SHAPECLIQUEIDNONE">
+	<attribute name="ShapeCliqueID" default="this">
 	  <description>shape clique to which this array belongs</description>
-	  <type name="Integer">
+	  <type name="Link">
             <targets>
               <target mandatory="no">
                 <phases>

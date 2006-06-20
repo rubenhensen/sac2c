@@ -855,6 +855,6 @@ typedef struct SERSTACK_T serstack_t;
  * N_avis attributes
  */
 
-#define SHAPECLIQUEIDNONE (-1)
+#define SHAPECLIQUEIDNONE(AVIS) (AVIS)
 
 #endif /* _SAC_TYPES_H_ */
