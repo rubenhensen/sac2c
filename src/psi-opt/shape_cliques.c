@@ -38,6 +38,7 @@
 #include "new_types.h"
 #include "type_utils.h"
 #include "ctinfo.h"
+#include "index_infer.h"
 
 /*
  * OPEN PROBLEMS:
@@ -147,7 +148,7 @@ SCIprf (node *arg_node, info *arg_info)
         DBUG_ASSERT ((AVIS_SHAPECLIQUEID (lhsavis) == SHAPECLIQUEIDNONE (lhsavis)),
                      "PRF SxA lhs shape clique is non-degenerate");
         /* By non-degenerate, I mean that the clique has more than 1 member */
-        SCIAppendAvisToShapeClique (lhsavis, arg2avis, arg_info);
+        SCIAppendAvisToShapeClique (lhsavis, arg2avis);
         break;
 
     case F_add_AxS: /* Scalar-right dyadic scalar functions */
@@ -165,7 +166,7 @@ SCIprf (node *arg_node, info *arg_info)
         arg1avis = ID_AVIS (arg1);
         DBUG_ASSERT ((AVIS_SHAPECLIQUEID (lhsavis) == SHAPECLIQUEIDNONE (lhsavis)),
                      "PRF AxS lhs shape clique is non-degenerate");
-        SCIAppendAvisToShapeClique (lhsavis, arg1avis, arg_info);
+        SCIAppendAvisToShapeClique (lhsavis, arg1avis);
         break;
     /* Various fns which we are confused about */
     /* The right solution is to invent F_mod_AxS_, etc., for all these */
@@ -192,7 +193,7 @@ SCIprf (node *arg_node, info *arg_info)
         arg1avis = ID_AVIS (arg1);
         DBUG_ASSERT ((AVIS_SHAPECLIQUEID (lhsavis) == SHAPECLIQUEIDNONE (lhsavis)),
                      "PRF AxS lhs shape clique is non-degenerate");
-        SCIAppendAvisToShapeClique (lhsavis, arg1avis, arg_info);
+        SCIAppendAvisToShapeClique (lhsavis, arg1avis);
         break;
 
     case F_add_AxA: /* Dyadic scalar functions. These need shape clique guards. .*/
@@ -290,7 +291,7 @@ SCImodarray (node *arg_node, info *arg_info)
         rhsavis = ID_AVIS (rhs);
         DBUG_ASSERT ((AVIS_SHAPECLIQUEID (lhsavis) == SHAPECLIQUEIDNONE (lhsavis)),
                      "modarray lhs is non-degenerate shape clique");
-        SCIAppendAvisToShapeClique (lhsavis, rhsavis, arg_info);
+        SCIAppendAvisToShapeClique (lhsavis, rhsavis);
     } else {
         DBUG_PRINT ("SCI", ("found modarray non- N_id"));
     }
@@ -396,6 +397,26 @@ SCIlet (node *arg_node, info *arg_info)
 
 /** <!--*******************************************************************-->
  *
+ * @fn node *SCIid( node *arg_node, info *arg_info)
+ * @brief This function handles assignments of values to names.
+ *          The lhs and rhs are placed into the same shape clique via
+ *          a set join operation.
+ *
+ *     ****************************************************************************/
+node *
+SCIid (node *arg_node, info *arg_info)
+{
+    node *lhs, *rhs;
+
+    DBUG_ENTER ("SCIid");
+    lhs = INFO_LHS (arg_info);
+    rhs = ID_AVIS (arg_node);
+    SCIAppendAvisToShapeClique (ID_AVIS (lhs), ID_AVIS (rhs));
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--*******************************************************************-->
+ *
  * @fn node *SCIfundef( node *arg_node, info *arg_info)
  *
  * *****************************************************************************/
@@ -410,9 +431,9 @@ SCIfundef (node *arg_node, info *arg_info)
         && (!FUNDEF_ISCONDFUN (arg_node)) && (!FUNDEF_ISDOFUN (arg_node))) {
 
         SCIResetAllShapeCliques (arg_node, arg_info);
-        SCIShapeCliquePrintIDs (arg_node, arg_info);
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-        SCIShapeCliquePrintIDs (arg_node, arg_info);
+        DBUG_PRINT ("SCI", ("Final shape cliques:"));
+        SCIShapeCliquePrintIDs (arg_node);
     }
 
     if (NULL != FUNDEF_NEXT (arg_node))
@@ -429,51 +450,34 @@ SCIfundef (node *arg_node, info *arg_info)
  *
  * ****************************************************************************/
 node *
-SCIAppendAvisToShapeClique (node *avis1, node *avis2, info *arg_info)
+SCIAppendAvisToShapeClique (node *avis1, node *avis2)
 {
     node *nextavis1, *curavis2;
 
-    DBUG_PRINT ("SCI", ("Adding entry to shape clique #%d", AVIS_SHAPECLIQUEID (avis2)));
-    nextavis1 = AVIS_SHAPECLIQUEID (avis1); /* Point avis1 at avis2 */
-    AVIS_SHAPECLIQUEID (avis1) = avis2;
+    DBUG_ENTER ("SCIAppendAvisToShapeClique");
+    /* If avises are already in same shape clique, this function is a no-op */
+    if (!SCIAvisesAreInSameShapeClique (avis1, avis2)) {
+        DBUG_PRINT ("SCI", ("Adding id: %s to shape clique %s", AVIS_NAME (avis1),
+                            AVIS_NAME (avis2)));
+        nextavis1 = AVIS_SHAPECLIQUEID (avis1); /* Point avis1 at avis2 */
+        AVIS_SHAPECLIQUEID (avis1) = avis2;
 
-    /* Find end of avis2 chain and point it at avis1 */
-    curavis2 = avis2;
-    do {
-        curavis2 = AVIS_SHAPECLIQUEID (curavis2);
-    } while (curavis2 != avis2);
+        /* Find avis2 that points at avis2, and point it at avis1 */
+        curavis2 = avis2;
+        while (AVIS_SHAPECLIQUEID (curavis2) != avis2) {
+            curavis2 = AVIS_SHAPECLIQUEID (curavis2);
+        }
 
-    AVIS_SHAPECLIQUEID (curavis2) = nextavis1;
-    return (SCIShapeCliqueCanonicalID (avis1));
+        AVIS_SHAPECLIQUEID (curavis2) = nextavis1;
+    }
+    DBUG_PRINT ("SCI", ("Resulting shape clique is:"));
+    SCIPrintShapeCliqueNames (avis2);
+    DBUG_RETURN (avis2);
 }
 
 /** <!--*******************************************************************-->
  *
- * @fn int SCIShapeCliqueCanonicalID( node *avis1)
- * @brief This function picks a canonical member of a shape clique,
- * appends avis1 to the shape clique of avis2.
- * The result is the canonical shape clique id for avis2.
- *
- * ****************************************************************************/
-node *
-SCIShapeCliqueCanonicalID (node *avis1)
-{
-    node *minavis1, *curavis1;
-
-    minavis1 = avis1;
-    curavis1 = avis1;
-    do {
-        if (curavis1 < minavis1)
-            minavis1 = curavis1;
-        curavis1 = AVIS_SHAPECLIQUEID (curavis1);
-    } while (curavis1 != avis1);
-
-    return (minavis1);
-}
-
-/** <!--*******************************************************************-->
- *
- * @fn void *SCIResetAllShapeCliques( node *avis1, info *arg_info)
+ * @fn void *SCIResetAllShapeCliques( node *arg_node, node *arg_info))
  * @brief This function resets the shape clique ID entries in all N_avis nodes
  *        for this function.
  *        This is required for shape clique inference and to keep the
@@ -487,11 +491,14 @@ SCIResetAllShapeCliques (node *arg_node, info *arg_info)
 {
     node *arg, *argavis;
 
+    DBUG_ENTER ("SCIResetAllShapeCliques");
     /* reset all arguments */
     arg = FUNDEF_ARGS (arg_node);
     while (arg != NULL) {
         argavis = ARG_AVIS (arg);
         AVIS_SHAPECLIQUEID (argavis) = SHAPECLIQUEIDNONE (argavis);
+        AVIS_ISSCIPRINTED (argavis) = FALSE;
+        AVIS_ISVECT2OFFSETISSUED (argavis) = FALSE;
         arg = ARG_NEXT (arg);
     }
 
@@ -502,31 +509,72 @@ SCIResetAllShapeCliques (node *arg_node, info *arg_info)
         while (arg != NULL) {
             argavis = VARDEC_AVIS (arg);
             AVIS_SHAPECLIQUEID (argavis) = SHAPECLIQUEIDNONE (argavis);
+            AVIS_ISSCIPRINTED (argavis) = FALSE;
+            AVIS_ISVECT2OFFSETISSUED (argavis) = FALSE;
             arg = VARDEC_NEXT (arg);
         }
     }
 
-    return;
+    DBUG_VOID_RETURN;
 }
 
 /** <!--*******************************************************************-->
  *
- * @fn void SCIShapeCliquePrintIDs(  node *arg_node, info *arg_info)
+ * @fn void *SCIResetIsSCIPrinted( node *arg_node)
+ * @brief This function resets the shape clique was-printed in all N_avis nodes
+ *    *
+ *     ****************************************************************************/
+void
+SCIResetIsSCIPrinted (node *arg_node)
+{
+    node *arg, *argavis;
+
+    DBUG_ENTER ("SCIResetIsSCIPrinted");
+
+    /* reset all arguments */
+    arg = FUNDEF_ARGS (arg_node);
+    while (arg != NULL) {
+        argavis = ARG_AVIS (arg);
+        AVIS_ISSCIPRINTED (argavis) = FALSE;
+        arg = ARG_NEXT (arg);
+    }
+
+    /* reset all locals */
+    arg = FUNDEF_BODY (arg_node); /* maybe N_block */
+    if (NULL != arg) {
+        arg = BLOCK_VARDEC (arg);
+        while (arg != NULL) {
+            argavis = VARDEC_AVIS (arg);
+            AVIS_ISSCIPRINTED (argavis) = FALSE;
+            arg = VARDEC_NEXT (arg);
+        }
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/** <!--*******************************************************************-->
+ *
+ * @fn void SCIShapeCliquePrintIDs(  node *arg_node)
  * @brief This function is a debugging function, which is intended to print
  *        all names and ShapeCliqueIDs for this function.
  *
  * ****************************************************************************/
 void
-SCIShapeCliquePrintIDs (node *arg_node, info *arg_info)
+SCIShapeCliquePrintIDs (node *arg_node)
 {
     node *arg, *argavis;
+
+    DBUG_ENTER ("SCIShapeCliquePrintIDs");
+    SCIResetIsSCIPrinted (arg_node);
 
     /* print all arguments */
     arg = FUNDEF_ARGS (arg_node);
     while (arg != NULL) {
         argavis = ARG_AVIS (arg);
-        DBUG_PRINT ("SCI", ("ShapeCliqueID %d for Argument %s",
-                            AVIS_SHAPECLIQUEID (argavis), AVIS_NAME (argavis)));
+        if (!AVIS_ISSCIPRINTED (argavis))
+            SCIPrintShapeCliqueNames (argavis);
+        AVIS_ISSCIPRINTED (argavis) = TRUE;
         arg = ARG_NEXT (arg);
     }
 
@@ -536,12 +584,41 @@ SCIShapeCliquePrintIDs (node *arg_node, info *arg_info)
         arg = BLOCK_VARDEC (arg);
         while (arg != NULL) {
             argavis = VARDEC_AVIS (arg);
-            DBUG_PRINT ("SCI", ("ShapeCliqueID %d for Local %s",
-                                AVIS_SHAPECLIQUEID (argavis), AVIS_NAME (argavis)));
+            if (!AVIS_ISSCIPRINTED (argavis))
+                SCIPrintShapeCliqueNames (argavis);
+            AVIS_ISSCIPRINTED (argavis) = TRUE;
             arg = VARDEC_NEXT (arg);
         }
     }
-    return;
+
+    SCIResetIsSCIPrinted (arg_node);
+    DBUG_VOID_RETURN;
+}
+
+/** <!--*******************************************************************-->
+ *
+ * @fn void SCIPrintShapeCliqueNames( node *avis)
+ * @brief This function is a debugging function, to print the names of
+ * all entries in one shape clique.
+ *
+ * ****************************************************************************/
+void
+SCIPrintShapeCliqueNames (node *avis)
+{
+    node *curavis;
+
+    DBUG_ENTER ("SCIPrintShapeCliqueNames");
+    curavis = avis;
+    DBUG_PRINT ("SCI", ("Members of shape clique: %s are:", AVIS_NAME (avis)));
+    do {
+        if (!AVIS_ISSCIPRINTED (curavis)) {
+            DBUG_PRINT ("SCI", ("  %s", AVIS_NAME (curavis)));
+        }
+        AVIS_ISSCIPRINTED (curavis) = TRUE;
+        curavis = AVIS_SHAPECLIQUEID (curavis);
+    } while (avis != curavis);
+    DBUG_PRINT ("SCI", ("end"));
+    DBUG_VOID_RETURN;
 }
 
 /** <!--*******************************************************************-->
@@ -567,9 +644,83 @@ SCIAvisesAreInSameShapeClique (node *avis1, node *avis2)
             break;
         }
         curavis2 = AVIS_SHAPECLIQUEID (curavis2);
-    } while (avis2 == curavis2);
+    } while (avis2 != curavis2);
 
     return (z);
+}
+
+/** <!--*******************************************************************-->
+ *
+ * @fn void SCIBuildAKSShapeCliques( node *arg_node)
+ * @brief Build shape cliques for all AKS arrays.
+ *
+ * ****************************************************************************/
+void
+SCIBuildAKSShapeCliques (node *arg_node)
+{
+    node *arg, *argavis;
+    ntype *type1;
+
+    arg = FUNDEF_ARGS (arg_node);
+    if (NULL != arg) {
+        arg = BLOCK_VARDEC (arg);
+        while (arg != NULL) {
+            argavis = VARDEC_AVIS (arg);
+            type1 = AVIS_TYPE (argavis);
+            if (TUshapeKnown (type1))
+                SCIBuildAKSShapeCliqueOne (arg_node, argavis);
+            arg = VARDEC_NEXT (arg);
+        }
+    }
+    return;
+}
+
+/** <!--*******************************************************************-->
+ *
+ * @fn void SCIBuildAKSShapeCliqueOne( node *arg_node, node *avis)
+ * @brief Build a shape cliques for all AKS arrays with same shape as
+ * AKS array avis.
+ *
+ * ****************************************************************************/
+void
+SCIBuildAKSShapeCliqueOne (node *arg_node, node *avis)
+{
+    node *arg, *argavis;
+    ntype *typearg, *typeargavis;
+
+    arg = FUNDEF_ARGS (arg_node);
+    typearg = AVIS_TYPE (avis);
+    if (NULL != arg) {
+        arg = BLOCK_VARDEC (arg);
+        while (arg != NULL) {
+            argavis = VARDEC_AVIS (arg);
+            typeargavis = AVIS_TYPE (argavis);
+            if (TUshapeKnown (typeargavis) && SCIeqShapes (typeargavis, typearg)) {
+                SCIAppendAvisToShapeClique (argavis, avis);
+            }
+            arg = VARDEC_NEXT (arg);
+        }
+    }
+    return;
+}
+
+/** <!--*******************************************************************-->
+ *
+ * @fn bool SCIeqShapes ( ntype *a, ntype *b)
+ * @brief Predicate to tell if two AKS arrays have the same shape
+ *
+ * ****************************************************************************/
+
+bool
+SCIeqShapes (ntype *a, ntype *b)
+{
+    bool res;
+
+    DBUG_ENTER ("SCIeqShapes");
+
+    res = SHcompareShapes (TYgetShape (a), TYgetShape (b));
+
+    DBUG_RETURN (res);
 }
 
 /*@}*/

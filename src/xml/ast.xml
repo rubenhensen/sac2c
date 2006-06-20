@@ -4606,6 +4606,7 @@
           </type>
         </attribute>
         <attribute name="Type">
+	  <description>the inferred type, which may be more precise than DeclType.</description>
           <type name="NewType">
             <targets>
               <target mandatory="yes">
@@ -4618,7 +4619,7 @@
           </type>
         </attribute>
 	<attribute name="DeclType" default="NULL">
-	  <description>stores the declared type, iff present.</description>
+	  <description>the declared type, iff present.</description>
 	  <type name="NewType">
             <targets>
               <target mandatory="no">
@@ -4864,6 +4865,16 @@
         <flag name="IsLifted" >
           <description>Used by SpmdLift traversal in order to indicate 
             which VARDECS are no longer needed and can thus be eliminated.
+          </description>
+        </flag>
+        <flag name="IsSCIPrinted" default="FALSE" >
+          <description>Used by IVE to mark printed clique entries
+          </description>
+        </flag>
+        <flag name="IsVect2OffsetIssued" default="FALSE" >
+          <description>Used by IVE to indicate that a Vect2Offset call
+	  bas been issued for this name. Remaining elements of this shape
+	  clique can use that Vect2Offset call instead of their own.
           </description>
         </flag>
       </flags>
