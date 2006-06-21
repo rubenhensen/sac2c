@@ -8,24 +8,18 @@
  *
  * @defgroup sci Shape Clique Inference
  *
- *  This file implements inference of shape cliques
- *  for IVE (index vector elimination) and potentially other optimizations, such
- *  as array memory reuse.
+ *  This file implements inference of shape cliques.
+ *  Shape cliques are sets of variables that are known to have the same
+ *  shape, even if we don't know their exact shape at compile time.
+ *  Information from shape clique inference is presently used for index
+ *  vector elimination (IVE), and may be used for other optimizations, such as
+ *  array memory reuse.
  *
  * @ingroup sci
  *
  * @{
  *
  **************************************************************************/
-
-/**
- *
- * @file shape_cliques.c
- *
- *  This file contains code to implement inference of shape cliques
- *  for IVE (index vector elimination) and potentially other optimizations.
- *
- */
 
 #include "shape_cliques.h"
 
