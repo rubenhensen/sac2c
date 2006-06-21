@@ -692,8 +692,8 @@ SCIBuildAKSShapeCliques (node *arg_node)
             type1 = AVIS_TYPE (argavis);
             if (TUshapeKnown (type1)) {
                 SCIBuildAKSShapeCliqueOne (arg_node, argavis);
-                arg = VARDEC_NEXT (arg);
             }
+            arg = VARDEC_NEXT (arg);
         }
     }
     DBUG_VOID_RETURN;
