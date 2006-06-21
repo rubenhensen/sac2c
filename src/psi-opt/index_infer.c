@@ -1,31 +1,22 @@
 /*
  *
- * $Log$
- * Revision 1.7  2005/09/27 02:52:11  sah
- * hopefully, IVE is now back to its own power. Due to
- * lots of other compiler bugs, this code is not fully
- * tested, yet.
+ * $Id$
  *
- * Revision 1.6  2005/09/23 14:04:01  sah
- * added fixpoint iteration for lacfuns
- * to ensure that all index uses are
- * detected.
+ */
+
+/**
  *
- * Revision 1.5  2005/09/14 17:23:29  sah
- * arg3 of modarray may be constant!
+ * @file index_infer.c
  *
- * Revision 1.4  2005/08/21 09:34:29  ktr
- * all arguments and the return value of sel
- * and modarray must be AKS to allow conversion into
- * idx_sel and idx_modarray,respectively
+ *  This file contains code to implement the array usage analysis for IVE.
+ *  It computes two attributes for all N_avis nodes:
+ *   AVIS_IDXTYPES - an N_exprs chain of N_type nodes that contains all
+ *                   shapes of arrays this particular identifier selects into
+ *   AVIS_NEEDCOUNT - counts all non-indexing uses of the identifier
  *
- * Revision 1.2  2005/08/20 19:08:02  ktr
- * starting brushing
- *
- * Revision 1.1  2005/07/16 19:00:18  sbs
- * Initial revision
- *
- *
+ *  NB: The analysis deals with Loop functions inter-functional, i.e., it
+ *      treats them as if they were inlined. This requires a
+ *      fix-point iteration for each loop function!!!
  */
 
 #include "tree_basic.h"
@@ -147,6 +138,20 @@ CountUses (node *args)
     DBUG_RETURN (result);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn  void AddTypeToIdxTypes( node *avis, ntype *type)
+ *
+ *   @brief checks whether the shape of the type argument exists in the
+ *          set of N_type nodes hanging off the AVIS_IDXTYPES( avis).
+ *          If NOT, an N_type node containing that shape is built and
+ *          added to the set.
+ *          NOTE here, that the ntype type is expected to be at least AKS!
+ *   @param
+ *   @return
+ *
+ *****************************************************************************/
+
 static void
 AddTypeToIdxTypes (node *avis, ntype *type)
 {
@@ -167,6 +172,17 @@ AddTypeToIdxTypes (node *avis, ntype *type)
     DBUG_VOID_RETURN;
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn  void TranscribeIdxTypes( node *fromavis, node *toavis)
+ *
+ *   @brief computes the setunion of the AVIS_IDXTYPES chains and attaches
+ *          the result to toavis.
+ *   @param
+ *   @return
+ *
+ *****************************************************************************/
+
 static void
 TranscribeIdxTypes (node *fromavis, node *toavis)
 {
@@ -182,6 +198,21 @@ TranscribeIdxTypes (node *fromavis, node *toavis)
 
     DBUG_VOID_RETURN;
 }
+
+/** <!--********************************************************************-->
+ *
+ * @fn  void TranscribeFormalToConcrete( node *args, node *exprs)
+ *
+ *   @brief expects args to be the formal parameter chain of a function and
+ *          exprs to be the actual parameter chain of a call to that very function.
+ *          For each argument, it computes the setunion of the AVIS_IDXTYPES chains
+ *          from the formal parameters and the actual parameters and attaches
+ *          the result to the  AVIS_IDXTYPES chains of the actual parameters.
+ *          NB: this is needed for the fixpoint iteration in Loop functions!
+ *   @param
+ *   @return
+ *
+ *****************************************************************************/
 
 static void
 TranscribeFormalToConcrete (node *args, node *exprs)
@@ -671,7 +702,7 @@ IVEIprintPreFun (node *arg_node, info *arg_info)
     switch (NODE_TYPE (arg_node)) {
     case N_avis:
         exprs = AVIS_IDXTYPES (arg_node);
-        printf ("/*");
+        printf ("/* IVEI results");
         if (exprs != NULL) {
             while (exprs != NULL) {
                 printf (":IDX(%s)",
