@@ -69,6 +69,24 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
+static int
+CountSpecializations (int num_fundefs, node **fundeflist)
+{
+    int i, res;
+
+    DBUG_ENTER ("CountSpecializations");
+
+    res = 0;
+    for (i = 0; i < num_fundefs; i++) {
+        DBUG_ASSERT ((fundeflist[i] != NULL) && (NODE_TYPE (fundeflist[i]) == N_fundef),
+                     "CountSpecializations called with illegal fundeflist!");
+        if (FUNDEF_ISSPECIALISATION (fundeflist[i])) {
+            res++;
+        }
+    }
+    DBUG_RETURN (res);
+}
+
 /******************************************************************************
  *
  * Function:
@@ -143,8 +161,12 @@ DispatchFunCall (node *fundef, ntype *arg_types)
                 new_fundef = FUNDEF_IMPL (fundef);
                 DBUG_PRINT ("DFC",
                             ("  dispatched statically %s", CTIitemName (new_fundef)));
-            } else if ((dft_res->num_partials == 0)
-                       && (dft_res->num_deriveable_partials == 0)) {
+            } else if ((dft_res->num_partials
+                        == CountSpecializations (dft_res->num_partials,
+                                                 dft_res->partials))
+                       && (dft_res->num_deriveable_partials
+                           == CountSpecializations (dft_res->num_deriveable_partials,
+                                                    dft_res->deriveable_partials))) {
                 /*
                  * static dispatch possible
                  */
