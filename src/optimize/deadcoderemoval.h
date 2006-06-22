@@ -31,6 +31,7 @@ extern node *DCRret (node *arg_node, info *arg_info);
 extern node *DCRblock (node *arg_node, info *arg_info);
 extern node *DCRvardec (node *arg_node, info *arg_info);
 extern node *DCRassign (node *arg_node, info *arg_info);
+extern node *DCRannotate (node *arg_node, info *arg_info);
 extern node *DCRlet (node *arg_node, info *arg_info);
 extern node *DCRids (node *arg_node, info *arg_info);
 extern node *DCRcond (node *arg_node, info *arg_info);

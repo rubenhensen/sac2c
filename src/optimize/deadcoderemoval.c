@@ -521,6 +521,25 @@ DCRassign (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
+ *   node *DCRannotate(node *arg_node , info *arg_info)
+ *
+ * description:
+ *  mark this RHS to be kept!
+ *
+ *****************************************************************************/
+node *
+DCRannotate (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("DCRannotate");
+
+    INFO_REMASSIGN (arg_info) = FALSE;
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *DCRreturn(node *arg_node , info *arg_info)
  *
  * description:

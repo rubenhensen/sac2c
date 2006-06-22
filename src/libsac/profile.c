@@ -1,36 +1,6 @@
 /*
  *
- * $Log$
- * Revision 3.2  2001/06/28 09:42:43  sbs
- * concat in definition of __PF_TIMER and __PF_TIMER_PERCENTAGE
- * eliminated.
- *
- * Revision 3.1  2000/11/20 18:02:46  sacbase
- * new release made
- *
- * Revision 2.2  1999/07/08 12:30:19  cg
- * File moved to new directory src/libsac.
- *
- *
- */
-
-/*
- *
- * Revision 2.1  1999/02/23 12:43:41  sacbase
- * new release made
- *
- * Revision 1.4  1998/06/29 08:50:14  cg
- * added '#define _POSIX_C_SOURCE 199506L' for multi-threaded execution.
- *
- * Revision 1.3  1998/05/07 08:13:24  cg
- * SAC runtime library implementation converted to new naming conventions.
- *
- * Revision 1.2  1998/03/24 13:51:45  cg
- * First working revision
- *
- * Revision 1.1  1998/03/19 16:36:14  cg
- * Initial revision
- *
+ * $Id$
  *
  */
 
@@ -97,11 +67,30 @@ struct rusage SAC_PF_stop_timer;
 void
 SAC_PF_PrintHeader (char *title)
 {
-    fprintf (stderr, "****************************************"
+    fprintf (stderr, "\n****************************************"
                      "****************************************\n");
     fprintf (stderr, "*** %-72s ***\n", title);
     fprintf (stderr, "****************************************"
                      "****************************************\n");
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void SAC_PF_PrintSubHeader( char * title, int lineno)
+ *
+ * description:
+ *
+ *   This function prints some header lines for presenting profiling
+ *   information.
+ *
+ *
+ ******************************************************************************/
+
+void
+SAC_PF_PrintSubHeader (char *title, int lineno)
+{
+    fprintf (stderr, "call to %s in line #%d:\n", title, lineno);
 }
 
 /******************************************************************************

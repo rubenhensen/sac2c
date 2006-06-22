@@ -574,8 +574,11 @@ TransformIntoDoLoop (node *fundef)
          */
 
         int_call = BLOCK_INSTR (COND_THEN (cond));
-        DBUG_ASSERT ((IsRecursiveCall (int_call, fundef)
-                      && (ASSIGN_NEXT (int_call) == NULL)),
+        while ((int_call != NULL)
+               && (NODE_TYPE (ASSIGN_INSTR (int_call)) == N_annotate)) {
+            int_call = ASSIGN_NEXT (int_call);
+        }
+        DBUG_ASSERT ((IsRecursiveCall (int_call, fundef)),
                      "recursive call of do-loop function must be the only"
                      " assignment in the conditional");
 

@@ -258,8 +258,12 @@ SSALURGetDoLoopUnrolling (node *fundef, node *ext_assign)
         DBUG_RETURN (UNR_NONE);
     }
 
-    /* extract recursive call behind cond */
+    /* extract recursive call behind cond  */
     then_instr = COND_THENINSTR (ASSIGN_INSTR (cond_assign));
+    while ((then_instr != NULL)
+           && (NODE_TYPE (ASSIGN_INSTR (then_instr)) == N_annotate)) {
+        then_instr = ASSIGN_NEXT (then_instr);
+    }
     DBUG_ASSERT ((NODE_TYPE (then_instr) == N_assign),
                  "cond of loop fun w/o N_assign in then body");
     DBUG_ASSERT ((NODE_TYPE (ASSIGN_INSTR (then_instr)) == N_let),

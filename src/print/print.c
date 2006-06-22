@@ -1555,6 +1555,7 @@ node *
 PRTannotate (node *arg_node, info *arg_info)
 {
     static char strbuffer1[256];
+    static char strbuffer2[512];
 
     DBUG_ENTER ("PRTannotate");
 
@@ -1576,20 +1577,21 @@ PRTannotate (node *arg_node, info *arg_info)
         }
     }
 
-#if 0 /**** TODO ****/
-  if (ANNOTATE_TAG (arg_node) & INL_FUN) {
-    sprintf (strbuffer2, "PROFILE_INLINE( %s)", strbuffer1);
-  } else {
-    strcpy (strbuffer2, strbuffer1);
-  }
-
-  if (ANNOTATE_TAG (arg_node) & LIB_FUN) {
-    sprintf (strbuffer1, "PROFILE_LIBRARY( %s)", strbuffer2);
-  } else {
-    strcpy (strbuffer1, strbuffer2);
-  }
-
-#endif
+    if (ANNOTATE_TAG (arg_node) & INL_FUN) {
+        sprintf (strbuffer2, "PROFILE_INLINE( %s)", strbuffer1);
+        if (ANNOTATE_TAG (arg_node) & LIB_FUN) {
+            sprintf (strbuffer1, "PROFILE_LIBRARY( %s)", strbuffer2);
+        } else {
+            strcpy (strbuffer1, strbuffer2);
+        }
+    } else {
+        strcpy (strbuffer2, strbuffer1);
+        if (ANNOTATE_TAG (arg_node) & LIB_FUN) {
+            sprintf (strbuffer1, "PROFILE_LIBRARY( %s)", strbuffer2);
+        } else {
+            strcpy (strbuffer1, strbuffer2);
+        }
+    }
 
     fprintf (global.outfile, "%s;", strbuffer1);
 
@@ -1857,6 +1859,7 @@ PRTassign (node *arg_node, info *arg_info)
     if (NODE_TYPE (instr) == N_annotate) {
         if (global.compiler_phase < PH_compile) {
             trav_instr = FALSE;
+            trav_instr = TRUE;
         }
         DBUG_EXECUTE ("PRINT_PROFILE", trav_instr = TRUE;);
     }

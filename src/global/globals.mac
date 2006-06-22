@@ -424,6 +424,7 @@ GLOBAL (int, profile_funcntr, 0)
 GLOBAL (char **, profile_funnme, (char **)ILIBmalloc (PF_MAXFUN * sizeof (char *)))
 GLOBAL (int *, profile_funapcntr, (int *)ILIBmalloc (PF_MAXFUN * sizeof (int)))
 GLOBAL (int **, profile_funapline, BuildFunApLine (PF_MAXFUN, PF_MAXFUNAP))
+GLOBAL (int **, profile_parentfunno, BuildFunApLine (PF_MAXFUN, PF_MAXFUNAP))
 GLOBAL (int, profile_funapmax, 1)
 
 /*

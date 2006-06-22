@@ -734,6 +734,10 @@ GetRecursiveCallAssignment (node *dofun)
 
     ass = COND_THENINSTR (ASSIGN_INSTR (ass));
 
+    while ((ass != NULL) && (NODE_TYPE (ASSIGN_INSTR (ass)) == N_annotate)) {
+        ass = ASSIGN_NEXT (ass);
+    }
+
     DBUG_ASSERT ((ass != NULL) && (NODE_TYPE (ass) == N_assign)
                    && (NODE_TYPE (ASSIGN_INSTR (ass)) == N_let)
                    && (NODE_TYPE (ASSIGN_RHS (ass)) == N_ap)

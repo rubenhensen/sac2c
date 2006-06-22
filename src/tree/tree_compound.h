@@ -49,7 +49,8 @@ specific implementation of a function should remain with the source code.
 #define CALL_FUN 0x0001
 #define RETURN_FROM_FUN 0x0002
 #define INL_FUN 0x0004
-#define OVRLD_FUN 0x0008
+#define LIB_FUN 0x0008
+#define OVRLD_FUN 0x0010
 /*--------------------------------------------------------------------------*/
 
 /***

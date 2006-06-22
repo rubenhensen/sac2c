@@ -63,12 +63,14 @@
  */
 struct INFO {
     node *fundef;
+    node *parent;
 };
 
 /*
  * INFO macros
  */
 #define INFO_PF_FUNDEF(n) (n->fundef)
+#define INFO_PF_PARENT(n) (n->parent)
 
 /*
  * INFO functions
@@ -83,6 +85,7 @@ MakeInfo ()
     result = ILIBmalloc (sizeof (info));
 
     INFO_PF_FUNDEF (result) = NULL;
+    INFO_PF_PARENT (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -122,7 +125,9 @@ static node *
 SearchMain (node *fundef)
 {
     DBUG_ENTER ("SearchMain");
-    while ((fundef != NULL) && (strcmp (FUNDEF_NAME (fundef), "main") != 0)) {
+    while ((fundef != NULL)
+           && ((FUNDEF_ISWRAPPERFUN (fundef) == TRUE)
+               || (strcmp (FUNDEF_NAME (fundef), "main") != 0))) {
         fundef = FUNDEF_NEXT (fundef);
     }
     DBUG_RETURN (fundef);
@@ -218,6 +223,10 @@ Fundef2FunTypeMask (node *fundef)
         funtypemask = funtypemask | INL_FUN;
     }
 
+    if (!FUNDEF_ISLOCAL (fundef)) {
+        funtypemask = funtypemask | LIB_FUN;
+    }
+
     DBUG_RETURN (funtypemask);
 }
 
@@ -248,6 +257,7 @@ PFfundef (node *arg_node, info *arg_info)
 {
     char *str_buff;
     ntype *wrappertype;
+    node *mem_parent;
 
     DBUG_ENTER ("PFfundef");
 
@@ -266,13 +276,20 @@ PFfundef (node *arg_node, info *arg_info)
             FUNDEF_FUNNO (arg_node) = ++global.profile_funcntr;
         }
         if (FUNDEF_BODY (arg_node) != NULL) { /* library funs do have no body! */
+            mem_parent = INFO_PF_PARENT (arg_info);
+            INFO_PF_PARENT (arg_info) = arg_node;
             FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+            INFO_PF_PARENT (arg_info) = mem_parent;
+
         } else if (FUNDEF_ISWRAPPERFUN (arg_node)) {
             wrappertype = FUNDEF_WRAPPERTYPE (arg_node);
             if (TYisProd (wrappertype)) {
                 DBUG_ASSERT (FUNDEF_IMPL (arg_node) != NULL,
                              "product wrapper type without IMPL found!");
                 FUNDEF_IMPL (arg_node) = TRAVdo (FUNDEF_IMPL (arg_node), arg_info);
+            } else if (wrappertype == NULL) {
+                DBUG_ASSERT (FUNDEF_WASUSED (arg_node),
+                             "non-used wrapperfun w/o wrappertype found");
             } else {
                 FUNDEF_WRAPPERTYPE (arg_node)
                   = TYmapFunctionInstances (wrappertype, PFfundef, arg_info);
@@ -307,7 +324,7 @@ node *
 PFassign (node *arg_node, info *arg_info)
 {
     int funtypemask;
-    int funno, funap_cnt;
+    int funno, funap_cnt, parent_funno;
     node *old_next_assign, *res;
     char *str_buff;
 
@@ -326,6 +343,7 @@ PFassign (node *arg_node, info *arg_info)
          * PF - data structure indexing starts with 0:
          */
         funno = FUNDEF_FUNNO (INFO_PF_FUNDEF (arg_info)) - 1;
+        parent_funno = FUNDEF_FUNNO (INFO_PF_PARENT (arg_info)) - 1;
 
         /*
          * incrementing the application counter for the function
@@ -346,6 +364,7 @@ PFassign (node *arg_node, info *arg_info)
                 global.profile_funapmax = global.profile_funapcntr[funno];
             }
             global.profile_funapline[funno][funap_cnt] = NODE_LINE (arg_node);
+            global.profile_parentfunno[funno][funap_cnt] = parent_funno;
         }
 
         /*

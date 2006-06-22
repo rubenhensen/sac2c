@@ -1,38 +1,5 @@
 /*
- *
- * $Log$
- * Revision 3.3  2002/04/30 08:43:37  dkr
- * no changes done
- *
- * Revision 3.2  2001/06/28 09:53:27  sbs
- * superfluous prep concats eliminated.
- *
- * Revision 3.1  2000/11/20 18:02:19  sacbase
- * new release made
- *
- * Revision 2.2  2000/08/02 10:13:38  nmw
- * profiling for c library added
- *
- * Revision 2.1  1999/02/23 12:43:58  sacbase
- * new release made
- *
- * Revision 1.4  1998/08/07 18:08:45  sbs
- * changed PROFILE_BEGIN_WITH -> SAC_PF_BEGIN_WITH
- * and     PROFILE_END_WITH   -> SAC_PF_END_WITH
- *
- * Revision 1.3  1998/05/07 08:17:51  cg
- * SAC header files converted to new naming conventions.
- *
- * Revision 1.2  1998/03/24 13:53:24  cg
- * The presentation of profiling information is now entirely implemented
- * using macros. This is necessary because neither the number of functions
- * nor the maximum number of applications of a single function should be
- * statically fixed. These numbers are inherently application dependent,
- * so access to the timer arrays cannot be specified as part of the
- * runtime library.
- *
- * Revision 1.1  1998/03/19 16:54:53  cg
- * Initial revision
+ * $Id$
  *
  */
 
@@ -78,6 +45,25 @@
 
 typedef struct timeval SAC_PF_TIMER;
 
+typedef enum {
+    PF_ow_fun = 0,
+    PF_ow_genarray = 1,
+    PF_ow_modarray = 2,
+    PF_ow_fold = 3,
+    PF_iw_fun = 4,
+    PF_iw_genarray = 5,
+    PF_iw_modarray = 6,
+    PF_iw_fold = 7
+} SAC_PF_timer_type;
+
+typedef struct timer_record {
+    int funno;
+    int funapno;
+    SAC_PF_timer_type timer_type;
+    struct timer_record *parent;
+    int *cycle_tag;
+} SAC_PF_TIMER_RECORD;
+
 /*
  * External declarations of C library functions needed
  */
@@ -89,6 +75,7 @@ extern int getrusage (int who, struct rusage *rusage);
  */
 
 extern void SAC_PF_PrintHeader (char *title);
+extern void SAC_PF_PrintSubHeader (char *title, int lineno);
 extern void SAC_PF_PrintTime (char *title, char *space, SAC_PF_TIMER *time);
 extern void SAC_PF_PrintTimePercentage (char *title, char *space, SAC_PF_TIMER *time1,
                                         SAC_PF_TIMER *time2);
@@ -109,158 +96,120 @@ extern struct rusage SAC_PF_stop_timer;
 
 #if SAC_DO_COMPILE_MODULE
 #define SAC_PF_DEFINE()                                                                  \
-    extern SAC_PF_TIMER SAC_PF_fw_fun_timer[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP];           \
-    extern SAC_PF_TIMER SAC_PF_fw_with_genarray_timer[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP]; \
-    extern SAC_PF_TIMER SAC_PF_fw_with_modarray_timer[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP]; \
-    extern SAC_PF_TIMER SAC_PF_fw_with_fold_timer[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP];     \
-    extern SAC_PF_TIMER SAC_PF_fun_timer[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP];              \
-    extern SAC_PF_TIMER SAC_PF_with_genarray_timer[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP];    \
-    extern SAC_PF_TIMER SAC_PF_with_modarray_timer[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP];    \
-    extern SAC_PF_TIMER SAC_PF_with_fold_timer[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP];        \
+    extern SAC_PF_TIMER SAC_PF_timer[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP][8];               \
+    extern int SAC_PF_cycle_tag[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP];                       \
                                                                                          \
-    extern SAC_PF_TIMER *SAC_PF_act_timer;                                               \
+    extern int SAC_PF_act_cycle_tag;                                                     \
+    extern SAC_PF_TIMER_RECORD *SAC_PF_act_record;                                       \
                                                                                          \
     extern char *SAC_PF_fun_name[SAC_SET_MAXFUN];                                        \
     extern int SAC_PF_maxfunap[SAC_SET_MAXFUN];                                          \
-    extern int SAC_PF_funapline[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP];
+    extern int SAC_PF_funapline[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP];                       \
+    extern int SAC_PF_parentfunno[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP];
 #else
 #define SAC_PF_DEFINE()                                                                  \
-    SAC_PF_TIMER SAC_PF_fw_fun_timer[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP];                  \
-    SAC_PF_TIMER SAC_PF_fw_with_genarray_timer[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP];        \
-    SAC_PF_TIMER SAC_PF_fw_with_modarray_timer[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP];        \
-    SAC_PF_TIMER SAC_PF_fw_with_fold_timer[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP];            \
-    SAC_PF_TIMER SAC_PF_fun_timer[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP];                     \
-    SAC_PF_TIMER SAC_PF_with_genarray_timer[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP];           \
-    SAC_PF_TIMER SAC_PF_with_modarray_timer[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP];           \
-    SAC_PF_TIMER SAC_PF_with_fold_timer[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP];               \
+    SAC_PF_TIMER SAC_PF_timer[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP][8];                      \
+    int SAC_PF_cycle_tag[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP];                              \
                                                                                          \
-    SAC_PF_TIMER *SAC_PF_act_timer = &SAC_PF_fun_timer[0][0];                            \
+    int SAC_PF_act_cycle_tag;                                                            \
+    SAC_PF_TIMER_RECORD SAC_PF_initial_record;                                           \
+    SAC_PF_TIMER_RECORD *SAC_PF_act_record = &SAC_PF_initial_record;                     \
                                                                                          \
     char *SAC_PF_fun_name[SAC_SET_MAXFUN] = SAC_SET_FUN_NAMES;                           \
     int SAC_PF_maxfunap[SAC_SET_MAXFUN] = SAC_SET_FUN_APPS;                              \
-    int SAC_PF_funapline[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP] = SAC_SET_FUN_AP_LINES;
+    int SAC_PF_funapline[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP] = SAC_SET_FUN_AP_LINES;       \
+    int SAC_PF_parentfunno[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP] = SAC_SET_FUN_PARENTS;
 #endif
 
 #define SAC_PF_SETUP()                                                                   \
     {                                                                                    \
-        int i, j;                                                                        \
+        int i, j, k;                                                                     \
                                                                                          \
         SAC_PF_INIT_CLOCK ();                                                            \
         for (i = 0; i < SAC_SET_MAXFUN; i++) {                                           \
             for (j = 0; j < SAC_PF_maxfunap[i]; j++) {                                   \
-                SAC_PF_INIT_TIMER (SAC_PF_fun_timer[i][j]);                              \
-                SAC_PF_INIT_TIMER (SAC_PF_with_modarray_timer[i][j]);                    \
-                SAC_PF_INIT_TIMER (SAC_PF_with_genarray_timer[i][j]);                    \
-                SAC_PF_INIT_TIMER (SAC_PF_with_fold_timer[i][j]);                        \
-                SAC_PF_INIT_TIMER (SAC_PF_fw_fun_timer[i][j]);                           \
-                SAC_PF_INIT_TIMER (SAC_PF_fw_with_modarray_timer[i][j]);                 \
-                SAC_PF_INIT_TIMER (SAC_PF_fw_with_genarray_timer[i][j]);                 \
-                SAC_PF_INIT_TIMER (SAC_PF_fw_with_fold_timer[i][j]);                     \
+                for (k = 0; k < 8; k++) {                                                \
+                    SAC_PF_INIT_TIMER (SAC_PF_timer[i][j][k]);                           \
+                }                                                                        \
+                SAC_PF_cycle_tag[i][j] = 0;                                              \
             }                                                                            \
         }                                                                                \
+        SAC_PF_act_record->funno = 0;                                                    \
+        SAC_PF_act_record->funapno = 0;                                                  \
+        SAC_PF_act_record->timer_type = PF_ow_fun;                                       \
+        SAC_PF_act_record->parent = NULL;                                                \
+        SAC_PF_act_record->cycle_tag = &SAC_PF_cycle_tag[0][0];                          \
+        SAC_PF_act_cycle_tag = 0;                                                        \
         SAC_PF_START_CLOCK ();                                                           \
     }
 
 #define SAC_PF_PRINT()                                                                   \
     {                                                                                    \
-        SAC_PF_TIMER *tmp;                                                               \
+        SAC_PF_TIMER grand_total;                                                        \
                                                                                          \
         SAC_PF_STOP_CLOCK ();                                                            \
-        SAC_PF_ADD_TO_TIMER (*SAC_PF_act_timer);                                         \
-        SAC_PF_PRINT_OVERALL (tmp, SAC_PF_DISPLAY_WITH, SAC_SET_MAXFUN, SAC_PF_maxfunap, \
-                              SAC_PF_fun_timer, SAC_PF_with_modarray_timer,              \
-                              SAC_PF_with_genarray_timer, SAC_PF_with_fold_timer,        \
-                              SAC_PF_fw_fun_timer, SAC_PF_fw_with_modarray_timer,        \
-                              SAC_PF_fw_with_genarray_timer, SAC_PF_fw_with_fold_timer); \
-                                                                                         \
-        SAC_PF_PRINT_FUNS (tmp, SAC_PF_DISPLAY_FUN, SAC_PF_DISPLAY_WITH, SAC_SET_MAXFUN, \
-                           SAC_PF_maxfunap, SAC_PF_fun_timer,                            \
-                           SAC_PF_with_modarray_timer, SAC_PF_with_genarray_timer,       \
-                           SAC_PF_with_fold_timer, SAC_PF_fw_fun_timer,                  \
-                           SAC_PF_fw_with_modarray_timer, SAC_PF_fw_with_genarray_timer, \
-                           SAC_PF_fw_with_fold_timer, SAC_PF_fun_name);                  \
+        SAC_PF_ADD_TO_TIMER_CHAIN (SAC_PF_act_record);                                   \
+        SAC_PF_PRINT_OVERALL (grand_total);                                              \
+        SAC_PF_PRINT_FUNS (grand_total);                                                 \
     }
 
-#define SAC_PF_PRINT_OVERALL(tmp, display, maxfun, maxfunap, fun_timer,                  \
-                             with_modarray_timer, with_genarray_timer, with_fold_timer,  \
-                             fw_fun_timer, fw_with_modarray_timer,                       \
-                             fw_with_genarray_timer, fw_with_fold_timer)                 \
+#define SAC_PF_PRINT_OVERALL(total)                                                      \
     {                                                                                    \
-        int i, j;                                                                        \
-        SAC_PF_TIMER with_total, non_with_total;                                         \
-        SAC_PF_TIMER total;                                                              \
+        int i, j, k;                                                                     \
+        SAC_PF_TIMER with_total;                                                         \
                                                                                          \
         SAC_PF_INIT_TIMER (with_total);                                                  \
-        SAC_PF_INIT_TIMER (non_with_total);                                              \
         SAC_PF_INIT_TIMER (total);                                                       \
                                                                                          \
-        for (i = 0; i < maxfun; i++) {                                                   \
-            for (j = 0; j < maxfunap[i]; j++) {                                          \
-                SAC_PF_ADD_TIMERS (with_total, with_total, with_modarray_timer[i][j]);   \
-                SAC_PF_ADD_TIMERS (with_total, with_total, with_genarray_timer[i][j]);   \
-                SAC_PF_ADD_TIMERS (with_total, with_total, with_fold_timer[i][j]);       \
-                SAC_PF_ADD_TIMERS (with_total, with_total, fw_fun_timer[i][j]);          \
-                SAC_PF_ADD_TIMERS (with_total, with_total,                               \
-                                   fw_with_modarray_timer[i][j]);                        \
-                SAC_PF_ADD_TIMERS (with_total, with_total,                               \
-                                   fw_with_genarray_timer[i][j]);                        \
-                SAC_PF_ADD_TIMERS (with_total, with_total, fw_with_fold_timer[i][j]);    \
-                SAC_PF_ADD_TIMERS (non_with_total, non_with_total, fun_timer[i][j]);     \
-            }                                                                            \
+        for (k = PF_ow_genarray; k <= PF_iw_fold; k++) {                                 \
+            SAC_PF_ADD_TIMERS (with_total, with_total, SAC_PF_timer[0][0][k]);           \
         }                                                                                \
-        SAC_PF_ADD_TIMERS (total, with_total, non_with_total);                           \
+        SAC_PF_ADD_TIMERS (total, with_total, SAC_PF_timer[0][0][PF_ow_fun]);            \
                                                                                          \
         SAC_PF_PrintHeader ("Overall Profile");                                          \
         SAC_PF_PrintTime ("time used", SAC_PF_TIMER_SPACE, &total);                      \
                                                                                          \
-        if (display) {                                                                   \
+        if (SAC_PF_DISPLAY_WITH) {                                                       \
             SAC_PF_PrintTimePercentage ("   with-loop", "", &with_total, &total);        \
-            SAC_PF_PrintTimePercentage ("   non-with-loop", "", &non_with_total,         \
-                                        &total);                                         \
+            SAC_PF_PrintTimePercentage ("   non-with-loop", "",                          \
+                                        &SAC_PF_timer[0][0][PF_ow_fun], &total);         \
         }                                                                                \
-                                                                                         \
-        tmp = &total;                                                                    \
     }
 
-#define SAC_PF_PRINT_FUNS(total_time, display_fun, display_with, maxfun, maxfunap,       \
-                          fun_timer, with_modarray_timer, with_genarray_timer,           \
-                          with_fold_timer, fw_fun_timer, fw_with_modarray_timer,         \
-                          fw_with_genarray_timer, fw_with_fold_timer, fun_name)          \
+#define SAC_PF_PRINT_FUNS(total_time)                                                    \
     {                                                                                    \
-        int i, j;                                                                        \
+        int i, j, k, l;                                                                  \
         SAC_PF_TIMER with_total, parent_with_total, non_with_total, total;               \
                                                                                          \
         SAC_PF_PrintHeader ("Function Profiles");                                        \
                                                                                          \
-        for (i = 0; i < (display_fun ? maxfun : 1); i++) {                               \
+        for (i = 0; i < (SAC_PF_DISPLAY_FUN ? SAC_SET_MAXFUN : 1); i++) {                \
             SAC_PF_INIT_TIMER (with_total);                                              \
             SAC_PF_INIT_TIMER (parent_with_total);                                       \
             SAC_PF_INIT_TIMER (non_with_total);                                          \
             SAC_PF_INIT_TIMER (total);                                                   \
                                                                                          \
-            for (j = 0; j < maxfunap[i]; j++) {                                          \
-                SAC_PF_ADD_TIMERS (with_total, with_total, with_modarray_timer[i][j]);   \
-                SAC_PF_ADD_TIMERS (with_total, with_total, with_genarray_timer[i][j]);   \
-                SAC_PF_ADD_TIMERS (with_total, with_total, with_fold_timer[i][j]);       \
-                SAC_PF_ADD_TIMERS (with_total, with_total,                               \
-                                   fw_with_modarray_timer[i][j]);                        \
-                SAC_PF_ADD_TIMERS (with_total, with_total,                               \
-                                   fw_with_genarray_timer[i][j]);                        \
-                SAC_PF_ADD_TIMERS (with_total, with_total, fw_with_fold_timer[i][j]);    \
-                SAC_PF_ADD_TIMERS (parent_with_total, parent_with_total,                 \
-                                   fw_fun_timer[i][j]);                                  \
-                SAC_PF_ADD_TIMERS (non_with_total, non_with_total, fun_timer[i][j]);     \
+            for (j = 0; j < SAC_PF_maxfunap[i]; j++) {                                   \
+                for (k = PF_ow_genarray; k <= PF_ow_fold; k++) {                         \
+                    SAC_PF_ADD_TIMERS (with_total, with_total, SAC_PF_timer[i][j][k]);   \
+                }                                                                        \
+                for (k = PF_iw_fun; k <= PF_iw_fold; k++) {                              \
+                    SAC_PF_ADD_TIMERS (parent_with_total, parent_with_total,             \
+                                       SAC_PF_timer[i][j][k]);                           \
+                }                                                                        \
+                SAC_PF_ADD_TIMERS (non_with_total, non_with_total,                       \
+                                   SAC_PF_timer[i][j][PF_ow_fun]);                       \
             }                                                                            \
                                                                                          \
             SAC_PF_ADD_TIMERS (total, with_total, non_with_total);                       \
             SAC_PF_ADD_TIMERS (total, total, parent_with_total);                         \
                                                                                          \
             if ((total.tv_sec != 0) || (total.tv_usec != 0)) {                           \
-                SAC_PF_PrintHeader (fun_name[i]);                                        \
+                SAC_PF_PrintHeader (SAC_PF_fun_name[i]);                                 \
                 SAC_PF_PrintTimePercentage ("time used", SAC_PF_TIMER_SPACE, &total,     \
-                                            total_time);                                 \
+                                            &total_time);                                \
                                                                                          \
-                if (display_with) {                                                      \
+                if (SAC_PF_DISPLAY_WITH) {                                               \
                     SAC_PF_PrintTimePercentage ("   with-loop(own)", "", &with_total,    \
                                                 &total);                                 \
                                                                                          \
@@ -269,6 +218,28 @@ extern struct rusage SAC_PF_stop_timer;
                                                                                          \
                     SAC_PF_PrintTimePercentage ("   non-with-loop", "", &non_with_total, \
                                                 &total);                                 \
+                }                                                                        \
+                if (SAC_PF_DISPLAY_FUN) {                                                \
+                    for (k = 0; k < SAC_SET_MAXFUN; k += (k == (i - 1) ? 2 : 1)) {       \
+                        if (k == i) {                                                    \
+                            k++;                                                         \
+                        } /* required for i==0 only! */                                  \
+                        for (j = 0; j < SAC_PF_maxfunap[k]; j++) {                       \
+                            if (SAC_PF_parentfunno[k][j] == i) {                         \
+                                SAC_PF_TIMER sub_total;                                  \
+                                SAC_PF_INIT_TIMER (sub_total);                           \
+                                SAC_PF_PrintSubHeader (SAC_PF_fun_name[k],               \
+                                                       SAC_PF_funapline[k][j]);          \
+                                for (l = 0; l < 8; l++) {                                \
+                                    SAC_PF_ADD_TIMERS (sub_total, sub_total,             \
+                                                       SAC_PF_timer[k][j][l]);           \
+                                }                                                        \
+                                SAC_PF_PrintTimePercentage (" relative time used",       \
+                                                            SAC_PF_TIMER_SPACE,          \
+                                                            &sub_total, &total);         \
+                            }                                                            \
+                        }                                                                \
+                    }                                                                    \
                 }                                                                        \
             }                                                                            \
         }                                                                                \
@@ -282,24 +253,54 @@ extern struct rusage SAC_PF_stop_timer;
 
 #define SAC_PF_STOP_CLOCK() getrusage (RUSAGE_SELF, &SAC_PF_stop_timer)
 
-#define SAC_PF_ADD_TO_TIMER(timer)                                                       \
+#define SAC_PF_RECORD_TIMER(record)                                                      \
+    (SAC_PF_timer[record->funno][record->funapno][record->timer_type])
+
+#define SAC_PF_ADD_TO_TIMER(record)                                                      \
     {                                                                                    \
-        if (((timer).tv_usec += SAC_PF_stop_timer.ru_utime.tv_usec                       \
-                                - SAC_PF_start_timer.ru_utime.tv_usec)                   \
+        if ((SAC_PF_RECORD_TIMER (record).tv_usec                                        \
+             += SAC_PF_stop_timer.ru_utime.tv_usec                                       \
+                - SAC_PF_start_timer.ru_utime.tv_usec)                                   \
             < 0) {                                                                       \
-            (timer).tv_usec += 1000000;                                                  \
-            (timer).tv_sec += SAC_PF_stop_timer.ru_utime.tv_sec                          \
-                              - SAC_PF_start_timer.ru_utime.tv_sec - 1;                  \
+            SAC_PF_RECORD_TIMER (record).tv_usec += 1000000;                             \
+            SAC_PF_RECORD_TIMER (record).tv_sec += SAC_PF_stop_timer.ru_utime.tv_sec     \
+                                                   - SAC_PF_start_timer.ru_utime.tv_sec  \
+                                                   - 1;                                  \
         } else {                                                                         \
-            (timer).tv_sec                                                               \
+            SAC_PF_RECORD_TIMER (record).tv_sec                                          \
               += SAC_PF_stop_timer.ru_utime.tv_sec - SAC_PF_start_timer.ru_utime.tv_sec; \
         }                                                                                \
     }
 
+#define SAC_PF_ADD_TO_TIMER_CHAIN(record)                                                \
+    {                                                                                    \
+        SAC_PF_TIMER_RECORD *tmp;                                                        \
+        tmp = record;                                                                    \
+        SAC_PF_act_cycle_tag++;                                                          \
+        do {                                                                             \
+            if (*(tmp->cycle_tag) != SAC_PF_act_cycle_tag) {                             \
+                *(tmp->cycle_tag) = SAC_PF_act_cycle_tag;                                \
+                SAC_PF_ADD_TO_TIMER (tmp);                                               \
+            }                                                                            \
+            tmp = tmp->parent;                                                           \
+        } while (tmp != NULL);                                                           \
+    }
+
 #define SAC_PF_ADD_TIMERS(timer, timer1, timer2)                                         \
     {                                                                                    \
-        timer.tv_sec = timer1.tv_sec + timer2.tv_sec;                                    \
         timer.tv_usec = timer1.tv_usec + timer2.tv_usec;                                 \
+        if (timer.tv_usec >= 1000000) {                                                  \
+            timer.tv_usec -= 1000000;                                                    \
+            timer.tv_sec = timer1.tv_sec + timer2.tv_sec + 1;                            \
+        } else {                                                                         \
+            timer.tv_sec = timer1.tv_sec + timer2.tv_sec;                                \
+        }                                                                                \
+    }
+
+#define SAC_PF_COPY_TIMER(totimer, fromtimer)                                            \
+    {                                                                                    \
+        totimer.tv_sec = fromtimer.tv_sec;                                               \
+        totimer.tv_usec = fromtimer.tv_usec;                                             \
     }
 
 #define SAC_PF_TIMER_SPACE "              "
@@ -320,22 +321,25 @@ extern struct rusage SAC_PF_stop_timer;
 
 #define SAC_PF_BEGIN_WITH(str)                                                           \
     {                                                                                    \
-        SAC_PF_TIMER *SAC_PF_mem_act;                                                    \
+        SAC_PF_TIMER_RECORD SAC_PF_new_record;                                           \
+                                                                                         \
         SAC_PF_STOP_CLOCK ();                                                            \
-        SAC_PF_mem_act = SAC_PF_act_timer;                                               \
-        SAC_PF_ADD_TO_TIMER (*SAC_PF_act_timer);                                         \
-        SAC_PF_act_timer                                                                 \
-          = (SAC_PF_with_level == 0                                                      \
-               ? &SAC_PF_with_##str##_timer[SAC_PF_act_funno][SAC_PF_act_funapno]        \
-               : &SAC_PF_fw_with_##str##_timer[SAC_PF_act_funno][SAC_PF_act_funapno]);   \
+        SAC_PF_ADD_TO_TIMER_CHAIN (SAC_PF_act_record);                                   \
+        SAC_PF_new_record.parent = SAC_PF_act_record;                                    \
+        SAC_PF_new_record.funno = SAC_PF_act_record->funno;                              \
+        SAC_PF_new_record.funapno = SAC_PF_act_record->funapno;                          \
+        SAC_PF_new_record.timer_type                                                     \
+          = (SAC_PF_with_level == 0 ? PF_ow_##str : PF_iw_##str);                        \
+        SAC_PF_new_record.cycle_tag = SAC_PF_act_record->cycle_tag;                      \
+        SAC_PF_act_record = &SAC_PF_new_record;                                          \
         SAC_PF_with_level++;                                                             \
         SAC_PF_START_CLOCK ();
 
 #define SAC_PF_END_WITH(str)                                                             \
     SAC_PF_STOP_CLOCK ();                                                                \
     SAC_PF_with_level--;                                                                 \
-    SAC_PF_ADD_TO_TIMER (*SAC_PF_act_timer);                                             \
-    SAC_PF_act_timer = SAC_PF_mem_act;                                                   \
+    SAC_PF_ADD_TO_TIMER_CHAIN (SAC_PF_act_record);                                       \
+    SAC_PF_act_record = SAC_PF_act_record->parent;                                       \
     SAC_PF_START_CLOCK ();                                                               \
     }
 
@@ -349,36 +353,65 @@ extern struct rusage SAC_PF_stop_timer;
 
 #endif /* SAC_DO_PROFILE_WITH */
 
+#ifdef DEBUG_PROFILING
+
+#include <stdio.h>
+
+#define DEBUG_PROFILE_PRINT(record)                                                      \
+    {                                                                                    \
+        SAC_PF_TIMER_RECORD *tmp;                                                        \
+        tmp = SAC_PF_act_record;                                                         \
+        while (tmp != NULL) {                                                            \
+            fprintf (stderr, "funno: %d funapno: %d timer_type: %d\n", tmp->funno,       \
+                     tmp->funapno, tmp->timer_type);                                     \
+            tmp = tmp->parent;                                                           \
+        }                                                                                \
+    }
+
+#define DEBUG_PROFILE_ENTER(record)                                                      \
+    {                                                                                    \
+        fprintf (stderr, "entering UDF:\n");                                             \
+        DEBUG_PROFILE_PRINT (record);                                                    \
+    }
+
+#define DEBUG_PROFILE_LEAVE(record)                                                      \
+    {                                                                                    \
+        fprintf (stderr, "leaving UDF:\n");                                              \
+        DEBUG_PROFILE_PRINT (record);                                                    \
+    }
+
+#else
+#define DEBUG_PROFILE_ENTER(record)
+#define DEBUG_PROFILE_LEAVE(record)
+
+#endif
+
 /*
  *  Macros for profiling function applications
  */
 
 #if (SAC_DO_PROFILE_FUN && SAC_DO_PROFILE)
 
-#define PROFILE_BEGIN_UDF(funno, funapno)                                                \
+#define PROFILE_BEGIN_UDF(funno_in, funapno_in)                                          \
     {                                                                                    \
-        SAC_PF_TIMER *SAC_PF_mem_act;                                                    \
-        int SAC_PF_mem_funno;                                                            \
-        int SAC_PF_mem_funapno;                                                          \
+        SAC_PF_TIMER_RECORD SAC_PF_new_record;                                           \
                                                                                          \
         SAC_PF_STOP_CLOCK ();                                                            \
-        SAC_PF_mem_act = SAC_PF_act_timer;                                               \
-        SAC_PF_mem_funno = SAC_PF_act_funno;                                             \
-        SAC_PF_mem_funapno = SAC_PF_act_funapno;                                         \
-        SAC_PF_ADD_TO_TIMER (*SAC_PF_act_timer);                                         \
-        SAC_PF_act_funno = funno;                                                        \
-        SAC_PF_act_funapno = funapno;                                                    \
-        SAC_PF_act_timer                                                                 \
-          = (SAC_PF_with_level == 0 ? &SAC_PF_fun_timer[funno][funapno]                  \
-                                    : &SAC_PF_fw_fun_timer[funno][funapno]);             \
+        SAC_PF_ADD_TO_TIMER_CHAIN (SAC_PF_act_record);                                   \
+        SAC_PF_new_record.parent = SAC_PF_act_record;                                    \
+        SAC_PF_new_record.funno = funno_in;                                              \
+        SAC_PF_new_record.funapno = funapno_in;                                          \
+        SAC_PF_new_record.timer_type = (SAC_PF_with_level == 0 ? PF_ow_fun : PF_iw_fun); \
+        SAC_PF_new_record.cycle_tag = &SAC_PF_cycle_tag[funno_in][funapno_in];           \
+        SAC_PF_act_record = &SAC_PF_new_record;                                          \
+        DEBUG_PROFILE_ENTER (SAC_PF_act_record);                                         \
         SAC_PF_START_CLOCK ();
 
 #define PROFILE_END_UDF(funno, funapno)                                                  \
     SAC_PF_STOP_CLOCK ();                                                                \
-    SAC_PF_ADD_TO_TIMER (*SAC_PF_act_timer);                                             \
-    SAC_PF_act_timer = SAC_PF_mem_act;                                                   \
-    SAC_PF_act_funno = SAC_PF_mem_funno;                                                 \
-    SAC_PF_act_funapno = SAC_PF_mem_funapno;                                             \
+    SAC_PF_ADD_TO_TIMER_CHAIN (SAC_PF_act_record);                                       \
+    SAC_PF_act_record = SAC_PF_act_record->parent;                                       \
+    DEBUG_PROFILE_LEAVE (SAC_PF_act_record);                                             \
     SAC_PF_START_CLOCK ();                                                               \
     }
 

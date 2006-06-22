@@ -239,6 +239,30 @@ PrintProfileData ()
 
     fprintf (global.outfile, "\n");
 
+    fprintf (global.outfile, "#define SAC_SET_FUN_PARENTS    \\\n");
+    fprintf (global.outfile, "  {    \\\n");
+    fprintf (global.outfile, "    {    \\\n");
+    fprintf (global.outfile, "      %d", global.profile_parentfunno[0][0]);
+    for (j = 1; j < global.profile_funapcntr[0]; j++) {
+        fprintf (global.outfile, ", %d", global.profile_parentfunno[0][j]);
+    }
+    fprintf (global.outfile, "   \\\n"
+                             "    }");
+    for (i = 1; i < global.profile_funcntr; i++) {
+        fprintf (global.outfile, ",   \\\n"
+                                 "    {     \\\n");
+        fprintf (global.outfile, "      %d", global.profile_parentfunno[i][0]);
+        for (j = 1; j < global.profile_funapcntr[i]; j++) {
+            fprintf (global.outfile, ", %d", global.profile_parentfunno[i][j]);
+        }
+        fprintf (global.outfile, "   \\\n"
+                                 "    }");
+    }
+    fprintf (global.outfile, "   \\\n"
+                             "  }");
+
+    fprintf (global.outfile, "\n");
+
     DBUG_VOID_RETURN;
 }
 
