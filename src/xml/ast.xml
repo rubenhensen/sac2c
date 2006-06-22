@@ -872,6 +872,7 @@
 	  <node name="Vardec" />
 	  <node name="Block" />
 	  <node name="Assign" />
+	  <node name="Annotate" />
 	  <node name="Let" />
 	  <node name="Ids" />
 	  <node name="Code" />
