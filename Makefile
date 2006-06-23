@@ -154,6 +154,7 @@ makesubdir: $(TARGETS)
 
 clean: makefiles $(addsuffix .clean,$(ALL_SOURCE_DIRS))
 	$(RM) sac2c
+	$(RM) sac2c.prod
 	$(RM) sac2c.efence
 	$(RM) -r .sb SunWS_cache
 	$(RM) src.tar.gz src/global/build.c
