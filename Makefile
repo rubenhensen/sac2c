@@ -11,6 +11,8 @@
 
 PROJECT_ROOT := .
 
+HIDE = @
+
 include $(PROJECT_ROOT)/Makefile.Config
 include $(PROJECT_ROOT)/Makefile.Targets
 
@@ -110,7 +112,7 @@ src/%/Makefile: Makefile.Source
 sac2c.prod sac2c: src/global/build.o
 	@$(ECHO) ""
 	@$(ECHO) "Linking sac2c (developer version)"
-	@$(LIBTOOL) $(CC) $(CCLINKFLAGS) -o $@ $(TARGETS) $< $(LIB) $(LIBS) $(LDDYNFLAG)
+	$(HIDE)$(LIBTOOL) $(CC) $(CCLINKFLAGS) -o $@ $(TARGETS) $< $(LIB) $(LIBS) $(LDDYNFLAG)
 	@$(RM) make_track
 
 src/global/build.c: $(TARGETS)
@@ -129,7 +131,7 @@ src/global/build.c: $(TARGETS)
 sac2c.efence: $(TARGETS_DEVEL)
 	@$(ECHO) ""
 	@$(ECHO) "Linking sac2c (efence version)"
-	@$(LIBTOOL) $(CC) $(CCLINKFLAGS) -o sac2c.efence $(TARGETS_DEVEL) $(LIBS) $(EFLIBS) $(LDDYNFLAG)
+	$(HIDE)$(LIBTOOL) $(CC) $(CCLINKFLAGS) -o sac2c.efence $(TARGETS_DEVEL) $(LIBS) $(EFLIBS) $(LDDYNFLAG)
 
 doxygen:
 	doxygen sac2cdoxy
@@ -215,7 +217,7 @@ configure: configure.ac
 
 %.prod.o: %.c %.maketrack.comp
 	@$(ECHO) "  Compiling product code:  $(notdir $<)"
-	@$(CCPROD) $(CCPROD_FLAGS) $(CPROD_FLAGS) $(YYFLAGS) $(INCS) -o $@ -c $<
+	$(HIDE)$(CCPROD) $(CCPROD_FLAGS) $(CPROD_FLAGS) $(YYFLAGS) $(INCS) -o $@ -c $<
 	@$(CLOCK_SKEW_ELIMINATION) $@
 
 
@@ -226,7 +228,7 @@ configure: configure.ac
               $(ECHO) "Compiling files in directory $(dir $@)" ; \
          fi
 	@$(ECHO) "  Compiling developer code:  $(notdir $<)"
-	@$(CC) $(CCFLAGS) $(CFLAGS) $(YYFLAGS) $(INCS) -o $@ -c $<
+	$(HIDE)$(CC) $(CCFLAGS) $(CFLAGS) $(YYFLAGS) $(INCS) -o $@ -c $<
 	@$(CLOCK_SKEW_ELIMINATION) $@
 
 
@@ -238,37 +240,37 @@ configure: configure.ac
 
 %.h: %.h.xsl $(XML_DIR)/ast.xml $(XML_COMMONS) %.track
 	@$(ECHO) "  Generating header file from XML specification:  $(notdir $@)"
-	@$(XSLTENGINE) $< $(XML_DIR)/ast.xml | $(CODE_BEAUTIFIER) >$@
+	$(HIDE)$(XSLTENGINE) $< $(XML_DIR)/ast.xml | $(CODE_BEAUTIFIER) >$@
 
 %.mac: %.mac.xsl $(XML_DIR)/ast.xml $(XML_COMMONS) %.track
 	@$(ECHO) "  Generating macro file from XML specification:  $(notdir $@)"
-	@$(XSLTENGINE) $< $(XML_DIR)/ast.xml | $(CODE_BEAUTIFIER) >$@
+	$(HIDE)$(XSLTENGINE) $< $(XML_DIR)/ast.xml | $(CODE_BEAUTIFIER) >$@
 
 %.c: %.c.xsl $(XML_DIR)/ast.xml $(XML_COMMONS) %.track
 	@$(ECHO) "  Generating source code from XML specification:  $(notdir $@)"
-	@$(XSLTENGINE) $< $(XML_DIR)/ast.xml | $(CODE_BEAUTIFIER) >$@
+	$(HIDE)$(XSLTENGINE) $< $(XML_DIR)/ast.xml | $(CODE_BEAUTIFIER) >$@
 
 
 %.lex.c: %.l %.track
 	@$(ECHO) "  Generating source code from LEX specification:  $(notdir $<)"
-	@$(LEX) $<
-	@mv lex.yy.c $@
+	$(HIDE)$(LEX) $<
+	$(HIDE)mv lex.yy.c $@
 	@$(CLOCK_SKEW_ELIMINATION) $@
 
 %.tab.c: %.y %.track
 	@$(ECHO) "  Generating source code from YACC specification:  $(notdir $<)"
-	@$(YACC) $<
-	@mv y.tab.c $@
-	@$(RM) y.tab.h
-	@mv y.output $(dir $@)
+	$(HIDE)$(YACC) $<
+	$(HIDE)mv y.tab.c $@
+	$(HIDE)$(RM) y.tab.h
+	$(HIDE)mv y.output $(dir $@)
 	@$(CLOCK_SKEW_ELIMINATION) $@
 
 %.tab.h: %.y %.track
 	@$(ECHO) "  Generating header file from YACC specification:  $(notdir $<)"
-	@$(YACC) $<
-	@mv y.tab.h $@
-	@$(RM) y.tab.c 
-	@mv y.output $(dir $@)
+	$(HIDE)$(YACC) $<
+	$(HIDE)mv y.tab.h $@
+	$(HIDE)$(RM) y.tab.c 
+	$(HIDE)mv y.output $(dir $@)
 	@$(CLOCK_SKEW_ELIMINATION) $@
 
 %.track: 
