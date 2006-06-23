@@ -22,7 +22,7 @@ SOURCE_DIRS     = $(addprefix src/,$(TARGET))
 TARGETS_DEVEL = $(addprefix src/,$(foreach target,$(TARGET),$(addprefix $(target)/,$($(target)))))
 TARGETS_PROD  = $(patsubst .o,.prod.o,$(TARGETS_DEVEL))
 
-ifeq ($(MODE),prod)
+ifeq ($(MODE),.prod)
   TARGETS = $(TARGETS_PROD)
 else
   TARGETS = $(TARGETS_DEVEL)
