@@ -370,7 +370,7 @@ EmitAKDVect2offset (node *bid, node *ivavis, info *info)
 
     assign = TBmakeAssign (TBmakeLet (TBmakeIds (result, NULL), offset), NULL);
 
-    INFO_POSTASSIGNS (info) = TCappendAssign (assign, INFO_POSTASSIGNS (info));
+    INFO_POSTASSIGNS (info) = TCappendAssign (INFO_POSTASSIGNS (info), assign);
 
     AVIS_SSAASSIGN (result) = assign;
 
@@ -422,7 +422,7 @@ EmitAKSVect2offset (node *bid, node *ivavis, info *info)
 
     assign = TBmakeAssign (TBmakeLet (TBmakeIds (result, NULL), offset), NULL);
 
-    INFO_POSTASSIGNS (info) = TCappendAssign (assign, INFO_POSTASSIGNS (info));
+    INFO_POSTASSIGNS (info) = TCappendAssign (INFO_POSTASSIGNS (info), assign);
 
     AVIS_SSAASSIGN (result) = assign;
 
