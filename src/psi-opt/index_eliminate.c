@@ -317,6 +317,8 @@ ScalarizeShape (info *info, node *ivavis, int rank, node *bavis)
         INFO_POSTASSIGNS (info)
           = TBmakeAssign (TBmakeLet (TBmakeIds (shpelavis, NULL), shpel),
                           INFO_POSTASSIGNS (info));
+
+        AVIS_SSAASSIGN (shpelavis) = INFO_POSTASSIGNS (info);
         exprs = TBmakeExprs (TBmakeId (shpelavis), exprs);
     }
     return (exprs);
@@ -368,8 +370,7 @@ EmitAKDVect2offset (node *bid, node *ivavis, info *info)
 
     assign = TBmakeAssign (TBmakeLet (TBmakeIds (result, NULL), offset), NULL);
 
-    /* We're appending to front of list, which is why the vect2offset comes first */
-    INFO_POSTASSIGNS (info) = TCappendAssign (INFO_POSTASSIGNS (info), assign);
+    INFO_POSTASSIGNS (info) = TCappendAssign (assign, INFO_POSTASSIGNS (info));
 
     AVIS_SSAASSIGN (result) = assign;
 
