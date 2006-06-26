@@ -1,31 +1,4 @@
-/*
- * $Log$
- * Revision 1.7  2005/10/05 13:27:11  ktr
- * minor bugfixing
- *
- * Revision 1.6  2005/09/28 16:48:49  sah
- * added loads of DBUG prints and resolved a bug
- * this resolves bug #120 as well
- *
- * Revision 1.5  2005/09/27 20:22:11  sah
- * wlidx offsets are used now whenever possible.
- *
- * Revision 1.4  2005/09/27 14:25:06  sah
- * quick fix for bug Ã#120
- *
- * Revision 1.3  2005/09/27 02:52:11  sah
- * hopefully, IVE is now back to its own power. Due to
- * lots of other compiler bugs, this code is not fully
- * tested, yet.
- *
- * Revision 1.2  2005/09/15 11:08:52  sah
- * now, wloffsets are used whenever possible
- *
- * Revision 1.1  2005/09/14 21:26:36  sah
- * Initial revision
- *
- *
- */
+/* $Id$ */
 
 #include "index_optimize.h"
 
@@ -38,6 +11,7 @@
 #include "internal_lib.h"
 #include "type_utils.h"
 #include "new_types.h"
+#include "shape_cliques.h"
 #include "shape.h"
 
 /**
@@ -102,7 +76,7 @@ FreeInfo (info *info)
  * offsets for a given vect2offset operation.
  *
  * IV            stores the avis of the indexvector
- * OFFSETS       contains all offsetvar avis and their corresponding shape
+ * OFFSETS       contains all offsetvar avis and their corresponding clique
  * LOCALOFFSETS  contains offset that are computed "locally" within the
  *               current block
  * SCALARS       contains the N_ids chain of scalars that can be used instead
@@ -111,7 +85,7 @@ FreeInfo (info *info)
 
 struct OFFSETINFO {
     node *avis;
-    shape *shape;
+    node *clique;
     offsetinfo *next;
 };
 
@@ -132,7 +106,7 @@ struct IVINFO {
 #define WITHIV_SCALARS(n) ((n)->scalars)
 #define WITHIV_NEXT(n) ((n)->next)
 #define WITHOFFSET_AVIS(n) ((n)->avis)
-#define WITHOFFSET_SHAPE(n) ((n)->shape)
+#define WITHOFFSET_CLIQUE(n) ((n)->clique)
 #define WITHOFFSET_NEXT(n) ((n)->next)
 
 /**
@@ -143,10 +117,6 @@ GenOffsetInfo (node *lhs, node *withops)
 {
     offsetinfo *result;
     offsetinfo *next;
-    shape *shape;
-#ifndef DBUG_OFF
-    char *tmp;
-#endif
 
     DBUG_ENTER ("GenOffsetInfo");
 
@@ -155,23 +125,18 @@ GenOffsetInfo (node *lhs, node *withops)
 
         next = GenOffsetInfo (IDS_NEXT (lhs), WITHOP_NEXT (withops));
 
-        if (((NODE_TYPE (withops) == N_genarray) || (NODE_TYPE (withops) == N_modarray))
-            && (TUshapeKnown (IDS_NTYPE (lhs)))) {
+        if (((NODE_TYPE (withops) == N_genarray)
+             || (NODE_TYPE (withops) == N_modarray))) {
             /*
              * only genarray and modarray wls have a built in index.
-             * furthermore, the shape of the result must be known
-             * to be able to decide whether the offset does match
              */
-            shape = SHcopyShape (TYgetShape (IDS_NTYPE (lhs)));
 
-            DBUG_EXECUTE ("IVEO", tmp = SHshape2String (0, shape););
-            DBUG_PRINT ("IVEO", ("adding wl-idx %s for shape %s",
-                                 AVIS_NAME (WITHOP_IDX (withops)), tmp));
-            DBUG_EXECUTE ("IVEO", tmp = ILIBfree (tmp););
+            DBUG_PRINT ("IVEO", ("adding offset %s and clique member %s",
+                                 WITHOP_IDX (withops), AVIS_NAME (IDS_AVIS (lhs))));
 
             result = ILIBmalloc (sizeof (offsetinfo));
 
-            WITHOFFSET_SHAPE (result) = shape;
+            WITHOFFSET_CLIQUE (result) = IDS_AVIS (lhs);
             WITHOFFSET_AVIS (result) = WITHOP_IDX (withops);
             WITHOFFSET_NEXT (result) = next;
         } else {
@@ -190,7 +155,6 @@ FreeOffsetInfo (offsetinfo *info)
     DBUG_ENTER ("FreeOffsetInfo");
 
     if (info != NULL) {
-        WITHOFFSET_SHAPE (info) = SHfreeShape (WITHOFFSET_SHAPE (info));
         WITHOFFSET_NEXT (info) = FreeOffsetInfo (WITHOFFSET_NEXT (info));
 
         info = ILIBfree (info);
@@ -241,7 +205,7 @@ PopIV (ivinfo *info)
 }
 
 static ivinfo *
-PushLocalOffset (ivinfo *ivinfo, node *avis, shape *shape)
+PushLocalOffset (ivinfo *ivinfo, node *avis, node *clique)
 {
     offsetinfo *newinfo;
 
@@ -249,7 +213,7 @@ PushLocalOffset (ivinfo *ivinfo, node *avis, shape *shape)
 
     newinfo = ILIBmalloc (sizeof (offsetinfo));
 
-    WITHOFFSET_SHAPE (newinfo) = SHcopyShape (shape);
+    WITHOFFSET_CLIQUE (newinfo) = clique;
     WITHOFFSET_AVIS (newinfo) = avis;
     WITHOFFSET_NEXT (newinfo) = WITHIV_LOCALOFFSETS (ivinfo);
 
@@ -269,19 +233,15 @@ PopLocalOffsets (ivinfo *ivinfo)
 }
 
 static node *
-FindIVOffset (ivinfo *info, node *iv, shape *shape)
+FindIVOffset (ivinfo *info, node *iv, node *clique)
 {
     node *result = NULL;
     offsetinfo *oinfo;
-#ifndef DBUG_OFF
-    char *tmp;
-#endif
 
     DBUG_ENTER ("FindIVOffset");
 
-    DBUG_EXECUTE ("IVEO", tmp = SHshape2String (0, shape););
-    DBUG_PRINT ("IVEO", ("looking up offset for %s and shape %s", AVIS_NAME (iv), tmp));
-    DBUG_EXECUTE ("IVEO", tmp = ILIBfree (tmp););
+    DBUG_PRINT ("IVEO", ("looking up offset for %s and clique member %s", AVIS_NAME (iv),
+                         AVIS_NAME (clique)));
 
     while ((info != NULL) && (WITHIV_IV (info) != iv)) {
         info = WITHIV_NEXT (info);
@@ -293,7 +253,8 @@ FindIVOffset (ivinfo *info, node *iv, shape *shape)
          */
         oinfo = WITHIV_OFFSETS (info);
 
-        while ((oinfo != NULL) && (!SHcompareShapes (shape, WITHOFFSET_SHAPE (oinfo)))) {
+        while ((oinfo != NULL)
+               && (!SCIAvisesAreInSameShapeClique (clique, WITHOFFSET_CLIQUE (oinfo)))) {
             oinfo = WITHOFFSET_NEXT (oinfo);
         }
 
@@ -305,8 +266,9 @@ FindIVOffset (ivinfo *info, node *iv, shape *shape)
              */
             oinfo = WITHIV_LOCALOFFSETS (info);
 
-            while ((oinfo != NULL)
-                   && (!SHcompareShapes (shape, WITHOFFSET_SHAPE (oinfo)))) {
+            while (
+              (oinfo != NULL)
+              && (!SCIAvisesAreInSameShapeClique (clique, WITHOFFSET_CLIQUE (oinfo)))) {
                 oinfo = WITHOFFSET_NEXT (oinfo);
             }
 
@@ -338,35 +300,35 @@ FindIVScalars (ivinfo *info, node *iv)
 }
 
 static node *
-GetAvis4Shape (node *avis, shape *shape, info *arg_info)
+GetAvis4Clique (node *avis, node *clique, info *arg_info)
 {
     node *result = NULL;
-    node *types;
+    node *cliques;
     node *ids;
 
-    DBUG_ENTER ("GetAvis4Shape");
+    DBUG_ENTER ("GetAvis4Clique");
 
-    types = AVIS_IDXSHAPES (avis);
+    cliques = AVIS_IDXSHAPES (avis);
     ids = AVIS_IDXIDS (avis);
 
-    if ((types != NULL) && (ids == NULL)) {
+    if ((cliques != NULL) && (ids == NULL)) {
         /*
          * we have an index vector of a withloop here! as offsets
          * for wl-indexvectors are local w.r.t. the current code
          * block, they are not annotated to the withiv-avis. so
          * we need to look it up in the withiv info structure!
          */
-        result = FindIVOffset (INFO_IVINFO (arg_info), avis, shape);
+        result = FindIVOffset (INFO_IVINFO (arg_info), avis, clique);
     } else {
-        while (types != NULL) {
-            DBUG_ASSERT ((ids != NULL), "# of ids does not match # of types");
+        while (cliques != NULL) {
+            DBUG_ASSERT ((ids != NULL), "# of ids does not match # of cliques");
 
-            if (SHcompareShapes (shape, TYgetShape (TYPE_TYPE (EXPRS_EXPR (types))))) {
+            if (SCIAvisesAreInSameShapeClique (clique, ID_AVIS (EXPRS_EXPR (cliques)))) {
                 result = IDS_AVIS (ids);
                 break;
             }
 
-            types = EXPRS_NEXT (types);
+            cliques = EXPRS_NEXT (cliques);
             ids = IDS_NEXT (ids);
         }
     }
@@ -375,7 +337,7 @@ GetAvis4Shape (node *avis, shape *shape, info *arg_info)
 }
 
 static node *
-Scalar2Offset (node *scalar, int dims, shape *shape, info *arg_info)
+Scalar2Offset (node *scalar, int dims, node *shape, info *arg_info)
 {
     node *args = NULL;
     node *avis;
@@ -399,7 +361,7 @@ Scalar2Offset (node *scalar, int dims, shape *shape, info *arg_info)
     /*
      * add shape array
      */
-    args = TBmakeExprs (SHshape2Array (shape), args);
+    args = TCappendExprs (DUPdoDupTree (ARRAY_AELEMS (shape)), args);
 
     /*
      * tmpvar = _idxs2offset( args)
@@ -411,15 +373,65 @@ Scalar2Offset (node *scalar, int dims, shape *shape, info *arg_info)
     DBUG_RETURN (avis);
 }
 
+/** <!-- ****************************************************************** -->
+ * @fn node *FindAvisForShapeExpression( node *shape)
+ *
+ * @brief For a given shape expression of a F_vect2offset application, this
+ *        function returns the associated avis of the array the offset
+ *        indexes into.
+ *        In order for this to work, the shape has to be an array of ids
+ *        which are defined by applications of F_idx_shape_sel.
+ *
+ * @param shape N_array node of the shape argument of F_vect2offset
+ *
+ * @return Avis node of the corresponding array
+ ******************************************************************************/
+node *
+FindAvisForShapeExpression (node *shape)
+{
+    node *result;
+    node *assign;
+    node *rhs;
+
+    DBUG_ENTER ("FindAvisForShapeExpression");
+
+    DBUG_ASSERT ((NODE_TYPE (shape) == N_array),
+                 "Found a vect2offset whose first argument is not an "
+                 "array constructor!");
+    DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (ARRAY_AELEMS (shape))) == N_id),
+                 "FindAvisForShapeExpression cannot be called on constant "
+                 "shapes.");
+
+    DBUG_ASSERT ((AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (ARRAY_AELEMS (shape)))) != NULL),
+                 "Found a shape argument to vect2offset with SSAASSIGN being "
+                 "NULL.");
+
+    assign = AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (ARRAY_AELEMS (shape))));
+
+    rhs = LET_EXPR (ASSIGN_INSTR (assign));
+
+    DBUG_ASSERT ((NODE_TYPE (rhs) == N_prf),
+                 "Found a vect2offset whose shape is not defined using "
+                 "a prf!");
+
+    DBUG_ASSERT ((PRF_PRF (rhs) == F_idx_shape_sel),
+                 "Found a vect2offset whose shape is not defined using "
+                 "shape_sel!");
+
+    result = ID_AVIS (PRF_ARG2 (rhs));
+
+    DBUG_RETURN (result);
+}
+
 /**
  * optimizer functions
  */
 static node *
 ReplaceByWithOffset (node *arg_node, info *arg_info)
 {
-    shape *shape;
     node *offset;
     node *scalars;
+    node *clique;
 
     DBUG_ENTER ("ReplaceByWithOffset");
 
@@ -427,9 +439,9 @@ ReplaceByWithOffset (node *arg_node, info *arg_info)
                  "found an id which was identified as a withid (no SSAASSIGN "
                  "and not N_arg) although not inside a withloop.");
 
-    shape = SHarray2Shape (PRF_ARG1 (arg_node));
+    clique = FindAvisForShapeExpression (PRF_ARG1 (arg_node));
 
-    offset = FindIVOffset (INFO_IVINFO (arg_info), ID_AVIS (PRF_ARG2 (arg_node)), shape);
+    offset = FindIVOffset (INFO_IVINFO (arg_info), ID_AVIS (PRF_ARG2 (arg_node)), clique);
 
     if (offset != NULL) {
         DBUG_PRINT ("IVEO", ("replacing vect2offset by wlidx %s",
@@ -443,7 +455,7 @@ ReplaceByWithOffset (node *arg_node, info *arg_info)
          * generated one, so we store it within the ivinfo
          */
         INFO_IVINFO (arg_info) = PushLocalOffset (INFO_IVINFO (arg_info),
-                                                  IDS_AVIS (INFO_LHS (arg_info)), shape);
+                                                  IDS_AVIS (INFO_LHS (arg_info)), clique);
 
         DBUG_PRINT ("IVEO", ("replacing vect2offset by wl-idxs2offset"));
 
@@ -457,8 +469,6 @@ ReplaceByWithOffset (node *arg_node, info *arg_info)
             arg_node = offset;
         }
     }
-
-    shape = SHfreeShape (shape);
 
     DBUG_RETURN (arg_node);
 }
@@ -501,13 +511,13 @@ OptimizeComputation (node *arg_node, info *arg_info)
     node *prf;
     node *arg1;
     node *arg2;
-    shape *shape;
+    node *clique;
 
     DBUG_ENTER ("OptimizeComputation");
 
     iv = PRF_ARG2 (arg_node);
     prf = ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (iv)));
-    shape = SHarray2Shape (PRF_ARG1 (arg_node));
+    clique = FindAvisForShapeExpression (PRF_ARG1 (arg_node));
 
     if (AVIS_NEEDCOUNT (IDS_AVIS (INFO_LHS (arg_info))) == 0) {
         /*
@@ -519,8 +529,8 @@ OptimizeComputation (node *arg_node, info *arg_info)
             /*
              * look up the matching offsets and replace computation
              */
-            arg1 = GetAvis4Shape (ID_AVIS (PRF_ARG1 (prf)), shape, arg_info);
-            arg2 = GetAvis4Shape (ID_AVIS (PRF_ARG2 (prf)), shape, arg_info);
+            arg1 = GetAvis4Clique (ID_AVIS (PRF_ARG1 (prf)), clique, arg_info);
+            arg2 = GetAvis4Clique (ID_AVIS (PRF_ARG2 (prf)), clique, arg_info);
 
             if ((arg1 != NULL) && (arg2 != NULL)) {
                 DBUG_PRINT ("IVEO", ("computing prf on offsets instead of idx-vects"));
@@ -535,15 +545,15 @@ OptimizeComputation (node *arg_node, info *arg_info)
         case F_add_SxA:
         case F_sub_SxA:
             if (TUdimKnown (ID_NTYPE (PRF_ARG2 (prf)))) {
-                arg2 = GetAvis4Shape (ID_AVIS (PRF_ARG2 (prf)), shape, arg_info);
+                arg2 = GetAvis4Clique (ID_AVIS (PRF_ARG2 (prf)), clique, arg_info);
 
                 if (arg2 != NULL) {
                     DBUG_PRINT ("IVEO",
                                 ("computing prf on offsets instead of idx-vects"));
 
                     arg1 = Scalar2Offset (PRF_ARG1 (prf),
-                                          TYgetDim (ID_NTYPE (PRF_ARG2 (prf))), shape,
-                                          arg_info);
+                                          TYgetDim (ID_NTYPE (PRF_ARG2 (prf))),
+                                          PRF_ARG1 (arg_node), arg_info);
 
                     arg_node = FREEdoFreeNode (arg_node);
                     arg_node
@@ -556,15 +566,15 @@ OptimizeComputation (node *arg_node, info *arg_info)
         case F_add_AxS:
         case F_sub_AxS:
             if (TUdimKnown (ID_NTYPE (PRF_ARG1 (prf)))) {
-                arg1 = GetAvis4Shape (ID_AVIS (PRF_ARG1 (prf)), shape, arg_info);
+                arg1 = GetAvis4Clique (ID_AVIS (PRF_ARG1 (prf)), clique, arg_info);
 
                 if (arg1 != NULL) {
                     DBUG_PRINT ("IVEO",
                                 ("computing prf on offsets instead of idx-vects"));
 
                     arg2 = Scalar2Offset (PRF_ARG2 (prf),
-                                          TYgetDim (ID_NTYPE (PRF_ARG1 (prf))), shape,
-                                          arg_info);
+                                          TYgetDim (ID_NTYPE (PRF_ARG1 (prf))),
+                                          PRF_ARG1 (arg_node), arg_info);
 
                     arg_node = FREEdoFreeNode (arg_node);
                     arg_node
@@ -575,7 +585,7 @@ OptimizeComputation (node *arg_node, info *arg_info)
             break;
 
         case F_mul_SxA:
-            arg2 = GetAvis4Shape (ID_AVIS (PRF_ARG2 (prf)), shape, arg_info);
+            arg2 = GetAvis4Clique (ID_AVIS (PRF_ARG2 (prf)), clique, arg_info);
 
             if (arg2 != NULL) {
                 DBUG_PRINT ("IVEO", ("computing prf on offsets instead of idx-vects"));
@@ -588,7 +598,7 @@ OptimizeComputation (node *arg_node, info *arg_info)
             break;
 
         case F_mul_AxS:
-            arg1 = GetAvis4Shape (ID_AVIS (PRF_ARG1 (prf)), shape, arg_info);
+            arg1 = GetAvis4Clique (ID_AVIS (PRF_ARG1 (prf)), clique, arg_info);
 
             if (arg1 != NULL) {
                 DBUG_PRINT ("IVEO", ("computing prf on offsets instead of idx-vects"));
@@ -604,8 +614,6 @@ OptimizeComputation (node *arg_node, info *arg_info)
             break;
         }
     }
-
-    shape = SHfreeShape (shape);
 
     DBUG_RETURN (arg_node);
 }
@@ -679,12 +687,20 @@ IVEOprf (node *arg_node, info *arg_info)
                  * this index vector is defined as a array of
                  * scalars.
                  */
+                DBUG_PRINT ("IVEO", ("Trying to scalarise vect2offset for iv %s...",
+                                     AVIS_NAME (ID_AVIS (ivarg))));
+
                 arg_node = ReplaceByIdx2Offset (arg_node, arg_info);
             } else if (NODE_TYPE (ASSIGN_RHS (ivassign)) == N_prf) {
                 /*
                  * this index vector is defined as a computation
                  * on (maybe) other index vectors or constants
                  */
+                DBUG_PRINT (
+                  "IVEO",
+                  ("Trying to lift vect2offset for iv %s to computation on offsets...",
+                   AVIS_NAME (ID_AVIS (ivarg))));
+
                 arg_node = OptimizeComputation (arg_node, arg_info);
             }
         } else {
@@ -697,6 +713,10 @@ IVEOprf (node *arg_node, info *arg_info)
                  * the lhs avis for this shape for later use. This is done
                  * by ReplaceByWithOffset.
                  */
+                DBUG_PRINT ("IVEO",
+                            ("Trying to replace vect2offset for iv %s by wlidx...",
+                             AVIS_NAME (ID_AVIS (ivarg))));
+
                 arg_node = ReplaceByWithOffset (arg_node, arg_info);
             }
         }
