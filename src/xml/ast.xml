@@ -4810,14 +4810,20 @@
               </target>
             </targets>
           </type>
-          <description>Used by by Interface Analsysis in order to 
+          <description>Used by Interface Analysis in order to 
             obtain the transitive hull of variable aliases.</description>
         </attribute>
-	<attribute name="IdxTypes">
+	<attribute name="IdxShapes">
+          <description>Used by Index Vector Elimination. If this 
+	  N_avis is an index vector, IdxShapes is the 
+	  head of a linked 
+	  list of N_exprs node that point to N_id nodes 
+	  that represent the set of unique array shapes which 
+	  are indexed by this N_avis. </description>
 	  <type name="Node">
             <targets>
               <target mandatory="no">
-                <node name="Type" />
+                <node name="Exprs" />
                 <phases>
                   <phase name="ive" />
                 </phases>
@@ -4826,6 +4832,8 @@
 	  </type>
 	</attribute>
 	<attribute name="IdxIds">
+          <description>Used by Index Vector Elimination for Loop/Cond fn 
+	  	analysis </description>
 	  <type name="Node">
             <targets>
               <target mandatory="no">
@@ -4838,12 +4846,13 @@
 	  </type>
 	</attribute>
 	<attribute name="ShapeCliqueID" default="this">
-	  <description>shape clique to which this array belongs</description>
+	  <description>Circular linked-list of N_avis nodes which comprise this array's shape clique. All entries in the clique are known to have the same shape.</description>
 	  <type name="Link">
             <targets>
-              <target mandatory="no">
+              <target mandatory="yes">
+	       <node name="Avis" />
                 <phases>
-		  <range from="sci" to="ive" />
+		  <range from="wlidx" to="ive" />
                 </phases>
               </target>
             </targets>

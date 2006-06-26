@@ -1,19 +1,6 @@
 /*
  *
- * $Log$
- * Revision 1.4  2005/09/23 14:03:22  sah
- * extended index_eliminate to drag index offsets across
- * lacfun boundaries.
- *
- * Revision 1.3  2005/09/15 17:13:56  ktr
- * removed IVE renaming function which was obsolete due to explicit
- * offset variables
- *
- * Revision 1.2  2005/09/15 12:46:05  sah
- * args and ids are now properly traversed
- *
- * Revision 1.1  2005/09/12 16:19:19  sah
- * Initial revision
+ * $Id$
  *
  */
 
@@ -30,6 +17,7 @@
 #include "DupTree.h"
 #include "type_utils.h"
 #include "free.h"
+#include "shape_cliques.h"
 
 /*
  * OPEN PROBLEMS:
@@ -47,7 +35,7 @@
  * @defgroup ive IVE
  * @ingroup opt
  *
- * @brief The "index vector elimination" (IVE for short)
+ * @brief "index vector elimination" (IVE)
  *	does eliminate index vectors, at times.
  *	Specifically, it adds code that converts index
  *	vectors to array offsets. If all references to an
@@ -58,24 +46,81 @@
  *	eliminated, but performance may still be improved,
  *	due to improved sel/modarray operation.
  *
- *      As of 2005-09-12, this works only for AKS arrays.
+ *	As of 2006-06-21, it replaces ALL sel and modarray operations
+ *	for AKD/AUD arrays (B) operations as follows:
+ *
+ *	   x = sel(iv,B)            ->      iv_B = vect2offset(iv,_shape_(B));
+ *	                                    x = _idx_sel(iv_B,B);
+ *
+ *
+ *     X = modarray(B, iv, v);  ->      iv_B = vect2offset(iv,iv,_shape_(B));
+ *                                      X = idx_modarray(iv_B, B, v);
+ *
+ *     NB. Note different argument order in modarray vs idx_modarray!
+ *
+ *     In the case where an index vector is used by more than one
+ *     indexing operation on arrays that are in the same shape clique
+ *     (and hence known to have the same shape), the offset (iv_B)
+ *     will eventually be shared by them, though CSE and DCR:
+ *
+ *     A = reverse(B);                  NB. A and B are in same shape clique
+ *     ...
+ *	   x = sel(iv,B)            ->      iv_B = vect2offset(iv,_shape_(B));
+ *	   ...                              x = _idx_sel(iv_B,B);
+ *	   q = sel(iv,A)            ->      iv_A = vect2offset(iv,_shape_(B));
+ *	                                    x = _idx_sel(iv_A,A);
+ *
+ *     NB. The second argument of vect2offset will use the name
+ *     of the earliest array encountered in that shape clique. Note in the
+ *     above that the computation of q uses the shape of A, not B.
+ *
+ *     NB. It is possible that code motion may be able to lift the
+ *     calculation of iv_B to an earlier point in the computation.
+ *     I should measure this...
+ *
+ * The index_optimize phase (q.v.) that follows this phase may make
+ * further improvements to some of this code
+ *
+ * IVE treatment of AKS arrays is more aggressive than for AKD/AUD arrays,
+ * in that it:
+ *
+ *      1. Places the vect2offset operation directly after the definition
+ *         of the index vector.
+ *      2. Uses the (statically known) shape of the array in the vect2offset
+ *         operation. This approach can not be used for AKD/AUD arrays,
+ *         because the array itself may not exist at the location of the
+ *         definition of the index vector.
+ *      3. If the offset created by the vect2offset is used by more than
+ *         one AKS indexing operation, it will be shared by those operations.
+ *
  *
  * <pre>
  * Example:
  *
  *            a = reshape([4,4], [1,2,...,16]);
+ *            b = a + 1;
  *            iv = [2,3];
+ *            ...
  *            z = a[iv];
+ *            q = b[iv];
  *
  * is transformed into:
  *
  *            a = reshape([4,4], [1,2,...,16]);
+ *            b = a + 1;
  *            iv = [2,3];
  *            __iv_4_4 = 11;
+ *            ...
  *            z = idx_sel(a, __iv_4_4);
+ *            q = idx_sel(b, __iv_4_4);
  * The iv =... will be deleted by DCR, if possible.
+ *
  * </pre>
  *
+ * @{
+ */
+
+/**
  * @{
  */
 
@@ -117,18 +162,7 @@
  *	assigns.
  *
  *	Replace each sel or modarray reference to an index vector
- *	by a reference using the offset.
- *
- *	E.g:
- *		iv = [2,3]
- *              ...
- *              x = sel(iv,B);
- *	is changed to:
- *		iv = [2,3]
- *		iv_B = vect2offset(iv,shape(B));
- *              ...
- *		x = _idx_sel(iv,B,B);
- *
+ *	as above.
  * </pre>
  */
 
@@ -196,66 +230,184 @@ static int ive_expr;
  */
 
 /** <!-- ****************************************************************** -->
- * @brief Search iv's avis for array entry of "type"
+ * @brief Find identifier to use as offset in idx_sel operation.
+ *        This is done by searching iv's avis for an array entry in the
+ *        same shape clique as bavis, and returning the corresponding
+ *        AVIS_IDXIDS. This N_avis was created when the vect2offset
+ *        was emitted. E.g., if it generated:
+ *          iv_B = vect2offset( iv, _shape_(B));
+ *       the result N_avis is that of iv_B.
  *
- * @param avis N_avis node of the selection index
- * @param type type of array potentially being indexed by the avis entry
+ * @param ivavis -  N_avis node of the selection index, iv
+ * @param bavis  -  N_avis of array, B, potentially being indexed by the ivavis entry
+ *                  in B[iv] or B[iv] = v
  *
- * @return avis entry that matches type, or NULL, if no match is found
+ * @return avis entry that matches bavis, or NULL, if no match is found
  ******************************************************************************/
 static node *
-GetAvis4Shape (node *avis, ntype *type)
+GetIvScalarOffsetAvis (node *iavis, node *bavis)
 {
     node *result = NULL;
-    node *types;
     node *ids;
+    node *shpexprs;
+    node *shpid;
 
-    DBUG_ENTER ("GetAvis4Shape");
+    DBUG_ENTER ("GetIvScalarOffsetAvis");
+    DBUG_ASSERT (NODE_TYPE (iavis) == N_avis, "Expected N_avis node as iavis");
+    DBUG_ASSERT (NODE_TYPE (bavis) == N_avis, "Expected N_avis node as bavis");
 
-    if (TUshapeKnown (type)) {
-        types = AVIS_IDXTYPES (avis);
-        ids = AVIS_IDXIDS (avis);
+    /* shpexprs is exprs list of B N_avis nodes hanging off iavis */
+    shpexprs = AVIS_IDXSHAPES (iavis);
+    DBUG_ASSERT (NODE_TYPE (shpexprs) == N_exprs,
+                 "Expected N_exprs node as shpexprs type node");
+    ids = AVIS_IDXIDS (iavis);
 
-        while (types != NULL) {
-            DBUG_ASSERT ((ids != NULL),
-                         "number of IDXTYPES does not match number of IDXIDS!");
+    while (shpexprs != NULL) {
+        DBUG_ASSERT ((ids != NULL),
+                     "number of IDXSHAPES does not match number of IDXIDS!");
 
-            if (SHcompareShapes (TYgetShape (type),
-                                 TYgetShape (TYPE_TYPE (EXPRS_EXPR (types))))) {
-                result = IDS_AVIS (ids);
-                break;
-            }
-
-            types = EXPRS_NEXT (types);
-            ids = IDS_NEXT (ids);
+        /* Search for entry in same shape clique as B */
+        shpid = EXPRS_EXPR (shpexprs);
+        DBUG_ASSERT ((N_id == NODE_TYPE (shpid)),
+                     "Shape clique shape chain entry not N_id");
+        if (SCIAvisesAreInSameShapeClique (bavis, ID_AVIS (shpid))) {
+            result = IDS_AVIS (ids);
+            break;
         }
-    } else {
-        result = NULL;
+
+        shpexprs = EXPRS_NEXT (shpexprs);
+        ids = IDS_NEXT (ids);
     }
 
     DBUG_RETURN (result);
 }
 
+/** <!-- ****************************************************************** -->
+ * @brief Emit code to scalarize shape vector for typical array in
+ *        bavis shape clique
+ * @param info
+ * @param ivavis - index vector array name to use for generating
+ *                 scalar shape element names
+ * @param rank - size of shape vector to scalarize
+ * @param bavis - array to use for specifying shape clique
+ *
+ * @return exprs node containing shape_sel expressions
+ ******************************************************************************/
+node *
+ScalarizeShape (info *info, node *ivavis, int rank, node *bavis)
+{ /* Emit rank-sized vector of _shape_sel invocations for
+   * best array in shape clique of ivavis
+   */
+
+    node *cliqueb;
+    node *exprs;
+    int axis;
+    node *shpelavis;
+    ntype *shpeltype;
+    node *shpel;
+
+    cliqueb = SCIFindMarkedAvisInSameShapeClique (bavis);
+    exprs = NULL;
+    for (axis = rank - 1; axis >= 0; axis--) {
+        shpeltype = TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0));
+        shpelavis = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (ivavis)), shpeltype);
+        INFO_VARDECS (info) = TBmakeVardec (shpelavis, INFO_VARDECS (info));
+
+        shpel = TCmakePrf2 (F_idx_shape_sel, TBmakeNum (axis), TBmakeId (cliqueb));
+        INFO_POSTASSIGNS (info)
+          = TBmakeAssign (TBmakeLet (TBmakeIds (shpelavis, NULL), shpel),
+                          INFO_POSTASSIGNS (info));
+        exprs = TBmakeExprs (TBmakeId (shpelavis), exprs);
+    }
+    return (exprs);
+}
+/** <!-- ****************************************************************** -->
+ * @brief Emit Vect2offset for AKD array indexing operations sel(iv, B)
+ *        and modarray(B, iv, val)
+ * AKD case: Replace  x = sel( iv, B) by:
+ *                        shp0 = _shape_sel( 0, B);
+ *                        shp1 = _shape_sel( 1, B);
+ *                        ...
+ *                        iv_B = vect2offset( [shp0, shp1...], iv);
+ *                        x = idx_sel( iv_B, B);
+ *
+ * @param bid is the N_id for B.
+ * @param  ivavis is the avis for iv
+ *
+ * @return The N_avis for the newly generated iv_B.
+ ******************************************************************************/
 static node *
-Type2IdxAssign (ntype *type, node *avis, info *info)
+EmitAKDVect2offset (node *bid, node *ivavis, info *info)
 {
+
     node *result;
     node *assign;
     node *offset;
+    node *exprs;
 
-    DBUG_ENTER ("Type2IdxAssign");
+    DBUG_ENTER ("EmitAKDVect2offset");
 
-    DBUG_ASSERT ((TYisAKS (type)), "Type2IdxAssign called with non-AKS type");
+    exprs = ScalarizeShape (info, ivavis, TYgetDim (ID_NTYPE (bid)), ID_AVIS (bid));
 
-    /*
-     * iv = id =>
-     *
-     * _vect2offset_( [ <shp> ], iv)
+    /* Emit     iv_B = vect2offset( [shp0, shp1, ...], iv);
+     * KLUDGE: This is not flattened code: the correct approach,
+     * according to the non-existent sac2c design and implementation
+     * manual, is to make a temp vector, tv, from the scalars,
+     * and generate iv_B = vect2Offset( tv, iv); However, we
+     * don't do that...
+     * See also KLUDGE in index_optimize.
      */
-    offset
-      = TCmakePrf2 (F_vect2offset, SHshape2Array (TYgetShape (type)), TBmakeId (avis));
 
-    result = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (avis)),
+    offset = TCmakePrf2 (F_vect2offset, TCmakeIntVector (exprs), TBmakeId (ivavis));
+
+    /* Generate temp name for resulting integer scalar array offset iv_B */
+    result = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (ivavis)),
+                         TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
+
+    INFO_VARDECS (info) = TBmakeVardec (result, INFO_VARDECS (info));
+
+    assign = TBmakeAssign (TBmakeLet (TBmakeIds (result, NULL), offset), NULL);
+
+    /* We're appending to front of list, which is why the vect2offset comes first */
+    INFO_POSTASSIGNS (info) = TCappendAssign (INFO_POSTASSIGNS (info), assign);
+
+    AVIS_SSAASSIGN (result) = assign;
+
+    DBUG_RETURN (result);
+}
+/** <!-- ****************************************************************** -->
+ * @brief Emit Vect2offset for AKS array indexing operations sel(iv, B)
+ *        and modarray(B, iv, val)
+ *        This emits:  vect2offset( [ <shp> ], iv);
+ *
+ * @param bavis is the avis for B.
+ * @param  ivavis is the avis for iv
+ *
+ * @return
+ ******************************************************************************/
+static node *
+EmitAKSVect2offset (node *bid, node *ivavis, info *info)
+{
+
+    node *result;
+    node *assign;
+    node *offset;
+    ntype *btype;
+    node *bavis;
+
+    DBUG_ENTER ("EmitAKSVect2offset");
+    DBUG_ASSERT (N_id == NODE_TYPE (bid), "bid node not of type N_id");
+    DBUG_ASSERT (N_avis == NODE_TYPE (ivavis), "ivavis node not of type N_avis");
+
+    bavis = ID_AVIS (bid);
+    btype = AVIS_TYPE (bavis);
+    offset
+      = TCmakePrf2 (F_vect2offset, SHshape2Array (TYgetShape (btype)), /* e.g., [2,3,4] */
+                    TBmakeId (ivavis)                                  /* iv */
+      );
+
+    /* Generate temp name for resulting integer scalar array offset */
+    result = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (ivavis)),
                          TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
 
     INFO_VARDECS (info) = TBmakeVardec (result, INFO_VARDECS (info));
@@ -270,29 +422,57 @@ Type2IdxAssign (ntype *type, node *avis, info *info)
 }
 
 /** <!-- ****************************************************************** -->
- * @brief Generates vect2offset assignments for the given
- *        index variable and shapes.
+ * @brief Emit Vect2offset for any array indexing operations sel(iv, B)
+ *        and modarray(B, iv, val)
  *
- * @param types N_exprs chain of N_type nodes containing all shapes
- *              an offset has to be built for.
- * @param avis N_avis node of the selection index
+ * @param bavis is the avis for B.
+ * @param  ivavis is the avis for iv
+ *
+ * @return
+ ******************************************************************************/
+static node *
+EmitVect2offset (node *bid, node *ivavis, info *info)
+{
+    node *res;
+
+    DBUG_ENTER ("EmitVect2offset");
+    DBUG_ASSERT (N_id == NODE_TYPE (bid), "bid node not of type N_id");
+    DBUG_ASSERT (N_avis == NODE_TYPE (ivavis), "ivavis node not of type N_avis");
+
+    if (TUshapeKnown (AVIS_TYPE (ID_AVIS (bid)))) {
+        res = EmitAKSVect2offset (bid, ivavis, info);
+    } else if (TUdimKnown (AVIS_TYPE (ID_AVIS (bid)))) {
+        res = EmitAKDVect2offset (bid, ivavis, info);
+    } else
+        res = ivavis; /* Do nothing to AUD and AUDGZ arrays */
+
+    DBUG_RETURN (res);
+}
+/** <!-- ****************************************************************** -->
+ * @brief Recursively generates all vect2offset assignments for the given
+ *        index variable and shapes for B[iv]
+ *
+ * @param bexprs N_exprs chain of N_type nodes containing all shapes B
+ *              for which we need to build offsets
+ * @param ivavis N_avis node of the selection index, iv
  * @param info info structure
  *
  * @return N_ids chain containing all created offset ids
  ******************************************************************************/
 static node *
-IdxTypes2IdxIds (node *types, node *avis, info *info)
+EmitVect2Offsets (node *bexprs, node *ivavis, info *info)
 {
     node *result = NULL;
     node *idxavis;
 
-    DBUG_ENTER ("IdxTypes2IdxIds");
+    DBUG_ENTER ("EmitVect2Offsets");
 
-    if (types != NULL) {
-        result = IdxTypes2IdxIds (EXPRS_NEXT (types), avis, info);
+    if (bexprs != NULL) {
+        DBUG_ASSERT (N_exprs == NODE_TYPE (bexprs), "bexprs node not of type N_exprs");
+        DBUG_ASSERT (N_avis == NODE_TYPE (ivavis), "ivavis node not of type N_avis");
+        result = EmitVect2Offsets (EXPRS_NEXT (bexprs), ivavis, info);
 
-        idxavis = Type2IdxAssign (TYPE_TYPE (EXPRS_EXPR (types)), avis, info);
-
+        idxavis = EmitVect2offset (EXPRS_EXPR (bexprs), ivavis, info);
         result = TBmakeIds (idxavis, result);
     }
 
@@ -337,24 +517,22 @@ static
    * @brief Generates new concrete arguments for the given idxtypes and avis.
    *        The avis must contain matching idxids for all given types!
    *
-   * @param types N_exprs chain of type nodes
+   * @param avisexpr N_exprs chain of type nodes
    * @param avis avis node with idxids
    * @param args N_exprs chain of concrete args
    *
    * @return extended N_exprs arg chain
    ******************************************************************************/
   node *
-  IdxTypes2ApArgs (node *types, node *avis, node *args)
+  IdxTypes2ApArgs (node *avisexpr, node *ivavis, node *args)
 {
     node *idxavis;
 
     DBUG_ENTER ("IdxTypes2ApArgs");
 
-    if (types != NULL) {
-        args = IdxTypes2ApArgs (EXPRS_NEXT (types), avis, args);
-
-        idxavis = GetAvis4Shape (avis, TYPE_TYPE (EXPRS_EXPR (types)));
-
+    if (avisexpr != NULL) {
+        args = IdxTypes2ApArgs (EXPRS_NEXT (avisexpr), ivavis, args);
+        idxavis = GetIvScalarOffsetAvis (ivavis, ID_AVIS (EXPRS_EXPR (avisexpr)));
         DBUG_ASSERT ((idxavis != NULL), "no matching index for given arg found!");
 
         args = TBmakeExprs (TBmakeId (idxavis), args);
@@ -370,7 +548,7 @@ ExtendConcreteArgs (node *concargs, node *formargs)
 
     if (concargs != NULL) {
         EXPRS_NEXT (concargs)
-          = IdxTypes2ApArgs (AVIS_IDXTYPES (ARG_AVIS (formargs)),
+          = IdxTypes2ApArgs (AVIS_IDXSHAPES (ARG_AVIS (formargs)),
                              ID_AVIS (EXPRS_EXPR (concargs)), EXPRS_NEXT (concargs));
 
         EXPRS_NEXT (concargs)
@@ -381,7 +559,85 @@ ExtendConcreteArgs (node *concargs, node *formargs)
 }
 
 /** <!-- ****************************************************************** -->
- * @brief  Attempt to replace y = sel(iv,B) by  y = idx_sel(iv_B,B)
+ * @brief  AKD/AUD Attempt to replace y = sel(iv,B) by:
+ *          iv_B = vect2offset(iv, _shape_(BClique));
+ *          y = idx_sel(iv_B,B)
+ *         where BClique is earliest member of B's shape clique that
+ *         has had an indexing operation already performed here.
+ *         [This will allow CSE to remove some of the vect2offsets.]
+ *
+ * @param prf prf entry for a sel(iv,B) operation
+ * @param lhs - unused in this call
+ *
+ * @return updated prf node
+ ******************************************************************************/
+static node *
+CheckAndReplaceSelAKD (node *prf, node *lhs)
+{
+    node *result;
+    node *ivavis;
+
+    DBUG_ENTER ("CheckAndReplaceSelAKD");
+
+    /* Use the scalarized iv offset */
+    ivavis = GetIvScalarOffsetAvis (ID_AVIS (PRF_ARG1 (prf)), ID_AVIS (PRF_ARG2 (prf)));
+
+    if (ivavis != NULL) { /* FIXME How can this ever be null???? */
+        result = TCmakePrf2 (F_idx_sel, TBmakeId (ivavis), PRF_ARG2 (prf));
+
+        PRF_ARG2 (prf) = NULL;
+        prf = FREEdoFreeTree (prf);
+
+        ive_expr++;
+    } else {
+        result = prf;
+    }
+
+    DBUG_RETURN (result);
+}
+/** <!-- ****************************************************************** -->
+ * @brief  AKS Attempt to replace y = sel( iv, B) by  y = idx_sel( iv_B, B)
+ *
+ * @param prf - prf entry for a sel(iv,B) operation
+ * @param lhs - unused in this call
+ *
+ * @return updated prf node
+ ******************************************************************************/
+static node *
+CheckAndReplaceSelAKS (node *prf, node *lhs)
+{
+    node *result;
+    node *ivscalaravis;
+
+    DBUG_ENTER ("CheckAndReplaceSelAKS");
+
+    ivscalaravis
+      = GetIvScalarOffsetAvis (ID_AVIS (PRF_ARG1 (prf)), ID_AVIS (PRF_ARG2 (prf)));
+
+    if (ivscalaravis != NULL) {
+        result
+          = TCmakePrf2 (F_idx_sel, TBmakeId (ivscalaravis), /* iv scalar offset into B */
+                        PRF_ARG2 (prf));                    /* B */
+
+        PRF_ARG2 (prf) = NULL;
+        prf = FREEdoFreeTree (prf);
+
+        ive_expr++;
+    } else {
+        result = prf;
+    }
+
+    DBUG_RETURN (result);
+}
+
+/** <!-- ****************************************************************** -->
+ * @brief  Attempt to replace:
+ *      (AKS):      y = sel(iv,B) by
+ *                  y = idx_sel(iv_B,B)
+ *
+ *      (AKD/AUD):  y = sel(iv,B) by
+ *                  iv_B = vect2offset(iv, _shape_(CliqueB));
+ *                  y = idx_sel(iv_B,B)
  *
  * @param prf prf entry for a sel(iv,B) operation
  * @param lhs - unused in this call
@@ -392,19 +648,13 @@ static node *
 CheckAndReplaceSel (node *prf, node *lhs)
 {
     node *result;
-    node *avis;
 
     DBUG_ENTER ("CheckAndReplaceSel");
 
-    avis = GetAvis4Shape (ID_AVIS (PRF_ARG1 (prf)), ID_NTYPE (PRF_ARG2 (prf)));
-
-    if (avis != NULL) {
-        result = TCmakePrf2 (F_idx_sel, TBmakeId (avis), PRF_ARG2 (prf));
-
-        PRF_ARG2 (prf) = NULL;
-        prf = FREEdoFreeNode (prf);
-
-        ive_expr++;
+    if ((!global.iveaksasakd) && TUshapeKnown (ID_NTYPE (PRF_ARG2 (prf)))) {
+        result = CheckAndReplaceSelAKS (prf, lhs);
+    } else if ((!global.iveaksonly) && TUdimKnown (ID_NTYPE (PRF_ARG2 (prf)))) {
+        result = CheckAndReplaceSelAKD (prf, lhs);
     } else {
         result = prf;
     }
@@ -429,7 +679,7 @@ CheckAndReplaceModarray (node *prf, node *lhs)
 
     DBUG_ENTER ("CheckAndReplaceModarray");
 
-    avis = GetAvis4Shape (ID_AVIS (PRF_ARG2 (prf)), ID_NTYPE (PRF_ARG1 (prf)));
+    avis = GetIvScalarOffsetAvis (ID_AVIS (PRF_ARG2 (prf)), ID_AVIS (PRF_ARG1 (prf)));
 
     if ((avis != NULL) && (TUshapeKnown (IDS_NTYPE (lhs)))
         && (TUshapeKnown (ID_NTYPE (PRF_ARG1 (prf))))
@@ -448,7 +698,7 @@ CheckAndReplaceModarray (node *prf, node *lhs)
 
         PRF_ARG1 (prf) = NULL;
         PRF_ARG3 (prf) = NULL;
-        prf = FREEdoFreeNode (prf);
+        prf = FREEdoFreeTree (prf);
 
         ive_expr++;
     } else {
@@ -538,8 +788,8 @@ IVEarg (node *arg_node, info *arg_info)
          * top-level function
          */
         AVIS_IDXIDS (ARG_AVIS (arg_node))
-          = IdxTypes2IdxIds (AVIS_IDXTYPES (ARG_AVIS (arg_node)), ARG_AVIS (arg_node),
-                             arg_info);
+          = EmitVect2Offsets (AVIS_IDXSHAPES (ARG_AVIS (arg_node)), ARG_AVIS (arg_node),
+                              arg_info);
     } else {
         /*
          * lac-function:
@@ -549,7 +799,7 @@ IVEarg (node *arg_node, info *arg_info)
          * extend the function signature.
          */
         AVIS_IDXIDS (ARG_AVIS (arg_node))
-          = IdxTypes2IdxArgs (AVIS_IDXTYPES (ARG_AVIS (arg_node)), ARG_AVIS (arg_node),
+          = IdxTypes2IdxArgs (AVIS_IDXSHAPES (ARG_AVIS (arg_node)), ARG_AVIS (arg_node),
                               &ARG_NEXT (arg_node), arg_info);
     }
 
@@ -610,8 +860,8 @@ IVEids (node *arg_node, info *arg_info)
     DBUG_ENTER ("IVEids");
 
     AVIS_IDXIDS (IDS_AVIS (arg_node))
-      = IdxTypes2IdxIds (AVIS_IDXTYPES (IDS_AVIS (arg_node)), IDS_AVIS (arg_node),
-                         arg_info);
+      = EmitVect2Offsets (AVIS_IDXSHAPES (IDS_AVIS (arg_node)), IDS_AVIS (arg_node),
+                          arg_info);
 
     if (IDS_NEXT (arg_node) != NULL) {
         IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
@@ -733,7 +983,7 @@ IVEcode (node *arg_node, info *arg_info)
 
     avis = IDS_AVIS (WITHID_VEC (INFO_WITHID (arg_info)));
 
-    AVIS_IDXIDS (avis) = IdxTypes2IdxIds (AVIS_IDXTYPES (avis), avis, arg_info);
+    AVIS_IDXIDS (avis) = EmitVect2Offsets (AVIS_IDXSHAPES (avis), avis, arg_info);
 
     CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
     if (AVIS_IDXIDS (avis) != NULL) {

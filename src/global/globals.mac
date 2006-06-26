@@ -318,6 +318,20 @@ GLOBAL (int, maxspec, 20)
  * Maximum number of specializations per function
  */
 
+GLOBAL (bool, iveaksonly, FALSE)
+/*
+ * If IVE is enabled, apply it to AKS arrays only
+ */
+
+GLOBAL (bool, iveaksasakd, FALSE)
+/*
+ * If IVE is enabled, apply it to AKD arrays as if they were AKD
+ * This is a temporary thing to let us measure to see if the old
+ * AKS IVE code is any better than the AKD IVE code.
+ * It really has no other use, and should be ripped out soon.
+ * rbe 2006-06-23.
+ */
+
 GLOBAL (sigspec_mode_t, sigspec_mode, SSP_aks)
 GLOBAL (char **, sigspec_mode_str, sigspec_mode_str_init)
 /*

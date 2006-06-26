@@ -272,6 +272,7 @@ USGprintUsage ()
                       "Stop after with-loop default partition generation.");
     PRINT_BREAK_SPEC (PH_sacopt, "wrci",
                       "Stop after with-loop reuse candidates inference.");
+    PRINT_BREAK_SPEC (PH_sacopt, "sci", "Stop after shape clique inference.");
     PRINT_BREAK_SPEC (PH_sacopt, "wlidx",
                       "Stop after annotating offset variables at with-loops.");
     PRINT_BREAK_SPEC (PH_sacopt, "ivei",
@@ -386,6 +387,12 @@ USGprintUsage ()
       "                      - segmentation and tiling of fold-with-loops.\n"
       "\n"
       "    -noreuse        Disable reuse inference in emm.\n"
+      "\n"
+      "    -iveaksonly    Disable ive for AKD arrays. This is a performance measurement  "
+      "option that should be removed.\n"
+      "\n"
+      "    -iveaksasakd   Treat AKS arrays as if they were AKD, for IVE. This is also a "
+      "performance measurement option that should be removed.\n"
       "\n"
       "    -no <opt>       Disable optimization technique <opt>.\n"
       "\n"

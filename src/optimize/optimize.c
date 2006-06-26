@@ -321,31 +321,33 @@ OPTdoOptimize (node *arg_node)
         arg_node = PHrunCompilerSubPhase (SUBPH_sci, arg_node);
         /* ive is dependent upon this phase running, as is
          * some of ktr's memory management stuff.
+         * Ergo, if you disable sci, we have to
+         * disable ive.
          */
-    }
-
-    /*
-     * apply index vector elimination
-     */
-    if (global.optimize.doive) {
-        TRAVsetPreFun (TR_prt, IVEIprintPreFun);
-        arg_node = PHrunCompilerSubPhase (SUBPH_ivei, arg_node);
-        arg_node = PHrunCompilerSubPhase (SUBPH_ive, arg_node);
-        arg_node = PHrunCompilerSubPhase (SUBPH_iveo, arg_node);
-        TRAVsetPreFun (TR_prt, NULL);
 
         /*
-         * Constant and variable propagation
+         * apply index vector elimination
          */
-        if (global.optimize.docvp) {
-            arg_node = PHrunCompilerSubPhase (SUBPH_cvpive, arg_node);
-        }
+        if (global.optimize.doive) {
+            TRAVsetPreFun (TR_prt, IVEIprintPreFun);
+            arg_node = PHrunCompilerSubPhase (SUBPH_ivei, arg_node);
+            arg_node = PHrunCompilerSubPhase (SUBPH_ive, arg_node);
+            arg_node = PHrunCompilerSubPhase (SUBPH_iveo, arg_node);
+            TRAVsetPreFun (TR_prt, NULL);
 
-        /*
-         * Dead code removal after ive
-         */
-        if (global.optimize.dodcr) {
-            arg_node = PHrunCompilerSubPhase (SUBPH_dcrive, arg_node);
+            /*
+             * Constant and variable propagation
+             */
+            if (global.optimize.docvp) {
+                arg_node = PHrunCompilerSubPhase (SUBPH_cvpive, arg_node);
+            }
+
+            /*
+             * Dead code removal after ive
+             */
+            if (global.optimize.dodcr) {
+                arg_node = PHrunCompilerSubPhase (SUBPH_dcrive, arg_node);
+            }
         }
     }
 

@@ -10,9 +10,12 @@
  *
  *  This file contains code to implement the array usage analysis for IVE.
  *  It computes two attributes for all N_avis nodes:
- *   AVIS_IDXTYPES - an N_exprs chain of N_type nodes that contains all
- *                   shapes of arrays this particular identifier selects into
+ *   AVIS_IDXSHAPES - an N_exprs chain of N_id nodes that
+ *                    represent the set of shapes of arrays which are
+ *                    indexed by this N_avis.
+ *
  *   AVIS_NEEDCOUNT - counts all non-indexing uses of the identifier
+ *   These attributes are used by index_optimize.c
  *
  *  NB: The analysis deals with Loop functions inter-functional, i.e., it
  *      treats them as if they were inlined. This requires a
@@ -28,6 +31,7 @@
 #include "new_types.h"
 #include "type_utils.h"
 #include "index_infer.h"
+#include "shape_cliques.h"
 
 /*
  * INFO structure
@@ -98,30 +102,20 @@ FreeInfo (info *info)
 
 /**
  *
- * @file index_infer.c
- *
- *  This file contains the implementation of the inference of uses attributes
- *  for IVE (index vector elimination).
- *
- */
-/**
- *
- * @name Some utility functions:
+ * @name Utility functions:
  *
  * @{
  */
-static bool
-eqShapes (ntype *a, ntype *b)
-{
-    bool res;
 
-    DBUG_ENTER ("eqTypeShapes");
-
-    res = SHcompareShapes (TYgetShape (a), TYgetShape (b));
-
-    DBUG_RETURN (res);
-}
-
+/** <!--********************************************************************-->
+ *
+ * @fn int CountUses( node *args)
+ *
+ *   @brief Counts the number of elements in an AVIS_IDXSHAPES chain.
+ *   @param - An AVIS_IDXSHAPES chain head.
+ *   @return - the number of elements in the chain.
+ *
+ *****************************************************************************/
 static int
 CountUses (node *args)
 {
@@ -130,7 +124,7 @@ CountUses (node *args)
     DBUG_ENTER ("CountUses");
 
     while (args != NULL) {
-        result = result + TCcountExprs (AVIS_IDXTYPES (ARG_AVIS (args)));
+        result = result + TCcountExprs (AVIS_IDXSHAPES (ARG_AVIS (args)));
 
         args = ARG_NEXT (args);
     }
@@ -140,33 +134,39 @@ CountUses (node *args)
 
 /** <!--********************************************************************-->
  *
- * @fn  void AddTypeToIdxTypes( node *avis, ntype *type)
+ * @fn  void AddIdtoIdxShapes( node *avis, node *id)
  *
- *   @brief checks whether the shape of the type argument exists in the
- *          set of N_type nodes hanging off the AVIS_IDXTYPES( avis).
- *          If NOT, an N_type node containing that shape is built and
- *          added to the set.
- *          NOTE here, that the ntype type is expected to be at least AKS!
+ *   @brief  Possibly adds id to the set of shapes in AVIS_IDXSHAPES( avis).
+ *           It does this by checking to see if the shape of the id
+ *           argument already exists in the set of N_id nodes
+ *           hanging off the AVIS_IDXSHAPES( avis), by checking for
+ *           the presence of N_id's shape clique in the set.
+ *
+ *           If the shape is already in the set, no changes are made.
+ *           Otherwise, an N_id node containing that shape is built and
+ *           added to the set.
+ *
  *   @param
  *   @return
  *
  *****************************************************************************/
 
 static void
-AddTypeToIdxTypes (node *avis, ntype *type)
+AddIdtoIdxShapes (node *avis, node *id)
 {
     node *exprs;
+    DBUG_ENTER ("AddIdtoIdxShapes");
 
-    DBUG_ENTER ("AddTypeToIdxTypes");
-
-    exprs = AVIS_IDXTYPES (avis);
-    while ((exprs != NULL) && (!eqShapes (type, TYPE_TYPE (EXPRS_EXPR (exprs))))) {
+    /* Set membership */
+    exprs = AVIS_IDXSHAPES (avis);
+    while ((exprs != NULL) && (!SCIAvisesAreInSameShapeClique (avis, ID_AVIS (id)))) {
         exprs = EXPRS_NEXT (exprs);
     }
 
+    /* Set union */
     if (exprs == NULL) {
-        AVIS_IDXTYPES (avis)
-          = TBmakeExprs (TBmakeType (TYeliminateAKV (type)), AVIS_IDXTYPES (avis));
+        AVIS_IDXSHAPES (avis)
+          = TBmakeExprs (TBmakeId (ID_AVIS (id)), AVIS_IDXSHAPES (avis));
     }
 
     DBUG_VOID_RETURN;
@@ -176,7 +176,7 @@ AddTypeToIdxTypes (node *avis, ntype *type)
  *
  * @fn  void TranscribeIdxTypes( node *fromavis, node *toavis)
  *
- *   @brief computes the setunion of the AVIS_IDXTYPES chains and attaches
+ *   @brief computes the setunion of the AVIS_IDXSHAPES chains and attaches
  *          the result to toavis.
  *   @param
  *   @return
@@ -190,9 +190,9 @@ TranscribeIdxTypes (node *fromavis, node *toavis)
 
     DBUG_ENTER ("TranscribeIdxTypes");
 
-    exprs = AVIS_IDXTYPES (fromavis);
+    exprs = AVIS_IDXSHAPES (fromavis);
     while (exprs != NULL) {
-        AddTypeToIdxTypes (toavis, TYPE_TYPE (EXPRS_EXPR (exprs)));
+        AddIdtoIdxShapes (toavis, EXPRS_EXPR (exprs));
         exprs = EXPRS_NEXT (exprs);
     }
 
@@ -205,9 +205,9 @@ TranscribeIdxTypes (node *fromavis, node *toavis)
  *
  *   @brief expects args to be the formal parameter chain of a function and
  *          exprs to be the actual parameter chain of a call to that very function.
- *          For each argument, it computes the setunion of the AVIS_IDXTYPES chains
+ *          For each argument, it computes the setunion of the AVIS_IDXSHAPES chains
  *          from the formal parameters and the actual parameters and attaches
- *          the result to the  AVIS_IDXTYPES chains of the actual parameters.
+ *          the result to the  AVIS_IDXSHAPES chains of the actual parameters.
  *          NB: this is needed for the fixpoint iteration in Loop functions!
  *   @param
  *   @return
@@ -513,15 +513,14 @@ IVEIprf (node *arg_node, info *arg_info)
         type1 = ID_NTYPE (arg1);
         type2 = ID_NTYPE (arg2);
 
-        if (TUshapeKnown (ltype) && TUshapeKnown (type2) && TUisIntVect (type1)
-            && TUshapeKnown (type1)) {
-            AddTypeToIdxTypes (ID_AVIS (arg1), type2);
-
+        if (TUisIntVect (type1)) {
+            AddIdtoIdxShapes (ID_AVIS (arg1), arg2);
             /*
              * as arg1 is used as a indexvector, we traverse arg2
              * only. this will mark it as non-index-vector use
              */
             PRF_ARG2 (arg_node) = TRAVdo (PRF_ARG2 (arg_node), arg_info);
+
         } else {
             /*
              * as we cannot replace this usage of the indexvector, it
@@ -547,9 +546,8 @@ IVEIprf (node *arg_node, info *arg_info)
         type2 = ID_NTYPE (arg2);
         type3 = (NODE_TYPE (arg3) == N_id) ? ID_NTYPE (arg3) : NULL;
 
-        if (TUshapeKnown (ltype) && TUshapeKnown (type1) && TUisIntVect (type2)
-            && TUshapeKnown (type2) && ((type3 == NULL) || TUshapeKnown (type3))) {
-            AddTypeToIdxTypes (ID_AVIS (arg2), type1);
+        if (TUisIntVect (type2)) {
+            AddIdtoIdxShapes (ID_AVIS (arg2), arg1);
             /*
              * argument 1 and 3 are non index-vector uses, so we
              * have to traverse them here
@@ -579,9 +577,7 @@ IVEIprf (node *arg_node, info *arg_info)
         type1 = (NODE_TYPE (arg1) == N_id) ? ID_NTYPE (arg1) : NULL;
         type2 = (NODE_TYPE (arg2) == N_id) ? ID_NTYPE (arg2) : NULL;
 
-        if ((AVIS_NEEDCOUNT (IDS_AVIS (lhs)) == 0) && TUisIntVect (ltype)
-            && TUshapeKnown (ltype) && ((type1 == NULL) || TUshapeKnown (type1))
-            && ((type2 == NULL) || TUshapeKnown (type2))) {
+        if ((AVIS_NEEDCOUNT (IDS_AVIS (lhs)) == 0) && TUisIntVect (ltype)) {
             /*
              * the result is used as an index-vector only.
              * so we forward the infered shapes to the
@@ -614,9 +610,7 @@ IVEIprf (node *arg_node, info *arg_info)
         type1 = (NODE_TYPE (arg1) == N_id) ? ID_NTYPE (arg1) : NULL;
         type2 = (NODE_TYPE (arg2) == N_id) ? ID_NTYPE (arg2) : NULL;
 
-        if ((AVIS_NEEDCOUNT (IDS_AVIS (lhs)) == 0) && TUisIntVect (ltype)
-            && TUshapeKnown (ltype) && ((type1 == NULL) || TUshapeKnown (type1))
-            && ((type2 == NULL) || TUshapeKnown (type2))) {
+        if ((AVIS_NEEDCOUNT (IDS_AVIS (lhs)) == 0) && TUisIntVect (ltype)) {
             /*
              * the result is used as an index-vector only.
              * so we forward the infered shapes to the
@@ -696,22 +690,28 @@ node *
 IVEIprintPreFun (node *arg_node, info *arg_info)
 {
     node *exprs;
+    static node *fundef = NULL;
 
     DBUG_ENTER ("IVEIprintPreFun");
 
     switch (NODE_TYPE (arg_node)) {
     case N_avis:
-        exprs = AVIS_IDXTYPES (arg_node);
+        exprs = AVIS_IDXSHAPES (arg_node);
         printf ("/* IVEI results");
         if (exprs != NULL) {
             while (exprs != NULL) {
-                printf (":IDX(%s)",
-                        SHshape2String (0, TYgetShape (TYPE_TYPE (EXPRS_EXPR (exprs)))));
+                printf (":IDX(%s)", ID_NAME (EXPRS_EXPR (exprs)));
                 exprs = EXPRS_NEXT (exprs);
             }
         }
         printf (":NEED(%d)", AVIS_NEEDCOUNT (arg_node));
+        printf ("CLIQUE(%d)",
+                SCIShapeCliqueNumber (AVIS_SHAPECLIQUEID (arg_node), fundef));
         printf ("*/");
+        break;
+
+    case N_fundef:
+        fundef = arg_node;
         break;
 
     default:

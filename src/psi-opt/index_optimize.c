@@ -346,7 +346,7 @@ GetAvis4Shape (node *avis, shape *shape, info *arg_info)
 
     DBUG_ENTER ("GetAvis4Shape");
 
-    types = AVIS_IDXTYPES (avis);
+    types = AVIS_IDXSHAPES (avis);
     ids = AVIS_IDXIDS (avis);
 
     if ((types != NULL) && (ids == NULL)) {
