@@ -23,6 +23,7 @@ extern bool TUisUniqueUserType (ntype *type);
 extern bool TUisArrayOfUser (ntype *type);
 extern bool TUisHidden (ntype *type);
 extern bool TUisBoxed (ntype *type);
+extern bool TUeqShapes (ntype *a, ntype *b);
 extern ntype *TUcomputeImplementationType (ntype *ty);
 extern char *TUtypeSignature2String (node *fundef);
 extern ntype *TUactualArgs2Ntype (node *actual);

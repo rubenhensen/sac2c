@@ -482,6 +482,24 @@ TUisBoxed (ntype *type)
     DBUG_RETURN (res);
 }
 
+/** <!--*******************************************************************-->
+ *
+ * @fn bool SCIeqShapes ( ntype *a, ntype *b)
+ * @brief Predicate to tell if two AKS arrays have the same shape
+ *
+ *****************************************************************************/
+bool
+TUeqShapes (ntype *a, ntype *b)
+{
+    bool res;
+
+    DBUG_ENTER ("TUeqShapes");
+
+    res = SHcompareShapes (TYgetShape (a), TYgetShape (b));
+
+    DBUG_RETURN (res);
+}
+
 /** <!--********************************************************************-->
  *
  * @fn ntype *TUcomputeImplementationType( ntype *ty)
