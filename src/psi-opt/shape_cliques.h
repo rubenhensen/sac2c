@@ -22,5 +22,6 @@ extern node *SCIprf (node *arg_node, info *arg_info);
 extern bool SCIAvisesAreInSameShapeClique (node *avis1, node *avis2);
 extern node *SCIFindMarkedAvisInSameShapeClique (node *avis1);
 extern int SCIShapeCliqueNumber (node *avis, node *arg_node);
+extern node *SCIfindShapeCliqueForShape (shape *shp, node *arg_node);
 
 #endif /* _SAC_SHAPE_CLIQUE_H */

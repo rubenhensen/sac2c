@@ -898,5 +898,71 @@ SCIdoShapeCliqueInference (node *syntax_tree)
     DBUG_RETURN (syntax_tree);
 }
 
+/** <!--*******************************************************************-->
+ *
+ * @fn node *SCIfindShapeCliqueForShape(shape * shp, node *arg_node)
+ * @brief Find shapeclique for shape
+ *  @param - shp is AKS shape we are looking for
+ *  @param - arg_node is N_fundef for the function
+ *
+ *  @return N_avis of the shape clique with that shape
+ *          or NULL if no such shape is found.
+ * ****************************************************************************/
+node *
+SCIfindShapeCliqueForShape (shape *shp, node *arg_node)
+{
+    node *res;
+    node *arg;
+    node *curavis;
+    shape *curshape;
+    bool fini;
+    ntype *curtype;
+
+    DBUG_ENTER ("SCIfindCliqueForShape");
+    DBUG_ASSERT ((N_fundef == NODE_TYPE (arg_node)),
+                 "SCIfindCliqueForShape expected N_fundef as arg");
+
+    res = NULL;
+    fini = FALSE;
+
+    /* search function arguments */
+    arg = FUNDEF_ARGS (arg_node);
+    while (arg != NULL) {
+        curavis = ARG_AVIS (arg);
+        curtype = AVIS_TYPE (curavis);
+        if (!TUshapeKnown (curtype)) { /* AKs only, please */
+            break;
+        }
+        curshape = TYgetShape (curtype);
+        if (SHcompareShapes (shp, curshape)) {
+            res = curavis;
+            fini = TRUE;
+            break;
+        }
+        arg = ARG_NEXT (arg);
+    }
+
+    /* search function locals */
+    arg = FUNDEF_BODY (arg_node); /* maybe N_block */
+    if (fini && (arg != NULL)) {
+        arg = BLOCK_VARDEC (arg);
+        while (arg != NULL) {
+            curavis = VARDEC_AVIS (arg);
+            curtype = AVIS_TYPE (curavis);
+            if (!TUshapeKnown (curtype)) { /* AKs only, please */
+                break;
+            }
+            curshape = TYgetShape (curtype);
+            if (SHcompareShapes (shp, curshape)) {
+                res = curavis;
+                fini = TRUE;
+                break;
+            }
+            arg = VARDEC_NEXT (arg);
+        }
+    }
+    DBUG_RETURN (res);
+}
+
 /*@}*/
 /*@} */ /* defgroup SCI */
