@@ -5,10 +5,9 @@
 #ifndef _SAC_CHECK_MEM_H_
 #define _SAC_CHECK_MEM_H_
 
-#ifdef SHOW_MALLOC
-
 #include "types.h"
 
+#ifdef SHOW_MALLOC
 extern void CHKMinitialize (int argc, char *argv[]);
 extern bool CHKMisMemcheckActive ();
 extern void CHKMdeinitialize ();
@@ -30,6 +29,8 @@ extern void CHKMdoNotReport (void *shifted_ptr);
 extern int CHKMgetSize (node *shifted_ptr);
 
 #else
+#define CHKMappendErrorNodes(arg_node, arg_info)
+#define CHKMtouch(shifted_ptr, arg_info)
 #define CHKMdoNotReport(shifter_ptr)
 #endif /* SHOW_MALLOC */
 

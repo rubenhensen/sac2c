@@ -51,6 +51,8 @@ version="1.0">
     <!-- includes -->
 
     <xsl:text>
+#ifdef SHOW_MALLOC
+
 #include "check.h"
 #include "globals.h"
 #include "tree_basic.h"
@@ -146,6 +148,7 @@ node *CHKdoTreeCheck( node *syntax_tree)
       <xsl:sort select="@name"/>
     </xsl:apply-templates>
     <xsl:value-of select="'} attr_list;'"/>
+    <xsl:value-of select="'#endif /* SHOW_MALLOC */'"/>
   </xsl:template>
 
 

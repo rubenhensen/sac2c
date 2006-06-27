@@ -605,6 +605,7 @@ OPTdoIntraFunctionalOptimizations (node *arg_node)
         /*
          *
          */
+#ifdef SHOW_MALLOC
         if ((global.treecheck) && (arg_node != NULL)) {
             arg_node = CHKdoTreeCheck (arg_node);
         }
@@ -612,6 +613,8 @@ OPTdoIntraFunctionalOptimizations (node *arg_node)
         if (global.memcheck && (arg_node != NULL)) {
             arg_node = CHKMdoMemCheck (arg_node);
         }
+#endif /* SHOW_MALLOC */
+
     } while ((AnyOptCounterNotZero (global.optcounters)) && (loop < global.max_optcycles)
              && (!PHbreakAfterCurrentPass (loop)));
 

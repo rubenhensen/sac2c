@@ -123,11 +123,11 @@ PHrunCompilerPhase (compiler_phase_t phase, node *syntax_tree)
     DBUG_EXECUTE ("MEM_LEAK", ILIBdbugMemoryLeakCheck (););
 #endif
 
+#ifdef SHOW_MALLOC
     if (global.treecheck && (syntax_tree != NULL)) {
         syntax_tree = CHKdoTreeCheck (syntax_tree);
     }
 
-#ifdef SHOW_MALLOC
     if (global.memcheck && (syntax_tree != NULL)) {
         syntax_tree = CHKMdoMemCheck (syntax_tree);
     }
@@ -162,11 +162,12 @@ PHrunCompilerSubPhase (compiler_subphase_t subphase, node *syntax_tree)
 
     CTIabortOnError ();
 
+#ifdef SHOW_MALLOC
+
     if ((global.treecheck) && (syntax_tree != NULL)) {
         syntax_tree = CHKdoTreeCheck (syntax_tree);
     }
 
-#ifdef SHOW_MALLOC
     if (global.memcheck && (syntax_tree != NULL)) {
         syntax_tree = CHKMdoMemCheck (syntax_tree);
     }
