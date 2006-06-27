@@ -47,7 +47,8 @@ SOURCE_MAKEFILES := $(addsuffix /Makefile,$(ALL_SOURCE_DIRS))
 
 .PHONY: clean %.clean all devel prod %.track
 .PHONY: efence check_os maketools makefiles libsac libsac2c heapmgr 
-.PHONY: distrib ctags runtime tools lib %.go makesubdir xml
+.PHONY: distrib ctags runtime tools lib  makesubdir xml
+
 
 .PRECIOUS: %.c %.h %.o %.prod.o .%.d %.c %.mac %.lex.c %.tab.c %.tab.h
 
@@ -60,9 +61,9 @@ SOURCE_MAKEFILES := $(addsuffix /Makefile,$(ALL_SOURCE_DIRS))
 
 all: devel
 
-devel: check_os lib maketools makefiles xml sac2c libsac heapmgr runtime tools
+devel: check_os lib maketools makefiles xml make_sac2c libsac heapmgr runtime tools
 
-prod: check_os lib maketools makefiles xml sac2c.prod libsac heapmgr runtime tools 
+prod: check_os lib maketools makefiles xml make_sac2c.prod libsac heapmgr runtime tools 
 
 efence: check_os maketools sac2c.efence
 
@@ -92,14 +93,14 @@ src/%/Makefile: Makefile.Source
 	@$(ECHO) "Creating makefile: $@"
 	@cp -f $< $@
 
-sac2%: 
+make_%: 
 	@$(ECHO) ""
 	@$(ECHO) "************************************"
-	@$(ECHO) "* Making $@"
+	@$(ECHO) "* Making $*"
 	@$(ECHO) "************************************"
 	@touch make_track
 	@$(MAKE) -f Makefile.Sac2c CHECK_DEPS="$(CHECK_DEPS)" \
-         HIDE="$(HIDE)" TARGET="$(src)" $@
+         HIDE="$(HIDE)" TARGET="$(src)" $*
 
 
 
