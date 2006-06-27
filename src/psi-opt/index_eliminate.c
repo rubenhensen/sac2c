@@ -396,7 +396,6 @@ EmitAKSVect2offset (node *bid, node *ivavis, info *info)
     node *offset;
     ntype *btype;
     node *bavis;
-    node *exprs;
 
     DBUG_ENTER ("EmitAKSVect2offset");
     DBUG_ASSERT (N_id == NODE_TYPE (bid), "bid node not of type N_id");
@@ -405,9 +404,10 @@ EmitAKSVect2offset (node *bid, node *ivavis, info *info)
     bavis = ID_AVIS (bid);
     btype = AVIS_TYPE (bavis);
 
-    offset = TCmakePrf2 (F_vect2offset, TCmakeIntVector (exprs), /*  [shp0, shp1,...] */
-                         TBmakeId (ivavis)                       /* iv */
-    );
+    offset
+      = TCmakePrf2 (F_vect2offset, SHshape2Array (TYgetShape (btype)), /* e.g., [2,3,4] */
+                    TBmakeId (ivavis)                                  /* iv */
+      );
 
     /* Generate temp name for resulting integer scalar array offset */
     result = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (ivavis)),

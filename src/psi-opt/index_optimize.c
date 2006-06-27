@@ -410,6 +410,10 @@ FindAvisForShapeExpression (node *shapeexpr, info *info)
 
         shp = SHarray2Shape (shapeexpr);
         result = SCIfindShapeCliqueForShape (shp, INFO_FUNDEF (info));
+
+        DBUG_ASSERT ((result != NULL),
+                     "Unable to find a shape clique for an AKS shape expression.");
+
     } else {
         /* AKD */
 
