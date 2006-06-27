@@ -343,6 +343,13 @@ OPTdoOptimize (node *arg_node)
             }
 
             /*
+             * Loop Invariant Removal
+             */
+            if (global.optimize.docvp) {
+                arg_node = PHrunCompilerSubPhase (SUBPH_lirive, arg_node);
+            }
+
+            /*
              * Dead code removal after ive
              */
             if (global.optimize.dodcr) {

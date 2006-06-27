@@ -308,6 +308,8 @@ SUBPHASE (iveo, "iveo", "Applying index vector elimination (optimisation)",
 SUBPHASE (cvpive, "cvpive", "Propagating constants and variables",
           CVPdoConstVarPropagation)
 
+SUBPHASE (lirive, "lirive", "Applying loop invariant removal", LIRdoLoopInvariantRemoval)
+
 SUBPHASE (dcrive, "dcrive", "Removing dead code", DCRdoDeadCodeRemovalModule)
 
 SUBPHASE (fdi, "fdi", "Freeing dispatch information", FDIdoFreeDispatchInformation)

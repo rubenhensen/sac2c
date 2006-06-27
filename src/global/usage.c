@@ -282,6 +282,8 @@ USGprintUsage ()
                       "Stop after index vector elimination optimisation.");
     PRINT_BREAK_SPEC (PH_sacopt, "cvpive",
                       "Stop after constant and variable propagation after ive.");
+    PRINT_BREAK_SPEC (PH_sacopt, "lirive",
+                      "Stop after loop invariant removal after ive.");
     PRINT_BREAK_SPEC (PH_sacopt, "dcrive", "Stop after dead code removal after ive.");
     PRINT_BREAK_SPEC (PH_sacopt, "fdi", "Stop after freeing dispatch information.");
 
