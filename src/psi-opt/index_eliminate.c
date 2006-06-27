@@ -278,6 +278,7 @@ GetIvScalarOffsetAvis (node *iavis, node *bavis)
         shpexprs = EXPRS_NEXT (shpexprs);
         ids = IDS_NEXT (ids);
     }
+    result = SCIFindMarkedAvisInSameShapeClique (result);
 
     DBUG_RETURN (result);
 }
@@ -403,12 +404,6 @@ EmitAKSVect2offset (node *bid, node *ivavis, info *info)
 
     bavis = ID_AVIS (bid);
     btype = AVIS_TYPE (bavis);
-
-    /* We need to scalarize the shape vector because we have to have a way to get the
-     * shape clique for B into index_optimize
-     * CF will make it vanish later, so be not afraid.
-     */
-    exprs = ScalarizeShape (info, ivavis, TYgetDim (ID_NTYPE (bid)), ID_AVIS (bid));
 
     offset = TCmakePrf2 (F_vect2offset, TCmakeIntVector (exprs), /*  [shp0, shp1,...] */
                          TBmakeId (ivavis)                       /* iv */
@@ -659,9 +654,16 @@ CheckAndReplaceSel (node *prf, node *lhs)
 
     DBUG_ENTER ("CheckAndReplaceSel");
 
-    if ((!global.iveaksasakd) && TUshapeKnown (ID_NTYPE (PRF_ARG2 (prf)))) {
+    /* Performanace analysis only Cases:
+     *  AKS array: Treat as AKD if IVE_akd
+     *             Else treat as AKS
+     *  AKD array: Treat as AKD if not IVE_aks
+     *             Else do no optimization
+     *  AUD array: No no optimization
+     */
+    if ((IVE_akd != global.ive) && TUshapeKnown (ID_NTYPE (PRF_ARG2 (prf)))) {
         result = CheckAndReplaceSelAKS (prf, lhs);
-    } else if ((!global.iveaksonly) && TUdimKnown (ID_NTYPE (PRF_ARG2 (prf)))) {
+    } else if ((IVE_aks != global.ive) && TUdimKnown (ID_NTYPE (PRF_ARG2 (prf)))) {
         result = CheckAndReplaceSelAKD (prf, lhs);
     } else {
         result = prf;
