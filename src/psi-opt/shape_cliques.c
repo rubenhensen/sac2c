@@ -944,7 +944,7 @@ SCIfindShapeCliqueForShape (shape *shp, node *arg_node)
 
     /* search function locals */
     arg = FUNDEF_BODY (arg_node); /* maybe N_block */
-    if (fini && (arg != NULL)) {
+    if ((!fini) && (arg != NULL)) {
         arg = BLOCK_VARDEC (arg);
         while (arg != NULL) {
             curavis = VARDEC_AVIS (arg);
