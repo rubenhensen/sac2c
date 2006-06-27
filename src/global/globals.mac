@@ -318,18 +318,12 @@ GLOBAL (int, maxspec, 20)
  * Maximum number of specializations per function
  */
 
-GLOBAL (bool, iveaksonly, FALSE)
+GLOBAL (int, ive, IVE_all)
 /*
- * If IVE is enabled, apply it to AKS arrays only
- */
-
-GLOBAL (bool, iveaksasakd, FALSE)
-/*
- * If IVE is enabled, apply it to AKD arrays as if they were AKD
- * This is a temporary thing to let us measure to see if the old
- * AKS IVE code is any better than the AKD IVE code.
- * It really has no other use, and should be ripped out soon.
- * rbe 2006-06-23.
+ * IVE_all: If IVE is enabled, apply it to AKS and AKD arrays
+ * This is the normal setting.
+ * IVE_akd: Treat AKS arrays as AKD within IVE
+ * IVE_aks: Perform IVE on AKS arrays only.
  */
 
 GLOBAL (sigspec_mode_t, sigspec_mode, SSP_aks)
