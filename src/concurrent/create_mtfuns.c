@@ -362,7 +362,7 @@ CMTFfundef (node *arg_node, info *arg_info)
         DBUG_ASSERT (FUNDEF_ISSTFUN (arg_node) || FUNDEF_ISMTFUN (arg_node),
                      "Encountered off-spine fundef that is neither MT nor ST.");
 
-        INFO_MTCONTEXT (arg_info) = FUNDEF_ISMTFUN (companion);
+        INFO_MTCONTEXT (arg_info) = FUNDEF_ISMTFUN (arg_node);
 
         if (FUNDEF_BODY (arg_node) != NULL) {
             FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);

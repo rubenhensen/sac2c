@@ -493,7 +493,7 @@ SPMDIgenarray (node *arg_node, info *arg_info)
          * no modarray with-ops. So we must build a genarray parallelization criterion.
          */
         arg1 = TBmakeId (ID_AVIS (GENARRAY_SHAPE (arg_node)));
-        arg1 = TBmakeId (ID_AVIS (GENARRAY_DEFAULT (arg_node)));
+        arg2 = TBmakeId (ID_AVIS (GENARRAY_DEFAULT (arg_node)));
         INFO_CONDITION (arg_info) = TCmakePrf2 (F_run_mt_genarray, arg1, arg2);
     }
 
