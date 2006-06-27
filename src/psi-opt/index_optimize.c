@@ -13,6 +13,7 @@
 #include "new_types.h"
 #include "shape_cliques.h"
 #include "shape.h"
+#include "constants.h"
 
 /**
  * forward declarations
@@ -28,6 +29,7 @@ struct INFO {
     node *lhs;
     node *vardecs;
     node *preassigns;
+    node *fundef;
 };
 
 /**
@@ -37,6 +39,7 @@ struct INFO {
 #define INFO_LHS(n) ((n)->lhs)
 #define INFO_VARDECS(n) ((n)->vardecs)
 #define INFO_PREASSIGNS(n) ((n)->preassigns)
+#define INFO_FUNDEF(n) ((n)->fundef)
 
 /**
  * INFO functions
@@ -54,6 +57,7 @@ MakeInfo ()
     INFO_LHS (result) = NULL;
     INFO_VARDECS (result) = NULL;
     INFO_PREASSIGNS (result) = NULL;
+    INFO_FUNDEF (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -374,7 +378,7 @@ Scalar2Offset (node *scalar, int dims, node *shape, info *arg_info)
 }
 
 /** <!-- ****************************************************************** -->
- * @fn node *FindAvisForShapeExpression( node *shape)
+ * @fn node *FindAvisForShapeExpression( node *shape, info *info)
  *
  * @brief For a given shape expression of a F_vect2offset application, this
  *        function returns the associated avis of the array the offset
@@ -383,42 +387,55 @@ Scalar2Offset (node *scalar, int dims, node *shape, info *arg_info)
  *        which are defined by applications of F_idx_shape_sel.
  *
  * @param shape N_array node of the shape argument of F_vect2offset
+ * @param info  info structure
  *
  * @return Avis node of the corresponding array
  ******************************************************************************/
 node *
-FindAvisForShapeExpression (node *shape)
+FindAvisForShapeExpression (node *shapeexpr, info *info)
 {
     node *result;
     node *assign;
     node *rhs;
+    shape *shp;
 
     DBUG_ENTER ("FindAvisForShapeExpression");
 
-    DBUG_ASSERT ((NODE_TYPE (shape) == N_array),
+    DBUG_ASSERT ((NODE_TYPE (shapeexpr) == N_array),
                  "Found a vect2offset whose first argument is not an "
                  "array constructor!");
-    DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (ARRAY_AELEMS (shape))) == N_id),
-                 "FindAvisForShapeExpression cannot be called on constant "
-                 "shapes.");
 
-    DBUG_ASSERT ((AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (ARRAY_AELEMS (shape)))) != NULL),
-                 "Found a shape argument to vect2offset with SSAASSIGN being "
-                 "NULL.");
+    if (COisConstant (shapeexpr)) {
+        /* AKS */
 
-    assign = AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (ARRAY_AELEMS (shape))));
+        shp = SHarray2Shape (shapeexpr);
+        result = SCIfindShapeCliqueForShape (shp, INFO_FUNDEF (info));
+    } else {
+        /* AKD */
 
-    rhs = LET_EXPR (ASSIGN_INSTR (assign));
+        DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (ARRAY_AELEMS (shapeexpr))) == N_id),
+                     "FindAvisForShapeExpression cannot be called on constant "
+                     "shapes.");
 
-    DBUG_ASSERT ((NODE_TYPE (rhs) == N_prf),
-                 "Found a vect2offset whose shape is not defined using "
-                 "a prf!");
+        DBUG_ASSERT ((AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (ARRAY_AELEMS (shapeexpr))))
+                      != NULL),
+                     "Found a shape argument to vect2offset with SSAASSIGN being "
+                     "NULL.");
 
-    DBUG_ASSERT ((PRF_PRF (rhs) == F_idx_shape_sel),
-                 "Found a vect2offset whose shape is not defined using "
-                 "shape_sel!");
+        assign = AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (ARRAY_AELEMS (shapeexpr))));
 
-    result = ID_AVIS (PRF_ARG2 (rhs));
+        rhs = LET_EXPR (ASSIGN_INSTR (assign));
+
+        DBUG_ASSERT ((NODE_TYPE (rhs) == N_prf),
+                     "Found a vect2offset whose shape is not defined using "
+                     "a prf!");
+
+        DBUG_ASSERT ((PRF_PRF (rhs) == F_idx_shape_sel),
+                     "Found a vect2offset whose shape is not defined using "
+                     "shape_sel!");
+
+        result = ID_AVIS (PRF_ARG2 (rhs));
+    }
 
     DBUG_RETURN (result);
 }
@@ -439,7 +456,7 @@ ReplaceByWithOffset (node *arg_node, info *arg_info)
                  "found an id which was identified as a withid (no SSAASSIGN "
                  "and not N_arg) although not inside a withloop.");
 
-    clique = FindAvisForShapeExpression (PRF_ARG1 (arg_node));
+    clique = FindAvisForShapeExpression (PRF_ARG1 (arg_node), arg_info);
 
     offset = FindIVOffset (INFO_IVINFO (arg_info), ID_AVIS (PRF_ARG2 (arg_node)), clique);
 
@@ -517,7 +534,7 @@ OptimizeComputation (node *arg_node, info *arg_info)
 
     iv = PRF_ARG2 (arg_node);
     prf = ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (iv)));
-    clique = FindAvisForShapeExpression (PRF_ARG1 (arg_node));
+    clique = FindAvisForShapeExpression (PRF_ARG1 (arg_node), arg_info);
 
     if (AVIS_NEEDCOUNT (IDS_AVIS (INFO_LHS (arg_info))) == 0) {
         /*
@@ -731,6 +748,7 @@ IVEOfundef (node *arg_node, info *arg_info)
     DBUG_ENTER ("IVEOblock");
 
     INFO_VARDECS (arg_info) = NULL;
+    INFO_FUNDEF (arg_info) = arg_node;
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
@@ -741,6 +759,8 @@ IVEOfundef (node *arg_node, info *arg_info)
           = TCappendVardec (INFO_VARDECS (arg_info), FUNDEF_VARDEC (arg_node));
         INFO_VARDECS (arg_info) = NULL;
     }
+
+    INFO_FUNDEF (arg_info) = NULL;
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
