@@ -1,5 +1,5 @@
 #
-# $Id:$
+# $Id: $
 #
 #
 
@@ -13,6 +13,21 @@
 ###############################################################################
 
 
+###############################################################################
+#
+# Calling conventions:
+#
+#  Start rules: 
+#    devel  compile developer code (default)
+#    prod   compile product code
+#    clean  cleanup derived files
+#
+#  Parameters:
+#    CHECK_DEPS="no"  de-activate dependency checking meachanism
+#    HIDE=""          show important commands issued by make (debugging)
+#
+###############################################################################
+
 
 ###############################################################################
 #
@@ -23,8 +38,10 @@ PROJECT_ROOT = ../..
 
 include $(PROJECT_ROOT)/Makefile.Config
 
-TARGET = $(notdir $(PWD))
+TARGET := $(notdir $(PWD))
 
+CHECK_DEPS := yes
+HIDE := @
 
 
 ###############################################################################
@@ -46,13 +63,16 @@ all: devel
 devel:
 	@$(ECHO) ""
 	@$(ECHO) "Making current subdirectory (developer version)"
-	@$(MAKE) -C $(PROJECT_ROOT) TARGET="$(TARGET)" MODE="" CHECK_DEPS="yes" makesubdir
+	@$(MAKE) -C $(PROJECT_ROOT) -f Makefile.Sac2c \
+                 TARGET="$(TARGET)" CHECK_DEPS="$(CHECK_DEPS)" HIDE="$(HIDE)" \
+                 makesubdir.devel
 
 prod:
 	@$(ECHO) ""
 	@$(ECHO) "Making current subdirectory (product version)"
-	@$(MAKE) -C $(PROJECT_ROOT) TARGET="$(TARGET)" MODE="prod" CHECK_DEPS="yes"makesubdir
-
+	@$(MAKE) -C $(PROJECT_ROOT) -f Makefile.Sac2c \
+                 TARGET="$(TARGET)" CHECK_DEPS="$(CHECK_DEPS)" HIDE="$(HIDE)" \
+                 makesubdir.prod
 
 
 
@@ -64,8 +84,6 @@ prod:
 Makefile: $(PROJECT_ROOT)/Makefile.Source
 	@$(ECHO) "  Creating makefile: $@" 
 	@cp -f $< $@
-
-
 
 
 

@@ -127,9 +127,11 @@ PHrunCompilerPhase (compiler_phase_t phase, node *syntax_tree)
         syntax_tree = CHKdoTreeCheck (syntax_tree);
     }
 
+#ifdef SHOW_MALLOC
     if (global.memcheck && (syntax_tree != NULL)) {
         syntax_tree = CHKMdoMemCheck (syntax_tree);
     }
+#endif
 
     if ((global.my_dbug) && (global.my_dbug_active)
         && (global.compiler_phase >= global.my_dbug_to)) {
@@ -164,9 +166,11 @@ PHrunCompilerSubPhase (compiler_subphase_t subphase, node *syntax_tree)
         syntax_tree = CHKdoTreeCheck (syntax_tree);
     }
 
+#ifdef SHOW_MALLOC
     if (global.memcheck && (syntax_tree != NULL)) {
         syntax_tree = CHKMdoMemCheck (syntax_tree);
     }
+#endif
 
     if ((global.break_after == global.compiler_phase)
         && (ILIBstringCompare (global.break_specifier, subphase_specifier[subphase]))) {
