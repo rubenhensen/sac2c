@@ -171,6 +171,7 @@
  */
 struct INFO {
     node *postassigns;
+    node *preassigns;
     node *vardecs;
     node *lhs;
     node *withid;
@@ -182,6 +183,7 @@ struct INFO {
  * INFO macros
  */
 #define INFO_POSTASSIGNS(n) ((n)->postassigns)
+#define INFO_PREASSIGNS(n) ((n)->preassigns)
 #define INFO_VARDECS(n) ((n)->vardecs)
 #define INFO_LHS(n) ((n)->lhs)
 #define INFO_WITHID(n) ((n)->withid)
@@ -201,6 +203,7 @@ MakeInfo ()
     result = ILIBmalloc (sizeof (info));
 
     INFO_POSTASSIGNS (result) = NULL;
+    INFO_PREASSIGNS (result) = NULL;
     INFO_VARDECS (result) = NULL;
     INFO_LHS (result) = NULL;
     INFO_WITHID (result) = NULL;
@@ -242,7 +245,7 @@ static int ive_expr;
  * @param bavis  -  N_avis of array, B, potentially being indexed by the ivavis entry
  *                  in B[iv] or B[iv] = v
  *
- * @return avis entry that matches bavis, or NULL, if no match is found
+ * @return avis entry for iv_B that matches bavis, or NULL, if no match is found
  ******************************************************************************/
 static node *
 GetIvScalarOffsetAvis (node *iavis, node *bavis)
@@ -278,7 +281,6 @@ GetIvScalarOffsetAvis (node *iavis, node *bavis)
         shpexprs = EXPRS_NEXT (shpexprs);
         ids = IDS_NEXT (ids);
     }
-    result = SCIFindMarkedAvisInSameShapeClique (result);
 
     DBUG_RETURN (result);
 }
@@ -315,17 +317,17 @@ ScalarizeShape (info *info, node *ivavis, int rank, node *bavis)
         INFO_VARDECS (info) = TBmakeVardec (shpelavis, INFO_VARDECS (info));
 
         shpel = TCmakePrf2 (F_idx_shape_sel, TBmakeNum (axis), TBmakeId (cliqueb));
-        INFO_POSTASSIGNS (info)
+        INFO_PREASSIGNS (info)
           = TBmakeAssign (TBmakeLet (TBmakeIds (shpelavis, NULL), shpel),
-                          INFO_POSTASSIGNS (info));
+                          INFO_PREASSIGNS (info));
 
-        AVIS_SSAASSIGN (shpelavis) = INFO_POSTASSIGNS (info);
+        AVIS_SSAASSIGN (shpelavis) = INFO_PREASSIGNS (info);
         exprs = TBmakeExprs (TBmakeId (shpelavis), exprs);
     }
     return (exprs);
 }
 /** <!-- ****************************************************************** -->
- * @brief Emit Vect2offset for AKD array indexing operations sel(iv, B)
+ * @brief Emit Vect2Offset for AKD array indexing operations sel(iv, B)
  *        and modarray(B, iv, val)
  * AKD case: Replace  x = sel( iv, B) by:
  *                        shp0 = _shape_sel( 0, B);
@@ -340,7 +342,7 @@ ScalarizeShape (info *info, node *ivavis, int rank, node *bavis)
  * @return The N_avis for the newly generated iv_B.
  ******************************************************************************/
 static node *
-EmitAKDVect2offset (node *bid, node *ivavis, info *info)
+EmitAKDVect2Offset (node *bid, node *ivavis, info *info)
 {
 
     node *result;
@@ -350,58 +352,59 @@ EmitAKDVect2offset (node *bid, node *ivavis, info *info)
 
     DBUG_ENTER ("EmitAKDVect2offset");
 
-    exprs = ScalarizeShape (info, ivavis, TYgetDim (ID_NTYPE (bid)), ID_AVIS (bid));
+    result = ivavis;
 
-    /* Emit     iv_B = vect2offset( [shp0, shp1, ...], iv);
-     * KLUDGE: This is not flattened code: the correct approach,
-     * according to the non-existent sac2c design and implementation
-     * manual, is to make a temp vector, tv, from the scalars,
-     * and generate iv_B = vect2Offset( tv, iv); However, we
-     * don't do that...
-     * See also KLUDGE in index_optimize.
-     */
+    if (TUdimKnown (ID_NTYPE (bid))) {
+        exprs = ScalarizeShape (info, ivavis, TYgetDim (ID_NTYPE (bid)), ID_AVIS (bid));
 
-    offset = TCmakePrf2 (F_vect2offset, TCmakeIntVector (exprs), TBmakeId (ivavis));
+        /* Emit     iv_B = vect2offset( [shp0, shp1, ...], iv);
+         * KLUDGE: This is not flattened code: the correct approach,
+         * according to the non-existent sac2c design and implementation
+         * manual, is to make a temp vector, tv, from the scalars,
+         * and generate iv_B = vect2Offset( tv, iv); However, we
+         * don't do that...
+         * See also KLUDGE in index_optimize.
+         */
 
-    /* Generate temp name for resulting integer scalar array offset iv_B */
-    result = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (ivavis)),
-                         TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
+        offset = TCmakePrf2 (F_vect2offset, TCmakeIntVector (exprs), TBmakeId (ivavis));
 
-    INFO_VARDECS (info) = TBmakeVardec (result, INFO_VARDECS (info));
+        /* Generate temp name for resulting integer scalar array offset iv_B */
+        result = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (ivavis)),
+                             TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
 
-    assign = TBmakeAssign (TBmakeLet (TBmakeIds (result, NULL), offset), NULL);
+        INFO_VARDECS (info) = TBmakeVardec (result, INFO_VARDECS (info));
 
-    INFO_POSTASSIGNS (info) = TCappendAssign (INFO_POSTASSIGNS (info), assign);
+        assign = TBmakeAssign (TBmakeLet (TBmakeIds (result, NULL), offset), NULL);
 
-    AVIS_SSAASSIGN (result) = assign;
+        INFO_PREASSIGNS (info) = TCappendAssign (INFO_PREASSIGNS (info), assign);
+
+        AVIS_SSAASSIGN (result) = assign;
+    }
 
     DBUG_RETURN (result);
 }
 /** <!-- ****************************************************************** -->
  * @brief Emit Vect2offset for AKS array indexing operations sel(iv, B)
  *        and modarray(B, iv, val)
- *        This emits:  vect2offset( [ <shp> ], iv);
+ *        This emits:  iv_B = vect2offset( [ <shp> ], iv);
  *
  * @param bavis is the avis for B.
  * @param  ivavis is the avis for iv
  *
- * @return
+ * @return Result is N_avis for iv_B
  ******************************************************************************/
 static node *
-EmitAKSVect2offset (node *bid, node *ivavis, info *info)
+EmitAKSVect2offset (node *bavis, node *ivavis, info *info)
 {
 
     node *result;
     node *assign;
     node *offset;
     ntype *btype;
-    node *bavis;
 
     DBUG_ENTER ("EmitAKSVect2offset");
-    DBUG_ASSERT (N_id == NODE_TYPE (bid), "bid node not of type N_id");
     DBUG_ASSERT (N_avis == NODE_TYPE (ivavis), "ivavis node not of type N_avis");
 
-    bavis = ID_AVIS (bid);
     btype = AVIS_TYPE (bavis);
 
     offset
@@ -425,33 +428,6 @@ EmitAKSVect2offset (node *bid, node *ivavis, info *info)
 }
 
 /** <!-- ****************************************************************** -->
- * @brief Emit Vect2offset for any array indexing operations sel(iv, B)
- *        and modarray(B, iv, val)
- *
- * @param bavis is the avis for B.
- * @param  ivavis is the avis for iv
- *
- * @return
- ******************************************************************************/
-static node *
-EmitVect2offset (node *bid, node *ivavis, info *info)
-{
-    node *res;
-
-    DBUG_ENTER ("EmitVect2offset");
-    DBUG_ASSERT (N_id == NODE_TYPE (bid), "bid node not of type N_id");
-    DBUG_ASSERT (N_avis == NODE_TYPE (ivavis), "ivavis node not of type N_avis");
-
-    if (TUshapeKnown (AVIS_TYPE (ID_AVIS (bid)))) {
-        res = EmitAKSVect2offset (bid, ivavis, info);
-    } else if (TUdimKnown (AVIS_TYPE (ID_AVIS (bid)))) {
-        res = EmitAKDVect2offset (bid, ivavis, info);
-    } else
-        res = ivavis; /* Do nothing to AUD and AUDGZ arrays */
-
-    DBUG_RETURN (res);
-}
-/** <!-- ****************************************************************** -->
  * @brief Recursively generates all vect2offset assignments for the given
  *        index variable and shapes for B[iv]
  *
@@ -463,19 +439,24 @@ EmitVect2offset (node *bid, node *ivavis, info *info)
  * @return N_ids chain containing all created offset ids
  ******************************************************************************/
 static node *
-EmitVect2Offsets (node *bexprs, node *ivavis, info *info)
+EmitAKSVect2Offsets (node *bexprs, node *ivavis, info *info)
 {
     node *result = NULL;
-    node *idxavis;
+    node *idxavis = NULL;
+    node *bavis;
 
-    DBUG_ENTER ("EmitVect2Offsets");
+    DBUG_ENTER ("EmitAKSVect2Offsets");
 
     if (bexprs != NULL) {
         DBUG_ASSERT (N_exprs == NODE_TYPE (bexprs), "bexprs node not of type N_exprs");
         DBUG_ASSERT (N_avis == NODE_TYPE (ivavis), "ivavis node not of type N_avis");
-        result = EmitVect2Offsets (EXPRS_NEXT (bexprs), ivavis, info);
 
-        idxavis = EmitVect2offset (EXPRS_EXPR (bexprs), ivavis, info);
+        bavis = ID_AVIS (EXPRS_EXPR (bexprs));
+        if (TUshapeKnown (AVIS_TYPE (bavis))) {
+            idxavis = EmitAKSVect2offset (bavis, ivavis, info);
+        }
+
+        result = EmitAKSVect2Offsets (EXPRS_NEXT (bexprs), ivavis, info);
         result = TBmakeIds (idxavis, result);
     }
 
@@ -505,11 +486,13 @@ IdxTypes2IdxArgs (node *types, node *avis, node **args, info *info)
     if (types != NULL) {
         result = IdxTypes2IdxArgs (EXPRS_NEXT (types), avis, args, info);
 
-        idxavis = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (avis)),
-                              TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
+        if (TUshapeKnown (AVIS_TYPE (avis))) {
+            idxavis = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (avis)),
+                                  TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
 
-        *args = TBmakeArg (idxavis, *args);
-        result = TBmakeIds (idxavis, result);
+            *args = TBmakeArg (idxavis, *args);
+            result = TBmakeIds (idxavis, result);
+        }
     }
 
     DBUG_RETURN (result);
@@ -536,9 +519,9 @@ static
     if (avisexpr != NULL) {
         args = IdxTypes2ApArgs (EXPRS_NEXT (avisexpr), ivavis, args);
         idxavis = GetIvScalarOffsetAvis (ivavis, ID_AVIS (EXPRS_EXPR (avisexpr)));
-        DBUG_ASSERT ((idxavis != NULL), "no matching index for given arg found!");
-
-        args = TBmakeExprs (TBmakeId (idxavis), args);
+        if (idxavis != NULL) {
+            args = TBmakeExprs (TBmakeId (idxavis), args);
+        }
     }
 
     DBUG_RETURN (args);
@@ -575,17 +558,16 @@ ExtendConcreteArgs (node *concargs, node *formargs)
  * @return updated prf node
  ******************************************************************************/
 static node *
-CheckAndReplaceSelAKD (node *prf, node *lhs)
+CheckAndReplaceSelAKD (node *prf, info *info)
 {
     node *result;
     node *ivavis;
 
     DBUG_ENTER ("CheckAndReplaceSelAKD");
 
-    /* Use the scalarized iv offset */
-    ivavis = GetIvScalarOffsetAvis (ID_AVIS (PRF_ARG1 (prf)), ID_AVIS (PRF_ARG2 (prf)));
+    ivavis = EmitAKDVect2Offset (PRF_ARG2 (prf), ID_AVIS (PRF_ARG1 (prf)), info);
 
-    if (ivavis != NULL) { /* FIXME How can this ever be null???? */
+    if (ivavis != NULL) {
         result = TCmakePrf2 (F_idx_sel, TBmakeId (ivavis), PRF_ARG2 (prf));
 
         PRF_ARG2 (prf) = NULL;
@@ -607,10 +589,10 @@ CheckAndReplaceSelAKD (node *prf, node *lhs)
  * @return updated prf node
  ******************************************************************************/
 static node *
-CheckAndReplaceSelAKS (node *prf, node *lhs)
+CheckAndReplaceSelAKS (node *prf, info *info)
 {
-    node *result;
     node *ivscalaravis;
+    node *result = NULL;
 
     DBUG_ENTER ("CheckAndReplaceSelAKS");
 
@@ -648,23 +630,23 @@ CheckAndReplaceSelAKS (node *prf, node *lhs)
  * @return updated prf node
  ******************************************************************************/
 static node *
-CheckAndReplaceSel (node *prf, node *lhs)
+CheckAndReplaceSel (node *prf, info *info)
 {
     node *result;
 
     DBUG_ENTER ("CheckAndReplaceSel");
 
-    /* Performanace analysis only Cases:
-     *  AKS array: Treat as AKD if IVE_akd
+    /* Performaace-analysis-only Cases:
+     *  AKS array: If IVE_akd, treat as AKD
      *             Else treat as AKS
-     *  AKD array: Treat as AKD if not IVE_aks
+     *  AKD array: If IVE_aks, treat as AKD
      *             Else do no optimization
-     *  AUD array: No no optimization
+     *  AUD array: No optimization
      */
     if ((IVE_akd != global.ive) && TUshapeKnown (ID_NTYPE (PRF_ARG2 (prf)))) {
-        result = CheckAndReplaceSelAKS (prf, lhs);
+        result = CheckAndReplaceSelAKS (prf, info);
     } else if ((IVE_aks != global.ive) && TUdimKnown (ID_NTYPE (PRF_ARG2 (prf)))) {
-        result = CheckAndReplaceSelAKD (prf, lhs);
+        result = CheckAndReplaceSelAKD (prf, info);
     } else {
         result = prf;
     }
@@ -673,44 +655,109 @@ CheckAndReplaceSel (node *prf, node *lhs)
 }
 
 /** <!-- ****************************************************************** -->
- * @brief  Replace y = modarray(iv,B,val) with y = idx_modarray(iv_B,B,val)
+ * @brief  Replace y = modarray(B,iv,val) with y = idx_modarray(B,iv_B,val)
+ *         where B is AKS
  *
- * @param prf prf entry for a sel(iv,B) operation
+ * @param prf prf entry for a modarray(B,iv) operation
  * @param lhs node of "y" in above. Required only because
  *            of _idx_modarray ICM restriction noted below.
  *
  * @return updated prf node
  ******************************************************************************/
 static node *
-CheckAndReplaceModarray (node *prf, node *lhs)
+CheckAndReplaceAKSModarray (node *prf, info *info)
 {
     node *result;
-    node *avis;
+    node *ivoffsetavis;
+    node *bid;
 
-    DBUG_ENTER ("CheckAndReplaceModarray");
+    DBUG_ENTER ("CheckAndReplaceAKSModarray");
 
-    avis = GetIvScalarOffsetAvis (ID_AVIS (PRF_ARG2 (prf)), ID_AVIS (PRF_ARG1 (prf)));
+    bid = PRF_ARG1 (prf);
+    result = prf;
+    ivoffsetavis
+      = GetIvScalarOffsetAvis (ID_AVIS (PRF_ARG2 (prf)), ID_AVIS (PRF_ARG1 (prf)));
 
-    if ((avis != NULL) && (TUshapeKnown (IDS_NTYPE (lhs)))
-        && (TUshapeKnown (ID_NTYPE (PRF_ARG1 (prf))))
-        && (TUshapeKnown (ID_NTYPE (PRF_ARG2 (prf))))
-        && ((NODE_TYPE (PRF_ARG3 (prf)) != N_id)
-            || TUshapeKnown (ID_NTYPE (PRF_ARG3 (prf))))) {
-        /*
-         * TODO: sah
-         * _idx_modarray_ is limited to args and return
-         * values of at least AKS type, so we have to check
-         * that here. A better idea would be to modify the
-         * _idx_modarray_ prf to work on AKD as well...
-         */
+    if ((ivoffsetavis != NULL)) {
         result
-          = TCmakePrf3 (F_idx_modarray, PRF_ARG1 (prf), TBmakeId (avis), PRF_ARG3 (prf));
+          = TCmakePrf3 (F_idx_modarray, bid, TBmakeId (ivoffsetavis), PRF_ARG3 (prf));
 
         PRF_ARG1 (prf) = NULL;
         PRF_ARG3 (prf) = NULL;
         prf = FREEdoFreeTree (prf);
 
         ive_expr++;
+    } else {
+        result = prf;
+    }
+
+    DBUG_RETURN (result);
+}
+
+/** <!-- ****************************************************************** -->
+ * @brief  Replace y = modarray(B,iv,val) with y = idx_modarray(B,iv_B,val)
+ *         where B is AKD
+ * @param prf prf entry for a modarray(B,iv) operation
+ * @param lhs node of "y" in above. Required only because
+ *            of _idx_modarray ICM restriction noted below.
+ *
+ * @return updated prf node
+ ******************************************************************************/
+static node *
+CheckAndReplaceAKDModarray (node *prf, info *info)
+{
+    node *result;
+    node *ivavis;
+    node *bid;
+
+    DBUG_ENTER ("CheckAndReplaceAKDModarray");
+
+    bid = PRF_ARG1 (prf);
+    result = prf;
+    ivavis = EmitAKDVect2Offset (bid, ID_AVIS (PRF_ARG2 (prf)), info);
+
+    if ((ivavis != NULL)) {
+        result = TCmakePrf3 (F_idx_modarray, bid, TBmakeId (ivavis), PRF_ARG3 (prf));
+
+        PRF_ARG1 (prf) = NULL;
+        PRF_ARG3 (prf) = NULL;
+        prf = FREEdoFreeTree (prf);
+
+        ive_expr++;
+    } else {
+        result = prf;
+    }
+
+    DBUG_RETURN (result);
+}
+
+/** <!-- ****************************************************************** -->
+ * @brief  Replace y = modarray(B,iv,val) with y = idx_modarray(B,iv_B,val)
+ *
+ * @param prf prf entry for a modarray(B,iv) operation
+ * @param lhs node of "y" in above. Required only because
+ *            of _idx_modarray ICM restriction noted below.
+ *
+ * @return updated prf node
+ ******************************************************************************/
+static node *
+CheckAndReplaceModarray (node *prf, info *info)
+{
+    node *result;
+
+    DBUG_ENTER ("CheckAndReplaceModarray");
+
+    /* Performaace-analysis-only Cases:
+     *  AKS array: If IVE_akd, treat as AKD
+     *             Else treat as AKS
+     *  AKD array: If IVE_aks, treat as AKD
+     *             Else do no optimization
+     *  AUD array: No optimization
+     */
+    if ((IVE_akd != global.ive) && TUshapeKnown (ID_NTYPE (PRF_ARG1 (prf)))) {
+        result = CheckAndReplaceAKSModarray (prf, info);
+    } else if ((IVE_aks != global.ive) && TUdimKnown (ID_NTYPE (PRF_ARG1 (prf)))) {
+        result = CheckAndReplaceAKDModarray (prf, info);
     } else {
         result = prf;
     }
@@ -798,8 +845,8 @@ IVEarg (node *arg_node, info *arg_info)
          * top-level function
          */
         AVIS_IDXIDS (ARG_AVIS (arg_node))
-          = EmitVect2Offsets (AVIS_IDXSHAPES (ARG_AVIS (arg_node)), ARG_AVIS (arg_node),
-                              arg_info);
+          = EmitAKSVect2Offsets (AVIS_IDXSHAPES (ARG_AVIS (arg_node)),
+                                 ARG_AVIS (arg_node), arg_info);
     } else {
         /*
          * lac-function:
@@ -870,8 +917,8 @@ IVEids (node *arg_node, info *arg_info)
     DBUG_ENTER ("IVEids");
 
     AVIS_IDXIDS (IDS_AVIS (arg_node))
-      = EmitVect2Offsets (AVIS_IDXSHAPES (IDS_AVIS (arg_node)), IDS_AVIS (arg_node),
-                          arg_info);
+      = EmitAKSVect2Offsets (AVIS_IDXSHAPES (IDS_AVIS (arg_node)), IDS_AVIS (arg_node),
+                             arg_info);
 
     if (IDS_NEXT (arg_node) != NULL) {
         IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
@@ -896,10 +943,10 @@ IVEprf (node *arg_node, info *arg_info)
 
     switch (PRF_PRF (arg_node)) {
     case F_sel:
-        arg_node = CheckAndReplaceSel (arg_node, INFO_LHS (arg_info));
+        arg_node = CheckAndReplaceSel (arg_node, arg_info);
         break;
     case F_modarray:
-        arg_node = CheckAndReplaceModarray (arg_node, INFO_LHS (arg_info));
+        arg_node = CheckAndReplaceModarray (arg_node, arg_info);
         break;
 
     default:
@@ -930,6 +977,11 @@ IVEassign (node *arg_node, info *arg_info)
         ASSIGN_NEXT (arg_node)
           = TCappendAssign (INFO_POSTASSIGNS (arg_info), ASSIGN_NEXT (arg_node));
         INFO_POSTASSIGNS (arg_info) = NULL;
+    }
+
+    if (INFO_PREASSIGNS (arg_info) != NULL) {
+        arg_node = TCappendAssign (INFO_PREASSIGNS (arg_info), arg_node);
+        INFO_PREASSIGNS (arg_info) = NULL;
     }
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
@@ -993,7 +1045,7 @@ IVEcode (node *arg_node, info *arg_info)
 
     avis = IDS_AVIS (WITHID_VEC (INFO_WITHID (arg_info)));
 
-    AVIS_IDXIDS (avis) = EmitVect2Offsets (AVIS_IDXSHAPES (avis), avis, arg_info);
+    AVIS_IDXIDS (avis) = EmitAKSVect2Offsets (AVIS_IDXSHAPES (avis), avis, arg_info);
 
     CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
     if (AVIS_IDXIDS (avis) != NULL) {
