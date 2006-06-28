@@ -500,6 +500,8 @@ Scalar2Offset (node *scalar, int dims, node *shape, info *arg_info)
 
     INFO_PREASSIGNS (arg_info) = TBmakeAssign (let, INFO_PREASSIGNS (arg_info));
 
+    AVIS_SSAASSIGN (avis) = INFO_PREASSIGNS (arg_info);
+
     DBUG_RETURN (avis);
 }
 

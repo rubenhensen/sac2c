@@ -155,11 +155,14 @@ static void
 AddIdtoIdxShapes (node *avis, node *id)
 {
     node *exprs;
+
     DBUG_ENTER ("AddIdtoIdxShapes");
 
     /* Set membership */
     exprs = AVIS_IDXSHAPES (avis);
-    while ((exprs != NULL) && (!SCIAvisesAreInSameShapeClique (avis, ID_AVIS (id)))) {
+    while (
+      (exprs != NULL)
+      && (!SCIAvisesAreInSameShapeClique (ID_AVIS (EXPRS_EXPR (exprs)), ID_AVIS (id)))) {
         exprs = EXPRS_NEXT (exprs);
     }
 
@@ -204,11 +207,14 @@ TranscribeIdxTypes (node *fromavis, node *toavis)
  * @fn  void TranscribeFormalToConcrete( node *args, node *exprs)
  *
  *   @brief expects args to be the formal parameter chain of a function and
- *          exprs to be the actual parameter chain of a call to that very function.
- *          For each argument, it computes the setunion of the AVIS_IDXSHAPES chains
- *          from the formal parameters and the actual parameters and attaches
- *          the result to the  AVIS_IDXSHAPES chains of the actual parameters.
+ *          exprs to be the actual parameter chain of a call to that very
+ *          function.
+ *          For each argument, it computes the setunion of the AVIS_IDXSHAPES
+ *          chains from the formal parameters and the actual parameters and
+ *          attaches the result to the  AVIS_IDXSHAPES chains of the actual
+ *          parameters.
  *          NB: this is needed for the fixpoint iteration in Loop functions!
+ *
  *   @param
  *   @return
  *
@@ -220,6 +226,9 @@ TranscribeFormalToConcrete (node *args, node *exprs)
     DBUG_ENTER ("TranscribeFormalToConcrete");
 
     while (args != NULL) {
+        DBUG_ASSERT ((exprs != NULL),
+                     "# of formal args does not fit # of concrete args.");
+
         TranscribeIdxTypes (ARG_AVIS (args), ID_AVIS (EXPRS_EXPR (exprs)));
         args = ARG_NEXT (args);
         exprs = EXPRS_NEXT (exprs);
@@ -277,40 +286,28 @@ IVEIap (node *arg_node, info *arg_info)
             do {
                 AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
 
-#if 0
-        /* 
-         * Add all types annotated at the formal parameters to the 
-         * corresponding concrete parameters
-         */
-        TranscribeFormalToConcrete( FUNDEF_ARGS( AP_FUNDEF( arg_node)),
-                                    AP_ARGS( arg_node));
-#endif
+                /*
+                 * we have to reevaluate the use situation here as it
+                 * may change whenever we reach the inner loopfun
+                 * application.
+                 * Note here that we do not propagate the need to the
+                 * outer calls as it would be very difficult to synchronize
+                 * the two shape cliques across function boundaries.
+                 * Therefore, the offsets need to be created explicitly
+                 * in IVE in front of the loopfun call!
+                 */
 
                 olduses = uses;
                 uses = CountUses (FUNDEF_ARGS (AP_FUNDEF (arg_node)));
             } while (uses != olduses);
-
-#if 0
-      /*
-       * As this is a do function, the need for the args
-       * generated within the do function has to be 
-       * transcribed to the concrete args. (the body of
-       * lacfuns is handeled as if it had been inlined)
-       */
-      TranscribeNeedToArgs( FUNDEF_ARGS( AP_FUNDEF( arg_node)),
-                            AP_ARGS( arg_node));
-#endif
         } else {
             INFO_INTAP (arg_info) = arg_node;
-
-#if 0
-      /* 
-       * Add all types annotated at the formal parameters to the corresponding 
-       * concrete parameters
-       */
-      TranscribeFormalToConcrete( FUNDEF_ARGS( AP_FUNDEF( arg_node)),
-                                  AP_ARGS( arg_node));
-#endif
+            /*
+             * Add all types annotated at the formal parameters to the corresponding
+             * concrete parameters
+             */
+            TranscribeFormalToConcrete (FUNDEF_ARGS (AP_FUNDEF (arg_node)),
+                                        AP_ARGS (arg_node));
 
             /*
              * as this is the internal application of a recursive
@@ -326,18 +323,6 @@ IVEIap (node *arg_node, info *arg_info)
          * needed here.
          */
         AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
-
-        /*
-         * Add all types annotated at the formal parameters to the corresponding
-         * concrete parameters. furthermore, the need information is
-         * transcribed, as well.
-         */
-#if 0
-    TranscribeFormalToConcrete( FUNDEF_ARGS( AP_FUNDEF( arg_node)),
-                                AP_ARGS( arg_node));
-    TranscribeNeedToArgs( FUNDEF_ARGS( AP_FUNDEF( arg_node)),
-                          AP_ARGS( arg_node));
-#endif
     } else {
         /*
          * this is a regular function application. so the need inference

@@ -172,6 +172,7 @@
 struct INFO {
     node *postassigns;
     node *preassigns;
+    node *precondassigns;
     node *vardecs;
     node *lhs;
     node *withid;
@@ -184,6 +185,7 @@ struct INFO {
  */
 #define INFO_POSTASSIGNS(n) ((n)->postassigns)
 #define INFO_PREASSIGNS(n) ((n)->preassigns)
+#define INFO_PRECONDASSIGNS(n) ((n)->precondassigns)
 #define INFO_VARDECS(n) ((n)->vardecs)
 #define INFO_LHS(n) ((n)->lhs)
 #define INFO_WITHID(n) ((n)->withid)
@@ -204,6 +206,7 @@ MakeInfo ()
 
     INFO_POSTASSIGNS (result) = NULL;
     INFO_PREASSIGNS (result) = NULL;
+    INFO_PRECONDASSIGNS (result) = NULL;
     INFO_VARDECS (result) = NULL;
     INFO_LHS (result) = NULL;
     INFO_WITHID (result) = NULL;
@@ -502,24 +505,59 @@ static
   /** <!-- ****************************************************************** -->
    * @brief Generates new concrete arguments for the given idxtypes and avis.
    *        The avis must contain matching idxids for all given types!
+   *        Furthermore, _vect2offset_ prfs are issued in front
+   *        of the current assignment to compute the offsets.
    *
    * @param avisexpr N_exprs chain of type nodes
-   * @param avis avis node with idxids
+   * @param ivavis index vector avis
    * @param args N_exprs chain of concrete args
+   * @param info info structure
    *
    * @return extended N_exprs arg chain
    ******************************************************************************/
   node *
-  IdxTypes2ApArgs (node *avisexpr, node *ivavis, node *args)
+  IdxTypes2ApArgs (node *shapes, node *ivavis, node *args, info *info)
 {
+    node *offset;
     node *idxavis;
+    ntype *arraytype;
 
     DBUG_ENTER ("IdxTypes2ApArgs");
 
-    if (avisexpr != NULL) {
-        args = IdxTypes2ApArgs (EXPRS_NEXT (avisexpr), ivavis, args);
-        idxavis = GetIvScalarOffsetAvis (ivavis, ID_AVIS (EXPRS_EXPR (avisexpr)));
-        if (idxavis != NULL) {
+    if (shapes != NULL) {
+        args = IdxTypes2ApArgs (EXPRS_NEXT (shapes), ivavis, args, info);
+
+        arraytype = AVIS_TYPE (ID_AVIS (EXPRS_EXPR (shapes)));
+
+        if (TUshapeKnown (arraytype)) {
+            /* AKS */
+
+            /*
+             * generate new offset vardec
+             */
+            idxavis = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (ivavis)),
+                                  TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
+            /*
+             * generate offset compuatation
+             */
+            offset = TBmakeAssign (TBmakeLet (TBmakeIds (idxavis, NULL),
+                                              TCmakePrf2 (F_vect2offset,
+                                                          SHshape2Array (
+                                                            TYgetShape (arraytype)),
+                                                          TBmakeId (ivavis))),
+                                   NULL);
+
+            AVIS_SSAASSIGN (idxavis) = offset;
+            INFO_VARDECS (info) = TBmakeVardec (idxavis, INFO_VARDECS (info));
+
+            if (INFO_LASTAP (info) != NULL) {
+                /* inside a condfun */
+                INFO_PRECONDASSIGNS (info)
+                  = TCappendAssign (INFO_PRECONDASSIGNS (info), offset);
+            } else {
+                INFO_PREASSIGNS (info) = TCappendAssign (INFO_PREASSIGNS (info), offset);
+            }
+
             args = TBmakeExprs (TBmakeId (idxavis), args);
         }
     }
@@ -528,17 +566,17 @@ static
 }
 
 node *
-ExtendConcreteArgs (node *concargs, node *formargs)
+ExtendConcreteArgs (node *concargs, node *formargs, info *info)
 {
     DBUG_ENTER ("ExtendConcreteArgs");
 
     if (concargs != NULL) {
-        EXPRS_NEXT (concargs)
-          = IdxTypes2ApArgs (AVIS_IDXSHAPES (ARG_AVIS (formargs)),
-                             ID_AVIS (EXPRS_EXPR (concargs)), EXPRS_NEXT (concargs));
+        EXPRS_NEXT (concargs) = IdxTypes2ApArgs (AVIS_IDXSHAPES (ARG_AVIS (formargs)),
+                                                 ID_AVIS (EXPRS_EXPR (concargs)),
+                                                 EXPRS_NEXT (concargs), info);
 
         EXPRS_NEXT (concargs)
-          = ExtendConcreteArgs (EXPRS_NEXT (concargs), ARG_NEXT (formargs));
+          = ExtendConcreteArgs (EXPRS_NEXT (concargs), ARG_NEXT (formargs), info);
     }
 
     DBUG_RETURN (concargs);
@@ -848,27 +886,16 @@ IVEarg (node *arg_node, info *arg_info)
           = EmitAKSVect2Offsets (AVIS_IDXSHAPES (ARG_AVIS (arg_node)),
                                  ARG_AVIS (arg_node), arg_info);
     } else {
-#if 0
-    /*
-     * lac-function:
-     *
-     * here, we can try to reuse the offsets that have been
-     * generated for the concrete args. to do so, we have to
-     * extend the function signature.
-     */
-    AVIS_IDXIDS( ARG_AVIS( arg_node)) =
-      IdxTypes2IdxArgs( AVIS_IDXSHAPES( ARG_AVIS( arg_node)),
-                        ARG_AVIS( arg_node),
-                        &ARG_NEXT( arg_node),
-                        arg_info);
-#else
         /*
-         * TODO: extend this to new AKD code
+         * lac-function:
+         *
+         * here, we can try to reuse the offsets that have been
+         * generated for the concrete args. to do so, we have to
+         * extend the function signature.
          */
         AVIS_IDXIDS (ARG_AVIS (arg_node))
-          = EmitAKSVect2Offsets (AVIS_IDXSHAPES (ARG_AVIS (arg_node)),
-                                 ARG_AVIS (arg_node), arg_info);
-#endif
+          = IdxTypes2IdxArgs (AVIS_IDXSHAPES (ARG_AVIS (arg_node)), ARG_AVIS (arg_node),
+                              &ARG_NEXT (arg_node), arg_info);
     }
 
     if (ARG_NEXT (arg_node) != NULL) {
@@ -980,26 +1007,38 @@ IVEprf (node *arg_node, info *arg_info)
 node *
 IVEassign (node *arg_node, info *arg_info)
 {
+    node *postassigns;
+    node *new_node;
+
     DBUG_ENTER ("IVEassign");
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
-    if (INFO_POSTASSIGNS (arg_info) != NULL) {
-        ASSIGN_NEXT (arg_node)
-          = TCappendAssign (INFO_POSTASSIGNS (arg_info), ASSIGN_NEXT (arg_node));
-        INFO_POSTASSIGNS (arg_info) = NULL;
-    }
+    new_node = arg_node;
 
     if (INFO_PREASSIGNS (arg_info) != NULL) {
-        arg_node = TCappendAssign (INFO_PREASSIGNS (arg_info), arg_node);
+        new_node = TCappendAssign (INFO_PREASSIGNS (arg_info), new_node);
         INFO_PREASSIGNS (arg_info) = NULL;
     }
+
+    if ((NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_cond)
+        && (INFO_PRECONDASSIGNS (arg_info) != NULL)) {
+        new_node = TCappendAssign (INFO_PRECONDASSIGNS (arg_info), new_node);
+        INFO_PRECONDASSIGNS (arg_info) = NULL;
+    }
+
+    postassigns = INFO_POSTASSIGNS (arg_info);
+    INFO_POSTASSIGNS (arg_info) = NULL;
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
     }
 
-    DBUG_RETURN (arg_node);
+    if (postassigns != NULL) {
+        ASSIGN_NEXT (arg_node) = TCappendAssign (postassigns, ASSIGN_NEXT (arg_node));
+    }
+
+    DBUG_RETURN (new_node);
 }
 
 /** <!-- ****************************************************************** -->
@@ -1092,10 +1131,9 @@ IVEap (node *arg_node, info *arg_info)
          * extend the arguments of the given application
          */
 
-#if 0
-    AP_ARGS( arg_node) = ExtendConcreteArgs( AP_ARGS( arg_node),
-                                  FUNDEF_ARGS( AP_FUNDEF( arg_node)));
-#endif
+        AP_ARGS (arg_node)
+          = ExtendConcreteArgs (AP_ARGS (arg_node), FUNDEF_ARGS (AP_FUNDEF (arg_node)),
+                                arg_info);
     }
 
     DBUG_RETURN (arg_node);
