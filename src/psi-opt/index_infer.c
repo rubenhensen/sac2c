@@ -277,33 +277,40 @@ IVEIap (node *arg_node, info *arg_info)
             do {
                 AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
 
-                /*
-                 * Add all types annotated at the formal parameters to the
-                 * corresponding concrete parameters
-                 */
-                TranscribeFormalToConcrete (FUNDEF_ARGS (AP_FUNDEF (arg_node)),
-                                            AP_ARGS (arg_node));
+#if 0
+        /* 
+         * Add all types annotated at the formal parameters to the 
+         * corresponding concrete parameters
+         */
+        TranscribeFormalToConcrete( FUNDEF_ARGS( AP_FUNDEF( arg_node)),
+                                    AP_ARGS( arg_node));
+#endif
 
                 olduses = uses;
                 uses = CountUses (FUNDEF_ARGS (AP_FUNDEF (arg_node)));
             } while (uses != olduses);
 
-            /*
-             * As this is a do function, the need for the args
-             * generated within the do function has to be
-             * transcribed to the concrete args. (the body of
-             * lacfuns is handeled as if it had been inlined)
-             */
-            TranscribeNeedToArgs (FUNDEF_ARGS (AP_FUNDEF (arg_node)), AP_ARGS (arg_node));
+#if 0
+      /*
+       * As this is a do function, the need for the args
+       * generated within the do function has to be 
+       * transcribed to the concrete args. (the body of
+       * lacfuns is handeled as if it had been inlined)
+       */
+      TranscribeNeedToArgs( FUNDEF_ARGS( AP_FUNDEF( arg_node)),
+                            AP_ARGS( arg_node));
+#endif
         } else {
             INFO_INTAP (arg_info) = arg_node;
 
-            /*
-             * Add all types annotated at the formal parameters to the corresponding
-             * concrete parameters
-             */
-            TranscribeFormalToConcrete (FUNDEF_ARGS (AP_FUNDEF (arg_node)),
-                                        AP_ARGS (arg_node));
+#if 0
+      /* 
+       * Add all types annotated at the formal parameters to the corresponding 
+       * concrete parameters
+       */
+      TranscribeFormalToConcrete( FUNDEF_ARGS( AP_FUNDEF( arg_node)),
+                                  AP_ARGS( arg_node));
+#endif
 
             /*
              * as this is the internal application of a recursive
@@ -325,9 +332,12 @@ IVEIap (node *arg_node, info *arg_info)
          * concrete parameters. furthermore, the need information is
          * transcribed, as well.
          */
-        TranscribeFormalToConcrete (FUNDEF_ARGS (AP_FUNDEF (arg_node)),
-                                    AP_ARGS (arg_node));
-        TranscribeNeedToArgs (FUNDEF_ARGS (AP_FUNDEF (arg_node)), AP_ARGS (arg_node));
+#if 0
+    TranscribeFormalToConcrete( FUNDEF_ARGS( AP_FUNDEF( arg_node)),
+                                AP_ARGS( arg_node));
+    TranscribeNeedToArgs( FUNDEF_ARGS( AP_FUNDEF( arg_node)),
+                          AP_ARGS( arg_node));
+#endif
     } else {
         /*
          * this is a regular function application. so the need inference
