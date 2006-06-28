@@ -489,7 +489,7 @@ IdxTypes2IdxArgs (node *types, node *avis, node **args, info *info)
     if (types != NULL) {
         result = IdxTypes2IdxArgs (EXPRS_NEXT (types), avis, args, info);
 
-        if (TUshapeKnown (AVIS_TYPE (avis))) {
+        if (TUshapeKnown (AVIS_TYPE (ID_AVIS (EXPRS_EXPR (types))))) {
             idxavis = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (avis)),
                                   TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
 
