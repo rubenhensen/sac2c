@@ -848,16 +848,27 @@ IVEarg (node *arg_node, info *arg_info)
           = EmitAKSVect2Offsets (AVIS_IDXSHAPES (ARG_AVIS (arg_node)),
                                  ARG_AVIS (arg_node), arg_info);
     } else {
+#if 0
+    /*
+     * lac-function:
+     *
+     * here, we can try to reuse the offsets that have been
+     * generated for the concrete args. to do so, we have to
+     * extend the function signature.
+     */
+    AVIS_IDXIDS( ARG_AVIS( arg_node)) =
+      IdxTypes2IdxArgs( AVIS_IDXSHAPES( ARG_AVIS( arg_node)),
+                        ARG_AVIS( arg_node),
+                        &ARG_NEXT( arg_node),
+                        arg_info);
+#else
         /*
-         * lac-function:
-         *
-         * here, we can try to reuse the offsets that have been
-         * generated for the concrete args. to do so, we have to
-         * extend the function signature.
+         * TODO: extend this to new AKD code
          */
         AVIS_IDXIDS (ARG_AVIS (arg_node))
-          = IdxTypes2IdxArgs (AVIS_IDXSHAPES (ARG_AVIS (arg_node)), ARG_AVIS (arg_node),
-                              &ARG_NEXT (arg_node), arg_info);
+          = EmitAKSVect2Offsets (AVIS_IDXSHAPES (ARG_AVIS (arg_node)),
+                                 ARG_AVIS (arg_node), arg_info);
+#endif
     }
 
     if (ARG_NEXT (arg_node) != NULL) {
