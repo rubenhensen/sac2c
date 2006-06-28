@@ -1092,8 +1092,10 @@ IVEap (node *arg_node, info *arg_info)
          * extend the arguments of the given application
          */
 
-        AP_ARGS (arg_node)
-          = ExtendConcreteArgs (AP_ARGS (arg_node), FUNDEF_ARGS (AP_FUNDEF (arg_node)));
+#if 0
+    AP_ARGS( arg_node) = ExtendConcreteArgs( AP_ARGS( arg_node),
+                                  FUNDEF_ARGS( AP_FUNDEF( arg_node)));
+#endif
     }
 
     DBUG_RETURN (arg_node);
