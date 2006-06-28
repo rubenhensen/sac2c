@@ -345,8 +345,15 @@ OPTdoOptimize (node *arg_node)
             /*
              * Loop Invariant Removal
              */
-            if (global.optimize.docvp) {
+            if (global.optimize.dolir) {
                 arg_node = PHrunCompilerSubPhase (SUBPH_lirive, arg_node);
+            }
+
+            /*
+             * Common subexpression elimination
+             */
+            if (global.optimize.docse) {
+                arg_node = PHrunCompilerSubPhase (SUBPH_cseive, arg_node);
             }
 
             /*

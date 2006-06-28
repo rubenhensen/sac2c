@@ -310,6 +310,9 @@ SUBPHASE (cvpive, "cvpive", "Propagating constants and variables",
 
 SUBPHASE (lirive, "lirive", "Applying loop invariant removal", LIRdoLoopInvariantRemoval)
 
+SUBPHASE (cseive, "cseive", "Eliminating common subexpression",
+          CSEdoCommonSubexpressionEliminationModule)
+
 SUBPHASE (dcrive, "dcrive", "Removing dead code", DCRdoDeadCodeRemovalModule)
 
 SUBPHASE (fdi, "fdi", "Freeing dispatch information", FDIdoFreeDispatchInformation)
