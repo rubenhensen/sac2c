@@ -550,8 +550,9 @@ static
             AVIS_SSAASSIGN (idxavis) = offset;
             INFO_VARDECS (info) = TBmakeVardec (idxavis, INFO_VARDECS (info));
 
-            if (INFO_LASTAP (info) != NULL) {
-                /* inside a condfun */
+            if ((INFO_LASTAP (info) != NULL)
+                && (FUNDEF_ISDOFUN (AP_FUNDEF (INFO_LASTAP (info))))) {
+                /* inside a dofun */
                 INFO_PRECONDASSIGNS (info)
                   = TCappendAssign (INFO_PRECONDASSIGNS (info), offset);
             } else {
