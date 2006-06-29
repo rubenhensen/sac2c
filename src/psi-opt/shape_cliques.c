@@ -628,6 +628,9 @@ SCIprf (node *arg_node, info *arg_info)
     case F_neg: /* Monadic scalar functions */
     case F_abs:
     case F_not:
+    case F_toi_S: /* Monadic coercion function */
+    case F_tof_S:
+    case F_tod_S:
         /* Place lhs id and arg1 in same shape clique */
         lhs = INFO_LHS (arg_info);
         arg1 = PRF_ARG1 (arg_node);
@@ -638,19 +641,39 @@ SCIprf (node *arg_node, info *arg_info)
         AppendAvisToShapeClique (lhsavis, arg1avis);
         break;
 
-    case F_add_AxA: /* Dyadic array functions. */
-    case F_sub_AxA: /* These need shape clique guards. */
-    case F_mul_AxA:
-    case F_div_AxA:
-        break;
-
-    case F_toi_S: /* Functions that we don't put to any use */
-    case F_tof_S:
-    case F_tod_S:
     case F_add_SxS: /* Scalar-Scalar dyadic scalar functions */
     case F_sub_SxS:
     case F_mul_SxS:
     case F_div_SxS:
+        /* Maybe place lhs , arg1, and arg2 in same shape clique */
+        lhs = INFO_LHS (arg_info);
+        lhsavis = IDS_AVIS (lhs);
+        DBUG_ASSERT ((AVIS_SHAPECLIQUEID (lhsavis) == SHAPECLIQUEIDNONE (lhsavis)),
+                     "PRF AxS lhs shape clique is non-degenerate");
+
+        arg1 = PRF_ARG1 (arg_node);
+        if (N_id == NODE_TYPE (arg1)) {
+            arg1avis = ID_AVIS (arg1);
+            AppendAvisToShapeClique (lhsavis, arg1avis);
+        }
+
+        arg2 = PRF_ARG2 (arg_node);
+        if (N_id == NODE_TYPE (arg2)) {
+            arg2avis = ID_AVIS (arg2);
+            AppendAvisToShapeClique (lhsavis, arg2avis);
+        }
+
+        break;
+
+        /* Can't handle dyadic scalar fns today, as */
+        /* they need shape clique guards. */
+    case F_add_AxA:
+    case F_sub_AxA:
+    case F_mul_AxA:
+    case F_div_AxA:
+        break;
+
+        /* Can't handle these, either */
     case F_shape:
     case F_reshape:
     case F_shape_sel:
