@@ -1,15 +1,15 @@
-/*****************************************************************************
- *
+/*
  * $Id$
+ */
+
+/** <!--********************************************************************-->
  *
- * prefix: SSACF
+ * @defgroup cf Constant Folding
  *
- * description:
  *   this module implementes constant folding on code in ssa form. for
  *   constant expressions we compute primitive functions at compile time
  *   so we need not to compute them at runtime. this simplyfies the code
  *   and allows further optimizations.
- *
  *
  * TODO: this comment needs to be adjusted to the changes that have been made
  *       during post-Marielyst brushing/bugfixing!!!!
@@ -56,7 +56,20 @@
  *
  *  not yet implemented: cat, rotate
  *
+ *  @ingroup opt
+ *
+ *  @{
+ *
  *****************************************************************************/
+
+/** <!--********************************************************************-->
+ *
+ * @file SSAConstantFolding.c
+ *
+ * Prefix: SSACF
+ *
+ *****************************************************************************/
+#include "SSAConstantFolding.h"
 
 #include "dbug.h"
 #include "tree_basic.h"
@@ -75,27 +88,23 @@
 #include "ctinfo.h"
 #include "compare_tree.h"
 #include "namespaces.h"
-#include "SSAConstantFolding.h"
 
-/*
- * INFO struct
- */
+/** <!--********************************************************************-->
+ *
+ * @name INFO structure
+ * @{
+ *
+ *****************************************************************************/
 struct INFO {
     bool remassign;
     node *fundef;
     node *preassign;
 };
 
-/*
- * INFO macros
- */
 #define INFO_REMASSIGN(n) (n->remassign)
 #define INFO_FUNDEF(n) (n->fundef)
 #define INFO_PREASSIGN(n) (n->preassign)
 
-/*
- * INFO functions
- */
 static info *
 MakeInfo ()
 {
@@ -121,6 +130,47 @@ FreeInfo (info *info)
 
     DBUG_RETURN (info);
 }
+/** <!--********************************************************************-->
+ * @}  <!-- INFO structure -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ *
+ * @name Entry functions
+ * @{
+ *
+ *****************************************************************************/
+/** <!--********************************************************************-->
+ *
+ * @fn node* CFdoConstantFolding(node* fundef)
+ *
+ *****************************************************************************/
+
+node *
+CFdoConstantFolding (node *fundef)
+{
+    info *arg_info;
+
+    DBUG_ENTER ("CFdoConstantFolding");
+
+    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
+                 "CFdoConstantFolding called for non-fundef node");
+
+    /* do not start traversal in special functions */
+    arg_info = MakeInfo ();
+
+    TRAVpush (TR_cf);
+    fundef = TRAVdo (fundef, arg_info);
+    TRAVpop ();
+
+    arg_info = FreeInfo (arg_info);
+
+    DBUG_RETURN (fundef);
+}
+
+/** <!--********************************************************************-->
+ * @}  <!-- Entry functions -->
+ *****************************************************************************/
 
 /* maximum of supported args for primitive functions */
 #define PRF_MAX_ARGS 3
@@ -523,9 +573,12 @@ CFscoFreeStructConstant (struct_constant *struc_co)
     DBUG_RETURN ((struct_constant *)NULL);
 }
 
-/*
- * functions for internal use only
- */
+/** <!--********************************************************************-->
+ *
+ * @name Static helper funcions
+ * @{
+ *
+ *****************************************************************************/
 
 /** <!--********************************************************************-->
  *
@@ -1690,9 +1743,16 @@ Sel (node *idx_expr, node *array_expr)
     DBUG_RETURN (result);
 }
 
-/*
- * traversal functions for CF traversal
- */
+/** <!--********************************************************************-->
+ * @}  <!-- Static helper functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ *
+ * @name Traversal functions
+ * @{
+ *
+ *****************************************************************************/
 
 /******************************************************************************
  *
@@ -2029,51 +2089,72 @@ CFarray (node *arg_node, info *arg_info)
     node *oldelems, *tmp;
     shape *shp = NULL, *newshp;
     ntype *basetype;
+    ntype *atype;
 
     DBUG_ENTER ("CFarray");
 
-    if (ARRAY_AELEMS (arg_node) != NULL) {
+    /*
+     * Test whether whole array can be replaced with an array constant
+     */
+    atype = NTCnewTypeCheck_Expr (arg_node);
 
-        /* Test whether subarrays can be copied in */
-        /* Therefore all elemens need to be id nodes defined by N_array nodes.
-           Furthermore, they must all add the same dimensionality to
-           the dimension of their children */
-        tmp = ARRAY_AELEMS (arg_node);
-        while (tmp != NULL) {
-            if ((NODE_TYPE (EXPRS_EXPR (tmp)) != N_id)
-                || (ID_SSAASSIGN (EXPRS_EXPR (tmp)) == NULL)
-                || (NODE_TYPE (ASSIGN_RHS (ID_SSAASSIGN (EXPRS_EXPR (tmp))))
-                    != N_array)) {
-                break;
-            }
-            oldelems = ASSIGN_RHS (ID_SSAASSIGN (EXPRS_EXPR (tmp)));
-
-            if (shp == NULL)
-                shp = ARRAY_SHAPE (oldelems);
-            else if (!SHcompareShapes (shp, ARRAY_SHAPE (oldelems)))
-                break;
-
-            tmp = EXPRS_NEXT (tmp);
-        }
-        if (tmp == NULL) {
-            /* Merge subarrays into this arrays */
-            oldelems = ARRAY_AELEMS (arg_node);
-            tmp = oldelems;
+    if (TYisAKV (atype)) {
+        /*
+         * replace it
+         */
+        arg_node = FREEdoFreeNode (arg_node);
+        arg_node = COconstant2AST (TYgetValue (atype));
+    } else {
+        /*
+         * Try to merge subarrays in
+         */
+        if (ARRAY_AELEMS (arg_node) != NULL) {
+            /*
+             * All elements need to be id nodes defined by N_array nodes.
+             * Furthermore, they must all add the same dimensionality to
+             * the dimension of their children
+             */
+            tmp = ARRAY_AELEMS (arg_node);
             while (tmp != NULL) {
-                newelems
-                  = TCappendExprs (newelems, DUPdoDupTree (ARRAY_AELEMS (ASSIGN_RHS (
-                                               ID_SSAASSIGN (EXPRS_EXPR (tmp))))));
+                if ((NODE_TYPE (EXPRS_EXPR (tmp)) != N_id)
+                    || (ID_SSAASSIGN (EXPRS_EXPR (tmp)) == NULL)
+                    || (NODE_TYPE (ASSIGN_RHS (ID_SSAASSIGN (EXPRS_EXPR (tmp))))
+                        != N_array)) {
+                    break;
+                }
+                oldelems = ASSIGN_RHS (ID_SSAASSIGN (EXPRS_EXPR (tmp)));
+
+                if (shp == NULL)
+                    shp = ARRAY_SHAPE (oldelems);
+                else if (!SHcompareShapes (shp, ARRAY_SHAPE (oldelems)))
+                    break;
+
                 tmp = EXPRS_NEXT (tmp);
             }
+            if (tmp == NULL) {
+                /*
+                 * Merge subarrays into this arrays
+                 */
+                oldelems = ARRAY_AELEMS (arg_node);
+                tmp = oldelems;
+                while (tmp != NULL) {
+                    newelems
+                      = TCappendExprs (newelems, DUPdoDupTree (ARRAY_AELEMS (ASSIGN_RHS (
+                                                   ID_SSAASSIGN (EXPRS_EXPR (tmp))))));
+                    tmp = EXPRS_NEXT (tmp);
+                }
 
-            basetype = TYcopyType (ARRAY_ELEMTYPE (arg_node));
-            newshp = SHappendShapes (ARRAY_SHAPE (arg_node), shp);
+                basetype = TYcopyType (ARRAY_ELEMTYPE (arg_node));
+                newshp = SHappendShapes (ARRAY_SHAPE (arg_node), shp);
 
-            arg_node = FREEdoFreeNode (arg_node);
+                arg_node = FREEdoFreeNode (arg_node);
 
-            arg_node = TBmakeArray (basetype, newshp, newelems);
+                arg_node = TBmakeArray (basetype, newshp, newelems);
+            }
         }
     }
+
+    atype = TYfreeType (atype);
 
     DBUG_RETURN (arg_node);
 }
@@ -2490,6 +2571,10 @@ CFwith (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("CFwith");
 
+    /*
+     * Create a fake assignment for the index vector in case the variables
+     * need to be looked up.
+     */
     if (WITH_IDS (arg_node) != NULL) {
         vecassign
           = TBmakeAssign (TBmakeLet (DUPdoDupNode (WITH_VEC (arg_node)),
@@ -2498,8 +2583,16 @@ CFwith (node *arg_node, info *arg_info)
         AVIS_SSAASSIGN (IDS_AVIS (WITH_VEC (arg_node))) = vecassign;
     }
 
-    arg_node = TRAVcont (arg_node, arg_info);
+    /*
+     * Codes are traversed via the Parts to allow for exploiting generators
+     * of width one.
+     */
+    WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
+    WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
 
+    /*
+     * Remove the fake assignment after the traversal
+     */
     if (vecassign != NULL) {
         AVIS_SSAASSIGN (IDS_AVIS (WITH_VEC (arg_node))) = NULL;
         vecassign = FREEdoFreeTree (vecassign);
@@ -2508,34 +2601,143 @@ CFwith (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *   node* SSAConstantFolding(node* fundef)
+ * @fn node *CFcode( node *arg_node, info *arg_info)
  *
- * description:
- *   starts the DeadCodeRemoval for the given fundef.
- *
- ******************************************************************************/
-
+ *****************************************************************************/
 node *
-CFdoConstantFolding (node *fundef)
+CFcode (node *arg_node, info *arg_info)
 {
-    info *arg_info;
+    DBUG_ENTER ("CFcode");
 
-    DBUG_ENTER ("CFdoConstantFolding");
+    /*
+     * Do not traverse CODE_NEXT since codes are traversed through the Parts
+     */
+    if (CODE_CBLOCK (arg_node) != NULL) {
+        CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
+    }
 
-    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
-                 "CFdoConstantFolding called for non-fundef node");
+    CODE_CEXPRS (arg_node) = TRAVdo (CODE_CEXPRS (arg_node), arg_info);
 
-    /* do not start traversal in special functions */
-    arg_info = MakeInfo ();
-
-    TRAVpush (TR_cf);
-    fundef = TRAVdo (fundef, arg_info);
-    TRAVpop ();
-
-    arg_info = FreeInfo (arg_info);
-
-    DBUG_RETURN (fundef);
+    DBUG_RETURN (arg_node);
 }
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *CFpart( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+CFpart (node *arg_node, info *arg_info)
+{
+    ntype *temp;
+    node *n;
+
+    DBUG_ENTER ("CFpart");
+
+    PART_GENERATOR (arg_node) = TRAVdo (PART_GENERATOR (arg_node), arg_info);
+
+    /*
+     * Try to temporarily upgrade the types of the index variables to AKV
+     * in case some width of the generator is known to be one
+     */
+    if ((CODE_USED (PART_CODE (arg_node)) == 1)
+        && (NODE_TYPE (PART_GENERATOR (arg_node)) == N_generator)
+        && (GENERATOR_GENWIDTH (PART_GENERATOR (arg_node)) != NULL)) {
+        node *gen = PART_GENERATOR (arg_node);
+        ntype *gwtype;
+        ntype *lbtype;
+
+        /*
+         * Try to upgrade the type of the index vector
+         */
+        gwtype = NTCnewTypeCheck_Expr (GENERATOR_GENWIDTH (gen));
+        lbtype = NTCnewTypeCheck_Expr (GENERATOR_BOUND1 (gen));
+
+        if ((TYisAKV (gwtype)) && (COisOne (TYgetValue (gwtype), TRUE))
+            && (TYisAKV (lbtype))) {
+            IDS_NTYPE (PART_VEC (arg_node))
+              = TYfreeType (IDS_NTYPE (PART_VEC (arg_node)));
+            IDS_NTYPE (PART_VEC (arg_node)) = TYcopyType (lbtype);
+        }
+
+        gwtype = TYfreeType (gwtype);
+        lbtype = TYfreeType (lbtype);
+
+        /*
+         * Try to upgrade the types of the index scalars
+         */
+        if ((NODE_TYPE (GENERATOR_GENWIDTH (gen)) == N_array)
+            && (NODE_TYPE (GENERATOR_BOUND1 (gen)) == N_array)) {
+            node *lbe = ARRAY_AELEMS (GENERATOR_BOUND1 (gen));
+            node *gwe = ARRAY_AELEMS (GENERATOR_GENWIDTH (gen));
+            n = PART_IDS (arg_node);
+
+            while (n != NULL) {
+                gwtype = NTCnewTypeCheck_Expr (EXPRS_EXPR (gwe));
+                lbtype = NTCnewTypeCheck_Expr (EXPRS_EXPR (lbe));
+
+                if ((TYisAKV (gwtype)) && (COisOne (TYgetValue (gwtype), TRUE))
+                    && (TYisAKV (lbtype))) {
+                    IDS_NTYPE (n) = TYfreeType (IDS_NTYPE (n));
+                    IDS_NTYPE (n) = TYcopyType (lbtype);
+                }
+
+                gwtype = TYfreeType (gwtype);
+                lbtype = TYfreeType (lbtype);
+
+                n = IDS_NEXT (n);
+                lbe = EXPRS_NEXT (lbe);
+                gwe = EXPRS_NEXT (gwe);
+            }
+        }
+    }
+
+    /*
+     * Traverse this parts code if it has not yet been traversed.
+     * Mark the code as completely traversed afterwards by inverting CODE_USED
+     */
+    if (CODE_USED (PART_CODE (arg_node)) > 0) {
+        PART_CODE (arg_node) = TRAVdo (PART_CODE (arg_node), arg_info);
+        CODE_USED (PART_CODE (arg_node)) *= -1;
+    }
+
+    /*
+     * Revert types of index variables to AKS
+     */
+    temp = IDS_NTYPE (PART_VEC (arg_node));
+    IDS_NTYPE (PART_VEC (arg_node)) = TYeliminateAKV (temp);
+    temp = TYfreeType (temp);
+
+    n = PART_IDS (arg_node);
+    while (n != NULL) {
+        temp = IDS_NTYPE (n);
+        IDS_NTYPE (n) = TYeliminateAKV (temp);
+        temp = TYfreeType (temp);
+
+        n = IDS_NEXT (n);
+    }
+
+    /*
+     * Traverse PART_NEXT
+     */
+    if (PART_NEXT (arg_node) != NULL) {
+        PART_NEXT (arg_node) = TRAVdo (PART_NEXT (arg_node), arg_info);
+    }
+
+    /*
+     * Revert CODE_USED to correct state
+     */
+    CODE_USED (PART_CODE (arg_node)) = abs (CODE_USED (PART_CODE (arg_node)));
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ * @}  <!-- Traversal functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ * @}  <!-- Constant folding -->
+ *****************************************************************************/

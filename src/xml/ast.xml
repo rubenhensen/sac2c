@@ -811,6 +811,8 @@
           <node name="Array" />
           <node name="Prf" />
           <node name="With" />
+          <node name="Code" />
+          <node name="Part" />
           <node name="Funcond" />
         </travuser>
         <travnone>

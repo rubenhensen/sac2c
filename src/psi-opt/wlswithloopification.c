@@ -386,7 +386,9 @@ MakeSelParts (shape *maxshp, int unrdim, node *withid)
  *        Typically, this means there is one part containing a selection
  *        array[iv].
  *        However, if array is an N_array, its elements are copied elementwise
- *        by one part per array element.
+ *        by one part per array element. To avoid generator explosion,
+ *        this is only performed if the array contains no more elements then
+ *        global.wlunrnum.
  *
  * @param array id of the array to be copied
  * @param dim number of dimensions the copy-wl shall cover
@@ -430,7 +432,8 @@ CreateCopyWithloop (node *array, int dim, node *fundef)
     if (AVIS_SSAASSIGN (ID_AVIS (array)) != NULL) {
         node *rhs = ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (array)));
 
-        if (NODE_TYPE (rhs) == N_array) {
+        if ((NODE_TYPE (rhs) == N_array)
+            && (SHgetUnrLen (ARRAY_SHAPE (rhs)) <= global.wlunrnum)) {
             /*
              * array is given by an array, unroll at most the array dimensionality
              */
