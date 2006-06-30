@@ -550,9 +550,15 @@ static
             AVIS_SSAASSIGN (idxavis) = offset;
             INFO_VARDECS (info) = TBmakeVardec (idxavis, INFO_VARDECS (info));
 
-            if ((INFO_LASTAP (info) != NULL)
-                && (FUNDEF_ISDOFUN (AP_FUNDEF (INFO_LASTAP (info))))) {
-                /* inside a dofun */
+            /*
+             * we have to be very careful on where to insert the offset
+             * computation. If we are within a loop function and these offset
+             * computations are triggered by the recursive call, we have to
+             * make sure that they are inserted in front of the surrounding
+             * if as we otherwise would destroy the special loopfun form
+             */
+            if (AP_FUNDEF (INFO_LASTAP (info)) == INFO_FUNDEF (info)) {
+                /* recursive call inside of a dofun */
                 INFO_PRECONDASSIGNS (info)
                   = TCappendAssign (INFO_PRECONDASSIGNS (info), offset);
             } else {
@@ -1118,14 +1124,12 @@ IVEap (node *arg_node, info *arg_info)
     DBUG_ENTER ("IVEap");
 
     if (FUNDEF_ISLACFUN (AP_FUNDEF (arg_node))) {
+        oldap = INFO_LASTAP (arg_info);
+        INFO_LASTAP (arg_info) = arg_node;
+
         if (AP_FUNDEF (arg_node) != INFO_FUNDEF (arg_info)) {
             /* external application */
-            oldap = INFO_LASTAP (arg_info);
-            INFO_LASTAP (arg_info) = arg_node;
-
             AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
-
-            INFO_LASTAP (arg_info) = oldap;
         }
 
         /*
@@ -1135,6 +1139,8 @@ IVEap (node *arg_node, info *arg_info)
         AP_ARGS (arg_node)
           = ExtendConcreteArgs (AP_ARGS (arg_node), FUNDEF_ARGS (AP_FUNDEF (arg_node)),
                                 arg_info);
+
+        INFO_LASTAP (arg_info) = oldap;
     }
 
     DBUG_RETURN (arg_node);
