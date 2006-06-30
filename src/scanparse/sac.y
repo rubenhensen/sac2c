@@ -96,7 +96,7 @@ static int prf_arity[] = {
 COMMA  AMPERS  DOT  QUESTION  ARROW 
 INLINE  LET  TYPEDEF  OBJDEF  CLASSTYPE 
 INC  DEC  ADDON  SUBON  MULON  DIVON  MODON 
-K_MAIN  RETURN  IF  ELSE  DO  WHILE  FOR  NWITH  FOLD 
+K_MAIN  RETURN  IF  ELSE  DO  WHILE  FOR  NWITH  FOLD FOLDFIX
 MODULE  IMPORT  EXPORT  PROVIDE  USE  CLASS  ALL  EXCEPT
 MODSPEC
 SC  TRUETOKEN  FALSETOKEN  EXTERN  C_KEYWORD 
@@ -1458,6 +1458,13 @@ nwithop: GENARRAY BRACKET_L expr COMMA expr BRACKET_R
            SPFOLD_NS( $$) = NSdupNamespace( SPID_NS( $3));
            $3 = FREEdoFreeTree( $3);
          }
+       | FOLDFIX BRACKET_L qual_ext_id COMMA expr COMMA expr BRACKET_R
+         { $$ = TBmakeSpfold( $5);
+           SPFOLD_FUN( $$) = ILIBstringCopy( SPID_NAME( $3));
+           SPFOLD_NS( $$) = NSdupNamespace( SPID_NS( $3));
+           SPFOLD_FIX( $$) = $7;
+           $3 = FREEdoFreeTree( $3);
+         }
        ;
 
 withop: GENARRAY BRACKET_L expr COMMA expr BRACKET_R
@@ -1478,6 +1485,14 @@ withop: GENARRAY BRACKET_L expr COMMA expr BRACKET_R
           SPFOLD_NS( $$) = NSdupNamespace( SPID_NS( $3));
           $3 = FREEdoFreeTree( $3);
           SPFOLD_SPEXPR( $$) = $7;
+        }
+      | FOLDFIX BRACKET_L qual_ext_id COMMA expr COMMA expr COMMA expr BRACKET_R
+        { $$ = TBmakeSpfold( $5);
+          SPFOLD_FUN( $$) = ILIBstringCopy( SPID_NAME( $3));
+          SPFOLD_NS( $$) = NSdupNamespace( SPID_NS( $3));
+          $3 = FREEdoFreeTree( $3);
+          SPFOLD_FIX( $$) = $7;
+          SPFOLD_SPEXPR( $$) = $9;
         }
       ;
 

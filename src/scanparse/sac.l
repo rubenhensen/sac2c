@@ -167,6 +167,7 @@ int charpos = 0;
 "width"                    { FILTER( WIDTH); }
 "genarray"                 { FILTER( GENARRAY); }
 "modarray"                 { FILTER( MODARRAY); }
+"foldfix"                  { FILTER( FOLDFIX); }
 "fold"                     { FILTER( FOLD); }
 "inline"                   { FILTER( INLINE); }
 
