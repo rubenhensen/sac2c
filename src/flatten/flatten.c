@@ -452,6 +452,7 @@ FltnMgwith (node *wloop)
             WITH_WITHOP (wloop) = TBmakeSpfold (first_wl);
             SPFOLD_NS (WITH_WITHOP (wloop)) = NSdupNamespace (SPFOLD_NS (withop));
             SPFOLD_FUN (WITH_WITHOP (wloop)) = ILIBstringCopy (SPFOLD_FUN (withop));
+            SPFOLD_FIX (WITH_WITHOP (wloop)) = DUPdoDupTree (SPFOLD_FIX (withop));
         } else {
             WITH_WITHOP (wloop) = TBmakeModarray (first_wl);
         }
@@ -1439,7 +1440,8 @@ FLATmodarray (node *arg_node, info *arg_info)
  *
  * description:
  *   flattens N_spfold
- *   - fold: the neutral element has to be an id  or is flattened otherwise.
+ *   - fold: the neutral element and the potential fix element have to be an id
+ *           or is flattened otherwise.
  *           It is optional.
  *
  ******************************************************************************/
@@ -1454,6 +1456,15 @@ FLATspfold (node *arg_node, info *arg_info)
     expr = SPFOLD_NEUTRAL (arg_node);
     if ((expr != NULL) && (NODE_TYPE (expr) != N_id)) {
         SPFOLD_NEUTRAL (arg_node) = Abstract (expr, arg_info);
+        expr2 = TRAVdo (expr, arg_info);
+
+        DBUG_ASSERT ((expr == expr2),
+                     "return-node differs from arg_node while flattening an expr!");
+    }
+
+    expr = SPFOLD_FIX (arg_node);
+    if ((expr != NULL) && (NODE_TYPE (expr) != N_id)) {
+        SPFOLD_FIX (arg_node) = Abstract (expr, arg_info);
         expr2 = TRAVdo (expr, arg_info);
 
         DBUG_ASSERT ((expr == expr2),

@@ -1936,6 +1936,7 @@ DUPfold (node *arg_node, info *arg_info)
     FOLD_FUNDEF (new_node)
       = LUTsearchInLutPp (INFO_LUT (arg_info), FOLD_FUNDEF (arg_node));
 
+    FOLD_FIX (new_node) = DUPCONT (FOLD_FIX (arg_node));
     FOLD_NEXT (new_node) = DUPCONT (FOLD_NEXT (arg_node));
 
     CopyCommonNodeData (new_node, arg_node);
@@ -1956,6 +1957,7 @@ DUPspfold (node *arg_node, info *arg_info)
     SPFOLD_FUN (new_node) = ILIBstringCopy (SPFOLD_FUN (arg_node));
     SPFOLD_NS (new_node) = NSdupNamespace (SPFOLD_NS (arg_node));
 
+    SPFOLD_FIX (new_node) = DUPCONT (SPFOLD_FIX (arg_node));
     SPFOLD_NEXT (new_node) = DUPCONT (SPFOLD_NEXT (arg_node));
 
     CopyCommonNodeData (new_node, arg_node);

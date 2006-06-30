@@ -728,7 +728,10 @@ CRTWRPspfold (node *arg_node, info *arg_info)
     } else {
         new_node = TBmakeFold (wrapper, SPFOLD_NEUTRAL (arg_node));
 
+        FOLD_FIX (new_node) = SPFOLD_FIX (arg_node);
+
         SPFOLD_NEUTRAL (arg_node) = NULL;
+        SPFOLD_FIX (arg_node) = NULL;
         arg_node = FREEdoFreeNode (arg_node);
     }
 
