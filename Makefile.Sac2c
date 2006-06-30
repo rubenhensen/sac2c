@@ -1,6 +1,6 @@
 
 #
-# $Id: $
+# $Id:$
 #
 #
 
@@ -81,21 +81,43 @@ DEPS = $(foreach file,$(DEPENDENCY_FILES),$(dir $(file)).$(notdir $(file)))
 # Start rules
 #
 
-sac2c: src/global/build_devel.o
+sac2c: src/global/build.o
 	@$(ECHO) ""
 	@$(ECHO) "Linking $@ (developer version)"
-	$(HIDE) $(LIBTOOL) $(CC) $(CCLINKFLAGS) -o $@ $(TARGETS_DEVEL) $< $(LIB) $(LIBS) $(LDDYNFLAG)
+	$(HIDE) $(LIBTOOL) $(CC) $(CCLINKFLAGS) -o $@ $(TARGETS_DEVEL) $< \
+                $(LIB) $(LIBS) $(LDDYNFLAG)
 	@$(RM) make_track
 
 sac2c.prod: src/global/build_prod.o
 	@$(ECHO) ""
 	@$(ECHO) "Linking $@ (product version)"
-	$(HIDE) $(LIBTOOL) $(CC) $(CCLINKFLAGS) -o $@ $(TARGETS_PROD) $< $(LIB) $(LIBS) $(LDDYNFLAG)
+	$(HIDE) $(LIBTOOL) $(CC) $(CCLINKFLAGS) -o $@ $(TARGETS_PROD) $< \
+                $(LIB) $(LIBS) $(LDDYNFLAG)
 	@$(RM) make_track
 
-src/global/build_devel.c: $(TARGETS_DEVEL) 
+
+sac2c.efence: src/global/build.o
 	@$(ECHO) ""
-	@$(ECHO) "Creating revision information file:  $@"
+	@$(ECHO) "Linking $@ (efence version)"
+	$(HIDE) $(LIBTOOL) $(CC) $(CCLINKFLAGS) -o $@ $(TARGETS_DEVEL) $< \
+                $(LIB) $(LIBS) $(EFLIBS) $(LDDYNFLAG)
+	@$(RM) make_track
+
+
+
+###############################################################################
+#
+# Creating the revision data file
+#
+# We make sac2c depend on the revision data file and in turn the revision data
+# file depend on all target object files. By this dependency chain we achieve
+# that only if one of the object files needs to be remade, if also remake the
+# revision data file and, thereupon, relink sac2c.
+#
+
+src/global/build.c: $(TARGETS_DEVEL) 
+	@$(ECHO) ""
+	@$(ECHO) "Creating revision data file:  $@"
 	@$(ECHO) "char build_date[] = \"`date`\";"  >  $@
 	@$(ECHO) "char build_user[] = \"$(USER)\";" >> $@
 	@$(ECHO) "char build_host[] = \"`hostname`\";" >> $@
@@ -107,7 +129,7 @@ src/global/build_devel.c: $(TARGETS_DEVEL)
 
 src/global/build_prod.c: $(TARGETS_PROD)
 	@$(ECHO) ""
-	@$(ECHO) "Creating revision information file:  $@"
+	@$(ECHO) "Creating revision data file:  $@"
 	@$(ECHO) "char build_date[] = \"`date`\";"  >  $@
 	@$(ECHO) "char build_user[] = \"$(USER)\";" >> $@
 	@$(ECHO) "char build_host[] = \"`hostname`\";" >> $@
@@ -116,14 +138,6 @@ src/global/build_prod.c: $(TARGETS_PROD)
 	@$(ECHO) "char build_ast[]  = \"`$(XSLTENGINE) src/xml/ast2fingerprint.xsl src/xml/ast.xml | $(FINGERPRINTER)`\";" >> $@
 	@$(CLOCK_SKEW_ELIMINATION) $@ 
 	@$(ECHO) "$(dir $@)" > make_track
-
-
-sac2c.efence: src/global/build_devel.o
-	@$(ECHO) ""
-	@$(ECHO) "Linking $@ (efence version)"
-	$(HIDE) $(LIBTOOL) $(CC) $(CCLINKFLAGS) -o $@ $(TARGETS_DEVEL) $< $(LIB) $(LIBS) $(EFLIBS) $(LDDYNFLAG)
-	@$(RM) make_track
-
 
 
 

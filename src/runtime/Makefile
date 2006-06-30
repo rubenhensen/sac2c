@@ -87,7 +87,7 @@ LIBS :=
 
 all:  libsac.a libsac_mt.a libsac_heapmgr.a  \
       libsac_heapmgr_diag.a libsac_heapmgr_mt.a libsac_heapmgr_mt_diag.a  \
-      CacheSimAnalyser sac2crc config.h libsac2c.so libsac2c.a
+      CacheSimAnalyser config.h libsac2c.so libsac2c.a
 
 
 tar: runtime.tar
@@ -100,14 +100,7 @@ libsac_heap%.a :
 	  fi
 	$(CLOCK_SKEW_ELIMINATION) $@
 
-lib%.so : 
-	@ if [ ! -f $@ ]; \
-	    then ln -s ../libsac/$@;  \
-                 echo ln -s ../libsac/$@;  \
-	  fi
-	$(CLOCK_SKEW_ELIMINATION) $@
-
-lib%.a : 
+lib%: 
 	@ if [ ! -f $@ ]; \
 	    then ln -s ../libsac/$@;  \
                  echo ln -s ../libsac/$@;  \
@@ -120,12 +113,11 @@ config.h:
                  echo ln -s ../global/$@;  \
 	  fi
 	$(CLOCK_SKEW_ELIMINATION) $@
-	
 
 
-sac2crc: sac2crc.in
-	(cd $(PROJECT_ROOT); ./configure)
-	$(CLOCK_SKEW_ELIMINATION) $@
+# sac2crc: sac2crc.in
+# 	(cd $(PROJECT_ROOT); ./configure)
+# 	$(CLOCK_SKEW_ELIMINATION) $@
 
 
 CacheSimAnalyser: 
@@ -196,4 +188,4 @@ clean:
 # - relies on INCS to be set appropriately
 #
 
-include ../../Makefile.Deps
+# include ../../Makefile.Deps

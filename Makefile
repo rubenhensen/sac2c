@@ -45,7 +45,7 @@ SOURCE_MAKEFILES := $(addsuffix /Makefile,$(ALL_SOURCE_DIRS))
 # Dummy rules
 #
 
-.PHONY: clean %.clean all devel prod %.track
+.PHONY: clean %.clean cleanprod %.cleanprod all devel prod %.track
 .PHONY: efence check_os maketools makefiles libsac libsac2c heapmgr 
 .PHONY: distrib ctags runtime tools lib  makesubdir xml
 
@@ -130,6 +130,13 @@ clean: makefiles $(addsuffix .clean,$(ALL_SOURCE_DIRS))
 %.clean:
 	@$(ECHO) "Cleaning directory $*"
 	@$(MAKE) -C $* clean
+
+
+cleanprod: $(addsuffix .cleanprod,$(ALL_SOURCE_DIRS))
+
+%.cleanprod:
+	@$(ECHO) "Cleaning directory $* (product sources)"
+	@$(MAKE) -C $* cleanprod
 
 
 ###############################################################################

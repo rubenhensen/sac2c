@@ -49,7 +49,7 @@ HIDE := @
 # Dummy rules
 #
 
-.PHONY: clean all devel prod 
+.PHONY: all devel prod  clean cleanprod
 
 
 
@@ -122,3 +122,5 @@ clean:
 	@$(RM) BEtest
 	@$(RM) *.lex.c *.tab.c *.tab.h y.output
 
+cleanprod:
+	@$(RM) *.prod.o
