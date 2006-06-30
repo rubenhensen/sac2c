@@ -1,12 +1,5 @@
 /*
- * $Log$
- * Revision 1.2  2005/09/28 19:14:51  sah
- * prelude module sac2c is not loaded
- * while compiling module sac2c ;)
- *
- * Revision 1.1  2005/09/28 17:40:40  sah
- * Initial revision
- *
+ * $Id$
  *
  */
 
@@ -45,6 +38,7 @@ ASFdoAddSpecialFunctions (node *syntaxtree)
     if (!ILIBstringCompare ("sac2c", NSgetModule (MODULE_NAMESPACE (syntaxtree)))) {
         DSaddSymbolByName ("sel", SET_wrapperhead, "sac2c");
         DSaddSymbolByName ("zero", SET_wrapperhead, "sac2c");
+        DSaddSymbolByName ("eq", SET_wrapperhead, "sac2c");
     } else {
         CTInote ("compiling module `sac2c', no prelude functions loaded");
     }

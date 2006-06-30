@@ -1,36 +1,6 @@
 /*
  *
- * $Log$
- * Revision 1.10  2005/04/15 08:47:35  ktr
- * replaced TYcopyType with TYeliminateAKV
- *
- * Revision 1.9  2005/01/11 11:19:19  cg
- * Converted output from Error.h to ctinfo.c
- *
- * Revision 1.8  2004/12/09 16:51:45  sbs
- * error in calling TBmakeLet fixed
- *
- * Revision 1.7  2004/11/25 22:49:49  khf
- * corrected application of TCmakeAp2
- *
- * Revision 1.6  2004/11/24 12:47:20  khf
- * replaced WITH_CEXPR
- *
- * Revision 1.5  2004/11/23 21:50:47  khf
- * SacDefCamp04: Compiles
- *
- * Revision 1.4  2004/11/11 19:01:51  khf
- * fixed bug 83
- *
- * Revision 1.3  2004/08/09 13:14:17  khf
- * some comments added
- *
- * Revision 1.2  2004/07/23 13:35:46  khf
- * F_accu contains no longer the neutral elements of fold operators
- *
- * Revision 1.1  2004/07/21 12:35:31  khf
- * Initial revision
- *
+ * $Id$
  *
  *
  */
@@ -63,6 +33,28 @@
  * off the code in compile. The only argument is the index vector
  * of the surrounding withloop to disable LIR.
  *
+ *
+ * Furthermore, we make the fix-stop comparison (if present) explicit.
+ * I.e., we introduce a variable new_s of type bool[] which replaces
+ * the FOLD_FIX value. It is computed by using sac2c::eq
+ *
+ * Ex.:
+ *    A = with(iv)
+ *          gen:{ val = ...;
+ *              }: val
+ *        foldfix( op, n, s);
+ *
+ * is transformed into
+ *
+ *    A = with(iv)
+ *          gen:{ acc   = accu( iv);
+ *                val = ...;
+ *                res = op( acc, val);
+ *                new_s = sac2c::eq( res, s);
+ *              }: res
+ *        foldfix( op, n, new_s);
+ *
+ *
  */
 
 #include <stdio.h>
@@ -79,6 +71,9 @@
 #include "dbug.h"
 #include "traverse.h"
 #include "constants.h"
+#include "shape.h"
+#include "deserialize.h"
+#include "namespaces.h"
 #include "ExplicitAccumulate.h"
 
 /**
@@ -87,11 +82,21 @@
 struct INFO {
     node *fundef;
     node *wl;
+    node *fold_ids;
+    node *accu;
+    node *fix;
+    node *avis;
+    node *expr;
     node *ids;
 };
 
 #define INFO_EA_FUNDEF(n) (n->fundef)
 #define INFO_EA_WL(n) (n->wl)
+#define INFO_EA_FOLD_LHS(n) (n->fold_ids)
+#define INFO_EA_FOLD_ACCU(n) (n->accu)
+#define INFO_EA_FOLD_FIXVAL(n) (n->fix)
+#define INFO_EA_FOLD_FIXBOOL(n) (n->avis)
+#define INFO_EA_FOLD_CEXPR(n) (n->expr)
 #define INFO_EA_LHS_IDS(n) (n->ids)
 
 /**
@@ -108,6 +113,11 @@ MakeInfo ()
 
     INFO_EA_FUNDEF (result) = NULL;
     INFO_EA_WL (result) = NULL;
+    INFO_EA_FOLD_LHS (result) = NULL;
+    INFO_EA_FOLD_ACCU (result) = NULL;
+    INFO_EA_FOLD_FIXVAL (result) = NULL;
+    INFO_EA_FOLD_FIXBOOL (result) = NULL;
+    INFO_EA_FOLD_CEXPR (result) = NULL;
     INFO_EA_LHS_IDS (result) = NULL;
 
     DBUG_RETURN (result);
@@ -125,140 +135,110 @@ FreeInfo (info *info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *MakeAccuAssign( node *fundef, node *lhs_ids, node *idx_vec)
+ * @fn node *MakeAccuAssign( node *assign, info *arg_info)
  *
  *   @brief creates new assignment containing prf F_accu
  *
- *   @param  node *fundef  :  N_fundef of current function
- *           node *lhs_ids :  LHS N_ids of current withloop
- *           node *idx_vex :  index vector of current withloop
- *   @return node *        :  new N_assign node
+ *   @param  node *assign   :  first N_assign in code block
+ *           info *arg_info :  context info
+ *   @return node *         :  new N_assign node
  ******************************************************************************/
 static node *
-MakeAccuAssign (node *fundef, node *lhs_ids, node *idx_vec)
+MakeAccuAssign (node *assign, info *arg_info)
 {
-    node *vardec, *tmp, *nassign, *_ids;
-    char *nvarname;
+    node *lhs_ids, *avis;
 
     DBUG_ENTER ("MakeAccuAssign");
 
-    nvarname = ILIBtmpVarName (IDS_NAME (lhs_ids));
-    _ids
-      = TBmakeIds (TBmakeAvis (nvarname, TYeliminateAKV (AVIS_TYPE (IDS_AVIS (lhs_ids)))),
-                   NULL);
+    /* create avis */
+    lhs_ids = INFO_EA_FOLD_LHS (arg_info);
+    INFO_EA_FOLD_LHS (arg_info) = NULL;
+    avis = TBmakeAvis (ILIBtmpVarName (IDS_NAME (lhs_ids)),
+                       TYeliminateAKV (AVIS_TYPE (IDS_AVIS (lhs_ids))));
+    INFO_EA_FOLD_ACCU (arg_info) = avis;
 
-    vardec = TBmakeVardec (IDS_AVIS (_ids), NULL);
+    /* insert vardec */
+    FUNDEF_VARDEC (INFO_EA_FUNDEF (arg_info))
+      = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_EA_FUNDEF (arg_info)));
 
-    fundef = TCaddVardecs (fundef, vardec);
+    /* create <avis> = F_accu( <idx-varname>) */
 
-    /* F_accu( <idx-varname>) */
-    tmp = TCmakePrf1 (F_accu, DUPdupIdsId (idx_vec));
-
-    nassign = TBmakeAssign (TBmakeLet (_ids, tmp), NULL);
+    assign = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL),
+                                      TCmakePrf1 (F_accu, DUPdupIdsId (WITH_VEC (
+                                                            INFO_EA_WL (arg_info))))),
+                           assign);
 
     /* set correct backref to defining assignment */
-    AVIS_SSAASSIGN (IDS_AVIS (_ids)) = nassign;
+    AVIS_SSAASSIGN (avis) = assign;
 
-    DBUG_RETURN (nassign);
+    DBUG_RETURN (assign);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn node *MakeFoldFunAssign( node *fundef, node *withop, node *accu_ids,
- *                              node *cexpr);
+ * @fn node *MakeFoldFunAssign( info *arg_info);
  *
  *   @brief  creates new assignment containing fold function of withloop
  *
- *   @param  node *fundef  :  N_fundef of current function
- *           node *withop  :  N_withop of current withloop
- *           node *accu_ids:  lhs of accu assign
- *           node *cexpr   :  cexpr of current ncode
- *   @return node *        :  new N_assign node
+ *   @param  info *arg_info  :  fold WL context
+ *   @return node *          :  new N_assign node
  ******************************************************************************/
 static node *
-MakeFoldFunAssign (node *fundef, node *withop, node *accu_ids, node *cexpr)
+MakeFoldFunAssign (info *arg_info)
 {
-    node *vardec, *funap, *nassign, *_ids;
-    char *nvarname;
+    node *old_cexpr_id, *avis, *assign, *args, *eq_funap, *fixassign;
 
     DBUG_ENTER ("MakeFoldFunAssign");
 
     /*
      * create a function application of the form:
-     *    <res> = <fun>( <acc>, <cexpr>);
+     *    <cexpr'> = <fun>( <acc>, <cexpr>);
      * where
      *    <acc>   is the accumulator variable
      *    <fun>   is the name of the (artificially introduced) folding-fun
-     *              (can be found via 'NWITHOP_FUN')
      *    <cexpr> is the expression in the operation part
      */
 
-    DBUG_ASSERT ((NODE_TYPE (cexpr) == N_id), "CEXPR must be a N_id node!");
-    DBUG_ASSERT ((NODE_TYPE (withop) == N_fold), "withop must be a N_fold node!");
+    /* create new cexpr id: */
+    old_cexpr_id = EXPRS_EXPR1 (INFO_EA_FOLD_CEXPR (arg_info));
+    avis = TBmakeAvis (ILIBtmpVarName (ID_NAME (old_cexpr_id)),
+                       TYcopyType (AVIS_TYPE (INFO_EA_FOLD_ACCU (arg_info))));
 
-    nvarname = ILIBtmpVarName (ID_NAME (cexpr));
-    _ids = TBmakeIds (TBmakeAvis (nvarname,
-                                  TYeliminateAKV (AVIS_TYPE (IDS_AVIS (accu_ids)))),
-                      NULL);
+    /* replace old_cexpr_id with new one: */
+    EXPRS_EXPR1 (INFO_EA_FOLD_CEXPR (arg_info)) = TBmakeId (avis);
 
-    vardec = TBmakeVardec (IDS_AVIS (_ids), NULL);
+    /* insert vardec */
+    FUNDEF_VARDEC (INFO_EA_FUNDEF (arg_info))
+      = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_EA_FUNDEF (arg_info)));
 
-    fundef = TCaddVardecs (fundef, vardec);
+    /* create <avis> = <fun>( <accu>, old_cexpr_id); */
 
-    funap
-      = TCmakeAp2 (FOLD_FUNDEF (withop), DUPdupIdsId (accu_ids), DUPdoDupNode (cexpr));
-
-    AP_FUNDEF (funap) = FOLD_FUNDEF (withop);
-
-    nassign = TBmakeAssign (TBmakeLet (_ids, funap), NULL);
+    assign = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL),
+                                      TCmakeAp2 (FOLD_FUNDEF (
+                                                   WITH_WITHOP (INFO_EA_WL (arg_info))),
+                                                 TBmakeId (INFO_EA_FOLD_ACCU (arg_info)),
+                                                 old_cexpr_id)),
+                           NULL);
 
     /* set correct backref to defining assignment */
-    AVIS_SSAASSIGN (IDS_AVIS (_ids)) = nassign;
+    AVIS_SSAASSIGN (avis) = assign;
 
-    DBUG_RETURN (nassign);
-}
+    if (INFO_EA_FOLD_FIXVAL (arg_info) != NULL) {
+        /* create an assignment <fixbool> = sac2c::eq( <avis>, fixval); */
+        args = TBmakeExprs (TBmakeId (avis),
+                            TBmakeExprs (INFO_EA_FOLD_FIXVAL (arg_info), NULL));
+        INFO_EA_FOLD_FIXVAL (arg_info) = NULL;
+        eq_funap = DSdispatchFunCall (NSgetNamespace ("sac2c"), "eq", args);
+        DBUG_ASSERT (eq_funap != NULL, "sac2c::eq not found");
+        fixassign
+          = TBmakeAssign (TBmakeLet (TBmakeIds (INFO_EA_FOLD_FIXBOOL (arg_info), NULL),
+                                     eq_funap),
+                          NULL);
+        INFO_EA_FOLD_FIXBOOL (arg_info) = NULL;
+        ASSIGN_NEXT (assign) = fixassign;
+    }
 
-/** <!--********************************************************************-->
- *
- * @fn node *InsertAccuPrf( node *ncode, info *arg_info);
- *
- *   @brief
- *
- *   @param  node *ncode    :  N_code of current withloop
- *           node *arg_info :  N_info
- *   @return node *         :  modified N_code
- ******************************************************************************/
-static node *
-InsertAccuPrf (node *ncode, info *arg_info)
-{
-    node *wl, *nblock, *accuassign, *ffassign, *nassign, *nid;
-
-    DBUG_ENTER ("InsertAccuPrf");
-
-    wl = INFO_EA_WL (arg_info);
-    nblock = CODE_CBLOCK (ncode);
-
-    /* <acc> = F_accu( <idx-varname>); */
-    accuassign = MakeAccuAssign (INFO_EA_FUNDEF (arg_info), INFO_EA_LHS_IDS (arg_info),
-                                 WITH_VEC (wl));
-
-    /*   <res> = <fun>( <acc>, <cexpr>); */
-    ffassign = MakeFoldFunAssign (INFO_EA_FUNDEF (arg_info), WITH_WITHOP (wl),
-                                  ASSIGN_LHS (accuassign), EXPRS_EXPR (WITH_CEXPRS (wl)));
-
-    nassign = TCappendAssign (BLOCK_INSTR (nblock), ffassign);
-
-    ASSIGN_NEXT (accuassign) = nassign;
-
-    BLOCK_INSTR (nblock) = accuassign;
-
-    /* replace CEXPR */
-    nid = DUPdupIdsId (ASSIGN_LHS (ffassign));
-
-    EXPRS_EXPR (WITH_CEXPRS (wl)) = FREEdoFreeNode (EXPRS_EXPR (WITH_CEXPRS (wl)));
-    EXPRS_EXPR (WITH_CEXPRS (wl)) = nid;
-
-    DBUG_RETURN (ncode);
+    DBUG_RETURN (assign);
 }
 
 /**
@@ -284,9 +264,11 @@ EAmodule (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EAmodule");
 
+    DSinitDeserialize (arg_node);
     if (MODULE_FUNS (arg_node) != NULL) {
         MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
     }
+    DSfinishDeserialize (arg_node);
 
     DBUG_RETURN (arg_node);
 }
@@ -322,6 +304,39 @@ EAfundef (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *EAassign(node *arg_node, info *arg_info)
+ *
+ *   @brief  Traverses in expression
+ *
+ *   @param  node *arg_node:  N_assign
+ *           info *arg_info:  info
+ *   @return node *        :  N_assign
+ ******************************************************************************/
+
+node *
+EAassign (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("EAassign");
+
+    if (INFO_EA_FOLD_LHS (arg_info) != NULL) {
+        arg_node = MakeAccuAssign (arg_node, arg_info);
+    }
+
+    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+
+    if (ASSIGN_NEXT (arg_node) != NULL) {
+        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
+    } else {
+        if (INFO_EA_FOLD_ACCU (arg_info) != NULL) {
+            ASSIGN_NEXT (arg_node) = MakeFoldFunAssign (arg_info);
+        }
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *EAlet(node *arg_node, info *arg_info)
  *
  *   @brief  Traverses in expression
@@ -334,16 +349,11 @@ EAfundef (node *arg_node, info *arg_info)
 node *
 EAlet (node *arg_node, info *arg_info)
 {
-    node *tmp;
-
     DBUG_ENTER ("EAlet");
 
-    tmp = INFO_EA_LHS_IDS (arg_info);
     INFO_EA_LHS_IDS (arg_info) = LET_IDS (arg_node);
 
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
-
-    INFO_EA_LHS_IDS (arg_info) = tmp;
 
     DBUG_RETURN (arg_node);
 }
@@ -370,27 +380,55 @@ EAwith (node *arg_node, info *arg_info)
     tmp = arg_info;
     arg_info = MakeInfo ();
     INFO_EA_FUNDEF (arg_info) = INFO_EA_FUNDEF (tmp);
+    INFO_EA_LHS_IDS (arg_info) = INFO_EA_LHS_IDS (tmp);
+    INFO_EA_WL (arg_info) = arg_node;
 
-    /* modify bottom up */
+    WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
+
     WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
 
     /* pop arg_info */
     arg_info = FreeInfo (arg_info);
     arg_info = tmp;
 
-    if (NODE_TYPE (WITH_WITHOP (arg_node)) == N_fold) {
+    DBUG_RETURN (arg_node);
+}
 
-        DBUG_PRINT ("EA", ("Fold WL found, inserting F_Accu..."));
+/** <!--********************************************************************-->
+ *
+ * @fn node *EAfold(node *arg_node, info *arg_info)
+ *
+ *   @brief  modify code.
+ *
+ *   @param  node *arg_node:  N_fold
+ *           info *arg_info:  N_info
+ *   @return node *        :  N_fold
+ ******************************************************************************/
 
-        INFO_EA_WL (arg_info) = arg_node; /* store the current node for later */
+node *
+EAfold (node *arg_node, info *arg_info)
+{
+    node *avis;
 
-        DBUG_ASSERT ((CODE_NEXT (WITH_CODE (arg_node)) == NULL),
-                     "Withloop has more than one N_code!");
-        WITH_CODE (arg_node) = InsertAccuPrf (WITH_CODE (arg_node), arg_info);
+    DBUG_ENTER ("EAfold");
 
-        DBUG_PRINT ("EA", (" inserting complete"));
+    DBUG_PRINT ("EA", ("Fold WL found, inserting F_Accu..."));
 
-    } /* else nothing to do */
+    INFO_EA_FOLD_LHS (arg_info) = INFO_EA_LHS_IDS (arg_info);
+
+    if (FOLD_FIX (arg_node) != NULL) {
+        /**
+         * create new FIX identifier and insert it into the vardecs
+         */
+        avis = TBmakeAvis (ILIBtmpVarName (ID_NAME (FOLD_FIX (arg_node))),
+                           TYmakeAKS (TYmakeSimpleType (T_bool), SHmakeShape (0)));
+        FUNDEF_VARDEC (INFO_EA_FUNDEF (arg_info))
+          = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_EA_FUNDEF (arg_info)));
+
+        INFO_EA_FOLD_FIXBOOL (arg_info) = avis;
+        INFO_EA_FOLD_FIXVAL (arg_info) = FOLD_FIX (arg_node); /* for consumption! */
+        FOLD_FIX (arg_node) = TBmakeId (avis);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -411,7 +449,10 @@ EAcode (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EAcode");
 
+    INFO_EA_FOLD_CEXPR (arg_info) = CODE_CEXPRS (arg_node);
     CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
+
+    DBUG_ASSERT (CODE_NEXT (arg_node) == NULL, "cannot handle multi generator WLs");
 
     DBUG_RETURN (arg_node);
 }

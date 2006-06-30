@@ -1,6 +1,6 @@
 module sac2c;
 
-provide {sel, zero};
+provide {sel, zero, eq};
 
 #define BUILT_IN( fun)    \
 fun( int)                 \
@@ -38,4 +38,21 @@ ZERO( double, 0d)
 ZERO( float, 0f)
 ZERO( char, ' ')
 ZERO( bool, false)
+
+inline
+bool and( bool a, bool b)
+{
+  return( _and_( a, b));
+}
+
+#define EQ( a)                                                       \
+inline                                                               \
+bool eq( a[*] A, a[*] B)                                             \
+{                                                                    \
+  res = with( _mul_SxA_(0, _shape_(A)) <= iv < _shape_(A))           \
+        fold( sac2c::and, true, _eq_(_sel_( iv, A), _sel_( iv, B))); \
+  return( res);                                                      \
+}
+
+BUILT_IN( EQ)
 
