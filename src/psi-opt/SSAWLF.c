@@ -733,6 +733,9 @@ CreateCode (node *target, node *subst)
     coden = DUPdoDupTreeType (CODE_CBLOCK (target), DUP_WLF);
     coden = TRAVdo (coden, new_arg_info);
     coden = TBmakeCode (coden, DUPdoDupTreeType (CODE_CEXPRS (target), DUP_WLF));
+    if (CODE_GUARD (target) != NULL) {
+        CODE_GUARD (coden) = DUPdoDupTreeType (CODE_GUARD (target), DUP_WLF);
+    }
 
     new_arg_info = FreeInfo (new_arg_info);
 
