@@ -177,7 +177,7 @@ clean:
 	$(RM) *.o *.a *.bak *~ .*.d
 	$(RM) -r .sb  SunWS_cache
 	$(RM) runtime.tar
-	$(RM) sac2crc CacheSimAnalyser
+	$(RM) CacheSimAnalyser
 	$(RM) icm_test.log
 
 
