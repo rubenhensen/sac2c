@@ -2004,6 +2004,7 @@ DUPcode (node *arg_node, info *arg_info)
     new_cexprs = DUPTRAV (CODE_CEXPRS (arg_node));
 
     new_node = TBmakeCode (new_block, new_cexprs);
+    CODE_GUARD (new_node) = DUPTRAV (CODE_GUARD (arg_node));
 
     INFO_LUT (arg_info) = LUTinsertIntoLutP (INFO_LUT (arg_info), arg_node, new_node);
 
