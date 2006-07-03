@@ -69,6 +69,7 @@ struct INFO {
     bool isfold;
     node *spmdframe;
     node *spmdbarrier;
+    char *break_label;
     lut_t *foldlut;
 };
 
@@ -89,6 +90,7 @@ struct INFO {
 #define INFO_ISFOLD(n) (n->isfold)
 #define INFO_SPMDFRAME(n) (n->spmdframe)
 #define INFO_SPMDBARRIER(n) (n->spmdbarrier)
+#define INFO_BREAKLABEL(n) (n->break_label)
 #define INFO_FOLDLUT(n) (n->foldlut)
 
 /*
@@ -5583,6 +5585,7 @@ COMPwith2 (node *arg_node, info *arg_info)
     node *idxs_exprs;
     node *withop;
     node *let_neutral;
+    char *break_label_str;
 
     DBUG_ENTER ("COMPwith2");
 
@@ -5782,6 +5785,7 @@ COMPwith2 (node *arg_node, info *arg_info)
      *     down below!                              *
      ************************************************/
 
+    break_label_str = ILIBtmpVarName (LABEL_POSTFIX);
     if (WITH2_CODE (arg_node) != NULL) {
         WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
     }
@@ -5790,36 +5794,29 @@ COMPwith2 (node *arg_node, info *arg_info)
      * put it all together                     *
      *******************************************/
 
-  ret_node = TCmakeAssigns9( alloc_icms,
-			     fold_icms,
-			     TCmakeAssignIcm1( "PF_BEGIN_WITH",
-			       TCmakeIdCopyString( profile_name),
-				 TCmakeAssignIcm1( "WL_SCHEDULE__BEGIN",
-				 icm_args,
-				 NULL)),
-			     shpfac_decl_icms,
-			     shpfac_def_icms,
-			     TRAVdo( WITH2_SEGS( arg_node), arg_info),
-			     TCmakeAssignIcm1( "WL_SCHEDULE__END",
-			       DUPdoDupTree( icm_args),
-			       TCmakeAssignIcm1( "PF_END_WITH",
-				 TCmakeIdCopyString( profile_name),
-#if 0
-				 TCmakeAssignIcm0( "ND_LABEL",
-                                   NULL ))),
-#else
-                                                            NULL)),
-#endif
-			     fold_rc_icms,
-			     free_icms);
+    INFO_BREAKLABEL (arg_info) = break_label_str;
+    ret_node = TCmakeAssigns9 (
+      alloc_icms, fold_icms,
+      TCmakeAssignIcm1 ("PF_BEGIN_WITH", TCmakeIdCopyString (profile_name),
+                        TCmakeAssignIcm1 ("WL_SCHEDULE__BEGIN", icm_args, NULL)),
+      shpfac_decl_icms, shpfac_def_icms, TRAVdo (WITH2_SEGS (arg_node), arg_info),
+      TCmakeAssignIcm1 ("WL_SCHEDULE__END", DUPdoDupTree (icm_args),
+                        TCmakeAssignIcm1 ("PF_END_WITH",
+                                          TCmakeIdCopyString (profile_name),
+                                          TCmakeAssignIcm1 ("ND_LABEL",
+                                                            TCmakeIdCopyString (
+                                                              break_label_str),
+                                                            NULL))),
+      fold_rc_icms, free_icms);
+    INFO_BREAKLABEL (arg_info) = NULL;
 
-  /*
-   * pop 'wlids', 'wlnode'
-   */
-  wlids = old_wlids;
-  wlnode = old_wlnode;
+    /*
+     * pop 'wlids', 'wlnode'
+     */
+    wlids = old_wlids;
+    wlnode = old_wlnode;
 
-  DBUG_RETURN( ret_node);
+    DBUG_RETURN (ret_node);
 }
 
 /** <!--********************************************************************-->
@@ -6445,6 +6442,7 @@ COMPwlgridx (node *arg_node, info *arg_info)
             node *icm_args = NULL;
             char *icm_name = NULL;
             node *cexpr;
+            node *guard;
             node *tmp_ids;
             node *withop;
             node *idxs_exprs;
@@ -6457,6 +6455,7 @@ COMPwlgridx (node *arg_node, info *arg_info)
              * insert compiled code.
              */
             cexprs = CODE_CEXPRS (WLGRIDX_CODE (arg_node));
+            guard = CODE_GUARD (WLGRIDX_CODE (arg_node));
             DBUG_ASSERT ((cexprs != NULL), "no code exprs found");
 
             DBUG_ASSERT ((WLGRIDX_CBLOCK (arg_node) != NULL),
@@ -6496,13 +6495,16 @@ COMPwlgridx (node *arg_node, info *arg_info)
                 case N_fold:
                     icm_name = "WL_FOLD";
                     icm_args = MakeIcmArgs_WL_OP2 (arg_node, tmp_ids);
-#if 0
-          if( FOLD_FIX( withop) != NULL ) {
-            node_icms = TCappendAssign( node_icms,
-                                        TCmakeAssignIcm0( "FOLDFIX_ESCAPE",
-                                                          NULL));
-          }
-#endif
+                    if (guard != NULL) {
+                        node_icms
+                          = TCappendAssign (node_icms,
+                                            TCmakeAssignIcm2 ("BREAK_ON_GUARD",
+                                                              DUPdoDupTree (guard),
+                                                              TCmakeIdCopyString (
+                                                                INFO_BREAKLABEL (
+                                                                  arg_info)),
+                                                              NULL));
+                    }
                     break;
 
                 default:

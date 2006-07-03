@@ -1,5 +1,5 @@
 /*
- * $Id:$
+ * $Id$
  */
 
 /*****************************************************************************
@@ -70,5 +70,9 @@ extern void SAC_String2Array (unsigned char *array, const char *string);
 #define SAC_ND_LABEL(label)                                                              \
     label:
 #define SAC_ND_GOTO(label) goto label;
+
+#define SAC_BREAK_ON_GUARD(guard, label)                                                 \
+    if (guard)                                                                           \
+        goto label;
 
 #endif /* _SAC_MISC_H_ */
