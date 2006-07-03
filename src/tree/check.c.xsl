@@ -15,8 +15,8 @@ version="1.0">
   <xsl:output method="text" indent="no"/>
   <xsl:strip-space elements="*"/>
   
-  <!-- This stylesheet generates a check.c file implementing all functions neede
-       d to check a node -->
+  <!-- This stylesheet generates a check.c file implementing all 
+       functions needed to check a node -->
   
   <xsl:variable name="newline">
     <xsl:text>
@@ -97,7 +97,7 @@ static info *FreeInfo(info *info)
  *
  * @fn node *CHKdoTreeCheck( node *syntax_tree)
  *
- *****************************************************************************/
+ ****************************************************************************/
 node *CHKdoTreeCheck( node *syntax_tree)
 {
   info *info;
@@ -122,11 +122,11 @@ node *CHKdoTreeCheck( node *syntax_tree)
 }
     </xsl:text>
   
-<!-- *************************************************************************** 
-*
-*   the nodesets-functions, the check functions and the enum typedef
-*
-***************************************************************************** --> 
+<!-- ************************************************************************* 
+ *
+ *   the nodesets-functions, the check functions and the enum typedef
+ *
+ ************************************************************************* --> 
     <!-- first the nodeset-functions --> 
     <xsl:apply-templates select="//nodesets/nodeset">
       <xsl:sort select="@name"/>
@@ -148,15 +148,17 @@ node *CHKdoTreeCheck( node *syntax_tree)
       <xsl:sort select="@name"/>
     </xsl:apply-templates>
     <xsl:value-of select="'} attr_list;'"/>
+    <xsl:value-of select="$newline"/>
     <xsl:value-of select="'#endif /* SHOW_MALLOC */'"/>
+    <xsl:value-of select="$newline"/>
   </xsl:template>
 
 
-<!-- *************************************************************************** 
-*
-*    IsFun-template: call match node, mode isfun -> to check the nodesets
-*
-***************************************************************************** --> 
+<!-- ************************************************************************* 
+ *
+ *    IsFun-template: call match node, mode isfun -> to check the nodesets
+ *
+ ************************************************************************* --> 
   <xsl:template match="nodeset">
     <xsl:value-of select="$newline"/>        
     <xsl:value-of select="'static bool is'"/>
@@ -204,11 +206,12 @@ node *CHKdoTreeCheck( node *syntax_tree)
   </xsl:template>
 
 
-<!-- *************************************************************************** 
-*
-*    Main-template: call match node, mode function -> main function include all checks
-*
-***************************************************************************** -->
+<!-- ************************************************************************* 
+ *
+ *    Main-template: call match node, mode function -> main function include 
+ *    all checks
+ *
+ ************************************************************************* -->
   <xsl:template match="node" mode="function">
     <xsl:call-template name="travfun-comment">
       <xsl:with-param name="prefix">CHK</xsl:with-param>
@@ -369,11 +372,11 @@ node *CHKdoTreeCheck( node *syntax_tree)
 
 
 
-<!-- *************************************************************************** 
-*
-*    Son-template:
-*
-***************************************************************************** -->
+<!-- ************************************************************************* 
+ *
+ *    Son-template:
+ *
+ ************************************************************************* -->
   <xsl:template name="exist_son">
     <!-- exist test -->
     <xsl:value-of select="'CHKexistSon( '"/>
@@ -455,11 +458,10 @@ node *CHKdoTreeCheck( node *syntax_tree)
 
 
 
-<!-- *************************************************************************** 
-*                                                                            
-*  Attribute-template:
-*                                                                              
-***************************************************************************** -->
+<!-- ************************************************************************* 
+ *                                                                            
+ *  Attribute-template:
+ *                                                                              ************************************************************************* -->
   <xsl:template name="exist_attribute">
     <xsl:value-of select="'CHKexistAttribute( '"/>
     <xsl:call-template name="node-access">
@@ -553,11 +555,11 @@ node *CHKdoTreeCheck( node *syntax_tree)
 
 
 
-<!-- *************************************************************************** 
-*
-*  CHKnotExist
-*
-***************************************************************************** -->
+<!-- ************************************************************************* 
+ *
+ *  CHKnotExist
+ *
+ ************************************************************************* -->
   <xsl:template name="notexist">
     <xsl:if test="key(&quot;arraytypes&quot;, ./type/@name)">
       <xsl:value-of select="'for( cnt = 0; cnt &lt; '" />
@@ -602,11 +604,11 @@ node *CHKdoTreeCheck( node *syntax_tree)
 
 
 
-<!-- *************************************************************************** 
-*
-*    template: call match check, mode customize -> for own check functions
-*
-***************************************************************************** --> 
+<!-- ************************************************************************* 
+ *
+ *    template: call match check, mode customize -> for own check functions
+ *
+ ************************************************************************* --> 
   <xsl:template match="check" mode="customize">
     <xsl:text>
 
@@ -620,11 +622,11 @@ node *CHKdoTreeCheck( node *syntax_tree)
   </xsl:template>
 
   
-<!-- *************************************************************************** 
-*
-*    template: call match sons : mode trav -> for the trav functions
-*
-***************************************************************************** -->
+<!-- ************************************************************************* 
+ *
+ *    template: call match sons : mode trav -> for the trav functions
+ *
+ ************************************************************************* -->
   <xsl:template match="son" mode="trav">
     <xsl:text>
 
@@ -670,11 +672,11 @@ node *CHKdoTreeCheck( node *syntax_tree)
 
 
 
-<!-- *************************************************************************** 
-*
-*    range specifier: range/phase/all
-*
-***************************************************************************** -->
+<!-- ************************************************************************* 
+ *
+ *    range specifier: range/phase/all
+ *
+ ************************************************************************* -->
 
   <xsl:template match="range">
     <xsl:value-of select="'|| (( global.compiler_subphase &gt;= '"/>
@@ -698,14 +700,14 @@ node *CHKdoTreeCheck( node *syntax_tree)
   
 
 
-<!-- *************************************************************************** 
-*
-*    correct specifier: 
-*           
-*              son: node/set
-*        attribute: node/any
-*
-***************************************************************************** -->
+<!-- ************************************************************************* 
+ *
+ *    correct specifier: 
+ *           
+ *              son: node/set
+ *        attribute: node/any
+ *
+ ************************************************************************* -->
  
   <xsl:template match="node" mode="correctson" >
     <xsl:value-of select="'|| ( NODE_TYPE( '"/>
@@ -779,11 +781,11 @@ node *CHKdoTreeCheck( node *syntax_tree)
 
 
 
-<!-- *************************************************************************** 
-*
-*    help functions
-*
-***************************************************************************** -->
+<!-- ************************************************************************* 
+ *
+ *    help functions
+ *
+ ************************************************************************* -->
 
   <xsl:template name="upper_uppername">
     <xsl:param name="name1" />
@@ -826,11 +828,11 @@ node *CHKdoTreeCheck( node *syntax_tree)
   </xsl:template>
 
 
-<!-- *************************************************************************** 
-*
-*    Enum-template: call match node : a enumtype for the I/O
-*
-***************************************************************************** -->
+<!-- ************************************************************************* 
+ *
+ *    Enum-template: call match node : a enumtype for the I/O
+ *
+ ************************************************************************* -->
   <xsl:template match="node" mode="enum">
     <xsl:if test="string-length(attributes/attribute/@name) &gt; 0">
       <xsl:value-of select="'CHK_'"/>
@@ -851,193 +853,5 @@ node *CHKdoTreeCheck( node *syntax_tree)
       <xsl:value-of select="$newline" />
     </xsl:if>
   </xsl:template>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<!-- *************************************************************************** 
-*
-*    old
-*
-***************************************************************************** -->
-
-<!--
-  <xsl:template name="exist_attribute_old">
-    <xsl:choose>
-      <xsl:when test="((./phases/all) or (not(./phases/*)))">
-        <xsl:if test="string-length(@mandatory) &gt; 2">
-          <xsl:call-template name="CHKexistAttribute"/>                
-        </xsl:if>
-      </xsl:when>
-      <xsl:when test="((./phases/range) or ( true()))">
-        <xsl:value-of select="'if( ( FALSE)'"/>
-        <xsl:apply-templates select="./phases/*"/>
-        <xsl:value-of select="') {'"/>
-        <xsl:if test="string-length(@mandatory) &gt; 2">
-          <xsl:call-template name="CHKexistAttribute"/>
-        </xsl:if>
-        <xsl:value-of select="'}'"/>
-        <xsl:value-of select="'else {'"/>
-        <xsl:call-template name="CHKnotExistAttribute"/>
-        <xsl:value-of select="'}'"/>
-      </xsl:when>
-      <xsl:otherwise>
-        <xsl:call-template name="CHKnotExistAttribute"/>                
-      </xsl:otherwise>
-    </xsl:choose>
-  </xsl:template>
-  
-  <xsl:template name="CHKexistAttribute">
-    <xsl:if test="key(&quot;arraytypes&quot;, ./type/@name)">
-      <xsl:value-of select="'for( cnt = 0; cnt &lt; '" />
-      <xsl:value-of select="key(&quot;types&quot;, ./type/@name)/@size"/>
-      <xsl:value-of select="'; cnt++) { '" />
-    </xsl:if>
-    <xsl:value-of select="'CHKexistAttribute( '"/>
-    <xsl:call-template name="node-access">
-      <xsl:with-param name="node">arg_node</xsl:with-param>
-      <xsl:with-param name="nodetype">
-        <xsl:value-of select="../../@name"/>
-      </xsl:with-param>
-      <xsl:with-param name="field">
-        <xsl:value-of select="@name"/>
-      </xsl:with-param>
-      <xsl:with-param name="index">
-        <xsl:if test="key(&quot;arraytypes&quot;, ./type/@name)">
-          <xsl:value-of select="'cnt'"/>
-        </xsl:if>
-      </xsl:with-param>
-    </xsl:call-template>
-    <xsl:value-of select="', '"/>
-    <xsl:value-of select="'arg_node'"/>
-    <xsl:value-of select="', '"/>
-    <xsl:value-of select="'&quot;'"/>
-    <xsl:value-of select="'mandatory attribute '"/>
-    <xsl:call-template name="uppercase">
-      <xsl:with-param name="string" >
-        <xsl:value-of select="../../@name"/>
-      </xsl:with-param>
-    </xsl:call-template>
-    <xsl:value-of select="'_'"/>
-    <xsl:call-template name="uppercase">
-      <xsl:with-param name="string" >
-        <xsl:value-of select="@name"/>
-      </xsl:with-param>
-    </xsl:call-template>
-    <xsl:value-of select="' is NULL'"/>
-    <xsl:value-of select="'&quot;'"/>
-    <xsl:value-of select="');'"/>
-    <xsl:if test="key(&quot;arraytypes&quot;, ./type/@name)">
-      <xsl:value-of select="'}'"/>
-    </xsl:if>
-  </xsl:template>
-
-
-  <xsl:template name="CHKnotExistattribute">
-    <xsl:if test="key(&quot;arraytypes&quot;, ./type/@name)">
-      <xsl:value-of select="'for( cnt = 0; cnt &lt; '" />
-      <xsl:value-of select="key(&quot;types&quot;, ./type/@name)/@size"/>
-      <xsl:value-of select="'; cnt++) { '" />
-    </xsl:if>
-    <xsl:value-of select="'CHKnotExistAttribute( '"/>
-    <xsl:call-template name="node-access">
-      <xsl:with-param name="node">arg_node</xsl:with-param>
-      <xsl:with-param name="nodetype">
-        <xsl:value-of select="../../@name"/>
-      </xsl:with-param>
-      <xsl:with-param name="field">
-        <xsl:value-of select="@name"/>
-      </xsl:with-param>
-      <xsl:with-param name="index">
-        <xsl:if test="key(&quot;arraytypes&quot;, ./type/@name)">
-          <xsl:value-of select="'cnt'"/>
-        </xsl:if>
-      </xsl:with-param>
-    </xsl:call-template>
-    <xsl:value-of select="', '"/>
-    <xsl:value-of select="'arg_node'"/>
-    <xsl:value-of select="', '"/>
-    <xsl:value-of select="'&quot;'"/>
-    <xsl:value-of select="'attribute '"/>
-    <xsl:call-template name="uppercase">
-      <xsl:with-param name="string" >
-        <xsl:value-of select="../../@name"/>
-      </xsl:with-param>
-    </xsl:call-template>
-    <xsl:value-of select="'_'"/>
-    <xsl:call-template name="uppercase">
-      <xsl:with-param name="string" >
-        <xsl:value-of select="@name"/>
-      </xsl:with-param>
-    </xsl:call-template>
-    <xsl:value-of select="' must be NULL'"/>
-    <xsl:value-of select="'&quot;'"/>
-    <xsl:value-of select="');'"/>
-    <xsl:if test="key(&quot;arraytypes&quot;, ./type/@name)">
-      <xsl:value-of select="'}'"/>
-    </xsl:if>
-  </xsl:template>
-
-
-  <xsl:template name="correcttype_attribute_old">
-    <xsl:choose>
-      <xsl:when test="type/@name = 'NodePointer'">
-      </xsl:when>
-      <xsl:when test="key(&quot;types&quot;, ./type/@name)[@copy = &quot;literal&quot;]">
-      </xsl:when>
-      <xsl:otherwise>
-        <xsl:if test="not(./type/targets/target/any)">
-          <xsl:value-of select="'if( '"/>
-          <xsl:call-template name="upper_uppername">
-            <xsl:with-param name="name1">
-              <xsl:value-of select="../../@name" />
-            </xsl:with-param>
-            <xsl:with-param name="name2">
-              <xsl:value-of select="@name"/>
-            </xsl:with-param>
-          </xsl:call-template>
-          <xsl:value-of select="'( arg_node) != NULL) {'"/>
-          <xsl:value-of select="'if( !(( FALSE)'"/>
-          <xsl:apply-templates select="./type/targets/target/*" mode="correctattribute" />
-          <xsl:value-of select="'))'" />
-          <xsl:value-of select="'{'" />      
-          <xsl:value-of select="'CHKcorrectTypeInsertError('"/>
-          <xsl:value-of select="'arg_node,'"/>
-          <xsl:value-of select="'&quot;'"/>
-          <xsl:call-template name="upper_uppername">
-            <xsl:with-param name="name1">
-              <xsl:value-of select="../../@name" />
-            </xsl:with-param>
-            <xsl:with-param name="name2">
-              <xsl:value-of select="@name"/>
-            </xsl:with-param>
-          </xsl:call-template>
-          <xsl:value-of select="' hasnt the right type.'"/>
-          <xsl:value-of select="'&quot;'"/>
-          <xsl:value-of select="');'"/>
-          <xsl:value-of select="'}'" />      
-          <xsl:value-of select="'}'" />      
-        </xsl:if>
-      </xsl:otherwise>
-    </xsl:choose>
-  </xsl:template>
-
--->
-
-
 
 </xsl:stylesheet>

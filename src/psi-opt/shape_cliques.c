@@ -633,12 +633,15 @@ SCIprf (node *arg_node, info *arg_info)
     case F_tod_S:
         /* Place lhs id and arg1 in same shape clique */
         lhs = INFO_LHS (arg_info);
-        arg1 = PRF_ARG1 (arg_node);
         lhsavis = IDS_AVIS (lhs);
-        arg1avis = ID_AVIS (arg1);
-        DBUG_ASSERT ((AVIS_SHAPECLIQUEID (lhsavis) == SHAPECLIQUEIDNONE (lhsavis)),
-                     "PRF AxS lhs shape clique is non-degenerate");
-        AppendAvisToShapeClique (lhsavis, arg1avis);
+
+        arg1 = PRF_ARG1 (arg_node);
+        if (N_id == NODE_TYPE (arg1)) {
+            arg1avis = ID_AVIS (arg1);
+            DBUG_ASSERT ((AVIS_SHAPECLIQUEID (lhsavis) == SHAPECLIQUEIDNONE (lhsavis)),
+                         "PRF AxS lhs shape clique is non-degenerate");
+            AppendAvisToShapeClique (lhsavis, arg1avis);
+        }
         break;
 
     case F_add_SxS: /* Scalar-Scalar dyadic scalar functions */
