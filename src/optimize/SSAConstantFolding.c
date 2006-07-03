@@ -1658,8 +1658,14 @@ ShapeSel (constant *idx, node *array_expr)
                 case N_genarray:
                     if (NODE_TYPE (GENARRAY_SHAPE (withop)) == N_array) {
                         node *aelems = ARRAY_AELEMS (GENARRAY_SHAPE (withop));
-                        if (shape_elem < TCcountExprs (aelems)) {
+                        int framedim = TCcountExprs (aelems);
+
+                        if (shape_elem < framedim) {
                             res = DUPdoDupNode (TCgetNthExpr (shape_elem, aelems));
+                        } else if (GENARRAY_DEFAULT (withop) != NULL) {
+                            res = TCmakePrf2 (F_idx_shape_sel,
+                                              TBmakeNum (shape_elem - framedim),
+                                              DUPdoDupNode (GENARRAY_DEFAULT (withop)));
                         }
                     }
                     break;
