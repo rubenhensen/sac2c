@@ -269,7 +269,8 @@ WLSIMPpart (node *arg_node, info *arg_info)
          * Do not delete last part of genarray with-loop. See comment above!
          */
         if (!((NODE_TYPE (WITH_WITHOP (INFO_WITH (arg_info))) == N_genarray)
-              && (WITH_PART (INFO_WITH (arg_info)) == arg_node))) {
+              && (WITH_PART (INFO_WITH (arg_info)) == arg_node)
+              && (PART_NEXT (arg_node) == NULL))) {
             arg_node = FREEdoFreeNode (arg_node);
         }
     }

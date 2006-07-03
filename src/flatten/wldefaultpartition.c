@@ -1,22 +1,5 @@
 /*
- *
- * $Log$
- * Revision 1.4  2005/07/15 15:57:02  sah
- * introduced namespaces
- *
- * Revision 1.3  2005/06/18 18:04:52  sah
- * the special function sac2c:sel is now inserted using
- * DSdispatchFunCall
- *
- * Revision 1.2  2005/06/15 08:43:21  ktr
- * Some bugfixing
- *
- * Revision 1.1  2005/06/14 08:58:57  khf
- * Initial revision
- *
- *
- *
- *
+ * $Id$
  */
 
 /**
@@ -58,12 +41,12 @@ struct INFO {
     node *selwrapper;
 };
 
-#define INFO_WLDP_WL(n) (n->wl)
-#define INFO_WLDP_MODULE(n) (n->module)
-#define INFO_WLDP_FUNDEF(n) (n->fundef)
-#define INFO_WLDP_DEFEXPR(n) (n->defexpr)
-#define INFO_WLDP_DEFASS(n) (n->defass)
-#define INFO_WLDP_SELWRAPPER(n) (n->selwrapper)
+#define INFO_WL(n) (n->wl)
+#define INFO_MODULE(n) (n->module)
+#define INFO_FUNDEF(n) (n->fundef)
+#define INFO_DEFEXPR(n) (n->defexpr)
+#define INFO_DEFASS(n) (n->defass)
+#define INFO_SELWRAPPER(n) (n->selwrapper)
 
 /**
  * INFO functions
@@ -77,12 +60,12 @@ MakeInfo ()
 
     result = ILIBmalloc (sizeof (info));
 
-    INFO_WLDP_WL (result) = NULL;
-    INFO_WLDP_MODULE (result) = NULL;
-    INFO_WLDP_FUNDEF (result) = NULL;
-    INFO_WLDP_DEFEXPR (result) = NULL;
-    INFO_WLDP_DEFASS (result) = NULL;
-    INFO_WLDP_SELWRAPPER (result) = NULL;
+    INFO_WL (result) = NULL;
+    INFO_MODULE (result) = NULL;
+    INFO_FUNDEF (result) = NULL;
+    INFO_DEFEXPR (result) = NULL;
+    INFO_DEFASS (result) = NULL;
+    INFO_SELWRAPPER (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -151,7 +134,7 @@ CreateScalarWL (int dim, node *array_shape, simpletype btype, node *expr, node *
       TBmakeAvis (ILIBtmpVar (), TYmakeAKS (TYmakeSimpleType (btype), SHmakeShape (0))));
     vardecs = TBmakeVardec (ID_AVIS (id), vardecs);
 
-    ass = TBmakeAssign (TBmakeLet (ID_AVIS (id), expr), NULL);
+    ass = TBmakeAssign (TBmakeLet (TBmakeIds (ID_AVIS (id), NULL), expr), NULL);
     AVIS_SSAASSIGN (ID_AVIS (id)) = ass;
 
     code = TBmakeCode (TBmakeBlock (ass, NULL), TBmakeExprs (id, NULL));
@@ -253,19 +236,19 @@ node *CreateArraySel( node *sel_vec, node *sel_array, info *arg_info)
   }
   else {   /* (len_index < dim_array) */
 
-    if (INFO_WLDP_SELWRAPPER( arg_info) == NULL){
+    if (INFO_SELWRAPPER( arg_info) == NULL){
       
-      DSinitDeserialize(INFO_WLDP_MODULE( arg_info));
+      DSinitDeserialize(INFO_MODULE( arg_info));
       
-      INFO_WLDP_SELWRAPPER( arg_info) = DSaddSymbolByName( "sel",
+      INFO_SELWRAPPER( arg_info) = DSaddSymbolByName( "sel",
                                                            SET_wrapperhead, 
                                                            "sac2c");
-      DSfinishDeserialize( INFO_WLDP_MODULE( arg_info));
+      DSfinishDeserialize( INFO_MODULE( arg_info));
     }
     
-    DBUG_ASSERT( (INFO_WLDP_SELWRAPPER( arg_info) != NULL),
+    DBUG_ASSERT( (INFO_SELWRAPPER( arg_info) != NULL),
                  "no sac2c:sel wrapper found!");
-    sel = TCmakeAp2( INFO_WLDP_SELWRAPPER( arg_info), 
+    sel = TCmakeAp2( INFO_SELWRAPPER( arg_info), 
                      DUPdupIdsId( sel_vec), DUPdoDupNode( sel_array)); 
   }
   
@@ -291,7 +274,7 @@ WLDPmodule (node *arg_node, info *arg_info)
 
     DSinitDeserialize (arg_node);
 
-    INFO_WLDP_MODULE (arg_info) = arg_node;
+    INFO_MODULE (arg_info) = arg_node;
 
     if (MODULE_FUNS (arg_node) != NULL) {
         MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
@@ -318,7 +301,7 @@ WLDPfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLDPfundef");
 
-    INFO_WLDP_FUNDEF (arg_info) = arg_node;
+    INFO_FUNDEF (arg_info) = arg_node;
 
     if (FUNDEF_BODY (arg_node)) {
         FUNDEF_INSTR (arg_node) = TRAVdo (FUNDEF_INSTR (arg_node), arg_info);
@@ -353,10 +336,10 @@ WLDPassign (node *arg_node, info *arg_info)
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
-    if (INFO_WLDP_DEFASS (arg_info) != NULL) {
-        ASSIGN_NEXT (INFO_WLDP_DEFASS (arg_info)) = arg_node;
-        arg_node = INFO_WLDP_DEFASS (arg_info);
-        INFO_WLDP_DEFASS (arg_info) = NULL;
+    if (INFO_DEFASS (arg_info) != NULL) {
+        ASSIGN_NEXT (INFO_DEFASS (arg_info)) = arg_node;
+        arg_node = INFO_DEFASS (arg_info);
+        INFO_DEFASS (arg_info) = NULL;
     }
 
     DBUG_RETURN (arg_node);
@@ -388,7 +371,7 @@ WLDPwith (node *arg_node, info *arg_info)
 
     if ((WITH_TYPE (arg_node) == N_genarray) || (WITH_TYPE (arg_node) == N_modarray)) {
 
-        INFO_WLDP_WL (arg_info) = arg_node;
+        INFO_WL (arg_info) = arg_node;
 
         /*
          * we traverse the Wl operation for generating default expression.
@@ -430,7 +413,7 @@ WLDPgenarray (node *arg_node, info *arg_info)
     if (GENARRAY_DEFAULT (arg_node) == NULL) {
         ntype *array_type;
 
-        array_type = ID_NTYPE (EXPRS_EXPR (WITH_CEXPRS (INFO_WLDP_WL (arg_info))));
+        array_type = ID_NTYPE (EXPRS_EXPR (WITH_CEXPRS (INFO_WL (arg_info))));
 
         if (TYisAKV (array_type) || TYisAKS (array_type)) {
             node *avis, *ids, *vardec;
@@ -439,17 +422,16 @@ WLDPgenarray (node *arg_node, info *arg_info)
             ids = TBmakeIds (avis, NULL);
             vardec = TBmakeVardec (avis, NULL);
 
-            INFO_WLDP_FUNDEF (arg_info)
-              = TCaddVardecs (INFO_WLDP_FUNDEF (arg_info), vardec);
+            INFO_FUNDEF (arg_info) = TCaddVardecs (INFO_FUNDEF (arg_info), vardec);
 
-            INFO_WLDP_DEFASS (arg_info)
+            INFO_DEFASS (arg_info)
               = TBmakeAssign (TBmakeLet (ids, CreateZeros (array_type,
-                                                           INFO_WLDP_FUNDEF (arg_info))),
+                                                           INFO_FUNDEF (arg_info))),
                               NULL);
             /* set correct backref to defining assignment */
-            AVIS_SSAASSIGN (IDS_AVIS (ids)) = INFO_WLDP_DEFASS (arg_info);
+            AVIS_SSAASSIGN (IDS_AVIS (ids)) = INFO_DEFASS (arg_info);
 
-            INFO_WLDP_DEFEXPR (arg_info) = TBmakeId (avis);
+            INFO_DEFEXPR (arg_info) = TBmakeId (avis);
 
         } else {
             CTIabortLine (global.linenum,
@@ -459,7 +441,7 @@ WLDPgenarray (node *arg_node, info *arg_info)
         }
 
     } else {
-        INFO_WLDP_DEFEXPR (arg_info) = DUPdoDupTree (GENARRAY_DEFAULT (arg_node));
+        INFO_DEFEXPR (arg_info) = DUPdoDupTree (GENARRAY_DEFAULT (arg_node));
     }
 
     DBUG_RETURN (arg_node);
@@ -483,7 +465,7 @@ WLDPmodarray (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("WLDPmodarray");
 
-    sel_vec = WITHID_VEC (WITH_WITHID (INFO_WLDP_WL (arg_info)));
+    sel_vec = WITHID_VEC (WITH_WITHID (INFO_WL (arg_info)));
     sel_array = MODARRAY_ARRAY (arg_node);
 
 #if 0  
@@ -493,13 +475,13 @@ WLDPmodarray (node *arg_node, info *arg_info)
          TYisAKS(ID_NTYPE( sel_array)) ||
          TYisAKD(ID_NTYPE( sel_array)))) {
 
-    INFO_WLDP_DEFEXPR( arg_info) = CreateArraySel( sel_vec,
+    INFO_DEFEXPR( arg_info) = CreateArraySel( sel_vec,
                                                    sel_array,
                                                    arg_info);
   }
   else{
 #endif
-    INFO_WLDP_DEFEXPR (arg_info)
+    INFO_DEFEXPR (arg_info)
       = DSdispatchFunCall (NSgetNamespace ("sac2c"), "sel",
                            TBmakeExprs (DUPdupIdsId (sel_vec),
                                         TBmakeExprs (DUPdoDupNode (sel_array), NULL)));
@@ -528,34 +510,33 @@ WLDPpart (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("WLDPpart");
 
-    DBUG_ASSERT ((INFO_WLDP_DEFEXPR (arg_info) != NULL),
-                 "default expression is missing!");
+    DBUG_ASSERT ((INFO_DEFEXPR (arg_info) != NULL), "default expression is missing!");
 
     _ids = TBmakeIds (TBmakeAvis (ILIBtmpVar (),
-                                  TYeliminateAKV (AVIS_TYPE (ID_AVIS (EXPRS_EXPR (
-                                    WITH_CEXPRS (INFO_WLDP_WL (arg_info))))))),
+                                  TYeliminateAKV (AVIS_TYPE (ID_AVIS (
+                                    EXPRS_EXPR (WITH_CEXPRS (INFO_WL (arg_info))))))),
                       NULL);
 
     vardec = TBmakeVardec (IDS_AVIS (_ids), NULL);
 
-    INFO_WLDP_FUNDEF (arg_info) = TCaddVardecs (INFO_WLDP_FUNDEF (arg_info), vardec);
+    INFO_FUNDEF (arg_info) = TCaddVardecs (INFO_FUNDEF (arg_info), vardec);
 
     idn = DUPdupIdsId (_ids);
 
     /* create new N_code node  */
-    nassign = TBmakeAssign (TBmakeLet (_ids, INFO_WLDP_DEFEXPR (arg_info)), NULL);
+    nassign = TBmakeAssign (TBmakeLet (_ids, INFO_DEFEXPR (arg_info)), NULL);
     /* set correct backref to defining assignment */
     AVIS_SSAASSIGN (IDS_AVIS (_ids)) = nassign;
 
     code = TBmakeCode (TBmakeBlock (nassign, NULL), TBmakeExprs (idn, NULL));
 
-    INFO_WLDP_DEFEXPR (arg_info) = NULL;
+    INFO_DEFEXPR (arg_info) = NULL;
 
     PART_NEXT (arg_node)
       = TBmakePart (code, DUPdoDupTree (PART_WITHID (arg_node)), TBmakeDefault ());
     CODE_USED (code) = 1;
 
-    CODE_NEXT (WITH_CODE (INFO_WLDP_WL (arg_info))) = code;
+    CODE_NEXT (WITH_CODE (INFO_WL (arg_info))) = code;
 
     DBUG_RETURN (arg_node);
 }
@@ -584,7 +565,7 @@ WLDPdoWlDefaultPartition (node *arg_node)
 
     arg_info = MakeInfo ();
 
-    INFO_WLDP_MODULE (arg_info) = arg_node;
+    INFO_MODULE (arg_info) = arg_node;
 
     TRAVpush (TR_wldp);
     arg_node = TRAVdo (arg_node, arg_info);

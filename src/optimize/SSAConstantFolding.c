@@ -231,7 +231,7 @@ static shape *GetShapeOfExpr (node *expr);
  */
 
 static constant *Dim (node *expr);
-static constant *Shape (node *expr);
+static node *Shape (node *expr);
 
 static node *StructOpSel (constant *idx, node *expr);
 static node *StructOpReshape (constant *idx, node *expr);
@@ -720,20 +720,76 @@ Dim (node *expr)
  *
  *****************************************************************************/
 
-static constant *
+static node *
 Shape (node *expr)
 {
-    constant *result;
+    node *res = NULL;
 
     DBUG_ENTER ("Shape");
 
-    if ((NODE_TYPE (expr) == N_id) && TUshapeKnown (ID_NTYPE (expr))) {
-        result = COmakeConstantFromShape (TYgetShape (ID_NTYPE (expr)));
+    DBUG_ASSERT (NODE_TYPE (expr) == N_id, "Shape can only be applied to N_id nodes.");
+
+    if (TUshapeKnown (ID_NTYPE (expr))) {
+        res = SHshape2Array (TYgetShape (ID_NTYPE (expr)));
     } else {
-        result = NULL;
+        node *ass = AVIS_SSAASSIGN (ID_AVIS (expr));
+
+        if ((ass != NULL) && (NODE_TYPE (ASSIGN_RHS (ass)) == N_with)) {
+            node *with = ASSIGN_RHS (ass);
+            node *withop = WITH_WITHOP (with);
+            node *ids = ASSIGN_LHS (ass);
+
+            while ((ids != NULL) && (IDS_AVIS (ids) != ID_AVIS (expr))) {
+                ids = IDS_NEXT (ids);
+                withop = WITHOP_NEXT (withop);
+            }
+
+            DBUG_ASSERT (ids != NULL, "Wrong AVIS_SSAASSIGN link encountered!");
+
+            switch (NODE_TYPE (withop)) {
+            case N_modarray:
+                res = Shape (MODARRAY_ARRAY (withop));
+                if (res == NULL) {
+                    res = TCmakePrf1 (F_shape,
+                                      TBmakeId (ID_AVIS (MODARRAY_ARRAY (withop))));
+                }
+                break;
+
+            case N_genarray:
+                if (GENARRAY_DEFAULT (withop) != NULL) {
+                    if (TUdimKnown (ID_NTYPE (GENARRAY_DEFAULT (withop)))
+                        && (TYgetDim (ID_NTYPE (GENARRAY_DEFAULT (withop))) == 0)) {
+                        res = DUPdoDupNode (GENARRAY_SHAPE (withop));
+                    }
+                } else {
+                    node *code = WITH_CODE (with);
+
+                    while ((res == NULL) && (code != NULL)) {
+                        node *exprs = CODE_CEXPRS (code);
+                        ids = ASSIGN_LHS (ass);
+
+                        while ((ids != NULL) && (IDS_AVIS (ids) != ID_AVIS (expr))) {
+                            ids = IDS_NEXT (ids);
+                            exprs = EXPRS_NEXT (exprs);
+                        }
+
+                        if (TUdimKnown (ID_NTYPE (EXPRS_EXPR (exprs)))
+                            && (TYgetDim (ID_NTYPE (EXPRS_EXPR (exprs))) == 0)) {
+                            res = DUPdoDupNode (GENARRAY_SHAPE (withop));
+                        }
+
+                        code = CODE_NEXT (code);
+                    }
+                }
+                break;
+
+            default:
+                break;
+            }
+        }
     }
 
-    DBUG_RETURN (result);
+    DBUG_RETURN (res);
 }
 
 /******************************************************************************
@@ -1570,10 +1626,54 @@ ShapeSel (constant *idx, node *array_expr)
 
     DBUG_ENTER ("ShapeSel");
 
-    if (TUshapeKnown (ID_NTYPE (array_expr))) {
-        shape_elem = ((int *)COgetDataVec (idx))[0];
+    shape_elem = ((int *)COgetDataVec (idx))[0];
 
+    if (TUshapeKnown (ID_NTYPE (array_expr))) {
         res = TBmakeNum (SHgetExtent (TYgetShape (ID_NTYPE (array_expr)), shape_elem));
+    } else {
+        node *ass = AVIS_SSAASSIGN (ID_AVIS (array_expr));
+
+        if (ass != NULL) {
+            if (NODE_TYPE (ASSIGN_RHS (ass)) == N_with) {
+                node *with = ASSIGN_RHS (ass);
+                node *withop = WITH_WITHOP (with);
+                node *ids = ASSIGN_LHS (ass);
+
+                while ((ids != NULL) && (IDS_AVIS (ids) != ID_AVIS (array_expr))) {
+                    ids = IDS_NEXT (ids);
+                    withop = WITHOP_NEXT (withop);
+                }
+
+                DBUG_ASSERT (ids != NULL, "Wrong AVIS_SSAASSIGN link encountered!");
+
+                switch (NODE_TYPE (withop)) {
+                case N_modarray:
+                    res = ShapeSel (idx, MODARRAY_ARRAY (withop));
+                    if (res == NULL) {
+                        res = TCmakePrf2 (F_idx_shape_sel, TBmakeNum (shape_elem),
+                                          TBmakeId (ID_AVIS (MODARRAY_ARRAY (withop))));
+                    }
+                    break;
+
+                case N_genarray:
+                    if (NODE_TYPE (GENARRAY_SHAPE (withop)) == N_array) {
+                        node *aelems = ARRAY_AELEMS (GENARRAY_SHAPE (withop));
+                        if (shape_elem < TCcountExprs (aelems)) {
+                            res = DUPdoDupNode (TCgetNthExpr (shape_elem, aelems));
+                        }
+                    }
+                    break;
+
+                default:
+                    break;
+                }
+            } else if (NODE_TYPE (ASSIGN_RHS (ass)) == N_array) {
+                node *array = ASSIGN_RHS (ass);
+                if (shape_elem < SHgetDim (ARRAY_SHAPE (array))) {
+                    res = TBmakeNum (SHgetExtent (ARRAY_SHAPE (array), shape_elem));
+                }
+            }
+        }
     }
 
     DBUG_RETURN (res);
@@ -2225,7 +2325,7 @@ CFfoldPrfExpr (prf op, node **arg_expr)
             ONE_ARG (arg_expr)
             {
                 /* for some non full constant expression */
-                new_co = Shape (arg_expr[0]);
+                new_node = Shape (arg_expr[0]);
             }
         break;
 
