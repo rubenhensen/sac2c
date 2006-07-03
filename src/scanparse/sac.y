@@ -1242,7 +1242,7 @@ expr: qual_ext_id                { $$ = $1;                   }
 
 with: BRACKET_L generator BRACKET_R wlassignblock withop
       { 
-        node * cexpr;
+        node * cexpr, *guard, *code;
 #if 0
         /*
          * For now, we do not yet ask for the new syntax, BUT later we will
@@ -1263,29 +1263,45 @@ with: BRACKET_L generator BRACKET_R wlassignblock withop
          */
         if( NODE_TYPE( $5) == N_genarray) {
           cexpr = GENARRAY_SPEXPR($5);
+          guard = NULL;
           GENARRAY_SPEXPR($5) = NULL;
         } else if ( NODE_TYPE( $5) == N_modarray) {
           cexpr = MODARRAY_SPEXPR($5);
+          guard = NULL;
           MODARRAY_SPEXPR($5) = NULL;
         } else {
           cexpr = SPFOLD_SPEXPR($5);
+          guard = SPFOLD_SPGUARD($5);
           SPFOLD_SPEXPR($5) = NULL;
+          SPFOLD_SPGUARD($5) = NULL;
         }
-        $$ = TBmakeWith( $2, TBmakeCode( $4, TBmakeExprs( cexpr, NULL)), $5);
-        CODE_USED( WITH_CODE( $$))++;
+        code = TBmakeCode( $4, TBmakeExprs( cexpr, NULL));
+        CODE_USED( code)++;
+        CODE_GUARD( code) = guard;
+
+        $$ = TBmakeWith( $2, code, $5);
         /*
          * Finally, we generate the link between the (only) partition
          * and the (only) code!
          */
-        PART_CODE( WITH_PART( $$)) = WITH_CODE( $$);
+        PART_CODE( WITH_PART( $$)) = code;
       }
     | BRACKET_L ID BRACKET_R parts nwithop
-      { $$ = $4;
+      { node *code;
+
+        $$ = $4;
         WITH_WITHOP( $$) = $5;
         /*
          * At the time being we ignore $2. However, it SHOULD be checked
          * against all genidxs in $4 here....
          */
+        if( NODE_TYPE( $5) == N_spfold) {
+          code = WITH_CODE( $$);
+          while( code != NULL) {
+            CODE_GUARD( code) = SPFOLD_SPGUARD( $5);
+            code = CODE_NEXT( code);
+          }
+        }
       }
     ;
 
@@ -1462,7 +1478,7 @@ nwithop: GENARRAY BRACKET_L expr COMMA expr BRACKET_R
          { $$ = TBmakeSpfold( $5);
            SPFOLD_FUN( $$) = ILIBstringCopy( SPID_NAME( $3));
            SPFOLD_NS( $$) = NSdupNamespace( SPID_NS( $3));
-           SPFOLD_FIX( $$) = $7;
+           SPFOLD_SPGUARD( $$) = $7;
            $3 = FREEdoFreeTree( $3);
          }
        ;
@@ -1491,7 +1507,7 @@ withop: GENARRAY BRACKET_L expr COMMA expr BRACKET_R
           SPFOLD_FUN( $$) = ILIBstringCopy( SPID_NAME( $3));
           SPFOLD_NS( $$) = NSdupNamespace( SPID_NS( $3));
           $3 = FREEdoFreeTree( $3);
-          SPFOLD_FIX( $$) = $7;
+          SPFOLD_SPGUARD( $$) = $7;
           SPFOLD_SPEXPR( $$) = $9;
         }
       ;

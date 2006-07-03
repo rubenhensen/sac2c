@@ -5790,28 +5790,36 @@ COMPwith2 (node *arg_node, info *arg_info)
      * put it all together                     *
      *******************************************/
 
-    ret_node
-      = TCmakeAssigns9 (alloc_icms, fold_icms,
-                        TCmakeAssignIcm1 ("PF_BEGIN_WITH",
-                                          TCmakeIdCopyString (profile_name),
-                                          TCmakeAssignIcm1 ("WL_SCHEDULE__BEGIN",
-                                                            icm_args, NULL)),
-                        shpfac_decl_icms, shpfac_def_icms,
-                        TRAVdo (WITH2_SEGS (arg_node), arg_info),
-                        TCmakeAssignIcm1 ("WL_SCHEDULE__END", DUPdoDupTree (icm_args),
-                                          TCmakeAssignIcm1 ("PF_END_WITH",
-                                                            TCmakeIdCopyString (
-                                                              profile_name),
+  ret_node = TCmakeAssigns9( alloc_icms,
+			     fold_icms,
+			     TCmakeAssignIcm1( "PF_BEGIN_WITH",
+			       TCmakeIdCopyString( profile_name),
+				 TCmakeAssignIcm1( "WL_SCHEDULE__BEGIN",
+				 icm_args,
+				 NULL)),
+			     shpfac_decl_icms,
+			     shpfac_def_icms,
+			     TRAVdo( WITH2_SEGS( arg_node), arg_info),
+			     TCmakeAssignIcm1( "WL_SCHEDULE__END",
+			       DUPdoDupTree( icm_args),
+			       TCmakeAssignIcm1( "PF_END_WITH",
+				 TCmakeIdCopyString( profile_name),
+#if 0
+				 TCmakeAssignIcm0( "ND_LABEL",
+                                   NULL ))),
+#else
                                                             NULL)),
-                        fold_rc_icms, free_icms);
+#endif
+			     fold_rc_icms,
+			     free_icms);
 
-    /*
-     * pop 'wlids', 'wlnode'
-     */
-    wlids = old_wlids;
-    wlnode = old_wlnode;
+  /*
+   * pop 'wlids', 'wlnode'
+   */
+  wlids = old_wlids;
+  wlnode = old_wlnode;
 
-    DBUG_RETURN (ret_node);
+  DBUG_RETURN( ret_node);
 }
 
 /** <!--********************************************************************-->
@@ -6488,6 +6496,13 @@ COMPwlgridx (node *arg_node, info *arg_info)
                 case N_fold:
                     icm_name = "WL_FOLD";
                     icm_args = MakeIcmArgs_WL_OP2 (arg_node, tmp_ids);
+#if 0
+          if( FOLD_FIX( withop) != NULL ) {
+            node_icms = TCappendAssign( node_icms,
+                                        TCmakeAssignIcm0( "FOLDFIX_ESCAPE",
+                                                          NULL));
+          }
+#endif
                     break;
 
                 default:

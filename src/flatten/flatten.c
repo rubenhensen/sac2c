@@ -452,7 +452,6 @@ FltnMgwith (node *wloop)
             WITH_WITHOP (wloop) = TBmakeSpfold (first_wl);
             SPFOLD_NS (WITH_WITHOP (wloop)) = NSdupNamespace (SPFOLD_NS (withop));
             SPFOLD_FUN (WITH_WITHOP (wloop)) = ILIBstringCopy (SPFOLD_FUN (withop));
-            SPFOLD_FIX (WITH_WITHOP (wloop)) = DUPdoDupTree (SPFOLD_FIX (withop));
         } else {
             WITH_WITHOP (wloop) = TBmakeModarray (first_wl);
         }
@@ -1462,15 +1461,6 @@ FLATspfold (node *arg_node, info *arg_info)
                      "return-node differs from arg_node while flattening an expr!");
     }
 
-    expr = SPFOLD_FIX (arg_node);
-    if ((expr != NULL) && (NODE_TYPE (expr) != N_id)) {
-        SPFOLD_FIX (arg_node) = Abstract (expr, arg_info);
-        expr2 = TRAVdo (expr, arg_info);
-
-        DBUG_ASSERT ((expr == expr2),
-                     "return-node differs from arg_node while flattening an expr!");
-    }
-
     DBUG_RETURN (arg_node);
 }
 
@@ -1708,6 +1698,18 @@ FLATcode (node *arg_node, info *arg_info)
     }
 
     INFO_FLAT_LASTASSIGN (arg_info) = mem_last_assign;
+
+    expr = CODE_GUARD (arg_node);
+    if (expr != NULL) {
+        if (NODE_TYPE (expr) != N_id) {
+            CODE_GUARD (arg_node) = Abstract (expr, arg_info);
+            expr2 = TRAVdo (expr, arg_info);
+        } else {
+            expr2 = TRAVdo (expr, arg_info);
+        }
+        DBUG_ASSERT ((expr == expr2),
+                     "return-node differs from arg_node while flattening an expr!");
+    }
 
     DBUG_RETURN (arg_node);
 }

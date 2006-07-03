@@ -5506,6 +5506,22 @@
             </target>
           </targets>
         </son>
+        <son name="Guard" default="NULL">
+          <description>Non NULL for foldfix code sections only!
+                       Before "Explicit Accus", it holds the fixpoint expression.
+                       After "Explicit Accus", it holds the boolean that decides
+                       over the break. NB: It is a single expression as multi
+                       operator foldfix is NOT supported!
+          </description>
+          <targets>
+            <target mandatory="no">
+              <set name="Expr" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
         <son name="Next" default="NULL">
           <targets>
             <target mandatory="no">
@@ -5911,16 +5927,6 @@
             </target>
           </targets>
         </son>
-        <son name="Fix" default="NULL">
-          <targets>
-            <target mandatory="no">
-              <set name="Expr" />
-              <phases>
-                <all />
-              </phases>
-            </target>
-          </targets>
-        </son>
         <son name="Next" default="NULL">
           <targets>
             <target mandatory="no">
@@ -5958,10 +5964,28 @@
           </type>
         </attribute>
         <attribute name="SPEXPR">
+          <description> Used in sac.y only in order to ship the WL body result
+                        into the N_code!
+          </description>
           <type name="Link">
             <targets>
               <target mandatory="yes">
                 <any />
+                <phases>
+                  <phase name="sp" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="SPGUARD" default="NULL">
+          <description> Used in sac.y only in order to ship the fixpoint of
+                        a foldfix into the N_code!
+          </description>
+          <type name="Link">
+            <targets>
+              <target mandatory="no">
+                <set name="Expr" />
                 <phases>
                   <phase name="sp" />
                 </phases>
@@ -5983,16 +6007,6 @@
         <son name="Neutral">
           <targets>
             <target mandatory="yes">
-              <set name="Expr" />
-              <phases>
-                <all />
-              </phases>
-            </target>
-          </targets>
-        </son>
-        <son name="Fix" default="NULL">
-          <targets>
-            <target mandatory="no">
               <set name="Expr" />
               <phases>
                 <all />

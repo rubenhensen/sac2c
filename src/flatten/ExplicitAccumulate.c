@@ -34,15 +34,15 @@
  * of the surrounding withloop to disable LIR.
  *
  *
- * Furthermore, we make the fix-stop comparison (if present) explicit.
+ * Furthermore, we make the fix-break comparison (if present) explicit.
  * I.e., we introduce a variable new_s of type bool[] which replaces
- * the FOLD_FIX value. It is computed by using sac2c::eq
+ * the CODE_GUARD value. It is computed by using sac2c::eq
  *
  * Ex.:
  *    A = with(iv)
  *          gen:{ val = ...;
- *              }: val
- *        foldfix( op, n, s);
+ *              }: val break s;
+ *        fold( op, n);
  *
  * is transformed into
  *
@@ -51,8 +51,8 @@
  *                val = ...;
  *                res = op( acc, val);
  *                new_s = sac2c::eq( res, s);
- *              }: res
- *        foldfix( op, n, new_s);
+ *              }: res break new_s;
+ *        fold( op, n );
  *
  *
  */
@@ -94,8 +94,8 @@ struct INFO {
 #define INFO_EA_WL(n) (n->wl)
 #define INFO_EA_FOLD_LHS(n) (n->fold_ids)
 #define INFO_EA_FOLD_ACCU(n) (n->accu)
-#define INFO_EA_FOLD_FIXVAL(n) (n->fix)
-#define INFO_EA_FOLD_FIXBOOL(n) (n->avis)
+#define INFO_EA_FOLD_GUARDVAL(n) (n->fix)
+#define INFO_EA_FOLD_GUARDBOOL(n) (n->avis)
 #define INFO_EA_FOLD_CEXPR(n) (n->expr)
 #define INFO_EA_LHS_IDS(n) (n->ids)
 
@@ -115,8 +115,8 @@ MakeInfo ()
     INFO_EA_WL (result) = NULL;
     INFO_EA_FOLD_LHS (result) = NULL;
     INFO_EA_FOLD_ACCU (result) = NULL;
-    INFO_EA_FOLD_FIXVAL (result) = NULL;
-    INFO_EA_FOLD_FIXBOOL (result) = NULL;
+    INFO_EA_FOLD_GUARDVAL (result) = NULL;
+    INFO_EA_FOLD_GUARDBOOL (result) = NULL;
     INFO_EA_FOLD_CEXPR (result) = NULL;
     INFO_EA_LHS_IDS (result) = NULL;
 
@@ -223,18 +223,19 @@ MakeFoldFunAssign (info *arg_info)
     /* set correct backref to defining assignment */
     AVIS_SSAASSIGN (avis) = assign;
 
-    if (INFO_EA_FOLD_FIXVAL (arg_info) != NULL) {
+    if (INFO_EA_FOLD_GUARDVAL (arg_info) != NULL) {
         /* create an assignment <fixbool> = sac2c::eq( <avis>, fixval); */
         args = TBmakeExprs (TBmakeId (avis),
-                            TBmakeExprs (INFO_EA_FOLD_FIXVAL (arg_info), NULL));
-        INFO_EA_FOLD_FIXVAL (arg_info) = NULL;
+                            TBmakeExprs (INFO_EA_FOLD_GUARDVAL (arg_info), NULL));
+        INFO_EA_FOLD_GUARDVAL (arg_info) = NULL;
         eq_funap = DSdispatchFunCall (NSgetNamespace ("sac2c"), "eq", args);
         DBUG_ASSERT (eq_funap != NULL, "sac2c::eq not found");
         fixassign
-          = TBmakeAssign (TBmakeLet (TBmakeIds (INFO_EA_FOLD_FIXBOOL (arg_info), NULL),
+          = TBmakeAssign (TBmakeLet (TBmakeIds (INFO_EA_FOLD_GUARDBOOL (arg_info), NULL),
                                      eq_funap),
                           NULL);
-        INFO_EA_FOLD_FIXBOOL (arg_info) = NULL;
+        AVIS_SSAASSIGN (INFO_EA_FOLD_GUARDBOOL (arg_info)) = fixassign;
+        INFO_EA_FOLD_GUARDBOOL (arg_info) = NULL;
         ASSIGN_NEXT (assign) = fixassign;
     }
 
@@ -408,27 +409,11 @@ EAwith (node *arg_node, info *arg_info)
 node *
 EAfold (node *arg_node, info *arg_info)
 {
-    node *avis;
-
     DBUG_ENTER ("EAfold");
 
     DBUG_PRINT ("EA", ("Fold WL found, inserting F_Accu..."));
 
     INFO_EA_FOLD_LHS (arg_info) = INFO_EA_LHS_IDS (arg_info);
-
-    if (FOLD_FIX (arg_node) != NULL) {
-        /**
-         * create new FIX identifier and insert it into the vardecs
-         */
-        avis = TBmakeAvis (ILIBtmpVarName (ID_NAME (FOLD_FIX (arg_node))),
-                           TYmakeAKS (TYmakeSimpleType (T_bool), SHmakeShape (0)));
-        FUNDEF_VARDEC (INFO_EA_FUNDEF (arg_info))
-          = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_EA_FUNDEF (arg_info)));
-
-        INFO_EA_FOLD_FIXBOOL (arg_info) = avis;
-        INFO_EA_FOLD_FIXVAL (arg_info) = FOLD_FIX (arg_node); /* for consumption! */
-        FOLD_FIX (arg_node) = TBmakeId (avis);
-    }
 
     DBUG_RETURN (arg_node);
 }
@@ -447,7 +432,23 @@ EAfold (node *arg_node, info *arg_info)
 node *
 EAcode (node *arg_node, info *arg_info)
 {
+    node *avis;
+
     DBUG_ENTER ("EAcode");
+
+    if (CODE_GUARD (arg_node) != NULL) {
+        /**
+         * create new GUARD identifier and insert it into the vardecs
+         */
+        avis = TBmakeAvis (ILIBtmpVarName (ID_NAME (CODE_GUARD (arg_node))),
+                           TYmakeAKS (TYmakeSimpleType (T_bool), SHmakeShape (0)));
+        FUNDEF_VARDEC (INFO_EA_FUNDEF (arg_info))
+          = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_EA_FUNDEF (arg_info)));
+
+        INFO_EA_FOLD_GUARDBOOL (arg_info) = avis;
+        INFO_EA_FOLD_GUARDVAL (arg_info) = CODE_GUARD (arg_node); /* for consumption! */
+        CODE_GUARD (arg_node) = TBmakeId (avis);
+    }
 
     INFO_EA_FOLD_CEXPR (arg_info) = CODE_CEXPRS (arg_node);
     CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
