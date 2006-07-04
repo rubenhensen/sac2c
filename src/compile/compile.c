@@ -3048,14 +3048,27 @@ COMPPrfIncRC (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("COMPPrfIncRC");
 
-    DBUG_ASSERT ((NODE_TYPE (PRF_ARG1 (arg_node)) == N_id),
-                 "found non N_id node as arg1 of inc_rc (maybe object?)");
+    switch (NODE_TYPE (PRF_ARG1 (arg_node))) {
+    case N_id:
+        name = ID_NAME (PRF_ARG1 (arg_node));
+        type = ID_TYPE (PRF_ARG1 (arg_node));
+        num = NUM_VAL (PRF_ARG2 (arg_node));
 
-    name = ID_NAME (PRF_ARG1 (arg_node));
-    type = ID_TYPE (PRF_ARG1 (arg_node));
-    num = NUM_VAL (PRF_ARG2 (arg_node));
+        ret_node = MakeIncRcIcm (name, type, num, NULL);
+        break;
 
-    ret_node = MakeIncRcIcm (name, type, num, NULL);
+    case N_globobj:
+        name = OBJDEF_NAME (GLOBOBJ_OBJDEF (PRF_ARG1 (arg_node)));
+        type = TYtype2OldType (OBJDEF_TYPE (GLOBOBJ_OBJDEF (PRF_ARG1 (arg_node))));
+        num = NUM_VAL (PRF_ARG2 (arg_node));
+
+        ret_node = MakeIncRcIcm (name, type, num, NULL);
+
+        type = FREEfreeAllTypes (type);
+        break;
+    default:
+        DBUG_ASSERT (FALSE, "1. Argument of inc_rc has wrong node type.");
+    }
 
     DBUG_RETURN (ret_node);
 }
@@ -3082,16 +3095,27 @@ COMPPrfDecRC (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("COMPPrfDecRC");
 
-    DBUG_ASSERT ((NODE_TYPE (PRF_ARG1 (arg_node)) == N_id),
-                 "found non N_id node as arg1 of dec_rc (maybe object?)");
+    switch (NODE_TYPE (PRF_ARG1 (arg_node))) {
+    case N_id:
+        name = ID_NAME (PRF_ARG1 (arg_node));
+        type = ID_TYPE (PRF_ARG1 (arg_node));
+        num = NUM_VAL (PRF_ARG2 (arg_node));
 
-    name = ID_NAME (PRF_ARG1 (arg_node));
-    type = ID_TYPE (PRF_ARG1 (arg_node));
+        ret_node = MakeDecRcIcm (name, type, num, NULL);
+        break;
 
-    num = NUM_VAL (PRF_ARG2 (arg_node));
+    case N_globobj:
+        name = OBJDEF_NAME (GLOBOBJ_OBJDEF (PRF_ARG1 (arg_node)));
+        type = TYtype2OldType (OBJDEF_TYPE (GLOBOBJ_OBJDEF (PRF_ARG1 (arg_node))));
+        num = NUM_VAL (PRF_ARG2 (arg_node));
 
-    ret_node = MakeDecRcIcm (name, type, num, /* One argument is superflouos */
-                             NULL);
+        ret_node = MakeDecRcIcm (name, type, num, NULL);
+
+        type = FREEfreeAllTypes (type);
+        break;
+    default:
+        DBUG_ASSERT (FALSE, "1. Argument of dec_rc has wrong node type.");
+    }
 
     DBUG_RETURN (ret_node);
 }
