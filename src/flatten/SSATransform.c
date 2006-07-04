@@ -1273,10 +1273,6 @@ SSATcode (node *arg_node, info *arg_info)
     /* traverse expressions */
     CODE_CEXPRS (arg_node) = TRAVdo (CODE_CEXPRS (arg_node), arg_info);
 
-    if (CODE_GUARD (arg_node) != NULL) {
-        CODE_GUARD (arg_node) = TRAVdo (CODE_GUARD (arg_node), arg_info);
-    }
-
     INFO_NESTLEVEL (arg_info) -= 1;
 
     if (CODE_NEXT (arg_node) != NULL) {

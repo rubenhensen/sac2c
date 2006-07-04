@@ -3515,11 +3515,6 @@ PRTcode (node *arg_node, info *arg_info)
     fprintf (global.outfile, " : ");
     TRAVdo (CODE_CEXPRS (arg_node), arg_info);
 
-    if (CODE_GUARD (arg_node) != NULL) {
-        fprintf (global.outfile, " break ");
-        TRAVdo (CODE_GUARD (arg_node), arg_info);
-    }
-
     fprintf (global.outfile, " ; ");
 
     if (CODE_ISSIMDSUITABLE (arg_node)) {
@@ -3722,6 +3717,11 @@ PRTspfold (node *arg_node, info *arg_info)
 
     fprintf (global.outfile, ")");
 
+    if (SPFOLD_GUARD (arg_node) != NULL) {
+        fprintf (global.outfile, " break ");
+        TRAVdo (SPFOLD_GUARD (arg_node), arg_info);
+    }
+
     if (SPFOLD_NEXT (arg_node) != NULL) {
         fprintf (global.outfile, ",\n");
         /*
@@ -3772,12 +3772,51 @@ PRTfold (node *arg_node, info *arg_info)
 
     fprintf (global.outfile, ")");
 
+    if (FOLD_GUARD (arg_node) != NULL) {
+        fprintf (global.outfile, " break ");
+        TRAVdo (FOLD_GUARD (arg_node), arg_info);
+    }
+
     if (FOLD_NEXT (arg_node) != NULL) {
         fprintf (global.outfile, ",\n");
         /*
          * continue with other withops
          */
         PRINT_CONT (TRAVdo (FOLD_NEXT (arg_node), arg_info), ;);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *PRTbreak( node *arg_node, info *arg_info)
+ *
+ *   @brief
+ *   @param
+ *   @return
+ *
+ *
+ ******************************************************************************/
+node *
+PRTbreak (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("PRTbreak");
+
+    if (NODE_ERROR (arg_node) != NULL) {
+        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
+    }
+
+    INDENT;
+
+    fprintf (global.outfile, "break()");
+
+    if (BREAK_NEXT (arg_node) != NULL) {
+        fprintf (global.outfile, ",\n");
+        /*
+         * continue with other withops
+         */
+        PRINT_CONT (TRAVdo (BREAK_NEXT (arg_node), arg_info), ;);
     }
 
     DBUG_RETURN (arg_node);

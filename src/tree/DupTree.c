@@ -1933,6 +1933,8 @@ DUPfold (node *arg_node, info *arg_info)
 
     new_node = TBmakeFold (FOLD_FUNDEF (arg_node), DUPTRAV (FOLD_NEUTRAL (arg_node)));
 
+    FOLD_GUARD (new_node) = DUPTRAV (FOLD_GUARD (arg_node));
+
     FOLD_FUNDEF (new_node)
       = LUTsearchInLutPp (INFO_LUT (arg_info), FOLD_FUNDEF (arg_node));
 
@@ -1953,10 +1955,29 @@ DUPspfold (node *arg_node, info *arg_info)
 
     new_node = TBmakeSpfold (DUPTRAV (SPFOLD_NEUTRAL (arg_node)));
 
+    SPFOLD_GUARD (new_node) = DUPTRAV (SPFOLD_GUARD (arg_node));
+
     SPFOLD_FUN (new_node) = ILIBstringCopy (SPFOLD_FUN (arg_node));
     SPFOLD_NS (new_node) = NSdupNamespace (SPFOLD_NS (arg_node));
 
     SPFOLD_NEXT (new_node) = DUPCONT (SPFOLD_NEXT (arg_node));
+
+    CopyCommonNodeData (new_node, arg_node);
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+node *
+DUPbreak (node *arg_node, info *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DUPbreak");
+
+    new_node = TBmakeBreak ();
+
+    BREAK_NEXT (new_node) = DUPCONT (BREAK_NEXT (arg_node));
 
     CopyCommonNodeData (new_node, arg_node);
 
@@ -2004,7 +2025,6 @@ DUPcode (node *arg_node, info *arg_info)
     new_cexprs = DUPTRAV (CODE_CEXPRS (arg_node));
 
     new_node = TBmakeCode (new_block, new_cexprs);
-    CODE_GUARD (new_node) = DUPTRAV (CODE_GUARD (arg_node));
 
     INFO_LUT (arg_info) = LUTinsertIntoLutP (INFO_LUT (arg_info), arg_node, new_node);
 

@@ -1,8 +1,5 @@
 /*
- *
  * $Id$
- *
- *
  */
 
 /**
@@ -84,20 +81,18 @@ struct INFO {
     node *wl;
     node *fold_ids;
     node *accu;
-    node *fix;
-    node *avis;
+    node *guard;
     node *expr;
     node *ids;
 };
 
-#define INFO_EA_FUNDEF(n) (n->fundef)
-#define INFO_EA_WL(n) (n->wl)
-#define INFO_EA_FOLD_LHS(n) (n->fold_ids)
-#define INFO_EA_FOLD_ACCU(n) (n->accu)
-#define INFO_EA_FOLD_GUARDVAL(n) (n->fix)
-#define INFO_EA_FOLD_GUARDBOOL(n) (n->avis)
-#define INFO_EA_FOLD_CEXPR(n) (n->expr)
-#define INFO_EA_LHS_IDS(n) (n->ids)
+#define INFO_FUNDEF(n) (n->fundef)
+#define INFO_WL(n) (n->wl)
+#define INFO_FOLD_LHS(n) (n->fold_ids)
+#define INFO_FOLD_ACCU(n) (n->accu)
+#define INFO_FOLD_GUARD(n) (n->guard)
+#define INFO_FOLD_CEXPR(n) (n->expr)
+#define INFO_LHS_IDS(n) (n->ids)
 
 /**
  * INFO functions
@@ -111,14 +106,13 @@ MakeInfo ()
 
     result = ILIBmalloc (sizeof (info));
 
-    INFO_EA_FUNDEF (result) = NULL;
-    INFO_EA_WL (result) = NULL;
-    INFO_EA_FOLD_LHS (result) = NULL;
-    INFO_EA_FOLD_ACCU (result) = NULL;
-    INFO_EA_FOLD_GUARDVAL (result) = NULL;
-    INFO_EA_FOLD_GUARDBOOL (result) = NULL;
-    INFO_EA_FOLD_CEXPR (result) = NULL;
-    INFO_EA_LHS_IDS (result) = NULL;
+    INFO_FUNDEF (result) = NULL;
+    INFO_WL (result) = NULL;
+    INFO_FOLD_LHS (result) = NULL;
+    INFO_FOLD_ACCU (result) = NULL;
+    INFO_FOLD_GUARD (result) = NULL;
+    INFO_FOLD_CEXPR (result) = NULL;
+    INFO_LHS_IDS (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -151,21 +145,21 @@ MakeAccuAssign (node *assign, info *arg_info)
     DBUG_ENTER ("MakeAccuAssign");
 
     /* create avis */
-    lhs_ids = INFO_EA_FOLD_LHS (arg_info);
-    INFO_EA_FOLD_LHS (arg_info) = NULL;
+    lhs_ids = INFO_FOLD_LHS (arg_info);
+    INFO_FOLD_LHS (arg_info) = NULL;
     avis = TBmakeAvis (ILIBtmpVarName (IDS_NAME (lhs_ids)),
                        TYeliminateAKV (AVIS_TYPE (IDS_AVIS (lhs_ids))));
-    INFO_EA_FOLD_ACCU (arg_info) = avis;
+    INFO_FOLD_ACCU (arg_info) = avis;
 
     /* insert vardec */
-    FUNDEF_VARDEC (INFO_EA_FUNDEF (arg_info))
-      = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_EA_FUNDEF (arg_info)));
+    FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+      = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
 
     /* create <avis> = F_accu( <idx-varname>) */
 
     assign = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL),
                                       TCmakePrf1 (F_accu, DUPdupIdsId (WITH_VEC (
-                                                            INFO_EA_WL (arg_info))))),
+                                                            INFO_WL (arg_info))))),
                            assign);
 
     /* set correct backref to defining assignment */
@@ -200,43 +194,52 @@ MakeFoldFunAssign (info *arg_info)
      */
 
     /* create new cexpr id: */
-    old_cexpr_id = EXPRS_EXPR1 (INFO_EA_FOLD_CEXPR (arg_info));
+    old_cexpr_id = EXPRS_EXPR1 (INFO_FOLD_CEXPR (arg_info));
     avis = TBmakeAvis (ILIBtmpVarName (ID_NAME (old_cexpr_id)),
-                       TYcopyType (AVIS_TYPE (INFO_EA_FOLD_ACCU (arg_info))));
+                       TYcopyType (AVIS_TYPE (INFO_FOLD_ACCU (arg_info))));
 
     /* replace old_cexpr_id with new one: */
-    EXPRS_EXPR1 (INFO_EA_FOLD_CEXPR (arg_info)) = TBmakeId (avis);
+    EXPRS_EXPR1 (INFO_FOLD_CEXPR (arg_info)) = TBmakeId (avis);
 
     /* insert vardec */
-    FUNDEF_VARDEC (INFO_EA_FUNDEF (arg_info))
-      = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_EA_FUNDEF (arg_info)));
+    FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+      = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
 
     /* create <avis> = <fun>( <accu>, old_cexpr_id); */
 
     assign = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL),
                                       TCmakeAp2 (FOLD_FUNDEF (
-                                                   WITH_WITHOP (INFO_EA_WL (arg_info))),
-                                                 TBmakeId (INFO_EA_FOLD_ACCU (arg_info)),
+                                                   WITH_WITHOP (INFO_WL (arg_info))),
+                                                 TBmakeId (INFO_FOLD_ACCU (arg_info)),
                                                  old_cexpr_id)),
                            NULL);
 
     /* set correct backref to defining assignment */
     AVIS_SSAASSIGN (avis) = assign;
 
-    if (INFO_EA_FOLD_GUARDVAL (arg_info) != NULL) {
-        /* create an assignment <fixbool> = sac2c::eq( <avis>, fixval); */
-        args = TBmakeExprs (TBmakeId (avis),
-                            TBmakeExprs (INFO_EA_FOLD_GUARDVAL (arg_info), NULL));
-        INFO_EA_FOLD_GUARDVAL (arg_info) = NULL;
+    if (INFO_FOLD_GUARD (arg_info) != NULL) {
+        /*
+         * create an assignment <fixbool> = sac2c::eq( <avis>, fixval);
+         */
+        args
+          = TBmakeExprs (TBmakeId (avis),
+                         TBmakeExprs (DUPdoDupNode (INFO_FOLD_GUARD (arg_info)), NULL));
+
         eq_funap = DSdispatchFunCall (NSgetNamespace ("sac2c"), "eq", args);
         DBUG_ASSERT (eq_funap != NULL, "sac2c::eq not found");
-        fixassign
-          = TBmakeAssign (TBmakeLet (TBmakeIds (INFO_EA_FOLD_GUARDBOOL (arg_info), NULL),
-                                     eq_funap),
-                          NULL);
-        AVIS_SSAASSIGN (INFO_EA_FOLD_GUARDBOOL (arg_info)) = fixassign;
-        INFO_EA_FOLD_GUARDBOOL (arg_info) = NULL;
+
+        avis = TBmakeAvis (ILIBtmpVarName (ID_NAME (INFO_FOLD_GUARD (arg_info))),
+                           TYmakeAKS (TYmakeSimpleType (T_bool), SHmakeShape (0)));
+
+        FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+          = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+
+        fixassign = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), eq_funap), NULL);
+
+        AVIS_SSAASSIGN (avis) = fixassign;
         ASSIGN_NEXT (assign) = fixassign;
+
+        EXPRS_NEXT (INFO_FOLD_CEXPR (arg_info)) = TBmakeExprs (TBmakeId (avis), NULL);
     }
 
     DBUG_RETURN (assign);
@@ -290,7 +293,7 @@ EAfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EAfundef");
 
-    INFO_EA_FUNDEF (arg_info) = arg_node;
+    INFO_FUNDEF (arg_info) = arg_node;
 
     if (FUNDEF_BODY (arg_node)) {
         FUNDEF_INSTR (arg_node) = TRAVdo (FUNDEF_INSTR (arg_node), arg_info);
@@ -319,7 +322,7 @@ EAassign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EAassign");
 
-    if (INFO_EA_FOLD_LHS (arg_info) != NULL) {
+    if (INFO_FOLD_LHS (arg_info) != NULL) {
         arg_node = MakeAccuAssign (arg_node, arg_info);
     }
 
@@ -328,7 +331,7 @@ EAassign (node *arg_node, info *arg_info)
     if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
     } else {
-        if (INFO_EA_FOLD_ACCU (arg_info) != NULL) {
+        if (INFO_FOLD_ACCU (arg_info) != NULL) {
             ASSIGN_NEXT (arg_node) = MakeFoldFunAssign (arg_info);
         }
     }
@@ -352,7 +355,7 @@ EAlet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EAlet");
 
-    INFO_EA_LHS_IDS (arg_info) = LET_IDS (arg_node);
+    INFO_LHS_IDS (arg_info) = LET_IDS (arg_node);
 
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
@@ -380,13 +383,17 @@ EAwith (node *arg_node, info *arg_info)
     /* stack arg_info */
     tmp = arg_info;
     arg_info = MakeInfo ();
-    INFO_EA_FUNDEF (arg_info) = INFO_EA_FUNDEF (tmp);
-    INFO_EA_LHS_IDS (arg_info) = INFO_EA_LHS_IDS (tmp);
-    INFO_EA_WL (arg_info) = arg_node;
+    INFO_FUNDEF (arg_info) = INFO_FUNDEF (tmp);
+    INFO_LHS_IDS (arg_info) = INFO_LHS_IDS (tmp);
+    INFO_WL (arg_info) = arg_node;
 
     WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
 
     WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
+
+    if (INFO_FOLD_GUARD (arg_info) != NULL) {
+        INFO_FOLD_GUARD (arg_info) = FREEdoFreeNode (INFO_FOLD_GUARD (arg_info));
+    }
 
     /* pop arg_info */
     arg_info = FreeInfo (arg_info);
@@ -413,7 +420,35 @@ EAfold (node *arg_node, info *arg_info)
 
     DBUG_PRINT ("EA", ("Fold WL found, inserting F_Accu..."));
 
-    INFO_EA_FOLD_LHS (arg_info) = INFO_EA_LHS_IDS (arg_info);
+    INFO_FOLD_LHS (arg_info) = INFO_LHS_IDS (arg_info);
+
+    if (FOLD_GUARD (arg_node) != NULL) {
+        node *avis;
+
+        /*
+         * Transcribe Guard into info node and remove guard from fold
+         */
+        INFO_FOLD_GUARD (arg_info) = FOLD_GUARD (arg_node);
+        FOLD_GUARD (arg_node) = NULL;
+
+        /*
+         * Append break withop
+         */
+        FOLD_NEXT (arg_node) = TBmakeBreak ();
+
+        /*
+         * Append IDS to LHS of assignment
+         */
+        avis = TBmakeAvis (ILIBtmpVarName (ID_NAME (INFO_FOLD_GUARD (arg_info))),
+                           TYmakeAKS (TYmakeSimpleType (T_bool), SHmakeShape (0)));
+
+        FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+          = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+
+        AVIS_SSAASSIGN (avis) = AVIS_SSAASSIGN (IDS_AVIS (INFO_LHS_IDS (arg_info)));
+
+        IDS_NEXT (INFO_LHS_IDS (arg_info)) = TBmakeIds (avis, NULL);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -432,25 +467,9 @@ EAfold (node *arg_node, info *arg_info)
 node *
 EAcode (node *arg_node, info *arg_info)
 {
-    node *avis;
-
     DBUG_ENTER ("EAcode");
 
-    if (CODE_GUARD (arg_node) != NULL) {
-        /**
-         * create new GUARD identifier and insert it into the vardecs
-         */
-        avis = TBmakeAvis (ILIBtmpVarName (ID_NAME (CODE_GUARD (arg_node))),
-                           TYmakeAKS (TYmakeSimpleType (T_bool), SHmakeShape (0)));
-        FUNDEF_VARDEC (INFO_EA_FUNDEF (arg_info))
-          = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_EA_FUNDEF (arg_info)));
-
-        INFO_EA_FOLD_GUARDBOOL (arg_info) = avis;
-        INFO_EA_FOLD_GUARDVAL (arg_info) = CODE_GUARD (arg_node); /* for consumption! */
-        CODE_GUARD (arg_node) = TBmakeId (avis);
-    }
-
-    INFO_EA_FOLD_CEXPR (arg_info) = CODE_CEXPRS (arg_node);
+    INFO_FOLD_CEXPR (arg_info) = CODE_CEXPRS (arg_node);
     CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
 
     DBUG_ASSERT (CODE_NEXT (arg_node) == NULL, "cannot handle multi generator WLs");

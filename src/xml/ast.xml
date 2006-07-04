@@ -2095,6 +2095,7 @@
 	<node name="Modarray" />
 	<node name="SPFold" />
 	<node name="Fold" />
+        <node name="Break" />
       </target>
     </nodeset>
   </nodesets>
@@ -5506,22 +5507,6 @@
             </target>
           </targets>
         </son>
-        <son name="Guard" default="NULL">
-          <description>Non NULL for foldfix code sections only!
-                       Before "Explicit Accus", it holds the fixpoint expression.
-                       After "Explicit Accus", it holds the boolean that decides
-                       over the break. NB: It is a single expression as multi
-                       operator foldfix is NOT supported!
-          </description>
-          <targets>
-            <target mandatory="no">
-              <set name="Expr" />
-              <phases>
-                <all />
-              </phases>
-            </target>
-          </targets>
-        </son>
         <son name="Next" default="NULL">
           <targets>
             <target mandatory="no">
@@ -5915,7 +5900,7 @@
 
 -->
     <node name="SPFold">
-      <description>withloop operationi (SP version)</description>
+      <description>withloop operation (SP version)</description>
       <sons>
         <son name="Neutral">
           <targets>
@@ -5923,6 +5908,28 @@
               <set name="Expr" />
               <phases>
                 <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+        <son name="Guard" default="NULL">
+          <targets>
+            <target mandatory="no">
+              <set name="Expr" />
+              <phases>
+                <range from="sp" to="flat" />
+              </phases>
+            </target>
+            <target mandatory="no">
+              <node name="SPId" />
+              <phases>
+                <range from="flat" to="insvd" />
+              </phases>
+            </target>
+            <target mandatory="no">
+              <node name="Id" />
+              <phases>
+                <range from="insvd" to="crtwrp" />
               </phases>
             </target>
           </targets>
@@ -5978,21 +5985,6 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="SPGUARD" default="NULL">
-          <description> Used in sac.y only in order to ship the fixpoint of
-                        a foldfix into the N_code!
-          </description>
-          <type name="Link">
-            <targets>
-              <target mandatory="no">
-                <set name="Expr" />
-                <phases>
-                  <phase name="sp" />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
       </attributes>
       <flags></flags>
     </node>
@@ -6010,6 +6002,16 @@
               <set name="Expr" />
               <phases>
                 <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+        <son name="Guard" default="NULL">
+          <targets>
+            <target mandatory="no">
+              <node name="Id" />
+              <phases>
+                <range from="crtwrp" to="accu" />
               </phases>
             </target>
           </targets>
@@ -6039,6 +6041,28 @@
           </type>
         </attribute>
       </attributes>
+      <flags></flags>
+    </node>
+<!--
+
+  N_break :
+
+-->
+    <node name="Break">
+      <description>Withloop operation for stopping folding</description>
+      <sons>
+        <son name="Next" default="NULL">
+          <targets>
+            <target mandatory="no">
+              <set name="WithOp" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+      </sons>
+      <attributes></attributes>
       <flags></flags>
     </node>
 <!--

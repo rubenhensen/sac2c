@@ -727,8 +727,10 @@ CRTWRPspfold (node *arg_node, info *arg_info)
                       NSgetName (SPFOLD_NS (arg_node)), SPFOLD_FUN (arg_node));
     } else {
         new_node = TBmakeFold (wrapper, SPFOLD_NEUTRAL (arg_node));
+        FOLD_GUARD (new_node) = SPFOLD_GUARD (arg_node);
 
         SPFOLD_NEUTRAL (arg_node) = NULL;
+        SPFOLD_GUARD (arg_node) = NULL;
         arg_node = FREEdoFreeNode (arg_node);
     }
 

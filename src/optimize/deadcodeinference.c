@@ -586,11 +586,6 @@ DCIcode (node *arg_node, info *arg_info)
         CODE_CEXPRS (arg_node) = TRAVdo (CODE_CEXPRS (arg_node), arg_info);
     }
 
-    /* traverse guard expression */
-    if (CODE_GUARD (arg_node) != NULL) {
-        CODE_GUARD (arg_node) = TRAVdo (CODE_GUARD (arg_node), arg_info);
-    }
-
     /* traverse code block */
     if (CODE_CBLOCK (arg_node) != NULL) {
         CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);

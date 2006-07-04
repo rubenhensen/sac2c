@@ -6466,7 +6466,6 @@ COMPwlgridx (node *arg_node, info *arg_info)
             node *icm_args = NULL;
             char *icm_name = NULL;
             node *cexpr;
-            node *guard;
             node *tmp_ids;
             node *withop;
             node *idxs_exprs;
@@ -6479,7 +6478,7 @@ COMPwlgridx (node *arg_node, info *arg_info)
              * insert compiled code.
              */
             cexprs = CODE_CEXPRS (WLGRIDX_CODE (arg_node));
-            guard = CODE_GUARD (WLGRIDX_CODE (arg_node));
+
             DBUG_ASSERT ((cexprs != NULL), "no code exprs found");
 
             DBUG_ASSERT ((WLGRIDX_CBLOCK (arg_node) != NULL),
@@ -6519,16 +6518,14 @@ COMPwlgridx (node *arg_node, info *arg_info)
                 case N_fold:
                     icm_name = "WL_FOLD";
                     icm_args = MakeIcmArgs_WL_OP2 (arg_node, tmp_ids);
-                    if (guard != NULL) {
-                        node_icms
-                          = TCappendAssign (node_icms,
-                                            TCmakeAssignIcm2 ("BREAK_ON_GUARD",
-                                                              DUPdoDupTree (guard),
-                                                              TCmakeIdCopyString (
-                                                                INFO_BREAKLABEL (
-                                                                  arg_info)),
-                                                              NULL));
-                    }
+                    break;
+
+                case N_break:
+                    icm_name = "BREAK_ON_GUARD";
+                    icm_args = TBmakeExprs (DUPdoDupTree (cexpr),
+                                            TBmakeExprs (TCmakeIdCopyString (
+                                                           INFO_BREAKLABEL (arg_info)),
+                                                         NULL));
                     break;
 
                 default:

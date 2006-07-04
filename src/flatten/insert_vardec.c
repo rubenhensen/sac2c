@@ -517,10 +517,6 @@ INSVDcode (node *arg_node, info *arg_info)
         CODE_CEXPRS (arg_node) = TRAVdo (CODE_CEXPRS (arg_node), arg_info);
     }
 
-    if (CODE_GUARD (arg_node) != NULL) {
-        CODE_GUARD (arg_node) = TRAVdo (CODE_GUARD (arg_node), arg_info);
-    }
-
     if (CODE_NEXT (arg_node) != NULL) {
         CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
     }
