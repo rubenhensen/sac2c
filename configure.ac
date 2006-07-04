@@ -139,7 +139,7 @@ dnl search for flex or lex
 AC_PROG_LEX()
 
 dnl search for xlst engine
-AC_CHECK_PROGS(XSLT, [sabcmd xsltproc], [!fail])
+AC_CHECK_PROGS(XSLT, [xsltproc sabcmd], [!fail])
 
 dnl search for malloc.h
 AC_CHECK_HEADERS(malloc.h)
