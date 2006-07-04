@@ -1165,7 +1165,9 @@ extern int TCcountParts (node *parts);
 #define WITHOP_NEXT(n)                                                                   \
     ((NODE_TYPE (n) == N_genarray)                                                       \
        ? GENARRAY_NEXT (n)                                                               \
-       : ((NODE_TYPE (n) == N_modarray) ? MODARRAY_NEXT (n) : FOLD_NEXT (n)))
+       : (NODE_TYPE (n) == N_modarray)                                                   \
+           ? MODARRAY_NEXT (n)                                                           \
+           : (NODE_TYPE (n) == N_break) ? BREAK_NEXT (n) : (FOLD_NEXT (n)))
 
 #define L_WITHOP_NEXT(n, rhs)                                                            \
     switch                                                                               \
@@ -1180,6 +1182,9 @@ extern int TCcountParts (node *parts);
         case N_fold:                                                                     \
             FOLD_NEXT (n) = rhs;                                                         \
             break;                                                                       \
+        case N_break:                                                                    \
+            BREAK_NEXT (n) = rhs;                                                        \
+            break;                                                                       \
         default:                                                                         \
             DBUG_ASSERT (FALSE, "Illegal node type");                                    \
         }
@@ -1187,7 +1192,9 @@ extern int TCcountParts (node *parts);
 #define WITHOP_MEM(n)                                                                    \
     ((NODE_TYPE (n) == N_genarray)                                                       \
        ? GENARRAY_MEM (n)                                                                \
-       : (NODE_TYPE (n) == N_modarray) ? MODARRAY_MEM (n) : NULL)
+       : (NODE_TYPE (n) == N_modarray)                                                   \
+           ? MODARRAY_MEM (n)                                                            \
+           : (NODE_TYPE (n) == N_break) ? BREAK_MEM (n) : (NULL))
 
 #define WITHOP_IDX(n)                                                                    \
     ((NODE_TYPE (n) == N_genarray)                                                       \

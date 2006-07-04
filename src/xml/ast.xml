@@ -6051,6 +6051,16 @@
     <node name="Break">
       <description>Withloop operation for stopping folding</description>
       <sons>
+        <son name="Mem" default="NULL">
+          <targets>
+            <target mandatory="yes">
+              <node name="Id" />
+              <phases>
+                <range from="alloc" to="final" />
+              </phases>
+            </target>
+          </targets>
+        </son>
         <son name="Next" default="NULL">
           <targets>
             <target mandatory="no">

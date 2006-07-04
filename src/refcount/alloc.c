@@ -779,9 +779,12 @@ EMALcode (node *arg_node, info *arg_info)
             crestype = TYcopyType (AVIS_TYPE (cexavis));
         }
 
-        if ((NODE_TYPE (withops) == N_genarray) || (NODE_TYPE (withops) == N_modarray)) {
+        if ((NODE_TYPE (withops) == N_genarray) || (NODE_TYPE (withops) == N_modarray)
+            || (NODE_TYPE (withops) == N_break)) {
 
             if (TUdimKnown (crestype) && (TYgetDim (crestype) == 0)) {
+                node *iv;
+                node *idx;
                 /*
                  * Create a new value variable
                  * Ex: a_val
@@ -799,20 +802,25 @@ EMALcode (node *arg_node, info *arg_info)
                  *   ...
                  *   a_val = wl_assign( a, A, iv, idx);
                  * }: a_val;
+                 *
+                 * for Break withops, we set iv = [] and idx = 0
                  */
+                if (NODE_TYPE (withops) == N_break) {
+                    iv = TCmakeIntVector (NULL);
+                    idx = TBmakeNum (0);
+                } else {
+                    iv = DUPdoDupNode (INFO_INDEXVECTOR (arg_info));
+                    idx = TBmakeId (WITHOP_IDX (withops));
+                }
+
                 assign = TBmakeAssign (
-                  TBmakeLet (
-                    TBmakeIds (valavis, NULL),
-                    TBmakePrf (F_wl_assign,
-                               TBmakeExprs (
-                                 TBmakeId (cexavis),
-                                 TBmakeExprs (TBmakeId (als->avis),
-                                              TBmakeExprs (DUPdoDupNode (
-                                                             INFO_INDEXVECTOR (arg_info)),
-                                                           TBmakeExprs (TBmakeId (
-                                                                          WITHOP_IDX (
-                                                                            withops)),
-                                                                        NULL)))))),
+                  TBmakeLet (TBmakeIds (valavis, NULL),
+                             TBmakePrf (F_wl_assign,
+                                        TBmakeExprs (
+                                          TBmakeId (cexavis),
+                                          TBmakeExprs (
+                                            TBmakeId (als->avis),
+                                            TBmakeExprs (iv, TBmakeExprs (idx, NULL)))))),
                   assign);
                 AVIS_SSAASSIGN (valavis) = assign;
 
@@ -1755,6 +1763,85 @@ EMALmodarray (node *arg_node, info *arg_info)
 
         /*
          * modarray-wl:
+         * Allocation must remain in ALLOCLIST
+         */
+        als->next = INFO_ALLOCLIST (arg_info);
+        INFO_ALLOCLIST (arg_info) = als;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--******************************************************************-->
+ *
+ * @fn node *EMALbreak( node *arg_node, info *arg_info)
+ *
+ *  @brief
+ *
+ *  @param arg_node with-loop
+ *  @param arg_info
+ *
+ *  @return with-loop
+ *
+ ***************************************************************************/
+node *
+EMALbreak (node *arg_node, info *arg_info)
+{
+    node *wlavis;
+    alloclist_struct *als;
+
+    DBUG_ENTER ("EMALbreak");
+
+    DBUG_ASSERT (INFO_ALLOCLIST (arg_info) != NULL,
+                 "ALLOCLIST must contain an entry for each WITHOP!");
+
+    /*
+     * Pop first element from alloclist for traversal of next WITHOP
+     */
+    als = INFO_ALLOCLIST (arg_info);
+    INFO_ALLOCLIST (arg_info) = als->next;
+    als->next = NULL;
+
+    if (BREAK_NEXT (arg_node) != NULL) {
+        BREAK_NEXT (arg_node) = TRAVdo (BREAK_NEXT (arg_node), arg_info);
+    }
+
+    if (INFO_WITHOPMODE (arg_info) == EA_memname) {
+
+        /*
+         * Create new identifier for new memory
+         */
+        wlavis = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (als->avis)),
+                             TYeliminateAKV (AVIS_TYPE (als->avis)));
+
+        FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+          = TBmakeVardec (wlavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+
+        als->avis = wlavis;
+
+        /*
+         * Annotate which memory is to be used
+         */
+        BREAK_MEM (arg_node) = TBmakeId (wlavis);
+
+        /*
+         * Restore first element of alloclist as it is needed in EMALcode
+         * to preserve correspondence between the result values and the withops
+         */
+        als->next = INFO_ALLOCLIST (arg_info);
+        INFO_ALLOCLIST (arg_info) = als;
+    } else {
+        DBUG_ASSERT (INFO_WITHOPMODE (arg_info) == EA_shape,
+                     "Unknown Withop traversal mode");
+        /*
+         * break-withop:
+         * dim = 0, shape = []
+         */
+        als->dim = TBmakeNum (0);
+        als->shape = TCmakeIntVector (NULL);
+
+        /*
+         * break:
          * Allocation must remain in ALLOCLIST
          */
         als->next = INFO_ALLOCLIST (arg_info);
