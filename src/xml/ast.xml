@@ -573,6 +573,7 @@
           <node name="Genarray" />
           <node name="Modarray" />
           <node name="Fold" />
+          <node name="Break" />
         </travuser>
       </traversal>
       <traversal id="SWR" name="Split Wrappers" default="sons" include="split_wrappers.h" >

@@ -87,6 +87,7 @@
 struct INFO {
     ntype *type;
     ntype *gen_type;
+    ntype *bodies_type;
     int num_exprs_sofar;
     node *last_assign;
     node *ptr_return;
@@ -99,6 +100,7 @@ struct INFO {
  */
 #define INFO_TYPE(n) (n->type)
 #define INFO_GEN_TYPE(n) (n->gen_type)
+#define INFO_BODIES_TYPE(n) (n->bodies_type)
 #define INFO_NUM_EXPRS_SOFAR(n) (n->num_exprs_sofar)
 #define INFO_LAST_ASSIGN(n) (n->last_assign)
 #define INFO_RETURN(n) (n->ptr_return)
@@ -118,6 +120,7 @@ MakeInfo ()
 
     INFO_TYPE (result) = NULL;
     INFO_GEN_TYPE (result) = NULL;
+    INFO_BODIES_TYPE (result) = NULL;
     INFO_NUM_EXPRS_SOFAR (result) = 0;
     INFO_LAST_ASSIGN (result) = NULL;
     INFO_RETURN (result) = NULL;
@@ -901,16 +904,21 @@ NTClet (node *arg_node, info *arg_info)
     lhs = LET_IDS (arg_node);
 
     if ((NODE_TYPE (LET_EXPR (arg_node)) == N_ap)
-        || (NODE_TYPE (LET_EXPR (arg_node)) == N_prf)) {
+        || (NODE_TYPE (LET_EXPR (arg_node)) == N_prf)
+        || (NODE_TYPE (LET_EXPR (arg_node)) == N_with)) {
         if (NODE_TYPE (LET_EXPR (arg_node)) == N_ap) {
             DBUG_ASSERT ((TCcountIds (lhs) >= TYgetProductSize (rhs_type)),
                          "fun ap yields more return values  than lhs vars available!");
-        } else {
+        } else if (NODE_TYPE (LET_EXPR (arg_node)) == N_prf) {
             if (TCcountIds (lhs) != TYgetProductSize (rhs_type)) {
                 CTIabortLine (global.linenum, "%s yields %d instead of %d return values",
                               global.prf_string[PRF_PRF (LET_EXPR (arg_node))],
                               TYgetProductSize (rhs_type), TCcountIds (lhs));
             }
+        } else {
+            DBUG_ASSERT (TCcountIds (lhs) == TYgetProductSize (rhs_type),
+                         "lhs variables of withloop does not match produced number"
+                         " of return types");
         }
         i = 0;
         while (lhs) {
@@ -1533,7 +1541,7 @@ NTCcast (node *arg_node, info *arg_info)
 node *
 NTCwith (node *arg_node, info *arg_info)
 {
-    ntype *gen, *body, *res, *tmp, *mem_outer_accu;
+    ntype *gen, *body, *mem_outer_accu;
 #ifndef DBUG_OFF
     char *tmp_str;
 #endif
@@ -1566,9 +1574,11 @@ NTCwith (node *arg_node, info *arg_info)
     body = INFO_TYPE (arg_info);
     INFO_TYPE (arg_info) = NULL;
 
-    tmp = body;
-    body = TYgetProductMember (body, 0);
-    tmp = TYfreeTypeConstructor (tmp);
+    DBUG_ASSERT (TYisProd (body), "non product type recieved for the type of a WL body");
+    /**
+     * needs to be kept as product type as multi-operator WL requires more
+     * than one return type!
+     */
 
     DBUG_EXECUTE ("NTC", tmp_str = TYtype2String (body, FALSE, 0););
     DBUG_PRINT ("NTC", ("  WL - body type: %s", tmp_str));
@@ -1577,15 +1587,16 @@ NTCwith (node *arg_node, info *arg_info)
     /*
      * Finally, we compute the return type from "gen" and "body".
      * This is done in NTCNwithop. The two types are transferred via
-     * INFO_GEN_TYPE and INFO_TYPE, respectively.
+     * INFO_GEN_TYPE and INFO_BODIES_TYPE, respectively.
+     * However, since we only need one body type per withop, we use the
+     * field INFO_NUM_EXPRS_SOFAR( arg_info) to indicate the acual
+     * component of interest in the product type "body".
      */
     INFO_GEN_TYPE (arg_info) = gen;
-    INFO_TYPE (arg_info) = body;
+    INFO_BODIES_TYPE (arg_info) = body;
+    INFO_NUM_EXPRS_SOFAR (arg_info) = 0;
 
     WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
-    res = TYgetProductMember (INFO_TYPE (arg_info), 0);
-    TYfreeTypeConstructor (INFO_TYPE (arg_info));
-    INFO_TYPE (arg_info) = res;
 
     DBUG_EXECUTE ("NTC", tmp_str = TYtype2String (INFO_TYPE (arg_info), FALSE, 0););
     DBUG_PRINT ("NTC", ("  WL - final type: %s", tmp_str));
@@ -1771,10 +1782,6 @@ NTCcode (node *arg_node, info *arg_info)
     CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
     CODE_CEXPRS (arg_node) = TRAVdo (CODE_CEXPRS (arg_node), arg_info);
 
-    DBUG_ASSERT ((TYisProd (INFO_TYPE (arg_info))
-                  && (TYgetProductSize (INFO_TYPE (arg_info)) == 1)),
-                 "multi-operator wl encountered in TC but not supported!");
-
     /**
      * traverse into further code blocks iff existant
      */
@@ -1798,6 +1805,26 @@ NTCcode (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+static node *
+HandleMultiOperators (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("HandleMultiOperators");
+
+    if (arg_node != NULL) {
+        INFO_NUM_EXPRS_SOFAR (arg_info)++;
+        arg_node = TRAVdo (arg_node, arg_info);
+        INFO_NUM_EXPRS_SOFAR (arg_info)--;
+
+    } else {
+        DBUG_ASSERT (TYgetProductSize (INFO_BODIES_TYPE (arg_info))
+                       == INFO_NUM_EXPRS_SOFAR (arg_info) + 1,
+                     "less withops than code returns");
+        INFO_TYPE (arg_info)
+          = TYmakeEmptyProductType (INFO_NUM_EXPRS_SOFAR (arg_info) + 1);
+    }
+    DBUG_RETURN (arg_node);
+}
+
 /** <!--********************************************************************-->
  *
  * @fn node *NTCgenarray( node *arg_node, info *arg_info)
@@ -1815,11 +1842,14 @@ NTCgenarray (node *arg_node, info *arg_info)
     ntype *shp, *dexpr, *args;
     te_info *info;
 
-    DBUG_ENTER ("NTCNgenarray");
+    DBUG_ENTER ("NTCgenarray");
 
     gen = INFO_GEN_TYPE (arg_info);
-    INFO_GEN_TYPE (arg_info) = NULL;
-    body = INFO_TYPE (arg_info);
+    DBUG_ASSERT (TYgetProductSize (INFO_BODIES_TYPE (arg_info))
+                   > INFO_NUM_EXPRS_SOFAR (arg_info),
+                 "more withops than code returns");
+    body
+      = TYgetProductMember (INFO_BODIES_TYPE (arg_info), INFO_NUM_EXPRS_SOFAR (arg_info));
 
     /*
      * First, we check the shape expression:
@@ -1842,7 +1872,11 @@ NTCgenarray (node *arg_node, info *arg_info)
     info = TEmakeInfo (global.linenum, TE_with, "genarray");
     res = NTCCTcomputeType (NTCCTwl_gen, info, args);
 
-    INFO_TYPE (arg_info) = res;
+    GENARRAY_NEXT (arg_node) = HandleMultiOperators (GENARRAY_NEXT (arg_node), arg_info);
+
+    TYsetProductMember (INFO_TYPE (arg_info), INFO_NUM_EXPRS_SOFAR (arg_info),
+                        TYgetProductMember (res, 0));
+    res = TYfreeTypeConstructor (res);
 
     DBUG_RETURN (arg_node);
 }
@@ -1867,8 +1901,11 @@ NTCmodarray (node *arg_node, info *arg_info)
     DBUG_ENTER ("NTCmodarray");
 
     gen = INFO_GEN_TYPE (arg_info);
-    INFO_GEN_TYPE (arg_info) = NULL;
-    body = INFO_TYPE (arg_info);
+    DBUG_ASSERT (TYgetProductSize (INFO_BODIES_TYPE (arg_info))
+                   > INFO_NUM_EXPRS_SOFAR (arg_info),
+                 "more withops than code returns");
+    body
+      = TYgetProductMember (INFO_BODIES_TYPE (arg_info), INFO_NUM_EXPRS_SOFAR (arg_info));
 
     /*
      * First, we check the array expression:
@@ -1881,7 +1918,11 @@ NTCmodarray (node *arg_node, info *arg_info)
     info = TEmakeInfo (global.linenum, TE_with, "modarray");
     res = NTCCTcomputeType (NTCCTwl_mod, info, args);
 
-    INFO_TYPE (arg_info) = res;
+    MODARRAY_NEXT (arg_node) = HandleMultiOperators (MODARRAY_NEXT (arg_node), arg_info);
+
+    TYsetProductMember (INFO_TYPE (arg_info), INFO_NUM_EXPRS_SOFAR (arg_info),
+                        TYgetProductMember (res, 0));
+    res = TYfreeTypeConstructor (res);
 
     DBUG_RETURN (arg_node);
 }
@@ -1908,8 +1949,12 @@ NTCfold (node *arg_node, info *arg_info)
     DBUG_ENTER ("NTCfold");
 
     gen = INFO_GEN_TYPE (arg_info);
-    INFO_GEN_TYPE (arg_info) = NULL;
-    body = INFO_TYPE (arg_info);
+
+    DBUG_ASSERT (TYgetProductSize (INFO_BODIES_TYPE (arg_info))
+                   > INFO_NUM_EXPRS_SOFAR (arg_info),
+                 "more withops than code returns");
+    body
+      = TYgetProductMember (INFO_BODIES_TYPE (arg_info), INFO_NUM_EXPRS_SOFAR (arg_info));
 
     /**
      * we are dealing with a udf-fold-wl here!
@@ -1989,7 +2034,41 @@ NTCfold (node *arg_node, info *arg_info)
         CTIabortLine (global.linenum, "Illegal fold function in fold with loop");
     }
 
-    INFO_TYPE (arg_info) = res;
+    FOLD_NEXT (arg_node) = HandleMultiOperators (FOLD_NEXT (arg_node), arg_info);
+
+    TYsetProductMember (INFO_TYPE (arg_info), INFO_NUM_EXPRS_SOFAR (arg_info),
+                        TYgetProductMember (res, 0));
+    res = TYfreeTypeConstructor (res);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *NTCbreak( node *arg_node, info *arg_info)
+ *
+ *   @brief
+ *   @param
+ *   @return
+ *
+ ******************************************************************************/
+
+node *
+NTCbreak (node *arg_node, info *arg_info)
+{
+    ntype *body;
+
+    DBUG_ENTER ("NTCbreak");
+    DBUG_ASSERT (TYgetProductSize (INFO_BODIES_TYPE (arg_info))
+                   > INFO_NUM_EXPRS_SOFAR (arg_info),
+                 "more withops than code returns");
+    body
+      = TYgetProductMember (INFO_BODIES_TYPE (arg_info), INFO_NUM_EXPRS_SOFAR (arg_info));
+
+    BREAK_NEXT (arg_node) = HandleMultiOperators (BREAK_NEXT (arg_node), arg_info);
+
+    TYsetProductMember (INFO_TYPE (arg_info), INFO_NUM_EXPRS_SOFAR (arg_info),
+                        TYcopyType (body));
 
     DBUG_RETURN (arg_node);
 }
