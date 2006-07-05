@@ -502,6 +502,27 @@ FRCwith2 (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *FRCbreak( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ *****************************************************************************/
+node *
+FRCbreak (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("FRCbreak");
+
+    BREAK_MEM (arg_node) = TRAVdo (BREAK_MEM (arg_node), arg_info);
+
+    if (BREAK_NEXT (arg_node) != NULL) {
+        BREAK_NEXT (arg_node) = TRAVdo (BREAK_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *FRCfold( node *arg_node, info *arg_info)
  *
  * @brief
@@ -564,6 +585,25 @@ FRCmodarray (node *arg_node, info *arg_info)
 
     if (MODARRAY_NEXT (arg_node) != NULL) {
         MODARRAY_NEXT (arg_node) = TRAVdo (MODARRAY_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *FRCcode( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+FRCcode (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("FRCcode");
+
+    CODE_CEXPRS (arg_node) = TRAVdo (CODE_CEXPRS (arg_node), arg_info);
+
+    if (CODE_CBLOCK (arg_node) != NULL) {
+        CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);

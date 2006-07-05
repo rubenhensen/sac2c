@@ -18,6 +18,8 @@ extern node *FRCdoFilterReuseCandidates (node *syntax_tree);
 extern node *FRCap (node *arg_node, info *arg_info);
 extern node *FRCarg (node *arg_node, info *arg_info);
 extern node *FRCassign (node *arg_node, info *arg_info);
+extern node *FRCbreak (node *arg_node, info *arg_info);
+extern node *FRCcode (node *arg_node, info *arg_info);
 extern node *FRCcond (node *arg_node, info *arg_info);
 extern node *FRCfold (node *arg_node, info *arg_info);
 extern node *FRCfuncond (node *arg_node, info *arg_info);
