@@ -3317,9 +3317,11 @@ COMPPrfWLBreak (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("COMPPrfWLBreak");
 
-    ret_node = TCmakeAssignIcm2 ("BREAK_ON_GUARD",
-                                 TCmakeIdCopyString (ID_NAME (PRF_ARG1 (arg_node))),
-                                 TCmakeIdCopyString (INFO_BREAKLABEL (arg_info)), NULL);
+    ret_node = TCmakeAssignIcm3 ("ND_ASSIGN__DATA", DUPdupIdNt (PRF_ARG2 (arg_node)),
+                                 DUPdupIdNt (PRF_ARG1 (arg_node)),
+                                 TCmakeIdCopyString (
+                                   GenericFun (0, ID_TYPE (PRF_ARG1 (arg_node)))),
+                                 NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -5641,7 +5643,6 @@ COMPwith2 (node *arg_node, info *arg_info)
     node *withop;
     node *let_neutral;
     char *break_label_str;
-    char *old_break_label;
 
     DBUG_ENTER ("COMPwith2");
 
@@ -5653,8 +5654,6 @@ COMPwith2 (node *arg_node, info *arg_info)
     wlids = INFO_LASTIDS (arg_info);
     old_wlnode = wlnode; /* stack 'wlnode' */
     wlnode = arg_node;
-    old_break_label = INFO_BREAKLABEL (arg_info);
-    INFO_BREAKLABEL (arg_info) = NULL;
 
     /*******************************************
      * build WL_... ICMs                       *
@@ -5829,6 +5828,9 @@ COMPwith2 (node *arg_node, info *arg_info)
         profile_name = "fold";
         break;
 
+    case N_break:
+        DBUG_ASSERT ((0), "Break must not appear as a first withop");
+
     default:
         DBUG_ASSERT ((0), "illegal withop type found");
         break;
@@ -5843,9 +5845,6 @@ COMPwith2 (node *arg_node, info *arg_info)
      *     down below!                              *
      ************************************************/
 
-    break_label_str = ILIBtmpVarName (LABEL_POSTFIX);
-    INFO_BREAKLABEL (arg_info) = break_label_str;
-
     if (WITH2_CODE (arg_node) != NULL) {
         WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
     }
@@ -5853,6 +5852,9 @@ COMPwith2 (node *arg_node, info *arg_info)
     /*******************************************
      * put it all together                     *
      *******************************************/
+
+    break_label_str = ILIBtmpVarName (LABEL_POSTFIX);
+    INFO_BREAKLABEL (arg_info) = break_label_str;
 
     ret_node = TCmakeAssigns9 (
       alloc_icms, fold_icms,
@@ -5874,7 +5876,6 @@ COMPwith2 (node *arg_node, info *arg_info)
      */
     wlids = old_wlids;
     wlnode = old_wlnode;
-    INFO_BREAKLABEL (arg_info) = old_break_label;
 
     DBUG_RETURN (ret_node);
 }
@@ -6557,6 +6558,11 @@ COMPwlgridx (node *arg_node, info *arg_info)
                     break;
 
                 case N_break:
+                    icm_name = "BREAK_ON_GUARD";
+                    icm_args = TBmakeExprs (DUPdoDupTree (BREAK_MEM (withop)),
+                                            TBmakeExprs (TCmakeIdCopyString (
+                                                           INFO_BREAKLABEL (arg_info)),
+                                                         NULL));
                     break;
 
                 default:
