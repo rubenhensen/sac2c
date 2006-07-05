@@ -2430,6 +2430,7 @@ TCisPhiFun (node *id)
  *   node *TCmakePrf1( prf prf, node *arg1)
  *   node *TCmakePrf2( prf prf, node *arg1, node *arg2)
  *   node *TCmakePrf3( prf prf, node *arg1, node *arg2, node *arg3)
+ *   node *TCmakePrf4( prf prf, node *arg1, node *arg2, node *arg3, node *arg4)
  *
  * description:
  *   create N_prf node for primitive function application with 1, 2, or 3
@@ -2470,6 +2471,22 @@ TCmakePrf3 (prf prf, node *arg1, node *arg2, node *arg3)
 
     res
       = TBmakePrf (prf, TBmakeExprs (arg1, TBmakeExprs (arg2, TBmakeExprs (arg3, NULL))));
+
+    DBUG_RETURN (res);
+}
+
+node *
+TCmakePrf4 (prf prf, node *arg1, node *arg2, node *arg3, node *arg4)
+{
+    node *res;
+
+    DBUG_ENTER ("TBmakePrf4");
+
+    res = TBmakePrf (prf,
+                     TBmakeExprs (arg1,
+                                  TBmakeExprs (arg2,
+                                               TBmakeExprs (arg3,
+                                                            TBmakeExprs (arg4, NULL)))));
 
     DBUG_RETURN (res);
 }

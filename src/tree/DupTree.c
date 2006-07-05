@@ -1977,6 +1977,7 @@ DUPbreak (node *arg_node, info *arg_info)
 
     new_node = TBmakeBreak ();
 
+    BREAK_MEM (new_node) = DUPTRAV (BREAK_MEM (arg_node));
     BREAK_NEXT (new_node) = DUPCONT (BREAK_NEXT (arg_node));
 
     CopyCommonNodeData (new_node, arg_node);

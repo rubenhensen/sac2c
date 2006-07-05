@@ -842,22 +842,19 @@ MMVgenarray (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("MMVgenarray");
 
-    if (GENARRAY_SHAPE (arg_node) != NULL) {
-        GENARRAY_SHAPE (arg_node) = TRAVdo (GENARRAY_SHAPE (arg_node), arg_info);
-    }
+    GENARRAY_SHAPE (arg_node) = TRAVdo (GENARRAY_SHAPE (arg_node), arg_info);
+
     if (GENARRAY_DEFAULT (arg_node) != NULL) {
         GENARRAY_DEFAULT (arg_node) = TRAVdo (GENARRAY_DEFAULT (arg_node), arg_info);
     }
 
-    if (GENARRAY_MEM (arg_node) != NULL) {
-        GENARRAY_MEM (arg_node) = TRAVdo (GENARRAY_MEM (arg_node), arg_info);
+    GENARRAY_MEM (arg_node) = TRAVdo (GENARRAY_MEM (arg_node), arg_info);
 
-        LUTinsertIntoLutS (INFO_LUT (arg_info), IDS_NAME (INFO_LHS (arg_info)),
-                           ID_NAME (GENARRAY_MEM (arg_node)));
+    LUTinsertIntoLutS (INFO_LUT (arg_info), IDS_NAME (INFO_LHS (arg_info)),
+                       ID_NAME (GENARRAY_MEM (arg_node)));
 
-        LUTinsertIntoLutP (INFO_LUT (arg_info), IDS_AVIS (INFO_LHS (arg_info)),
-                           ID_AVIS (GENARRAY_MEM (arg_node)));
-    }
+    LUTinsertIntoLutP (INFO_LUT (arg_info), IDS_AVIS (INFO_LHS (arg_info)),
+                       ID_AVIS (GENARRAY_MEM (arg_node)));
 
     if (GENARRAY_NEXT (arg_node) != NULL) {
         INFO_LHS (arg_info) = IDS_NEXT (INFO_LHS (arg_info));
@@ -885,22 +882,53 @@ MMVmodarray (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("MMVmodarray");
 
-    if (MODARRAY_ARRAY (arg_node) != NULL) {
-        MODARRAY_ARRAY (arg_node) = TRAVdo (MODARRAY_ARRAY (arg_node), arg_info);
-    }
+    MODARRAY_ARRAY (arg_node) = TRAVdo (MODARRAY_ARRAY (arg_node), arg_info);
 
-    if (MODARRAY_MEM (arg_node) != NULL) {
-        MODARRAY_MEM (arg_node) = TRAVdo (MODARRAY_MEM (arg_node), arg_info);
+    MODARRAY_MEM (arg_node) = TRAVdo (MODARRAY_MEM (arg_node), arg_info);
 
-        LUTinsertIntoLutS (INFO_LUT (arg_info), IDS_NAME (INFO_LHS (arg_info)),
-                           ID_NAME (MODARRAY_MEM (arg_node)));
+    LUTinsertIntoLutS (INFO_LUT (arg_info), IDS_NAME (INFO_LHS (arg_info)),
+                       ID_NAME (MODARRAY_MEM (arg_node)));
 
-        LUTinsertIntoLutP (INFO_LUT (arg_info), IDS_AVIS (INFO_LHS (arg_info)),
-                           ID_AVIS (MODARRAY_MEM (arg_node)));
-    }
+    LUTinsertIntoLutP (INFO_LUT (arg_info), IDS_AVIS (INFO_LHS (arg_info)),
+                       ID_AVIS (MODARRAY_MEM (arg_node)));
+
     if (MODARRAY_NEXT (arg_node) != NULL) {
         INFO_LHS (arg_info) = IDS_NEXT (INFO_LHS (arg_info));
         MODARRAY_NEXT (arg_node) = TRAVdo (MODARRAY_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--******************************************************************-->
+ *
+ * @fn MMVbreak
+ *
+ *  @brief Adds the current LHS and the MEM-variable into LUT if this
+ *         withop is either WO_genarray or WO_modarray.
+ *
+ *  @param arg_node
+ *  @param arg_info
+ *
+ *  @return
+ *
+ ***************************************************************************/
+node *
+MMVbreak (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("MMVbreak");
+
+    BREAK_MEM (arg_node) = TRAVdo (BREAK_MEM (arg_node), arg_info);
+
+    LUTinsertIntoLutS (INFO_LUT (arg_info), IDS_NAME (INFO_LHS (arg_info)),
+                       ID_NAME (BREAK_MEM (arg_node)));
+
+    LUTinsertIntoLutP (INFO_LUT (arg_info), IDS_AVIS (INFO_LHS (arg_info)),
+                       ID_AVIS (BREAK_MEM (arg_node)));
+
+    if (BREAK_NEXT (arg_node) != NULL) {
+        INFO_LHS (arg_info) = IDS_NEXT (INFO_LHS (arg_info));
+        BREAK_NEXT (arg_node) = TRAVdo (BREAK_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -924,9 +952,7 @@ MMVfold (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("MMVfold");
 
-    if (FOLD_NEUTRAL (arg_node) != NULL) {
-        FOLD_NEUTRAL (arg_node) = TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
-    }
+    FOLD_NEUTRAL (arg_node) = TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
 
     if (FOLD_NEXT (arg_node) != NULL) {
         INFO_LHS (arg_info) = IDS_NEXT (INFO_LHS (arg_info));
@@ -963,9 +989,7 @@ MMVcode (node *arg_node, info *arg_info)
         CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
     }
 
-    if (CODE_CEXPRS (arg_node) != NULL) {
-        CODE_CEXPRS (arg_node) = TRAVdo (CODE_CEXPRS (arg_node), arg_info);
-    }
+    CODE_CEXPRS (arg_node) = TRAVdo (CODE_CEXPRS (arg_node), arg_info);
 
     /*
      * if at least one WL-operator ist fold the accumulation results

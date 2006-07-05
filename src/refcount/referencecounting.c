@@ -599,8 +599,9 @@ RCIprf (node *arg_node, info *arg_info)
         break;
 
     case F_wl_assign:
+    case F_wl_break:
         /*
-         * wl_assign( v, m, iv)
+         * wl_assign( v, m, iv, idx)
          * Traverse only value v
          */
         INFO_MODE (arg_info) = rc_prfuse;

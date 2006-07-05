@@ -706,6 +706,7 @@ RCMprf (node *arg_node, info *arg_info)
         break;
 
     case F_wl_assign:
+    case F_wl_break:
     case F_accu:
     case F_suballoc:
         /*

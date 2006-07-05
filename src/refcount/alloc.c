@@ -783,8 +783,8 @@ EMALcode (node *arg_node, info *arg_info)
             || (NODE_TYPE (withops) == N_break)) {
 
             if (TUdimKnown (crestype) && (TYgetDim (crestype) == 0)) {
-                node *iv;
-                node *idx;
+                node *prfap;
+
                 /*
                  * Create a new value variable
                  * Ex: a_val
@@ -803,25 +803,23 @@ EMALcode (node *arg_node, info *arg_info)
                  *   a_val = wl_assign( a, A, iv, idx);
                  * }: a_val;
                  *
-                 * for Break withops, we set iv = [] and idx = 0
+                 * for Break withops, we use wl_break(a,A,iv);
                  */
                 if (NODE_TYPE (withops) == N_break) {
-                    iv = TCmakeIntVector (NULL);
-                    idx = TBmakeNum (0);
+                    prfap
+                      = TCmakePrf3 (F_wl_break, TBmakeId (cexavis), TBmakeId (als->avis),
+                                    DUPdoDupNode (INFO_INDEXVECTOR (arg_info)));
+
                 } else {
-                    iv = DUPdoDupNode (INFO_INDEXVECTOR (arg_info));
-                    idx = TBmakeId (WITHOP_IDX (withops));
+                    prfap
+                      = TCmakePrf4 (F_wl_assign, TBmakeId (cexavis), TBmakeId (als->avis),
+                                    DUPdoDupNode (INFO_INDEXVECTOR (arg_info)),
+                                    TBmakeId (WITHOP_IDX (withops)));
                 }
 
-                assign = TBmakeAssign (
-                  TBmakeLet (TBmakeIds (valavis, NULL),
-                             TBmakePrf (F_wl_assign,
-                                        TBmakeExprs (
-                                          TBmakeId (cexavis),
-                                          TBmakeExprs (
-                                            TBmakeId (als->avis),
-                                            TBmakeExprs (iv, TBmakeExprs (idx, NULL)))))),
-                  assign);
+                assign
+                  = TBmakeAssign (TBmakeLet (TBmakeIds (valavis, NULL), prfap), assign);
+
                 AVIS_SSAASSIGN (valavis) = assign;
 
                 /*

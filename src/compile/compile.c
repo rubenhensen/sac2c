@@ -3299,6 +3299,33 @@ COMPPrfWLAssign (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn  node COMPPrfWLBreak( node *arg_node, info *arg_info)
+ *
+ * @brief  Compiles N_prf node of type F_wl_break
+ *   The return value is a N_assign chain of ICMs.
+ *   Note, that the old 'arg_node' is removed by COMPLet.
+ *
+ * Remarks:
+ *   INFO_LASTIDS contains name of assigned variable.
+ *
+ ******************************************************************************/
+
+static node *
+COMPPrfWLBreak (node *arg_node, info *arg_info)
+{
+    node *ret_node;
+
+    DBUG_ENTER ("COMPPrfWLBreak");
+
+    ret_node = TCmakeAssignIcm2 ("BREAK_ON_GUARD",
+                                 TCmakeIdCopyString (ID_NAME (PRF_ARG1 (arg_node))),
+                                 TCmakeIdCopyString (INFO_BREAKLABEL (arg_info)), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn  node COMPPrfCopy( node *arg_node, info *arg_info)
  *
  * @brief  Compiles N_prf node of type F_copy
@@ -4516,6 +4543,10 @@ COMPprf (node *arg_node, info *arg_info)
         ret_node = COMPPrfWLAssign (arg_node, arg_info);
         break;
 
+    case F_wl_break:
+        ret_node = COMPPrfWLBreak (arg_node, arg_info);
+        break;
+
     case F_copy:
         ret_node = COMPPrfCopy (arg_node, arg_info);
         break;
@@ -5610,6 +5641,7 @@ COMPwith2 (node *arg_node, info *arg_info)
     node *withop;
     node *let_neutral;
     char *break_label_str;
+    char *old_break_label;
 
     DBUG_ENTER ("COMPwith2");
 
@@ -5621,6 +5653,8 @@ COMPwith2 (node *arg_node, info *arg_info)
     wlids = INFO_LASTIDS (arg_info);
     old_wlnode = wlnode; /* stack 'wlnode' */
     wlnode = arg_node;
+    old_break_label = INFO_BREAKLABEL (arg_info);
+    INFO_BREAKLABEL (arg_info) = NULL;
 
     /*******************************************
      * build WL_... ICMs                       *
@@ -5810,6 +5844,8 @@ COMPwith2 (node *arg_node, info *arg_info)
      ************************************************/
 
     break_label_str = ILIBtmpVarName (LABEL_POSTFIX);
+    INFO_BREAKLABEL (arg_info) = break_label_str;
+
     if (WITH2_CODE (arg_node) != NULL) {
         WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
     }
@@ -5818,7 +5854,6 @@ COMPwith2 (node *arg_node, info *arg_info)
      * put it all together                     *
      *******************************************/
 
-    INFO_BREAKLABEL (arg_info) = break_label_str;
     ret_node = TCmakeAssigns9 (
       alloc_icms, fold_icms,
       TCmakeAssignIcm1 ("PF_BEGIN_WITH", TCmakeIdCopyString (profile_name),
@@ -5839,6 +5874,7 @@ COMPwith2 (node *arg_node, info *arg_info)
      */
     wlids = old_wlids;
     wlnode = old_wlnode;
+    INFO_BREAKLABEL (arg_info) = old_break_label;
 
     DBUG_RETURN (ret_node);
 }
@@ -6521,11 +6557,6 @@ COMPwlgridx (node *arg_node, info *arg_info)
                     break;
 
                 case N_break:
-                    icm_name = "BREAK_ON_GUARD";
-                    icm_args = TBmakeExprs (DUPdoDupTree (cexpr),
-                                            TBmakeExprs (TCmakeIdCopyString (
-                                                           INFO_BREAKLABEL (arg_info)),
-                                                         NULL));
                     break;
 
                 default:

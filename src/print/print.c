@@ -3809,7 +3809,14 @@ PRTbreak (node *arg_node, info *arg_info)
 
     INDENT;
 
-    fprintf (global.outfile, "break()");
+    fprintf (global.outfile, "break(");
+
+    if (BREAK_MEM (arg_node) != NULL) {
+        fprintf (global.outfile, " ");
+        TRAVdo (BREAK_MEM (arg_node), arg_info);
+    }
+
+    fprintf (global.outfile, ")");
 
     if (BREAK_NEXT (arg_node) != NULL) {
         fprintf (global.outfile, ",\n");

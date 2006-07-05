@@ -15,6 +15,7 @@
 extern node *MMVdoMarkMemVals (node *syntax_tree);
 
 extern node *MMVblock (node *arg_node, info *arg_info);
+extern node *MMVbreak (node *arg_node, info *arg_info);
 extern node *MMVcode (node *arg_node, info *arg_info);
 extern node *MMVdo (node *arg_node, info *arg_info);
 extern node *MMVfold (node *arg_node, info *arg_info);

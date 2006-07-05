@@ -1333,6 +1333,7 @@
           <node name="Ap" />
           <node name="Array" />
           <node name="Assign" />
+          <node name="Break" />
           <node name="Code" />
           <node name="Fold" />
           <node name="Funcond" />
@@ -1887,6 +1888,7 @@
       <traversal id="MMV" name="MarkMemVals" default="sons" include="markmemvals.h" >
         <travuser>
           <node name="Block" />
+          <node name="Break" />
           <node name="Code" />
           <node name="Do" />
           <node name="Fold" />

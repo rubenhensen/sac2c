@@ -704,6 +704,7 @@ SCIprf (node *arg_node, info *arg_info)
     case F_isreused:
     case F_suballoc:
     case F_wl_assign:
+    case F_wl_break:
     case F_fill:
     case F_inc_rc:
     case F_dec_rc:
