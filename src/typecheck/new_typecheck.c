@@ -1774,7 +1774,8 @@ NTCwithid (node *arg_node, info *arg_info)
 node *
 NTCcode (node *arg_node, info *arg_info)
 {
-    ntype *remaining_blocks, *this_block, *blocks;
+    ntype *remaining_blocks, *this_block, *blocks, *res_i, *res;
+    int num_ops, i;
     te_info *info;
 
     DBUG_ENTER ("NTCcode");
@@ -1793,13 +1794,22 @@ NTCcode (node *arg_node, info *arg_info)
         remaining_blocks = INFO_TYPE (arg_info);
         INFO_TYPE (arg_info) = NULL;
 
-        info = TEmakeInfo (global.linenum, TE_with, "multi generator");
-        blocks = TYmakeProductType (2, TYgetProductMember (this_block, 0),
-                                    TYgetProductMember (remaining_blocks, 0));
+        num_ops = TYgetProductSize (this_block);
+        DBUG_ASSERT (num_ops == TYgetProductSize (remaining_blocks),
+                     "number of WL-body types varies within one multi-generator WL");
+        res = TYmakeEmptyProductType (num_ops);
+
+        for (i = 0; i < num_ops; i++) {
+            info = TEmakeInfo (global.linenum, TE_with, "multi generator");
+            blocks = TYmakeProductType (2, TYgetProductMember (this_block, i),
+                                        TYgetProductMember (remaining_blocks, i));
+            res_i = NTCCTcomputeType (NTCCTwl_multicode, info, blocks);
+            TYsetProductMember (res, i, TYgetProductMember (res_i, 0));
+            res_i = TYfreeTypeConstructor (res_i);
+        }
         this_block = TYfreeTypeConstructor (this_block);
         remaining_blocks = TYfreeTypeConstructor (remaining_blocks);
-
-        INFO_TYPE (arg_info) = NTCCTcomputeType (NTCCTwl_multicode, info, blocks);
+        INFO_TYPE (arg_info) = res;
     }
 
     DBUG_RETURN (arg_node);
