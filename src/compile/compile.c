@@ -3043,7 +3043,7 @@ COMPPrfIncRC (node *arg_node, info *arg_info)
 {
     char *name;
     types *type;
-    node *ret_node;
+    node *ret_node = NULL;
     int num;
 
     DBUG_ENTER ("COMPPrfIncRC");
@@ -3090,7 +3090,7 @@ COMPPrfDecRC (node *arg_node, info *arg_info)
 {
     char *name;
     types *type;
-    node *ret_node;
+    node *ret_node = NULL;
     int num;
 
     DBUG_ENTER ("COMPPrfDecRC");
