@@ -835,6 +835,41 @@ EMALcode (node *arg_node, info *arg_info)
                 EXPRS_EXPR (cexprs) = TBmakeId (valavis);
             } else {
                 /*
+                 * Here we handle the special case where the suballocated field is at
+                 * least AKD whereas its contents is AUD.
+                 * We insert a type_conv to handle this gracefully.
+                 */
+                if (TUdimKnown (crestype) && (!TUdimKnown (AVIS_TYPE (cexavis)))) {
+
+                    DBUG_PRINT ("EMAL", ("Cell shape is <=AKD wheras content is AUD"));
+
+                    node *avis;
+                    node *ass;
+
+                    avis = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (cexavis)),
+                                       TYcopyType (crestype));
+
+                    FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+                      = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+
+                    ass = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL),
+                                                   TCmakePrf2 (F_type_conv,
+                                                               TBmakeType (
+                                                                 TYcopyType (crestype)),
+                                                               TBmakeId (cexavis))),
+                                        NULL);
+                    AVIS_SSAASSIGN (avis) = ass;
+
+                    EXPRS_EXPR (cexprs) = FREEdoFreeNode (EXPRS_EXPR (cexprs));
+                    EXPRS_EXPR (cexprs) = TBmakeId (avis);
+
+                    cexavis = avis;
+
+                    BLOCK_INSTR (CODE_CBLOCK (arg_node))
+                      = TCappendAssign (BLOCK_INSTR (CODE_CBLOCK (arg_node)), ass);
+                }
+
+                /*
                  * Create a new memory variable
                  * Ex: a_mem
                  */
