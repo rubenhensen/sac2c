@@ -73,6 +73,7 @@ extern char *ILIBtmpVar (void);
 extern char *ILIBtmpVarName (char *postfix);
 
 extern char *ILIBreplaceSpecialCharacters (const char *name);
+extern char *ILIBstring2SafeCEncoding (const char *string);
 
 #ifdef SHOW_MALLOC
 extern void ILIBcomputeMallocAlignStep (void);

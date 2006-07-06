@@ -818,10 +818,6 @@ DSimportTypedefByName (const char *name, const char *module)
                                  MODULE_TYPES (INFO_DS_MODULE (DSstate)));
         }
 
-        if (exist_tdef != NULL) {
-            DBUG_PRINT ("SAH", ("FOUND %s", CTIitemName (exist_tdef)));
-        }
-
         /*
          * Check that either
          * - there is no typedef

@@ -51,6 +51,8 @@
 void
 SATserializeString (info *info, char *attr, node *parent)
 {
+    char *tmp;
+
     DBUG_ENTER ("SATserializeString");
 
     if (attr == NULL) {
@@ -60,7 +62,9 @@ SATserializeString (info *info, char *attr, node *parent)
     } else {
         DBUG_PRINT ("SET", ("Processing String `%s'", attr));
 
-        fprintf (INFO_SER_FILE (info), "ILIBstringCopy(\"%s\")", attr);
+        tmp = ILIBstring2SafeCEncoding (attr);
+        fprintf (INFO_SER_FILE (info), "ILIBstringCopy(\"%s\")", tmp);
+        tmp = ILIBfree (tmp);
     }
 
     DBUG_VOID_RETURN;
@@ -83,15 +87,7 @@ SATserializeSharedString (info *info, char *attr, node *parent)
 {
     DBUG_ENTER ("SATserializeSharedString");
 
-    if (attr == NULL) {
-        DBUG_PRINT ("SET", ("Processing String (null)"));
-
-        fprintf (INFO_SER_FILE (info), "NULL");
-    } else {
-        DBUG_PRINT ("SET", ("Processing String `%s'", attr));
-
-        fprintf (INFO_SER_FILE (info), "ILIBstringCopy(\"%s\")", attr);
-    }
+    SATserializeString (info, attr, parent);
 
     DBUG_VOID_RETURN;
 }

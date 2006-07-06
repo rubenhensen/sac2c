@@ -2719,7 +2719,7 @@ PRTbool (node *arg_node, info *arg_info)
 node *
 PRTstr (node *arg_node, info *arg_info)
 {
-    char *s;
+    char *tmp;
 
     DBUG_ENTER ("PRTstr");
 
@@ -2727,18 +2727,11 @@ PRTstr (node *arg_node, info *arg_info)
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
     }
 
-    s = STR_STRING (arg_node);
+    tmp = ILIBstring2SafeCEncoding (STR_STRING (arg_node));
 
-    putc ('\"', global.outfile);
-    while (s[0] != '\0') {
-        if (s[0] == '\"') {
-            fprintf (global.outfile, "\\\"");
-        } else {
-            putc (s[0], global.outfile);
-        }
-        s++;
-    }
-    putc ('\"', global.outfile);
+    fprintf (global.outfile, "\"%s\"", tmp);
+
+    tmp = ILIBfree (tmp);
 
     DBUG_RETURN (arg_node);
 }

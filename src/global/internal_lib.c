@@ -1191,6 +1191,40 @@ ILIBreplaceSpecialCharacters (const char *name)
     DBUG_RETURN (new_name);
 }
 
+/** <!-- ****************************************************************** -->
+ * @brief Converts its argument into a string that can be safely used when
+ *        printing C code. It does so by replacing all occurences of '"'
+ *        by '\"'.
+ *
+ * @param string a string.
+ *
+ * @return a safe string
+ ******************************************************************************/
+char *
+ILIBstring2SafeCEncoding (const char *string)
+{
+    char *result, *tmp;
+    int i, len;
+
+    DBUG_ENTER ("ILIBstring2SafeCEncoding");
+
+    len = strlen (string);
+
+    result = ILIBmalloc (len * 2 + 1);
+    tmp = result;
+
+    for (i = 0; i < len; i++) {
+        if (string[i] == '"') {
+            tmp += sprintf (tmp, "\\\"");
+        } else {
+            *tmp = string[i];
+            tmp++;
+        }
+    }
+
+    DBUG_RETURN (result);
+}
+
 #ifdef SHOW_MALLOC
 
 /* -------------------------------------------------------------------------- *

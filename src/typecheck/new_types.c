@@ -7003,9 +7003,15 @@ SerializePolyType (FILE *file, ntype *type)
 static void
 SerializeBottomType (FILE *file, ntype *type)
 {
+    char *tmp;
+
     DBUG_ENTER ("SerializeBottomType");
 
-    fprintf (file, "TYdeserializeType( %d, \"%s\")", NTYPE_CON (type), BOTTOM_MSG (type));
+    tmp = ILIBstring2SafeCEncoding (BOTTOM_MSG (type));
+
+    fprintf (file, "TYdeserializeType( %d, \"%s\")", NTYPE_CON (type), tmp);
+
+    tmp = ILIBfree (tmp);
 
     DBUG_VOID_RETURN;
 }
