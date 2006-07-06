@@ -219,13 +219,14 @@ extern nodelist *TCnodeListFind (nodelist *nl, node *node);
  *
  *  functionname  : TCsearchTypedef
  *  arguments     : 1) type name to be searched for
- *                  2) module name of type to be searched for
+ *                  2) namespace of type to be searched for
  *                  3) list of type implementations (typedef nodes)
  *  description   : looks for a certain typedef in list of typedefs
  *
  */
 
-extern node *TCSearchTypedef (char *name, char *mod, node *implementations);
+extern node *TCsearchTypedef (const char *name, const namespace_t *ns,
+                              node *implementations);
 
 /*****************************************************************************
  *

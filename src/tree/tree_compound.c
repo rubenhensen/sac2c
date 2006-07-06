@@ -956,8 +956,9 @@ TCsearchTypedef (const char *name, const namespace_t *ns, node *implementations)
 
     tmp = implementations;
 
-    while ((tmp != NULL) && (!ILIBstringCompare (name, TYPEDEF_NAME (tmp)))
-           && (!NSequals (ns, TYPEDEF_NS (tmp)))) {
+    while ((tmp != NULL)
+           && (!ILIBstringCompare (name, TYPEDEF_NAME (tmp))
+               || !NSequals (ns, TYPEDEF_NS (tmp)))) {
         tmp = TYPEDEF_NEXT (tmp);
     }
 

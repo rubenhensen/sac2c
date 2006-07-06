@@ -802,34 +802,65 @@ DSimportTypedefByName (const char *name, const char *module)
         node *new_tdef;
         usertype orig_udt;
         ntype *alias;
+        node *exist_tdef;
 
         orig_udt = UTfindUserType (TYPEDEF_NAME (orig_tdef), TYPEDEF_NS (orig_tdef));
 
         /*
-         * as this is an alias, we set the declared type to
-         * alias[]
+         * first check whether we have imported that type earlier
+         * on.
          */
-        alias = TYmakeAKS (TYmakeUserType (orig_udt), SHmakeShape (0));
+        exist_tdef = TCsearchTypedef (TYPEDEF_NAME (orig_tdef), global.modulenamespace,
+                                      INFO_DS_TYPEDEFS (DSstate));
+        if (exist_tdef == NULL) {
+            exist_tdef
+              = TCsearchTypedef (TYPEDEF_NAME (orig_tdef), global.modulenamespace,
+                                 MODULE_TYPES (INFO_DS_MODULE (DSstate)));
+        }
+
+        if (exist_tdef != NULL) {
+            DBUG_PRINT ("SAH", ("FOUND %s", CTIitemName (exist_tdef)));
+        }
 
         /*
-         * construct the new typedef and mark it as an alias
+         * Check that either
+         * - there is no typedef
+         * - the typedef that exists is not an ALIAS
+         * - if it is an ALIAS, it aliases a different type
+         * In all three cases create a new user alias. Otherwise
+         * the existing typedef will do.
          */
-        new_tdef = TBmakeTypedef (ILIBstringCopy (TYPEDEF_NAME (orig_tdef)),
-                                  NSdupNamespace (global.modulenamespace), alias, NULL);
-        TYPEDEF_ISALIAS (new_tdef) = TRUE;
+        if ((exist_tdef == NULL) || (!TYPEDEF_ISALIAS (exist_tdef))
+            || (UTgetUnAliasedType (
+                  TYgetUserType (TYgetScalar (TYPEDEF_NTYPE (exist_tdef))))
+                != UTgetUnAliasedType (orig_udt))) {
+            /*
+             * as this is an alias, we set the declared type to
+             * the original type.
+             */
+            alias = TYmakeAKS (TYmakeUserType (orig_udt), SHmakeShape (0));
 
-        /*
-         * we have to propagate the uniqueness property as well
-         */
-        TYPEDEF_ISUNIQUE (new_tdef) = TYPEDEF_ISUNIQUE (orig_tdef);
+            /*
+             * construct the new typedef and mark it as an alias
+             */
+            new_tdef
+              = TBmakeTypedef (ILIBstringCopy (TYPEDEF_NAME (orig_tdef)),
+                               NSdupNamespace (global.modulenamespace), alias, NULL);
+            TYPEDEF_ISALIAS (new_tdef) = TRUE;
 
-        /*
-         * insert it into the state. we cannot use InsertIntoState here, as we
-         * have created a new local typedef and InsertIntoState is meant for
-         * adding non-local items to the AST only.
-         */
-        INFO_DS_TYPEDEFS (DSstate)
-          = TCappendTypedef (INFO_DS_TYPEDEFS (DSstate), new_tdef);
+            /*
+             * we have to propagate the uniqueness property as well
+             */
+            TYPEDEF_ISUNIQUE (new_tdef) = TYPEDEF_ISUNIQUE (orig_tdef);
+
+            /*
+             * insert it into the state. we cannot use InsertIntoState here, as we
+             * have created a new local typedef and InsertIntoState is meant for
+             * adding non-local items to the AST only.
+             */
+            INFO_DS_TYPEDEFS (DSstate)
+              = TCappendTypedef (INFO_DS_TYPEDEFS (DSstate), new_tdef);
+        }
     }
 
     DBUG_VOID_RETURN;
