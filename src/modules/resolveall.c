@@ -1,39 +1,4 @@
-/*
- *
- * $Log$
- * Revision 1.9  2005/09/28 19:32:19  sah
- * when using/importing a function from the current namespace
- * a nice errror message is now given.
- *
- * Revision 1.8  2005/05/18 14:06:07  sah
- * fixed generation of warning message
- *
- * Revision 1.7  2005/05/18 13:56:51  sah
- * enabled caching of symboltables which
- * leads to a huge speedup when analysing use and import
- * from big modules
- *
- * Revision 1.6  2005/04/26 16:39:20  sah
- * added nice error messages and import capabilities
- *
- * Revision 1.5  2005/01/11 12:32:52  cg
- * Converted output from Error.h to ctinfo.c
- *
- * Revision 1.4  2004/11/25 20:51:53  sah
- * COMPILES
- *
- * Revision 1.3  2004/11/17 19:48:18  sah
- * added visibility checking
- *
- * Revision 1.2  2004/10/25 11:58:47  sah
- * major code cleanup
- *
- * Revision 1.1  2004/10/21 17:18:55  sah
- * Initial revision
- *
- *
- *
- */
+/* $Id$ */
 
 #include "resolveall.h"
 #include "tree_basic.h"
@@ -153,7 +118,7 @@ CheckSymbolExistsRec (const char *mod, const sttable_t *table, node *symbols,
                 && ((!(STsymbolVisibility (symbol) == SVT_provided)) || exportedonly))) {
             node *tmp;
 
-            CTIwarnLine (NODE_LINE (symbols), "Symbol `%s:%s' is undefined. Ignoring...",
+            CTIwarnLine (NODE_LINE (symbols), "Symbol `%s::%s' is undefined. Ignoring...",
                          mod, SYMBOL_ID (symbols));
 
             tmp = symbols;

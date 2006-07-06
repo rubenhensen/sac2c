@@ -176,8 +176,8 @@ PPIfundef (node *arg_node, info *arg_info)
         } else {
             char *funsig = TUtypeSignature2String (arg_node);
 
-            CTIerror ("Unable to find body of function '%s:%s' with args '%s' in module.",
-                      NSgetName (FUNDEF_NS (arg_node)), FUNDEF_NAME (arg_node), funsig);
+            CTIerror ("Unable to find body of function '%s' with args '%s' in module.",
+                      CTIitemName (arg_node), funsig);
 
             funsig = ILIBfree (funsig);
         }
