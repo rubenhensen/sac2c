@@ -50,8 +50,8 @@ inline                                                               \
 bool eq( a[*] A, a[*] B)                                             \
 {                                                                    \
   res = with( _mul_SxA_(0, _shape_(A)) <= iv < _shape_(A))           \
-        foldfix( sac2c::and, true, false,                            \
-                 _eq_(_sel_( iv, A), _sel_( iv, B)));                \
+        fold( sac2c::and, true,                                      \
+              _eq_(_sel_( iv, A), _sel_( iv, B)));                   \
   return( res);                                                      \
 }
 
