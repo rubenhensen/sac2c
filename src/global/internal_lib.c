@@ -1222,6 +1222,8 @@ ILIBstring2SafeCEncoding (const char *string)
         }
     }
 
+    *tmp = '\0';
+
     DBUG_RETURN (result);
 }
 
