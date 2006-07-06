@@ -54,6 +54,7 @@
  *   INFO_ONEFUNCTION - traverse one function only (and associated lacfuns)
  *   INFO_FUNDEF     - pointer to current fundef to prevent infinite recursion
  *   INFO_VARDECMODE -   M_fix / M_filter
+ *   INFO_DELLACFUN  -   indicates that a call to a lacfun has been deleted
  */
 
 /**
@@ -68,6 +69,7 @@ struct INFO {
     bool onefunction;
     node *fundef;
     enum { M_fix, M_filter } mode;
+    bool dellacfun;
 };
 
 /**
@@ -81,6 +83,7 @@ struct INFO {
 #define INFO_ONEFUNCTION(n) ((n)->onefunction)
 #define INFO_FUNDEF(n) ((n)->fundef)
 #define INFO_VARDECMODE(n) ((n)->mode)
+#define INFO_DELLACFUN(n) ((n)->dellacfun)
 
 /**
  * INFO functions
@@ -102,6 +105,7 @@ MakeInfo ()
     INFO_ONEFUNCTION (result) = FALSE;
     INFO_FUNDEF (result) = NULL;
     INFO_VARDECMODE (result) = M_fix;
+    INFO_DELLACFUN (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -479,96 +483,104 @@ NT2OTfundef (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("NT2OTfundef");
 
-    INFO_FUNDEF (arg_info) = arg_node;
+    if (!FUNDEF_ISLACFUN (arg_node) || INFO_ONEFUNCTION (arg_info)) {
+        INFO_FUNDEF (arg_info) = arg_node;
 
-    otype = TUmakeProductTypeFromRets (FUNDEF_RETS (arg_node));
-    DBUG_ASSERT ((otype != NULL), "FUNDEF_RET_TYPE not found!");
-    ftype = TYfixAndEliminateAlpha (otype);
-    FUNDEF_RETS (arg_node) = TUreplaceRetTypes (FUNDEF_RETS (arg_node), ftype);
+        DBUG_PRINT ("FIXNT",
+                    ("----> Processing function (-?-)::%s\n", FUNDEF_NAME (arg_node)));
 
-    /* process the real function type as well */
-    if (FUNDEF_WRAPPERTYPE (arg_node) != NULL) {
-        ntype *funtype = TYfixAndEliminateAlpha (FUNDEF_WRAPPERTYPE (arg_node));
-        FUNDEF_WRAPPERTYPE (arg_node) = TYfreeType (FUNDEF_WRAPPERTYPE (arg_node));
-        FUNDEF_WRAPPERTYPE (arg_node) = funtype;
-    }
+        otype = TUmakeProductTypeFromRets (FUNDEF_RETS (arg_node));
+        DBUG_ASSERT ((otype != NULL), "FUNDEF_RET_TYPE not found!");
+        ftype = TYfixAndEliminateAlpha (otype);
+        FUNDEF_RETS (arg_node) = TUreplaceRetTypes (FUNDEF_RETS (arg_node), ftype);
 
-    if (TYcountNoMinAlpha (ftype) > 0) {
-
-        if (FUNDEF_ISPROVIDED (arg_node) || FUNDEF_ISEXPORTED (arg_node)) {
-            CTIabortLine (NODE_LINE (arg_node),
-                          "One component of inferred return type (%s) has no lower bound;"
-                          " an application of \"%s\" will not terminate",
-                          TYtype2String (ftype, FALSE, 0), FUNDEF_NAME (arg_node));
-        } else {
-            DBUG_PRINT ("FIXNT", ("eliminating function %s due to lacking result type",
-                                  FUNDEF_NAME (arg_node)));
-            arg_node = FREEdoFreeNode (arg_node);
+        /* process the real function type as well */
+        if (FUNDEF_WRAPPERTYPE (arg_node) != NULL) {
+            ntype *funtype = TYfixAndEliminateAlpha (FUNDEF_WRAPPERTYPE (arg_node));
+            FUNDEF_WRAPPERTYPE (arg_node) = TYfreeType (FUNDEF_WRAPPERTYPE (arg_node));
+            FUNDEF_WRAPPERTYPE (arg_node) = funtype;
         }
-    } else {
-        bottom = TYgetBottom (ftype);
-        if (bottom != NULL) {
-            DBUG_PRINT ("FIXNT", ("bottom component found in function %s",
-                                  FUNDEF_NAME (arg_node)));
-            if (ILIBstringCompare (FUNDEF_NAME (arg_node), "main")
-                || FUNDEF_ISPROVIDED (arg_node) || FUNDEF_ISEXPORTED (arg_node)) {
-                CTIabortOnBottom (TYgetBottomError (bottom));
-            } else {
-                /**
-                 * we transform the entire body into one 'type error' assignment
-                 *
-                 * In case of LaC funs this is more difficult. Since the signatures
-                 * of these funs are not user specified, they do not have an upper
-                 * limit which prevents from a successfull type error generation.
-                 * (cf. bug no 115).However, since this bottom has been propagated into
-                 * the calling site, we can simply eliminate these functions entirely!
-                 */
-                if (FUNDEF_ISLACFUN (arg_node)) {
-                    /* mark this fun as zombie! */
-                    arg_node = FREEdoFreeNode (arg_node);
 
+        if (TYcountNoMinAlpha (ftype) > 0) {
+
+            if (FUNDEF_ISPROVIDED (arg_node) || FUNDEF_ISEXPORTED (arg_node)) {
+                CTIabortLine (NODE_LINE (arg_node),
+                              "One component of inferred return type (%s) has no lower "
+                              "bound;"
+                              " an application of \"%s\" will not terminate",
+                              TYtype2String (ftype, FALSE, 0), FUNDEF_NAME (arg_node));
+            } else {
+                DBUG_PRINT ("FIXNT",
+                            ("eliminating function %s due to lacking result type",
+                             FUNDEF_NAME (arg_node)));
+                arg_node = FREEdoFreeNode (arg_node);
+            }
+        } else {
+            bottom = TYgetBottom (ftype);
+            if (bottom != NULL) {
+                DBUG_PRINT ("FIXNT", ("bottom component found in function %s",
+                                      FUNDEF_NAME (arg_node)));
+                if (ILIBstringCompare (FUNDEF_NAME (arg_node), "main")
+                    || FUNDEF_ISPROVIDED (arg_node) || FUNDEF_ISEXPORTED (arg_node)) {
+                    CTIabortOnBottom (TYgetBottomError (bottom));
                 } else {
-                    arg_node = TransformIntoTypeError (arg_node);
+                    /**
+                     * we transform the entire body into one 'type error' assignment
+                     *
+                     * In case of LaC funs this is more difficult. Since the signatures
+                     * of these funs are not user specified, they do not have an upper
+                     * limit which prevents from a successfull type error generation.
+                     * (cf. bug no 115).However, since this bottom has been propagated
+                     * into the calling site, we can simply eliminate these functions
+                     * entirely!
+                     */
+                    if (FUNDEF_ISLACFUN (arg_node)) {
+                        /* mark this fun as zombie! */
+                        arg_node = FREEdoFreeNode (arg_node);
+
+                    } else {
+                        arg_node = TransformIntoTypeError (arg_node);
+                    }
+                }
+
+            } else {
+                DBUG_ASSERT (TYisProdOfArray (ftype), "inconsistent return type found");
+                DBUG_PRINT ("FIXNT", ("ProdOfArray return type found for function %s",
+                                      FUNDEF_NAME (arg_node)));
+
+                if (FUNDEF_ARGS (arg_node) != NULL) {
+                    FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
+                }
+
+                INFO_VARDECS (arg_info) = NULL;
+                if (FUNDEF_BODY (arg_node) != NULL) {
+                    FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+                }
+
+                if (INFO_VARDECS (arg_info) != NULL) {
+                    /*
+                     * if some new vardecs have been built, insert them !
+                     * this has to be done here rather than in NT2OTblock since blocks
+                     * in general may not be top level.
+                     * AFAIK, the only place where vardecs are in fact built is the
+                     * extension of withloop ids in NT2OTwithid.
+                     */
+                    INFO_VARDECS (arg_info) = TRAVdo (INFO_VARDECS (arg_info), arg_info);
+
+                    FUNDEF_VARDEC (arg_node) = TCappendVardec (INFO_VARDECS (arg_info),
+                                                               FUNDEF_VARDEC (arg_node));
+                    INFO_VARDECS (arg_info) = NULL;
+                }
+                if (FUNDEF_ISDOFUN (arg_node) && INFO_THENBOTTS (arg_info) != NULL) {
+                    FUNDEF_ISDOFUN (arg_node) = FALSE;
+                    FUNDEF_ISLACINLINE (arg_node) = TRUE;
                 }
             }
-
-        } else {
-            DBUG_ASSERT (TYisProdOfArray (ftype), "inconsistent return type found");
-            DBUG_PRINT ("FIXNT", ("ProdOfArray return type found for function %s",
-                                  FUNDEF_NAME (arg_node)));
-
-            if (FUNDEF_ARGS (arg_node) != NULL) {
-                FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
-            }
-
-            INFO_VARDECS (arg_info) = NULL;
-            if (FUNDEF_BODY (arg_node) != NULL) {
-                FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-            }
-
-            if (INFO_VARDECS (arg_info) != NULL) {
-                /*
-                 * if some new vardecs have been built, insert them !
-                 * this has to be done here rather than in NT2OTblock since blocks
-                 * in general may not be top level.
-                 * AFAIK, the only place where vardecs are in fact built is the
-                 * extension of withloop ids in NT2OTwithid.
-                 */
-                INFO_VARDECS (arg_info) = TRAVdo (INFO_VARDECS (arg_info), arg_info);
-
-                FUNDEF_VARDEC (arg_node)
-                  = TCappendVardec (INFO_VARDECS (arg_info), FUNDEF_VARDEC (arg_node));
-                INFO_VARDECS (arg_info) = NULL;
-            }
-            if (FUNDEF_ISDOFUN (arg_node) && INFO_THENBOTTS (arg_info) != NULL) {
-                FUNDEF_ISDOFUN (arg_node) = FALSE;
-                FUNDEF_ISLACINLINE (arg_node) = TRUE;
-            }
         }
-    }
 
-    INFO_THENBOTTS (arg_info) = NULL;
-    INFO_ELSEBOTTS (arg_info) = NULL;
+        INFO_THENBOTTS (arg_info) = NULL;
+        INFO_ELSEBOTTS (arg_info) = NULL;
+    }
 
     if ((!INFO_ONEFUNCTION (arg_info)) && (FUNDEF_NEXT (arg_node) != NULL)) {
         FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
@@ -585,17 +597,44 @@ NT2OTfundef (node *arg_node, info *arg_info)
 node *
 NT2OTap (node *arg_node, info *arg_info)
 {
+    ntype *argt, *bottom;
+
     DBUG_ENTER ("NT2OTap");
 
     arg_node = TRAVcont (arg_node, arg_info);
 
-    if (INFO_ONEFUNCTION (arg_info) && FUNDEF_ISLACFUN (AP_FUNDEF (arg_node))
+#if 0
+  if ( INFO_ONEFUNCTION( arg_info) &&
+       FUNDEF_ISLACFUN( AP_FUNDEF( arg_node)) &&
+       ( AP_FUNDEF( arg_node) != INFO_FUNDEF( arg_info))) {
+    info *new_info = MakeInfo();
+    INFO_ONEFUNCTION( new_info) = TRUE;
+    AP_FUNDEF( arg_node) = TRAVdo( AP_FUNDEF( arg_node), new_info);
+    new_info = FreeInfo( new_info);
+  }
+#else
+    if (FUNDEF_ISLACFUN (AP_FUNDEF (arg_node))
         && (AP_FUNDEF (arg_node) != INFO_FUNDEF (arg_info))) {
-        info *new_info = MakeInfo ();
-        INFO_ONEFUNCTION (new_info) = TRUE;
-        AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), new_info);
-        new_info = FreeInfo (new_info);
+        DBUG_PRINT ("FIXNT", ("lacfun %s found...", FUNDEF_NAME (AP_FUNDEF (arg_node))));
+        /**
+         * First, we check whether we are dealing with an application
+         * that contains a bottom type. If so, we delete the lacfun!
+         */
+        argt = TUactualArgs2Ntype (AP_ARGS (arg_node));
+        bottom = TYgetBottom (argt);
+        if (bottom != NULL) {
+            DBUG_PRINT ("FIXNT", ("deleting %s", FUNDEF_NAME (AP_FUNDEF (arg_node))));
+            INFO_DELLACFUN (arg_info) = TRUE;
+            AP_FUNDEF (arg_node) = FREEdoFreeNode (AP_FUNDEF (arg_node));
+        } else {
+            info *new_info = MakeInfo ();
+            INFO_ONEFUNCTION (new_info) = TRUE;
+            AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), new_info);
+            new_info = FreeInfo (new_info);
+        }
+        argt = TYfreeType (argt);
     }
+#endif
 
     DBUG_RETURN (arg_node);
 }
@@ -819,6 +858,10 @@ NT2OTlet (node *arg_node, info *arg_info)
         INFO_LHS (arg_info) = LET_IDS (arg_node);
         LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
         INFO_LHS (arg_info) = NULL;
+        if (INFO_DELLACFUN (arg_info)) {
+            INFO_DELLACFUN (arg_info) = FALSE;
+            arg_node = FREEdoFreeTree (arg_node);
+        }
     }
 
     DBUG_RETURN (arg_node);
