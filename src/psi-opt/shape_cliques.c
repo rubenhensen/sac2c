@@ -957,14 +957,13 @@ SCIfindShapeCliqueForShape (shape *shp, node *arg_node)
     while (arg != NULL) {
         curavis = ARG_AVIS (arg);
         curtype = AVIS_TYPE (curavis);
-        if (!TUshapeKnown (curtype)) { /* AKs only, please */
-            break;
-        }
-        curshape = TYgetShape (curtype);
-        if (SHcompareShapes (shp, curshape)) {
-            res = curavis;
-            fini = TRUE;
-            break;
+        if (TUshapeKnown (curtype)) { /* AKs only, please */
+            curshape = TYgetShape (curtype);
+            if (SHcompareShapes (shp, curshape)) {
+                res = curavis;
+                fini = TRUE;
+                break;
+            }
         }
         arg = ARG_NEXT (arg);
     }
@@ -977,13 +976,12 @@ SCIfindShapeCliqueForShape (shape *shp, node *arg_node)
             curavis = VARDEC_AVIS (arg);
             curtype = AVIS_TYPE (curavis);
             if (!TUshapeKnown (curtype)) { /* AKs only, please */
-                break;
-            }
-            curshape = TYgetShape (curtype);
-            if (SHcompareShapes (shp, curshape)) {
-                res = curavis;
-                fini = TRUE;
-                break;
+                curshape = TYgetShape (curtype);
+                if (SHcompareShapes (shp, curshape)) {
+                    res = curavis;
+                    fini = TRUE;
+                    break;
+                }
             }
             arg = VARDEC_NEXT (arg);
         }
