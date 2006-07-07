@@ -207,6 +207,9 @@ SUBPHASE (ili, "ili", "Infering loop invariant variables", ILIdoInferLoopInvaria
 
 SUBPHASE (ntccyc, "ntc", "Applying type upgrade", NTCdoNewTypeCheckOneFunction)
 
+SUBPHASE (nt2otcyc, "n2o", "Finalising infered type information",
+          NT2OTdoTransformOneFunction)
+
 SUBPHASE (rtupcyc, "rtupcyc", "Applying reverse type upgrade",
           RTUPdoReverseTypeUpgradeOneFundef)
 

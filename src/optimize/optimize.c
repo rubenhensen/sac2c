@@ -444,6 +444,7 @@ OPTdoIntraFunctionalOptimizations (node *arg_node)
                      */
                     if (global.optimize.dotup) {
                         fundef = PHrunOptimizationInCycle (SUBPH_ntccyc, loop, fundef);
+                        fundef = PHrunOptimizationInCycle (SUBPH_nt2otcyc, loop, fundef);
                     }
 
                     /*

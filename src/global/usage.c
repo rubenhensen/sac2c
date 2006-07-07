@@ -213,7 +213,10 @@ USGprintUsage ()
 
     PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:cse",
                       "Stop in cycle <n> after common subexpression elimination.");
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:tup", "Stop in cycle <n> after type upgrade.");
+    PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:ntc",
+                      "Stop in cycle <n> after type upgrade inference.");
+    PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:n2o",
+                      "Stop in cycle <n> after type upgrade finalization.");
     PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:dfc",
                       "Stop in cycle <n> after dispatch function calls.");
     PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:inl", "Stop in cycle <n> after inlining.");

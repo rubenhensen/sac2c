@@ -298,7 +298,7 @@ TagAsUnchecked (node *fundef, info *info)
 node *
 NTCdoNewTypeCheckOneFunction (node *arg_node)
 {
-    ntype *old_rets = NULL, *new_rets = NULL;
+    ntype *old_rets = NULL, *new_rets = NULL, *new_rets_fixed = NULL;
 
     DBUG_ENTER ("NTCdoNewTypeCheckOneFunction");
 
@@ -346,19 +346,16 @@ NTCdoNewTypeCheckOneFunction (node *arg_node)
 
         TRAVpop ();
 
-        /*
-         * Apple mysterious n2o traversal
-         */
-        arg_node = NT2OTdoTransformOneFunction (arg_node);
-
         /**
          * check for return type upgrades:
          */
         if (FUNDEF_RETS (arg_node) != NULL) {
             new_rets = TUmakeProductTypeFromRets (FUNDEF_RETS (arg_node));
-            FUNDEF_WASUPGRADED (arg_node) = !TYeqTypes (old_rets, new_rets);
+            new_rets_fixed = TYfixAndEliminateAlpha (new_rets);
+            FUNDEF_WASUPGRADED (arg_node) = !TYeqTypes (old_rets, new_rets_fixed);
             old_rets = TYfreeType (old_rets);
             new_rets = TYfreeType (new_rets);
+            new_rets_fixed = TYfreeType (new_rets_fixed);
         } else {
             FUNDEF_WASUPGRADED (arg_node) = FALSE;
         }

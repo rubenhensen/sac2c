@@ -2192,7 +2192,7 @@ node *
 CFarray (node *arg_node, info *arg_info)
 {
     node *newelems = NULL;
-    node *oldelems, *tmp;
+    node *oldelems, *tmp, *first_inner_array;
     shape *shp = NULL, *newshp;
     ntype *basetype;
     ntype *atype;
@@ -2242,6 +2242,9 @@ CFarray (node *arg_node, info *arg_info)
                  * Merge subarrays into this arrays
                  */
                 oldelems = ARRAY_AELEMS (arg_node);
+                DBUG_ASSERT (oldelems != NULL,
+                             "Trying to merge subarrays into an empty array!");
+                first_inner_array = ASSIGN_RHS (ID_SSAASSIGN (EXPRS_EXPR (oldelems)));
                 tmp = oldelems;
                 while (tmp != NULL) {
                     newelems
@@ -2250,7 +2253,7 @@ CFarray (node *arg_node, info *arg_info)
                     tmp = EXPRS_NEXT (tmp);
                 }
 
-                basetype = TYcopyType (ARRAY_ELEMTYPE (arg_node));
+                basetype = TYcopyType (ARRAY_ELEMTYPE (first_inner_array));
                 newshp = SHappendShapes (ARRAY_SHAPE (arg_node), shp);
 
                 arg_node = FREEdoFreeNode (arg_node);
