@@ -4578,6 +4578,26 @@
     <node name="Avis">
     <description>Arg and vardec information structure</description> 
       <sons>
+        <son name="Dim" default="NULL">
+          <targets>
+            <target mandatory="no">
+              <set name="Expr" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+        <son name="Shape" default="NULL">
+          <targets>
+            <target mandatory="no">
+              <set name="Expr" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>        
       </sons>
       <attributes>
         <attribute name="Decl" default="NULL">
