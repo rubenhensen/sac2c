@@ -45,6 +45,7 @@
 #include "NameTuplesUtils.h"
 #include "new_types.h"
 #include "shape.h"
+#include "new_typecheck.h"
 
 /** <!--********************************************************************-->
  *
@@ -57,12 +58,20 @@ struct INFO {
     node *assign;
     node *preassigns;
     node *postassigns;
+
+    node *lhs;
+    node *withop;
+    ntype *cextypes;
 };
 
 #define INFO_FUNDEF(n) ((n)->fundef)
 #define INFO_ASSIGN(n) ((n)->assign)
 #define INFO_PREASSIGNS(n) ((n)->preassigns)
 #define INFO_POSTASSIGNS(n) ((n)->postassigns)
+
+#define INFO_LHS(n) ((n)->lhs)
+#define INFO_WITHOP(n) ((n)->withop)
+#define INFO_CEXTYPES(n) ((n)->cextypes)
 
 static info *
 MakeInfo ()
@@ -77,6 +86,8 @@ MakeInfo ()
     INFO_ASSIGN (result) = NULL;
     INFO_PREASSIGNS (result) = NULL;
     INFO_POSTASSIGNS (result) = NULL;
+    INFO_WITHOP (result) = NULL;
+    INFO_CEXTYPES (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -139,6 +150,43 @@ ASDdoAudSclDistinction (node *syntax_tree)
  * @{
  *
  *****************************************************************************/
+/** <!--********************************************************************-->
+ *
+ *  @fn ntype *GetLeastTypes(  ntype *p1, ntype *p2)
+ *
+ ******************************************************************************/
+static ntype *
+GetLeastTypes (ntype *p1, ntype *p2)
+{
+    ntype *res;
+
+    DBUG_ENTER ("GetLeastTypes");
+
+    if ((p1 == NULL) || (p2 == NULL)) {
+        res = p1 == NULL ? p2 : p1;
+    } else {
+        int i;
+
+        res = TYmakeEmptyProductType (TYgetProductSize (p1));
+
+        for (i = 0; i < TYgetProductSize (p1); i++) {
+            ntype *t1, *t2;
+
+            t1 = TYeliminateAKV (TYgetProductMember (p1, i));
+            t2 = TYeliminateAKV (TYgetProductMember (p2, i));
+
+            TYsetProductMember (res, i, TYcopyType (TYleTypes (t1, t2) ? t1 : t2));
+
+            t1 = TYfreeType (t1);
+            t2 = TYfreeType (t2);
+        }
+
+        p1 = TYfreeType (p1);
+        p2 = TYfreeType (p2);
+    }
+
+    DBUG_RETURN (res);
+}
 
 /** <!--********************************************************************-->
  *
@@ -498,6 +546,150 @@ ASDcond (node *arg_node, info *arg_info)
                 funcond_ass = ASSIGN_NEXT (funcond_ass);
             }
         }
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *ASDlet( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+ASDlet (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("ASDlet");
+
+    INFO_LHS (arg_info) = LET_IDS (arg_node);
+    LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *ASDwith( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+ASDwith (node *arg_node, info *arg_info)
+{
+    ntype *oldcextypes;
+    node *oldwithop;
+
+    DBUG_ENTER ("ASDwith");
+
+    oldcextypes = INFO_CEXTYPES (arg_info);
+    oldwithop = INFO_WITHOP (arg_info);
+
+    INFO_CEXTYPES (arg_info) = NULL;
+    INFO_WITHOP (arg_info) = WITH_WITHOP (arg_node);
+
+    WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
+    WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
+
+    INFO_CEXTYPES (arg_info) = TYfreeType (INFO_CEXTYPES (arg_info));
+    INFO_CEXTYPES (arg_info) = oldcextypes;
+    INFO_WITHOP (arg_info) = oldwithop;
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *ASDwith2( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+ASDwith2 (node *arg_node, info *arg_info)
+{
+    ntype *oldcextypes;
+    node *oldwithop;
+
+    DBUG_ENTER ("ASDwith2");
+
+    oldcextypes = INFO_CEXTYPES (arg_info);
+    oldwithop = INFO_WITHOP (arg_info);
+
+    INFO_CEXTYPES (arg_info) = NULL;
+    INFO_WITHOP (arg_info) = WITH2_WITHOP (arg_node);
+
+    WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
+    WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
+
+    INFO_CEXTYPES (arg_info) = TYfreeType (INFO_CEXTYPES (arg_info));
+    INFO_CEXTYPES (arg_info) = oldcextypes;
+    INFO_WITHOP (arg_info) = oldwithop;
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *ASDcode( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+ASDcode (node *arg_node, info *arg_info)
+{
+    int i;
+    node *cexprs, *withop;
+
+    DBUG_ENTER ("ASDcode");
+
+    if (CODE_CBLOCK (arg_node) != NULL) {
+        CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
+    }
+
+    INFO_CEXTYPES (arg_info)
+      = GetLeastTypes (INFO_CEXTYPES (arg_info),
+                       NTCnewTypeCheck_Expr (CODE_CEXPRS (arg_node)));
+
+    if (CODE_NEXT (arg_node) != NULL) {
+        CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
+    }
+
+    i = 0;
+    cexprs = CODE_CEXPRS (arg_node);
+    withop = INFO_WITHOP (arg_info);
+
+    while (cexprs != NULL) {
+        if ((NODE_TYPE (withop) == N_genarray) || (NODE_TYPE (withop) == N_modarray)) {
+            ntype *restype, *cextype;
+
+            restype = TYgetProductMember (INFO_CEXTYPES (arg_info), i);
+            cextype = ID_NTYPE (EXPRS_EXPR (cexprs));
+
+            if (TYcmpTypes (restype, cextype) == TY_lt) {
+                node *avis, *ass;
+                node *cexavis = ID_AVIS (EXPRS_EXPR (cexprs));
+
+                avis = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (cexavis)),
+                                   TYcopyType (restype));
+
+                FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+                  = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+
+                ass = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL),
+                                               TCmakePrf2 (F_type_conv,
+                                                           TBmakeType (
+                                                             TYcopyType (restype)),
+                                                           TBmakeId (cexavis))),
+                                    NULL);
+                AVIS_SSAASSIGN (avis) = ass;
+
+                EXPRS_EXPR (cexprs) = FREEdoFreeNode (EXPRS_EXPR (cexprs));
+                EXPRS_EXPR (cexprs) = TBmakeId (avis);
+
+                BLOCK_INSTR (CODE_CBLOCK (arg_node))
+                  = TCappendAssign (BLOCK_INSTR (CODE_CBLOCK (arg_node)), ass);
+            }
+        }
+
+        i++;
+        withop = WITHOP_NEXT (withop);
+        cexprs = EXPRS_NEXT (cexprs);
     }
 
     DBUG_RETURN (arg_node);

@@ -1317,6 +1317,9 @@
           <node name="Assign" />
           <node name="Ap" />
           <node name="Cond" />
+          <node name="With" />
+          <node name="With2" />
+          <node name="Code" />
         </travuser>
 	<traverror>
           <node name="Do" />
