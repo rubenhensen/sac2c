@@ -5859,28 +5859,38 @@ COMPwith2 (node *arg_node, info *arg_info)
     break_label_str = ILIBtmpVarName (LABEL_POSTFIX);
     INFO_BREAKLABEL (arg_info) = break_label_str;
 
-    ret_node = TCmakeAssigns9 (
-      alloc_icms, fold_icms,
-      TCmakeAssignIcm1 ("PF_BEGIN_WITH", TCmakeIdCopyString (profile_name),
-                        TCmakeAssignIcm1 ("WL_SCHEDULE__BEGIN", icm_args, NULL)),
-      shpfac_decl_icms, shpfac_def_icms, TRAVdo (WITH2_SEGS (arg_node), arg_info),
-      TCmakeAssignIcm1 ("WL_SCHEDULE__END", DUPdoDupTree (icm_args),
-                        TCmakeAssignIcm1 ("PF_END_WITH",
-                                          TCmakeIdCopyString (profile_name),
-                                          TCmakeAssignIcm1 ("ND_LABEL",
-                                                            TCmakeIdCopyString (
-                                                              break_label_str),
-                                                            NULL))),
-      fold_rc_icms, free_icms);
-    INFO_BREAKLABEL (arg_info) = NULL;
+  ret_node = TCmakeAssigns9( alloc_icms,
+			     fold_icms,
+			     TCmakeAssignIcm1( "PF_BEGIN_WITH",
+			       TCmakeIdCopyString( profile_name),
+				 TCmakeAssignIcm1( "WL_SCHEDULE__BEGIN",
+				 icm_args,
+				 NULL)),
+			     shpfac_decl_icms,
+			     shpfac_def_icms,
+			     TRAVdo( WITH2_SEGS( arg_node), arg_info),
+			     TCmakeAssignIcm1( "WL_SCHEDULE__END",
+			       DUPdoDupTree( icm_args),
+			       TCmakeAssignIcm1( "PF_END_WITH",
+				 TCmakeIdCopyString( profile_name),
+#if 0
+                                 TCmakeAssignIcm1( "ND_LABEL",
+                                                   TCmakeIdCopyString( break_label_str),
+                                   NULL ))),
+#else
+                                                            NULL)),
+#endif
+			     fold_rc_icms,
+			     free_icms);
+  INFO_BREAKLABEL( arg_info) = NULL;
 
-    /*
-     * pop 'wlids', 'wlnode'
-     */
-    wlids = old_wlids;
-    wlnode = old_wlnode;
+  /*
+   * pop 'wlids', 'wlnode'
+   */
+  wlids = old_wlids;
+  wlnode = old_wlnode;
 
-    DBUG_RETURN (ret_node);
+  DBUG_RETURN( ret_node);
 }
 
 /** <!--********************************************************************-->
