@@ -28,6 +28,7 @@
 #include "new_types.h"
 #include "ReuseWithArrays.h"
 #include "reusewithoffset.h"
+#include "compare_tree.h"
 
 #include <string.h>
 
@@ -162,6 +163,21 @@ TypeMatch (ntype *t1, ntype *t2)
     DBUG_RETURN (res);
 }
 
+static bool
+ShapeVarsMatch (node *a1, node *a2)
+{
+    bool res;
+
+    DBUG_ENTER ("ShapeVarsMatch");
+
+    res = ((AVIS_DIM (a1) != NULL) && (AVIS_DIM (a2) != NULL) && (AVIS_SHAPE (a1) != NULL)
+           && (AVIS_SHAPE (a2) != NULL)
+           && (CMPTdoCompareTree (AVIS_DIM (a1), AVIS_DIM (a2)) == CMPT_EQ)
+           && (CMPTdoCompareTree (AVIS_SHAPE (a1), AVIS_SHAPE (a2)) == CMPT_EQ));
+
+    DBUG_RETURN (res);
+}
+
 static node *
 MatchingRCs (node *rcs, node *ids, node *modarray)
 {
@@ -173,6 +189,7 @@ MatchingRCs (node *rcs, node *ids, node *modarray)
         match = MatchingRCs (EXPRS_NEXT (rcs), ids, modarray);
 
         if (TypeMatch (ID_NTYPE (EXPRS_EXPR (rcs)), IDS_NTYPE (ids))
+            || ShapeVarsMatch (ID_AVIS (EXPRS_EXPR (rcs)), IDS_AVIS (ids))
             || ((modarray != NULL)
                 && (ID_AVIS (EXPRS_EXPR (rcs)) == ID_AVIS (modarray)))) {
             match = TBmakeExprs (TBmakeId (ID_AVIS (EXPRS_EXPR (rcs))), match);

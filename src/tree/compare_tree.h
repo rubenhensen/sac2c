@@ -1,40 +1,5 @@
 /*
- * $Log$
- * Revision 1.10  2005/09/18 21:26:43  ktr
- * Compare tree now always maintains a LUT to keep track of renamings due to
- * SSA form
- * In particular, this allows CSE to eliminate with-loops
- *
- * Revision 1.9  2004/11/26 13:12:18  khf
- * SacDevCamp04: COMPILES!!
- *
- * Revision 1.8  2004/11/22 21:29:55  ktr
- * Big Switch Header! SacDevCamp 04
- *
- * Revision 1.7  2004/08/01 18:44:21  sah
- * switch to new INFO structure
- * PHASE I
- *
- * Revision 1.6  2003/01/28 18:16:22  ktr
- * CompareTreeLUT added to compare_tree
- *
- * Revision 1.5  2001/04/30 12:24:58  nmw
- * comments corrected
- *
- * Revision 1.4  2001/03/20 14:22:50  nmw
- * CMPTarray added, checks for equal types, too
- *
- * Revision 1.3  2001/03/09 11:48:54  sbs
- * types.h now explicitly included.
- *
- * Revision 1.2  2001/03/07 10:03:40  nmw
- * first implementation
- *
- * Revision 1.1  2001/03/06 13:16:50  nmw
- * Initial revision
- *
- *
- *
+ * $Id$
  */
 
 #ifndef SAC_COMPARETREE_H

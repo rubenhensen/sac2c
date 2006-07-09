@@ -1,12 +1,13 @@
-/*****************************************************************************
- *
+/*
  * $Id$
+ */
+
+/** <!--********************************************************************-->
  *
  * file:   SSACSE.c
  *
  * prefix: SSACSE
  *
- * WARNING: This travesal works with new types only
  * description:
  *   This module does the Common Subexpression Elimination in the AST for a
  *   single function (including the special functions in order of application).
@@ -80,7 +81,6 @@
  * INFO structure
  */
 struct INFO {
-    bool remassign;
     node *fundef;
     node *ext_assign;
     node *cse;
@@ -93,7 +93,6 @@ struct INFO {
 /*
  * INFO macros
  */
-#define INFO_REMASSIGN(n) (n->remassign)
 #define INFO_FUNDEF(n) (n->fundef)
 #define INFO_EXT_ASSIGN(n) (n->ext_assign)
 #define INFO_CSE(n) (n->cse)
@@ -114,7 +113,6 @@ MakeInfo ()
 
     result = ILIBmalloc (sizeof (info));
 
-    INFO_REMASSIGN (result) = FALSE;
     INFO_FUNDEF (result) = NULL;
     INFO_EXT_ASSIGN (result) = NULL;
     INFO_CSE (result) = NULL;
@@ -147,7 +145,6 @@ static node *SetSubstAttributes (node *subst, node *with);
 /* helper functions for internal use only */
 static node *FindCse (node *cselist, node *let);
 
-static bool CmpIdsTypes (node *ichain1, node *ichain2);
 static node *PropagateSubst2Args (node *fun_args, node *ap_args, node *fundef);
 static node *PropagateReturn2Results (node *ap_fundef, node *ids_chain);
 static nodelist *BuildSubstNodelist (node *return_exprs, node *fundef, node *ext_assign);
@@ -283,47 +280,13 @@ FindCse (node *cselist, node *let)
     while ((csetmp != NULL) && (match == NULL)) {
         if ((CSEINFO_LET (csetmp) != NULL)
             && (CMPTdoCompareTree (LET_EXPR (let), LET_EXPR (CSEINFO_LET (csetmp)))
-                == CMPT_EQ)
-            && (CmpIdsTypes (LET_IDS (let), LET_IDS (CSEINFO_LET (csetmp))))) {
+                == CMPT_EQ)) {
             match = CSEINFO_LET (csetmp);
         }
         csetmp = CSEINFO_NEXT (csetmp);
     }
 
     DBUG_RETURN (match);
-}
-
-/******************************************************************************
- *
- * function:
- *    bool CmpIdsTypes( ids *ichain1, ids *ichain2)
- *
- * description:
- *    compares the types of all ids in two given ids chains.
- *    return TRUE if the types of each two corresponding ids are equal.
- *
- ******************************************************************************/
-static bool
-CmpIdsTypes (node *ichain1, node *ichain2)
-{
-    bool result;
-
-    DBUG_ENTER ("CmpIdsTypes");
-
-    if (ichain1 != NULL) {
-        DBUG_ASSERT ((ichain2 != NULL), "comparing different ids chains");
-        if (TYcmpTypes (IDS_NTYPE (ichain1), IDS_NTYPE (ichain2)) == TY_eq) {
-            result = CmpIdsTypes (IDS_NEXT (ichain1), IDS_NEXT (ichain2));
-        } else {
-            result = FALSE;
-        }
-    } else {
-        /* no types are equal */
-        DBUG_ASSERT ((ichain2 == NULL), "comparing ids chains of different length");
-        result = TRUE;
-    }
-
-    DBUG_RETURN (result);
 }
 
 /******************************************************************************
@@ -932,30 +895,19 @@ node *
 CSEassign (node *arg_node, info *arg_info)
 {
     node *old_assign;
-    bool remassign;
-    node *tmp;
 
-    DBUG_ENTER ("SSEassign");
+    DBUG_ENTER ("CSEassign");
 
     DBUG_ASSERT ((ASSIGN_INSTR (arg_node) != NULL), "assign node without instruction");
 
     old_assign = INFO_ASSIGN (arg_info);
     INFO_ASSIGN (arg_info) = arg_node;
-    INFO_REMASSIGN (arg_info) = FALSE;
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
-    remassign = INFO_REMASSIGN (arg_info);
     INFO_ASSIGN (arg_info) = old_assign;
 
     /* traverse to next assignment in chain */
     if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
-
-    /* in bottom-up traversal free this assignment if it was marked as unused */
-    if (remassign) {
-        tmp = arg_node;
-        arg_node = ASSIGN_NEXT (arg_node);
-        FREEdoFreeNode (tmp);
     }
 
     DBUG_RETURN (arg_node);
@@ -987,8 +939,6 @@ CSEcond (node *arg_node, info *arg_info)
     if (COND_ELSE (arg_node) != NULL) {
         COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
     }
-
-    INFO_REMASSIGN (arg_info) = FALSE;
 
     DBUG_RETURN (arg_node);
 }
@@ -1023,8 +973,6 @@ CSEreturn (node *arg_node, info *arg_info)
     } else {
         INFO_RESULTARG (arg_info) = NULL;
     }
-
-    INFO_REMASSIGN (arg_info) = FALSE;
 
     DBUG_RETURN (arg_node);
 }
@@ -1088,8 +1036,6 @@ CSElet (node *arg_node, info *arg_info)
                     ("Common subexpression eliminated in line %d", NODE_LINE (arg_node)));
         global.optcounters.cse_expr++;
 
-        /* remove assignment */
-        INFO_REMASSIGN (arg_info) = TRUE;
     } else {
         if ((NODE_TYPE (LET_EXPR (arg_node)) == N_ap)
             && (FUNDEF_ISLACFUN (AP_FUNDEF (LET_EXPR (arg_node))))) {
@@ -1111,9 +1057,6 @@ CSElet (node *arg_node, info *arg_info)
             /* new expression found */
             DBUG_PRINT ("CSE", ("add new expression to cselist"));
             INFO_CSE (arg_info) = AddCseinfo (INFO_CSE (arg_info), arg_node);
-
-            /* do not remove assignment */
-            INFO_REMASSIGN (arg_info) = FALSE;
         }
     }
 
@@ -1205,9 +1148,6 @@ CSEap (node *arg_node, info *arg_info)
  *   ids *CSEids( ids *arg_ids, info *arg_info)
  *
  * description:
- *   Traverses chain of ids to do variable substitution as annotated in
- *   AVIS_SUBST attribute, but does not substitute loop invariant args in a
- *   recursive funap (iff INFO_RECFUNAP() is TRUE),
  *
  *   If we have some nodelist stored in INFO_RESULTARG annotate the
  *   stored subst avis information after processing, so further uses will be
@@ -1221,16 +1161,6 @@ CSEids (node *arg_node, info *arg_info)
     DBUG_ENTER ("CSEids");
 
     DBUG_ASSERT ((IDS_AVIS (arg_node) != NULL), "missing Avis backlink in ids");
-
-    /* check for necessary substitution */
-    if ((AVIS_SUBST (IDS_AVIS (arg_node)) != NULL)
-        && (!((INFO_RECFUNAP (arg_info)) && (AVIS_SSALPINV (IDS_AVIS (arg_node)))))) {
-        DBUG_PRINT ("CSE", ("substitution: %s -> %s", AVIS_NAME (IDS_AVIS (arg_node)),
-                            AVIS_NAME (AVIS_SUBST (IDS_AVIS (arg_node)))));
-
-        /* do renaming to new ssa vardec */
-        IDS_AVIS (arg_node) = AVIS_SUBST (IDS_AVIS (arg_node));
-    }
 
     /* process stored INFO_RESULTARG information */
     if (INFO_RESULTARG (arg_info) != NULL) {

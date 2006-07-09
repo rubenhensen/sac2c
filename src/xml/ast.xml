@@ -859,6 +859,7 @@
 	  <node name="Return" />
 	  <node name="Array" />
 	  <node name="Funcond" />
+          <node name="Avis" />
 	</travuser>
       </traversal>
       <traversal id="UPRF" name="Unroll PRFs" default="sons" include="prfunroll.h">
@@ -1037,6 +1038,23 @@
 	  <node name="With" />
    	</travuser>
       </traversal>
+      <traversal id="ISV" name="Insert Shape Variables" default="sons" 
+        include="insert_shapevars.h" >
+	<travuser>
+          <node name="Fundef" />
+	  <node name="Avis" />
+	  <node name="Vardec" />
+   	</travuser>
+      </traversal>      
+      <traversal id="ESV" name="Eliminate Shape Variables" default="sons" 
+        include="elim_shapevars.h" >
+	<travuser>
+	  <node name="Avis" />
+   	</travuser>
+        <travnone>
+          <node name="Assign" />
+        </travnone>
+      </traversal>      
       <traversal id="RTUP" name="Reverse Type Upgrade" default="sons" include="reverse_type_upgrade.h" >
 	<travuser>
 	  <node name="Assign" />

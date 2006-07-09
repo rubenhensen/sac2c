@@ -54,6 +54,7 @@ const int PROP_nothing = 0;
 const int PROP_variable = 1;
 const int PROP_scalarconst = 2;
 const int PROP_arrayconst = 4;
+const int PROP_array = 8;
 
 /*
  * INFO structure
@@ -114,6 +115,32 @@ CVParray (node *arg_node, info *arg_info)
 
     INFO_PROPMODE (arg_info) = PROP_variable | PROP_scalarconst;
     arg_node = TRAVcont (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *CVPavis( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+CVPavis (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("CVPavis");
+
+    if (AVIS_DIM (arg_node) != NULL) {
+        INFO_PROPMODE (arg_info) = PROP_variable | PROP_scalarconst;
+        AVIS_DIM (arg_node) = TRAVdo (AVIS_DIM (arg_node), arg_info);
+    }
+
+    if (AVIS_SHAPE (arg_node) != NULL) {
+        INFO_PROPMODE (arg_info)
+          = PROP_variable | PROP_scalarconst | PROP_arrayconst | PROP_array;
+        AVIS_SHAPE (arg_node) = TRAVdo (AVIS_SHAPE (arg_node), arg_info);
+    }
+
+    INFO_PROPMODE (arg_info) = PROP_nothing;
 
     DBUG_RETURN (arg_node);
 }
@@ -189,9 +216,13 @@ CVPid (node *arg_node, info *arg_info)
         arg_node = COconstant2AST (TYgetValue (AVIS_TYPE (avis)));
         global.optcounters.cvp_expr += 1;
     } else {
-        if ((INFO_PROPMODE (arg_info) & PROP_variable) && (AVIS_SSAASSIGN (avis) != NULL)
-            && (NODE_TYPE (ASSIGN_RHS (AVIS_SSAASSIGN (avis))) == N_id)) {
-            ID_AVIS (arg_node) = ID_AVIS (ASSIGN_RHS (AVIS_SSAASSIGN (avis)));
+        if ((AVIS_SSAASSIGN (avis) != NULL)
+            && (((INFO_PROPMODE (arg_info) & PROP_variable)
+                 && (NODE_TYPE (ASSIGN_RHS (AVIS_SSAASSIGN (avis))) == N_id))
+                || ((INFO_PROPMODE (arg_info) & PROP_array)
+                    && (NODE_TYPE (ASSIGN_RHS (AVIS_SSAASSIGN (avis))) == N_array)))) {
+            arg_node = FREEdoFreeNode (arg_node);
+            arg_node = DUPdoDupNode (ASSIGN_RHS (AVIS_SSAASSIGN (avis)));
             global.optcounters.cvp_expr += 1;
         }
     }

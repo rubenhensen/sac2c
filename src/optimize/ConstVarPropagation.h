@@ -1,39 +1,5 @@
 /*
- *
- * $Log$
- * Revision 1.10  2005/09/04 12:52:11  ktr
- * re-engineered the optimization cycle
- *
- * Revision 1.9  2005/08/31 17:12:39  ktr
- * Major simplification
- *
- * Revision 1.8  2005/02/14 15:51:48  mwe
- * CVPids added
- *
- * Revision 1.7  2005/02/14 10:46:43  mwe
- * CVParg added
- *
- * Revision 1.6  2004/11/22 17:58:37  khf
- * more codebrushing
- *
- * Revision 1.5  2004/11/21 20:34:10  khf
- * the big 2004 codebrushing event
- *
- * Revision 1.4  2004/07/23 13:58:18  ktr
- * Added CVPNwithop to prevent CVP to propagate the neutral element.
- *
- * Revision 1.3  2004/07/18 19:54:54  sah
- * switch to new INFO structure
- * PHASE I
- * (as well some code cleanup)
- *
- * Revision 1.2  2004/03/06 20:06:40  mwe
- * CVPfuncond added
- *
- * Revision 1.1  2004/03/02 16:58:51  mwe
- * Initial revision
- *
- *
+ * $Id$
  */
 
 #ifndef _SAC_CONSTVARPROPAGATION_H_
@@ -66,5 +32,6 @@ extern node *CVPid (node *arg_node, info *arg_info);
 extern node *CVPreturn (node *arg_node, info *arg_info);
 extern node *CVParray (node *arg_node, info *arg_info);
 extern node *CVPfuncond (node *arg_node, info *arg_info);
+extern node *CVPavis (node *arg_node, info *arg_info);
 
 #endif /* _SAC_CONSTVARPROPAGATION_H_ */

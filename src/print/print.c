@@ -1682,12 +1682,25 @@ PRTvardec (node *arg_node, info *arg_info)
         type_str = ILIBfree (type_str);
 
         fprintf (global.outfile, "%s", VARDEC_NAME (arg_node));
-
+        if (AVIS_DIM (VARDEC_AVIS (arg_node)) != NULL) {
+            fprintf (global.outfile, "(");
+            AVIS_DIM (VARDEC_AVIS (arg_node))
+              = TRAVdo (AVIS_DIM (VARDEC_AVIS (arg_node)), arg_info);
+            fprintf (global.outfile, ")");
+        }
+        if (AVIS_SHAPE (VARDEC_AVIS (arg_node)) != NULL) {
+            fprintf (global.outfile, "[");
+            AVIS_SHAPE (VARDEC_AVIS (arg_node))
+              = TRAVdo (AVIS_SHAPE (VARDEC_AVIS (arg_node)), arg_info);
+            fprintf (global.outfile, "]");
+        }
         fprintf (global.outfile, "; ");
 
-        type_str = CVtype2String (VARDEC_TYPE (arg_node), 0, TRUE);
-        fprintf (global.outfile, "/* %s */", type_str);
-        type_str = ILIBfree (type_str);
+        if (VARDEC_TYPE (arg_node) != NULL) {
+            type_str = CVtype2String (VARDEC_TYPE (arg_node), 0, TRUE);
+            fprintf (global.outfile, "/* %s */", type_str);
+            type_str = ILIBfree (type_str);
+        }
 
         if (AVIS_DECLTYPE (VARDEC_AVIS (arg_node)) != NULL) {
             type_str = TYtype2String (AVIS_DECLTYPE (VARDEC_AVIS (arg_node)), FALSE, 0);

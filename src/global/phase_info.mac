@@ -197,6 +197,8 @@ SUBPHASE (dfr, "dfr", "Removing dead functions", DFRdoDeadFunctionRemoval)
 
 SUBPHASE (dcr, "dcr", "Removing dead code", DCRdoDeadCodeRemovalModule)
 
+SUBPHASE (isv, "isv", "Inserting shape variables", ISVdoInsertShapeVariables)
+
 SUBPHASE (intraopt, "cyc", "Applying intra-functional optimizations",
           OPTdoIntraFunctionalOptimizations)
 
@@ -271,6 +273,8 @@ SUBPHASE (dfrcyc, "dfr", "Removing dead functions", DFRdoDeadFunctionRemoval)
 
 SUBPHASE (dcrcyc, "dcr", "Applying dead code removal", DCRdoDeadCodeRemovalModule)
 
+SUBPHASE (isvcyc, "isv", "Inserting shape variables", ISVdoInsertShapeVariablesOneFundef)
+
 SUBPHASE (sisi, "sisi", "Simplifying function signatures", SISIdoSignatureSimplification)
 
 SUBPHASE (uesd, "uesd", "Reintroducing subtraction and division operators",
@@ -315,6 +319,8 @@ SUBPHASE (lirive, "lirive", "Applying loop invariant removal", LIRdoLoopInvarian
 
 SUBPHASE (cseive, "cseive", "Eliminating common subexpression",
           CSEdoCommonSubexpressionEliminationModule)
+
+SUBPHASE (esv, "esv", "Eliminating shape variables", ESVdoEliminateShapeVariables)
 
 SUBPHASE (dcrive, "dcrive", "Removing dead code", DCRdoDeadCodeRemovalModule)
 
