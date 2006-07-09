@@ -310,7 +310,11 @@ GOImodule (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("GOImodule");
 
-    if (MODULE_FILETYPE (arg_node) == F_prog) {
+    /*
+     * we only generate object initialisers in programs
+     * that make use of objects!
+     */
+    if ((MODULE_FILETYPE (arg_node) == F_prog) && (MODULE_OBJS (arg_node) != NULL)) {
         INFO_NS (arg_info) = MODULE_NAMESPACE (arg_node);
 
         if (MODULE_FUNS (arg_node) != NULL) {
