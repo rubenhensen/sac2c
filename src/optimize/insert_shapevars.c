@@ -272,9 +272,9 @@ ISVavis (node *arg_node, info *arg_info)
                                              TCmakePrf1 (F_shape, TBmakeId (arg_node))),
                                   NULL);
 
-                assign = TCappendAssign (assign, newass);
+                AVIS_SSAASSIGN (shpavis) = newass;
 
-                AVIS_SSAASSIGN (shpavis) = ASSIGN_NEXT (assign);
+                assign = TCappendAssign (assign, newass);
 
                 INFO_VARDECS (arg_info) = TBmakeVardec (shpavis, INFO_VARDECS (arg_info));
 

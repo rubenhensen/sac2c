@@ -818,7 +818,11 @@ CSEblock (node *arg_node, info *arg_info)
 
     if (BLOCK_VARDEC (arg_node) != NULL) {
         /* traverse vardecs of block */
-        BLOCK_VARDEC (arg_node) = TRAVdo (BLOCK_VARDEC (arg_node), arg_info);
+        node *vardec = BLOCK_VARDEC (arg_node);
+        while (vardec != NULL) {
+            AVIS_SUBST (VARDEC_AVIS (vardec)) = NULL;
+            vardec = VARDEC_NEXT (vardec);
+        }
     }
 
     /* start new cse frame */
@@ -855,6 +859,10 @@ CSEblock (node *arg_node, info *arg_info)
         }
     }
 
+    if (BLOCK_VARDEC (arg_node) != NULL) {
+        BLOCK_VARDEC (arg_node) = TRAVdo (BLOCK_VARDEC (arg_node), arg_info);
+    }
+
     DBUG_RETURN (arg_node);
 }
 
@@ -873,7 +881,7 @@ CSEvardec (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CSEvardec");
 
-    AVIS_SUBST (VARDEC_AVIS (arg_node)) = NULL;
+    VARDEC_AVIS (arg_node) = TRAVdo (VARDEC_AVIS (arg_node), arg_info);
 
     if (VARDEC_NEXT (arg_node) != NULL) {
         VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
