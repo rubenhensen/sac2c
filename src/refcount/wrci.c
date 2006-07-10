@@ -170,8 +170,9 @@ ShapeVarsMatch (node *a1, node *a2)
 
     DBUG_ENTER ("ShapeVarsMatch");
 
-    res = ((AVIS_DIM (a1) != NULL) && (AVIS_DIM (a2) != NULL) && (AVIS_SHAPE (a1) != NULL)
-           && (AVIS_SHAPE (a2) != NULL)
+    res = ((TYeqTypes (TYgetScalar (AVIS_TYPE (a1)), TYgetScalar (AVIS_TYPE (a2))))
+           && (AVIS_DIM (a1) != NULL) && (AVIS_DIM (a2) != NULL)
+           && (AVIS_SHAPE (a1) != NULL) && (AVIS_SHAPE (a2) != NULL)
            && (CMPTdoCompareTree (AVIS_DIM (a1), AVIS_DIM (a2)) == CMPT_EQ)
            && (CMPTdoCompareTree (AVIS_SHAPE (a1), AVIS_SHAPE (a2)) == CMPT_EQ));
 
