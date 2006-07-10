@@ -76,7 +76,8 @@ objects     = object_init.o resolve_reference_args.o object_analysis.o \
               restore_objects.o check_uniqueness_annotations.o \
               uniqueness_phase.o  \
               generate_object_initialiser.o strip_external_signatures.o \
-              manage_object_initialisers.o
+              manage_object_initialisers.o \
+	      check_uniqueness.o
 
 optimize    = optimize.o \
               DeadFunctionRemoval.o deadcodeinference.o \

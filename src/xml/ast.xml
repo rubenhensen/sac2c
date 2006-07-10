@@ -718,6 +718,16 @@
 	  <node name="Ret" />
 	</travuser>
       </traversal>
+      <traversal id="CU" name="Check uniqueness" default="sons" include="check_uniqueness.h">
+        <travuser>
+	  <node name="Avis" />
+	  <node name="Block" />
+	  <node name="Cond" />
+	  <node name="Fundef" />
+	  <node name="Id" />
+	  <node name="Funcond" />
+	</travuser>
+      </traversal>
      </phase>
     <phase id="sacopt" name="Running SAC optimizations"
       startfun="NULL" include=".h"
@@ -4909,6 +4919,19 @@
             </targets>
 	  </type>
 	</attribute>
+	<attribute name="UniqueRef">
+	  <description>First reference to this unique object declaration. Used to generate useful error messages in case of uniqueness violation.</description>
+	  <type name="Link">
+	    <targets>
+	      <target mandatory="yes">
+	        <node name="Id" />
+		<phases>
+		  <phase name="cu" />
+		</phases>
+	      </target>
+	    </targets>
+	  </type>
+	</attribute>
       </attributes>
       <flags>
         <flag name="SSADefined" />
@@ -4938,6 +4961,23 @@
 	  clique can use that Vect2Offset call instead of their own.
           </description>
         </flag>
+	<flag name="IsUniqueConsumed" default="FALSE" >
+	  <description>Used by the uniqueness checker to determine whether
+	  a unique type has been consumed earlier on.
+	  </description>
+	</flag>
+	<flag name="IsUniqueConsumedThen" default="FALSE" >
+	  <description>Used by the uniqueness checker to determine whether
+	  a unique type has been consumed earlier on, before the THEN
+	  branch of an N_cond.
+	  </description>
+	</flag>
+	<flag name="IsUniqueConsumedElse" default="FALSE" >
+	  <description>Used by the uniqueness checker to determine whether
+	  a unique type has been consumed earlier on, before the ELSE
+	  branch of an N_cond.
+	  </description>
+	</flag>
       </flags>
     </node>
 <!--

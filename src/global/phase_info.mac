@@ -159,6 +159,8 @@ PHASE (uniquecheck, "Checking uniqueness property of objects", UPdoUniquenessInf
 
 SUBPHASE (cua, "cua", "Checking uniqueness annotations", CUAdoCheckUniquenessAnnotations)
 
+SUBPHASE (cu, "cu", "Checking uniqueness", CUdoCheckUniqueness)
+
 /******************************************************************************/
 
 PHASE (elimudt, "Eliminating User-Defined Types and Creating Wrapper Code", PHdummy)

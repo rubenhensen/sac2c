@@ -11,6 +11,7 @@ UPdoUniquenessInference (node *syntax_tree)
     DBUG_ENTER ("UPdoUniquenessInference");
 
     syntax_tree = PHrunCompilerSubPhase (SUBPH_cua, syntax_tree);
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_cu, syntax_tree);
 
     DBUG_RETURN (syntax_tree);
 }
