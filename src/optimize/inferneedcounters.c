@@ -1,8 +1,5 @@
 /*
- * $Log$
- * Revision 1.1  2005/08/19 18:17:38  ktr
- * Initial revision
- *
+ * $Id$
  */
 #include "tree_basic.h"
 #include "traverse.h"
@@ -165,9 +162,21 @@ INFNCavis (node *arg_node, info *arg_info)
 node *
 INFNCid (node *arg_node, info *arg_info)
 {
+    node *avis;
+
     DBUG_ENTER ("INFNCid");
 
-    AVIS_NEEDCOUNT (ID_AVIS (arg_node)) += 1;
+    avis = ID_AVIS (arg_node);
+
+    AVIS_NEEDCOUNT (avis) += 1;
+
+    if (AVIS_DIM (avis) != NULL) {
+        AVIS_DIM (avis) = TRAVdo (AVIS_DIM (avis), arg_info);
+    }
+
+    if (AVIS_SHAPE (avis) != NULL) {
+        AVIS_SHAPE (avis) = TRAVdo (AVIS_SHAPE (avis), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }

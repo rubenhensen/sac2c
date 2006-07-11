@@ -372,17 +372,6 @@ ICM_END( ND_PRF_IDX_SEL__DATA, (to_NT, to_sdim, from_NT, from_sdim,
                                 idx_ANY, copyfun))
 #endif
 
-#if defined(ND_PRF_SHAPE_SEL__DATA_id) || defined(ICM_ALL)
-ICM_DEF( ND_PRF_SHAPE_SEL__DATA_id, ICM_TRACE_NONE)
-  ICM_NT( to_NT)
-  ICM_INT( to_sdim)
-  ICM_NT( from_NT)
-  ICM_INT( from_sdim)
-  ICM_NT( idx_NT)
-ICM_END( ND_PRF_SHAPE_SEL__DATA_id, (to_NT, to_sdim, from_NT, from_sdim,
-                          	     idx_NT))
-#endif
-
 #if defined(ND_PRF_IDX_SHAPE_SEL__DATA) || defined(ICM_ALL)
 ICM_DEF( ND_PRF_IDX_SHAPE_SEL__DATA, ICM_TRACE_NONE)
   ICM_NT( to_NT)

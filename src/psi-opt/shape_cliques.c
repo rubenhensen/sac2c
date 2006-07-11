@@ -679,7 +679,6 @@ SCIprf (node *arg_node, info *arg_info)
         /* Can't handle these, either */
     case F_shape:
     case F_reshape:
-    case F_shape_sel:
     case F_run_mt_fold:
     case F_noop:
     case F_copy:

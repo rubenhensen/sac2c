@@ -1230,7 +1230,6 @@ EMALprf (node *arg_node, info *arg_info)
         break;
 
     case F_idx_shape_sel:
-    case F_shape_sel:
         /*
          * shape_sel always yields a scalar
          *

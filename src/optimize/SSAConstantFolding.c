@@ -235,7 +235,6 @@ static node *Shape (node *expr, info *arg_info);
 
 static node *StructOpSel (constant *idx, node *expr);
 static node *StructOpReshape (constant *idx, node *expr);
-static node *StructOpIdxSel (constant *idx, node *expr);
 static node *StructOpTake (constant *idx, node *expr);
 static node *StructOpDrop (constant *idx, node *expr);
 
@@ -859,8 +858,6 @@ Shape (node *expr, info *arg_info)
             case F_idxs2offset:
             case F_vect2offset:
             case F_sel:
-            case F_idx_sel:
-            case F_shape_sel:
             case F_idx_shape_sel:
             case F_add_SxS:
             case F_sub_SxS:
@@ -876,7 +873,6 @@ Shape (node *expr, info *arg_info)
                 break;
 
             case F_modarray:
-            case F_idx_modarray:
             case F_copy:
             case F_toi_A:
             case F_tof_A:
@@ -942,6 +938,12 @@ Shape (node *expr, info *arg_info)
             }
         } break;
 
+        case F_idx_sel:
+        case F_idx_modarray:
+            DBUG_ASSERT ((0),
+                         ("F_idx_ operations are not allowed during the optimizer!"));
+            break;
+
         default:
             break;
         }
@@ -966,6 +968,45 @@ Shape (node *expr, info *arg_info)
             res = TBmakeExprs (TBmakeId (avis), res);
         }
         res = TCmakeIntVector (res);
+    }
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * @fn node *IdxShapeSel(constant *idx, node *array_expr, info *arg_info)
+ *
+ *****************************************************************************/
+static node *
+IdxShapeSel (constant *idx, node *array_expr, info *arg_info)
+{
+    node *res = NULL;
+
+    DBUG_ENTER ("IdxShapeSel");
+
+    if (AVIS_SHAPE (ID_AVIS (array_expr)) != NULL) {
+        int shape_elem = ((int *)COgetDataVec (idx))[0];
+
+        if (NODE_TYPE (AVIS_SHAPE (ID_AVIS (array_expr))) == N_id) {
+            node *avis;
+
+            avis
+              = TBmakeAvis (ILIBtmpVarName (ID_NAME (array_expr)),
+                            TYmakeAKV (TYmakeSimpleType (T_int), COcopyConstant (idx)));
+
+            INFO_PREASSIGN (arg_info)
+              = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), TBmakeNum (shape_elem)),
+                              NULL);
+
+            res = TCmakePrf2 (F_sel, TBmakeId (avis),
+                              ID_AVIS (AVIS_SHAPE (ID_AVIS (array_expr))));
+        }
+
+        if (NODE_TYPE (AVIS_SHAPE (ID_AVIS (array_expr))) == N_array) {
+            res = DUPdoDupNode (TCgetNthExpr (shape_elem + 1, ARRAY_AELEMS (AVIS_SHAPE (
+                                                                ID_AVIS (array_expr)))));
+        }
     }
 
     DBUG_RETURN (res);
@@ -1146,66 +1187,6 @@ StructOpReshape (constant *idx, node *expr)
          * free tmp. struct constant
          */
         struc_co = CFscoFreeStructConstant (struc_co);
-    }
-
-    DBUG_RETURN (result);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *StructOpIdxSel(constant *idx, node *arg_expr)
- *
- * description:
- *   computes structural idxsel on array expressions with
- *   constant index vector.
- *
- *****************************************************************************/
-
-static node *
-StructOpIdxSel (constant *idx, node *expr)
-{
-    struct_constant *struc_co;
-    node *result;
-    constant *old_hidden_co;
-
-    DBUG_ENTER ("StructOpIdxSel");
-
-    /*
-     * tries to convert expr(especially arrays) into a structual constant
-     */
-    struc_co = CFscoExpr2StructConstant (expr);
-
-    /*
-     * given expression could be converted to struct_constant
-     */
-    if (struc_co != NULL) {
-        /*
-         * save internal hidden input constant
-         */
-        old_hidden_co = SCO_HIDDENCO (struc_co);
-
-        /*
-         * perform struc-op on hidden constant
-         */
-        SCO_HIDDENCO (struc_co) = COidxSel (idx, SCO_HIDDENCO (struc_co));
-
-        /*
-         * return modified array
-         */
-        result = CFscoDupStructConstant2Expr (struc_co);
-
-        /*
-         * free tmp. struct constant
-         */
-        struc_co = CFscoFreeStructConstant (struc_co);
-
-        /*
-         * free internal input constant
-         */
-        old_hidden_co = COfreeConstant (old_hidden_co);
-    } else {
-        result = NULL;
     }
 
     DBUG_RETURN (result);
@@ -1789,98 +1770,6 @@ CatVxV (node *vec1, node *vec2)
 /******************************************************************************
  *
  * function:
- *   node *ShapeSel(constant *idx, node *array_expr)
- *
- * description:
- *   selects element idx from the shape vector of array_expr if
- *   its shape is known
- *
- *****************************************************************************/
-static node *
-ShapeSel (constant *idx, node *array_expr)
-{
-    node *res = NULL;
-    node *shpvar = NULL;
-
-    int shape_elem;
-
-    DBUG_ENTER ("ShapeSel");
-
-    shape_elem = ((int *)COgetDataVec (idx))[0];
-
-    if ((AVIS_SHAPE (ID_AVIS (array_expr)) != NULL)
-        && (NODE_TYPE (AVIS_SHAPE (ID_AVIS (array_expr))) == N_array)) {
-        shpvar = TCgetNthExpr (shape_elem + 1,
-                               ARRAY_AELEMS (AVIS_SHAPE (ID_AVIS (array_expr))));
-        printf ("%d ", shape_elem);
-        PRTdoPrintNode (shpvar);
-    }
-
-    if (TUshapeKnown (ID_NTYPE (array_expr))) {
-        res = TBmakeNum (SHgetExtent (TYgetShape (ID_NTYPE (array_expr)), shape_elem));
-    } else if ((shpvar != NULL)
-               && (IdNotGivenByExpr (shpvar,
-                                     TCmakePrf2 (F_idx_shape_sel, TBmakeNum (shape_elem),
-                                                 DUPdoDupNode (array_expr))))) {
-        res = DUPdoDupNode (shpvar);
-    } else {
-        node *ass = AVIS_SSAASSIGN (ID_AVIS (array_expr));
-
-        if (ass != NULL) {
-            if (NODE_TYPE (ASSIGN_RHS (ass)) == N_with) {
-                node *with = ASSIGN_RHS (ass);
-                node *withop = WITH_WITHOP (with);
-                node *ids = ASSIGN_LHS (ass);
-
-                while ((ids != NULL) && (IDS_AVIS (ids) != ID_AVIS (array_expr))) {
-                    ids = IDS_NEXT (ids);
-                    withop = WITHOP_NEXT (withop);
-                }
-
-                DBUG_ASSERT (ids != NULL, "Wrong AVIS_SSAASSIGN link encountered!");
-
-                switch (NODE_TYPE (withop)) {
-                case N_modarray:
-                    res = ShapeSel (idx, MODARRAY_ARRAY (withop));
-                    if (res == NULL) {
-                        res = TCmakePrf2 (F_idx_shape_sel, TBmakeNum (shape_elem),
-                                          TBmakeId (ID_AVIS (MODARRAY_ARRAY (withop))));
-                    }
-                    break;
-
-                case N_genarray:
-                    if (NODE_TYPE (GENARRAY_SHAPE (withop)) == N_array) {
-                        node *aelems = ARRAY_AELEMS (GENARRAY_SHAPE (withop));
-                        int framedim = TCcountExprs (aelems);
-
-                        if (shape_elem < framedim) {
-                            res = DUPdoDupNode (TCgetNthExpr (shape_elem + 1, aelems));
-                        } else if (GENARRAY_DEFAULT (withop) != NULL) {
-                            res = TCmakePrf2 (F_idx_shape_sel,
-                                              TBmakeNum (shape_elem - framedim),
-                                              DUPdoDupNode (GENARRAY_DEFAULT (withop)));
-                        }
-                    }
-                    break;
-
-                default:
-                    break;
-                }
-            } else if (NODE_TYPE (ASSIGN_RHS (ass)) == N_array) {
-                node *array = ASSIGN_RHS (ass);
-                if (shape_elem < SHgetDim (ARRAY_SHAPE (array))) {
-                    res = TBmakeNum (SHgetExtent (ARRAY_SHAPE (array), shape_elem));
-                }
-            }
-        }
-    }
-
-    DBUG_RETURN (res);
-}
-
-/******************************************************************************
- *
- * function:
  *   node *Sel(node *idx_expr, node *array_expr)
  *
  * description:
@@ -1906,16 +1795,12 @@ Sel (node *idx_expr, node *array_expr)
     node *result;
     node *prf_mod;
     node *prf_sel;
-    node *prf_shape;
     node *concat;
     node *mod_arr_expr;
     node *mod_idx_expr;
     node *mod_elem_expr;
     constant *idx_co;
     constant *mod_idx_co;
-    constant *old_hidden_co;
-    constant *zero_co;
-    struct_constant *idx_struc;
 
     DBUG_ENTER ("Sel");
 
@@ -1993,44 +1878,6 @@ Sel (node *idx_expr, node *array_expr)
                 result = TCmakePrf2 (F_sel, concat,
                                      DUPdoDupTree (
                                        EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (prf_sel)))));
-            }
-            break;
-
-        case F_shape:
-            /*
-             * sel( [i], shape( A)) can be optimized using F_shape_sel.
-             *
-             * => _shape_sel_( [i], A)
-             */
-            prf_shape = ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (array_expr)));
-
-            idx_struc = CFscoExpr2StructConstant (idx_expr);
-            if (idx_struc != NULL) {
-                /*
-                 * save internal hidden input constant
-                 */
-                old_hidden_co = SCO_HIDDENCO (idx_struc);
-
-                zero_co = COmakeConstantFromInt (0);
-                SCO_HIDDENCO (idx_struc) = COidxSel (zero_co, SCO_HIDDENCO (idx_struc));
-                zero_co = COfreeConstant (zero_co);
-
-                /*
-                 * free internal input constant
-                 */
-                old_hidden_co = COfreeConstant (old_hidden_co);
-
-                result
-                  = TCmakePrf2 (F_idx_shape_sel, CFscoDupStructConstant2Expr (idx_struc),
-                                DUPdoDupNode (PRF_ARG1 (prf_shape)));
-
-                /*
-                 * free scruct constant
-                 */
-                idx_struc = CFscoFreeStructConstant (idx_struc);
-            } else {
-                result = TCmakePrf2 (F_shape_sel, DUPdoDupNode (idx_expr),
-                                     DUPdoDupNode (PRF_ARG1 (prf_shape)));
             }
             break;
 
@@ -2531,6 +2378,12 @@ CFfoldPrfExpr (prf op, node **arg_expr, info *arg_info)
             }
         break;
 
+    case F_idx_shape_sel:
+        if ((arg_co[0] != NULL) && (arg_expr[1] != NULL)) {
+            new_node = IdxShapeSel (arg_co[0], arg_expr[1], arg_info);
+        }
+        break;
+
         /* two-argument functions */
     case F_min:
         break;
@@ -2686,16 +2539,6 @@ CFfoldPrfExpr (prf op, node **arg_expr, info *arg_info)
         }
         break;
 
-    case F_idx_shape_sel:
-    case F_shape_sel:
-        if
-            FIRST_CONST_ARG_OF_TWO (arg_co, arg_expr)
-            {
-                /* for some none constant expression and constant index vector */
-                new_node = ShapeSel (arg_co[0], arg_expr[1]);
-            }
-        break;
-
     case F_sel:
         if
             FIRST_CONST_ARG_OF_TWO (arg_co, arg_expr)
@@ -2709,21 +2552,6 @@ CFfoldPrfExpr (prf op, node **arg_expr, info *arg_info)
                sel-sel combinations */
             new_node = Sel (arg_expr[0], arg_expr[1]);
         }
-        break;
-
-    case F_idx_sel:
-        if
-            TWO_CONST_ARG (arg_co)
-            {
-                /* for pure constant args */
-                new_co = COidxSel (arg_co[0], arg_co[1]);
-            }
-        else if
-            FIRST_CONST_ARG_OF_TWO (arg_co, arg_expr)
-            {
-                /* for some non constant expression and constant index skalar */
-                new_node = StructOpIdxSel (arg_co[0], arg_expr[1]);
-            }
         break;
 
     case F_take_SxV:

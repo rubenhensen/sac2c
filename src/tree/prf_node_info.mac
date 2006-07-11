@@ -78,8 +78,6 @@ PRF_IF (F_toi_S, "F_toi_S", "_toi_S_", "toi", FALSE, 1, NTCCTprf_toiS, COtoi, FA
           FALSE),
   PRF_IF (F_reshape, "F_reshape", "_reshape_", "reshape", FALSE, 2, NTCCTprf_reshape,
           COreshape, FALSE),
-  PRF_IF (F_shape_sel, "F_shape_sel", "_shape_sel_", "shape_sel", FALSE, 2,
-          NTCCTprf_shape_sel, NULL, FALSE),
   PRF_IF (F_idx_shape_sel, "F_idx_shape_sel", "_idx_shape_sel_", "idx_shape_sel", FALSE,
           2, NTCCTprf_idx_shape_sel, NULL, FALSE),
   PRF_IF (F_idx_sel, "F_idx_sel", "_idx_sel_", "idx_sel", FALSE, 2, NTCCTprf_idx_selS,

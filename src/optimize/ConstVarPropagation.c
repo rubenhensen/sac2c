@@ -260,7 +260,6 @@ CVPprf (node *arg_node, info *arg_info)
     case F_type_error:
     case F_dispatch_error:
     case F_sel:
-    case F_shape_sel:
     case F_copy:
         /*
          * Only propagate variables here
@@ -271,7 +270,6 @@ CVPprf (node *arg_node, info *arg_info)
         }
         break;
 
-    case F_idx_sel:
     case F_idx_shape_sel:
     case F_take_SxV:
     case F_drop_SxV:
@@ -300,17 +298,11 @@ CVPprf (node *arg_node, info *arg_info)
 
         break;
 
+    case F_idx_sel:
     case F_idx_modarray:
-        /*
-         * The first argument of idx_modarray must be variable
-         * the others can as well be constant scalars
-         */
-        INFO_PROPMODE (arg_info) = PROP_variable;
-        PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
-
-        INFO_PROPMODE (arg_info) = PROP_variable | PROP_scalarconst;
-        PRF_ARG2 (arg_node) = TRAVdo (PRF_ARG2 (arg_node), arg_info);
-        PRF_ARG3 (arg_node) = TRAVdo (PRF_ARG3 (arg_node), arg_info);
+        DBUG_ASSERT (((global.compiler_phase >= PH_sacopt)
+                      && (global.compiler_subphase >= SUBPH_ivei)),
+                     ("F_idx_ operations are not allowed during the optimizer!"));
         break;
 
     default:

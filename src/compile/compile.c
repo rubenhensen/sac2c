@@ -3706,61 +3706,6 @@ COMPPrfIdxModarray (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPPrfShapeSel( node *arg_node, info *arg_info)
- *
- * @brief  Compiles N_prf node of type F_shape_sel.
- *         The return value is a N_assign chain of ICMs.
- *         Note, that the old 'arg_node' is removed by COMPLet.
- *
- * Remarks:
- *   INFO_LASTIDS contains name of assigned variable.
- *
- ******************************************************************************/
-
-static node *
-COMPPrfShapeSel (node *arg_node, info *arg_info)
-{
-    node *arg1, *arg2;
-    node *let_ids;
-    node *ret_node;
-
-    DBUG_ENTER ("COMPPrfShapeSel");
-
-    let_ids = INFO_LASTIDS (arg_info);
-    arg1 = PRF_ARG1 (arg_node);
-    arg2 = PRF_ARG2 (arg_node);
-
-    DBUG_ASSERT (((NODE_TYPE (arg1) == N_id) || (NODE_TYPE (arg1) == N_array)),
-                 "1st arg of F_shape_sel is neither N_id nor N_num!");
-    DBUG_ASSERT ((NODE_TYPE (arg2) == N_id), "2nd arg of F_shape_sel is no N_id!");
-
-    if (NODE_TYPE (arg1) == N_id) {
-        ret_node = TCmakeAssignIcm3 ("ND_PRF_SHAPE_SEL__DATA_id",
-                                     MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                                                   FALSE, TRUE, FALSE, NULL),
-                                     MakeTypeArgs (ID_NAME (arg2), ID_TYPE (arg2), FALSE,
-                                                   TRUE, FALSE, NULL),
-                                     TBmakeExprs (DUPdupIdNt (arg1), NULL), NULL);
-    } else {
-        /*
-         * NODE_TYPE( arg_1) == N_array
-         */
-        ret_node = TCmakeAssignIcm3 ("ND_PRF_IDX_SHAPE_SEL__DATA",
-                                     MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                                                   FALSE, TRUE, FALSE, NULL),
-                                     MakeTypeArgs (ID_NAME (arg2), ID_TYPE (arg2), FALSE,
-                                                   TRUE, FALSE, NULL),
-                                     TBmakeExprs (DUPdupNodeNt (
-                                                    EXPRS_EXPR (ARRAY_AELEMS (arg1))),
-                                                  NULL),
-                                     NULL);
-    }
-
-    DBUG_RETURN (ret_node);
-}
-
-/** <!--********************************************************************-->
- *
  * @fn  node *COMPPrfIdxShapeSel( node *arg_node, info *arg_info)
  *
  * @brief  Compiles N_prf node of type F_idx_shape_sel.
@@ -3785,8 +3730,7 @@ COMPPrfIdxShapeSel (node *arg_node, info *arg_info)
     arg1 = PRF_ARG1 (arg_node);
     arg2 = PRF_ARG2 (arg_node);
 
-    DBUG_ASSERT (((NODE_TYPE (arg1) == N_id) || (NODE_TYPE (arg1) == N_num)),
-                 "1st arg of F_idx_shape_sel is neither N_id nor N_num!");
+    DBUG_ASSERT ((NODE_TYPE (arg1) == N_num), "1st arg of F_idx_shape_sel is no N_num!");
     DBUG_ASSERT ((NODE_TYPE (arg2) == N_id), "2nd arg of F_idx_shape_sel is no N_id!");
 
     ret_node = TCmakeAssignIcm3 ("ND_PRF_IDX_SHAPE_SEL__DATA",
@@ -4656,10 +4600,6 @@ COMPprf (node *arg_node, info *arg_info)
 
     case F_idx_modarray:
         ret_node = COMPPrfIdxModarray (arg_node, arg_info);
-        break;
-
-    case F_shape_sel:
-        ret_node = COMPPrfShapeSel (arg_node, arg_info);
         break;
 
     case F_idx_shape_sel:
