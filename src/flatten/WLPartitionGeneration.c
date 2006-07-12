@@ -173,6 +173,10 @@ CreateArrayOfShapeSels (node *array, int dim, info *arg_info)
      */
     shape_avis = TBmakeAvis (ILIBtmpVarName (ID_NAME (array)),
                              TYmakeAKD (TYmakeSimpleType (T_int), 1, SHcreateShape (0)));
+
+    FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+      = TBmakeVardec (shape_avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+
     shape_ass
       = TBmakeAssign (TBmakeLet (TBmakeIds (shape_avis, NULL),
                                  TCmakePrf1 (F_shape, TBmakeId (ID_AVIS (array)))),
