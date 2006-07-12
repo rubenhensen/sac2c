@@ -1643,6 +1643,19 @@ PRTarg (node *arg_node, info *arg_info)
         fprintf (global.outfile, "%s", ARG_NAME (arg_node));
     }
 
+    if (AVIS_DIM (ARG_AVIS (arg_node)) != NULL) {
+        fprintf (global.outfile, "(");
+        AVIS_DIM (ARG_AVIS (arg_node))
+          = TRAVdo (AVIS_DIM (ARG_AVIS (arg_node)), arg_info);
+        fprintf (global.outfile, ")");
+    }
+    if (AVIS_SHAPE (ARG_AVIS (arg_node)) != NULL) {
+        fprintf (global.outfile, "[");
+        AVIS_SHAPE (ARG_AVIS (arg_node))
+          = TRAVdo (AVIS_SHAPE (ARG_AVIS (arg_node)), arg_info);
+        fprintf (global.outfile, "]");
+    }
+
     TRAVdo (ARG_AVIS (arg_node), arg_info);
 
     if (ARG_NEXT (arg_node) != NULL) {

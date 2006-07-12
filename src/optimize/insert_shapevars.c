@@ -141,6 +141,33 @@ ISVdoInsertShapeVariablesOneFundef (node *fundef)
  * @{
  *
  *****************************************************************************/
+node *
+GenIntVector (node *element)
+{
+    node *res = NULL;
+
+    DBUG_ENTER ("GenIntVector");
+
+    res = TCmakeIntVector (TBmakeExprs (element, NULL));
+
+    DBUG_RETURN (res);
+}
+
+node *
+MakeScalarAvis (node *orig_avis)
+{
+    node *res;
+
+    DBUG_ENTER ("MakeScalarAvis");
+
+    res = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (orig_avis)),
+                      TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
+
+    AVIS_DIM (res) = TBmakeNum (0);
+    AVIS_SHAPE (res) = TCmakeIntVector (NULL);
+
+    DBUG_RETURN (res);
+}
 
 /** <!--********************************************************************-->
  * @}  <!-- Static helper functions -->
@@ -164,6 +191,11 @@ ISVfundef (node *arg_node, info *arg_info)
     DBUG_ENTER ("ISVfundef");
 
     if ((FUNDEF_BODY (arg_node) != NULL) && (FUNDEF_VARDEC (arg_node) != NULL)) {
+
+        if (FUNDEF_ARGS (arg_node) != NULL) {
+            FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
+        }
+
         FUNDEF_VARDEC (arg_node) = TRAVdo (FUNDEF_VARDEC (arg_node), arg_info);
     }
 
@@ -210,82 +242,60 @@ ISVvardec (node *arg_node, info *arg_info)
 node *
 ISVavis (node *arg_node, info *arg_info)
 {
-    node *assign = NULL;
-
     DBUG_ENTER ("ISVavis");
 
     if (AVIS_DIM (arg_node) == NULL) {
         if (TUdimKnown (AVIS_TYPE (arg_node))) {
             AVIS_DIM (arg_node) = TBmakeNum (TYgetDim (AVIS_TYPE (arg_node)));
         } else {
-            if ((AVIS_SSAASSIGN (arg_node) != NULL)
-                && (NODE_TYPE (ASSIGN_RHS (AVIS_SSAASSIGN (arg_node))) != N_funcond)) {
-                node *dimavis;
+            node *dimavis = MakeScalarAvis (arg_node);
+            ;
 
-                dimavis
-                  = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (arg_node)),
-                                TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
+            INFO_VARDECS (arg_info) = TBmakeVardec (dimavis, INFO_VARDECS (arg_info));
 
-                AVIS_DIM (dimavis) = TBmakeNum (0);
-                AVIS_SHAPE (dimavis) = TCmakeIntVector (NULL);
-
-                assign
-                  = TBmakeAssign (TBmakeLet (TBmakeIds (dimavis, NULL),
-                                             TCmakePrf1 (F_dim, TBmakeId (arg_node))),
-                                  NULL);
-                AVIS_SSAASSIGN (dimavis) = assign;
-
-                INFO_VARDECS (arg_info) = TBmakeVardec (dimavis, NULL);
-
-                AVIS_DIM (arg_node) = TBmakeId (dimavis);
-            }
+            AVIS_DIM (arg_node) = TBmakeId (dimavis);
         }
     }
 
     if (AVIS_SHAPE (arg_node) == NULL) {
         if (TUshapeKnown (AVIS_TYPE (arg_node))) {
+            /*
+             * <= AKS
+             */
             AVIS_SHAPE (arg_node) = SHshape2Array (TYgetShape (AVIS_TYPE (arg_node)));
+        } else if (TUdimKnown (AVIS_TYPE (arg_node))) {
+            /*
+             * AKD
+             */
+            int i;
+            node *aelems = NULL;
 
-        } else {
-            if ((AVIS_SSAASSIGN (arg_node) != NULL)
-                && (NODE_TYPE (ASSIGN_RHS (AVIS_SSAASSIGN (arg_node))) != N_funcond)) {
-                node *shpavis;
-                node *newass;
+            for (i = TYgetDim (AVIS_TYPE (arg_node)) - 1; i >= 0; i--) {
+                node *selavis = MakeScalarAvis (arg_node);
 
-                if (TUdimKnown (AVIS_TYPE (arg_node))) {
-                    int dim = TYgetDim (AVIS_TYPE (arg_node));
-                    shpavis = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (arg_node)),
-                                          TYmakeAKS (TYmakeSimpleType (T_int),
-                                                     SHcreateShape (1, dim)));
-                } else {
-                    shpavis = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (arg_node)),
-                                          TYmakeAKD (TYmakeSimpleType (T_int), 1,
-                                                     SHmakeShape (0)));
-                }
+                INFO_VARDECS (arg_info) = TBmakeVardec (selavis, INFO_VARDECS (arg_info));
 
-                AVIS_DIM (shpavis) = TBmakeNum (1);
-                AVIS_SHAPE (shpavis) = TCmakeIntVector (
-                  TBmakeExprs (DUPdoDupNode (AVIS_DIM (arg_node)), NULL));
-
-                newass
-                  = TBmakeAssign (TBmakeLet (TBmakeIds (shpavis, NULL),
-                                             TCmakePrf1 (F_shape, TBmakeId (arg_node))),
-                                  NULL);
-
-                AVIS_SSAASSIGN (shpavis) = newass;
-
-                assign = TCappendAssign (assign, newass);
-
-                INFO_VARDECS (arg_info) = TBmakeVardec (shpavis, INFO_VARDECS (arg_info));
-
-                AVIS_SHAPE (arg_node) = TBmakeId (shpavis);
+                aelems = TBmakeExprs (TBmakeId (selavis), aelems);
             }
-        }
-    }
 
-    if (assign != NULL) {
-        ASSIGN_NEXT (AVIS_SSAASSIGN (arg_node))
-          = TCappendAssign (assign, ASSIGN_NEXT (AVIS_SSAASSIGN (arg_node)));
+            AVIS_SHAPE (arg_node) = TCmakeIntVector (aelems);
+        } else {
+            /*
+             * AUD
+             */
+            node *shpavis;
+
+            shpavis
+              = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (arg_node)),
+                            TYmakeAKD (TYmakeSimpleType (T_int), 1, SHmakeShape (0)));
+
+            AVIS_DIM (shpavis) = TBmakeNum (1);
+            AVIS_SHAPE (shpavis) = GenIntVector (DUPdoDupNode (AVIS_DIM (arg_node)));
+
+            INFO_VARDECS (arg_info) = TBmakeVardec (shpavis, INFO_VARDECS (arg_info));
+
+            AVIS_SHAPE (arg_node) = TBmakeId (shpavis);
+        }
     }
 
     DBUG_RETURN (arg_node);
