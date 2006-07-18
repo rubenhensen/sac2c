@@ -700,10 +700,13 @@ NTCblock (node *arg_node, info *arg_info)
 node *
 NTCvardec (node *arg_node, info *arg_info)
 {
+    node *avis;
     ntype *type;
     DBUG_ENTER ("NTCvardec");
 
-    type = AVIS_TYPE (VARDEC_AVIS (arg_node));
+    avis = VARDEC_AVIS (arg_node);
+    type = AVIS_TYPE (avis);
+
     if (type != NULL) {
         /**
          * this means that the vardec has been created
@@ -718,8 +721,21 @@ NTCvardec (node *arg_node, info *arg_info)
          * uses of non-defined vars when running the first time!
          * Hence, we just eliminate the existing types and start from scratch.
          */
-        AVIS_TYPE (VARDEC_AVIS (arg_node)) = NULL;
+        AVIS_TYPE (avis) = NULL;
         type = TYfreeType (type);
+    }
+
+    /*
+     * For shape variables, try to reconstruct type from dim, shape here
+     * as they are never assigned!
+     */
+    if (AVIS_SHAPEVAROF (avis) != NULL) {
+        if (NUM_VAL (AVIS_DIM (avis)) == 0) {
+            AVIS_TYPE (avis) = TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0));
+        } else {
+            DBUG_ASSERT (NUM_VAL (AVIS_DIM (avis)) == 1, "Illegal shape variable found!");
+            AVIS_TYPE (avis) = TYmakeAKD (TYmakeSimpleType (T_int), 1, SHmakeShape (0));
+        }
     }
 
     if (VARDEC_NEXT (arg_node) != NULL) {

@@ -743,6 +743,34 @@ PRTids (node *arg_node, info *arg_info)
 
         fprintf (global.outfile, "%s", IDS_NAME (arg_node));
 
+        if (IDS_AVIS (arg_node) != NULL) {
+            node *avis = IDS_AVIS (arg_node);
+
+            if (AVIS_DIM (avis) != NULL) {
+                node *dim = AVIS_DIM (avis);
+
+                if ((NODE_TYPE (dim) == N_id)
+                    && (AVIS_SHAPEVAROF (ID_AVIS (dim)) == avis)) {
+                    fprintf (global.outfile, "(%s)", ID_NAME (dim));
+                }
+            }
+
+            if (AVIS_SHAPE (avis) != NULL) {
+                node *shape = AVIS_SHAPE (avis);
+
+                if (((NODE_TYPE (shape) == N_id)
+                     && (AVIS_SHAPEVAROF (ID_AVIS (shape)) == avis))
+                    || ((NODE_TYPE (shape) == N_array) && (ARRAY_AELEMS (shape) != NULL)
+                        && (NODE_TYPE (EXPRS_EXPR (ARRAY_AELEMS (shape))) == N_id)
+                        && (AVIS_SHAPEVAROF (ID_AVIS (EXPRS_EXPR (ARRAY_AELEMS (shape))))
+                            == avis))) {
+                    fprintf (global.outfile, "[");
+                    shape = TRAVdo (shape, arg_info);
+                    fprintf (global.outfile, "]");
+                }
+            }
+        }
+
         DBUG_EXECUTE ("PRINT_AVIS", if (IDS_AVIS (arg_node) != NULL) {
             fprintf (global.outfile, "/* avis: %p */", IDS_AVIS (arg_node));
         });

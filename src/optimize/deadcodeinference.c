@@ -147,6 +147,10 @@ MarkAvisAlive (node *avis)
         AVIS_ISDEAD (avis) = FALSE;
         DBUG_PRINT ("DCI", ("marking var %s as alive", AVIS_NAME (avis)));
 
+        if (AVIS_SHAPEVAROF (avis) != NULL) {
+            MarkAvisAlive (AVIS_SHAPEVAROF (avis));
+        }
+
         if (AVIS_DIM (avis) != NULL) {
             AVIS_DIM (avis) = TRAVdo (AVIS_DIM (avis), NULL);
         }
@@ -197,12 +201,12 @@ DCIfundef (node *arg_node, info *arg_info)
             /*
              * Traverse ARGS and VARDECS to initialize AVIS_ISDEAD
              */
-            if (FUNDEF_ARGS (arg_node) != NULL) {
-                FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), info);
-            }
-
             if (FUNDEF_VARDEC (arg_node) != NULL) {
                 FUNDEF_VARDEC (arg_node) = TRAVdo (FUNDEF_VARDEC (arg_node), info);
+            }
+
+            if (FUNDEF_ARGS (arg_node) != NULL) {
+                FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), info);
             }
 
             if (FUNDEF_ISLACFUN (arg_node)) {
@@ -252,10 +256,9 @@ DCIarg (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("DCIarg");
 
-    if (FUNDEF_ISLACFUN (INFO_FUNDEF (arg_info))) {
-        AVIS_ISDEAD (ARG_AVIS (arg_node)) = TRUE;
-        DBUG_PRINT ("DCI", ("marking argument %s as dead", ARG_NAME (arg_node)));
-    } else {
+    AVIS_ISDEAD (ARG_AVIS (arg_node)) = TRUE;
+
+    if (!FUNDEF_ISLACFUN (INFO_FUNDEF (arg_info))) {
         MarkAvisAlive (ARG_AVIS (arg_node));
     }
 

@@ -350,13 +350,9 @@ extern node *TCremoveFundef (node *fundef_chain, node *fundef);
 /*
  * TODO: REMOVE US CAUSE WE'RE UGLY
  */
-#define VARDEC_BASETYPE(n) (TYPES_BASETYPE (VARDEC_TYPE (n)))
 #define VARDEC_DIM(n) (TYPES_DIM (VARDEC_TYPE (n)))
 #define VARDEC_SHAPE(n, x) (TYPES_SHAPE (VARDEC_TYPE (n), x))
 #define VARDEC_SHPSEG(n) (TYPES_SHPSEG (VARDEC_TYPE (n)))
-#define VARDEC_TNAME(n) (TYPES_NAME (VARDEC_TYPE (n)))
-#define VARDEC_TMOD(n) (TYPES_MOD (VARDEC_TYPE (n)))
-#define VARDEC_TDEF(n) (TYPES_TDEF (VARDEC_TYPE (n)))
 
 /******************************************************************************
  *
@@ -383,35 +379,6 @@ extern node *TCaddVardecs (node *fundef, node *vardecs);
 
 extern node *TCappendVardec (node *vardec_chain, node *vardec);
 
-/******************************************************************************
- *
- * function:
- *   node *TCmakeVardecFromArg( node *arg)
- *
- * description:
- *   copies all attributes from an arg node to a new allocated vardec node.
- *
- * remark:
- *   This function is used by ssa-transformation to rename a redefinition
- *   of an fundef argument. The Next pointer is set to NULL.
- *
- *
- ******************************************************************************/
-
-extern node *TCmakeVardecFromArg (node *arg_node);
-
-/******************************************************************************
- *
- * function:
- *   node *TCmakeArgFromVardec( node *vardec_node)
- *
- * description:
- *   copies all attributes from an vardec node to a new allocated arg node.
- *
- ******************************************************************************/
-
-extern node *TCmakeArgFromVardec (node *vardec_node);
-
 extern int TCcountVardecs (node *vardecs);
 
 /*--------------------------------------------------------------------------*/
@@ -430,12 +397,8 @@ extern int TCcountVardecs (node *vardecs);
 /*
  * TODO: REMOVE US CAUSE WE'RE UGLY
  */
-#define ARG_BASETYPE(n) (TYPES_BASETYPE (ARG_TYPE (n)))
 #define ARG_DIM(n) (TYPES_DIM (ARG_TYPE (n)))
-#define ARG_SHAPE(n, x) (TYPES_SHAPE (ARG_TYPE (n), x))
-#define ARG_SHPSEG(n) (TYPES_SHPSEG (ARG_TYPE (n)))
 #define ARG_TNAME(n) (TYPES_NAME (ARG_TYPE (n)))
-#define ARG_TMOD(n) (TYPES_MOD (ARG_TYPE (n)))
 
 extern int TCcountArgs (node *args);
 extern node *TCappendArgs (node *arg_chain, node *arg);

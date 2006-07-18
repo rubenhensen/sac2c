@@ -185,11 +185,14 @@ CreateArrayOfShapeSels (node *array, int dim, info *arg_info)
     AVIS_SSAASSIGN (shape_avis) = shape_ass;
 
     for (i = dim - 1; i >= 0; i--) {
+        shape *shp;
         node *idx_avis, *sel_avis;
 
-        idx_avis
-          = TBmakeAvis (ILIBtmpVarName (ID_NAME (array)),
-                        TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (1, 1)));
+        shp = SHcreateShape (1, i);
+        idx_avis = TBmakeAvis (ILIBtmpVarName (ID_NAME (array)),
+                               TYmakeAKV (TYmakeSimpleType (T_int),
+                                          COmakeConstantFromShape (shp)));
+        shp = SHfreeShape (shp);
 
         sel_avis = TBmakeAvis (ILIBtmpVarName (ID_NAME (array)),
                                TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));

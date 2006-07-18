@@ -363,21 +363,21 @@ OPTdoOptimize (node *arg_node)
                 arg_node = PHrunCompilerSubPhase (SUBPH_cseive, arg_node);
             }
         }
+    }
 
+    /*
+     * Eliminate shape variables
+     */
+    if (global.optimize.doisv) {
+        arg_node = PHrunCompilerSubPhase (SUBPH_esv, arg_node);
+    }
+
+    if (global.optimize.doisv || global.optimize.doive) {
         /*
-         * Eliminate shape variables
+         * Dead code removal after ive
          */
-        if (global.optimize.doisv) {
-            arg_node = PHrunCompilerSubPhase (SUBPH_esv, arg_node);
-        }
-
-        if (global.optimize.doisv || global.optimize.doive) {
-            /*
-             * Dead code removal after ive
-             */
-            if (global.optimize.dodcr) {
-                arg_node = PHrunCompilerSubPhase (SUBPH_dcrive, arg_node);
-            }
+        if (global.optimize.dodcr) {
+            arg_node = PHrunCompilerSubPhase (SUBPH_dcrive, arg_node);
         }
     }
 

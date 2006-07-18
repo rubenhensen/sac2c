@@ -559,75 +559,6 @@ TearDownSSAT (node *avis)
 
 /** <!--********************************************************************-->
  *
- * @fn node *SSATnewVardec(node *old_vardec_or_arg)
- *
- *   @brief creates a new (renamed) vardec of the given original vardec.
- *          The global ssa rename counter of the baseid is incremented.
- *          The ssacnt node is shared between all renamed instances of the
- *          original vardec.
- *
- ******************************************************************************/
-static node *
-SSATnewVardec (node *old_vardec_or_arg)
-{
-    node *ssacnt;
-    node *new_vardec;
-    ntype *type;
-    char tmpstring[TMP_STRING_LEN];
-
-    DBUG_ENTER ("SSATnewVardec");
-
-    ssacnt = AVIS_SSACOUNT (DECL_AVIS (old_vardec_or_arg));
-
-    if (NODE_TYPE (old_vardec_or_arg) == N_arg) {
-        new_vardec = TCmakeVardecFromArg (old_vardec_or_arg);
-        if (global.compiler_phase <= PH_typecheck) {
-            /**
-             * we are running SSATransform prior or during TC! Therefore,
-             * the type needs to be generalized to unknown[*]. This requires
-             * insert_type_conv to be run prior to SSATransform!
-             */
-            type = VARDEC_NTYPE (new_vardec);
-            VARDEC_NTYPE (new_vardec) = TYmakeAUD (TYmakeSimpleType (T_unknown));
-            type = TYfreeType (type);
-            /**
-             * Stephan memorial line:  (please do not remove)
-             *    DBUG_PRINT( "SBS", ("POOP"));
-             */
-        }
-    } else {
-        new_vardec = DUPdoDupNode (old_vardec_or_arg);
-    }
-
-    /* increment ssa renaming counter */
-    SSACNT_COUNT (ssacnt) = SSACNT_COUNT (ssacnt) + 1;
-
-    /* create new unique name */
-    sprintf (tmpstring, "__SSA%d_%d", global.ssaform_phase, SSACNT_COUNT (ssacnt));
-    ILIBfree (VARDEC_NAME (new_vardec));
-    VARDEC_NAME (new_vardec) = ILIBstringConcat (SSACNT_BASEID (ssacnt), tmpstring);
-    ;
-
-    /**
-     * reset ssa stack
-     * This is required since the new variable in fact has no renaming yet.
-     * Bug 150 showed that this consistency actually is required.
-     * If the predicate of a conditional has been renamed when the funcond is build,
-     * the old version of the predicate variable is chosen for the funcond predicate.
-     * Although this could be avoided by NOT traversing the funcond predicates
-     * this solution is cleaner as it keeps consistency of the AVIS atributes.
-     */
-    AVIS_SSASTACK_TOP (VARDEC_AVIS (new_vardec)) = NULL;
-    AVIS_SSATHEN (VARDEC_AVIS (new_vardec)) = NULL;
-    AVIS_SSAELSE (VARDEC_AVIS (new_vardec)) = NULL;
-
-    IncSSATCounter ();
-
-    DBUG_RETURN (new_vardec);
-}
-
-/** <!--********************************************************************-->
- *
  * @fn node *CreateFuncondAssign( node *cond, node *id, node *assign)
  *
  *   @brief create a funcond assignment of the form
@@ -655,6 +586,43 @@ CreateFuncondAssign (node *cond, node *id, node *assign)
       = TBmakeAssign (TBmakeLet (TBmakeIds (ID_AVIS (id), NULL), funcond), assign);
 
     DBUG_RETURN (new_assign);
+}
+
+static void
+SetShapeVarsDefined (node *avis)
+{
+    DBUG_ENTER ("SetShapeVarsDefined");
+
+    if ((AVIS_DIM (avis) != NULL) && (NODE_TYPE (AVIS_DIM (avis)) == N_id)
+        && (AVIS_SHAPEVAROF (ID_AVIS (AVIS_DIM (avis))) == avis)) {
+        node *dimavis = ID_AVIS (AVIS_DIM (avis));
+        AVIS_SSADEFINED (dimavis) = TRUE;
+        AVIS_SSASTACK_TOP (dimavis) = dimavis;
+    }
+
+    if (AVIS_SHAPE (avis) != NULL) {
+        if ((NODE_TYPE (AVIS_SHAPE (avis)) == N_id)
+            && (AVIS_SHAPEVAROF (ID_AVIS (AVIS_SHAPE (avis))) == avis)) {
+            node *shpavis = ID_AVIS (AVIS_SHAPE (avis));
+            AVIS_SSADEFINED (shpavis) = TRUE;
+            AVIS_SSASTACK_TOP (shpavis) = shpavis;
+        }
+
+        if ((NODE_TYPE (AVIS_SHAPE (avis)) == N_array)) {
+            node *exprs = ARRAY_AELEMS (AVIS_SHAPE (avis));
+            while (exprs != NULL) {
+                if ((NODE_TYPE (EXPRS_EXPR (exprs)) == N_id)
+                    && (AVIS_SHAPEVAROF (ID_AVIS (EXPRS_EXPR (exprs))) == avis)) {
+                    node *selavis = ID_AVIS (EXPRS_EXPR (exprs));
+                    AVIS_SSADEFINED (selavis) = TRUE;
+                    AVIS_SSASTACK_TOP (selavis) = selavis;
+                }
+                exprs = EXPRS_NEXT (exprs);
+            }
+        }
+    }
+
+    DBUG_VOID_RETURN;
 }
 
 /*@}*/
@@ -839,34 +807,36 @@ SSATlet (node *arg_node, info *arg_info)
 node *
 SSATarg (node *arg_node, info *arg_info)
 {
+    node *avis = ARG_AVIS (arg_node);
+
     DBUG_ENTER ("SSATarg");
 
     DBUG_PRINT ("SSA", ("working on arg %s", ARG_NAME (arg_node)));
 
-    if (AVIS_SSACOUNT (ARG_AVIS (arg_node)) == NULL) {
+    if (AVIS_SSACOUNT (avis) == NULL) {
         node *topblock = FUNDEF_BODY (INFO_FUNDEF (arg_info));
         BLOCK_SSACOUNTER (topblock)
           = TBmakeSsacnt (0, ILIBstringCopy (ARG_NAME (arg_node)),
                           BLOCK_SSACOUNTER (topblock));
-        AVIS_SSACOUNT (ARG_AVIS (arg_node)) = BLOCK_SSACOUNTER (topblock);
+        AVIS_SSACOUNT (avis) = BLOCK_SSACOUNTER (topblock);
     }
 
     /* actual rename-to target on stack*/
-    AVIS_SSASTACK_TOP (ARG_AVIS (arg_node)) = ARG_AVIS (arg_node);
-    AVIS_SSADEFINED (ARG_AVIS (arg_node)) = TRUE;
+    AVIS_SSASTACK_TOP (avis) = avis;
+    AVIS_SSADEFINED (avis) = TRUE;
 
     /*
      * mark stack as active
      * (later added vardecs and stacks are ignored when stacking)
      */
-    AVIS_SSASTACK_INUSE (ARG_AVIS (arg_node)) = TRUE;
+    AVIS_SSASTACK_INUSE (avis) = TRUE;
 
     /* clear all traversal infos in avis node */
-    AVIS_SSATHEN (ARG_AVIS (arg_node)) = NULL;
-    AVIS_SSAELSE (ARG_AVIS (arg_node)) = NULL;
+    AVIS_SSATHEN (avis) = NULL;
+    AVIS_SSAELSE (avis) = NULL;
 
     /* no direct assignment available (yet) */
-    AVIS_SSAASSIGN (ARG_AVIS (arg_node)) = NULL;
+    AVIS_SSAASSIGN (avis) = NULL;
 
     /* traverse next arg */
     if (ARG_NEXT (arg_node) != NULL) {
@@ -892,29 +862,38 @@ SSATarg (node *arg_node, info *arg_info)
 node *
 SSATvardec (node *arg_node, info *arg_info)
 {
+    node *avis = VARDEC_AVIS (arg_node);
+
     DBUG_ENTER ("SSATvardec");
 
-    if (AVIS_SSACOUNT (VARDEC_AVIS (arg_node)) == NULL) {
+    if (AVIS_SSACOUNT (avis) == NULL) {
         node *topblock = FUNDEF_BODY (INFO_FUNDEF (arg_info));
         BLOCK_SSACOUNTER (topblock)
           = TBmakeSsacnt (0, ILIBstringCopy (VARDEC_NAME (arg_node)),
                           BLOCK_SSACOUNTER (topblock));
-        AVIS_SSACOUNT (VARDEC_AVIS (arg_node)) = BLOCK_SSACOUNTER (topblock);
+        AVIS_SSACOUNT (avis) = BLOCK_SSACOUNTER (topblock);
     }
 
     /* jet undefined on stack */
-    AVIS_SSASTACK_TOP (VARDEC_AVIS (arg_node)) = NULL;
-    AVIS_SSADEFINED (VARDEC_AVIS (arg_node)) = FALSE;
+    AVIS_SSASTACK_TOP (avis) = NULL;
+    AVIS_SSADEFINED (avis) = FALSE;
+
+    if ((AVIS_SHAPEVAROF (avis) != NULL)
+        && (NODE_TYPE (AVIS_DECL (AVIS_SHAPEVAROF (avis))) == N_arg)) {
+        AVIS_SSASTACK_TOP (avis) = avis;
+        AVIS_SSADEFINED (avis) = TRUE;
+        printf ("%s used as shapevar of arg\n", AVIS_NAME (avis));
+    }
 
     /*
      * mark stack as activ
      * (later added vardecs and stacks are ignored when stacking)
      */
-    AVIS_SSASTACK_INUSE (VARDEC_AVIS (arg_node)) = TRUE;
+    AVIS_SSASTACK_INUSE (avis) = TRUE;
 
     /* clear all traversal infos in avis node */
-    AVIS_SSATHEN (VARDEC_AVIS (arg_node)) = NULL;
-    AVIS_SSAELSE (VARDEC_AVIS (arg_node)) = NULL;
+    AVIS_SSATHEN (avis) = NULL;
+    AVIS_SSAELSE (avis) = NULL;
 
     /* traverse next vardec */
     if (VARDEC_NEXT (arg_node) != NULL) {
@@ -1419,64 +1398,103 @@ SSATreturn (node *arg_node, info *arg_info)
 /*@{*/
 /** <!--********************************************************************-->
  *
- * @fn node *SSATids(node *arg_ids, info *arg_info)
+ * @fn node *SSATids(node *arg_node, info *arg_info)
  *
  *   @brief creates new (renamed) instance of defined variables.
  *
  ******************************************************************************/
 
 node *
-SSATids (node *arg_ids, info *arg_info)
+SSATids (node *arg_node, info *arg_info)
 {
-    node *new_vardec;
+    node *avis;
 
     DBUG_ENTER ("SSATids");
 
-    IDS_AVIS (arg_ids)
-      = EnsureSsaStackElement (IDS_AVIS (arg_ids), INFO_NESTLEVEL (arg_info));
+    IDS_AVIS (arg_node)
+      = EnsureSsaStackElement (IDS_AVIS (arg_node), INFO_NESTLEVEL (arg_info));
 
-    if (!AVIS_SSADEFINED (IDS_AVIS (arg_ids))) {
+    avis = IDS_AVIS (arg_node);
+
+    if (!AVIS_SSADEFINED (avis)) {
         /*
          * first definition of variable (no renaming)
          */
-        AVIS_SSASTACK_TOP (IDS_AVIS (arg_ids)) = IDS_AVIS (arg_ids);
-        AVIS_SSADEFINED (IDS_AVIS (arg_ids)) = TRUE;
+        AVIS_SSASTACK_TOP (avis) = avis;
+        AVIS_SSADEFINED (avis) = TRUE;
         DBUG_PRINT ("SSA", ("first definition, no renaming: %s (" F_PTR ")",
-                            AVIS_NAME (IDS_AVIS (arg_ids)), IDS_AVIS (arg_ids)));
+                            AVIS_NAME (avis), avis));
+
+        SetShapeVarsDefined (avis);
 
     } else {
         /*
          * redefinition - create new unique variable/vardec
          */
-        new_vardec = SSATnewVardec (AVIS_DECL (IDS_AVIS (arg_ids)));
+        node *ssacnt;
+        node *new_avis;
+        char tmpstring[TMP_STRING_LEN];
+        char *new_name;
 
-        VARDEC_NEXT (new_vardec) = FUNDEF_VARDEC (INFO_FUNDEF (arg_info));
-        FUNDEF_VARDEC (INFO_FUNDEF (arg_info)) = new_vardec;
+        ssacnt = AVIS_SSACOUNT (avis);
+
+        /* increment ssa renaming counter */
+        SSACNT_COUNT (ssacnt) += 1;
+
+        /* make new avis */
+        new_avis = DUPdoDupNode (avis);
+        AVIS_SSALPINV (avis) = FALSE;
+
+        /* create new unique name */
+        sprintf (tmpstring, "__SSA%d_%d", global.ssaform_phase, SSACNT_COUNT (ssacnt));
+        new_name = ILIBstringConcat (SSACNT_BASEID (ssacnt), tmpstring);
+
+        AVIS_NAME (new_avis) = ILIBfree (AVIS_NAME (new_avis));
+        AVIS_NAME (new_avis) = new_name;
+
+        if (global.compiler_phase <= PH_typecheck) {
+            /**
+             * we are running SSATransform prior or during TC! Therefore,
+             * the type needs to be generalized to unknown[*]. This requires
+             * insert_type_conv to be run prior to SSATransform!
+             */
+            AVIS_TYPE (new_avis) = TYfreeType (AVIS_TYPE (new_avis));
+            AVIS_TYPE (new_avis) = TYmakeAUD (TYmakeSimpleType (T_unknown));
+            /**
+             * Stephan memorial line:  (please do not remove)
+             *    DBUG_PRINT( "SBS", ("POOP"));
+             */
+        }
+
+        FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+          = TBmakeVardec (new_avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
 
         DBUG_PRINT ("SSA", ("re-definition, renaming: %s (" F_PTR ") -> %s",
-                            AVIS_NAME (IDS_AVIS (arg_ids)), IDS_AVIS (arg_ids),
-                            AVIS_NAME (VARDEC_AVIS (new_vardec))));
+                            AVIS_NAME (avis), avis, AVIS_NAME (new_avis)));
 
         /* new rename-to target for old vardec */
-        AVIS_SSASTACK_TOP (IDS_AVIS (arg_ids)) = VARDEC_AVIS (new_vardec);
+        AVIS_SSASTACK_TOP (avis) = new_avis;
 
         /* rename this ids */
-        IDS_AVIS (arg_ids) = VARDEC_AVIS (new_vardec);
+        IDS_AVIS (arg_node) = new_avis;
+
+        /* Increase global renaming counter */
+        IncSSATCounter ();
     }
 
-    AVIS_SSAASSIGN (IDS_AVIS (arg_ids)) = INFO_ASSIGN (arg_info);
+    AVIS_SSAASSIGN (IDS_AVIS (arg_node)) = INFO_ASSIGN (arg_info);
 
     /* traverese next ids */
-    if (IDS_NEXT (arg_ids) != NULL) {
-        IDS_NEXT (arg_ids) = TRAVdo (IDS_NEXT (arg_ids), arg_info);
+    if (IDS_NEXT (arg_node) != NULL) {
+        IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
     }
 
-    DBUG_RETURN (arg_ids);
+    DBUG_RETURN (arg_node);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn node *TreatIdsAsRhs(ids *arg_ids, info *arg_info)
+ * @fn node *TreatIdsAsRhs(ids *arg_node, info *arg_info)
  *
  *   @brief rename variable to actual ssa renaming counter.
  *          This function is only to used in the context of multiple WITHID
@@ -1484,19 +1502,19 @@ SSATids (node *arg_ids, info *arg_info)
  *
  ******************************************************************************/
 static node *
-TreatIdsAsRhs (node *arg_ids, info *arg_info)
+TreatIdsAsRhs (node *arg_node, info *arg_info)
 {
     node *new_avis;
 
     DBUG_ENTER ("TreatIdsAsRhs");
 
-    IDS_AVIS (arg_ids)
-      = RemoveOldSsaStackElements (IDS_AVIS (arg_ids), INFO_NESTLEVEL (arg_info));
+    IDS_AVIS (arg_node)
+      = RemoveOldSsaStackElements (IDS_AVIS (arg_node), INFO_NESTLEVEL (arg_info));
 
-    new_avis = AVIS_SSASTACK_TOP (IDS_AVIS (arg_ids));
+    new_avis = AVIS_SSASTACK_TOP (IDS_AVIS (arg_node));
 
     /* do renaming to new ssa vardec */
-    if ((!AVIS_SSADEFINED (IDS_AVIS (arg_ids))) || (new_avis == NULL)) {
+    if ((!AVIS_SSADEFINED (IDS_AVIS (arg_node))) || (new_avis == NULL)) {
         /**
          * One may think, that it would suffice to check AVIS_SSADEFINED here.
          * However, it may happen that despite AVIS_SSADEFINED being set
@@ -1525,18 +1543,18 @@ TreatIdsAsRhs (node *arg_ids, info *arg_info)
          */
         if (INFO_ALLOW_GOS (arg_info) == FALSE) {
             CTIerrorLine (global.linenum, "Variable %s used without definition",
-                          IDS_NAME (arg_ids));
+                          IDS_NAME (arg_node));
         }
     } else {
-        IDS_AVIS (arg_ids) = new_avis;
+        IDS_AVIS (arg_node) = new_avis;
     }
 
     /* traverese next ids */
-    if (IDS_NEXT (arg_ids) != NULL) {
-        IDS_NEXT (arg_ids) = TreatIdsAsRhs (IDS_NEXT (arg_ids), arg_info);
+    if (IDS_NEXT (arg_node) != NULL) {
+        IDS_NEXT (arg_node) = TreatIdsAsRhs (IDS_NEXT (arg_node), arg_info);
     }
 
-    DBUG_RETURN (arg_ids);
+    DBUG_RETURN (arg_node);
 }
 
 /*@}*/

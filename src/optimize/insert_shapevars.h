@@ -18,5 +18,11 @@ extern node *ISVdoInsertShapeVariables (node *syntax_tree);
 extern node *ISVfundef (node *arg_node, info *arg_info);
 extern node *ISVvardec (node *arg_node, info *arg_info);
 extern node *ISVavis (node *arg_node, info *arg_info);
+extern node *ISVblock (node *arg_node, info *arg_info);
+extern node *ISVassign (node *arg_node, info *arg_info);
+extern node *ISVlet (node *arg_node, info *arg_info);
+extern node *ISVids (node *arg_node, info *arg_info);
+extern node *ISVwith (node *arg_node, info *arg_info);
+extern node *ISVpart (node *arg_node, info *arg_info);
 
 #endif /* _SAC_INSERT_SHAPEVARS_H_ */

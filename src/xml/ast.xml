@@ -1054,15 +1054,64 @@
           <node name="Fundef" />
 	  <node name="Avis" />
 	  <node name="Vardec" />
+	  <node name="Block" />
+	  <node name="Assign" />
+	  <node name="Let" />
+          <node name="Ids" />
+          <node name="With" />
+          <node name="Part" />
    	</travuser>
-      </traversal>      
+        <travnone>
+          <node name="Withid" />
+        </travnone>
+      </traversal>     
+      <traversal id="MDE" name="Make Dim Expression" default="error"
+        include="makedimexpr.h">
+        <travuser>
+          <node name="Id" />
+          <node name="Funcond" />
+          <node name="Ap" />
+          <node name="Array" />
+          <node name="Prf" />
+          <node name="With" />
+          <node name="Bool" />
+          <node name="Char" />
+          <node name="Num" />
+          <node name="Float" />
+          <node name="Double" />         
+        </travuser>
+      </traversal>
+      <traversal id="MSE" name="Make Shape Expression" default="error"
+        include="makeshapeexpr.h">
+        <travuser>
+          <node name="Id" />
+          <node name="Funcond" />
+          <node name="Ap" />
+          <node name="Array" />
+          <node name="Prf" />
+          <node name="With" />
+          <node name="Bool" />
+          <node name="Char" />
+          <node name="Num" />
+          <node name="Float" />
+          <node name="Double" />         
+        </travuser>
+      </traversal>
       <traversal id="ESV" name="Eliminate Shape Variables" default="sons" 
         include="elim_shapevars.h" >
 	<travuser>
+          <node name="Fundef" />
 	  <node name="Avis" />
+          <node name="Block" />
+          <node name="Assign" />
+          <node name="Let" />
+          <node name="Ids" />
+          <node name="Id" />
+          <node name="Cond" />
+          <node name="Funcond" />
    	</travuser>
         <travnone>
-          <node name="Assign" />
+          <node name="Withid" />
         </travnone>
       </traversal>      
       <traversal id="RTUP" name="Reverse Type Upgrade" default="sons" include="reverse_type_upgrade.h" >
@@ -4614,7 +4663,7 @@
             <target mandatory="no">
               <set name="Expr" />
               <phases>
-                <all />
+                <range from="isv" to="esv" />
               </phases>
             </target>
           </targets>
@@ -4624,13 +4673,25 @@
             <target mandatory="no">
               <set name="Expr" />
               <phases>
-                <all />
+                <range from="isv" to="esv" />
               </phases>
             </target>
           </targets>
         </son>        
       </sons>
       <attributes>
+        <attribute name="ShapeVarOf" default="NULL">
+          <type name="Link">
+            <targets>
+              <target mandatory="no">
+                <node name="Avis" />
+                <phases>
+                  <range from="isv" to="esv" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
         <attribute name="Decl" default="NULL">
           <type name="Link">
             <targets>

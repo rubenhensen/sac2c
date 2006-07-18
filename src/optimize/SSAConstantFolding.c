@@ -230,8 +230,8 @@ static shape *GetShapeOfExpr (node *expr);
  * that can handle all these cases internally
  */
 
-static constant *Dim (node *expr);
-static node *Shape (node *expr, info *arg_info);
+static node *Dim (node *expr);
+static node *Shape (node *expr);
 
 static node *StructOpSel (constant *idx, node *expr);
 static node *StructOpReshape (constant *idx, node *expr);
@@ -680,28 +680,6 @@ Args2Const (constant **co_array, node **arg_expr, int max_args)
     DBUG_RETURN (co_array);
 }
 
-/** <!--********************************************************************-->
- *
- * @fn bool IdNotGivenByExpr( node *id, node *expr)
- *
- *****************************************************************************/
-static bool
-IdNotGivenByExpr (node *id, node *expr)
-{
-    bool res = TRUE;
-
-    DBUG_ENTER ("IdNotGivenByExpr");
-
-    if ((NODE_TYPE (id) == N_id) && (AVIS_SSAASSIGN (ID_AVIS (id)) != NULL)) {
-        res = (CMPTdoCompareTree (ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (id))), expr)
-               == CMPT_NEQ);
-    }
-
-    expr = FREEdoFreeNode (expr);
-
-    DBUG_RETURN (res);
-}
-
 /******************************************************************************
  *
  * function:
@@ -713,26 +691,28 @@ IdNotGivenByExpr (node *id, node *expr)
  *
  *****************************************************************************/
 
-static constant *
+static node *
 Dim (node *expr)
 {
-    constant *result;
+    node *res = NULL;
 
     DBUG_ENTER ("Dim");
 
-    if ((NODE_TYPE (expr) == N_id) && TUdimKnown (ID_NTYPE (expr))) {
-        result = COmakeConstantFromInt (TYgetDim (ID_NTYPE (expr)));
-    } else {
-        result = NULL;
+    DBUG_ASSERT (NODE_TYPE (expr) == N_id, "Dim can only be applied to N_id nodes!");
+
+    if (TUdimKnown (ID_NTYPE (expr))) {
+        res = TBmakeNum (TYgetDim (ID_NTYPE (expr)));
+    } else if (AVIS_DIM (ID_AVIS (expr)) != NULL) {
+        res = DUPdoDupNode (AVIS_DIM (ID_AVIS (expr)));
     }
 
-    DBUG_RETURN (result);
+    DBUG_RETURN (res);
 }
 
 /******************************************************************************
  *
  * function:
- *   node *Shape(node *expr, info *arg_info)
+ *   node *Shape(node *expr)
  *
  * description:
  *   computes the shape of a given identifier. returns the shape as expression
@@ -742,7 +722,7 @@ Dim (node *expr)
  *****************************************************************************/
 
 static node *
-Shape (node *expr, info *arg_info)
+Shape (node *expr)
 {
     node *res = NULL;
 
@@ -752,222 +732,8 @@ Shape (node *expr, info *arg_info)
 
     if (TUshapeKnown (ID_NTYPE (expr))) {
         res = SHshape2Array (TYgetShape (ID_NTYPE (expr)));
-    } else if ((AVIS_SHAPE (ID_AVIS (expr)) != NULL)
-               && (IdNotGivenByExpr (AVIS_SHAPE (ID_AVIS (expr)),
-                                     TCmakePrf1 (F_shape, DUPdoDupNode (expr))))) {
+    } else if (AVIS_SHAPE (ID_AVIS (expr)) != NULL) {
         res = DUPdoDupNode (AVIS_SHAPE (ID_AVIS (expr)));
-    } else if (AVIS_SSAASSIGN (ID_AVIS (expr)) != NULL) {
-        node *ass = AVIS_SSAASSIGN (ID_AVIS (expr));
-
-        switch (NODE_TYPE (ASSIGN_RHS (ass))) {
-        case N_id: {
-            node *id = ASSIGN_RHS (ass);
-            if (TUshapeKnown (ID_NTYPE (id))) {
-                res = SHshape2Array (TYgetShape (ID_NTYPE (id)));
-            } else {
-                if (AVIS_SHAPE (ID_AVIS (id)) != NULL) {
-                    res = DUPdoDupNode (AVIS_SHAPE (ID_AVIS (id)));
-                }
-            }
-        } break;
-
-        case N_with: {
-            node *with = ASSIGN_RHS (ass);
-            node *withop = WITH_WITHOP (with);
-            node *ids = ASSIGN_LHS (ass);
-
-            while ((ids != NULL) && (IDS_AVIS (ids) != ID_AVIS (expr))) {
-                ids = IDS_NEXT (ids);
-                withop = WITHOP_NEXT (withop);
-            }
-
-            DBUG_ASSERT (ids != NULL, "Wrong AVIS_SSAASSIGN link encountered!");
-
-            switch (NODE_TYPE (withop)) {
-            case N_modarray:
-                res = Shape (MODARRAY_ARRAY (withop), arg_info);
-                if (res == NULL) {
-                    res = TCmakePrf1 (F_shape,
-                                      TBmakeId (ID_AVIS (MODARRAY_ARRAY (withop))));
-                }
-                break;
-
-            case N_genarray:
-                if (GENARRAY_DEFAULT (withop) != NULL) {
-                    if (TUdimKnown (ID_NTYPE (GENARRAY_DEFAULT (withop)))
-                        && (TYgetDim (ID_NTYPE (GENARRAY_DEFAULT (withop))) == 0)) {
-                        res = DUPdoDupNode (GENARRAY_SHAPE (withop));
-                    }
-                } else {
-                    node *code = WITH_CODE (with);
-
-                    while ((res == NULL) && (code != NULL)) {
-                        node *exprs = CODE_CEXPRS (code);
-                        ids = ASSIGN_LHS (ass);
-
-                        while ((ids != NULL) && (IDS_AVIS (ids) != ID_AVIS (expr))) {
-                            ids = IDS_NEXT (ids);
-                            exprs = EXPRS_NEXT (exprs);
-                        }
-
-                        if (TUdimKnown (ID_NTYPE (EXPRS_EXPR (exprs)))
-                            && (TYgetDim (ID_NTYPE (EXPRS_EXPR (exprs))) == 0)) {
-                            res = DUPdoDupNode (GENARRAY_SHAPE (withop));
-                        }
-
-                        code = CODE_NEXT (code);
-                    }
-                }
-                break;
-
-            default:
-                break;
-            }
-        } break;
-
-        case N_prf: {
-            node *prf = ASSIGN_RHS (ass);
-            switch (PRF_PRF (prf)) {
-            case F_shape: {
-                /*
-                 * shape( shape( A))
-                 * => dimvar = dim(A); [dimvar]
-                 */
-                node *avis
-                  = TBmakeAvis (ILIBtmpVarName (ID_NAME (PRF_ARG1 (prf))),
-                                TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
-
-                FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-                  = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
-
-                INFO_PREASSIGN (arg_info)
-                  = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL),
-                                             TCmakePrf1 (F_dim,
-                                                         DUPdoDupNode (PRF_ARG1 (prf)))),
-                                  NULL);
-                AVIS_SSAASSIGN (avis) = INFO_PREASSIGN (arg_info);
-
-                res = TCmakeIntVector (TBmakeExprs (TBmakeId (avis), NULL));
-            } break;
-
-            case F_reshape:
-                res = DUPdoDupNode (PRF_ARG1 (prf));
-                break;
-
-            case F_dim:
-            case F_idxs2offset:
-            case F_vect2offset:
-            case F_sel:
-            case F_idx_shape_sel:
-            case F_add_SxS:
-            case F_sub_SxS:
-            case F_mul_SxS:
-            case F_div_SxS:
-            case F_toi_S:
-            case F_tof_S:
-            case F_tod_S:
-            case F_mod: /* According to prf_node_info.mac, these are SxS */
-            case F_min:
-            case F_max:
-                res = TCmakeIntVector (NULL);
-                break;
-
-            case F_modarray:
-            case F_copy:
-            case F_toi_A:
-            case F_tof_A:
-            case F_tod_A:
-            case F_neg:
-            case F_not:
-            case F_abs:
-            case F_add_AxS:
-            case F_sub_AxS:
-            case F_mul_AxS:
-            case F_div_AxS:
-                if (NODE_TYPE (PRF_ARG1 (prf)) == N_id) {
-                    res = Shape (PRF_ARG1 (prf), arg_info);
-                    if (res == NULL) {
-                        res = TCmakePrf1 (F_shape, DUPdoDupNode (PRF_ARG1 (prf)));
-                    }
-                }
-                break;
-
-            case F_add_SxA:
-            case F_sub_SxA:
-            case F_mul_SxA:
-            case F_div_SxA:
-                if (NODE_TYPE (PRF_ARG2 (prf)) == N_id) {
-                    res = Shape (PRF_ARG2 (prf), arg_info);
-                    if (res == NULL) {
-                        res = TCmakePrf1 (F_shape, DUPdoDupNode (PRF_ARG2 (prf)));
-                    }
-                }
-                break;
-
-            case F_add_AxA:
-            case F_mul_AxA:
-            case F_sub_AxA:
-            case F_div_AxA:
-            case F_and: /* According to prf_node_info.mac, these are AxA */
-            case F_or:
-            case F_le:
-            case F_lt:
-            case F_eq:
-            case F_neq:
-            case F_ge:
-            case F_gt:
-                if (NODE_TYPE (PRF_ARG1 (prf)) == N_id) {
-                    res = Shape (PRF_ARG1 (prf), arg_info);
-                    if (res == NULL) {
-                        res = TCmakePrf1 (F_shape, DUPdoDupNode (PRF_ARG1 (prf)));
-                    }
-                }
-                if ((res == NULL) && (NODE_TYPE (PRF_ARG2 (prf)) == N_id)) {
-                    res = Shape (PRF_ARG2 (prf), arg_info);
-                    if (res == NULL) {
-                        res = TCmakePrf1 (F_shape, DUPdoDupNode (PRF_ARG2 (prf)));
-                    }
-                }
-                break;
-
-            case F_drop_SxV:
-            case F_take_SxV:
-            case F_cat_VxV:
-            default:
-                break;
-            }
-        } break;
-
-        case F_idx_sel:
-        case F_idx_modarray:
-            DBUG_ASSERT ((0),
-                         ("F_idx_ operations are not allowed during the optimizer!"));
-            break;
-
-        default:
-            break;
-        }
-    } else if (TUdimKnown (ID_NTYPE (expr))) {
-        int i;
-        for (i = TYgetDim (ID_NTYPE (expr)) - 1; i >= 0; i--) {
-            node *avis
-              = TBmakeAvis (ILIBtmpVarName (ID_NAME (expr)),
-                            TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
-
-            FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-              = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
-
-            INFO_PREASSIGN (arg_info)
-              = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL),
-                                         TCmakePrf2 (F_idx_shape_sel, TBmakeNum (i),
-                                                     DUPdoDupNode (expr))),
-                              INFO_PREASSIGN (arg_info));
-
-            AVIS_SSAASSIGN (avis) = INFO_PREASSIGN (arg_info);
-
-            res = TBmakeExprs (TBmakeId (avis), res);
-        }
-        res = TCmakeIntVector (res);
     }
 
     DBUG_RETURN (res);
@@ -988,25 +754,44 @@ IdxShapeSel (constant *idx, node *array_expr, info *arg_info)
     if (AVIS_SHAPE (ID_AVIS (array_expr)) != NULL) {
         int shape_elem = ((int *)COgetDataVec (idx))[0];
 
-        if (NODE_TYPE (AVIS_SHAPE (ID_AVIS (array_expr))) == N_id) {
-            node *avis;
-
-            avis
-              = TBmakeAvis (ILIBtmpVarName (ID_NAME (array_expr)),
-                            TYmakeAKV (TYmakeSimpleType (T_int), COcopyConstant (idx)));
-
-            INFO_PREASSIGN (arg_info)
-              = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), TBmakeNum (shape_elem)),
-                              NULL);
-
-            res = TCmakePrf2 (F_sel, TBmakeId (avis),
-                              ID_AVIS (AVIS_SHAPE (ID_AVIS (array_expr))));
-        }
-
         if (NODE_TYPE (AVIS_SHAPE (ID_AVIS (array_expr))) == N_array) {
             res = DUPdoDupNode (TCgetNthExpr (shape_elem + 1, ARRAY_AELEMS (AVIS_SHAPE (
                                                                 ID_AVIS (array_expr)))));
         }
+
+#if 0
+    if ( NODE_TYPE( AVIS_SHAPE( ID_AVIS( array_expr))) == N_id) {
+      node *avis;
+      constant *new_co;
+      int *dv;
+
+      dv = ILIBmalloc( sizeof(int));
+      *dv = shape_elem;
+
+      new_co = COmakeConstant( T_int,
+                               SHcreateShape( 1, 1),
+                               dv);
+      
+      avis = TBmakeAvis( ILIBtmpVarName( ID_NAME( array_expr)),
+                         TYmakeAKV( TYmakeSimpleType( T_int),
+                                    new_co));
+      
+      FUNDEF_VARDEC( INFO_FUNDEF( arg_info)) =
+        TBmakeVardec( avis, FUNDEF_VARDEC( INFO_FUNDEF( arg_info)));
+
+      INFO_PREASSIGN( arg_info) = 
+        TBmakeAssign( TBmakeLet( TBmakeIds( avis, NULL),
+                                 TCmakeIntVector( TBmakeExprs( TBmakeNum( shape_elem), 
+                                                               NULL))),
+                      NULL);
+
+      AVIS_SSAASSIGN( avis) = INFO_PREASSIGN( arg_info);
+
+      res = TCmakePrf2( F_sel,
+                        TBmakeId( avis),
+                        DUPdoDupNode( AVIS_SHAPE( ID_AVIS( array_expr))));
+    }
+#endif
     }
 
     DBUG_RETURN (res);
@@ -2365,7 +2150,7 @@ CFfoldPrfExpr (prf op, node **arg_expr, info *arg_info)
             ONE_ARG (arg_expr)
             {
                 /* for some non full constant expression */
-                new_co = Dim (arg_expr[0]);
+                new_node = Dim (arg_expr[0]);
             }
         break;
 
@@ -2374,7 +2159,7 @@ CFfoldPrfExpr (prf op, node **arg_expr, info *arg_info)
             ONE_ARG (arg_expr)
             {
                 /* for some non full constant expression */
-                new_node = Shape (arg_expr[0], arg_info);
+                new_node = Shape (arg_expr[0]);
             }
         break;
 

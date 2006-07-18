@@ -98,6 +98,29 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
+static bool
+IsScalarConst (node *arg_node)
+{
+    bool res;
+
+    DBUG_ENTER ("IsScalarConst");
+
+    switch (NODE_TYPE (arg_node)) {
+    case N_float:
+    case N_double:
+    case N_bool:
+    case N_num:
+    case N_char:
+        res = TRUE;
+        break;
+
+    default:
+        res = FALSE;
+        break;
+    }
+
+    DBUG_RETURN (res);
+}
 /******************************************************************************
  *
  * function:
@@ -220,7 +243,9 @@ CVPid (node *arg_node, info *arg_info)
             && (((INFO_PROPMODE (arg_info) & PROP_variable)
                  && (NODE_TYPE (ASSIGN_RHS (AVIS_SSAASSIGN (avis))) == N_id))
                 || ((INFO_PROPMODE (arg_info) & PROP_array)
-                    && (NODE_TYPE (ASSIGN_RHS (AVIS_SSAASSIGN (avis))) == N_array)))) {
+                    && (NODE_TYPE (ASSIGN_RHS (AVIS_SSAASSIGN (avis))) == N_array))
+                || ((INFO_PROPMODE (arg_info) & PROP_scalarconst)
+                    && (IsScalarConst (ASSIGN_RHS (AVIS_SSAASSIGN (avis))))))) {
             arg_node = FREEdoFreeNode (arg_node);
             arg_node = DUPdoDupNode (ASSIGN_RHS (AVIS_SSAASSIGN (avis)));
             global.optcounters.cvp_expr += 1;

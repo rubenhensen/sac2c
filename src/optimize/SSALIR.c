@@ -783,6 +783,37 @@ InsListGetFrame (nodelist *il, int depth)
     DBUG_RETURN (tmp);
 }
 
+static void
+SetShapeVarsDefDepth (node *avis, int defdepth)
+{
+    DBUG_ENTER ("SetShapeVarsDefined");
+
+    if ((AVIS_DIM (avis) != NULL) && (NODE_TYPE (AVIS_DIM (avis)) == N_id)
+        && (AVIS_SHAPEVAROF (ID_AVIS (AVIS_DIM (avis))) == avis)) {
+        AVIS_DEFDEPTH (ID_AVIS (AVIS_DIM (avis))) = defdepth;
+    }
+
+    if (AVIS_SHAPE (avis) != NULL) {
+        if ((NODE_TYPE (AVIS_SHAPE (avis)) == N_id)
+            && (AVIS_SHAPEVAROF (ID_AVIS (AVIS_SHAPE (avis))) == avis)) {
+            AVIS_DEFDEPTH (ID_AVIS (AVIS_SHAPE (avis))) = defdepth;
+        }
+
+        if ((NODE_TYPE (AVIS_SHAPE (avis)) == N_array)) {
+            node *exprs = ARRAY_AELEMS (AVIS_SHAPE (avis));
+            while (exprs != NULL) {
+                if ((NODE_TYPE (EXPRS_EXPR (exprs)) == N_id)
+                    && (AVIS_SHAPEVAROF (ID_AVIS (EXPRS_EXPR (exprs))) == avis)) {
+                    AVIS_DEFDEPTH (ID_AVIS (EXPRS_EXPR (exprs))) = defdepth;
+                }
+                exprs = EXPRS_NEXT (exprs);
+            }
+        }
+    }
+
+    DBUG_VOID_RETURN;
+}
+
 /* traversal functions */
 /******************************************************************************
  *
@@ -907,29 +938,33 @@ LIRfundef (node *arg_node, info *arg_info)
 node *
 LIRarg (node *arg_node, info *arg_info)
 {
+    node *avis;
+
     DBUG_ENTER ("LIRarg");
+
+    avis = ARG_AVIS (arg_node);
 
     /*
      * build up LUT between args and their corresponding calling vardecs
      * for all loop invariant arguments
      */
     if ((INFO_MOVELUT (arg_info) != NULL) && (INFO_APARGCHAIN (arg_info) != NULL)
-        && (AVIS_SSALPINV (ARG_AVIS (arg_node)) == TRUE)) {
+        && (AVIS_SSALPINV (avis) == TRUE)) {
         DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (INFO_APARGCHAIN (arg_info))) == N_id),
                      "non N_id node in function application");
 
         /* add internal->external pairs to LUT: */
         /* avis */
         INFO_MOVELUT (arg_info)
-          = LUTinsertIntoLutP (INFO_MOVELUT (arg_info), ARG_AVIS (arg_node),
+          = LUTinsertIntoLutP (INFO_MOVELUT (arg_info), avis,
                                ID_AVIS (EXPRS_EXPR (INFO_APARGCHAIN (arg_info))));
     }
 
     /* init avis data for argument */
-    AVIS_NEEDCOUNT (ARG_AVIS (arg_node)) = 0;
-    AVIS_DEFDEPTH (ARG_AVIS (arg_node)) = 0;
-    AVIS_LIRMOVE (ARG_AVIS (arg_node)) = LIRMOVE_NONE;
-    AVIS_EXPRESULT (ARG_AVIS (arg_node)) = FALSE;
+    AVIS_NEEDCOUNT (avis) = 0;
+    AVIS_DEFDEPTH (avis) = 0;
+    AVIS_LIRMOVE (avis) = LIRMOVE_NONE;
+    AVIS_EXPRESULT (avis) = FALSE;
 
     if (ARG_NEXT (arg_node) != NULL) {
         /* when building LUT traverse to next arg pf external call */
@@ -956,13 +991,22 @@ LIRarg (node *arg_node, info *arg_info)
 node *
 LIRvardec (node *arg_node, info *arg_info)
 {
+    node *avis;
+
     DBUG_ENTER ("LIRvardec");
 
-    AVIS_NEEDCOUNT (VARDEC_AVIS (arg_node)) = 0;
-    AVIS_DEFDEPTH (VARDEC_AVIS (arg_node)) = DD_UNDEFINED;
-    AVIS_SSALPINV (VARDEC_AVIS (arg_node)) = FALSE;
-    AVIS_LIRMOVE (VARDEC_AVIS (arg_node)) = LIRMOVE_NONE;
-    AVIS_EXPRESULT (VARDEC_AVIS (arg_node)) = FALSE;
+    avis = VARDEC_AVIS (arg_node);
+
+    AVIS_NEEDCOUNT (avis) = 0;
+    AVIS_DEFDEPTH (avis) = DD_UNDEFINED;
+    AVIS_SSALPINV (avis) = FALSE;
+    AVIS_LIRMOVE (avis) = LIRMOVE_NONE;
+    AVIS_EXPRESULT (avis) = FALSE;
+
+    if ((AVIS_SHAPEVAROF (avis) != NULL)
+        && (NODE_TYPE (AVIS_DECL (AVIS_SHAPEVAROF (avis))) == N_arg)) {
+        AVIS_DEFDEPTH (avis) = 0;
+    }
 
     /* traverse to next vardec */
     if (VARDEC_NEXT (arg_node) != NULL) {
@@ -1635,31 +1679,31 @@ LIRexprs (node *arg_node, info *arg_info)
 node *
 LIRids (node *arg_ids, info *arg_info)
 {
+    node *avis;
+
     DBUG_ENTER ("LIRids");
 
-    DBUG_ASSERT ((arg_ids != NULL), "no ids found!");
-    DBUG_ASSERT ((IDS_AVIS (arg_ids) != NULL), "IDS_AVIS not found!");
+    avis = IDS_AVIS (arg_ids);
 
     /* set current withloop depth as definition depth */
-    AVIS_DEFDEPTH (IDS_AVIS (arg_ids)) = INFO_SETDEPTH (arg_info);
+    AVIS_DEFDEPTH (avis) = INFO_SETDEPTH (arg_info);
+    SetShapeVarsDefDepth (avis, INFO_SETDEPTH (arg_info));
 
     /* propagte the currect FLAG to the ids */
     switch (INFO_FLAG (arg_info)) {
     case LIR_MOVEUP:
         DBUG_PRINT ("LIR", ("mark: moving up vardec %s", IDS_NAME (arg_ids)));
-        AVIS_SSALPINV (IDS_AVIS (arg_ids)) = TRUE;
-
-        (AVIS_LIRMOVE (IDS_AVIS (arg_ids))) |= LIRMOVE_UP;
+        AVIS_SSALPINV (avis) = TRUE;
+        (AVIS_LIRMOVE (avis)) |= LIRMOVE_UP;
         break;
 
     case LIR_MOVELOCAL:
-        DBUG_PRINT ("LIR", ("mark: local vardec %s", AVIS_NAME (IDS_AVIS (arg_ids))));
-
-        AVIS_LIRMOVE (IDS_AVIS (arg_ids)) = LIRMOVE_LOCAL;
+        DBUG_PRINT ("LIR", ("mark: local vardec %s", IDS_NAME (arg_ids)));
+        AVIS_LIRMOVE (avis) = LIRMOVE_LOCAL;
         break;
 
     case LIR_NORMAL:
-        AVIS_LIRMOVE (IDS_AVIS (arg_ids)) = LIRMOVE_NONE;
+        AVIS_LIRMOVE (avis) = LIRMOVE_NONE;
         break;
 
     default:
@@ -2026,7 +2070,10 @@ LIRMOVids (node *arg_ids, info *arg_info)
             new_vardec_id = TBmakeId (new_avis);
 
             /* make new arg for this functions (instead of vardec) */
-            new_arg = TCmakeArgFromVardec (IDS_DECL (arg_ids));
+            new_arg = TBmakeArg (DUPdoDupNode (IDS_AVIS (arg_ids)), NULL);
+
+            AVIS_SSAASSIGN (ARG_AVIS (new_arg)) = NULL;
+            AVIS_SSALPINV (ARG_AVIS (new_arg)) = FALSE;
 
             /* make identifier for recursive function call */
             new_arg_id = TBmakeId (ARG_AVIS (new_arg));
