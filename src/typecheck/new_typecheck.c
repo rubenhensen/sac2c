@@ -2096,6 +2096,36 @@ NTCbreak (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn node *NTCextract( node *arg_node, info *arg_info)
+ *
+ *   @brief
+ *   @param
+ *   @return
+ *
+ ******************************************************************************/
+
+node *
+NTCextract (node *arg_node, info *arg_info)
+{
+    ntype *body;
+
+    DBUG_ENTER ("NTCextract");
+    DBUG_ASSERT (TYgetProductSize (INFO_BODIES_TYPE (arg_info))
+                   > INFO_NUM_EXPRS_SOFAR (arg_info),
+                 "more withops than code returns");
+    body
+      = TYgetProductMember (INFO_BODIES_TYPE (arg_info), INFO_NUM_EXPRS_SOFAR (arg_info));
+
+    EXTRACT_NEXT (arg_node) = HandleMultiOperators (EXTRACT_NEXT (arg_node), arg_info);
+
+    TYsetProductMember (INFO_TYPE (arg_info), INFO_NUM_EXPRS_SOFAR (arg_info),
+                        TYcopyType (body));
+
+    DBUG_RETURN (arg_node);
+}
+
 /* @} */
 
 /**
