@@ -882,7 +882,6 @@ SSATvardec (node *arg_node, info *arg_info)
         && (NODE_TYPE (AVIS_DECL (AVIS_SHAPEVAROF (avis))) == N_arg)) {
         AVIS_SSASTACK_TOP (avis) = avis;
         AVIS_SSADEFINED (avis) = TRUE;
-        printf ("%s used as shapevar of arg\n", AVIS_NAME (avis));
     }
 
     /*

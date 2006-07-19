@@ -394,8 +394,8 @@ MDEwith (node *arg_node, info *arg_info)
         break;
 
     case N_genarray: {
-        node *framedim;
-        node *celldim;
+        node *framedim = NULL;
+        node *celldim = NULL;
         node *genshp;
 
         if (GENARRAY_DEFAULT (withop) != NULL) {
