@@ -271,7 +271,8 @@ SUBPHASE (esd, "esd", "Eliminating subtraction and division operators", ESDdoEli
 
 SUBPHASE (al, "al", "Applying associative law", ASSOCdoAssociativityOptimizationOneFundef)
 
-SUBPHASE (dl, "dl", "Applying distributive law", DLdoDistributiveLaw)
+SUBPHASE (dl, "dl", "Applying distributive law",
+          DISTRIBdoDistributivityOptimizationOneFundef)
 
 SUBPHASE (dfrcyc, "dfr", "Removing dead functions", DFRdoDeadFunctionRemoval)
 
