@@ -821,7 +821,7 @@
 	  <node name="Prf" />
 	</travuser>
       </traversal>
-      <traversal id="DISTRIB" name="Distributivity Optimization" default="sons" include="associativity.h" >
+      <traversal id="DISTRIB" name="Distributivity Optimization" default="sons" include="distributivity.h" >
         <travuser>
           <node name="DISTRIBfundef" />
           <node name="DISTRIBblock" />
