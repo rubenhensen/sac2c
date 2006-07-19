@@ -146,7 +146,7 @@ FreeInfo (info *info)
  *   @brief expects (array) to point to an identifier and generates a
  *          structural constant of shape selections
  *
- *          [ shape(A)[[0]], ..., shape(A)[[dim-1]]]
+ *          [ idx_shape_sel( 0, A), ..., idx_shape_sel( dim-1, A)]
  *
  *   @param  node *array   :  N_id
  *           int dim       :
@@ -158,71 +158,39 @@ FreeInfo (info *info)
 static node *
 CreateArrayOfShapeSels (node *array, int dim, info *arg_info)
 {
-    node *shape_avis;
-    node *shape_ass;
-    node *res = NULL;
     int i;
+    node *res = NULL;
 
     DBUG_ENTER ("CreateArrayOfShapeSels");
 
     DBUG_ASSERT ((NODE_TYPE (array) == N_id),
                  "CreateArrayOfShapeSels not called with N_id");
 
-    /*
-     * Create assignment for the shape
-     */
-    shape_avis = TBmakeAvis (ILIBtmpVarName (ID_NAME (array)),
-                             TYmakeAKD (TYmakeSimpleType (T_int), 1, SHcreateShape (0)));
-
-    FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-      = TBmakeVardec (shape_avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
-
-    shape_ass
-      = TBmakeAssign (TBmakeLet (TBmakeIds (shape_avis, NULL),
-                                 TCmakePrf1 (F_shape, TBmakeId (ID_AVIS (array)))),
-                      NULL);
-
-    AVIS_SSAASSIGN (shape_avis) = shape_ass;
-
     for (i = dim - 1; i >= 0; i--) {
-        shape *shp;
-        node *idx_avis, *sel_avis;
-
-        shp = SHcreateShape (1, i);
-        idx_avis = TBmakeAvis (ILIBtmpVarName (ID_NAME (array)),
-                               TYmakeAKV (TYmakeSimpleType (T_int),
-                                          COmakeConstantFromShape (shp)));
-        shp = SHfreeShape (shp);
+        node *sel_avis;
 
         sel_avis = TBmakeAvis (ILIBtmpVarName (ID_NAME (array)),
                                TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
 
         FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-          = TBmakeVardec (idx_avis, TBmakeVardec (sel_avis, FUNDEF_VARDEC (
-                                                              INFO_FUNDEF (arg_info))));
+          = TBmakeVardec (sel_avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
 
         INFO_NASSIGNS (arg_info)
-          = TBmakeAssign (TBmakeLet (TBmakeIds (idx_avis, NULL),
-                                     TCmakeIntVector (TBmakeExprs (TBmakeNum (i), NULL))),
-                          TBmakeAssign (TBmakeLet (TBmakeIds (sel_avis, NULL),
-                                                   TCmakePrf2 (F_sel, TBmakeId (idx_avis),
-                                                               TBmakeId (shape_avis))),
-                                        INFO_NASSIGNS (arg_info)));
+          = TBmakeAssign (TBmakeLet (TBmakeIds (sel_avis, NULL),
+                                     TCmakePrf2 (F_idx_shape_sel, TBmakeNum (i),
+                                                 TBmakeId (ID_AVIS (array)))),
+                          INFO_NASSIGNS (arg_info));
 
         /*
          * set correct backref to defining assignment
          */
-        AVIS_SSAASSIGN (idx_avis) = INFO_NASSIGNS (arg_info);
-        AVIS_SSAASSIGN (sel_avis) = ASSIGN_NEXT (INFO_NASSIGNS (arg_info));
+        AVIS_SSAASSIGN (sel_avis) = INFO_NASSIGNS (arg_info);
 
         /*
          * create element of structural constant
          */
         res = TBmakeExprs (TBmakeId (sel_avis), res);
     }
-
-    ASSIGN_NEXT (shape_ass) = INFO_NASSIGNS (arg_info);
-    INFO_NASSIGNS (arg_info) = shape_ass;
 
     /*
      * create structural constant

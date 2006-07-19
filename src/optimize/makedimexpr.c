@@ -174,6 +174,7 @@ MDEid (node *arg_node, info *arg_info)
 node *
 MDEfuncond (node *arg_node, info *arg_info)
 {
+    node *res = NULL;
     node *lhsavis;
     node *thendim;
     node *elsedim;
@@ -191,7 +192,7 @@ MDEfuncond (node *arg_node, info *arg_info)
         AVIS_DIM (lhsavis) = DUPdoDupNode (thendim);
     }
 
-    DBUG_RETURN (NULL);
+    DBUG_RETURN (res);
 }
 
 /** <!--********************************************************************-->
@@ -245,9 +246,11 @@ MDEarray (node *arg_node, info *arg_info)
 node *
 MDEap (node *arg_node, info *arg_info)
 {
+    node *res = NULL;
+
     DBUG_ENTER ("MDEap");
 
-    DBUG_RETURN (NULL);
+    DBUG_RETURN (res);
 }
 
 /** <!--********************************************************************-->

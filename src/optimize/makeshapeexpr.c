@@ -218,6 +218,7 @@ MSEid (node *arg_node, info *arg_info)
 node *
 MSEfuncond (node *arg_node, info *arg_info)
 {
+    node *res = NULL;
     node *lhsavis;
     node *thenshp;
     node *elseshp;
@@ -235,7 +236,7 @@ MSEfuncond (node *arg_node, info *arg_info)
         AVIS_SHAPE (lhsavis) = DUPdoDupNode (thenshp);
     }
 
-    DBUG_RETURN (NULL);
+    DBUG_RETURN (res);
 }
 
 /** <!--********************************************************************-->
@@ -315,9 +316,11 @@ MSEarray (node *arg_node, info *arg_info)
 node *
 MSEap (node *arg_node, info *arg_info)
 {
+    node *res = NULL;
+
     DBUG_ENTER ("MSEap");
 
-    DBUG_RETURN (NULL);
+    DBUG_RETURN (res);
 }
 
 /** <!--********************************************************************-->
