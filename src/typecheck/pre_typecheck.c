@@ -21,6 +21,7 @@ PTCdoPreTypecheck (node *syntax_tree)
     syntax_tree = PHrunCompilerSubPhase (SUBPH_goi, syntax_tree);
     syntax_tree = PHrunCompilerSubPhase (SUBPH_rso, syntax_tree);
     syntax_tree = PHrunCompilerSubPhase (SUBPH_rra, syntax_tree);
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_woa, syntax_tree);
     syntax_tree = PHrunCompilerSubPhase (SUBPH_ewt, syntax_tree);
     syntax_tree = PHrunCompilerSubPhase (SUBPH_lac2fun, syntax_tree);
     syntax_tree = PHrunCompilerSubPhase (SUBPH_ssa, syntax_tree);

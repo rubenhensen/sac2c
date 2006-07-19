@@ -3876,6 +3876,40 @@ PRTbreak (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn node *PRTextract( node *arg_node, info *arg_info)
+ *
+ *   @brief
+ *   @param
+ *   @return
+ *
+ *
+ ******************************************************************************/
+node *
+PRTextract (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("PRTextract");
+
+    if (NODE_ERROR (arg_node) != NULL) {
+        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
+    }
+
+    INDENT;
+
+    fprintf (global.outfile, "extract()");
+
+    if (EXTRACT_NEXT (arg_node) != NULL) {
+        fprintf (global.outfile, ",\n");
+        /*
+         * continue with other withops
+         */
+        PRINT_CONT (TRAVdo (EXTRACT_NEXT (arg_node), arg_info), ;);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
 /******************************************************************************
  *
  * function:

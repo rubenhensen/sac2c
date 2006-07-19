@@ -567,6 +567,8 @@ OPTanalyseCommandline (node *syntax_tree)
      * Options starting with wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
      */
 
+    ARGS_FLAG ("wlo", global.wlo = TRUE);
+
     ARGS_FLAG ("wls_aggressive", global.wls_aggressive = TRUE);
 
     ARGS_OPTION_BEGIN ("#")

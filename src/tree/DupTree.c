@@ -1986,6 +1986,23 @@ DUPbreak (node *arg_node, info *arg_info)
 }
 
 /******************************************************************************/
+node *
+DUPextract (node *arg_node, info *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DUPextract");
+
+    new_node = TBmakeExtract ();
+
+    EXTRACT_NEXT (new_node) = DUPCONT (EXTRACT_NEXT (arg_node));
+
+    CopyCommonNodeData (new_node, arg_node);
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
 
 node *
 DUPpart (node *arg_node, info *arg_info)

@@ -522,6 +522,13 @@
 	  <node name="Ap" />
 	</travuser>
       </traversal>
+      <traversal id="WOA" name="Adding objects to with-loops" default="sons" include="withloop_objects.h" >
+        <travuser>
+	  <node name="Id" />
+          <node name="Let" />
+	  <node name="With" />
+	</travuser>
+      </traversal>
       <traversal id="RRA" name="Resolve Reference Args" default="sons" include="resolve_reference_args.h" >
         <travuser>
 	  <node name="Fundef" />
@@ -2181,6 +2188,7 @@
 	<node name="SPFold" />
 	<node name="Fold" />
         <node name="Break" />
+        <node name="Extract" />
       </target>
     </nodeset>
   </nodesets>
@@ -6208,6 +6216,28 @@
             </target>
           </targets>
         </son>
+        <son name="Next" default="NULL">
+          <targets>
+            <target mandatory="no">
+              <set name="WithOp" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+      </sons>
+      <attributes></attributes>
+      <flags></flags>
+    </node>
+<!--
+
+  N_extract:
+
+-->
+    <node name="Extract">
+      <description>Withloop operation for returning objects</description>
+      <sons>
         <son name="Next" default="NULL">
           <targets>
             <target mandatory="no">

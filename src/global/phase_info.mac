@@ -124,6 +124,8 @@ SUBPHASE (rso, "rso", "Resolving global objects", RSOdoResolveObjects)
 
 SUBPHASE (rra, "rra", "Resolving reference arguments", RRAdoResolveReferenceArgs)
 
+SUBPHASE (woa, "woa", "Adding Objects to With-loops", WOAdoWithloopObjectAnalysis)
+
 SUBPHASE (ewt, "ewt", "Extending dispatch information", EWTdoExtendWrapperTypes)
 
 SUBPHASE (lac2fun, "l2f", "Eliminating loops and conditionals", L2FdoLac2Fun)

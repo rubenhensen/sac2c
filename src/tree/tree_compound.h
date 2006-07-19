@@ -1132,7 +1132,9 @@ extern int TCcountParts (node *parts);
        ? GENARRAY_NEXT (n)                                                               \
        : (NODE_TYPE (n) == N_modarray)                                                   \
            ? MODARRAY_NEXT (n)                                                           \
-           : (NODE_TYPE (n) == N_break) ? BREAK_NEXT (n) : (FOLD_NEXT (n)))
+           : (NODE_TYPE (n) == N_break)                                                  \
+               ? BREAK_NEXT (n)                                                          \
+               : (NODE_TYPE (n) == N_extract) ? EXTRACT_NEXT (n) : (FOLD_NEXT (n)))
 
 #define L_WITHOP_NEXT(n, rhs)                                                            \
     switch                                                                               \
@@ -1149,6 +1151,9 @@ extern int TCcountParts (node *parts);
             break;                                                                       \
         case N_break:                                                                    \
             BREAK_NEXT (n) = rhs;                                                        \
+            break;                                                                       \
+        case N_extract:                                                                  \
+            EXTRACT_NEXT (n) = rhs;                                                      \
             break;                                                                       \
         default:                                                                         \
             DBUG_ASSERT (FALSE, "Illegal node type");                                    \
