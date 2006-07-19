@@ -820,6 +820,16 @@
 	  <node name="Prf" />
 	</travuser>
       </traversal>
+      <traversal id="DISTRIB" name="Distributivity Optimization" default="sons" include="associativity.h" >
+        <travuser>
+          <node name="DISTRIBfundef" />
+          <node name="DISTRIBblock" />
+          <node name="DISTRIBassign" />
+          <node name="DISTRIBlet" />
+          <node name="DISTRIBids" />
+          <node name="DISTRIBprf" />
+        </travuser>
+      </traversal>
       <traversal id="CF" name="Constant Folding" default="sons" include="SSAConstantFolding.h" >
         <travuser>
           <node name="Fundef" />
