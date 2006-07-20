@@ -2349,6 +2349,9 @@ GetWlIterShape (node *wl, node *res_ids)
         case N_break:
             break;
 
+        case N_extract:
+            break;
+
         default:
             DBUG_ASSERT (FALSE, "non initialised WithopType found.");
             break;
@@ -7064,6 +7067,9 @@ CheckWith (node *arg_node, node *res_ids)
             break;
 
         case N_break:
+            break;
+
+        case N_extract:
             break;
 
         default:
