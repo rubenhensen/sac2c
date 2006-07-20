@@ -749,7 +749,7 @@ PRTids (node *arg_node, info *arg_info)
             if (AVIS_DIM (avis) != NULL) {
                 node *dim = AVIS_DIM (avis);
 
-                if ((NODE_TYPE (dim) == N_id)
+                if ((NODE_TYPE (dim) == N_id) && (AVIS_SSAASSIGN (ID_AVIS (dim)) != NULL)
                     && (AVIS_SHAPEVAROF (ID_AVIS (dim)) == avis)) {
                     fprintf (global.outfile, "(%s)", ID_NAME (dim));
                 }
@@ -759,9 +759,12 @@ PRTids (node *arg_node, info *arg_info)
                 node *shape = AVIS_SHAPE (avis);
 
                 if (((NODE_TYPE (shape) == N_id)
+                     && (AVIS_SSAASSIGN (ID_AVIS (shape)) != NULL)
                      && (AVIS_SHAPEVAROF (ID_AVIS (shape)) == avis))
                     || ((NODE_TYPE (shape) == N_array) && (ARRAY_AELEMS (shape) != NULL)
                         && (NODE_TYPE (EXPRS_EXPR (ARRAY_AELEMS (shape))) == N_id)
+                        && (AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (ARRAY_AELEMS (shape))))
+                            != NULL)
                         && (AVIS_SHAPEVAROF (ID_AVIS (EXPRS_EXPR (ARRAY_AELEMS (shape))))
                             == avis))) {
                     fprintf (global.outfile, "[");

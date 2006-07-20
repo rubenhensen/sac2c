@@ -37,6 +37,7 @@
  * INFO structure
  */
 struct INFO {
+    bool onefundef;
     node *vardec;
     node *lhs;
     node *preassign;
@@ -45,6 +46,7 @@ struct INFO {
 /*
  * INFO macros
  */
+#define INFO_ONEFUNDEF(n) ((n)->onefundef)
 #define INFO_VARDEC(n) ((n)->vardec)
 #define INFO_LHS(n) ((n)->lhs)
 #define INFO_PREASSIGN(n) ((n)->preassign)
@@ -61,6 +63,7 @@ MakeInfo ()
 
     result = ILIBmalloc (sizeof (info));
 
+    INFO_ONEFUNDEF (result) = TRUE;
     INFO_VARDEC (result) = NULL;
     INFO_LHS (result) = NULL;
     INFO_PREASSIGN (result) = NULL;
@@ -105,6 +108,37 @@ UPRFdoUnrollPRFs (node *fundef)
     info = FreeInfo (info);
 
     DBUG_RETURN (fundef);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *UPRFdoUnrollPRFsModule( node *syntax_tree)
+ *
+ * @brief starting point of prf unrolling
+ *
+ * @param syntax_tree
+ *
+ * @return syntax_tree
+ *
+ *****************************************************************************/
+node *
+UPRFdoUnrollPRFsModule (node *syntax_tree)
+{
+    info *info;
+
+    DBUG_ENTER ("UPRFdoUnrollPRFsModule");
+
+    info = MakeInfo ();
+
+    INFO_ONEFUNDEF (info) = FALSE;
+
+    TRAVpush (TR_uprf);
+    syntax_tree = TRAVdo (syntax_tree, info);
+    TRAVpop ();
+
+    info = FreeInfo (info);
+
+    DBUG_RETURN (syntax_tree);
 }
 
 /******************************************************************************
@@ -288,6 +322,12 @@ UPRFfundef (node *arg_node, info *arg_info)
         INFO_VARDEC (arg_info) = FUNDEF_VARDEC (arg_node);
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
         FUNDEF_VARDEC (arg_node) = INFO_VARDEC (arg_info);
+    }
+
+    if (!INFO_ONEFUNDEF (arg_info)) {
+        if (FUNDEF_NEXT (arg_node) != NULL) {
+            FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+        }
     }
 
     DBUG_RETURN (arg_node);

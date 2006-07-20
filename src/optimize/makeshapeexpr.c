@@ -415,7 +415,7 @@ MSEprf (node *arg_node, info *arg_info)
         node *vsavis;
 
         vsavis
-          = MakeAssignForIdShape (PRF_ARG1 (arg_node), INFO_FUNDEF (arg_info), &preass);
+          = MakeAssignForIdShape (PRF_ARG2 (arg_node), INFO_FUNDEF (arg_info), &preass);
 
         rhsnode
           = TCmakePrf2 (F_sub_AxS, TBmakeId (vsavis), DUPdoDupNode (PRF_ARG1 (arg_node)));
@@ -555,6 +555,8 @@ MSEwith (node *arg_node, info *arg_info)
             preass
               = TBmakeAssign (TBmakeLet (TBmakeIds (fsavis, NULL), DUPdoDupNode (genshp)),
                               preass);
+
+            AVIS_SSAASSIGN (fsavis) = preass;
         }
 
         rhsnode = TCmakePrf2 (F_cat_VxV, TBmakeId (fsavis), TBmakeId (csavis));

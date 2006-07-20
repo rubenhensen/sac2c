@@ -201,8 +201,6 @@ SUBPHASE (dfr, "dfr", "Removing dead functions", DFRdoDeadFunctionRemoval)
 
 SUBPHASE (dcr, "dcr", "Removing dead code", DCRdoDeadCodeRemovalModule)
 
-SUBPHASE (isv, "isv", "Inserting shape variables", ISVdoInsertShapeVariables)
-
 SUBPHASE (intraopt, "cyc", "Applying intra-functional optimizations",
           OPTdoIntraFunctionalOptimizations)
 
@@ -278,8 +276,6 @@ SUBPHASE (dfrcyc, "dfr", "Removing dead functions", DFRdoDeadFunctionRemoval)
 
 SUBPHASE (dcrcyc, "dcr", "Applying dead code removal", DCRdoDeadCodeRemovalModule)
 
-SUBPHASE (isvcyc, "isv", "Inserting shape variables", ISVdoInsertShapeVariablesOneFundef)
-
 SUBPHASE (sisi, "sisi", "Simplifying function signatures", SISIdoSignatureSimplification)
 
 SUBPHASE (uesd, "uesd", "Reintroducing subtraction and division operators",
@@ -300,6 +296,23 @@ SUBPHASE (dcr3, "dcr3", "Removing dead code", DCRdoDeadCodeRemovalModule)
 
 SUBPHASE (wlpg2, "wlpg2", "Generating full with-loop partitions",
           WLPGdoWlPartitionGeneration)
+
+SUBPHASE (isv, "isv", "Inserting shape variables", ISVdoInsertShapeVariables)
+
+SUBPHASE (svprfunr, "svprfunr", "Applying prf unrolling", UPRFdoUnrollPRFsModule)
+
+SUBPHASE (svcvp, "svcvp", "Propagating constants and variables", CVPdoConstVarPropagation)
+
+SUBPHASE (svtup, "svtup", "Applying type upgrade", NTCdoNewReTypeCheck)
+
+SUBPHASE (svnt2ot, "svn2o", "Finalising infered type information", NT2OTdoTransform)
+
+SUBPHASE (svcf, "svcf", "Applying constant folding", CFdoConstantFoldingModule)
+
+SUBPHASE (svcse, "svcse", "Elimininating common subexpressions",
+          CSEdoCommonSubexpressionEliminationModule)
+
+SUBPHASE (svdcr, "svdcr", "Removing dead code", DCRdoDeadCodeRemovalModule)
 
 SUBPHASE (wrci, "wrci", "Inferencing with-loop reuse candidates",
           WRCIdoWithloopReuseCandidateInference)

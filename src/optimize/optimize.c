@@ -223,13 +223,6 @@ OPTdoOptimize (node *arg_node)
         arg_node = PHrunCompilerSubPhase (SUBPH_dcr, arg_node);
     }
 
-    /*
-     * Insert shape variables
-     */
-    if (global.optimize.doisv) {
-        arg_node = PHrunCompilerSubPhase (SUBPH_isv, arg_node);
-    }
-
     /**
      * Loop invariant removal
      */
@@ -308,6 +301,38 @@ OPTdoOptimize (node *arg_node)
      * with-loop partition generation
      */
     arg_node = PHrunCompilerSubPhase (SUBPH_wlpg2, arg_node);
+
+    /*
+     * Insert shape variables
+     */
+    if (global.optimize.doisv) {
+        arg_node = PHrunCompilerSubPhase (SUBPH_isv, arg_node);
+
+        if (global.optimize.doprfunr) {
+            arg_node = PHrunCompilerSubPhase (SUBPH_svprfunr, arg_node);
+        }
+
+        if (global.optimize.dotup) {
+            arg_node = PHrunCompilerSubPhase (SUBPH_svtup, arg_node);
+            arg_node = PHrunCompilerSubPhase (SUBPH_svnt2ot, arg_node);
+        }
+
+        if (global.optimize.docf) {
+            arg_node = PHrunCompilerSubPhase (SUBPH_svcf, arg_node);
+        }
+
+        if (global.optimize.docse) {
+            arg_node = PHrunCompilerSubPhase (SUBPH_svcse, arg_node);
+        }
+
+        if (global.optimize.docvp) {
+            arg_node = PHrunCompilerSubPhase (SUBPH_svcvp, arg_node);
+        }
+
+        if (global.optimize.dodcr) {
+            arg_node = PHrunCompilerSubPhase (SUBPH_svdcr, arg_node);
+        }
+    }
 
     /*
      * Withloop reuse candidate inference
@@ -532,13 +557,6 @@ OPTdoIntraFunctionalOptimizations (node *arg_node)
                      */
                     if (global.optimize.dodcr) {
                         fundef = PHrunOptimizationInCycle (SUBPH_dcrcycfun, loop, fundef);
-                    }
-
-                    /*
-                     * Insert shape variables
-                     */
-                    if (global.optimize.doisv) {
-                        fundef = PHrunOptimizationInCycle (SUBPH_isvcyc, loop, fundef);
                     }
 
                     /*

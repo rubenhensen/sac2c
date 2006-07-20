@@ -14,6 +14,7 @@
  *
  *****************************************************************************/
 extern node *UPRFdoUnrollPRFs (node *fundef);
+extern node *UPRFdoUnrollPRFsModule (node *syntax_tree);
 
 extern node *UPRFfundef (node *arg_node, info *arg_info);
 extern node *UPRFassign (node *arg_node, info *arg_info);
