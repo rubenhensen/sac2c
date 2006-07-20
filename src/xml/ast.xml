@@ -823,12 +823,12 @@
       </traversal>
       <traversal id="DISTRIB" name="Distributivity Optimization" default="sons" include="distributivity.h" >
         <travuser>
-          <node name="DISTRIBfundef" />
-          <node name="DISTRIBblock" />
-          <node name="DISTRIBassign" />
-          <node name="DISTRIBlet" />
-          <node name="DISTRIBids" />
-          <node name="DISTRIBprf" />
+          <node name="Fundef" />
+          <node name="Block" />
+          <node name="Assign" />
+          <node name="Let" />
+          <node name="Ids" />
+          <node name="Prf" />
         </travuser>
       </traversal>
       <traversal id="CF" name="Constant Folding" default="sons" include="SSAConstantFolding.h" >
