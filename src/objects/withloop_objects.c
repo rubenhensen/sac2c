@@ -1,5 +1,32 @@
 /* $Id$ */
 
+/*
+ * The task of the withloop opbject analysis traversal is to find with-loops
+ * that reference objects in their body, and make sure the objects are
+ * returned from the bodies to the surrounding code, as follows:
+ *
+ * BEFORE:
+ * -------
+ *
+ * a = with ( iv )  {
+ *       ...
+ *       stdout = print ( stdout, f ( iv ) );
+ *       ...
+ *     } : b
+ *     genarray ( shp (b), ... );
+ *
+ * AFTER:
+ * ------
+ *
+ * a, stdout = with ( iv ) {
+ *       ...
+ *       stdout = print ( stdout, f ( iv ) );
+ *       ...
+ *     } : b, stdout
+ *     genarray ( shp ( b), ...)
+ *     extract ( );
+ */
+
 #include "withloop_objects.h"
 
 #include "ctinfo.h"
@@ -65,60 +92,59 @@ FreeInfo (info *info)
 static node *
 AddObjectsToWithExprs (node *withexprs, node *objects)
 {
-    node *lastexprs;
-    node *objiter;
+    node *exprs;
+    node *object;
+    node *avis;
+
+    DBUG_ENTER ("AddObjectsToWithExprs");
 
     /* Append to the last exprs to match the extract() ops */
-    lastexprs = withexprs;
-    while (EXPRS_NEXT (lastexprs) != NULL) {
-        lastexprs = EXPRS_NEXT (lastexprs);
+    exprs = withexprs;
+    while (EXPRS_NEXT (exprs) != NULL) {
+        exprs = EXPRS_NEXT (exprs);
     }
 
-    objiter = objects;
-    while (objiter != NULL) {
-        node *avis;
-
-        avis = ID_AVIS (SET_MEMBER (objiter));
-        printf ("adding expr for %s\n", AVIS_NAME (avis));
-        EXPRS_NEXT (lastexprs) = TBmakeExprs (TBmakeId (avis), NULL);
-        lastexprs = EXPRS_NEXT (lastexprs);
-        objiter = SET_NEXT (objiter);
+    object = objects;
+    while (object != NULL) {
+        avis = ID_AVIS (EXPRS_EXPR (object));
+        EXPRS_NEXT (exprs) = TBmakeExprs (TBmakeId (avis), NULL);
+        exprs = EXPRS_NEXT (exprs);
+        object = EXPRS_NEXT (object);
     }
 
-    return withexprs;
+    DBUG_RETURN (withexprs);
 }
 
 static node *
 AddObjectsToWithOps (node *withops, node *objects)
 {
-    node *lastop;
-    node *objiter;
+    node *withop;
+    node *object;
 
-    /* Append to the last op, so first find the last one */
-    lastop = withops;
-    while (WITHOP_NEXT (lastop) != NULL) {
-        lastop = WITHOP_NEXT (lastop);
+    DBUG_ENTER ("AddObjectsToWithOps");
+
+    /* Fast-forward to the last withop */
+    withop = withops;
+    while (WITHOP_NEXT (withop) != NULL) {
+        withop = WITHOP_NEXT (withop);
     }
 
-    objiter = objects;
-    while (objiter != NULL) {
-        node *avis;
-
-        L_WITHOP_NEXT (lastop, TBmakeExtract ());
-        lastop = WITHOP_NEXT (lastop);
-        avis = ID_AVIS (SET_MEMBER (objiter));
-        printf ("adding extract() for %s\n", AVIS_NAME (avis));
-        /*EXTRACT_OBJECT( lastop) = TBmakeId( avis);*/
-        objiter = SET_NEXT (objiter);
+    /* Append an extract() withop for every object */
+    object = objects;
+    while (object != NULL) {
+        L_WITHOP_NEXT (withop, TBmakeExtract ());
+        withop = WITHOP_NEXT (withop);
+        object = EXPRS_NEXT (object);
     }
 
-    return withops;
+    DBUG_RETURN (withops);
 }
 
 static node *
 AddObjectsToWithLoop (node *withnode, node *objects)
 {
     node *withexprs;
+
     DBUG_ENTER ("AddObjectsToWithLoop");
 
     /* Add the objects the the withloop's exprs */
@@ -134,26 +160,27 @@ AddObjectsToWithLoop (node *withnode, node *objects)
 static node *
 AddObjectsToLHS (node *lhs_ids, node *objects)
 {
-    node *last_ids;
-    node *objiter;
+    node *ids;
+    node *object;
+    node *avis;
+
+    DBUG_ENTER ("AddObjectsToLHS");
 
     /* Append to the last exprs to match the extract() ops */
-    last_ids = lhs_ids;
-    while (IDS_NEXT (last_ids) != NULL) {
-        last_ids = IDS_NEXT (last_ids);
+    ids = lhs_ids;
+    while (IDS_NEXT (ids) != NULL) {
+        ids = IDS_NEXT (ids);
     }
 
-    objiter = objects;
-    while (objiter != NULL) {
-        node *avis;
-
-        avis = ID_AVIS (SET_MEMBER (objiter));
-        printf ("adding lhs expr for %s\n", AVIS_NAME (avis));
-        IDS_NEXT (last_ids) = TBmakeIds (avis, NULL);
-        last_ids = IDS_NEXT (last_ids);
-        objiter = SET_NEXT (objiter);
+    object = objects;
+    while (object != NULL) {
+        avis = ID_AVIS (EXPRS_EXPR (object));
+        IDS_NEXT (ids) = TBmakeIds (avis, NULL);
+        ids = IDS_NEXT (ids);
+        object = EXPRS_NEXT (object);
     }
-    return lhs_ids;
+
+    DBUG_RETURN (lhs_ids);
 }
 
 /*
@@ -163,23 +190,22 @@ AddObjectsToLHS (node *lhs_ids, node *objects)
 node *
 WOAid (node *arg_node, info *arg_info)
 {
+    node *avis;
+    ntype *type;
+
     DBUG_ENTER ("WOAid");
 
     if (INFO_INWITHLOOP (arg_info) == TRUE) {
 
-        node *avis = ID_AVIS (arg_node);
-        ntype *type = AVIS_TYPE (avis);
+        avis = ID_AVIS (arg_node);
+        type = AVIS_TYPE (avis);
 
         if (TYisArray (type) && TUisUniqueUserType (TYgetScalar (type))) {
-
-            /* This is an object referenced from within a with-loop. Add it
-             * to the list of objects that will be attached to the with-loop. */
-            TCSetAdd (&INFO_OBJECTS (arg_info), arg_node);
-            CTIwarnLine (NODE_LINE (arg_node),
-                         "Unique var %s of type %s referenced from with-loop. This is "
-                         "currently unsupported!",
-                         AVIS_NAME (avis),
-                         UTgetName (TYgetUserType (TYgetScalar (type))));
+            /*
+             * This is an object referenced from within a with-loop. Add it
+             * to the list of objects that will be attached to the with-loop.
+             */
+            INFO_OBJECTS (arg_info) = TBmakeExprs (arg_node, INFO_OBJECTS (arg_info));
         }
     }
 
