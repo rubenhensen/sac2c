@@ -317,16 +317,22 @@ OPTdoOptimize (node *arg_node)
             arg_node = PHrunCompilerSubPhase (SUBPH_svnt2ot, arg_node);
         }
 
-        if (global.optimize.docf) {
-            arg_node = PHrunCompilerSubPhase (SUBPH_svcf, arg_node);
+        for (int i = 0; i < 3; i++) {
+            if (global.optimize.docf) {
+                arg_node = PHrunCompilerSubPhase (SUBPH_svcf, arg_node);
+            }
+
+            if (global.optimize.docse) {
+                arg_node = PHrunCompilerSubPhase (SUBPH_svcse, arg_node);
+            }
+
+            if (global.optimize.docvp) {
+                arg_node = PHrunCompilerSubPhase (SUBPH_svcvp, arg_node);
+            }
         }
 
-        if (global.optimize.docse) {
-            arg_node = PHrunCompilerSubPhase (SUBPH_svcse, arg_node);
-        }
-
-        if (global.optimize.docvp) {
-            arg_node = PHrunCompilerSubPhase (SUBPH_svcvp, arg_node);
+        if (global.optimize.dowlsimp) {
+            arg_node = PHrunCompilerSubPhase (SUBPH_svwlsimp, arg_node);
         }
 
         if (global.optimize.dodcr) {

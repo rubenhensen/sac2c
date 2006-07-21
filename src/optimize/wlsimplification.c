@@ -38,6 +38,8 @@
  * INFO structure
  */
 struct INFO {
+    bool onefundef;
+
     /*
      * elements for identifying empty generators
      */
@@ -54,10 +56,11 @@ struct INFO {
 /**
  * INFO macros
  */
-#define INFO_EMPTYPART(n) (n->emptypart)
-#define INFO_WITH(n) (n->with)
-#define INFO_FUNDEF(n) (n->fundef)
-#define INFO_PREASSIGN(n) (n->preassign)
+#define INFO_ONEFUNDEF(n) ((n)->onefundef)
+#define INFO_EMPTYPART(n) ((n)->emptypart)
+#define INFO_WITH(n) ((n)->with)
+#define INFO_FUNDEF(n) ((n)->fundef)
+#define INFO_PREASSIGN(n) ((n)->preassign)
 
 /**
  * INFO functions
@@ -71,6 +74,7 @@ MakeInfo ()
 
     result = ILIBmalloc (sizeof (info));
 
+    INFO_ONEFUNDEF (result) = TRUE;
     INFO_EMPTYPART (result) = FALSE;
     INFO_WITH (result) = NULL;
     INFO_FUNDEF (result) = NULL;
@@ -120,6 +124,37 @@ WLSIMPdoWithloopSimplification (node *fundef)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *WLSIMPdoWithloopSimplificationModule( node *syntax_tree)
+ *
+ * @brief
+ *
+ * @param syntax_tree
+ *
+ * @return modified syntax_tree.
+ *
+ *****************************************************************************/
+node *
+WLSIMPdoWithloopSimplificationModule (node *syntax_tree)
+{
+    info *info;
+
+    DBUG_ENTER ("WLSIMPdoWithloopSimplificationModule");
+
+    info = MakeInfo ();
+
+    INFO_ONEFUNDEF (info) = FALSE;
+
+    TRAVpush (TR_wlsimp);
+    syntax_tree = TRAVdo (syntax_tree, info);
+    TRAVpop ();
+
+    info = FreeInfo (info);
+
+    DBUG_RETURN (syntax_tree);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *WLSIMPfundef( node *arg_node, info *arg_info)
  *
  *****************************************************************************/
@@ -131,6 +166,12 @@ WLSIMPfundef (node *arg_node, info *arg_info)
     if (FUNDEF_BODY (arg_node) != NULL) {
         INFO_FUNDEF (arg_info) = arg_node;
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+    }
+
+    if (!INFO_ONEFUNDEF (arg_info)) {
+        if (FUNDEF_NEXT (arg_node) != NULL) {
+            FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+        }
     }
 
     DBUG_RETURN (arg_node);

@@ -312,6 +312,9 @@ SUBPHASE (svcf, "svcf", "Applying constant folding", CFdoConstantFoldingModule)
 SUBPHASE (svcse, "svcse", "Elimininating common subexpressions",
           CSEdoCommonSubexpressionEliminationModule)
 
+SUBPHASE (svwlsimp, "svwlsimp", "Simplifying with-loops",
+          WLSIMPdoWithloopSimplificationModule)
+
 SUBPHASE (svdcr, "svdcr", "Removing dead code", DCRdoDeadCodeRemovalModule)
 
 SUBPHASE (wrci, "wrci", "Inferencing with-loop reuse candidates",
