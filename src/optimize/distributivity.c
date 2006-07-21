@@ -145,6 +145,7 @@ DISTRIBdoDistributivityOptimizationOneFundef (node *syntax_tree)
  * Helper functions
  *
  *****************************************************************************/
+#ifndef DBUG_OFF
 static void
 Print (node *n)
 {
@@ -160,6 +161,7 @@ Print (node *n)
 
     DBUG_VOID_RETURN;
 }
+#endif
 
 static prf
 normalizePrf (prf prf)
