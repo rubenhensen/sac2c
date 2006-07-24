@@ -4532,34 +4532,6 @@ PRTssacnt (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PRTcseinfo( node *arg_node, info *arg_info);
- *
- * description:
- *   Prints sets of available common subexpressions (debug only).
- *
- ******************************************************************************/
-
-node *
-PRTcseinfo (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("PRTcseinfo");
-
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
-
-    /* to be implemented */
-
-    if (CSEINFO_NEXT (arg_node) != NULL) {
-        PRINT_CONT (TRAVdo (CSEINFO_NEXT (arg_node), arg_info), ;);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
  *   node *PRTavis( node *arg_node, info *arg_info)
  *
  * description:

@@ -332,7 +332,6 @@ CMPTids (node *arg_node, info *arg_info)
         AVIS_ALT (IDS_AVIS (INFO_TREE (arg_info))) = IDS_AVIS (arg_node);
         INFO_IDS (arg_info)
           = TBmakeIds (IDS_AVIS (INFO_TREE (arg_info)), INFO_IDS (arg_info));
-
         arg_node = TravLocal (arg_node, arg_info);
     }
 
@@ -551,8 +550,6 @@ CMPTnodeType (node *arg_node, info *arg_info)
     /* check for equal node type (if tree1 and tree2 != NULL)*/
     if ((arg_node != NULL) && (INFO_TREE (arg_info) != NULL)
         && (NODE_TYPE (arg_node) != NODE_TYPE (INFO_TREE (arg_info)))) {
-        DBUG_PRINT ("CMPT", ("comparing nodetype %s and %s", NODE_TEXT (arg_node),
-                             NODE_TEXT (INFO_TREE (arg_info))));
 
         INFO_EQFLAG (arg_info) = CMPT_NEQ;
     }

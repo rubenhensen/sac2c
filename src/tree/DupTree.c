@@ -1478,24 +1478,6 @@ DUPfuncond (node *arg_node, info *arg_info)
 /******************************************************************************/
 
 node *
-DUPcseinfo (node *arg_node, info *arg_info)
-{
-    node *new_node;
-
-    DBUG_ENTER ("DUPcseinfo");
-
-    new_node = TBmakeCseinfo (DUPTRAV (CSEINFO_LAYER (arg_node)),
-                              DUPTRAV (CSEINFO_LET (arg_node)),
-                              DUPCONT (CSEINFO_NEXT (arg_node)));
-
-    CopyCommonNodeData (new_node, arg_node);
-
-    DBUG_RETURN (new_node);
-}
-
-/******************************************************************************/
-
-node *
 DUPannotate (node *arg_node, info *arg_info)
 {
     node *new_node;

@@ -1438,14 +1438,13 @@ TCmakeAssignInstr (node *instr, node *next)
 int
 TCcountAssigns (node *arg_node)
 {
-    int res;
+    int res = 0;
 
     DBUG_ENTER ("TCcountAssigns");
 
-    if (arg_node == NULL) {
-        res = 0;
-    } else {
-        res = 1 + TCcountAssigns (ASSIGN_NEXT (arg_node));
+    while (arg_node != NULL) {
+        res += 1;
+        arg_node = ASSIGN_NEXT (arg_node);
     }
 
     DBUG_RETURN (res);

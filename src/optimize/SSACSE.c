@@ -77,13 +77,102 @@
 #include "ctinfo.h"
 #include "map_fun_trav.h"
 
+/** <!--********************************************************************-->
+ *
+ * @name CSEINFO structure
+ * @{
+ *
+ *****************************************************************************/
+typedef struct CSEINFO {
+    struct CSEINFO *nextlayer;
+    int entries;
+    int current;
+    node **lets;
+} cseinfo;
+
+static cseinfo *
+AddCseInfoLayer (cseinfo *nextlayer, int entries)
+{
+    cseinfo *res;
+
+    DBUG_ENTER ("AddCseInfoLayer");
+
+    res = (cseinfo *)ILIBmalloc (sizeof (cseinfo));
+
+    res->nextlayer = nextlayer;
+    res->entries = entries;
+    res->current = 0;
+    res->lets = ILIBmalloc (entries * sizeof (node *));
+
+    DBUG_RETURN (res);
+}
+
+static cseinfo *
+RemoveTopCseLayer (cseinfo *top)
+{
+    DBUG_ENTER ("RemoveTopCseLayer");
+
+    cseinfo *res = top->nextlayer;
+
+    top->lets = ILIBfree (top->lets);
+    top = ILIBfree (top);
+
+    DBUG_RETURN (res);
+}
+
+static cseinfo *
+AddLet (cseinfo *layer, node *let)
+{
+    DBUG_ENTER ("AddLet");
+
+    layer->lets[layer->current] = let;
+    layer->current += 1;
+
+    DBUG_RETURN (layer);
+}
+
+static node *
+FindCSE (cseinfo *layer, node *let)
+{
+    int i;
+    int stop = layer->current;
+    node *arhs = LET_EXPR (let);
+    node *res = NULL;
+
+    DBUG_ENTER ("FindCSE");
+
+    for (i = 0; i < stop; i++) {
+        node *brhs = LET_EXPR (layer->lets[i]);
+        nodetype ant = NODE_TYPE (arhs);
+        nodetype bnt = NODE_TYPE (brhs);
+        if ((ant == bnt)
+            && (((ant == N_prf) && (PRF_PRF (arhs) == PRF_PRF (brhs)))
+                || (ant != N_prf))) {
+            if (CMPTdoCompareTree (arhs, brhs) == CMPT_EQ) {
+                res = layer->lets[i];
+                break;
+            }
+        }
+    }
+
+    if ((res == NULL) && (layer->nextlayer != NULL)) {
+        res = FindCSE (layer->nextlayer, let);
+    }
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ * @}  <!-- CSE structure -->
+ *****************************************************************************/
+
 /*
  * INFO structure
  */
 struct INFO {
     node *fundef;
     node *ext_assign;
-    node *cse;
+    cseinfo *cse;
     node *assign;
     node *withid;
     bool recfunap;
@@ -136,158 +225,14 @@ FreeInfo (info *info)
 
 typedef enum { THENPART, ELSEPART } condpart;
 
-/* functions to handle cseinfo chains */
-static node *AddCseinfo (node *cseinfo, node *let);
-static node *CreateNewCselayer (node *cseinfo);
-static node *RemoveTopCselayer (node *cseinfo);
-static node *SetSubstAttributes (node *subst, node *with);
-
 /* helper functions for internal use only */
-static node *FindCse (node *cselist, node *let);
+static node *SetSubstAttributes (node *subst, node *with);
 
 static node *PropagateSubst2Args (node *fun_args, node *ap_args, node *fundef);
 static node *PropagateReturn2Results (node *ap_fundef, node *ids_chain);
 static nodelist *BuildSubstNodelist (node *return_exprs, node *fundef, node *ext_assign);
 static node *GetResultArgAvis (node *id, condpart cp);
 static node *GetApAvisOfArgAvis (node *arg_avis, node *fundef, node *ext_assign);
-
-/******************************************************************************
- *
- * function:
- *   node *AddCseinfo(node *cseinfo, node *let)
- *
- * description:
- *   Adds an new let node to the actual cse layer to store an available
- *   expression in the curreent context.
- *
- ******************************************************************************/
-static node *
-AddCseinfo (node *cseinfo, node *let)
-{
-    DBUG_ENTER ("AddCseInfo");
-
-    DBUG_ASSERT ((cseinfo != NULL), "cseinfo layer stack is NULL");
-    DBUG_ASSERT ((let != NULL), "add NULL let to cseinfo layer stack");
-
-    DBUG_PRINT ("CSE", ("add let node " F_PTR " to cse layer " F_PTR, let, cseinfo));
-
-    if (CSEINFO_LET (cseinfo) == NULL) {
-        /* add letnode top existing empty cseinfo node */
-        CSEINFO_LET (cseinfo) = let;
-    } else {
-        /*
-         * create new cseinfo node with let attribute on actual layer
-         * and adds it in front of the cseinfo chain.
-         */
-        cseinfo = TBmakeCseinfo (CSEINFO_LAYER (cseinfo), let, cseinfo);
-    }
-
-    DBUG_RETURN (cseinfo);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *CreateNewCselayer(node *cseinfo)
- *
- * description:
- *   starts a new layer of cse let nodes. this happens when we enter a new
- *   withloop or a then/else part of an conditional.
- *
- ******************************************************************************/
-static node *
-CreateNewCselayer (node *cseinfo)
-{
-    DBUG_ENTER ("CreateNewCselayer");
-
-    cseinfo = TBmakeCseinfo (NULL, NULL, cseinfo);
-
-    DBUG_PRINT ("CSE", ("create new cse layer " F_PTR, cseinfo));
-
-    /* set selfreference to mark new starting layer */
-    CSEINFO_LAYER (cseinfo) = cseinfo;
-
-    DBUG_RETURN (cseinfo);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *RemoveTopCSElayer(node *cseinfo)
- *
- * description:
- *   removes all cseinfo nodes from the current cse layer. last cseinfo
- *   node on layer is marked with selfreference in CSEINFO_LAYER.
- *   this happens when we leave a withloop body or then/else parts of a
- *   conditional and the here collected expressions are no longer available.
- *
- ******************************************************************************/
-static node *
-RemoveTopCselayer (node *cseinfo)
-{
-    node *tmp;
-    node *freetmp;
-
-    DBUG_ENTER ("RemoveTopCselayer");
-
-    tmp = cseinfo;
-
-    while (tmp != NULL) {
-        freetmp = tmp;
-        cseinfo = CSEINFO_NEXT (tmp);
-
-        if (tmp == CSEINFO_LAYER (tmp)) {
-            tmp = NULL;
-        } else {
-            tmp = CSEINFO_NEXT (tmp);
-        }
-        DBUG_PRINT ("CSE", ("removing csenode " F_PTR, freetmp));
-        FREEdoFreeNode (freetmp);
-    }
-
-    DBUG_RETURN (cseinfo);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *FindCse(node *cselist, node *let)
- *
- * description:
- *   traverses the cseinfo chain until matching expression is found and
- *   return this let node. else return NULL. the matching is computed via
- *   a compare tree betwenn the given let and each stored expression.
- *
- * remark:
- *   the type compare is necessary to avoid wrong array replacements,
- *   e.g. [1,2,3,4] that is used as [[1,2],[3,4]] or [1,2,3,4]. These
- *   expressions uses the same RHS but are assigned to different shaped LHS.
- *   So if we do a simple replacement we get type mismatches.
- *
- ******************************************************************************/
-static node *
-FindCse (node *cselist, node *let)
-{
-    node *match;
-    node *csetmp;
-
-    DBUG_ENTER ("FindCse");
-    DBUG_ASSERT ((let != NULL), "FindCse is called with empty let node");
-
-    match = NULL;
-    csetmp = cselist;
-
-    while ((csetmp != NULL) && (match == NULL)) {
-        if ((CSEINFO_LET (csetmp) != NULL)
-            && (CMPTdoCompareTree (LET_EXPR (let), LET_EXPR (CSEINFO_LET (csetmp)))
-                == CMPT_EQ)) {
-            match = CSEINFO_LET (csetmp);
-        }
-        csetmp = CSEINFO_NEXT (csetmp);
-    }
-
-    DBUG_RETURN (match);
-}
 
 /******************************************************************************
  *
@@ -811,13 +756,16 @@ CSEarg (node *arg_node, info *arg_info)
 node *
 CSEblock (node *arg_node, info *arg_info)
 {
+    int assigns;
     node *oldwithid = NULL;
     node *ivlet = NULL;
 
     DBUG_ENTER ("CSEblock");
 
     if (BLOCK_VARDEC (arg_node) != NULL) {
-        /* traverse vardecs of block */
+        /*
+         * traverse vardecs of block
+         */
         node *vardec = BLOCK_VARDEC (arg_node);
         while (vardec != NULL) {
             AVIS_SUBST (VARDEC_AVIS (vardec)) = NULL;
@@ -825,66 +773,44 @@ CSEblock (node *arg_node, info *arg_info)
         }
     }
 
-    /* start new cse frame */
-    INFO_CSE (arg_info) = CreateNewCselayer (INFO_CSE (arg_info));
+    if (NODE_TYPE (BLOCK_INSTR (arg_node)) != N_empty) {
+        /*
+         * start new cse frame
+         */
+        assigns = TCcountAssigns (BLOCK_INSTR (arg_node));
+        INFO_CSE (arg_info) = AddCseInfoLayer (INFO_CSE (arg_info), assigns + 1);
 
-    /* create fake let node for iv = [i,j,k] */
-    if (INFO_WITHID (arg_info) != NULL) {
-        oldwithid = INFO_WITHID (arg_info);
-        INFO_WITHID (arg_info) = NULL;
+        /*
+         * create fake let node for iv = [i,j,k]
+         */
+        if (INFO_WITHID (arg_info) != NULL) {
+            oldwithid = INFO_WITHID (arg_info);
+            INFO_WITHID (arg_info) = NULL;
 
-        if (WITHID_IDS (oldwithid) != NULL) {
-            DBUG_PRINT ("CSE", ("add new expression to cselist"));
-            ivlet = TBmakeLet (TBmakeIds (IDS_AVIS (WITHID_VEC (oldwithid)), NULL),
+            if (WITHID_IDS (oldwithid) != NULL) {
+                ivlet
+                  = TBmakeLet (TBmakeIds (IDS_AVIS (WITHID_VEC (oldwithid)), NULL),
                                TCmakeIntVector (TCids2Exprs (WITHID_IDS (oldwithid))));
-            INFO_CSE (arg_info) = AddCseinfo (INFO_CSE (arg_info), ivlet);
+                INFO_CSE (arg_info) = AddLet (INFO_CSE (arg_info), ivlet);
+            }
         }
-    }
 
-    BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
+        BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
 
-    if (BLOCK_INSTR (arg_node) == NULL) {
-        /* insert at least the N_empty node in an empty block */
-        BLOCK_INSTR (arg_node) = TBmakeEmpty ();
-    }
-
-    /* remove top cse frame */
-    INFO_CSE (arg_info) = RemoveTopCselayer (INFO_CSE (arg_info));
-
-    /* remove the fake assignment of the index scalars to the index vector */
-    if (oldwithid != NULL) {
-        INFO_WITHID (arg_info) = oldwithid;
-        if (ivlet != NULL) {
-            ivlet = FREEdoFreeNode (ivlet);
+        /*
+         * remove the fake assignment of the index scalars to the index vector
+         */
+        if (oldwithid != NULL) {
+            INFO_WITHID (arg_info) = oldwithid;
+            if (ivlet != NULL) {
+                ivlet = FREEdoFreeNode (ivlet);
+            }
         }
-    }
 
-    if (BLOCK_VARDEC (arg_node) != NULL) {
-        BLOCK_VARDEC (arg_node) = TRAVdo (BLOCK_VARDEC (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *CSEvardec(node *arg_node, info *arg_info)
- *
- * description:
- *   traverse chain of vardecs to init avis subst attribute.
- *
- *
- *****************************************************************************/
-node *
-CSEvardec (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("CSEvardec");
-
-    VARDEC_AVIS (arg_node) = TRAVdo (VARDEC_AVIS (arg_node), arg_info);
-
-    if (VARDEC_NEXT (arg_node) != NULL) {
-        VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
+        /*
+         * remove top cse frame
+         */
+        INFO_CSE (arg_info) = RemoveTopCseLayer (INFO_CSE (arg_info));
     }
 
     DBUG_RETURN (arg_node);
@@ -1012,11 +938,6 @@ CSElet (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("CSElet");
 
-    DBUG_PRINT ("CSE", ("inspecting expression for cse"));
-
-    DBUG_ASSERT ((LET_EXPR (arg_node) != NULL), "let without expression");
-    DBUG_ASSERT ((LET_IDS (arg_node) != NULL), "let without ids");
-
     /*
      * traverse right side expression to do variable substitutions
      * or CSE in with-loops/special fundefs
@@ -1027,7 +948,7 @@ CSElet (node *arg_node, info *arg_info)
      * funconds must never be eliminated by CSE as this corrupts SSA form!!!
      */
     if (NODE_TYPE (LET_EXPR (arg_node)) != N_funcond) {
-        match = FindCse (INFO_CSE (arg_info), arg_node);
+        match = FindCSE (INFO_CSE (arg_info), arg_node);
     }
 
     /*
@@ -1062,9 +983,7 @@ CSElet (node *arg_node, info *arg_info)
                                                           LET_IDS (arg_node));
 
         } else {
-            /* new expression found */
-            DBUG_PRINT ("CSE", ("add new expression to cselist"));
-            INFO_CSE (arg_info) = AddCseinfo (INFO_CSE (arg_info), arg_node);
+            INFO_CSE (arg_info) = AddLet (INFO_CSE (arg_info), arg_node);
         }
     }
 
@@ -1141,10 +1060,6 @@ CSEap (node *arg_node, info *arg_info)
         INFO_RESULTARG (arg_info) = INFO_RESULTARG (new_arg_info);
 
         new_arg_info = FreeInfo (new_arg_info);
-
-    } else {
-        DBUG_PRINT ("CSE", ("do not traverse in normal fundef %s",
-                            FUNDEF_NAME (AP_FUNDEF (arg_node))));
     }
 
     DBUG_RETURN (arg_node);

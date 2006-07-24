@@ -115,7 +115,6 @@ extern node *DUPavis (node *arg_node, info *arg_info);
 extern node *DUPssastack (node *arg_node, info *arg_info);
 extern node *DUPssacnt (node *arg_node, info *arg_info);
 extern node *DUPfuncond (node *arg_node, info *arg_info);
-extern node *DUPcseinfo (node *arg_node, info *arg_info);
 extern node *DUPannotate (node *arg_node, info *arg_info);
 extern node *DUPex (node *arg_node, info *arg_info);
 extern node *DUPcwrapper (node *arg_node, info *arg_info);
