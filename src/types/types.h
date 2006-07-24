@@ -233,33 +233,6 @@ typedef struct GENERATOR_REL {
 
 #define DIM_NO_OFFSET(dim) (((dim) < KNOWN_DIM_OFFSET) ? KNOWN_DIM_OFFSET - (dim) : (dim))
 
-typedef types shapes; /* this definition is primarily needed for
-                       * the vinfo nodes; there we need the shape
-                       * only( including the dim)...
-                       */
-
-typedef struct WL_INFO {
-    int referenced;         /* number of references in function */
-    int referenced_fold;    /* number of foldable references */
-    int references_folded;  /* number of refs eliminated by WLF */
-    int parts;              /* number of N_part nodes */
-    int complex;            /* indicator of fold complexity */
-    bool foldable;          /* has constant generator */
-    bool no_chance;         /* 1 if WL is defined within loop/cond */
-    bool dependent;         /* depends on fusionable withloop */
-    bool mto_offset_needed; /* more than one offset needed */
-} wl_info;
-
-typedef struct FUN_NAME {
-    char *id;     /* name of function */
-    char *id_mod; /* name of modul belonging to 'id' */
-} fun_name;
-
-typedef struct {
-    int tag; /* tag for return type */
-    int tc;  /* type class */
-} prf_tag;
-
 /*
  * The NEW node structure of the SAC syntax tree
  * The type is abstract, as there is _no_ way to access a node other
