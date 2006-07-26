@@ -83,49 +83,6 @@ FreeInfo (info *info)
 
 /** <!--********************************************************************-->
  *
- * @name Entry functions
- * @{
- *
- *****************************************************************************/
-/** <!--********************************************************************-->
- *
- * @fn node *MSEdoMakeShapeExpression( node *expr, node *avis,
- *                                     node *allids, node *fundef)
- *
- *****************************************************************************/
-node *
-MSEdoMakeShapeExpression (node *expr, node *avis, node *allids, node *fundef)
-{
-    info *info;
-    node *res;
-
-    DBUG_ENTER ("MSEdoMakeShapeExpression");
-
-    info = MakeInfo ();
-
-    INFO_AVIS (info) = avis;
-    INFO_ALLIDS (info) = allids;
-    INFO_FUNDEF (info) = fundef;
-
-    TRAVpush (TR_mse);
-    res = TRAVdo (expr, info);
-    TRAVpop ();
-
-    info = FreeInfo (info);
-
-    if (res != NULL) {
-        AVIS_SHAPEVAROF (ID_AVIS (AVIS_SHAPE (avis))) = NULL;
-    }
-
-    DBUG_RETURN (res);
-}
-
-/** <!--********************************************************************-->
- * @}  <!-- Entry functions -->
- *****************************************************************************/
-
-/** <!--********************************************************************-->
- *
  * @name Static helper funcions
  * @{
  *
@@ -175,8 +132,82 @@ MakeAssignForIdShape (node *id, node *fundef, node **preass)
     DBUG_RETURN (res);
 }
 
+static node *
+MakeVectAvis (char *name, node *dim)
+{
+    node *res;
+
+    DBUG_ENTER ("MakeVectAvis");
+
+    if (NODE_TYPE (dim) == N_num) {
+        res = TBmakeAvis (name, TYmakeAKS (TYmakeSimpleType (T_int),
+                                           SHcreateShape (1, NUM_VAL (dim))));
+    } else {
+        res = TBmakeAvis (name, TYmakeAKD (TYmakeSimpleType (T_int), 1, SHmakeShape (0)));
+    }
+
+    AVIS_DIM (res) = TBmakeNum (1);
+    AVIS_SHAPE (res) = GenIntVector (DUPdoDupNode (dim));
+
+    DBUG_RETURN (res);
+}
+
 /** <!--********************************************************************-->
  * @}  <!-- Static helper functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ *
+ * @name Entry functions
+ * @{
+ *
+ *****************************************************************************/
+/** <!--********************************************************************-->
+ *
+ * @fn node *MSEdoMakeShapeExpression( node *expr, node *avis,
+ *                                     node *allids, node *fundef)
+ *
+ *****************************************************************************/
+node *
+MSEdoMakeShapeExpression (node *expr, node *avis, node *allids, node *fundef)
+{
+    info *info;
+    node *res;
+    node *shpavis;
+
+    DBUG_ENTER ("MSEdoMakeShapeExpression");
+
+    DBUG_ASSERT ((AVIS_DIM (avis) != NULL) && (AVIS_SHAPE (avis) == NULL),
+                 "AVIS_DIM( avis) must not be NULL "
+                 "whereas AVIS_SHAPE( avis) must be NULL");
+
+    info = MakeInfo ();
+
+    INFO_AVIS (info) = avis;
+    INFO_ALLIDS (info) = allids;
+    INFO_FUNDEF (info) = fundef;
+
+    shpavis = MakeVectAvis (ILIBtmpVarName (AVIS_NAME (avis)), AVIS_DIM (avis));
+    AVIS_SHAPE (avis) = TBmakeId (shpavis);
+
+    TRAVpush (TR_mse);
+    res = TRAVdo (expr, info);
+    TRAVpop ();
+
+    info = FreeInfo (info);
+
+    if (res != NULL) {
+        FUNDEF_VARDEC (fundef) = TBmakeVardec (shpavis, FUNDEF_VARDEC (fundef));
+    } else {
+        AVIS_SHAPE (avis) = FREEdoFreeNode (AVIS_SHAPE (avis));
+        shpavis = FREEdoFreeNode (shpavis);
+    }
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ * @}  <!-- Entry functions -->
  *****************************************************************************/
 
 /** <!--********************************************************************-->
@@ -402,23 +433,77 @@ MSEprf (node *arg_node, info *arg_info)
         break;
 
     case F_shape:
-        rhsnode = TCmakeIntVector (
-          TBmakeExprs (DUPdoDupNode (AVIS_DIM (ID_AVIS (PRF_ARG1 (arg_node)))), NULL));
+        if (AVIS_DIM (ID_AVIS (PRF_ARG1 (arg_node))) != NULL) {
+            node *adim = AVIS_DIM (ID_AVIS (PRF_ARG1 (arg_node)));
+            rhsnode = TCmakeIntVector (TBmakeExprs (DUPdoDupNode (adim), NULL));
+        }
         break;
 
-    case F_take_SxV:
-        rhsnode
-          = TCmakeIntVector (TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)), NULL));
-        break;
+    case F_take_SxV: {
+        node *scalar;
+
+        if (NODE_TYPE (PRF_ARG1 (arg_node)) == N_num) {
+            scalar = TBmakeNum (abs (NUM_VAL (PRF_ARG1 (arg_node))));
+        } else {
+            node *idavis;
+            node *absavis;
+
+            idavis = ID_AVIS (PRF_ARG1 (arg_node));
+
+            absavis = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (idavis)),
+                                  TYeliminateAKV (AVIS_TYPE (idavis)));
+
+            AVIS_DIM (absavis) = DUPdoDupNode (AVIS_DIM (idavis));
+            AVIS_SHAPE (absavis) = DUPdoDupNode (AVIS_SHAPE (idavis));
+
+            FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+              = TBmakeVardec (absavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+
+            preass = TBmakeAssign (TBmakeLet (TBmakeIds (absavis, NULL),
+                                              TCmakePrf1 (F_abs, TBmakeId (idavis))),
+                                   preass);
+
+            AVIS_SSAASSIGN (absavis) = preass;
+
+            scalar = TBmakeId (absavis);
+        }
+
+        rhsnode = TCmakeIntVector (TBmakeExprs (scalar, NULL));
+    } break;
 
     case F_drop_SxV: {
+        node *scalar;
         node *vsavis;
 
         vsavis
           = MakeAssignForIdShape (PRF_ARG2 (arg_node), INFO_FUNDEF (arg_info), &preass);
 
-        rhsnode
-          = TCmakePrf2 (F_sub_AxS, TBmakeId (vsavis), DUPdoDupNode (PRF_ARG1 (arg_node)));
+        if (NODE_TYPE (PRF_ARG1 (arg_node)) == N_num) {
+            scalar = TBmakeNum (abs (NUM_VAL (PRF_ARG1 (arg_node))));
+        } else {
+            node *idavis;
+            node *absavis;
+
+            idavis = ID_AVIS (PRF_ARG1 (arg_node));
+
+            absavis = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (idavis)),
+                                  TYeliminateAKV (AVIS_TYPE (idavis)));
+
+            AVIS_DIM (absavis) = DUPdoDupNode (AVIS_DIM (idavis));
+            AVIS_SHAPE (absavis) = DUPdoDupNode (AVIS_SHAPE (idavis));
+
+            FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+              = TBmakeVardec (absavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+
+            preass = TBmakeAssign (TBmakeLet (TBmakeIds (absavis, NULL),
+                                              TCmakePrf1 (F_abs, TBmakeId (idavis))),
+                                   preass);
+
+            AVIS_SSAASSIGN (absavis) = preass;
+
+            scalar = TBmakeId (absavis);
+        }
+        rhsnode = TCmakePrf2 (F_sub_AxS, TBmakeId (vsavis), scalar);
     } break;
 
     case F_cat_VxV: {
@@ -432,6 +517,10 @@ MSEprf (node *arg_node, info *arg_info)
 
         rhsnode = TCmakePrf2 (F_add_AxA, TBmakeId (v1savis), TBmakeId (v2savis));
     } break;
+
+    case F_dtype_conv:
+        rhsnode = DUPdoDupNode (PRF_ARG2 (arg_node));
+        break;
 
     case F_accu:
         break;

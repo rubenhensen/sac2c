@@ -295,6 +295,15 @@ CVPprf (node *arg_node, info *arg_info)
         }
         break;
 
+    case F_dtype_conv:
+        INFO_PROPMODE (arg_info) = PROP_scalarconst | PROP_variable;
+        PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
+        INFO_PROPMODE (arg_info) = PROP_scalarconst | PROP_variable;
+        PRF_ARG2 (arg_node) = TRAVdo (PRF_ARG2 (arg_node), arg_info);
+        INFO_PROPMODE (arg_info) = PROP_variable;
+        PRF_ARG3 (arg_node) = TRAVdo (PRF_ARG3 (arg_node), arg_info);
+        break;
+
     case F_idx_shape_sel:
     case F_take_SxV:
     case F_drop_SxV:

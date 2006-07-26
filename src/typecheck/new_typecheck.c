@@ -725,19 +725,6 @@ NTCvardec (node *arg_node, info *arg_info)
         type = TYfreeType (type);
     }
 
-    /*
-     * For shape variables, try to reconstruct type from dim, shape here
-     * as they are never assigned!
-     */
-    if (AVIS_SHAPEVAROF (avis) != NULL) {
-        if (NUM_VAL (AVIS_DIM (avis)) == 0) {
-            AVIS_TYPE (avis) = TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0));
-        } else {
-            DBUG_ASSERT (NUM_VAL (AVIS_DIM (avis)) == 1, "Illegal shape variable found!");
-            AVIS_TYPE (avis) = TYmakeAKD (TYmakeSimpleType (T_int), 1, SHmakeShape (0));
-        }
-    }
-
     if (VARDEC_NEXT (arg_node) != NULL) {
         VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
     }

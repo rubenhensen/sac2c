@@ -783,37 +783,6 @@ InsListGetFrame (nodelist *il, int depth)
     DBUG_RETURN (tmp);
 }
 
-static void
-SetShapeVarsDefDepth (node *avis, int defdepth)
-{
-    DBUG_ENTER ("SetShapeVarsDefined");
-
-    if ((AVIS_DIM (avis) != NULL) && (NODE_TYPE (AVIS_DIM (avis)) == N_id)
-        && (AVIS_SHAPEVAROF (ID_AVIS (AVIS_DIM (avis))) == avis)) {
-        AVIS_DEFDEPTH (ID_AVIS (AVIS_DIM (avis))) = defdepth;
-    }
-
-    if (AVIS_SHAPE (avis) != NULL) {
-        if ((NODE_TYPE (AVIS_SHAPE (avis)) == N_id)
-            && (AVIS_SHAPEVAROF (ID_AVIS (AVIS_SHAPE (avis))) == avis)) {
-            AVIS_DEFDEPTH (ID_AVIS (AVIS_SHAPE (avis))) = defdepth;
-        }
-
-        if ((NODE_TYPE (AVIS_SHAPE (avis)) == N_array)) {
-            node *exprs = ARRAY_AELEMS (AVIS_SHAPE (avis));
-            while (exprs != NULL) {
-                if ((NODE_TYPE (EXPRS_EXPR (exprs)) == N_id)
-                    && (AVIS_SHAPEVAROF (ID_AVIS (EXPRS_EXPR (exprs))) == avis)) {
-                    AVIS_DEFDEPTH (ID_AVIS (EXPRS_EXPR (exprs))) = defdepth;
-                }
-                exprs = EXPRS_NEXT (exprs);
-            }
-        }
-    }
-
-    DBUG_VOID_RETURN;
-}
-
 /* traversal functions */
 /******************************************************************************
  *
@@ -1002,11 +971,6 @@ LIRvardec (node *arg_node, info *arg_info)
     AVIS_SSALPINV (avis) = FALSE;
     AVIS_LIRMOVE (avis) = LIRMOVE_NONE;
     AVIS_EXPRESULT (avis) = FALSE;
-
-    if ((AVIS_SHAPEVAROF (avis) != NULL)
-        && (NODE_TYPE (AVIS_DECL (AVIS_SHAPEVAROF (avis))) == N_arg)) {
-        AVIS_DEFDEPTH (avis) = 0;
-    }
 
     /* traverse to next vardec */
     if (VARDEC_NEXT (arg_node) != NULL) {
@@ -1687,7 +1651,6 @@ LIRids (node *arg_ids, info *arg_info)
 
     /* set current withloop depth as definition depth */
     AVIS_DEFDEPTH (avis) = INFO_SETDEPTH (arg_info);
-    SetShapeVarsDefDepth (avis, INFO_SETDEPTH (arg_info));
 
     /* propagte the currect FLAG to the ids */
     switch (INFO_FLAG (arg_info)) {

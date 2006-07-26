@@ -9,6 +9,7 @@
 #include "constants.h"
 #include "new_types.h"
 #include "type_errors.h"
+#include "type_utils.h"
 #include "user_types.h"
 #include "shape.h"
 #include "constants.h"
@@ -290,6 +291,40 @@ NTCCTprf_type_conv (te_info *info, ntype *args)
                        TYtype2String (arg, FALSE, 0), TYtype2String (type, FALSE, 0));
         err_msg = TEfetchErrors ();
         res = TYmakeBottomType (err_msg);
+    }
+
+    DBUG_RETURN (TYmakeProductType (1, res));
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn ntype *NTCCTprf_dtype_conv( te_info *info, ntype *args)
+ *
+ *****************************************************************************/
+ntype *
+NTCCTprf_dtype_conv (te_info *info, ntype *args)
+{
+    ntype *dim;
+    ntype *shape;
+    ntype *type;
+    ntype *res;
+
+    DBUG_ENTER ("NTCCTprf_dtype_conv");
+
+    dim = TYgetProductMember (args, 0);
+    shape = TYgetProductMember (args, 1);
+    type = TYgetProductMember (args, 2);
+
+    if (TUshapeKnown (type)) {
+        res = TYcopyType (type);
+    } else if (TYisAKV (shape)) {
+        res = TYmakeAKS (TYcopyType (TYgetScalar (type)),
+                         COconstant2Shape (TYgetValue (shape)));
+    } else if (TYisAKV (dim)) {
+        res = TYmakeAKD (TYcopyType (TYgetScalar (type)),
+                         *((int *)COgetDataVec (TYgetValue (dim))), SHmakeShape (0));
+    } else {
+        res = TYcopyType (type);
     }
 
     DBUG_RETURN (TYmakeProductType (1, res));

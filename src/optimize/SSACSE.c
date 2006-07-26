@@ -261,9 +261,6 @@ SetSubstAttributes (node *subst, node *with)
 
         AVIS_SUBST (IDS_AVIS (tmpsubst)) = IDS_AVIS (tmpwith);
 
-        /* vardec has no definition anymore */
-        AVIS_SSAASSIGN (IDS_AVIS (tmpsubst)) = NULL;
-
         tmpsubst = IDS_NEXT (tmpsubst);
         tmpwith = IDS_NEXT (tmpwith);
     }
@@ -711,8 +708,25 @@ CSEfundef (node *arg_node, info *arg_info)
     }
 
     if (FUNDEF_BODY (arg_node) != NULL) {
+        node *n;
+
         /* traverse block of fundef */
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+
+        /*
+         * Reset AVIS_SUBST
+         */
+        n = FUNDEF_ARGS (arg_node);
+        while (n != NULL) {
+            AVIS_SUBST (ARG_AVIS (n)) = NULL;
+            n = ARG_NEXT (n);
+        }
+
+        n = FUNDEF_VARDEC (arg_node);
+        while (n != NULL) {
+            AVIS_SUBST (VARDEC_AVIS (n)) = NULL;
+            n = VARDEC_NEXT (n);
+        }
     }
 
     DBUG_RETURN (arg_node);

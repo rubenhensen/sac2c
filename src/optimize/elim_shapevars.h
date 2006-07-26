@@ -17,13 +17,10 @@ extern node *ESVdoInsertShapeVariables (node *syntax_tree);
 
 extern node *ESVfundef (node *arg_node, info *arg_info);
 extern node *ESVavis (node *arg_node, info *arg_info);
-extern node *ESVblock (node *arg_node, info *arg_info);
 extern node *ESVassign (node *arg_node, info *arg_info);
 extern node *ESVlet (node *arg_node, info *arg_info);
-extern node *ESVids (node *arg_node, info *arg_info);
 extern node *ESVid (node *arg_node, info *arg_info);
-extern node *ESVcond (node *arg_node, info *arg_info);
-extern node *ESVfuncond (node *arg_node, info *arg_info);
+extern node *ESVprf (node *arg_node, info *arg_info);
 
 /*
  * Do not traverse

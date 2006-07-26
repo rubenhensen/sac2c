@@ -46,17 +46,23 @@
  *****************************************************************************/
 struct INFO {
     enum { TS_module, TS_fundef } travscope;
+    enum { TM_all, TM_then, TM_else } travmode;
     node *vardecs;
     node *preassign;
+    node *postassign;
     node *fundef;
+    node *preblock;
     node *lhs;
     node *rhs;
 };
 
 #define INFO_TRAVSCOPE(n) ((n)->travscope)
+#define INFO_TRAVMODE(n) ((n)->travmode)
 #define INFO_VARDECS(n) ((n)->vardecs)
 #define INFO_PREASSIGN(n) ((n)->preassign)
+#define INFO_POSTASSIGN(n) ((n)->postassign)
 #define INFO_FUNDEF(n) ((n)->fundef)
+#define INFO_PREBLOCK(n) ((n)->preblock)
 #define INFO_LHS(n) ((n)->lhs)
 #define INFO_RHS(n) ((n)->rhs)
 
@@ -70,8 +76,14 @@ MakeInfo ()
     result = ILIBmalloc (sizeof (info));
 
     INFO_TRAVSCOPE (result) = TS_module;
+    INFO_TRAVMODE (result) = TM_all;
     INFO_VARDECS (result) = NULL;
     INFO_PREASSIGN (result) = NULL;
+    INFO_POSTASSIGN (result) = NULL;
+    INFO_FUNDEF (result) = NULL;
+    INFO_PREBLOCK (result) = NULL;
+    INFO_LHS (result) = NULL;
+    INFO_RHS (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -154,77 +166,138 @@ ISVdoInsertShapeVariablesOneFundef (node *fundef)
  * @{
  *
  *****************************************************************************/
-static node *
-GenIntVector (node *element)
-{
-    node *res = NULL;
-
-    DBUG_ENTER ("GenIntVector");
-
-    res = TCmakeIntVector (TBmakeExprs (element, NULL));
-
-    DBUG_RETURN (res);
-}
 
 static node *
-MakeScalarAvis (node *orig_avis, char *name)
+MakeDTProxy (node *avis, node *postass, info *arg_info)
 {
-    node *res;
+    bool makeproxy = FALSE;
 
-    DBUG_ENTER ("MakeScalarAvis");
+    DBUG_ENTER ("MakeDTProxy");
 
-    res = TBmakeAvis (name, TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
+    switch (INFO_TRAVMODE (arg_info)) {
+    case TM_then:
+        makeproxy = (!AVIS_HASDTTHENPROXY (avis));
+        break;
 
-    AVIS_DIM (res) = TBmakeNum (0);
-    AVIS_SHAPE (res) = TCmakeIntVector (NULL);
-    AVIS_SHAPEVAROF (res) = orig_avis;
+    case TM_else:
+        makeproxy = (!AVIS_HASDTELSEPROXY (avis));
+        break;
 
-    DBUG_RETURN (res);
-}
-
-static bool
-DimIsUndefinedId (node *avis)
-{
-    bool res;
-
-    DBUG_ENTER ("DimIsUndefinedId");
-
-    res = ((NODE_TYPE (AVIS_DIM (avis)) == N_id)
-           && (AVIS_SHAPEVAROF (ID_AVIS (AVIS_DIM (avis))) == avis));
-
-    DBUG_RETURN (res);
-}
-
-static bool
-ShapeIsUndefinedId (node *avis)
-{
-    bool res;
-
-    DBUG_ENTER ("ShapeIsUndefinedId");
-
-    res = ((NODE_TYPE (AVIS_SHAPE (avis)) == N_id)
-           && (AVIS_SHAPEVAROF (ID_AVIS (AVIS_SHAPE (avis))) == avis));
-
-    DBUG_RETURN (res);
-}
-
-static bool
-ShapeIsUndefinedIdArray (node *avis)
-{
-    bool res = FALSE;
-
-    DBUG_ENTER ("ShapeIsUndefinedIdArray");
-
-    if ((NODE_TYPE (AVIS_SHAPE (avis)) == N_array)
-        && (ARRAY_AELEMS (AVIS_SHAPE (avis)) != NULL)) {
-        node *elem1 = EXPRS_EXPR (ARRAY_AELEMS (AVIS_SHAPE (avis)));
-        res
-          = ((NODE_TYPE (elem1) == N_id) && (AVIS_SHAPEVAROF (ID_AVIS (elem1)) == avis));
+    case TM_all:
+        makeproxy = ((!AVIS_HASDTTHENPROXY (avis)) || (!AVIS_HASDTELSEPROXY (avis)));
+        break;
     }
 
-    DBUG_RETURN (res);
+    if (makeproxy) {
+        node *dimavis;
+        node *shpavis;
+        node *proxyavis;
+        node *fundef;
+
+        fundef = INFO_FUNDEF (arg_info);
+
+        dimavis = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (avis)),
+                              TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
+        AVIS_DIM (dimavis) = TBmakeNum (0);
+        AVIS_SHAPE (dimavis) = TCmakeIntVector (NULL);
+
+        shpavis = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (avis)),
+                              TYmakeAKD (TYmakeSimpleType (T_int), 1, SHmakeShape (0)));
+        AVIS_DIM (shpavis) = TBmakeNum (1);
+        AVIS_SHAPE (shpavis) = TCmakeIntVector (TBmakeExprs (TBmakeId (dimavis), NULL));
+
+        proxyavis
+          = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (avis)), TYcopyType (AVIS_TYPE (avis)));
+        AVIS_DIM (proxyavis) = TBmakeId (dimavis);
+        AVIS_SHAPE (proxyavis) = TBmakeId (shpavis);
+
+        FUNDEF_VARDEC (fundef)
+          = TBmakeVardec (dimavis,
+                          TBmakeVardec (shpavis, TBmakeVardec (proxyavis,
+                                                               FUNDEF_VARDEC (fundef))));
+
+        postass
+          = TBmakeAssign (TBmakeLet (TBmakeIds (proxyavis, NULL),
+                                     TCmakePrf3 (F_dtype_conv, TBmakeId (dimavis),
+                                                 TBmakeId (shpavis), TBmakeId (avis))),
+                          postass);
+        AVIS_SSAASSIGN (proxyavis) = postass;
+
+        postass = TBmakeAssign (TBmakeLet (TBmakeIds (shpavis, NULL),
+                                           TCmakePrf1 (F_shape, TBmakeId (avis))),
+                                postass);
+        AVIS_SSAASSIGN (shpavis) = postass;
+
+        postass = TBmakeAssign (TBmakeLet (TBmakeIds (dimavis, NULL),
+                                           TCmakePrf1 (F_dim, TBmakeId (avis))),
+                                postass);
+        AVIS_SSAASSIGN (dimavis) = postass;
+
+        switch (INFO_TRAVMODE (arg_info)) {
+        case TM_then:
+            AVIS_HASDTTHENPROXY (avis) = TRUE;
+            break;
+
+        case TM_else:
+            AVIS_HASDTELSEPROXY (avis) = TRUE;
+            break;
+
+        case TM_all:
+            AVIS_HASDTTHENPROXY (avis) = TRUE;
+            AVIS_HASDTELSEPROXY (avis) = TRUE;
+            break;
+        }
+    }
+
+    DBUG_RETURN (postass);
 }
 
+static node *
+MakeArgProxies (node *arg_node, info *arg_info)
+{
+    node *ass = NULL;
+
+    DBUG_ENTER ("MakeArgProxies");
+
+    if (arg_node != NULL) {
+        ass = MakeArgProxies (ARG_NEXT (arg_node), arg_info);
+        ass = MakeDTProxy (ARG_AVIS (arg_node), ass, arg_info);
+    }
+
+    DBUG_RETURN (ass);
+}
+
+static node *
+PrependAssign (node *prefix, node *rest)
+{
+    DBUG_ENTER ("PrependAssign");
+
+    if (prefix != NULL) {
+        if (NODE_TYPE (rest) == N_empty) {
+            rest = FREEdoFreeNode (rest);
+            rest = prefix;
+        } else {
+            rest = TCappendAssign (prefix, rest);
+        }
+    }
+
+    DBUG_RETURN (rest);
+}
+
+static node *
+RemoveAvisSubst (node *fundef)
+{
+    DBUG_ENTER ("RemoveAvisSubst");
+
+    if (FUNDEF_ARGS (fundef) != NULL) {
+        FUNDEF_ARGS (fundef) = TRAVdo (FUNDEF_ARGS (fundef), NULL);
+    }
+    if (FUNDEF_VARDEC (fundef) != NULL) {
+        FUNDEF_VARDEC (fundef) = TRAVdo (FUNDEF_VARDEC (fundef), NULL);
+    }
+
+    DBUG_RETURN (fundef);
+}
 /** <!--********************************************************************-->
  * @}  <!-- Static helper functions -->
  *****************************************************************************/
@@ -246,48 +319,43 @@ ISVfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ISVfundef");
 
-    if ((FUNDEF_BODY (arg_node) != NULL) && (FUNDEF_VARDEC (arg_node) != NULL)) {
+    if (FUNDEF_BODY (arg_node) != NULL) {
+        INFO_FUNDEF (arg_info) = arg_node;
 
-        if (FUNDEF_ARGS (arg_node) != NULL) {
-            FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
+        /*
+         * Resolve shape variables to dim, shape, idx_shape_sel
+         * In case of cond functions, we need a copy of those variables
+         */
+        if (FUNDEF_ISCONDFUN (arg_node)) {
+            INFO_TRAVMODE (arg_info) = TM_then;
+            arg_node = RemoveAvisSubst (arg_node);
+            INFO_PREBLOCK (arg_info) = MakeArgProxies (FUNDEF_ARGS (arg_node), arg_info);
+
+            FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+
+            INFO_TRAVMODE (arg_info) = TM_else;
+            arg_node = RemoveAvisSubst (arg_node);
+            INFO_PREBLOCK (arg_info) = MakeArgProxies (FUNDEF_ARGS (arg_node), arg_info);
+
+            FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+        } else {
+            INFO_TRAVMODE (arg_info) = TM_all;
+            arg_node = RemoveAvisSubst (arg_node);
+            FUNDEF_INSTR (arg_node)
+              = TCappendAssign (MakeArgProxies (FUNDEF_ARGS (arg_node), arg_info),
+                                FUNDEF_INSTR (arg_node));
+
+            FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
         }
 
-        FUNDEF_VARDEC (arg_node) = TRAVdo (FUNDEF_VARDEC (arg_node), arg_info);
-
-        INFO_FUNDEF (arg_info) = arg_node;
-        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+        /*
+         * Clean up the AVIS_SUBST mess
+         */
+        arg_node = RemoveAvisSubst (arg_node);
     }
 
     if ((INFO_TRAVSCOPE (arg_info) == TS_module) && (FUNDEF_NEXT (arg_node) != NULL)) {
         FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *ISVvardec(node *arg_node, info *arg_info)
- *
- * @brief
- *
- *****************************************************************************/
-node *
-ISVvardec (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("ISVvardec");
-
-    if (VARDEC_NEXT (arg_node) != NULL) {
-        VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
-    }
-
-    VARDEC_AVIS (arg_node) = TRAVdo (VARDEC_AVIS (arg_node), arg_info);
-
-    if (INFO_VARDECS (arg_info) != NULL) {
-        VARDEC_NEXT (arg_node)
-          = TCappendVardec (INFO_VARDECS (arg_info), VARDEC_NEXT (arg_node));
-
-        INFO_VARDECS (arg_info) = NULL;
     }
 
     DBUG_RETURN (arg_node);
@@ -303,70 +371,7 @@ ISVavis (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ISVavis");
 
-    if (AVIS_DIM (arg_node) == NULL) {
-        if (TUdimKnown (AVIS_TYPE (arg_node))) {
-            AVIS_DIM (arg_node) = TBmakeNum (TYgetDim (AVIS_TYPE (arg_node)));
-        } else {
-            node *dimavis
-              = MakeScalarAvis (arg_node,
-                                ILIBstringConcat (AVIS_NAME (arg_node), "__dim"));
-
-            INFO_VARDECS (arg_info) = TBmakeVardec (dimavis, INFO_VARDECS (arg_info));
-
-            AVIS_DIM (arg_node) = TBmakeId (dimavis);
-        }
-    }
-
-    if (AVIS_SHAPE (arg_node) == NULL) {
-        if (TUshapeKnown (AVIS_TYPE (arg_node))) {
-            /*
-             * <= AKS
-             */
-            AVIS_SHAPE (arg_node) = SHshape2Array (TYgetShape (AVIS_TYPE (arg_node)));
-        } else if (TUdimKnown (AVIS_TYPE (arg_node))) {
-            /*
-             * AKD
-             */
-            int i;
-            node *aelems = NULL;
-            str_buf *name;
-
-            name = ILIBstrBufCreate (1024 * sizeof (char));
-
-            for (i = TYgetDim (AVIS_TYPE (arg_node)) - 1; i >= 0; i--) {
-                name = ILIBstrBufPrintf (name, "%s__shp%d", AVIS_NAME (arg_node), i);
-
-                node *selavis = MakeScalarAvis (arg_node, ILIBstrBuf2String (name));
-
-                ILIBstrBufFlush (name);
-
-                INFO_VARDECS (arg_info) = TBmakeVardec (selavis, INFO_VARDECS (arg_info));
-
-                aelems = TBmakeExprs (TBmakeId (selavis), aelems);
-            }
-
-            AVIS_SHAPE (arg_node) = TCmakeIntVector (aelems);
-
-            name = ILIBstrBufFree (name);
-        } else {
-            /*
-             * AUD
-             */
-            node *shpavis;
-
-            shpavis
-              = TBmakeAvis (ILIBstringConcat (AVIS_NAME (arg_node), "__shp"),
-                            TYmakeAKD (TYmakeSimpleType (T_int), 1, SHmakeShape (0)));
-
-            AVIS_DIM (shpavis) = TBmakeNum (1);
-            AVIS_SHAPE (shpavis) = GenIntVector (DUPdoDupNode (AVIS_DIM (arg_node)));
-            AVIS_SHAPEVAROF (shpavis) = arg_node;
-
-            INFO_VARDECS (arg_info) = TBmakeVardec (shpavis, INFO_VARDECS (arg_info));
-
-            AVIS_SHAPE (arg_node) = TBmakeId (shpavis);
-        }
-    }
+    AVIS_SUBST (arg_node) = NULL;
 
     DBUG_RETURN (arg_node);
 }
@@ -403,6 +408,12 @@ ISVassign (node *arg_node, info *arg_info)
     preassign = INFO_PREASSIGN (arg_info);
     INFO_PREASSIGN (arg_info) = NULL;
 
+    if (INFO_POSTASSIGN (arg_info) != NULL) {
+        ASSIGN_NEXT (arg_node)
+          = TCappendAssign (INFO_POSTASSIGN (arg_info), ASSIGN_NEXT (arg_node));
+        INFO_POSTASSIGN (arg_info) = NULL;
+    }
+
     if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
     }
@@ -424,6 +435,7 @@ ISVlet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ISVlet");
 
+    INFO_LHS (arg_info) = LET_IDS (arg_node);
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
     if (LET_IDS (arg_node) != NULL) {
@@ -450,105 +462,62 @@ ISVids (node *arg_node, info *arg_info)
 
     avis = IDS_AVIS (arg_node);
 
-    if (DimIsUndefinedId (avis)) {
-        INFO_PREASSIGN (arg_info)
-          = TCappendAssign (INFO_PREASSIGN (arg_info),
-                            MDEdoMakeDimExpression (INFO_RHS (arg_info), avis,
-                                                    INFO_LHS (arg_info),
-                                                    INFO_FUNDEF (arg_info)));
-    }
-
-    if ((!DimIsUndefinedId (avis)) && (ShapeIsUndefinedId (avis))) {
-        INFO_PREASSIGN (arg_info)
-          = TCappendAssign (INFO_PREASSIGN (arg_info),
-                            MSEdoMakeShapeExpression (INFO_RHS (arg_info), avis,
-                                                      INFO_LHS (arg_info),
-                                                      INFO_FUNDEF (arg_info)));
-    }
-
-    if ((!DimIsUndefinedId (avis)) && (ShapeIsUndefinedIdArray (avis))) {
-        int dim;
-        node *shpavis;
-        node *oldshape;
-        node *newass = NULL;
-
-        DBUG_ASSERT (NODE_TYPE (AVIS_DIM (avis)) == N_num,
-                     "AKD array without constant AVIS_DIM found!");
-
-        dim = SHgetExtent (ARRAY_SHAPE (AVIS_SHAPE (avis)), 0);
-
-        shpavis
-          = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (avis)),
-                        TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (1, dim)));
-
-        AVIS_DIM (shpavis) = TBmakeNum (1);
-        AVIS_SHAPE (shpavis) = GenIntVector (TBmakeNum (dim));
-        AVIS_SHAPEVAROF (shpavis) = avis;
-
-        /*
-         * Temporarily exchange Shapevector with Id
-         */
-        oldshape = AVIS_SHAPE (avis);
-        AVIS_SHAPE (avis) = TBmakeId (shpavis);
-
-        newass = MSEdoMakeShapeExpression (INFO_RHS (arg_info), avis, INFO_LHS (arg_info),
-                                           INFO_FUNDEF (arg_info));
-
-        AVIS_SHAPE (avis) = FREEdoFreeNode (AVIS_SHAPE (avis));
-        AVIS_SHAPE (avis) = oldshape;
-
-        if (newass == NULL) {
-            shpavis = FREEdoFreeNode (shpavis);
-        } else {
-            FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-              = TBmakeVardec (shpavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
-
-            INFO_PREASSIGN (arg_info)
-              = TCappendAssign (INFO_PREASSIGN (arg_info), newass);
-            newass = NULL;
-
-            for (dim = dim - 1; dim >= 0; dim--) {
-                shape *shp;
-                node *idxavis;
-                node *shpelavis;
-
-                shpelavis
-                  = ID_AVIS (TCgetNthExpr (dim + 1, ARRAY_AELEMS (AVIS_SHAPE (avis))));
-
-                shp = SHcreateShape (1, dim);
-                idxavis = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (avis)),
-                                      TYmakeAKV (TYmakeSimpleType (T_int),
-                                                 COmakeConstantFromShape (shp)));
-                shp = SHfreeShape (shp);
-
-                AVIS_DIM (idxavis) = TBmakeNum (1);
-                AVIS_SHAPE (idxavis) = GenIntVector (TBmakeNum (1));
-
-                FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-                  = TBmakeVardec (idxavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
-
-                newass
-                  = TBmakeAssign (TBmakeLet (TBmakeIds (idxavis, NULL),
-                                             TCmakeIntVector (
-                                               TBmakeExprs (TBmakeNum (dim), NULL))),
-                                  TBmakeAssign (TBmakeLet (TBmakeIds (shpelavis, NULL),
-                                                           TCmakePrf2 (F_sel,
-                                                                       TBmakeId (idxavis),
-                                                                       TBmakeId (
-                                                                         shpavis))),
-                                                newass));
-
-                AVIS_SSAASSIGN (idxavis) = newass;
-                AVIS_SSAASSIGN (shpelavis) = ASSIGN_NEXT (newass);
-                AVIS_SHAPEVAROF (shpelavis) = NULL;
+    if ((NODE_TYPE (INFO_RHS (arg_info)) != N_ap)
+        && (!((NODE_TYPE (INFO_RHS (arg_info)) == N_prf)
+              && (PRF_PRF (INFO_RHS (arg_info)) == F_type_conv)))) {
+        if (AVIS_DIM (avis) == NULL) {
+            if (TUdimKnown (AVIS_TYPE (avis))) {
+                AVIS_DIM (avis) = TBmakeNum (TYgetDim (AVIS_TYPE (avis)));
+            } else {
+                INFO_PREASSIGN (arg_info)
+                  = TCappendAssign (INFO_PREASSIGN (arg_info),
+                                    MDEdoMakeDimExpression (INFO_RHS (arg_info), avis,
+                                                            INFO_LHS (arg_info),
+                                                            INFO_FUNDEF (arg_info)));
             }
         }
 
-        INFO_PREASSIGN (arg_info) = TCappendAssign (INFO_PREASSIGN (arg_info), newass);
+        if ((AVIS_DIM (avis) != NULL) && (AVIS_SHAPE (avis) == NULL)) {
+            if (TUshapeKnown (AVIS_TYPE (avis))) {
+                AVIS_SHAPE (avis) = SHshape2Array (TYgetShape (AVIS_TYPE (avis)));
+            } else {
+                INFO_PREASSIGN (arg_info)
+                  = TCappendAssign (INFO_PREASSIGN (arg_info),
+                                    MSEdoMakeShapeExpression (INFO_RHS (arg_info), avis,
+                                                              INFO_LHS (arg_info),
+                                                              INFO_FUNDEF (arg_info)));
+            }
+        }
+    } else {
+        if (!((FUNDEF_ISDOFUN (INFO_FUNDEF (arg_info)))
+              && (NODE_TYPE (INFO_RHS (arg_info)) == N_ap)
+              && (AP_FUNDEF (INFO_RHS (arg_info)) == INFO_FUNDEF (arg_info)))) {
+            INFO_POSTASSIGN (arg_info)
+              = MakeDTProxy (avis, INFO_POSTASSIGN (arg_info), arg_info);
+        }
     }
 
     if (IDS_NEXT (arg_node) != NULL) {
         IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *ISVprf( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+ISVprf (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("ISVprf");
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    if (PRF_PRF (arg_node) == F_dtype_conv) {
+        AVIS_SUBST (ID_AVIS (PRF_ARG3 (arg_node))) = IDS_AVIS (INFO_LHS (arg_info));
     }
 
     DBUG_RETURN (arg_node);
@@ -564,23 +533,11 @@ ISVwith (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ISVwith");
 
-    WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
     WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
+    WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
+    WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
-}
-
-static void
-MakePreassign (node *avis, node *rhs, info *arg_info)
-{
-    DBUG_ENTER ("MakePreassign");
-
-    INFO_PREASSIGN (arg_info)
-      = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), rhs), INFO_PREASSIGN (arg_info));
-    AVIS_SHAPEVAROF (avis) = NULL;
-    AVIS_SSAASSIGN (avis) = INFO_PREASSIGN (arg_info);
-
-    DBUG_VOID_RETURN;
 }
 
 /** <!--********************************************************************-->
@@ -595,51 +552,22 @@ ISVpart (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("ISVpart");
 
+    PART_GENERATOR (arg_node) = TRAVdo (PART_GENERATOR (arg_node), arg_info);
+
     if (NODE_TYPE (PART_GENERATOR (arg_node)) == N_generator) {
         node *ivavis = IDS_AVIS (PART_VEC (arg_node));
 
-        if (NODE_TYPE (AVIS_DIM (ivavis)) == N_id) {
-            node *dimavis = ID_AVIS (AVIS_DIM (ivavis));
-            if (AVIS_SHAPEVAROF (dimavis) == ivavis) {
-                MakePreassign (dimavis, TBmakeNum (1), arg_info);
-            }
+        if (AVIS_DIM (ivavis) == NULL) {
+            AVIS_DIM (ivavis) = TBmakeNum (1);
         }
 
-        if (NODE_TYPE (AVIS_SHAPE (ivavis)) == N_id) {
-            node *savis = ID_AVIS (AVIS_SHAPE (ivavis));
+        if (AVIS_SHAPE (ivavis) == NULL) {
+            node *lb = GENERATOR_BOUND1 (PART_GENERATOR (arg_node));
 
-            if (AVIS_SHAPEVAROF (savis) == ivavis) {
-                node *lb = GENERATOR_BOUND1 (PART_GENERATOR (arg_node));
-
-                if (NODE_TYPE (lb) == N_array) {
-                    MakePreassign (savis, SHshape2Array (ARRAY_SHAPE (lb)), arg_info);
-                } else {
-                    MakePreassign (savis, DUPdoDupNode (AVIS_SHAPE (ID_AVIS (lb))),
-                                   arg_info);
-                }
-            }
-        }
-
-        if (NODE_TYPE (AVIS_SHAPE (ivavis)) == N_array) {
-            node *svar = EXPRS_EXPR (ARRAY_AELEMS (AVIS_SHAPE (ivavis)));
-
-            if (NODE_TYPE (svar) == N_id) {
-                node *svavis = ID_AVIS (svar);
-
-                if (AVIS_SHAPEVAROF (svavis) == ivavis) {
-                    node *lb = GENERATOR_BOUND1 (PART_GENERATOR (arg_node));
-
-                    if (NODE_TYPE (lb) == N_array) {
-                        MakePreassign (svavis,
-                                       TBmakeNum (SHgetExtent (ARRAY_SHAPE (lb), 0)),
-                                       arg_info);
-                    } else {
-                        MakePreassign (svavis,
-                                       TCmakePrf2 (F_idx_shape_sel, TBmakeNum (0),
-                                                   DUPdoDupNode (lb)),
-                                       arg_info);
-                    }
-                }
+            if (NODE_TYPE (lb) == N_array) {
+                AVIS_SHAPE (ivavis) = SHshape2Array (ARRAY_SHAPE (lb));
+            } else {
+                AVIS_SHAPE (ivavis) = DUPdoDupNode (AVIS_SHAPE (ID_AVIS (lb)));
             }
         }
 
@@ -647,18 +575,12 @@ ISVpart (node *arg_node, info *arg_info)
         while (ids != NULL) {
             node *idsavis = IDS_AVIS (ids);
 
-            if (NODE_TYPE (AVIS_DIM (idsavis)) == N_id) {
-                node *dimavis = ID_AVIS (AVIS_DIM (idsavis));
-                if (AVIS_SHAPEVAROF (dimavis) == idsavis) {
-                    MakePreassign (dimavis, TBmakeNum (0), arg_info);
-                }
+            if (AVIS_DIM (idsavis) == NULL) {
+                AVIS_DIM (idsavis) = TBmakeNum (0);
             }
 
-            if (NODE_TYPE (AVIS_SHAPE (idsavis)) == N_id) {
-                node *shpavis = ID_AVIS (AVIS_SHAPE (idsavis));
-                if (AVIS_SHAPEVAROF (shpavis) == idsavis) {
-                    MakePreassign (shpavis, TCmakeIntVector (NULL), arg_info);
-                }
+            if (AVIS_SHAPE (idsavis) == NULL) {
+                AVIS_SHAPE (idsavis) = TCmakeIntVector (NULL);
             }
 
             ids = IDS_NEXT (ids);
@@ -667,12 +589,97 @@ ISVpart (node *arg_node, info *arg_info)
 
     if (PART_NEXT (arg_node) != NULL) {
         PART_NEXT (arg_node) = TRAVdo (PART_NEXT (arg_node), arg_info);
-    } else {
     }
 
     DBUG_RETURN (arg_node);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn node *ISVid( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+ISVid (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("ISVid");
+
+    if (AVIS_SUBST (ID_AVIS (arg_node)) != NULL) {
+        ID_AVIS (arg_node) = AVIS_SUBST (ID_AVIS (arg_node));
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *ISVcond( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+ISVcond (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("ISVcond");
+
+    switch (INFO_TRAVMODE (arg_info)) {
+    case TM_then:
+        BLOCK_INSTR (COND_THEN (arg_node))
+          = PrependAssign (INFO_PREBLOCK (arg_info), BLOCK_INSTR (COND_THEN (arg_node)));
+        INFO_PREBLOCK (arg_info) = NULL;
+
+        COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
+        break;
+
+    case TM_else:
+        BLOCK_INSTR (COND_ELSE (arg_node))
+          = PrependAssign (INFO_PREBLOCK (arg_info), BLOCK_INSTR (COND_ELSE (arg_node)));
+        INFO_PREBLOCK (arg_info) = NULL;
+
+        COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
+        break;
+
+    case TM_all:
+        arg_node = TRAVcont (arg_node, arg_info);
+        break;
+
+    default:
+        DBUG_ASSERT ((0), "Illegal traversal mode");
+        break;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *ISVfuncond( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+ISVfuncond (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("ISVfuncond");
+
+    switch (INFO_TRAVMODE (arg_info)) {
+    case TM_then:
+        FUNCOND_THEN (arg_node) = TRAVdo (FUNCOND_THEN (arg_node), arg_info);
+        break;
+
+    case TM_else:
+        FUNCOND_ELSE (arg_node) = TRAVdo (FUNCOND_ELSE (arg_node), arg_info);
+        break;
+
+    case TM_all:
+        arg_node = TRAVcont (arg_node, arg_info);
+        break;
+
+    default:
+        DBUG_ASSERT ((0), "Illegal traversal mode");
+        break;
+    }
+
+    DBUG_RETURN (arg_node);
+}
 /** <!--********************************************************************-->
  * @}  <!-- Traversal functions -->
  *****************************************************************************/

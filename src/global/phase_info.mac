@@ -201,11 +201,16 @@ SUBPHASE (dfr, "dfr", "Removing dead functions", DFRdoDeadFunctionRemoval)
 
 SUBPHASE (dcr, "dcr", "Removing dead code", DCRdoDeadCodeRemovalModule)
 
+SUBPHASE (isv, "isv", "Inserting shape variables", ISVdoInsertShapeVariables)
+
 SUBPHASE (intraopt, "cyc", "Applying intra-functional optimizations",
           OPTdoIntraFunctionalOptimizations)
 
 SUBPHASE (cse, "cse", "Applying common subexpression elimination",
           CSEdoCommonSubexpressionElimination)
+
+SUBPHASE (isvcyc, "isvcyc", "Inserting shape variables",
+          ISVdoInsertShapeVariablesOneFundef)
 
 SUBPHASE (ili, "ili", "Infering loop invariant variables", ILIdoInferLoopInvariants)
 
@@ -297,7 +302,7 @@ SUBPHASE (dcr3, "dcr3", "Removing dead code", DCRdoDeadCodeRemovalModule)
 SUBPHASE (wlpg2, "wlpg2", "Generating full with-loop partitions",
           WLPGdoWlPartitionGeneration)
 
-SUBPHASE (isv, "isv", "Inserting shape variables", ISVdoInsertShapeVariables)
+SUBPHASE (isv2, "isv2", "Inserting shape variables", ISVdoInsertShapeVariables)
 
 SUBPHASE (svprfunr, "svprfunr", "Applying prf unrolling", UPRFdoUnrollPRFsModule)
 

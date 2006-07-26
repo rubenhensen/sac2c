@@ -231,6 +231,13 @@ OPTdoOptimize (node *arg_node)
     }
 
     /*
+     * Insert shape variables
+     */
+    if (global.optimize.doisv) {
+        arg_node = PHrunCompilerSubPhase (SUBPH_isv, arg_node);
+    }
+
+    /*
      * Intra-functional optimizations
      */
     arg_node = PHrunCompilerSubPhase (SUBPH_intraopt, arg_node);
@@ -306,18 +313,18 @@ OPTdoOptimize (node *arg_node)
      * Insert shape variables
      */
     if (global.optimize.doisv) {
-        arg_node = PHrunCompilerSubPhase (SUBPH_isv, arg_node);
-
-        if (global.optimize.doprfunr) {
-            arg_node = PHrunCompilerSubPhase (SUBPH_svprfunr, arg_node);
-        }
-
-        if (global.optimize.dotup) {
-            arg_node = PHrunCompilerSubPhase (SUBPH_svtup, arg_node);
-            arg_node = PHrunCompilerSubPhase (SUBPH_svnt2ot, arg_node);
-        }
+        arg_node = PHrunCompilerSubPhase (SUBPH_isv2, arg_node);
 
         for (int i = 0; i < 3; i++) {
+            if (global.optimize.doprfunr) {
+                arg_node = PHrunCompilerSubPhase (SUBPH_svprfunr, arg_node);
+            }
+
+            if (global.optimize.dotup) {
+                arg_node = PHrunCompilerSubPhase (SUBPH_svtup, arg_node);
+                arg_node = PHrunCompilerSubPhase (SUBPH_svnt2ot, arg_node);
+            }
+
             if (global.optimize.docf) {
                 arg_node = PHrunCompilerSubPhase (SUBPH_svcf, arg_node);
             }
@@ -479,6 +486,13 @@ OPTdoIntraFunctionalOptimizations (node *arg_node)
                      */
                     if (global.optimize.docse) {
                         fundef = PHrunOptimizationInCycle (SUBPH_cse, loop, fundef);
+                    }
+
+                    /*
+                     * Insert shape variables
+                     */
+                    if (global.optimize.doisv) {
+                        fundef = PHrunOptimizationInCycle (SUBPH_isvcyc, loop, fundef);
                     }
 
                     /*

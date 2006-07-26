@@ -83,6 +83,31 @@ FreeInfo (info *info)
 
 /** <!--********************************************************************-->
  *
+ * @name Static helper funcions
+ * @{
+ *
+ *****************************************************************************/
+static node *
+MakeScalarAvis (char *name)
+{
+    node *res;
+
+    DBUG_ENTER ("MakeScalarAvis");
+
+    res = TBmakeAvis (name, TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
+
+    AVIS_DIM (res) = TBmakeNum (0);
+    AVIS_SHAPE (res) = TCmakeIntVector (NULL);
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ * @}  <!-- Static helper functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ *
  * @name Entry functions
  * @{
  *
@@ -98,14 +123,20 @@ MDEdoMakeDimExpression (node *expr, node *avis, node *allids, node *fundef)
 {
     info *info;
     node *res;
+    node *dimavis;
 
     DBUG_ENTER ("MDEdoMakeDimExpression");
+
+    DBUG_ASSERT (AVIS_DIM (avis) == NULL, "AVIS_DIM( avis) is already set!");
 
     info = MakeInfo ();
 
     INFO_AVIS (info) = avis;
     INFO_ALLIDS (info) = allids;
     INFO_FUNDEF (info) = fundef;
+
+    dimavis = MakeScalarAvis (ILIBtmpVarName (AVIS_NAME (avis)));
+    AVIS_DIM (avis) = TBmakeId (dimavis);
 
     TRAVpush (TR_mde);
     res = TRAVdo (expr, info);
@@ -114,7 +145,10 @@ MDEdoMakeDimExpression (node *expr, node *avis, node *allids, node *fundef)
     info = FreeInfo (info);
 
     if (res != NULL) {
-        AVIS_SHAPEVAROF (ID_AVIS (AVIS_DIM (avis))) = NULL;
+        FUNDEF_VARDEC (fundef) = TBmakeVardec (dimavis, FUNDEF_VARDEC (fundef));
+    } else {
+        AVIS_DIM (avis) = FREEdoFreeNode (AVIS_DIM (avis));
+        dimavis = FREEdoFreeNode (dimavis);
     }
 
     DBUG_RETURN (res);
@@ -122,17 +156,6 @@ MDEdoMakeDimExpression (node *expr, node *avis, node *allids, node *fundef)
 
 /** <!--********************************************************************-->
  * @}  <!-- Entry functions -->
- *****************************************************************************/
-
-/** <!--********************************************************************-->
- *
- * @name Static helper funcions
- * @{
- *
- *****************************************************************************/
-
-/** <!--********************************************************************-->
- * @}  <!-- Static helper functions -->
  *****************************************************************************/
 
 /** <!--********************************************************************-->
@@ -175,22 +198,8 @@ node *
 MDEfuncond (node *arg_node, info *arg_info)
 {
     node *res = NULL;
-    node *lhsavis;
-    node *thendim;
-    node *elsedim;
 
     DBUG_ENTER ("MDEfuncond");
-
-    lhsavis = INFO_AVIS (arg_info);
-
-    thendim = AVIS_DIM (ID_AVIS (FUNCOND_THEN (arg_node)));
-    elsedim = AVIS_DIM (ID_AVIS (FUNCOND_ELSE (arg_node)));
-
-    if (CMPT_EQ == CMPTdoCompareTree (thendim, elsedim)) {
-
-        AVIS_DIM (lhsavis) = FREEdoFreeNode (AVIS_DIM (lhsavis));
-        AVIS_DIM (lhsavis) = DUPdoDupNode (thendim);
-    }
 
     DBUG_RETURN (res);
 }
@@ -336,6 +345,10 @@ MDEprf (node *arg_node, info *arg_info)
     case F_reshape:
         rhsnode = TCmakePrf2 (F_idx_shape_sel, TBmakeNum (0),
                               DUPdoDupNode (PRF_ARG1 (arg_node)));
+        break;
+
+    case F_dtype_conv:
+        rhsnode = DUPdoDupNode (PRF_ARG1 (arg_node));
         break;
 
     case F_accu:

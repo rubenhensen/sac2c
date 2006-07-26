@@ -1242,8 +1242,6 @@ DUPids (node *arg_node, info *arg_info)
             AVIS_SSAASSIGN (newavis) = INFO_ASSIGN (arg_info);
         }
 
-        AVIS_ISALIAS (newavis) = AVIS_ISALIAS (IDS_AVIS (arg_node));
-
         FUNDEF_VARDEC (INFO_FUNDEFSSA (arg_info))
           = TBmakeVardec (newavis, FUNDEF_VARDEC (INFO_FUNDEFSSA (arg_info)));
 
@@ -1251,23 +1249,18 @@ DUPids (node *arg_node, info *arg_info)
             VARDEC_TYPE (AVIS_DECL (newavis)) = DUPdupOneTypes (IDS_TYPE (arg_node));
         }
 
-#if 0
-    INFO_LUT( arg_info) = 
-      LUTinsertIntoLutS( INFO_LUT( arg_info),
-                         IDS_NAME( arg_node),    
-                         AVIS_NAME( newavis));
-
-    INFO_LUT( arg_info) = 
-      LUTinsertIntoLutP( INFO_LUT( arg_info),
-                         IDS_DECL( arg_node), 
-                         AVIS_DECL( newavis));
-#endif
-
         INFO_LUT (arg_info)
           = LUTinsertIntoLutP (INFO_LUT (arg_info), IDS_AVIS (arg_node), newavis);
     }
 
     avis = LUTsearchInLutPp (INFO_LUT (arg_info), IDS_AVIS (arg_node));
+
+    AVIS_ISALIAS (avis) = AVIS_ISALIAS (IDS_AVIS (arg_node));
+    AVIS_HASDTTHENPROXY (avis) = AVIS_HASDTTHENPROXY (IDS_AVIS (arg_node));
+    AVIS_HASDTELSEPROXY (avis) = AVIS_HASDTELSEPROXY (IDS_AVIS (arg_node));
+
+    AVIS_DIM (avis) = DUPTRAV (AVIS_DIM (IDS_AVIS (arg_node)));
+    AVIS_SHAPE (avis) = DUPTRAV (AVIS_SHAPE (IDS_AVIS (arg_node)));
 
     if ((INFO_ASSIGN (arg_info) != NULL) && (AVIS_SSAASSIGN (avis) != NULL)) {
         AVIS_SSAASSIGN (avis) = INFO_ASSIGN (arg_info);

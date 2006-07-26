@@ -1070,13 +1070,16 @@
 	<travuser>
           <node name="Fundef" />
 	  <node name="Avis" />
-	  <node name="Vardec" />
 	  <node name="Block" />
 	  <node name="Assign" />
 	  <node name="Let" />
           <node name="Ids" />
+          <node name="Id" />
+          <node name="Prf" />
           <node name="With" />
           <node name="Part" />
+          <node name="Cond" />
+          <node name="Funcond" />
    	</travuser>
         <travnone>
           <node name="Withid" />
@@ -1119,13 +1122,10 @@
 	<travuser>
           <node name="Fundef" />
 	  <node name="Avis" />
-          <node name="Block" />
           <node name="Assign" />
           <node name="Let" />
-          <node name="Ids" />
           <node name="Id" />
-          <node name="Cond" />
-          <node name="Funcond" />
+          <node name="Prf" />
    	</travuser>
         <travnone>
           <node name="Withid" />
@@ -4638,18 +4638,6 @@
         </son>        
       </sons>
       <attributes>
-        <attribute name="ShapeVarOf" default="NULL">
-          <type name="Link">
-            <targets>
-              <target mandatory="no">
-                <node name="Avis" />
-                <phases>
-                  <range from="isv" to="esv" />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
         <attribute name="Decl" default="NULL">
           <type name="Link">
             <targets>
@@ -4997,6 +4985,8 @@
 	  branch of an N_cond.
 	  </description>
 	</flag>
+        <flag name="HasDTThenProxy" default="FALSE" />
+        <flag name="HasDTElseProxy" default="FALSE" />
       </flags>
     </node>
 <!--

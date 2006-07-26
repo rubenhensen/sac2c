@@ -588,43 +588,6 @@ CreateFuncondAssign (node *cond, node *id, node *assign)
     DBUG_RETURN (new_assign);
 }
 
-static void
-SetShapeVarsDefined (node *avis)
-{
-    DBUG_ENTER ("SetShapeVarsDefined");
-
-    if ((AVIS_DIM (avis) != NULL) && (NODE_TYPE (AVIS_DIM (avis)) == N_id)
-        && (AVIS_SHAPEVAROF (ID_AVIS (AVIS_DIM (avis))) == avis)) {
-        node *dimavis = ID_AVIS (AVIS_DIM (avis));
-        AVIS_SSADEFINED (dimavis) = TRUE;
-        AVIS_SSASTACK_TOP (dimavis) = dimavis;
-    }
-
-    if (AVIS_SHAPE (avis) != NULL) {
-        if ((NODE_TYPE (AVIS_SHAPE (avis)) == N_id)
-            && (AVIS_SHAPEVAROF (ID_AVIS (AVIS_SHAPE (avis))) == avis)) {
-            node *shpavis = ID_AVIS (AVIS_SHAPE (avis));
-            AVIS_SSADEFINED (shpavis) = TRUE;
-            AVIS_SSASTACK_TOP (shpavis) = shpavis;
-        }
-
-        if ((NODE_TYPE (AVIS_SHAPE (avis)) == N_array)) {
-            node *exprs = ARRAY_AELEMS (AVIS_SHAPE (avis));
-            while (exprs != NULL) {
-                if ((NODE_TYPE (EXPRS_EXPR (exprs)) == N_id)
-                    && (AVIS_SHAPEVAROF (ID_AVIS (EXPRS_EXPR (exprs))) == avis)) {
-                    node *selavis = ID_AVIS (EXPRS_EXPR (exprs));
-                    AVIS_SSADEFINED (selavis) = TRUE;
-                    AVIS_SSASTACK_TOP (selavis) = selavis;
-                }
-                exprs = EXPRS_NEXT (exprs);
-            }
-        }
-    }
-
-    DBUG_VOID_RETURN;
-}
-
 /*@}*/
 
 /**
@@ -877,12 +840,6 @@ SSATvardec (node *arg_node, info *arg_info)
     /* jet undefined on stack */
     AVIS_SSASTACK_TOP (avis) = NULL;
     AVIS_SSADEFINED (avis) = FALSE;
-
-    if ((AVIS_SHAPEVAROF (avis) != NULL)
-        && (NODE_TYPE (AVIS_DECL (AVIS_SHAPEVAROF (avis))) == N_arg)) {
-        AVIS_SSASTACK_TOP (avis) = avis;
-        AVIS_SSADEFINED (avis) = TRUE;
-    }
 
     /*
      * mark stack as activ
@@ -1423,8 +1380,6 @@ SSATids (node *arg_node, info *arg_info)
         AVIS_SSADEFINED (avis) = TRUE;
         DBUG_PRINT ("SSA", ("first definition, no renaming: %s (" F_PTR ")",
                             AVIS_NAME (avis), avis));
-
-        SetShapeVarsDefined (avis);
 
     } else {
         /*

@@ -147,10 +147,6 @@ MarkAvisAlive (node *avis)
         AVIS_ISDEAD (avis) = FALSE;
         DBUG_PRINT ("DCI", ("marking var %s as alive", AVIS_NAME (avis)));
 
-        if (AVIS_SHAPEVAROF (avis) != NULL) {
-            MarkAvisAlive (AVIS_SHAPEVAROF (avis));
-        }
-
         if (AVIS_DIM (avis) != NULL) {
             AVIS_DIM (avis) = TRAVdo (AVIS_DIM (avis), NULL);
         }
