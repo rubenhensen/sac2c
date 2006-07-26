@@ -89,7 +89,7 @@ optimize    = optimize.o \
               associativity.o elimtypeconv.o liftoptflags.o \
               wlsimplification.o prfunroll.o wlselcount.o \
               insert_shapevars.o elim_shapevars.o makedimexpr.o makeshapeexpr.o \
-							distributivity.o
+	      distributivity.o remove_vardecs.o
 
 psi-opt     = index_eliminate.o index_infer.o index_optimize.o \
               wl_access_analyze.o tile_size_inference.o wls.o wlscheck.o \

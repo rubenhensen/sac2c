@@ -1131,6 +1131,15 @@
           <node name="Withid" />
         </travnone>
       </traversal>      
+      <traversal id="RMV" name="Remove Vardecs" default="sons" 
+        include="remove_vardecs.h" >
+	<travuser>
+          <node name="Fundef" />
+	  <node name="Block" />
+	  <node name="Vardec" />
+          <node name="Ids" />
+   	</travuser>
+      </traversal>     
       <traversal id="RTUP" name="Reverse Type Upgrade" default="sons" include="reverse_type_upgrade.h" >
 	<travuser>
 	  <node name="Assign" />

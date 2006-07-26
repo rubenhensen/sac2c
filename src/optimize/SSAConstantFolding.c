@@ -1737,6 +1737,10 @@ CFfundef (node *arg_node, info *arg_info)
     if (FUNDEF_BODY (arg_node) != NULL) {
         /* traverse block of fundef */
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+
+        if (FUNDEF_ISLACINLINE (arg_node)) {
+            RMVdoRemoveVardecsOneFundef (arg_node);
+        }
     }
 
     if (!INFO_ONEFUNDEF (arg_info)) {
