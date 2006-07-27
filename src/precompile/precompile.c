@@ -49,6 +49,11 @@ PRECdoPrecompile (node *syntax_tree)
     syntax_tree = PHrunCompilerSubPhase (SUBPH_reso, syntax_tree);
 
     /*
+     * Restore withloop objects
+     */
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_rwoa, syntax_tree);
+
+    /*
      * Set Linksign
      */
     syntax_tree = PHrunCompilerSubPhase (SUBPH_sls, syntax_tree);
