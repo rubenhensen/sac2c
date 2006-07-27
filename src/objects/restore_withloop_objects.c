@@ -214,16 +214,25 @@ RWOAlet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("RWOAlet");
 
+    node *old_lhs;
+
     if (LET_IDS (arg_node) != NULL) {
         LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
     }
 
     if (LET_EXPR (arg_node) != NULL && LET_EXPR (arg_node)->nodetype == N_with2) {
         DBUG_ASSERT (LET_IDS (arg_node) != NULL, "N_let without LHS");
+
+        /* Save the previous let's lhs */
+        old_lhs = INFO_WITH_LET_LHS (arg_info);
         INFO_WITH_LET_LHS (arg_info) = LET_IDS (arg_node);
+
         LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
+
+        /* Restore it */
         LET_IDS (arg_node) = INFO_WITH_LET_LHS (arg_info);
-        INFO_WITH_LET_LHS (arg_info) = NULL;
+        INFO_WITH_LET_LHS (arg_info) = old_lhs;
+
     } else {
         LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
     }
