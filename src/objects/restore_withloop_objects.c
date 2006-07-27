@@ -31,7 +31,6 @@ struct INFO {
 
 #define INFO_WITH_LET_LHS(n) ((n)->with_let_lhs)
 #define INFO_WITH_EXPRS(n) ((n)->with_exprs)
-#define INFO_REMOVED_IDS(n) ((n)->removed_ids)
 #define INFO_DELETE_ASSIGN(n) ((n)->delete_assign)
 
 /*
@@ -49,7 +48,6 @@ MakeInfo ()
 
     INFO_WITH_LET_LHS (result) = NULL;
     INFO_WITH_EXPRS (result) = NULL;
-    INFO_REMOVED_IDS (result) = NULL;
     INFO_DELETE_ASSIGN (result) = FALSE;
 
     DBUG_RETURN (result);
@@ -124,8 +122,7 @@ RemoveExtractedObjects (node *withops, node *withexprs, node *let_lhs, info *arg
             if (prev_let_lhs != NULL) {
                 IDS_NEXT (prev_let_lhs) = let_lhs;
             }
-            IDS_NEXT (temp) = INFO_REMOVED_IDS (arg_info);
-            INFO_REMOVED_IDS (arg_info) = temp;
+            FREEdoFreeNode (temp);
 
         } else {
 
@@ -189,8 +186,6 @@ RWOAblock (node *arg_node, info *arg_info)
     /* Traverse the vardecs */
     if (BLOCK_VARDEC (arg_node) != NULL) {
         BLOCK_VARDEC (arg_node) = TRAVdo (BLOCK_VARDEC (arg_node), arg_info);
-        DBUG_ASSERT (INFO_REMOVED_IDS (arg_info) == NULL,
-                     "Not able to remove all VARDECs corresponding to objects");
     }
 
     DBUG_RETURN (arg_node);
@@ -251,11 +246,13 @@ RWOAprf (node *arg_node, info *arg_info)
     DBUG_ENTER ("RWOAprf");
 
     if (p == F_inc_rc || p == F_dec_rc) {
+        printf ("foo!\n");
         /*
          * For now we delete any inc_rc and dec_rc applied to N_globobj.
          * This is probably not right and will remove too much, but for now...
          */
-        if (EXPRS_EXPR (PRF_ARGS (arg_node))->nodetype == N_globobj) {
+        if (NODE_TYPE (EXPRS_EXPR (PRF_ARGS (arg_node))) == N_globobj) {
+            printf ("foobar!\n");
             INFO_DELETE_ASSIGN (arg_info) = TRUE;
         }
     }
@@ -270,39 +267,8 @@ RWOAvardec (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("RWOAvardec");
 
-    node *id_iter = INFO_REMOVED_IDS (arg_info);
-    node *prev_id = NULL;
-    node *temp;
-    bool remove = FALSE;
-
-    while (id_iter != NULL) {
-        if (IDS_AVIS (id_iter) == VARDEC_AVIS (arg_node)) {
-
-            /* Remove this N_ids from the list, we found it's N_vardec */
-            if (prev_id != NULL) {
-                IDS_NEXT (prev_id) = IDS_NEXT (id_iter);
-            } else {
-                INFO_REMOVED_IDS (arg_info) = IDS_NEXT (id_iter);
-            }
-            FREEdoFreeNode (id_iter);
-
-            /* Remove the VARDEC */
-            remove = TRUE;
-            break;
-        }
-
-        prev_id = id_iter;
-        id_iter = IDS_NEXT (id_iter);
-    }
-
     if (VARDEC_NEXT (arg_node) != NULL) {
-        if (remove == FALSE) {
-            VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
-        } else {
-            temp = arg_node;
-            arg_node = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
-            FREEdoFreeNode (temp);
-        }
+        VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);

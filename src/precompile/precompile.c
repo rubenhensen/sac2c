@@ -44,14 +44,14 @@ PRECdoPrecompile (node *syntax_tree)
     syntax_tree = PHrunCompilerSubPhase (SUBPH_rera, syntax_tree);
 
     /*
-     * Restore Global Objects
-     */
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_reso, syntax_tree);
-
-    /*
      * Restore withloop objects
      */
     syntax_tree = PHrunCompilerSubPhase (SUBPH_rwoa, syntax_tree);
+
+    /*
+     * Restore Global Objects
+     */
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_reso, syntax_tree);
 
     /*
      * Set Linksign

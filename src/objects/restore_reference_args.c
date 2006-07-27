@@ -121,6 +121,33 @@ RemoveArtificialReturnValues (node *form_args, node *act_args, node *ids)
 }
 
 static node *
+RemoveArtificialWithloopReturns (node *with_node, info *arg_info)
+{
+    DBUG_ENTER ("RemoveArtificialWithloopReturn");
+
+    node *withops = WITH2_WITHOP (with_node);
+    node *withexprs = CODE_CEXPRS (WITH2_CODE (with_node));
+    node *letlhs = INFO_LHS (arg_info);
+
+    node *iter = withops;
+    while (iter != NULL) {
+        /* If the withop is of type N_extract, then the LHS is artificial
+         * and we should replace the LHS N_id by the with N_expr. */
+        if (NODE_TYPE (iter) == N_extract) {
+            printf ("foo: pointing %s at %s\n", AVIS_NAME (IDS_AVIS (letlhs)),
+                    ID_NAME (EXPRS_EXPR (withexprs)));
+            AVIS_SUBST (IDS_AVIS (letlhs)) = ID_AVIS (EXPRS_EXPR (withexprs));
+        }
+
+        letlhs = IDS_NEXT (letlhs);
+        withexprs = EXPRS_NEXT (withexprs);
+        iter = WITHOP_NEXT (iter);
+    }
+
+    DBUG_RETURN (with_node);
+}
+
+static node *
 TransformArtificialReturnExprsIntoAssignments (node *args, node *exprs, node **assigns)
 {
     DBUG_ENTER ("TransformArtificialReturnExprsIntoAssignments");
@@ -422,6 +449,24 @@ RERAmodule (node *arg_node, info *arg_info)
     if (MODULE_FUNDECS (arg_node) != NULL) {
         MODULE_FUNDECS (arg_node) = TRAVdo (MODULE_FUNDECS (arg_node), arg_info);
     }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+RERAwith2 (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("RERAwith2");
+
+    if (WITH2_CODE (arg_node) != NULL) {
+        WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
+    }
+
+    if (WITH2_WITHOP (arg_node) != NULL) {
+        WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
+    }
+
+    RemoveArtificialWithloopReturns (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }
