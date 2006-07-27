@@ -88,6 +88,7 @@
 #include "ctinfo.h"
 #include "compare_tree.h"
 #include "namespaces.h"
+#include "remove_vardecs.h"
 
 /** <!--********************************************************************-->
  *

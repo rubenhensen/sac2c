@@ -711,6 +711,7 @@ SCIprf (node *arg_node, info *arg_info)
     case F_to_unq:
     case F_from_unq:
     case F_type_conv:
+    case F_dtype_conv:
     case F_dispatch_error:
     case F_type_error:
     case F_esd_neg:
