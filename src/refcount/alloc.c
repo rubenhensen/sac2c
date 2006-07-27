@@ -1850,6 +1850,66 @@ EMALbreak (node *arg_node, info *arg_info)
 
 /** <!--******************************************************************-->
  *
+ * @fn node *EMALextract( node *arg_node, info *arg_info)
+ *
+ *  @brief
+ *
+ *  @param arg_node with-loop
+ *  @param arg_info
+ *
+ *  @return with-loop
+ *
+ ***************************************************************************/
+node *
+EMALextract (node *arg_node, info *arg_info)
+{
+    alloclist_struct *als;
+
+    DBUG_ENTER ("EMALextract");
+
+    DBUG_ASSERT (INFO_ALLOCLIST (arg_info) != NULL,
+                 "ALLOCLIST must contain an entry for each WITHOP!");
+
+    /*
+     * Pop first element from alloclist for traversal of next WITHOP
+     */
+    als = INFO_ALLOCLIST (arg_info);
+    INFO_ALLOCLIST (arg_info) = als->next;
+    als->next = NULL;
+
+    if (EXTRACT_NEXT (arg_node) != NULL) {
+        EXTRACT_NEXT (arg_node) = TRAVdo (EXTRACT_NEXT (arg_node), arg_info);
+    }
+
+    if (INFO_WITHOPMODE (arg_info) == EA_memname) {
+        /*
+         * Restore first element of alloclist as it is needed in EMALcode
+         * to preserve correspondence between the result values and the withops
+         */
+        als->next = INFO_ALLOCLIST (arg_info);
+        INFO_ALLOCLIST (arg_info) = als;
+    } else {
+        DBUG_ASSERT (INFO_WITHOPMODE (arg_info) == EA_shape,
+                     "Unknown Withop traversal mode");
+        /*
+         * extract-withop:
+         * dim = 0, shape = [] (object)
+         * wrong! should not alloc at all!
+         */
+        als->dim = TBmakeNum (0);
+        als->shape = TCmakeIntVector (NULL);
+
+        /*
+         * extract:
+         * Allocation is removed from ALLOCLIST, we don't want it alloc'ed
+         */
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--******************************************************************-->
+ *
  * @fn node *EMALfold( node *arg_node, info *arg_info)
  *
  *  @brief

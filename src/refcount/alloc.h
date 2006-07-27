@@ -23,6 +23,7 @@ extern node *EMALbreak (node *arg_node, info *arg_info);
 extern node *EMALarray (node *arg_node, info *arg_info);
 extern node *EMALassign (node *arg_node, info *arg_info);
 extern node *EMALcode (node *arg_node, info *arg_info);
+extern node *EMALextract (node *arg_node, info *arg_info);
 extern node *EMALfold (node *arg_node, info *arg_info);
 extern node *EMALfuncond (node *arg_node, info *arg_info);
 extern node *EMALfundef (node *arg_node, info *arg_info);
