@@ -21,7 +21,6 @@
 struct INFO {
     node *with_let_lhs; /* N_ids on the left-hand side of the with-loop let */
     node *with_exprs;   /* Result expressions of the with-loop */
-    node *removed_ids;  /* The N_ids that were removed from with_let_lhs */
     bool delete_assign; /* The current assignment should be deleted entirely */
 };
 
@@ -110,12 +109,6 @@ RemoveExtractedObjects (node *withops, node *withexprs, node *let_lhs, info *arg
                 EXPRS_NEXT (prev_withexpr) = withexprs;
             }
             FREEdoFreeNode (temp);
-
-            /*
-             * We have to keep track of the variables that the result
-             * of this with-loop is assigned to, because we need to remove
-             * the vardecs later.
-             */
 
             temp = let_lhs;
             let_lhs = IDS_NEXT (let_lhs);
@@ -246,13 +239,11 @@ RWOAprf (node *arg_node, info *arg_info)
     DBUG_ENTER ("RWOAprf");
 
     if (p == F_inc_rc || p == F_dec_rc) {
-        printf ("foo!\n");
         /*
          * For now we delete any inc_rc and dec_rc applied to N_globobj.
          * This is probably not right and will remove too much, but for now...
          */
         if (NODE_TYPE (EXPRS_EXPR (PRF_ARGS (arg_node))) == N_globobj) {
-            printf ("foobar!\n");
             INFO_DELETE_ASSIGN (arg_info) = TRUE;
         }
     }
