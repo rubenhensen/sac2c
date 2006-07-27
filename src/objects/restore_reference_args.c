@@ -134,8 +134,6 @@ RemoveArtificialWithloopReturns (node *with_node, info *arg_info)
         /* If the withop is of type N_extract, then the LHS is artificial
          * and we should replace the LHS N_id by the with N_expr. */
         if (NODE_TYPE (iter) == N_extract) {
-            printf ("foo: pointing %s at %s\n", AVIS_NAME (IDS_AVIS (letlhs)),
-                    ID_NAME (EXPRS_EXPR (withexprs)));
             AVIS_SUBST (IDS_AVIS (letlhs)) = ID_AVIS (EXPRS_EXPR (withexprs));
         }
 
