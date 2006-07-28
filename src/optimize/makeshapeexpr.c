@@ -250,22 +250,8 @@ node *
 MSEfuncond (node *arg_node, info *arg_info)
 {
     node *res = NULL;
-    node *lhsavis;
-    node *thenshp;
-    node *elseshp;
 
     DBUG_ENTER ("MSEfuncond");
-
-    lhsavis = INFO_AVIS (arg_info);
-
-    thenshp = AVIS_SHAPE (ID_AVIS (FUNCOND_THEN (arg_node)));
-    elseshp = AVIS_SHAPE (ID_AVIS (FUNCOND_THEN (arg_node)));
-
-    if (CMPT_EQ == CMPTdoCompareTree (thenshp, elseshp)) {
-
-        AVIS_SHAPE (lhsavis) = FREEdoFreeNode (AVIS_SHAPE (lhsavis));
-        AVIS_SHAPE (lhsavis) = DUPdoDupNode (thenshp);
-    }
 
     DBUG_RETURN (res);
 }
