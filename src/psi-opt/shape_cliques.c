@@ -174,8 +174,10 @@ AppendAvisToShapeClique (node *avis1, node *avis2)
 
         AVIS_SHAPECLIQUEID (curavis2) = nextavis1;
 
-        DBUG_PRINT ("SCI_APPEND", ("Resulting shape clique is:"));
-        PrintShapeCliqueNames (avis2, TRUE);
+        /* This got tedious
+        DBUG_PRINT("SCI_APPEND", ("Resulting shape clique is:"));
+        PrintShapeCliqueNames(avis2, TRUE);
+        */
     }
     DBUG_RETURN (avis2);
 }
@@ -610,7 +612,6 @@ SCIprf (node *arg_node, info *arg_info)
                      "PRF AxS lhs shape clique is non-degenerate");
         AppendAvisToShapeClique (lhsavis, arg1avis);
         break;
-        /* Various fns which we are confused about */
         /* The right solution is to invent F_mod_AxS_, etc., for all these */
     case F_mod:
     case F_max:
@@ -623,6 +624,49 @@ SCIprf (node *arg_node, info *arg_info)
     case F_ge:
     case F_gt:
     case F_lt:
+        /* First, see if this is essentially a case of AxA. If so, give up */
+        /* Place lhs id and one arg in same shape clique, if SxA or AxS. */
+        lhs = INFO_LHS (arg_info);
+        arg1 = PRF_ARG1 (arg_node);
+        arg2 = PRF_ARG2 (arg_node);
+        lhsavis = IDS_AVIS (lhs);
+        DBUG_ASSERT ((AVIS_SHAPECLIQUEID (lhsavis) == SHAPECLIQUEIDNONE (lhsavis)),
+                     "PRF AxS lhs shape clique is non-degenerate");
+
+        switch (NODE_TYPE (arg1)) {
+        case N_num:
+        case N_double:
+        case N_float:
+        case N_char:
+        case N_bool: /* SxA or SxS */
+            if (NODE_TYPE (arg2) == N_id) {
+                DBUG_PRINT ("SCID", ("this is SxA"));
+                AppendAvisToShapeClique (lhsavis, ID_AVIS (arg2));
+            }
+            break;
+
+        default:
+            break;
+        }
+
+        switch (NODE_TYPE (arg2)) {
+        case N_num:
+        case N_double:
+        case N_float:
+        case N_char:
+        case N_bool: /* AxS or SxS */
+
+            if (NODE_TYPE (arg1) == N_id) {
+                DBUG_PRINT ("SCID", ("this is AxS"));
+                AppendAvisToShapeClique (lhsavis, ID_AVIS (arg1));
+            }
+            break;
+
+        default: /* do nothing  */
+            DBUG_PRINT ("SCID", ("This is SxS"));
+            break;
+        }
+
         break;
 
     case F_neg: /* Monadic scalar functions */
@@ -749,7 +793,7 @@ SCImodarray (node *arg_node, info *arg_info)
 
     rhs = MODARRAY_ARRAY (arg_node);
     if (N_id == NODE_TYPE (rhs)) {
-        DBUG_PRINT ("SCI", ("found modarray N_id"));
+        DBUG_PRINT ("SCID", ("found modarray N_id"));
         /* Place C in same shape clique as B */
         lhs = INFO_LHS (arg_info);
         lhsavis = IDS_AVIS (lhs);
@@ -759,7 +803,7 @@ SCImodarray (node *arg_node, info *arg_info)
 
         AppendAvisToShapeClique (lhsavis, rhsavis);
     } else {
-        DBUG_PRINT ("SCI", ("found modarray non- N_id"));
+        DBUG_PRINT ("SCID", ("found modarray non- N_id"));
     }
 
     DBUG_RETURN (arg_node);
@@ -793,18 +837,92 @@ SCIgenarray (node *arg_node, info *arg_info)
      * you gotta start somewhere.
      */
 
-    node *shp, *def;
+    node *shp;
+    node *def;
+    node *shps;
+    node *rhs;
+    node *shapeel;
+    node *shapeelprf;
+    node *shapeelass;
+    node *shapeellet;
+    node *shapeelargs;
+    node *shapeelaxis;
+    node *shapeelB;
+    node *shapeBavis;
+    node *lhs;
+    int axis;
+
+    lhs = IDS_AVIS (INFO_LHS (arg_info));
     shp = GENARRAY_SHAPE (arg_node);
     def = GENARRAY_DEFAULT (arg_node);
-    if (N_id == NODE_TYPE (shp)) { /* S may be an N_id or an N_array */
-        DBUG_PRINT ("SCI", ("found genarray shape N_id"));
+
+    /* All shapes have been scalarized by now, so this is a bit messy */
+    DBUG_ASSERT ((N_array == NODE_TYPE (shp)), "SCIgenarray did not see N_array");
+    shps = ARRAY_AELEMS (shp);
+    DBUG_ASSERT ((N_exprs == NODE_TYPE (shps)), "SCIgenarray did not see N_exprs");
+    /* shps is now current element of an N_exprs chain that points to the
+     * scalarized shape vector elements of the genarray shape.
+     */
+
+    rhs = NULL;
+    axis = 0;
+
+    while (NULL != shps) {
+        /* Examine all genarray shape elements to */
+        /* ensure that we are doing F_idx_shape_sel(axis, B) correctly */
+
+        shapeel = EXPRS_EXPR (shps);
+        if (N_id != NODE_TYPE (shapeel)) {
+            break; /* WL genarray ([2,3,4], 5) */
+        }
+        shapeelass = AVIS_SSAASSIGN (ID_AVIS (shapeel));
+        DBUG_ASSERT ((N_assign == NODE_TYPE (shapeelass)),
+                     "SCIgenarray did not see N_assign");
+        shapeellet = ASSIGN_INSTR (shapeelass);
+        DBUG_ASSERT ((N_let == NODE_TYPE (shapeellet)), "SCIgenarray did not see N_let");
+        shapeelprf = LET_EXPR (shapeellet);
+        if (N_prf != NODE_TYPE (shapeelprf)) {
+            DBUG_PRINT ("SCI", ("SCIgenarray did not see N_prf"));
+            /* Presumably an N_ap */
+            break;
+        }
+        if (PRF_PRF (shapeelprf) != F_idx_shape_sel) {
+            DBUG_PRINT ("SCI", (("WL Genarray did not see F_idx_shape_sel")));
+            break;
+        }
+        shapeelargs = PRF_ARGS (shapeelprf); /* _idx_shape_sel( elaxis, B) */
+        DBUG_ASSERT ((N_exprs == NODE_TYPE (shapeelargs)),
+                     "SCIgenarray did not see _idx_shape_sel args");
+        shapeelaxis = EXPRS_EXPR (shapeelargs);
+        shapeelB = EXPRS_EXPR (EXPRS_NEXT (shapeelargs));
+        if ((N_num != NODE_TYPE (shapeelaxis)) || (axis != NUM_VAL (shapeelaxis))
+            || (N_id != NODE_TYPE (shapeelB))) {
+            DBUG_PRINT ("SCI", (("SCIgenarray confused on _idx_shape_sel arguments")));
+            break;
+        }
+        shapeBavis = ID_AVIS (shapeelB);
+        if ((NULL == rhs) && (0 == axis)) {
+            rhs = shapeBavis;
+        }
+        if ((NULL != rhs) && (rhs != shapeBavis)) {
+            break; /* All idx_shape_sel arg2 should be the same B! */
+        }
+
+        shps = EXPRS_NEXT (shps);
+        axis++;
     }
-    if (NULL == def) { /* No default cell or scalar cell is good! */
-        /*
-         * TODO: If def non-null, have to check exprs for scalar default
-         *       element!
-         */
-        def = def;
+
+    /*
+     * : If def non-null, have to check for scalar default
+     *       element!
+     */
+    if ((NULL != rhs)
+        && ((NULL == def)
+            || ((NULL != def) && (N_id == NODE_TYPE (def))
+                && (0 == AVIS_DIM (ID_AVIS (def)))))) {
+        /* Wow. Place lhs and rhs in same shape clique */
+        AppendAvisToShapeClique (lhs, rhs);
+        DBUG_PRINT ("SCI", (("WL Genarray performing SC union")));
     }
 
     DBUG_RETURN (arg_node);
@@ -875,8 +993,12 @@ SCIfundef (node *arg_node, info *arg_info)
      * Do nothing if wrapper function, external function, do-fun or cond-fun,
      * or if fn does not have a body
      */
-    if ((FUNDEF_BODY (arg_node) != NULL) && (!FUNDEF_ISWRAPPERFUN (arg_node))
-        && (!FUNDEF_ISCONDFUN (arg_node)) && (!FUNDEF_ISDOFUN (arg_node))) {
+    /*
+      if ((FUNDEF_BODY(arg_node) != NULL) &&
+          (!FUNDEF_ISWRAPPERFUN(arg_node)) &&
+          (!FUNDEF_ISCONDFUN(arg_node)) && (!FUNDEF_ISDOFUN(arg_node))) {
+    */
+    if ((FUNDEF_BODY (arg_node) != NULL)) {
 
         ResetAllShapeCliques (arg_node, arg_info);
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
