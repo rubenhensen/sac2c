@@ -882,6 +882,10 @@ SCIgenarray (node *arg_node, info *arg_info)
             break; /* WL genarray ([2,3,4], 5) */
         }
         shapeelass = AVIS_SSAASSIGN (ID_AVIS (shapeel));
+        if (NULL == shapeelass) {
+            break; /*  No SSAASSIGN for WL genarray ( [ constantfolded]...); */
+        }
+
         DBUG_ASSERT ((N_assign == NODE_TYPE (shapeelass)),
                      "SCIgenarray did not see N_assign");
         shapeellet = ASSIGN_INSTR (shapeelass);
