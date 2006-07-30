@@ -857,12 +857,18 @@ SCIgenarray (node *arg_node, info *arg_info)
     def = GENARRAY_DEFAULT (arg_node);
 
     /* All shapes have been scalarized by now, so this is a bit messy */
-    DBUG_ASSERT ((N_array == NODE_TYPE (shp)), "SCIgenarray did not see N_array");
-    shps = ARRAY_AELEMS (shp);
-    DBUG_ASSERT ((N_exprs == NODE_TYPE (shps)), "SCIgenarray did not see N_exprs");
-    /* shps is now current element of an N_exprs chain that points to the
-     * scalarized shape vector elements of the genarray shape.
-     */
+
+    if (N_array == NODE_TYPE (shp)) {
+        shps = ARRAY_AELEMS (shp);
+        DBUG_ASSERT ((N_exprs == NODE_TYPE (shps)), "SCIgenarray did not see N_exprs");
+        /* shps is now current element of an N_exprs chain that points to the
+         * scalarized shape vector elements of the genarray shape.
+         */
+    } else {
+        shps = NULL;
+        DBUG_PRINT ("SCI", ("SCIgenarray did not see N_array"));
+        /* We definitely get here on "make libsac2c" looking at N_id */
+    }
 
     rhs = NULL;
     axis = 0;
