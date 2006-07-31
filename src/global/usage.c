@@ -406,6 +406,7 @@ USGprintUsage ()
       "                      1: enable the usage of withloop offsets where possible\n"
       "                      2: scalarise vect2offset operations where possible\n"
       "                      3: try to optimise computations on index vectors\n"
+      "                      4: try to reuse offsets once computed\n"
       "This is a performance measurement option to be removed.\n"
       "\n"
       "    -no <opt>       Disable optimization technique <opt>.\n"

@@ -312,7 +312,20 @@ ScalarizeShape (info *info, node *ivavis, int rank, node *bavis)
     ntype *shpeltype;
     node *shpel;
 
-    cliqueb = SCIFindMarkedAvisInSameShapeClique (bavis);
+    DBUG_ENTER ("ScalarizeShape");
+
+    /*
+     * we try to always use the same array here to allow
+     * CSE to detect that all vect2offsets of one clique
+     * are common. In case that this feature is turned off,
+     * we just use the current avis.
+     */
+    if (global.iveo & IVEO_share) {
+        cliqueb = SCIFindMarkedAvisInSameShapeClique (bavis);
+    } else {
+        cliqueb = bavis;
+    }
+
     exprs = NULL;
     for (axis = rank - 1; axis >= 0; axis--) {
         shpeltype = TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0));
@@ -353,7 +366,7 @@ EmitAKDVect2Offset (node *bid, node *ivavis, info *info)
     node *offset;
     node *exprs;
 
-    DBUG_ENTER ("EmitAKDVect2offset");
+    DBUG_ENTER ("EmitAKDVect2Offset");
 
     result = ivavis;
 

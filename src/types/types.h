@@ -102,7 +102,13 @@ typedef enum { SS_aks, SS_akd, SS_aud } spec_mode_t;
 
 typedef enum { IVE_all = 3, IVE_aks = 1, IVE_akd = 2 } ivetype_t;
 
-typedef enum { IVEO_all = 7, IVEO_wlidx = 1, IVEO_idxs = 2, IVEO_copt = 4 } iveotype_t;
+typedef enum {
+    IVEO_all = 15,
+    IVEO_wlidx = 1,
+    IVEO_idxs = 2,
+    IVEO_copt = 4,
+    IVEO_share = 8
+} iveotype_t;
 
 typedef enum { SSP_akv, SSP_aks, SSP_akd, SSP_aud } sigspec_mode_t;
 
