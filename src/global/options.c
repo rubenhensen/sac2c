@@ -347,6 +347,7 @@ OPTanalyseCommandline (node *syntax_tree)
     ARGS_OPTION ("initmheap", ARG_NUM (global.initial_master_heapsize));
     ARGS_OPTION ("initwheap", ARG_NUM (global.initial_worker_heapsize));
     ARGS_OPTION ("inituheap", ARG_NUM (global.initial_unified_heapsize));
+    ARGS_OPTION ("iveo", ARG_NUM (global.iveo));
     ARGS_OPTION ("ive", ARG_NUM (global.ive));
 
     ARGS_OPTION_BEGIN ("I")

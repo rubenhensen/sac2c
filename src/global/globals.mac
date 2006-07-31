@@ -318,12 +318,21 @@ GLOBAL (int, maxspec, 20)
  * Maximum number of specializations per function
  */
 
-GLOBAL (int, ive, IVE_all)
+GLOBAL (ivetype_t, ive, IVE_all)
 /*
  * IVE_all: If IVE is enabled, apply it to AKS and AKD arrays
  * This is the normal setting.
  * IVE_akd: Treat AKS arrays as AKD within IVE
  * IVE_aks: Perform IVE on AKS arrays only.
+ */
+
+GLOBAL (iveotype_t, iveo, IVEO_all)
+/*
+ * IVEO_all: do all ive optimisations
+ * This is the normal setting.
+ * IVEO_wlidx: do wlidx only
+ * IVEO_idxs: use idxs2offset
+ * IVEO_copt: optimize computations
  */
 
 GLOBAL (sigspec_mode_t, sigspec_mode, SSP_aks)

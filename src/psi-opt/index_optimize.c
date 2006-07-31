@@ -605,13 +605,13 @@ ReplaceByWithOffset (node *arg_node, info *arg_info)
 
     offset = FindIVOffset (INFO_IVINFO (arg_info), ID_AVIS (PRF_ARG2 (arg_node)), clique);
 
-    if (offset != NULL) {
+    if ((offset != NULL) && (global.iveo & IVEO_wlidx)) {
         DBUG_PRINT ("IVEO", ("replacing vect2offset by wlidx %s",
                              AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node)))));
 
         arg_node = FREEdoFreeNode (arg_node);
         arg_node = TBmakeId (offset);
-    } else {
+    } else if (global.iveo & IVEO_idxs) {
         /*
          * this offset is a non-wl-var offset but a locally
          * generated one, so we store it within the ivinfo
@@ -879,7 +879,8 @@ IVEOprf (node *arg_node, info *arg_info)
         ivassign = AVIS_SSAASSIGN (ID_AVIS (ivarg));
 
         if (ivassign != NULL) {
-            if (NODE_TYPE (ASSIGN_RHS (ivassign)) == N_array) {
+            if ((NODE_TYPE (ASSIGN_RHS (ivassign)) == N_array)
+                && (global.iveo & IVEO_idxs)) {
                 /*
                  * this index vector is defined as a array of
                  * scalars.
@@ -888,7 +889,8 @@ IVEOprf (node *arg_node, info *arg_info)
                                      AVIS_NAME (ID_AVIS (ivarg))));
 
                 arg_node = ReplaceByIdx2Offset (arg_node, arg_info);
-            } else if (NODE_TYPE (ASSIGN_RHS (ivassign)) == N_prf) {
+            } else if ((NODE_TYPE (ASSIGN_RHS (ivassign)) == N_prf)
+                       && (global.iveo & IVEO_copt)) {
                 /*
                  * this index vector is defined as a computation
                  * on (maybe) other index vectors or constants
