@@ -175,9 +175,9 @@ AppendAvisToShapeClique (node *avis1, node *avis2)
         AVIS_SHAPECLIQUEID (curavis2) = nextavis1;
 
         /* This got tedious
-        DBUG_PRINT("SCI_APPEND", ("Resulting shape clique is:"));
-        PrintShapeCliqueNames(avis2, TRUE);
-        */
+           DBUG_PRINT("SCI_APPEND", ("Resulting shape clique is:"));
+           PrintShapeCliqueNames(avis2, TRUE);
+         */
     }
     DBUG_RETURN (avis2);
 }
@@ -879,10 +879,12 @@ SCIgenarray (node *arg_node, info *arg_info)
 
         shapeel = EXPRS_EXPR (shps);
         if (N_id != NODE_TYPE (shapeel)) {
+            rhs = NULL;
             break; /* WL genarray ([2,3,4], 5) */
         }
         shapeelass = AVIS_SSAASSIGN (ID_AVIS (shapeel));
         if (NULL == shapeelass) {
+            rhs = NULL;
             break; /*  No SSAASSIGN for WL genarray ( [ constantfolded]...); */
         }
 
@@ -894,10 +896,12 @@ SCIgenarray (node *arg_node, info *arg_info)
         if (N_prf != NODE_TYPE (shapeelprf)) {
             DBUG_PRINT ("SCI", ("SCIgenarray did not see N_prf"));
             /* Presumably an N_ap */
+            rhs = NULL;
             break;
         }
         if (PRF_PRF (shapeelprf) != F_idx_shape_sel) {
             DBUG_PRINT ("SCI", (("WL Genarray did not see F_idx_shape_sel")));
+            rhs = NULL;
             break;
         }
         shapeelargs = PRF_ARGS (shapeelprf); /* _idx_shape_sel( elaxis, B) */
@@ -908,13 +912,16 @@ SCIgenarray (node *arg_node, info *arg_info)
         if ((N_num != NODE_TYPE (shapeelaxis)) || (axis != NUM_VAL (shapeelaxis))
             || (N_id != NODE_TYPE (shapeelB))) {
             DBUG_PRINT ("SCI", (("SCIgenarray confused on _idx_shape_sel arguments")));
+            rhs = NULL;
             break;
         }
+
         shapeBavis = ID_AVIS (shapeelB);
         if ((NULL == rhs) && (0 == axis)) {
             rhs = shapeBavis;
         }
         if ((NULL != rhs) && (rhs != shapeBavis)) {
+            rhs = NULL;
             break; /* All idx_shape_sel arg2 should be the same B! */
         }
 
@@ -929,7 +936,8 @@ SCIgenarray (node *arg_node, info *arg_info)
     if ((NULL != rhs)
         && ((NULL == def)
             || ((NULL != def) && (N_id == NODE_TYPE (def))
-                && (0 == AVIS_DIM (ID_AVIS (def)))))) {
+                && (TUdimKnown (AVIS_TYPE (ID_AVIS (def))))
+                && (TYgetDim (AVIS_TYPE (ID_AVIS (def))) == 0)))) {
         /* Wow. Place lhs and rhs in same shape clique */
         AppendAvisToShapeClique (lhs, rhs);
         DBUG_PRINT ("SCI", (("WL Genarray performing SC union")));
