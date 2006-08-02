@@ -694,6 +694,7 @@
           <node name="Part" />
           <node name="Genarray" />
           <node name="Modarray" />
+          <node name="Extract" />
          </travuser>
       </traversal>
       <traversal id="WLPG" name="With-Loop Partition Generation" default="sons" include="WLPartitionGeneration.h" >

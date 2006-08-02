@@ -410,6 +410,10 @@ WLDPgenarray (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLDPgenarray");
 
+    if (GENARRAY_NEXT (arg_node) != NULL) {
+        GENARRAY_NEXT (arg_node) = TRAVdo (GENARRAY_NEXT (arg_node), arg_info);
+    }
+
     if (GENARRAY_DEFAULT (arg_node) == NULL) {
         ntype *array_type;
 
@@ -431,7 +435,8 @@ WLDPgenarray (node *arg_node, info *arg_info)
             /* set correct backref to defining assignment */
             AVIS_SSAASSIGN (IDS_AVIS (ids)) = INFO_DEFASS (arg_info);
 
-            INFO_DEFEXPR (arg_info) = TBmakeId (avis);
+            INFO_DEFEXPR (arg_info)
+              = TBmakeExprs (TBmakeId (avis), INFO_DEFEXPR (arg_info));
 
         } else {
             CTIabortLine (global.linenum,
@@ -441,7 +446,8 @@ WLDPgenarray (node *arg_node, info *arg_info)
         }
 
     } else {
-        INFO_DEFEXPR (arg_info) = DUPdoDupTree (GENARRAY_DEFAULT (arg_node));
+        INFO_DEFEXPR (arg_info) = TBmakeExprs (DUPdoDupTree (GENARRAY_DEFAULT (arg_node)),
+                                               INFO_DEFEXPR (arg_info));
     }
 
     DBUG_RETURN (arg_node);
@@ -465,6 +471,10 @@ WLDPmodarray (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("WLDPmodarray");
 
+    if (MODARRAY_NEXT (arg_node) != NULL) {
+        MODARRAY_NEXT (arg_node) = TRAVdo (MODARRAY_NEXT (arg_node), arg_info);
+    }
+
     sel_vec = WITHID_VEC (WITH_WITHID (INFO_WL (arg_info)));
     sel_array = MODARRAY_ARRAY (arg_node);
 
@@ -482,12 +492,41 @@ WLDPmodarray (node *arg_node, info *arg_info)
   else{
 #endif
     INFO_DEFEXPR (arg_info)
-      = DSdispatchFunCall (NSgetNamespace ("sac2c"), "sel",
-                           TBmakeExprs (DUPdupIdsId (sel_vec),
-                                        TBmakeExprs (DUPdoDupNode (sel_array), NULL)));
+      = TBmakeExprs (DSdispatchFunCall (NSgetNamespace ("sac2c"), "sel",
+                                        TBmakeExprs (DUPdupIdsId (sel_vec),
+                                                     TBmakeExprs (DUPdoDupNode (
+                                                                    sel_array),
+                                                                  NULL))),
+                     INFO_DEFEXPR (arg_info));
 #if 0
   }
 #endif
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *WLDPextract( node *arg_node, info *arg_info)
+ *
+ *   @brief  generates default expression.
+ *
+ *   @param  node *arg_node:  N_extract
+ *           info *arg_info:  N_info
+ *   @return node *        :  N_extract
+ ******************************************************************************/
+
+node *
+WLDPextract (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("WLDPextract");
+
+    if (EXTRACT_NEXT (arg_node) != NULL) {
+        EXTRACT_NEXT (arg_node) = TRAVdo (EXTRACT_NEXT (arg_node), arg_info);
+    }
+
+    INFO_DEFEXPR (arg_info)
+      = TBmakeExprs (DUPdoDupTree (EXTRACT_DEFAULT (arg_node)), INFO_DEFEXPR (arg_info));
 
     DBUG_RETURN (arg_node);
 }
@@ -512,23 +551,8 @@ WLDPpart (node *arg_node, info *arg_info)
 
     DBUG_ASSERT ((INFO_DEFEXPR (arg_info) != NULL), "default expression is missing!");
 
-    _ids = TBmakeIds (TBmakeAvis (ILIBtmpVar (),
-                                  TYeliminateAKV (AVIS_TYPE (ID_AVIS (
-                                    EXPRS_EXPR (WITH_CEXPRS (INFO_WL (arg_info))))))),
-                      NULL);
-
-    vardec = TBmakeVardec (IDS_AVIS (_ids), NULL);
-
-    INFO_FUNDEF (arg_info) = TCaddVardecs (INFO_FUNDEF (arg_info), vardec);
-
-    idn = DUPdupIdsId (_ids);
-
-    /* create new N_code node  */
-    nassign = TBmakeAssign (TBmakeLet (_ids, INFO_DEFEXPR (arg_info)), NULL);
-    /* set correct backref to defining assignment */
-    AVIS_SSAASSIGN (IDS_AVIS (_ids)) = nassign;
-
-    code = TBmakeCode (TBmakeBlock (nassign, NULL), TBmakeExprs (idn, NULL));
+    code = TBmakeCode (TBmakeBlock (TBmakeEmpty (), NULL),
+                       TBmakeExprs (INFO_DEFEXPR (arg_info), NULL));
 
     INFO_DEFEXPR (arg_info) = NULL;
 
