@@ -624,8 +624,8 @@ SCIprf (node *arg_node, info *arg_info)
     case F_ge:
     case F_gt:
     case F_lt:
-        /* First, see if this is essentially a case of AxA. If so, give up */
         /* Place lhs id and one arg in same shape clique, if SxA or AxS. */
+        /* or if AxA and both args are in same shape clique.		 */
         lhs = INFO_LHS (arg_info);
         arg1 = PRF_ARG1 (arg_node);
         arg2 = PRF_ARG2 (arg_node);
@@ -662,8 +662,16 @@ SCIprf (node *arg_node, info *arg_info)
             }
             break;
 
-        default: /* do nothing  */
-            DBUG_PRINT ("SCID", ("This is SxS"));
+        case N_id:
+            if (NODE_TYPE (arg1) == N_id) { /* N_id on both sides */
+                arg1avis = ID_AVIS (arg1);
+                arg2avis = ID_AVIS (arg2);
+                if (SCIAvisesAreInSameShapeClique (arg1avis, arg2avis)) {
+                    AppendAvisToShapeClique (lhsavis, arg2avis);
+                }
+            }
+
+        default: /* SxS */
             break;
         }
 
@@ -712,15 +720,26 @@ SCIprf (node *arg_node, info *arg_info)
 
         break;
 
-        /* Can't handle dyadic scalar fns today, as */
-        /* they need shape clique guards. */
+        /* Dyadic scalar fns
+         * they really need shape clique guards, but if
+         * both arguments are in same shape clique, we can
+         * add the result to that shape clique */
     case F_add_AxA:
     case F_sub_AxA:
     case F_mul_AxA:
     case F_div_AxA:
+        lhs = INFO_LHS (arg_info);
+        lhsavis = IDS_AVIS (lhs);
+        arg1 = PRF_ARG1 (arg_node);
+        arg1avis = ID_AVIS (arg1);
+        arg2 = PRF_ARG2 (arg_node);
+        arg2avis = ID_AVIS (arg2);
+        if (SCIAvisesAreInSameShapeClique (arg1avis, arg2avis)) {
+            AppendAvisToShapeClique (lhsavis, arg2avis);
+        }
         break;
 
-        /* Can't handle these, either */
+        /* Can't handle these today */
     case F_shape:
     case F_reshape:
     case F_run_mt_fold:
