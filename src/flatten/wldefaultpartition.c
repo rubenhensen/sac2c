@@ -546,7 +546,7 @@ node *
 WLDPpart (node *arg_node, info *arg_info)
 {
     node *_ids, *vardec, *idn, *code, *nassign;
-    node *expriter;
+    node *expriter, *temp, *idniter;
 
     DBUG_ENTER ("WLDPpart");
 
@@ -556,6 +556,7 @@ WLDPpart (node *arg_node, info *arg_info)
     idn = NULL;
     nassign = NULL;
     vardec = NULL;
+    idniter = NULL;
     expriter = INFO_DEFEXPR (arg_info);
 
     while (expriter != NULL) {
@@ -565,7 +566,15 @@ WLDPpart (node *arg_node, info *arg_info)
                           NULL);
 
         vardec = TBmakeVardec (IDS_AVIS (_ids), vardec);
-        idn = TBmakeExprs (DUPdupIdsId (_ids), idn);
+
+        temp = TBmakeExprs (DUPdupIdsId (_ids), NULL);
+        if (idn == NULL) {
+            idn = temp;
+            idniter = idn;
+        } else {
+            EXPRS_NEXT (idniter) = temp;
+            idniter = temp;
+        }
 
         /* create new N_code node  */
         nassign = TBmakeAssign (TBmakeLet (_ids, EXPRS_EXPR (expriter)), nassign);
