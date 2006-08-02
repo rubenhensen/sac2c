@@ -545,13 +545,40 @@ WLDPextract (node *arg_node, info *arg_info)
 node *
 WLDPpart (node *arg_node, info *arg_info)
 {
-    node *code;
+    node *_ids, *vardec, *idn, *code, *nassign;
+    node *expriter;
 
     DBUG_ENTER ("WLDPpart");
 
     DBUG_ASSERT ((INFO_DEFEXPR (arg_info) != NULL), "default expression is missing!");
 
-    code = TBmakeCode (TBmakeBlock (TBmakeEmpty (), NULL), INFO_DEFEXPR (arg_info));
+    _ids = NULL;
+    idn = NULL;
+    nassign = NULL;
+    vardec = NULL;
+    expriter = INFO_DEFEXPR (arg_info);
+
+    while (expriter != NULL) {
+        _ids = TBmakeIds (TBmakeAvis (ILIBtmpVar (),
+                                      TYeliminateAKV (AVIS_TYPE (ID_AVIS (
+                                        EXPRS_EXPR (WITH_CEXPRS (INFO_WL (arg_info))))))),
+                          NULL);
+
+        vardec = TBmakeVardec (IDS_AVIS (_ids), vardec);
+        idn = TBmakeExprs (DUPdupIdsId (_ids), idn);
+
+        /* create new N_code node  */
+        nassign = TBmakeAssign (TBmakeLet (_ids, EXPRS_EXPR (expriter)), nassign);
+
+        /* set correct backref to defining assignment */
+        AVIS_SSAASSIGN (IDS_AVIS (_ids)) = nassign;
+
+        expriter = EXPRS_NEXT (expriter);
+    }
+
+    INFO_FUNDEF (arg_info) = TCaddVardecs (INFO_FUNDEF (arg_info), vardec);
+
+    code = TBmakeCode (TBmakeBlock (nassign, NULL), idn);
 
     INFO_DEFEXPR (arg_info) = NULL;
 
