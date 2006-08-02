@@ -1968,7 +1968,7 @@ DUPextract (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("DUPextract");
 
-    new_node = TBmakeExtract ();
+    new_node = TBmakeExtract (DUPTRAV (EXTRACT_DEFAULT (arg_node)));
 
     EXTRACT_NEXT (new_node) = DUPCONT (EXTRACT_NEXT (arg_node));
 

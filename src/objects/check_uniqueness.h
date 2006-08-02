@@ -8,6 +8,7 @@
 extern node *CUavis (node *arg_node, info *arg_info);
 extern node *CUblock (node *arg_node, info *arg_info);
 extern node *CUcond (node *arg_node, info *arg_info);
+extern node *CUextract (node *arg_node, info *arg_info);
 extern node *CUfuncond (node *arg_node, info *arg_info);
 extern node *CUfundef (node *arg_node, info *arg_info);
 extern node *CUid (node *arg_node, info *arg_info);

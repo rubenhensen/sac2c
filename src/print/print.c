@@ -3869,7 +3869,13 @@ PRTextract (node *arg_node, info *arg_info)
 
     INDENT;
 
-    fprintf (global.outfile, "extract()");
+    fprintf (global.outfile, "extract( ");
+
+    if (EXTRACT_DEFAULT (arg_node) != NULL) {
+        TRAVdo (EXTRACT_DEFAULT (arg_node), arg_info);
+    }
+
+    fprintf (global.outfile, ")");
 
     if (EXTRACT_NEXT (arg_node) != NULL) {
         fprintf (global.outfile, ",\n");

@@ -10,6 +10,11 @@
  *     tree is in SSA form and has been mangled beyond recognition.
  *     Also, objects are seldomly used explicitly in user code, making
  *     an error message even more cryptic.
+ *   - We intentionally skip the default expression of N_extract nodes,
+ *     to work around the fact that it is also used in the N_part of the
+ *     with-loop. In actuality it will never be used at the same time,
+ *     just like if-then-else, and so we should treat different with-ops
+ *     as different code paths and allow simultaneous use.
  * BUGS:
  *   - None so far :)
  */
@@ -231,6 +236,21 @@ CUfundef (node *arg_node, info *arg_info)
     /* Continue to the next function. */
     if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+CUextract (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("CUextract");
+
+    /* Skip the 'default element' son, see PROBLEMS at the top of this
+     * file.  */
+
+    if (EXTRACT_NEXT (arg_node) != NULL) {
+        EXTRACT_NEXT (arg_node) = TRAVdo (EXTRACT_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);

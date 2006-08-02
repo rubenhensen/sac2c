@@ -24,13 +24,14 @@
  *       ...
  *     } : b, stdout
  *     genarray ( shp ( b), ...)
- *     extract ( );
+ *     extract ( stdout);
  */
 
 #include "withloop_objects.h"
 
 #include "ctinfo.h"
 #include "dbug.h"
+#include "DupTree.h"
 #include "globals.h"
 #include "internal_lib.h"
 #include "new_types.h"
@@ -132,7 +133,8 @@ AddObjectsToWithOps (node *withops, node *objects)
     /* Append an extract() withop for every object */
     object = objects;
     while (object != NULL) {
-        L_WITHOP_NEXT (withop, TBmakeExtract ());
+        /* Use the original object as default element */
+        L_WITHOP_NEXT (withop, TBmakeExtract (DUPdoDupTree (EXPRS_EXPR (object))));
         withop = WITHOP_NEXT (withop);
         object = EXPRS_NEXT (object);
     }
