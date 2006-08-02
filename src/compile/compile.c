@@ -4377,9 +4377,6 @@ COMPPrfVect2Offset (node *arg_node, info *arg_info)
     shpexprs = ARRAY_AELEMS (PRF_ARG1 (arg_node));
     iv_vect = PRF_ARG2 (arg_node);
 
-    DBUG_ASSERT ((TCgetTypesLength (ID_TYPE (iv_vect)) > 0),
-                 "vect2offset not yet implemented for non AKS index vectors");
-
     icm = TCmakeIcm5 ("ND_VECT2OFFSET", DUPdupIdsIdNt (let_ids),
                       TBmakeNum (TCgetTypesLength (ID_TYPE (iv_vect))),
                       DUPdupIdNt (iv_vect), TBmakeNum (TCcountExprs (shpexprs)),

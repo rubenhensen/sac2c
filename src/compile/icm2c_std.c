@@ -1482,10 +1482,15 @@ ICMCompileND_VECT2OFFSET (char *off_NT, int from_size, char *from_NT, int shp_si
      * or a constant scalar!
      */
 
-    DBUG_ASSERT ((from_size >= 0), "Illegal size found!");
+    DBUG_ASSERT ((shp_size != 0), "illegal shape size (AUD?)");
 
-    Vect2Offset2 (off_NT, from_NT, from_size, NULL, ReadId, shp_ANY, shp_size, NULL,
-                  ReadConstArray_Str);
+    if (from_size > 0) {
+        Vect2Offset2 (off_NT, from_NT, from_size, NULL, ReadId, shp_ANY, shp_size, NULL,
+                      ReadConstArray_Str);
+    } else {
+        Vect2Offset2 (off_NT, from_NT, from_size, SizeId, ReadId, shp_ANY, shp_size, NULL,
+                      ReadConstArray_Str);
+    }
 
     DBUG_VOID_RETURN;
 }
@@ -1523,7 +1528,8 @@ ICMCompileND_IDXS2OFFSET (char *off_NT, int idxs_size, char **idxs_ANY, int shp_
      * or a constant scalar!
      */
 
-    DBUG_ASSERT ((idxs_size >= 0), "Illegal size found!");
+    DBUG_ASSERT ((shp_size != 0), "illegal size found!)");
+    DBUG_ASSERT ((shp_size != 0), "illegal shape size (AUD?)");
 
     Vect2Offset2 (off_NT, idxs_ANY, idxs_size, NULL, ReadConstArray_Str, shp_ANY,
                   shp_size, NULL, ReadConstArray_Str);
