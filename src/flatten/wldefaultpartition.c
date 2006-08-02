@@ -545,14 +545,13 @@ WLDPextract (node *arg_node, info *arg_info)
 node *
 WLDPpart (node *arg_node, info *arg_info)
 {
-    node *_ids, *vardec, *idn, *code, *nassign;
+    node *code;
 
     DBUG_ENTER ("WLDPpart");
 
     DBUG_ASSERT ((INFO_DEFEXPR (arg_info) != NULL), "default expression is missing!");
 
-    code = TBmakeCode (TBmakeBlock (TBmakeEmpty (), NULL),
-                       TBmakeExprs (INFO_DEFEXPR (arg_info), NULL));
+    code = TBmakeCode (TBmakeBlock (TBmakeEmpty (), NULL), INFO_DEFEXPR (arg_info));
 
     INFO_DEFEXPR (arg_info) = NULL;
 
