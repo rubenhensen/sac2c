@@ -163,7 +163,7 @@ target idefix:: ultra2_entr450:
 
 target asterix_cc::suncc::asterix:
 
-CCFLAGS        +=  "-xtarget=opteron -xarch=amd64"
+CCFLAGS        +=  "-xtarget=opteron"
 EXTLIBPATH     :=  "/opt/csw/lib"
 
 

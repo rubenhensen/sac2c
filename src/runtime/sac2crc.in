@@ -99,21 +99,17 @@ CACHE3_MSCA      :=  0
 target suncc:
 
 CC             :=  cc
-CCFLAGS        :=  "-dalign -fsimple -xsafe=mem"
+CCFLAGS        :=  "-dalign -xsafe=mem"
  
 OPT_O0         :=  ""
 OPT_O1         :=  -xO2
 OPT_O2         :=  -xO4
-OPT_O3         :=  -xO5
+OPT_O3         :=  "-fast -xvector=simd"
  
 SYSTEM_LIBPATH :=  "/usr/ccs/bin:"
                    "/usr/ccs/lib:"
                    "/lib:"
                    "/usr/lib"
-
-target suncc_fast::suncc:
-
-CCFLAGS        += -fast
 
 
 /*******************************************************************************
