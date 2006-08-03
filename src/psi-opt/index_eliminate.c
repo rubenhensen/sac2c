@@ -340,7 +340,7 @@ ScalarizeShape (info *info, node *ivavis, int rank, node *bavis)
         AVIS_SSAASSIGN (shpelavis) = INFO_PREASSIGNS (info);
         exprs = TBmakeExprs (TBmakeId (shpelavis), exprs);
     }
-    return (exprs);
+    DBUG_RETURN (exprs);
 }
 /** <!-- ****************************************************************** -->
  * @brief Emit Vect2Offset for AKD array indexing operations sel(iv, B)
