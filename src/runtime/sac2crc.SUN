@@ -5,11 +5,15 @@
  * description:
  *
  *  contains cache characteristics for various SUN machines, as well as
- *  targets specific to the SUN machines available in Kiel.
+ *  targets specific to the SUN machines available in Kiel and Hertfordshire.
  *
  ******************************************************************************/
  
 
+target sunfire_x4100:
+
+CACHE1_SIZE    :=   64
+CACHE2_SIZE    := 1024
 
 target sparc_4:
 
@@ -134,6 +138,8 @@ CACHE2_WRITEPOL :=  "write_around"
  *   
  */
 
+target asterix::sunfire_x4100:
+
 target tummy::ultra2i:
 
 target cheops::ultra2i:
@@ -154,6 +160,12 @@ target idefix:: ultra2_entr450:
  * Specific machine targets using Sun cc
  *
  */
+
+target asterix_cc::suncc::asterix:
+
+CCFLAGS        +=  "-xtarget=opteron -xarch=amd64"
+EXTLIBPATH     :=  "/opt/csw/lib"
+
 
 target tummy_cc::suncc::tummy:
 
