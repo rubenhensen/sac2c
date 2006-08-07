@@ -48,8 +48,7 @@ MEMmalloc (int size)
         orig_ptr = malloc (size + malloc_align_step);
 
         if (orig_ptr == NULL) {
-            CTIabort ("Out of memory: %u Bytes already allocated",
-                      global.current_allocated_mem);
+            CTIabortOutOfMemory (size);
         }
 
         shifted_ptr = CHKMregisterMem (size, orig_ptr);
@@ -177,7 +176,7 @@ MEMmalloc (int size)
         ptr = malloc (size);
 
         if (ptr == NULL) {
-            CTIabort ("Out of memory");
+            CTIabortOutOfMemory (size);
         }
     } else {
         ptr = NULL;

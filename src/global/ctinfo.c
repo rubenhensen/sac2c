@@ -602,7 +602,6 @@ CTIabortOnBottom (char *err_msg)
  *   @brief   produces an error message without file name and line number
  *            and terminates the compilation process.
  *
- *   @param line  line number
  *   @param format  format string like in printf
  *
  ******************************************************************************/
@@ -655,6 +654,47 @@ CTIabortLine (int line, const char *format, ...)
     PrintMessage (abort_message_header, format, arg_p);
 
     va_end (arg_p);
+
+    errors++;
+
+    AbortCompilation ();
+
+    DBUG_VOID_RETURN;
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn void CTIabortOutOfMemory( unsigned int request)
+ *
+ *   @brief   produces a specific "out of memory" error message
+ *            without file name and line number and terminates the
+ *            compilation process.
+ *
+ *            This very special function is needed because the normal
+ *            procedure of formatting a message may require further
+ *            allocation of memory, which in this very case generates
+ *            a vicious circle of error messages instead of terminating
+ *            compilation properly.
+ *
+ *   @param request size of requested memory
+ *
+ ******************************************************************************/
+
+void
+CTIabortOutOfMemory (unsigned int request)
+{
+    DBUG_ENTER ("CTIabortOutOfMemory");
+
+    fprintf (stderr,
+             "\n"
+             "%sOut of memory:\n"
+             "%s %u bytes requested\n",
+             abort_message_header, abort_message_header, request);
+
+#ifdef SHOW_MALLOC
+    fprintf (stderr, "%s %u bytes already allocated\n", abort_message_header,
+             global.current_allocated_mem);
+#endif
 
     errors++;
 

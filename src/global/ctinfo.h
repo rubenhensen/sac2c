@@ -1,30 +1,5 @@
-/*
- *
- * $Log$
- * Revision 1.8  2005/07/15 15:57:02  sah
- * introduced namespaces
- *
- * Revision 1.7  2005/06/14 23:39:03  sbs
- * CTIabortOnBottom added for reporting bottom types
- *
- * Revision 1.6  2005/06/14 17:58:19  sbs
- * added CTIgetErrorMessageVA
- *
- * Revision 1.5  2005/03/10 09:41:09  cg
- * Added CTIterminateCompilation()
- *
- * Revision 1.4  2005/01/12 15:50:46  cg
- * Added CTIterminateCompilation.
- *
- * Revision 1.3  2005/01/11 15:11:46  cg
- * Added some useful functionality.
- *
- * Revision 1.2  2005/01/07 19:54:13  cg
- * Some streamlining done.
- *
- * Revision 1.1  2005/01/07 16:48:36  cg
- * Initial revision
- *
+/**
+ * $Id$
  *
  */
 
@@ -51,6 +26,7 @@ extern int CTIgetErrorMessageLineLength ();
 extern void CTIabortOnBottom (char *err_msg);
 extern void CTIabort (const char *format, ...);
 extern void CTIabortLine (int line, const char *format, ...);
+extern void CTIabortOutOfMemory (unsigned int request);
 extern void CTIabortOnError ();
 extern void CTIwarn (const char *format, ...);
 extern void CTIwarnLine (int line, const char *format, ...);
