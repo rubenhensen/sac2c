@@ -174,11 +174,12 @@ DispatchFunCall (node *fundef, ntype *arg_types)
                     DBUG_ASSERT ((dft_res->deriveable == NULL),
                                  "def and deriveable found!");
                     new_fundef = dft_res->def;
+
+                    DBUG_PRINT ("DFC",
+                                ("  dispatched statically %s", CTIitemName (new_fundef)));
                 } else {
                     new_fundef = dft_res->deriveable;
                 }
-                DBUG_PRINT ("DFC",
-                            ("  dispatched statically %s", CTIitemName (new_fundef)));
             } else if (!CWChasWrapperCode (fundef)) {
                 /*
                  * static dispatch impossible,
