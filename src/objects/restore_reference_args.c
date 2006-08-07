@@ -120,29 +120,24 @@ RemoveArtificialReturnValues (node *form_args, node *act_args, node *ids)
     DBUG_RETURN (ids);
 }
 
-static node *
-RemoveArtificialWithloopReturns (node *with_node, info *arg_info)
+static void
+RemoveArtificialWithloopReturns (node *withops, node *withexprs, node *letlhs)
 {
     DBUG_ENTER ("RemoveArtificialWithloopReturn");
 
-    node *withops = WITH2_WITHOP (with_node);
-    node *withexprs = CODE_CEXPRS (WITH2_CODE (with_node));
-    node *letlhs = INFO_LHS (arg_info);
-
-    node *iter = withops;
-    while (iter != NULL) {
+    while (withops != NULL) {
         /* If the withop is of type N_extract, then the LHS is artificial
          * and we should replace the LHS N_id by the with N_expr. */
-        if (NODE_TYPE (iter) == N_extract) {
+        if (NODE_TYPE (withops) == N_extract) {
             AVIS_SUBST (IDS_AVIS (letlhs)) = ID_AVIS (EXPRS_EXPR (withexprs));
         }
 
         letlhs = IDS_NEXT (letlhs);
         withexprs = EXPRS_NEXT (withexprs);
-        iter = WITHOP_NEXT (iter);
+        withops = WITHOP_NEXT (withops);
     }
 
-    DBUG_RETURN (with_node);
+    DBUG_VOID_RETURN;
 }
 
 static node *
@@ -452,6 +447,26 @@ RERAmodule (node *arg_node, info *arg_info)
 }
 
 node *
+RERAwith (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("RERAwith");
+
+    if (WITH_CODE (arg_node) != NULL) {
+        WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
+    }
+
+    if (WITH_WITHOP (arg_node) != NULL) {
+        WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
+    }
+
+    RemoveArtificialWithloopReturns (WITH_WITHOP (arg_node),
+                                     CODE_CEXPRS (WITH_CODE (arg_node)),
+                                     INFO_LHS (arg_info));
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
 RERAwith2 (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("RERAwith2");
@@ -464,7 +479,23 @@ RERAwith2 (node *arg_node, info *arg_info)
         WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
     }
 
-    RemoveArtificialWithloopReturns (arg_node, arg_info);
+    RemoveArtificialWithloopReturns (WITH2_WITHOP (arg_node),
+                                     CODE_CEXPRS (WITH2_CODE (arg_node)),
+                                     INFO_LHS (arg_info));
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+RERAblock (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("RERAblock");
+
+    BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
+
+    if (BLOCK_INSTR (arg_node) == NULL) {
+        BLOCK_INSTR (arg_node) = TBmakeEmpty ();
+    }
 
     DBUG_RETURN (arg_node);
 }
