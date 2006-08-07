@@ -161,12 +161,19 @@ AddIdsToTypeError (node *ids, node *error)
     errorids = LET_IDS (ASSIGN_INSTR (error));
 
     while (ids != NULL) {
-        if (IdsInChain (ids, errorids)) {
+        if (TYisBottom (AVIS_TYPE (IDS_AVIS (ids))) || IdsInChain (ids, errorids)) {
+            /*
+             * it is already in there or will be added
+             * later, so nothing to do
+             */
             node *tmp = ids;
             ids = IDS_NEXT (ids);
             IDS_NEXT (tmp) = result;
             result = tmp;
         } else {
+            /*
+             * add it now.
+             */
             node *tmp = ids;
             ids = IDS_NEXT (ids);
             IDS_NEXT (tmp) = errorids;
@@ -218,28 +225,34 @@ AddTypeError (node *assign, node *bottom_id, ntype *other_type)
     AVIS_TYPE (ID_AVIS (bottom_id)) = TYeliminateAKV (other_type);
 
     /**
-     * and we eliminate the defining N_let:
+     * and we eliminate the defining N_let if it has not been
+     * eliminated already while processing one of its further
+     * results:
      */
     DBUG_ASSERT ((AVIS_SSAASSIGN (ID_AVIS (bottom_id)) != NULL),
                  "missing AVIS_SSAASSIGN!");
     DBUG_ASSERT ((NODE_TYPE (AVIS_SSAASSIGN (ID_AVIS (bottom_id))) == N_assign),
                  "AVIS_SSAASSIGN points to non N_assign node!");
-    DBUG_ASSERT ((NODE_TYPE (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (bottom_id))))
-                  == N_let),
-                 "AVIS_SSAASSIGN does not point to an N_let assignment!");
+    if (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (bottom_id))) != NULL) {
+        DBUG_ASSERT ((NODE_TYPE (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (bottom_id))))
+                      == N_let),
+                     "AVIS_SSAASSIGN does not point to an N_let assignment!");
 
-    /*
-     * as we will delete the entire let, we have to ensure that all
-     * lhs ids are bound to a type error. this may not be the case if
-     * only one result of the rhs function call is a bottom and the
-     * others are not.
-     */
-    LET_IDS (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (bottom_id))))
-      = AddIdsToTypeError (LET_IDS (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (bottom_id)))),
-                           assign);
+        /*
+         * as we will delete the entire let, we have to ensure that all
+         * lhs ids are bound to a type error. this may not be the case if
+         * only one result of the rhs function call is a bottom and the
+         * others are not. If in fact they are bottom, we do not add them
+         * as they would be added twice otherwise!
+         */
+        LET_IDS (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (bottom_id))))
+          = AddIdsToTypeError (LET_IDS (
+                                 ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (bottom_id)))),
+                               assign);
 
-    ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (bottom_id)))
-      = FREEdoFreeTree (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (bottom_id))));
+        ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (bottom_id)))
+          = FREEdoFreeTree (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (bottom_id))));
+    }
 
     /**
      * finally set the SSAASSIGN to the type_error
@@ -934,11 +947,15 @@ NT2OTcond (node *arg_node, info *arg_info)
     COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
 
     if (INFO_THENBOTTS (arg_info) != NULL) {
-        ASSIGN_NEXT (INFO_THENBOTTS (arg_info)) = BLOCK_INSTR (COND_THEN (arg_node));
+        INFO_THENBOTTS (arg_info) = TCappendAssign (INFO_THENBOTTS (arg_info),
+                                                    BLOCK_INSTR (COND_THEN (arg_node)));
+
         BLOCK_INSTR (COND_THEN (arg_node)) = INFO_THENBOTTS (arg_info);
     }
     if (INFO_ELSEBOTTS (arg_info) != NULL) {
-        ASSIGN_NEXT (INFO_ELSEBOTTS (arg_info)) = BLOCK_INSTR (COND_ELSE (arg_node));
+        INFO_ELSEBOTTS (arg_info) = TCappendAssign (INFO_ELSEBOTTS (arg_info),
+                                                    BLOCK_INSTR (COND_ELSE (arg_node)));
+
         BLOCK_INSTR (COND_ELSE (arg_node)) = INFO_ELSEBOTTS (arg_info);
     }
 
