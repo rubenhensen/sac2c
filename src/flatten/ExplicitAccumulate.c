@@ -239,7 +239,8 @@ MakeFoldFunAssign (info *arg_info)
         AVIS_SSAASSIGN (avis) = fixassign;
         ASSIGN_NEXT (assign) = fixassign;
 
-        EXPRS_NEXT (INFO_FOLD_CEXPR (arg_info)) = TBmakeExprs (TBmakeId (avis), NULL);
+        EXPRS_NEXT (INFO_FOLD_CEXPR (arg_info))
+          = TBmakeExprs (TBmakeId (avis), EXPRS_NEXT (INFO_FOLD_CEXPR (arg_info)));
     }
 
     DBUG_RETURN (assign);
@@ -424,6 +425,8 @@ EAfold (node *arg_node, info *arg_info)
 
     if (FOLD_GUARD (arg_node) != NULL) {
         node *avis;
+        node *brk;
+        node *ids;
 
         /*
          * Transcribe Guard into info node and remove guard from fold
@@ -434,7 +437,9 @@ EAfold (node *arg_node, info *arg_info)
         /*
          * Append break withop
          */
-        FOLD_NEXT (arg_node) = TBmakeBreak ();
+        brk = TBmakeBreak ();
+        BREAK_NEXT (brk) = FOLD_NEXT (arg_node);
+        FOLD_NEXT (arg_node) = brk;
 
         /*
          * Append IDS to LHS of assignment
@@ -447,7 +452,9 @@ EAfold (node *arg_node, info *arg_info)
 
         AVIS_SSAASSIGN (avis) = AVIS_SSAASSIGN (IDS_AVIS (INFO_LHS_IDS (arg_info)));
 
-        IDS_NEXT (INFO_LHS_IDS (arg_info)) = TBmakeIds (avis, NULL);
+        ids = TBmakeIds (avis, NULL);
+        IDS_NEXT (ids) = IDS_NEXT (INFO_LHS_IDS (arg_info));
+        IDS_NEXT (INFO_LHS_IDS (arg_info)) = ids;
     }
 
     DBUG_RETURN (arg_node);
