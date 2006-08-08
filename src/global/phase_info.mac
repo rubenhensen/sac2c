@@ -505,6 +505,8 @@ SUBPHASE (mng, "mng", "Mark NoOp Grids", MNGdoMarkNoopGrids)
 
 SUBPHASE (rid, "rid", "Consistently renaming identifiers", RIDdoRenameIdentifiers)
 
+SUBPHASE (rcs, "rcs", "Resolving code sharing in With-Loops", RCSdoResolveCodeSharing)
+
 /******************************************************************************/
 
 PHASE (compile, "Generating C code", PHdummy)

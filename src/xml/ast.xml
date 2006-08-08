@@ -2094,6 +2094,16 @@
 	  <node name="Avis" />
 	</travuser>
       </traversal>
+      <traversal id="RCS" name="Resolve Code Sharing" default="sons" include="resolve_code_sharing.h">
+        <travuser>
+	  <node name="With" />
+	  <node name="With2" />
+	  <node name="Code" />
+	  <node name="Part" />
+	  <node name="WLgrid" />
+	  <node name="WLgridVar" />
+	</travuser>
+      </traversal>
     </phase>
     <phase id="compile" name="Generating C code" 
       startfun="NULL" include=".h"

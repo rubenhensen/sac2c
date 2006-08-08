@@ -121,7 +121,8 @@ refcount    = emm.o rcopt.o filterrc.o alloc.o referencecounting.o \
 precompile  = precompile.o markmemvals.o \
               renameidentifiers.o functionprecompile.o \
               typeconv_precompile.o setlinksign.o \
-              remove_external_code.o mark_noop_grids.o
+              remove_external_code.o mark_noop_grids.o \
+              resolve_code_sharing.o
 
 compile     = gen_startup_code.o compile.o icm2c.o icm2c_basic.o \
               icm2c_utils.o icm2c_std.o icm2c_prf.o icm2c_mt.o icm2c_sched.o \

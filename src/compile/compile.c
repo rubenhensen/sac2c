@@ -32,7 +32,7 @@
 #include "shape.h"
 #include "LookUpTable.h"
 
-#define FOLDFIX_ACTIVE 1
+#define FOLDFIX_LABEL_GENERATION_ACTIVE 1
 
 /*
  * arg_info
@@ -5806,7 +5806,7 @@ COMPwith2 (node *arg_node, info *arg_info)
       TCmakeAssignIcm1 ("WL_SCHEDULE__END", DUPdoDupTree (icm_args),
                         TCmakeAssignIcm1 ("PF_END_WITH",
                                           TCmakeIdCopyString (profile_name),
-#if FOLDFIX_ACTIVE
+#if FOLDFIX_LABEL_GENERATION_ACTIVE
                                           TCmakeAssignIcm1 ("ND_LABEL",
                                                             TCmakeIdCopyString (
                                                               break_label_str),

@@ -97,5 +97,10 @@ PRECdoPrecompile (node *syntax_tree)
      */
     syntax_tree = PHrunCompilerSubPhase (SUBPH_rid, syntax_tree);
 
+    /*
+     * Resolve Code Sharing in With-Loops
+     */
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_rcs, syntax_tree);
+
     DBUG_RETURN (syntax_tree);
 }
