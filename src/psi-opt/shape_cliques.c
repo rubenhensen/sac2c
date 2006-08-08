@@ -575,6 +575,8 @@ node *
 SCIprf (node *arg_node, info *arg_info)
 {
     node *lhs, *arg1, *arg2, *lhsavis, *arg1avis, *arg2avis;
+    node *arg3;
+    node *arg3avis;
 
     DBUG_ENTER ("SCIprf");
 
@@ -677,6 +679,20 @@ SCIprf (node *arg_node, info *arg_info)
 
         break;
 
+    case F_dtype_conv:
+        /* Place lhs id and arg3 in same shape clique */
+        lhs = INFO_LHS (arg_info);
+        lhsavis = IDS_AVIS (lhs);
+
+        arg3 = PRF_ARG3 (arg_node);
+        if (N_id == NODE_TYPE (arg3)) {
+            arg3avis = ID_AVIS (arg3);
+            DBUG_ASSERT ((AVIS_SHAPECLIQUEID (lhsavis) == SHAPECLIQUEIDNONE (lhsavis)),
+                         "PRF F_type_conv lhs shape clique is non-degenerate");
+            AppendAvisToShapeClique (lhsavis, arg3avis);
+        }
+        break;
+
     case F_neg: /* Monadic scalar functions */
     case F_abs:
     case F_not:
@@ -774,7 +790,6 @@ SCIprf (node *arg_node, info *arg_info)
     case F_to_unq:
     case F_from_unq:
     case F_type_conv:
-    case F_dtype_conv:
     case F_dispatch_error:
     case F_type_error:
     case F_esd_neg:
