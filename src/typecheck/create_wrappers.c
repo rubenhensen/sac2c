@@ -651,7 +651,7 @@ CRTWRPspap (node *arg_node, info *arg_info)
 
     if (wrapper == NULL) {
         CTIabortLine (NODE_LINE (arg_node),
-                      "No definition found for a function \"%s:%s\" that expects"
+                      "No definition found for a function \"%s::%s\" that expects"
                       " %i argument(s) and yields %i return value(s)",
                       NSgetName (SPAP_NS (arg_node)), SPAP_NAME (arg_node), num_args,
                       INFO_EXPRETS (arg_info));
@@ -722,7 +722,7 @@ CRTWRPspfold (node *arg_node, info *arg_info)
 
     if (wrapper == NULL) {
         CTIabortLine (NODE_LINE (arg_node),
-                      "No definition found for a function \"%s:%s\" that expects"
+                      "No definition found for a function \"%s::%s\" that expects"
                       " 2 arguments and yields 1 return value",
                       NSgetName (SPFOLD_NS (arg_node)), SPFOLD_FUN (arg_node));
     } else {
