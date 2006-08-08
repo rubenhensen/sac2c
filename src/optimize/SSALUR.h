@@ -46,6 +46,5 @@ extern node *LURdoLoopUnrolling (node *fundef);
 extern node *LURfundef (node *arg_node, info *arg_info);
 extern node *LURassign (node *arg_node, info *arg_info);
 extern node *LURap (node *arg_node, info *arg_info);
-extern node *LURwith (node *arg_node, info *arg_info);
 
 #endif /* _SAC_SSALUR_H_ */

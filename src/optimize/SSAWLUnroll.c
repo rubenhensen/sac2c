@@ -2,16 +2,6 @@
  * $Id$
  */
 
-/*******************************************************************************
-
-  This file make the following functions available:
-  - Check whether WL (genarray, modarray, fold) can be unrolled
-  - Execution of WL unrolling (genarray, modarray, fold)
-
-  Theses functions are called from SSALUR.c and SSAWLUnroll.c
-
- *******************************************************************************/
-
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -35,39 +25,49 @@
 #include "SSAWLUnroll.h"
 
 /*
- * INFO structure and macros
+ * INFO structure
  */
+struct INFO {
+    node *assign;
+    node *preassign;
+    node *fundef;
+};
 
-#include "SSALUR_info.h"
-
-/* opfun is a higher oder function called from within ForEachElementHelp()
- * to create explicit code for one single array element. opfun have the
- * following values:
- *   - CreateModGenarray()
- *   - CreateFodl()
- *
- * The args of opfun are stored in opfunarg. Both variables are global to
- * reduce function arguments.
- *
- *
- * Structure of functions in this file:
- * ------------------------------------
- *
- * CheckUnrollFold               CheckUnrollGenarray               CheckUnrollModarray
- *       |                                 |                                |
- * DoUnrollFold                  DoUnrollGenarray                  DoUnrollModarray
- *                \                        |                      /
- *                 \----------------ForEachElement---------------/ | |
- * | ForEachElementHelp                                       \|/ /                \
- * ` CreateFold     CreateModGenarray      (higher order functions) \                /
- *                                 CreateBottomCode
- *
+/*
+ * INFO macros
  */
+#define INFO_ASSIGN(n) ((n)->assign)
+#define INFO_PREASSIGN(n) ((n)->preassign)
+#define INFO_FUNDEF(n) ((n)->fundef)
 
-typedef node *(*funp) (node *, node *);
+/*
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
 
-funp opfun;
-void **opfunarg;
+    DBUG_ENTER ("MakeInfo");
+
+    result = ILIBmalloc (sizeof (info));
+
+    INFO_ASSIGN (result) = NULL;
+    INFO_PREASSIGN (result) = NULL;
+    INFO_FUNDEF (result) = NULL;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = ILIBfree (info);
+
+    DBUG_RETURN (info);
+}
 
 /******************************************************************************
  *
@@ -75,7 +75,7 @@ void **opfunarg;
  *   node *CreateBodyCode
  *
  * description:
- *   Duplicate the code behind the N_Npart node and insert index variables.
+ *   Duplicate the code behind the N_part node and insert index variables.
  *
  ******************************************************************************/
 
@@ -116,27 +116,20 @@ CreateBodyCode (node *partn, node *index)
 /******************************************************************************
  *
  * function:
- *   node *CreateModGenarray(node *assignn, node *index)
+ *   node *ApplyModGenarray(node *assignn, node *index)
  *
  * description:
- *   Create unrolled code for one index element.
- *   This is an opfun function. Further parameters in opfunarg.
+ *   Modify unrolled body code for one index element to apply the modarray
+ *   or genarray op.
  *
  ******************************************************************************/
 
 static node *
-CreateModGenarray (node *assignn, node *index)
+ApplyModGenarray (node *bodycode, node *index, node *partn, node *array)
 {
-    node *exprs, *letexpr, *cexpr, *tmpn, *bodyn;
-    node *array;
-    node *partn;
+    node *exprs, *letexpr, *cexpr, *tmpn;
 
-    DBUG_ENTER ("CreateModGenarray");
-
-    partn = opfunarg[0]; /* (node*) */
-    array = opfunarg[1]; /* (ids*) */
-
-    bodyn = CreateBodyCode (partn, index);
+    DBUG_ENTER ("ApplyModGenarray");
 
     /* create prf modarray */
     cexpr = EXPRS_EXPR (CODE_CEXPRS (PART_CODE (partn)));
@@ -147,48 +140,30 @@ CreateModGenarray (node *assignn, node *index)
 
     letexpr = TBmakePrf (F_modarray, exprs);
 
-    assignn = TBmakeAssign (TBmakeLet (DUPdoDupNode (array), letexpr), assignn);
+    /* append to body code */
+    tmpn = TBmakeAssign (TBmakeLet (DUPdoDupNode (array), letexpr), NULL);
+    bodycode = TCappendAssign (bodycode, tmpn);
 
-    /* append assignn to bodyn */
-    if (bodyn) {
-        tmpn = bodyn;
-        while (ASSIGN_NEXT (tmpn)) {
-            tmpn = ASSIGN_NEXT (tmpn);
-        }
-        ASSIGN_NEXT (tmpn) = assignn;
-    } else {
-        bodyn = assignn;
-    }
-
-    DBUG_RETURN (bodyn);
+    DBUG_RETURN (bodycode);
 }
 
 /******************************************************************************
  *
  * function:
- *   node *CreateFold( node *assignn, node *index)
+ *   node *ApplyFold( node *assignn, node *index)
  *
  * description:
- *
+ *   Modify unrolled body code for one index element to apply the fold op.
  *
  ******************************************************************************/
 
 static node *
-CreateFold (node *assignn, node *index)
+ApplyFold (node *bodycode, node *index, node *partn, node *acc, node *cexpr)
 {
-    node *partn, *cexpr, *bodyn, *tmp, *letn;
-    node *acc;
+    node *tmp, *letn;
     bool F_accu_found = FALSE;
 
-    DBUG_ENTER ("CreateFold");
-
-    partn = opfunarg[0]; /* N_Npart */
-
-    /*
-     * create assign-chain for the code-body
-     * and prepand it to assignn:
-     */
-    bodyn = CreateBodyCode (partn, index);
+    DBUG_ENTER ("ApplyFold");
 
     /*
      * special handling of
@@ -200,12 +175,9 @@ CreateFold (node *assignn, node *index)
      * append new last assignment: LHS of current WL = cexpr;
      */
 
-    acc = opfunarg[1];   /* ids of current WL */
-    cexpr = opfunarg[2]; /* id */
+    DBUG_ASSERT ((NODE_TYPE (bodycode) != N_empty), "BLOCK_INSTR is empty!");
 
-    DBUG_ASSERT ((NODE_TYPE (bodyn) != N_empty), "BLOCK_INSTR is empty!");
-
-    tmp = bodyn;
+    tmp = bodycode;
     while (tmp != NULL) {
         if ((NODE_TYPE (ASSIGN_RHS (tmp)) == N_prf)
             && (PRF_PRF (ASSIGN_RHS (tmp)) == F_accu)) {
@@ -226,29 +198,76 @@ CreateFold (node *assignn, node *index)
         tmp = ASSIGN_NEXT (tmp);
     }
 
-    if (bodyn != NULL) {
-        assignn = TCappendAssign (bodyn, assignn);
-    }
-
-    DBUG_RETURN (assignn);
+    DBUG_RETURN (bodycode);
 }
 
 /******************************************************************************
  *
  * function:
- *   node *ForEachElementHelp()
+ *   node *ForEachElementWithop( node *bodycode, node *wln, node *partn,
+ *                               node *index, info *arg_info)
  *
  * description:
- *   See ForEachElement().
+ *   Applies the proper Create* function to the given unrolled body code
+ *   for each withop in the with-loop.
  *
  ******************************************************************************/
 
 static node *
-ForEachElementHelp (int *l, int *u, int *s, int *w, int dim, int maxdim, node *assignn)
+ForEachElementWithop (node *bodycode, node *wln, node *partn, node *index, info *arg_info)
+{
+    node *withop;
+    node *arrayname;
+    node *acc;
+    node *cexpr;
+
+    DBUG_ENTER ("ForEachElementWithop");
+
+    withop = WITH_WITHOP (wln);
+    while (withop != NULL) {
+        switch (NODE_TYPE (withop)) {
+        case N_genarray:
+            arrayname = LET_IDS (ASSIGN_INSTR (INFO_ASSIGN (arg_info)));
+            bodycode = ApplyModGenarray (bodycode, index, partn, arrayname);
+            break;
+        case N_modarray:
+            arrayname = ASSIGN_LHS (INFO_ASSIGN (arg_info));
+            bodycode = ApplyModGenarray (bodycode, index, partn, arrayname);
+            break;
+        case N_fold:
+            acc = LET_IDS (ASSIGN_INSTR (INFO_ASSIGN (arg_info)));
+            cexpr = EXPRS_EXPR (CODE_CEXPRS (PART_CODE (partn)));
+            bodycode = ApplyFold (bodycode, index, partn, acc, cexpr);
+            break;
+        case N_break:
+            /* no-op */
+            break;
+        default:
+            DBUG_ASSERT (0, "unhandled withop");
+        }
+        withop = WITHOP_NEXT (withop);
+    }
+
+    DBUG_RETURN (bodycode);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *ForEachElementHelp(...)
+ *
+ * description:
+ *   Helper function for ForEachElement(), for multi-dimensional index vectors.
+ *
+ ******************************************************************************/
+
+static node *
+ForEachElementHelp (int *l, int *u, int *s, int *w, int dim, int maxdim, node *assignn,
+                    node *wln, node *partn, info *arg_info)
 {
     int count, act_w, i;
     static int ind[SHP_SEG_SIZE];
-    node *index;
+    node *index, *bodycode;
 
     DBUG_ENTER ("ForEachElementHelp");
 
@@ -265,9 +284,15 @@ ForEachElementHelp (int *l, int *u, int *s, int *w, int dim, int maxdim, node *a
             }
             index = TCmakeIntVector (index);
 
-            assignn = opfun (assignn, index);
+            /* Create a fresh copy of the bodycode, then hand it over to
+             * each of the withops to mutate. Finally, append it to the
+             * assign chain. */
+            bodycode = CreateBodyCode (partn, index);
+            bodycode = ForEachElementWithop (bodycode, wln, partn, index, arg_info);
+            assignn = TCappendAssign (assignn, bodycode);
         } else {
-            assignn = ForEachElementHelp (l, u, s, w, dim + 1, maxdim, assignn);
+            assignn = ForEachElementHelp (l, u, s, w, dim + 1, maxdim, assignn, wln,
+                                          partn, arg_info);
         }
 
         /* advance to next element */
@@ -285,18 +310,18 @@ ForEachElementHelp (int *l, int *u, int *s, int *w, int dim, int maxdim, node *a
 /******************************************************************************
  *
  * function:
- *   node *ForEachElement(node *partn, node *assignn)
+ *   node *ForEachElement(node *assignn, node *wln, node *partn, info *arg_info)
  *
  * description:
- *   Calls function opfun for every index of the generator given in partn.
+ *   Creates a copy of the with-loop body code, and calls ForEachElementWithop
+ *   on the body code for every index element of the given generator in partn.
  *
  ******************************************************************************/
 
 static node *
-ForEachElement (node *partn, node *assignn)
+ForEachElement (node *assignn, node *wln, node *partn, info *arg_info)
 {
-    node *res;
-    node *index;
+    node *index, *bodycode;
     int maxdim, *l, *u, *s, *w;
 
     DBUG_ENTER ("ForEachElement");
@@ -304,7 +329,6 @@ ForEachElement (node *partn, node *assignn)
     maxdim = SHgetExtent (TYgetShape (IDS_NTYPE (PART_VEC (partn))), 0);
 
     l = u = s = w = NULL;
-    res = NULL;
 
     WLFarrayST2ArrayInt (GENERATOR_BOUND1 (PART_GENERATOR (partn)), &l, maxdim);
     WLFarrayST2ArrayInt (GENERATOR_BOUND2 (PART_GENERATOR (partn)), &u, maxdim);
@@ -320,9 +344,15 @@ ForEachElement (node *partn, node *assignn)
         index = TCmakeIntVector (NULL);
         /* nums struct is freed inside MakeShpseg() */
 
-        res = opfun (assignn, index);
+        /* Create a fresh copy of the bodycode, then hand it over to
+         * each of the withops to mutate. Finally, append it to the
+         * assign chain. */
+        bodycode = CreateBodyCode (partn, index);
+        bodycode = ForEachElementWithop (bodycode, wln, partn, index, arg_info);
+        assignn = TCappendAssign (assignn, bodycode);
     } else {
-        res = ForEachElementHelp (l, u, s, w, 0, maxdim, assignn);
+        assignn
+          = ForEachElementHelp (l, u, s, w, 0, maxdim, assignn, wln, partn, arg_info);
     }
 
     l = ILIBfree (l);
@@ -330,7 +360,7 @@ ForEachElement (node *partn, node *assignn)
     s = ILIBfree (s);
     w = ILIBfree (w);
 
-    DBUG_RETURN (res);
+    DBUG_RETURN (assignn);
 }
 
 /******************************************************************************
@@ -339,7 +369,7 @@ ForEachElement (node *partn, node *assignn)
  *   int CountElements(node *genn)
  *
  * description:
- *   counts number of specified elements by generator node genn.
+ *   Counts number of specified elements by generator node genn.
  *   Supports grids.
  *
  ******************************************************************************/
@@ -424,29 +454,30 @@ CountElements (node *genn)
 /******************************************************************************
  *
  * function:
- *   bool WLUCheckUnrollModarray(node *wln)
+ *   bool CheckUnrollModarray(node *wln, info *arg_info)
  *
  * description:
- *   Checks if this modarray WL can be unrolled.
+ *   Checks if this modarray-WL can be unrolled.
  *   Multiple N_Npart nodes, which are not the identity of the base array,
  *   may be unrolled simultaneously. These N_Npart nodes are marked in
  *   NPART_COPY
  *
  ******************************************************************************/
 
-bool
-WLUcheckUnrollModarray (node *wln, info *arg_info)
+static bool
+CheckUnrollModarray (node *wln, info *arg_info)
 {
     bool ok;
     int elts;
     node *partn, *genn, *coden, *tmpn, *exprn, *lhs;
 
-    DBUG_ENTER ("WLUcheckUnrollModarray");
+    DBUG_ENTER ("CheckUnrollModarray");
 
-    /* check all N_parts.
-     All bounds (step, width) have to be constant. Count the number of
-     elements which do NOT just copy the original array
-     (e.g. body = {__flat = A[iv]} ) */
+    /*
+     * Check all N_parts:
+     * Count the number of elements which do NOT just copy the original array
+     * (e.g. body = {__flat = A[iv]} )
+     */
 
     partn = WITH_PART (wln);
     elts = 0;
@@ -455,50 +486,45 @@ WLUcheckUnrollModarray (node *wln, info *arg_info)
 
     ok = (TYisAKS (IDS_NTYPE (lhs)) || TYisAKV (IDS_NTYPE (lhs)));
 
-    /* everything constant? */
     while (ok && (partn != NULL)) {
         genn = PART_GENERATOR (partn);
-        ok = ((NODE_TYPE (genn) == N_generator) && COisConstant (GENERATOR_BOUND1 (genn))
-              && COisConstant (GENERATOR_BOUND2 (genn))
-              && ((GENERATOR_STEP (genn) == NULL) || COisConstant (GENERATOR_STEP (genn)))
-              && ((GENERATOR_WIDTH (genn) == NULL)
-                  || COisConstant (GENERATOR_WIDTH (genn))));
 
-        if (ok) {
-            /* check if code is a copy of the original array and set NPART_COPY
-               for later usage in WLUDoUnrollModarray().
+        /*
+         * Check if code is a copy of the original array and set NPART_COPY
+         * for later usage in WLUDoUnrollModarray().
+         *
+         * B = new_with
+         *       ([ 0 ] <= __flat_1_iv=[__flat_0_i] < [ 3 ]) {
+         *         __wlt_4 = sel( __flat_1_iv, A );
+         *       } : __wlt_4,
+         *       ...more parts...
+         *     modarray( A);
+         *
+         * We need DCR to be done before to detect identity written by the
+         * programmer.
+         */
 
-               B = new_with
-                 ([ 0 ] <= __flat_1_iv=[__flat_0_i] < [ 3 ]) {
-                    __wlt_4 = sel( __flat_1_iv, A );
-                 } : __wlt_4,
-                 ...more parts...
-               modarray( A);
+        coden = PART_CODE (partn);
 
-               We need DCR to be done before to detect identity written by the
-               programmer. */
+        if (N_empty == NODE_TYPE (BLOCK_INSTR (CODE_CBLOCK (coden)))) {
+            PART_ISCOPY (partn) = FALSE;
+        } else {
+            tmpn = ASSIGN_INSTR (BLOCK_INSTR (CODE_CBLOCK (coden)));
+            exprn = LET_EXPR (tmpn);
+            PART_ISCOPY (partn)
+              = ((N_let == NODE_TYPE (tmpn))
+                 && (ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (coden)))
+                     == IDS_AVIS (LET_IDS (tmpn)))
+                 && (N_prf == NODE_TYPE (exprn)) && (F_sel == PRF_PRF (exprn))
+                 && (N_id == NODE_TYPE (PRF_ARG1 (exprn)))
+                 && (IDS_AVIS (PART_VEC (partn)) == ID_AVIS (PRF_ARG1 (exprn)))
+                 && (N_id == NODE_TYPE (PRF_ARG2 (exprn)))
+                 && (ID_AVIS (MODARRAY_ARRAY (WITH_WITHOP (wln)))
+                     == ID_AVIS (PRF_ARG2 (exprn))));
+        }
 
-            coden = PART_CODE (partn);
-            if (N_empty == NODE_TYPE (BLOCK_INSTR (CODE_CBLOCK (coden)))) {
-                PART_ISCOPY (partn) = FALSE;
-            } else {
-                tmpn = ASSIGN_INSTR (BLOCK_INSTR (CODE_CBLOCK (coden)));
-                exprn = LET_EXPR (tmpn);
-                PART_ISCOPY (partn)
-                  = ((N_let == NODE_TYPE (tmpn))
-                     && (ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (coden)))
-                         == IDS_AVIS (LET_IDS (tmpn)))
-                     && (N_prf == NODE_TYPE (exprn)) && (F_sel == PRF_PRF (exprn))
-                     && (N_id == NODE_TYPE (PRF_ARG1 (exprn)))
-                     && (IDS_AVIS (PART_VEC (partn)) == ID_AVIS (PRF_ARG1 (exprn)))
-                     && (N_id == NODE_TYPE (PRF_ARG2 (exprn)))
-                     && (ID_AVIS (MODARRAY_ARRAY (WITH_WITHOP (wln)))
-                         == ID_AVIS (PRF_ARG2 (exprn))));
-            }
-
-            if (!PART_ISCOPY (partn)) {
-                elts += CountElements (genn);
-            }
+        if (!PART_ISCOPY (partn)) {
+            elts += CountElements (genn);
         }
 
         partn = PART_NEXT (partn);
@@ -507,10 +533,6 @@ WLUcheckUnrollModarray (node *wln, info *arg_info)
     if (ok && (elts > global.wlunrnum)) {
         ok = FALSE;
         if (elts <= 32) {
-            /*
-             * Most with-loops can easily be unrolled.
-             * So, we only want to see a warning for small ones.
-             */
             CTInote ("WLUR: -maxwlur %d would unroll fold with-loop", elts);
         }
     }
@@ -521,42 +543,26 @@ WLUcheckUnrollModarray (node *wln, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *WLUDoUnrollModarray(node *wln, info *arg_info)
+ *   node *FinalizeModarray( node *bodycode, node *withop,
+ *                                    info *arg_info)
  *
  * description:
- *   Unrolls all N_Npart nodes which are marked in NPART_COPY.
+ *   Adds final code to the unrolled with-loop for the modarray op.
  *
  ******************************************************************************/
 
-node *
-WLUdoUnrollModarray (node *wln, info *arg_info)
+static node *
+FinalizeModarray (node *bodycode, node *withop, info *arg_info)
 {
-    node *partn, *res;
-    void *arg[2];
     node *letn;
+    node *res;
 
-    DBUG_ENTER ("WLUDoUnrollModarray");
+    DBUG_ENTER ("FinalizeModarray");
 
-    partn = WITH_PART (wln);
-
-    res = NULL;
-    while (partn) {
-        if (!PART_ISCOPY (partn)) {
-            /* unroll this part */
-            opfun = CreateModGenarray;
-            arg[0] = partn;                               /* (node*) */
-            arg[1] = ASSIGN_LHS (INFO_ASSIGN (arg_info)); /* (ids*) */
-            opfunarg = arg;
-            res = ForEachElement (partn, res);
-        }
-
-        partn = PART_NEXT (partn);
-    }
-
-    /* finally add Duplication of new array name */
+    /* Finally add duplication of new array name */
     letn = TBmakeLet (DUPdoDupNode (ASSIGN_LHS (INFO_ASSIGN (arg_info))),
-                      DUPdoDupTree (MODARRAY_ARRAY (WITH_WITHOP (wln))));
-    res = TBmakeAssign (letn, res);
+                      DUPdoDupTree (MODARRAY_ARRAY (withop)));
+    res = TBmakeAssign (letn, bodycode);
 
     DBUG_RETURN (res);
 }
@@ -564,21 +570,20 @@ WLUdoUnrollModarray (node *wln, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   bool WLUCheckUnrollGenarray( node *wln, info *arg_info)
+ *   bool CheckUnrollGenarray( node *wln, info *arg_info)
  *
  * description:
+ *   Checks whether the given genarray-wl can be unrolled.
  *   Unrolling of arrays is done if number of array elements is smaller
  *   than wlunrnum.
  *
  ******************************************************************************/
 
-bool
-WLUcheckUnrollGenarray (node *wln, info *arg_info)
+static bool
+CheckUnrollGenarray (node *wln, info *arg_info)
 {
     bool ok;
     int length;
-    node *genn;
-    node *partn;
     node *lhs;
 
     DBUG_ENTER ("WLUCheckUnrollGenarray");
@@ -595,26 +600,11 @@ WLUcheckUnrollGenarray (node *wln, info *arg_info)
      * Everything constant?
      */
     ok = (length >= 0);
-    partn = WITH_PART (wln);
-
-    while (ok && (partn != NULL)) {
-        genn = PART_GENERATOR (partn);
-        ok = ((NODE_TYPE (genn) == N_generator) && COisConstant (GENERATOR_BOUND1 (genn))
-              && COisConstant (GENERATOR_BOUND2 (genn))
-              && ((GENERATOR_STEP (genn) == NULL) || COisConstant (GENERATOR_STEP (genn)))
-              && ((GENERATOR_WIDTH (genn) == NULL)
-                  || COisConstant (GENERATOR_WIDTH (genn))));
-        partn = PART_NEXT (partn);
-    }
 
     if (ok && (length > global.wlunrnum)) {
         ok = FALSE;
         if (length <= 32) {
             CTInote ("WLUR: -maxwlur %d would unroll genarray with-loop", length);
-            /*
-             * Most with-loops can easily be unrolled.
-             * So, we only want to see a warning for small ones.
-             */
         }
     }
 
@@ -624,45 +614,33 @@ WLUcheckUnrollGenarray (node *wln, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *WLUDoUnrollGenarray(node *wln, info *arg_info)
+ *   node *FinalizeGenarray( node *bodycode, node *withop,
+ *                                    info *arg_info)
  *
  * description:
- *   Unrolls all N_Npart nodes which are marked in NPART_COPY.
+ *   Adds final code to the unrolled with-loop for the genarray op.
  *
  ******************************************************************************/
 
-node *
-WLUdoUnrollGenarray (node *wln, info *arg_info)
+static node *
+FinalizeGenarray (node *bodycode, node *withop, info *arg_info)
 {
-    node *partn, *res;
-    node *reshape;
-    void *arg[2];
-    node *arrayname;
     ntype *type;
+    simpletype btype;
+    int length;
     node *shp, *shpavis;
     node *vect, *vectavis;
     node *vardecs = NULL;
-    int length;
-    simpletype btype;
+    node *arrayname;
+    node *reshape;
+    node *res;
 
-    DBUG_ENTER ("WLUdoUnrollGenarray");
+    DBUG_ENTER ("FinalizeGenarray");
 
-    partn = WITH_PART (wln);
     arrayname = LET_IDS (ASSIGN_INSTR (INFO_ASSIGN (arg_info)));
 
-    res = NULL;
-    while (partn) {
-        opfun = CreateModGenarray;
-        arg[0] = partn;     /* (node*) */
-        arg[1] = arrayname; /* (ids*) */
-        opfunarg = arg;
-        res = ForEachElement (partn, res);
-
-        partn = PART_NEXT (partn);
-    }
-
     /*
-     * finally add:
+     * Prepend:
      *
      * <tmp1> = <shape>;
      * <tmp2> = [0,...,0];
@@ -690,7 +668,7 @@ WLUdoUnrollGenarray (node *wln, info *arg_info)
         type = TYfreeType (type);
     }
 
-    res = TBmakeAssign (TBmakeLet (DUPdoDupNode (arrayname), reshape), res);
+    res = TBmakeAssign (TBmakeLet (DUPdoDupNode (arrayname), reshape), bodycode);
     res = TBmakeAssign (TBmakeLet (TBmakeIds (vectavis, NULL), vect), res);
     res = TBmakeAssign (TBmakeLet (TBmakeIds (shpavis, NULL), shp), res);
 
@@ -702,51 +680,41 @@ WLUdoUnrollGenarray (node *wln, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   bool WLUCheckUnrollFold( node *wln)
+ *   bool CheckUnrollFold( node *wln, info *arg_info)
  *
  * description:
- *   Unrolling of fold-WLs is done if the total number of function calls is
- *   less or equal wlunrnum.
+ *   Checks whether the given fold-wl can be unrolled.
  *
  ******************************************************************************/
 
-bool
-WLUcheckUnrollFold (node *wln)
+static bool
+CheckUnrollFold (node *wln)
 {
-    int ok = TRUE;
-    int elts;
-    node *partn, *genn;
+    bool ok = TRUE;
+    int elements;
+    node *partn;
+    node *genn;
 
-    DBUG_ENTER ("WLUCheckUnrollFold");
+    DBUG_ENTER ("CheckUnrollFold");
 
-    /* check all N_parts.
-       All bounds (step, width) have to be constant. */
+    /*
+     * Loop through all N_parts, counting elements.
+     * All bounds (low, high, step, width) have to be constant.
+     */
 
     partn = WITH_PART (wln);
-    elts = 0;
+    elements = 0;
 
-    /* everything constant? */
-    while (ok && (partn != NULL)) {
+    while (partn != NULL) {
         genn = PART_GENERATOR (partn);
-        ok = ((NODE_TYPE (genn) == N_generator) && COisConstant (GENERATOR_BOUND1 (genn))
-              && COisConstant (GENERATOR_BOUND2 (genn))
-              && ((GENERATOR_STEP (genn) == NULL) || COisConstant (GENERATOR_STEP (genn)))
-              && ((GENERATOR_WIDTH (genn) == NULL)
-                  || COisConstant (GENERATOR_WIDTH (genn))));
-        if (ok) {
-            elts += CountElements (genn);
-        }
+        elements += CountElements (genn);
         partn = PART_NEXT (partn);
     }
 
-    if (ok && (elts > global.wlunrnum)) {
+    if (elements > global.wlunrnum) {
         ok = FALSE;
-        if (elts <= 32) {
-            CTInote ("WLUR: -maxwlur %d would unroll fold with-loop", elts);
-            /*
-             * Most with-loops can easily be unrolled.
-             * So, we only want to see a warning for small ones.
-             */
+        if (elements <= 32) {
+            CTInote ("WLUR: -maxwlur %d would unroll fold with-loop", elements);
         }
     }
 
@@ -756,49 +724,359 @@ WLUcheckUnrollFold (node *wln)
 /******************************************************************************
  *
  * function:
- *   node *WLUdoUnrollFold(node *wln, info *arg_info)
+ *   node *FinalizeFold( node *bodycode, node *withop,
+ *                                info *arg_info)
  *
  * description:
- *   INFO_FUNDEF( arg_info) contains the pointer to the N_fundef node
- *     where this WL is situated in.
+ *   Adds final code to the unrolled with-loop for the fold op.
  *
- *   Unroll fold WL:
- *     res = neutral;
- *     wl_expr = ...            \  repeat for
- *     res = f(res, wl_expr);   /  every element
+ ******************************************************************************/
+
+static node *
+FinalizeFold (node *bodycode, node *withop, info *arg_info)
+{
+    node *letn;
+    node *res;
+
+    DBUG_ENTER ("FinalizeFold");
+
+    /* add initialisation of accumulator with neutral element. */
+    letn = TBmakeLet (DUPdoDupNode (ASSIGN_LHS (INFO_ASSIGN (arg_info))),
+                      DUPdoDupTree (FOLD_NEUTRAL (withop)));
+    res = TBmakeAssign (letn, bodycode);
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *DoUnrollWithloop(node *wln, info *arg_info)
+ *
+ * description:
+ *   Unrolls the given with-loop.
+ *
+ ******************************************************************************/
+
+static node *
+DoUnrollWithloop (node *wln, info *arg_info)
+{
+    node *partn, *res, *withop;
+
+    DBUG_ENTER ("DoUnrollWithloop");
+
+    partn = WITH_PART (wln);
+    withop = WITH_WITHOP (wln);
+    res = NULL;
+
+    /* Go over every partition of the with loop, copy the body code
+     * and apply each withop. */
+    while (partn != NULL) {
+        res = ForEachElement (res, wln, partn, arg_info);
+        partn = PART_NEXT (partn);
+    }
+
+    /* Finalize the unrolling for every withop. */
+    withop = WITH_WITHOP (wln);
+    while (withop != NULL) {
+        switch (NODE_TYPE (withop)) {
+        case N_genarray:
+            res = FinalizeGenarray (res, withop, arg_info);
+            break;
+        case N_modarray:
+            res = FinalizeModarray (res, withop, arg_info);
+            break;
+        case N_fold:
+            res = FinalizeFold (res, withop, arg_info);
+            break;
+        case N_break:
+            /* no-op */
+            break;
+        default:
+            DBUG_ASSERT (0, "unhandled with-op");
+        }
+        withop = WITHOP_NEXT (withop);
+    }
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   bool CheckUnrollWithloop( node *wln)
+ *
+ * description:
+ *   Checks whether the given with-loop may be unrolled. Returns true if this
+ *   is the case, false otherwise. Checks if the bounds are constant, and if so,
+ *   checks for each withop whether their restrictions are satisfied.
+ *
+ ******************************************************************************/
+
+static bool
+CheckUnrollWithloop (node *wln, info *arg_info)
+{
+    int ok = TRUE;
+    node *partn, *genn, *op;
+
+    DBUG_ENTER ("CheckUnrollWithloop");
+
+    partn = WITH_PART (wln);
+
+    /* Everything constant? */
+    while (ok && (partn != NULL)) {
+        genn = PART_GENERATOR (partn);
+        ok = (NODE_TYPE (genn) == N_generator && COisConstant (GENERATOR_BOUND1 (genn))
+              && COisConstant (GENERATOR_BOUND2 (genn))
+              && ((GENERATOR_STEP (genn) == NULL) || COisConstant (GENERATOR_STEP (genn)))
+              && ((GENERATOR_WIDTH (genn) == NULL)
+                  || COisConstant (GENERATOR_WIDTH (genn))));
+        partn = PART_NEXT (partn);
+    }
+
+    /* Check for every with-op */
+    op = WITH_WITHOP (wln);
+    while (ok && op != NULL) {
+        switch (NODE_TYPE (op)) {
+        case N_genarray:
+            ok = CheckUnrollGenarray (wln, arg_info);
+            break;
+        case N_modarray:
+            ok = CheckUnrollModarray (wln, arg_info);
+            break;
+        case N_fold:
+            ok = CheckUnrollFold (wln);
+            break;
+        case N_break:
+            /* no-op */
+            break;
+        default:
+            DBUG_ASSERT (0, "unhandled with-op");
+        }
+        op = WITHOP_NEXT (op);
+    }
+
+    DBUG_RETURN (ok);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *LacFundef( node *arg_node, info *arg_info)
+ *
+ * description:
+ *   Special version of WLURfundef for LAC functions.
  *
  ******************************************************************************/
 
 node *
-WLUdoUnrollFold (node *wln, info *arg_info)
+LacFundef (node *arg_node, info *arg_info)
 {
-    node *partn, *res;
-    void *arg[5];
-    node *letn;
+    DBUG_ENTER ("WLURfundef");
 
-    DBUG_ENTER ("WLUdoUnrollFold");
+    INFO_FUNDEF (arg_info) = arg_node;
+    if (FUNDEF_BODY (arg_node) != NULL) {
+        /* traverse block of fundef */
+        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+    }
+    INFO_FUNDEF (arg_info) = NULL;
 
-    partn = WITH_PART (wln);
+    DBUG_RETURN (arg_node);
+}
 
-    res = NULL;
-    while (partn != NULL) {
-        /* unroll this part */
-        opfun = CreateFold;
-        arg[0] = partn;                                           /* N_Npart node */
-        arg[1] = LET_IDS (ASSIGN_INSTR (INFO_ASSIGN (arg_info))); /* ids */
-        arg[2] = EXPRS_EXPR (CODE_CEXPRS (PART_CODE (partn)));    /* id */
-        arg[3] = WITH_WITHOP (wln);                               /* N_Nwithop node */
-        arg[4] = INFO_FUNDEF (arg_info);                          /* N_fundef node */
-        opfunarg = arg;
-        res = ForEachElement (partn, res);
+/*
+ * Traversal functions
+ */
 
-        partn = PART_NEXT (partn);
+/******************************************************************************
+ *
+ * function:
+ *   node *WLURap( node *arg_node, info *arg_info)
+ *
+ * description:
+ *   Checks whethers this is an appliance of a special loop or cond function,
+ *   and recursively traverses it if so.
+ *
+ ******************************************************************************/
+
+node *
+WLURap (node *arg_node, info *arg_info)
+{
+    info *new_arg_info;
+
+    DBUG_ENTER ("WLURap");
+
+    DBUG_ASSERT ((AP_FUNDEF (arg_node) != NULL), "missing fundef in ap-node");
+
+    if (AP_ARGS (arg_node) != NULL) {
+        AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
     }
 
-    /* finally add initialisation of accumulator with neutral element. */
-    letn = TBmakeLet (DUPdoDupNode (ASSIGN_LHS (INFO_ASSIGN (arg_info))),
-                      DUPdoDupTree (FOLD_NEUTRAL (WITH_WITHOP (wln))));
-    res = TBmakeAssign (letn, res);
+    /* traverse special fundef without recursion */
+    if ((FUNDEF_ISLACFUN (AP_FUNDEF (arg_node)))
+        && (AP_FUNDEF (arg_node) != INFO_FUNDEF (arg_info))) {
+        DBUG_PRINT ("WLUR", ("traverse in special fundef %s",
+                             FUNDEF_NAME (AP_FUNDEF (arg_node))));
 
-    DBUG_RETURN (res);
+        /* stack arg_info frame for new fundef */
+        new_arg_info = MakeInfo ();
+
+        /* start traversal of special fundef */
+        AP_FUNDEF (arg_node) = LacFundef (AP_FUNDEF (arg_node), new_arg_info);
+
+        DBUG_PRINT ("WLUR", ("traversal of special fundef %s finished\n",
+                             FUNDEF_NAME (AP_FUNDEF (arg_node))));
+        new_arg_info = FreeInfo (new_arg_info);
+
+    } else {
+        DBUG_PRINT ("WLUR", ("do not traverse in normal fundef %s",
+                             FUNDEF_NAME (AP_FUNDEF (arg_node))));
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *WLURassign( node *arg_node, info *arg_info)
+ *
+ * description:
+ *
+ ******************************************************************************/
+
+node *
+WLURassign (node *arg_node, info *arg_info)
+{
+    node *pre_assigns;
+    node *tmp;
+    node *old_assign;
+
+    DBUG_ENTER ("WLURassign");
+
+    DBUG_ASSERT ((ASSIGN_INSTR (arg_node) != NULL), "assign node without instruction");
+
+    /* stack actual assign */
+    old_assign = INFO_ASSIGN (arg_info);
+    INFO_ASSIGN (arg_info) = arg_node;
+
+    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+
+    pre_assigns = INFO_PREASSIGN (arg_info);
+    INFO_PREASSIGN (arg_info) = NULL;
+
+    /* restore stacked assign */
+    INFO_ASSIGN (arg_info) = old_assign;
+
+    /* traverse to next assignment in chain */
+    if (ASSIGN_NEXT (arg_node) != NULL) {
+        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
+    }
+
+    /* integrate pre_assignments in assignment chain and remove this assign */
+    if (pre_assigns != NULL) {
+        tmp = arg_node;
+        arg_node = TCappendAssign (pre_assigns, ASSIGN_NEXT (arg_node));
+        tmp = FREEdoFreeNode (tmp);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *WLURfundef( node *arg_node, info *arg_info)
+ *
+ * description:
+ *
+ ******************************************************************************/
+
+node *
+WLURfundef (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("WLURfundef");
+
+    if (!FUNDEF_ISLACFUN (arg_node)) {
+        INFO_FUNDEF (arg_info) = arg_node;
+        if (FUNDEF_BODY (arg_node) != NULL) {
+            /* traverse block of fundef */
+            FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+        }
+        INFO_FUNDEF (arg_info) = NULL;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *WLURwith( node *arg_node, info *arg_info)
+ *
+ * description:
+ *   Checks whether the given with-node can be unrolled, and if so,
+ *   applies the unroll.
+ *
+ ******************************************************************************/
+
+node *
+WLURwith (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("WLURwith");
+
+    /* traverse the N_Nwithop node */
+    if (WITH_WITHOP (arg_node) != NULL) {
+        WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
+    }
+
+    /* traverse all generators */
+    if (WITH_PART (arg_node) != NULL) {
+        WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
+    }
+
+    /* traverse bodies */
+    if (WITH_CODE (arg_node) != NULL) {
+        WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
+    }
+
+    /* can this WL be unrolled? */
+    if (CheckUnrollWithloop (arg_node, arg_info)) {
+        global.optcounters.wlunr_expr++;
+        INFO_PREASSIGN (arg_info) = DoUnrollWithloop (arg_node, arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *WLURdoWithloopUnrolling( node *syntax_tree)
+ *
+ * description:
+ *   Starts the with-loop unrolling traversal for the given syntax tree.
+ *
+ ******************************************************************************/
+
+node *
+WLURdoWithloopUnrolling (node *syntax_tree)
+{
+    info *info;
+
+    DBUG_ENTER ("WLURdoWithloopUnrolling");
+
+    if (global.optimize.dowlur) {
+        TRAVpush (TR_wlur);
+
+        info = MakeInfo ();
+
+        syntax_tree = TRAVdo (syntax_tree, info);
+
+        FreeInfo (info);
+
+        TRAVpop ();
+    }
+
+    DBUG_RETURN (syntax_tree);
 }

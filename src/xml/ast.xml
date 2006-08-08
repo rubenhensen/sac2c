@@ -1018,6 +1018,13 @@
 	  <node name="Ap" />
 	  <node name="Assign" />
 	  <node name="Fundef" />
+	</travuser>
+      </traversal>
+      <traversal id="WLUR" name="With-Loop Unrolling Traversal" default="sons" include="SSAWLUnroll.h" >
+	<travuser>
+    <node name="Ap" />
+	  <node name="Assign" />
+    <node name="Fundef" />
 	  <node name="With" />
 	</travuser>
       </traversal>

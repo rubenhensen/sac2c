@@ -251,9 +251,14 @@ SUBPHASE (dcrcycfun, "dcrfun", "Applying dead code removal",
 
 SUBPHASE (wls, "wls", "Applying with-loop scalarization", WLSdoWithloopScalarization)
 
-SUBPHASE (lur, "lur", "Applying (with-)loop unrolling", LURdoLoopUnrolling)
+SUBPHASE (lur, "lur", "Applying loop unrolling", LURdoLoopUnrolling)
 
-SUBPHASE (ssalur, "ssalur", "Restoring SSA form after (with-)loop unrolling",
+SUBPHASE (ssalur, "ssalur", "Restoring SSA form after loop unrolling",
+          SSATdoTransformOneFunction)
+
+SUBPHASE (wlur, "wlur", "Applying withloop unrolling", WLURdoWithloopUnrolling)
+
+SUBPHASE (ssawlur, "ssawlur", "Restoring SSA form after withloop unrolling",
           SSATdoTransformOneFunction)
 
 SUBPHASE (prfunr, "prfunr", "Applying prf unrolling", UPRFdoUnrollPRFs)

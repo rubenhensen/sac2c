@@ -596,9 +596,17 @@ OPTdoIntraFunctionalOptimizations (node *arg_node)
                     /*
                      * Loop unrolling
                      */
-                    if (global.optimize.dolur || global.optimize.dowlur) {
+                    if (global.optimize.dolur) {
                         fundef = PHrunOptimizationInCycle (SUBPH_lur, loop, fundef);
                         fundef = PHrunOptimizationInCycle (SUBPH_ssalur, loop, fundef);
+                    }
+
+                    /*
+                     * With-loop unrolling
+                     */
+                    if (global.optimize.dowlur) {
+                        fundef = PHrunOptimizationInCycle (SUBPH_wlur, loop, fundef);
+                        fundef = PHrunOptimizationInCycle (SUBPH_ssawlur, loop, fundef);
                     }
 
                     /*
