@@ -4957,14 +4957,14 @@
             </targets>
 	  </type>
 	</attribute>
-	<attribute name="ShapeCliqueID" default="this">
+	<attribute name="ShapeCliqueID" >
 	  <description>Circular linked-list of N_avis nodes which comprise this array's shape clique. All entries in the clique are known to have the same shape.</description>
 	  <type name="Link">
             <targets>
               <target mandatory="yes">
 	       <node name="Avis" />
                 <phases>
-		  <range from="wlidx" to="ive" />
+		  <range from="sci" to="iveo" />
                 </phases>
               </target>
             </targets>
