@@ -224,6 +224,14 @@ AddTypeError (node *assign, node *bottom_id, ntype *other_type)
 
     AVIS_TYPE (ID_AVIS (bottom_id)) = TYeliminateAKV (other_type);
 
+    if (AVIS_DIM (ID_AVIS (bottom_id)) != NULL) {
+        AVIS_DIM (ID_AVIS (bottom_id)) = FREEdoFreeNode (AVIS_DIM (ID_AVIS (bottom_id)));
+    }
+    if (AVIS_SHAPE (ID_AVIS (bottom_id)) != NULL) {
+        AVIS_SHAPE (ID_AVIS (bottom_id))
+          = FREEdoFreeNode (AVIS_SHAPE (ID_AVIS (bottom_id)));
+    }
+
     /**
      * and we eliminate the defining N_let if it has not been
      * eliminated already while processing one of its further
@@ -261,76 +269,6 @@ AddTypeError (node *assign, node *bottom_id, ntype *other_type)
 
     DBUG_RETURN (assign);
 }
-
-#if 0
-  static node *ReplaceBodyByTypeError( node *fundef, ntype *inferred_type)
-  {
-    node *block, *avis, *tmpnode;
-    node *vardecs = NULL;
-    node *ids = NULL;
-    node *exprs = NULL;
-    node *ret = NULL;
-    ntype *bottom = NULL;
-    int i,n;
-
-    DBUG_ENTER("ReplaceBodyByTypeError");
-
-    n = TYgetProductSize( inferred_type);
-    for( i=n-1; i>=0; i--) {
-      avis = TBmakeAvis( ILIBtmpVar(),
-                         TYcopyType( TYgetProductMember( inferred_type, i)));
-      if( TYisBottom( TYgetProductMember( inferred_type, i))) {
-        if( bottom == NULL) {
-          bottom = TYcopyType(
-                        TYgetProductMember( inferred_type, i));
-        } else {
-          TYextendBottomError( 
-            bottom,
-            TYgetBottomError(
-              TYgetProductMember( inferred_type, i)));
-        }
-      }
-      vardecs = TBmakeVardec( avis, vardecs);
-      ids = TBmakeIds( avis, ids);
-      exprs = TBmakeExprs( TBmakeId( avis), exprs);
-    }
-
-    ret = TBmakeReturn( exprs);
-
-    block = TBmakeBlock( 
-              TBmakeAssign(
-                TBmakeLet( ids, 
-                  TCmakePrf1( F_type_error, 
-                    TBmakeType( bottom))),
-                TBmakeAssign( ret, NULL)),
-              vardecs);
-
-    tmpnode = ids;
-    while ( tmpnode != NULL) {
-      AVIS_SSAASSIGN( IDS_AVIS( tmpnode)) = BLOCK_INSTR( block);
-      tmpnode = IDS_NEXT( tmpnode);
-    }
-
-    FUNDEF_BODY( fundef) = FREEdoFreeTree( FUNDEF_BODY( fundef));
-          
-    FUNDEF_BODY( fundef) = block;
-    FUNDEF_RETURN( fundef) = ret;
-
-    /**
-     * finally, we need to make sure that this function is tagged appropriately
-     * As it does not have a body anymore, we need to remove potential LAC flags
-     * and ensure the code will be inlined.
-     */
-    if( FUNDEF_ISLACFUN( fundef)) {
-      FUNDEF_ISDOFUN( fundef) = FALSE;
-      FUNDEF_ISCONDFUN( fundef) = FALSE;
-      FUNDEF_ISLACINLINE( fundef) = TRUE;
-    }
-    
-
-    DBUG_RETURN( fundef);
-  }
-#endif
 
 static node *
 TransformIntoTypeError (node *fundef)
