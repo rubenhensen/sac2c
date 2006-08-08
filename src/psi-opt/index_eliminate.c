@@ -330,6 +330,7 @@ ScalarizeShape (info *info, node *ivavis, int rank, node *bavis)
     for (axis = rank - 1; axis >= 0; axis--) {
         shpeltype = TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0));
         shpelavis = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (ivavis)), shpeltype);
+        AVIS_SHAPECLIQUEID (shpelavis) = shpelavis;
         INFO_VARDECS (info) = TBmakeVardec (shpelavis, INFO_VARDECS (info));
 
         shpel = TCmakePrf2 (F_idx_shape_sel, TBmakeNum (axis), TBmakeId (cliqueb));
@@ -387,6 +388,7 @@ EmitAKDVect2Offset (node *bid, node *ivavis, info *info)
         /* Generate temp name for resulting integer scalar array offset iv_B */
         result = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (ivavis)),
                              TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
+        AVIS_SHAPECLIQUEID (result) = result;
 
         INFO_VARDECS (info) = TBmakeVardec (result, INFO_VARDECS (info));
 
@@ -431,6 +433,7 @@ EmitAKSVect2offset (node *bavis, node *ivavis, info *info)
     /* Generate temp name for resulting integer scalar array offset */
     result = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (ivavis)),
                          TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
+    AVIS_SHAPECLIQUEID (result) = result;
 
     INFO_VARDECS (info) = TBmakeVardec (result, INFO_VARDECS (info));
 
@@ -505,6 +508,7 @@ IdxTypes2IdxArgs (node *types, node *avis, node **args, info *info)
         if (TUshapeKnown (AVIS_TYPE (ID_AVIS (EXPRS_EXPR (types))))) {
             idxavis = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (avis)),
                                   TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
+            AVIS_SHAPECLIQUEID (idxavis) = idxavis;
 
             *args = TBmakeArg (idxavis, *args);
             result = TBmakeIds (idxavis, result);
@@ -550,6 +554,7 @@ static
              */
             idxavis = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (ivavis)),
                                   TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
+            AVIS_SHAPECLIQUEID (idxavis) = idxavis;
             /*
              * generate offset compuatation
              */
