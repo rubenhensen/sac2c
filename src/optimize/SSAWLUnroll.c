@@ -132,6 +132,7 @@ ApplyModGenarray (node *bodycode, node *index, node *partn, node *array)
     DBUG_ENTER ("ApplyModGenarray");
 
     /* create prf modarray */
+    /* FIXME: this assumes first cexpr is the right one */
     cexpr = EXPRS_EXPR (CODE_CEXPRS (PART_CODE (partn)));
     tmpn = TBmakeId (IDS_AVIS (array));
 
@@ -204,6 +205,34 @@ ApplyFold (node *bodycode, node *index, node *partn, node *acc, node *cexpr)
 /******************************************************************************
  *
  * function:
+ *   node *ApplyExtract( node *assignn, node *index)
+ *
+ * description:
+ *   Modify unrolled body code for one index element to apply the extract op.
+ *
+ ******************************************************************************/
+
+static node *
+ApplyExtract (node *bodycode, node *index, node *partn, node *withop, node *cexpr)
+{
+    node *letn;
+    node *assignn;
+
+    DBUG_ENTER ("ApplyExtract");
+
+    /* Assign the resulting object of the body to the ingoing object
+     * (which incidentally is the default element so use that). */
+    letn = TBmakeLet (TBmakeIds (ID_AVIS (EXTRACT_DEFAULT (withop)), NULL),
+                      DUPdoDupTree (EXPRS_EXPR (cexpr)));
+    assignn = TBmakeAssign (letn, NULL);
+    bodycode = TCappendAssign (bodycode, assignn);
+
+    DBUG_RETURN (bodycode);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *ForEachElementWithop( node *bodycode, node *wln, node *partn,
  *                               node *index, info *arg_info)
  *
@@ -224,6 +253,7 @@ ForEachElementWithop (node *bodycode, node *wln, node *partn, node *index, info 
     DBUG_ENTER ("ForEachElementWithop");
 
     withop = WITH_WITHOP (wln);
+    cexpr = CODE_CEXPRS (PART_CODE (partn));
     while (withop != NULL) {
         switch (NODE_TYPE (withop)) {
         case N_genarray:
@@ -236,16 +266,19 @@ ForEachElementWithop (node *bodycode, node *wln, node *partn, node *index, info 
             break;
         case N_fold:
             acc = LET_IDS (ASSIGN_INSTR (INFO_ASSIGN (arg_info)));
-            cexpr = EXPRS_EXPR (CODE_CEXPRS (PART_CODE (partn)));
-            bodycode = ApplyFold (bodycode, index, partn, acc, cexpr);
+            bodycode = ApplyFold (bodycode, index, partn, acc, EXPRS_EXPR (cexpr));
             break;
         case N_break:
             /* no-op */
+            break;
+        case N_extract:
+            bodycode = ApplyExtract (bodycode, index, partn, withop, cexpr);
             break;
         default:
             DBUG_ASSERT (0, "unhandled withop");
         }
         withop = WITHOP_NEXT (withop);
+        cexpr = EXPRS_NEXT (cexpr);
     }
 
     DBUG_RETURN (bodycode);
@@ -482,6 +515,7 @@ CheckUnrollModarray (node *wln, info *arg_info)
     partn = WITH_PART (wln);
     elts = 0;
 
+    /* FIXME: this assumes the first LHS of the withloop is the right one */
     lhs = LET_IDS (ASSIGN_INSTR (INFO_ASSIGN (arg_info)));
 
     ok = (TYisAKS (IDS_NTYPE (lhs)) || TYisAKV (IDS_NTYPE (lhs)));
@@ -506,9 +540,11 @@ CheckUnrollModarray (node *wln, info *arg_info)
 
         coden = PART_CODE (partn);
 
+        /* FIXME: this assumes the first cblock of the withloop is the right one */
         if (N_empty == NODE_TYPE (BLOCK_INSTR (CODE_CBLOCK (coden)))) {
             PART_ISCOPY (partn) = FALSE;
         } else {
+            /* FIXME: see three lines up */
             tmpn = ASSIGN_INSTR (BLOCK_INSTR (CODE_CBLOCK (coden)));
             exprn = LET_EXPR (tmpn);
             PART_ISCOPY (partn)
@@ -560,6 +596,7 @@ FinalizeModarray (node *bodycode, node *withop, info *arg_info)
     DBUG_ENTER ("FinalizeModarray");
 
     /* Finally add duplication of new array name */
+    /* FIXME: this assumes the first LHS of the withloop is the right one */
     letn = TBmakeLet (DUPdoDupNode (ASSIGN_LHS (INFO_ASSIGN (arg_info))),
                       DUPdoDupTree (MODARRAY_ARRAY (withop)));
     res = TBmakeAssign (letn, bodycode);
@@ -588,6 +625,7 @@ CheckUnrollGenarray (node *wln, info *arg_info)
 
     DBUG_ENTER ("WLUCheckUnrollGenarray");
 
+    /* FIXME: this assumes the first LHS of the withloop is the right one */
     lhs = LET_IDS (ASSIGN_INSTR (INFO_ASSIGN (arg_info)));
 
     if (TYisAKS (IDS_NTYPE (lhs)) || TYisAKV (IDS_NTYPE (lhs))) {
@@ -637,6 +675,7 @@ FinalizeGenarray (node *bodycode, node *withop, info *arg_info)
 
     DBUG_ENTER ("FinalizeGenarray");
 
+    /* FIXME: this assumes the first LHS of the withloop is the right one */
     arrayname = LET_IDS (ASSIGN_INSTR (INFO_ASSIGN (arg_info)));
 
     /*
@@ -733,7 +772,7 @@ CheckUnrollFold (node *wln)
  ******************************************************************************/
 
 static node *
-FinalizeFold (node *bodycode, node *withop, info *arg_info)
+FinalizeFold (node *bodycode, node *withop, node *lhs, info *arg_info)
 {
     node *letn;
     node *res;
@@ -741,11 +780,37 @@ FinalizeFold (node *bodycode, node *withop, info *arg_info)
     DBUG_ENTER ("FinalizeFold");
 
     /* add initialisation of accumulator with neutral element. */
-    letn = TBmakeLet (DUPdoDupNode (ASSIGN_LHS (INFO_ASSIGN (arg_info))),
-                      DUPdoDupTree (FOLD_NEUTRAL (withop)));
+    letn = TBmakeLet (DUPdoDupNode (lhs), DUPdoDupTree (FOLD_NEUTRAL (withop)));
     res = TBmakeAssign (letn, bodycode);
 
     DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *FinalizeExtract( node *bodycode, node *withop, node *lhs
+ *                                    info *arg_info)
+ *
+ * description:
+ *   Adds final code to the unrolled with-loop for the extract op.
+ *
+ ******************************************************************************/
+
+static node *
+FinalizeExtract (node *bodycode, node *withop, node *lhs, info *arg_info)
+{
+    node *letn;
+    node *assignn;
+
+    DBUG_ENTER ("FinalizeExtract");
+
+    /* Append final assign of the last resulting object to the loop's lhs. */
+    letn = TBmakeLet (DUPdoDupNode (lhs), DUPdoDupTree (EXTRACT_DEFAULT (withop)));
+    assignn = TBmakeAssign (letn, NULL);
+    bodycode = TCappendAssign (bodycode, assignn);
+
+    DBUG_RETURN (bodycode);
 }
 
 /******************************************************************************
@@ -761,13 +826,17 @@ FinalizeFold (node *bodycode, node *withop, info *arg_info)
 static node *
 DoUnrollWithloop (node *wln, info *arg_info)
 {
-    node *partn, *res, *withop;
+    node *partn;
+    node *res;
+    node *withop;
+    node *lhs;
 
     DBUG_ENTER ("DoUnrollWithloop");
 
     partn = WITH_PART (wln);
     withop = WITH_WITHOP (wln);
     res = NULL;
+    lhs = ASSIGN_LHS (INFO_ASSIGN (arg_info));
 
     /* Go over every partition of the with loop, copy the body code
      * and apply each withop. */
@@ -778,6 +847,7 @@ DoUnrollWithloop (node *wln, info *arg_info)
 
     /* Finalize the unrolling for every withop. */
     withop = WITH_WITHOP (wln);
+
     while (withop != NULL) {
         switch (NODE_TYPE (withop)) {
         case N_genarray:
@@ -787,15 +857,19 @@ DoUnrollWithloop (node *wln, info *arg_info)
             res = FinalizeModarray (res, withop, arg_info);
             break;
         case N_fold:
-            res = FinalizeFold (res, withop, arg_info);
+            res = FinalizeFold (res, withop, lhs, arg_info);
             break;
         case N_break:
             /* no-op */
+            break;
+        case N_extract:
+            res = FinalizeExtract (res, withop, lhs, arg_info);
             break;
         default:
             DBUG_ASSERT (0, "unhandled with-op");
         }
         withop = WITHOP_NEXT (withop);
+        lhs = IDS_NEXT (lhs);
     }
 
     DBUG_RETURN (res);
@@ -848,6 +922,9 @@ CheckUnrollWithloop (node *wln, info *arg_info)
             ok = CheckUnrollFold (wln);
             break;
         case N_break:
+            /* no-op */
+            break;
+        case N_extract:
             /* no-op */
             break;
         default:
