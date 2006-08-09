@@ -36,6 +36,7 @@
 #include "DataFlowMask.h"
 #include "DataFlowMaskUtils.h"
 #include "InferDFMs.h"
+#include "remove_dfms.h"
 #include "cleanup_decls.h"
 #include "namespaces.h"
 #include "lac2fun.h"
@@ -563,14 +564,14 @@ L2FdoLac2Fun (node *syntax_tree)
 
 #ifndef DBUG_OFF
     if (global.compiler_phase == PH_sacopt) {
-        DBUG_PRINT ("OPT", ("  inferring DFMs"));
+        DBUG_PRINT ("OPT", ("  removing DFMs"));
     }
 #endif
 
     /*
-     * after lifting and clean-up the current DFMs are not valid anymore!!!
+     * so we do not need the DFMs anymore
      */
-    syntax_tree = INFDFMSdoInferDfms (syntax_tree, HIDE_LOCALS_NEVER);
+    syntax_tree = RDFMSdoRemoveDfms (syntax_tree);
 
 #ifndef DBUG_OFF
     if (global.compiler_phase == PH_sacopt) {
