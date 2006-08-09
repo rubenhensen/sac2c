@@ -125,15 +125,13 @@ CreateBodyCode (node *partn, node *index)
  ******************************************************************************/
 
 static node *
-ApplyModGenarray (node *bodycode, node *index, node *partn, node *array)
+ApplyModGenarray (node *bodycode, node *index, node *partn, node *cexpr, node *array)
 {
-    node *exprs, *letexpr, *cexpr, *tmpn;
+    node *exprs, *letexpr, *tmpn;
 
     DBUG_ENTER ("ApplyModGenarray");
 
     /* create prf modarray */
-    /* FIXME: this assumes first cexpr is the right one */
-    cexpr = EXPRS_EXPR (CODE_CEXPRS (PART_CODE (partn)));
     tmpn = TBmakeId (IDS_AVIS (array));
 
     exprs = TBmakeExprs (tmpn, TBmakeExprs (TBmakeId (IDS_AVIS (PART_VEC (partn))),
@@ -159,7 +157,7 @@ ApplyModGenarray (node *bodycode, node *index, node *partn, node *array)
  ******************************************************************************/
 
 static node *
-ApplyFold (node *bodycode, node *index, node *partn, node *acc, node *cexpr)
+ApplyFold (node *bodycode, node *index, node *partn, node *cexpr, node *acc)
 {
     node *tmp, *letn;
     bool F_accu_found = FALSE;
@@ -246,27 +244,27 @@ static node *
 ForEachElementWithop (node *bodycode, node *wln, node *partn, node *index, info *arg_info)
 {
     node *withop;
-    node *arrayname;
     node *acc;
     node *cexpr;
+    node *lhs;
 
     DBUG_ENTER ("ForEachElementWithop");
 
     withop = WITH_WITHOP (wln);
     cexpr = CODE_CEXPRS (PART_CODE (partn));
+    lhs = ASSIGN_LHS (INFO_ASSIGN (arg_info));
+
     while (withop != NULL) {
         switch (NODE_TYPE (withop)) {
         case N_genarray:
-            arrayname = LET_IDS (ASSIGN_INSTR (INFO_ASSIGN (arg_info)));
-            bodycode = ApplyModGenarray (bodycode, index, partn, arrayname);
+            bodycode = ApplyModGenarray (bodycode, index, partn, EXPRS_EXPR (cexpr), lhs);
             break;
         case N_modarray:
-            arrayname = ASSIGN_LHS (INFO_ASSIGN (arg_info));
-            bodycode = ApplyModGenarray (bodycode, index, partn, arrayname);
+            bodycode = ApplyModGenarray (bodycode, index, partn, EXPRS_EXPR (cexpr), lhs);
             break;
         case N_fold:
             acc = LET_IDS (ASSIGN_INSTR (INFO_ASSIGN (arg_info)));
-            bodycode = ApplyFold (bodycode, index, partn, acc, EXPRS_EXPR (cexpr));
+            bodycode = ApplyFold (bodycode, index, partn, EXPRS_EXPR (cexpr), acc);
             break;
         case N_break:
             /* no-op */
@@ -279,6 +277,7 @@ ForEachElementWithop (node *bodycode, node *wln, node *partn, node *index, info 
         }
         withop = WITHOP_NEXT (withop);
         cexpr = EXPRS_NEXT (cexpr);
+        lhs = IDS_NEXT (lhs);
     }
 
     DBUG_RETURN (bodycode);
@@ -498,11 +497,11 @@ CountElements (node *genn)
  ******************************************************************************/
 
 static bool
-CheckUnrollModarray (node *wln, info *arg_info)
+CheckUnrollModarray (node *wln, node *lhs, info *arg_info)
 {
     bool ok;
     int elts;
-    node *partn, *genn, *coden, *tmpn, *exprn, *lhs;
+    node *partn, *genn, *coden, *tmpn, *exprn;
 
     DBUG_ENTER ("CheckUnrollModarray");
 
@@ -514,9 +513,6 @@ CheckUnrollModarray (node *wln, info *arg_info)
 
     partn = WITH_PART (wln);
     elts = 0;
-
-    /* FIXME: this assumes the first LHS of the withloop is the right one */
-    lhs = LET_IDS (ASSIGN_INSTR (INFO_ASSIGN (arg_info)));
 
     ok = (TYisAKS (IDS_NTYPE (lhs)) || TYisAKV (IDS_NTYPE (lhs)));
 
@@ -540,11 +536,9 @@ CheckUnrollModarray (node *wln, info *arg_info)
 
         coden = PART_CODE (partn);
 
-        /* FIXME: this assumes the first cblock of the withloop is the right one */
         if (N_empty == NODE_TYPE (BLOCK_INSTR (CODE_CBLOCK (coden)))) {
             PART_ISCOPY (partn) = FALSE;
         } else {
-            /* FIXME: see three lines up */
             tmpn = ASSIGN_INSTR (BLOCK_INSTR (CODE_CBLOCK (coden)));
             exprn = LET_EXPR (tmpn);
             PART_ISCOPY (partn)
@@ -588,7 +582,7 @@ CheckUnrollModarray (node *wln, info *arg_info)
  ******************************************************************************/
 
 static node *
-FinalizeModarray (node *bodycode, node *withop, info *arg_info)
+FinalizeModarray (node *bodycode, node *withop, node *lhs, info *arg_info)
 {
     node *letn;
     node *res;
@@ -596,9 +590,7 @@ FinalizeModarray (node *bodycode, node *withop, info *arg_info)
     DBUG_ENTER ("FinalizeModarray");
 
     /* Finally add duplication of new array name */
-    /* FIXME: this assumes the first LHS of the withloop is the right one */
-    letn = TBmakeLet (DUPdoDupNode (ASSIGN_LHS (INFO_ASSIGN (arg_info))),
-                      DUPdoDupTree (MODARRAY_ARRAY (withop)));
+    letn = TBmakeLet (DUPdoDupNode (lhs), DUPdoDupTree (MODARRAY_ARRAY (withop)));
     res = TBmakeAssign (letn, bodycode);
 
     DBUG_RETURN (res);
@@ -617,16 +609,12 @@ FinalizeModarray (node *bodycode, node *withop, info *arg_info)
  ******************************************************************************/
 
 static bool
-CheckUnrollGenarray (node *wln, info *arg_info)
+CheckUnrollGenarray (node *wln, node *lhs, info *arg_info)
 {
     bool ok;
     int length;
-    node *lhs;
 
     DBUG_ENTER ("WLUCheckUnrollGenarray");
-
-    /* FIXME: this assumes the first LHS of the withloop is the right one */
-    lhs = LET_IDS (ASSIGN_INSTR (INFO_ASSIGN (arg_info)));
 
     if (TYisAKS (IDS_NTYPE (lhs)) || TYisAKV (IDS_NTYPE (lhs))) {
         length = SHgetUnrLen (TYgetShape (IDS_NTYPE (lhs)));
@@ -661,7 +649,7 @@ CheckUnrollGenarray (node *wln, info *arg_info)
  ******************************************************************************/
 
 static node *
-FinalizeGenarray (node *bodycode, node *withop, info *arg_info)
+FinalizeGenarray (node *bodycode, node *withop, node *lhs, info *arg_info)
 {
     ntype *type;
     simpletype btype;
@@ -669,14 +657,10 @@ FinalizeGenarray (node *bodycode, node *withop, info *arg_info)
     node *shp, *shpavis;
     node *vect, *vectavis;
     node *vardecs = NULL;
-    node *arrayname;
     node *reshape;
     node *res;
 
     DBUG_ENTER ("FinalizeGenarray");
-
-    /* FIXME: this assumes the first LHS of the withloop is the right one */
-    arrayname = LET_IDS (ASSIGN_INSTR (INFO_ASSIGN (arg_info)));
 
     /*
      * Prepend:
@@ -685,7 +669,7 @@ FinalizeGenarray (node *bodycode, node *withop, info *arg_info)
      * <tmp2> = [0,...,0];
      * <array> = _reshape_( <tmp1>, <tmp2>)
      */
-    type = IDS_NTYPE (arrayname);
+    type = IDS_NTYPE (lhs);
     btype = TYgetSimpleType (TYgetScalar (type));
     length = SHgetUnrLen (TYgetShape (type));
 
@@ -703,11 +687,11 @@ FinalizeGenarray (node *bodycode, node *withop, info *arg_info)
     reshape = TCmakePrf2 (F_reshape, TBmakeId (shpavis), TBmakeId (vectavis));
 
     if (TYisAKV (type)) {
-        IDS_NTYPE (arrayname) = TYeliminateAKV (type);
+        IDS_NTYPE (lhs) = TYeliminateAKV (type);
         type = TYfreeType (type);
     }
 
-    res = TBmakeAssign (TBmakeLet (DUPdoDupNode (arrayname), reshape), bodycode);
+    res = TBmakeAssign (TBmakeLet (DUPdoDupNode (lhs), reshape), bodycode);
     res = TBmakeAssign (TBmakeLet (TBmakeIds (vectavis, NULL), vect), res);
     res = TBmakeAssign (TBmakeLet (TBmakeIds (shpavis, NULL), shp), res);
 
@@ -851,10 +835,10 @@ DoUnrollWithloop (node *wln, info *arg_info)
     while (withop != NULL) {
         switch (NODE_TYPE (withop)) {
         case N_genarray:
-            res = FinalizeGenarray (res, withop, arg_info);
+            res = FinalizeGenarray (res, withop, lhs, arg_info);
             break;
         case N_modarray:
-            res = FinalizeModarray (res, withop, arg_info);
+            res = FinalizeModarray (res, withop, lhs, arg_info);
             break;
         case N_fold:
             res = FinalizeFold (res, withop, lhs, arg_info);
@@ -891,7 +875,10 @@ static bool
 CheckUnrollWithloop (node *wln, info *arg_info)
 {
     int ok = TRUE;
-    node *partn, *genn, *op;
+    node *partn;
+    node *genn;
+    node *op;
+    node *lhs;
 
     DBUG_ENTER ("CheckUnrollWithloop");
 
@@ -910,13 +897,15 @@ CheckUnrollWithloop (node *wln, info *arg_info)
 
     /* Check for every with-op */
     op = WITH_WITHOP (wln);
+    lhs = ASSIGN_LHS (INFO_ASSIGN (arg_info));
+
     while (ok && op != NULL) {
         switch (NODE_TYPE (op)) {
         case N_genarray:
-            ok = CheckUnrollGenarray (wln, arg_info);
+            ok = CheckUnrollGenarray (wln, lhs, arg_info);
             break;
         case N_modarray:
-            ok = CheckUnrollModarray (wln, arg_info);
+            ok = CheckUnrollModarray (wln, lhs, arg_info);
             break;
         case N_fold:
             ok = CheckUnrollFold (wln);
@@ -931,6 +920,7 @@ CheckUnrollWithloop (node *wln, info *arg_info)
             DBUG_ASSERT (0, "unhandled with-op");
         }
         op = WITHOP_NEXT (op);
+        lhs = IDS_NEXT (lhs);
     }
 
     DBUG_RETURN (ok);
