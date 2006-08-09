@@ -25,6 +25,7 @@ extern node *ISVid (node *arg_node, info *arg_info);
 extern node *ISVprf (node *arg_node, info *arg_info);
 extern node *ISVwith (node *arg_node, info *arg_info);
 extern node *ISVpart (node *arg_node, info *arg_info);
+extern node *ISVcode (node *arg_node, info *arg_info);
 extern node *ISVcond (node *arg_node, info *arg_info);
 extern node *ISVfuncond (node *arg_node, info *arg_info);
 

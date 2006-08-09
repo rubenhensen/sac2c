@@ -54,6 +54,7 @@ struct INFO {
     node *preblock;
     node *lhs;
     node *rhs;
+    node *withid;
 };
 
 #define INFO_TRAVSCOPE(n) ((n)->travscope)
@@ -65,6 +66,7 @@ struct INFO {
 #define INFO_PREBLOCK(n) ((n)->preblock)
 #define INFO_LHS(n) ((n)->lhs)
 #define INFO_RHS(n) ((n)->rhs)
+#define INFO_WITHID(n) ((n)->withid)
 
 static info *
 MakeInfo ()
@@ -84,6 +86,7 @@ MakeInfo ()
     INFO_PREBLOCK (result) = NULL;
     INFO_LHS (result) = NULL;
     INFO_RHS (result) = NULL;
+    INFO_WITHID (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -531,11 +534,18 @@ ISVprf (node *arg_node, info *arg_info)
 node *
 ISVwith (node *arg_node, info *arg_info)
 {
+    node *oldwithid;
+
     DBUG_ENTER ("ISVwith");
+
+    oldwithid = INFO_WITHID (arg_info);
+    INFO_WITHID (arg_info) = WITH_WITHID (arg_node);
 
     WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
     WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
     WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
+
+    INFO_WITHID (arg_info) = oldwithid;
 
     DBUG_RETURN (arg_node);
 }
@@ -589,6 +599,28 @@ ISVpart (node *arg_node, info *arg_info)
 
     if (PART_NEXT (arg_node) != NULL) {
         PART_NEXT (arg_node) = TRAVdo (PART_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *ISVcode( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+ISVcode (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("ISVcode");
+
+    CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
+    CODE_CEXPRS (arg_node) = TRAVdo (CODE_CEXPRS (arg_node), arg_info);
+
+    AVIS_SUBST (IDS_AVIS (WITHID_VEC (INFO_WITHID (arg_info)))) = NULL;
+
+    if (CODE_NEXT (arg_node) != NULL) {
+        CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
