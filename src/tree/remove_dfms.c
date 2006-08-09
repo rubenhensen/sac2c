@@ -5,6 +5,16 @@
 #include "traverse.h"
 #include "dbug.h"
 
+/** <!-- ****************************************************************** -->
+ * @fn node *RDFMSwith( node *arg_node, info *arg_info)
+ *
+ * @brief Removes the data flow masks from this node.
+ *
+ * @param arg_node with node
+ * @param arg_info NULL
+ *
+ * @return with without DFMs
+ ******************************************************************************/
 node *
 RDFMSwith (node *arg_node, info *arg_info)
 {
@@ -27,6 +37,16 @@ RDFMSwith (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/** <!-- ****************************************************************** -->
+ * @fn node *RDFMSwith2( node *arg_node, info *arg_info)
+ *
+ * @brief Removes the data flow masks from this node.
+ *
+ * @param arg_node with2 node
+ * @param arg_info NULL
+ *
+ * @return with2 without DFMs
+ ******************************************************************************/
 node *
 RDFMSwith2 (node *arg_node, info *arg_info)
 {
@@ -49,6 +69,16 @@ RDFMSwith2 (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/** <!-- ****************************************************************** -->
+ * @fn node *RDFMScond( node *arg_node, info *arg_info)
+ *
+ * @brief Removes the data flow masks from this node.
+ *
+ * @param arg_node cond node
+ * @param arg_info NULL
+ *
+ * @return cond without DFMs
+ ******************************************************************************/
 node *
 RDFMScond (node *arg_node, info *arg_info)
 {
@@ -71,6 +101,16 @@ RDFMScond (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/** <!-- ****************************************************************** -->
+ * @fn node *RDFMSdo( node *arg_node, info *arg_info)
+ *
+ * @brief Removes the data flow masks from this node.
+ *
+ * @param arg_node do node
+ * @param arg_info NULL
+ *
+ * @return do without DFMs
+ ******************************************************************************/
 node *
 RDFMSdo (node *arg_node, info *arg_info)
 {
@@ -93,6 +133,16 @@ RDFMSdo (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/** <!-- ****************************************************************** -->
+ * @fn node *RDFMSfundef( node *arg_node, info *arg_info)
+ *
+ * @brief  Removes the data flow masks from this node.
+ *
+ * @param arg_node fundef node
+ * @param arg_info NULL
+ *
+ * @return fundef without DFMs
+ ******************************************************************************/
 node *
 RDFMSfundef (node *arg_node, info *arg_info)
 {
@@ -107,6 +157,13 @@ RDFMSfundef (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/** <!-- ****************************************************************** -->
+ * @brief Removes data flow masks from the ast given as first argument.
+ *
+ * @param arg_node piece of syntax tree
+ *
+ * @return cleaned up tree
+ ******************************************************************************/
 node *
 RDFMSdoRemoveDfms (node *arg_node)
 {

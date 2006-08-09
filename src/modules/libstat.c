@@ -63,9 +63,6 @@ PrintLibStatHeader (module_t *module)
 {
     DBUG_ENTER ("PrintLibStatHeader");
 
-#ifndef PRODUCTION
-    printf ("\nThe SaC DevCamp DK Team presents the ");
-#endif
     printf ("\nLibrary Information for Module `%s':\n\n", MODMgetModuleName (module));
 
     DBUG_VOID_RETURN;
