@@ -236,6 +236,8 @@ MakeDTProxy (node *avis, node *postass, info *arg_info)
                                 postass);
         AVIS_SSAASSIGN (dimavis) = postass;
 
+        AVIS_SUBST (avis) = proxyavis;
+
         switch (INFO_TRAVMODE (arg_info)) {
         case TM_then:
             AVIS_HASDTTHENPROXY (avis) = TRUE;
@@ -344,11 +346,14 @@ ISVfundef (node *arg_node, info *arg_info)
         } else {
             INFO_TRAVMODE (arg_info) = TM_all;
             arg_node = RemoveAvisSubst (arg_node);
-            FUNDEF_INSTR (arg_node)
-              = TCappendAssign (MakeArgProxies (FUNDEF_ARGS (arg_node), arg_info),
-                                FUNDEF_INSTR (arg_node));
+
+            INFO_PREBLOCK (arg_info) = MakeArgProxies (FUNDEF_ARGS (arg_node), arg_info);
 
             FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+
+            FUNDEF_INSTR (arg_node)
+              = TCappendAssign (INFO_PREBLOCK (arg_info), FUNDEF_INSTR (arg_node));
+            INFO_PREBLOCK (arg_info) = NULL;
         }
 
         /*
@@ -403,6 +408,7 @@ node *
 ISVassign (node *arg_node, info *arg_info)
 {
     node *preassign;
+    node *postassign;
 
     DBUG_ENTER ("ISVassign");
 
@@ -411,14 +417,15 @@ ISVassign (node *arg_node, info *arg_info)
     preassign = INFO_PREASSIGN (arg_info);
     INFO_PREASSIGN (arg_info) = NULL;
 
-    if (INFO_POSTASSIGN (arg_info) != NULL) {
-        ASSIGN_NEXT (arg_node)
-          = TCappendAssign (INFO_POSTASSIGN (arg_info), ASSIGN_NEXT (arg_node));
-        INFO_POSTASSIGN (arg_info) = NULL;
-    }
+    postassign = INFO_POSTASSIGN (arg_info);
+    INFO_POSTASSIGN (arg_info) = NULL;
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
+    }
+
+    if (postassign != NULL) {
+        ASSIGN_NEXT (arg_node) = TCappendAssign (postassign, ASSIGN_NEXT (arg_node));
     }
 
     if (preassign != NULL) {
@@ -502,25 +509,6 @@ ISVids (node *arg_node, info *arg_info)
 
     if (IDS_NEXT (arg_node) != NULL) {
         IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *ISVprf( node *arg_node, info *arg_info)
- *
- *****************************************************************************/
-node *
-ISVprf (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("ISVprf");
-
-    arg_node = TRAVcont (arg_node, arg_info);
-
-    if (PRF_PRF (arg_node) == F_dtype_conv) {
-        AVIS_SUBST (ID_AVIS (PRF_ARG3 (arg_node))) = IDS_AVIS (INFO_LHS (arg_info));
     }
 
     DBUG_RETURN (arg_node);
@@ -655,19 +643,20 @@ ISVcond (node *arg_node, info *arg_info)
 
     switch (INFO_TRAVMODE (arg_info)) {
     case TM_then:
+        COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
+
         BLOCK_INSTR (COND_THEN (arg_node))
           = PrependAssign (INFO_PREBLOCK (arg_info), BLOCK_INSTR (COND_THEN (arg_node)));
         INFO_PREBLOCK (arg_info) = NULL;
-
-        COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
         break;
 
     case TM_else:
+        COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
+
         BLOCK_INSTR (COND_ELSE (arg_node))
           = PrependAssign (INFO_PREBLOCK (arg_info), BLOCK_INSTR (COND_ELSE (arg_node)));
         INFO_PREBLOCK (arg_info) = NULL;
 
-        COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
         break;
 
     case TM_all:

@@ -22,7 +22,6 @@ extern node *ISVassign (node *arg_node, info *arg_info);
 extern node *ISVlet (node *arg_node, info *arg_info);
 extern node *ISVids (node *arg_node, info *arg_info);
 extern node *ISVid (node *arg_node, info *arg_info);
-extern node *ISVprf (node *arg_node, info *arg_info);
 extern node *ISVwith (node *arg_node, info *arg_info);
 extern node *ISVpart (node *arg_node, info *arg_info);
 extern node *ISVcode (node *arg_node, info *arg_info);
