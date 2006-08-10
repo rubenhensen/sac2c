@@ -825,7 +825,12 @@ DoUnrollWithloop (node *wln, info *arg_info)
     /* Go over every partition of the with loop, copy the body code
      * and apply each withop. */
     while (partn != NULL) {
-        res = ForEachElement (res, wln, partn, arg_info);
+
+        /* If this part just copies the previous array, AND this is not
+         * a multi-operator with-loop, skip it. */
+        if (!PART_ISCOPY (partn) || WITHOP_NEXT (WITH_WITHOP (wln))) {
+            res = ForEachElement (res, wln, partn, arg_info);
+        }
         partn = PART_NEXT (partn);
     }
 
