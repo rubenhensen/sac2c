@@ -184,6 +184,136 @@ AppendAvisToShapeClique (node *avis1, node *avis2)
 
 /** <!--*******************************************************************-->
  *
+ * @fn bool DefaultCellIsScalar( node *def)
+ * @brief  Predicate for genarray(shape,..., def), default cell being scalar
+ *         or elided.
+ * @result TRUE if the default cell is elided or scalar; else FALSE.
+ *
+ *****************************************************************************/
+static bool
+DefaultCellIsScalar (node *def)
+{
+    bool z;
+
+    DBUG_ENTER ("DefaultCellIsScalar");
+
+    if ((NULL == def)) {
+        z = TRUE;
+    } else {
+        if ((NULL != def) && (N_id == NODE_TYPE (def))
+            && (TUdimKnown (AVIS_TYPE (ID_AVIS (def))))
+            && (0 == TYgetDim (AVIS_TYPE (ID_AVIS (def))))) {
+            z = TRUE;
+        } else {
+            z = FALSE;
+        }
+    }
+
+    DBUG_RETURN (z);
+}
+
+/** <!--*******************************************************************-->
+ *
+ * @fn node *CheckShapeElements( node *shps)
+ * @brief  This function examines all elements of a genarray's shape
+ *         argument to ensure they are all elements of F_idx_shape_sel.
+ * @result is N_avis of X if the genarray shape argument is of the
+ *         form: genarray (shape(X),..., def);
+ *         If the shape is an empty array of
+ *         the form: genarray ([:int], ..., def);
+ *         the result is NULL;
+ *
+ *****************************************************************************/
+static node *
+CheckShapeElements (node *shps)
+{
+    node *shapeel;
+    node *shapeelass;
+    node *shapeellet;
+    node *shapeelprf;
+    node *shapeBavis;
+    node *shapeelaxis;
+    node *shapeelargs;
+    node *shapeelB;
+    node *z;
+    int axis;
+
+    DBUG_ENTER ("CheckShapeElements");
+    z = NULL;
+    axis = 0;
+    if (NULL == shps) {
+        DBUG_PRINT ("SCI", (("SCI CheckShapeElements found genarray([:int]...). Using "
+                             "default cell")));
+    } else {
+        while (NULL != shps) {
+            /* Examine all genarray shape elements to */
+            /* ensure that we are doing F_idx_shape_sel(axis, B) correctly */
+
+            shapeel = EXPRS_EXPR (shps);
+            if (N_id != NODE_TYPE (shapeel)) { /* Z = WL genarray( [2,3,4], 5, def); */
+                /* Observation: if def is AKS or better, we could place Z in an AKS
+                 * shape clique with arrays of shape: [2,3,4]++shape(def)
+                 */
+                z = NULL;
+                break;
+            }
+            shapeelass = AVIS_SSAASSIGN (ID_AVIS (shapeel));
+            if (NULL == shapeelass) {
+                z = NULL;
+                break; /*  No SSAASSIGN for WL genarray ( [ constantfolded]...); */
+            }
+
+            DBUG_ASSERT ((N_assign == NODE_TYPE (shapeelass)),
+                         "SCIgenarray did not see N_assign");
+            shapeellet = ASSIGN_INSTR (shapeelass);
+            DBUG_ASSERT ((N_let == NODE_TYPE (shapeellet)),
+                         "SCIgenarray did not see N_let");
+            shapeelprf = LET_EXPR (shapeellet);
+            if (N_prf != NODE_TYPE (shapeelprf)) {
+                DBUG_PRINT ("SCI", ("SCI CheckShapeElements did not see N_prf"));
+                /* Presumably an N_ap */
+                z = NULL;
+                break;
+            }
+            if (PRF_PRF (shapeelprf) != F_idx_shape_sel) {
+                DBUG_PRINT ("SCI",
+                            (("SCI CheckShapeElements did not see F_idx_shape_sel")));
+                z = NULL;
+                break;
+            }
+            shapeelargs = PRF_ARGS (shapeelprf); /* _idx_shape_sel( elaxis, B) */
+            DBUG_ASSERT ((N_exprs == NODE_TYPE (shapeelargs)),
+                         "SCI CheckShapeElements did not see _idx_shape_sel args");
+            shapeelaxis = EXPRS_EXPR (shapeelargs);
+            shapeelB = EXPRS_EXPR (EXPRS_NEXT (shapeelargs));
+            if ((N_num != NODE_TYPE (shapeelaxis)) || (axis != NUM_VAL (shapeelaxis))
+                || (N_id != NODE_TYPE (shapeelB))) {
+                DBUG_PRINT ("SCI", (("SCI CheckShapeElements confused on _idx_shape_sel "
+                                     "arguments")));
+                z = NULL;
+                break;
+            }
+
+            shapeBavis = ID_AVIS (shapeelB);
+            if ((NULL == z) && (0 == axis)) {
+                z = shapeBavis;
+                DBUG_PRINT ("SCI", (("SCI CheckShapeElements found good shape vector. "
+                                     "Using shape(B)")));
+            }
+            if ((NULL != z) && (z != shapeBavis)) {
+                z = NULL;
+                break; /* All idx_shape_sel arg2 should be the same B! */
+            }
+
+            shps = EXPRS_NEXT (shps);
+            axis++;
+        }
+    }
+    DBUG_RETURN (z);
+}
+
+/** <!--*******************************************************************-->
+ *
  * @fn void *ResetAllShapeCliques( node *arg_node, node *arg_info))
  * @brief This function resets the shape clique ID entries in all N_avis nodes
  *        for this function.
@@ -861,118 +991,60 @@ SCIgenarray (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SCIgenarray");
     /*
-     * For a WL of the form:
+     * Case 1: For a WL of the form:
      *
      *    S = shape(B);
      *    C = with() genarray( S, defaultelement),
      *
-     * place C in same shape clique as B, IFF def is a scalar.
-     * It may be possible to get fancier with non-scalar default element, but
-     * you gotta start somewhere.
+     * place C in same shape clique as B, IFF def is a scalar, or elided.
+     *
+     * Case 2: If S is an empty list (i.e., [:int]),
+     * place C in same shape clique as defaultelement.
+     *
+     * Case 3: DO nothing.
      */
 
     node *shp;
     node *def;
     node *shps;
     node *rhs;
-    node *shapeel;
-    node *shapeelprf;
-    node *shapeelass;
-    node *shapeellet;
-    node *shapeelargs;
-    node *shapeelaxis;
-    node *shapeelB;
-    node *shapeBavis;
     node *lhs;
-    int axis;
+    bool ds;
 
     lhs = IDS_AVIS (INFO_LHS (arg_info));
     shp = GENARRAY_SHAPE (arg_node);
     def = GENARRAY_DEFAULT (arg_node);
+    ds = DefaultCellIsScalar (def);
 
-    /* All shapes have been scalarized by now, so this is a bit messy */
-
-    if (N_array == NODE_TYPE (shp)) {
+    if (N_array == NODE_TYPE (shp)) { /* All shapes are scalarized by now */
         shps = ARRAY_AELEMS (shp);
-        DBUG_ASSERT ((N_exprs == NODE_TYPE (shps)), "SCIgenarray did not see N_exprs");
+
         /* shps is now current element of an N_exprs chain that points to the
          * scalarized shape vector elements of the genarray shape.
+         * Or, shps is NULL: the shape is an empty vector.
          */
+        if ((NULL != shps)) { /* scalarized shape vector exists */
+            DBUG_ASSERT ((N_exprs == NODE_TYPE (shps)),
+                         "SCIgenarray did not see N_exprs");
+            rhs = CheckShapeElements (shps);
+        } else {                     /* empty shape vector */
+            if (NULL != def) {       /* def, if present, is clique member w/lhs */
+                rhs = ID_AVIS (def); /* shape is empty vector */
+                ds = TRUE;
+            } else {
+                rhs = NULL; /* shape is empty vector, but def is elided */
+                ds = FALSE;
+            }
+        }
     } else {
-        shps = NULL;
+        rhs = NULL; /* Don't do any unions: we are confused */
+        def = NULL;
+        ds = FALSE;
         DBUG_PRINT ("SCI", ("SCIgenarray did not see N_array"));
-        /* We definitely get here on "make libsac2c" looking at N_id */
+        /* We definitely got here on "make libsac2c" looking at N_id */
     }
 
-    rhs = NULL;
-    axis = 0;
-
-    while (NULL != shps) {
-        /* Examine all genarray shape elements to */
-        /* ensure that we are doing F_idx_shape_sel(axis, B) correctly */
-
-        shapeel = EXPRS_EXPR (shps);
-        if (N_id != NODE_TYPE (shapeel)) {
-            rhs = NULL;
-            break; /* WL genarray ([2,3,4], 5) */
-        }
-        shapeelass = AVIS_SSAASSIGN (ID_AVIS (shapeel));
-        if (NULL == shapeelass) {
-            rhs = NULL;
-            break; /*  No SSAASSIGN for WL genarray ( [ constantfolded]...); */
-        }
-
-        DBUG_ASSERT ((N_assign == NODE_TYPE (shapeelass)),
-                     "SCIgenarray did not see N_assign");
-        shapeellet = ASSIGN_INSTR (shapeelass);
-        DBUG_ASSERT ((N_let == NODE_TYPE (shapeellet)), "SCIgenarray did not see N_let");
-        shapeelprf = LET_EXPR (shapeellet);
-        if (N_prf != NODE_TYPE (shapeelprf)) {
-            DBUG_PRINT ("SCI", ("SCIgenarray did not see N_prf"));
-            /* Presumably an N_ap */
-            rhs = NULL;
-            break;
-        }
-        if (PRF_PRF (shapeelprf) != F_idx_shape_sel) {
-            DBUG_PRINT ("SCI", (("WL Genarray did not see F_idx_shape_sel")));
-            rhs = NULL;
-            break;
-        }
-        shapeelargs = PRF_ARGS (shapeelprf); /* _idx_shape_sel( elaxis, B) */
-        DBUG_ASSERT ((N_exprs == NODE_TYPE (shapeelargs)),
-                     "SCIgenarray did not see _idx_shape_sel args");
-        shapeelaxis = EXPRS_EXPR (shapeelargs);
-        shapeelB = EXPRS_EXPR (EXPRS_NEXT (shapeelargs));
-        if ((N_num != NODE_TYPE (shapeelaxis)) || (axis != NUM_VAL (shapeelaxis))
-            || (N_id != NODE_TYPE (shapeelB))) {
-            DBUG_PRINT ("SCI", (("SCIgenarray confused on _idx_shape_sel arguments")));
-            rhs = NULL;
-            break;
-        }
-
-        shapeBavis = ID_AVIS (shapeelB);
-        if ((NULL == rhs) && (0 == axis)) {
-            rhs = shapeBavis;
-        }
-        if ((NULL != rhs) && (rhs != shapeBavis)) {
-            rhs = NULL;
-            break; /* All idx_shape_sel arg2 should be the same B! */
-        }
-
-        shps = EXPRS_NEXT (shps);
-        axis++;
-    }
-
-    /*
-     * : If def non-null, have to check for scalar default
-     *       element!
-     */
-    if ((NULL != rhs)
-        && ((NULL == def)
-            || ((NULL != def) && (N_id == NODE_TYPE (def))
-                && (TUdimKnown (AVIS_TYPE (ID_AVIS (def))))
-                && (TYgetDim (AVIS_TYPE (ID_AVIS (def))) == 0)))) {
-        /* Wow. Place lhs and rhs in same shape clique */
+    if ((NULL != rhs) && (ds)) {
         AppendAvisToShapeClique (lhs, rhs);
         DBUG_PRINT ("SCI", (("WL Genarray performing SC union")));
     }
