@@ -2040,16 +2040,32 @@ CFids (node *arg_node, info *arg_info)
          * this is done in CFlet iff it turns out the assignment chain is
          * in fact required
          */
-    } else if ((dim != NULL) && (shape != NULL)) {
-        if ((NODE_TYPE (dim) == N_num) && (NUM_VAL (dim) == 1)
-            && (NODE_TYPE (shape) == N_array)
-            && (NODE_TYPE (EXPRS_EXPR (ARRAY_AELEMS (shape))) == N_num)
-            && (NUM_VAL (EXPRS_EXPR (ARRAY_AELEMS (shape))) == 0)) {
-            INFO_PREASSIGN (arg_info)
-              = TBmakeAssign (TBmakeLet (DUPdoDupNode (arg_node), TCmakeIntVector (NULL)),
-                              INFO_PREASSIGN (arg_info));
-        }
     }
+#if 0
+  /*
+   * This has been commented out since when throwing away a WL on the RHS,
+   * we MUST ensure that the references to shape variables defined in that
+   * WL are removed. 
+   * I see some solutions:
+   * 1) Move shape attributes to IDS node (probably more DT like) 
+   * 2) Traverse WL to remove all SV references first
+   */
+  else if ( ( dim != NULL) && ( shape != NULL)) {
+    if ( ( NODE_TYPE( dim) == N_num) && ( NUM_VAL( dim) == 1) &&
+         ( NODE_TYPE( shape) == N_array) && 
+         ( NODE_TYPE( EXPRS_EXPR( ARRAY_AELEMS( shape))) == N_num) &&
+         ( NUM_VAL( EXPRS_EXPR( ARRAY_AELEMS( shape))) == 0)) {
+      ntype *ty = TYmakeAKS( TYcopyType( TYgetScalar( IDS_NTYPE( arg_node))),
+                             SHmakeShape(0));
+
+      INFO_PREASSIGN( arg_info) =
+        TBmakeAssign( TBmakeLet( DUPdoDupNode( arg_node),
+                                 TCmakeVector( ty, NULL)),
+                      INFO_PREASSIGN( arg_info));
+      
+    }
+  }
+#endif
 
     if (IDS_NEXT (arg_node) != NULL) {
         IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);

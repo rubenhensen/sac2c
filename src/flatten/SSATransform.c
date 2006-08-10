@@ -1372,6 +1372,14 @@ SSATids (node *arg_node, info *arg_info)
 
     avis = IDS_AVIS (arg_node);
 
+    if (AVIS_DIM (avis) != NULL) {
+        AVIS_DIM (avis) = TRAVdo (AVIS_DIM (avis), arg_info);
+    }
+
+    if (AVIS_SHAPE (avis) != NULL) {
+        AVIS_SHAPE (avis) = TRAVdo (AVIS_SHAPE (avis), arg_info);
+    }
+
     if (!AVIS_SSADEFINED (avis)) {
         /*
          * first definition of variable (no renaming)
