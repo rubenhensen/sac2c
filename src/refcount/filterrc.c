@@ -606,6 +606,10 @@ FRCcode (node *arg_node, info *arg_info)
         CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
     }
 
+    if (CODE_NEXT (arg_node) != NULL) {
+        CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
+    }
+
     DBUG_RETURN (arg_node);
 }
 
