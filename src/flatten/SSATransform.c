@@ -1372,14 +1372,6 @@ SSATids (node *arg_node, info *arg_info)
 
     avis = IDS_AVIS (arg_node);
 
-    if (AVIS_DIM (avis) != NULL) {
-        AVIS_DIM (avis) = TRAVdo (AVIS_DIM (avis), arg_info);
-    }
-
-    if (AVIS_SHAPE (avis) != NULL) {
-        AVIS_SHAPE (avis) = TRAVdo (AVIS_SHAPE (avis), arg_info);
-    }
-
     if (!AVIS_SSADEFINED (avis)) {
         /*
          * first definition of variable (no renaming)
@@ -1414,6 +1406,14 @@ SSATids (node *arg_node, info *arg_info)
         AVIS_NAME (new_avis) = ILIBfree (AVIS_NAME (new_avis));
         AVIS_NAME (new_avis) = new_name;
 
+        if (AVIS_DIM (avis) != NULL) {
+            AVIS_DIM (new_avis) = DUPdoDupNode (AVIS_DIM (avis));
+        }
+
+        if (AVIS_SHAPE (avis) != NULL) {
+            AVIS_SHAPE (new_avis) = DUPdoDupNode (AVIS_SHAPE (avis));
+        }
+
         if (global.compiler_phase <= PH_typecheck) {
             /**
              * we are running SSATransform prior or during TC! Therefore,
@@ -1444,7 +1444,17 @@ SSATids (node *arg_node, info *arg_info)
         IncSSATCounter ();
     }
 
-    AVIS_SSAASSIGN (IDS_AVIS (arg_node)) = INFO_ASSIGN (arg_info);
+    avis = IDS_AVIS (arg_node);
+
+    AVIS_SSAASSIGN (avis) = INFO_ASSIGN (arg_info);
+
+    if (AVIS_DIM (avis) != NULL) {
+        AVIS_DIM (avis) = TRAVdo (AVIS_DIM (avis), arg_info);
+    }
+
+    if (AVIS_SHAPE (avis) != NULL) {
+        AVIS_SHAPE (avis) = TRAVdo (AVIS_SHAPE (avis), arg_info);
+    }
 
     /* traverese next ids */
     if (IDS_NEXT (arg_node) != NULL) {

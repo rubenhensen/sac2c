@@ -9,6 +9,10 @@
 #include "dbug.h"
 #include "globals.h"
 #include "compare_tree.h"
+#include "new_types.h"
+#include "new_typecheck.h"
+#include "type_utils.h"
+#include "constants.h"
 
 #include "elimtypeconv.h"
 
@@ -43,7 +47,19 @@ CompareDTypes (node *avis, node *dim, node *shape)
 
     DBUG_ENTER ("CompareDTypes");
 
-    if ((AVIS_DIM (avis) != NULL) && (AVIS_SHAPE (avis) != NULL)) {
+    if (TUshapeKnown (AVIS_TYPE (avis))) {
+        ntype *st = NTCnewTypeCheck_Expr (shape);
+        constant *sco = COmakeConstantFromShape (TYgetShape (AVIS_TYPE (avis)));
+
+        if (TYisAKV (st)) {
+            res = COcompareConstants (sco, TYgetValue (st));
+        }
+
+        st = TYfreeType (st);
+        sco = COfreeConstant (sco);
+    }
+
+    if ((!res) && (AVIS_DIM (avis) != NULL) && (AVIS_SHAPE (avis) != NULL)) {
         node *ashape = AVIS_SHAPE (avis);
         node *shapeavis = ID_AVIS (shape);
 
