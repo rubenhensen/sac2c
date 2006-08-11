@@ -124,6 +124,8 @@ SUBPHASE (rso, "rso", "Resolving global objects", RSOdoResolveObjects)
 
 SUBPHASE (rra, "rra", "Resolving reference arguments", RRAdoResolveReferenceArgs)
 
+SUBPHASE (iu, "iu", "Inferring uniqueness property", IUdoInferUniqueness)
+
 SUBPHASE (woa, "woa", "Adding Objects to With-loops", WOAdoWithloopObjectAnalysis)
 
 SUBPHASE (ewt, "ewt", "Extending dispatch information", EWTdoExtendWrapperTypes)
