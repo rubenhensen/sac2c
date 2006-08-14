@@ -567,7 +567,14 @@ int *_slevel_;
     stack->level++;
     if (stack->level == stack->maxdepth + 1) {
         fprintf (_db_fp_, "WARNING: dbug-maxdepth %d too low\n", stack->maxdepth);
-        _db_push_ ("t");
+#if 0
+      /**
+       * automatic tracing is a good idea for detecting the reason for the 
+       * overflow, but it sometimes kills the masterrun. Therefore, we decided
+       * NOT to automatically trace anymore.....
+       */
+      _db_push_("t");
+#endif
     }
     *_slevel_ = stack->level;
     if (DoTrace ()) {
