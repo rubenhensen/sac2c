@@ -978,7 +978,7 @@ assignsOPTret: /*
                }
              | RETURN { $<cint>$ = global.linenum; } SEMIC
                { $$ = TBmakeAssign( TBmakeReturn( NULL), NULL);
-                 NODE_LINE( $$) = $<cint>3;
+                 NODE_LINE( $$) = $<cint>2;
                }
              | assign { $<cint>$ = global.linenum; } assignsOPTret
                {
@@ -1043,7 +1043,7 @@ let:       ids LET { $<cint>$ = global.linenum; } expr
                                   NULL))));
 
              $$ = TBmakeLet( ids, ap);
-             NODE_LINE( $$) = $<cint>5;
+             NODE_LINE( $$) = $<cint>6;
            }
          | expr_ap { $$ = TBmakeLet( NULL, $1); }
          | ID INC { $$ = MakeIncDecLet( $1, ILIBstringCopy( "+")); }
