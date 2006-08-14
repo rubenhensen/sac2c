@@ -537,12 +537,6 @@
 	  <node name="With" />
 	</travuser>
       </traversal>
-      <traversal id="IU" name="Infer uniqueness" default="sons" include="infer_uniqueness.h" >
-      	<travuser>
-	  <node name="Fundef" />
-	  <node name="Ap" />
-	</travuser>
-      </traversal>
       <traversal id="RRA" name="Resolve Reference Args" default="sons" include="resolve_reference_args.h" >
         <travuser>
 	  <node name="Fundef" />

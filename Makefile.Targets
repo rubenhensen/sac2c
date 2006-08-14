@@ -77,8 +77,7 @@ objects     = object_init.o resolve_reference_args.o object_analysis.o \
               uniqueness_phase.o  \
               generate_object_initialiser.o strip_external_signatures.o \
               manage_object_initialisers.o \
-	      check_uniqueness.o withloop_objects.o restore_withloop_objects.o \
-        infer_uniqueness.o
+      	      check_uniqueness.o withloop_objects.o restore_withloop_objects.o
        
 
 optimize    = optimize.o \
@@ -91,7 +90,7 @@ optimize    = optimize.o \
               associativity.o elimtypeconv.o liftoptflags.o \
               wlsimplification.o prfunroll.o wlselcount.o \
               insert_shapevars.o elim_shapevars.o makedimexpr.o makeshapeexpr.o \
-	      distributivity.o remove_vardecs.o
+      	      distributivity.o remove_vardecs.o
 
 psi-opt     = index_eliminate.o index_infer.o index_optimize.o \
               wl_access_analyze.o tile_size_inference.o wls.o wlscheck.o \
