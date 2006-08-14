@@ -1,24 +1,5 @@
 <?xml version="1.0"?>
-<!--
-  $Log$
-  Revision 1.5  2005/06/28 16:17:07  sah
-  removed a warning message
-
-  Revision 1.4  2004/11/27 03:00:31  sah
-  bugfix
-
-  Revision 1.3  2004/11/26 00:20:39  sah
-  fixed bug
-
-  Revision 1.2  2004/11/25 23:49:26  sah
-  added ugly funs for CMPtree
-
-  Revision 1.1  2004/11/24 17:55:56  sah
-  Initial revision
-
-
-
--->
+<!-- $Id -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
   
   <xsl:import href="../xml/common-travfun.xsl"/>

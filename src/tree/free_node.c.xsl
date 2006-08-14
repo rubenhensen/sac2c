@@ -122,14 +122,6 @@ version="1.0">
   <xsl:if test="attributes/attribute[key(&quot;arraytypes&quot;, ./type/@name)]">
     <xsl:value-of select="'int cnt;'" />
   </xsl:if>
-  <!-- DBUG_ENTER statement -->
-  <xsl:value-of select="'DBUG_ENTER( &quot;FREE'"/>
-  <xsl:call-template name="lowercase" >
-    <xsl:with-param name="string" >
-      <xsl:value-of select="@name"/>
-    </xsl:with-param>
-  </xsl:call-template>
-  <xsl:value-of select="'&quot;);'"/>
   <!-- set status of Fundef to zombie -->
   <xsl:value-of select="'DBUG_PRINT(&quot;FREE&quot;, (&quot;transforming %s at &quot; F_PTR &quot; into a zombie&quot;, '"/>
   <xsl:call-template name="node-access">
@@ -148,8 +140,8 @@ version="1.0">
   <xsl:apply-templates select="attributes/attribute[@name != &quot;Name&quot;][@name != &quot;Mod&quot;][@name!=&quot;LinkMod&quot;][@name != &quot;Types&quot;][@name != &quot;Type&quot;][@name!=&quot;Impl&quot;]"/>
   <!-- call free for all other sons -->
   <xsl:apply-templates select="sons/son[not( @name= &quot;Next&quot;)]"/>
-  <!-- DBUG_RETURN call -->
-  <xsl:value-of select="'DBUG_RETURN( arg_node);'"/>
+  <!-- return -->
+  <xsl:value-of select="'return( arg_node);'"/>
   <!-- end of body -->
   <xsl:value-of select="'}'"/>
 </xsl:template>
@@ -194,14 +186,6 @@ version="1.0">
   </xsl:if>
   <!-- variable for result -->
   <xsl:value-of select="'node *result = NULL;'"/>
-  <!-- DBUG_ENTER statement -->
-  <xsl:value-of select="'DBUG_ENTER( &quot;FREE'"/>
-  <xsl:call-template name="lowercase" >
-    <xsl:with-param name="string" >
-      <xsl:value-of select="@name"/>
-    </xsl:with-param>
-  </xsl:call-template>
-  <xsl:value-of select="'&quot;);'"/>
   <!-- give hint we start to free now -->
   <xsl:value-of select="'DBUG_PRINT( &quot;FREE&quot;, (&quot;Processing node %s at &quot; F_PTR, NODE_TEXT( arg_node), arg_node));'"/>
   <xsl:value-of select="'NODE_ERROR( arg_node) = FREETRAV( NODE_ERROR( arg_node), arg_info);'"/>
@@ -258,8 +242,7 @@ version="1.0">
       <xsl:value-of select="'result = ILIBfree( arg_node);'"/>
     </xsl:otherwise>
   </xsl:choose>
-  <!-- DBUG_RETURN call -->
-  <xsl:value-of select="'DBUG_RETURN( result);'"/>
+  <xsl:value-of select="'return( result);'"/>
   <!-- end of body -->
   <xsl:value-of select="'}'"/>
 </xsl:template>
