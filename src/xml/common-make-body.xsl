@@ -117,6 +117,7 @@ version="1.0">
   <!-- set lineno -->
   <xsl:value-of select="'DBUG_PRINT( &quot;MAKE&quot;, (&quot;setting lineno to %d&quot;, global.linenum));'"/>
   <xsl:value-of select="'NODE_LINE( this) = global.linenum;'" />
+  <xsl:value-of select="'NODE_ERROR( this) = NULL;'" />
   <!-- set filename -->
   <xsl:value-of select="'DBUG_PRINT( &quot;MAKE&quot;, (&quot;setting filename to %s&quot;, global.filename));'"/>
   <xsl:value-of select="'NODE_FILE( this) = global.filename;'" />
