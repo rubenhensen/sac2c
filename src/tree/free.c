@@ -407,8 +407,8 @@ FreeZombie (node *fundef)
         fundef = FUNDEF_NEXT (fundef);
 
         /* free entire structure */
-        tmp->sons.N_fundef = ILIBfree (tmp->sons.N_fundef);
-        tmp->attribs.N_fundef = ILIBfree (tmp->attribs.N_fundef);
+        tmp->sons.N_fundef = NULL;
+        tmp->attribs.N_fundef = NULL;
         tmp = ILIBfree (tmp);
 
         zombies_exist -= 1;

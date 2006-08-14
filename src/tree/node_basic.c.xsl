@@ -35,39 +35,6 @@ version="1.0">
 #include "internal_lib.h"
 #include "dbug.h"
 #include "check_mem.h"
-
-#ifndef SHOW_MALLOC
-static node *MakeEmptyNode()
-{
-  node *result;
-
-  DBUG_ENTER("MakeEmptyNode");
-
-  result = (node *) ILIBmalloc( sizeof( node));
-
-  NODE_ERROR( result) = NULL;
-
-  DBUG_RETURN( result);
-}
-
-#else
-static node *MakeEmptyNodeAt( char *file, int line)
-{
-  node *result;
-
-  DBUG_ENTER("MakeEmptyNodeAt");
-
-  result = (node *) ILIBmallocAt( sizeof( node), file, line);
-
-  NODE_ERROR( result) = NULL;
-
-  DBUG_RETURN( result);
-}    
-
-#define MakeEmptyNode() MakeEmptyNodeAt( __FILE__, __LINE__)
-
-#endif /* SHOW_MALLOC */
-
   </xsl:text>
   <xsl:apply-templates select="//syntaxtree/node"/>
   <xsl:text>

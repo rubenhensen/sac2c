@@ -19,6 +19,7 @@ version="1.0">
   <xsl:value-of select="'{'"/>
   <!-- declarate variables -->
   <xsl:value-of select="'node *this;'" />
+  <xsl:value-of select="'int size;'" />
   <!-- counter for for-loops -->
   <xsl:if test="attributes/attribute/type[key( &quot;arraytypes&quot;, @name)]" >
     <xsl:value-of select="'int cnt;'" />
@@ -38,13 +39,22 @@ version="1.0">
   <xsl:value-of select="'&quot;);'"/>
   <!-- allocate new node this -->
   <xsl:value-of select="'DBUG_PRINT( &quot;MAKE&quot;, (&quot;allocating node structure&quot;));'"/>
-
-  <!-- Part for Memorycheck START -->
-
+  <xsl:value-of select="'size = sizeof(node) + sizeof( struct SONS_N_'" />
+  <xsl:call-template name="uppercase">
+    <xsl:with-param name="string" select="@name"/>
+  </xsl:call-template>
+  <xsl:value-of select="') + sizeof( struct ATTRIBS_N_'" />
+  <xsl:call-template name="uppercase">
+    <xsl:with-param name="string" select="@name"/>
+  </xsl:call-template>
+  <xsl:value-of select="');'" />
+  <!-- 
+      Part for Memorycheck START 
+   -->
   <xsl:value-of select="'#ifdef SHOW_MALLOC'"/>
   <xsl:text>
   </xsl:text>
-  <xsl:value-of select="'this = MakeEmptyNodeAt( file, line);'" />
+  <xsl:value-of select="'this = (node *) ILIBmallocAt( size, file, line);'" />
   <xsl:value-of select="'CHKMsetNodeType(this, N_'" />
   <xsl:call-template name="lowercase" >
     <xsl:with-param name="string" >
@@ -55,14 +65,37 @@ version="1.0">
   <xsl:text>
   </xsl:text>
   <xsl:value-of select="'#else '" />
-  <xsl:value-of select="$newline" />
-  <xsl:value-of select="'this = MakeEmptyNode();'" />
-  <xsl:value-of select="$newline" />
+  <xsl:call-template name="newline" />
+  <xsl:value-of select="'this = (node *) ILIBmalloc( size);'" />
+  <xsl:call-template name="newline" />
   <xsl:value-of select="'#endif /* SHOW_MALLOC */'" />
-  <xsl:value-of select="$newline" />
-
-  <!-- Part for Memorycheck END -->
-
+  <xsl:call-template name="newline" />
+  <!-- 
+      Part for Memorycheck END 
+   -->
+  <!-- set sons and attribs pointer -->
+  <xsl:value-of select="'this->sons.'"/>
+  <xsl:call-template name="name-to-nodeenum" >
+    <xsl:with-param name="name" select="@name"/>
+  </xsl:call-template>
+  <xsl:value-of select="' = (struct SONS_N_'" />
+  <xsl:call-template name="uppercase">
+    <xsl:with-param name="string" select="@name"/>
+  </xsl:call-template>
+  <xsl:value-of select="' *) ((char *) this + sizeof( node));'" />
+  <xsl:value-of select="'this->attribs.'"/>
+  <xsl:call-template name="name-to-nodeenum" >
+    <xsl:with-param name="name" select="@name"/>
+  </xsl:call-template>
+  <xsl:value-of select="' = (struct ATTRIBS_N_'" />
+  <xsl:call-template name="uppercase">
+    <xsl:with-param name="string" select="@name"/>
+  </xsl:call-template>
+  <xsl:value-of select="' *) ((char *) this + sizeof( node) + sizeof( struct SONS_N_'" />
+  <xsl:call-template name="uppercase">
+    <xsl:with-param name="string" select="@name"/>
+  </xsl:call-template>
+  <xsl:value-of select="'));'" />
   <xsl:value-of select="'NODE_TYPE( this) = N_'" />
   <xsl:call-template name="lowercase" >
     <xsl:with-param name="string" >
@@ -72,28 +105,6 @@ version="1.0">
   <xsl:value-of select="';'" />
 
   <xsl:value-of select="'DBUG_PRINT( &quot;MAKE&quot;, (&quot;address: &quot;F_PTR, this));'"/>
-  <!-- allocate the sons structure -->
-  <xsl:value-of select="'DBUG_PRINT( &quot;MAKE&quot;, (&quot;allocating sons structure&quot;));'"/>
-  <xsl:value-of select="'this->sons.'"/>
-  <xsl:call-template name="name-to-nodeenum">
-    <xsl:with-param name="name" select="@name" />
-  </xsl:call-template>
-  <xsl:value-of select="' = ILIBmalloc(sizeof(struct SONS_N_'"/>
-  <xsl:call-template name="uppercase">
-    <xsl:with-param name="string" select="@name"/>
-  </xsl:call-template>
-  <xsl:value-of select="'));'"/>
-  <!-- allocate the attrib structure -->
-  <xsl:value-of select="'DBUG_PRINT( &quot;MAKE&quot;, (&quot;allocating attrib structure&quot;));'"/>
-  <xsl:value-of select="'this->attribs.'"/>
-  <xsl:call-template name="name-to-nodeenum">
-    <xsl:with-param name="name" select="@name" />
-  </xsl:call-template>
-  <xsl:value-of select="' = ILIBmalloc(sizeof(struct ATTRIBS_N_'"/>
-  <xsl:call-template name="uppercase">
-    <xsl:with-param name="string" select="@name"/>
-  </xsl:call-template>
-  <xsl:value-of select="'));'"/>
   <!-- set node type -->
   <xsl:value-of select="'DBUG_PRINT( &quot;MAKE&quot;, (&quot;setting node type&quot;));'"/>
   <xsl:value-of select="'NODE_TYPE(this) = '" />

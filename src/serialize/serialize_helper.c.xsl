@@ -75,22 +75,9 @@ version="1.0">
 
 <xsl:template match="/" mode="gen-make-fun">
   <xsl:value-of select="'node *SHLPmakeNode( nodetype node_type, int lineno, char* sfile, ...) {'" />
-  <xsl:value-of select="'node *this = ILIBmalloc( sizeof( node));'" />
+  <xsl:value-of select="'node *this = NULL;'" />
   <xsl:value-of select="'va_list args;'" />
   <xsl:value-of select="'int cnt, max;'" />
-  <xsl:value-of select="'NODE_TYPE( this) = node_type;'" />
-  <xsl:value-of select="'NODE_LINE( this) = lineno;'" />
-  <xsl:value-of select="'NODE_FILE( this) = sfile;'" />
-  <xsl:value-of select="'NODE_ERROR( this) = NULL;'" />
-  <xsl:value-of select="'#ifdef SHOW_MALLOC'" />
-  <xsl:text>
-  </xsl:text>
-  <xsl:value-of select="'CHKMsetNodeType (this, node_type);'" />
-  <xsl:text>
-  </xsl:text>
-  <xsl:value-of select="'#endif /* SHOW_MALLOC */'" />
-  <xsl:text>
-  </xsl:text>
   <xsl:value-of select="'switch (node_type) {'" />
   <xsl:apply-templates select="//syntaxtree/node" mode="gen-case" />
   <xsl:value-of select="'default: /* error */ '" />
@@ -113,22 +100,55 @@ version="1.0">
 </xsl:template>
 
 <xsl:template match="node" mode="gen-alloc-fun">
-  <xsl:value-of select="'this->attribs.'" />
-  <xsl:call-template name="name-to-nodeenum" >
-    <xsl:with-param name="name" select="@name" />
+  <!-- allocate structure -->
+  <xsl:value-of select="'this = ILIBmalloc( sizeof( node) + sizeof( struct SONS_N_'" />
+  <xsl:call-template name="uppercase" >
+    <xsl:with-param name="string" >
+      <xsl:value-of select="@name" />
+    </xsl:with-param>
   </xsl:call-template>
-  <xsl:value-of select="' = ILIBmalloc(sizeof(struct ATTRIBS_N_'"/>
+  <xsl:value-of select="') + sizeof( struct ATTRIBS_N_'" />
   <xsl:call-template name="uppercase" >
     <xsl:with-param name="string" >
       <xsl:value-of select="@name" />
     </xsl:with-param>
   </xsl:call-template>
   <xsl:value-of select="'));'" />
+  <!-- set basic info -->
+  <xsl:value-of select="'NODE_TYPE( this) = node_type;'" />
+  <xsl:value-of select="'NODE_LINE( this) = lineno;'" />
+  <xsl:value-of select="'NODE_FILE( this) = sfile;'" />
+  <xsl:value-of select="'NODE_ERROR( this) = NULL;'" />
+  <xsl:call-template name="newline" />
+  <xsl:value-of select="'#ifdef SHOW_MALLOC'" />
+  <xsl:call-template name="newline" />
+  <xsl:value-of select="'CHKMsetNodeType (this, node_type);'" />
+  <xsl:call-template name="newline" />
+  <xsl:value-of select="'#endif /* SHOW_MALLOC */'" />
+  <xsl:call-template name="newline" />
+  <!-- set sons and attribs types -->
   <xsl:value-of select="'this->sons.'" />
   <xsl:call-template name="name-to-nodeenum" >
     <xsl:with-param name="name" select="@name" />
   </xsl:call-template>
-  <xsl:value-of select="' = ILIBmalloc(sizeof(struct SONS_N_'"/>
+  <xsl:value-of select="' = (struct SONS_N_'" />
+  <xsl:call-template name="uppercase" >
+    <xsl:with-param name="string" >
+      <xsl:value-of select="@name" />
+    </xsl:with-param>
+  </xsl:call-template>
+  <xsl:value-of select="' *) ((char*) this + sizeof( node));'" />
+  <xsl:value-of select="'this->attribs.'" />
+  <xsl:call-template name="name-to-nodeenum" >
+    <xsl:with-param name="name" select="@name" />
+  </xsl:call-template>
+  <xsl:value-of select="' = (struct ATTRIBS_N_'" />
+  <xsl:call-template name="uppercase" >
+    <xsl:with-param name="string" >
+      <xsl:value-of select="@name" />
+    </xsl:with-param>
+  </xsl:call-template>
+  <xsl:value-of select="' *) ((char*) this + sizeof( node) + sizeof( struct SONS_N_'" />
   <xsl:call-template name="uppercase" >
     <xsl:with-param name="string" >
       <xsl:value-of select="@name" />
