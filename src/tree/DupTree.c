@@ -1962,15 +1962,15 @@ DUPbreak (node *arg_node, info *arg_info)
 
 /******************************************************************************/
 node *
-DUPextract (node *arg_node, info *arg_info)
+DUPpropagate (node *arg_node, info *arg_info)
 {
     node *new_node;
 
-    DBUG_ENTER ("DUPextract");
+    DBUG_ENTER ("DUPpropagate");
 
-    new_node = TBmakeExtract (DUPTRAV (EXTRACT_DEFAULT (arg_node)));
+    new_node = TBmakePropagate (DUPTRAV (PROPAGATE_DEFAULT (arg_node)));
 
-    EXTRACT_NEXT (new_node) = DUPCONT (EXTRACT_NEXT (arg_node));
+    PROPAGATE_NEXT (new_node) = DUPCONT (PROPAGATE_NEXT (arg_node));
 
     CopyCommonNodeData (new_node, arg_node);
 

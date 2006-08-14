@@ -105,7 +105,7 @@ extern node *PRTmodarray (node *arg_node, info *arg_info);
 extern node *PRTfold (node *arg_node, info *arg_info);
 extern node *PRTspfold (node *arg_node, info *arg_info);
 extern node *PRTbreak (node *arg_node, info *arg_info);
-extern node *PRTextract (node *arg_node, info *arg_info);
+extern node *PRTpropagate (node *arg_node, info *arg_info);
 
 /* with-loop (backend) */
 extern node *PRTwith2 (node *arg_node, info *arg_info);

@@ -10,7 +10,7 @@
  *     tree is in SSA form and has been mangled beyond recognition.
  *     Also, objects are seldomly used explicitly in user code, making
  *     an error message even more cryptic.
- *   - We intentionally skip the default expression of N_extract nodes,
+ *   - We intentionally skip the default expression of N_propagate nodes,
  *     to work around the fact that it is also used in the N_part of the
  *     with-loop. In actuality it will never be used at the same time,
  *     just like if-then-else, and so we should treat different with-ops
@@ -242,15 +242,15 @@ CUfundef (node *arg_node, info *arg_info)
 }
 
 node *
-CUextract (node *arg_node, info *arg_info)
+CUpropagate (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CUextract");
+    DBUG_ENTER ("CUpropagate");
 
     /* Skip the 'default element' son, see PROBLEMS at the top of this
      * file.  */
 
-    if (EXTRACT_NEXT (arg_node) != NULL) {
-        EXTRACT_NEXT (arg_node) = TRAVdo (EXTRACT_NEXT (arg_node), arg_info);
+    if (PROPAGATE_NEXT (arg_node) != NULL) {
+        PROPAGATE_NEXT (arg_node) = TRAVdo (PROPAGATE_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);

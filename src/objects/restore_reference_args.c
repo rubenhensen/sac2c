@@ -126,9 +126,9 @@ RemoveArtificialWithloopReturns (node *withops, node *withexprs, node *letlhs)
     DBUG_ENTER ("RemoveArtificialWithloopReturn");
 
     while (withops != NULL) {
-        /* If the withop is of type N_extract, then the LHS is artificial
+        /* If the withop is of type N_propagate, then the LHS is artificial
          * and we should replace the LHS N_id by the with N_expr. */
-        if (NODE_TYPE (withops) == N_extract) {
+        if (NODE_TYPE (withops) == N_propagate) {
             AVIS_SUBST (IDS_AVIS (letlhs)) = ID_AVIS (EXPRS_EXPR (withexprs));
         }
 

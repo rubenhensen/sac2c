@@ -2085,7 +2085,7 @@ NTCbreak (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *NTCextract( node *arg_node, info *arg_info)
+ * @fn node *NTCpropagate( node *arg_node, info *arg_info)
  *
  *   @brief
  *   @param
@@ -2094,18 +2094,19 @@ NTCbreak (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 node *
-NTCextract (node *arg_node, info *arg_info)
+NTCpropagate (node *arg_node, info *arg_info)
 {
     ntype *body;
 
-    DBUG_ENTER ("NTCextract");
+    DBUG_ENTER ("NTCpropagate");
     DBUG_ASSERT (TYgetProductSize (INFO_BODIES_TYPE (arg_info))
                    > INFO_NUM_EXPRS_SOFAR (arg_info),
                  "more withops than code returns");
     body
       = TYgetProductMember (INFO_BODIES_TYPE (arg_info), INFO_NUM_EXPRS_SOFAR (arg_info));
 
-    EXTRACT_NEXT (arg_node) = HandleMultiOperators (EXTRACT_NEXT (arg_node), arg_info);
+    PROPAGATE_NEXT (arg_node)
+      = HandleMultiOperators (PROPAGATE_NEXT (arg_node), arg_info);
 
     TYsetProductMember (INFO_TYPE (arg_info), INFO_NUM_EXPRS_SOFAR (arg_info),
                         TYcopyType (body));

@@ -203,7 +203,7 @@ ApplyFold (node *bodycode, node *index, node *partn, node *cexpr, node *acc)
 /******************************************************************************
  *
  * function:
- *   node *ApplyExtract( node *assignn, node *index)
+ *   node *ApplyPropagate( node *assignn, node *index)
  *
  * description:
  *   Modify unrolled body code for one index element to apply the extract op.
@@ -211,16 +211,16 @@ ApplyFold (node *bodycode, node *index, node *partn, node *cexpr, node *acc)
  ******************************************************************************/
 
 static node *
-ApplyExtract (node *bodycode, node *index, node *partn, node *withop, node *cexpr)
+ApplyPropagate (node *bodycode, node *index, node *partn, node *withop, node *cexpr)
 {
     node *letn;
     node *assignn;
 
-    DBUG_ENTER ("ApplyExtract");
+    DBUG_ENTER ("ApplyPropagate");
 
     /* Assign the resulting object of the body to the ingoing object
      * (which incidentally is the default element so use that). */
-    letn = TBmakeLet (TBmakeIds (ID_AVIS (EXTRACT_DEFAULT (withop)), NULL),
+    letn = TBmakeLet (TBmakeIds (ID_AVIS (PROPAGATE_DEFAULT (withop)), NULL),
                       DUPdoDupTree (EXPRS_EXPR (cexpr)));
     assignn = TBmakeAssign (letn, NULL);
     bodycode = TCappendAssign (bodycode, assignn);
@@ -269,8 +269,8 @@ ForEachElementWithop (node *bodycode, node *wln, node *partn, node *index, info 
         case N_break:
             /* no-op */
             break;
-        case N_extract:
-            bodycode = ApplyExtract (bodycode, index, partn, withop, cexpr);
+        case N_propagate:
+            bodycode = ApplyPropagate (bodycode, index, partn, withop, cexpr);
             break;
         default:
             DBUG_ASSERT (0, "unhandled withop");
@@ -773,7 +773,7 @@ FinalizeFold (node *bodycode, node *withop, node *lhs, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *FinalizeExtract( node *bodycode, node *withop, node *lhs
+ *   node *FinalizePropagate( node *bodycode, node *withop, node *lhs
  *                                    info *arg_info)
  *
  * description:
@@ -782,15 +782,15 @@ FinalizeFold (node *bodycode, node *withop, node *lhs, info *arg_info)
  ******************************************************************************/
 
 static node *
-FinalizeExtract (node *bodycode, node *withop, node *lhs, info *arg_info)
+FinalizePropagate (node *bodycode, node *withop, node *lhs, info *arg_info)
 {
     node *letn;
     node *assignn;
 
-    DBUG_ENTER ("FinalizeExtract");
+    DBUG_ENTER ("FinalizePropagate");
 
     /* Append final assign of the last resulting object to the loop's lhs. */
-    letn = TBmakeLet (DUPdoDupNode (lhs), DUPdoDupTree (EXTRACT_DEFAULT (withop)));
+    letn = TBmakeLet (DUPdoDupNode (lhs), DUPdoDupTree (PROPAGATE_DEFAULT (withop)));
     assignn = TBmakeAssign (letn, NULL);
     bodycode = TCappendAssign (bodycode, assignn);
 
@@ -851,8 +851,8 @@ DoUnrollWithloop (node *wln, info *arg_info)
         case N_break:
             /* no-op */
             break;
-        case N_extract:
-            res = FinalizeExtract (res, withop, lhs, arg_info);
+        case N_propagate:
+            res = FinalizePropagate (res, withop, lhs, arg_info);
             break;
         default:
             DBUG_ASSERT (0, "unhandled with-op");
@@ -918,7 +918,7 @@ CheckUnrollWithloop (node *wln, info *arg_info)
         case N_break:
             /* no-op */
             break;
-        case N_extract:
+        case N_propagate:
             /* no-op */
             break;
         default:

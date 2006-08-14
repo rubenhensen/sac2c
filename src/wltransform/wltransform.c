@@ -2349,7 +2349,7 @@ GetWlIterShape (node *wl, node *res_ids)
         case N_break:
             break;
 
-        case N_extract:
+        case N_propagate:
             break;
 
         default:
@@ -7069,7 +7069,7 @@ CheckWith (node *arg_node, node *res_ids)
         case N_break:
             break;
 
-        case N_extract:
+        case N_propagate:
             break;
 
         default:

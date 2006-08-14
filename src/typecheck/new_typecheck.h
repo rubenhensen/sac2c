@@ -44,7 +44,7 @@ extern node *NTCgenarray (node *arg_node, info *arg_info);
 extern node *NTCmodarray (node *arg_node, info *arg_info);
 extern node *NTCfold (node *arg_node, info *arg_info);
 extern node *NTCbreak (node *arg_node, info *arg_info);
-extern node *NTCextract (node *arg_node, info *arg_info);
+extern node *NTCpropagate (node *arg_node, info *arg_info);
 
 extern node *NTCtriggerTypeCheck (node *fundef);
 

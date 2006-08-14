@@ -89,7 +89,7 @@ RemoveExtractedObjects (node *withops, node *withexprs, node *let_lhs, info *arg
 
     iter = withops;
     while (iter != NULL) {
-        if (iter->nodetype == N_extract) {
+        if (iter->nodetype == N_propagate) {
 
             /*
              * Remove the extract() withop, and the associated LHS expr and

@@ -3850,7 +3850,7 @@ PRTbreak (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *PRTextract( node *arg_node, info *arg_info)
+ * @fn node *PRTpropagate( node *arg_node, info *arg_info)
  *
  *   @brief
  *   @param
@@ -3859,9 +3859,9 @@ PRTbreak (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 node *
-PRTextract (node *arg_node, info *arg_info)
+PRTpropagate (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("PRTextract");
+    DBUG_ENTER ("PRTpropagate");
 
     if (NODE_ERROR (arg_node) != NULL) {
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
@@ -3869,20 +3869,20 @@ PRTextract (node *arg_node, info *arg_info)
 
     INDENT;
 
-    fprintf (global.outfile, "extract( ");
+    fprintf (global.outfile, "propagate( ");
 
-    if (EXTRACT_DEFAULT (arg_node) != NULL) {
-        TRAVdo (EXTRACT_DEFAULT (arg_node), arg_info);
+    if (PROPAGATE_DEFAULT (arg_node) != NULL) {
+        TRAVdo (PROPAGATE_DEFAULT (arg_node), arg_info);
     }
 
     fprintf (global.outfile, ")");
 
-    if (EXTRACT_NEXT (arg_node) != NULL) {
+    if (PROPAGATE_NEXT (arg_node) != NULL) {
         fprintf (global.outfile, ",\n");
         /*
          * continue with other withops
          */
-        PRINT_CONT (TRAVdo (EXTRACT_NEXT (arg_node), arg_info), ;);
+        PRINT_CONT (TRAVdo (PROPAGATE_NEXT (arg_node), arg_info), ;);
     }
 
     DBUG_RETURN (arg_node);

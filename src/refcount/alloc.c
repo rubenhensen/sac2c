@@ -1850,7 +1850,7 @@ EMALbreak (node *arg_node, info *arg_info)
 
 /** <!--******************************************************************-->
  *
- * @fn node *EMALextract( node *arg_node, info *arg_info)
+ * @fn node *EMALpropagate( node *arg_node, info *arg_info)
  *
  *  @brief
  *
@@ -1861,11 +1861,11 @@ EMALbreak (node *arg_node, info *arg_info)
  *
  ***************************************************************************/
 node *
-EMALextract (node *arg_node, info *arg_info)
+EMALpropagate (node *arg_node, info *arg_info)
 {
     alloclist_struct *als;
 
-    DBUG_ENTER ("EMALextract");
+    DBUG_ENTER ("EMALpropagate");
 
     DBUG_ASSERT (INFO_ALLOCLIST (arg_info) != NULL,
                  "ALLOCLIST must contain an entry for each WITHOP!");
@@ -1877,8 +1877,8 @@ EMALextract (node *arg_node, info *arg_info)
     INFO_ALLOCLIST (arg_info) = als->next;
     als->next = NULL;
 
-    if (EXTRACT_NEXT (arg_node) != NULL) {
-        EXTRACT_NEXT (arg_node) = TRAVdo (EXTRACT_NEXT (arg_node), arg_info);
+    if (PROPAGATE_NEXT (arg_node) != NULL) {
+        PROPAGATE_NEXT (arg_node) = TRAVdo (PROPAGATE_NEXT (arg_node), arg_info);
     }
 
     if (INFO_WITHOPMODE (arg_info) == EA_memname) {
@@ -1892,7 +1892,7 @@ EMALextract (node *arg_node, info *arg_info)
         DBUG_ASSERT (INFO_WITHOPMODE (arg_info) == EA_shape,
                      "Unknown Withop traversal mode");
         /*
-         * extract-withop:
+         * propagate-withop:
          * dim = 0, shape = [] (object)
          * wrong! should not alloc at all!
          */
@@ -1900,7 +1900,7 @@ EMALextract (node *arg_node, info *arg_info)
         als->shape = TCmakeIntVector (NULL);
 
         /*
-         * extract:
+         * propagate:
          * Allocation is removed from ALLOCLIST, we don't want it alloc'ed
          */
     }

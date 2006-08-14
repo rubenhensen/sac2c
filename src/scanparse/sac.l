@@ -169,6 +169,7 @@ int charpos = 0;
 "modarray"                 { FILTER( MODARRAY); }
 "foldfix"                  { FILTER( FOLDFIX); }
 "fold"                     { FILTER( FOLD); }
+"propagate"                { FILTER( PROPAGATE); }
 "inline"                   { FILTER( INLINE); }
 
 "module"                   { FILTER( MODULE); }

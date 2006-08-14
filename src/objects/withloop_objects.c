@@ -134,7 +134,7 @@ AddObjectsToWithOps (node *withops, node *objects)
     object = objects;
     while (object != NULL) {
         /* Use the original object as default element */
-        L_WITHOP_NEXT (withop, TBmakeExtract (DUPdoDupTree (EXPRS_EXPR (object))));
+        L_WITHOP_NEXT (withop, TBmakePropagate (DUPdoDupTree (EXPRS_EXPR (object))));
         withop = WITHOP_NEXT (withop);
         object = EXPRS_NEXT (object);
     }

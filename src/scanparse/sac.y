@@ -103,7 +103,7 @@ SC  TRUETOKEN  FALSETOKEN  EXTERN  C_KEYWORD
 HASH  PRAGMA  LINKNAME  LINKSIGN  EFFECT  REFCOUNTING 
 COPYFUN  FREEFUN  INITFUN  LINKWITH LINKOBJ
 WLCOMP  CACHESIM  SPECIALIZE 
-TARGET  STEP  WIDTH  GENARRAY  MODARRAY 
+TARGET  STEP  WIDTH  GENARRAY  MODARRAY  PROPAGATE
 LE  LT  GT LAZYAND LAZYOR
 STAR  PLUS  MINUS  TILDE  EXCL 
 
@@ -145,7 +145,7 @@ PRF_CAT_VxV  PRF_TAKE_SxV  PRF_DROP_SxV
      let cond optelse  doloop whileloop forloop  assignblock
      lets qual_ext_id qual_ext_ids ids
 %type <node> exprs  expr  expr_ap  opt_arguments  expr_ar  expr_sel  with 
-     generator  steps  width  nwithop  withop  wlassignblock  genidx 
+     generator  steps  width  nwithop  propagate withop  wlassignblock  genidx 
      part  parts nums returntypes returndectypes ntypes varntypes
 %type <prf> genop prf
 
@@ -1280,8 +1280,11 @@ with: BRACKET_L generator BRACKET_R wlassignblock withop
          */
         PART_CODE( WITH_PART( $$)) = code;
       }
-    | BRACKET_L ID BRACKET_R parts nwithop
+    | BRACKET_L ID BRACKET_R parts nwithop propagate
       { $$ = $4;
+        if ($6 != NULL) {
+          L_WITHOP_NEXT( $5, $6);
+        }
         WITH_WITHOP( $$) = $5;
         /*
          * At the time being we ignore $2. However, it SHOULD be checked
@@ -1374,8 +1377,8 @@ parts: part
        }
      ;
 
-part: BRACKET_L generator BRACKET_R wlassignblock COLON expr SEMIC
-      { $$ = TBmakeWith( $2, TBmakeCode( $4, TBmakeExprs( $6, NULL)), NULL);
+part: BRACKET_L generator BRACKET_R wlassignblock COLON exprs SEMIC
+      { $$ = TBmakeWith( $2, TBmakeCode( $4, $6), NULL);
         CODE_USED( WITH_CODE( $$))++;
         PART_CODE( $2) = WITH_CODE( $$);
       }
@@ -1467,6 +1470,16 @@ nwithop: GENARRAY BRACKET_L expr COMMA expr BRACKET_R
            $3 = FREEdoFreeTree( $3);
          }
        ;
+
+propagate: PROPAGATE BRACKET_L expr BRACKET_R propagate
+           { $$ = TBmakePropagate( $3);
+             if ($5 != NULL) {
+               PROPAGATE_NEXT( $$) = $5;
+             }
+           }
+         | /* empty */
+           { $$ = NULL; }
+         ;
 
 withop: GENARRAY BRACKET_L expr COMMA expr BRACKET_R
         { $$ = TBmakeGenarray( $3, NULL);

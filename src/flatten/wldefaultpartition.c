@@ -507,26 +507,26 @@ WLDPmodarray (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *WLDPextract( node *arg_node, info *arg_info)
+ * @fn node *WLDPpropagate( node *arg_node, info *arg_info)
  *
  *   @brief  generates default expression.
  *
- *   @param  node *arg_node:  N_extract
+ *   @param  node *arg_node:  N_propagate
  *           info *arg_info:  N_info
- *   @return node *        :  N_extract
+ *   @return node *        :  N_propagate
  ******************************************************************************/
 
 node *
-WLDPextract (node *arg_node, info *arg_info)
+WLDPpropagate (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLDPextract");
+    DBUG_ENTER ("WLDPpropagate");
 
-    if (EXTRACT_NEXT (arg_node) != NULL) {
-        EXTRACT_NEXT (arg_node) = TRAVdo (EXTRACT_NEXT (arg_node), arg_info);
+    if (PROPAGATE_NEXT (arg_node) != NULL) {
+        PROPAGATE_NEXT (arg_node) = TRAVdo (PROPAGATE_NEXT (arg_node), arg_info);
     }
 
-    INFO_DEFEXPR (arg_info)
-      = TBmakeExprs (DUPdoDupTree (EXTRACT_DEFAULT (arg_node)), INFO_DEFEXPR (arg_info));
+    INFO_DEFEXPR (arg_info) = TBmakeExprs (DUPdoDupTree (PROPAGATE_DEFAULT (arg_node)),
+                                           INFO_DEFEXPR (arg_info));
 
     DBUG_RETURN (arg_node);
 }

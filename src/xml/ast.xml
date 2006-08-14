@@ -589,7 +589,7 @@
           <node name="Modarray" />
           <node name="Fold" />
           <node name="Break" />
-          <node name="Extract" />
+          <node name="Propagate" />
         </travuser>
       </traversal>
       <traversal id="SWR" name="Split Wrappers" default="sons" include="split_wrappers.h" >
@@ -702,7 +702,7 @@
           <node name="Part" />
           <node name="Genarray" />
           <node name="Modarray" />
-          <node name="Extract" />
+          <node name="Propagate" />
          </travuser>
       </traversal>
       <traversal id="WLPG" name="With-Loop Partition Generation" default="sons" include="WLPartitionGeneration.h" >
@@ -740,10 +740,10 @@
 	  <node name="Avis" />
 	  <node name="Block" />
 	  <node name="Cond" />
-    <node name="Extract" />
 	  <node name="Funcond" />
 	  <node name="Fundef" />
 	  <node name="Id" />
+    <node name="Propagate" />
 	</travuser>
       </traversal>
      </phase>
@@ -1458,7 +1458,6 @@
           <node name="Assign" />
           <node name="Break" />
           <node name="Code" />
-          <node name="Extract" />
           <node name="Fold" />
           <node name="Funcond" />
           <node name="Fundef" />
@@ -1467,6 +1466,7 @@
           <node name="Let" />
           <node name="Modarray" />
           <node name="Prf" />
+          <node name="Propagate" />
           <node name="With" />
           <node name="With2" />
           <node name="Withid" />
@@ -2250,7 +2250,7 @@
 	<node name="SPFold" />
 	<node name="Fold" />
         <node name="Break" />
-        <node name="Extract" />
+        <node name="Propagate" />
       </target>
     </nodeset>
   </nodesets>
@@ -6224,11 +6224,11 @@
     </node>
 <!--
 
-  N_extract:
+  N_propagate:
 
 -->
-    <node name="Extract">
-      <description>Withloop operation for returning objects</description>
+    <node name="Propagate">
+      <description>Withloop operation for propagating objects between iterations</description>
       <sons>
         <son name="Default">
           <targets>
