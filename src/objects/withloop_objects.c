@@ -112,10 +112,11 @@ AddAccu (node *assign, node *prop, info *arg_info)
       = TBmakeVardec (avis, BLOCK_VARDEC (FUNDEF_BODY (INFO_FUNDEF (arg_info))));
 
     /* create <avis> = F_accu( <idx-varname>) */
-    assign = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL),
-                                      TCmakePrf1 (F_accu, DUPdupIdsId (WITH_VEC (
-                                                            INFO_WL (arg_info))))),
-                           assign);
+    assign
+      = TBmakeAssign (TBmakeLet (TBmakeIds (ID_AVIS (PROPAGATE_DEFAULT (prop)), NULL),
+                                 TCmakePrf1 (F_accu, DUPdupIdsId (
+                                                       WITH_VEC (INFO_WL (arg_info))))),
+                      assign);
 
     /* set correct backref to defining assignment */
     AVIS_SSAASSIGN (avis) = assign;
