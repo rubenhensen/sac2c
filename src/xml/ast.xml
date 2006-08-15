@@ -532,8 +532,10 @@
       </traversal>
       <traversal id="WOA" name="Resolving objects in with-loops" default="sons" include="withloop_objects.h" >
         <travuser>
+          <node name="Fundef" />
 	  <node name="Id" />
           <node name="Let" />
+          <node name="Propagate" />
 	  <node name="With" />
 	</travuser>
       </traversal>

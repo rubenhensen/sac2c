@@ -47,7 +47,9 @@
 
 struct INFO {
     bool inwithloop;
+    node *fundef;
     node *objects;
+    node *wl;
 };
 
 /*
@@ -55,7 +57,9 @@ struct INFO {
  */
 
 #define INFO_INWITHLOOP(n) ((n)->inwithloop)
+#define INFO_FUNDEF(n) ((n)->fundef)
 #define INFO_OBJECTS(n) ((n)->objects)
+#define INFO_WL(n) ((n)->wl)
 
 /*
  * INFO functions
@@ -72,6 +76,8 @@ MakeInfo ()
 
     INFO_INWITHLOOP (result) = FALSE;
     INFO_OBJECTS (result) = NULL;
+    INFO_WL (result) = NULL;
+    INFO_FUNDEF (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -89,6 +95,33 @@ FreeInfo (info *info)
 /*
  * Local helper functions
  */
+
+static node *
+AddAccu (node *assign, node *prop, info *arg_info)
+{
+    node *avis;
+
+    DBUG_ENTER ("MakeAccu");
+
+    /* create avis */
+    avis = TBmakeAvis (ILIBtmpVarName (ID_NAME (PROPAGATE_DEFAULT (prop))),
+                       TYeliminateAKV (AVIS_TYPE (ID_AVIS (PROPAGATE_DEFAULT (prop)))));
+
+    /* insert vardec */
+    BLOCK_VARDEC (FUNDEF_BODY (INFO_FUNDEF (arg_info)))
+      = TBmakeVardec (avis, BLOCK_VARDEC (FUNDEF_BODY (INFO_FUNDEF (arg_info))));
+
+    /* create <avis> = F_accu( <idx-varname>) */
+    assign = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL),
+                                      TCmakePrf1 (F_accu, DUPdupIdsId (WITH_VEC (
+                                                            INFO_WL (arg_info))))),
+                           assign);
+
+    /* set correct backref to defining assignment */
+    AVIS_SSAASSIGN (avis) = assign;
+
+    DBUG_RETURN (assign);
+}
 
 static node *
 AddObjectsToWithExprs (node *withexprs, node *objects)
@@ -130,7 +163,7 @@ AddObjectsToWithOps (node *withops, node *objects)
         withop = WITHOP_NEXT (withop);
     }
 
-    /* Append an extract() withop for every object */
+    /* Append a propagate() withop for every object */
     object = objects;
     while (object != NULL) {
         /* Use the original object as default element */
@@ -190,6 +223,24 @@ AddObjectsToLHS (node *lhs_ids, node *objects)
  */
 
 node *
+WOAfundef (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER (WOAfundef);
+
+    INFO_FUNDEF (arg_info) = arg_node;
+    if (FUNDEF_BODY (arg_node) != NULL) {
+        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+    }
+    INFO_FUNDEF (arg_info) = NULL;
+
+    if (FUNDEF_NEXT (arg_node) != NULL) {
+        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
 WOAid (node *arg_node, info *arg_info)
 {
     node *avis;
@@ -243,6 +294,23 @@ WOAlet (node *arg_node, info *arg_info)
 }
 
 node *
+WOApropagate (node *arg_node, info *arg_info)
+{
+    node *block;
+
+    DBUG_ENTER ("WOApropagate");
+
+    block = CODE_CBLOCK (WITH_CODE (INFO_WL (arg_info)));
+    BLOCK_INSTR (block) = AddAccu (BLOCK_INSTR (block), arg_node, arg_info);
+
+    if (PROPAGATE_NEXT (arg_node) != NULL) {
+        PROPAGATE_NEXT (arg_node) = TRAVdo (PROPAGATE_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
 WOAwith (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WOAwith");
@@ -261,9 +329,12 @@ WOAwith (node *arg_node, info *arg_info)
         arg_node = AddObjectsToWithLoop (arg_node, INFO_OBJECTS (arg_info));
     }
 
+    /* Traverse the withops, which will add F_accu's for each propagate */
+    INFO_WL (arg_info) = arg_node;
     if (WITH_WITHOP (arg_node) != NULL) {
         WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
     }
+    INFO_WL (arg_info) = NULL;
 
     DBUG_RETURN (arg_node);
 }
