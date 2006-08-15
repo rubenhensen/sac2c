@@ -6,6 +6,7 @@
 
 #include "modulemanager.h"
 #include "libmanager.h"
+#include "serialize.h"
 #include "filemgr.h"
 #include "ctinfo.h"
 #include "dbug.h"
@@ -30,29 +31,44 @@ static module_t *modulepool = NULL;
 
 typedef sttable_t *(*symtabfun_p) ();
 typedef stringset_t *(*deptabfun_p) ();
-typedef const char *(*modversionfun_p) ();
+typedef const char *(*astversionfun_p) ();
+typedef int (*serversionfun_p) ();
 typedef void (*nsmapfun_p) ();
 
 static bool
 hasSameASTVersion (module_t *module)
 {
-    modversionfun_p verfun;
+    astversionfun_p astverfun;
+    serversionfun_p serverfun;
     char *name;
 
     DBUG_ENTER ("hasSameASTVersion");
 
-    name = ILIBmalloc (sizeof (char) * (strlen (module->name) + 12));
-    sprintf (name, "__%s_VERSION", module->name);
+    name = ILIBmalloc (sizeof (char) * (strlen (module->name) + 14));
+    sprintf (name, "__%s_ASTVERSION", module->name);
 
-    verfun = (modversionfun_p)LIBMgetLibraryFunction (name, module->lib);
+    astverfun = (astversionfun_p)LIBMgetLibraryFunction (name, module->lib);
 
-    if (verfun == NULL) {
-        CTIabort ("Error loading module version information: %s", LIBMgetError ());
+    if (astverfun == NULL) {
+        CTIabort ("The module '%s' is either corrupted or uses an outdated "
+                  "file format.",
+                  module->name);
+    }
+
+    sprintf (name, "__%s_SERIALIZER", module->name);
+
+    serverfun = (serversionfun_p)LIBMgetLibraryFunction (name, module->lib);
+
+    if (astverfun == NULL) {
+        CTIabort ("The module '%s' is either corrupted or uses an outdated "
+                  "file format.",
+                  module->name);
     }
 
     name = ILIBfree (name);
 
-    DBUG_RETURN (ILIBstringCompare (verfun (), build_ast));
+    DBUG_RETURN ((serverfun () == SAC_SERIALIZE_VERSION)
+                 && ILIBstringCompare (astverfun (), build_ast));
 }
 
 static void

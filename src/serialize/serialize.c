@@ -136,9 +136,14 @@ GenerateSerFileVersionInfo (node *module, FILE *file)
     DBUG_ENTER ("GenerateSerFileVersionInfo");
 
     fprintf (file,
-             "const char *__%s_VERSION() {\n"
+             "const char *__%s_ASTVERSION() {\n"
              "  return( \"%s\"); \n}\n\n",
              NSgetName (MODULE_NAMESPACE (module)), build_ast);
+
+    fprintf (file,
+             "int __%s_SERIALIZER() {\n"
+             "  return( %d); \n}\n\n",
+             NSgetName (MODULE_NAMESPACE (module)), SAC_SERIALIZE_VERSION);
 
     DBUG_VOID_RETURN;
 }

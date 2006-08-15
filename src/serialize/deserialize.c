@@ -1046,7 +1046,7 @@ DSdispatchFunCall (const namespace_t *ns, const char *name, node *args)
  */
 
 ntype *
-DSloadUserType (const char *name, const namespace_t *ns)
+DSloadUserType (const char *symbid, const namespace_t *ns)
 {
     ntype *result;
     node *tdef;
@@ -1054,11 +1054,15 @@ DSloadUserType (const char *name, const namespace_t *ns)
 
     DBUG_ENTER ("DSloadUserType");
 
-    tdef = DSaddSymbolByName (name, SET_typedef, NSgetModule (ns));
+    tdef = FindSymbolInAst (symbid);
+
+    if (tdef == NULL) {
+        tdef = DSaddSymbolById (symbid, NSgetModule (ns));
+    }
 
     DBUG_ASSERT ((tdef != NULL), "deserialisation of typedef failed!");
 
-    udt = UTfindUserType (name, ns);
+    udt = UTfindUserType (TYPEDEF_NAME (tdef), ns);
 
     DBUG_ASSERT ((udt != UT_NOT_DEFINED), "typedef not in udt repository");
 

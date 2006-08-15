@@ -6705,10 +6705,20 @@ SerializeSymbolType (FILE *file, ntype *type)
 static void
 SerializeUserType (FILE *file, ntype *type)
 {
+    node *tdef;
+
     DBUG_ENTER ("SerializeUserType");
 
+    /*
+     * we have to get the symbolname here. One could move
+     * this functionality to serialize, but on the other
+     * hand I think it is better to have it all in once
+     * place for all the ntypes.
+     */
+    tdef = UTgetTdef (USER_TYPE (type));
+
     fprintf (file, "TYdeserializeType( %d, \"%s\", ", NTYPE_CON (type),
-             UTgetName (USER_TYPE (type)));
+             SERgenerateSerFunName (SET_typedef, tdef));
 
     NSserializeNamespace (file, UTgetNamespace (USER_TYPE (type)));
 
@@ -7146,22 +7156,15 @@ TYdeserializeType (typeconstr con, ...)
         va_end (args);
     } break;
     case TC_user: {
-        char *name;
+        char *symid;
         namespace_t *ns;
-        usertype type;
 
         va_start (args, con);
 
-        name = va_arg (args, char *);
+        symid = va_arg (args, char *);
         ns = va_arg (args, namespace_t *);
 
-        type = UTfindUserType (name, ns);
-
-        if (type != UT_NOT_DEFINED) {
-            result = TYmakeUserType (type);
-        } else {
-            result = DSloadUserType (name, ns);
-        }
+        result = DSloadUserType (symid, ns);
 
         va_end (args);
     } break;
