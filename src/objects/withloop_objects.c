@@ -114,8 +114,10 @@ AddAccu (node *assign, node *prop, info *arg_info)
     /* create <avis> = F_accu( <idx-varname>) */
     assign
       = TBmakeAssign (TBmakeLet (TBmakeIds (ID_AVIS (PROPAGATE_DEFAULT (prop)), NULL),
-                                 TCmakePrf1 (F_accu, DUPdupIdsId (
-                                                       WITH_VEC (INFO_WL (arg_info))))),
+                                 TCmakePrf2 (F_prop_obj,
+                                             DUPdupIdsId (WITH_VEC (INFO_WL (arg_info))),
+                                             TBmakeId (
+                                               ID_AVIS (PROPAGATE_DEFAULT (prop))))),
                       assign);
 
     /* set correct backref to defining assignment */
