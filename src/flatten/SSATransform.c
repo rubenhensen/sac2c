@@ -1094,7 +1094,10 @@ SSATpart (node *arg_node, info *arg_info)
 
     /* traverse withid on our way back up: */
     DBUG_ASSERT ((PART_WITHID (arg_node) != NULL), "Npart without Nwithid node!");
+
+    INFO_NESTLEVEL (arg_info) += 1;
     PART_WITHID (arg_node) = TRAVdo (PART_WITHID (arg_node), arg_info);
+    INFO_NESTLEVEL (arg_info) -= 1;
 
     DBUG_RETURN (arg_node);
 }
