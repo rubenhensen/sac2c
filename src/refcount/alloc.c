@@ -1319,9 +1319,10 @@ EMALprf (node *arg_node, info *arg_info)
         }
         break;
 
+    case F_prop_obj:
     case F_accu:
         /*
-         * a,... = accu( iv, n, ...)
+         * a,... = accu( iv, n, ...) (and prop_obj)
          * accu requires a special treatment as
          * none of its return values must be allocated
          */

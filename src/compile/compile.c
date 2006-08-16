@@ -4518,6 +4518,7 @@ COMPprf (node *arg_node, info *arg_info)
         ret_node = COMPPrfIncRC (arg_node, arg_info);
         break;
 
+    case F_prop_obj:
     case F_accu:
         ret_node = TCmakeAssignIcm0 ("NOOP", NULL);
         break;
