@@ -93,7 +93,7 @@ CheckExport (bool all, node *symbol, info *arg_info)
     }
 
     if (all) {
-        /* in case of a all flag, the symbollist was
+        /* in case of an all flag, the symbollist was
          * an except, thus the result has to be inversed
          */
         INFO_EXP_RESULT (arg_info) = !INFO_EXP_RESULT (arg_info);
@@ -224,9 +224,10 @@ EXPfundef (node *arg_node, info *arg_info)
              * contain compiler generated functions of
              * another namespace
              */
+
             FUNDEF_ISEXPORTED (arg_node) = FALSE;
             FUNDEF_ISPROVIDED (arg_node) = FALSE;
-        } else if ((INFO_EXP_FILETYPE (arg_info) == F_prog)
+        } else if ((INFO_EXP_FILETYPE (arg_info) == F_prog) && (FUNDEF_ISLOCAL (arg_node))
                    && (ILIBstringCompare (FUNDEF_NAME (arg_node), "main"))) {
 
             /* override exports/provide for function main in a
@@ -264,21 +265,6 @@ EXPfundef (node *arg_node, info *arg_info)
                 FUNDEF_ISPROVIDED (arg_node) = FALSE;
             }
         }
-        /* TODO: adapt to new object handling */
-#if 0
-  } else if ( FUNDEF_STATUS( arg_node) == ST_objinitfun ) {
-    /* init functions of objects are always local, as there is
-     * no need for them to be used outside the module
-     */
-    SET_FLAG( FUNDEF, arg_node, IS_EXPORTED, FALSE);
-    SET_FLAG( FUNDEF, arg_node, IS_PROVIDED, FALSE);
-  } else if ( FUNDEF_STATUS( arg_node) == ST_classfun ) {
-    /* classfuns are not exported as well, as that would
-     * break the encapsulation
-     */
-    SET_FLAG( FUNDEF, arg_node, IS_EXPORTED, FALSE);
-    SET_FLAG( FUNDEF, arg_node, IS_PROVIDED, FALSE);
-#endif
     } else {
         DBUG_PRINT ("EXP", ("...is not visible (non local)"));
 
