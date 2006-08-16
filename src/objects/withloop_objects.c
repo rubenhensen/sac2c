@@ -49,6 +49,7 @@ struct INFO {
     bool inwithloop;
     node *fundef;
     node *objects;
+    node *propobj;
     node *wl;
 };
 
@@ -59,6 +60,7 @@ struct INFO {
 #define INFO_INWITHLOOP(n) ((n)->inwithloop)
 #define INFO_FUNDEF(n) ((n)->fundef)
 #define INFO_OBJECTS(n) ((n)->objects)
+#define INFO_PROPOBJ(n) ((n)->propobj)
 #define INFO_WL(n) ((n)->wl)
 
 /*
@@ -75,9 +77,10 @@ MakeInfo ()
     result = ILIBmalloc (sizeof (info));
 
     INFO_INWITHLOOP (result) = FALSE;
-    INFO_OBJECTS (result) = NULL;
-    INFO_WL (result) = NULL;
     INFO_FUNDEF (result) = NULL;
+    INFO_OBJECTS (result) = NULL;
+    INFO_PROPOBJ (result) = NULL;
+    INFO_WL (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -111,7 +114,7 @@ AddAccu (node *assign, node *prop, info *arg_info)
     BLOCK_VARDEC (FUNDEF_BODY (INFO_FUNDEF (arg_info)))
       = TBmakeVardec (avis, BLOCK_VARDEC (FUNDEF_BODY (INFO_FUNDEF (arg_info))));
 
-    /* create <avis> = F_accu( <idx-varname>) */
+    /* create <avis> = F_prop_obj( <idx-varname>) */
     assign
       = TBmakeAssign (TBmakeLet (TBmakeIds (ID_AVIS (PROPAGATE_DEFAULT (prop)), NULL),
                                  TCmakePrf2 (F_prop_obj,
@@ -123,7 +126,38 @@ AddAccu (node *assign, node *prop, info *arg_info)
     /* set correct backref to defining assignment */
     AVIS_SSAASSIGN (avis) = assign;
 
+    INFO_PROPOBJ (arg_info) = assign;
+
     DBUG_RETURN (assign);
+}
+
+static void
+ModAccu (node *prop, info *arg_info)
+{
+    node *avis;
+    node *args;
+    node *lhs;
+
+    DBUG_ENTER ("ModAccu");
+
+    /* create avis */
+    avis = TBmakeAvis (ILIBtmpVarName (ID_NAME (PROPAGATE_DEFAULT (prop))),
+                       TYeliminateAKV (AVIS_TYPE (ID_AVIS (PROPAGATE_DEFAULT (prop)))));
+
+    /* insert vardec */
+    BLOCK_VARDEC (FUNDEF_BODY (INFO_FUNDEF (arg_info)))
+      = TBmakeVardec (avis, BLOCK_VARDEC (FUNDEF_BODY (INFO_FUNDEF (arg_info))));
+
+    /* adjust the original so that
+     * <avis> = F_prop_obj( <idx-varname>, ..., <new-obj> ) */
+    args = PRF_ARGS (LET_EXPR (ASSIGN_INSTR (INFO_PROPOBJ (arg_info))));
+    lhs = LET_IDS (ASSIGN_INSTR (INFO_PROPOBJ (arg_info)));
+
+    args
+      = TCappendExprs (args,
+                       TBmakeExprs (TBmakeId (ID_AVIS (PROPAGATE_DEFAULT (prop))), NULL));
+    lhs = TCappendIds (lhs, TBmakeIds (ID_AVIS (PROPAGATE_DEFAULT (prop)), NULL));
+    DBUG_LEAVE;
 }
 
 static node *
@@ -304,7 +338,11 @@ WOApropagate (node *arg_node, info *arg_info)
     DBUG_ENTER ("WOApropagate");
 
     block = CODE_CBLOCK (WITH_CODE (INFO_WL (arg_info)));
-    BLOCK_INSTR (block) = AddAccu (BLOCK_INSTR (block), arg_node, arg_info);
+    if (INFO_PROPOBJ (arg_info) == NULL) {
+        BLOCK_INSTR (block) = AddAccu (BLOCK_INSTR (block), arg_node, arg_info);
+    } else {
+        ModAccu (arg_node, arg_info);
+    }
 
     if (PROPAGATE_NEXT (arg_node) != NULL) {
         PROPAGATE_NEXT (arg_node) = TRAVdo (PROPAGATE_NEXT (arg_node), arg_info);
@@ -338,6 +376,7 @@ WOAwith (node *arg_node, info *arg_info)
         WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
     }
     INFO_WL (arg_info) = NULL;
+    INFO_PROPOBJ (arg_info) = NULL;
 
     DBUG_RETURN (arg_node);
 }
