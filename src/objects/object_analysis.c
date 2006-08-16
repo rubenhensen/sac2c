@@ -18,7 +18,7 @@ struct INFO {
     node *objdefs;
     node *fundefs;
     int changes;
-    bool islocal;
+    bool wasused;
 };
 
 /*
@@ -28,7 +28,7 @@ struct INFO {
 #define INFO_OBJDEFS(n) ((n)->objdefs)
 #define INFO_FUNDEFS(n) ((n)->fundefs)
 #define INFO_CHANGES(n) ((n)->changes)
-#define INFO_ISLOCAL(n) ((n)->islocal)
+#define INFO_WASUSED(n) ((n)->wasused)
 
 /*
  * INFO functions
@@ -46,7 +46,7 @@ MakeInfo ()
     INFO_OBJDEFS (result) = NULL;
     INFO_FUNDEFS (result) = NULL;
     INFO_CHANGES (result) = 0;
-    INFO_ISLOCAL (result) = FALSE;
+    INFO_WASUSED (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -140,7 +140,7 @@ ProjectObjects (node *fundef, info *info)
     DBUG_ENTER ("ProjectObjects");
 
     if ((FUNDEF_ISLOCAL (fundef) && !FUNDEF_WASIMPORTED (fundef))
-        || !INFO_ISLOCAL (info)) {
+        || INFO_WASUSED (info)) {
         /*
          * this is either a local instance or the entire
          * wrapper is not local and thus all its instances.
@@ -186,7 +186,7 @@ UnifyOverloadedFunctions (node *funs, info *info)
 
             if (TYisFun (FUNDEF_WRAPPERTYPE (funs))) {
                 INFO_OBJECTS (info) = FUNDEF_OBJECTS (funs);
-                INFO_ISLOCAL (info) = FUNDEF_ISLOCAL (funs);
+                INFO_WASUSED (info) = FUNDEF_WASUSED (funs);
 
                 FUNDEF_WRAPPERTYPE (funs)
                   = TYmapFunctionInstances (FUNDEF_WRAPPERTYPE (funs), CollectObjects,
