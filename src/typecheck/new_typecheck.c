@@ -93,6 +93,8 @@ struct INFO {
     node *ptr_return;
     node *ptr_objdefs;
     ntype *accu;
+    ntype *prop_objs;
+    int prop_cnt;
 };
 
 /**
@@ -105,6 +107,8 @@ struct INFO {
 #define INFO_LAST_ASSIGN(n) (n->last_assign)
 #define INFO_RETURN(n) (n->ptr_return)
 #define INFO_EXP_ACCU(n) (n->accu)
+#define INFO_PROP_OBJS(n) (n->prop_objs)
+#define INFO_ACT_PROP_OBJ(n) (n->prop_cnt)
 
 /**
  * INFO functions
@@ -125,6 +129,8 @@ MakeInfo ()
     INFO_LAST_ASSIGN (result) = NULL;
     INFO_RETURN (result) = NULL;
     INFO_EXP_ACCU (result) = NULL;
+    INFO_PROP_OBJS (result) = NULL;
+    INFO_ACT_PROP_OBJ (result) = 0;
 
     DBUG_RETURN (result);
 }
@@ -1164,6 +1170,8 @@ NTCprf (node *arg_node, info *arg_info)
     int pos;
     prf prf;
     te_info *info;
+    ntype *alpha, *def_obj;
+    bool ok;
 
     DBUG_ENTER ("NTCprf");
 
@@ -1171,10 +1179,36 @@ NTCprf (node *arg_node, info *arg_info)
 
     if (prf == F_accu) {
         if (INFO_EXP_ACCU (arg_info) != NULL) {
+            /**
+             * we are dealing with a non-first partition of a MG-WL here!
+             */
             res = TYmakeProductType (1, TYcopyType (INFO_EXP_ACCU (arg_info)));
         } else {
             INFO_EXP_ACCU (arg_info) = TYmakeAlphaType (NULL);
             res = TYmakeProductType (1, INFO_EXP_ACCU (arg_info));
+        }
+    } else if (prf == F_prop_obj) {
+        if (INFO_PROP_OBJS (arg_info) != NULL) {
+            /**
+             * we are dealing with a non-first partition of a MG-WL here!
+             */
+            res = TYcopyType (INFO_PROP_OBJS (arg_info));
+        } else {
+            argexprs = PRF_EXPRS2 (arg_node); /* skip iv! */
+            pos = 0;
+
+            res = TYmakeEmptyProductType (TCcountExprs (argexprs));
+
+            while (argexprs != NULL) {
+                alpha = TYmakeAlphaType (NULL);
+                def_obj = AVIS_TYPE (ID_AVIS (EXPRS_EXPR (argexprs)));
+                ok = SSInewTypeRel (def_obj, alpha);
+                res = TYsetProductMember (res, pos, alpha);
+                pos++;
+                argexprs = EXPRS_NEXT (argexprs);
+            }
+
+            INFO_PROP_OBJS (arg_info) = TYcopyType (res);
         }
     } else if (prf == F_type_error) {
         /*
@@ -1541,7 +1575,7 @@ NTCcast (node *arg_node, info *arg_info)
 node *
 NTCwith (node *arg_node, info *arg_info)
 {
-    ntype *gen, *body, *mem_outer_accu;
+    ntype *gen, *body, *mem_outer_accu, *mem_outer_prop_objs;
 #ifndef DBUG_OFF
     char *tmp_str;
 #endif
@@ -1563,12 +1597,15 @@ NTCwith (node *arg_node, info *arg_info)
     /*
      * Then, we infer the type of the WL body:
      *
-     * Since this may yield an explicit accu type in INFO_EXP_ACCU,
-     * and fold-wls may be nested, we need to stack these pointers before
-     * traversing the code of this WL.
+     * Since this may yield an explicit accu type in INFO_EXP_ACCU and
+     * an new types for propagated objects in INFO_PROP_OBJS,
+     * and fold-wls / propagate-wls may be nested, we need to stack these
+     * pointers before traversing the code of this WL.
      */
     mem_outer_accu = INFO_EXP_ACCU (arg_info);
     INFO_EXP_ACCU (arg_info) = NULL;
+    mem_outer_prop_objs = INFO_PROP_OBJS (arg_info);
+    INFO_PROP_OBJS (arg_info) = NULL;
 
     WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
     body = INFO_TYPE (arg_info);
@@ -1591,10 +1628,13 @@ NTCwith (node *arg_node, info *arg_info)
      * However, since we only need one body type per withop, we use the
      * field INFO_NUM_EXPRS_SOFAR( arg_info) to indicate the acual
      * component of interest in the product type "body".
+     * We also may have to deal with propagate operations. Therefore,
+     * we initilise INFO_ACT_PROP_OBJ.
      */
     INFO_GEN_TYPE (arg_info) = gen;
     INFO_BODIES_TYPE (arg_info) = body;
     INFO_NUM_EXPRS_SOFAR (arg_info) = 0;
+    INFO_ACT_PROP_OBJ (arg_info) = 0;
 
     WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
 
@@ -1603,9 +1643,11 @@ NTCwith (node *arg_node, info *arg_info)
     DBUG_EXECUTE ("NTC", tmp_str = ILIBfree (tmp_str););
 
     /**
-     * eventually, we need to restore a potential outer accu for fold-wls:
+     * eventually, we need to restore a potential outer accu / prop_objs
+     * for fold-wls / propagate-wls:
      */
     INFO_EXP_ACCU (arg_info) = mem_outer_accu;
+    INFO_PROP_OBJS (arg_info) = mem_outer_prop_objs;
 
     DBUG_RETURN (arg_node);
 }
@@ -2096,7 +2138,8 @@ NTCbreak (node *arg_node, info *arg_info)
 node *
 NTCpropagate (node *arg_node, info *arg_info)
 {
-    ntype *body;
+    ntype *body, *prop_obj_type;
+    bool ok;
 
     DBUG_ENTER ("NTCpropagate");
     DBUG_ASSERT (TYgetProductSize (INFO_BODIES_TYPE (arg_info))
@@ -2104,6 +2147,25 @@ NTCpropagate (node *arg_node, info *arg_info)
                  "more withops than code returns");
     body
       = TYgetProductMember (INFO_BODIES_TYPE (arg_info), INFO_NUM_EXPRS_SOFAR (arg_info));
+
+    DBUG_ASSERT (INFO_PROP_OBJS (arg_info) != NULL,
+                 "propagate WL found without F_prop_obj in any body");
+
+    prop_obj_type
+      = TYgetProductMember (INFO_PROP_OBJS (arg_info), INFO_ACT_PROP_OBJ (arg_info));
+    INFO_ACT_PROP_OBJ (arg_info)++;
+
+    ok = SSInewTypeRel (body, prop_obj_type);
+
+    if (!ok) {
+        CTIabortLine (global.linenum,
+                      "Illegal object transformation in propagate with loop");
+    }
+
+    if (PROPAGATE_NEXT (arg_node) == NULL) {
+        TYfreeType (INFO_PROP_OBJS (arg_info));
+        INFO_PROP_OBJS (arg_info) = NULL;
+    }
 
     PROPAGATE_NEXT (arg_node)
       = HandleMultiOperators (PROPAGATE_NEXT (arg_node), arg_info);
