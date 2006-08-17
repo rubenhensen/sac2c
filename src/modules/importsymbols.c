@@ -129,10 +129,10 @@ IMPmodule (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("IMPmodule");
 
-    if (MODULE_IMPORTS (arg_node) != NULL) {
+    if (MODULE_INTERFACE (arg_node) != NULL) {
         DSinitDeserialize (arg_node);
 
-        MODULE_IMPORTS (arg_node) = TRAVdo (MODULE_IMPORTS (arg_node), arg_info);
+        MODULE_INTERFACE (arg_node) = TRAVdo (MODULE_INTERFACE (arg_node), arg_info);
 
         DSfinishDeserialize (arg_node);
     }

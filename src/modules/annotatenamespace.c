@@ -700,8 +700,8 @@ ANSmodule (node *arg_node, info *arg_info)
      * traverse use/import statements
      */
 
-    if (MODULE_IMPORTS (arg_node) != NULL) {
-        MODULE_IMPORTS (arg_node) = TRAVdo (MODULE_IMPORTS (arg_node), arg_info);
+    if (MODULE_INTERFACE (arg_node) != NULL) {
+        MODULE_INTERFACE (arg_node) = TRAVdo (MODULE_INTERFACE (arg_node), arg_info);
     }
 
     /*

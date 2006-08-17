@@ -2262,7 +2262,7 @@
     <node name="Module">
       <description>node for a module declaration</description>
       <sons>
-        <son name="Imports">
+        <son name="Interface">
           <description>symbols imported and exported by the module</description>
           <targets>
             <target mandatory="no">

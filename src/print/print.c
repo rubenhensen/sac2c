@@ -925,10 +925,10 @@ PRTmodule (node *arg_node, info *arg_info)
             break;
         }
 
-        if (MODULE_IMPORTS (arg_node) != NULL) {
+        if (MODULE_INTERFACE (arg_node) != NULL) {
             fprintf (global.outfile, "\n");
             /* print import-list */
-            TRAVdo (MODULE_IMPORTS (arg_node), arg_info);
+            TRAVdo (MODULE_INTERFACE (arg_node), arg_info);
         }
 
         if (MODULE_TYPES (arg_node) != NULL) {

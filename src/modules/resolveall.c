@@ -309,8 +309,8 @@ RSAmodule (node *arg_node, info *arg_info)
 
     INFO_CURRENTNS (arg_info) = MODULE_NAMESPACE (arg_node);
 
-    if (MODULE_IMPORTS (arg_node) != NULL) {
-        MODULE_IMPORTS (arg_node) = TRAVdo (MODULE_IMPORTS (arg_node), arg_info);
+    if (MODULE_INTERFACE (arg_node) != NULL) {
+        MODULE_INTERFACE (arg_node) = TRAVdo (MODULE_INTERFACE (arg_node), arg_info);
     }
 
     INFO_CURRENTNS (arg_info) = NULL;

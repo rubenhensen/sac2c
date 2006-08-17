@@ -261,7 +261,7 @@ prg: defs
 
 defs: interface def2
       { $$ = $2;
-        MODULE_IMPORTS( $$) = $1;
+        MODULE_INTERFACE( $$) = $1;
       }
     | def2
       { $$ = $1; }
@@ -1726,7 +1726,7 @@ classtype: CLASSTYPE ntype SEMIC { $$ = $2; }
 modspec: modheader OWN COLON expdesc
          { $$ = $1;
            MODSPEC_OWN( $$) = $4;
-           MODSPEC_IMPORTS( $$) = NULL;
+           MODSPEC_INTERFACE( $$) = NULL;
            DBUG_PRINT( "PARSE",
                        ("%s:"F_PTR" Id: %s , %s"F_PTR,
                         global.mdb_nodetype[ NODE_TYPE( $$)],

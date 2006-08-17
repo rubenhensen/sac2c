@@ -386,7 +386,7 @@ EXPmodule (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EXPmodule");
 
-    INFO_INTERFACE (arg_info) = MODULE_IMPORTS (arg_node);
+    INFO_INTERFACE (arg_info) = MODULE_INTERFACE (arg_node);
     INFO_FILETYPE (arg_info) = MODULE_FILETYPE (arg_node);
     INFO_SYMBMODE (arg_info) = SYM_filter;
 
@@ -406,7 +406,7 @@ EXPmodule (node *arg_node, info *arg_info)
         MODULE_OBJS (arg_node) = TRAVdo (MODULE_OBJS (arg_node), arg_info);
     }
 
-    MODULE_IMPORTS (arg_node) = INFO_INTERFACE (arg_info);
+    MODULE_INTERFACE (arg_node) = INFO_INTERFACE (arg_info);
 
     /*
      * now check whether all symbols specified in export/provide have
@@ -414,8 +414,8 @@ EXPmodule (node *arg_node, info *arg_info)
      */
     INFO_SYMBMODE (arg_info) = SYM_check;
 
-    if (MODULE_IMPORTS (arg_node) != NULL) {
-        MODULE_IMPORTS (arg_node) = TRAVdo (MODULE_IMPORTS (arg_node), arg_info);
+    if (MODULE_INTERFACE (arg_node) != NULL) {
+        MODULE_INTERFACE (arg_node) = TRAVdo (MODULE_INTERFACE (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);

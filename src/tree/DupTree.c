@@ -744,7 +744,7 @@ DUPmodule (node *arg_node, info *arg_info)
 
     new_node
       = TBmakeModule (NSdupNamespace (MODULE_NAMESPACE (arg_node)),
-                      MODULE_FILETYPE (arg_node), DUPTRAV (MODULE_IMPORTS (arg_node)),
+                      MODULE_FILETYPE (arg_node), DUPTRAV (MODULE_INTERFACE (arg_node)),
                       DUPTRAV (MODULE_TYPES (arg_node)), DUPTRAV (MODULE_OBJS (arg_node)),
                       DUPTRAV (MODULE_FUNS (arg_node)),
                       DUPTRAV (MODULE_FUNDECS (arg_node)));
