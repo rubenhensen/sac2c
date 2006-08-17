@@ -327,7 +327,7 @@ NT2OTdoTransform (node *arg_node)
     TRAVpop ();
 
     /**
-     * Since all alpha types are gone now, we may may free all tvars, all
+     * Since all alpha types are gone now, we may free all tvars, all
      *  sig_deps, and all te_infos:
      */
     SSIfreeAllTvars ();
@@ -394,10 +394,6 @@ NT2OTmodule (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("NT2OTmodule");
 
-    if (MODULE_IMPORTS (arg_node) != NULL) {
-        MODULE_IMPORTS (arg_node) = TRAVdo (MODULE_IMPORTS (arg_node), arg_info);
-    }
-
     if (MODULE_TYPES (arg_node) != NULL) {
         MODULE_TYPES (arg_node) = TRAVdo (MODULE_TYPES (arg_node), arg_info);
     }
@@ -437,8 +433,7 @@ NT2OTfundef (node *arg_node, info *arg_info)
     if (!FUNDEF_ISLACFUN (arg_node) || INFO_ONEFUNCTION (arg_info)) {
         INFO_FUNDEF (arg_info) = arg_node;
 
-        DBUG_PRINT ("FIXNT",
-                    ("----> Processing function (-?-)::%s\n", FUNDEF_NAME (arg_node)));
+        DBUG_PRINT ("FIXNT", ("----> Processing function %s\n", CTIitemName (arg_node)));
 
         otype = TUmakeProductTypeFromRets (FUNDEF_RETS (arg_node));
         DBUG_ASSERT ((otype != NULL), "FUNDEF_RET_TYPE not found!");
@@ -459,20 +454,19 @@ NT2OTfundef (node *arg_node, info *arg_info)
                               "One component of inferred return type (%s) has no lower "
                               "bound;"
                               " an application of \"%s\" will not terminate",
-                              TYtype2String (ftype, FALSE, 0), FUNDEF_NAME (arg_node));
+                              TYtype2String (ftype, FALSE, 0), CTIitemName (arg_node));
             } else {
                 DBUG_PRINT ("FIXNT",
                             ("eliminating function %s due to lacking result type",
-                             FUNDEF_NAME (arg_node)));
+                             CTIitemName (arg_node)));
                 arg_node = FREEdoFreeNode (arg_node);
             }
         } else {
             bottom = TYgetBottom (ftype);
             if (bottom != NULL) {
                 DBUG_PRINT ("FIXNT", ("bottom component found in function %s",
-                                      FUNDEF_NAME (arg_node)));
-                if (ILIBstringCompare (FUNDEF_NAME (arg_node), "main")
-                    || FUNDEF_ISPROVIDED (arg_node) || FUNDEF_ISEXPORTED (arg_node)) {
+                                      CTIitemName (arg_node)));
+                if (FUNDEF_ISPROVIDED (arg_node) || FUNDEF_ISEXPORTED (arg_node)) {
                     CTIabortOnBottom (TYgetBottomError (bottom));
                 } else {
                     /**
@@ -497,7 +491,7 @@ NT2OTfundef (node *arg_node, info *arg_info)
             } else {
                 DBUG_ASSERT (TYisProdOfArray (ftype), "inconsistent return type found");
                 DBUG_PRINT ("FIXNT", ("ProdOfArray return type found for function %s",
-                                      FUNDEF_NAME (arg_node)));
+                                      CTIitemName (arg_node)));
 
                 if (FUNDEF_ARGS (arg_node) != NULL) {
                     FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
@@ -566,7 +560,7 @@ NT2OTap (node *arg_node, info *arg_info)
 #else
     if (FUNDEF_ISLACFUN (AP_FUNDEF (arg_node))
         && (AP_FUNDEF (arg_node) != INFO_FUNDEF (arg_info))) {
-        DBUG_PRINT ("FIXNT", ("lacfun %s found...", FUNDEF_NAME (AP_FUNDEF (arg_node))));
+        DBUG_PRINT ("FIXNT", ("lacfun %s found...", CTIitemName (AP_FUNDEF (arg_node))));
         /**
          * First, we check whether we are dealing with an application
          * that contains a bottom type. If so, we delete the lacfun!
@@ -574,7 +568,7 @@ NT2OTap (node *arg_node, info *arg_info)
         argt = TUactualArgs2Ntype (AP_ARGS (arg_node));
         bottom = TYgetBottom (argt);
         if (bottom != NULL) {
-            DBUG_PRINT ("FIXNT", ("deleting %s", FUNDEF_NAME (AP_FUNDEF (arg_node))));
+            DBUG_PRINT ("FIXNT", ("deleting %s", CTIitemName (AP_FUNDEF (arg_node))));
             INFO_DELLACFUN (arg_info) = TRUE;
             AP_FUNDEF (arg_node) = FREEdoFreeNode (AP_FUNDEF (arg_node));
         } else {
@@ -809,9 +803,15 @@ NT2OTlet (node *arg_node, info *arg_info)
         INFO_LHS (arg_info) = LET_IDS (arg_node);
         LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
         INFO_LHS (arg_info) = NULL;
+
         if (INFO_DELLACFUN (arg_info)) {
+            /*
+             * the LaC function has been deleted as it contains bottoms.
+             * Thus this let is needed no more. Flag this to the outer
+             * assign by deleting the let as well.
+             */
             INFO_DELLACFUN (arg_info) = FALSE;
-            arg_node = FREEdoFreeTree (arg_node);
+            arg_node = FREEdoFreeNode (arg_node);
         }
     }
 
@@ -831,7 +831,6 @@ NT2OTlet (node *arg_node, info *arg_info)
 node *
 NT2OTassign (node *arg_node, info *arg_info)
 {
-    node *this_assign;
     DBUG_ENTER ("NT2OTassign");
 
     /**
@@ -850,11 +849,9 @@ NT2OTassign (node *arg_node, info *arg_info)
     if (ASSIGN_INSTR (arg_node) != NULL) {
         ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
     }
+
     if (ASSIGN_INSTR (arg_node) == NULL) {
-        this_assign = arg_node;
-        arg_node = ASSIGN_NEXT (arg_node);
-        ASSIGN_NEXT (this_assign) = NULL;
-        this_assign = FREEdoFreeNode (this_assign);
+        arg_node = FREEdoFreeNode (arg_node);
     }
 
     DBUG_RETURN (arg_node);
