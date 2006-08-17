@@ -486,9 +486,6 @@ SUBPHASE (rera, "rera", "Restoring reference arguments", RERAdoRestoreReferenceA
 
 SUBPHASE (reso, "reso", "Restoring global objects", RESOdoRestoreObjects)
 
-SUBPHASE (rwoa, "rwoa", "Restoring with-loop objects",
-          RWOAdoRestoreWithloopObjectAnalysis)
-
 SUBPHASE (sls, "sls", "Applying linksign pragma", SLSdoSetLinksign)
 
 SUBPHASE (mmv, "mmv", "Marking memval identifiers", MMVdoMarkMemVals)

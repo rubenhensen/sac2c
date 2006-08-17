@@ -2003,18 +2003,7 @@
 	  <node name="Block" />
 	  <node name="Fundef" />
 	  <node name="Module" />
-	</travuser>
-      </traversal>
-      <traversal id="RWOA" name="Restoring objects in with-loops" default="sons" include="restore_withloop_objects.h" >
-        <travuser>
-	  <node name="Assign" />
-	  <node name="Block" />
-	  <node name="Fundef" />
-	  <node name="Id" />
-          <node name="Let" />
-	  <node name="Prf" />
-	  <node name="Vardec" />
-	  <node name="With2" />
+    <node name="Propagate" />
 	</travuser>
       </traversal>
       <traversal id="SLS" name="Set Linksign" default="sons" include="setlinksign.h" >

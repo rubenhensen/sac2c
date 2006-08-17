@@ -152,6 +152,90 @@ StripArtificialArgExprs (node *form_args, node *act_args)
     DBUG_RETURN (act_args);
 }
 
+/** <!-- ****************************************************************** -->
+ * @fn node *DeleteLHSforRHSobjects( node *lhs, node *rhs)
+ *
+ * @brief Removes all LHS ids form the chain that have
+ *        a corresponding RHS object.
+ *
+ * @param lhs left hand side of assignment (N_ids chain)
+ * @param rhs right hand side expressions (N_exprs chain)
+ *
+ * @return New left hand side (N_ids chain)
+ ******************************************************************************/
+node *
+DeleteLHSforRHSobjects (node *lhs, node *rhs)
+{
+    node *prevlhs = NULL;
+    node *lhs_out;
+
+    DBUG_ENTER ("DeleteLHSforRHSobjects");
+
+    lhs_out = lhs;
+
+    while (rhs != NULL) {
+        if (NODE_TYPE (EXPRS_EXPR (rhs)) == N_globobj) {
+
+            /* Remove lhs ids */
+            lhs = FREEdoFreeNode (lhs);
+            if (prevlhs != NULL) {
+                IDS_NEXT (prevlhs) = lhs;
+            } else {
+                lhs_out = lhs;
+            }
+
+        } else {
+            /* Iterate lhs ids */
+            prevlhs = lhs;
+            lhs = IDS_NEXT (lhs);
+        }
+
+        /* Iterate rhs expr */
+        rhs = EXPRS_NEXT (rhs);
+    }
+
+    DBUG_RETURN (lhs_out);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn node *DeleteRHSobjects( node *rhs)
+ *
+ * @brief Removes all RHS objects from the chain.
+ *
+ * @param lhs left hand side of assignment (N_ids chain)
+ * @param rhs right hand side expressions (N_exprs chain)
+ *
+ * @return New left hand side (N_ids chain)
+ ******************************************************************************/
+node *
+DeleteRHSobjects (node *rhs)
+{
+    node *prevrhs = NULL;
+    node *rhs_out = rhs;
+
+    DBUG_ENTER ("DeleteRHSobjects");
+
+    while (rhs != NULL) {
+        if (NODE_TYPE (EXPRS_EXPR (rhs)) == N_globobj) {
+
+            /* Remove rhs object */
+            rhs = FREEdoFreeNode (rhs);
+            if (prevrhs != NULL) {
+                EXPRS_NEXT (prevrhs) = rhs;
+            } else {
+                rhs_out = rhs;
+            }
+
+        } else {
+            /* Iterate rhs */
+            prevrhs = rhs;
+            rhs = EXPRS_NEXT (rhs);
+        }
+    }
+
+    DBUG_RETURN (rhs_out);
+}
+
 /*
  * traversal functions
  */
@@ -236,6 +320,58 @@ RESOlet (node *arg_node, info *arg_info)
         AVIS_SUBST (IDS_AVIS (LET_IDS (arg_node))) = GLOBOBJ_OBJDEF (LET_EXPR (arg_node));
 
         INFO_DELETE (arg_info) = TRUE;
+    }
+
+    /*
+     * detect assignments of the form
+     *
+     * <ids> = with ... : <globobj> ...
+     *
+     * and delete both, as it is an identity assignment.
+     */
+    if (NODE_TYPE (LET_EXPR (arg_node)) == N_with
+        || NODE_TYPE (LET_EXPR (arg_node)) == N_with2) {
+        node *with_code;
+
+        if (NODE_TYPE (LET_EXPR (arg_node)) == N_with) {
+            with_code = WITH_CODE (LET_EXPR (arg_node));
+        } else {
+            with_code = WITH2_CODE (LET_EXPR (arg_node));
+        }
+
+        LET_IDS (arg_node)
+          = DeleteLHSforRHSobjects (LET_IDS (arg_node), CODE_CEXPRS (with_code));
+
+        /* Delete RHS for every with generator! */
+        while (with_code != NULL) {
+            CODE_CEXPRS (with_code) = DeleteRHSobjects (CODE_CEXPRS (with_code));
+            with_code = CODE_NEXT (with_code);
+        }
+    }
+
+    /*
+     * detect assignments of the form
+     *
+     * <ids> = F_prop_obj( iv, <globobj>);
+     *
+     * and delete lhs where rhs is a globobj, as it is
+     * and identity assignment.
+     */
+    if (NODE_TYPE (LET_EXPR (arg_node)) == N_prf
+        && PRF_PRF (LET_EXPR (arg_node)) == F_prop_obj) {
+        node *prf_args;
+
+        prf_args = PRF_ARGS (LET_EXPR (arg_node));
+
+        LET_IDS (arg_node)
+          = DeleteLHSforRHSobjects (LET_IDS (arg_node), EXPRS_NEXT (prf_args));
+        EXPRS_NEXT (prf_args) = DeleteRHSobjects (EXPRS_NEXT (prf_args));
+
+        if (EXPRS_NEXT (prf_args) == NULL) {
+            /* only iv argument left, and no lhs. so delete */
+            DBUG_ASSERT (LET_IDS (arg_node) == NULL, "no F_prop_obj args, but have lhs");
+            INFO_DELETE (arg_info) = TRUE;
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -328,6 +464,26 @@ RESOmodule (node *arg_node, info *arg_info)
 
     if (MODULE_FUNDECS (arg_node) != NULL) {
         MODULE_FUNDECS (arg_node) = TRAVdo (MODULE_FUNDECS (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+RESOpropagate (node *arg_node, info *arg_info)
+{
+    node *arg;
+
+    DBUG_ENTER ("RESOpropagate");
+
+    if (PROPAGATE_NEXT (arg_node) != NULL) {
+        PROPAGATE_NEXT (arg_node) = TRAVdo (PROPAGATE_NEXT (arg_node), arg_info);
+    }
+
+    arg = AVIS_DECL (ID_AVIS (PROPAGATE_DEFAULT (arg_node)));
+
+    if (NODE_TYPE (arg) == N_arg && ARG_ISARTIFICIAL (arg)) {
+        arg_node = FREEdoFreeNode (arg_node);
     }
 
     DBUG_RETURN (arg_node);
