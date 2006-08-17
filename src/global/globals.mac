@@ -690,12 +690,6 @@ GLOBAL (min_array_rep_t, min_array_rep, MAR_scl_aks)
  * array representations used by the backend
  */
 
-GLOBAL (bool, wlo, FALSE);
-/*
- * Used to control wether objects-in-with-loops is enabled or not.
- * Defaults to false while in development, will be removed later.
- */
-
 /*
  * Name tuples
  */

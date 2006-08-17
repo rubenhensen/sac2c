@@ -404,17 +404,15 @@ WOAdoWithloopObjectAnalysis (node *syntax_tree)
     info *arg_info;
     DBUG_ENTER ("WOAdoWithloopObjectAnalysis");
 
-    if (global.wlo == TRUE) {
-        TRAVpush (TR_woa);
+    TRAVpush (TR_woa);
 
-        arg_info = MakeInfo ();
+    arg_info = MakeInfo ();
 
-        syntax_tree = TRAVdo (syntax_tree, arg_info);
+    syntax_tree = TRAVdo (syntax_tree, arg_info);
 
-        FreeInfo (arg_info);
+    FreeInfo (arg_info);
 
-        TRAVpop ();
-    }
+    TRAVpop ();
 
     DBUG_RETURN (syntax_tree);
 }
