@@ -7706,7 +7706,11 @@
           </type>
 	</attribute>
       </attributes>
-      <flags></flags>
+      <flags>
+        <flag name="Used" default="FALSE">
+	  <description>Used to flag those symbols that are in fact used, that is, those that do exist in the module.</description>
+	</flag>
+      </flags>
     </node>
 <!--
 

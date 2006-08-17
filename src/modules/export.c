@@ -28,19 +28,20 @@ struct INFO {
     bool provided;
     bool result;
     node *interface;
-    char *modname;
     int filetype;
+    enum { SYM_filter, SYM_check } symbmode;
 };
 
 /*
  * INFO macros
  */
-#define INFO_EXP_SYMBOL(n) (n->symbol)
-#define INFO_EXP_EXPORTED(n) (n->exported)
-#define INFO_EXP_PROVIDED(n) (n->provided)
-#define INFO_EXP_RESULT(n) (n->result)
-#define INFO_EXP_INTERFACE(n) (n->interface)
-#define INFO_EXP_FILETYPE(n) (n->filetype)
+#define INFO_SYMBOL(n) (n->symbol)
+#define INFO_EXPORTED(n) (n->exported)
+#define INFO_PROVIDED(n) (n->provided)
+#define INFO_RESULT(n) (n->result)
+#define INFO_INTERFACE(n) (n->interface)
+#define INFO_FILETYPE(n) (n->filetype)
+#define INFO_SYMBMODE(n) (n->symbmode)
 
 /*
  * INFO functions
@@ -54,12 +55,13 @@ MakeInfo ()
 
     result = ILIBmalloc (sizeof (info));
 
-    INFO_EXP_SYMBOL (result) = NULL;
-    INFO_EXP_EXPORTED (result) = FALSE;
-    INFO_EXP_PROVIDED (result) = FALSE;
-    INFO_EXP_RESULT (result) = FALSE;
-    INFO_EXP_INTERFACE (result) = NULL;
-    INFO_EXP_FILETYPE (result) = 0;
+    INFO_SYMBOL (result) = NULL;
+    INFO_EXPORTED (result) = FALSE;
+    INFO_PROVIDED (result) = FALSE;
+    INFO_RESULT (result) = FALSE;
+    INFO_INTERFACE (result) = NULL;
+    INFO_FILETYPE (result) = 0;
+    INFO_SYMBMODE (result) = SYM_filter;
 
     DBUG_RETURN (result);
 }
@@ -69,8 +71,8 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    INFO_EXP_SYMBOL (info) = NULL;
-    INFO_EXP_INTERFACE (info) = NULL;
+    INFO_SYMBOL (info) = NULL;
+    INFO_INTERFACE (info) = NULL;
 
     info = ILIBfree (info);
 
@@ -86,7 +88,7 @@ CheckExport (bool all, node *symbol, info *arg_info)
 {
     DBUG_ENTER ("CheckExport");
 
-    INFO_EXP_RESULT (arg_info) = FALSE;
+    INFO_RESULT (arg_info) = FALSE;
 
     if (symbol != NULL) {
         symbol = TRAVdo (symbol, arg_info);
@@ -96,10 +98,22 @@ CheckExport (bool all, node *symbol, info *arg_info)
         /* in case of an all flag, the symbollist was
          * an except, thus the result has to be inversed
          */
-        INFO_EXP_RESULT (arg_info) = !INFO_EXP_RESULT (arg_info);
+        INFO_RESULT (arg_info) = !INFO_RESULT (arg_info);
     }
 
-    DBUG_RETURN (INFO_EXP_RESULT (arg_info));
+    DBUG_RETURN (INFO_RESULT (arg_info));
+}
+
+static node *
+CheckSymbolsUsed (node *symbols, info *info)
+{
+    DBUG_ENTER ("CheckSymbolsUsed");
+
+    if (symbols != NULL) {
+        symbols = TRAVdo (symbols, info);
+    }
+
+    DBUG_RETURN (symbols);
 }
 
 /*
@@ -139,16 +153,21 @@ EXPprovide (node *arg_node, info *arg_info)
         PROVIDE_NEXT (arg_node) = TRAVdo (PROVIDE_NEXT (arg_node), arg_info);
     }
 
-    if (INFO_EXP_FILETYPE (arg_info) != F_prog) {
-        if (CheckExport (PROVIDE_ALL (arg_node), PROVIDE_SYMBOL (arg_node), arg_info)) {
-            INFO_EXP_PROVIDED (arg_info) = TRUE;
-        }
-    } else {
-        CTIwarnLine (NODE_LINE (arg_node),
-                     "The provide directive is only allowed in modules and "
-                     "classes. Ignoring...");
+    if (INFO_SYMBMODE (arg_info) == SYM_filter) {
+        if (INFO_FILETYPE (arg_info) != F_prog) {
+            if (CheckExport (PROVIDE_ALL (arg_node), PROVIDE_SYMBOL (arg_node),
+                             arg_info)) {
+                INFO_PROVIDED (arg_info) = TRUE;
+            }
+        } else {
+            CTIwarnLine (NODE_LINE (arg_node),
+                         "The provide directive is only allowed in modules and "
+                         "classes. Ignoring...");
 
-        arg_node = FREEdoFreeNode (arg_node);
+            arg_node = FREEdoFreeNode (arg_node);
+        }
+    } else if (INFO_SYMBMODE (arg_info) == SYM_check) {
+        CheckSymbolsUsed (EXPORT_SYMBOL (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -163,16 +182,20 @@ EXPexport (node *arg_node, info *arg_info)
         EXPORT_NEXT (arg_node) = TRAVdo (EXPORT_NEXT (arg_node), arg_info);
     }
 
-    if (INFO_EXP_FILETYPE (arg_info) != F_prog) {
-        if (CheckExport (EXPORT_ALL (arg_node), EXPORT_SYMBOL (arg_node), arg_info)) {
-            INFO_EXP_EXPORTED (arg_info) = TRUE;
-        }
-    } else {
-        CTIwarnLine (NODE_LINE (arg_node),
-                     "The export directive is only allowed in modules and classes. "
-                     "Ignoring...");
+    if (INFO_SYMBMODE (arg_info) == SYM_filter) {
+        if (INFO_FILETYPE (arg_info) != F_prog) {
+            if (CheckExport (EXPORT_ALL (arg_node), EXPORT_SYMBOL (arg_node), arg_info)) {
+                INFO_EXPORTED (arg_info) = TRUE;
+            }
+        } else {
+            CTIwarnLine (NODE_LINE (arg_node),
+                         "The export directive is only allowed in modules and classes. "
+                         "Ignoring...");
 
-        arg_node = FREEdoFreeNode (arg_node);
+            arg_node = FREEdoFreeNode (arg_node);
+        }
+    } else if (INFO_SYMBMODE (arg_info) == SYM_check) {
+        CheckSymbolsUsed (EXPORT_SYMBOL (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -183,8 +206,21 @@ EXPsymbol (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EXPsymbol");
 
-    if (ILIBstringCompare (INFO_EXP_SYMBOL (arg_info), SYMBOL_ID (arg_node))) {
-        INFO_EXP_RESULT (arg_info) = TRUE;
+    if (INFO_SYMBMODE (arg_info) == SYM_filter) {
+        if (ILIBstringCompare (INFO_SYMBOL (arg_info), SYMBOL_ID (arg_node))) {
+            INFO_RESULT (arg_info) = TRUE;
+
+            /*
+             * mark this symbol as used
+             */
+            SYMBOL_USED (arg_node) = TRUE;
+        }
+    } else if (INFO_SYMBMODE (arg_info) == SYM_check) {
+        if (!SYMBOL_USED (arg_node)) {
+            CTIerrorLine (NODE_LINE (arg_node),
+                          "Symbol '%s' used in export or provide is not defined.",
+                          SYMBOL_ID (arg_node));
+        }
     }
 
     if (SYMBOL_NEXT (arg_node) != NULL) {
@@ -227,7 +263,7 @@ EXPfundef (node *arg_node, info *arg_info)
 
             FUNDEF_ISEXPORTED (arg_node) = FALSE;
             FUNDEF_ISPROVIDED (arg_node) = FALSE;
-        } else if ((INFO_EXP_FILETYPE (arg_info) == F_prog) && (FUNDEF_ISLOCAL (arg_node))
+        } else if ((INFO_FILETYPE (arg_info) == F_prog) && (FUNDEF_ISLOCAL (arg_node))
                    && (ILIBstringCompare (FUNDEF_NAME (arg_node), "main"))) {
 
             /* override exports/provide for function main in a
@@ -239,21 +275,20 @@ EXPfundef (node *arg_node, info *arg_info)
             FUNDEF_ISEXPORTED (arg_node) = FALSE;
             FUNDEF_ISPROVIDED (arg_node) = TRUE;
         } else {
-            INFO_EXP_SYMBOL (arg_info) = FUNDEF_NAME (arg_node);
-            INFO_EXP_EXPORTED (arg_info) = FALSE;
-            INFO_EXP_PROVIDED (arg_info) = FALSE;
+            INFO_SYMBOL (arg_info) = FUNDEF_NAME (arg_node);
+            INFO_EXPORTED (arg_info) = FALSE;
+            INFO_PROVIDED (arg_info) = FALSE;
 
-            if (INFO_EXP_INTERFACE (arg_info) != NULL) {
-                INFO_EXP_INTERFACE (arg_info)
-                  = TRAVdo (INFO_EXP_INTERFACE (arg_info), arg_info);
+            if (INFO_INTERFACE (arg_info) != NULL) {
+                INFO_INTERFACE (arg_info) = TRAVdo (INFO_INTERFACE (arg_info), arg_info);
             }
 
-            if (INFO_EXP_EXPORTED (arg_info)) {
+            if (INFO_EXPORTED (arg_info)) {
                 DBUG_PRINT ("EXP", ("...is exported"));
 
                 FUNDEF_ISEXPORTED (arg_node) = TRUE;
                 FUNDEF_ISPROVIDED (arg_node) = TRUE;
-            } else if (INFO_EXP_PROVIDED (arg_info)) {
+            } else if (INFO_PROVIDED (arg_info)) {
                 DBUG_PRINT ("EXP", ("...is provided"));
 
                 FUNDEF_ISEXPORTED (arg_node) = FALSE;
@@ -289,18 +324,18 @@ EXPtypedef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EXPtypedef");
 
-    INFO_EXP_SYMBOL (arg_info) = TYPEDEF_NAME (arg_node);
-    INFO_EXP_EXPORTED (arg_info) = FALSE;
-    INFO_EXP_PROVIDED (arg_info) = FALSE;
+    INFO_SYMBOL (arg_info) = TYPEDEF_NAME (arg_node);
+    INFO_EXPORTED (arg_info) = FALSE;
+    INFO_PROVIDED (arg_info) = FALSE;
 
-    if (INFO_EXP_INTERFACE (arg_info) != NULL) {
-        INFO_EXP_INTERFACE (arg_info) = TRAVdo (INFO_EXP_INTERFACE (arg_info), arg_info);
+    if (INFO_INTERFACE (arg_info) != NULL) {
+        INFO_INTERFACE (arg_info) = TRAVdo (INFO_INTERFACE (arg_info), arg_info);
     }
 
-    if (INFO_EXP_EXPORTED (arg_info)) {
+    if (INFO_EXPORTED (arg_info)) {
         TYPEDEF_ISEXPORTED (arg_node) = TRUE;
         TYPEDEF_ISPROVIDED (arg_node) = TRUE;
-    } else if (INFO_EXP_PROVIDED (arg_info)) {
+    } else if (INFO_PROVIDED (arg_info)) {
         TYPEDEF_ISEXPORTED (arg_node) = FALSE;
         TYPEDEF_ISPROVIDED (arg_node) = TRUE;
     } else {
@@ -320,18 +355,18 @@ EXPobjdef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EXPobjdef");
 
-    INFO_EXP_SYMBOL (arg_info) = OBJDEF_NAME (arg_node);
-    INFO_EXP_EXPORTED (arg_info) = FALSE;
-    INFO_EXP_PROVIDED (arg_info) = FALSE;
+    INFO_SYMBOL (arg_info) = OBJDEF_NAME (arg_node);
+    INFO_EXPORTED (arg_info) = FALSE;
+    INFO_PROVIDED (arg_info) = FALSE;
 
-    if (INFO_EXP_INTERFACE (arg_info) != NULL) {
-        INFO_EXP_INTERFACE (arg_info) = TRAVdo (INFO_EXP_INTERFACE (arg_info), arg_info);
+    if (INFO_INTERFACE (arg_info) != NULL) {
+        INFO_INTERFACE (arg_info) = TRAVdo (INFO_INTERFACE (arg_info), arg_info);
     }
 
-    if (INFO_EXP_EXPORTED (arg_info)) {
+    if (INFO_EXPORTED (arg_info)) {
         OBJDEF_ISEXPORTED (arg_node) = TRUE;
         OBJDEF_ISPROVIDED (arg_node) = TRUE;
-    } else if (INFO_EXP_PROVIDED (arg_info)) {
+    } else if (INFO_PROVIDED (arg_info)) {
         OBJDEF_ISEXPORTED (arg_node) = FALSE;
         OBJDEF_ISPROVIDED (arg_node) = TRUE;
     } else {
@@ -351,8 +386,9 @@ EXPmodule (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EXPmodule");
 
-    INFO_EXP_INTERFACE (arg_info) = MODULE_IMPORTS (arg_node);
-    INFO_EXP_FILETYPE (arg_info) = MODULE_FILETYPE (arg_node);
+    INFO_INTERFACE (arg_info) = MODULE_IMPORTS (arg_node);
+    INFO_FILETYPE (arg_info) = MODULE_FILETYPE (arg_node);
+    INFO_SYMBMODE (arg_info) = SYM_filter;
 
     if (MODULE_FUNS (arg_node) != NULL) {
         MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
@@ -370,7 +406,17 @@ EXPmodule (node *arg_node, info *arg_info)
         MODULE_OBJS (arg_node) = TRAVdo (MODULE_OBJS (arg_node), arg_info);
     }
 
-    MODULE_IMPORTS (arg_node) = INFO_EXP_INTERFACE (arg_info);
+    MODULE_IMPORTS (arg_node) = INFO_INTERFACE (arg_info);
+
+    /*
+     * now check whether all symbols specified in export/provide have
+     * in fact been used.
+     */
+    INFO_SYMBMODE (arg_info) = SYM_check;
+
+    if (MODULE_IMPORTS (arg_node) != NULL) {
+        MODULE_IMPORTS (arg_node) = TRAVdo (MODULE_IMPORTS (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
