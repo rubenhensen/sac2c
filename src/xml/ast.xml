@@ -319,7 +319,6 @@
           <node name="Assign" />
           <node name="Module" />
           <node name="Fundef" />
-          <node name="Let" />
           <node name="Cast" />
           <node name="Exprs" />
           <node name="SPAp" />
@@ -328,8 +327,6 @@
           <node name="Do" />
           <node name="Array" />
           <node name="Return" />
-          <node name="SPId" />
-          <node name="Arg" />
           <node name="Prf" />
           <node name="With" />
           <node name="Withid" />
