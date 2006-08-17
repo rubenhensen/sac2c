@@ -1157,6 +1157,9 @@ extern int TCcountWithops (node *withop);
         case N_propagate:                                                                \
             PROPAGATE_NEXT (n) = rhs;                                                    \
             break;                                                                       \
+        case N_spfold:                                                                   \
+            SPFOLD_NEXT (n) = rhs;                                                       \
+            break;                                                                       \
         default:                                                                         \
             DBUG_ASSERT (FALSE, "Illegal node type");                                    \
         }
@@ -1250,7 +1253,7 @@ extern int TCcountWithops (node *withop);
 #define WITH_OR_WITH2_VEC(n) ((NODE_TYPE (n) == N_with) ? WITH_VEC (n) : WITH2_VEC (n))
 
 #define WITH_OR_WITH2_CEXPR(n)                                                           \
-    ((NODE_TYPE (n) == N_with) ? WITH_CEXPR (n) : WITH2_CEXPR (n))
+    ((NODE_TYPE (n) == N_with) ? WITH_CEXPR (n) : WITH2_CEXPRS (n))
 
 #define WITH_OR_WITH2_IN_MASK(n)                                                         \
     ((NODE_TYPE (n) == N_with) ? WITH_IN_MASK (n) : WITH2_IN_MASK (n))
