@@ -138,22 +138,33 @@ USGprintUsage ()
 
             "    Currently supported break specifiers are as follows:\n\n");
 
-    PRINT_BREAK_SPEC (PH_scanparse, "yacc", "Stop after parsing (yacc).");
+    PRINT_BREAK_SPEC (PH_scanparse, "cpp", "Stop after running the C preprocessor.");
+    PRINT_BREAK_SPEC (PH_scanparse, "sp", "Stop after parsing (yacc).");
+    PRINT_BREAK_SPEC (PH_scanparse, "acn",
+                      "Stop after resolving the axis control notation.");
+    PRINT_BREAK_SPEC (PH_scanparse, "pragma", "Stop after resolving pragmas");
+    PRINT_BREAK_SPEC (PH_scanparse, "objinit",
+                      "Stop after generating generic types and functions");
 
     printf ("\n");
 
-    PRINT_BREAK_SPEC (PH_scanparse, "rsa", "Stop after resolving all flag.");
-    PRINT_BREAK_SPEC (PH_scanparse, "ans", "Stop after annotating namespaces.");
-    PRINT_BREAK_SPEC (PH_scanparse, "gdp", "Stop after gathering dependencies.");
-    PRINT_BREAK_SPEC (PH_scanparse, "imp", "Stop after importing instances.");
-    PRINT_BREAK_SPEC (PH_scanparse, "uss", "Stop after fetching used symbols.");
-    PRINT_BREAK_SPEC (PH_scanparse, "dep", "Stop after resolving dependencies.");
+    PRINT_BREAK_SPEC (PH_module, "rsa", "Stop after resolving all flag.");
+    PRINT_BREAK_SPEC (PH_module, "ans", "Stop after annotating namespaces.");
+    PRINT_BREAK_SPEC (PH_module, "gdp", "Stop after gathering dependencies.");
+    PRINT_BREAK_SPEC (PH_module, "imp", "Stop after importing instances.");
+    PRINT_BREAK_SPEC (PH_module, "uss", "Stop after fetching used symbols.");
+    PRINT_BREAK_SPEC (PH_module, "dep", "Stop after resolving dependencies.");
 
     printf ("\n");
 
-    PRINT_BREAK_SPEC (PH_simplify, "mop",
+    PRINT_BREAK_SPEC (PH_simplify, "w2d",
+                      "Stop after transforming while-loops into do-loops");
+    PRINT_BREAK_SPEC (PH_simplify, "hce",
+                      "Stop after eliminating conditional expressions");
+    PRINT_BREAK_SPEC (PH_simplify, "hm",
                       "Stop after resolving (multiple) applications of infix");
     CONT_BREAK_SPEC ("operations.");
+    PRINT_BREAK_SPEC (PH_simplify, "flat", "Stop after flattening nested expressions");
 
     printf ("\n");
 
@@ -931,7 +942,8 @@ USGprintUsage ()
             "      Karsten Hinckfuss\n"
             "      Steffen Kuthe\n"
             "      Jan-Henrik Baumgarten\n"
-            "      Robert Bernecky\n");
+            "      Robert Bernecky\n"
+            "      Theo van Klaveren\n");
 
     printf ("\n\nCONTACT:\n\n"
 
