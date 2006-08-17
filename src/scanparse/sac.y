@@ -1469,9 +1469,9 @@ nwithop: GENARRAY BRACKET_L expr COMMA expr BRACKET_R
          }
        ;
 
-propagate: PROPAGATE BRACKET_L expr BRACKET_R propagate
+propagate: PROPAGATE BRACKET_L expr BRACKET_R COMMA propagate
            { $$ = TBmakePropagate( $3);
-             PROPAGATE_NEXT( $$) = $5;
+             PROPAGATE_NEXT( $$) = $6;
            }
          | /* empty */
            { $$ = NULL; }
