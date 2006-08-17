@@ -1060,9 +1060,12 @@ NTCCTprf_ari_op_SxS (te_info *info, ntype *args)
 
     TEassureNumS (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
     TEassureNumS (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
-    TEassureSameSimpleType (TEarg2Obj (1), array1, TEprfArg2Obj (TEgetNameStr (info), 2),
-                            array2);
     err_msg = TEfetchErrors ();
+    if (err_msg == NULL) {
+        TEassureSameSimpleType (TEarg2Obj (1), array1,
+                                TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+        err_msg = TEfetchErrors ();
+    }
     if ((err_msg == NULL) && TEgetPrf (info) == F_div_SxS) {
         TEassureValNonZero (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
         err_msg = TEfetchErrors ();
@@ -1108,9 +1111,12 @@ NTCCTprf_ari_op_SxA (te_info *info, ntype *args)
 
     TEassureNumS (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
     TEassureNumA (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
-    TEassureSameSimpleType (TEarg2Obj (1), array1, TEprfArg2Obj (TEgetNameStr (info), 2),
-                            array2);
     err_msg = TEfetchErrors ();
+    if (err_msg == NULL) {
+        TEassureSameSimpleType (TEarg2Obj (1), array1,
+                                TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+        err_msg = TEfetchErrors ();
+    }
     if ((err_msg == NULL) && TEgetPrf (info) == F_div_SxA) {
         TEassureValNonZero (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
         err_msg = TEfetchErrors ();
@@ -1156,9 +1162,12 @@ NTCCTprf_ari_op_AxS (te_info *info, ntype *args)
 
     TEassureNumA (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
     TEassureNumS (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
-    TEassureSameSimpleType (TEarg2Obj (1), array1, TEprfArg2Obj (TEgetNameStr (info), 2),
-                            array2);
     err_msg = TEfetchErrors ();
+    if (err_msg == NULL) {
+        TEassureSameSimpleType (TEarg2Obj (1), array1,
+                                TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+        err_msg = TEfetchErrors ();
+    }
     if ((err_msg == NULL) && TEgetPrf (info) == F_div_AxS) {
         TEassureValNonZero (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
         err_msg = TEfetchErrors ();
@@ -1204,10 +1213,14 @@ NTCCTprf_ari_op_AxA (te_info *info, ntype *args)
 
     TEassureNumA (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
     TEassureNumA (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
-    TEassureSameSimpleType (TEarg2Obj (1), array1, TEprfArg2Obj (TEgetNameStr (info), 2),
-                            array2);
     res = TEassureSameShape (TEarg2Obj (1), array1, TEprfArg2Obj (TEgetNameStr (info), 2),
                              array2);
+    err_msg = TEfetchErrors ();
+    if (err_msg == NULL) {
+        TEassureSameSimpleType (TEarg2Obj (1), array1,
+                                TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+        err_msg = TEfetchErrors ();
+    }
     err_msg = TEfetchErrors ();
     if ((err_msg == NULL) && TEgetPrf (info) == F_div_AxA) {
         TEassureValNonZero (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
@@ -1292,11 +1305,14 @@ NTCCTprf_rel_op_AxA (te_info *info, ntype *args)
 
     TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
     TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
-    TEassureSameSimpleType (TEarg2Obj (1), array1, TEprfArg2Obj (TEgetNameStr (info), 2),
-                            array2);
     res = TEassureSameShape (TEarg2Obj (1), array1, TEprfArg2Obj (TEgetNameStr (info), 2),
                              array2);
     err_msg = TEfetchErrors ();
+    if (err_msg == NULL) {
+        TEassureSameSimpleType (TEarg2Obj (1), array1,
+                                TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+        err_msg = TEfetchErrors ();
+    }
     if (err_msg != NULL) {
         res = TYmakeBottomType (err_msg);
     } else {
@@ -1584,11 +1600,14 @@ NTCCTprf_cat_VxV (te_info *info, ntype *args)
 
     TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
     TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
-    TEassureSameSimpleType (TEarg2Obj (1), array1, TEprfArg2Obj (TEgetNameStr (info), 2),
-                            array2);
     TEassureVect (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
     TEassureVect (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
     err_msg = TEfetchErrors ();
+    if (err_msg == NULL) {
+        TEassureSameSimpleType (TEarg2Obj (1), array1,
+                                TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+        err_msg = TEfetchErrors ();
+    }
     if (err_msg != NULL) {
         res = TYmakeBottomType (err_msg);
     } else {
