@@ -2724,6 +2724,21 @@ TCcountParts (node *parts)
  ***  N_withop :
  ***/
 
+int
+TCcountWithops (node *withop)
+{
+    int counter = 0;
+
+    DBUG_ENTER ("TCcountWithops");
+
+    while (withop != NULL) {
+        counter += 1;
+        withop = WITHOP_NEXT (withop);
+    }
+
+    DBUG_RETURN (counter);
+}
+
 /*--------------------------------------------------------------------------*/
 
 /***

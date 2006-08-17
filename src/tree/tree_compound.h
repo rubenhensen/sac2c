@@ -1127,6 +1127,8 @@ extern int TCcountParts (node *parts);
  ***  withop :
  ***/
 
+extern int TCcountWithops (node *withop);
+
 #define WITHOP_NEXT(n)                                                                   \
     ((NODE_TYPE (n) == N_genarray)                                                       \
        ? GENARRAY_NEXT (n)                                                               \
