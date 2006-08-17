@@ -1005,9 +1005,11 @@ NTClet (node *arg_node, info *arg_info)
     } else {
 
         /* lhs must be one ids only since rhs is not a function application! */
-        CTIabortLine (global.linenum,
-                      "rhs yields one value, %d vars specified on the lhs",
-                      TCcountIds (lhs));
+        if (TCcountIds (lhs) != 1) {
+            CTIabortLine (global.linenum,
+                          "rhs yields one value, %d vars specified on the lhs",
+                          TCcountIds (lhs));
+        }
 
         existing_type = AVIS_TYPE (IDS_AVIS (lhs));
         inferred_type = rhs_type;
