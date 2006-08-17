@@ -274,6 +274,32 @@ RERAlet (node *arg_node, info *arg_info)
     }
 
     /*
+     * check whether rhs is a prop_obj() and in that case substitute
+     * lhs of any reference args by rhs.
+     */
+    if ((NODE_TYPE (LET_EXPR (arg_node)) == N_prf)
+        && (PRF_PRF (LET_EXPR (arg_node)) == F_prop_obj)) {
+        node *args = PRF_ARGS (LET_EXPR (arg_node));
+        node *lhs = LET_IDS (arg_node);
+
+        args = EXPRS_NEXT (args); /* skip iv arg */
+
+        while (args != NULL) {
+            if (NODE_TYPE (AVIS_DECL (ID_AVIS (EXPRS_EXPR (args)))) == N_arg) {
+                arg = AVIS_DECL (ID_AVIS (EXPRS_EXPR (args)));
+
+                if (ARG_WASREFERENCE (arg) || ARG_ISREFERENCE (arg)) {
+                    AVIS_SUBST (IDS_AVIS (lhs)) = ARG_AVIS (arg);
+                }
+            }
+
+            /* iterate */
+            args = EXPRS_NEXT (args);
+            lhs = IDS_NEXT (lhs);
+        }
+    }
+
+    /*
      * substitute LHS ids
      */
     if (LET_IDS (arg_node) != NULL) {
