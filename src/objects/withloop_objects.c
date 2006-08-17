@@ -157,7 +157,7 @@ ModAccu (node *prop, info *arg_info)
       = TCappendExprs (args,
                        TBmakeExprs (TBmakeId (ID_AVIS (PROPAGATE_DEFAULT (prop))), NULL));
     lhs = TCappendIds (lhs, TBmakeIds (ID_AVIS (PROPAGATE_DEFAULT (prop)), NULL));
-    DBUG_LEAVE;
+    DBUG_VOID_RETURN;
 }
 
 static node *
