@@ -922,9 +922,12 @@ NTClet (node *arg_node, info *arg_info)
                               TYgetProductSize (rhs_type), TCcountIds (lhs));
             }
         } else {
-            DBUG_ASSERT (TCcountIds (lhs) == TYgetProductSize (rhs_type),
-                         "lhs variables of withloop does not match produced number"
-                         " of return types");
+            if (TCcountIds (lhs) != TYgetProductSize (rhs_type)) {
+                CTIabortLine (global.linenum,
+                              "with loop returns %d values,"
+                              " %d variables specified on the lhs",
+                              TYgetProductSize (rhs_type), TCcountIds (lhs));
+            }
         }
         i = 0;
         while (lhs) {
@@ -1002,8 +1005,9 @@ NTClet (node *arg_node, info *arg_info)
     } else {
 
         /* lhs must be one ids only since rhs is not a function application! */
-        DBUG_ASSERT ((TCcountIds (lhs) == 1),
-                     "more than one lhs var without a function call on the rhs");
+        CTIabortLine (global.linenum,
+                      "rhs yields one value, %d vars specified on the lhs",
+                      TCcountIds (lhs));
 
         existing_type = AVIS_TYPE (IDS_AVIS (lhs));
         inferred_type = rhs_type;

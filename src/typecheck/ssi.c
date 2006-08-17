@@ -726,7 +726,7 @@ SSIgetMin (tvar *var)
 char *
 SSIvariable2String (tvar *var)
 {
-    char buf[4096];
+    static char buf[4096];
     char *tmp = &buf[0];
     char *tmp_str, *tmp_str2;
 
@@ -757,7 +757,7 @@ SSIvariable2String (tvar *var)
 char *
 SSIvariable2DebugString (tvar *var)
 {
-    char buf[256];
+    static char buf[65536];
     char *tmp = &buf[0];
     char *tmp_str, *tmp_str2;
     int i;
