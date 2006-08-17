@@ -1282,8 +1282,8 @@ with: BRACKET_L generator BRACKET_R wlassignblock withop
       }
     | BRACKET_L ID BRACKET_R parts nwithop propagate
       { $$ = $4;
-        L_WITHOP_NEXT( $5, $6);
         WITH_WITHOP( $$) = $5;
+        L_WITHOP_NEXT( $5, $6);
         /*
          * At the time being we ignore $2. However, it SHOULD be checked
          * against all genidxs in $4 here....
@@ -1469,7 +1469,7 @@ nwithop: GENARRAY BRACKET_L expr COMMA expr BRACKET_R
          }
        ;
 
-propagate: COMMA PROPAGATE BRACKET_L expr BRACKET_R propagate
+propagate: PROPAGATE BRACKET_L expr BRACKET_R propagate
            { $$ = TBmakePropagate( $4);
              PROPAGATE_NEXT( $$) = $6;
            }
