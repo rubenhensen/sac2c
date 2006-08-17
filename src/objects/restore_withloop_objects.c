@@ -74,7 +74,6 @@ FreeInfo (info *info)
 static node *
 RemoveExtractedObjects (node *withops, node *withexprs, node *let_lhs, info *arg_info)
 {
-    node *temp;
     node *iter;
     node *prev_withop = NULL;
     node *prev_withexpr = NULL;
@@ -89,33 +88,27 @@ RemoveExtractedObjects (node *withops, node *withexprs, node *let_lhs, info *arg
 
     iter = withops;
     while (iter != NULL) {
-        if (iter->nodetype == N_propagate) {
+        if (NODE_TYPE (iter) == N_propagate) {
 
             /*
-             * Remove the extract() withop, and the associated LHS expr and
+             * Remove the propagate() withop, and the associated LHS expr and
              * with-loop result expression.
              */
 
-            temp = iter;
-            iter = WITHOP_NEXT (iter);
+            iter = FREEdoFreeNode (iter);
             if (prev_withop != NULL) {
                 L_WITHOP_NEXT (prev_withop, iter);
             }
-            FREEdoFreeNode (temp);
 
-            temp = withexprs;
-            withexprs = EXPRS_NEXT (withexprs);
+            withexprs = FREEdoFreeNode (withexprs);
             if (prev_withexpr != NULL) {
                 EXPRS_NEXT (prev_withexpr) = withexprs;
             }
-            FREEdoFreeNode (temp);
 
-            temp = let_lhs;
-            let_lhs = IDS_NEXT (let_lhs);
+            let_lhs = FREEdoFreeNode (let_lhs);
             if (prev_let_lhs != NULL) {
                 IDS_NEXT (prev_let_lhs) = let_lhs;
             }
-            FREEdoFreeNode (temp);
 
         } else {
 
@@ -140,10 +133,9 @@ RemoveExtractedObjects (node *withops, node *withexprs, node *let_lhs, info *arg
 node *
 RWOAassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RWOAassign");
-
     bool dodel = FALSE;
-    node *temp;
+
+    DBUG_ENTER ("RWOAassign");
 
     if (ASSIGN_INSTR (arg_node) != NULL) {
         ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
@@ -157,12 +149,9 @@ RWOAassign (node *arg_node, info *arg_info)
     }
 
     if (dodel == TRUE) {
-        temp = ASSIGN_NEXT (arg_node);
-        FREEdoFreeNode (arg_node);
-        DBUG_RETURN (temp);
-    } else {
-        DBUG_RETURN (arg_node);
+        arg_node = FREEdoFreeNode (arg_node);
     }
+    DBUG_RETURN (arg_node);
 }
 
 node *
