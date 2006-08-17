@@ -294,8 +294,21 @@ WOAid (node *arg_node, info *arg_info)
             /*
              * This is an object referenced from within a with-loop. Add it
              * to the list of objects that will be attached to the with-loop.
+             * But of course only if it's not in the list already.
              */
-            INFO_OBJECTS (arg_info) = TBmakeExprs (arg_node, INFO_OBJECTS (arg_info));
+            node *iter = INFO_OBJECTS (arg_info);
+
+            while (iter != NULL) {
+                if (ID_AVIS (EXPRS_EXPR (iter)) == avis) {
+                    break;
+                }
+                iter = EXPRS_NEXT (iter);
+            }
+
+            /* At the end of the list, so it was not found. Add it. */
+            if (iter == NULL) {
+                INFO_OBJECTS (arg_info) = TBmakeExprs (arg_node, INFO_OBJECTS (arg_info));
+            }
         }
     }
 
