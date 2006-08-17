@@ -917,15 +917,16 @@ NTClet (node *arg_node, info *arg_info)
                          "fun ap yields more return values  than lhs vars available!");
         } else if (NODE_TYPE (LET_EXPR (arg_node)) == N_prf) {
             if (TCcountIds (lhs) != TYgetProductSize (rhs_type)) {
-                CTIabortLine (global.linenum, "%s yields %d instead of %d return values",
+                CTIabortLine (global.linenum,
+                              "%s yields %d instead of %d return value(s)",
                               global.prf_string[PRF_PRF (LET_EXPR (arg_node))],
                               TYgetProductSize (rhs_type), TCcountIds (lhs));
             }
         } else {
             if (TCcountIds (lhs) != TYgetProductSize (rhs_type)) {
                 CTIabortLine (global.linenum,
-                              "with loop returns %d values,"
-                              " %d variables specified on the lhs",
+                              "with loop returns %d value(s)"
+                              " but %d variable(s) specified on the lhs",
                               TYgetProductSize (rhs_type), TCcountIds (lhs));
             }
         }
@@ -1642,6 +1643,12 @@ NTCwith (node *arg_node, info *arg_info)
     INFO_NUM_EXPRS_SOFAR (arg_info) = 0;
     INFO_ACT_PROP_OBJ (arg_info) = 0;
 
+    if (TYgetProductSize (body) != TCcountWithops (WITH_WITHOP (arg_node))) {
+        CTIabortLine (global.linenum,
+                      "Inconsistent with loop: %d operator(s) "
+                      "but %d value(s) specified in the body",
+                      TCcountWithops (WITH_WITHOP (arg_node)), TYgetProductSize (body));
+    }
     WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
 
     DBUG_EXECUTE ("NTC", tmp_str = TYtype2String (INFO_TYPE (arg_info), FALSE, 0););
@@ -1874,9 +1881,6 @@ HandleMultiOperators (node *arg_node, info *arg_info)
         INFO_NUM_EXPRS_SOFAR (arg_info)--;
 
     } else {
-        DBUG_ASSERT (TYgetProductSize (INFO_BODIES_TYPE (arg_info))
-                       == INFO_NUM_EXPRS_SOFAR (arg_info) + 1,
-                     "less withops than code returns");
         INFO_TYPE (arg_info)
           = TYmakeEmptyProductType (INFO_NUM_EXPRS_SOFAR (arg_info) + 1);
     }
@@ -1903,9 +1907,6 @@ NTCgenarray (node *arg_node, info *arg_info)
     DBUG_ENTER ("NTCgenarray");
 
     gen = INFO_GEN_TYPE (arg_info);
-    DBUG_ASSERT (TYgetProductSize (INFO_BODIES_TYPE (arg_info))
-                   > INFO_NUM_EXPRS_SOFAR (arg_info),
-                 "more withops than code returns");
     body
       = TYgetProductMember (INFO_BODIES_TYPE (arg_info), INFO_NUM_EXPRS_SOFAR (arg_info));
 
@@ -1959,9 +1960,6 @@ NTCmodarray (node *arg_node, info *arg_info)
     DBUG_ENTER ("NTCmodarray");
 
     gen = INFO_GEN_TYPE (arg_info);
-    DBUG_ASSERT (TYgetProductSize (INFO_BODIES_TYPE (arg_info))
-                   > INFO_NUM_EXPRS_SOFAR (arg_info),
-                 "more withops than code returns");
     body
       = TYgetProductMember (INFO_BODIES_TYPE (arg_info), INFO_NUM_EXPRS_SOFAR (arg_info));
 
@@ -2008,9 +2006,6 @@ NTCfold (node *arg_node, info *arg_info)
 
     gen = INFO_GEN_TYPE (arg_info);
 
-    DBUG_ASSERT (TYgetProductSize (INFO_BODIES_TYPE (arg_info))
-                   > INFO_NUM_EXPRS_SOFAR (arg_info),
-                 "more withops than code returns");
     body
       = TYgetProductMember (INFO_BODIES_TYPE (arg_info), INFO_NUM_EXPRS_SOFAR (arg_info));
 
@@ -2117,9 +2112,6 @@ NTCbreak (node *arg_node, info *arg_info)
     ntype *body;
 
     DBUG_ENTER ("NTCbreak");
-    DBUG_ASSERT (TYgetProductSize (INFO_BODIES_TYPE (arg_info))
-                   > INFO_NUM_EXPRS_SOFAR (arg_info),
-                 "more withops than code returns");
     body
       = TYgetProductMember (INFO_BODIES_TYPE (arg_info), INFO_NUM_EXPRS_SOFAR (arg_info));
 
@@ -2148,9 +2140,6 @@ NTCpropagate (node *arg_node, info *arg_info)
     bool ok;
 
     DBUG_ENTER ("NTCpropagate");
-    DBUG_ASSERT (TYgetProductSize (INFO_BODIES_TYPE (arg_info))
-                   > INFO_NUM_EXPRS_SOFAR (arg_info),
-                 "more withops than code returns");
     body
       = TYgetProductMember (INFO_BODIES_TYPE (arg_info), INFO_NUM_EXPRS_SOFAR (arg_info));
 
