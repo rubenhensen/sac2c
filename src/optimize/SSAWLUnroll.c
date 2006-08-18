@@ -214,16 +214,86 @@ static node *
 ApplyPropagate (node *bodycode, node *index, node *partn, node *withop, node *cexpr)
 {
     node *letn;
-    node *assignn;
+    node *tmp;
+    node *tmp_prev;
+    bool F_prop_obj_found;
 
     DBUG_ENTER ("ApplyPropagate");
 
-    /* Assign the resulting object of the body to the ingoing object
-     * (which incidentally is the default element so use that). */
-    letn = TBmakeLet (TBmakeIds (ID_AVIS (PROPAGATE_DEFAULT (withop)), NULL),
-                      DUPdoDupTree (EXPRS_EXPR (cexpr)));
-    assignn = TBmakeAssign (letn, NULL);
-    bodycode = TCappendAssign (bodycode, assignn);
+    DBUG_ASSERT ((NODE_TYPE (bodycode) != N_empty), "BLOCK_INSTR is empty!");
+
+    /*
+     * remove affected objects from the expression
+     *
+     *    a', ...  = prop_obj(iv, a, ...)
+     */
+
+    tmp = bodycode;
+    tmp_prev = NULL;
+    F_prop_obj_found = FALSE;
+
+    while (tmp != NULL) {
+        if ((NODE_TYPE (ASSIGN_RHS (tmp)) == N_prf)
+            && (PRF_PRF (ASSIGN_RHS (tmp)) == F_prop_obj)) {
+            node *prf_arg = PRF_ARGS (ASSIGN_RHS (tmp));
+            node *lhs = ASSIGN_LHS (tmp);
+            node *prf_prv = NULL;
+            node *lhs_prv = NULL;
+
+            /* skip iv */
+            prf_prv = prf_arg;
+            prf_arg = EXPRS_NEXT (prf_arg);
+
+            /* replace object in lhs and prf args with new assignment below it */
+            while (prf_arg != NULL) {
+                if (ID_AVIS (EXPRS_EXPR (prf_arg))
+                    == ID_AVIS (PROPAGATE_DEFAULT (withop))) {
+                    letn = TBmakeLet (TBmakeIds (IDS_AVIS (lhs), NULL),
+                                      TBmakeId (ID_AVIS (EXPRS_EXPR (prf_arg))));
+                    ASSIGN_NEXT (tmp) = TBmakeAssign (letn, ASSIGN_NEXT (tmp));
+                    lhs = FREEdoFreeNode (lhs);
+                    if (lhs_prv != NULL) {
+                        IDS_NEXT (lhs_prv) = lhs;
+                    } else {
+                        ASSIGN_LHS (tmp) = lhs;
+                    }
+                    prf_arg = FREEdoFreeNode (prf_arg);
+                    EXPRS_NEXT (prf_prv) = prf_arg;
+                } else {
+                    prf_prv = prf_arg;
+                    prf_arg = EXPRS_NEXT (prf_arg);
+                    lhs_prv = lhs;
+                    lhs = IDS_NEXT (lhs);
+                }
+            }
+
+            /* check whether we leave an empty F_prop_obj, and if so, delete */
+            if (ASSIGN_LHS (tmp) == NULL) {
+                tmp = FREEdoFreeNode (tmp);
+                if (tmp_prev != NULL) {
+                    ASSIGN_NEXT (tmp_prev) = tmp;
+                } else {
+                    bodycode = tmp;
+                }
+                continue;
+            }
+
+            F_prop_obj_found = TRUE;
+        }
+
+        if (ASSIGN_NEXT (tmp) == NULL) {
+
+            /* Assign the resulting object of the body to the ingoing object
+             * (which incidentally is the default element so use that). */
+            letn = TBmakeLet (TBmakeIds (ID_AVIS (PROPAGATE_DEFAULT (withop)), NULL),
+                              DUPdoDupTree (EXPRS_EXPR (cexpr)));
+            ASSIGN_NEXT (tmp) = TBmakeAssign (letn, NULL);
+            tmp = ASSIGN_NEXT (tmp);
+        }
+
+        tmp_prev = tmp;
+        tmp = ASSIGN_NEXT (tmp);
+    }
 
     DBUG_RETURN (bodycode);
 }
