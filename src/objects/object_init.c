@@ -28,11 +28,13 @@
  * @param ns      ns of function to be built
  * @param from    type to convert from
  * @param to      type to convert to
+ * @param prf     primitive function to stick in
  *
  * @return N_fundef node representing the type conversion
  ******************************************************************************/
 static node *
-BuildTypeConversion (const char *name, const namespace_t *ns, ntype *from, ntype *to)
+BuildTypeConversion (const char *name, const namespace_t *ns, ntype *from, ntype *to,
+                     prf prf)
 {
     node *result;
     node *avisarg;
@@ -51,27 +53,13 @@ BuildTypeConversion (const char *name, const namespace_t *ns, ntype *from, ntype
       = TBmakeAssign (TBmakeReturn (
                         TBmakeExprs (TBmakeSpid (NULL, ILIBstringCopy ("result")), NULL)),
                       NULL);
-#if 0
-  /*
-   * res = type_conv( restype, arg);
-   */
-  assign = TBmakeAssign(
-             TBmakeLet(
-               TBmakeSpids( ILIBstringCopy( "result"), NULL),
-               TCmakePrf2(
-                 F_type_conv,
-                 TBmakeType( 
-                   TYcopyType( to)),
-                 TBmakeId( avisarg))), 
-             assign);
-#else
     /*
-     * res = (:restype) arg;
+     * res = prf( (:restype) arg);
      */
     assign = TBmakeAssign (TBmakeLet (TBmakeSpids (ILIBstringCopy ("result"), NULL),
-                                      TBmakeCast (TYcopyType (to), TBmakeId (avisarg))),
+                                      TCmakePrf1 (prf, TBmakeCast (TYcopyType (to),
+                                                                   TBmakeId (avisarg)))),
                            assign);
-#endif
 
     /*
      * create the fundef body block
@@ -120,10 +108,10 @@ CreateTypeConversions (node *typedefs, node *funs)
                                SHmakeShape (0));
 
         to_fun = BuildTypeConversion (to_name, TYPEDEF_NS (typedefs),
-                                      TYPEDEF_NTYPE (typedefs), tdef_type);
+                                      TYPEDEF_NTYPE (typedefs), tdef_type, F_to_unq);
 
         from_fun = BuildTypeConversion (from_name, TYPEDEF_NS (typedefs), tdef_type,
-                                        TYPEDEF_NTYPE (typedefs));
+                                        TYPEDEF_NTYPE (typedefs), F_from_unq);
 
         FUNDEF_NEXT (to_fun) = funs;
         FUNDEF_NEXT (from_fun) = to_fun;
