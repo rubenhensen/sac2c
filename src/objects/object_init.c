@@ -57,8 +57,7 @@ BuildTypeConversion (const char *name, const namespace_t *ns, ntype *from, ntype
      * res = prf( (:restype) arg);
      */
     assign = TBmakeAssign (TBmakeLet (TBmakeSpids (ILIBstringCopy ("result"), NULL),
-                                      TCmakePrf1 (prf, TBmakeCast (TYcopyType (to),
-                                                                   TBmakeId (avisarg)))),
+                                      TBmakeCast (TYcopyType (to), TBmakeId (avisarg))),
                            assign);
 
     /*
