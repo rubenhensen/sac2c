@@ -73,6 +73,23 @@ NTCCTprf_dummy (te_info *info, ntype *args)
 /******************************************************************************
  *
  * function:
+ *    ntype *NTCPRF_id( te_info *info, ntype *args)
+ *
+ * description:
+ *    generic version which simply returns its argument type.
+ *
+ ******************************************************************************/
+
+ntype *
+NTCCTprf_id (te_info *info, ntype *args)
+{
+    DBUG_ENTER ("NTCCTprf_id");
+    DBUG_RETURN (TYcopyType (args));
+}
+
+/******************************************************************************
+ *
+ * function:
  *    ntype *NTCCTprf_array( te_info *info, ntype *elems)
  *
  * description:

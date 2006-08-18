@@ -8,6 +8,7 @@
 #include "types.h"
 
 extern ntype *NTCCTprf_dummy (te_info *info, ntype *args);
+extern ntype *NTCCTprf_id (te_info *info, ntype *args);
 extern ntype *NTCCTprf_array (te_info *info, ntype *elems);
 extern ntype *NTCCTprf_cast (te_info *info, ntype *elems);
 extern ntype *NTCCTprf_type_conv (te_info *info, ntype *args);
