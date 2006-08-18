@@ -4,10 +4,20 @@
  *
  * @file wlpropagation.c
  *
- * This file implements functionality of type upgrade (infer types of lhs
- * dependent on rhs), reverse type upgrade (infer types of rhs dependent
- * on lhs), function dispatch (removes calls of wrapper functions) and
- * function specialization (create more special function instances).
+ * The following functions implement the functionality of with-loop
+ * propagation.
+ * With-loop propagation means to move a with-loop from one context into
+ * another, here we are interested to move with-loops defined in one
+ * function but used (via argument of a function call) in another
+ * loop-function into that loop-function.
+ * This is only beneficial if no more overhead (with-loop moved into the
+ * body of a loop) is produced as is prevented (because of less memory
+ * access overhead (copying of arguments)).
+ * For that some preconditions have to be fulfilled:
+ * - The with-loop contains no selections (no expensive memory access)
+ * - The with-loop contains just one selection but is used only
+ *   once (that means: as argument of a function application).
+ * Then it is assumed to be save to do with-loop propagation.
  *
  **************************************************************************/
 
@@ -84,11 +94,10 @@ FreeInfo (info *arg_info)
  *
  * @fn static bool IdIsDefinedByWL(node *arg_node)
  *
- * @brief: returns TRUE if arg_node (=>N_id) is defined by
- *         with-loop
+ * @brief: returns TRUE if arg_node (always of type N_id) is defined by
+ *         a with-loop
  *
- *  <+long description+>
- * @param arg_node
+ * @param arg_node of type N_id
  *
  * @result
  *
@@ -115,11 +124,14 @@ IdIsDefinedByWL (node *arg_node)
  *
  * @fn static node *GetRecursiveFunctionApplication(node *fundef)
  *
- * @brief: returns the N_assign-node conatining the
- *         recursive function call of 'fundef'
+ * @brief: returns the N_assign-node containing the
+ *         recursive function call of argument 'fundef'
  *
+ * The one and only occurrence of a N_cond node in a function
+ * representing a do-loop is the corresponding recursive
+ * function call. The N_assign node containing this recursive
+ * function call is the return value.
  *
- *  <+long description+>
  * @param fundef is a N_fundef node, defining a do-function
  *
  * @result
@@ -159,7 +171,6 @@ GetRecursiveFunctionApplication (node *fundef)
  *
  * @brief: Starting routine of with-loop propagation traversal
  *
- *  <+long description+>
  * @param arg_node
  *
  * @result
@@ -192,7 +203,9 @@ WLPROPdoWithloopPropagation (node *arg_node)
  *
  * @brief: handles fundef nodes
  *
- *  <+long description+>
+ * First all necessary information for with-loop propagation are
+ * infered, then the actual traversal is started.
+ *
  * @param arg_node
  * @param arg_info
  *
@@ -235,9 +248,8 @@ WLPROPfundef (node *arg_node, info *arg_info)
  *
  * @fn node *WLPROPassign(node *arg_node, info *arg_info)
  *
- * @brief: handles assign nodes
+ * @brief: handles assign nodes, top-down traversal
  *
- *  <+long description+>
  * @param arg_node
  * @param arg_info
  *
@@ -264,7 +276,11 @@ WLPROPassign (node *arg_node, info *arg_info)
  *
  * @brief: handles ap nodes
  *
- *  <+long description+>
+ * If the current function application represents a do-loop the
+ * argument chain is traversed and with-loop propagation can apply if
+ * possible. After that, with-loop propagation is done again on the
+ * same function to handle transitive dependencies.
+ *
  * @param arg_node
  * @param arg_info
  *
@@ -333,7 +349,11 @@ WLPROPap (node *arg_node, info *arg_info)
  *
  * @brief: handles exprs nodes
  *
- *  <+long description+>
+ * Does just a top-down traversal.
+ * If the travstate equals withloop_prop, the current expr-chain
+ * represents the argument chain of an N_ap node. Then the
+ * corresponding N_arg node (linked to from arg_info) is also adjusted.
+ *
  * @param arg_node
  * @param arg_info
  *
@@ -352,7 +372,7 @@ WLPROPexprs (node *arg_node, info *arg_info)
          * since we are trying to propagate withloops into
          * do-funs, set the arg-node of the
          * applied do-fun to correspond to the id-node of the
-         * applying function which will be traversed next.
+         * applying (calling) function which will be traversed next.
          */
         INFO_CORRESPONDINGFUNARG (arg_info)
           = ARG_NEXT (INFO_CORRESPONDINGFUNARG (arg_info));
@@ -373,7 +393,16 @@ WLPROPexprs (node *arg_node, info *arg_info)
  *
  * @brief: handles id nodes
  *
- *  <+long description+>
+ * Most of the actual code transformation is done here.
+ * If 'arg_node' is defined by a with-loop and both the
+ * with-loop and 'arg_node' fulfill the conditions for
+ * with-loop propagation the transformation starts.
+ * First of all a lookup table and a dataflow mask are used
+ * to identify identifiers used in the with-loop, to create corresponding
+ * new ones and to keep track of them. Then the with-loop is moved from
+ * the calling function into the called function (insert code in
+ * argument chain, adjust references and function signatures).
+ *
  * @param arg_node
  * @param arg_info
  *
@@ -420,7 +449,7 @@ WLPROPid (node *arg_node, info *arg_info)
                                        INFO_ARGNUM (arg_info)));
 
                 /*
-                 * generate LUT
+                 * generate LUT to keep track of identifiers
                  */
                 lut = LUTgenerateLut ();
 
@@ -502,7 +531,9 @@ WLPROPid (node *arg_node, info *arg_info)
                 /*
                  * Now the withloop definition was moved into the body
                  * of the applied function.
-                 * Still missing: Transforming former withloop-arg to vardec
+                 *
+                 * Will be done in the following:
+                 *                Transforming former withloop-arg to vardec
                  *                Replace the withloop-arg in signature
                  *                by dummy identifier
                  */
