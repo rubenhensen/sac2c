@@ -167,7 +167,7 @@ EXPprovide (node *arg_node, info *arg_info)
             arg_node = FREEdoFreeNode (arg_node);
         }
     } else if (INFO_SYMBMODE (arg_info) == SYM_check) {
-        CheckSymbolsUsed (EXPORT_SYMBOL (arg_node), arg_info);
+        CheckSymbolsUsed (PROVIDE_SYMBOL (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
