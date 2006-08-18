@@ -258,8 +258,9 @@ EMIPcode (node *arg_node, info *arg_info)
      */
     cexprs = CODE_CEXPRS (arg_node);
     while (cexprs != NULL) {
-        node *cid = EXPRS_EXPR (cexprs);
-        node *wlass = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (cid))));
+        node *cid;
+        node *wlass;
+        node *rhs;
         node *mem;
         node *val;
         node *cval;
@@ -269,163 +270,173 @@ EMIPcode (node *arg_node, info *arg_info)
         bool isinblock;
         node *assigns;
 
-        if ((NODE_TYPE (wlass) == N_prf) && (PRF_PRF (wlass) == F_fill)
-            && (NODE_TYPE (PRF_ARG1 (wlass)) == N_prf)
-            && (PRF_PRF (PRF_ARG1 (wlass)) == F_copy)) {
-            /*
-             * Search for suballoc situation
-             *
-             *   a  = ...
-             *   m' = suballoc( A, iv);
-             *   m  = fill( copy( a), m');
-             * }: m
-             */
-            val = PRF_ARG1 (wlass);
-            mem = PRF_ARG2 (wlass);
-            cval = PRF_ARG1 (val);
-            avis = ID_AVIS (cval);
-            memass = AVIS_SSAASSIGN (ID_AVIS (mem));
-            memop = LET_EXPR (ASSIGN_INSTR (memass));
+        cid = EXPRS_EXPR (cexprs);
+        wlass = AVIS_SSAASSIGN (ID_AVIS (cid));
 
-            /*
-             * a must be assigned inside the current block in order to
-             * move suballoc in front of a.
-             */
-            isinblock = FALSE;
-            if (AVIS_SSAASSIGN (avis) != NULL) {
-                assigns = BLOCK_INSTR (CODE_CBLOCK (arg_node));
-                while (assigns != NULL) {
-                    if (assigns == AVIS_SSAASSIGN (avis)) {
-                        isinblock = TRUE;
-                        break;
-                    }
-                    assigns = ASSIGN_NEXT (assigns);
-                }
-            }
+        if (wlass != NULL) {
+            rhs = ASSIGN_RHS (wlass);
 
-            if ((isinblock) && (PRF_PRF (memop) == F_suballoc)) {
+            if ((NODE_TYPE (rhs) == N_prf) && (PRF_PRF (rhs) == F_fill)
+                && (NODE_TYPE (PRF_ARG1 (rhs)) == N_prf)
+                && (PRF_PRF (PRF_ARG1 (rhs)) == F_copy)) {
                 /*
-                 * Situation recognized, find highest position for suballoc
-                 */
-                node *def = AVIS_SSAASSIGN (ID_AVIS (cval));
-                INFO_LASTSAFE (arg_info) = NULL;
-                INFO_NOUSE (arg_info) = LUTsearchInLutPp (INFO_REUSELUT (arg_info),
-                                                          ID_AVIS (PRF_ARG1 (memop)));
-                if (INFO_NOUSE (arg_info) == ID_AVIS (PRF_ARG1 (memop))) {
-                    INFO_NOUSE (arg_info) = NULL;
-                }
-                INFO_NOAP (arg_info) = NULL;
-
-                /*
-                 * BETWEEN def and LASTSAFE:
+                 * Search for suballoc situation
                  *
-                 * NOUSE must not be used at all!!!
-                 * NOAP must not be used in function applications
+                 *   a  = ...
+                 *   m' = suballoc( A, iv);
+                 *   m  = fill( copy( a), m');
+                 * }: m
                  */
-                INFO_OK (arg_info) = TRUE;
+                val = PRF_ARG1 (rhs);
+                mem = PRF_ARG2 (rhs);
+                cval = PRF_ARG1 (val);
+                avis = ID_AVIS (cval);
+                memass = AVIS_SSAASSIGN (ID_AVIS (mem));
+                memop = LET_EXPR (ASSIGN_INSTR (memass));
 
-                while (INFO_OK (arg_info)) {
-                    TRAVpush (TR_emiph);
-                    ASSIGN_NEXT (def) = TRAVdo (ASSIGN_NEXT (def), arg_info);
-                    TRAVpop ();
-
-                    if (INFO_OK (arg_info)) {
-                        node *defrhs = ASSIGN_RHS (def);
-                        node *withop, *ids;
-                        switch (NODE_TYPE (defrhs)) {
-                        case N_prf:
-                            if (PRF_PRF (defrhs) == F_fill) {
-                                node *memass
-                                  = AVIS_SSAASSIGN (ID_AVIS (PRF_ARG2 (defrhs)));
-                                node *memop = ASSIGN_RHS (memass);
-                                if ((PRF_PRF (memop) == F_alloc)
-                                    || (PRF_PRF (memop) == F_reuse)
-                                    || (PRF_PRF (memop) == F_alloc_or_reuse)) {
-                                    INFO_LASTSAFE (arg_info) = memass;
-                                    if (PRF_PRF (memop) == F_reuse) {
-                                        avis = ID_AVIS (PRF_ARG1 (memop));
-                                        def = AVIS_SSAASSIGN (ID_AVIS (PRF_ARG1 (memop)));
-                                        INFO_NOAP (arg_info) = ID_AVIS (PRF_ARG1 (memop));
-                                    } else {
-                                        INFO_OK (arg_info) = FALSE;
-                                    }
-                                } else {
-                                    INFO_OK (arg_info) = FALSE;
-                                }
-                            } else {
-                                INFO_OK (arg_info) = FALSE;
-                            }
-                            break;
-
-                        case N_with:
-                        case N_with2:
-                            withop = WITH_OR_WITH2_WITHOP (defrhs);
-                            ids = ASSIGN_LHS (def);
-                            while (IDS_AVIS (ids) != avis) {
-                                ids = IDS_NEXT (ids);
-                                withop = WITHOP_NEXT (withop);
-                            }
-                            if ((NODE_TYPE (withop) == N_genarray)
-                                || (NODE_TYPE (withop) == N_modarray)) {
-                                node *memass
-                                  = AVIS_SSAASSIGN (ID_AVIS (WITHOP_MEM (withop)));
-                                node *memop = ASSIGN_RHS (memass);
-                                if ((PRF_PRF (memop) == F_alloc)
-                                    || (PRF_PRF (memop) == F_reuse)
-                                    || (PRF_PRF (memop) == F_alloc_or_reuse)) {
-                                    INFO_LASTSAFE (arg_info) = memass;
-                                    if (PRF_PRF (memop) == F_reuse) {
-                                        avis = ID_AVIS (PRF_ARG1 (memop));
-                                        def = AVIS_SSAASSIGN (ID_AVIS (PRF_ARG1 (memop)));
-                                        INFO_NOAP (arg_info) = ID_AVIS (PRF_ARG1 (memop));
-                                    } else {
-                                        INFO_OK (arg_info) = FALSE;
-                                    }
-                                } else {
-                                    INFO_OK (arg_info) = FALSE;
-                                }
-                            } else {
-                                INFO_OK (arg_info) = FALSE;
-                            }
-                            break;
-
-                        default:
-                            INFO_OK (arg_info) = FALSE;
+                /*
+                 * a must be assigned inside the current block in order to
+                 * move suballoc in front of a.
+                 */
+                isinblock = FALSE;
+                if (AVIS_SSAASSIGN (avis) != NULL) {
+                    assigns = BLOCK_INSTR (CODE_CBLOCK (arg_node));
+                    while (assigns != NULL) {
+                        if (assigns == AVIS_SSAASSIGN (avis)) {
+                            isinblock = TRUE;
                             break;
                         }
+                        assigns = ASSIGN_NEXT (assigns);
                     }
                 }
 
-                if (INFO_LASTSAFE (arg_info) != NULL) {
-                    node *n;
+                if ((isinblock) && (PRF_PRF (memop) == F_suballoc)) {
                     /*
-                     * Replace some alloc or reuse or alloc_or_reuse with
-                     * suballoc
+                     * Situation recognized, find highest position for suballoc
                      */
-                    ASSIGN_RHS (INFO_LASTSAFE (arg_info))
-                      = FREEdoFreeNode (ASSIGN_RHS (INFO_LASTSAFE (arg_info)));
-                    ASSIGN_RHS (INFO_LASTSAFE (arg_info)) = DUPdoDupNode (memop);
-
-                    /*
-                     * Replace CEXPR
-                     */
-                    EXPRS_EXPR (cexprs) = FREEdoFreeNode (EXPRS_EXPR (cexprs));
-                    EXPRS_EXPR (cexprs) = DUPdoDupNode (cval);
-
-                    /*
-                     * Remove old suballoc/fill(copy) combination
-                     */
-                    n = BLOCK_INSTR (CODE_CBLOCK (arg_node));
-                    while (ASSIGN_NEXT (n) != memass) {
-                        n = ASSIGN_NEXT (n);
+                    node *def = AVIS_SSAASSIGN (ID_AVIS (cval));
+                    INFO_LASTSAFE (arg_info) = NULL;
+                    INFO_NOUSE (arg_info) = LUTsearchInLutPp (INFO_REUSELUT (arg_info),
+                                                              ID_AVIS (PRF_ARG1 (memop)));
+                    if (INFO_NOUSE (arg_info) == ID_AVIS (PRF_ARG1 (memop))) {
+                        INFO_NOUSE (arg_info) = NULL;
                     }
-                    ASSIGN_NEXT (n) = FREEdoFreeNode (ASSIGN_NEXT (n));
-                    ASSIGN_NEXT (n) = FREEdoFreeNode (ASSIGN_NEXT (n));
+                    INFO_NOAP (arg_info) = NULL;
+
+                    /*
+                     * BETWEEN def and LASTSAFE:
+                     *
+                     * NOUSE must not be used at all!!!
+                     * NOAP must not be used in function applications
+                     */
+                    INFO_OK (arg_info) = TRUE;
+
+                    while (INFO_OK (arg_info)) {
+                        TRAVpush (TR_emiph);
+                        ASSIGN_NEXT (def) = TRAVdo (ASSIGN_NEXT (def), arg_info);
+                        TRAVpop ();
+
+                        if (INFO_OK (arg_info)) {
+                            node *defrhs = ASSIGN_RHS (def);
+                            node *withop, *ids;
+                            switch (NODE_TYPE (defrhs)) {
+                            case N_prf:
+                                if (PRF_PRF (defrhs) == F_fill) {
+                                    node *memass
+                                      = AVIS_SSAASSIGN (ID_AVIS (PRF_ARG2 (defrhs)));
+                                    node *memop = ASSIGN_RHS (memass);
+                                    if ((PRF_PRF (memop) == F_alloc)
+                                        || (PRF_PRF (memop) == F_reuse)
+                                        || (PRF_PRF (memop) == F_alloc_or_reuse)) {
+                                        INFO_LASTSAFE (arg_info) = memass;
+                                        if (PRF_PRF (memop) == F_reuse) {
+                                            avis = ID_AVIS (PRF_ARG1 (memop));
+                                            def = AVIS_SSAASSIGN (
+                                              ID_AVIS (PRF_ARG1 (memop)));
+                                            INFO_NOAP (arg_info)
+                                              = ID_AVIS (PRF_ARG1 (memop));
+                                        } else {
+                                            INFO_OK (arg_info) = FALSE;
+                                        }
+                                    } else {
+                                        INFO_OK (arg_info) = FALSE;
+                                    }
+                                } else {
+                                    INFO_OK (arg_info) = FALSE;
+                                }
+                                break;
+
+                            case N_with:
+                            case N_with2:
+                                withop = WITH_OR_WITH2_WITHOP (defrhs);
+                                ids = ASSIGN_LHS (def);
+                                while (IDS_AVIS (ids) != avis) {
+                                    ids = IDS_NEXT (ids);
+                                    withop = WITHOP_NEXT (withop);
+                                }
+                                if ((NODE_TYPE (withop) == N_genarray)
+                                    || (NODE_TYPE (withop) == N_modarray)) {
+                                    node *memass
+                                      = AVIS_SSAASSIGN (ID_AVIS (WITHOP_MEM (withop)));
+                                    node *memop = ASSIGN_RHS (memass);
+                                    if ((PRF_PRF (memop) == F_alloc)
+                                        || (PRF_PRF (memop) == F_reuse)
+                                        || (PRF_PRF (memop) == F_alloc_or_reuse)) {
+                                        INFO_LASTSAFE (arg_info) = memass;
+                                        if (PRF_PRF (memop) == F_reuse) {
+                                            avis = ID_AVIS (PRF_ARG1 (memop));
+                                            def = AVIS_SSAASSIGN (
+                                              ID_AVIS (PRF_ARG1 (memop)));
+                                            INFO_NOAP (arg_info)
+                                              = ID_AVIS (PRF_ARG1 (memop));
+                                        } else {
+                                            INFO_OK (arg_info) = FALSE;
+                                        }
+                                    } else {
+                                        INFO_OK (arg_info) = FALSE;
+                                    }
+                                } else {
+                                    INFO_OK (arg_info) = FALSE;
+                                }
+                                break;
+
+                            default:
+                                INFO_OK (arg_info) = FALSE;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (INFO_LASTSAFE (arg_info) != NULL) {
+                        node *n;
+                        /*
+                         * Replace some alloc or reuse or alloc_or_reuse with
+                         * suballoc
+                         */
+                        ASSIGN_RHS (INFO_LASTSAFE (arg_info))
+                          = FREEdoFreeNode (ASSIGN_RHS (INFO_LASTSAFE (arg_info)));
+                        ASSIGN_RHS (INFO_LASTSAFE (arg_info)) = DUPdoDupNode (memop);
+
+                        /*
+                         * Replace CEXPR
+                         */
+                        EXPRS_EXPR (cexprs) = FREEdoFreeNode (EXPRS_EXPR (cexprs));
+                        EXPRS_EXPR (cexprs) = DUPdoDupNode (cval);
+
+                        /*
+                         * Remove old suballoc/fill(copy) combination
+                         */
+                        n = BLOCK_INSTR (CODE_CBLOCK (arg_node));
+                        while (ASSIGN_NEXT (n) != memass) {
+                            n = ASSIGN_NEXT (n);
+                        }
+                        ASSIGN_NEXT (n) = FREEdoFreeNode (ASSIGN_NEXT (n));
+                        ASSIGN_NEXT (n) = FREEdoFreeNode (ASSIGN_NEXT (n));
+                    }
                 }
+                break;
             }
-            break;
         }
-
         cexprs = EXPRS_NEXT (cexprs);
     }
 

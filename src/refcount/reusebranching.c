@@ -753,74 +753,82 @@ EMRBcode (node *arg_node, info *arg_info)
     cexprs = CODE_CEXPRS (arg_node);
 
     while (cexprs != NULL) {
-        node *cid = EXPRS_EXPR (cexprs);
-        node *wlass = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (cid))));
+        node *cid;
+        node *wlass;
+        node *rhs;
         node *mem;
         node *memop;
         node *val;
         node *cval;
         node *memval;
 
-        if (NODE_TYPE (wlass) == N_prf) {
-            switch (PRF_PRF (wlass)) {
-            case F_fill:
-                /*
-                 * Search for suballoc situation
-                 *
-                 *   a  = with ...
-                 *   m' = suballoc( A, iv);
-                 *   m  = fill( copy( a), m');
-                 * }: m
-                 */
-                val = PRF_ARG1 (wlass);
-                mem = PRF_ARG2 (wlass);
-                if ((NODE_TYPE (val) == N_prf) && (PRF_PRF (val) == F_copy)) {
-                    cval = PRF_ARG1 (val);
-                    memop = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (mem))));
-                    if ((PRF_PRF (memop) == F_suballoc)
-                        && (DFMtestMaskEntry (INFO_LOCALVARS (arg_info), NULL,
-                                              ID_AVIS (cval)))
-                        && ((NODE_TYPE (ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (cval))))
-                             == N_with)
-                            || (NODE_TYPE (ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (cval))))
-                                == N_with2))) {
-                        /*
-                         * Full branch in order to be able to move suballoc upwards
-                         */
-                        DFMsetMaskSet (INFO_DRCS (arg_info));
-                    }
-                }
-                break;
+        cid = EXPRS_EXPR (cexprs);
+        wlass = AVIS_SSAASSIGN (ID_AVIS (cid));
 
-            case F_wl_assign:
-                /*
-                 * Search for selection
-                 *
-                 *   a = fill( B[...], ...)
-                 *   r = wl_assign( a, ..., ...);
-                 * }: r
-                 *
-                 * OR
-                 *
-                 *   a = fill ( idx_sel( ..., B), ...);
-                 *   r = wl_assign( a, ..., ...);
-                 * }: r
-                 */
-                if (AVIS_SSAASSIGN (ID_AVIS (PRF_ARG1 (wlass))) != NULL) {
-                    memval = ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (PRF_ARG1 (wlass))));
-                    if ((NODE_TYPE (memval) == N_prf) && (PRF_PRF (memval) == F_fill)
-                        && (NODE_TYPE (PRF_ARG1 (memval)) == N_prf)
-                        && ((PRF_PRF (PRF_ARG1 (memval)) == F_sel)
-                            || (PRF_PRF (PRF_ARG1 (memval)) == F_idx_sel))) {
-                        DFMsetMaskEntrySet (INFO_DRCS (arg_info), NULL,
-                                            ID_AVIS (PRF_ARG2 (PRF_ARG1 (memval))));
+        if (wlass != NULL) {
+            rhs = ASSIGN_RHS (wlass);
+            if (NODE_TYPE (rhs) == N_prf) {
+                switch (PRF_PRF (rhs)) {
+                case F_fill:
+                    /*
+                     * Search for suballoc situation
+                     *
+                     *   a  = with ...
+                     *   m' = suballoc( A, iv);
+                     *   m  = fill( copy( a), m');
+                     * }: m
+                     */
+                    val = PRF_ARG1 (rhs);
+                    mem = PRF_ARG2 (rhs);
+                    if ((NODE_TYPE (val) == N_prf) && (PRF_PRF (val) == F_copy)) {
+                        cval = PRF_ARG1 (val);
+                        memop = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (mem))));
+                        if ((PRF_PRF (memop) == F_suballoc)
+                            && (DFMtestMaskEntry (INFO_LOCALVARS (arg_info), NULL,
+                                                  ID_AVIS (cval)))
+                            && ((NODE_TYPE (ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (cval))))
+                                 == N_with)
+                                || (NODE_TYPE (
+                                      ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (cval))))
+                                    == N_with2))) {
+                            /*
+                             * Full branch in order to be able to move suballoc upwards
+                             */
+                            DFMsetMaskSet (INFO_DRCS (arg_info));
+                        }
                     }
-                }
-                break;
+                    break;
 
-            default:
-                DBUG_PRINT ("EMRB", ("No suballoc or wl_assign found: Fold-Withop?"));
-                break;
+                case F_wl_assign:
+                    /*
+                     * Search for selection
+                     *
+                     *   a = fill( B[...], ...)
+                     *   r = wl_assign( a, ..., ...);
+                     * }: r
+                     *
+                     * OR
+                     *
+                     *   a = fill ( idx_sel( ..., B), ...);
+                     *   r = wl_assign( a, ..., ...);
+                     * }: r
+                     */
+                    if (AVIS_SSAASSIGN (ID_AVIS (PRF_ARG1 (rhs))) != NULL) {
+                        memval = ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (PRF_ARG1 (rhs))));
+                        if ((NODE_TYPE (memval) == N_prf) && (PRF_PRF (memval) == F_fill)
+                            && (NODE_TYPE (PRF_ARG1 (memval)) == N_prf)
+                            && ((PRF_PRF (PRF_ARG1 (memval)) == F_sel)
+                                || (PRF_PRF (PRF_ARG1 (memval)) == F_idx_sel))) {
+                            DFMsetMaskEntrySet (INFO_DRCS (arg_info), NULL,
+                                                ID_AVIS (PRF_ARG2 (PRF_ARG1 (memval))));
+                        }
+                    }
+                    break;
+
+                default:
+                    DBUG_PRINT ("EMRB", ("No suballoc or wl_assign found: Fold-Withop?"));
+                    break;
+                }
             }
         }
         cexprs = EXPRS_NEXT (cexprs);
