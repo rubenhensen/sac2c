@@ -83,7 +83,7 @@ OPTIMIZE ("sisi", sisi, FALSE, FALSE, "signature simplification")
 OPTIMIZE ("rtup", rtup, TRUE, FALSE, "reverse type upgrade")
 OPTIMIZE ("esd", esd, FALSE, FALSE, "eliminate substraction and division")
 OPTIMIZE ("wlprop", wlprop, TRUE, FALSE, " withloop propagation")
-OPTIMIZE ("isv", isv, TRUE, FALSE, "insert shape variables")
+OPTIMIZE ("isv", isv, FALSE, FALSE, "insert shape variables")
 
 OPTCOUNTER (dead_expr, "dead assignment(s) removed")
 OPTCOUNTER (dead_var, "dead variable declaration(s) removed")
