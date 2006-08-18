@@ -6507,6 +6507,9 @@ COMPwlgridx (node *arg_node, info *arg_info)
                     icm_args = MakeIcmArgs_WL_OP2 (arg_node, tmp_ids);
                     break;
 
+                case N_propagate:
+                    break;
+
                 case N_break:
                     icm_name = "BREAK_ON_GUARD";
                     icm_args = TBmakeExprs (DUPdoDupTree (BREAK_MEM (withop)),
