@@ -3,7 +3,7 @@
 #ifndef _SAC_SERIALIZE_H_
 #define _SAC_SERIALIZE_H_
 
-#define SAC_SERIALIZE_VERSION 2
+#define SAC_SERIALIZE_VERSION 3
 
 #include "symboltable.h"
 #include "serialize_stack.h"

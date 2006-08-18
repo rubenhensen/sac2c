@@ -159,11 +159,7 @@ AppendSerFunType (char *funname, ntype *type, int size)
 
     pos = &funname[strlen (funname)];
 
-    DBUG_ASSERT ((size > 2), "fundef name buffer to small!");
-
-    *pos = '_';
-    pos++;
-    size--;
+    DBUG_ASSERT ((size > 1), "fundef name buffer to small!");
 
     if (TYisScalar (type)) {
         *pos = 'S';
@@ -243,6 +239,28 @@ AppendSerFunType (char *funname, ntype *type, int size)
 }
 
 static int
+AppendSerFunArgType (char *funname, node *arg, int size)
+{
+    char *pos;
+
+    DBUG_ENTER ("AppendSerFunArgType");
+
+    DBUG_ASSERT ((size > 2), "funname buffer to small");
+
+    pos = &funname[strlen (funname)];
+
+    if (ARG_ISARTIFICIAL (arg)) {
+        size -= snprintf (pos, size, "_A");
+    } else if (ARG_WASREFERENCE (arg)) {
+        size -= snprintf (pos, size, "_R");
+    } else {
+        size -= snprintf (pos, size, "_N");
+    }
+
+    DBUG_RETURN (size);
+}
+
+static int
 AppendSerFunTypeSignature (char *funname, node *fundef, int size)
 {
     node *args;
@@ -252,6 +270,7 @@ AppendSerFunTypeSignature (char *funname, node *fundef, int size)
     args = FUNDEF_ARGS (fundef);
 
     while (args != NULL) {
+        size = AppendSerFunArgType (funname, args, size);
         size = AppendSerFunType (funname, AVIS_TYPE (ARG_AVIS (args)), size);
 
         args = ARG_NEXT (args);
