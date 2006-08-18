@@ -1023,7 +1023,8 @@ MMVfold (node *arg_node, info *arg_info)
  *
  *  @brief Substitutes a CEXPR reference with the corresponding reference
  *         on LHS of current withloop if the corresponding WL operation
- *         is fold.
+ *         is fold.  OR  substitutes a CEXPR reference with the default
+ *         element if corresponding WL operation is propagate.
  *
  *  @param arg_node
  *  @param arg_info
@@ -1073,6 +1074,16 @@ MMVcode (node *arg_node, info *arg_info)
                                               NULL));
 
             ID_AVIS (EXPRS_EXPR (cexprs)) = IDS_AVIS (wlids);
+        } else if (NODE_TYPE (withop) == N_propagate) {
+            BLOCK_INSTR (CODE_CBLOCK (arg_node))
+              = TCappendAssign (BLOCK_INSTR (CODE_CBLOCK (arg_node)),
+                                TBmakeAssign (TBmakeLet (TBmakeIds (ID_AVIS (
+                                                                      PROPAGATE_DEFAULT (
+                                                                        withop)),
+                                                                    NULL),
+                                                         DUPdoDupNode (
+                                                           EXPRS_EXPR (cexprs))),
+                                              NULL));
         }
         wlids = IDS_NEXT (wlids);
         cexprs = EXPRS_NEXT (cexprs);
