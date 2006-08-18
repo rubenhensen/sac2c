@@ -2154,7 +2154,11 @@ NTCpropagate (node *arg_node, info *arg_info)
 
     if (!ok) {
         CTIabortLine (global.linenum,
-                      "Illegal object transformation in propagate with loop");
+                      "Illegal object transformation in propagate with loop"
+                      " body yields %s, but %s is propagated",
+                      TYtype2String (body, FALSE, 0),
+                      TYtype2String (AVIS_TYPE (ID_AVIS (PROPAGATE_DEFAULT (arg_node))),
+                                     FALSE, 0));
     }
 
     if (PROPAGATE_NEXT (arg_node) == NULL) {
