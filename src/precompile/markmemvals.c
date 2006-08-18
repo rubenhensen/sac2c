@@ -586,6 +586,57 @@ MMVprfWLAssign (node *arg_node, info *arg_info)
 
 /** <!--******************************************************************-->
  *
+ * @fn MMVprfPropObj
+ *
+ *  @brief
+ *
+ *  @param arg_node
+ *  @param arg_info
+ *
+ *  @return
+ *
+ ***************************************************************************/
+static node *
+MMVprfPropObj (node *arg_node, info *arg_info)
+{
+    node *withop;
+    node *ids_assign;
+    node *args;
+
+    DBUG_ENTER ("MMVprfPropObj");
+
+    /*
+     * A,B = with(iv)
+     *        gen:{
+     *             a',... = prop_obj( iv, a, ...);
+     *             ...
+     *             }...
+     *            propagate( a)
+     *            ...
+     *
+     *     rename: a' -> a
+     */
+
+    ids_assign = INFO_LHS (arg_info);
+    args = EXPRS_NEXT (PRF_ARGS (arg_node));
+
+    DBUG_ASSERT ((withop != NULL), "F_prop_obj without withloop");
+    DBUG_ASSERT ((ids_assign != NULL), "ids of assign is missing");
+
+    while (args != NULL) {
+        LUTinsertIntoLutS (INFO_LUT (arg_info), IDS_NAME (ids_assign),
+                           ID_NAME (EXPRS_EXPR (args)));
+        LUTinsertIntoLutP (INFO_LUT (arg_info), IDS_AVIS (ids_assign),
+                           ID_AVIS (EXPRS_EXPR (args)));
+        ids_assign = IDS_NEXT (ids_assign);
+        args = EXPRS_NEXT (args);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--******************************************************************-->
+ *
  * @fn MMVprf
  *
  *  @brief Adds the current LHS and the MEM-variable into LUT if this
@@ -619,6 +670,10 @@ MMVprf (node *arg_node, info *arg_info)
 
     case F_wl_assign:
         arg_node = MMVprfWLAssign (arg_node, arg_info);
+        break;
+
+    case F_prop_obj:
+        arg_node = MMVprfPropObj (arg_node, arg_info);
         break;
 
     default:
