@@ -32,6 +32,7 @@
 #include "ctinfo.h"
 #include "dbug.h"
 #include "DupTree.h"
+#include "free.h"
 #include "globals.h"
 #include "internal_lib.h"
 #include "new_types.h"
@@ -307,7 +308,8 @@ WOAid (node *arg_node, info *arg_info)
 
             /* At the end of the list, so it was not found. Add it. */
             if (iter == NULL) {
-                INFO_OBJECTS (arg_info) = TBmakeExprs (arg_node, INFO_OBJECTS (arg_info));
+                INFO_OBJECTS (arg_info)
+                  = TBmakeExprs (TBmakeId (ID_AVIS (arg_node)), INFO_OBJECTS (arg_info));
             }
         }
     }
@@ -336,6 +338,7 @@ WOAlet (node *arg_node, info *arg_info)
             if (INFO_OBJECTS (arg_info) != NULL) {
                 LET_IDS (arg_node)
                   = AddObjectsToLHS (LET_IDS (arg_node), INFO_OBJECTS (arg_info));
+                INFO_OBJECTS (arg_info) = FREEdoFreeTree (INFO_OBJECTS (arg_info));
             }
         }
     }
