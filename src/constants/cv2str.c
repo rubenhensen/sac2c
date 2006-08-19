@@ -47,9 +47,10 @@
         buffer_act = buffer;                                                             \
                                                                                          \
         if (len > 0) {                                                                   \
-            buffer_act += sprintf (buffer_act, form, ((type *)src)[off]);                \
+            buffer_act += snprintf (buffer_act, 100, form, ((type *)src)[off]);          \
             for (i = 1; (i < len) && (buffer_act - buffer < max_char); i++) {            \
-                buffer_act += sprintf (buffer_act, format, ((type *)src)[i + off]);      \
+                buffer_act                                                               \
+                  += snprintf (buffer_act, 100, format, ((type *)src)[i + off]);         \
             }                                                                            \
             if ((i < len) || (buffer_act > buffer + max_char)) {                         \
                 sprintf (buffer + max_char, "...");                                      \
