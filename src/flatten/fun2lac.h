@@ -1,24 +1,5 @@
 /*
- *
- * $Log$
- * Revision 3.4  2005/03/04 21:21:42  cg
- * Removed various traversal functions.
- *
- * Revision 3.3  2004/11/22 12:37:33  ktr
- * Ismop SacDevCamp 04
- *
- * Revision 3.2  2004/07/16 17:36:23  sah
- * switch to new INFO structure
- * PHASE I
- *
- * Revision 3.1  2000/11/20 17:59:22  sacbase
- * new release made
- *
- * Revision 1.1  2000/02/17 16:15:25  cg
- * Initial revision
- *
- *
- *
+ * $Id:$
  */
 
 #ifndef _SAC_FUN2LAC_H_
@@ -42,5 +23,14 @@ extern node *F2LdoFun2Lac (node *syntax_tree);
 
 extern node *F2Lmodule (node *arg_node, info *arg_info);
 extern node *F2Lfundef (node *arg_node, info *arg_info);
+
+extern node *F2Lassign (node *arg_node, info *arg_info);
+extern node *F2Lcond (node *arg_node, info *arg_info);
+extern node *F2Lreturn (node *arg_node, info *arg_info);
+extern node *F2Lprf (node *arg_node, info *arg_info);
+extern node *F2Larg (node *arg_node, info *arg_info);
+extern node *F2Lwith (node *arg_node, info *arg_info);
+extern node *F2Lwith2 (node *arg_node, info *arg_info);
+extern node *F2Lap (node *arg_node, info *arg_info);
 
 #endif /* _SAC_FUN2LAC_H_ */
