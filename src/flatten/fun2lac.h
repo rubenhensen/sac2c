@@ -1,5 +1,5 @@
 /*
- * $Id:$
+ * $Id$
  */
 
 #ifndef _SAC_FUN2LAC_H_
@@ -26,11 +26,6 @@ extern node *F2Lfundef (node *arg_node, info *arg_info);
 
 extern node *F2Lassign (node *arg_node, info *arg_info);
 extern node *F2Lcond (node *arg_node, info *arg_info);
-extern node *F2Lreturn (node *arg_node, info *arg_info);
-extern node *F2Lprf (node *arg_node, info *arg_info);
 extern node *F2Larg (node *arg_node, info *arg_info);
-extern node *F2Lwith (node *arg_node, info *arg_info);
-extern node *F2Lwith2 (node *arg_node, info *arg_info);
-extern node *F2Lap (node *arg_node, info *arg_info);
 
 #endif /* _SAC_FUN2LAC_H_ */

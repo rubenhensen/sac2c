@@ -174,12 +174,7 @@
           <node name="Fundef" />
           <node name="Assign" />
           <node name="Cond" />
-          <node name="Return" />
-          <node name="Prf" />
           <node name="Arg" />
-          <node name="Ap" />
-          <node name="With" />
-          <node name="With2" />
         </travuser>
       </traversal>
       <traversal id="USSAT" name="UndoSSATransform Traversal" default="sons" include="UndoSSATransform.h" >

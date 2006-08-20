@@ -153,13 +153,10 @@ static lut_t *f2l_lut = NULL;
 struct INFO {
     bool below_cond;
     node *fundef;
-    node *body_assigns;
-    node *pred;
-    node *recargs;
     node *returnn;
-    node *then_rc_assigns;
-    node *else_rc_assigns;
-    node *keep_rc_assigns;
+    node *cond;
+    node *recap;
+    node *recarg;
     node *new_vardecs;
     node *new_topassigns;
     node *new_botassigns;
@@ -172,13 +169,10 @@ struct INFO {
 
 #define INFO_BELOW_COND(n) n->below_cond
 #define INFO_FUNDEF(n) n->fundef
-#define INFO_BODY_ASSIGNS(n) n->body_assigns
-#define INFO_PRED(n) n->pred
-#define INFO_RECARGS(n) n->recargs
 #define INFO_RETURN(n) n->returnn
-#define INFO_THEN_RC_ASSIGNS(n) n->then_rc_assigns
-#define INFO_ELSE_RC_ASSIGNS(n) n->else_rc_assigns
-#define INFO_KEEP_RC_ASSIGNS(n) n->keep_rc_assigns
+#define INFO_COND(n) n->cond
+#define INFO_RECAP(n) n->recap
+#define INFO_RECARG(n) n->recarg
 #define INFO_NEW_VARDECS(n) n->new_vardecs
 #define INFO_NEW_TOPASSIGNS(n) n->new_topassigns
 #define INFO_NEW_BOTASSIGNS(n) n->new_botassigns
@@ -199,13 +193,10 @@ MakeInfo ()
 
     INFO_BELOW_COND (result) = FALSE;
     INFO_FUNDEF (result) = NULL;
-    INFO_BODY_ASSIGNS (result) = NULL;
-    INFO_PRED (result) = NULL;
-    INFO_RECARGS (result) = NULL;
+    INFO_COND (result) = NULL;
+    INFO_RECAP (result) = NULL;
+    INFO_RECARG (result) = NULL;
     INFO_RETURN (result) = NULL;
-    INFO_THEN_RC_ASSIGNS (result) = NULL;
-    INFO_ELSE_RC_ASSIGNS (result) = NULL;
-    INFO_KEEP_RC_ASSIGNS (result) = NULL;
     INFO_NEW_VARDECS (result) = NULL;
     INFO_NEW_TOPASSIGNS (result) = NULL;
     INFO_NEW_BOTASSIGNS (result) = NULL;
@@ -228,10 +219,11 @@ static node *
 SearchStoreVar (node *avis, node *assigns)
 {
     node *tmp;
-    node *res = NULL;
+    node *res;
 
     DBUG_ENTER ("SearchStoreVar");
 
+    res = NULL;
     tmp = assigns;
 
     while (tmp != NULL) {
@@ -251,27 +243,43 @@ F2Lassign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("F2Lassign");
 
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (arg_node, arg_info);
-    }
+    switch (NODE_TYPE (ASSIGN_INSTR (arg_node))) {
+    case N_return:
+        INFO_RETURN (arg_info) = arg_node;
+        arg_node = NULL;
+        break;
+    case N_cond:
+        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
-    ASSIGN_INSTR (arg_node) = TRAVdo (arg_node, arg_info);
+        DBUG_ASSERT (ASSIGN_NEXT (arg_node) != NULL,
+                     "Cond node is last assignment in chain");
 
-    if (ASSIGN_INSTR (arg_node) == NULL) {
-        arg_node = FREEdoFreeNode (arg_node);
+        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
+        INFO_COND (arg_info) = arg_node;
+        arg_node = NULL;
+        break;
+    case N_let:
+        if (INFO_BELOW_COND (arg_info) && (ASSIGN_NEXT (arg_node) == NULL)) {
+            DBUG_ASSERT (NODE_TYPE (LET_EXPR (ASSIGN_INSTR (arg_node))) == N_ap,
+                         "Last assignment in then-part not function call");
+
+            DBUG_ASSERT (AP_FUNDEF (LET_EXPR (ASSIGN_INSTR (arg_node)))
+                           == INFO_FUNDEF (arg_info),
+                         "Last assignment in then-part not recursive call");
+
+            INFO_RECAP (arg_info) = arg_node;
+            arg_node = NULL;
+        } else {
+            if (ASSIGN_NEXT (arg_node) != NULL) {
+                ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
+            }
+        }
+        break;
+    default:
+        DBUG_ASSERT (FALSE, "Control flow should not reach here");
     }
 
     DBUG_RETURN (arg_node);
-}
-
-node *
-F2Lreturn (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("F2Lreturn");
-
-    INFO_RETURN (arg_info) = arg_node;
-
-    DBUG_RETURN (NULL);
 }
 
 node *
@@ -281,149 +289,87 @@ F2Lcond (node *arg_node, info *arg_info)
 
     DBUG_ASSERT (!INFO_BELOW_COND (arg_info), "Nested conditional found.");
 
-    INFO_PRED (arg_info) = COND_COND (arg_node);
-    COND_COND (arg_node) = NULL;
-
     INFO_BELOW_COND (arg_info) = TRUE;
 
     COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
 
-    INFO_THEN_RC_ASSIGNS (info) = INFO_KEEP_RC_ASSIGNS (info);
-    INFO_KEEP_RC_ASSIGNS (info) = NULL;
-
-    COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
-
-    INFO_ELSE_RC_ASSIGNS (info) = INFO_KEEP_RC_ASSIGNS (info);
-    INFO_KEEP_RC_ASSIGNS (info) = NULL;
-
     INFO_BELOW_COND (arg_info) = FALSE;
 
-    arg_node = FREEdoFreeTree (arg_node);
-
     DBUG_RETURN (arg_node);
 }
 
-node *
-F2Lprf (node *arg_node, info *arg_info)
+static node *
+Arg2Var (node *arg, info *arg_info)
 {
-    DBUG_ENTER ("F2Lprf");
+    char *new_name;
+    node *new_avis;
 
-    if (INFO_BELOW_COND (arg_info)) {
-        DBUG_ASSERT ((PRF_PRF (arg_node) == F_inc_rc) || (PRF_PRF (arg_node) == F_dec_rc)
-                       || (PRF_PRF (arg_node) == F_free),
-                     "Illegal prf found in conditional");
-        INFO_KEEP_RC_ASSIGN (arg_info)
-          = TBmakeAssign (arg_node, INFO_KEEP_RC_ASSIGN (arg_info));
-        arg_node = NULL;
-    }
+    DBUG_ENTER ("Arg2Var");
 
-    DBUG_RETURN (arg_node);
-}
+    new_name = ILIBtmpVarName (ARG_NAME (arg));
+    new_avis = TBmakeAvis (new_name, TYcopyType (AVIS_TYPE (ARG_AVIS (arg))));
 
-node *
-F2Lwith (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("F2Lwith");
+    INFO_NEW_VARDECS (arg_info) = TBmakeVardec (new_avis, INFO_NEW_VARDECS (arg_info));
 
-    /*
-     * Here, we solely avoid useless traversal into complex substructures.
-     */
+    VARDEC_TYPE (INFO_NEW_VARDECS (arg_info)) = DUPdupAllTypes (ARG_TYPE (arg));
+    /* This must be legacy code, probably superfluous. */
 
-    DBUG_RETURN (arg_node);
-}
-
-node *
-F2Lwith2 (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("F2Lwith2");
-
-    /*
-     * Here, we solely avoid useless traversal into complex substructures.
-     */
-
-    DBUG_RETURN (arg_node);
-}
-
-node *
-F2Lap (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("F2Lap");
-
-    if (AP_FUNDEF (arg_node) == INFO_FUNDEF (arg_info)) {
-        /*
-         * We have found the recursive application.
-         */
-        INFO_RECARGS (arg_info) = AP_ARGS (arg_node);
-        AP_ARGS (arg_node) = NULL;
-    }
-
-    DBUG_RETURN (arg_node);
+    DBUG_RETURN (new_avis);
 }
 
 node *
 F2Larg (node *arg_node, info *arg_info)
 {
     node *recarg, *new_avis, *tmp_avis;
-    char *new_name, tmp_name;
+    bool needs_aux_assign;
 
     DBUG_ENTER ("F2Larg");
 
-    recarg = EXPRS_EXPR (INFO_RECARGS (arg_info));
+    recarg = EXPRS_EXPR (INFO_RECARG (arg_info));
+    new_avis = NULL;
+    needs_aux_assign = FALSE;
 
     if (ID_AVIS (recarg) != ARG_AVIS (arg_node)) {
-        new_name = ILIBtmpVarName (ARG_NAME (arg_node));
-        new_avis = TBmakeAvis (new_name, TYcopyType (AVIS_TYPE (ARG_AVIS (arg_node))));
+        new_avis = Arg2Var (arg_node, arg_info);
+        f2l_lut = LUTinsertIntoLutP (f2l_lut, ARG_AVIS (arg_node), new_avis);
+        needs_aux_assign = (NULL != LUTsearchInLutP (f2l_lut, ID_AVIS (recarg)));
+    }
 
-        INFO_NEW_VARDECS (arg_info)
-          = TBmakeVardec (new_avis, INFO_NEW_VARDECS (arg_info));
+    if (ARG_NEXT (arg_node) != NULL) {
+        INFO_RECARG (arg_info) = EXPRS_NEXT (INFO_RECARG (arg_info));
+        ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
+    }
 
-        VARDEC_TYPE (INFO_NEW_VARDECS (arg_info)) = DUPdupAllTypes (ARG_TYPE (arg_node));
-        /* This must be legacy code, probably superfluous. */
-
+    if (new_avis != NULL) {
         INFO_NEW_TOPASSIGNS (arg_info)
           = TBmakeAssign (TBmakeLet (TBmakeIds (new_avis, NULL),
                                      TBmakeId (ARG_AVIS (arg_node))),
                           INFO_NEW_TOPASSIGNS (arg_info));
 
-        f2l_lut = LUTinsertIntoLutP (f2l_lut, ARG_AVIS (arg_node), new_avis);
-
-        if (NULL == LUTsearchInLutP (ID_AVIS (recarg))) {
-            INFO_NEW_BOTASSIGNS (arg_info)
-              = TBmakeAssign (TBmakeLet (TBmakeIds (new_avis, NULL), recarg),
-                              INFO_NEW_BOTASSIGNS (arg_info));
-            EXPRS_EXPR (INFO_RECARGS (arg_info)) = NULL;
-        } else {
-            tmp_avis = SearchStoreVar (ID_AVIS (recarg), INFO_NEW_AUXASSIGNS (arg_info));
+        if (needs_aux_assign) {
+            tmp_avis = SearchStoreVar (LUTsearchInLutPp (f2l_lut, ID_AVIS (recarg)),
+                                       INFO_NEW_AUXASSIGNS (arg_info));
 
             if (tmp_avis == NULL) {
-                tmp_name = ILIBtmpVarName (ARG_NAME (arg_node));
-                tmp_avis
-                  = TBmakeAvis (tmp_name, TYcopyType (AVIS_TYPE (ARG_AVIS (arg_node))));
-
-                INFO_NEW_VARDECS (arg_info)
-                  = TBmakeVardec (new_avis, INFO_NEW_VARDECS (arg_info));
-
-                VARDEC_TYPE (INFO_NEW_VARDECS (arg_info))
-                  = DUPdupAllTypes (ARG_TYPE (arg_node));
-                /* This must be legacy code, probably superfluous. */
-
+                tmp_avis = Arg2Var (arg_node, arg_info);
                 INFO_NEW_AUXASSIGNS (arg_info)
                   = TBmakeAssign (TBmakeLet (TBmakeIds (tmp_avis, NULL),
-                                             TBmakeId (ID_AVIS (recarg))),
+                                             TBmakeId (
+                                               LUTsearchInLutPp (f2l_lut,
+                                                                 ID_AVIS (recarg)))),
                                   INFO_NEW_AUXASSIGNS (arg_info));
             }
 
             INFO_NEW_BOTASSIGNS (arg_info)
-              = TCappendAssigns (INFO_NEW_BOTASSIGNS (arg_info),
-                                 TBmakeAssign (TBmakeLet (TBmakeIds (new_avis, NULL),
-                                                          TBmakeId (tmp_avis)),
-                                               NULL));
+              = TBmakeAssign (TBmakeLet (TBmakeIds (new_avis, NULL), TBmakeId (tmp_avis)),
+                              INFO_NEW_BOTASSIGNS (arg_info));
+        } else {
+            INFO_NEW_BOTASSIGNS (arg_info)
+              = TBmakeAssign (TBmakeLet (TBmakeIds (new_avis, NULL),
+                                         TBmakeId (
+                                           LUTsearchInLutPp (f2l_lut, ID_AVIS (recarg)))),
+                              INFO_NEW_BOTASSIGNS (arg_info));
         }
-    }
-
-    if (ARG_NEXT (arg_node) != NULL) {
-        INFO_RECARGS (arg_info) = EXPRS_NEXT (INFO_RECARGS (arg_info));
-        ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -432,21 +378,53 @@ F2Larg (node *arg_node, info *arg_info)
 static node *
 TransformIntoDoLoop (node *arg_node, info *arg_info)
 {
-    node *body_assigns, *loop_body, *loop, *fun_body, *epilogue;
+    node *loop_body, *loop, *fun_body;
+    node *body_assigns, *then_assigns, *else_assigns, *return_assign, *loop_pred;
+
     DBUG_ENTER ("TransformIntoDoLoop");
 
-    INFO_FUNDEF (info) = arg_node;
+    INFO_FUNDEF (arg_info) = arg_node;
 
     FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 
-    body_assigns = FUNDEF_INSTR (arg_node);
-    FUNDEF_INSTR (arg_node) = NULL;
-
     if (FUNDEF_ARGS (arg_node) != NULL) {
+        INFO_RECARG (arg_info)
+          = AP_ARGS (LET_EXPR (ASSIGN_INSTR (INFO_RECAP (arg_info))));
         FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
     }
 
-    INFO_RECARGS (arg_info) = FREEdoFreeTree (INFO_RECARGS (arg_info));
+    body_assigns = DUPdoDupTreeLut (FUNDEF_INSTR (arg_node), f2l_lut);
+
+    return_assign = DUPdoDupTreeLut (INFO_RETURN (arg_info), f2l_lut);
+
+    loop_pred
+      = DUPdoDupTreeLut (COND_COND (ASSIGN_INSTR (INFO_COND (arg_info))), f2l_lut);
+
+    then_assigns = BLOCK_INSTR (COND_THEN (ASSIGN_INSTR (INFO_COND (arg_info))));
+    if ((then_assigns != NULL) && (NODE_TYPE (then_assigns) == N_assign)) {
+        then_assigns = DUPdoDupTreeLut (then_assigns, f2l_lut);
+    } else {
+        then_assigns = NULL;
+    }
+
+    else_assigns = BLOCK_INSTR (COND_ELSE (ASSIGN_INSTR (INFO_COND (arg_info))));
+    if ((else_assigns != NULL) && (NODE_TYPE (else_assigns) == N_assign)) {
+        else_assigns = DUPdoDupTreeLut (else_assigns, f2l_lut);
+    } else {
+        else_assigns = NULL;
+    }
+
+    /*
+     * The above strane code is necessary because empty assign chains are represented
+     * by the N_empty node rather than a NULL pointer. This should be changed!
+     */
+
+    FUNDEF_INSTR (arg_node) = FREEdoFreeTree (FUNDEF_INSTR (arg_node));
+    INFO_RETURN (arg_info) = FREEdoFreeTree (INFO_RETURN (arg_info));
+    INFO_COND (arg_info) = FREEdoFreeTree (INFO_COND (arg_info));
+    INFO_RECAP (arg_info) = FREEdoFreeTree (INFO_RECAP (arg_info));
+
+    f2l_lut = LUTremoveContentLut (f2l_lut);
 
     loop_body
       = TCappendAssign (body_assigns, TCappendAssign (INFO_NEW_AUXASSIGNS (arg_info),
@@ -455,32 +433,25 @@ TransformIntoDoLoop (node *arg_node, info *arg_info)
     INFO_NEW_AUXASSIGNS (arg_info) = NULL;
     INFO_NEW_BOTASSIGNS (arg_info) = NULL;
 
-    loop = TBmakeDo (INFO_PRED (arg_info), TBmakeBlock (loop_body, NULL));
-    info_pred (arg_info) = NULL;
+    loop = TBmakeDo (loop_pred, TBmakeBlock (loop_body, NULL));
 
-    DO_SKIP (loop) = INFO_THEN_RC_ASSIGNS (arg_info);
-    INFO_THEN_RC_ASSIGNS (arg_info) = NULL;
-    DO_LABEL (loop) = ILIBtmpVar ();
+    DO_SKIP (loop) = then_assigns;
 
-    epilogue = TCappendAssign (INFO_ELSE_RC_ASSIGNS (arg_info),
-                               TBmakeAssign (INFO_RETURN (arg_info), NULL));
-    INFO_ELSE_RC_ASSIGNS (arg_info) = NULL;
-    INFO_RETURN (arg_info) = NULL;
+    if (DO_SKIP (loop) != NULL) {
+        DO_LABEL (loop) = ILIBtmpVarName ("label");
+    }
 
-    fun_body
-      = TCappendAssign (INFO_NEW_TOPASSIGNS (arg_info), TBmakeAssign (loop, epilogue));
+    fun_body = TBmakeAssign (loop, TCappendAssign (else_assigns, return_assign));
+
+    FUNDEF_INSTR (arg_node) = TCappendAssign (INFO_NEW_TOPASSIGNS (arg_info), fun_body);
+
     INFO_NEW_TOPASSIGNS (arg_info) = NULL;
-
-    FUNDEF_INSTR (arg_node) = DUPdoDupTreeLut (fun_body, f2l_lut);
-    fun_body = FREEdoFreeTree (fun_body);
-
-    f2l_lut = LUTremoveContentLut (f2l_lut);
 
     FUNDEF_VARDEC (arg_node)
       = TCappendVardec (INFO_NEW_VARDECS (arg_info), FUNDEF_VARDEC (arg_node));
     INFO_NEW_VARDECS (arg_info) = NULL;
 
-    INFO_FUNDEF (arg_node) = NULL;
+    INFO_FUNDEF (arg_info) = NULL;
 
     DBUG_RETURN (arg_node);
 }
@@ -533,42 +504,7 @@ F2Lassign (node *arg_node, info *arg_info)
 }
 
 node *
-F2Lreturn (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("F2L");
-    DBUG_RETURN (arg_node);
-}
-
-node *
 F2Lcond (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("F2L");
-    DBUG_RETURN (arg_node);
-}
-
-node *
-F2Lprf (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("F2L");
-    DBUG_RETURN (arg_node);
-}
-
-node *
-F2Lap (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("F2L");
-    DBUG_RETURN (arg_node);
-}
-
-node *
-F2Lwith (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("F2L");
-    DBUG_RETURN (arg_node);
-}
-
-node *
-F2Lwith2 (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("F2L");
     DBUG_RETURN (arg_node);
@@ -989,7 +925,7 @@ ReturnVarsAreIdentical (node *ext_rets, node *int_rets)
  ******************************************************************************/
 
 static node *
-TransformIntoDoLoop (node *fundef)
+TransformIntoDoLoop (node *fundef, info *arg_info)
 {
     node *assigns;
     node *cond_assign, *cond;
@@ -1181,7 +1117,9 @@ F2Lfundef (node *arg_node, info *arg_info)
          */
     } else {
         if (FUNDEF_ISDOFUN (arg_node)) {
-            arg_node = TransformIntoDoLoop (arg_node);
+            arg_node = TransformIntoDoLoop (arg_node, arg_info);
+            FUNDEF_ISDOFUN (arg_node) = FALSE;
+            FUNDEF_ISLACINLINE (arg_node) = TRUE;
         }
     }
 
