@@ -256,6 +256,67 @@ AddObjectsToLHS (node *lhs_ids, node *objects)
     DBUG_RETURN (lhs_ids);
 }
 
+/** <!-- ****************************************************************** -->
+ * @brief Adds one N_id node to a set of N_expr nodes, but only if there
+ *        is no other N_id which has the same AVIS in the set.
+ *
+ * @param set    The set to add to.
+ * @param new_id The N_id node to add.
+ *
+ * @return The resulting set.
+ ******************************************************************************/
+static node *
+AddToObjectSet (node *set, node *new_id)
+{
+    node *iter;
+
+    DBUG_ENTER ("AddToObjectSet");
+
+    iter = set;
+    while (iter != NULL) {
+        if (ID_AVIS (EXPRS_EXPR (iter)) == ID_AVIS (new_id)) {
+            break;
+        }
+        iter = EXPRS_NEXT (iter);
+    }
+
+    /* At the end of the list, so it was not found. Add it. */
+    if (iter == NULL) {
+        set = TBmakeExprs (TBmakeId (ID_AVIS (new_id)), set);
+    }
+
+    DBUG_RETURN (set);
+}
+
+/** <!-- ****************************************************************** -->
+ * @brief Merges two sets of N_expr nodes, returning the union of the two
+ *        sets. Both the original sets are freed.
+ *
+ * @param set_a First set.
+ * @param set_b Second set.
+ *
+ * @return Union of set_a and set_b.
+ ******************************************************************************/
+static node *
+MergeObjectSet (node *set_a, node *set_b)
+{
+    node *a_iter;
+
+    DBUG_ENTER ("MergeObjectSet");
+
+    /*
+     * For every item in set a, we add it to set b.
+     * We return set b as a result.
+     */
+    a_iter = set_a;
+    while (a_iter != NULL) {
+        set_b = AddToObjectSet (set_b, EXPRS_EXPR (a_iter));
+        a_iter = FREEdoFreeNode (a_iter);
+    }
+
+    DBUG_RETURN (set_b);
+}
+
 /*
  * Traversal functions
  */
@@ -270,6 +331,10 @@ WOAfundef (node *arg_node, info *arg_info)
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
     }
     INFO_FUNDEF (arg_info) = NULL;
+
+    if (INFO_OBJECTS (arg_info) != NULL) {
+        INFO_OBJECTS (arg_info) = FREEdoFreeTree (INFO_OBJECTS (arg_info));
+    }
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
@@ -297,20 +362,7 @@ WOAid (node *arg_node, info *arg_info)
              * to the list of objects that will be attached to the with-loop.
              * But of course only if it's not in the list already.
              */
-            node *iter = INFO_OBJECTS (arg_info);
-
-            while (iter != NULL) {
-                if (ID_AVIS (EXPRS_EXPR (iter)) == avis) {
-                    break;
-                }
-                iter = EXPRS_NEXT (iter);
-            }
-
-            /* At the end of the list, so it was not found. Add it. */
-            if (iter == NULL) {
-                INFO_OBJECTS (arg_info)
-                  = TBmakeExprs (TBmakeId (ID_AVIS (arg_node)), INFO_OBJECTS (arg_info));
-            }
+            INFO_OBJECTS (arg_info) = AddToObjectSet (INFO_OBJECTS (arg_info), arg_node);
         }
     }
 
@@ -321,6 +373,8 @@ WOAid (node *arg_node, info *arg_info)
 node *
 WOAlet (node *arg_node, info *arg_info)
 {
+    node *saved_objs;
+
     DBUG_ENTER ("WOAlet");
 
     if (LET_IDS (arg_node) != NULL) {
@@ -328,9 +382,21 @@ WOAlet (node *arg_node, info *arg_info)
     }
 
     if (LET_EXPR (arg_node) != NULL) {
+
+        /*
+         * If we are entering a with-loop, save the object set
+         * and empty it. Afterwards, merge our existing object
+         * set with the one resulting from the with-loop.
+         */
+        if (NODE_TYPE (LET_EXPR (arg_node)) == N_with) {
+            saved_objs = INFO_OBJECTS (arg_info);
+            INFO_OBJECTS (arg_info) = NULL;
+        }
+
         LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
         if (NODE_TYPE (LET_EXPR (arg_node)) == N_with) {
+
             /*
              * This is a let with a with-loop RHS. Add the with-loop's objects,
              * which should now be in arg_info, to the LHS expressions.
@@ -338,8 +404,11 @@ WOAlet (node *arg_node, info *arg_info)
             if (INFO_OBJECTS (arg_info) != NULL) {
                 LET_IDS (arg_node)
                   = AddObjectsToLHS (LET_IDS (arg_node), INFO_OBJECTS (arg_info));
-                INFO_OBJECTS (arg_info) = FREEdoFreeTree (INFO_OBJECTS (arg_info));
             }
+
+            /* Merge with the old object set. */
+            INFO_OBJECTS (arg_info)
+              = MergeObjectSet (INFO_OBJECTS (arg_info), saved_objs);
         }
     }
 
