@@ -657,8 +657,9 @@ ShapeCliqueLookup (node *scavis, node *arg_node)
  * @brief Utility function to provide shape clique identifier for
  *        human-readable printing.
  *
- *     @param arg_node for function
- *     @param N_avis address for any member of the shape clique
+ * @param arg_node for function
+ * @param N_avis address for any member of the shape clique
+ * @result a small integer or -1, if the avis address is NULL.
  *
  * ****************************************************************************/
 int
@@ -680,8 +681,12 @@ SCIShapeCliqueNumber (node *avis, node *arg_node)
     int res;
 
     DBUG_ENTER ("SCIShapeCliqueNumber");
-    cliquemin = ShapeCliqueMin (avis);
-    res = ShapeCliqueLookup (cliquemin, arg_node);
+    if (NULL == avis) {
+        res = -1;
+    } else {
+        cliquemin = ShapeCliqueMin (avis);
+        res = ShapeCliqueLookup (cliquemin, arg_node);
+    }
     DBUG_RETURN (res);
 }
 
@@ -924,6 +929,7 @@ SCIprf (node *arg_node, info *arg_info)
     case F_type_error:
     case F_esd_neg:
     case F_esd_rec:
+    case F_prop_obj:
         /* the following are in the land of the living dead. */
     case F_run_mt_genarray:
     case F_run_mt_modarray:
