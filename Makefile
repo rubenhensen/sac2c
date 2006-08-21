@@ -65,7 +65,8 @@ devel: check_os lib maketools makefiles xml make_sac2c libsac heapmgr runtime to
 
 prod: check_os lib maketools makefiles xml make_sac2c.prod libsac heapmgr runtime tools 
 
-efence: check_os maketools sac2c.efence
+efence: check_os lib maketools makefiles xml make_sac2c.efence libsac heapmgr runtime tools 
+
 
 
 ###############################################################################
