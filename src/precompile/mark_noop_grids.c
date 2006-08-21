@@ -1,6 +1,33 @@
-/**
+/*
  * $Id$
  */
+
+/** <!--********************************************************************-->
+ *
+ * @defgroup MNG Mark NoOp Grids
+ *
+ * This traversal converts between two different encodings for parts of grids
+ * that do not contain any operations (e.g. retain the original value of the
+ * array at that position). In the frontend, these parts are encoded by code
+ * blocks than contain a single F_noop operation. In the backend, these parts
+ * are encoded by plain non-existence, e.g. the parent has a NULL pointer.
+ *
+ * To convert between the two representations, we need to detect those parts
+ * of a WL2 structure, that only contain F_noop calls. As the WL2 is encoded
+ * as a tree, we propagate this information up from the leaves (e.g. the
+ * code blocks) to the parent nodes. Whenever a parent detects that it only
+ * has ISNOOP sons, it frees all of its sons and flags ISNOOP to its parent.
+ *
+ * After the traversal, all parts of a WL2 structure that correspond to F_noop
+ * code blocks have been freed. This then triggers the generation of NOOP ICMs
+ * in the backend.
+ *
+ * On the long run, it would be nicer to use one common representation in the
+ * frontend end and backend.
+ *
+ * @{
+ *
+ *****************************************************************************/
 
 #include "mark_noop_grids.h"
 
@@ -50,9 +77,12 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
-/**
- * traversal functions
- */
+/** <!--********************************************************************-->
+ *
+ * @name Traversal functions
+ * @{
+ *
+ ******************************************************************************/
 
 node *
 MNGwlblock (node *arg_node, info *arg_info)
@@ -366,6 +396,16 @@ MNGwlgridvar (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/** <!-- ****************************************************************** -->
+ * @brief Directs the traversal into the body of the code block. Note that
+ *        only this block is traversed, not the succesors, as we want to
+ *        infer whether this block is a noop.
+ *
+ * @param arg_node N_code block
+ * @param arg_info info structure
+ *
+ * @return unchanged N_code block
+ ******************************************************************************/
 node *
 MNGcode (node *arg_node, info *arg_info)
 {
@@ -381,6 +421,16 @@ MNGcode (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/** <!-- ****************************************************************** -->
+ * @brief Detects occurences of lets apart from applications of F_noop.
+ *        If such a let is found, ISNOOP is set to FALSE. This flags the
+ *        surrounding code block as being a proper operation.
+ *
+ * @param arg_node N_let node
+ * @param arg_info info structure
+ *
+ * @return unchanged N_let node
+ ******************************************************************************/
 node *
 MNGlet (node *arg_node, info *arg_info)
 {
@@ -397,12 +447,16 @@ MNGlet (node *arg_node, info *arg_info)
     /*
      * we have to continue the traversal here as we
      * want to walk through the entire tree. Otherwise
-     * we would miss all with nodes ;)
+     * we would miss all contained with nodes (nesting!) ;)
      */
     arg_node = TRAVcont (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }
+
+/** <!--********************************************************************-->
+ * @}  <!-- Traversal functions -->
+ ******************************************************************************/
 
 /**
  * entry function
@@ -426,3 +480,7 @@ MNGdoMarkNoopGrids (node *syntax_tree)
 
     DBUG_RETURN (syntax_tree);
 }
+
+/** <!--********************************************************************-->
+ * @}  <!-- Mark NoOP Grids -->
+ *****************************************************************************/
