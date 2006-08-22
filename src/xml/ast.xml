@@ -1690,6 +1690,7 @@
           <node name="Let" />
           <node name="Modarray" />
           <node name="Prf" />
+          <node name="Propagate" />
           <node name="Return" />
           <node name="With" />
           <node name="With2" />
