@@ -957,7 +957,6 @@ RCIpropagate (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("RCIpropagate");
 
-    printf ("Look ma, no hands!\n");
     /*
      * propagate( n);
      *
