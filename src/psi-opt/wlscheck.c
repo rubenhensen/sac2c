@@ -562,6 +562,14 @@ WLSCwith (node *arg_node, info *arg_info)
         }
 
         /*
+         * Outer with-loop must not be a multi-operator with-loop
+         */
+        if (WITHOP_NEXT (WITH_WITHOP (arg_node)) != NULL) {
+            INFO_POSSIBLE (arg_info) = FALSE;
+            DBUG_PRINT ("WLS", ("Outer with-loop is multi-operator with-loop!"));
+        }
+
+        /*
          * Its parts must form a full partition of index space
          */
         if (INFO_POSSIBLE (arg_info)) {
@@ -708,6 +716,29 @@ node *
 WLSCfold (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLSCfold");
+
+    INFO_POSSIBLE (arg_info) = FALSE;
+    DBUG_PRINT ("WLS", ("Inner with-loop is no genarray/modarray with-loop!!!"));
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *WLSCpropagate(node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return
+ *
+ *****************************************************************************/
+node *
+WLSCpropagate (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("WLSCpropagate");
 
     INFO_POSSIBLE (arg_info) = FALSE;
     DBUG_PRINT ("WLS", ("Inner with-loop is no genarray/modarray with-loop!!!"));

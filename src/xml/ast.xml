@@ -1266,6 +1266,7 @@
           <node name="Genarray" />
           <node name="Modarray" />
           <node name="Fold" />
+          <node name="Propagate" />
         </travuser>
       </traversal>
       <traversal id="WLSW" name="With-Loop Scalarization Withloopification traversal" default="sons" include="wls.h">

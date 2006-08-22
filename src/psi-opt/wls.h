@@ -39,6 +39,7 @@ extern node *WLSCgenerator (node *arg_node, info *arg_info);
 extern node *WLSCgenarray (node *arg_node, info *arg_info);
 extern node *WLSCmodarray (node *arg_node, info *arg_info);
 extern node *WLSCfold (node *arg_node, info *arg_info);
+extern node *WLSCpropagate (node *arg_node, info *arg_info);
 
 /******************************************************************************
  *
