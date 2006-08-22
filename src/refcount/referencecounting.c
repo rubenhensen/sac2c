@@ -608,6 +608,7 @@ RCIprf (node *arg_node, info *arg_info)
         PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
         break;
 
+    case F_prop_obj:
     case F_accu:
     case F_suballoc:
         /*
@@ -939,6 +940,34 @@ RCIfold (node *arg_node, info *arg_info)
 
     if (FOLD_NEXT (arg_node) != NULL) {
         FOLD_NEXT (arg_node) = TRAVdo (FOLD_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn RCIpropagate
+ *
+ *  @brief
+ *
+ *****************************************************************************/
+node *
+RCIpropagate (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("RCIpropagate");
+
+    printf ("Look ma, no hands!\n");
+    /*
+     * propagate( n);
+     *
+     * - n must be refcounted like a funap use
+     */
+    INFO_MODE (arg_info) = rc_apuse;
+    PROPAGATE_DEFAULT (arg_node) = TRAVdo (PROPAGATE_DEFAULT (arg_node), arg_info);
+
+    if (PROPAGATE_NEXT (arg_node) != NULL) {
+        PROPAGATE_NEXT (arg_node) = TRAVdo (PROPAGATE_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);

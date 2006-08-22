@@ -29,6 +29,7 @@ extern node *RCIids (node *arg_node, info *arg_info);
 extern node *RCIlet (node *arg_node, info *arg_info);
 extern node *RCImodarray (node *arg_node, info *arg_info);
 extern node *RCIprf (node *arg_node, info *arg_info);
+extern node *RCIpropagate (node *arg_node, info *arg_info);
 extern node *RCIreturn (node *arg_node, info *arg_info);
 extern node *RCIwith (node *arg_node, info *arg_info);
 extern node *RCIwith2 (node *arg_node, info *arg_info);

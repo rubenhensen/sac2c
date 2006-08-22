@@ -707,6 +707,7 @@ RCMprf (node *arg_node, info *arg_info)
 
     case F_wl_assign:
     case F_wl_break:
+    case F_prop_obj:
     case F_accu:
     case F_suballoc:
         /*
