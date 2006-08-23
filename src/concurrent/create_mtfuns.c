@@ -116,7 +116,7 @@ CMTFdoCreateMtFuns (node *syntax_tree)
     info = MakeInfo ();
 
     TRAVpush (TR_cmtf);
-    syntax_tree = TRAVdo (syntax_tree, NULL);
+    syntax_tree = TRAVdo (syntax_tree, info);
     TRAVpop ();
 
     info = FreeInfo (info);
