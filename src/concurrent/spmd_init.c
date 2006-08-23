@@ -372,6 +372,9 @@ SPMDIwith2 (node *arg_node, info *arg_info)
                 WITH2_WITHID (arg_node) = TRAVdo (WITH2_WITHID (arg_node), arg_info);
                 WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
 
+                /* Traverse withops again to collect data-flow information. */
+                WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
+
                 INFO_BELOWWITH (arg_info) = FALSE;
             }
         } else {
@@ -392,6 +395,10 @@ node *
 SPMDIfold (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SPMDIfold");
+
+    if (FOLD_NEUTRAL (arg_node) != NULL) {
+        FOLD_NEUTRAL (arg_node) = TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
+    }
 
     if (global.no_fold_parallel) {
         /*
@@ -437,6 +444,14 @@ SPMDIgenarray (node *arg_node, info *arg_info)
     node *arg1, *arg2;
 
     DBUG_ENTER ("SPMDIgenarray");
+
+    if (GENARRAY_SHAPE (arg_node) != NULL) {
+        GENARRAY_SHAPE (arg_node) = TRAVdo (GENARRAY_SHAPE (arg_node), arg_info);
+    }
+
+    if (GENARRAY_DEFAULT (arg_node) != NULL) {
+        GENARRAY_DEFAULT (arg_node) = TRAVdo (GENARRAY_DEFAULT (arg_node), arg_info);
+    }
 
     size_static = TUshapeKnown (IDS_NTYPE (INFO_LETIDS (arg_info)));
 
@@ -524,6 +539,10 @@ SPMDImodarray (node *arg_node, info *arg_info)
     int size;
 
     DBUG_ENTER ("SPMDImodarray");
+
+    if (MODARRAY_ARRAY (arg_node) != NULL) {
+        MODARRAY_ARRAY (arg_node) = TRAVdo (MODARRAY_ARRAY (arg_node), arg_info);
+    }
 
     if (TUshapeKnown (IDS_NTYPE (INFO_LETIDS (arg_info)))) {
         size = SHgetUnrLen (TYgetShape (IDS_NTYPE (INFO_LETIDS (arg_info))));
