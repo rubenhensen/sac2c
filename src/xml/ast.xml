@@ -2940,7 +2940,7 @@
           </type>
         </attribute>
         <attribute name="Companion">
-          <description>used in both implementations of MT</description>
+          <description>This link points to the companion function of the current function. In case this is the sequential version (as encoded by ISSTFUN) of the function, the companion will be the parallel version (as encoded by ISMTFUN) and vice versa. The attribute is used in both implementations of MT.</description>
           <type name="ExtLink">
             <targets>
               <target mandatory="no">
@@ -2994,17 +2994,39 @@
         </attribute>
       </attributes>
       <flags>
-        <flag name="IsExported" />
-        <flag name="IsProvided" />
-        <flag name="WasImported" />
-        <flag name="WasUsed" />
-        <flag name="IsLocal" default="TRUE" />
-        <flag name="IsNeeded" />
-        <flag name="IsCondfun" />
-        <flag name="IsDoFun" />
-        <flag name="IsSpmdfun" />
-        <flag name="IsMtfun" />
-        <flag name="IsStfun" />
+        <flag name="IsExported">
+          <description>This function is being exported from the current namespace and will thus be fully visible from outside.</description>
+        </flag>
+        <flag name="IsProvided">
+          <description>This function is being provided from the current namespace and will thus be available for use from outside, only.</description>
+        </flag>
+        <flag name="WasImported">
+          <description>This function was imported from another namespace. This as well means that it is local now.</description>
+        </flag>
+        <flag name="WasUsed">
+          <description>This function was used from another namespace. This as well means that it is not local.</description>
+        </flag>
+        <flag name="IsLocal" default="TRUE">
+          <description>This function is defined locally in the current namespace. That is, it was defined locally or imported.</description>
+        </flag>
+        <flag name="IsNeeded">
+          <description>This flag is used in multiple phases, usually to tag functions that are referenced in some sense. It has always to be reset to FALSE at the end of each phase.</description>
+        </flag>
+        <flag name="IsCondfun">
+          <description>This is a lifted conditional. The function is only referenced once from the context the conditional was lifted from.</description>
+        </flag>
+        <flag name="IsDoFun">
+          <description>This function is a functional representation of a do loop; it is only referenced twice: Once from the context the loop was lifted from and once from the inner recursive application.</description>
+        </flag>
+        <flag name="IsSpmdfun">
+          <description>This function is a lifted region (usually one withloop) from a SPMD-block; it is only called once from within the region it was lifted from. From a backend perspective, the SPMD function is the transition from sequential to parallel execution. It is called while in sequential mode, its body is exectuted in parallel by multiple threads and it syncronizes on the return.</description>
+        </flag>
+        <flag name="IsMtfun">
+          <description>This is (potentially) a copy of the original function that will be executed in parallel by multiple threads during runtime. Note that all functions called from such a function need to be MT-funs, as well. If the function is only used in parallel context, this may in fact be the original function that has been reused.</description>
+        </flag>
+        <flag name="IsStfun">
+          <description>This is (potentially) a copy of the original function that will be executed sequentially by a single thread during runtime. If the function is only used in sequential context, this may in fact be the original function that has been reused.</description>
+        </flag>
         <flag name="IsWrapperfun" />
         <flag name="IsZombie" />
         <flag name="IsExtern" />
@@ -5040,11 +5062,13 @@
 
 -->
     <node name="Spmd">
+      <description></description>
       <sons>
         <son name="Cond">
+          <description>If non-NULL, this conditional decides on whether to execute in parallel or sequential. It is encoded using F_run_mt_genarray, F_run_mt_modarray and F_run_mt_fold primitive functions, only. If the condition is NULL, the parallel branch is always executed and thus only that branch exists.</description>
           <targets>
             <target mandatory="no">
-              <set name="Expr" />
+              <node name="Prf" />
               <phases>
                 <all />
               </phases>
@@ -5052,6 +5076,7 @@
           </targets>
         </son>
         <son name="Region">
+          <description>Parallel branch. Contains a single assignment with a withloop on the RHS.</description>
           <targets>
             <target mandatory="yes">
               <node name="Block" />
@@ -5062,6 +5087,7 @@
           </targets>
         </son>
         <son name="Sequential">
+          <description>Sequential branch. Contains a single assignment with a withloop on the RHS. Initially, this is an exact copy of the parallel branch. Only during compilation, the generated ICMs may differ.</description>
           <targets>
             <target mandatory="no">
               <node name="Block" />
@@ -5074,6 +5100,7 @@
       </sons>
       <attributes>
         <attribute name="In" default="NULL">
+          <description>Variables that go into the contained withloop. Used later on to build SPMD functions.</description>
           <type name="DFMask">
             <targets>
               <target mandatory="yes">
@@ -5086,6 +5113,7 @@
           </type>
         </attribute>
         <attribute name="Out" default="NULL">
+          <description>Variables that go out of the contained withloop. Used later on to build SPMD functions.</description>
           <type name="DFMask">
             <targets>
               <target mandatory="yes">
@@ -5098,6 +5126,7 @@
           </type>
         </attribute>
         <attribute name="Local" default="NULL">
+          <description>Variables that are only locally used within the contained withloop.</description>
           <type name="DFMask">
             <targets>
               <target mandatory="yes">
@@ -8070,23 +8099,6 @@
       <attributes> </attributes>
       <flags></flags>
     </node>
-
   </syntaxtree>
 </definition>
-<!-- Keep this comment at the end of the file
-Local variables:
-mode: xml
-sgml-omittag:nil
-sgml-shorttag:nil
-sgml-namecase-general:nil
-sgml-general-insert-case:lower
-sgml-minimize-attributes:nil
-sgml-always-quote-attributes:t
-sgml-indent-step:2
-sgml-indent-data:t
-sgml-parent-document:nil
-sgml-exposed-tags:nil
-sgml-local-catalogs:nil
-sgml-local-ecat-files:nil
-End:
--->
+
