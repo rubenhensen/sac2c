@@ -371,6 +371,7 @@ SPMDIwith2 (node *arg_node, info *arg_info)
 
                 WITH2_WITHID (arg_node) = TRAVdo (WITH2_WITHID (arg_node), arg_info);
                 WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
+                WITH2_SEGS (arg_node) = TRAVdo (WITH2_SEGS (arg_node), arg_info);
 
                 /* Traverse withops again to collect data-flow information. */
                 WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
