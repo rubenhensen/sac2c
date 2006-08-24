@@ -12,6 +12,40 @@
  *   enclose each with-loop suitable for non-sequential execution by
  *   an spmd-block.
  *
+ *   Upon encountering a withloop (N_with), we first traverse the withops.
+ *   Each of the withop nodes then decides whether paralellizing it is
+ *   worthwile, not worthwile, or unknown.
+ *
+ *   Depending on the result of this decision, the withop is placed inside
+ *   a N_spmd block: This is done for positive and unknown decisions, and
+ *   not done for negative decisions. The spmd block has three sons: Cond,
+ *   Region and Sequential:
+ *     - Cond is the condition upon which the spmd block is to be executed
+ *       in parallel. This only exists if the decision is unknown.
+ *     - Region is the parallel version of the withloop.
+ *     - Sequential is the sequential version of the withloop. This only
+ *       exists if the decision is unknown.
+ *
+ *   BEFORE:
+ *     N_assign -> N_let -> N_ids ...
+ *        |          |
+ *        |          \----> N_with2  -> ....
+ *     N_assign...
+ *
+ *   AFTER:
+ *     N_assign -> N_spmd -> N_expr
+ *        |          |
+ *        |          |-----> N_block -> N_assign -> N_let -> N_ids ...
+ *        |          |                                |
+ *        |          \-----> N_block -> ...           \----> N_with2
+ *     N_assign...
+ *
+ *   This traversal also makes three dataflow masks for every spmd block
+ *   it creates: IN, OUT and LOCAL. All variables in withloop-containing
+ *   functions are set in these dataflow masks. These masks are later used
+ *   by spmd_lift to lift the spmd Region into a separate function, to
+ *   determine function args, rets and vardecs respectively.
+ *
  *****************************************************************************/
 
 #include "spmd_init.h"

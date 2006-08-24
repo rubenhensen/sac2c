@@ -9,18 +9,27 @@
  * description:
  *
  *   This file implements a program traversal that creates MT-variants of all
- *   functions executed in parallel by multiple threads in a replicated manner.
+ *   functions executed in parallel by multiple threads.
  *
- *   We traverse all functions and create MT versions of each exported or
- *   provided function because we do not know whether they will be used in
- *   sequential or in a parallel context by the using module or program.
+ *   The traversal uses the following rules:
+ *     - Start traversing at an exported or provided fundef, with the ST
+ *       marker.
+ *     - When we encounter a function application:
+ *        - If it is not marked, mark it with the current marker. Traverse
+ *          into the function recursively.
+ *        - If it is marked with our current marker, skip.
+ *        - If it is marked with the other marker, create a copy of the
+ *          fundef and mark that one with our marker. Replace application with
+ *          application to this function. Traverse into the new function.
+ *     - When we encounter an spmd block:
+ *        - If the current marker is ST, set the current marker to MT and
+ *          enter the block. Reset marker to ST afterwards.
+ *        - If the current marker is MT, discard the spmd block. We don't
+ *          allow nesting spmd blocks.
  *
- *   All function calls in MT functions or in parallel branches of SPMD blocks
- *   are redirected from the original (sequential) version of a function to
- *   its MT-variant until we reach a fixed point.
- *
- *   When traversing MT functions we again eliminate all SPMD blocks because
- *   we are not interested into nested data parallelism for the time being.
+ *    This algorithm repeats until all functions are marked and thus a fixed
+ *    point is reached. Tagged functions are renamend in the rename
+ *    identifiers traversal.
  *
  *****************************************************************************/
 
