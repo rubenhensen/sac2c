@@ -30,6 +30,14 @@
 #include "internal_lib.h"
 
 /**
+ * State used for withop traversal
+ */
+enum {
+    WITHOPMODE_DECIDE,  /* Decide whether this withloop is parallellizable */
+    WITHOPMODE_DATAFLOW /* Collect dataflow information */
+};
+
+/**
  * INFO structure
  */
 
@@ -43,6 +51,7 @@ struct INFO {
     bool isworth;
     node *condition;
     node *sequential;
+    int withopmode;
 
     dfmask_t *in_mask;
     dfmask_t *out_mask;
@@ -62,6 +71,7 @@ struct INFO {
 #define INFO_MAYPAR(n) (n->maypar)
 #define INFO_CONDITION(n) (n->condition)
 #define INFO_SEQUENTIAL(n) (n->sequential)
+#define INFO_WITHOPMODE(n) (n->withopmode)
 
 #define INFO_IN_MASK(n) (n->in_mask)
 #define INFO_OUT_MASK(n) (n->out_mask)
@@ -89,6 +99,7 @@ MakeInfo ()
     INFO_MAYPAR (result) = FALSE;
     INFO_CONDITION (result) = NULL;
     INFO_SEQUENTIAL (result) = NULL;
+    INFO_WITHOPMODE (result) = WITHOPMODE_DECIDE;
 
     INFO_IN_MASK (result) = NULL;
     INFO_OUT_MASK (result) = NULL;
@@ -341,8 +352,15 @@ SPMDIwith2 (node *arg_node, info *arg_info)
          * data flow information.
          */
 
+        int oldmode = INFO_WITHOPMODE (arg_info);
+        INFO_WITHOPMODE (arg_info) = WITHOPMODE_DATAFLOW;
+
         WITH2_WITHID (arg_node) = TRAVdo (WITH2_WITHID (arg_node), arg_info);
         WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
+        WITH2_SEGS (arg_node) = TRAVdo (WITH2_SEGS (arg_node), arg_info);
+        WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
+
+        INFO_WITHOPMODE (arg_info) = oldmode;
     } else {
 
         INFO_MAYPAR (arg_info) = TRUE;
@@ -350,6 +368,7 @@ SPMDIwith2 (node *arg_node, info *arg_info)
         INFO_CONDITION (arg_info) = NULL;
         INFO_LETIDS (arg_info) = LET_IDS (INFO_LET (arg_info));
 
+        INFO_WITHOPMODE (arg_info) = WITHOPMODE_DECIDE;
         WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
 
         if (INFO_MAYPAR (arg_info)) {
@@ -368,17 +387,20 @@ SPMDIwith2 (node *arg_node, info *arg_info)
                   = DFMgenMaskClear (FUNDEF_DFM_BASE (INFO_FUNDEF (arg_info)));
 
                 INFO_BELOWWITH (arg_info) = TRUE;
+                INFO_WITHOPMODE (arg_info) = WITHOPMODE_DATAFLOW;
 
                 WITH2_WITHID (arg_node) = TRAVdo (WITH2_WITHID (arg_node), arg_info);
                 WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
                 WITH2_SEGS (arg_node) = TRAVdo (WITH2_SEGS (arg_node), arg_info);
-
                 /* Traverse withops again to collect data-flow information. */
                 WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
 
+                INFO_WITHOPMODE (arg_info) = WITHOPMODE_DECIDE;
                 INFO_BELOWWITH (arg_info) = FALSE;
             }
         } else {
+            /* Traverse code to find nested withloops which we may want
+             * to parallellize */
             WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
         }
     }
@@ -397,35 +419,48 @@ SPMDIfold (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SPMDIfold");
 
-    if (FOLD_NEUTRAL (arg_node) != NULL) {
-        FOLD_NEUTRAL (arg_node) = TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
-    }
-
-    if (global.no_fold_parallel) {
-        /*
-         * We decided not to parallelize fold-with-loops.
-         * Therefore, we stop traversal of with-ops, reset the flags and delete
-         * a potential conditions derived from a previous with-op.
-         */
-        INFO_MAYPAR (arg_info) = FALSE;
-        INFO_ISWORTH (arg_info) = FALSE;
-        if (INFO_CONDITION (arg_info) != NULL) {
-            INFO_CONDITION (arg_info) = FREEdoFreeTree (INFO_CONDITION (arg_info));
+    switch (INFO_WITHOPMODE (arg_info)) {
+    case WITHOPMODE_DECIDE:
+        if (global.no_fold_parallel) {
+            /*
+             * We decided not to parallelize fold-with-loops.
+             * Therefore, we stop traversal of with-ops, reset the flags and delete
+             * a potential conditions derived from a previous with-op.
+             */
+            INFO_MAYPAR (arg_info) = FALSE;
+            INFO_ISWORTH (arg_info) = FALSE;
+            if (INFO_CONDITION (arg_info) != NULL) {
+                INFO_CONDITION (arg_info) = FREEdoFreeTree (INFO_CONDITION (arg_info));
+            }
+        } else {
+            if (FOLD_NEXT (arg_node) != NULL) {
+                INFO_LETIDS (arg_info) = IDS_NEXT (INFO_LETIDS (arg_info));
+                FOLD_NEXT (arg_node) = TRAVdo (FOLD_NEXT (arg_node), arg_info);
+            } else {
+                if (INFO_MAYPAR (arg_info) && !INFO_ISWORTH (arg_info)) {
+                    /*
+                     * This with-loop only consists of fold operations. As long as we do
+                     * not have a proper condition on fold-with-loops, we parallelize
+                     * always.
+                     */
+                    INFO_ISWORTH (arg_info) = TRUE;
+                }
+            }
         }
-    } else {
+        break;
+
+    case WITHOPMODE_DATAFLOW:
+        if (FOLD_NEUTRAL (arg_node) != NULL) {
+            FOLD_NEUTRAL (arg_node) = TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
+        }
         if (FOLD_NEXT (arg_node) != NULL) {
             INFO_LETIDS (arg_info) = IDS_NEXT (INFO_LETIDS (arg_info));
             FOLD_NEXT (arg_node) = TRAVdo (FOLD_NEXT (arg_node), arg_info);
-        } else {
-            if (INFO_MAYPAR (arg_info) && !INFO_ISWORTH (arg_info)) {
-                /*
-                 * This with-loop only consists of fold operations. As long as we do
-                 * not have a proper condition on fold-with-loops, we parallelize
-                 * always.
-                 */
-                INFO_ISWORTH (arg_info) = TRUE;
-            }
         }
+        break;
+
+    default:
+        DBUG_ASSERT (FALSE, "Illegal withop-mode");
     }
 
     DBUG_RETURN (arg_node);
@@ -446,82 +481,96 @@ SPMDIgenarray (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("SPMDIgenarray");
 
-    if (GENARRAY_SHAPE (arg_node) != NULL) {
-        GENARRAY_SHAPE (arg_node) = TRAVdo (GENARRAY_SHAPE (arg_node), arg_info);
-    }
+    switch (INFO_WITHOPMODE (arg_info)) {
+    case WITHOPMODE_DECIDE:
+        size_static = TUshapeKnown (IDS_NTYPE (INFO_LETIDS (arg_info)));
 
-    if (GENARRAY_DEFAULT (arg_node) != NULL) {
-        GENARRAY_DEFAULT (arg_node) = TRAVdo (GENARRAY_DEFAULT (arg_node), arg_info);
-    }
-
-    size_static = TUshapeKnown (IDS_NTYPE (INFO_LETIDS (arg_info)));
-
-    if (size_static) {
-        size = SHgetUnrLen (TYgetShape (IDS_NTYPE (INFO_LETIDS (arg_info))));
-        if (size >= global.min_parallel_size) {
-            /*
-             * We statically know the size of the result array and its beyond the
-             * threshold. We parallelize unconditionally and eliminate a condition
-             * created before.
-             */
-            INFO_ISWORTH (arg_info) = TRUE;
-            if (INFO_CONDITION (arg_info) != NULL) {
-                INFO_CONDITION (arg_info) = FREEdoFreeTree (INFO_CONDITION (arg_info));
-            }
-        } else {
-            /*
-             * We statically know the size of the result array and its *not* beyond
-             * the threshold.
-             */
-            if (INFO_ISWORTH (arg_info)) {
+        if (size_static) {
+            size = SHgetUnrLen (TYgetShape (IDS_NTYPE (INFO_LETIDS (arg_info))));
+            if (size >= global.min_parallel_size) {
                 /*
-                 * We previously considered the with-loop to be worth parallelization.
-                 * We stick to this initial decision.
+                 * We statically know the size of the result array and its beyond the
+                 * threshold. We parallelize unconditionally and eliminate a condition
+                 * created before.
                  */
-            } else {
-                /*
-                 * We now know that the with-loop is not worth parallelization.
-                 * So, we eliminate a potential condition.
-                 */
+                INFO_ISWORTH (arg_info) = TRUE;
                 if (INFO_CONDITION (arg_info) != NULL) {
                     INFO_CONDITION (arg_info)
                       = FREEdoFreeTree (INFO_CONDITION (arg_info));
                 }
+            } else {
+                /*
+                 * We statically know the size of the result array and its *not* beyond
+                 * the threshold.
+                 */
+                if (INFO_ISWORTH (arg_info)) {
+                    /*
+                     * We previously considered the with-loop to be worth parallelization.
+                     * We stick to this initial decision.
+                     */
+                } else {
+                    /*
+                     * We now know that the with-loop is not worth parallelization.
+                     * So, we eliminate a potential condition.
+                     */
+                    if (INFO_CONDITION (arg_info) != NULL) {
+                        INFO_CONDITION (arg_info)
+                          = FREEdoFreeTree (INFO_CONDITION (arg_info));
+                    }
+                }
             }
-        }
-    } else {
-        /*
-         * We do not know the size statically.
-         * Nevertheless, we do not construct a condition here. We first continue
-         * the with-op traversal because we may find a modarray with-loop, which
-         * allows us to build a simpler condition.
-         */
-    }
-
-    if (GENARRAY_NEXT (arg_node) != NULL) {
-        INFO_LETIDS (arg_info) = IDS_NEXT (INFO_LETIDS (arg_info));
-        GENARRAY_NEXT (arg_node) = TRAVdo (GENARRAY_NEXT (arg_node), arg_info);
-    }
-
-    if (!size_static && (INFO_CONDITION (arg_info) == NULL)) {
-        /*
-         * We would like to give this with-loop a try and obviously there have been
-         * no modarray with-ops. So we must build a genarray parallelization criterion.
-         */
-
-        if (NODE_TYPE (GENARRAY_SHAPE (arg_node)) == N_id) {
-            arg1 = TBmakeId (ID_AVIS (GENARRAY_SHAPE (arg_node)));
         } else {
-            arg1 = DUPdoDupNode (GENARRAY_SHAPE (arg_node));
+            /*
+             * We do not know the size statically.
+             * Nevertheless, we do not construct a condition here. We first continue
+             * the with-op traversal because we may find a modarray with-loop, which
+             * allows us to build a simpler condition.
+             */
         }
 
-        if (NODE_TYPE (GENARRAY_DEFAULT (arg_node)) == N_id) {
-            arg2 = TBmakeId (ID_AVIS (GENARRAY_DEFAULT (arg_node)));
-        } else {
-            arg2 = DUPdoDupNode (GENARRAY_DEFAULT (arg_node));
+        if (GENARRAY_NEXT (arg_node) != NULL) {
+            INFO_LETIDS (arg_info) = IDS_NEXT (INFO_LETIDS (arg_info));
+            GENARRAY_NEXT (arg_node) = TRAVdo (GENARRAY_NEXT (arg_node), arg_info);
         }
 
-        INFO_CONDITION (arg_info) = TCmakePrf2 (F_run_mt_genarray, arg1, arg2);
+        if (!size_static && (INFO_CONDITION (arg_info) == NULL)) {
+            /*
+             * We would like to give this with-loop a try and obviously there have been
+             * no modarray with-ops. So we must build a genarray parallelization
+             * criterion.
+             */
+
+            if (NODE_TYPE (GENARRAY_SHAPE (arg_node)) == N_id) {
+                arg1 = TBmakeId (ID_AVIS (GENARRAY_SHAPE (arg_node)));
+            } else {
+                arg1 = DUPdoDupNode (GENARRAY_SHAPE (arg_node));
+            }
+
+            if (NODE_TYPE (GENARRAY_DEFAULT (arg_node)) == N_id) {
+                arg2 = TBmakeId (ID_AVIS (GENARRAY_DEFAULT (arg_node)));
+            } else {
+                arg2 = DUPdoDupNode (GENARRAY_DEFAULT (arg_node));
+            }
+
+            INFO_CONDITION (arg_info) = TCmakePrf2 (F_run_mt_genarray, arg1, arg2);
+        }
+        break;
+
+    case WITHOPMODE_DATAFLOW:
+        if (GENARRAY_SHAPE (arg_node) != NULL) {
+            GENARRAY_SHAPE (arg_node) = TRAVdo (GENARRAY_SHAPE (arg_node), arg_info);
+        }
+        if (GENARRAY_DEFAULT (arg_node) != NULL) {
+            GENARRAY_DEFAULT (arg_node) = TRAVdo (GENARRAY_DEFAULT (arg_node), arg_info);
+        }
+        if (GENARRAY_NEXT (arg_node) != NULL) {
+            INFO_LETIDS (arg_info) = IDS_NEXT (INFO_LETIDS (arg_info));
+            GENARRAY_NEXT (arg_node) = TRAVdo (GENARRAY_NEXT (arg_node), arg_info);
+        }
+        break;
+
+    default:
+        DBUG_ASSERT (FALSE, "Illegal withop-mode");
     }
 
     DBUG_RETURN (arg_node);
@@ -541,53 +590,63 @@ SPMDImodarray (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("SPMDImodarray");
 
-    if (MODARRAY_ARRAY (arg_node) != NULL) {
-        MODARRAY_ARRAY (arg_node) = TRAVdo (MODARRAY_ARRAY (arg_node), arg_info);
-    }
-
-    if (TUshapeKnown (IDS_NTYPE (INFO_LETIDS (arg_info)))) {
-        size = SHgetUnrLen (TYgetShape (IDS_NTYPE (INFO_LETIDS (arg_info))));
-        if (size >= global.min_parallel_size) {
-            /*
-             * We statically know the size of the result array and its beyond the
-             * threshold. We parallelize unconditionally and eliminate a condition
-             * created before.
-             */
-            INFO_ISWORTH (arg_info) = TRUE;
-            if (INFO_CONDITION (arg_info) != NULL) {
-                INFO_CONDITION (arg_info) = FREEdoFreeTree (INFO_CONDITION (arg_info));
-            }
-        } else {
-            /*
-             * We statically know the size of the result array and its *not* beyond
-             * the threshold.
-             */
-            if (INFO_ISWORTH (arg_info)) {
+    switch (INFO_WITHOPMODE (arg_info)) {
+    case WITHOPMODE_DECIDE:
+        if (TUshapeKnown (IDS_NTYPE (INFO_LETIDS (arg_info)))) {
+            size = SHgetUnrLen (TYgetShape (IDS_NTYPE (INFO_LETIDS (arg_info))));
+            if (size >= global.min_parallel_size) {
                 /*
-                 * We previously considered the with-loop to be worth parallelization.
-                 * We stick to this initial decision.
+                 * We statically know the size of the result array and its beyond the
+                 * threshold. We parallelize unconditionally and eliminate a condition
+                 * created before.
                  */
-            } else {
-                /*
-                 * We now know that the with-loop is not worth parallelization.
-                 * So, we eliminate a potential condition.
-                 */
+                INFO_ISWORTH (arg_info) = TRUE;
                 if (INFO_CONDITION (arg_info) != NULL) {
                     INFO_CONDITION (arg_info)
                       = FREEdoFreeTree (INFO_CONDITION (arg_info));
                 }
+            } else {
+                /*
+                 * We statically know the size of the result array and its *not* beyond
+                 * the threshold.
+                 */
+                if (INFO_ISWORTH (arg_info)) {
+                    /*
+                     * We previously considered the with-loop to be worth parallelization.
+                     * We stick to this initial decision.
+                     */
+                } else {
+                    /*
+                     * We now know that the with-loop is not worth parallelization.
+                     * So, we eliminate a potential condition.
+                     */
+                    if (INFO_CONDITION (arg_info) != NULL) {
+                        INFO_CONDITION (arg_info)
+                          = FREEdoFreeTree (INFO_CONDITION (arg_info));
+                    }
+                }
+            }
+        } else {
+            /*
+             * We do not know the size statically. So, we give it a try and generate
+             * a condition if no condition exists so far. Otherwise, we stick to the
+             * existing condition.
+             */
+            if (INFO_CONDITION (arg_info) == NULL) {
+                arg = TBmakeId (ID_AVIS (MODARRAY_ARRAY (arg_node)));
+                INFO_CONDITION (arg_info) = TCmakePrf1 (F_run_mt_modarray, arg);
             }
         }
-    } else {
-        /*
-         * We do not know the size statically. So, we give it a try and generate
-         * a condition if no condition exists so far. Otherwise, we stick to the
-         * existing condition.
-         */
-        if (INFO_CONDITION (arg_info) == NULL) {
-            arg = TBmakeId (ID_AVIS (MODARRAY_ARRAY (arg_node)));
-            INFO_CONDITION (arg_info) = TCmakePrf1 (F_run_mt_modarray, arg);
+        break;
+
+    case WITHOPMODE_DATAFLOW:
+        if (MODARRAY_ARRAY (arg_node) != NULL) {
+            MODARRAY_ARRAY (arg_node) = TRAVdo (MODARRAY_ARRAY (arg_node), arg_info);
         }
+        break;
+
+    default:
+        DBUG_ASSERT (FALSE, "Illegal withop-mode");
     }
 
     if (MODARRAY_NEXT (arg_node) != NULL) {
