@@ -252,26 +252,13 @@ ILIBstrBufCreate (int size)
     DBUG_RETURN (res);
 }
 
-/******************************************************************************
- *
- * Function:
- *   str_buf *ILIBstrBufPrint(  str_buf *s, const char *string);
- *
- * Description:
- *
- *
- ******************************************************************************/
-
-str_buf *
-ILIBstrBufPrint (str_buf *s, const char *string)
+static str_buf *
+EnsureStrBufSpace (str_buf *s, int len)
 {
-    int len;
     int new_size;
     char *new_buf;
 
-    DBUG_ENTER ("ILIBstrBufPrint");
-
-    len = strlen (string);
+    DBUG_ENTER ("EnsureStrBufSpace");
 
     if ((len + 1) > (s->size - s->pos)) {
 
@@ -286,6 +273,30 @@ ILIBstrBufPrint (str_buf *s, const char *string)
         s->buf = new_buf;
         s->size = new_size;
     }
+
+    DBUG_RETURN (s);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   str_buf *ILIBstrBufPrint(  str_buf *s, const char *string);
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+str_buf *
+ILIBstrBufPrint (str_buf *s, const char *string)
+{
+    int len;
+
+    DBUG_ENTER ("ILIBstrBufPrint");
+
+    len = strlen (string);
+
+    s = EnsureStrBufSpace (s, len);
 
     s->pos += sprintf (&s->buf[s->pos], "%s", string);
     DBUG_PRINT ("STRBUF", ("pos of buffer %p now is %d", s, s->pos));
@@ -306,18 +317,21 @@ ILIBstrBufPrint (str_buf *s, const char *string)
 str_buf *
 ILIBstrBufPrintf (str_buf *s, const char *format, ...)
 {
-    va_list arg_p;
-    static char string[512];
+    va_list arg_p, arg_p_copy;
+    int len;
 
     DBUG_ENTER ("ILIBstrBufPrintf");
 
     va_start (arg_p, format);
-    vsprintf (string, format, arg_p);
+
+    va_copy (arg_p_copy, arg_p);
+    len = vsnprintf (NULL, 0, format, arg_p_copy);
+    va_end (arg_p_copy);
+
+    s = EnsureStrBufSpace (s, len);
+
+    s->pos += vsprintf (&s->buf[s->pos], format, arg_p);
     va_end (arg_p);
-
-    DBUG_ASSERT (strlen (string) < 512, "string buffer in ILIBstrBufprintf too small!");
-
-    s = ILIBstrBufPrint (s, string);
 
     DBUG_RETURN (s);
 }
