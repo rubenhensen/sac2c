@@ -90,8 +90,6 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
-static const char *mt_suffix = "__MT";
-
 /******************************************************************************
  *
  * @fn node *CMTFdoCreateMtFuns( node *syntax_tree)
@@ -140,7 +138,6 @@ static node *
 MakeCompanion (node *fundef)
 {
     node *companion;
-    char *funname;
 
     DBUG_ENTER ("MakeCompanion");
 
@@ -156,23 +153,6 @@ MakeCompanion (node *fundef)
 
     FUNDEF_ISMTFUN (companion) = !FUNDEF_ISMTFUN (fundef);
     FUNDEF_ISSTFUN (companion) = !FUNDEF_ISSTFUN (fundef);
-
-    if (FUNDEF_ISMTFUN (companion)) {
-        /*
-         * If we build an MT fun from an ST fun, we append a suffix to the
-         * function name.
-         */
-        funname = FUNDEF_NAME (companion);
-        FUNDEF_NAME (companion) = ILIBstringConcat (funname, mt_suffix);
-        ILIBfree (funname);
-    } else {
-        /*
-         * If we build an ST fun from an MT fun, we have previously appended
-         * a suffix to the function name. This suffix is cut off here.
-         */
-        FUNDEF_NAME (companion)
-        [strlen (FUNDEF_NAME (companion)) - strlen (mt_suffix)] = '\0';
-    }
 
     DBUG_RETURN (companion);
 }

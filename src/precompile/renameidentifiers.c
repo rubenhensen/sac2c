@@ -154,66 +154,56 @@ RenameTypes (types *type)
 static char *
 RenameFunName (node *fundef)
 {
-    char *prefix;
     char *tmp_name;
     char *new_name;
     char *ns_name;
     char *akv_id = NULL;
+    str_buf *buf;
 
     DBUG_ENTER ("RenameFunName");
 
+    buf = ILIBstrBufCreate (40);
     tmp_name = ILIBreplaceSpecialCharacters (FUNDEF_NAME (fundef));
 
     if (FUNDEF_ISSPMDFUN (fundef)) {
-        new_name = (char *)ILIBmalloc ((strlen (tmp_name) + 6) * sizeof (char));
-        sprintf (new_name, "SACf_%s", tmp_name);
+        ILIBstrBufPrintf (buf, "SACf_%s", tmp_name);
     } else {
         node *arg;
-        int length = 0;
-
-        arg = FUNDEF_ARGS (fundef);
-        while (arg != NULL) {
-            length += strlen (ARG_TYPESTRING (arg)) + 2;
-            arg = ARG_NEXT (arg);
-        }
 
         if (FUNDEF_ISWRAPPERFUN (fundef)) {
-            prefix = "SACwf";
+            buf = ILIBstrBufPrint (buf, "SACwf_");
         } else {
-            prefix = "SACf";
+            buf = ILIBstrBufPrint (buf, "SACf_");
         }
 
         ns_name = ILIBreplaceSpecialCharacters (NSgetName (FUNDEF_NS (fundef)));
-
-        if (FUNDEF_AKVID (fundef) > 0) {
-            akv_id = ILIBitoa (FUNDEF_AKVID (fundef));
-            length += (strlen (prefix) + strlen (ns_name) + strlen (tmp_name) + 4 + 6
-                       + strlen (akv_id));
-        } else {
-            length += (strlen (prefix) + strlen (ns_name) + strlen (tmp_name) + 4);
-        }
-
-        new_name = (char *)ILIBmalloc (length * sizeof (char));
-        sprintf (new_name, "%s_%s__%s", prefix, ns_name, tmp_name);
-
+        buf = ILIBstrBufPrintf (buf, "%s__%s", ns_name, tmp_name);
         ns_name = ILIBfree (ns_name);
 
         arg = FUNDEF_ARGS (fundef);
         while (arg != NULL) {
-            strcat (new_name, "__");
-            strcat (new_name, ARG_TYPESTRING (arg));
+            buf = ILIBstrBufPrintf (buf, "__%s", ARG_TYPESTRING (arg));
             ARG_TYPESTRING (arg) = ILIBfree (ARG_TYPESTRING (arg));
             arg = ARG_NEXT (arg);
         }
     }
 
     if (FUNDEF_AKVID (fundef) > 0) {
-        strcat (new_name, "__akv_");
-        strcat (new_name, akv_id);
+        akv_id = ILIBitoa (FUNDEF_AKVID (fundef));
+        buf = ILIBstrBufPrintf (buf, "__akv_%s", akv_id);
         akv_id = ILIBfree (akv_id);
     }
 
+    if (FUNDEF_ISMTFUN (fundef)) {
+        buf = ILIBstrBufPrint (buf, "__MT");
+    } else if (FUNDEF_ISSTFUN (fundef)) {
+        buf = ILIBstrBufPrint (buf, "__ST");
+    }
+
     tmp_name = ILIBfree (tmp_name);
+
+    new_name = ILIBstrBuf2String (buf);
+    buf = ILIBstrBufFree (buf);
 
     DBUG_RETURN (new_name);
 }

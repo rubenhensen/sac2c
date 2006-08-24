@@ -1498,6 +1498,14 @@ PRTfundef (node *arg_node, info *arg_info)
                     fprintf (global.outfile, "/* Loop function */\n");
                 }
 
+                if (FUNDEF_ISMTFUN (arg_node)) {
+                    fprintf (global.outfile, "/* Multi-threaded function */\n");
+                } else if (FUNDEF_ISSTFUN (arg_node)) {
+                    fprintf (global.outfile, "/* Single-threaded function */\n");
+                } else if (FUNDEF_ISSPMDFUN (arg_node)) {
+                    fprintf (global.outfile, "/* SPMD function */\n");
+                }
+
                 if ((FUNDEF_ICM (arg_node) == NULL)
                     || (NODE_TYPE (FUNDEF_ICM (arg_node)) != N_icm)) {
                     PrintFunctionHeader (arg_node, arg_info, FALSE);
