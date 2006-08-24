@@ -4,6 +4,11 @@
  *
  * @file removespmd.c
  *
+ * This traversal removes spmd blocks. Depending on whether the spmd
+ * block was conditional or not, this results in either just the contents
+ * of the spmd block's Region, or a real conditional calling either the
+ * Region or the Sequential version of the code. Either way the spmd
+ * block is gone afterwards.
  */
 
 #include "removespmd.h"
