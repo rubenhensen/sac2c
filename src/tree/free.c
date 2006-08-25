@@ -124,7 +124,8 @@ FREEfreeOneTypes (types *fr)
     DBUG_ENTER ("FREEfreeOneTypes");
 
     if (fr != NULL) {
-        DBUG_PRINT ("FREE", ("Removing types: %s", TYPES_NAME (fr)));
+        DBUG_PRINT ("FREE", ("Removing types: %s",
+                             (TYPES_NAME (fr) == NULL) ? "<simple>" : TYPES_NAME (fr)));
         tmp = fr;
         fr = TYPES_NEXT (fr);
 
