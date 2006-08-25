@@ -64,6 +64,17 @@ PRECdoPrecompile (node *syntax_tree)
     syntax_tree = PHrunCompilerSubPhase (SUBPH_moi, syntax_tree);
 
     /*
+     * Resolve Code Sharing in With-Loops
+     */
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_rcs, syntax_tree);
+
+    /*
+     * WARNING: no phases that duplicate code below this line!
+     *          FPC builds the argtabs which CANNOT be maintained
+     *          by duptree!
+     */
+
+    /*
      * Function precompilation
      */
     syntax_tree = PHrunCompilerSubPhase (SUBPH_fpc, syntax_tree);
@@ -91,11 +102,6 @@ PRECdoPrecompile (node *syntax_tree)
      * Rename identifiers
      */
     syntax_tree = PHrunCompilerSubPhase (SUBPH_rid, syntax_tree);
-
-    /*
-     * Resolve Code Sharing in With-Loops
-     */
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_rcs, syntax_tree);
 
     DBUG_RETURN (syntax_tree);
 }
