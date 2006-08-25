@@ -455,7 +455,10 @@ ILIBstringLCopy (const char *source, int maxlen)
         }
 
         ret = (char *)ILIBmalloc (sizeof (char) * (max + 1));
-        strlcpy (ret, source, max + 1);
+        strncpy (ret, source, max);
+
+        /* make sure string ends with 0 */
+        ret[max] = '\0';
     } else {
         ret = NULL;
     }
