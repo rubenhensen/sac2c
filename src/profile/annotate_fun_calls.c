@@ -147,56 +147,46 @@ SearchMain (node *fundef)
 static char *
 Fundef2ProfileString (node *fundef)
 {
-    char *str_buff, *tmp_str;
-    int str_spc = PF_MAXFUNNAMELEN - 1;
+    char *tmp_str, *result;
+    str_buf *str_buff;
     node *arg;
 
     DBUG_ENTER ("Fundef2ProfileString");
-    str_buff = (char *)ILIBmalloc (sizeof (char) * PF_MAXFUNNAMELEN);
-    str_buff[0] = '\0';
-    str_buff = strncpy (str_buff, FUNDEF_NAME (fundef), str_spc);
-    str_spc -= strlen (FUNDEF_NAME (fundef));
-    str_spc = MAX (str_spc, 0);
-    str_buff = strncat (str_buff, "( ", str_spc);
-    str_spc -= 2;
-    str_spc = MAX (str_spc, 0);
+    str_buff = ILIBstrBufCreate (PF_MAXFUNNAMELEN - 1);
+    str_buff = ILIBstrBufPrintf (str_buff, "%s( ", FUNDEF_NAME (fundef));
+
     arg = FUNDEF_ARGS (fundef);
     while (arg != NULL) {
         tmp_str = TYtype2String (ARG_NTYPE (arg), FALSE, 0);
-        str_buff = strncat (str_buff, tmp_str, str_spc);
-        str_spc -= strlen (tmp_str);
-        str_spc = MAX (str_spc, 0);
-        if (ARG_ISREFERENCE (arg) && !ARG_ISREADONLY (arg)) {
-            str_buff = strncat (str_buff, " &", str_spc);
-            str_spc -= 2;
-            str_spc = MAX (str_spc, 0);
-        } else if (ARG_ISREFERENCE (arg) && ARG_ISREADONLY (arg)) {
-            str_buff = strncat (str_buff, " (&)", str_spc);
-            str_spc -= 4;
-            str_spc = MAX (str_spc, 0);
-        } else {
-            str_buff = strncat (str_buff, " ", str_spc);
-            str_spc--;
-            str_spc = MAX (str_spc, 0);
-        }
-        if (ARG_NAME (arg) != NULL) {
-            str_buff = strncat (str_buff, ARG_NAME (arg), str_spc);
-            str_spc - +strlen (ARG_NAME (arg));
-            str_spc = MAX (str_spc, 0);
-        }
+        str_buff = ILIBstrBufPrint (str_buff, tmp_str);
         tmp_str = ILIBfree (tmp_str);
+
+        if (ARG_ISREFERENCE (arg) && !ARG_ISREADONLY (arg)) {
+            str_buff = ILIBstrBufPrint (str_buff, " &");
+        } else if (ARG_ISREFERENCE (arg) && ARG_ISREADONLY (arg)) {
+            str_buff = ILIBstrBufPrint (str_buff, " (&)");
+        } else {
+            str_buff = ILIBstrBufPrint (str_buff, " ");
+        }
+
+        if (ARG_NAME (arg) != NULL) {
+            str_buff = ILIBstrBufPrint (str_buff, ARG_NAME (arg));
+        }
+
         arg = ARG_NEXT (arg);
         if (arg != NULL) {
-            str_buff = strncat (str_buff, ", ", str_spc);
-            str_spc -= 2;
-            str_spc = MAX (str_spc, 0);
+            str_buff = ILIBstrBufPrint (str_buff, ", ");
         }
     }
-    str_buff = strncat (str_buff, ")", str_spc);
-    str_spc -= 2;
-    str_spc = MAX (str_spc, 0);
+    str_buff = ILIBstrBufPrint (str_buff, ")");
 
-    DBUG_RETURN (str_buff);
+    tmp_str = ILIBstrBuf2String (str_buff);
+    str_buff = ILIBstrBufFree (str_buff);
+
+    result = ILIBstringLCopy (tmp_str, PF_MAXFUNNAMELEN);
+    tmp_str = ILIBfree (tmp_str);
+
+    DBUG_RETURN (result);
 }
 
 /********************************************************************************

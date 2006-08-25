@@ -44,6 +44,7 @@ extern bool ILIBstrBufIsEmpty (str_buf *s);
 extern void *ILIBstrBufFree (str_buf *s);
 
 extern char *ILIBstringCopy (const char *source);
+extern char *ILIBstringLCopy (const char *source, int maxlen);
 extern char *ILIBstringConcat (const char *first, const char *second);
 extern char *ILIBstringConcat3 (const char *first, const char *second, const char *third);
 extern char *ILIBstringConcat4 (const char *first, const char *second, const char *third,

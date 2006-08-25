@@ -440,6 +440,29 @@ ILIBstringCopy (const char *source)
     DBUG_RETURN (ret);
 }
 
+char *
+ILIBstringLCopy (const char *source, int maxlen)
+{
+    char *ret;
+    int max;
+
+    DBUG_ENTER ("ILIBstringCopy");
+
+    if (source != NULL) {
+        max = strlen (source);
+        if (max > maxlen) {
+            max = maxlen;
+        }
+
+        ret = (char *)ILIBmalloc (sizeof (char) * (max + 1));
+        strlcpy (ret, source, max + 1);
+    } else {
+        ret = NULL;
+    }
+
+    DBUG_RETURN (ret);
+}
+
 /******************************************************************************
  *
  * function:
