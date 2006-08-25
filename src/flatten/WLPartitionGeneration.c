@@ -874,15 +874,38 @@ CreateFullPartition (node *wln, info *arg_info)
  *
  *           NOTE HERE, that wl is either MODIFIED in place or FREED entirely!!
  *
+ *           Due to break() and propagate(x), we may find some additional
+ *           operators. These require some additional changes:
+ *
+ *           with( lb <= iv < ub)              =>     neutral
+ *           fold( fun, neutral, exp)
+ *           break( )
+ *
+ *           AND the respective ids of the lhs needs to be eliminated
+ *
+ *           with( lb <= iv < ub)              =>     x
+ *           propagate( x )
+ *
+ *           As we now have several cases where we return a value instead of
+ *           keeping the WL, we may need to insert additional assignments.
+ *           This is done using INFO_NASSIGN (cf. WLPGassign).
+ *
+ *           NOTE here, that the current implementation CANNOT handle
+ *           arbitrary multi operator WLs. This would require a proper
+ *           rewrite of this function + a different abstraction:
+ *           Instead of modifying the RHS only, we would need to replace the
+ *           entire assignment with a new assignment chain.
+ *
  *   @param  node *wl       :  N_with
  *           info *arg_info :  N_INFO
- *   @return node *         :  modified N_with
+ *   @return node *         :  modified N_with or replacement code
  ******************************************************************************/
 
 static node *
 CreateEmptyGenWLReplacement (node *wl, info *arg_info)
 {
-    node *let_ids;
+    node *let_ids, *last_ids;
+    node *wlop;
     int dim, i;
     node *lb, *ub, *lbe, *ube;
     node *code;
@@ -894,120 +917,158 @@ CreateEmptyGenWLReplacement (node *wl, info *arg_info)
 
     DBUG_ENTER ("CreateEmptyGenWLReplacement");
 
-    switch (NODE_TYPE (WITH_WITHOP (wl))) {
-    case N_genarray:
-        res = wl;
-        /*
-         * First, we change the generator to full scope.
-         */
-        let_ids = LET_IDS (INFO_LET (arg_info));
-        dim = SHgetDim (TYgetShape (AVIS_TYPE (IDS_AVIS (let_ids))));
-        lb = WITH_BOUND1 (wl);
-        ub = WITH_BOUND2 (wl);
-        lbe = ARRAY_AELEMS (lb);
-        ube = ARRAY_AELEMS (ub);
+    wlop = WITH_WITHOP (wl);
+    let_ids = LET_IDS (INFO_LET (arg_info));
+    last_ids = NULL;
 
-        i = 0;
-        while ((i < dim) && (lbe != NULL)) {
-            NUM_VAL (EXPRS_EXPR (lbe)) = 0;
-            NUM_VAL (EXPRS_EXPR (ube))
-              = SHgetExtent (TYgetShape (IDS_NTYPE (let_ids)), i);
+    while (wlop != NULL) {
+        DBUG_ASSERT (let_ids != NULL, "lhs dos not match number of WLops");
 
-            lbe = EXPRS_NEXT (lbe);
-            ube = EXPRS_NEXT (ube);
-            i++;
-        }
+        switch (NODE_TYPE (wlop)) {
+        case N_genarray:
+            res = wl;
+            /*
+             * First, we change the generator to full scope.
+             */
+            dim = SHgetDim (TYgetShape (AVIS_TYPE (IDS_AVIS (let_ids))));
+            lb = WITH_BOUND1 (wl);
+            ub = WITH_BOUND2 (wl);
+            lbe = ARRAY_AELEMS (lb);
+            ube = ARRAY_AELEMS (ub);
 
-        if (WITH_STEP (wl)) {
-            WITH_STEP (wl) = FREEdoFreeTree (WITH_STEP (wl));
-        }
-        if (WITH_WIDTH (wl)) {
-            WITH_WIDTH (wl) = FREEdoFreeTree (WITH_WIDTH (wl));
-        }
+            i = 0;
+            while ((i < dim) && (lbe != NULL)) {
+                NUM_VAL (EXPRS_EXPR (lbe)) = 0;
+                NUM_VAL (EXPRS_EXPR (ube))
+                  = SHgetExtent (TYgetShape (IDS_NTYPE (let_ids)), i);
 
-        /*
-         * Now we have to change the code. Either we can use DEFAULT (easy)
-         * or we have to create zeros (ugly).
-         */
-        code = WITH_CODE (wl);
-        if (GENARRAY_DEFAULT (WITH_WITHOP (wl)) != NULL) {
-            CODE_CBLOCK (code) = FREEdoFreeTree (CODE_CBLOCK (code));
-            CODE_CBLOCK (code) = TBmakeBlock (TBmakeEmpty (), NULL);
-
-            EXPRS_EXPR (CODE_CEXPRS (code))
-              = FREEdoFreeTree (EXPRS_EXPR (CODE_CEXPRS (code)));
-            EXPRS_EXPR (CODE_CEXPRS (code))
-              = DUPdoDupTree (GENARRAY_DEFAULT (WITH_WITHOP (wl)));
-        } else {
-            blockn = CODE_CBLOCK (code);
-            tmpn = BLOCK_INSTR (blockn);
-            cexpr = EXPRS_EXPR (CODE_CEXPRS (code));
-            array_type = ID_NTYPE (cexpr);
-
-            if (N_empty == NODE_TYPE (tmpn)) {
-                /* there is no instruction in the block right now. */
-                _ids = NewIds (cexpr, INFO_FUNDEF (arg_info));
-
-                if (TYisAKV (array_type) || TYisAKS (array_type)) {
-                    tmpn = CreateZeros (array_type, INFO_FUNDEF (arg_info));
-                } else {
-                    CTIabortLine (global.linenum,
-                                  "Cexpr of Genarray with-loop is not AKV/AKS."
-                                  " Unfortunately, a AKV/AKS cexpr is necessary here"
-                                  " to generate code for empty WL replacement");
-                }
-
-                /* replace N_empty with new assignment "_ids = [0,..,0]" */
-                assignn = TBmakeAssign (TBmakeLet (_ids, tmpn), NULL);
-                nassigns = TCappendAssign (nassigns, assignn);
-                BLOCK_INSTR (blockn) = TCappendAssign (BLOCK_INSTR (blockn), nassigns);
-
-                /* set correct backref to defining assignment */
-                AVIS_SSAASSIGN (IDS_AVIS (_ids)) = assignn;
-
-                /* replace CEXPR */
-                tmpn = WITH_CODE (INFO_WL (arg_info));
-                EXPRS_EXPR (CODE_CEXPRS (tmpn))
-                  = FREEdoFreeTree (EXPRS_EXPR (CODE_CEXPRS (tmpn)));
-                EXPRS_EXPR (CODE_CEXPRS (tmpn)) = DUPdupIdsId (_ids);
-
-            } else {
-                /* we have a non-empty block.
-                   search cexpr assignment and make it the only one in the block. */
-
-                assignn = DUPdoDupNode (AVIS_SSAASSIGN (ID_AVIS (cexpr)));
-                BLOCK_INSTR (blockn) = FREEdoFreeTree (BLOCK_INSTR (blockn));
-                LET_EXPR (ASSIGN_INSTR (assignn))
-                  = FREEdoFreeTree (LET_EXPR (ASSIGN_INSTR (assignn)));
-
-                if (TYisAKV (array_type) || TYisAKS (array_type)) {
-                    tmpn = CreateZeros (array_type, INFO_FUNDEF (arg_info));
-                } else {
-                    CTIabortLine (global.linenum,
-                                  "Cexpr of Genarray with-loop is not AKV/AKS."
-                                  " Unfortunately, a AKV/AKS cexpr is necessary here"
-                                  " to generate code for empty WL replacement");
-                }
-
-                CODE_VISITED (code) = TRUE;
-                LET_EXPR (ASSIGN_INSTR (assignn)) = tmpn;
-                nassigns = TCappendAssign (nassigns, assignn);
-
-                BLOCK_INSTR (blockn) = nassigns;
+                lbe = EXPRS_NEXT (lbe);
+                ube = EXPRS_NEXT (ube);
+                i++;
             }
+
+            if (WITH_STEP (wl)) {
+                WITH_STEP (wl) = FREEdoFreeTree (WITH_STEP (wl));
+            }
+            if (WITH_WIDTH (wl)) {
+                WITH_WIDTH (wl) = FREEdoFreeTree (WITH_WIDTH (wl));
+            }
+
+            /*
+             * Now we have to change the code. Either we can use DEFAULT (easy)
+             * or we have to create zeros (ugly).
+             */
+            code = WITH_CODE (wl);
+            if (GENARRAY_DEFAULT (WITH_WITHOP (wl)) != NULL) {
+                CODE_CBLOCK (code) = FREEdoFreeTree (CODE_CBLOCK (code));
+                CODE_CBLOCK (code) = TBmakeBlock (TBmakeEmpty (), NULL);
+
+                EXPRS_EXPR (CODE_CEXPRS (code))
+                  = FREEdoFreeTree (EXPRS_EXPR (CODE_CEXPRS (code)));
+                EXPRS_EXPR (CODE_CEXPRS (code))
+                  = DUPdoDupTree (GENARRAY_DEFAULT (WITH_WITHOP (wl)));
+            } else {
+                blockn = CODE_CBLOCK (code);
+                tmpn = BLOCK_INSTR (blockn);
+                cexpr = EXPRS_EXPR (CODE_CEXPRS (code));
+                array_type = ID_NTYPE (cexpr);
+
+                if (N_empty == NODE_TYPE (tmpn)) {
+                    /* there is no instruction in the block right now. */
+                    _ids = NewIds (cexpr, INFO_FUNDEF (arg_info));
+
+                    if (TYisAKV (array_type) || TYisAKS (array_type)) {
+                        tmpn = CreateZeros (array_type, INFO_FUNDEF (arg_info));
+                    } else {
+                        CTIabortLine (global.linenum,
+                                      "Cexpr of Genarray with-loop is not AKV/AKS."
+                                      " Unfortunately, a AKV/AKS cexpr is necessary here"
+                                      " to generate code for empty WL replacement");
+                    }
+
+                    /* replace N_empty with new assignment "_ids = [0,..,0]" */
+                    assignn = TBmakeAssign (TBmakeLet (_ids, tmpn), NULL);
+                    nassigns = TCappendAssign (nassigns, assignn);
+                    BLOCK_INSTR (blockn)
+                      = TCappendAssign (BLOCK_INSTR (blockn), nassigns);
+
+                    /* set correct backref to defining assignment */
+                    AVIS_SSAASSIGN (IDS_AVIS (_ids)) = assignn;
+
+                    /* replace CEXPR */
+                    tmpn = WITH_CODE (INFO_WL (arg_info));
+                    EXPRS_EXPR (CODE_CEXPRS (tmpn))
+                      = FREEdoFreeTree (EXPRS_EXPR (CODE_CEXPRS (tmpn)));
+                    EXPRS_EXPR (CODE_CEXPRS (tmpn)) = DUPdupIdsId (_ids);
+
+                } else {
+                    /* we have a non-empty block.
+                       search cexpr assignment and make it the only one in the block. */
+
+                    assignn = DUPdoDupNode (AVIS_SSAASSIGN (ID_AVIS (cexpr)));
+                    BLOCK_INSTR (blockn) = FREEdoFreeTree (BLOCK_INSTR (blockn));
+                    LET_EXPR (ASSIGN_INSTR (assignn))
+                      = FREEdoFreeTree (LET_EXPR (ASSIGN_INSTR (assignn)));
+
+                    if (TYisAKV (array_type) || TYisAKS (array_type)) {
+                        tmpn = CreateZeros (array_type, INFO_FUNDEF (arg_info));
+                    } else {
+                        CTIabortLine (global.linenum,
+                                      "Cexpr of Genarray with-loop is not AKV/AKS."
+                                      " Unfortunately, a AKV/AKS cexpr is necessary here"
+                                      " to generate code for empty WL replacement");
+                    }
+
+                    CODE_VISITED (code) = TRUE;
+                    LET_EXPR (ASSIGN_INSTR (assignn)) = tmpn;
+                    nassigns = TCappendAssign (nassigns, assignn);
+
+                    BLOCK_INSTR (blockn) = nassigns;
+                }
+            }
+            wlop = GENARRAY_NEXT (wlop);
+            break;
+        case N_modarray:
+            res = DUPdoDupTree (MODARRAY_ARRAY (WITH_WITHOP (wl)));
+            wlop = MODARRAY_NEXT (wlop);
+            break;
+        case N_fold:
+            res = DUPdoDupTree (FOLD_NEUTRAL (WITH_WITHOP (wl)));
+            wlop = FOLD_NEXT (wlop);
+            break;
+        case N_break:
+            DBUG_ASSERT ((last_ids != NULL), "break is first op in WL");
+            IDS_NEXT (last_ids) = FREEdoFreeNode (let_ids);
+            let_ids = last_ids;
+
+            wlop = BREAK_NEXT (wlop);
+            break;
+        case N_propagate:
+            DBUG_ASSERT ((last_ids != NULL), "propagate is first op in WL");
+            INFO_NASSIGNS (arg_info)
+              = TBmakeAssign (TBmakeLet (let_ids,
+                                         DUPdoDupTree (PROPAGATE_DEFAULT (wlop))),
+                              INFO_NASSIGNS (arg_info));
+            AVIS_SSAASSIGN (IDS_AVIS (let_ids)) = INFO_NASSIGNS (arg_info);
+            IDS_NEXT (last_ids) = IDS_NEXT (let_ids);
+            IDS_NEXT (let_ids) = NULL;
+            let_ids = last_ids;
+
+            wlop = PROPAGATE_NEXT (wlop);
+            break;
+        default:
+            DBUG_ASSERT ((0), "illegal WITHOP node found!");
+            break;
         }
-        break;
-    case N_modarray:
-        res = DUPdoDupTree (MODARRAY_ARRAY (WITH_WITHOP (wl)));
+        DBUG_ASSERT (((wlop == NULL) || (NODE_TYPE (wlop) == N_break)
+                      || (NODE_TYPE (wlop) == N_propagate)),
+                     "illegal mopWL");
+        last_ids = let_ids;
+        let_ids = IDS_NEXT (let_ids);
+    }
+
+    if (res != wl) {
         wl = FREEdoFreeTree (wl);
-        break;
-    case N_fold:
-        res = DUPdoDupTree (FOLD_NEUTRAL (WITH_WITHOP (wl)));
-        wl = FREEdoFreeTree (wl);
-        break;
-    default:
-        DBUG_ASSERT ((0), "illegal WITHOP node found!");
-        break;
     }
 
     DBUG_RETURN (res);
