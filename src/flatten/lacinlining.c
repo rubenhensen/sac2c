@@ -1,32 +1,4 @@
-/*
- * $Log$
- * Revision 1.7  2005/09/28 15:35:23  wpc
- * added some SHOW_MALLOC ifdefs
- *
- * Revision 1.6  2005/09/09 09:30:44  sah
- * renamed DowngradeConcreteArgs to AdaptConcreteArgs:
- *   - if concrete arg is < than formal arg, it is downgraded
- *   - if concrete arg is > than formal arg, a typeconv is inserted to
- *     upgrade it
- *
- * Revision 1.5  2005/09/04 12:48:54  ktr
- * adapted to new global optimization counters
- *
- * Revision 1.4  2005/07/21 12:00:58  sbs
- * moved freeing of lacinline functions into free
- *
- * Revision 1.3  2005/07/20 13:10:54  ktr
- * Functions markes as ISLACINLINE are now removed during the bottom-up
- * traversal
- *
- * Revision 1.2  2005/07/19 13:04:05  sah
- * moved DowngradeConcreteArgs from fun2lac to lacinlining
- * as the local knowledge is better during inlining
- *
- * Revision 1.1  2005/05/13 16:37:34  ktr
- * Initial revision
- *
- */
+/* $Id$ */
 
 #include "globals.h"
 #include "tree_basic.h"
