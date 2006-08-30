@@ -1342,86 +1342,6 @@ MakeSetShapeIcm (node *arg_node, node *let_ids)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *AddThreadIdIcm_ND_FUN_DEC( node *icm)
- *
- * @brief  ...
- *
- ******************************************************************************/
-
-static node *
-AddThreadIdIcm_ND_FUN_DEC (node *icm)
-{
-    node *args;
-
-    DBUG_ENTER ("AddThreadIdIcm_ND_FUN_DEC");
-
-    DBUG_ASSERT (((NODE_TYPE (icm) == N_icm) && (!strcmp (ICM_NAME (icm), "ND_FUN_DEC"))),
-                 "no ND_FUN_DEC icm found!");
-
-    if (((global.mtmode == MT_startstop) || (global.mtmode == MT_createjoin))
-        && (global.optimize.dophm)) {
-        args = ICM_EXPRS3 (icm);
-
-        DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (args)) == N_num),
-                     "wrong argument in ND_FUN_DEC icm found!");
-
-        EXPRS_NEXT (args) = TBmakeExprs (
-          TCmakeIdCopyString (global.argtag_string[ATG_in_nodesc]),
-          TBmakeExprs (TCmakeIdCopyString ("unsigned int"),
-                       TBmakeExprs (TCmakeIdCopyStringNt ("SAC_MT_mythread",
-                                                          TBmakeTypes1 (T_int)),
-                                    EXPRS_NEXT (args))));
-
-        (NUM_VAL (EXPRS_EXPR (args)))++;
-    }
-
-    DBUG_RETURN (icm);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn  node *AddThreadIdIcm_ND_FUN_AP( node *icm_assign)
- *
- * @brief  ...
- *
- ******************************************************************************/
-
-static node *
-AddThreadIdIcm_ND_FUN_AP (node *icm_assign)
-{
-    node *icm;
-    node *args;
-
-    DBUG_ENTER ("AddThreadIdIcm_ND_FUN_AP");
-
-    DBUG_ASSERT ((NODE_TYPE (icm_assign) == N_assign), "no assign found!");
-
-    icm = ASSIGN_INSTR (icm_assign);
-
-    DBUG_ASSERT (((NODE_TYPE (icm) == N_icm) && (!strcmp (ICM_NAME (icm), "ND_FUN_AP"))),
-                 "no ND_FUN_AP icm found!");
-
-    if (((global.mtmode == MT_startstop) || (global.mtmode == MT_createjoin))
-        && (global.optimize.dophm)) {
-        args = ICM_EXPRS3 (icm);
-
-        DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (args)) == N_num),
-                     "wrong argument in ND_FUN_AP icm found!");
-
-        EXPRS_NEXT (args)
-          = TBmakeExprs (TCmakeIdCopyString (global.argtag_string[ATG_in_nodesc]),
-                         TBmakeExprs (TCmakeIdCopyStringNt ("SAC_MT_mythread",
-                                                            TBmakeTypes1 (T_int)),
-                                      EXPRS_NEXT (args)));
-
-        (NUM_VAL (EXPRS_EXPR (args)))++;
-    }
-
-    DBUG_RETURN (icm_assign);
-}
-
-/** <!--********************************************************************-->
- *
  * @fn  node *MakeArgNode( int idx, types *type)
  *
  * @brief  ...
@@ -1538,13 +1458,6 @@ MakeIcm_ND_FUN_DEC (node *fundef)
 
     ret_node
       = TCmakeIcm2 ("ND_FUN_DEC", TCmakeIdCopyString (FUNDEF_NAME (fundef)), icm_args);
-
-    /*
-     * add the thread id
-     */
-    if (FUNDEF_BODY (fundef) != NULL) {
-        ret_node = AddThreadIdIcm_ND_FUN_DEC (ret_node);
-    }
 
     DBUG_RETURN (ret_node);
 }
@@ -1712,13 +1625,6 @@ MakeIcm_FUN_AP (node *ap, node *fundef, node *assigns)
         ret_node
           = TCmakeAssignIcm2 ("ND_FUN_AP", TCmakeIdCopyString (FUNDEF_NAME (fundef)),
                               icm_args, assigns);
-    }
-
-    /*
-     * add the thread id
-     */
-    if ((FUNDEF_BODY (fundef) != NULL) && (!FUNDEF_ISSPMDFUN (fundef))) {
-        ret_node = AddThreadIdIcm_ND_FUN_AP (ret_node);
     }
 
     DBUG_RETURN (ret_node);
