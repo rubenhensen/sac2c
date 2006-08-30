@@ -52,11 +52,11 @@ static int nextid = 0;
 static int nextviewid = 0;
 
 static bool
-equalsView (view_t *one, view_t *two)
+EqualsView (view_t *one, view_t *two)
 {
     bool result = TRUE;
 
-    DBUG_ENTER ("equalsView");
+    DBUG_ENTER ("EqualsView");
 
     if ((one == NULL) && (two != NULL)) {
         result = FALSE;
@@ -64,7 +64,7 @@ equalsView (view_t *one, view_t *two)
         result = FALSE;
     } else if (one != two) {
         result = ((one->id == two->id) && (ILIBstringCompare (one->name, two->name))
-                  && (equalsView (one->next, two->next)));
+                  && (EqualsView (one->next, two->next)));
     }
 
     DBUG_RETURN (result);
@@ -139,7 +139,7 @@ FindInPool (const char *module, view_t *view)
 
     for (cnt = 0; cnt < nextid; cnt++) {
         if ((ILIBstringCompare (pos->block[cnt % BLOCKSIZE]->module, module))
-            && (equalsView (pos->block[cnt % BLOCKSIZE]->view, view))) {
+            && (EqualsView (pos->block[cnt % BLOCKSIZE]->view, view))) {
             result = pos->block[cnt % BLOCKSIZE];
             break;
         }
@@ -153,13 +153,13 @@ FindInPool (const char *module, view_t *view)
 }
 
 static char *
-buildNamespaceName (namespace_t *ns)
+BuildNamespaceName (namespace_t *ns)
 {
     char *result;
     str_buf *buf;
     view_t *view;
 
-    DBUG_ENTER ("buildNamespaceName");
+    DBUG_ENTER ("BuildNamespaceName");
 
     buf = ILIBstrBufCreate (255);
 
@@ -190,7 +190,7 @@ AddNamespaceToPool (const char *module, view_t *view)
     new->module = ILIBstringCopy (module);
     new->id = nextid++;
     new->view = view;
-    new->name = buildNamespaceName (new);
+    new->name = BuildNamespaceName (new);
 
     PutInPool (new);
 
@@ -198,11 +198,11 @@ AddNamespaceToPool (const char *module, view_t *view)
 }
 
 static view_t *
-dupView (const view_t *src)
+DupView (const view_t *src)
 {
     view_t *result;
 
-    DBUG_ENTER ("dupView");
+    DBUG_ENTER ("DupView");
 
     if (src == NULL) {
         result = NULL;
@@ -211,24 +211,40 @@ dupView (const view_t *src)
 
         result->id = src->id;
         result->name = ILIBstringCopy (src->name);
-        result->next = dupView (src->next);
+        result->next = DupView (src->next);
     }
 
     DBUG_RETURN (result);
 }
 
 static view_t *
-makeView (const char *name, const view_t *views)
+FreeView (view_t *view)
+{
+    DBUG_ENTER ("FreeView");
+
+    if (view != NULL) {
+        view->id = 0;
+        view->name = ILIBfree (view->name);
+        view->next = FreeView (view->next);
+
+        view = ILIBfree (view);
+    }
+
+    DBUG_RETURN (view);
+}
+
+static view_t *
+MakeView (const char *name, const view_t *views)
 {
     view_t *result;
 
-    DBUG_ENTER ("makeView");
+    DBUG_ENTER ("MakeView");
 
     result = ILIBmalloc (sizeof (view_t));
 
     result->name = ILIBstringCopy (name);
     result->id = nextviewid++;
-    result->next = dupView (views);
+    result->next = DupView (views);
 
     DBUG_RETURN (result);
 }
@@ -280,10 +296,31 @@ NSgetInitNamespace ()
     DBUG_ENTER ("NSgetInitNamespace");
 
     if (initns == NULL) {
-        initns = AddNamespaceToPool (global.modulename, makeView ("_INIT", NULL));
+        initns = AddNamespaceToPool (global.modulename, MakeView ("_INIT", NULL));
     }
 
     DBUG_RETURN (NSdupNamespace (initns));
+}
+
+namespace_t *
+NSgetMTNamespace (const namespace_t *orig)
+{
+    namespace_t *result;
+    view_t *view;
+
+    DBUG_ENTER ("NSgetMTNamespace");
+
+    view = MakeView ("_MT", orig->view);
+
+    result = FindInPool (orig->name, view);
+
+    if (result != NULL) {
+        view = FreeView (view);
+    } else {
+        result = AddNamespaceToPool (orig->module, view);
+    }
+
+    DBUG_RETURN (result);
 }
 
 namespace_t *
@@ -362,21 +399,18 @@ NSbuildView (const namespace_t *orig)
 
     DBUG_ENTER ("NSbuildView");
 
-    view = makeView (orig->name, orig->view);
+    view = MakeView (orig->name, orig->view);
 
-    result = AddNamespaceToPool (global.modulename, view);
+    result = FindInPool (global.modulename, view);
 
-    DBUG_RETURN (result);
-}
-
-bool
-NSisView (const namespace_t *ns)
-{
-    bool result;
-
-    DBUG_ENTER ("NSisView");
-
-    result = (ns->view != NULL);
+    if (result != NULL) {
+        /*
+         * we reuse the view constructed earlier
+         */
+        view = FreeView (view);
+    } else {
+        result = AddNamespaceToPool (global.modulename, view);
+    }
 
     DBUG_RETURN (result);
 }

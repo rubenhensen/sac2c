@@ -5,7 +5,7 @@
 /**
  * @file namespaces.h
  * @brief function declarations for handling namespace identifiers
- *        as uses throughout the compiler
+ *        as used throughout the compiler
  */
 
 #ifndef _SAC_NAMESPACES_H_
@@ -16,9 +16,9 @@
 extern namespace_t *NSgetNamespace (const char *module);
 extern namespace_t *NSgetRootNamespace ();
 extern namespace_t *NSgetInitNamespace ();
+extern namespace_t *NSgetMTNamespace (const namespace_t *orig);
 
 extern namespace_t *NSdupNamespace (const namespace_t *ns);
-extern namespace_t *NSfreeNamespace (namespace_t *ns);
 extern namespace_t *NSfreeNamespace (namespace_t *ns);
 extern void NStouchNamespace (namespace_t *ns, info *arg_info);
 
@@ -28,7 +28,6 @@ extern const char *NSgetName (const namespace_t *ns);
 extern const char *NSgetModule (const namespace_t *ns);
 
 extern namespace_t *NSbuildView (const namespace_t *orig);
-extern bool NSisView (const namespace_t *ns);
 
 extern void NSserializeNamespace (FILE *file, const namespace_t *ns);
 extern namespace_t *NSdeserialzeNamespace (int id);

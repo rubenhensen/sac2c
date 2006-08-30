@@ -29,19 +29,21 @@ struct INFO {
     bool result;
     node *interface;
     int filetype;
+    namespace_t *namespace;
     enum { SYM_filter, SYM_check } symbmode;
 };
 
 /*
  * INFO macros
  */
-#define INFO_SYMBOL(n) (n->symbol)
-#define INFO_EXPORTED(n) (n->exported)
-#define INFO_PROVIDED(n) (n->provided)
-#define INFO_RESULT(n) (n->result)
-#define INFO_INTERFACE(n) (n->interface)
-#define INFO_FILETYPE(n) (n->filetype)
-#define INFO_SYMBMODE(n) (n->symbmode)
+#define INFO_SYMBOL(n) ((n)->symbol)
+#define INFO_EXPORTED(n) ((n)->exported)
+#define INFO_PROVIDED(n) ((n)->provided)
+#define INFO_RESULT(n) ((n)->result)
+#define INFO_INTERFACE(n) ((n)->interface)
+#define INFO_FILETYPE(n) ((n)->filetype)
+#define INFO_NAMESPACE(n) ((n)->namespace)
+#define INFO_SYMBMODE(n) ((n)->symbmode)
 
 /*
  * INFO functions
@@ -61,6 +63,7 @@ MakeInfo ()
     INFO_RESULT (result) = FALSE;
     INFO_INTERFACE (result) = NULL;
     INFO_FILETYPE (result) = 0;
+    INFO_NAMESPACE (result) = NULL;
     INFO_SYMBMODE (result) = SYM_filter;
 
     DBUG_RETURN (result);
@@ -252,7 +255,7 @@ EXPfundef (node *arg_node, info *arg_info)
 
             FUNDEF_ISEXPORTED (arg_node) = FALSE;
             FUNDEF_ISPROVIDED (arg_node) = FALSE;
-        } else if (NSisView (FUNDEF_NS (arg_node))) {
+        } else if (!NSequals (FUNDEF_NS (arg_node), INFO_NAMESPACE (arg_info))) {
             DBUG_PRINT ("EXP", ("...is not visible (in view)"));
 
             /*
@@ -388,6 +391,7 @@ EXPmodule (node *arg_node, info *arg_info)
 
     INFO_INTERFACE (arg_info) = MODULE_INTERFACE (arg_node);
     INFO_FILETYPE (arg_info) = MODULE_FILETYPE (arg_node);
+    INFO_NAMESPACE (arg_info) = MODULE_NAMESPACE (arg_node);
     INFO_SYMBMODE (arg_info) = SYM_filter;
 
     if (MODULE_FUNS (arg_node) != NULL) {
@@ -407,6 +411,7 @@ EXPmodule (node *arg_node, info *arg_info)
     }
 
     MODULE_INTERFACE (arg_node) = INFO_INTERFACE (arg_info);
+    INFO_NAMESPACE (arg_info) = NULL;
 
     /*
      * now check whether all symbols specified in export/provide have
