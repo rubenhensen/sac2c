@@ -28,8 +28,7 @@
  *          allow nesting spmd blocks.
  *
  *    This algorithm repeats until all functions are marked and thus a fixed
- *    point is reached. Tagged functions are renamend in the rename
- *    identifiers traversal.
+ *    point is reached. Tagged functions are put in the MT subnamespace.
  *
  *****************************************************************************/
 
@@ -42,6 +41,7 @@
 #include "DupTree.h"
 #include "free.h"
 #include "internal_lib.h"
+#include "namespaces.h"
 
 #include "create_mtfuns.h"
 
@@ -343,6 +343,16 @@ CMTFfundef (node *arg_node, info *arg_info)
              * disabled. To continue compilation in an ordered manner, we tag these
              * functions ST.
              */
+        }
+
+        /*
+         * On the traversal back up the tree, put all functions marked MT into
+         * the MT namespace.
+         */
+        if (FUNDEF_ISMTFUN (arg_node)) {
+            namespace_t *old_namespace = FUNDEF_NS (arg_node);
+            FUNDEF_NS (arg_node) = NSgetMTNamespace (old_namespace);
+            old_namespace = NSfreeNamespace (old_namespace);
         }
     } else {
         /*

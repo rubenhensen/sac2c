@@ -159,33 +159,31 @@ RenameFunName (node *fundef)
     char *ns_name;
     char *akv_id = NULL;
     str_buf *buf;
+    node *arg;
 
     DBUG_ENTER ("RenameFunName");
 
     buf = ILIBstrBufCreate (40);
-    tmp_name = ILIBreplaceSpecialCharacters (FUNDEF_NAME (fundef));
 
-    if (FUNDEF_ISSPMDFUN (fundef)) {
-        ILIBstrBufPrintf (buf, "SACf_%s", tmp_name);
+    if (FUNDEF_ISWRAPPERFUN (fundef)) {
+        buf = ILIBstrBufPrint (buf, "SACwf_");
     } else {
-        node *arg;
+        buf = ILIBstrBufPrint (buf, "SACf_");
+    }
 
-        if (FUNDEF_ISWRAPPERFUN (fundef)) {
-            buf = ILIBstrBufPrint (buf, "SACwf_");
-        } else {
-            buf = ILIBstrBufPrint (buf, "SACf_");
-        }
+    tmp_name = ILIBreplaceSpecialCharacters (FUNDEF_NAME (fundef));
+    ns_name = ILIBreplaceSpecialCharacters (NSgetName (FUNDEF_NS (fundef)));
 
-        ns_name = ILIBreplaceSpecialCharacters (NSgetName (FUNDEF_NS (fundef)));
-        buf = ILIBstrBufPrintf (buf, "%s__%s", ns_name, tmp_name);
-        ns_name = ILIBfree (ns_name);
+    buf = ILIBstrBufPrintf (buf, "%s__%s", ns_name, tmp_name);
 
-        arg = FUNDEF_ARGS (fundef);
-        while (arg != NULL) {
-            buf = ILIBstrBufPrintf (buf, "__%s", ARG_TYPESTRING (arg));
-            ARG_TYPESTRING (arg) = ILIBfree (ARG_TYPESTRING (arg));
-            arg = ARG_NEXT (arg);
-        }
+    tmp_name = ILIBfree (tmp_name);
+    ns_name = ILIBfree (ns_name);
+
+    arg = FUNDEF_ARGS (fundef);
+    while (arg != NULL) {
+        buf = ILIBstrBufPrintf (buf, "__%s", ARG_TYPESTRING (arg));
+        ARG_TYPESTRING (arg) = ILIBfree (ARG_TYPESTRING (arg));
+        arg = ARG_NEXT (arg);
     }
 
     if (FUNDEF_AKVID (fundef) > 0) {
@@ -193,14 +191,6 @@ RenameFunName (node *fundef)
         buf = ILIBstrBufPrintf (buf, "__akv_%s", akv_id);
         akv_id = ILIBfree (akv_id);
     }
-
-    if (FUNDEF_ISMTFUN (fundef)) {
-        buf = ILIBstrBufPrint (buf, "__MT");
-    } else if (FUNDEF_ISSTFUN (fundef)) {
-        buf = ILIBstrBufPrint (buf, "__ST");
-    }
-
-    tmp_name = ILIBfree (tmp_name);
 
     new_name = ILIBstrBuf2String (buf);
     buf = ILIBstrBufFree (buf);
