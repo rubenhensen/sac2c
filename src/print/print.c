@@ -1452,6 +1452,11 @@ PRTfundef (node *arg_node, info *arg_info)
 
                 fprintf (global.outfile, "\n");
             }
+        } else if (FUNDEF_ISSPMDFUN (arg_node)) {
+            fprintf (global.outfile,
+                     "SAC_MT_SPMD_FUN_REAL_RETTYPE() %s( "
+                     "SAC_MT_SPMD_FUN_REAL_PARAM_LIST());\n",
+                     FUNDEF_NAME (arg_node));
         }
     } else {
         /*

@@ -87,7 +87,7 @@ LIBS :=
 
 all:  libsac.a libsac_mt.a libsac_heapmgr.a  \
       libsac_heapmgr_diag.a libsac_heapmgr_mt.a libsac_heapmgr_mt_diag.a  \
-      CacheSimAnalyser config.h libsac2c.so libsac2c.a
+      CacheSimAnalyser config.h libsac2c.so libsac2c.a sac_mt_gen.h
 
 
 tar: runtime.tar
@@ -179,6 +179,10 @@ clean:
 	$(RM) runtime.tar
 	$(RM) CacheSimAnalyser
 	$(RM) icm_test.log
+
+%.h: %.h.m4
+	@$(ECHO) "   Generating header file from M4 macro..."
+	$(HIDE) gm4 -I $(PROJECT_ROOT)/src/m4 $< > $@	
 
 
 #######################################################################################

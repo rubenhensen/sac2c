@@ -33,28 +33,6 @@
 #include "free.h"
 #endif /* BEtest */
 
-typedef enum { in = 0, out = 1, inout = 2 } tag_t;
-
-static tag_t
-tag (char *arg)
-{
-    tag_t res = in;
-
-    DBUG_ENTER ("tag");
-
-    if (ILIBstringCompare (arg, "in")) {
-        res = in;
-    } else if (ILIBstringCompare (arg, "out")) {
-        res = out;
-    } else if (ILIBstringCompare (arg, "inout")) {
-        res = inout;
-    } else {
-        DBUG_ASSERT (FALSE, "Unknown icm tag found.");
-    }
-
-    DBUG_RETURN (res);
-}
-
 /******************************************************************************
  *
  * function:
@@ -75,7 +53,7 @@ void
 ICMCompileMT_SPMD_FUN_DEC (char *funname, int vararg_cnt, char **vararg)
 {
     int i;
-    int cnt[3] = {0, 0, 0};
+    int cnt;
 
     DBUG_ENTER ("ICMCompileMT_SPMD_FUN_DEC");
 
@@ -98,10 +76,11 @@ ICMCompileMT_SPMD_FUN_DEC (char *funname, int vararg_cnt, char **vararg)
     INDENT;
     fprintf (global.outfile, "SAC_HM_DEFINE_THREAD_STATUS( SAC_HM_multi_threaded)\n");
 
+    cnt = 0;
     for (i = 0; i < 3 * vararg_cnt; i += 3) {
         INDENT;
         fprintf (global.outfile, "SAC_MT_RECEIVE_PARAM_%s( %s, %d, %s, %s)\n", vararg[i],
-                 funname, cnt[tag (vararg[i])]++, vararg[i + 1], vararg[i + 2]);
+                 funname, cnt++, vararg[i + 1], vararg[i + 2]);
     }
 
     DBUG_VOID_RETURN;
@@ -127,7 +106,7 @@ void
 ICMCompileMT_SPMD_FUN_AP (char *funname, int vararg_cnt, char **vararg)
 {
     int i;
-    int cnt[3] = {0, 0, 0};
+    int cnt;
 
     DBUG_ENTER ("ICMCompileMT_SPMD_FUN_AP");
 
@@ -136,14 +115,15 @@ ICMCompileMT_SPMD_FUN_AP (char *funname, int vararg_cnt, char **vararg)
 #include "icm_trace.c"
 #undef MT_SPMD_FUN_AP
 
+    cnt = 0;
     for (i = 0; i < 2 * vararg_cnt; i += 2) {
         INDENT;
         fprintf (global.outfile, "SAC_MT_SEND_PARAM_%s( %s, %d, %s)\n", vararg[i],
-                 funname, cnt[tag (vararg[i])]++, vararg[i + 1]);
+                 funname, cnt++, vararg[i + 1]);
     }
 
     INDENT;
-    fprintf (global.outfile, "SAC_MT_SPMD_EXECUTE( funname);");
+    fprintf (global.outfile, "SAC_MT_SPMD_EXECUTE( %s);", funname);
 
     DBUG_VOID_RETURN;
 }
@@ -181,7 +161,6 @@ ICMCompileMT_SPMD_FUN_RET (char *funname, int vararg_cnt, char **vararg)
     fprintf (global.outfile, "SAC_MT_SYNC_WORKER_BEGIN();\n");
 
     cnt = 0;
-
     for (i = 0; i < 3 * vararg_cnt; i += 3) {
         if (ILIBstringCompare (vararg[i], "out")) {
             INDENT;
@@ -239,7 +218,7 @@ void
 ICMCompileMT_SPMD_FRAME_ELEMENT (char *funname, int vararg_cnt, char **vararg)
 {
     int i;
-    int cnt[3] = {0, 0, 0};
+    int cnt;
 
     DBUG_ENTER ("ICMCompileMT_SPMD_FRAME_ELEMENT");
 
@@ -251,10 +230,11 @@ ICMCompileMT_SPMD_FRAME_ELEMENT (char *funname, int vararg_cnt, char **vararg)
     INDENT;
     fprintf (global.outfile, "SAC_MT_SPMD_FRAME_ELEMENT_BEGIN( %s)\n", funname);
 
+    cnt = 0;
     for (i = 0; i < 3 * vararg_cnt; i += 3) {
         INDENT;
         fprintf (global.outfile, "SAC_MT_FRAME_ELEMENT_%s( %s, %d, %s, %s)\n", vararg[i],
-                 funname, cnt[tag (vararg[i])]++, vararg[i + 1], vararg[i + 2]);
+                 funname, cnt++, vararg[i + 1], vararg[i + 2]);
     }
 
     INDENT;
@@ -283,7 +263,7 @@ void
 ICMCompileMT_SPMD_BARRIER_ELEMENT (char *funname, int vararg_cnt, char **vararg)
 {
     int i;
-    int cnt[3] = {0, 0, 0};
+    int cnt;
 
     DBUG_ENTER ("ICMCompileMT_SPMD_BARRIER_ELEMENT");
 
@@ -295,11 +275,11 @@ ICMCompileMT_SPMD_BARRIER_ELEMENT (char *funname, int vararg_cnt, char **vararg)
     INDENT;
     fprintf (global.outfile, "SAC_MT_SPMD_BARRIER_ELEMENT_BEGIN( %s)\n", funname);
 
+    cnt = 0;
     for (i = 0; i < 3 * vararg_cnt; i += 3) {
         INDENT;
         fprintf (global.outfile, "SAC_MT_BARRIER_ELEMENT_%s( %s, %d, %s, %s)\n",
-                 vararg[i], funname, cnt[tag (vararg[i])]++, vararg[i + 1],
-                 vararg[i + 2]);
+                 vararg[i], funname, cnt++, vararg[i + 1], vararg[i + 2]);
     }
 
     INDENT;
