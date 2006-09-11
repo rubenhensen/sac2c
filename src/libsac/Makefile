@@ -48,6 +48,10 @@ cinterface.c: ../tree/type_info.mac
 	touch $@
 	$(CLOCK_SKEW_ELIMINATION) $@
 
+message.c: $(PROJECT_ROOT)/src/runtime/sac_mt_gen.h
+
+$(PROJECT_ROOT)/src/runtime/sac_mt_gen.h:
+	cd $(PROJECT_ROOT)/src/runtime; make sac_mt_gen.h
 
 libsac.a: $(OBJS_LIBSAC)
 	ar rc $@ $^

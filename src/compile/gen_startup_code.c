@@ -594,7 +594,7 @@ GSCprintMainEnd ()
 void
 GSCprintMain ()
 {
-    char *res_NT, *mythread_NT;
+    char *res_NT;
     types *tmp_type;
     bool print_thread_id
       = (((global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop))
@@ -613,7 +613,6 @@ GSCprintMain ()
     }
     tmp_type = TBmakeTypes1 (T_int);
     res_NT = NTUcreateNtTag ("SAC_res", tmp_type);
-    mythread_NT = NTUcreateNtTag ("SAC_MT_mythread", tmp_type);
     tmp_type = FREEfreeAllTypes (tmp_type);
     ICMCompileND_DECL (res_NT, "int", 0, NULL); /* create ND_DECL icm */
     GSCprintMainBegin ();
@@ -621,16 +620,12 @@ GSCprintMain ()
     INDENT;
     fprintf (global.outfile, "SACf_%s__main( ", NSgetName (NSgetRootNamespace ()));
 
-    if (print_thread_id) {
-        fprintf (global.outfile, "SAC_ND_ARG_in( %s), ", mythread_NT);
-    }
     fprintf (global.outfile, "SAC_ND_ARG_out( %s)", res_NT);
     fprintf (global.outfile, ");\n\n");
     GSCprintMainEnd ();
     INDENT;
     fprintf (global.outfile, "return( SAC_ND_READ( %s, 0));\n", res_NT);
     res_NT = ILIBfree (res_NT);
-    mythread_NT = ILIBfree (mythread_NT);
     global.indent--;
     INDENT;
     fprintf (global.outfile, "}\n");

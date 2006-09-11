@@ -85,9 +85,9 @@ LIBS :=
 .PHONY: all tar deps clean
 
 
-all:  libsac.a libsac_mt.a libsac_heapmgr.a  \
+all:  sac_mt_gen.h libsac.a libsac_mt.a libsac_heapmgr.a  \
       libsac_heapmgr_diag.a libsac_heapmgr_mt.a libsac_heapmgr_mt_diag.a  \
-      CacheSimAnalyser config.h libsac2c.so libsac2c.a sac_mt_gen.h
+      CacheSimAnalyser config.h libsac2c.so libsac2c.a
 
 
 tar: runtime.tar

@@ -1899,9 +1899,13 @@ extern volatile SAC_MT_barrier_t *SAC_MT_barrier;
 
 extern volatile unsigned int SAC_MT_master_flag;
 
+extern volatile unsigned int SAC_MT_not_yet_parallel;
+
 extern unsigned int SAC_MT_masterclass;
 
 extern unsigned int SAC_MT_threads;
+
+extern pthread_t *SAC_MT1_internal_id;
 
 /*
  * REMARK:
@@ -1921,6 +1925,14 @@ extern void SAC_MT_SetupInitial (int argc, char *argv[], unsigned int num_thread
 
 extern void SAC_MT_TR_SetupInitial (int argc, char *argv[], unsigned int num_threads,
                                     unsigned int max_threads);
+
+extern pthread_key_t SAC_MT_threadid_key;
+
+extern unsigned int SAC_MT_master_id;
+
+SAC_MT_DECLARE_LOCK (SAC_MT_output_lock)
+
+SAC_MT_DECLARE_LOCK (SAC_MT_init_lock)
 
 /*****************************************************************************/
 
