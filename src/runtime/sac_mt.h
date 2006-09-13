@@ -1768,25 +1768,25 @@ extern void SAC_MT1_TR_Setup( int cache_line_max, int barrier_offset,
     SAC_spmd_frame->spmdfun.in_##num = SAC_ND_A_FIELD (var_NT);                          \
     SAC_spmd_frame->spmdfun.in_##num##_desc = SAC_ND_A_DESC (var_NT);
 
-#define SAC_MT_SEND_PARAM_out__NOOP(spmdfun, var_NT) SAC_NOOP ()
+#define SAC_MT_SEND_PARAM_out__NOOP(spmdfun, num, var_NT) SAC_NOOP ()
 
 /*****************************************************************************/
 
 #define SAC_MT_RECEIVE_PARAM_in__NODESC(spmdfun, num, basetype, var_NT)                  \
     SAC_ND_TYPE (var_NT, basetype)                                                       \
-    SAC_NAMEP (SAC_ND_A_FIELD (var_NT)) = SAC_spmd_frame->spmdfun.in_##num;
+    SAC_ND_A_FIELD (var_NT) = SAC_spmd_frame->spmdfun.in_##num;
 
 #define SAC_MT_RECEIVE_PARAM_in__DESC(spmdfun, num, basetype, var_NT)                    \
     SAC_ND_TYPE (var_NT, basetype)                                                       \
-    SAC_NAMEP (SAC_ND_A_FIELD (var_NT)) = SAC_spmd_frame->spmdfun.in_##num;              \
+    SAC_ND_A_FIELD (var_NT) = SAC_spmd_frame->spmdfun.in_##num;                          \
     SAC_ND_DESC_TYPE (var_NT)                                                            \
-    SAC_NAMEP (SAC_ND_A_DESC (var_NT)) = SAC_spmd_frame->spmdfun.in_##num##_desc;
+    SAC_ND_A_DESC (var_NT) = SAC_spmd_frame->spmdfun.in_##num##_desc;
 
 #define SAC_MT_RECEIVE_PARAM_in__DESC__FAKERC(spmdfun, num, basetype, var_NT)            \
     SAC_ND_TYPE (var_NT, basetype)                                                       \
-    SAC_NAMEP (SAC_ND_A_FIELD (var_NT)) = SAC_spmd_frame->spmdfun.in_##num;              \
+    SAC_ND_A_FIELD (var_NT) = SAC_spmd_frame->spmdfun.in_##num;                          \
     SAC_ND_DESC_TYPE (var_NT)                                                            \
-    SAC_NAMEP (SAC_ND_A_DESC (var_NT)) = SAC_spmd_frame->spmdfun.in_##num##_desc;
+    SAC_ND_A_DESC (var_NT) = SAC_spmd_frame->spmdfun.in_##num##_desc;
 
 #define SAC_MT_RECEIVE_PARAM_out__NOOP(spmdfun, num, basetype, var_NT) SAC_NOOP ()
 
@@ -2220,7 +2220,7 @@ SAC_MT_DECLARE_LOCK (SAC_MT_init_lock)
         unsigned int SAC_MT_son_id;                                                      \
         unsigned int SAC_MT_i;                                                           \
                                                                                          \
-        for (;;) {                                                                       \
+        do {                                                                             \
             SAC_MT_i = SAC_MT_MYWORKERCLASS ();                                          \
                                                                                          \
             do {                                                                         \
@@ -2230,8 +2230,8 @@ SAC_MT_DECLARE_LOCK (SAC_MT_init_lock)
 
 #define SAC_MT_SYNC_WORKER_END()                                                         \
     SAC_MT_CLEAR_BARRIER (SAC_MT_son_id)                                                 \
-    if (!SAC_MT_ready_count) {                                                           \
-        goto label_worker_continue_##id;                                                 \
+    if (SAC_MT_ready_count == 0) {                                                       \
+        break;                                                                           \
     }                                                                                    \
     SAC_MT_ready_count >>= 1;                                                            \
     }                                                                                    \
@@ -2239,14 +2239,18 @@ SAC_MT_DECLARE_LOCK (SAC_MT_init_lock)
     while (SAC_MT_i >>= 1)                                                               \
         ;                                                                                \
     }                                                                                    \
-    if (SAC_MT_MYTHREAD ()) {                                                            \
-        SAC_MT_SET_BARRIER (SAC_MT_MYTHREAD (), 1)                                       \
-    }                                                                                    \
+    while (SAC_MT_ready_count != 0)                                                      \
+        ;                                                                                \
+    SAC_MT_SET_BARRIER (SAC_MT_MYTHREAD (), 1)                                           \
     }
+
+#define SAC_MT_SPMD_FOLD_RETURN_WORKER(spmdfun, id, foldfun, accu) SAC_NOOP ()
 
 #define SAC_MT_SYNC_MASTER_BEGIN() SAC_NOOP ()
 
 #define SAC_MT_SYNC_MASTER_END() SAC_NOOP ()
+
+#define SAC_MT_SPMD_FOLD_RETURN_MASTER(spmdfun, id, foldfun, accu) SAC_NOOP ()
 
 /*****************************************************************************/
 
