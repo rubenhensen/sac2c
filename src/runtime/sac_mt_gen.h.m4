@@ -4,16 +4,16 @@ dnl SAC_MT_FRAME_ELEMENT_inout
 
 icm(`SAC_MT_FRAME_ELEMENT_inout',
     `SCL', `*', `*',
-    `SAC_MT_FRAME_ELEMENT_in__NODESC', `12', `3', `0')
+    `SAC_MT_FRAME_ELEMENT_inout__NODESC', `12', `3', `0')
 icm(`SAC_MT_FRAME_ELEMENT_inout',
     `AKS', `*', `*',
-    `SAC_MT_FRAME_ELEMENT_in__NODESC', `12', `3', `0')
+    `SAC_MT_FRAME_ELEMENT_inout__NODESC', `12', `3', `0')
 icm(`SAC_MT_FRAME_ELEMENT_inout',
     `AKD', `*', `*',
-    `SAC_MT_FRAME_ELEMENT_in__DESC', `12', `3', `0')
+    `SAC_MT_FRAME_ELEMENT_inout__DESC', `12', `3', `0')
 icm(`SAC_MT_FRAME_ELEMENT_inout',
     `AUD', `*', `*',
-    `SAC_MT_FRAME_ELEMENT_in__DESC', `12', `3', `0')
+    `SAC_MT_FRAME_ELEMENT_inout__DESC', `12', `3', `0')
 
 dnl SAC_MT_FRAME_ELEMENT_in
 
@@ -91,16 +91,16 @@ dnl SAC_MT_SEND_PARAM_inout
 
 icm(`SAC_MT_SEND_PARAM_inout',
     `SCL', `*', `*',
-    `SAC_MT_SEND_PARAM_in__NODESC', `12', `2', `0')
+    `SAC_MT_SEND_PARAM_inout__NODESC', `12', `2', `0')
 icm(`SAC_MT_SEND_PARAM_inout',
     `AKS', `*', `*',
-    `SAC_MT_SEND_PARAM_in__NODESC', `12', `2', `0')
+    `SAC_MT_SEND_PARAM_inout__NODESC', `12', `2', `0')
 icm(`SAC_MT_SEND_PARAM_inout',
     `AKD', `*', `*',
-    `SAC_MT_SEND_PARAM_in__DESC', `12', `2', `0')
+    `SAC_MT_SEND_PARAM_inout__DESC', `12', `2', `0')
 icm(`SAC_MT_SEND_PARAM_inout',
     `AUD', `*', `*',
-    `SAC_MT_SEND_PARAM_in__DESC', `12', `2', `0')
+    `SAC_MT_SEND_PARAM_inout__DESC', `12', `2', `0')
 
 dnl SAC_MT_SEND_PARAM_out
 
@@ -130,19 +130,19 @@ dnl SAC_MT_RECEIVE_PARAM_inout
 
 icm(`SAC_MT_RECEIVE_PARAM_inout',
     `SCL', `NHD', `*',
-    `SAC_MT_RECEIVE_PARAM_in__NODESC', `12', `3', `0')
+    `SAC_MT_RECEIVE_PARAM_inout__NODESC', `12', `3', `0')
 icm(`SAC_MT_RECEIVE_PARAM_inout',
     `SCL', `HID', `*',
-    `SAC_MT_RECEIVE_PARAM_in__NODESC__FAKERC', `12', `3', `0')
+    `SAC_MT_RECEIVE_PARAM_inout__NODESC__FAKERC', `12', `3', `0')
 icm(`SAC_MT_RECEIVE_PARAM_inout',
     `AKS', `*', `*',
-    `SAC_MT_RECEIVE_PARAM_in__NODESC', `12', `3', `0')
+    `SAC_MT_RECEIVE_PARAM_inout__NODESC', `12', `3', `0')
 icm(`SAC_MT_RECEIVE_PARAM_inout',
     `AKD', `*', `*',
-    `SAC_MT_RECEIVE_PARAM_in__DESC', `12', `3', `0')
+    `SAC_MT_RECEIVE_PARAM_inout__DESC', `12', `3', `0')
 icm(`SAC_MT_RECEIVE_PARAM_inout',
     `AUD', `*', `*',
-    `SAC_MT_RECEIVE_PARAM_in__DESC', `12', `3', `0')
+    `SAC_MT_RECEIVE_PARAM_inout__DESC', `12', `3', `0')
 
 dnl SAC_MT_RECEIVE_PARAM_out
 

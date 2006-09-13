@@ -1729,6 +1729,13 @@ extern void SAC_MT1_TR_Setup( int cache_line_max, int barrier_offset,
     SAC_ND_DESC_TYPE (var_NT) in_##num##_desc;                                           \
     SAC_ND_TYPE (var_NT, basetype) in_##num;
 
+#define SAC_MT_FRAME_ELEMENT_inout__NODESC(name, num, basetype, var_NT)                  \
+    SAC_ND_TYPE (var_NT, basetype) * in_##num;
+
+#define SAC_MT_FRAME_ELEMENT_inout__DESC(name, num, basetype, var_NT)                    \
+    SAC_ND_DESC_TYPE (var_NT) * in_##num##_desc;                                         \
+    SAC_ND_TYPE (var_NT, basetype) * in_##num;
+
 #define SAC_MT_FRAME_ELEMENT_out__NOOP(name, num, basetype, var_NT)
 
 /*****************************************************************************/
@@ -1768,6 +1775,13 @@ extern void SAC_MT1_TR_Setup( int cache_line_max, int barrier_offset,
     SAC_spmd_frame->spmdfun.in_##num = SAC_ND_A_FIELD (var_NT);                          \
     SAC_spmd_frame->spmdfun.in_##num##_desc = SAC_ND_A_DESC (var_NT);
 
+#define SAC_MT_SEND_PARAM_inout__NODESC(spmdfun, num, var_NT)                            \
+    SAC_spmd_frame->spmdfun.in_##num = &SAC_ND_A_FIELD (var_NT);
+
+#define SAC_MT_SEND_PARAM_inout__DESC(spmdfun, num, var_NT)                              \
+    SAC_spmd_frame->spmdfun.in_##num = &SAC_ND_A_FIELD (var_NT);                         \
+    SAC_spmd_frame->spmdfun.in_##num##_desc = &SAC_ND_A_DESC (var_NT);
+
 #define SAC_MT_SEND_PARAM_out__NOOP(spmdfun, num, var_NT) SAC_NOOP ()
 
 /*****************************************************************************/
@@ -1787,6 +1801,22 @@ extern void SAC_MT1_TR_Setup( int cache_line_max, int barrier_offset,
     SAC_ND_A_FIELD (var_NT) = SAC_spmd_frame->spmdfun.in_##num;                          \
     SAC_ND_DESC_TYPE (var_NT)                                                            \
     SAC_ND_A_DESC (var_NT) = SAC_spmd_frame->spmdfun.in_##num##_desc;
+
+#define SAC_MT_RECEIVE_PARAM_inout__NODESC(spmdfun, num, basetype, var_NT)               \
+    SAC_ND_TYPE (var_NT, basetype) * SAC_NAMEP (SAC_ND_A_FIELD (var_NT))                 \
+      = SAC_spmd_frame->spmdfun.in_##num;
+
+#define SAC_MT_RECEIVE_PARAM_inout__DESC(spmdfun, num, basetype, var_NT)                 \
+    SAC_ND_TYPE (var_NT, basetype) * SAC_NAMEP (SAC_ND_A_FIELD (var_NT))                 \
+      = SAC_spmd_frame->spmdfun.in_##num;                                                \
+    SAC_ND_DESC_TYPE (var_NT) * SAC_NAMEP (SAC_ND_A_DESC (var_NT))                       \
+      = SAC_spmd_frame->spmdfun.in_##num##_desc;
+
+#define SAC_MT_RECEIVE_PARAM_inout__DESC__FAKERC(spmdfun, num, basetype, var_NT)         \
+    SAC_ND_TYPE (var_NT, basetype) * SAC_NAMEP (SAC_ND_A_FIELD (var_NT))                 \
+      = SAC_spmd_frame->spmdfun.in_##num;                                                \
+    SAC_ND_DESC_TYPE (var_NT) * SAC_NAMEP (SAC_ND_A_DESC (var_NT))                       \
+      = SAC_spmd_frame->spmdfun.in_##num##_desc;
 
 #define SAC_MT_RECEIVE_PARAM_out__NOOP(spmdfun, num, basetype, var_NT) SAC_NOOP ()
 
