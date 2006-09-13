@@ -1416,12 +1416,7 @@ MakeIcm_ND_FUN_DEC (node *fundef)
         char *name;
         node *id;
 
-        if (argtab->ptr_out[i] != NULL) {
-            tag = argtab->tag[i];
-            type = TYtype2OldType (RET_TYPE (argtab->ptr_out[i]));
-            id = MakeArgNode (i, type);
-        } else {
-            DBUG_ASSERT ((argtab->ptr_in[i] != NULL), "argtab is uncompressed!");
+        if (argtab->ptr_in[i] != NULL) {
             DBUG_ASSERT ((NODE_TYPE (argtab->ptr_in[i]) == N_arg),
                          "no N_arg node found in argtab");
 
@@ -1433,6 +1428,11 @@ MakeIcm_ND_FUN_DEC (node *fundef)
             } else {
                 id = MakeArgNode (i, type);
             }
+        } else {
+            DBUG_ASSERT ((argtab->ptr_out[i] != NULL), "argtab is uncompressed!");
+            tag = argtab->tag[i];
+            type = TYtype2OldType (RET_TYPE (argtab->ptr_out[i]));
+            id = MakeArgNode (i, type);
         }
 
         icm_args = TBmakeExprs (TCmakeIdCopyString (global.argtag_string[tag]),
@@ -1494,17 +1494,17 @@ MakeIcm_MT_SPMD_FUN_DEC (node *fundef)
         node *id;
         types *type;
 
-        if (argtab->ptr_out[i] != NULL) {
-            type = TYtype2OldType (RET_TYPE (argtab->ptr_out[i]));
-            id = MakeArgNode (i, type);
-        } else {
-            DBUG_ASSERT ((argtab->ptr_in[i] != NULL), "argtab is uncompressed!");
+        if (argtab->ptr_in[i] != NULL) {
             DBUG_ASSERT ((NODE_TYPE (argtab->ptr_in[i]) == N_arg),
                          "no N_arg node found in argtab");
 
             name = ARG_NAME (argtab->ptr_in[i]);
             type = ARG_TYPE (argtab->ptr_in[i]);
             id = TCmakeIdCopyStringNt (STR_OR_EMPTY (name), type);
+        } else {
+            DBUG_ASSERT ((argtab->ptr_out[i] != NULL), "argtab is uncompressed!");
+            type = TYtype2OldType (RET_TYPE (argtab->ptr_out[i]));
+            id = MakeArgNode (i, type);
         }
 
         icm_args = TBmakeExprs (TCmakeIdCopyString (global.argtag_string[argtab->tag[i]]),
