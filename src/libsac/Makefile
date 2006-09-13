@@ -28,7 +28,7 @@ OBJS_LIBSAC := message.o misc.o profile.o trace.o nophm.o sac_arg.o \
                commandline.o
 
 OBJS_LIBSAC_MT := message_mt.o misc_mt.o trace_mt.o mt.o mt_trace.o \
-                  nophm_mt.o sac_arg.o cinterface.o
+                  nophm_mt.o sac_arg.o cinterface.o commandline.o
 
 
 .PHONY: all tar clean prod
