@@ -1,65 +1,5 @@
 #
-#
-# $Log$
-# Revision 3.23  2005/06/10 13:33:10  sbs
-# added libsac2c.so
-#
-# Revision 3.22  2003/10/20 14:35:53  dkr
-# target icm_test modified
-#
-# Revision 3.21  2003/09/29 23:38:54  dkr
-# target icm_test modified: more GREPs added
-#
-# Revision 3.20  2003/09/22 16:03:06  dkr
-# target icm_tester modified
-#
-# Revision 3.19  2003/09/22 15:22:22  dkr
-# new target icm_tester added
-#
-# Revision 3.18  2003/09/22 11:17:23  dkr
-# target icm_test modified
-#
-# Revision 3.17  2003/09/19 15:05:13  dkr
-# target icm_test extended: some formating done with sed, code beautifier used
-#
-# Revision 3.16  2003/06/17 19:02:50  dkr
-# target icm_test extended
-#
-# Revision 3.15  2003/06/17 18:49:20  dkr
-# target test_icm modified
-#
-# Revision 3.14  2003/06/17 18:18:40  dkr
-# target 'icm_test' added
-#
-# Revision 3.13  2003/03/25 12:06:41  sbs
-# config.h added
-#
-# Revision 3.12  2003/03/21 16:30:25  sbs
-# rule for sac2crc changed
-#
-# Revision 3.11  2003/03/20 23:18:22  sah
-# updated link sac2crc link creation
-# to confirm with new configure
-#
-# Revision 3.10  2002/06/06 19:56:03  dkr
-# target clean modified
-#
-# Revision 3.9  2002/06/06 19:35:17  dkr
-# target clean: *.old removed
-#
-# Revision 3.8  2001/11/15 15:36:48  sacbase
-# CLOCK_SKEW_ELIMINATION and PROJECT_ROOT added.
-#
-# Revision 3.7  2001/11/14 12:59:48  sbs
-# deps line replaced by inclusion of Makefile.Deps
-# ( .xxx.d mechanism)
-# global setup included via Makefile.Config
-#
-# ... [eliminated] ...
-#
-# Revision 1.1  1998/03/19 16:32:50  cg
-# Initial revision
-#
+# $Id$
 # 
 
 
@@ -182,7 +122,7 @@ clean:
 
 %.h: %.h.m4
 	@$(ECHO) "   Generating header file from M4 macro..."
-	$(HIDE) gm4 -I $(PROJECT_ROOT)/src/m4 $< > $@	
+	$(HIDE) $(M4PROC) -I $(PROJECT_ROOT)/src/m4 $< > $@	
 
 
 #######################################################################################

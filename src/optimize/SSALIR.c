@@ -1196,6 +1196,8 @@ LIRassign (node *arg_node, info *arg_info)
 node *
 LIRlet (node *arg_node, info *arg_info)
 {
+    node *ids;
+
     DBUG_ENTER ("LIRlet");
 
     if (INFO_TOPBLOCK (arg_info)) {
@@ -1203,8 +1205,21 @@ LIRlet (node *arg_node, info *arg_info)
         INFO_NONLIRUSE (arg_info) = 0;
     }
 
-    if (LET_EXPR (arg_node) != NULL) {
-        LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
+    LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
+
+    /*
+     * Analyse dependencies carried in the DTUL
+     */
+    ids = LET_IDS (arg_node);
+    while (ids != NULL) {
+        node *avis = IDS_AVIS (ids);
+        if (AVIS_DIM (avis) != NULL) {
+            AVIS_DIM (avis) = TRAVdo (AVIS_DIM (avis), arg_info);
+        }
+        if (AVIS_SHAPE (avis) != NULL) {
+            AVIS_SHAPE (avis) = TRAVdo (AVIS_SHAPE (avis), arg_info);
+        }
+        ids = IDS_NEXT (ids);
     }
 
     if (INFO_TOPBLOCK (arg_info)) {

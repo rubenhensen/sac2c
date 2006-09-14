@@ -141,6 +141,9 @@ AC_PROG_LEX()
 dnl search for xlst engine
 AC_CHECK_PROGS(XSLT, [xsltproc sabcmd], [!fail])
 
+dnl search for m4 macro processor
+AC_CHECK_PROGS(M4, [gm4 m4], [!fail])
+
 dnl search for malloc.h
 AC_CHECK_HEADERS(malloc.h)
 
