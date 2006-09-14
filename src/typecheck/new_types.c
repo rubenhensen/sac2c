@@ -1240,9 +1240,14 @@ FilterFundefs (ntype *fun, int num_kills, node **kill_list)
     if (fun != NULL) {
         switch (NTYPE_CON (fun)) {
         case TC_fun:
-            for (i = 0; i < NTYPE_ARITY (fun); i++) {
+            for (i = 0; i < NTYPE_ARITY (fun);) {
                 NTYPE_SON (fun, i)
                   = FilterFundefs (NTYPE_SON (fun, i), num_kills, kill_list);
+                if (NTYPE_SON (fun, i) == NULL) {
+                    fun = DeleteSon (fun, i);
+                } else {
+                    i++;
+                }
             }
             break;
         case TC_ibase:
@@ -1393,7 +1398,7 @@ typedef bool (*cmp_ntype_fun_t) (ntype *, ntype *);
 static bool
 CmpIbase (ntype *ibase1, ntype *ibase2)
 {
-    DBUG_ASSERT (((NTYPE_CON (ibase1) == TC_ibase) && (NTYPE_CON (ibase1) == TC_ibase)),
+    DBUG_ASSERT (((NTYPE_CON (ibase1) == TC_ibase) && (NTYPE_CON (ibase2) == TC_ibase)),
                  "CmpIbase called with non TC_ibase arg!");
 
     return (TYeqTypes (IBASE_BASE (ibase1), IBASE_BASE (ibase2)));
@@ -1402,7 +1407,7 @@ CmpIbase (ntype *ibase1, ntype *ibase2)
 static bool
 CmpIdim (ntype *idim1, ntype *idim2)
 {
-    DBUG_ASSERT (((NTYPE_CON (idim1) == TC_idim) && (NTYPE_CON (idim1) == TC_idim)),
+    DBUG_ASSERT (((NTYPE_CON (idim1) == TC_idim) && (NTYPE_CON (idim2) == TC_idim)),
                  "CmpIdim called with non TC_idim arg!");
 
     return (IDIM_DIM (idim1) == IDIM_DIM (idim2));
@@ -1412,7 +1417,7 @@ static bool
 CmpIshape (ntype *ishape1, ntype *ishape2)
 {
     DBUG_ASSERT (((NTYPE_CON (ishape1) == TC_ishape)
-                  && (NTYPE_CON (ishape1) == TC_ishape)),
+                  && (NTYPE_CON (ishape2) == TC_ishape)),
                  "CmpIshape called with non TC_ishape arg!");
 
     return (SHcompareShapes (ISHAPE_SHAPE (ishape1), ISHAPE_SHAPE (ishape2)));
