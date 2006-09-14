@@ -51,12 +51,15 @@ cinterface.c: ../tree/type_info.mac
 $(PROJECT_ROOT)/src/runtime/sac_mt_gen.h:
 	cd $(PROJECT_ROOT)/src/runtime; make sac_mt_gen.h
 
-libsac.a: $(OBJS_LIBSAC)
+$(PROJECT_ROOT)/src/runtime/sac_std_gen.h:
+	cd $(PROJECT_ROOT)/src/runtime; make sac_std_gen.h
+
+libsac.a: $(PROJECT_ROOT)/src/runtime/sac_std_gen.h $(OBJS_LIBSAC)
 	ar rc $@ $^
 	ranlib $@
 	$(CLOCK_SKEW_ELIMINATION) $@
 
-libsac_mt.a: $(OBJS_LIBSAC_MT)
+libsac_mt.a: $(PROJECT_ROOT)/src/runtime/sac_mt_gen.h $(OBJS_LIBSAC_MT)
 	ar rc $@ $^
 	ranlib $@
 	$(CLOCK_SKEW_ELIMINATION) $@
@@ -81,11 +84,11 @@ cachesim_access_advanced.o: cachesim_access.c
 	$(CLOCK_SKEW_ELIMINATION) $@
 
 
-%_mt.o: %.c $(PROJECT_ROOT)/src/runtime/sac_mt_gen.h
+%_mt.o: %.c
 	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) $(MTFLAGS) -o $@ -c $<
 	$(CLOCK_SKEW_ELIMINATION) $@
 
-%.o: %.c 
+%.o: %.c
 	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) -o $@ -c $<
 	$(CLOCK_SKEW_ELIMINATION) $@
 

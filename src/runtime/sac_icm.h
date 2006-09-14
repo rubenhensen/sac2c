@@ -208,12 +208,33 @@
 #define CAT22(x, y) xCAT22 (x, y)
 #define xCAT22(x, y) x##y
 
+#define CAT23(x, y) xCAT23 (x, y)
+#define xCAT23(x, y) x##y
+
+#define CAT24(x, y) xCAT24 (x, y)
+#define xCAT24(x, y) x##y
+
+#define CAT25(x, y) xCAT25 (x, y)
+#define xCAT25(x, y) x##y
+
+#define CAT26(x, y) xCAT26 (x, y)
+#define xCAT26(x, y) x##y
+
+#define CAT27(x, y) xCAT27 (x, y)
+#define xCAT27(x, y) x##y
+
+#define CAT28(x, y) xCAT28 (x, y)
+#define xCAT28(x, y) x##y
+
 #define AddParens(a) xAddParens (a)
 #define xAddParens(a) (a)
 
 /*
  * Catenate arguments, insert commas, add parens.
  */
+
+#define BuildArgs1(a) xBuildArgs1 (a)
+#define xBuildArgs1(a) (a)
 
 #define BuildArgs2(a, b) xBuildArgs2 (a, b)
 #define xBuildArgs2(a, b) (a, b)

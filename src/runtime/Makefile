@@ -25,7 +25,7 @@ LIBS :=
 .PHONY: all tar deps clean
 
 
-all:  sac_mt_gen.h libsac.a libsac_mt.a libsac_heapmgr.a  \
+all:  sac_std_gen.h sac_mt_gen.h libsac.a libsac_mt.a libsac_heapmgr.a  \
       libsac_heapmgr_diag.a libsac_heapmgr_mt.a libsac_heapmgr_mt_diag.a  \
       CacheSimAnalyser config.h libsac2c.so libsac2c.a
 
@@ -120,7 +120,7 @@ clean:
 	$(RM) CacheSimAnalyser
 	$(RM) icm_test.log
 
-%.h: %.h.m4
+%.h: %.h.m4 $(PROJECT_ROOT)/src/m4/icm.m4
 	@$(ECHO) "   Generating header file from M4 macro..."
 	$(HIDE) $(M4PROC) -I $(PROJECT_ROOT)/src/m4 $< > $@	
 

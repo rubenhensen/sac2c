@@ -84,9 +84,11 @@ _do_icm4(`$1___$2', `$3', `$5', `$6')')
 dnl This macro simply defines macro $1 to macro $2.
 
 define(`_do_icm4',
-``#'define $1(extra_args(`0', `$3')`'ifelse(`$3', `0', `', `, ')var_NT`'ifelse(`$4', `0', `', `, ')extra_args(`$3', `eval($3+$4)'))  \
+`#ifndef $1
+`#'define $1(extra_args(`0', `$3')`'ifelse(`$3', `0', `', `, ')var_NT`'ifelse(`$4', `0', `', `, ')extra_args(`$3', `eval($3+$4)'))  \
   $2( \
 extra_args(`0', `$3')`'ifelse(`$3', `0', `', `, ')var_NT`'ifelse(`$4', `0', `', `, ')extra_args(`$3', `eval($3+$4)'))
+#endif
 
 ')
 
