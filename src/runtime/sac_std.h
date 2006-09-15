@@ -322,8 +322,7 @@ typedef int *SAC_array_descriptor_t;
  *
  ******************************************************************************/
 
-#define SAC_ND_TYPE_NT(basetype_NT)                                                      \
-    SAC_ND_TYPE (NT_SHP (basetype_NT), (NT_NAME (basetype_NT)))
+#define SAC_ND_TYPE_NT(basetype_NT) SAC_ND_TYPE (basetype_NT, NT_NAME (basetype_NT))
 
 /*
  * SAC_ND_DESC_TYPE implementations (referenced by sac_std_gen.h)
