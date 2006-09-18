@@ -226,6 +226,15 @@
 #define CAT28(x, y) xCAT28 (x, y)
 #define xCAT28(x, y) x##y
 
+#define CAT29(x, y) xCAT29 (x, y)
+#define xCAT29(x, y) x##y
+
+#define CAT30(x, y) xCAT30 (x, y)
+#define xCAT30(x, y) x##y
+
+#define CAT31(x, y) xCAT31 (x, y)
+#define xCAT31(x, y) x##y
+
 #define AddParens(a) xAddParens (a)
 #define xAddParens(a) (a)
 

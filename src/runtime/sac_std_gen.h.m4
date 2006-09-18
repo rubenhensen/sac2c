@@ -378,3 +378,236 @@ icm(`SAC_ND_FREE__DATA',
 icm(`SAC_ND_FREE__DATA',
     `AUD', `HID', `*',
     `SAC_ND_FREE__DATA__AKS_HID', `19', `0', `1')
+
+dnl SAC_ND_ASSIGN__DATA
+dnl
+dnl Note: This ICM takes TWO nametuple arguments instead of one. This is
+dnl       implemented by expanding it twice. The intermediate macro's are
+dnl       immediately called from here, so it's not visible from the outside,
+dnl       but this implementation is fairly inefficient in terms of code size.
+dnl
+dnl There are five cases for the LHS nametuple:
+dnl     SCL, NHD
+dnl     SCL, HID
+dnl     AKS and AKD
+dnl     AUD, NHD
+dnl     AUD, HID
+dnl
+dnl These are actually reduced to less target macro's, but we still need
+dnl them.
+
+icm(`SAC_ND_ASSIGN__DATA',
+    `SCL', `NHD', `*',
+    `GEN_SAC_ND_ASSIGN__DATA__SCL_NHD', `22', `0', `2')
+icm(`SAC_ND_ASSIGN__DATA',
+    `SCL', `HID', `*',
+    `GEN_SAC_ND_ASSIGN__DATA__SCL_HID', `22', `0', `2')
+icm(`SAC_ND_ASSIGN__DATA',
+    `AKS', `*', `*',
+    `GEN_SAC_ND_ASSIGN__DATA__AKS', `22', `0', `2')
+icm(`SAC_ND_ASSIGN__DATA',
+    `AKD', `*', `*',
+    `GEN_SAC_ND_ASSIGN__DATA__AKS', `22', `0', `2')
+icm(`SAC_ND_ASSIGN__DATA',
+    `AKD', `*', `*',
+    `GEN_SAC_ND_ASSIGN__DATA__AKS', `22', `0', `2')
+icm(`SAC_ND_ASSIGN__DATA',
+    `AUD', `NHD', `*',
+    `GEN_SAC_ND_ASSIGN__DATA__AUD_NHD', `22', `0', `2')
+icm(`SAC_ND_ASSIGN__DATA',
+    `AUD', `HID', `*',
+    `GEN_SAC_ND_ASSIGN__DATA__AUD_HID', `22', `0', `2')
+
+dnl GEN_SAC_ND_ASSIGN__DATA__SCL_NHD
+dnl
+dnl Left-hand NT is a SCL NHD. There are three cases for the RHS:
+dnl     SCL -> do a direct assignment of the scl value
+dnl     AKS/AKD, AUD HID -> undef (can't assign)
+dnl     AUD, NHD -> copy aud value to scl
+
+icm(`GEN_SAC_ND_ASSIGN__DATA__SCL_NHD',
+    `SCL', `*', `*',
+    `SAC_ND_ASSIGN__DATA__AKS_AKS', `25', `1', `1')
+icm(`GEN_SAC_ND_ASSIGN__DATA__SCL_NHD',
+    `AUD', `NHD', `*',
+    `SAC_ND_ASSIGN__DATA__SCL_AUD', `25', `1', `1')
+icm(`GEN_SAC_ND_ASSIGN__DATA__SCL_NHD',
+    `*', `*', `*',
+    `SAC_ND_ASSIGN__DATA__UNDEF', `25', `1', `1')
+
+dnl GEN_SAC_ND_ASSIGN__DATA__SCL_HID
+dnl
+dnl Left-hand NT is a SCL HID. There are four cases for the RHS:
+dnl     SCL -> do a direct assignment of the scl value
+dnl     AKS/AKD, AUD NHD -> undef (can't assign)
+dnl     AUD HID NUQ  -> copy aud value to scl
+dnl     AUD HID UNQ  -> copy aud value to scl, free unique aud
+
+icm(`GEN_SAC_ND_ASSIGN__DATA__SCL_HID',
+    `SCL', `*', `*',
+    `SAC_ND_ASSIGN__DATA__AKS_AKS', `25', `1', `1')
+icm(`GEN_SAC_ND_ASSIGN__DATA__SCL_HID',
+    `AUD', `HID', `NUQ',
+    `SAC_ND_ASSIGN__DATA__SCL_AUD', `25', `1', `1')
+icm(`GEN_SAC_ND_ASSIGN__DATA__SCL_HID',
+    `AUD', `HID', `UNQ',
+    `SAC_ND_ASSIGN__DATA__SCL_AUD_UNQ', `25', `1', `1')
+icm(`GEN_SAC_ND_ASSIGN__DATA__SCL_HID',
+    `*', `*', `*',
+    `SAC_ND_ASSIGN__DATA__UNDEF', `25', `1', `1')
+
+dnl GEN_SAC_ND_ASSIGN__DATA__AKS
+dnl
+dnl Left-hand NT is a AKS or AKD. There are two cases for the RHS:
+dnl     SCL -> undef (can't assign)
+dnl     AKS, AKD or AUD -> do a direct assignment
+
+icm(`GEN_SAC_ND_ASSIGN__DATA__AKS',
+    `SCL', `*', `*',
+    `SAC_ND_ASSIGN__DATA__UNDEF', `25', `1', `1')
+icm(`GEN_SAC_ND_ASSIGN__DATA__AKS',
+    `*', `*', `*',
+    `SAC_ND_ASSIGN__DATA__AKS_AKS', `25', `1', `1')
+
+dnl GEN_SAC_ND_ASSIGN__DATA__AUD_NHD
+dnl
+dnl Left-hand NT is a AUD NHD. There are three cases for the RHS:
+dnl     SCL NHD -> allocate aud, copy scl
+dnl     SCL HID -> undef (can't assign)
+dnl     AKS, AKD, AUD -> allocate aud, do assignment
+
+icm(`GEN_SAC_ND_ASSIGN__DATA__AUD_NHD',
+    `SCL', `NHD', `*',
+    `SAC_ND_ASSIGN__DATA__AUD_SCL_NHD', `25', `1', `1')
+icm(`GEN_SAC_ND_ASSIGN__DATA__AUD_NHD',
+    `SCL', `HID', `*',
+    `SAC_ND_ASSIGN__DATA__UNDEF', `25', `1', `1')
+icm(`GEN_SAC_ND_ASSIGN__DATA__AUD_NHD',
+    `*', `*', `*',
+    `SAC_ND_ASSIGN__DATA__AUD_AKS', `25', `1', `1')
+
+dnl GEN_SAC_ND_ASSIGN__DATA__AUD_HID
+
+dnl Left-hand NT is a AUD NHD. There are four cases for the RHS:
+dnl     SCL HID NUQ -> allocate aud, copy scl
+dnl     SCL HID UNQ -> allocate aud, copy scl, do uniqueness foo
+dnl     SCL NHD -> undef (can't assign)
+dnl     AKS, AKD, AUD -> allocate aud, do assignment
+
+icm(`GEN_SAC_ND_ASSIGN__DATA__AUD_HID',
+    `SCL', `HID', `NUQ',
+    `SAC_ND_ASSIGN__DATA__AUD_SCL_NHD', `25', `1', `1')
+icm(`GEN_SAC_ND_ASSIGN__DATA__AUD_HID',
+    `SCL', `HID', `UNQ',
+    `SAC_ND_ASSIGN__DATA__AUD_SCL_UNQ', `25', `1', `1')
+icm(`GEN_SAC_ND_ASSIGN__DATA__AUD_HID',
+    `SCL', `NHD', `*',
+    `SAC_ND_ASSIGN__DATA__UNDEF', `25', `1', `1')
+icm(`GEN_SAC_ND_ASSIGN__DATA__AUD_HID',
+    `*', `*', `*',
+    `SAC_ND_ASSIGN__DATA__AUD_AKS', `25', `1', `1')
+
+dnl SAC_ND_COPY__DATA
+dnl
+dnl Note: This ICM takes TWO nametuple arguments instead of one. This is
+dnl       implemented by expanding it twice. The intermediate macro's are
+dnl       immediately called from here, so it's not visible from the outside,
+dnl       but this implementation is fairly inefficient in terms of code size.
+dnl
+dnl There are two cases for the LHS nametuple:
+dnl     SCL
+dnl     AKS, AKD, AUD
+dnl
+dnl These are actually reduced to two target macro's, but we still need
+dnl the intermediate ones for AKS, AKD and AUD because it's not a 1:1
+dnl mapping from the LHS.
+
+icm(`SAC_ND_COPY__DATA',
+    `SCL', `*', `*',
+    `SAC_ND_COPY__DATA__SCL_SCL', `22', `0', `2')
+icm(`SAC_ND_COPY__DATA',
+    `*', `*', `*',
+    `GEN_SAC_ND_COPY__DATA__AKS', `22', `0', `2')
+
+dnl GEN_SAC_ND_COPY__DATA__AKS
+dnl
+dnl There are two cases for the RHS:
+dnl   SCL -> copy scalar value
+dnl   AKS, AKD, AUD -> do a data copy
+
+icm(`GEN_SAC_ND_COPY__DATA__AKS',
+    `SCL', `*', `*',
+    `SAC_ND_COPY__DATA__SCL_SCL', `25', `1', `1')
+icm(`GEN_SAC_ND_COPY__DATA__AKS',
+    `*', `*', `*',
+    `SAC_ND_COPY__DATA__AKS_AKS', `25', `1', `1')
+
+dnl SAC_ND_SET__RC
+
+icm(`SAC_ND_SET__RC',
+    `*', `*', `UNQ',
+    `SAC_ND_SET__RC__NOOP', `28', `0', `1')
+icm(`SAC_ND_SET__RC',
+    `SCL', `NHD', `NUQ',
+    `SAC_ND_SET__RC__NOOP', `28', `0', `1')
+icm(`SAC_ND_SET__RC',
+    `*', `*', `NUQ',
+    `SAC_ND_SET__RC__DEFAULT', `28', `0', `1')
+
+dnl SAC_ND_INC_RC
+
+icm(`SAC_ND_INC_RC',
+    `*', `*', `UNQ',
+    `SAC_ND_INC_RC__NOOP', `28', `0', `1')
+icm(`SAC_ND_INC_RC',
+    `SCL', `NHD', `NUQ',
+    `SAC_ND_INC_RC__NOOP', `28', `0', `1')
+icm(`SAC_ND_INC_RC',
+    `*', `*', `NUQ',
+    `SAC_ND_INC_RC__DEFAULT', `28', `0', `1')
+
+dnl SAC_ND_DEC_RC
+
+icm(`SAC_ND_DEC_RC',
+    `*', `*', `UNQ',
+    `SAC_ND_DEC_RC__NOOP', `28', `0', `1')
+icm(`SAC_ND_DEC_RC',
+    `SCL', `NHD', `NUQ',
+    `SAC_ND_DEC_RC__NOOP', `28', `0', `1')
+icm(`SAC_ND_DEC_RC',
+    `*', `*', `NUQ',
+    `SAC_ND_DEC_RC__DEFAULT', `28', `0', `1')
+
+dnl SAC_ND_DEC_RC_FREE
+
+icm(`SAC_ND_DEC_RC_FREE',
+    `*', `*', `UNQ',
+    `SAC_ND_DEC_RC_FREE__UNQ', `28', `0', `2')
+icm(`SAC_ND_DEC_RC_FREE',
+    `SCL', `NHD', `NUQ',
+    `SAC_ND_DEC_RC_FREE__NOOP', `28', `0', `2')
+icm(`SAC_ND_DEC_RC_FREE',
+    `*', `*', `NUQ',
+    `SAC_ND_DEC_RC_FREE__DEFAULT', `28', `0', `2')
+
+dnl SAC_IS_LASTREF__BLOCK_BEGIN
+
+icm(`SAC_IS_LASTREF__BLOCK_BEGIN',
+    `*', `*', `UNQ',
+    `SAC_IS_LASTREF__BLOCK_BEGIN__UNQ', `28', `0', `0')
+icm(`SAC_IS_LASTREF__BLOCK_BEGIN',
+    `SCL', `NHD', `NUQ',
+    `SAC_IS_LASTREF__BLOCK_BEGIN__SCL_NHD_NUQ', `28', `0', `0')
+icm(`SAC_IS_LASTREF__BLOCK_BEGIN',
+    `*', `*', `NUQ',
+    `SAC_IS_LASTREF__BLOCK_BEGIN__DEFAULT', `28', `0', `0')
+
+dnl SAC_IS_REUSED__BLOCK_BEGIN
+
+icm(`SAC_IS_REUSED__BLOCK_BEGIN',
+    `SCL', `*', `*',
+    `SAC_IS_REUSED__BLOCK_BEGIN__SCL', `28', `0', `1')
+icm(`SAC_IS_REUSED__BLOCK_BEGIN',
+    `*', `*', `*',
+    `SAC_IS_REUSED__BLOCK_BEGIN__DEFAULT', `28', `0', `1')
+
