@@ -573,6 +573,13 @@ OPTdoIntraFunctionalOptimizations (node *arg_node)
                     }
 
                     /*
+                     * Symbolic with-loop folding
+                     */
+                    if (global.optimize.doswlf) {
+                        fundef = PHrunOptimizationInCycle (SUBPH_swlf, loop, fundef);
+                    }
+
+                    /*
                      * Dead code removal (Just the current FUNDEF)
                      */
                     if (global.optimize.dodcr) {
