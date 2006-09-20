@@ -246,6 +246,9 @@ SUBPHASE (wlf, "wlf", "Applying with-loop folding", WLFdoWLF)
 SUBPHASE (ssawlf, "ssawlf", "Restoring SSA form after with-loop folding",
           SSATdoTransformOneFundef)
 
+SUBPHASE (swlf, "swlf", "Applying symbolic with-loop folding",
+          SWLFdoSymbolicWithLoopFolding)
+
 SUBPHASE (dcrcycfun, "dcrfun", "Applying dead code removal",
           DCRdoDeadCodeRemovalOneFundef)
 
