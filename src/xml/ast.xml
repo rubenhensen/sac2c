@@ -1221,7 +1221,12 @@
 	  <node name="With" />
           <node name="Code" />
 	</travuser>
-      </traversal>
+     </traversal>
+     <traversal id="SWLF" name="Symbolic With-Loop-Folding" default="sons" include="symb_wlf.h" >
+       <travuser>
+          <node name="Fundef" />
+       </travuser>
+     </traversal>
       <traversal id="WLFS" name="With-Loop-Fusion" default="sons" include="WithloopFusion.h" >
 	<travuser>
 	  <node name="Fundef" />
