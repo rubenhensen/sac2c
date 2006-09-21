@@ -41,7 +41,8 @@ dnl This macro concatenates the shape element of the tag ($2)
 dnl to the macro name, and then calls _do_icm2 with the
 dnl remainder of the arguments.
 define(`_do_icm1',
-`#ifndef $1
+`#ifndef DEF_$1
+`#'define DEF_$1
 `#'define $1(extra_args(`0', `$7')`'ifelse(`$7', `0', `', `, ')var_NT`'ifelse(`$8', `0', `', `, ')extra_args(`$7', `eval($7+$8)'))  \
   CAT$6( $1___, NT_SHP( var_NT) \
   BuildArgs`'eval($7+$8+1)( \
@@ -56,7 +57,8 @@ dnl to the macro name, and then calls _do_icm3 with the
 dnl remainder of the arguments.
 
 define(`_do_icm2',
-`#ifndef $1
+`#ifndef DEF_$1
+`#'define DEF_$1
 `#'define $1(extra_args(`0', `$6')`'ifelse(`$6', `0', `', `, ')var_NT`'ifelse(`$7', `0', `', `, ')extra_args(`$6', `eval($6+$7)'))  \
   CAT$5( $1___, NT_HID( var_NT) \
   BuildArgs`'eval($6+$7+1)( \
@@ -71,7 +73,8 @@ dnl to the macro name, and then calls _do_icm4 with the
 dnl remainder of the arguments.
 
 define(`_do_icm3',
-`#ifndef $1
+`#ifndef DEF_$1
+`#'define DEF_$1
 `#'define $1(extra_args(`0', `$5')`'ifelse(`$5', `0', `', `, ')var_NT`'ifelse(`$6', `0', `', `, ')extra_args(`$5', `eval($5+$6)'))  \
   CAT$4( $1___, NT_UNQ( var_NT) \
   BuildArgs`'eval($5+$6+1)( \
@@ -84,7 +87,8 @@ _do_icm4(`$1___$2', `$3', `$5', `$6')')
 dnl This macro simply defines macro $1 to macro $2.
 
 define(`_do_icm4',
-`#ifndef $1
+`#ifndef DEF_$1
+`#'define DEF_$1
 `#'define $1(extra_args(`0', `$3')`'ifelse(`$3', `0', `', `, ')var_NT`'ifelse(`$4', `0', `', `, ')extra_args(`$3', `eval($3+$4)'))  \
   $2( \
 extra_args(`0', `$3')`'ifelse(`$3', `0', `', `, ')var_NT`'ifelse(`$4', `0', `', `, ')extra_args(`$3', `eval($3+$4)'))

@@ -62,6 +62,8 @@
 #endif
 
 #include <pthread.h>
+#include <alloca.h>
+#include <string.h>
 
 #if 0
 
@@ -1790,17 +1792,22 @@ extern void SAC_MT1_TR_Setup( int cache_line_max, int barrier_offset,
     SAC_ND_TYPE (var_NT, basetype)                                                       \
     SAC_ND_A_FIELD (var_NT) = SAC_spmd_frame.spmdfun.in_##num;
 
+#define SAC_MT_RECEIVE_PARAM_in__NODESC__FAKERC(spmdfun, num, basetype, var_NT)          \
+    SAC_ND_TYPE (var_NT, basetype)                                                       \
+    SAC_ND_A_FIELD (var_NT) = SAC_spmd_frame.spmdfun.in_##num;                           \
+    SAC_ND_DESC_TYPE (var_NT)                                                            \
+    SAC_ND_A_DESC (var_NT)                                                               \
+      = (SAC_ND_DESC_TYPE (var_NT))alloca (FIXED_SIZE_OF_DESC * sizeof (int));           \
+    memset (SAC_ND_A_DESC (var_NT), '\0', FIXED_SIZE_OF_DESC * sizeof (int));
+
 #define SAC_MT_RECEIVE_PARAM_in__DESC(spmdfun, num, basetype, var_NT)                    \
     SAC_ND_TYPE (var_NT, basetype)                                                       \
     SAC_ND_A_FIELD (var_NT) = SAC_spmd_frame.spmdfun.in_##num;                           \
     SAC_ND_DESC_TYPE (var_NT)                                                            \
-    SAC_ND_A_DESC (var_NT) = SAC_spmd_frame.spmdfun.in_##num##_desc;
-
-#define SAC_MT_RECEIVE_PARAM_in__DESC__FAKERC(spmdfun, num, basetype, var_NT)            \
-    SAC_ND_TYPE (var_NT, basetype)                                                       \
-    SAC_ND_A_FIELD (var_NT) = SAC_spmd_frame.spmdfun.in_##num;                           \
-    SAC_ND_DESC_TYPE (var_NT)                                                            \
-    SAC_ND_A_DESC (var_NT) = SAC_spmd_frame.spmdfun.in_##num##_desc;
+    SAC_ND_A_DESC (var_NT) = (SAC_ND_DESC_TYPE (var_NT))alloca (                         \
+      BYTE_SIZE_OF_DESC (DESC_DIM (SAC_spmd_frame.spmdfun.in_##num##_desc)));            \
+    memcpy (SAC_ND_A_DESC (var_NT), SAC_spmd_frame.spmdfun.in_##num##_desc,              \
+            BYTE_SIZE_OF_DESC (DESC_DIM (SAC_spmd_frame.spmdfun.in_##num##_desc)));
 
 #define SAC_MT_RECEIVE_PARAM_inout__NODESC(spmdfun, num, basetype, var_NT)               \
     SAC_ND_TYPE (var_NT, basetype) * SAC_NAMEP (SAC_ND_A_FIELD (var_NT))                 \
@@ -1809,14 +1816,24 @@ extern void SAC_MT1_TR_Setup( int cache_line_max, int barrier_offset,
 #define SAC_MT_RECEIVE_PARAM_inout__DESC(spmdfun, num, basetype, var_NT)                 \
     SAC_ND_TYPE (var_NT, basetype) * SAC_NAMEP (SAC_ND_A_FIELD (var_NT))                 \
       = SAC_spmd_frame.spmdfun.in_##num;                                                 \
+    SAC_ND_DESC_TYPE (var_NT)                                                            \
+    CAT0 (SAC_ND_A_DESC (var_NT), __s) = (SAC_ND_DESC_TYPE (var_NT))alloca (             \
+      BYTE_SIZE_OF_DESC (DESC_DIM (*SAC_spmd_frame.spmdfun.in_##num##_desc)));           \
+    memcpy (CAT0 (SAC_ND_A_DESC (var_NT), __s), *SAC_spmd_frame.spmdfun.in_##num##_desc, \
+            BYTE_SIZE_OF_DESC (DESC_DIM (*SAC_spmd_frame.spmdfun.in_##num##_desc)));     \
     SAC_ND_DESC_TYPE (var_NT) * SAC_NAMEP (SAC_ND_A_DESC (var_NT))                       \
-      = SAC_spmd_frame.spmdfun.in_##num##_desc;
+      = &CAT0 (SAC_ND_A_DESC (var_NT), __s);
 
-#define SAC_MT_RECEIVE_PARAM_inout__DESC__FAKERC(spmdfun, num, basetype, var_NT)         \
+#define SAC_MT_RECEIVE_PARAM_inout__NODESC__FAKERC(spmdfun, num, basetype, var_NT)       \
     SAC_ND_TYPE (var_NT, basetype) * SAC_NAMEP (SAC_ND_A_FIELD (var_NT))                 \
       = SAC_spmd_frame.spmdfun.in_##num;                                                 \
+    SAC_ND_DESC_TYPE (var_NT)                                                            \
+    CAT0 (SAC_ND_A_DESC (var_NT), __s)                                                   \
+      = (SAC_ND_DESC_TYPE (var_NT))alloca (FIXED_SIZE_OF_DESC * sizeof (int));           \
+    memset (CAT0 (SAC_ND_A_DESC (var_NT), __s), '\0',                                    \
+            FIXED_SIZE_OF_DESC * sizeof (int));                                          \
     SAC_ND_DESC_TYPE (var_NT) * SAC_NAMEP (SAC_ND_A_DESC (var_NT))                       \
-      = SAC_spmd_frame.spmdfun.in_##num##_desc;
+      = &CAT0 (SAC_ND_A_DESC (var_NT), __s);
 
 #define SAC_MT_RECEIVE_PARAM_out__NOOP(spmdfun, num, basetype, var_NT) SAC_NOOP ()
 
@@ -2246,7 +2263,7 @@ SAC_MT_DECLARE_LOCK (SAC_MT_init_lock)
 
 #define SAC_MT_SYNC_WORKER_BEGIN()                                                       \
     {                                                                                    \
-        unsigned int SAC_MT_ready_count = SAC_MT_MYWORKERCLASS () >> 1;                  \
+        unsigned int SAC_MT_ready_count = SAC_MT_MYWORKERCLASS ();                       \
         unsigned int SAC_MT_son_id;                                                      \
         unsigned int SAC_MT_i;                                                           \
                                                                                          \
@@ -2260,10 +2277,10 @@ SAC_MT_DECLARE_LOCK (SAC_MT_init_lock)
 
 #define SAC_MT_SYNC_WORKER_END()                                                         \
     SAC_MT_CLEAR_BARRIER (SAC_MT_son_id)                                                 \
+    SAC_MT_ready_count >>= 1;                                                            \
     if (SAC_MT_ready_count == 0) {                                                       \
         break;                                                                           \
     }                                                                                    \
-    SAC_MT_ready_count >>= 1;                                                            \
     }                                                                                    \
     }                                                                                    \
     while (SAC_MT_i >>= 1)                                                               \
