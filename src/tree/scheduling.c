@@ -388,7 +388,7 @@ SCHmakeSchedulingByPragma (node *ap_node, int line)
     DBUG_ENTER ("SCHmakeSchedulingByPragma");
 
     while ((scheduler_table[i].discipline[0] != '\0')
-           && (0 != strcmp (scheduler_table[i].discipline, AP_NAME (ap_node)))) {
+           && (0 != strcmp (scheduler_table[i].discipline, SPAP_NAME (ap_node)))) {
         i++;
     }
 
@@ -410,7 +410,7 @@ SCHmakeSchedulingByPragma (node *ap_node, int line)
         sched->line = line;
 
         sched = CheckSchedulingArgs (sched, scheduler_table[i].arg_spec,
-                                     AP_ARGS (ap_node), line);
+                                     SPAP_ARGS (ap_node), line);
     } else {
         CTIabortLine (line, "Illegal argument in wlcomp-pragma found; "
                             "Scheduling(): Unknown scheduler");
@@ -1192,7 +1192,7 @@ SCHmakeTaskselByPragma (node *ap_node, int line)
     DBUG_ENTER ("SCHmakeTaskselByPragma");
 
     while ((taskselector_table[i].discipline[0] != '\0')
-           && (0 != strcmp (taskselector_table[i].discipline, AP_NAME (ap_node)))) {
+           && (0 != strcmp (taskselector_table[i].discipline, SPAP_NAME (ap_node)))) {
         i++;
     }
 
@@ -1209,7 +1209,7 @@ SCHmakeTaskselByPragma (node *ap_node, int line)
         }
         tasksel->line = line;
 
-        tasksel = CheckTaskselArgs (tasksel, AP_ARGS (ap_node), line);
+        tasksel = CheckTaskselArgs (tasksel, SPAP_ARGS (ap_node), line);
     } else {
         CTIabortLine (line, "Illegal argument in wlcomp-pragma found; "
                             "Tasksel(): Unknown Taskselector");

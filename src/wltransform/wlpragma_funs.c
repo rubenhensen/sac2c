@@ -1,122 +1,4 @@
-/*
- *
- * $Log$
- * Revision 3.35  2005/09/27 16:21:16  sbs
- * ExtractPragma changed to N_spap
- *
- * Revision 3.34  2005/01/07 19:56:38  cg
- * Converted compile time output from Error.h to ctinfo.c
- *
- * Revision 3.33  2005/01/07 18:01:31  cg
- * Updated usage of ctinfo
- *
- * Revision 3.32  2005/01/07 17:24:50  cg
- * Converted compile time output from Error.h to ctinfo.c
- *
- * Revision 3.31  2004/12/11 14:47:26  ktr
- * some bugfixes
- *
- * Revision 3.30  2004/11/27 02:05:38  jhb
- * compile
- *
- * Revision 3.29  2004/11/26 20:31:34  jhb
- * changed MakeWlseg to MakeWlSeg
- *
- * Revision 3.28  2004/11/25 21:36:44  jhb
- * fixed WLTRAinsertWlNodes
- *
- * Revision 3.27  2004/10/11 14:57:53  sah
- * made INC/DEC NCODE_USED explicit 
- *
- * Revision 3.26  2004/02/05 10:37:14  cg
- * Re-factorized handling of different modes in multithreaded code
- * generation:
- * - Added enumeration type for representation of modes
- * - Renamed mode identifiers to more descriptive names.
- *
- * Revision 3.25  2003/12/10 16:07:14  skt
- * changed compiler flag from -mtn to -mtmode and expanded mt-versions by one
- *
- * Revision 3.24  2001/06/13 13:09:24  ben
- * WLCOMP_Tasksel added
- *
- * Revision 3.23  2001/05/22 15:07:28  dkr
- * bug in WLCOMP_Scheduling() fixed:
- * SCHRemoveScheduling called with non-NULL argument only
- *
- * Revision 3.22  2001/05/18 12:17:02  dkr
- * WLCOMP_Scheduling: call of SCHRemoveScheduling() added
- *
- * Revision 3.21  2001/04/03 10:00:00  dkr
- * WLCOMP_Bv() renamed to StoreBv()
- *
- * Revision 3.20  2001/04/03 09:50:33  dkr
- * some warning/error messages modified
- *
- * Revision 3.19  2001/04/02 17:07:03  dkr
- * Scheduling() is ignored if multi-threading is inactive
- *
- * Revision 3.18  2001/03/29 01:36:21  dkr
- * WLSEGVAR_IDX_MIN, WLSEGVAR_IDX_MAX are now node-vectors
- *
- * Revision 3.17  2001/03/28 09:23:21  dkr
- * Pffff... typo in WLCOMP_NoBlocking corrected
- *
- * Revision 3.16  2001/03/27 21:40:09  dkr
- * macro MALLOC_INIT_VECT used
- *
- * Revision 3.15  2001/03/22 19:19:16  dkr
- * include of tree.h eliminated
- *
- * Revision 3.14  2001/03/20 19:04:53  dkr
- * wlcomp-pragma functions SchedulingWL(), SchedulingSegs() replaced by
- * Scheduling()
- *
- * Revision 3.13  2001/03/20 16:02:55  ben
- * wlcomp-pragma functions SchedulingWL, SchedulingSegs added
- *
- * Revision 3.12  2001/02/06 01:44:47  dkr
- * signature of MakeWLgrid() and MakeWLgridVar() modified
- *
- * Revision 3.11  2001/01/29 18:33:45  dkr
- * some superfluous attributes of N_WLsegVar removed
- *
- * Revision 3.10  2001/01/25 12:06:13  dkr
- * ExtractAplPragmaAp() modified.
- * bug in ExtractNaiveCompPragmaAp() fixed.
- *
- * Revision 3.9  2001/01/24 23:35:22  dkr
- * signature of MakeWLgridVar, MakeWLgrid, MakeWLseg, MakeWLsegVar
- * modified
- *
- * Revision 3.8  2001/01/10 14:27:50  dkr
- * function MakeWLsegX used
- *
- * Revision 3.7  2001/01/09 16:17:23  dkr
- * All() and Cubes() use function AllStridesAreConstant() now
- *
- * Revision 3.6  2001/01/08 16:12:22  dkr
- * support for naive compilation of with-loops added
- *
- * Revision 3.5  2001/01/08 13:40:09  dkr
- * functions ExtractAplPragma... moved from wltransform.c to
- * wlpragma_funs.c
- *
- * Revision 3.4  2001/01/08 12:07:26  dkr
- * no changes done
- *
- * Revision 3.3  2000/12/06 10:57:33  dkr
- * nothing changed
- *
- * Revision 3.2  2000/11/29 13:00:30  dkr
- * no warnings ...
- *
- * Revision 3.1  2000/11/20 18:01:28  sacbase
- * new release made
- *
- * [ eliminated ]
- *
- */
+/* $Id$ */
 
 #include "types.h"
 #include "tree_basic.h"
@@ -231,14 +113,14 @@ ExtractAplPragmaAp (node *exprs, node *pragma, int line)
     if (exprs != NULL) {
         DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "Illegal wlcomp pragma.");
         ap = EXPRS_EXPR (exprs);
-        DBUG_ASSERT ((NODE_TYPE (ap) == N_ap), "Illegal wlcomp pragma.");
-        if (0 == strcmp (FUNDEF_NAME (AP_FUNDEF (ap)), "APL")) {
-            if ((AP_EXPRS1 (ap) == NULL) || (NODE_TYPE (AP_ARG1 (ap)) != N_id)
-                || (AP_EXPRS2 (ap) == NULL) || (NODE_TYPE (AP_ARG2 (ap)) != N_num)
-                || (AP_EXPRS3 (ap) == NULL) || (NODE_TYPE (AP_ARG3 (ap)) != N_num)) {
+        DBUG_ASSERT ((NODE_TYPE (ap) == N_spap), "Illegal wlcomp pragma.");
+        if (0 == strcmp (SPAP_NAME (ap), "APL")) {
+            if ((SPAP_EXPRS1 (ap) == NULL) || (NODE_TYPE (SPAP_ARG1 (ap)) != N_id)
+                || (SPAP_EXPRS2 (ap) == NULL) || (NODE_TYPE (SPAP_ARG2 (ap)) != N_num)
+                || (SPAP_EXPRS3 (ap) == NULL) || (NODE_TYPE (SPAP_ARG3 (ap)) != N_num)) {
                 CTIerrorLine (line, "Illegal wlcomp-pragma entry APL found");
             } else {
-                switch (NUM_VAL (AP_ARG3 (ap))) {
+                switch (NUM_VAL (SPAP_ARG3 (ap))) {
                 case 1:
                     size = 1024 * global.config.cache1_size;
                     break;
@@ -252,7 +134,7 @@ ExtractAplPragmaAp (node *exprs, node *pragma, int line)
                     size = 0;
                 }
                 if (size > 0) {
-                    NUM_VAL (AP_ARG3 (ap)) = size;
+                    NUM_VAL (SPAP_ARG3 (ap)) = size;
                     PRAGMA_APL (pragma) = ap;
                 } else {
                     FREEdoFreeTree (ap);
@@ -937,7 +819,7 @@ WLCOMP_Scheduling (node *segs, node *parms, node *cubes, int dims, int line)
                          "illegal parameter of wlcomp-pragma found!");
 
             arg = EXPRS_EXPR (parms);
-            if (NODE_TYPE (arg) != N_ap) {
+            if (NODE_TYPE (arg) != N_spap) {
                 CTIabortLine (line, "Illegal argument in wlcomp-pragma found;"
                                     " Scheduling(): Argument is not an application");
             }
@@ -993,7 +875,7 @@ WLCOMP_Tasksel (node *segs, node *parms, node *cubes, int dims, int line)
                          "illegal parameter of wlcomp-pragma found!");
 
             arg = EXPRS_EXPR (parms);
-            if (NODE_TYPE (arg) != N_ap) {
+            if (NODE_TYPE (arg) != N_spap) {
                 CTIabortLine (line, "Illegal argument in wlcomp-pragma found;"
                                     " Tasksel(): Argument is not an application");
             }
