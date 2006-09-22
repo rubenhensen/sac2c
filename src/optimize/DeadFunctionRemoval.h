@@ -12,6 +12,7 @@ extern node *DFRdoDeadFunctionRemoval (node *arg_node);
 extern node *DFRmodule (node *arg_node, info *arg_info);
 extern node *DFRobjdef (node *arg_node, info *arg_info);
 extern node *DFRfundef (node *arg_node, info *arg_info);
+extern node *DFRarg (node *arg_node, info *arg_info);
 extern node *DFRap (node *arg_node, info *arg_info);
 extern node *DFRfold (node *arg_node, info *arg_info);
 

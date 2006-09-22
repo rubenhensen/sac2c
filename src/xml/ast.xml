@@ -771,6 +771,7 @@
 	  <node name="Module" />
 	  <node name="Objdef" />
 	  <node name="Fundef" />
+	  <node name="Arg" />
 	  <node name="Ap" />
 	  <node name="Fold" />
 	</travuser>
@@ -2677,8 +2678,9 @@
         <flag name="IsProvided" />
         <flag name="IsLocal" default="TRUE"/>
         <flag name="IsExtern" />
-        <flag name="IsAlias" />
-      </flags>
+        <flag name="IsAlias" /> 
+        <flag name="IsNeeded" default="TRUE" />
+     </flags>
     </node>
 <!--
 
@@ -3295,18 +3297,6 @@
                 <any />
                 <phases>
                   <range from="tot" to="final" />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-        <attribute name="Objdef">
-          <type name="ExtLink">
-            <targets>
-              <target mandatory="no">
-                <node name="Objdef" />
-                <phases>
-                  <!-- <range from="inl" to="precompile" /> TODO -->
                 </phases>
               </target>
             </targets>
@@ -4721,12 +4711,6 @@
               </target>
               <target mandatory="yes">
                 <node name="Arg" />
-                <phases>
-                  <all />
-                </phases>
-              </target>
-              <target mandatory="yes">
-                <node name="Objdef" />
                 <phases>
                   <all />
                 </phases>

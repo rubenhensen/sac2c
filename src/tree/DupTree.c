@@ -1050,7 +1050,6 @@ DUPvardec (node *arg_node, info *arg_info)
 
     VARDEC_TYPE (new_node) = DupTypes (VARDEC_TYPE (arg_node), arg_info);
 
-    VARDEC_OBJDEF (new_node) = VARDEC_OBJDEF (arg_node);
     VARDEC_FLAGSTRUCTURE (new_node) = VARDEC_FLAGSTRUCTURE (arg_node);
 
     CopyCommonNodeData (new_node, arg_node);
