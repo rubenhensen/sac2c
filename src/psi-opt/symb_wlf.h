@@ -16,5 +16,8 @@
 extern node *SWLFdoSymbolicWithLoopFolding (node *syntax_tree);
 
 extern node *SWLFfundef (node *arg_node, info *arg_info);
+extern node *SWLFblock (node *arg_node, info *arg_info);
+extern node *SWLFassign (node *arg_node, info *arg_info);
+extern node *SWLFwith (node *arg_node, info *arg_info);
 
 #endif /* _SAC_SYMB_WLF_H_ */

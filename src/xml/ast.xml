@@ -1225,7 +1225,10 @@
      </traversal>
      <traversal id="SWLF" name="Symbolic With-Loop-Folding" default="sons" include="symb_wlf.h" >
        <travuser>
-          <node name="Fundef" />
+          <node name="Fundef"  />
+          <node name="Block"   />
+          <node name="Assign"  />
+          <node name="With"    />
        </travuser>
      </traversal>
       <traversal id="WLFS" name="With-Loop-Fusion" default="sons" include="WithloopFusion.h" >

@@ -28,6 +28,8 @@
 /*
  * Other includes go here
  */
+#include "tree_basic.h"
+#include "tree_compound.h"
 #include "node_basic.h"
 #include "print.h"
 #include "dbug.h"
@@ -41,13 +43,19 @@
  *
  *****************************************************************************/
 struct INFO {
-    node *temp;
+    node *fundef;
+    int swlaction;
+    node *exprs;
 };
 
 /**
  * A template entry in the template info structure
  */
-#define INFO_TEMP(n) (n->temp)
+#define INFO_FUNDEF(n) ((n)->fundef)
+#define INFO_SWLACTION(n) ((n)->swlaction)
+#define INFO_EXPRS(n) ((n)->exprs)
+
+typedef enum { SWL_pass, SWL_replace } swl_action_t;
 
 static info *
 MakeInfo ()
@@ -58,7 +66,8 @@ MakeInfo ()
 
     result = ILIBmalloc (sizeof (info));
 
-    INFO_TEMP (result) = NULL;
+    INFO_FUNDEF (result) = NULL;
+    INFO_SWLACTION (result) = SWL_pass;
 
     DBUG_RETURN (result);
 }
@@ -82,6 +91,7 @@ FreeInfo (info *info)
  * @{
  *
  *****************************************************************************/
+
 /** <!--********************************************************************-->
  *
  * @fn node *SWLFdoSymbolicWithLoopFolding( node *syntax_tree)
@@ -158,7 +168,81 @@ SWLFfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SWLFfundef");
 
-    DBUG_PRINT ("SWLF", ("Symbolic: %s", "hello"));
+    if (FUNDEF_BODY (arg_node)) {
+        DBUG_PRINT ("SWLF", ("Symbolic With-Loops fusion in function %s",
+                             FUNDEF_NAME (arg_node)));
+
+        INFO_FUNDEF (arg_info) = arg_node;
+
+        FUNDEF_INSTR (arg_node) = TRAVdo (FUNDEF_INSTR (arg_node), arg_info);
+
+        DBUG_PRINT ("SWLF", ("Symbolic With-Loops fusion in function %s complete",
+                             FUNDEF_NAME (arg_node)));
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node SWLFblock( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+SWLFblock (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("SWLFblock");
+
+    if (BLOCK_INSTR (arg_node)) {
+        BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node SWLFassign( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+SWLFassign (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("SWLFassign");
+
+    if (ASSIGN_INSTR (arg_node)) {
+        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    }
+
+    if (ASSIGN_INSTRTYPE (arg_node) == N_let && NODE_TYPE (ASSIGN_RHS (arg_node)) == N_prf
+        && PRF_PRF (ASSIGN_RHS (arg_node)) == F_sel) {
+        PRTdoPrintNode (ASSIGN_RHS (arg_node));
+
+        if (INFO_SWLACTION (arg_info) == SWL_replace) {
+            ;
+        }
+    }
+
+    if (ASSIGN_NEXT (arg_node)) {
+        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node SWLFwith( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+SWLFwith (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("SWLFwith");
+
+    if (WITH_CODE (arg_node)) {
+        WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
