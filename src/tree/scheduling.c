@@ -204,14 +204,14 @@ CheckSchedulingArgs (sched_t *sched, char *spec, node *exprs, int line)
                 break;
 
             case 'i':
-                if (NODE_TYPE (expr) != N_id) {
+                if (NODE_TYPE (expr) != N_spid) {
                     CTIabortLine (line,
                                   "Argument %d of scheduling discipline '%s` must be"
                                   " an identifier",
                                   i, sched->discipline);
                 }
                 sched->args[i].arg_type = AT_id;
-                sched->args[i].arg.id = ILIBstringCopy (ID_NAME (expr));
+                sched->args[i].arg.id = ILIBstringCopy (SPID_NAME (expr));
                 break;
 
             case 'x':
@@ -220,9 +220,9 @@ CheckSchedulingArgs (sched_t *sched, char *spec, node *exprs, int line)
                     sched->args[i].arg_type = AT_num_for_id;
                     sched->args[i].arg.num = NUM_VAL (expr);
                     break;
-                case N_id:
+                case N_spid:
                     sched->args[i].arg_type = AT_id;
-                    sched->args[i].arg.id = ILIBstringCopy (ID_NAME (expr));
+                    sched->args[i].arg.id = ILIBstringCopy (SPID_NAME (expr));
                     break;
                 default:
                     CTIabortLine (line,
