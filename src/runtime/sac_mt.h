@@ -2234,6 +2234,118 @@ SAC_MT_DECLARE_LOCK (SAC_MT_init_lock)
         SAC_MT_RELEASE_LOCK (SAC_MT_TS_TASKLOCK (sched_id));                             \
     }
 
+/*
+ * SET_TASKS initiziale the first max_task taskqueues
+ */
+
+#define SAC_MT_SCHEDULER_SET_TASKS(sched_id, max_task)                                   \
+    {                                                                                    \
+        int i;                                                                           \
+                                                                                         \
+        for (i = 0; i <= max_task; i++) {                                                \
+            SAC_MT_TASK (sched_id, i) = 0;                                               \
+        }                                                                                \
+        SAC_TR_MT_PRINT (("SAC_MT_TASK set for sched_id %d", sched_id));                 \
+    }
+
+#define SAC_MT_SCHEDULER_Static_FIRST_TASK(taskid)                                       \
+    {                                                                                    \
+        taskid = SAC_MT_MYTHREAD ();                                                     \
+    }
+
+#define SAC_MT_SCHEDULER_Static_NEXT_TASK(taskid)                                        \
+    {                                                                                    \
+        taskid += SAC_MT_THREADS ();                                                     \
+    }
+
+#define SAC_MT_SCHEDULER_Self_FIRST_TASK_STATIC(sched_id, taskid)                        \
+    {                                                                                    \
+        taskid = SAC_MT_MYTHREAD ();                                                     \
+        SAC_TR_MT_PRINT (("SAC_MT_SCHEDULER_Self_FIRST_TASK_STATIC"));                   \
+    }
+
+#define SAC_MT_SCHEDULER_Self_FIRST_TASK_DYNAMIC(sched_id, taskid)                       \
+    {                                                                                    \
+        SAC_MT_SCHEDULER_Self_NEXT_TASK (sched_id, taskid);                              \
+        SAC_TR_MT_PRINT (                                                                \
+          ("SAC_MT_SCHEDULER_Self_FIRST_TASK_DYNAMIC task = %d", taskid));               \
+    }
+
+#define SAC_MT_SCHEDULER_Self_NEXT_TASK(sched_id, taskid)                                \
+    {                                                                                    \
+        SAC_MT_ACQUIRE_LOCK (SAC_MT_TASKLOCK (sched_id, 0));                             \
+                                                                                         \
+        taskid = SAC_MT_TASK (sched_id, 0);                                              \
+        (SAC_MT_TASK (sched_id, 0))++;                                                   \
+                                                                                         \
+        SAC_MT_RELEASE_LOCK (SAC_MT_TASKLOCK (sched_id, 0));                             \
+    }
+
+/*
+ * Affinity_INIT initialize the taskqueues for each thread for the
+ * affinity scheduling
+ */
+#define SAC_MT_SCHEDULER_Affinity_INIT(sched_id, tasks_per_thread)                       \
+    {                                                                                    \
+        int i;                                                                           \
+        for (i = 0; i < SAC_MT_THREADS (); i++) {                                        \
+            SAC_MT_TASK (sched_id, i) = i * tasks_per_thread;                            \
+            SAC_MT_LAST_TASK (sched_id, i) = (i + 1) * tasks_per_thread;                 \
+        }                                                                                \
+    }
+
+#define SAC_MT_SCHEDULER_Affinity_FIRST_TASK(sched_id, tasks_per_thread, taskid,         \
+                                             worktodo)                                   \
+    {                                                                                    \
+        SAC_MT_SCHEDULER_Affinity_NEXT_TASK (sched_id, tasks_per_thread, taskid,         \
+                                             worktodo)                                   \
+    }
+
+#define SAC_MT_SCHEDULER_Affinity_NEXT_TASK(sched_id, tasks_per_thread, taskid,          \
+                                            worktodo)                                    \
+    {                                                                                    \
+        int queueid, maxloadthread, mintask;                                             \
+        worktodo = 0;                                                                    \
+        taskid = 0;                                                                      \
+                                                                                         \
+        /* first look if MYTHREAD has work to do */                                      \
+        SAC_MT_ACQUIRE_LOCK (SAC_MT_TASKLOCK (sched_id, SAC_MT_MYTHREAD ()));            \
+                                                                                         \
+        if (SAC_MT_TASK (sched_id, SAC_MT_MYTHREAD ())                                   \
+            < SAC_MT_LAST_TASK (sched_id, SAC_MT_MYTHREAD ())) {                         \
+            taskid = SAC_MT_TASK (sched_id, SAC_MT_MYTHREAD ());                         \
+            (SAC_MT_TASK (sched_id, SAC_MT_MYTHREAD ()))++;                              \
+            SAC_MT_RELEASE_LOCK (SAC_MT_TASKLOCK (sched_id, SAC_MT_MYTHREAD ()));        \
+            worktodo = 1;                                                                \
+        } else {                                                                         \
+            /*                                                                           \
+             * if there was no work to do, find the task, which has done, the            \
+             * smallest work till now                                                    \
+             */                                                                          \
+            SAC_MT_RELEASE_LOCK (SAC_MT_TASKLOCK (sched_id, SAC_MT_MYTHREAD ()));        \
+            maxloadthread = 0;                                                           \
+            mintask = SAC_MT_LAST_TASK (sched_id, 0) - SAC_MT_TASK (sched_id, 0);        \
+            for (queueid = 1; queueid < SAC_MT_THREADS (); queueid++)                    \
+                if (SAC_MT_LAST_TASK (sched_id, queueid)                                 \
+                      - SAC_MT_TASK (sched_id, queueid)                                  \
+                    > mintask) {                                                         \
+                    mintask = SAC_MT_TASK (sched_id, queueid)                            \
+                              - SAC_MT_LAST_TASK (sched_id, queueid);                    \
+                    maxloadthread = queueid;                                             \
+                }                                                                        \
+                                                                                         \
+            /* if there was a thread with work to do,get his next task */                \
+            SAC_MT_ACQUIRE_LOCK (SAC_MT_TASKLOCK (sched_id, maxloadthread));             \
+            if (SAC_MT_TASK (sched_id, maxloadthread)                                    \
+                < SAC_MT_LAST_TASK (sched_id, maxloadthread)) {                          \
+                taskid = SAC_MT_LAST_TASK (sched_id, maxloadthread) - 1;                 \
+                (SAC_MT_LAST_TASK (sched_id, maxloadthread))--;                          \
+                worktodo = 1;                                                            \
+            }                                                                            \
+            SAC_MT_RELEASE_LOCK (SAC_MT_TASKLOCK (sched_id, maxloadthread));             \
+        }                                                                                \
+    }
+
 /******************************************************************************/
 
 /*
