@@ -188,20 +188,23 @@ InsertIntoOut (argtab_t *argtab, node *fundef, node *ret)
 
     DBUG_ENTER ("InsertIntoOut");
 
-    DBUG_PRINT ("FPC", ("out: parameter matched to %d", RET_LINKSIGN (ret)));
-
     line = NODE_LINE (fundef);
 
+    /*
+     * Get the linksign value. This will just be the return's natural position
+     * if the linksign pragma was not used.
+     */
     idx = RET_LINKSIGN (ret);
 
+    /* We do not pass descriptors for non-refcounted parameters. */
     if (!RET_ISREFCOUNTED (ret)) {
         argtag = ATG_out_nodesc;
     } else {
         argtag = ATG_out;
 
         /*
-         * as this return value needs a descriptor, it cannot be returned using
-         * the c return expression
+         * As this return value needs a descriptor, it cannot be returned using
+         * the C return expression.
          */
         if (idx == 0) {
             CTIerrorLine (line, "Pragma 'linksign' or 'refcounting' illegal: "
@@ -210,21 +213,18 @@ InsertIntoOut (argtab_t *argtab, node *fundef, node *ret)
     }
 
     /*
-     * check whether this return value is mapped to the c return value
+     * Check whether this return value is mapped to the C return value.
      */
     if (idx == 0) {
         node *retexprs;
         node *rets;
 
-        /*
-         * mark the C return value
-         */
         RET_ISCRETURN (ret) = TRUE;
 
         /*
-         * lookup the return N_exprs node corresponding to the current ret node
-         * and save it as the c return expression for later use in compile.
-         * this is only done if the function has a body and thus will be
+         * Look up the return N_exprs node corresponding to the current ret node
+         * and save it as the C return expression for later use in compile.
+         * This is only done if the function has a body and thus will be
          * compiled.
          */
 
@@ -251,47 +251,49 @@ InsertIntoOut (argtab_t *argtab, node *fundef, node *ret)
             RETURN_CRET (FUNDEF_RETURN (fundef)) = retexprs;
         }
     }
-    /*
-     * update the argtab
-     */
-    if ((idx >= 0) && (idx < argtab->size)) {
-        /*
-         * as the ptr_in chain will be filled while traversing the arg chain
-         * there should be no values there at this stage. The handling of args
-         * has to be performed after handling ret values to handle in/out
-         * parameters correctly.
-         */
-        DBUG_ASSERT ((argtab->ptr_in[idx] == NULL), "argtab is inconsistent");
 
-        /*
-         * check whether this entry already is in use and produce an error
-         * message
-         */
-        if (argtab->tag[idx] == ATG_notag) {
-            DBUG_ASSERT ((argtab->ptr_out[idx] == NULL), "argtab is inconsistent");
-
-            argtab->ptr_out[idx] = ret;
-            argtab->tag[idx] = argtag;
-
-            DBUG_PRINT ("PREC",
-                        ("%s(): out-arg " F_PTR
-                         " (RET) inserted at position %d with tag %s.",
-                         FUNDEF_NAME (fundef), ret, idx, global.argtag_string[argtag]));
-        } else if (idx == 0) {
-            CTIerrorLine (line, "Pragma 'linksign' illegal: "
-                                "return value found twice");
-        } else {
-            CTIerrorLine (line,
-                          "Pragma 'linksign' illegal: "
-                          "out-parameter at position %d found twice",
-                          idx);
-        }
-    } else {
+    /* Check for illegal index values. */
+    if ((idx < 0) || (idx > argtab->size)) {
         CTIerrorLine (line,
                       "Pragma 'linksign' illegal: "
                       "entry contains illegal value %d",
                       idx);
+        DBUG_RETURN (argtab);
     }
+
+    /* Check whether this parameter was already given. */
+    if (argtab->ptr_out[idx] != NULL) {
+        CTIerrorLine (line,
+                      "Pragma 'linksign' illegal: "
+                      "out-parameter at position %d found twice",
+                      idx);
+        DBUG_RETURN (argtab);
+    }
+
+    /*
+     * As the ptr_in chain will be filled while traversing the arg chain
+     * there should be no values there at this stage. The handling of args
+     * has to be performed after handling ret values to handle in/out
+     * parameters correctly.
+     */
+    DBUG_ASSERT ((argtab->ptr_in[idx] == NULL), "argtab is inconsistent");
+
+    /*
+     * Check whether this entry already is in use and produce an error
+     * message.
+     */
+    if (argtab->tag[idx] != ATG_notag) {
+        CTIerrorLine (line, "Pragma 'linksign' illegal: return value found twice");
+        DBUG_RETURN (argtab);
+    }
+
+    DBUG_ASSERT ((argtab->ptr_out[idx] == NULL), "argtab is inconsistent");
+
+    argtab->ptr_out[idx] = ret;
+    argtab->tag[idx] = argtag;
+
+    DBUG_PRINT ("FPC", ("%s(): out-arg inserted at position %d with tag %s.",
+                        FUNDEF_NAME (fundef), idx, global.argtag_string[argtag]));
 
     DBUG_RETURN (argtab);
 }
@@ -300,7 +302,8 @@ InsertIntoOut (argtab_t *argtab, node *fundef, node *ret)
  *
  * @fn  argtab_t *InsertIntoIn( argtab_t *argtab, node *fundef, node *arg)
  *
- * @brief Inserts an in-argument into the argtab.
+ * @brief Inserts an in-argument into the argtab, merges with out-arguments
+ * if the linksign pragma was applied.
  *
  ******************************************************************************/
 
@@ -313,24 +316,28 @@ InsertIntoIn (argtab_t *argtab, node *fundef, node *arg)
 
     DBUG_ENTER ("InsertIntoIn");
 
-    DBUG_PRINT ("FPC",
-                ("in: parameter %s matched to %d", ARG_NAME (arg), ARG_LINKSIGN (arg)));
-
     line = NODE_LINE (fundef);
 
-    idx = ARG_LINKSIGN (arg);
-
+    /* Check if the type is not refcounted, so we don't pass the descriptor. */
     if (!ARG_ISREFCOUNTED (arg)) {
+
+        /* Reference parameters are passed as inout, otherwise pass as in. */
         if (ARG_ISREFERENCE (arg)) {
-            if ((FUNDEF_ISEXTERN (fundef)) && (TUisBoxed (ARG_NTYPE (arg)))) {
+
+            /* External boxed types do not need an additional pointer dereference.
+             * The _bx suffix accomplishes this in the backend. */
+            if (FUNDEF_ISEXTERN (fundef) && TUisBoxed (ARG_NTYPE (arg))) {
                 argtag = ATG_inout_nodesc_bx;
             } else {
                 argtag = ATG_inout_nodesc;
             }
+
         } else {
             argtag = ATG_in_nodesc;
         }
     } else {
+
+        /* Same as above: Reference parameters are passed as inout. */
         if (ARG_ISREFERENCE (arg)) {
             argtag = ATG_inout;
         } else {
@@ -338,92 +345,104 @@ InsertIntoIn (argtab_t *argtab, node *fundef, node *arg)
         }
     }
 
+    /*
+     * Get the linksign value. This will just be the parameter's natural position
+     * if the linksign pragma was not used.
+     */
+    idx = ARG_LINKSIGN (arg);
+
+    /* Check for illegal index values. */
+    if ((idx < 0) || (idx > argtab->size)) {
+        CTIerrorLine (line,
+                      "Pragma 'linksign' illegal: "
+                      "entry contains illegal value %d",
+                      idx);
+        DBUG_RETURN (argtab);
+    }
+
+    /* Index 0 is reserved for return positions. */
     if (idx == 0) {
         CTIerrorLine (line, "Pragma 'linksign' illegal: "
                             "in-parameter cannot be used as return value");
+        DBUG_RETURN (argtab);
+    }
+
+    /* Check whether this parameter was already given. */
+    if (argtab->ptr_in[idx] != NULL) {
+        CTIerrorLine (line,
+                      "Pragma 'linksign' illegal: "
+                      "in-parameter at position %d found twice",
+                      idx);
+        DBUG_RETURN (argtab);
+    }
+
+    if (argtab->ptr_out[idx] == NULL) {
+
+        /*
+         * There is no corresponding out parameter, so just insert the argument
+         * into the argtab as an in parameter.
+         */
+        DBUG_ASSERT ((argtab->tag[idx] == ATG_notag), "argtab is inconsistent");
+
+        argtab->ptr_in[idx] = arg;
+        argtab->tag[idx] = argtag;
+
+        DBUG_PRINT ("FPC",
+                    ("%s(): in-arg %s at position %d with tag %s.", FUNDEF_NAME (fundef),
+                     AVIS_NAME (ARG_AVIS (arg)), idx, global.argtag_string[argtag]));
     } else {
-        if ((idx > 0) && (idx < argtab->size)) {
-            /*
-             * this is a in only argument, as no outptr is set
-             */
-            if (argtab->ptr_in[idx] == NULL) {
-                if (argtab->ptr_out[idx] == NULL) {
-                    DBUG_ASSERT ((argtab->tag[idx] == ATG_notag),
-                                 "argtab is inconsistent");
+        /*
+         * There is already an out parameter, so we are going to merge the in
+         * parameter with the out parameter. This normally only happens when the
+         * linksign pragma was used on an external function.
+         *
+         * This can only be done under two conditions: - Both parameters should be
+         * of the same type.  - Both parameters must not have a descriptor, because
+         * we do not reference count external data.
+         *
+         * NOTE: inout parameters are also used for SPMD functions. In that case
+         * the last restriction does not apply.
+         */
 
-                    argtab->ptr_in[idx] = arg;
-                    argtab->tag[idx] = argtag;
-
-                    DBUG_PRINT ("PREC",
-                                ("%s(): in-arg " F_PTR "," F_PTR
-                                 " (ARG,TYPE) merged with out-arg " F_PTR
-                                 " (TYPE) with tag %s.",
-                                 FUNDEF_NAME (fundef), arg, ARG_NTYPE (arg),
-                                 argtab->ptr_out[idx], global.argtag_string[argtag]));
-                } else {
-                    /*
-                     * there is already an outptr, so both must have no descriptor and
-                     * the types must be equal
-                     *
-                     * Attention: The absence of the descriptors seems to enforced in
-                     * order to avoid sac style reference counting in side-effecting C
-                     * functions
-                     *
-                     * We intentionally reused the linksign mechanism for SPMD code
-                     * generation without this restriction.
-                     */
-                    if ((FUNDEF_ISSPMDFUN (fundef))
-                        || ((argtab->tag[idx] == ATG_out_nodesc)
-                            && (argtag == ATG_in_nodesc))) {
-                        /*
-                         * merge 'argtab->ptr_out[idx]' and 'arg'
-                         */
-                        if (TYeqTypes (RET_TYPE (argtab->ptr_out[idx]),
-                                       ARG_NTYPE (arg))) {
-                            if (FUNDEF_ISSPMDFUN (fundef)) {
-                                argtag = ATG_inout;
-                            } else {
-                                if (TUisBoxed (ARG_NTYPE (arg))) {
-                                    argtag = ATG_inout_nodesc_bx;
-                                } else {
-                                    argtag = ATG_inout_nodesc;
-                                }
-                            }
-
-                            argtab->ptr_in[idx] = arg;
-                            argtab->tag[idx] = argtag;
-
-                            DBUG_PRINT ("PREC", ("%s(): in-arg " F_PTR "," F_PTR
-                                                 " (ARG,TYPE) merged with out-arg " F_PTR
-                                                 " (TYPE) with tag %s.",
-                                                 FUNDEF_NAME (fundef), arg,
-                                                 ARG_NTYPE (arg), argtab->ptr_out[idx],
-                                                 global.argtag_string[argtag]));
-                        } else {
-                            CTIerrorLine (line, "Pragma 'linksign' illegal: "
-                                                "mappings allowed exclusively between "
-                                                "parameters"
-                                                " with identical types");
-                        }
-                    } else {
-                        CTIerrorLine (line,
-                                      "Pragma 'linksign' illegal: "
-                                      "mappings allowed exclusively between parameters"
-                                      " without descriptor");
-                    }
-                }
-            } else {
-                CTIerrorLine (line,
-                              "Pragma 'linksign' illegal: "
-                              "in-parameter at position %d found twice",
-                              idx);
-            }
-        } else {
-            CTIerrorLine (line,
-                          "Pragma 'linksign' illegal: "
-                          "entry contains illegal value %d",
-                          idx);
+        /* Check that both parameters have no descriptors. */
+        if (!(FUNDEF_ISSPMDFUN (fundef))
+            && !(argtab->tag[idx] == ATG_out_nodesc && argtag == ATG_in_nodesc)) {
+            CTIerrorLine (line, "Pragma 'linksign' illegal: "
+                                "mappings allowed exclusively between parameters"
+                                " without descriptor");
+            DBUG_RETURN (argtab);
         }
+
+        /* Check that both parameters have equal types. */
+        if (!TYeqTypes (RET_TYPE (argtab->ptr_out[idx]), ARG_NTYPE (arg))) {
+            CTIerrorLine (line, "Pragma 'linksign' illegal: "
+                                "mappings allowed exclusively between parameters"
+                                " with identical types");
+        }
+
+        /*
+         * Merge the in and out parameters.
+         *
+         * SPMD functions get the inout tag. Other functions have no descriptors
+         * and thus get the inout_nodesc_bx or inout_nodesc for boxed and unboxed
+         * types, respectively.
+         */
+        if (FUNDEF_ISSPMDFUN (fundef)) {
+            argtag = ATG_inout;
+        } else {
+            if (TUisBoxed (ARG_NTYPE (arg))) {
+                argtag = ATG_inout_nodesc_bx;
+            } else {
+                argtag = ATG_inout_nodesc;
+            }
+        }
+
+        argtab->ptr_in[idx] = arg;
+        argtab->tag[idx] = argtag;
+
+        DBUG_PRINT ("FPC", ("%s(): in-arg %s merged with out-arg %d with tag %s.",
+                            FUNDEF_NAME (fundef), AVIS_NAME (ARG_AVIS (arg)), idx,
+                            global.argtag_string[argtag]));
     }
 
     DBUG_RETURN (argtab);
@@ -658,8 +677,8 @@ FPClet (node *arg_node, info *arg_info)
 
         DBUG_ASSERT ((fundef != NULL), "AP_FUNDEF not found!");
 
-        DBUG_PRINT ("PREC", ("Application of %s:%s().", NSgetName (FUNDEF_NS (fundef)),
-                             FUNDEF_NAME (fundef)));
+        DBUG_PRINT ("FPC", ("Application of %s:%s().", NSgetName (FUNDEF_NS (fundef)),
+                            FUNDEF_NAME (fundef)));
 
         ids = LET_IDS (arg_node);
         rets = FUNDEF_RETS (fundef);
