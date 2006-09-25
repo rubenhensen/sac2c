@@ -283,14 +283,14 @@ SUBPHASE (al, "al", "Applying associative law", ASSOCdoAssociativityOptimization
 SUBPHASE (dl, "dl", "Applying distributive law",
           DISTRIBdoDistributivityOptimizationOneFundef)
 
-SUBPHASE (dfrcyc, "dfr", "Removing dead functions", DFRdoDeadFunctionRemoval)
-
 SUBPHASE (dcrcyc, "dcr", "Applying dead code removal", DCRdoDeadCodeRemovalModule)
 
 SUBPHASE (sisi, "sisi", "Simplifying function signatures", SISIdoSignatureSimplification)
 
 SUBPHASE (uesd, "uesd", "Reintroducing subtraction and division operators",
           UESDdoUndoElimSubDiv)
+
+SUBPHASE (dfr2, "dfr2", "Removing dead functions", DFRdoDeadFunctionRemoval)
 
 SUBPHASE (dcr2, "dcr2", "Applying dead code removal again", DCRdoDeadCodeRemovalModule)
 

@@ -276,6 +276,7 @@ USGprintUsage ()
     PRINT_BREAK_SPEC (PH_sacopt, "lir2", "Stop after (with-)loop invariant removal.");
     PRINT_BREAK_SPEC (PH_sacopt, "uesd",
                       "Stop after reintroducing subtraction and division operators.");
+    PRINT_BREAK_SPEC (PH_sacopt, "dfr2", "Stop after dead function removal.");
     PRINT_BREAK_SPEC (PH_sacopt, "dcr2", "Stop after dead code removal.");
     PRINT_BREAK_SPEC (PH_sacopt, "wlfs", "Stop after with loop fusion.");
     PRINT_BREAK_SPEC (PH_sacopt, "cse2", "Stop after common subexpression elimination.");

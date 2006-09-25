@@ -248,6 +248,9 @@ DFRdoDeadFunctionRemoval (node *arg_node)
 
     DBUG_ENTER ("DFRdoDeadFunctionRemoval");
 
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module),
+                 "DFR can only be called on entire modules");
+
 #ifdef SHOW_MALLOC
     DBUG_PRINT ("OPTMEM",
                 ("mem currently allocated: %d bytes", global.current_allocated_mem));
@@ -319,16 +322,19 @@ DFRmodule (node *arg_node, info *arg_info)
     /*
      * Step 2: Search for needed fundecs, fundefs and objdefs in fundef bodies.
      */
+    DBUG_PRINT ("DFR", ("processing objects..."));
     if (MODULE_OBJS (arg_node) != NULL) {
         INFO_SPINE (arg_info) = TRUE;
         MODULE_OBJS (arg_node) = TRAVdo (MODULE_OBJS (arg_node), arg_info);
     }
 
+    DBUG_PRINT ("DFR", ("processing fundefs..."));
     if (MODULE_FUNS (arg_node) != NULL) {
         INFO_SPINE (arg_info) = TRUE;
         MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
     }
 
+    DBUG_PRINT ("DFR", ("processing fundecs..."));
     if (MODULE_FUNDECS (arg_node) != NULL) {
         INFO_SPINE (arg_info) = TRUE;
         MODULE_FUNDECS (arg_node) = TRAVdo (MODULE_FUNDECS (arg_node), arg_info);

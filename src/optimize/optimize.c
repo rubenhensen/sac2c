@@ -170,7 +170,7 @@ PrintFundefInformation (node *fundef)
         arg = ARG_NEXT (arg);
     }
 
-    CTInote ("****** Optimizing function:\n******  %s( %s): ...", FUNDEF_NAME (fundef),
+    CTInote ("****** Optimizing function:\n******  %s( %s): ...", CTIitemName (fundef),
              argtype_buffer);
 
     DBUG_VOID_RETURN;
@@ -254,6 +254,13 @@ OPTdoOptimize (node *arg_node)
      */
     if (global.optimize.doesd) {
         arg_node = PHrunCompilerSubPhase (SUBPH_uesd, arg_node);
+    }
+
+    /*
+     * Dead function removal
+     */
+    if (global.optimize.dodfr) {
+        arg_node = PHrunCompilerSubPhase (SUBPH_dfr2, arg_node);
     }
 
     /*
@@ -665,13 +672,6 @@ OPTdoIntraFunctionalOptimizations (node *arg_node)
             }
 
             fundef = FUNDEF_NEXT (fundef);
-        }
-
-        /*
-         * Dead function removal
-         */
-        if (global.optimize.dodfr) {
-            arg_node = PHrunOptimizationInCycle (SUBPH_dfrcyc, loop, arg_node);
         }
 
         /*
