@@ -524,17 +524,11 @@
       </traversal>
       <traversal id="RSO" name="Resolve Objects" default="sons" include="resolve_objects.h" >
         <travuser>
-	  <node name="Module" />
+	  <node name="Ap" />
 	  <node name="Fundef" />
 	  <node name="Globobj" />
-	  <node name="Ap" />
-	</travuser>
-      </traversal>
-      <traversal id="WOA" name="Resolving objects in with-loops" default="sons" include="withloop_objects.h" >
-        <travuser>
-          <node name="Fundef" />
-	  <node name="Id" />
           <node name="Let" />
+	  <node name="Module" />
           <node name="Propagate" />
 	  <node name="With" />
 	</travuser>
@@ -2043,6 +2037,7 @@
           <node name="Let" />
           <node name="Modarray" />
           <node name="Prf" />
+          <node name="Propagate" />
           <node name="Vardec" />
           <node name="With" />
           <node name="With2" />
