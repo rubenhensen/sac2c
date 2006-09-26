@@ -546,6 +546,7 @@ node *
 RSOglobobj (node *arg_node, info *arg_info)
 {
     node *new_node;
+    node *avis;
 
     DBUG_ENTER ("RSOglobobj");
 
@@ -556,7 +557,16 @@ RSOglobobj (node *arg_node, info *arg_info)
                         CTIitemName (GLOBOBJ_OBJDEF (arg_node)),
                         AVIS_NAME (OBJDEF_ARGAVIS (GLOBOBJ_OBJDEF (arg_node)))));
 
+    avis = OBJDEF_ARGAVIS (GLOBOBJ_OBJDEF (arg_node));
     new_node = TBmakeId (OBJDEF_ARGAVIS (GLOBOBJ_OBJDEF (arg_node)));
+
+    if (INFO_INWITHLOOP (arg_info)) {
+        DBUG_PRINT ("RSO", (">>> adding unique object to with-loop:"
+                            "%s",
+                            AVIS_NAME (avis)));
+        INFO_OBJECTS (arg_info) = AddToObjectSet (INFO_OBJECTS (arg_info), new_node);
+    }
+
     arg_node = FREEdoFreeNode (arg_node);
 
     DBUG_RETURN (new_node);
