@@ -12,12 +12,14 @@
  */
 struct INFO {
     bool delete;
+    bool dospmd;
 };
 
 /*
  * INFO macros
  */
 #define INFO_DELETE(n) ((n)->delete)
+#define INFO_DOSPMD(n) ((n)->dospmd)
 
 /*
  * INFO functions
@@ -32,6 +34,7 @@ MakeInfo ()
     result = ILIBmalloc (sizeof (info));
 
     INFO_DELETE (result) = FALSE;
+    INFO_DOSPMD (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -110,15 +113,25 @@ DeleteSubstVardecs (node *vardecs)
  * @return Cleaned chain of N_arg nodes.
  ******************************************************************************/
 static node *
-StripArtificialArgs (node *args)
+StripArtificialArgs (node *args, int linksigndiff)
 {
     DBUG_ENTER ("StripArtificialArgs");
 
     if (args != NULL) {
-        ARG_NEXT (args) = StripArtificialArgs (ARG_NEXT (args));
+        if (ARG_ISARTIFICIAL (args)) {
+            linksigndiff += 1;
+        }
+
+        ARG_NEXT (args) = StripArtificialArgs (ARG_NEXT (args), linksigndiff);
 
         if (ARG_ISARTIFICIAL (args)) {
             args = FREEdoFreeNode (args);
+        } else {
+            if (ARG_HASLINKSIGNINFO (args)) {
+                DBUG_PRINT ("RESO", ("lsd: arg %d->%d", ARG_LINKSIGN (args),
+                                     ARG_LINKSIGN (args) - linksigndiff));
+                // ARG_LINKSIGN( args) = ARG_LINKSIGN( args) - linksigndiff;
+            }
         }
     }
 
@@ -236,6 +249,25 @@ DeleteRHSobjects (node *rhs)
     DBUG_RETURN (rhs_out);
 }
 
+static node *
+MarkArtificialArgs (node *fundef_args, node *ap_args)
+{
+    DBUG_ENTER ("MarkArtificialArgs");
+    if (fundef_args != NULL) {
+        node *avis = ID_AVIS (EXPRS_EXPR (ap_args));
+        if (NODE_TYPE (AVIS_DECL (avis)) == N_arg) {
+            if (ARG_ISARTIFICIAL (AVIS_DECL (avis))) {
+                DBUG_PRINT ("RESO", ("Marking %s", AVIS_NAME (avis)));
+                ARG_ISARTIFICIAL (fundef_args) = TRUE;
+                ARG_OBJDEF (fundef_args) = ARG_OBJDEF (AVIS_DECL (avis));
+            }
+        }
+        ARG_NEXT (fundef_args)
+          = MarkArtificialArgs (ARG_NEXT (fundef_args), EXPRS_NEXT (ap_args));
+    }
+    DBUG_RETURN (fundef_args);
+}
+
 /*
  * traversal functions
  */
@@ -276,6 +308,11 @@ RESOap (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("RESOap");
 
+    if (FUNDEF_ISSPMDFUN (AP_FUNDEF (arg_node))) {
+        FUNDEF_ARGS (AP_FUNDEF (arg_node))
+          = MarkArtificialArgs (FUNDEF_ARGS (AP_FUNDEF (arg_node)), AP_ARGS (arg_node));
+    }
+
     AP_ARGS (arg_node)
       = StripArtificialArgExprs (FUNDEF_ARGS (AP_FUNDEF (arg_node)), AP_ARGS (arg_node));
 
@@ -290,6 +327,11 @@ RESOap (node *arg_node, info *arg_info)
         AP_FUNDEF (arg_node) = FUNDEF_IMPL (AP_FUNDEF (arg_node));
     }
 
+    if (FUNDEF_ISSPMDFUN (AP_FUNDEF (arg_node))) {
+        INFO_DOSPMD (arg_info) = TRUE;
+        AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
+        INFO_DOSPMD (arg_info) = FALSE;
+    }
     arg_node = TRAVcont (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
@@ -423,6 +465,13 @@ RESOfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("RESOfundef");
 
+    if (FUNDEF_ISSPMDFUN (arg_node) && !INFO_DOSPMD (arg_info)) {
+        if (FUNDEF_NEXT (arg_node) != NULL) {
+            FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+        }
+        DBUG_RETURN (arg_node);
+    }
+
     /*
      * prcocess all bodies first
      */
@@ -430,14 +479,14 @@ RESOfundef (node *arg_node, info *arg_info)
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
     }
 
-    if (FUNDEF_NEXT (arg_node) != NULL) {
+    if (FUNDEF_NEXT (arg_node) != NULL && !FUNDEF_ISSPMDFUN (arg_node)) {
         FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
     }
 
     /*
      * then clean up the signatures
      */
-    FUNDEF_ARGS (arg_node) = StripArtificialArgs (FUNDEF_ARGS (arg_node));
+    FUNDEF_ARGS (arg_node) = StripArtificialArgs (FUNDEF_ARGS (arg_node), 0);
 
     /*
      * finally delete object wrapper functions

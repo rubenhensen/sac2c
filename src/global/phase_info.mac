@@ -483,6 +483,9 @@ SUBPHASE (lacinl, "lacinl", "Inlining LaC functions", LINLdoLACInlining)
 
 SUBPHASE (rec, "rec", "Removing external code", RECdoRemoveExternalCode)
 
+SUBPHASE (spmdfunfix, "spmdfunfix", "Fixing SPMD function signatures",
+          FSFSdoFixSpmdFunctionSignatures)
+
 SUBPHASE (rera, "rera", "Restoring reference arguments", RERAdoRestoreReferenceArguments)
 
 SUBPHASE (reso, "reso", "Restoring global objects", RESOdoRestoreObjects)

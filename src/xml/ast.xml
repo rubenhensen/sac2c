@@ -1986,6 +1986,15 @@
 	  <node name="Fundef" />
 	</travuser>
       </traversal>
+      <traversal id="FSFS" name="SPMD Function Signature Fix" default="sons" include="spmdfun_fix.h">
+        <travuser>
+          <node name="Ap" />
+          <node name="Fundef" />
+          <node name="Let" />
+          <node name="Return" />
+          <node name="With2" />
+        </travuser>
+      </traversal>
       <traversal id="RERA" name="Restore Reference Args" default="sons" include="restore_reference_args.h">
         <travuser>
 	  <node name="Ap" />

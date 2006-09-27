@@ -291,8 +291,8 @@ COSMIarg (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("COSMIarg");
 
-    ARG_LINKSIGN (arg_node) = INFO_LINKSIGN (arg_info);
-    ARG_HASLINKSIGNINFO (arg_node) = TRUE;
+    // ARG_LINKSIGN( arg_node) = INFO_LINKSIGN( arg_info);
+    // ARG_HASLINKSIGNINFO( arg_node) = TRUE;
     INFO_LINKSIGN (arg_info) += 1;
 
     if (ARG_NEXT (arg_node) != NULL) {

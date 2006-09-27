@@ -38,6 +38,8 @@ PRECdoPrecompile (node *syntax_tree)
      */
     syntax_tree = PHrunCompilerSubPhase (SUBPH_rec, syntax_tree);
 
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_spmdfunfix, syntax_tree);
+
     /*
      * Restore Reference Args
      */
