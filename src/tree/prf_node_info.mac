@@ -109,8 +109,10 @@ PRF_IF (F_toi_S, "F_toi_S", "_toi_S_", "toi", FALSE, 1, NTCCTprf_toiS, COtoi, FA
           NTCCTprf_dummy, NULL, FALSE),
 
   PRF_IF (F_accu, "F_accu", "_accu_", "accu", FALSE, 0, NTCCTprf_dummy, NULL, FALSE),
-  PRF_IF (F_prop_obj, "F_prop_obj", "_prop_obj_", "prop_obj", FALSE, 0, NTCCTprf_dummy,
-          NULL, FALSE),
+  PRF_IF (F_prop_obj_in, "F_prop_obj_in", "_prop_obj_in_", "prop_obj_in", FALSE, 0,
+          NTCCTprf_dummy, NULL, FALSE),
+  PRF_IF (F_prop_obj_out, "F_prop_obj_out", "_prop_obj_out_", "prop_obj_out", FALSE, 0,
+          NTCCTprf_dummy, NULL, FALSE),
 
   PRF_IF (F_alloc, "F_alloc", "_alloc_", "alloc", FALSE, 0, NTCCTprf_dummy, NULL, FALSE),
   PRF_IF (F_reuse, "F_reuse", "_reuse_", "reuse", FALSE, 0, NTCCTprf_dummy, NULL, FALSE),

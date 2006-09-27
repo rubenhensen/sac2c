@@ -25,10 +25,11 @@
  * ------
  *
  * a, stdout = with ( iv ) {
- *       stdout = F_prop_obj ( iv, stdout );
+ *       stdout = F_prop_obj_in ( iv, stdout );
  *       ...
  *       stdout = print ( stdout, f ( iv ) );
  *       ...
+ *       stdout = F_prop_obj_out ( iv, stdout );
  *     } : b, stdout
  *     genarray ( shp ( b ), ... )
  *     propagate ( stdout );
@@ -53,7 +54,8 @@ struct INFO {
     bool inwithloop;
     node *fundef;
     node *objects;
-    node *propobj;
+    node *propobj_in;
+    node *propobj_out;
     node *wl;
 };
 
@@ -64,7 +66,8 @@ struct INFO {
 #define INFO_INWITHLOOP(n) ((n)->inwithloop)
 #define INFO_FUNDEF(n) ((n)->fundef)
 #define INFO_OBJECTS(n) ((n)->objects)
-#define INFO_PROPOBJ(n) ((n)->propobj)
+#define INFO_PROPOBJ_IN(n) ((n)->propobj_in)
+#define INFO_PROPOBJ_OUT(n) ((n)->propobj_out)
 #define INFO_WL(n) ((n)->wl)
 
 /*
@@ -83,7 +86,8 @@ MakeInfo ()
     INFO_INWITHLOOP (result) = FALSE;
     INFO_FUNDEF (result) = NULL;
     INFO_OBJECTS (result) = NULL;
-    INFO_PROPOBJ (result) = NULL;
+    INFO_PROPOBJ_IN (result) = NULL;
+    INFO_PROPOBJ_OUT (result) = NULL;
     INFO_WL (result) = NULL;
 
     DBUG_RETURN (result);
@@ -188,11 +192,11 @@ CleanUpObjlist (node *list)
 }
 
 /** <!-- ****************************************************************** -->
- * @brief Adds a F_prop_obj primitive function call to the body of a with-loop.
- * This is called for the first propagate() with-op encountered; every
- * subsequent call should use ModPropObj() instead. The call looks like:
+ * @brief Adds a F_prop_obj_in primitive function call to the body of a
+ * with-loop. This is called for the first propagate() with-op encountered;
+ * every subsequent call should use ModPropObj() instead. The call looks like:
  *
- *    object = F_prop_obj(iv, object);
+ *    object = F_prop_obj_in(iv, object);
  *
  * @param assign Start of the with-loop body assignment chain.
  * @param prop Propagate node containing object to add in call.
@@ -215,10 +219,10 @@ AddPropObj (node *assign, node *prop, info *arg_info)
     BLOCK_VARDEC (FUNDEF_BODY (INFO_FUNDEF (arg_info)))
       = TBmakeVardec (avis, BLOCK_VARDEC (FUNDEF_BODY (INFO_FUNDEF (arg_info))));
 
-    /* create <avis> = F_prop_obj( <idx-varname>) */
+    /* create <avis> = F_prop_obj_in( <idx-varname>) */
     assign
       = TBmakeAssign (TBmakeLet (TBmakeIds (ID_AVIS (PROPAGATE_DEFAULT (prop)), NULL),
-                                 TCmakePrf2 (F_prop_obj,
+                                 TCmakePrf2 (F_prop_obj_in,
                                              DUPdupIdsId (WITH_VEC (INFO_WL (arg_info))),
                                              TBmakeId (
                                                ID_AVIS (PROPAGATE_DEFAULT (prop))))),
@@ -227,7 +231,7 @@ AddPropObj (node *assign, node *prop, info *arg_info)
     /* set correct backref to defining assignment */
     AVIS_SSAASSIGN (avis) = assign;
 
-    INFO_PROPOBJ (arg_info) = assign;
+    INFO_PROPOBJ_IN (arg_info) = assign;
 
     DBUG_RETURN (assign);
 }
@@ -259,8 +263,8 @@ ModPropObj (node *prop, info *arg_info)
 
     /* adjust the original so that
      * <avis> = F_prop_obj( <idx-varname>, ..., <new-obj> ) */
-    args = PRF_ARGS (LET_EXPR (ASSIGN_INSTR (INFO_PROPOBJ (arg_info))));
-    lhs = LET_IDS (ASSIGN_INSTR (INFO_PROPOBJ (arg_info)));
+    args = PRF_ARGS (LET_EXPR (ASSIGN_INSTR (INFO_PROPOBJ_IN (arg_info))));
+    lhs = LET_IDS (ASSIGN_INSTR (INFO_PROPOBJ_IN (arg_info)));
 
     args
       = TCappendExprs (args,
@@ -652,7 +656,7 @@ RSOpropagate (node *arg_node, info *arg_info)
     DBUG_ENTER ("RSOpropagate");
 
     block = CODE_CBLOCK (WITH_CODE (INFO_WL (arg_info)));
-    if (INFO_PROPOBJ (arg_info) == NULL) {
+    if (INFO_PROPOBJ_IN (arg_info) == NULL) {
         BLOCK_INSTR (block) = AddPropObj (BLOCK_INSTR (block), arg_node, arg_info);
     } else {
         ModPropObj (arg_node, arg_info);
@@ -690,7 +694,7 @@ RSOwith (node *arg_node, info *arg_info)
         WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
     }
     INFO_WL (arg_info) = NULL;
-    INFO_PROPOBJ (arg_info) = NULL;
+    INFO_PROPOBJ_IN (arg_info) = NULL;
 
     DBUG_RETURN (arg_node);
 }

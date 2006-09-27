@@ -1194,7 +1194,7 @@ NTCprf (node *arg_node, info *arg_info)
             INFO_EXP_ACCU (arg_info) = TYmakeAlphaType (NULL);
             res = TYmakeProductType (1, INFO_EXP_ACCU (arg_info));
         }
-    } else if (prf == F_prop_obj) {
+    } else if (prf == F_prop_obj_in) {
         if (INFO_PROP_OBJS (arg_info) != NULL) {
             /**
              * we are dealing with a non-first partition of a MG-WL here!

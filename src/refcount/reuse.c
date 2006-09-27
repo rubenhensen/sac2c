@@ -229,7 +229,8 @@ EMRIprf (node *arg_node, info *arg_info)
     DBUG_ENTER ("EMRIprf");
 
     switch (PRF_PRF (arg_node)) {
-    case F_prop_obj:
+    case F_prop_obj_in:
+    case F_prop_obj_out:
     case F_accu:
     case F_wl_assign:
     case F_free:

@@ -390,7 +390,7 @@ RESOlet (node *arg_node, info *arg_info)
      * and identity assignment.
      */
     if (NODE_TYPE (LET_EXPR (arg_node)) == N_prf
-        && PRF_PRF (LET_EXPR (arg_node)) == F_prop_obj) {
+        && PRF_PRF (LET_EXPR (arg_node)) == F_prop_obj_in) {
         node *prf_args;
 
         prf_args = PRF_ARGS (LET_EXPR (arg_node));

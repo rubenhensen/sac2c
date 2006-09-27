@@ -672,7 +672,7 @@ MMVprf (node *arg_node, info *arg_info)
         arg_node = MMVprfWLAssign (arg_node, arg_info);
         break;
 
-    case F_prop_obj:
+    case F_prop_obj_in:
         arg_node = MMVprfPropObj (arg_node, arg_info);
         break;
 

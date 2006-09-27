@@ -234,7 +234,7 @@ ApplyPropagate (node *bodycode, node *index, node *partn, node *withop, node *ce
 
     while (tmp != NULL) {
         if ((NODE_TYPE (ASSIGN_RHS (tmp)) == N_prf)
-            && (PRF_PRF (ASSIGN_RHS (tmp)) == F_prop_obj)) {
+            && (PRF_PRF (ASSIGN_RHS (tmp)) == F_prop_obj_in)) {
             node *prf_arg = PRF_ARGS (ASSIGN_RHS (tmp));
             node *lhs = ASSIGN_LHS (tmp);
             node *prf_prv = NULL;

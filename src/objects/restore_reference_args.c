@@ -278,7 +278,7 @@ RERAlet (node *arg_node, info *arg_info)
      * lhs of any reference args by rhs.
      */
     if ((NODE_TYPE (LET_EXPR (arg_node)) == N_prf)
-        && (PRF_PRF (LET_EXPR (arg_node)) == F_prop_obj)) {
+        && (PRF_PRF (LET_EXPR (arg_node)) == F_prop_obj_in)) {
         node *args = PRF_ARGS (LET_EXPR (arg_node));
         node *lhs = LET_IDS (arg_node);
 

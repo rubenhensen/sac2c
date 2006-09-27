@@ -929,7 +929,8 @@ SCIprf (node *arg_node, info *arg_info)
     case F_type_error:
     case F_esd_neg:
     case F_esd_rec:
-    case F_prop_obj:
+    case F_prop_obj_in:
+    case F_prop_obj_out:
         /* the following are in the land of the living dead. */
     case F_run_mt_genarray:
     case F_run_mt_modarray:

@@ -700,11 +700,11 @@ EMAAprf (node *arg_node, info *arg_info)
      * Primitive functions in general yield a fresh result.
      * Hence, they won't return an alias of an argument.
      *
-     * Exception: F_accu and F_prop_obj return an alias
+     * Exception: F_accu and F_prop_obj_in return an alias
      */
     switch (PRF_PRF (arg_node)) {
 
-    case F_prop_obj:
+    case F_prop_obj_in:
     case F_accu:
         MarkAllIdsAliasing (INFO_LHS (arg_info), INFO_MASK (arg_info));
         break;
