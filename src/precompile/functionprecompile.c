@@ -143,6 +143,16 @@ CompressArgtab (argtab_t *argtab)
     DBUG_RETURN (argtab);
 }
 
+static int
+HighestLinksign (node *args)
+{
+    int res = -1;
+    if (args != NULL) {
+        res = MAX (ARG_LINKSIGN (args), HighestLinksign (ARG_NEXT (args)));
+    }
+    return (res);
+}
+
 /*
  * traversal functions
  */
@@ -195,6 +205,8 @@ InsertIntoOut (argtab_t *argtab, node *fundef, node *ret)
      * if the linksign pragma was not used.
      */
     idx = RET_LINKSIGN (ret);
+
+    DBUG_PRINT ("FPC", ("out(%d)", idx));
 
     /* We do not pass descriptors for non-refcounted parameters. */
     if (!RET_ISREFCOUNTED (ret)) {
@@ -253,7 +265,7 @@ InsertIntoOut (argtab_t *argtab, node *fundef, node *ret)
     }
 
     /* Check for illegal index values. */
-    if ((idx < 0) || (idx > argtab->size)) {
+    if ((idx < 0) || (idx >= argtab->size)) {
         CTIerrorLine (line,
                       "Pragma 'linksign' illegal: "
                       "entry contains illegal value %d",
@@ -351,8 +363,10 @@ InsertIntoIn (argtab_t *argtab, node *fundef, node *arg)
      */
     idx = ARG_LINKSIGN (arg);
 
+    DBUG_PRINT ("FPC", ("in(%d): %s", idx, AVIS_NAME (ARG_AVIS (arg))));
+
     /* Check for illegal index values. */
-    if ((idx < 0) || (idx > argtab->size)) {
+    if ((idx < 0) || (idx >= argtab->size)) {
         CTIerrorLine (line,
                       "Pragma 'linksign' illegal: "
                       "entry contains illegal value %d",
@@ -469,9 +483,11 @@ FPCfundef (node *arg_node, info *arg_info)
     INFO_FUNDEF (arg_info) = arg_node;
 
     if (!FUNDEF_ISZOMBIE (arg_node)) {
-        INFO_ARGTAB (arg_info)
-          = TBmakeArgtab (TCcountRets (FUNDEF_RETS (arg_node))
-                          + TCcountArgs (FUNDEF_ARGS (arg_node)) + 1);
+        int argtabsize
+          = TCcountRets (FUNDEF_RETS (arg_node)) + TCcountArgs (FUNDEF_ARGS (arg_node));
+
+        argtabsize = MAX (argtabsize, HighestLinksign (FUNDEF_ARGS (arg_node)));
+        INFO_ARGTAB (arg_info) = TBmakeArgtab (argtabsize + 1);
 
         if (FUNDEF_RETS (arg_node) != NULL) {
             FUNDEF_RETS (arg_node) = TRAVdo (FUNDEF_RETS (arg_node), arg_info);

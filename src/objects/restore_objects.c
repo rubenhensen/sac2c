@@ -113,25 +113,15 @@ DeleteSubstVardecs (node *vardecs)
  * @return Cleaned chain of N_arg nodes.
  ******************************************************************************/
 static node *
-StripArtificialArgs (node *args, int linksigndiff)
+StripArtificialArgs (node *args)
 {
     DBUG_ENTER ("StripArtificialArgs");
 
     if (args != NULL) {
-        if (ARG_ISARTIFICIAL (args)) {
-            linksigndiff += 1;
-        }
-
-        ARG_NEXT (args) = StripArtificialArgs (ARG_NEXT (args), linksigndiff);
+        ARG_NEXT (args) = StripArtificialArgs (ARG_NEXT (args));
 
         if (ARG_ISARTIFICIAL (args)) {
             args = FREEdoFreeNode (args);
-        } else {
-            if (ARG_HASLINKSIGNINFO (args)) {
-                DBUG_PRINT ("RESO", ("lsd: arg %d->%d", ARG_LINKSIGN (args),
-                                     ARG_LINKSIGN (args) - linksigndiff));
-                // ARG_LINKSIGN( args) = ARG_LINKSIGN( args) - linksigndiff;
-            }
         }
     }
 
@@ -486,7 +476,7 @@ RESOfundef (node *arg_node, info *arg_info)
     /*
      * then clean up the signatures
      */
-    FUNDEF_ARGS (arg_node) = StripArtificialArgs (FUNDEF_ARGS (arg_node), 0);
+    FUNDEF_ARGS (arg_node) = StripArtificialArgs (FUNDEF_ARGS (arg_node));
 
     /*
      * finally delete object wrapper functions
