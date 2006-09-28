@@ -1973,6 +1973,9 @@ LIRMOVwithid (node *arg_node, info *arg_info)
             if (WITHID_IDS (arg_node) != NULL) {
                 WITHID_IDS (arg_node) = TRAVdo (WITHID_IDS (arg_node), arg_info);
             }
+            if (WITHID_IDXS (arg_node) != NULL) {
+                WITHID_IDXS (arg_node) = TRAVdo (WITHID_IDXS (arg_node), arg_info);
+            }
 
             /* switch back to previous mode */
             INFO_FLAG (arg_info) = old_flag;
