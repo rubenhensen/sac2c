@@ -1348,3 +1348,77 @@ ICMCompileND_PRF_CAT__SHAPE (char *to_NT, int to_sdim, char *from1_NT, int from1
 
     DBUG_VOID_RETURN;
 }
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileND_PRF_PROP_OBJ_IN( char *to_NT, int to_sdim,
+ *                                      char *from1_NT, int from1_sdim,
+ *                                      char *from2_NT, int from2_sdim)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   ND_PRF_PROP_OBJ_IN( vararg_cnt, vararg)
+ *
+ ******************************************************************************/
+
+void
+ICMCompileND_PRF_PROP_OBJ_IN (int vararg_cnt, char **vararg)
+{
+    int i;
+    DBUG_ENTER ("ICMCompileND_PRF_PROP_OBJ_IN");
+
+#define ND_PRF_PROP_OBJ_IN
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef ND_PRF_PROP_OBJ_IN
+
+    INDENT;
+    fprintf (global.outfile, "SAC_ND_PROP_OBJ_IN( )\n");
+
+    for (i = 0; i < 2 * vararg_cnt; i += 2) {
+        INDENT;
+        fprintf (global.outfile, "SAC_ND_PROP_OBJ_UNBOX( %s, %s );\n", vararg[i],
+                 vararg[i + 1]);
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileND_PRF_PROP_OBJ_OUT( char *to_NT, int to_sdim,
+ *                                       char *from1_NT, int from1_sdim,
+ *                                       char *from2_NT, int from2_sdim)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   ND_PRF_PROP_OBJ_OUT( vararg_cnt, vararg)
+ *
+ ******************************************************************************/
+
+void
+ICMCompileND_PRF_PROP_OBJ_OUT (int vararg_cnt, char **vararg)
+{
+    int i;
+    DBUG_ENTER ("ICMCompileND_PRF_PROP_OBJ_OUT");
+
+#define ND_PRF_PROP_OBJ_OUT
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef ND_PRF_PROP_OBJ_OUT
+
+    for (i = 0; i < 2 * vararg_cnt; i += 2) {
+        INDENT;
+        fprintf (global.outfile, "SAC_ND_PROP_OBJ_BOX( %s, %s );\n", vararg[i],
+                 vararg[i + 1]);
+    }
+
+    INDENT;
+    fprintf (global.outfile, "SAC_ND_PROP_OBJ_OUT( )\n");
+
+    DBUG_VOID_RETURN;
+}

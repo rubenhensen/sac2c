@@ -27,10 +27,10 @@
  * a, stdout = with ( iv ) {
  *       stdout = F_prop_obj_in ( iv, stdout );
  *       ...
- *       stdout = print ( stdout, f ( iv ) );
+ *       stdout' = print ( stdout, f ( iv ) );
  *       ...
- *       stdout = F_prop_obj_out ( iv, stdout );
- *     } : b, stdout
+ *       stdout' = F_prop_obj_out ( iv, stdout');
+ *     } : b, stdout'
  *     genarray ( shp ( b ), ... )
  *     propagate ( stdout );
  */
@@ -106,6 +106,38 @@ FreeInfo (info *info)
 /*
  * static helper functions
  */
+
+/** <!-- ****************************************************************** -->
+ * @brief Finds the with-loop goal expression that belongs to the given
+ * propagate withop.
+ *
+ * @param prop
+ * @param arg_info
+ *
+ * @return
+ ******************************************************************************/
+static node *
+FindPropagateGoalExpr (node *prop, info *arg_info)
+{
+    node *wlexpr;
+    node *wlop;
+
+    DBUG_ENTER ("FindPropagateGoalExpr");
+
+    wlexpr = CODE_CEXPRS (WITH_CODE (INFO_WL (arg_info)));
+    wlop = WITH_WITHOP (INFO_WL (arg_info));
+
+    while (wlop != NULL) {
+        if (wlop == prop) {
+            return wlexpr;
+        }
+
+        wlop = WITHOP_NEXT (wlop);
+        wlexpr = EXPRS_NEXT (wlexpr);
+    }
+
+    DBUG_RETURN (wlexpr);
+}
 
 /** <!-- ****************************************************************** -->
  * @brief Appends the objdefs that are in the objlist set to the parameter
@@ -208,8 +240,12 @@ static node *
 AddPropObj (node *assign, node *prop, info *arg_info)
 {
     node *avis;
+    node *prop_obj_out;
+    node *wl_out;
 
     DBUG_ENTER ("MakeAccu");
+
+    /**** PROPOBJ_IN ****/
 
     /* create avis */
     avis = TBmakeAvis (ILIBtmpVarName (ID_NAME (PROPAGATE_DEFAULT (prop))),
@@ -219,7 +255,7 @@ AddPropObj (node *assign, node *prop, info *arg_info)
     BLOCK_VARDEC (FUNDEF_BODY (INFO_FUNDEF (arg_info)))
       = TBmakeVardec (avis, BLOCK_VARDEC (FUNDEF_BODY (INFO_FUNDEF (arg_info))));
 
-    /* create <avis> = F_prop_obj_in( <idx-varname>) */
+    /* create <avis> = F_prop_obj_in( <idx-varname>, <object>) */
     assign
       = TBmakeAssign (TBmakeLet (TBmakeIds (ID_AVIS (PROPAGATE_DEFAULT (prop)), NULL),
                                  TCmakePrf2 (F_prop_obj_in,
@@ -230,8 +266,32 @@ AddPropObj (node *assign, node *prop, info *arg_info)
 
     /* set correct backref to defining assignment */
     AVIS_SSAASSIGN (avis) = assign;
-
     INFO_PROPOBJ_IN (arg_info) = assign;
+
+    /**** PROPOBJ_OUT ****/
+
+    /* find goal expression of the propagate */
+    wl_out = FindPropagateGoalExpr (prop, arg_info);
+
+    /* create avis */
+    avis = TBmakeAvis (ILIBtmpVarName (ID_NAME (EXPRS_EXPR (wl_out))),
+                       TYeliminateAKV (AVIS_TYPE (ID_AVIS (EXPRS_EXPR (wl_out)))));
+
+    /* insert vardec */
+    BLOCK_VARDEC (FUNDEF_BODY (INFO_FUNDEF (arg_info)))
+      = TBmakeVardec (avis, BLOCK_VARDEC (FUNDEF_BODY (INFO_FUNDEF (arg_info))));
+
+    /* create <avis> = F_prop_obj_out( <object>) */
+    prop_obj_out
+      = TBmakeAssign (TBmakeLet (TBmakeIds (ID_AVIS (EXPRS_EXPR (wl_out)), NULL),
+                                 TCmakePrf1 (F_prop_obj_out,
+                                             TBmakeId (ID_AVIS (EXPRS_EXPR (wl_out))))),
+                      NULL);
+    assign = TCappendAssign (assign, prop_obj_out);
+
+    /* set correct backref to defining assignment */
+    AVIS_SSAASSIGN (avis) = prop_obj_out;
+    INFO_PROPOBJ_OUT (arg_info) = prop_obj_out;
 
     DBUG_RETURN (assign);
 }
@@ -253,6 +313,8 @@ ModPropObj (node *prop, info *arg_info)
 
     DBUG_ENTER ("ModPropObj");
 
+    /**** PROPOBJ_IN ****/
+
     /* create avis */
     avis = TBmakeAvis (ILIBtmpVarName (ID_NAME (PROPAGATE_DEFAULT (prop))),
                        TYeliminateAKV (AVIS_TYPE (ID_AVIS (PROPAGATE_DEFAULT (prop)))));
@@ -265,6 +327,26 @@ ModPropObj (node *prop, info *arg_info)
      * <avis> = F_prop_obj( <idx-varname>, ..., <new-obj> ) */
     args = PRF_ARGS (LET_EXPR (ASSIGN_INSTR (INFO_PROPOBJ_IN (arg_info))));
     lhs = LET_IDS (ASSIGN_INSTR (INFO_PROPOBJ_IN (arg_info)));
+
+    args
+      = TCappendExprs (args,
+                       TBmakeExprs (TBmakeId (ID_AVIS (PROPAGATE_DEFAULT (prop))), NULL));
+    lhs = TCappendIds (lhs, TBmakeIds (ID_AVIS (PROPAGATE_DEFAULT (prop)), NULL));
+
+    /**** PROPOBJ_OUT ****/
+
+    /* create avis */
+    avis = TBmakeAvis (ILIBtmpVarName (ID_NAME (PROPAGATE_DEFAULT (prop))),
+                       TYeliminateAKV (AVIS_TYPE (ID_AVIS (PROPAGATE_DEFAULT (prop)))));
+
+    /* insert vardec */
+    BLOCK_VARDEC (FUNDEF_BODY (INFO_FUNDEF (arg_info)))
+      = TBmakeVardec (avis, BLOCK_VARDEC (FUNDEF_BODY (INFO_FUNDEF (arg_info))));
+
+    /* adjust the original so that
+     * <avis> = F_prop_obj_out( ..., <new-obj> ) */
+    args = PRF_ARGS (LET_EXPR (ASSIGN_INSTR (INFO_PROPOBJ_OUT (arg_info))));
+    lhs = LET_IDS (ASSIGN_INSTR (INFO_PROPOBJ_OUT (arg_info)));
 
     args
       = TCappendExprs (args,

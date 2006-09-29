@@ -84,4 +84,8 @@ extern void ICMCompileND_PRF_SHAPE_SEL__DATA_id (char *to_NT, int to_sdim, char 
 extern void ICMCompileND_PRF_IDX_SHAPE_SEL__DATA (char *to_NT, int to_sdim, char *from_NT,
                                                   int from_sdim, char *idx_ANY);
 
+extern void ICMCompileND_PRF_PROP_OBJ_IN (int vararg_cnt, char **vararg);
+
+extern void ICMCompileND_PRF_PROP_OBJ_OUT (int vararg_cnt, char **vararg);
+
 #endif /* _SAC_ICM2C_PRF_H_ */

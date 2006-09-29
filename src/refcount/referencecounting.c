@@ -608,6 +608,7 @@ RCIprf (node *arg_node, info *arg_info)
         PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
         break;
 
+    case F_prop_obj_out:
     case F_prop_obj_in:
     case F_accu:
     case F_suballoc:

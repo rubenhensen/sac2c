@@ -704,6 +704,7 @@ EMAAprf (node *arg_node, info *arg_info)
      */
     switch (PRF_PRF (arg_node)) {
 
+    case F_prop_obj_out:
     case F_prop_obj_in:
     case F_accu:
         MarkAllIdsAliasing (INFO_LHS (arg_info), INFO_MASK (arg_info));

@@ -88,6 +88,8 @@ extern volatile int SAC_MT_Task[];
 
 pthread_key_t SAC_MT_threadid_key;
 
+SAC_MT_DEFINE_LOCK (SAC_MT_propagate_lock)
+
 SAC_MT_DEFINE_LOCK (SAC_MT_output_lock)
 
 SAC_MT_DEFINE_LOCK (SAC_MT_init_lock)

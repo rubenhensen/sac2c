@@ -1320,6 +1320,7 @@ EMALprf (node *arg_node, info *arg_info)
         break;
 
     case F_prop_obj_in:
+    case F_prop_obj_out:
     case F_accu:
         /*
          * a,... = accu( iv, n, ...) (and prop_obj)

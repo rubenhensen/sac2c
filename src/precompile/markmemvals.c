@@ -85,6 +85,7 @@ struct INFO {
     node *lhs_wl;
     node *withop;
     node *fundef;
+    node *prop_in;
 };
 
 #define INFO_LUT(n) (n->lut)
@@ -92,6 +93,7 @@ struct INFO {
 #define INFO_LHS_WL(n) (n->lhs_wl)
 #define INFO_WITHOP(n) (n->withop)
 #define INFO_FUNDEF(n) (n->fundef)
+#define INFO_PROP_IN(n) (n->prop_in)
 
 /**
  * INFO functions
@@ -110,6 +112,7 @@ MakeInfo ()
     INFO_LHS_WL (result) = NULL;
     INFO_WITHOP (result) = NULL;
     INFO_FUNDEF (result) = NULL;
+    INFO_PROP_IN (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -586,7 +589,7 @@ MMVprfWLAssign (node *arg_node, info *arg_info)
 
 /** <!--******************************************************************-->
  *
- * @fn MMVprfPropObj
+ * @fn MMVprfPropObjIn
  *
  *  @brief
  *
@@ -597,19 +600,22 @@ MMVprfWLAssign (node *arg_node, info *arg_info)
  *
  ***************************************************************************/
 static node *
-MMVprfPropObj (node *arg_node, info *arg_info)
+MMVprfPropObjIn (node *arg_node, info *arg_info)
 {
     node *withop;
     node *ids_assign;
     node *args;
 
-    DBUG_ENTER ("MMVprfPropObj");
+    DBUG_ENTER ("MMVprfPropObjIn");
 
     /*
      * A,B = with(iv)
      *        gen:{
-     *             a',... = prop_obj( iv, a, ...);
+     *             a',... = prop_obj_in( iv, a, ...);
      *             ...
+     *             a''    = f(a');
+     *             ...
+     *             a'''   = prop_obj_out( a'');
      *             }...
      *            propagate( a)
      *            ...
@@ -620,16 +626,80 @@ MMVprfPropObj (node *arg_node, info *arg_info)
     ids_assign = INFO_LHS (arg_info);
     args = EXPRS_NEXT (PRF_ARGS (arg_node));
 
-    DBUG_ASSERT ((withop != NULL), "F_prop_obj without withloop");
-    DBUG_ASSERT ((ids_assign != NULL), "ids of assign is missing");
+    DBUG_ASSERT ((withop != NULL), "F_prop_obj_in without withloop");
 
     while (args != NULL) {
+        DBUG_ASSERT ((ids_assign != NULL), "ids of assign is missing");
         LUTinsertIntoLutS (INFO_LUT (arg_info), IDS_NAME (ids_assign),
                            ID_NAME (EXPRS_EXPR (args)));
         LUTinsertIntoLutP (INFO_LUT (arg_info), IDS_AVIS (ids_assign),
                            ID_AVIS (EXPRS_EXPR (args)));
         ids_assign = IDS_NEXT (ids_assign);
         args = EXPRS_NEXT (args);
+    }
+
+    INFO_PROP_IN (arg_info) = arg_node;
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--******************************************************************-->
+ *
+ * @fn MMVprfPropObjOut
+ *
+ *  @brief
+ *
+ *  @param arg_node
+ *  @param arg_info
+ *
+ *  @return
+ *
+ ***************************************************************************/
+static node *
+MMVprfPropObjOut (node *arg_node, info *arg_info)
+{
+    node *withop;
+    node *ids_assign;
+    node *args;
+
+    DBUG_ENTER ("MMVprfPropObjOut");
+
+    /*
+     * A,B = with(iv)
+     *        gen:{
+     *             a,... = prop_obj_in( iv, a, ...);
+     *             ...
+     *             a''    = f(a);
+     *             ...
+     *             a'''   = prop_obj_out( a'');
+     *             } : a''', ...
+     *            propagate( a)
+     *            ...
+     *
+     *     rename: a''' -> a
+     */
+
+    ids_assign = INFO_LHS (arg_info);
+    args = EXPRS_NEXT (PRF_ARGS (INFO_PROP_IN (arg_info)));
+
+    DBUG_ASSERT ((withop != NULL), "F_prop_obj_out without withloop");
+
+    while (args != NULL) {
+        DBUG_ASSERT ((ids_assign != NULL), "ids of assign is missing");
+        DBUG_PRINT ("MMV", ("renaming %s -> %s", IDS_NAME (ids_assign),
+                            ID_NAME (EXPRS_EXPR (args))));
+        LUTinsertIntoLutS (INFO_LUT (arg_info), IDS_NAME (ids_assign),
+                           ID_NAME (EXPRS_EXPR (args)));
+        LUTinsertIntoLutP (INFO_LUT (arg_info), IDS_AVIS (ids_assign),
+                           ID_AVIS (EXPRS_EXPR (args)));
+        ids_assign = IDS_NEXT (ids_assign);
+        args = EXPRS_NEXT (args);
+    }
+
+    INFO_PROP_IN (arg_info) = NULL;
+
+    if (PRF_ARGS (arg_node) != NULL) {
+        PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -673,7 +743,11 @@ MMVprf (node *arg_node, info *arg_info)
         break;
 
     case F_prop_obj_in:
-        arg_node = MMVprfPropObj (arg_node, arg_info);
+        arg_node = MMVprfPropObjIn (arg_node, arg_info);
+        break;
+
+    case F_prop_obj_out:
+        arg_node = MMVprfPropObjOut (arg_node, arg_info);
         break;
 
     default:
@@ -730,12 +804,14 @@ MMVwith (node *arg_node, info *arg_info)
 {
     node *withop;
     node *lhs;
+    node *prop_in;
 
     DBUG_ENTER ("MMVwith");
 
     /* stack lhs and withop of surrounding WL */
     lhs = INFO_LHS_WL (arg_info);
     withop = INFO_WITHOP (arg_info);
+    prop_in = INFO_PROP_IN (arg_info);
 
     INFO_LHS_WL (arg_info) = INFO_LHS (arg_info);
     INFO_WITHOP (arg_info) = WITH_WITHOP (arg_node);
@@ -752,6 +828,7 @@ MMVwith (node *arg_node, info *arg_info)
 
     INFO_WITHOP (arg_info) = withop;
     INFO_LHS_WL (arg_info) = lhs;
+    INFO_PROP_IN (arg_info) = prop_in;
 
     DBUG_RETURN (arg_node);
 }
@@ -773,6 +850,7 @@ MMVwith2 (node *arg_node, info *arg_info)
 {
     node *withop;
     node *lhs;
+    node *prop_in;
 
     DBUG_ENTER ("MMVwith2");
 
@@ -781,6 +859,7 @@ MMVwith2 (node *arg_node, info *arg_info)
      */
     lhs = INFO_LHS_WL (arg_info);
     withop = INFO_WITHOP (arg_info);
+    prop_in = INFO_PROP_IN (arg_info);
 
     INFO_LHS_WL (arg_info) = INFO_LHS (arg_info);
     INFO_WITHOP (arg_info) = WITH2_WITHOP (arg_node);
@@ -797,6 +876,7 @@ MMVwith2 (node *arg_node, info *arg_info)
 
     INFO_WITHOP (arg_info) = withop;
     INFO_LHS_WL (arg_info) = lhs;
+    INFO_PROP_IN (arg_info) = prop_in;
 
     DBUG_RETURN (arg_node);
 }
@@ -1023,8 +1103,7 @@ MMVfold (node *arg_node, info *arg_info)
  *
  *  @brief Substitutes a CEXPR reference with the corresponding reference
  *         on LHS of current withloop if the corresponding WL operation
- *         is fold.  OR  substitutes a CEXPR reference with the default
- *         element if corresponding WL operation is propagate.
+ *         is fold.
  *
  *  @param arg_node
  *  @param arg_info
@@ -1074,16 +1153,6 @@ MMVcode (node *arg_node, info *arg_info)
                                               NULL));
 
             ID_AVIS (EXPRS_EXPR (cexprs)) = IDS_AVIS (wlids);
-        } else if (NODE_TYPE (withop) == N_propagate) {
-            BLOCK_INSTR (CODE_CBLOCK (arg_node))
-              = TCappendAssign (BLOCK_INSTR (CODE_CBLOCK (arg_node)),
-                                TBmakeAssign (TBmakeLet (TBmakeIds (ID_AVIS (
-                                                                      PROPAGATE_DEFAULT (
-                                                                        withop)),
-                                                                    NULL),
-                                                         DUPdoDupNode (
-                                                           EXPRS_EXPR (cexprs))),
-                                              NULL));
         }
         wlids = IDS_NEXT (wlids);
         cexprs = EXPRS_NEXT (cexprs);

@@ -1035,3 +1035,17 @@ ICM_DEF( DISPATCH_ERROR, ICM_TRACE_NONE)
 ICM_END( DISPATCH_ERROR, (cnt_to, to_ANY, funname, cnt_from, from_ANY))
 #endif
 
+#if defined(ND_PRF_PROP_OBJ_IN) || defined(ICM_ALL)
+ICM_DEF( ND_PRF_PROP_OBJ_IN, ICM_TRACE_NONE)
+  ICM_INT( vararg_cnt)
+  ICM_VARANY( (2*vararg_cnt), vararg)
+ICM_END( ND_PRF_PROP_OBJ_IN, (vararg_cnt, vararg))
+#endif
+
+#if defined(ND_PRF_PROP_OBJ_OUT) || defined(ICM_ALL)
+ICM_DEF( ND_PRF_PROP_OBJ_OUT, ICM_TRACE_NONE)
+  ICM_INT( vararg_cnt)
+  ICM_VARANY( (2*vararg_cnt), vararg)
+ICM_END( ND_PRF_PROP_OBJ_OUT, (vararg_cnt, vararg))
+#endif
+

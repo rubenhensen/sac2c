@@ -1977,6 +1977,8 @@ extern pthread_key_t SAC_MT_threadid_key;
 
 extern unsigned int SAC_MT_master_id;
 
+SAC_MT_DECLARE_LOCK (SAC_MT_propagate_lock)
+
 SAC_MT_DECLARE_LOCK (SAC_MT_output_lock)
 
 SAC_MT_DECLARE_LOCK (SAC_MT_init_lock)
@@ -2413,6 +2415,18 @@ SAC_MT_DECLARE_LOCK (SAC_MT_init_lock)
 
 /*****************************************************************************/
 
+#define SAC_ND_PROP_OBJ_IN() SAC_MT_ACQUIRE_LOCK (SAC_MT_propagate_lock);
+
+#define SAC_ND_PROP_OBJ_OUT() SAC_MT_RELEASE_LOCK (SAC_MT_propagate_lock);
+
+#define SAC_ND_PROP_OBJ_UNBOX(unboxed, boxed)                                            \
+    SAC_ND_A_FIELD (unboxed) = *SAC_NAMEP (SAC_ND_A_FIELD (boxed));
+
+#define SAC_ND_PROP_OBJ_BOX(boxed, unboxed)                                              \
+    *SAC_NAMEP (SAC_ND_A_FIELD (boxed)) = SAC_ND_A_FIELD (unboxed);
+
+/*****************************************************************************/
+
 #include "sac_mt_gen.h" /* generated macro's */
 
 /*****************************************************************************/
@@ -2451,6 +2465,15 @@ SAC_MT_DECLARE_LOCK (SAC_MT_init_lock)
 #define SAC_MT_ACQUIRE_LOCK(name)
 
 #define SAC_MT_RELEASE_LOCK(name)
+
+#define SAC_ND_PROP_OBJ_IN()
+
+#define SAC_ND_PROP_OBJ_OUT()
+
+#define SAC_ND_PROP_OBJ_UNBOX(unboxed, boxed)
+
+#define SAC_ND_PROP_OBJ_BOX(boxed, unboxed)                                              \
+    SAC_ND_A_FIELD (boxed) = SAC_ND_A_FIELD (unboxed);
 
 /*****************************************************************************/
 

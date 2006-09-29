@@ -384,25 +384,34 @@ RESOlet (node *arg_node, info *arg_info)
     /*
      * detect assignments of the form
      *
-     * <ids> = F_prop_obj( iv, <globobj>);
+     * <ids> = F_prop_obj_in( iv, <globobj> );
+     *   or
+     * <ids> = F_prop_obj_out( <globobj> );
      *
      * and delete lhs where rhs is a globobj, as it is
      * and identity assignment.
      */
     if (NODE_TYPE (LET_EXPR (arg_node)) == N_prf
-        && PRF_PRF (LET_EXPR (arg_node)) == F_prop_obj_in) {
+        && (PRF_PRF (LET_EXPR (arg_node)) == F_prop_obj_in
+            || PRF_PRF (LET_EXPR (arg_node)) == F_prop_obj_out)) {
         node *prf_args;
+        node *exprs;
 
         prf_args = PRF_ARGS (LET_EXPR (arg_node));
 
-        LET_IDS (arg_node)
-          = DeleteLHSforRHSobjects (LET_IDS (arg_node), EXPRS_NEXT (prf_args));
-        EXPRS_NEXT (prf_args) = DeleteRHSobjects (EXPRS_NEXT (prf_args));
+        if (PRF_PRF (LET_EXPR (arg_node)) == F_prop_obj_in) {
+            exprs = EXPRS_NEXT (prf_args);
+        } else {
+            exprs = prf_args;
+        }
 
-        if (EXPRS_NEXT (prf_args) == NULL) {
-            /* only iv argument left, and no lhs. so delete */
-            DBUG_ASSERT (LET_IDS (arg_node) == NULL, "no F_prop_obj args, but have lhs");
-            INFO_DELETE (arg_info) = TRUE;
+        LET_IDS (arg_node) = DeleteLHSforRHSobjects (LET_IDS (arg_node), exprs);
+        exprs = DeleteRHSobjects (exprs);
+
+        if (PRF_PRF (LET_EXPR (arg_node)) == F_prop_obj_in) {
+            EXPRS_NEXT (prf_args) = exprs;
+        } else {
+            PRF_ARGS (LET_EXPR (arg_node)) = exprs;
         }
     }
 

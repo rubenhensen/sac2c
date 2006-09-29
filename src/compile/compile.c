@@ -1630,6 +1630,80 @@ MakeIcm_FUN_AP (node *ap, node *fundef, node *assigns)
     DBUG_RETURN (ret_node);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn  node *MakeIcm_PROP_OBJ_OUT( node *prop_obj, node *assigns)
+ *
+ * @brief  Builds a N_assign node with the ND_PROP_OBJ_OUT icm.
+ *
+ ******************************************************************************/
+
+static node *
+MakeIcm_PROP_OBJ_OUT (node *prop_obj, node *lhs, node *assigns)
+{
+    node *exprs;
+    node *icm_args;
+    node *ret_node;
+    int count;
+
+    DBUG_ENTER ("MakeIcm_PROP_OBJ_OUT");
+
+    exprs = PRF_ARGS (prop_obj);
+    icm_args = NULL;
+    count = 0;
+
+    while (exprs != NULL) {
+        icm_args = TBmakeExprs (DUPdupIdsIdNt (lhs),
+                                TBmakeExprs (DUPdupIdNt (EXPRS_EXPR (exprs)), icm_args));
+        count++;
+        lhs = IDS_NEXT (lhs);
+        exprs = EXPRS_NEXT (exprs);
+    }
+
+    icm_args = TBmakeExprs (TBmakeNum (count), icm_args);
+
+    ret_node = TCmakeAssignIcm1 ("ND_PRF_PROP_OBJ_OUT", icm_args, assigns);
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  node *MakeIcm_PROP_OBJ_IN( node *prop_obj, node *assigns)
+ *
+ * @brief  Builds a N_assign node with the ND_PROP_OBJ_IN icm.
+ *
+ ******************************************************************************/
+
+static node *
+MakeIcm_PROP_OBJ_IN (node *prop_obj, node *lhs, node *assigns)
+{
+    node *exprs;
+    node *icm_args;
+    node *ret_node;
+    int count;
+
+    DBUG_ENTER ("MakeIcm_PROP_OBJ_IN");
+
+    exprs = EXPRS_NEXT (PRF_ARGS (prop_obj));
+    icm_args = NULL;
+    count = 0;
+
+    while (exprs != NULL) {
+        icm_args = TBmakeExprs (DUPdupIdsIdNt (lhs),
+                                TBmakeExprs (DUPdupIdNt (EXPRS_EXPR (exprs)), icm_args));
+        count++;
+        lhs = IDS_NEXT (lhs);
+        exprs = EXPRS_NEXT (exprs);
+    }
+
+    icm_args = TBmakeExprs (TBmakeNum (count), icm_args);
+
+    ret_node = TCmakeAssignIcm1 ("ND_PRF_PROP_OBJ_IN", icm_args, assigns);
+
+    DBUG_RETURN (ret_node);
+}
+
 #ifndef DBUG_OFF
 
 /** <!--********************************************************************-->
@@ -2934,6 +3008,46 @@ COMParray (node *arg_node, info *arg_info)
                               TCmakeIdCopyString (copyfun), ret_node);
     }
 
+    DBUG_RETURN (ret_node);
+}
+
+/** <!-- ****************************************************************** -->
+ *
+ * @fn  node COMPPrfPropObjIn( node *arg_node, info *arg_info)
+ *
+ * @brief Compiles N_prf node of type F_prop_obj_in.
+ *   The return value is a N_assign chain of ICMs.
+ *   Note, that the old 'arg_node' is removed by COMPLet.
+ *
+ ******************************************************************************/
+
+node *
+COMPPrfPropObjIn (node *arg_node, info *arg_info)
+{
+    node *ret_node = NULL;
+    DBUG_ENTER ("COMPPrfPropObjIn");
+
+    ret_node = MakeIcm_PROP_OBJ_IN (arg_node, INFO_LASTIDS (arg_info), NULL);
+    DBUG_RETURN (ret_node);
+}
+
+/** <!-- ****************************************************************** -->
+ *
+ * @fn  node COMPPrfPropObjIn( node *arg_node, info *arg_info)
+ *
+ * @brief Compiles N_prf node of type F_prop_obj_in.
+ *   The return value is a N_assign chain of ICMs.
+ *   Note, that the old 'arg_node' is removed by COMPLet.
+ *
+ ******************************************************************************/
+
+node *
+COMPPrfPropObjOut (node *arg_node, info *arg_info)
+{
+    node *ret_node = NULL;
+    DBUG_ENTER ("COMPPrfPropObjOut");
+
+    ret_node = MakeIcm_PROP_OBJ_OUT (arg_node, INFO_LASTIDS (arg_info), NULL);
     DBUG_RETURN (ret_node);
 }
 
@@ -4425,6 +4539,13 @@ COMPprf (node *arg_node, info *arg_info)
         break;
 
     case F_prop_obj_in:
+        ret_node = COMPPrfPropObjIn (arg_node, arg_info);
+        break;
+
+    case F_prop_obj_out:
+        ret_node = COMPPrfPropObjOut (arg_node, arg_info);
+        break;
+
     case F_accu:
         ret_node = TCmakeAssignIcm0 ("NOOP", NULL);
         break;

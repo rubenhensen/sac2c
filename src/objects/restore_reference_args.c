@@ -274,32 +274,6 @@ RERAlet (node *arg_node, info *arg_info)
     }
 
     /*
-     * check whether rhs is a prop_obj() and in that case substitute
-     * lhs of any reference args by rhs.
-     */
-    if ((NODE_TYPE (LET_EXPR (arg_node)) == N_prf)
-        && (PRF_PRF (LET_EXPR (arg_node)) == F_prop_obj_in)) {
-        node *args = PRF_ARGS (LET_EXPR (arg_node));
-        node *lhs = LET_IDS (arg_node);
-
-        args = EXPRS_NEXT (args); /* skip iv arg */
-
-        while (args != NULL) {
-            if (NODE_TYPE (AVIS_DECL (ID_AVIS (EXPRS_EXPR (args)))) == N_arg) {
-                arg = AVIS_DECL (ID_AVIS (EXPRS_EXPR (args)));
-
-                if (ARG_WASREFERENCE (arg) || ARG_ISREFERENCE (arg)) {
-                    AVIS_SUBST (IDS_AVIS (lhs)) = ARG_AVIS (arg);
-                }
-            }
-
-            /* iterate */
-            args = EXPRS_NEXT (args);
-            lhs = IDS_NEXT (lhs);
-        }
-    }
-
-    /*
      * substitute LHS ids
      */
     if (LET_IDS (arg_node) != NULL) {
@@ -424,6 +398,9 @@ RERAfundef (node *arg_node, info *arg_info)
 node *
 RERAprf (node *arg_node, info *arg_info)
 {
+    node *args;
+    node *lhs;
+
     DBUG_ENTER ("RERAprf");
 
     arg_node = TRAVcont (arg_node, arg_info);
@@ -441,6 +418,34 @@ RERAprf (node *arg_node, info *arg_info)
         while ((INFO_LHS (arg_info) != NULL)
                && (AVIS_SUBST (IDS_AVIS (INFO_LHS (arg_info))) != NULL)) {
             INFO_LHS (arg_info) = FREEdoFreeNode (INFO_LHS (arg_info));
+        }
+        break;
+
+    case F_prop_obj_out:
+    case F_prop_obj_in:
+        /*
+         * check whether rhs is a prop_obj() and in that case substitute
+         * lhs of any reference args by rhs.
+         */
+        args = PRF_ARGS (arg_node);
+        lhs = INFO_LHS (arg_info);
+
+        if (PRF_PRF (arg_node) == F_prop_obj_in) {
+            args = EXPRS_NEXT (args); /* skip iv arg */
+        }
+
+        while (args != NULL) {
+            if (NODE_TYPE (AVIS_DECL (ID_AVIS (EXPRS_EXPR (args)))) == N_arg) {
+                node *arg = AVIS_DECL (ID_AVIS (EXPRS_EXPR (args)));
+
+                if (ARG_WASREFERENCE (arg) || ARG_ISREFERENCE (arg)) {
+                    AVIS_SUBST (IDS_AVIS (lhs)) = ARG_AVIS (arg);
+                }
+            }
+
+            /* iterate */
+            args = EXPRS_NEXT (args);
+            lhs = IDS_NEXT (lhs);
         }
         break;
 
