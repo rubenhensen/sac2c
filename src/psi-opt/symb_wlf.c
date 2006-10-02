@@ -1,16 +1,19 @@
 /*
- * $Id$
+ * $Id: symb_wlf.c pde $
  */
 
 /** <!--********************************************************************-->
  *
- * @defgroup symbolic with loop folding
+ * @defgroup swlf symbolic With-Loop folding
  *
- * Module description goes here.
+ * TODO: write Module description here.
+ *       describe preconditions
+ *
+ * Example
  *
  * For an example, take a look at src/refcount/explicitcopy.c
  *
- * @ingroup tt
+ * @ingroup opt
  *
  * @{
  *
@@ -25,9 +28,6 @@
  *****************************************************************************/
 #include "symb_wlf.h"
 
-/*
- * Other includes go here
- */
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "node_basic.h"
@@ -35,6 +35,7 @@
 #include "dbug.h"
 #include "traverse.h"
 #include "internal_lib.h"
+#include "inferneedcounters.h"
 
 /** <!--********************************************************************-->
  *
@@ -44,21 +45,19 @@
  *****************************************************************************/
 struct INFO {
     node *fundef;
-    int swlaction;
-    node *exprs;
+    node *code;
+    int level;
 };
 
 /**
- * A template entry in the template info structure
+ * Macro definitions for INFO structure
  */
 #define INFO_FUNDEF(n) ((n)->fundef)
-#define INFO_SWLACTION(n) ((n)->swlaction)
-#define INFO_EXPRS(n) ((n)->exprs)
-
-typedef enum { SWL_pass, SWL_replace } swl_action_t;
+#define INFO_LEVEL(n) ((n)->level)
+#define INFO_CODE(n) ((n)->code)
 
 static info *
-MakeInfo ()
+MakeInfo (node *fundef)
 {
     info *result;
 
@@ -66,8 +65,9 @@ MakeInfo ()
 
     result = ILIBmalloc (sizeof (info));
 
-    INFO_FUNDEF (result) = NULL;
-    INFO_SWLACTION (result) = SWL_pass;
+    INFO_FUNDEF (result) = fundef;
+    INFO_CODE (result) = NULL;
+    INFO_LEVEL (result) = 0;
 
     DBUG_RETURN (result);
 }
@@ -81,6 +81,7 @@ FreeInfo (info *info)
 
     DBUG_RETURN (info);
 }
+
 /** <!--********************************************************************-->
  * @}  <!-- INFO structure -->
  *****************************************************************************/
@@ -94,29 +95,28 @@ FreeInfo (info *info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *SWLFdoSymbolicWithLoopFolding( node *syntax_tree)
+ * @fn node *SWLFdoSymbolicWithLoopFolding( node *fundef)
+ *
+ * @brief global entry  point of symbolic With-Loop folding
+ *
+ * @param fundef Fundef-Node to start SWLF.
+ *
+ * @return optimized fundef
  *
  *****************************************************************************/
 node *
-SWLFdoSymbolicWithLoopFolding (node *syntax_tree)
+SWLFdoSymbolicWithLoopFolding (node *fundef)
 {
-    info *info;
-
     DBUG_ENTER ("SWLFdoSymbolicWithLoopFolding");
 
-    info = MakeInfo ();
-
-    DBUG_PRINT ("SWLF", ("Starting symbolic with loop folding."));
+    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
+                 "SWLFdoSymbolicWithLoopFolding called for non-fundef node");
 
     TRAVpush (TR_swlf);
-    syntax_tree = TRAVdo (syntax_tree, info);
+    fundef = TRAVdo (fundef, NULL);
     TRAVpop ();
 
-    DBUG_PRINT ("SWLF", ("Symbolic with loop folding complete."));
-
-    info = FreeInfo (info);
-
-    DBUG_RETURN (syntax_tree);
+    DBUG_RETURN (fundef);
 }
 
 /** <!--********************************************************************-->
@@ -160,7 +160,7 @@ DummyStaticHelper (node *arg_node)
  *
  * @fn node *SWLFfundef(node *arg_node, info *arg_info)
  *
- * @brief Performs a traversal of the fundef chain without entering the body
+ * @brief applies SWLF to a given fundef.
  *
  *****************************************************************************/
 node *
@@ -172,9 +172,13 @@ SWLFfundef (node *arg_node, info *arg_info)
         DBUG_PRINT ("SWLF", ("Symbolic With-Loops fusion in function %s",
                              FUNDEF_NAME (arg_node)));
 
-        INFO_FUNDEF (arg_info) = arg_node;
+        arg_node = INFNCdoInferNeedCountersOneFundef (arg_node);
 
-        FUNDEF_INSTR (arg_node) = TRAVdo (FUNDEF_INSTR (arg_node), arg_info);
+        arg_info = MakeInfo (arg_node);
+
+        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+
+        arg_info = FreeInfo (arg_info);
 
         DBUG_PRINT ("SWLF", ("Symbolic With-Loops fusion in function %s complete",
                              FUNDEF_NAME (arg_node)));
@@ -185,24 +189,9 @@ SWLFfundef (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node SWLFblock( node *arg_node, info *arg_info)
- *
- *****************************************************************************/
-node *
-SWLFblock (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("SWLFblock");
-
-    if (BLOCK_INSTR (arg_node)) {
-        BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
  * @fn node SWLFassign( node *arg_node, info *arg_info)
+ *
+ * @brief performs a top-down traversal.
  *
  *****************************************************************************/
 node *
@@ -210,19 +199,11 @@ SWLFassign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SWLFassign");
 
-    if (ASSIGN_INSTR (arg_node)) {
-        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
-    }
+    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
-    if (ASSIGN_INSTRTYPE (arg_node) == N_let && NODE_TYPE (ASSIGN_RHS (arg_node)) == N_prf
-        && PRF_PRF (ASSIGN_RHS (arg_node)) == F_sel) {
-        PRTdoPrintNode (ASSIGN_RHS (arg_node));
-
-        if (INFO_SWLACTION (arg_info) == SWL_replace) {
-            ;
-        }
-    }
-
+    /*
+     * Top-down traversal
+     */
     if (ASSIGN_NEXT (arg_node)) {
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
     }
@@ -232,7 +213,9 @@ SWLFassign (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node SWLFwith( node *arg_node, info *arg_info)
+ * @fn node *SWLFwith( node *arg_node, info *arg_info)
+ *
+ * @brief applies SWLF to a with-loop in a top-down manner.
  *
  *****************************************************************************/
 node *
@@ -240,8 +223,56 @@ SWLFwith (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SWLFwith");
 
-    if (WITH_CODE (arg_node)) {
-        WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
+    INFO_LEVEL (arg_info) += 1;
+    INFO_CODE (arg_info) = WITH_CODE (arg_node);
+
+    /* Traverses sons */
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    INFO_LEVEL (arg_info) -= 1;
+
+    /**
+     * check the preconditions
+     */
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SWLFids( node *arg_node, info *arg_info)
+ *
+ * @brief set current With-Loop depth as ids defDepth attribute
+ *
+ *****************************************************************************/
+node *
+SWLFids (node *arg_node, info *arg_info)
+{
+    node *avis;
+
+    DBUG_ENTER ("SWLFids");
+
+    avis = IDS_AVIS (arg_node);
+
+    AVIS_DEFDEPTH (avis) = INFO_LEVEL (arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SWLFprf( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ *****************************************************************************/
+node *
+SWLFprf (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("SWLFprf");
+
+    if (PRF_PRF (arg_node) == F_sel) {
+        DBUG_PRINT ("SWLF", ("_sel_(...)"));
     }
 
     DBUG_RETURN (arg_node);

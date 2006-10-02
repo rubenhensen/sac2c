@@ -1220,9 +1220,10 @@
      <traversal id="SWLF" name="Symbolic With-Loop-Folding" default="sons" include="symb_wlf.h" >
        <travuser>
           <node name="Fundef"  />
-          <node name="Block"   />
           <node name="Assign"  />
           <node name="With"    />
+          <node name="Ids"     />
+          <node name="Prf"     />
        </travuser>
      </traversal>
       <traversal id="WLFS" name="With-Loop-Fusion" default="sons" include="WithloopFusion.h" >
@@ -4900,6 +4901,7 @@
                 <any />
                 <phases>
                   <phase name="lir" />
+                  <phase name="swlf" />
                 </phases>
               </target>
             </targets>
