@@ -269,7 +269,11 @@ CleanUp ()
 {
     DBUG_ENTER ("CleanUp");
 
-    FMGRdeleteTmpDir ();
+    if (global.cleanup) {
+        global.cleanup = FALSE;
+
+        FMGRdeleteTmpDir ();
+    }
 
     DBUG_VOID_RETURN;
 }
@@ -287,12 +291,12 @@ AbortCompilation ()
 {
     DBUG_ENTER ("AbortCompilation");
 
+    CleanUp ();
+
     fprintf (stderr, "\n*** Compilation failed ***\n");
     fprintf (stderr, "*** Exit code %d (%s)\n", global.compiler_phase,
              PHphaseName (global.compiler_phase));
     fprintf (stderr, "*** %d Error(s), %d Warning(s)\n\n", errors, warnings);
-
-    CleanUp ();
 
     exit ((int)global.compiler_phase);
 
