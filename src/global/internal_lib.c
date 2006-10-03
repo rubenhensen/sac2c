@@ -317,21 +317,32 @@ ILIBstrBufPrint (str_buf *s, const char *string)
 str_buf *
 ILIBstrBufPrintf (str_buf *s, const char *format, ...)
 {
-    va_list arg_p, arg_p_copy;
-    int len;
+    va_list arg_p;
+    int len, rem;
+    bool ok;
 
     DBUG_ENTER ("ILIBstrBufPrintf");
 
-    va_start (arg_p, format);
+    ok = FALSE;
 
-    va_copy (arg_p_copy, arg_p);
-    len = vsnprintf (NULL, 0, format, arg_p_copy);
-    va_end (arg_p_copy);
+    while (!ok) {
+        rem = s->size - s->pos;
 
-    s = EnsureStrBufSpace (s, len);
+        va_start (arg_p, format);
+        len = vsnprintf (&s->buf[s->pos], rem, format, arg_p);
+        va_end (arg_p);
 
-    s->pos += vsprintf (&s->buf[s->pos], format, arg_p);
-    va_end (arg_p);
+        if ((len >= 0) && (len < rem)) {
+            ok = TRUE;
+        } else {
+            if (len < 0) {
+                len = 2 * (s->size + 10);
+            }
+            s = EnsureStrBufSpace (s, len);
+        }
+    }
+
+    s->pos += len;
 
     DBUG_RETURN (s);
 }
