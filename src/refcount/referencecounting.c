@@ -602,15 +602,24 @@ RCIprf (node *arg_node, info *arg_info)
     case F_wl_break:
         /*
          * wl_assign( v, m, iv, idx)
-         * Traverse only value v
+         *
+         * - Traverse only value v
          */
         INFO_MODE (arg_info) = rc_prfuse;
         PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
         break;
 
     case F_prop_obj_out:
-    case F_prop_obj_in:
+        /*
+         * prop_obj_out( a)
+         * - a must be counted like a funap use of a
+         */
+        INFO_MODE (arg_info) = rc_apuse;
+        PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
+        break;
+
     case F_accu:
+    case F_prop_obj_in:
     case F_suballoc:
         /*
          * Do not visit the memory variable or the index vector!
