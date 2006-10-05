@@ -36,6 +36,8 @@
 #include "cv2str.h"
 #include "check_mem.h"
 
+#include <limits.h>
+
 static bool argtag_has_shp_init[] = {
 #define SELECTshp(it_shp) it_shp
 #include "argtag_info.mac"

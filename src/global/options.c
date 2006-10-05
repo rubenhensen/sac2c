@@ -20,6 +20,7 @@
  *****************************************************************************/
 
 #include <stdlib.h>
+#include <limits.h>
 
 #include "config.h"
 #include "dbug.h"
@@ -369,6 +370,15 @@ OPTanalyseCommandline (node *syntax_tree)
         FMGRappendPath (PK_lib_path, FMGRabsolutePathname (ARG));
     }
     ARGS_OPTION_END ("L");
+
+    ARGS_OPTION_BEGIN ("linksetsize")
+    {
+        ARG_RANGE (global.linksetsize, 0, INT_MAX);
+        if (global.linksetsize == 0) {
+            global.linksetsize = INT_MAX;
+        }
+    }
+    ARGS_OPTION_END ("linksetsize");
 
     /*
      * Options starting with mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm

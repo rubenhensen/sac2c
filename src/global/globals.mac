@@ -465,6 +465,13 @@ GLOBAL (bool, use_efence, FALSE)
  * link executable with ElectricFence (Malloc Debugger)
  */
 
+/* GLOBAL( int, linksetsize,  INT_MAX) */
+GLOBAL (int, linksetsize, 10)
+/*
+ * number of functions written to the same file when creating library
+ * Zero means unlimited.
+ */
+
 GLOBAL (bool, cleanup, TRUE)
 /*
  * Don't remove temporary files and directory when compiling
@@ -652,12 +659,6 @@ GLOBAL (bool, print_objdef_for_header_file, FALSE)
  *  In this case the ICM ND_KS_DECL_GLOBAL_ARRAY must be written
  *  differently. This global variable triggers the respective print
  *  function defined in icm2c.c. It is set by PrintModul.
- */
-
-GLOBAL (int, function_counter, 1)
-/*
- *  This global variable is used whenever the functions of a module or
- *  class are written to separate files.
  */
 
 GLOBAL (int, object_counter, 0)

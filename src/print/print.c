@@ -68,6 +68,8 @@ struct INFO {
     nodelist *efuns;
     nodelist *eobjs;
     bool firstError;
+    int filecounter;
+    int funcounter;
 };
 
 /* access macros print */
@@ -82,6 +84,8 @@ struct INFO {
 #define INFO_SHAPE(n) (n->shape)
 #define INFO_SHAPE_COUNTER(n) (n->shapecnt)
 #define INFO_FIRSTERROR(n) (n->firstError)
+#define INFO_FILECOUNTER(n) (n->filecounter)
+#define INFO_FUNCOUNTER(n) (n->filecounter)
 
 /*
  * This global variable is used to detect inside of PrintIcm() whether
@@ -198,6 +202,8 @@ MakeInfo ()
     INFO_SHAPE (result) = NULL;
     INFO_SHAPE_COUNTER (result) = NULL;
     INFO_FIRSTERROR (result) = TRUE;
+    INFO_FILECOUNTER (result) = 1;
+    INFO_FUNCOUNTER (result) = 0;
 
     DBUG_RETURN (result);
 }
@@ -873,13 +879,23 @@ PRTmodule (node *arg_node, info *arg_info)
         }
 
         fclose (global.outfile);
+        global.outfile = NULL;
 
         if (NULL != MODULE_FUNS (arg_node)) {
             TRAVdo (MODULE_FUNS (arg_node), arg_info); /* print function definitions */
-                                                       /*
-                                                        * Note that in this case a separate file is created for each function.
-                                                        * These files are opened and closed in PRTfundef().
-                                                        */
+            /*
+             * Note that in this case a separate file is created for each function.
+             * These files are opened and closed in PRTfundef().
+             */
+
+            if (global.outfile != NULL) {
+                fclose (global.outfile);
+                /*
+                 * Due to the linksetsize feature it may be the case that the lust file
+                 * created is still open for writing after having written the last
+                 * function.
+                 */
+            }
         }
 
         /*
@@ -894,7 +910,7 @@ PRTmodule (node *arg_node, info *arg_info)
                  " = 0;\n\n",
                  NSgetName (MODULE_NAMESPACE (arg_node)));
         fclose (global.outfile);
-
+        global.outfile = NULL;
     } else {
         switch (global.filetype) {
         case F_modimp:
@@ -1488,11 +1504,15 @@ PRTfundef (node *arg_node, info *arg_info)
              */
 
             if (FUNDEF_BODY (arg_node) != NULL) {
-                if (INFO_SEPARATE (arg_info)) {
+                if (INFO_SEPARATE (arg_info)
+                    && (INFO_FUNCOUNTER (arg_info) % global.linksetsize == 0)) {
                     global.outfile = FMGRwriteOpen ("%s/fun%d.c", global.tmp_dirname,
-                                                    global.function_counter);
+                                                    INFO_FILECOUNTER (arg_info));
+                    INFO_FILECOUNTER (arg_info) += 1;
                     fprintf (global.outfile, "#include \"header.h\"\n\n");
                 }
+
+                INFO_FUNCOUNTER (arg_info) += 1;
 
                 if (FUNDEF_ISWRAPPERFUN (arg_node)) {
                     fprintf (global.outfile, "/* wrapper function */\n");
@@ -1532,10 +1552,10 @@ PRTfundef (node *arg_node, info *arg_info)
 
                 fprintf (global.outfile, "\n\n");
 
-                if (INFO_SEPARATE (arg_info)) {
+                if (INFO_SEPARATE (arg_info)
+                    && (INFO_FUNCOUNTER (arg_info) % global.linksetsize == 0)) {
                     fclose (global.outfile);
                     global.outfile = NULL;
-                    global.function_counter++;
                 }
             }
         }
