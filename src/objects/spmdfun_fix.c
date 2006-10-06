@@ -123,7 +123,7 @@ ScanWithops (node *withop, node *lhs, info *arg_info)
         ScanWithops (WITHOP_NEXT (withop), IDS_NEXT (lhs), arg_info);
     }
 
-    DBUG_LEAVE;
+    DBUG_VOID_RETURN;
 }
 
 /** <!-- ****************************************************************** -->
