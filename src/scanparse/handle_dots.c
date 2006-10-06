@@ -1619,7 +1619,9 @@ HDwith (node *arg_node, info *arg_info)
      * the rest, so the withop is handeled first.
      */
 
-    WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
+    if (WITH_WITHOP (arg_node) != NULL) {
+        WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
+    }
 
     WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
     WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);

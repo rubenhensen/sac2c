@@ -1134,9 +1134,12 @@ extern int TCcountWithops (node *withop);
        ? GENARRAY_NEXT (n)                                                               \
        : (NODE_TYPE (n) == N_modarray)                                                   \
            ? MODARRAY_NEXT (n)                                                           \
-           : (NODE_TYPE (n) == N_break)                                                  \
-               ? BREAK_NEXT (n)                                                          \
-               : (NODE_TYPE (n) == N_propagate) ? PROPAGATE_NEXT (n) : (FOLD_NEXT (n)))
+           : (NODE_TYPE (n) == N_spfold)                                                 \
+               ? SPFOLD_NEXT (n)                                                         \
+               : (NODE_TYPE (n) == N_break)                                              \
+                   ? BREAK_NEXT (n)                                                      \
+                   : (NODE_TYPE (n) == N_propagate) ? PROPAGATE_NEXT (n)                 \
+                                                    : (FOLD_NEXT (n)))
 
 #define L_WITHOP_NEXT(n, rhs)                                                            \
     switch                                                                               \

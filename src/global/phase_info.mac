@@ -66,6 +66,10 @@ SUBPHASE (cpp, "cpp", "Running C preprocessor", PHdummy)
 
 SUBPHASE (sp, "sp", "Parsing input file", SPdoScanParse)
 
+SUBPHASE (hwlg, "hwlg", "Handling multi-generator with-loops", HWLGdoHandleWithLoops)
+
+SUBPHASE (hwlo, "hwlo", "Handling multi-operator with-loops", HWLOdoHandleWithLoops)
+
 SUBPHASE (acn, "acn", "Resolving axis control and dot notation", HDdoEliminateSelDots)
 
 SUBPHASE (pragma, "pragma", "Resolving pragma annotations", RSPdoResolvePragmas)

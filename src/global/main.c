@@ -145,6 +145,8 @@ main (int argc, char *argv[])
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
     syntax_tree = PHrunCompilerSubPhase (SUBPH_sp, syntax_tree);
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_hwlg, syntax_tree);
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_hwlo, syntax_tree);
     syntax_tree = PHrunCompilerSubPhase (SUBPH_acn, syntax_tree);
     syntax_tree = PHrunCompilerSubPhase (SUBPH_pragma, syntax_tree);
     syntax_tree = PHrunCompilerSubPhase (SUBPH_objinit, syntax_tree);

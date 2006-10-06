@@ -41,6 +41,7 @@ extern node *FLATgenerator (node *arg_node, info *arg_info);
 extern node *FLATgenarray (node *arg_node, info *arg_info);
 extern node *FLATmodarray (node *arg_node, info *arg_info);
 extern node *FLATspfold (node *arg_node, info *arg_info);
+extern node *FLATpropagate (node *arg_node, info *arg_info);
 extern node *FLATcode (node *arg_node, info *arg_info);
 
 #endif /* _SAC_FLATTEN_H_ */

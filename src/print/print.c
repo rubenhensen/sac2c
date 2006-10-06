@@ -3369,7 +3369,12 @@ PRTwith (node *arg_node, info *arg_info)
     TRAVdo (WITH_PART (arg_node), arg_info);
     global.indent--;
 
-    TRAVdo (WITH_WITHOP (arg_node), arg_info);
+    if (WITH_WITHOP (arg_node) != NULL) {
+        TRAVdo (WITH_WITHOP (arg_node), arg_info);
+    } else {
+        INDENT;
+        fprintf (global.outfile, "void ");
+    }
 
     global.indent--;
 
@@ -3564,8 +3569,10 @@ PRTcode (node *arg_node, info *arg_info)
     /* print the code section; the body first */
     TRAVdo (CODE_CBLOCK (arg_node), arg_info);
 
-    fprintf (global.outfile, " : ");
-    TRAVdo (CODE_CEXPRS (arg_node), arg_info);
+    if (CODE_CEXPRS (arg_node) != NULL) {
+        fprintf (global.outfile, " : ");
+        TRAVdo (CODE_CEXPRS (arg_node), arg_info);
+    }
 
     fprintf (global.outfile, " ; ");
 

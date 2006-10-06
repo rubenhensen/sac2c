@@ -151,7 +151,9 @@ HCEcode (node *arg_node, info *arg_info)
         CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
     }
 
-    CODE_CEXPRS (arg_node) = TRAVdo (CODE_CEXPRS (arg_node), arg_info);
+    if (CODE_CEXPRS (arg_node) != NULL) {
+        CODE_CEXPRS (arg_node) = TRAVdo (CODE_CEXPRS (arg_node), arg_info);
+    }
 
     if (INFO_HCE_PREASSIGN (arg_info) != NULL) {
         CODE_CBLOCK_INSTR (arg_node)
@@ -285,7 +287,9 @@ HCEwith (node *arg_node, info *arg_info)
 
     WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
     WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
-    WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
+    if (WITH_WITHOP (arg_node) != NULL) {
+        WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }

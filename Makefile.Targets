@@ -43,14 +43,15 @@ serialize   = serialize_node.o serialize_attribs.o deserialize.o \
               serialize_stack.o serialize_symboltable.o \
               serialize_filenames.o add_function_body.o
 
-scanparse   = sac.tab.o sac.lex.o scnprs.o handle_dots.o resolvepragma.o
+scanparse   = sac.tab.o sac.lex.o scnprs.o handle_dots.o resolvepragma.o \
+              handle_with_loop_generators.o handle_with_loop_operators.o
 
 
 flatten     = flatten.o lac2fun.o fun2lac.o insert_vardec.o \
               handle_mops.o UndoSSATransform.o ToNewTypes.o SSATransform.o \
               WLPartitionGeneration.o WLEnhancement.o ExplicitAccumulate.o \
               ToOldTypes.o wlanalysis.o lacinlining.o wldefaultpartition.o \
-              while2do.o handle_condexpr.o codesimplification.o 
+              while2do.o handle_condexpr.o codesimplification.o
 
 constants   = shape.o constants_basic.o constants_struc_ops.o \
               constants_ari_ops.o cv2cv.o cv2scalar.o cv2str.o \

@@ -269,6 +269,29 @@
           <node name="SPMop" />
         </travuser>
       </traversal>
+      <traversal id="HWLG" name="Handle multi-generator with-loops"
+                 default="sons" include="handle_with_loop_generators.h" >
+        <travuser>
+          <node name="Assign" />
+          <node name="With" />
+          <node name="Genarray" />
+          <node name="Modarray" />
+          <node name="SPFold" />
+          <node name="Propagate" />
+        </travuser>
+      </traversal>
+      <traversal id="HWLO" name="Handle multi-operator with-loops"
+                 default="sons" include="handle_with_loop_operators.h" >
+        <travuser>
+          <node name="Assign" />
+          <node name="Let" />
+          <node name="With" />
+          <node name="Genarray" />
+          <node name="Modarray" />
+          <node name="SPFold" />
+          <node name="Propagate" />
+        </travuser>
+      </traversal>
       <traversal id="HD" name="Handle Dots" default="sons" include="handle_dots.h">
         <travuser>
           <node name="SPId" />
@@ -337,6 +360,7 @@
           <node name="Generator" />
           <node name="Genarray" />
           <node name="Modarray" />
+          <node name="Propagate" />
           <node name="SPFold" />
           <node name="Code" />
         </travuser>
@@ -5245,7 +5269,7 @@
         </son>
         <son name="WithOp">
           <targets>
-            <target mandatory="yes">
+            <target mandatory="no">
               <set name="WithOp" />
               <phases>
                 <all />
@@ -5665,7 +5689,7 @@
         </son>
         <son name="CExprs">
           <targets>
-            <target mandatory="yes">
+            <target mandatory="no">
               <node name="Exprs" />
               <phases>
                 <all />

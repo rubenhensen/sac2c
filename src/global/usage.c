@@ -140,6 +140,10 @@ USGprintUsage ()
 
     PRINT_BREAK_SPEC (PH_scanparse, "cpp", "Stop after running the C preprocessor.");
     PRINT_BREAK_SPEC (PH_scanparse, "sp", "Stop after parsing (yacc).");
+    PRINT_BREAK_SPEC (PH_scanparse, "hwlg",
+                      "Stop after transforming multi-generator with-loops");
+    PRINT_BREAK_SPEC (PH_scanparse, "hwlo",
+                      "Stop after transforming multi-operator with-loops");
     PRINT_BREAK_SPEC (PH_scanparse, "acn",
                       "Stop after resolving the axis control notation.");
     PRINT_BREAK_SPEC (PH_scanparse, "pragma", "Stop after resolving pragmas");

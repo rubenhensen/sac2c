@@ -144,9 +144,9 @@ PRF_CAT_VxV  PRF_TAKE_SxV  PRF_DROP_SxV
 %type <node> exprblock  exprblock2  assignsOPTret  assigns  assign 
      let cond optelse  doloop whileloop forloop  assignblock
      lets qual_ext_id qual_ext_ids ids
-%type <node> exprs  expr  expr_ap  opt_arguments  expr_ar  expr_sel  with 
-     generator  steps  width  nwithop  propagate withop  wlassignblock  genidx 
-     part  parts nums returntypes returndectypes ntypes varntypes
+%type <node> exprs expr expr_with expr_ap opt_arguments expr_ar expr_sel
+     with generator  steps  width  nwithops nwithop  withop  wlassignblock  genidx 
+     part  parts npart nparts nums returntypes returndectypes ntypes varntypes
 %type <prf> genop prf
 
 %type <id> reservedid  string ext_id
@@ -155,7 +155,7 @@ PRF_CAT_VxV  PRF_TAKE_SxV  PRF_DROP_SxV
 
 /* pragmas */
 %type <id> pragmacachesim
-%type <node> wlcomp_pragma_global  wlcomp_pragma_local  wlcomp_conf
+%type <node> wlcomp_pragma_global  wlcomp_pragma_local
 %type <node> pragmas pragma pragmalist
 /*
 %type <node> pragmas 
@@ -718,7 +718,7 @@ fundec2: fundecargs BRACKET_R { $<cint>$ = global.linenum; } SEMIC
 
 hash_pragma: HASH PRAGMA ;
 
-wlcomp_pragma_global: hash_pragma WLCOMP wlcomp_conf
+wlcomp_pragma_global: hash_pragma WLCOMP expr_ap
                       { if (global_wlcomp_aps != NULL) {
                           /* remove old global pragma */
                           global_wlcomp_aps = FREEdoFreeTree( global_wlcomp_aps);
@@ -730,7 +730,7 @@ wlcomp_pragma_global: hash_pragma WLCOMP wlcomp_conf
                       }
                     ;
 
-wlcomp_pragma_local: hash_pragma WLCOMP wlcomp_conf
+wlcomp_pragma_local: hash_pragma WLCOMP expr_ap
                      { $3 = CheckWlcompConf( $3, NULL);
                        if ($3 != NULL) {
                          $$ = TBmakePragma();
@@ -748,10 +748,6 @@ wlcomp_pragma_local: hash_pragma WLCOMP wlcomp_conf
                        }
                      }
                    ;
-
-wlcomp_conf: ID        { $$ = TBmakeId( TBmakeAvis( $1, NULL)); }
-           | expr_ap   { $$ = $1; }
-           ;
 
 
 pragmacachesim: hash_pragma CACHESIM string   { $$ = $3;              }
@@ -1046,6 +1042,7 @@ let:       ids LET { $<cint>$ = global.linenum; } expr
              NODE_LINE( $$) = $<cint>6;
            }
          | expr_ap { $$ = TBmakeLet( NULL, $1); }
+         | expr_with { $$ = TBmakeLet( NULL, $1); }
          | ID INC { $$ = MakeIncDecLet( $1, ILIBstringCopy( "+")); }
          | INC ID { $$ = MakeIncDecLet( $2, ILIBstringCopy( "+")); }
          | ID DEC { $$ = MakeIncDecLet( $1, ILIBstringCopy( "-")); }
@@ -1174,7 +1171,7 @@ expr: qual_ext_id                { $$ = $1;                   }
     | expr QUESTION expr COLON expr 
       { $$ = TBmakeFuncond( $1, $3, $5); 
       }
-    | BRACKET_L expr BRACKET_R
+    |  BRACKET_L expr BRACKET_R
       { $$ = $2;
         if( NODE_TYPE( $2) == N_spmop) {
           SPMOP_ISFIXED( $$) = TRUE;
@@ -1222,6 +1219,7 @@ expr: qual_ext_id                { $$ = $1;                   }
       }
     | expr_sel                    { $$ = $1; }   /* bracket notation      */
     | expr_ap                     { $$ = $1; }   /* prefix function calls */
+    | expr_with                   { $$ = $1; }   /* with loops            */
     | expr_ar                     { $$ = $1; }   /* constant arrays       */
     | BRACKET_L COLON ntype BRACKET_R expr   %prec CAST
       { $$ = TBmakeCast( $3, $5);
@@ -1232,18 +1230,18 @@ expr: qual_ext_id                { $$ = $1;                   }
     | BRACE_L SQBR_L exprs SQBR_R ARROW expr BRACE_R
       { $$ = TBmakeSetwl( $3, $6);
       }
-    | wlcomp_pragma_local NWITH { $<cint>$ = global.linenum; } with
-      { $$ = $4;
-        NODE_LINE( $$)= $<cint>3;
-        WITH_PRAGMA( $$) = $1;
-      }
     ;
       
+expr_with: NWITH { $<cint>$ = global.linenum; } with
+      { $$ = $3;
+        NODE_LINE( $$)= $<cint>2;
+      }
+      ;
 
 with: BRACKET_L generator BRACKET_R wlassignblock withop
       { 
         node *cexpr, *code;
-#if 0
+#if 1
         /*
          * For now, we do not yet ask for the new syntax, BUT later we will
          * activate the following two lines....
@@ -1280,14 +1278,34 @@ with: BRACKET_L generator BRACKET_R wlassignblock withop
          */
         PART_CODE( WITH_PART( $$)) = code;
       }
-    | BRACKET_L ID BRACKET_R parts nwithop propagate
+    | BRACKET_L ID BRACKET_R parts nwithop
       { $$ = $4;
         WITH_WITHOP( $$) = $5;
-        L_WITHOP_NEXT( $5, $6);
+#if 1
         /*
-         * At the time being we ignore $2. However, it SHOULD be checked
-         * against all genidxs in $4 here....
+         * At the time being we ignore $2. However, it SHOULD not be specified
+         * here.....
          */
+        CTIwarnLine( global.linenum,
+                     "Extra specification of with-loop index is deprecated!\n"
+                     "Please eliminate the unifying index in brackets!");
+#endif
+
+      }
+    | BRACE_L wlcomp_pragma_local nparts BRACE_R BRACKET_L nwithops BRACKET_R
+      { $$ = $3;
+        WITH_WITHOP( $$) = $6;
+        WITH_PRAGMA( $$) = $2;
+      }
+    | BRACE_L wlcomp_pragma_local nparts BRACE_R nwithop
+      { $$ = $3;
+        WITH_WITHOP( $$) = $5;
+        WITH_PRAGMA( $$) = $2;
+      }
+    | BRACE_L wlcomp_pragma_local nparts BRACE_R TYPE_VOID
+      { $$ = $3;
+        WITH_WITHOP( $$) = NULL;
+        WITH_PRAGMA( $$) = $2;
       }
     ;
 
@@ -1362,6 +1380,37 @@ expr_ar: SQBR_L { $<cint>$ = global.linenum; } exprs SQBR_R
          }
        ;
 
+nparts: npart
+       { $$ = $1;
+       }
+     | npart nparts
+       { $$ = $1;
+         PART_NEXT( WITH_PART( $1)) = WITH_PART( $2);
+         CODE_NEXT( WITH_CODE( $1)) = WITH_CODE( $2);
+         WITH_PART( $2) = NULL;
+         WITH_CODE( $2) = NULL;
+         FREEdoFreeTree( $2);
+       }
+     ;
+
+npart: BRACKET_L generator BRACKET_R wlassignblock COLON expr SEMIC
+       { $$ = TBmakeWith( $2, TBmakeCode( $4, TBmakeExprs( $6, NULL)), NULL);
+         CODE_USED( WITH_CODE( $$))++;
+         PART_CODE( $2) = WITH_CODE( $$);
+       }
+     | BRACKET_L generator BRACKET_R wlassignblock COLON
+                                    BRACKET_L expr COMMA exprs BRACKET_R SEMIC
+       { $$ = TBmakeWith( $2, TBmakeCode( $4, TBmakeExprs( $7, $9)), NULL);
+         CODE_USED( WITH_CODE( $$))++;
+         PART_CODE( $2) = WITH_CODE( $$);
+       }
+     | BRACKET_L generator BRACKET_R wlassignblock SEMIC
+       { $$ = TBmakeWith( $2, TBmakeCode( $4, NULL), NULL);
+         CODE_USED( WITH_CODE( $$))++;
+         PART_CODE( $2) = WITH_CODE( $$);
+       }
+     ;
+     
 parts: part
        { $$ = $1;
        }
@@ -1377,6 +1426,11 @@ parts: part
 
 part: BRACKET_L generator BRACKET_R wlassignblock COLON exprs SEMIC
       { $$ = TBmakeWith( $2, TBmakeCode( $4, $6), NULL);
+        CODE_USED( WITH_CODE( $$))++;
+        PART_CODE( $2) = WITH_CODE( $$);
+      }
+    | BRACKET_L generator BRACKET_R wlassignblock SEMIC
+      { $$ = TBmakeWith( $2, TBmakeCode( $4, NULL), NULL);
         CODE_USED( WITH_CODE( $$))++;
         PART_CODE( $2) = WITH_CODE( $$);
       }
@@ -1445,6 +1499,15 @@ wlassignblock: BRACE_L { $<cint>$ = global.linenum; } assigns BRACE_R
                }
              ;
 
+nwithops: nwithop
+          { $$ = $1;
+          }
+        | nwithop COMMA nwithops
+          { $$ = $1;
+            L_WITHOP_NEXT( $$, $3);
+          }
+        ;
+
 nwithop: GENARRAY BRACKET_L expr COMMA expr BRACKET_R
          { $$ = TBmakeGenarray( $3, $5);
          }
@@ -1467,15 +1530,10 @@ nwithop: GENARRAY BRACKET_L expr COMMA expr BRACKET_R
            SPFOLD_GUARD( $$) = $7;
            $3 = FREEdoFreeTree( $3);
          }
+       | PROPAGATE BRACKET_L expr BRACKET_R
+         { $$ = TBmakePropagate( $3);
+         }
        ;
-
-propagate: PROPAGATE BRACKET_L expr BRACKET_R propagate
-           { $$ = TBmakePropagate( $3);
-             PROPAGATE_NEXT( $$) = $5;
-           }
-         | /* empty */
-           { $$ = NULL; }
-         ;
 
 withop: GENARRAY BRACKET_L expr COMMA expr BRACKET_R
         { $$ = TBmakeGenarray( $3, NULL);
