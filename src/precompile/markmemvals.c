@@ -864,7 +864,9 @@ MMVwith2 (node *arg_node, info *arg_info)
     INFO_LHS_WL (arg_info) = INFO_LHS (arg_info);
     INFO_WITHOP (arg_info) = WITH2_WITHOP (arg_node);
 
-    WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
+    if (WITH2_WITHOP (arg_node) != NULL) {
+        WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
+    }
 
     if (WITH2_SEGS (arg_node) != NULL) {
         WITH2_SEGS (arg_node) = TRAVdo (WITH2_SEGS (arg_node), arg_info);
@@ -1124,7 +1126,9 @@ MMVcode (node *arg_node, info *arg_info)
         CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
     }
 
-    CODE_CEXPRS (arg_node) = TRAVdo (CODE_CEXPRS (arg_node), arg_info);
+    if (CODE_CEXPRS (arg_node) != NULL) {
+        CODE_CEXPRS (arg_node) = TRAVdo (CODE_CEXPRS (arg_node), arg_info);
+    }
 
     /*
      * if at least one WL-operator ist fold the accumulation results

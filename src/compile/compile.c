@@ -5788,29 +5788,33 @@ COMPwith2 (node *arg_node, info *arg_info)
      * Take type of first operator as profile name
      * even it is a multioperator WL
      */
-    switch (WITH2_TYPE (arg_node)) {
-    case N_genarray:
-        profile_name = "genarray";
-        break;
+    if (WITH2_WITHOP (arg_node) == NULL) {
+        profile_name = "void";
+    } else {
+        switch (WITH2_TYPE (arg_node)) {
+        case N_genarray:
+            profile_name = "genarray";
+            break;
 
-    case N_modarray:
-        profile_name = "modarray";
-        break;
+        case N_modarray:
+            profile_name = "modarray";
+            break;
 
-    case N_fold:
-        profile_name = "fold";
-        break;
+        case N_fold:
+            profile_name = "fold";
+            break;
 
-    case N_propagate:
-        profile_name = "propagate";
-        break;
+        case N_propagate:
+            profile_name = "propagate";
+            break;
 
-    case N_break:
-        DBUG_ASSERT ((0), "Break must not appear as a first withop");
+        case N_break:
+            DBUG_ASSERT ((0), "Break must not appear as a first withop");
 
-    default:
-        DBUG_ASSERT ((0), "illegal withop type found");
-        break;
+        default:
+            DBUG_ASSERT ((0), "illegal withop type found");
+            break;
+        }
     }
 
     /************************************************
@@ -6497,8 +6501,6 @@ COMPwlgridx (node *arg_node, info *arg_info)
              */
             cexprs = CODE_CEXPRS (WLGRIDX_CODE (arg_node));
 
-            DBUG_ASSERT ((cexprs != NULL), "no code exprs found");
-
             DBUG_ASSERT ((WLGRIDX_CBLOCK (arg_node) != NULL),
                          "no code block found in N_Ncode node");
             DBUG_ASSERT ((WLGRIDX_CBLOCK_INSTR (arg_node) != NULL),
@@ -6514,7 +6516,7 @@ COMPwlgridx (node *arg_node, info *arg_info)
             idxs_exprs = WITH2_IDXS (wlnode);
             withop = WITH2_WITHOP (wlnode);
 
-            while (tmp_ids != NULL) {
+            while (tmp_ids != NULL && cexprs != NULL) {
                 cexpr = EXPRS_EXPR (cexprs);
                 /*
                  * choose right ICM

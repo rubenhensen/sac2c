@@ -3996,7 +3996,12 @@ PRTwith2 (node *arg_node, info *arg_info)
 
     INDENT;
     fprintf (global.outfile, "/********** conexpr: **********/\n");
-    TRAVdo (WITH2_WITHOP (arg_node), arg_info);
+    if (WITH2_WITHOP (arg_node) != NULL) {
+        TRAVdo (WITH2_WITHOP (arg_node), arg_info);
+    } else {
+        INDENT;
+        fprintf (global.outfile, "void ");
+    }
 
     global.indent--;
 

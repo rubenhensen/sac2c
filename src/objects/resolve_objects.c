@@ -368,22 +368,28 @@ static node *
 AddObjectsToWithExprs (node *withexprs, node *objects)
 {
     node *exprs;
+    node *newexprs;
     node *object;
     node *avis;
 
     DBUG_ENTER ("AddObjectsToWithExprs");
 
-    /* Append to the last exprs to match the extract() ops */
     exprs = withexprs;
-    while (EXPRS_NEXT (exprs) != NULL) {
+    while (exprs != NULL && EXPRS_NEXT (exprs) != NULL) {
         exprs = EXPRS_NEXT (exprs);
     }
 
     object = objects;
     while (object != NULL) {
         avis = ID_AVIS (EXPRS_EXPR (object));
-        EXPRS_NEXT (exprs) = TBmakeExprs (TBmakeId (avis), NULL);
-        exprs = EXPRS_NEXT (exprs);
+        newexprs = TBmakeExprs (TBmakeId (avis), NULL);
+        if (exprs != NULL) {
+            EXPRS_NEXT (exprs) = newexprs;
+            exprs = EXPRS_NEXT (exprs);
+        } else {
+            withexprs = newexprs;
+            exprs = newexprs;
+        }
         object = EXPRS_NEXT (object);
     }
 
@@ -403,12 +409,13 @@ AddObjectsToWithOps (node *withops, node *objects)
 {
     node *withop;
     node *object;
+    node *newop;
 
     DBUG_ENTER ("AddObjectsToWithOps");
 
     /* Fast-forward to the last withop */
     withop = withops;
-    while (WITHOP_NEXT (withop) != NULL) {
+    while (withop != NULL && WITHOP_NEXT (withop) != NULL) {
         withop = WITHOP_NEXT (withop);
     }
 
@@ -416,8 +423,15 @@ AddObjectsToWithOps (node *withops, node *objects)
     object = objects;
     while (object != NULL) {
         /* Use the original object as default element */
-        L_WITHOP_NEXT (withop, TBmakePropagate (DUPdoDupTree (EXPRS_EXPR (object))));
-        withop = WITHOP_NEXT (withop);
+        newop = TBmakePropagate (DUPdoDupTree (EXPRS_EXPR (object)));
+
+        if (withop != NULL) {
+            L_WITHOP_NEXT (withop, newop);
+            withop = WITHOP_NEXT (withop);
+        } else {
+            withops = newop;
+            withop = newop;
+        }
         object = EXPRS_NEXT (object);
     }
 
@@ -470,15 +484,20 @@ AddObjectsToLHS (node *lhs_ids, node *objects)
 
     /* Append to the last exprs to match the extract() ops */
     ids = lhs_ids;
-    while (IDS_NEXT (ids) != NULL) {
+    while (ids != NULL && IDS_NEXT (ids) != NULL) {
         ids = IDS_NEXT (ids);
     }
 
     object = objects;
     while (object != NULL) {
         avis = ID_AVIS (EXPRS_EXPR (object));
-        IDS_NEXT (ids) = TBmakeIds (avis, NULL);
-        ids = IDS_NEXT (ids);
+        if (ids != NULL) {
+            IDS_NEXT (ids) = TBmakeIds (avis, NULL);
+            ids = IDS_NEXT (ids);
+        } else {
+            ids = TBmakeIds (avis, NULL);
+            lhs_ids = ids;
+        }
         object = EXPRS_NEXT (object);
     }
 
