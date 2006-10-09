@@ -161,10 +161,10 @@ TransformArtificialReturnExprsIntoAssignments (node *args, node *exprs, node **a
              * remove the return expression
              */
             exprs = FREEdoFreeNode (exprs);
-
-            exprs = TransformArtificialReturnExprsIntoAssignments (ARG_NEXT (args), exprs,
-                                                                   assigns);
         }
+
+        exprs = TransformArtificialReturnExprsIntoAssignments (ARG_NEXT (args), exprs,
+                                                               assigns);
     }
 
     DBUG_RETURN (exprs);
