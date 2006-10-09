@@ -5801,6 +5801,10 @@ COMPwith2 (node *arg_node, info *arg_info)
         profile_name = "fold";
         break;
 
+    case N_propagate:
+        profile_name = "propagate";
+        break;
+
     case N_break:
         DBUG_ASSERT ((0), "Break must not appear as a first withop");
 

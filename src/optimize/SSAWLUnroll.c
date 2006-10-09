@@ -817,6 +817,50 @@ CheckUnrollFold (node *wln)
 /******************************************************************************
  *
  * function:
+ *   bool CheckUnrollPropagate( node *wln, info *arg_info)
+ *
+ * description:
+ *   Checks whether the given propagate-wl can be unrolled.
+ *
+ ******************************************************************************/
+
+static bool
+CheckUnrollPropagate (node *wln)
+{
+    bool ok = TRUE;
+    int elements;
+    node *partn;
+    node *genn;
+
+    DBUG_ENTER ("CheckUnrollPropagate");
+
+    /*
+     * Loop through all N_parts, counting elements.
+     * All bounds (low, high, step, width) have to be constant.
+     */
+
+    partn = WITH_PART (wln);
+    elements = 0;
+
+    while (partn != NULL) {
+        genn = PART_GENERATOR (partn);
+        elements += CountElements (genn);
+        partn = PART_NEXT (partn);
+    }
+
+    if (elements > global.wlunrnum) {
+        ok = FALSE;
+        if (elements <= 32) {
+            CTInote ("WLUR: -maxwlur %d would unroll propagate with-loop", elements);
+        }
+    }
+
+    DBUG_RETURN (ok);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *FinalizeFold( node *bodycode, node *withop,
  *                                info *arg_info)
  *
@@ -989,7 +1033,7 @@ CheckUnrollWithloop (node *wln, info *arg_info)
             /* no-op */
             break;
         case N_propagate:
-            /* no-op */
+            ok = CheckUnrollPropagate (wln);
             break;
         default:
             DBUG_ASSERT (0, "unhandled with-op");

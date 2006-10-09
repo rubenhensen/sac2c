@@ -94,7 +94,8 @@ FreeInfo (info *info)
 }
 
 #ifndef DBUG_OFF
-static char *gen_prop_str[] = {"GPT_empty", "GPT_full", "GPT_partial", "GPT_unknown"};
+static char *gen_prop_str[]
+  = {"GPT_unknown", "GPT_empty", "GPT_full", "GPT_partial", "GPT_unknown"};
 
 #endif
 
@@ -340,7 +341,8 @@ ComputeGeneratorProperties (node *wl, shape *max_shp)
     }
 
     if (res == GPT_unknown) {
-        if ((NODE_TYPE (WITH_WITHOP (wl)) == N_fold)) {
+        if (NODE_TYPE (WITH_WITHOP (wl)) == N_fold
+            || NODE_TYPE (WITH_WITHOP (wl)) == N_propagate) {
             res = GPT_full;
         } else {
             /**
@@ -573,7 +575,8 @@ WLAgenerator (node *arg_node, info *arg_info)
     }
 
     if (gshape == GV_struct_constant) {
-        if (NODE_TYPE (WITH_WITHOP (wln)) == N_fold) {
+        if (NODE_TYPE (WITH_WITHOP (wln)) == N_fold
+            || NODE_TYPE (WITH_WITHOP (wln)) == N_propagate) {
             gprop = GPT_full;
         } else {
             gprop = GPT_partial;
