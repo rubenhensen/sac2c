@@ -2416,10 +2416,10 @@ SAC_MT_DECLARE_LOCK (SAC_MT_init_lock)
 /*****************************************************************************/
 
 #define SAC_ND_PROP_OBJ_IN()
-/* SAC_MT_ACQUIRE_LOCK( SAC_MT_propagate_lock); */
+SAC_MT_ACQUIRE_LOCK (SAC_MT_propagate_lock);
 
 #define SAC_ND_PROP_OBJ_OUT()
-/* SAC_MT_RELEASE_LOCK( SAC_MT_propagate_lock); */
+SAC_MT_RELEASE_LOCK (SAC_MT_propagate_lock);
 
 #define SAC_ND_PROP_OBJ_UNBOX(unboxed, boxed)                                            \
     SAC_ND_A_FIELD (unboxed) = *SAC_NAMEP (SAC_ND_A_FIELD (boxed));
