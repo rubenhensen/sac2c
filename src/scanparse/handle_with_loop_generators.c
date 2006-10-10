@@ -337,20 +337,23 @@ SplitWith (node *arg_node, info *arg_info)
 node *
 HWLGwith (node *arg_node, info *arg_info)
 {
-    node *old_lastassign, *new_assigns;
+    node *old_lastassign, *new_assigns = NULL;
 
     DBUG_ENTER ("HWLGwith");
 
-    DBUG_PRINT ("HWLG", ("N_with found; traversing withops now:"));
     /**
      * First, we extract potential Multi-Generator With-Loops within
      * the withops. These may occur as we are run prior to flatten!
      */
-    old_lastassign = INFO_HWLG_LASTASSIGN (arg_info);
-    INFO_HWLG_LASTASSIGN (arg_info) = NULL;
-    WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
-    new_assigns = INFO_HWLG_LASTASSIGN (arg_info);
-    INFO_HWLG_LASTASSIGN (arg_info) = old_lastassign;
+    if (WITH_WITHOP (arg_node) != NULL) {
+        DBUG_PRINT ("HWLG", ("N_with found; traversing withops now:"));
+
+        old_lastassign = INFO_HWLG_LASTASSIGN (arg_info);
+        INFO_HWLG_LASTASSIGN (arg_info) = NULL;
+        WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
+        new_assigns = INFO_HWLG_LASTASSIGN (arg_info);
+        INFO_HWLG_LASTASSIGN (arg_info) = old_lastassign;
+    }
 
     DBUG_PRINT ("HWLG", ("              splitting generators now:"));
     /**
