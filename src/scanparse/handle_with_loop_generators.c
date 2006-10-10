@@ -119,7 +119,7 @@
  *
  */
 
-typedef enum { T_traverse, T_create } mode_t;
+typedef enum { T_traverse, T_create } traversal_mode_t;
 
 /**
  * INFO structure
@@ -128,7 +128,7 @@ struct INFO {
     node *lastassign;
     node *lhs;
     node *withops;
-    mode_t withop_traversal_mode;
+    traversal_mode_t withop_traversal_mode;
 };
 
 /**
