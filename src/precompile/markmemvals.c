@@ -602,7 +602,6 @@ MMVprfWLAssign (node *arg_node, info *arg_info)
 static node *
 MMVprfPropObjIn (node *arg_node, info *arg_info)
 {
-    node *withop;
     node *ids_assign;
     node *args;
 
@@ -625,8 +624,6 @@ MMVprfPropObjIn (node *arg_node, info *arg_info)
 
     ids_assign = INFO_LHS (arg_info);
     args = EXPRS_NEXT (PRF_ARGS (arg_node));
-
-    DBUG_ASSERT ((withop != NULL), "F_prop_obj_in without withloop");
 
     while (args != NULL) {
         DBUG_ASSERT ((ids_assign != NULL), "ids of assign is missing");
@@ -658,7 +655,6 @@ MMVprfPropObjIn (node *arg_node, info *arg_info)
 static node *
 MMVprfPropObjOut (node *arg_node, info *arg_info)
 {
-    node *withop;
     node *ids_assign;
     node *args;
 
@@ -681,8 +677,6 @@ MMVprfPropObjOut (node *arg_node, info *arg_info)
 
     ids_assign = INFO_LHS (arg_info);
     args = EXPRS_NEXT (PRF_ARGS (INFO_PROP_IN (arg_info)));
-
-    DBUG_ASSERT ((withop != NULL), "F_prop_obj_out without withloop");
 
     while (args != NULL) {
         DBUG_ASSERT ((ids_assign != NULL), "ids of assign is missing");

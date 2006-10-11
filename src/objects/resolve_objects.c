@@ -722,6 +722,7 @@ RSOlet (node *arg_node, info *arg_info)
          * and empty it. Afterwards, merge our existing object
          * set with the one resulting from the with-loop.
          */
+        saved_objs = NULL;
         if (NODE_TYPE (LET_EXPR (arg_node)) == N_with) {
             saved_objs = INFO_OBJECTS (arg_info);
             INFO_OBJECTS (arg_info) = NULL;

@@ -194,6 +194,7 @@ BubbleArgUp (node *fundef_args, int pos)
     prev_iter = NULL;
     iter = fundef_args;
     count = 1;
+    keep = NULL;
 
     /* Iterate until we hit the argument we're looking for. */
     while (iter != NULL) {
@@ -243,6 +244,7 @@ BubbleRetUp (node *fundef_rets, int pos)
     prev_iter = NULL;
     iter = fundef_rets;
     count = 1;
+    keep = NULL;
 
     /* Iterate until we hit the ret we're looking for. */
     while (iter != NULL) {
@@ -292,6 +294,7 @@ BubbleExprUp (node *exprs, int pos)
     prev_iter = NULL;
     iter = exprs;
     count = 1;
+    keep = NULL;
 
     /* Iterate until we hit the expr we're looking for. */
     while (iter != NULL) {
@@ -338,6 +341,7 @@ BubbleIdsUp (node *ids, int pos)
     prev_iter = NULL;
     iter = ids;
     count = 1;
+    keep = NULL;
 
     /* Iterate until we hit the expr we're looking for. */
     while (iter != NULL) {
