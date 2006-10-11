@@ -206,6 +206,7 @@ UpdateFixSignature (node *fundef, ntype *arg_ts)
  *    Here, we assume that all argument types are either array types or
  *    type variables with identical Min and Max!
  *    This function replaces the old type siganture (in the N_arg nodes)
+ *    by type variables and makes the argument types subtypes of those.
  *    It returns the modified N_fundef node.
  *
  ******************************************************************************/
@@ -241,7 +242,14 @@ UpdateVarSignature (node *fundef, ntype *arg_ts)
             new_type = old_type;
         }
         ok = ok && SSInewTypeRel (type, new_type);
-        DBUG_ASSERT (ok, "UpdateVarSignature called with incompatible args");
+        if (!ok) {
+            CTIerrorLine (global.linenum,
+                          "loop variable \"%s\" is being used inconsistently; "
+                          "conflicting types are %s and %s",
+                          ARG_NAME (args), TYtype2String (type, FALSE, 0),
+                          TYtype2String (TYfixAndEliminateAlpha (new_type), FALSE, 0));
+            CTIabortOnError ();
+        }
 
         ARG_NTYPE (args) = new_type;
 
@@ -577,7 +585,7 @@ SPEChandleLacFun (node *fundef, node *assign, ntype *args)
      * types minima of these, i.e., we make the overall types potentially
      * less precise. This is done by "UpdateVarSignature".
      */
-    UpdateVarSignature (fundef, args);
+    fundef = UpdateVarSignature (fundef, args);
 
     DBUG_RETURN (fundef);
 }
