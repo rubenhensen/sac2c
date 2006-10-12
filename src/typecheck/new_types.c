@@ -3665,7 +3665,11 @@ TYlubOfTypes (ntype *t1, ntype *t2)
 
     switch (TYcmpTypes (t1, t2)) {
     case TY_eq:
-        res = TYcopyType (t1);
+        if (TYisBottom (t1)) {
+            res = TUcombineBottom (t1, t2);
+        } else {
+            res = TYcopyType (t1);
+        }
         break;
     case TY_lt:
         res = TYcopyType (t2);

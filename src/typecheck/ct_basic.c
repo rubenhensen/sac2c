@@ -191,39 +191,27 @@ NTCCTfuncond (te_info *err_info, ntype *args)
             CTIabort (err_msg);
         }
 
-        if (TYisArray (rhs1)) {
-            if (TYisArray (rhs2)) {
-                TEassureSameScalarType ("then branch", rhs1, "else branch", rhs2);
-                err_msg = TEfetchErrors ();
+        if (TYisAlpha (rhs1)) {
+            rhs1 = TYmakeBottomType ("then branch computation does not terminate");
+        }
+        if (TYisAlpha (rhs2)) {
+            rhs2 = TYmakeBottomType ("else branch computation does not terminate");
+        }
+        if (TYisArray (rhs1) && TYisArray (rhs2)) {
+            TEassureSameScalarType ("then branch", rhs1, "else branch", rhs2);
+            err_msg = TEfetchErrors ();
 
-                if (err_msg != NULL) {
-                    CTIabort (err_msg);
-
-                } else {
-                    res = TYmakeProductType (1, TYlubOfTypes (rhs1, rhs2));
-                }
-            } else {
-                res = TYmakeProductType (1, TYcopyType (rhs1));
-            }
-        } else {
-            if (TYisArray (rhs2)) {
-                res = TYmakeProductType (1, TYcopyType (rhs2));
-            } else {
-                if (TYisBottom (rhs1)) {
-                    if (TYisBottom (rhs2)) {
-                        res = TYmakeProductType (1, TUcombineBottom (rhs1, rhs2));
-                    } else {
-                        res = TYmakeProductType (1, TYcopyType (rhs1));
-                    }
-                } else {
-                    if (TYisBottom (rhs2)) {
-                        res = TYmakeProductType (1, TYcopyType (rhs2));
-                    } else {
-                        res = TYmakeProductType (1, TYmakeAlphaType (NULL));
-                    }
-                }
+            if (err_msg != NULL) {
+                CTIabort (err_msg);
             }
         }
+
+        res = TYmakeProductType (1, TYlubOfTypes (rhs1, rhs2));
+
+    } else if (TYisBottom (pred)) {
+        res = TYmakeProductType (1, TYcopyType (pred));
+    } else {
+        res = TYmakeProductType (1, TYmakeAlphaType (NULL));
     }
 
     DBUG_RETURN (res);
