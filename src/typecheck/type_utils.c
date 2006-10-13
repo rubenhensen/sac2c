@@ -728,6 +728,80 @@ TUcombineBottom (ntype *left, ntype *right)
 }
 
 /** <!-- ****************************************************************** -->
+ * @fn ntype *TUcombineBottoms( ntype *prod)
+ *
+ * @brief resturns a new bottom ntype containing the concatenation of
+ *        the error messages contained in the given type.
+ *
+ * @param type
+ *
+ * @return freshly allocated bottom type
+ ******************************************************************************/
+
+ntype *
+TUcombineBottoms (ntype *prod)
+{
+    ntype *res = NULL, *next = NULL;
+    int i;
+
+    DBUG_ENTER ("TUcombineBottoms");
+
+    if (TYisProd (prod)) {
+        for (i = 0; i < TYgetProductSize (prod); i++) {
+            next = TUcombineBottoms (TYgetProductMember (prod, i));
+            if (res != NULL) {
+                if (next != NULL) {
+                    TYextendBottomError (res, TYgetBottomError (next));
+                    next = TYfreeType (next);
+                }
+            } else {
+                res = next;
+            }
+        }
+    } else {
+        if (TYisBottom (prod)) {
+            res = TYcopyType (prod);
+        }
+    }
+
+    DBUG_RETURN (res);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn ntype *TUspreadBottoms( ntype *prod)
+ *
+ * @brief replaces all non-bottom types by combinations of all bottom
+ *        types found
+ *
+ * @param prod product type potentially containing bottom types.
+ *
+ * @return a copy of the type where all types have been replaced by identical
+ *         bottom types.
+ ******************************************************************************/
+
+ntype *
+TUspreadBottoms (ntype *prod)
+{
+    ntype *result = NULL, *bottoms = NULL;
+    int i;
+
+    DBUG_ENTER ("TUspreadBottoms");
+
+    bottoms = TUcombineBottoms (prod);
+    if (bottoms == NULL) {
+        result = TYcopyType (prod);
+    } else {
+        result = TYmakeEmptyProductType (TYgetProductSize (prod));
+        for (i = 0; i < TYgetProductSize (prod); i++) {
+            TYsetProductMember (result, i, TYcopyType (bottoms));
+        }
+        bottoms = TYfreeType (bottoms);
+    }
+
+    DBUG_RETURN (result);
+}
+
+/** <!-- ****************************************************************** -->
  * @fn ntype *TUcombineBottomsFromRets( node *rets)
  *
  * @brief resturns a new bottom ntype containing the concatenation of all

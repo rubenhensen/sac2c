@@ -1,5 +1,5 @@
 /*
- * $Log$
+ * $Id$
  */
 
 #include <stdio.h>

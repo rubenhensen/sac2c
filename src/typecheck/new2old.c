@@ -796,6 +796,7 @@ NT2OTlet (node *arg_node, info *arg_info)
     DBUG_ENTER ("NT2OTlet");
 
     if (IdsContainBottom (LET_IDS (arg_node))) {
+
         DBUG_PRINT ("FIXNT", ("bottom LHS found; eliminating N_let \"%s...\"",
                               IDS_NAME (LET_IDS (arg_node))));
         arg_node = FREEdoFreeTree (arg_node);

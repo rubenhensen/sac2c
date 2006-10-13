@@ -31,7 +31,9 @@ extern bool TUsignatureMatches (node *formal, ntype *actual_prod_type);
 extern bool TUretsContainBottom (node *rets);
 extern bool TUretsAreConstant (node *rets);
 extern ntype *TUcombineBottom (ntype *left, ntype *right);
+extern ntype *TUcombineBottoms (ntype *prod);
 extern ntype *TUcombineBottomsFromRets (node *rets);
+extern ntype *TUspreadBottoms (ntype *prod);
 extern ntype *TUcheckUdtAndSetBaseType (usertype udt, int *visited);
 
 #endif /* _SAC_TYPE_UTILS_H_*/
