@@ -765,10 +765,10 @@ MemobjToErrorMessage (char *kind_of_error, memobj *ptr_to_memobj)
     str = (char *)ILIBmalloc (sizeof (char) * 1024);
 
     test = snprintf (str, 1024,
-                     "%s Address: 0x%x, Nodetype: %s,\n"
+                     "%s Address: 0x%lx, Nodetype: %s,\n"
                      "             allocated at: %s:%d, \n"
                      "             Traversal: %s, Subphase: %s",
-                     kind_of_error, (unsigned int)MEMOBJ_PTR (ptr_to_memobj),
+                     kind_of_error, (unsigned long int)MEMOBJ_PTR (ptr_to_memobj),
                      global.mdb_nodetype[MEMOBJ_NODETYPE (ptr_to_memobj)],
                      MEMOBJ_FILE (ptr_to_memobj), MEMOBJ_LINE (ptr_to_memobj),
                      MEMOBJ_TRAVERSAL (ptr_to_memobj),
