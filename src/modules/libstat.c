@@ -1,45 +1,6 @@
 /*
  *
- * $Log$
- * Revision 1.20  2005/08/09 10:06:52  sah
- * using CTIterminateCompilation instead of exit
- * to make sure the tmpdir is removed and all
- * the cleanup is done correctly
- *
- * Revision 1.19  2005/07/27 13:40:40  sah
- * added missing include
- *
- * Revision 1.18  2005/07/22 13:11:39  sah
- * interface changes
- *
- * Revision 1.17  2005/07/17 21:14:59  sah
- * wrapper bodies are no more deserialized
- *
- * Revision 1.16  2005/07/15 15:57:02  sah
- * introduced namespaces
- *
- * Revision 1.15  2005/06/28 16:29:46  sah
- * removed some warning messages
- *
- * Revision 1.14  2005/05/18 13:56:51  sah
- * enabled caching of symboltables which
- * leads to a huge speedup when analysing use and import
- * from big modules
- *
- * Revision 1.13  2005/04/24 15:20:03  sah
- * libstat now exits the entire compiler
- *
- * Revision 1.12  2004/11/26 23:19:54  jhb
- * PrintLibStat changed to LIBSprintStat
- *
- * Revision 1.11  2004/11/25 20:22:11  sah
- * COMPILES
- *
- *
- * Revision 1.1  2004/10/04 11:35:10  sah
- * Initial revision
- *
- *
+ * $Id$
  *
  */
 
@@ -51,7 +12,6 @@
 #include "add_function_body.h"
 #include "tree_basic.h"
 #include "print.h"
-#include "new2old.h"
 #include "stringset.h"
 #include "internal_lib.h"
 #include "namespaces.h"

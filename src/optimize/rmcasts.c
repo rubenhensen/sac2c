@@ -25,8 +25,8 @@
 #include "type_utils.h"
 #include "rmcasts.h"
 #include "update_wrapper_type.h"
-#include "elim_alpha.h"
-#include "elim_bottom.h"
+#include "elim_alpha_types.h"
+#include "elim_bottom_types.h"
 
 /** <!--********************************************************************-->
  *

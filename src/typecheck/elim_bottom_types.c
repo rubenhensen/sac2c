@@ -6,7 +6,7 @@
 
 #include <stdio.h>
 #include <string.h>
-#include "new2old.h"
+#include "elim_bottom_types.h"
 
 #include "dbug.h"
 #include "ctinfo.h"

@@ -638,7 +638,7 @@
           <node name="Let" />
         </travuser>
       </traversal>
-      <traversal id="EAT" name="Eliminate type variables and do some cleanup" default="sons" include="elim_alpha.h" >
+      <traversal id="EAT" name="Eliminate type variables and do some cleanup" default="sons" include="elim_alpha_types.h" >
         <travuser>
           <node name="Module" />
           <node name="Fundef" />
@@ -652,7 +652,7 @@
           <node name="With" />
         </travuser>
       </traversal>
-      <traversal id="EBT" name="Eliminate bottom types" default="sons" include="elim_bottom.h" >
+      <traversal id="EBT" name="Eliminate bottom types" default="sons" include="elim_bottom_types.h" >
         <travuser>
           <node name="Module" />
           <node name="Fundef" />

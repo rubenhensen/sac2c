@@ -19,7 +19,6 @@
 #include "stringset.h"
 #include "modulemanager.h"
 #include "namespaces.h"
-#include "new2old.h"
 #include "traverse.h"
 #include "ctinfo.h"
 #include "free.h"
