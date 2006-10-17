@@ -25,7 +25,8 @@
 #include "type_utils.h"
 #include "rmcasts.h"
 #include "update_wrapper_type.h"
-#include "new2old.h"
+#include "elim_alpha.h"
+#include "elim_bottom.h"
 
 /** <!--********************************************************************-->
  *
@@ -199,7 +200,12 @@ RCdoRemoveCasts (node *syntax_tree)
 
     syntax_tree = UWTdoUpdateWrapperType (syntax_tree);
 
-    syntax_tree = NT2OTdoTransform (syntax_tree);
+    /**
+     * FIXME: is this really needed here?
+     *        shouldn't that go to UWT????
+     */
+    syntax_tree = EATdoEliminateAlphaTypes (syntax_tree);
+    syntax_tree = EBTdoEliminateBottomTypes (syntax_tree);
 
     DBUG_RETURN (syntax_tree);
 }

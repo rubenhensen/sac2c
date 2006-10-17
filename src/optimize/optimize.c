@@ -276,9 +276,14 @@ OPTdoOptimize (node *arg_node)
     arg_node = PHrunCompilerSubPhase (SUBPH_rtc, arg_node);
 
     /*
-     * apply FINT2OT (final type finalisation)
+     * apply FINEAT (final tye variable elimination)
      */
-    arg_node = PHrunCompilerSubPhase (SUBPH_finnt2ot, arg_node);
+    arg_node = PHrunCompilerSubPhase (SUBPH_fineat, arg_node);
+
+    /*
+     * apply FINEBT (final bottom type elimination)
+     */
+    arg_node = PHrunCompilerSubPhase (SUBPH_finebt, arg_node);
 
     /*
      * With-loop fusion
@@ -329,7 +334,8 @@ OPTdoOptimize (node *arg_node)
 
             if (global.optimize.dotup) {
                 arg_node = PHrunCompilerSubPhase (SUBPH_svtup, arg_node);
-                arg_node = PHrunCompilerSubPhase (SUBPH_svnt2ot, arg_node);
+                arg_node = PHrunCompilerSubPhase (SUBPH_sveat, arg_node);
+                arg_node = PHrunCompilerSubPhase (SUBPH_svebt, arg_node);
             }
 
             if (global.optimize.docf) {
@@ -512,7 +518,8 @@ OPTdoIntraFunctionalOptimizations (node *arg_node)
                      */
                     if (global.optimize.dotup) {
                         fundef = PHrunOptimizationInCycle (SUBPH_ntccyc, loop, fundef);
-                        fundef = PHrunOptimizationInCycle (SUBPH_nt2otcyc, loop, fundef);
+                        fundef = PHrunOptimizationInCycle (SUBPH_eatcyc, loop, fundef);
+                        fundef = PHrunOptimizationInCycle (SUBPH_ebtcyc, loop, fundef);
                     }
 
                     /*
@@ -746,7 +753,8 @@ OPTdoIntraFunctionalOptimizations (node *arg_node)
                  */
                 if (global.optimize.dotup) {
                     fundef = PHrunOptimizationInCycle (SUBPH_ntccyc, loop, fundef);
-                    fundef = PHrunOptimizationInCycle (SUBPH_nt2otcyc, loop, fundef);
+                    fundef = PHrunOptimizationInCycle (SUBPH_eatcyc, loop, fundef);
+                    fundef = PHrunOptimizationInCycle (SUBPH_ebtcyc, loop, fundef);
                 }
 
                 /*

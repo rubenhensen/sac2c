@@ -214,7 +214,8 @@ main (int argc, char *argv[])
     NOTE_COMPILER_PHASE;
 
     syntax_tree = PHrunCompilerSubPhase (SUBPH_tc, syntax_tree);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_nt2ot, syntax_tree);
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_eat, syntax_tree);
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_ebt, syntax_tree);
     syntax_tree = PHrunCompilerSubPhase (SUBPH_swr, syntax_tree);
 
     PHASE_DONE_EPILOG;

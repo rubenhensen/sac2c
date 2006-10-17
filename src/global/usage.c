@@ -193,8 +193,8 @@ USGprintUsage ()
 
     PRINT_BREAK_SPEC (PH_typecheck, "ntc", "Stop after infering all types.");
     PRINT_BREAK_SPEC (PH_typecheck, "ds", "Stop after deserializing code.");
-    PRINT_BREAK_SPEC (PH_typecheck, "n2o",
-                      "Stop after computing old type representation.");
+    PRINT_BREAK_SPEC (PH_typecheck, "eat", "Stop after eliminating type variables.");
+    PRINT_BREAK_SPEC (PH_typecheck, "ebt", "Stop after eliminating bottom types.");
     PRINT_BREAK_SPEC (PH_typecheck, "swr", "Stop after splitting wrappers.");
 
     printf ("\n");
@@ -230,8 +230,10 @@ USGprintUsage ()
                       "Stop in cycle <n> after common subexpression elimination.");
     PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:ntc",
                       "Stop in cycle <n> after type upgrade inference.");
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:n2o",
-                      "Stop in cycle <n> after type upgrade finalization.");
+    PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:eat",
+                      "Stop in cycle <n> after type variable elimination.");
+    PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:ebt",
+                      "Stop in cycle <n> after bottom type elimination.");
     PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:dfc",
                       "Stop in cycle <n> after dispatch function calls.");
     PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:inl", "Stop in cycle <n> after inlining.");
@@ -286,7 +288,8 @@ USGprintUsage ()
     PRINT_BREAK_SPEC (PH_sacopt, "cse2", "Stop after common subexpression elimination.");
     PRINT_BREAK_SPEC (PH_sacopt, "dcr3", "Stop after dead code removal.");
     PRINT_BREAK_SPEC (PH_sacopt, "rtc", "Stop after final type inference.");
-    PRINT_BREAK_SPEC (PH_sacopt, "finn2o", "Stop after final type finalisation.");
+    PRINT_BREAK_SPEC (PH_sacopt, "fineat", "Stop after final type variable elimination.");
+    PRINT_BREAK_SPEC (PH_sacopt, "finebt", "Stop after final bottom type elimination.");
     PRINT_BREAK_SPEC (PH_sacopt, "wlpg2",
                       "Stop after with-loop default partition generation.");
     PRINT_BREAK_SPEC (PH_sacopt, "wrci",

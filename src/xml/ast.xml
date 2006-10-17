@@ -638,7 +638,7 @@
           <node name="Let" />
         </travuser>
       </traversal>
-      <traversal id="NT2OT" name="Convert from new to old types and do some cleanup" default="sons" include="new2old.h" >
+      <traversal id="EAT" name="Eliminate type variables and do some cleanup" default="sons" include="elim_alpha.h" >
         <travuser>
           <node name="Module" />
           <node name="Fundef" />
@@ -646,14 +646,22 @@
           <node name="Avis" />
           <node name="Array" />
           <node name="Block" />
-          <node name="Vardec" />
-          <node name="Assign" />
           <node name="Let" />
-          <node name="Cond" />
-          <node name="Funcond" />
           <node name="Part" />
           <node name="Withid" />
           <node name="With" />
+        </travuser>
+      </traversal>
+      <traversal id="EBT" name="Eliminate bottom types" default="sons" include="elim_bottom.h" >
+        <travuser>
+          <node name="Module" />
+          <node name="Fundef" />
+          <node name="Ap" />
+          <node name="Vardec" />
+          <node name="Let" />
+          <node name="Assign" />
+          <node name="Cond" />
+          <node name="Funcond" />
         </travuser>
       </traversal>
       <traversal id="FDI" name="Free Dispatch Information" default="sons" include="free_dispatch_information.h">

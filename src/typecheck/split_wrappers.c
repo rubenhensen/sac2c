@@ -1,39 +1,6 @@
 /*
  *
- * $Log$
- * Revision 1.9  2005/09/13 16:31:44  sah
- * added additional wrapper cleanup at end of phase
- *
- * Revision 1.8  2005/08/19 18:10:00  sah
- * adapted signature of CorrectFundefPointer to new ast structure
- * simplified detection of generic wrappers
- *
- * Revision 1.7  2005/07/28 10:58:02  sah
- * specialisation for used functions is handeled
- * correctly now even in obscure cases
- *
- * Revision 1.6  2005/07/27 14:57:57  sah
- * fixed a minor bug
- *
- * Revision 1.5  2005/07/27 10:39:55  sah
- * modified joining and splitting of wrappers
- * to allow for non-joined wrappers as are
- * created by the specialisations
- *
- * Revision 1.4  2005/07/26 12:46:50  sah
- * added support to move wrapper to their corresponding
- * view if specialisations were added
- * added removing of aliasing on splitting wrappers
- *
- * Revision 1.3  2005/07/22 13:12:37  sah
- * new wrapperfuns are maked as NTC_checked
- *
- * Revision 1.2  2005/07/17 20:34:18  sah
- * fixed an include
- *
- * Revision 1.1  2005/07/17 20:10:17  sbs
- * Initial revision
- *
+ * $Id$
  *
  */
 
@@ -55,7 +22,8 @@
 #include "serialize.h"
 #include "deserialize.h"
 #include "update_wrapper_type.h"
-#include "new2old.h"
+#include "elim_alpha.h"
+#include "elim_bottom.h"
 
 /*******************************************************************************
  *
@@ -719,7 +687,15 @@ SWRdoSplitWrappers (node *ast)
      * a UWTdoUpdateWrapperType to rebuild them.
      */
     ast = UWTdoUpdateWrapperType (ast);
-    ast = NT2OTdoTransform (ast);
+
+    /**
+     * Whether the following traversal are required or not is by no means
+     * clear. However, previously, we had a call to NT2OT here which has
+     * been split into EAT and EBT now.
+     * FIXME: this needs to be investigated further....
+     */
+    ast = EATdoEliminateAlphaTypes (ast);
+    ast = EBTdoEliminateBottomTypes (ast);
 
     DBUG_RETURN (ast);
 }
