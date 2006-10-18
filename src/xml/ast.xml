@@ -4894,6 +4894,21 @@
             </targets>
           </type>
         </attribute>
+        <attribute name="BotRT" default="NULL">
+          <type name="NewType">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <phase name="ebt" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+          <description>
+            Used in order to memorize a replacement type for bottom funcond variables.
+          </description>
+        </attribute>
         <attribute name="Subst">
           <type name="Link">
             <targets>

@@ -915,7 +915,8 @@ NTClet (node *arg_node, info *arg_info)
             DBUG_ASSERT ((TCcountIds (lhs) >= TYgetProductSize (rhs_type)),
                          "fun ap yields more return values  than lhs vars available!");
         } else if (NODE_TYPE (LET_EXPR (arg_node)) == N_prf) {
-            if (TCcountIds (lhs) != TYgetProductSize (rhs_type)) {
+            if ((PRF_PRF (LET_EXPR (arg_node)) != F_type_error)
+                && (TCcountIds (lhs) != TYgetProductSize (rhs_type))) {
                 CTIabortLine (global.linenum,
                               "%s yields %d instead of %d return value(s)",
                               global.prf_string[PRF_PRF (LET_EXPR (arg_node))],
@@ -998,7 +999,10 @@ NTClet (node *arg_node, info *arg_info)
                 }
             }
 
-            i++;
+            if ((NODE_TYPE (LET_EXPR (arg_node)) != N_prf)
+                || (PRF_PRF (LET_EXPR (arg_node)) != F_type_error)) {
+                i++;
+            }
             lhs = IDS_NEXT (lhs);
         }
         TYfreeTypeConstructor (rhs_type);

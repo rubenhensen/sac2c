@@ -121,46 +121,6 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
-static void
-LiftBottomToTypeError (node *bottom_id, ntype *other_type, info *arg_info)
-{
-    node *let;
-
-    DBUG_ENTER ("LiftBottomToTypeError");
-
-    /**
-     * First we transform the bottom type of botttom_id into
-     *    _type_error_( bottom) :
-     */
-    INFO_TYPEERROR (arg_info)
-      = TCmakePrf1 (F_type_error, TBmakeType (AVIS_TYPE (ID_AVIS (bottom_id))));
-    /**
-     * Now, we change the type of bottom_id to other_type.
-     */
-    AVIS_TYPE (ID_AVIS (bottom_id)) = TYeliminateAKV (other_type);
-
-    /**
-     * this seems to be saa-bind related stuff??!
-     */
-    if (AVIS_DIM (ID_AVIS (bottom_id)) != NULL) {
-        AVIS_DIM (ID_AVIS (bottom_id)) = FREEdoFreeNode (AVIS_DIM (ID_AVIS (bottom_id)));
-    }
-    if (AVIS_SHAPE (ID_AVIS (bottom_id)) != NULL) {
-        AVIS_SHAPE (ID_AVIS (bottom_id))
-          = FREEdoFreeNode (AVIS_SHAPE (ID_AVIS (bottom_id)));
-    }
-
-    /**
-     * Finally, we traverse the definition of bottom_id out of order!
-     * This is necessary, as we want the let to be replaced by the type
-     * error we have created above!
-     */
-    let = ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (bottom_id)));
-    let = TRAVdo (let, arg_info);
-
-    DBUG_VOID_RETURN;
-}
-
 static node *
 TransformIntoTypeError (node *fundef)
 {
@@ -492,6 +452,8 @@ EBTlet (node *arg_node, info *arg_info)
  *
  *   @brief filter-out lhs vars. iff INFO_TYPEERROR is NULL and lhs contains
  *          bottom vars, create type-error!
+ *          iff AVIS_BOTRT is set, replace the bottom type with the specified
+ *          one.
  *   @param
  *   @return
  *
@@ -500,23 +462,44 @@ EBTlet (node *arg_node, info *arg_info)
 node *
 EBTids (node *arg_node, info *arg_info)
 {
+    node *avis;
+
     DBUG_ENTER ("EBTids");
 
     if (IDS_NEXT (arg_node) != NULL) {
         IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
     }
 
-    if (TYisBottom (AVIS_TYPE (IDS_AVIS (arg_node)))) {
-        DBUG_PRINT ("EBT",
-                    ("eliminating bottom LHS %s", AVIS_NAME (IDS_AVIS (arg_node))));
+    avis = IDS_AVIS (arg_node);
+
+    if (TYisBottom (AVIS_TYPE (avis))) {
         if (INFO_TYPEERROR (arg_info) == NULL) {
-            DBUG_PRINT ("EBT", ("creating type error due to bottom LHS %s",
-                                AVIS_NAME (IDS_AVIS (arg_node))));
+            DBUG_PRINT ("EBT",
+                        ("creating type error due to bottom LHS %s", AVIS_NAME (avis)));
             INFO_TYPEERROR (arg_info)
-              = TCmakePrf1 (F_type_error,
-                            TBmakeType (TYcopyType (AVIS_TYPE (IDS_AVIS (arg_node)))));
+              = TCmakePrf1 (F_type_error, TBmakeType (TYcopyType (AVIS_TYPE (avis))));
         }
-        arg_node = FREEdoFreeNode (arg_node);
+
+        if (AVIS_BOTRT (avis) != NULL) {
+            DBUG_PRINT ("EBT", ("lifting bottom LHS %s", AVIS_NAME (avis)));
+            AVIS_TYPE (avis) = TYfreeType (AVIS_TYPE (avis));
+            AVIS_TYPE (avis) = AVIS_BOTRT (avis);
+            AVIS_BOTRT (avis) = NULL;
+
+            /**
+             * this seems to be saa-bind related stuff??!
+             */
+            if (AVIS_DIM (avis) != NULL) {
+                AVIS_DIM (avis) = FREEdoFreeNode (AVIS_DIM (avis));
+            }
+            if (AVIS_SHAPE (avis) != NULL) {
+                AVIS_SHAPE (avis) = FREEdoFreeNode (AVIS_SHAPE (avis));
+            }
+
+        } else {
+            DBUG_PRINT ("EBT", ("eliminating bottom LHS %s", AVIS_NAME (avis)));
+            arg_node = FREEdoFreeNode (arg_node);
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -620,12 +603,12 @@ EBTfuncond (node *arg_node, info *arg_info)
 
     if (TYisBottom (ttype)) {
         DBUG_ASSERT (!TYisBottom (etype), "two bottom args for funcond found");
-        LiftBottomToTypeError (FUNCOND_THEN (arg_node), etype, arg_info);
+        AVIS_BOTRT (ID_AVIS (FUNCOND_THEN (arg_node))) = TYeliminateAKV (etype);
         INFO_THENBOTTS (arg_info) = TRUE;
     }
     if (TYisBottom (etype)) {
         DBUG_ASSERT (!TYisBottom (ttype), "two bottom args for funcond found");
-        LiftBottomToTypeError (FUNCOND_ELSE (arg_node), ttype, arg_info);
+        AVIS_BOTRT (ID_AVIS (FUNCOND_ELSE (arg_node))) = TYeliminateAKV (ttype);
         INFO_ELSEBOTTS (arg_info) = TRUE;
     }
 
