@@ -44,18 +44,81 @@
  * - transform functions that return a bottom type into bottom-functions
  * - eliminate bottom variables by
  *   a) eliminating the respective declaration
- *   b) replacing the definition of this variable by a type_error
+ *   b) replacing the definition of the variable by a type_error
  *      which is assigned to the (remaining if any) non-bottom lhs
  *      variables.
  * Here an example......
  *
- * There is one exception to this scheme though which pertains to funconds.
+ *      int foo( int x)
+ *      {
+ *         _|_ a;
+ *         int b;
+ *         int c;
+ *
+ *         a, b, c = goo( x);
+ *
+ *         return( b);
+ *      }
+ *
+ * is transformed into:
+ *
+ *      int foo( int x)
+ *      {
+ *         int b;
+ *         int c;
+ *
+ *         b, c = _type_error( _|_);
+ *
+ *         return( b);
+ *      }
+ *
+ * There is one exception to this scheme though, which originates from funconds.
  * As these are non-strict, we allow one of them to be bottom.
- * As a consequence, we do need a proper definition of that variable. To achieve
- * that, we transform the rhs of that definition into a type error and then
- * change its type from bottom to the corresponding non-bottom type of the
- * other branch of the conditional.
+ * As a consequence, we do need a proper definition of that variable although
+ * we inferred a bottom type for it! To achieve that, we transform the rhs of
+ * that definition into a type error and then change its type from bottom to
+ * the corresponding non-bottom type of the other branch of the conditional.
  * For example......
+ *
+ *      int foo( int x)
+ *      {
+ *         _|_ a;
+ *         int a2;
+ *
+ *         if( x == 1) {
+ *           a = goo( x);
+ *         } else {
+ *         }
+ *         a2 = ( x == 1 ? a : x);
+ *
+ *         return( a2);
+ *      }
+ *
+ * needs to be transformed into:
+ *
+ *      int foo( int x)
+ *      {
+ *         int a;
+ *         int a2;
+ *
+ *         if( x == 1) {
+ *           a = _type_error_( _|_);
+ *         } else {
+ *         }
+ *         a2 = ( x == 1 ? a : x);
+ *
+ *         return( a2);
+ *      }
+ *
+ * Note here, that the "bottom identifier" "a" has NOT been eliminated
+ * but turned into a non-bottom type, namely "int" which is derived from the
+ * other alternative from the funcond, i.e., from "x". However, the type
+ * error remains captured by the application of "_type_error_" instead
+ * of "goo".
+ *
+ * NB: Apart from these bottom type eliminations we also eliminate
+ *     LaC functions that obtain bottom arguments. This needs to be done
+ *     as these functions have NOT been type checked at all!
  *
  */
 
