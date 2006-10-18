@@ -1256,6 +1256,8 @@
           <node name="Fundef"  />
           <node name="Assign"  />
           <node name="With"    />
+          <node name="Code"    />
+          <node name="Part"    />
           <node name="Ids"     />
           <node name="Prf"     />
        </travuser>
