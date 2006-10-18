@@ -430,26 +430,30 @@ EATarray (node *arg_node, info *arg_info)
         nested = NTCnewTypeCheck_Expr (arg_node);
     }
 
-    outer = TYmakeAKS (TYcopyType (TYgetScalar (nested)),
-                       SHcopyShape (ARRAY_SHAPE (arg_node)));
-    arrayelem = ARRAY_ELEMTYPE (arg_node);
+    if (TYisBottom (nested)) {
+        elemtype = nested;
+    } else {
+        outer = TYmakeAKS (TYcopyType (TYgetScalar (nested)),
+                           SHcopyShape (ARRAY_SHAPE (arg_node)));
+        arrayelem = ARRAY_ELEMTYPE (arg_node);
 
-    elemtype = TYdeNestTypeFromOuter (nested, outer);
+        elemtype = TYdeNestTypeFromOuter (nested, outer);
+
+        outer = TYfreeType (outer);
+        nested = TYfreeType (nested);
 
 #ifndef DBUG_OFF
-    if (!TYisSimple (TYgetScalar (arrayelem))
-        || (TYgetSimpleType (TYgetScalar (arrayelem)) != T_unknown)) {
+        if (!TYisSimple (TYgetScalar (arrayelem))
+            || (TYgetSimpleType (TYgetScalar (arrayelem)) != T_unknown)) {
 
-        DBUG_ASSERT (TYleTypes (elemtype, arrayelem),
-                     "new element type of array does not match old type!");
-    }
+            DBUG_ASSERT (TYleTypes (elemtype, arrayelem),
+                         "new element type of array does not match old type!");
+        }
 #endif
+    }
 
     ARRAY_ELEMTYPE (arg_node) = TYfreeType (ARRAY_ELEMTYPE (arg_node));
     ARRAY_ELEMTYPE (arg_node) = elemtype;
-
-    outer = TYfreeType (outer);
-    nested = TYfreeType (nested);
 
     DBUG_RETURN (arg_node);
 }
