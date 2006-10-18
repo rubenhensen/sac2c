@@ -315,19 +315,28 @@ EATfundef (node *arg_node, info *arg_info)
 node *
 EATap (node *arg_node, info *arg_info)
 {
+    ntype *argt, *bottom;
+
     DBUG_ENTER ("EATap");
 
     arg_node = TRAVcont (arg_node, arg_info);
 
+    argt = TUactualArgs2Ntype (AP_ARGS (arg_node));
+    bottom = TYgetBottom (argt);
+
     if (FUNDEF_ISLACFUN (AP_FUNDEF (arg_node))
         && (AP_FUNDEF (arg_node) != INFO_FUNDEF (arg_info))) {
         DBUG_PRINT ("FIXNT", ("lacfun %s found...", CTIitemName (AP_FUNDEF (arg_node))));
-
-        info *new_info = MakeInfo ();
-        INFO_ONEFUNCTION (new_info) = TRUE;
-        AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), new_info);
-        new_info = FreeInfo (new_info);
+        if (bottom != NULL) {
+            AP_FUNDEF (arg_node) = FREEdoFreeNode (AP_FUNDEF (arg_node));
+        } else {
+            info *new_info = MakeInfo ();
+            INFO_ONEFUNCTION (new_info) = TRUE;
+            AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), new_info);
+            new_info = FreeInfo (new_info);
+        }
     }
+    argt = TYfreeType (argt);
 
     DBUG_RETURN (arg_node);
 }
