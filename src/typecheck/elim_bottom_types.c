@@ -38,30 +38,47 @@
  *
  */
 
-/*
- * This phase does NOT ONLY compute old types from the new ones but
- * IT ALSO fixes the ntypes, i.e., it eliminates type vars!!!!!!
+/**
+ * This phase eliminates all existing bottom types.
+ * To achieve that, it does:
+ * - transform functions that return a bottom type into bottom-functions
+ * - eliminate bottom variables by
+ *   a) eliminating the respective declaration
+ *   b) replacing the definition of this variable by a type_error
+ *      which is assigned to the (remaining if any) non-bottom lhs
+ *      variables.
+ * Here an example......
+ *
+ * There is one exception to this scheme though which pertains to funconds.
+ * As these are non-strict, we allow one of them to be bottom.
+ * As a consequence, we do need a proper definition of that variable. To achieve
+ * that, we transform the rhs of that definition into a type error and then
+ * change its type from bottom to the corresponding non-bottom type of the
+ * other branch of the conditional.
+ * For example......
+ *
  */
 
 /*
  * usages of 'arg_info':
  *
- *   INFO_THENBOTTS   -   type_error let
- *   INFO_ELSEBOTTS   -   type_error let
+ *   INFO_THENBOTTS   - at least one bottom in then branch found
+ *   INFO_ELSEBOTTS   - at least one bottom in else branch found
  *   INFO_ONEFUNCTION - traverse one function only (and associated lacfuns)
  *   INFO_FUNDEF      - pointer to current fundef to prevent infinite recursion
- *   INFO_DELLACFUN   -   indicates that a call to a lacfun has been deleted
+ *   INFO_TYPEERROR   - indicates that the rhs of a let is to be transformed
+ *                      into this type error
  */
 
 /**
  * INFO structure
  */
 struct INFO {
-    node *then_botts;
-    node *else_botts;
+    bool then_botts;
+    bool else_botts;
     bool onefunction;
     node *fundef;
-    bool dellacfun;
+    node *type_error;
 };
 
 /**
@@ -71,7 +88,7 @@ struct INFO {
 #define INFO_ELSEBOTTS(n) ((n)->else_botts)
 #define INFO_ONEFUNCTION(n) ((n)->onefunction)
 #define INFO_FUNDEF(n) ((n)->fundef)
-#define INFO_DELLACFUN(n) ((n)->dellacfun)
+#define INFO_TYPEERROR(n) ((n)->type_error)
 
 /**
  * INFO functions
@@ -85,11 +102,11 @@ MakeInfo ()
 
     result = ILIBmalloc (sizeof (info));
 
-    INFO_THENBOTTS (result) = NULL;
-    INFO_ELSEBOTTS (result) = NULL;
+    INFO_THENBOTTS (result) = FALSE;
+    INFO_ELSEBOTTS (result) = FALSE;
     INFO_ONEFUNCTION (result) = FALSE;
     INFO_FUNDEF (result) = NULL;
-    INFO_DELLACFUN (result) = FALSE;
+    INFO_TYPEERROR (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -104,109 +121,27 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
-static bool
-IdsContainBottom (node *ids)
+static void
+LiftBottomToTypeError (node *bottom_id, ntype *other_type, info *arg_info)
 {
-    bool res = FALSE;
+    node *let;
 
-    DBUG_ENTER ("IdsContainBottom");
+    DBUG_ENTER ("LiftBottomToTypeError");
 
-    while (ids != NULL) {
-        res = res || TYisBottom (AVIS_TYPE (IDS_AVIS (ids)));
-        ids = IDS_NEXT (ids);
-    }
-
-    DBUG_RETURN (res);
-}
-
-static bool
-IdsInChain (node *ids, node *chain)
-{
-    bool result = FALSE;
-
-    DBUG_ENTER ("IdsInChain");
-
-    while (!result && (chain != NULL)) {
-        result = IDS_AVIS (ids) == IDS_AVIS (chain);
-        chain = IDS_NEXT (chain);
-    }
-
-    DBUG_RETURN (result);
-}
-
-static node *
-AddIdsToTypeError (node *ids, node *error)
-{
-    node *result = NULL;
-    node *errorids;
-
-    DBUG_ENTER ("AddIdsToTypeError");
-
-    errorids = LET_IDS (ASSIGN_INSTR (error));
-
-    while (ids != NULL) {
-        if (TYisBottom (AVIS_TYPE (IDS_AVIS (ids))) || IdsInChain (ids, errorids)) {
-            /*
-             * it is already in there or will be added
-             * later, so nothing to do
-             */
-            node *tmp = ids;
-            ids = IDS_NEXT (ids);
-            IDS_NEXT (tmp) = result;
-            result = tmp;
-        } else {
-            /*
-             * add it now.
-             */
-            node *tmp = ids;
-            ids = IDS_NEXT (ids);
-            IDS_NEXT (tmp) = errorids;
-            errorids = tmp;
-
-            AVIS_SSAASSIGN (IDS_AVIS (errorids)) = error;
-            DBUG_PRINT ("EBT", ("adding ids '%s' to type error...", IDS_NAME (errorids)));
-        }
-    }
-
-    LET_IDS (ASSIGN_INSTR (error)) = errorids;
-
-    DBUG_RETURN (result);
-}
-
-static node *
-AddTypeError (node *assign, node *bottom_id, ntype *other_type)
-{
-    node *ids;
-    DBUG_ENTER ("AddTypeError");
-
-    if (assign == NULL) {
-        /**
-         * No errors yet : create an assignment of the form
-         *
-         *   bottom_id = type_error( bottom_type);
-         *
-         */
-        assign = TBmakeAssign (TBmakeLet (TBmakeIds (ID_AVIS (bottom_id), NULL),
-                                          TCmakePrf1 (F_type_error,
-                                                      TBmakeType (TYcopyType (AVIS_TYPE (
-                                                        ID_AVIS (bottom_id)))))),
-                               NULL);
-
-    } else {
-        /**
-         * We have seen other errors before, add a new LHS
-         */
-        ids = LET_IDS (ASSIGN_INSTR (assign));
-        ids = TBmakeIds (ID_AVIS (bottom_id), ids);
-        LET_IDS (ASSIGN_INSTR (assign)) = ids;
-    }
     /**
-     * Finally, we change the type of bottom_id to other_type.
+     * First we transform the bottom type of botttom_id into
+     *    _type_error_( bottom) :
      */
-    AVIS_TYPE (ID_AVIS (bottom_id)) = TYfreeType (AVIS_TYPE (ID_AVIS (bottom_id)));
-
+    INFO_TYPEERROR (arg_info)
+      = TCmakePrf1 (F_type_error, TBmakeType (AVIS_TYPE (ID_AVIS (bottom_id))));
+    /**
+     * Now, we change the type of bottom_id to other_type.
+     */
     AVIS_TYPE (ID_AVIS (bottom_id)) = TYeliminateAKV (other_type);
 
+    /**
+     * this seems to be saa-bind related stuff??!
+     */
     if (AVIS_DIM (ID_AVIS (bottom_id)) != NULL) {
         AVIS_DIM (ID_AVIS (bottom_id)) = FREEdoFreeNode (AVIS_DIM (ID_AVIS (bottom_id)));
     }
@@ -216,41 +151,14 @@ AddTypeError (node *assign, node *bottom_id, ntype *other_type)
     }
 
     /**
-     * and we eliminate the defining N_let if it has not been
-     * eliminated already while processing one of its further
-     * results:
+     * Finally, we traverse the definition of bottom_id out of order!
+     * This is necessary, as we want the let to be replaced by the type
+     * error we have created above!
      */
-    DBUG_ASSERT ((AVIS_SSAASSIGN (ID_AVIS (bottom_id)) != NULL),
-                 "missing AVIS_SSAASSIGN!");
-    DBUG_ASSERT ((NODE_TYPE (AVIS_SSAASSIGN (ID_AVIS (bottom_id))) == N_assign),
-                 "AVIS_SSAASSIGN points to non N_assign node!");
-    if (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (bottom_id))) != NULL) {
-        DBUG_ASSERT ((NODE_TYPE (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (bottom_id))))
-                      == N_let),
-                     "AVIS_SSAASSIGN does not point to an N_let assignment!");
+    let = ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (bottom_id)));
+    let = TRAVdo (let, arg_info);
 
-        /*
-         * as we will delete the entire let, we have to ensure that all
-         * lhs ids are bound to a type error. this may not be the case if
-         * only one result of the rhs function call is a bottom and the
-         * others are not. If in fact they are bottom, we do not add them
-         * as they would be added twice otherwise!
-         */
-        LET_IDS (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (bottom_id))))
-          = AddIdsToTypeError (LET_IDS (
-                                 ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (bottom_id)))),
-                               assign);
-
-        ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (bottom_id)))
-          = FREEdoFreeTree (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (bottom_id))));
-    }
-
-    /**
-     * finally set the SSAASSIGN to the type_error
-     */
-    AVIS_SSAASSIGN (ID_AVIS (bottom_id)) = assign;
-
-    DBUG_RETURN (assign);
+    DBUG_VOID_RETURN;
 }
 
 static node *
@@ -436,14 +344,14 @@ EBTfundef (node *arg_node, info *arg_info)
                 FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
             }
 
-            if (FUNDEF_ISDOFUN (arg_node) && INFO_THENBOTTS (arg_info) != NULL) {
+            if (FUNDEF_ISDOFUN (arg_node) && INFO_THENBOTTS (arg_info)) {
                 FUNDEF_ISDOFUN (arg_node) = FALSE;
                 FUNDEF_ISLACINLINE (arg_node) = TRUE;
             }
         }
 
-        INFO_THENBOTTS (arg_info) = NULL;
-        INFO_ELSEBOTTS (arg_info) = NULL;
+        INFO_THENBOTTS (arg_info) = FALSE;
+        INFO_ELSEBOTTS (arg_info) = FALSE;
     }
 
     if ((!INFO_ONEFUNCTION (arg_info)) && (FUNDEF_NEXT (arg_node) != NULL)) {
@@ -455,38 +363,22 @@ EBTfundef (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *EBTap( node *arg_node, info *arg_info)
+ * @fn node *EBTblock( node *arg_node, info *arg_info)
+ *
+ * @brief ensure that the BODY is traversed BEFORE the vardecs!
+ * @return original node
  *
  *****************************************************************************/
+
 node *
-EBTap (node *arg_node, info *arg_info)
+EBTblock (node *arg_node, info *arg_info)
 {
-    ntype *argt, *bottom;
+    DBUG_ENTER ("EBTblock");
 
-    DBUG_ENTER ("EBTap");
+    BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
 
-    arg_node = TRAVcont (arg_node, arg_info);
-
-    if (FUNDEF_ISLACFUN (AP_FUNDEF (arg_node))
-        && (AP_FUNDEF (arg_node) != INFO_FUNDEF (arg_info))) {
-        DBUG_PRINT ("EBT", ("lacfun %s found...", CTIitemName (AP_FUNDEF (arg_node))));
-        /**
-         * First, we check whether we are dealing with an application
-         * that contains a bottom type. If so, we delete the lacfun!
-         */
-        argt = TUactualArgs2Ntype (AP_ARGS (arg_node));
-        bottom = TYgetBottom (argt);
-        if (bottom != NULL) {
-            DBUG_PRINT ("EBT", ("deleting %s", CTIitemName (AP_FUNDEF (arg_node))));
-            INFO_DELLACFUN (arg_info) = TRUE;
-            AP_FUNDEF (arg_node) = FREEdoFreeNode (AP_FUNDEF (arg_node));
-        } else {
-            info *new_info = MakeInfo ();
-            INFO_ONEFUNCTION (new_info) = TRUE;
-            AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), new_info);
-            new_info = FreeInfo (new_info);
-        }
-        argt = TYfreeType (argt);
+    if (BLOCK_VARDEC (arg_node) != NULL) {
+        BLOCK_VARDEC (arg_node) = TRAVdo (BLOCK_VARDEC (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -527,43 +419,6 @@ EBTvardec (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************
- *
- * function:
- *   node *EBTlet( node *arg_node, info *arg_info)
- *
- * description:
- *
- *
- ******************************************************************************/
-
-node *
-EBTlet (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("EBTlet");
-
-    if (IdsContainBottom (LET_IDS (arg_node))) {
-
-        DBUG_PRINT ("EBT", ("bottom LHS found; eliminating N_let \"%s...\"",
-                            IDS_NAME (LET_IDS (arg_node))));
-        arg_node = FREEdoFreeTree (arg_node);
-    } else {
-        LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
-
-        if (INFO_DELLACFUN (arg_info)) {
-            /*
-             * the LaC function has been deleted as it contains bottoms.
-             * Thus this let is needed no more. Flag this to the outer
-             * assign by deleting the let as well.
-             */
-            INFO_DELLACFUN (arg_info) = FALSE;
-            arg_node = FREEdoFreeNode (arg_node);
-        }
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
 /** <!--********************************************************************-->
  *
  * @fn node *EBTassign( node *arg_node, info *arg_info)
@@ -580,25 +435,138 @@ EBTassign (node *arg_node, info *arg_info)
     DBUG_ENTER ("EBTassign");
 
     /**
-     * First we go down in order to collect those funcond vars that need to be
-     * created by the prf 'type_error'.
+     * First we go down in order to collect those bottom funcond vars that need to
+     * be created by the prf 'type_error'.
      */
     if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
     }
 
     /**
-     * Now, we can go into the instruction. In case of N_lets that have bottom
-     * vars on their LHS, we may obtain NULL, which signals us to eliminate
-     * this very N_assign.
+     * Now, we can go into the instruction. In case of
+     * - N_cond we place the type_errors generated by the funconds into the
+     *   corresponding blocks!
      */
     if (ASSIGN_INSTR (arg_node) != NULL) {
         ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
     }
 
-    if (ASSIGN_INSTR (arg_node) == NULL) {
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *EBTlet( node *arg_node, info *arg_info)
+ *
+ *   @brief if args contain bottom: convert rhs into type-error
+ *          else if lhs vars contain bottom: convert rhs into type-error.
+ *          Anyways do filter-out bottom lhs vars.
+ *   @param
+ *   @return
+ *
+ ******************************************************************************/
+
+node *
+EBTlet (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("EBTlet");
+
+    LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
+
+    if (LET_IDS (arg_node) != NULL) {
+        LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
+    }
+
+    if (INFO_TYPEERROR (arg_info) != NULL) {
+        LET_EXPR (arg_node) = FREEdoFreeTree (LET_EXPR (arg_node));
+        LET_EXPR (arg_node) = INFO_TYPEERROR (arg_info);
+        INFO_TYPEERROR (arg_info) = NULL;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *EBTids( node *arg_node, info *arg_info)
+ *
+ *   @brief filter-out lhs vars. iff INFO_TYPEERROR is NULL and lhs contains
+ *          bottom vars, create type-error!
+ *   @param
+ *   @return
+ *
+ ******************************************************************************/
+
+node *
+EBTids (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("EBTids");
+
+    if (IDS_NEXT (arg_node) != NULL) {
+        IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
+    }
+
+    if (TYisBottom (AVIS_TYPE (IDS_AVIS (arg_node)))) {
+        DBUG_PRINT ("EBT",
+                    ("eliminating bottom LHS %s", AVIS_NAME (IDS_AVIS (arg_node))));
+        if (INFO_TYPEERROR (arg_info) == NULL) {
+            DBUG_PRINT ("EBT", ("creating type error due to bottom LHS %s",
+                                AVIS_NAME (IDS_AVIS (arg_node))));
+            INFO_TYPEERROR (arg_info)
+              = TCmakePrf1 (F_type_error,
+                            TBmakeType (TYcopyType (AVIS_TYPE (IDS_AVIS (arg_node)))));
+        }
         arg_node = FREEdoFreeNode (arg_node);
     }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *EBTap( node *arg_node, info *arg_info)
+ *
+ * @brief create a type error iff args contain bottom;
+ *        delete LaC fun iff args contain bottom, traverse into it otherwise.
+ * @return original node
+ *
+ *****************************************************************************/
+node *
+EBTap (node *arg_node, info *arg_info)
+{
+    ntype *argt, *bottom;
+
+    DBUG_ENTER ("EBTap");
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    argt = TUactualArgs2Ntype (AP_ARGS (arg_node));
+    bottom = TYgetBottom (argt);
+
+    if (bottom != NULL) {
+        if (FUNDEF_ISLACFUN (AP_FUNDEF (arg_node))
+            && (AP_FUNDEF (arg_node) != INFO_FUNDEF (arg_info))) {
+            DBUG_PRINT ("EBT",
+                        ("lacfun %s found...", CTIitemName (AP_FUNDEF (arg_node))));
+            DBUG_PRINT ("EBT", ("deleting %s", CTIitemName (AP_FUNDEF (arg_node))));
+            AP_FUNDEF (arg_node) = FREEdoFreeNode (AP_FUNDEF (arg_node));
+        }
+        INFO_TYPEERROR (arg_info)
+          = TCmakePrf1 (F_type_error, TBmakeType (TYcopyType (bottom)));
+
+    } else {
+        if (FUNDEF_ISLACFUN (AP_FUNDEF (arg_node))
+            && (AP_FUNDEF (arg_node) != INFO_FUNDEF (arg_info))) {
+            DBUG_PRINT ("EBT",
+                        ("lacfun %s found...", CTIitemName (AP_FUNDEF (arg_node))));
+            info *new_info = MakeInfo ();
+            INFO_ONEFUNCTION (new_info) = TRUE;
+            AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), new_info);
+            new_info = FreeInfo (new_info);
+        }
+    }
+
+    argt = TYfreeType (argt);
 
     DBUG_RETURN (arg_node);
 }
@@ -618,7 +586,7 @@ EBTcond (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EBTcond");
 
-    if ((INFO_THENBOTTS (arg_info) != NULL) && (INFO_ELSEBOTTS (arg_info) != NULL)) {
+    if (INFO_THENBOTTS (arg_info) && INFO_ELSEBOTTS (arg_info)) {
         /**
          * There are errors in both branches, i.e., abort
          */
@@ -626,19 +594,6 @@ EBTcond (node *arg_node, info *arg_info)
     }
     COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
     COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
-
-    if (INFO_THENBOTTS (arg_info) != NULL) {
-        INFO_THENBOTTS (arg_info) = TCappendAssign (INFO_THENBOTTS (arg_info),
-                                                    BLOCK_INSTR (COND_THEN (arg_node)));
-
-        BLOCK_INSTR (COND_THEN (arg_node)) = INFO_THENBOTTS (arg_info);
-    }
-    if (INFO_ELSEBOTTS (arg_info) != NULL) {
-        INFO_ELSEBOTTS (arg_info) = TCappendAssign (INFO_ELSEBOTTS (arg_info),
-                                                    BLOCK_INSTR (COND_ELSE (arg_node)));
-
-        BLOCK_INSTR (COND_ELSE (arg_node)) = INFO_ELSEBOTTS (arg_info);
-    }
 
     DBUG_RETURN (arg_node);
 }
@@ -665,13 +620,13 @@ EBTfuncond (node *arg_node, info *arg_info)
 
     if (TYisBottom (ttype)) {
         DBUG_ASSERT (!TYisBottom (etype), "two bottom args for funcond found");
-        INFO_THENBOTTS (arg_info)
-          = AddTypeError (INFO_THENBOTTS (arg_info), FUNCOND_THEN (arg_node), etype);
+        LiftBottomToTypeError (FUNCOND_THEN (arg_node), etype, arg_info);
+        INFO_THENBOTTS (arg_info) = TRUE;
     }
     if (TYisBottom (etype)) {
         DBUG_ASSERT (!TYisBottom (ttype), "two bottom args for funcond found");
-        INFO_ELSEBOTTS (arg_info)
-          = AddTypeError (INFO_ELSEBOTTS (arg_info), FUNCOND_ELSE (arg_node), ttype);
+        LiftBottomToTypeError (FUNCOND_ELSE (arg_node), ttype, arg_info);
+        INFO_ELSEBOTTS (arg_info) = TRUE;
     }
 
     DBUG_RETURN (arg_node);

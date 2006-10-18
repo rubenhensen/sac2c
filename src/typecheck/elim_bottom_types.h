@@ -18,6 +18,8 @@ extern node *EBTap (node *arg_node, info *arg_info);
 extern node *EBTvardec (node *arg_node, info *arg_info);
 extern node *EBTlet (node *arg_node, info *arg_info);
 extern node *EBTassign (node *arg_node, info *arg_info);
+extern node *EBTblock (node *arg_node, info *arg_info);
+extern node *EBTids (node *arg_node, info *arg_info);
 extern node *EBTcond (node *arg_node, info *arg_info);
 extern node *EBTfuncond (node *arg_node, info *arg_info);
 
