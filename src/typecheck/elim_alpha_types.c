@@ -327,9 +327,7 @@ EATap (node *arg_node, info *arg_info)
     if (FUNDEF_ISLACFUN (AP_FUNDEF (arg_node))
         && (AP_FUNDEF (arg_node) != INFO_FUNDEF (arg_info))) {
         DBUG_PRINT ("FIXNT", ("lacfun %s found...", CTIitemName (AP_FUNDEF (arg_node))));
-        if (bottom != NULL) {
-            AP_FUNDEF (arg_node) = FREEdoFreeNode (AP_FUNDEF (arg_node));
-        } else {
+        if (bottom == NULL) {
             info *new_info = MakeInfo ();
             INFO_ONEFUNCTION (new_info) = TRUE;
             AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), new_info);
