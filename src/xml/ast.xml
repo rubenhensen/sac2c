@@ -3215,11 +3215,6 @@
           <targets>
             <target mandatory="yes">
               <node name="Assign" />
-              <phases>
-                <all />
-              </phases>
-            </target>
-            <target mandatory="yes">
               <node name="Empty" />
               <phases>
                 <all />
@@ -3242,7 +3237,7 @@
         <attribute name="CacheSim" default="NULL">
           <type name="String">
             <targets>
-              <target mandatory="yes">
+              <target mandatory="no">
                 <any />
                 <phases>
                   <all />
@@ -5442,11 +5437,6 @@
           <targets>
           <target mandatory="yes">
               <node name="Generator" />
-              <phases>
-                <all />
-              </phases>
-            </target>
-          <target mandatory="yes">
               <node name="Default" />
               <phases>
                 <all />
@@ -5495,21 +5485,21 @@
         <son name="Vec">
           <targets>
             <target mandatory="yes">
-              <node name="Ids" />
+              <node name="SPIds" />
               <phases>
-                <all />
+                <range from="initial" to="insvd" />
               </phases>
             </target>
             <target mandatory="yes">
-              <node name="SPIds" />
+              <node name="Ids" />
               <phases>
-                <all />
+                <range from="insvd" to="alloc" />
               </phases>
             </target>
             <target mandatory="yes">
               <node name="Id" />
               <phases>
-                <all />
+                <range from="alloc" to="final" />
               </phases>
             </target>
           </targets>
@@ -5521,19 +5511,19 @@
             <target mandatory="no">
               <node name="Ids" />
               <phases>
-                <all />
+                <range from="insvd" to="alloc" />
               </phases>
             </target>
             <target mandatory="no">
               <node name="SPIds" />
               <phases>
-                <all />
+                <range from="initial" to="insvd" />
               </phases>
             </target>
             <target mandatory="no">
               <node name="Exprs" />
               <phases>
-                <all />
+                <range from="alloc" to="final" />
               </phases>
             </target>
           </targets>
@@ -5545,13 +5535,13 @@
             <target mandatory="no">
               <node name="Ids" />
               <phases>
-                <all />
+                <range from="wlidx" to="alloc" />
               </phases>
             </target>
             <target mandatory="no">
               <node name="Exprs" />
               <phases>
-                <all />
+                <range from="alloc" to="final" />
               </phases>
             </target>
           </targets>
@@ -5763,10 +5753,10 @@
         <attribute name="WLAA_Info" default="NULL">
           <type name="AccessInfo">
             <targets>
-              <target mandatory="yes">
+              <target mandatory="no">
                 <any />
                 <phases>
-                  <all />
+                  <phase name="initial" />
 		  <!-- this is only used during wlaa and array padding! -->
                 </phases>
               </target>
