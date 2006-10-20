@@ -2778,8 +2778,6 @@ PRTbool (node *arg_node, info *arg_info)
 node *
 PRTstr (node *arg_node, info *arg_info)
 {
-    char *tmp;
-
     DBUG_ENTER ("PRTstr");
 
     if (NODE_ERROR (arg_node) != NULL) {
