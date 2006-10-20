@@ -1469,15 +1469,37 @@ Modarray (node *a, constant *idx, node *elem)
     struct_constant *struc_a;
     struct_constant *struc_elem;
     constant *old_hidden_co;
+    ntype *atype;
 
     DBUG_ENTER ("Modarray");
 
     /**
      * if the index is an empty vector, we simply replace the entire
      * expression by the elem value!
+     * Well, not quite!!! This is only valid, iff
+     *      shape( elem) ==  shape( a)
+     * If we do not know this, then the only thing we can do is
+     * to replace the modarray by
+     *      _type_conv_( type(a), elem)
+     * iff a is AKS!
+     * cf bug246 !!!
      */
     if (COisEmptyVect (idx)) {
-        result = DUPdoDupTree (elem);
+        DBUG_ASSERT ((NODE_TYPE (a) == N_id),
+                     "non id found in array-arg position of F_modarray");
+        DBUG_ASSERT ((NODE_TYPE (elem) == N_id),
+                     "non id found in elem-arg position of F_modarray");
+        if (AVIS_SHAPE (ID_AVIS (a)) != NULL) {
+            if (CMPTdoCompareTree (AVIS_SHAPE (ID_AVIS (a)), AVIS_SHAPE (ID_AVIS (elem)))
+                == CMPT_EQ) {
+                result = DUPdoDupTree (elem);
+            }
+        }
+        atype = AVIS_TYPE (ID_AVIS (a));
+        if ((result == NULL) && TUshapeKnown (atype)) {
+            result = TCmakePrf2 (F_type_conv, TBmakeType (TYeliminateAKV (atype)),
+                                 DUPdoDupTree (elem));
+        }
     } else {
         /**
          * as we are not dealing with the degenerate case (idx == []),
