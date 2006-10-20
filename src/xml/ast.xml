@@ -4043,7 +4043,9 @@
         <attribute name="String" default="NULL">
           <description>In case of constant character arrays defined
             as strings, this attribute holds the original
-            definition. TODO: This should be eliminated as soon as possible.
+            definition. The definition needs to be safe for printing as
+            a C string, e.g. special characters need to be escaped.
+            TODO: This should be eliminated as soon as possible.
           </description>
           <type name="String">
             <targets>
@@ -4252,6 +4254,11 @@
       <sons></sons>
       <attributes>
         <attribute name="String">
+          <description>
+            The value of this string. Note that the string needs to be
+            in an encoding which is safe for printing in C code, e.g.
+            special characters like quotation marks need to be escaped.
+          </description>
           <type name="String">
             <targets>
               <target mandatory="yes">

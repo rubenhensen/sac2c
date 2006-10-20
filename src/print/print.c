@@ -2786,11 +2786,7 @@ PRTstr (node *arg_node, info *arg_info)
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
     }
 
-    tmp = ILIBstring2SafeCEncoding (STR_STRING (arg_node));
-
-    fprintf (global.outfile, "\"%s\"", tmp);
-
-    tmp = ILIBfree (tmp);
+    fprintf (global.outfile, "\"%s\"", STR_STRING (arg_node));
 
     DBUG_RETURN (arg_node);
 }
