@@ -2058,9 +2058,9 @@ SAC_MT_DECLARE_LOCK (SAC_MT_init_lock)
 
 #define SAC_ND_PRF_RUNMTGENARRAY__DATA(var_NT, args) SAC_NOOP ()
 
-#define SAC_ND_PRF_RUNMTMODARRAY__DATA(var_NT, args) SAC_NOOP
+#define SAC_ND_PRF_RUNMTMODARRAY__DATA(var_NT, args) SAC_NOOP ()
 
-#define SAC_ND_PRF_RUNMTFOLD__DATA(var_NT, args) SAC_NOOP
+#define SAC_ND_PRF_RUNMTFOLD__DATA(var_NT, args) SAC_NOOP ()
 
 /*****************************************************************************/
 
