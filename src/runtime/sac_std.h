@@ -929,7 +929,6 @@ typedef int *SAC_array_descriptor_t;
 
 #define SAC_ND_ASSIGN__DATA__AUD_AKS(to_NT, from_NT, copyfun)                            \
     {                                                                                    \
-        SAC_ND_ALLOC__DATA (to_NT)                                                       \
         SAC_ND_A_FIELD (to_NT) = SAC_ND_A_FIELD (from_NT);                               \
     }
 
