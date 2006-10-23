@@ -1316,6 +1316,7 @@ NTCexprs (node *arg_node, info *arg_info)
 node *
 NTCarray (node *arg_node, info *arg_info)
 {
+    int old_num_exprs;
     ntype *type, *elems;
     te_info *info;
 #ifndef DBUG_OFF
@@ -1340,6 +1341,13 @@ NTCarray (node *arg_node, info *arg_info)
          *   int[ARRAY_SHAPE]  which in NTCCTprf_array is combined with the element
          * type by TYnestTypes.
          */
+        /**
+         * INFO_NUM_EXPRS_SOFAR needs to be stacked here, as N_arrays may
+         * appear in N_genarray sons. As the M-OP-WLs use this field as well
+         * for counting the number of ops encountered, we need to stack them
+         * (cf. bug310)
+         */
+        old_num_exprs = INFO_NUM_EXPRS_SOFAR (arg_info);
         INFO_NUM_EXPRS_SOFAR (arg_info) = 1;
 
         ARRAY_AELEMS (arg_node) = TRAVdo (ARRAY_AELEMS (arg_node), arg_info);
@@ -1357,6 +1365,8 @@ NTCarray (node *arg_node, info *arg_info)
                                            SHcopyShape (ARRAY_SHAPE (arg_node))));
         elems = INFO_TYPE (arg_info);
         INFO_TYPE (arg_info) = NULL;
+
+        INFO_NUM_EXPRS_SOFAR (arg_info) = old_num_exprs;
 
         /**
          * Now, we built the resulting (AKS-)type type from the product type found:
