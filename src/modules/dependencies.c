@@ -161,29 +161,18 @@ BuildDepClosFoldFun (const char *entry, strstype_t kind, void *rest)
     DBUG_RETURN ((void *)result);
 }
 
-static stringset_t *
-BuildDependencyClosure (stringset_t *deps)
+stringset_t *
+DEPbuildDependencyClosure (stringset_t *deps)
 {
     stringset_t *result;
 
-    DBUG_ENTER ("BuildDependencyClosure");
+    DBUG_ENTER ("DEPbuildDependencyClosure");
 
     result = STRSfold (&BuildDepClosFoldFun, deps, NULL);
 
     result = STRSjoin (result, deps);
 
     DBUG_RETURN (result);
-}
-
-node *
-DEPdoResolveDependencies (node *syntax_tree)
-{
-    DBUG_ENTER ("DEPdesolveDependencies");
-
-    MODULE_DEPENDENCIES (syntax_tree)
-      = BuildDependencyClosure (MODULE_DEPENDENCIES (syntax_tree));
-
-    DBUG_RETURN (syntax_tree);
 }
 
 static void *

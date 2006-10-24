@@ -159,7 +159,6 @@ USGprintUsage ()
     PRINT_BREAK_SPEC (PH_module, "gdp", "Stop after gathering dependencies.");
     PRINT_BREAK_SPEC (PH_module, "imp", "Stop after importing instances.");
     PRINT_BREAK_SPEC (PH_module, "uss", "Stop after fetching used symbols.");
-    PRINT_BREAK_SPEC (PH_module, "dep", "Stop after resolving dependencies.");
 
     printf ("\n");
 

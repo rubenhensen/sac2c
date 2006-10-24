@@ -178,7 +178,6 @@ main (int argc, char *argv[])
     syntax_tree = PHrunCompilerSubPhase (SUBPH_gdp, syntax_tree);
     syntax_tree = PHrunCompilerSubPhase (SUBPH_imp, syntax_tree);
     syntax_tree = PHrunCompilerSubPhase (SUBPH_uss, syntax_tree);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_dep, syntax_tree);
 
     ABORT_ON_ERROR;
 
@@ -363,6 +362,13 @@ main (int argc, char *argv[])
          * during the compilation steps up to here
          */
         DEPgenerateDependencyTable (dependencies);
+    } else {
+        /*
+         * for programs, we build the closure of all dependencies.
+         * again, we cannot do this earlier, as new dependencies
+         * might have been introduced until here.
+         */
+        dependencies = DEPbuildDependencyClosure (dependencies);
     }
 
     if (global.gen_cccall) {
