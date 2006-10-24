@@ -463,6 +463,11 @@ node *CHKdoTreeCheck( node *syntax_tree)
  *  Attribute-template:
  *                                                                              ************************************************************************* -->
   <xsl:template name="exist_attribute">
+    <xsl:if test="key(&quot;arraytypes&quot;, ../../../type/@name)">
+      <xsl:value-of select="'for( cnt = 0; cnt &lt; '" />
+      <xsl:value-of select="key(&quot;types&quot;, ../../../type/@name)/@size"/>
+      <xsl:value-of select="'; cnt++) { '" />
+    </xsl:if>
     <xsl:value-of select="'CHKexistAttribute( '"/>
     <xsl:call-template name="node-access">
       <xsl:with-param name="node">arg_node</xsl:with-param>
@@ -497,6 +502,9 @@ node *CHKdoTreeCheck( node *syntax_tree)
     <xsl:value-of select="' is NULL'"/>
     <xsl:value-of select="'&quot;'"/>
     <xsl:value-of select="');'"/>
+    <xsl:if test="key(&quot;arraytypes&quot;, ../../../type/@name)">
+      <xsl:value-of select="'}'"/>
+    </xsl:if>
   </xsl:template>
 
 
