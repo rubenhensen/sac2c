@@ -272,8 +272,14 @@ SplitWith (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("SplitWith");
 
-    if ((PART_NEXT (WITH_PART (arg_node)) != NULL)
-        && (CODE_NEXT (WITH_CODE (arg_node)) != NULL)) {
+    if (WITH_PART (arg_node) == NULL) {
+        /**
+         * no generators at all
+         */
+        DBUG_ASSERT ((WITH_CODE (arg_node) == NULL),
+                     "found a WL w/o generators, but with code blocks!");
+    } else if ((PART_NEXT (WITH_PART (arg_node)) != NULL)
+               && (CODE_NEXT (WITH_CODE (arg_node)) != NULL)) {
         /**
          * pull out the first part!
          */

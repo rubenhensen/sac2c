@@ -44,7 +44,8 @@ serialize   = serialize_node.o serialize_attribs.o deserialize.o \
               serialize_filenames.o add_function_body.o
 
 scanparse   = sac.tab.o sac.lex.o scnprs.o handle_dots.o resolvepragma.o \
-              handle_with_loop_generators.o handle_with_loop_operators.o
+              handle_with_loop_generators.o handle_with_loop_operators.o \
+              handle_zero_generator_with_loops.o
 
 
 flatten     = flatten.o lac2fun.o fun2lac.o insert_vardec.o \

@@ -3350,18 +3350,23 @@ PRTwith (node *arg_node, info *arg_info)
     global.indent++;
 
     fprintf (global.outfile, "with");
-    fprintf (global.outfile, " ( ");
-    if (WITHID_VEC (PART_WITHID (WITH_PART (arg_node))) != NULL) {
-        TRAVdo (WITHID_VEC (PART_WITHID (WITH_PART (arg_node))), arg_info);
+
+    if (WITH_PART (arg_node) != NULL) {
+        fprintf (global.outfile, " ( ");
+        if (WITHID_VEC (PART_WITHID (WITH_PART (arg_node))) != NULL) {
+            TRAVdo (WITHID_VEC (PART_WITHID (WITH_PART (arg_node))), arg_info);
+        } else {
+            fprintf (global.outfile, "[ ");
+            TRAVdo (WITHID_IDS (PART_WITHID (WITH_PART (arg_node))), arg_info);
+            fprintf (global.outfile, " ]");
+        }
+        fprintf (global.outfile, " )\n");
+        global.indent++;
+        TRAVdo (WITH_PART (arg_node), arg_info);
+        global.indent--;
     } else {
-        fprintf (global.outfile, "[ ");
-        TRAVdo (WITHID_IDS (PART_WITHID (WITH_PART (arg_node))), arg_info);
-        fprintf (global.outfile, " ]");
+        fprintf (global.outfile, "\n");
     }
-    fprintf (global.outfile, " )\n");
-    global.indent++;
-    TRAVdo (WITH_PART (arg_node), arg_info);
-    global.indent--;
 
     if (WITH_WITHOP (arg_node) != NULL) {
         TRAVdo (WITH_WITHOP (arg_node), arg_info);

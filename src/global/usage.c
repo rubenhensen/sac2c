@@ -140,6 +140,8 @@ USGprintUsage ()
 
     PRINT_BREAK_SPEC (PH_scanparse, "cpp", "Stop after running the C preprocessor.");
     PRINT_BREAK_SPEC (PH_scanparse, "sp", "Stop after parsing (yacc).");
+    PRINT_BREAK_SPEC (PH_scanparse, "hzgwl",
+                      "Stop after transforming zero-generator with-loops");
     PRINT_BREAK_SPEC (PH_scanparse, "hwlg",
                       "Stop after transforming multi-generator with-loops");
     PRINT_BREAK_SPEC (PH_scanparse, "hwlo",

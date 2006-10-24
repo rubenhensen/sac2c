@@ -292,6 +292,18 @@
           <node name="Propagate" />
         </travuser>
       </traversal>
+      <traversal id="HZGWL" name="Handle zero-generator withloops"
+                 default="sons" include="handle_zero_generator_with_loops.h" >
+        <travuser>
+          <node name="With" />
+          <node name="Modarray" />
+          <node name="Genarray" />
+          <node name="SPFold" />
+          <node name="Propagate" />
+          <node name="Let" />
+          <node name="Assign" />
+        </travuser>
+      </traversal>
       <traversal id="HD" name="Handle Dots" default="sons" include="handle_dots.h">
         <travuser>
           <node name="SPId" />

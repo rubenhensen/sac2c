@@ -369,10 +369,12 @@ HWLOwith (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("HWLOwith");
 
-    DBUG_ASSERT (CODE_NEXT (WITH_CODE (arg_node)) == NULL,
+    DBUG_ASSERT ((WITH_CODE (arg_node) == NULL)
+                   || (CODE_NEXT (WITH_CODE (arg_node)) == NULL),
                  "HWLO requires all WLs to be single-generator!");
 
-    INFO_HWLO_CEXPRS (arg_info) = CODE_CEXPRS (WITH_CODE (arg_node));
+    INFO_HWLO_CEXPRS (arg_info)
+      = (WITH_CODE (arg_node) == NULL) ? NULL : CODE_CEXPRS (WITH_CODE (arg_node));
 
     if (TCcountExprs (INFO_HWLO_CEXPRS (arg_info)) > 1) {
         if (INFO_HWLO_LHS (arg_info) == NULL) {
@@ -421,7 +423,9 @@ HWLOwith (node *arg_node, info *arg_info)
             INFO_HWLO_NUM_STD_OPS (arg_info) = 0;
         }
     } else {
-        WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
+        if (WITH_CODE (arg_node) != NULL) {
+            WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
+        }
     }
 
     DBUG_RETURN (arg_node);
