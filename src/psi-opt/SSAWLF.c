@@ -1291,10 +1291,10 @@ CheckForSuperfluousCodes (node *wln)
 /******************************************************************************
  *
  * function:
- *   node *Modarray2Genarray(node *wln, node *substwln)
+ *   node *Modarray2Genarray( node *withop, node *wln, node *substwln)
  *
  * description:
- *   transforms the withop of the given WL. The goal is remove a reference
+ *   transforms the withops of the given WL. The goal is remove a reference
  *   to a WL which can be folded so that DCR can eleminate the WL.
  *
  * example:
@@ -1303,37 +1303,53 @@ CheckForSuperfluousCodes (node *wln)
  *     where newshape depends on shape and the given index vector of C.
  *
  ******************************************************************************/
-
 static node *
-Modarray2Genarray (node *wln, node *substwln)
+Modarray2Genarray (node *withop, node *wln, node *substwln)
 {
-    node *shparray;
-    shape *vecshape, *arrayshape, *prefix;
-
     DBUG_ENTER ("Modarray2Genarray");
 
-    DBUG_ASSERT ((N_modarray == NODE_TYPE (WITH_WITHOP (wln))),
-                 "wrong withop for Modarray2Genarray");
     DBUG_ASSERT (substwln, "substwln ist NULL");
+    DBUG_ASSERT (withop != NULL, "withop is NULL");
 
-    /* at the moment, substwln points to the assignment of the WL. */
-    substwln = LET_EXPR (ASSIGN_INSTR (substwln));
-    (WITH_REFERENCES_FOLDED (substwln))++; /* removed another reference */
+    /*
+     * Replace all further modarrays recursively
+     */
+    if (WITHOP_NEXT (withop) != NULL) {
+        L_WITHOP_NEXT (withop, Modarray2Genarray (WITHOP_NEXT (withop), wln, substwln));
+    }
 
-    /* compute shape of WL for NWITHOP_SHAPE() */
-    vecshape = TYgetShape (IDS_NTYPE (WITH_VEC (wln)));
-    arrayshape = TYgetShape (ID_NTYPE (MODARRAY_ARRAY (WITH_WITHOP (wln))));
+    if ((NODE_TYPE (withop) == N_modarray)
+        && (AVIS_SSAASSIGN (ID_AVIS (MODARRAY_ARRAY (withop))) == substwln)) {
+        node *shparray, *nextop;
+        shape *vecshape, *arrayshape, *prefix;
 
-    prefix = SHtakeFromShape (SHgetUnrLen (vecshape), arrayshape);
-    shparray = SHshape2Array (prefix);
+        /*
+         * at the moment, substwln points to the assignment of the WL.
+         * remove another reference
+         */
+        substwln = LET_EXPR (ASSIGN_INSTR (substwln));
+        (WITH_REFERENCES_FOLDED (substwln))++;
 
-    prefix = SHfreeShape (prefix);
+        /*
+         * compute shape of WL for NWITHOP_SHAPE()
+         */
+        vecshape = TYgetShape (IDS_NTYPE (WITH_VEC (wln)));
+        arrayshape = TYgetShape (ID_NTYPE (MODARRAY_ARRAY (withop)));
 
-    /* delete old withop and create new one */
-    FREEdoFreeTree (WITH_WITHOP (wln));
-    WITH_WITHOP (wln) = TBmakeGenarray (shparray, NULL);
+        prefix = SHtakeFromShape (SHgetUnrLen (vecshape), arrayshape);
+        shparray = SHshape2Array (prefix);
 
-    DBUG_RETURN (wln);
+        prefix = SHfreeShape (prefix);
+
+        /*
+         * delete old withop and create new one
+         */
+        nextop = FREEdoFreeNode (withop);
+        withop = TBmakeGenarray (shparray, NULL);
+        L_WITHOP_NEXT (withop, nextop);
+    }
+
+    DBUG_RETURN (withop);
 }
 
 /******************************************************************************
@@ -1771,14 +1787,17 @@ WLFwith (node *arg_node, info *arg_info)
             wlf_mode = wlfm_search_WL;
         }
 
-        /* If the current WL has a modarray-operator there is a referene to another
-           array in its operator part. If this array was chosen to be folded
-           (FoldDecision) we have to eleminate the reference to it. Else DCR
-           would not remove the subst WL.*/
-        if (N_modarray == NODE_TYPE (WITH_WITHOP (arg_node)) && substwln
-            && /* can be NULL if array is not in reach (loops, function argument)*/
-            FoldDecision (arg_node, substwln)) {
-            arg_node = Modarray2Genarray (arg_node, substwln);
+        /*
+         * If the current WL has a modarray-operator there is a referene to another
+         * array in its operator part. If this array was chosen to be folded
+         * (FoldDecision) we have to eleminate the reference to it. Else DCR
+         * would not remove the subst WL.
+         *
+         * substwln can be NULL if array is not in reach (loops, function argument)
+         */
+        if ((substwln != NULL) && (FoldDecision (arg_node, substwln))) {
+            WITH_WITHOP (arg_node)
+              = Modarray2Genarray (WITH_WITHOP (arg_node), arg_node, substwln);
         }
 
         /* restore arg_info */
