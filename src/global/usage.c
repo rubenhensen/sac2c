@@ -474,10 +474,6 @@ USGprintUsage ()
       "                      (default: %d)\n\n",
       global.max_optcycles);
 
-    printf ("    -maxoptvar <n>  Reserve <n> variables for optimization.\n"
-            "                      (default: %d)\n\n",
-            global.optvar);
-
     printf (
       "    -maxrecinl <n>  Inline recursive function applications at most <n> times.\n"
       "                      (default: %d)\n\n",

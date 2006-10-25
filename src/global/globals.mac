@@ -348,7 +348,6 @@ GLOBAL (char **, spec_mode_str, spec_mode_str_init)
  * for the (new) type inference.
  */
 
-GLOBAL (int, optvar, 50)
 GLOBAL (int, max_recursive_inlining, 0)
 GLOBAL (int, unrnum, 2)
 GLOBAL (int, wlunrnum, 9)

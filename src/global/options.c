@@ -410,8 +410,6 @@ OPTanalyseCommandline (node *syntax_tree)
 
     ARGS_OPTION ("maxoptcyc", ARG_NUM (global.max_optcycles));
 
-    ARGS_OPTION ("maxoptvar", ARG_NUM (global.optvar));
-
     ARGS_OPTION ("maxrecinl", CTIabort ("Option -maxrecinl de-activated temporarily");
                  ARG_NUM (global.max_recursive_inlining));
 
