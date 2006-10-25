@@ -90,7 +90,7 @@ AC_PROG_RANLIB()
 if test "$RANLIB"; then
   AC_MSG_CHECKING([whether ranlibs needs extra argument])
   case "$target_os" in
-    *macos*) RANLIB="$RANLIB -c"
+    *darwin*) RANLIB="$RANLIB -c"
     AC_MSG_RESULT([adding -c flag for OS X])
     ;;
     *)

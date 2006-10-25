@@ -18550,7 +18550,7 @@ if test "$RANLIB"; then
   echo "$as_me:$LINENO: checking whether ranlibs needs extra argument" >&5
 echo $ECHO_N "checking whether ranlibs needs extra argument... $ECHO_C" >&6
   case "$target_os" in
-    *macos*) RANLIB="$RANLIB -c"
+    *darwin*) RANLIB="$RANLIB -c"
     echo "$as_me:$LINENO: result: adding -c flag for OS X" >&5
 echo "${ECHO_T}adding -c flag for OS X" >&6
     ;;
