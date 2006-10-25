@@ -395,16 +395,18 @@ CMTFspmd (node *arg_node, info *arg_info)
          * block to avoid the recursive unfolding of parallelism.
          */
 
-        INFO_SPMDASSIGNS (arg_info) = SPMD_REGION (arg_node);
-        /*
-         * We store the assignment chain of the SPMD region in the info structure
-         * for subsequent integration into the surrounding assignment chain.
-         */
+        if (NODE_TYPE (BLOCK_INSTR (SPMD_REGION (arg_node))) != N_empty) {
+            INFO_SPMDASSIGNS (arg_info) = BLOCK_INSTR (SPMD_REGION (arg_node));
+            /*
+             * We store the assignment chain of the SPMD region in the info structure
+             * for subsequent integration into the surrounding assignment chain.
+             */
 
-        SPMD_REGION (arg_node) = TBmakeBlock (TBmakeEmpty (), NULL);
-        /*
-         * We must restore a correct N_spmd node for later de-allocation.
-         */
+            BLOCK_INSTR (SPMD_REGION (arg_node)) = TBmakeEmpty ();
+            /*
+             * We must restore a correct N_spmd node for later de-allocation.
+             */
+        }
     } else {
         /*
          * We are not yet in a parallel context. Hence, we traverse the SPMD
