@@ -85,6 +85,20 @@ AC_PROG_CPP()
 dnl check for libtool
 AC_PROG_LIBTOOL()
 
+dnl check for ranlib
+AC_PROG_RANLIB()
+if test "$RANLIB"; then
+  AC_MSG_CHECKING([whether ranlibs needs extra argument])
+  case "$target_os" in
+    *macos*) RANLIB="$RANLIB -c"
+    AC_MSG_RESULT([adding -c flag for OS X])
+    ;;
+    *)
+    AC_MSG_RESULT([no])
+    ;;
+  esac
+fi
+
 dnl check, whether we need -traditinal flag
 AC_PROG_GCC_TRADITIONAL
 
