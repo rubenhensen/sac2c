@@ -232,6 +232,8 @@ GDPobjdef (node *arg_node, info *arg_info)
 
     OBJDEF_TYPE (arg_node) = GDPntype (OBJDEF_TYPE (arg_node), arg_info);
 
+    AddNamespaceToDependencies (OBJDEF_NS (arg_node), arg_info);
+
     arg_node = TRAVcont (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);

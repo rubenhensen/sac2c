@@ -1,42 +1,4 @@
-/*
- *
- * $Log$
- * Revision 1.9  2005/08/09 10:06:52  sah
- * using CTIterminateCompilation instead of exit
- * to make sure the tmpdir is removed and all
- * the cleanup is done correctly
- *
- * Revision 1.8  2005/07/15 15:57:02  sah
- * introduced namespaces
- *
- * Revision 1.7  2005/06/18 18:06:00  sah
- * moved entire dependency handling to dependencies.c
- * the dependency table is now created shortly prior
- * to c code generation
- *
- * Revision 1.6  2005/06/04 11:50:00  sbs
- * output of -M changed. Now, dependencies to .sac files are provided if no .so
- * is found but the source is found.
- *
- * Revision 1.5  2005/06/02 17:02:34  sbs
- * added an empty alldeps rule for -Mlib in case there are no
- * dependencies at all.
- *
- * Revision 1.4  2005/06/02 15:02:37  sah
- * added -Mlib option and corresponding implementation
- *
- * Revision 1.3  2005/06/01 18:01:24  sah
- * finished printing of dependencies
- *
- * Revision 1.2  2004/11/25 21:19:24  sah
- * COMPILES
- *
- * Revision 1.1  2004/11/08 19:04:54  sah
- * Initial revision
- *
- *
- *
- */
+/* $Id$ */
 
 #include "dependencies.h"
 
@@ -169,6 +131,14 @@ DEPbuildDependencyClosure (stringset_t *deps)
     DBUG_ENTER ("DEPbuildDependencyClosure");
 
     result = STRSfold (&BuildDepClosFoldFun, deps, NULL);
+
+    if (result != NULL) {
+        /**
+         * we have found some second level dependencies,
+         * so next we build the closure over them.
+         */
+        result = DEPbuildDependencyClosure (result);
+    }
 
     result = STRSjoin (result, deps);
 
