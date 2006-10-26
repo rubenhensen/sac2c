@@ -2133,6 +2133,8 @@ LIRdoWithLoopInvariantRemovalOneFundef (node *fundef)
 node *
 LIRdoLoopInvariantRemoval (node *module)
 {
+    int movedsofar;
+
     info *info;
 
     DBUG_ENTER ("LIRdoLoopInvariantRemoval");
@@ -2140,15 +2142,19 @@ LIRdoLoopInvariantRemoval (node *module)
     DBUG_ASSERT ((NODE_TYPE (module) == N_module),
                  "LIRdoLoopInvariantRemoval called for non-module node");
 
-    info = MakeInfo ();
+    do {
+        movedsofar = global.optcounters.lir_expr;
 
-    INFO_TRAVSTART (info) = TS_module;
+        info = MakeInfo ();
 
-    TRAVpush (TR_lir);
-    module = TRAVdo (module, info);
-    TRAVpop ();
+        INFO_TRAVSTART (info) = TS_module;
 
-    info = FreeInfo (info);
+        TRAVpush (TR_lir);
+        module = TRAVdo (module, info);
+        TRAVpop ();
+
+        info = FreeInfo (info);
+    } while (movedsofar < global.optcounters.lir_expr);
 
     DBUG_RETURN (module);
 }
