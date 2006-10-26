@@ -390,14 +390,6 @@ OPTdoOptimize (node *arg_node)
             TRAVsetPreFun (TR_prt, IVEIprintPreFun);
             arg_node = PHrunCompilerSubPhase (SUBPH_ivei, arg_node);
             arg_node = PHrunCompilerSubPhase (SUBPH_ive, arg_node);
-
-            /*
-             * Loop Invariant Removal
-             */
-            if (global.optimize.dolir) {
-                arg_node = PHrunCompilerSubPhase (SUBPH_lirive, arg_node);
-            }
-
             arg_node = PHrunCompilerSubPhase (SUBPH_iveo, arg_node);
             TRAVsetPreFun (TR_prt, NULL);
 

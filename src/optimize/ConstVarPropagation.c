@@ -332,11 +332,40 @@ CVPprf (node *arg_node, info *arg_info)
 
         break;
 
+    /**
+     * Although the following operations do not exist during the
+     * optimisations, CVP needs to be able to handle them correctly
+     * as CVP is run after IVE, as well!
+     */
     case F_idx_sel:
+        DBUG_ASSERT (((global.compiler_phase >= PH_sacopt)
+                      && (global.compiler_subphase >= SUBPH_ivei)),
+                     ("F_idx_ operations are not allowed during the optimizer!"));
+        /*
+         * The second argument of idx_sel must be variable
+         * the others can as well be constant scalars
+         */
+        INFO_PROPMODE (arg_info) = PROP_variable | PROP_scalarconst;
+        PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
+
+        INFO_PROPMODE (arg_info) = PROP_variable;
+        PRF_ARG2 (arg_node) = TRAVdo (PRF_ARG2 (arg_node), arg_info);
+        break;
+
     case F_idx_modarray:
         DBUG_ASSERT (((global.compiler_phase >= PH_sacopt)
                       && (global.compiler_subphase >= SUBPH_ivei)),
                      ("F_idx_ operations are not allowed during the optimizer!"));
+        /*
+         * The first argument of idx_modarray must be variable
+         * the others can as well be constant scalars
+         */
+        INFO_PROPMODE (arg_info) = PROP_variable;
+        PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
+
+        INFO_PROPMODE (arg_info) = PROP_variable | PROP_scalarconst;
+        PRF_ARG2 (arg_node) = TRAVdo (PRF_ARG2 (arg_node), arg_info);
+        PRF_ARG3 (arg_node) = TRAVdo (PRF_ARG3 (arg_node), arg_info);
         break;
 
     default:
