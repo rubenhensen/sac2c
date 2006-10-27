@@ -1292,20 +1292,42 @@ with: BRACKET_L generator BRACKET_R wlassignblock withop
 #endif
 
       }
-    | BRACE_L wlcomp_pragma_local nparts BRACE_R BRACKET_L nwithops BRACKET_R
+    | BRACE_L wlcomp_pragma_local nparts BRACE_R COLON 
+      BRACKET_L nwithops BRACKET_R
+      { $$ = $3;
+        WITH_WITHOP( $$) = $7;
+        WITH_PRAGMA( $$) = $2;
+      }
+    | BRACE_L wlcomp_pragma_local BRACE_R COLON 
+      BRACKET_L nwithops BRACKET_R
+      { $$ = TBmakeWith( NULL, NULL, $6);
+        WITH_PRAGMA( $$) = $2;
+      }
+    | BRACE_L wlcomp_pragma_local nparts BRACE_R COLON nwithop
       { $$ = $3;
         WITH_WITHOP( $$) = $6;
         WITH_PRAGMA( $$) = $2;
       }
-    | BRACE_L wlcomp_pragma_local nparts BRACE_R nwithop
-      { $$ = $3;
-        WITH_WITHOP( $$) = $5;
+    | BRACE_L wlcomp_pragma_local BRACE_R COLON nwithop
+      { $$ = TBmakeWith( NULL, NULL, $5);
         WITH_PRAGMA( $$) = $2;
       }
-    | BRACE_L wlcomp_pragma_local nparts BRACE_R TYPE_VOID
+    | BRACE_L wlcomp_pragma_local nparts BRACE_R COLON TYPE_VOID
       { $$ = $3;
         WITH_WITHOP( $$) = NULL;
         WITH_PRAGMA( $$) = $2;
+      }
+    | COLON BRACKET_L nwithops BRACKET_R
+      {
+        $$ = TBmakeWith( NULL, NULL, $3);
+      }
+    | COLON TYPE_VOID
+      {
+        $$ = TBmakeWith( NULL, NULL, NULL);
+      }
+    | COLON nwithop
+      {
+        $$ = TBmakeWith( NULL, NULL, $2);
       }
     ;
 
