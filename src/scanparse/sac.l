@@ -40,7 +40,7 @@ int charpos = 0;
 %p 6000 /* set positions to 6000 */
 %e 2000 /* set nodes to 1100 */
 %option noyywrap
-
+%option nounput
 
 %%
 %{

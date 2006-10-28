@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 
 #include "globals.h"
 #include "build.h"
@@ -863,22 +864,45 @@ USGprintUsage ()
             "                      s: Use intrinsic sel.\n"
             "                      o: Use intrinsic type conversion.\n");
 
-    printf (
-      "\n\nLIBRARY OPTIONS:\n\n"
+    printf ("\n\nLIBRARY OPTIONS:\n\n"
 
-      "    -genlib <lang>  Specify library format when compiling SAC module/class\n"
-      "                    implementations.\n"
-      "                    Supported values for <lang> are:\n"
-      "                      sac: Generate SAC library file (default).\n"
-      "                        c: Generate C object and header files.\n"
-      "\n"
-      "                    NOTE:\n"
-      "                    Be careful to use same options for privat heap management\n"
-      "                    (PHM) and profiling for compilation of all modules/classes\n"
-      "                    you are going to link together to a single executable.\n"
-      "\n"
-      "                    NOTE:\n"
-      "                    Multithreading is not yet available for C libraries.\n");
+            "    -linksetsize <n> Specify how many compiled C functions are stored "
+            "within\n"
+            "                     a single C source file for further compilation and "
+            "linking.\n"
+            "                     A large number here means that potentially many "
+            "functions\n"
+            "                     need to be linked to an executable that are actually "
+            "never\n"
+            "                     called. However, setting the linksetsize to 1 "
+            "considerably\n"
+            "                     slows down the compilation of large SAC "
+            "modules/classes\n"
+            "                     (default: %d)\n"
+            "\n"
+            "                     NOTE:\n"
+            "                     A linksetsize of 0 means all functions are stored in "
+            "a\n"
+            "                     a single file.\n"
+            "\n"
+            "    -genlib <lang>   Specify library format when compiling SAC "
+            "module/class\n"
+            "                     implementations.\n"
+            "                     Supported values for <lang> are:\n"
+            "                       sac: Generate SAC library file (default).\n"
+            "                         c: Generate C object and header files.\n"
+            "\n"
+            "                     NOTE:\n"
+            "                     Be careful to use same options for privat heap "
+            "management\n"
+            "                     (PHM) and profiling for compilation of all "
+            "modules/classes\n"
+            "                     you are going to link together to a single "
+            "executable.\n"
+            "\n"
+            "                     NOTE:\n"
+            "                     Multithreading is not yet available for C libraries.\n",
+            global.linksetsize == INT_MAX ? 0 : global.linksetsize);
 
     printf ("\n\nC-COMPILER OPTIONS:\n\n"
 
