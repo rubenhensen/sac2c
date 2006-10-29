@@ -50,6 +50,18 @@ PRECdoPrecompile (node *syntax_tree)
      */
     syntax_tree = PHrunCompilerSubPhase (SUBPH_reso, syntax_tree);
 
+#ifdef BEMT
+    /*
+     * Create Multithreaded Code
+     */
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_spmdinit, syntax_tree);
+
+    /*
+     * Create MT-funs for exported and provided functions in modules
+     */
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_createmtfuns, syntax_tree);
+#endif
+
     /*
      * Set Linksign
      */

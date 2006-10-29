@@ -21,5 +21,7 @@ extern node *CMTFassign (node *arg_node, info *arg_info);
 extern node *CMTFap (node *arg_node, info *arg_info);
 extern node *CMTFfold (node *arg_node, info *arg_info);
 extern node *CMTFspmd (node *arg_node, info *arg_info);
+extern node *CMTFcond (node *arg_node, info *arg_info);
+extern node *CMTFwith2 (node *arg_node, info *arg_info);
 
 #endif /* _SAC_CREATE_MTFUNS_H_ */

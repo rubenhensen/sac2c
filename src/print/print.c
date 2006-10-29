@@ -3965,6 +3965,11 @@ PRTwith2 (node *arg_node, info *arg_info)
     TRAVdo (WITH2_WITHID (arg_node), arg_info);
     fprintf (global.outfile, ")\n");
 
+    if (WITH2_MT (arg_node)) {
+        INDENT;
+        fprintf (global.outfile, "/** MT **/\n");
+    }
+
     INDENT;
     fprintf (global.outfile, "/********** operators: **********/\n");
     code = WITH2_CODE (arg_node);

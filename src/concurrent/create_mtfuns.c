@@ -99,6 +99,30 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
+static bool
+IsSpmdConditional (node *arg_node)
+{
+    bool res;
+    node *prf;
+
+    DBUG_ENTER ("IsSpmdConditional");
+
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_cond,
+                 "IsSpmdConditional() applied to wrong node type.");
+
+    res = FALSE;
+
+    if (NODE_TYPE (COND_COND (arg_node)) == N_prf) {
+        prf = COND_COND (arg_node);
+        if ((PRF_PRF (prf) == F_run_mt_genarray) || (PRF_PRF (prf) == F_run_mt_modarray)
+            || (PRF_PRF (prf) == F_run_mt_fold)) {
+            res = TRUE;
+        }
+    }
+
+    DBUG_RETURN (res);
+}
+
 /******************************************************************************
  *
  * @fn node *CMTFdoCreateMtFuns( node *syntax_tree)
@@ -118,15 +142,17 @@ CMTFdoCreateMtFuns (node *syntax_tree)
 
     DBUG_ENTER ("CMTFdoCreateMtFuns");
 
-    DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_module, "Illegal argument node!!!");
+    if ((global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop)) {
+        DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_module, "Illegal argument node!!!");
 
-    info = MakeInfo ();
+        info = MakeInfo ();
 
-    TRAVpush (TR_cmtf);
-    syntax_tree = TRAVdo (syntax_tree, info);
-    TRAVpop ();
+        TRAVpush (TR_cmtf);
+        syntax_tree = TRAVdo (syntax_tree, info);
+        TRAVpop ();
 
-    info = FreeInfo (info);
+        info = FreeInfo (info);
+    }
 
     DBUG_RETURN (syntax_tree);
 }
@@ -389,6 +415,7 @@ CMTFspmd (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CMTFspmd");
 
+#ifndef BEMT
     if (INFO_MTCONTEXT (arg_info)) {
         /*
          * We are already in an MT context. Hence, we eliminate this nested SPMD
@@ -424,6 +451,98 @@ CMTFspmd (node *arg_node, info *arg_info)
             SPMD_SEQUENTIAL (arg_node) = TRAVdo (SPMD_SEQUENTIAL (arg_node), arg_info);
         }
     }
+#endif
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * @fn node *CMTFcond( node *arg_node, info *arg_info)
+ *
+ *  @brief CMTF traversal function for N_cond node
+ *
+ *  @param arg_node
+ *  @param arg_info
+ *
+ *  @return arg_node
+ *
+ *****************************************************************************/
+
+node *
+CMTFcond (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("CMTFcond");
+
+#ifdef BEMT
+    if (IsSpmdConditional (arg_node) && INFO_MTCONTEXT (arg_info)) {
+        /*
+         * We are already in an MT context. Hence, we eliminate this nested SPMD
+         * block to avoid the recursive unfolding of parallelism.
+         */
+
+        INFO_SPMDASSIGNS (arg_info) = BLOCK_INSTR (COND_ELSE (arg_node));
+        /*
+         * We store the assignment chain of the SPMD region in the info structure
+         * for subsequent integration into the surrounding assignment chain.
+         */
+
+        BLOCK_INSTR (COND_ELSE (arg_node)) = TBmakeEmpty ();
+        /*
+         * We must restore a correct N_spmd node for later de-allocation.
+         */
+    } else {
+        COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
+        COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
+    }
+#endif
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * @fn node *CMTFwith2( node *arg_node, info *arg_info)
+ *
+ *  @brief CMTF traversal function for N_with2 node
+ *
+ *  @param arg_node
+ *  @param arg_info
+ *
+ *  @return arg_node
+ *
+ *****************************************************************************/
+
+node *
+CMTFwith2 (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("CMTFwith2");
+
+#ifdef BEMT
+    if (INFO_MTCONTEXT (arg_info)) {
+        if (WITH2_MT (arg_node)) {
+            WITH2_MT (arg_node) = FALSE;
+        }
+        WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
+    } else {
+        /*
+         * We are not yet in a parallel context. Hence, we traverse the SPMD
+         * region in MT context and the optional sequential alternative of a
+         * conditional SPMD block in sequential mode. We need not to traverse
+         * the condition of a conditional SPMD block because for the time being
+         * it may not contain applications of defined functions.
+         */
+
+        if (WITH2_MT (arg_node)) {
+            INFO_MTCONTEXT (arg_info) = TRUE;
+            WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
+            INFO_MTCONTEXT (arg_info) = FALSE;
+        } else {
+            WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
+        }
+    }
+
+#endif
 
     DBUG_RETURN (arg_node);
 }

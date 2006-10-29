@@ -62,6 +62,8 @@ CONCdoConcurrent (node *syntax_tree)
             CTIstate ("  Using start-stop version of multithreading (MT2)");
         }
 
+#ifndef BEMT
+
         /*
          * Init SPMD blocks around with-loops
          */
@@ -100,6 +102,7 @@ CONCdoConcurrent (node *syntax_tree)
          * Establish SSA form in SPMD conditional functions
          */
         syntax_tree = PHrunCompilerSubPhase (SUBPH_concssa, syntax_tree);
+#endif
         break;
 
 #ifndef PRODUCTION

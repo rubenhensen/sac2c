@@ -1866,6 +1866,8 @@
           <node name="Fundef" />
           <node name="Assign" />
           <node name="Spmd" />
+          <node name="Cond" />
+          <node name="With2" />
           <node name="Ap" />
           <node name="Fold" />
         </travuser>
@@ -2263,6 +2265,7 @@
         <node name="Id" />
         <node name="SPId" />
         <node name="With" />
+        <node name="With2" />
         <node name="Array" />
         <node name="Ap" />
         <node name="SPAp" />
