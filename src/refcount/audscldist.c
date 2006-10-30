@@ -696,6 +696,44 @@ ASDcode (node *arg_node, info *arg_info)
 }
 
 /** <!--********************************************************************-->
+ *
+ * @fn node *ASDprf( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+ASDprf (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("ASDprf");
+
+    switch (PRF_PRF (arg_node)) {
+    case F_abs:
+    case F_neg:
+    case F_not: {
+        node *id = PRF_ARG1 (arg_node);
+        shape_class_t actual_cls = NTUgetShapeClassFromNType (ID_NTYPE (id));
+
+        if (actual_cls != C_scl) {
+            ntype *nt;
+
+            DBUG_PRINT ("ASD", ("   ... = %s( ... %s ...), %s instead of %s",
+                                global.mdb_prf[PRF_PRF (arg_node)], ID_NAME (id),
+                                global.nt_shape_string[actual_cls],
+                                global.nt_shape_string[C_scl]));
+
+            nt = TYmakeAKS (TYcopyType (TYgetScalar (ID_NTYPE (id))), SHmakeShape (0));
+            LiftId (id, nt, arg_info);
+            nt = TYfreeType (nt);
+        }
+    } break;
+
+    default:
+        break;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
  * @}  <!-- Traversal functions -->
  *****************************************************************************/
 

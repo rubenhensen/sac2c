@@ -256,6 +256,8 @@ USGprintUsage ()
     PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:ssawlf",
                       "Stop in cycle <n> after restoring SSA form after with-loop "
                       "folding.");
+    PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:swlf",
+                      "Stop in cycle <n> after symbolic with-loop folding.");
     PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:cf2",
                       "Stop in cycle <n> after second constant folding.");
     PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:dcr",

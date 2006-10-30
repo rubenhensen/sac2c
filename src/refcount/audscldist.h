@@ -23,5 +23,6 @@ extern node *ASDcond (node *arg_node, info *arg_info);
 extern node *ASDwith (node *arg_node, info *arg_info);
 extern node *ASDwith2 (node *arg_node, info *arg_info);
 extern node *ASDcode (node *arg_node, info *arg_info);
+extern node *ASDprf (node *arg_node, info *arg_info);
 
 #endif /* _SAC_AUD_SCL_DISTINCTION_H_ */
