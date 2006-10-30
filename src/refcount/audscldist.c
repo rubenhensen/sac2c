@@ -715,6 +715,7 @@ ASDprf (node *arg_node, info *arg_info)
         if (actual_cls != C_scl) {
             ntype *nt;
 
+            DBUG_PRINT ("ASD", ("Unary scalar prf applied to non-scalar found: "));
             DBUG_PRINT ("ASD", ("   ... = %s( ... %s ...), %s instead of %s",
                                 global.mdb_prf[PRF_PRF (arg_node)], ID_NAME (id),
                                 global.nt_shape_string[actual_cls],
@@ -726,6 +727,19 @@ ASDprf (node *arg_node, info *arg_info)
         }
     } break;
 
+    case F_type_conv: {
+        node *id = PRF_ARG2 (arg_node);
+        ntype *tg = TYPE_TYPE (PRF_ARG1 (arg_node));
+        shape_class_t id_cls = NTUgetShapeClassFromNType (ID_NTYPE (id));
+        shape_class_t tg_cls = NTUgetShapeClassFromNType (tg);
+
+        if ((id_cls != tg_cls) && ((id_cls == C_scl) || (tg_cls == C_scl))) {
+            DBUG_PRINT ("ASD", ("Shape class conversion disguised as typeconv found:"));
+            PRF_ARG2 (arg_node) = NULL;
+            arg_node = FREEdoFreeNode (arg_node);
+            arg_node = TCmakePrf1 (F_copy, id);
+        }
+    } break;
     default:
         break;
     }
