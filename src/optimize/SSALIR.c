@@ -2142,19 +2142,17 @@ LIRdoLoopInvariantRemoval (node *module)
     DBUG_ASSERT ((NODE_TYPE (module) == N_module),
                  "LIRdoLoopInvariantRemoval called for non-module node");
 
-    do {
-        movedsofar = global.optcounters.lir_expr;
+    movedsofar = global.optcounters.lir_expr;
 
-        info = MakeInfo ();
+    info = MakeInfo ();
 
-        INFO_TRAVSTART (info) = TS_module;
+    INFO_TRAVSTART (info) = TS_module;
 
-        TRAVpush (TR_lir);
-        module = TRAVdo (module, info);
-        TRAVpop ();
+    TRAVpush (TR_lir);
+    module = TRAVdo (module, info);
+    TRAVpop ();
 
-        info = FreeInfo (info);
-    } while (movedsofar < global.optcounters.lir_expr);
+    info = FreeInfo (info);
 
     DBUG_RETURN (module);
 }
