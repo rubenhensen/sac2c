@@ -33,6 +33,426 @@
 #include "namespaces.h"
 #include "new_types.h"
 
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+
+#ifdef BEMT
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+
+/**
+ * INFO structure
+ */
+struct INFO {
+    node *spmdfuns;
+    node *fundef;
+    lut_t *lut;
+    node *args;
+    node *params;
+    node *vardecs;
+    node *rets;
+    types *rettypes;
+    node *retexprs;
+    node *allocassigns;
+    node *freeassigns;
+    bool collect;
+    bool lift;
+};
+
+/**
+ * INFO macros
+ */
+#define INFO_SPMDFUNS(n) (n->spmdfuns)
+#define INFO_FUNDEF(n) (n->fundef)
+#define INFO_LUT(n) (n->lut)
+#define INFO_ARGS(n) (n->args)
+#define INFO_PARAMS(n) (n->args)
+#define INFO_VARDECS(n) (n->vardecs)
+#define INFO_RETS(n) (n->rets)
+#define INFO_RETTYPES(n) (n->rettypes)
+#define INFO_RETEXPRS(n) (n->retexprs)
+#define INFO_ALLOCASSIGNS(n) (n->allocassigns)
+#define INFO_FREEASSIGNS(n) (n->freeassigns)
+#define INFO_COLLECT(n) (n->collect)
+#define INFO_LIFTT(n) (n->lift)
+
+/**
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = ILIBmalloc (sizeof (info));
+
+    INFO_SPMDFUNS (result) = NULL;
+    INFO_FUNDEF (result) = NULL;
+    INFO_LUT (result) = NULL;
+    INFO_ARGS (result) = NULL;
+    INFO_PARAMS (result) = NULL;
+    INFO_VARDECS (result) = NULL;
+    INFO_RETS (result) = NULL;
+    INFO_RETTYPES (result) = NULL;
+    INFO_RETEXPRS (result) = NULL;
+    INFO_ALLOCASSIGNS (result) = NULL;
+    INFO_FREEASSIGNS (result) = NULL;
+    INFO_COLLECT (result) = FALSE;
+    INFO_LIFT (result) = FALSE;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = ILIBfree (info);
+
+    DBUG_RETURN (info);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn static nnode *CreateSpmdFundef( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+
+static node *
+CreateSpmdFundef (node *arg_node, info *arg_info)
+{
+    node *spmd_fundef, *fundef, *body, *withlet, *retexprs, *vardecs;
+    node *allocassigns, *freeassigns, *assigns;
+
+    DBUG_ENTER ("CreateSpmdFundef");
+
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_let,
+                 "CreateSpmdFundef( ) called with illegal node type.");
+
+    /*
+     * generate body of SPMD function
+     */
+
+    retexprs = INFO_RETEXPRS (arg_info);
+    INFO_RETEXPRS (arg_info) = NULL;
+
+    vardecs = INFO_VARDECS (arg_info);
+    INFO_VARDECS (arg_info) = NULL;
+
+    allocassigns = INFO_ALLOCASSIGNS (arg_info);
+    INFO_ALLOCASSIGNS (arg_info) = NULL;
+
+    freeassigns = INFO_FREEASSIGNS (arg_info);
+    INFO_FREEASSIGNS (arg_info) = NULL;
+
+    withlet = DUPdoDupTreeLut (arg_node, INFO_LUT (arg_info));
+
+    assigns
+      = TCappendAssign (allocassigns,
+                        TCappendAssigns (TBmakeAssign (withlet, NULL),
+                                         TCappendAssign (freeassigns,
+                                                         TBmakeAssign (TBmakeReturn (
+                                                                         retexprs),
+                                                                       NULL))));
+    body
+      = TBmakeBlock (TBmakeAssign (withlet, TBmakeAssign (TBmakeReturn (retexprs), NULL)),
+                     vardecs);
+
+    /*
+     * create SPMD fundef
+     */
+    spmd_fundef
+      = TBmakeFundef (ILIBtmpVarName (FUNDEF_NAME (fundef)),
+                      NSdupNamespace (FUNDEF_NS (fundef)), rets, args, body, NULL);
+
+    FUNDEF_TYPES (spmd_fundef) = rettypes;
+    FUNDEF_ISSPMDFUN (spmd_fundef) = TRUE;
+
+    /*
+     * append return expressions to body of SPMD-function
+     */
+    FUNDEF_RETURN (new_fundef) = TBmakeReturn (retexprs);
+    TCappendAssign (BLOCK_INSTR (body), TBmakeAssign (FUNDEF_RETURN (new_fundef), NULL));
+
+    fundef = NULL;
+
+    DBUG_RETURN (fundef);
+}
+
+/******************************************************************************
+ *
+ * @fn SPMDLdoSpmdLift
+ *
+ *  @brief initiates traversal spmd lift
+ *
+ *  @param syntax_tree
+ *
+ *  @return syntax_tree
+ *
+ *****************************************************************************/
+
+node *
+SPMDLdoSpmdLift (node *syntax_tree)
+{
+    info *info;
+
+    DBUG_ENTER ("SPMDLdoSpmdLift");
+
+    DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_module, "Illegal argument node!!!");
+
+    info = MakeInfo ();
+
+    TRAVpush (TR_spmdl);
+    syntax_tree = TRAVdo (syntax_tree, info);
+    TRAVpop ();
+
+    info = FreeInfo (info);
+
+    DBUG_RETURN (syntax_tree);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SPMDLmodule( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+
+node *
+SPMDLmodule (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("SPMDLmodule");
+
+    INFO_LUT (info) = LUTgenerateLut ();
+
+    if (MODULE_FUNS (arg_node) != NULL) {
+        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
+    }
+
+    INFO_LUT (info) = LUTremoveLut (INFO_LUT (info));
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SPMDLfundef( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+
+node *
+SPMDLfundef (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("SPMDLfundef");
+
+    if (FUNDEF_ISSTFUN (arg_node) && (FUNDEF_BODY (arg_node) != NULL)) {
+        /*
+         * Only ST funs may contain parallel with-loops.
+         * So, we may constrain our search.
+         */
+        INFO_FUNDEF (arg_info) = arg_node;
+        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+        INFO_FUNDEF (arg_info) = NULL;
+    }
+
+    if (FUNDEF_NEXT (arg_node) != NULL) {
+        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+    } else {
+        /*
+         * We have reached the end of the FUNDEF chain. We add the new SPMD functions
+         * constructed meanwhile and stored in the info structure to the end and stop
+         * the traversal.
+         */
+        FUNDEF_NEXT (arg_node) = INFO_SPMDFUNS (arg_info);
+        INFO_SPMDFUNS (arg_info) = NULL;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SPMDLblock( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+
+node *
+SPMDLblock (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("SPMDLblock");
+
+    BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
+
+    if (BLOCK_VARDEC (arg_node) != NULL) {
+        BLOCK_VARDEC (arg_node) = TRAVdo (BLOCK_VARDEC (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SPMDLvardec( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+
+node *
+SPMDLvardec (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("SPMDLvardec");
+
+    if (VARDEC_NEXT (arg_node) != NULL) {
+        VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
+    }
+
+    if (AVIS_ISLIFTED (VARDEC_AVIS (arg_node))) {
+        arg_node = FREEdoFreeNode (arg_node);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SPMDLlet( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+
+node *
+SPMDLlet (node *arg_node, info *arg_info)
+{
+    node *spmd_fundef, *spmd_ap;
+
+    DBUG_ENTER ("SPMDLlet");
+
+    LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
+
+    if (LET_IDS (arg_node) != NULL) {
+        LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
+    }
+
+    if (INFO_LIFT (arg_info)) {
+        spmd_fundef = CreateSpmdFundef (arg_node, arg_info);
+        FUNDEF_NEXT (spmd_fundef) = INFO_SPMDFUNS (arg_info);
+        INFO_SPMDFUNS (arg_info) = spmd_fundef;
+
+        spmd_ap = TBmakeAp (spmd_fundef, INFO_ARGS (arg_info));
+        INFO_ARGS (arg_info) = NULL;
+
+        LET_EXPR (arg_node) = FREEdoFreeTree (LET_EXPR (arg_node));
+        LET_EXPR (arg_node) = spmd_ap;
+
+        INFO_LIFT (arg_info) = FALSE;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *SPMDLwith2( node *arg_node, info *arg_info)
+ *
+ * description:
+ *   lifts a parallelised with-loop into a function.
+ *
+ ******************************************************************************/
+
+node *
+SPMDLwith2 (node *arg_node, info *arg_info)
+{
+    node *fundef, *new_fundef, *body;
+    node *vardecs, *args;
+    node *retexprs, *rets, *retids;
+    node *letap;
+
+    types *rettypes;
+    lut_t *lut;
+
+    DBUG_ENTER ("SPMDLwith2");
+
+    if (WITH2_MT (arg_node)) {
+        INFO_COLLECT (arg_info) = TRUE;
+
+        /*
+         * Collect data flow information
+         */
+
+        if (WITH2_ALLOCASSIGNS (arg_node) != NULL) {
+            WITH2_ALLOCASSIGNS (arg_node)
+              = TRAVdo (WITH2_ALLOCASSIGNS (arg_node), arg_info);
+        }
+
+        WITH2_SEGS (arg_node) = TRAVdo (WITH2_SEGS (arg_node), arg_info);
+        WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
+        WITH2_WITHID (arg_node) = TRAVdo (WITH2_WITHID (arg_node), arg_info);
+        WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
+
+        INFO_ALLOCASSIGNS (arg_info) = WITH2_ALLOCASSIGNS (arg_node);
+        WITH2_ALLOCASSIGNS (arg_node) = NULL;
+
+        INFO_FREEASSIGNS (arg_info) = WITH2_FREEASSIGNS (arg_node);
+        WITH2_FREEASSIGNS (arg_node) = NULL;
+
+        INFO_LUT (arg_info) = LUTremoveContentLut (INFO_LUT (arg_info));
+        INFO_COLLECT (arg_info) = FALSE;
+        INFO_LIFT (arg_info) = TRUE;
+    } else {
+        if (INFO_COLLECT (arg_info)) {
+            /*
+             * If we are in the collect mode, we need to traverse all sons.
+             */
+            WITH2_SEGS (arg_node) = TRAVdo (WITH2_SEGS (arg_node), arg_info);
+            WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
+            WITH2_WITHID (arg_node) = TRAVdo (WITH2_WITHID (arg_node), arg_info);
+            WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
+        } else {
+            /*
+             * If we are still looking for a parallel with-loop, the codes are
+             * the only place to have a look at.
+             */
+            WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
+        }
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SPMDLspmd( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+
+node *
+SPMDLspmd (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("SPMDLspmd");
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+
+#else
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+
 /**
  * INFO structure
  */
@@ -404,3 +824,37 @@ SPMDLspmd (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SPMDLlet( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+
+node *
+SPMDLlet (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("SPMDLlet");
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SPMDLwith2( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+
+node *
+SPMDLwith2 (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("SPMDLwith2");
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+#endif

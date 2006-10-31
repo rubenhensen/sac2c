@@ -404,7 +404,7 @@ SUBPHASE (spmdinit_old, "spmdinit", "Building SPMD blocks around with-loops",
 SUBPHASE (createmtfuns_old, "createmtfuns",
           "Creating MT variants of exported and provided functions", CMTFdoCreateMtFuns)
 
-SUBPHASE (spmdlift, "spmdlift", "Lifting SPMD blocks to functions", SPMDLdoSpmdLift)
+SUBPHASE (spmdlift_old, "spmdlift", "Lifting SPMD blocks to functions", SPMDLdoSpmdLift)
 
 SUBPHASE (sched, "sched", "Annotating scheduling informations", SCHEDdoScheduleTrav)
 
@@ -510,6 +510,8 @@ SUBPHASE (spmdinit, "spmdinit", "Building SPMD blocks around with-loops", SPMDId
 
 SUBPHASE (createmtfuns, "createmtfuns",
           "Creating MT variants of exported and provided functions", CMTFdoCreateMtFuns)
+
+SUBPHASE (spmdlift, "spmdlift", "Lifting SPMD blocks to functions", SPMDLdoSpmdLift)
 
 SUBPHASE (sls, "sls", "Applying linksign pragma", SLSdoSetLinksign)
 

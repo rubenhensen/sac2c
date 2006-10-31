@@ -60,6 +60,11 @@ PRECdoPrecompile (node *syntax_tree)
      * Create MT-funs for exported and provided functions in modules
      */
     syntax_tree = PHrunCompilerSubPhase (SUBPH_createmtfuns, syntax_tree);
+
+    /*
+     * Lift SPMD blocks to SPMD functions
+     */
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_spmdlift, syntax_tree);
 #endif
 
     /*

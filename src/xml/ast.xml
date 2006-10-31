@@ -1880,6 +1880,8 @@
           <node name="Block" />
           <node name="Vardec" />
           <node name="Spmd" />
+          <node name="With2" />
+          <node name="Let" />
         </travuser>
       </traversal>
       <traversal id="SCHED" name="Schedule" default="sons" include="schedule.h">
@@ -5933,7 +5935,31 @@
             </targets>
           </type>
         </attribute>
-      </attributes>
+         <attribute name="AllocAssigns">
+          <type name="Node">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <phase name="spmdl" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="FreeAssigns">
+          <type name="Node">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <phase name="spmdl" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+       </attributes>
       <flags>
         <flag name="MT" />
 	<flag name="NeedsOffset" />
