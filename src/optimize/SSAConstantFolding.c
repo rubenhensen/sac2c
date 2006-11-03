@@ -2414,6 +2414,17 @@ CFfoldPrfExpr (prf op, node **arg_expr, info *arg_info)
                     }
                 }
             }
+        } else if (((arg_expr[0] != NULL) && (arg_expr[1] != NULL))
+                   && ((AVIS_SHAPE (ID_AVIS (arg_expr[1])) != NULL)
+                       && ((CMPTdoCompareTree (arg_expr[0],
+                                               AVIS_SHAPE (ID_AVIS (arg_expr[1])))
+                            == CMPT_EQ)
+                           || ((AVIS_SSAASSIGN (ID_AVIS (arg_expr[0])) != NULL)
+                               && (CMPTdoCompareTree (ASSIGN_RHS (AVIS_SSAASSIGN (
+                                                        ID_AVIS (arg_expr[0]))),
+                                                      AVIS_SHAPE (ID_AVIS (arg_expr[1])))
+                                   == CMPT_EQ))))) {
+            new_node = DUPdoDupNode (arg_expr[1]);
         }
         break;
 
