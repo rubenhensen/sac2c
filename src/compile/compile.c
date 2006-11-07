@@ -140,15 +140,12 @@ FreeInfo (info *info)
  ***  RC: moved here temporarily for compatibility reasons from refcount.h
  ***/
 
-/* value, representing an undefined reference counter */
-#define RC_UNDEF (-2)
 /* value, representing an inactive reference counter */
 #define RC_INACTIVE (-1)
 
 /*
  * macros for testing the RC status
  */
-#define RC_IS_UNDEF(rc) ((rc) == RC_UNDEF)
 #define RC_IS_INACTIVE(rc) ((rc) == RC_INACTIVE)
 #define RC_IS_ACTIVE(rc) ((rc) >= 0) /* == (RC_IS_ZERO(rc) || RC_IS_VITAL(rc)) */
 
@@ -158,6 +155,13 @@ FreeInfo (info *info)
 
 #define RC_IS_ZERO(rc) ((rc) == 0)
 #define RC_IS_VITAL(rc) ((rc) > 0)
+
+/******************************************************************************
+ *
+ * Enum type for specifying kinds of Generic Functions
+ *
+ *****************************************************************************/
+typedef enum { GF_copy, GF_free } generic_fun_t;
 
 /******************************************************************************
  *
@@ -405,15 +409,17 @@ MakeSizeArg (node *arg, bool int_only)
 
 /** <!--********************************************************************-->
  *
- * @fn  char *GenericFun( int which, types *type)
+ * @fn  char *GenericFun( generic_fun_t which, types *type)
  *
- * @brief  Returns the name of the specified generic function of the given
+ * @brief  Returns the name of the specified generic function for the given
  *         type.
+ *
+ * @param which
  *
  ******************************************************************************/
 
 static char *
-GenericFun (int which, types *type)
+GenericFun (generic_fun_t which, types *type)
 {
     node *tdef;
     char *ret = NULL;
@@ -421,7 +427,14 @@ GenericFun (int which, types *type)
 
     DBUG_ENTER ("GenericFun");
 
-    DBUG_PRINT ("COMP", ("Looking for generic fun %d (0==copy/1==free)", which));
+    DBUG_EXECUTE ("COMP", switch (which) {
+        case GF_copy:
+            DBUG_PRINT ("COMP", ("Looking for generic copy function"));
+            break;
+        case GF_free:
+            DBUG_PRINT ("COMP", ("Looking for generic free function"));
+            break;
+    });
 
     DBUG_ASSERT ((type != NULL), "no type found!");
 
@@ -437,14 +450,11 @@ GenericFun (int which, types *type)
 
         if (TYgetSimpleType (TYgetScalar (UTgetBaseType (utype))) == T_hidden) {
             switch (which) {
-            case 0:
+            case GF_copy:
                 ret = TYPEDEF_COPYFUN (tdef);
                 break;
-            case 1:
+            case GF_free:
                 ret = TYPEDEF_FREEFUN (tdef);
-                break;
-            default:
-                DBUG_ASSERT ((0), "Unknown kind if generic function requested");
                 break;
             }
         }
@@ -663,9 +673,9 @@ MakeSetRcIcm (char *name, types *type, int rc, node *assigns)
             assigns = TCmakeAssignIcm2 ("ND_SET__RC", TCmakeIdCopyStringNt (name, type),
                                         TBmakeNum (rc), assigns);
         } else {
-            assigns
-              = TCmakeAssignIcm2 ("ND_FREE", TCmakeIdCopyStringNt (name, type),
-                                  TCmakeIdCopyString (GenericFun (1, type)), assigns);
+            assigns = TCmakeAssignIcm2 ("ND_FREE", TCmakeIdCopyStringNt (name, type),
+                                        TCmakeIdCopyString (GenericFun (GF_free, type)),
+                                        assigns);
         }
     }
 
@@ -715,9 +725,10 @@ MakeDecRcIcm (char *name, types *type, int num, node *assigns)
     DBUG_ASSERT ((num >= 0), "decrement for rc must be >= 0.");
 
     if (num > 0) {
-        assigns = TCmakeAssignIcm3 ("ND_DEC_RC_FREE", TCmakeIdCopyStringNt (name, type),
-                                    TBmakeNum (num),
-                                    TCmakeIdCopyString (GenericFun (1, type)), assigns);
+        assigns
+          = TCmakeAssignIcm3 ("ND_DEC_RC_FREE", TCmakeIdCopyStringNt (name, type),
+                              TBmakeNum (num),
+                              TCmakeIdCopyString (GenericFun (GF_free, type)), assigns);
     }
 
     DBUG_RETURN (assigns);
@@ -831,13 +842,14 @@ MakeCheckReuseIcm (char *name, types *type, node *reuse_id, node *assigns)
 {
     DBUG_ENTER ("MakeCheckReuseIcm");
 
-    assigns = TCmakeAssignIcm2 ("ND_CHECK_REUSE",
-                                MakeTypeArgs (name, type, FALSE, TRUE, FALSE,
-                                              MakeTypeArgs (ID_NAME (reuse_id),
-                                                            ID_TYPE (reuse_id), FALSE,
-                                                            TRUE, FALSE, NULL)),
-                                TCmakeIdCopyString (GenericFun (0, ID_TYPE (reuse_id))),
-                                assigns);
+    assigns
+      = TCmakeAssignIcm2 ("ND_CHECK_REUSE",
+                          MakeTypeArgs (name, type, FALSE, TRUE, FALSE,
+                                        MakeTypeArgs (ID_NAME (reuse_id),
+                                                      ID_TYPE (reuse_id), FALSE, TRUE,
+                                                      FALSE, NULL)),
+                          TCmakeIdCopyString (GenericFun (GF_copy, ID_TYPE (reuse_id))),
+                          assigns);
 
     DBUG_RETURN (assigns);
 }
@@ -2703,7 +2715,8 @@ COMPid (node *arg_node, info *arg_info)
                                             MakeTypeArgs (ID_NAME (arg_node),
                                                           ID_TYPE (arg_node), FALSE, TRUE,
                                                           FALSE, NULL)),
-                              TCmakeIdCopyString (GenericFun (0, ID_TYPE (arg_node))),
+                              TCmakeIdCopyString (
+                                GenericFun (GF_copy, ID_TYPE (arg_node))),
                               ret_node);
     } else {
         /*
@@ -2767,7 +2780,8 @@ COMPIdFromUnique (node *arg_node, info *arg_info)
                                             MakeTypeArgs (ID_NAME (arg_node),
                                                           ID_TYPE (arg_node), FALSE, TRUE,
                                                           FALSE, NULL)),
-                              TCmakeIdCopyString (GenericFun (0, ID_TYPE (arg_node))));
+                              TCmakeIdCopyString (
+                                GenericFun (GF_copy, ID_TYPE (arg_node))));
     }
 
     DBUG_RETURN (ret_node);
@@ -2818,8 +2832,9 @@ COMPIdToUnique (node *arg_node, info *arg_info)
     /*
      * No RC manipulation requires as MAKE_UNIQUE always yields rc == 1
      */
-    ret_node = TCmakeAssignIcm2 ("ND_MAKE_UNIQUE", icm_args,
-                                 TCmakeIdCopyString (GenericFun (0, rhs_type)), NULL);
+    ret_node
+      = TCmakeAssignIcm2 ("ND_MAKE_UNIQUE", icm_args,
+                          TCmakeIdCopyString (GenericFun (GF_copy, rhs_type)), NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -2989,7 +3004,7 @@ COMParray (node *arg_node, info *arg_info)
         if (ARRAY_AELEMS (arg_node) != NULL) {
             node *val0 = EXPRS_EXPR (ARRAY_AELEMS (arg_node));
             if (NODE_TYPE (val0) == N_id) {
-                copyfun = GenericFun (0, ID_TYPE (val0));
+                copyfun = GenericFun (GF_copy, ID_TYPE (val0));
             } else {
                 copyfun = NULL;
             }
@@ -3316,7 +3331,7 @@ COMPPrfWLAssign (node *arg_node, info *arg_info)
                           TBmakeExprs (MakeSizeArg (PRF_ARG3 (arg_node), TRUE), NULL),
                           DUPdupIdNt (PRF_ARG4 (arg_node)),
                           TCmakeIdCopyString (
-                            GenericFun (0, ID_TYPE (PRF_ARG1 (arg_node)))),
+                            GenericFun (GF_copy, ID_TYPE (PRF_ARG1 (arg_node)))),
                           NULL);
 
     DBUG_RETURN (ret_node);
@@ -3345,7 +3360,7 @@ COMPPrfWLBreak (node *arg_node, info *arg_info)
     ret_node = TCmakeAssignIcm3 ("ND_ASSIGN__DATA", DUPdupIdNt (PRF_ARG2 (arg_node)),
                                  DUPdupIdNt (PRF_ARG1 (arg_node)),
                                  TCmakeIdCopyString (
-                                   GenericFun (0, ID_TYPE (PRF_ARG1 (arg_node)))),
+                                   GenericFun (GF_copy, ID_TYPE (PRF_ARG1 (arg_node)))),
                                  NULL);
 
     DBUG_RETURN (ret_node);
@@ -3376,7 +3391,7 @@ COMPPrfCopy (node *arg_node, info *arg_info)
     ret_node = TCmakeAssignIcm3 ("ND_COPY__DATA", DUPdupIdsIdNt (let_ids),
                                  DUPdupIdNt (PRF_ARG1 (arg_node)),
                                  TCmakeIdCopyString (
-                                   GenericFun (0, ID_TYPE (PRF_ARG1 (arg_node)))),
+                                   GenericFun (GF_copy, ID_TYPE (PRF_ARG1 (arg_node)))),
                                  NULL);
 
     DBUG_RETURN (ret_node);
@@ -3540,7 +3555,7 @@ COMPPrfReshape (node *arg_node, info *arg_info)
 
 #if 1
     /* Is this correct? Or do we have to take the rhs instead? */
-    copyfun = GenericFun (0, IDS_TYPE (let_ids));
+    copyfun = GenericFun (GF_copy, IDS_TYPE (let_ids));
 #endif
 
     ret_node
@@ -3610,16 +3625,16 @@ COMPPrfAllocOrReshape (node *arg_node, info *arg_info)
 
     ret_node = TCmakeAssignIcm1 (
       "IS_LASTREF__BLOCK_BEGIN", DUPdupIdNt (PRF_ARG4 (arg_node)),
-      TCappendAssign (COMPPrfReshape (arg_node, arg_info),
+      TCappendAssign (
+        COMPPrfReshape (arg_node, arg_info),
+        MakeIncRcIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids), rc,
                       TCmakeAssignIcm1 (
                         "IS_LASTREF__BLOCK_ELSE", DUPdupIdNt (PRF_ARG4 (arg_node)),
-                        MakeAllocIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids), 1, get_dim,
+                        MakeAllocIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids), rc, get_dim,
                                       set_shape_icm, NULL,
                                       TCmakeAssignIcm1 ("IS_LASTREF__BLOCK_END",
                                                         DUPdupIdNt (PRF_ARG4 (arg_node)),
-                                                        MakeIncRcIcm (IDS_NAME (let_ids),
-                                                                      IDS_TYPE (let_ids),
-                                                                      rc, ret_node))))));
+                                                        ret_node))))));
 
     DBUG_RETURN (ret_node);
 }
@@ -3671,7 +3686,8 @@ COMPPrfIdxSel (node *arg_node, info *arg_info)
       = TCmakeAssignIcm2 ("ND_PRF_IDX_SEL__DATA",
                           MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE,
                                         TRUE, FALSE, DUPdoDupTree (icm_args)),
-                          TCmakeIdCopyString (GenericFun (0, ID_TYPE (arg2))), NULL);
+                          TCmakeIdCopyString (GenericFun (GF_copy, ID_TYPE (arg2))),
+                          NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -3724,7 +3740,8 @@ COMPPrfIdxModarray (node *arg_node, info *arg_info)
                                         MakeTypeArgs (ID_NAME (arg1), ID_TYPE (arg1),
                                                       FALSE, TRUE, FALSE, NULL)),
                           DUPdupNodeNt (arg2), DUPdupNodeNt (arg3),
-                          TCmakeIdCopyString (GenericFun (0, ID_TYPE (arg1))), NULL);
+                          TCmakeIdCopyString (GenericFun (GF_copy, ID_TYPE (arg1))),
+                          NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -3824,7 +3841,8 @@ COMPPrfSel (node *arg_node, info *arg_info)
         ret_node
           = TCmakeAssignIcm3 ("ND_PRF_SEL__DATA_id", DUPdoDupTree (icm_args),
                               MakeSizeArg (arg1, TRUE),
-                              TCmakeIdCopyString (GenericFun (0, ID_TYPE (arg2))), NULL);
+                              TCmakeIdCopyString (GenericFun (GF_copy, ID_TYPE (arg2))),
+                              NULL);
     } else {
         DBUG_ASSERT ((NODE_TYPE (arg1) == N_array),
                      "1st arg of F_sel is neither N_id nor N_array!");
@@ -3841,7 +3859,8 @@ COMPPrfSel (node *arg_node, info *arg_info)
 
         ret_node
           = TCmakeAssignIcm2 ("ND_PRF_SEL__DATA_arr", DUPdoDupTree (icm_args),
-                              TCmakeIdCopyString (GenericFun (0, ID_TYPE (arg2))), NULL);
+                              TCmakeIdCopyString (GenericFun (GF_copy, ID_TYPE (arg2))),
+                              NULL);
     }
 
     DBUG_RETURN (ret_node);
@@ -3904,7 +3923,8 @@ COMPPrfModarray (node *arg_node, info *arg_info)
                                                           FALSE, TRUE, FALSE, NULL)),
                               DUPdupNodeNt (arg2), MakeSizeArg (arg2, TRUE),
                               DUPdupNodeNt (arg3),
-                              TCmakeIdCopyString (GenericFun (0, ID_TYPE (arg1))), NULL);
+                              TCmakeIdCopyString (GenericFun (GF_copy, ID_TYPE (arg1))),
+                              NULL);
     } else {
         DBUG_ASSERT ((NODE_TYPE (arg2) == N_array),
                      "2nd arg of F_modarray is neither N_id nor N_array!");
@@ -3917,7 +3937,8 @@ COMPPrfModarray (node *arg_node, info *arg_info)
                                                           FALSE, TRUE, FALSE, NULL)),
                               MakeSizeArg (arg2, TRUE),
                               DUPdupExprsNt (ARRAY_AELEMS (arg2)), DUPdupNodeNt (arg3),
-                              TCmakeIdCopyString (GenericFun (0, ID_TYPE (arg1))), NULL);
+                              TCmakeIdCopyString (GenericFun (GF_copy, ID_TYPE (arg1))),
+                              NULL);
     }
 
     DBUG_RETURN (ret_node);
@@ -3994,7 +4015,8 @@ COMPPrfTake (node *arg_node, info *arg_info)
 
     ret_node
       = TCmakeAssignIcm2 ("ND_PRF_TAKE__DATA", DUPdoDupTree (icm_args),
-                          TCmakeIdCopyString (GenericFun (0, ID_TYPE (arg2))), NULL);
+                          TCmakeIdCopyString (GenericFun (GF_copy, ID_TYPE (arg2))),
+                          NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -4037,7 +4059,8 @@ COMPPrfDrop (node *arg_node, info *arg_info)
 
     ret_node
       = TCmakeAssignIcm2 ("ND_PRF_DROP__DATA", DUPdoDupTree (icm_args),
-                          TCmakeIdCopyString (GenericFun (0, ID_TYPE (arg2))), NULL);
+                          TCmakeIdCopyString (GenericFun (GF_copy, ID_TYPE (arg2))),
+                          NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -4079,8 +4102,8 @@ COMPPrfCat (node *arg_node, info *arg_info)
                                     MakeTypeArgs (ID_NAME (arg2), ID_TYPE (arg2), FALSE,
                                                   TRUE, FALSE, NULL)));
 
-    copyfun1 = GenericFun (0, ID_TYPE (arg1));
-    copyfun2 = GenericFun (0, ID_TYPE (arg2));
+    copyfun1 = GenericFun (GF_copy, ID_TYPE (arg1));
+    copyfun2 = GenericFun (GF_copy, ID_TYPE (arg2));
     DBUG_ASSERT ((((copyfun1 == NULL) && (copyfun2 == NULL))
                   || (strcmp (copyfun1, copyfun2) == 0)),
                  "F_cat_VxV: different copyfuns found!");
