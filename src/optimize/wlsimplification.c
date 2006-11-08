@@ -342,7 +342,9 @@ WLSIMPgenerator (node *arg_node, info *arg_info)
 
     if ((NODE_TYPE (lb) == N_id) && (NODE_TYPE (ub) == N_id)) {
 
-        if (ID_AVIS (lb) == ID_AVIS (ub)) {
+        if ((ID_AVIS (lb) == ID_AVIS (ub)) && (TUshapeKnown (ID_NTYPE (lb)))
+            && (TYgetDim (ID_NTYPE (lb)) == 1)
+            && (SHgetExtent (TYgetShape (ID_NTYPE (lb)), 0) > 0)) {
             INFO_EMPTYPART (arg_info) = TRUE;
         } else {
             if (TYisAKV (ID_NTYPE (lb)) && TYisAKV (ID_NTYPE (ub))) {
