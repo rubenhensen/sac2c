@@ -708,24 +708,27 @@ ASDprf (node *arg_node, info *arg_info)
     switch (PRF_PRF (arg_node)) {
     case F_abs:
     case F_neg:
-    case F_not: {
-        node *id = PRF_ARG1 (arg_node);
-        shape_class_t actual_cls = NTUgetShapeClassFromNType (ID_NTYPE (id));
+    case F_not:
+        if (NODE_TYPE (PRF_ARG1 (arg_node)) == N_id) {
+            node *id = PRF_ARG1 (arg_node);
+            shape_class_t actual_cls = NTUgetShapeClassFromNType (ID_NTYPE (id));
 
-        if (actual_cls != C_scl) {
-            ntype *nt;
+            if (actual_cls != C_scl) {
+                ntype *nt;
 
-            DBUG_PRINT ("ASD", ("Unary scalar prf applied to non-scalar found: "));
-            DBUG_PRINT ("ASD", ("   ... = %s( ... %s ...), %s instead of %s",
-                                global.mdb_prf[PRF_PRF (arg_node)], ID_NAME (id),
-                                global.nt_shape_string[actual_cls],
-                                global.nt_shape_string[C_scl]));
+                DBUG_PRINT ("ASD", ("Unary scalar prf applied to non-scalar found: "));
+                DBUG_PRINT ("ASD", ("   ... = %s( ... %s ...), %s instead of %s",
+                                    global.mdb_prf[PRF_PRF (arg_node)], ID_NAME (id),
+                                    global.nt_shape_string[actual_cls],
+                                    global.nt_shape_string[C_scl]));
 
-            nt = TYmakeAKS (TYcopyType (TYgetScalar (ID_NTYPE (id))), SHmakeShape (0));
-            LiftId (id, nt, arg_info);
-            nt = TYfreeType (nt);
+                nt
+                  = TYmakeAKS (TYcopyType (TYgetScalar (ID_NTYPE (id))), SHmakeShape (0));
+                LiftId (id, nt, arg_info);
+                nt = TYfreeType (nt);
+            }
         }
-    } break;
+        break;
 
     case F_type_conv: {
         node *id = PRF_ARG2 (arg_node);
