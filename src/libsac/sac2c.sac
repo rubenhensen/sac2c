@@ -15,9 +15,12 @@ inline                                                                   \
 a[*] sel( int[.] idx, a[*] array)                                        \
 {                                                                        \
   new_shape = _drop_SxV_( _sel_( [0], _shape_(idx)), _shape_(array));    \
-  res = with( . <= iv <= .) {                                            \
-          new_idx = _cat_VxV_( idx, iv);                                 \
-        } genarray( new_shape, _sel_(new_idx, array), zero( array));     \
+  res = with {                                                           \
+          ( . <= iv <= . )                                               \
+          {                                                              \
+            new_idx = _cat_VxV_( idx, iv);                               \
+          } : _sel_(new_idx, array);                                     \
+        } : genarray( new_shape, zero( array ) );                        \
   return( res);                                                          \
 }
 
@@ -49,9 +52,10 @@ bool and( bool a, bool b)
 inline                                                               \
 bool eq( a[*] A, a[*] B)                                             \
 {                                                                    \
-  res = with( _mul_SxA_(0, _shape_(A)) <= iv < _shape_(A))           \
-        fold( sac2c::and, true,                                      \
-              _eq_(_sel_( iv, A), _sel_( iv, B)));                   \
+  res = with {                                                       \
+          ( _mul_SxA_(0, _shape_(A)) <= iv < _shape_(A) )            \
+          : _eq_(_sel_( iv, A), _sel_( iv, B));                      \
+        } : fold( sac2c::and, true );                                \
   return( res);                                                      \
 }
 
