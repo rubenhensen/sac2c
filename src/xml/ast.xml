@@ -302,6 +302,7 @@
           <node name="Propagate" />
           <node name="Let" />
           <node name="Assign" />
+          <node name="Return" />
         </travuser>
       </traversal>
       <traversal id="HD" name="Handle Dots" default="sons" include="handle_dots.h">

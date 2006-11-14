@@ -1,6 +1,6 @@
 /*
  *
- * $Id$
+ * $Id:$
  *
  */
 
@@ -25,5 +25,6 @@ extern node *HZGWLspfold (node *arg_node, info *arg_info);
 extern node *HZGWLpropagate (node *arg_node, info *arg_info);
 extern node *HZGWLlet (node *arg_node, info *arg_info);
 extern node *HZGWLassign (node *arg_node, info *arg_info);
+extern node *HZGWLreturn (node *arg_node, info *arg_info);
 
 #endif /* _SAC_HANDLE_ZERO_GENERATOR_WITH_LOOPS__H_ */

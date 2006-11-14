@@ -1,5 +1,5 @@
 /*
- * $Id: $
+ * $Id:$
  */
 
 #include "dbug.h"
@@ -483,6 +483,22 @@ HZGWLassign (node *arg_node, info *arg_info)
             ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
         }
     }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+HZGWLreturn (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("HZGWLreturn");
+
+    /**
+     * remember whether we have a wl is non expression
+     * position but at let-level.
+     */
+    INFO_EXPRPOS (arg_info) = TRUE;
+
+    arg_node = TRAVcont (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }
