@@ -1,40 +1,10 @@
-/*
- *
- * $Log$
- * Revision 1.9  2005/06/23 09:04:01  sah
- * made message printed by DISPATCH_ERROR
- * much more descriptive
- *
- * Revision 1.8  2005/06/16 09:48:48  sbs
- * changed TYPE_ERROR into DISPATCH_ERROR
- *
- * Revision 1.7  2004/11/25 10:26:46  jhb
- * compile SACdevCamp 2k4
- *
- * Revision 1.6  2003/09/17 12:56:52  dkr
- * postfix _any renamed into _ANY
- *
- * Revision 1.5  2002/10/29 20:41:21  dkr
- * TYPE_ERROR ICM: 'exit(-1)' replaced by 'return' ...
- *
- * Revision 1.4  2002/10/29 19:08:38  dkr
- * TYPE_ERROR ICM: 'break' replaced by 'exit(-1)'
- *
- * Revision 1.3  2002/10/10 23:52:23  dkr
- * signature of TYPE_ERROR modified
- *
- * Revision 1.2  2002/09/09 14:24:53  dkr
- * signature of ICMCompileTYPE_ERROR modified
- *
- * Revision 1.1  2002/09/09 14:18:52  dkr
- * Initial revision
- *
- */
+/* $Log$ */
 
 #include <stdio.h>
 #include <ctype.h>
 
 #include "icm2c_basic.h"
+#include "icm2c_utils.h"
 #include "icm2c_error.h"
 
 #include "dbug.h"
@@ -80,8 +50,13 @@ ICMCompileDISPATCH_ERROR (int cnt_to, char **to_ANY, char *funname, int cnt_from
     fprintf (global.outfile, "\"Shape of arguments:\"");
     fprintf (global.outfile, ", ");
     for (i = 0; i < cnt_from; i++) {
-        fprintf (global.outfile, "\"  %%s\", SAC_PrintShape( SAC_ND_A_DESC( %s))",
-                 from_ANY[i]);
+        if (ICUGetShapeClass (from_ANY[i]) == C_scl) {
+            fprintf (global.outfile, "\"  []\"");
+        } else {
+            fprintf (global.outfile, "\"  %%s\", SAC_PrintShape( SAC_ND_A_DESC( %s))",
+                     from_ANY[i]);
+        }
+
         if (i < cnt_from - 1) {
             fprintf (global.outfile, ", ");
         }
