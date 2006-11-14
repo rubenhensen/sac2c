@@ -2812,6 +2812,13 @@ PRTtype (node *arg_node, info *arg_info)
         type_str = TYtype2String (TYPE_TYPE (arg_node), FALSE, 0);
         fprintf (global.outfile, "%s", type_str);
         type_str = ILIBfree (type_str);
+
+#ifndef DBUG_OFF
+        if (TYisBottom (TYPE_TYPE (arg_node))) {
+            fprintf (global.outfile, " /* %s */",
+                     TYgetBottomError (TYPE_TYPE (arg_node)));
+        }
+#endif
     }
 
     DBUG_RETURN (arg_node);
