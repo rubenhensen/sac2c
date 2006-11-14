@@ -465,7 +465,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os OS ARCH CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CPP EGREP LN_S ECHO AR ac_ct_AR RANLIB ac_ct_RANLIB STRIP ac_ct_STRIP CXX CXXFLAGS ac_ct_CXX CXXCPP F77 FFLAGS ac_ct_F77 LIBTOOL CB YACC LEX LEXLIB LEX_OUTPUT_ROOT XSLT M4 DISABLE_MT DISABLE_PHM OPT_O0 OPT_O1 OPT_O2 OPT_O3 OPT_g RCLDFLAGS RCCCFLAGS MKCCFLAGS PDCCFLAGS DEPSFLAG CPPFILE CCMTLINK OSFLAGS LD_DYNAMIC LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os OS ARCH CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CPP EGREP LN_S ECHO AR ac_ct_AR RANLIB ac_ct_RANLIB STRIP ac_ct_STRIP CXX CXXFLAGS ac_ct_CXX CXXCPP F77 FFLAGS ac_ct_F77 LIBTOOL CB YACC LEX LEXLIB LEX_OUTPUT_ROOT XSLT M4 DISABLE_MT DISABLE_PHM OPT_O0 OPT_O1 OPT_O2 OPT_O3 OPT_g RCLDFLAGS RCCCFLAGS MKCCFLAGS PDCCFLAGS DEPSFLAG CPPFILE CCMTLINK OSFLAGS LD_DYNAMIC LD_PATH LIBOBJS LTLIBOBJS'
 ac_subst_files='RCSUN RCX86 RCALPHA RCMAC'
 
 # Initialize some variables set by options.
@@ -20348,30 +20348,35 @@ case "$target_os" in
   solaris*)
     OSFLAGS="-D__EXTENSIONS__ -DMUST_INIT_YY -fPIC -DPIC"
     LD_DYNAMIC="ld -dy -G"
+    LD_PATH="-R"
     echo "$as_me:$LINENO: result: solaris settings" >&5
 echo "${ECHO_T}solaris settings" >&6
     ;;
   *linux*)
     OSFLAGS="-fPIC -DPIC -D_POSIX_SOURCE -D_SVID_SOURCE -D_BSD_SOURCE -Dlint"
     LD_DYNAMIC="ld -G -dy -shared -allow-shlib-undefined"
+    LD_PATH="-Wl,-rpath,"
     echo "$as_me:$LINENO: result: linux settings" >&5
 echo "${ECHO_T}linux settings" >&6
     ;;
   *osf*)
     OSFLAGS="-D_OSF_SOURCE"
     LD_DYNAMIC=""
+    LD_PATH=""
     echo "$as_me:$LINENO: result: OSF settings" >&5
 echo "${ECHO_T}OSF settings" >&6
     ;;
   *darwin*)
     OSFLAGS="-no-cpp-precomp -Wno-long-double"
     LD_DYNAMIC="ld -undefined suppress -flat_namespace -bundle /usr/lib/bundle1.o"
+    LD_PATH="-install_name"
     echo "$as_me:$LINENO: result: OS X settings" >&5
 echo "${ECHO_T}OS X settings" >&6
     ;;
   *bsd*)
     OSFLAGS="-fpic"
     LD_DYNAMIC="ld -dy -shared -symbolic"
+    LD_PATH="-Wl,-rpath,"
     echo "$as_me:$LINENO: result: BSD settings" >&5
 echo "${ECHO_T}BSD settings" >&6
     ;;
@@ -20380,6 +20385,7 @@ echo "${ECHO_T}BSD settings" >&6
 echo "${ECHO_T}unknown" >&6
     ;;
 esac
+
 
 
 
@@ -21100,6 +21106,7 @@ s,@CPPFILE@,$CPPFILE,;t t
 s,@CCMTLINK@,$CCMTLINK,;t t
 s,@OSFLAGS@,$OSFLAGS,;t t
 s,@LD_DYNAMIC@,$LD_DYNAMIC,;t t
+s,@LD_PATH@,$LD_PATH,;t t
 s,@LIBOBJS@,$LIBOBJS,;t t
 s,@LTLIBOBJS@,$LTLIBOBJS,;t t
 /@RCSUN@/r $RCSUN

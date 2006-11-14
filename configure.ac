@@ -369,26 +369,31 @@ case "$target_os" in
   solaris*)     
     OSFLAGS=["-D__EXTENSIONS__ -DMUST_INIT_YY -fPIC -DPIC"]
     LD_DYNAMIC=["ld -dy -G"]
+    LD_PATH=["-R"]
     AC_MSG_RESULT([solaris settings])
     ;;
   *linux*)      
     OSFLAGS=["-fPIC -DPIC -D_POSIX_SOURCE -D_SVID_SOURCE -D_BSD_SOURCE -Dlint"]
     LD_DYNAMIC=["ld -G -dy -shared -allow-shlib-undefined"]
+    LD_PATH=["-Wl,-rpath,"]
     AC_MSG_RESULT([linux settings])
     ;;
   *osf*)	
     OSFLAGS=["-D_OSF_SOURCE"]
     LD_DYNAMIC=[""]
+    LD_PATH=[""]
     AC_MSG_RESULT([OSF settings])
     ;;
   *darwin*)      
     OSFLAGS=["-no-cpp-precomp -Wno-long-double"]
     LD_DYNAMIC=["ld -undefined suppress -flat_namespace -bundle /usr/lib/bundle1.o"]
+    LD_PATH=["-install_name"]
     AC_MSG_RESULT([OS X settings])
     ;;
   *bsd*)
     OSFLAGS=["-fpic"]
     LD_DYNAMIC=["ld -dy -shared -symbolic"]
+    LD_PATH=["-Wl,-rpath,"]
     AC_MSG_RESULT([BSD settings])
     ;;
   *)
@@ -397,6 +402,7 @@ case "$target_os" in
 esac
 AC_SUBST(OSFLAGS)
 AC_SUBST(LD_DYNAMIC)
+AC_SUBST(LD_PATH)
 
 dnl 
 dnl static sac2c settings for config.h

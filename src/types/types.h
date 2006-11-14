@@ -574,6 +574,7 @@ typedef struct {
     char *tar_extract;
     char *ar_create;
     char *ld_dynamic;
+    char *ld_path;
     char *ranlib;
     char *mkdir;
     char *rmdir;

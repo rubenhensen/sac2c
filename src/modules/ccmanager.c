@@ -251,7 +251,7 @@ AddExtLib (const char *path, str_buf *buf)
 {
     DBUG_ENTER ("AddExtLibPath");
 
-    buf = ILIBstrBufPrintf (buf, "-L%s -R%s ", path, path);
+    buf = ILIBstrBufPrintf (buf, "-L%s %s%s ", path, global.config.ld_path, path);
 
     DBUG_RETURN (buf);
 }
