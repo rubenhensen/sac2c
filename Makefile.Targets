@@ -90,7 +90,7 @@ optimize    = optimize.o \
               reverse_type_upgrade.o ConstVarPropagation.o DistributiveLaw.o \
               signature_simplification.o inlining.o inferneedcounters.o \
               associativity.o elimtypeconv.o liftoptflags.o \
-              wlsimplification.o prfunroll.o wlselcount.o \
+              wlsimplification.o copywlelim.o prfunroll.o wlselcount.o \
               insert_shapevars.o elim_shapevars.o makedimexpr.o makeshapeexpr.o \
       	      distributivity.o remove_vardecs.o
 
