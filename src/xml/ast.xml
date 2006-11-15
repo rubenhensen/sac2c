@@ -1299,6 +1299,12 @@
           <node name="Generator" />
         </travuser>
       </traversal>
+      <traversal id="CWLE" name="Copy With-Loop Elimination" default="sons" include="copywlelim.h">
+        <travuser>
+          <node name="Fundef" />
+          <node name="With" />
+        </travuser>
+      </traversal>
       <traversal id="WLS" name="With-Loop Scalarization" default="sons" include="wls.h">
         <travuser>
           <node name="Assign" />
