@@ -246,6 +246,8 @@ SUBPHASE (wlpgcyc, "wlpg", "Generating full with-loop partitions",
 
 SUBPHASE (wlsimp, "wlsimp", "Simplifying with-loops", WLSIMPdoWithloopSimplification)
 
+SUBPHASE (cwle, "cwle", "Eliminate copy with-loops", CWLEdoTemplateTraversal)
+
 SUBPHASE (wli, "wli", "Infering foldable with-loops", WLIdoWLI)
 
 SUBPHASE (wlf, "wlf", "Applying with-loop folding", WLFdoWLF)

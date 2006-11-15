@@ -578,6 +578,13 @@ OPTdoIntraFunctionalOptimizations (node *arg_node)
                     }
 
                     /*
+                     * Copy With-loop elimination
+                     */
+                    if (global.optimize.docwle) {
+                        fundef = PHrunOptimizationInCycle (SUBPH_cwle, loop, fundef);
+                    }
+
+                    /*
                      * With-loop folding
                      */
                     if (global.optimize.dowlf) {
