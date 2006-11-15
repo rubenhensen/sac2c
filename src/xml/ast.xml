@@ -4743,6 +4743,9 @@
     <description>Arg and vardec information structure</description> 
       <sons>
         <son name="Dim" default="NULL">
+          <description>
+            contains the symbolic array attribute representing an array's rank. This is represented by an expression and could either be a num constant (AKV,AKS,AKD) or an identifier(AUD).
+          </description>
           <targets>
             <target mandatory="no">
               <set name="Expr" />
@@ -4753,6 +4756,9 @@
           </targets>
         </son>
         <son name="Shape" default="NULL">
+          <description>
+            contains the symbolic array attribute representing an array's shape. This is represented by an expression and could either be an array of num constants (AKV,AKS), an mixed array of constants and identifiers (AKD, with partial shape information), or an identifier (AUD).
+          </description>
           <targets>
             <target mandatory="no">
               <set name="Expr" />
@@ -4820,6 +4826,22 @@
             </targets>
           </type>
 	</attribute>
+        <attribute name="SSAAssign">
+          <description>
+            provides a direct link to the N_assign node containing the definition of the identifier represented by this AVIS node. In SSA form, AVIS_SSAASSIGN must only be NULL for identifiers for function arguments and with-loop index variables.
+          </description>
+          <type name="Link">
+            <targets>
+              <target mandatory="no">
+                <node name="Assign" />
+                <phases>
+                  <range from="ssa" to="wltussa" />
+                  <range from="wltssa" to="ussa" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
         <attribute name="SSACount">
           <type name="Link">
             <targets>
@@ -4829,19 +4851,6 @@
                   <phase name="ssa" />
                   <phase name="wltssa" />
                   <phase name="ssawc" />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-        <attribute name="SSAAssign">
-          <type name="Link">
-            <targets>
-              <target mandatory="no">
-                <node name="Assign" />
-                <phases>
-                  <range from="ssa" to="wltussa" />
-                  <range from="wltssa" to="ussa" />
                 </phases>
               </target>
             </targets>
