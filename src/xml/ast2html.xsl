@@ -556,13 +556,13 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
           </xsl:if>
           <xsl:if test="@default">
             <tr>
-              <td class="bold" style="width: 7%;">Default:</td>
+              <td class="bold" style="width: 10%;">Default:</td>
               <td class="ccode"><xsl:value-of select="@default" /></td>
             </tr>
           </xsl:if>
           <xsl:if test="targets">
             <tr>
-              <td class="bold" style="width: 7%;">Targets:</td>
+              <td class="bold" style="width: 10%;">Targets:</td>
               <td><xsl:apply-templates select="targets" mode="targets" /></td>
             </tr>
           </xsl:if>
@@ -588,19 +588,19 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
           </xsl:if>
           <xsl:if test="@default">
             <tr>
-              <td class="bold" style="width: 7%;">Default:</td>
+              <td class="bold" style="width: 10%;">Default:</td>
               <td class="ccode"><xsl:value-of select="@default" /></td>
             </tr>
           </xsl:if>
           <xsl:if test="type">
             <tr>
-              <td class="bold" style="width: 7%;">Type:</td>
+              <td class="bold" style="width: 10%;">Type:</td>
               <td><xsl:apply-templates select="type" mode="table" /></td>
             </tr>
           </xsl:if>
           <xsl:if test="targets">
             <tr>
-              <td class="bold" style="width: 7%;">Targets:</td>
+              <td class="bold" style="width: 10%;">Targets:</td>
               <td><xsl:apply-templates select="targets" mode="targets" /></td>
             </tr>
           </xsl:if>
@@ -627,7 +627,7 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
             </tr>
           </xsl:if>
           <tr>
-            <td class="bold" style="width: 7%;">Default:</td>
+            <td class="bold" style="width: 10%;">Default:</td>
             <td class="ccode">
               <xsl:if test="not(@default)">
                 FALSE
