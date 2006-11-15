@@ -45,7 +45,7 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
                           margin: 0pt } 
           td.toclink { text-align: right; font-size: smaller; } 
           td.hidden { padding: 0pt } 
-          td.ccode { font-family: courier; }
+          .ccode { font-family: courier; }
           table.hidden { border-style: none; margin: 0pt; width: 100%; 
                          padding: 2pt } 
           tr.nonmandatory { color: #666666; font-style: italic } 
@@ -83,8 +83,18 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
           table.sub { border-width: 1pt; border-style: solid;
                       border-color: #000000; background-color: #cccccc; 
                       padding: 0pt; margin: 0pt; width: 100%;}
+
+	  table.targetbox { border-spacing: 0px; vertical-align: middle; border: 0px solid black; 
+	                    width: 350px; padding: 0px; margin: 0px;}
+	  table.targetbox td { padding: 0px; margin: 0px; }
+
+	  td.bordertop { border-top: 1px solid #999999; }
+	  table.borderless, table.borderless td { padding: 0px; margin: 0px; border: 0px; }
+
+	  .bold { font-weight: bold; }
         </style>
         <script type="text/javascript" language="JavaScript1.2">
+
           function toggle( id) {
             if (document.getElementById(id).style.display != "block") {
               document.getElementById(id).style.display = "block";
@@ -107,6 +117,7 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
           function cleanup() {
             alert("pup");
           }
+
         </script>
       </head>
       <body>
@@ -184,6 +195,7 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
       </body>
     </html>
   </xsl:template>
+
   <!-- in list-of-tables mode, attribute types generates a link -->
   <xsl:template match="attributetypes" mode="list-of-tables">
     <li>
@@ -212,6 +224,7 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
       </xsl:element>
     </li>
   </xsl:template>
+
   <!-- we sort the nodes by name using this template -->
   <xsl:template match="syntaxtree" mode="list-of-tables">
     <li>
@@ -223,6 +236,7 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
       </ul>
     </li>
   </xsl:template>
+
   <!-- in list-of-tables mode, each node generates a link -->
   <xsl:template match="node" mode="list-of-tables">
     <li>
@@ -247,7 +261,7 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
         <xsl:apply-templates mode="list-of-tables" />
       </ul>
     </li>
-  </xsl:template>
+  </xsl:template> 
 
   <xsl:template match="phase" mode="list-of-tables" >
     <li>
@@ -460,6 +474,12 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
     </xsl:apply-templates>
   </xsl:template>
 
+
+
+
+
+
+
   <!-- each node is transformed to a table -->
   <xsl:template match="node" mode="table">
     <xsl:element name="a">
@@ -467,7 +487,7 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
     </xsl:element>
     <table>
       <tr>
-        <td class="title">
+        <td class="title" colspan="2">
           <xsl:call-template name="name-to-nodeenum" >
             <xsl:with-param name="name" >
               <xsl:value-of select="@name" />
@@ -477,194 +497,152 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
         </td>
       </tr>
       <tr>
-        <td class="heading">
+        <td colspan="2" class="heading">
           Make Function
         </td>
       </tr>
       <tr>
-        <td class="ccode">
+        <td colspan="2" class="ccode">
           <xsl:apply-templates select="." mode="make-head" />
         </td>
       </tr>
+
       <xsl:if test="sons/son">
         <tr>
-          <td class="heading">Sons</td>
+          <td colspan="2" class="heading">Sons</td>
         </tr>
-        <tr>
-          <td>
-            <table class="hidden">
-              <tr>
-                <td class="subheading">Name</td>
-                <td class="subheading">Possible Target Nodes</td>
-                <td class="subheading">Default</td>
-                <td class="subheading">Comment</td>
-              </tr>
-              <xsl:apply-templates select="sons" mode="table" />
-            </table>
-          </td>
-        </tr>
+          <xsl:apply-templates select="sons" mode="table" />
       </xsl:if>
-      <xsl:if test="attributes/attribute[type/targets/target/phases/all]">
+
+      <xsl:if test="attributes/attribute">
         <tr>
-          <td class="heading">Permanent Attributes</td>
+          <td colspan="2" class="heading">Attributes</td>
         </tr>
-        <tr>
-          <td>
-            <table class="hidden">
-              <tr>
-                <td class="subheading">Name</td>
-                <td class="subheading">Type</td>
-                <td class="subheading">Default</td>
-                <td class="subheading">Comment</td>
-              </tr>
-              <xsl:apply-templates select="attributes/attribute[type/targets/target/phases/all]"
-              mode="table" />
-            </table>
-          </td>
-        </tr>
+        <xsl:apply-templates select="attributes/attribute[type/targets/target/phases/all]" mode="table" />
+        <xsl:apply-templates select="attributes/attribute[not( type/targets/target/phases/all)]" mode="table" />
       </xsl:if>
-      <xsl:if test="attributes/attribute[not(type/targets/target/phases/all)]">
-        <tr>
-          <td class="heading">Temporary Attributes</td>
-        </tr>
-        <tr>
-          <td>
-            <table class="hidden">
-              <tr>
-                <td class="subheading">Name</td>
-                <td class="subheading">Type</td>
-                <td class="subheading">Phases</td>
-                <td class="subheading">Default</td>
-                <td class="subheading">Comment</td>
-              </tr>
-              <xsl:apply-templates select="attributes/attribute[not( type/targets/target/phases/all)]" mode="table" />
-            </table>
-          </td>
-        </tr>
-      </xsl:if>
+
       <xsl:if test="flags/flag" >
         <tr>
-          <td class="heading">Flags</td>
+          <td colspan="2" class="heading">Flags</td>
         </tr>
-        <tr>
-          <td>
-            <table class="hidden">
-              <tr>
-                <td class="subheading">Name</td>
-                <td class="subheading">Default</td>
-                <td class="subheading">Comment</td>
-              </tr>
-              <xsl:apply-templates select="flags/flag" mode="table" />
-            </table>
-          </td>
-        </tr>
+          <xsl:apply-templates select="flags/flag" mode="table" />
       </xsl:if>
       <tr>
-        <td class="toclink">
+        <td colspan="2" class="toclink">
           <a href="#toc" class="toclink">top</a>
         </td>
       </tr>
     </table>
   </xsl:template>
 
+
+
+
   <!-- sons are transformed into rows of a table -->
   <xsl:template match="son" mode="table">
-    <xsl:element name="tr">
-      <xsl:if test="@mandatory = 'yes'">
-        <xsl:attribute name="class">
-          <xsl:value-of select="'mandatory'" />
-        </xsl:attribute>
-      </xsl:if>
-      <xsl:if test="@mandatory = 'no'">
-        <xsl:attribute name="class">
-          <xsl:value-of select="'nonmandatory'" />
-        </xsl:attribute>
-      </xsl:if>
-      <td>
+    <tr>
+      <td style="width:10%;" class="bold bordertop">
         <xsl:value-of select="@name" />
       </td>
-      <td>
-        <xsl:apply-templates select="targets/target" mode="table-target" />
+      <td class="bordertop">
+        <table class="hidden borderless">
+          <xsl:if test="description">
+            <tr>
+              <td colspan="2">
+                <xsl:value-of select="description" />
+              </td>
+            </tr>
+          </xsl:if>
+          <xsl:if test="@default">
+            <tr>
+              <td class="bold" style="width: 7%;">Default:</td>
+              <td class="ccode"><xsl:value-of select="@default" /></td>
+            </tr>
+          </xsl:if>
+          <xsl:if test="targets">
+            <tr>
+              <td class="bold" style="width: 7%;">Targets:</td>
+              <td><xsl:apply-templates select="targets" mode="targets" /></td>
+            </tr>
+          </xsl:if>
+        </table>
       </td>
-      <td class="ccode" >
-        <xsl:value-of select="@default" />
-      </td>
-      <td>
-        <xsl:value-of select="description" />
-      </td>
-    </xsl:element>
-  </xsl:template>
-
-  <!-- a target node is transformed into a reference to that node -->
-  <xsl:template match="target/node" mode="table-target">
-    <xsl:value-of select="' '" />
-    <xsl:element name="a">
-      <xsl:attribute name="href">
-       <xsl:value-of select="'#'" />
-       <xsl:value-of select="@name" />
-      </xsl:attribute>
-      <xsl:call-template name="name-to-nodeenum" >
-        <xsl:with-param name="name" >
-          <xsl:value-of select="@name" />
-        </xsl:with-param>
-      </xsl:call-template>
-    </xsl:element>
-  </xsl:template>
-
-  <!-- a target set is transformed into a reference to that node -->
-  <xsl:template match="target/set" mode="table-target">
-    <xsl:element name="a">
-      <xsl:attribute name="href">
-        <xsl:value-of select="'#'" />
-        <xsl:value-of select="@name" />
-      </xsl:attribute>
-      <xsl:value-of select="'{'" />
-      <xsl:value-of select="@name" />
-      <xsl:value-of select="'}'" />
-    </xsl:element>
-  </xsl:template>
-
-  <!-- a target any is transformed into any -->
-  <xsl:template match="target/any" mode="table-target">
-    <xsl:value-of select="'any'" />
+    </tr>
   </xsl:template>
 
   <!-- attributes are transformed similar to sons -->
   <xsl:template match="attribute" mode="table">
-    <xsl:element name="tr">
-      <xsl:if test="@mandatory = 'yes'">
-        <xsl:attribute name="class">
-          <xsl:value-of select="'mandatory'" />
-        </xsl:attribute>
-      </xsl:if>
-      <xsl:if test="@mandatory = 'no'">
-        <xsl:attribute name="class">
-          <xsl:value-of select="'nonmandatory'" />
-        </xsl:attribute>
-      </xsl:if>
-      <td>
+    <tr>
+      <td style="width:10%;" class="bold bordertop">
         <xsl:value-of select="@name" />
       </td>
-      <td>
-        <xsl:apply-templates select="type" mode="table" />
+      <td class="bordertop">
+        <table class="hidden borderless">
+          <xsl:if test="description">
+            <tr>
+              <td colspan="2">
+                <xsl:value-of select="description" />
+              </td>
+            </tr>
+          </xsl:if>
+          <xsl:if test="@default">
+            <tr>
+              <td class="bold" style="width: 7%;">Default:</td>
+              <td class="ccode"><xsl:value-of select="@default" /></td>
+            </tr>
+          </xsl:if>
+          <xsl:if test="type">
+            <tr>
+              <td class="bold" style="width: 7%;">Type:</td>
+              <td><xsl:apply-templates select="type" mode="table" /></td>
+            </tr>
+          </xsl:if>
+          <xsl:if test="targets">
+            <tr>
+              <td class="bold" style="width: 7%;">Targets:</td>
+              <td><xsl:apply-templates select="targets" mode="targets" /></td>
+            </tr>
+          </xsl:if>
+        </table>
       </td>
-      <xsl:if test="not(type/targets/target/phases/all)">
-        <td>
-          <xsl:apply-templates select="type/targets/target/phases" mode="table-node" />
-        </td>
-      </xsl:if>
-      <td class="ccode" >
-        <xsl:value-of select="@default" />
-      </td>
-      <td>
-        <xsl:value-of select="description" />
-      </td>
-    </xsl:element>
+    </tr>
   </xsl:template>
+
+
+
+  <!-- flags are matched into a row of a table -->
+  <xsl:template match="flags/flag" mode="table" >
+    <tr>
+      <td style="width:10%;" class="bold bordertop">
+        <xsl:value-of select="@name" />
+      </td>
+      <td class="bordertop">
+        <table class="hidden borderless">
+          <xsl:if test="description">
+            <tr>
+              <td colspan="2">
+                <xsl:value-of select="description" />
+              </td>
+            </tr>
+          </xsl:if>
+          <tr>
+            <td class="bold" style="width: 7%;">Default:</td>
+            <td class="ccode">
+              <xsl:if test="not(@default)">
+                FALSE
+              </xsl:if>
+              <xsl:value-of select="@default" />
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </xsl:template>
+
 
   <!-- attribute types a transformed into references to type table -->
   <xsl:template match="type" mode="table">
-    <div class="type">
       <xsl:element name="a">
         <xsl:attribute name="href">
           <xsl:value-of select="'#atype_'" />
@@ -672,16 +650,6 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
         </xsl:attribute>
         <xsl:value-of select="@name" />
       </xsl:element>
-      <xsl:apply-templates select="targets/target"
-      mode="attrib-table" />
-    </div>
-  </xsl:template>
-
-  <!-- target is transformed into a small list -->
-  <xsl:template match="target" mode="attrib-table">
-    <xsl:value-of select="' ( '" />
-    <xsl:apply-templates select="." mode="table-target" />
-    <xsl:value-of select="' ) '" />
   </xsl:template>
 
   <!-- attribute phase information is just printed -->
@@ -701,24 +669,6 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
     <xsl:value-of select="concat( @to, ' ]')" />
   </xsl:template>
 
-  <!-- flags are matched into a row of a table -->
-  <xsl:template match="flags/flag" mode="table" >
-    <tr>
-      <td>
-        <xsl:value-of select="@name" />
-      </td>
-      <td class="ccode" >
-        <xsl:if test="not( @default)" >
-          <xsl:value-of select="'FALSE'" />
-        </xsl:if>
-        <xsl:value-of select="@default" />
-      </td>
-      <td>
-        <xsl:value-of select="description" />
-      </td>
-    </tr>
-  </xsl:template>
-
   <!-- general template for descriptions -->
   <xsl:template match="description" mode="table">
     <div class="description">
@@ -730,4 +680,149 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
   <xsl:template match="unknown" mode="table">
     <div class="alert">unknown</div>
   </xsl:template>
+
+
+
+
+  <!--
+     - new general functions
+     - as of 2006-11-15.
+     -->
+
+
+
+
+
+
+
+
+
+
+  <!--
+     - general handling for <targets>:
+     - generate some table, in which we place row-wise
+     - all the target-entries.
+     -->
+
+  <xsl:template match="targets" mode="targets">
+    <table class="targetbox">
+      <xsl:apply-templates select="target" mode="targets" />
+    </table>
+  </xsl:template>
+
+
+
+  <!--
+     - now, the single rows for each target.
+     -->
+
+  <xsl:template match="target" mode="targets">
+    <tr>
+      <xsl:if test="@mandatory = 'yes'">
+        <xsl:attribute name="class">
+          <xsl:value-of select="'mandatory'" />
+        </xsl:attribute>
+      </xsl:if>
+      <xsl:if test="@mandatory = 'no'">
+        <xsl:attribute name="class">
+          <xsl:value-of select="'nonmandatory'" />
+        </xsl:attribute>
+      </xsl:if>
+      <td style="width: 50%;">
+
+        <xsl:if test="any">
+	  <xsl:value-of select="'Any'" />
+	</xsl:if>
+
+	<xsl:if test="set">
+	  <xsl:element name="a">
+	    <xsl:attribute name="href">
+	      <xsl:value-of select="'#'" />
+	      <xsl:value-of select="set/@name" />
+	    </xsl:attribute>
+	    {<xsl:call-template name="uppercase">
+	      <xsl:with-param name="string">
+	        <xsl:value-of select="set/@name" />
+	      </xsl:with-param>
+	    </xsl:call-template>}
+	  </xsl:element>
+	  <xsl:if test="node">
+	    <br />
+	  </xsl:if>
+	</xsl:if>
+
+	<xsl:if test="node">
+	  <xsl:element name="a">
+	    <xsl:attribute name="href">
+	      <xsl:value-of select="'#'" />
+	      <xsl:value-of select="node/@name" />
+	    </xsl:attribute>
+	    <xsl:call-template name="name-to-nodeenum" >
+	      <xsl:with-param name="name" >
+	        <xsl:value-of select="node/@name" />
+	      </xsl:with-param>
+	    </xsl:call-template>
+	  </xsl:element>
+	</xsl:if>
+      </td>
+      <td style="width: 50%;">
+        <xsl:apply-templates select="phases" mode="phase_list" />
+      </td>
+    </tr>
+  </xsl:template>
+
+
+
+
+
+
+
+
+  <!--
+     - this template just shows all the phases. seperated by <br>.
+     -->
+
+  <xsl:template match="phases" mode="phase_list">
+        <xsl:if test="all">
+	  <xsl:value-of select="'[ all ]'" />
+	  <br />
+	</xsl:if>
+
+	<xsl:if test="phase">
+	  <xsl:apply-templates select="phase" mode="phase_list" />
+	</xsl:if>
+	
+	<xsl:if test="range">
+	  <xsl:apply-templates select="range" mode="phase_list" />
+	</xsl:if>
+  </xsl:template>
+
+  <!--
+     - this is needed by phases for generating multiple range-tags.
+     -->
+
+  <xsl:template match="range" mode="phase_list">
+    <xsl:value-of select="'[ '" />
+    <xsl:value-of select="@from" />
+    <xsl:value-of select="' - '" />
+    <xsl:value-of select="@to" />
+    <xsl:value-of select="' ]'" />
+    <br />
+  </xsl:template>
+
+  <!--
+     - this is neede by phases for generating multiple phase-tags.
+     -->
+
+  <xsl:template match="phase" mode="phase_list">
+    <xsl:value-of select="'[ '" />
+    <xsl:value-of select="@name" />
+    <xsl:value-of select="' ]'" />
+    <br />
+  </xsl:template>
+
+
+
+
 </xsl:stylesheet>
+
