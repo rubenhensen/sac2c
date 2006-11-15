@@ -4750,7 +4750,10 @@
       <sons>
         <son name="Dim" default="NULL">
           <description>
-            contains the symbolic array attribute representing an array's rank. This is represented by an expression and could either be a num constant (AKV,AKS,AKD) or an identifier(AUD).
+An expression (N_exprs) specifying the array's rank
+as a symbolic array attribute. The expression is a numeric
+constant (N_num) for AKS, AKD, and AKV arrays, and an
+identifier (N_id) for AUD arrays.
           </description>
           <targets>
             <target mandatory="no">
@@ -4763,7 +4766,13 @@
         </son>
         <son name="Shape" default="NULL">
           <description>
-            contains the symbolic array attribute representing an array's shape. This is represented by an expression and could either be an array of num constants (AKV,AKS), an mixed array of constants and identifiers (AKD, with partial shape information), or an identifier (AUD).
+	  An expression (N_exprs) specifying the array's ahape
+	  as a symbolic array attribute. The expression is
+	  an array of integer constants (N_num) for AKV and AKS arrays,
+	  a mixed array of integer constants and identifiers (N_num N_id)
+	  for AKD arrays with partial shape information, or an
+	  identifier (N_id) for AUD arrays.
+
           </description>
           <targets>
             <target mandatory="no">
