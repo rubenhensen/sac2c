@@ -598,10 +598,10 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
               <td><xsl:apply-templates select="type" mode="table" /></td>
             </tr>
           </xsl:if>
-          <xsl:if test="targets">
+          <xsl:if test="type/targets">
             <tr>
               <td class="bold" style="width: 10%;">Targets:</td>
-              <td><xsl:apply-templates select="targets" mode="targets" /></td>
+              <td><xsl:apply-templates select="type/targets" mode="targets" /></td>
             </tr>
           </xsl:if>
         </table>
