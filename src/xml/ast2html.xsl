@@ -466,8 +466,26 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
       </tr>
     </table>
   </xsl:template>
+
+  <!--
+     - the elements in our nodeset
+     -->
+  <xsl:template match="node" mode="table-target">
+    <xsl:element name="a">
+      <xsl:attribute name="href">
+        <xsl:value-of select="'#'" />
+        <xsl:value-of select="@name" />
+      </xsl:attribute>
+      <xsl:call-template name="name-to-nodeenum" >
+        <xsl:with-param name="name" >
+          <xsl:value-of select="@name" />
+        </xsl:with-param>
+      </xsl:call-template>
+    </xsl:element>
+  </xsl:template>
+
  
-  <!-- sort all nodes -->
+  <!-- Sort all nodes -->
   <xsl:template match="syntaxtree" mode="table">
     <xsl:apply-templates select="node" mode="table">
       <xsl:sort select="@name"/>
@@ -692,12 +710,6 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
 
 
 
-
-
-
-
-
-
   <!--
      - general handling for <targets>:
      - generate some table, in which we place row-wise
@@ -770,11 +782,6 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
       </td>
     </tr>
   </xsl:template>
-
-
-
-
-
 
 
 
