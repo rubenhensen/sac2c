@@ -800,7 +800,7 @@ ILIBsystemCallStartTracking ()
 
     DBUG_ASSERT ((syscalltrack == NULL), "tracking has already been enabled!");
 
-    syscalltrack = FMGRwriteOpen ("syscall.sh");
+    syscalltrack = FMGRwriteOpen ("%s.sac2c", global.outfilename);
 
     fprintf (syscalltrack, "#! /bin/sh\n\n");
 
