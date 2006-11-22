@@ -247,6 +247,8 @@ USGprintUsage ()
                       "Stop in cycle <n> after with-loop partition generation.");
     PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:wlsimp",
                       "Stop in cycle <n> after with-loop simplification.");
+    PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:cwle",
+                      "Stop in cycle <n> after copy with-loop elimination.");
     PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:wlt",
                       "Stop in cycle <n> after with-loop transformation.");
     PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:wli",

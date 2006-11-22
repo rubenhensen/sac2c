@@ -1303,6 +1303,8 @@
         <travuser>
           <node name="Fundef" />
           <node name="With" />
+          <node name="Let" />
+          <node name="Code" />
         </travuser>
       </traversal>
       <traversal id="WLS" name="With-Loop Scalarization" default="sons" include="wls.h">
@@ -4340,6 +4342,11 @@
       </sons>
       <attributes>
         <attribute name="Prf">
+          <description>
+            Describes the type of function this node
+            represents. A list of possible values is
+            found in src/tree/prf_node_info.mac
+          </description>
           <type name="Prf">
             <targets>
               <target mandatory="yes">
