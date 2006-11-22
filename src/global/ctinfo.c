@@ -922,7 +922,7 @@ CTIterminateCompilation (compiler_phase_t phase, char *break_specifier, node *sy
      *  Finally, we do some clean up.
      */
 
-    FMGRdeleteTmpDir ();
+    CleanUp ();
 
     if (syntax_tree != NULL) {
         syntax_tree = FREEdoFreeTree (syntax_tree);
