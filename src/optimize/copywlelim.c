@@ -35,11 +35,8 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "DupTree.h"
-
-/* these are not needed yet, maybe we will need them some day.
-#include "print.h"
-#include "new_types.h"
-*/
+#include "free.h"
+#include "compare_tree.h"
 
 /** <!--********************************************************************-->
  *
@@ -49,18 +46,15 @@
  *****************************************************************************/
 
 struct INFO {
-    node *resshape;  /* The N_avis of the array in our generator */
-    node *partarray; /* The N_avis of our Parts, if they consist
-                        of just one assignment. */
-    node *iv;        /* The vector of our wl-parts */
-    bool valid;      /* Do we have a valid case for cwle? */
+    node *lhs;  /* The N_avis of the array in our generator */
+    node *rhs;  /* The N_avis of our Parts, if they consist
+                         of just one assignment. */
+    node *iv;   /* The vector of our wl-parts */
+    bool valid; /* Do we have a valid case for cwle? */
 };
 
-/**
- * Macros for accessing the info-structure
- */
-#define INFO_RESSHAPE(n) (n->resshape)
-#define INFO_PARTARRAY(n) (n->partarray)
+#define INFO_LHS(n) (n->lhs)
+#define INFO_RHS(n) (n->rhs)
 #define INFO_IV(n) (n->iv)
 #define INFO_VALID(n) (n->valid)
 
@@ -74,8 +68,8 @@ MakeInfo ()
     result = ILIBmalloc (sizeof (info));
 
     INFO_VALID (result) = FALSE;
-    INFO_RESSHAPE (result) = NULL;
-    INFO_PARTARRAY (result) = NULL;
+    INFO_LHS (result) = NULL;
+    INFO_RHS (result) = NULL;
     INFO_IV (result) = NULL;
 
     DBUG_RETURN (result);
@@ -90,6 +84,7 @@ FreeInfo (info *info)
 
     DBUG_RETURN (info);
 }
+
 /** <!--********************************************************************-->
  * @}  <!-- INFO structure -->
  *****************************************************************************/
@@ -166,7 +161,7 @@ CWLEfundef (node *arg_node, info *arg_info)
     DBUG_PRINT ("CWLE", ("Calling CWLEfundef"));
 
     if (NULL != FUNDEF_BODY (arg_node)) {
-        TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -192,43 +187,26 @@ CWLElet (node *arg_node, info *arg_info)
     DBUG_PRINT ("CWLE", ("Calling CWLElet"));
 
     INFO_VALID (arg_info) = TRUE;
-    INFO_RESSHAPE (arg_info) = NULL;
-    INFO_PARTARRAY (arg_info) = NULL;
+    INFO_LHS (arg_info) = NULL;
+    INFO_RHS (arg_info) = NULL;
+    INFO_IV (arg_info) = NULL;
 
     /*
-     * get the shape of our lhs
+     * save the ids of our let and traverse into the epression, hoping
+     * that it is a with-loop.
      */
 
-    if (NULL != LET_IDS (arg_node)) {
-        INFO_RESSHAPE (arg_info) = AVIS_SHAPE (IDS_AVIS (LET_IDS (arg_node)));
-    } else {
-        INFO_VALID (arg_info) = FALSE;
-    }
+    INFO_LHS (arg_info) = LET_IDS (arg_node);
+    LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
     /*
-     * if we got a shape, traverse into the loop, if there is one
+     * we are through, everything is false now.
      */
-
-    if (INFO_VALID (arg_info)) {
-        TRAVdo (LET_EXPR (arg_node), arg_info);
-
-        if (INFO_VALID (arg_info) && NULL != INFO_PARTARRAY (arg_info)
-            && INFO_RESSHAPE (arg_info)
-                 == AVIS_SHAPE (ID_AVIS (INFO_PARTARRAY (arg_info)))) {
-
-            /*
-             * we now can safely replace the with by partarray
-             */
-
-            DBUG_PRINT ("CWLE", ("found target. let is replacing expr-node..."));
-            DBUG_PRINT ("CWLE", ("partarray is of type %i",
-                                 NODE_TYPE (INFO_PARTARRAY (arg_info))));
-
-            LET_EXPR (arg_node) = DUPdoDupNode (INFO_PARTARRAY (arg_info));
-        }
-    }
 
     INFO_VALID (arg_info) = FALSE;
+    INFO_LHS (arg_info) = NULL;
+    INFO_RHS (arg_info) = NULL;
+    INFO_IV (arg_info) = NULL;
 
     DBUG_RETURN (arg_node);
 }
@@ -247,16 +225,69 @@ CWLElet (node *arg_node, info *arg_info)
 node *
 CWLEwith (node *arg_node, info *arg_info)
 {
+    node *target;
+
     DBUG_ENTER ("CWLEwith");
     DBUG_PRINT ("CWLE", ("Calling CWLEwith"));
 
-    if (INFO_VALID (arg_info)) {
+    /*
+     * save the index-vector of our with-loop and
+     * traverse into the codes.
+     */
 
-        DBUG_PRINT ("CWLE", ("with_vec is of type %i", NODE_TYPE (WITH_VEC (arg_node))));
+    DBUG_PRINT ("CWLE", ("traversing codes ..."));
 
-        INFO_IV (arg_info) = IDS_AVIS (WITH_VEC (arg_node));
+    INFO_IV (arg_info) = IDS_AVIS (WITH_VEC (arg_node));
+    WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
 
-        TRAVdo (WITH_CODE (arg_node), arg_info);
+    DBUG_PRINT ("CWLE", ("finished traversing codes."));
+
+    /*
+     * if our codes indicate that we are still on the run
+     * we have to check, if this is a one-generator-loop.
+     */
+
+    if (INFO_VALID (arg_info) && NULL == IDS_NEXT (INFO_LHS (arg_info))) {
+
+        /*
+         * from now on, we just want to know about the LHS-Avis.
+         */
+
+        INFO_LHS (arg_info) = IDS_AVIS (INFO_LHS (arg_info));
+
+        /*
+         * we may now compare shape size.
+         */
+
+        DBUG_PRINT ("CWLE", ("codes signal valid. comparing shapes ..."));
+        DBUG_PRINT ("CWLE", ("lhs is of type %i", NODE_TYPE (INFO_LHS (arg_info))));
+        DBUG_PRINT ("CWLE", ("rhs is of type %i", NODE_TYPE (INFO_RHS (arg_info))));
+
+        if (NULL != AVIS_SHAPE (INFO_LHS (arg_info))) {
+            DBUG_PRINT ("CWLE", ("LHS-shape is not null."));
+
+            if (NULL != AVIS_SHAPE (INFO_RHS (arg_info))) {
+                DBUG_PRINT ("CWLE", ("RHS-shape is not null."));
+
+                if (CMPT_EQ
+                    == CMPTdoCompareTree (AVIS_SHAPE (INFO_LHS (arg_info)),
+                                          AVIS_SHAPE (INFO_RHS (arg_info)))) {
+
+                    DBUG_PRINT ("CWLE", ("shapes are equal. replacing loop..."));
+
+                    /*
+                     * 3 steps:
+                     * 1. create a new N_id with our rhs-array inside.
+                     * 2. free the with-loop, we do not need it anymore.
+                     * 3. return the brandnew N_id.
+                     */
+
+                    target = TBmakeId (DUPdoDupNode (INFO_RHS (arg_info)));
+                    FREEdoFreeTree (arg_node);
+                    DBUG_RETURN (target);
+                }
+            }
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -274,93 +305,99 @@ node *
 CWLEcode (node *arg_node, info *arg_info)
 {
     node *ravis;
-    node *nlet;
     node *target = NULL;
+    info *subinfo;
 
     DBUG_ENTER ("CWLEcode");
     DBUG_PRINT ("CWLE", ("Calling CWLEcode"));
 
+    /*
+     * create a new info-structure for traversing the code-block,
+     * traverse, and release the info-structure.
+     * this needs to be done in order to keep the info-structures
+     * seperate in the case of nested with-loops.
+     */
+
+    subinfo = MakeInfo ();
+    CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), subinfo);
+    subinfo = FreeInfo (subinfo);
+
+    /*
+     * before checking ourselves, lets traverse into the next
+     * code, so we can search therein for other with-loops.
+     */
+
+    if (NULL != CODE_NEXT (arg_node)) {
+        CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
+    }
+
+    /*
+     * if we still have a valid cwle-case, check if we do agree with that.
+     */
+
     if (INFO_VALID (arg_info)) {
+        DBUG_PRINT ("CWLE", ("previous nodes signal ok..."));
 
         /*
-         * take a look for our return value
+         * we have to check for:
+         * code->cexprs->expr-(id)>avis->ssaassign->n_assign->n_let->expr->prf existing?
+         * prf of type F_sel?
+         * prf->args->expr-(id)>avis == with_iv?
+         * target = prf->args->next->expr-(id)>avis
          */
 
-        ravis = ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (arg_node)));
-        DBUG_PRINT ("CWLE", ("type of ravis: %i", NODE_TYPE (ravis)));
+        if (N_id == NODE_TYPE (ravis = EXPRS_EXPR (CODE_CEXPRS (arg_node)))) {
+            DBUG_PRINT ("CWLE", ("code_cexprs is of type id"));
 
-        /*
-         * oke, check if our first assign is a n_let
-         * you have to check for empty nodes first, though
-         */
+            if (N_let
+                == NODE_TYPE (ravis = ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (ravis))))) {
+                DBUG_PRINT ("CWLE", ("cexprs is defined at a n_let expression"));
 
-        if (N_empty != NODE_TYPE (BLOCK_INSTR (CODE_CBLOCK (arg_node)))
-            && N_let == NODE_TYPE (ASSIGN_INSTR (BLOCK_INSTR (CODE_CBLOCK (arg_node))))) {
-            nlet = ASSIGN_INSTR (BLOCK_INSTR (CODE_CBLOCK (arg_node)));
+                if (N_prf == NODE_TYPE (ravis = LET_EXPR (ravis))) {
+                    DBUG_PRINT ("CWLE", ("cexprs is created by a n_prf"));
 
-            /*
-             * check, if the let assigns something to our ravis
-             */
+                    if (F_sel == PRF_PRF (ravis)) {
+                        DBUG_PRINT ("CWLE", ("the prf is of type F_sel"));
 
-            if (IDS_AVIS (LET_IDS (nlet)) == ravis) {
-                DBUG_PRINT ("CWLE", ("our nlet assigns to the ravis!"));
+                        if (INFO_IV (arg_info)
+                            == ID_AVIS (EXPRS_EXPR (PRF_ARGS (ravis)))) {
+                            DBUG_PRINT ("CWLE", ("prf selects at iv"));
 
-                /*
-                 * is our let assigning a prf, and what are its parameters?
-                 */
-
-                DBUG_PRINT ("CWLE", ("nlet->expr type: %i", NODE_TYPE (LET_EXPR (nlet))));
-
-                if (N_prf == NODE_TYPE (LET_EXPR (nlet))
-                    && F_sel == PRF_PRF (LET_EXPR (nlet))
-                    && N_id == NODE_TYPE (EXPRS_EXPR (PRF_ARGS (LET_EXPR (nlet))))) {
-
-                    /*
-                     * this thing has to be equal to iv in the "( . <= iv <= .)"
-                     */
-
-                    DBUG_PRINT ("CWLE", ("checking for iv ..."));
-
-                    if (INFO_IV (arg_info)
-                        == ID_AVIS (EXPRS_EXPR (PRF_ARGS (LET_EXPR (nlet))))) {
-
-                        /*
-                         * check for the second argument to prf; this is our array
-                         * that we copy from
-                         */
-
-                        DBUG_PRINT ("CWLE", ("checking for target array ..."));
-
-                        if (NULL != EXPRS_NEXT (PRF_ARGS (LET_EXPR (nlet)))) {
-                            target = EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (LET_EXPR (nlet))));
+                            target = EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (ravis)));
                         }
                     }
                 }
             }
         }
-
-        if (NULL != target) {
-            DBUG_PRINT ("CWLE", ("target found."));
-
-            /*
-             * oke, we got a target, now we have to check if its our target
-             */
-
-            if (NULL == INFO_PARTARRAY (arg_info)) {
-                INFO_PARTARRAY (arg_info) = target;
-            } else if (target != INFO_PARTARRAY (arg_info)) {
-
-                /*
-                 * if the target is not equal to a previous target, skip this wl
-                 */
-
-                INFO_VALID (arg_info) = FALSE;
-            }
-        }
+    } else {
+        DBUG_PRINT ("CWLE", ("previous nodes signal NO ok"));
     }
 
-    if (INFO_VALID (arg_info) && CODE_NEXT (arg_node) != NULL) {
-        TRAVdo (CODE_NEXT (arg_node), arg_info);
+    if (NULL != ID_AVIS (target)) {
+        DBUG_PRINT ("CWLE", ("found a target."));
+    } else {
+        INFO_VALID (arg_info) = FALSE;
+    }
+
+    /*
+     * if we have found some avis, that meets the requirements, then
+     * lets check if it is the same that we have found before. If we
+     * do not have found anything before, assign it to INFO_RHS.
+     */
+
+    if (INFO_VALID (arg_info)) {
+        DBUG_PRINT ("CWLE", ("checking if target is legitimate ..."));
+
+        if (NULL == INFO_RHS (arg_info) || target == INFO_RHS (arg_info)) {
+            DBUG_PRINT ("CWLE", ("target is valid. saving"));
+
+            INFO_RHS (arg_info) = target;
+        } else {
+            DBUG_PRINT ("CWLE", ("target is NOT valid. skipping wl"));
+
+            INFO_VALID (arg_info) = FALSE;
+            INFO_RHS (arg_info) = NULL;
+        }
     }
 
     DBUG_RETURN (arg_node);
