@@ -834,7 +834,7 @@ CheckAndReplaceModarray (node *prf, info *info)
 
 /** <!-- ****************************************************************** -->
  * @brief Starts index elimination in a given fundef node. On top-level,
- *        only non-lac functions are processed, as lac-funs are handeled
+ *        only non-lac functions are processed, as lac-funs are handled
  *        when reaching their application.
  *
  * @param arg_node N_fundef node
