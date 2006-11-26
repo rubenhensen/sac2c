@@ -47,17 +47,22 @@ CompareDTypes (node *avis, node *dim, node *shape)
 
     DBUG_ENTER ("CompareDTypes");
 
-    if (TUshapeKnown (AVIS_TYPE (avis))) {
-        ntype *st = NTCnewTypeCheck_Expr (shape);
-        constant *sco = COmakeConstantFromShape (TYgetShape (AVIS_TYPE (avis)));
+#if 0
+  /*
+   * Commented this out as this removes some of the symbolic array attributes
+   */
+  if ( TUshapeKnown( AVIS_TYPE( avis))) {
+    ntype *st = NTCnewTypeCheck_Expr( shape);
+    constant *sco = COmakeConstantFromShape( TYgetShape( AVIS_TYPE( avis)));
 
-        if (TYisAKV (st)) {
-            res = COcompareConstants (sco, TYgetValue (st));
-        }
-
-        st = TYfreeType (st);
-        sco = COfreeConstant (sco);
+    if ( TYisAKV( st)) {
+      res = COcompareConstants( sco, TYgetValue( st));
     }
+
+    st = TYfreeType( st);
+    sco = COfreeConstant( sco);
+  }
+#endif
 
     if ((!res) && (AVIS_DIM (avis) != NULL) && (AVIS_SHAPE (avis) != NULL)) {
         node *ashape = AVIS_SHAPE (avis);
