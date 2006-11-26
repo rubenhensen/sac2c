@@ -16,6 +16,7 @@ extern node *SCIlet (node *arg_node, info *arg_info);
 extern node *SCImodarray (node *arg_node, info *arg_info);
 extern node *SCIfundef (node *arg_node, info *arg_info);
 extern node *SCIprf (node *arg_node, info *arg_info);
+extern bool SAAAvisesAreSameShape (node *avis1, node *avis2);
 
 /* utility functions potentially used by other phases */
 

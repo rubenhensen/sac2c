@@ -38,6 +38,7 @@
 #include "type_utils.h"
 #include "ctinfo.h"
 #include "index_infer.h"
+#include "wrci.h"
 
 /*
  * OPEN PROBLEMS:
@@ -437,9 +438,7 @@ ShapeCliquePrintIDs (node *arg_node)
  *
  * @fn bool SCIAvisesAreInSameShapeClique( node *avis1, node *avis2)
  * @brief Predicate for determining if two avis nodes are in same
- *          shape clique. The main reason for having a function to do this
- *          today is that I am contemplating a very different representation
- *          for shape clique membership.
+ *        shape clique.
  *
  *****************************************************************************/
 bool
@@ -447,6 +446,8 @@ SCIAvisesAreInSameShapeClique (node *avis1, node *avis2)
 {
     node *curavis2;
     bool z;
+    bool znew;
+    ntype *type1, *type2;
 
     z = FALSE;
     curavis2 = avis2;
@@ -457,8 +458,16 @@ SCIAvisesAreInSameShapeClique (node *avis1, node *avis2)
         }
         curavis2 = AVIS_SHAPECLIQUEID (curavis2);
     } while (avis2 != curavis2);
+    znew = ShapeVarsMatch (avis1, avis2);
+    type1 = AVIS_TYPE (avis1);
+    type2 = AVIS_TYPE (avis2);
+    if ((FALSE == znew) && (TRUE == z) && (TUdimKnown (type1) && TUdimKnown (type2))) {
+        DBUG_PRINT ("RBE", ("SAA missed an SCI inference"));
+        DBUG_PRINT ("RBE", ("z=%d,znew=%d for %s, and %s", z, znew, AVIS_NAME (avis1),
+                            AVIS_NAME (avis2)));
+    }
 
-    return (z);
+    return (znew);
 }
 
 /** <!--*******************************************************************-->
