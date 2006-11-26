@@ -163,7 +163,7 @@ TypeMatch (ntype *t1, ntype *t2)
     DBUG_RETURN (res);
 }
 
-static bool
+bool
 ShapeVarsMatch (node *a1, node *a2)
 {
     bool res;
