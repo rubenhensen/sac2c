@@ -149,8 +149,8 @@ CWLEdoTemplateTraversal (node *syntax_tree)
  *
  * @brief Just traverses into the function-body.
  *
- * This needs to be overwritten, as the generated version does not traverse
- * into the function body.
+ * This needs to be overwritten, as the generated version does traverse into
+ * FUNDEF_NEXT, which is done anyway.
  *
  *****************************************************************************/
 
@@ -173,9 +173,9 @@ CWLEfundef (node *arg_node, info *arg_info)
  *
  * @brief checks for the shape of its LHS and passes it on
  *
- * This function checks for the shape of the identifier, that is placed
- *   on its left hand side. We need this information to check, if the array,
- *   that we copy from, is the same size as the array that we would like
+ * This function checks for the shape of the identifier that is placed
+ *   on its left hand side. We need this information to check if the array
+ *   that we copy from is the same size as the array that we would like
  *   to copy into.
  *
  *****************************************************************************/
@@ -215,10 +215,14 @@ CWLElet (node *arg_node, info *arg_info)
  *
  * @fn node *CWLEwith(node *arg_node, info *arg_info)
  *
- * @brief redirects the checks into the N_code nodes
+ * @brief traverses the codes and replaces itself with a N_id on success.
  *
- * Here we just check, if we are inside a cwle, and if, redirect control
- *   to the N_code nodes, to check for copying action.
+ * Here we traverse into the codeblocks for checking for nested wls and to
+ *   have a look for some cwle-action.
+ *   If the checks in the codes succeed, we compare the found array we
+ *   apparently copy from with the array we would like to create; if these
+ *   fit (in shape) we may replace ourselves with a N_id-node of the array
+ *   found in the codes.
  *
  *****************************************************************************/
 
@@ -250,7 +254,8 @@ CWLEwith (node *arg_node, info *arg_info)
     if (INFO_VALID (arg_info) && NULL == IDS_NEXT (INFO_LHS (arg_info))) {
 
         /*
-         * from now on, we just want to know about the LHS-Avis.
+         * from now on, we just want to know about the LHS-Avis; so info_lhs and
+         * info_rhs both contain a N_avis.
          */
 
         INFO_LHS (arg_info) = IDS_AVIS (INFO_LHS (arg_info));
@@ -260,14 +265,12 @@ CWLEwith (node *arg_node, info *arg_info)
          */
 
         DBUG_PRINT ("CWLE", ("codes signal valid. comparing shapes ..."));
-        DBUG_PRINT ("CWLE", ("lhs is of type %i", NODE_TYPE (INFO_LHS (arg_info))));
-        DBUG_PRINT ("CWLE", ("rhs is of type %i", NODE_TYPE (INFO_RHS (arg_info))));
 
-        if (NULL != AVIS_SHAPE (INFO_LHS (arg_info))) {
-            DBUG_PRINT ("CWLE", ("LHS-shape is not null."));
+        if (NULL != AVIS_SHAPE (INFO_RHS (arg_info))) {
+            DBUG_PRINT ("CWLE", ("RHS-shape is not null."));
 
-            if (NULL != AVIS_SHAPE (INFO_RHS (arg_info))) {
-                DBUG_PRINT ("CWLE", ("RHS-shape is not null."));
+            if (NULL != AVIS_SHAPE (INFO_LHS (arg_info))) {
+                DBUG_PRINT ("CWLE", ("LHS-shape is not null."));
 
                 if (CMPT_EQ
                     == CMPTdoCompareTree (AVIS_SHAPE (INFO_LHS (arg_info)),
@@ -297,7 +300,15 @@ CWLEwith (node *arg_node, info *arg_info)
  *
  * @fn node *CWLEcode(node *arg_node, info *arg_info)
  *
- * @brief does the banana-dance ;)
+ * @brief checks for nested with-loops and for a valid cwle-case in this wl.
+ *
+ * several tasks are done in the N_code-nodes:
+ *   1. At first we traverse into the code-block. This ensures that even if
+ *      we are no more at a valid cwle-case for this with loop we can find
+ *      nested cwle-cases.
+ *   2. traverse into the other codes, so all nested wls are found.
+ *   3. start look for a cwle-case in this code and compare it with the
+ *      information from the other codes.
  *
  *****************************************************************************/
 
@@ -333,6 +344,7 @@ CWLEcode (node *arg_node, info *arg_info)
 
     /*
      * if we still have a valid cwle-case, check if we do agree with that.
+     * if, then save the source-array, if not, set valid to false.
      */
 
     if (INFO_VALID (arg_info)) {
@@ -363,7 +375,9 @@ CWLEcode (node *arg_node, info *arg_info)
                             == ID_AVIS (EXPRS_EXPR (PRF_ARGS (ravis)))) {
                             DBUG_PRINT ("CWLE", ("prf selects at iv"));
 
-                            target = EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (ravis)));
+                            target = ID_AVIS (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (ravis))));
+
+                            DBUG_PRINT ("CWLE", ("target is of %i", NODE_TYPE (target)));
                         }
                     }
                 }
@@ -373,7 +387,7 @@ CWLEcode (node *arg_node, info *arg_info)
         DBUG_PRINT ("CWLE", ("previous nodes signal NO ok"));
     }
 
-    if (NULL != ID_AVIS (target)) {
+    if (NULL != target) {
         DBUG_PRINT ("CWLE", ("found a target."));
     } else {
         INFO_VALID (arg_info) = FALSE;
