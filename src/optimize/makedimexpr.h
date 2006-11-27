@@ -26,5 +26,6 @@ extern node *MDEchar (node *arg_node, info *arg_info);
 extern node *MDEnum (node *arg_node, info *arg_info);
 extern node *MDEfloat (node *arg_node, info *arg_info);
 extern node *MDEdouble (node *arg_node, info *arg_info);
+extern node *MakeScalarAvis (char *name);
 
 #endif /* _SAC_MAKEDIMEXPR_H_ */

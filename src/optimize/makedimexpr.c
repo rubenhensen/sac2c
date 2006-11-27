@@ -83,11 +83,11 @@ FreeInfo (info *info)
 
 /** <!--********************************************************************-->
  *
- * @name Static helper funcions
+ * @name helper funcions
  * @{
  *
  *****************************************************************************/
-static node *
+node *
 MakeScalarAvis (char *name)
 {
     node *res;
