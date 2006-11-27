@@ -285,7 +285,7 @@ CWLEwith (node *arg_node, info *arg_info)
                      * 3. return the brandnew N_id.
                      */
 
-                    target = TBmakeId (DUPdoDupNode (INFO_RHS (arg_info)));
+                    target = TBmakeId (INFO_RHS (arg_info));
                     FREEdoFreeTree (arg_node);
                     DBUG_RETURN (target);
                 }
