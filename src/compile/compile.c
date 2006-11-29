@@ -4315,7 +4315,8 @@ COMPPrfTypeError (node *arg_node, info *arg_info)
     DBUG_ASSERT ((TYisBottom (TYPE_TYPE (bottom))),
                  "1st argument of F_type_error contains non bottom type!");
 
-    message = TCmakeStrCopy (TYgetBottomError (TYPE_TYPE (bottom)));
+    message
+      = TBmakeStr (ILIBstring2SafeCEncoding (TYgetBottomError (TYPE_TYPE (bottom))));
 
     ret_node = TCmakeAssignIcm1 ("TYPE_ERROR", message, NULL);
 
