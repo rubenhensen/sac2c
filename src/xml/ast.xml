@@ -1307,6 +1307,7 @@
           <node name="Code" />
           <node name="Assign" />
           <node name="Ids" />
+          <node name="Args" />
         </travuser>
       </traversal>
       <traversal id="WLS" name="With-Loop Scalarization" default="sons" include="wls.h">

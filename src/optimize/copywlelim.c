@@ -48,7 +48,7 @@
 
 struct INFO {
     node *lhs;
-    node *rhs;
+    node *rhsavis;
     node *iv;
     bool valid;
     dfmask_t *dfm;
@@ -57,7 +57,7 @@ struct INFO {
 /* The left hand side of the N_let, the array we are copying into */
 #define INFO_LHS(n) (n->lhs)
 /* The right hand side of the N_let, or the array we copy from, respectively */
-#define INFO_RHS(n) (n->rhs)
+#define INFO_RHSAVIS(n) (n->rhsavis)
 /* This is the selection-vector inside our with-loop */
 #define INFO_IV(n) (n->iv)
 /* Do we (still) have a valid case of cwle? */
@@ -77,7 +77,7 @@ MakeInfo ()
 
     INFO_VALID (result) = FALSE;
     INFO_LHS (result) = NULL;
-    INFO_RHS (result) = NULL;
+    INFO_RHSAVIS (result) = NULL;
     INFO_IV (result) = NULL;
 
     DBUG_RETURN (result);
@@ -87,6 +87,10 @@ static info *
 FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
+
+    INFO_LHS (info) = NULL;
+    INFO_RHSAVIS (info) = NULL;
+    INFO_IV (info) = NULL;
 
     info = ILIBfree (info);
 
@@ -174,31 +178,66 @@ CWLEfundef (node *arg_node, info *arg_info)
     DBUG_PRINT ("CWLE", ("Calling CWLEfundef"));
 
     /*
-     * create our empty, unused DataFlowMask and fill it with nothing.
+     * no body - no cwle
      */
 
-    if (NULL != FUNDEF_ARGS (arg_node) && NULL != FUNDEF_BODY (arg_node)) {
-        DBUG_PRINT ("CWLE", ("creating DFM"));
+    if (NULL != FUNDEF_BODY (arg_node)) {
+
+        /*
+         * create our empty, unused DataFlowMask and fill it with nothing.
+         */
 
         dfmask_base = DFMgenMaskBase (FUNDEF_ARGS (arg_node),
                                       BLOCK_VARDEC (FUNDEF_BODY (arg_node)));
         INFO_DFM (arg_info) = DFMgenMaskClear (dfmask_base);
-    }
 
-    /*
-     * traverse into the function body.
-     */
+        /*
+         * traverse into the function arguments (for checking with the DFM) and
+         * the function body.
+         */
 
-    if (NULL != FUNDEF_BODY (arg_node)) {
+        if (NULL != FUNDEF_ARGS (arg_node)) {
+            FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
+        }
+
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-    }
 
-    if (NULL != dfmask_base) {
-        DBUG_PRINT ("CWLE", ("removing DFM"));
+        /*
+         * clean our dfm up again
+         */
 
         INFO_DFM (arg_info) = DFMremoveMask (INFO_DFM (arg_info));
         DFMremoveMaskBase (dfmask_base);
     }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *CWLEargs( node *arg_node, info *arg_info)
+ *
+ * @brief for setting the bitmask in our DFM.
+ *
+ *****************************************************************************/
+node *
+CWLEargs (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("CWLEargs");
+
+    /*
+     * do not forget to traverse into the next arg
+     */
+
+    if (NULL != ARG_NEXT (arg_node)) {
+        ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
+    }
+
+    /*
+     * set the bitmask for this avis
+     */
+
+    DFMsetMaskEntrySet (INFO_DFM (arg_info), NULL, ARG_AVIS (arg_node));
 
     DBUG_RETURN (arg_node);
 }
@@ -223,32 +262,29 @@ CWLElet (node *arg_node, info *arg_info)
     DBUG_PRINT ("CWLE", ("Calling CWLElet"));
 
     INFO_VALID (arg_info) = TRUE;
-    INFO_LHS (arg_info) = NULL;
-    INFO_RHS (arg_info) = NULL;
-    INFO_IV (arg_info) = NULL;
 
     /*
      * first traverse into the ids, for saving it in the DFM.
+     * if we do not have a ids, we should not care about cwle either.
      */
 
-    LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
+    if (NULL != LET_IDS (arg_node)) {
+        LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
 
-    /*
-     * save the ids of our let and traverse into the epression, hoping
-     * that it is a with-loop.
-     */
+        /*
+         * save the ids of our let and traverse into the epression, hoping
+         * that it is a with-loop.
+         */
 
-    INFO_LHS (arg_info) = LET_IDS (arg_node);
-    LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
+        INFO_LHS (arg_info) = LET_IDS (arg_node);
+        LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
+    }
 
     /*
      * we are through, everything is false now.
      */
 
     INFO_VALID (arg_info) = FALSE;
-    INFO_LHS (arg_info) = NULL;
-    INFO_RHS (arg_info) = NULL;
-    INFO_IV (arg_info) = NULL;
 
     DBUG_RETURN (arg_node);
 }
@@ -257,7 +293,7 @@ CWLElet (node *arg_node, info *arg_info)
  *
  * @fn node *CWLEassign( node *arg_node, info *arg_info)
  *
- * @brief enshures the traversalorder assign_instr; assign_next
+ * @brief ensures a top-down traversal
  *
  *****************************************************************************/
 node *
@@ -315,18 +351,12 @@ CWLEids (node *arg_node, info *arg_info)
 node *
 CWLEwith (node *arg_node, info *arg_info)
 {
-    node *target;
-    dfmask_t *mask;
-
     DBUG_ENTER ("CWLEwith");
     DBUG_PRINT ("CWLE", ("Calling CWLEwith"));
 
     /*
-     * save the index-vector of our with-loop and a copy of the dfmask and
-     * traverse into the codes.
+     * save the index-vector of our with-loop
      */
-
-    mask = INFO_DFM (arg_info);
 
     DBUG_PRINT ("CWLE", ("traversing codes"));
 
@@ -340,42 +370,30 @@ CWLEwith (node *arg_node, info *arg_info)
      *   2. Do we look at a modarray/genarray-loop?
      */
 
-    if (INFO_VALID (arg_info) && NULL == IDS_NEXT (INFO_LHS (arg_info))
-        && (N_genarray == NODE_TYPE (WITH_WITHOP (arg_node))
-            || N_modarray == NODE_TYPE (WITH_WITHOP (arg_node)))) {
-
-        /*
-         * from now on, we just want to know about the LHS-Avis; so info_lhs and
-         * info_rhs both contain a N_avis.
-         */
-
-        INFO_LHS (arg_info) = IDS_AVIS (INFO_LHS (arg_info));
+    if (INFO_VALID (arg_info) && NULL == WITHOP_NEXT (WITH_WITHOP (arg_node))
+        && (N_genarray == WITH_TYPE (arg_node) || N_modarray == WITH_TYPE (arg_node))) {
 
         /*
          * we may now compare the shapes and check our DataFlowMask.
          */
 
-        DBUG_PRINT ("CWLE", ("codes signal valid. comparing shapes and testing dfm"));
+        DBUG_PRINT ("CWLE", ("codes signal valid. comparing shapes"));
 
-        if (NULL != AVIS_SHAPE (INFO_RHS (arg_info))
-            && NULL != AVIS_SHAPE (INFO_LHS (arg_info))
+        if (NULL != AVIS_SHAPE (INFO_RHSAVIS (arg_info))
+            && NULL != AVIS_SHAPE (IDS_AVIS (INFO_LHS (arg_info)))
             && CMPT_EQ
-                 == CMPTdoCompareTree (AVIS_SHAPE (INFO_LHS (arg_info)),
-                                       AVIS_SHAPE (INFO_RHS (arg_info)))
-            && DFMtestMaskEntry (mask, NULL, INFO_RHS (arg_info))) {
+                 == CMPTdoCompareTree (AVIS_SHAPE (IDS_AVIS (INFO_LHS (arg_info))),
+                                       AVIS_SHAPE (INFO_RHSAVIS (arg_info)))) {
             DBUG_PRINT ("CWLE", ("everything ok. replacing wl with %s",
-                                 AVIS_NAME (INFO_RHS (arg_info))));
+                                 AVIS_NAME (INFO_RHSAVIS (arg_info))));
 
             /*
-             * 3 steps:
-             * 1. create a new N_id with our rhs-array inside.
-             * 2. free the with-loop, we do not need it anymore.
-             * 3. return the brandnew N_id.
+             * 1. free the with-loop, we do not need it anymore.
+             * 2. return a brandnew N_id, build from our rhsavis.
              */
 
-            target = TBmakeId (INFO_RHS (arg_info));
-            FREEdoFreeTree (arg_node);
-            DBUG_RETURN (target);
+            arg_node = FREEdoFreeTree (arg_node);
+            arg_node = TBmakeId (INFO_RHSAVIS (arg_info));
         }
     }
 
@@ -419,11 +437,11 @@ CWLEcode (node *arg_node, info *arg_info)
      */
 
     subinfo = MakeInfo ();
-    INFO_DFM (subinfo) = INFO_DFM (arg_info);
+    INFO_DFM (subinfo) = DFMgenMaskCopy (INFO_DFM (arg_info));
 
     CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), subinfo);
 
-    INFO_DFM (subinfo) = NULL;
+    INFO_DFM (subinfo) = DFMremoveMask (INFO_DFM (subinfo));
     subinfo = FreeInfo (subinfo);
 
     /*
@@ -484,21 +502,25 @@ CWLEcode (node *arg_node, info *arg_info)
     /*
      * if we have found some avis, that meets the requirements, then
      * lets check if it is the same that we have found before. If we
-     * do not have found anything before, assign it to INFO_RHS.
+     * do not have found anything before, assign it to INFO_RHSAVIS.
+     *
+     * At this point we also check the DataFlowMask, to see if our
+     * source array was defined _before_ this wl.
      */
 
     if (INFO_VALID (arg_info)) {
         DBUG_PRINT ("CWLE", ("checking if target is legitimate"));
 
-        if (NULL == INFO_RHS (arg_info) || target == INFO_RHS (arg_info)) {
+        if ((NULL == INFO_RHSAVIS (arg_info) || target == INFO_RHSAVIS (arg_info))
+            && DFMtestMaskEntry (INFO_DFM (arg_info), NULL, target)) {
             DBUG_PRINT ("CWLE", ("target is valid. saving"));
 
-            INFO_RHS (arg_info) = target;
+            INFO_RHSAVIS (arg_info) = target;
         } else {
             DBUG_PRINT ("CWLE", ("target is NOT valid. skipping wl"));
 
             INFO_VALID (arg_info) = FALSE;
-            INFO_RHS (arg_info) = NULL;
+            INFO_RHSAVIS (arg_info) = NULL;
         }
     }
 
