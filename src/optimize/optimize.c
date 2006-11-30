@@ -377,42 +377,36 @@ OPTdoOptimize (node *arg_node)
      */
     if (global.optimize.dosci) {
         arg_node = PHrunCompilerSubPhase (SUBPH_sci, arg_node);
-        /* ive is dependent upon this phase running, as is
-         * some of ktr's memory management stuff.
-         * Ergo, if you disable sci, we have to
-         * disable ive.
-         */
+    }
+    /*
+     * apply index vector elimination (dependent on isv, as of 2006-11-30)
+     */
+    if (global.optimize.doive && global.optimize.doisv) {
+        TRAVsetPreFun (TR_prt, IVEIprintPreFun);
+        arg_node = PHrunCompilerSubPhase (SUBPH_ivei, arg_node);
+        arg_node = PHrunCompilerSubPhase (SUBPH_ive, arg_node);
+        arg_node = PHrunCompilerSubPhase (SUBPH_iveo, arg_node);
+        TRAVsetPreFun (TR_prt, NULL);
 
         /*
-         * apply index vector elimination
+         * Constant and variable propagation
          */
-        if (global.optimize.doive) {
-            TRAVsetPreFun (TR_prt, IVEIprintPreFun);
-            arg_node = PHrunCompilerSubPhase (SUBPH_ivei, arg_node);
-            arg_node = PHrunCompilerSubPhase (SUBPH_ive, arg_node);
-            arg_node = PHrunCompilerSubPhase (SUBPH_iveo, arg_node);
-            TRAVsetPreFun (TR_prt, NULL);
+        if (global.optimize.docvp) {
+            arg_node = PHrunCompilerSubPhase (SUBPH_cvpive, arg_node);
+        }
 
-            /*
-             * Constant and variable propagation
-             */
-            if (global.optimize.docvp) {
-                arg_node = PHrunCompilerSubPhase (SUBPH_cvpive, arg_node);
-            }
+        /*
+         * Loop Invariant Removal
+         */
+        if (global.optimize.dolir) {
+            arg_node = PHrunCompilerSubPhase (SUBPH_lirive, arg_node);
+        }
 
-            /*
-             * Loop Invariant Removal
-             */
-            if (global.optimize.dolir) {
-                arg_node = PHrunCompilerSubPhase (SUBPH_lirive, arg_node);
-            }
-
-            /*
-             * Common subexpression elimination
-             */
-            if (global.optimize.docse) {
-                arg_node = PHrunCompilerSubPhase (SUBPH_cseive, arg_node);
-            }
+        /*
+         * Common subexpression elimination
+         */
+        if (global.optimize.docse) {
+            arg_node = PHrunCompilerSubPhase (SUBPH_cseive, arg_node);
         }
     }
 

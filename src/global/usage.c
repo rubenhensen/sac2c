@@ -439,6 +439,8 @@ USGprintUsage ()
       "    -do <opt>       Enable optimization technique <opt>.\n"
       "\n\n"
       "    The following optimization techniques are currently supported:\n"
+      "\n"
+      "     (A leading * identifies optimization enabled by default.)\n"
       "\n");
 
 #ifdef PRODUCTION
@@ -455,9 +457,6 @@ USGprintUsage ()
       "    NOTE:\n"
       "     -no opt     disables all optimizations at once.\n"
       "     -do opt     enables all optimizations at once.\n"
-      "\n"
-      "    NOTE:\n"
-      "     A leading * identifies optimization enabled by default.\n"
       "\n"
       "    NOTE:\n"
       "     Upper case letters may be used to indicate optimization techniques.\n"

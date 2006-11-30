@@ -32,6 +32,7 @@
 #include "type_utils.h"
 #include "index_infer.h"
 #include "shape_cliques.h"
+#include "wrci.h"
 
 /*
  * INFO structure
@@ -134,13 +135,14 @@ CountUses (node *args)
 
 /** <!--********************************************************************-->
  *
- * @fn  void AddIdtoIdxShapes( node *avis, node *id)
+ * @fn  void AddIdtoIdxShapes( node *ivavis, node *Xid)
  *
- *   @brief  Possibly adds id to the set of shapes in AVIS_IDXSHAPES( avis).
- *           It does this by checking to see if the shape of the id
+ *   @brief  Possibly adds Xid to the set of shapes in AVIS_IDXSHAPES( ivavis),
+ *           for an op such as sel(iv, X).
+ *           It does this by checking to see if the shape of the Xid
  *           argument already exists in the set of N_id nodes
- *           hanging off the AVIS_IDXSHAPES( avis), by checking for
- *           the presence of N_id's shape clique in the set.
+ *           hanging off the AVIS_IDXSHAPES( ivavis), by checking for
+ *           the presence in the set of an array of the same shape as N_id
  *
  *           If the shape is already in the set, no changes are made.
  *           Otherwise, an N_id node containing that shape is built and
@@ -152,27 +154,49 @@ CountUses (node *args)
  *****************************************************************************/
 
 static void
-AddIdtoIdxShapes (node *avis, node *id)
+AddIdtoIdxShapes (node *ivavis, node *Xid)
 {
     node *exprs;
 
     DBUG_ENTER ("AddIdtoIdxShapes");
 
-    /* Set membership */
-    exprs = AVIS_IDXSHAPES (avis);
-    while (
-      (exprs != NULL)
-      && (!SCIAvisesAreInSameShapeClique (ID_AVIS (EXPRS_EXPR (exprs)), ID_AVIS (id)))) {
-        exprs = EXPRS_NEXT (exprs);
-    }
+    exprs = FindMatchingVarShape (ID_AVIS (Xid), ivavis); /* Set membership */
 
-    /* Set union */
-    if (exprs == NULL) {
-        AVIS_IDXSHAPES (avis)
-          = TBmakeExprs (TBmakeId (ID_AVIS (id)), AVIS_IDXSHAPES (avis));
+    if (exprs == NULL) { /* Set union */
+        AVIS_IDXSHAPES (ivavis)
+          = TBmakeExprs (TBmakeId (ID_AVIS (Xid)), AVIS_IDXSHAPES (ivavis));
     }
 
     DBUG_VOID_RETURN;
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  node *FindMatchingVarShape( node *avis, node *ivavis)
+ *
+ *   #brief  Search AVIS_IDXSHAPES( ivavis) for an array of the same
+ *           shape as avis.
+ *
+ *   @param  avis:   N_avis of the array we seek.
+ *           ivavis: N_avis of the array whose AVIS_IDXSHAPES we will search.
+ *   @return address of the matching AVIS_IDXSHAPES exprs entry, or NULL.
+ *
+ *****************************************************************************/
+
+node *
+FindMatchingVarShape (node *avis, node *ivavis)
+{
+    node *exprs;
+
+    DBUG_ENTER ("FindMatchingVarShape");
+
+    /* Set membership */
+    exprs = AVIS_IDXSHAPES (ivavis);
+    while ((exprs != NULL) && (!ShapeVarsMatch (ID_AVIS (EXPRS_EXPR (exprs)), avis))) {
+        exprs = EXPRS_NEXT (exprs);
+    }
+
+    DBUG_RETURN (exprs);
 }
 
 /** <!--********************************************************************-->
@@ -227,7 +251,7 @@ TranscribeFormalToConcrete (node *args, node *exprs)
 
     while (args != NULL) {
         DBUG_ASSERT ((exprs != NULL),
-                     "# of formal args does not fit # of concrete args.");
+                     "# of formal args does not match # of concrete args.");
 
         TranscribeIdxTypes (ARG_AVIS (args), ID_AVIS (EXPRS_EXPR (exprs)));
         args = ARG_NEXT (args);
@@ -243,7 +267,7 @@ TranscribeNeedToArgs (node *args, node *exprs)
     DBUG_ENTER ("TranscribeNeedToArgs");
 
     if (args != NULL) {
-        DBUG_ASSERT ((exprs != NULL), "less conrete args than formal args!");
+        DBUG_ASSERT ((exprs != NULL), "fewer concrete args than formal args!");
 
         TranscribeNeedToArgs (ARG_NEXT (args), EXPRS_NEXT (exprs));
 
@@ -577,7 +601,7 @@ IVEIprf (node *arg_node, info *arg_info)
              * the result is used as an index-vector only.
              * so we forward the infered shapes to the
              * array arguments. We do not forward it to
-             * scalars. These are handeled in index_optimize.
+             * scalars. These are handled in index_optimize.
              */
             if ((NODE_TYPE (arg1) == N_id) && TYgetDim (type1) != 0) {
                 TranscribeIdxTypes (IDS_AVIS (lhs), ID_AVIS (arg1));
@@ -700,8 +724,10 @@ IVEIprintPreFun (node *arg_node, info *arg_info)
             }
         }
         printf (":NEED(%d)", AVIS_NEEDCOUNT (arg_node));
-        printf ("CLIQUE(%d)",
-                SCIShapeCliqueNumber (AVIS_SHAPECLIQUEID (arg_node), fundef));
+        /* TEMPKILL!!!!
+        printf("CLIQUE(%d)", SCIShapeCliqueNumber( AVIS_SHAPECLIQUEID( arg_node),
+                              fundef));
+        */
         printf ("*/");
         break;
 

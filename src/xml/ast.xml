@@ -131,7 +131,7 @@
       <traversal id="SBT" name="Serialize Build Stack" default="user" include="serialize_buildstack.h" />
       <traversal id="SET" name="Serialize Node Traversal" default="user" include="serialize_node.h" />
       <traversal id="SEL" name="Serialize Link Traversal" default="user" include="serialize_link.h" />
-      <traversal id="AFB" name="Add Fucntion Body Traversal" default="sons" include="add_function_body.h">
+      <traversal id="AFB" name="Add Function Body Traversal" default="sons" include="add_function_body.h">
         <travuser>
           <node name="Fundef" />
           <node name="Return" />
@@ -4157,7 +4157,21 @@
       </attributes>
       <flags>
         <flag name="IsSclPrf" />
+	<flag name="IsVect2OffsetIssued" >
+		<description>
+		This flag indicates that a Vect2Offset has been issued
+		by IVE for this array. It is meaningful only for an N_id
+		that is pointed to from an ID_IDXSHAPES chain.
+		</description>
+                <phases>
+                  <range from="ivei" to="iveo" />
+                </phases>
+	</flag>
       </flags>
+
+
+
+
     </node>
 <!--
 
@@ -5052,32 +5066,42 @@ identifier (N_id) for AUD arrays.
             obtain the transitive hull of variable aliases.</description>
         </attribute>
 	<attribute name="IdxShapes">
-          <description>Used by Index Vector Elimination. If this 
-	  N_avis is an index vector, IdxShapes is the 
-	  head of a linked 
-	  list of N_exprs node that point to N_id nodes 
-	  that represent the set of unique array shapes which 
-	  are indexed by this N_avis. </description>
+          <description>Used by Index Vector Elimination.
+	  All array shapes that are indexed by this avis are 
+	  listed in an N_exprs chain from here, as a chain of
+	  N_id nodes with a representative element for each shape.
+	  Initially, the representatives are arbitrary; during
+	  index_eliminate, each representative is replaced by
+	  the first array of that shape to have a Vect2Offset
+	  emitted on its behalf. Thus, later Vect2offset references to the
+	  same shape array use the representative instead of the
+	  actual array being indexed.
+	  </description>
 	  <type name="Node">
             <targets>
               <target mandatory="no">
                 <node name="Exprs" />
                 <phases>
-                  <phase name="ive" />
+		  <range from="ive" to="iveo" />
                 </phases>
               </target>
             </targets>
 	  </type>
 	</attribute>
 	<attribute name="IdxIds">
-          <description>Used by Index Vector Elimination for Loop/Cond fn 
-	  	analysis </description>
+          <description>Used by Index Vector Elimination.
+	  This is an N_exprs chain of N_id nodes that correspond, one-to-one,
+	  to the IdxShapes chain. Each N_id node defines
+	  the name of the offset variable to be used when 
+	  indexing an array whose shape matches that of the
+	  corresponding IdsShapes node.
+	  </description>
 	  <type name="Node">
             <targets>
               <target mandatory="no">
                 <node name="Ids" />
                 <phases>
-                  <phase name="ive" />
+		  <range from="ive" to="iveo" />
                 </phases>
               </target>
             </targets>

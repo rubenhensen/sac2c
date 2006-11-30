@@ -82,6 +82,7 @@
 #include "DataFlowMask.h"
 #include "internal_lib.h"
 #include "shape.h"
+#include "makedimexpr.h"
 
 /** <!--********************************************************************-->
  *
@@ -422,9 +423,7 @@ CreateCopyWithloop (node *array, int dim, node *fundef)
     vec_ids = TBmakeIds (avis, NULL);
 
     for (i = 0; i < dim; i++) {
-        avis = TBmakeAvis (ILIBtmpVar (),
-                           TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
-
+        avis = MakeScalarAvis (ILIBtmpVar ());
         vardecs = TBmakeVardec (avis, vardecs);
         scl_ids = TBmakeIds (avis, scl_ids);
     }

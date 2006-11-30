@@ -37,5 +37,6 @@ extern node *IVEIavis (node *arg_node, info *arg_info);
 extern node *IVEIid (node *arg_node, info *arg_info);
 extern node *IVEIap (node *arg_node, info *arg_info);
 extern node *IVEIlet (node *arg_node, info *arg_info);
+extern node *FindMatchingVarShape (node *avis, node *ivavis);
 
 #endif /* _SAC_INDEX_INFER_H_ */

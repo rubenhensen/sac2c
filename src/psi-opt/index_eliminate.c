@@ -18,6 +18,9 @@
 #include "type_utils.h"
 #include "free.h"
 #include "shape_cliques.h"
+#include "index_infer.h"
+#include "wrci.h"
+#include "makedimexpr.h"
 
 /*
  * OPEN PROBLEMS:
@@ -276,7 +279,7 @@ GetIvScalarOffsetAvis (node *iavis, node *bavis)
         shpid = EXPRS_EXPR (shpexprs);
         DBUG_ASSERT ((N_id == NODE_TYPE (shpid)),
                      "Shape clique shape chain entry not N_id");
-        if (SCIAvisesAreInSameShapeClique (bavis, ID_AVIS (shpid))) {
+        if (ShapeVarsMatch (bavis, ID_AVIS (shpid))) {
             result = IDS_AVIS (ids);
             break;
         }
@@ -285,6 +288,49 @@ GetIvScalarOffsetAvis (node *iavis, node *bavis)
         ids = IDS_NEXT (ids);
     }
 
+    DBUG_RETURN (result);
+}
+
+/** <!-- ****************************************************************** -->
+ * @brief node * FindArrayWithSameShape( bid, ivavis);
+ * We are generating code for B[IV], where bid and ivavis represent those
+ * arrays.
+ * We want to find an array B' of the shape as B, for which we
+ * have already issued a vect2offset. If we find one, we will issue
+ * vect2offset( iv, _shape_( B')) instead of vect2offset( iv, _shape_( B)).
+ * This will be determined by the presence of a isvect2offsetissued
+ * mark in the B' avis.
+ * If we don't find one, we replace B' by B in the IDX_IDS entry,
+ * and mark that entry for future use.
+ *
+ * @param ivavis - N_avis for vector being used as an array index
+ * @param bid -    N_id for array being indexed
+ *
+ * @return - avis of array to use for the _shape_  operation.
+ ******************************************************************************/
+static node *
+FindArrayWithSameShape (node *bid, node *ivavis)
+{
+    node *exprs;
+    node *result;
+    node *bavis;
+    node *typid;
+
+    DBUG_ENTER ("FindAvisWithSameShape");
+    bavis = ID_AVIS (bid);
+    exprs = FindMatchingVarShape (bavis, ivavis);
+    DBUG_ASSERT (NULL != exprs, "IVE X[IV] did not find matching X IDX_SHAPE entry");
+    typid = EXPRS_EXPR (exprs);
+    result = ID_AVIS (typid);
+    if (FALSE == ID_ISVECT2OFFSETISSUED (typid)) {
+        /* No vect2offset issued for this array shape yet.
+         * Mark the chain's IDXSHAPES entry as having one issued,
+         * and replace the N_avis pointer in IDXSHAPES with this one.
+         */
+        ID_ISVECT2OFFSETISSUED (typid) = TRUE;
+        ID_AVIS (typid) = bavis;
+        result = bavis;
+    }
     DBUG_RETURN (result);
 }
 
@@ -300,8 +346,8 @@ GetIvScalarOffsetAvis (node *iavis, node *bavis)
  * @return exprs node containing shape_sel expressions
  ******************************************************************************/
 node *
-ScalarizeShape (info *info, node *ivavis, int rank, node *bavis)
-{ /* Emit rank-sized vector of _shape_sel invocations for
+ScalarizeShape (info *info, node *ivavis, int rank, node *bid)
+{ /* Emit rank-sized vector of _shape_sel(B) invocations for
    * best array in shape clique of ivavis
    */
 
@@ -309,7 +355,6 @@ ScalarizeShape (info *info, node *ivavis, int rank, node *bavis)
     node *exprs;
     int axis;
     node *shpelavis;
-    ntype *shpeltype;
     node *shpel;
 
     DBUG_ENTER ("ScalarizeShape");
@@ -321,15 +366,14 @@ ScalarizeShape (info *info, node *ivavis, int rank, node *bavis)
      * we just use the current avis.
      */
     if (global.iveo & IVEO_share) {
-        cliqueb = SCIFindMarkedAvisInSameShapeClique (bavis);
+        cliqueb = FindArrayWithSameShape (bid, ivavis);
     } else {
-        cliqueb = bavis;
+        cliqueb = ID_AVIS (bid);
     }
 
     exprs = NULL;
     for (axis = rank - 1; axis >= 0; axis--) {
-        shpeltype = TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0));
-        shpelavis = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (ivavis)), shpeltype);
+        shpelavis = MakeScalarAvis (ILIBtmpVarName (AVIS_NAME (ivavis)));
         AVIS_SHAPECLIQUEID (shpelavis) = shpelavis;
         INFO_VARDECS (info) = TBmakeVardec (shpelavis, INFO_VARDECS (info));
 
@@ -372,7 +416,7 @@ EmitAKDVect2Offset (node *bid, node *ivavis, info *info)
     result = ivavis;
 
     if (TUdimKnown (ID_NTYPE (bid))) {
-        exprs = ScalarizeShape (info, ivavis, TYgetDim (ID_NTYPE (bid)), ID_AVIS (bid));
+        exprs = ScalarizeShape (info, ivavis, TYgetDim (ID_NTYPE (bid)), bid);
 
         /* Emit     iv_B = vect2offset( [shp0, shp1, ...], iv);
          * KLUDGE: This is not flattened code: the correct approach,
@@ -386,8 +430,7 @@ EmitAKDVect2Offset (node *bid, node *ivavis, info *info)
         offset = TCmakePrf2 (F_vect2offset, TCmakeIntVector (exprs), TBmakeId (ivavis));
 
         /* Generate temp name for resulting integer scalar array offset iv_B */
-        result = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (ivavis)),
-                             TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
+        result = MakeScalarAvis (ILIBtmpVarName (AVIS_NAME (ivavis)));
         AVIS_SHAPECLIQUEID (result) = result;
 
         INFO_VARDECS (info) = TBmakeVardec (result, INFO_VARDECS (info));
@@ -431,8 +474,7 @@ EmitAKSVect2offset (node *bavis, node *ivavis, info *info)
       );
 
     /* Generate temp name for resulting integer scalar array offset */
-    result = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (ivavis)),
-                         TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
+    result = MakeScalarAvis (ILIBtmpVarName (AVIS_NAME (ivavis)));
     AVIS_SHAPECLIQUEID (result) = result;
 
     INFO_VARDECS (info) = TBmakeVardec (result, INFO_VARDECS (info));
@@ -506,8 +548,7 @@ IdxTypes2IdxArgs (node *types, node *avis, node **args, info *info)
         result = IdxTypes2IdxArgs (EXPRS_NEXT (types), avis, args, info);
 
         if (TUshapeKnown (AVIS_TYPE (ID_AVIS (EXPRS_EXPR (types))))) {
-            idxavis = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (avis)),
-                                  TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
+            idxavis = MakeScalarAvis (ILIBtmpVarName (AVIS_NAME (avis)));
             AVIS_SHAPECLIQUEID (idxavis) = idxavis;
 
             *args = TBmakeArg (idxavis, *args);
@@ -552,11 +593,10 @@ static
             /*
              * generate new offset vardec
              */
-            idxavis = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (ivavis)),
-                                  TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
+            idxavis = MakeScalarAvis (ILIBtmpVarName (AVIS_NAME (ivavis)));
             AVIS_SHAPECLIQUEID (idxavis) = idxavis;
             /*
-             * generate offset compuatation
+             * generate offset computation
              */
             offset = TBmakeAssign (TBmakeLet (TBmakeIds (idxavis, NULL),
                                               TCmakePrf2 (F_vect2offset,

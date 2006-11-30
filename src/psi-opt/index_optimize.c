@@ -14,6 +14,8 @@
 #include "shape_cliques.h"
 #include "shape.h"
 #include "constants.h"
+#include "makedimexpr.h"
+#include "wrci.h"
 
 /**
  * forward declarations
@@ -340,8 +342,7 @@ FindIVOffset (ivinfo *info, node *iv, node *clique)
          */
         oinfo = WITHIV_OFFSETS (info);
 
-        while ((oinfo != NULL)
-               && (!SCIAvisesAreInSameShapeClique (clique, WITHOFFSET_CLIQUE (oinfo)))) {
+        while ((oinfo != NULL) && (!ShapeVarsMatch (clique, WITHOFFSET_CLIQUE (oinfo)))) {
             oinfo = WITHOFFSET_NEXT (oinfo);
         }
 
@@ -353,9 +354,8 @@ FindIVOffset (ivinfo *info, node *iv, node *clique)
              */
             oinfo = WITHIV_LOCALOFFSETS (info);
 
-            while (
-              (oinfo != NULL)
-              && (!SCIAvisesAreInSameShapeClique (clique, WITHOFFSET_CLIQUE (oinfo)))) {
+            while ((oinfo != NULL)
+                   && (!ShapeVarsMatch (clique, WITHOFFSET_CLIQUE (oinfo)))) {
                 oinfo = WITHOFFSET_NEXT (oinfo);
             }
 
@@ -402,11 +402,11 @@ FindIVScalars (ivinfo *info, node *iv)
  * @fn node *GetAvis4Clique( node *iv, node *clique, info *arg_info)
  *
  * @brief Returns the avis of the offset variable that can be used for a
- *        selection into an array from the given clique instead of the
+ *        selection into an array from the given clique, instead of the
  *        given index vector. If none can be found, NULL is returned.
  *
- * @param iv        avis of index vector used for selection
- * @param clique    clique of the array used for selection
+ * @param iv        avis of index vector, iv, used for selection
+ * @param clique    clique of the array X, used for selection in X[iv]
  * @param arg_info  info structure (needed for fundef reference)
  *
  * @return avis of matching offset or NULL
@@ -435,7 +435,7 @@ GetAvis4Clique (node *iv, node *clique, info *arg_info)
         while (cliques != NULL) {
             DBUG_ASSERT ((ids != NULL), "# of ids does not match # of cliques");
 
-            if (SCIAvisesAreInSameShapeClique (clique, ID_AVIS (EXPRS_EXPR (cliques)))) {
+            if (ShapeVarsMatch (clique, ID_AVIS (EXPRS_EXPR (cliques)))) {
                 result = IDS_AVIS (ids);
                 break;
             }
@@ -461,7 +461,7 @@ GetAvis4Clique (node *iv, node *clique, info *arg_info)
  *
  * @param scalar    node defining a scalar value
  * @param dims      number of dimensions of the array used for selection
- * @param shape     node definign the shape of the array used for selection
+ * @param shape     node defining the shape of the array used for selection
  * @param arg_info  info node (needed to insert new assignments)
  *
  * @return Avis referencing the computed offset
@@ -476,9 +476,7 @@ Scalar2Offset (node *scalar, int dims, node *shape, info *arg_info)
 
     DBUG_ENTER ("Scalar2Offset");
 
-    avis
-      = TBmakeAvis (ILIBtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
-
+    avis = MakeScalarAvis (ILIBtmpVar ());
     INFO_VARDECS (arg_info) = TBmakeVardec (avis, INFO_VARDECS (arg_info));
 
     /*
