@@ -360,6 +360,8 @@ CWLEwith (node *arg_node, info *arg_info)
 
     DBUG_PRINT ("CWLE", ("traversing codes"));
 
+    WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
+
     INFO_IV (arg_info) = IDS_AVIS (WITH_VEC (arg_node));
     WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
 
@@ -509,7 +511,7 @@ CWLEcode (node *arg_node, info *arg_info)
      */
 
     if (INFO_VALID (arg_info)) {
-        DBUG_PRINT ("CWLE", ("checking if target is legitimate"));
+        DBUG_PRINT ("CWLE", ("checking if target is legitimate and known"));
 
         if ((NULL == INFO_RHSAVIS (arg_info) || target == INFO_RHSAVIS (arg_info))
             && DFMtestMaskEntry (INFO_DFM (arg_info), NULL, target)) {
