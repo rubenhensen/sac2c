@@ -49,7 +49,7 @@
 struct INFO {
     node *lhs;
     node *rhsavis;
-    node *iv;
+    node *withid;
     bool valid;
     dfmask_t *dfm;
 };
@@ -59,7 +59,7 @@ struct INFO {
 /* The right hand side of the N_let, or the array we copy from, respectively */
 #define INFO_RHSAVIS(n) (n->rhsavis)
 /* This is the selection-vector inside our with-loop */
-#define INFO_IV(n) (n->iv)
+#define INFO_WITHID(n) (n->withid)
 /* Do we (still) have a valid case of cwle? */
 #define INFO_VALID(n) (n->valid)
 /* This saves all visited identifiers, so we only replace loops with known
@@ -78,7 +78,7 @@ MakeInfo ()
     INFO_VALID (result) = FALSE;
     INFO_LHS (result) = NULL;
     INFO_RHSAVIS (result) = NULL;
-    INFO_IV (result) = NULL;
+    INFO_WITHID (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -90,7 +90,7 @@ FreeInfo (info *info)
 
     INFO_LHS (info) = NULL;
     INFO_RHSAVIS (info) = NULL;
-    INFO_IV (info) = NULL;
+    INFO_WITHID (info) = NULL;
 
     info = ILIBfree (info);
 
@@ -360,9 +360,7 @@ CWLEwith (node *arg_node, info *arg_info)
 
     DBUG_PRINT ("CWLE", ("traversing codes"));
 
-    WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
-
-    INFO_IV (arg_info) = IDS_AVIS (WITH_VEC (arg_node));
+    INFO_WITHID (arg_info) = WITH_WITHID (arg_node);
     WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
 
     /*
@@ -421,39 +419,13 @@ CWLEwith (node *arg_node, info *arg_info)
 node *
 CWLEcode (node *arg_node, info *arg_info)
 {
-    node *ravis;
+    node *let_expr;
+    node *cexpr_avis;
     node *target = NULL;
     info *subinfo;
 
     DBUG_ENTER ("CWLEcode");
     DBUG_PRINT ("CWLE", ("Calling CWLEcode"));
-
-    /*
-     * create a new info-structure for traversing the code-block,
-     * traverse, and release the info-structure.
-     * we obviously need to pass it the dfmask, so we use that from
-     * the local info structure.
-     *
-     * this needs to be done in order to keep the info-structures
-     * seperate in the case of nested with-loops.
-     */
-
-    subinfo = MakeInfo ();
-    INFO_DFM (subinfo) = DFMgenMaskCopy (INFO_DFM (arg_info));
-
-    CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), subinfo);
-
-    INFO_DFM (subinfo) = DFMremoveMask (INFO_DFM (subinfo));
-    subinfo = FreeInfo (subinfo);
-
-    /*
-     * before checking ourselves, lets traverse into the next
-     * code, so we can search therein for other with-loops.
-     */
-
-    if (NULL != CODE_NEXT (arg_node)) {
-        CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
-    }
 
     /*
      * if we still have a valid cwle-case, check if we do agree with that.
@@ -472,23 +444,24 @@ CWLEcode (node *arg_node, info *arg_info)
          * target = prf->args->next->expr-(id)>avis
          */
 
-        if (NULL != AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (arg_node))))
-            && N_let
-                 == NODE_TYPE (ASSIGN_INSTR (
-                      AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (arg_node))))))
-            && N_prf
-                 == NODE_TYPE (LET_EXPR (ASSIGN_INSTR (
-                      AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (arg_node)))))))) {
+        cexpr_avis = ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (arg_node)));
+
+        DBUG_PRINT ("CWLE", ("foobar!"));
+
+        if ((NULL != AVIS_SSAASSIGN (cexpr_avis))
+            && (N_let == NODE_TYPE (ASSIGN_INSTR (AVIS_SSAASSIGN (cexpr_avis))))
+            && (N_prf
+                == NODE_TYPE (LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (cexpr_avis)))))) {
             DBUG_PRINT ("CWLE", ("first checks hold (ssaassign points to prf)"));
 
-            ravis = LET_EXPR (ASSIGN_INSTR (
-              AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (arg_node))))));
+            let_expr = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (cexpr_avis)));
 
-            if (F_sel == PRF_PRF (ravis)
-                && INFO_IV (arg_info) == ID_AVIS (PRF_ARG1 (ravis))) {
+            if ((F_sel == PRF_PRF (let_expr))
+                && (IDS_AVIS (WITHID_VEC (INFO_WITHID (arg_info)))
+                    == ID_AVIS (PRF_ARG1 (let_expr)))) {
                 DBUG_PRINT ("CWLE", ("second checks hold (prf selects at iv)"));
 
-                target = ID_AVIS (PRF_ARG2 (ravis));
+                target = ID_AVIS (PRF_ARG2 (let_expr));
             }
         }
     } else {
@@ -525,6 +498,35 @@ CWLEcode (node *arg_node, info *arg_info)
             INFO_RHSAVIS (arg_info) = NULL;
         }
     }
+
+    /*
+     * after checking this wl, we may traverse into the next node.
+     * if there is none present, we may mark the withid, so that it is
+     * present in the inner with loops.
+     */
+
+    if (NULL != CODE_NEXT (arg_node)) {
+        CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
+    } else {
+        INFO_WITHID (arg_info) = TRAVdo (INFO_WITHID (arg_info), arg_info);
+    }
+
+    /*
+     * create a new info-structure for traversing the code-block,
+     * traverse, and release the info-structure.
+     * we obviously need to pass it the dfmask, so we use that from
+     * the local info structure.
+     *
+     * this needs to be done in order to keep the info-structures
+     * seperate in the case of nested with-loops.
+     */
+
+    subinfo = MakeInfo ();
+    INFO_DFM (subinfo) = INFO_DFM (arg_info);
+
+    CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), subinfo);
+
+    subinfo = FreeInfo (subinfo);
 
     DBUG_RETURN (arg_node);
 }
