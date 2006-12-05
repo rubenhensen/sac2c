@@ -130,7 +130,4 @@ extern node *PRTprovide (node *arg_node, info *arg_info);
 extern node *PRTsymbol (node *arg_node, info *arg_info);
 extern node *PRTset (node *arg_node, info *arg_info);
 
-/* Shape Clique Inference */
-extern node *PRTshapeclique (node *arg_node, info *arg_info);
-
 #endif /* _SAC_PRINT_H_ */

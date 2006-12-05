@@ -11,7 +11,6 @@
 #include "internal_lib.h"
 #include "type_utils.h"
 #include "new_types.h"
-#include "shape_cliques.h"
 #include "shape.h"
 #include "constants.h"
 #include "makedimexpr.h"
@@ -503,6 +502,70 @@ Scalar2Offset (node *scalar, int dims, node *shape, info *arg_info)
     DBUG_RETURN (avis);
 }
 
+/** <!--*******************************************************************-->
+ *
+ * @fn node *FindShapeCliqueForShape(shape * shp, node *arg_node)
+ * @brief Find shapeclique for shape
+ *  @param - shp is AKS shape we are looking for
+ *  @param - arg_node is N_fundef for the function
+ *
+ *  @return N_avis of the shape clique with that shape
+ *          or NULL if no such shape is found.
+ * ****************************************************************************/
+node *
+FindShapeCliqueForShape (shape *shp, node *arg_node)
+{
+    node *res;
+    node *arg;
+    node *curavis;
+    shape *curshape;
+    bool fini;
+    ntype *curtype;
+
+    DBUG_ENTER ("FindCliqueForShape");
+    DBUG_ASSERT ((N_fundef == NODE_TYPE (arg_node)),
+                 "FindCliqueForShape expected N_fundef as arg");
+
+    res = NULL;
+    fini = FALSE;
+
+    /* search function arguments */
+    arg = FUNDEF_ARGS (arg_node);
+    while (arg != NULL) {
+        curavis = ARG_AVIS (arg);
+        curtype = AVIS_TYPE (curavis);
+        if (TUshapeKnown (curtype)) { /* AKS only, please */
+            curshape = TYgetShape (curtype);
+            if (SHcompareShapes (shp, curshape)) {
+                res = curavis;
+                fini = TRUE;
+                break;
+            }
+        }
+        arg = ARG_NEXT (arg);
+    }
+
+    /* search function locals */
+    arg = FUNDEF_BODY (arg_node); /* maybe N_block */
+    if ((!fini) && (arg != NULL)) {
+        arg = BLOCK_VARDEC (arg);
+        while (arg != NULL) {
+            curavis = VARDEC_AVIS (arg);
+            curtype = AVIS_TYPE (curavis);
+            if (TUshapeKnown (curtype)) { /* AKS only, please */
+                curshape = TYgetShape (curtype);
+                if (SHcompareShapes (shp, curshape)) {
+                    res = curavis;
+                    fini = TRUE;
+                    break;
+                }
+            }
+            arg = VARDEC_NEXT (arg);
+        }
+    }
+    DBUG_RETURN (res);
+}
+
 /** <!-- ****************************************************************** -->
  * @fn node *FindAvisForShapeExpression( node *shape, info *info)
  *
@@ -535,7 +598,7 @@ FindAvisForShapeExpression (node *shapeexpr, info *info)
         /* AKS */
 
         shp = SHarray2Shape (shapeexpr);
-        result = SCIfindShapeCliqueForShape (shp, INFO_FUNDEF (info));
+        result = FindShapeCliqueForShape (shp, INFO_FUNDEF (info));
 
         DBUG_ASSERT ((result != NULL),
                      "Unable to find a shape clique for an AKS shape expression.");

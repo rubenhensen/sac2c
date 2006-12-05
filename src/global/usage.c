@@ -300,7 +300,6 @@ USGprintUsage ()
                       "Stop after with-loop default partition generation.");
     PRINT_BREAK_SPEC (PH_sacopt, "wrci",
                       "Stop after with-loop reuse candidates inference.");
-    PRINT_BREAK_SPEC (PH_sacopt, "sci", "Stop after shape clique inference.");
     PRINT_BREAK_SPEC (PH_sacopt, "wlidx",
                       "Stop after annotating offset variables at with-loops.");
     PRINT_BREAK_SPEC (PH_sacopt, "ivei",

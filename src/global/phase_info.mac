@@ -351,8 +351,6 @@ SUBPHASE (wrci, "wrci", "Inferencing with-loop reuse candidates",
 SUBPHASE (wlidx, "wlidx", "Annoting offset variable at with-loops",
           WLIDXdoAnnotateWithloopIdxs)
 
-SUBPHASE (sci, "sci", "Applying shape clique inference", SCIdoShapeCliqueInference)
-
 SUBPHASE (ivei, "ivei", "Applying index vector elimination (inference)",
           IVEIdoIndexVectorEliminationInference)
 

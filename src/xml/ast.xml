@@ -95,9 +95,6 @@
         </travsons>
       </traversal>
       <traversal id="DUP" name="Tree duplication" default="user" include="DupTree.h">
-      <traverror> 
-      	<node name="ShapeClique" />
-      </traverror>
       </traversal>
       <traversal id="FREE" name="Free Tree" default="user" include="free_node.h" />
       <traversal id="UWT" name="Update Wrapper Types" default="sons" include="update_wrapper_type.h" >
@@ -1352,15 +1349,6 @@
           <node name="Withid" />
           <node name="Genarray" />
           <node name="Modarray" />
-        </travuser>
-      </traversal>
-      <traversal id="SCI" name="Shape Clique Inference" default="sons" include="shape_cliques.h" >
-        <travuser>
-          <node name="Fundef" />
-          <node name="Genarray" />
-          <node name="Let" />
-          <node name="Modarray" />
-          <node name="Prf" />
         </travuser>
       </traversal>
       <traversal id="IVE" name="Index Vector Elimination" default="sons" include="index_eliminate.h">
@@ -5107,19 +5095,6 @@ identifier (N_id) for AUD arrays.
             </targets>
 	  </type>
 	</attribute>
-	<attribute name="ShapeCliqueID" >
-	  <description>Circular linked-list of N_avis nodes which comprise this array's shape clique. All entries in the clique are known to have the same shape.</description>
-	  <type name="Link">
-            <targets>
-              <target mandatory="yes">
-	       <node name="Avis" />
-                <phases>
-		  <range from="sci" to="iveo" />
-                </phases>
-              </target>
-            </targets>
-	  </type>
-	</attribute>
 	<attribute name="UniqueRef">
 	  <description>First reference to this unique object declaration. Used to generate useful error messages in case of uniqueness violation.</description>
 	  <type name="Link">
@@ -5150,10 +5125,6 @@ identifier (N_id) for AUD arrays.
         <flag name="IsLifted" >
           <description>Used by SpmdLift traversal in order to indicate 
             which VARDECS are no longer needed and can thus be eliminated.
-          </description>
-        </flag>
-        <flag name="IsSCIPrinted" default="FALSE" >
-          <description>Used by IVE to mark printed clique entries
           </description>
         </flag>
         <flag name="IsVect2OffsetIssued" default="FALSE" >
@@ -8211,38 +8182,6 @@ identifier (N_id) for AUD arrays.
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
-    </node>
-<!--
-
-  N_shapeclique :
-
--->
-    <node name="ShapeClique" default="0">
-      <description>Head of one shape clique set</description>
-      <sons>
-        <son name="Next">
-          <targets>
-            <target mandatory="no">
-              <node name="ShapeClique" />
-              <phases>
-                <all />
-              </phases>
-            </target>
-          </targets>
-        </son>
-        <son name="Members" default="NULL">
-          <targets>
-            <target mandatory="no">
-              <node name="Set" />
-              <phases>
-                <all />
-              </phases>
-            </target>
-          </targets>
-        </son>
-      </sons>
-      <attributes> </attributes>
       <flags></flags>
     </node>
   </syntaxtree>

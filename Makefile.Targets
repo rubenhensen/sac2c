@@ -99,7 +99,7 @@ psi-opt     = index_eliminate.o index_infer.o index_optimize.o \
               wlsbuild.o wlswithloopification.o SSAWithloopFolding.o \
               SSAWLI.o SSAWLF.o WithloopFusion.o detectdependencies.o \
               pad.o pad_collect.o pad_infer.o pad_transform.o pad_info.o \
-              tagdependencies.o resolvedependencies.o shape_cliques.o symb_wlf.o
+              tagdependencies.o resolvedependencies.o symb_wlf.o
 
 wltransform = wlpragma_funs.o wltransform.o wlidxs.o 
 

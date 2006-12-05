@@ -17,7 +17,6 @@
 #include "DupTree.h"
 #include "type_utils.h"
 #include "free.h"
-#include "shape_cliques.h"
 #include "index_infer.h"
 #include "wrci.h"
 #include "makedimexpr.h"
@@ -374,7 +373,6 @@ ScalarizeShape (info *info, node *ivavis, int rank, node *bid)
     exprs = NULL;
     for (axis = rank - 1; axis >= 0; axis--) {
         shpelavis = MakeScalarAvis (ILIBtmpVarName (AVIS_NAME (ivavis)));
-        AVIS_SHAPECLIQUEID (shpelavis) = shpelavis;
         INFO_VARDECS (info) = TBmakeVardec (shpelavis, INFO_VARDECS (info));
 
         shpel = TCmakePrf2 (F_idx_shape_sel, TBmakeNum (axis), TBmakeId (cliqueb));
@@ -431,7 +429,6 @@ EmitAKDVect2Offset (node *bid, node *ivavis, info *info)
 
         /* Generate temp name for resulting integer scalar array offset iv_B */
         result = MakeScalarAvis (ILIBtmpVarName (AVIS_NAME (ivavis)));
-        AVIS_SHAPECLIQUEID (result) = result;
 
         INFO_VARDECS (info) = TBmakeVardec (result, INFO_VARDECS (info));
 
@@ -475,7 +472,6 @@ EmitAKSVect2offset (node *bavis, node *ivavis, info *info)
 
     /* Generate temp name for resulting integer scalar array offset */
     result = MakeScalarAvis (ILIBtmpVarName (AVIS_NAME (ivavis)));
-    AVIS_SHAPECLIQUEID (result) = result;
 
     INFO_VARDECS (info) = TBmakeVardec (result, INFO_VARDECS (info));
 
@@ -549,7 +545,6 @@ IdxTypes2IdxArgs (node *types, node *avis, node **args, info *info)
 
         if (TUshapeKnown (AVIS_TYPE (ID_AVIS (EXPRS_EXPR (types))))) {
             idxavis = MakeScalarAvis (ILIBtmpVarName (AVIS_NAME (avis)));
-            AVIS_SHAPECLIQUEID (idxavis) = idxavis;
 
             *args = TBmakeArg (idxavis, *args);
             result = TBmakeIds (idxavis, result);
@@ -594,7 +589,6 @@ static
              * generate new offset vardec
              */
             idxavis = MakeScalarAvis (ILIBtmpVarName (AVIS_NAME (ivavis)));
-            AVIS_SHAPECLIQUEID (idxavis) = idxavis;
             /*
              * generate offset computation
              */

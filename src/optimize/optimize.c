@@ -373,12 +373,6 @@ OPTdoOptimize (node *arg_node)
     arg_node = PHrunCompilerSubPhase (SUBPH_wlidx, arg_node);
 
     /*
-     * Shape clique inference
-     */
-    if (global.optimize.dosci) {
-        arg_node = PHrunCompilerSubPhase (SUBPH_sci, arg_node);
-    }
-    /*
      * apply index vector elimination (dependent on isv, as of 2006-11-30)
      */
     if (global.optimize.doive && global.optimize.doisv) {

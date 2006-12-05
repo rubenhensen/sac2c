@@ -31,7 +31,6 @@
 #include "new_types.h"
 #include "type_utils.h"
 #include "index_infer.h"
-#include "shape_cliques.h"
 #include "wrci.h"
 
 /*
@@ -724,10 +723,6 @@ IVEIprintPreFun (node *arg_node, info *arg_info)
             }
         }
         printf (":NEED(%d)", AVIS_NEEDCOUNT (arg_node));
-        /* TEMPKILL!!!!
-        printf("CLIQUE(%d)", SCIShapeCliqueNumber( AVIS_SHAPECLIQUEID( arg_node),
-                              fundef));
-        */
         printf ("*/");
         break;
 
