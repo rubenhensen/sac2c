@@ -8,7 +8,7 @@
  *
  * Utility traversal to provide expressions for computing array dimensions.
  *
- * @ingroup isv
+ * @ingroup isaa
  *
  * @{
  *

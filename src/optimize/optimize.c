@@ -231,18 +231,19 @@ OPTdoOptimize (node *arg_node)
     }
 
     /*
-     * Insert shape variables
+     * Insert symbolic array attributes
      */
-    if (global.optimize.doisv) {
-        arg_node = PHrunCompilerSubPhase (SUBPH_isv, arg_node);
+    if (global.optimize.dosaacyc) {
+        arg_node = PHrunCompilerSubPhase (SUBPH_isaa, arg_node);
     }
 
     /*
      * Intra-functional optimizations
+     * THE CYCLE
      */
     arg_node = PHrunCompilerSubPhase (SUBPH_intraopt, arg_node);
 
-    /**
+    /*
      * Loop invariant removal
      */
     if (global.optimize.dolir) {
@@ -324,8 +325,8 @@ OPTdoOptimize (node *arg_node)
     /*
      * Insert shape variables
      */
-    if (global.optimize.doisv) {
-        arg_node = PHrunCompilerSubPhase (SUBPH_isv2, arg_node);
+    if (global.optimize.dosaa) {
+        arg_node = PHrunCompilerSubPhase (SUBPH_isaa2, arg_node);
 
         for (int i = 0; i < 3; i++) {
             if (global.optimize.doprfunr) {
@@ -373,9 +374,9 @@ OPTdoOptimize (node *arg_node)
     arg_node = PHrunCompilerSubPhase (SUBPH_wlidx, arg_node);
 
     /*
-     * apply index vector elimination (dependent on isv, as of 2006-11-30)
+     * apply index vector elimination (dependent on saa, as of 2006-11-30)
      */
-    if (global.optimize.doive && global.optimize.doisv) {
+    if (global.optimize.doive && global.optimize.dosaa) {
         TRAVsetPreFun (TR_prt, IVEIprintPreFun);
         arg_node = PHrunCompilerSubPhase (SUBPH_ivei, arg_node);
         arg_node = PHrunCompilerSubPhase (SUBPH_ive, arg_node);
@@ -390,13 +391,6 @@ OPTdoOptimize (node *arg_node)
         }
 
         /*
-         * Loop Invariant Removal
-         */
-        if (global.optimize.dolir) {
-            arg_node = PHrunCompilerSubPhase (SUBPH_lirive, arg_node);
-        }
-
-        /*
          * Common subexpression elimination
          */
         if (global.optimize.docse) {
@@ -407,11 +401,18 @@ OPTdoOptimize (node *arg_node)
     /*
      * Eliminate shape variables
      */
-    if (global.optimize.doisv) {
+    if (global.optimize.dosaa) {
         arg_node = PHrunCompilerSubPhase (SUBPH_esv, arg_node);
     }
 
-    if (global.optimize.doisv || global.optimize.doive) {
+    if (global.optimize.dosaa || global.optimize.doive) {
+        /*
+         * Loop Invariant Removal
+         */
+        if (global.optimize.dolir) {
+            arg_node = PHrunCompilerSubPhase (SUBPH_lirive, arg_node);
+        }
+
         /*
          * Dead code removal after ive
          */
@@ -492,8 +493,8 @@ OPTdoIntraFunctionalOptimizations (node *arg_node)
                     /*
                      * Insert shape variables
                      */
-                    if (global.optimize.doisv) {
-                        fundef = PHrunOptimizationInCycle (SUBPH_isvcyc, loop, fundef);
+                    if (global.optimize.dosaacyc) {
+                        fundef = PHrunOptimizationInCycle (SUBPH_saacyc, loop, fundef);
                     }
 
                     /*

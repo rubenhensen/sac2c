@@ -1123,8 +1123,8 @@
 	  <node name="With" />
    	</travuser>
       </traversal>
-      <traversal id="ISV" name="Insert Shape Variables" default="sons" 
-        include="insert_shapevars.h" >
+      <traversal id="ISAA" name="Insert Symbolic Array Attributes" default="sons" 
+        include="insert_symb_arrayattr.h" >
 	<travuser>
           <node name="Fundef" />
 	  <node name="Avis" />
@@ -4771,7 +4771,7 @@ identifier (N_id) for AUD arrays.
             <target mandatory="no">
               <set name="Expr" />
               <phases>
-                <range from="isv" to="esv" />
+                <range from="isaa" to="esv" />
               </phases>
             </target>
           </targets>
@@ -4790,7 +4790,7 @@ identifier (N_id) for AUD arrays.
             <target mandatory="no">
               <set name="Expr" />
               <phases>
-                <range from="isv" to="esv" />
+                <range from="isaa" to="esv" />
               </phases>
             </target>
           </targets>

@@ -91,8 +91,8 @@ optimize    = optimize.o \
               signature_simplification.o inlining.o inferneedcounters.o \
               associativity.o elimtypeconv.o liftoptflags.o \
               wlsimplification.o copywlelim.o prfunroll.o wlselcount.o \
-              insert_shapevars.o elim_shapevars.o makedimexpr.o makeshapeexpr.o \
-      	      distributivity.o remove_vardecs.o
+              insert_symb_arrayattr.o elim_shapevars.o makedimexpr.o \
+              makeshapeexpr.o distributivity.o remove_vardecs.o
 
 psi-opt     = index_eliminate.o index_infer.o index_optimize.o \
               wl_access_analyze.o tile_size_inference.o wls.o wlscheck.o \

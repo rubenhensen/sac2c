@@ -4,7 +4,7 @@
 
 /** <!--********************************************************************-->
  *
- * @defgroup isv Insert Shape Variables
+ * @defgroup isaa Insert Symbolic Array Attributes
  *
  * This traversal augments all AVIS nodes with expressions for dim and shape.
  * In contrast to the new_types, these expressions do not need to be constant.
@@ -17,12 +17,12 @@
 
 /** <!--********************************************************************-->
  *
- * @file insert_shapevars.c
+ * @file insert_symb_arrayattr.c
  *
- * Prefix: ISV
+ * Prefix: ISAA
  *
  *****************************************************************************/
-#include "insert_shapevars.h"
+#include "insert_symb_arrayattr.h"
 
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -113,20 +113,20 @@ FreeInfo (info *info)
  *****************************************************************************/
 /** <!--********************************************************************-->
  *
- * @fn node *ISVdoInsertShapeVariables( node *syntax_tree)
+ * @fn node *ISAAdoInsertShapeVariables( node *syntax_tree)
  *
  *****************************************************************************/
 node *
-ISVdoInsertShapeVariables (node *syntax_tree)
+ISAAdoInsertShapeVariables (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("ISVdoInsertShapeVariables");
+    DBUG_ENTER ("ISAAdoInsertShapeVariables");
 
     info = MakeInfo ();
 
     INFO_TRAVSCOPE (info) = TS_module;
-    TRAVpush (TR_isv);
+    TRAVpush (TR_isaa);
     syntax_tree = TRAVdo (syntax_tree, info);
     TRAVpop ();
 
@@ -137,20 +137,20 @@ ISVdoInsertShapeVariables (node *syntax_tree)
 
 /** <!--********************************************************************-->
  *
- * @fn node *ISVdoInsertShapeVariablesOneFundef( node *fundef)
+ * @fn node *ISAAdoInsertShapeVariablesOneFundef( node *fundef)
  *
  *****************************************************************************/
 node *
-ISVdoInsertShapeVariablesOneFundef (node *fundef)
+ISAAdoInsertShapeVariablesOneFundef (node *fundef)
 {
     info *info;
 
-    DBUG_ENTER ("ISVdoInsertShapeVariablesOneFundef");
+    DBUG_ENTER ("ISAAdoInsertShapeVariablesOneFundef");
 
     info = MakeInfo ();
 
     INFO_TRAVSCOPE (info) = TS_fundef;
-    TRAVpush (TR_isv);
+    TRAVpush (TR_isaa);
     fundef = TRAVdo (fundef, info);
     TRAVpop ();
 
@@ -316,13 +316,13 @@ RemoveAvisSubst (node *fundef)
 
 /** <!--********************************************************************-->
  *
- * @fn node *ISVfundef( node *arg_node, info *arg_info)
+ * @fn node *ISAAfundef( node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-ISVfundef (node *arg_node, info *arg_info)
+ISAAfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ISVfundef");
+    DBUG_ENTER ("ISAAfundef");
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         INFO_FUNDEF (arg_info) = arg_node;
@@ -371,13 +371,13 @@ ISVfundef (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *ISVavis( node *arg_node, info *arg_info)
+ * @fn node *ISAAavis( node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-ISVavis (node *arg_node, info *arg_info)
+ISAAavis (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ISVavis");
+    DBUG_ENTER ("ISAAavis");
 
     AVIS_SUBST (arg_node) = NULL;
 
@@ -386,13 +386,13 @@ ISVavis (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *ISVblock( node *arg_node, info *arg_info)
+ * @fn node *ISAAblock( node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-ISVblock (node *arg_node, info *arg_info)
+ISAAblock (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ISVblock");
+    DBUG_ENTER ("ISAAblock");
 
     BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
 
@@ -401,16 +401,16 @@ ISVblock (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *ISVassign( node *arg_node, info *arg_info)
+ * @fn node *ISAAassign( node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-ISVassign (node *arg_node, info *arg_info)
+ISAAassign (node *arg_node, info *arg_info)
 {
     node *preassign;
     node *postassign;
 
-    DBUG_ENTER ("ISVassign");
+    DBUG_ENTER ("ISAAassign");
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
@@ -437,13 +437,13 @@ ISVassign (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *ISVlet( node *arg_node, info *arg_info)
+ * @fn node *ISAAlet( node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-ISVlet (node *arg_node, info *arg_info)
+ISAAlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ISVlet");
+    DBUG_ENTER ("ISAAlet");
 
     INFO_LHS (arg_info) = LET_IDS (arg_node);
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
@@ -460,15 +460,15 @@ ISVlet (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *ISVids( node *arg_node, info *arg_info)
+ * @fn node *ISAAids( node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-ISVids (node *arg_node, info *arg_info)
+ISAAids (node *arg_node, info *arg_info)
 {
     node *avis;
 
-    DBUG_ENTER ("ISVids");
+    DBUG_ENTER ("ISAAids");
 
     avis = IDS_AVIS (arg_node);
 
@@ -516,15 +516,15 @@ ISVids (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *ISVwith( node *arg_node, info *arg_info)
+ * @fn node *ISAAwith( node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-ISVwith (node *arg_node, info *arg_info)
+ISAAwith (node *arg_node, info *arg_info)
 {
     node *oldwithid;
 
-    DBUG_ENTER ("ISVwith");
+    DBUG_ENTER ("ISAAwith");
 
     oldwithid = INFO_WITHID (arg_info);
     INFO_WITHID (arg_info) = WITH_WITHID (arg_node);
@@ -540,15 +540,15 @@ ISVwith (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *ISVpart( node *arg_node, info *arg_info)
+ * @fn node *ISAApart( node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-ISVpart (node *arg_node, info *arg_info)
+ISAApart (node *arg_node, info *arg_info)
 {
     node *ids;
 
-    DBUG_ENTER ("ISVpart");
+    DBUG_ENTER ("ISAApart");
 
     PART_GENERATOR (arg_node) = TRAVdo (PART_GENERATOR (arg_node), arg_info);
 
@@ -594,13 +594,13 @@ ISVpart (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *ISVcode( node *arg_node, info *arg_info)
+ * @fn node *ISAAcode( node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-ISVcode (node *arg_node, info *arg_info)
+ISAAcode (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ISVcode");
+    DBUG_ENTER ("ISAAcode");
 
     CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
     CODE_CEXPRS (arg_node) = TRAVdo (CODE_CEXPRS (arg_node), arg_info);
@@ -616,13 +616,13 @@ ISVcode (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *ISVid( node *arg_node, info *arg_info)
+ * @fn node *ISAAid( node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-ISVid (node *arg_node, info *arg_info)
+ISAAid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ISVid");
+    DBUG_ENTER ("ISAAid");
 
     if (AVIS_SUBST (ID_AVIS (arg_node)) != NULL) {
         ID_AVIS (arg_node) = AVIS_SUBST (ID_AVIS (arg_node));
@@ -633,13 +633,13 @@ ISVid (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *ISVcond( node *arg_node, info *arg_info)
+ * @fn node *ISAAcond( node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-ISVcond (node *arg_node, info *arg_info)
+ISAAcond (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ISVcond");
+    DBUG_ENTER ("ISAAcond");
 
     switch (INFO_TRAVMODE (arg_info)) {
     case TM_then:
@@ -673,13 +673,13 @@ ISVcond (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *ISVfuncond( node *arg_node, info *arg_info)
+ * @fn node *ISAAfuncond( node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-ISVfuncond (node *arg_node, info *arg_info)
+ISAAfuncond (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ISVfuncond");
+    DBUG_ENTER ("ISAAfuncond");
 
     switch (INFO_TRAVMODE (arg_info)) {
     case TM_then:

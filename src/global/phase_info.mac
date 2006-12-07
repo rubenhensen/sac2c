@@ -206,7 +206,7 @@ SUBPHASE (dfr, "dfr", "Removing dead functions", DFRdoDeadFunctionRemoval)
 
 SUBPHASE (dcr, "dcr", "Removing dead code", DCRdoDeadCodeRemovalModule)
 
-SUBPHASE (isv, "isv", "Inserting shape variables", ISVdoInsertShapeVariables)
+SUBPHASE (isaa, "isaa", "Inserting symbolic array attributes", ISAAdoInsertShapeVariables)
 
 SUBPHASE (intraopt, "cyc", "Applying intra-functional optimizations",
           OPTdoIntraFunctionalOptimizations)
@@ -214,8 +214,8 @@ SUBPHASE (intraopt, "cyc", "Applying intra-functional optimizations",
 SUBPHASE (cse, "cse", "Applying common subexpression elimination",
           CSEdoCommonSubexpressionElimination)
 
-SUBPHASE (isvcyc, "isvcyc", "Inserting shape variables",
-          ISVdoInsertShapeVariablesOneFundef)
+SUBPHASE (saacyc, "saacyc", "Inserting symbolic array attributes",
+          ISAAdoInsertShapeVariablesOneFundef)
 
 SUBPHASE (ili, "ili", "Infering loop invariant variables", ILIdoInferLoopInvariants)
 
@@ -321,7 +321,8 @@ SUBPHASE (dcr3, "dcr3", "Removing dead code", DCRdoDeadCodeRemovalModule)
 SUBPHASE (wlpg2, "wlpg2", "Generating full with-loop partitions",
           WLPGdoWlPartitionGeneration)
 
-SUBPHASE (isv2, "isv2", "Inserting shape variables", ISVdoInsertShapeVariables)
+SUBPHASE (isaa2, "isaa2", "Inserting symbolic array attributes",
+          ISAAdoInsertShapeVariables)
 
 SUBPHASE (svprfunr, "svprfunr", "Applying prf unrolling", UPRFdoUnrollPRFsModule)
 

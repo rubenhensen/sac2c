@@ -8,7 +8,7 @@
  *
  * Utility traversal to provide expressions for computing array shapes.
  *
- * @ingroup isv
+ * @ingroup isaa
  *
  * @{
  *
