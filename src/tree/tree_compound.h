@@ -59,6 +59,7 @@ specific implementation of a function should remain with the source code.
 
 extern int TCgetShpsegLength (int dims, shpseg *shape);
 extern shpseg *TCdiffShpseg (int dim, shpseg *shape1, shpseg *shape2);
+extern bool ShapeVarsMatch (node *avis1, node *avis2);
 extern bool TCequalShpseg (int dim, shpseg *shape2, shpseg *shape1);
 extern shpseg *TCmergeShpseg (shpseg *first, int dim1, shpseg *second, int dim2);
 

@@ -31,7 +31,6 @@
 #include "new_types.h"
 #include "type_utils.h"
 #include "index_infer.h"
-#include "wrci.h"
 
 /*
  * INFO structure

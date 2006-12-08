@@ -163,22 +163,6 @@ TypeMatch (ntype *t1, ntype *t2)
     DBUG_RETURN (res);
 }
 
-bool
-ShapeVarsMatch (node *a1, node *a2)
-{
-    bool res;
-
-    DBUG_ENTER ("ShapeVarsMatch");
-
-    res = ((TYeqTypes (TYgetScalar (AVIS_TYPE (a1)), TYgetScalar (AVIS_TYPE (a2))))
-           && (AVIS_DIM (a1) != NULL) && (AVIS_DIM (a2) != NULL)
-           && (AVIS_SHAPE (a1) != NULL) && (AVIS_SHAPE (a2) != NULL)
-           && (CMPTdoCompareTree (AVIS_DIM (a1), AVIS_DIM (a2)) == CMPT_EQ)
-           && (CMPTdoCompareTree (AVIS_SHAPE (a1), AVIS_SHAPE (a2)) == CMPT_EQ));
-
-    DBUG_RETURN (res);
-}
-
 static node *
 MatchingRCs (node *rcs, node *ids, node *modarray)
 {

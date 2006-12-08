@@ -4,6 +4,7 @@
 
 #include "tree_basic.h"
 #include "tree_compound.h"
+#include "compare_tree.h"
 #include "DupTree.h"
 #include "shape.h"
 #include "dbug.h"
@@ -105,6 +106,33 @@ TCdiffShpseg (int dim, shpseg *shape1, shpseg *shape2)
     }
 
     DBUG_RETURN (shape_diff);
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   bool ShapeVarsMatch( node *avis1, node *avis2)
+ *
+ * description:
+ *   Compares the shapes of two arrays, based on their N_avis SAA shapes.
+ *
+ *
+ *****************************************************************************/
+
+bool
+ShapeVarsMatch (node *avis1, node *avis2)
+{
+    bool res;
+
+    DBUG_ENTER ("ShapeVarsMatch");
+
+    res = ((TYeqTypes (TYgetScalar (AVIS_TYPE (avis1)), TYgetScalar (AVIS_TYPE (avis2))))
+           && (AVIS_DIM (avis1) != NULL) && (AVIS_DIM (avis2) != NULL)
+           && (AVIS_SHAPE (avis1) != NULL) && (AVIS_SHAPE (avis2) != NULL)
+           && (CMPTdoCompareTree (AVIS_DIM (avis1), AVIS_DIM (avis2)) == CMPT_EQ)
+           && (CMPTdoCompareTree (AVIS_SHAPE (avis1), AVIS_SHAPE (avis2)) == CMPT_EQ));
+
+    DBUG_RETURN (res);
 }
 
 /*****************************************************************************

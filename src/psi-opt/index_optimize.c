@@ -14,7 +14,6 @@
 #include "shape.h"
 #include "constants.h"
 #include "makedimexpr.h"
-#include "wrci.h"
 
 /**
  * forward declarations

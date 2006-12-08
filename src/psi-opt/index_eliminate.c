@@ -18,7 +18,6 @@
 #include "type_utils.h"
 #include "free.h"
 #include "index_infer.h"
-#include "wrci.h"
 #include "makedimexpr.h"
 
 /*
