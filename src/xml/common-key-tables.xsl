@@ -1,22 +1,22 @@
 <?xml version="1.0"?>
+
 <!--
-  $Log$
-  Revision 1.4  2004/12/05 17:50:57  sah
-  extended checks
-
-  Revision 1.3  2004/11/29 13:35:39  sah
-  added nodes key
-
-  Revision 1.2  2004/11/24 00:25:04  sah
-  added another key
-  ,
-
-  Revision 1.1  2004/11/23 11:34:56  sah
-  Initial revision
-
-
- 
+ ***********************************************************************
+ *                                                                     *
+ *                      Copyright (c) 1994-2007                        *
+ *         SAC Research Foundation (http://www.sac-home.org/)          *
+ *                                                                     *
+ *                        All Rights Reserved                          *
+ *                                                                     *
+ *   The copyright holder makes no warranty of any kind with respect   *
+ *   to this product and explicitly disclaims any implied warranties   *
+ *   of merchantability or fitness for any particular purpose.         *
+ *                                                                     *
+ ***********************************************************************
  -->
+
+<!--  $Id$  -->
+
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
 
 <!-- as we make lookups to attributetypes quite often, we create a key -->

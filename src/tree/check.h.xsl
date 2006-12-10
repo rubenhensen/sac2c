@@ -1,10 +1,23 @@
 <?xml version="1.0"?>
 
 <!--
-  $Id$
--->
+ ***********************************************************************
+ *                                                                     *
+ *                      Copyright (c) 1994-2007                        *
+ *         SAC Research Foundation (http://www.sac-home.org/)          *
+ *                                                                     *
+ *                        All Rights Reserved                          *
+ *                                                                     *
+ *   The copyright holder makes no warranty of any kind with respect   *
+ *   to this product and explicitly disclaims any implied warranties   *
+ *   of merchantability or fitness for any particular purpose.         *
+ *                                                                     *
+ ***********************************************************************
+ -->
 
-  <!-- This stylesheet generates a check.h file implementing all functions needed to check a node -->
+<!--  $Id$  -->
+
+<!-- This stylesheet generates a check.h file implementing all functions needed to check a node -->
 
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
 version="1.0">

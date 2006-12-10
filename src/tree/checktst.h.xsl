@@ -1,16 +1,23 @@
 <?xml version="1.0"?>
 
 <!--
-  $Log$
-  Revision 1.1  2005/06/06 10:15:14  jhb
-  Initial revision
+ ***********************************************************************
+ *                                                                     *
+ *                      Copyright (c) 1994-2007                        *
+ *         SAC Research Foundation (http://www.sac-home.org/)          *
+ *                                                                     *
+ *                        All Rights Reserved                          *
+ *                                                                     *
+ *   The copyright holder makes no warranty of any kind with respect   *
+ *   to this product and explicitly disclaims any implied warranties   *
+ *   of merchantability or fitness for any particular purpose.         *
+ *                                                                     *
+ ***********************************************************************
+ -->
 
-  Revision 1.1 2004/09/29 15:15:00 jhb
-  Initial revision
+<!--  $Id$  -->
 
--->
-
-  <!-- This stylesheet generates a checktst.h file implementing all functions needed to check a node -->
+<!-- This stylesheet generates a checktst.h file implementing all functions needed to check a node -->
 
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
 version="1.0">

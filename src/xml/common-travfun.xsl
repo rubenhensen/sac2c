@@ -1,18 +1,25 @@
 <?xml version="1.0"?>
+
 <!--
-  $Log$
-  Revision 1.2  2004/11/24 00:27:17  sah
-  ...
+ ***********************************************************************
+ *                                                                     *
+ *                      Copyright (c) 1994-2007                        *
+ *         SAC Research Foundation (http://www.sac-home.org/)          *
+ *                                                                     *
+ *                        All Rights Reserved                          *
+ *                                                                     *
+ *   The copyright holder makes no warranty of any kind with respect   *
+ *   to this product and explicitly disclaims any implied warranties   *
+ *   of merchantability or fitness for any particular purpose.         *
+ *                                                                     *
+ ***********************************************************************
+ -->
 
-  Revision 1.1  2004/11/23 11:36:55  sah
-  Initial revision
+<!--  $Id$  -->
 
-
-
--->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
 version="1.0">
-<xsl:import href="../xml/common-c-code.xsl"/>
+<xsl:import href="../xml/common_c_code.xsl"/>
 
 <xsl:output method="text" indent="no"/>
 <xsl:strip-space elements="*"/>

@@ -1,15 +1,29 @@
 <?xml version="1.0"?>
+
 <!--
-  $Id$
+ ***********************************************************************
+ *                                                                     *
+ *                      Copyright (c) 1994-2007                        *
+ *         SAC Research Foundation (http://www.sac-home.org/)          *
+ *                                                                     *
+ *                        All Rights Reserved                          *
+ *                                                                     *
+ *   The copyright holder makes no warranty of any kind with respect   *
+ *   to this product and explicitly disclaims any implied warranties   *
+ *   of merchantability or fitness for any particular purpose.         *
+ *                                                                     *
+ ***********************************************************************
  -->
+
+<!--  $Id$  -->
 
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
 version="1.0">
 
-<xsl:import href="../xml/common-c-code.xsl"/>
-<xsl:import href="../xml/common-name-to-nodeenum.xsl"/>
-<xsl:import href="../xml/common-node-access.xsl"/>
-<xsl:import href="../xml/common-make-assertion.xsl"/>
+<xsl:import href="../xml/common_c_code.xsl"/>
+<xsl:import href="../xml/common_name_to_nodeenum.xsl"/>
+<xsl:import href="../xml/common_node_access.xsl"/>
+<xsl:import href="../xml/common_make_assertion.xsl"/>
 
 <xsl:output method="text" indent="no"/>
 <xsl:strip-space elements="*"/>

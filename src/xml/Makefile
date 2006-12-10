@@ -14,7 +14,7 @@ include $(PROJECT_ROOT)/Makefile.Config
 all: ast.html
 
 check:
-	$(XSLTENGINE) check-integrity.xsl ast.xml
+	$(XSLTENGINE) check_integrity.xsl ast.xml
 
 ast.html: ast2html.xsl ast.xml 
 	$(XSLTENGINE) ast2html.xsl ast.xml > ast.html

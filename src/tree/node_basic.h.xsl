@@ -1,27 +1,31 @@
 <?xml version="1.0"?>
+
 <!--
-  $Log$
-  Revision 1.3  2005/05/20 18:08:35  sah
-  added _SAC_AST_VERSION_ define
+ ***********************************************************************
+ *                                                                     *
+ *                      Copyright (c) 1994-2007                        *
+ *         SAC Research Foundation (http://www.sac-home.org/)          *
+ *                                                                     *
+ *                        All Rights Reserved                          *
+ *                                                                     *
+ *   The copyright holder makes no warranty of any kind with respect   *
+ *   to this product and explicitly disclaims any implied warranties   *
+ *   of merchantability or fitness for any particular purpose.         *
+ *                                                                     *
+ ***********************************************************************
+ -->
 
-  Revision 1.2  2004/11/23 13:14:02  ktr
-  removed node_compat.h
+<!--  $Id$  -->
 
-  Revision 1.1  2004/11/23 11:30:50  sah
-  Initial revision
-
-
-
--->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
 version="1.0">
 
-<xsl:import href="../xml/common-key-tables.xsl"/>
-<xsl:import href="../xml/common-accessor-macros.xsl"/>
-<xsl:import href="../xml/common-make-head.xsl"/>
-<xsl:import href="../xml/common-make-head-checkmem.xsl"/>
-<xsl:import href="../xml/common-travfun.xsl"/>
-<xsl:import href="../xml/common-name-to-nodeenum.xsl"/>
+<xsl:import href="../xml/common_key_tables.xsl"/>
+<xsl:import href="../xml/common_accessor_macros.xsl"/>
+<xsl:import href="../xml/common_make_head.xsl"/>
+<xsl:import href="../xml/common_make_head_checkmem.xsl"/>
+<xsl:import href="../xml/common_travfun.xsl"/>
+<xsl:import href="../xml/common_name_to_nodeenum.xsl"/>
 
 <xsl:output method="text" indent="no"/>
 <xsl:strip-space elements="*"/>
