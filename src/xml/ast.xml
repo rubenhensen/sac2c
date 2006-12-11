@@ -5632,6 +5632,7 @@ identifier (N_id) for AUD arrays.
               </phases>
             </target>
           </targets>
+          <description>Bound may be N_num (e.g., [0]), or an N_array.</description>
         </son>
         <son name="Bound2">
           <targets>
@@ -5648,6 +5649,7 @@ identifier (N_id) for AUD arrays.
               </phases>
             </target>
           </targets>
+          <description>Bound may be N_num (e.g., [0]), or an N_array.</description>
         </son>
         <son name="Step">
           <targets>
