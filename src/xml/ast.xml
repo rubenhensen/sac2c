@@ -4778,10 +4778,10 @@ identifier (N_id) for AUD arrays.
         </son>
         <son name="Shape" default="NULL">
           <description>
-	  An expression (N_exprs) specifying the array's ahape
-	  as a symbolic array attribute. The expression is
-	  an array of integer constants (N_num) for AKV and AKS arrays,
-	  a mixed array of integer constants and identifiers (N_num N_id)
+	  An array (N_array) specifying the array's shape
+	  as a symbolic array attribute. The array is
+	  comprised of integer constants (N_num) for AKV and AKS arrays,
+	  a mixed array of integer constants and identifiers (N_num, N_id)
 	  for AKD arrays with partial shape information, or an
 	  identifier (N_id) for AUD arrays.
 
