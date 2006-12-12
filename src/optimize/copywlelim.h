@@ -21,6 +21,6 @@ extern node *CWLElet (node *arg_node, info *arg_info);
 extern node *CWLEcode (node *arg_node, info *arg_info);
 extern node *CWLEassign (node *arg_node, info *arg_info);
 extern node *CWLEids (node *arg_node, info *arg_info);
-extern node *CWLEargs (node *arg_node, info *arg_info);
+extern node *CWLEarg (node *arg_node, info *arg_info);
 
 #endif /* _SAC_CWLE_TARV_H_ */
