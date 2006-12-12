@@ -197,15 +197,15 @@ CWLEfundef (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *CWLEargs( node *arg_node, info *arg_info)
+ * @fn node *CWLEarg( node *arg_node, info *arg_info)
  *
  * @brief for setting the bitmask in our DFM.
  *
  *****************************************************************************/
 node *
-CWLEargs (node *arg_node, info *arg_info)
+CWLEarg (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CWLEargs");
+    DBUG_ENTER ("CWLEarg");
 
     if (NULL != ARG_NEXT (arg_node)) {
         ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
