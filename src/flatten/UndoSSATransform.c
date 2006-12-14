@@ -427,12 +427,12 @@ IdGivenByFillOperation (node *idavis)
         case N_ap: {
             node *rets = FUNDEF_RETS (AP_FUNDEF (expr));
 
-            while (IDS_AVIS (ids) != idavis) {
+            while ((IDS_AVIS (ids) != idavis) && (rets != NULL)) {
                 ids = IDS_NEXT (ids);
                 rets = RET_NEXT (rets);
             }
 
-            if (RET_HASLINKSIGNINFO (rets)) {
+            if ((rets != NULL) && (RET_HASLINKSIGNINFO (rets))) {
                 node *args = FUNDEF_ARGS (AP_FUNDEF (expr));
                 while (args != NULL) {
                     if (ARG_HASLINKSIGNINFO (args)
