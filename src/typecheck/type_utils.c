@@ -642,7 +642,8 @@ TUsignatureMatches (node *formal, ntype *actual_prod_type)
         DBUG_EXECUTE ("TU", tmp_str = ILIBfree (tmp_str);
                       tmp2_str = ILIBfree (tmp2_str););
 
-        if (!TYleTypes (actual_type, formal_type)) {
+        if (!(TYleTypes (actual_type, formal_type)
+              || (TYgetSimpleType (TYgetScalar (formal_type)) == T_unknown))) {
             match = FALSE;
             break;
         }

@@ -9,10 +9,12 @@
 #include "extend_lac_funs.h"
 
 #include "dbug.h"
+#include "DupTree.h"
 #include "internal_lib.h"
 #include "free.h"
 #include "namespaces.h"
 #include "deserialize.h"
+#include "new_types.h"
 
 #include "traverse.h"
 #include "tree_basic.h"
@@ -93,10 +95,32 @@ FreeInfo (info *info)
 static node *
 SearchPredicate (node *ap)
 {
+    node *pred_avis, *formal_args, *act_args, *assign;
+
     DBUG_ENTER ("SearchPredicate");
 
-    DBUG_RETURN (
-      ID_AVIS (COND_COND (ASSIGN_INSTR (BLOCK_INSTR (FUNDEF_BODY (AP_FUNDEF (ap)))))));
+    DBUG_ASSERT (NODE_TYPE (AP_FUNDEF (ap)) == N_fundef,
+                 "AP_FUNDEF does not point to a fundef node");
+    DBUG_ASSERT (FUNDEF_ISCONDFUN (AP_FUNDEF (ap)) || FUNDEF_ISDOFUN (AP_FUNDEF (ap)),
+                 "AP_FUNDEF does not point to a LaC fun fundef node");
+    DBUG_ASSERT (FUNDEF_BODY (AP_FUNDEF (ap)) != NULL,
+                 "AP_FUNDEF points to a fundef node without body");
+    DBUG_ASSERT (NODE_TYPE (FUNDEF_BODY (AP_FUNDEF (ap))) == N_block,
+                 "AP_FUNDEF does not point to a fundef with a block node");
+
+    assign = BLOCK_INSTR (FUNDEF_BODY (AP_FUNDEF (ap)));
+
+    pred_avis = ID_AVIS (COND_COND (ASSIGN_INSTR (assign)));
+
+    formal_args = FUNDEF_ARGS (AP_FUNDEF (ap));
+    act_args = AP_ARGS (ap);
+
+    while ((formal_args != NULL) && (ARG_AVIS (formal_args) != pred_avis)) {
+        formal_args = ARG_NEXT (formal_args);
+        act_args = EXPRS_NEXT (act_args);
+    }
+
+    DBUG_RETURN (ID_AVIS (EXPRS_EXPR (act_args)));
 }
 
 /** <!--********************************************************************-->
@@ -112,7 +136,7 @@ CreateTmpVar (char *name, info *arg_info)
 
     DBUG_ENTER ("CreateTmpVar");
 
-    avis = TBmakeAvis (ILIBtmpVarName (name), NULL);
+    avis = TBmakeAvis (ILIBtmpVarName (name), TYmakeAUD (TYmakeSimpleType (T_unknown)));
     INFO_VARDECS (arg_info) = TBmakeVardec (avis, INFO_VARDECS (arg_info));
 
     DBUG_RETURN (avis);
@@ -146,7 +170,8 @@ CreateLacFunCallAssignments (node *ap, node *pred_avis, node *result_avis,
 {
     node *assigns = NULL;
     node *exprs, *arg_avis, *new_arg_avis, *new_arg_expr, *loc_args;
-    node *arg, *args, *act_args;
+    node *arg, *args = NULL, *act_args;
+    node *fundef, *result_expr;
     DBUG_ENTER ("CreateLacFunCallAssignments");
 
     /**
@@ -188,21 +213,20 @@ CreateLacFunCallAssignments (node *ap, node *pred_avis, node *result_avis,
                                                            TBmakeExprs (TBmakeId (
                                                                           shape_avis),
                                                                         NULL))));
-                assigns = CreateLetAssign (new_arg_avis,
-                                           DSdispatchFunCall (NSgetNamespace ("sac2c"),
-                                                              "adjustLacFunParamsReshape",
-                                                              loc_args),
-                                           assigns);
+                fundef = DSdispatchFunCall (NSgetNamespace ("sac2c"),
+                                            "adjustLacFunParamsReshape", loc_args);
+                DBUG_ASSERT (fundef != NULL,
+                             "sac2c::adjustLacFunParamsReshape not found");
+                assigns = CreateLetAssign (new_arg_avis, fundef, assigns);
             } else {
                 loc_args
                   = TBmakeExprs (TBmakeId (pred_avis),
                                  TBmakeExprs (TBmakeId (arg_avis),
                                               TBmakeExprs (TBmakeId (idx_avis), NULL)));
-                assigns
-                  = CreateLetAssign (new_arg_avis,
-                                     DSdispatchFunCall (NSgetNamespace ("sac2c"),
-                                                        "adjustLacFunParams", loc_args),
-                                     assigns);
+                fundef = DSdispatchFunCall (NSgetNamespace ("sac2c"),
+                                            "adjustLacFunParams", loc_args);
+                DBUG_ASSERT (fundef != NULL, "sac2c::adjustLacFunParams not found");
+                assigns = CreateLetAssign (new_arg_avis, fundef, assigns);
             }
         }
 
@@ -224,9 +248,11 @@ CreateLacFunCallAssignments (node *ap, node *pred_avis, node *result_avis,
      *
      * result = LaCfun( pred', arg1', ..., argn');
      */
-    assigns
-      = TCappendAssign (assigns, CreateLetAssign (result_avis,
-                                                  TBmakeAp (AP_FUNDEF (ap), args), NULL));
+    result_expr = DUPdoDupTree (ap);
+    AP_ARGS (result_expr) = FREEdoFreeTree (AP_ARGS (result_expr));
+    AP_ARGS (result_expr) = args;
+
+    assigns = TCappendAssign (assigns, CreateLetAssign (result_avis, result_expr, NULL));
 
     DBUG_RETURN (assigns);
 }
@@ -304,13 +330,16 @@ CreateWithLoop (node *ap, info *arg_info)
      *   } : code;
      * } : genarray( shape, default);
      */
-    code_expr = TBmakeCode (TBmakeBlock (code_expr_ass, NULL), TBmakeId (code_avis));
+    code_expr = TBmakeCode (TBmakeBlock (code_expr_ass, NULL),
+                            TBmakeExprs (TBmakeId (code_avis), NULL));
+    CODE_USED (code_expr)++;
 
-    with = TBmakeWith (TBmakePart (code_expr, TBmakeWithid (TBmakeId (iv_avis), NULL),
-                                   TBmakeGenerator (F_le, F_lt, TBmakeId (idx_avis),
-                                                    TBmakeId (shape_avis), NULL, NULL)),
-                       code_expr,
-                       TBmakeGenarray (TBmakeId (shape_avis), TBmakeId (default_avis)));
+    with
+      = TBmakeWith (TBmakePart (code_expr, TBmakeWithid (TBmakeIds (iv_avis, NULL), NULL),
+                                TBmakeGenerator (F_le, F_lt, TBmakeId (idx_avis),
+                                                 TBmakeId (shape_avis), NULL, NULL)),
+                    code_expr,
+                    TBmakeGenarray (TBmakeId (shape_avis), TBmakeId (default_avis)));
     DBUG_RETURN (with);
 }
 
@@ -357,15 +386,21 @@ ELFfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ELFfundef");
 
-    if (FUNDEF_BODY (arg_node) != NULL) {
-        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+    if (!NSequals (FUNDEF_NS (arg_node), NSgetNamespace ("sac2c"))) {
+        if (FUNDEF_BODY (arg_node) != NULL) {
+            FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+        }
+
+        if (INFO_VARDECS (arg_info) != NULL) {
+            BLOCK_VARDEC (FUNDEF_BODY (arg_node))
+              = TCappendVardec (INFO_VARDECS (arg_info),
+                                BLOCK_VARDEC (FUNDEF_BODY (arg_node)));
+            INFO_VARDECS (arg_info) = NULL;
+        }
     }
 
-    if (INFO_VARDECS (arg_info) != NULL) {
-        BLOCK_VARDEC (FUNDEF_BODY (arg_node))
-          = TCappendVardec (INFO_VARDECS (arg_info),
-                            BLOCK_VARDEC (FUNDEF_BODY (arg_node)));
-        INFO_VARDECS (arg_info) = NULL;
+    if (FUNDEF_NEXT (arg_node) != NULL) {
+        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -413,11 +448,12 @@ ELFap (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("ELFap");
 
-    if (!AP_ISRECURSIVEDOFUNCALL (arg_node) && !FUNDEF_ISCONDFUN (AP_FUNDEF (arg_node))
-        && !FUNDEF_ISDOFUN (AP_FUNDEF (arg_node))) {
+    if (FUNDEF_ISCONDFUN (AP_FUNDEF (arg_node))) {
         with = CreateWithLoop (arg_node, arg_info);
         arg_node = FREEdoFreeTree (arg_node);
         arg_node = with;
+    } else if (FUNDEF_ISDOFUN (AP_FUNDEF (arg_node))
+               && !AP_ISRECURSIVEDOFUNCALL (arg_node)) {
     }
 
     DBUG_RETURN (arg_node);

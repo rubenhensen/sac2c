@@ -135,6 +135,8 @@ SUBPHASE (ewt, "ewt", "Extending dispatch information", EWTdoExtendWrapperTypes)
 
 SUBPHASE (lac2fun, "l2f", "Eliminating loops and conditionals", L2FdoLac2Fun)
 
+SUBPHASE (elf, "elf", "Extending LaC funs", ELFdoExtendLacFuns)
+
 SUBPHASE (ssa, "ssa", "Establishing static single assignment form",
           SSATdoTransformAllowGOs)
 

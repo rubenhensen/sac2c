@@ -1,6 +1,6 @@
 module sac2c;
 
-provide {sel, zero, eq};
+provide {sel, zero, eq, adjustLacFunParams, adjustLacFunParamsReshape};
 
 #define BUILT_IN( fun)    \
 fun( int)                 \
@@ -60,4 +60,17 @@ bool eq( a[*] A, a[*] B)                                             \
 }
 
 BUILT_IN( EQ)
+
+
+int[*] adjustLacFunParamsReshape( bool[*] p, int[*] i, int[.] iv, int[.] shp)
+{
+  return( ( _or_(_eq_( _dim_(p), 0), _eq_(_dim_(i), 0)) ?
+            i : _reshape_( shp, i)[iv]));
+}
+
+int[*] adjustLacFunParams( bool[*] p, int[*] i, int[.] iv)
+{
+  return( ( _or_(_eq_( _dim_(p), 0), _eq_(_dim_(i), 0)) ?
+            i : i[iv]));
+}
 

@@ -39,6 +39,8 @@ ASFdoAddSpecialFunctions (node *syntaxtree)
         DSaddSymbolByName ("sel", SET_wrapperhead, "sac2c");
         DSaddSymbolByName ("zero", SET_wrapperhead, "sac2c");
         DSaddSymbolByName ("eq", SET_wrapperhead, "sac2c");
+        DSaddSymbolByName ("adjustLacFunParams", SET_wrapperhead, "sac2c");
+        DSaddSymbolByName ("adjustLacFunParamsReshape", SET_wrapperhead, "sac2c");
     } else {
         CTInote ("compiling module `sac2c', no prelude functions loaded");
     }
