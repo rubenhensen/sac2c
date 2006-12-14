@@ -117,7 +117,7 @@ ETCprf (node *arg_node, info *arg_info)
         }
         break;
 
-    case F_dtype_conv:
+    case F_saabind:
         if (CompareDTypes (ID_AVIS (PRF_ARG3 (arg_node)), PRF_ARG1 (arg_node),
                            PRF_ARG2 (arg_node))) {
             node *res = PRF_ARG3 (arg_node);

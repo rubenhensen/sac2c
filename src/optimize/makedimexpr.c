@@ -347,7 +347,7 @@ MDEprf (node *arg_node, info *arg_info)
                               DUPdoDupNode (PRF_ARG1 (arg_node)));
         break;
 
-    case F_dtype_conv:
+    case F_saabind:
         rhsnode = DUPdoDupNode (PRF_ARG1 (arg_node));
         break;
 

@@ -218,7 +218,7 @@ MakeDTProxy (node *avis, node *postass, info *arg_info)
 
         postass
           = TBmakeAssign (TBmakeLet (TBmakeIds (proxyavis, NULL),
-                                     TCmakePrf3 (F_dtype_conv, TBmakeId (dimavis),
+                                     TCmakePrf3 (F_saabind, TBmakeId (dimavis),
                                                  TBmakeId (shpavis), TBmakeId (avis))),
                           postass);
         AVIS_SSAASSIGN (proxyavis) = postass;

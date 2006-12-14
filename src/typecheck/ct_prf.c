@@ -315,18 +315,18 @@ NTCCTprf_type_conv (te_info *info, ntype *args)
 
 /** <!--********************************************************************-->
  *
- * @fn ntype *NTCCTprf_dtype_conv( te_info *info, ntype *args)
+ * @fn ntype *NTCCTprf_saabind( te_info *info, ntype *args)
  *
  *****************************************************************************/
 ntype *
-NTCCTprf_dtype_conv (te_info *info, ntype *args)
+NTCCTprf_saabind (te_info *info, ntype *args)
 {
     ntype *dim;
     ntype *shape;
     ntype *type;
     ntype *res;
 
-    DBUG_ENTER ("NTCCTprf_dtype_conv");
+    DBUG_ENTER ("NTCCTprf_saabind");
 
     dim = TYgetProductMember (args, 0);
     shape = TYgetProductMember (args, 1);

@@ -228,7 +228,7 @@ ESVprf (node *arg_node, info *arg_info)
 
     arg_node = TRAVcont (arg_node, arg_info);
 
-    if (PRF_PRF (arg_node) == F_dtype_conv) {
+    if (PRF_PRF (arg_node) == F_saabind) {
         AVIS_SUBST (IDS_AVIS (INFO_LHS (arg_info))) = ID_AVIS (PRF_ARG3 (arg_node));
     }
 

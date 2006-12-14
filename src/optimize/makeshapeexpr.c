@@ -504,7 +504,7 @@ MSEprf (node *arg_node, info *arg_info)
         rhsnode = TCmakePrf2 (F_add_AxA, TBmakeId (v1savis), TBmakeId (v2savis));
     } break;
 
-    case F_dtype_conv:
+    case F_saabind:
         rhsnode = DUPdoDupNode (PRF_ARG2 (arg_node));
         break;
 

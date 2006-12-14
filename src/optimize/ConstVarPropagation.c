@@ -295,7 +295,7 @@ CVPprf (node *arg_node, info *arg_info)
         }
         break;
 
-    case F_dtype_conv:
+    case F_saabind:
         INFO_PROPMODE (arg_info) = PROP_scalarconst | PROP_variable;
         PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
         INFO_PROPMODE (arg_info) = PROP_scalarconst | PROP_variable;
