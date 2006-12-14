@@ -6,6 +6,7 @@
 
 #include "phase.h"
 #include "dbug.h"
+#include "globals.h"
 
 node *
 PTCdoPreTypecheck (node *syntax_tree)
@@ -23,7 +24,9 @@ PTCdoPreTypecheck (node *syntax_tree)
     syntax_tree = PHrunCompilerSubPhase (SUBPH_rra, syntax_tree);
     syntax_tree = PHrunCompilerSubPhase (SUBPH_ewt, syntax_tree);
     syntax_tree = PHrunCompilerSubPhase (SUBPH_lac2fun, syntax_tree);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_elf, syntax_tree);
+    if (global.elf) {
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_elf, syntax_tree);
+    }
     syntax_tree = PHrunCompilerSubPhase (SUBPH_ssa, syntax_tree);
 
     DBUG_RETURN (syntax_tree);

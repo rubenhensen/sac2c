@@ -146,6 +146,15 @@ GLOBAL (bool, dynamic_shapes, FALSE)
  */
 
 /*
+ * Extended LaC fun option
+ */
+
+GLOBAL (bool, elf, FALSE)
+/*
+ * Extended LaC fun option disabled per default
+ */
+
+/*
  * SIMD options
  */
 

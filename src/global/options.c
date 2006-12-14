@@ -312,6 +312,8 @@ OPTanalyseCommandline (node *syntax_tree)
      * Options starting with eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
      */
 
+    ARGS_FLAG ("elf", global.elf = TRUE);
+
     ARGS_OPTION_BEGIN ("E")
     {
         FMGRappendPath (PK_extlib_path, FMGRabsolutePathname (ARG));
