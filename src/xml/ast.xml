@@ -648,6 +648,13 @@
           <node name="Let" />
         </travuser>
       </traversal>
+      <traversal id="ELF" name="Extend LaC funs" default="sons" include="extend_lac_funs.h" >
+        <travuser>
+          <node name="Fundef" />
+          <node name="Assign" />
+          <node name="Ap" />
+        </travuser>
+      </traversal>
       <traversal id="EAT" name="Eliminate type variables and do some cleanup" default="sons" include="elim_alpha_types.h" >
         <travuser>
           <node name="Module" />

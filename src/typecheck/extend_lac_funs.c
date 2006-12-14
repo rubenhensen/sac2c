@@ -1,0 +1,424 @@
+/*
+ *
+ * $Id:  $
+ *
+ */
+
+#include <stdio.h>
+#include <string.h>
+#include "extend_lac_funs.h"
+
+#include "dbug.h"
+#include "internal_lib.h"
+#include "free.h"
+#include "namespaces.h"
+#include "deserialize.h"
+
+#include "traverse.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+#include "traverse_helper.h"
+
+/*
+ * OPEN PROBLEMS:
+ *
+ * I) not yet solved:
+ *
+ * II) to be fixed here:
+ *
+ * III) to be fixed somewhere else:
+ *
+ */
+
+/**
+ * This phase ....
+ *
+ */
+
+/*
+ * usages of 'arg_info':
+ *
+ *   INFO_VARDECS     - vardec chain of freshly generated vardecs
+ *   INFO_ASSIGNS     - assignment chain of freshly generated assignments
+ */
+
+/**
+ * INFO structure
+ */
+struct INFO {
+    node *vardecs;
+    node *assigns;
+};
+
+/**
+ * INFO macros
+ */
+#define INFO_VARDECS(n) ((n)->vardecs)
+#define INFO_ASSIGNS(n) ((n)->assigns)
+
+/**
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = ILIBmalloc (sizeof (info));
+
+    INFO_VARDECS (result) = NULL;
+    INFO_ASSIGNS (result) = NULL;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = ILIBfree (info);
+
+    DBUG_RETURN (info);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node * SearchPredicate( node *ap)
+ *
+ *****************************************************************************/
+
+static node *
+SearchPredicate (node *ap)
+{
+    DBUG_ENTER ("SearchPredicate");
+
+    DBUG_RETURN (
+      ID_AVIS (COND_COND (ASSIGN_INSTR (BLOCK_INSTR (FUNDEF_BODY (AP_FUNDEF (ap)))))));
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node * CreateTmpVar( char *name, info *arg_info)
+ *
+ *****************************************************************************/
+
+static node *
+CreateTmpVar (char *name, info *arg_info)
+{
+    node *avis;
+
+    DBUG_ENTER ("CreateTmpVar");
+
+    avis = TBmakeAvis (ILIBtmpVarName (name), NULL);
+    INFO_VARDECS (arg_info) = TBmakeVardec (avis, INFO_VARDECS (arg_info));
+
+    DBUG_RETURN (avis);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node * CreateLetAssign( node *avis, node *rhs, node *next)
+ *
+ *****************************************************************************/
+
+static node *
+CreateLetAssign (node *avis, node *rhs, node *next)
+{
+    DBUG_ENTER ("CreateLetAssign");
+
+    DBUG_RETURN (TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), rhs), next));
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *CreateLacFunCallAssignments( node *ap, node *pred_avis,
+ *            node *result_avis, node *shape_avis, node *idx_avis,
+ *            info *arg_info)
+ *
+ *****************************************************************************/
+
+static node *
+CreateLacFunCallAssignments (node *ap, node *pred_avis, node *result_avis,
+                             node *shape_avis, node *idx_avis, info *arg_info)
+{
+    node *assigns = NULL;
+    node *exprs, *arg_avis, *new_arg_avis, *new_arg_expr, *loc_args;
+    node *arg, *args, *act_args;
+    DBUG_ENTER ("CreateLacFunCallAssignments");
+
+    /**
+     * First, we compute all new_args:
+     *
+     * iff shape != NULL we create:
+     *
+     *    arg1' = adjustLacFunParams( pred, arg1, idx);
+     *    ...
+     *    argn' = adjustLacFunParams( pred, argn, idx);
+     *
+     * otherwise, we create:
+     *
+     *    arg1' = adjustLacFunParamsReshape( pred, arg1, idx, shape);
+     *    ...
+     *    argn' = adjustLacFunParamsReshape( pred, argn, idx, shape);
+     *
+     * For the predicate, we generate:
+     *
+     *    pred' = _sel_( idx, pred);
+     */
+    exprs = AP_ARGS (ap);
+
+    while (exprs != NULL) {
+        arg_avis = ID_AVIS (EXPRS_EXPR (exprs));
+
+        new_arg_avis = CreateTmpVar ("arg", arg_info);
+
+        if (arg_avis == pred_avis) {
+            new_arg_expr = TCmakePrf2 (F_sel, TBmakeId (idx_avis), TBmakeId (pred_avis));
+            assigns = CreateLetAssign (new_arg_avis, new_arg_expr, assigns);
+
+        } else {
+            if (shape_avis != NULL) {
+                loc_args
+                  = TBmakeExprs (TBmakeId (pred_avis),
+                                 TBmakeExprs (TBmakeId (arg_avis),
+                                              TBmakeExprs (TBmakeId (idx_avis),
+                                                           TBmakeExprs (TBmakeId (
+                                                                          shape_avis),
+                                                                        NULL))));
+                assigns = CreateLetAssign (new_arg_avis,
+                                           DSdispatchFunCall (NSgetNamespace ("sac2c"),
+                                                              "adjustLacFunParamsReshape",
+                                                              loc_args),
+                                           assigns);
+            } else {
+                loc_args
+                  = TBmakeExprs (TBmakeId (pred_avis),
+                                 TBmakeExprs (TBmakeId (arg_avis),
+                                              TBmakeExprs (TBmakeId (idx_avis), NULL)));
+                assigns
+                  = CreateLetAssign (new_arg_avis,
+                                     DSdispatchFunCall (NSgetNamespace ("sac2c"),
+                                                        "adjustLacFunParams", loc_args),
+                                     assigns);
+            }
+        }
+
+        arg = TBmakeExprs (TBmakeId (new_arg_avis), NULL);
+
+        if (args == NULL) {
+            args = arg;
+            act_args = args;
+        } else {
+            EXPRS_NEXT (act_args) = arg;
+            act_args = arg;
+        }
+
+        exprs = EXPRS_NEXT (exprs);
+    }
+
+    /**
+     * Eventually, we create the LaCfun call:
+     *
+     * result = LaCfun( pred', arg1', ..., argn');
+     */
+    assigns
+      = TCappendAssign (assigns, CreateLetAssign (result_avis,
+                                                  TBmakeAp (AP_FUNDEF (ap), args), NULL));
+
+    DBUG_RETURN (assigns);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *CreateWithLoop( node *ap, info *arg_info)
+ *
+ *****************************************************************************/
+
+static node *
+CreateWithLoop (node *ap, info *arg_info)
+{
+    node *with, *pred_avis, *shape_avis, *idx_avis, *idx_expr, *shape_expr;
+    node *default_avis, *default_expr_ass, *iv_avis, *code_avis, *code_expr;
+    node *code_expr_ass;
+
+    DBUG_ENTER ("CreateWithLoop");
+
+    pred_avis = SearchPredicate (ap);
+
+    /**
+     *  First we compute a few tmps needed throughout:
+     *
+     *  shape = _shape_( pred);
+     *  idx = 0*shape;
+     */
+    shape_avis = CreateTmpVar ("shape", arg_info);
+    idx_avis = CreateTmpVar ("idx", arg_info);
+
+    shape_expr = TCmakePrf1 (F_shape, TBmakeId (pred_avis));
+    idx_expr = TCmakePrf2 (F_mul_SxA, TBmakeNum (0), TBmakeId (shape_avis));
+
+    INFO_ASSIGNS (arg_info)
+      = CreateLetAssign (idx_avis, idx_expr, INFO_ASSIGNS (arg_info));
+    INFO_ASSIGNS (arg_info)
+      = CreateLetAssign (shape_avis, shape_expr, INFO_ASSIGNS (arg_info));
+
+    /**
+     * Now, we create the assignment chain that computes the default expression:
+     *
+     * arg1' = adjustLacFunParams( pred, arg1, idx);
+     * ...
+     * argn' = adjustLacFunParams( pred, argn, idx);
+     * pred' = _sel_( idx, p);
+     * default = LaCfun( pred', arg1', ..., argn');
+     */
+    default_avis = CreateTmpVar ("default", arg_info);
+    default_expr_ass = CreateLacFunCallAssignments (ap, pred_avis, default_avis, NULL,
+                                                    idx_avis, arg_info);
+
+    INFO_ASSIGNS (arg_info) = TCappendAssign (INFO_ASSIGNS (arg_info), default_expr_ass);
+
+    /**
+     * Similarily, we create the body of the WL:
+     *
+     * arg1' = adjustLacFunParamsReshape( pred, arg1, iv, shape);
+     * ...
+     * argn' = adjustLacFunParamsReshape( pred, argn, iv, shape);
+     * pred' = _sel_( iv, p);
+     * code = LaCfun( pred', arg1', ..., argn');
+     */
+
+    iv_avis = CreateTmpVar ("iv", arg_info);
+    code_avis = CreateTmpVar ("code", arg_info);
+    code_expr_ass = CreateLacFunCallAssignments (ap, pred_avis, code_avis, shape_avis,
+                                                 iv_avis, arg_info);
+
+    /**
+     * Eventually, we create the WL:
+     *
+     * with {
+     *   ( idx <= iv < shape) : {
+     *     <code_expr_ass>          // see above!
+     *   } : code;
+     * } : genarray( shape, default);
+     */
+    code_expr = TBmakeCode (TBmakeBlock (code_expr_ass, NULL), TBmakeId (code_avis));
+
+    with = TBmakeWith (TBmakePart (code_expr, TBmakeWithid (TBmakeId (iv_avis), NULL),
+                                   TBmakeGenerator (F_le, F_lt, TBmakeId (idx_avis),
+                                                    TBmakeId (shape_avis), NULL, NULL)),
+                       code_expr,
+                       TBmakeGenarray (TBmakeId (shape_avis), TBmakeId (default_avis)));
+    DBUG_RETURN (with);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *ELFdoExtendLacFuns( node *arg_node)
+ *
+ *****************************************************************************/
+
+node *
+ELFdoExtendLacFuns (node *arg_node)
+{
+    info *info_node;
+
+    DBUG_ENTER ("EBTdoEliminateBottomTypes");
+
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_module,
+                 "EBTdoEliminateBottomTypes can be called on N_module only!");
+
+    TRAVpush (TR_elf);
+
+    info_node = MakeInfo ();
+    DSinitDeserialize (arg_node);
+    arg_node = TRAVdo (arg_node, info_node);
+    DSfinishDeserialize (arg_node);
+    info_node = FreeInfo (info_node);
+
+    TRAVpop ();
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *ELFfundef( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ * @return
+ *
+ *****************************************************************************/
+node *
+ELFfundef (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("ELFfundef");
+
+    if (FUNDEF_BODY (arg_node) != NULL) {
+        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+    }
+
+    if (INFO_VARDECS (arg_info) != NULL) {
+        BLOCK_VARDEC (FUNDEF_BODY (arg_node))
+          = TCappendVardec (INFO_VARDECS (arg_info),
+                            BLOCK_VARDEC (FUNDEF_BODY (arg_node)));
+        INFO_VARDECS (arg_info) = NULL;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *ELFassign( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ * @return
+ *
+ *****************************************************************************/
+node *
+ELFassign (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("ELFassign");
+
+    if (ASSIGN_NEXT (arg_node) != NULL) {
+        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
+    }
+    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    if (INFO_ASSIGNS (arg_info) != NULL) {
+        arg_node = TCappendAssign (INFO_ASSIGNS (arg_info), arg_node);
+        INFO_ASSIGNS (arg_info) = NULL;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *ELFap( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ * @return
+ *
+ *****************************************************************************/
+node *
+ELFap (node *arg_node, info *arg_info)
+{
+    node *with;
+
+    DBUG_ENTER ("ELFap");
+
+    if (!AP_ISRECURSIVEDOFUNCALL (arg_node) && !FUNDEF_ISCONDFUN (AP_FUNDEF (arg_node))
+        && !FUNDEF_ISDOFUN (AP_FUNDEF (arg_node))) {
+        with = CreateWithLoop (arg_node, arg_info);
+        arg_node = FREEdoFreeTree (arg_node);
+        arg_node = with;
+    }
+
+    DBUG_RETURN (arg_node);
+}

@@ -64,7 +64,8 @@ typecheck   = new_typecheck.o new_types.o user_types.o create_wrappers.o \
               type_statistics.o type_utils.o resolvesymboltypes.o \
               split_wrappers.o dispatchfuncalls.o insert_type_conv.o \
               update_wrapper_type.o free_dispatch_information.o \
-              pre_typecheck.o elim_alpha_types.o elim_bottom_types.o
+              pre_typecheck.o elim_alpha_types.o elim_bottom_types.o \
+              extend_lac_funs.o
 
 types       = 
 

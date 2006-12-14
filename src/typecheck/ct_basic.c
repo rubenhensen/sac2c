@@ -9,6 +9,7 @@
 #include "dbug.h"
 #include "internal_lib.h"
 
+#include "constants.h"
 #include "new_types.h"
 #include "type_utils.h"
 #include "sig_deps.h"
@@ -176,6 +177,7 @@ NTCCTfuncond (te_info *err_info, ntype *args)
     ntype *pred, *rhs1, *rhs2;
     ntype *res = NULL;
     char *err_msg;
+    constant *pred_val;
 
     DBUG_ENTER ("NTCCTfuncond");
 
@@ -206,7 +208,24 @@ NTCCTfuncond (te_info *err_info, ntype *args)
             }
         }
 
-        res = TYmakeProductType (1, TYlubOfTypes (rhs1, rhs2));
+        if (TYisAKV (pred)) {
+            pred_val = TYgetValue (pred);
+            if (COisTrue (pred_val, FALSE) && !TYisBottom (rhs1)) {
+                res = TYmakeProductType (1, TYcopyType (rhs1));
+            } else if (COisFalse (pred_val, FALSE) && !TYisBottom (rhs2)) {
+                res = TYmakeProductType (1, TYcopyType (rhs2));
+            } else {
+                /**
+                 * This ensures that we tolerate non-terminating recursions
+                 * if at least a terminating branch exists!
+                 * I.e.: if( true) { rec_call(); } else { }; is ok!
+                 *       if( ...) { rec_call(); } else { rec_call();} is not ok!
+                 */
+                res = TYmakeProductType (1, TYlubOfTypes (rhs1, rhs2));
+            }
+        } else {
+            res = TYmakeProductType (1, TYlubOfTypes (rhs1, rhs2));
+        }
 
     } else if (TYisBottom (pred)) {
         res = TYmakeProductType (1, TYcopyType (pred));
