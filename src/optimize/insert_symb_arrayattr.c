@@ -47,7 +47,6 @@
 struct INFO {
     enum { TS_module, TS_fundef } travscope;
     enum { TM_all, TM_then, TM_else } travmode;
-    node *vardecs;
     node *preassign;
     node *postassign;
     node *fundef;
@@ -59,7 +58,6 @@ struct INFO {
 
 #define INFO_TRAVSCOPE(n) ((n)->travscope)
 #define INFO_TRAVMODE(n) ((n)->travmode)
-#define INFO_VARDECS(n) ((n)->vardecs)
 #define INFO_PREASSIGN(n) ((n)->preassign)
 #define INFO_POSTASSIGN(n) ((n)->postassign)
 #define INFO_FUNDEF(n) ((n)->fundef)
@@ -79,7 +77,6 @@ MakeInfo ()
 
     INFO_TRAVSCOPE (result) = TS_module;
     INFO_TRAVMODE (result) = TM_all;
-    INFO_VARDECS (result) = NULL;
     INFO_PREASSIGN (result) = NULL;
     INFO_POSTASSIGN (result) = NULL;
     INFO_FUNDEF (result) = NULL;
