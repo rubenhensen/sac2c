@@ -352,7 +352,7 @@ CorrectFundefPointer (node *fundef, ntype *arg_types)
                              "no appropriate wrapper function found!");
 
                 DBUG_ASSERT ((!FUNDEF_ISZOMBIE (newfundef)), "zombie found");
-            } while (!TUsignatureMatches (FUNDEF_ARGS (newfundef), arg_types));
+            } while (!TUsignatureMatches (FUNDEF_ARGS (newfundef), arg_types, TRUE));
             DBUG_PRINT ("SWR", ("  correct wrapper found"));
         } else {
             /**

@@ -961,7 +961,7 @@ doDispatchFunCall (node *fundefs, const namespace_t *ns, const char *name,
         if (FUNDEF_ISWRAPPERFUN (fundefs)) {
             if (NSequals (FUNDEF_NS (fundefs), ns)
                 && ILIBstringCompare (FUNDEF_NAME (fundefs), name)) {
-                if (TUsignatureMatches (FUNDEF_ARGS (fundefs), argtypes)) {
+                if (TUsignatureMatches (FUNDEF_ARGS (fundefs), argtypes, FALSE)) {
                     result = fundefs;
                 }
             }

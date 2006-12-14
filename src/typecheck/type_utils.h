@@ -27,7 +27,7 @@ extern bool TUeqShapes (ntype *a, ntype *b);
 extern ntype *TUcomputeImplementationType (ntype *ty);
 extern char *TUtypeSignature2String (node *fundef);
 extern ntype *TUactualArgs2Ntype (node *actual);
-extern bool TUsignatureMatches (node *formal, ntype *actual_prod_type);
+extern bool TUsignatureMatches (node *formal, ntype *actual_prod_type, bool exact);
 extern bool TUretsContainBottom (node *rets);
 extern bool TUretsAreConstant (node *rets);
 extern ntype *TUcombineBottom (ntype *left, ntype *right);

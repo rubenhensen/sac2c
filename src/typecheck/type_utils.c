@@ -610,15 +610,16 @@ TUactualArgs2Ntype (node *actual)
 /******************************************************************************
  *
  * Function:
- *   bool TUsignatureMatches( node *formal, ntype *actual_prod_type)
+ *   bool TUsignatureMatches( node *formal, ntype *actual_prod_type, bool exact)
  *
  * Description:
  *   Checks whether TYPE('formal') is a supertype of 'actual_prod_type'.
+ *   if exact==true it does NOT match unknown, otherwise it does.
  *
  ******************************************************************************/
 
 bool
-TUsignatureMatches (node *formal, ntype *actual_prod_type)
+TUsignatureMatches (node *formal, ntype *actual_prod_type, bool exact)
 {
     ntype *actual_type, *formal_type;
     int pos;
@@ -643,7 +644,7 @@ TUsignatureMatches (node *formal, ntype *actual_prod_type)
                       tmp2_str = ILIBfree (tmp2_str););
 
         if (!(TYleTypes (actual_type, formal_type)
-              || (TYgetSimpleType (TYgetScalar (formal_type)) == T_unknown))) {
+              || (!exact && TYgetSimpleType (TYgetScalar (formal_type)) == T_unknown))) {
             match = FALSE;
             break;
         }
