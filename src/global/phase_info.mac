@@ -93,6 +93,8 @@ SUBPHASE (imp, "imp", "Getting imported symbols", IMPdoImportSymbols)
 
 SUBPHASE (uss, "uss", "Getting used symbols", USSdoUseSymbols)
 
+SUBPHASE (asf, "asf", "Loading sac2c prelude functions", ASFdoAddSpecialFunctions)
+
 /******************************************************************************/
 
 PHASE (simplify, "Simplifying source code", CSdoCodeSimplification)
@@ -155,8 +157,6 @@ SUBPHASE (swr, "swr", "Splitting Wrappers", SWRdoSplitWrappers)
 PHASE (export, "Processing exports", PHdummy)
 
 SUBPHASE (exp, "exp", "Exporting symbols", EXPdoExport)
-
-SUBPHASE (asf, "asf", "Loading sac2c prelude functions", ASFdoAddSpecialFunctions)
 
 SUBPHASE (ppi, "ppi", "Restoring bodies of imported inline functions", PPIdoPrepareInline)
 

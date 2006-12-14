@@ -160,6 +160,7 @@ USGprintUsage ()
     PRINT_BREAK_SPEC (PH_module, "gdp", "Stop after gathering dependencies.");
     PRINT_BREAK_SPEC (PH_module, "imp", "Stop after importing instances.");
     PRINT_BREAK_SPEC (PH_module, "uss", "Stop after fetching used symbols.");
+    PRINT_BREAK_SPEC (PH_module, "asf", "Stop after loading sac2c prelude functions.");
 
     printf ("\n");
 

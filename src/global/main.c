@@ -178,6 +178,7 @@ main (int argc, char *argv[])
     syntax_tree = PHrunCompilerSubPhase (SUBPH_gdp, syntax_tree);
     syntax_tree = PHrunCompilerSubPhase (SUBPH_imp, syntax_tree);
     syntax_tree = PHrunCompilerSubPhase (SUBPH_uss, syntax_tree);
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_asf, syntax_tree);
 
     ABORT_ON_ERROR;
 
@@ -233,7 +234,6 @@ main (int argc, char *argv[])
     NOTE_COMPILER_PHASE;
 
     syntax_tree = PHrunCompilerSubPhase (SUBPH_exp, syntax_tree);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_asf, syntax_tree);
     syntax_tree = PHrunCompilerSubPhase (SUBPH_ppi, syntax_tree);
 
     PHASE_DONE_EPILOG;
