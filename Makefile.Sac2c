@@ -244,7 +244,7 @@ makesubdir.prod: $(TARGETS_PROD)
         fi
 	@$(ECHO) "  Checking dependencies of source file: $(notdir $<)"
 	@if $(CC) $(CCDEPS_FLAGS) $(CFLAGS) $(INCS) $<  > $@d ; \
-	 then sed 's/\($(notdir $*)\)\.o[ :]*/$(subst /,\/,$*)\.o $(subst /,\/,$@)\: $$\(PROJECT_ROOT\)\/Makefile.Config /'  <$@d >$@; \
+	 then sed 's/\($(notdir $*)\)\.o[ :]*/$(subst /,\/,$*)\.o $(subst /,\/,$@)\: $(PROJECT_ROOT)\/Makefile.Config /'  <$@d >$@; \
 	      $(RM) $@d ; \
 	 else $(RM) $@d ; \
 	      exit 1 ;  \
