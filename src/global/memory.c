@@ -29,7 +29,22 @@
  ******************************************************************************/
 
 #ifdef SHOW_MALLOC
-static void *
+
+/*
+ * These types are only used to compute malloc_align_step.
+ * No instances are raised.
+ */
+typedef union {
+    long int l;
+    double d;
+} malloc_align_type;
+
+typedef struct {
+    int size;
+    malloc_align_type align;
+} malloc_header_type;
+
+void *
 MEMmalloc (int size)
 {
     void *orig_ptr;
@@ -37,7 +52,7 @@ MEMmalloc (int size)
 
     DBUG_ENTER ("MEMmalloc");
 
-    DBUG_ASSERT ((size >= 0), "ILIBmalloc called with negative size!");
+    DBUG_ASSERT ((size >= 0), "MEMmalloc called with negative size!");
 
     if (size > 0) {
 
@@ -45,7 +60,7 @@ MEMmalloc (int size)
          * Since some UNIX system (e.g. ALPHA) do return NULL for size 0 as well
          * we do complain for ((NULL == tmp) && (size > 0)) only!!
          */
-        orig_ptr = malloc (size + malloc_align_step);
+        orig_ptr = malloc (size + global.malloc_align_step);
 
         if (orig_ptr == NULL) {
             CTIabortOutOfMemory (size);
@@ -156,6 +171,58 @@ MEMfree (void *shifted_ptr)
 }
 
 #endif /* NOFREE */
+
+/* -------------------------------------------------------------------------- *
+ * task: calculates the number of bytes for a safe alignment (used in MEMmalloc)
+ * initializes global variable malloc_align_step
+ *
+ * remarks: the c-compiler alignment of structs is exploited.
+ * -------------------------------------------------------------------------- */
+
+void
+MEMcomputeMallocAlignStep ()
+{
+    DBUG_ENTER ("MEMcomputeMallocAlignStep");
+
+    /* calculate memory alignment steps for this machine */
+    global.malloc_align_step = sizeof (malloc_header_type) - sizeof (malloc_align_type);
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void MEMdbugMemoryLeakCheck( void)
+ *
+ * description:
+ *   computes and prints memory usage w/o memory used for the actual
+ *   syntax tree.
+ *
+ ******************************************************************************/
+
+void
+MEMdbugMemoryLeakCheck (void)
+{
+    node *ast_dup;
+    int mem_before;
+
+    DBUG_ENTER ("MEMdbugMemoryLeakCheck");
+
+    mem_before = global.current_allocated_mem;
+    CTInote ("*** Currently allocated memory (Bytes):   %s",
+             CVintBytes2String (global.current_allocated_mem));
+    ast_dup = DUPdoDupTree (global.syntax_tree);
+    CTInote ("*** Size of the syntax tree (Bytes):      %s",
+             CVintBytes2String (global.current_allocated_mem - mem_before));
+    CTInote ("*** Other memory allocated/ Leak (Bytes): %s",
+             CVintBytes2String (2 * mem_before - global.current_allocated_mem));
+    FREEdoFreeTree (ast_dup);
+    CTInote ("*** FreeTree / DupTree leak (Bytes):      %s",
+             CVintBytes2String (global.current_allocated_mem - mem_before));
+
+    DBUG_VOID_RETURN;
+}
 
 #else /*SHOW_MALLOC */
 

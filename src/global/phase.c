@@ -120,7 +120,7 @@ PHrunCompilerPhase (compiler_phase_t phase, node *syntax_tree)
     CTIabortOnError ();
 
 #ifdef SHOW_MALLOC
-    DBUG_EXECUTE ("MEM_LEAK", ILIBdbugMemoryLeakCheck (););
+    DBUG_EXECUTE ("MEM_LEAK", MEMdbugMemoryLeakCheck (););
 #endif
 
 #ifdef SHOW_MALLOC

@@ -32,22 +32,6 @@
 
 #define MAX_SYSCALL 1000
 
-/*
- * These types are only used to compute malloc_align_step.
- * No instances are raised.
- */
-typedef union {
-    long int l;
-    double d;
-} malloc_align_type;
-
-typedef struct {
-    int size;
-    malloc_align_type align;
-} malloc_header_type;
-
-int malloc_align_step = 0;
-
 /**
  * global file handle for syscall tracking
  */
@@ -1277,63 +1261,3 @@ ILIBstring2SafeCEncoding (const char *string)
 
     DBUG_RETURN (result);
 }
-
-#ifdef SHOW_MALLOC
-
-/* -------------------------------------------------------------------------- *
- * task: calculates the number of bytes for a safe alignment (used in ILIBmalloc)
- * initializes global variable malloc_align_step
- *
- * remarks: the c-compiler alignment of structs is exploited.
- * -------------------------------------------------------------------------- */
-
-void
-ILIBcomputeMallocAlignStep (void)
-{
-    DBUG_ENTER ("ComputeMallocAlignStep");
-
-    /* calculate memory alignment steps for this machine */
-    malloc_align_step = sizeof (malloc_header_type) - sizeof (malloc_align_type);
-
-    DBUG_VOID_RETURN;
-}
-
-#endif /* SHOW_MALLOC */
-
-#ifndef DBUG_OFF
-
-/******************************************************************************
- *
- * function:
- *   void ILIBdbugMemoryLeakCheck( void)
- *
- * description:
- *   computes and prints memory usage w/o memory used for the actual
- *   syntax tree.
- *
- ******************************************************************************/
-
-void
-ILIBdbugMemoryLeakCheck (void)
-{
-    node *ast_dup;
-    int mem_before;
-
-    DBUG_ENTER ("ILIBdbugMemoryLeakCheck");
-
-    mem_before = global.current_allocated_mem;
-    CTInote ("*** Currently allocated memory (Bytes):   %s",
-             CVintBytes2String (global.current_allocated_mem));
-    ast_dup = DUPdoDupTree (global.syntax_tree);
-    CTInote ("*** Size of the syntax tree (Bytes):      %s",
-             CVintBytes2String (global.current_allocated_mem - mem_before));
-    CTInote ("*** Other memory allocated/ Leak (Bytes): %s",
-             CVintBytes2String (2 * mem_before - global.current_allocated_mem));
-    FREEdoFreeTree (ast_dup);
-    CTInote ("*** FreeTree / DupTree leak (Bytes):      %s",
-             CVintBytes2String (global.current_allocated_mem - mem_before));
-
-    DBUG_VOID_RETURN;
-}
-
-#endif /* DBUG_OFF */

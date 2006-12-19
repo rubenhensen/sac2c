@@ -32,12 +32,13 @@
 #define GLOBAL(type, name, init) GLOBALtype (type) GLOBALname (name) GLOBALinit (init)
 
 /*
- * Memory usage counters
+ * Memory allocation
  */
 
 #ifdef SHOW_MALLOC
 GLOBAL (unsigned int, current_allocated_mem, 0)
 GLOBAL (unsigned int, max_allocated_mem, 0)
+GLOBAL (unsigned int, malloc_align_step, 0)
 #endif
 
 /*

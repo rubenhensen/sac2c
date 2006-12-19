@@ -71,7 +71,7 @@
 #ifdef SHOW_MALLOC
 #define PHASE_DONE_EPILOG                                                                \
     CTIabortOnError ();                                                                  \
-    DBUG_EXECUTE ("MEM_LEAK", ILIBdbugMemoryLeakCheck (););
+    DBUG_EXECUTE ("MEM_LEAK", MEMdbugMemoryLeakCheck (););
 #else
 #define PHASE_DONE_EPILOG CTIabortOnError ();
 #endif

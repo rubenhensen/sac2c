@@ -76,14 +76,6 @@ extern char *ILIBtmpVarName (char *postfix);
 extern char *ILIBreplaceSpecialCharacters (const char *name);
 extern char *ILIBstring2SafeCEncoding (const char *string);
 
-#ifdef SHOW_MALLOC
-extern void ILIBcomputeMallocAlignStep (void);
-#endif
-
-#ifndef DBUG_OFF
-extern void ILIBdbugMemoryLeakCheck (void);
-#endif
-
 /*********************************
  * macro definitions
  *********************************/

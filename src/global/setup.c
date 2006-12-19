@@ -10,7 +10,6 @@
 #include "dbug.h"
 #include "phase.h"
 #include "globals.h"
-#include "internal_lib.h"
 #include "ctinfo.h"
 #include "DupTree.h"
 #include "filemgr.h"
@@ -25,7 +24,7 @@ SETUPdoSetupCompiler (int argc, char *argv[])
     setlocale (LC_ALL, "en_US");
 
 #ifdef SHOW_MALLOC
-    ILIBcomputeMallocAlignStep ();
+    MEMcomputeMallocAlignStep ();
     CHKMinitialize (argc, argv);
 #endif
 

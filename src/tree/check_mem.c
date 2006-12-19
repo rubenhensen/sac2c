@@ -91,10 +91,10 @@ typedef struct MEMOBJ {
 #define MEMOBJ_SHAREDBIT(n) ((n)->flags.IsShared)
 #define MEMOBJ_REPORTED(n) ((n)->flags.IsReported)
 
-#define SHIFT2ORIG(n) ((memobj **)(((char *)(n)) - malloc_align_step))
+#define SHIFT2ORIG(n) ((memobj **)(((char *)(n)) - global.malloc_align_step))
 #define SHIFT2MEMOBJ(n) (*(SHIFT2ORIG (n)))
 
-#define ORIG2SHIFT(n) (((char *)(n)) + malloc_align_step)
+#define ORIG2SHIFT(n) (((char *)(n)) + global.malloc_align_step)
 #define ORIG2MEMOBJ(n) (*(memobj **)(n))
 
 static void CHKManalyzeMemtab (memobj *, int);
