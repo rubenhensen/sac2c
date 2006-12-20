@@ -12,6 +12,9 @@
 #include "check_mem.h"
 #include "ctinfo.h"
 #include "globals.h"
+#include "DupTree.h"
+#include "free.h"
+#include "convert.h"
 
 /******************************************************************************
  *
@@ -32,8 +35,14 @@
 
 /*
  * These types are only used to compute malloc_align_step.
- * No instances are raised.
+ *
+ * CAUTION:
+ *
+ * We need malloc_align_step in check_mem.c as well. Rather than using a single
+ * global variable we use two static global variables, which are initialised
+ * exactly in the same way, and of course need to be.
  */
+
 typedef union {
     long int l;
     double d;
@@ -44,6 +53,8 @@ typedef struct {
     malloc_align_type align;
 } malloc_header_type;
 
+static int malloc_align_step = sizeof (malloc_header_type) - sizeof (malloc_align_type);
+
 void *
 MEMmalloc (int size)
 {
@@ -53,6 +64,7 @@ MEMmalloc (int size)
     DBUG_ENTER ("MEMmalloc");
 
     DBUG_ASSERT ((size >= 0), "MEMmalloc called with negative size!");
+    DBUG_ASSERT ((malloc_align_step > 0), "malloc_align_step not set");
 
     if (size > 0) {
 
@@ -60,7 +72,7 @@ MEMmalloc (int size)
          * Since some UNIX system (e.g. ALPHA) do return NULL for size 0 as well
          * we do complain for ((NULL == tmp) && (size > 0)) only!!
          */
-        orig_ptr = malloc (size + global.malloc_align_step);
+        orig_ptr = malloc (size + malloc_align_step);
 
         if (orig_ptr == NULL) {
             CTIabortOutOfMemory (size);
@@ -137,6 +149,8 @@ MEMfree (void *shifted_ptr)
 
     DBUG_ENTER ("MEMfree");
 
+    DBUG_ASSERT ((malloc_align_step > 0), "malloc_align_step not set");
+
     if (shifted_ptr != NULL) {
         size = CHKMgetSize (shifted_ptr);
 
@@ -171,24 +185,6 @@ MEMfree (void *shifted_ptr)
 }
 
 #endif /* NOFREE */
-
-/* -------------------------------------------------------------------------- *
- * task: calculates the number of bytes for a safe alignment (used in MEMmalloc)
- * initializes global variable malloc_align_step
- *
- * remarks: the c-compiler alignment of structs is exploited.
- * -------------------------------------------------------------------------- */
-
-void
-MEMcomputeMallocAlignStep ()
-{
-    DBUG_ENTER ("MEMcomputeMallocAlignStep");
-
-    /* calculate memory alignment steps for this machine */
-    global.malloc_align_step = sizeof (malloc_header_type) - sizeof (malloc_align_type);
-
-    DBUG_VOID_RETURN;
-}
 
 /******************************************************************************
  *

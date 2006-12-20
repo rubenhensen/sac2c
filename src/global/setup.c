@@ -15,6 +15,7 @@
 #include "filemgr.h"
 #include "options.h"
 #include "check_mem.h"
+#include "memory.h"
 
 void
 SETUPdoSetupCompiler (int argc, char *argv[])
@@ -24,7 +25,6 @@ SETUPdoSetupCompiler (int argc, char *argv[])
     setlocale (LC_ALL, "en_US");
 
 #ifdef SHOW_MALLOC
-    MEMcomputeMallocAlignStep ();
     CHKMinitialize (argc, argv);
 #endif
 

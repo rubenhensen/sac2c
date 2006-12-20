@@ -26,6 +26,27 @@
 #include "check_node.h"
 #include "check_attribs.h"
 
+/*
+ * These types are only used to compute malloc_align_step.
+ *
+ * CAUTION:
+ *
+ * We need malloc_align_step in check_mem.c as well. Rather than using a single
+ * global variable we use two static global variables, which are initialised
+ * exactly in the same way, and of course need to be.
+ */
+typedef union {
+    long int l;
+    double d;
+} malloc_align_type;
+
+typedef struct {
+    int size;
+    malloc_align_type align;
+} malloc_header_type;
+
+static int malloc_align_step = sizeof (malloc_header_type) - sizeof (malloc_align_type);
+
 /**
  * INFO structure
  */
@@ -91,10 +112,10 @@ typedef struct MEMOBJ {
 #define MEMOBJ_SHAREDBIT(n) ((n)->flags.IsShared)
 #define MEMOBJ_REPORTED(n) ((n)->flags.IsReported)
 
-#define SHIFT2ORIG(n) ((memobj **)(((char *)(n)) - global.malloc_align_step))
+#define SHIFT2ORIG(n) ((memobj **)(((char *)(n)) - malloc_align_step))
 #define SHIFT2MEMOBJ(n) (*(SHIFT2ORIG (n)))
 
-#define ORIG2SHIFT(n) (((char *)(n)) + global.malloc_align_step)
+#define ORIG2SHIFT(n) (((char *)(n)) + malloc_align_step)
 #define ORIG2MEMOBJ(n) (*(memobj **)(n))
 
 static void CHKManalyzeMemtab (memobj *, int);

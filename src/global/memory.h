@@ -20,7 +20,6 @@ extern void *MEMfree (void *address);
 /* special check_mem malloc-call to get more informations */
 
 #ifdef SHOW_MALLOC
-extern void MEMcomputeMallocAlignStep ();
 extern void MEMdbugMemoryLeakCheck ();
 extern void *MEMmallocAt (int size, char *file, int line);
 #define MEMmalloc(size) MEMmallocAt (size, __FILE__, __LINE__)

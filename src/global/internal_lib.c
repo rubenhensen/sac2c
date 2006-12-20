@@ -14,11 +14,8 @@
 #include "dbug.h"
 
 #include "ctinfo.h"
-#include "DupTree.h"
-#include "free.h"
 #include "globals.h"
 #include "traverse.h"
-#include "convert.h"
 #include "filemgr.h"
 
 /*
