@@ -488,13 +488,16 @@ BuildFunApLine (int maxfun, int maxfunap)
 global_t global;
 
 void
-GLOBinitializeGlobal ()
+GLOBinitializeGlobal (int argc, char *argv[])
 {
     DBUG_ENTER ("GLOBinitializeGlobal");
 
 #define GLOBALname(name) global.name =
 #define GLOBALinit(init) init;
 #include "globals.mac"
+
+    global.argc = argc;
+    global.argv = argv;
 
     DBUG_VOID_RETURN;
 }

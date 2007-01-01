@@ -14,8 +14,6 @@
 #include "DupTree.h"
 #include "filemgr.h"
 #include "options.h"
-#include "check_mem.h"
-#include "memory.h"
 
 void
 SETUPdoSetupCompiler (int argc, char *argv[])
@@ -23,17 +21,12 @@ SETUPdoSetupCompiler (int argc, char *argv[])
     DBUG_ENTER ("SETUPdoSetupCompiler");
 
     setlocale (LC_ALL, "en_US");
-
-#ifdef SHOW_MALLOC
-    CHKMinitialize (argc, argv);
-#endif
-
-    GLOBinitializeGlobal ();
-
     CTIinstallInterruptHandlers ();
 
-    global.argc = argc;
-    global.argv = argv;
+    OPTcheckPreSetupOptions ();
+    GLOBinitializeGlobal (argc, argv);
+
+    DUPinitDupTree ();
 
     DBUG_VOID_RETURN;
 }
@@ -43,7 +36,6 @@ SETUPdoInitializations (node *syntax_tree)
 {
     DBUG_ENTER ("SETUPdoInitializations");
 
-    DUPinitDupTree ();
     FMGRcreateTmpDir ();
 
     DBUG_RETURN (syntax_tree);

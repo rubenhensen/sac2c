@@ -122,7 +122,6 @@ static void CHKManalyzeMemtab (memobj *, int);
 
 static char *MemobjToErrorMessage (char *, memobj *);
 
-static bool memcheck = FALSE;
 static memobj *memtab = NULL;
 static int memfreeslots = 0;
 static int memindex = 0;
@@ -203,45 +202,6 @@ FreeMemtab (memobj *memtab, int memtabsize)
 
 /** <!--********************************************************************-->
  *
- * @fn void CHKMinitialize( int argc, char *argv[])
- *
- * the initial function
- *
- *****************************************************************************/
-void
-CHKMinitialize (int argc, char *argv[])
-{
-    int i;
-
-    DBUG_ENTER ("CHKMinitialize");
-
-    for (i = 0; i < (argc - 1); i++) {
-        if (strcmp (argv[i], "-d") == 0) {
-            if (strcmp (argv[i + 1], "memcheck") == 0) {
-                memcheck = TRUE;
-            }
-        }
-    }
-
-    DBUG_VOID_RETURN;
-}
-
-/** <!--********************************************************************-->
- *
- * @fn bool CHKMisMemcheckActive()
- *
- * the initial function
- *
- *****************************************************************************/
-bool
-CHKMisMemcheckActive ()
-{
-    DBUG_ENTER ("CHKMisMemcheckActive");
-    DBUG_RETURN (memcheck);
-}
-
-/** <!--********************************************************************-->
- *
  * @fn void *CHKMdeinitialize()
  *
  * the initial function
@@ -252,7 +212,7 @@ CHKMdeinitialize ()
 {
     DBUG_ENTER ("CHKMdeinitialize");
 
-    if (memcheck) {
+    if (global.memcheck) {
         global.current_allocated_mem -= memtabsize * sizeof (memobj);
     }
 
@@ -308,7 +268,7 @@ CHKMregisterMem (int size, void *orig_ptr)
 
     DBUG_ENTER ("CHKMregisterMem");
 
-    if (memcheck) {
+    if (global.memcheck) {
 
         shifted_ptr = ORIG2SHIFT (orig_ptr);
 
@@ -424,7 +384,7 @@ CHKMunregisterMem (void *shifted_ptr)
 
     orig_ptr = SHIFT2ORIG (shifted_ptr);
 
-    if (memcheck) {
+    if (global.memcheck) {
         ptr_to_memobj = SHIFT2MEMOBJ (shifted_ptr);
 
         if ((MEMOBJ_SIZE (ptr_to_memobj) == 0) && (MEMOBJ_PTR (ptr_to_memobj) == NULL)) {
@@ -691,7 +651,7 @@ CHKMdoNotReport (void *shifted_ptr)
 
     DBUG_ENTER ("CHKMdoNotReport");
 
-    if (memcheck) {
+    if (global.memcheck) {
         ptr_to_memobj = SHIFT2MEMOBJ (shifted_ptr);
 
         MEMOBJ_REPORTED (ptr_to_memobj) = TRUE;
@@ -712,7 +672,7 @@ CHKMsetNodeType (node *shifted_ptr, nodetype newnodetype)
 
     DBUG_ENTER ("CHKMsetNodeType");
 
-    if (memcheck) {
+    if (global.memcheck) {
 
         ptr_to_memobj = SHIFT2MEMOBJ (shifted_ptr);
 
@@ -734,7 +694,7 @@ CHKMsetLocation (node *shifted_ptr, char *file, int line)
 
     DBUG_ENTER ("CHKMsetLocation");
 
-    if (memcheck) {
+    if (global.memcheck) {
 
         ptr_to_memobj = SHIFT2MEMOBJ (shifted_ptr);
 
@@ -760,7 +720,7 @@ CHKMgetSize (node *shifted_ptr)
 
     DBUG_ENTER ("CHKMgetSize");
 
-    if (memcheck) {
+    if (global.memcheck) {
 
         ptr_to_memobj = SHIFT2MEMOBJ (shifted_ptr);
 

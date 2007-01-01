@@ -45,12 +45,40 @@ OPTcheckPreSetupOptions ()
 {
     DBUG_ENTER ("OPTcheckPreSetupOptions");
 
+    global.memcheck = FALSE;
+    /*
+     * This must be done here because memcheck requires initialisation
+     * before anything else in the compiler; the standard initialisation
+     * of global variables would be too late.
+     */
+
     ARGS_BEGIN (global.argc, global.argv);
 
     ARGS_FLAG ("copyright", USGprintCopyright (); exit (0));
 
     ARGS_FLAG ("h", USGprintUsage (); exit (0));
     ARGS_FLAG ("help", USGprintUsage (); exit (0));
+
+#ifdef SHOW_MALLOC
+    /*
+     * We do this option here only for -d memcheck.
+     * However, to accept the other choices as well, we need
+     * to repeat them here.
+     */
+    ARGS_OPTION_BEGIN ("d")
+    {
+        ARG_CHOICE_BEGIN ();
+        ARG_CHOICE ("treecheck", global.treecheck = TRUE);
+        ARG_CHOICE ("memcheck", global.memcheck = TRUE);
+        ARG_CHOICE ("efence", global.use_efence = TRUE);
+        ARG_CHOICE ("nocleanup", global.cleanup = FALSE);
+        ARG_CHOICE ("nolacinline", global.lacinline = FALSE);
+        ARG_CHOICE ("syscall", global.show_syscall = TRUE);
+        ARG_CHOICE ("cccall", global.gen_cccall = TRUE; global.cleanup = FALSE);
+        ARG_CHOICE_END ();
+    }
+    ARGS_OPTION_END ("d");
+#endif
 
     ARGS_OPTION ("v", ARG_RANGE (global.verbose_level, 0, 3));
 
@@ -292,6 +320,13 @@ OPTanalyseCommandline (node *syntax_tree)
 
     ARGS_OPTION_BEGIN ("d")
     {
+        /*
+         * CAUTION:
+         * Due to -d memcheck the -d options is also identified in
+         * presetup options and is repeated here only for technical
+         * reasons. Any change in this option MUST be reflected in
+         * OPTcheckPreSetupOptions().
+         */
         ARG_CHOICE_BEGIN ();
         ARG_CHOICE ("treecheck", global.treecheck = TRUE);
 #ifdef SHOW_MALLOC

@@ -25,6 +25,6 @@
 extern FILE *yyin;
 extern global_t global;
 
-extern void GLOBinitializeGlobal ();
+extern void GLOBinitializeGlobal (int argc, char *argv[]);
 
 #endif /* _SAC_GLOBALS_H_ */

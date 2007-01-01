@@ -8,8 +8,6 @@
 #include "types.h"
 
 #ifdef SHOW_MALLOC
-extern void CHKMinitialize (int argc, char *argv[]);
-extern bool CHKMisMemcheckActive ();
 extern void CHKMdeinitialize ();
 
 extern node *CHKMdoMemCheck (node *syntax_tree);

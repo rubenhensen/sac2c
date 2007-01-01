@@ -462,9 +462,16 @@ GLOBAL (bool, treecheck, FALSE)
  */
 
 #ifdef SHOW_MALLOC
-GLOBAL (bool, memcheck, CHKMisMemcheckActive ())
+GLOBAL (bool, memcheck, global.memcheck)
 /*
  * check syntaxtree for memoryproblems with xml specification
+ *
+ * CAUTION:
+ * memcheck requires initiatilisation BEFORE anything else.
+ * Therefore, we look for -d memcheck in presetup options
+ * and set global.memcheck there accordingly. We re-initialise
+ * global.memcheck to its existing value here for purely technical
+ * reasons.
  */
 #endif /* SHOW_MALLOC */
 

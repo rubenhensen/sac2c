@@ -127,8 +127,6 @@ main (int argc, char *argv[])
 
     SETUPdoSetupCompiler (argc, argv);
 
-    OPTcheckPreSetupOptions ();
-
     syntax_tree = PHrunCompilerPhase (PH_setup, syntax_tree);
 
     OPTcheckPostSetupOptions ();
