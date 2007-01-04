@@ -14,6 +14,7 @@
 #include "DupTree.h"
 #include "filemgr.h"
 #include "options.h"
+#include "memory.h"
 
 void
 SETUPdoSetupCompiler (int argc, char *argv[])
@@ -22,9 +23,9 @@ SETUPdoSetupCompiler (int argc, char *argv[])
 
     setlocale (LC_ALL, "en_US");
     CTIinstallInterruptHandlers ();
+    GLOBinitializeGlobal (argc, argv);
 
     OPTcheckPreSetupOptions ();
-    GLOBinitializeGlobal (argc, argv);
 
     DUPinitDupTree ();
 
