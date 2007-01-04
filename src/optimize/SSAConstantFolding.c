@@ -56,6 +56,13 @@
  *
  *  not yet implemented: cat, rotate
  *
+ *  As of 2006-12-22, most of the appropriate SxS optimizations have been
+ *  extended to SxA and AxS. rbe
+ *
+ * TODO:
+ *  1. Could extend F_reshape(x,y) and F_take(x,y) to work on any arrays where we can
+ *prove that all(x==shape(y)). Perhaps SAA can do this handily.
+ *
  *  @ingroup opt
  *
  *  @{
@@ -1090,7 +1097,7 @@ StructOpTake (constant *idx, node *expr)
  *   node *StructOpDrop(constant *idx, node *arg_expr)
  *
  * description:
- *   computes structural take on array expressions with constant index vector.
+ *   computes structural drop on array expressions with constant index vector.
  *
  *****************************************************************************/
 
@@ -1258,7 +1265,7 @@ ArithmOpWrapper (prf op, constant **arg_co, node **arg_expr)
             target_shp = GetShapeOfExpr (expr);
             if (target_shp != NULL) {
                 /* Create True constant of same shape as expression */
-                tmp_co = COmakeFalse (target_shp);
+                tmp_co = COmakeTrue (target_shp);
             }
         }
         break;
@@ -2222,14 +2229,23 @@ CFfoldPrfExpr (prf op, node **arg_expr, info *arg_info)
         /* one-argument functions */
     case F_toi_S:
     case F_toi_A:
-        break;
-
-    case F_tof_S:
-    case F_tof_A:
+        if (T_int == TYgetSimpleType (TYgetScalar (ID_NTYPE (arg_expr[0])))) {
+            new_node = DUPdoDupTree (arg_expr[0]);
+        }
         break;
 
     case F_tod_S:
     case F_tod_A:
+        if (T_double == TYgetSimpleType (TYgetScalar (ID_NTYPE (arg_expr[0])))) {
+            new_node = DUPdoDupTree (arg_expr[0]);
+        }
+        break;
+
+    case F_tof_S:
+    case F_tof_A:
+        if (T_float == TYgetSimpleType (TYgetScalar (ID_NTYPE (arg_expr[0])))) {
+            new_node = DUPdoDupTree (arg_expr[0]);
+        }
         break;
 
     case F_abs:
@@ -2289,7 +2305,23 @@ CFfoldPrfExpr (prf op, node **arg_expr, info *arg_info)
             }
         break;
     case F_add_AxS:
+        if
+            SECOND_CONST_ARG_OF_TWO (arg_co, arg_expr)
+            {
+                if (COisZero (arg_co[1], FALSE)) { /* A + 0 */
+                    new_node = DUPdoDupTree (arg_expr[0]);
+                }
+            }
+        break;
+
     case F_add_SxA:
+        if
+            FIRST_CONST_ARG_OF_TWO (arg_co, arg_expr)
+            {
+                if (COisZero (arg_co[0], FALSE)) { /* 0 + A */
+                    new_node = DUPdoDupTree (arg_expr[1]);
+                }
+            }
         break;
 
     case F_sub_SxS:
@@ -2304,6 +2336,7 @@ CFfoldPrfExpr (prf op, node **arg_expr, info *arg_info)
                 new_node = Sub (arg_expr[0], arg_expr[1]);
             }
         break;
+
     case F_sub_AxA:
         if
             TWO_ARG (arg_expr)
@@ -2311,7 +2344,15 @@ CFfoldPrfExpr (prf op, node **arg_expr, info *arg_info)
                 new_node = Sub (arg_expr[0], arg_expr[1]);
             }
         break;
+
     case F_sub_AxS:
+        if
+            SECOND_CONST_ARG_OF_TWO (arg_co, arg_expr)
+            {
+                if (COisZero (arg_co[1], FALSE)) { /* A - 0 */
+                    new_node = DUPdoDupTree (arg_expr[0]);
+                }
+            }
     case F_sub_SxA:
         break;
 
@@ -2323,7 +2364,25 @@ CFfoldPrfExpr (prf op, node **arg_expr, info *arg_info)
             }
         break;
     case F_mul_AxS:
+        if
+            SECOND_CONST_ARG_OF_TWO (arg_co, arg_expr)
+            {
+                if (COisOne (arg_co[1], FALSE)) { /* A * 1 */
+                    new_node = DUPdoDupTree (arg_expr[0]);
+                }
+            }
+        break;
+
     case F_mul_SxA:
+        if
+            FIRST_CONST_ARG_OF_TWO (arg_co, arg_expr)
+            {
+                if (COisOne (arg_co[0], FALSE)) { /* 1 * A */
+                    new_node = DUPdoDupTree (arg_expr[1]);
+                }
+            }
+        break;
+
     case F_mul_AxA:
         break;
 
@@ -2341,8 +2400,18 @@ CFfoldPrfExpr (prf op, node **arg_expr, info *arg_info)
                 new_node = ArithmOpWrapper (F_div_SxS, arg_co, arg_expr);
             }
         break;
-    case F_div_SxA:
+
     case F_div_AxS:
+        if
+            SECOND_CONST_ARG_OF_TWO (arg_co, arg_expr)
+            {
+                if (COisOne (arg_co[1], FALSE)) { /* A / 1 */
+                    new_node = DUPdoDupTree (arg_expr[0]);
+                }
+            }
+        break;
+
+    case F_div_SxA:
     case F_div_AxA:
         break;
 
@@ -2500,13 +2569,23 @@ CFfoldPrfExpr (prf op, node **arg_expr, info *arg_info)
         }
         break;
 
-        /* not implemeneted functions */
-    case F_cat:
-        /* not implemented yet */
-        break;
+#ifdef HADROTATE
+        if
+            we had a rotate primitive, this would do the trick
 
+              /* Rotate by zero is trivial */
+              if FIRST_CONST_ARG_OF_TWO (arg_co, arg_expr)
+            {
+                if (COisZero (arg_co[0], FALSE)) { /* rotate([0], A) */
+                    new_node = DUPdoDupTree (arg_expr[1]);
+                }
+            }
+        break;
+#endif
+
+    /* not implemented yet */
     case F_rotate:
-        /* not implemented yet */
+    case F_cat:
         break;
 
     default:
