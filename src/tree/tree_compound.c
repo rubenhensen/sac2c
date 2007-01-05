@@ -111,7 +111,7 @@ TCdiffShpseg (int dim, shpseg *shape1, shpseg *shape2)
 /*****************************************************************************
  *
  * function:
- *   bool ShapeVarsMatch( node *avis1, node *avis2)
+ *   bool TCshapeVarsMatch( node *avis1, node *avis2)
  *
  * description:
  *   Compares the shapes of two arrays, based on their N_avis SAA shapes.
@@ -120,11 +120,11 @@ TCdiffShpseg (int dim, shpseg *shape1, shpseg *shape2)
  *****************************************************************************/
 
 bool
-ShapeVarsMatch (node *avis1, node *avis2)
+TCshapeVarsMatch (node *avis1, node *avis2)
 {
     bool res;
 
-    DBUG_ENTER ("ShapeVarsMatch");
+    DBUG_ENTER ("TCshapeVarsMatch");
 
     res = ((TYeqTypes (TYgetScalar (AVIS_TYPE (avis1)), TYgetScalar (AVIS_TYPE (avis2))))
            && (AVIS_DIM (avis1) != NULL) && (AVIS_DIM (avis2) != NULL)

@@ -190,7 +190,7 @@ FindMatchingVarShape (node *avis, node *ivavis)
 
     /* Set membership */
     exprs = AVIS_IDXSHAPES (ivavis);
-    while ((exprs != NULL) && (!ShapeVarsMatch (ID_AVIS (EXPRS_EXPR (exprs)), avis))) {
+    while ((exprs != NULL) && (!TCshapeVarsMatch (ID_AVIS (EXPRS_EXPR (exprs)), avis))) {
         exprs = EXPRS_NEXT (exprs);
     }
 

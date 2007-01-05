@@ -340,7 +340,8 @@ FindIVOffset (ivinfo *info, node *iv, node *clique)
          */
         oinfo = WITHIV_OFFSETS (info);
 
-        while ((oinfo != NULL) && (!ShapeVarsMatch (clique, WITHOFFSET_CLIQUE (oinfo)))) {
+        while ((oinfo != NULL)
+               && (!TCshapeVarsMatch (clique, WITHOFFSET_CLIQUE (oinfo)))) {
             oinfo = WITHOFFSET_NEXT (oinfo);
         }
 
@@ -353,7 +354,7 @@ FindIVOffset (ivinfo *info, node *iv, node *clique)
             oinfo = WITHIV_LOCALOFFSETS (info);
 
             while ((oinfo != NULL)
-                   && (!ShapeVarsMatch (clique, WITHOFFSET_CLIQUE (oinfo)))) {
+                   && (!TCshapeVarsMatch (clique, WITHOFFSET_CLIQUE (oinfo)))) {
                 oinfo = WITHOFFSET_NEXT (oinfo);
             }
 
@@ -433,7 +434,7 @@ GetAvis4Clique (node *iv, node *clique, info *arg_info)
         while (cliques != NULL) {
             DBUG_ASSERT ((ids != NULL), "# of ids does not match # of cliques");
 
-            if (ShapeVarsMatch (clique, ID_AVIS (EXPRS_EXPR (cliques)))) {
+            if (TCshapeVarsMatch (clique, ID_AVIS (EXPRS_EXPR (cliques)))) {
                 result = IDS_AVIS (ids);
                 break;
             }

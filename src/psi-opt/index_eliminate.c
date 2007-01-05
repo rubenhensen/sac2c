@@ -277,7 +277,7 @@ GetIvScalarOffsetAvis (node *iavis, node *bavis)
         shpid = EXPRS_EXPR (shpexprs);
         DBUG_ASSERT ((N_id == NODE_TYPE (shpid)),
                      "Shape clique shape chain entry not N_id");
-        if (ShapeVarsMatch (bavis, ID_AVIS (shpid))) {
+        if (TCshapeVarsMatch (bavis, ID_AVIS (shpid))) {
             result = IDS_AVIS (ids);
             break;
         }

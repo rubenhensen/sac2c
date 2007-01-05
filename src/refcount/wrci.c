@@ -174,7 +174,7 @@ MatchingRCs (node *rcs, node *ids, node *modarray)
         match = MatchingRCs (EXPRS_NEXT (rcs), ids, modarray);
 
         if (TypeMatch (ID_NTYPE (EXPRS_EXPR (rcs)), IDS_NTYPE (ids))
-            || ShapeVarsMatch (ID_AVIS (EXPRS_EXPR (rcs)), IDS_AVIS (ids))
+            || TCshapeVarsMatch (ID_AVIS (EXPRS_EXPR (rcs)), IDS_AVIS (ids))
             || ((modarray != NULL)
                 && (ID_AVIS (EXPRS_EXPR (rcs)) == ID_AVIS (modarray)))) {
             match = TBmakeExprs (TBmakeId (ID_AVIS (EXPRS_EXPR (rcs))), match);
