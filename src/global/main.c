@@ -129,7 +129,7 @@ main (int argc, char *argv[])
 
     syntax_tree = PHrunCompilerPhase (PH_setup, syntax_tree);
 
-    OPTcheckPostSetupOptions ();
+    OPTcheckPostSetupOptions (argc, argv);
 
     /*
      *  Finally the compilation process is started.

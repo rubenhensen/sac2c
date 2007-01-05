@@ -41,7 +41,7 @@
 #include "libstat.h"
 
 void
-OPTcheckPreSetupOptions ()
+OPTcheckPreSetupOptions (int argc, char *argv[])
 {
     DBUG_ENTER ("OPTcheckPreSetupOptions");
 
@@ -52,33 +52,12 @@ OPTcheckPreSetupOptions ()
      * of global variables would be too late.
      */
 
-    ARGS_BEGIN (global.argc, global.argv);
+    ARGS_BEGIN (argc, argv);
 
     ARGS_FLAG ("copyright", USGprintCopyright (); exit (0));
 
     ARGS_FLAG ("h", USGprintUsage (); exit (0));
     ARGS_FLAG ("help", USGprintUsage (); exit (0));
-
-#ifdef SHOW_MALLOC
-    /*
-     * We do this option here only for -d memcheck.
-     * However, to accept the other choices as well, we need
-     * to repeat them here.
-     */
-    ARGS_OPTION_BEGIN ("d")
-    {
-        ARG_CHOICE_BEGIN ();
-        ARG_CHOICE ("treecheck", global.treecheck = TRUE);
-        ARG_CHOICE ("memcheck", global.memcheck = TRUE);
-        ARG_CHOICE ("efence", global.use_efence = TRUE);
-        ARG_CHOICE ("nocleanup", global.cleanup = FALSE);
-        ARG_CHOICE ("nolacinline", global.lacinline = FALSE);
-        ARG_CHOICE ("syscall", global.show_syscall = TRUE);
-        ARG_CHOICE ("cccall", global.gen_cccall = TRUE; global.cleanup = FALSE);
-        ARG_CHOICE_END ();
-    }
-    ARGS_OPTION_END ("d");
-#endif
 
     ARGS_OPTION ("v", ARG_RANGE (global.verbose_level, 0, 3));
 
@@ -92,11 +71,11 @@ OPTcheckPreSetupOptions ()
 }
 
 void
-OPTcheckPostSetupOptions ()
+OPTcheckPostSetupOptions (int argc, char *argv[])
 {
     DBUG_ENTER ("OPTcheckPostSetupOptions");
 
-    ARGS_BEGIN (global.argc, global.argv);
+    ARGS_BEGIN (argc, argv);
 
     ARGS_OPTION ("libstat", LIBSprintLibStat (ARG));
 

@@ -40,7 +40,7 @@
 #define _SAC_OPTIONS_H_
 
 extern node *OPTanalyseCommandline (node *);
-extern void OPTcheckPreSetupOptions ();
-extern void OPTcheckPostSetupOptions ();
+extern void OPTcheckPreSetupOptions (int argc, char *argv[]);
+extern void OPTcheckPostSetupOptions (int argc, char *argv[]);
 
 #endif /* _SAC_OPTIONS_H_ */

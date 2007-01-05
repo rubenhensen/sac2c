@@ -15,17 +15,19 @@
 #include "filemgr.h"
 #include "options.h"
 #include "memory.h"
+#include "check_mem.h"
 
 void
 SETUPdoSetupCompiler (int argc, char *argv[])
 {
     DBUG_ENTER ("SETUPdoSetupCompiler");
 
+    CHKMinit (argc, argv);
     setlocale (LC_ALL, "en_US");
     CTIinstallInterruptHandlers ();
     GLOBinitializeGlobal (argc, argv);
 
-    OPTcheckPreSetupOptions ();
+    OPTcheckPreSetupOptions (argc, argv);
 
     DUPinitDupTree ();
 
