@@ -45,13 +45,6 @@ OPTcheckPreSetupOptions (int argc, char *argv[])
 {
     DBUG_ENTER ("OPTcheckPreSetupOptions");
 
-    global.memcheck = FALSE;
-    /*
-     * This must be done here because memcheck requires initialisation
-     * before anything else in the compiler; the standard initialisation
-     * of global variables would be too late.
-     */
-
     ARGS_BEGIN (argc, argv);
 
     ARGS_FLAG ("copyright", USGprintCopyright (); exit (0));
