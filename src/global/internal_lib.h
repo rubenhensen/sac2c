@@ -67,9 +67,6 @@ extern int ILIBsystemTest (char *format, ...);
 extern void ILIBsystemCallStartTracking ();
 extern void ILIBsystemCallStopTracking ();
 
-extern void ILIBcreateCppCallString (const char *file, char *cccallstr,
-                                     const char *cppfile);
-
 extern char *ILIBtmpVar (void);
 extern char *ILIBtmpVarName (char *postfix);
 

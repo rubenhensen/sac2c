@@ -11,9 +11,11 @@
 #define _SAC_SCNPRS_H_
 
 #include "types.h"
-#include "sac.tab.h"
 
+extern node *SPdoLocateSource (node *syntax_tree);
+extern node *SPdoRunPreProcessor (node *syntax_tree);
 extern node *SPdoScanParse (node *syntax_tree);
+
 extern int SPmyYyparse ();
 
 #endif /* _SAC_SCNPRS_H_ */

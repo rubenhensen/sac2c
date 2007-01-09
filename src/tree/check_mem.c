@@ -1,3 +1,8 @@
+/*
+ * $Id$ check_mem.c
+ *
+ */
+
 #ifdef SHOW_MALLOC
 
 /******************************************************************************
@@ -202,35 +207,6 @@ FreeMemtab (memobj *memtab, int memtabsize)
 
 /** <!--********************************************************************-->
  *
- * @fn void CHKMinit( int argc, char *argv[])
- *
- * We MUST check for this option BEFORE we do any allocations, in particular
- * before we initialise the global variables. As we need them to be initialised
- * before we check for presetup command line options like -help, we cannot
- * look for -d memcheck in OPTcheckPreSetupOptions(). Hence, we require this
- * otherwise very ugly solution.
- *
- *****************************************************************************/
-void
-CHKMinit (int argc, char *argv[])
-{
-    int i;
-
-    DBUG_ENTER ("CHKMinit");
-
-    for (i = 0; i < argc; i++) {
-        if ((ILIBstringCompare (argv[i], "-d") && (i < argc - 1)
-             && ILIBstringCompare (argv[i + 1], "memcheck"))
-            || ILIBstringCompare (argv[i], "-dmemcheck")) {
-            global.memcheck = TRUE;
-        }
-    }
-
-    DBUG_VOID_RETURN;
-}
-
-/** <!--********************************************************************-->
- *
  * @fn void *CHKMdeinitialize()
  *
  * the initial function
@@ -371,9 +347,7 @@ CHKMregisterMem (int size, void *orig_ptr)
         MEMOBJ_USEDBIT (ptr_to_memobj) = FALSE;
         MEMOBJ_SHAREDBIT (ptr_to_memobj) = FALSE;
 
-        if ((global.compiler_subphase >= SUBPH_initial)
-            && (global.compiler_subphase <= SUBPH_init)) {
-
+        if (global.compiler_subphase == SUBPH_initial) {
             MEMOBJ_REPORTED (ptr_to_memobj) = TRUE;
         } else {
             MEMOBJ_REPORTED (ptr_to_memobj) = FALSE;

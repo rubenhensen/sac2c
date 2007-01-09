@@ -81,6 +81,7 @@ USGprintUsage ()
       "    -VV             Display verbose version identification.\n"
       "\n"
       "    -libstat        Print status information of the given SAC library file.\n"
+      "    -prsc           Print resource settings.\n"
       "\n"
       "    -M              Detect dependencies from imported modules/classes and\n"
       "                    write them to stdout in a way suitable for the make\n"
@@ -141,16 +142,19 @@ USGprintUsage ()
 
     PRINT_BREAK_SPEC (PH_scanparse, "cpp", "Stop after running the C preprocessor.");
     PRINT_BREAK_SPEC (PH_scanparse, "sp", "Stop after parsing (yacc).");
-    PRINT_BREAK_SPEC (PH_scanparse, "hzgwl",
+
+    printf ("\n");
+
+    PRINT_BREAK_SPEC (PH_preprocess, "hzgwl",
                       "Stop after transforming zero-generator with-loops");
-    PRINT_BREAK_SPEC (PH_scanparse, "hwlg",
+    PRINT_BREAK_SPEC (PH_preprocess, "hwlg",
                       "Stop after transforming multi-generator with-loops");
-    PRINT_BREAK_SPEC (PH_scanparse, "hwlo",
+    PRINT_BREAK_SPEC (PH_preprocess, "hwlo",
                       "Stop after transforming multi-operator with-loops");
-    PRINT_BREAK_SPEC (PH_scanparse, "acn",
+    PRINT_BREAK_SPEC (PH_preprocess, "acn",
                       "Stop after resolving the axis control notation.");
-    PRINT_BREAK_SPEC (PH_scanparse, "pragma", "Stop after resolving pragmas");
-    PRINT_BREAK_SPEC (PH_scanparse, "objinit",
+    PRINT_BREAK_SPEC (PH_preprocess, "pragma", "Stop after resolving pragmas");
+    PRINT_BREAK_SPEC (PH_preprocess, "objinit",
                       "Stop after generating generic types and functions");
 
     printf ("\n");

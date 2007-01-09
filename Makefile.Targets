@@ -24,7 +24,7 @@ src = global tree serialize \
 #  Note that the variable names must coincide with the directory names above.
 
 
-global      = main.o setup.o usage.o internal_lib.o memory.o globals.o \
+global      = main.o usage.o internal_lib.o memory.o globals.o \
               resource.o options.o NameTuplesUtils.o \
               filemgr.o ctinfo.o phase.o private_heap.o
 

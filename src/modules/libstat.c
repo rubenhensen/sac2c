@@ -119,47 +119,49 @@ PrintLibStatCode (module_t *module, const sttable_t *table)
 }
 
 void
-LIBSprintLibStat (char *libname)
+LIBSprintLibStat ()
 {
     module_t *module;
     const sttable_t *table;
 
     DBUG_ENTER ("LIBSprintLibStat");
 
-    DBUG_PRINT ("LIBSTAT", ("Loading module `%s'", libname));
+    if (global.libstat) {
+        DBUG_PRINT ("LIBSTAT", ("Loading module `%s'", global.sacfilename));
 
-    module = MODMloadModule (libname);
+        module = MODMloadModule (global.sacfilename);
 
-    DBUG_PRINT ("LIBSTAT", ("Getting symbol table"));
+        DBUG_PRINT ("LIBSTAT", ("Getting symbol table"));
 
-    table = MODMgetSymbolTable (module);
+        table = MODMgetSymbolTable (module);
 
-    DBUG_PRINT ("LIBSTAT", ("Printing LibStat header\n"));
+        DBUG_PRINT ("LIBSTAT", ("Printing LibStat header\n"));
 
-    PrintLibStatHeader (module);
+        PrintLibStatHeader (module);
 
-    DBUG_PRINT ("LIBSTAT", ("Printing table information"));
+        DBUG_PRINT ("LIBSTAT", ("Printing table information"));
 
-    PrintLibStatTable (table);
+        PrintLibStatTable (table);
 
-    DBUG_PRINT ("LIBSTAT", ("Printing dependencies"));
+        DBUG_PRINT ("LIBSTAT", ("Printing dependencies"));
 
-    PrintLibStatDependencies (module);
+        PrintLibStatDependencies (module);
 
-    DBUG_PRINT ("LIBSTAT", ("Printing code"));
+        DBUG_PRINT ("LIBSTAT", ("Printing code"));
 
-    PrintLibStatCode (module, table);
+        PrintLibStatCode (module, table);
 
-    DBUG_PRINT ("LIBSTAT", ("Unloading module `%s'", libname));
+        DBUG_PRINT ("LIBSTAT", ("Unloading module `%s'", global.sacfilename));
 
-    module = MODMunLoadModule (module);
+        module = MODMunLoadModule (module);
 
-    /*
-     * exit compiler at this point, as we have printed
-     * the libstat information
-     */
+        /*
+         * exit compiler at this point, as we have printed
+         * the libstat information
+         */
 
-    CTIterminateCompilation (PH_final, NULL, NULL);
+        exit (0);
+    }
 
     DBUG_VOID_RETURN;
 }

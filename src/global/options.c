@@ -21,12 +21,6 @@
 #include "config.h"
 #include "dbug.h"
 
-#define ARGS_ERROR(msg)                                                                  \
-    {                                                                                    \
-        CTIerror ("%s: %s %s %s", msg, ARGS_argv[0], STR_OR_EMPTY (OPT),                 \
-                  STR_OR_EMPTY (ARG));                                                   \
-    }
-
 #include "getoptions.h"
 
 #include "usage.h"
@@ -36,6 +30,9 @@
 #include "ctinfo.h"
 #include "libstat.h"
 
+#undef ARGS_ERROR
+#define ARGS_ERROR(msg)
+
 void
 OPTcheckPreSetupOptions (int argc, char *argv[])
 {
@@ -43,30 +40,22 @@ OPTcheckPreSetupOptions (int argc, char *argv[])
 
     ARGS_BEGIN (argc, argv);
 
-    ARGS_FLAG ("copyright", USGprintCopyright (); exit (0));
-
-    ARGS_FLAG ("h", USGprintUsage (); exit (0));
-    ARGS_FLAG ("help", USGprintUsage (); exit (0));
-
-    ARGS_OPTION ("v", ARG_RANGE (global.verbose_level, 0, 3));
-
-    ARGS_FLAG ("V", USGprintVersion (); exit (0));
-
-    ARGS_FLAG ("VV", USGprintVersionVerbose (); exit (0));
-
-    ARGS_END ();
-
-    DBUG_VOID_RETURN;
-}
-
-void
-OPTcheckPostSetupOptions (int argc, char *argv[])
-{
-    DBUG_ENTER ("OPTcheckPostSetupOptions");
-
-    ARGS_BEGIN (argc, argv);
-
-    ARGS_OPTION ("libstat", LIBSprintLibStat (ARG));
+    ARGS_OPTION_BEGIN ("d")
+    {
+        /*
+         * CAUTION:
+         * Due to -d memcheck the -d options is also identified in
+         * presetup options and is repeated here only for technical
+         * reasons. Any change in this option MUST be reflected in
+         * OPTcheckPreSetupOptions().
+         */
+        ARG_CHOICE_BEGIN ();
+#ifdef SHOW_MALLOC
+        ARG_CHOICE ("memcheck", global.memcheck = TRUE);
+#endif
+        ARG_CHOICE_END ();
+    }
+    ARGS_OPTION_END ("d");
 
     ARGS_END ();
 
@@ -156,26 +145,31 @@ CheckOptionConsistency ()
 /******************************************************************************
  *
  * function:
- *   node *OPTanalyseCommandline( node *syntax_tree)
+ *   node *OPTanalyseCommandline(  int argc, char *argv[])
  *
  * description:
  *   This function analyses the commandline options given to sac2c.
  *   Usually selections made are stored in global variables for later
  *   reference.
  *
- *   The non-obvious signature is to obey the compiler subphase standard.
- *
  ******************************************************************************/
 
-node *
-OPTanalyseCommandline (node *syntax_tree)
+#undef ARGS_ERROR
+#define ARGS_ERROR(msg)                                                                  \
+    {                                                                                    \
+        CTIerror ("%s: %s %s %s", msg, ARGS_argv[0], STR_OR_EMPTY (OPT),                 \
+                  STR_OR_EMPTY (ARG));                                                   \
+    }
+
+void
+OPTanalyseCommandline (int argc, char *argv[])
 {
     int store_num_threads = 0;
     mtmode_t store_mtmode = MT_none;
 
     DBUG_ENTER ("OPTanalyseCommandline");
 
-    ARGS_BEGIN (global.argc, global.argv);
+    ARGS_BEGIN (argc, argv);
 
     /*
      * Options starting with aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
@@ -233,7 +227,20 @@ OPTanalyseCommandline (node *syntax_tree)
     }
     ARGS_OPTION_END ("check");
 
-    ARGS_OPTION ("cppI", global.cpp_incs[global.num_cpp_incs++] = ILIBstringCopy (ARG));
+    ARGS_FLAG ("copyright", USGprintCopyright (); exit (0));
+
+    ARGS_OPTION_BEGIN ("cppI")
+    {
+        char *tmp;
+        if (global.cpp_options == NULL) {
+            tmp = ILIBstringConcat (" -I", ARG);
+        } else {
+            tmp = ILIBstringConcat3 (global.cpp_options, " -I", ARG);
+            ILIBfree (global.cpp_options);
+        }
+        global.cpp_options = tmp;
+    }
+    ARGS_OPTION_END ("cppI")
 
     ARGS_OPTION_BEGIN ("csdefaults")
     {
@@ -309,7 +316,18 @@ OPTanalyseCommandline (node *syntax_tree)
     }
     ARGS_OPTION_END ("d");
 
-    ARGS_OPTION ("D", global.cpp_vars[global.num_cpp_vars++] = ILIBstringCopy (ARG));
+    ARGS_OPTION_BEGIN ("D")
+    {
+        char *tmp;
+        if (global.cpp_options == NULL) {
+            tmp = ILIBstringConcat (" -D", ARG);
+        } else {
+            tmp = ILIBstringConcat3 (global.cpp_options, " -D", ARG);
+            ILIBfree (global.cpp_options);
+        }
+        global.cpp_options = tmp;
+    }
+    ARGS_OPTION_END ("D")
 
     /*
      * Options starting with eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
@@ -346,6 +364,9 @@ OPTanalyseCommandline (node *syntax_tree)
      * Options starting with hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh
      */
 
+    ARGS_FLAG ("h", USGprintUsage (); exit (0));
+    ARGS_FLAG ("help", USGprintUsage (); exit (0));
+
     /*
      * Options starting with iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii
      */
@@ -375,6 +396,8 @@ OPTanalyseCommandline (node *syntax_tree)
         FMGRappendPath (PK_lib_path, FMGRabsolutePathname (ARG));
     }
     ARGS_OPTION_END ("L");
+
+    ARGS_FLAG ("libstat", global.libstat = TRUE);
 
     ARGS_OPTION_BEGIN ("linksetsize")
     {
@@ -503,6 +526,8 @@ OPTanalyseCommandline (node *syntax_tree)
      * Options starting with ppppppppppppppppppppppppppppppppppppppppppp
      */
 
+    ARGS_FLAG ("prsc", global.print_resources = TRUE);
+
     ARGS_OPTION_BEGIN ("profile")
     {
         ARG_FLAGMASK_BEGIN ();
@@ -570,12 +595,11 @@ OPTanalyseCommandline (node *syntax_tree)
      * Options starting with vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
      */
 
-    ARGS_OPTION ("v", );
-    /*
-     * The -v option has allready been processed by OPTcheckSpecialOptions().
-     * However, it must be repeated here with empty action part to avoid an
-     * illegal command line option error.
-     */
+    ARGS_OPTION ("v", ARG_RANGE (global.verbose_level, 0, 3));
+
+    ARGS_FLAG ("V", USGprintVersion (); exit (0));
+
+    ARGS_FLAG ("VV", USGprintVersionVerbose (); exit (0));
 
     /*
      * Options starting with wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
@@ -628,13 +652,11 @@ OPTanalyseCommandline (node *syntax_tree)
         }
     });
 
-    ARGS_OPTION ("libstat", /* ignore for now */);
-
     ARGS_UNKNOWN (ARGS_ERROR ("Invalid command line entry"));
 
     ARGS_END ();
 
     CheckOptionConsistency ();
 
-    DBUG_RETURN (syntax_tree);
+    DBUG_VOID_RETURN;
 }

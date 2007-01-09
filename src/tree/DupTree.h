@@ -18,9 +18,6 @@
 #define DUP_WLF 2
 #define DUP_SSA 3
 
-/* initializing */
-extern void DUPinitDupTree ();
-
 /*
  * Functions for duplicating (parts of) the AST
  */

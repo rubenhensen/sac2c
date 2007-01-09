@@ -1,6 +1,8 @@
-/******************************************************************************
- *
+/*
  * $Id$
+ */
+
+/******************************************************************************
  *
  * PREFIX: DUP
  *
@@ -134,27 +136,6 @@ static node *store_copied_special_fundefs = NULL;
 
 /******************************************************************************
  *
- * Function:
- *   void DUPinitDupTree()
- *
- * Description:
- *
- *
- ******************************************************************************/
-
-void
-DUPinitDupTree ()
-{
-    DBUG_ENTER ("DUPinitDupTree");
-
-    DBUG_ASSERT ((dup_lut == NULL), "DUPinitDupTree() called more than once!");
-    dup_lut = LUTgenerateLut ();
-
-    DBUG_VOID_RETURN;
-}
-
-/******************************************************************************
- *
  * function:
  *   static node *DupTreeOrNodeLutType( bool NodeOnly,
  *                                      node *arg_node, lut_t *lut, int type,
@@ -220,12 +201,9 @@ DupTreeOrNodeLutType (bool node_only, node *arg_node, lut_t *lut, int type, node
         }
 
         if (lut == NULL) {
-            /*
-             * It would be extremly unefficient to generate a new LUT for each call
-             * of DupTree/DupNode.
-             * Therefore, we just generate it *once* via InitDupTree() !!
-             */
-            DBUG_ASSERT ((dup_lut != NULL), "DUPinitDupTree() has not been called!");
+            if (dup_lut == NULL) {
+                dup_lut = LUTgenerateLut ();
+            }
             DBUG_ASSERT ((LUTisEmptyLut (dup_lut)), "LUT for DupTree is not empty!");
             INFO_LUT (arg_info) = dup_lut;
         } else {

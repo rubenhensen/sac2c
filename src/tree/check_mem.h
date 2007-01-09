@@ -9,7 +9,6 @@
 
 #ifdef SHOW_MALLOC
 extern void CHKMdeinitialize ();
-extern void CHKMinit (int argc, char *argv[]);
 
 extern node *CHKMdoMemCheck (node *syntax_tree);
 extern void CHKMtouch (void *shifted_ptr, info *arg_info);

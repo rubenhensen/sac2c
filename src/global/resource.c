@@ -1,110 +1,5 @@
 /*
- *
- * $Log$
- * Revision 3.18  2005/06/01 12:47:45  sah
- * added lots of runtime paths
- *
- * Revision 3.17  2005/04/12 15:15:36  sah
- * cleaned up module system compiler args
- * and sac2crc parameters
- *
- * Revision 3.16  2005/03/10 09:41:09  cg
- * Adjusted RSCevaluateConfiguration() to compiler phase driver function
- * calling conventions.
- * Paths are now reset immediately.
- *
- * Revision 3.15  2005/01/11 11:28:11  cg
- * Converted output from Error.h to ctinfo.c
- *
- * Revision 3.14  2005/01/07 19:54:13  cg
- * Converted compile time output from Error.h to ctinfo.c
- *
- * Revision 3.13  2004/11/27 05:02:55  ktr
- * Some Bugfixes.
- *
- * Revision 3.12  2004/11/25 17:53:48  cg
- * SacDevCamp 04
- *
- * Revision 3.11  2004/11/22 19:24:35  cg
- * Moved all definitions/declarations of global variables to globals.mac
- *
- * Revision 3.10  2004/10/17 17:48:42  sah
- * added LD_DYNAMIC
- *
- * Revision 3.9  2004/03/10 00:10:17  dkrHH
- * old backend removed
- *
- * Revision 3.8  2003/03/24 16:37:04  sbs
- * opt_I added.
- *
- * Revision 3.7  2003/03/21 15:24:04  sbs
- * RSCParseResourceFile added
- *
- * Revision 3.6  2003/03/08 22:26:53  dkr
- * CCFLAGS of custom targets patched for new backend as well
- *
- * Revision 3.5  2003/02/11 16:42:47  dkr
- * CCFLAGS patched for new backend
- *
- * Revision 3.4  2001/11/29 13:24:05  sbs
- * LDFLAGS added
- *
- * Revision 3.3  2001/05/17 11:15:59  sbs
- * return value of Free used now 8-()
- *
- * Revision 3.2  2001/05/17 08:35:33  sbs
- * MALLOC/FREE eliminated
- *
- * Revision 3.1  2000/11/20 17:59:37  sacbase
- * new release made
- *
- * Revision 2.6  2000/02/03 17:20:55  cg
- * Added new resource table entries CACHE[123]_MSCA
- *
- * Revision 2.5  1999/06/10 09:47:56  cg
- * added new resource entry RSH for the specification of how to
- * invoke a remote shell.
- *
- * Revision 2.4  1999/05/18 12:29:10  cg
- * added new resource entry TMPDIR to specify where sac2c puts
- * its temporary files.
- *
- * Revision 2.3  1999/05/06 15:38:46  sbs
- * call of yyparse changed to My_yyparse.
- *
- * Revision 2.2  1999/03/31 08:50:49  cg
- * added new resource entries CACHEx_WRITEPOL
- *
- * Revision 2.1  1999/02/23 12:39:39  sacbase
- * new release made
- *
- * Revision 1.6  1998/11/19 16:12:36  cg
- * new configuration entry: CCMTLINK
- * specifies libraries to link with for multi-threaded programs only.
- * This makes the target 'par' obsolete.
- *
- * Revision 1.5  1998/07/07 13:41:49  cg
- * improved the resource management by implementing multiple inheritence
- * between targets
- *
- * Revision 1.4  1998/05/27 11:19:44  cg
- * global variable 'filename' which contains the current file name in order
- * to provide better error messages is now handled correctly.
- *
- * Revision 1.3  1998/03/17 12:14:24  cg
- * added resource SYSTEM_LIBPATH.
- * This makes the gcc special feature '--print-file-name' obsolete.
- * A fourth search path is used instead for system libraries.
- * This additional path may only be set via the sac2crc file,
- * but not by environment variables or command line parameters.
- *
- * Revision 1.2  1998/03/04 16:23:27  cg
- *  C compiler invocations and file handling converted to new
- * to usage of new  configuration files.
- *
- * Revision 1.1  1998/02/27 10:04:47  cg
- * Initial revision
- *
+ * $Id$
  *
  */
 
@@ -166,7 +61,8 @@
 #include "globals.h"
 #include "ctinfo.h"
 #include "internal_lib.h"
-#include "filemgr.h"
+
+#include "sac.tab.h"
 
 /******************************************************************************
  *
@@ -442,7 +338,7 @@ FreeTargetList (target_list_t *target)
 /******************************************************************************
  *
  * function:
- *  void RSCshowResources()
+ *  void PrintResources()
  *
  * description:
  *  This function displays the current configuration. It's called in main.c
@@ -451,12 +347,12 @@ FreeTargetList (target_list_t *target)
  *
  ******************************************************************************/
 
-void
-RSCshowResources ()
+static void
+PrintResources ()
 {
     int i;
 
-    DBUG_ENTER ("RSCshowResources");
+    DBUG_ENTER ("PrintResources");
 
     printf ("\nConfiguration for target '%s`:\n\n", global.target_name);
 
@@ -501,8 +397,9 @@ RSCparseResourceFile (char *buffer)
     if (yyin == NULL) {
         ok = FALSE;
     } else {
-
-        CTInote ("Parsing configuration file \"%s\" ...", buffer);
+        if (global.print_resources) {
+            CTIstate ("Parsing configuration file \"%s\" ...", buffer);
+        }
 
         global.linenum = 1;
         global.filename = buffer; /* set for better error messages only */
@@ -760,12 +657,10 @@ EvaluateCustomTarget (char *target, target_list_t *target_list)
  *  This function triggers the whole process of evaluating the configuration
  *  files.
  *
- *   The non-obvious signature is to obey the compiler subphase standard.
- *
  ******************************************************************************/
 
-node *
-RSCevaluateConfiguration (node *syntax_tree)
+void
+RSCevaluateConfiguration ()
 {
     DBUG_ENTER ("RSCevaluateConfiguration");
 
@@ -779,7 +674,10 @@ RSCevaluateConfiguration (node *syntax_tree)
 
     global.target_list = FreeTargetList (global.target_list);
 
-    FMGRsetupPaths ();
+    if (global.print_resources) {
+        PrintResources ();
+        exit (0);
+    }
 
-    DBUG_RETURN (syntax_tree);
+    DBUG_VOID_RETURN;
 }

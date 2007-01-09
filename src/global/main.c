@@ -10,6 +10,7 @@
 
 #include "phase.h"
 
+#include "filemgr.h"
 #include "config.h"
 #include "convert.h"
 #include "types.h"
@@ -41,12 +42,12 @@
 #include "traverse.h"
 #include "ToOldTypes.h"
 #include "ToNewTypes.h"
-#include "setup.h"
 #include "codesimplification.h"
 
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <locale.h>
 
 /*
  * THE FOLLOWING MACROS ARE DEPRECATED!!  DO NOT USE!!!
@@ -102,6 +103,32 @@
 #endif /* DBUG_OFF */
 
 /*
+ * We must set up the compiler infrastructure first.
+ */
+
+static void
+SetupCompiler (int argc, char *argv[])
+{
+    DBUG_ENTER ("SetupCompiler");
+
+    setlocale (LC_ALL, "en_US");
+    CTIinstallInterruptHandlers ();
+    OPTcheckPreSetupOptions (argc, argv);
+
+    GLOBinitializeGlobal (argc, argv);
+    OPTanalyseCommandline (argc, argv);
+
+    RSCevaluateConfiguration ();
+
+    LIBSprintLibStat ();
+
+    FMGRsetupPaths ();
+    FMGRcreateTmpDir ();
+
+    DBUG_VOID_RETURN;
+}
+
+/*
  *  And now, the main function which triggers the whole compilation.
  */
 
@@ -111,29 +138,7 @@ main (int argc, char *argv[])
     node *syntax_tree = NULL;
     stringset_t *dependencies;
 
-    /*
-     * Unfortunately, a few initializations must be done before running the setup
-     * compiler phase. Several options like -h or -V should be handled before
-     * compile time output with respect to a regular compiler run is produced.
-     * In particular for the -h option we need the global variables to
-     * be initialized. As long as we work with pre-allocated buffers of fixed
-     * length (which should be changed), this initialization requires allocation
-     * to work properly.
-     *
-     * Furthermore, options like libstat need to be checked after the setup
-     * phase but prior to the following compiler phases. This is achieved by
-     * calling OPTcheckPostSetupOptions.
-     */
-
-    SETUPdoSetupCompiler (argc, argv);
-
-    syntax_tree = PHrunCompilerPhase (PH_setup, syntax_tree);
-
-    OPTcheckPostSetupOptions (argc, argv);
-
-    /*
-     *  Finally the compilation process is started.
-     */
+    SetupCompiler (argc, argv);
 
     global.compiler_phase = PH_scanparse;
 
@@ -142,7 +147,24 @@ main (int argc, char *argv[])
      */
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_loc, syntax_tree);
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_cpp, syntax_tree);
     syntax_tree = PHrunCompilerSubPhase (SUBPH_sp, syntax_tree);
+
+    PHASE_DONE_EPILOG;
+    PHASE_EPILOG;
+
+    if (global.break_after == PH_scanparse)
+        goto BREAK;
+    global.compiler_phase++;
+
+    PHASE_PROLOG;
+
+    /*
+     * Preprocess
+     */
+    PHASE_PROLOG;
+    NOTE_COMPILER_PHASE;
     syntax_tree = PHrunCompilerSubPhase (SUBPH_hzgwl, syntax_tree);
     syntax_tree = PHrunCompilerSubPhase (SUBPH_hwlg, syntax_tree);
     syntax_tree = PHrunCompilerSubPhase (SUBPH_hwlo, syntax_tree);
@@ -153,7 +175,7 @@ main (int argc, char *argv[])
     PHASE_DONE_EPILOG;
     PHASE_EPILOG;
 
-    if (global.break_after == PH_scanparse)
+    if (global.break_after == PH_preprocess)
         goto BREAK;
     global.compiler_phase++;
 

@@ -952,52 +952,6 @@ ILIBsystemTest (char *format, ...)
 /******************************************************************************
  *
  * Function:
- *   void ILIBcreateCppCallString( const char *file, char *cccallstr
- *                                 const char *cppfile)
- *
- * Description:
- *   Checks whether the given filename is empty, i.e., we are reading from
- *   stdin, and generates a system call string in the buffer provided by
- *   cccallstr.
- *
- ******************************************************************************/
-
-void
-ILIBcreateCppCallString (const char *file, char *cccallstr, const char *cppfile)
-{
-    int i;
-
-    DBUG_ENTER ("ILIBcreateCppCallString");
-
-    if (file == NULL) { /*we are reading from stdin! */
-        strcpy (cccallstr, global.config.cpp_stdin);
-    } else {
-        strcpy (cccallstr, global.config.cpp_file);
-    }
-    for (i = 0; i < global.num_cpp_vars; i++) {
-        strcat (cccallstr, " ");
-        strcat (cccallstr, global.config.opt_D);
-        strcat (cccallstr, global.cpp_vars[i]);
-    }
-    for (i = 0; i < global.num_cpp_incs; i++) {
-        strcat (cccallstr, " ");
-        strcat (cccallstr, global.config.opt_I);
-        strcat (cccallstr, global.cpp_incs[i]);
-    }
-    if (file != NULL) {
-        strcat (cccallstr, " ");
-        strcat (cccallstr, file);
-    }
-
-    strcat (cccallstr, " -o ");
-    strcat (cccallstr, cppfile);
-
-    DBUG_VOID_RETURN;
-}
-
-/******************************************************************************
- *
- * Function:
  *   char *ILIBtmpVar( void)
  *
  * Description:

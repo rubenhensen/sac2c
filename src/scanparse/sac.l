@@ -1,6 +1,8 @@
 %{
 
-/* $Id$ */
+/*
+ * $Id$
+ */
 
 
 
@@ -229,14 +231,14 @@ int charpos = 0;
 "continue"                 { FILTER( C_KEYWORD); }
 "break"                    { FILTER( C_KEYWORD); }
 
-"target"                   { if( global.compiler_phase==PH_setup) {
+"target"                   { if( global.compiler_phase==PH_initial) {
                                FILTER( TARGET);
                              } else {
                                yylval.id = ILIBstringCopy(yytext);
                                FILTER( ID);
                              }
                            }
-"default"                  { if( global.compiler_phase==PH_setup) {
+"default"                  { if( global.compiler_phase==PH_initial) {
                                yylval.id = ILIBstringCopy(yytext);
                                FILTER( ID);
                              } else {
@@ -244,7 +246,7 @@ int charpos = 0;
                              }
                            }
 
-[-/][_A-Za-z0-9]*          { if( global.compiler_phase == PH_setup) {
+[-/][_A-Za-z0-9]*          { if( global.compiler_phase == PH_initial) {
                                yylval.id = ILIBstringCopy( yytext);
                                FILTER( OPTION);
                              } else {

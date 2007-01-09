@@ -243,17 +243,7 @@ GLOBAL (bool, executionmodes_available, FALSE)
  *  refer to -D, -cppI command line options:
  */
 
-GLOBAL (char **, cpp_vars, (char **)ILIBmalloc (MAX_CPP_VARS * sizeof (char *)))
-/* pointer to respective argv field */
-
-GLOBAL (int, num_cpp_vars, 0)
-/* number of preprocessor -D options */
-
-GLOBAL (char **, cpp_incs, (char **)ILIBmalloc (MAX_CPP_INCS * sizeof (char *)))
-/* pointer to respective argv field */
-
-GLOBAL (int, num_cpp_incs, 0)
-/* number of preprocessor -cppI options */
+GLOBAL (char *, cpp_options, NULL);
 
 /*
  * C compiler options
@@ -496,6 +486,11 @@ GLOBAL (bool, cleanup, TRUE)
 GLOBAL (bool, libstat, FALSE)
 /*
  * Don't actually compile, but display library information.
+ */
+
+GLOBAL (bool, print_resources, FALSE)
+/*
+ * Don't actually compile, but display resource information.
  */
 
 GLOBAL (bool, makedeps, FALSE)

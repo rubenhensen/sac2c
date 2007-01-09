@@ -12,70 +12,85 @@
 #include "filemgr.h"
 #include "handle_dots.h"
 
-/*
- *
- *  functionname  : ScanParse
- *  arguments     : ---
- *  description   : searches the file given by the global variable filename
- *                  in the path and parses it.
- *                  The global variables outfilename and cfilename are
- *                  set according to a module/class name, which will be
- *                  abbreviated to a maximum of 13 characters.
- *  global vars   : yyin, filename, syntax_tree
- *  internal funs : CheckModuleName
- *  external funs : FindFile, yyparse, strcpy
- *  macros        : MAX_PATH_LEN, ERROR
- *
- *  remarks       : two different versions with and without invoking
- *                  the C-preprocessor.
- *
- */
+#include "sac.tab.h"
+
+static const char *pathname;
 
 node *
-SPdoScanParse (node *syntax_tree)
+SPdoLocateSource (node *syntax_tree)
 {
-    const char *pathname;
-    char cccallstr[MAX_PATH_LEN];
-    char *cppfile;
-    int err;
-
-    DBUG_ENTER ("SPdoScanParse");
-
-    global.compiler_subphase = SUBPH_cpp;
+    DBUG_ENTER ("SPdoRunPreProcessor");
 
     global.filename = global.puresacfilename;
 
-    /*
-     * Create a name for the file containing the CPP's result
-     */
-
     if (global.sacfilename == NULL) {
-        cppfile = ILIBstringConcat3 (global.tmp_dirname, "/", "stdin");
-        ILIBcreateCppCallString (global.sacfilename, cccallstr, cppfile);
-        CTInote ("Parsing from stdin ...");
+        pathname = NULL;
+        CTInote ("Reading from stdin ...");
     } else {
-        cppfile = ILIBstringConcat3 (global.tmp_dirname, "/", global.filename);
         pathname = FMGRfindFile (PK_path, global.sacfilename);
 
         if (pathname == NULL) {
             CTIabort ("Unable to open file \"%s\"", global.sacfilename);
         }
 
-        ILIBcreateCppCallString (pathname, cccallstr, cppfile);
-
-        CTInote ("Parsing file \"%s\" ...", pathname);
+        CTInote ("Reading from file \"%s\" ...", pathname);
     }
+
+    DBUG_RETURN (syntax_tree);
+}
+
+node *
+SPdoRunPreProcessor (node *syntax_tree)
+{
+    int err;
+    char *tmp, *cppcallstr;
+
+    DBUG_ENTER ("SPdoRunPreProcessor");
+
+    global.filename = global.puresacfilename;
+
+    if (pathname == NULL) {
+        cppcallstr
+          = ILIBstringConcat (global.config.cpp_stdin,
+                              global.cpp_options == NULL ? " " : global.cpp_options);
+    } else {
+        cppcallstr
+          = ILIBstringConcat4 (global.config.cpp_file,
+                               global.cpp_options == NULL ? " " : global.cpp_options, " ",
+                               pathname);
+#if 0
+    pathname = ILIBfree( pathname);
+#endif
+    }
+
+    tmp = ILIBstringConcat4 (cppcallstr, " -o ", global.tmp_dirname, "/source");
+    cppcallstr = ILIBfree (cppcallstr);
+    cppcallstr = tmp;
 
     if (global.show_syscall) {
-        CTInote ("err = system( \"%s\")", cccallstr);
+        CTInote ("err = system( \"%s\")", cppcallstr);
     }
 
-    err = system (cccallstr);
+    err = system (cppcallstr);
+
+    cppcallstr = ILIBfree (cppcallstr);
+
     if (err) {
-        CTIabort ("Unable to start C preprocessor");
+        CTIabort ("Unable to run C preprocessor");
     }
 
-    global.compiler_subphase = SUBPH_sp;
+    DBUG_RETURN (syntax_tree);
+}
+
+node *
+SPdoScanParse (node *syntax_tree)
+{
+    int err;
+    char *cppfile;
+
+    DBUG_ENTER ("SPdoScanParse");
+
+    cppfile = ILIBstringConcat (global.tmp_dirname, "/source");
 
     if (global.show_syscall) {
         CTInote ("yyin = fopen( \"%s\", \"r\")", cppfile);
@@ -84,7 +99,7 @@ SPdoScanParse (node *syntax_tree)
     yyin = fopen (cppfile, "r");
 
     if ((yyin == NULL) || (ferror (yyin))) {
-        CTIabort ("Unable to start C preprocessor");
+        CTIabort ("C preprocessing failed");
     }
 
     global.start_token = PARSE_PRG;
@@ -105,10 +120,12 @@ SPdoScanParse (node *syntax_tree)
     }
 
     err = remove (cppfile);
+
+    cppfile = ILIBfree (cppfile);
+
     if (err) {
         CTIabort ("Could not delete /tmp-file");
     }
-    ILIBfree (cppfile);
 
     FMGRsetFileNames (global.syntax_tree);
 

@@ -1,6 +1,8 @@
-/**
+/*
  * $Id$
- *
+ */
+
+/*
  * @file
  *
  * This file provides the interface for producing any kind of output during
@@ -43,7 +45,6 @@
 #include "filemgr.h"
 #include "internal_lib.h"
 #include "build.h"
-#include "resource.h"
 #include "print.h"
 #include "convert.h"
 #include "globals.h"
@@ -909,12 +910,8 @@ CTIterminateCompilation (compiler_phase_t phase, char *break_specifier, node *sy
      */
 
     if (global.print_after_break) {
-        if (phase < PH_scanparse) {
-            RSCshowResources ();
-        } else {
-            if (phase <= PH_compile) {
-                syntax_tree = PRTdoPrint (syntax_tree);
-            }
+        if ((phase <= PH_compile) && (syntax_tree != NULL)) {
+            syntax_tree = PRTdoPrint (syntax_tree);
         }
     }
 

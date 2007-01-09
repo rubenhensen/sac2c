@@ -54,15 +54,6 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
-/* set to maximum allowed number of CPP includes */
-#undef MAX_CPP_INCS
-
-/* set to maximum allowed number of CPP vars */
-#undef MAX_CPP_VARS
-
-/* set to maximum length of sac error messages */
-#undef MAX_ERROR_MESSAGE_LENGTH
-
 /* set to maximum file name length */
 #undef MAX_FILE_NAME
 
