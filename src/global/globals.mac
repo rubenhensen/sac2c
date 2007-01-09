@@ -605,26 +605,6 @@ GLOBAL (compiler_subphase_t, compiler_subphase, SUBPH_initial)
  * Counter for compilation phases
  */
 
-GLOBAL (int, message_indent, 0)
-/*
- * used for formatting compile time output
- */
-
-GLOBAL (int, last_indent, 0)
-/*
- * used for formatting compile time output
- */
-
-GLOBAL (int, current_line_length, 80)
-/*
- * used for formatting compile time output
- */
-
-GLOBAL (char *, error_message_buffer, (char *)ILIBmalloc (MAX_ERROR_MESSAGE_LENGTH))
-/*
- * Buffer for generating formatted message
- */
-
 GLOBAL (int, linenum, 1)
 /*
  * Current line number
