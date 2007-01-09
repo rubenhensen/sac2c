@@ -410,15 +410,11 @@ dnl
 
 AC_DEFINE( MAX_PATH_LEN, 1024, [set to maximum path length])
 AC_DEFINE( MAX_FILE_NAME, 256, [set to maximum file name length])
-AC_DEFINE( MAX_CPP_VARS, 128, [set to maximum allowed number of CPP vars])
-AC_DEFINE( MAX_CPP_INCS, 128, [set to maximum allowed number of CPP includes])
 AC_DEFINE( PF_MAXFUN, 100, [set to maximum number of sac functions for profiling])
 AC_DEFINE( PF_MAXFUNAP, 100, 
            [set to maximum number of sac function applications for profiling])
 AC_DEFINE( PF_MAXFUNNAMELEN, 100, 
            [set to maximum length of sac function names for profiling])
-AC_DEFINE( MAX_ERROR_MESSAGE_LENGTH, 2000, 
-           [set to maximum length of sac error messages])
 
 
 
