@@ -1,10 +1,6 @@
 /*
  * $Id$
  *
- *
- * Revision 2.1  1999/05/12 14:27:24  cg
- * initial revision
- *
  */
 
 /*****************************************************************************
@@ -15,7 +11,7 @@
  *
  * description:
  *  This file provides means for the analysis of sac2c command line arguments.
- *  It uses the set macro definitions from main_args.h
+ *  It uses the set macro definitions from getoptions.h
  *
  *****************************************************************************/
 
@@ -31,7 +27,7 @@
                   STR_OR_EMPTY (ARG));                                                   \
     }
 
-#include "main_args.h"
+#include "getoptions.h"
 
 #include "usage.h"
 #include "filemgr.h"

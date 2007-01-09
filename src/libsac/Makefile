@@ -24,7 +24,7 @@ LIBS := -L.
 
 OBJS_LIBSAC := message.o misc.o profile.o trace.o nophm.o sac_arg.o \
                cachesim_access_advanced.o cachesim_access_simple.o \
-               cachesim_basic.o ../../lib/main_args.o cinterface.o \
+               cachesim_basic.o ../../lib/getoptions.o cinterface.o \
                commandline.o
 
 OBJS_LIBSAC_MT := message_mt.o misc_mt.o trace_mt.o mt.o mt_trace.o \

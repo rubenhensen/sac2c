@@ -1,6 +1,6 @@
 
 #
-# $Id:$
+# $Id$
 #
 #
 
@@ -41,7 +41,7 @@ ALL_SOURCE_DIRS := $(addprefix src/,$(src))
 TARGETS_DEVEL := $(addprefix src/,$(foreach target,$(TARGET),$(addprefix $(target)/,$($(target)))))
 TARGETS_PROD  := $(patsubst %.o,%.prod.o,$(TARGETS_DEVEL))
 
-LIB  := lib/dbug.o lib/main_args.o
+LIB  := lib/dbug.o lib/getoptions.o
 INCS := -Iinc $(patsubst %,-I%,$(ALL_SOURCE_DIRS))
 
 REVISION := $(shell svn info | grep Revision: | sed -e 's/Revision: //g')

@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <time.h>
 
-#include "main_args.h"
+#include "getoptions.h"
 
 /*****************************************************************************
  *

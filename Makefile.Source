@@ -1,6 +1,5 @@
 #
-# $Id: $
-#
+# $Id$
 #
 
 ###############################################################################
@@ -101,7 +100,7 @@ TARGETS_DEVEL := $(addprefix ../,$(foreach target,$(src),$(addprefix $(target)/,
 
 BETEST_OBJS = $(filter-out $(patsubst %,../compile/%.o,$(BETEST_ICMS)) \                            ../global/main.o,$(TARGETS_DEVEL)) \
               $(patsubst %,../compile/%.BEtest.o,$(BETEST_ICMS)) \
-              ../../lib/dbug.o ../../lib/main_args.o ../global/build.o
+              ../../lib/dbug.o ../../lib/getoptions.o ../global/build.o
 
 
 BEtest: BEtest.c icm_vars.c icm_betest.c icm.data $(BETEST_OBJS)

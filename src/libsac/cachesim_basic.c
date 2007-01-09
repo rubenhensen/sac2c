@@ -1,97 +1,5 @@
 /*
- * $Log$
- * Revision 3.3  2003/07/28 15:35:06  cg
- * Changed quoted mail addresses to sac-home.org.
- *
- * Revision 3.2  2000/11/21 17:35:37  cg
- * Bug fixed in piped cache simulation on selected blocks:
- * Block characterization tags are encoded for piping in a way that
- * all blank characters are replaced by '+'.
- *
- * Revision 3.1  2000/11/20 18:02:42  sacbase
- * new release made
- *
- * Revision 2.23  2000/10/27 16:12:13  cg
- * Converted counters to new data type  unsigned long long int !
- *
- * Revision 2.22  2000/10/19 13:56:46  cg
- * Presentation of simulation results now includes statistical data
- * for all cache levels combined.
- *
- * Revision 2.21  2000/07/31 14:43:43  cg
- * Bug fixed in invocation of cache simulation tool.
- *
- * Revision 2.20  2000/02/04 16:50:20  cg
- * Changed setting of cache sizes from a KB representation to bytes.
- *
- * Revision 2.19  1999/07/22 14:56:13  cg
- * Added safety checks concerning existence and executability of
- * external CacheSimAnalyser for piped cache simulation.
- *
- * Revision 2.18  1999/07/22 09:53:06  cg
- * Added new routine to compute the number of digits required to
- * represent the final counter values. Before, this was done
- * using the Math library functions log10() and ceil() which
- * required to link with libm.
- *
- * Revision 2.17  1999/07/20 08:36:09  bs
- * Result presentation beautified.
- *
- * Revision 2.16  1999/07/08 12:28:01  cg
- * File moved to new directory src/libsac.
- *
- *
- */
-
-/*
- * Revision 2.15  1999/07/05 11:58:30  her
- * changes to seperate read from writecounters
- *
- * Revision 2.14  1999/07/02 10:05:51  cg
- * Result presentation beautified.
- *
- * Revision 2.13  1999/06/11 12:57:59  cg
- * Cache simulation via memory access trace file implemented.
- * Added help screen for CacheSimAnalyser as well as application
- * programs compiled for cache simulation.
- *
- * Revision 2.12  1999/06/10 09:52:13  cg
- * Added piped cache simulation on remote host machine.
- *
- * Revision 2.11  1999/06/03 13:40:36  her
- * added the line "self & cross int." to the output of SAC_CS_ShowResults.
- *
- * Revision 2.10  1999/05/20 14:16:29  cg
- * All simulation parameters may now be set dynamically, including
- * global/blocked simulation.
- *
- * Revision 2.9  1999/05/10 10:57:54  her
- * SAC_CS_CheckArguments got a new parameter: profilinglevel
- *
- * Revision 2.8  1999/05/06 14:05:45  her
- * eliminated THE segmentation fault caused by pde1-64
- *
- * Revision 2.7  1999/04/26 11:55:34  her
- * modifications for the piped-cachesimulation
- *
- * Revision 2.5  1999/04/14 09:23:15  cg
- * Cache simulation may now be triggered by pragmas.
- *
- * Revision 2.4  1999/04/12 09:40:54  cg
- * Bug removed in initialization of write access function table.
- * Presentation of results immproved.
- *
- * Revision 2.3  1999/04/06 13:45:39  cg
- * added extended setup of cache parameters.
- *
- * Revision 2.2  1999/03/26 14:34:21  her
- * new functions SAC_CS_Start and SAC_CS_Stop added
- *
- * Revision 2.1  1999/02/23 12:43:36  sacbase
- * new release made
- *
- * Revision 1.1  1999/02/17 17:25:18  her
- * Initial revision
+ * $Id$
  *
  */
 
@@ -105,7 +13,7 @@
 #include "sac_message.h"
 
 #include "cachesim.h"
-#include "main_args.h"
+#include "getoptions.h"
 
 /*
  * The following defines are copied from globals.h for usage in function

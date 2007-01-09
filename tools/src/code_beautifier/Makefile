@@ -1,15 +1,5 @@
 #
-#
-# $Log$
-# Revision 1.3  2004/08/18 10:33:15  sah
-# added missing dependency to cb
-#
-# Revision 1.2  2004/08/18 09:59:34  sbs
-# no dependencies for cb!
-#
-# Revision 1.1  2003/09/19 14:40:02  dkr
-# Initial revision
-#
+# $Id$
 #
 
 #######################################################################################
@@ -23,7 +13,7 @@ include $(PROJECT_ROOT)/Makefile.Config
 
 INCS   = -I../../../inc
 LIBDIR = ../../../lib
-LIBS   = $(LIBDIR)/main_args.o
+LIBS   = $(LIBDIR)/getoptions.o
 
 TOOLS = ../..
 

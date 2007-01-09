@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "main_args.h"
+#include "getoptions.h"
 
 /* boolean */
 typedef int bool;

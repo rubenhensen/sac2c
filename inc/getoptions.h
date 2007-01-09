@@ -1,36 +1,9 @@
 /*
- *
- * $Log$
- * Revision 3.3  2005/04/07 16:16:27  cg
- * Textual arguments to command line options are now parsed case insensitive.
- * This allows us to write -noopt or -noOPT without specifying two different
- * options in options.c
- *
- * Revision 3.2  2004/11/26 16:32:19  cg
- * ARGS_OPTION_BEGIN/END added.
- *
- * Revision 3.1  2000/11/20 17:59:15  sacbase
- * new release made
- *
- * Revision 2.3  1999/11/10 13:23:33  sbs
- * stdlib.h now included as well => strtol not known otherwise!
- *
- * Revision 2.2  1999/05/18 12:51:33  cg
- * All macros are now prefixed with either ARGS or ARG.
- * Invalid command line entries not necessarily lead to an error
- * message.
- *
- * Revision 2.1  1999/05/12 14:13:41  cg
- * new release made
- *
- * Revision 1.1  1999/05/12 13:52:40  cg
- * Initial revision
- *
- *
+ * $Id$
  */
 
 /*
- * File: main_args.h
+ * File: get_options.h
  *
  * Description:
  *
@@ -133,18 +106,17 @@
  *
  */
 
-#ifndef _main_args_h
-
-#define _main_args_h
+#ifndef _GETOPTIONS_H_
+#define _GETOPTIONS_H_
 
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-extern int ARGS_CheckOption (char *pattern, char *argv1, char *argv2, char **option,
-                             char **argument);
+extern int GOPTcheckOption (char *pattern, char *argv1, char *argv2, char **option,
+                            char **argument);
 
-extern int ARGS_StringEqual (char *s1, char *s2, int case_sensitive);
+extern int GOPTstringEqual (char *s1, char *s2, int case_sensitive);
 
 #define ARGS_BEGIN(argc, argv)                                                           \
     {                                                                                    \
@@ -159,7 +131,7 @@ extern int ARGS_StringEqual (char *s1, char *s2, int case_sensitive);
 
 #define ARGS_FLAG(s, action)                                                             \
     if ((ARGS_argv[ARGS_i][0] == '-')                                                    \
-        && ARGS_StringEqual (s, ARGS_argv[ARGS_i] + 1, 1)) {                             \
+        && GOPTstringEqual (s, ARGS_argv[ARGS_i] + 1, 1)) {                              \
         OPT = ARGS_argv[ARGS_i] + 1;                                                     \
         ARG = NULL;                                                                      \
         action;                                                                          \
@@ -169,9 +141,9 @@ extern int ARGS_StringEqual (char *s1, char *s2, int case_sensitive);
 
 #define ARGS_OPTION(s, action)                                                           \
     if ((ARGS_shift                                                                      \
-         = ARGS_CheckOption (s, ARGS_argv[ARGS_i],                                       \
-                             ARGS_i < ARGS_argc - 1 ? ARGS_argv[ARGS_i + 1] : NULL,      \
-                             &OPT, &ARG))) {                                             \
+         = GOPTcheckOption (s, ARGS_argv[ARGS_i],                                        \
+                            ARGS_i < ARGS_argc - 1 ? ARGS_argv[ARGS_i + 1] : NULL, &OPT, \
+                            &ARG))) {                                                    \
         if (ARG == NULL) {                                                               \
             ARGS_ERROR ("Missing argument for option");                                  \
         } else {                                                                         \
@@ -184,9 +156,9 @@ extern int ARGS_StringEqual (char *s1, char *s2, int case_sensitive);
 
 #define ARGS_OPTION_BEGIN(s)                                                             \
     if ((ARGS_shift                                                                      \
-         = ARGS_CheckOption (s, ARGS_argv[ARGS_i],                                       \
-                             ARGS_i < ARGS_argc - 1 ? ARGS_argv[ARGS_i + 1] : NULL,      \
-                             &OPT, &ARG))) {                                             \
+         = GOPTcheckOption (s, ARGS_argv[ARGS_i],                                        \
+                            ARGS_i < ARGS_argc - 1 ? ARGS_argv[ARGS_i + 1] : NULL, &OPT, \
+                            &ARG))) {                                                    \
         if (ARG == NULL) {                                                               \
             ARGS_ERROR ("Missing argument for option");                                  \
         } else {
@@ -233,7 +205,7 @@ extern int ARGS_StringEqual (char *s1, char *s2, int case_sensitive);
         int ARGS_not_chosen = 1;
 
 #define ARG_CHOICE(choice, action)                                                       \
-    if (ARGS_not_chosen && ARGS_StringEqual (ARG, choice, 0)) {                          \
+    if (ARGS_not_chosen && GOPTstringEqual (ARG, choice, 0)) {                           \
         ARGS_not_chosen = 0;                                                             \
         action;                                                                          \
     }
@@ -319,4 +291,4 @@ extern int ARGS_StringEqual (char *s1, char *s2, int case_sensitive);
         }                                                                                \
         }
 
-#endif /* _main_args_h */
+#endif /* _GETOPTIONS_H_ */

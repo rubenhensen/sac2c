@@ -1,32 +1,5 @@
 #
-#
-# $Log$
-# Revision 1.10  2003/04/10 18:50:39  dkr
-# clean target extended
-#
-# Revision 1.9  2003/04/01 10:53:32  sbs
-# Makefile.Config and Makefile.Deps included properly now.
-#
-# Revision 1.8  2001/12/06 14:39:46  dkr
-# target 'clean' corrected
-#
-# Revision 1.7  2001/11/20 10:42:09  sacbase
-# mkdir integrated into make rule rather than separate rule
-#
-# Revision 1.6  2001/11/20 10:18:15  sacbase
-# missing dep for $(LIBS) added.
-#
-# Revision 1.5  2001/11/20 10:17:20  sacbase
-# rule for $(LIBS) added.
-#
-# Revision 1.4  2001/11/20 10:13:38  sacbase
-# new destination directory $(TOOLS)/bin added.
-#
-# Revision 1.3  2001/11/19 18:20:33  dkr
-# rcs header added
-# Makefile.Config included
-#
-#
+# $Id$
 
 #######################################################################################
 #
@@ -39,7 +12,7 @@ include $(PROJECT_ROOT)/Makefile.Config
 
 INCS   = -I../../../inc
 LIBDIR = ../../../lib
-LIBS   = $(LIBDIR)/main_args.o
+LIBS   = $(LIBDIR)/getoptions.o
 
 TOOLS = ../../
 
