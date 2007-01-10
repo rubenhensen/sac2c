@@ -25,7 +25,7 @@ src = global tree serialize \
 
 
 global      = main.o usage.o internal_lib.o memory.o globals.o \
-              resource.o options.o NameTuplesUtils.o \
+              resource.o options.o NameTuplesUtils.o phase_drivers.o \
               filemgr.o ctinfo.o phase.o private_heap.o
 
 tree        = traverse.o tree_basic.o free.o tree_compound.o DupTree.o \
@@ -50,9 +50,9 @@ scanparse   = sac.tab.o sac.lex.o scnprs.o handle_dots.o resolvepragma.o \
 
 flatten     = flatten.o lac2fun.o fun2lac.o insert_vardec.o \
               handle_mops.o UndoSSATransform.o ToNewTypes.o SSATransform.o \
-              WLPartitionGeneration.o WLEnhancement.o ExplicitAccumulate.o \
+              WLPartitionGeneration.o ExplicitAccumulate.o \
               ToOldTypes.o wlanalysis.o lacinlining.o wldefaultpartition.o \
-              while2do.o handle_condexpr.o codesimplification.o
+              while2do.o handle_condexpr.o 
 
 constants   = shape.o constants_basic.o constants_struc_ops.o \
               constants_ari_ops.o cv2cv.o cv2scalar.o cv2str.o \
@@ -64,8 +64,7 @@ typecheck   = new_typecheck.o new_types.o user_types.o create_wrappers.o \
               type_statistics.o type_utils.o resolvesymboltypes.o \
               split_wrappers.o dispatchfuncalls.o insert_type_conv.o \
               update_wrapper_type.o free_dispatch_information.o \
-              pre_typecheck.o elim_alpha_types.o elim_bottom_types.o \
-              extend_lac_funs.o
+              elim_alpha_types.o elim_bottom_types.o extend_lac_funs.o
 
 types       = 
 
@@ -77,7 +76,6 @@ modules     = symboltable.o stringset.o libstat.o modulemanager.o libmanager.o \
 objects     = object_init.o resolve_reference_args.o object_analysis.o \
               extend_wrapper_types.o resolve_objects.o restore_reference_args.o \
               restore_objects.o check_uniqueness_annotations.o \
-              uniqueness_phase.o  \
               generate_object_initialiser.o strip_external_signatures.o \
               manage_object_initialisers.o \
       	      check_uniqueness.o spmdfun_fix.o
@@ -104,7 +102,7 @@ psi-opt     = index_eliminate.o index_infer.o index_optimize.o \
 
 wltransform = wlpragma_funs.o wltransform.o wlidxs.o 
 
-concurrent  = concurrent.o create_mtfuns.o spmd_init.o spmd_lift.o schedule.o \
+concurrent  = create_mtfuns.o spmd_init.o spmd_lift.o schedule.o \
               removespmd.o
 
 multithread = multithread_lib.o tag_executionmode.o \

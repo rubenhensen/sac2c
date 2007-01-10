@@ -1,11 +1,6 @@
 /*
  *
- * $Log$
- * Revision 1.2  2005/09/04 12:49:35  ktr
- * added new global optimization counters and made all optimizations proper subphases
- *
- * Revision 1.1  2005/03/07 13:40:34  cg
- * Initial revision
+ * $Id$
  *
  *
  */

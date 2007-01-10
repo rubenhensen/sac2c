@@ -129,7 +129,7 @@ USGprintUsage ()
             "    -noPAB          Deactivates printing after break.\n"
             "    -doPAB          Activates printing after break.\n\n");
 
-    for (ph = 1; ph <= PH_genccode; ph++) {
+    for (ph = 1; ph < PH_final; ph++) {
         printf ("    -b %2i           Stop after: %s.\n", ph, PHphaseName (ph));
     }
 

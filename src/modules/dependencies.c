@@ -1,9 +1,13 @@
-/* $Id$ */
+/*
+ * $Id$
+ */
 
 #include "dependencies.h"
 
 #include <string.h>
 #include <libgen.h>
+
+#include "globals.h"
 #include "stringset.h"
 #include "tree_basic.h"
 #include "modulemanager.h"
@@ -81,12 +85,12 @@ GenerateDependencyTableEntries (stringset_t *deps, FILE *file)
     DBUG_VOID_RETURN;
 }
 
-void
-DEPgenerateDependencyTable (stringset_t *deps)
+static void
+GenerateDependencyTable (stringset_t *deps)
 {
     FILE *file;
 
-    DBUG_ENTER ("DEPgenerateDependencyTable");
+    DBUG_ENTER ("GenerateDependencyTable");
 
     file = FMGRwriteOpen ("%s/dependencytable.c", global.tmp_dirname);
 
@@ -123,12 +127,12 @@ BuildDepClosFoldFun (const char *entry, strstype_t kind, void *rest)
     DBUG_RETURN ((void *)result);
 }
 
-stringset_t *
-DEPbuildDependencyClosure (stringset_t *deps)
+static stringset_t *
+BuildDependencyClosure (stringset_t *deps)
 {
     stringset_t *result;
 
-    DBUG_ENTER ("DEPbuildDependencyClosure");
+    DBUG_ENTER ("BuildDependencyClosure");
 
     result = STRSfold (&BuildDepClosFoldFun, deps, NULL);
 
@@ -137,7 +141,7 @@ DEPbuildDependencyClosure (stringset_t *deps)
          * we have found some second level dependencies,
          * so next we build the closure over them.
          */
-        result = DEPbuildDependencyClosure (result);
+        result = BuildDependencyClosure (result);
     }
 
     result = STRSjoin (result, deps);
@@ -343,6 +347,34 @@ DEPdoPrintDependencies (node *syntax_tree)
     }
 
     CTIterminateCompilation (PH_final, NULL, syntax_tree);
+
+    DBUG_RETURN (syntax_tree);
+}
+
+/*
+ * We use a rather weird signature here to fit the framework of the
+ * compiler phase mechanism.
+ */
+node *
+DEPdoHandleDependencies (node *syntax_tree)
+{
+    DBUG_ENTER ("DEPdoHandleDependencies");
+
+    if (global.filetype != F_prog) {
+        /*
+         * finally generate the dependency table.
+         * we do this here as new dependencies may be introduced
+         * during the compilation steps up to here
+         */
+        GenerateDependencyTable (global.dependencies);
+    } else {
+        /*
+         * for programs, we build the closure of all dependencies.
+         * again, we cannot do this earlier, as new dependencies
+         * might have been introduced until here.
+         */
+        global.dependencies = BuildDependencyClosure (global.dependencies);
+    }
 
     DBUG_RETURN (syntax_tree);
 }

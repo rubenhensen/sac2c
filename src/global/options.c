@@ -269,7 +269,7 @@ OPTanalyseCommandline (int argc, char *argv[])
 
     ARGS_FLAG ("cs", global.docachesim = FALSE);
 
-    ARGS_FLAG ("c", global.break_after = PH_genccode);
+    ARGS_FLAG ("c", global.break_after = PH_compile);
 
     /*
      * Options starting with ddddddddddddddddddddddddddddddddddddddddddd

@@ -7,7 +7,6 @@
 
 #include "types.h"
 
-extern node *WLTRAdoWlTransformPhase (node *syntax_tree);
 extern node *WLTRAdoWlTransform (node *syntax_tree);
 
 extern node *WLTRAassign (node *arg_node, info *arg_info);

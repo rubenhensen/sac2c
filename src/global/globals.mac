@@ -784,6 +784,12 @@ GLOBAL (configuration_t, config, config_init)
  * which is read from the sac2crc file.
  */
 
+/*
+ * Storing module dependencies
+ */
+
+GLOBAL (stringset_t *, dependencies, NULL);
+
 #undef GLOBALtype
 #undef GLOBALname
 #undef GLOBALinit

@@ -30,6 +30,10 @@
 #define SUBPHASEspec(it_spec)
 #endif
 
+#ifndef SUBPHASEusage
+#define SUBPHASEusage(it_usage)
+#endif
+
 #ifndef SUBPHASEtext
 #define SUBPHASEtext(it_text)
 #endif
@@ -38,527 +42,572 @@
 #define SUBPHASEfun(it_fun)
 #endif
 
-#define SUBPHASE(it_element, it_spec, it_text, it_fun)                                   \
-    SUBPHASEelement (it_element) SUBPHASEspec (it_spec) SUBPHASEtext (it_text)           \
-      SUBPHASEfun (it_fun)
+#define SUBPHASE(it_element, it_spec, it_usage, it_text, it_fun)                         \
+    SUBPHASEelement (it_element) SUBPHASEspec (it_spec) SUBPHASEusage (it_usage)         \
+      SUBPHASEtext (it_text) SUBPHASEfun (it_fun)
 
 /******************************************************************************/
 
 PHASE (initial, "Setting up compiler infrastructure", PHdummy)
 
-SUBPHASE (initial, "initial", "Setting up compiler infrastructure", PHdummy)
+SUBPHASE (initial, "initial", "initial", "Setting up compiler infrastructure", PHdummy)
 
 /******************************************************************************/
 
-PHASE (scanparse, "Loading SAC program", PHdummy)
+PHASE (scanparse, "Loading SAC program", PHDdriveScanParse)
 
-SUBPHASE (loc, "loc", "Locating source code", SPdoLocateSource)
+SUBPHASE (loc, "loc", "loc", "Locating source code", SPdoLocateSource)
 
-SUBPHASE (cpp, "cpp", "Running C preprocessor", SPdoRunPreProcessor)
+SUBPHASE (cpp, "cpp", "cpp", "Running C preprocessor", SPdoRunPreProcessor)
 
-SUBPHASE (sp, "sp", "Parsing input file", SPdoScanParse)
+SUBPHASE (sp, "sp", "sp", "Parsing input file", SPdoScanParse)
 
 /******************************************************************************/
 
-PHASE (preprocess, "Preprocessing SAC program", PHdummy)
+PHASE (preprocess, "Preprocessing SAC program", PHDdrivePreprocess)
 
-SUBPHASE (hzgwl, "hzgwl", "Handling zero-generator with-loops",
+SUBPHASE (hzgwl, "hzgwl", "hzgwl", "Handling zero-generator with-loops",
           HZGWLdoHandleZeroGeneratorWithLoops)
 
-SUBPHASE (hwlg, "hwlg", "Handling multi-generator with-loops", HWLGdoHandleWithLoops)
+SUBPHASE (hwlg, "hwlg", "hwlg", "Handling multi-generator with-loops",
+          HWLGdoHandleWithLoops)
 
-SUBPHASE (hwlo, "hwlo", "Handling multi-operator with-loops", HWLOdoHandleWithLoops)
+SUBPHASE (hwlo, "hwlo", "hwlo", "Handling multi-operator with-loops",
+          HWLOdoHandleWithLoops)
 
-SUBPHASE (acn, "acn", "Resolving axis control and dot notation", HDdoEliminateSelDots)
+SUBPHASE (acn, "acn", "acn", "Resolving axis control and dot notation",
+          HDdoEliminateSelDots)
 
-SUBPHASE (pragma, "pragma", "Resolving pragma annotations", RSPdoResolvePragmas)
+SUBPHASE (pragma, "pragma", "pragma", "Resolving pragma annotations", RSPdoResolvePragmas)
 
-SUBPHASE (objinit, "objinit", "Generating generic types and functions", OIdoObjectInit)
-
-/******************************************************************************/
-
-PHASE (module, "Running module system", PHdummy)
-
-SUBPHASE (rsa, "rsa", "Processing use and import statements", RSAdoResolveAll)
-
-SUBPHASE (ans, "ans", "Annotating namespaces", ANSdoAnnotateNamespace)
-
-SUBPHASE (gdp, "gdp", "Gathering dependencies", GDPdoGatherDependencies)
-
-SUBPHASE (imp, "imp", "Getting imported symbols", IMPdoImportSymbols)
-
-SUBPHASE (uss, "uss", "Getting used symbols", USSdoUseSymbols)
-
-SUBPHASE (asf, "asf", "Loading sac2c prelude functions", ASFdoAddSpecialFunctions)
+SUBPHASE (objinit, "objinit", "objinit", "Generating generic types and functions",
+          OIdoObjectInit)
 
 /******************************************************************************/
 
-PHASE (simplify, "Simplifying source code", CSdoCodeSimplification)
+PHASE (module, "Running module system", PHDdriveModuleSystem)
 
-SUBPHASE (w2d, "w2d", "Transforming while-loops into do-loops", W2DdoTransformWhile2Do)
+SUBPHASE (rsa, "rsa", "rsa", "Processing use and import statements", RSAdoResolveAll)
 
-SUBPHASE (hce, "hce", "Eliminating conditional expressions",
+SUBPHASE (ans, "ans", "ans", "Annotating namespaces", ANSdoAnnotateNamespace)
+
+SUBPHASE (gdp, "gdp", "gdp", "Gathering dependencies", GDPdoGatherDependencies)
+
+SUBPHASE (imp, "imp", "imp", "Getting imported symbols", IMPdoImportSymbols)
+
+SUBPHASE (uss, "uss", "uss", "Getting used symbols", USSdoUseSymbols)
+
+SUBPHASE (asf, "asf", "asf", "Loading sac2c prelude functions", ASFdoAddSpecialFunctions)
+
+/******************************************************************************/
+
+PHASE (simplify, "Simplifying source code", PHDdriveCodeSimplification)
+
+SUBPHASE (w2d, "w2d", "w2d", "Transforming while-loops into do-loops",
+          W2DdoTransformWhile2Do)
+
+SUBPHASE (hce, "hce", "hce", "Eliminating conditional expressions",
           HCEdoHandleConditionalExpressions)
 
-SUBPHASE (hm, "hm", "Handling multiple operator expressions", HMdoHandleMops)
+SUBPHASE (hm, "hm", "hm", "Handling multiple operator expressions", HMdoHandleMops)
 
-SUBPHASE (flat, "flat", "Flattening nested expressions", FLATdoFlatten)
+SUBPHASE (flat, "flat", "flat", "Flattening nested expressions", FLATdoFlatten)
 
 /******************************************************************************/
 
-PHASE (pretypecheck, "Converting to static single assignment form", PTCdoPreTypecheck)
+PHASE (pretypecheck, "Converting to static single assignment form",
+       PHDdrivePreTypechecking)
 
-SUBPHASE (rst, "rst", "Processing user defined types", RSTdoResolveSymbolTypes)
+SUBPHASE (rst, "rst", "rst", "Processing user defined types", RSTdoResolveSymbolTypes)
 
-SUBPHASE (insvd, "ivd", "Inserting variable declarations", INSVDdoInsertVardec)
+SUBPHASE (insvd, "ivd", "ivd", "Inserting variable declarations", INSVDdoInsertVardec)
 
-SUBPHASE (instc, "itc", "Converting type decls in type conversions",
+SUBPHASE (instc, "itc", "itc", "Converting type decls in type conversions",
           INSTCdoInsertTypeConv)
 
-SUBPHASE (ses, "ses", "Stripping external signatures", SESdoStripExternalSignatures)
+SUBPHASE (ses, "ses", "ses", "Stripping external signatures",
+          SESdoStripExternalSignatures)
 
-SUBPHASE (crtwrp, "cwr", "Creating wrapper functions", CRTWRPdoCreateWrappers)
+SUBPHASE (crtwrp, "cwr", "cwr", "Creating wrapper functions", CRTWRPdoCreateWrappers)
 
-SUBPHASE (oan, "oan", "Running global object analysis", OANdoObjectAnalysis)
+SUBPHASE (oan, "oan", "oan", "Running global object analysis", OANdoObjectAnalysis)
 
-SUBPHASE (goi, "goi", "Generating object initialiser", GOIdoGenerateObjectInitialiser)
+SUBPHASE (goi, "goi", "goi", "Generating object initialiser",
+          GOIdoGenerateObjectInitialiser)
 
-SUBPHASE (rso, "rso", "Resolving global objects", RSOdoResolveObjects)
+SUBPHASE (rso, "rso", "rso", "Resolving global objects", RSOdoResolveObjects)
 
-SUBPHASE (rra, "rra", "Resolving reference arguments", RRAdoResolveReferenceArgs)
+SUBPHASE (rra, "rra", "rra", "Resolving reference arguments", RRAdoResolveReferenceArgs)
 
-SUBPHASE (ewt, "ewt", "Extending dispatch information", EWTdoExtendWrapperTypes)
+SUBPHASE (ewt, "ewt", "ewt", "Extending dispatch information", EWTdoExtendWrapperTypes)
 
-SUBPHASE (lac2fun, "l2f", "Eliminating loops and conditionals", L2FdoLac2Fun)
+SUBPHASE (lac2fun, "l2f", "l2f", "Eliminating loops and conditionals", L2FdoLac2Fun)
 
-SUBPHASE (elf, "elf", "Extending LaC funs", ELFdoExtendLacFuns)
+SUBPHASE (elf, "elf", "elf", "Extending LaC funs", ELFdoExtendLacFuns)
 
-SUBPHASE (ssa, "ssa", "Establishing static single assignment form",
+SUBPHASE (ssa, "ssa", "ssa", "Establishing static single assignment form",
           SSATdoTransformAllowGOs)
 
 /******************************************************************************/
 
-PHASE (typecheck, "Running type inference system", PHdummy)
+PHASE (typecheck, "Running type inference system", PHDdriveTypechecking)
 
-SUBPHASE (tc, "ntc", "Running type inference system", NTCdoNewTypeCheck)
+SUBPHASE (tc, "ntc", "ntc", "Running type inference system", NTCdoNewTypeCheck)
 
-SUBPHASE (ds, "ds", "Deserializing code", PHdummy)
+SUBPHASE (eat, "eat", "eat", "Eliminating Type Variables", EATdoEliminateAlphaTypes)
 
-SUBPHASE (eat, "eat", "Eliminating Type Variables", EATdoEliminateAlphaTypes)
+SUBPHASE (ebt, "ebt", "ebt", "Eliminating BottomTypes", EBTdoEliminateBottomTypes)
 
-SUBPHASE (ebt, "ebt", "Eliminating BottomTypes", EBTdoEliminateBottomTypes)
-
-SUBPHASE (swr, "swr", "Splitting Wrappers", SWRdoSplitWrappers)
+SUBPHASE (swr, "swr", "swr", "Splitting Wrappers", SWRdoSplitWrappers)
 
 /******************************************************************************/
 
-PHASE (export, "Processing exports", PHdummy)
+PHASE (export, "Processing exports", PHDdriveExport)
 
-SUBPHASE (exp, "exp", "Exporting symbols", EXPdoExport)
+SUBPHASE (exp, "exp", "exp", "Exporting symbols", EXPdoExport)
 
-SUBPHASE (ppi, "ppi", "Restoring bodies of imported inline functions", PPIdoPrepareInline)
-
-/******************************************************************************/
-
-PHASE (uniquecheck, "Checking uniqueness property of objects", UPdoUniquenessInference)
-
-SUBPHASE (cua, "cua", "Checking uniqueness annotations", CUAdoCheckUniquenessAnnotations)
-
-SUBPHASE (cu, "cu", "Checking uniqueness", CUdoCheckUniqueness)
+SUBPHASE (ppi, "ppi", "ppi", "Restoring bodies of imported inline functions",
+          PPIdoPrepareInline)
 
 /******************************************************************************/
 
-PHASE (elimudt, "Eliminating User-Defined Types and Creating Wrapper Code", PHdummy)
+PHASE (uniquecheck, "Checking uniqueness property of objects", PHDdriveUniquenessCheck)
 
-SUBPHASE (cwc, "cwc", "Creating Wrapper Bodies", CWCdoCreateWrapperCode)
+SUBPHASE (cua, "cua", "cua", "Checking uniqueness annotations",
+          CUAdoCheckUniquenessAnnotations)
 
-SUBPHASE (lac2funwc, "l2f", "Eliminating conditionals in wrapper code", L2FdoLac2Fun)
+SUBPHASE (cu, "cu", "cu", "Checking uniqueness", CUdoCheckUniqueness)
 
-SUBPHASE (ssawc, "ssa", "Establishing static single assignment form in wrapper code",
+/******************************************************************************/
+
+PHASE (elimudt, "Eliminating User-Defined Types and Creating Wrapper Code",
+       PHDdriveWrapperCreation)
+
+SUBPHASE (cwc, "cwc", "cwc", "Creating Wrapper Bodies", CWCdoCreateWrapperCode)
+
+SUBPHASE (lac2funwc, "l2f", "l2f", "Eliminating conditionals in wrapper code",
+          L2FdoLac2Fun)
+
+SUBPHASE (ssawc, "ssa", "ssa",
+          "Establishing static single assignment form in wrapper code",
           SSATdoTransformAllowGOs)
 
-SUBPHASE (dfc, "dfc", "Trying to dispatch staticly", DFCdoDispatchFunCalls)
+SUBPHASE (dfc, "dfc", "dfc", "Trying to dispatch staticly", DFCdoDispatchFunCalls)
 
-SUBPHASE (eudt, "eudt", "Eliminating User-Defined Types", RCdoRemoveCasts)
+SUBPHASE (eudt, "eudt", "eudt", "Eliminating User-Defined Types", RCdoRemoveCasts)
 
 /******************************************************************************/
 
-PHASE (wlenhance, "Enhancing of with-loops", WLEdoWlEnhancement)
+PHASE (wlenhance, "Enhancing of with-loops", PHDdriveWithLoopEnhancement)
 
-SUBPHASE (accu, "accu", "Introducing explicit accumulators", EAdoExplicitAccumulate)
+SUBPHASE (accu, "accu", "accu", "Introducing explicit accumulators",
+          EAdoExplicitAccumulate)
 
-SUBPHASE (wldp, "wldp", "Adding default partitions", WLDPdoWlDefaultPartition)
+SUBPHASE (wldp, "wldp", "wldp", "Adding default partitions", WLDPdoWlDefaultPartition)
 
-SUBPHASE (rtup, "rtup", "Applying reverse type upgrade", RTUPdoReverseTypeUpgrade)
+SUBPHASE (rtup, "rtup", "rtup", "Applying reverse type upgrade", RTUPdoReverseTypeUpgrade)
 
-SUBPHASE (wlpg, "wlpg", "Generating full with-loop partitions",
+SUBPHASE (wlpg, "wlpg", "wlpg", "Generating full with-loop partitions",
           WLPGdoWlPartitionGeneration)
 
 /******************************************************************************/
 
-PHASE (sacopt, "Running SAC optimizations", OPTdoOptimize)
+PHASE (sacopt, "Running SAC optimizations", PHDdriveOptimization)
 
-SUBPHASE (inl, "inl", "Applying function inlining", INLdoInlining)
+SUBPHASE (inl, "inl", "inl", "Applying function inlining", INLdoInlining)
 
-SUBPHASE (dfr, "dfr", "Removing dead functions", DFRdoDeadFunctionRemoval)
+SUBPHASE (dfr, "dfr", "dfr", "Removing dead functions", DFRdoDeadFunctionRemoval)
 
-SUBPHASE (dcr, "dcr", "Removing dead code", DCRdoDeadCodeRemovalModule)
+SUBPHASE (dcr, "dcr", "dcr", "Removing dead code", DCRdoDeadCodeRemovalModule)
 
-SUBPHASE (isaa, "isaa", "Inserting symbolic array attributes", ISAAdoInsertShapeVariables)
-
-SUBPHASE (intraopt, "cyc", "Applying intra-functional optimizations",
-          OPTdoIntraFunctionalOptimizations)
-
-SUBPHASE (cse, "cse", "Applying common subexpression elimination",
-          CSEdoCommonSubexpressionElimination)
-
-SUBPHASE (saacyc, "saacyc", "Inserting symbolic array attributes",
-          ISAAdoInsertShapeVariablesOneFundef)
-
-SUBPHASE (ili, "ili", "Infering loop invariant variables", ILIdoInferLoopInvariants)
-
-SUBPHASE (ntccyc, "ntc", "Applying type upgrade", NTCdoNewTypeCheckOneFunction)
-
-SUBPHASE (eatcyc, "eat", "Eliminating Type Variables",
-          EATdoEliminateAlphaTypesOneFunction)
-
-SUBPHASE (ebtcyc, "ebt", "Eliminating Bottom Types", EBTdoEliminateBottomTypesOneFunction)
-
-SUBPHASE (rtupcyc, "rtupcyc", "Applying reverse type upgrade",
-          RTUPdoReverseTypeUpgradeOneFundef)
-
-SUBPHASE (wlprop, "wlprop", "Applying with-loop propagation", WLPROPdoWithloopPropagation)
-
-SUBPHASE (dfccyc, "dfc", "Applying function call dispatch",
-          DFCdoDispatchFunCallsOneFundef)
-
-SUBPHASE (inlcyc, "inl", "Applying inlining", INLdoInlining)
-
-SUBPHASE (cf, "cf", "Applying constant folding", CFdoConstantFolding)
-
-SUBPHASE (cvp, "cvp", "Propagating constants and variables",
-          CVPdoConstVarPropagationOneFundef)
-
-SUBPHASE (wlpgcyc, "wlpg", "Generating full with-loop partitions",
-          WLPGdoWlPartitionGenerationOpt)
-
-SUBPHASE (wlsimp, "wlsimp", "Simplifying with-loops", WLSIMPdoWithloopSimplification)
-
-SUBPHASE (cwle, "cwle", "Eliminate copy with-loops", CWLEdoTemplateTraversal)
-
-SUBPHASE (wli, "wli", "Infering foldable with-loops", WLIdoWLI)
-
-SUBPHASE (wlf, "wlf", "Applying with-loop folding", WLFdoWLF)
-
-SUBPHASE (ssawlf, "ssawlf", "Restoring SSA form after with-loop folding",
-          SSATdoTransformOneFundef)
-
-SUBPHASE (swlf, "swlf", "Applying symbolic with-loop folding",
-          SWLFdoSymbolicWithLoopFolding)
-
-SUBPHASE (dcrcycfun, "dcrfun", "Applying dead code removal",
-          DCRdoDeadCodeRemovalOneFundef)
-
-SUBPHASE (wls, "wls", "Applying with-loop scalarization", WLSdoWithloopScalarization)
-
-SUBPHASE (lur, "lur", "Applying loop unrolling", LURdoLoopUnrolling)
-
-SUBPHASE (ssalur, "ssalur", "Restoring SSA form after loop unrolling",
-          SSATdoTransformOneFunction)
-
-SUBPHASE (wlur, "wlur", "Applying withloop unrolling", WLURdoWithloopUnrolling)
-
-SUBPHASE (ssawlur, "ssawlur", "Restoring SSA form after withloop unrolling",
-          SSATdoTransformOneFunction)
-
-SUBPHASE (prfunr, "prfunr", "Applying prf unrolling", UPRFdoUnrollPRFs)
-
-SUBPHASE (linlcyc, "linl", "Inlining degenerated LaC functions",
-          LINLdoLACInliningOneFundef)
-
-SUBPHASE (lir, "lir", "Applying loop invariant removal", LIRdoLoopInvariantRemoval)
-
-SUBPHASE (lir2, "lir2", "Applying loop invariant removal", LIRdoLoopInvariantRemoval)
-
-SUBPHASE (wlir, "wlir", "Applying with-loop invariant removal",
-          LIRdoWithLoopInvariantRemovalOneFundef)
-
-SUBPHASE (etc, "etc", "Eliminating typeconv primitives", ETCdoEliminateTypeConversions)
-
-SUBPHASE (esd, "esd", "Eliminating subtraction and division operators", ESDdoElimSubDiv)
-
-SUBPHASE (al, "al", "Applying associative law", ASSOCdoAssociativityOptimizationOneFundef)
-
-SUBPHASE (dl, "dl", "Applying distributive law",
-          DISTRIBdoDistributivityOptimizationOneFundef)
-
-SUBPHASE (dcrcyc, "dcr", "Applying dead code removal", DCRdoDeadCodeRemovalModule)
-
-SUBPHASE (sisi, "sisi", "Simplifying function signatures", SISIdoSignatureSimplification)
-
-SUBPHASE (uesd, "uesd", "Reintroducing subtraction and division operators",
-          UESDdoUndoElimSubDiv)
-
-SUBPHASE (dfr2, "dfr2", "Removing dead functions", DFRdoDeadFunctionRemoval)
-
-SUBPHASE (dcr2, "dcr2", "Applying dead code removal again", DCRdoDeadCodeRemovalModule)
-
-SUBPHASE (rtc, "rtc", "Running final type inference", NTCdoNewReTypeCheck)
-
-SUBPHASE (fineat, "fineat", "Final type variable elimination", EATdoEliminateAlphaTypes)
-
-SUBPHASE (finebt, "finebt", "Final bottom type elimination", EBTdoEliminateBottomTypes)
-
-SUBPHASE (wlfs, "wlfs", "Applying with-loop fusion", WLFSdoWithloopFusion)
-
-SUBPHASE (cse2, "cse", "Elimininating common subexpressions",
-          CSEdoCommonSubexpressionEliminationModule)
-
-SUBPHASE (dcr3, "dcr3", "Removing dead code", DCRdoDeadCodeRemovalModule)
-
-SUBPHASE (wlpg2, "wlpg2", "Generating full with-loop partitions",
-          WLPGdoWlPartitionGeneration)
-
-SUBPHASE (isaa2, "isaa2", "Inserting symbolic array attributes",
+SUBPHASE (isaa, "isaa", "isaa", "Inserting symbolic array attributes",
           ISAAdoInsertShapeVariables)
 
-SUBPHASE (svprfunr, "svprfunr", "Applying prf unrolling", UPRFdoUnrollPRFsModule)
+SUBPHASE (intraopt, "cyc", "cyc", "Applying intra-functional optimizations",
+          OPTdoIntraFunctionalOptimizations)
 
-SUBPHASE (svcvp, "svcvp", "Propagating constants and variables", CVPdoConstVarPropagation)
+SUBPHASE (cse, "cse", "cse", "Applying common subexpression elimination",
+          CSEdoCommonSubexpressionElimination)
 
-SUBPHASE (svtup, "svtup", "Applying type upgrade", NTCdoNewReTypeCheck)
+SUBPHASE (saacyc, "saacyc", "saacyc", "Inserting symbolic array attributes",
+          ISAAdoInsertShapeVariablesOneFundef)
 
-SUBPHASE (sveat, "sveat", "Finalising infered type information (Alphas)",
+SUBPHASE (ili, "ili", "ili", "Infering loop invariant variables",
+          ILIdoInferLoopInvariants)
+
+SUBPHASE (ntccyc, "ntc", "ntc", "Applying type upgrade", NTCdoNewTypeCheckOneFunction)
+
+SUBPHASE (eatcyc, "eat", "eat", "Eliminating Type Variables",
+          EATdoEliminateAlphaTypesOneFunction)
+
+SUBPHASE (ebtcyc, "ebt", "ebt", "Eliminating Bottom Types",
+          EBTdoEliminateBottomTypesOneFunction)
+
+SUBPHASE (rtupcyc, "rtupcyc", "rtupcyc", "Applying reverse type upgrade",
+          RTUPdoReverseTypeUpgradeOneFundef)
+
+SUBPHASE (wlprop, "wlprop", "wlprop", "Applying with-loop propagation",
+          WLPROPdoWithloopPropagation)
+
+SUBPHASE (dfccyc, "dfc", "dfc", "Applying function call dispatch",
+          DFCdoDispatchFunCallsOneFundef)
+
+SUBPHASE (inlcyc, "inl", "inl", "Applying inlining", INLdoInlining)
+
+SUBPHASE (cf, "cf", "cf", "Applying constant folding", CFdoConstantFolding)
+
+SUBPHASE (cvp, "cvp", "cvp", "Propagating constants and variables",
+          CVPdoConstVarPropagationOneFundef)
+
+SUBPHASE (wlpgcyc, "wlpg", "wlpg", "Generating full with-loop partitions",
+          WLPGdoWlPartitionGenerationOpt)
+
+SUBPHASE (wlsimp, "wlsimp", "wlsimp", "Simplifying with-loops",
+          WLSIMPdoWithloopSimplification)
+
+SUBPHASE (cwle, "cwle", "cwle", "Eliminate copy with-loops", CWLEdoTemplateTraversal)
+
+SUBPHASE (wli, "wli", "wli", "Infering foldable with-loops", WLIdoWLI)
+
+SUBPHASE (wlf, "wlf", "wlf", "Applying with-loop folding", WLFdoWLF)
+
+SUBPHASE (ssawlf, "ssawlf", "ssawlf", "Restoring SSA form after with-loop folding",
+          SSATdoTransformOneFundef)
+
+SUBPHASE (swlf, "swlf", "swlf", "Applying symbolic with-loop folding",
+          SWLFdoSymbolicWithLoopFolding)
+
+SUBPHASE (dcrcycfun, "dcrfun", "dcrfun", "Applying dead code removal",
+          DCRdoDeadCodeRemovalOneFundef)
+
+SUBPHASE (wls, "wls", "wls", "Applying with-loop scalarization",
+          WLSdoWithloopScalarization)
+
+SUBPHASE (lur, "lur", "lur", "Applying loop unrolling", LURdoLoopUnrolling)
+
+SUBPHASE (ssalur, "ssalur", "ssalur", "Restoring SSA form after loop unrolling",
+          SSATdoTransformOneFunction)
+
+SUBPHASE (wlur, "wlur", "wlur", "Applying withloop unrolling", WLURdoWithloopUnrolling)
+
+SUBPHASE (ssawlur, "ssawlur", "ssawlur", "Restoring SSA form after withloop unrolling",
+          SSATdoTransformOneFunction)
+
+SUBPHASE (prfunr, "prfunr", "prfunr", "Applying prf unrolling", UPRFdoUnrollPRFs)
+
+SUBPHASE (linlcyc, "linl", "linl", "Inlining degenerated LaC functions",
+          LINLdoLACInliningOneFundef)
+
+SUBPHASE (lir, "lir", "lir", "Applying loop invariant removal", LIRdoLoopInvariantRemoval)
+
+SUBPHASE (lir2, "lir2", "lir2", "Applying loop invariant removal",
+          LIRdoLoopInvariantRemoval)
+
+SUBPHASE (wlir, "wlir", "wlir", "Applying with-loop invariant removal",
+          LIRdoWithLoopInvariantRemovalOneFundef)
+
+SUBPHASE (etc, "etc", "etc", "Eliminating typeconv primitives",
+          ETCdoEliminateTypeConversions)
+
+SUBPHASE (esd, "esd", "esd", "Eliminating subtraction and division operators",
+          ESDdoElimSubDiv)
+
+SUBPHASE (al, "al", "al", "Applying associative law",
+          ASSOCdoAssociativityOptimizationOneFundef)
+
+SUBPHASE (dl, "dl", "dl", "Applying distributive law",
+          DISTRIBdoDistributivityOptimizationOneFundef)
+
+SUBPHASE (dcrcyc, "dcr", "dcr", "Applying dead code removal", DCRdoDeadCodeRemovalModule)
+
+SUBPHASE (sisi, "sisi", "sisi", "Simplifying function signatures",
+          SISIdoSignatureSimplification)
+
+SUBPHASE (uesd, "uesd", "uesd", "Reintroducing subtraction and division operators",
+          UESDdoUndoElimSubDiv)
+
+SUBPHASE (dfr2, "dfr2", "dfr2", "Removing dead functions", DFRdoDeadFunctionRemoval)
+
+SUBPHASE (dcr2, "dcr2", "dcr2", "Applying dead code removal again",
+          DCRdoDeadCodeRemovalModule)
+
+SUBPHASE (rtc, "rtc", "rtc", "Running final type inference", NTCdoNewReTypeCheck)
+
+SUBPHASE (fineat, "fineat", "fineat", "Final type variable elimination",
           EATdoEliminateAlphaTypes)
 
-SUBPHASE (svebt, "svebt", "Finalising infered type information (Bottoms)",
+SUBPHASE (finebt, "finebt", "finebt", "Final bottom type elimination",
           EBTdoEliminateBottomTypes)
 
-SUBPHASE (svcf, "svcf", "Applying constant folding", CFdoConstantFoldingModule)
+SUBPHASE (wlfs, "wlfs", "wlfs", "Applying with-loop fusion", WLFSdoWithloopFusion)
 
-SUBPHASE (svcse, "svcse", "Elimininating common subexpressions",
+SUBPHASE (cse2, "cse", "cse", "Elimininating common subexpressions",
           CSEdoCommonSubexpressionEliminationModule)
 
-SUBPHASE (svwlsimp, "svwlsimp", "Simplifying with-loops",
-          WLSIMPdoWithloopSimplificationModule)
+SUBPHASE (dcr3, "dcr3", "dcr3", "Removing dead code", DCRdoDeadCodeRemovalModule)
 
-SUBPHASE (svdcr, "svdcr", "Removing dead code", DCRdoDeadCodeRemovalModule)
+SUBPHASE (wlpg2, "wlpg2", "wlpg2", "Generating full with-loop partitions",
+          WLPGdoWlPartitionGeneration)
 
-SUBPHASE (wrci, "wrci", "Inferencing with-loop reuse candidates",
-          WRCIdoWithloopReuseCandidateInference)
+SUBPHASE (isaa2, "isaa2", "isaa2", "Inserting symbolic array attributes",
+          ISAAdoInsertShapeVariables)
 
-SUBPHASE (wlidx, "wlidx", "Annoting offset variable at with-loops",
-          WLIDXdoAnnotateWithloopIdxs)
+SUBPHASE (svprfunr, "svprfunr", "svprfunr", "Applying prf unrolling",
+          UPRFdoUnrollPRFsModule)
 
-SUBPHASE (ivei, "ivei", "Applying index vector elimination (inference)",
-          IVEIdoIndexVectorEliminationInference)
-
-SUBPHASE (ive, "ive", "Applying index vector elimination", IVEdoIndexVectorElimination)
-
-SUBPHASE (iveo, "iveo", "Applying index vector elimination (optimisation)",
-          IVEOdoIndexVectorEliminationOptimisation)
-
-SUBPHASE (cvpive, "cvpive", "Propagating constants and variables",
+SUBPHASE (svcvp, "svcvp", "svcvp", "Propagating constants and variables",
           CVPdoConstVarPropagation)
 
-SUBPHASE (lirive, "lirive", "Applying loop invariant removal", LIRdoLoopInvariantRemoval)
+SUBPHASE (svtup, "svtup", "svtup", "Applying type upgrade", NTCdoNewReTypeCheck)
 
-SUBPHASE (cseive, "cseive", "Eliminating common subexpression",
+SUBPHASE (sveat, "sveat", "sveat", "Finalising infered type information (Alphas)",
+          EATdoEliminateAlphaTypes)
+
+SUBPHASE (svebt, "svebt", "svebt", "Finalising infered type information (Bottoms)",
+          EBTdoEliminateBottomTypes)
+
+SUBPHASE (svcf, "svcf", "svcf", "Applying constant folding", CFdoConstantFoldingModule)
+
+SUBPHASE (svcse, "svcse", "svcse", "Elimininating common subexpressions",
           CSEdoCommonSubexpressionEliminationModule)
 
-SUBPHASE (esv, "esv", "Eliminating shape variables", ESVdoEliminateShapeVariables)
+SUBPHASE (svwlsimp, "svwlsimp", "svwlsimp", "Simplifying with-loops",
+          WLSIMPdoWithloopSimplificationModule)
 
-SUBPHASE (dcrive, "dcrive", "Removing dead code", DCRdoDeadCodeRemovalModule)
+SUBPHASE (svdcr, "svdcr", "svdcr", "Removing dead code", DCRdoDeadCodeRemovalModule)
 
-SUBPHASE (fdi, "fdi", "Freeing dispatch information", FDIdoFreeDispatchInformation)
+SUBPHASE (wrci, "wrci", "wrci", "Inferencing with-loop reuse candidates",
+          WRCIdoWithloopReuseCandidateInference)
+
+SUBPHASE (wlidx, "wlidx", "wlidx", "Annoting offset variable at with-loops",
+          WLIDXdoAnnotateWithloopIdxs)
+
+SUBPHASE (ivei, "ivei", "ivei", "Applying index vector elimination (inference)",
+          IVEIdoIndexVectorEliminationInference)
+
+SUBPHASE (ive, "ive", "ive", "Applying index vector elimination",
+          IVEdoIndexVectorElimination)
+
+SUBPHASE (iveo, "iveo", "iveo", "Applying index vector elimination (optimisation)",
+          IVEOdoIndexVectorEliminationOptimisation)
+
+SUBPHASE (cvpive, "cvpive", "cvpive", "Propagating constants and variables",
+          CVPdoConstVarPropagation)
+
+SUBPHASE (lirive, "lirive", "lirive", "Applying loop invariant removal",
+          LIRdoLoopInvariantRemoval)
+
+SUBPHASE (cseive, "cseive", "cseive", "Eliminating common subexpression",
+          CSEdoCommonSubexpressionEliminationModule)
+
+SUBPHASE (esv, "esv", "esv", "Eliminating shape variables", ESVdoEliminateShapeVariables)
+
+SUBPHASE (dcrive, "dcrive", "dcrive", "Removing dead code", DCRdoDeadCodeRemovalModule)
+
+SUBPHASE (fdi, "fdi", "fdi", "Freeing dispatch information", FDIdoFreeDispatchInformation)
 
 /******************************************************************************/
 
-PHASE (wltrans, "Transforming with-loop representation", WLTRAdoWlTransformPhase)
+PHASE (wltrans, "Transforming with-loop representation", PHDdriveWithLoopTransformation)
 
-SUBPHASE (wltussa, "ussa", "Converting from SSA form", USSATdoUndoSsaTransform)
+SUBPHASE (wltussa, "ussa", "ussa", "Converting from SSA form", USSATdoUndoSsaTransform)
 
-SUBPHASE (wltfun2lac, "fun2lac", "Reintroducing loops and conditionals", F2LdoFun2Lac)
+SUBPHASE (wltfun2lac, "fun2lac", "fun2lac", "Reintroducing loops and conditionals",
+          F2LdoFun2Lac)
 
-SUBPHASE (wltlacinl, "lacinl", "Inlining LaC functions", LINLdoLACInlining)
+SUBPHASE (wltlacinl, "lacinl", "lacinl", "Inlining LaC functions", LINLdoLACInlining)
 
-SUBPHASE (wltra, "wltra", "Transforming with-loop representation", WLTRAdoWlTransform)
+SUBPHASE (wltra, "wltra", "wltra", "Transforming with-loop representation",
+          WLTRAdoWlTransform)
 
-SUBPHASE (wltlac2fun, "lac2fun", "Eliminating loops and conditionals", L2FdoLac2Fun)
+SUBPHASE (wltlac2fun, "lac2fun", "lac2fun", "Eliminating loops and conditionals",
+          L2FdoLac2Fun)
 
-SUBPHASE (wltssa, "ssa", "Establishing static single assignment form", SSATdoTransform)
+SUBPHASE (wltssa, "ssa", "ssa", "Establishing static single assignment form",
+          SSATdoTransform)
 
-SUBPHASE (wltcvp, "cvp", "Propagating constants and variables", CVPdoConstVarPropagation)
+SUBPHASE (wltcvp, "cvp", "cvp", "Propagating constants and variables",
+          CVPdoConstVarPropagation)
 
-SUBPHASE (wltdcr, "dcr", "Removing dead code", DCRdoDeadCodeRemovalModule)
+SUBPHASE (wltdcr, "dcr", "dcr", "Removing dead code", DCRdoDeadCodeRemovalModule)
 
 /******************************************************************************/
 
 PHASE (multithread, "Generating annotations for multithreaded execution",
-       CONCdoConcurrent)
+       PHDdriveMultithreading)
 
-SUBPHASE (spmdinit_old, "spmdinit", "Building SPMD blocks around with-loops",
+SUBPHASE (spmdinit_old, "spmdinit", "spmdinit", "Building SPMD blocks around with-loops",
           SPMDIdoSpmdInit)
 
-SUBPHASE (createmtfuns_old, "createmtfuns",
+SUBPHASE (createmtfuns_old, "createmtfuns", "createmtfuns",
           "Creating MT variants of exported and provided functions", CMTFdoCreateMtFuns)
 
-SUBPHASE (spmdlift_old, "spmdlift", "Lifting SPMD blocks to functions", SPMDLdoSpmdLift)
+SUBPHASE (spmdlift_old, "spmdlift", "spmdlift", "Lifting SPMD blocks to functions",
+          SPMDLdoSpmdLift)
 
-SUBPHASE (sched, "sched", "Annotating scheduling informations", SCHEDdoScheduleTrav)
+SUBPHASE (sched, "sched", "sched", "Annotating scheduling informations",
+          SCHEDdoScheduleTrav)
 
-SUBPHASE (rmspmd, "rmspmd", "Removing SPMD blocks", RMSPMDdoRemoveSpmdBlocks)
+SUBPHASE (rmspmd, "rmspmd", "rmspmd", "Removing SPMD blocks", RMSPMDdoRemoveSpmdBlocks)
 
-SUBPHASE (conclac2fun, "l2f", "Lifting SPMD conditionals", L2FdoLac2Fun)
+SUBPHASE (conclac2fun, "l2f", "l2f", "Lifting SPMD conditionals", L2FdoLac2Fun)
 
-SUBPHASE (concssa, "ssa",
+SUBPHASE (concssa, "ssa", "ssa",
           "Establishing static single assignment form in SPMD conditionals",
           SSATdoTransform)
 
-SUBPHASE (tem, "tem", "Tagging execution modes", TEMdoTagExecutionmode)
+SUBPHASE (tem, "tem", "tem", "Tagging execution modes", TEMdoTagExecutionmode)
 
-SUBPHASE (crwiw, "crwiw", "Creating with in with", CRWIWdoCreateWithinwith)
+SUBPHASE (crwiw, "crwiw", "crwiw", "Creating with in with", CRWIWdoCreateWithinwith)
 
-SUBPHASE (pem, "pem", "Propagating execution modes", PEMdoPropagateExecutionmode)
+SUBPHASE (pem, "pem", "pem", "Propagating execution modes", PEMdoPropagateExecutionmode)
 
-SUBPHASE (cdfg, "cdfg", "Creating data flow graph", CDFGdoCreateDataflowgraph)
+SUBPHASE (cdfg, "cdfg", "cdfg", "Creating data flow graph", CDFGdoCreateDataflowgraph)
 
-SUBPHASE (asmra, "asmra", "Rearringing assignments", ASMRAdoAssignmentsRearrange)
+SUBPHASE (asmra, "asmra", "asmra", "Rearringing assignments", ASMRAdoAssignmentsRearrange)
 
-SUBPHASE (crece, "crece", "Creating execution mode cells", CRECEdoCreateCells)
+SUBPHASE (crece, "crece", "crece", "Creating execution mode cells", CRECEdoCreateCells)
 
-SUBPHASE (cegro, "cegro", "Extending execution mode cells", CEGROdoCellGrowth)
+SUBPHASE (cegro, "cegro", "cegro", "Extending execution mode cells", CEGROdoCellGrowth)
 
-SUBPHASE (repfun, "repfun", "Replicating functions", REPFUNdoReplicateFunctions)
+SUBPHASE (repfun, "repfun", "repfun", "Replicating functions", REPFUNdoReplicateFunctions)
 
-SUBPHASE (mtdfr, "dfr", "Removing superfluos functions", DFRdoDeadFunctionRemoval)
+SUBPHASE (mtdfr, "dfr", "dfr", "Removing superfluos functions", DFRdoDeadFunctionRemoval)
 
-SUBPHASE (concel, "concel", "Consolidating execution mode cells",
+SUBPHASE (concel, "concel", "concel", "Consolidating execution mode cells",
           CONCELdoConsolidateCells)
 
 /******************************************************************************/
 
 PHASE (memory, "Introducing explicit memory management instructions",
-       EMMdoMemoryManagement)
+       PHDdriveMemoryManagement)
 
-SUBPHASE (simd, "simd", "SIMD inference", SIMDdoInferSIMD)
+SUBPHASE (simd, "simd", "simd", "SIMD inference", SIMDdoInferSIMD)
 
-SUBPHASE (asd, "asd", "AUD/SCL distinction", ASDdoAudSclDistinction)
+SUBPHASE (asd, "asd", "asd", "AUD/SCL distinction", ASDdoAudSclDistinction)
 
-SUBPHASE (copy, "copy", "Making copy operations explicit", EMECdoExplicitCopy)
+SUBPHASE (copy, "copy", "copy", "Making copy operations explicit", EMECdoExplicitCopy)
 
-SUBPHASE (alloc, "alloc", "Introducing explicit allocation statements ", EMALdoAlloc)
+SUBPHASE (alloc, "alloc", "alloc", "Introducing explicit allocation statements ",
+          EMALdoAlloc)
 
-SUBPHASE (emmdcr, "dcr", "Removing dead code", DCRdoDeadCodeRemovalModule)
+SUBPHASE (emmdcr, "dcr", "dcr", "Removing dead code", DCRdoDeadCodeRemovalModule)
 
-SUBPHASE (rci, "rci", "Inferring reuse candidates", EMRIdoReuseInference)
+SUBPHASE (rci, "rci", "rci", "Inferring reuse candidates", EMRIdoReuseInference)
 
-SUBPHASE (ia, "ia", "Interface aliasing analysis", EMIAdoInterfaceAnalysis)
+SUBPHASE (ia, "ia", "ia", "Interface aliasing analysis", EMIAdoInterfaceAnalysis)
 
-SUBPHASE (lro, "lro", "Applying loop reuse optimization", EMLRdoLoopReuseOptimization)
+SUBPHASE (lro, "lro", "lro", "Applying loop reuse optimization",
+          EMLRdoLoopReuseOptimization)
 
-SUBPHASE (aa, "aa", "Aliasing analysis", EMAAdoAliasAnalysis)
+SUBPHASE (aa, "aa", "aa", "Aliasing analysis", EMAAdoAliasAnalysis)
 
-SUBPHASE (srce, "srce", "Removing non-local reuse-candidates",
+SUBPHASE (srce, "srce", "srce", "Removing non-local reuse-candidates",
           SRCEdoRemoveReuseCandidates)
 
-SUBPHASE (frc, "frc", "Removing invalid reuse candidates", FRCdoFilterReuseCandidates)
+SUBPHASE (frc, "frc", "frc", "Removing invalid reuse candidates",
+          FRCdoFilterReuseCandidates)
 
-SUBPHASE (sr, "sr", "Static reuse", EMSRdoStaticReuse)
+SUBPHASE (sr, "sr", "sr", "Static reuse", EMSRdoStaticReuse)
 
-SUBPHASE (rb, "rb", "Introducing reuse branches", EMRBdoReuseBranching)
+SUBPHASE (rb, "rb", "rb", "Introducing reuse branches", EMRBdoReuseBranching)
 
-SUBPHASE (ipc, "ipc", "Identfying in-place updates", EMIPdoInplaceComputation)
+SUBPHASE (ipc, "ipc", "ipc", "Identfying in-place updates", EMIPdoInplaceComputation)
 
-SUBPHASE (dr, "dr", "Exploiting data reuse", EMDRdoDataReuse)
+SUBPHASE (dr, "dr", "dr", "Exploiting data reuse", EMDRdoDataReuse)
 
-SUBPHASE (emmdcr2, "dcr2", "Removing dead code", DCRdoDeadCodeRemovalModule)
+SUBPHASE (emmdcr2, "dcr2", "dcr2", "Removing dead code", DCRdoDeadCodeRemovalModule)
 
-SUBPHASE (rc, "rc", "Reference counting", RCIdoReferenceCounting)
+SUBPHASE (rc, "rc", "rc", "Reference counting", RCIdoReferenceCounting)
 
-SUBPHASE (rcm, "rcm", "Reference counting minimization", RCMdoRefcountMinimization)
+SUBPHASE (rcm, "rcm", "rcm", "Reference counting minimization", RCMdoRefcountMinimization)
 
-SUBPHASE (rco, "rco", "Optimizing reference counting instructions", EMRCOdoRefCountOpt)
+SUBPHASE (rco, "rco", "rco", "Optimizing reference counting instructions",
+          EMRCOdoRefCountOpt)
 
-SUBPHASE (mvsmi, "mvsmi",
+SUBPHASE (mvsmi, "mvsmi", "mvsmi",
           "Moving shared memory management instructions out of SPMD functions",
           MVSMIdoMoveSharedMemoryManagementInstructions)
 
-SUBPHASE (re, "re", "Removing reuse instructions", EMREdoReuseElimination)
+SUBPHASE (re, "re", "re", "Removing reuse instructions", EMREdoReuseElimination)
 
 /******************************************************************************/
 
-PHASE (precompile, "Preparing C code generation", PRECdoPrecompile)
+PHASE (precompile, "Preparing C code generation", PHDdrivePrecompilation)
 
-SUBPHASE (ussa, "ussa", "Converting from SSA form", USSATdoUndoSsaTransform)
+SUBPHASE (ussa, "ussa", "ussa", "Converting from SSA form", USSATdoUndoSsaTransform)
 
-SUBPHASE (fun2lac, "fun2lac", "Reintroducing loops and conditionals", F2LdoFun2Lac)
+SUBPHASE (fun2lac, "fun2lac", "fun2lac", "Reintroducing loops and conditionals",
+          F2LdoFun2Lac)
 
-SUBPHASE (lacinl, "lacinl", "Inlining LaC functions", LINLdoLACInlining)
+SUBPHASE (lacinl, "lacinl", "lacinl", "Inlining LaC functions", LINLdoLACInlining)
 
-SUBPHASE (rec, "rec", "Removing external code", RECdoRemoveExternalCode)
+SUBPHASE (rec, "rec", "rec", "Removing external code", RECdoRemoveExternalCode)
 
-SUBPHASE (spmdfunfix, "spmdfunfix", "Fixing SPMD function signatures",
+SUBPHASE (spmdfunfix, "spmdfunfix", "spmdfunfix", "Fixing SPMD function signatures",
           FSFSdoFixSpmdFunctionSignatures)
 
-SUBPHASE (rera, "rera", "Restoring reference arguments", RERAdoRestoreReferenceArguments)
+SUBPHASE (rera, "rera", "rera", "Restoring reference arguments",
+          RERAdoRestoreReferenceArguments)
 
-SUBPHASE (reso, "reso", "Restoring global objects", RESOdoRestoreObjects)
+SUBPHASE (reso, "reso", "reso", "Restoring global objects", RESOdoRestoreObjects)
 
-SUBPHASE (spmdinit, "spmdinit", "Building SPMD blocks around with-loops", SPMDIdoSpmdInit)
+SUBPHASE (spmdinit, "spmdinit", "spmdinit", "Building SPMD blocks around with-loops",
+          SPMDIdoSpmdInit)
 
-SUBPHASE (createmtfuns, "createmtfuns",
+SUBPHASE (createmtfuns, "createmtfuns", "createmtfuns",
           "Creating MT variants of exported and provided functions", CMTFdoCreateMtFuns)
 
-SUBPHASE (spmdlift, "spmdlift", "Lifting SPMD blocks to functions", SPMDLdoSpmdLift)
+SUBPHASE (spmdlift, "spmdlift", "spmdlift", "Lifting SPMD blocks to functions",
+          SPMDLdoSpmdLift)
 
-SUBPHASE (sls, "sls", "Applying linksign pragma", SLSdoSetLinksign)
+SUBPHASE (sls, "sls", "sls", "Applying linksign pragma", SLSdoSetLinksign)
 
-SUBPHASE (mmv, "mmv", "Marking memval identifiers", MMVdoMarkMemVals)
+SUBPHASE (mmv, "mmv", "mmv", "Marking memval identifiers", MMVdoMarkMemVals)
 
-SUBPHASE (moi, "moi", "Manage object initialisers", MOIdoManageObjectInitialisers)
+SUBPHASE (moi, "moi", "moi", "Manage object initialisers", MOIdoManageObjectInitialisers)
 
-SUBPHASE (fpc, "fpc", "Reorganizing function prototypes", FPCdoFunctionPrecompile)
+SUBPHASE (rcs, "rcs", "rcs", "Resolving code sharing in With-Loops",
+          RCSdoResolveCodeSharing)
 
-SUBPHASE (tcp, "tcp", "Applying type conversions", TCPdoTypeConversions)
+SUBPHASE (fpc, "fpc", "fpc", "Reorganizing function prototypes", FPCdoFunctionPrecompile)
 
-SUBPHASE (aff, "aff", "Adjusting fold functions", PHdummy)
+SUBPHASE (tcp, "tcp", "tcp", "Applying type conversions", TCPdoTypeConversions)
 
-SUBPHASE (mng, "mng", "Mark NoOp Grids", MNGdoMarkNoopGrids)
+SUBPHASE (aff, "aff", "aff", "Adjusting fold functions", PHdummy)
 
-SUBPHASE (rid, "rid", "Consistently renaming identifiers", RIDdoRenameIdentifiers)
+SUBPHASE (mng, "mng", "mng", "Mark NoOp Grids", MNGdoMarkNoopGrids)
 
-SUBPHASE (rcs, "rcs", "Resolving code sharing in With-Loops", RCSdoResolveCodeSharing)
-
-/******************************************************************************/
-
-PHASE (compile, "Generating C code", PHdummy)
-
-SUBPHASE (tot, "tot", "Converting to old type representation", PHdummy)
-
-SUBPHASE (comp, "comp", "Generating C code", PHdummy)
+SUBPHASE (rid, "rid", "rid", "Consistently renaming identifiers", RIDdoRenameIdentifiers)
 
 /******************************************************************************/
 
-PHASE (genccode, "Creating C file", PHdummy)
+PHASE (compile, "Generating Code", PHDdriveCodeGeneration)
+
+SUBPHASE (tot, "tot", "tot", "Converting to old type representation", TOTdoToOldTypes)
+
+SUBPHASE (comp, "comp", "comp", "Creating intermediate code macros", COMPdoCompile)
+
+SUBPHASE (prt, "prt", "prt", "Generating C file(s)", PRTdoPrint)
+
+SUBPHASE (frtr, "frtr", "frtr", "De-allocating syntax tree representation",
+          FREEdoFreeTree)
 
 /******************************************************************************/
 
-PHASE (invokecc, "Invoking C compiler", PHdummy)
+PHASE (invokecc, "Creating binary code", PHDdriveBinaryCodeCreation)
 
-/******************************************************************************/
+SUBPHASE (hdep, "hdep", "hdep", "Handling dependencies", DEPdoHandleDependencies)
 
-PHASE (createlib, "Creating library", PHdummy)
+SUBPHASE (icc, "icc", "icc", "Invoking C compiler", CCMinvokeCC)
 
-/******************************************************************************/
-
-PHASE (writedeps, "Writing dependencies to stdout", PHdummy)
+SUBPHASE (crlib, "crlib", "crlib", "Creating SAC library", LIBBcreateLibrary)
 
 /******************************************************************************/
 
 PHASE (final, "Irregular compiler phase", PHdummy)
 
-SUBPHASE (final, "final", "Irregular compiler subphase", PHdummy)
+SUBPHASE (final, "final", "final", "Irregular compiler subphase", PHdummy)
 
 /******************************************************************************/
 
@@ -572,5 +621,6 @@ SUBPHASE (final, "final", "Irregular compiler subphase", PHdummy)
 
 #undef SUBPHASEelement
 #undef SUBPHASEspec
+#undef SUBPHASEusage
 #undef SUBPHASEtext
 #undef SUBPHASEfun

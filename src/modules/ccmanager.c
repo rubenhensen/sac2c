@@ -1,76 +1,6 @@
 /*
  *
- * $Log$
- * Revision 1.21  2005/09/13 16:49:02  sah
- * outsourced the decision on where to find external
- * libraries to the c linker. I guess he known better
- * than the sac2c compiler, anyways.
- *
- * Revision 1.20  2005/07/18 15:54:45  sbs
- * fixed stupid bug
- *
- * Revision 1.19  2005/07/18 15:45:59  sah
- * modified compiler link flag generation
- *
- * Revision 1.18  2005/07/17 21:14:59  sah
- * no OPT flag when compiling serializer code
- *
- * Revision 1.17  2005/06/28 16:23:25  sah
- * added module inconsistency check
- *
- * Revision 1.16  2005/06/18 18:06:00  sah
- * moved entire dependency handling to dependencies.c
- * the dependency table is now created shortly prior
- * to c code generation
- *
- * Revision 1.15  2005/06/16 15:55:11  sah
- * intermediate fix
- *
- * Revision 1.14  2005/06/16 15:34:22  sah
- * even better way of linking sac2c module
- *
- * Revision 1.13  2005/06/16 15:19:46  sah
- * made linking of sac2c implicit
- *
- * Revision 1.12  2005/06/01 12:47:45  sah
- * added lots of runtime paths
- *
- * Revision 1.11  2005/04/12 15:15:36  sah
- * cleaned up module system compiler args
- * and sac2crc parameters
- *
- * Revision 1.10  2005/04/12 13:58:41  sah
- * fixed small memory leak
- *
- * Revision 1.9  2005/02/16 22:29:13  sah
- * fixed dependency machanism (for objfiles)
- *
- * Revision 1.8  2005/01/11 12:32:52  cg
- * Converted output from Error.h to ctinfo.c
- *
- * Revision 1.7  2004/11/24 18:56:18  sah
- * COMPILES
- *
- * Revision 1.6  2004/11/09 01:14:55  sah
- * added a break in default case
- *
- * Revision 1.5  2004/11/07 18:05:01  sah
- * improved dependency handling
- * for external function added
- *
- * Revision 1.4  2004/11/02 12:15:21  sah
- * empty dependencies are handeled correctly now
- *
- * Revision 1.3  2004/10/28 17:18:58  sah
- * added handling of dependencies
- *
- * Revision 1.2  2004/10/17 17:49:19  sah
- * fixed shell command
- *
- * Revision 1.1  2004/10/17 17:04:46  sah
- * Initial revision
- *
- *
+ * $Id$
  *
  */
 
@@ -360,15 +290,17 @@ InvokeCCModule (char *cccall, char *ccflags)
     ILIBsystemCall ("cd %s; %s -c namespacemap.c", global.tmp_dirname, cccall);
     ILIBsystemCall ("cd %s; %s -c symboltable.c", global.tmp_dirname, cccall);
     ILIBsystemCall ("cd %s; %s -c dependencytable.c", global.tmp_dirname, cccall);
+
     DBUG_VOID_RETURN;
 }
 
-void
-CCMinvokeCC (stringset_t *deps)
+node *
+CCMinvokeCC (node *syntax_tree)
 {
     char *ccflags;
     char *cccall;
     char *libs;
+    stringset_t *deps = global.dependencies;
 
     DBUG_ENTER ("CCMinvokeCC");
 
@@ -376,14 +308,15 @@ CCMinvokeCC (stringset_t *deps)
     ccflags = GetCCFlags ();
     libs = GetLibs ();
 
-    if (global.filetype == F_prog)
+    if (global.filetype == F_prog) {
         InvokeCCProg (cccall, ccflags, libs, deps);
-    else
+    } else {
         InvokeCCModule (cccall, ccflags);
+    }
 
     cccall = ILIBfree (cccall);
     ccflags = ILIBfree (ccflags);
     libs = ILIBfree (libs);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN (syntax_tree);
 }

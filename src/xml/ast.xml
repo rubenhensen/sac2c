@@ -727,8 +727,6 @@
       startfun="NULL" include=".h"
       if="true"
       breakspec="we">
-      <traversal id="WLE" name="With-Loop Enhancement" default="sons" include="WLEnhancement.h" >
-      </traversal>
       <traversal id="EA" name="Explicit Accumulate" default="sons" include="ExplicitAccumulate.h" >
         <travuser>
           <node name="Module" />
