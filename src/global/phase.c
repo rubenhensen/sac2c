@@ -241,3 +241,11 @@ PHdummy (node *syntax_tree)
 
     DBUG_RETURN (syntax_tree);
 }
+
+node *
+PHidentity (node *syntax_tree)
+{
+    DBUG_ENTER ("PHidentity");
+
+    DBUG_RETURN (syntax_tree);
+}

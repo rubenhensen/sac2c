@@ -10,6 +10,9 @@
 
 #include "types.h"
 
+extern node *PHidentity (node *syntax_tree);
+extern node *PHdummy (node *syntax_tree);
+
 extern const char *PHphaseName (compiler_phase_t phase);
 extern node *PHrunCompilerPhase (compiler_phase_t phase, node *syntax_tree);
 
