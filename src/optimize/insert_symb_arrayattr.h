@@ -27,5 +27,6 @@ extern node *ISAApart (node *arg_node, info *arg_info);
 extern node *ISAAcode (node *arg_node, info *arg_info);
 extern node *ISAAcond (node *arg_node, info *arg_info);
 extern node *ISAAfuncond (node *arg_node, info *arg_info);
+extern node *ISAAap (node *arg_node, info *arg_info);
 
 #endif /* _SAC_INSERT_SHAPEVARS_H_ */

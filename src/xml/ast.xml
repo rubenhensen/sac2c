@@ -1143,6 +1143,7 @@
           <node name="Code" />
           <node name="Cond" />
           <node name="Funcond" />
+          <node name="Ap" />
    	</travuser>
         <travnone>
           <node name="Withid" />
@@ -3122,6 +3123,9 @@
         <flag name="WasUpgraded">
 	  <description>TRUE iff the return type has changed during the last run of type-upgrade</description>
 	</flag>
+        <flag name="HasSAAArguments" default="FALSE">
+          <description>Within the optimisation cycle we may introduce new parameters to the function, representing shape or dimension of other parameters. If this is done, we may set this value to TRUE.</description>
+        </flag>
       </flags>
     </node>
 <!--
