@@ -173,74 +173,75 @@ ISAAdoInsertShapeVariablesOneFundef (node *fundef)
  */
 
 static node *
-PrependArrayAttributesAsParameters (node *arg_node, info *arg_info)
+PrependSAAInFormalArgs (node *arg_node, info *arg_info)
 {
     node *avis;
     node *newshp;
     node *newdim;
+    node *preargs = NULL;
 
-    /* values that our function takes, AP_FUNDEF->FUNDEF_ARGS */
-    DBUG_ENTER ("PrependArrayAttributesAsParameters");
+    DBUG_ENTER ("PrependSAAInFormalArgs");
 
     if (NULL != ARG_NEXT (arg_node)) {
-        ARG_NEXT (arg_node)
-          = PrependArrayAttributesAsParameters (ARG_NEXT (arg_node), arg_info);
+        ARG_NEXT (arg_node) = PrependSAAInFormalArgs (ARG_NEXT (arg_node), arg_info);
     }
 
     avis = ARG_AVIS (arg_node);
 
-    if (TYisAUD (AVIS_TYPE (avis))) {
-        DBUG_PRINT ("ISAA", ("inserting a dim-param for %s", AVIS_NAME (avis)));
+    if ((TYisAUD (AVIS_TYPE (avis))) && (FALSE == AVIS_HASSAAARGUMENTS (avis))) {
+        DBUG_PRINT ("ISAA", ("inserting a formal dim for %s", AVIS_NAME (avis)));
 
         newdim = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (avis)),
                              TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
+        AVIS_HASSAAARGUMENTS (newdim) = TRUE;
 
         /* within this phase we append N_ids to DIM/SHAPE. but they are cleared
          * later on anyway. */
         AVIS_DIM (avis) = TBmakeId (newdim);
+
+        preargs = TBmakeArg (newdim, preargs);
     }
 
-    if ((TYisAKD (AVIS_TYPE (avis))) || (TYisAUD (AVIS_TYPE (avis)))) {
-        DBUG_PRINT ("ISAA", ("inserting a shape-param for %s", AVIS_NAME (avis)));
+    if (((TYisAKD (AVIS_TYPE (avis))) || (TYisAUD (AVIS_TYPE (avis))))
+        && (FALSE == AVIS_HASSAAARGUMENTS (avis))) {
+        DBUG_PRINT ("ISAA", ("inserting a formal shape for %s", AVIS_NAME (avis)));
 
         /* create a new avis, assign it to AVIS_SHAPE(avis) and prepend it into
-         * the parameter-list of our function.
-         */
+         * the parameter-list of our function. */
 
         newshp = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (avis)),
                              TYmakeAKD (TYmakeSimpleType (T_int), 1, SHmakeShape (0)));
         AVIS_SHAPE (newshp) = AVIS_DIM (avis);
+        AVIS_HASSAAARGUMENTS (newshp) = TRUE;
 
         AVIS_SHAPE (avis) = TBmakeId (newshp);
-        arg_node = TBmakeArg (newshp, arg_node);
+        preargs = TBmakeArg (newshp, preargs);
 
         AVIS_HASDTTHENPROXY (avis) = FALSE;
         AVIS_HASDTELSEPROXY (avis) = FALSE;
     }
 
-    if (TYisAUD (AVIS_TYPE (avis))) {
-        /* this had to be placed after inserting the shape, to preserve the
-         * correct order of the arguments */
-        arg_node = TBmakeArg (newdim, arg_node);
-    }
+    AVIS_HASSAAARGUMENTS (avis) = TRUE;
+
+    arg_node = TCappendArgs (preargs, arg_node);
 
     DBUG_RETURN (arg_node);
 }
 
 static node *
-PrependArrayAttributesAsArguments (node *arg_node, info *arg_info)
+PrependSAAInConcreteArgs (node *arg_node, node *funargs, info *arg_info)
 {
     node *avis;
     node *newshp;
     node *newdim;
     node *preass;
+    node *preargs = NULL;
 
-    /* values given from the outside, AP_ARGS */
-    DBUG_ENTER ("PrependArrayAttributesAsArguments");
+    DBUG_ENTER ("PrependSAAInConcreteArgs");
 
-    if (NULL != EXPRS_NEXT (arg_node)) {
-        EXPRS_NEXT (arg_node)
-          = PrependArrayAttributesAsArguments (EXPRS_NEXT (arg_node), arg_info);
+    if ((NULL != EXPRS_NEXT (arg_node)) && (NULL != ARG_NEXT (funargs))) {
+        EXPRS_NEXT (arg_node) = PrependSAAInConcreteArgs (EXPRS_NEXT (arg_node),
+                                                          ARG_NEXT (funargs), arg_info);
     }
 
     /* there may be an saabind to our avis already */
@@ -249,9 +250,10 @@ PrependArrayAttributesAsArguments (node *arg_node, info *arg_info)
         avis = AVIS_SUBST (avis);
     }
 
-    if (TYisAUD (AVIS_TYPE (avis))) {
-        DBUG_PRINT ("ISAA", ("inserting a dim-arg for %s in fun %s", AVIS_NAME (avis),
-                             FUNDEF_NAME (INFO_FUNDEF (arg_info))));
+    if ((TYisAUD (AVIS_TYPE (avis)))
+        && (FALSE == AVIS_HASSAAARGUMENTS (ARG_AVIS (funargs)))) {
+        DBUG_PRINT ("ISAA", ("inserting a concrete dim for %s in fun %s",
+                             AVIS_NAME (avis), FUNDEF_NAME (INFO_FUNDEF (arg_info))));
 
         /* this is quite similar as to how we proceeded with the shape. */
 
@@ -271,12 +273,15 @@ PrependArrayAttributesAsArguments (node *arg_node, info *arg_info)
         /* 3. */
         INFO_FUNDEF (arg_info)
           = TCaddVardecs (INFO_FUNDEF (arg_info), TBmakeVardec (newdim, NULL));
+
+        /* 4. */
+        preargs = TBmakeExprs (TBmakeId (newdim), preargs);
     }
 
-    if ((TYisAKD (AVIS_TYPE (avis))) || (TYisAUD (AVIS_TYPE (avis)))) {
-        DBUG_PRINT ("ISAA", ("inserting a shape-arg for %s in fun %s", AVIS_NAME (avis),
-                             FUNDEF_NAME (INFO_FUNDEF (arg_info))));
-
+    if (((TYisAKD (AVIS_TYPE (avis))) || (TYisAUD (AVIS_TYPE (avis))))
+        && (FALSE == AVIS_HASSAAARGUMENTS (ARG_AVIS (funargs)))) {
+        DBUG_PRINT ("ISAA", ("inserting a concrete shape for %s in fun %s",
+                             AVIS_NAME (avis), FUNDEF_NAME (INFO_FUNDEF (arg_info))));
         /* todo:
          * 1. create the new avis, which holds the shape.
          * 2. create an N_let, that assigns shape(arg) to our new avis.
@@ -317,12 +322,10 @@ PrependArrayAttributesAsArguments (node *arg_node, info *arg_info)
           = TCaddVardecs (INFO_FUNDEF (arg_info), TBmakeVardec (newshp, NULL));
 
         /* 4. */
-        arg_node = TBmakeExprs (TBmakeId (newshp), arg_node);
+        preargs = TBmakeExprs (TBmakeId (newshp), preargs);
     }
 
-    if (TYisAUD (AVIS_TYPE (avis))) {
-        arg_node = TBmakeExprs (TBmakeId (newdim), arg_node);
-    }
+    arg_node = TCappendExprs (preargs, arg_node);
 
     DBUG_RETURN (arg_node);
 }
@@ -596,33 +599,28 @@ node *
 ISAAap (node *arg_node, info *arg_info)
 {
     node *fun;
-#ifdef MAY_SAA_UNLEASH_ITS_FULL_GLORIOUS_POWERS
+
     int travmode;
     node *preblock;
     node *preassign;
     node *fundef;
-#endif
 
     DBUG_ENTER ("ISAAap");
 
     fun = AP_FUNDEF (arg_node);
 
     if ((TRUE == FUNDEF_ISCONDFUN (fun)) && (NULL != FUNDEF_ARGS (fun))
-        && (TRUE != FUNDEF_HASSAAARGUMENTS (fun))
         && (TS_args != INFO_TRAVSCOPE (arg_info))) {
         /* three things have to be done in order to set the SAA up:
          * 1. Introduce the new arguments on both application and function side.
          * 2. Generate new proxys inside the function, thereby propagating the
          *    new parameters and removing the AVIS_DIM and AVIS_SHAPE info.
-         * 3. set HasSAAArguments to TRUE
          */
 
         /* 1. */
-#ifdef MAY_SAA_UNLEASH_ITS_FULL_GLORIOUS_POWERS
-        FUNDEF_ARGS (fun)
-          = PrependArrayAttributesAsParameters (FUNDEF_ARGS (fun), arg_info);
         AP_ARGS (arg_node)
-          = PrependArrayAttributesAsArguments (AP_ARGS (arg_node), arg_info);
+          = PrependSAAInConcreteArgs (AP_ARGS (arg_node), FUNDEF_ARGS (fun), arg_info);
+        FUNDEF_ARGS (fun) = PrependSAAInFormalArgs (FUNDEF_ARGS (fun), arg_info);
 
         /* 2. */
         preblock = INFO_PREBLOCK (arg_info);
@@ -639,10 +637,6 @@ ISAAap (node *arg_node, info *arg_info)
         INFO_PREASSIGN (arg_info) = preassign;
         INFO_TRAVSCOPE (arg_info) = travmode;
         INFO_FUNDEF (arg_info) = fundef;
-#endif
-
-        /* 3. */
-        FUNDEF_HASSAAARGUMENTS (fun) = TRUE;
     }
 
     /* we may now traverse the arguments, in order to take care of AVIS_SUBST */
@@ -756,42 +750,46 @@ ISAAids (node *arg_node, info *arg_info)
 
     avis = IDS_AVIS (arg_node);
 
-    if ((NODE_TYPE (INFO_RHS (arg_info)) != N_ap)
-        && (!((NODE_TYPE (INFO_RHS (arg_info)) == N_prf)
-              && (PRF_PRF (INFO_RHS (arg_info)) == F_saabind)))) {
-        if (AVIS_DIM (avis) == NULL) {
-            if (TUdimKnown (AVIS_TYPE (avis))) {
-                AVIS_DIM (avis) = TBmakeNum (TYgetDim (AVIS_TYPE (avis)));
-            } else {
-                INFO_PREASSIGN (arg_info)
-                  = TCappendAssign (INFO_PREASSIGN (arg_info),
-                                    MDEdoMakeDimExpression (INFO_RHS (arg_info), avis,
-                                                            INFO_LHS (arg_info),
-                                                            INFO_FUNDEF (arg_info)));
+    if (TS_args != INFO_TRAVSCOPE (arg_info)) {
+
+        if ((NODE_TYPE (INFO_RHS (arg_info)) != N_ap)
+            && (!((NODE_TYPE (INFO_RHS (arg_info)) == N_prf)
+                  && ((PRF_PRF (INFO_RHS (arg_info)) == F_saabind)
+                      || (PRF_PRF (INFO_RHS (arg_info)) == F_type_conv))))) {
+            if (AVIS_DIM (avis) == NULL) {
+                if (TUdimKnown (AVIS_TYPE (avis))) {
+                    AVIS_DIM (avis) = TBmakeNum (TYgetDim (AVIS_TYPE (avis)));
+                } else {
+                    INFO_PREASSIGN (arg_info)
+                      = TCappendAssign (INFO_PREASSIGN (arg_info),
+                                        MDEdoMakeDimExpression (INFO_RHS (arg_info), avis,
+                                                                INFO_LHS (arg_info),
+                                                                INFO_FUNDEF (arg_info)));
+                }
             }
-        }
 
-        if ((AVIS_DIM (avis) != NULL) && (AVIS_SHAPE (avis) == NULL)) {
-            if (TUshapeKnown (AVIS_TYPE (avis))) {
-                AVIS_SHAPE (avis) = SHshape2Array (TYgetShape (AVIS_TYPE (avis)));
-            } else {
-                INFO_PREASSIGN (arg_info)
-                  = TCappendAssign (INFO_PREASSIGN (arg_info),
-                                    MSEdoMakeShapeExpression (INFO_RHS (arg_info), avis,
-                                                              INFO_LHS (arg_info),
-                                                              INFO_FUNDEF (arg_info)));
+            if ((AVIS_DIM (avis) != NULL) && (AVIS_SHAPE (avis) == NULL)) {
+                if (TUshapeKnown (AVIS_TYPE (avis))) {
+                    AVIS_SHAPE (avis) = SHshape2Array (TYgetShape (AVIS_TYPE (avis)));
+                } else {
+                    INFO_PREASSIGN (arg_info)
+                      = TCappendAssign (INFO_PREASSIGN (arg_info),
+                                        MSEdoMakeShapeExpression (INFO_RHS (arg_info),
+                                                                  avis,
+                                                                  INFO_LHS (arg_info),
+                                                                  INFO_FUNDEF (
+                                                                    arg_info)));
+                }
             }
-        }
-    } else {
-        /* if we call a do-loop-fun from inside the function */
-        if (!((FUNDEF_ISDOFUN (INFO_FUNDEF (arg_info)))
-              && (NODE_TYPE (INFO_RHS (arg_info)) == N_ap)
-              && (AP_FUNDEF (INFO_RHS (arg_info)) == INFO_FUNDEF (arg_info)))) {
+        } else {
+            /* if we call a do-loop-fun from inside the function */
+            if (!((FUNDEF_ISDOFUN (INFO_FUNDEF (arg_info)))
+                  && (NODE_TYPE (INFO_RHS (arg_info)) == N_ap)
+                  && (AP_FUNDEF (INFO_RHS (arg_info)) == INFO_FUNDEF (arg_info)))) {
 
-            /* TODO:
-             * insert the PrependArrayAttributesAsParameters here, probably */
+                /* TODO:
+                 * insert the PrependArrayAttributesAsParameters here, probably */
 
-            if (TS_args != INFO_TRAVSCOPE (arg_info)) {
                 INFO_POSTASSIGN (arg_info)
                   = MakeDTProxy (avis, INFO_POSTASSIGN (arg_info), arg_info);
             }
