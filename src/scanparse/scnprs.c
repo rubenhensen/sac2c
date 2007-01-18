@@ -63,7 +63,13 @@ SPdoRunPreProcessor (node *syntax_tree)
 #endif
     }
 
-    tmp = ILIBstringConcat4 (cppcallstr, " -o ", global.tmp_dirname, "/source");
+    /*
+     * The sed command is needed to remove a pragma that is inserted by the
+     * Apple GCC 3.3 on Panther
+     */
+    tmp = ILIBstringConcat4 (cppcallstr, " | sed '/^#pragma GCC set_debug_pwd/d' > ",
+                             global.tmp_dirname, "/source");
+
     cppcallstr = ILIBfree (cppcallstr);
     cppcallstr = tmp;
 

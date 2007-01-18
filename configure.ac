@@ -332,7 +332,7 @@ elif [ test "$MACC" = yes ]; then
   AC_SUBST(MKCCFLAGS, ["-g -Wall -std=c99"])
   AC_SUBST(PDCCFLAGS, ["-g -std=c99"])
   AC_SUBST(DEPSFLAG, ["-M"])
-  AC_SUBST(CPPFILE, ["cpp3 -C -traditional-cpp"])
+  AC_SUBST(CPPFILE, ["gcc -E -C -x c"])
   AC_SUBST(CCMTLINK, [""])
   AC_MSG_RESULT([Apple cc settings])
 else
