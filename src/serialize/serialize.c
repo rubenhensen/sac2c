@@ -145,6 +145,11 @@ GenerateSerFileVersionInfo (node *module, FILE *file)
              "  return( %d); \n}\n\n",
              NSgetName (MODULE_NAMESPACE (module)), SAC_SERIALIZE_VERSION);
 
+    fprintf (file,
+             "int __%s_USEDFLAGS() {\n"
+             "  return( %d); \n}\n\n",
+             NSgetName (MODULE_NAMESPACE (module)), GLOBALS_MODFLAGS);
+
     DBUG_VOID_RETURN;
 }
 

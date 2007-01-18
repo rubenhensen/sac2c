@@ -33,16 +33,17 @@ typedef sttable_t *(*symtabfun_p) ();
 typedef stringset_t *(*deptabfun_p) ();
 typedef const char *(*astversionfun_p) ();
 typedef int (*serversionfun_p) ();
+typedef int (*flagfun_p) ();
 typedef void (*nsmapfun_p) ();
 
-static bool
-hasSameASTVersion (module_t *module)
+static void
+checkHasSameASTVersion (module_t *module)
 {
     astversionfun_p astverfun;
     serversionfun_p serverfun;
     char *name;
 
-    DBUG_ENTER ("hasSameASTVersion");
+    DBUG_ENTER ("checkHasSameASTVersion");
 
     name = ILIBmalloc (sizeof (char) * (strlen (module->name) + 14));
     sprintf (name, "__%s_ASTVERSION", module->name);
@@ -52,6 +53,13 @@ hasSameASTVersion (module_t *module)
     if (astverfun == NULL) {
         CTIabort ("The module '%s' is either corrupted or uses an outdated "
                   "file format.",
+                  module->name);
+    }
+
+    if (!ILIBstringCompare (astverfun (), build_ast)) {
+        CTIabort ("The module '%s' uses an incompatible syntax tree layout. "
+                  "Please update the module and compiler to the most "
+                  "recent version.",
                   module->name);
     }
 
@@ -67,8 +75,44 @@ hasSameASTVersion (module_t *module)
 
     name = ILIBfree (name);
 
-    DBUG_RETURN ((serverfun () == SAC_SERIALIZE_VERSION)
-                 && ILIBstringCompare (astverfun (), build_ast));
+    if (!(serverfun () == SAC_SERIALIZE_VERSION)) {
+        CTIabort ("The module '%s' uses an incompatible serialisation algorithm. "
+                  "Please update the module and compiler to the most "
+                  "recent version.",
+                  module->name);
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+static void
+checkWasBuildUsingSameFlags (module_t *module)
+{
+    flagfun_p flagfun;
+    char *name;
+
+    DBUG_ENTER ("wasBuildUsingSameFlags");
+
+    name = ILIBmalloc (sizeof (char) * (strlen (module->name) + 13));
+    sprintf (name, "__%s_USEDFLAGS", module->name);
+
+    flagfun = (flagfun_p)LIBMgetLibraryFunction (name, module->lib);
+
+    if (flagfun == NULL) {
+        CTIabort ("The module '%s' is either corrupted or uses an outdated "
+                  "file format.",
+                  module->name);
+    }
+
+    if (!(flagfun () == GLOBALS_MODFLAGS)) {
+        CTIabort ("The module '%s' was built using incompatible compiler "
+                  "settings. The settings were [%s]. Please recompile the "
+                  "module using the current settings or switch the "
+                  "settings used when compiling the module.",
+                  module->name, GLOBALS_MODFLAGS_TEXT (flagfun ()));
+    }
+
+    DBUG_VOID_RETURN;
 }
 
 static void
@@ -151,11 +195,8 @@ AddModuleToPool (const char *name)
                   LIBMgetError ());
     }
 
-    if (!hasSameASTVersion (result)) {
-        CTIabort ("Module `%s' [%s] was compiled using an incompatible version of "
-                  "sac2c.",
-                  name, result->sofile);
-    }
+    checkHasSameASTVersion (result);
+    checkWasBuildUsingSameFlags (result);
 
     addNamespaceMappings (result);
 
