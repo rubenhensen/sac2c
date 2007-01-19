@@ -5567,7 +5567,7 @@ identifier (N_id) for AUD arrays.
               </phases>
             </target>
           </targets>
-          <description>After explicit allocation (EMAL), Vec points to 
+          <description>This is the vector form of a WL generator. After explicit allocation (EMAL), Vec points to 
             an N_id node.</description>
 	</son>
         <son name="Ids">
@@ -5591,7 +5591,7 @@ identifier (N_id) for AUD arrays.
               </phases>
             </target>
           </targets>
-          <description>After explicit allocation (EMAL), Ids points to 
+          <description> This is the scalarized form of a WL generator. After explicit allocation (EMAL), Ids points to 
             an N_exprs-list of N_id nodes.</description>
 	</son>
         <son name="Idxs" default="NULL">
@@ -5609,7 +5609,7 @@ identifier (N_id) for AUD arrays.
               </phases>
             </target>
           </targets>
-          <description>After explicit allocation (EMAL), Idxs points to an 
+          <description>This is a chain of arrays that are indexed using this WL index vector. After explicit allocation (EMAL), Idxs points to an 
             N_exprs-list of N_id nodes.</description>
 	</son>
       </sons>
