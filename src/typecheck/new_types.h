@@ -149,12 +149,15 @@ typeconstr TYgetConstr (ntype *type);
  * Scalar Types: Simple / User / Symbol
  */
 extern ntype *TYmakeSimpleType (simpletype base);
+extern ntype *TYmakeHiddenSimpleType (usertype udt);
 extern ntype *TYmakeUserType (usertype base);
 extern ntype *TYmakeSymbType (char *name, namespace_t *mod);
 
 extern ntype *TYsetSimpleType (ntype *simple, simpletype base);
+extern ntype *TYsetHiddenUserType (ntype *simple, usertype udt);
 
 extern simpletype TYgetSimpleType (ntype *simple);
+extern usertype TYgetHiddenUserType (ntype *simple);
 extern usertype TYgetUserType (ntype *user);
 extern char *TYgetName (ntype *symb);
 extern const namespace_t *TYgetNamespace (ntype *symb);

@@ -454,7 +454,7 @@ typedef: TYPEDEF ntype ID SEMIC
 
 exttypedef: EXTERN TYPEDEF ID SEMIC
             { $$ = TBmakeTypedef( $3, NULL, TYmakeAKS(
-                     TYmakeSimpleType( T_hidden), 
+                     TYmakeHiddenSimpleType( 0), 
                      SHmakeShape( 0)), NULL);
 
               DBUG_PRINT( "PARSE",
@@ -1785,7 +1785,7 @@ class: CLASS { file_kind = F_classimp; } ID SEMIC classtype defs
 
 classtype: CLASSTYPE ntype SEMIC { $$ = $2; }
          | EXTERN CLASSTYPE SEMIC { $$ = TYmakeAKS(
-                                           TYmakeSimpleType( T_hidden),
+                                           TYmakeHiddenSimpleType( 0),
                                            SHmakeShape( 0)); }
          ;
 

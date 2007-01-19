@@ -120,13 +120,19 @@ typedef struct DFT_STATE {
     int *ups;
     int *downs;
 } dft_state;
+
+typedef struct SIMPLE {
+    simpletype simple;
+    usertype udt;
+} simple;
+
 /*
  * In order to have a uniform type for ALL type constructors, we define
  * a union type over all potential attributes:
  */
 
 typedef union {
-    simpletype a_simple;
+    simple a_simple;
     attr_symbol a_symbol;
     usertype a_user;
     shape *a_aks;
@@ -171,7 +177,8 @@ struct NTYPE {
 /*
  * Macros for accessing the attributes...
  */
-#define SIMPLE_TYPE(n) (n->typeattr.a_simple)
+#define SIMPLE_TYPE(n) (n->typeattr.a_simple.simple)
+#define SIMPLE_HIDDEN_UDT(n) (n->typeattr.a_simple.udt)
 #define SYMBOL_NS(n) (n->typeattr.a_symbol.mod)
 #define SYMBOL_NAME(n) (n->typeattr.a_symbol.name)
 #define USER_TYPE(n) (n->typeattr.a_user)
@@ -446,6 +453,7 @@ TYgetConstr (ntype *type)
  *
  * function:
  *   ntype * TYmakeSimpleType( simpletype base)
+ *   ntype * TYmakeHiddenSimpleType( usertype udt)
  *   ntype * TYmakeSymbType( char *name, namespace_t *ns)
  *   ntype * TYmakeUserType( usertype udt)
  *
@@ -464,8 +472,25 @@ TYmakeSimpleType (simpletype base)
 
     DBUG_ENTER ("TYmakeSimpleType");
 
+    DBUG_ASSERT (base != T_hidden, "TYmakeSimpleType called with T_hidden arg!"
+                                   "Please use TYmakeHiddenSimpleType instead!");
+
     res = MakeNtype (TC_simple, 0);
     SIMPLE_TYPE (res) = base;
+
+    DBUG_RETURN (res);
+}
+
+ntype *
+TYmakeHiddenSimpleType (usertype udt)
+{
+    ntype *res;
+
+    DBUG_ENTER ("TYmakeSimpleType");
+
+    res = MakeNtype (TC_simple, 0);
+    SIMPLE_TYPE (res) = T_hidden;
+    SIMPLE_HIDDEN_UDT (res) = udt;
 
     DBUG_RETURN (res);
 }
@@ -509,10 +534,21 @@ TYsetSimpleType (ntype *simple, simpletype base)
     DBUG_RETURN (simple);
 }
 
+ntype *
+TYsetHiddenUserType (ntype *simple, usertype udt)
+{
+    DBUG_ENTER ("TYsetHiddenUserType");
+
+    SIMPLE_HIDDEN_UDT (simple) = udt;
+
+    DBUG_RETURN (simple);
+}
+
 /******************************************************************************
  *
  * function:
  *   simpletype    TYgetSimpleType( ntype *simple)
+ *   usertype      TYgetHiddenUserType( ntype *simple)
  *   usertype      TYgetUserType( ntype *user)
  *   char        * TYgetName( ntype *symb)
  *   namespace_t * TYgetNamespace( ntype *symb)
@@ -529,6 +565,17 @@ TYgetSimpleType (ntype *simple)
     DBUG_ASSERT ((NTYPE_CON (simple) == TC_simple),
                  "TYgetSimpleType applied to nonsimple-type!");
     DBUG_RETURN (SIMPLE_TYPE (simple));
+}
+
+usertype
+TYgetHiddenUserType (ntype *simple)
+{
+    DBUG_ENTER ("TYgetHiddenUserType");
+    DBUG_ASSERT ((NTYPE_CON (simple) == TC_simple),
+                 "TYgetHiddenUserType applied to nonsimple-type!");
+    DBUG_ASSERT ((SIMPLE_TYPE (simple) == T_hidden),
+                 "TYgetHiddenUserType applied to non hidden type!");
+    DBUG_RETURN (SIMPLE_HIDDEN_UDT (simple));
 }
 
 usertype
@@ -3877,6 +3924,7 @@ TYeliminateUser (ntype *t1)
 {
     ntype *res;
     int i;
+    usertype udt;
 
     DBUG_ENTER ("TYeliminateUser");
 
@@ -3887,7 +3935,18 @@ TYeliminateUser (ntype *t1)
         }
     } else {
         if (TYisArray (t1) && TYisUser (TYgetScalar (t1))) {
-            res = TYnestTypes (t1, UTgetBaseType (USER_TYPE (TYgetScalar (t1))));
+            udt = USER_TYPE (TYgetScalar (t1));
+            res = TYnestTypes (t1, UTgetBaseType (udt));
+            if (TUisHidden (res)) {
+                /**
+                 * Here, we need to make sure that we keep
+                 * the usertype for hidden types!
+                 * Note here, that we deliberately ignore the
+                 * modified return value as we want to utilize the
+                 * side effect!
+                 */
+                TYsetHiddenUserType (TYgetScalar (res), udt);
+            }
         } else {
             res = TYcopyType (t1);
         }
@@ -4164,6 +4223,7 @@ CopyTypeConstructor (ntype *type, TV_treatment new_tvars)
             break;
         case TC_simple:
             SIMPLE_TYPE (res) = SIMPLE_TYPE (type);
+            SIMPLE_HIDDEN_UDT (res) = SIMPLE_HIDDEN_UDT (type);
             break;
         case TC_symbol:
             SYMBOL_NS (res) = NSdupNamespace (SYMBOL_NS (type));
@@ -4348,6 +4408,9 @@ ScalarType2String (ntype *type)
     switch (NTYPE_CON (type)) {
     case TC_simple:
         buf = ILIBstrBufPrintf (buf, "%s", global.mdb_type[SIMPLE_TYPE (type)]);
+        if (SIMPLE_TYPE (type) == T_hidden) {
+            buf = ILIBstrBufPrintf (buf, "(%d)", SIMPLE_HIDDEN_UDT (type));
+        }
         break;
     case TC_symbol:
         if (SYMBOL_NS (type) == NULL) {
@@ -4723,6 +4786,9 @@ TYtype2DebugString (ntype *type, bool multiline, int offset)
         case TC_simple:
             multiline = FALSE;
             buf = ILIBstrBufPrintf (buf, "%s", global.mdb_type[SIMPLE_TYPE (type)]);
+            if (SIMPLE_TYPE (type) == T_hidden) {
+                buf = ILIBstrBufPrintf (buf, "(%d)", SIMPLE_HIDDEN_UDT (type));
+            }
             break;
         case TC_symbol:
             multiline = FALSE;
@@ -7138,6 +7204,7 @@ TYdeserializeType (typeconstr con, ...)
     ntype *result = NULL;
     int cnt;
     va_list args;
+    simpletype st;
 
     DBUG_ENTER ("TYdeserializeType");
 
@@ -7147,7 +7214,12 @@ TYdeserializeType (typeconstr con, ...)
     case TC_simple: {
         va_start (args, con);
 
-        result = TYmakeSimpleType (va_arg (args, int));
+        st = va_arg (args, int);
+        if (st == T_hidden) {
+            result = TYmakeHiddenSimpleType (0);
+        } else {
+            result = TYmakeSimpleType (st);
+        }
 
         va_end (args);
     } break;
