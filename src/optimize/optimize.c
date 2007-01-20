@@ -50,7 +50,7 @@
  *
  *   @brief returns an optcounters structure with all elements set to 0
  *
- ******************************************************************************/
+ *****************************************************************************/
 static optimize_counter_t
 GenerateOptCounters ()
 {
@@ -70,7 +70,7 @@ GenerateOptCounters ()
  *
  *   @brief returns whether any optimization counter is not zero.
  *
- ******************************************************************************/
+ *****************************************************************************/
 static bool
 AnyOptCounterNotZero (optimize_counter_t oc)
 {
@@ -93,7 +93,7 @@ AnyOptCounterNotZero (optimize_counter_t oc)
  *
  *   @brief returns the sum of two optimization counter structures
  *
- ******************************************************************************/
+ *****************************************************************************/
 static optimize_counter_t
 AddOptCounters (optimize_counter_t o, optimize_counter_t p)
 {
@@ -113,7 +113,7 @@ AddOptCounters (optimize_counter_t o, optimize_counter_t p)
  *
  *   @brief prints the global optimization statistic
  *
- ******************************************************************************/
+ *****************************************************************************/
 static void
 PrintStatistics ()
 {
@@ -233,7 +233,7 @@ OPTdoOptimize (node *arg_node)
     /*
      * Insert symbolic array attributes
      */
-    if (global.optimize.dosaacyc) {
+    if (global.optimize.dosaacyc && global.optimize.dodcr) {
         arg_node = PHrunCompilerSubPhase (SUBPH_isaa, arg_node);
     }
 
@@ -325,7 +325,7 @@ OPTdoOptimize (node *arg_node)
     /*
      * Insert shape variables
      */
-    if (global.optimize.dosaa) {
+    if (global.optimize.dosaa && global.optimize.dodcr) {
         arg_node = PHrunCompilerSubPhase (SUBPH_isaa2, arg_node);
 
         for (int i = 0; i < 3; i++) {
@@ -376,7 +376,7 @@ OPTdoOptimize (node *arg_node)
     /*
      * apply index vector elimination (dependent on saa, as of 2006-11-30)
      */
-    if (global.optimize.doive && global.optimize.dosaa) {
+    if (global.optimize.doive && global.optimize.dosaa && global.optimize.dodcr) {
         TRAVsetPreFun (TR_prt, IVEIprintPreFun);
         arg_node = PHrunCompilerSubPhase (SUBPH_ivei, arg_node);
         arg_node = PHrunCompilerSubPhase (SUBPH_ive, arg_node);
@@ -401,11 +401,11 @@ OPTdoOptimize (node *arg_node)
     /*
      * Eliminate shape variables
      */
-    if (global.optimize.dosaa) {
+    if (global.optimize.dosaa && global.optimize.dodcr) {
         arg_node = PHrunCompilerSubPhase (SUBPH_esv, arg_node);
     }
 
-    if (global.optimize.dosaa || global.optimize.doive) {
+    if ((global.optimize.dosaa && global.optimize.dodcr) || global.optimize.doive) {
         /*
          * Loop Invariant Removal
          */
@@ -493,7 +493,7 @@ OPTdoIntraFunctionalOptimizations (node *arg_node)
                     /*
                      * Insert shape variables
                      */
-                    if (global.optimize.dosaacyc) {
+                    if (global.optimize.dosaacyc && global.optimize.dodcr) {
                         fundef = PHrunOptimizationInCycle (SUBPH_saacyc, loop, fundef);
                     }
 
