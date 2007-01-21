@@ -281,7 +281,8 @@ const namespace_t *
 UTgetNamespace (usertype udt)
 {
     DBUG_ENTER ("UTgetNamespace");
-    DBUG_ASSERT ((udt < udt_no), "UTgetNamespace called with illegal udt!");
+    DBUG_ASSERT (((udt < udt_no) && (udt > UT_NOT_DEFINED)),
+                 "UTgetNamespace called with illegal udt!");
 
     DBUG_RETURN (ENTRY_NS (udt_rep[udt]));
 }
@@ -290,7 +291,8 @@ char *
 UTgetName (usertype udt)
 {
     DBUG_ENTER ("UTgetName");
-    DBUG_ASSERT ((udt < udt_no), "UTgetName called with illegal udt!");
+    DBUG_ASSERT (((udt < udt_no) && (udt > UT_NOT_DEFINED)),
+                 "UTgetNamespace called with illegal udt!");
 
     DBUG_RETURN (ENTRY_NAME (udt_rep[udt]));
 }
@@ -299,7 +301,8 @@ ntype *
 UTgetTypedef (usertype udt)
 {
     DBUG_ENTER ("UTgetTypedef");
-    DBUG_ASSERT ((udt < udt_no), "UTgetTypedef called with illegal udt!");
+    DBUG_ASSERT (((udt < udt_no) && (udt > UT_NOT_DEFINED)),
+                 "UTgetNamespace called with illegal udt!");
 
     DBUG_RETURN (ENTRY_DEF (udt_rep[udt]));
 }
@@ -308,7 +311,8 @@ ntype *
 UTgetBaseType (usertype udt)
 {
     DBUG_ENTER ("UTgetBaseType");
-    DBUG_ASSERT ((udt < udt_no), "UTgetBaseType called with illegal udt!");
+    DBUG_ASSERT (((udt < udt_no) && (udt > UT_NOT_DEFINED)),
+                 "UTgetNamespace called with illegal udt!");
 
     DBUG_RETURN (ENTRY_BASE (udt_rep[udt]));
 }
@@ -317,7 +321,8 @@ int
 UTgetLine (usertype udt)
 {
     DBUG_ENTER ("UTgetLine");
-    DBUG_ASSERT ((udt < udt_no), "UTgetLine called with illegal udt!");
+    DBUG_ASSERT (((udt < udt_no) && (udt > UT_NOT_DEFINED)),
+                 "UTgetNamespace called with illegal udt!");
 
     DBUG_RETURN (ENTRY_LINE (udt_rep[udt]));
 }
@@ -326,7 +331,8 @@ node *
 UTgetTdef (usertype udt)
 {
     DBUG_ENTER ("UTgetTdef");
-    DBUG_ASSERT ((udt < udt_no), "UTgetTdef called with illegal udt!");
+    DBUG_ASSERT (((udt < udt_no) && (udt > UT_NOT_DEFINED)),
+                 "UTgetNamespace called with illegal udt!");
 
     DBUG_RETURN (ENTRY_TDEF (udt_rep[udt]));
 }
@@ -337,7 +343,8 @@ UTgetAlias (usertype udt)
     usertype alias;
 
     DBUG_ENTER ("UTgetAlias");
-    DBUG_ASSERT ((udt < udt_no), "UTgetAlias called with illegal udt!");
+    DBUG_ASSERT (((udt < udt_no) && (udt > UT_NOT_DEFINED)),
+                 "UTgetNamespace called with illegal udt!");
 
     alias = ENTRY_ALIAS (udt_rep[udt]);
 
@@ -350,7 +357,8 @@ UTgetUnAliasedType (usertype udt)
     usertype result;
 
     DBUG_ENTER ("UTgetUnAliasedType");
-    DBUG_ASSERT ((udt < udt_no), "UTgetUnAliasedType called with illegal udt!");
+    DBUG_ASSERT (((udt < udt_no) && (udt > UT_NOT_DEFINED)),
+                 "UTgetNamespace called with illegal udt!");
 
     if (ENTRY_ALIAS (udt_rep[udt]) != UT_NOT_DEFINED) {
         result = UTgetUnAliasedType (ENTRY_ALIAS (udt_rep[udt]));

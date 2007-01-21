@@ -477,6 +477,7 @@ TYmakeSimpleType (simpletype base)
 
     res = MakeNtype (TC_simple, 0);
     SIMPLE_TYPE (res) = base;
+    SIMPLE_HIDDEN_UDT (res) = UT_NOT_DEFINED;
 
     DBUG_RETURN (res);
 }
@@ -3935,7 +3936,13 @@ TYeliminateUser (ntype *t1)
         }
     } else {
         if (TYisArray (t1) && TYisUser (TYgetScalar (t1))) {
-            udt = USER_TYPE (TYgetScalar (t1));
+            /*
+             * we have to dealias the type here, as we are interested
+             * in the real implementation type. Otherwise, external
+             * types (aka 'real hiddens') would be hidden behind the
+             * alias udt!
+             */
+            udt = UTgetUnAliasedType (USER_TYPE (TYgetScalar (t1)));
             res = TYnestTypes (t1, UTgetBaseType (udt));
             if (TUisHidden (res)) {
                 /**
@@ -5668,7 +5675,19 @@ Type2OldType (ntype *new)
         TYPES_DIM (res) = ARRAY_OR_SCALAR;
         break;
     case TC_simple:
-        res = TBmakeTypes (SIMPLE_TYPE (new), 0, NULL, NULL, NULL);
+        if ((SIMPLE_TYPE (new) == T_hidden)
+            && (SIMPLE_HIDDEN_UDT (new) != UT_NOT_DEFINED)) {
+            res
+              = TBmakeTypes (T_user, 0, NULL,
+                             ILIBstringCopy (UTgetName (SIMPLE_HIDDEN_UDT (new))),
+                             ILIBstringCopy (
+                               (UTgetNamespace (SIMPLE_HIDDEN_UDT (new)) == NULL)
+                                 ? NULL
+                                 : NSgetName (UTgetNamespace (SIMPLE_HIDDEN_UDT (new)))));
+            TYPES_TDEF (res) = UTgetTdef (SIMPLE_HIDDEN_UDT (new));
+        } else {
+            res = TBmakeTypes (SIMPLE_TYPE (new), 0, NULL, NULL, NULL);
+        }
         break;
     case TC_user:
         res = TBmakeTypes (T_user, 0, NULL, ILIBstringCopy (UTgetName (USER_TYPE (new))),
@@ -6761,7 +6780,21 @@ SerializeSimpleType (FILE *file, ntype *type)
 {
     DBUG_ENTER ("SerializeSimpleType");
 
-    fprintf (file, "TYdeserializeType( %d, %d)", NTYPE_CON (type), SIMPLE_TYPE (type));
+    if (SIMPLE_HIDDEN_UDT (type) != UT_NOT_DEFINED) {
+        node *tdef;
+
+        tdef = UTgetTdef (SIMPLE_HIDDEN_UDT (type));
+
+        fprintf (file, "TYdeserializeType( %d, %d, 1, \"%s\", ", NTYPE_CON (type),
+                 SIMPLE_TYPE (type), SERgenerateSerFunName (SET_typedef, tdef));
+
+        NSserializeNamespace (file, UTgetNamespace (SIMPLE_HIDDEN_UDT (type)));
+
+        fprintf (file, ")");
+    } else {
+        fprintf (file, "TYdeserializeType( %d, %d, 0)", NTYPE_CON (type),
+                 SIMPLE_TYPE (type));
+    }
 
     DBUG_VOID_RETURN;
 }
@@ -7212,13 +7245,31 @@ TYdeserializeType (typeconstr con, ...)
 
     switch (con) {
     case TC_simple: {
+        usertype udt;
+        char *symid;
+        namespace_t *ns;
+        bool has_hidden;
+
         va_start (args, con);
 
         st = va_arg (args, int);
-        if (st == T_hidden) {
-            result = TYmakeHiddenSimpleType (0);
+        has_hidden = va_arg (args, bool);
+
+        if (has_hidden) {
+            DBUG_ASSERT ((st == T_hidden), "Found hidden udt in non hidden type!");
+
+            symid = va_arg (args, char *);
+            ns = va_arg (args, namespace_t *);
+
+            udt = DSloadUserType (symid, ns);
+
+            result = TYmakeHiddenSimpleType (udt);
         } else {
-            result = TYmakeSimpleType (st);
+            if (st == T_hidden) {
+                result = TYmakeHiddenSimpleType (UT_NOT_DEFINED);
+            } else {
+                result = TYmakeSimpleType (st);
+            }
         }
 
         va_end (args);
@@ -7239,13 +7290,16 @@ TYdeserializeType (typeconstr con, ...)
     case TC_user: {
         char *symid;
         namespace_t *ns;
+        usertype udt;
 
         va_start (args, con);
 
         symid = va_arg (args, char *);
         ns = va_arg (args, namespace_t *);
 
-        result = DSloadUserType (symid, ns);
+        udt = DSloadUserType (symid, ns);
+
+        result = TYmakeUserType (udt);
 
         va_end (args);
     } break;

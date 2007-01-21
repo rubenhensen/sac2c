@@ -33,7 +33,7 @@ extern void DSremoveAliasing (const char *symbol);
 /*
  * hooks for deserialization
  */
-extern ntype *DSloadUserType (const char *symid, const namespace_t *ns);
+extern usertype DSloadUserType (const char *symid, const namespace_t *ns);
 extern node *DSlookupFunction (const char *module, const char *symbol);
 extern node *DSlookupObject (const char *module, const char *symbol);
 extern node *DSfetchArgAvis (int pos);

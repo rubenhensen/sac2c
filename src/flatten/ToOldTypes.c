@@ -1,21 +1,4 @@
-/*
- * $Log$
- * Revision 1.5  2004/12/19 15:33:32  sbs
- * phase brushed
- *
- * Revision 1.4  2004/12/19 14:33:45  sbs
- * made functional
- *
- * Revision 1.3  2004/12/08 17:59:15  ktr
- * removed ARRAY_TYPE/ARRAY_NTYPE
- *
- * Revision 1.2  2004/11/24 17:16:49  mwe
- * SacDevCamp: Compiles!
- *
- * Revision 1.1  2004/11/19 10:50:43  mwe
- * Initial revision
- *
- */
+/* $Id$ */
 
 /*****************************************************************************
  *

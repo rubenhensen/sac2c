@@ -166,6 +166,16 @@ icm(`SAC_ND_TYPE',
     `*', `*', `*',
     `SAC_ND_TYPE_TAG__DEFAULT', `13', `0', `1')
 
+dnl SAC_ND_TYPEDEF
+
+icm(`SAC_ND_TYPEDEF',
+    `*', `HID', `*',
+    `SAC_ND_TYPEDEF__HID', `16', `0', `1')
+
+icm(`SAC_ND_TYPEDEF',
+    `*', `*', `*',
+    `SAC_ND_TYPEDEF__DEFAULT', `16', `0', `1')
+
 dnl SAC_ND_DECL__DESC
 
 icm(`SAC_ND_DECL__DESC',

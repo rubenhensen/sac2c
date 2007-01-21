@@ -23,6 +23,7 @@
 #include "globals.h"
 #include "handle_mops.h"
 #include "new_types.h"
+#include "user_types.h"
 #include "type_utils.h"
 #include "shape.h"
 #include "stringset.h"
@@ -454,7 +455,7 @@ typedef: TYPEDEF ntype ID SEMIC
 
 exttypedef: EXTERN TYPEDEF ID SEMIC
             { $$ = TBmakeTypedef( $3, NULL, TYmakeAKS(
-                     TYmakeHiddenSimpleType( 0), 
+                     TYmakeHiddenSimpleType( UT_NOT_DEFINED), 
                      SHmakeShape( 0)), NULL);
 
               DBUG_PRINT( "PARSE",
@@ -1784,9 +1785,11 @@ class: CLASS { file_kind = F_classimp; } ID SEMIC classtype defs
        ;
 
 classtype: CLASSTYPE ntype SEMIC { $$ = $2; }
-         | EXTERN CLASSTYPE SEMIC { $$ = TYmakeAKS(
-                                           TYmakeHiddenSimpleType( 0),
-                                           SHmakeShape( 0)); }
+         | EXTERN CLASSTYPE SEMIC 
+           { 
+             $$ = TYmakeAKS(
+                    TYmakeHiddenSimpleType( UT_NOT_DEFINED),
+                    SHmakeShape( 0)); }
          ;
 
 

@@ -1044,10 +1044,9 @@ DSdispatchFunCall (const namespace_t *ns, const char *name, node *args)
  * hooks for the deserialisation process
  */
 
-ntype *
+usertype
 DSloadUserType (const char *symbid, const namespace_t *ns)
 {
-    ntype *result;
     node *tdef;
     usertype udt;
 
@@ -1065,9 +1064,7 @@ DSloadUserType (const char *symbid, const namespace_t *ns)
 
     DBUG_ASSERT ((udt != UT_NOT_DEFINED), "typedef not in udt repository");
 
-    result = TYmakeUserType (udt);
-
-    DBUG_RETURN (result);
+    DBUG_RETURN (udt);
 }
 
 node *

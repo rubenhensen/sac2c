@@ -359,7 +359,10 @@ typedef int *SAC_array_descriptor_t;
  *
  ******************************************************************************/
 
-#define SAC_ND_TYPEDEF(var_NT, basetype)                                                 \
+#define SAC_ND_TYPEDEF__HID(var_NT, basetype)                                            \
+    typedef SAC_ND_TYPE (var_NT, SAC_hidden) NT_NAME (var_NT);
+
+#define SAC_ND_TYPEDEF__DEFAULT(var_NT, basetype)                                        \
     typedef SAC_ND_TYPE (var_NT, basetype) NT_NAME (var_NT);
 
 /************************

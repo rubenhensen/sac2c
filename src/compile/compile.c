@@ -31,6 +31,7 @@
 #include "user_types.h"
 #include "shape.h"
 #include "LookUpTable.h"
+#include "convert.h"
 
 #define FOLDFIX_LABEL_GENERATION_ACTIVE 1
 
@@ -423,18 +424,21 @@ GenericFun (generic_fun_t which, types *type)
 {
     node *tdef;
     char *ret = NULL;
+#ifndef DBUG_OFF
+    char *tmp;
+#endif
     usertype utype;
 
     DBUG_ENTER ("GenericFun");
 
-    DBUG_EXECUTE ("COMP", switch (which) {
+    DBUG_EXECUTE ("COMP", tmp = CVtype2String (type, 0, FALSE); switch (which) {
         case GF_copy:
-            DBUG_PRINT ("COMP", ("Looking for generic copy function"));
+            DBUG_PRINT ("COMP", ("Looking for generic copy functioni for type %s", tmp));
             break;
         case GF_free:
-            DBUG_PRINT ("COMP", ("Looking for generic free function"));
+            DBUG_PRINT ("COMP", ("Looking for generic free function for type %s", tmp));
             break;
-    });
+    } tmp = ILIBfree (tmp););
 
     DBUG_ASSERT ((type != NULL), "no type found!");
 
