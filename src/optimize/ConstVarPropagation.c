@@ -339,7 +339,7 @@ CVPprf (node *arg_node, info *arg_info)
      */
     case F_idx_sel:
         DBUG_ASSERT (((global.compiler_phase >= PH_sacopt)
-                      && (global.compiler_subphase >= SUBPH_ivei)),
+                      && (global.compiler_subphase >= SUBPH_ivesplit)),
                      ("F_idx_ operations are not allowed during the optimizer!"));
         /*
          * The second argument of idx_sel must be variable
@@ -354,7 +354,7 @@ CVPprf (node *arg_node, info *arg_info)
 
     case F_idx_modarray:
         DBUG_ASSERT (((global.compiler_phase >= PH_sacopt)
-                      && (global.compiler_subphase >= SUBPH_ivei)),
+                      && (global.compiler_subphase >= SUBPH_ivesplit)),
                      ("F_idx_ operations are not allowed during the optimizer!"));
         /*
          * The first argument of idx_modarray must be variable

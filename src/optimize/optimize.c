@@ -41,8 +41,7 @@
 #include "check_mem.h"
 
 #include "liftoptflags.h"
-#include "index_infer.h" /* for IVEIprintPreFun */
-#include "new_types.h"   /* for TYtype2String */
+#include "new_types.h" /* for TYtype2String */
 
 /** <!--********************************************************************-->
  *
@@ -377,11 +376,7 @@ OPTdoOptimize (node *arg_node)
      * apply index vector elimination (dependent on saa, as of 2006-11-30)
      */
     if (global.optimize.doive && global.optimize.dosaa && global.optimize.dodcr) {
-        TRAVsetPreFun (TR_prt, IVEIprintPreFun);
-        arg_node = PHrunCompilerSubPhase (SUBPH_ivei, arg_node);
-        arg_node = PHrunCompilerSubPhase (SUBPH_ive, arg_node);
-        arg_node = PHrunCompilerSubPhase (SUBPH_iveo, arg_node);
-        TRAVsetPreFun (TR_prt, NULL);
+        arg_node = PHrunCompilerSubPhase (SUBPH_ivesplit, arg_node);
 
         /*
          * Constant and variable propagation
@@ -396,6 +391,11 @@ OPTdoOptimize (node *arg_node)
         if (global.optimize.docse) {
             arg_node = PHrunCompilerSubPhase (SUBPH_cseive, arg_node);
         }
+
+        /*
+         * IVE Reuse Withloop Offsets and Scalarize Index Vectors
+         */
+        arg_node = PHrunCompilerSubPhase (SUBPH_iveras, arg_node);
     }
 
     /*

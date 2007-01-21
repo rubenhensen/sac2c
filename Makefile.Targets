@@ -93,7 +93,7 @@ optimize    = optimize.o \
               insert_symb_arrayattr.o elim_shapevars.o makedimexpr.o \
               makeshapeexpr.o distributivity.o remove_vardecs.o
 
-psi-opt     = index_eliminate.o index_infer.o index_optimize.o \
+psi-opt     = ive_split_selections.o ive_reusewl_and_scalarize.o \
               wl_access_analyze.o tile_size_inference.o wls.o wlscheck.o \
               wlsbuild.o wlswithloopification.o SSAWithloopFolding.o \
               SSAWLI.o SSAWLF.o WithloopFusion.o detectdependencies.o \

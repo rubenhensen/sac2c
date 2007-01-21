@@ -1357,27 +1357,18 @@
           <node name="Modarray" />
         </travuser>
       </traversal>
-      <traversal id="IVE" name="Index Vector Elimination" default="sons" include="index_eliminate.h">
+      <traversal id="IVESPLIT" name="Index Vector Elimination (Split Selections)" default="sons" include="ive_split_selections.h">
         <travuser>
 	  <node name="Fundef" />
 	  <node name="Assign" />
-	  <node name="Let" />
 	  <node name="Prf" />
-	  <node name="Ids" />
-	  <node name="Block" />
-	  <node name="Arg" />
-	  <node name="With" />
-	  <node name="Code" />
-	  <node name="Ap" />
         </travuser>
       </traversal>
-      <traversal id="IVEO" name="IVE - Optimization" default="sons" include="index_optimize.h">
+      <traversal id="IVERAS" name="Index Vector Elimination (Reuse WL-offsets and Scalarize)" default="sons" include="ive_reusewl_and_scalarize.h">
         <travuser>
+	  <node name="Prf" />
 	  <node name="Let" />
 	  <node name="With" />
-	  <node name="Prf" />
-	  <node name="Fundef" />
-	  <node name="Assign" />
 	  <node name="Code" />
         </travuser>
       </traversal>
@@ -1387,18 +1378,6 @@
           <node name="Let" />
           <node name="With" />
           <node name="Withid" />
-        </travuser>
-      </traversal>
-      <traversal id="IVEI" name="IVE - Use Inference" default="sons" include="index_infer.h">
-        <travuser>
-          <node name="Fundef" />
-          <node name="Ap" />
-          <node name="Assign" />
-          <node name="Prf" />
-          <node name="Let" />
-          <node name="Block" />
-          <node name="Avis" />
-          <node name="Id" />
         </travuser>
       </traversal>
     </phase>
@@ -4151,16 +4130,6 @@
       </attributes>
       <flags>
         <flag name="IsSclPrf" />
-	<flag name="IsVect2OffsetIssued" >
-		<description>
-		This flag indicates that a Vect2Offset has been issued
-		by IVE for this array. It is meaningful only for an N_id
-		that is pointed to from an ID_IDXSHAPES chain.
-		</description>
-                <phases>
-                  <range from="ivei" to="iveo" />
-                </phases>
-	</flag>
       </flags>
 
 
@@ -5059,48 +5028,6 @@ identifier (N_id) for AUD arrays.
           <description>Used by Interface Analysis in order to 
             obtain the transitive hull of variable aliases.</description>
         </attribute>
-	<attribute name="IdxShapes">
-          <description>Used by Index Vector Elimination.
-	  All array shapes that are indexed by this avis are 
-	  listed in an N_exprs chain from here, as a chain of
-	  N_id nodes with a representative element for each shape.
-	  Initially, the representatives are arbitrary; during
-	  index_eliminate, each representative is replaced by
-	  the first array of that shape to have a Vect2Offset
-	  emitted on its behalf. Thus, later Vect2offset references to the
-	  same shape array use the representative instead of the
-	  actual array being indexed.
-	  </description>
-	  <type name="Node">
-            <targets>
-              <target mandatory="no">
-                <node name="Exprs" />
-                <phases>
-		  <range from="ive" to="iveo" />
-                </phases>
-              </target>
-            </targets>
-	  </type>
-	</attribute>
-	<attribute name="IdxIds">
-          <description>Used by Index Vector Elimination.
-	  This is an N_exprs chain of N_id nodes that correspond, one-to-one,
-	  to the IdxShapes chain. Each N_id node defines
-	  the name of the offset variable to be used when 
-	  indexing an array whose shape matches that of the
-	  corresponding IdsShapes node.
-	  </description>
-	  <type name="Node">
-            <targets>
-              <target mandatory="no">
-                <node name="Ids" />
-                <phases>
-		  <range from="ive" to="iveo" />
-                </phases>
-              </target>
-            </targets>
-	  </type>
-	</attribute>
 	<attribute name="UniqueRef">
 	  <description>First reference to this unique object declaration. Used to generate useful error messages in case of uniqueness violation.</description>
 	  <type name="Link">

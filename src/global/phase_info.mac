@@ -382,14 +382,9 @@ SUBPHASE (wrci, "wrci", "wrci", "Inferencing with-loop reuse candidates",
 SUBPHASE (wlidx, "wlidx", "wlidx", "Annoting offset variable at with-loops",
           WLIDXdoAnnotateWithloopIdxs)
 
-SUBPHASE (ivei, "ivei", "ivei", "Applying index vector elimination (inference)",
-          IVEIdoIndexVectorEliminationInference)
-
-SUBPHASE (ive, "ive", "ive", "Applying index vector elimination",
-          IVEdoIndexVectorElimination)
-
-SUBPHASE (iveo, "iveo", "iveo", "Applying index vector elimination (optimisation)",
-          IVEOdoIndexVectorEliminationOptimisation)
+SUBPHASE (ivesplit, "ivesplit", "ivesplit",
+          "Applying index vector elimination (split selections)",
+          IVESPLITdoSplitSelections)
 
 SUBPHASE (cvpive, "cvpive", "cvpive", "Propagating constants and variables",
           CVPdoConstVarPropagation)
@@ -399,6 +394,10 @@ SUBPHASE (lirive, "lirive", "lirive", "Applying loop invariant removal",
 
 SUBPHASE (cseive, "cseive", "cseive", "Eliminating common subexpression",
           CSEdoCommonSubexpressionEliminationModule)
+
+SUBPHASE (iveras, "iveras", "iveras",
+          "Applying index vector elimination (reuse WL-offsets and scalarize)",
+          IVERASdoWithloopReuseAndOptimisation)
 
 SUBPHASE (esv, "esv", "esv", "Eliminating shape variables", ESVdoEliminateShapeVariables)
 
