@@ -36,10 +36,10 @@ SetupCompiler (int argc, char *argv[])
 
     RSCevaluateConfiguration ();
 
-    LIBSprintLibStat ();
-
     FMGRsetupPaths ();
     FMGRcreateTmpDir ();
+
+    LIBSprintLibStat ();
 
     DBUG_RETURN (NULL);
 }
