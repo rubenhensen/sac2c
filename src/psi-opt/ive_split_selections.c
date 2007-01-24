@@ -232,6 +232,9 @@ IVESPLITprf (node *arg_node, info *arg_info)
 
     switch (PRF_PRF (arg_node)) {
     case F_sel:
+        DBUG_ASSERT ((AVIS_SHAPE (ID_AVIS (PRF_ARG2 (arg_node))) != NULL),
+                     "missing saa shape!");
+
         if (NODE_TYPE (AVIS_SHAPE (ID_AVIS (PRF_ARG2 (arg_node)))) == N_array) {
             avis = AddVect2Offset (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info);
             new_node = TCmakePrf2 (F_idx_sel, TBmakeId (avis), PRF_ARG2 (arg_node));
@@ -243,6 +246,9 @@ IVESPLITprf (node *arg_node, info *arg_info)
         break;
 
     case F_modarray:
+        DBUG_ASSERT ((AVIS_SHAPE (ID_AVIS (PRF_ARG1 (arg_node))) != NULL),
+                     "missing saa shape!");
+
         if (NODE_TYPE (AVIS_SHAPE (ID_AVIS (PRF_ARG1 (arg_node)))) == N_array) {
             avis = AddVect2Offset (PRF_ARG2 (arg_node), PRF_ARG1 (arg_node), arg_info);
             new_node = TCmakePrf3 (F_idx_modarray, PRF_ARG1 (arg_node), TBmakeId (avis),
