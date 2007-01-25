@@ -1,33 +1,4 @@
-/*
- *
- * $Log$
- * Revision 3.4  2004/03/09 23:56:15  dkrHH
- * old backend removed
- *
- * Revision 3.2  2000/11/29 16:18:22  nmw
- * function SAC_CI_SACArg2string() added
- *
- * Revision 3.1  2000/11/20 18:02:10  sacbase
- * new release made
- *
- * Revision 1.6  2000/07/28 14:42:15  nmw
- * Prototypes changed to handle T_user types
- *
- * Revision 1.5  2000/07/07 15:32:53  nmw
- * InUseDirectory added
- *
- * Revision 1.4  2000/07/06 15:52:57  nmw
- * SAC_CI_InitRefcounter() added
- *
- * Revision 1.3  2000/07/06 09:23:32  nmw
- * reference to type_info.mac removed
- *
- * Revision 1.2  2000/07/06 08:18:57  dkr
- * RCS header added
- * absolute path of type_info.mac-include removed
- * -> but I think type_info.mac should NOT be included here anyway!
- *
- */
+/* $Id$ */
 
 #ifndef _sac_arg_h
 #define _sac_arg_h
@@ -62,19 +33,19 @@ typedef struct SAC_ARG_STRUCT {
 #define SAC_ARG_DIM(a) (a->dim)
 #define SAC_ARG_TNAME(a) (a->typename)
 
-extern SAC_arg SAC_CI_NewSACArg (SAC_ARG_simpletype basetype, char *tname, int dim,
-                                 int *shpvec);
-extern SAC_arg SAC_CI_CreateSACArg (SAC_ARG_simpletype basetype, char *tname, int dim,
-                                    ...);
-extern bool SAC_CI_CmpSACArgType (SAC_arg sa, SAC_ARG_simpletype basetype, char *tname,
+extern SAC_arg *SAC_CI_NewSACArg (SAC_ARG_simpletype basetype, char *tname, int dim,
+                                  int *shpvec);
+extern SAC_arg *SAC_CI_CreateSACArg (SAC_ARG_simpletype basetype, char *tname, int dim,
+                                     ...);
+extern bool SAC_CI_CmpSACArgType (SAC_arg *sa, SAC_ARG_simpletype basetype, char *tname,
                                   int dim, ...);
-extern SAC_arg SAC_CI_InitRefcounter (SAC_arg sa, int initvalue);
-extern void SAC_CI_ExitOnInvalidArg (SAC_arg sa, SAC_ARG_simpletype basetype, char *tname,
-                                     int flag);
+extern SAC_arg *SAC_CI_InitRefcounter (SAC_arg *sa, int initvalue);
+extern void SAC_CI_ExitOnInvalidArg (SAC_arg *sa, SAC_ARG_simpletype basetype,
+                                     char *tname, int flag);
 
 extern void SAC_CI_InitSACArgDirectory ();
 extern void SAC_CI_FreeSACArgDirectory ();
 
-extern char *SAC_CI_SACArg2string (SAC_arg sa, char *buffer);
+extern char *SAC_CI_SACArg2string (SAC_arg *sa, char *buffer);
 
 #endif

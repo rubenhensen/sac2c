@@ -1,41 +1,4 @@
-/*
- * $Log$
- * Revision 3.3  2000/12/05 14:28:54  nmw
- * refcounter handling for T_hidden fixed
- *
- * Revision 3.2  2000/11/29 16:21:03  nmw
- * function SAC_CI_SACArg2string() added
- *
- * Revision 3.1  2000/11/20 18:02:47  sacbase
- * new release made
- *
- * Revision 1.8  2000/07/28 14:45:09  nmw
- * changes to support T_user types in SAC_args
- *
- * Revision 1.7  2000/07/13 09:53:36  nmw
- * comments added
- *
- * Revision 1.6  2000/07/12 10:12:23  nmw
- * RCS-header added
- *
- * Revision 1.5  2000/07/07 15:33:54  nmw
- * InUseDirectory added
- *
- * Revision 1.4  2000/07/06 15:55:12  nmw
- * SAC_CI_InitRefcounter added
- *
- * Revision 1.3  2000/07/05 19:47:36  nmw
- * stdlib.h added for linux compatibility
- *
- * Revision 1.2  2000/07/05 15:35:30  nmw
- * minor debugging, filenames adapted
- *
- * Revision 1.1  2000/07/05 12:47:08  nmw
- * Initial revision
- *
- *
- * implementation of abstract datatype SAC_arg
- */
+/* $Id$ */
 
 #include <stdarg.h>
 #include <stdlib.h>
@@ -54,20 +17,20 @@ char *basetype_string[] = {
 
 /* datatype for SAC_arg inUseDirectory */
 typedef struct SAC_ARG_DIR_S {
-    SAC_arg vars[SAC_ARG_MAX_VARS_IN_DIR];
+    SAC_arg *vars[SAC_ARG_MAX_VARS_IN_DIR];
     int act_slot;
     struct SAC_ARG_DIR_S *next;
 } in_use_directory_T;
 
 static in_use_directory_T *GetNewInUseDirectory (in_use_directory_T *old);
-static void AddToInUseDirectory (SAC_arg sa);
+static void AddToInUseDirectory (SAC_arg *sa);
 
 static in_use_directory_T *in_use_directory;
 
 /******************************************************************************
  *
  * function:
- *   SAC_arg SAC_NewSACArg(SAC_ARG_simpletype basetype,char *tname,
+ *   SAC_arg *SAC_NewSACArg(SAC_ARG_simpletype basetype,char *tname,
  *                         int dim, int *shpvec)
  *
  * description:
@@ -79,12 +42,12 @@ static in_use_directory_T *in_use_directory;
  *
  ******************************************************************************/
 
-SAC_arg
+SAC_arg *
 SAC_CI_NewSACArg (SAC_ARG_simpletype basetype, char *tname, int dim, int *shpvec)
 {
-    SAC_arg result;
+    SAC_arg *result;
 
-    result = (SAC_arg)SAC_MALLOC (sizeof (SAC_ARG_STRUCT));
+    result = (SAC_arg *)SAC_MALLOC (sizeof (SAC_ARG_STRUCT));
 
     /* add to directory */
     AddToInUseDirectory (result);
@@ -111,7 +74,7 @@ SAC_CI_NewSACArg (SAC_ARG_simpletype basetype, char *tname, int dim, int *shpvec
 /******************************************************************************
  *
  * function:
- *   SAC_arg SAC_CreateSACArg(simpletype basetype, char *tname, int dim, ...)
+ *   SAC_arg *SAC_CreateSACArg(simpletype basetype, char *tname, int dim, ...)
  *
  * description:
  *   creates a SAC_arg data type of basetype and dimension with the specified
@@ -122,7 +85,7 @@ SAC_CI_NewSACArg (SAC_ARG_simpletype basetype, char *tname, int dim, int *shpvec
  *
  ******************************************************************************/
 
-SAC_arg
+SAC_arg *
 SAC_CI_CreateSACArg (SAC_ARG_simpletype basetype, char *tname, int dim, ...)
 {
     va_list Argp;
@@ -147,7 +110,7 @@ SAC_CI_CreateSACArg (SAC_ARG_simpletype basetype, char *tname, int dim, ...)
 /******************************************************************************
  *
  * function:
- *   bool SAC_CmpSACArgType(SAC_arg sa, SAC_ARG_simpletype basetype,
+ *   bool SAC_CmpSACArgType(SAC_arg *sa, SAC_ARG_simpletype basetype,
  *                          char *tname, int dim, ...)
  *
  * description:
@@ -156,7 +119,7 @@ SAC_CI_CreateSACArg (SAC_ARG_simpletype basetype, char *tname, int dim, ...)
  ******************************************************************************/
 
 bool
-SAC_CI_CmpSACArgType (SAC_arg sa, SAC_ARG_simpletype basetype, char *tname, int dim, ...)
+SAC_CI_CmpSACArgType (SAC_arg *sa, SAC_ARG_simpletype basetype, char *tname, int dim, ...)
 {
     va_list Argp;
     bool res = true;
@@ -185,7 +148,7 @@ SAC_CI_CmpSACArgType (SAC_arg sa, SAC_ARG_simpletype basetype, char *tname, int 
 /******************************************************************************
  *
  * function:
- *   void SAC_FreeSACArg(SAC_arg sa)
+ *   void SAC_FreeSACArg(SAC_arg *sa)
  *
  * description:
  *   frees SAC_arg data structure and used resources, if they have not been
@@ -194,7 +157,7 @@ SAC_CI_CmpSACArgType (SAC_arg sa, SAC_ARG_simpletype basetype, char *tname, int 
  ******************************************************************************/
 
 static void
-SAC_CI_FreeSACArg (SAC_arg sa)
+SAC_CI_FreeSACArg (SAC_arg *sa)
 {
     if (sa != NULL) {
         /* free all allocated resources and the data structure */
@@ -211,7 +174,7 @@ SAC_CI_FreeSACArg (SAC_arg sa)
             SAC_FREE (SAC_ARG_SHPVEC (sa));
         }
 
-        /*free SAC_arg datastructure */
+        /*free SAC_arg *datastructure */
         SAC_FREE (sa);
     }
 }
@@ -219,7 +182,7 @@ SAC_CI_FreeSACArg (SAC_arg sa)
 /******************************************************************************
  *
  * function:
- *   SAC_arg SAC_CI_InitRefcounter(SAC_arg sa, int initvalue)
+ *   SAC_arg *SAC_CI_InitRefcounter(SAC_arg *sa, int initvalue)
  *
  * description:
  *   allocate refcounter variable and init refcounter and local refcounter
@@ -228,8 +191,8 @@ SAC_CI_FreeSACArg (SAC_arg sa)
  *
  ******************************************************************************/
 
-SAC_arg
-SAC_CI_InitRefcounter (SAC_arg sa, int initvalue)
+SAC_arg *
+SAC_CI_InitRefcounter (SAC_arg *sa, int initvalue)
 {
     if (SAC_ARG_DIM (sa) > 0) {
         /* arraytype with refcounting */
@@ -246,7 +209,7 @@ SAC_CI_InitRefcounter (SAC_arg sa, int initvalue)
 /******************************************************************************
  *
  * function:
- *   void SAC_CI_ExitOnInvalidArg(SAC_arg sa, SAC_ARG_simpletype basetype,
+ *   void SAC_CI_ExitOnInvalidArg(SAC_arg *sa, SAC_ARG_simpletype basetype,
  *                                char *tname int arg_mode)
  *
  * description:
@@ -256,7 +219,7 @@ SAC_CI_InitRefcounter (SAC_arg sa, int initvalue)
  ******************************************************************************/
 
 void
-SAC_CI_ExitOnInvalidArg (SAC_arg sa, SAC_ARG_simpletype basetype, char *tname, int flag)
+SAC_CI_ExitOnInvalidArg (SAC_arg *sa, SAC_ARG_simpletype basetype, char *tname, int flag)
 {
     if (SAC_ARG_LRC (sa) > 0) {
         /* no usertype checks */
@@ -324,7 +287,7 @@ GetNewInUseDirectory (in_use_directory_T *old)
 /******************************************************************************
  *
  * function:
- *   static void AddToInUseDirectory(SAC_arg sa)
+ *   static void AddToInUseDirectory(SAC_arg *sa)
  *
  * description:
  *   adds SAC_arg to directory; if no free slot available -> alloc new directory
@@ -332,7 +295,7 @@ GetNewInUseDirectory (in_use_directory_T *old)
  *****************************************************************************/
 
 static void
-AddToInUseDirectory (SAC_arg sa)
+AddToInUseDirectory (SAC_arg *sa)
 {
     if (in_use_directory->act_slot == SAC_ARG_MAX_VARS_IN_DIR) {
         /* directory full, append new one */
@@ -373,7 +336,7 @@ SAC_CI_FreeSACArgDirectory ()
 /******************************************************************************
  *
  * function:
- *   char*  SAC_CI_SACArg2string(SAC_arg sa, char* buffer)
+ *   char*  SAC_CI_SACArg2string(SAC_arg *sa, char* buffer)
  *
  * description:
  *   creates a string representation for the SAC_arg type like 'int[1,2,3]'
@@ -382,7 +345,7 @@ SAC_CI_FreeSACArgDirectory ()
  *****************************************************************************/
 
 char *
-SAC_CI_SACArg2string (SAC_arg sa, char *buffer)
+SAC_CI_SACArg2string (SAC_arg *sa, char *buffer)
 {
     char *internal_buffer;
     char tempstr[CHAR_BUFFER_SIZE];
