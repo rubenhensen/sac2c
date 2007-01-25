@@ -598,7 +598,7 @@ PHASE (invokecc, "Creating binary code", PHDdriveBinaryCodeCreation)
 
 SUBPHASE (hdep, "hdep", "hdep", "Handling dependencies", DEPdoHandleDependencies)
 
-SUBPHASE (icc, "icc", "icc", "Invoking C compiler", CCMinvokeCC)
+SUBPHASE (ivcc, "icc", "icc", "Invoking C compiler", CCMinvokeCC)
 
 SUBPHASE (crlib, "crlib", "crlib", "Creating SAC library", LIBBcreateLibrary)
 

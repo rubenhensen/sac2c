@@ -33,6 +33,7 @@
  * global file handle for syscall tracking
  */
 FILE *syscalltrack = NULL;
+bool syscalltrack_active = FALSE;
 
 struct PTR_BUF {
     void **buf;
@@ -781,9 +782,15 @@ ILIBsystemCallStartTracking ()
 
     DBUG_ASSERT ((syscalltrack == NULL), "tracking has already been enabled!");
 
-    syscalltrack = FMGRwriteOpen ("%s.sac2c", global.outfilename);
+    if (syscalltrack_active) {
+        syscalltrack = FMGRappendOpen ("%s.sac2c", global.outfilename);
+    } else {
+        CTInote ("Creating cc call shell script `%s.sac2c'", global.outfilename);
+        syscalltrack = FMGRwriteOpen ("%s.sac2c", global.outfilename);
+        fprintf (syscalltrack, "#! /bin/sh\n\n");
+    }
 
-    fprintf (syscalltrack, "#! /bin/sh\n\n");
+    syscalltrack_active = TRUE;
 
     DBUG_VOID_RETURN;
 }

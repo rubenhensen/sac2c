@@ -304,6 +304,13 @@ CCMinvokeCC (node *syntax_tree)
 
     DBUG_ENTER ("CCMinvokeCC");
 
+    if (global.gen_cccall) {
+        /*
+         * enable system call tracking
+         */
+        ILIBsystemCallStartTracking ();
+    }
+
     cccall = GetCCCall ();
     ccflags = GetCCFlags ();
     libs = GetLibs ();
@@ -317,6 +324,13 @@ CCMinvokeCC (node *syntax_tree)
     cccall = ILIBfree (cccall);
     ccflags = ILIBfree (ccflags);
     libs = ILIBfree (libs);
+
+    if (global.gen_cccall) {
+        /*
+         * stop tracking and close file
+         */
+        ILIBsystemCallStopTracking ();
+    }
 
     DBUG_RETURN (syntax_tree);
 }

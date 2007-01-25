@@ -54,6 +54,13 @@ LIBBcreateLibrary (node *syntax_tree)
 
     CTInote ("Creating static SAC library `lib%s.a'", global.modulename);
 
+    if (global.gen_cccall) {
+        /*
+         * enable system call tracking
+         */
+        ILIBsystemCallStartTracking ();
+    }
+
     deplibs = STRSfold (&BuildDepLibsStringMod, deps, ILIBstringCopy (""));
 
     ILIBsystemCall ("%s %slib%s.a %s/fun*.o %s/globals.o %s", global.config.ar_create,
@@ -74,6 +81,13 @@ LIBBcreateLibrary (node *syntax_tree)
                     global.config.ld_dynamic, global.targetdir, global.modulename,
                     global.tmp_dirname, global.tmp_dirname, global.tmp_dirname,
                     global.tmp_dirname, global.tmp_dirname);
+
+    if (global.gen_cccall) {
+        /*
+         * stop tracking and close file
+         */
+        ILIBsystemCallStopTracking ();
+    }
 
     DBUG_RETURN (syntax_tree);
 }

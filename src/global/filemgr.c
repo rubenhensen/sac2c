@@ -1,5 +1,5 @@
 /*
- * $Id:$
+ * $Id$
  *
  * Revision 1.1  1994/12/11  17:33:27  sbs
  * Initial revision
@@ -464,6 +464,45 @@ FMGRwriteOpen (const char *format, ...)
 
     if (file == NULL) {
         CTIabort ("Unable to write file \"%s\"", buffer);
+    }
+
+    DBUG_RETURN (file);
+}
+
+/*
+ *
+ *  functionname  : FMGRappendOpen
+ *  arguments     : 1) format string like that of printf
+ *                  2) variable argument list for 1)
+ *  description   : opens the given file for writing. If this fails,
+ *                  an error message
+ *                  occurs and compilation is aborted.
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : vsprintf, va_start, va_end, fopen
+ *  macros        : vararg macros, ERROR
+ *
+ *  remarks       :
+ *
+ */
+
+FILE *
+FMGRappendOpen (const char *format, ...)
+{
+    va_list arg_p;
+    static char buffer[MAX_PATH_LEN];
+    FILE *file;
+
+    DBUG_ENTER ("FMGRappendOpen");
+
+    va_start (arg_p, format);
+    vsprintf (buffer, format, arg_p);
+    va_end (arg_p);
+
+    file = fopen (buffer, "a");
+
+    if (file == NULL) {
+        CTIabort ("Unable to append file \"%s\"", buffer);
     }
 
     DBUG_RETURN (file);

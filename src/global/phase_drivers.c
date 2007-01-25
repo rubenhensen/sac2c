@@ -4,11 +4,11 @@
  *
  */
 
+#include "dbug.h"
 #include "types.h"
 #include "phase.h"
 #include "globals.h"
 #include "ctinfo.h"
-#include "internal_lib.h"
 #include "dependencies.h"
 #include "optimize.h"
 #include "annotate_fun_calls.h"
@@ -487,24 +487,10 @@ PHDdriveBinaryCodeCreation (node *syntax_tree)
 
     syntax_tree = PHrunCompilerSubPhase (SUBPH_hdep, syntax_tree);
 
-    if (global.gen_cccall) {
-        /*
-         * enable system call tracking
-         */
-        ILIBsystemCallStartTracking ();
-    }
-
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_icc, syntax_tree);
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_ivcc, syntax_tree);
 
     if (global.filetype != F_prog) {
         syntax_tree = PHrunCompilerSubPhase (SUBPH_crlib, syntax_tree);
-    }
-
-    if (global.gen_cccall) {
-        /*
-         * stop tracking and close file
-         */
-        ILIBsystemCallStopTracking ();
     }
 
     /*
