@@ -109,7 +109,7 @@ multithread = multithread_lib.o tag_executionmode.o \
               propagate_executionmode.o create_cells.o \
               create_dataflowgraph.o assignments_rearrange.o \
               cell_growth.o create_withinwith.o replicate_functions.o \
-              consolidate_cells.o
+              consolidate_cells.o abort.o
 
 profile     = annotate_fun_calls.o
 

@@ -435,13 +435,15 @@ SUBPHASE (wltdcr, "dcr", "dcr", "Removing dead code", DCRdoDeadCodeRemovalModule
 PHASE (multithread, "Generating annotations for multithreaded execution",
        PHDdriveMultithreading)
 
-SUBPHASE (spmdinit_old, "spmdinit", "spmdinit", "Building SPMD blocks around with-loops",
+#ifndef BEMT
+
+SUBPHASE (spmdinit, "spmdinit", "spmdinit", "Building SPMD blocks around with-loops",
           SPMDIdoSpmdInit)
 
-SUBPHASE (createmtfuns_old, "createmtfuns", "createmtfuns",
+SUBPHASE (createmtfuns, "createmtfuns", "createmtfuns",
           "Creating MT variants of exported and provided functions", CMTFdoCreateMtFuns)
 
-SUBPHASE (spmdlift_old, "spmdlift", "spmdlift", "Lifting SPMD blocks to functions",
+SUBPHASE (spmdlift, "spmdlift", "spmdlift", "Lifting SPMD blocks to functions",
           SPMDLdoSpmdLift)
 
 SUBPHASE (sched, "sched", "sched", "Annotating scheduling informations",
@@ -454,6 +456,10 @@ SUBPHASE (conclac2fun, "l2f", "l2f", "Lifting SPMD conditionals", L2FdoLac2Fun)
 SUBPHASE (concssa, "ssa", "ssa",
           "Establishing static single assignment form in SPMD conditionals",
           SSATdoTransform)
+
+#endif /* BEMT */
+
+#ifndef PRODUCTION
 
 SUBPHASE (tem, "tem", "tem", "Tagging execution modes", TEMdoTagExecutionmode)
 
@@ -475,6 +481,10 @@ SUBPHASE (mtdfr, "dfr", "dfr", "Removing superfluos functions", DFRdoDeadFunctio
 
 SUBPHASE (concel, "concel", "concel", "Consolidating execution mode cells",
           CONCELdoConsolidateCells)
+
+SUBPHASE (abort, "abort", "abort", "Aborting MT3 compilation", MTABabort)
+
+#endif /* PRODUCTION */
 
 /******************************************************************************/
 
@@ -556,6 +566,8 @@ SUBPHASE (rera, "rera", "rera", "Restoring reference arguments",
 
 SUBPHASE (reso, "reso", "reso", "Restoring global objects", RESOdoRestoreObjects)
 
+#ifdef BEMT
+
 SUBPHASE (spmdinit, "spmdinit", "spmdinit", "Building SPMD blocks around with-loops",
           SPMDIdoSpmdInit)
 
@@ -564,6 +576,8 @@ SUBPHASE (createmtfuns, "createmtfuns", "createmtfuns",
 
 SUBPHASE (spmdlift, "spmdlift", "spmdlift", "Lifting SPMD blocks to functions",
           SPMDLdoSpmdLift)
+
+#endif /*  BEMT */
 
 SUBPHASE (sls, "sls", "sls", "Applying linksign pragma", SLSdoSetLinksign)
 
@@ -574,11 +588,23 @@ SUBPHASE (moi, "moi", "moi", "Manage object initialisers", MOIdoManageObjectInit
 SUBPHASE (rcs, "rcs", "rcs", "Resolving code sharing in With-Loops",
           RCSdoResolveCodeSharing)
 
+/*
+ * WARNING: no phases that duplicate code below this line!
+ *          FPC builds the argtabs which CANNOT be maintained
+ *          by duptree!
+ */
+
 SUBPHASE (fpc, "fpc", "fpc", "Reorganizing function prototypes", FPCdoFunctionPrecompile)
 
 SUBPHASE (tcp, "tcp", "tcp", "Applying type conversions", TCPdoTypeConversions)
 
-SUBPHASE (aff, "aff", "aff", "Adjusting fold functions", PHdummy)
+#if 0
+
+SUBPHASE( aff, "aff",  "aff", 
+          "Adjusting fold functions",
+          PHidentity)
+
+#endif
 
 SUBPHASE (mng, "mng", "mng", "Mark NoOp Grids", MNGdoMarkNoopGrids)
 

@@ -231,12 +231,6 @@ GLOBAL (int, min_parallel_size_per_thread, 8)
  *       => generator size must be >= 32 to be executed parallel
  */
 
-GLOBAL (bool, executionmodes_available, FALSE)
-/*
- * Flag showing if the sourcecode is tagged with executionmodes or not
- * this information is important for printing it
- */
-
 /*
  * Preprocessor options
  *
