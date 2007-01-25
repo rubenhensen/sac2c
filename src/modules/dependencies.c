@@ -208,7 +208,7 @@ doPrintLibDependencies (node *tree)
      */
     printf ("alldeps_%s:\n", NSgetName (MODULE_NAMESPACE (tree)));
 
-    STRSfold (&PrintLibDepFoldFun, MODULE_DEPENDENCIES (tree),
+    STRSfold (&PrintLibDepFoldFun, global.dependencies,
               (void *)NSgetName (MODULE_NAMESPACE (tree)));
 
     DBUG_VOID_RETURN;
@@ -331,7 +331,7 @@ DEPdoPrintDependencies (node *syntax_tree)
     /*
      * now add the dependencies
      */
-    STRSfold (&PrintDepFoldFun, MODULE_DEPENDENCIES (syntax_tree), NULL);
+    STRSfold (&PrintDepFoldFun, global.dependencies, NULL);
 
     /*
      * and finally two newline to make it look nicer

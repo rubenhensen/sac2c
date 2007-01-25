@@ -19,7 +19,6 @@
  * INFO structure
  */
 struct INFO {
-    node *module;
     node *nums;
     int counter;
     enum { RSP_default, RSP_refcnt, RSP_linksign } travmode;
@@ -28,7 +27,6 @@ struct INFO {
 /*
  * INFO macros
  */
-#define INFO_MODULE(n) ((n)->module)
 #define INFO_NUMS(n) ((n)->nums)
 #define INFO_COUNTER(n) ((n)->counter)
 #define INFO_TRAVMODE(n) ((n)->travmode)
@@ -45,7 +43,6 @@ MakeInfo ()
 
     result = ILIBmalloc (sizeof (info));
 
-    INFO_MODULE (result) = NULL;
     INFO_NUMS (result) = NULL;
     INFO_COUNTER (result) = 0;
     INFO_TRAVMODE (result) = RSP_default;
@@ -288,9 +285,7 @@ RSPtypedef (node *arg_node, info *arg_info)
          * add them to the dependencies
          */
         if (PRAGMA_LINKOBJ (pragma) != NULL) {
-            MODULE_DEPENDENCIES (INFO_MODULE (arg_info))
-              = STRSjoin (PRAGMA_LINKOBJ (pragma),
-                          MODULE_DEPENDENCIES (INFO_MODULE (arg_info)));
+            global.dependencies = STRSjoin (PRAGMA_LINKOBJ (pragma), global.dependencies);
 
             PRAGMA_LINKOBJ (pragma) = NULL;
         }
@@ -300,9 +295,7 @@ RSPtypedef (node *arg_node, info *arg_info)
          * the external dependencies of this module.
          */
         if (PRAGMA_LINKMOD (pragma) != NULL) {
-            MODULE_DEPENDENCIES (INFO_MODULE (arg_info))
-              = STRSjoin (PRAGMA_LINKMOD (pragma),
-                          MODULE_DEPENDENCIES (INFO_MODULE (arg_info)));
+            global.dependencies = STRSjoin (PRAGMA_LINKMOD (pragma), global.dependencies);
 
             PRAGMA_LINKMOD (pragma) = NULL;
         }
@@ -414,9 +407,7 @@ RSPfundef (node *arg_node, info *arg_info)
          * the external dependencies of this module.
          */
         if (PRAGMA_LINKMOD (pragma) != NULL) {
-            MODULE_DEPENDENCIES (INFO_MODULE (arg_info))
-              = STRSjoin (PRAGMA_LINKMOD (pragma),
-                          MODULE_DEPENDENCIES (INFO_MODULE (arg_info)));
+            global.dependencies = STRSjoin (PRAGMA_LINKMOD (pragma), global.dependencies);
 
             PRAGMA_LINKMOD (pragma) = NULL;
         }
@@ -426,9 +417,7 @@ RSPfundef (node *arg_node, info *arg_info)
          * add it to the dependencies
          */
         if (PRAGMA_LINKOBJ (pragma) != NULL) {
-            MODULE_DEPENDENCIES (INFO_MODULE (arg_info))
-              = STRSjoin (PRAGMA_LINKOBJ (pragma),
-                          MODULE_DEPENDENCIES (INFO_MODULE (arg_info)));
+            global.dependencies = STRSjoin (PRAGMA_LINKOBJ (pragma), global.dependencies);
 
             PRAGMA_LINKOBJ (pragma) = NULL;
         }
@@ -465,8 +454,6 @@ node *
 RSPmodule (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("RSPModule");
-
-    INFO_MODULE (arg_info) = arg_node;
 
     if (MODULE_OBJS (arg_node) != NULL) {
         MODULE_OBJS (arg_node) = TRAVdo (MODULE_OBJS (arg_node), arg_info);

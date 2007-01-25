@@ -290,8 +290,7 @@ DSfinishDeserialize (node *module)
     MODULE_OBJS (module)
       = TCappendObjdef (MODULE_OBJS (module), INFO_DS_OBJDEFS (DSstate));
 
-    MODULE_DEPENDENCIES (module)
-      = STRSjoin (MODULE_DEPENDENCIES (module), INFO_DS_DEPS (DSstate));
+    global.dependencies = STRSjoin (global.dependencies, INFO_DS_DEPS (DSstate));
 
     DSstate = FreeInfo (DSstate);
 

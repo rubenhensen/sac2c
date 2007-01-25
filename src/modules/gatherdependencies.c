@@ -76,9 +76,8 @@ AddNamespaceToDependencies (const namespace_t *ns, info *info)
              * this symbol comes from another namespace
              *  -> add the namespace to the dependency list
              */
-            MODULE_DEPENDENCIES (INFO_GDP_MODULE (info))
-              = STRSadd (NSgetName (ns), STRS_saclib,
-                         MODULE_DEPENDENCIES (INFO_GDP_MODULE (info)));
+            global.dependencies
+              = STRSadd (NSgetName (ns), STRS_saclib, global.dependencies);
         }
     }
 
@@ -97,8 +96,7 @@ AddModuleToDependencies (const char *mod, info *info)
              * this symbol comes from another module
              *  -> add the module name to the dependency list
              */
-            MODULE_DEPENDENCIES (INFO_GDP_MODULE (info))
-              = STRSadd (mod, STRS_saclib, MODULE_DEPENDENCIES (INFO_GDP_MODULE (info)));
+            global.dependencies = STRSadd (mod, STRS_saclib, global.dependencies);
         }
     }
 

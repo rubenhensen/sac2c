@@ -15,7 +15,6 @@
 #include "type_statistics.h"
 #include "emm.h"
 #include "tree_basic.h"
-#include "stringset.h"
 
 #include "phase_drivers.h"
 
@@ -467,14 +466,6 @@ PHDdriveCodeGeneration (node *syntax_tree)
     syntax_tree = PHrunCompilerSubPhase (SUBPH_tot, syntax_tree);
     syntax_tree = PHrunCompilerSubPhase (SUBPH_comp, syntax_tree);
     syntax_tree = PHrunCompilerSubPhase (SUBPH_prt, syntax_tree);
-
-    /*
-     * prior to freeing the syntax tree, we have to save the dependencies
-     * as these are needed for calling the CC
-     */
-    global.dependencies = MODULE_DEPENDENCIES (syntax_tree);
-    MODULE_DEPENDENCIES (syntax_tree) = NULL;
-
     syntax_tree = PHrunCompilerSubPhase (SUBPH_frtr, syntax_tree);
 
     DBUG_RETURN (syntax_tree);
@@ -486,17 +477,11 @@ PHDdriveBinaryCodeCreation (node *syntax_tree)
     DBUG_ENTER ("PHDdriveBinaryCodeCreation");
 
     syntax_tree = PHrunCompilerSubPhase (SUBPH_hdep, syntax_tree);
-
     syntax_tree = PHrunCompilerSubPhase (SUBPH_ivcc, syntax_tree);
 
     if (global.filetype != F_prog) {
         syntax_tree = PHrunCompilerSubPhase (SUBPH_crlib, syntax_tree);
     }
-
-    /*
-     * now we can free the set of dependencies now as well
-     */
-    global.dependencies = STRSfree (global.dependencies);
 
     DBUG_RETURN (syntax_tree);
 }

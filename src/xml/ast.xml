@@ -2418,18 +2418,6 @@
             </targets>
           </type>
         </attribute>
-        <attribute name="Dependencies">
-          <type name="StringSet">
-            <targets>
-              <target mandatory="yes">
-                <any />
-                <phases>
-                  <range from="ans" to="final" />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
       </attributes>
       <flags></flags>
     </node>

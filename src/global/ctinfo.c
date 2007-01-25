@@ -53,6 +53,7 @@
 #include "namespaces.h"
 #include "tree_basic.h"
 #include "check_mem.h"
+#include "stringset.h"
 
 static char *message_buffer = NULL;
 static int message_buffer_size = 0;
@@ -274,6 +275,12 @@ CleanUp ()
         global.cleanup = FALSE;
 
         FMGRdeleteTmpDir ();
+        global.dependencies = STRSfree (global.dependencies);
+        /*
+         * This is somewhat inconsistent as the other global variables are not
+         * de-allocated. However, this piece of code was moved from phase_drivers.c
+         * to this place rather than being just deleted.
+         */
     }
 
     DBUG_VOID_RETURN;
