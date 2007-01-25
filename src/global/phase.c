@@ -97,13 +97,15 @@ PHsetFirstOptimization (compiler_subphase_t subphase)
 }
 
 node *
-PHrunCompilerPhase (compiler_phase_t phase, node *syntax_tree)
+PHrunCompilerPhase (compiler_phase_t phase, node *syntax_tree, bool cond)
 {
     DBUG_ENTER ("PHrunCompilerPhase");
 
     global.compiler_phase = phase;
 
-    if ((phase != PH_initial) && (phase != PH_final)) {
+    if ((global.compiler_phase <= phase) && (phase != PH_initial)
+        && (phase != PH_final)) {
+        global.compiler_phase = phase;
 
 #ifndef DBUG_OFF
         if ((global.my_dbug) && (!global.my_dbug_active)
@@ -114,26 +116,30 @@ PHrunCompilerPhase (compiler_phase_t phase, node *syntax_tree)
         }
 #endif
 
-        CTIstate (" ");
-        CTIstate ("** %d: %s ...", (int)phase, PHphaseName (phase));
+        CTInote (" ");
 
-        syntax_tree = phase_fun[phase](syntax_tree);
+        if (cond) {
+            CTIstate ("** %2d: %s ...", (int)phase, PHphaseName (phase));
+            syntax_tree = phase_fun[phase](syntax_tree);
 
-        CTIabortOnError ();
+            CTIabortOnError ();
 
 #ifdef SHOW_MALLOC
-        DBUG_EXECUTE ("MEM_LEAK", MEMdbugMemoryLeakCheck (););
+            DBUG_EXECUTE ("MEM_LEAK", MEMdbugMemoryLeakCheck (););
 #endif
 
 #ifdef SHOW_MALLOC
-        if (global.treecheck && (syntax_tree != NULL)) {
-            syntax_tree = CHKdoTreeCheck (syntax_tree);
-        }
+            if (global.treecheck && (syntax_tree != NULL)) {
+                syntax_tree = CHKdoTreeCheck (syntax_tree);
+            }
 
-        if (global.memcheck && (syntax_tree != NULL)) {
-            syntax_tree = CHKMdoMemCheck (syntax_tree);
-        }
+            if (global.memcheck && (syntax_tree != NULL)) {
+                syntax_tree = CHKMdoMemCheck (syntax_tree);
+            }
 #endif
+        } else {
+            CTIstate ("** %2d: %s skipped.", (int)phase, PHphaseName (phase));
+        }
 
         if ((global.my_dbug) && (global.my_dbug_active)
             && (global.compiler_phase >= global.my_dbug_to)) {
@@ -150,7 +156,7 @@ PHrunCompilerPhase (compiler_phase_t phase, node *syntax_tree)
 }
 
 node *
-PHrunCompilerSubPhase (compiler_subphase_t subphase, node *syntax_tree)
+PHrunCompilerSubPhase (compiler_subphase_t subphase, node *syntax_tree, bool cond)
 {
     DBUG_ENTER ("PHrunCompilerSubPhase");
 
@@ -161,22 +167,23 @@ PHrunCompilerSubPhase (compiler_subphase_t subphase, node *syntax_tree)
 
     if ((subphase != SUBPH_initial) && (subphase != SUBPH_final)) {
 
-        CTIstate ("**** %s ...", PHsubPhaseName (subphase));
-
-        syntax_tree = subphase_fun[subphase](syntax_tree);
-
-        CTIabortOnError ();
+        if (cond) {
+            CTInote ("**** %s ...", PHsubPhaseName (subphase));
+            syntax_tree = subphase_fun[subphase](syntax_tree);
+            CTIabortOnError ();
 
 #ifdef SHOW_MALLOC
+            if ((global.treecheck) && (syntax_tree != NULL)) {
+                syntax_tree = CHKdoTreeCheck (syntax_tree);
+            }
 
-        if ((global.treecheck) && (syntax_tree != NULL)) {
-            syntax_tree = CHKdoTreeCheck (syntax_tree);
-        }
-
-        if (global.memcheck && (syntax_tree != NULL)) {
-            syntax_tree = CHKMdoMemCheck (syntax_tree);
-        }
+            if (global.memcheck && (syntax_tree != NULL)) {
+                syntax_tree = CHKMdoMemCheck (syntax_tree);
+            }
 #endif
+        } else {
+            /* CTIstate("**** Skipped: %s ", PHsubPhaseName( subphase)); */
+        }
 
         if ((global.break_after == global.compiler_phase)
             && (ILIBstringCompare (global.break_specifier,
@@ -190,28 +197,33 @@ PHrunCompilerSubPhase (compiler_subphase_t subphase, node *syntax_tree)
 }
 
 node *
-PHrunOptimizationInCycle (compiler_subphase_t subphase, int pass, node *syntax_tree)
+PHrunOptimizationInCycle (compiler_subphase_t subphase, int pass, node *syntax_tree,
+                          bool cond)
 {
     DBUG_ENTER ("PHrunOptimizationInCycle");
 
-    if ((global.break_after != global.compiler_phase)
-        || (!ILIBstringCompare (global.break_specifier,
-                                subphase_specifier[global.compiler_subphase]))
-        || (global.break_cycle_specifier == -1) || (pass < global.break_cycle_specifier)
-        || ((pass == global.break_cycle_specifier)
-            && (!BreakAfterEarlierOptimization (subphase)))) {
+    if (cond) {
+        if ((global.break_after != global.compiler_phase)
+            || (!ILIBstringCompare (global.break_specifier,
+                                    subphase_specifier[global.compiler_subphase]))
+            || (global.break_cycle_specifier == -1)
+            || (pass < global.break_cycle_specifier)
+            || ((pass == global.break_cycle_specifier)
+                && (!BreakAfterEarlierOptimization (subphase)))) {
 
-        DBUG_EXECUTE ("OPT", CTIstate ("****** %s ...", PHsubPhaseName (subphase)););
+            DBUG_EXECUTE ("OPT", CTIstate ("****** %s ...", PHsubPhaseName (subphase)););
 
-        syntax_tree = subphase_fun[subphase](syntax_tree);
+            syntax_tree = subphase_fun[subphase](syntax_tree);
 
-        CTIabortOnError ();
+            CTIabortOnError ();
 
-        if (NODE_TYPE (syntax_tree) == N_fundef) {
-            syntax_tree = TCappendFundef (syntax_tree, DUPgetCopiedSpecialFundefs ());
-        } else {
-            MODULE_FUNS (syntax_tree)
-              = TCappendFundef (MODULE_FUNS (syntax_tree), DUPgetCopiedSpecialFundefs ());
+            if (NODE_TYPE (syntax_tree) == N_fundef) {
+                syntax_tree = TCappendFundef (syntax_tree, DUPgetCopiedSpecialFundefs ());
+            } else {
+                MODULE_FUNS (syntax_tree)
+                  = TCappendFundef (MODULE_FUNS (syntax_tree),
+                                    DUPgetCopiedSpecialFundefs ());
+            }
         }
     }
 

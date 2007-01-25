@@ -64,11 +64,15 @@ main (int argc, char *argv[])
      */
 
 #define PHASEelement(it_element)                                                         \
-    syntax_tree = PHrunCompilerPhase (PH_##it_element, syntax_tree);
+  syntax_tree = PHrunCompilerPhase( PH_##it_element, syntax_tree,
+
+#define PHASEcond(it_cond)                                                               \
+  it_cond);
 
 #include "phase_info.mac"
 
 #undef SUBPHASEelement
+#undef SUBPHASEcond
 
     /*
      * Now, we are done.

@@ -23,7 +23,6 @@
  *
  ******************************************************************************/
 
-#include "precompile.h"
 #include "dbug.h"
 #include "ctinfo.h"
 #include "tree_basic.h"

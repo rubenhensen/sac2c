@@ -120,8 +120,7 @@ refcount    = rcopt.o filterrc.o alloc.o referencecounting.o \
               rcminimize.o NumLookUpTable.o wrci.o reusewithoffset.o \
               movesharedmeminstr.o scoperce.o show_alias.o
 
-precompile  = precompile.o markmemvals.o \
-              renameidentifiers.o functionprecompile.o \
+precompile  = markmemvals.o renameidentifiers.o functionprecompile.o \
               typeconv_precompile.o setlinksign.o \
               remove_external_code.o mark_noop_grids.o \
               resolve_code_sharing.o

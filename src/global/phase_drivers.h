@@ -17,6 +17,6 @@
 
 #include "phase_info.mac"
 
-#undef SUBPHASEelement
+#undef PHASEfun
 
 #endif /* _SAC_PHASE_DRIVERS_H_ */

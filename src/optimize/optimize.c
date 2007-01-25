@@ -262,187 +262,171 @@ OPTdoIntraFunctionalOptimizations (node *arg_node)
                     /*
                      * Common subexpression elimination
                      */
-                    if (global.optimize.docse) {
-                        fundef = PHrunOptimizationInCycle (SUBPH_cse, loop, fundef);
-                    }
+                    fundef = PHrunOptimizationInCycle (SUBPH_cse, loop, fundef,
+                                                       global.optimize.docse);
 
                     /*
                      * Insert shape variables
                      */
-                    if (global.optimize.dosaacyc && global.optimize.dodcr) {
-                        fundef = PHrunOptimizationInCycle (SUBPH_saacyc, loop, fundef);
-                    }
+                    fundef = PHrunOptimizationInCycle (SUBPH_saacyc, loop, fundef,
+                                                       global.optimize.dosaacyc
+                                                         && global.optimize.dodcr);
 
                     /*
                      * Infer loop invariants
                      */
-                    fundef = PHrunOptimizationInCycle (SUBPH_ili, loop, fundef);
+                    fundef = PHrunOptimizationInCycle (SUBPH_ili, loop, fundef, ALWAYS);
 
                     /*
                      * Type upgrade
                      */
-                    if (global.optimize.dotup) {
-                        fundef = PHrunOptimizationInCycle (SUBPH_ntccyc, loop, fundef);
-                        fundef = PHrunOptimizationInCycle (SUBPH_eatcyc, loop, fundef);
-                        fundef = PHrunOptimizationInCycle (SUBPH_ebtcyc, loop, fundef);
-                    }
+                    fundef = PHrunOptimizationInCycle (SUBPH_ntccyc, loop, fundef,
+                                                       global.optimize.dotup);
+                    fundef = PHrunOptimizationInCycle (SUBPH_eatcyc, loop, fundef,
+                                                       global.optimize.dotup);
+                    fundef = PHrunOptimizationInCycle (SUBPH_ebtcyc, loop, fundef,
+                                                       global.optimize.dotup);
 
                     /*
                      * Reverse type upgrade
                      */
-                    if (global.optimize.dortup) {
-                        fundef = PHrunOptimizationInCycle (SUBPH_rtupcyc, loop, fundef);
-                    }
+                    fundef = PHrunOptimizationInCycle (SUBPH_rtupcyc, loop, fundef,
+                                                       global.optimize.dortup);
 
                     /*
                      * try to dispatch further function calls
                      */
-                    fundef = PHrunOptimizationInCycle (SUBPH_dfccyc, loop, fundef);
+                    fundef
+                      = PHrunOptimizationInCycle (SUBPH_dfccyc, loop, fundef, ALWAYS);
 
                     /*
                      * apply INL (inlining)
                      */
-                    if (global.optimize.doinl) {
-                        FUNDEF_ISINLINECOMPLETED (fundef) = FALSE;
-                        fundef = PHrunOptimizationInCycle (SUBPH_inlcyc, loop, fundef);
-                    }
+                    FUNDEF_ISINLINECOMPLETED (fundef) = FALSE;
+                    fundef = PHrunOptimizationInCycle (SUBPH_inlcyc, loop, fundef,
+                                                       global.optimize.doinl);
 
                     /*
                      * Withloop Propagation
                      */
-                    if (global.optimize.dowlprop) {
-                        fundef = PHrunOptimizationInCycle (SUBPH_wlprop, loop, fundef);
-                    }
+                    fundef = PHrunOptimizationInCycle (SUBPH_wlprop, loop, fundef,
+                                                       global.optimize.dowlprop);
 
                     /*
                      * Constant folding
                      */
-                    if (global.optimize.docf) {
-                        fundef = PHrunOptimizationInCycle (SUBPH_cf, loop, fundef);
-                    }
+                    fundef = PHrunOptimizationInCycle (SUBPH_cf, loop, fundef,
+                                                       global.optimize.docf);
 
                     /*
                      * Constant and variable propagation
                      */
-                    if (global.optimize.docvp) {
-                        fundef = PHrunOptimizationInCycle (SUBPH_cvp, loop, fundef);
-                    }
+                    fundef = PHrunOptimizationInCycle (SUBPH_cvp, loop, fundef,
+                                                       global.optimize.docvp);
 
                     /*
                      * With-loop partition generation
                      */
-                    if (global.optimize.dowlpg) {
-                        fundef = PHrunOptimizationInCycle (SUBPH_wlpgcyc, loop, fundef);
-                    }
+                    fundef = PHrunOptimizationInCycle (SUBPH_wlpgcyc, loop, fundef,
+                                                       global.optimize.dowlpg);
 
                     /*
                      * With-loop simplification
                      */
-                    if (global.optimize.dowlsimp) {
-                        fundef = PHrunOptimizationInCycle (SUBPH_wlsimp, loop, fundef);
-                    }
+                    fundef = PHrunOptimizationInCycle (SUBPH_wlsimp, loop, fundef,
+                                                       global.optimize.dowlsimp);
 
                     /*
                      * Copy With-loop elimination
                      */
-                    if (global.optimize.docwle) {
-                        fundef = PHrunOptimizationInCycle (SUBPH_cwle, loop, fundef);
-                    }
+                    fundef = PHrunOptimizationInCycle (SUBPH_cwle, loop, fundef,
+                                                       global.optimize.docwle);
 
                     /*
                      * With-loop folding
                      */
-                    if (global.optimize.dowlf) {
-                        fundef = PHrunOptimizationInCycle (SUBPH_wli, loop, fundef);
-                        fundef = PHrunOptimizationInCycle (SUBPH_wlf, loop, fundef);
-                        fundef = PHrunOptimizationInCycle (SUBPH_ssawlf, loop, fundef);
-                    }
+                    fundef = PHrunOptimizationInCycle (SUBPH_wli, loop, fundef,
+                                                       global.optimize.dowlf);
+                    fundef = PHrunOptimizationInCycle (SUBPH_wlf, loop, fundef,
+                                                       global.optimize.dowlf);
+                    fundef = PHrunOptimizationInCycle (SUBPH_ssawlf, loop, fundef,
+                                                       global.optimize.dowlf);
 
                     /*
                      * Symbolic with-loop folding
                      */
-                    if (global.optimize.doswlf) {
-                        fundef = PHrunOptimizationInCycle (SUBPH_swlf, loop, fundef);
-                    }
+                    fundef = PHrunOptimizationInCycle (SUBPH_swlf, loop, fundef,
+                                                       global.optimize.doswlf);
 
                     /*
                      * Dead code removal (Just the current FUNDEF)
                      */
-                    if (global.optimize.dodcr) {
-                        fundef = PHrunOptimizationInCycle (SUBPH_dcrcycfun, loop, fundef);
-                    }
+                    fundef = PHrunOptimizationInCycle (SUBPH_dcrcycfun, loop, fundef,
+                                                       global.optimize.dodcr);
 
                     /*
                      * With-loop scalarization
                      */
-                    if (global.optimize.dowls) {
-                        fundef = PHrunOptimizationInCycle (SUBPH_wls, loop, fundef);
-                    }
+                    fundef = PHrunOptimizationInCycle (SUBPH_wls, loop, fundef,
+                                                       global.optimize.dowls);
 
                     /*
                      * Prf unrolling
                      */
-                    if (global.optimize.doprfunr) {
-                        fundef = PHrunOptimizationInCycle (SUBPH_prfunr, loop, fundef);
-                    }
+                    fundef = PHrunOptimizationInCycle (SUBPH_prfunr, loop, fundef,
+                                                       global.optimize.doprfunr);
 
                     /*
                      * Loop unrolling
                      */
-                    if (global.optimize.dolur) {
-                        fundef = PHrunOptimizationInCycle (SUBPH_lur, loop, fundef);
-                        fundef = PHrunOptimizationInCycle (SUBPH_ssalur, loop, fundef);
-                    }
+                    fundef = PHrunOptimizationInCycle (SUBPH_lur, loop, fundef,
+                                                       global.optimize.dolur);
+                    fundef = PHrunOptimizationInCycle (SUBPH_ssalur, loop, fundef,
+                                                       global.optimize.dolur);
 
                     /*
                      * With-loop unrolling
                      */
-                    if (global.optimize.dowlur) {
-                        fundef = PHrunOptimizationInCycle (SUBPH_wlur, loop, fundef);
-                        fundef = PHrunOptimizationInCycle (SUBPH_ssawlur, loop, fundef);
-                    }
+                    fundef = PHrunOptimizationInCycle (SUBPH_wlur, loop, fundef,
+                                                       global.optimize.dowlur);
+                    fundef = PHrunOptimizationInCycle (SUBPH_ssawlur, loop, fundef,
+                                                       global.optimize.dowlur);
 
                     /*
                      * LAC inlining
                      */
-                    if (global.lacinline) {
-                        fundef = PHrunOptimizationInCycle (SUBPH_linlcyc, loop, fundef);
-                    }
+                    fundef = PHrunOptimizationInCycle (SUBPH_linlcyc, loop, fundef,
+                                                       global.lacinline);
 
                     /*
                      * In optimization cycle: just with-loop invariant removal
                      */
-                    if (global.optimize.dolir) {
-                        fundef = PHrunOptimizationInCycle (SUBPH_wlir, loop, fundef);
-                    }
+                    fundef = PHrunOptimizationInCycle (SUBPH_wlir, loop, fundef,
+                                                       global.optimize.dolir);
 
                     /*
                      * Eliminate typeconv prfs
                      */
-                    if (global.optimize.doetc) {
-                        fundef = PHrunOptimizationInCycle (SUBPH_etc, loop, fundef);
-                    }
+                    fundef = PHrunOptimizationInCycle (SUBPH_etc, loop, fundef,
+                                                       global.optimize.doetc);
 
                     /*
                      * Eliminate subtraction and division operations
                      */
-                    if (global.optimize.doesd) {
-                        fundef = PHrunOptimizationInCycle (SUBPH_esd, loop, fundef);
-                    }
+                    fundef = PHrunOptimizationInCycle (SUBPH_esd, loop, fundef,
+                                                       global.optimize.doesd);
 
                     /*
                      * Associativity optimization
                      */
-                    if (global.optimize.doal) {
-                        fundef = PHrunOptimizationInCycle (SUBPH_al, loop, fundef);
-                    }
+                    fundef = PHrunOptimizationInCycle (SUBPH_al, loop, fundef,
+                                                       global.optimize.doal);
 
                     /*
                      * Distributivity optimization
                      */
-                    if (global.optimize.dodl) {
-                        fundef = PHrunOptimizationInCycle (SUBPH_dl, loop, fundef);
-                    }
+                    fundef = PHrunOptimizationInCycle (SUBPH_dl, loop, fundef,
+                                                       global.optimize.dodl);
                 }
 
                 FUNDEF_WASOPTIMIZED (fundef) = AnyOptCounterNotZero (global.optcounters);
@@ -456,16 +440,15 @@ OPTdoIntraFunctionalOptimizations (node *arg_node)
         /*
          * Dead code removal
          */
-        if (global.optimize.dodcr) {
-            arg_node = PHrunOptimizationInCycle (SUBPH_dcrcyc, loop, arg_node);
-        }
+        arg_node = PHrunOptimizationInCycle (SUBPH_dcrcyc, loop, arg_node,
+                                             global.optimize.dodcr);
 
         /*
          * Signature simplification
          */
-        if ((global.optimize.dosisi) && (global.optimize.dodcr)) {
-            arg_node = PHrunOptimizationInCycle (SUBPH_sisi, loop, arg_node);
-        }
+        arg_node
+          = PHrunOptimizationInCycle (SUBPH_sisi, loop, arg_node,
+                                      global.optimize.dosisi && global.optimize.dodcr);
 
         /*
          * Lift Optimise and Type Upgrade Flags
@@ -523,16 +506,17 @@ OPTdoIntraFunctionalOptimizations (node *arg_node)
                 /*
                  * Type upgrade
                  */
-                if (global.optimize.dotup) {
-                    fundef = PHrunOptimizationInCycle (SUBPH_ntccyc, loop, fundef);
-                    fundef = PHrunOptimizationInCycle (SUBPH_eatcyc, loop, fundef);
-                    fundef = PHrunOptimizationInCycle (SUBPH_ebtcyc, loop, fundef);
-                }
+                fundef = PHrunOptimizationInCycle (SUBPH_ntccyc, loop, fundef,
+                                                   global.optimize.dotup);
+                fundef = PHrunOptimizationInCycle (SUBPH_eatcyc, loop, fundef,
+                                                   global.optimize.dotup);
+                fundef = PHrunOptimizationInCycle (SUBPH_ebtcyc, loop, fundef,
+                                                   global.optimize.dotup);
 
                 /*
                  * try to dispatch further function calls
                  */
-                fundef = PHrunOptimizationInCycle (SUBPH_dfccyc, loop, fundef);
+                fundef = PHrunOptimizationInCycle (SUBPH_dfccyc, loop, fundef, ALWAYS);
 
                 FUNDEF_WASOPTIMIZED (fundef) = AnyOptCounterNotZero (global.optcounters);
                 DBUG_EXECUTE ("OPT", PrintStatistics (););
