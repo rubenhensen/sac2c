@@ -93,6 +93,8 @@ SUBPHASE (ans, "ans", "ans", "Annotating namespaces", ANSdoAnnotateNamespace)
 
 SUBPHASE (gdp, "gdp", "gdp", "Gathering dependencies", GDPdoGatherDependencies)
 
+SUBPHASE (pdp, "pdp", "pdp", "Printing dependencies", DEPdoPrintDependencies)
+
 SUBPHASE (imp, "imp", "imp", "Getting imported symbols", IMPdoImportSymbols)
 
 SUBPHASE (uss, "uss", "uss", "Getting used symbols", USSdoUseSymbols)

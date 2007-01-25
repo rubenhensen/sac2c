@@ -49,14 +49,17 @@ PHDdriveModuleSystem (node *syntax_tree)
 {
     DBUG_ENTER ("PHDdriveModuleSystem");
 
-    if (global.makedeps) {
-        syntax_tree = PHrunCompilerSubPhase (SUBPH_gdp, syntax_tree);
-        DEPdoPrintDependencies (syntax_tree);
+    if (!global.makedeps) {
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_rsa, syntax_tree);
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_ans, syntax_tree);
     }
 
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_rsa, syntax_tree);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_ans, syntax_tree);
     syntax_tree = PHrunCompilerSubPhase (SUBPH_gdp, syntax_tree);
+
+    if (global.makedeps) {
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_pdp, syntax_tree);
+    }
+
     syntax_tree = PHrunCompilerSubPhase (SUBPH_imp, syntax_tree);
     syntax_tree = PHrunCompilerSubPhase (SUBPH_uss, syntax_tree);
     syntax_tree = PHrunCompilerSubPhase (SUBPH_asf, syntax_tree);
