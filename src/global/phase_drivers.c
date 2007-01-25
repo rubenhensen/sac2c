@@ -174,16 +174,241 @@ PHDdriveOptimization (node *syntax_tree)
 {
     DBUG_ENTER ("PHDdriveOptimization");
 
-    syntax_tree = OPTdoOptimize (syntax_tree);
     /*
-     * Adapting optimise takes too much effort for today.
-     * Hence, we leave it as is.
+     * apply INL (inlining)
+     */
+    if (global.optimize.doinl) {
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_inl, syntax_tree);
+    }
+
+    /*
+     * apply DFR (dead function removal)
+     */
+    if (global.optimize.dodfr) {
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_dfr, syntax_tree);
+    }
+
+    /*
+     * Array elimination (FIX ME!)
      */
 
-    syntax_tree = TSdoPrintTypeStatistics (syntax_tree);
+    /*
+     * Dead code removal
+     */
+    if (global.optimize.dodcr) {
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_dcr, syntax_tree);
+    }
+
+    /**
+     * Loop invariant removal
+     */
+    if (global.optimize.dolir) {
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_lir, syntax_tree);
+    }
+
+    /*
+     * Insert symbolic array attributes
+     */
+    if (global.optimize.dosaacyc && global.optimize.dodcr) {
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_isaa, syntax_tree);
+    }
+
+    /*
+     * Intra-functional optimizations
+     * THE CYCLE
+     */
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_intraopt, syntax_tree);
+
+    /*
+     * Loop invariant removal
+     */
+    if (global.optimize.dolir) {
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_lir2, syntax_tree);
+    }
+
+    /*
+     * UESD
+     */
+    if (global.optimize.doesd) {
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_uesd, syntax_tree);
+    }
+
+    /*
+     * Dead function removal
+     */
+    if (global.optimize.dodfr) {
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_dfr2, syntax_tree);
+    }
+
+    /*
+     * Dead code removal
+     */
+    if (global.optimize.dodcr) {
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_dcr2, syntax_tree);
+    }
+
+    /*
+     * apply RTC (final type inference)
+     */
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_rtc, syntax_tree);
+
+    /*
+     * apply FINEAT (final tye variable elimination)
+     */
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_fineat, syntax_tree);
+
+    /*
+     * apply FINEBT (final bottom type elimination)
+     */
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_finebt, syntax_tree);
+
+    /*
+     * With-loop fusion
+     *
+     * Fusion must run after final type inference because the type system
+     * cannot handle multi-operator with-loops.
+     */
+    if (global.optimize.dowlfs) {
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_wlfs, syntax_tree);
+
+        /*
+         * Common subexpression elimination
+         */
+        if (global.optimize.docse) {
+            syntax_tree = PHrunCompilerSubPhase (SUBPH_cse2, syntax_tree);
+        }
+
+        /*
+         * Dead code removal
+         */
+        if (global.optimize.dodcr) {
+            syntax_tree = PHrunCompilerSubPhase (SUBPH_dcr3, syntax_tree);
+        }
+    }
+
+    /*
+     * !!! If they should ever work again, WLAA, TSI, and AP must run here
+     */
+
+    /*
+     * Another MANDATORY run of WLPG. This is necessary to prevent AKSIV
+     * with-loops to arrive at wltransform
+     *
+     * with-loop partition generation
+     */
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_wlpg2, syntax_tree);
+
+    /*
+     * Insert shape variables
+     */
+    if (global.optimize.dosaa && global.optimize.dodcr) {
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_isaa2, syntax_tree);
+
+        for (int i = 0; i < 3; i++) {
+            if (global.optimize.doprfunr) {
+                syntax_tree = PHrunCompilerSubPhase (SUBPH_svprfunr, syntax_tree);
+            }
+
+            if (global.optimize.dotup) {
+                syntax_tree = PHrunCompilerSubPhase (SUBPH_svtup, syntax_tree);
+                syntax_tree = PHrunCompilerSubPhase (SUBPH_sveat, syntax_tree);
+                syntax_tree = PHrunCompilerSubPhase (SUBPH_svebt, syntax_tree);
+            }
+
+            if (global.optimize.docf) {
+                syntax_tree = PHrunCompilerSubPhase (SUBPH_svcf, syntax_tree);
+            }
+
+            if (global.optimize.docse) {
+                syntax_tree = PHrunCompilerSubPhase (SUBPH_svcse, syntax_tree);
+            }
+
+            if (global.optimize.docvp) {
+                syntax_tree = PHrunCompilerSubPhase (SUBPH_svcvp, syntax_tree);
+            }
+        }
+
+        if (global.optimize.dowlsimp) {
+            syntax_tree = PHrunCompilerSubPhase (SUBPH_svwlsimp, syntax_tree);
+        }
+
+        if (global.optimize.dodcr) {
+            syntax_tree = PHrunCompilerSubPhase (SUBPH_svdcr, syntax_tree);
+        }
+    }
+
+    /*
+     * Withloop reuse candidate inference
+     */
+    if (global.optimize.douip) {
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_wrci, syntax_tree);
+    }
+
+    /*
+     * annotate offset scalars on with-loops
+     */
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_wlidx, syntax_tree);
+
+    /*
+     * apply index vector elimination (dependent on saa, as of 2006-11-30)
+     */
+    if (global.optimize.doive && global.optimize.dosaa && global.optimize.dodcr) {
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_ivesplit, syntax_tree);
+
+        /*
+         * Constant and variable propagation
+         */
+        if (global.optimize.docvp) {
+            syntax_tree = PHrunCompilerSubPhase (SUBPH_cvpive, syntax_tree);
+        }
+
+        /*
+         * Common subexpression elimination
+         */
+        if (global.optimize.docse) {
+            syntax_tree = PHrunCompilerSubPhase (SUBPH_cseive, syntax_tree);
+        }
+
+        /*
+         * IVE Reuse Withloop Offsets and Scalarize Index Vectors
+         */
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_iveras, syntax_tree);
+    }
+
+    /*
+     * Eliminate shape variables
+     */
+    if (global.optimize.dosaa && global.optimize.dodcr) {
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_esv, syntax_tree);
+    }
+
+    if ((global.optimize.dosaa && global.optimize.dodcr) || global.optimize.doive) {
+        /*
+         * Loop Invariant Removal
+         */
+        if (global.optimize.dolir) {
+            syntax_tree = PHrunCompilerSubPhase (SUBPH_lirive, syntax_tree);
+        }
+
+        /*
+         * Dead code removal after ive
+         */
+        if (global.optimize.dodcr) {
+            syntax_tree = PHrunCompilerSubPhase (SUBPH_dcrive, syntax_tree);
+        }
+    }
+
+    /*
+     * apply FDI (free dispatch information)
+     */
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_fdi, syntax_tree);
+
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_optstat, syntax_tree);
+
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_typestat, syntax_tree);
 
     if (global.doprofile) {
-        syntax_tree = PFdoProfileFunCalls (syntax_tree);
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_pfap, syntax_tree);
     }
 
     DBUG_RETURN (syntax_tree);

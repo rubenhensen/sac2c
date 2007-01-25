@@ -1,5 +1,5 @@
 /*
- * $Log$
+ * $Id$
  */
 
 #ifndef _SAC_OPTIMIZE_H_
@@ -7,7 +7,7 @@
 
 #include "types.h"
 
-extern node *OPTdoOptimize (node *arg_node);
 extern node *OPTdoIntraFunctionalOptimizations (node *arg_node);
+extern node *OPTdoPrintStatistics (node *syntax_tree);
 
 #endif /* _SAC_OPTIMIZE_H_ */

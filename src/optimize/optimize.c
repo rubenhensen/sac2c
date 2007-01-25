@@ -1,6 +1,9 @@
-/**
+/*
  * $Id$
  *
+ */
+
+/*
  * @defgroup opt Optimizations
  *
  * This group contains all those files/ modules that apply optimizations
@@ -108,13 +111,14 @@ AddOptCounters (optimize_counter_t o, optimize_counter_t p)
 
 /** <!--********************************************************************-->
  *
- * @fn void PrintStatistics()
+ * @fn void PrintStatistics( void)
  *
- *   @brief prints the global optimization statistic
+ *   @brief prints the optimization statistic
  *
  *****************************************************************************/
+
 static void
-PrintStatistics ()
+PrintStatistics (void)
 {
     DBUG_ENTER ("PrintStatistics");
 
@@ -125,6 +129,27 @@ PrintStatistics ()
 #include "optimize.mac"
 
     DBUG_VOID_RETURN;
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *OPTdoPrintStatistics( node *syntax_tree)
+ *
+ *   @brief prints the global optimization statistic
+ *
+ *****************************************************************************/
+
+node *
+OPTdoPrintStatistics (node *syntax_tree)
+{
+    DBUG_ENTER ("OPTdoPrintStatistics");
+
+    CTInote (" ");
+    CTInote ("Overall optimization statistics:");
+
+    PrintStatistics ();
+
+    DBUG_RETURN (syntax_tree);
 }
 
 /** <!--********************************************************************-->
@@ -183,255 +208,6 @@ PrintFundefInformation (node *fundef)
  *
  * @{
  */
-
-/** <!--********************************************************************-->
- *
- * @fn node *OPTdoOptimize( node *arg_node)
- *
- *   @brief governs the whole optimization phase and installs opt_tab.
- *
- *****************************************************************************/
-
-node *
-OPTdoOptimize (node *arg_node)
-{
-    DBUG_ENTER ("OPTdoOptimize");
-
-    /*
-     * apply INL (inlining)
-     */
-    if (global.optimize.doinl) {
-        arg_node = PHrunCompilerSubPhase (SUBPH_inl, arg_node);
-    }
-
-    /*
-     * apply DFR (dead function removal)
-     */
-    if (global.optimize.dodfr) {
-        arg_node = PHrunCompilerSubPhase (SUBPH_dfr, arg_node);
-    }
-
-    /*
-     * Array elimination (FIX ME!)
-     */
-
-    /*
-     * Dead code removal
-     */
-    if (global.optimize.dodcr) {
-        arg_node = PHrunCompilerSubPhase (SUBPH_dcr, arg_node);
-    }
-
-    /**
-     * Loop invariant removal
-     */
-    if (global.optimize.dolir) {
-        arg_node = PHrunCompilerSubPhase (SUBPH_lir, arg_node);
-    }
-
-    /*
-     * Insert symbolic array attributes
-     */
-    if (global.optimize.dosaacyc && global.optimize.dodcr) {
-        arg_node = PHrunCompilerSubPhase (SUBPH_isaa, arg_node);
-    }
-
-    /*
-     * Intra-functional optimizations
-     * THE CYCLE
-     */
-    arg_node = PHrunCompilerSubPhase (SUBPH_intraopt, arg_node);
-
-    /*
-     * Loop invariant removal
-     */
-    if (global.optimize.dolir) {
-        arg_node = PHrunCompilerSubPhase (SUBPH_lir2, arg_node);
-    }
-
-    /*
-     * UESD
-     */
-    if (global.optimize.doesd) {
-        arg_node = PHrunCompilerSubPhase (SUBPH_uesd, arg_node);
-    }
-
-    /*
-     * Dead function removal
-     */
-    if (global.optimize.dodfr) {
-        arg_node = PHrunCompilerSubPhase (SUBPH_dfr2, arg_node);
-    }
-
-    /*
-     * Dead code removal
-     */
-    if (global.optimize.dodcr) {
-        arg_node = PHrunCompilerSubPhase (SUBPH_dcr2, arg_node);
-    }
-
-    /*
-     * apply RTC (final type inference)
-     */
-    arg_node = PHrunCompilerSubPhase (SUBPH_rtc, arg_node);
-
-    /*
-     * apply FINEAT (final tye variable elimination)
-     */
-    arg_node = PHrunCompilerSubPhase (SUBPH_fineat, arg_node);
-
-    /*
-     * apply FINEBT (final bottom type elimination)
-     */
-    arg_node = PHrunCompilerSubPhase (SUBPH_finebt, arg_node);
-
-    /*
-     * With-loop fusion
-     *
-     * Fusion must run after final type inference because the type system
-     * cannot handle multi-operator with-loops.
-     */
-    if (global.optimize.dowlfs) {
-        arg_node = PHrunCompilerSubPhase (SUBPH_wlfs, arg_node);
-
-        /*
-         * Common subexpression elimination
-         */
-        if (global.optimize.docse) {
-            arg_node = PHrunCompilerSubPhase (SUBPH_cse2, arg_node);
-        }
-
-        /*
-         * Dead code removal
-         */
-        if (global.optimize.dodcr) {
-            arg_node = PHrunCompilerSubPhase (SUBPH_dcr3, arg_node);
-        }
-    }
-
-    /*
-     * !!! If they should ever work again, WLAA, TSI, and AP must run here
-     */
-
-    /*
-     * Another MANDATORY run of WLPG. This is necessary to prevent AKSIV
-     * with-loops to arrive at wltransform
-     *
-     * with-loop partition generation
-     */
-    arg_node = PHrunCompilerSubPhase (SUBPH_wlpg2, arg_node);
-
-    /*
-     * Insert shape variables
-     */
-    if (global.optimize.dosaa && global.optimize.dodcr) {
-        arg_node = PHrunCompilerSubPhase (SUBPH_isaa2, arg_node);
-
-        for (int i = 0; i < 3; i++) {
-            if (global.optimize.doprfunr) {
-                arg_node = PHrunCompilerSubPhase (SUBPH_svprfunr, arg_node);
-            }
-
-            if (global.optimize.dotup) {
-                arg_node = PHrunCompilerSubPhase (SUBPH_svtup, arg_node);
-                arg_node = PHrunCompilerSubPhase (SUBPH_sveat, arg_node);
-                arg_node = PHrunCompilerSubPhase (SUBPH_svebt, arg_node);
-            }
-
-            if (global.optimize.docf) {
-                arg_node = PHrunCompilerSubPhase (SUBPH_svcf, arg_node);
-            }
-
-            if (global.optimize.docse) {
-                arg_node = PHrunCompilerSubPhase (SUBPH_svcse, arg_node);
-            }
-
-            if (global.optimize.docvp) {
-                arg_node = PHrunCompilerSubPhase (SUBPH_svcvp, arg_node);
-            }
-        }
-
-        if (global.optimize.dowlsimp) {
-            arg_node = PHrunCompilerSubPhase (SUBPH_svwlsimp, arg_node);
-        }
-
-        if (global.optimize.dodcr) {
-            arg_node = PHrunCompilerSubPhase (SUBPH_svdcr, arg_node);
-        }
-    }
-
-    /*
-     * Withloop reuse candidate inference
-     */
-    if (global.optimize.douip) {
-        arg_node = PHrunCompilerSubPhase (SUBPH_wrci, arg_node);
-    }
-
-    /*
-     * annotate offset scalars on with-loops
-     */
-    arg_node = PHrunCompilerSubPhase (SUBPH_wlidx, arg_node);
-
-    /*
-     * apply index vector elimination (dependent on saa, as of 2006-11-30)
-     */
-    if (global.optimize.doive && global.optimize.dosaa && global.optimize.dodcr) {
-        arg_node = PHrunCompilerSubPhase (SUBPH_ivesplit, arg_node);
-
-        /*
-         * Constant and variable propagation
-         */
-        if (global.optimize.docvp) {
-            arg_node = PHrunCompilerSubPhase (SUBPH_cvpive, arg_node);
-        }
-
-        /*
-         * Common subexpression elimination
-         */
-        if (global.optimize.docse) {
-            arg_node = PHrunCompilerSubPhase (SUBPH_cseive, arg_node);
-        }
-
-        /*
-         * IVE Reuse Withloop Offsets and Scalarize Index Vectors
-         */
-        arg_node = PHrunCompilerSubPhase (SUBPH_iveras, arg_node);
-    }
-
-    /*
-     * Eliminate shape variables
-     */
-    if (global.optimize.dosaa && global.optimize.dodcr) {
-        arg_node = PHrunCompilerSubPhase (SUBPH_esv, arg_node);
-    }
-
-    if ((global.optimize.dosaa && global.optimize.dodcr) || global.optimize.doive) {
-        /*
-         * Loop Invariant Removal
-         */
-        if (global.optimize.dolir) {
-            arg_node = PHrunCompilerSubPhase (SUBPH_lirive, arg_node);
-        }
-
-        /*
-         * Dead code removal after ive
-         */
-        if (global.optimize.dodcr) {
-            arg_node = PHrunCompilerSubPhase (SUBPH_dcrive, arg_node);
-        }
-    }
-
-    /*
-     * apply FDI (free dispatch information)
-     */
-    arg_node = PHrunCompilerSubPhase (SUBPH_fdi, arg_node);
-
-    CTInote (" ");
-    CTInote ("Overall optimization statistics:");
-    PrintStatistics ();
-
-    DBUG_RETURN (arg_node);
-}
 
 /** <!--********************************************************************-->
  *

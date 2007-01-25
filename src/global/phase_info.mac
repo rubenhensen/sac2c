@@ -220,11 +220,15 @@ SUBPHASE (dfr, "dfr", "dfr", "Removing dead functions", DFRdoDeadFunctionRemoval
 
 SUBPHASE (dcr, "dcr", "dcr", "Removing dead code", DCRdoDeadCodeRemovalModule)
 
+SUBPHASE (lir, "lir", "lir", "Applying loop invariant removal", LIRdoLoopInvariantRemoval)
+
 SUBPHASE (isaa, "isaa", "isaa", "Inserting symbolic array attributes",
           ISAAdoInsertShapeVariables)
 
-SUBPHASE (intraopt, "cyc", "cyc", "Applying intra-functional optimizations",
+SUBPHASE (intraopt, "cyc", "cyc", "Applying intra-functional optimization cycle",
           OPTdoIntraFunctionalOptimizations)
+
+/*******/
 
 SUBPHASE (cse, "cse", "cse", "Applying common subexpression elimination",
           CSEdoCommonSubexpressionElimination)
@@ -298,11 +302,6 @@ SUBPHASE (prfunr, "prfunr", "prfunr", "Applying prf unrolling", UPRFdoUnrollPRFs
 SUBPHASE (linlcyc, "linl", "linl", "Inlining degenerated LaC functions",
           LINLdoLACInliningOneFundef)
 
-SUBPHASE (lir, "lir", "lir", "Applying loop invariant removal", LIRdoLoopInvariantRemoval)
-
-SUBPHASE (lir2, "lir2", "lir2", "Applying loop invariant removal",
-          LIRdoLoopInvariantRemoval)
-
 SUBPHASE (wlir, "wlir", "wlir", "Applying with-loop invariant removal",
           LIRdoWithLoopInvariantRemovalOneFundef)
 
@@ -322,6 +321,11 @@ SUBPHASE (dcrcyc, "dcr", "dcr", "Applying dead code removal", DCRdoDeadCodeRemov
 
 SUBPHASE (sisi, "sisi", "sisi", "Simplifying function signatures",
           SISIdoSignatureSimplification)
+
+/********/
+
+SUBPHASE (lir2, "lir2", "lir2", "Applying loop invariant removal",
+          LIRdoLoopInvariantRemoval)
 
 SUBPHASE (uesd, "uesd", "uesd", "Reintroducing subtraction and division operators",
           UESDdoUndoElimSubDiv)
@@ -355,9 +359,6 @@ SUBPHASE (isaa2, "isaa2", "isaa2", "Inserting symbolic array attributes",
 SUBPHASE (svprfunr, "svprfunr", "svprfunr", "Applying prf unrolling",
           UPRFdoUnrollPRFsModule)
 
-SUBPHASE (svcvp, "svcvp", "svcvp", "Propagating constants and variables",
-          CVPdoConstVarPropagation)
-
 SUBPHASE (svtup, "svtup", "svtup", "Applying type upgrade", NTCdoNewReTypeCheck)
 
 SUBPHASE (sveat, "sveat", "sveat", "Finalising infered type information (Alphas)",
@@ -370,6 +371,9 @@ SUBPHASE (svcf, "svcf", "svcf", "Applying constant folding", CFdoConstantFolding
 
 SUBPHASE (svcse, "svcse", "svcse", "Elimininating common subexpressions",
           CSEdoCommonSubexpressionEliminationModule)
+
+SUBPHASE (svcvp, "svcvp", "svcvp", "Propagating constants and variables",
+          CVPdoConstVarPropagation)
 
 SUBPHASE (svwlsimp, "svwlsimp", "svwlsimp", "Simplifying with-loops",
           WLSIMPdoWithloopSimplificationModule)
@@ -389,9 +393,6 @@ SUBPHASE (ivesplit, "ivesplit", "ivesplit",
 SUBPHASE (cvpive, "cvpive", "cvpive", "Propagating constants and variables",
           CVPdoConstVarPropagation)
 
-SUBPHASE (lirive, "lirive", "lirive", "Applying loop invariant removal",
-          LIRdoLoopInvariantRemoval)
-
 SUBPHASE (cseive, "cseive", "cseive", "Eliminating common subexpression",
           CSEdoCommonSubexpressionEliminationModule)
 
@@ -401,9 +402,20 @@ SUBPHASE (iveras, "iveras", "iveras",
 
 SUBPHASE (esv, "esv", "esv", "Eliminating shape variables", ESVdoEliminateShapeVariables)
 
+SUBPHASE (lirive, "lirive", "lirive", "Applying loop invariant removal",
+          LIRdoLoopInvariantRemoval)
+
 SUBPHASE (dcrive, "dcrive", "dcrive", "Removing dead code", DCRdoDeadCodeRemovalModule)
 
 SUBPHASE (fdi, "fdi", "fdi", "Freeing dispatch information", FDIdoFreeDispatchInformation)
+
+SUBPHASE (optstat, "optstat", "optstat", "Displaying optimisation statistics",
+          OPTdoPrintStatistics)
+
+SUBPHASE (typestat, "typestat", "typestat", "Displaying type specialisation statistics",
+          TSdoPrintTypeStatistics)
+
+SUBPHASE (pfap, "pfap", "pfap", "Profiling function applications", PFdoProfileFunCalls)
 
 /******************************************************************************/
 
