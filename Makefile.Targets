@@ -113,12 +113,12 @@ multithread = multithread_lib.o tag_executionmode.o \
 
 profile     = annotate_fun_calls.o
 
-refcount    = emm.o rcopt.o filterrc.o alloc.o referencecounting.o \
+refcount    = rcopt.o filterrc.o alloc.o referencecounting.o \
               reuse.o aliasanalysis.o staticreuse.o reuseelimination.o \
               interfaceanalysis.o loopreuseopt.o datareuse.o explicitcopy.o \
               reusebranching.o ReuseWithArrays.o inplacecomp.o audscldist.o \
               rcminimize.o NumLookUpTable.o wrci.o reusewithoffset.o \
-              movesharedmeminstr.o scoperce.o
+              movesharedmeminstr.o scoperce.o show_alias.o
 
 precompile  = precompile.o markmemvals.o \
               renameidentifiers.o functionprecompile.o \

@@ -494,6 +494,8 @@ SUBPHASE (emmdcr, "dcr", "dcr", "Removing dead code", DCRdoDeadCodeRemovalModule
 
 SUBPHASE (rci, "rci", "rci", "Inferring reuse candidates", EMRIdoReuseInference)
 
+SUBPHASE (shal, "shal", "shal", "Activating display of alias information", SHALactivate)
+
 SUBPHASE (ia, "ia", "ia", "Interface aliasing analysis", EMIAdoInterfaceAnalysis)
 
 SUBPHASE (lro, "lro", "lro", "Applying loop reuse optimization",
@@ -516,6 +518,9 @@ SUBPHASE (ipc, "ipc", "ipc", "Identfying in-place updates", EMIPdoInplaceComputa
 SUBPHASE (dr, "dr", "dr", "Exploiting data reuse", EMDRdoDataReuse)
 
 SUBPHASE (emmdcr2, "dcr2", "dcr2", "Removing dead code", DCRdoDeadCodeRemovalModule)
+
+SUBPHASE (unshal, "unshal", "unshal", "Deactivating display of alias information",
+          SHALdeactivate)
 
 SUBPHASE (rc, "rc", "rc", "Reference counting", RCIdoReferenceCounting)
 

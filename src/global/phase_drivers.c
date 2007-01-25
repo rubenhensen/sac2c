@@ -13,7 +13,6 @@
 #include "optimize.h"
 #include "annotate_fun_calls.h"
 #include "type_statistics.h"
-#include "emm.h"
 #include "tree_basic.h"
 
 #include "phase_drivers.h"
@@ -342,10 +341,81 @@ PHDdriveMemoryManagement (node *syntax_tree)
 {
     DBUG_ENTER ("PHDdriveMemoryManagement");
 
-    syntax_tree = EMMdoMemoryManagement (syntax_tree);
-    /*
-     * Do this later.
-     */
+    if (global.simd) {
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_simd, syntax_tree);
+    }
+
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_asd, syntax_tree);
+
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_copy, syntax_tree);
+
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_alloc, syntax_tree);
+
+    if (global.optimize.dodcr) {
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_emmdcr, syntax_tree);
+    }
+
+    if (global.optimize.douip) {
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_rci, syntax_tree);
+    }
+
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_shal, syntax_tree);
+
+    if (global.optimize.dosrf) {
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_ia, syntax_tree);
+    }
+
+    if ((global.optimize.dosrf) && (global.optimize.dolro)) {
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_lro, syntax_tree);
+    }
+
+    if (global.optimize.dosrf) {
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_aa, syntax_tree);
+    }
+
+    if (global.optimize.douip) {
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_srce, syntax_tree);
+    }
+
+    if (global.optimize.douip) {
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_frc, syntax_tree);
+    }
+
+    if ((global.optimize.douip) && (global.optimize.dosrf)) {
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_sr, syntax_tree);
+    }
+
+    if ((global.optimize.doipc) || ((global.optimize.douip) && (global.optimize.dodr))) {
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_rb, syntax_tree);
+    }
+
+    if (global.optimize.doipc) {
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_ipc, syntax_tree);
+    }
+
+    if ((global.optimize.douip) && (global.optimize.dodr)) {
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_dr, syntax_tree);
+    }
+
+    if (global.optimize.dodcr) {
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_emmdcr2, syntax_tree);
+    }
+
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_unshal, syntax_tree);
+
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_rc, syntax_tree);
+
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_rcm, syntax_tree);
+
+    if (global.optimize.dorco) {
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_rco, syntax_tree);
+    }
+
+    if ((global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop)) {
+        syntax_tree = PHrunCompilerSubPhase (SUBPH_mvsmi, syntax_tree);
+    }
+
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_re, syntax_tree);
 
     DBUG_RETURN (syntax_tree);
 }
