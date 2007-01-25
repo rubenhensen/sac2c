@@ -213,8 +213,8 @@ extern int SAC_GetDim (SAC_arg sa);
 extern int SAC_GetShape (SAC_arg sa, int pos);
 
 /* functions concerning the refcounting */
-extern int SAC_GetRefcounter (SAC_arg sa);
-extern int SAC_SetRefcounter (SAC_arg sa, int newrc);
+extern void SAC_IncRC (SAC_arg sa, int no);
+extern void SAC_DecRC (SAC_arg sa, int no);
 
 /* functions to convert SAC_arg from and to c datatypes */
 /* for int */

@@ -189,52 +189,76 @@ SAC_GetShapeElement (SAC_arg sa, int pos)
 /******************************************************************************
  *
  * function:
- *   int SAC_GetRefcounter(SAC_arg sa)
+ *   void SAC_IncRC(SAC_arg sa, int no)
  *
  * description:
- *   returns the current refcounter value
+ *   increments the refcounter by no.
+ *   does not change the refcounter if SAC_arg is invalid,
+ *   that means refcounter has already reached 0
  *
  ******************************************************************************/
 
-int
-SAC_GetRefcounter (SAC_arg sa)
+void
+SAC_IncRC (SAC_arg sa, int no)
 {
+    char charbuffer[CHAR_BUFFER_SIZE];
+
     CHECK_FOR_ACTIVE_RUNTIMESYSTEM ();
-    return (SAC_ARG_LRC (sa));
+
+    if (no < 0) {
+        SAC_RuntimeError ("IncRC called with negative argument!\n");
+    }
+
+    if ((SAC_ARG_DIM (sa) > 0) || (SAC_ARG_TYPE (sa) == T_hidden)) {
+        if (SAC_ARG_LRC (sa) > 0) {
+            *(SAC_ARG_RC (sa)) += no;
+            SAC_ARG_LRC (sa) += no;
+        }
+    } else {
+        SAC_CI_SACArg2string (sa, charbuffer);
+        SAC_Print ("*** warning: SAC_IncRC() called on variable not refcounted"
+                   " (type: %s)\n\n",
+                   charbuffer);
+    }
 }
 
 /******************************************************************************
  *
  * function:
- *   int SAC_SetRefcounter(SAC_arg sa, int newrc)
+ *   void SAC_DecRC(SAC_arg sa, int no)
  *
  * description:
- *   sets the refcounter to newrc, returns the new refcounter
- *   does not change the refcounter is SAC_arg is invalid,
+ *   decrements the refcounter by no.
+ *   does not change the refcounter if SAC_arg is invalid,
  *   that means refcounter has already reached 0
  *
  ******************************************************************************/
 
-int
-SAC_SetRefcounter (SAC_arg sa, int newrc)
+void
+SAC_DecRC (SAC_arg sa, int no)
 {
     char charbuffer[CHAR_BUFFER_SIZE];
 
     CHECK_FOR_ACTIVE_RUNTIMESYSTEM ();
+
+    if (no < 0) {
+        SAC_RuntimeError ("DecRC called with negative argument!\n");
+    }
+
     if ((SAC_ARG_DIM (sa) > 0) || (SAC_ARG_TYPE (sa) == T_hidden)) {
-        if (newrc < 0)
-            SAC_RuntimeError ("Illegal refcounter value specified!\n");
         if (SAC_ARG_LRC (sa) > 0) {
-            *(SAC_ARG_RC (sa)) = newrc;
-            SAC_ARG_LRC (sa) = newrc;
+            *(SAC_ARG_RC (sa)) -= no;
+            SAC_ARG_LRC (sa) -= no;
+            if (SAC_ARG_LRC (sa) < 0) {
+                SAC_RuntimeError ("RC dropped below zero.\n");
+            }
         }
     } else {
         SAC_CI_SACArg2string (sa, charbuffer);
-        SAC_Print ("*** warning: SAC_SetRefcounter() called on variable not refcounted"
+        SAC_Print ("*** warning: SAC_IncRC() called on variable not refcounted"
                    " (type: %s)\n\n",
                    charbuffer);
     }
-    return (SAC_ARG_LRC (sa));
 }
 
 /*
