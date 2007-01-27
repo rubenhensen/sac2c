@@ -713,8 +713,6 @@ SUBPHASE (concssa, "ssa", "ssa",
 
 #endif /* BEMT */
 
-#ifndef PRODUCTION
-
 SUBPHASE (tem, "tem", "tem", "Tagging execution modes", TEMdoTagExecutionmode,
           global.mtmode == MT_mtstblock)
 
@@ -747,8 +745,6 @@ SUBPHASE (concel, "concel", "concel", "Consolidating execution mode cells",
 
 SUBPHASE (abort, "abort", "abort", "Aborting MT3 compilation", MTABabort,
           global.mtmode == MT_mtstblock)
-
-#endif /* PRODUCTION */
 
 ENDPHASE (mt)
 
