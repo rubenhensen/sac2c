@@ -6739,10 +6739,13 @@ ProcessSegments (node *segs, int iter_dims, shape *iter_shp, bool do_naive_comp)
             DBUG_EXECUTE ("WLtrans", CTInote ("step 5: split"););
             WLSEG_CONTENTS (seg) = SplitWl (WLSEG_CONTENTS (seg));
         }
+
+#if TO_BE_ADAPTED_TO_PHASE_MECHANISM
         if ((global.break_after == PH_wltrans)
             && (ILIBstringCompare (global.break_specifier, "split"))) {
             goto DONE;
         }
+#endif
 
         /*
          * hierarchical blocking
@@ -6758,10 +6761,13 @@ ProcessSegments (node *segs, int iter_dims, shape *iter_shp, bool do_naive_comp)
                   = BlockWl (WLSEG_CONTENTS (seg), iter_dims, WLSEG_BV (seg, b), FALSE);
             }
         }
+
+#if TO_BE_ADAPTED_TO_PHASE_MECHANISM
         if ((global.break_after == PH_wltrans)
             && (ILIBstringCompare (global.break_specifier, "block"))) {
             goto DONE;
         }
+#endif
 
         /*
          * unrolling-blocking
@@ -6771,10 +6777,13 @@ ProcessSegments (node *segs, int iter_dims, shape *iter_shp, bool do_naive_comp)
             WLSEG_CONTENTS (seg)
               = BlockWl (WLSEG_CONTENTS (seg), iter_dims, WLSEG_UBV (seg), TRUE);
         }
+
+#if TO_BE_ADAPTED_TO_PHASE_MECHANISM
         if ((global.break_after == PH_wltrans)
             && (ILIBstringCompare (global.break_specifier, "ublock"))) {
             goto DONE;
         }
+#endif
 
         /*
          * merging
@@ -6783,10 +6792,13 @@ ProcessSegments (node *segs, int iter_dims, shape *iter_shp, bool do_naive_comp)
             DBUG_EXECUTE ("WLtrans", CTInote ("step 8: merge"););
             WLSEG_CONTENTS (seg) = MergeWl (WLSEG_CONTENTS (seg));
         }
+
+#if TO_BE_ADAPTED_TO_PHASE_MECHANISM
         if ((global.break_after == PH_wltrans)
             && (ILIBstringCompare (global.break_specifier, "merge"))) {
             goto DONE;
         }
+#endif
 
         /*
          * optimization
@@ -6795,10 +6807,13 @@ ProcessSegments (node *segs, int iter_dims, shape *iter_shp, bool do_naive_comp)
             DBUG_EXECUTE ("WLtrans", CTInote ("step 9: optimize"););
             WLSEG_CONTENTS (seg) = OptWl (WLSEG_CONTENTS (seg));
         }
+
+#if TO_BE_ADAPTED_TO_PHASE_MECHANISM
         if ((global.break_after == PH_wltrans)
             && (ILIBstringCompare (global.break_specifier, "opt"))) {
             goto DONE;
         }
+#endif
 
         /*
          * fitting
@@ -6807,10 +6822,13 @@ ProcessSegments (node *segs, int iter_dims, shape *iter_shp, bool do_naive_comp)
             DBUG_EXECUTE ("WLtrans", CTInote ("step 10: fit"););
             WLSEG_CONTENTS (seg) = FitWl (WLSEG_CONTENTS (seg));
         }
+
+#if TO_BE_ADAPTED_TO_PHASE_MECHANISM
         if ((global.break_after == PH_wltrans)
             && (ILIBstringCompare (global.break_specifier, "fit"))) {
             goto DONE;
         }
+#endif
 
         /*
          * normalization
@@ -6820,22 +6838,28 @@ ProcessSegments (node *segs, int iter_dims, shape *iter_shp, bool do_naive_comp)
             WLSEG_CONTENTS (seg)
               = NormWl (iter_dims, iter_shp, WLSEG_IDX_MAX (seg), WLSEG_CONTENTS (seg));
         }
+
+#if TO_BE_ADAPTED_TO_PHASE_MECHANISM
         if ((global.break_after == PH_wltrans)
             && (ILIBstringCompare (global.break_specifier, "norm"))) {
             goto DONE;
         }
+#endif
 
         /*
          * fill all gaps
          */
         DBUG_EXECUTE ("WLtrans", CTInote ("step 12: fill gaps (all)"););
         InsertNoopNodes (WLSEGX_CONTENTS (seg));
+
+#if TO_BE_ADAPTED_TO_PHASE_MECHANISM
         if ((global.break_after == PH_wltrans)
             && (ILIBstringCompare (global.break_specifier, "fill2"))) {
             goto DONE;
         }
 
     DONE:
+#endif
         /* compute GRIDX_FITTED */
         L_WLSEGX_CONTENTS (seg, InferFitted (WLSEGX_CONTENTS (seg)));
 
@@ -7203,10 +7227,12 @@ WLTRAwith (node *arg_node, info *arg_info)
             do_naive_comp
               = ExtractNaiveCompPragma (WITH_PRAGMA (arg_node), global.linenum);
 
+#if TO_BE_ADAPTED_TO_PHASE_MECHANISM
             if ((global.break_after == PH_wltrans)
                 && (ILIBstringCompare (global.break_specifier, "conv"))) {
                 goto DONE;
             }
+#endif
 
             /*
              * build the cubes
@@ -7215,10 +7241,12 @@ WLTRAwith (node *arg_node, info *arg_info)
 
             cubes = BuildCubes (strides, has_fold, iter_dims, iter_shp, &do_naive_comp);
 
+#if TO_BE_ADAPTED_TO_PHASE_MECHANISM
             if ((global.break_after == PH_wltrans)
                 && (ILIBstringCompare (global.break_specifier, "cubes"))) {
                 goto DONE;
             }
+#endif
 
             DBUG_EXECUTE ("WLtrans",
                           if (do_naive_comp) {
@@ -7230,10 +7258,13 @@ WLTRAwith (node *arg_node, info *arg_info)
              */
             DBUG_EXECUTE ("WLtrans", CTInote ("step 3: fill gaps (grids)"););
             cubes = InsertNoopGrids (cubes);
+
+#if TO_BE_ADAPTED_TO_PHASE_MECHANISM
             if ((global.break_after == PH_wltrans)
                 && (ILIBstringCompare (global.break_specifier, "fill1"))) {
                 goto DONE;
             }
+#endif
 
             DBUG_EXECUTE ("WLtrans", CTInote ("step 4: choose segments"););
             if (do_naive_comp) {
@@ -7262,17 +7293,22 @@ WLTRAwith (node *arg_node, info *arg_info)
 
                 segs = SetSegs (WITH_PRAGMA (arg_node), cubes, iter_dims, fold_float);
             }
+
+#if TO_BE_ADAPTED_TO_PHASE_MECHANISM
             if ((global.break_after == PH_wltrans)
                 && (ILIBstringCompare (global.break_specifier, "segs"))) {
                 goto DONE;
             }
+#endif
 
             /*
              * do all the segment-wise transformation stuff (step 4 -- 11)
              */
             segs = ProcessSegments (segs, iter_dims, iter_shp, do_naive_comp);
 
+#if TO_BE_ADAPTED_TO_PHASE_MECHANISM
         DONE:
+#endif
             if (segs == NULL) {
                 segs = WLCOMP_All (NULL, NULL, (cubes == NULL) ? strides : cubes,
                                    iter_dims, global.linenum);

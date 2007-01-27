@@ -29,6 +29,7 @@
 #include "internal_lib.h"
 #include "ctinfo.h"
 #include "libstat.h"
+#include "phase.h"
 
 #undef ARGS_ERROR
 #define ARGS_ERROR(msg)
@@ -185,31 +186,9 @@ OPTanalyseCommandline (int argc, char *argv[])
      * Options starting with bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
      */
 
-    ARGS_OPTION_BEGIN ("b")
-    {
-        char *break_arg = ILIBstringCopy (ARG);
+    ARGS_OPTION ("bcyc", ARG_NUM (global.break_cycle_specifier));
 
-        ARG = strtok (ARG, ":");
-        ARG_RANGE (global.break_after, 1, 25);
-
-        ARG = strtok (NULL, ":");
-        if (ARG != NULL) {
-            global.break_specifier = ILIBstringCopy (ARG);
-
-            ARG = strtok (NULL, ":");
-            if (ARG != NULL) {
-                ARG_NUM (global.break_cycle_specifier);
-
-                ARG = strtok (NULL, ":");
-                if (ARG != NULL) {
-                    global.break_opt_specifier = ILIBstringCopy (ARG);
-                }
-            }
-        }
-
-        break_arg = ILIBfree (break_arg);
-    }
-    ARGS_OPTION_END ("b");
+    ARGS_OPTION ("b", PHinterpretBreakOption (ARG))
 
     /*
      * Options starting with ccccccccccccccccccccccccccccccccccccccccccc
@@ -269,7 +248,7 @@ OPTanalyseCommandline (int argc, char *argv[])
 
     ARGS_FLAG ("cs", global.docachesim = FALSE);
 
-    ARGS_FLAG ("c", global.break_after = PH_compile);
+    ARGS_FLAG ("c", global.break_after = PH_cp);
 
     /*
      * Options starting with ddddddddddddddddddddddddddddddddddddddddddd

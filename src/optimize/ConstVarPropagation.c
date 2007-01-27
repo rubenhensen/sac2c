@@ -338,7 +338,7 @@ CVPprf (node *arg_node, info *arg_info)
      * as CVP is run after IVE, as well!
      */
     case F_idx_sel:
-        DBUG_ASSERT (((global.compiler_phase >= PH_sacopt)
+        DBUG_ASSERT (((global.compiler_phase >= PH_op)
                       && (global.compiler_subphase >= SUBPH_ivesplit)),
                      ("F_idx_ operations are not allowed during the optimizer!"));
         /*
@@ -353,7 +353,7 @@ CVPprf (node *arg_node, info *arg_info)
         break;
 
     case F_idx_modarray:
-        DBUG_ASSERT (((global.compiler_phase >= PH_sacopt)
+        DBUG_ASSERT (((global.compiler_phase >= PH_op)
                       && (global.compiler_subphase >= SUBPH_ivesplit)),
                      ("F_idx_ operations are not allowed during the optimizer!"));
         /*

@@ -1417,7 +1417,7 @@ SSATids (node *arg_node, info *arg_info)
             AVIS_SHAPE (new_avis) = DUPdoDupNode (AVIS_SHAPE (avis));
         }
 
-        if (global.compiler_phase <= PH_typecheck) {
+        if (global.compiler_phase <= PH_tc) {
             /**
              * we are running SSATransform prior or during TC! Therefore,
              * the type needs to be generalized to unknown[*]. This requires
@@ -1572,7 +1572,7 @@ SSATdoTransform (node *syntax_tree)
                  "SSATransform is used for module nodes only");
 
 #ifndef DBUG_OFF
-    if (global.compiler_phase == PH_sacopt) {
+    if (global.compiler_phase == PH_op) {
         DBUG_PRINT ("OPT", ("starting ssa transformation for ast"));
     }
 #endif
@@ -1615,7 +1615,7 @@ SSATdoTransformAllowGOs (node *syntax_tree)
                  "SSATdoTransformAllowGos is used for module nodes only");
 
 #ifndef DBUG_OFF
-    if (global.compiler_phase == PH_sacopt) {
+    if (global.compiler_phase == PH_op) {
         DBUG_PRINT ("OPT", ("starting ssa transformation allowing GOs for ast"));
     }
 #endif
@@ -1657,7 +1657,7 @@ SSATdoTransformOneFunction (node *fundef)
 
     if (!(FUNDEF_ISLACFUN (fundef))) {
 #ifndef DBUG_OFF
-        if (global.compiler_phase == PH_sacopt) {
+        if (global.compiler_phase == PH_op) {
             DBUG_PRINT ("OPT",
                         ("starting ssa transformation for %s", FUNDEF_NAME (fundef)));
         }
@@ -1699,7 +1699,7 @@ SSATdoTransformOneFundef (node *fundef)
                  "SSATdoTransformOneFundef is applicable to fundef nodes only");
 
 #ifndef DBUG_OFF
-    if (global.compiler_phase == PH_sacopt) {
+    if (global.compiler_phase == PH_op) {
         DBUG_PRINT ("OPT", ("starting ssa transformation for %s", FUNDEF_NAME (fundef)));
     }
 #endif

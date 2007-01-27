@@ -7,7 +7,9 @@
 
 #include "types.h"
 
-extern node *OPTdoIntraFunctionalOptimizations (node *arg_node);
 extern node *OPTdoPrintStatistics (node *syntax_tree);
+
+extern node *OPTrunStabilizationCycle (node *arg_node);
+extern node *OPTrunOptimizationCycle (node *arg_node);
 
 #endif /* _SAC_OPTIMIZE_H_ */

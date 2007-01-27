@@ -14,27 +14,9 @@
 #include "usage.h"
 #include "phase.h"
 
-#define PRINT_BREAK_SPEC(ph, spec, comment)                                              \
-    {                                                                                    \
-        int _i;                                                                          \
-        printf ("    -b %2i:%s", ph, spec);                                              \
-        DBUG_ASSERT (strlen (spec) < 18, " you need to increase"                         \
-                                         " the space in PRINT_BREAK_SPEC");              \
-        for (_i = 0; (size_t)_i < (18 - strlen (spec)); _i++) {                          \
-            printf (" ");                                                                \
-        }                                                                                \
-        printf ("%s\n", comment);                                                        \
-    }
-
-#define CONT_BREAK_SPEC(comment)                                                         \
-    {                                                                                    \
-        printf ("                            %s\n", comment);                            \
-    }
-
 void
 USGprintUsage ()
 {
-    int ph;
     char *env;
 
     DBUG_ENTER ("usage");
@@ -122,281 +104,60 @@ USGprintUsage ()
     printf ("\n\nBREAK OPTIONS:\n\n"
 
             "    Break options allow you to stop the compilation process\n"
-            "    after a particular phase.\n"
-            "    By default the programm will then be printed out, but this behaviour\n"
-            "    may be influenced by the following compiler options:\n"
+            "    after a particular phase, subphase or cycle optimisation.\n"
+            "    By default the intermediate programm will be printed, \n"
+            "    but this behaviour may be influenced by the following\n"
+            "    compiler options:\n"
             "\n"
             "    -noPAB          Deactivates printing after break.\n"
-            "    -doPAB          Activates printing after break.\n\n");
+            "    -doPAB          Activates printing after break.\n"
+            "\n"
+            "    -b<n>           Break after compiler phase <n>,\n"
+            "                    where <n> is a natural number.\n"
+            "    -b<spec>        Break after compiler phase,  compiler\n"
+            "                    subphase or cycle optimization <spec>,\n"
+            "                    where <spec> is one of codes shown below.\n"
+            "                    In case of a cycle optimization, we break\n"
+            "                    in the first cycle by default.\n"
+            "    -bcyc<n>        If a cycle optimization is selected to\n"
+            "                    break after, this option allows us to specify\n"
+            "                    a concrete cycle other than the first.\n");
 
-    for (ph = 1; ph < PH_final; ph++) {
-        printf ("    -b %2i           Stop after: %s.\n", ph, PHphaseName (ph));
-    }
+    printf ("\n\nBREAK OPTION SPECIFIERS:\n");
 
-    printf ("\n\nBREAK SPECIFIERS:\n\n"
+#define PHASEelement(it_element)                                                         \
+    printf ("\n    " #it_element " | %-2d", (int)PH_##it_element);
 
-            "    Break specifiers allow you to stop the compilation process\n"
-            "    within a particular phase.\n\n"
+#define PHASEtext(it_text) printf (" : " it_text "\n");
 
-            "    Currently supported break specifiers are as follows:\n\n");
+#define SUBPHASEelement(it_element) printf ("      %-10s", #it_element);
 
-    PRINT_BREAK_SPEC (PH_scanparse, "cpp", "Stop after running the C preprocessor.");
-    PRINT_BREAK_SPEC (PH_scanparse, "sp", "Stop after parsing (yacc).");
+#define SUBPHASEtext(it_text) printf (" : " it_text "\n");
 
-    printf ("\n");
+#define OPTCYCLEelement(it_element) printf ("      %-10s", #it_element);
 
-    PRINT_BREAK_SPEC (PH_preprocess, "hzgwl",
-                      "Stop after transforming zero-generator with-loops");
-    PRINT_BREAK_SPEC (PH_preprocess, "hwlg",
-                      "Stop after transforming multi-generator with-loops");
-    PRINT_BREAK_SPEC (PH_preprocess, "hwlo",
-                      "Stop after transforming multi-operator with-loops");
-    PRINT_BREAK_SPEC (PH_preprocess, "acn",
-                      "Stop after resolving the axis control notation.");
-    PRINT_BREAK_SPEC (PH_preprocess, "pragma", "Stop after resolving pragmas");
-    PRINT_BREAK_SPEC (PH_preprocess, "objinit",
-                      "Stop after generating generic types and functions");
+#define OPTCYCLEtext(it_text) printf (" : " it_text "\n");
 
-    printf ("\n");
+#define OPTINCYCelement(it_element) printf ("        %-10s", #it_element);
 
-    PRINT_BREAK_SPEC (PH_module, "rsa", "Stop after resolving all flag.");
-    PRINT_BREAK_SPEC (PH_module, "ans", "Stop after annotating namespaces.");
-    PRINT_BREAK_SPEC (PH_module, "gdp", "Stop after gathering dependencies.");
-    PRINT_BREAK_SPEC (PH_module, "imp", "Stop after importing instances.");
-    PRINT_BREAK_SPEC (PH_module, "uss", "Stop after fetching used symbols.");
-    PRINT_BREAK_SPEC (PH_module, "asf", "Stop after loading sac2c prelude functions.");
+#define OPTINCYCtext(it_text) printf (" : " it_text "\n");
 
-    printf ("\n");
+#define OPTINCYCFUNelement(it_element) printf ("        %-10s", #it_element);
 
-    PRINT_BREAK_SPEC (PH_simplify, "w2d",
-                      "Stop after transforming while-loops into do-loops");
-    PRINT_BREAK_SPEC (PH_simplify, "hce",
-                      "Stop after eliminating conditional expressions");
-    PRINT_BREAK_SPEC (PH_simplify, "hm",
-                      "Stop after resolving (multiple) applications of infix");
-    CONT_BREAK_SPEC ("operations.");
-    PRINT_BREAK_SPEC (PH_simplify, "flat", "Stop after flattening nested expressions");
+#define OPTINCYCFUNtext(it_text) printf (" : " it_text " (fun based)\n");
 
-    printf ("\n");
+#include "phase_info.mac"
 
-    PRINT_BREAK_SPEC (PH_pretypecheck, "rst", "Stop after resolving symbol types.");
-    PRINT_BREAK_SPEC (PH_pretypecheck, "ivd", "Stop after inserting vardecs.");
-    PRINT_BREAK_SPEC (PH_pretypecheck, "itc", "Stop after inserting type conversions.");
-    PRINT_BREAK_SPEC (PH_pretypecheck, "ses",
-                      "Stop after stripping external signatures.");
-    PRINT_BREAK_SPEC (PH_pretypecheck, "cwr", "Stop after creating wrappers.");
-    PRINT_BREAK_SPEC (PH_pretypecheck, "oan", "Stop after analysing objects.");
-    PRINT_BREAK_SPEC (PH_pretypecheck, "goi", "Stop after creating object initialisers.");
-    PRINT_BREAK_SPEC (PH_pretypecheck, "rso", "Stop after resolving global objects.");
-    PRINT_BREAK_SPEC (PH_pretypecheck, "rra",
-                      "Stop after resolving reference arguments.");
-    PRINT_BREAK_SPEC (PH_pretypecheck, "ewt", "Stop after extending wrapper types.");
-    PRINT_BREAK_SPEC (PH_pretypecheck, "l2f",
-                      "Stop after converting loops and conditionals into");
-    CONT_BREAK_SPEC ("functions.");
-    PRINT_BREAK_SPEC (PH_pretypecheck, "ssa", "Stop after converting into SSA form.");
-
-    printf ("\n");
-
-    PRINT_BREAK_SPEC (PH_typecheck, "ntc", "Stop after infering all types.");
-    PRINT_BREAK_SPEC (PH_typecheck, "ds", "Stop after deserializing code.");
-    PRINT_BREAK_SPEC (PH_typecheck, "eat", "Stop after eliminating type variables.");
-    PRINT_BREAK_SPEC (PH_typecheck, "ebt", "Stop after eliminating bottom types.");
-    PRINT_BREAK_SPEC (PH_typecheck, "swr", "Stop after splitting wrappers.");
-
-    printf ("\n");
-
-    PRINT_BREAK_SPEC (PH_elimudt, "cwc",
-                      "Stop after creating SAC code for wrapper functions.");
-    PRINT_BREAK_SPEC (PH_elimudt, "l2f",
-                      "Stop after converting loops and conditionals into");
-    CONT_BREAK_SPEC ("functions.");
-    PRINT_BREAK_SPEC (PH_elimudt, "ssa", "Stop after converting into SSA form.");
-    PRINT_BREAK_SPEC (PH_elimudt, "dfc",
-                      "Stop after trying to dispatch function calls statically.");
-    PRINT_BREAK_SPEC (PH_elimudt, "eudt", "Stop after eliminating user-defined types.");
-
-    printf ("\n");
-
-    PRINT_BREAK_SPEC (PH_wlenhance, "accu",
-                      "Stop after inserting explicit accumulation.");
-    PRINT_BREAK_SPEC (PH_wlenhance, "wldp", "Stop after adding default partitions.");
-    PRINT_BREAK_SPEC (PH_wlenhance, "wlpg", "Stop after with-loop partition generation.");
-
-    printf ("\n");
-
-    PRINT_BREAK_SPEC (PH_sacopt, "inl", "Stop after function inlining.");
-    PRINT_BREAK_SPEC (PH_sacopt, "dfr", "Stop after initial dead function removal.");
-    PRINT_BREAK_SPEC (PH_sacopt, "ae", "Stop after array elimination.");
-    PRINT_BREAK_SPEC (PH_sacopt, "dcr", "Stop after dead code removal.");
-    PRINT_BREAK_SPEC (PH_sacopt, "lir", "Stop after (with-)loop invariant removal.");
-
-    printf ("\n");
-
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:cse",
-                      "Stop in cycle <n> after common subexpression elimination.");
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:ntc",
-                      "Stop in cycle <n> after type upgrade inference.");
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:eat",
-                      "Stop in cycle <n> after type variable elimination.");
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:ebt",
-                      "Stop in cycle <n> after bottom type elimination.");
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:dfc",
-                      "Stop in cycle <n> after dispatch function calls.");
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:inl", "Stop in cycle <n> after inlining.");
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:cf",
-                      "Stop in cycle <n> after constant folding.");
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:cvp",
-                      "Stop in cycle <n> after constant and variable propagation.");
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:wlpg",
-                      "Stop in cycle <n> after with-loop partition generation.");
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:wlsimp",
-                      "Stop in cycle <n> after with-loop simplification.");
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:cwle",
-                      "Stop in cycle <n> after copy with-loop elimination.");
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:wlt",
-                      "Stop in cycle <n> after with-loop transformation.");
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:wli",
-                      "Stop in cycle <n> after with-loop information gathering.");
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:wlf",
-                      "Stop in cycle <n> after with-loop folding.");
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:ssawlf",
-                      "Stop in cycle <n> after restoring SSA form after with-loop "
-                      "folding.");
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:swlf",
-                      "Stop in cycle <n> after symbolic with-loop folding.");
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:cf2",
-                      "Stop in cycle <n> after second constant folding.");
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:dcr",
-                      "Stop in cycle <n> after dead code removal.");
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:wls",
-                      "Stop in cycle <n> after with-loop scalarization.");
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:lur",
-                      "Stop in cycle <n> after (with-)loop unrolling.");
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:ssalur",
-                      "Stop in cycle <n> after restoring SSA form after (with-)loop "
-                      "unrolling.");
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:cf3",
-                      "Stop in cycle <n> after third constant folding.");
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:lus",
-                      "Stop in cycle <n> after loop unswitching.");
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:wlir",
-                      "Stop in cycle <n> after with-loop invariant removal.");
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:al",
-                      "Stop in cycle <n> after associative law.");
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc:<n>:dl",
-                      "Stop in cycle <n> after distributive law.");
-
-    printf ("\n");
-
-    PRINT_BREAK_SPEC (PH_sacopt, "cyc", "Stop after fundef optimization cycle.");
-    PRINT_BREAK_SPEC (PH_sacopt, "lir2", "Stop after (with-)loop invariant removal.");
-    PRINT_BREAK_SPEC (PH_sacopt, "uesd",
-                      "Stop after reintroducing subtraction and division operators.");
-    PRINT_BREAK_SPEC (PH_sacopt, "dfr2", "Stop after dead function removal.");
-    PRINT_BREAK_SPEC (PH_sacopt, "dcr2", "Stop after dead code removal.");
-    PRINT_BREAK_SPEC (PH_sacopt, "wlfs", "Stop after with loop fusion.");
-    PRINT_BREAK_SPEC (PH_sacopt, "cse2", "Stop after common subexpression elimination.");
-    PRINT_BREAK_SPEC (PH_sacopt, "dcr3", "Stop after dead code removal.");
-    PRINT_BREAK_SPEC (PH_sacopt, "rtc", "Stop after final type inference.");
-    PRINT_BREAK_SPEC (PH_sacopt, "fineat", "Stop after final type variable elimination.");
-    PRINT_BREAK_SPEC (PH_sacopt, "finebt", "Stop after final bottom type elimination.");
-    PRINT_BREAK_SPEC (PH_sacopt, "wlpg2",
-                      "Stop after with-loop default partition generation.");
-    PRINT_BREAK_SPEC (PH_sacopt, "wrci",
-                      "Stop after with-loop reuse candidates inference.");
-    PRINT_BREAK_SPEC (PH_sacopt, "wlidx",
-                      "Stop after annotating offset variables at with-loops.");
-    PRINT_BREAK_SPEC (PH_sacopt, "ivei",
-                      "Stop after index vector elimination inference.");
-    PRINT_BREAK_SPEC (PH_sacopt, "ive", "Stop after index vector elimination.");
-    PRINT_BREAK_SPEC (PH_sacopt, "iveo",
-                      "Stop after index vector elimination optimisation.");
-    PRINT_BREAK_SPEC (PH_sacopt, "cvpive",
-                      "Stop after constant and variable propagation after ive.");
-    PRINT_BREAK_SPEC (PH_sacopt, "lirive",
-                      "Stop after loop invariant removal after ive.");
-    PRINT_BREAK_SPEC (PH_sacopt, "cseive",
-                      "Stop after common subexpression elimination after ive.");
-    PRINT_BREAK_SPEC (PH_sacopt, "dcrive", "Stop after dead code removal after ive.");
-    PRINT_BREAK_SPEC (PH_sacopt, "fdi", "Stop after freeing dispatch information.");
-
-    printf ("\n");
-
-    PRINT_BREAK_SPEC (PH_wltrans, "ussa", "Stop after undo ssa transform.");
-    PRINT_BREAK_SPEC (PH_wltrans, "fun2lac",
-                      "Stop after reintroducing loops and conditionals");
-    PRINT_BREAK_SPEC (PH_wltrans, "lacinl", "Stop after inlining LaC functions");
-    PRINT_BREAK_SPEC (PH_wltrans, "conv", "Stop after converting.");
-    PRINT_BREAK_SPEC (PH_wltrans, "cubes", "Stop after cube-building.");
-    PRINT_BREAK_SPEC (PH_wltrans, "fill1", "Stop after gap filling (grids only).");
-    PRINT_BREAK_SPEC (PH_wltrans, "segs", "Stop after choice of segments.");
-    PRINT_BREAK_SPEC (PH_wltrans, "split", "Stop after splitting.");
-    PRINT_BREAK_SPEC (PH_wltrans, "block", "Stop after hierarchical blocking.");
-    PRINT_BREAK_SPEC (PH_wltrans, "ublock", "Stop after unrolling-blocking.");
-    PRINT_BREAK_SPEC (PH_wltrans, "merge", "Stop after merging.");
-    PRINT_BREAK_SPEC (PH_wltrans, "opt", "Stop after optimization.");
-    PRINT_BREAK_SPEC (PH_wltrans, "fit", "Stop after fitting.");
-    PRINT_BREAK_SPEC (PH_wltrans, "norm", "Stop after normalization.");
-    PRINT_BREAK_SPEC (PH_wltrans, "fill2", "Stop after gap filling (all nodes).");
-    PRINT_BREAK_SPEC (PH_wltrans, "l2f", "Stop after Lac To Fun conversion.");
-    PRINT_BREAK_SPEC (PH_wltrans, "ssa", "Stop after conversion into SSA form.");
-    PRINT_BREAK_SPEC (PH_wltrans, "cvp", "Stop after Constant and variable Propagation.");
-    PRINT_BREAK_SPEC (PH_wltrans, "dcr", "Stop after Dead Code Removal.");
-
-    printf ("\n");
-    printf ("    with \"-mt [-mtmode 2]\"\n");
-
-    PRINT_BREAK_SPEC (PH_multithread, "spmdinit", "Stop after building SPMD blocks.");
-    PRINT_BREAK_SPEC (PH_multithread, "spmdopt", "Stop after optimizing SPMD blocks.");
-    PRINT_BREAK_SPEC (PH_multithread, "createmtfuns",
-                      "Stop after creating MT/ST functions.");
-    PRINT_BREAK_SPEC (PH_multithread, "spmdlift", "Stop after lifting SPMD blocks.");
-    PRINT_BREAK_SPEC (PH_multithread, "sched",
-                      "Stop after creating scheduling annotations.");
-    PRINT_BREAK_SPEC (PH_multithread, "rmspmd", "Stop after eliminating SPMD blocks.");
-    PRINT_BREAK_SPEC (PH_multithread, "l2f", "Stop after lifting SPMD conditionals.");
-    PRINT_BREAK_SPEC (PH_multithread, "ssa",
-                      "Stop after restoring SSA form in SPMD conditionals.");
-
-    printf ("\n");
-    printf ("    with \"-mt -mtmode 3\" (UNDER CONSTRUCTION!!!)\n");
-
-    PRINT_BREAK_SPEC (PH_multithread, "init", "Stop after internal initialization.");
-    PRINT_BREAK_SPEC (PH_multithread, "tem", "Stop after tagging the executionmode.");
-    PRINT_BREAK_SPEC (PH_multithread, "crwiw",
-                      "Stop after create replications within with-loops.");
-    PRINT_BREAK_SPEC (PH_multithread, "pem", "Stop after propagating the executionmode.");
-    PRINT_BREAK_SPEC (PH_multithread, "cdfg", "Stop after creating the dataflowgraph.");
-    PRINT_BREAK_SPEC (PH_multithread, "asmra", "Stop after assignments rearranging.");
-    PRINT_BREAK_SPEC (PH_multithread, "crece", "Stop after creating the cells.");
-    PRINT_BREAK_SPEC (PH_multithread, "cegro", "Stop after cell growing.");
-    PRINT_BREAK_SPEC (PH_multithread, "repfun", "Stop after replicating functions.");
-    PRINT_BREAK_SPEC (PH_multithread, "concel", "Stop after consolidating the cells.");
-
-    printf ("\n");
-
-    PRINT_BREAK_SPEC (PH_memory, "copy", "Stop after Explicit Copy Inference.");
-    PRINT_BREAK_SPEC (PH_memory, "alloc", "Stop after Explicit Allocation Inference.");
-    PRINT_BREAK_SPEC (PH_memory, "dcr", "Stop after Dead Code Removal.");
-    PRINT_BREAK_SPEC (PH_memory, "ri", "Stop after Reuse Inference.");
-    PRINT_BREAK_SPEC (PH_memory, "ia", "Stop after Interface Analysis.");
-    PRINT_BREAK_SPEC (PH_memory, "lro", "Stop after Loop Reuse Optimization.");
-    PRINT_BREAK_SPEC (PH_memory, "frc", "Stop after Filtering Reuse Candidates.");
-    PRINT_BREAK_SPEC (PH_memory, "sr", "Stop after Static Reuse.");
-    PRINT_BREAK_SPEC (PH_memory, "rb", "Stop after Reuse Branching..");
-    PRINT_BREAK_SPEC (PH_memory, "ipc", "Stop after Inplace Computation.");
-    PRINT_BREAK_SPEC (PH_memory, "dr", "Stop after Data Reuse.");
-    PRINT_BREAK_SPEC (PH_memory, "dcr2", "Stop after Dead Code Removal (2).");
-    PRINT_BREAK_SPEC (PH_memory, "rc", "Stop after Reference Counting Inference.");
-    PRINT_BREAK_SPEC (PH_memory, "rco", "Stop after Reference Counting Optimizations.");
-    PRINT_BREAK_SPEC (PH_memory, "re", "Stop after Reuse Elimination.");
-
-    printf ("\n");
-
-    PRINT_BREAK_SPEC (PH_precompile, "prec1", "Stop after first traversal.");
-    PRINT_BREAK_SPEC (PH_precompile, "prec2", "Stop after second traversal.");
-    PRINT_BREAK_SPEC (PH_precompile, "prec3", "Stop after third traversal.");
+#undef PHASEelement
+#undef PHASEtext
+#undef SUBPHASEelement
+#undef SUBPHASEtext
+#undef OPTCYCLEelement
+#undef OPTCYCLEtext
+#undef OPTINCYCelement
+#undef OPTINCYCtext
+#undef OPTINCYCFUNelement
+#undef OPTINCYCFUNtext
 
     printf ("\n\nTYPE INFERENCE OPTIONS:\n\n");
     printf ("    -specmode <strat>  Specify function specialization strategy:\n"

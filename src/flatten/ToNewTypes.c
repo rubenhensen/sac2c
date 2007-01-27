@@ -1,59 +1,5 @@
 /*
- * $Log$
- * Revision 1.10  2004/12/19 19:32:48  sbs
- * eliminated CheckAvis reminiscents
- * Now, TNT does compute new types from old types only!
- * .
- *
- * Revision 1.9  2004/12/19 14:51:02  sbs
- * old types killed now
- *
- * Revision 1.8  2004/12/08 17:59:15  ktr
- * removed ARRAY_TYPE/ARRAY_NTYPE
- *
- * Revision 1.7  2004/11/26 12:50:08  mwe
- * changes according to changes in tree_compound.h
- *
- * Revision 1.6  2004/11/25 22:50:01  mwe
- * changes according to changes in ast.xml
- *
- * Revision 1.5  2004/11/25 14:07:36  mwe
- * unused variables removed
- *
- * Revision 1.4  2004/11/24 16:33:03  mwe
- * TNT is now activated only after PH_typecheck
- *
- * Revision 1.3  2004/11/24 14:58:23  mwe
- * SacDevCamp: compiles!!!
- *
- * Revision 1.2  2004/11/19 13:41:00  mwe
- * TravSons in TNTarray, TNTcast, TNTtypedef added
- *
- * Revision 1.1  2004/11/18 14:33:57  mwe
- * Initial revision
- *
- * Revision 1.6  2004/09/30 15:14:39  sbs
- * eliminated FunTypes from ALL but wrapper functions
- * (memory concerns!)
- * Now, the function signatures of individual instances are
- * stored in the AVIS_TYPE and FUNDEF_RET_TYPE only!!!!!
- *
- * Revision 1.5  2004/09/29 13:47:32  sah
- * extended the ntype generation to
- * function and return types
- *
- * Revision 1.4  2004/08/29 18:08:38  sah
- * added some DBUG_PRINTS
- *
- * Revision 1.3  2004/07/16 14:41:34  sah
- * switch to new INFO structure
- * PE I
- *
- * Revision 1.2  2004/07/05 17:22:22  sbs
- * some DBUG_PRINTs added.
- *
- * Revision 1.1  2004/01/28 17:01:32  skt
- * Initial revision
+ * $Id$
  *
  */
 
@@ -386,7 +332,7 @@ TNTdoToNewTypes (node *syntax_tree)
 
     DBUG_PRINT ("OPT", ("start checking avis information"));
 
-    if (global.compiler_phase > PH_typecheck) {
+    if (global.compiler_phase > PH_tc) {
         arg_info = MakeInfo ();
         INFO_TNT_TRAVMODE (arg_info) = TNTSF_TRAV_FUNDEFS;
 
@@ -417,7 +363,7 @@ TNTdoToNewTypesOneFunction (node *fundef)
 
     DBUG_ENTER ("TNTdoToNewTypesOneFunction");
 
-    if (global.compiler_phase > PH_typecheck) {
+    if (global.compiler_phase > PH_tc) {
 
         DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
                      "TNTdoToNewTypesOneFunction is used for fundef nodes only");
@@ -456,7 +402,7 @@ TNTdoToNewTypesOneFundef (node *fundef)
 
     DBUG_ENTER ("TNTdoToNewTypesOneFundef");
 
-    if (global.compiler_phase > PH_typecheck) {
+    if (global.compiler_phase > PH_tc) {
 
         DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
                      "TNTdoToNewTypesOneFundef is used for fundef nodes only");

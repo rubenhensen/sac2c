@@ -333,7 +333,7 @@ TCgetTypesLine (types *type, int line)
     if (TYPES_BASETYPE (type) == T_user) {
         tdef = TYPES_TDEF (type);
 
-        if ((tdef == NULL) && (global.compiler_phase <= PH_typecheck)) {
+        if ((tdef == NULL) && (global.compiler_phase <= PH_tc)) {
             tdef = NULL;
         }
 

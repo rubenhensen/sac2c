@@ -71,18 +71,48 @@ typedef enum {
 typedef int usertype;
 
 typedef enum {
+    PH_initial = 0,
 #define PHASEelement(it_element) PH_##it_element,
 #include "phase_info.mac"
 #undef PHASEelement
-    PH_dummy
+    PH_final
 } compiler_phase_t;
 
 typedef enum {
+    SUBPH_initial = 0,
 #define SUBPHASEelement(it_element) SUBPH_##it_element,
+#define OPTCYCLEelement(it_element) SUBPH_##it_element,
 #include "phase_info.mac"
 #undef SUBPHASEelement
-    SUBPH_dummy
+#undef OPTCYCLEelement
+    SUBPH_final
 } compiler_subphase_t;
+
+typedef enum {
+    OIC_initial = 0,
+#define OPTINCYCelement(it_element) OIC_##it_element,
+#define OPTINCYCFUNelement(it_element) OIC_##it_element,
+#include "phase_info.mac"
+#undef OPTINCYCelement
+#undef OPTINCYCFUNelement
+    OIC_final
+} compiler_optincyc_t;
+
+typedef enum {
+    PHALL_initial = 0,
+#define PHASEelement(it_element) PHALL_##it_element,
+#define SUBPHASEelement(it_element) PHALL_##it_element,
+#define OPTCYCLEelement(it_element) PHALL_##it_element,
+#define OPTINCYCelement(it_element) PHALL_##it_element,
+#define OPTINCYCFUNelement(it_element) PHALL_##it_element,
+#include "phase_info.mac"
+#undef PHASEelement
+#undef SUBPHASEelement
+#undef OPTCYCLEelement
+#undef OPTINCYCelement
+#undef OPTINCYCFUNelement
+    PHALL_final
+} compiler_allphase_t;
 
 typedef enum { F_prog, F_modimp, F_classimp, F_modspec, F_unknown } file_type;
 

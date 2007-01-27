@@ -24,7 +24,7 @@ PHDdriveScanParse (node *syntax_tree)
 
     syntax_tree = PHrunCompilerSubPhase (SUBPH_loc, syntax_tree, ALWAYS);
     syntax_tree = PHrunCompilerSubPhase (SUBPH_cpp, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_sp, syntax_tree, ALWAYS);
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_prs, syntax_tree, ALWAYS);
 
     DBUG_RETURN (syntax_tree);
 }
@@ -68,7 +68,7 @@ PHDdriveCodeSimplification (node *syntax_tree)
     syntax_tree = PHrunCompilerSubPhase (SUBPH_w2d, syntax_tree, ALWAYS);
     syntax_tree = PHrunCompilerSubPhase (SUBPH_hce, syntax_tree, ALWAYS);
     syntax_tree = PHrunCompilerSubPhase (SUBPH_hm, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_flat, syntax_tree, ALWAYS);
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_flt, syntax_tree, ALWAYS);
 
     DBUG_RETURN (syntax_tree);
 }
@@ -100,7 +100,7 @@ PHDdriveTypechecking (node *syntax_tree)
 {
     DBUG_ENTER ("PHDdriveTypechecking");
 
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_tc, syntax_tree, ALWAYS);
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_ti, syntax_tree, ALWAYS);
     syntax_tree = PHrunCompilerSubPhase (SUBPH_eat, syntax_tree, ALWAYS);
     syntax_tree = PHrunCompilerSubPhase (SUBPH_ebt, syntax_tree, ALWAYS);
     syntax_tree = PHrunCompilerSubPhase (SUBPH_swr, syntax_tree, ALWAYS);
@@ -170,7 +170,10 @@ PHDdriveOptimization (node *syntax_tree)
       = PHrunCompilerSubPhase (SUBPH_isaa, syntax_tree,
                                global.optimize.dosaacyc && global.optimize.dodcr);
 
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_intraopt, syntax_tree, ALWAYS);
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_cyc, syntax_tree, ALWAYS);
+
+    syntax_tree
+      = PHrunCompilerSubPhase (SUBPH_scyc, syntax_tree, global.run_stabilization_cycle);
 
     syntax_tree = PHrunCompilerSubPhase (SUBPH_lir2, syntax_tree, global.optimize.dolir);
     syntax_tree = PHrunCompilerSubPhase (SUBPH_uesd, syntax_tree, global.optimize.doesd);

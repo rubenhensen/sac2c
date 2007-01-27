@@ -346,7 +346,7 @@ DEPdoPrintDependencies (node *syntax_tree)
         doPrintLibDependencies (syntax_tree);
     }
 
-    CTIterminateCompilation (PH_final, NULL, syntax_tree);
+    CTIterminateCompilation (syntax_tree);
 
     DBUG_RETURN (syntax_tree);
 }

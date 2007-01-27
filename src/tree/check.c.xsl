@@ -700,12 +700,12 @@ node *CHKdoTreeCheck( node *syntax_tree)
  ************************************************************************* -->
 
   <xsl:template match="range">
-    <xsl:value-of select="'|| (( global.compiler_subphase &gt;= '"/>
-    <xsl:value-of select="'SUBPH_'"/>
+    <xsl:value-of select="'|| (( global.compiler_allphase &gt;= '"/>
+    <xsl:value-of select="'PHALL_'"/>
     <xsl:value-of select="@from"/>
     <xsl:value-of select="')'"/>
-    <xsl:value-of select="' &amp;&amp; ( global.compiler_subphase &lt; '"/>
-    <xsl:value-of select="'SUBPH_'"/>
+    <xsl:value-of select="' &amp;&amp; ( global.compiler_allphase &lt; '"/>
+    <xsl:value-of select="'PHALL_'"/>
     <xsl:value-of select="@to"/>
     <xsl:value-of select="'))'"/>
   </xsl:template>

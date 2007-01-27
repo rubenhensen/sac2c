@@ -246,16 +246,13 @@ TOTdoToOldTypes (node *syntax_tree)
 
     DBUG_ENTER ("ToOldTypes");
 
-    if (global.compiler_phase > PH_typecheck) {
+    TRAVpush (TR_tot);
 
-        TRAVpush (TR_tot);
+    arg_info = MakeInfo ();
+    syntax_tree = TRAVdo (syntax_tree, arg_info);
+    arg_info = FreeInfo (arg_info);
 
-        arg_info = MakeInfo ();
-        syntax_tree = TRAVdo (syntax_tree, arg_info);
-        arg_info = FreeInfo (arg_info);
-
-        TRAVpop ();
-    }
+    TRAVpop ();
 
     DBUG_RETURN (syntax_tree);
 }

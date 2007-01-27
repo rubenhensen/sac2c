@@ -1916,7 +1916,7 @@ PRTassign (node *arg_node, info *arg_info)
 
     trav_instr = TRUE;
     if (NODE_TYPE (instr) == N_annotate) {
-        if (global.compiler_phase < PH_compile) {
+        if (global.compiler_phase < PH_cp) {
             trav_instr = FALSE;
             trav_instr = TRUE;
         }
@@ -4863,7 +4863,7 @@ PRTdataflownode (node *arg_node, info *arg_info)
         fprintf (global.outfile, "%s: %s, REFCOUNT: %i", DATAFLOWNODE_NAME (arg_node),
                  MUTHLIBdecodeExecmode (DATAFLOWNODE_EXECMODE (arg_node)),
                  DATAFLOWNODE_REFCOUNT (arg_node));
-        if (global.break_after == PH_multithread) {
+        if (global.break_after == PH_mt) {
             fprintf (global.outfile, ", REFLEFT: %i, USED: %i\n",
                      DATAFLOWNODE_REFLEFT (arg_node), DATAFLOWNODE_ISUSED (arg_node));
         } else {

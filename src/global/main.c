@@ -25,6 +25,8 @@
 static node *
 SetupCompiler (int argc, char *argv[])
 {
+    node *syntax_tree = NULL;
+
     DBUG_ENTER ("SetupCompiler");
 
     setlocale (LC_ALL, "en_US");
@@ -41,7 +43,9 @@ SetupCompiler (int argc, char *argv[])
 
     LIBSprintLibStat ();
 
-    DBUG_RETURN (NULL);
+    CTIabortOnError ();
+
+    DBUG_RETURN (syntax_tree);
 }
 
 /*
@@ -78,7 +82,7 @@ main (int argc, char *argv[])
      * Now, we are done.
      */
 
-    CTIterminateCompilation (PH_final, "", syntax_tree);
+    CTIterminateCompilation (syntax_tree);
 
     return (0);
 }

@@ -34,8 +34,7 @@ extern void CTIwarnContinued (const char *format, ...);
 extern int CTIgetWarnMessageLineLength ();
 extern void CTIstate (const char *format, ...);
 extern void CTInote (const char *format, ...);
-extern void CTIterminateCompilation (compiler_phase_t phase, char *break_specifier,
-                                     node *syntax_tree);
+extern void CTIterminateCompilation (node *syntax_tree);
 extern const char *CTIitemName (node *item);
 
 #endif /* _SAC_CTINFO_H_ */

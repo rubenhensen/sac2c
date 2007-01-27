@@ -965,7 +965,7 @@ TransformIntoDoLoop (node *fundef, info *arg_info)
      */
 
     if (NODE_TYPE (cond) != N_return) {
-        if (global.compiler_phase >= PH_memory) {
+        if (global.compiler_phase >= PH_mm) {
             /*
              * Adjust_RC Operations in the THEN-Tree must be moved
              * in to the Do-Loops SKIP-Block

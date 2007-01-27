@@ -907,19 +907,20 @@ CTInote (const char *format, ...)
  ******************************************************************************/
 
 void
-CTIterminateCompilation (compiler_phase_t phase, char *break_specifier, node *syntax_tree)
+CTIterminateCompilation (node *syntax_tree)
 {
     DBUG_ENTER ("CTIterminateCompilation");
 
     /*
-     * Upon premature termination of compilation process show compiler resources
-     * or syntax tree if available.
+     * Upon premature termination of compilation process show
+     * syntax tree if available.
      */
 
-    if (global.print_after_break) {
-        if ((phase <= PH_compile) && (syntax_tree != NULL)) {
-            syntax_tree = PRTdoPrint (syntax_tree);
-        }
+    if (global.print_after_break && (syntax_tree != NULL)
+        && (global.compiler_subphase <= SUBPH_comp)
+        && ((global.break_after < PH_final) || (global.break_after_subphase < SUBPH_final)
+            || (global.break_after_optincyc < OIC_final))) {
+        syntax_tree = PRTdoPrint (syntax_tree);
     }
 
     /*
@@ -937,26 +938,31 @@ CTIterminateCompilation (compiler_phase_t phase, char *break_specifier, node *sy
      */
 
     CTIstate (" ");
-    CTIstate ("*** Compilation successful ***");
+    CTIstate ("** Compilation successful");
 
-    if (phase < PH_final) {
-        CTIstate ("*** BREAK after: %s", PHphaseName (phase));
-        if (break_specifier != NULL) {
-            CTIstate ("*** BREAK specifier: '%s`", break_specifier);
-        }
+    if (global.break_after < PH_final) {
+        CTIstate ("** BREAK after: %s\n", PHphaseName (global.compiler_phase));
+    } else if (global.break_after_subphase < SUBPH_final) {
+        CTIstate ("** BREAK during: %s\n", PHphaseName (global.compiler_phase));
+        CTIstate ("** BREAK after:  %s\n", PHsubPhaseName (global.compiler_subphase));
+    } else if (global.break_after_optincyc < OIC_final) {
+        CTIstate ("** BREAK during: %s\n", PHphaseName (global.compiler_phase));
+        CTIstate ("** BREAK during: %s\n", PHsubPhaseName (global.compiler_subphase));
+        CTIstate ("** BREAK in cycle:  %d\n", global.break_cycle_specifier);
+        CTIstate ("** BREAK after:  %s\n", PHoptInCycName (global.break_after_optincyc));
     }
 
 #ifdef SHOW_MALLOC
     CHKMdeinitialize ();
 
-    CTIstate ("*** Maximum allocated memory (bytes):   %s",
+    CTIstate ("** Maximum allocated memory (bytes):   %s",
               CVintBytes2String (global.max_allocated_mem));
-    CTIstate ("*** Currently allocated memory (bytes): %s",
+    CTIstate ("** Currently allocated memory (bytes): %s",
               CVintBytes2String (global.current_allocated_mem));
 #endif
 
-    CTIstate ("*** Exit code 0");
-    CTIstate ("*** 0 error(s), %d warning(s)", warnings);
+    CTIstate ("** Exit code 0");
+    CTIstate ("** 0 error(s), %d warning(s)", warnings);
     CTIstate (" ");
 
     exit (0);

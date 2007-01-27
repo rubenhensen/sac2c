@@ -518,21 +518,20 @@ GLOBAL (compiler_phase_t, break_after, PH_final)
  * Stop compilation process after given phase.
  */
 
-GLOBAL (int, break_cycle_specifier, -1)
+GLOBAL (compiler_subphase_t, break_after_subphase, SUBPH_final)
+/*
+ * Stop compilation process after given subphase.
+ */
+
+GLOBAL (compiler_optincyc_t, break_after_optincyc, OIC_final)
+/*
+ * Stop compilation process after given cycle optimization.
+ */
+
+GLOBAL (int, break_cycle_specifier, 1)
 /*
  * Additional break specifier that allows a designated break within
  * a particular (optimization) loop.
- */
-
-GLOBAL (char *, break_specifier, "")
-/*
- * Additional break specifier to allow breaking within a particular
- * compiler phase at any position.
- */
-
-GLOBAL (char *, break_opt_specifier, "")
-/*
- * Additional break specifier to allow breaking after a certain optimization
  */
 
 GLOBAL (genlib_flags_t, genlib, genlib_init)
@@ -596,7 +595,22 @@ GLOBAL (compiler_phase_t, compiler_phase, PH_initial)
 
 GLOBAL (compiler_subphase_t, compiler_subphase, SUBPH_initial)
 /*
- * Counter for compilation phases
+ * Counter for compilation subphases
+ */
+
+GLOBAL (compiler_optincyc_t, compiler_optincyc, OIC_initial)
+/*
+ * Counter for cycle optimizations
+ */
+
+GLOBAL (compiler_allphase_t, compiler_allphase, PHALL_initial)
+/*
+ * Counter for phase kinds
+ */
+
+GLOBAL (bool, run_stabilization_cycle, TRUE)
+/*
+ * Counter for phase kinds
  */
 
 GLOBAL (int, linenum, 1)

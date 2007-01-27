@@ -1,101 +1,9 @@
 /*
+ * $Id$
  *
- * $Log$
- * Revision 3.20  2005/06/29 18:32:14  sah
- * added CVbasetype2ShortString
- *
- * Revision 3.19  2004/12/07 14:37:45  sbs
- * eliminated CVoldTypeSignature2String
- *
- * Revision 3.18  2004/11/25 18:10:15  jhb
- * compile
- *
- * Revision 3.16  2002/10/29 17:34:09  dkr
- * Type2String() modified: 'X' used for dot-shapes instead of 'x'
- *
- * Revision 3.15  2002/10/08 01:51:46  dkr
- * Type2String() corrected
- *
- * Revision 3.14  2002/09/16 14:24:58  dkr
- * Type2String() modified: some spaces in output removed
- *
- * Revision 3.13  2002/09/09 20:36:27  dkr
- * Type2String() corrected
- *
- * Revision 3.12  2002/08/13 17:22:05  dkr
- * IntBytes2String: argument is unsigned now
- *
- * Revision 3.11  2002/08/05 17:03:01  sbs
- * OldTypeSignature2String added
- *
- * Revision 3.10  2002/03/05 17:49:22  sbs
- * Type2String now handles NULL pointers as well 8-))
- *
- * Revision 3.9  2001/06/28 09:26:06  cg
- * Syntax of array types changed:
- * int[] -> int[+]  and  int[?] -> int[*]
- * int[] is still supported as input.
- *
- * Revision 3.8  2001/05/17 10:03:24  nmw
- * type mistake in IntByte2String corrected, warning eliminated
- *
- * Revision 3.7  2001/05/17 07:35:11  sbs
- * IntBytes2String added
- * Malloc / Free checked
- *
- * Revision 3.6  2001/03/15 16:53:52  dkr
- * Type2String: types->id and the '&' for reference objects are no longer
- * printed here!
- * Note, that types->id and types->attrib is *not* part of the virtual
- * TYPES 'types'!!
- *
- * Revision 3.5  2001/03/15 15:48:28  dkr
- * Type2String streamlined
- *
- * Revision 3.3  2001/03/15 11:59:16  dkr
- * ST_inout replaced by ST_reference
- *
- * Revision 3.2  2001/02/14 10:16:23  dkr
- * Type2String: access macros used
- *
- * Revision 3.1  2000/11/20 17:59:43  sacbase
- * new release made
- *
- * Revision 2.11  2000/10/30 19:24:44  dkr
- * Type2String: in case of ST_inout a '&' is printed now
- *
- * Revision 2.10  2000/10/27 13:24:04  cg
- * Added new functions Basetype2String() and Shpseg2String().
- *
- * Revision 2.9  2000/08/17 10:08:19  dkr
- * comments for Type2String modified
- *
- * Revision 2.8  2000/06/14 12:59:32  nmw
- * Added flag=4 to print only first type in return list
- *
- * Revision 2.7  1999/10/19 12:57:25  sacbase
- * inclusion of type_info.mac adjusted to new .mac mechanism
- *
- * Revision 2.6  1999/04/15 15:00:56  cg
- * Now, enough memory is allocated for string representation
- * of floating point numbers.
- *
- * Revision 2.5  1999/04/14 16:25:41  jhs
- * int[*] removed for second try with empty arrays.
- *
- * Revision 2.4  1999/04/09 13:54:07  jhs
- * No changes made, error not in this file.
- *
- * Revision 2.3  1999/04/08 17:17:45  jhs
- * Handling for empty arrays added.
- *
- * Revision 2.2  1999/04/01 13:35:54  cg
- * added lots of '(' and ')' to avoid ambiguity warnings.
- * bug fixed in conversion of float and double constants into
- * strings.
- *
- * [ ... ]
- *
+ */
+
+/*
  * Revision 1.1  1994/12/05  13:20:47  hw
  * Initial revision
  *
@@ -228,7 +136,7 @@ CVtype2String (types *type, int flag, bool all)
             if (TYPES_BASETYPE (type) == T_user) {
                 if ((flag != 3) && (TYPES_MOD (type) != NULL)) {
                     strcat (tmp_string, TYPES_MOD (type));
-                    if (global.compiler_phase >= PH_precompile) {
+                    if (global.compiler_phase >= PH_pc) {
                         strcat (tmp_string, "__");
                     } else {
                         strcat (tmp_string, ":");

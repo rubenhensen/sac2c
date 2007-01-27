@@ -530,24 +530,11 @@ L2FdoLac2Fun (node *syntax_tree)
 
     DBUG_ENTER ("Lac2Fun");
 
-#ifndef DBUG_OFF
-    if (global.compiler_phase == PH_sacopt) {
-        DBUG_PRINT ("OPT", ("LAC2FUN"));
-        DBUG_PRINT ("OPT", ("  inferring DFMs"));
-    }
-#endif
-
     /*
      * infer the in-, out- and local-masks of each conditional or loop
      * (via fixpoint iteration)
      */
     syntax_tree = INFDFMSdoInferDfms (syntax_tree, HIDE_LOCALS_LAC);
-
-#ifndef DBUG_OFF
-    if (global.compiler_phase == PH_sacopt) {
-        DBUG_PRINT ("OPT", ("  transforming loops and conditionals"));
-    }
-#endif
 
     info = MakeInfo ();
 
@@ -562,22 +549,10 @@ L2FdoLac2Fun (node *syntax_tree)
      */
     syntax_tree = CUDdoCleanupDecls (syntax_tree);
 
-#ifndef DBUG_OFF
-    if (global.compiler_phase == PH_sacopt) {
-        DBUG_PRINT ("OPT", ("  removing DFMs"));
-    }
-#endif
-
     /*
      * so we do not need the DFMs anymore
      */
     syntax_tree = RDFMSdoRemoveDfms (syntax_tree);
-
-#ifndef DBUG_OFF
-    if (global.compiler_phase == PH_sacopt) {
-        DBUG_PRINT ("OPT", ("                        done"));
-    }
-#endif
 
     DBUG_RETURN (syntax_tree);
 }

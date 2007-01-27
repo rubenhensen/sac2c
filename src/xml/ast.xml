@@ -6129,13 +6129,13 @@ identifier (N_id) for AUD arrays.
             <target mandatory="no">
               <set name="Expr" />
               <phases>
-                <range from="sp" to="flat" />
+                <range from="sp" to="flt" />
               </phases>
             </target>
             <target mandatory="no">
               <node name="SPId" />
               <phases>
-                <range from="flat" to="insvd" />
+                <range from="flt" to="insvd" />
               </phases>
             </target>
             <target mandatory="no">
