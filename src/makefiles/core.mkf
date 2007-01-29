@@ -48,7 +48,8 @@ TARGETFILES_PROD     := $(addsuffix .prod.o,$(TARGETFILES))
 TARGETFILES_DEVEL_MT := $(addsuffix .mt.o,$(TARGETFILES))
 TARGETFILES_PROD_MT  := $(addsuffix .mt.prod.o,$(TARGETFILES))
 
-TARGETFILES_HEADER   := $(addsuffix .h,$(TARGETFILES))
+TARGETFILES_HEADER   := $(addsuffix .h,\
+                          $(foreach target,$(TARGETDIR),$(addprefix $(target)/,$($(runtime)))))
 
 
 LIB  := -L../lib -lcommon 

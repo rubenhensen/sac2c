@@ -34,7 +34,7 @@ PROJECT_ROOT := .
 HIDE := @
 DEPS := yes
 
-include $(PROJECT_ROOT)/src/makefiles/config.mkf
+-include $(PROJECT_ROOT)/src/makefiles/config.mkf
 
 
 ###############################################################################

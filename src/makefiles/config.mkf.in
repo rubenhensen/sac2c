@@ -27,7 +27,7 @@ DISABLE_PHM  := @DISABLE_PHM@
 # svn setup:
 #
 
-REV := $(shell svn info | grep Revision: | sed -e 's/Revision: //g')
+REVISION     := $(shell svn info | grep Revision: | sed -e 's/Revision: //g')
 
 
 ################################################################################
@@ -75,11 +75,6 @@ INCS         := -I../../include \
 
 LIBS         := @LIBS@@LEXLIB@
 EFLIBS       := -lefence
-
-CONFIGURED   := $(PROJECT_ROOT)/src/makefiles/config.mkf \
-                $(PROJECT_ROOT)/src/include/config.h \
-                $(PROJECT_ROOT)/configure
-AUTOHEADERED := $(PROJECT_ROOT)/src/include/config.h.in
 
 ifeq ($(OS),solaris2.8)
   YYFLAGS   := -DYYDEBUG=1 -DYYLMAX=8192

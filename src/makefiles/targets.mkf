@@ -115,7 +115,7 @@ runtime         = core_h extras_h interface_h mt_h phm_h
 
 libsacprelude   = 
 
-libsac          = core interface mt phm cachesim
+libsac          = core mt phm cachesim # interface
 
 libsacphm       = heap diag opt compat
 
@@ -281,7 +281,7 @@ print           = print convert
 #
 
 core_h          = audwl commandline icm prf std std_gen message \
-                  bool errors idx misc serialize wl
+                  bool errors idx misc wl
 
 extras_h        = cachesim profile runtimecheck trace
 

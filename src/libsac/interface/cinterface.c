@@ -1,11 +1,13 @@
-/* $Id$ */
+/*
+ * $Id$
+ */
 
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+
 #include "sac.h"
-#include "sac_cinterface.h"
 
 /* SAC_InitRuntimeSystem() and SAC_FreeRuntimeSystem() are not part
  * of the CInterface. These functions are implemented in each c-library

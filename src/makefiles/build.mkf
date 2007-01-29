@@ -105,14 +105,14 @@ $(PROJECT_ROOT)/lib/libsacprelude.so: $(TARGETFILES_DEVEL)
 	@$(TOUCH) .done
 	@$(CLOCK_SKEW_ELIMINATION)  
 
-$(PROJECT_ROOT)/lib/lib%.a: $(TARGETFILES_DEVEL) #$(TARGETFILES_DEVEL_MT) 
+$(PROJECT_ROOT)/lib/lib%.a: $(TARGETFILES_DEVEL) $(TARGETFILES_DEVEL_MT) 
 	@$(ECHO) ""
 	@$(ECHO) "Creating $(PREFIX_ROOT)lib/lib$*.a (developer version)"
 	$(HIDE) $(AR) $@ $(TARGETFILES_DEVEL)
 	$(HIDE) $(RANLIB) $@
 	@$(ECHO) "Creating $(PREFIX_ROOT)lib/lib$*_mt.a (developer version)"
-	$(HIDE) $(AR)  $(PROJECT_ROOT)/lib/lib%_mt.a$(TARGETFILES_DEVEL_MT) 
-	$(HIDE) $(RANLIB) $(PROJECT_ROOT)/lib/lib%_mt.a
+	$(HIDE) $(AR)  $(PROJECT_ROOT)/lib/lib$*_mt.a $(TARGETFILES_DEVEL_MT) 
+	$(HIDE) $(RANLIB) $(PROJECT_ROOT)/lib/lib$*_mt.a
 	@$(RM) .make_track
 	@$(TOUCH) .done
 	@$(CLOCK_SKEW_ELIMINATION)  
@@ -123,8 +123,8 @@ $(PROJECT_ROOT)/lib/lib%.prod.a:  $(TARGETFILES_PROD) $(TARGETFILES_PROD_MT)
 	$(HIDE) $(AR) $@ $^
 	$(HIDE) $(RANLIB) $@
 	@$(ECHO) "Creating $(PREFIX_ROOT)lib/lib$*_mt.a (product version)"
-	$(HIDE) $(AR)  $(PROJECT_ROOT)/lib/lib%_mt.a$(TARGETFILES_DEVEL_MT) 
-	$(HIDE) $(RANLIB) $(PROJECT_ROOT)/lib/lib%_mt.a
+	$(HIDE) $(AR)  $(PROJECT_ROOT)/lib/lib$*_mt.a $(TARGETFILES_DEVEL_MT) 
+	$(HIDE) $(RANLIB) $(PROJECT_ROOT)/lib/lib$*_mt.a
 	@$(RM) .make_track
 	@$(TOUCH) .done
 	@$(CLOCK_SKEW_ELIMINATION)  
