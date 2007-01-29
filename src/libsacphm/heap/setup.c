@@ -1,39 +1,6 @@
 /*
  *
- * $Log$
- * Revision 3.4  2003/04/15 09:02:29  sbs
- * binsize and min_chunk_size only defined when creating the MT versions.
- * Otherwise, these are not used.
- *
- * Revision 3.3  2003/04/14 14:43:50  sbs
- * casts from int into unsigned int added for comparison of num_threads.
- *
- * Revision 3.2  2003/03/20 14:00:18  sbs
- * config.h included; HAVE_MALLOC_H used.
- *
- * Revision 3.1  2000/11/20 18:02:56  sacbase
- * new release made
- *
- * Revision 1.6  2000/05/24 09:32:35  cg
- * Added dummy definition of SAC_HM_ShowDiagnostics().
- * Heap manager diagnostics are now printed after termination through
- * runtime error.
- *
- * Revision 1.5  2000/03/02 16:46:02  jhs
- * including malloc.h while compiling unter LINUX_X86
- *
- * Revision 1.4  2000/02/07 09:51:59  cg
- * Changed setting of semicolons in definitions and declarations of
- * mutex locks in order to avoid nasty warnings from cc.
- *
- * Revision 1.3  2000/01/17 19:48:01  cg
- * Removed debug code.
- *
- * Revision 1.2  2000/01/17 16:25:58  cg
- * Added multi-threading capabilities to the heap manager.
- *
- * Revision 1.1  2000/01/03 17:33:17  cg
- * Initial revision
+ * $Id$
  *
  *
  */
@@ -59,7 +26,6 @@
 #endif
 
 #include "heapmgr.h"
-#include "sac_message.h"
 
 /*
  * Heap management configuration data.

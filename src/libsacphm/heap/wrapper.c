@@ -1,23 +1,6 @@
 /*
  *
- * $Log$
- * Revision 3.2  2000/12/29 14:24:41  cg
- * When compiling for multithreaded execution, any function gets one additional
- * parameter to hold the thread ID, which is needed for heap management.
- * Thread-specific data is only used by malloc().
- *
- * Revision 3.1  2000/11/20 18:02:57  sacbase
- * new release made
- *
- * Revision 1.3  2000/01/17 17:58:45  cg
- * Added support for optimized allocation of refernce counters.
- *
- * Revision 1.2  2000/01/17 16:25:58  cg
- * Added multi-threading capabilities to the heap manager.
- *
- * Revision 1.1  2000/01/03 17:33:17  cg
- * Initial revision
- *
+ * $Id$
  *
  */
 

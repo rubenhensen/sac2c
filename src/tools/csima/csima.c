@@ -1,30 +1,5 @@
 /*
- * $Log$
- * Revision 3.2  2000/11/21 17:35:37  cg
- * Bug fixed in piped cache simulation on selected blocks:
- * Block characterization tags are encoded for piping in a way that
- * all blank characters are replaced by '+'.
- *
- * Revision 3.1  2000/11/20 18:02:48  sacbase
- * new release made
- *
- * Revision 2.1  1999/07/08 12:00:25  cg
- * initial revision
- *
- * Revision 1.7  1999/07/02 10:05:51  cg
- * Result presentation beautified.
- *
- * Revision 1.6  1999/06/11 12:56:58  cg
- * Analyser made compatible to substantial improvements in
- * cache simulation library.
- *
- * Revision 1.5  1999/06/10 09:51:20  cg
- * Added piped cache simulation on remote host machine.
- *
- * Revision 1.4  1999/05/20 14:14:37  cg
- * Input scanning facilities optimized.
- * All simulation parameters may now be set dynamically, including
- * global/blocked simulation.
+ * $Id$
  *
  *
  */
@@ -45,8 +20,8 @@
  *****************************************************************************/
 
 #include <stdio.h>
-#include "sac_cachesim.h"
-#include "sac_message.h"
+
+#include "sac.h"
 #include "cachesim.h"
 
 static void

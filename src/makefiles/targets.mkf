@@ -31,12 +31,12 @@ targets_libsacprelude_devel    := libsacprelude.so
 targets_libsacprelude_prod     := libsacprelude.prod.so
 targets_libsacprelude_default  := $(targets_libsacprelude_devel)
 
-targets_libsac_devel           := libsac.devel.a
-targets_libsac_prod            := libsac.a
+targets_libsac_devel           := libsac.devel.a libsac_mt.devel.a
+targets_libsac_prod            := libsac.a libsac_mt.a
 targets_libsac_default         := $(targets_libsac_prod)
 
-targets_libsacphm_devel        := libsacphm.devel
-targets_libsacphm_prod         := libsacphm
+targets_libsacphm_devel        := libsacphm.devel.a libsacphm_mt.devel.a
+targets_libsacphm_prod         := libsacphm.a libsacphm_mt.a
 targets_libsacphm_default      := $(targets_libsacphm_prod)
 
 targets_tools_devel            := csima csim

@@ -33,10 +33,10 @@ DEPS := yes
 include $(PROJECT_ROOT)/src/makefiles/config.mkf
 include $(PROJECT_ROOT)/src/makefiles/targets.mkf
 
-SUBPROJECT          := $(notdir $(CURDIR))
-SUBPROJECT_DIRS     := $($(SUBPROJECT))
+SUBPROJECT           := $(notdir $(CURDIR))
+SUBPROJECT_DIRS      := $($(SUBPROJECT))
 
-SOURCE_DIRS         := $(TARGETDIR)
+SOURCE_DIRS          := $(TARGETDIR)
 
 TARGETFILES          := $(foreach target,$(TARGETDIR),$(addprefix $(target)/,$($(target))))
 
@@ -49,10 +49,11 @@ TARGETFILES_DEVEL_MT := $(addsuffix .mt.o,$(TARGETFILES))
 TARGETFILES_PROD_MT  := $(addsuffix .mt.prod.o,$(TARGETFILES))
 
 TARGETFILES_HEADER   := $(addsuffix .h,\
-                          $(foreach target,$(TARGETDIR),$(addprefix $(target)/,$($(runtime)))))
+                          $(foreach target,$(TARGETDIR),\
+                            $(addprefix $(target)/,$($(runtime)))))
 
 
-LIB  := -L../lib -lcommon 
+LIB  := -L../lib -L../../lib -lsac -lcommon
 INCS := -I../../include -I../include $(patsubst %,-I%,$(SUBPROJECT_DIRS))
 
 XML_DIR     := $(PROJECT_ROOT)/src/libsac2c/xml
@@ -68,11 +69,11 @@ GENERATED_SOURCE_FILES := $(patsubst %.xsl,%,$(foreach dir,$(SOURCE_DIRS),$(wild
                           $(patsubst %.y,%.tab.c,$(foreach dir,$(SOURCE_DIRS),$(wildcard $(dir)/*.y))) \
                           $(patsubst %.l,%.lex.c,$(foreach dir,$(SOURCE_DIRS),$(wildcard $(dir)/*.l))) \
 
-GENERATED_FILES := $(GENERATED_INCLUDE_FILES) $(GENERATED_SOURCE_FILES)
+GENERATED_FILES  := $(GENERATED_INCLUDE_FILES) $(GENERATED_SOURCE_FILES)
 
 DEPENDENCY_FILES := $(patsubst %.o,%.d,$(TARGETFILES_DEVEL))
 
-DEPENDENCIES := $(foreach file,$(DEPENDENCY_FILES),$(dir $(file)).$(notdir $(file)))
+DEPENDENCIES     := $(foreach file,$(DEPENDENCY_FILES),$(dir $(file)).$(notdir $(file)))
 
 
   

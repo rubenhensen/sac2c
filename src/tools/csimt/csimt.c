@@ -1,24 +1,11 @@
 /*
- * $Log$
- * Revision 3.1  2000/11/20 18:02:49  sacbase
- * new release made
- *
- * Revision 1.4  2000/01/27 11:11:27  her
- * removed the suscicious pointer arithmetic on a void*.
- *
- * Revision 1.3  1999/07/08 12:01:31  cg
- * File moved to new directory src/tools
- *
- * Revision 1.2  1999/04/26 09:32:28  her
- * fixed some things
- *
- * Revision 1.1  1999/03/19 11:02:43  her
- * Initial revision
+ * $Id$
  *
  */
 
 #include <stdio.h>
-#include "sac_cachesim.h"
+
+#include "sac.h"
 
 int
 main ()

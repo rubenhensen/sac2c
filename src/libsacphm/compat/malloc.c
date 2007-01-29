@@ -1,47 +1,6 @@
 /*
  *
- * $Log$
- * Revision 3.2  2000/12/06 18:11:01  cg
- * Added initial version of array placement.
- *
- * Revision 3.1  2000/11/20 18:02:54  sacbase
- * new release made
- *
- * Revision 1.4  2000/02/04 17:23:14  cg
- * Bug fixed in free(), dignostic heap management now works with
- * refernce counter allocation optimization.
- *
- * Revision 1.3  2000/01/17 17:58:45  cg
- * Added support for optimized allocation of refernce counters.
- *
- * Revision 1.2  2000/01/17 16:25:58  cg
- * Added multi-threading capabilities to the heap manager.
- *
- * Revision 1.1  2000/01/03 17:33:17  cg
- * Initial revision
- *
- *
- */
-
-/*
- * Revision 1.4  1999/09/17 14:33:34  cg
- * New version of SAC heap manager:
- *  - no special API functions for top arena.
- *  - coalascing is always done deferred.
- *  - no doubly linked free lists any more.
- *
- * Revision 1.3  1999/07/29 07:35:41  cg
- * Two new performance related features added to SAC private heap
- * management:
- *   - pre-splitting for arenas with fixed size chunks.
- *   - deferred coalascing for arenas with variable chunk sizes.
- *
- * Revision 1.2  1999/07/16 09:41:16  cg
- * Added facilities for heap management diagnostics.
- *
- * Revision 1.1  1999/07/08 12:28:56  cg
- * Initial revision
- *
+ * $Id$
  *
  */
 

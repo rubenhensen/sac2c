@@ -1,38 +1,6 @@
 /*
  *
- * $Log$
- * Revision 3.3  2003/04/15 09:01:54  sbs
- * binsize[] eliminated entirely as it is used nowhere.
- *
- * Revision 3.2  2003/04/14 14:47:56  sbs
- * t casted into unisgned int for comparison with num_threads.
- *
- * Revision 3.1  2000/11/20 18:02:52  sacbase
- * new release made
- *
- * Revision 1.2  2000/01/17 16:25:58  cg
- * Added multi-threading capabilities to the heap manager.
- *
- * Revision 1.1  2000/01/03 17:33:17  cg
- * Initial revision
- *
- *
- */
-
-/*
- * Revision 1.3  1999/11/02 14:29:25  sbs
- * output changed so that it is more "obvious" that the mem-usage in the arena
- * actually is a multiple of the binsize!
- *
- * Revision 1.2  1999/09/17 14:33:34  cg
- * New version of SAC heap manager:
- *  - no special API functions for top arena.
- *  - coalascing is always done deferred.
- *  - no doubly linked free lists any more.
- *
- * Revision 1.1  1999/09/16 09:22:25  cg
- * Initial revision
- *
+ * $Id$
  *
  */
 
@@ -63,7 +31,6 @@
 #include <stdlib.h>
 
 #include "heapmgr.h"
-#include "sac_message.h"
 
 #ifdef DIAG
 

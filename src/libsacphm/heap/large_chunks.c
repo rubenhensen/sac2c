@@ -1,22 +1,6 @@
 /*
  *
- * $Log$
- * Revision 3.3  2000/12/13 14:54:12  sbs
- * eliminated true_arena in SAC_HM_FreeLargeChunk since it simply was
- * not used!
- *
- * Revision 3.2  2000/12/06 18:11:01  cg
- * Added initial version of array placement.
- *
- * Revision 3.1  2000/11/20 18:02:54  sacbase
- * new release made
- *
- * Revision 1.2  2000/01/17 16:25:58  cg
- * Added multi-threading capabilities to the heap manager.
- *
- * Revision 1.1  2000/01/03 17:33:17  cg
- * Initial revision
- *
+ * $Id$
  *
  */
 
@@ -38,7 +22,6 @@
 #include <stdlib.h>
 
 #include "heapmgr.h"
-#include "sac_message.h"
 
 /******************************************************************************
  *

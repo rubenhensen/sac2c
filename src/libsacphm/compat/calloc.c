@@ -1,34 +1,6 @@
 /*
  *
- * $Log$
- * Revision 3.2  2003/09/16 14:00:18  dkr
- * *** empty log message ***
- *
- * Revision 3.1  2000/11/20 18:02:51  sacbase
- * new release made
- *
- * Revision 1.2  2000/01/17 16:25:58  cg
- * Conventional heap management functions now have their
- * original prototypes using size_t.
- *
- * Revision 1.1  2000/01/03 17:33:17  cg
- * Initial revision
- *
- */
-
-/*
- *
- * Revision 1.3  1999/09/17 14:33:34  cg
- * New version of SAC heap manager:
- *  - no special API functions for top arena.
- *  - coalascing is always done deferred.
- *  - no doubly linked free lists any more.
- *
- * Revision 1.2  1999/07/16 09:41:16  cg
- * Added facilities for heap management diagnostics.
- *
- * Revision 1.1  1999/07/08 12:28:56  cg
- * Initial revision
+ * $Id$
  *
  */
 

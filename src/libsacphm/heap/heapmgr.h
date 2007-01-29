@@ -1,60 +1,6 @@
 /*
  *
- * $Log$
- * Revision 3.6  2003/10/08 15:50:23  cg
- * Central documentation of the SAC private heap manager now
- * addresses issues related to descriptor allocation optimization
- * (DAO) and memory size cache adjustment (MSCA).
- *
- * Revision 3.5  2003/09/16 13:59:56  dkr
- * sac_misc.h included
- *
- * Revision 3.4  2003/03/20 13:57:28  sbs
- * config.h included; SBRK_T used.
- *
- * Revision 3.3  2001/11/14 18:35:21  dkr
- * new target architecture SAC_FOR_OSX_MAC added
- *
- * Revision 3.2  2000/12/14 10:26:20  sbs
- * Neither _REENTRANT nor POSIX_SOURCE preset anymore since these will be set
- * in sac_mt.h anyways!
- *
- * Revision 3.1  2000/11/20 18:02:52  sacbase
- * new release made
- *
- * Revision 1.4  2000/11/13 16:45:40  cg
- * Added correct sbrk() casts for OSF_ALPHA platform.
- *
- * Revision 1.3  2000/01/17 19:47:44  cg
- * Adjusted target architecture discrimination to new project wide standard.
- *
- * Revision 1.2  2000/01/17 16:25:58  cg
- * Moved some declarations to sac_heapmgr.h
- *
- * Revision 1.1  2000/01/03 17:33:17  cg
- * Initial revision
- *
- */
-
-/*
- *
- * Revision 1.4  1999/09/17 14:33:34  cg
- * New version of SAC heap manager:
- *  - no special API functions for top arena.
- *  - coalascing is always done deferred.
- *  - no doubly linked free lists any more.
- *
- * Revision 1.3  1999/07/29 07:35:41  cg
- * Two new performance related features added to SAC private heap
- * management:
- *   - pre-splitting for arenas with fixed size chunks.
- *   - deferred coalascing for arenas with variable chunk sizes.
- *
- * Revision 1.2  1999/07/16 09:41:16  cg
- * Added facilities for heap management diagnostics.
- *
- * Revision 1.1  1999/07/08 12:28:56  cg
- * Initial revision
+ * $Id$
  *
  */
 
@@ -301,8 +247,8 @@
  *
  *****************************************************************************/
 
-#ifndef HEAPMGR_H
-#define HEAPMGR_H
+#ifndef _SAC_HEAPMGR_H_
+#define _SAC_HEAPMGR_H_
 
 #include "config.h"
 
@@ -310,20 +256,21 @@
 
 #define SAC_DO_MULTITHREAD 1
 #define SAC_DO_THREADS_STATIC 1
+
 #else
+
 #define SAC_DO_MULTITHREAD 0
+
 #endif /*  MT  */
-
-#include "sac_misc.h"
-#include "sac_mt.h"
-
-#undef SAC_DO_MULTITHREAD
-#undef SAC_DO_THREADS_STATIC
 
 #define SAC_DO_PHM 1
 #define SAC_COMPILE_SACLIB
-#include "sac_heapmgr.h"
-#undef SAC_COMPILE_LIB
+
+#include "sac.h"
+
+#undef SAC_COMPILE_SACLIB
+#undef SAC_DO_MULTITHREAD
+#undef SAC_DO_THREADS_STATIC
 
 /*
  * Macro definition of sbrk() system call
@@ -470,4 +417,4 @@ extern void SAC_HM_CheckDiagPatternAnyChunk (SAC_HM_header_t *addr);
 
 #endif /* DIAG */
 
-#endif /* HEAPMGR_H */
+#endif /* _SAC_HEAPMGR_H_ */
