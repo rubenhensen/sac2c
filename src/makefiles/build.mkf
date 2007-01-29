@@ -100,7 +100,7 @@ $(PROJECT_ROOT)/src/bin/%: $(TARGETFILES_PROD)
 $(PROJECT_ROOT)/lib/libsacprelude.so: $(TARGETFILES_DEVEL) 
 	@$(ECHO) ""
 	@$(ECHO) "Creating $(PREFIX_ROOT)lib/libsacprelude.so"
-	$(HIDE) $(PROJECT_ROOT)/bin/sac2c -v3 -o $(PROJECT_ROOT)/lib sacprelude.sac
+	$(HIDE) $(PROJECT_ROOT)/bin/sac2c -v0 -o $(PROJECT_ROOT)/lib sacprelude.sac
 	@$(RM) .make_track
 	@$(TOUCH) .done
 	@$(CLOCK_SKEW_ELIMINATION)  
