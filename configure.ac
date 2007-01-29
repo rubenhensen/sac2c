@@ -7,7 +7,7 @@ dnl on different hosts and os
 
 dnl tell configure who we are
 dnl parameters: package name, version, where to send bugreports
-AC_INIT(sac2c, rcs, info@sac-home.org)
+AC_INIT(sac2c, svn, info@sac-home.org)
 
 dnl set source directory and scripting directory
 AC_CONFIG_SRCDIR(.)
@@ -17,8 +17,8 @@ dnl we use C as our compiler language
 AC_LANG(C)
 
 dnl and which files to create
-AC_CONFIG_FILES(Makefile.Config src/runtime/sac2crc)
-AC_CONFIG_HEADER(./src/global/config.h)
+AC_CONFIG_FILES(src/makefiles/config.mkf include/sac2crc)
+AC_CONFIG_HEADER(src/include/config.h)
 
 dnl check for host type
 AC_CANONICAL_BUILD()
@@ -118,7 +118,7 @@ case "$GNUINDENT" in
       AC_MSG_RESULT(yes)
       ;;
     *)
-      CB="\$(PROJECT_ROOT)/tools/bin/cb"
+      CB="\$(PROJECT_ROOT)/src/bin/cb"
       AC_MSG_RESULT(no)
       ;;
     esac
@@ -133,7 +133,7 @@ if [ test "$YACC" != "yacc" ]; then
   AC_MSG_CHECKING([whether $YACC works])
   mkdir .ac_yacc_test
   cd .ac_yacc_test
-  cp ../src/scanparse/sac.y .
+  cp ../src/libsac2c/scanparse/sac.y .
   if [ $YACC sac.y >/dev/null 2>/dev/null ]; then
     AC_MSG_RESULT(ok)
   else
@@ -416,6 +416,7 @@ AC_DEFINE( PF_MAXFUNAP, 100,
 AC_DEFINE( PF_MAXFUNNAMELEN, 100, 
            [set to maximum length of sac function names for profiling])
 
+AC_DEFINE( SAC_PRELUDE_NAME, "sacprelude", [name of sac prelude])
 
 
 dnl generate the Makefile.Config out of Makefile.Config.in

@@ -1,0 +1,340 @@
+#
+# $Id$
+#
+#
+
+
+###############################################################################
+#
+# Collection of targets
+#
+
+targets_commonlib_devel        := libcommon.a
+targets_commonlib_prod         := libcommon.prod.a
+targets_commonlib_default      := $(targets_commonlib_devel)
+
+targets_maketools_devel        := cse.devel csd.devel cb.devel cachet.devel \
+                                  echo.devel md5calc.devel icmt.devel hzip.devel
+targets_maketools_prod         := cse csd cb cachet echo md5calc icmt hzip
+targets_maketools_default      := $(targets_maketools_prod)
+
+targets_libsac2c_devel         := sac2c
+targets_libsac2c_prod          := sac2c.prod
+targets_libsac2c_efence        := sac2c.efence
+targets_libsac2c_default       := $(targets_libsac2c_devel)
+
+targets_runtime_devel          := sac.h
+targets_runtime_prod           := sac.h
+targets_runtime_default        := sac.h
+
+targets_libsacprelude_devel    := libsacprelude.so
+targets_libsacprelude_prod     := libsacprelude.prod.so
+targets_libsacprelude_default  := $(targets_libsacprelude_devel)
+
+targets_libsac_devel           := libsac.devel.a
+targets_libsac_prod            := libsac.a
+targets_libsac_default         := $(targets_libsac_prod)
+
+targets_libsacphm_devel        := libsacphm.devel
+targets_libsacphm_prod         := libsacphm
+targets_libsacphm_default      := $(targets_libsacphm_prod)
+
+targets_tools_devel            := csima csim
+targets_tools_prod             := csima.prod csim.prod
+targets_tools_default          := $(targets_tools_devel)
+
+
+###############################################################################
+#
+# Collection of target directories
+#
+
+targetdir_commonlib       := src/lib
+targetdir_maketools       := src/bin
+targetdir_libsac2c        := bin
+targetdir_runtime         := include
+targetdir_libsacprelude   := lib
+targetdir_libsac          := lib
+targetdir_libsacphm       := lib
+targetdir_tools           := bin
+
+
+###############################################################################
+#
+# Collection of additional files to be cleaned
+#
+
+clean_commonlib           := 
+clean_commonlib_devel     := 
+clean_commonlib_prod      := 
+
+clean_maketools           := 
+clean_maketools_devel     := 
+clean_maketools_prod      := 
+
+clean_libsac2c            := sac2c.efence \
+                             ../src/libsac2c/global/build.c \
+                             ../src/libsac2c/global/build_prod.c
+
+clean_libsac2c_devel      := sac2c.efence \
+                             ../src/libsac2c/global/build.c
+
+clean_libsac2c_prod       := ../src/libsac2c/global/build_prod.c
+
+clean_runtime             :=
+clean_runtime_devel       :=
+clean_runtime_prod        :=
+
+clean_tools               :=
+clean_tools_devel         :=
+clean_tools_prod          :=
+
+clean_demo                :=
+clean_demo_devel          :=
+clean_demo_prod           :=
+
+
+###############################################################################
+#
+# Collection of source directories
+#
+#  Note that all names must be pairwise disjoint.
+#
+
+commonlib       = getoptions md5sum dbug 
+
+maketools       = cse csd cb cachet echo icmt md5calc hzip
+
+libsac2c        = global tree serialize \
+                  scanparse flatten constants typecheck types \
+                  modules objects stdopt arrayopt wltransform \
+                  concurrent multithread profile \
+                  memory precompile codegen print 
+
+runtime         = core_h extras_h interface_h mt_h phm_h
+
+libsacprelude   = 
+
+libsac          = core interface mt phm cachesim
+
+libsacphm       = heap diag opt compat
+
+tools           = csima csimt
+
+
+###############################################################################
+#
+# Collection of commonlib object files
+#
+# Note that the variable names must coincide with the directory names above.
+#
+
+dbug            = dbug
+
+getoptions      = getoptions
+
+md5sum          = md5
+
+
+###############################################################################
+#
+# Collection of make tool object files
+#
+# Note that the variable names must coincide with the directory names above.
+#
+
+cse             = cse
+
+csd             = csd
+
+cb              = cb
+
+cachet          = accesstime bits ctest l1 l2 verbose
+
+echo            = echo
+
+icmt            = icmt
+
+md5calc         = md5calc
+
+hzip            = hzip
+
+
+###############################################################################
+#
+# Collection of libsac2c object files
+#
+# Note that the variable names must coincide with the directory names above.
+#
+
+global          = main usage internal_lib memory globals \
+                  resource options NameTuplesUtils phase_drivers \
+                  filemgr ctinfo phase private_heap
+
+tree            = traverse tree_basic free tree_compound DupTree \
+                  LookUpTable DataFlowMask DataFlowMaskUtils check_mem \
+                  InferDFMs cleanup_decls change_signature compare_tree \
+                  scheduling wl_bounds node_basic free_node \
+                  free_attribs traverse_tables traverse_helper check \
+                  check_lib checktst prepare_inlining map_call_graph \
+                  map_fun_trav check_node check_attribs remove_dfms
+     
+
+serialize       = serialize_node serialize_attribs deserialize \
+                  serialize_buildstack serialize_helper \
+                  serialize_link serialize \
+                  serialize_stack serialize_symboltable \
+                  serialize_filenames add_function_body
+
+scanparse       = sac.tab sac.lex scnprs handle_dots resolvepragma \
+                  handle_with_loop_generators handle_with_loop_operators \
+                  handle_zero_generator_with_loops
+
+flatten         = flatten lac2fun fun2lac insert_vardec \
+                  handle_mops UndoSSATransform ToNewTypes SSATransform \
+                  WLPartitionGeneration ExplicitAccumulate \
+                  ToOldTypes wlanalysis lacinlining wldefaultpartition \
+                  while2do handle_condexpr 
+
+constants       = shape constants_basic constants_struc_ops \
+                  constants_ari_ops cv2cv cv2scalar cv2str \
+                  zipcv basecv constants_serialize
+
+typecheck       = new_typecheck new_types user_types create_wrappers \
+                  ssi sig_deps ct_prf ct_basic ct_fun ct_with \
+                  type_errors specialize create_wrapper_code \
+                  type_statistics type_utils resolvesymboltypes \
+                  split_wrappers dispatchfuncalls insert_type_conv \
+                  update_wrapper_type free_dispatch_information \
+                  elim_alpha_types elim_bottom_types extend_lac_funs
+
+types           = 
+
+modules         = symboltable stringset libstat modulemanager libmanager \
+                  export ccmanager libbuilder resolveall \
+                  annotatenamespace usesymbols prepareinline dependencies \
+                  importsymbols gatherdependencies namespaces addspecialfuns
+
+objects         = object_init resolve_reference_args object_analysis \
+                  extend_wrapper_types resolve_objects restore_reference_args \
+                  restore_objects check_uniqueness_annotations \
+                  generate_object_initialiser strip_external_signatures \
+                  manage_object_initialisers check_uniqueness spmdfun_fix
+       
+
+stdopt          = optimize \
+                  DeadFunctionRemoval deadcodeinference \
+                  deadcoderemoval SSACSE SSAConstantFolding SSALIR \
+                  SSALUR SSAInferLI SSAWLUnroll rmcasts \
+                  ElimSubDiv wlpropagation UndoElimSubDiv \
+                  reverse_type_upgrade ConstVarPropagation DistributiveLaw \
+                  signature_simplification inlining inferneedcounters \
+                  associativity elimtypeconv liftoptflags \
+                  wlsimplification copywlelim prfunroll wlselcount \
+                  insert_symb_arrayattr elim_shapevars makedimexpr \
+                  makeshapeexpr distributivity remove_vardecs
+
+arrayopt        = ive_split_selections ive_reusewl_and_scalarize \
+                  wl_access_analyze tile_size_inference wls wlscheck \
+                  wlsbuild wlswithloopification SSAWithloopFolding \
+                  SSAWLI SSAWLF WithloopFusion detectdependencies \
+                  pad pad_collect pad_infer pad_transform pad_info \
+                  tagdependencies resolvedependencies symb_wlf
+
+wltransform     = wlpragma_funs wltransform wlidxs 
+
+concurrent      = create_mtfuns spmd_init spmd_lift schedule \
+                  removespmd
+
+multithread     = multithread_lib tag_executionmode \
+                  propagate_executionmode create_cells \
+                  create_dataflowgraph assignments_rearrange \
+                  cell_growth create_withinwith replicate_functions \
+                  consolidate_cells abort
+
+profile         = annotate_fun_calls
+
+memory          = rcopt filterrc alloc referencecounting \
+                  reuse aliasanalysis staticreuse reuseelimination \
+                  interfaceanalysis loopreuseopt datareuse explicitcopy \
+                  reusebranching ReuseWithArrays inplacecomp audscldist \
+                  rcminimize NumLookUpTable wrci reusewithoffset \
+                  movesharedmeminstr scoperce show_alias
+
+precompile      = markmemvals renameidentifiers functionprecompile \
+                  typeconv_precompile setlinksign \
+                  remove_external_code mark_noop_grids \
+                  resolve_code_sharing
+
+codegen         = gen_startup_code compile icm2c icm2c_basic \
+                  icm2c_utils icm2c_std icm2c_prf icm2c_mt icm2c_sched \
+                  icm2c_wl icm2c_error simd_infer 
+
+print           = print convert
+
+
+###############################################################################
+#
+# Collection of runtime header files
+#
+# Note that the variable names must coincide with the directory names above.
+#
+
+core_h          = audwl commandline icm prf std std_gen message \
+                  bool errors idx misc serialize wl
+
+extras_h        = cachesim profile runtimecheck trace
+
+phm_h           = phm
+
+interface_h     = cinterface cwrapper sacarg
+
+mt_h            = mt mt_gen
+
+
+###############################################################################
+#
+# Collection of libsac object files
+#
+# Note that the variable names must coincide with the directory names above.
+#
+
+core            = commandline message misc profile trace
+
+interface       = cinterface sac_arg
+
+mt              = mt
+
+phm             = nophm
+
+cachesim        = access basic 
+
+
+###############################################################################
+#
+# Collection of libsacphm object files
+#
+# Note that the variable names must coincide with the directory names above.
+#
+
+heap            = internal setup wrapper small_chunks large_chunks
+
+diag            = diagnostics
+
+opt             = placement
+
+compat          = malloc calloc realloc memalign
+
+
+###############################################################################
+#
+# Collection of tool object files
+#
+# Note that the variable names must coincide with the directory names above.
+#
+
+csima           = csima
+
+csimt           = csimt
+
+

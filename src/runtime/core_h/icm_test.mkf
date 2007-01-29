@@ -1,0 +1,74 @@
+#
+# $Id$
+# 
+
+
+#######################################################################################
+#
+# include general setup:
+#
+
+PROJECT_ROOT := ../..
+
+include $(PROJECT_ROOT)/src/makefiles/config.mkf
+
+
+#######################################################################################
+#
+# local settings:
+#
+
+INCS := 
+LIBS := 
+
+
+#######################################################################################
+#
+# call the CC preprocessor on 'icm_test.c' to test the expansion of H-ICMs
+#
+
+icm_test: icm_test.c
+	$(CC) -D_SHP_=SCL -D_HID_=NHD -D_UNQ_=NUQ -I$$SACBASE/runtime -E $^ | \
+          sed -f icm_test.sed | $(CODE_BEAUTIFIER) -r >  icm_test.log
+	$(CC) -D_SHP_=SCL -D_HID_=NHD -D_UNQ_=UNQ -I$$SACBASE/runtime -E $^ | \
+          sed -f icm_test.sed | $(CODE_BEAUTIFIER) -r >> icm_test.log
+	$(CC) -D_SHP_=SCL -D_HID_=HID -D_UNQ_=NUQ -I$$SACBASE/runtime -E $^ | \
+          sed -f icm_test.sed | $(CODE_BEAUTIFIER) -r >> icm_test.log
+	$(CC) -D_SHP_=SCL -D_HID_=HID -D_UNQ_=UNQ -I$$SACBASE/runtime -E $^ | \
+          sed -f icm_test.sed | $(CODE_BEAUTIFIER) -r >> icm_test.log
+	$(CC) -D_SHP_=AKS -D_HID_=NHD -D_UNQ_=NUQ -I$$SACBASE/runtime -E $^ | \
+          sed -f icm_test.sed | $(CODE_BEAUTIFIER) -r >> icm_test.log
+	$(CC) -D_SHP_=AKS -D_HID_=NHD -D_UNQ_=UNQ -I$$SACBASE/runtime -E $^ | \
+          sed -f icm_test.sed | $(CODE_BEAUTIFIER) -r >> icm_test.log
+	$(CC) -D_SHP_=AKS -D_HID_=HID -D_UNQ_=NUQ -I$$SACBASE/runtime -E $^ | \
+          sed -f icm_test.sed | $(CODE_BEAUTIFIER) -r >> icm_test.log
+	$(CC) -D_SHP_=AKS -D_HID_=HID -D_UNQ_=UNQ -I$$SACBASE/runtime -E $^ | \
+          sed -f icm_test.sed | $(CODE_BEAUTIFIER) -r >> icm_test.log
+	$(CC) -D_SHP_=AKD -D_HID_=NHD -D_UNQ_=NUQ -I$$SACBASE/runtime -E $^ | \
+          sed -f icm_test.sed | $(CODE_BEAUTIFIER) -r >> icm_test.log
+	$(CC) -D_SHP_=AKD -D_HID_=NHD -D_UNQ_=UNQ -I$$SACBASE/runtime -E $^ | \
+          sed -f icm_test.sed | $(CODE_BEAUTIFIER) -r >> icm_test.log
+	$(CC) -D_SHP_=AKD -D_HID_=HID -D_UNQ_=NUQ -I$$SACBASE/runtime -E $^ | \
+          sed -f icm_test.sed | $(CODE_BEAUTIFIER) -r >> icm_test.log
+	$(CC) -D_SHP_=AKD -D_HID_=HID -D_UNQ_=UNQ -I$$SACBASE/runtime -E $^ | \
+          sed -f icm_test.sed | $(CODE_BEAUTIFIER) -r >> icm_test.log
+	$(CC) -D_SHP_=AUD -D_HID_=NHD -D_UNQ_=NUQ -I$$SACBASE/runtime -E $^ | \
+          sed -f icm_test.sed | $(CODE_BEAUTIFIER) -r >> icm_test.log
+	$(CC) -D_SHP_=AUD -D_HID_=NHD -D_UNQ_=UNQ -I$$SACBASE/runtime -E $^ | \
+          sed -f icm_test.sed | $(CODE_BEAUTIFIER) -r >> icm_test.log
+	$(CC) -D_SHP_=AUD -D_HID_=HID -D_UNQ_=NUQ -I$$SACBASE/runtime -E $^ | \
+          sed -f icm_test.sed | $(CODE_BEAUTIFIER) -r >> icm_test.log
+	$(CC) -D_SHP_=AUD -D_HID_=HID -D_UNQ_=UNQ -I$$SACBASE/runtime -E $^ | \
+          sed -f icm_test.sed | $(CODE_BEAUTIFIER) -r >> icm_test.log
+	-grep CAT[0-9] icm_test.log
+	-grep "[^A-Z]NT_" icm_test.log
+	-grep Item icm_test.log
+	-grep __SCL icm_test.log
+	-grep __AKS icm_test.log
+	-grep __AKD icm_test.log
+	-grep __AUD icm_test.log
+	-grep __HID icm_test.log
+	-grep __NHD icm_test.log
+	-grep __UNQ icm_test.log
+	-grep __NUQ icm_test.log
+	@echo '!!! CPP output can be found in file >>icm_test.log<< !!!'

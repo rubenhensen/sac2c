@@ -1,0 +1,167 @@
+#
+# $Id$
+#
+
+#
+# This makefile needs to be replaced by a more appropriate mechanism.
+#
+
+
+
+################################################################################
+#
+# Building sac2c
+#
+
+$(PROJECT_ROOT)/bin/sac2c: global/build.o 
+	@$(ECHO) ""
+	@$(ECHO) "Linking $(PREFIX_ROOT)bin/sac2c (developer version)"
+	$(HIDE) $(LIBTOOL) $(CC) $(CCLINKFLAGS) -o $@ $(TARGETFILES_DEVEL) $< \
+                $(LIB) $(LIBS) $(LDDYNFLAG)
+	@$(RM) .make_track
+	@$(TOUCH) .done
+	@$(CLOCK_SKEW_ELIMINATION)  
+
+$(PROJECT_ROOT)/bin/sac2c.prod: global/build_prod.o
+	@$(ECHO) ""
+	@$(ECHO) "Linking $(PREFIX_ROOT)bin/sac2c.prod (product version)"
+	$(HIDE) $(LIBTOOL) $(CC) $(CCLINKFLAGS) -o $@ $(TARGETFILES_PROD) $< \
+                $(LIB) $(LIBS) $(LDDYNFLAG)
+	@$(RM) .make_track
+	@$(TOUCH) .done
+	@$(CLOCK_SKEW_ELIMINATION)  
+
+$(PROJECT_ROOT)/bin/sac2c.efence: global/build.o
+	@$(ECHO) ""
+	@$(ECHO) "Linking $(PREFIX_ROOT)bin/sac2c.efence (efence version)"
+	$(HIDE) $(LIBTOOL) $(CC) $(CCLINKFLAGS) -o $@ $(TARGETFILES_DEVEL) $< \
+                $(LIB) $(LIBS) $(LDDYNFLAG) $(EFLIBS)
+	@$(RM) .make_track
+	@$(TOUCH) .done
+	@$(CLOCK_SKEW_ELIMINATION)  
+
+
+
+################################################################################
+#
+# Building common library
+#
+
+$(PROJECT_ROOT)/src/lib/libcommon.a: $(TARGETFILES_DEVEL) 
+	@$(ECHO) ""
+	@$(ECHO) "Creating $(PREFIX_ROOT)src/lib/libcommon.a (developer version)"
+	$(HIDE) ar rc $@ $^
+	$(HIDE) $(RANLIB) $@
+	@$(RM) .make_track
+	@$(TOUCH) .done
+	@$(CLOCK_SKEW_ELIMINATION)  
+
+$(PROJECT_ROOT)/src/lib/libcommon.prod.a:  $(TARGETFILES_PROD) 
+	@$(ECHO) ""
+	@$(ECHO) "Creating $(PREFIX_ROOT)src/lib/libcommon.prod.a (product version)"
+	$(HIDE) ar rc $@ $^
+	$(HIDE) $(RANLIB) $@
+	@$(RM) .make_track
+	@$(TOUCH) .done
+	@$(CLOCK_SKEW_ELIMINATION)  
+
+
+################################################################################
+#
+# Building make tools
+#
+
+$(PROJECT_ROOT)/src/bin/%.devel: $(TARGETFILES_DEVEL) 
+	@$(ECHO) ""
+	@$(ECHO) "Linking $(PREFIX_ROOT)src/bin/$*.devel (developer version)"
+	$(HIDE) $(CC) -o $@ \
+                $(filter $*/%,$^) \
+                $(LIB) $(LIBS)
+	@$(RM) .make_track
+	@$(TOUCH) .done
+	@$(CLOCK_SKEW_ELIMINATION)  
+
+$(PROJECT_ROOT)/src/bin/%: $(TARGETFILES_PROD) 
+	@$(ECHO) ""
+	@$(ECHO) "Linking $(PREFIX_ROOT)src/bin/$* (product version)"
+	$(HIDE) $(CCPROD) -o $@ \
+                $(filter $*/%,$^) \
+                $(LIB) $(LIBS)
+	@$(RM) .make_track
+	@$(TOUCH) .done
+	@$(CLOCK_SKEW_ELIMINATION)  
+
+
+################################################################################
+#
+# Building libsac, libsacphm and libsacprelude
+#
+
+$(PROJECT_ROOT)/lib/libsacprelude.so: $(TARGETFILES_DEVEL) 
+	@$(ECHO) ""
+	@$(ECHO) "Creating $(PREFIX_ROOT)lib/libsacprelude.so"
+	$(HIDE) $(PROJECT_ROOT)/bin/sac2c -v3 -o $(PROJECT_ROOT)/lib sacprelude.sac
+	@$(RM) .make_track
+	@$(TOUCH) .done
+	@$(CLOCK_SKEW_ELIMINATION)  
+
+$(PROJECT_ROOT)/lib/lib%.a: $(TARGETFILES_DEVEL) #$(TARGETFILES_DEVEL_MT) 
+	@$(ECHO) ""
+	@$(ECHO) "Creating $(PREFIX_ROOT)lib/lib$*.a (developer version)"
+	$(HIDE) $(AR) $@ $(TARGETFILES_DEVEL)
+	$(HIDE) $(RANLIB) $@
+	@$(ECHO) "Creating $(PREFIX_ROOT)lib/lib$*_mt.a (developer version)"
+	$(HIDE) $(AR)  $(PROJECT_ROOT)/lib/lib%_mt.a$(TARGETFILES_DEVEL_MT) 
+	$(HIDE) $(RANLIB) $(PROJECT_ROOT)/lib/lib%_mt.a
+	@$(RM) .make_track
+	@$(TOUCH) .done
+	@$(CLOCK_SKEW_ELIMINATION)  
+
+$(PROJECT_ROOT)/lib/lib%.prod.a:  $(TARGETFILES_PROD) $(TARGETFILES_PROD_MT)  
+	@$(ECHO) ""
+	@$(ECHO) "Creating $(PREFIX_ROOT)lib/lib$*.prod.a (product version)"
+	$(HIDE) $(AR) $@ $^
+	$(HIDE) $(RANLIB) $@
+	@$(ECHO) "Creating $(PREFIX_ROOT)lib/lib$*_mt.a (product version)"
+	$(HIDE) $(AR)  $(PROJECT_ROOT)/lib/lib%_mt.a$(TARGETFILES_DEVEL_MT) 
+	$(HIDE) $(RANLIB) $(PROJECT_ROOT)/lib/lib%_mt.a
+	@$(RM) .make_track
+	@$(TOUCH) .done
+	@$(CLOCK_SKEW_ELIMINATION)  
+
+
+################################################################################
+#
+# Building runtime header file
+#
+
+$(PROJECT_ROOT)/include/sac.h: $(TARGETFILES_HEADER) 
+	@$(ECHO) ""
+	@$(ECHO) "Creating $(PREFIX_ROOT)include/sac.h"
+	$(HIDE) $(HEADER_ZIPPER) $^ > $@
+	@$(RM) .make_track
+	@$(TOUCH) .done
+	@$(CLOCK_SKEW_ELIMINATION)  
+
+
+
+################################################################################
+#
+# Building tools
+#
+
+$(PROJECT_ROOT)/bin/%.devel: $(TARGETFILES_DEVEL)
+	@$(ECHO) ""
+	@$(ECHO) "Linking $(PREFIX_ROOT)bin/$*.devel (developer version)"
+	$(HIDE) $(CC) -o $@  $(filter $*/%,$^)
+	@$(RM) .make_track
+	@$(TOUCH) .done
+	@$(CLOCK_SKEW_ELIMINATION)  
+
+$(PROJECT_ROOT)/bin/%: $(TARGETFILES_PROD) 
+	@$(ECHO) ""
+	@$(ECHO) "Linking $(PREFIX_ROOT)bin/$* (product version)"
+	$(HIDE) $(CCPROD) -o $@  $(filter $*/%,$^) 
+	@$(RM) .make_track
+	@$(TOUCH) .done
+	@$(CLOCK_SKEW_ELIMINATION) 
