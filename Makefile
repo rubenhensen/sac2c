@@ -137,7 +137,7 @@ maketools: checks
 	$(HIDE) $(MAKE) -C src/maketools DEPS="$(DEPS)" HIDE="$(HIDE)" \
                         PREFIX_LOCAL="src/maketools/" PREFIX_ROOT="" default
 
-sac2c: checks
+libsac2c: checks
 	$(HIDE) $(MAKE) -C src/libsac2c  DEPS="$(DEPS)" HIDE="$(HIDE)" \
                         PREFIX_LOCAL="src/libsac2c/"  PREFIX_ROOT="" default
 
@@ -145,7 +145,7 @@ runtime: checks
 	$(HIDE) $(MAKE) -C src/runtime  DEPS="$(DEPS)" HIDE="$(HIDE)" \
                         PREFIX_LOCAL="src/runtime/"  PREFIX_ROOT="" default
 
-sacprelude: checks
+libsacprelude: checks
 	$(HIDE) $(MAKE) -C src/libsacprelude  DEPS="$(DEPS)" HIDE="$(HIDE)" \
                         PREFIX_LOCAL="src/libsacprelude/"  PREFIX_ROOT="" default
 
