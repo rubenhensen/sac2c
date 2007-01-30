@@ -58,7 +58,8 @@ struct INFO {
     node *nwith2;
     int sib;
     int ofp;
-    int prototype;
+    bool specialization;
+    bool prototype;
     int separate;
     int dim;
     shpseg *shape;
@@ -73,19 +74,20 @@ struct INFO {
 };
 
 /* access macros print */
-#define INFO_CONT(n) (n->cont)
-#define INFO_FUNDEF(n) (n->fundef)
-#define INFO_NPART(n) (n->npart)
-#define INFO_NWITH2(n) (n->nwith2)
-#define INFO_OMIT_FORMAL_PARAMS(n) (n->ofp)
-#define INFO_PROTOTYPE(n) (n->prototype)
-#define INFO_SEPARATE(n) (n->separate)
-#define INFO_DIM(n) (n->dim)
-#define INFO_SHAPE(n) (n->shape)
-#define INFO_SHAPE_COUNTER(n) (n->shapecnt)
-#define INFO_FIRSTERROR(n) (n->firstError)
-#define INFO_FILECOUNTER(n) (n->filecounter)
-#define INFO_FUNCOUNTER(n) (n->filecounter)
+#define INFO_CONT(n) ((n)->cont)
+#define INFO_FUNDEF(n) ((n)->fundef)
+#define INFO_NPART(n) ((n)->npart)
+#define INFO_NWITH2(n) ((n)->nwith2)
+#define INFO_OMIT_FORMAL_PARAMS(n) ((n)->ofp)
+#define INFO_SPECIALIZATION(n) ((n)->specialization)
+#define INFO_PROTOTYPE(n) ((n)->prototype)
+#define INFO_SEPARATE(n) ((n)->separate)
+#define INFO_DIM(n) ((n)->dim)
+#define INFO_SHAPE(n) ((n)->shape)
+#define INFO_SHAPE_COUNTER(n) ((n)->shapecnt)
+#define INFO_FIRSTERROR(n) ((n)->firstError)
+#define INFO_FILECOUNTER(n) ((n)->filecounter)
+#define INFO_FUNCOUNTER(n) ((n)->filecounter)
 
 /*
  * This global variable is used to detect inside of PrintIcm() whether
@@ -196,7 +198,8 @@ MakeInfo ()
     INFO_NPART (result) = NULL;
     INFO_NWITH2 (result) = NULL;
     INFO_OMIT_FORMAL_PARAMS (result) = 0;
-    INFO_PROTOTYPE (result) = 0;
+    INFO_SPECIALIZATION (result) = FALSE;
+    INFO_PROTOTYPE (result) = FALSE;
     INFO_SEPARATE (result) = 0;
     INFO_DIM (result) = 0;
     INFO_SHAPE (result) = NULL;
@@ -969,6 +972,17 @@ PRTmodule (node *arg_node, info *arg_info)
             INFO_PROTOTYPE (arg_info) = FALSE;
         }
 
+        if (MODULE_FUNSPECS (arg_node) != NULL) {
+            fprintf (global.outfile, "\n\n"
+                                     "/*\n"
+                                     " *  user requested specialisations (FUNSPECS)\n"
+                                     " */\n\n");
+            INFO_SPECIALIZATION (arg_info) = TRUE;
+            /* print function declarations */
+            TRAVdo (MODULE_FUNSPECS (arg_node), arg_info);
+            INFO_SPECIALIZATION (arg_info) = FALSE;
+        }
+
         if (MODULE_FUNS (arg_node) != NULL) {
             fprintf (global.outfile, "\n\n"
                                      "/*\n"
@@ -1438,7 +1452,11 @@ PRTfundef (node *arg_node, info *arg_info)
         FUNDEF_OBJECTS( arg_node) = TRAVdo( FUNDEF_OBJECTS( arg_node), arg_info);
       }
     */
-    if (INFO_PROTOTYPE (arg_info)) {
+    if (INFO_SPECIALIZATION (arg_info)) {
+        fprintf (global.outfile, "specialize ");
+        PrintFunctionHeader (arg_node, arg_info, FALSE);
+        fprintf (global.outfile, ";\n\n");
+    } else if (INFO_PROTOTYPE (arg_info)) {
         /*
          * print function declaration
          */

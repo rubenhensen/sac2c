@@ -2360,6 +2360,16 @@
             </target>
           </targets>
         </son>
+        <son name="FunSpecs" default="NULL">
+          <targets>
+            <target mandatory="no">
+              <node name="Fundef" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
         <son name="CWrapper" default="NULL">
           <targets>
             <target mandatory="no">

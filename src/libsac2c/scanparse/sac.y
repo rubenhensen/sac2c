@@ -308,14 +308,23 @@ def3: objdef def3
       { $$ = $1; }
     ;
 
-def4: fundec {  pragma_type = PRAG_fundec; } pragmas def4
-      { $$ = $4;
-        FUNDEF_PRAGMA( $1) = $3;
-        MODULE_FUNDECS( $$) = TCappendFundef( MODULE_FUNDECS( $$), $1);
+def4: EXTERN fundec {  pragma_type = PRAG_fundec; } pragmas def4
+      { $$ = $5;
+        FUNDEF_PRAGMA( $2) = $4;
+        MODULE_FUNDECS( $$) = TCappendFundef( MODULE_FUNDECS( $$), $2);
       }
-    | fundec def4
-      { $$ = $2;
-        MODULE_FUNDECS( $$) = TCappendFundef( MODULE_FUNDECS( $$), $1);
+    | EXTERN fundec def4
+      { $$ = $3;
+        MODULE_FUNDECS( $$) = TCappendFundef( MODULE_FUNDECS( $$), $2);
+      }
+    | SPECIALIZE fundec {  pragma_type = PRAG_fundec; } pragmas def4
+      { $$ = $4;
+        FUNDEF_PRAGMA( $2) = $4;
+        MODULE_FUNSPECS( $$) = TCappendFundef( MODULE_FUNSPECS( $$), $2);
+      }
+    | SPECIALIZE fundec def4
+      { $$ = $3;
+        MODULE_FUNSPECS( $$) = TCappendFundef( MODULE_FUNSPECS( $$), $2);
       }
     | fundef { pragma_type = PRAG_fundef; } pragmas def4
       { $$ = $4;
@@ -682,10 +691,10 @@ mainargs: TYPE_VOID     { $$ = NULL; }
 *********************************************************************
 */
 
-fundec: EXTERN returndectypes ext_id BRACKET_L fundec2
-        { $$ = $5;
-          FUNDEF_RETS( $$) = $2;
-          FUNDEF_NAME( $$) = $3;  /* function name */
+fundec: returndectypes ext_id BRACKET_L fundec2
+        { $$ = $4;
+          FUNDEF_RETS( $$) = $1;
+          FUNDEF_NAME( $$) = $2;  /* function name */
           FUNDEF_ISEXTERN( $$) = TRUE;
           if( has_dot_rets) {
              FUNDEF_HASDOTRETS( $$) = TRUE;
