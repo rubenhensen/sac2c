@@ -50,7 +50,7 @@ MOVE             :=  mv
 RSH              :=  rsh
 DUMP_OUTPUT      :=  ">/dev/null 2>&1"
  
-LIBPATH          :=  "$SACBASE/runtime:"
+LIBPATH          :=  "$SAC2CBASE/lib:"
                      "$SACBASE/stdlib/modules/structures/lib:"
                      "$SACBASE/stdlib/modules/numerical/lib:"
                      "$SACBASE/stdlib/world/system/lib:"
