@@ -170,7 +170,7 @@ ESPfundef (node *arg_node, info *arg_info)
          * check of all potentially involved fundefs and extract the
          * return type from the dft_res structure:
          */
-        disp_res = SPEChandleDownProjections (disp_res, arg_node, args);
+        disp_res = SPEChandleDownProjections (disp_res, wrapper, args);
 
         if ((disp_res->def == NULL) && (disp_res->num_partials == 0)) {
             /*
