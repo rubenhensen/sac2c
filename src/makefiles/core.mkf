@@ -38,7 +38,8 @@ SUBPROJECT_DIRS      := $($(SUBPROJECT))
 
 SOURCE_DIRS          := $(TARGETDIR)
 
-TARGETFILES          := $(foreach target,$(TARGETDIR),$(addprefix $(target)/,$($(target))))
+TARGETFILES          := $(foreach target,$(TARGETDIR),\
+                          $(addprefix $(target)/,$($(target))))
 
 TARGETFILES_SRC      := $(addsuffix .c,$(TARGETFILES))
 
@@ -52,28 +53,43 @@ TARGETFILES_HEADER   := $(addsuffix .h,\
                           $(foreach target,$(TARGETDIR),\
                             $(addprefix $(target)/,$($(runtime)))))
 
+LIBDIRS        := -L../lib -L../../lib
+LIB_MAKETOOLS  := -lcommon
+LIB_TOOLS      := -lsac -lcommon
 
-LIB  := -L../lib -L../../lib -lsac -lcommon
-INCS := -I../../include -I../include $(patsubst %,-I%,$(SUBPROJECT_DIRS))
+INCDIRS        := -I../../include -I../include $(patsubst %,-I%,$(SUBPROJECT_DIRS))
 
 XML_DIR     := $(PROJECT_ROOT)/src/libsac2c/xml
 XML_COMMONS := $(wildcard $(XML_DIR)/common_*.xsl)
 
 M4_DIR      := $(PROJECT_ROOT)/src/runtime/m4
 
-GENERATED_INCLUDE_FILES := $(patsubst %.xsl,%,$(foreach dir,$(SOURCE_DIRS),$(wildcard $(dir)/*.h.xsl))) \
-                           $(patsubst %.xsl,%,$(foreach dir,$(SOURCE_DIRS),$(wildcard $(dir)/*.mac.xsl))) \
-                           $(patsubst %.y,%.tab.h,$(foreach dir,$(SOURCE_DIRS),$(wildcard $(dir)/*.y)))
+GENERATED_INCLUDE_FILES := $(patsubst %.xsl,%,\
+                             $(foreach dir,$(SOURCE_DIRS),\
+                               $(wildcard $(dir)/*.h.xsl))) \
+                           $(patsubst %.xsl,%,\
+                             $(foreach dir,$(SOURCE_DIRS),\
+                               $(wildcard $(dir)/*.mac.xsl))) \
+                           $(patsubst %.y,%.tab.h,\
+                             $(foreach dir,$(SOURCE_DIRS),\
+                               $(wildcard $(dir)/*.y)))
 
-GENERATED_SOURCE_FILES := $(patsubst %.xsl,%,$(foreach dir,$(SOURCE_DIRS),$(wildcard $(dir)/*.c.xsl))) \
-                          $(patsubst %.y,%.tab.c,$(foreach dir,$(SOURCE_DIRS),$(wildcard $(dir)/*.y))) \
-                          $(patsubst %.l,%.lex.c,$(foreach dir,$(SOURCE_DIRS),$(wildcard $(dir)/*.l))) \
+GENERATED_SOURCE_FILES := $(patsubst %.xsl,%,\
+                            $(foreach dir,$(SOURCE_DIRS),\
+                              $(wildcard $(dir)/*.c.xsl))) \
+                          $(patsubst %.y,%.tab.c,\
+                            $(foreach dir,$(SOURCE_DIRS),\
+                              $(wildcard $(dir)/*.y))) \
+                          $(patsubst %.l,%.lex.c,\
+                            $(foreach dir,$(SOURCE_DIRS),\
+                              $(wildcard $(dir)/*.l))) \
 
 GENERATED_FILES  := $(GENERATED_INCLUDE_FILES) $(GENERATED_SOURCE_FILES)
 
 DEPENDENCY_FILES := $(patsubst %.o,%.d,$(TARGETFILES_DEVEL))
 
-DEPENDENCIES     := $(foreach file,$(DEPENDENCY_FILES),$(dir $(file)).$(notdir $(file)))
+DEPENDENCIES     := $(foreach file,$(DEPENDENCY_FILES),\
+                      $(dir $(file)).$(notdir $(file)))
 
 
   
@@ -174,7 +190,7 @@ makesubdir.prod: $(TARGETFILES_PROD)
               $(ECHO) "Compiling files in directory $(PREFIX_LOCAL)$(dir $@)" ; \
          fi
 	@$(ECHO) "  Compiling multithreaded developer code:  $(notdir $<)"
-	$(HIDE) $(CC) $(CCFLAGS) $(CFLAGS) $(YYFLAGS) $(CCMTFLAGS) $(INCS) -o $@ -c $<
+	$(HIDE) $(CC) $(CCFLAGS) $(CFLAGS) $(YYFLAGS) $(CCMTFLAGS) $(INCDIRS) -o $@ -c $<
 	@$(CLOCK_SKEW_ELIMINATION) 
 
 %.mt.prod.o: %.c 
@@ -184,7 +200,7 @@ makesubdir.prod: $(TARGETFILES_PROD)
               $(ECHO) "Compiling files in directory $(PREFIX_LOCAL)$(dir $@)" ; \
          fi
 	@$(ECHO) "  Compiling multithreaded product code:  $(notdir $<)"
-	$(HIDE) $(CCPROD) $(CCPROD_FLAGS) $(CPROD_FLAGS) $(YYFLAGS) $(CCMTFLAGS) $(INCS) -o $@ -c $<
+	$(HIDE) $(CCPROD) $(CCPROD_FLAGS) $(CPROD_FLAGS) $(YYFLAGS) $(CCMTFLAGS) $(INCDIRS) -o $@ -c $<
 	@$(CLOCK_SKEW_ELIMINATION) 
 
 
@@ -195,7 +211,7 @@ makesubdir.prod: $(TARGETFILES_PROD)
               $(ECHO) "Compiling files in directory $(PREFIX_LOCAL)$(dir $@)" ; \
          fi
 	@$(ECHO) "  Compiling developer code:  $(notdir $<)"
-	$(HIDE) $(CC) $(CCFLAGS) $(CFLAGS) $(YYFLAGS) $(INCS) -o $@ -c $<
+	$(HIDE) $(CC) $(CCFLAGS) $(CFLAGS) $(YYFLAGS) $(INCDIRS) -o $@ -c $<
 	@$(CLOCK_SKEW_ELIMINATION) 
 
 %.prod.o: %.c 
@@ -205,7 +221,7 @@ makesubdir.prod: $(TARGETFILES_PROD)
               $(ECHO) "Compiling files in directory $(PREFIX_LOCAL)$(dir $@)" ; \
          fi
 	@$(ECHO) "  Compiling product code:  $(notdir $<)"
-	$(HIDE) $(CCPROD) $(CCPROD_FLAGS) $(CPROD_FLAGS) $(YYFLAGS) $(INCS) -o $@ -c $<
+	$(HIDE) $(CCPROD) $(CCPROD_FLAGS) $(CPROD_FLAGS) $(YYFLAGS) $(INCDIRS) -o $@ -c $<
 	@$(CLOCK_SKEW_ELIMINATION) 
 
 
@@ -299,7 +315,7 @@ makesubdir.prod: $(TARGETFILES_PROD)
              $(ECHO) "Checking dependencies in directory $(PREFIX_LOCAL)$(dir $@)" ; \
         fi
 	@$(ECHO) "  Checking dependencies of source file: $(notdir $<)"
-	$(HIDE) if $(CC) $(CCDEPS_FLAGS) $(CFLAGS) $(INCS) $<  > $@d ; \
+	$(HIDE) if $(CC) $(CCDEPS_FLAGS) $(CFLAGS) $(INCDIRS) $<  > $@d ; \
 	 then sed 's/\($(notdir $*)\)\.o[ :]*/$(subst /,\/,$*)\.o $(subst /,\/,$@)\: ..\/makefiles\/config.mkf /'  <$@d >$@; \
 	      $(RM) $@d ; \
 	 else $(RM) $@d ; \

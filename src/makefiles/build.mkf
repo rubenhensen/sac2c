@@ -17,7 +17,7 @@ $(PROJECT_ROOT)/bin/sac2c: global/build.o
 	@$(ECHO) ""
 	@$(ECHO) "Linking $(PREFIX_ROOT)bin/sac2c (developer version)"
 	$(HIDE) $(LIBTOOL) $(CC) $(CCLINKFLAGS) -o $@ $(TARGETFILES_DEVEL) $< \
-                $(LIB) $(LIBS) $(LDDYNFLAG)
+                $(LIBDIRS) $(LIB_MAKETOOLS) $(LIBS) $(LDDYNFLAG)
 	@$(RM) .make_track
 	@$(TOUCH) .done
 	@$(CLOCK_SKEW_ELIMINATION)  
@@ -26,7 +26,7 @@ $(PROJECT_ROOT)/bin/sac2c.prod: global/build_prod.o
 	@$(ECHO) ""
 	@$(ECHO) "Linking $(PREFIX_ROOT)bin/sac2c.prod (product version)"
 	$(HIDE) $(LIBTOOL) $(CC) $(CCLINKFLAGS) -o $@ $(TARGETFILES_PROD) $< \
-                $(LIB) $(LIBS) $(LDDYNFLAG)
+                $(LIBDIRS) $(LIB_MAKETOOLS) $(LIBS) $(LDDYNFLAG)
 	@$(RM) .make_track
 	@$(TOUCH) .done
 	@$(CLOCK_SKEW_ELIMINATION)  
@@ -35,7 +35,7 @@ $(PROJECT_ROOT)/bin/sac2c.efence: global/build.o
 	@$(ECHO) ""
 	@$(ECHO) "Linking $(PREFIX_ROOT)bin/sac2c.efence (efence version)"
 	$(HIDE) $(LIBTOOL) $(CC) $(CCLINKFLAGS) -o $@ $(TARGETFILES_DEVEL) $< \
-                $(LIB) $(LIBS) $(LDDYNFLAG) $(EFLIBS)
+                $(LIBDIRS) $(LIB_MAKETOOLS) $(LIBS) $(LDDYNFLAG) $(EFLIBS)
 	@$(RM) .make_track
 	@$(TOUCH) .done
 	@$(CLOCK_SKEW_ELIMINATION)  
@@ -72,21 +72,21 @@ $(PROJECT_ROOT)/src/lib/libcommon.prod.a:  $(TARGETFILES_PROD)
 #
 
 $(PROJECT_ROOT)/src/bin/%.devel: $(TARGETFILES_DEVEL) 
-	@$(ECHO) ""
+#	@$(ECHO) ""
 	@$(ECHO) "Linking $(PREFIX_ROOT)src/bin/$*.devel (developer version)"
 	$(HIDE) $(CC) -o $@ \
                 $(filter $*/%,$^) \
-                $(LIB) $(LIBS)
+                $(LIBDIRS) $(LIB_MAKETOOLS) $(LIBS)
 	@$(RM) .make_track
 	@$(TOUCH) .done
 	@$(CLOCK_SKEW_ELIMINATION)  
 
 $(PROJECT_ROOT)/src/bin/%: $(TARGETFILES_PROD) 
-	@$(ECHO) ""
+#	@$(ECHO) ""
 	@$(ECHO) "Linking $(PREFIX_ROOT)src/bin/$* (product version)"
 	$(HIDE) $(CCPROD) -o $@ \
                 $(filter $*/%,$^) \
-                $(LIB) $(LIBS)
+                $(LIBDIRS) $(LIB_MAKETOOLS) $(LIBS)
 	@$(RM) .make_track
 	@$(TOUCH) .done
 	@$(CLOCK_SKEW_ELIMINATION)  
@@ -175,7 +175,7 @@ $(PROJECT_ROOT)/include/sac.h: $(TARGETFILES_HEADER)
 $(PROJECT_ROOT)/bin/%.devel: $(TARGETFILES_DEVEL)
 	@$(ECHO) ""
 	@$(ECHO) "Linking $(PREFIX_ROOT)bin/$*.devel (developer version)"
-	$(HIDE) $(CC) -o $@ $(filter $*/%,$^)  $(LIB) $(LIBS)
+	$(HIDE) $(CC) -o $@ $(filter $*/%,$^)  $(LIBDIRS) $(LIB_TOOLS) $(LIBS)
 	@$(RM) .make_track
 	@$(TOUCH) .done
 	@$(CLOCK_SKEW_ELIMINATION)  
@@ -183,7 +183,7 @@ $(PROJECT_ROOT)/bin/%.devel: $(TARGETFILES_DEVEL)
 $(PROJECT_ROOT)/bin/%: $(TARGETFILES_PROD) 
 	@$(ECHO) ""
 	@$(ECHO) "Linking $(PREFIX_ROOT)bin/$* (product version)"
-	$(HIDE) $(CC) -o $@ $(filter $*/%,$^)  $(LIB) $(LIBS)
+	$(HIDE) $(CC) -o $@ $(filter $*/%,$^)  $(LIBDIRS) $(LIB_TOOLS) $(LIBS)
 	@$(RM) .make_track
 	@$(TOUCH) .done
 	@$(CLOCK_SKEW_ELIMINATION) 

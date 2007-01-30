@@ -36,12 +36,7 @@
 #define SAC_DO_MULTITHREAD 0
 #endif /*  MT  */
 
-#if 1
 #include "sac.h"
-#endif
-
-#undef SAC_DO_MULTITHREAD
-#undef SAC_DO_THREADS_STATIC
 
 /*
  * Function definitions
