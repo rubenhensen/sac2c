@@ -1277,12 +1277,18 @@ CSEdoCommonSubexpressionElimination (node *fundef)
  * @fn node *CSEdoCommonSubexpressionEliminationModule( node *arg_node)
  *
  *****************************************************************************/
+static node *
+WrapCSECall (node *arg_node, info *arg_info)
+{
+    return (CSEdoCommonSubexpressionElimination (arg_node));
+}
+
 node *
 CSEdoCommonSubexpressionEliminationModule (node *arg_node)
 {
     DBUG_ENTER ("CSEdoCommonSubexpressionEliminationModule");
 
-    arg_node = MFTdoMapFunTrav (arg_node, CSEdoCommonSubexpressionElimination);
+    MODULE_FUNS (arg_node) = MFTdoMapFunTrav (MODULE_FUNS (arg_node), NULL, WrapCSECall);
 
     DBUG_RETURN (arg_node);
 }

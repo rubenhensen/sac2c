@@ -12,6 +12,7 @@
 
 extern node *MFTfundef (node *arg_node, info *arg_info);
 
-extern node *MFTdoMapFunTrav (node *module, node *(*trav) (node *));
+extern node *MFTdoMapFunTrav (node *fundef, info *arg_info,
+                              node *(*trav) (node *, info *));
 
 #endif /* _SAC_MAP_LAC_FUNS_H_ */

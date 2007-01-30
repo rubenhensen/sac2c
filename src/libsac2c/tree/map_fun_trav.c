@@ -15,19 +15,21 @@
 #include "tree_compound.h"
 #include "internal_lib.h"
 
-typedef node *(*trav_p) (node *);
+typedef node *(*trav_p) (node *, info *);
 
 /**
  * INFO structure
  */
 struct INFO {
     trav_p maptrav;
+    info *extinfo;
 };
 
 /**
  * INFO macros
  */
 #define INFO_MAPTRAV(n) ((n)->maptrav)
+#define INFO_EXTINFO(n) ((n)->extinfo)
 
 /**
  * INFO functions
@@ -42,6 +44,7 @@ MakeInfo ()
     result = ILIBmalloc (sizeof (info));
 
     INFO_MAPTRAV (result) = NULL;
+    INFO_EXTINFO (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -65,7 +68,7 @@ MFTfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("MFTfundef");
 
-    arg_node = INFO_MAPTRAV (arg_info) (arg_node);
+    arg_node = INFO_MAPTRAV (arg_info) (arg_node, INFO_EXTINFO (arg_info));
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
@@ -78,23 +81,24 @@ MFTfundef (node *arg_node, info *arg_info)
  * traversal start function
  */
 node *
-MFTdoMapFunTrav (node *arg_node, trav_p maptrav)
+MFTdoMapFunTrav (node *arg_node, info *extinfo, trav_p maptrav)
 {
     info *localinfo;
 
     DBUG_ENTER ("MFTdoMapFunTrav");
 
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module),
-                 "MLFdoMapFunTrav called on non module node");
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_fundef),
+                 "MLFdoMapFunTrav called on non fundef node");
 
     localinfo = MakeInfo ();
 
     INFO_MAPTRAV (localinfo) = maptrav;
+    INFO_EXTINFO (localinfo) = extinfo;
 
     TRAVpush (TR_mft);
 
-    if (MODULE_FUNS (arg_node) != NULL) {
-        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), localinfo);
+    if (arg_node != NULL) {
+        arg_node = TRAVdo (arg_node, localinfo);
     }
 
     TRAVpop ();
