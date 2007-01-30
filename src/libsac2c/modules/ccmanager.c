@@ -113,15 +113,15 @@ AddSacLibs (str_buf *buffer)
     if (global.optimize.dophm) {
         if (global.mtmode == MT_none) {
             if (global.runtimecheck.heap) {
-                ILIBstrBufPrint (buffer, "-lsac_heapmgr_diag ");
+                ILIBstrBufPrint (buffer, "-lsacphm_diag ");
             } else {
-                ILIBstrBufPrint (buffer, "-lsac_heapmgr ");
+                ILIBstrBufPrint (buffer, "-lsacphm ");
             }
         } else {
             if (global.runtimecheck.heap) {
-                ILIBstrBufPrint (buffer, "-lsac_heapmgr_mt_diag ");
+                ILIBstrBufPrint (buffer, "-lsacphm_mt_diag ");
             } else {
-                ILIBstrBufPrint (buffer, "-lsac_heapmgr_mt ");
+                ILIBstrBufPrint (buffer, "-lsacphm_mt ");
             }
         }
     }
