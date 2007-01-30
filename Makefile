@@ -126,6 +126,44 @@ efence:
 
 ###############################################################################
 #
+# Rules for making selected subprojects in default mode
+#
+
+commonlib: checks
+	$(HIDE) $(MAKE) -C src/commonlib DEPS="$(DEPS)" HIDE="$(HIDE)" \
+                        PREFIX_LOCAL="src/commonlib/" PREFIX_ROOT="" default
+
+maketools: checks
+	$(HIDE) $(MAKE) -C src/maketools DEPS="$(DEPS)" HIDE="$(HIDE)" \
+                        PREFIX_LOCAL="src/maketools/" PREFIX_ROOT="" default
+
+sac2c: checks
+	$(HIDE) $(MAKE) -C src/libsac2c  DEPS="$(DEPS)" HIDE="$(HIDE)" \
+                        PREFIX_LOCAL="src/libsac2c/"  PREFIX_ROOT="" default
+
+runtime: checks
+	$(HIDE) $(MAKE) -C src/runtime  DEPS="$(DEPS)" HIDE="$(HIDE)" \
+                        PREFIX_LOCAL="src/runtime/"  PREFIX_ROOT="" default
+
+sacprelude: checks
+	$(HIDE) $(MAKE) -C src/libsacprelude  DEPS="$(DEPS)" HIDE="$(HIDE)" \
+                        PREFIX_LOCAL="src/libsacprelude/"  PREFIX_ROOT="" default
+
+libsac: checks
+	$(HIDE) $(MAKE) -C src/libsac  DEPS="$(DEPS)" HIDE="$(HIDE)" \
+                        PREFIX_LOCAL="src/libsac/"  PREFIX_ROOT="" default
+
+libsacphm: checks
+	$(HIDE) $(MAKE) -C src/libsacphm  DEPS="$(DEPS)" HIDE="$(HIDE)" \
+                        PREFIX_LOCAL="src/libsacphm/"  PREFIX_ROOT="" default
+
+tools: checks
+	$(HIDE) $(MAKE) -C src/tools     DEPS="$(DEPS)" HIDE="$(HIDE)" \
+                        PREFIX_LOCAL="src/tools/"     PREFIX_ROOT="" default
+
+
+###############################################################################
+#
 # Rules for configure mechanism
 #
 
