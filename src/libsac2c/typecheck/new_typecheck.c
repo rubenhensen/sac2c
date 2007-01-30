@@ -174,8 +174,10 @@ NTCdoNewTypeCheck (node *arg_node)
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module),
                  "NTCdoNewTypeCheck() not called with N_module node!");
 
-    ok = SSIinitAssumptionSystem (SDhandleContradiction, SDhandleElimination);
-    DBUG_ASSERT (ok, "Initialisation of Assumption System went wrong!");
+    if (!SSIassumptionSystemIsInitialized ()) {
+        ok = SSIinitAssumptionSystem (SDhandleContradiction, SDhandleElimination);
+        DBUG_ASSERT (ok, "Initialisation of Assumption System went wrong!");
+    }
 
     ignore = SPECresetSpecChain ();
 
@@ -200,20 +202,6 @@ NTCdoNewTypeCheck (node *arg_node)
      * of bodies to the ast
      */
     DSinitDeserialize (arg_node);
-
-#if 0
-  /*
-   * if compiling for a c library, search for specializations
-   * of functions and integrate them.
-   *
-   * NB: this is copied from the old TC; may not work properly
-   * at all, i.e., needs attention 8-)
-   *
-   */
-  if (global.genlib.c) {
-    arg_node = ImportSpecialization(arg_node);
-  }
-#endif
 
     TRAVpush (TR_ntc);
 

@@ -87,6 +87,34 @@ TUcreateTmpVardecsFromRets (node *rets)
 
 /** <!--********************************************************************-->
  *
+ * @fn ntype *TUmakeProductTypeFromArgs( node *args)
+ *
+ *   @brief
+ *   @param
+ *   @return
+ *
+ ******************************************************************************/
+
+ntype *
+TUmakeProductTypeFromArgs (node *args)
+{
+    ntype *type = NULL;
+    int i = 0;
+
+    DBUG_ENTER ("TUcreateTmpVardecsFromArgs");
+
+    type = TYmakeEmptyProductType (TCcountArgs (args));
+    while (args != NULL) {
+        type = TYsetProductMember (type, i, TYcopyType (ARG_NTYPE (args)));
+        args = ARG_NEXT (args);
+        i++;
+    }
+
+    DBUG_RETURN (type);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn ntype *TUmakeProductTypeFromRets( node *rets)
  *
  *   @brief

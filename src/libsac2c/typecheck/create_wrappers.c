@@ -372,6 +372,33 @@ CRTWRPcreateFuntype (node *fundef)
     DBUG_RETURN (res);
 }
 
+node *
+CRTWRPspecFundef (node *arg_node, info *arg_info)
+{
+    int num_args, num_rets;
+    node *wrapper;
+
+    DBUG_ENTER ("CRTWRPspecFundef");
+
+    num_args = TCcountArgs (FUNDEF_ARGS (arg_node));
+    num_rets = TCcountRets (FUNDEF_RETS (arg_node));
+
+    wrapper = FindWrapper (FUNDEF_NS (arg_node), FUNDEF_NAME (arg_node), num_args,
+                           num_rets, INFO_WRAPPERFUNS (arg_info));
+    if (wrapper == NULL) {
+        CTIabortLine (NODE_LINE (arg_node),
+                      "No definition found for a function \"%s::%s\" that expects"
+                      " %i argument(s) and yields %i return value(s)",
+                      NSgetName (FUNDEF_NS (arg_node)), FUNDEF_NAME (arg_node), num_args,
+                      num_rets);
+
+    } else {
+        FUNDEF_IMPL (arg_node) = wrapper;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
 /******************************************************************************
  *
  * function:
@@ -419,6 +446,12 @@ CRTWRPmodule (node *arg_node, info *arg_info)
     if (MODULE_FUNS (arg_node) != NULL) {
         MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
     }
+
+    /**
+     * Now, we set the FUNDEF_IMPL nodes for the forced specializations:
+     */
+    MODULE_FUNSPECS (arg_node)
+      = MFTdoMapFunTrav (MODULE_FUNSPECS (arg_node), CRTWRPspecFundef);
     /**
      * Finally, we insert the wrapper functions into the fundef chain:
      */

@@ -9,6 +9,7 @@
 
 extern ntype *TUrebuildWrapperType (ntype *);
 extern node *TUcreateTmpVardecsFromRets (node *rets);
+extern ntype *TUmakeProductTypeFromArgs (node *args);
 extern ntype *TUmakeProductTypeFromRets (node *rets);
 extern node *TUreplaceRetTypes (node *rets, ntype *prodt);
 extern node *TUrettypes2unknownAUD (node *rets);

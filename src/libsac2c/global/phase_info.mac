@@ -285,6 +285,9 @@ ENDPHASE (pt)
 
 PHASE (tc, "Running type inference system", PHDdriveTypechecking, ALWAYS)
 
+SUBPHASE (esp, "esp", "esp", "Enforcing Specializations", ESPdoEnforceSpecialization,
+          ALWAYS)
+
 SUBPHASE (ti, "ti", "ti", "Running type inference system", NTCdoNewTypeCheck, ALWAYS)
 
 SUBPHASE (eat, "eat", "eat", "Eliminating Type Variables", EATdoEliminateAlphaTypes,

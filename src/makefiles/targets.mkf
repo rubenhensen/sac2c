@@ -206,7 +206,8 @@ typecheck       = new_typecheck new_types user_types create_wrappers \
                   type_statistics type_utils resolvesymboltypes \
                   split_wrappers dispatchfuncalls insert_type_conv \
                   update_wrapper_type free_dispatch_information \
-                  elim_alpha_types elim_bottom_types extend_lac_funs
+                  elim_alpha_types elim_bottom_types extend_lac_funs \
+                  enforce_specialization
 
 types           = 
 

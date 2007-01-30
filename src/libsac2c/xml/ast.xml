@@ -586,6 +586,12 @@
       startfun="NTCdoNewTypeCheck" include="new_typecheck.h"
       if="true"
       breakspec="tc">
+      <traversal id="ESP" name="Enforce Specialization" default="sons" include="enforce_specialization.h" >
+        <travuser> 
+          <node name="Module" />
+          <node name="Fundef" />
+        </travuser>
+      </traversal>
       <traversal id="NTC" name="New Type Inference" default="sons" include="new_typecheck.h" >
         <travuser> 
           <node name="Module" />

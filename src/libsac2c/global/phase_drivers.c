@@ -100,6 +100,7 @@ PHDdriveTypechecking (node *syntax_tree)
 {
     DBUG_ENTER ("PHDdriveTypechecking");
 
+    syntax_tree = PHrunCompilerSubPhase (SUBPH_esp, syntax_tree, ALWAYS);
     syntax_tree = PHrunCompilerSubPhase (SUBPH_ti, syntax_tree, ALWAYS);
     syntax_tree = PHrunCompilerSubPhase (SUBPH_eat, syntax_tree, ALWAYS);
     syntax_tree = PHrunCompilerSubPhase (SUBPH_ebt, syntax_tree, ALWAYS);
