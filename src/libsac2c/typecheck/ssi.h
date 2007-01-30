@@ -38,7 +38,7 @@ extern bool SSInewTypeRel (ntype *small, ntype *big);
 
 extern bool SSIinitAssumptionSystem (tvar_ass_handle_fun HandleContra,
                                      tvar_ass_handle_fun HandleFix);
-extern bool SSIassumtionSystemIsInitialized ();
+extern bool SSIassumptionSystemIsInitialized ();
 
 extern bool SSIassumeLow (tvar *var, sig_dep *handle);
 extern bool SSIfixLow (tvar *var);
