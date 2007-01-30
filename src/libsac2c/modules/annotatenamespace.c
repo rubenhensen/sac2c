@@ -727,6 +727,13 @@ ANSmodule (node *arg_node, info *arg_info)
     }
 
     /*
+     * traverse funspecs
+     */
+
+    if (MODULE_FUNSPECS (arg_node) != NULL) {
+        MODULE_FUNSPECS (arg_node) = TRAVdo (MODULE_FUNSPECS (arg_node), arg_info);
+    }
+    /*
      * traverse typedefs
      */
 
