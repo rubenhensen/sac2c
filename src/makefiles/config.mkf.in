@@ -87,6 +87,7 @@ CLOCK_SKEW_ELIMINATION   := if [ -x $(PROJECT_ROOT)/src/bin/cse ] ; \
                             then $(PROJECT_ROOT)/src/bin/cse $@ ; \
                             fi
 
+SAC2C                    := $(PROJECT_ROOT)/bin/sac2c -v0 
 FINGERPRINTER            := $(PROJECT_ROOT)/src/bin/md5calc
 CODE_BEAUTIFIER          := @CB@
 ICM_TESTER               := $(PROJECT_ROOT)/src/bin/icmt
