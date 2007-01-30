@@ -20,6 +20,7 @@
 #include "new_types.h"
 #include "type_utils.h"
 #include "deserialize.h"
+#include "map_fun_trav.h"
 
 /*******************************************************************************
  *
@@ -451,7 +452,7 @@ CRTWRPmodule (node *arg_node, info *arg_info)
      * Now, we set the FUNDEF_IMPL nodes for the forced specializations:
      */
     MODULE_FUNSPECS (arg_node)
-      = MFTdoMapFunTrav (MODULE_FUNSPECS (arg_node), CRTWRPspecFundef);
+      = MFTdoMapFunTrav (MODULE_FUNSPECS (arg_node), arg_info, CRTWRPspecFundef);
     /**
      * Finally, we insert the wrapper functions into the fundef chain:
      */
