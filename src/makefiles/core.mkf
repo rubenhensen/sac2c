@@ -14,8 +14,8 @@
 # Hence, we can expect variables to be preset from the outside:
 #
 #  TARGETDIR : The compilation target directory. These are either all src directories
-#           when called by the top-level directory or just the one directory itself
-#           when called locally.
+#              when called by the top-level directory or just the one directory itself
+#              when called locally.
 #
 #
 
@@ -50,19 +50,30 @@ TARGETFILES_DEVEL_MT := $(addsuffix .mt.o,$(TARGETFILES))
 TARGETFILES_PROD_MT  := $(addsuffix .mt.prod.o,$(TARGETFILES))
 
 TARGETFILES_HEADER   := $(addsuffix .h,\
-                          $(foreach target,$(TARGETDIR),\
-                            $(addprefix $(target)/,$($(runtime)))))
+                          $(foreach target,$(runtime),\
+                            $(addprefix ../runtime/$(target)/,$($(target)))))
+#
+# We must treat the header file targets of the runtime subproject differently
+# because some of the libsac source files include sac.h, which creates a 
+# dependency that we don't desire but which we cannot avoid either. However,
+# we must formulate the dependencies of sac.h in a way that works both when
+# making the runtime subproject and when doing the libsac subproject.
+# In particular, we hardcode the dependencies to '$(runtime)' rather than
+# using the generic $(TARGETFILES) and we put an extra '../runtime' in front
+# of the path.
+#
 
 LIBDIRS        := -L../lib -L../../lib
 LIB_MAKETOOLS  := -lcommon
 LIB_TOOLS      := -lsac -lcommon
 
-INCDIRS        := -I../../include -I../include $(patsubst %,-I%,$(SUBPROJECT_DIRS))
+INCDIRS        := -I../../include -I../include \
+                  $(patsubst %,-I%,$(SUBPROJECT_DIRS))
 
-XML_DIR     := $(PROJECT_ROOT)/src/libsac2c/xml
-XML_COMMONS := $(wildcard $(XML_DIR)/common_*.xsl)
+XML_DIR        := $(PROJECT_ROOT)/src/libsac2c/xml
+XML_COMMONS    := $(wildcard $(XML_DIR)/common_*.xsl)
 
-M4_DIR      := $(PROJECT_ROOT)/src/runtime/m4
+M4_DIR         := $(PROJECT_ROOT)/src/runtime/m4
 
 GENERATED_INCLUDE_FILES := $(patsubst %.xsl,%,\
                              $(foreach dir,$(SOURCE_DIRS),\

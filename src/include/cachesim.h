@@ -1,37 +1,5 @@
 /*
- * $Log$
- * Revision 3.2  2000/11/21 17:35:37  cg
- * Extended length of tag strings in piped cache simulation to have
- * enough space for block characterization.
- *
- * Revision 3.1  2000/11/20 18:02:41  sacbase
- * new release made
- *
- * Revision 2.2  2000/10/27 16:12:13  cg
- * Converted counters to new data type  unsigned long long int !
- *
- * Revision 2.1  1999/07/08 12:26:16  cg
- * File moved to new directory src/libsac.
- *
- *
- */
-
-/*
- * Revision 1.5  1999/07/05 11:57:31  her
- * changes to seperate read from writecounters
- *
- * Revision 1.4  1999/05/20 14:16:49  cg
- * added macro MAX_TAG_LENGTH
- *
- * Revision 1.3  1999/05/10 10:55:31  her
- * removed SAC_CS_CheckArguments; was already in sac_cachesim.h
- *
- * Revision 1.2  1999/05/03 11:52:38  her
- * added a forward declaration for SAC_CS_CheckArguments
- *
- * Revision 1.1  1999/04/06 13:41:24  cg
- * Initial revision
- *
+ * $Id$
  *
  */
 

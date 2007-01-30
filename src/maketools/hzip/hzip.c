@@ -253,6 +253,8 @@ main (int argc, char *argv[])
     int i;
     FILE *infile;
 
+    printf ("/*\n *  Produced by %s\n */\n\n", argv[0]);
+
     for (i = 1; i < argc; i++) {
         infile = fopen (argv[i], "r");
         if (infile == NULL) {

@@ -209,9 +209,6 @@
  * will also be used in libsac_cachesim_access_advanced.o */
 extern void SAC_CS_DetailedAnalysis_Read (tCacheLevel *act_cl, void *baseaddress,
                                           ULINT aligned_addr, unsigned cacheline);
-#ifndef TYPE
-#define TYPE S
-#endif
 
 /******************************************************************************
  *
@@ -264,7 +261,7 @@ GetPosWithinSet (int *pWas_invalid, tCacheLevel *act_cl, ULINT *pElm0, ULINT ali
  *   same cacheline as ´E´, will be updated.
  *
  *****************************************************************************/
-#ifdef DETAILED
+#if DETAILED
 #define SAC_CS_READORWRITE Write
 #else
 #define SAC_CS_READORWRITE Read
@@ -297,7 +294,7 @@ void SAC_CS_DETAILEDANALYSIS (SAC_CS_READORWRITE) (tCacheLevel *act_cl, void *ba
             p2Entry = GET_SH_PTR_2ENTRY (act_sh_ary, idx);
             entry = GET_SH_ENTRY (p2Entry, idx);
             if (aligned_addr == entry_addr) {
-#ifdef DETAILED
+#if DETAILED
                 SAC_CS_wcold[SAC_CS_level] += !L_BIT (entry);
                 SAC_CS_wcross[SAC_CS_level] += C_BIT (entry);
                 SAC_CS_wself[SAC_CS_level] += S_BIT (entry);
@@ -354,7 +351,7 @@ void SAC_CS_ACCESS_DMREAD (TYPE) (void *baseaddress, void *elemaddress)
         SAC_CS_rmiss[SAC_CS_level]++;
         SAC_CS_rinvalid[SAC_CS_level] += was_invalid;
 
-#ifdef DETAILED
+#if DETAILED
         /* run through all shadowarrays and their affected entries */
         SAC_CS_DetailedAnalysis_Read (act_cl, baseaddress, aligned_addr, cacheline);
 #endif
@@ -399,7 +396,7 @@ void SAC_CS_ACCESS_DMFOW (TYPE) (void *baseaddress, void *elemaddress)
         SAC_CS_wmiss[SAC_CS_level]++;
         SAC_CS_winvalid[SAC_CS_level] += was_invalid;
 
-#ifdef DETAILED
+#if DETAILED
         /* run through all shadowarrays and their affected entries */
         SAC_CS_DetailedAnalysis_Write (act_cl, baseaddress, aligned_addr, cacheline);
 #endif
@@ -443,7 +440,7 @@ void SAC_CS_ACCESS_DMWV (TYPE) (void *baseaddress, void *elemaddress)
         SAC_CS_wmiss[SAC_CS_level]++;
         SAC_CS_winvalid[SAC_CS_level] += was_invalid;
 
-#ifdef DETAILED
+#if DETAILED
         /* run through all shadowarrays and their affected entries */
         SAC_CS_DetailedAnalysis_Write (act_cl, baseaddress, aligned_addr, cacheline);
 #endif
@@ -486,7 +483,7 @@ void SAC_CS_ACCESS_DMWA (TYPE) (void *baseaddress, void *elemaddress)
         SAC_CS_wmiss[SAC_CS_level]++;
         SAC_CS_winvalid[SAC_CS_level] += was_invalid;
 
-#ifdef DETAILED
+#if DETAILED
         /* run through all shadowarrays and their affected entries */
         SAC_CS_DetailedAnalysis_Write (act_cl, baseaddress, aligned_addr, cacheline);
 #endif
@@ -525,7 +522,7 @@ void SAC_CS_ACCESS_AS4READ (TYPE) (void *baseaddress, void *elemaddress)
         SAC_CS_rmiss[SAC_CS_level]++;
         SAC_CS_rinvalid[SAC_CS_level] += was_invalid;
 
-#ifdef DETAILED
+#if DETAILED
         /* run through all shadowarrays and their affected entries */
         SAC_CS_DetailedAnalysis_Read (act_cl, baseaddress, aligned_addr, cacheline);
 #endif
@@ -574,7 +571,7 @@ void SAC_CS_ACCESS_AS4FOW (TYPE) (void *baseaddress, void *elemaddress)
         SAC_CS_wmiss[SAC_CS_level]++;
         SAC_CS_winvalid[SAC_CS_level] += was_invalid;
 
-#ifdef DETAILED
+#if DETAILED
         /* run through all shadowarrays and their affected entries */
         SAC_CS_DetailedAnalysis_Write (act_cl, baseaddress, aligned_addr, cacheline);
 #endif
@@ -623,7 +620,7 @@ void SAC_CS_ACCESS_AS4WV (TYPE) (void *baseaddress, void *elemaddress)
         SAC_CS_wmiss[SAC_CS_level]++;
         SAC_CS_winvalid[SAC_CS_level] += was_invalid;
 
-#ifdef DETAILED
+#if DETAILED
         /* run through all shadowarrays and their affected entries */
         SAC_CS_DetailedAnalysis_Write (act_cl, baseaddress, aligned_addr, cacheline);
 #endif
@@ -672,7 +669,7 @@ void SAC_CS_ACCESS_AS4WA (TYPE) (void *baseaddress, void *elemaddress)
         SAC_CS_wmiss[SAC_CS_level]++;
         SAC_CS_winvalid[SAC_CS_level] += was_invalid;
 
-#ifdef DETAILED
+#if DETAILED
         /* run through all shadowarrays and their affected entries */
         SAC_CS_DetailedAnalysis_Write (act_cl, baseaddress, aligned_addr, cacheline);
 #endif

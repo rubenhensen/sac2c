@@ -39,8 +39,8 @@ targets_libsacphm_devel        := libsacphm.devel.a libsacphm_mt.devel.a
 targets_libsacphm_prod         := libsacphm.a libsacphm_mt.a
 targets_libsacphm_default      := $(targets_libsacphm_prod)
 
-targets_tools_devel            := csima csim
-targets_tools_prod             := csima.prod csim.prod
+targets_tools_devel            := csima csimt
+targets_tools_prod             := csima.prod csimt.prod
 targets_tools_default          := $(targets_tools_devel)
 
 
@@ -307,7 +307,7 @@ mt              = mt
 
 phm             = nophm
 
-cachesim        = access basic 
+cachesim        = basic access_simple access_detailed
 
 
 ###############################################################################

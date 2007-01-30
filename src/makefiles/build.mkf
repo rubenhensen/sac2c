@@ -173,7 +173,7 @@ $(PROJECT_ROOT)/include/sac.h: $(TARGETFILES_HEADER)
 #
 
 $(PROJECT_ROOT)/bin/%.devel: $(TARGETFILES_DEVEL)
-	@$(ECHO) ""
+#	@$(ECHO) ""
 	@$(ECHO) "Linking $(PREFIX_ROOT)bin/$*.devel (developer version)"
 	$(HIDE) $(CC) -o $@ $(filter $*/%,$^)  $(LIBDIRS) $(LIB_TOOLS) $(LIBS)
 	@$(RM) .make_track
@@ -181,7 +181,7 @@ $(PROJECT_ROOT)/bin/%.devel: $(TARGETFILES_DEVEL)
 	@$(CLOCK_SKEW_ELIMINATION)  
 
 $(PROJECT_ROOT)/bin/%: $(TARGETFILES_PROD) 
-	@$(ECHO) ""
+#	@$(ECHO) ""
 	@$(ECHO) "Linking $(PREFIX_ROOT)bin/$* (product version)"
 	$(HIDE) $(CC) -o $@ $(filter $*/%,$^)  $(LIBDIRS) $(LIB_TOOLS) $(LIBS)
 	@$(RM) .make_track
