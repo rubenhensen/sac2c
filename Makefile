@@ -74,8 +74,6 @@ default devel prod: checks
 	@$(ECHO) "************************************************************"
 	@$(ECHO) "* Building $(PROJECT_NAME)"
 	@$(ECHO) "************************************************************"
-	$(HIDE) $(MAKE) -C src/commonlib DEPS="$(DEPS)" HIDE="$(HIDE)" \
-                        PREFIX_LOCAL="src/commonlib/" PREFIX_ROOT="" $@
 	$(HIDE) $(MAKE) -C src/maketools DEPS="$(DEPS)" HIDE="$(HIDE)" \
                         PREFIX_LOCAL="src/maketools/" PREFIX_ROOT="" $@
 	$(HIDE) $(MAKE) -C src/libsac2c  DEPS="$(DEPS)" HIDE="$(HIDE)" \
@@ -108,8 +106,6 @@ clean cleandevel cleanprod: checks
 	@$(ECHO) "************************************************************"
 	@$(ECHO) "* Cleaning $(PROJECT_NAME)"
 	@$(ECHO) "************************************************************"
-	$(HIDE) $(MAKE) -C src/commonlib DEPS="$(DEPS)" HIDE="$(HIDE)" \
-                        PREFIX_LOCAL="src/commonlib/" PREFIX_ROOT="" $@
 	$(HIDE) $(MAKE) -C src/maketools DEPS="$(DEPS)" HIDE="$(HIDE)" \
                         PREFIX_LOCAL="src/maketools/" PREFIX_ROOT="" $@
 	$(HIDE) $(MAKE) -C src/libsac2c  DEPS="$(DEPS)" HIDE="$(HIDE)" \

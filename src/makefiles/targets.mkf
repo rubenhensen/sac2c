@@ -5,42 +5,6 @@
 
 ###############################################################################
 #
-# Subproject commonlib
-#
-###############################################################################
-
-###############################################################################
-#
-# General settings
-#
-
-commonlib_targets           := libcommon.a
-commonlib_targetdir         := src/lib
-
-commonlib_subtarget_suffix  := .o
-commonlib_defaultstyle      := devel
-
-commonlib_extraclean_all    := 
-commonlib_extraclean_devel  := 
-commonlib_extraclean_prod   := 
-
-commonlib_sourcedirs        := getoptions md5sum dbug 
-
-###############################################################################
-# 
-# Subtargets
-#
-
-commonlib_dbug              := dbug
-
-commonlib_getoptions        := getoptions
-
-commonlib_md5sum            := md5
-
-
-
-###############################################################################
-#
 # Subproject maketools
 #
 ###############################################################################
@@ -79,7 +43,7 @@ maketools_echo              := echo
 
 maketools_icmt              := icmt
 
-maketools_md5calc           := md5calc
+maketools_md5calc           := md5 md5calc
 
 maketools_hzip              := hzip
 
@@ -111,7 +75,7 @@ libsac2c_extraclean_devel  := bin/sac2c.efence \
 
 libsac2c_extraclean_prod   := src/libsac2c/global/build_prod.c
 
-libsac2c_sourcedirs        := global tree serialize \
+libsac2c_sourcedirs        := global tree support serialize \
                               scanparse flatten constants typecheck types \
                               modules objects stdopt arrayopt wltransform \
                               concurrent multithread profile \
@@ -133,7 +97,8 @@ libsac2c_tree        := traverse tree_basic free tree_compound DupTree \
                         free_attribs traverse_tables traverse_helper check \
                         check_lib checktst prepare_inlining map_call_graph \
                         map_fun_trav check_node check_attribs remove_dfms
-     
+
+libsac2c_support     := dbug
 
 libsac2c_serialize   := serialize_node serialize_attribs deserialize \
                         serialize_buildstack serialize_helper \
@@ -176,7 +141,7 @@ libsac2c_objects     := object_init resolve_reference_args object_analysis \
                         restore_objects check_uniqueness_annotations \
                         generate_object_initialiser strip_external_signatures \
                         manage_object_initialisers check_uniqueness spmdfun_fix
-       
+
 
 libsac2c_stdopt      := optimize \
                         DeadFunctionRemoval deadcodeinference \

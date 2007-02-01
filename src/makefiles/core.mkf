@@ -155,20 +155,6 @@ makesubdir: $(SUBTARGETS)
 
 ################################################################################
 #
-# Building common library
-#
-
-$(PROJECT_ROOT)/src/lib/libcommon.a: $(SUBTARGETS) 
-	@$(ECHO) ""
-	@$(ECHO) "Creating $(PREFIX_ROOT)src/lib/libcommon.a ($($(STYLE)_long) version)"
-	$(HIDE) $(AR) $@ $^
-	$(HIDE) $(RANLIB) $@
-	@$(TOUCH) .done
-	@$(CLOCK_SKEW_ELIMINATION)  
-
-
-################################################################################
-#
 # Building make tools
 #
 
@@ -474,7 +460,7 @@ global/build_$(STYLE).c: $(SUBTARGETS)
         fi
 	@$(ECHO) "  Checking dependencies of source file: $(notdir $<)"
 	$(HIDE) if $(CC_DEVEL) $(CC_FLAGS_DEPS) $(SETTINGS_DEVEL) $(INCDIRS) $<  > $@d ; \
-	 then sed 's/\($(notdir $*)\)\.o[ :]*/$(subst /,\/,$*)\.o $(subst /,\/,$@)\: ..\/makefiles\/config.mkf /'  <$@d >$@; \
+	 then sed 's/\($(notdir $*)\)\.o[ :]*/$(subst /,\/,$*)\.o $(subst /,\/,$*)\.p.o $(subst /,\/,$*)\.d.o $(subst /,\/,$*)\.p.mt.o $(subst /,\/,$*)\.d.mt.o $(subst /,\/,$*)\.p.diag.o $(subst /,\/,$*)\.d.diag.o  $(subst /,\/,$*)\.p.mt.diag.o $(subst /,\/,$*)\.d.mt.diag.o $(subst /,\/,$@)\: ..\/makefiles\/config.mkf /'  <$@d >$@; \
 	      $(RM) $@d ; \
 	 else $(RM) $@d ; \
 	      exit 1 ;  \

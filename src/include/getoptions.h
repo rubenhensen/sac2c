@@ -112,11 +112,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-extern int GOPTcheckOption (char *pattern, char *argv1, char *argv2, char **option,
-                            char **argument);
-
-extern int GOPTstringEqual (char *s1, char *s2, int case_sensitive);
+#include <ctype.h> /* for tolower() */
 
 #define ARGS_BEGIN(argc, argv)                                                           \
     {                                                                                    \
@@ -130,8 +126,7 @@ extern int GOPTstringEqual (char *s1, char *s2, int case_sensitive);
         while (ARGS_i < ARGS_argc) {
 
 #define ARGS_FLAG(s, action)                                                             \
-    if ((ARGS_argv[ARGS_i][0] == '-')                                                    \
-        && GOPTstringEqual (s, ARGS_argv[ARGS_i] + 1, 1)) {                              \
+    if ((ARGS_argv[ARGS_i][0] == '-') && StringEqual (s, ARGS_argv[ARGS_i] + 1, 1)) {    \
         OPT = ARGS_argv[ARGS_i] + 1;                                                     \
         ARG = NULL;                                                                      \
         action;                                                                          \
@@ -141,9 +136,9 @@ extern int GOPTstringEqual (char *s1, char *s2, int case_sensitive);
 
 #define ARGS_OPTION(s, action)                                                           \
     if ((ARGS_shift                                                                      \
-         = GOPTcheckOption (s, ARGS_argv[ARGS_i],                                        \
-                            ARGS_i < ARGS_argc - 1 ? ARGS_argv[ARGS_i + 1] : NULL, &OPT, \
-                            &ARG))) {                                                    \
+         = CheckOption (s, ARGS_argv[ARGS_i],                                            \
+                        ARGS_i < ARGS_argc - 1 ? ARGS_argv[ARGS_i + 1] : NULL, &OPT,     \
+                        &ARG))) {                                                        \
         if (ARG == NULL) {                                                               \
             ARGS_ERROR ("Missing argument for option");                                  \
         } else {                                                                         \
@@ -156,9 +151,9 @@ extern int GOPTstringEqual (char *s1, char *s2, int case_sensitive);
 
 #define ARGS_OPTION_BEGIN(s)                                                             \
     if ((ARGS_shift                                                                      \
-         = GOPTcheckOption (s, ARGS_argv[ARGS_i],                                        \
-                            ARGS_i < ARGS_argc - 1 ? ARGS_argv[ARGS_i + 1] : NULL, &OPT, \
-                            &ARG))) {                                                    \
+         = CheckOption (s, ARGS_argv[ARGS_i],                                            \
+                        ARGS_i < ARGS_argc - 1 ? ARGS_argv[ARGS_i + 1] : NULL, &OPT,     \
+                        &ARG))) {                                                        \
         if (ARG == NULL) {                                                               \
             ARGS_ERROR ("Missing argument for option");                                  \
         } else {
@@ -205,7 +200,7 @@ extern int GOPTstringEqual (char *s1, char *s2, int case_sensitive);
         int ARGS_not_chosen = 1;
 
 #define ARG_CHOICE(choice, action)                                                       \
-    if (ARGS_not_chosen && GOPTstringEqual (ARG, choice, 0)) {                           \
+    if (ARGS_not_chosen && StringEqual (ARG, choice, 0)) {                               \
         ARGS_not_chosen = 0;                                                             \
         action;                                                                          \
     }
@@ -290,5 +285,172 @@ extern int GOPTstringEqual (char *s1, char *s2, int case_sensitive);
         ARGS_i++;                                                                        \
         }                                                                                \
         }
+
+/*
+ * In the remainder, we feature the definitions of two auxiliary functions,
+ * declared in the beginning. It is not optimal to have plain C code in a
+ * header file, but in this very case it allows us to have a pure include
+ * based realisation of getoptions without the need to link with additional
+ * libraries. Given the additional fact that programs typically include
+ * getoptions.h exactly once, this seems to be a suitable trade-off.
+ */
+
+/******************************************************************************
+ *
+ * function:
+ *   int CheckOption(char *pattern, char *argv1, char *argv2,
+ *                   char **option, char **argument)
+ *
+ * description:
+ *
+ *  This function gets two consecutive entries from the command line,
+ *  argv1 and argv2. It compares the first argument, i.e. pattern,
+ *  against argv1. If these are equal, the function decides that argv2
+ *  must be the argument to the option specified by pattern. If argv2
+ *  does not start with '-', everything is fine and argv1 is returned as
+ *  option and argv2 as argument. The actual return value is 2, indicating
+ *  that two command line entries have been processed.
+ *
+ *  If pattern is a prefix of argv1, then the remaining characters are assumed
+ *  to represent the argument; the return parameters argument and option are
+ *  set accordingly. The actual return value is 1, indicating
+ *  that one command line entry has been processed.
+ *
+ *  If pattern is not even a prefix of argv1, then the actual return value
+ *  is 0, indicating that none of the command line entries have been processed.
+ *
+ ******************************************************************************/
+
+static int
+CheckOption (char *pattern, char *argv1, char *argv2, char **option, char **argument)
+{
+    static char *buffer = NULL;
+    static int buffer_size = 0;
+
+    int i = 0;
+    int res = 1;
+    int request;
+
+    if (buffer == NULL) {
+        buffer = (char *)malloc (64);
+        if (buffer == NULL) {
+            fprintf (stderr, "Out of memory");
+            exit (1);
+        }
+        buffer_size = 62;
+    }
+
+    if (argv2 == NULL) {
+        request = strlen (argv1);
+    } else {
+        request = strlen (argv1) + strlen (argv2);
+    }
+
+    if (buffer_size <= request) {
+        free (buffer);
+        buffer = (char *)malloc (request + 20);
+        if (buffer == NULL) {
+            fprintf (stderr, "Out of memory");
+            exit (1);
+        }
+        buffer_size = request + 18;
+    }
+
+    if (argv1[0] != '-') {
+        *option = NULL;
+        *argument = NULL;
+        return (0);
+    }
+
+    while (pattern[i] != '\0') {
+        /*
+         * The function is finished if <pattern> is not a prefix of
+         * the current <argv>.
+         */
+        if (pattern[i] != argv1[i + 1]) {
+            *option = NULL;
+            *argument = NULL;
+            return (0);
+        }
+
+        i++;
+    }
+
+    if (argv1[i + 1] == '\0') {
+        /*
+         * <pattern> and the current <argv> are identical.
+         */
+
+        *option = argv1;
+
+        if (argv2 == NULL) {
+            *argument = NULL;
+        } else {
+            if (argv2[0] == '-') {
+                *argument = NULL;
+            } else {
+                *argument = argv2;
+                res = 2;
+            }
+        }
+    } else {
+        strcpy (buffer, argv1);
+        buffer[i + 1] = '\0';
+        /*
+         * The library function strncpy() itself does NOT append
+         * a terminating 0 character.
+         */
+
+        *option = buffer;
+        *argument = argv1 + i + 1;
+    }
+
+    return (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   bool StringEqual( char *s1, char *s2, int case_sensitive)
+ *
+ * description:
+ *
+ *  This function compares two strings s1 and s2 for equality. The third
+ *  (boolean) parameter specifies case sensitivity.
+ *
+ ******************************************************************************/
+
+static int
+StringEqual (char *s1, char *s2, int case_sensitive)
+{
+    int i;
+
+    if ((s1 == NULL) && (s2 == NULL)) {
+        return (1);
+    }
+    if ((s1 == NULL) || (s2 == NULL)) {
+        return (0);
+    }
+
+    if (case_sensitive) {
+        for (i = 0; (s1[i] != '\0') && (s2[i] != '\0'); i++) {
+            if (s1[i] != s2[i]) {
+                return (0);
+            }
+        }
+    } else {
+        for (i = 0; (s1[i] != '\0') && (s2[i] != '\0'); i++) {
+            if (tolower (s1[i]) != tolower (s2[i])) {
+                return (0);
+            }
+        }
+    }
+
+    if ((s1[i] == '\0') && (s2[i] == '\0')) {
+        return (1);
+    } else {
+        return (0);
+    }
+}
 
 #endif /* _GETOPTIONS_H_ */

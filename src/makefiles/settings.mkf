@@ -46,9 +46,9 @@ SETTINGS_DIAG          := -DDIAG
 # internal directories and other settings:
 #
 
-LIBDIRS                := -L../lib -L../../lib
-LIB_MAKETOOLS          := -lcommon
-LIB_TOOLS              := -lsac -lcommon
+LIBDIRS                := -L../../lib
+LIB_MAKETOOLS          := 
+LIB_TOOLS              := -lsac 
 
 XML_DIR                := $(PROJECT_ROOT)/src/libsac2c/xml
 XML_COMMONS            := $(wildcard $(XML_DIR)/common_*.xsl)

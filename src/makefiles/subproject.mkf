@@ -83,7 +83,7 @@ efence: make_efence
 make_%: checks
 	@$(ECHO) ""
 	@$(ECHO) "************************************************************"
-	@$(ECHO) "* Building $(PROJECT_NAME) $(SUBPROJECT) "
+	@$(ECHO) "* Building $(PROJECT_NAME) $(SUBPROJECT) ($($*_long) version)"
 	@$(ECHO) "* revision $(REVISION)"
 	@$(ECHO) "* on $(OS) for $(ARCH)"
 	@$(ECHO) "************************************************************"
