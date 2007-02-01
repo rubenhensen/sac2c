@@ -113,9 +113,9 @@ AddSacLibs (str_buf *buffer)
     if (global.optimize.dophm) {
         if (global.mtmode == MT_none) {
             if (global.runtimecheck.heap) {
-                ILIBstrBufPrint (buffer, "-lsacphm_diag ");
+                ILIBstrBufPrint (buffer, "-lsacphm_seq_diag ");
             } else {
-                ILIBstrBufPrint (buffer, "-lsacphm ");
+                ILIBstrBufPrint (buffer, "-lsacphm_seq ");
             }
         } else {
             if (global.runtimecheck.heap) {
@@ -127,7 +127,7 @@ AddSacLibs (str_buf *buffer)
     }
 
     if (global.mtmode == MT_none) {
-        ILIBstrBufPrint (buffer, "-lsac ");
+        ILIBstrBufPrint (buffer, "-lsac_seq ");
     } else {
         ILIBstrBufPrint (buffer, "-lsac_mt -lpthread");
     }

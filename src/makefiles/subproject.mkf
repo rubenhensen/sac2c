@@ -1,4 +1,3 @@
-
 #
 # $Id$
 #
@@ -30,31 +29,27 @@
 # general setup:
 #
 
-PROJECT_ROOT := ../..
+PROJECT_ROOT     := ../..
 
-HIDE   := @
-DEPS   := yes
+HIDE             := @
+DEPS             := yes
 
-PREFIX_LOCAL := 
-PREFIX_ROOT  := $(PROJECT_ROOT)/
+PREFIX_LOCAL     := 
+PREFIX_ROOT      := $(PROJECT_ROOT)/
 
-include $(PROJECT_ROOT)/src/makefiles/config.mkf
-include $(PROJECT_ROOT)/src/makefiles/targets.mkf
+MAKEFILE_DIR     := $(PROJECT_ROOT)/src/makefiles
+
+include $(MAKEFILE_DIR)/config.mkf
+include $(MAKEFILE_DIR)/settings.mkf
+include $(MAKEFILE_DIR)/targets.mkf
 
 SUBPROJECT       := $(notdir $(CURDIR))
-SUBPROJECT_DIRS  := $($(SUBPROJECT))
 
-targetdirname    := $(targetdir_$(SUBPROJECT))
-targetdir        := $(PROJECT_ROOT)/$(targetdirname)
+TARGETDIR_NAME   := $($(SUBPROJECT)_targetdir)
+TARGETDIR        := $(PROJECT_ROOT)/$(TARGETDIR_NAME)
 
-targets_devel    := $(addprefix $(targetdir)/,$(targets_$(SUBPROJECT)_devel))
-targets_prod     := $(addprefix $(targetdir)/,$(targets_$(SUBPROJECT)_prod))
-targets_efence   := $(addprefix $(targetdir)/,$(targets_$(SUBPROJECT)_efence))
-targets_default  := $(addprefix $(targetdir)/,$(targets_$(SUBPROJECT)_default))
-
-clean_also       := $(addprefix $(targetdir)/,$(clean_$(SUBPROJECT)))
-clean_also_devel := $(addprefix $(targetdir)/,$(clean_$(SUBPROJECT)_devel))
-clean_also_prod  := $(addprefix $(targetdir)/,$(clean_$(SUBPROJECT)_prod))
+TARGETS          := $(addprefix $(TARGETDIR)/,\
+                      $($(SUBPROJECT)_targets))
 
 
 ###############################################################################
@@ -62,9 +57,7 @@ clean_also_prod  := $(addprefix $(targetdir)/,$(clean_$(SUBPROJECT)_prod))
 # Dummy rules
 #
 
-.PHONY: clean clean_dirs %.clean 
-.PHONY: cleanprod cleanprod_dirs %.cleanprod 
-.PHONY: cleandevel cleandevel_dirs %.cleandevel
+.PHONY: clean clean_% 
 .PHONY: default devel prod efence make_%
 
 
@@ -73,7 +66,7 @@ clean_also_prod  := $(addprefix $(targetdir)/,$(clean_$(SUBPROJECT)_prod))
 # Start rules
 #
 
-default: make_default
+default: make_$($(SUBPROJECT)_defaultstyle)
 
 devel: make_devel
 
@@ -95,16 +88,22 @@ make_%: checks
 	@$(ECHO) "* on $(OS) for $(ARCH)"
 	@$(ECHO) "************************************************************"
 	@$(TOUCH) .make_track
-	$(HIDE) $(MAKE) -f $(PROJECT_ROOT)/src/makefiles/core.mkf \
+	@ if [ -f .last_style ] ; \
+          then if [ "$($*_long)" != "`cat .last_style`" -a "" != "`cat .last_style`" ] ; \
+               then $(RM) $(TARGETS) ; \
+                    $(ECHO) "" ; \
+                    $(ECHO) "Removing `cat .last_style` targets for $($*_long) targets" ; \
+               fi ; \
+          fi
+	@$(ECHO) $($*_long) > .last_style; 
+	$(HIDE) $(MAKE) -f $(MAKEFILE_DIR)/core.mkf \
                          DEPS="$(DEPS)" HIDE="$(HIDE)" \
                          PREFIX_LOCAL="$(PREFIX_LOCAL)" \
                          PREFIX_ROOT="$(PREFIX_ROOT)" \
-                         TARGETDIR="$(SUBPROJECT_DIRS)" \
-                         TARGETS="$(targets_$*)" 
+                         SUBPROJECT="$(SUBPROJECT)" \
+                         STYLE="$*" 
+	@$(RM) .make_track
 	@$(ECHO) ""
-
-
-
 
 
 ###############################################################################
@@ -112,60 +111,30 @@ make_%: checks
 # Rules for cleaning directories
 #
 
-clean: 
+clean: clean_all
+
+clean_%: 
 	@$(ECHO) ""
 	@$(ECHO) "************************************************************"
 	@$(ECHO) "* Cleaning $(PROJECT_NAME) $(SUBPROJECT)"
+	@$(ECHO) "* revision $(REVISION)"
+	@$(ECHO) "* on $(OS) for $(ARCH)"
 	@$(ECHO) "************************************************************"
-	@$(ECHO) "Cleaning directory $(PREFIX_ROOT)$(targetdirname)"
-	$(HIDE) $(RM) $(targets_devel) $(targets_prod) $(clean_also)
-	@$(MAKE) HIDE="$(HIDE)" clean_dirs
 	@$(ECHO) ""
-
-clean_dirs: $(addsuffix .clean,$(SUBPROJECT_DIRS))
-
-%.clean:
-	@$(ECHO) "Cleaning directory $(PREFIX_LOCAL)$*"
-	$(HIDE) $(MAKE) -C $* HIDE="$(HIDE)" clean_sourcedir
-
-
-cleanprod: 
+	$(HIDE) $(MAKE) -f $(MAKEFILE_DIR)/clean.mkf \
+                        HIDE="$(HIDE)" \
+                        PROJECT_ROOT="$(PROJECT_ROOT)" \
+                        PREFIX_LOCAL="$(PREFIX_LOCAL)" \
+                        PREFIX_ROOT="$(PREFIX_ROOT)" \
+                        STYLE="$*" \
+                        SUBPROJECT="$(SUBPROJECT)" \
+                        clean_subdirs
 	@$(ECHO) ""
-	@$(ECHO) "************************************************************"
-	@$(ECHO) "* Cleaning $(PROJECT_NAME) $(SUBPROJECT)  (product code only)"
-	@$(ECHO) "************************************************************"
-	@$(ECHO) "Cleaning directory $(PREFIX_ROOT)$(targetdirname)"
-	$(HIDE) $(RM) $(targets_prod) $(clean_also_prod)
-	@$(MAKE) HIDE="$(HIDE)" cleanprod_dirs
-	@$(ECHO) ""
-
-cleanprod_dirs: $(addsuffix .cleanprod,$(SUBPROJECT_DIRS))
-
-%.cleanprod:
-	@$(ECHO) "Cleaning directory (PREFIX_LOCAL)$*"
-	$(HIDE) $(MAKE) -C $* HIDE="$(HIDE)" cleanprod_sourcedir
-
-
-cleandevel: 
-	@$(ECHO) ""
-	@$(ECHO) "************************************************************"
-	@$(ECHO) "* Cleaning $(PROJECT_NAME) $(SUBPROJECT)  (developer code only)"
-	@$(ECHO) "************************************************************"
-	@$(ECHO) "Cleaning directory $(PREFIX_ROOT)$(targetdirname)"
-	$(HIDE) $(RM) $(targets_devel) $(clean_also_devel)
-	@$(MAKE) HIDE="$(HIDE)" cleandevel_dirs
-	@$(ECHO) ""
-
-cleandevel_dirs: $(addsuffix .cleandevel,$(SUBPROJECT_DIRS))
-
-%.cleandevel:
-	@$(ECHO) "Cleaning directory (PREFIX_LOCAL)$*"
-	$(HIDE) $(MAKE) -C $* HIDE="$(HIDE)" cleandevel_sourcedir
 
 
 ###############################################################################
 #
-# Rules for consistency checks
+# Includes for consistency checking mechanism
 #
 
-include $(PROJECT_ROOT)/src/makefiles/check.mkf
+include $(MAKEFILE_DIR)/check.mkf

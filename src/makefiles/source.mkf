@@ -5,10 +5,7 @@
 
 ###############################################################################
 #
-# Makefile for snetc source directories
-#
-# This Makefile is copied on demand into source directories.
-# Be sure not to edit these copies.
+# Makefile for source directories
 #
 ###############################################################################
 
@@ -37,15 +34,24 @@
 # General settings
 #
 
-PROJECT_ROOT = ../../..
+PROJECT_ROOT   := ../../..
 
-include $(PROJECT_ROOT)/src/makefiles/config.mkf
-include $(PROJECT_ROOT)/src/makefiles/targets.mkf
+HIDE           := @
+DEPS           := yes
 
-TARGETDIR := $(notdir $(CURDIR))
+PREFIX_LOCAL   := 
+PREFIX_ROOT    := $(PROJECT_ROOT)/
 
-DEPS := yes
-HIDE := @
+MAKEFILE_DIR   := $(PROJECT_ROOT)/src/makefiles
+
+include $(MAKEFILE_DIR)/config.mkf
+include $(MAKEFILE_DIR)/settings.mkf
+include $(MAKEFILE_DIR)/targets.mkf
+
+SUBPROJECT_DIR := $(notdir $(CURDIR))
+
+SUBPROJECT     := $(notdir $(realpath $(CURDIR)/..))
+
 
 
 ###############################################################################
@@ -63,25 +69,32 @@ HIDE := @
 # Start rules
 #
 
-default: devel
+default: make_$($(SUBPROJECT)_defaultstyle)
 
-devel: checks
-	@$(ECHO) ""
-	@$(ECHO) "Making current subdirectory (developer version)"
-	@$(TOUCH) .make_track
-	$(HIDE) $(MAKE) -C .. -f ../makefiles/core.mkf \
-                        TARGETDIR="$(TARGETDIR)" DEPS="$(DEPS)" HIDE="$(HIDE)" \
-                        makesubdir.devel
-	@$(RM) .make_track
+devel: make_devel
 
-prod: checks
+prod: make_prod
+
+efence: make_efence
+
+
+###############################################################################
+#
+# Main rule
+#
+
+make_%: checks
 	@$(ECHO) ""
-	@$(ECHO) "Making current subdirectory (product version)"
-	@$(TOUCH) .make_track
+	@$(ECHO) "Making current subdirectory ($($*_long) version)"
+	@$(TOUCH) ../.make_track
 	$(HIDE) $(MAKE) -C .. -f ../makefiles/core.mkf \
-                        TARGETDIR="$(TARGETDIR)" DEPS="$(DEPS)" HIDE="$(HIDE)" \
-                        makesubdir.prod
-	@$(RM) .make_track
+                         DEPS="$(DEPS)" HIDE="$(HIDE)" \
+                         PREFIX_LOCAL="$(PREFIX_LOCAL)" \
+                         PREFIX_ROOT="$(PREFIX_ROOT)" \
+                         SUBPROJECT="$(SUBPROJECT)" \
+                         SUBPROJECT_DIRS="$(SUBPROJECT_DIR)" \
+                         STYLE="$*" makesubdir
+	@$(ECHO) ""
 
 
 
@@ -97,55 +110,37 @@ checkxml:
 	$(XSLTENGINE) %< ast.xml > $@
 
 
-
-###############################################################################
-#
-# Rules for debugging 
-#
-
-TARGETFILES_DEVEL := $(addprefix ../,$(foreach target,$(src),$(addprefix $(target)/,$($(target)))))
-
-
 ###############################################################################
 #
 # Rules for directory cleaning
 #
 
 clean:
+	@$(ECHO) ""
 	@$(ECHO) "Cleaning current subdirectory"
-	$(HIDE) $(MAKE) clean_sourcedir
+	$(HIDE) $(MAKE) -f $(MAKEFILE_DIR)/clean.mkf \
+                        HIDE="$(HIDE)" \
+                        SUBPROJECT="$(SUBPROJECT)" \
+                        SUBPROJECT_DIRS="$(SUBPROJECT_DIR)" \
+                        PROJECT_ROOT="$(PROJECT_ROOT)" \
+                        clean_sourcedir_all
+	@$(ECHO) ""
 
-cleanprod:
-	@$(ECHO) "Cleaning current subdirectory (product version only)"
-	$(HIDE) $(MAKE) cleanprod_sourcedir
-
-cleandevel:
-	@$(ECHO) "Cleaning current subdirectory (developer version only)"
-	$(HIDE) $(MAKE) cleandevel_sourcedir
-
-
-###############################################################################
-#
-# Rules for directory cleaning when process initiated in parent directory
-#
-
-clean_sourcedir:
-	$(HIDE) $(RM) *.o *.a *.bak *~ .*.d
-	$(HIDE) $(RM) $(patsubst %.xsl,%,$(wildcard *.xsl))
-	$(HIDE) $(RM) $(patsubst %.m4,%,$(wildcard *.m4))
-	$(HIDE) $(RM) -r .sb SunWS_cache
-	$(HIDE) $(RM) *.lex.c *.tab.c *.tab.h y.output
-
-cleanprod_sourcedir:
-	$(HIDE) $(RM) *.prod.o
-
-cleandevel_sourcedir:
-	$(HIDE) $(RM) *.o
+clean_%: 
+	@$(ECHO) ""
+	@$(ECHO) "Cleaning current subdirectory ($($(STYLE)_long) version only)"
+	$(HIDE) $(MAKE) -f $(MAKEFILE_DIR)/clean.mkf \
+                        HIDE="$(HIDE)" \
+                        SUBPROJECT="$(SUBPROJECT)" \
+                        SUBPROJECT_DIRS="$(SUBPROJECT_DIR)" \
+                        PROJECT_ROOT="$(PROJECT_ROOT)" \
+                        clean_sourcedir_$*
+	@$(ECHO) ""
 
 
 ###############################################################################
 #
-# Rules for consistency checks
+# Includes for consistency checking mechanism
 #
 
-include $(PROJECT_ROOT)/src/makefiles/check.mkf
+include $(MAKEFILE_DIR)/check.mkf

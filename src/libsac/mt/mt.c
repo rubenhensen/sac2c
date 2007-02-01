@@ -42,11 +42,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#ifdef TRACE
+#if TRACE
 #define SAC_DO_TRACE 1
 #else
 #define SAC_DO_TRACE 0
-#endif /* TRACE */
+#endif
 
 #define SAC_DO_MULTITHREAD 1
 #define SAC_DO_THREADS_STATIC 1
@@ -263,7 +263,7 @@ ThreadControlInitialWorker (void *arg)
  *
  ******************************************************************************/
 
-#ifdef TRACE
+#if TRACE
 void
 SAC_MT_TR_SetupInitial (int argc, char *argv[], unsigned int num_threads,
                         unsigned int max_threads)
@@ -327,7 +327,7 @@ SAC_MT_SetupInitial (int argc, char *argv[], unsigned int num_threads,
  *
  ******************************************************************************/
 
-#ifdef TRACE
+#if TRACE
 void
 SAC_MT_TR_Setup (int cache_line_max, int barrier_offset, int num_schedulers)
 #else
@@ -428,7 +428,7 @@ SAC_MT_Setup (int cache_line_max, int barrier_offset, int num_schedulers)
  *
  ******************************************************************************/
 
-#ifdef TRACE
+#if TRACE
 void
 SAC_MT1_TR_Setup (int cache_line_max, int barrier_offset, int num_schedulers)
 #else

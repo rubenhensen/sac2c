@@ -13,10 +13,12 @@
 #
 # Hence, we can expect variables to be preset from the outside:
 #
-#  TARGETDIR : The compilation target directory. These are either all src directories
-#              when called by the top-level directory or just the one directory itself
-#              when called locally.
+# SUBPROJECT      : name of subproject (must be set)
 #
+# SUBPROJECT_DIRS : name of specific source directory of subproject
+#                   set by source.mkf but not by subrpoject.mkf
+#
+# STYLE           : must be set to either default, devel or prod
 #
 
 
@@ -25,33 +27,45 @@
 # general setup:
 #
 
-PROJECT_ROOT := ../..
+PROJECT_ROOT     := ../..
 
-HIDE := @
-DEPS := yes
+MAKEFILE_DIR     := $(PROJECT_ROOT)/src/makefiles
 
-include $(PROJECT_ROOT)/src/makefiles/config.mkf
-include $(PROJECT_ROOT)/src/makefiles/targets.mkf
+include $(MAKEFILE_DIR)/config.mkf
+include $(MAKEFILE_DIR)/settings.mkf
+include $(MAKEFILE_DIR)/targets.mkf
 
-SUBPROJECT           := $(notdir $(CURDIR))
-SUBPROJECT_DIRS      := $($(SUBPROJECT))
+SUBPROJECT_DIRS  := $($(SUBPROJECT)_sourcedirs)
+#
+# preset by source.mkf to specific directory
+#
 
-SOURCE_DIRS          := $(TARGETDIR)
+INCDIRS          := -I../../include -I../include \
+                    $(patsubst %,-I%,$(SUBPROJECT_DIRS))
 
-TARGETFILES          := $(foreach target,$(TARGETDIR),\
-                          $(addprefix $(target)/,$($(target))))
+TARGETDIR_NAME   := $($(SUBPROJECT)_targetdir)
+TARGETDIR        := $(PROJECT_ROOT)/$(TARGETDIR_NAME)
 
-TARGETFILES_SRC      := $(addsuffix .c,$(TARGETFILES))
+TARGETS          := $(addprefix $(TARGETDIR)/,\
+                      $($(SUBPROJECT)_targets))
 
-TARGETFILES_DEVEL    := $(addsuffix .o,$(TARGETFILES))
-TARGETFILES_PROD     := $(addsuffix .prod.o,$(TARGETFILES))
+SUBTARGETS_RAW   := $(foreach srcdir,$(SUBPROJECT_DIRS),\
+                      $(addprefix $(srcdir)/,\
+                        $($(SUBPROJECT)_$(srcdir))))
 
-TARGETFILES_DEVEL_MT := $(addsuffix .mt.o,$(TARGETFILES))
-TARGETFILES_PROD_MT  := $(addsuffix .mt.prod.o,$(TARGETFILES))
+SUBTARGETS       := $(addsuffix $($(SUBPROJECT)_subtarget_suffix),\
+                      $(addsuffix .$($(STYLE)_short),\
+                        $(SUBTARGETS_RAW)))
 
-TARGETFILES_HEADER   := $(addsuffix .h,\
-                          $(foreach target,$(runtime),\
-                            $(addprefix ../runtime/$(target)/,$($(target)))))
+SUBTARGETS_MT    := $(patsubst %.o,%.mt.o,$(SUBTARGETS))
+SUBTARGETS_SEQ   := $(patsubst %.o,%.seq.o,$(SUBTARGETS))
+SUBTARGETS_DIAG  := $(patsubst %.o,%.diag.o,$(SUBTARGETS))
+SUBTARGETS_MT_DIAG := $(patsubst %.o,%.mt.diag.o,$(SUBTARGETS))
+
+SUBTARGETS_HEADER   := $(addsuffix .h,\
+                         $(foreach srcdir,$(runtime_sourcedirs),\
+                           $(addprefix ../runtime/$(srcdir)/,\
+                             $(runtime_$(srcdir)))))
 #
 # We must treat the header file targets of the runtime subproject differently
 # because some of the libsac source files include sac.h, which creates a 
@@ -63,45 +77,31 @@ TARGETFILES_HEADER   := $(addsuffix .h,\
 # of the path.
 #
 
-LIBDIRS        := -L../lib -L../../lib
-LIB_MAKETOOLS  := -lcommon
-LIB_TOOLS      := -lsac -lcommon
-
-INCDIRS        := -I../../include -I../include \
-                  $(patsubst %,-I%,$(SUBPROJECT_DIRS))
-
-XML_DIR        := $(PROJECT_ROOT)/src/libsac2c/xml
-XML_COMMONS    := $(wildcard $(XML_DIR)/common_*.xsl)
-
-M4_DIR         := $(PROJECT_ROOT)/src/runtime/m4
-
 GENERATED_INCLUDE_FILES := $(patsubst %.xsl,%,\
-                             $(foreach dir,$(SOURCE_DIRS),\
+                             $(foreach dir,$(SUBPROJECT_DIRS),\
                                $(wildcard $(dir)/*.h.xsl))) \
                            $(patsubst %.xsl,%,\
-                             $(foreach dir,$(SOURCE_DIRS),\
+                             $(foreach dir,$(SUBPROJECT_DIRS),\
                                $(wildcard $(dir)/*.mac.xsl))) \
                            $(patsubst %.y,%.tab.h,\
-                             $(foreach dir,$(SOURCE_DIRS),\
+                             $(foreach dir,$(SUBPROJECT_DIRS),\
                                $(wildcard $(dir)/*.y)))
 
 GENERATED_SOURCE_FILES := $(patsubst %.xsl,%,\
-                            $(foreach dir,$(SOURCE_DIRS),\
+                            $(foreach dir,$(SUBPROJECT_DIRS),\
                               $(wildcard $(dir)/*.c.xsl))) \
                           $(patsubst %.y,%.tab.c,\
-                            $(foreach dir,$(SOURCE_DIRS),\
+                            $(foreach dir,$(SUBPROJECT_DIRS),\
                               $(wildcard $(dir)/*.y))) \
                           $(patsubst %.l,%.lex.c,\
-                            $(foreach dir,$(SOURCE_DIRS),\
+                            $(foreach dir,$(SUBPROJECT_DIRS),\
                               $(wildcard $(dir)/*.l))) \
 
 GENERATED_FILES  := $(GENERATED_INCLUDE_FILES) $(GENERATED_SOURCE_FILES)
 
-DEPENDENCY_FILES := $(patsubst %.o,%.d,$(TARGETFILES_DEVEL))
-
-DEPENDENCIES     := $(foreach file,$(DEPENDENCY_FILES),\
-                      $(dir $(file)).$(notdir $(file)))
-
+DEPENDENCY_FILES := $(addsuffix .d,\
+                      $(foreach file,$(SUBTARGETS_RAW),\
+                        $(dir $(file)).$(notdir $(file))))
 
   
 ###############################################################################
@@ -109,10 +109,11 @@ DEPENDENCIES     := $(foreach file,$(DEPENDENCY_FILES),\
 # Dummy rules
 #
 
-.PHONY: all makesubdir.devel makesubdir.prod
+.PHONY: all makesubdir
 
-.PRECIOUS: %.c %.h %.o %.prod.o %.mt.o %.mt.prod.o .%.d %.c \
-           %.lex.c %.tab.c %.tab.h %.mac
+.PRECIOUS: %.c %.h %.o %.p.o %.d.o %.d.mt.o %.p.mt.o .%.d \
+           %.lex.c %.tab.c %.tab.h %.mac \
+           %.d.diag.o %.p.diag.o %.d.mt.diag.o %.p.mt.diag.o 
 
 
 
@@ -124,17 +125,162 @@ DEPENDENCIES     := $(foreach file,$(DEPENDENCY_FILES),\
 all: $(TARGETS)
 	@ if [ -f .done ] ; \
           then $(RM) .done ; \
-          else $(ECHO) "$(PROJECT_NAME) $(SUBPROJECT) up to date !"; \
+          else $(ECHO) "" ; \
+               $(ECHO) "$(PROJECT_NAME) $(SUBPROJECT)" \
+                       "($($(STYLE)_long) version) is up to date !"; \
           fi
 
 
 ###############################################################################
 #
-# Build rules
+# Debugging rules
 #
 
-include $(PROJECT_ROOT)/src/makefiles/build.mkf
+tutu:
+	@$(ECHO) $(TARGETS) 
+	@$(ECHO) $(SUBTARGETS) 
+	@$(ECHO) $(DEPENDENCY_FILES)
 
+
+###############################################################################
+#
+# Rules for making subdirectories
+#
+
+makesubdir: $(SUBTARGETS)
+
+
+################################################################################
+#
+# Building common library
+#
+
+$(PROJECT_ROOT)/src/lib/libcommon.a: $(SUBTARGETS) 
+	@$(ECHO) ""
+	@$(ECHO) "Creating $(PREFIX_ROOT)src/lib/libcommon.a ($($(STYLE)_long) version)"
+	$(HIDE) $(AR) $@ $^
+	$(HIDE) $(RANLIB) $@
+	@$(TOUCH) .done
+	@$(CLOCK_SKEW_ELIMINATION)  
+
+
+################################################################################
+#
+# Building make tools
+#
+
+$(PROJECT_ROOT)/src/bin/%: $(SUBTARGETS) 
+	@$(ECHO) ""
+	@$(ECHO) "Linking $(PREFIX_ROOT)src/bin/$* ($($(STYLE)_long) version)"
+	$(HIDE) $(LD) $(LD_FLAGS) -o $@ \
+                $(filter $*/%,$^) \
+                $(LIBDIRS) $(LIB_MAKETOOLS) $(LIBS)
+	@$(TOUCH) .done
+	@$(CLOCK_SKEW_ELIMINATION)  
+
+
+################################################################################
+#
+# Building libsac2c
+#
+
+$(PROJECT_ROOT)/bin/sac2c: global/build_$(STYLE).$($(STYLE)_short).o
+	@$(ECHO) ""
+	@$(ECHO) "Linking $(PREFIX_ROOT)bin/sac2c ($($(STYLE)_long) version)"
+	$(HIDE) $(LIBTOOL) $(LD) $(LDFLAGS) $(LD_FLAGS_DYN) -o $@ \
+                $(SUBTARGETS) $< \
+                $(LIBDIRS) $(LIB_MAKETOOLS) $(LIBS)
+	@$(TOUCH) .done
+	@$(CLOCK_SKEW_ELIMINATION)  
+
+$(PROJECT_ROOT)/bin/sac2c.efence: global/build_devel.d.o
+	@$(ECHO) ""
+	@$(ECHO) "Linking $(PREFIX_ROOT)bin/sac2c.efence (efence version)"
+	$(HIDE) $(LIBTOOL) $(LD) $(LDFLAGS) $(LD_FLAGS_DYN) -o $@ \
+                $(SUBTARGETS) $< \
+                $(LIBDIRS) $(LIB_MAKETOOLS) $(LIBS) $(LIBS_EFENCE)
+	@$(TOUCH) .done
+	@$(CLOCK_SKEW_ELIMINATION)  
+
+
+
+################################################################################
+#
+# Building runtime header file
+#
+
+$(PROJECT_ROOT)/include/sac.h: $(SUBTARGETS_HEADER) 
+	@$(ECHO) ""
+	@$(ECHO) "Creating $(PREFIX_ROOT)include/sac.h"
+	$(HIDE) $(HEADER_ZIPPER) $^ > $@
+	@$(TOUCH) .done
+	@$(CLOCK_SKEW_ELIMINATION)  
+
+
+################################################################################
+#
+# Building libsacprelude
+#
+
+$(PROJECT_ROOT)/lib/libsacprelude.so: $(SUBTARGETS) 
+	@$(ECHO) ""
+	@$(ECHO) "Creating $(PREFIX_ROOT)lib/libsacprelude.so"
+	$(HIDE) $(SAC2C) -o $(PROJECT_ROOT)/lib sacprelude.sac
+	@$(TOUCH) .done
+	@$(CLOCK_SKEW_ELIMINATION)  
+
+
+################################################################################
+#
+# Building libsac and libsacphm in various variants
+#
+
+$(PROJECT_ROOT)/lib/lib%_mt_diag.a: $(SUBTARGETS_MT_DIAG) 
+	@$(ECHO) ""
+	@$(ECHO) "Creating $(PREFIX_ROOT)lib/lib$*_mt_diag.a ($($(STYLE)_long) version)"
+	$(HIDE) $(AR) $@ $^
+	$(HIDE) $(RANLIB) $@
+	@$(TOUCH) .done
+	@$(CLOCK_SKEW_ELIMINATION)  
+
+$(PROJECT_ROOT)/lib/lib%_seq_diag.a: $(SUBTARGETS_DIAG) 
+	@$(ECHO) ""
+	@$(ECHO) "Creating $(PREFIX_ROOT)lib/lib$*_seq_diag.a ($($(STYLE)_long) version)"
+	$(HIDE) $(AR) $@ $^
+	$(HIDE) $(RANLIB) $@
+	@$(TOUCH) .done
+	@$(CLOCK_SKEW_ELIMINATION)  
+
+$(PROJECT_ROOT)/lib/lib%_mt.a: $(SUBTARGETS_MT) 
+	@$(ECHO) ""
+	@$(ECHO) "Creating $(PREFIX_ROOT)lib/lib$*_mt.a ($($(STYLE)_long) version)"
+	$(HIDE) $(AR) $@ $^
+	$(HIDE) $(RANLIB) $@
+	@$(TOUCH) .done
+	@$(CLOCK_SKEW_ELIMINATION)  
+
+$(PROJECT_ROOT)/lib/lib%_seq.a: $(SUBTARGETS) 
+	@$(ECHO) ""
+	@$(ECHO) "Creating $(PREFIX_ROOT)lib/lib$*_seq.a ($($(STYLE)_long) version)"
+	$(HIDE) $(AR) $@ $^
+	$(HIDE) $(RANLIB) $@
+	@$(TOUCH) .done
+	@$(CLOCK_SKEW_ELIMINATION)  
+
+
+################################################################################
+#
+# Building tools
+#
+
+$(PROJECT_ROOT)/bin/%: $(SUBTARGETS)
+	@$(ECHO) ""
+	@$(ECHO) "Linking $(PREFIX_ROOT)bin/$* ($($(STYLE)_long) version)"
+	$(HIDE) $(LD) $(LD_FLAGS) -o $@ \
+                      $(filter $*/%,$^) \
+                      $(LIBDIRS) $(LIB_TOOLS) $(LIBS)
+	@$(TOUCH) .done
+	@$(CLOCK_SKEW_ELIMINATION)  
 
 
 ###############################################################################
@@ -147,46 +293,17 @@ include $(PROJECT_ROOT)/src/makefiles/build.mkf
 # revision data file and, thereupon, relink snetc.
 #
 
-global/build.c: $(TARGETFILES_DEVEL) 
+global/build_$(STYLE).c: $(SUBTARGETS) 
 	@$(ECHO) ""
 	@$(ECHO) "Creating revision data file:  $@"
-	@$(ECHO) "char build_date[] = \"`date`\";"  >  $@
-	@$(ECHO) "char build_user[] = \"$(USER)\";" >> $@
-	@$(ECHO) "char build_host[] = \"`hostname`\";" >> $@
-	@$(ECHO) "char build_os[]   = \"$(OS)\";"   >> $@
-	@$(ECHO) "char build_rev[]  = \"$(REVISION)\";"  >> $@
-	@$(ECHO) "char build_ast[]  = \"`$(XSLTENGINE) $(XML_DIR)/ast2fingerprint.xsl $(XML_DIR)/ast.xml | $(FINGERPRINTER)`\";" >> $@
+	@$(ECHO) "char build_style[] = \"$($(STYLE)_long)\";"        >  $@
+	@$(ECHO) "char build_date[]  = \"`date`\";"                  >> $@
+	@$(ECHO) "char build_user[]  = \"$(USER)\";"                 >> $@
+	@$(ECHO) "char build_host[]  = \"`hostname`\";"              >> $@
+	@$(ECHO) "char build_os[]    = \"$(OS)\";"                   >> $@
+	@$(ECHO) "char build_rev[]   = \"$(REVISION)\";"             >> $@
+	@$(ECHO) "char build_ast[]   = \"`$(FINGERPRINTER_CALL)`\";" >> $@
 	@$(CLOCK_SKEW_ELIMINATION)  
-
-global/build_prod.c: $(TARGETFILES_PROD)
-	@$(ECHO) ""
-	@$(ECHO) "Creating revision data file:  $@"
-	@$(ECHO) "char build_date[] = \"`date`\";"  >  $@
-	@$(ECHO) "char build_user[] = \"$(USER)\";" >> $@
-	@$(ECHO) "char build_host[] = \"`hostname`\";" >> $@
-	@$(ECHO) "char build_os[]   = \"$(OS)\";"   >> $@
-	@$(ECHO) "char build_rev[]  = \"$(REVISION)\";"  >> $@
-	@$(ECHO) "char build_ast[]  = \"`$(XSLTENGINE) $(XML_DIR)/ast2fingerprint.xsl $(XML_DIR)/ast.xml | $(FINGERPRINTER)`\";" >> $@
-	@$(CLOCK_SKEW_ELIMINATION)  
-
-tutu:
-	@echo $(TARGETFILES_DEVEL) 
-	@echo $(TARGETFILES)
-	@echo $(TARGETDIR)
-	@echo $(DEPENDENCIES)
-
-
-###############################################################################
-#
-# Rules for making subdirectories
-#
-
-makesubdir.devel: $(TARGETFILES_DEVEL)
-	@$(ECHO) ""
-
-makesubdir.prod: $(TARGETFILES_PROD)
-	@$(ECHO) ""
-
 
 
 ###############################################################################
@@ -194,51 +311,62 @@ makesubdir.prod: $(TARGETFILES_PROD)
 # Pattern rules for compilation
 #
 
-%.mt.o: %.c 
-	@if [ ! -f .make_track -o "$(dir $*)" != "`cat .make_track`" ] ; \
+%.$($(STYLE)_short).mt.diag.o: %.c 
+	@if [ "$(dir $*)" != "`cat .make_track`" ] ; \
          then $(ECHO) "$(dir $*)" > .make_track; \
               $(ECHO) ""; \
               $(ECHO) "Compiling files in directory $(PREFIX_LOCAL)$(dir $@)" ; \
          fi
-	@$(ECHO) "  Compiling multithreaded developer code:  $(notdir $<)"
-	$(HIDE) $(CC) $(CCFLAGS) $(CFLAGS) $(YYFLAGS) $(CCMTFLAGS) $(INCDIRS) -o $@ -c $<
+	@$(ECHO) "  Compiling multithreaded diagnostic $($(STYLE)_long) code:  $(notdir $<)"
+	$(HIDE) $(CC_$($(STYLE)_cap)) \
+                  $(CC_FLAGS_$($(STYLE)_cap)) $(SETTINGS_$($(STYLE)_cap)) \
+                  $(CC_FLAGS_MT) $(SETTINGS_MT) $(SETTINGS_DIAG) \
+                  $(INCDIRS) -o $@ -c $<
 	@$(CLOCK_SKEW_ELIMINATION) 
 
-%.mt.prod.o: %.c 
-	@if [ ! -f .make_track -o "$(dir $*)" != "`cat .make_track`" ] ; \
+%.$($(STYLE)_short).diag.o: %.c 
+	@if [ "$(dir $*)" != "`cat .make_track`" ] ; \
          then $(ECHO) "$(dir $*)" > .make_track; \
               $(ECHO) ""; \
               $(ECHO) "Compiling files in directory $(PREFIX_LOCAL)$(dir $@)" ; \
          fi
-	@$(ECHO) "  Compiling multithreaded product code:  $(notdir $<)"
-	$(HIDE) $(CCPROD) $(CCPROD_FLAGS) $(CPROD_FLAGS) $(YYFLAGS) $(CCMTFLAGS) $(INCDIRS) -o $@ -c $<
+	@$(ECHO) "  Compiling diagnostic $($(STYLE)_long) code:  $(notdir $<)"
+	$(HIDE) $(CC_$($(STYLE)_cap)) \
+                  $(CC_FLAGS_$($(STYLE)_cap)) $(SETTINGS_$($(STYLE)_cap)) \
+                  $(CC_FLAGS_YY)  $(SETTINGS_DIAG) \
+                  $(INCDIRS) -o $@ -c $<
 	@$(CLOCK_SKEW_ELIMINATION) 
 
-
-%.o: %.c 
-	@if [ ! -f .make_track -o "$(dir $*)" != "`cat .make_track`" ] ; \
+%.$($(STYLE)_short).mt.o: %.c 
+	@if [ "$(dir $*)" != "`cat .make_track`" ] ; \
          then $(ECHO) "$(dir $*)" > .make_track; \
               $(ECHO) ""; \
               $(ECHO) "Compiling files in directory $(PREFIX_LOCAL)$(dir $@)" ; \
          fi
-	@$(ECHO) "  Compiling developer code:  $(notdir $<)"
-	$(HIDE) $(CC) $(CCFLAGS) $(CFLAGS) $(YYFLAGS) $(INCDIRS) -o $@ -c $<
+	@$(ECHO) "  Compiling multithreaded $($(STYLE)_long) code:  $(notdir $<)"
+	$(HIDE) $(CC_$($(STYLE)_cap)) \
+                  $(CC_FLAGS_$($(STYLE)_cap)) $(SETTINGS_$($(STYLE)_cap)) \
+                  $(CC_FLAGS_MT) $(SETTINGS_MT) \
+                  $(INCDIRS) -o $@ -c $<
 	@$(CLOCK_SKEW_ELIMINATION) 
 
-%.prod.o: %.c 
-	@if [ ! -f .make_track -o "$(dir $*)" != "`cat .make_track`" ] ; \
+%.$($(STYLE)_short).o: %.c 
+	@if [ "$(dir $*)" != "`cat .make_track`" ] ; \
          then $(ECHO) "$(dir $*)" > .make_track; \
               $(ECHO) ""; \
               $(ECHO) "Compiling files in directory $(PREFIX_LOCAL)$(dir $@)" ; \
          fi
-	@$(ECHO) "  Compiling product code:  $(notdir $<)"
-	$(HIDE) $(CCPROD) $(CCPROD_FLAGS) $(CPROD_FLAGS) $(YYFLAGS) $(INCDIRS) -o $@ -c $<
+	@$(ECHO) "  Compiling $($(STYLE)_long) code:  $(notdir $<)"
+	$(HIDE) $(CC_$($(STYLE)_cap)) \
+                  $(CC_FLAGS_$($(STYLE)_cap)) $(SETTINGS_$($(STYLE)_cap)) \
+                  $(CC_FLAGS_YY) \
+                  $(INCDIRS) -o $@ -c $<
 	@$(CLOCK_SKEW_ELIMINATION) 
 
 
 ###############################################################################
 #
-# Pattern rules for source code generation
+# Pattern rules for source code generation with xml and xslt
 #
 
 %.h: %.h.xsl $(XML_DIR)/ast.xml $(XML_COMMONS) 
@@ -271,6 +399,11 @@ makesubdir.prod: $(TARGETFILES_PROD)
 	$(HIDE)$(XSLTENGINE) $< $(XML_DIR)/ast.xml | $(CODE_BEAUTIFIER) >$@
 	@$(CLOCK_SKEW_ELIMINATION)  
 
+
+###############################################################################
+#
+# Pattern rules for source code generation with lex and yacc
+#
 
 %.lex.c: %.l 
 	@if [ ! -f .make_track -o "$(dir $*)" != "`cat .make_track`" ] ; \
@@ -309,8 +442,14 @@ makesubdir.prod: $(TARGETFILES_PROD)
 	$(HIDE)mv y.output $(dir $@)
 	@$(CLOCK_SKEW_ELIMINATION) 
 
+
+###############################################################################
+#
+# Pattern rules for header file generation with m4
+#
+
 %.h: %.h.m4 $(M4_DIR)/icm.m4
-	@$(ECHO) "   Generating header file from M4 macro specification: $(notdir $@)"
+	@$(ECHO) "  Generating header file from M4 macro specification: $(notdir $@)"
 	$(HIDE) $(M4PROC) -I $(M4_DIR) $< > $@	
 
 
@@ -326,7 +465,7 @@ makesubdir.prod: $(TARGETFILES_PROD)
              $(ECHO) "Checking dependencies in directory $(PREFIX_LOCAL)$(dir $@)" ; \
         fi
 	@$(ECHO) "  Checking dependencies of source file: $(notdir $<)"
-	$(HIDE) if $(CC) $(CCDEPS_FLAGS) $(CFLAGS) $(INCDIRS) $<  > $@d ; \
+	$(HIDE) if $(CC_DEVEL) $(CC_FLAGS_DEPS) $(SETTINGS_DEVEL) $(INCDIRS) $<  > $@d ; \
 	 then sed 's/\($(notdir $*)\)\.o[ :]*/$(subst /,\/,$*)\.o $(subst /,\/,$@)\: ..\/makefiles\/config.mkf /'  <$@d >$@; \
 	      $(RM) $@d ; \
 	 else $(RM) $@d ; \
@@ -342,8 +481,8 @@ makesubdir.prod: $(TARGETFILES_PROD)
 #
 
 ifeq ($(DEPS),yes)
-  ifneq ($(DEPENDENCIES),)
-    -include $(sort $(DEPENDENCIES))
+  ifneq ($(DEPENDENCY_FILES),)
+    -include $(sort $(DEPENDENCY_FILES))
   endif
 endif
 

@@ -128,14 +128,19 @@ void
 PHinterpretBreakOption (char *option)
 {
     int num;
+    char *rest;
 
     DBUG_ENTER ("PHinterpreteBreakOption");
 
-    num = atoi (option);
+    num = strtol (option, &rest, 10);
 
-    /*
-     * First, we check for compiler phase specifications.
-     */
+    if (rest[0] != '\0') {
+        CTIerror ("Illegal argument for break option: -b %s", option);
+    } else {
+
+        /*
+         * First, we check for compiler phase specifications.
+         */
 
 #define PHASEelement(it_element)                                                         \
     if (ILIBstringCompare (option, #it_element) || (num == (int)PH_##it_element)) {      \
@@ -146,9 +151,9 @@ PHinterpretBreakOption (char *option)
 
 #undef PHASEelement
 
-    /*
-     * Next, we check for compiler subphase specifications.
-     */
+        /*
+         * Next, we check for compiler subphase specifications.
+         */
 
 #define SUBPHASEelement(it_element)                                                      \
     if (ILIBstringCompare (option, #it_element)) {                                       \
@@ -165,9 +170,9 @@ PHinterpretBreakOption (char *option)
 #undef SUBPHASEelement
 #undef OPTCYCLEelement
 
-    /*
-     * At last, we check for cycle optimisation specifications.
-     */
+        /*
+         * At last, we check for cycle optimisation specifications.
+         */
 
 #define OPTINCYCelement(it_element)                                                      \
     if (ILIBstringCompare (option, #it_element)) {                                       \
@@ -184,8 +189,9 @@ PHinterpretBreakOption (char *option)
 #undef OPTINCYCelement
 #undef OPTINCYCFUNelement
 
-    {
-        CTIerror ("Illegal argument for break option -b: %s", option);
+        {
+            CTIerror ("Illegal argument for break option: -b %s", option);
+        }
     }
 
     DBUG_VOID_RETURN;

@@ -1,0 +1,98 @@
+#
+# $Id$
+#
+
+
+################################################################################
+#
+# system setup:
+#
+
+PROJECT_NAME           := sac2c
+
+REVISION               := $(shell svn info \
+                                  | grep Revision: \
+                                  | sed -e 's/Revision: //g')
+
+MAKEFLAGS              += --no-print-directory
+
+
+################################################################################
+#
+# general setup:
+#
+
+SETTINGS_DEVEL         := -DSHOW_MALLOC \
+                          -DWLAA_DEACTIVATED \
+                          -DAE_DEACTIVATED \
+                          -DTSI_DEACTIVATED \
+                          -DPADT_DEACTIVATED \
+                          -DCLEANMEM
+
+SETTINGS_PROD          := -DDBUG_OFF \
+                          -DPRODUCTION \
+                          -DWLAA_DEACTIVATED \
+                          -DAE_DEACTIVATED \
+                          -DTSI_DEACTIVATED \
+                          -DPADT_DEACTIVATED 
+
+SETTINGS_MT            := -DMT 
+
+SETTINGS_DIAG          := -DDIAG
+
+
+################################################################################
+#
+# internal directories and other settings:
+#
+
+LIBDIRS                := -L../lib -L../../lib
+LIB_MAKETOOLS          := -lcommon
+LIB_TOOLS              := -lsac -lcommon
+
+XML_DIR                := $(PROJECT_ROOT)/src/libsac2c/xml
+XML_COMMONS            := $(wildcard $(XML_DIR)/common_*.xsl)
+
+M4_DIR                 := $(PROJECT_ROOT)/src/runtime/m4
+
+
+################################################################################
+#
+# internal tools:
+#
+
+LIBTOOL                := $(PROJECT_ROOT)/libtool --silent --mode=link 
+
+CLOCK_SKEW_ELIMINATION := if [ -x $(PROJECT_ROOT)/src/bin/cse ] ; \
+                          then $(PROJECT_ROOT)/src/bin/cse $@ ; \
+                          fi
+
+SAC2C                  := $(PROJECT_ROOT)/bin/sac2c -v0 
+
+FINGERPRINTER          := $(PROJECT_ROOT)/src/bin/md5calc
+
+ICM_TESTER             := $(PROJECT_ROOT)/src/bin/icmt
+
+HEADER_ZIPPER          := $(PROJECT_ROOT)/src/bin/hzip
+
+FINGERPRINTER_CALL     := $(XSLTENGINE) $(XML_DIR)/ast2fingerprint.xsl \
+                           $(XML_DIR)/ast.xml | $(FINGERPRINTER)
+
+
+################################################################################
+#
+# definitions for makefile mechanism
+#
+
+devel_short            := d
+prod_short             := p
+
+devel_long             := developer
+prod_long              := product
+
+d_long                 := devel
+p_long                 := prod
+
+devel_cap              := DEVEL
+prod_cap               := PROD
+

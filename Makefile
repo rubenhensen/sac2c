@@ -34,7 +34,10 @@ PROJECT_ROOT := .
 HIDE := @
 DEPS := yes
 
--include $(PROJECT_ROOT)/src/makefiles/config.mkf
+MAKEFILE_DIR := $(PROJECT_ROOT)/src/makefiles
+
+-include $(MAKEFILE_DIR)/config.mkf   # config.mkf may not yet exist
+include $(MAKEFILE_DIR)/settings.mkf
 
 
 ###############################################################################
@@ -92,8 +95,15 @@ default devel prod: checks
 	@$(ECHO) "* Building $(PROJECT_NAME) completed"
 	@$(ECHO) "************************************************************"
 	@$(ECHO) ""
+
+
  
-clean cleandevel cleanprod: 
+###############################################################################
+#
+# Cleaning rules
+#
+
+clean cleandevel cleanprod: checks
 	@$(ECHO) ""
 	@$(ECHO) "************************************************************"
 	@$(ECHO) "* Cleaning $(PROJECT_NAME)"
@@ -176,10 +186,10 @@ config:
 
 ###############################################################################
 #
-# Rules for consistency checks
+# Includes for consistency checking mechanism
 #
 
-include $(PROJECT_ROOT)/src/makefiles/check.mkf
+include $(MAKEFILE_DIR)/check.mkf
 
 
 
