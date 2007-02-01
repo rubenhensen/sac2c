@@ -48,7 +48,7 @@ include $(MAKEFILE_DIR)/config.mkf
 include $(MAKEFILE_DIR)/settings.mkf
 include $(MAKEFILE_DIR)/targets.mkf
 
-SUBPROJECT_DIR := $(notdir $(CURDIR))
+MAKE_DIR       := $(notdir $(CURDIR))
 
 SUBPROJECT     := $(notdir $(realpath $(CURDIR)/..))
 
@@ -92,10 +92,8 @@ make_%: checks
                          PREFIX_LOCAL="$(PREFIX_LOCAL)" \
                          PREFIX_ROOT="$(PREFIX_ROOT)" \
                          SUBPROJECT="$(SUBPROJECT)" \
-                         SUBPROJECT_DIRS="$(SUBPROJECT_DIR)" \
+                         MAKE_DIRS="$(MAKE_DIR)" \
                          STYLE="$*" makesubdir
-	@$(ECHO) ""
-
 
 
 ###############################################################################
@@ -121,7 +119,7 @@ clean:
 	$(HIDE) $(MAKE) -f $(MAKEFILE_DIR)/clean.mkf \
                         HIDE="$(HIDE)" \
                         SUBPROJECT="$(SUBPROJECT)" \
-                        SUBPROJECT_DIRS="$(SUBPROJECT_DIR)" \
+                        MAKE_DIRS="$(MAKE_DIR)" \
                         PROJECT_ROOT="$(PROJECT_ROOT)" \
                         clean_sourcedir_all
 	@$(ECHO) ""
@@ -132,7 +130,7 @@ clean_%:
 	$(HIDE) $(MAKE) -f $(MAKEFILE_DIR)/clean.mkf \
                         HIDE="$(HIDE)" \
                         SUBPROJECT="$(SUBPROJECT)" \
-                        SUBPROJECT_DIRS="$(SUBPROJECT_DIR)" \
+                        MAKE_DIRS="$(MAKE_DIR)" \
                         PROJECT_ROOT="$(PROJECT_ROOT)" \
                         clean_sourcedir_$*
 	@$(ECHO) ""

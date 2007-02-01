@@ -36,8 +36,10 @@ include $(MAKEFILE_DIR)/settings.mkf
 include $(MAKEFILE_DIR)/targets.mkf
 
 SUBPROJECT_DIRS  := $($(SUBPROJECT)_sourcedirs)
+
+MAKE_DIRS        := $(SUBPROJECT_DIRS)
 #
-# preset by source.mkf to specific directory
+# preset by source.mkf to specific directory 
 #
 
 INCDIRS          := -I../../include -I../include \
@@ -49,7 +51,7 @@ TARGETDIR        := $(PROJECT_ROOT)/$(TARGETDIR_NAME)
 TARGETS          := $(addprefix $(TARGETDIR)/,\
                       $($(SUBPROJECT)_targets))
 
-SUBTARGETS_RAW   := $(foreach srcdir,$(SUBPROJECT_DIRS),\
+SUBTARGETS_RAW   := $(foreach srcdir,$(MAKE_DIRS),\
                       $(addprefix $(srcdir)/,\
                         $($(SUBPROJECT)_$(srcdir))))
 
@@ -78,23 +80,23 @@ SUBTARGETS_HEADER   := $(addsuffix .h,\
 #
 
 GENERATED_INCLUDE_FILES := $(patsubst %.xsl,%,\
-                             $(foreach dir,$(SUBPROJECT_DIRS),\
+                             $(foreach dir,$(MAKE_DIRS),\
                                $(wildcard $(dir)/*.h.xsl))) \
                            $(patsubst %.xsl,%,\
-                             $(foreach dir,$(SUBPROJECT_DIRS),\
+                             $(foreach dir,$(MAKE_DIRS),\
                                $(wildcard $(dir)/*.mac.xsl))) \
                            $(patsubst %.y,%.tab.h,\
-                             $(foreach dir,$(SUBPROJECT_DIRS),\
+                             $(foreach dir,$(MAKE_DIRS),\
                                $(wildcard $(dir)/*.y)))
 
 GENERATED_SOURCE_FILES := $(patsubst %.xsl,%,\
-                            $(foreach dir,$(SUBPROJECT_DIRS),\
+                            $(foreach dir,$(MAKE_DIRS),\
                               $(wildcard $(dir)/*.c.xsl))) \
                           $(patsubst %.y,%.tab.c,\
-                            $(foreach dir,$(SUBPROJECT_DIRS),\
+                            $(foreach dir,$(MAKE_DIRS),\
                               $(wildcard $(dir)/*.y))) \
                           $(patsubst %.l,%.lex.c,\
-                            $(foreach dir,$(SUBPROJECT_DIRS),\
+                            $(foreach dir,$(MAKE_DIRS),\
                               $(wildcard $(dir)/*.l))) \
 
 GENERATED_FILES  := $(GENERATED_INCLUDE_FILES) $(GENERATED_SOURCE_FILES)
@@ -148,6 +150,7 @@ tutu:
 #
 
 makesubdir: $(SUBTARGETS)
+	@$(ECHO) ""
 
 
 ################################################################################
@@ -312,8 +315,8 @@ global/build_$(STYLE).c: $(SUBTARGETS)
 #
 
 %.$($(STYLE)_short).mt.diag.o: %.c 
-	@if [ "$(dir $*)" != "`cat .make_track`" ] ; \
-         then $(ECHO) "$(dir $*)" > .make_track; \
+	@if [ "compile $(dir $*)" != "`cat .make_track`" ] ; \
+         then $(ECHO) "compile $(dir $*)" > .make_track; \
               $(ECHO) ""; \
               $(ECHO) "Compiling files in directory $(PREFIX_LOCAL)$(dir $@)" ; \
          fi
@@ -325,8 +328,8 @@ global/build_$(STYLE).c: $(SUBTARGETS)
 	@$(CLOCK_SKEW_ELIMINATION) 
 
 %.$($(STYLE)_short).diag.o: %.c 
-	@if [ "$(dir $*)" != "`cat .make_track`" ] ; \
-         then $(ECHO) "$(dir $*)" > .make_track; \
+	@if [ "compile $(dir $*)" != "`cat .make_track`" ] ; \
+         then $(ECHO) "compile $(dir $*)" > .make_track; \
               $(ECHO) ""; \
               $(ECHO) "Compiling files in directory $(PREFIX_LOCAL)$(dir $@)" ; \
          fi
@@ -338,8 +341,8 @@ global/build_$(STYLE).c: $(SUBTARGETS)
 	@$(CLOCK_SKEW_ELIMINATION) 
 
 %.$($(STYLE)_short).mt.o: %.c 
-	@if [ "$(dir $*)" != "`cat .make_track`" ] ; \
-         then $(ECHO) "$(dir $*)" > .make_track; \
+	@if [ "compile $(dir $*)" != "`cat .make_track`" ] ; \
+         then $(ECHO) "compile $(dir $*)" > .make_track; \
               $(ECHO) ""; \
               $(ECHO) "Compiling files in directory $(PREFIX_LOCAL)$(dir $@)" ; \
          fi
@@ -351,8 +354,8 @@ global/build_$(STYLE).c: $(SUBTARGETS)
 	@$(CLOCK_SKEW_ELIMINATION) 
 
 %.$($(STYLE)_short).o: %.c 
-	@if [ "$(dir $*)" != "`cat .make_track`" ] ; \
-         then $(ECHO) "$(dir $*)" > .make_track; \
+	@if [ "compile $(dir $*)" != "`cat .make_track`" ] ; \
+         then $(ECHO) "compile $(dir $*)" > .make_track; \
               $(ECHO) ""; \
               $(ECHO) "Compiling files in directory $(PREFIX_LOCAL)$(dir $@)" ; \
          fi
@@ -370,8 +373,8 @@ global/build_$(STYLE).c: $(SUBTARGETS)
 #
 
 %.h: %.h.xsl $(XML_DIR)/ast.xml $(XML_COMMONS) 
-	@if [ ! -f .make_track -o "$(dir $*)" != "`cat .make_track`" ] ; \
-         then $(ECHO) "$(dir $*)" > .make_track; \
+	@if [ "generate header $(dir $*)" != "`cat .make_track`" ] ; \
+         then $(ECHO) "generate header $(dir $*)" > .make_track; \
               $(ECHO) ""; \
               $(ECHO) "Generating header files in directory $(PREFIX_LOCAL)$(dir $@)" ; \
          fi
@@ -380,8 +383,8 @@ global/build_$(STYLE).c: $(SUBTARGETS)
 	@$(CLOCK_SKEW_ELIMINATION)  
 
 %.c: %.c.xsl $(XML_DIR)/ast.xml $(XML_COMMONS) 
-	@if [ ! -f .make_track -o "$(dir $*)" != "`cat .make_track`" ] ; \
-         then $(ECHO) "$(dir $*)" > .make_track; \
+	@if [ "generate source $(dir $*)" != "`cat .make_track`" ] ; \
+         then $(ECHO) "generate source $(dir $*)" > .make_track; \
               $(ECHO) ""; \
               $(ECHO) "Generating source files in directory $(PREFIX_LOCAL)$(dir $@)" ; \
          fi
@@ -390,8 +393,8 @@ global/build_$(STYLE).c: $(SUBTARGETS)
 	@$(CLOCK_SKEW_ELIMINATION)  
 
 %.mac: %.mac.xsl $(XML_DIR)/ast.xml $(XML_COMMONS) 
-	@if [ ! -f .make_track -o "$(dir $*)" != "`cat .make_track`" ] ; \
-         then $(ECHO) "$(dir $*)" > .make_track; \
+	@if [ "generate macro $(dir $*)" != "`cat .make_track`" ] ; \
+         then $(ECHO) "generate macro $(dir $*)" > .make_track; \
               $(ECHO) ""; \
               $(ECHO) "Generating macro files in directory $(PREFIX_LOCAL)$(dir $@)" ; \
          fi
@@ -406,8 +409,8 @@ global/build_$(STYLE).c: $(SUBTARGETS)
 #
 
 %.lex.c: %.l 
-	@if [ ! -f .make_track -o "$(dir $*)" != "`cat .make_track`" ] ; \
-         then $(ECHO) "$(dir $*)" > .make_track; \
+	@if [ "generate source $(dir $*)" != "`cat .make_track`" ] ; \
+         then $(ECHO) "generate source $(dir $*)" > .make_track; \
               $(ECHO) ""; \
               $(ECHO) "Generating source files in directory $(PREFIX_LOCAL)$(dir $@)" ; \
          fi
@@ -417,8 +420,8 @@ global/build_$(STYLE).c: $(SUBTARGETS)
 	@$(CLOCK_SKEW_ELIMINATION) 
 
 %.tab.c: %.y 
-	@if [ ! -f .make_track -o "$(dir $*)" != "`cat .make_track`" ] ; \
-         then $(ECHO) "$(dir $*)" > .make_track; \
+	@if [ "generate source $(dir $*)" != "`cat .make_track`" ] ; \
+         then $(ECHO) "generate source $(dir $*)" > .make_track; \
               $(ECHO) ""; \
               $(ECHO) "Generating source files in directory $(PREFIX_LOCAL)$(dir $@)" ; \
          fi
@@ -430,8 +433,8 @@ global/build_$(STYLE).c: $(SUBTARGETS)
 	@$(CLOCK_SKEW_ELIMINATION) 
 
 %.tab.h: %.y 
-	@if [ ! -f .make_track -o "$(dir $*)" != "`cat .make_track`" ] ; \
-         then $(ECHO) "$(dir $*)" > .make_track; \
+	@if [ "generate header $(dir $*)" != "`cat .make_track`" ] ; \
+         then $(ECHO) "generate header $(dir $*)" > .make_track; \
               $(ECHO) ""; \
               $(ECHO) "Generating header files in directory $(PREFIX_LOCAL)$(dir $@)" ; \
          fi
@@ -449,6 +452,11 @@ global/build_$(STYLE).c: $(SUBTARGETS)
 #
 
 %.h: %.h.m4 $(M4_DIR)/icm.m4
+	@if [ "generate header $(dir $*)" != "`cat .make_track`" ] ; \
+         then $(ECHO) "generate header $(dir $*)" > .make_track; \
+              $(ECHO) ""; \
+              $(ECHO) "Generating header files in directory $(PREFIX_LOCAL)$(dir $@)" ; \
+         fi
 	@$(ECHO) "  Generating header file from M4 macro specification: $(notdir $@)"
 	$(HIDE) $(M4PROC) -I $(M4_DIR) $< > $@	
 
@@ -459,8 +467,8 @@ global/build_$(STYLE).c: $(SUBTARGETS)
 #
 
 .%.d: %.c $(GENERATED_FILES) 
-	@if [ ! -f .make_track -o "$(dir $*)" != "`cat .make_track`" ] ; \
-        then $(ECHO) "$(dir $*)" > .make_track; \
+	@if [ "dependency $(dir $*)" != "`cat .make_track`" ] ; \
+        then $(ECHO) "dependency $(dir $*)" > .make_track; \
              $(ECHO) ""; \
              $(ECHO) "Checking dependencies in directory $(PREFIX_LOCAL)$(dir $@)" ; \
         fi
@@ -482,7 +490,7 @@ global/build_$(STYLE).c: $(SUBTARGETS)
 
 ifeq ($(DEPS),yes)
   ifneq ($(DEPENDENCY_FILES),)
-    -include $(sort $(DEPENDENCY_FILES))
+    -include $(DEPENDENCY_FILES)
   endif
 endif
 
