@@ -146,9 +146,9 @@ SpecializationOracle (node *wrapper, node *fundef, ntype *args, dft_res *dft)
  ******************************************************************************/
 
 static node *
-UpdateFixSignature (node *fundef, ntype *arg_ts)
+UpdateFixSignature (node *fundef, ntype *arg_ts, ntype *ret_ts)
 {
-    node *args;
+    node *args, *rets;
     ntype *type, *old_type, *new_type;
     int i = 0;
 
@@ -157,6 +157,12 @@ UpdateFixSignature (node *fundef, ntype *arg_ts)
                  "UpdateFixSignature called with incompatible no of arguments!");
     DBUG_ASSERT ((TYisProdOfArrayOrFixedAlpha (arg_ts)),
                  "UpdateFixSignature called with non-fixed args!");
+    DBUG_ASSERT (((ret_ts == NULL)
+                  || (TCcountRets (FUNDEF_RETS (fundef)) == TYgetProductSize (ret_ts))),
+                 "UpdateFixSignature called with incompatible no of return "
+                 "values!");
+    DBUG_ASSERT (((ret_ts == NULL) || (TYisProdOfArrayOrFixedAlpha (ret_ts))),
+                 "UpdateFixSignature called with non-fixed rets!");
 
     args = FUNDEF_ARGS (fundef);
     while (args) {
@@ -191,6 +197,16 @@ UpdateFixSignature (node *fundef, ntype *arg_ts)
         AVIS_DECLTYPE (ARG_AVIS (args)) = TYcopyType (new_type);
 
         args = ARG_NEXT (args);
+        i++;
+    }
+
+    rets = FUNDEF_RETS (fundef);
+    i = 0;
+    while ((ret_ts != NULL) && (rets != NULL)) {
+        RET_TYPE (rets) = TYfreeType (RET_TYPE (rets));
+        RET_TYPE (rets) = TYcopyType (TYgetProductMember (ret_ts, i));
+
+        rets = RET_NEXT (rets);
         i++;
     }
 
@@ -329,11 +345,13 @@ SetLaCNamespace (node *arg_node, namespace_t *ns)
  * @param wrapper Wrapper of the function to be specialised
  * @param fundef Instance to be specialised
  * @param args Types of arguments the instance shall be specialised for
+ * @param rets Types of return arguments the instance shall be specialised for
+ *             or NULL to not fix the return types.
  *
  * @return the wrapper, possibly containing the new instance
  ******************************************************************************/
 static node *
-DoSpecialize (node *wrapper, node *fundef, ntype *args)
+DoSpecialize (node *wrapper, node *fundef, ntype *args, ntype *rets)
 {
     node *res;
     node *res_ret, *fundef_ret;
@@ -432,7 +450,7 @@ DoSpecialize (node *wrapper, node *fundef, ntype *args)
     /*
      * do actually specialize the copy !!
      * */
-    UpdateFixSignature (res, args);
+    UpdateFixSignature (res, args, rets);
 
     /*
      * convert the return type(s) into Alpha - AUDs
@@ -487,14 +505,15 @@ DoSpecialize (node *wrapper, node *fundef, ntype *args)
  * function:
  *    dft_res *SPEChandleDownProjections( dft_res *dft,
  *                                          node *wrapper,
- *                                            ntype *args)
+ *                                            ntype *args,
+ *                                            ntype *rets)
  *
  * description:
  *
  ******************************************************************************/
 
 dft_res *
-SPEChandleDownProjections (dft_res *dft, node *wrapper, ntype *args)
+SPEChandleDownProjections (dft_res *dft, node *wrapper, ntype *args, ntype *rets)
 {
     node *new_fundef;
     ntype *new_args;
@@ -505,9 +524,10 @@ SPEChandleDownProjections (dft_res *dft, node *wrapper, ntype *args)
     while (dft->deriveable != NULL) {
         new_args = SpecializationOracle (wrapper, dft->deriveable, args, dft);
         if (new_args == NULL) {
-            new_fundef = DoSpecialize (wrapper, dft->deriveable, args);
+            new_fundef = DoSpecialize (wrapper, dft->deriveable, args, rets);
             for (i = 0; i < dft->num_deriveable_partials; i++) {
-                new_fundef = DoSpecialize (wrapper, dft->deriveable_partials[i], args);
+                new_fundef
+                  = DoSpecialize (wrapper, dft->deriveable_partials[i], args, rets);
             }
         } else {
             args = new_args;
@@ -519,7 +539,8 @@ SPEChandleDownProjections (dft_res *dft, node *wrapper, ntype *args)
         new_args = SpecializationOracle (wrapper, dft->deriveable_partials[0], args, dft);
         if (new_args == NULL) {
             for (i = 0; i < dft->num_deriveable_partials; i++) {
-                new_fundef = DoSpecialize (wrapper, dft->deriveable_partials[i], args);
+                new_fundef
+                  = DoSpecialize (wrapper, dft->deriveable_partials[i], args, rets);
             }
         } else {
             args = new_args;

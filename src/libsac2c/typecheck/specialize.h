@@ -20,7 +20,8 @@
 
 #include "types.h"
 
-extern dft_res *SPEChandleDownProjections (dft_res *dft, node *wrapper, ntype *args);
+extern dft_res *SPEChandleDownProjections (dft_res *dft, node *wrapper, ntype *args,
+                                           ntype *rets);
 extern node *SPEChandleLacFun (node *fundef, node *assign, ntype *args);
 extern node *SPECresetSpecChain ();
 

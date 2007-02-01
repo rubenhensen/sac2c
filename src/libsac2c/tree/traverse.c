@@ -165,6 +165,11 @@ TRAVdo (node *arg_node, info *arg_info)
         if (MODULE_FUNDECS (arg_node) != NULL) {
             MODULE_FUNDECS (arg_node) = FREEremoveAllZombies (MODULE_FUNDECS (arg_node));
         }
+
+        if (MODULE_FUNSPECS (arg_node) != NULL) {
+            MODULE_FUNSPECS (arg_node)
+              = FREEremoveAllZombies (MODULE_FUNSPECS (arg_node));
+        }
     }
 
 #ifdef SANITYCHECKS

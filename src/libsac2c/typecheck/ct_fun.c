@@ -247,8 +247,10 @@ NTCCTudf (te_info *info, ntype *args)
              * create specializations (if appropriate), trigger the type
              * check of all potentially involved fundefs and extract the
              * return type from the dft_res structure:
+             * Note that we pass NULL for the return type as we do not want
+             * to fix it but infer it.
              */
-            dft_res = SPEChandleDownProjections (dft_res, fundef, args);
+            dft_res = SPEChandleDownProjections (dft_res, fundef, args, NULL);
 
             if ((dft_res->def == NULL) && (dft_res->num_partials == 0)) {
                 /*

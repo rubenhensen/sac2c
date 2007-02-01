@@ -140,7 +140,7 @@ node *
 ESPfundef (node *arg_node, info *arg_info)
 {
     node *wrapper;
-    ntype *args;
+    ntype *args, *rets;
     dft_res *disp_res;
 #ifndef DBUG_OFF
     char *tmp_str;
@@ -151,6 +151,7 @@ ESPfundef (node *arg_node, info *arg_info)
     wrapper = FUNDEF_IMPL (arg_node);
 
     args = TUmakeProductTypeFromArgs (FUNDEF_ARGS (arg_node));
+    rets = TUmakeProductTypeFromRets (FUNDEF_RETS (arg_node));
 
     DBUG_EXECUTE ("ESP", tmp_str = TYtype2String (args, 0, 0););
     DBUG_PRINT ("ESP", ("dispatching %s for %s", CTIitemName (wrapper), tmp_str));
@@ -170,7 +171,7 @@ ESPfundef (node *arg_node, info *arg_info)
          * check of all potentially involved fundefs and extract the
          * return type from the dft_res structure:
          */
-        disp_res = SPEChandleDownProjections (disp_res, wrapper, args);
+        disp_res = SPEChandleDownProjections (disp_res, wrapper, args, rets);
 
         if ((disp_res->def == NULL) && (disp_res->num_partials == 0)) {
             /*
@@ -184,6 +185,9 @@ ESPfundef (node *arg_node, info *arg_info)
 
         TYfreeDft_res (disp_res);
     }
+
+    args = TYfreeType (args);
+    rets = TYfreeType (rets);
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
