@@ -120,6 +120,7 @@ clean cleandevel cleanprod: checks
                         PREFIX_LOCAL="src/libsacphm/"  PREFIX_ROOT="" $@
 	$(HIDE) $(MAKE) -C src/tools     DEPS="$(DEPS)" HIDE="$(HIDE)" \
                         PREFIX_LOCAL="src/tools/"     PREFIX_ROOT="" $@
+	$(HIDE) $(RM) lib/* bin/*
 	@$(ECHO) ""
 	@$(ECHO) "************************************************************"
 	@$(ECHO) "* Cleaning $(PROJECT_NAME) completed"
@@ -134,10 +135,6 @@ efence:
 #
 # Rules for making selected subprojects in default mode
 #
-
-commonlib: checks
-	$(HIDE) $(MAKE) -C src/commonlib DEPS="$(DEPS)" HIDE="$(HIDE)" \
-                        PREFIX_LOCAL="src/commonlib/" PREFIX_ROOT="" default
 
 maketools: checks
 	$(HIDE) $(MAKE) -C src/maketools DEPS="$(DEPS)" HIDE="$(HIDE)" \
