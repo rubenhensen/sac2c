@@ -78,6 +78,7 @@
 #include "new_types.h"
 #include "new_typecheck.h"
 #include "constants.h"
+#include "math_utils.h"
 
 /*
  * INFO structure
@@ -922,7 +923,7 @@ IntersectInternGen (intern_gen *target_ig, intern_gen *subst_ig)
                         }
                     } else {
                         for (d = 0; d < max_dim; d++) {
-                            new_gen->step[d] = ILIBlcm (target_ig->step[d], sig->step[d]);
+                            new_gen->step[d] = MATHlcm (target_ig->step[d], sig->step[d]);
                         }
                     }
 

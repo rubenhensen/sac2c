@@ -22,16 +22,6 @@
  *
  *********************************/
 
-extern int ILIBlcm (int x, int y);
-
-#if 0
-extern void SYScall( char *format, ...);
-extern int  SYScallNoErr( char *format, ...);
-extern int  SYStest( char *format, ...);
-extern void SYSstartTracking();
-extern void SYSstopTracking();
-#endif
-
 extern char *ILIBtmpVar (void);
 extern char *ILIBtmpVarName (char *postfix);
 

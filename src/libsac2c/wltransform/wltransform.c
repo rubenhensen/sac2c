@@ -31,7 +31,6 @@
 
 #include "tree_basic.h"
 #include "tree_compound.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "traverse.h"
@@ -48,6 +47,9 @@
 #include "new_types.h"
 #include "shape.h"
 #include "phase.h"
+#include "math_utils.h"
+#include "globals.h"
+#include "internal_lib.h"
 
 /*
  * moved from wl_bounds.h
@@ -1722,7 +1724,7 @@ NormalizeStride1 (node *stride)
      * if (bound2 - bound1 - grid_b1 <= step), we can set (step = 1)
      */
     if (bound2 - bound1 - grid_b1 <= step) {
-        bound2 = MIN (bound2, bound1 + grid_b2);
+        bound2 = MATHmin (bound2, bound1 + grid_b2);
         bound1 += grid_b1;
         grid_b1 = 0;
         grid_b2 = 1;
@@ -1751,7 +1753,7 @@ NormalizeStride1 (node *stride)
 
     /* calculate minimum for 'bound1' */
     new_bound1 = bound1 - (step - grid_b2);
-    new_bound1 = MAX (0, new_bound1);
+    new_bound1 = MATHmax (0, new_bound1);
 
     /* calculate maximum for 'bound2' */
     new_bound2 = ((bound2 - bound1 - grid_b1) % step >= grid_b2 - grid_b1)
@@ -1922,8 +1924,8 @@ IndexRearStride (node *stride)
     }
 
     result = bound2
-             - MAX (0, ((bound2 - bound1 - grid_b1 - 1) % WLSTRIDE_STEP (stride)) + 1
-                         - (WLGRID_BOUND2 (grid) - grid_b1));
+             - MATHmax (0, ((bound2 - bound1 - grid_b1 - 1) % WLSTRIDE_STEP (stride)) + 1
+                             - (WLGRID_BOUND2 (grid) - grid_b1));
 
     DBUG_RETURN (result);
 }
@@ -1963,7 +1965,7 @@ GetLcmUnroll (node *nodes, int dim, bool include_blocks)
             /*
              * we have found a node with unrolling information
              */
-            unroll = ILIBlcm (unroll, WLNODE_STEP_INT (nodes));
+            unroll = MATHlcm (unroll, WLNODE_STEP_INT (nodes));
         } else {
             /*
              * search in whole tree for nodes with unrolling information
@@ -1972,19 +1974,19 @@ GetLcmUnroll (node *nodes, int dim, bool include_blocks)
             case N_wlblock:
                 /* here is no break missing! */
             case N_wlublock:
-                unroll = ILIBlcm (unroll, GetLcmUnroll (WLXBLOCK_NEXTDIM (nodes), dim,
+                unroll = MATHlcm (unroll, GetLcmUnroll (WLXBLOCK_NEXTDIM (nodes), dim,
                                                         include_blocks));
-                unroll = ILIBlcm (unroll, GetLcmUnroll (WLXBLOCK_CONTENTS (nodes), dim,
+                unroll = MATHlcm (unroll, GetLcmUnroll (WLXBLOCK_CONTENTS (nodes), dim,
                                                         include_blocks));
                 break;
 
             case N_wlstride:
-                unroll = ILIBlcm (unroll, GetLcmUnroll (WLSTRIDE_CONTENTS (nodes), dim,
+                unroll = MATHlcm (unroll, GetLcmUnroll (WLSTRIDE_CONTENTS (nodes), dim,
                                                         include_blocks));
                 break;
 
             case N_wlgrid:
-                unroll = ILIBlcm (unroll, GetLcmUnroll (WLGRID_NEXTDIM (nodes), dim,
+                unroll = MATHlcm (unroll, GetLcmUnroll (WLGRID_NEXTDIM (nodes), dim,
                                                         include_blocks));
                 break;
 
@@ -2705,8 +2707,8 @@ Parts2Strides (node *parts, int iter_dims, shape *iter_shp)
                 new_stride
                   = TBmakeWlstride (0, dim, CurrentComponentGetInt (bound1),
                                     (iter_shp != NULL)
-                                      ? MIN (CurrentComponentGetInt (bound2),
-                                             SHgetExtent (iter_shp, dim))
+                                      ? MATHmin (CurrentComponentGetInt (bound2),
+                                                 SHgetExtent (iter_shp, dim))
                                       : CurrentComponentGetInt (bound2),
                                     CurrentComponentGetInt (step), new_grid, NULL);
 
@@ -2804,10 +2806,10 @@ StridesDisjointOneDim (int lb1, int ub1, int step1, int width1, int lb2, int ub2
 
     DBUG_ENTER ("StridesDisjointOneDim");
 
-    lb = MAX (lb1, lb2);
-    ub = MIN (ub1, ub2);
-    step = ILIBlcm (step1, step2);
-    ub = MIN (ub, lb + step);
+    lb = MATHmax (lb1, lb2);
+    ub = MATHmin (ub1, ub2);
+    step = MATHlcm (step1, step2);
+    ub = MATHmin (ub, lb + step);
 
     for (iv = lb; iv < ub; iv++) {
         if (((iv - lb1) % step1 < width1) && ((iv - lb2) % step2 < width2)) {
@@ -2999,8 +3001,8 @@ TestAndDivideStrides (node *stride1, node *stride2, node **divided_stridea,
         head2 = IndexHeadStride (stride2);
         rear2 = IndexRearStride (stride2);
 
-        i_bound1 = MAX (bound11, bound12);
-        i_bound2 = MIN (bound21, bound22);
+        i_bound1 = MATHmax (bound11, bound12);
+        i_bound2 = MATHmin (bound21, bound22);
 
         i_offset1
           = WLTRAgridOffset (i_bound1, bound11, WLSTRIDE_STEP (stride1), grid1_b2);
@@ -3185,8 +3187,8 @@ IntersectStrideWithOutline (node *stride1, node *stride2, node **i_stride1,
         head2 = IndexHeadStride (stride2);
         rear2 = IndexRearStride (stride2);
 
-        i_bound1 = MAX (bound11, bound12);
-        i_bound2 = MIN (bound21, bound22);
+        i_bound1 = MATHmax (bound11, bound12);
+        i_bound2 = MATHmin (bound21, bound22);
 
         i_offset1
           = WLTRAgridOffset (i_bound1, bound11, WLSTRIDE_STEP (stride1), grid1_b2);
@@ -4490,7 +4492,7 @@ CheckParams (node *seg)
             }
             for (; d < WLSEG_DIMS (seg); d++) {
                 if ((WLSEG_BV (seg, b))[d]
-                    < MAX ((WLSEG_SV (seg))[d], (WLSEG_UBV (seg)[d]))) {
+                    < MATHmax ((WLSEG_SV (seg))[d], (WLSEG_UBV (seg)[d]))) {
                     CTIabortLine (global.linenum,
                                   "Blocking step (%i) is greater than 1 but smaller"
                                   " than stride step (%i) or unrolling-blocking step"
@@ -4703,8 +4705,8 @@ SplitStride (node *stride1, node *stride2, node **s_stride1, node **s_stride2)
 
     if ((tmp1 != NULL) && (tmp2 != NULL)) { /* is there anything to split? */
         /* compute bounds of intersection */
-        i_bound1 = MAX (WLSTRIDE_BOUND1 (tmp1), WLSTRIDE_BOUND1 (tmp2));
-        i_bound2 = MIN (WLSTRIDE_BOUND2 (tmp1), WLSTRIDE_BOUND2 (tmp2));
+        i_bound1 = MATHmax (WLSTRIDE_BOUND1 (tmp1), WLSTRIDE_BOUND1 (tmp2));
+        i_bound2 = MATHmin (WLSTRIDE_BOUND2 (tmp1), WLSTRIDE_BOUND2 (tmp2));
 
         if (i_bound1 < i_bound2) { /* is intersection non-empty? */
             *s_stride1 = DUPdoDupNode (stride1);
@@ -5152,8 +5154,8 @@ IntersectGrid (node *grid1, node *grid2, int step, node **i_grid1, node **i_grid
     bound22 = WLGRID_BOUND2 (grid2);
 
     /* compute bounds of intersection */
-    i_bound1 = MAX (bound11, bound12);
-    i_bound2 = MIN (bound21, bound22);
+    i_bound1 = MATHmax (bound11, bound12);
+    i_bound2 = MATHmin (bound21, bound22);
 
     if (i_bound1 < i_bound2) { /* is intersection non-empty? */
 
@@ -5251,10 +5253,10 @@ MergeWl (node *nodes)
             tmp = WLSTRIDE_NEXT (node1);
             while ((tmp != NULL) && (IndexHeadStride (tmp) < rear1)) {
                 /* compute new bounds */
-                bound1 = MAX (bound1, WLSTRIDE_BOUND1 (tmp));
-                bound2 = MIN (bound2, WLSTRIDE_BOUND2 (tmp));
+                bound1 = MATHmax (bound1, WLSTRIDE_BOUND1 (tmp));
+                bound2 = MATHmin (bound2, WLSTRIDE_BOUND2 (tmp));
                 /* compute new step */
-                step = ILIBlcm (step, WLSTRIDE_STEP (tmp));
+                step = MATHlcm (step, WLSTRIDE_STEP (tmp));
                 /* count the number of found dimensions for next traversal */
                 count++;
                 tmp = WLSTRIDE_NEXT (tmp);
@@ -5940,7 +5942,7 @@ DoNormalize (node *nodes, int *width)
             DBUG_ASSERT ((WLNODE_BOUND1_INT (node) < curr_width),
                          "lower bound out of range");
 
-            L_WLNODE_BOUND2_INT (node, MIN (WLNODE_BOUND2_INT (node), curr_width));
+            L_WLNODE_BOUND2_INT (node, MATHmin (WLNODE_BOUND2_INT (node), curr_width));
 
             /*
              * remove nodes whose index ranges lies outside the current block
@@ -5976,8 +5978,8 @@ DoNormalize (node *nodes, int *width)
             /* WLgrids do not have a STEP value, so it cannot be set here */
 
             if (NODE_TYPE (node) != N_wlgrid) {
-                L_WLNODE_STEP_INT (node, MIN (WLNODE_STEP_INT (node),
-                                              width[WLNODE_DIM (node)]));
+                L_WLNODE_STEP_INT (node, MATHmin (WLNODE_STEP_INT (node),
+                                                  width[WLNODE_DIM (node)]));
             }
 
             /*

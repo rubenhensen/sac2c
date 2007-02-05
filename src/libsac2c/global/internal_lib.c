@@ -19,6 +19,7 @@
 #include "globals.h"
 #include "traverse.h"
 #include "filemgr.h"
+#include "math_utils.h"
 
 /*
  * experimental support for garbage collection
@@ -31,62 +32,15 @@
 
 /******************************************************************************
  *
- * function:
- *   int ILIBlcm( int x, int y)
- *
- * description:
- *   returns the lowest-common-multiple of x, y.
- *
- ******************************************************************************/
-
-int
-ILIBlcm (int x, int y)
-{
-    int u, v;
-
-    DBUG_ENTER ("ILIBlcm");
-
-    DBUG_ASSERT (((x > 0) && (y > 0)), "arguments of lcm() must be >0");
-
-    u = x;
-    v = y;
-    while (u != v) {
-        if (u < v) {
-            u += x;
-        } else {
-            v += y;
-        }
-    }
-
-    DBUG_RETURN (u);
-}
-
-/******************************************************************************
- *
  * Function:
  *   char *ILIBtmpVar( void)
  *
  * Description:
  *   Generates string to be used as artificial variable.
  *   The variable name is different in each call of ILIBtmpVar().
- *   The string has the form "__tmp_" ++ compiler phase ++ consecutive number.
+ *   The string has the form "__tmp_" ++ traversal ++ consecutive number.
  *
  ******************************************************************************/
-
-static int
-NumDigits (int number)
-{
-    int i = 1;
-
-    DBUG_ENTER ("NumDigits");
-
-    while (number / 10 >= 1) {
-        number = number / 10;
-        i += 1;
-    }
-
-    DBUG_RETURN (i);
-}
 
 char *
 ILIBtmpVar (void)
@@ -98,8 +52,8 @@ ILIBtmpVar (void)
     DBUG_ENTER ("ILIBtmpVar");
 
     prefix = TRAVgetName ();
-    result
-      = (char *)MEMmalloc ((strlen (prefix) + NumDigits (counter) + 3) * sizeof (char));
+    result = (char *)MEMmalloc ((strlen (prefix) + MATHnumDigits (counter) + 3)
+                                * sizeof (char));
     sprintf (result, "_%s_%d", prefix, counter);
     counter++;
 

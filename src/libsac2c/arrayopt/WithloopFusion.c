@@ -9,7 +9,6 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "node_basic.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "free.h"
@@ -26,6 +25,7 @@
 #include "detectdependencies.h"
 #include "tagdependencies.h"
 #include "resolvedependencies.h"
+#include "math_utils.h"
 
 /**
  * INFO structure
@@ -1181,8 +1181,8 @@ IntersectParts (node *parts_1, node *parts_2, node **new_parts_2)
             ub_new = ARRAY_AELEMS (new_array_ub);
 
             for (d = 0; d < dim; d++) {
-                lb = MAX (NUM_VAL (EXPRS_EXPR (lb_1)), NUM_VAL (EXPRS_EXPR (lb_2)));
-                ub = MIN (NUM_VAL (EXPRS_EXPR (ub_1)), NUM_VAL (EXPRS_EXPR (ub_2)));
+                lb = MATHmax (NUM_VAL (EXPRS_EXPR (lb_1)), NUM_VAL (EXPRS_EXPR (lb_2)));
+                ub = MATHmin (NUM_VAL (EXPRS_EXPR (ub_1)), NUM_VAL (EXPRS_EXPR (ub_2)));
                 if (lb >= ub)
                     break; /* empty intersection */
                 else {
@@ -1216,7 +1216,7 @@ IntersectParts (node *parts_1, node *parts_2, node **new_parts_2)
                         step_2 = ARRAY_AELEMS (GENERATOR_STEP (PART_GENERATOR (parts_2)));
                         for (d = 0; d < dim; d++) {
                             NUM_VAL (EXPRS_EXPR (nstep))
-                              = ILIBlcm (NUM_VAL (EXPRS_EXPR (step_1)),
+                              = MATHlcm (NUM_VAL (EXPRS_EXPR (step_1)),
                                          NUM_VAL (EXPRS_EXPR (step_2)));
                             nstep = EXPRS_NEXT (nstep);
                             step_1 = EXPRS_NEXT (step_1);

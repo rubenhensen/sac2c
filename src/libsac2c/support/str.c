@@ -11,6 +11,7 @@
 
 #include "memory.h"
 #include "dbug.h"
+#include "math_utils.h"
 
 /*******************************************************************************
  *
@@ -274,23 +275,6 @@ STRtok (char *first, char *sep)
  *
  *******************************************************************************/
 
-static long
-ipow (int base, int exp)
-{
-    int i;
-    long res;
-
-    DBUG_ENTER ("ipow");
-
-    res = 1;
-
-    for (i = 0; i < exp; i++) {
-        res *= base;
-    }
-
-    DBUG_RETURN (res);
-}
-
 char *
 STRitoa (long number)
 {
@@ -311,8 +295,8 @@ STRitoa (long number)
     str[length] = atoi ("\0");
 
     for (i = 0; i < length; i++) {
-        str[i] = ((int)'0') + (number / ipow (10, (length - 1)));
-        number = number % ipow (10, (length - 1));
+        str[i] = ((int)'0') + (number / MATHipow (10, (length - 1)));
+        number = number % MATHipow (10, (length - 1));
     }
 
     DBUG_RETURN (str);
