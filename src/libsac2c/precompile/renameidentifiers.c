@@ -14,7 +14,7 @@
 #include "dbug.h"
 #include "traverse.h"
 #include "scheduling.h"
-#include "internal_lib.h"
+#include "str_buffer.h"
 #include "str.h"
 #include "memory.h"
 #include "user_types.h"
@@ -165,37 +165,37 @@ RenameFunName (node *fundef)
 
     DBUG_ENTER ("RenameFunName");
 
-    buf = ILIBstrBufCreate (40);
+    buf = SBUFcreate (40);
 
     if (FUNDEF_ISWRAPPERFUN (fundef)) {
-        buf = ILIBstrBufPrint (buf, "SACwf_");
+        buf = SBUFprint (buf, "SACwf_");
     } else {
-        buf = ILIBstrBufPrint (buf, "SACf_");
+        buf = SBUFprint (buf, "SACf_");
     }
 
     tmp_name = STRreplaceSpecialCharacters (FUNDEF_NAME (fundef));
     ns_name = STRreplaceSpecialCharacters (NSgetName (FUNDEF_NS (fundef)));
 
-    buf = ILIBstrBufPrintf (buf, "%s__%s", ns_name, tmp_name);
+    buf = SBUFprintf (buf, "%s__%s", ns_name, tmp_name);
 
     tmp_name = MEMfree (tmp_name);
     ns_name = MEMfree (ns_name);
 
     arg = FUNDEF_ARGS (fundef);
     while (arg != NULL) {
-        buf = ILIBstrBufPrintf (buf, "__%s", ARG_TYPESTRING (arg));
+        buf = SBUFprintf (buf, "__%s", ARG_TYPESTRING (arg));
         ARG_TYPESTRING (arg) = MEMfree (ARG_TYPESTRING (arg));
         arg = ARG_NEXT (arg);
     }
 
     if (FUNDEF_AKVID (fundef) > 0) {
         akv_id = STRitoa (FUNDEF_AKVID (fundef));
-        buf = ILIBstrBufPrintf (buf, "__akv_%s", akv_id);
+        buf = SBUFprintf (buf, "__akv_%s", akv_id);
         akv_id = MEMfree (akv_id);
     }
 
-    new_name = ILIBstrBuf2String (buf);
-    buf = ILIBstrBufFree (buf);
+    new_name = SBUF2str (buf);
+    buf = SBUFfree (buf);
 
     DBUG_RETURN (new_name);
 }

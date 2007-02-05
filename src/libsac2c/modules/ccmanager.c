@@ -7,6 +7,7 @@
 #include "ccmanager.h"
 #include "internal_lib.h"
 #include "str.h"
+#include "str_buffer.h"
 #include "memory.h"
 #include "dbug.h"
 #include "ctinfo.h"
@@ -27,15 +28,14 @@ GetCCCall ()
 
     DBUG_ENTER ("GetCCCall");
 
-    buffer = ILIBstrBufCreate (128);
+    buffer = SBUFcreate (128);
 
-    ILIBstrBufPrintf (buffer, "%s %s %s %s -L%s ", global.config.cc,
-                      global.config.ccflags, global.config.ldflags, global.config.ccdir,
-                      global.tmp_dirname);
+    SBUFprintf (buffer, "%s %s %s %s -L%s ", global.config.cc, global.config.ccflags,
+                global.config.ldflags, global.config.ccdir, global.tmp_dirname);
 
-    result = ILIBstrBuf2String (buffer);
+    result = SBUF2str (buffer);
 
-    buffer = ILIBstrBufFree (buffer);
+    buffer = SBUFfree (buffer);
 
     DBUG_RETURN (result);
 }
@@ -47,16 +47,16 @@ AddOptimizeFlag (str_buf *buffer)
 
     switch (global.cc_optimize) {
     case 0:
-        ILIBstrBufPrintf (buffer, "%s ", global.config.opt_O0);
+        SBUFprintf (buffer, "%s ", global.config.opt_O0);
         break;
     case 1:
-        ILIBstrBufPrintf (buffer, "%s ", global.config.opt_O1);
+        SBUFprintf (buffer, "%s ", global.config.opt_O1);
         break;
     case 2:
-        ILIBstrBufPrintf (buffer, "%s ", global.config.opt_O2);
+        SBUFprintf (buffer, "%s ", global.config.opt_O2);
         break;
     case 3:
-        ILIBstrBufPrintf (buffer, "%s ", global.config.opt_O3);
+        SBUFprintf (buffer, "%s ", global.config.opt_O3);
         break;
     default:
         break;
@@ -71,7 +71,7 @@ AddDebugFlag (str_buf *buffer)
     DBUG_ENTER ("AddDebugFlag");
 
     if (global.cc_debug) {
-        ILIBstrBufPrintf (buffer, "%s ", global.config.opt_g);
+        SBUFprintf (buffer, "%s ", global.config.opt_g);
     }
 
     DBUG_VOID_RETURN;
@@ -85,14 +85,14 @@ GetCCFlags ()
 
     DBUG_ENTER ("GetCCFlags");
 
-    buffer = ILIBstrBufCreate (1024);
+    buffer = SBUFcreate (1024);
 
     AddOptimizeFlag (buffer);
     AddDebugFlag (buffer);
 
-    result = ILIBstrBuf2String (buffer);
+    result = SBUF2str (buffer);
 
-    buffer = ILIBstrBufFree (buffer);
+    buffer = SBUFfree (buffer);
 
     DBUG_RETURN (result);
 }
@@ -102,7 +102,7 @@ AddCCLibs (str_buf *buffer)
 {
     DBUG_ENTER ("AddCCLibs");
 
-    ILIBstrBufPrintf (buffer, "%s ", global.config.cclink);
+    SBUFprintf (buffer, "%s ", global.config.cclink);
 
     DBUG_VOID_RETURN;
 }
@@ -115,23 +115,23 @@ AddSacLibs (str_buf *buffer)
     if (global.optimize.dophm) {
         if (global.mtmode == MT_none) {
             if (global.runtimecheck.heap) {
-                ILIBstrBufPrint (buffer, "-lsacphm_seq_diag ");
+                SBUFprint (buffer, "-lsacphm_seq_diag ");
             } else {
-                ILIBstrBufPrint (buffer, "-lsacphm_seq ");
+                SBUFprint (buffer, "-lsacphm_seq ");
             }
         } else {
             if (global.runtimecheck.heap) {
-                ILIBstrBufPrint (buffer, "-lsacphm_mt_diag ");
+                SBUFprint (buffer, "-lsacphm_mt_diag ");
             } else {
-                ILIBstrBufPrint (buffer, "-lsacphm_mt ");
+                SBUFprint (buffer, "-lsacphm_mt ");
             }
         }
     }
 
     if (global.mtmode == MT_none) {
-        ILIBstrBufPrint (buffer, "-lsac_seq ");
+        SBUFprint (buffer, "-lsac_seq ");
     } else {
-        ILIBstrBufPrint (buffer, "-lsac_mt -lpthread");
+        SBUFprint (buffer, "-lsac_mt -lpthread");
     }
 
     DBUG_VOID_RETURN;
@@ -150,7 +150,7 @@ AddEfenceLib (str_buf *buffer)
         if (efence == NULL) {
             CTIwarn ("Unable to find `libefence.a' in EXTLIB_PATH");
         } else {
-            ILIBstrBufPrintf (buffer, "%s ", efence);
+            SBUFprintf (buffer, "%s ", efence);
         }
     }
 
@@ -165,15 +165,15 @@ GetLibs ()
 
     DBUG_ENTER ("GetLibs");
 
-    buffer = ILIBstrBufCreate (256);
+    buffer = SBUFcreate (256);
 
     AddSacLibs (buffer);
     AddCCLibs (buffer);
     AddEfenceLib (buffer);
 
-    result = ILIBstrBuf2String (buffer);
+    result = SBUF2str (buffer);
 
-    buffer = ILIBstrBufFree (buffer);
+    buffer = SBUFfree (buffer);
 
     DBUG_RETURN (result);
 }
@@ -183,7 +183,7 @@ AddExtLib (const char *path, str_buf *buf)
 {
     DBUG_ENTER ("AddExtLibPath");
 
-    buf = ILIBstrBufPrintf (buf, "-L%s %s%s ", path, global.config.ld_path, path);
+    buf = SBUFprintf (buf, "-L%s %s%s ", path, global.config.ld_path, path);
 
     DBUG_RETURN (buf);
 }
@@ -192,15 +192,15 @@ static char *
 GetExtLibPath ()
 {
     char *result;
-    str_buf *buffer = ILIBstrBufCreate (255);
+    str_buf *buffer = SBUFcreate (255);
 
     DBUG_ENTER ("GetExtLibPath");
 
     buffer = (str_buf *)FMGRmapPath (PK_extlib_path,
                                      (void *(*)(const char *, void *))AddExtLib, buffer);
 
-    result = ILIBstrBuf2String (buffer);
-    buffer = ILIBstrBufFree (buffer);
+    result = SBUF2str (buffer);
+    buffer = SBUFfree (buffer);
 
     DBUG_RETURN (result);
 }

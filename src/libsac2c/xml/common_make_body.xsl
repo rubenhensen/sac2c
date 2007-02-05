@@ -68,7 +68,7 @@ version="1.0">
   <xsl:value-of select="'#ifdef SHOW_MALLOC'"/>
   <xsl:text>
   </xsl:text>
-  <xsl:value-of select="'this = (node *) ILIBmallocAt( size, file, line);'" />
+  <xsl:value-of select="'this = (node *) MEMmallocAt( size, file, line);'" />
   <xsl:value-of select="'CHKMsetNodeType(this, N_'" />
   <xsl:call-template name="lowercase" >
     <xsl:with-param name="string" >
@@ -80,7 +80,7 @@ version="1.0">
   </xsl:text>
   <xsl:value-of select="'#else '" />
   <xsl:call-template name="newline" />
-  <xsl:value-of select="'this = (node *) ILIBmalloc( size);'" />
+  <xsl:value-of select="'this = (node *) MEMmalloc( size);'" />
   <xsl:call-template name="newline" />
   <xsl:value-of select="'#endif /* SHOW_MALLOC */'" />
   <xsl:call-template name="newline" />

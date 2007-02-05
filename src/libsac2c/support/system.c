@@ -1,7 +1,7 @@
 /*
  * $Id$
  */
-#include "internal_lib.h"
+#include ""
 #include "str.h"
 #include "memory.h"
 
@@ -45,7 +45,7 @@ struct PTR_BUF {
 
 /** <!--********************************************************************-->
  *
- * @fn  ptr_buf *ILIBptrBufCreate( int size)
+ * @fn  ptr_buf *PBUFcreate( int size)
  *
  *   @brief  creates an (unbound) pointer buffer
  *
@@ -57,11 +57,11 @@ struct PTR_BUF {
  ******************************************************************************/
 
 ptr_buf *
-ILIBptrBufCreate (int size)
+PBUFcreate (int size)
 {
     ptr_buf *res;
 
-    DBUG_ENTER ("ILIBptrBufCreate");
+    DBUG_ENTER ("PBUFcreate");
 
     res = (ptr_buf *)MEMmalloc (sizeof (ptr_buf));
     res->buf = (void **)MEMmalloc (size * sizeof (void *));
@@ -211,7 +211,7 @@ struct STR_BUF {
 /******************************************************************************
  *
  * Function:
- *   str_buf *ILIBstrBufCreate( int size);
+ *   str_buf *SBUFcreate( int size);
  *
  * Description:
  *
@@ -219,11 +219,11 @@ struct STR_BUF {
  ******************************************************************************/
 
 str_buf *
-ILIBstrBufCreate (int size)
+SBUFcreate (int size)
 {
     str_buf *res;
 
-    DBUG_ENTER ("ILIBstrBufCreate");
+    DBUG_ENTER ("SBUFcreate");
 
     res = (str_buf *)MEMmalloc (sizeof (str_buf));
     res->buf = (char *)MEMmalloc (size * sizeof (char));
@@ -264,7 +264,7 @@ EnsureStrBufSpace (str_buf *s, int len)
 /******************************************************************************
  *
  * Function:
- *   str_buf *ILIBstrBufPrint(  str_buf *s, const char *string);
+ *   str_buf *SBUFprint(  str_buf *s, const char *string);
  *
  * Description:
  *
@@ -272,11 +272,11 @@ EnsureStrBufSpace (str_buf *s, int len)
  ******************************************************************************/
 
 str_buf *
-ILIBstrBufPrint (str_buf *s, const char *string)
+SBUFprint (str_buf *s, const char *string)
 {
     int len;
 
-    DBUG_ENTER ("ILIBstrBufPrint");
+    DBUG_ENTER ("SBUFprint");
 
     len = strlen (string);
 
@@ -291,7 +291,7 @@ ILIBstrBufPrint (str_buf *s, const char *string)
 /******************************************************************************
  *
  * Function:
- *   str_buf *ILIBstrBufPrintf(  str_buf *s, const char *format, ...);
+ *   str_buf *SBUFprintf(  str_buf *s, const char *format, ...);
  *
  * Description:
  *
@@ -299,13 +299,13 @@ ILIBstrBufPrint (str_buf *s, const char *string)
  ******************************************************************************/
 
 str_buf *
-ILIBstrBufPrintf (str_buf *s, const char *format, ...)
+SBUFprintf (str_buf *s, const char *format, ...)
 {
     va_list arg_p;
     int len, rem;
     bool ok;
 
-    DBUG_ENTER ("ILIBstrBufPrintf");
+    DBUG_ENTER ("SBUFprintf");
 
     ok = FALSE;
 
@@ -334,7 +334,7 @@ ILIBstrBufPrintf (str_buf *s, const char *format, ...)
 /******************************************************************************
  *
  * Function:
- *   char *ILIBstrBuf2String(  str_buf *s);
+ *   char *SBUF2str(  str_buf *s);
  *
  * Description:
  *
@@ -342,9 +342,9 @@ ILIBstrBufPrintf (str_buf *s, const char *format, ...)
  ******************************************************************************/
 
 char *
-ILIBstrBuf2String (str_buf *s)
+SBUF2str (str_buf *s)
 {
-    DBUG_ENTER ("ILIBstrBuf2String");
+    DBUG_ENTER ("SBUF2str");
 
     DBUG_RETURN (STRcpy (s->buf));
 }
@@ -352,7 +352,7 @@ ILIBstrBuf2String (str_buf *s)
 /******************************************************************************
  *
  * Function:
- *   void ILIBstrBufFlush(  str_buf *s)
+ *   void SBUFflush(  str_buf *s)
  *
  * Description:
  *
@@ -360,9 +360,9 @@ ILIBstrBuf2String (str_buf *s)
  ******************************************************************************/
 
 void
-ILIBstrBufFlush (str_buf *s)
+SBUFflush (str_buf *s)
 {
-    DBUG_ENTER ("ILIBstrBufFlush");
+    DBUG_ENTER ("SBUFflush");
 
     s->pos = 0;
     DBUG_PRINT ("STRBUF", ("pos of buffer %p reset to %d", s, s->pos));
@@ -373,7 +373,7 @@ ILIBstrBufFlush (str_buf *s)
 /******************************************************************************
  *
  * Function:
- *   bool ILIBstrBufIsEmpty( str_buf *s)
+ *   bool SBUFisEmpty( str_buf *s)
  *
  * Description:
  *
@@ -381,9 +381,9 @@ ILIBstrBufFlush (str_buf *s)
  ******************************************************************************/
 
 bool
-ILIBstrBufIsEmpty (str_buf *s)
+SBUFisEmpty (str_buf *s)
 {
-    DBUG_ENTER ("ILIBstrBufIsEmpty");
+    DBUG_ENTER ("SBUFisEmpty");
 
     DBUG_RETURN (s->pos == 0);
 }
@@ -391,16 +391,16 @@ ILIBstrBufIsEmpty (str_buf *s)
 /******************************************************************************
  *
  * Function:
- *   void *ILIBstrBufFree( str_buf *s);
+ *   void *SBUFfree( str_buf *s);
  *
  * Description:
  *
  ******************************************************************************/
 
 void *
-ILIBstrBufFree (str_buf *s)
+SBUFfree (str_buf *s)
 {
-    DBUG_ENTER ("ILIBstrBufFree");
+    DBUG_ENTER ("SBUFfree");
 
     s->buf = MEMfree (s->buf);
     s = MEMfree (s);

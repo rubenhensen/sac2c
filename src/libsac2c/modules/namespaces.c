@@ -10,10 +10,11 @@
 
 #include "namespaces.h"
 #include "dbug.h"
-#include "internal_lib.h"
+#include "str_buffer.h"
 #include "str.h"
 #include "memory.h"
 #include "filemgr.h"
+#include "globals.h"
 
 #define BLOCKSIZE 100
 
@@ -163,19 +164,19 @@ BuildNamespaceName (namespace_t *ns)
 
     DBUG_ENTER ("BuildNamespaceName");
 
-    buf = ILIBstrBufCreate (255);
+    buf = SBUFcreate (255);
 
-    buf = ILIBstrBufPrint (buf, ns->module);
+    buf = SBUFprint (buf, ns->module);
 
     view = ns->view;
 
     while (view != NULL) {
-        buf = ILIBstrBufPrintf (buf, ":%s", view->name);
+        buf = SBUFprintf (buf, ":%s", view->name);
         view = view->next;
     }
 
-    result = ILIBstrBuf2String (buf);
-    buf = ILIBstrBufFree (buf);
+    result = SBUF2str (buf);
+    buf = SBUFfree (buf);
 
     DBUG_RETURN (result);
 }

@@ -49,13 +49,12 @@
 #include "cv2scalar.h"
 #include "cv2cv.h"
 #include "cv2str.h"
-#include "internal_lib.h"
+#include "str_buffer.h"
 #include "str.h"
 #include "memory.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "basecv.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "new_types.h"
@@ -526,16 +525,16 @@ COconstant2String (constant *a)
     DBUG_ENTER ("COconstant2String");
 
     if (buf == NULL) {
-        buf = ILIBstrBufCreate (64);
+        buf = SBUFcreate (64);
     }
     tmp_str = SHshape2String (0, CONSTANT_SHAPE (a));
     tmp2_str = COconstantData2String (10000, a);
-    buf = ILIBstrBufPrintf (buf, "reshape( %s, [%s])", tmp_str, tmp2_str);
+    buf = SBUFprintf (buf, "reshape( %s, [%s])", tmp_str, tmp2_str);
     tmp_str = MEMfree (tmp_str);
     tmp2_str = MEMfree (tmp2_str);
 
-    res = ILIBstrBuf2String (buf);
-    ILIBstrBufFlush (buf);
+    res = SBUF2str (buf);
+    SBUFflush (buf);
 
     DBUG_RETURN (res);
 }

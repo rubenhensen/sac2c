@@ -15,6 +15,7 @@ extern char *STRcat (const char *first, const char *second);
 extern char *STRcatn (int n, ...);
 extern char *STRtok (char *str, char *tok);
 extern bool STReq (const char *first, const char *second);
+extern int STRlen (const char *str);
 
 extern char *STRitoa (long number);
 

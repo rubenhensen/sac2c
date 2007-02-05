@@ -6,6 +6,7 @@
 #include "dbug.h"
 #include "internal_lib.h"
 #include "str.h"
+#include "str_buffer.h"
 #include "memory.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -575,29 +576,29 @@ TUtypeSignature2String (node *fundef)
     DBUG_ENTER ("TUtypeSignature2String");
 
     if (buf == NULL) {
-        buf = ILIBstrBufCreate (100);
+        buf = SBUFcreate (100);
     }
 
     arg = FUNDEF_ARGS (fundef);
     while (arg != NULL) {
         tmp_str = TYtype2String (ARG_NTYPE (arg), FALSE, 0);
-        buf = ILIBstrBufPrintf (buf, "%s ", tmp_str);
+        buf = SBUFprintf (buf, "%s ", tmp_str);
         tmp_str = MEMfree (tmp_str);
         arg = ARG_NEXT (arg);
     }
 
-    buf = ILIBstrBufPrint (buf, "-> ");
+    buf = SBUFprint (buf, "-> ");
 
     arg = FUNDEF_RETS (fundef);
     while (arg != NULL) {
         tmp_str = TYtype2String (RET_TYPE (arg), FALSE, 0);
-        buf = ILIBstrBufPrintf (buf, "%s ", tmp_str);
+        buf = SBUFprintf (buf, "%s ", tmp_str);
         tmp_str = MEMfree (tmp_str);
         arg = RET_NEXT (arg);
     }
 
-    tmp_str = ILIBstrBuf2String (buf);
-    ILIBstrBufFlush (buf);
+    tmp_str = SBUF2str (buf);
+    SBUFflush (buf);
 
     DBUG_RETURN (tmp_str);
 }

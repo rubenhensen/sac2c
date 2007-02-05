@@ -453,12 +453,6 @@ typedef char *(*cv2strfunptr) (void *, int, int, int);
 
 typedef void (*zipcvfunptr) (void *, int, void *, int, void *, int);
 
-/*
- * moved from internal_lib.h
- */
-typedef struct STR_BUF str_buf;
-typedef struct PTR_BUF ptr_buf;
-
 /*******************************************************************************
  *
  * moved from new_types.h

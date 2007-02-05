@@ -46,9 +46,11 @@
  ***
  ***/
 
+#include <string.h>
+
 #include "tree_basic.h"
 #include "tree_compound.h"
-#include "internal_lib.h"
+#include "str_buffer.h"
 #include "str.h"
 #include "memory.h"
 #include "traverse.h"
@@ -57,8 +59,7 @@
 #include "globals.h"
 #include "convert.h"
 #include "new_types.h"
-
-#include <string.h>
+#include "dbug.h"
 
 /*
  * INFO structure
@@ -154,36 +155,36 @@ Fundef2ProfileString (node *fundef)
     node *arg;
 
     DBUG_ENTER ("Fundef2ProfileString");
-    str_buff = ILIBstrBufCreate (PF_MAXFUNNAMELEN - 1);
-    str_buff = ILIBstrBufPrintf (str_buff, "%s( ", FUNDEF_NAME (fundef));
+    str_buff = SBUFcreate (PF_MAXFUNNAMELEN - 1);
+    str_buff = SBUFprintf (str_buff, "%s( ", FUNDEF_NAME (fundef));
 
     arg = FUNDEF_ARGS (fundef);
     while (arg != NULL) {
         tmp_str = TYtype2String (ARG_NTYPE (arg), FALSE, 0);
-        str_buff = ILIBstrBufPrint (str_buff, tmp_str);
+        str_buff = SBUFprint (str_buff, tmp_str);
         tmp_str = MEMfree (tmp_str);
 
         if (ARG_ISREFERENCE (arg) && !ARG_ISREADONLY (arg)) {
-            str_buff = ILIBstrBufPrint (str_buff, " &");
+            str_buff = SBUFprint (str_buff, " &");
         } else if (ARG_ISREFERENCE (arg) && ARG_ISREADONLY (arg)) {
-            str_buff = ILIBstrBufPrint (str_buff, " (&)");
+            str_buff = SBUFprint (str_buff, " (&)");
         } else {
-            str_buff = ILIBstrBufPrint (str_buff, " ");
+            str_buff = SBUFprint (str_buff, " ");
         }
 
         if (ARG_NAME (arg) != NULL) {
-            str_buff = ILIBstrBufPrint (str_buff, ARG_NAME (arg));
+            str_buff = SBUFprint (str_buff, ARG_NAME (arg));
         }
 
         arg = ARG_NEXT (arg);
         if (arg != NULL) {
-            str_buff = ILIBstrBufPrint (str_buff, ", ");
+            str_buff = SBUFprint (str_buff, ", ");
         }
     }
-    str_buff = ILIBstrBufPrint (str_buff, ")");
+    str_buff = SBUFprint (str_buff, ")");
 
-    tmp_str = ILIBstrBuf2String (str_buff);
-    str_buff = ILIBstrBufFree (str_buff);
+    tmp_str = SBUF2str (str_buff);
+    str_buff = SBUFfree (str_buff);
 
     result = STRncpy (tmp_str, PF_MAXFUNNAMELEN);
     tmp_str = MEMfree (tmp_str);

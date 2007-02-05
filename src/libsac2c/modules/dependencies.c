@@ -12,7 +12,7 @@
 #include "tree_basic.h"
 #include "modulemanager.h"
 #include "filemgr.h"
-#include "internal_lib.h"
+#include "str_buffer.h"
 #include "str.h"
 #include "memory.h"
 #include "namespaces.h"
@@ -55,8 +55,8 @@ TableEntriesFoldFun (const char *val, strstype_t kind, void *rest)
     switch (kind) {
     case STRS_saclib:
     case STRS_extlib:
-        result = ILIBstrBufPrintf ((str_buf *)rest,
-                                   "result = STRSadd( \"%s\", %d, result);\n", val, kind);
+        result = SBUFprintf ((str_buf *)rest, "result = STRSadd( \"%s\", %d, result);\n",
+                             val, kind);
         break;
     default:
         break;
@@ -73,16 +73,16 @@ GenerateDependencyTableEntries (stringset_t *deps, FILE *file)
 
     DBUG_ENTER ("GenerateDependencyTableEntries");
 
-    buffer = ILIBstrBufCreate (4096);
+    buffer = SBUFcreate (4096);
 
     buffer = STRSfold (&TableEntriesFoldFun, deps, buffer);
 
-    string = ILIBstrBuf2String (buffer);
+    string = SBUF2str (buffer);
 
     fprintf (file, string);
 
     string = MEMfree (string);
-    buffer = ILIBstrBufFree (buffer);
+    buffer = SBUFfree (buffer);
 
     DBUG_VOID_RETURN;
 }

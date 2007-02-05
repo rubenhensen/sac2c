@@ -1,34 +1,6 @@
 /*
  *
- * $Log$
- * Revision 1.9  2005/01/11 14:20:44  cg
- * Converted output generation from Error.h to ctinfo.c
- *
- * Revision 1.8  2004/11/25 17:52:55  sbs
- * compiles
- *
- * Revision 1.7  2004/11/23 20:22:31  sbs
- * SacDevCamp 04 done.
- *
- * Revision 1.6  2004/11/22 11:44:14  cg
- * Moved spec_mode_str from globals.c to this file.
- *
- * Revision 1.5  2004/07/30 17:29:21  sbs
- * switch to new INFO structure
- * PHASE I
- *
- * Revision 1.4  2003/09/18 11:14:26  sbs
- * break in default branch of switch added.
- *
- * Revision 1.3  2003/09/18 08:57:10  sbs
- * missing colon after DBUG_VOID_RETURN added.
- *
- * Revision 1.2  2003/09/17 13:06:26  sbs
- * output reniced.
- *
- * Revision 1.1  2003/09/17 12:36:46  sbs
- * Initial revision
- *
+ * $Id$
  *
  */
 
@@ -39,7 +11,7 @@
 #include "tree_compound.h"
 #include "traverse.h"
 #include "convert.h"
-#include "internal_lib.h"
+#include "str_buffer.h"
 #include "str.h"
 #include "memory.h"
 #include "globals.h"
@@ -157,32 +129,30 @@ PrintStatistics (node *fundef, info *info)
 
     DBUG_ENTER ("PrintStatistics");
 
-    buf = ILIBstrBufCreate (80);
-    buf = ILIBstrBufPrintf (buf, "  %s( ", FUNDEF_NAME (fundef));
+    buf = SBUFcreate (80);
+    buf = SBUFprintf (buf, "  %s( ", FUNDEF_NAME (fundef));
 
     arg = FUNDEF_ARGS (fundef);
     while (arg != NULL) {
-        buf = ILIBstrBufPrintf (buf, "%s", TYtype2String (ARG_NTYPE (arg), FALSE, 0));
+        buf = SBUFprintf (buf, "%s", TYtype2String (ARG_NTYPE (arg), FALSE, 0));
         arg = ARG_NEXT (arg);
         if (arg != NULL) {
-            buf = ILIBstrBufPrint (buf, ", ");
+            buf = SBUFprint (buf, ", ");
         }
     }
-    buf = ILIBstrBufPrint (buf, "):\n");
+    buf = SBUFprint (buf, "):\n");
 
     switch (global.spec_mode) {
     case (SS_aks):
         if (INFO_TS_AKD (info) > 0) {
-            buf
-              = ILIBstrBufPrintf (buf, "    %d akd variables left\n", INFO_TS_AKD (info));
+            buf = SBUFprintf (buf, "    %d akd variables left\n", INFO_TS_AKD (info));
             flag = TRUE;
             INFO_TS_ANY (info) = TRUE;
         }
         /* here no break is missing! */
     case (SS_akd):
         if (INFO_TS_AUD (info) > 0) {
-            buf
-              = ILIBstrBufPrintf (buf, "    %d aud variables left\n", INFO_TS_AUD (info));
+            buf = SBUFprintf (buf, "    %d aud variables left\n", INFO_TS_AUD (info));
             flag = TRUE;
             INFO_TS_ANY (info) = TRUE;
         }
@@ -193,11 +163,11 @@ PrintStatistics (node *fundef, info *info)
         break;
     }
     if (flag) {
-        tmp = ILIBstrBuf2String (buf);
+        tmp = SBUF2str (buf);
         CTInote ("%s", tmp);
         tmp = MEMfree (tmp);
     }
-    buf = ILIBstrBufFree (buf);
+    buf = SBUFfree (buf);
 
     DBUG_VOID_RETURN;
 }

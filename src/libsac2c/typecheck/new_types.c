@@ -73,6 +73,7 @@
 #include "tree_compound.h"
 #include "internal_lib.h"
 #include "str.h"
+#include "str_buffer.h"
 #include "memory.h"
 #include "LookUpTable.h"
 
@@ -2793,45 +2794,45 @@ TYdft_res2DebugString (dft_res *dft)
     DBUG_ENTER ("TYdft_res2DebugString");
 
     if (buf == NULL) {
-        buf = ILIBstrBufCreate (100);
+        buf = SBUFcreate (100);
     }
     if (dft == NULL) {
-        buf = ILIBstrBufPrintf (buf, "--");
+        buf = SBUFprintf (buf, "--");
     } else {
         if (dft->def) {
             tmp_str = TUtypeSignature2String (dft->def);
-            buf = ILIBstrBufPrintf (buf, "exact : (%s) ", tmp_str);
+            buf = SBUFprintf (buf, "exact : (%s) ", tmp_str);
             tmp_str = MEMfree (tmp_str);
         }
         if (dft->deriveable) {
             tmp_str = TUtypeSignature2String (dft->deriveable);
-            buf = ILIBstrBufPrintf (buf, "deriveable : (%s) ", tmp_str);
+            buf = SBUFprintf (buf, "deriveable : (%s) ", tmp_str);
             tmp_str = MEMfree (tmp_str);
         }
         if (dft->num_partials > 0) {
-            buf = ILIBstrBufPrintf (buf, "partials : ");
+            buf = SBUFprintf (buf, "partials : ");
             for (i = 0; i < dft->num_partials; i++) {
                 tmp_str = TUtypeSignature2String (dft->partials[i]);
-                buf = ILIBstrBufPrintf (buf, "%s ", tmp_str);
+                buf = SBUFprintf (buf, "%s ", tmp_str);
                 tmp_str = MEMfree (tmp_str);
             }
         }
         if (dft->num_deriveable_partials > 0) {
-            buf = ILIBstrBufPrintf (buf, "deriveable_partials : ");
+            buf = SBUFprintf (buf, "deriveable_partials : ");
             for (i = 0; i < dft->num_deriveable_partials; i++) {
                 tmp_str = TUtypeSignature2String (dft->deriveable_partials[i]);
-                buf = ILIBstrBufPrintf (buf, "%s ", tmp_str);
+                buf = SBUFprintf (buf, "%s ", tmp_str);
                 tmp_str = MEMfree (tmp_str);
             }
         }
 
-        if (ILIBstrBufIsEmpty (buf)) {
-            buf = ILIBstrBufPrintf (buf, "no match!");
+        if (SBUFisEmpty (buf)) {
+            buf = SBUFprintf (buf, "no match!");
         }
     }
 
-    tmp_str = ILIBstrBuf2String (buf);
-    ILIBstrBufFlush (buf);
+    tmp_str = SBUF2str (buf);
+    SBUFflush (buf);
 
     DBUG_RETURN (tmp_str);
 }
@@ -4409,42 +4410,42 @@ ScalarType2String (ntype *type)
     DBUG_ENTER ("ScalarType2String");
 
     if (buf == NULL) {
-        buf = ILIBstrBufCreate (64);
+        buf = SBUFcreate (64);
     }
 
     switch (NTYPE_CON (type)) {
     case TC_simple:
-        buf = ILIBstrBufPrintf (buf, "%s", global.mdb_type[SIMPLE_TYPE (type)]);
+        buf = SBUFprintf (buf, "%s", global.mdb_type[SIMPLE_TYPE (type)]);
         if (SIMPLE_TYPE (type) == T_hidden) {
-            buf = ILIBstrBufPrintf (buf, "(%d)", SIMPLE_HIDDEN_UDT (type));
+            buf = SBUFprintf (buf, "(%d)", SIMPLE_HIDDEN_UDT (type));
         }
         break;
     case TC_symbol:
         if (SYMBOL_NS (type) == NULL) {
-            buf = ILIBstrBufPrintf (buf, "%s", SYMBOL_NAME (type));
+            buf = SBUFprintf (buf, "%s", SYMBOL_NAME (type));
         } else {
-            buf = ILIBstrBufPrintf (buf, "%s::%s", NSgetName (SYMBOL_NS (type)),
-                                    SYMBOL_NAME (type));
+            buf = SBUFprintf (buf, "%s::%s", NSgetName (SYMBOL_NS (type)),
+                              SYMBOL_NAME (type));
         }
         break;
     case TC_user:
         if (UTgetNamespace (USER_TYPE (type)) == NULL) {
-            buf = ILIBstrBufPrintf (buf, "%s", UTgetName (USER_TYPE (type)));
+            buf = SBUFprintf (buf, "%s", UTgetName (USER_TYPE (type)));
         } else {
-            buf = ILIBstrBufPrintf (buf, "%s::%s",
-                                    NSgetName (UTgetNamespace (USER_TYPE (type))),
-                                    UTgetName (USER_TYPE (type)));
+            buf
+              = SBUFprintf (buf, "%s::%s", NSgetName (UTgetNamespace (USER_TYPE (type))),
+                            UTgetName (USER_TYPE (type)));
         }
         break;
     case TC_poly:
-        buf = ILIBstrBufPrintf (buf, "<%s>", POLY_NAME (type));
+        buf = SBUFprintf (buf, "<%s>", POLY_NAME (type));
         break;
     default:
         DBUG_ASSERT (0, "ScalarType2String called with non-scalar type!");
     }
 
-    res = ILIBstrBuf2String (buf);
-    ILIBstrBufFlush (buf);
+    res = SBUF2str (buf);
+    SBUFflush (buf);
 
     DBUG_RETURN (res);
 }
@@ -4458,51 +4459,51 @@ ArrayType2String (ntype *type)
     DBUG_ENTER ("ArrayType2String");
 
     if (buf == NULL) {
-        buf = ILIBstrBufCreate (128);
+        buf = SBUFcreate (128);
     }
 
     DBUG_ASSERT (type, "ArrayType2String called with NULL!");
     DBUG_ASSERT (TYisArray (type), "ArrayType2String called with non-array type!");
 
     tmp_str = ScalarType2String (AKS_BASE (type));
-    buf = ILIBstrBufPrint (buf, tmp_str);
+    buf = SBUFprint (buf, tmp_str);
     tmp_str = MEMfree (tmp_str);
 
     switch (NTYPE_CON (type)) {
     case TC_akv:
         if (TYgetDim (type) > 0) {
             tmp_str = SHshape2String (0, COgetShape (AKV_CONST (type)));
-            buf = ILIBstrBufPrint (buf, tmp_str);
+            buf = SBUFprint (buf, tmp_str);
             tmp_str = MEMfree (tmp_str);
         }
         tmp_str = COconstantData2String (3, AKV_CONST (type));
-        buf = ILIBstrBufPrintf (buf, "{%s}", tmp_str);
+        buf = SBUFprintf (buf, "{%s}", tmp_str);
         tmp_str = MEMfree (tmp_str);
         break;
     case TC_aks:
         if (TYgetDim (type) > 0) {
             tmp_str = SHshape2String (0, AKS_SHP (type));
-            buf = ILIBstrBufPrint (buf, tmp_str);
+            buf = SBUFprint (buf, tmp_str);
             tmp_str = MEMfree (tmp_str);
         }
         break;
     case TC_akd:
         tmp_str = SHshape2String (AKD_DOTS (type), AKD_SHP (type));
-        buf = ILIBstrBufPrint (buf, tmp_str);
+        buf = SBUFprint (buf, tmp_str);
         tmp_str = MEMfree (tmp_str);
         break;
     case TC_audgz:
-        buf = ILIBstrBufPrintf (buf, "[+]");
+        buf = SBUFprintf (buf, "[+]");
         break;
     case TC_aud:
-        buf = ILIBstrBufPrintf (buf, "[*]");
+        buf = SBUFprintf (buf, "[*]");
         break;
     default:
         DBUG_ASSERT (0, "ArrayType2String called with non-array type!");
     }
 
-    tmp_str = ILIBstrBuf2String (buf);
-    ILIBstrBufFlush (buf);
+    tmp_str = SBUF2str (buf);
+    SBUFflush (buf);
 
     DBUG_RETURN (tmp_str);
 }
@@ -4512,9 +4513,9 @@ PrintFunSep (str_buf *buf, bool multiline, int offset)
 {
     DBUG_ENTER ("FunType2String");
     if (multiline) {
-        buf = ILIBstrBufPrintf (buf, ",\n%*s", offset, "");
+        buf = SBUFprintf (buf, ",\n%*s", offset, "");
     } else {
-        buf = ILIBstrBufPrintf (buf, ", ");
+        buf = SBUFprintf (buf, ", ");
     }
     DBUG_RETURN (buf);
 }
@@ -4530,20 +4531,20 @@ FunType2String (ntype *type, char *scal_str, bool multiline, int offset)
 
     DBUG_ENTER ("FunType2String");
 
-    buf = ILIBstrBufCreate (4096);
+    buf = SBUFcreate (4096);
     switch (NTYPE_CON (type)) {
     case TC_fun:
-        buf = ILIBstrBufPrintf (buf, "{ ");
+        buf = SBUFprintf (buf, "{ ");
         offset += 2;
         for (i = 0; i < NTYPE_ARITY (type); i++) {
             tmp_str = FunType2String (NTYPE_SON (type, i), scal_str, multiline, offset);
             if (i > 0) {
                 buf = PrintFunSep (buf, multiline, offset);
             }
-            buf = ILIBstrBufPrint (buf, tmp_str);
+            buf = SBUFprint (buf, tmp_str);
             tmp_str = MEMfree (tmp_str);
         }
-        buf = ILIBstrBufPrintf (buf, "}");
+        buf = SBUFprintf (buf, "}");
         break;
 
     case TC_ibase:
@@ -4557,10 +4558,10 @@ FunType2String (ntype *type, char *scal_str, bool multiline, int offset)
         /*
          * print "<scal_str>[*]" instance:
          */
-        buf = ILIBstrBufPrintf (buf, "%s[*]", scal_str);
+        buf = SBUFprintf (buf, "%s[*]", scal_str);
         tmp_str
           = FunType2String (IBASE_GEN (type), scal_str, multiline, offset + scal_len + 3);
-        buf = ILIBstrBufPrint (buf, tmp_str);
+        buf = SBUFprint (buf, tmp_str);
         tmp_str = MEMfree (tmp_str);
 
         /*
@@ -4570,8 +4571,8 @@ FunType2String (ntype *type, char *scal_str, bool multiline, int offset)
             tmp_str = FunType2String (IBASE_SCAL (type), scal_str, multiline,
                                       offset + scal_len);
             buf = PrintFunSep (buf, multiline, offset);
-            buf = ILIBstrBufPrint (buf, scal_str);
-            buf = ILIBstrBufPrint (buf, tmp_str);
+            buf = SBUFprint (buf, scal_str);
+            buf = SBUFprint (buf, tmp_str);
             tmp_str = MEMfree (tmp_str);
         }
 
@@ -4580,7 +4581,7 @@ FunType2String (ntype *type, char *scal_str, bool multiline, int offset)
          */
         if (IBASE_IARR (type)) {
             tmp_str = FunType2String (IBASE_IARR (type), scal_str, multiline, offset);
-            buf = ILIBstrBufPrint (buf, tmp_str);
+            buf = SBUFprint (buf, tmp_str);
             tmp_str = MEMfree (tmp_str);
         }
 
@@ -4596,8 +4597,8 @@ FunType2String (ntype *type, char *scal_str, bool multiline, int offset)
             tmp_str = FunType2String (IBASE_GEN (type), scal_str, multiline,
                                       offset + scal_len + 3);
             buf = PrintFunSep (buf, multiline, offset);
-            buf = ILIBstrBufPrintf (buf, "%s[+]", scal_str);
-            buf = ILIBstrBufPrint (buf, tmp_str);
+            buf = SBUFprintf (buf, "%s[+]", scal_str);
+            buf = SBUFprint (buf, tmp_str);
             tmp_str = MEMfree (tmp_str);
         }
 
@@ -4607,7 +4608,7 @@ FunType2String (ntype *type, char *scal_str, bool multiline, int offset)
 
         for (i = 0; i < (NTYPE_ARITY (type) - 1); i++) {
             tmp_str = FunType2String (IARR_IDIM (type, i), scal_str, multiline, offset);
-            buf = ILIBstrBufPrint (buf, tmp_str);
+            buf = SBUFprint (buf, tmp_str);
             tmp_str = MEMfree (tmp_str);
         }
 
@@ -4625,8 +4626,8 @@ FunType2String (ntype *type, char *scal_str, bool multiline, int offset)
             tmp_str = FunType2String (IDIM_GEN (type), scal_str, multiline,
                                       offset + strlen (scal_str) + strlen (shp_str));
             buf = PrintFunSep (buf, multiline, offset);
-            buf = ILIBstrBufPrintf (buf, "%s%s", scal_str, shp_str);
-            buf = ILIBstrBufPrint (buf, tmp_str);
+            buf = SBUFprintf (buf, "%s%s", scal_str, shp_str);
+            buf = SBUFprint (buf, tmp_str);
             shp_str = MEMfree (shp_str);
             tmp_str = MEMfree (tmp_str);
         }
@@ -4637,7 +4638,7 @@ FunType2String (ntype *type, char *scal_str, bool multiline, int offset)
 
         for (i = 0; i < (NTYPE_ARITY (type) - 1); i++) {
             tmp_str = FunType2String (IDIM_ISHAPE (type, i), scal_str, multiline, offset);
-            buf = ILIBstrBufPrint (buf, tmp_str);
+            buf = SBUFprint (buf, tmp_str);
             tmp_str = MEMfree (tmp_str);
         }
 
@@ -4653,8 +4654,8 @@ FunType2String (ntype *type, char *scal_str, bool multiline, int offset)
             tmp_str = FunType2String (IDIM_GEN (type), scal_str, multiline,
                                       offset + strlen (scal_str) + strlen (shp_str));
             buf = PrintFunSep (buf, multiline, offset);
-            buf = ILIBstrBufPrintf (buf, "%s%s", scal_str, shp_str);
-            buf = ILIBstrBufPrint (buf, tmp_str);
+            buf = SBUFprintf (buf, "%s%s", scal_str, shp_str);
+            buf = SBUFprint (buf, tmp_str);
             shp_str = MEMfree (shp_str);
             tmp_str = MEMfree (tmp_str);
         }
@@ -4664,8 +4665,8 @@ FunType2String (ntype *type, char *scal_str, bool multiline, int offset)
     case TC_ires:
         offset += 4;
         tmp_str = TYtype2String (IRES_TYPE (type), multiline, offset);
-        buf = ILIBstrBufPrintf (buf, " -> ");
-        buf = ILIBstrBufPrint (buf, tmp_str);
+        buf = SBUFprintf (buf, " -> ");
+        buf = SBUFprint (buf, tmp_str);
         tmp_str = MEMfree (tmp_str);
         break;
     default:
@@ -4673,8 +4674,8 @@ FunType2String (ntype *type, char *scal_str, bool multiline, int offset)
         break;
     }
 
-    tmp_str = ILIBstrBuf2String (buf);
-    buf = ILIBstrBufFree (buf);
+    tmp_str = SBUF2str (buf);
+    buf = SBUFfree (buf);
 
     DBUG_RETURN (tmp_str);
 }
@@ -4707,21 +4708,21 @@ TYtype2String (ntype *type, bool multiline, int offset)
             res = FunType2String (type, NULL, multiline, offset);
             break;
         case TC_prod:
-            buf = ILIBstrBufCreate (256);
-            buf = ILIBstrBufPrintf (buf, "(");
+            buf = SBUFcreate (256);
+            buf = SBUFprintf (buf, "(");
             if (NTYPE_ARITY (type) > 0) {
                 tmp_str = TYtype2String (NTYPE_SON (type, 0), multiline, offset);
-                buf = ILIBstrBufPrintf (buf, " %s", tmp_str);
+                buf = SBUFprintf (buf, " %s", tmp_str);
                 tmp_str = MEMfree (tmp_str);
                 for (i = 1; i < NTYPE_ARITY (type); i++) {
                     tmp_str = TYtype2String (NTYPE_SON (type, i), multiline, offset);
-                    buf = ILIBstrBufPrintf (buf, ", %s", tmp_str);
+                    buf = SBUFprintf (buf, ", %s", tmp_str);
                     tmp_str = MEMfree (tmp_str);
                 }
             }
-            buf = ILIBstrBufPrintf (buf, ")");
-            res = ILIBstrBuf2String (buf);
-            buf = ILIBstrBufFree (buf);
+            buf = SBUFprintf (buf, ")");
+            res = SBUF2str (buf);
+            buf = SBUFfree (buf);
             break;
         case TC_alpha:
             res = SSIvariable2DebugString (ALPHA_SSI (type));
@@ -4758,33 +4759,33 @@ TYtype2DebugString (ntype *type, bool multiline, int offset)
 
     DBUG_ENTER ("TYtype2DebugString");
 
-    buf = ILIBstrBufCreate (8192);
+    buf = SBUFcreate (8192);
     if (type == NULL) {
-        buf = ILIBstrBufPrintf (buf, "--");
+        buf = SBUFprintf (buf, "--");
     } else {
-        buf = ILIBstrBufPrintf (buf, "%s{ ", dbug_str[NTYPE_CON (type)]);
+        buf = SBUFprintf (buf, "%s{ ", dbug_str[NTYPE_CON (type)]);
 
         switch (NTYPE_CON (type)) {
         case TC_bottom:
             multiline = FALSE;
-            buf = ILIBstrBufPrint (buf, BOTTOM_MSG (type));
+            buf = SBUFprint (buf, BOTTOM_MSG (type));
             break;
         case TC_akv:
             multiline = FALSE;
             tmp_str = COconstant2String (AKV_CONST (type));
-            buf = ILIBstrBufPrintf (buf, "%s, ", tmp_str);
+            buf = SBUFprintf (buf, "%s, ", tmp_str);
             tmp_str = MEMfree (tmp_str);
             break;
         case TC_aks:
             multiline = FALSE;
             tmp_str = SHshape2String (0, AKS_SHP (type));
-            buf = ILIBstrBufPrintf (buf, "%s, ", tmp_str);
+            buf = SBUFprintf (buf, "%s, ", tmp_str);
             tmp_str = MEMfree (tmp_str);
             break;
         case TC_akd:
             multiline = FALSE;
             tmp_str = SHshape2String (AKD_DOTS (type), AKD_SHP (type));
-            buf = ILIBstrBufPrintf (buf, "%s, ", tmp_str);
+            buf = SBUFprintf (buf, "%s, ", tmp_str);
             tmp_str = MEMfree (tmp_str);
             break;
         case TC_aud:
@@ -4792,62 +4793,62 @@ TYtype2DebugString (ntype *type, bool multiline, int offset)
             break;
         case TC_simple:
             multiline = FALSE;
-            buf = ILIBstrBufPrintf (buf, "%s", global.mdb_type[SIMPLE_TYPE (type)]);
+            buf = SBUFprintf (buf, "%s", global.mdb_type[SIMPLE_TYPE (type)]);
             if (SIMPLE_TYPE (type) == T_hidden) {
-                buf = ILIBstrBufPrintf (buf, "(%d)", SIMPLE_HIDDEN_UDT (type));
+                buf = SBUFprintf (buf, "(%d)", SIMPLE_HIDDEN_UDT (type));
             }
             break;
         case TC_symbol:
             multiline = FALSE;
             if (SYMBOL_NS (type) == NULL) {
-                buf = ILIBstrBufPrint (buf, SYMBOL_NAME (type));
+                buf = SBUFprint (buf, SYMBOL_NAME (type));
             } else {
-                buf = ILIBstrBufPrintf (buf, "%s::%s", NSgetName (SYMBOL_NS (type)),
-                                        SYMBOL_NAME (type));
+                buf = SBUFprintf (buf, "%s::%s", NSgetName (SYMBOL_NS (type)),
+                                  SYMBOL_NAME (type));
             }
             break;
         case TC_user:
             multiline = FALSE;
-            buf = ILIBstrBufPrintf (buf, "%d", USER_TYPE (type));
+            buf = SBUFprintf (buf, "%d", USER_TYPE (type));
             break;
         case TC_poly:
             multiline = FALSE;
-            buf = ILIBstrBufPrint (buf, POLY_NAME (type));
+            buf = SBUFprint (buf, POLY_NAME (type));
             break;
         case TC_ibase:
             tmp_str = TYtype2DebugString (IBASE_BASE (type), FALSE, offset);
-            buf = ILIBstrBufPrint (buf, tmp_str);
-            buf = ILIBstrBufPrint (buf, ",");
+            buf = SBUFprint (buf, tmp_str);
+            buf = SBUFprint (buf, ",");
             tmp_str = MEMfree (tmp_str);
             break;
         case TC_idim:
-            buf = ILIBstrBufPrintf (buf, "%d,", IDIM_DIM (type));
+            buf = SBUFprintf (buf, "%d,", IDIM_DIM (type));
             break;
         case TC_ishape:
             tmp_str = SHshape2String (0, ISHAPE_SHAPE (type));
-            buf = ILIBstrBufPrintf (buf, "%s,", tmp_str);
+            buf = SBUFprintf (buf, "%s,", tmp_str);
             tmp_str = MEMfree (tmp_str);
             break;
         case TC_ires:
             if (IRES_NUMFUNS (type) > 0) {
-                buf = ILIBstrBufPrintf (buf, "poss: {");
+                buf = SBUFprintf (buf, "poss: {");
                 for (i = 0; i < IRES_NUMFUNS (type); i++) {
-                    buf = ILIBstrBufPrintf (buf, "%d ", IRES_POS (type, i));
+                    buf = SBUFprintf (buf, "%d ", IRES_POS (type, i));
                 }
-                buf = ILIBstrBufPrintf (buf, "} ");
+                buf = SBUFprintf (buf, "} ");
             }
             if (IRES_NUMFUNS (type) > 0) {
-                buf = ILIBstrBufPrintf (buf, "fundefs: {");
+                buf = SBUFprintf (buf, "fundefs: {");
                 for (i = 0; i < IRES_NUMFUNS (type); i++) {
-                    buf = ILIBstrBufPrintf (buf, F_PTR " ", IRES_FUNDEF (type, i));
+                    buf = SBUFprintf (buf, F_PTR " ", IRES_FUNDEF (type, i));
                 }
-                buf = ILIBstrBufPrintf (buf, "} ");
+                buf = SBUFprintf (buf, "} ");
             }
             break;
         case TC_alpha:
             multiline = FALSE;
             tmp_str = SSIvariable2DebugString (ALPHA_SSI (type));
-            buf = ILIBstrBufPrintf (buf, "%s", tmp_str);
+            buf = SBUFprintf (buf, "%s", tmp_str);
             tmp_str = MEMfree (tmp_str);
             break;
         default:
@@ -4855,7 +4856,7 @@ TYtype2DebugString (ntype *type, bool multiline, int offset)
         }
 
         if (variable_arity[NTYPE_CON (type)]) {
-            buf = ILIBstrBufPrintf (buf, " <");
+            buf = SBUFprintf (buf, " <");
         }
         n = NTYPE_ARITY (type);
         offset += 3;
@@ -4863,24 +4864,24 @@ TYtype2DebugString (ntype *type, bool multiline, int offset)
             tmp_str = TYtype2DebugString (NTYPE_SON (type, i), multiline, offset);
             if (i == 0) {
                 if (multiline) {
-                    buf = ILIBstrBufPrintf (buf, "\n%*s", offset - 1, "");
+                    buf = SBUFprintf (buf, "\n%*s", offset - 1, "");
                 }
-                buf = ILIBstrBufPrint (buf, tmp_str);
+                buf = SBUFprint (buf, tmp_str);
             } else {
                 buf = PrintFunSep (buf, multiline, offset);
-                buf = ILIBstrBufPrint (buf, tmp_str);
+                buf = SBUFprint (buf, tmp_str);
             }
             tmp_str = MEMfree (tmp_str);
         }
         offset -= 3;
         if (variable_arity[NTYPE_CON (type)]) {
-            buf = ILIBstrBufPrintf (buf, ">");
+            buf = SBUFprintf (buf, ">");
         }
-        buf = ILIBstrBufPrintf (buf, "}");
+        buf = SBUFprintf (buf, "}");
     }
 
-    tmp_str = ILIBstrBuf2String (buf);
-    buf = ILIBstrBufFree (buf);
+    tmp_str = SBUF2str (buf);
+    buf = SBUFfree (buf);
 
     DBUG_RETURN (tmp_str);
 }
@@ -4893,9 +4894,9 @@ TYArgs2FunTypeString (node *args, ntype *rettype)
 
     DBUG_ENTER ("TYArgs2FunTypeString");
 
-    buf = ILIBstrBufCreate (4096);
+    buf = SBUFcreate (4096);
 
-    ILIBstrBufPrintf (buf, "PROJ { ");
+    SBUFprintf (buf, "PROJ { ");
 
     while (args != NULL) {
         ntype *atype = AVIS_TYPE (ARG_AVIS (args));
@@ -4903,7 +4904,7 @@ TYArgs2FunTypeString (node *args, ntype *rettype)
         if (atype != NULL) {
             tmp = TYtype2String (atype, 0, 0);
 
-            ILIBstrBufPrintf (buf, "%s -> ", tmp);
+            SBUFprintf (buf, "%s -> ", tmp);
 
             tmp = MEMfree (tmp);
         }
@@ -4913,11 +4914,11 @@ TYArgs2FunTypeString (node *args, ntype *rettype)
 
     tmp = TYtype2String (rettype, 0, 0);
 
-    ILIBstrBufPrintf (buf, "%s }", tmp);
+    SBUFprintf (buf, "%s }", tmp);
 
-    tmp = ILIBstrBuf2String (buf);
+    tmp = SBUF2str (buf);
 
-    buf = ILIBstrBufFree (buf);
+    buf = SBUFfree (buf);
 
     DBUG_RETURN (tmp);
 }

@@ -21,27 +21,6 @@
  * Prefix: ILIB
  *
  *********************************/
-#ifdef SHOW_MALLOC
-#define ILIBmallocAt(size, file, line) MEMmallocAt (size, file, line)
-#endif
-#define ILIBmalloc(size) MEMmalloc (size)
-
-#define ILIBfree(n) MEMfree (n)
-
-extern ptr_buf *ILIBptrBufCreate (int size);
-extern ptr_buf *ILIBptrBufAdd (ptr_buf *s, void *ptr);
-extern int ILIBptrBufGetSize (ptr_buf *s);
-extern void *ILIBptrBufGetPtr (ptr_buf *s, int pos);
-extern void ILIBptrBufFlush (ptr_buf *s);
-extern void *ILIBptrBufFree (ptr_buf *s);
-
-extern str_buf *ILIBstrBufCreate (int size);
-extern str_buf *ILIBstrBufPrint (str_buf *s, const char *string);
-extern str_buf *ILIBstrBufPrintf (str_buf *s, const char *format, ...);
-extern char *ILIBstrBuf2String (str_buf *s);
-extern void ILIBstrBufFlush (str_buf *s);
-extern bool ILIBstrBufIsEmpty (str_buf *s);
-extern void *ILIBstrBufFree (str_buf *s);
 
 extern int ILIBlcm (int x, int y);
 
@@ -77,7 +56,7 @@ extern char *ILIBtmpVarName (char *postfix);
 
 #define MALLOC_VECT(vect, dims, type)                                                    \
     if (vect == NULL) {                                                                  \
-        (vect) = (type *)ILIBmalloc ((dims) * sizeof (type));                            \
+        (vect) = (type *)MEMmalloc ((dims) * sizeof (type));                             \
     }
 
 /* caution: 'val' should occur in the macro implementation only once! */
