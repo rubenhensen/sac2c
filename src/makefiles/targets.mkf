@@ -192,7 +192,7 @@ runtime_extraclean_all    :=
 runtime_extraclean_devel  := 
 runtime_extraclean_prod   := 
 
-runtime_sourcedirs        := core_h extras_h interface_h mt_h phm_h
+runtime_sourcedirs        := core_h extras_h mt_h phm_h
 
 ###############################################################################
 
@@ -202,8 +202,6 @@ runtime_core_h         := audwl commandline icm prf std std_gen message \
 runtime_extras_h       := cachesim profile runtimecheck trace
 
 runtime_phm_h          := phm
-
-runtime_interface_h    := cinterface cwrapper sacarg
 
 runtime_mt_h           := mt mt_gen
 
