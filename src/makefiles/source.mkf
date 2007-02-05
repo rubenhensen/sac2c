@@ -59,9 +59,8 @@ SUBPROJECT     := $(notdir $(realpath $(CURDIR)/..))
 # Dummy rules
 #
 
-.PHONY: default devel prod clean cleanprod cleandevel  \
-        clean_sourcedir cleanprod_sourcedir cleandevel_sourcedir checkxml
-
+.PHONY: default devel prod efence clean checkxml refactor
+.PHONY: make_% clean_% %.html
 
 
 ###############################################################################
@@ -105,7 +104,7 @@ checkxml:
 	$(XSLTENGINE) check_integrity.xsl ast.xml
 
 %.html: %2html.xsl %.xml
-	$(XSLTENGINE) %< ast.xml > $@
+	$(XSLTENGINE) $^ > $@
 
 
 ###############################################################################
@@ -126,7 +125,7 @@ clean:
 
 clean_%: 
 	@$(ECHO) ""
-	@$(ECHO) "Cleaning current subdirectory ($($(STYLE)_long) version only)"
+	@$(ECHO) "Cleaning current subdirectory ($($*_long) version only)"
 	$(HIDE) $(MAKE) -f $(MAKEFILE_DIR)/clean.mkf \
                         HIDE="$(HIDE)" \
                         SUBPROJECT="$(SUBPROJECT)" \
@@ -134,6 +133,30 @@ clean_%:
                         PROJECT_ROOT="$(PROJECT_ROOT)" \
                         clean_sourcedir_$*
 	@$(ECHO) ""
+
+
+###############################################################################
+#
+# Rules for refactoring source files
+#
+
+refactor:
+	$(HIDE) if [ "$(PATTERN)" == "" ] ; \
+                then $(ECHO) "No pattern for refactoring specified!" ; \
+                     exit 1 ; \
+                fi
+	@$(ECHO) ""
+	@$(ECHO) "Refactoring current subdirectory"
+	@$(ECHO) " \"$(PATTERN)\""
+	@$(ECHO) "  -> \"$(OUTPUT)\""
+	@$(ECHO) ""
+	@$(TOUCH) ../.make_track
+	$(HIDE) $(MAKE) -C .. -f ../makefiles/refactor.mkf \
+                         SUBPROJECT="$(SUBPROJECT)" \
+                         MAKE_DIRS="$(MAKE_DIR)" \
+                         HIDE="$(HIDE)" \
+                         PATTERN="$(PATTERN)" \
+                         OUTPUT="$(OUTPUT)"
 
 
 ###############################################################################

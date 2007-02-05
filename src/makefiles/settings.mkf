@@ -61,7 +61,7 @@ M4_DIR                 := $(PROJECT_ROOT)/src/runtime/m4
 # internal tools:
 #
 
-LIBTOOL                := $(PROJECT_ROOT)/libtool --silent --mode=link 
+LIBTOOL                := $(PROJECT_ROOT)/setup/libtool --silent --mode=link 
 
 CLOCK_SKEW_ELIMINATION := if [ -x $(PROJECT_ROOT)/src/bin/cse ] ; \
                           then $(PROJECT_ROOT)/src/bin/cse $@ ; \

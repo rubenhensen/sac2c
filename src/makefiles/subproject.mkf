@@ -57,8 +57,8 @@ TARGETS          := $(addprefix $(TARGETDIR)/,\
 # Dummy rules
 #
 
-.PHONY: clean clean_% 
 .PHONY: default devel prod efence make_%
+.PHONY: clean clean_% refactor
 
 
 ###############################################################################
@@ -134,7 +134,38 @@ clean_%:
 
 ###############################################################################
 #
+# Rules for refactoring source files
+#
+
+refactor:
+	$(HIDE) if [ "$(PATTERN)" == "" ] ; \
+                then $(ECHO) "No pattern for refactoring specified!" ; \
+                     exit 1 ; \
+                fi
+	@$(ECHO) ""
+	@$(ECHO) "************************************************************"
+	@$(ECHO) "* Refactoring $(PROJECT_NAME) $(SUBPROJECT)"
+	@$(ECHO) "* revision $(REVISION)"
+	@$(ECHO) "* on $(OS) for $(ARCH)"
+	@$(ECHO) "************************************************************"
+	@$(ECHO) "* \"$(PATTERN)\""
+	@$(ECHO) "*   -> \"$(OUTPUT)\""
+	@$(ECHO) "************************************************************"
+	@$(TOUCH) .make_track
+	$(HIDE) $(MAKE) -f $(MAKEFILE_DIR)/refactor.mkf \
+                        SUBPROJECT="$(SUBPROJECT)" \
+                        HIDE="$(HIDE)" \
+                        PATTERN="$(PATTERN)" \
+                        OUTPUT="$(OUTPUT)"
+	$(HIDE) $(RM) .make_track
+
+
+###############################################################################
+#
 # Includes for consistency checking mechanism
 #
 
 include $(MAKEFILE_DIR)/check.mkf
+
+
+

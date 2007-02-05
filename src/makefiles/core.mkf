@@ -15,7 +15,7 @@
 #
 # SUBPROJECT      : name of subproject (must be set)
 #
-# SUBPROJECT_DIRS : name of specific source directory of subproject
+# MAKE_DIRS       : name of specific source directory of subproject
 #                   set by source.mkf but not by subrpoject.mkf
 #
 # STYLE           : must be set to either default, devel or prod
@@ -46,7 +46,12 @@ INCDIRS          := -I../../include -I../include \
                     $(patsubst %,-I%,$(SUBPROJECT_DIRS))
 
 TARGETDIR_NAME   := $($(SUBPROJECT)_targetdir)
-TARGETDIR        := $(PROJECT_ROOT)/$(TARGETDIR_NAME)
+
+ifeq ($(TARGETDIR_NAME),)
+  TARGETDIR        := $(PROJECT_ROOT)
+else
+  TARGETDIR        := $(PROJECT_ROOT)/$(TARGETDIR_NAME)
+endif
 
 TARGETS          := $(addprefix $(TARGETDIR)/,\
                       $($(SUBPROJECT)_targets))
@@ -104,6 +109,8 @@ GENERATED_FILES  := $(GENERATED_INCLUDE_FILES) $(GENERATED_SOURCE_FILES)
 DEPENDENCY_FILES := $(addsuffix .d,\
                       $(foreach file,$(SUBTARGETS_RAW),\
                         $(dir $(file)).$(notdir $(file))))
+
+FINGERPRINT_FILE := $(PROJECT_ROOT)/src/include/.fingerprint
 
   
 ###############################################################################
@@ -191,6 +198,10 @@ $(PROJECT_ROOT)/bin/sac2c.efence: global/build_devel.d.o
 	@$(TOUCH) .done
 	@$(CLOCK_SKEW_ELIMINATION)  
 
+$(PROJECT_ROOT)/src/html/%.html: xml/%2html.xsl xml/%.xml
+	@$(ECHO) ""
+	@$(ECHO) "Creating $(PREFIX_ROOT)src/html/$(notdir $@)"
+	$(HIDE) $(XSLTENGINE) $^ > $@
 
 
 ################################################################################
@@ -211,10 +222,10 @@ $(PROJECT_ROOT)/include/sac.h: $(SUBTARGETS_HEADER)
 # Building libsacprelude
 #
 
-$(PROJECT_ROOT)/lib/libsacprelude.so: $(SUBTARGETS) 
+$(PROJECT_ROOT)/lib/libsacprelude.so: $(SUBTARGETS) $(FINGERPRINT_FILE)
 	@$(ECHO) ""
 	@$(ECHO) "Creating $(PREFIX_ROOT)lib/libsacprelude.so"
-	$(HIDE) $(SAC2C) -o $(PROJECT_ROOT)/lib sacprelude.sac
+	$(HIDE) $(SAC2C) -o $(TARGETDIR) sacprelude.sac
 	@$(TOUCH) .done
 	@$(CLOCK_SKEW_ELIMINATION)  
 
@@ -283,6 +294,13 @@ $(PROJECT_ROOT)/bin/%: $(SUBTARGETS)
 #
 
 global/build_$(STYLE).c: $(SUBTARGETS) 
+	$(HIDE) $(FINGERPRINTER_CALL) > .fingerprint
+	$(HIDE) if [ -f $(FINGERPRINT_FILE) ] ; \
+                then if [ "`cat $(FINGERPRINT_FILE)`" != "`cat .fingerprint`" ] ; \
+                     then mv .fingerprint $(FINGERPRINT_FILE) ; \
+                     fi ; \
+                else cp .fingerprint $(FINGERPRINT_FILE) ; \
+                fi
 	@$(ECHO) ""
 	@$(ECHO) "Creating revision data file:  $@"
 	@$(ECHO) "char build_style[] = \"$($(STYLE)_long)\";"        >  $@
@@ -291,8 +309,9 @@ global/build_$(STYLE).c: $(SUBTARGETS)
 	@$(ECHO) "char build_host[]  = \"`hostname`\";"              >> $@
 	@$(ECHO) "char build_os[]    = \"$(OS)\";"                   >> $@
 	@$(ECHO) "char build_rev[]   = \"$(REVISION)\";"             >> $@
-	@$(ECHO) "char build_ast[]   = \"`$(FINGERPRINTER_CALL)`\";" >> $@
+	@$(ECHO) "char build_ast[]   = \"`cat .fingerprint`\";"      >> $@
 	@$(CLOCK_SKEW_ELIMINATION)  
+
 
 
 ###############################################################################
@@ -460,13 +479,12 @@ global/build_$(STYLE).c: $(SUBTARGETS)
         fi
 	@$(ECHO) "  Checking dependencies of source file: $(notdir $<)"
 	$(HIDE) if $(CC_DEVEL) $(CC_FLAGS_DEPS) $(SETTINGS_DEVEL) $(INCDIRS) $<  > $@d ; \
-	 then sed 's/\($(notdir $*)\)\.o[ :]*/$(subst /,\/,$*)\.o $(subst /,\/,$*)\.p.o $(subst /,\/,$*)\.d.o $(subst /,\/,$*)\.p.mt.o $(subst /,\/,$*)\.d.mt.o $(subst /,\/,$*)\.p.diag.o $(subst /,\/,$*)\.d.diag.o  $(subst /,\/,$*)\.p.mt.diag.o $(subst /,\/,$*)\.d.mt.diag.o $(subst /,\/,$@)\: ..\/makefiles\/config.mkf /'  <$@d >$@; \
+	 then $(SED) 's/\($(notdir $*)\)\.o[ :]*/$(subst /,\/,$*)\.o $(subst /,\/,$*)\.p.o $(subst /,\/,$*)\.d.o $(subst /,\/,$*)\.p.mt.o $(subst /,\/,$*)\.d.mt.o $(subst /,\/,$*)\.p.diag.o $(subst /,\/,$*)\.d.diag.o  $(subst /,\/,$*)\.p.mt.diag.o $(subst /,\/,$*)\.d.mt.diag.o $(subst /,\/,$@)\: ..\/makefiles\/config.mkf /'  <$@d >$@; \
 	      $(RM) $@d ; \
 	 else $(RM) $@d ; \
 	      exit 1 ;  \
 	 fi
 	@$(CLOCK_SKEW_ELIMINATION) 
-
 
 
 ###############################################################################

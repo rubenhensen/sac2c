@@ -1,4 +1,4 @@
-/* src/include/config.h.in.  Generated from configure.ac by autoheader.  */
+/* ../src/include/config.h.in.  Generated from configure.ac by autoheader.  */
 
 /* set to the architecture */
 #undef ARCH

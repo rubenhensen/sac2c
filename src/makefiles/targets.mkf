@@ -9,12 +9,7 @@
 #
 ###############################################################################
 
-###############################################################################
-#
-# General settings
-#
-
-maketools_targets           := cse csd cb cachet echo md5calc icmt hzip
+maketools_targets           := cse csd cb echo md5calc icmt hzip
 maketools_targetdir         := src/bin
 
 maketools_subtarget_suffix  := .o
@@ -24,20 +19,15 @@ maketools_extraclean_all    :=
 maketools_extraclean_devel  := 
 maketools_extraclean_prod   := 
 
-maketools_sourcedirs        := cse csd cb cachet echo md5calc icmt hzip
+maketools_sourcedirs        := cse csd cb echo md5calc icmt hzip
 
 ###############################################################################
-# 
-# Subtargets
-#
 
 maketools_cse               := cse
 
 maketools_csd               := csd
 
 maketools_cb                := cb
-
-maketools_cachet            := accesstime bits ctest l1 l2 verbose
 
 maketools_echo              := echo
 
@@ -48,20 +38,14 @@ maketools_md5calc           := md5 md5calc
 maketools_hzip              := hzip
 
 
-
 ###############################################################################
 #
 # Subproject libsac2c
 #
 ###############################################################################
 
-###############################################################################
-#
-# General settings
-#
-
-libsac2c_targets           := sac2c
-libsac2c_targetdir         := bin
+libsac2c_targets           := bin/sac2c src/html/ast.html
+libsac2c_targetdir         := 
 
 libsac2c_subtarget_suffix  := .o
 libsac2c_defaultstyle      := devel
@@ -82,9 +66,6 @@ libsac2c_sourcedirs        := global tree support serialize \
                               memory precompile codegen print 
 
 ###############################################################################
-# 
-# Subtargets
-#
 
 libsac2c_global      := main usage internal_lib memory globals \
                         resource options NameTuplesUtils phase_drivers \
@@ -201,11 +182,6 @@ libsac2c_print       := print convert
 #
 ###############################################################################
 
-###############################################################################
-#
-# General settings
-#
-
 runtime_targets           := sac.h
 runtime_targetdir         := include
 
@@ -219,9 +195,6 @@ runtime_extraclean_prod   :=
 runtime_sourcedirs        := core_h extras_h interface_h mt_h phm_h
 
 ###############################################################################
-# 
-# Subtargets
-#
 
 runtime_core_h         := audwl commandline icm prf std std_gen message \
                           bool errors idx misc wl
@@ -235,17 +208,11 @@ runtime_interface_h    := cinterface cwrapper sacarg
 runtime_mt_h           := mt mt_gen
 
 
-
 ###############################################################################
 #
 # Subproject libsacprelude
 #
 ###############################################################################
-
-###############################################################################
-#
-# General settings
-#
 
 libsacprelude_targets           := libsacprelude.so
 libsacprelude_targetdir         := lib
@@ -260,9 +227,6 @@ libsacprelude_extraclean_prod   :=
 libsacprelude_sourcedirs        := 
 
 ###############################################################################
-# 
-# Subtargets
-#
 
 
 
@@ -272,11 +236,6 @@ libsacprelude_sourcedirs        :=
 # Subproject libsac
 #
 ###############################################################################
-
-###############################################################################
-#
-# General settings
-#
 
 libsac_targets           := libsac_seq.a libsac_mt.a
 libsac_targetdir         := lib
@@ -291,9 +250,6 @@ libsac_extraclean_prod   :=
 libsac_sourcedirs        := core mt phm cachesim # interface
 
 ###############################################################################
-# 
-# Subtargets
-#
 
 libsac_core         := commandline message misc profile trace
 
@@ -313,11 +269,6 @@ libsac_cachesim     := basic access_simple access_detailed
 #
 ###############################################################################
 
-###############################################################################
-#
-# General settings
-#
-
 libsacphm_targets           := libsacphm_seq.a libsacphm_seq_diag.a \
                                libsacphm_mt.a libsacphm_mt_diag.a
 libsacphm_targetdir         := lib
@@ -332,9 +283,6 @@ libsacphm_extraclean_prod   :=
 libsacphm_sourcedirs        := heap diag opt compat
 
 ###############################################################################
-# 
-# Subtargets
-#
 
 libsacphm_heap      := internal setup wrapper small_chunks large_chunks
 
@@ -352,12 +300,7 @@ libsacphm_compat    := malloc calloc realloc memalign
 #
 ###############################################################################
 
-###############################################################################
-#
-# General settings
-#
-
-tools_targets           := csimt csima
+tools_targets           := csimt csima ctest
 tools_targetdir         := bin
 
 tools_subtarget_suffix  := .o
@@ -367,17 +310,15 @@ tools_extraclean_all    :=
 tools_extraclean_devel  := 
 tools_extraclean_prod   := 
 
-tools_sourcedirs        := csimt csima
+tools_sourcedirs        := csimt csima ctest
 
 ###############################################################################
-# 
-# Subtargets
-#
 
 tools_csima           := csima
 
 tools_csimt           := csimt
 
+tools_ctest           := accesstime bits ctest l1 l2 verbose
 
 
 
@@ -385,5 +326,6 @@ tools_csimt           := csimt
 #
 # End of file
 #
+###############################################################################
 
 

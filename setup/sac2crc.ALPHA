@@ -1,0 +1,32 @@
+
+/*******************************************************************************
+ *
+ * Specific targets for DEC ALPHA machines
+ *
+ */
+
+
+target dec_3000_800:
+
+CACHE1_SIZE      :=  8
+CACHE1_LINE      :=  32
+CACHE1_ASSOC     :=  1
+CACHE1_WRITEPOL  :=  "write_around"
+
+CACHE2_SIZE      :=  2048
+CACHE2_LINE      :=  32
+CACHE2_ASSOC     :=  1
+
+
+target axp_8200:
+
+CACHE1_SIZE      :=  8
+CACHE1_LINE      :=  32
+CACHE1_ASSOC     :=  1
+CACHE1_WRITEPOL  :=  "write_around"
+
+CACHE2_SIZE      :=  4096
+CACHE2_LINE      :=  64
+CACHE2_ASSOC     :=  1
+
+

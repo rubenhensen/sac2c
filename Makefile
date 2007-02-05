@@ -127,8 +127,47 @@ clean cleandevel cleanprod: checks
 	@$(ECHO) "************************************************************"
 	@$(ECHO) ""
 
+###############################################################################
+#
+# Efence rules
+#
+# Adjustment to new makefile system postponed until libsac2c becomes a real
+# library.
+#
+
 efence:
 	$(HIDE) $(MAKE) -C src/compiler  DEPS="$(DEPS)" HIDE="$(HIDE)" $@
+
+
+###############################################################################
+#
+# Refactoring rules
+#
+
+refactor: checks
+	@$(ECHO) ""
+	@$(ECHO) "************************************************************"
+	@$(ECHO) "* Refactoring $(PROJECT_NAME)"
+	@$(ECHO) "************************************************************"
+	$(HIDE) $(MAKE) -C src/maketools DEPS="$(DEPS)" HIDE="$(HIDE)" \
+                        PREFIX_LOCAL="src/maketools/" PREFIX_ROOT="" $@
+	$(HIDE) $(MAKE) -C src/libsac2c  DEPS="$(DEPS)" HIDE="$(HIDE)" \
+                        PREFIX_LOCAL="src/libsac2c/"  PREFIX_ROOT="" $@
+	$(HIDE) $(MAKE) -C src/runtime  DEPS="$(DEPS)" HIDE="$(HIDE)" \
+                        PREFIX_LOCAL="src/runtime/"  PREFIX_ROOT="" $@
+	$(HIDE) $(MAKE) -C src/libsacprelude  DEPS="$(DEPS)" HIDE="$(HIDE)" \
+                        PREFIX_LOCAL="src/libsacprelude/"  PREFIX_ROOT="" $@
+	$(HIDE) $(MAKE) -C src/libsac  DEPS="$(DEPS)" HIDE="$(HIDE)" \
+                        PREFIX_LOCAL="src/libsac/"  PREFIX_ROOT="" $@
+	$(HIDE) $(MAKE) -C src/libsacphm  DEPS="$(DEPS)" HIDE="$(HIDE)" \
+                        PREFIX_LOCAL="src/libsacphm/"  PREFIX_ROOT="" $@
+	$(HIDE) $(MAKE) -C src/tools     DEPS="$(DEPS)" HIDE="$(HIDE)" \
+                        PREFIX_LOCAL="src/tools/" PREFIX_ROOT="" $@
+	@$(ECHO) ""
+	@$(ECHO) "************************************************************"
+	@$(ECHO) "* Refactoring $(PROJECT_NAME) completed"
+	@$(ECHO) "************************************************************"
+	@$(ECHO) ""
 
 
 ###############################################################################
@@ -167,22 +206,23 @@ tools: checks
 
 ###############################################################################
 #
-# Rules for configure mechanism
-#
-
-config: 
-	svn lock configure $(AUTOHEADERED)
-	autoconf
-	autoheader
-	svn commit configure $(AUTOHEADERED)
-
-
-###############################################################################
-#
 # Includes for consistency checking mechanism
 #
 
 include $(MAKEFILE_DIR)/check.mkf
 
+
+
+###############################################################################
+#
+# Rules for configure mechanism
+#
+
+config: 
+	@ cd setup ; \
+          svn lock configure $(AUTOHEADERED) ; \
+          autoconf ; \
+          autoheader ; \
+          svn commit configure $(AUTOHEADERED)
 
 

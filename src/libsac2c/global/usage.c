@@ -49,8 +49,9 @@ USGprintUsage ()
       "    file specified using the -o option.\n"
       "    \n"
       "    However, when compiling a SAC module/class implementation, the\n"
-      "    resulting SAC library is stored in the file <mod/class name>.lib in the\n"
-      "    current directory. In this case, the -o option may be used to specify a\n"
+      "    resulting SAC library is stored in the files <mod/class name>.a\n"
+      "    and  <mod/class name>.so in the current directory.\n"
+      "    In this case, the -o option may be used to specify a\n"
       "    different directory but not a different file name.\n");
 
     printf (
@@ -767,8 +768,9 @@ USGprintVersion ()
 {
     DBUG_ENTER ("USGprintVersion");
 
-    printf ("sac2c %s rev %s %s  (%s %s)\n",
+    printf ("sac2c %s\n %s rev %s %s\n (%s by %s)\n",
             (global.version_id[0] == '\0') ? "???" : global.version_id,
+            (build_style[0] == '\0') ? "" : build_style,
             (build_rev[0] == '\0') ? "???" : build_rev,
             (global.target_platform[0] == '\0') ? "???" : global.target_platform,
             (build_date[0] == '\0') ? "???" : build_date,
@@ -790,26 +792,27 @@ USGprintVersionVerbose ()
             "PLATFORM:      %s\n"
             "\n"
 
-            "BUILD:         %s\n"
+            "BUILD:         %s (%s)\n"
+            "AT DATE:       %s\n"
             "BY USER:       %s\n"
             "ON HOST:       %s\n"
-            "FOR OS:        %s\n"
             "\n"
 
             "\n",
             (global.version_id[0] == '\0') ? "???" : global.version_id,
             (global.target_platform[0] == '\0') ? "???" : global.target_platform,
+            (build_rev[0] == '\0') ? "???" : build_rev,
+            (build_style[0] == '\0') ? "" : build_style,
             (build_date[0] == '\0') ? "???" : build_date,
             (build_user[0] == '\0') ? "???" : build_user,
-            (build_host[0] == '\0') ? "???" : build_host,
-            (build_os[0] == '\0') ? "???" : build_os);
+            (build_host[0] == '\0') ? "???" : build_host);
 
-    printf ("(c) Copyright 1994 - 2005 by\n\n"
+    printf ("(c) Copyright 1994-2007 by\n\n"
 
             "  SaC Development Team\n\n"
 
             "  http://www.sac-home.org\n"
-            "  email:info@sac-home.org\n");
+            "  email:info@sac-home.org\n\n");
 
     DBUG_VOID_RETURN;
 }
@@ -819,20 +822,26 @@ USGprintCopyright ()
 {
     DBUG_ENTER ("USGprintCopyright");
 
-    printf ("\n          SAC - Single Assignment C\n"
-            "    ---------------------------------------------\n\n"
-
-            "    SAC COPYRIGHT NOTICE, LICENSE, AND DISCLAIMER\n\n"
-
-            "(c) Copyright 1994 - 2005 by\n\n"
-
-            "  SaC Development Team\n\n"
-
-            "  http://www.sac-home.org\n"
-            "  email:info@sac-home.org\n\n");
+    printf (
+      "\n"
+      "---------------------------------------------------------------------------\n"
+      "SAC - Single Assignment C\n"
+      "---------------------------------------------------------------------------\n"
+      "\n"
+      "COPYRIGHT NOTICE, LICENSE AND DISCLAIMER\n"
+      "\n"
+      "(c) Copyright 1994 - 2007 by\n"
+      "\n"
+      "  SAC Development Team\n"
+      "\n"
+      "  http://www.sac-home.org\n"
+      "  email:info@sac-home.org\n"
+      "\n"
+      "---------------------------------------------------------------------------\n"
+      "\n");
 
     printf (
-      "The SAC compiler, the SAC standard library, and all accompanying\n"
+      "The SAC compiler, the SAC standard library and all accompanying\n"
       "software and documentation (in the following named this software)\n"
       "is developed by the SAC Development Team (in the following named\n"
       "the developer) which reserves all rights on this software.\n"
@@ -856,26 +865,10 @@ USGprintCopyright ()
       "other tortuous action, arising out of or in connection with the use or\n"
       "performance of this software. The entire risk as to the quality and\n"
       "performance of this software is with you. Should this software prove\n"
-      "defective, you assume the cost of all servicing, repair, or correction.\n\n");
-
-#if 0
-  printf("Permission to use, copy, modify, and distribute this software and its\n"
-         "documentation for any purpose and without fee is hereby granted,\n"
-         "provided that the above copyright notice appear in all copies and that\n"
-         "both the copyright notice and this permission notice and warranty\n"
-         "disclaimer appear in supporting documentation, and that the name of\n"
-         "CAU Kiel or any CAU Kiel entity not be used in advertising\n"
-         "or publicity pertaining to distribution of the software without\n"
-         "specific, written prior permission.\n\n"
-
-         "CAU Kiel disclaims all warranties with regard to this software, including\n"
-         "all implied warranties of merchantability and fitness.  In no event\n"
-         "shall CAU Kiel be liable for any special, indirect or consequential\n"
-         "damages or any damages whatsoever resulting from loss of use, data or\n"
-         "profits, whether in an action of contract, negligence or other\n"
-         "tortious action, arising out of or in connection with the use or\n"
-         "performance of this software.\n\n");
-#endif
+      "defective, you assume the cost of all servicing, repair, or correction.\n"
+      "\n"
+      "---------------------------------------------------------------------------\n"
+      "\n");
 
     DBUG_VOID_RETURN;
 }

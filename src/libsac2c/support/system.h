@@ -13,7 +13,6 @@
 #include "globals.h"
 #include "ctinfo.h"
 #include "memory.h"
-/*    #include <string.h> */
 
 /*********************************
  *

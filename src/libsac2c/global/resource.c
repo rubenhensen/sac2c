@@ -48,7 +48,6 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
 
 #include "types.h"
 #include "dbug.h"
@@ -425,7 +424,7 @@ RSCparseResourceFile (char *buffer)
 static void
 ParseResourceFiles ()
 {
-    char buffer[MAX_FILE_NAME];
+    char *filename;
     char *envvar;
     bool ok;
 
@@ -443,15 +442,16 @@ ParseResourceFiles ()
                   "The environment variable SAC2CBASE is not set properly.");
     }
 
-    strcpy (buffer, envvar);
-    strcat (buffer, "/include/sac2crc");
+    filename = ILIBstringConcat (envvar, "/sac2crc");
 
-    ok = RSCparseResourceFile (buffer);
+    ok = RSCparseResourceFile (filename);
 
     if (!ok) {
         CTIabort ("Unable to parse public sac2crc file.\n"
                   "Somewhat, your installation is corrupted.");
     }
+
+    ILIBfree (filename);
 
     /*
      * Second, the private sac2crc file ist read.
@@ -461,14 +461,12 @@ ParseResourceFiles ()
     envvar = getenv ("HOME");
 
     if (envvar != NULL) {
-
-        strcpy (buffer, envvar);
-        strcat (buffer, "/.sac2crc");
-
-        ok = RSCparseResourceFile (buffer);
+        filename = ILIBstringConcat (envvar, "/.sac2crc");
+        ok = RSCparseResourceFile (filename);
+        ILIBfree (filename);
     }
 
-    global.filename = global.puresacfilename;
+    global.filename = global.puresacfilename; /* What is this good for ? */
 
     DBUG_VOID_RETURN;
 }

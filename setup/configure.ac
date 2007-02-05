@@ -3,7 +3,7 @@ dnl $Id$
 dnl
 
 dnl configure script for building sac2c compiler 
-dnl on different hosts and os
+dnl on different hosts and operating systems
 
 dnl tell configure who we are
 dnl parameters: package name, version, where to send bugreports
@@ -17,8 +17,8 @@ dnl we use C as our compiler language
 AC_LANG(C)
 
 dnl and which files to create
-AC_CONFIG_FILES(src/makefiles/config.mkf include/sac2crc)
-AC_CONFIG_HEADER(src/include/config.h)
+AC_CONFIG_FILES(../src/makefiles/config.mkf sac2crc)
+AC_CONFIG_HEADER(../src/include/config.h)
 
 dnl check for host type
 AC_CANONICAL_BUILD()
@@ -34,7 +34,10 @@ AC_SUBST(ARCH,$target_cpu)
 dnl search for a C compiler
 AC_PROG_CC(gcc cc)
 
+dnl
 dnl check whether its suns cc
+dnl
+
 AC_MSG_CHECKING(whether cc is a Sun Pro C compiler)
 AC_TRY_COMPILE(,
 [#ifndef __SUNPRO_C
@@ -46,7 +49,11 @@ AC_MSG_RESULT(no)
 SUNC=no
 )
 
+
+dnl
 dnl check whether its compaqs (or dec) cc
+dnl
+
 AC_MSG_CHECKING(whether cc is a Compaq/DEC C compiler)
 AC_TRY_COMPILE(,
 [#ifndef __DECC
@@ -58,7 +65,11 @@ AC_MSG_RESULT(no)
 DECC=no
 )
 
+
+dnl
 dnl check whether its apples cc
+dnl
+
 AC_MSG_CHECKING(whether cc is a Apple compiler)
 AC_TRY_COMPILE(,
 [#ifndef __APPLE__
@@ -71,7 +82,11 @@ AC_TRY_COMPILE(,
   MACC=no
 )
   
+
+dnl
 dnl check whether popen is an extension
+dnl
+
 AC_MSG_CHECKING([need of _EXTENSIONS_ flag])
 AC_TRY_COMPILE([#include <stdio.h>],[popen("rw","testfile")],
 AC_MSG_RESULT(no)
@@ -102,7 +117,10 @@ fi
 dnl check, whether we need -traditinal flag
 AC_PROG_GCC_TRADITIONAL
 
+dnl
 dnl check whether its gnu indent
+dnl
+
 AC_MSG_CHECKING([whether GNU indent works])
 GNUINDENT=$(indent --version 2>/dev/null)
 case "$GNUINDENT" in
@@ -128,12 +146,16 @@ AC_SUBST(CB, $CB)
 dnl search for bison, byacc or yacc
 AC_PROG_YACC()
 
+
+dnl
 dnl check whether a non yacc works
+dnl
+
 if [ test "$YACC" != "yacc" ]; then
   AC_MSG_CHECKING([whether $YACC works])
   mkdir .ac_yacc_test
   cd .ac_yacc_test
-  cp ../src/libsac2c/scanparse/sac.y .
+  cp ../../src/libsac2c/scanparse/sac.y .
   if [ $YACC sac.y >/dev/null 2>/dev/null ]; then
     AC_MSG_RESULT(ok)
   else
@@ -224,7 +246,11 @@ case "$target_os" in
               AC_SUBST(DISABLE_PHM, yes)
 esac
 
+
+dnl
 dnl check if printf generates leading 0x for pointers
+dnl
+
 AC_MSG_CHECKING(for 0x prefix when printing pointers)
 AC_EGREP_CPP(0x0*,
 [#include <stdio.h>
@@ -241,7 +267,11 @@ else
 0x in front of pointers)
 fi
 
+
+dnl
 dnl check if stderr is a constant (needed for dbug.c
+dnl
+
 AC_MSG_CHECKING(whether stderr is a constant)
 AC_TRY_COMPILE([
 #include <stdio.h>
@@ -257,13 +287,19 @@ else
   AC_MSG_RESULT(no)
 fi
 
-dnl when not using bison, we need to
-dnl reference YYLABELS
+
+dnl
+dnl when not using bison, we need to reference YYLABELS
+dnl
+
 if test "$YACC" = "obsolete_yacc"; then
   AC_DEFINE(MUST_REFERENCE_YYLABELS, 1, set to 1 if gcc complains about unused labels)
 fi
 
+dnl
 dnl check for pthread flag on gcc
+dnl
+
 if test "$GCC" = yes; then
   AC_MSG_CHECKING([existence of pthread flag])
   echo "int main(){return 0;}" > .sac_configure_temp.c
@@ -276,8 +312,12 @@ if test "$GCC" = yes; then
   fi
   rm -f .sac_configure_temp.c .sac_configure_temp
 fi
-dnl test for compiler flags
-dnl for sac2crc
+
+
+dnl
+dnl test for compiler flags for sac2crc
+dnl
+
 AC_MSG_CHECKING([sac2crc compiler flags])
 if [ test "$GCC" = yes ]; then
   AC_SUBST(OPT_O0, [""])
@@ -351,19 +391,27 @@ else
   AC_MSG_RESULT([none found])
 fi   
 
-dnl append platform specific files
-dnl to sac2crc
+
+dnl 
+dnl append platform specific files to sac2crc
+dnl 
+
 AC_SUBST_FILE(RCSUN)
 AC_SUBST_FILE(RCX86)
 AC_SUBST_FILE(RCALPHA)
 AC_SUBST_FILE(RCMAC)
-RCSUN=$srcdir/src/runtime/sac2crc.SUN
-RCX86=$srcdir/src/runtime/sac2crc.X86
-RCALPHA=$srcdir/src/runtime/sac2crc.ALPHA
-RCMAC=$srcdir/src/runtime/sac2crc.MAC
+RCSUN=./sac2crc.SUN
+RCX86=./sac2crc.X86
+RCALPHA=./sac2crc.ALPHA
+RCMAC=./sac2crc.MAC
 
+
+dnl
 dnl generate specific flags for known os
+dnl
+
 AC_MSG_CHECKING([sac2crc system flags])
+
 OSFLAGS=""
 case "$target_os" in
   solaris*)     
@@ -404,6 +452,7 @@ AC_SUBST(OSFLAGS)
 AC_SUBST(LD_DYNAMIC)
 AC_SUBST(LD_PATH)
 
+
 dnl 
 dnl static sac2c settings for config.h
 dnl
@@ -419,5 +468,8 @@ AC_DEFINE( PF_MAXFUNNAMELEN, 100,
 AC_DEFINE( SAC_PRELUDE_NAME, "sacprelude", [name of sac prelude])
 
 
-dnl generate the Makefile.Config out of Makefile.Config.in
+dnl
+dnl create configure-generated file
+dnl
+
 AC_OUTPUT()

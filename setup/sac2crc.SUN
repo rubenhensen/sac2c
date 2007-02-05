@@ -1,0 +1,115 @@
+
+/*******************************************************************************
+ *
+ * Specific targets for SUN machines
+ *
+ */
+
+target sunfire_x4100:
+
+CACHE1_SIZE    :=   64
+CACHE2_SIZE    := 1024
+
+
+target sparc_4:
+
+CACHE1_SIZE    :=  8
+CACHE1_LINE    :=  16
+CACHE1_ASSOC   :=  1
+
+
+target sparc_5:
+
+CACHE1_SIZE    :=  8
+CACHE1_LINE    :=  16
+CACHE1_ASSOC   :=  1
+
+
+target sparc_20_61:
+
+CACHE1_SIZE    :=  16
+CACHE1_LINE    :=  32
+CACHE1_ASSOC   :=  4
+
+
+target sparc_20_71:
+
+CACHE1_SIZE    :=  16
+CACHE1_LINE    :=  32
+CACHE1_ASSOC   :=  4
+
+CACHE2_SIZE    :=  1024
+CACHE2_LINE    :=  32
+CACHE2_ASSOC   :=  1
+
+
+target ultra2:
+
+CACHE1_SIZE    :=  16
+CACHE1_LINE    :=  32
+CACHE1_ASSOC   :=  1
+
+CACHE2_SIZE    :=  512
+CACHE2_LINE    :=  64
+CACHE2_ASSOC   :=  1
+
+target ultra2i:
+
+CACHE1_SIZE    :=  16
+CACHE1_LINE    :=  32
+CACHE1_ASSOC   :=  1
+
+CACHE2_SIZE    :=  2048
+CACHE2_LINE    :=  64
+CACHE2_ASSOC   :=  1
+
+
+target ultra3:
+
+CACHE1_SIZE    :=  64
+CACHE1_LINE    :=  32
+CACHE1_ASSOC   :=  4
+
+CACHE2_SIZE    :=  8192
+CACHE2_LINE    :=  256
+CACHE2_ASSOC   :=  1
+
+
+target ultra_entr3000:
+
+CACHE1_SIZE    :=  16
+CACHE1_LINE    :=  32
+CACHE1_ASSOC   :=  1
+
+CACHE2_SIZE    :=  512
+CACHE2_LINE    :=  64
+CACHE2_ASSOC   :=  1
+
+
+target ultra2_entr4000:
+
+CACHE1_SIZE    :=  16
+CACHE1_LINE    :=  32
+CACHE1_ASSOC   :=  1
+CACHE1_MSCA    :=  25
+
+CACHE2_SIZE    :=  1024
+CACHE2_LINE    :=  64
+CACHE2_ASSOC   :=  1
+CACHE2_MSCA    :=  3
+
+
+target ultra2_entr450:
+
+CACHE1_SIZE     :=  16
+CACHE1_LINE     :=  32
+CACHE1_ASSOC    :=  1
+CACHE1_WRITEPOL :=  "write_around"
+
+CACHE2_SIZE     :=  4096
+CACHE2_LINE     :=  64
+CACHE2_ASSOC    :=  1
+CACHE2_WRITEPOL :=  "write_around"
+
+
+

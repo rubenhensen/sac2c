@@ -18,14 +18,25 @@
 
 CONFIGURED   := $(PROJECT_ROOT)/src/makefiles/config.mkf \
                 $(PROJECT_ROOT)/src/include/config.h \
-                $(PROJECT_ROOT)/include/sac2crc
+                $(PROJECT_ROOT)/setup/sac2crc
 
 AUTOHEADERED := $(PROJECT_ROOT)/src/include/config.h.in
 
-AUTOCONFED   := $(PROJECT_ROOT)/configure
+AUTOCONFED   := $(PROJECT_ROOT)/setup/configure
 
+
+#######################################################################################
+#
+# Dummy rules:
+#
 
 .PHONY: checks
+
+
+#######################################################################################
+#
+# Start rules:
+#
 
 checks: $(CONFIGURED)
 

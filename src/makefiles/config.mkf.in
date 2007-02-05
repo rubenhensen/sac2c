@@ -14,7 +14,7 @@ ARCH            := @ARCH@
 
 ################################################################################
 #
-# general setup:
+# compiler and linker setup:
 #
 
 CC_DEVEL        := @CC@
@@ -32,46 +32,46 @@ LD              := @CC@
 LD_FLAGS        := 
 LD_FLAGS_DYN    := -export-dynamic
 
-XSLTENGINE      := @XSLT@
-
-M4PROC          := @M4@
-
-CODE_BEAUTIFIER := @CB@
-
 
 ################################################################################
 #
-# MT & PHM Setup:
-#
-
-DISABLE_MT      := @DISABLE_MT@
-DISABLE_PHM     := @DISABLE_PHM@
-
-
-################################################################################
-#
-# external tools:
+# tool setup:
 #
 
 TAR             := tar
 AR              := ar rc
 RM              := rm -f
+MV              := mv -f
+SED             := sed
 GZIP            := gzip -f
 ECHO            := echo
+GREP            := fgrep
+WC              := wc
 LEX             := @LEX@ -n
 YACC            := @YACC@ -dv
 RANLIB          := @RANLIB@
 TOUCH           := touch
+XSLTENGINE      := @XSLT@
+M4PROC          := @M4@
+CODE_BEAUTIFIER := @CB@
 
 
 ################################################################################
 #
-# external libraries
+# library setup:
 #
 
 LIBS            := @LIBS@@LEXLIB@
 LIBS_EFENCE     := -lefence
 
+
+################################################################################
+#
+# feature setup:
+#
+
+DISABLE_MT      := @DISABLE_MT@
+DISABLE_PHM     := @DISABLE_PHM@
 
 
 
