@@ -1,28 +1,5 @@
 /*
- * $Log$
- * Revision 1.8  2005/03/04 21:21:42  cg
- * FUNDEF_USED counter etc removed.
- *
- * Revision 1.7  2004/11/24 19:40:47  skt
- * SACDevCampDK 2k4
- *
- * Revision 1.6  2004/11/23 20:52:11  skt
- * big compiler brushing during SACDevCampDK 2k4
- *
- * Revision 1.5  2004/11/23 14:38:13  skt
- * SACDevCampDK 2k4
- *
- * Revision 1.4  2004/09/22 12:07:56  skt
- * initialization of old_flag added
- *
- * Revision 1.3  2004/08/31 16:59:10  skt
- * some comments added
- *
- * Revision 1.2  2004/08/26 17:05:04  skt
- * implementation finished
- *
- * Revision 1.1  2004/08/24 16:48:56  skt
- * Initial revision
+ * $Id$
  *
  */
 
@@ -53,9 +30,9 @@
 #include "traverse.h"
 #include "create_withinwith.h"
 #include "multithread_lib.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
+#include "dbug.h"
 
 /*
  * INFO structure

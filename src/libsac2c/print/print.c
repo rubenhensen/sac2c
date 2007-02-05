@@ -28,11 +28,30 @@
 #include "wltransform.h"
 #include "multithread_lib.h"
 #include "constants.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "namespaces.h"
 #include "shape.h"
+
+/*
+ * Ugly macros that used to be in internal_lib.h and are only used here and
+ * in DupTree.
+ */
+
+#define PRINT_VECT(handle, vect, dims, format)                                           \
+    {                                                                                    \
+        int d;                                                                           \
+        if ((vect) != NULL) {                                                            \
+            fprintf (handle, "[ ");                                                      \
+            for (d = 0; d < (dims); d++) {                                               \
+                fprintf (handle, format, (vect)[d]);                                     \
+                fprintf (handle, " ");                                                   \
+            }                                                                            \
+            fprintf (handle, "]");                                                       \
+        } else {                                                                         \
+            fprintf (handle, "NULL");                                                    \
+        }                                                                                \
+    }
 
 /*
  * use of arg_info in this file:
@@ -138,7 +157,7 @@ static node *last_assignment_icm = NULL;
     fprintf (file, ">");
 
 #define PRINT_STRING(file, str)                                                          \
-    fprintf (file, "%s", STR_OR_UNKNOWN (str));                                          \
+    fprintf (file, "%s", STRonNULL ("?", str));                                          \
     PRINT_POINTER_BRACKETS (file, str);
 
 /*
@@ -395,7 +414,7 @@ WLAAprintAccesses (node *arg_node, info *arg_info)
                         for (i = 1; i < dim; i++)
                             fprintf (global.outfile, ",%d", SHPSEG_SHAPE (offset, i));
                         fprintf (global.outfile, " ], %s)\n",
-                                 STR_OR_UNKNOWN (VARDEC_NAME (ACCESS_ARRAY (access))));
+                                 STRonNULL ("?", VARDEC_NAME (ACCESS_ARRAY (access))));
                         offset = SHPSEG_NEXT (offset);
                     } while (offset != NULL);
                 }
@@ -418,7 +437,7 @@ WLAAprintAccesses (node *arg_node, info *arg_info)
                             fprintf (global.outfile, ",%d", SHPSEG_SHAPE (offset, i));
                         }
                         fprintf (global.outfile, " ], %s)\n",
-                                 STR_OR_UNKNOWN (VARDEC_NAME (ACCESS_ARRAY (access))));
+                                 STRonNULL ("?", VARDEC_NAME (ACCESS_ARRAY (access))));
                         offset = SHPSEG_NEXT (offset);
                     } while (offset != NULL);
                 }
@@ -562,7 +581,7 @@ PRTprintArgtab (argtab_t *argtab, bool is_def)
                     if (is_def) {
                     } else {
                         fprintf (global.outfile, "%s",
-                                 STR_OR_EMPTY (IDS_NAME (((node *)argtab->ptr_out[i]))));
+                                 STRonNull ("", IDS_NAME (((node *)argtab->ptr_out[i]))));
                     }
                 } else {
                     fprintf (global.outfile, "-");

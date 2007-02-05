@@ -8,12 +8,12 @@
 #include "traverse.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "DupTree.h"
 #include "free.h"
 #include "namespaces.h"
+#include "ctinfo.h"
 
 #include "handle_with_loop_operators.h"
 

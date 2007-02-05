@@ -28,7 +28,6 @@
 #include "free.h"
 #include "DataFlowMask.h"
 #include "DataFlowMaskUtils.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "LookUpTable.h"
@@ -172,7 +171,7 @@ CreateSpmdFundef (node *arg_node, info *arg_info)
      * create SPMD fundef
      */
     spmd_fundef
-      = TBmakeFundef (ILIBtmpVarName (FUNDEF_NAME (fundef)),
+      = TBmakeFundef (TRAVtmpVarName (FUNDEF_NAME (fundef)),
                       NSdupNamespace (FUNDEF_NS (fundef)), rets, args, body, NULL);
 
     FUNDEF_TYPES (spmd_fundef) = rettypes;
@@ -791,7 +790,7 @@ SPMDLspmd (node *arg_node, info *arg_info)
      * create SPMD fundef
      */
     new_fundef
-      = TBmakeFundef (ILIBtmpVarName (FUNDEF_NAME (fundef)),
+      = TBmakeFundef (TRAVtmpVarName (FUNDEF_NAME (fundef)),
                       NSdupNamespace (FUNDEF_NS (fundef)), rets, args, body, NULL);
 
     FUNDEF_TYPES (new_fundef) = rettypes;

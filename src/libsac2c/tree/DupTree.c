@@ -30,7 +30,6 @@
 #include "tree_compound.h"
 #include "node_basic.h"
 #include "tree_compound.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "traverse.h"
@@ -47,6 +46,27 @@
 #include "constants.h"
 #include "stringset.h"
 #include "namespaces.h"
+
+/*
+ * Ugly macros that used to be in internal_lib.h and are only used here and
+ * in wltransform.
+ */
+
+#define MALLOC_VECT(vect, dims, type)                                                    \
+    if (vect == NULL) {                                                                  \
+        (vect) = (type *)MEMmalloc ((dims) * sizeof (type));                             \
+    }
+
+#define DUP_VECT(new_vect, old_vect, dims, type)                                         \
+    {                                                                                    \
+        int d;                                                                           \
+        if ((old_vect) != NULL) {                                                        \
+            MALLOC_VECT (new_vect, dims, type);                                          \
+            for (d = 0; d < (dims); d++) {                                               \
+                (new_vect)[d] = (old_vect)[d];                                           \
+            }                                                                            \
+        }                                                                                \
+    }
 
 /*
  * INFO structure
@@ -1153,7 +1173,7 @@ DUPdo (node *arg_node, info *arg_info)
 
     DO_SKIP (new_node) = DUPTRAV (DO_SKIP (arg_node));
     DO_LABEL (new_node)
-      = (DO_LABEL (arg_node) != NULL ? ILIBtmpVarName (DO_LABEL (arg_node)) : NULL);
+      = (DO_LABEL (arg_node) != NULL ? TRAVtmpVarName (DO_LABEL (arg_node)) : NULL);
 
     CopyCommonNodeData (new_node, arg_node);
 
@@ -1214,7 +1234,7 @@ DUPids (node *arg_node, info *arg_info)
         /*
          * To maintain SSA form, new variables must be generated
          */
-        newavis = TBmakeAvis (ILIBtmpVarName (IDS_NAME (arg_node)),
+        newavis = TBmakeAvis (TRAVtmpVarName (IDS_NAME (arg_node)),
                               TYcopyType (IDS_NTYPE (arg_node)));
 
         if (AVIS_SSAASSIGN (IDS_AVIS (arg_node)) != NULL) {
@@ -1325,7 +1345,7 @@ DUPap (node *arg_node, info *arg_info)
             DBUG_ASSERT (FUNDEF_NEXT (new_fundef) == NULL, "Too many functions copied.");
 
             FUNDEF_NAME (new_fundef) = MEMfree (FUNDEF_NAME (new_fundef));
-            FUNDEF_NAME (new_fundef) = ILIBtmpVarName (FUNDEF_NAME (old_fundef));
+            FUNDEF_NAME (new_fundef) = TRAVtmpVarName (FUNDEF_NAME (old_fundef));
 
             /*
              * Unfortunately, there is no proper way to insert the new fundef
@@ -1751,7 +1771,7 @@ DUPwith (node *arg_node, info *arg_info)
          */
         oldids = WITH_VEC (arg_node);
 
-        newavis = TBmakeAvis (ILIBtmpVarName (IDS_NAME (oldids)),
+        newavis = TBmakeAvis (TRAVtmpVarName (IDS_NAME (oldids)),
                               TYcopyType (IDS_NTYPE (oldids)));
 
         vardec = TBmakeVardec (newavis, NULL);
@@ -1774,7 +1794,7 @@ DUPwith (node *arg_node, info *arg_info)
         oldids = WITH_IDS (arg_node);
         while (oldids != NULL) {
 
-            newavis = TBmakeAvis (ILIBtmpVarName (IDS_NAME (oldids)),
+            newavis = TBmakeAvis (TRAVtmpVarName (IDS_NAME (oldids)),
                                   TYcopyType (IDS_NTYPE (oldids)));
 
             vardec = TBmakeVardec (newavis, NULL);

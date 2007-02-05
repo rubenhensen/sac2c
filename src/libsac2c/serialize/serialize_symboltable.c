@@ -9,12 +9,12 @@
 
 #include "serialize_info.h"
 #include "dbug.h"
-#include "internal_lib.h"
 #include "symboltable.h"
 #include "filemgr.h"
 #include "tree_basic.h"
 #include "namespaces.h"
 #include "serialize_symboltable.h"
+#include "globals.h"
 
 static void
 GenerateSerSymbolTableAdd (stsymbol_t *symbol, stentry_t *entry, FILE *file)

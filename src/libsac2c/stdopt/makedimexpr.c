@@ -27,7 +27,6 @@
 #include "tree_compound.h"
 #include "traverse.h"
 #include "dbug.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "DupTree.h"
@@ -137,7 +136,7 @@ MDEdoMakeDimExpression (node *expr, node *avis, node *allids, node *fundef)
     INFO_ALLIDS (info) = allids;
     INFO_FUNDEF (info) = fundef;
 
-    dimavis = MakeScalarAvis (ILIBtmpVarName (AVIS_NAME (avis)));
+    dimavis = MakeScalarAvis (TRAVtmpVarName (AVIS_NAME (avis)));
     AVIS_DIM (avis) = TBmakeId (dimavis);
 
     TRAVpush (TR_mde);
@@ -442,7 +441,7 @@ MDEwith (node *arg_node, info *arg_info)
         } else {
             node *fdavis;
 
-            fdavis = TBmakeAvis (ILIBtmpVar (),
+            fdavis = TBmakeAvis (TRAVtmpVar (),
                                  TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
 
             AVIS_DIM (fdavis) = TBmakeNum (0);

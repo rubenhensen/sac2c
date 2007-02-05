@@ -9,10 +9,10 @@
  * description:
  *
  *****************************************************************************/
+
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "dbug.h"
@@ -20,6 +20,7 @@
 #include "free.h"
 #include "UndoSSATransform.h"
 #include "print.h"
+#include "globals.h"
 
 /*
  * INFO structure

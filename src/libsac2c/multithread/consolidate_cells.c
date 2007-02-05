@@ -1,19 +1,5 @@
 /*
- * $Log$
- * Revision 1.5  2004/11/24 19:40:47  skt
- * SACDevCampDK 2k4
- *
- * Revision 1.4  2004/11/23 20:52:11  skt
- * big compiler brushing during SACDevCampDK 2k4
- *
- * Revision 1.3  2004/11/23 14:38:13  skt
- * SACDevCampDK 2k4
- *
- * Revision 1.2  2004/11/22 14:37:39  skt
- * code brushing in SACDevCampDK 2004
- *
- * Revision 1.1  2004/09/02 16:02:22  skt
- * Initial revision
+ * $Id$
  *
  */
 
@@ -41,8 +27,8 @@
 #include "tree_basic.h"
 #include "traverse.h"
 #include "consolidate_cells.h"
-#include "internal_lib.h"
 #include "str.h"
+#include "dbug.h"
 #include "memory.h"
 
 /*

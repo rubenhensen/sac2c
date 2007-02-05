@@ -25,7 +25,6 @@
 #include "free.h"
 #include "dbug.h"
 #include "print.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "new_types.h"
@@ -438,7 +437,7 @@ WLSIMPgenerator (node *arg_node, info *arg_info)
 
             while (lb != NULL) {
                 node *diffavis;
-                diffavis = TBmakeAvis (ILIBtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int),
+                diffavis = TBmakeAvis (TRAVtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int),
                                                                  SHmakeShape (0)));
 
                 FUNDEF_VARDEC (INFO_FUNDEF (arg_info))

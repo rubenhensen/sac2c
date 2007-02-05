@@ -40,7 +40,6 @@
 #include "dbug.h"
 #include "print.h"
 #include "new_types.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 
@@ -155,7 +154,7 @@ CreateCopyId (node *oldid, info *arg_info)
     /*
      * Create a new variable for b'
      */
-    avis = TBmakeAvis (ILIBtmpVarName (ID_NAME (oldid)),
+    avis = TBmakeAvis (TRAVtmpVarName (ID_NAME (oldid)),
                        TYcopyType (AVIS_TYPE (ID_AVIS (oldid))));
 
     FUNDEF_VARDEC (INFO_FUNDEF (arg_info))

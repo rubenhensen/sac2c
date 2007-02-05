@@ -33,7 +33,6 @@
 #include "icm2c_std.h"
 #include "print.h"
 #include "gen_startup_code.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "renameidentifiers.h"
@@ -361,7 +360,7 @@ PrintGlobalSettings (node *syntax_tree)
              ((float)global.config.cache3_msca_factor) / 100);
 
     fprintf (global.outfile, "#define SAC_SET_CACHESIM_HOST        \"%s\"\n",
-             STR_OR_EMPTY (global.cachesim_host));
+             STRonNull ("", global.cachesim_host));
 
     if (global.cachesim_file[0] == '\0') {
         fprintf (global.outfile, "#define SAC_SET_CACHESIM_FILE        \"%s.cs\"\n",

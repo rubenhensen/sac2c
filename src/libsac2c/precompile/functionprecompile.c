@@ -33,10 +33,10 @@
 #include "types.h"
 #include "globals.h"
 #include "type_utils.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "namespaces.h"
+#include "math_utils.h"
 
 /*
  * INFO structure
@@ -149,7 +149,7 @@ HighestLinksign (node *args)
 {
     int res = -1;
     if (args != NULL) {
-        res = MAX (ARG_LINKSIGN (args), HighestLinksign (ARG_NEXT (args)));
+        res = MATHmax (ARG_LINKSIGN (args), HighestLinksign (ARG_NEXT (args)));
     }
     return (res);
 }
@@ -487,7 +487,7 @@ FPCfundef (node *arg_node, info *arg_info)
         int argtabsize
           = TCcountRets (FUNDEF_RETS (arg_node)) + TCcountArgs (FUNDEF_ARGS (arg_node));
 
-        argtabsize = MAX (argtabsize, HighestLinksign (FUNDEF_ARGS (arg_node)));
+        argtabsize = MATHmax (argtabsize, HighestLinksign (FUNDEF_ARGS (arg_node)));
         INFO_ARGTAB (arg_info) = TBmakeArgtab (argtabsize + 1);
 
         if (FUNDEF_RETS (arg_node) != NULL) {

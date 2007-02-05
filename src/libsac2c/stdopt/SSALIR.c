@@ -131,7 +131,6 @@
 
 #include "dbug.h"
 #include "tree_basic.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "traverse.h"
@@ -403,7 +402,7 @@ CreateNewResult (node *avis, info *arg_info)
     DBUG_ENTER ("CreateNewResult");
 
     /* 1. create new vardec in external (calling) fundef */
-    new_name = ILIBtmpVarName (AVIS_NAME (avis));
+    new_name = TRAVtmpVarName (AVIS_NAME (avis));
     new_ext_vardec = TBmakeVardec (TBmakeAvis (new_name, TYcopyType (AVIS_TYPE (avis))),
                                    FUNDEF_VARDEC (INFO_EXTFUNDEF (arg_info)));
 
@@ -420,14 +419,14 @@ CreateNewResult (node *avis, info *arg_info)
     AVIS_EXPRESULT (avis) = TRUE;
 
     /* 3. create new vardec in local fundef (as result in recursive call) */
-    new_int_vardec = TBmakeVardec (TBmakeAvis (ILIBtmpVarName (AVIS_NAME (avis)),
+    new_int_vardec = TBmakeVardec (TBmakeAvis (TRAVtmpVarName (AVIS_NAME (avis)),
                                                TYcopyType (AVIS_TYPE (avis))),
                                    FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
 
     FUNDEF_VARDEC (INFO_FUNDEF (arg_info)) = new_int_vardec;
 
     /* 4. create new vardec in local fundef (as PhiCopyTarget) */
-    new_pct_vardec = TBmakeVardec (TBmakeAvis (ILIBtmpVarName (AVIS_NAME (avis)),
+    new_pct_vardec = TBmakeVardec (TBmakeAvis (TRAVtmpVarName (AVIS_NAME (avis)),
                                                TYcopyType (AVIS_TYPE (avis))),
                                    FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
 
@@ -564,7 +563,7 @@ AdjustExternalResult (node *new_assigns, node *ext_assign, node *ext_fundef)
             while (result_chain != NULL) {
                 if (IDS_AVIS (new_ids) == IDS_AVIS (result_chain)) {
                     /* matching ids found - create new vardec and rename result_ids */
-                    new_avis = TBmakeAvis (ILIBtmpVarName (IDS_NAME (result_chain)),
+                    new_avis = TBmakeAvis (TRAVtmpVarName (IDS_NAME (result_chain)),
                                            TYcopyType (IDS_NTYPE (result_chain)));
                     new_vardec
                       = TBmakeVardec (new_avis, BLOCK_VARDEC (FUNDEF_BODY (ext_fundef)));
@@ -2016,7 +2015,7 @@ LIRMOVids (node *arg_ids, info *arg_info)
          */
 
         /* create new vardec */
-        new_avis = TBmakeAvis (ILIBtmpVarName (IDS_NAME (arg_ids)),
+        new_avis = TBmakeAvis (TRAVtmpVarName (IDS_NAME (arg_ids)),
                                TYcopyType (IDS_NTYPE (arg_ids)));
         new_vardec
           = TBmakeVardec (new_avis,

@@ -47,9 +47,12 @@ version="1.0">
   <xsl:text>
 #include "node_basic.h"
 #include "tree_basic.h"
-#include "internal_lib.h"
 #include "dbug.h"
 #include "check_mem.h"
+#include "str.h"
+#include "globals.h"
+#include "memory.h"
+#include "ctinfo.h"
   </xsl:text>
   <xsl:apply-templates select="//syntaxtree/node"/>
   <xsl:text>

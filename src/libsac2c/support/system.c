@@ -37,7 +37,7 @@ static bool syscalltrack_active = FALSE;
 /******************************************************************************
  *
  * Function:
- *   void SYSstartTracking()
+ *   void SYSstartTracking( void)
  *
  * Description:
  *   Initiates tracking of system calls for -d gencccall option
@@ -45,7 +45,7 @@ static bool syscalltrack_active = FALSE;
  ******************************************************************************/
 
 void
-SYSstartTracking ()
+SYSstartTracking (void)
 {
     DBUG_ENTER ("SYSstartTracking");
 
@@ -67,7 +67,7 @@ SYSstartTracking ()
 /******************************************************************************
  *
  * Function:
- *   void SYSstopTracking()
+ *   void SYSstopTracking( void)
  *
  * Description:
  *   Stops tracking of system calls for -d gencccall option
@@ -75,7 +75,7 @@ SYSstartTracking ()
  ******************************************************************************/
 
 void
-SYSstopTracking ()
+SYSstopTracking (void)
 {
     DBUG_ENTER ("SYSstopTracking");
 

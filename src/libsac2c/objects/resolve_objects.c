@@ -43,10 +43,10 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "new_types.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "free.h"
+#include "ctinfo.h"
 
 /*
  * INFO structure
@@ -161,7 +161,7 @@ AppendObjdefsToArgs (node *args, node *objlist)
     if (objlist != NULL) {
         args = AppendObjdefsToArgs (args, SET_NEXT (objlist));
 
-        avis = TBmakeAvis (ILIBtmpVarName (OBJDEF_NAME (SET_MEMBER (objlist))),
+        avis = TBmakeAvis (TRAVtmpVarName (OBJDEF_NAME (SET_MEMBER (objlist))),
                            TYcopyType (OBJDEF_TYPE (SET_MEMBER (objlist))));
         AVIS_DECLTYPE (avis) = TYcopyType (AVIS_TYPE (avis));
 
@@ -250,7 +250,7 @@ AddPropObj (node *assign, node *prop, info *arg_info)
     /**** PROPOBJ_IN ****/
 
     /* create avis */
-    avis = TBmakeAvis (ILIBtmpVarName (ID_NAME (PROPAGATE_DEFAULT (prop))),
+    avis = TBmakeAvis (TRAVtmpVarName (ID_NAME (PROPAGATE_DEFAULT (prop))),
                        TYeliminateAKV (AVIS_TYPE (ID_AVIS (PROPAGATE_DEFAULT (prop)))));
 
     /* insert vardec */
@@ -276,7 +276,7 @@ AddPropObj (node *assign, node *prop, info *arg_info)
     wl_out = FindPropagateGoalExpr (prop, arg_info);
 
     /* create avis */
-    avis = TBmakeAvis (ILIBtmpVarName (ID_NAME (EXPRS_EXPR (wl_out))),
+    avis = TBmakeAvis (TRAVtmpVarName (ID_NAME (EXPRS_EXPR (wl_out))),
                        TYeliminateAKV (AVIS_TYPE (ID_AVIS (EXPRS_EXPR (wl_out)))));
 
     /* insert vardec */
@@ -318,7 +318,7 @@ ModPropObj (node *prop, info *arg_info)
     /**** PROPOBJ_IN ****/
 
     /* create avis */
-    avis = TBmakeAvis (ILIBtmpVarName (ID_NAME (PROPAGATE_DEFAULT (prop))),
+    avis = TBmakeAvis (TRAVtmpVarName (ID_NAME (PROPAGATE_DEFAULT (prop))),
                        TYeliminateAKV (AVIS_TYPE (ID_AVIS (PROPAGATE_DEFAULT (prop)))));
 
     /* insert vardec */
@@ -338,7 +338,7 @@ ModPropObj (node *prop, info *arg_info)
     /**** PROPOBJ_OUT ****/
 
     /* create avis */
-    avis = TBmakeAvis (ILIBtmpVarName (ID_NAME (PROPAGATE_DEFAULT (prop))),
+    avis = TBmakeAvis (TRAVtmpVarName (ID_NAME (PROPAGATE_DEFAULT (prop))),
                        TYeliminateAKV (AVIS_TYPE (ID_AVIS (PROPAGATE_DEFAULT (prop)))));
 
     /* insert vardec */

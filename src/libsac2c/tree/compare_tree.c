@@ -19,7 +19,6 @@
 #include "tree_compound.h"
 #include "traverse_helper.h"
 #include "new_types.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "dbug.h"
@@ -27,6 +26,7 @@
 #include "traverse.h"
 #include "free.h"
 #include "shape.h"
+#include "globals.h"
 
 /*
  * INFO structure

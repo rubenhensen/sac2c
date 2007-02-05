@@ -7,7 +7,6 @@
 #include "split_wrappers.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "dbug.h"
@@ -26,6 +25,7 @@
 #include "update_wrapper_type.h"
 #include "elim_alpha_types.h"
 #include "elim_bottom_types.h"
+#include "globals.h"
 
 /*******************************************************************************
  *

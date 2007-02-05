@@ -8,10 +8,10 @@
 #include "tree_compound.h"
 #include "DupTree.h"
 #include "free.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "compare_tree.h"
+#include "globals.h"
 
 /**
  * forward declarations

@@ -80,7 +80,6 @@
 #include "free.h"
 #include "DupTree.h"
 #include "DataFlowMask.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "shape.h"
@@ -296,7 +295,7 @@ MakeSelCodes (node *part, node *iv, node *arr, node *fundef)
         new_type = TYmakeAKS (TYcopyType (TYgetScalar (ID_NTYPE (arr))),
                               SHdropFromShape (dim, TYgetShape (ID_NTYPE (arr))));
 
-        avis = TBmakeAvis (ILIBtmpVar (), new_type);
+        avis = TBmakeAvis (TRAVtmpVar (), new_type);
 
         vardecs = TBmakeVardec (avis, vardecs);
 
@@ -418,14 +417,14 @@ CreateCopyWithloop (node *array, int dim, node *fundef)
 
     DBUG_ENTER ("CreateCopyWithloop");
 
-    avis = TBmakeAvis (ILIBtmpVar (),
+    avis = TBmakeAvis (TRAVtmpVar (),
                        TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (1, dim)));
 
     vardecs = TBmakeVardec (avis, vardecs);
     vec_ids = TBmakeIds (avis, NULL);
 
     for (i = 0; i < dim; i++) {
-        avis = MakeScalarAvis (ILIBtmpVar ());
+        avis = MakeScalarAvis (TRAVtmpVar ());
         vardecs = TBmakeVardec (avis, vardecs);
         scl_ids = TBmakeIds (avis, scl_ids);
     }
@@ -554,7 +553,7 @@ WLSWcode (node *arg_node, info *arg_info)
             DBUG_PRINT ("WLS", ("Copy with-loop required"));
 
             avis
-              = TBmakeAvis (ILIBtmpVar (), TYcopyType (ID_NTYPE (CODE_CEXPR (arg_node))));
+              = TBmakeAvis (TRAVtmpVar (), TYcopyType (ID_NTYPE (CODE_CEXPR (arg_node))));
 
             vardecs = TBmakeVardec (avis, vardecs);
 

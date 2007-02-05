@@ -17,10 +17,10 @@
 #include "globals.h"
 #include "NameTuplesUtils.h"
 #include "type_utils.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "namespaces.h"
+#include "traverse.h"
 
 /*
  * macro template for append functions
@@ -1369,7 +1369,7 @@ TCcreateIdsFromRets (node *rets, node **vardecs)
 
     if (rets != NULL) {
         vardec
-          = TBmakeVardec (TBmakeAvis (ILIBtmpVar (), TYcopyType (RET_TYPE (rets))), NULL);
+          = TBmakeVardec (TBmakeAvis (TRAVtmpVar (), TYcopyType (RET_TYPE (rets))), NULL);
         result = TBmakeIds (VARDEC_AVIS (vardec),
                             TCcreateIdsFromRets (RET_NEXT (rets), vardecs));
 

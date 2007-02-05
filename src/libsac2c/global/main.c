@@ -11,13 +11,13 @@
 #include "phase.h"
 
 #include "types.h"
-#include "internal_lib.h"
 #include "options.h"
 #include "ctinfo.h"
 #include "globals.h"
 #include "resource.h"
 #include "libstat.h"
 #include "filemgr.h"
+#include "dbug.h"
 
 #include <stdlib.h>
 #include <locale.h>

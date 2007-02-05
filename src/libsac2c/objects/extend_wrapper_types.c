@@ -8,7 +8,6 @@
 #include "new_types.h"
 #include "type_utils.h"
 #include "create_wrappers.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 

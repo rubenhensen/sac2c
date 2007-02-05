@@ -17,7 +17,6 @@
 #include "print.h"
 #include "gen_startup_code.h"
 #include "free.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 

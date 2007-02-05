@@ -8,10 +8,10 @@
 #include "traverse.h"
 #include "free.h"
 #include "new_types.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "prepare_inlining.h"
+#include "ctinfo.h"
 
 #include "lacinlining.h"
 
@@ -146,7 +146,7 @@ AdaptConcreteArgs (node *conc_arg, node *form_arg, node *fundef)
                 DBUG_PRINT ("LINL", ("    >> insert assignment to downgrade type"));
 
                 newavis
-                  = TBmakeAvis (ILIBtmpVarName (ARG_NAME (form_arg)), TYcopyType (ctype));
+                  = TBmakeAvis (TRAVtmpVarName (ARG_NAME (form_arg)), TYcopyType (ctype));
 
                 FUNDEF_INSTR (fundef)
                   = TBmakeAssign (TBmakeLet (TBmakeIds (ARG_AVIS (form_arg), NULL),
@@ -164,7 +164,7 @@ AdaptConcreteArgs (node *conc_arg, node *form_arg, node *fundef)
                 DBUG_PRINT ("LINL", ("    >> insert typeconv to upgrade type"));
 
                 newavis
-                  = TBmakeAvis (ILIBtmpVarName (ARG_NAME (form_arg)), TYcopyType (ctype));
+                  = TBmakeAvis (TRAVtmpVarName (ARG_NAME (form_arg)), TYcopyType (ctype));
 
                 FUNDEF_INSTR (fundef)
                   = TBmakeAssign (TBmakeLet (TBmakeIds (ARG_AVIS (form_arg), NULL),

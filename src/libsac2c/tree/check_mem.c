@@ -20,7 +20,6 @@
 
 #include "check_mem.h"
 
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "traverse.h"
@@ -32,6 +31,9 @@
 #include "print.h"
 #include "check_node.h"
 #include "check_attribs.h"
+#include "dbug.h"
+#include "globals.h"
+#include "ctinfo.h"
 
 /*
  * These types are only used to compute malloc_align_step.

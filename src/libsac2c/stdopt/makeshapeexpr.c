@@ -27,7 +27,6 @@
 #include "tree_compound.h"
 #include "traverse.h"
 #include "dbug.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "DupTree.h"
@@ -111,10 +110,10 @@ MakeAssignForIdShape (node *id, node *fundef, node **preass)
 
     if (NODE_TYPE (AVIS_DIM (ID_AVIS (id))) == N_num) {
         int dim = NUM_VAL (AVIS_DIM (ID_AVIS (id)));
-        res = TBmakeAvis (ILIBtmpVarName (ID_NAME (id)),
+        res = TBmakeAvis (TRAVtmpVarName (ID_NAME (id)),
                           TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (1, dim)));
     } else {
-        res = TBmakeAvis (ILIBtmpVarName (ID_NAME (id)),
+        res = TBmakeAvis (TRAVtmpVarName (ID_NAME (id)),
                           TYmakeAKD (TYmakeSimpleType (T_int), 1, SHmakeShape (0)));
     }
 
@@ -189,7 +188,7 @@ MSEdoMakeShapeExpression (node *expr, node *avis, node *allids, node *fundef)
     INFO_ALLIDS (info) = allids;
     INFO_FUNDEF (info) = fundef;
 
-    shpavis = MakeVectAvis (ILIBtmpVarName (AVIS_NAME (avis)), AVIS_DIM (avis));
+    shpavis = MakeVectAvis (TRAVtmpVarName (AVIS_NAME (avis)), AVIS_DIM (avis));
     AVIS_SHAPE (avis) = TBmakeId (shpavis);
 
     TRAVpush (TR_mse);
@@ -298,7 +297,7 @@ MSEarray (node *arg_node, info *arg_info)
         node *csavis;
 
         framedim = SHgetDim (ARRAY_SHAPE (arg_node));
-        fsavis = TBmakeAvis (ILIBtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int),
+        fsavis = TBmakeAvis (TRAVtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int),
                                                        SHcreateShape (1, framedim)));
 
         AVIS_DIM (fsavis) = TBmakeNum (1);
@@ -438,7 +437,7 @@ MSEprf (node *arg_node, info *arg_info)
 
             idavis = ID_AVIS (PRF_ARG1 (arg_node));
 
-            absavis = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (idavis)),
+            absavis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (idavis)),
                                   TYeliminateAKV (AVIS_TYPE (idavis)));
 
             AVIS_DIM (absavis) = DUPdoDupNode (AVIS_DIM (idavis));
@@ -474,7 +473,7 @@ MSEprf (node *arg_node, info *arg_info)
 
             idavis = ID_AVIS (PRF_ARG1 (arg_node));
 
-            absavis = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (idavis)),
+            absavis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (idavis)),
                                   TYeliminateAKV (AVIS_TYPE (idavis)));
 
             AVIS_DIM (absavis) = DUPdoDupNode (AVIS_DIM (idavis));
@@ -597,7 +596,7 @@ MSEwith (node *arg_node, info *arg_info)
             DBUG_ASSERT (cshp != NULL, "Genarray WL without default element requires "
                                        "AKS elements!");
 
-            csavis = TBmakeAvis (ILIBtmpVar (),
+            csavis = TBmakeAvis (TRAVtmpVar (),
                                  TYmakeAKS (TYmakeSimpleType (T_int),
                                             SHcreateShape (1, SHgetDim (cshp))));
 
@@ -620,7 +619,7 @@ MSEwith (node *arg_node, info *arg_info)
         } else {
             int framedim = TCcountExprs (ARRAY_AELEMS (genshp));
 
-            fsavis = TBmakeAvis (ILIBtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int),
+            fsavis = TBmakeAvis (TRAVtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int),
                                                            SHcreateShape (1, framedim)));
 
             AVIS_DIM (fsavis) = TBmakeNum (1);

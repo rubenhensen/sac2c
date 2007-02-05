@@ -8,7 +8,6 @@
 #include "symboltable.h"
 #include "ctinfo.h"
 #include "free.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "namespaces.h"

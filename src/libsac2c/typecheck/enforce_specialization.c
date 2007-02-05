@@ -29,7 +29,6 @@
  * Other includes go here
  */
 #include "dbug.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "ssi.h"
@@ -42,6 +41,8 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "free.h"
+#include "globals.h"
+#include "ctinfo.h"
 
 /** <!--********************************************************************-->
  *

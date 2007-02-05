@@ -3,7 +3,6 @@
 #include "generate_object_initialiser.h"
 
 #include "dbug.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "traverse.h"

@@ -61,7 +61,6 @@
 #include "shape.h"
 #include "new_types.h"
 #include "type_utils.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 

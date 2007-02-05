@@ -11,7 +11,6 @@
 #include "types.h"
 #include "free.h"
 #include "globals.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "tree_basic.h"

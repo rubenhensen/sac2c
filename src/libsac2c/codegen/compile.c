@@ -14,7 +14,6 @@
 
 #include "tree_basic.h"
 #include "tree_compound.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 
@@ -34,6 +33,7 @@
 #include "shape.h"
 #include "LookUpTable.h"
 #include "convert.h"
+#include "math_utils.h"
 
 #define FOLDFIX_LABEL_GENERATION_ACTIVE 1
 
@@ -466,7 +466,7 @@ GenericFun (generic_fun_t which, types *type)
         }
     }
 
-    DBUG_PRINT ("COMP", ("Found generic fun `%s'", STR_OR_EMPTY (ret)));
+    DBUG_PRINT ("COMP", ("Found generic fun `%s'", STRonNull ("", ret)));
 
     DBUG_RETURN (ret);
 }
@@ -1518,7 +1518,7 @@ MakeIcm_MT_SPMD_FUN_DEC (node *fundef)
 
             name = ARG_NAME (argtab->ptr_in[i]);
             type = ARG_TYPE (argtab->ptr_in[i]);
-            id = TCmakeIdCopyStringNt (STR_OR_EMPTY (name), type);
+            id = TCmakeIdCopyStringNt (STRonNull ("", name), type);
         } else {
             DBUG_ASSERT ((argtab->ptr_out[i] != NULL), "argtab is uncompressed!");
             type = TYtype2OldType (RET_TYPE (argtab->ptr_out[i]));
@@ -4805,7 +4805,7 @@ COMPdo (node *arg_node, info *arg_info)
      * See explanations above.
      */
     if (DO_LABEL (arg_node) == 0) {
-        label_str = ILIBtmpVarName (LABEL_POSTFIX);
+        label_str = TRAVtmpVarName (LABEL_POSTFIX);
     } else {
         label_str = DO_LABEL (arg_node);
         DO_LABEL (arg_node) = NULL;
@@ -5218,7 +5218,7 @@ MakeIcm_WL_SET_OFFSET (node *arg_node, node *assigns)
                 }
                 first_block_dim = d;
 
-                first_block_dim = MIN (first_block_dim, first_ublock_dim);
+                first_block_dim = MATHmin (first_block_dim, first_ublock_dim);
             } else {
                 first_block_dim = dims;
             }
@@ -5863,7 +5863,7 @@ COMPwith2 (node *arg_node, info *arg_info)
      * put it all together                     *
      *******************************************/
 
-    break_label_str = ILIBtmpVarName (LABEL_POSTFIX);
+    break_label_str = TRAVtmpVarName (LABEL_POSTFIX);
     INFO_BREAKLABEL (arg_info) = break_label_str;
 
     ret_node = TCmakeAssigns9 (

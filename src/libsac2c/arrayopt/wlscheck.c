@@ -89,7 +89,6 @@
 #include "print.h"
 #include "optimize.h"
 #include "shape.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 

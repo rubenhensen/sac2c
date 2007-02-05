@@ -20,7 +20,6 @@
 #include "tree_basic.h"
 #include "node_basic.h"
 #include "tree_compound.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "free.h"
@@ -33,6 +32,7 @@
 #include "SSAConstantFolding.h"
 #include "WLPartitionGeneration.h"
 #include "wlanalysis.h"
+#include "ctinfo.h"
 
 typedef enum {
     GV_constant = 0,
@@ -128,9 +128,9 @@ VectVar2StructConst (node **expr, node *fundef, int shpext)
     exprs = NULL;
 
     for (i = shpext - 1; i >= 0; i--) {
-        idx_avis = TBmakeAvis (ILIBtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int),
+        idx_avis = TBmakeAvis (TRAVtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int),
                                                          SHcreateShape (1, 1)));
-        res_avis = TBmakeAvis (ILIBtmpVarName (ID_NAME (*expr)),
+        res_avis = TBmakeAvis (TRAVtmpVarName (ID_NAME (*expr)),
                                TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
         fundef
           = TCaddVardecs (fundef, TBmakeVardec (idx_avis, TBmakeVardec (res_avis, NULL)));

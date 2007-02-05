@@ -38,7 +38,6 @@ static char *rename_type[] = {
 #include "free.h"
 #include "constants_internal.h"
 #include "globals.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 

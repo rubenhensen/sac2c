@@ -33,7 +33,6 @@
 #include "filterrc.h"
 #include "aliasanalysis.h"
 #include "DupTree.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 
@@ -233,7 +232,7 @@ EMLRap (node *arg_node, info *arg_info)
                  * Create a new memory variable
                  * Ex: a_mem
                  */
-                memavis = TBmakeAvis (ILIBtmpVarName (ID_NAME (oldarg)),
+                memavis = TBmakeAvis (TRAVtmpVarName (ID_NAME (oldarg)),
                                       TYeliminateAKV (AVIS_TYPE (oldavis)));
 
                 FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
@@ -243,7 +242,7 @@ EMLRap (node *arg_node, info *arg_info)
                  * Create a new value variable
                  * Ex: a_val
                  */
-                valavis = TBmakeAvis (ILIBtmpVarName (ID_NAME (oldarg)),
+                valavis = TBmakeAvis (TRAVtmpVarName (ID_NAME (oldarg)),
                                       TYcopyType (AVIS_TYPE (oldavis)));
 
                 FUNDEF_VARDEC (INFO_FUNDEF (arg_info))

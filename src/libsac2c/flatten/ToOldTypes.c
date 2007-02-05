@@ -21,7 +21,6 @@
 #include "tree_compound.h"
 #include "new_types.h"
 #include "node_basic.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "traverse.h"

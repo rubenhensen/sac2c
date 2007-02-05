@@ -8,7 +8,6 @@
 #include "traverse.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "DupTree.h"
@@ -407,7 +406,7 @@ HWLGgenarray (node *arg_node, info *arg_info)
             GENARRAY_NEXT (arg_node) = TRAVdo (GENARRAY_NEXT (arg_node), arg_info);
         }
 
-        tmp = ILIBtmpVar ();
+        tmp = TRAVtmpVar ();
 
         new_withop = TBmakeModarray (TBmakeSpid (NULL, tmp));
         MODARRAY_NEXT (new_withop) = INFO_HWLG_NEW_WITHOPS (arg_info);
@@ -447,7 +446,7 @@ HWLGmodarray (node *arg_node, info *arg_info)
             MODARRAY_NEXT (arg_node) = TRAVdo (MODARRAY_NEXT (arg_node), arg_info);
         }
 
-        tmp = ILIBtmpVar ();
+        tmp = TRAVtmpVar ();
 
         new_withop = TBmakeModarray (TBmakeSpid (NULL, tmp));
         MODARRAY_NEXT (new_withop) = INFO_HWLG_NEW_WITHOPS (arg_info);
@@ -487,7 +486,7 @@ HWLGspfold (node *arg_node, info *arg_info)
             SPFOLD_NEXT (arg_node) = TRAVdo (SPFOLD_NEXT (arg_node), arg_info);
         }
 
-        tmp = ILIBtmpVar ();
+        tmp = TRAVtmpVar ();
 
         new_withop = TBmakeSpfold (TBmakeSpid (NULL, tmp));
         SPFOLD_NS (new_withop) = NSdupNamespace (SPFOLD_NS (arg_node));

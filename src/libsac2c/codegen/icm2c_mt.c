@@ -24,7 +24,6 @@
 #include "globals.h"
 #include "print.h"
 #include "tree_basic.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 

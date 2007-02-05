@@ -1,94 +1,16 @@
 /*
  *
- * $Log$
- * Revision 1.27  2004/12/18 15:32:44  sbs
- * nasty bug in Set_Shape solved
- *
- * Revision 1.26  2004/11/24 17:42:47  jhb
- * compile! SACdevCamp2k4
- *
- * Revision 1.25  2004/11/24 16:02:28  jhb
- * removed include NameTuples.h
- *
- * Revision 1.24  2004/03/10 00:10:17  dkrHH
- * old backend removed
- *
- * Revision 1.23  2003/11/11 19:10:44  dkr
- * bug in Check_Mirror() fixed:
- * check of SAC_ND_A_DIM was too weak...
- *
- * Revision 1.22  2003/09/30 22:10:41  dkrHH
- * bug in Set_Shape() fixed
- *
- * Revision 1.21  2003/09/30 21:49:18  dkrHH
- * comments for Set_Shape() and Check_Mirror() updated.
- *
- * Revision 1.20  2003/09/30 19:29:08  dkr
- * Set_Shape() added
- *
- * Revision 1.19  2003/09/29 17:58:19  dkr
- * comment for GetAttr() corrected
- *
- * Revision 1.18  2003/09/19 15:39:19  dkr
- * postfix _nt of varnames renamed into _NT
- *
- * Revision 1.17  2003/09/17 12:57:59  dkr
- * postfixes _nt, _any renamed into _NT, _ANY
- *
- * Revision 1.16  2003/04/15 18:25:52  dkr
- * ReadConstArray(): DBUG_ASSERT added
- *
- * Revision 1.15  2003/03/28 15:04:23  dkr
- * DBUG_OFF flag used
- *
- * Revision 1.14  2002/10/29 19:09:40  dkr
- * Vect2Offset2() rewritten
- *
- * Revision 1.13  2002/10/24 16:00:14  dkr
- * minor changes done
- *
- * Revision 1.12  2002/10/08 01:49:52  dkr
- * bug in VectToOffset2() fixed
- *
- * Revision 1.10  2002/08/05 18:08:15  dkr
- * comment corrected
- *
- * Revision 1.9  2002/07/31 15:36:29  dkr
- * types for NT tags reorganized
- *
- * Revision 1.8  2002/07/24 14:34:29  dkr
- * WriteScalar() added
- *
- * Revision 1.7  2002/07/24 08:20:29  dkr
- * VectToOffset2: DBUG_ASSERT corrected
- *
- * Revision 1.6  2002/07/12 17:36:40  dkr
- * some spaces in output added
- *
- * Revision 1.5  2002/07/12 14:34:51  dkr
- * print_comment initialized with 1 now
- *
- * Revision 1.4  2002/07/11 17:29:19  dkr
- * SizeId() added
- *
- * Revision 1.3  2002/07/11 13:37:19  dkr
- * functions renamed
- *
- * Revision 1.2  2002/07/10 19:27:26  dkr
- * new backend: access macros are functions now
- *
- * Revision 1.1  2002/07/02 13:03:19  dkr
- * Initial revision
+ * $Id$
  *
  */
 
 #include "icm2c_basic.h"
 
 #include "dbug.h"
+#include "str.h"
 #include "globals.h"
 #include "print.h"
 #include "icm2c_utils.h"
-#include "internal_lib.h"
 
 int print_comment = 1; /* bool */
 
@@ -545,9 +467,9 @@ ReadScalar (void *scl, char *idx_str, int idx)
 
     DBUG_ASSERT ((scl != NULL), "scalar for ReadScalar() not found!");
     DBUG_PRINT ("COMP", ("scalar = " F_PTR ", idx_s = %s, idx = %d", scl,
-                         STR_OR_EMPTY (idx_str), idx));
+                         STRonNull ("", idx_str), idx));
     DBUG_PRINT ("COMP", ("scalar = \"%s\", idx_s = %s, idx = %d", scl,
-                         STR_OR_EMPTY (idx_str), idx));
+                         STRonNull ("", idx_str), idx));
 
     if (((char *)scl)[0] == '(') {
         /* 'scl' is a tagged id */

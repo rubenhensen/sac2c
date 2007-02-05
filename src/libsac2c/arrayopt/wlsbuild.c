@@ -54,7 +54,6 @@
 #include "DupTree.h"
 #include "LookUpTable.h"
 #include "SSAConstantFolding.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "shape.h"
@@ -366,7 +365,7 @@ WLSBcode (node *arg_node, info *arg_info)
               = TCmakeIntVector (TCids2Exprs (WITHID_IDS (INFO_OUTERWITHID (arg_info))));
 
             oldavis = IDS_AVIS (WITHID_VEC (INFO_OUTERWITHID (arg_info)));
-            avis = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (oldavis)),
+            avis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (oldavis)),
                                TYcopyType (AVIS_TYPE (oldavis)));
 
             FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
@@ -392,7 +391,7 @@ WLSBcode (node *arg_node, info *arg_info)
             array = TCmakeIntVector (TCids2Exprs (newids));
 
             oldavis = IDS_AVIS (WITHID_VEC (INFO_INNERWITHID (arg_info)));
-            avis = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (oldavis)),
+            avis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (oldavis)),
                                TYcopyType (AVIS_TYPE (oldavis)));
 
             FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
@@ -721,7 +720,7 @@ WLSBwithid (node *arg_node, info *arg_info)
         /*
          * Create a vardec for the new index vector
          */
-        avis = TBmakeAvis (ILIBtmpVar (), vectype);
+        avis = TBmakeAvis (TRAVtmpVar (), vectype);
 
         FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
           = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));

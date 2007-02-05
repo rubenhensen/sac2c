@@ -12,7 +12,6 @@
 #include "tree_compound.h"
 #include "DupTree.h"
 #include "LookUpTable.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "traverse.h"

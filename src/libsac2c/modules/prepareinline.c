@@ -10,12 +10,14 @@
 #include "traverse.h"
 #include "add_function_body.h"
 #include "deserialize.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "type_utils.h"
 #include "new_types.h"
 #include "namespaces.h"
+#include "dbug.h"
+#include "ctinfo.h"
+#include "globals.h"
 
 /*
  * INFO structure

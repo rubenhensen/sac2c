@@ -42,7 +42,6 @@
     <xsl:text>
 #include "traverse_tables.h"
 #include "traverse_helper.h"
-#include "internal_lib.h"
     </xsl:text>
       <xsl:apply-templates select="/definition/phases//traversal" mode="include" />
     <xsl:text>

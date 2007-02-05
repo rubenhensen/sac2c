@@ -87,7 +87,6 @@ version="1.0">
 #include "serialize_stack.h"
 #include "tree_basic.h"
 #include "traverse.h"
-#include "internal_lib.h"
 #include "dbug.h"
 
   </xsl:text>

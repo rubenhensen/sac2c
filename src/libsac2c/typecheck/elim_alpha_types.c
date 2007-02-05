@@ -10,7 +10,6 @@
 
 #include "dbug.h"
 #include "ctinfo.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "free.h"
@@ -574,7 +573,7 @@ EATwithid (node *arg_node, info *arg_info)
                 new_vardecs = INFO_VARDECS (arg_info);
                 for (i = 0; i < num_vars; i++) {
                     tmp_avis
-                      = TBmakeAvis (ILIBtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int),
+                      = TBmakeAvis (TRAVtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int),
                                                               SHcreateShape (0)));
                     new_vardecs = TBmakeVardec (tmp_avis, new_vardecs);
                     new_ids = TBmakeIds (tmp_avis, new_ids);

@@ -1,62 +1,19 @@
 /*
  *
- * $Log$
- * Revision 1.14  2005/06/28 15:51:15  sah
- * removed a warning
- *
- * Revision 1.13  2005/05/26 18:37:53  sbs
- * corrected NTUgetShapeClassFromNType :-(
- * naughty sh***y Marielyst hack
- *
- * Revision 1.12  2004/11/26 21:30:51  ktr
- * ntype backend stage 0
- *
- * Revision 1.11  2004/11/26 16:36:38  cg
- * const specifier added.
- *
- * Revision 1.10  2004/11/25 17:53:48  cg
- * SacDevCamp 04
- *
- * Revision 1.9  2003/03/13 17:10:03  dkr
- * fixed a bug in GetHiddenClassFromTypes()
- * handling of -minarrayrep flag corrected
- *
- * Revision 1.8  2003/03/13 15:49:09  dkr
- * handling of -minarrayrep option added
- *
- * Revision 1.7  2002/07/31 15:35:02  dkr
- * new hidden tag added
- *
- * Revision 1.6  2002/07/15 18:40:39  dkr
- * Get...ClassFromTypes(): DBUG_ASSERT added
- *
- * Revision 1.5  2002/07/12 21:37:58  dkr
- * fixed a bug in GetDataClassFromTypes()
- *
- * Revision 1.4  2002/07/11 13:58:57  dkr
- * AddNtTag() added
- *
- * Revision 1.3  2002/06/04 08:37:17  dkr
- * C_unknownc renamed into C_unknownd
- *
- * Revision 1.2  2002/06/02 21:42:42  dkr
- * symbols renamed
- *
- * Revision 1.1  2002/05/31 17:14:56  dkr
- * Initial revision
+ * $Id$
  *
  */
 
 #include <string.h>
 
 #include "dbug.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "new_types.h"
 #include "type_utils.h"
+#include "globals.h"
 
 #include "NameTuplesUtils.h"
 

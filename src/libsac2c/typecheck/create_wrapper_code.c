@@ -5,7 +5,6 @@
 #include "create_wrapper_code.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
-#include "internal_lib.h"
 #include "dbug.h"
 #include "ctinfo.h"
 #include "traverse.h"
@@ -16,6 +15,7 @@
 #include "type_utils.h"
 #include "ct_fun.h"
 #include "namespaces.h"
+#include "globals.h"
 
 /**
  **

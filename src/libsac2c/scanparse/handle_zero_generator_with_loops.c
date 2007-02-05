@@ -7,12 +7,12 @@
 #include "traverse.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "free.h"
 #include "DupTree.h"
 #include "namespaces.h"
+#include "ctinfo.h"
 
 #include "handle_zero_generator_with_loops.h"
 
@@ -166,7 +166,7 @@ BuildDefault (node *arg_node)
     DBUG_ENTER ("BuildDefault");
 
     WITH_PART (arg_node)
-      = TBmakePart (NULL, TBmakeWithid (TBmakeSpids (ILIBtmpVar (), NULL), NULL),
+      = TBmakePart (NULL, TBmakeWithid (TBmakeSpids (TRAVtmpVar (), NULL), NULL),
                     TBmakeGenerator (F_le, F_le, TBmakeDot (1), TBmakeDot (1), NULL,
                                      NULL));
     WITH_CODE (arg_node) = TBmakeCode (TBmakeBlock (TBmakeEmpty (), NULL), NULL);
@@ -213,7 +213,7 @@ MergeNewExprs (node **preassigns, node **postassigns, node *with, node **exprs,
                 tmp = SPIDS_NEXT (*lhs);
                 SPIDS_NEXT (*lhs) = NULL;
 
-                tmpvar = ILIBtmpVar ();
+                tmpvar = TRAVtmpVar ();
 
                 *preassigns = TBmakeAssign (TBmakeLet (TBmakeSpids (tmpvar, NULL),
                                                        EXPRS_EXPR (*exprs)),

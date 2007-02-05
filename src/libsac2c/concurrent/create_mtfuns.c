@@ -40,10 +40,10 @@
 #include "traverse.h"
 #include "DupTree.h"
 #include "free.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "namespaces.h"
+#include "globals.h"
 
 #include "create_mtfuns.h"
 
@@ -101,29 +101,31 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
-static bool
-IsSpmdConditional (node *arg_node)
+#if 0
+static bool IsSpmdConditional( node *arg_node)
 {
-    bool res;
-    node *prf;
-
-    DBUG_ENTER ("IsSpmdConditional");
-
-    DBUG_ASSERT (NODE_TYPE (arg_node) == N_cond,
-                 "IsSpmdConditional() applied to wrong node type.");
-
-    res = FALSE;
-
-    if (NODE_TYPE (COND_COND (arg_node)) == N_prf) {
-        prf = COND_COND (arg_node);
-        if ((PRF_PRF (prf) == F_run_mt_genarray) || (PRF_PRF (prf) == F_run_mt_modarray)
-            || (PRF_PRF (prf) == F_run_mt_fold)) {
-            res = TRUE;
-        }
+  bool res;
+  node *prf;
+  
+  DBUG_ENTER("IsSpmdConditional");
+  
+  DBUG_ASSERT( NODE_TYPE( arg_node) == N_cond,
+               "IsSpmdConditional() applied to wrong node type.");
+  
+  res = FALSE;
+  
+  if ( NODE_TYPE( COND_COND( arg_node)) == N_prf) {
+    prf = COND_COND( arg_node);
+    if ((PRF_PRF( prf) == F_run_mt_genarray)
+        || (PRF_PRF( prf) == F_run_mt_modarray)
+        || (PRF_PRF( prf) == F_run_mt_fold)) {
+      res = TRUE;
     }
-
-    DBUG_RETURN (res);
+  }
+  
+  DBUG_RETURN( res);
 }
+#endif
 
 /******************************************************************************
  *

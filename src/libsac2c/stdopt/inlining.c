@@ -38,7 +38,6 @@
 #include "traverse.h"
 #include "free.h"
 #include "ctinfo.h" /* for CTIitemName */
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "type_utils.h"

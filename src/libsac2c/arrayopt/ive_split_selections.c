@@ -8,7 +8,6 @@
 
 #include "tree_basic.h"
 #include "tree_compound.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "shape.h"
@@ -127,7 +126,7 @@ AddVect2Offset (node *iv, node *array, info *info)
                  "no ssa shape information found!");
 
     avis
-      = TBmakeAvis (ILIBtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
+      = TBmakeAvis (TRAVtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
 
     INFO_VARDECS (info) = TBmakeVardec (avis, INFO_VARDECS (info));
 

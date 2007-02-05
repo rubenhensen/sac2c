@@ -9,7 +9,6 @@
 #include "dbug.h"
 
 #include "types.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "tree_basic.h"
@@ -124,7 +123,7 @@ Abstract (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("Abstract");
 
-    tmp = ILIBtmpVar ();
+    tmp = TRAVtmpVar ();
     ids = TBmakeSpids (STRcpy (tmp), NULL);
 
     INFO_FLAT_LASTASSIGN (arg_info)
@@ -913,7 +912,7 @@ FLATwithid (node *arg_node, info *arg_info)
     DBUG_ENTER ("FLATwithid");
 
     if (WITHID_VEC (arg_node) == NULL) {
-        WITHID_VEC (arg_node) = TBmakeSpids (ILIBtmpVar (), NULL);
+        WITHID_VEC (arg_node) = TBmakeSpids (TRAVtmpVar (), NULL);
     }
 
     DBUG_RETURN (arg_node);

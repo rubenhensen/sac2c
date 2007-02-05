@@ -62,7 +62,6 @@
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "free.h"
@@ -895,8 +894,8 @@ IntersectInternGen (intern_gen *target_ig, intern_gen *subst_ig)
             /* here we have to intersect target_ig and sig */
             /* first the bounds, ignore step/width */
             for (d = 0; d < max_dim; d++) {
-                l = MAX (target_ig->l[d], sig->l[d]);
-                u = MIN (target_ig->u[d], sig->u[d]);
+                l = MATHmax (target_ig->l[d], sig->l[d]);
+                u = MATHmin (target_ig->u[d], sig->u[d]);
                 if (l >= u) {
                     break; /* empty intersection */
                 } else {
@@ -1019,8 +1018,8 @@ RemoveDoubleIndexVectors (intern_gen *subst_ig, index_info *transformations)
                 transformations->vector--;
                 while (act_ig) {
                     /* fold both dimensions fdim and act_dim to fdim ... */
-                    act_ig->l[fdim] = MAX (act_ig->l[fdim], act_ig->l[act_dim]);
-                    act_ig->u[fdim] = MIN (act_ig->u[fdim], act_ig->u[act_dim]);
+                    act_ig->l[fdim] = MATHmax (act_ig->l[fdim], act_ig->l[act_dim]);
+                    act_ig->u[fdim] = MATHmin (act_ig->u[fdim], act_ig->u[act_dim]);
                     act_ig->shape--;
                     /* ...and remove unused dim act_dim. */
                     for (i = act_dim; i < transformations->vector; i++) {
@@ -1565,7 +1564,7 @@ WLFid (node *arg_node, info *arg_info)
                      (and DC-removing) some new variables. */
 
                 arrayn = TCmakeIntVector (TBmakeExprs (TBmakeNum (count), NULL));
-                arrayavisn = TBmakeAvis (ILIBtmpVar (), NTCnewTypeCheck_Expr (arrayn));
+                arrayavisn = TBmakeAvis (TRAVtmpVar (), NTCnewTypeCheck_Expr (arrayn));
                 FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
                   = TBmakeVardec (arrayavisn, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
 

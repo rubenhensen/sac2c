@@ -17,7 +17,6 @@
 #include "tree_basic.h"
 #include "node_basic.h"
 #include "tree_compound.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "free.h"
@@ -30,6 +29,7 @@
 #include "deserialize.h"
 #include "namespaces.h"
 #include "wldefaultpartition.h"
+#include "ctinfo.h"
 
 /**
  * INFO structure
@@ -115,7 +115,7 @@ CreateScalarWL (int dim, node *array_shape, simpletype btype, node *expr, node *
 
     DBUG_ASSERT ((dim >= 0), "CreateScalarWl() used with unknown shape!");
 
-    vec_ids = TBmakeIds (TBmakeAvis (ILIBtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int),
+    vec_ids = TBmakeIds (TBmakeAvis (TRAVtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int),
                                                                SHcreateShape (1, dim))),
                          NULL);
 
@@ -123,7 +123,7 @@ CreateScalarWL (int dim, node *array_shape, simpletype btype, node *expr, node *
 
     for (i = 0; i < dim; i++) {
         tmp_ids
-          = TBmakeIds (TBmakeAvis (ILIBtmpVar (),
+          = TBmakeIds (TBmakeAvis (TRAVtmpVar (),
                                    TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0))),
                        NULL);
 
@@ -133,7 +133,7 @@ CreateScalarWL (int dim, node *array_shape, simpletype btype, node *expr, node *
     }
 
     id = TBmakeId (
-      TBmakeAvis (ILIBtmpVar (), TYmakeAKS (TYmakeSimpleType (btype), SHmakeShape (0))));
+      TBmakeAvis (TRAVtmpVar (), TYmakeAKS (TYmakeSimpleType (btype), SHmakeShape (0))));
     vardecs = TBmakeVardec (ID_AVIS (id), vardecs);
 
     ass = TBmakeAssign (TBmakeLet (TBmakeIds (ID_AVIS (id), NULL), expr), NULL);
@@ -425,7 +425,7 @@ WLDPgenarray (node *arg_node, info *arg_info)
         if (TYisAKV (array_type) || TYisAKS (array_type)) {
             node *avis, *ids, *vardec;
 
-            avis = TBmakeAvis (ILIBtmpVar (), TYeliminateAKV (array_type));
+            avis = TBmakeAvis (TRAVtmpVar (), TYeliminateAKV (array_type));
             ids = TBmakeIds (avis, NULL);
             vardec = TBmakeVardec (avis, NULL);
 
@@ -563,7 +563,7 @@ WLDPpart (node *arg_node, info *arg_info)
     expriter = INFO_DEFEXPR (arg_info);
 
     while (expriter != NULL) {
-        _ids = TBmakeIds (TBmakeAvis (ILIBtmpVar (),
+        _ids = TBmakeIds (TBmakeAvis (TRAVtmpVar (),
                                       TYeliminateAKV (AVIS_TYPE (ID_AVIS (
                                         EXPRS_EXPR (WITH_CEXPRS (INFO_WL (arg_info))))))),
                           NULL);

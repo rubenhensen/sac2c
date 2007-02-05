@@ -1,63 +1,5 @@
 /*
- * $Log$
- * Revision 1.19  2004/11/24 19:40:47  skt
- * SACDevCampDK 2k4
- *
- * Revision 1.18  2004/11/23 20:52:11  skt
- * big compiler brushing during SACDevCampDK 2k4
- *
- * Revision 1.17  2004/11/23 14:38:13  skt
- * SACDevCampDK 2k4
- *
- * Revision 1.16  2004/11/22 14:59:51  skt
- * code brushing in SACDevCampDK 2004
- *
- * Revision 1.15  2004/08/26 17:05:04  skt
- * handling of MUTH_MULTI_SPECIALIZED added
- *
- * Revision 1.14  2004/08/19 17:45:53  skt
- * initialization of new_assign added
- *
- * Revision 1.13  2004/08/18 13:24:31  skt
- * switch to mtexecmode_t done
- *
- * Revision 1.12  2004/08/18 12:55:33  skt
- * added case MUTH_ANY into CRECEInsertCell
- * changed int into mtexecmode_t at executionmodes
- *
- * Revision 1.11  2004/08/17 10:37:31  skt
- * push / pop added at N_block
- *
- * Revision 1.10  2004/08/16 18:15:26  skt
- * implementation finished
- *
- * Revision 1.9  2004/08/16 16:52:35  skt
- * implementation expanded
- *
- * Revision 1.8  2004/08/13 16:17:40  skt
- * *** empty log message ***
- *
- * Revision 1.7  2004/08/05 17:42:19  skt
- * moved handling of the allocation around the withloop into propagate_executionmode
- *
- * Revision 1.6  2004/08/05 13:50:18  skt
- * welcome to the new INFO structure
- *
- * Revision 1.5  2004/07/29 13:45:19  skt
- * Handling of iv & its elements enhanced
- *
- * Revision 1.4  2004/07/28 23:37:23  skt
- * improved the handling of the indexvectors
- *
- * Revision 1.3  2004/07/28 22:45:22  skt
- * changed CRECEAddIv into CRECEHandleIv,
- * implementation changed & tested
- *
- * Revision 1.2  2004/07/28 17:46:14  skt
- * CRECEfundef added
- *
- * Revision 1.1  2004/07/26 16:11:55  skt
- * Initial revision
+ * $Id$
  *
  */
 
@@ -85,8 +27,8 @@
 #include "tree_basic.h"
 #include "traverse.h"
 #include "create_cells.h"
-#include "internal_lib.h"
 #include "str.h"
+#include "dbug.h"
 #include "memory.h"
 #include "multithread_lib.h"
 

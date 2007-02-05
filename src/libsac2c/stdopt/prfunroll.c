@@ -24,7 +24,6 @@
 #include "dbug.h"
 #include "print.h"
 #include "DupTree.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "free.h"
@@ -404,14 +403,14 @@ UPRFprf (node *arg_node, info *arg_info)
             /*
              * Create new assignments for the two arguments
              */
-            avis1 = TBmakeAvis (ILIBtmpVar (), TYcopyType (nt1));
+            avis1 = TBmakeAvis (TRAVtmpVar (), TYcopyType (nt1));
             INFO_VARDEC (arg_info) = TBmakeVardec (avis1, INFO_VARDEC (arg_info));
             ass = TBmakeAssign (TBmakeLet (TBmakeIds (avis1, NULL),
                                            DUPdoDupNode (PRF_ARG1 (arg_node))),
                                 ass);
             AVIS_SSAASSIGN (avis1) = ass;
 
-            avis2 = TBmakeAvis (ILIBtmpVar (), TYcopyType (nt2));
+            avis2 = TBmakeAvis (TRAVtmpVar (), TYcopyType (nt2));
             INFO_VARDEC (arg_info) = TBmakeVardec (avis2, INFO_VARDEC (arg_info));
             ass = TBmakeAssign (TBmakeLet (TBmakeIds (avis2, NULL),
                                            DUPdoDupNode (PRF_ARG2 (arg_node))),
@@ -426,7 +425,7 @@ UPRFprf (node *arg_node, info *arg_info)
                     argavis1 = avis1;
                 } else {
                     node *selarravis
-                      = TBmakeAvis (ILIBtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int),
+                      = TBmakeAvis (TRAVtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int),
                                                               SHcreateShape (1, 1)));
                     INFO_VARDEC (arg_info)
                       = TBmakeVardec (selarravis, INFO_VARDEC (arg_info));
@@ -436,7 +435,7 @@ UPRFprf (node *arg_node, info *arg_info)
                                         ass);
                     AVIS_SSAASSIGN (selarravis) = ass;
 
-                    argavis1 = TBmakeAvis (ILIBtmpVar (), TYcopyType (scl));
+                    argavis1 = TBmakeAvis (TRAVtmpVar (), TYcopyType (scl));
                     INFO_VARDEC (arg_info)
                       = TBmakeVardec (argavis1, INFO_VARDEC (arg_info));
                     ass
@@ -451,7 +450,7 @@ UPRFprf (node *arg_node, info *arg_info)
                     argavis2 = avis2;
                 } else {
                     node *selarravis
-                      = TBmakeAvis (ILIBtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int),
+                      = TBmakeAvis (TRAVtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int),
                                                               SHcreateShape (1, 1)));
                     INFO_VARDEC (arg_info)
                       = TBmakeVardec (selarravis, INFO_VARDEC (arg_info));
@@ -461,7 +460,7 @@ UPRFprf (node *arg_node, info *arg_info)
                                         ass);
                     AVIS_SSAASSIGN (selarravis) = ass;
 
-                    argavis2 = TBmakeAvis (ILIBtmpVar (), TYcopyType (scl));
+                    argavis2 = TBmakeAvis (TRAVtmpVar (), TYcopyType (scl));
                     INFO_VARDEC (arg_info)
                       = TBmakeVardec (argavis2, INFO_VARDEC (arg_info));
                     ass
@@ -472,7 +471,7 @@ UPRFprf (node *arg_node, info *arg_info)
                     AVIS_SSAASSIGN (argavis2) = ass;
                 }
 
-                resavis = TBmakeAvis (ILIBtmpVar (), TYcopyType (scl));
+                resavis = TBmakeAvis (TRAVtmpVar (), TYcopyType (scl));
                 INFO_VARDEC (arg_info) = TBmakeVardec (resavis, INFO_VARDEC (arg_info));
                 ass = TBmakeAssign (TBmakeLet (TBmakeIds (resavis, NULL),
                                                TCmakePrf2 (NormalizePrf (

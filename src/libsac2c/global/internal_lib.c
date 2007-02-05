@@ -1,7 +1,5 @@
 /*
- * $Id$
  */
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 
@@ -33,23 +31,23 @@
 /******************************************************************************
  *
  * Function:
- *   char *ILIBtmpVar( void)
+ *   char *TRAVtmpVar( void)
  *
  * Description:
  *   Generates string to be used as artificial variable.
- *   The variable name is different in each call of ILIBtmpVar().
+ *   The variable name is different in each call of TRAVtmpVar().
  *   The string has the form "__tmp_" ++ traversal ++ consecutive number.
  *
  ******************************************************************************/
 
 char *
-ILIBtmpVar (void)
+TRAVtmpVar (void)
 {
     static int counter = 0;
     const char *prefix;
     char *result;
 
-    DBUG_ENTER ("ILIBtmpVar");
+    DBUG_ENTER ("TRAVtmpVar");
 
     prefix = TRAVgetName ();
     result = (char *)MEMmalloc ((strlen (prefix) + MATHnumDigits (counter) + 3)
@@ -63,21 +61,21 @@ ILIBtmpVar (void)
 /******************************************************************************
  *
  * function:
- *   char *ILIBtmpVarName( char* postfix)
+ *   char *TRAVtmpVarName( char* postfix)
  *
  * description:
- *   creates a unique variable like ILIBtmpVar() and additionally appends
+ *   creates a unique variable like TRAVtmpVar() and additionally appends
  *   an individual string.
  *
  ******************************************************************************/
 
 char *
-ILIBtmpVarName (char *postfix)
+TRAVtmpVarName (char *postfix)
 {
     const char *tmp;
     char *result, *prefix;
 
-    DBUG_ENTER ("ILIBtmpVarName");
+    DBUG_ENTER ("TRAVtmpVarName");
 
     /* avoid chains of same prefixes */
     tmp = TRAVgetName ();
@@ -90,7 +88,7 @@ ILIBtmpVarName (char *postfix)
         }
     }
 
-    prefix = ILIBtmpVar ();
+    prefix = TRAVtmpVar ();
 
     result = STRcatn (3, prefix, "_", postfix);
 

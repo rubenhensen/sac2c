@@ -11,10 +11,10 @@
 #include "ctinfo.h"
 #include "dbug.h"
 #include "build.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "tree_basic.h"
+#include "globals.h"
 
 #include <string.h>
 

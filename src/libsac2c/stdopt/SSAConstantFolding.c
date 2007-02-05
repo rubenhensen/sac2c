@@ -82,7 +82,6 @@
 #include "tree_basic.h"
 #include "node_basic.h"
 #include "tree_compound.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "new_types.h"
@@ -783,7 +782,7 @@ Shape (node *expr, info *arg_info)
             if (TUdimKnown (ID_NTYPE (expr))) {
                 int i;
                 for (i = TYgetDim (ID_NTYPE (expr)) - 1; i >= 0; i--) {
-                    node *avis = TBmakeAvis (ILIBtmpVarName (ID_NAME (expr)),
+                    node *avis = TBmakeAvis (TRAVtmpVarName (ID_NAME (expr)),
                                              TYmakeAKS (TYmakeSimpleType (T_int),
                                                         SHmakeShape (0)));
 

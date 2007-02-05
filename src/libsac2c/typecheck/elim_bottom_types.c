@@ -10,7 +10,6 @@
 
 #include "dbug.h"
 #include "ctinfo.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "free.h"
@@ -28,6 +27,7 @@
 #include "type_errors.h"
 #include "ssi.h"
 #include "sig_deps.h"
+#include "globals.h"
 
 /*
  * OPEN PROBLEMS:

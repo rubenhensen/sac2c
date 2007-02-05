@@ -14,7 +14,6 @@
 #include "traverse.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "DupTree.h"
@@ -244,7 +243,7 @@ HCEfuncond (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("HCEfuncond");
 
-    n = ILIBtmpVar ();
+    n = TRAVtmpVar ();
 
     p = FUNCOND_IF (arg_node);
     FUNCOND_IF (arg_node) = NULL;

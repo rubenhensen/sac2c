@@ -1,22 +1,5 @@
 /*
- * $Log$
- * Revision 1.6  2004/11/24 19:40:47  skt
- * SACDevCampDK 2k4
- *
- * Revision 1.5  2004/11/23 20:52:11  skt
- * big compiler brushing during SACDevCampDK 2k4
- *
- * Revision 1.4  2004/11/23 14:38:13  skt
- * SACDevCampDK 2k4
- *
- * Revision 1.3  2004/11/22 13:48:10  skt
- * code brushing in SACDevCampDK 2004
- *
- * Revision 1.2  2004/08/17 15:47:39  skt
- * comments added
- *
- * Revision 1.1  2004/08/17 09:06:38  skt
- * Initial revision
+ * $Id$
  *
  */
 
@@ -42,9 +25,9 @@
 #include "tree_basic.h"
 #include "traverse.h"
 #include "cell_growth.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
+#include "dbug.h"
 
 /*
  * INFO structure

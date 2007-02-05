@@ -25,7 +25,6 @@
 
 #include "tree_basic.h"
 #include "tree_compound.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "free.h"
@@ -34,6 +33,8 @@
 #include "new_types.h"
 #include "shape.h"
 #include "namespaces.h"
+#include "dbug.h"
+#include "globals.h"
 
 /*
  * INFO structure
@@ -141,7 +142,7 @@ LiftArg (node *arg, node *fundef, ntype *new_type, node **new_assigns)
 
     DBUG_ENTER ("LiftArg");
 
-    new_name = ILIBtmpVarName (ID_NAME (arg));
+    new_name = TRAVtmpVarName (ID_NAME (arg));
 
     /*
      * Insert vardec for new var
@@ -197,7 +198,7 @@ LiftIds (node *ids_arg, node *fundef, ntype *new_type, node **new_assigns)
 
     DBUG_ENTER ("LiftIds");
 
-    new_name = ILIBtmpVarName (IDS_NAME (ids_arg));
+    new_name = TRAVtmpVarName (IDS_NAME (ids_arg));
 
     /*
      * Insert vardec for new var

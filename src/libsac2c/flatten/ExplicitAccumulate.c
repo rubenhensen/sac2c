@@ -61,7 +61,6 @@
 #include "tree_basic.h"
 #include "node_basic.h"
 #include "tree_compound.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "free.h"
@@ -149,7 +148,7 @@ MakeAccuAssign (node *assign, info *arg_info)
     /* create avis */
     lhs_ids = INFO_FOLD_LHS (arg_info);
     INFO_FOLD_LHS (arg_info) = NULL;
-    avis = TBmakeAvis (ILIBtmpVarName (IDS_NAME (lhs_ids)),
+    avis = TBmakeAvis (TRAVtmpVarName (IDS_NAME (lhs_ids)),
                        TYeliminateAKV (AVIS_TYPE (IDS_AVIS (lhs_ids))));
     INFO_FOLD_ACCU (arg_info) = avis;
 
@@ -197,7 +196,7 @@ MakeFoldFunAssign (info *arg_info)
 
     /* create new cexpr id: */
     old_cexpr_id = EXPRS_EXPR1 (INFO_FOLD_CEXPR (arg_info));
-    avis = TBmakeAvis (ILIBtmpVarName (ID_NAME (old_cexpr_id)),
+    avis = TBmakeAvis (TRAVtmpVarName (ID_NAME (old_cexpr_id)),
                        TYcopyType (AVIS_TYPE (INFO_FOLD_ACCU (arg_info))));
 
     /* replace old_cexpr_id with new one: */
@@ -230,7 +229,7 @@ MakeFoldFunAssign (info *arg_info)
         eq_funap = DSdispatchFunCall (NSgetNamespace (global.preludename), "eq", args);
         DBUG_ASSERTF (eq_funap != NULL, ("%s::eq not found", global.preludename));
 
-        avis = TBmakeAvis (ILIBtmpVarName (ID_NAME (INFO_FOLD_GUARD (arg_info))),
+        avis = TBmakeAvis (TRAVtmpVarName (ID_NAME (INFO_FOLD_GUARD (arg_info))),
                            TYmakeAKS (TYmakeSimpleType (T_bool), SHmakeShape (0)));
 
         FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
@@ -446,7 +445,7 @@ EAfold (node *arg_node, info *arg_info)
         /*
          * Append IDS to LHS of assignment
          */
-        avis = TBmakeAvis (ILIBtmpVarName (ID_NAME (INFO_FOLD_GUARD (arg_info))),
+        avis = TBmakeAvis (TRAVtmpVarName (ID_NAME (INFO_FOLD_GUARD (arg_info))),
                            TYmakeAKS (TYmakeSimpleType (T_bool), SHmakeShape (0)));
 
         FUNDEF_VARDEC (INFO_FUNDEF (arg_info))

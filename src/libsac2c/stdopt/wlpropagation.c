@@ -25,7 +25,6 @@
 #include "traverse.h"
 #include "new_types.h"
 #include "dbug.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "free.h"
@@ -490,7 +489,7 @@ WLPROPid (node *arg_node, info *arg_info)
                      * insert old/new pair into lut
                      */
                     origin = next;
-                    avis = TBmakeAvis (ILIBtmpVar (), TYcopyType (AVIS_TYPE (origin)));
+                    avis = TBmakeAvis (TRAVtmpVar (), TYcopyType (AVIS_TYPE (origin)));
                     copy = TBmakeArg (avis, NULL);
 
                     argchain_applied = TCappendArgs (argchain_applied, copy);
@@ -552,7 +551,7 @@ WLPROPid (node *arg_node, info *arg_info)
                  * identifier
                  */
                 ARG_AVIS (INFO_CORRESPONDINGFUNARG (arg_info))
-                  = TBmakeAvis (ILIBtmpVar (), TYcopyType (AVIS_TYPE (ARG_AVIS (
+                  = TBmakeAvis (TRAVtmpVar (), TYcopyType (AVIS_TYPE (ARG_AVIS (
                                                  INFO_CORRESPONDINGFUNARG (arg_info)))));
 
                 AVIS_DECL (ARG_AVIS (INFO_CORRESPONDINGFUNARG (arg_info)))

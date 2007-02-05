@@ -71,7 +71,6 @@
 #include "dbug.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "str_buffer.h"
 #include "memory.h"
@@ -92,6 +91,8 @@
 #include "serialize.h"
 #include "deserialize.h"
 #include "namespaces.h"
+#include "globals.h"
+#include "traverse.h"
 
 /*
  * Since all type constructors may have different attributes,
@@ -6103,7 +6104,7 @@ BuildTmpId (ntype *type, node **new_vardecs)
 
     DBUG_ENTER ("BuildTmpId");
 
-    avis = TBmakeAvis (ILIBtmpVar (), type);
+    avis = TBmakeAvis (TRAVtmpVar (), type);
     id = TBmakeId (avis);
     *new_vardecs = TBmakeVardec (avis, *new_vardecs);
 
@@ -6117,7 +6118,7 @@ BuildTmpIds (ntype *type, node **new_vardecs)
 
     DBUG_ENTER ("BuildTmpIds");
 
-    avis = TBmakeAvis (ILIBtmpVar (), type);
+    avis = TBmakeAvis (TRAVtmpVar (), type);
     ids = TBmakeIds (avis, NULL);
     *new_vardecs = TBmakeVardec (avis, *new_vardecs);
 

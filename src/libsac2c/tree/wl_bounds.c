@@ -10,9 +10,9 @@
 #include "free.h"
 #include "DupTree.h"
 #include "NameTuplesUtils.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "new_types.h"
+#include "dbug.h"
 
 /******************************************************************************
  *

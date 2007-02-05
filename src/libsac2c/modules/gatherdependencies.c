@@ -13,12 +13,12 @@
 #include "stringset.h"
 #include "tree_basic.h"
 #include "dbug.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "new_types.h"
 #include "traverse.h"
 #include "namespaces.h"
+#include "globals.h"
 
 /*
  * INFO structure

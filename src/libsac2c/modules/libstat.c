@@ -13,10 +13,10 @@
 #include "tree_basic.h"
 #include "print.h"
 #include "stringset.h"
-#include "internal_lib.h"
 #include "namespaces.h"
 #include "ctinfo.h"
 #include "free.h"
+#include "globals.h"
 
 static void
 PrintLibStatHeader (module_t *module)

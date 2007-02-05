@@ -1,16 +1,6 @@
 /*
  *
- * $Log$
- * Revision 3.14  2004/11/23 20:52:11  skt
- * big compiler brushing during SACDevCampDK 2k4
- *
- * Revision 3.13  2004/11/23 14:38:13  skt
- * SACDevCampDK 2k4
- *
- * [...]
- *
- * Revision 1.1  2000/02/21 17:48:22  jhs
- * Initial revision
+ * $Id$
  *
  */
 
@@ -30,9 +20,9 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "multithread_lib.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
+#include "dbug.h"
 
 /******************************************************************************
  *

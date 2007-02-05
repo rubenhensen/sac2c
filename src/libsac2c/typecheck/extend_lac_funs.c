@@ -10,7 +10,6 @@
 
 #include "dbug.h"
 #include "DupTree.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "free.h"
@@ -22,6 +21,7 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse_helper.h"
+#include "globals.h"
 
 /*
  * OPEN PROBLEMS:
@@ -138,7 +138,7 @@ CreateTmpVar (char *name, info *arg_info)
 
     DBUG_ENTER ("CreateTmpVar");
 
-    avis = TBmakeAvis (ILIBtmpVarName (name), TYmakeAUD (TYmakeSimpleType (T_unknown)));
+    avis = TBmakeAvis (TRAVtmpVarName (name), TYmakeAUD (TYmakeSimpleType (T_unknown)));
     INFO_VARDECS (arg_info) = TBmakeVardec (avis, INFO_VARDECS (arg_info));
 
     DBUG_RETURN (avis);

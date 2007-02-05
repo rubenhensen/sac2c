@@ -4,7 +4,6 @@
 
 #include "type_utils.h"
 #include "dbug.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "str_buffer.h"
 #include "memory.h"
@@ -18,6 +17,9 @@
 #include "create_wrappers.h"
 #include "ssi.h"
 #include "user_types.h"
+#include "globals.h"
+#include "traverse.h"
+#include "ctinfo.h"
 
 /** <!--********************************************************************-->
  *
@@ -80,7 +82,7 @@ TUcreateTmpVardecsFromRets (node *rets)
     DBUG_ENTER ("TUcreateTmpVardecsFromRets");
 
     while (rets != NULL) {
-        vardecs = TBmakeVardec (TBmakeAvis (ILIBtmpVar (), TYcopyType (RET_TYPE (rets))),
+        vardecs = TBmakeVardec (TBmakeAvis (TRAVtmpVar (), TYcopyType (RET_TYPE (rets))),
                                 vardecs);
         rets = RET_NEXT (rets);
     }

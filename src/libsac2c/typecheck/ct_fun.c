@@ -37,7 +37,6 @@
 #include "ct_fun.h"
 #include "dbug.h"
 #include "ctinfo.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "globals.h"

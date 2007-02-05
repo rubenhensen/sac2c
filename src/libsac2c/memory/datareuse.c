@@ -29,7 +29,6 @@
 #include "print.h"
 #include "DupTree.h"
 #include "LookUpTable.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "free.h"
@@ -344,7 +343,7 @@ EMDRcode (node *arg_node, info *arg_info)
             /*
              * Create a variable for new cexpr
              */
-            avis = TBmakeAvis (ILIBtmpVar (), TYeliminateAKV (AVIS_TYPE (ID_AVIS (id))));
+            avis = TBmakeAvis (TRAVtmpVar (), TYeliminateAKV (AVIS_TYPE (ID_AVIS (id))));
 
             FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
               = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));

@@ -88,7 +88,6 @@
 #include "DupTree.h"
 #include "resource.h"
 #include "convert.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 

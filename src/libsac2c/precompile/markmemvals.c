@@ -66,7 +66,6 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "LookUpTable.h"
@@ -75,6 +74,7 @@
 #include "free.h"
 #include "scheduling.h"
 #include "new_types.h"
+#include "dbug.h"
 
 #include <string.h>
 

@@ -8,9 +8,11 @@
 #include "namespaces.h"
 #include "new_types.h"
 #include "DupTree.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
+#include "ctinfo.h"
+#include "dbug.h"
+#include "globals.h"
 
 /*
  * INFO structure

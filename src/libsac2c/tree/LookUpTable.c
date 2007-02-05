@@ -131,7 +131,6 @@
 #include <string.h>
 #include <math.h>
 
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "free.h"

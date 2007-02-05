@@ -267,6 +267,34 @@ STRtok (char *first, char *sep)
 
 /*******************************************************************************
  *
+ * Description:
+ *
+ *  yields either the argument string if it is not NULL or an empty constant
+ *  string otherwise.
+ *
+ * This is helpful for instance when printing strings with the %s conversion
+ * specifier and the string to print may be NULL.
+ *
+ *******************************************************************************/
+
+char *
+STRonNull (char *alt, char *str)
+{
+    char *res;
+
+    DBUG_ENTER ("STRonNull");
+
+    if (str == NULL) {
+        res = alt;
+    } else {
+        res = str;
+    }
+
+    DBUG_RETURN (res);
+}
+
+/*******************************************************************************
+ *
  * Description: Convert long to string.
  *
  * Parameters: - number, number to convert

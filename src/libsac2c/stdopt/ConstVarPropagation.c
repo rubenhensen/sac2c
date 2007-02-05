@@ -6,7 +6,6 @@
 #include "tree_compound.h"
 #include "traverse.h"
 #include "dbug.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "free.h"
@@ -14,6 +13,7 @@
 #include "new_types.h"
 #include "constants.h"
 #include "new_types.h"
+#include "globals.h"
 
 #include "ConstVarPropagation.h"
 

@@ -122,7 +122,6 @@
 #include "free.h"
 #include "globals.h"
 #include "DupTree.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "new_types.h"

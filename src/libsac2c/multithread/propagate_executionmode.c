@@ -1,49 +1,5 @@
 /*
- * $Log$
- * Revision 1.15  2004/11/24 19:40:47  skt
- * SACDevCampDK 2k4
- *
- * Revision 1.14  2004/11/23 20:52:11  skt
- * big compiler brushing during SACDevCampDK 2k4
- *
- * Revision 1.13  2004/11/23 14:38:13  skt
- * SACDevCampDK 2k4
- *
- * Revision 1.12  2004/08/27 15:42:03  skt
- * fixed bug of with-loops wong executionmode assignment
- *
- * Revision 1.11  2004/08/26 17:34:24  skt
- * case MUTH_MULTI_SPECIALIZED added to all corresponding switchs
- *
- * Revision 1.10  2004/08/19 09:07:33  skt
- * now a N_return gets the same executionmode as its funcion
- *
- * Revision 1.9  2004/08/18 13:24:31  skt
- * switch to mtexecmode_t done
- *
- * Revision 1.8  2004/08/06 17:20:24  skt
- * some adaptions for creating the dataflowgraph
- *
- * Revision 1.7  2004/08/06 12:49:43  skt
- * fixed a bug in UpdateCondExecmode
- *
- * Revision 1.6  2004/08/05 17:42:19  skt
- * moved handling of the allocation around the withloop from create_cells
- *
- * Revision 1.5  2004/08/05 13:50:18  skt
- * welcome to the new INFO structure
- *
- * Revision 1.4  2004/07/29 13:25:59  skt
- * fixed the "doubled withop"-bug
- *
- * Revision 1.3  2004/07/23 10:05:46  skt
- * complete redesign
- *
- * Revision 1.2  2004/07/15 21:45:37  skt
- * some debug-information added (and fixed a compiler warning)
- *
- * Revision 1.1  2004/07/06 12:31:30  skt
- * Initial revision
+ * $Id$
  *
  */
 
@@ -73,10 +29,10 @@
 #include "traverse.h"
 #include "propagate_executionmode.h"
 #include "multithread_lib.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "print.h"
+#include "dbug.h"
 
 /*
  * INFO structure

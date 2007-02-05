@@ -6,7 +6,6 @@
 
 #include "deserialize.h"
 #include "serialize.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "tree_basic.h"
@@ -24,6 +23,8 @@
 #include "traverse.h"
 #include "ctinfo.h"
 #include "free.h"
+#include "dbug.h"
+#include "globals.h"
 
 #include <string.h>
 

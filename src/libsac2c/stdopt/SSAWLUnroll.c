@@ -8,7 +8,6 @@
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "node_basic.h"
@@ -20,6 +19,7 @@
 #include "constants.h"
 #include "new_types.h"
 #include "shape.h"
+#include "math_utils.h"
 
 #include "optimize.h"
 #include "DupTree.h"
@@ -535,7 +535,7 @@ CountElements (node *genn)
             m = tmp % s[i];
             tmp = (w != NULL) ? (d * w[i]) : d;
             if (m) {
-                tmp = tmp + (w ? (MIN (m, w[i])) : 1);
+                tmp = tmp + (w ? (MATHmin (m, w[i])) : 1);
             }
         }
 
@@ -746,13 +746,13 @@ FinalizeGenarray (node *bodycode, node *withop, node *lhs, info *arg_info)
     length = SHgetUnrLen (TYgetShape (type));
 
     shp = SHshape2Array (TYgetShape (type));
-    shpavis = TBmakeAvis (ILIBtmpVar (),
+    shpavis = TBmakeAvis (TRAVtmpVar (),
                           TYmakeAKS (TYmakeSimpleType (T_int),
                                      SHcreateShape (1, SHgetDim (TYgetShape (type)))));
     vardecs = TBmakeVardec (shpavis, vardecs);
 
     vect = TCcreateZeroVector (length, btype);
-    vectavis = TBmakeAvis (ILIBtmpVar (), TYmakeAKS (TYmakeSimpleType (btype),
+    vectavis = TBmakeAvis (TRAVtmpVar (), TYmakeAKS (TYmakeSimpleType (btype),
                                                      SHcreateShape (1, length)));
     vardecs = TBmakeVardec (vectavis, vardecs);
 

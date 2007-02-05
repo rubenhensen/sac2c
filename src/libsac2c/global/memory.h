@@ -27,15 +27,4 @@ extern void *MEMmallocAt (int size, char *file, int line);
 extern void *MEMmalloc (int size);
 #endif /* SHOW_MALLOC */
 
-/*********************************
- * macro definitions
- *********************************/
-
-/* format string for pointers */
-#ifdef NEED_PTR_PREFIX
-#define F_PTR "0x%p"
-#else
-#define F_PTR "%p"
-#endif
-
 #endif /* _SAC_MEMORY_H_ */

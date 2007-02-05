@@ -5,7 +5,6 @@
 #include "dispatchfuncalls.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "dbug.h"
@@ -17,6 +16,7 @@
 #include "create_wrapper_code.h"
 #include "namespaces.h"
 #include "ct_fun.h"
+#include "globals.h"
 
 /*******************************************************************************
  *

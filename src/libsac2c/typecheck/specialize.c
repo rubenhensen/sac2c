@@ -4,7 +4,6 @@
 
 #include "specialize.h"
 #include "dbug.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "free.h"
@@ -21,6 +20,7 @@
 #include "ctinfo.h"
 #include "namespaces.h"
 #include "map_call_graph.h"
+#include "globals.h"
 
 /**
  *

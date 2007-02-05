@@ -1,10 +1,5 @@
 /*
- * $Log$
- * Revision 1.2  2005/09/04 12:47:34  ktr
- * traversal might work better with correct trav_tab
- *
- * Revision 1.1  2005/09/04 12:10:48  ktr
- * Initial revision
+ * $Id$
  *
  */
 
@@ -13,8 +8,8 @@
 #include "traverse.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
-#include "internal_lib.h"
 #include "str.h"
+#include "dbug.h"
 #include "memory.h"
 
 typedef node *(*trav_p) (node *, info *);

@@ -1,56 +1,5 @@
 /*
- * $Log$
- * Revision 1.17  2004/11/24 19:40:47  skt
- * SACDevCampDK 2k4
- *
- * Revision 1.16  2004/11/23 20:52:11  skt
- * big compiler brushing during SACDevCampDK 2k4
- *
- * Revision 1.15  2004/11/23 14:38:13  skt
- * SACDevCampDK 2k4
- *
- * Revision 1.14  2004/11/22 13:09:21  skt
- * modul -> module in comments
- *
- * Revision 1.13  2004/11/22 12:49:31  skt
- * code brushing in SACDevCampDK 2005
- *
- * Revision 1.12  2004/08/27 09:02:01  skt
- * processing MUTH_MULTI_SPECIALIZED assignments enabled
- *
- * Revision 1.11  2004/08/26 17:23:56  skt
- * changed inclusion of multithread.h into multithread_lib.h
- *
- * Revision 1.10  2004/08/19 15:01:03  skt
- * rearranging algorithm improved
- *
- * Revision 1.9  2004/08/17 10:29:06  skt
- * changed two return into DBUG_RETURN
- *
- * Revision 1.8  2004/08/13 16:16:39  skt
- * some comments added
- *
- * Revision 1.7  2004/08/12 12:52:19  skt
- * some debugging...
- *
- * Revision 1.6  2004/08/11 09:31:54  skt
- * ASMRAPrintCluster bug fixed
- *
- * Revision 1.5  2004/08/11 08:38:44  skt
- * full redesigned, still under construction but looks well
- *
- * Revision 1.4  2004/08/05 10:52:22  skt
- * initialization of border & new_borderelem added
- *
- * Revision 1.3  2004/07/29 00:41:50  skt
- * build compilable intermediate version
- * work in progress
- *
- * Revision 1.2  2004/04/30 14:10:05  skt
- * some debugging
- *
- * Revision 1.1  2004/04/27 09:59:04  skt
- * Initial revision
+ * $Id$
  *
  */
 
@@ -81,9 +30,10 @@
 #include "traverse.h"
 #include "assignments_rearrange.h"
 #include "multithread_lib.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
+#include "dbug.h"
+#include "globals.h"
 
 /*
  * some local structures

@@ -28,7 +28,6 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "node_basic.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "dbug.h"
@@ -40,6 +39,7 @@
 #include "math.h"
 #include "ctinfo.h"
 #include "SSAWLUnroll.h"
+#include "globals.h"
 
 /*
  * INFO structure and macros
@@ -1026,7 +1026,7 @@ SSALURUnrollLoopBody (node *fundef, loopc_t unrolling)
     }
 
     /* set condition of conditional to false -> no more recursion */
-    predavis = TBmakeAvis (ILIBtmpVar (), TYmakeAKV (TYmakeSimpleType (T_bool),
+    predavis = TBmakeAvis (TRAVtmpVar (), TYmakeAKV (TYmakeSimpleType (T_bool),
                                                      COmakeFalse (SHmakeShape (0))));
 
     FUNDEF_VARDEC (fundef) = TBmakeVardec (predavis, FUNDEF_VARDEC (fundef));

@@ -68,7 +68,6 @@
 #include "traverse.h"
 #include "new_types.h"
 #include "dbug.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "optimize.h"
@@ -451,7 +450,7 @@ UESDprf (node *arg_node, info *arg_info)
                 tmp = TBmakePrf (op, tmp);
 
                 avis
-                  = TBmakeAvis (ILIBtmpVar (),
+                  = TBmakeAvis (TRAVtmpVar (),
                                 TYcopyType (IDS_NTYPE (LET_IDS (INFO_LET (arg_info)))));
                 FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
                   = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));

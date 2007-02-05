@@ -9,7 +9,6 @@
  *
  */
 #include "movesharedmeminstr.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 
@@ -19,7 +18,6 @@
 #include "traverse.h"
 #include "dbug.h"
 #include "print.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "DupTree.h"
@@ -497,7 +495,7 @@ MakeMemArg (node *memavis, node *extfundef, node *extap, node *spmdfun, lut_t *l
 
     DBUG_ENTER ("MakeMemArg");
 
-    avis = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (memavis)),
+    avis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (memavis)),
                        TYcopyType (AVIS_TYPE (memavis)));
 
     FUNDEF_VARDEC (extfundef) = TBmakeVardec (avis, FUNDEF_VARDEC (extfundef));

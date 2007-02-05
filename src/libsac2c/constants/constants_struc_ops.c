@@ -50,7 +50,6 @@
  */
 
 #include <stdlib.h>
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "dbug.h"

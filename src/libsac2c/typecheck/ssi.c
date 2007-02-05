@@ -1,51 +1,17 @@
 /*
  *
- * $Log$
- * Revision 1.11  2005/07/26 16:04:22  sbs
- * added SSIfreeAllTvars
- *
- * Revision 1.10  2005/07/25 17:14:25  sbs
- * changed to private heap in order to be able to collectively free tvars
- *
- * Revision 1.9  2005/01/11 14:20:44  cg
- * Converted output generation from Error.h to ctinfo.c
- *
- * Revision 1.8  2004/11/23 15:23:18  sbs
- * SacDevCamp04 done
- *
- * Revision 1.7  2004/08/08 16:05:08  sah
- * fixed some includes.
- *
- * Revision 1.6  2004/08/08 13:29:44  sbs
- * addded some DBUG_PRINTs
- *
- * Revision 1.5  2003/03/28 17:19:30  sbs
- * added to group ntc.
- *
- * Revision 1.4  2002/08/05 17:00:38  sbs
- * first alpha version of the new type checker !!
- *
- * Revision 1.3  2002/05/31 14:51:54  sbs
- * intermediate version to ensure compilable overall state.
- *
- * Revision 1.2  2002/03/12 16:47:40  sbs
- * ; after DBUG_VOID_REturn added.
- *
- * Revision 1.1  2002/03/12 15:16:27  sbs
- * Initial revision
- *
- *
+ * $Id$
  *
  */
 
 #include "ssi.h"
 #include "dbug.h"
 #include "new_types.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "ctinfo.h"
 #include "private_heap.h"
+#include "globals.h"
 
 /**
  *

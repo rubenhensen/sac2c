@@ -3,7 +3,6 @@
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
-#include "internal_lib.h"
 #include "dbug.h"
 #include "free.h"
 #include "DupTree.h"
@@ -12,8 +11,35 @@
 #include "scheduling.h"
 #include "wlpragma_funs.h"
 #include "ctinfo.h"
+#include "globals.h"
+#include "math_utils.h"
+#include "memory.h"
 
 #include <string.h>
+
+/*
+ * Ugly macros that used to be in internal_lib.h and are only used here and
+ * in DupTree and wltransform.
+ */
+
+#define MALLOC_VECT(vect, dims, type)                                                    \
+    if (vect == NULL) {                                                                  \
+        (vect) = (type *)MEMmalloc ((dims) * sizeof (type));                             \
+    }
+
+/* caution: 'val' should occur in the macro implementation only once! */
+#define MALLOC_INIT_VECT(vect, dims, type, val)                                          \
+    MALLOC_VECT (vect, dims, type);                                                      \
+    INIT_VECT (vect, dims, type, val)
+
+/* caution: 'val' should occur in the macro implementation only once! */
+#define INIT_VECT(vect, dims, type, val)                                                 \
+    {                                                                                    \
+        int d;                                                                           \
+        for (d = 0; d < (dims); d++) {                                                   \
+            (vect)[d] = val;                                                             \
+        }                                                                                \
+    }
 
 /******************************************************************************
  ******************************************************************************
@@ -249,11 +275,11 @@ IntersectStridesArray (node *strides, node *aelems1, node *aelems2, int line)
         }
 
         /* compute outline of intersection in current dim */
-        bound1 = MAX (WLSTRIDE_BOUND1 (strides), NUM_VAL (EXPRS_EXPR (aelems1)));
-        bound2 = MIN (WLSTRIDE_BOUND2 (strides), NUM_VAL (EXPRS_EXPR (aelems2)));
+        bound1 = MATHmax (WLSTRIDE_BOUND1 (strides), NUM_VAL (EXPRS_EXPR (aelems1)));
+        bound2 = MATHmin (WLSTRIDE_BOUND2 (strides), NUM_VAL (EXPRS_EXPR (aelems2)));
 
         width = bound2 - bound1;
-        step = MIN (WLSTRIDE_STEP (strides), width);
+        step = MATHmin (WLSTRIDE_STEP (strides), width);
 
         /* compute grids */
         if (width > 0) {
@@ -288,7 +314,7 @@ IntersectStridesArray (node *strides, node *aelems1, node *aelems2, int line)
 
                 nextdim = code = NULL;
                 if (grid1_b1 < width) {
-                    grid1_b2 = MIN (grid1_b2, width);
+                    grid1_b2 = MATHmin (grid1_b2, width);
 
                     if (WLGRID_NEXTDIM (grids) != NULL) {
                         /* compute intersection of next dim */
@@ -314,7 +340,7 @@ IntersectStridesArray (node *strides, node *aelems1, node *aelems2, int line)
                 }
                 if (grid2_b1 < width) {
                     DBUG_ASSERT ((grid1_b1 < width), "wrong grid bounds");
-                    grid2_b2 = MIN (grid2_b2, width);
+                    grid2_b2 = MATHmin (grid2_b2, width);
 
                     if (!empty) {
                         new_grids

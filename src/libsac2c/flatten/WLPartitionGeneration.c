@@ -64,7 +64,6 @@
 #include "type_utils.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "shape.h"
@@ -171,7 +170,7 @@ CreateArrayOfShapeSels (node *array, int dim, info *arg_info)
     for (i = dim - 1; i >= 0; i--) {
         node *sel_avis;
 
-        sel_avis = TBmakeAvis (ILIBtmpVarName (ID_NAME (array)),
+        sel_avis = TBmakeAvis (TRAVtmpVarName (ID_NAME (array)),
                                TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
 
         FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
@@ -226,7 +225,7 @@ NewIds (node *nd, node *fundef)
                  "ID is empty or not N_id/N_num");
 
     if (NODE_TYPE (nd) == N_id) {
-        nvarname = ILIBtmpVarName (ID_NAME (nd));
+        nvarname = TRAVtmpVarName (ID_NAME (nd));
         _ids
           = TBmakeIds (TBmakeAvis (nvarname, TYeliminateAKV (AVIS_TYPE (ID_AVIS (nd)))),
                        NULL);
@@ -234,7 +233,7 @@ NewIds (node *nd, node *fundef)
         vardec = TBmakeVardec (IDS_AVIS (_ids), NULL);
 
     } else {
-        nvarname = ILIBtmpVar ();
+        nvarname = TRAVtmpVar ();
         _ids = TBmakeIds (TBmakeAvis (nvarname, TYmakeAKS (TYmakeSimpleType (T_int),
                                                            SHmakeShape (0))),
                           NULL);
@@ -1494,7 +1493,7 @@ WLPGwith (node *arg_node, info *arg_info)
                  * array  = [:BASETYPE]
                  * result = reshape( newshp, array);
                  */
-                defshpavis = TBmakeAvis (ILIBtmpVar (),
+                defshpavis = TBmakeAvis (TRAVtmpVar (),
                                          TYmakeAKV (TYmakeSimpleType (T_int),
                                                     COmakeConstantFromShape (exprshape)));
                 FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
@@ -1520,7 +1519,7 @@ WLPGwith (node *arg_node, info *arg_info)
 
                 rhs_type = NTCnewTypeCheck_Expr (rhs);
 
-                defshpavis = TBmakeAvis (ILIBtmpVar (), TYgetProductMember (rhs_type, 0));
+                defshpavis = TBmakeAvis (TRAVtmpVar (), TYgetProductMember (rhs_type, 0));
 
                 rhs_type = TYfreeTypeConstructor (rhs_type);
 
@@ -1536,7 +1535,7 @@ WLPGwith (node *arg_node, info *arg_info)
             /*
              * shp' = shp;
              */
-            shpavis = TBmakeAvis (ILIBtmpVar (), TYcopyType (shptype));
+            shpavis = TBmakeAvis (TRAVtmpVar (), TYcopyType (shptype));
 
             FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
               = TBmakeVardec (shpavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
@@ -1563,7 +1562,7 @@ WLPGwith (node *arg_node, info *arg_info)
              */
             newshptype = NTCnewTypeCheck_Expr (rhs);
 
-            newshpavis = TBmakeAvis (ILIBtmpVar (), TYgetProductMember (newshptype, 0));
+            newshpavis = TBmakeAvis (TRAVtmpVar (), TYgetProductMember (newshptype, 0));
             newshptype = TYfreeTypeConstructor (newshptype);
 
             FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
@@ -1580,7 +1579,7 @@ WLPGwith (node *arg_node, info *arg_info)
             scalar = TYgetScalar (IDS_NTYPE (LET_IDS (INFO_LET (arg_info))));
             rhs = TCmakeVector (TYmakeAKS (TYcopyType (scalar), SHmakeShape (0)), NULL);
 
-            arrayavis = TBmakeAvis (ILIBtmpVar (), NTCnewTypeCheck_Expr (rhs));
+            arrayavis = TBmakeAvis (TRAVtmpVar (), NTCnewTypeCheck_Expr (rhs));
 
             FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
               = TBmakeVardec (arrayavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));

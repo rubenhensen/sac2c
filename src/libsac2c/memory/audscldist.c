@@ -38,7 +38,6 @@
 
 #include "tree_basic.h"
 #include "tree_compound.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "free.h"
@@ -48,6 +47,8 @@
 #include "new_types.h"
 #include "shape.h"
 #include "new_typecheck.h"
+#include "dbug.h"
+#include "globals.h"
 
 /** <!--********************************************************************-->
  *
@@ -224,7 +225,7 @@ LiftId (node *id, ntype *new_type, info *arg_info)
 
     DBUG_ENTER ("LiftId");
 
-    new_name = ILIBtmpVarName (ID_NAME (id));
+    new_name = TRAVtmpVarName (ID_NAME (id));
 
     if (new_type == NULL) {
         new_type = ID_NTYPE (id);
@@ -293,7 +294,7 @@ LiftIds (node *ids_arg, ntype *new_type, info *arg_info)
     fundef = INFO_FUNDEF (arg_info);
     assign = INFO_ASSIGN (arg_info);
 
-    new_name = ILIBtmpVarName (IDS_NAME (ids_arg));
+    new_name = TRAVtmpVarName (IDS_NAME (ids_arg));
 
     /*
      * Insert vardec for new var
@@ -667,7 +668,7 @@ ASDcode (node *arg_node, info *arg_info)
                 node *avis, *ass;
                 node *cexavis = ID_AVIS (EXPRS_EXPR (cexprs));
 
-                avis = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (cexavis)),
+                avis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (cexavis)),
                                    TYcopyType (restype));
 
                 FUNDEF_VARDEC (INFO_FUNDEF (arg_info))

@@ -32,11 +32,11 @@
 #include "dbug.h"
 #include "traverse.h"
 #include "free.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "DupTree.h"
 #include "LookUpTable.h"
+#include "globals.h"
 
 #ifndef BUG110_FIXED
 #include "new_types.h"
@@ -194,7 +194,7 @@ PINLarg (node *arg_node, info *arg_info)
         /*
          * we simply insert a renaming here
          */
-        avis = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (ARG_AVIS (arg_node))),
+        avis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (ARG_AVIS (arg_node))),
                            TYcopyType (AVIS_TYPE (ARG_AVIS (arg_node))));
 
         INFO_ASSIGNS (arg_info)
@@ -349,7 +349,7 @@ PINLavis (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("PINLavis");
 
-    name = ILIBtmpVarName (AVIS_NAME (arg_node));
+    name = TRAVtmpVarName (AVIS_NAME (arg_node));
 
     DBUG_PRINT ("PINL", ("renaming %s to %s", AVIS_NAME (arg_node), name));
 

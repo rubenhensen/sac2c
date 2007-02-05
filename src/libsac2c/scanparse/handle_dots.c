@@ -8,7 +8,6 @@
 #include "free.h"
 #include "ctinfo.h"
 #include "DupTree.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "tree_basic.h"
@@ -432,9 +431,9 @@ MakeTmpId (char *name)
     DBUG_ENTER ("MakeTmpId");
 
 #ifdef HD_USE_EXPLANATORY_NAMES
-    result = TBmakeSpid (NULL, ILIBtmpVarName (name));
+    result = TBmakeSpid (NULL, TRAVtmpVarName (name));
 #else
-    result = TBmakeSpid (NULL, ILIBtmpVar ());
+    result = TBmakeSpid (NULL, TRAVtmpVar ());
 #endif
 
     DBUG_RETURN (result);
@@ -909,7 +908,7 @@ BuildDefaultWithloop (node *array, node *shape)
 
     result
       = TBmakeWith (TBmakePart (NULL,
-                                TBmakeWithid (TBmakeSpids (ILIBtmpVar (), NULL), NULL),
+                                TBmakeWithid (TBmakeSpids (TRAVtmpVar (), NULL), NULL),
                                 TBmakeGenerator (F_le, F_le, TBmakeDot (1), TBmakeDot (1),
                                                  NULL, NULL)),
                     TBmakeCode (MAKE_EMPTY_BLOCK (),

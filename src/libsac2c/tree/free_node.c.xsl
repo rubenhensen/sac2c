@@ -85,10 +85,10 @@ version="1.0">
 #include "free_info.h"
 #include "tree_basic.h"
 #include "traverse.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "dbug.h"
+#include "globals.h"
 
 #define FREETRAV( node, info) (node != NULL) ? TRAVdo( node, info) : node
 #define FREECOND( node, info)                                    \

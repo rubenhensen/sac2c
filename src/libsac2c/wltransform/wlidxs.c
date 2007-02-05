@@ -9,7 +9,6 @@
 #include "tree_basic.h"
 #include "dbug.h"
 #include "tree_compound.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "traverse.h"
@@ -239,7 +238,7 @@ WLIDXwithid (node *arg_node, info *arg_info)
                 if (avis == NULL) {
                     node *vardec;
 
-                    avis = TBmakeAvis (ILIBtmpVarName (IDS_NAME (ids)),
+                    avis = TBmakeAvis (TRAVtmpVarName (IDS_NAME (ids)),
                                        TYmakeAKS (TYmakeSimpleType (T_int),
                                                   SHmakeShape (0)));
 

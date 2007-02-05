@@ -6,7 +6,6 @@
 #include "serialize_info.h"
 #include "dbug.h"
 #include "build.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "symboltable.h"
@@ -22,6 +21,7 @@
 #include "shape.h"
 #include "serialize_symboltable.h"
 #include "serialize_filenames.h"
+#include "dbug.h"
 
 #include <string.h>
 

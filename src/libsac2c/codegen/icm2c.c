@@ -45,7 +45,6 @@
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
-#include "internal_lib.h"
 #include "dbug.h"
 #include "globals.h"
 #include "convert.h"

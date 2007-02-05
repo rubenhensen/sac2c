@@ -7,9 +7,9 @@
 
 #include "ct_basic.h"
 #include "dbug.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
+#include "ctinfo.h"
 
 #include "constants.h"
 #include "new_types.h"

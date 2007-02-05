@@ -1,27 +1,12 @@
 /*
  *
- * $Log$
- * Revision 1.4  2005/09/01 12:20:15  sah
- * added AFBap: when adding a functions body, the bodies of all LAC funs
- *              are added now as well
- *
- * Revision 1.3  2005/08/09 12:20:34  sah
- * fixed a bug in handling functions with zero arguments
- *
- * Revision 1.2  2005/08/08 23:54:03  sah
- * FUNDEF_RETURN is now set correctly and
- * the code is a bit more commented now
- *
- * Revision 1.1  2005/07/22 15:09:38  sah
- * Initial revision
- *
+ * $Id$
  *
  */
 
 #include "add_function_body.h"
 #include "deserialize.h"
 #include "serialize.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "tree_basic.h"
@@ -29,6 +14,8 @@
 #include "modulemanager.h"
 #include "namespaces.h"
 #include "traverse.h"
+#include "dbug.h"
+#include "ctinfo.h"
 
 #include <string.h>
 

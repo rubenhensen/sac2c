@@ -11,10 +11,10 @@
 
 #include "serialize_filenames.h"
 #include "dbug.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "filemgr.h"
+#include "globals.h"
 
 struct FILENAMEDB {
     const char *name;

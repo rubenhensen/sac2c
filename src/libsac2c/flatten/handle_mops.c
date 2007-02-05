@@ -9,13 +9,13 @@
 #include "node_basic.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "ctinfo.h"
 #include "dbug.h"
 #include "free.h"
 #include "LookUpTable.h"
+#include "globals.h"
 
 static lut_t *prec_lut;
 

@@ -10,7 +10,6 @@
 
 #include "types.h"
 #include "free.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "print.h"

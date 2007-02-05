@@ -41,7 +41,6 @@
 
 #include "constants.h"
 #include "constants_internal.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include <stdio.h>

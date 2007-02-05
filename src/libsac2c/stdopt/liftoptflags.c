@@ -8,10 +8,10 @@
 #include "dbug.h"
 #include "traverse.h"
 #include "free.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "map_call_graph.h"
+#include "ctinfo.h"
 
 #include "liftoptflags.h"
 

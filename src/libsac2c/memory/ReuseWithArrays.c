@@ -51,7 +51,6 @@
 #include "traverse.h"
 #include "DataFlowMask.h"
 #include "free.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "new_types.h"

@@ -19,11 +19,9 @@
 #include <stdlib.h>
 
 #include "cv2str.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "dbug.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 

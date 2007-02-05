@@ -55,7 +55,6 @@
 #include "scnprs.h"
 #include "globals.h"
 #include "ctinfo.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 

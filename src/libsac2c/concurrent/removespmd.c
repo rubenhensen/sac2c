@@ -17,13 +17,13 @@
 #include "tree_compound.h"
 #include "traverse.h"
 #include "dbug.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "free.h"
 #include "shape.h"
 #include "new_types.h"
 #include "DataFlowMask.h"
+#include "globals.h"
 
 /*
  * INFO structure
@@ -228,7 +228,7 @@ RMSPMDspmd (node *arg_node, info *arg_info)
 
         arg_node = letap;
     } else {
-        predavis = TBmakeAvis (ILIBtmpVar (),
+        predavis = TBmakeAvis (TRAVtmpVar (),
                                TYmakeAKS (TYmakeSimpleType (T_bool), SHmakeShape (0)));
         FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
           = TBmakeVardec (predavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));

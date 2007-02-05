@@ -9,10 +9,10 @@
 
 #include "globals.h"
 #include "build.h"
-#include "internal_lib.h"
 #include "dbug.h"
 #include "usage.h"
 #include "phase.h"
+#include "str.h"
 
 void
 USGprintUsage ()
@@ -604,7 +604,7 @@ USGprintUsage ()
             "        f: fetch on write\n"
             "        v: write validate\n"
             "        a: write around\n",
-            STR_OR_EMPTY (env),
+            STRonNull ("", env),
             ((NULL != env) && (env[strlen (env) - 1] != '/')) ? "/" : "",
             global.version_id);
 

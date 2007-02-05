@@ -1,16 +1,6 @@
 /*
  *
- * $Log$
- * Revision 1.3  2005/10/03 14:38:33  sbs
- * added INSTCwith
- *
- * Revision 1.2  2005/08/19 17:26:54  sbs
- * added avis and block
- *
- * Revision 1.1  2005/08/18 07:01:54  sbs
- * Initial revision
- *
- *
+ * $Id$
  *
  */
 
@@ -38,7 +28,6 @@
 #include "tree_compound.h"
 #include "node_basic.h"
 #include "new_types.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "traverse.h"
@@ -46,6 +35,7 @@
 #include "free.h"
 #include "dbug.h"
 #include "DupTree.h"
+#include "ctinfo.h"
 
 #include "insert_type_conv.h"
 

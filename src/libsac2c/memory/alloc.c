@@ -25,7 +25,6 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "DupTree.h"
@@ -35,6 +34,7 @@
 #include "free.h"
 #include "shape.h"
 #include "string.h"
+#include "dbug.h"
 
 /**
  * Controls wheter AKS-Information should be used when possible
@@ -791,7 +791,7 @@ EMALcode (node *arg_node, info *arg_info)
                  * Create a new value variable
                  * Ex: a_val
                  */
-                valavis = TBmakeAvis (ILIBtmpVarName ("val"), TYcopyType (crestype));
+                valavis = TBmakeAvis (TRAVtmpVarName ("val"), TYcopyType (crestype));
 
                 FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
                   = TBmakeVardec (valavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
@@ -840,7 +840,7 @@ EMALcode (node *arg_node, info *arg_info)
                  * Create a new memory variable
                  * Ex: a_mem
                  */
-                memavis = TBmakeAvis (ILIBtmpVarName ("mem"), TYeliminateAKV (crestype));
+                memavis = TBmakeAvis (TRAVtmpVarName ("mem"), TYeliminateAKV (crestype));
 
                 FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
                   = TBmakeVardec (memavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
@@ -849,7 +849,7 @@ EMALcode (node *arg_node, info *arg_info)
                  * Create a new value variable
                  * Ex: a_val
                  */
-                valavis = TBmakeAvis (ILIBtmpVarName ("val"), TYcopyType (crestype));
+                valavis = TBmakeAvis (TRAVtmpVarName ("val"), TYcopyType (crestype));
 
                 FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
                   = TBmakeVardec (valavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
@@ -1088,7 +1088,7 @@ EMALlet (node *arg_node, info *arg_info)
              * a = fill( b + c, a');
              */
             avis
-              = TBmakeAvis (ILIBtmpVarName (IDS_NAME (LET_IDS (arg_node))),
+              = TBmakeAvis (TRAVtmpVarName (IDS_NAME (LET_IDS (arg_node))),
                             TYeliminateAKV (AVIS_TYPE (IDS_AVIS (LET_IDS (arg_node)))));
 
             FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
@@ -1639,7 +1639,7 @@ EMALgenarray (node *arg_node, info *arg_info)
         /*
          * Create new identifier for new memory
          */
-        wlavis = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (als->avis)),
+        wlavis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (als->avis)),
                              TYeliminateAKV (AVIS_TYPE (als->avis)));
 
         FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
@@ -1733,7 +1733,7 @@ EMALmodarray (node *arg_node, info *arg_info)
         /*
          * Create new identifier for new memory
          */
-        wlavis = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (als->avis)),
+        wlavis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (als->avis)),
                              TYeliminateAKV (AVIS_TYPE (als->avis)));
 
         FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
@@ -1812,7 +1812,7 @@ EMALbreak (node *arg_node, info *arg_info)
         /*
          * Create new identifier for new memory
          */
-        wlavis = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (als->avis)),
+        wlavis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (als->avis)),
                              TYeliminateAKV (AVIS_TYPE (als->avis)));
 
         FUNDEF_VARDEC (INFO_FUNDEF (arg_info))

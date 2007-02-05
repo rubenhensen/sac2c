@@ -1,31 +1,15 @@
 /*
  *
- * $Log$
- * Revision 3.113  2005/01/11 14:06:14  cg
- * Converted output from Error.h to ctinfo.c
- *
- * Revision 3.112  2004/11/24 19:41:24  sah
- * COMPILES!
- *
- * Revision 3.111  2004/11/23 10:30:03  sah
- * SaC DevCamp DK
- *
- * Revision 3.110  2004/11/23 10:05:24  sah
- * SaC DevCamp 04
- *
- * Revision 3.109  2004/11/07 15:50:02  sah
- * added CreateNums and CreateIntegerArray
- *
- * [...]
+ * $Id$
  *
  */
 
 #include "tree_basic.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "ctinfo.h"
 #include "free.h"
+#include "dbug.h"
 
 /*--------------------------------------------------------------------------*/
 /*  Make-functions for non-node structures                                  */

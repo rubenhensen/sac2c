@@ -4,19 +4,21 @@
  *
  */
 
+#include <string.h>
+
 #include "traverse.h"
 #include "traverse_tables.h"
 #include "traverse_helper.h"
 #include "globals.h"
 #include "free.h"
 #include "DupTree.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "dbug.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "phase.h"
+#include "math_utils.h"
 
 struct TRAVSTACK_T {
     struct TRAVSTACK_T *next;
@@ -262,4 +264,73 @@ TRAVsetPostFun (trav_t traversal, travfun_p postfun)
     posttable[traversal] = postfun;
 
     DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   char *TRAVtmpVar( void)
+ *
+ * Description:
+ *   Generates string to be used as artificial variable.
+ *   The variable name is different in each call of TRAVtmpVar().
+ *   The string has the form "__tmp_" ++ traversal ++ consecutive number.
+ *
+ ******************************************************************************/
+
+char *
+TRAVtmpVar (void)
+{
+    static int counter = 0;
+    const char *prefix;
+    char *result;
+
+    DBUG_ENTER ("TRAVtmpVar");
+
+    prefix = TRAVgetName ();
+    result = (char *)MEMmalloc ((strlen (prefix) + MATHnumDigits (counter) + 3)
+                                * sizeof (char));
+    sprintf (result, "_%s_%d", prefix, counter);
+    counter++;
+
+    DBUG_RETURN (result);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   char *TRAVtmpVarName( char* postfix)
+ *
+ * description:
+ *   creates a unique variable like TRAVtmpVar() and additionally appends
+ *   an individual string.
+ *
+ ******************************************************************************/
+
+char *
+TRAVtmpVarName (char *postfix)
+{
+    const char *tmp;
+    char *result, *prefix;
+
+    DBUG_ENTER ("TRAVtmpVarName");
+
+    /* avoid chains of same prefixes */
+    tmp = TRAVgetName ();
+
+    if ((strlen (postfix) > (strlen (tmp) + 1)) && (postfix[0] == '_')
+        && (strncmp ((postfix + 1), tmp, strlen (tmp)) == 0)) {
+        postfix = postfix + strlen (tmp) + 2;
+        while (postfix[0] != '_') {
+            postfix++;
+        }
+    }
+
+    prefix = TRAVtmpVar ();
+
+    result = STRcatn (3, prefix, "_", postfix);
+
+    MEMfree (prefix);
+
+    DBUG_RETURN (result);
 }

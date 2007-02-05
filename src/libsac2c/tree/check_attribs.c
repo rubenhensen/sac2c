@@ -7,7 +7,6 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "stringset.h"
-#include "internal_lib.h"
 #include "traverse.h"
 #include "LookUpTable.h"
 #include "DataFlowMask.h"

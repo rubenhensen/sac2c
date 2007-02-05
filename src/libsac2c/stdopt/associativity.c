@@ -8,7 +8,6 @@
 #include "new_typecheck.h"
 #include "traverse.h"
 #include "dbug.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "optimize.h"
@@ -464,7 +463,7 @@ CombineExprs2Prf (prf prf, node *expr1, node *expr2, info *arg_info)
     rhs = TCmakePrf2 (getPrf (prf, expr1, expr2), expr1, expr2);
 
     prod = NTCnewTypeCheck_Expr (rhs);
-    avis = TBmakeAvis (ILIBtmpVar (), TYcopyType (TYgetProductMember (prod, 0)));
+    avis = TBmakeAvis (TRAVtmpVar (), TYcopyType (TYgetProductMember (prod, 0)));
     prod = TYfreeType (prod);
 
     FUNDEF_VARDEC (INFO_FUNDEF (arg_info))

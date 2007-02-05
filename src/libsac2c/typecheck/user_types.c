@@ -7,13 +7,13 @@
 #include "dbug.h"
 #include "ctinfo.h"
 #include "free.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "namespaces.h"
 #include "new_types.h"
 #include "shape.h"
 #include "user_types.h"
+#include "globals.h"
 
 /*
  * This module "user_type" implements a repository for user defined types.

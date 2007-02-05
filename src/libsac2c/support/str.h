@@ -16,6 +16,7 @@ extern char *STRcatn (int n, ...);
 extern char *STRtok (char *str, char *tok);
 extern bool STReq (const char *first, const char *second);
 extern int STRlen (const char *str);
+extern char *STRonNull (char *alt, char *str);
 
 extern char *STRitoa (long number);
 
@@ -24,5 +25,16 @@ extern char *STRbytes2Hex (int len, unsigned char *array);
 
 extern char *STRreplaceSpecialCharacters (const char *name);
 extern char *STRstring2SafeCEncoding (const char *string);
+
+/*********************************
+ * macro definitions
+ *********************************/
+
+/* format string for pointers */
+#ifdef NEED_PTR_PREFIX
+#define F_PTR "0x%p"
+#else
+#define F_PTR "%p"
+#endif
 
 #endif /* _STR_H_ */

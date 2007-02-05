@@ -6,7 +6,6 @@
  */
 
 #include "resolvepragma.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "tree_basic.h"
@@ -16,6 +15,7 @@
 #include "free.h"
 #include "ctinfo.h"
 #include "dbug.h"
+#include "globals.h"
 
 /*
  * INFO structure

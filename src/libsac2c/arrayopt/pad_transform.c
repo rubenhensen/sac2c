@@ -365,7 +365,7 @@ AddDummyCode (node *wl)
     /* append new vardec-node */
     type = ID_TYPE (CODE_CEXPR (WITH_CODE (wl)));
     DBUG_ASSERT ((TYPES_NEXT (type) == NULL), "single type expected");
-    VARDEC_NEXT (vardec) = TBmakeVardec (ILIBtmpVar (), DUPdupAllTypes (type), NULL);
+    VARDEC_NEXT (vardec) = TBmakeVardec (TRAVtmpVar (), DUPdupAllTypes (type), NULL);
     vardec = VARDEC_NEXT (vardec);
 
     /* add dummy code */

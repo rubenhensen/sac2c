@@ -1,50 +1,5 @@
 /*
- * $Log$
- * Revision 1.14  2004/11/24 19:40:47  skt
- * SACDevCampDK 2k4
- *
- * Revision 1.13  2004/11/23 20:52:11  skt
- * big compiler brushing during SACDevCampDK 2k4
- *
- * Revision 1.12  2004/11/23 14:38:13  skt
- * SACDevCampDK 2k4
- *
- * Revision 1.11  2004/11/22 16:27:16  skt
- * code brushing in SACDevCampDK 2004
- *
- * Revision 1.10  2004/09/28 16:40:17  skt
- * added DATAFLOWNODE_USEDNODES support
- *
- * Revision 1.9  2004/08/18 13:33:46  skt
- * added a wonderful shortlink into UpdateDependencies
- * (thank you Clemens)
- *
- * Revision 1.8  2004/08/13 16:16:39  skt
- * some comments added
- *
- * Revision 1.7  2004/08/13 10:27:48  skt
- * comments, comments, comments...
- *
- * Revision 1.6  2004/08/12 12:39:28  skt
- * killed a bug in CDFGFirstIsWithinSecond
- * moved PrintDataflowgraph and PrintDataflownode to print
- *
- * Revision 1.5  2004/08/11 08:37:05  skt
- * output for a compiler stop by 'cdfg' added
- *
- * Revision 1.4  2004/08/09 03:47:34  skt
- * some very painful bugfixing
- * added support for dataflowgraphs within with-loops
- * (I hope someone'll use it in future)
- *
- * Revision 1.3  2004/08/06 17:24:38  skt
- * some adaptions made
- *
- * Revision 1.2  2004/08/05 13:50:18  skt
- * welcome to the new INFO structure
- *
- * Revision 1.1  2004/07/29 08:39:12  skt
- * Initial revision
+ * $Id$
  *
  */
 
@@ -75,9 +30,11 @@
 #include "traverse.h"
 #include "create_dataflowgraph.h"
 #include "print.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
+#include "dbug.h"
+#include "globals.h"
+
 #include <string.h>
 
 #define CDFG_DEBUG 0

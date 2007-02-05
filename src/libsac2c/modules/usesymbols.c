@@ -5,7 +5,6 @@
 #include "usesymbols.h"
 #include "traverse.h"
 #include "dbug.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "tree_basic.h"
@@ -16,6 +15,7 @@
 #include "symboltable.h"
 #include "ctinfo.h"
 #include "namespaces.h"
+#include "globals.h"
 
 /*
  * INFO structure

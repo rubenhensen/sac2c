@@ -32,9 +32,10 @@
 #include "tree_compound.h"
 #include "traverse.h"
 #include "multithread_lib.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
+#include "dbug.h"
+#include "globals.h"
 
 /*
  * INFO structure

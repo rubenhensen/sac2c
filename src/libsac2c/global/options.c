@@ -26,7 +26,6 @@
 #include "usage.h"
 #include "filemgr.h"
 #include "globals.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "ctinfo.h"
@@ -160,8 +159,8 @@ CheckOptionConsistency ()
 #undef ARGS_ERROR
 #define ARGS_ERROR(msg)                                                                  \
     {                                                                                    \
-        CTIerror ("%s: %s %s %s", msg, ARGS_argv[0], STR_OR_EMPTY (OPT),                 \
-                  STR_OR_EMPTY (ARG));                                                   \
+        CTIerror ("%s: %s %s %s", msg, ARGS_argv[0], STRonNull ("", OPT),                \
+                  STRonNull ("", ARG));                                                  \
     }
 
 void

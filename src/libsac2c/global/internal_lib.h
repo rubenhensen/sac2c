@@ -22,17 +22,12 @@
  *
  *********************************/
 
-extern char *ILIBtmpVar (void);
-extern char *ILIBtmpVarName (char *postfix);
+extern char *TRAVtmpVar (void);
+extern char *TRAVtmpVarName (char *postfix);
 
 /*********************************
  * macro definitions
  *********************************/
-
-/* handling of strings */
-#define STR_OR_NULL(str, null_str) (((str) != NULL) ? (str) : (null_str))
-#define STR_OR_EMPTY(str) STR_OR_NULL ((str), "")
-#define STR_OR_UNKNOWN(str) STR_OR_NULL ((str), "?")
 
 /* min, max */
 #define MAX(a, b) ((a < b) ? b : a)

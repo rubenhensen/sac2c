@@ -15,7 +15,6 @@
 #include "tree_compound.h"
 #include "traverse.h"
 #include "dbug.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "free.h"
@@ -316,7 +315,7 @@ ESDprf (node *arg_node, info *arg_info)
         prf = TBmakePrf (op, EXPRS_NEXT (PRF_ARGS (arg_node)));
         EXPRS_NEXT (PRF_ARGS (arg_node)) = NULL;
 
-        avis = TBmakeAvis (ILIBtmpVar (),
+        avis = TBmakeAvis (TRAVtmpVar (),
                            TYgetProductMember (NTCnewTypeCheck_Expr (prf), 0));
 
         INFO_NEWASSIGN (arg_info)

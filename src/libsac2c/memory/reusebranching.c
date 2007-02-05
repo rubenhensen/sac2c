@@ -20,7 +20,6 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "dbug.h"
@@ -280,7 +279,7 @@ BuildCondTree (node *ass, node *branches, node *memvars, node *fundef, char *roo
              */
             cflut = LUTgenerateLut ();
             cfargs = DFMUdfm2Args (inmask, cflut);
-            cfargs = TBmakeArg (TBmakeAvis (ILIBtmpVar (),
+            cfargs = TBmakeArg (TBmakeAvis (TRAVtmpVar (),
                                             TYmakeAKS (TYmakeSimpleType (T_bool),
                                                        SHmakeShape (0))),
                                 cfargs);
@@ -343,7 +342,7 @@ BuildCondTree (node *ass, node *branches, node *memvars, node *fundef, char *roo
                 /*
                  * Create new lhs variable for FUNCOND
                  */
-                cavis = TBmakeAvis (ILIBtmpVar (),
+                cavis = TBmakeAvis (TRAVtmpVar (),
                                     TYcopyType (AVIS_TYPE (IDS_AVIS (thenids))));
 
                 FUNDEF_VARDEC (condfun) = TBmakeVardec (cavis, FUNDEF_VARDEC (condfun));
@@ -404,7 +403,7 @@ BuildCondTree (node *ass, node *branches, node *memvars, node *fundef, char *roo
             /*
              * Create variable c'
              */
-            memavis = TBmakeAvis (ILIBtmpVarName ("mem"),
+            memavis = TBmakeAvis (TRAVtmpVarName ("mem"),
                                   TYmakeAKS (TYmakeSimpleType (T_bool), SHmakeShape (0)));
 
             FUNDEF_VARDEC (fundef) = TBmakeVardec (memavis, FUNDEF_VARDEC (fundef));
@@ -414,7 +413,7 @@ BuildCondTree (node *ass, node *branches, node *memvars, node *fundef, char *roo
             /*
              * Create variable c
              */
-            valavis = TBmakeAvis (ILIBtmpVarName ("val"),
+            valavis = TBmakeAvis (TRAVtmpVarName ("val"),
                                   TYmakeAKS (TYmakeSimpleType (T_bool), SHmakeShape (0)));
 
             FUNDEF_VARDEC (fundef) = TBmakeVardec (valavis, FUNDEF_VARDEC (fundef));
@@ -428,7 +427,7 @@ BuildCondTree (node *ass, node *branches, node *memvars, node *fundef, char *roo
             while (cfrets != NULL) {
                 node *cfavis;
 
-                cfavis = TBmakeAvis (ILIBtmpVar (), TYcopyType (RET_TYPE (cfrets)));
+                cfavis = TBmakeAvis (TRAVtmpVar (), TYcopyType (RET_TYPE (cfrets)));
 
                 FUNDEF_VARDEC (fundef) = TBmakeVardec (cfavis, FUNDEF_VARDEC (fundef));
 

@@ -1,58 +1,17 @@
 /*
  *
- * $Log$
- * Revision 1.8  2004/11/28 17:44:14  ktr
- * DBUG_ASSERT corrected.
- *
- * Revision 1.7  2004/11/25 12:19:31  skt
- * big compiler switch during SACDevCampDK 2k4
- *
- * Revision 1.6  2004/08/01 16:11:32  sah
- * switch to new INFO structure
- * PHASE I
- *
- * Revision 1.5  2001/04/23 13:39:41  dkr
- * CUDfundef(): now, after clean-up DFMUpdateMaskBase() is called
- *
- * Revision 1.4  2001/03/22 20:03:01  dkr
- * include of tree.h eliminated
- *
- * Revision 1.3  2001/02/13 16:14:39  nmw
- * save/restore of act_tab added
- *
- * Revision 1.2  2000/12/15 18:31:20  dkr
- * initial revision
- *
- * Revision 3.1  2000/11/20 17:59:17  sacbase
- * new release made
- *
- * Revision 1.5  2000/03/21 14:55:23  dkr
- * ASSERT added: CleanupDecls() can be used after type checking only
- *
- * Revision 1.4  2000/03/19 17:11:55  dkr
- * fixed a bug in CUDids(): INFO_CUD_REF may be NULL
- *
- * Revision 1.3  2000/03/19 15:46:44  dkr
- * DFMstack removed (ups, SAC allows no nested/local vardecs ...)
- * comments added
- *
- * Revision 1.2  2000/03/17 21:06:17  dkr
- * the elimination of superfluous vardecs works :)
- * comments are fairly rare for now ...
- *
- * Revision 1.1  2000/03/17 15:55:04  dkr
- * Initial revision
+ * $Id$
  *
  */
 
 #include "tree_basic.h"
 #include "tree_compound.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "traverse.h"
 #include "free.h"
 #include "DataFlowMask.h"
+#include "dbug.h"
 
 /******************************************************************************
  *

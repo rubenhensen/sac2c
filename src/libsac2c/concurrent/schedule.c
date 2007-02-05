@@ -29,7 +29,6 @@
 #include "tree_compound.h"
 #include "traverse.h"
 #include "scheduling.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 

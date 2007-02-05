@@ -82,7 +82,6 @@ version="1.0">
 #include "check_attribs.h"
 #include "tree_basic.h"
 #include "traverse.h"
-#include "internal_lib.h"
 #include "dbug.h"
 #include "check_mem.h"
 

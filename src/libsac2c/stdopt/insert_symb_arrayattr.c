@@ -28,7 +28,6 @@
 #include "tree_compound.h"
 #include "traverse.h"
 #include "dbug.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "DupTree.h"
@@ -196,7 +195,7 @@ PrependSAAInFormalArgs (node *arg_node, info *arg_info)
     if ((TYisAUD (AVIS_TYPE (avis))) && (FALSE == AVIS_HASSAAARGUMENTS (avis))) {
         DBUG_PRINT ("ISAA", ("inserting a formal dim for %s", AVIS_NAME (avis)));
 
-        newdim = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (avis)),
+        newdim = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (avis)),
                              TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
         AVIS_HASSAAARGUMENTS (newdim) = TRUE;
 
@@ -214,7 +213,7 @@ PrependSAAInFormalArgs (node *arg_node, info *arg_info)
         /* create a new avis, assign it to AVIS_SHAPE(avis) and prepend it into
          * the parameter-list of our function. */
 
-        newshp = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (avis)),
+        newshp = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (avis)),
                              TYmakeAKD (TYmakeSimpleType (T_int), 1, SHmakeShape (0)));
         AVIS_SHAPE (newshp) = AVIS_DIM (avis);
         AVIS_HASSAAARGUMENTS (newshp) = TRUE;
@@ -264,7 +263,7 @@ PrependSAAInConcreteArgs (node *arg_node, node *funargs, info *arg_info)
         /* this is quite similar as to how we proceeded with the shape. */
 
         /* 1. */
-        newdim = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (avis)),
+        newdim = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (avis)),
                              TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
         AVIS_DIM (newdim) = TBmakeNum (0);
         AVIS_SHAPE (newdim) = TCmakeIntVector (NULL);
@@ -298,12 +297,12 @@ PrependSAAInConcreteArgs (node *arg_node, node *funargs, info *arg_info)
         /* 1. */
         if (TYisAUD (AVIS_TYPE (funavis))) {
             newshp
-              = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (avis)),
+              = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (avis)),
                             TYmakeAKD (TYmakeSimpleType (T_int), 1, SHmakeShape (0)));
             AVIS_SHAPE (newshp) = TCmakeIntVector (
               TBmakeExprs (TBmakeId (ID_AVIS (AVIS_DIM (avis))), NULL));
         } else {
-            newshp = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (avis)),
+            newshp = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (avis)),
                                  TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
 
             if (NULL != AVIS_DIM (avis)) {
@@ -424,18 +423,18 @@ MakeDTProxy (node *avis, node *postass, info *arg_info)
 
         fundef = INFO_FUNDEF (arg_info);
 
-        dimavis = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (avis)),
+        dimavis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (avis)),
                               TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
         AVIS_DIM (dimavis) = TBmakeNum (0);
         AVIS_SHAPE (dimavis) = TCmakeIntVector (NULL);
 
-        shpavis = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (avis)),
+        shpavis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (avis)),
                               TYmakeAKD (TYmakeSimpleType (T_int), 1, SHmakeShape (0)));
         AVIS_DIM (shpavis) = TBmakeNum (1);
         AVIS_SHAPE (shpavis) = TCmakeIntVector (TBmakeExprs (TBmakeId (dimavis), NULL));
 
         proxyavis
-          = TBmakeAvis (ILIBtmpVarName (AVIS_NAME (avis)), TYcopyType (AVIS_TYPE (avis)));
+          = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (avis)), TYcopyType (AVIS_TYPE (avis)));
         AVIS_DIM (proxyavis) = TBmakeId (dimavis);
         AVIS_SHAPE (proxyavis) = TBmakeId (shpavis);
 

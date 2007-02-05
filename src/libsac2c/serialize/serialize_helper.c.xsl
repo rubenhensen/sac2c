@@ -76,7 +76,6 @@ version="1.0">
   <xsl:text>
 
 #include "types.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "tree_basic.h"

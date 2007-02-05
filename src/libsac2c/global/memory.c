@@ -15,6 +15,7 @@
 #include "DupTree.h"
 #include "free.h"
 #include "convert.h"
+#include "str.h"
 
 /******************************************************************************
  *

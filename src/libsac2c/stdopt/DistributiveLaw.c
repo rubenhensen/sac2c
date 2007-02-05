@@ -345,7 +345,6 @@
 
 #include "traverse.h"
 #include "dbug.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "free.h"
@@ -1341,7 +1340,7 @@ MakeAssignLetNodeFromCurrentNode (node *newnode, info *arg_info, int flag)
 
     type = TYcopyType (INFO_NTYPE (arg_info));
 
-    newavis = TBmakeAvis (ILIBtmpVar (), type);
+    newavis = TBmakeAvis (TRAVtmpVar (), type);
 
     newvardec = TBmakeVardec (newavis, (BLOCK_VARDEC (INFO_BLOCKNODE (arg_info))));
 

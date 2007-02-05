@@ -5,13 +5,13 @@
 #include "DeadFunctionRemoval.h"
 #include "tree_basic.h"
 #include "new_types.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "free.h"
 #include "dbug.h"
 #include "globals.h"
 #include "traverse.h"
+#include "ctinfo.h"
 
 /*
  * INFO structure

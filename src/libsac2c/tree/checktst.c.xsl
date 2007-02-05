@@ -73,7 +73,6 @@ version="1.0">
 #include "tree_compound.h"
 #include "DupTree.h"
 #include "free.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 

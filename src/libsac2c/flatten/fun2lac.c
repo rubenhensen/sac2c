@@ -24,7 +24,6 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "node_basic.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "traverse.h"
@@ -308,7 +307,7 @@ Arg2Var (node *arg, info *arg_info)
 
     DBUG_ENTER ("Arg2Var");
 
-    new_name = ILIBtmpVarName (ARG_NAME (arg));
+    new_name = TRAVtmpVarName (ARG_NAME (arg));
     new_avis = TBmakeAvis (new_name, TYcopyType (AVIS_TYPE (ARG_AVIS (arg))));
 
     INFO_NEW_VARDECS (arg_info) = TBmakeVardec (new_avis, INFO_NEW_VARDECS (arg_info));
@@ -440,7 +439,7 @@ TransformIntoDoLoop (node *arg_node, info *arg_info)
     DO_SKIP (loop) = then_assigns;
 
     if (DO_SKIP (loop) != NULL) {
-        DO_LABEL (loop) = ILIBtmpVarName ("label");
+        DO_LABEL (loop) = TRAVtmpVarName ("label");
     }
 
     fun_body = TBmakeAssign (loop, TCappendAssign (else_assigns, return_assign));
@@ -749,7 +748,7 @@ BuildRenamingAssignsForDo (node **vardecs, node **ass1, node **ass2, node **ass3
                 /*
                  * build a fresh vardec (tmp_a_i)
                  */
-                new_name = ILIBtmpVarName (ARG_NAME (ext_args));
+                new_name = TRAVtmpVarName (ARG_NAME (ext_args));
                 (*vardecs) = TBmakeVardec (TBmakeAvis (new_name, TYcopyType (AVIS_TYPE (
                                                                    ARG_AVIS (ext_args)))),
                                            *vardecs);
@@ -1077,7 +1076,7 @@ TransformIntoDoLoop (node *fundef, info *arg_info)
             skip = TBmakeEmpty ();
         }
         DO_SKIP (ASSIGN_INSTR (cond_assign)) = TBmakeBlock (skip, NULL);
-        DO_LABEL (ASSIGN_INSTR (cond_assign)) = ILIBtmpVar ();
+        DO_LABEL (ASSIGN_INSTR (cond_assign)) = TRAVtmpVar ();
     }
 
     /* Insert epilogue */

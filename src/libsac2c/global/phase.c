@@ -6,7 +6,6 @@
 #include "dbug.h"
 #include "ctinfo.h"
 #include "globals.h"
-#include "internal_lib.h"
 #include "str.h"
 #include "memory.h"
 #include "tree_basic.h"
