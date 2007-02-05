@@ -1,151 +1,6 @@
 /*
  *
- * $Log$
- * Revision 3.52  2005/10/06 18:20:07  sbs
- * changed ND_WRITE into SAC_ND_WRITE in ICMCompileWL_ADJUST_OFFSET
- *
- * Revision 3.51  2005/09/29 22:47:32  sah
- * extended WL_MODARRAY_SUBSHAPE
- *
- * Revision 3.50  2005/09/27 16:20:18  sbs
- * implementation of SIMD_BEGIN and SIMD_END added.
- *
- * Revision 3.49  2005/08/24 10:21:26  ktr
- * added support for explicit with-loop offsets
- *
- * Revision 3.48  2005/06/28 16:34:06  sah
- * removed a warning
- *
- * Revision 3.47  2005/06/22 20:48:15  sah
- * fixed WL_MODARRAY_SUBSHAPE and its
- * usage.
- *
- * Revision 3.46  2005/06/21 23:39:39  sah
- * added setting of modarray wls subvar descriptors
- * using new C-icm WL_MODARRAY_SUBSHAPE
- *
- * Revision 3.45  2005/06/16 22:28:53  sbs
- * bug in ASSERT macro eliinated.
- *
- * Revision 3.44  2005/06/10 15:56:11  sbs
- * changed WL_EMM_ASSIGN compilation. As second arg to the SHAPE_FACTOR h-icm
- * we now pass 0 whenever dims < 0. This should cover the AUD case properly
- * (cross fingers).
- *
- * Revision 3.43  2004/11/25 10:26:46  jhb
- * compile SACdevCamp 2k4
- *
- * Revision 3.42  2004/11/24 15:46:31  jhb
- * removed include my_dbug.h
- *
- * Revision 3.41  2004/10/28 17:50:22  khf
- * splitted WL_OFFSET into WL_OFFSET and WL_OFFSET_SHAPE_FACR
- * to avoid mixed declarations and code
- *
- * Revision 3.40  2004/10/05 17:26:53  khf
- * added INDENT in WL_OFFSET
- *
- * Revision 3.39  2004/08/13 16:38:37  khf
- * splitted WL_BEGIN_OFFSET into WL_SCHEDULE__BEGIN and
- * WL_OFFSET, added WL_SCHEDULE__END, removed WL_BEGIN_OFFSET,
- * WL_END_OFFSET, WL_BEGIN, and WL_END
- *
- * Revision 3.38  2004/08/05 16:12:09  ktr
- * added WL_INC_OFFSET and modified WL_EMM_ASSIGN which now resembles
- * WL_ASSIGN without incrementing the WL_OFFSET.
- *
- * Revision 3.37  2004/08/02 16:17:49  ktr
- * renamed ND_WL_GENARRAY__SHAPE_id into ND_WL_GENARRAY__SHAPE_id_id
- * renamed ND_WL_GENARRAY__SHAPE_arr into ND_WL_GENARRAY__SHAPE_arr_id
- * added ND_WL_GENARRAY__SHAPE_id_arr
- * added ND_WL_SUBALLOC
- * added ND_WL_EMM_ASSIGN
- *
- * Revision 3.36  2004/03/10 00:10:17  dkrHH
- * old backend removed
- *
- * Revision 3.35  2003/09/30 19:29:21  dkr
- * code brushed: Set_Shape() used
- *
- * Revision 3.34  2003/09/29 22:53:49  dkr
- * WLGenarray_Shape() modified
- *
- * Revision 3.33  2003/09/25 19:19:54  dkr
- * bug in WL_ASSIGN for old backend fixed
- *
- * Revision 3.32  2003/09/25 13:43:30  dkr
- * new argument 'copyfun' added to some ICMs.
- * ND_WRITE replaced by ND_WRITE_READ_COPY.
- *
- * Revision 3.31  2003/09/17 14:17:12  dkr
- * some function parameters renamed
- *
- * Revision 3.30  2003/09/17 12:57:46  dkr
- * postfixes _nt, _any renamed into _NT, _ANY
- *
- * Revision 3.29  2003/03/14 18:27:33  dkr
- * some fixes for old backend done
- *
- * Revision 3.28  2003/03/14 13:22:42  dkr
- * all arguments of WL-ICMs are tagged now
- *
- * Revision 3.27  2002/10/30 14:20:16  dkr
- * some new macros used
- *
- * Revision 3.26  2002/10/29 19:11:00  dkr
- * several bugs removed,
- * new macros for code generation used.
- *
- * Revision 3.25  2002/10/28 13:18:03  dkr
- * bug in WL_BEGIN__OFFSET fixed
- *
- * Revision 3.24  2002/10/28 09:25:04  dkr
- * bugs in WLGenarray_Shape() fixed
- *
- * Revision 3.23  2002/10/24 20:54:18  dkr
- * some ICMs modified in order to support dynamic shapes
- *
- * Revision 3.22  2002/10/07 23:35:45  dkr
- * some bugs with new backend fixed
- *
- * Revision 3.21  2002/08/06 12:18:58  dkr
- * ups, ... error in WL_BEGIN__OFFSET corrected
- *
- * Revision 3.20  2002/08/06 12:08:09  dkr
- * some cosmetical changes done
- *
- * Revision 3.19  2002/08/06 08:58:30  dkr
- * works also with old backend, now
- *
- * Revision 3.18  2002/08/05 20:42:10  dkr
- * ND_WL_GENARRAY__SHAPE... added
- *
- * Revision 3.17  2002/07/30 20:05:02  dkr
- * some comments corrected
- *
- * Revision 3.16  2002/07/15 14:43:59  dkr
- * bug in WL_ASSIGN__COPY fixed
- *
- * Revision 3.15  2002/07/12 23:10:50  dkr
- * bug in WL_ASSIGN__INIT fixed
- *
- * Revision 3.14  2002/07/12 18:52:46  dkr
- * some modifications for new backend done
- *
- * Revision 3.12  2001/05/18 09:58:03  cg
- * #include <malloc.h> removed.
- *
- * Revision 3.11  2001/02/06 01:43:55  dkr
- * WL_NOOP_... replaced by WL_ADJUST_OFFSET
- *
- * Revision 3.10  2001/01/30 12:21:58  dkr
- * PrintTraceICM() modified
- * implementation of ICMs WL_NOOP, WL_NOOP__OFFSET modified
- *
- * Revision 3.9  2001/01/25 12:08:16  dkr
- * layout of ICMs WL_SET_OFFSET and WL_INIT_OFFSET modified.
- *
- * [...]
+ * $Id$
  *
  */
 
@@ -160,7 +15,7 @@
 #include "globals.h"
 #include "print.h"
 #include "gen_startup_code.h"
-#include "internal_lib.h"
+#include "system.h"
 #include "str.h"
 #include "memory.h"
 #include "ctinfo.h"
@@ -1006,10 +861,10 @@ ICMCompileWL_SIMD_END (int cnt)
 
     fclose (global.outfile);
 
-    ILIBsystemCall ("gcc -E -P -I$SACBASE/runtime %s >%s2",
-                    /*     global.config.cpp_file,   */
-                    simd_filename, simd_filename);
-    ILIBsystemCall ("$SACBASE/stdlib/Tools/cb -r %s2 >%s", simd_filename, simd_filename);
+    SYScall ("gcc -E -P -I$SACBASE/runtime %s >%s2",
+             /*     global.config.cpp_file,   */
+             simd_filename, simd_filename);
+    SYScall ("$SACBASE/stdlib/Tools/cb -r %s2 >%s", simd_filename, simd_filename);
 
     simd_filename = MEMfree (simd_filename);
     global.outfile = store_global_outfile;

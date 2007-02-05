@@ -79,7 +79,7 @@ libsac2c_tree        := traverse tree_basic free tree_compound DupTree \
                         check_lib checktst prepare_inlining map_call_graph \
                         map_fun_trav check_node check_attribs remove_dfms
 
-libsac2c_support     := dbug str ptr_buffer str_buffer
+libsac2c_support     := dbug str ptr_buffer str_buffer system
 
 libsac2c_serialize   := serialize_node serialize_attribs deserialize \
                         serialize_buildstack serialize_helper \

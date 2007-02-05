@@ -24,11 +24,13 @@
 
 extern int ILIBlcm (int x, int y);
 
-extern void ILIBsystemCall (char *format, ...);
-extern int ILIBsystemCall2 (char *format, ...);
-extern int ILIBsystemTest (char *format, ...);
-extern void ILIBsystemCallStartTracking ();
-extern void ILIBsystemCallStopTracking ();
+#if 0
+extern void SYScall( char *format, ...);
+extern int  SYScallNoErr( char *format, ...);
+extern int  SYStest( char *format, ...);
+extern void SYSstartTracking();
+extern void SYSstopTracking();
+#endif
 
 extern char *ILIBtmpVar (void);
 extern char *ILIBtmpVarName (char *postfix);

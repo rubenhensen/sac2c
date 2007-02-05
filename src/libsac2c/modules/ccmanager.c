@@ -5,7 +5,7 @@
  */
 
 #include "ccmanager.h"
-#include "internal_lib.h"
+#include "system.h"
 #include "str.h"
 #include "str_buffer.h"
 #include "memory.h"
@@ -270,8 +270,8 @@ InvokeCCProg (char *cccall, char *ccflags, char *libs, stringset_t *deps)
 
     deplibs = (char *)STRSfold (&BuildDepLibsStringProg, deps, STRcpy (""));
 
-    ILIBsystemCall ("%s %s -o %s %s %s %s %s", cccall, ccflags, global.outfilename,
-                    global.cfilename, extpath, deplibs, libs);
+    SYScall ("%s %s -o %s %s %s %s %s", cccall, ccflags, global.outfilename,
+             global.cfilename, extpath, deplibs, libs);
 
     extpath = MEMfree (extpath);
     deplibs = MEMfree (deplibs);
@@ -284,14 +284,13 @@ InvokeCCModule (char *cccall, char *ccflags)
 {
     DBUG_ENTER ("InvokeCCModule");
 
-    ILIBsystemCall ("cd %s; %s %s -c fun*.c globals.c", global.tmp_dirname, cccall,
-                    ccflags);
+    SYScall ("cd %s; %s %s -c fun*.c globals.c", global.tmp_dirname, cccall, ccflags);
 
-    ILIBsystemCall ("cd %s; %s -c serialize.c", global.tmp_dirname, cccall);
-    ILIBsystemCall ("cd %s; %s -c filenames.c", global.tmp_dirname, cccall);
-    ILIBsystemCall ("cd %s; %s -c namespacemap.c", global.tmp_dirname, cccall);
-    ILIBsystemCall ("cd %s; %s -c symboltable.c", global.tmp_dirname, cccall);
-    ILIBsystemCall ("cd %s; %s -c dependencytable.c", global.tmp_dirname, cccall);
+    SYScall ("cd %s; %s -c serialize.c", global.tmp_dirname, cccall);
+    SYScall ("cd %s; %s -c filenames.c", global.tmp_dirname, cccall);
+    SYScall ("cd %s; %s -c namespacemap.c", global.tmp_dirname, cccall);
+    SYScall ("cd %s; %s -c symboltable.c", global.tmp_dirname, cccall);
+    SYScall ("cd %s; %s -c dependencytable.c", global.tmp_dirname, cccall);
 
     DBUG_VOID_RETURN;
 }
@@ -310,7 +309,7 @@ CCMinvokeCC (node *syntax_tree)
         /*
          * enable system call tracking
          */
-        ILIBsystemCallStartTracking ();
+        SYSstartTracking ();
     }
 
     cccall = GetCCCall ();
@@ -331,7 +330,7 @@ CCMinvokeCC (node *syntax_tree)
         /*
          * stop tracking and close file
          */
-        ILIBsystemCallStopTracking ();
+        SYSstopTracking ();
     }
 
     DBUG_RETURN (syntax_tree);

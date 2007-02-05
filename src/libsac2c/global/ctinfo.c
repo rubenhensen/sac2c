@@ -43,7 +43,7 @@
 
 #include "dbug.h"
 #include "filemgr.h"
-#include "internal_lib.h"
+#include "system.h"
 #include "str.h"
 #include "memory.h"
 #include "build.h"
@@ -350,7 +350,7 @@ InternalCompilerErrorBreak (int sig)
                              " *\n"
                              " * automatically generated on ");
         fclose (error_file);
-        ILIBsystemCall2 ("date >> SACbugreport");
+        SYScallNoErr ("date >> SACbugreport");
         error_file = fopen ("SACbugreport", "a");
 
         fprintf (error_file, " *\n");
@@ -373,7 +373,7 @@ InternalCompilerErrorBreak (int sig)
             fprintf (error_file, " * The contents of %s is:\n", global.sacfilename);
             fprintf (error_file, " */\n\n");
             fclose (error_file);
-            ILIBsystemCall2 ("cat %s >> SACbugreport", global.sacfilename);
+            SYScallNoErr ("cat %s >> SACbugreport", global.sacfilename);
             error_file = fopen ("SACbugreport", "a");
         } else {
             fprintf (error_file, " * Compiler crashed before SAC file name could be "

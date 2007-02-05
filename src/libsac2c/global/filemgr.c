@@ -9,7 +9,7 @@
 #include <unistd.h>
 
 #include "dbug.h"
-#include "internal_lib.h"
+#include "system.h"
 #include "str.h"
 #include "memory.h"
 #include "ctinfo.h"
@@ -19,6 +19,7 @@
 #include "resource.h"
 #include "namespaces.h"
 #include "tree_basic.h"
+#include "globals.h"
 
 static char path_bufs[4][MAX_PATH_LEN];
 static int bufsize[4];
@@ -141,13 +142,12 @@ FMGRcheckSystemLibrary (const char *name)
     /* create a dummy C program to compile and link against */
     /* the library.                                         */
 
-    ILIBsystemCall ("echo \"int main(){return(0);}\" >%s/SAC_XX_syslibtest.c",
-                    global.tmp_dirname);
+    SYScall ("echo \"int main(){return(0);}\" >%s/SAC_XX_syslibtest.c",
+             global.tmp_dirname);
 
-    result
-      = ILIBsystemCall2 ("%s %s %s -l%s -o %s/SAC_XX_syslibtest %s/SAC_XX_syslibtest.c",
-                         global.config.cc, global.config.ccflags, global.config.ldflags,
-                         name, global.tmp_dirname, global.tmp_dirname);
+    result = SYScallNoErr ("%s %s %s -l%s -o %s/SAC_XX_syslibtest %s/SAC_XX_syslibtest.c",
+                           global.config.cc, global.config.ccflags, global.config.ldflags,
+                           name, global.tmp_dirname, global.tmp_dirname);
 
     /* reverse result, because a result of 0 means true here. */
 
@@ -591,7 +591,7 @@ FMGRdeleteTmpDir ()
     DBUG_ENTER ("FMGRdeleteTmpDir");
 
     if (global.tmp_dirname != NULL) {
-        ILIBsystemCall ("%s %s", global.config.rmdir, global.tmp_dirname);
+        SYScall ("%s %s", global.config.rmdir, global.tmp_dirname);
     }
 
     DBUG_VOID_RETURN;
@@ -635,9 +635,9 @@ FMGRcreateTmpDir ()
         CTIabort ("System failed to create temporary directory");
     }
 
-    ILIBsystemCall ("%s %s", global.config.mkdir, global.tmp_dirname);
+    SYScall ("%s %s", global.config.mkdir, global.tmp_dirname);
 
-    /* Failure of the system call is detected in ILIBsystemCall */
+    /* Failure of the system call is detected in SYScall */
 
 #endif /* HAVE_MKDTEMP */
 
