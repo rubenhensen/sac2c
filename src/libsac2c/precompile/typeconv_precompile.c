@@ -26,6 +26,8 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "free.h"
 #include "traverse.h"
 #include "NameTuplesUtils.h"
@@ -61,7 +63,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_TCP_FUNDEF (result) = NULL;
     INFO_TCP_PREASSIGNS (result) = NULL;
@@ -76,7 +78,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }

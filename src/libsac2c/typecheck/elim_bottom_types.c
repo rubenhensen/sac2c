@@ -11,6 +11,8 @@
 #include "dbug.h"
 #include "ctinfo.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "free.h"
 #include "DupTree.h"
 #include "shape.h"
@@ -163,7 +165,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_THENBOTTS (result) = FALSE;
     INFO_ELSEBOTTS (result) = FALSE;
@@ -179,7 +181,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }

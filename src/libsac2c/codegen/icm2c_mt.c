@@ -25,6 +25,8 @@
 #include "print.h"
 #include "tree_basic.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 
 #ifndef BEtest
 #include "scnprs.h"   /* for big magic access to syntax tree      */
@@ -162,7 +164,7 @@ ICMCompileMT_SPMD_FUN_RET (char *funname, int vararg_cnt, char **vararg)
 
     cnt = 0;
     for (i = 0; i < 3 * vararg_cnt; i += 3) {
-        if (ILIBstringCompare (vararg[i], "out")) {
+        if (STReq (vararg[i], "out")) {
             INDENT;
             fprintf (global.outfile, "SAC_MT_SPMD_FOLD_RETURN_WORKER( %s, %d, %s, %s);\n",
                      funname, cnt, vararg[i + 1], vararg[i + 2]);
@@ -178,7 +180,7 @@ ICMCompileMT_SPMD_FUN_RET (char *funname, int vararg_cnt, char **vararg)
     cnt = 0;
 
     for (i = 0; i < 3 * vararg_cnt; i += 3) {
-        if (ILIBstringCompare (vararg[i], "out")) {
+        if (STReq (vararg[i], "out")) {
             INDENT;
             fprintf (global.outfile, "SAC_MT_SPMD_FOLD_RETURN_MASTER( %s, %d, %s, %s);\n",
                      funname, cnt, vararg[i + 1], vararg[i + 2]);
@@ -586,7 +588,7 @@ void ICMCompileMT_SYNC_FOLD( int barrier_id, int vararg_cnt, char **vararg)
    * fetch code-elements for all fold-operations
    */
 #ifndef BEtest
-  foldcodes = (node**) ILIBmalloc( vararg_cnt * sizeof( node*));
+  foldcodes = (node**) MEMmalloc( vararg_cnt * sizeof( node*));
   for (i = 0; i < vararg_cnt; i++) {
     foldop = vararg[4*i + 3];
     foldcodes[i] = SearchFoldImplementation( foldop);
@@ -714,7 +716,7 @@ void ICMCompileMT_SYNC_FOLD( int barrier_id, int vararg_cnt, char **vararg)
   for (i = 0; i < vararg_cnt; i++) {
     foldcodes[i] = FREEdoFreeTree( foldcodes[i]);
   }
-  foldcodes = ILIBfree( foldcodes);
+  foldcodes = MEMfree( foldcodes);
 #endif /* BEtest */
 
   DBUG_VOID_RETURN;

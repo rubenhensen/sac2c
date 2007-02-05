@@ -65,6 +65,8 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "shape.h"
 #include "free.h"
 #include "DupTree.h"
@@ -118,7 +120,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_WL (result) = NULL;
     INFO_FUNDEF (result) = NULL;
@@ -134,7 +136,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }
@@ -375,8 +377,7 @@ WLPGnormalizeStepWidth (node **step, node **width)
                 is_1 = is_1 && 1 == stpnum;
             } else if ((NODE_TYPE (EXPRS_EXPR (stp)) == N_id)
                        && (NODE_TYPE (EXPRS_EXPR (wth)) == N_id)) {
-                if (ILIBstringCompare (ID_NAME (EXPRS_EXPR (stp)),
-                                       ID_NAME (EXPRS_EXPR (wth)))) {
+                if (STReq (ID_NAME (EXPRS_EXPR (stp)), ID_NAME (EXPRS_EXPR (wth)))) {
                     EXPRS_EXPR (stp) = FREEdoFreeTree (EXPRS_EXPR (stp));
                     EXPRS_EXPR (stp) = TBmakeNum (1);
                     EXPRS_EXPR (wth) = FREEdoFreeTree (EXPRS_EXPR (wth));

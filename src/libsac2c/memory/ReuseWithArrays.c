@@ -52,6 +52,8 @@
 #include "DataFlowMask.h"
 #include "free.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "new_types.h"
 
 #include <string.h>
@@ -79,7 +81,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_IV (result) = NULL;
     INFO_MASK (result) = NULL;
@@ -93,7 +95,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }

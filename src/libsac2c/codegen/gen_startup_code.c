@@ -34,6 +34,8 @@
 #include "print.h"
 #include "gen_startup_code.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "renameidentifiers.h"
 #include "namespaces.h"
 
@@ -625,7 +627,7 @@ GSCprintMain ()
     GSCprintMainEnd ();
     INDENT;
     fprintf (global.outfile, "return( SAC_ND_READ( %s, 0));\n", res_NT);
-    res_NT = ILIBfree (res_NT);
+    res_NT = MEMfree (res_NT);
     global.indent--;
     INDENT;
     fprintf (global.outfile, "}\n");

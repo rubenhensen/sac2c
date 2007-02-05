@@ -14,6 +14,8 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "free.h"
 #include "resource.h"
 #include "sac.tab.h"
@@ -234,12 +236,12 @@ int charpos = 0;
 "target"                   { if( global.compiler_phase==PH_initial) {
                                FILTER( TARGET);
                              } else {
-                               yylval.id = ILIBstringCopy(yytext);
+                               yylval.id = STRcpy(yytext);
                                FILTER( ID);
                              }
                            }
 "default"                  { if( global.compiler_phase==PH_initial) {
-                               yylval.id = ILIBstringCopy(yytext);
+                               yylval.id = STRcpy(yytext);
                                FILTER( ID);
                              } else {
                                FILTER( C_KEYWORD);
@@ -247,7 +249,7 @@ int charpos = 0;
                            }
 
 [-/][_A-Za-z0-9]*          { if( global.compiler_phase == PH_initial) {
-                               yylval.id = ILIBstringCopy( yytext);
+                               yylval.id = STRcpy( yytext);
                                FILTER( OPTION);
                              } else {
                                switch (yytext[0]) {
@@ -257,35 +259,35 @@ int charpos = 0;
                                    break;
                                  case '/':
                                    yyless( 1);
-                                   yylval.id = ILIBstringCopy( yytext);
+                                   yylval.id = STRcpy( yytext);
                                    FILTER( ID);
                                    break;
                                  case '_':
-                                   yylval.id = ILIBstringCopy( yytext);
+                                   yylval.id = STRcpy( yytext);
                                    FILTER( ID);
                                    break;
                                  default:
-                                   yylval.id = ILIBstringCopy( yytext);
+                                   yylval.id = STRcpy( yytext);
                                    FILTER( ID);
                                }
                              }
                            }
 
 
-\"([^"\n]|(\\\"))*\"       { yylval.id = ILIBstringCopy( yytext + sizeof( char));
+\"([^"\n]|(\\\"))*\"       { yylval.id = STRcpy( yytext + sizeof( char));
                              yylval.id[ strlen( yylval.id) - 1] = '\0';
                              FILTER( STR);
                            }
 
 [A-Za-z]([A-Za-z0-9]|[_A-Za-z0-9][A-Za-z0-9])*_? {
-                             yylval.id = ILIBstringCopy( yytext);
+                             yylval.id = STRcpy( yytext);
                              FILTER( ID);
                            }
-[|&>!%=-]+                 { yylval.id = ILIBstringCopy(yytext);
+[|&>!%=-]+                 { yylval.id = STRcpy(yytext);
                              FILTER( ID);
                            }
 
-[_A-Za-z][_A-Za-z0-9]*     { yylval.id = ILIBstringCopy(yytext);
+[_A-Za-z][_A-Za-z0-9]*     { yylval.id = STRcpy(yytext);
                              FILTER( ID);
                            }
 
@@ -381,8 +383,8 @@ int charpos = 0;
                                linebuf_ptr = linebuf;
                              }
                              else {
-                               ILIBfree( tmp_buf);
-                               tmp_buf = ILIBmalloc( (yyleng) * sizeof(char));
+                               MEMfree( tmp_buf);
+                               tmp_buf = MEMmalloc( (yyleng) * sizeof(char));
                                strncpy( tmp_buf, yytext+1,yyleng);
                                linebuf_ptr = tmp_buf;
                              }
@@ -410,7 +412,7 @@ int charpos = 0;
                                 * global.filename will be used as a shared 
                                 * string in all node structures
                                 */
-                               global.filename = (char *)ILIBmalloc( (len+1)*sizeof(char));
+                               global.filename = (char *)MEMmalloc( (len+1)*sizeof(char));
                                CHKMdoNotReport( global.filename);
                                strncpy( global.filename , yytext + start, len);
                                global.filename[len] = '\0';
@@ -435,7 +437,7 @@ int charpos = 0;
                                 * global.filename will be used as a shared 
                                 * string in all node structures
                                 */
-                               global.filename = (char *)ILIBmalloc( (len+1)*sizeof(char));
+                               global.filename = (char *)MEMmalloc( (len+1)*sizeof(char));
                                CHKMdoNotReport( global.filename);
                                strncpy( global.filename , yytext + start, len);
                                global.filename[len] = '\0';

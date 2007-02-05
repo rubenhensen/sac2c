@@ -12,6 +12,8 @@
 #include "serialize_filenames.h"
 #include "dbug.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "filemgr.h"
 
 struct FILENAMEDB {
@@ -32,7 +34,7 @@ SFNgetId (const char *filename)
     DBUG_ENTER ("SFNgetId");
 
     if (database == NULL) {
-        database = (filenamedb_t *)ILIBmalloc (sizeof (filenamedb_t));
+        database = (filenamedb_t *)MEMmalloc (sizeof (filenamedb_t));
 
         database->name = filename;
         database->next = NULL;
@@ -53,7 +55,7 @@ SFNgetId (const char *filename)
         }
 
         if (!found) {
-            filenamedb_t *new = (filenamedb_t *)ILIBmalloc (sizeof (filenamedb_t));
+            filenamedb_t *new = (filenamedb_t *)MEMmalloc (sizeof (filenamedb_t));
 
             new->name = filename;
             new->next = NULL;

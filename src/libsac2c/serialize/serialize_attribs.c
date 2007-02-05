@@ -29,6 +29,8 @@
 #include "traverse.h"
 #include "tree_compound.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "new_types.h"
 #include "shape.h"
 #include "globals.h"
@@ -62,9 +64,9 @@ SATserializeString (info *info, char *attr, node *parent)
     } else {
         DBUG_PRINT ("SET", ("Processing String `%s'", attr));
 
-        tmp = ILIBstring2SafeCEncoding (attr);
-        fprintf (INFO_SER_FILE (info), "ILIBstringCopy(\"%s\")", tmp);
-        tmp = ILIBfree (tmp);
+        tmp = STRstring2SafeCEncoding (attr);
+        fprintf (INFO_SER_FILE (info), "STRcpy(\"%s\")", tmp);
+        tmp = MEMfree (tmp);
     }
 
     DBUG_VOID_RETURN;
@@ -177,11 +179,11 @@ SATserializeFloat (info *info, float attr, node *parent)
 
     DBUG_ENTER ("SATserializeFloat");
 
-    data = ILIBbyteArrayToHexString (sizeof (float), (unsigned char *)&attr);
+    data = STRbytes2Hex (sizeof (float), (unsigned char *)&attr);
 
     fprintf (INFO_SER_FILE (info), "DShex2Float( \"%s\")", data);
 
-    data = ILIBfree (data);
+    data = MEMfree (data);
 
     DBUG_VOID_RETURN;
 }
@@ -205,11 +207,11 @@ SATserializeDouble (info *info, double attr, node *parent)
 
     DBUG_ENTER ("SATserializeDouble");
 
-    data = ILIBbyteArrayToHexString (sizeof (double), (unsigned char *)&attr);
+    data = STRbytes2Hex (sizeof (double), (unsigned char *)&attr);
 
     fprintf (INFO_SER_FILE (info), "DShex2Double( \"%s\")", data);
 
-    data = ILIBfree (data);
+    data = MEMfree (data);
 
     DBUG_VOID_RETURN;
 }

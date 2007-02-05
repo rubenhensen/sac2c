@@ -33,6 +33,8 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "free.h"
 #include "traverse.h"
 #include "ctinfo.h"
@@ -175,7 +177,7 @@ CheckSchedulingArgs (sched_t *sched, char *spec, node *exprs, int line)
 
     DBUG_ENTER ("CheckSchedulingArgs");
 
-    arg_spec = ILIBstrTok (spec, ",");
+    arg_spec = STRtok (spec, ",");
 
     for (i = 0; i < sched->num_args; i++) {
         DBUG_ASSERT ((arg_spec != NULL), "Illegal scheduling specification");
@@ -211,7 +213,7 @@ CheckSchedulingArgs (sched_t *sched, char *spec, node *exprs, int line)
                                   i, sched->discipline);
                 }
                 sched->args[i].arg_type = AT_id;
-                sched->args[i].arg.id = ILIBstringCopy (SPID_NAME (expr));
+                sched->args[i].arg.id = STRcpy (SPID_NAME (expr));
                 break;
 
             case 'x':
@@ -222,7 +224,7 @@ CheckSchedulingArgs (sched_t *sched, char *spec, node *exprs, int line)
                     break;
                 case N_spid:
                     sched->args[i].arg_type = AT_id;
-                    sched->args[i].arg.id = ILIBstringCopy (SPID_NAME (expr));
+                    sched->args[i].arg.id = STRcpy (SPID_NAME (expr));
                     break;
                 default:
                     CTIabortLine (line,
@@ -246,7 +248,7 @@ CheckSchedulingArgs (sched_t *sched, char *spec, node *exprs, int line)
             DBUG_ASSERT ((arg_spec != NULL), "Illegal scheduling specification");
         }
 
-        arg_spec = ILIBstrTok (NULL, ",");
+        arg_spec = STRtok (NULL, ",");
         exprs = EXPRS_NEXT (exprs);
     }
 
@@ -300,7 +302,7 @@ SCHmakeScheduling (char *discipline, ...)
     DBUG_ASSERT ((scheduler_table[disc_no].discipline[0] != '\0'),
                  "Infered scheduling discipline not implemented");
 
-    sched = (sched_t *)ILIBmalloc (sizeof (sched_t));
+    sched = (sched_t *)MEMmalloc (sizeof (sched_t));
 
     sched->discipline = scheduler_table[disc_no].discipline;
     sched->class = scheduler_table[disc_no].class;
@@ -311,10 +313,10 @@ SCHmakeScheduling (char *discipline, ...)
     if (sched->num_args == 0) {
         sched->args = NULL;
     } else {
-        sched->args = (sched_arg_t *)ILIBmalloc (sched->num_args * sizeof (sched_arg_t));
+        sched->args = (sched_arg_t *)MEMmalloc (sched->num_args * sizeof (sched_arg_t));
     }
 
-    arg_spec = ILIBstrTok (scheduler_table[disc_no].arg_spec, ",");
+    arg_spec = STRtok (scheduler_table[disc_no].arg_spec, ",");
 
     for (i = 0; i < sched->num_args; i++) {
         DBUG_ASSERT ((arg_spec != NULL), "Illegal scheduling specification");
@@ -358,7 +360,7 @@ SCHmakeScheduling (char *discipline, ...)
             DBUG_ASSERT ((arg_spec != NULL), "Illegal scheduling specification");
         }
 
-        arg_spec = ILIBstrTok (NULL, ",");
+        arg_spec = STRtok (NULL, ",");
     }
 
     va_end (args);
@@ -393,7 +395,7 @@ SCHmakeSchedulingByPragma (node *ap_node, int line)
     }
 
     if (scheduler_table[i].discipline[0] != '\0') {
-        sched = (sched_t *)ILIBmalloc (sizeof (sched_t));
+        sched = (sched_t *)MEMmalloc (sizeof (sched_t));
         sched->discipline = scheduler_table[i].discipline;
         /*
          * Because sched is an object of an abstract data type, we may share it
@@ -405,7 +407,7 @@ SCHmakeSchedulingByPragma (node *ap_node, int line)
             sched->args = NULL;
         } else {
             sched->args
-              = (sched_arg_t *)ILIBmalloc (sched->num_args * sizeof (sched_arg_t));
+              = (sched_arg_t *)MEMmalloc (sched->num_args * sizeof (sched_arg_t));
         }
         sched->line = line;
 
@@ -448,11 +450,11 @@ SCHremoveScheduling (sched_t *sched)
             case AT_num_vec:
                 /* here is no break missing! */
             case AT_num_for_id_vec:
-                ILIBfree (sched->args[i].arg.num_vec);
+                MEMfree (sched->args[i].arg.num_vec);
                 break;
 
             case AT_id_vec:
-                ILIBfree (sched->args[i].arg.id_vec);
+                MEMfree (sched->args[i].arg.id_vec);
                 break;
 
             default:
@@ -460,10 +462,10 @@ SCHremoveScheduling (sched_t *sched)
             }
         }
 
-        ILIBfree (sched->args);
+        MEMfree (sched->args);
     }
 
-    sched = ILIBfree (sched);
+    sched = MEMfree (sched);
 
     DBUG_RETURN (sched);
 }
@@ -536,7 +538,7 @@ SCHcopyScheduling (sched_t *sched)
 
     DBUG_ENTER ("SCHcopyScheduling");
 
-    new_sched = (sched_t *)ILIBmalloc (sizeof (sched_t));
+    new_sched = (sched_t *)MEMmalloc (sizeof (sched_t));
 
     new_sched->discipline = sched->discipline;
     /*
@@ -550,7 +552,7 @@ SCHcopyScheduling (sched_t *sched)
 
     if (sched->num_args > 0) {
         new_sched->args
-          = (sched_arg_t *)ILIBmalloc (sched->num_args * sizeof (sched_arg_t));
+          = (sched_arg_t *)MEMmalloc (sched->num_args * sizeof (sched_arg_t));
 
         for (i = 0; i < sched->num_args; i++) {
             new_sched->args[i].arg_type = sched->args[i].arg_type;
@@ -628,8 +630,8 @@ SCHmarkmemvalsScheduling (sched_t *sched, lut_t *lut)
         if (sched->args[i].arg_type == AT_id) {
             new_name = LUTsearchInLutSs (lut, sched->args[i].arg.id);
             if (new_name != sched->args[i].arg.id) {
-                sched->args[i].arg.id = ILIBfree (sched->args[i].arg.id);
-                sched->args[i].arg.id = ILIBstringCopy (new_name);
+                sched->args[i].arg.id = MEMfree (sched->args[i].arg.id);
+                sched->args[i].arg.id = STRcpy (new_name);
             }
         }
     }
@@ -834,7 +836,7 @@ CompileSchedulingArgs (int seg_id, sched_t *sched, node *args)
                 break;
 
             case AT_num_for_id:
-                new_arg = TCmakeIdCopyString (ILIBitoa (sched->args[i].arg.num));
+                new_arg = TCmakeIdCopyString (STRitoa (sched->args[i].arg.num));
                 break;
 
             default:
@@ -985,11 +987,11 @@ CompileScheduling (int seg_id, node *wl_ids, sched_t *sched, node *arg_node, cha
     DBUG_ENTER ("CompileScheduling");
 
     if (sched != NULL) {
-        name = (char *)ILIBmalloc (sizeof (char)
-                                   * (strlen (sched->discipline) + strlen (suffix) + 15));
+        name = (char *)MEMmalloc (sizeof (char)
+                                  * (strlen (sched->discipline) + strlen (suffix) + 15));
         sprintf (name, "MT_SCHEDULER_%s_%s", sched->discipline, suffix);
     } else {
-        name = (char *)ILIBmalloc (sizeof (char) * (strlen (suffix) + 15));
+        name = (char *)MEMmalloc (sizeof (char) * (strlen (suffix) + 15));
         sprintf (name, "MT_SCHEDULER_%s", suffix);
     }
 
@@ -1197,7 +1199,7 @@ SCHmakeTaskselByPragma (node *ap_node, int line)
     }
 
     if (taskselector_table[i].discipline[0] != '\0') {
-        tasksel = (tasksel_t *)ILIBmalloc (sizeof (tasksel_t));
+        tasksel = (tasksel_t *)MEMmalloc (sizeof (tasksel_t));
         tasksel->discipline = taskselector_table[i].discipline;
 
         tasksel->num_args = taskselector_table[i].num_args;
@@ -1205,7 +1207,7 @@ SCHmakeTaskselByPragma (node *ap_node, int line)
         if (tasksel->num_args == 0) {
             tasksel->arg = NULL;
         } else {
-            tasksel->arg = (int *)ILIBmalloc (tasksel->num_args * sizeof (int));
+            tasksel->arg = (int *)MEMmalloc (tasksel->num_args * sizeof (int));
         }
         tasksel->line = line;
 
@@ -1239,10 +1241,10 @@ SCHremoveTasksel (tasksel_t *tasksel)
      * to the respective entry of the taskselector table.
      */
     if (tasksel->num_args > 0) {
-        ILIBfree (tasksel->arg);
+        MEMfree (tasksel->arg);
     }
 
-    tasksel = ILIBfree (tasksel);
+    tasksel = MEMfree (tasksel);
 
     DBUG_RETURN (tasksel);
 }
@@ -1295,7 +1297,7 @@ SCHcopyTasksel (tasksel_t *tasksel)
 
     DBUG_ENTER ("SCHcopyTasksel");
 
-    new_tasksel = (tasksel_t *)ILIBmalloc (sizeof (tasksel_t));
+    new_tasksel = (tasksel_t *)MEMmalloc (sizeof (tasksel_t));
 
     new_tasksel->discipline = tasksel->discipline;
     /*
@@ -1308,7 +1310,7 @@ SCHcopyTasksel (tasksel_t *tasksel)
     new_tasksel->dims = tasksel->dims;
 
     if (tasksel->num_args > 0) {
-        new_tasksel->arg = (int *)ILIBmalloc (tasksel->num_args * sizeof (int));
+        new_tasksel->arg = (int *)MEMmalloc (tasksel->num_args * sizeof (int));
 
         for (i = 0; i < tasksel->num_args; i++) {
             new_tasksel->arg[i] = tasksel->arg[i];
@@ -1445,7 +1447,7 @@ CompileSchedulingWithTaskselArgs (int seg_id, sched_t *sched, tasksel_t *tasksel
                 break;
 
             case AT_num_for_id:
-                new_arg = TCmakeIdCopyString (ILIBitoa (sched->args[i].arg.num));
+                new_arg = TCmakeIdCopyString (STRitoa (sched->args[i].arg.num));
                 break;
 
             default:
@@ -1645,11 +1647,11 @@ CompileSchedulingWithTasksel (int seg_id, node *wl_ids, sched_t *sched,
     DBUG_ENTER ("CompileSchedulingWithTasksel");
 
     if (sched != NULL) {
-        name = (char *)ILIBmalloc (sizeof (char)
-                                   * (strlen (sched->discipline) + strlen (suffix) + 15));
+        name = (char *)MEMmalloc (sizeof (char)
+                                  * (strlen (sched->discipline) + strlen (suffix) + 15));
         sprintf (name, "MT_SCHEDULER_%s_%s", sched->discipline, suffix);
     } else {
-        name = (char *)ILIBmalloc (sizeof (char) * (strlen (suffix) + 15));
+        name = (char *)MEMmalloc (sizeof (char) * (strlen (suffix) + 15));
         sprintf (name, "MT_SCHEDULER_%s", suffix);
     }
 

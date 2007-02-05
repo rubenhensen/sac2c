@@ -77,6 +77,8 @@
 #include "dbug.h"
 #include "traverse.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "inferneedcounters.h"
 #include "compare_tree.h"
 #include "DupTree.h"
@@ -111,7 +113,7 @@ MakeInfo (node *fundef)
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_FUNDEF (result) = fundef;
     INFO_PART (result) = NULL;
@@ -126,7 +128,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }

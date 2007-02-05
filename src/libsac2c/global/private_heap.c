@@ -22,7 +22,7 @@
  *
  * This file provides a simple heap facility.
  * Whereas most of the heap managament in the compiler should be done
- * using ILIBmalloc and ILIBfree, these sometimes do not suffice.
+ * using MEMmalloc and MEMfree, these sometimes do not suffice.
  *
  * The problem that sometimes occurs is that the nature of the algorithm
  * does not allow to precisely determine when an individual data structure
@@ -50,6 +50,8 @@
 #include "private_heap.h"
 #include "dbug.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 
 struct HEAP {
     size_t elem_size;
@@ -87,8 +89,8 @@ PHPcreateHeap (size_t elem_size, int chunk_size)
 
     DBUG_ASSERT (sizeof (char) == 1, "sizeof char is not 1 on this platform");
 
-    data = (char *)ILIBmalloc (elem_size * chunk_size);
-    res = (heap *)ILIBmalloc (sizeof (heap));
+    data = (char *)MEMmalloc (elem_size * chunk_size);
+    res = (heap *)MEMmalloc (sizeof (heap));
     HEAP_ELEM_SIZE (res) = elem_size;
     HEAP_CHUNK_SIZE (res) = chunk_size;
     HEAP_NUM_ELEMS (res) = 0;
@@ -188,8 +190,8 @@ PHPfreeHeap (heap *private_heap)
         if (HEAP_NEXT (private_heap) != NULL) {
             HEAP_NEXT (private_heap) = PHPfreeHeap (HEAP_NEXT (private_heap));
         }
-        HEAP_DATA (private_heap) = ILIBfree (HEAP_DATA (private_heap));
-        private_heap = ILIBfree (private_heap);
+        HEAP_DATA (private_heap) = MEMfree (HEAP_DATA (private_heap));
+        private_heap = MEMfree (private_heap);
     }
 
     DBUG_RETURN (private_heap);

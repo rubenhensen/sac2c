@@ -40,6 +40,8 @@
 #include "traverse.h"
 #include "convert.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "globals.h"
 #include "new_types.h"
 #include "ctinfo.h"
@@ -84,7 +86,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_TS_AKS (result) = 0;
     INFO_TS_AKD (result) = 0;
@@ -99,7 +101,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }
@@ -193,7 +195,7 @@ PrintStatistics (node *fundef, info *info)
     if (flag) {
         tmp = ILIBstrBuf2String (buf);
         CTInote ("%s", tmp);
-        tmp = ILIBfree (tmp);
+        tmp = MEMfree (tmp);
     }
     buf = ILIBstrBufFree (buf);
 

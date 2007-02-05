@@ -83,6 +83,8 @@
 #include "node_basic.h"
 #include "tree_compound.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "new_types.h"
 #include "type_utils.h"
 #include "new_typecheck.h"
@@ -122,7 +124,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_REMASSIGN (result) = FALSE;
     INFO_ONEFUNDEF (result) = TRUE;
@@ -137,7 +139,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }
@@ -332,7 +334,7 @@ CFscoArray2StructConstant (node *array)
         ashape = SHcopyShape (ARRAY_SHAPE (array));
 
         elem_count = SHgetUnrLen (ashape);
-        node_vec = (node **)ILIBmalloc (elem_count * sizeof (node *));
+        node_vec = (node **)MEMmalloc (elem_count * sizeof (node *));
 
         /* copy element pointers from array to vector */
         valid_const = TRUE;
@@ -349,7 +351,7 @@ CFscoArray2StructConstant (node *array)
         DBUG_ASSERT ((tmp == NULL), "array contains too many elements");
 
         /* create struct_constant */
-        struc_co = (struct_constant *)ILIBmalloc (sizeof (struct_constant));
+        struc_co = (struct_constant *)MEMmalloc (sizeof (struct_constant));
         SCO_BASETYPE (struc_co) = TYgetSimpleType (TYgetScalar (atype));
         if (TYisUser (atype)) {
             SCO_NAME (struc_co) = TYgetName (atype);
@@ -410,13 +412,13 @@ CFscoScalar2StructConstant (node *expr)
 
         /* alloc hidden vector */
         cshape = SHmakeShape (0);
-        elem = (node **)ILIBmalloc (sizeof (node *));
+        elem = (node **)MEMmalloc (sizeof (node *));
 
         /* copy element pointers from array to vector */
         *elem = expr;
 
         /* create struct_constant */
-        struc_co = (struct_constant *)ILIBmalloc (sizeof (struct_constant));
+        struc_co = (struct_constant *)MEMmalloc (sizeof (struct_constant));
         SCO_BASETYPE (struc_co) = TYgetSimpleType (TYgetScalar (ctype));
         SCO_NAME (struc_co) = NULL;
         SCO_NS (struc_co) = NULL;
@@ -435,13 +437,13 @@ CFscoScalar2StructConstant (node *expr)
 
             /* alloc hidden vector */
             cshape = SHmakeShape (0);
-            elem = (node **)ILIBmalloc (sizeof (node *));
+            elem = (node **)MEMmalloc (sizeof (node *));
 
             /* copy element pointers from array to vector */
             *elem = expr;
 
             /* create struct_constant */
-            struc_co = (struct_constant *)ILIBmalloc (sizeof (struct_constant));
+            struc_co = (struct_constant *)MEMmalloc (sizeof (struct_constant));
             SCO_BASETYPE (struc_co) = TYgetSimpleType (TYgetScalar (ctype));
             if (TYisUser (ctype)) {
                 SCO_NAME (struc_co) = TYgetName (ctype);
@@ -605,7 +607,7 @@ CFscoFreeStructConstant (struct_constant *struc_co)
     SCO_HIDDENCO (struc_co) = COfreeConstant (SCO_HIDDENCO (struc_co));
 
     /* free structure */
-    struc_co = ILIBfree (struc_co);
+    struc_co = MEMfree (struc_co);
 
     DBUG_RETURN ((struct_constant *)NULL);
 }

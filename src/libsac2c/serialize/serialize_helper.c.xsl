@@ -77,6 +77,8 @@ version="1.0">
 
 #include "types.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "tree_basic.h"
 #include "serialize.h"
 #include "stdarg.h"
@@ -116,7 +118,7 @@ version="1.0">
 
 <xsl:template match="node" mode="gen-alloc-fun">
   <!-- allocate structure -->
-  <xsl:value-of select="'this = ILIBmalloc( sizeof( node) + sizeof( struct SONS_N_'" />
+  <xsl:value-of select="'this = MEMmalloc( sizeof( node) + sizeof( struct SONS_N_'" />
   <xsl:call-template name="uppercase" >
     <xsl:with-param name="string" >
       <xsl:value-of select="@name" />

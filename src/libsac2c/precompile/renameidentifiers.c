@@ -15,6 +15,8 @@
 #include "traverse.h"
 #include "scheduling.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "user_types.h"
 #include "DataFlowMask.h"
 #include "new_types.h"
@@ -46,7 +48,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_RID_MODULE (result) = NULL;
 
@@ -58,7 +60,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }
@@ -90,7 +92,7 @@ BuildTypesRenaming (const char *mod, const char *name)
 
     DBUG_ENTER ("BuildTypesRenaming");
 
-    result = (char *)ILIBmalloc (sizeof (char) * (strlen (name) + strlen (mod) + 8));
+    result = (char *)MEMmalloc (sizeof (char) * (strlen (name) + strlen (mod) + 8));
     sprintf (result, "SACt_%s__%s", mod, name);
 
     DBUG_RETURN (result);
@@ -123,9 +125,9 @@ RenameTypes (types *type)
         DBUG_PRINT ("PREC", ("renaming type %s:%s to %s", TYPES_MOD (type),
                              TYPES_NAME (type), newname));
 
-        TYPES_NAME (type) = ILIBfree (TYPES_NAME (type));
+        TYPES_NAME (type) = MEMfree (TYPES_NAME (type));
         TYPES_NAME (type) = newname;
-        TYPES_MOD (type) = ILIBfree (TYPES_MOD (type));
+        TYPES_MOD (type) = MEMfree (TYPES_MOD (type));
 
         if (TYPES_NEXT (type) != NULL) {
             TYPES_NEXT (type) = RenameTypes (TYPES_NEXT (type));
@@ -171,25 +173,25 @@ RenameFunName (node *fundef)
         buf = ILIBstrBufPrint (buf, "SACf_");
     }
 
-    tmp_name = ILIBreplaceSpecialCharacters (FUNDEF_NAME (fundef));
-    ns_name = ILIBreplaceSpecialCharacters (NSgetName (FUNDEF_NS (fundef)));
+    tmp_name = STRreplaceSpecialCharacters (FUNDEF_NAME (fundef));
+    ns_name = STRreplaceSpecialCharacters (NSgetName (FUNDEF_NS (fundef)));
 
     buf = ILIBstrBufPrintf (buf, "%s__%s", ns_name, tmp_name);
 
-    tmp_name = ILIBfree (tmp_name);
-    ns_name = ILIBfree (ns_name);
+    tmp_name = MEMfree (tmp_name);
+    ns_name = MEMfree (ns_name);
 
     arg = FUNDEF_ARGS (fundef);
     while (arg != NULL) {
         buf = ILIBstrBufPrintf (buf, "__%s", ARG_TYPESTRING (arg));
-        ARG_TYPESTRING (arg) = ILIBfree (ARG_TYPESTRING (arg));
+        ARG_TYPESTRING (arg) = MEMfree (ARG_TYPESTRING (arg));
         arg = ARG_NEXT (arg);
     }
 
     if (FUNDEF_AKVID (fundef) > 0) {
-        akv_id = ILIBitoa (FUNDEF_AKVID (fundef));
+        akv_id = STRitoa (FUNDEF_AKVID (fundef));
         buf = ILIBstrBufPrintf (buf, "__akv_%s", akv_id);
-        akv_id = ILIBfree (akv_id);
+        akv_id = MEMfree (akv_id);
     }
 
     new_name = ILIBstrBuf2String (buf);
@@ -230,8 +232,8 @@ RenameFun (node *fun)
             DBUG_PRINT ("PREC", ("renaming C function %s to %s", FUNDEF_NAME (fun),
                                  FUNDEF_LINKNAME (fun)));
 
-            FUNDEF_NAME (fun) = ILIBfree (FUNDEF_NAME (fun));
-            FUNDEF_NAME (fun) = ILIBstringCopy (FUNDEF_LINKNAME (fun));
+            FUNDEF_NAME (fun) = MEMfree (FUNDEF_NAME (fun));
+            FUNDEF_NAME (fun) = STRcpy (FUNDEF_LINKNAME (fun));
         } else {
             DBUG_PRINT ("PREC",
                         ("C function %s has not been renamed", FUNDEF_NAME (fun)));
@@ -246,7 +248,7 @@ RenameFun (node *fun)
         DBUG_PRINT ("PREC", ("renaming SAC function %s:%s to %s",
                              NSgetName (FUNDEF_NS (fun)), FUNDEF_NAME (fun), new_name));
 
-        FUNDEF_NAME (fun) = ILIBfree (FUNDEF_NAME (fun));
+        FUNDEF_NAME (fun) = MEMfree (FUNDEF_NAME (fun));
         FUNDEF_NAME (fun) = new_name;
         FUNDEF_NS (fun) = NSfreeNamespace (FUNDEF_NS (fun));
     }
@@ -337,7 +339,7 @@ RIDtypedef (node *arg_node, info *arg_info)
      * and rename the typedef
      */
 
-    TYPEDEF_NAME (arg_node) = ILIBfree (TYPEDEF_NAME (arg_node));
+    TYPEDEF_NAME (arg_node) = MEMfree (TYPEDEF_NAME (arg_node));
     TYPEDEF_NAME (arg_node) = newname;
     TYPEDEF_NS (arg_node) = NSfreeNamespace (TYPEDEF_NS (arg_node));
 
@@ -374,14 +376,14 @@ RIDobjdef (node *arg_node, info *arg_info)
          */
 
         new_name
-          = (char *)ILIBmalloc (sizeof (char)
-                                * (strlen (OBJDEF_NAME (arg_node))
-                                   + strlen (NSgetName (OBJDEF_NS (arg_node))) + 8));
+          = (char *)MEMmalloc (sizeof (char)
+                               * (strlen (OBJDEF_NAME (arg_node))
+                                  + strlen (NSgetName (OBJDEF_NS (arg_node))) + 8));
 
         sprintf (new_name, "SACo_%s__%s", NSgetName (OBJDEF_NS (arg_node)),
                  OBJDEF_NAME (arg_node));
 
-        OBJDEF_NAME (arg_node) = ILIBfree (OBJDEF_NAME (arg_node));
+        OBJDEF_NAME (arg_node) = MEMfree (OBJDEF_NAME (arg_node));
         OBJDEF_NAME (arg_node) = new_name;
         OBJDEF_NS (arg_node) = NSfreeNamespace (OBJDEF_NS (arg_node));
     } else {
@@ -390,8 +392,8 @@ RIDobjdef (node *arg_node, info *arg_info)
          */
 
         if (OBJDEF_LINKNAME (arg_node) != NULL) {
-            OBJDEF_NAME (arg_node) = ILIBfree (OBJDEF_NAME (arg_node));
-            OBJDEF_NAME (arg_node) = ILIBstringCopy (OBJDEF_LINKNAME (arg_node));
+            OBJDEF_NAME (arg_node) = MEMfree (OBJDEF_NAME (arg_node));
+            OBJDEF_NAME (arg_node) = STRcpy (OBJDEF_LINKNAME (arg_node));
         }
     }
 
@@ -707,10 +709,10 @@ RIDrenameLocalIdentifier (char *id)
     }
 
     new_name
-      = (char *)ILIBmalloc (sizeof (char) * (strlen (id) + strlen (name_prefix) + 1));
+      = (char *)MEMmalloc (sizeof (char) * (strlen (id) + strlen (name_prefix) + 1));
     sprintf (new_name, "%s%s", name_prefix, id);
 
-    id = ILIBfree (id);
+    id = MEMfree (id);
 
     DBUG_RETURN (new_name);
 }

@@ -34,6 +34,8 @@
 #include "aliasanalysis.h"
 #include "DupTree.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 
 /*
  * CONTEXT enumeration: lr_context_t
@@ -69,7 +71,7 @@ MakeInfo (node *fundef)
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_CONTEXT (result) = LR_undef;
     INFO_PREASSIGN (result) = NULL;
@@ -86,7 +88,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }

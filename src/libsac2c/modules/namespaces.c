@@ -11,6 +11,8 @@
 #include "namespaces.h"
 #include "dbug.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "filemgr.h"
 
 #define BLOCKSIZE 100
@@ -63,7 +65,7 @@ EqualsView (view_t *one, view_t *two)
     } else if ((one != NULL) && (two == NULL)) {
         result = FALSE;
     } else if (one != two) {
-        result = ((one->id == two->id) && (ILIBstringCompare (one->name, two->name))
+        result = ((one->id == two->id) && (STReq (one->name, two->name))
                   && (EqualsView (one->next, two->next)));
     }
 
@@ -82,7 +84,7 @@ PutInPool (namespace_t *ns)
      * create initial pool if necessary
      */
     if (pool == NULL) {
-        pool = ILIBmalloc (sizeof (nspool_t));
+        pool = MEMmalloc (sizeof (nspool_t));
     }
 
     /*
@@ -92,7 +94,7 @@ PutInPool (namespace_t *ns)
 
     for (cnt = 0; cnt < (ns->id / BLOCKSIZE); cnt++) {
         if (pos->next == NULL) {
-            pos->next = ILIBmalloc (sizeof (nspool_t));
+            pos->next = MEMmalloc (sizeof (nspool_t));
         }
 
         pos = pos->next;
@@ -138,7 +140,7 @@ FindInPool (const char *module, view_t *view)
     pos = pool;
 
     for (cnt = 0; cnt < nextid; cnt++) {
-        if ((ILIBstringCompare (pos->block[cnt % BLOCKSIZE]->module, module))
+        if ((STReq (pos->block[cnt % BLOCKSIZE]->module, module))
             && (EqualsView (pos->block[cnt % BLOCKSIZE]->view, view))) {
             result = pos->block[cnt % BLOCKSIZE];
             break;
@@ -185,9 +187,9 @@ AddNamespaceToPool (const char *module, view_t *view)
 
     DBUG_ENTER ("AddNamespaceToPool");
 
-    new = ILIBmalloc (sizeof (namespace_t));
+    new = MEMmalloc (sizeof (namespace_t));
 
-    new->module = ILIBstringCopy (module);
+    new->module = STRcpy (module);
     new->id = nextid++;
     new->view = view;
     new->name = BuildNamespaceName (new);
@@ -207,10 +209,10 @@ DupView (const view_t *src)
     if (src == NULL) {
         result = NULL;
     } else {
-        result = ILIBmalloc (sizeof (view_t));
+        result = MEMmalloc (sizeof (view_t));
 
         result->id = src->id;
-        result->name = ILIBstringCopy (src->name);
+        result->name = STRcpy (src->name);
         result->next = DupView (src->next);
     }
 
@@ -224,10 +226,10 @@ FreeView (view_t *view)
 
     if (view != NULL) {
         view->id = 0;
-        view->name = ILIBfree (view->name);
+        view->name = MEMfree (view->name);
         view->next = FreeView (view->next);
 
-        view = ILIBfree (view);
+        view = MEMfree (view);
     }
 
     DBUG_RETURN (view);
@@ -240,9 +242,9 @@ MakeView (const char *name, const view_t *views)
 
     DBUG_ENTER ("MakeView");
 
-    result = ILIBmalloc (sizeof (view_t));
+    result = MEMmalloc (sizeof (view_t));
 
-    result->name = ILIBstringCopy (name);
+    result->name = STRcpy (name);
     result->id = nextviewid++;
     result->next = DupView (views);
 
@@ -453,9 +455,9 @@ NSdeserializeView (const char *name, int id, view_t *next)
 
     DBUG_ENTER ("NSdeserializeView");
 
-    result = ILIBmalloc (sizeof (view_t));
+    result = MEMmalloc (sizeof (view_t));
 
-    result->name = ILIBstringCopy (name);
+    result->name = STRcpy (name);
     result->id = id;
     result->next = next;
 

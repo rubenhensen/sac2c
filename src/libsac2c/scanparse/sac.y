@@ -9,13 +9,14 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <memory.h>
 
 #include "config.h"
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "dbug.h"
 #include "DupTree.h"        /* for use of DUPdoDupTree() */
 #include "ctinfo.h"
@@ -666,7 +667,7 @@ main: TYPE_INT K_MAIN BRACKET_L mainargs BRACKET_R { $<cint>$ = global.linenum; 
                            $4, $7, NULL);
         NODE_LINE( $$) = $<cint>6;
 
-        FUNDEF_NAME( $$) = ILIBstringCopy( "main");
+        FUNDEF_NAME( $$) = STRcpy( "main");
 
         DBUG_PRINT( "PARSE",
                     ("%s:"F_PTR", main "F_PTR " %s (" F_PTR ") ",
@@ -761,7 +762,7 @@ wlcomp_pragma_local: hash_pragma WLCOMP expr_ap
 
 
 pragmacachesim: hash_pragma CACHESIM string   { $$ = $3;              }
-              | hash_pragma CACHESIM          { $$ = ILIBstringCopy( ""); }
+              | hash_pragma CACHESIM          { $$ = STRcpy( ""); }
               | /* empty */              { $$ = NULL;            }
               ;
 
@@ -919,7 +920,7 @@ exprblock2: ntype ids SEMIC exprblock2
                */
               while (SPIDS_NEXT( $2) != NULL) {  /* at least 2 vardecs! */
                 vardec_ptr = TBmakeVardec( 
-                               TBmakeAvis( ILIBstringCopy( SPIDS_NAME( $2)),
+                               TBmakeAvis( STRcpy( SPIDS_NAME( $2)),
                                            TYcopyType( $1)),
                                vardec_ptr);
 
@@ -944,7 +945,7 @@ exprblock2: ntype ids SEMIC exprblock2
               $$ = $4;
               BLOCK_VARDEC( $$) = TBmakeVardec( 
                                     TBmakeAvis( 
-                                      ILIBstringCopy( SPIDS_NAME( $2)), $1),
+                                      STRcpy( SPIDS_NAME( $2)), $1),
                                                 vardec_ptr);
               /*
                * set the DECL_TYPE for the last vardec!
@@ -1037,12 +1038,12 @@ let:       ids LET { $<cint>$ = global.linenum; } expr
                EXPRS_EXPR( tmp) = NULL;
                tmp = FREEdoFreeNode( tmp);
              }
-             id = TBmakeSpid( NULL, ILIBstringCopy( $1));
+             id = TBmakeSpid( NULL, STRcpy( $1));
 
              ids = TBmakeSpids( $1, NULL);
 
              ap = TBmakeSpap( 
-                            TBmakeSpid( NULL, ILIBstringCopy( "modarray")),
+                            TBmakeSpid( NULL, STRcpy( "modarray")),
                             TBmakeExprs( id,
                               TBmakeExprs( $3,
                                 TBmakeExprs( $7,
@@ -1053,15 +1054,15 @@ let:       ids LET { $<cint>$ = global.linenum; } expr
            }
          | expr_ap { $$ = TBmakeLet( NULL, $1); }
          | expr_with { $$ = TBmakeLet( NULL, $1); }
-         | ID INC { $$ = MakeIncDecLet( $1, ILIBstringCopy( "+")); }
-         | INC ID { $$ = MakeIncDecLet( $2, ILIBstringCopy( "+")); }
-         | ID DEC { $$ = MakeIncDecLet( $1, ILIBstringCopy( "-")); }
-         | DEC ID { $$ = MakeIncDecLet( $2, ILIBstringCopy( "-")); }
-         | ID ADDON expr { $$ = MakeOpOnLet( $1, $3, ILIBstringCopy("+")); }
-         | ID SUBON expr { $$ = MakeOpOnLet( $1, $3, ILIBstringCopy("-")); }
-         | ID MULON expr { $$ = MakeOpOnLet( $1, $3, ILIBstringCopy("*")); }
-         | ID DIVON expr { $$ = MakeOpOnLet( $1, $3, ILIBstringCopy("/")); }
-         | ID MODON expr { $$ = MakeOpOnLet( $1, $3, ILIBstringCopy("%")); }
+         | ID INC { $$ = MakeIncDecLet( $1, STRcpy( "+")); }
+         | INC ID { $$ = MakeIncDecLet( $2, STRcpy( "+")); }
+         | ID DEC { $$ = MakeIncDecLet( $1, STRcpy( "-")); }
+         | DEC ID { $$ = MakeIncDecLet( $2, STRcpy( "-")); }
+         | ID ADDON expr { $$ = MakeOpOnLet( $1, $3, STRcpy("+")); }
+         | ID SUBON expr { $$ = MakeOpOnLet( $1, $3, STRcpy("-")); }
+         | ID MULON expr { $$ = MakeOpOnLet( $1, $3, STRcpy("*")); }
+         | ID DIVON expr { $$ = MakeOpOnLet( $1, $3, STRcpy("/")); }
+         | ID MODON expr { $$ = MakeOpOnLet( $1, $3, STRcpy("%")); }
          ;
 
 cond: IF { $<cint>$ = global.linenum; } BRACKET_L expr BRACKET_R assignblock optelse
@@ -1193,38 +1194,38 @@ expr: qual_ext_id                { $$ = $1;                   }
       }
     | PLUS expr %prec MM_OP
       {
-        $$ = TCmakeSpap1( NULL, ILIBstringCopy( "+"), $2);
+        $$ = TCmakeSpap1( NULL, STRcpy( "+"), $2);
       }
     | MINUS expr %prec MM_OP
       {
-        $$ = TCmakeSpap1( NULL, ILIBstringCopy( "-"), $2);
+        $$ = TCmakeSpap1( NULL, STRcpy( "-"), $2);
       }
     | TILDE expr %prec MM_OP
       {
-        $$ = TCmakeSpap1( NULL, ILIBstringCopy( "~"), $2);
+        $$ = TCmakeSpap1( NULL, STRcpy( "~"), $2);
       }
     | EXCL expr %prec MM_OP
       {
-        $$ = TCmakeSpap1( NULL, ILIBstringCopy( "!"), $2);
+        $$ = TCmakeSpap1( NULL, STRcpy( "!"), $2);
       }
     | PLUS BRACKET_L expr COMMA exprs BRACKET_R
       {
-        $$ = TBmakeSpap( TBmakeSpid( NULL, ILIBstringCopy( "+")), 
+        $$ = TBmakeSpap( TBmakeSpid( NULL, STRcpy( "+")), 
                          TBmakeExprs( $3, $5));
       }
     | MINUS BRACKET_L expr COMMA exprs BRACKET_R
       {
-        $$ = TBmakeSpap( TBmakeSpid( NULL, ILIBstringCopy( "-")), 
+        $$ = TBmakeSpap( TBmakeSpid( NULL, STRcpy( "-")), 
                          TBmakeExprs( $3, $5));
       }
     | TILDE BRACKET_L expr COMMA exprs BRACKET_R
       {
-        $$ = TBmakeSpap( TBmakeSpid( NULL, ILIBstringCopy( "~")), 
+        $$ = TBmakeSpap( TBmakeSpid( NULL, STRcpy( "~")), 
                          TBmakeExprs( $3, $5));
       }
     | EXCL BRACKET_L expr COMMA exprs BRACKET_R
       {
-        $$ = TBmakeSpap( TBmakeSpid( NULL, ILIBstringCopy( "!")), 
+        $$ = TBmakeSpap( TBmakeSpid( NULL, STRcpy( "!")), 
                          TBmakeExprs( $3, $5));
       }
     | expr_sel                    { $$ = $1; }   /* bracket notation      */
@@ -1235,7 +1236,7 @@ expr: qual_ext_id                { $$ = $1;                   }
       { $$ = TBmakeCast( $3, $5);
       }
     | BRACE_L ID ARROW expr BRACE_R
-      { $$ = TBmakeSetwl( TBmakeSpid( NULL, ILIBstringCopy( $2)), $4);
+      { $$ = TBmakeSetwl( TBmakeSpid( NULL, STRcpy( $2)), $4);
       }
     | BRACE_L SQBR_L exprs SQBR_R ARROW expr BRACE_R
       { $$ = TBmakeSetwl( $3, $6);
@@ -1344,13 +1345,13 @@ with: BRACKET_L generator BRACKET_R wlassignblock withop
 
 expr_sel: expr SQBR_L exprs SQBR_R
           { if( TCcountExprs($3) == 1) {
-              $$ = TCmakeSpap2( NULL, ILIBstringCopy( "sel"),
+              $$ = TCmakeSpap2( NULL, STRcpy( "sel"),
                                 EXPRS_EXPR( $3), $1);
               EXPRS_EXPR( $3) = NULL;
               $3 = FREEdoFreeNode( $3);
             } else {
               $$ = 
-                TCmakeSpap2(NULL, ILIBstringCopy( "sel"),
+                TCmakeSpap2(NULL, STRcpy( "sel"),
                             TCmakeVector(TYmakeAKS(TYmakeSimpleType(T_unknown),
                                                    SHmakeShape(0)),
                                          $3),
@@ -1359,7 +1360,7 @@ expr_sel: expr SQBR_L exprs SQBR_R
           }
         | expr SQBR_L SQBR_R
           { $$ = 
-              TCmakeSpap2( NULL, ILIBstringCopy( "sel"),
+              TCmakeSpap2( NULL, STRcpy( "sel"),
                            TCmakeVector(TYmakeAKS( TYmakeSimpleType(T_unknown), 
                                                    SHmakeShape(0)),
                                         NULL), 
@@ -1501,10 +1502,10 @@ width: /* empty */   { $$ = NULL; }
      ;
 
 genidx: ID LET SQBR_L ids SQBR_R
-        { $$ = TBmakeWithid( TBmakeSpids( ILIBstringCopy( $1), NULL), $4);
+        { $$ = TBmakeWithid( TBmakeSpids( STRcpy( $1), NULL), $4);
         }
       | ID
-        { $$ = TBmakeWithid( TBmakeSpids( ILIBstringCopy( $1), NULL), NULL);
+        { $$ = TBmakeWithid( TBmakeSpids( STRcpy( $1), NULL), NULL);
         }
       | SQBR_L ids SQBR_R
         { $$ = TBmakeWithid( NULL, $2);
@@ -1551,13 +1552,13 @@ nwithop: GENARRAY BRACKET_L expr COMMA expr BRACKET_R
          }
        | FOLD BRACKET_L qual_ext_id COMMA expr BRACKET_R
          { $$ = TBmakeSpfold( $5);
-           SPFOLD_FUN( $$) = ILIBstringCopy( SPID_NAME( $3));
+           SPFOLD_FUN( $$) = STRcpy( SPID_NAME( $3));
            SPFOLD_NS( $$) = NSdupNamespace( SPID_NS( $3));
            $3 = FREEdoFreeTree( $3);
          }
        | FOLDFIX BRACKET_L qual_ext_id COMMA expr COMMA expr BRACKET_R
          { $$ = TBmakeSpfold( $5);
-           SPFOLD_FUN( $$) = ILIBstringCopy( SPID_NAME( $3));
+           SPFOLD_FUN( $$) = STRcpy( SPID_NAME( $3));
            SPFOLD_NS( $$) = NSdupNamespace( SPID_NS( $3));
            SPFOLD_GUARD( $$) = $7;
            $3 = FREEdoFreeTree( $3);
@@ -1581,14 +1582,14 @@ withop: GENARRAY BRACKET_L expr COMMA expr BRACKET_R
         }
       | FOLD BRACKET_L qual_ext_id COMMA expr COMMA expr BRACKET_R
         { $$ = TBmakeSpfold( $5);
-          SPFOLD_FUN( $$) = ILIBstringCopy( SPID_NAME( $3));
+          SPFOLD_FUN( $$) = STRcpy( SPID_NAME( $3));
           SPFOLD_NS( $$) = NSdupNamespace( SPID_NS( $3));
           $3 = FREEdoFreeTree( $3);
           SPFOLD_SPEXPR( $$) = $7;
         }
       | FOLDFIX BRACKET_L qual_ext_id COMMA expr COMMA expr COMMA expr BRACKET_R
         { $$ = TBmakeSpfold( $5);
-          SPFOLD_FUN( $$) = ILIBstringCopy( SPID_NAME( $3));
+          SPFOLD_FUN( $$) = STRcpy( SPID_NAME( $3));
           SPFOLD_NS( $$) = NSdupNamespace( SPID_NS( $3));
           $3 = FREEdoFreeTree( $3);
           SPFOLD_GUARD( $$) = $7;
@@ -1671,27 +1672,27 @@ ids: ID COMMA ids
      }
    ;
 
-reservedid: GENARRAY          { $$ = ILIBstringCopy("genarray"); }
-          | MODARRAY          { $$ = ILIBstringCopy("modarray"); }
-          | ALL               { $$ = ILIBstringCopy("all"); }
-          | AMPERS            { $$ = ILIBstringCopy("&"); }
-          | EXCL              { $$ = ILIBstringCopy("!"); }
-          | INC               { $$ = ILIBstringCopy("++"); }
-          | DEC               { $$ = ILIBstringCopy("--"); }
-          | PLUS              { $$ = ILIBstringCopy("+"); }
-          | MINUS             { $$ = ILIBstringCopy("-"); }
-          | STAR              { $$ = ILIBstringCopy("*"); }
-          | LE                { $$ = ILIBstringCopy("<="); }
-          | LT                { $$ = ILIBstringCopy("<"); }
-          | GT                { $$ = ILIBstringCopy(">"); }
+reservedid: GENARRAY          { $$ = STRcpy("genarray"); }
+          | MODARRAY          { $$ = STRcpy("modarray"); }
+          | ALL               { $$ = STRcpy("all"); }
+          | AMPERS            { $$ = STRcpy("&"); }
+          | EXCL              { $$ = STRcpy("!"); }
+          | INC               { $$ = STRcpy("++"); }
+          | DEC               { $$ = STRcpy("--"); }
+          | PLUS              { $$ = STRcpy("+"); }
+          | MINUS             { $$ = STRcpy("-"); }
+          | STAR              { $$ = STRcpy("*"); }
+          | LE                { $$ = STRcpy("<="); }
+          | LT                { $$ = STRcpy("<"); }
+          | GT                { $$ = STRcpy(">"); }
           ; 
 string: STR       
         { $$ = $1;
         }
       | STR string
-        { $$ = ILIBstringConcat( $1, $2);
-          $1 = ILIBfree( $1);
-          $2 = ILIBfree( $2);
+        { $$ = STRcat( $1, $2);
+          $1 = MEMfree( $1);
+          $2 = MEMfree( $2);
         }
       ;
 
@@ -1925,7 +1926,7 @@ int SPmyYyparse()
    * make a copy of the actual filename, which will be used for
    * all subsequent nodes...
    */
-  tmp = (char *) ILIBmalloc( (strlen(global.filename)+1) * sizeof( char));
+  tmp = (char *) MEMmalloc( (strlen(global.filename)+1) * sizeof( char));
   CHKMdoNotReport( tmp);
   strcpy( tmp, global.filename);
   global.filename = tmp;
@@ -2086,7 +2087,7 @@ node *String2Array(char *str)
   ARRAY_STRING(array)=str;
 #endif  /* CHAR_ARRAY_AS_STRING */
 
-  res = TCmakeSpap2( NSgetNamespace( "String") , ILIBstringCopy( "to_string"), 
+  res = TCmakeSpap2( NSgetNamespace( "String") , STRcpy( "to_string"), 
                     array, len_expr);
 
   DBUG_RETURN( res); 
@@ -2109,7 +2110,7 @@ node *MakeIncDecLet( char *name, char *op)
   node *let, *id, *ids, *ap;
 
   DBUG_ENTER( "MakeIncDecLet");
-  ids = TBmakeSpids(  ILIBstringCopy( name), NULL);
+  ids = TBmakeSpids(  STRcpy( name), NULL);
 
   id = TBmakeSpid( NULL, name);
 
@@ -2139,7 +2140,7 @@ node *MakeOpOnLet( char *name, node *expr, char *op)
   node *let, *id, *ids, *ap;
 
   DBUG_ENTER( "MakeOpOnLet");
-  ids = TBmakeSpids( ILIBstringCopy( name), NULL);
+  ids = TBmakeSpids( STRcpy( name), NULL);
 
   id = TBmakeSpid( NULL, name);
 
@@ -2441,7 +2442,7 @@ node *SetClassType( node *module, ntype *type)
   DBUG_ENTER("SetClassType");
 
   tdef = TBmakeTypedef( 
-           ILIBstringCopy( NSgetModule( MODULE_NAMESPACE( module))),
+           STRcpy( NSgetModule( MODULE_NAMESPACE( module))),
            NSdupNamespace( MODULE_NAMESPACE( module)),
            type,
            MODULE_TYPES( module));

@@ -33,6 +33,8 @@
 #include "traverse.h"
 #include "free.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "DupTree.h"
 #include "LookUpTable.h"
 
@@ -76,7 +78,7 @@ MakeInfo (node *fundef, node *letids, node *apargs)
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_FUNDEF (result) = fundef;
     INFO_LETIDS (result) = letids;
@@ -93,7 +95,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }
@@ -351,7 +353,7 @@ PINLavis (node *arg_node, info *arg_info)
 
     DBUG_PRINT ("PINL", ("renaming %s to %s", AVIS_NAME (arg_node), name));
 
-    ILIBfree (AVIS_NAME (arg_node));
+    MEMfree (AVIS_NAME (arg_node));
     AVIS_NAME (arg_node) = name;
 
     DBUG_RETURN (arg_node);

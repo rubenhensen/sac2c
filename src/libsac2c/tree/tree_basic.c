@@ -22,6 +22,8 @@
 
 #include "tree_basic.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "ctinfo.h"
 #include "free.h"
 
@@ -41,12 +43,12 @@ TBmakeShpseg (node *numsp)
 
     DBUG_ENTER ("TBmakeShpseg");
 
-    tmp = (shpseg *)ILIBmalloc (sizeof (shpseg));
+    tmp = (shpseg *)MEMmalloc (sizeof (shpseg));
 
 #ifndef DBUG_OFF
     /*
      * For debugging memory use with dbx, it is important
-     * that all memory has been initialised before reading
+     * that all "memory.has been initialised before reading
      * from it. As the Shpseg is allocated in a fixed size
      * which may not be entirely filled afterwards, we
      * have to write an initial value! Otherwise dbx will
@@ -102,7 +104,7 @@ TBmakeTypes (simpletype btype, int dim, shpseg *shpseg, char *name, char *mod)
 
     DBUG_ENTER ("TBmakeTypes");
 
-    tmp = (types *)ILIBmalloc (sizeof (types));
+    tmp = (types *)MEMmalloc (sizeof (types));
 
     TYPES_BASETYPE (tmp) = btype;
     TYPES_NAME (tmp) = name;
@@ -126,7 +128,7 @@ TBmakeNodelistNode (node *node, nodelist *next)
 
     DBUG_ENTER ("TBmakeNodelistNode");
 
-    tmp = (nodelist *)ILIBmalloc (sizeof (nodelist));
+    tmp = (nodelist *)MEMmalloc (sizeof (nodelist));
     NODELIST_NODE (tmp) = node;
     NODELIST_NEXT (tmp) = next;
 
@@ -143,7 +145,7 @@ TBmakeAccess (node *array, node *iv, accessclass_t class, shpseg *offset,
 
     DBUG_ENTER ("TBmakeAccess");
 
-    tmp = (access_t *)ILIBmalloc (sizeof (access_t));
+    tmp = (access_t *)MEMmalloc (sizeof (access_t));
 
     ACCESS_ARRAY (tmp) = array;
     ACCESS_IV (tmp) = iv;
@@ -165,12 +167,12 @@ TBmakeArgtab (int size)
 
     DBUG_ENTER ("TBmakeArgtab");
 
-    argtab = (argtab_t *)ILIBmalloc (sizeof (argtab_t));
+    argtab = (argtab_t *)MEMmalloc (sizeof (argtab_t));
 
     argtab->size = size;
-    argtab->ptr_in = ILIBmalloc (argtab->size * sizeof (node *));
-    argtab->ptr_out = ILIBmalloc (argtab->size * sizeof (types *));
-    argtab->tag = ILIBmalloc (argtab->size * sizeof (argtag_t));
+    argtab->ptr_in = MEMmalloc (argtab->size * sizeof (node *));
+    argtab->ptr_out = MEMmalloc (argtab->size * sizeof (types *));
+    argtab->tag = MEMmalloc (argtab->size * sizeof (argtag_t));
 
     for (i = 0; i < argtab->size; i++) {
         argtab->ptr_in[i] = NULL;

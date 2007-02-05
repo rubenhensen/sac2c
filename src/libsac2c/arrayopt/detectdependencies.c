@@ -1,36 +1,6 @@
 /*
  *
- * $Log$
- * Revision 1.9  2005/01/11 13:32:21  cg
- * Converted output from Error.h to ctinfo.c
- *
- * Revision 1.8  2004/11/27 00:44:46  khf
- * adjusted startfunction
- *
- * Revision 1.7  2004/11/24 23:16:39  khf
- * SacDevCamp04
- *
- * Revision 1.6  2004/11/24 14:14:29  khf
- * SacDevCamp04: compiles
- *
- * Revision 1.5  2004/10/27 15:50:19  khf
- * some debugging
- *
- * Revision 1.4  2004/10/20 08:10:29  khf
- * added identification of resolveable dependencies,
- * some DBUG_PRINTs and changed signature of startfunction
- *
- * Revision 1.3  2004/09/21 17:03:34  khf
- * memory allocation has to be done first
- *
- * Revision 1.2  2004/09/02 15:27:01  khf
- * DDEPENDwithop removed, additional traverse in NWITHOP and NPART added
- *
- * Revision 1.1  2004/08/26 15:06:26  khf
- * Initial revision
- *
- *
- *
+ * $Id$
  *
  */
 
@@ -80,6 +50,8 @@
 #include "node_basic.h"
 #include "tree_compound.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "free.h"
 #include "DupTree.h"
 #include "globals.h"
@@ -119,7 +91,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_DDEPEND_FUSIONABLE_WL (result) = NULL;
     INFO_DDEPEND_REFERENCES_FUSIONABLE (result) = NULL;
@@ -136,7 +108,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }

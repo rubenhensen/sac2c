@@ -7,6 +7,8 @@
 #include "deserialize.h"
 #include "serialize.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "user_types.h"
@@ -71,7 +73,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_DS_RETURN (result) = NULL;
     INFO_DS_SSACOUNTER (result) = NULL;
@@ -95,7 +97,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }
@@ -133,7 +135,7 @@ makeAliasing (node *target, ds_aliasing_t *next)
 
     DBUG_ENTER ("makeAliasing");
 
-    result = ILIBmalloc (sizeof (ds_aliasing_t));
+    result = MEMmalloc (sizeof (ds_aliasing_t));
 
     result->alias = target;
     result->next = next;
@@ -193,11 +195,11 @@ InsertIntoState (node *item)
 
             alias = TYgetUserType (TYgetScalar (TYPEDEF_NTYPE (item)));
 
-            udt = UTaddAlias (ILIBstringCopy (TYPEDEF_NAME (item)),
+            udt = UTaddAlias (STRcpy (TYPEDEF_NAME (item)),
                               NSdupNamespace (TYPEDEF_NS (item)), alias, NODE_LINE (item),
                               item);
         } else {
-            udt = UTaddUserType (ILIBstringCopy (TYPEDEF_NAME (item)),
+            udt = UTaddUserType (STRcpy (TYPEDEF_NAME (item)),
                                  NSdupNamespace (TYPEDEF_NS (item)),
                                  TYcopyType (TYPEDEF_NTYPE (item)), NULL,
                                  NODE_LINE (item), item);
@@ -351,7 +353,7 @@ HeadSymbol2BodySymbol (const char *symbol)
     DBUG_ASSERT (((symbol[0] == 'S') && (symbol[1] == 'H') && (symbol[2] == 'D')),
                  "given symbol is not a function header symbol!");
 
-    result = ILIBmalloc (strlen (symbol) + 2);
+    result = MEMmalloc (strlen (symbol) + 2);
 
     snprintf (result, strlen (symbol) + 2, "S%s", symbol);
 
@@ -486,7 +488,7 @@ FindSymbolInFundefChain (const char *symbol, node *fundefs)
 
     while ((result == NULL) && (fundefs != NULL)) {
         if (FUNDEF_SYMBOLNAME (fundefs) != NULL) {
-            if (ILIBstringCompare (FUNDEF_SYMBOLNAME (fundefs), symbol)) {
+            if (STReq (FUNDEF_SYMBOLNAME (fundefs), symbol)) {
                 result = fundefs;
             }
         }
@@ -505,7 +507,7 @@ FindSymbolInTypedefChain (const char *symbol, node *typedefs)
 
     while ((result == NULL) && (typedefs != NULL)) {
         if (TYPEDEF_SYMBOLNAME (typedefs) != NULL) {
-            if (ILIBstringCompare (TYPEDEF_SYMBOLNAME (typedefs), symbol)) {
+            if (STReq (TYPEDEF_SYMBOLNAME (typedefs), symbol)) {
                 result = typedefs;
             }
         }
@@ -524,7 +526,7 @@ FindSymbolInObjdefChain (const char *symbol, node *objdefs)
 
     while ((result == NULL) && (objdefs != NULL)) {
         if (OBJDEF_SYMBOLNAME (objdefs) != NULL) {
-            if (ILIBstringCompare (OBJDEF_SYMBOLNAME (objdefs), symbol)) {
+            if (STReq (OBJDEF_SYMBOLNAME (objdefs), symbol)) {
                 result = objdefs;
             }
         }
@@ -838,7 +840,7 @@ DSimportTypedefByName (const char *name, const char *module)
              * construct the new typedef and mark it as an alias
              */
             new_tdef
-              = TBmakeTypedef (ILIBstringCopy (TYPEDEF_NAME (orig_tdef)),
+              = TBmakeTypedef (STRcpy (TYPEDEF_NAME (orig_tdef)),
                                NSdupNamespace (global.modulenamespace), alias, NULL);
             TYPEDEF_ISALIAS (new_tdef) = TRUE;
 
@@ -886,7 +888,7 @@ DSimportObjdefByName (const char *name, const char *module)
          */
         new_objdef = TBmakeObjdef (TYcopyType (OBJDEF_TYPE (orig_objdef)),
                                    NSdupNamespace (global.modulenamespace),
-                                   ILIBstringCopy (OBJDEF_NAME (orig_objdef)),
+                                   STRcpy (OBJDEF_NAME (orig_objdef)),
                                    TBmakeGlobobj (orig_objdef), NULL);
         OBJDEF_ISALIAS (new_objdef) = TRUE;
 
@@ -925,7 +927,7 @@ DSloadFunctionBody (node *fundef)
 
     serfun = MODMgetDeSerializeFunction (serfunname, module);
 
-    serfunname = ILIBfree (serfunname);
+    serfunname = MEMfree (serfunname);
 
     SetCurrentFundefHead (fundef);
 
@@ -959,7 +961,7 @@ doDispatchFunCall (node *fundefs, const namespace_t *ns, const char *name,
 
         if (FUNDEF_ISWRAPPERFUN (fundefs)) {
             if (NSequals (FUNDEF_NS (fundefs), ns)
-                && ILIBstringCompare (FUNDEF_NAME (fundefs), name)) {
+                && STReq (FUNDEF_NAME (fundefs), name)) {
                 if (TUsignatureMatches (FUNDEF_ARGS (fundefs), argtypes, FALSE)) {
                     result = fundefs;
                 }
@@ -1168,7 +1170,7 @@ DShex2Double (const char *string)
 
     DBUG_ENTER ("DShex2Double");
 
-    ILIBhexStringToByteArray ((unsigned char *)&res, string);
+    STRhex2Bytes ((unsigned char *)&res, string);
 
     DBUG_RETURN (res);
 }
@@ -1180,7 +1182,7 @@ DShex2Float (const char *string)
 
     DBUG_ENTER ("DShex2Float");
 
-    ILIBhexStringToByteArray ((unsigned char *)&res, string);
+    STRhex2Bytes ((unsigned char *)&res, string);
 
     DBUG_RETURN (res);
 }

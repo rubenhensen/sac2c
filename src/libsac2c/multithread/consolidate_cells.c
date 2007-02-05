@@ -42,6 +42,8 @@
 #include "traverse.h"
 #include "consolidate_cells.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 
 /*
  * INFO structure
@@ -66,7 +68,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_CONCEL_CELLASSIGN (result) = NULL;
 
@@ -78,7 +80,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }
@@ -148,7 +150,7 @@ CONCELfundef (node *arg_node, info *arg_info)
                 myblock = TRAVdo (myblock, arg_info);
                 DBUG_PRINT ("CONCEL", ("trav from fundef-body"));
 
-                /*BLOCK_INSTR(myblock) = ILIBfree(BLOCK_INSTR(myblock));*/
+                /*BLOCK_INSTR(myblock) = MEMfree(BLOCK_INSTR(myblock));*/
                 /*BLOCK_INSTR(myblock) = INFO_CONCEL_CELLASSIGN(arg_info);*/
             }
         }

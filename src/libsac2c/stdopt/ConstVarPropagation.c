@@ -7,6 +7,8 @@
 #include "traverse.h"
 #include "dbug.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "free.h"
 #include "DupTree.h"
 #include "new_types.h"
@@ -80,7 +82,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_PROPMODE (result) = PROP_nothing;
     INFO_ONEFUNDEF (result) = FALSE;
@@ -93,7 +95,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }

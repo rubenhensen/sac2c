@@ -33,6 +33,8 @@
 #include "traverse.h"
 #include "multithread_lib.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 
 /*
  * INFO structure
@@ -73,7 +75,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_LETLHS (result) = NULL;
     INFO_EXECMODE (result) = MUTH_ANY;
@@ -88,7 +90,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }

@@ -65,6 +65,8 @@
 #include "node_basic.h"
 #include "tree_compound.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "globals.h"
 #include "new_types.h"
 #include "dbug.h"
@@ -97,12 +99,12 @@ AddCseInfoLayer (cseinfo *nextlayer, int entries)
 
     DBUG_ENTER ("AddCseInfoLayer");
 
-    res = (cseinfo *)ILIBmalloc (sizeof (cseinfo));
+    res = (cseinfo *)MEMmalloc (sizeof (cseinfo));
 
     res->nextlayer = nextlayer;
     res->entries = entries;
     res->current = 0;
-    res->lets = ILIBmalloc (entries * sizeof (node *));
+    res->lets = MEMmalloc (entries * sizeof (node *));
 
     DBUG_RETURN (res);
 }
@@ -114,8 +116,8 @@ RemoveTopCseLayer (cseinfo *top)
 
     cseinfo *res = top->nextlayer;
 
-    top->lets = ILIBfree (top->lets);
-    top = ILIBfree (top);
+    top->lets = MEMfree (top->lets);
+    top = MEMfree (top);
 
     DBUG_RETURN (res);
 }
@@ -200,7 +202,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_FUNDEF (result) = NULL;
     INFO_EXT_ASSIGN (result) = NULL;
@@ -218,7 +220,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }
@@ -376,8 +378,8 @@ PropagateSubst2Args (node *fun_args, node *ap_args, node *fundef)
                                 FUNDEF_NAME (fundef), NODE_LINE (act_fun_arg),
                                 ARG_NAME (act_fun_arg), stype1, stype2));
         }
-        stype1 = ILIBfree (stype1);
-        stype2 = ILIBfree (stype2);
+        stype1 = MEMfree (stype1);
+        stype2 = MEMfree (stype2);
 
         /*
          * now search the application args for identical id to substitute it.

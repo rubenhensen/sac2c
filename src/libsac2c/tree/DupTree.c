@@ -31,6 +31,8 @@
 #include "node_basic.h"
 #include "tree_compound.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "traverse.h"
 #include "shape.h"
 #include "free.h"
@@ -80,7 +82,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_TYPE (result) = 0;
     INFO_CONT (result) = NULL;
@@ -98,7 +100,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }
@@ -402,10 +404,10 @@ DupTypes (types *arg_types, info *arg_info)
     DBUG_ENTER ("DupTypes");
 
     if (arg_types != NULL) {
-        new_types = TBmakeTypes (TYPES_BASETYPE (arg_types), TYPES_DIM (arg_types),
-                                 DupShpseg (TYPES_SHPSEG (arg_types), arg_info),
-                                 ILIBstringCopy (TYPES_NAME (arg_types)),
-                                 ILIBstringCopy (TYPES_MOD (arg_types)));
+        new_types
+          = TBmakeTypes (TYPES_BASETYPE (arg_types), TYPES_DIM (arg_types),
+                         DupShpseg (TYPES_SHPSEG (arg_types), arg_info),
+                         STRcpy (TYPES_NAME (arg_types)), STRcpy (TYPES_MOD (arg_types)));
 
         TYPES_TDEF (new_types) = TYPES_TDEF (arg_types);
 
@@ -584,7 +586,7 @@ DUPstr (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("DUPstr");
 
-    new_node = TBmakeStr (ILIBstringCopy (STR_STRING (arg_node)));
+    new_node = TBmakeStr (STRcpy (STR_STRING (arg_node)));
 
     CopyCommonNodeData (new_node, arg_node);
 
@@ -663,14 +665,14 @@ DUPid (node *arg_node, info *arg_info)
     }
 
     if (ID_NT_TAG (arg_node) != NULL) {
-        ID_NT_TAG (new_node) = ILIBstringCopy (ID_NT_TAG (arg_node));
+        ID_NT_TAG (new_node) = STRcpy (ID_NT_TAG (arg_node));
     }
 
     /*
      * furthermore, we have to copy the ICMTEXT attribute
      * if it still exists
      */
-    ID_ICMTEXT (new_node) = ILIBstringCopy (ID_ICMTEXT (arg_node));
+    ID_ICMTEXT (new_node) = STRcpy (ID_ICMTEXT (arg_node));
 
     CopyCommonNodeData (new_node, arg_node);
 
@@ -686,8 +688,8 @@ DUPspid (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("DUPspid");
 
-    new_node = TBmakeSpid (NSdupNamespace (SPID_NS (arg_node)),
-                           ILIBstringCopy (SPID_NAME (arg_node)));
+    new_node
+      = TBmakeSpid (NSdupNamespace (SPID_NS (arg_node)), STRcpy (SPID_NAME (arg_node)));
 
     CopyCommonNodeData (new_node, arg_node);
 
@@ -741,7 +743,7 @@ DUPtypedef (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("DUPtypedef");
 
-    new_node = TBmakeTypedef (ILIBstringCopy (TYPEDEF_NAME (arg_node)),
+    new_node = TBmakeTypedef (STRcpy (TYPEDEF_NAME (arg_node)),
                               NSdupNamespace (TYPEDEF_NS (arg_node)),
                               TYcopyType (TYPEDEF_NTYPE (arg_node)),
                               DUPCONT (TYPEDEF_NEXT (arg_node)));
@@ -767,8 +769,8 @@ DUPobjdef (node *arg_node, info *arg_info)
     new_node
       = TBmakeObjdef (TYcopyType (OBJDEF_TYPE (arg_node)),
                       NSdupNamespace (OBJDEF_NS (arg_node)),
-                      ILIBstringCopy (OBJDEF_NAME (arg_node)),
-                      DUPTRAV (OBJDEF_EXPR (arg_node)), DUPCONT (OBJDEF_NEXT (arg_node)));
+                      STRcpy (OBJDEF_NAME (arg_node)), DUPTRAV (OBJDEF_EXPR (arg_node)),
+                      DUPCONT (OBJDEF_NEXT (arg_node)));
 
     OBJDEF_FLAGSTRUCTURE (new_node) = OBJDEF_FLAGSTRUCTURE (arg_node);
 
@@ -819,7 +821,7 @@ DUPfundef (node *arg_node, info *arg_info)
     old_fundef = INFO_FUNDEF (arg_info);
     INFO_FUNDEF (arg_info) = arg_node;
 
-    new_node = TBmakeFundef (ILIBstringCopy (FUNDEF_NAME (arg_node)),
+    new_node = TBmakeFundef (STRcpy (FUNDEF_NAME (arg_node)),
                              NSdupNamespace (FUNDEF_NS (arg_node)),
                              DUPTRAV (FUNDEF_RETS (arg_node)),
                              NULL, /* must be duplicated later on */
@@ -1002,7 +1004,7 @@ DUPblock (node *arg_node, info *arg_info)
 #endif
 
     new_node = TBmakeBlock (DUPTRAV (BLOCK_INSTR (arg_node)), new_vardecs);
-    BLOCK_CACHESIM (new_node) = ILIBstringCopy (BLOCK_CACHESIM (arg_node));
+    BLOCK_CACHESIM (new_node) = STRcpy (BLOCK_CACHESIM (arg_node));
 
     /*
      * BLOCK_SSACOUNTER is adjusted correctly later on by DupFundef()
@@ -1259,8 +1261,8 @@ DUPspids (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("DUPspids");
 
-    new_node = TBmakeSpids (ILIBstringCopy (SPIDS_NAME (arg_node)),
-                            DUPCONT (SPIDS_NEXT (arg_node)));
+    new_node
+      = TBmakeSpids (STRcpy (SPIDS_NAME (arg_node)), DUPCONT (SPIDS_NEXT (arg_node)));
 
     CopyCommonNodeData (new_node, arg_node);
 
@@ -1322,7 +1324,7 @@ DUPap (node *arg_node, info *arg_info)
 
             DBUG_ASSERT (FUNDEF_NEXT (new_fundef) == NULL, "Too many functions copied.");
 
-            FUNDEF_NAME (new_fundef) = ILIBfree (FUNDEF_NAME (new_fundef));
+            FUNDEF_NAME (new_fundef) = MEMfree (FUNDEF_NAME (new_fundef));
             FUNDEF_NAME (new_fundef) = ILIBtmpVarName (FUNDEF_NAME (old_fundef));
 
             /*
@@ -1404,7 +1406,7 @@ DUParray (node *arg_node, info *arg_info)
                             SHcopyShape (ARRAY_SHAPE (arg_node)),
                             DUPTRAV (ARRAY_AELEMS (arg_node)));
 
-    ARRAY_STRING (new_node) = ILIBstringCopy (ARRAY_STRING (arg_node));
+    ARRAY_STRING (new_node) = STRcpy (ARRAY_STRING (arg_node));
 
     CopyCommonNodeData (new_node, arg_node);
 
@@ -1485,11 +1487,11 @@ DUPcwrapper (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("DUPcwrapper");
 
-    new_node = TBmakeCwrapper (CWRAPPER_FUNS (arg_node),
-                               ILIBstringCopy (CWRAPPER_NAME (arg_node)),
-                               NSdupNamespace (CWRAPPER_NS (arg_node)),
-                               CWRAPPER_ARGCOUNT (arg_node), CWRAPPER_RESCOUNT (arg_node),
-                               DUPTRAV (CWRAPPER_NEXT (arg_node)));
+    new_node
+      = TBmakeCwrapper (CWRAPPER_FUNS (arg_node), STRcpy (CWRAPPER_NAME (arg_node)),
+                        NSdupNamespace (CWRAPPER_NS (arg_node)),
+                        CWRAPPER_ARGCOUNT (arg_node), CWRAPPER_RESCOUNT (arg_node),
+                        DUPTRAV (CWRAPPER_NEXT (arg_node)));
     DBUG_RETURN (new_node);
 }
 
@@ -1525,9 +1527,9 @@ DUPimport (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("DUPimport");
 
-    new_node = TBmakeImport (ILIBstringCopy (IMPORT_MOD (arg_node)),
-                             DUPCONT (IMPORT_NEXT (arg_node)),
-                             DUPTRAV (IMPORT_SYMBOL (arg_node)));
+    new_node
+      = TBmakeImport (STRcpy (IMPORT_MOD (arg_node)), DUPCONT (IMPORT_NEXT (arg_node)),
+                      DUPTRAV (IMPORT_SYMBOL (arg_node)));
 
     IMPORT_FLAGSTRUCTURE (new_node) = IMPORT_FLAGSTRUCTURE (arg_node);
 
@@ -1560,8 +1562,8 @@ DUPuse (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("DUPuse");
 
-    new_node = TBmakeUse (ILIBstringCopy (USE_MOD (arg_node)),
-                          DUPCONT (USE_NEXT (arg_node)), DUPTRAV (USE_SYMBOL (arg_node)));
+    new_node = TBmakeUse (STRcpy (USE_MOD (arg_node)), DUPCONT (USE_NEXT (arg_node)),
+                          DUPTRAV (USE_SYMBOL (arg_node)));
 
     DBUG_RETURN (new_node);
 }
@@ -1625,8 +1627,8 @@ DUPsymbol (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("DUPsymbol");
 
-    new_node = TBmakeSymbol (ILIBstringCopy (SYMBOL_ID (arg_node)),
-                             DUPCONT (SYMBOL_NEXT (arg_node)));
+    new_node
+      = TBmakeSymbol (STRcpy (SYMBOL_ID (arg_node)), DUPCONT (SYMBOL_NEXT (arg_node)));
 
     DBUG_RETURN (new_node);
 }
@@ -1668,13 +1670,13 @@ DUPpragma (node *arg_node, info *arg_info)
     PRAGMA_EFFECT (new_node) = DUPTRAV (PRAGMA_EFFECT (arg_node));
     PRAGMA_LINKSIGN (new_node) = DUPTRAV (PRAGMA_LINKSIGN (arg_node));
 
-    PRAGMA_LINKNAME (new_node) = ILIBstringCopy (PRAGMA_LINKNAME (arg_node));
+    PRAGMA_LINKNAME (new_node) = STRcpy (PRAGMA_LINKNAME (arg_node));
 
-    PRAGMA_INITFUN (new_node) = ILIBstringCopy (PRAGMA_INITFUN (arg_node));
+    PRAGMA_INITFUN (new_node) = STRcpy (PRAGMA_INITFUN (arg_node));
     PRAGMA_WLCOMP_APS (new_node) = DUPTRAV (PRAGMA_WLCOMP_APS (arg_node));
 
-    PRAGMA_COPYFUN (new_node) = ILIBstringCopy (PRAGMA_COPYFUN (arg_node));
-    PRAGMA_FREEFUN (new_node) = ILIBstringCopy (PRAGMA_FREEFUN (arg_node));
+    PRAGMA_COPYFUN (new_node) = STRcpy (PRAGMA_COPYFUN (arg_node));
+    PRAGMA_FREEFUN (new_node) = STRcpy (PRAGMA_FREEFUN (arg_node));
     PRAGMA_LINKMOD (new_node) = STRSduplicate (PRAGMA_LINKMOD (arg_node));
     PRAGMA_LINKOBJ (new_node) = STRSduplicate (PRAGMA_LINKOBJ (arg_node));
     PRAGMA_NUMPARAMS (new_node) = PRAGMA_NUMPARAMS (arg_node);
@@ -1909,7 +1911,7 @@ DUPspfold (node *arg_node, info *arg_info)
 
     SPFOLD_GUARD (new_node) = DUPTRAV (SPFOLD_GUARD (arg_node));
 
-    SPFOLD_FUN (new_node) = ILIBstringCopy (SPFOLD_FUN (arg_node));
+    SPFOLD_FUN (new_node) = STRcpy (SPFOLD_FUN (arg_node));
     SPFOLD_NS (new_node) = NSdupNamespace (SPFOLD_NS (arg_node));
 
     SPFOLD_NEXT (new_node) = DUPCONT (SPFOLD_NEXT (arg_node));
@@ -2415,9 +2417,9 @@ DUPavis (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("DUPavis");
 
-    new_node = TBmakeAvis (ILIBstringCopy (LUTsearchInLutSs (INFO_LUT (arg_info),
-                                                             AVIS_NAME (arg_node))),
-                           TYcopyType (AVIS_TYPE (arg_node)));
+    new_node
+      = TBmakeAvis (STRcpy (LUTsearchInLutSs (INFO_LUT (arg_info), AVIS_NAME (arg_node))),
+                    TYcopyType (AVIS_TYPE (arg_node)));
 
     INFO_LUT (arg_info) = LUTinsertIntoLutP (INFO_LUT (arg_info), arg_node, new_node);
 
@@ -2486,9 +2488,8 @@ DUPssacnt (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("DUPssacnt");
 
-    new_node
-      = TBmakeSsacnt (SSACNT_COUNT (arg_node), ILIBstringCopy (SSACNT_BASEID (arg_node)),
-                      DUPCONT (SSACNT_NEXT (arg_node)));
+    new_node = TBmakeSsacnt (SSACNT_COUNT (arg_node), STRcpy (SSACNT_BASEID (arg_node)),
+                             DUPCONT (SSACNT_NEXT (arg_node)));
 
     INFO_LUT (arg_info) = LUTinsertIntoLutP (INFO_LUT (arg_info), arg_node, new_node);
 
@@ -2512,7 +2513,7 @@ DUPerror (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("DUPerror");
 
-    new_node = TBmakeError (ILIBstringCopy (ERROR_MESSAGE (arg_node)), NULL);
+    new_node = TBmakeError (STRcpy (ERROR_MESSAGE (arg_node)), NULL);
 
     if (ERROR_NEXT (arg_node) != NULL) {
         ERROR_NEXT (new_node) = DUPerror (ERROR_NEXT (arg_node), NULL);

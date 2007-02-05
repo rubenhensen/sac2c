@@ -16,9 +16,10 @@
 #include "dbug.h"
 #include "tree_basic.h"
 #include "deserialize.h"
-#include "internal_lib.h"
 #include "namespaces.h"
 #include "ctinfo.h"
+#include "str.h"
+#include "globals.h"
 
 node *
 ASFdoAddSpecialFunctions (node *syntaxtree)
@@ -35,8 +36,7 @@ ASFdoAddSpecialFunctions (node *syntaxtree)
      * unless we currently compile the sac prelude
      */
 
-    if (!ILIBstringCompare (global.preludename,
-                            NSgetModule (MODULE_NAMESPACE (syntaxtree)))) {
+    if (!STReq (global.preludename, NSgetModule (MODULE_NAMESPACE (syntaxtree)))) {
         DSaddSymbolByName ("sel", SET_wrapperhead, global.preludename);
         DSaddSymbolByName ("zero", SET_wrapperhead, global.preludename);
         DSaddSymbolByName ("eq", SET_wrapperhead, global.preludename);

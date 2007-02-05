@@ -31,6 +31,8 @@
 #include "globals.h"
 #include "dbug.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "traverse.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -73,7 +75,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_VALID (result) = FALSE;
     INFO_LHS (result) = NULL;
@@ -92,7 +94,7 @@ FreeInfo (info *info)
     INFO_RHSAVIS (info) = NULL;
     INFO_WITHID (info) = NULL;
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }

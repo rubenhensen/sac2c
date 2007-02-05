@@ -30,6 +30,8 @@
 #include "traverse.h"
 #include "scheduling.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 
 /**
  * INFO structure
@@ -52,7 +54,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     DBUG_RETURN (result);
 }
@@ -62,7 +64,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }

@@ -155,6 +155,7 @@ refactor:
                          SUBPROJECT="$(SUBPROJECT)" \
                          MAKE_DIRS="$(MAKE_DIR)" \
                          HIDE="$(HIDE)" \
+                         COND="$(COND)" \
                          PATTERN="$(PATTERN)" \
                          OUTPUT="$(OUTPUT)"
 

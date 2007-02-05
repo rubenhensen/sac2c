@@ -6,6 +6,8 @@
 
 #include "ccmanager.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "dbug.h"
 #include "ctinfo.h"
 #include "globals.h"
@@ -143,7 +145,7 @@ AddEfenceLib (str_buf *buffer)
     if (global.use_efence) {
         char *efence;
 
-        efence = ILIBstringCopy (FMGRfindFile (PK_extlib_path, "libefence.a"));
+        efence = STRcpy (FMGRfindFile (PK_extlib_path, "libefence.a"));
 
         if (efence == NULL) {
             CTIwarn ("Unable to find `libefence.a' in EXTLIB_PATH");
@@ -216,9 +218,9 @@ BuildDepLibsStringProg (const char *lib, strstype_t kind, void *rest)
         /*
          * lookup lib<lib>.a
          */
-        libname = ILIBmalloc (sizeof (char) * (strlen (lib) + 6));
+        libname = MEMmalloc (sizeof (char) * (strlen (lib) + 6));
         sprintf (libname, "lib%s.a", lib);
-        result = ILIBstringCopy (FMGRfindFile (PK_lib_path, libname));
+        result = STRcpy (FMGRfindFile (PK_lib_path, libname));
 
         if (result == NULL) {
             CTIabort ("Cannot find static library '%s'. The module '%s' "
@@ -226,30 +228,30 @@ BuildDepLibsStringProg (const char *lib, strstype_t kind, void *rest)
                       libname, lib);
         }
 
-        libname = ILIBfree (libname);
+        libname = MEMfree (libname);
         break;
     case STRS_extlib:
-        result = ILIBmalloc (sizeof (char) * (strlen (lib) + 3));
+        result = MEMmalloc (sizeof (char) * (strlen (lib) + 3));
         sprintf (result, "-l%s", lib);
 
         break;
     case STRS_objfile:
-        result = ILIBmalloc (sizeof (char) * (strlen (lib) + 3));
+        result = MEMmalloc (sizeof (char) * (strlen (lib) + 3));
         sprintf (result, "%s", lib);
         break;
     default:
-        result = ILIBstringCopy ("");
+        result = STRcpy ("");
         break;
     }
 
     if (rest != NULL) {
         char *temp
-          = ILIBmalloc (sizeof (char) * (strlen ((char *)rest) + strlen (result) + 2));
+          = MEMmalloc (sizeof (char) * (strlen ((char *)rest) + strlen (result) + 2));
 
         sprintf (temp, "%s %s", (char *)rest, result);
 
-        result = ILIBfree (result);
-        rest = ILIBfree (rest);
+        result = MEMfree (result);
+        rest = MEMfree (rest);
         result = temp;
     }
 
@@ -266,13 +268,13 @@ InvokeCCProg (char *cccall, char *ccflags, char *libs, stringset_t *deps)
 
     extpath = GetExtLibPath ();
 
-    deplibs = (char *)STRSfold (&BuildDepLibsStringProg, deps, ILIBstringCopy (""));
+    deplibs = (char *)STRSfold (&BuildDepLibsStringProg, deps, STRcpy (""));
 
     ILIBsystemCall ("%s %s -o %s %s %s %s %s", cccall, ccflags, global.outfilename,
                     global.cfilename, extpath, deplibs, libs);
 
-    extpath = ILIBfree (extpath);
-    deplibs = ILIBfree (deplibs);
+    extpath = MEMfree (extpath);
+    deplibs = MEMfree (deplibs);
 
     DBUG_VOID_RETURN;
 }
@@ -321,9 +323,9 @@ CCMinvokeCC (node *syntax_tree)
         InvokeCCModule (cccall, ccflags);
     }
 
-    cccall = ILIBfree (cccall);
-    ccflags = ILIBfree (ccflags);
-    libs = ILIBfree (libs);
+    cccall = MEMfree (cccall);
+    ccflags = MEMfree (ccflags);
+    libs = MEMfree (libs);
 
     if (global.gen_cccall) {
         /*

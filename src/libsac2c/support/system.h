@@ -1,5 +1,7 @@
 /*
- * $Id$
+ * $Id: internal_lib.h"
+#include "str.h"
+#include "memory.h 15176 2007-01-29 12:14:40Z cg $
  */
 
 #ifndef _SAC_INTERNAL_LIB_H_
@@ -12,7 +14,7 @@
 #include "dbug.h"
 #include "globals.h"
 #include "ctinfo.h"
-#include "memory.h"
+#include "" memory.h "
 
 /*********************************
  *
@@ -22,11 +24,11 @@
  *
  *********************************/
 #ifdef SHOW_MALLOC
-#define ILIBmallocAt(size, file, line) MEMmallocAt (size, file, line)
+#define MEMmallocAt(size, file, line) MEMmallocAt (size, file, line)
 #endif
-#define ILIBmalloc(size) MEMmalloc (size)
+#define MEMmalloc(size) MEMmalloc (size)
 
-#define ILIBfree(n) MEMfree (n)
+#define MEMfree(n) MEMfree (n)
 
 extern ptr_buf *ILIBptrBufCreate (int size);
 extern ptr_buf *ILIBptrBufAdd (ptr_buf *s, void *ptr);
@@ -43,23 +45,23 @@ extern void ILIBstrBufFlush (str_buf *s);
 extern bool ILIBstrBufIsEmpty (str_buf *s);
 extern void *ILIBstrBufFree (str_buf *s);
 
-extern char *ILIBstringCopy (const char *source);
-extern char *ILIBstringLCopy (const char *source, int maxlen);
-extern char *ILIBstringConcat (const char *first, const char *second);
-extern char *ILIBstringConcat3 (const char *first, const char *second, const char *third);
-extern char *ILIBstringConcat4 (const char *first, const char *second, const char *third,
-                                const char *fourth);
-extern char *ILIBstrTok (char *first, char *sep);
-extern bool ILIBstringCompare (const char *first, const char *second);
+extern char *STRcpy (const char *source);
+extern char *STRncpy (const char *source, int maxlen);
+extern char *STRcat (const char *first, const char *second);
+extern char *STRcatn (3, const char *first, const char *second, const char *third);
+extern char *STRcatn (4, const char *first, const char *second, const char *third,
+                      const char *fourth);
+extern char *STRtok (char *first, char *sep);
+extern bool STReq (const char *first, const char *second);
 extern int ILIBnumberOfDigits (int number);
 
 extern void *ILIBmemCopy (int size, void *mem);
 
 extern int ILIBlcm (int x, int y);
-extern char *ILIBitoa (long number);
+extern char *STRitoa (long number);
 
-extern unsigned char *ILIBhexStringToByteArray (unsigned char *array, const char *string);
-extern char *ILIBbyteArrayToHexString (int len, unsigned char *array);
+extern unsigned char *STRhex2Bytes (unsigned char *array, const char *string);
+extern char *STRbytes2Hex (int len, unsigned char *array);
 
 extern void ILIBsystemCall (char *format, ...);
 extern int ILIBsystemCall2 (char *format, ...);
@@ -70,8 +72,8 @@ extern void ILIBsystemCallStopTracking ();
 extern char *ILIBtmpVar (void);
 extern char *ILIBtmpVarName (char *postfix);
 
-extern char *ILIBreplaceSpecialCharacters (const char *name);
-extern char *ILIBstring2SafeCEncoding (const char *string);
+extern char *STRreplaceSpecialCharacters (const char *name);
+extern char *STRstring2SafeCEncoding (const char *string);
 
 /*********************************
  * macro definitions
@@ -96,7 +98,7 @@ extern char *ILIBstring2SafeCEncoding (const char *string);
 
 #define MALLOC_VECT(vect, dims, type)                                                    \
     if (vect == NULL) {                                                                  \
-        (vect) = (type *)ILIBmalloc ((dims) * sizeof (type));                            \
+        (vect) = (type *)MEMmalloc ((dims) * sizeof (type));                             \
     }
 
 /* caution: 'val' should occur in the macro implementation only once! */

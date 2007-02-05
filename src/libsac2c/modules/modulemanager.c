@@ -12,6 +12,8 @@
 #include "dbug.h"
 #include "build.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "tree_basic.h"
 
 #include <string.h>
@@ -45,7 +47,7 @@ checkHasSameASTVersion (module_t *module)
 
     DBUG_ENTER ("checkHasSameASTVersion");
 
-    name = ILIBmalloc (sizeof (char) * (strlen (module->name) + 14));
+    name = MEMmalloc (sizeof (char) * (strlen (module->name) + 14));
     sprintf (name, "__%s_ASTVERSION", module->name);
 
     astverfun = (astversionfun_p)LIBMgetLibraryFunction (name, module->lib);
@@ -56,7 +58,7 @@ checkHasSameASTVersion (module_t *module)
                   module->name);
     }
 
-    if (!ILIBstringCompare (astverfun (), build_ast)) {
+    if (!STReq (astverfun (), build_ast)) {
         CTIabort ("The module '%s' uses an incompatible syntax tree layout. "
                   "Please update the module and compiler to the most "
                   "recent version.",
@@ -73,7 +75,7 @@ checkHasSameASTVersion (module_t *module)
                   module->name);
     }
 
-    name = ILIBfree (name);
+    name = MEMfree (name);
 
     if (!(serverfun () == SAC_SERIALIZE_VERSION)) {
         CTIabort ("The module '%s' uses an incompatible serialisation algorithm. "
@@ -93,7 +95,7 @@ checkWasBuildUsingSameFlags (module_t *module)
 
     DBUG_ENTER ("wasBuildUsingSameFlags");
 
-    name = ILIBmalloc (sizeof (char) * (strlen (module->name) + 13));
+    name = MEMmalloc (sizeof (char) * (strlen (module->name) + 13));
     sprintf (name, "__%s_USEDFLAGS", module->name);
 
     flagfun = (flagfun_p)LIBMgetLibraryFunction (name, module->lib);
@@ -123,7 +125,7 @@ addNamespaceMappings (module_t *module)
 
     DBUG_ENTER ("addNamespaceMappings");
 
-    name = ILIBmalloc (sizeof (char) * (strlen (module->name) + 19));
+    name = MEMmalloc (sizeof (char) * (strlen (module->name) + 19));
     sprintf (name, "__%s__MapConstructor", module->name);
 
     mapfun = (nsmapfun_p)LIBMgetLibraryFunction (name, module->lib);
@@ -134,7 +136,7 @@ addNamespaceMappings (module_t *module)
 
     mapfun ();
 
-    name = ILIBfree (name);
+    name = MEMfree (name);
 
     DBUG_VOID_RETURN;
 }
@@ -168,12 +170,12 @@ AddModuleToPool (const char *name)
 
     DBUG_PRINT ("MODM", ("Start loading module '%s'.", name));
 
-    result = ILIBmalloc (sizeof (module_t));
+    result = MEMmalloc (sizeof (module_t));
 
-    tmp = ILIBmalloc (sizeof (char) * (strlen (name) + 7));
+    tmp = MEMmalloc (sizeof (char) * (strlen (name) + 7));
     sprintf (tmp, "lib%s.so", name);
 
-    result->sofile = ILIBstringCopy (FMGRfindFile (PK_lib_path, tmp));
+    result->sofile = STRcpy (FMGRfindFile (PK_lib_path, tmp));
 
     if (result->sofile == NULL) {
         CTIabort ("Cannot find library `%s' for module `%s'", tmp, name);
@@ -181,9 +183,9 @@ AddModuleToPool (const char *name)
 
     DBUG_PRINT ("MODM", ("Found library file '%s'.", result->sofile));
 
-    tmp = ILIBfree (tmp);
+    tmp = MEMfree (tmp);
 
-    result->name = ILIBstringCopy (name);
+    result->name = STRcpy (name);
     result->lib = LIBMloadLibrary (result->sofile);
     result->stable = NULL;
     result->next = modulepool;
@@ -262,7 +264,7 @@ GetSymbolTableFunction (module_t *module)
 
     DBUG_ENTER ("GetSymbolTableFunction");
 
-    name = ILIBmalloc (sizeof (char) * (strlen (module->name) + 11));
+    name = MEMmalloc (sizeof (char) * (strlen (module->name) + 11));
     sprintf (name, "__%s__SYMTAB", module->name);
 
     result = (symtabfun_p)LIBMgetLibraryFunction (name, module->lib);
@@ -271,7 +273,7 @@ GetSymbolTableFunction (module_t *module)
         CTIabort ("Error loading symbol table: %s", LIBMgetError ());
     }
 
-    name = ILIBfree (name);
+    name = MEMfree (name);
 
     DBUG_RETURN (result);
 }
@@ -300,7 +302,7 @@ GetDependencyTableFunction (module_t *module)
 
     DBUG_ENTER ("GetDependencyTableFunction");
 
-    name = ILIBmalloc (sizeof (char) * (strlen (module->name) + 11));
+    name = MEMmalloc (sizeof (char) * (strlen (module->name) + 11));
     sprintf (name, "__%s__DEPTAB", module->name);
 
     result = (deptabfun_p)LIBMgetLibraryFunction (name, module->lib);
@@ -309,7 +311,7 @@ GetDependencyTableFunction (module_t *module)
         CTIabort ("Error loading dependency table: %s", LIBMgetError ());
     }
 
-    name = ILIBfree (name);
+    name = MEMfree (name);
 
     DBUG_RETURN (result);
 }

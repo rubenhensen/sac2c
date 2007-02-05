@@ -18,6 +18,8 @@
 #include "NameTuplesUtils.h"
 #include "type_utils.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "namespaces.h"
 
 /*
@@ -634,7 +636,7 @@ TCtype2Shape (types *type)
 
     if (new_shpseg != NULL) {
         shp = SHoldShpseg2Shape (dim, new_shpseg);
-        new_shpseg = ILIBfree (new_shpseg);
+        new_shpseg = MEMfree (new_shpseg);
     } else {
         DBUG_ASSERT (dim <= 0, "shape inconsistency");
     }
@@ -757,7 +759,7 @@ TClookupIds (const char *name, node *ids_chain)
 {
     DBUG_ENTER ("TClookupIds");
 
-    while ((ids_chain != NULL) && (!ILIBstringCompare (name, IDS_NAME (ids_chain)))) {
+    while ((ids_chain != NULL) && (!STReq (name, IDS_NAME (ids_chain)))) {
         ids_chain = IDS_NEXT (ids_chain);
     }
 
@@ -878,7 +880,7 @@ TCnodeListDelete (nodelist *nl, node *node, bool free_attrib)
 
     while (nl && NODELIST_NODE (nl) == node) {
         if (free_attrib && NODELIST_ATTRIB2 (nl)) {
-            NODELIST_ATTRIB2 (nl) = ILIBfree (NODELIST_ATTRIB2 (nl));
+            NODELIST_ATTRIB2 (nl) = MEMfree (NODELIST_ATTRIB2 (nl));
         }
         nl = FREEfreeNodelistNode (nl);
     }
@@ -888,7 +890,7 @@ TCnodeListDelete (nodelist *nl, node *node, bool free_attrib)
     while (tmpnl) {
         if (NODELIST_NODE (tmpnl) == node) {
             if (free_attrib && NODELIST_ATTRIB2 (tmpnl)) {
-                NODELIST_ATTRIB2 (tmpnl) = ILIBfree (NODELIST_ATTRIB2 (tmpnl));
+                NODELIST_ATTRIB2 (tmpnl) = MEMfree (NODELIST_ATTRIB2 (tmpnl));
             }
 
             NODELIST_NEXT (prevnl) = FREEfreeNodelistNode (tmpnl);
@@ -909,7 +911,7 @@ TCnodeListFree (nodelist *nl, bool free_attrib)
 
     while (nl) {
         if (free_attrib && NODELIST_ATTRIB2 (nl)) {
-            NODELIST_ATTRIB2 (nl) = ILIBfree (NODELIST_ATTRIB2 (nl));
+            NODELIST_ATTRIB2 (nl) = MEMfree (NODELIST_ATTRIB2 (nl));
         }
         nl = FREEfreeNodelistNode (nl);
     }
@@ -985,8 +987,7 @@ TCsearchTypedef (const char *name, const namespace_t *ns, node *implementations)
     tmp = implementations;
 
     while ((tmp != NULL)
-           && (!ILIBstringCompare (name, TYPEDEF_NAME (tmp))
-               || !NSequals (ns, TYPEDEF_NS (tmp)))) {
+           && (!STReq (name, TYPEDEF_NAME (tmp)) || !NSequals (ns, TYPEDEF_NS (tmp)))) {
         tmp = TYPEDEF_NEXT (tmp);
     }
 
@@ -1406,14 +1407,14 @@ TCsearchDecl (const char *name, node *decl_node)
 
     while (NULL != decl_node) {
         if (N_vardec == NODE_TYPE (decl_node)) {
-            if (!ILIBstringCompare (name, VARDEC_NAME (decl_node))) {
+            if (!STReq (name, VARDEC_NAME (decl_node))) {
                 found = decl_node;
                 decl_node = NULL;
             } else {
                 decl_node = VARDEC_NEXT (decl_node);
             }
         } else {
-            if (!ILIBstringCompare (name, ARG_NAME (decl_node))) {
+            if (!STReq (name, ARG_NAME (decl_node))) {
                 found = decl_node;
                 decl_node = NULL;
             } else {
@@ -2314,7 +2315,7 @@ TCmakeIdCopyString (const char *str)
 
     result = TBmakeId (NULL);
 
-    ID_ICMTEXT (result) = ILIBstringCopy (str);
+    ID_ICMTEXT (result) = STRcpy (str);
 
     DBUG_RETURN (result);
 }
@@ -2822,7 +2823,7 @@ TCmakeStrCopy (const char *str)
 {
     DBUG_ENTER ("TCmakeStrCopy");
 
-    DBUG_RETURN (TBmakeStr (ILIBstringCopy (str)));
+    DBUG_RETURN (TBmakeStr (STRcpy (str)));
 }
 
 /*--------------------------------------------------------------------------*/

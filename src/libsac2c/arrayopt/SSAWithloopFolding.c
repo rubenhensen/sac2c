@@ -42,6 +42,8 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "free.h"
 #include "DupTree.h"
 #include "globals.h"
@@ -77,14 +79,14 @@ WLFcreateIndex (int vector)
     index_info *pindex;
     DBUG_ENTER ("WLFcreateInfoInfo");
 
-    pindex = ILIBmalloc (sizeof (index_info));
+    pindex = MEMmalloc (sizeof (index_info));
     pindex->vector = vector;
 
     if (!vector)
         vector = 1;
-    pindex->permutation = ILIBmalloc (sizeof (int) * vector);
-    pindex->last = ILIBmalloc (sizeof (index_info *) * vector);
-    pindex->const_arg = ILIBmalloc (sizeof (int) * vector);
+    pindex->permutation = MEMmalloc (sizeof (int) * vector);
+    pindex->last = MEMmalloc (sizeof (index_info *) * vector);
+    pindex->const_arg = MEMmalloc (sizeof (int) * vector);
 
     pindex->arg_no = 0;
 
@@ -287,16 +289,16 @@ WLFcreateInternGen (int shape, int stepwidth)
 
     DBUG_ENTER ("WLFcreateInternGen");
 
-    ig = ILIBmalloc (sizeof (intern_gen));
+    ig = MEMmalloc (sizeof (intern_gen));
     ig->shape = shape;
     ig->code = NULL;
     ig->next = NULL;
 
-    ig->l = ILIBmalloc (sizeof (int) * shape);
-    ig->u = ILIBmalloc (sizeof (int) * shape);
+    ig->l = MEMmalloc (sizeof (int) * shape);
+    ig->u = MEMmalloc (sizeof (int) * shape);
     if (stepwidth) {
-        ig->step = ILIBmalloc (sizeof (int) * shape);
-        ig->width = ILIBmalloc (sizeof (int) * shape);
+        ig->step = MEMmalloc (sizeof (int) * shape);
+        ig->width = MEMmalloc (sizeof (int) * shape);
     } else {
         ig->step = NULL;
         ig->width = NULL;
@@ -433,8 +435,8 @@ WLFnormalizeInternGen (intern_gen *ig)
 
         /* if both vectors are 1 this is equivalent to no grid. */
         if (!error && is_1) {
-            ig->step = ILIBfree (ig->step);
-            ig->width = ILIBfree (ig->width);
+            ig->step = MEMfree (ig->step);
+            ig->width = MEMfree (ig->width);
         }
     }
 
@@ -465,7 +467,7 @@ WLFarrayST2ArrayInt (node *arrayn, int **iarray, int shape)
     DBUG_ASSERT ((iarray != NULL), "no iarray found!");
 
     if (*iarray == NULL) {
-        *iarray = ILIBmalloc (shape * sizeof (int));
+        *iarray = MEMmalloc (shape * sizeof (int));
     }
 
     if (arrayn == NULL) {
@@ -481,7 +483,7 @@ WLFarrayST2ArrayInt (node *arrayn, int **iarray, int shape)
             }
             tmp_co = COfreeConstant (tmp_co);
         } else {
-            *iarray = ILIBfree (*iarray);
+            *iarray = MEMfree (*iarray);
         }
     } else /* (NODE_TYPE(arrayn) == N_id) */ {
         DBUG_ASSERT ((NODE_TYPE (arrayn) == N_id), "wrong arrayn");
@@ -492,7 +494,7 @@ WLFarrayST2ArrayInt (node *arrayn, int **iarray, int shape)
                 (*iarray)[i] = tmp[i];
             }
         } else {
-            *iarray = ILIBfree (*iarray);
+            *iarray = MEMfree (*iarray);
         }
     }
 
@@ -656,12 +658,12 @@ WLFfreeInternGen (intern_gen *tmp)
 
     DBUG_ASSERT ((tmp != NULL), "cannot free a NULL intern gen (WLF)!");
 
-    tmp->l = ILIBfree (tmp->l);
-    tmp->u = ILIBfree (tmp->u);
-    tmp->step = ILIBfree (tmp->step);
-    tmp->width = ILIBfree (tmp->width);
+    tmp->l = MEMfree (tmp->l);
+    tmp->u = MEMfree (tmp->u);
+    tmp->step = MEMfree (tmp->step);
+    tmp->width = MEMfree (tmp->width);
 
-    tmp = ILIBfree (tmp);
+    tmp = MEMfree (tmp);
 
     DBUG_RETURN (tmp);
 }

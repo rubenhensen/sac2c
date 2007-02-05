@@ -10,6 +10,8 @@
 #include "tree_compound.h"
 #include "node_basic.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "free.h"
 #include "shape.h"
 #include "DupTree.h"
@@ -177,7 +179,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_WL (result) = NULL;
     INFO_FUNDEF (result) = NULL;
@@ -275,7 +277,7 @@ FreeInfo (info *info)
         INFO_FWL_SHAPE (info) = COfreeConstant (INFO_FWL_SHAPE (info));
     }
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }
@@ -290,7 +292,7 @@ MakeGridInfo ()
 
     DBUG_ENTER ("MakeGridInfo");
 
-    result = ILIBmalloc (sizeof (gridinfo));
+    result = MEMmalloc (sizeof (gridinfo));
 
     GRIDINFO_NEW_LB (result) = NULL;
     GRIDINFO_NEW_UB (result) = NULL;
@@ -431,7 +433,7 @@ FreeGridInfo (gridinfo *gridinfo)
 {
     DBUG_ENTER ("FreeGridInfo");
 
-    gridinfo = ILIBfree (gridinfo);
+    gridinfo = MEMfree (gridinfo);
 
     DBUG_RETURN (gridinfo);
 }
@@ -570,8 +572,8 @@ CompGenSon (node *gen_son1, node *gen_son2)
                         gen_prob = GEN_constant;
             } else if ((NODE_TYPE (EXPRS_EXPR (elems1)) == N_id)
                        && (NODE_TYPE (EXPRS_EXPR (elems2)) == N_id)) {
-                if (ILIBstringCompare (ID_NAME (EXPRS_EXPR (elems1)),
-                                       ID_NAME (EXPRS_EXPR (elems2)))) {
+                if (STReq (ID_NAME (EXPRS_EXPR (elems1)),
+                           ID_NAME (EXPRS_EXPR (elems2)))) {
                     if (gen_prob == GEN_equal)
                         gen_prob = GEN_equal_var;
                     else if (gen_prob == GEN_constant) {

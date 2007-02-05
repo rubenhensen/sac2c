@@ -30,6 +30,8 @@
  */
 #include "dbug.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "ssi.h"
 #include "specialize.h"
 #include "type_utils.h"
@@ -160,7 +162,7 @@ ESPfundef (node *arg_node, info *arg_info)
 
     DBUG_EXECUTE ("ESP", tmp_str = TYdft_res2DebugString (disp_res););
     DBUG_PRINT ("ESP", ("%s", tmp_str));
-    DBUG_EXECUTE ("ESP", ILIBfree (tmp_str););
+    DBUG_EXECUTE ("ESP", MEMfree (tmp_str););
 
     if (disp_res == NULL) {
         CTIwarnLine (global.linenum, "Specialization of \"%s\" to arguments () ignored",

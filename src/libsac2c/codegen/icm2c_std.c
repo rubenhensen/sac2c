@@ -15,12 +15,14 @@
 #include "gen_startup_code.h"
 #include "free.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 
 #ifdef BEtest
-#define ILIBfree(x)                                                                      \
+#define MEMfree(x)                                                                       \
     x;                                                                                   \
     free (x)
-#define ILIBmalloc(x) malloc (x)
+#define MEMmalloc(x) malloc (x)
 #endif /* BEtest */
 
 #define ScanArglist(cnt, inc, sep_str, sep_code, code)                                   \
@@ -102,7 +104,7 @@ ICMCompileND_FUN_AP (char *name, char *retname, int vararg_cnt, char **vararg)
 #undef ND_FUN_AP
 
     INDENT;
-    if (!ILIBstringCompare (retname, "")) {
+    if (!STReq (retname, "")) {
         fprintf (global.outfile, "%s = ", retname);
     }
 
@@ -1263,16 +1265,16 @@ ICMCompileND_CREATE__ARRAY__SHAPE (char *to_NT, int to_sdim, int dim, int *shp,
          */
         DBUG_ASSERT ((to_sc == C_aks), "[] with unknown shape found!");
     } else if (entries_are_scalars) {
-        char **shp_str = (char **)ILIBmalloc (dim * sizeof (char *));
+        char **shp_str = (char **)MEMmalloc (dim * sizeof (char *));
         for (i = 0; i < dim; i++) {
-            shp_str[i] = (char *)ILIBmalloc (20 * sizeof (char));
+            shp_str[i] = (char *)MEMmalloc (20 * sizeof (char));
             sprintf (shp_str[i], "%d", shp[i]);
         }
         ICMCompileND_SET__SHAPE_arr (to_NT, dim, shp_str);
         for (i = 0; i < dim; i++) {
-            shp_str[i] = ILIBfree (shp_str[i]);
+            shp_str[i] = MEMfree (shp_str[i]);
         }
-        shp_str = ILIBfree (shp_str);
+        shp_str = MEMfree (shp_str);
     } else {
         /* 'vals_ANY[i]' is a tagged identifier */
 

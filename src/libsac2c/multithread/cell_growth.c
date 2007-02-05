@@ -43,6 +43,8 @@
 #include "traverse.h"
 #include "cell_growth.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 
 /*
  * INFO structure
@@ -68,7 +70,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_CEGRO_NEXTCELL (result) = NULL;
 
@@ -80,7 +82,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }

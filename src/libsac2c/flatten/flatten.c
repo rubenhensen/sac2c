@@ -10,6 +10,8 @@
 
 #include "types.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "tree_basic.h"
 #include "node_basic.h"
 #include "tree_compound.h"
@@ -81,7 +83,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_FLAT_CONTEXT (result) = 0;
     INFO_FLAT_LASTASSIGN (result) = NULL;
@@ -95,7 +97,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }
@@ -123,7 +125,7 @@ Abstract (node *arg_node, info *arg_info)
     DBUG_ENTER ("Abstract");
 
     tmp = ILIBtmpVar ();
-    ids = TBmakeSpids (ILIBstringCopy (tmp), NULL);
+    ids = TBmakeSpids (STRcpy (tmp), NULL);
 
     INFO_FLAT_LASTASSIGN (arg_info)
       = TBmakeAssign (TBmakeLet (ids, arg_node), INFO_FLAT_LASTASSIGN (arg_info));

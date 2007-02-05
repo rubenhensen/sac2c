@@ -155,6 +155,7 @@ refactor:
 	$(HIDE) $(MAKE) -f $(MAKEFILE_DIR)/refactor.mkf \
                         SUBPROJECT="$(SUBPROJECT)" \
                         HIDE="$(HIDE)" \
+                        COND="$(COND)" \
                         PATTERN="$(PATTERN)" \
                         OUTPUT="$(OUTPUT)"
 	$(HIDE) $(RM) .make_track

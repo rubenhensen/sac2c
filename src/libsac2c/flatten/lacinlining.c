@@ -9,6 +9,8 @@
 #include "free.h"
 #include "new_types.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "prepare_inlining.h"
 
 #include "lacinlining.h"
@@ -43,7 +45,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_ONEFUNDEF (result) = FALSE;
     INFO_FUNDEF (result) = NULL;
@@ -59,7 +61,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }
@@ -123,8 +125,8 @@ AdaptConcreteArgs (node *conc_arg, node *form_arg, node *fundef)
             DBUG_EXECUTE ("LINL", tmp_str = TYtype2String (ftype, 0, 0);
                           tmp_str2 = TYtype2String (ctype, 0, 0););
             DBUG_PRINT ("LINL", ("  >> trying to adapt %s to %s", tmp_str2, tmp_str));
-            DBUG_EXECUTE ("LINL", tmp_str = ILIBfree (tmp_str);
-                          tmp_str2 = ILIBfree (tmp_str2););
+            DBUG_EXECUTE ("LINL", tmp_str = MEMfree (tmp_str);
+                          tmp_str2 = MEMfree (tmp_str2););
 
             if (TYisAKS (ftype) && TYisAKV (ctype)) {
                 /*

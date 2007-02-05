@@ -11,6 +11,8 @@
 #include "types.h"
 #include "free.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "print.h"
 #include "tree_compound.h"
 #include "tree_basic.h"
@@ -88,7 +90,7 @@ GetNextIcm (char **ret, node *exprs)
     len += strlen (ICM_NAME (expr));
     len += 8 + 2 * cnt;
 
-    (*ret) = (char *)ILIBmalloc (len * sizeof (char));
+    (*ret) = (char *)MEMmalloc (len * sizeof (char));
     (*ret)[0] = '\0';
     strcat ((*ret), "SAC_");
     strcat ((*ret), ICM_NAME (expr));
@@ -99,11 +101,11 @@ GetNextIcm (char **ret, node *exprs)
     for (i = 1; i < cnt; i++) {
         strcat ((*ret), ", ");
         strcat ((*ret), v[i]);
-        v[i] = ILIBfree (v[i]);
+        v[i] = MEMfree (v[i]);
     }
     strcat ((*ret), ")");
 
-    v = ILIBfree (v);
+    v = MEMfree (v);
 
     DBUG_PRINT ("PRINT", ("icm-arg found: %s", (*ret)));
 
@@ -142,7 +144,7 @@ node *GetNextPrf( char **ret, node *exprs)
   len += strlen( prf_symbol[ PRF_PRF( expr)]);
   len += 5;
 
-  (*ret) = (char *) ILIBmalloc( len * sizeof( char));
+  (*ret) = (char *) MEMmalloc( len * sizeof( char));
   (*ret)[0] = '\0';
   strcat( (*ret), "(");
   strcat( (*ret), v[0]);
@@ -152,7 +154,7 @@ node *GetNextPrf( char **ret, node *exprs)
   strcat( (*ret), v[1]);
   strcat( (*ret), ")");
 
-  v = ILIBfree( v);
+  v = MEMfree( v);
 
   DBUG_PRINT( "PRINT", ("icm-arg found: %s", (*ret)));
 
@@ -183,9 +185,9 @@ GetNextNt (char **ret, node *exprs)
      */
     if ((ID_NAME_OR_ICMTEXT (expr))[0] != '\0') {
         DBUG_ASSERT ((ID_NT_TAG (expr) != NULL), "wrong icm-arg: no tag found");
-        (*ret) = ILIBstringCopy (ID_NT_TAG (expr));
+        (*ret) = STRcpy (ID_NT_TAG (expr));
     } else {
-        (*ret) = ILIBstringCopy ("");
+        (*ret) = STRcpy ("");
     }
 
     DBUG_PRINT ("PRINT", ("icm-arg found: %s", (*ret)));
@@ -216,7 +218,7 @@ GetNextId (char **ret, node *exprs)
      * store the name in the avis (NAME), but directly
      * inside of the id node (ICMTEXT)
      */
-    (*ret) = ILIBstringCopy (ID_NAME_OR_ICMTEXT (expr));
+    (*ret) = STRcpy (ID_NAME_OR_ICMTEXT (expr));
 
     DBUG_PRINT ("PRINT", ("icm-arg found: %s", (*ret)));
 
@@ -240,7 +242,7 @@ GetNextGlobobj (char **ret, node *exprs)
 
     DBUG_ASSERT ((NODE_TYPE (expr) == N_globobj), "wrong icm-arg: N_globobj expected");
 
-    (*ret) = ILIBstringCopy (OBJDEF_NT_TAG (GLOBOBJ_OBJDEF (expr)));
+    (*ret) = STRcpy (OBJDEF_NT_TAG (GLOBOBJ_OBJDEF (expr)));
 
     DBUG_PRINT ("PRINT", ("icm-arg found: %s", (*ret)));
 
@@ -263,7 +265,7 @@ GetNextString (char **ret, node *exprs)
     expr = EXPRS_EXPR (exprs);
 
     DBUG_ASSERT ((NODE_TYPE (expr) == N_str), "wrong icm-arg: N_str expected");
-    (*ret) = ILIBmalloc (strlen (STR_STRING (expr)) + 3);
+    (*ret) = MEMmalloc (strlen (STR_STRING (expr)) + 3);
     sprintf ((*ret), "\"%s\"", STR_STRING (expr));
 
     DBUG_PRINT ("PRINT", ("icm-arg found: %s", (*ret)));
@@ -426,17 +428,17 @@ GetNextAny (char **ret, node *exprs)
         exprs = GetNextString (ret, exprs);
         break;
     case N_num:
-        (*ret) = (char *)ILIBmalloc (sizeof (char) * 50);
+        (*ret) = (char *)MEMmalloc (sizeof (char) * 50);
         exprs = GetNextInt (&ival, exprs);
         sprintf ((*ret), "%d", ival);
         break;
     case N_char:
-        (*ret) = (char *)ILIBmalloc (sizeof (char) * 5);
+        (*ret) = (char *)MEMmalloc (sizeof (char) * 5);
         exprs = GetNextChar (&cval, exprs);
         sprintf ((*ret), "%d", cval);
         break;
     case N_bool:
-        (*ret) = (char *)ILIBmalloc (sizeof (char) * 6);
+        (*ret) = (char *)MEMmalloc (sizeof (char) * 6);
         exprs = GetNextBool (&bval, exprs);
         if (bval) {
             sprintf ((*ret), "true");
@@ -467,7 +469,7 @@ GetNextVarAny (char ***ret, int *ret_len, int cnt, node *exprs)
 
     DBUG_ENTER ("GetNextVarAny");
 
-    (*ret) = (char **)ILIBmalloc (cnt * sizeof (char *));
+    (*ret) = (char **)MEMmalloc (cnt * sizeof (char *));
 
     DBUG_ASSERT ((exprs != NULL), "wrong icm-arg: NULL found!");
     DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "wrong icm-arg: N_exprs expected");
@@ -493,7 +495,7 @@ GetNextVarNt (char ***ret, int cnt, node *exprs)
 
     DBUG_ENTER ("GetNextVarNt");
 
-    (*ret) = (char **)ILIBmalloc (cnt * sizeof (char *));
+    (*ret) = (char **)MEMmalloc (cnt * sizeof (char *));
 
     DBUG_ASSERT ((exprs != NULL), "wrong icm-arg: NULL found!");
     DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "wrong icm-arg: N_exprs expected");
@@ -515,7 +517,7 @@ node *GetNextVarId( char ***ret, int cnt, node *exprs)
 
   DBUG_ENTER( "GetNextVarId");
 
-  (*ret) = (char **) ILIBmalloc( cnt * sizeof( char*));
+  (*ret) = (char **) MEMmalloc( cnt * sizeof( char*));
 
   DBUG_ASSERT( (exprs != NULL), "wrong icm-arg: NULL found!");
   DBUG_ASSERT( (NODE_TYPE( exprs) == N_exprs),
@@ -538,7 +540,7 @@ GetNextVarInt (int **ret, int cnt, node *exprs)
 
     DBUG_ENTER ("GetNextVarInt");
 
-    (*ret) = (int *)ILIBmalloc (cnt * sizeof (int));
+    (*ret) = (int *)MEMmalloc (cnt * sizeof (int));
 
     DBUG_ASSERT ((exprs != NULL), "wrong icm-arg: NULL found!");
     DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "wrong icm-arg: N_exprs expected");

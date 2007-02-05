@@ -6,6 +6,8 @@
 #include "dbug.h"
 #include "traverse.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "free_info.h"
 #include "tree_basic.h"
 #include "new_types.h"
@@ -28,7 +30,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_FREE_FLAG (result) = NULL;
     INFO_FREE_ASSIGN (result) = NULL;
@@ -41,7 +43,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }
@@ -85,11 +87,11 @@ FREEfreeIndexInfo (index_info *fr)
 
     DBUG_ASSERT ((fr != NULL), "cannot free a NULL index info (WLF)!");
 
-    fr->permutation = ILIBfree (fr->permutation);
-    fr->last = ILIBfree (fr->last);
-    fr->const_arg = ILIBfree (fr->const_arg);
+    fr->permutation = MEMfree (fr->permutation);
+    fr->last = MEMfree (fr->last);
+    fr->const_arg = MEMfree (fr->const_arg);
 
-    fr = ILIBfree (fr);
+    fr = MEMfree (fr);
 
     DBUG_RETURN (fr);
 }
@@ -109,7 +111,7 @@ FREEfreeShpseg (shpseg *fr)
         SHPSEG_NEXT (fr) = FREEfreeShpseg (SHPSEG_NEXT (fr));
     }
 
-    fr = ILIBfree (fr);
+    fr = MEMfree (fr);
 
     DBUG_RETURN (fr);
 }
@@ -134,10 +136,10 @@ FREEfreeOneTypes (types *fr)
                          "SHPSEG not found although DIM is greater 0");
             TYPES_SHPSEG (tmp) = FREEfreeShpseg (TYPES_SHPSEG (tmp));
         }
-        TYPES_NAME (tmp) = ILIBfree (TYPES_NAME (tmp));
-        TYPES_MOD (tmp) = ILIBfree (TYPES_MOD (tmp));
+        TYPES_NAME (tmp) = MEMfree (TYPES_NAME (tmp));
+        TYPES_MOD (tmp) = MEMfree (TYPES_MOD (tmp));
 
-        tmp = ILIBfree (tmp);
+        tmp = MEMfree (tmp);
     }
 
     DBUG_RETURN (fr);
@@ -173,7 +175,7 @@ FREEfreeNodelist (nodelist *list)
     while (list != NULL) {
         tmp = list;
         list = NODELIST_NEXT (list);
-        tmp = ILIBfree (tmp);
+        tmp = MEMfree (tmp);
     }
 
     DBUG_RETURN (list);
@@ -196,7 +198,7 @@ FREEfreeNodelistNode (nodelist *nl)
 
     tmp = nl;
     nl = NODELIST_NEXT (nl);
-    tmp = ILIBfree (tmp);
+    tmp = MEMfree (tmp);
 
     DBUG_RETURN (nl);
 }
@@ -233,7 +235,7 @@ FREEfreeOneAccess (access_t *fr)
       ACCESS_OFFSET (tmp) = FREEfreeShpseg (ACCESS_OFFSET (tmp));
     }
 
-    tmp = ILIBfree (tmp);
+    tmp = MEMfree (tmp);
 #else
         fr = NULL;
 #endif
@@ -265,12 +267,12 @@ FREEfreeArgtab (argtab_t *argtab)
 
     DBUG_ASSERT ((argtab != NULL), "argument is NULL");
 
-    argtab->ptr_in = ILIBfree (argtab->ptr_in);
-    argtab->ptr_out = ILIBfree (argtab->ptr_out);
-    argtab->tag = ILIBfree (argtab->tag);
+    argtab->ptr_in = MEMfree (argtab->ptr_in);
+    argtab->ptr_out = MEMfree (argtab->ptr_out);
+    argtab->tag = MEMfree (argtab->tag);
     argtab->size = 0;
 
-    argtab = ILIBfree (argtab);
+    argtab = MEMfree (argtab);
 
     DBUG_RETURN (argtab);
 }
@@ -392,7 +394,7 @@ FreeZombie (node *fundef)
         /*
          * remove all the zombie data
          */
-        FUNDEF_NAME (fundef) = ILIBfree (FUNDEF_NAME (fundef));
+        FUNDEF_NAME (fundef) = MEMfree (FUNDEF_NAME (fundef));
         FUNDEF_NS (fundef) = NSfreeNamespace (FUNDEF_NS (fundef));
         FUNDEF_IMPL (fundef) = NULL;
 
@@ -410,7 +412,7 @@ FreeZombie (node *fundef)
         /* free entire structure */
         tmp->sons.N_fundef = NULL;
         tmp->attribs.N_fundef = NULL;
-        tmp = ILIBfree (tmp);
+        tmp = MEMfree (tmp);
 
         zombies_exist -= 1;
     }

@@ -13,6 +13,8 @@
 #include "node_basic.h"
 #include "dbug.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "free.h"
 #include "tree_compound.h"
 
@@ -39,7 +41,7 @@ MakeInfo ()
     info *result;
 
     DBUG_ENTER ("MakeInfo");
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_WLSELSMAX (result) = 0;
     INFO_WLSELS (result) = 0;
@@ -54,7 +56,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }

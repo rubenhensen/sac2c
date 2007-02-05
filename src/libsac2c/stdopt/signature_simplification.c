@@ -70,6 +70,8 @@
 #include "new_types.h"
 #include "dbug.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "free.h"
 #include "globals.h"
 #include "constants.h"
@@ -115,7 +117,7 @@ MakeInfo ()
     info *result;
 
     DBUG_ENTER ("MakeInfo");
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_FUNDEF (result) = NULL;
     INFO_RETURNEXPRS (result) = FALSE;
@@ -136,7 +138,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }
@@ -238,7 +240,7 @@ SISIfundef (node *arg_node, info *arg_info)
         INFO_FUNDEF (arg_info) = arg_node;
 
         if ((FUNDEF_RETS (arg_node) != NULL) && (!FUNDEF_ISLACFUN (arg_node))
-            && (!ILIBstringCompare ("main", FUNDEF_NAME (arg_node)))
+            && (!STReq ("main", FUNDEF_NAME (arg_node)))
             && (!NSequals (NSgetRootNamespace (), FUNDEF_NS (arg_node)))
             && (!FUNDEF_ISEXPORTED (arg_node)) && (!FUNDEF_ISPROVIDED (arg_node))) {
             FUNDEF_RETS (arg_node) = TRAVdo (FUNDEF_RETS (arg_node), arg_info);
@@ -553,7 +555,7 @@ SISIreturn (node *arg_node, info *arg_info)
     DBUG_ENTER ("SISIreturn");
 
     if ((!FUNDEF_ISLACFUN (INFO_FUNDEF (arg_info)))
-        && (!ILIBstringCompare ("main", FUNDEF_NAME (INFO_FUNDEF (arg_info))))
+        && (!STReq ("main", FUNDEF_NAME (INFO_FUNDEF (arg_info))))
         && (!NSequals (NSgetRootNamespace (), FUNDEF_NS (INFO_FUNDEF (arg_info))))
         && (!FUNDEF_ISEXPORTED (INFO_FUNDEF (arg_info)))
         && (!FUNDEF_ISPROVIDED (INFO_FUNDEF (arg_info)))) {

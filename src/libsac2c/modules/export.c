@@ -12,6 +12,8 @@
 #include "free.h"
 #include "globals.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "ctinfo.h"
@@ -55,7 +57,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_SYMBOL (result) = NULL;
     INFO_EXPORTED (result) = FALSE;
@@ -77,7 +79,7 @@ FreeInfo (info *info)
     INFO_SYMBOL (info) = NULL;
     INFO_INTERFACE (info) = NULL;
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }
@@ -210,7 +212,7 @@ EXPsymbol (node *arg_node, info *arg_info)
     DBUG_ENTER ("EXPsymbol");
 
     if (INFO_SYMBMODE (arg_info) == SYM_filter) {
-        if (ILIBstringCompare (INFO_SYMBOL (arg_info), SYMBOL_ID (arg_node))) {
+        if (STReq (INFO_SYMBOL (arg_info), SYMBOL_ID (arg_node))) {
             INFO_RESULT (arg_info) = TRUE;
 
             /*
@@ -267,7 +269,7 @@ EXPfundef (node *arg_node, info *arg_info)
             FUNDEF_ISEXPORTED (arg_node) = FALSE;
             FUNDEF_ISPROVIDED (arg_node) = FALSE;
         } else if ((INFO_FILETYPE (arg_info) == F_prog) && (FUNDEF_ISLOCAL (arg_node))
-                   && (ILIBstringCompare (FUNDEF_NAME (arg_node), "main"))) {
+                   && (STReq (FUNDEF_NAME (arg_node), "main"))) {
 
             /* override exports/provide for function main in a
              * program! Main is always provided.

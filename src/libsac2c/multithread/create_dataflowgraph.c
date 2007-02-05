@@ -76,6 +76,8 @@
 #include "create_dataflowgraph.h"
 #include "print.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include <string.h>
 
 #define CDFG_DEBUG 0
@@ -138,7 +140,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_CDFG_CURRENTDFG (result) = NULL;
     INFO_CDFG_OUTERMOSTDFG (result) = NULL;
@@ -152,7 +154,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }
@@ -764,10 +766,10 @@ GetName (node *assign)
         if (LET_IDS (ASSIGN_INSTR (assign)) != NULL) {
             return_value = IDS_NAME (LET_IDS (ASSIGN_INSTR (assign)));
         } else {
-            return_value = ILIBstringCopy ("DF__void");
+            return_value = STRcpy ("DF__void");
         }
     } else if (NODE_TYPE (instr) == N_cond) {
-        return_value = ILIBstringCopy ("DF__conditional");
+        return_value = STRcpy ("DF__conditional");
     } else {
         DBUG_ASSERT (0, "GetName was called with an invalid assignment");
     }

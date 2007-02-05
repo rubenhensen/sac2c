@@ -1,52 +1,6 @@
 /*
  *
- * $Log$
- * Revision 1.13  2005/06/28 12:39:42  sbs
- * adjusted WLBnodeOrIntPrint and WLBnodeOrIntMakeIndex
- * As we assume that this code is relevant for with2 only(!!),
- * we can now rely on WLPG to make bounds structural constants
- * As a consequence of that, we know, that we just need to
- * expect scalars either as num or as id.
- *
- * Revision 1.12  2004/12/13 18:55:48  ktr
- * Withids contain N_id/N_exprs of N_id after explicit allocation now.
- *
- * Revision 1.11  2004/12/13 13:54:05  ktr
- * should be more robust against missing old types.
- *
- * Revision 1.10  2004/11/25 16:55:42  skt
- * big compiler switch during SACDevCampDK sk4
- *
- * Revision 1.9  2004/03/09 23:57:59  dkrHH
- * old backend removed
- *
- * Revision 1.8  2002/08/08 13:03:07  dkr
- * bug in NodeOrInt_Print() fixed
- *
- * Revision 1.7  2002/08/07 09:46:13  dkr
- * ifdef added to please cc (no warnings anymore)
- *
- * Revision 1.6  2002/07/15 14:49:34  dkr
- * signature of NodeOrInt_MakeIndex() modified:
- * parameters 'no_num' and 'no_icm' removed
- * (even C-ICMs can handle N_num and N_icm args now :-)
- *
- * Revision 1.5  2002/07/15 14:28:01  dkr
- * modifications for new backend done
- *
- * Revision 1.4  2001/05/17 11:33:25  dkr
- * MALLOC/FREE eliminated
- *
- * Revision 1.3  2001/04/02 16:01:56  dkr
- * NodeOrInt_MakeIndex modified
- * NameOrVal_MakeIndex removed
- * NodeOrInt_Print added
- *
- * Revision 1.2  2001/04/02 11:41:14  dkr
- * includes added
- *
- * Revision 1.1  2001/03/30 14:07:28  dkr
- * Initial revision
+ * $Id$
  *
  */
 
@@ -57,6 +11,7 @@
 #include "DupTree.h"
 #include "NameTuplesUtils.h"
 #include "internal_lib.h"
+#include "str.h"
 #include "new_types.h"
 
 /******************************************************************************
@@ -383,7 +338,7 @@ WLBnameOrValEq (const char *name1, int val1, const char *name2, int val2, int sh
 
         ret = (val1 == val2);
     } else if ((name1 != NULL) && (name2 != NULL)) {
-        ret = (!ILIBstringCompare (name1, name2));
+        ret = (!STReq (name1, name2));
     } else {
         ret = FALSE;
     }

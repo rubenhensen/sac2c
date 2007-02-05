@@ -9,6 +9,8 @@
 #include "ctinfo.h"
 #include "free.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "namespaces.h"
 
 /**
@@ -33,7 +35,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_CURRENTNS (result) = NULL;
 
@@ -45,7 +47,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }
@@ -80,13 +82,13 @@ Symboltable2Symbols (stsymboliterator_t *iterator, bool exportedonly)
 
         if (exportedonly) {
             if (STsymbolVisibility (symb) == SVT_exported) {
-                result = TBmakeSymbol (ILIBstringCopy (STsymbolName (symb)), next);
+                result = TBmakeSymbol (STRcpy (STsymbolName (symb)), next);
             } else {
                 result = next;
             }
         } else {
             if (STsymbolVisibility (symb) != SVT_local) {
-                result = TBmakeSymbol (ILIBstringCopy (STsymbolName (symb)), next);
+                result = TBmakeSymbol (STRcpy (STsymbolName (symb)), next);
             } else {
                 result = next;
             }
@@ -196,7 +198,7 @@ RSAuse (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("RSAuse");
 
-    if (ILIBstringCompare (USE_MOD (arg_node), NSgetModule (INFO_CURRENTNS (arg_info)))) {
+    if (STReq (USE_MOD (arg_node), NSgetModule (INFO_CURRENTNS (arg_info)))) {
         CTIerrorLine (NODE_LINE (arg_node),
                       "The namespace of the module being compiled cannot be "
                       "referenced in use statements.");
@@ -239,8 +241,7 @@ RSAimport (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("RSAImport");
 
-    if (ILIBstringCompare (IMPORT_MOD (arg_node),
-                           NSgetModule (INFO_CURRENTNS (arg_info)))) {
+    if (STReq (IMPORT_MOD (arg_node), NSgetModule (INFO_CURRENTNS (arg_info)))) {
         CTIerrorLine (NODE_LINE (arg_node),
                       "The namespace of the module being compiled cannot be "
                       "referenced in import statements.");

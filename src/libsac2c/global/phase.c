@@ -7,6 +7,8 @@
 #include "ctinfo.h"
 #include "globals.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "DupTree.h"
@@ -143,7 +145,7 @@ PHinterpretBreakOption (char *option)
          */
 
 #define PHASEelement(it_element)                                                         \
-    if (ILIBstringCompare (option, #it_element) || (num == (int)PH_##it_element)) {      \
+    if (STReq (option, #it_element) || (num == (int)PH_##it_element)) {                  \
         global.break_after = PH_##it_element;                                            \
     } else
 
@@ -156,12 +158,12 @@ PHinterpretBreakOption (char *option)
          */
 
 #define SUBPHASEelement(it_element)                                                      \
-    if (ILIBstringCompare (option, #it_element)) {                                       \
+    if (STReq (option, #it_element)) {                                                   \
         global.break_after_subphase = SUBPH_##it_element;                                \
     } else
 
 #define OPTCYCLEelement(it_element)                                                      \
-    if (ILIBstringCompare (option, #it_element)) {                                       \
+    if (STReq (option, #it_element)) {                                                   \
         global.break_after_subphase = SUBPH_##it_element;                                \
     } else
 
@@ -175,12 +177,12 @@ PHinterpretBreakOption (char *option)
          */
 
 #define OPTINCYCelement(it_element)                                                      \
-    if (ILIBstringCompare (option, #it_element)) {                                       \
+    if (STReq (option, #it_element)) {                                                   \
         global.break_after_optincyc = OIC_##it_element;                                  \
     } else
 
 #define OPTINCYCFUNelement(it_element)                                                   \
-    if (ILIBstringCompare (option, #it_element)) {                                       \
+    if (STReq (option, #it_element)) {                                                   \
         global.break_after_optincyc = OIC_##it_element;                                  \
     } else
 

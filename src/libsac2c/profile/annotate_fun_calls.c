@@ -49,6 +49,8 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "traverse.h"
 #include "free.h"
 #include "ctinfo.h"
@@ -82,7 +84,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_PF_FUNDEF (result) = NULL;
     INFO_PF_PARENT (result) = NULL;
@@ -95,7 +97,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }
@@ -159,7 +161,7 @@ Fundef2ProfileString (node *fundef)
     while (arg != NULL) {
         tmp_str = TYtype2String (ARG_NTYPE (arg), FALSE, 0);
         str_buff = ILIBstrBufPrint (str_buff, tmp_str);
-        tmp_str = ILIBfree (tmp_str);
+        tmp_str = MEMfree (tmp_str);
 
         if (ARG_ISREFERENCE (arg) && !ARG_ISREADONLY (arg)) {
             str_buff = ILIBstrBufPrint (str_buff, " &");
@@ -183,8 +185,8 @@ Fundef2ProfileString (node *fundef)
     tmp_str = ILIBstrBuf2String (str_buff);
     str_buff = ILIBstrBufFree (str_buff);
 
-    result = ILIBstringLCopy (tmp_str, PF_MAXFUNNAMELEN);
-    tmp_str = ILIBfree (tmp_str);
+    result = STRncpy (tmp_str, PF_MAXFUNNAMELEN);
+    tmp_str = MEMfree (tmp_str);
 
     DBUG_RETURN (result);
 }
@@ -260,7 +262,7 @@ PFfundef (node *arg_node, info *arg_info)
                      "Instead, it's time will be accounted to \"main\"",
                      str_buff);
             FUNDEF_FUNNO (arg_node) = 1;
-            str_buff = ILIBfree (str_buff);
+            str_buff = MEMfree (str_buff);
         } else {
             global.profile_funnme[global.profile_funcntr] = str_buff;
             FUNDEF_FUNNO (arg_node) = ++global.profile_funcntr;
@@ -346,7 +348,7 @@ PFassign (node *arg_node, info *arg_info)
                      "be profiled separately, but be accounted to the application "
                      "in line %d",
                      str_buff, NODE_LINE (arg_node), global.profile_funapline[funno][0]);
-            str_buff = ILIBfree (str_buff);
+            str_buff = MEMfree (str_buff);
             funap_cnt = 0;
         } else {
             funap_cnt = global.profile_funapcntr[funno]++;

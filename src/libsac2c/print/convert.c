@@ -39,6 +39,8 @@ static char *rename_type[] = {
 #include "constants_internal.h"
 #include "globals.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 
 /*
  *
@@ -57,7 +59,7 @@ CVfloat2String (float val)
 
     DBUG_ENTER ("CVfloat2String");
 
-    tmp_string = (char *)ILIBmalloc (sizeof (char) * 270);
+    tmp_string = (char *)MEMmalloc (sizeof (char) * 270);
     /*
      * 256 chars + "." + "e+1000" + ".0f" + "\0" = 267
      */
@@ -90,7 +92,7 @@ CVdouble2String (double val)
 
     DBUG_ENTER ("CVdouble2String");
 
-    tmp_string = (char *)ILIBmalloc (sizeof (char) * 270);
+    tmp_string = (char *)MEMmalloc (sizeof (char) * 270);
     /*
      * 256 chars + "." + "e+1000" + ".0" + "\0" = 266
      */
@@ -126,7 +128,7 @@ CVtype2String (types *type, int flag, bool all)
 
     DBUG_ENTER ("CVtype2String");
 
-    tmp_string = (char *)ILIBmalloc (sizeof (char) * TYPE_LENGTH);
+    tmp_string = (char *)MEMmalloc (sizeof (char) * TYPE_LENGTH);
     tmp_string[0] = '\0';
 
     if (type == NULL) {
@@ -264,7 +266,7 @@ CVshpseg2String (int dim, shpseg *shape)
      * Instead of accurately computing the buffer space to be allocated,
      * we make a generous estimation.
      */
-    buffer = (char *)ILIBmalloc (dim * 20);
+    buffer = (char *)MEMmalloc (dim * 20);
 
     buffer[0] = '[';
     buffer[1] = '\0';

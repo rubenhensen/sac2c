@@ -5,6 +5,8 @@
 #include "specialize.h"
 #include "dbug.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "free.h"
 #include "ct_fun.h"
 #include "create_wrappers.h"
@@ -91,7 +93,7 @@ SpecializationOracle (node *wrapper, node *fundef, ntype *args, dft_res *dft)
 
     DBUG_EXECUTE ("SPEC", tmp_str = TYtype2String (args, FALSE, 0););
     DBUG_PRINT ("SPEC", ("spec %s for %s?", CTIitemName (fundef), tmp_str));
-    DBUG_EXECUTE ("SPEC", tmp_str = ILIBfree (tmp_str););
+    DBUG_EXECUTE ("SPEC", tmp_str = MEMfree (tmp_str););
 
     if ((dft->num_deriveable_partials > 1)
         || ((dft->num_deriveable_partials == 1) && (dft->deriveable != NULL))
@@ -123,7 +125,7 @@ SpecializationOracle (node *wrapper, node *fundef, ntype *args, dft_res *dft)
 
     DBUG_EXECUTE ("SPEC", tmp_str = TYtype2String (res, FALSE, 0););
     DBUG_PRINT ("SPEC", ("oracle: %s%s!", (res == NULL ? "yes" : "try with"), tmp_str));
-    DBUG_EXECUTE ("SPEC", tmp_str = ILIBfree (tmp_str););
+    DBUG_EXECUTE ("SPEC", tmp_str = MEMfree (tmp_str););
 
     DBUG_RETURN (res);
 }
@@ -363,7 +365,7 @@ DoSpecialize (node *wrapper, node *fundef, ntype *args, ntype *rets)
 
     DBUG_EXECUTE ("SPEC", tmp_str = TYtype2String (args, FALSE, 0););
     DBUG_PRINT ("SPEC", ("specializing %s for %s", CTIitemName (fundef), tmp_str));
-    DBUG_EXECUTE ("SPEC", tmp_str = ILIBfree (tmp_str););
+    DBUG_EXECUTE ("SPEC", tmp_str = MEMfree (tmp_str););
 
     /*
      * in case of a function loaded from a module, the body may be missing, so
@@ -382,7 +384,7 @@ DoSpecialize (node *wrapper, node *fundef, ntype *args, ntype *rets)
      * the one referenced by the SYMBOLNAME anymore
      */
     if (FUNDEF_SYMBOLNAME (res) != NULL) {
-        FUNDEF_SYMBOLNAME (res) = ILIBfree (FUNDEF_SYMBOLNAME (res));
+        FUNDEF_SYMBOLNAME (res) = MEMfree (FUNDEF_SYMBOLNAME (res));
     }
 
     /*

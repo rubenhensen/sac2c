@@ -50,7 +50,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_APT_EXPRESSION_PADDED (result) = FALSE;
     INFO_APT_WITHOP_TYPE (result) = 0;
@@ -66,7 +66,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }
@@ -143,11 +143,11 @@ PadName (char *unpadded_name)
 
     DBUG_ENTER ("PadName");
 
-    padded_name = (char *)ILIBmalloc (strlen (unpadded_name) + 6 * sizeof (char));
+    padded_name = (char *)MEMmalloc (strlen (unpadded_name) + 6 * sizeof (char));
     strcpy (padded_name, unpadded_name);
     strcat (padded_name, "__PAD");
 
-    unpadded_name = ILIBfree (unpadded_name);
+    unpadded_name = MEMfree (unpadded_name);
 
     DBUG_RETURN (padded_name);
 }
@@ -420,7 +420,7 @@ AddDummyCode (node *wl)
      * annotate the Ncode node with.
      */
 
-    CODE_WLAA_INFO (code) = ILIBmalloc (sizeof (access_info_t));
+    CODE_WLAA_INFO (code) = MEMmalloc (sizeof (access_info_t));
 
     CODE_WLAA_ACCESS (code) = NULL;
     CODE_WLAA_ACCESSCNT (code) = 0;
@@ -1082,7 +1082,7 @@ APTprf (node *arg_node, info *arg_info)
             old_type = PIgetOldType (
               DUPdupAllTypes (VARDEC_TYPE (ID_DECL (PRF_ARG1 (arg_node)))));
             arg_node = TCshpseg2Array (TYPES_SHPSEG (old_type), TYPES_DIM (old_type));
-            old_type = ILIBfree (old_type);
+            old_type = MEMfree (old_type);
         }
         /* even if PRF_ARG1 is padded, the result of PRF will have an
          * unpadded shape => return FALSE */

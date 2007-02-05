@@ -18,12 +18,14 @@
 #include "gen_startup_code.h"
 #include "free.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 
 #ifdef BEtest
-#define ILIBfree(x)                                                                      \
+#define MEMfree(x)                                                                       \
     x;                                                                                   \
     free (x)
-#define ILIBmalloc(x) malloc (x)
+#define MEMmalloc(x) malloc (x)
 #endif /* BEtest */
 
 /******************************************************************************
@@ -246,9 +248,9 @@ ICMCompileND_PRF_SEL__SHAPE_id (char *to_NT, int to_sdim, char *from_NT, int fro
         /* here is no break missing */
     case C_akd:
         DBUG_ASSERT ((to_dim >= 0), "illegal dimension found!");
-        shp = (char **)ILIBmalloc (to_dim * sizeof (char *));
+        shp = (char **)MEMmalloc (to_dim * sizeof (char *));
         for (i = 0; i < to_dim; i++) {
-            shp[i] = (char *)ILIBmalloc ((2 * strlen (from_NT) + 50) * sizeof (char));
+            shp[i] = (char *)MEMmalloc ((2 * strlen (from_NT) + 50) * sizeof (char));
             if (from_dim >= 0) {
                 sprintf (shp[i], "SAC_ND_A_SHAPE( %s, %d)", from_NT,
                          from_dim - (to_dim - i));
@@ -259,9 +261,9 @@ ICMCompileND_PRF_SEL__SHAPE_id (char *to_NT, int to_sdim, char *from_NT, int fro
         }
         ICMCompileND_SET__SHAPE_arr (to_NT, to_dim, shp);
         for (i = 0; i < to_dim; i++) {
-            shp[i] = ILIBfree (shp[i]);
+            shp[i] = MEMfree (shp[i]);
         }
-        shp = ILIBfree (shp);
+        shp = MEMfree (shp);
         break;
 
     case C_aud:
@@ -347,9 +349,9 @@ ICMCompileND_PRF_SEL__SHAPE_arr (char *to_NT, int to_sdim, char *from_NT, int fr
         /* here is no break missing */
     case C_akd:
         DBUG_ASSERT ((to_dim >= 0), "illegal dimension found!");
-        shp = (char **)ILIBmalloc (to_dim * sizeof (char *));
+        shp = (char **)MEMmalloc (to_dim * sizeof (char *));
         for (i = 0; i < to_dim; i++) {
-            shp[i] = (char *)ILIBmalloc ((2 * strlen (from_NT) + 50) * sizeof (char));
+            shp[i] = (char *)MEMmalloc ((2 * strlen (from_NT) + 50) * sizeof (char));
             if (from_dim >= 0) {
                 sprintf (shp[i], "SAC_ND_A_SHAPE( %s, %d)", from_NT,
                          from_dim - (to_dim - i));
@@ -360,9 +362,9 @@ ICMCompileND_PRF_SEL__SHAPE_arr (char *to_NT, int to_sdim, char *from_NT, int fr
         }
         ICMCompileND_SET__SHAPE_arr (to_NT, to_dim, shp);
         for (i = 0; i < to_dim; i++) {
-            shp[i] = ILIBfree (shp[i]);
+            shp[i] = MEMfree (shp[i]);
         }
-        shp = ILIBfree (shp);
+        shp = MEMfree (shp);
         break;
 
     case C_aud:
@@ -792,9 +794,9 @@ ICMCompileND_PRF_IDX_SEL__SHAPE (char *to_NT, int to_sdim, char *from_NT, int fr
         /* here is no break missing */
     case C_akd:
         DBUG_ASSERT ((to_dim >= 0), "illegal dimension found!");
-        shp = (char **)ILIBmalloc (to_dim * sizeof (char *));
+        shp = (char **)MEMmalloc (to_dim * sizeof (char *));
         for (i = 0; i < to_dim; i++) {
-            shp[i] = (char *)ILIBmalloc ((2 * strlen (from_NT) + 50) * sizeof (char));
+            shp[i] = (char *)MEMmalloc ((2 * strlen (from_NT) + 50) * sizeof (char));
             if (from_dim >= 0) {
                 sprintf (shp[i], "SAC_ND_A_SHAPE( %s, %d)", from_NT,
                          from_dim - (to_dim - i));
@@ -805,9 +807,9 @@ ICMCompileND_PRF_IDX_SEL__SHAPE (char *to_NT, int to_sdim, char *from_NT, int fr
         }
         ICMCompileND_SET__SHAPE_arr (to_NT, to_dim, shp);
         for (i = 0; i < to_dim; i++) {
-            shp[i] = ILIBfree (shp[i]);
+            shp[i] = MEMfree (shp[i]);
         }
-        shp = ILIBfree (shp);
+        shp = MEMfree (shp);
         break;
 
     case C_aud:
@@ -1079,16 +1081,16 @@ ICMCompileND_PRF_TAKE__SHAPE (char *to_NT, int to_sdim, char *from_NT, int from_
                      , fprintf (global.outfile, "2nd argument of %s is not a vector!",
                                 global.prf_string[F_take_SxV]););
 
-    shp = (char **)ILIBmalloc (sizeof (char *));
-    shp[0] = (char *)ILIBmalloc ((strlen (cnt_ANY) + 30) * sizeof (char));
+    shp = (char **)MEMmalloc (sizeof (char *));
+    shp[0] = (char *)MEMmalloc ((strlen (cnt_ANY) + 30) * sizeof (char));
     if (cnt_ANY[0] == '(') {
         sprintf (shp[0], "SAC_ABS( SAC_ND_A_FIELD( %s))", cnt_ANY);
     } else {
         sprintf (shp[0], "SAC_ABS( %s)", cnt_ANY);
     }
     ICMCompileND_SET__SHAPE_arr (to_NT, 1, shp);
-    shp[0] = ILIBfree (shp[0]);
-    shp = ILIBfree (shp);
+    shp[0] = MEMfree (shp[0]);
+    shp = MEMfree (shp);
 
     DBUG_VOID_RETURN;
 }
@@ -1208,9 +1210,9 @@ ICMCompileND_PRF_DROP__SHAPE (char *to_NT, int to_sdim, char *from_NT, int from_
                      , fprintf (global.outfile, "2nd argument of %s is not a vector!",
                                 global.prf_string[F_drop_SxV]););
 
-    shp = (char **)ILIBmalloc (sizeof (char *));
+    shp = (char **)MEMmalloc (sizeof (char *));
     shp[0]
-      = (char *)ILIBmalloc ((strlen (from_NT) + strlen (cnt_ANY) + 50) * sizeof (char));
+      = (char *)MEMmalloc ((strlen (from_NT) + strlen (cnt_ANY) + 50) * sizeof (char));
     if (cnt_ANY[0] == '(') {
         sprintf (shp[0], "SAC_ND_A_SIZE( %s) - SAC_ABS( SAC_ND_A_FIELD( %s))", from_NT,
                  cnt_ANY);
@@ -1218,8 +1220,8 @@ ICMCompileND_PRF_DROP__SHAPE (char *to_NT, int to_sdim, char *from_NT, int from_
         sprintf (shp[0], "SAC_ND_A_SIZE( %s) - SAC_ABS( %s)", from_NT, cnt_ANY);
     }
     ICMCompileND_SET__SHAPE_arr (to_NT, 1, shp);
-    shp[0] = ILIBfree (shp[0]);
-    shp = ILIBfree (shp);
+    shp[0] = MEMfree (shp[0]);
+    shp = MEMfree (shp);
 
     DBUG_VOID_RETURN;
 }
@@ -1338,13 +1340,13 @@ ICMCompileND_PRF_CAT__SHAPE (char *to_NT, int to_sdim, char *from1_NT, int from1
                      , fprintf (global.outfile, "2nd argument of %s is not a vector!",
                                 global.prf_string[F_cat_VxV]););
 
-    shp = (char **)ILIBmalloc (sizeof (char *));
+    shp = (char **)MEMmalloc (sizeof (char *));
     shp[0]
-      = (char *)ILIBmalloc ((strlen (from1_NT) + strlen (from2_NT) + 40) * sizeof (char));
+      = (char *)MEMmalloc ((strlen (from1_NT) + strlen (from2_NT) + 40) * sizeof (char));
     sprintf (shp[0], "SAC_ND_A_SIZE( %s) + SAC_ND_A_SIZE( %s)", from1_NT, from2_NT);
     ICMCompileND_SET__SHAPE_arr (to_NT, 1, shp);
-    shp[0] = ILIBfree (shp[0]);
-    shp = ILIBfree (shp);
+    shp[0] = MEMfree (shp[0]);
+    shp = MEMfree (shp);
 
     DBUG_VOID_RETURN;
 }

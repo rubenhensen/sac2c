@@ -9,6 +9,8 @@
 #include "DupTree.h"
 #include "free.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "compare_tree.h"
 
 /**
@@ -43,7 +45,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_IVINFO (result) = NULL;
     INFO_LHS (result) = NULL;
@@ -56,7 +58,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }
@@ -141,7 +143,7 @@ GenOffsetInfo (node *lhs, node *withops)
             DBUG_PRINT ("IVEO", ("adding offset %s and lhs id %s", WITHOP_IDX (withops),
                                  AVIS_NAME (IDS_AVIS (lhs))));
 
-            result = ILIBmalloc (sizeof (offsetinfo));
+            result = MEMmalloc (sizeof (offsetinfo));
 
             WITHOFFSET_SHAPEEXPR (result) = AVIS_SHAPE (IDS_AVIS (lhs));
             WITHOFFSET_AVIS (result) = WITHOP_IDX (withops);
@@ -173,7 +175,7 @@ FreeOffsetInfo (offsetinfo *info)
     if (info != NULL) {
         WITHOFFSET_NEXT (info) = FreeOffsetInfo (WITHOFFSET_NEXT (info));
 
-        info = ILIBfree (info);
+        info = MEMfree (info);
     }
 
     DBUG_RETURN (info);
@@ -203,7 +205,7 @@ PushIV (ivinfo *info, node *withid, node *lhs, node *withops)
     DBUG_PRINT ("IVERAS",
                 ("adding withid %s", AVIS_NAME (IDS_AVIS (WITHID_VEC (withid)))));
 
-    result = ILIBmalloc (sizeof (ivinfo));
+    result = MEMmalloc (sizeof (ivinfo));
 
     WITHIV_IV (result) = IDS_AVIS (WITHID_VEC (withid));
     WITHIV_OFFSETS (result) = GenOffsetInfo (lhs, withops);
@@ -238,7 +240,7 @@ PopIV (ivinfo *info)
     WITHIV_OFFSETS (info) = FreeOffsetInfo (WITHIV_OFFSETS (info));
     WITHIV_LOCALOFFSETS (info) = FreeOffsetInfo (WITHIV_LOCALOFFSETS (info));
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (result);
 }
@@ -264,7 +266,7 @@ PushLocalOffset (ivinfo *ivinfo, node *avis, node *shapeexpr)
 
     DBUG_ENTER ("PushLocalOffset");
 
-    newinfo = ILIBmalloc (sizeof (offsetinfo));
+    newinfo = MEMmalloc (sizeof (offsetinfo));
 
     WITHOFFSET_SHAPEEXPR (newinfo) = shapeexpr;
     WITHOFFSET_AVIS (newinfo) = avis;

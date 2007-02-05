@@ -90,6 +90,8 @@
 #include "optimize.h"
 #include "shape.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 
 /** <!--********************************************************************-->
  *
@@ -118,7 +120,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_POSSIBLE (result) = TRUE;
     INFO_INNERTRAV (result) = FALSE;
@@ -134,7 +136,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }

@@ -63,6 +63,8 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "free.h"
 #include "DupTree.h"
 #include "globals.h"
@@ -117,7 +119,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_NEXT (result) = NULL;
     INFO_SUBST (result) = NULL;
@@ -138,7 +140,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }
@@ -225,7 +227,7 @@ AddCC (node *targetn, node *substn, node *resultn)
 
     DBUG_ENTER ("AddCC");
 
-    cc = ILIBmalloc (sizeof (code_constr_type));
+    cc = MEMmalloc (sizeof (code_constr_type));
     cc->target = targetn;
     cc->subst = substn;
     cc->new = resultn;
@@ -281,7 +283,7 @@ FreeCC (code_constr_type *cc)
     while (cc) {
         tmpcc = cc;
         cc = cc->next;
-        tmpcc = ILIBfree (tmpcc);
+        tmpcc = MEMfree (tmpcc);
     }
 
     DBUG_VOID_RETURN;
@@ -624,7 +626,7 @@ FinalTransformations (intern_gen *substig, index_info *transformations, int targ
        subst array A[42,i,k]
        help: [2,0,3] */
     i = sizeof (int) * target_dim;
-    help = ILIBmalloc (i);
+    help = MEMmalloc (i);
     help = memset (help, 0, i);
     for (i = 0; i < transformations->vector; i++) {
         if (transformations->permutation[i]) {
@@ -681,7 +683,7 @@ FinalTransformations (intern_gen *substig, index_info *transformations, int targ
         tmpig = tmpig->next;
     }
 
-    help = ILIBfree (help);
+    help = MEMfree (help);
     WLFfreeInternGenChain (substig);
 
     DBUG_RETURN (rootig);
@@ -1002,7 +1004,7 @@ RemoveDoubleIndexVectors (intern_gen *subst_ig, index_info *transformations)
     DBUG_ENTER ("RemoveDoubleIndexVectors");
 
     i = sizeof (int) * SHP_SEG_SIZE; /* max number of dimensions */
-    found = ILIBmalloc (i);
+    found = MEMmalloc (i);
     found = memset (found, 0, i);
 
     for (act_dim = 0; act_dim < transformations->vector; act_dim++)
@@ -1040,7 +1042,7 @@ RemoveDoubleIndexVectors (intern_gen *subst_ig, index_info *transformations)
             }
         }
 
-    found = ILIBfree (found);
+    found = MEMfree (found);
 
     DBUG_RETURN (subst_ig);
 }
@@ -1752,15 +1754,15 @@ WLFwith (node *arg_node, info *arg_info)
             new_codes = NULL;
 
             dim = SHgetUnrLen (TYgetShape (IDS_NTYPE (WITH_VEC (arg_node))));
-            intersect_grids_ot = ILIBmalloc (sizeof (int) * dim);
-            intersect_grids_os = ILIBmalloc (sizeof (int) * dim);
+            intersect_grids_ot = MEMmalloc (sizeof (int) * dim);
+            intersect_grids_os = MEMmalloc (sizeof (int) * dim);
 
             DBUG_PRINT ("WLF", ("=> found something to fold in WL in line %d",
                                 NODE_LINE (arg_node)));
             WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
 
-            intersect_grids_ot = ILIBfree (intersect_grids_ot);
-            intersect_grids_os = ILIBfree (intersect_grids_os);
+            intersect_grids_ot = MEMfree (intersect_grids_ot);
+            intersect_grids_os = MEMfree (intersect_grids_os);
 
             /* all codes have been traversed. Now append new_codes to WL and
                exchange old generators with all_new_ig. */

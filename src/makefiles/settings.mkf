@@ -89,10 +89,11 @@ prod_short             := p
 
 devel_long             := developer
 prod_long              := product
+default_long           := default
 
 d_long                 := devel
 p_long                 := prod
 
 devel_cap              := DEVEL
 prod_cap               := PROD
-
+default_cap            := DEFAULT

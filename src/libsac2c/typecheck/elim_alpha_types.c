@@ -11,6 +11,8 @@
 #include "dbug.h"
 #include "ctinfo.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "free.h"
 #include "DupTree.h"
 #include "shape.h"
@@ -91,7 +93,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_VARDECS (result) = NULL;
     INFO_WLIDS (result) = NULL;
@@ -107,7 +109,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }
@@ -386,8 +388,8 @@ EATavis (node *arg_node, info *arg_info)
 #endif
         AVIS_TYPE (arg_node) = type;
         DBUG_PRINT ("FIXNT", ("... %s", tmp_str2));
-        DBUG_EXECUTE ("FIXNT", tmp_str = ILIBfree (tmp_str);
-                      tmp_str2 = ILIBfree (tmp_str2););
+        DBUG_EXECUTE ("FIXNT", tmp_str = MEMfree (tmp_str);
+                      tmp_str2 = MEMfree (tmp_str2););
 
         if (!(TYisArray (type) || TYisBottom (type))) {
             CTIabort ("Could not infer proper type for arg %s", AVIS_NAME (arg_node));

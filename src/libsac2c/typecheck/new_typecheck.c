@@ -12,6 +12,8 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "traverse.h"
 #include "DupTree.h"
 #include "globals.h"
@@ -119,7 +121,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_TYPE (result) = NULL;
     INFO_GEN_TYPE (result) = NULL;
@@ -139,7 +141,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }
@@ -457,12 +459,11 @@ TypeCheckFunctionBody (node *fundef, info *arg_info)
       while (arg != NULL) {
           tmp_str = TYtype2String (AVIS_TYPE (ARG_AVIS (arg)), FALSE, 0);
           DBUG_PRINT ("NTC", ("  -> argument type: %s", tmp_str));
-          tmp_str = ILIBfree (tmp_str);
+          tmp_str = MEMfree (tmp_str);
           arg = ARG_NEXT (arg);
       } tmp_str
       = TYtype2String (TUmakeProductTypeFromRets (FUNDEF_RETS (fundef)), FALSE, 0);
-      DBUG_PRINT ("NTC", ("  -> return type %s", tmp_str));
-      tmp_str = ILIBfree (tmp_str););
+      DBUG_PRINT ("NTC", ("  -> return type %s", tmp_str)); tmp_str = MEMfree (tmp_str););
 
     /*
      * Then, we infer the type of the body:
@@ -502,7 +503,7 @@ TypeCheckFunctionBody (node *fundef, info *arg_info)
     DBUG_EXECUTE ("NTC", tmp_str = TYtype2String (inf_type, FALSE, 0););
     DBUG_PRINT ("NTC",
                 ("inferred return type of \"%s\" is %s", FUNDEF_NAME (fundef), tmp_str));
-    DBUG_EXECUTE ("NTC", tmp_str = ILIBfree (tmp_str););
+    DBUG_EXECUTE ("NTC", tmp_str = MEMfree (tmp_str););
 
     spec_type = TUmakeProductTypeFromRets (FUNDEF_RETS (fundef));
     spec_n = TYgetProductSize (spec_type);
@@ -570,7 +571,7 @@ TypeCheckFunctionBody (node *fundef, info *arg_info)
     DBUG_EXECUTE ("NTC", tmp_str = TYtype2String (spec_type, FALSE, 0););
     DBUG_PRINT ("NTC",
                 ("final return type of \"%s\" is: %s", CTIitemName (fundef), tmp_str));
-    DBUG_EXECUTE ("NTC", tmp_str = ILIBfree (tmp_str););
+    DBUG_EXECUTE ("NTC", tmp_str = MEMfree (tmp_str););
 
     /* now the functions is entirely typechecked, so we mark it as checked */
     FUNDEF_TCSTAT (fundef) = NTC_checked;
@@ -944,7 +945,7 @@ NTClet (node *arg_node, info *arg_info)
                 DBUG_EXECUTE ("NTC", tmp_str = TYtype2String (AVIS_TYPE (IDS_AVIS (lhs)),
                                                               FALSE, 0););
                 DBUG_PRINT ("NTC", ("  type of \"%s\" is %s", IDS_NAME (lhs), tmp_str));
-                DBUG_EXECUTE ("NTC", tmp_str = ILIBfree (tmp_str););
+                DBUG_EXECUTE ("NTC", tmp_str = MEMfree (tmp_str););
             } else {
                 if (existing_type == NULL) {
                     if (declared_type == NULL) {
@@ -1022,7 +1023,7 @@ NTClet (node *arg_node, info *arg_info)
         DBUG_EXECUTE ("NTC",
                       tmp_str = TYtype2String (AVIS_TYPE (IDS_AVIS (lhs)), FALSE, 0););
         DBUG_PRINT ("NTC", ("  type of \"%s\" is %s", IDS_NAME (lhs), tmp_str));
-        DBUG_EXECUTE ("NTC", tmp_str = ILIBfree (tmp_str););
+        DBUG_EXECUTE ("NTC", tmp_str = MEMfree (tmp_str););
     }
 
     DBUG_RETURN (arg_node);
@@ -1390,8 +1391,8 @@ NTCarray (node *arg_node, info *arg_info)
         DBUG_PRINT ("NTC", ("computing type of empty array-constructor with outer "
                             "shape %s and element type %s",
                             tmp_str1, tmp_str2));
-        DBUG_EXECUTE ("NTC", tmp_str1 = ILIBfree (tmp_str1);
-                      tmp_str2 = ILIBfree (tmp_str2););
+        DBUG_EXECUTE ("NTC", tmp_str1 = MEMfree (tmp_str1);
+                      tmp_str2 = MEMfree (tmp_str2););
 
         if (TYisSimple (scalar)) {
             type = TYmakeAKV (TYcopyType (scalar),
@@ -1410,7 +1411,7 @@ NTCarray (node *arg_node, info *arg_info)
 
         DBUG_EXECUTE ("NTC", tmp_str1 = TYtype2String (type, FALSE, 0););
         DBUG_PRINT ("NTC", ("yields %s", tmp_str1));
-        DBUG_EXECUTE ("NTC", tmp_str1 = ILIBfree (tmp_str1););
+        DBUG_EXECUTE ("NTC", tmp_str1 = MEMfree (tmp_str1););
     }
 
     INFO_TYPE (arg_info) = TYgetProductMember (type, 0);
@@ -1603,7 +1604,7 @@ NTCwith (node *arg_node, info *arg_info)
 
     DBUG_EXECUTE ("NTC", tmp_str = TYtype2String (gen, FALSE, 0););
     DBUG_PRINT ("NTC", ("  WL - generator type: %s", tmp_str));
-    DBUG_EXECUTE ("NTC", tmp_str = ILIBfree (tmp_str););
+    DBUG_EXECUTE ("NTC", tmp_str = MEMfree (tmp_str););
 
     /*
      * Then, we infer the type of the WL body:
@@ -1630,7 +1631,7 @@ NTCwith (node *arg_node, info *arg_info)
 
     DBUG_EXECUTE ("NTC", tmp_str = TYtype2String (body, FALSE, 0););
     DBUG_PRINT ("NTC", ("  WL - body type: %s", tmp_str));
-    DBUG_EXECUTE ("NTC", tmp_str = ILIBfree (tmp_str););
+    DBUG_EXECUTE ("NTC", tmp_str = MEMfree (tmp_str););
 
     /*
      * Finally, we compute the return type from "gen" and "body".
@@ -1657,7 +1658,7 @@ NTCwith (node *arg_node, info *arg_info)
 
     DBUG_EXECUTE ("NTC", tmp_str = TYtype2String (INFO_TYPE (arg_info), FALSE, 0););
     DBUG_PRINT ("NTC", ("  WL - final type: %s", tmp_str));
-    DBUG_EXECUTE ("NTC", tmp_str = ILIBfree (tmp_str););
+    DBUG_EXECUTE ("NTC", tmp_str = MEMfree (tmp_str););
 
     /**
      * eventually, we need to restore a potential outer accu / prop_objs

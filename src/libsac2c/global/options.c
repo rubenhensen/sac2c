@@ -27,6 +27,8 @@
 #include "filemgr.h"
 #include "globals.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "ctinfo.h"
 #include "libstat.h"
 #include "phase.h"
@@ -212,10 +214,10 @@ OPTanalyseCommandline (int argc, char *argv[])
     {
         char *tmp;
         if (global.cpp_options == NULL) {
-            tmp = ILIBstringConcat (" -I", ARG);
+            tmp = STRcat (" -I", ARG);
         } else {
-            tmp = ILIBstringConcat3 (global.cpp_options, " -I", ARG);
-            ILIBfree (global.cpp_options);
+            tmp = STRcatn (3, global.cpp_options, " -I", ARG);
+            MEMfree (global.cpp_options);
         }
         global.cpp_options = tmp;
     }
@@ -299,10 +301,10 @@ OPTanalyseCommandline (int argc, char *argv[])
     {
         char *tmp;
         if (global.cpp_options == NULL) {
-            tmp = ILIBstringConcat (" -D", ARG);
+            tmp = STRcat (" -D", ARG);
         } else {
-            tmp = ILIBstringConcat3 (global.cpp_options, " -D", ARG);
-            ILIBfree (global.cpp_options);
+            tmp = STRcatn (3, global.cpp_options, " -D", ARG);
+            MEMfree (global.cpp_options);
         }
         global.cpp_options = tmp;
     }
@@ -489,7 +491,7 @@ OPTanalyseCommandline (int argc, char *argv[])
      * Options starting with ooooooooooooooooooooooooooooooooooooooooooo
      */
 
-    ARGS_OPTION ("o", global.outfilename = ILIBstringCopy (ARG));
+    ARGS_OPTION ("o", global.outfilename = STRcpy (ARG));
     /*
      * The option is only stored in outfilename,
      * the correct settings of the global variables
@@ -589,7 +591,7 @@ OPTanalyseCommandline (int argc, char *argv[])
     ARGS_OPTION_BEGIN ("#")
     {
         if (NULL == strchr (ARG, '/')) {
-            global.my_dbug_str = ILIBstringCopy (ARG);
+            global.my_dbug_str = STRcpy (ARG);
             global.my_dbug = 1;
             global.my_dbug_from = PH_initial;
             global.my_dbug_to = PH_final;
@@ -609,7 +611,7 @@ OPTanalyseCommandline (int argc, char *argv[])
                 ARGS_ERROR ("Invalid dbug phase specification");
             }
 
-            global.my_dbug_str = ILIBstringCopy (s);
+            global.my_dbug_str = STRcpy (s);
             global.my_dbug = 1;
         }
     }
@@ -617,7 +619,7 @@ OPTanalyseCommandline (int argc, char *argv[])
 
     ARGS_ARGUMENT ({
         if (global.sacfilename == NULL) {
-            global.sacfilename = ILIBstringCopy (ARG);
+            global.sacfilename = STRcpy (ARG);
 
             global.puresacfilename = strrchr (global.sacfilename, '/');
 

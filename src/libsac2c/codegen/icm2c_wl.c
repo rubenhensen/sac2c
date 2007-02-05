@@ -161,6 +161,8 @@
 #include "print.h"
 #include "gen_startup_code.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "ctinfo.h"
 
 static FILE *store_global_outfile;
@@ -972,8 +974,8 @@ ICMCompileWL_SIMD_BEGIN (int cnt)
 #include "icm_trace.c"
 #undef WL_SIMD_BEGIN
 
-    tmp_name = ILIBitoa (cnt);
-    simd_filename = ILIBstringConcat4 (global.tmp_dirname, "/simd", tmp_name, ".c");
+    tmp_name = STRitoa (cnt);
+    simd_filename = STRcatn (4, global.tmp_dirname, "/simd", tmp_name, ".c");
 
     INDENT;
     fprintf (global.outfile, "#include \"%s\"\n", simd_filename);
@@ -984,7 +986,7 @@ ICMCompileWL_SIMD_BEGIN (int cnt)
         CTIabort ("Unable to open file %s", simd_filename);
     }
 
-    tmp_name = ILIBfree (tmp_name);
+    tmp_name = MEMfree (tmp_name);
 
     store_global_outfile = global.outfile;
     store_global_indent = global.indent;
@@ -1009,7 +1011,7 @@ ICMCompileWL_SIMD_END (int cnt)
                     simd_filename, simd_filename);
     ILIBsystemCall ("$SACBASE/stdlib/Tools/cb -r %s2 >%s", simd_filename, simd_filename);
 
-    simd_filename = ILIBfree (simd_filename);
+    simd_filename = MEMfree (simd_filename);
     global.outfile = store_global_outfile;
     global.indent = store_global_indent;
 

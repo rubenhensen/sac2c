@@ -36,6 +36,8 @@
 #include "constants.h"
 #include "basecv.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 
 /******************************************************************************
  *
@@ -65,7 +67,7 @@
         arg_t *data_vec;                                                                 \
         DBUG_ENTER (str (CObaseCv##arg_ext##fun_ext));                                   \
         unrlen = SHgetUnrLen (shp);                                                      \
-        data_vec = (arg_t *)ILIBmalloc (unrlen * sizeof (arg_t));                        \
+        data_vec = (arg_t *)MEMmalloc (unrlen * sizeof (arg_t));                         \
         for (i = 0; i < unrlen; i++)                                                     \
             data_vec[i] = value;                                                         \
         DBUG_RETURN (COmakeConstant (s_type, shp, (void *)data_vec));                    \

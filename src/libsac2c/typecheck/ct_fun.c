@@ -38,6 +38,8 @@
 #include "dbug.h"
 #include "ctinfo.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "globals.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -96,7 +98,7 @@ DispatchFunType (node *wrapper, ntype *args)
 
     DBUG_EXECUTE ("NTC", tmp_str = TYdft_res2DebugString (res););
     DBUG_PRINT ("NTC", ("%s", tmp_str));
-    DBUG_EXECUTE ("NTC", ILIBfree (tmp_str););
+    DBUG_EXECUTE ("NTC", MEMfree (tmp_str););
 
     DBUG_RETURN (res);
 }
@@ -172,7 +174,7 @@ NTCCTdispatchFunType (node *wrapper, ntype *args)
 
     DBUG_EXECUTE ("NTC", tmp_str = TYdft_res2DebugString (res););
     DBUG_PRINT ("NTC", ("%s", tmp_str));
-    DBUG_EXECUTE ("NTC", ILIBfree (tmp_str););
+    DBUG_EXECUTE ("NTC", MEMfree (tmp_str););
 
     DBUG_RETURN (res);
 }
@@ -279,7 +281,7 @@ NTCCTudf (te_info *info, ntype *args)
     tmp = TYtype2String (args, FALSE, 0);
     TEhandleError (global.linenum, " -- in %s::%s%s@", NSgetName (FUNDEF_NS (fundef)),
                    FUNDEF_NAME (fundef), tmp);
-    tmp = ILIBfree (tmp);
+    tmp = MEMfree (tmp);
     tmp2 = TEfetchErrors ();
 
     for (i = 0; i < TYgetProductSize (res); i++) {
@@ -297,7 +299,7 @@ NTCCTudf (te_info *info, ntype *args)
         }
     }
 
-    tmp2 = ILIBfree (tmp2);
+    tmp2 = MEMfree (tmp2);
 
     DBUG_RETURN (res);
 }

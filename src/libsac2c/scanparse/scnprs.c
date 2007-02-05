@@ -9,6 +9,8 @@
 #include "dbug.h"
 #include "ctinfo.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "filemgr.h"
 #include "handle_dots.h"
 
@@ -50,16 +52,14 @@ SPdoRunPreProcessor (node *syntax_tree)
     global.filename = global.puresacfilename;
 
     if (pathname == NULL) {
-        cppcallstr
-          = ILIBstringConcat (global.config.cpp_stdin,
-                              global.cpp_options == NULL ? " " : global.cpp_options);
+        cppcallstr = STRcat (global.config.cpp_stdin,
+                             global.cpp_options == NULL ? " " : global.cpp_options);
     } else {
-        cppcallstr
-          = ILIBstringConcat4 (global.config.cpp_file,
-                               global.cpp_options == NULL ? " " : global.cpp_options, " ",
-                               pathname);
+        cppcallstr = STRcatn (4, global.config.cpp_file,
+                              global.cpp_options == NULL ? " " : global.cpp_options, " ",
+                              pathname);
 #if 0
-    pathname = ILIBfree( pathname);
+    pathname = MEMfree( pathname);
 #endif
     }
 
@@ -67,10 +67,10 @@ SPdoRunPreProcessor (node *syntax_tree)
      * The sed command is needed to remove a pragma that is inserted by the
      * Apple GCC 3.3 on Panther
      */
-    tmp = ILIBstringConcat4 (cppcallstr, " | sed '/^#pragma GCC set_debug_pwd/d' > ",
-                             global.tmp_dirname, "/source");
+    tmp = STRcatn (4, cppcallstr, " | sed '/^#pragma GCC set_debug_pwd/d' > ",
+                   global.tmp_dirname, "/source");
 
-    cppcallstr = ILIBfree (cppcallstr);
+    cppcallstr = MEMfree (cppcallstr);
     cppcallstr = tmp;
 
     if (global.show_syscall) {
@@ -79,7 +79,7 @@ SPdoRunPreProcessor (node *syntax_tree)
 
     err = system (cppcallstr);
 
-    cppcallstr = ILIBfree (cppcallstr);
+    cppcallstr = MEMfree (cppcallstr);
 
     if (err) {
         CTIabort ("Unable to run C preprocessor");
@@ -96,7 +96,7 @@ SPdoScanParse (node *syntax_tree)
 
     DBUG_ENTER ("SPdoScanParse");
 
-    cppfile = ILIBstringConcat (global.tmp_dirname, "/source");
+    cppfile = STRcat (global.tmp_dirname, "/source");
 
     if (global.show_syscall) {
         CTInote ("yyin = fopen( \"%s\", \"r\")", cppfile);
@@ -127,7 +127,7 @@ SPdoScanParse (node *syntax_tree)
 
     err = remove (cppfile);
 
-    cppfile = ILIBfree (cppfile);
+    cppfile = MEMfree (cppfile);
 
     if (err) {
         CTIabort ("Could not delete /tmp-file");

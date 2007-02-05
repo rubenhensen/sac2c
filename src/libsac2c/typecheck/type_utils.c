@@ -5,6 +5,8 @@
 #include "type_utils.h"
 #include "dbug.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 
@@ -580,7 +582,7 @@ TUtypeSignature2String (node *fundef)
     while (arg != NULL) {
         tmp_str = TYtype2String (ARG_NTYPE (arg), FALSE, 0);
         buf = ILIBstrBufPrintf (buf, "%s ", tmp_str);
-        tmp_str = ILIBfree (tmp_str);
+        tmp_str = MEMfree (tmp_str);
         arg = ARG_NEXT (arg);
     }
 
@@ -590,7 +592,7 @@ TUtypeSignature2String (node *fundef)
     while (arg != NULL) {
         tmp_str = TYtype2String (RET_TYPE (arg), FALSE, 0);
         buf = ILIBstrBufPrintf (buf, "%s ", tmp_str);
-        tmp_str = ILIBfree (tmp_str);
+        tmp_str = MEMfree (tmp_str);
         arg = RET_NEXT (arg);
     }
 
@@ -668,8 +670,7 @@ TUsignatureMatches (node *formal, ntype *actual_prod_type, bool exact)
                       tmp2_str = TYtype2String (actual_type, FALSE, 0););
         DBUG_PRINT ("TU", ("    comparing formal type %s with actual type %s", tmp_str,
                            tmp2_str));
-        DBUG_EXECUTE ("TU", tmp_str = ILIBfree (tmp_str);
-                      tmp2_str = ILIBfree (tmp2_str););
+        DBUG_EXECUTE ("TU", tmp_str = MEMfree (tmp_str); tmp2_str = MEMfree (tmp2_str););
 
         if (!(TYleTypes (actual_type, formal_type)
               || (!exact && TYgetSimpleType (TYgetScalar (formal_type)) == T_unknown))) {
@@ -943,7 +944,7 @@ TUcheckUdtAndSetBaseType (usertype udt, int *visited)
                     if (visited == NULL) {
                         /* This is the initial call, so visited has to be initialized! */
                         num_udt = UTgetNumberOfUserTypes ();
-                        visited = (int *)ILIBmalloc (sizeof (int) * num_udt);
+                        visited = (int *)MEMmalloc (sizeof (int) * num_udt);
                         for (i = 0; i < num_udt; i++)
                             visited[i] = 0;
                     }
@@ -974,7 +975,7 @@ TUcheckUdtAndSetBaseType (usertype udt, int *visited)
                  * program will terminate soon anyways!
                  */
                 if (visited != NULL)
-                    visited = ILIBfree (visited);
+                    visited = MEMfree (visited);
             }
         }
         UTsetBaseType (udt, base);

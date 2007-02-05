@@ -26,6 +26,8 @@
 #include "dbug.h"
 #include "print.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "new_types.h"
 #include "new_typecheck.h"
 #include "type_utils.h"
@@ -72,7 +74,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_ONEFUNDEF (result) = TRUE;
     INFO_EMPTYPART (result) = FALSE;
@@ -88,7 +90,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }

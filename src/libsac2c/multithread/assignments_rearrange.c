@@ -82,6 +82,8 @@
 #include "assignments_rearrange.h"
 #include "multithread_lib.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 
 /*
  * some local structures
@@ -136,7 +138,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_ASMRA_NEXT (result) = NULL;
 
@@ -148,7 +150,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }
@@ -811,7 +813,7 @@ MakeCluster (node *dfn)
 
     DBUG_ENTER ("MakeCluster");
 
-    result = ILIBmalloc (sizeof (struct asmra_cluster_s));
+    result = MEMmalloc (sizeof (struct asmra_cluster_s));
 
     ASMRA_CLUSTER_DFN (result) = dfn;
     ASMRA_CLUSTER_DISTANCE (result) = 0;
@@ -838,7 +840,7 @@ FreeCluster (struct asmra_cluster_s *cluster)
     if (ASMRA_CLUSTER_NEXT (cluster) != NULL) {
         ASMRA_CLUSTER_NEXT (cluster) = FreeCluster (ASMRA_CLUSTER_NEXT (cluster));
     }
-    cluster = ILIBfree (cluster);
+    cluster = MEMfree (cluster);
 
     DBUG_RETURN (cluster);
 }
@@ -986,7 +988,7 @@ FreeList (struct asmra_list_s *list)
     if (ASMRA_LIST_NEXT (list) != NULL) {
         list = FreeList (ASMRA_LIST_NEXT (list));
     }
-    list = ILIBfree (list);
+    list = MEMfree (list);
 
     DBUG_RETURN (list);
 }
@@ -1016,7 +1018,7 @@ ListAppend (struct asmra_list_s *list, node *node, struct asmra_cluster_s *clust
         while (ASMRA_LIST_NEXT (iter) != NULL) {
             iter = ASMRA_LIST_NEXT (iter);
         }
-        ASMRA_LIST_NEXT (iter) = ILIBmalloc (sizeof (struct asmra_list_s));
+        ASMRA_LIST_NEXT (iter) = MEMmalloc (sizeof (struct asmra_list_s));
         if (node != NULL) {
             ASMRA_LIST_NODEELEM (ASMRA_LIST_NEXT (iter)) = node;
         } else {
@@ -1025,7 +1027,7 @@ ListAppend (struct asmra_list_s *list, node *node, struct asmra_cluster_s *clust
         ASMRA_LIST_NEXT (ASMRA_LIST_NEXT (iter)) = NULL;
     } else {
 
-        list = ILIBmalloc (sizeof (struct asmra_list_s));
+        list = MEMmalloc (sizeof (struct asmra_list_s));
         if (node != NULL) {
             ASMRA_LIST_NODEELEM (ASMRA_LIST_NEXT (list)) = node;
         } else {

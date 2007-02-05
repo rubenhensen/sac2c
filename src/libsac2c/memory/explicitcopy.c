@@ -41,6 +41,8 @@
 #include "print.h"
 #include "new_types.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 
 /** <!--********************************************************************-->
  *
@@ -71,7 +73,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_PREASSIGN (result) = NULL;
     INFO_FUNDEF (result) = NULL;
@@ -84,7 +86,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }

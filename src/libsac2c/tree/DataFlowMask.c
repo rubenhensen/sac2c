@@ -27,6 +27,8 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "check_mem.h"
 
 /*
@@ -73,8 +75,8 @@ ExtendMask (mask_t *mask)
     DBUG_ENTER ("ExtendMask");
 
     old = mask->bitfield;
-    mask->bitfield = (unsigned int *)ILIBmalloc (mask->mask_base->num_bitfields
-                                                 * sizeof (unsigned int));
+    mask->bitfield = (unsigned int *)MEMmalloc (mask->mask_base->num_bitfields
+                                                * sizeof (unsigned int));
     for (i = 0; i < mask->num_bitfields; i++) {
         mask->bitfield[i] = old[i];
     }
@@ -82,7 +84,7 @@ ExtendMask (mask_t *mask)
         mask->bitfield[i] = 0;
     }
     mask->num_bitfields = mask->mask_base->num_bitfields;
-    old = ILIBfree (old);
+    old = MEMfree (old);
 
     DBUG_VOID_RETURN;
 }
@@ -109,8 +111,8 @@ DFMgenMaskBase (node *arguments, node *vardecs)
          * exactly one bit from a data flow mask.
          */
 
-        access_mask_table = (unsigned int *)ILIBmalloc (8 * sizeof (unsigned int)
-                                                        * sizeof (unsigned int));
+        access_mask_table
+          = (unsigned int *)MEMmalloc (8 * sizeof (unsigned int) * sizeof (unsigned int));
         access_mask = 1;
 
         for (cnt = 0; (size_t)cnt < 8 * sizeof (unsigned int); cnt++) {
@@ -143,11 +145,11 @@ DFMgenMaskBase (node *arguments, node *vardecs)
      * Second, a new mask data base data structure of appropriate size is allocated.
      */
 
-    base = (mask_base_t *)ILIBmalloc (sizeof (mask_base_t));
+    base = (mask_base_t *)MEMmalloc (sizeof (mask_base_t));
 
-    base->ids = (char **)ILIBmalloc (cnt * sizeof (char *));
+    base->ids = (char **)MEMmalloc (cnt * sizeof (char *));
 
-    base->decls = (node **)ILIBmalloc (cnt * sizeof (node *));
+    base->decls = (node **)MEMmalloc (cnt * sizeof (node *));
 
     base->num_ids = cnt;
 
@@ -200,7 +202,7 @@ DFMupdateMaskBase (mask_base_t *mask_base, node *arguments, node *vardecs)
      * the respective bits in the data flow masks are not going to be reused.
      */
 
-    old_decls = (node **)ILIBmalloc (mask_base->num_ids * sizeof (node *));
+    old_decls = (node **)MEMmalloc (mask_base->num_ids * sizeof (node *));
 
     for (i = 0; i < mask_base->num_ids; i++) {
         old_decls[i] = NULL;
@@ -250,16 +252,16 @@ DFMupdateMaskBase (mask_base_t *mask_base, node *arguments, node *vardecs)
      * identifiers.
      */
 
-    ILIBfree (mask_base->ids);
-    ILIBfree (mask_base->decls);
+    MEMfree (mask_base->ids);
+    MEMfree (mask_base->decls);
 
     old_num_ids = mask_base->num_ids;
     mask_base->num_ids = cnt;
 
     mask_base->num_bitfields = (mask_base->num_ids / (sizeof (unsigned int) * 8)) + 1;
 
-    mask_base->ids = (char **)ILIBmalloc ((mask_base->num_ids) * sizeof (char *));
-    mask_base->decls = (node **)ILIBmalloc ((mask_base->num_ids) * sizeof (node *));
+    mask_base->ids = (char **)MEMmalloc ((mask_base->num_ids) * sizeof (char *));
+    mask_base->decls = (node **)MEMmalloc ((mask_base->num_ids) * sizeof (node *));
 
     /*
      * The temporary identifier table is copied to the newly allocated one and
@@ -274,7 +276,7 @@ DFMupdateMaskBase (mask_base_t *mask_base, node *arguments, node *vardecs)
                                                         : VARDEC_NAME (old_decls[i]));
     }
 
-    old_decls = ILIBfree (old_decls);
+    old_decls = MEMfree (old_decls);
 
     /*
      * New local identifiers are appended to the identifier table.
@@ -327,9 +329,9 @@ DFMremoveMaskBase (mask_base_t *mask_base)
 
     DBUG_ASSERT ((mask_base != NULL), "DFMremoveMaskBase() called with mask_base NULL");
 
-    ILIBfree (mask_base->ids);
-    ILIBfree (mask_base->decls);
-    mask_base = ILIBfree (mask_base);
+    MEMfree (mask_base->ids);
+    MEMfree (mask_base->decls);
+    mask_base = MEMfree (mask_base);
 
     DBUG_RETURN (mask_base);
 }
@@ -456,14 +458,14 @@ DFMgenMaskClear (mask_base_t *mask_base)
 
     DBUG_ASSERT ((mask_base != NULL), "DFMgenMaskClear() called with mask_base NULL");
 
-    new_mask = ILIBmalloc (sizeof (mask_t));
+    new_mask = MEMmalloc (sizeof (mask_t));
 
     new_mask->num_bitfields = mask_base->num_bitfields;
 
     new_mask->mask_base = mask_base;
 
     new_mask->bitfield
-      = (unsigned int *)ILIBmalloc (new_mask->num_bitfields * sizeof (unsigned int));
+      = (unsigned int *)MEMmalloc (new_mask->num_bitfields * sizeof (unsigned int));
 
     for (i = 0; i < new_mask->num_bitfields; i++) {
         new_mask->bitfield[i] = 0;
@@ -482,14 +484,14 @@ DFMgenMaskSet (mask_base_t *mask_base)
 
     DBUG_ASSERT ((mask_base != NULL), "DFMgenMaskSet() called with mask_base NULL");
 
-    new_mask = ILIBmalloc (sizeof (mask_t));
+    new_mask = MEMmalloc (sizeof (mask_t));
 
     new_mask->num_bitfields = mask_base->num_bitfields;
 
     new_mask->mask_base = mask_base;
 
     new_mask->bitfield
-      = (unsigned int *)ILIBmalloc (new_mask->num_bitfields * sizeof (unsigned int));
+      = (unsigned int *)MEMmalloc (new_mask->num_bitfields * sizeof (unsigned int));
 
     for (i = 0; i < new_mask->num_bitfields; i++) {
         new_mask->bitfield[i] = ~((unsigned int)0);
@@ -510,14 +512,14 @@ DFMgenMaskCopy (mask_t *mask)
 
     CHECK_MASK (mask);
 
-    new_mask = ILIBmalloc (sizeof (mask_t));
+    new_mask = MEMmalloc (sizeof (mask_t));
 
     new_mask->num_bitfields = mask->num_bitfields;
 
     new_mask->mask_base = mask->mask_base;
 
     new_mask->bitfield
-      = (unsigned int *)ILIBmalloc (new_mask->num_bitfields * sizeof (unsigned int));
+      = (unsigned int *)MEMmalloc (new_mask->num_bitfields * sizeof (unsigned int));
 
     for (i = 0; i < new_mask->num_bitfields; i++) {
         new_mask->bitfield[i] = mask->bitfield[i];
@@ -538,14 +540,14 @@ DFMgenMaskInv (mask_t *mask)
 
     CHECK_MASK (mask);
 
-    new_mask = ILIBmalloc (sizeof (mask_t));
+    new_mask = MEMmalloc (sizeof (mask_t));
 
     new_mask->num_bitfields = mask->num_bitfields;
 
     new_mask->mask_base = mask->mask_base;
 
     new_mask->bitfield
-      = (unsigned int *)ILIBmalloc (new_mask->num_bitfields * sizeof (unsigned int));
+      = (unsigned int *)MEMmalloc (new_mask->num_bitfields * sizeof (unsigned int));
 
     for (i = 0; i < new_mask->num_bitfields; i++) {
         new_mask->bitfield[i] = ~(mask->bitfield[i]);
@@ -570,14 +572,14 @@ DFMgenMaskAnd (mask_t *mask1, mask_t *mask2)
     CHECK_MASK (mask1);
     CHECK_MASK (mask2);
 
-    new_mask = ILIBmalloc (sizeof (mask_t));
+    new_mask = MEMmalloc (sizeof (mask_t));
 
     new_mask->num_bitfields = mask1->num_bitfields;
 
     new_mask->mask_base = mask1->mask_base;
 
     new_mask->bitfield
-      = (unsigned int *)ILIBmalloc (new_mask->num_bitfields * sizeof (unsigned int));
+      = (unsigned int *)MEMmalloc (new_mask->num_bitfields * sizeof (unsigned int));
 
     for (i = 0; i < new_mask->num_bitfields; i++) {
         new_mask->bitfield[i] = mask1->bitfield[i] & mask2->bitfield[i];
@@ -602,14 +604,14 @@ DFMgenMaskOr (mask_t *mask1, mask_t *mask2)
     CHECK_MASK (mask1);
     CHECK_MASK (mask2);
 
-    new_mask = ILIBmalloc (sizeof (mask_t));
+    new_mask = MEMmalloc (sizeof (mask_t));
 
     new_mask->num_bitfields = mask1->num_bitfields;
 
     new_mask->mask_base = mask1->mask_base;
 
     new_mask->bitfield
-      = (unsigned int *)ILIBmalloc (new_mask->num_bitfields * sizeof (unsigned int));
+      = (unsigned int *)MEMmalloc (new_mask->num_bitfields * sizeof (unsigned int));
 
     for (i = 0; i < new_mask->num_bitfields; i++) {
         new_mask->bitfield[i] = mask1->bitfield[i] | mask2->bitfield[i];
@@ -634,14 +636,14 @@ DFMgenMaskMinus (mask_t *mask1, mask_t *mask2)
     CHECK_MASK (mask1);
     CHECK_MASK (mask2);
 
-    new_mask = ILIBmalloc (sizeof (mask_t));
+    new_mask = MEMmalloc (sizeof (mask_t));
 
     new_mask->num_bitfields = mask1->num_bitfields;
 
     new_mask->mask_base = mask1->mask_base;
 
     new_mask->bitfield
-      = (unsigned int *)ILIBmalloc (new_mask->num_bitfields * sizeof (unsigned int));
+      = (unsigned int *)MEMmalloc (new_mask->num_bitfields * sizeof (unsigned int));
 
     for (i = 0; i < new_mask->num_bitfields; i++) {
         new_mask->bitfield[i] = mask1->bitfield[i] & ~(mask2->bitfield[i]);
@@ -945,8 +947,8 @@ DFMremoveMask (mask_t *mask)
 
     DBUG_ASSERT ((mask != NULL), "DFMremoveMask() called with mask NULL");
 
-    ILIBfree (mask->bitfield);
-    mask = ILIBfree (mask);
+    MEMfree (mask->bitfield);
+    mask = MEMfree (mask);
 
     DBUG_RETURN (mask);
 }

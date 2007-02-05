@@ -29,6 +29,8 @@
 #include "tree_compound.h"
 #include "node_basic.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "traverse.h"
 #include "free.h"
 #include "dbug.h"
@@ -67,7 +69,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_FUNDEF (result) = NULL;
     INFO_FUNS (result) = NULL;
@@ -81,7 +83,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }
@@ -105,8 +107,8 @@ CreateLacFunName (char *funname, char *suffix)
 
     DBUG_ENTER ("CreateLacFunName");
 
-    name = (char *)ILIBmalloc ((strlen (funname) + strlen (suffix) + 20 + 3)
-                               * sizeof (char));
+    name
+      = (char *)MEMmalloc ((strlen (funname) + strlen (suffix) + 20 + 3) * sizeof (char));
     sprintf (name, "%s__%s_%i", funname, suffix, number);
     number++;
 
@@ -236,10 +238,9 @@ MakeL2fFundef (char *funname, namespace_t *ns, node *instr, node *funcall_let,
 
     ret = TBmakeAssign (TBmakeReturn (DFMUdfm2ReturnExprs (out, lut)), NULL);
 
-    fundef
-      = TBmakeFundef (ILIBstringCopy (funname), NSdupNamespace (ns), DFMUdfm2Rets (out),
-                      args, NULL, /* the block is not complete yet */
-                      NULL);
+    fundef = TBmakeFundef (STRcpy (funname), NSdupNamespace (ns), DFMUdfm2Rets (out),
+                           args, NULL, /* the block is not complete yet */
+                           NULL);
 
     FUNDEF_RETURN (fundef) = ASSIGN_INSTR (ret);
 
@@ -359,7 +360,7 @@ DoLifting (char *suffix, dfmask_t *in, dfmask_t *out, dfmask_t *local, node *arg
 
     DBUG_ASSERT ((NODE_TYPE (LET_EXPR (let)) == N_ap), "N_ap expected!");
 
-    funname = ILIBfree (funname);
+    funname = MEMfree (funname);
 
     /*
      * set back-references let <-> fundef

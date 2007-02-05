@@ -67,6 +67,8 @@
 #include "tree_compound.h"
 #include "traverse.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "LookUpTable.h"
 #include "print.h"
 #include "DupTree.h"
@@ -105,7 +107,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_LUT (result) = LUTgenerateLut ();
     INFO_LHS (result) = NULL;
@@ -123,7 +125,7 @@ FreeInfo (info *info)
     DBUG_ENTER ("FreeInfo");
 
     INFO_LUT (info) = LUTremoveLut (INFO_LUT (info));
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }

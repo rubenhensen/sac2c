@@ -56,6 +56,8 @@
 #include "globals.h"
 #include "ctinfo.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 
 #include "sac.tab.h"
 
@@ -161,7 +163,7 @@ RSCmakeInheritenceListEntry (char *name, inheritence_list_t *next)
 
     DBUG_ENTER ("RSCmakeInheritenceListEntry");
 
-    new = (inheritence_list_t *)ILIBmalloc (sizeof (inheritence_list_t));
+    new = (inheritence_list_t *)MEMmalloc (sizeof (inheritence_list_t));
 
     new->name = name;
     new->next = next;
@@ -196,7 +198,7 @@ RSCmakeResourceListEntry (char *name, char *value_str, int value_num, int add_fl
 
     DBUG_ENTER ("RSCmakeResourceListEntry");
 
-    tmp = (resource_list_t *)ILIBmalloc (sizeof (resource_list_t));
+    tmp = (resource_list_t *)MEMmalloc (sizeof (resource_list_t));
 
     tmp->name = name;
     tmp->value_str = value_str;
@@ -234,7 +236,7 @@ RSCmakeTargetListEntry (char *name, inheritence_list_t *super_targets,
 
     DBUG_ENTER ("RSCmakeTargetListEntry");
 
-    tmp = (target_list_t *)ILIBmalloc (sizeof (target_list_t));
+    tmp = (target_list_t *)MEMmalloc (sizeof (target_list_t));
 
     tmp->name = name;
     tmp->super_targets = super_targets;
@@ -310,21 +312,21 @@ FreeTargetList (target_list_t *target)
             tmp = resource;
             resource = resource->next;
 
-            tmp->name = ILIBfree (tmp->name);
-            tmp->value_str = ILIBfree (tmp->value_str);
-            tmp = ILIBfree (tmp);
+            tmp->name = MEMfree (tmp->name);
+            tmp->value_str = MEMfree (tmp->value_str);
+            tmp = MEMfree (tmp);
         }
 
-        tmp_target->name = ILIBfree (tmp_target->name);
+        tmp_target->name = MEMfree (tmp_target->name);
 
         inherit = tmp_target->super_targets;
         while (inherit != NULL) {
             tmp_inherit = inherit;
             inherit = inherit->next;
-            tmp_inherit = ILIBfree (tmp_inherit);
+            tmp_inherit = MEMfree (tmp_inherit);
         }
 
-        tmp_target = ILIBfree (tmp_target);
+        tmp_target = MEMfree (tmp_target);
     }
 
     DBUG_RETURN ((target_list_t *)NULL);
@@ -442,7 +444,7 @@ ParseResourceFiles ()
                   "The environment variable SAC2CBASE is not set properly.");
     }
 
-    filename = ILIBstringConcat (envvar, "/sac2crc");
+    filename = STRcat (envvar, "/sac2crc");
 
     ok = RSCparseResourceFile (filename);
 
@@ -451,7 +453,7 @@ ParseResourceFiles ()
                   "Somewhat, your installation is corrupted.");
     }
 
-    ILIBfree (filename);
+    MEMfree (filename);
 
     /*
      * Second, the private sac2crc file ist read.
@@ -461,9 +463,9 @@ ParseResourceFiles ()
     envvar = getenv ("HOME");
 
     if (envvar != NULL) {
-        filename = ILIBstringConcat (envvar, "/.sac2crc");
+        filename = STRcat (envvar, "/.sac2crc");
         ok = RSCparseResourceFile (filename);
-        ILIBfree (filename);
+        MEMfree (filename);
     }
 
     global.filename = global.puresacfilename; /* What is this good for ? */
@@ -493,7 +495,7 @@ EvaluateDefaultTarget (target_list_t *target)
 
     DBUG_ENTER ("EvaluateDefaultTarget");
 
-    while ((target != NULL) && (!ILIBstringCompare (target->name, "default"))) {
+    while ((target != NULL) && (!STReq (target->name, "default"))) {
         target = target->next;
     }
 
@@ -505,8 +507,7 @@ EvaluateDefaultTarget (target_list_t *target)
 
         resource = target->resource_list;
 
-        while ((resource != NULL)
-               && (!ILIBstringCompare (resource_table[i].name, resource->name))) {
+        while ((resource != NULL) && (!STReq (resource_table[i].name, resource->name))) {
             resource = resource->next;
         }
 
@@ -568,7 +569,7 @@ EvaluateCustomTarget (char *target, target_list_t *target_list)
 
     tmp = target_list;
 
-    while ((tmp != NULL) && (!ILIBstringCompare (tmp->name, target))) {
+    while ((tmp != NULL) && (!STReq (tmp->name, target))) {
         tmp = tmp->next;
     }
 
@@ -590,7 +591,7 @@ EvaluateCustomTarget (char *target, target_list_t *target_list)
     while (resource != NULL) {
         i = 0;
         while ((resource_table[i].name[0] != '\0')
-               && (!ILIBstringCompare (resource_table[i].name, resource->name))) {
+               && (!STReq (resource_table[i].name, resource->name))) {
             i++;
         }
 
@@ -607,14 +608,14 @@ EvaluateCustomTarget (char *target, target_list_t *target_list)
                 } else {
                     if (resource->add_flag) {
                         char *new;
-                        new = ILIBstringConcat3 (*((char **)(resource_table[i].store)),
-                                                 " ", resource->value_str);
-                        ILIBfree (*((char **)(resource_table[i].store)));
+                        new = STRcatn (3, *((char **)(resource_table[i].store)), " ",
+                                       resource->value_str);
+                        MEMfree (*((char **)(resource_table[i].store)));
                         *((char **)(resource_table[i].store)) = new;
                     } else {
-                        ILIBfree (*((char **)(resource_table[i].store)));
+                        MEMfree (*((char **)(resource_table[i].store)));
                         *((char **)(resource_table[i].store))
-                          = ILIBstringCopy (resource->value_str);
+                          = STRcpy (resource->value_str);
                     }
                 }
                 break;
@@ -662,7 +663,7 @@ RSCevaluateConfiguration ()
 
     EvaluateDefaultTarget (global.target_list);
 
-    if (!ILIBstringCompare (global.target_name, "default")) {
+    if (!STReq (global.target_name, "default")) {
         EvaluateCustomTarget (global.target_name, global.target_list);
     }
 

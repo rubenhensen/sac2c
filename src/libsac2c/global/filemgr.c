@@ -10,6 +10,8 @@
 
 #include "dbug.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "ctinfo.h"
 #include "free.h"
 #include "types.h"
@@ -181,10 +183,10 @@ FMGRcheckExistFile (const char *dir, const char *name)
         dir = "";
     }
 
-    tmp = ILIBstringConcat3 (dir, "/", name);
+    tmp = STRcatn (3, dir, "/", name);
 
     file = fopen (tmp, "r");
-    tmp = ILIBfree (tmp);
+    tmp = MEMfree (tmp);
 
     if (file == NULL) {
         res = FALSE;
@@ -296,7 +298,7 @@ AppendConfigPaths (pathkind_t pathkind, const char *path)
      * we have to copy path here, as strtok modifies it
      */
 
-    ptoken = ILIBstringCopy (path);
+    ptoken = STRcpy (path);
 
     pathentry = strtok (ptoken, ":");
 
@@ -328,7 +330,7 @@ AppendConfigPaths (pathkind_t pathkind, const char *path)
         pathentry = strtok (NULL, ":");
     }
 
-    ptoken = ILIBfree (ptoken);
+    ptoken = MEMfree (ptoken);
 
     DBUG_VOID_RETURN;
 }
@@ -529,14 +531,14 @@ FMGRsetFileNames (node *module)
     if (MODULE_FILETYPE (module) == F_prog) {
 
         global.modulenamespace = NSdupNamespace (MODULE_NAMESPACE (module));
-        global.modulename = ILIBstringCopy (NSgetName (MODULE_NAMESPACE (module)));
+        global.modulename = STRcpy (NSgetName (MODULE_NAMESPACE (module)));
 
         if (global.outfilename == NULL) {
             global.outfilename = "a.out";
             global.cfilename = "a.out.c";
             global.targetdir = "";
         } else {
-            global.cfilename = ILIBstringConcat (global.outfilename, ".c");
+            global.cfilename = STRcat (global.outfilename, ".c");
             global.targetdir = "";
         }
     } else {
@@ -546,27 +548,27 @@ FMGRsetFileNames (node *module)
         }
 
         if (global.sacfilename != NULL) {
-            buffer = ILIBstringConcat (NSgetName (MODULE_NAMESPACE (module)), ".sac");
+            buffer = STRcat (NSgetName (MODULE_NAMESPACE (module)), ".sac");
 
-            if (!ILIBstringCompare (buffer, global.puresacfilename)) {
+            if (!STReq (buffer, global.puresacfilename)) {
                 CTIwarn ("Module/class '%s` should be in a file named \"%s\" "
                          "instead of \"%s\"",
                          NSgetName (MODULE_NAMESPACE (module)), buffer,
                          global.sacfilename);
             }
-            ILIBfree (buffer);
+            MEMfree (buffer);
         }
 
         if (global.outfilename == NULL) {
             global.targetdir = "";
         } else {
-            global.targetdir = ILIBstringConcat (global.outfilename, "/");
+            global.targetdir = STRcat (global.outfilename, "/");
         }
 
         global.modulenamespace = NSdupNamespace (MODULE_NAMESPACE (module));
-        global.modulename = ILIBstringCopy (NSgetName (MODULE_NAMESPACE (module)));
-        global.cfilename = ILIBstringConcat (global.modulename, ".c");
-        global.outfilename = ILIBstringConcat (global.modulename, ".out");
+        global.modulename = STRcpy (NSgetName (MODULE_NAMESPACE (module)));
+        global.cfilename = STRcat (global.modulename, ".c");
+        global.outfilename = STRcat (global.modulename, ".out");
     }
 
     DBUG_VOID_RETURN;
@@ -612,7 +614,7 @@ FMGRcreateTmpDir ()
     /* mkdtemp is safer than tempnam and recommended */
     /* on linux/bsd platforms.                       */
 
-    global.tmp_dirname = (char *)ILIBmalloc (strlen (global.config.mkdir) + 12);
+    global.tmp_dirname = (char *)MEMmalloc (strlen (global.config.mkdir) + 12);
     global.tmp_dirname = strcpy (global.tmp_dirname, global.config.tmpdir);
     global.tmp_dirname = strcat (global.tmp_dirname, "/SAC_XXXXXX");
 

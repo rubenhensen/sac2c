@@ -34,6 +34,8 @@
 
 #include "tree_basic.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "free.h"
 #include "globals.h"
 #include "ctinfo.h"
@@ -190,7 +192,7 @@ PrintFundefInformation (node *fundef)
             buffer_space = 0;
         }
 
-        tmp_str = ILIBfree (tmp_str);
+        tmp_str = MEMfree (tmp_str);
         arg = ARG_NEXT (arg);
     }
 

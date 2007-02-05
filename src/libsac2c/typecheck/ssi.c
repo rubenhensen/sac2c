@@ -42,6 +42,8 @@
 #include "dbug.h"
 #include "new_types.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "ctinfo.h"
 #include "private_heap.h"
 
@@ -136,11 +138,11 @@ AddBigger (tvar *small, tvar *big)
     DBUG_ENTER ("AddBigger");
     if (TVAR_MBIG (small) == TVAR_NBIG (small)) {
         TVAR_MBIG (small) += CHUNK_SIZE;
-        new = (tvar **)ILIBmalloc (sizeof (tvar *) * TVAR_MBIG (small));
+        new = (tvar **)MEMmalloc (sizeof (tvar *) * TVAR_MBIG (small));
         for (i = 0; i < TVAR_MBIG (small) - CHUNK_SIZE; i++) {
             new[i] = TVAR_BIG (small, i);
         }
-        ILIBfree (TVAR_BIGS (small));
+        MEMfree (TVAR_BIGS (small));
         TVAR_BIGS (small) = new;
     }
     /*
@@ -161,11 +163,11 @@ AddSmaller (tvar *big, tvar *small)
     DBUG_ENTER ("AddSmaller");
     if (TVAR_MSMALL (big) == TVAR_NSMALL (big)) {
         TVAR_MSMALL (big) += CHUNK_SIZE;
-        new = (tvar **)ILIBmalloc (sizeof (tvar *) * TVAR_MSMALL (big));
+        new = (tvar **)MEMmalloc (sizeof (tvar *) * TVAR_MSMALL (big));
         for (i = 0; i < TVAR_MSMALL (big) - CHUNK_SIZE; i++) {
             new[i] = TVAR_SMALL (big, i);
         }
-        ILIBfree (TVAR_SMALLS (big));
+        MEMfree (TVAR_SMALLS (big));
         TVAR_SMALLS (big) = new;
     }
     /*
@@ -186,11 +188,11 @@ AddHandle (tvar *var, sig_dep *handle)
     DBUG_ENTER ("AddHandle");
     if (TVAR_MASS (var) == TVAR_NASS (var)) {
         TVAR_MASS (var) += CHUNK_SIZE;
-        new = (sig_dep **)ILIBmalloc (sizeof (sig_dep *) * TVAR_MASS (var));
+        new = (sig_dep **)MEMmalloc (sizeof (sig_dep *) * TVAR_MASS (var));
         for (i = 0; i < TVAR_MASS (var) - CHUNK_SIZE; i++) {
             new[i] = TVAR_HAND (var, i);
         }
-        ILIBfree (TVAR_HANDS (var));
+        MEMfree (TVAR_HANDS (var));
         TVAR_HANDS (var) = new;
     }
     /*
@@ -287,7 +289,7 @@ NewMax (tvar *var, ntype *cmax, bool outer)
 
     DBUG_EXECUTE ("SSI", tmp_str = TYtype2String (cmax, FALSE, 0););
     DBUG_PRINT ("SSI", ("    new max for #%d: %s", TVAR_NO (var), tmp_str));
-    DBUG_EXECUTE ("SSI", tmp_str = ILIBfree (tmp_str););
+    DBUG_EXECUTE ("SSI", tmp_str = MEMfree (tmp_str););
 
     if (cmax == NULL) {
         res = TRUE;
@@ -427,7 +429,7 @@ NewMin (tvar *var, ntype *cmin, bool outer)
 
     DBUG_EXECUTE ("SSI", tmp_str = TYtype2String (cmin, FALSE, 0););
     DBUG_PRINT ("SSI", ("    new min for #%d: %s", TVAR_NO (var), tmp_str));
-    DBUG_EXECUTE ("SSI", tmp_str = ILIBfree (tmp_str););
+    DBUG_EXECUTE ("SSI", tmp_str = MEMfree (tmp_str););
 
     if (cmin == NULL) {
         res = TRUE;
@@ -656,7 +658,7 @@ SSIfixLow (tvar *var)
 
     DBUG_EXECUTE ("SSI", tmp_str = TYtype2String (TVAR_MIN (var), FALSE, 0););
     DBUG_PRINT ("SSI", ("fixing variable #%d to %s", TVAR_NO (var), tmp_str));
-    DBUG_EXECUTE ("SSI", tmp_str = ILIBfree (tmp_str););
+    DBUG_EXECUTE ("SSI", tmp_str = MEMfree (tmp_str););
 
     SSInewMax (var, SSIgetMin (var));
 
@@ -675,7 +677,7 @@ SSIfixLow (tvar *var)
             res = res && ass_fix_handle (hands[i]);
         }
 
-        hands = ILIBfree (hands);
+        hands = MEMfree (hands);
     }
 
     DBUG_RETURN ((res && ass_system_active));
@@ -750,11 +752,11 @@ SSIvariable2String (tvar *var)
         tmp_str = TYtype2String (TVAR_MIN (var), FALSE, 0);
         tmp_str2 = TYtype2String (TVAR_MAX (var), FALSE, 0);
         tmp += sprintf (tmp, "#%d in [ %s, %s]", TVAR_NO (var), tmp_str, tmp_str2);
-        tmp_str = ILIBfree (tmp_str);
-        tmp_str2 = ILIBfree (tmp_str2);
+        tmp_str = MEMfree (tmp_str);
+        tmp_str2 = MEMfree (tmp_str2);
     }
 
-    DBUG_RETURN (ILIBstringCopy (buf));
+    DBUG_RETURN (STRcpy (buf));
 }
 
 /******************************************************************************
@@ -782,8 +784,8 @@ SSIvariable2DebugString (tvar *var)
         tmp_str = TYtype2String (TVAR_MIN (var), FALSE, 0);
         tmp_str2 = TYtype2String (TVAR_MAX (var), FALSE, 0);
         tmp += sprintf (tmp, "#%d: in [ %s, %s] le <", TVAR_NO (var), tmp_str, tmp_str2);
-        tmp_str = ILIBfree (tmp_str);
-        tmp_str2 = ILIBfree (tmp_str2);
+        tmp_str = MEMfree (tmp_str);
+        tmp_str2 = MEMfree (tmp_str2);
 
         for (i = 0; i < TVAR_NBIG (var); i++) {
             tmp += sprintf (tmp, " %d", TVAR_NO (TVAR_BIG (var, i)));
@@ -795,7 +797,7 @@ SSIvariable2DebugString (tvar *var)
         tmp += sprintf (tmp, ">");
     }
 
-    DBUG_RETURN (ILIBstringCopy (buf));
+    DBUG_RETURN (STRcpy (buf));
 }
 
 /* @} */ /* addtogroup ntc */

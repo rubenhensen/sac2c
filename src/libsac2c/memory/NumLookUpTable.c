@@ -3,6 +3,8 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "dbug.h"
 
 /******************************************************************************
@@ -43,11 +45,11 @@ NLUTgenerateNlut (node *args, node *vardecs)
     DBUG_ASSERT ((vardecs == NULL) || (NODE_TYPE (vardecs) == N_vardec),
                  "Second argument of NLUTgenerateNlut must be NULL or N_vardec");
 
-    nlut = ILIBmalloc (sizeof (nlut_t));
+    nlut = MEMmalloc (sizeof (nlut_t));
 
     NLUT_SIZE (nlut) = TCcountArgs (args) + TCcountVardecs (vardecs);
-    NLUT_NUMS (nlut) = ILIBmalloc (NLUT_SIZE (nlut) * sizeof (int));
-    NLUT_AVIS (nlut) = ILIBmalloc (NLUT_SIZE (nlut) * sizeof (node *));
+    NLUT_NUMS (nlut) = MEMmalloc (NLUT_SIZE (nlut) * sizeof (int));
+    NLUT_AVIS (nlut) = MEMmalloc (NLUT_SIZE (nlut) * sizeof (node *));
 
     c = 0;
     tmp = args;
@@ -88,11 +90,11 @@ NLUTgenerateNlutFromNlut (nlut_t *nlut)
 
     DBUG_ENTER ("NLUTgenerateNlutFromNlut");
 
-    newnlut = ILIBmalloc (sizeof (nlut_t));
+    newnlut = MEMmalloc (sizeof (nlut_t));
 
     NLUT_SIZE (newnlut) = NLUT_SIZE (nlut);
-    NLUT_NUMS (newnlut) = ILIBmalloc (NLUT_SIZE (nlut) * sizeof (int));
-    NLUT_AVIS (newnlut) = ILIBmalloc (NLUT_SIZE (nlut) * sizeof (node *));
+    NLUT_NUMS (newnlut) = MEMmalloc (NLUT_SIZE (nlut) * sizeof (int));
+    NLUT_AVIS (newnlut) = MEMmalloc (NLUT_SIZE (nlut) * sizeof (node *));
 
     for (i = 0; i < NLUT_SIZE (nlut); i++) {
         NLUT_NUMS (newnlut)[i] = 0;
@@ -119,11 +121,11 @@ NLUTduplicateNlut (nlut_t *nlut)
 
     DBUG_ENTER ("NLUTduplicateNlut");
 
-    newnlut = ILIBmalloc (sizeof (nlut_t));
+    newnlut = MEMmalloc (sizeof (nlut_t));
 
     NLUT_SIZE (newnlut) = NLUT_SIZE (nlut);
-    NLUT_NUMS (newnlut) = ILIBmalloc (NLUT_SIZE (nlut) * sizeof (int));
-    NLUT_AVIS (newnlut) = ILIBmalloc (NLUT_SIZE (nlut) * sizeof (node *));
+    NLUT_NUMS (newnlut) = MEMmalloc (NLUT_SIZE (nlut) * sizeof (int));
+    NLUT_AVIS (newnlut) = MEMmalloc (NLUT_SIZE (nlut) * sizeof (node *));
 
     for (i = 0; i < NLUT_SIZE (nlut); i++) {
         NLUT_NUMS (newnlut)[i] = NLUT_NUMS (nlut)[i];
@@ -147,10 +149,10 @@ NLUTremoveNlut (nlut_t *nlut)
 {
     DBUG_ENTER ("NLUTremoveNlut");
 
-    NLUT_NUMS (nlut) = ILIBfree (NLUT_NUMS (nlut));
-    NLUT_AVIS (nlut) = ILIBfree (NLUT_AVIS (nlut));
+    NLUT_NUMS (nlut) = MEMfree (NLUT_NUMS (nlut));
+    NLUT_AVIS (nlut) = MEMfree (NLUT_AVIS (nlut));
 
-    nlut = ILIBfree (nlut);
+    nlut = MEMfree (nlut);
 
     DBUG_RETURN (nlut);
 }

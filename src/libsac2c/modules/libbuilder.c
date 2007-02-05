@@ -8,6 +8,8 @@
 #include "dbug.h"
 #include "ctinfo.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "stringset.h"
 #include "resource.h"
 #include "filemgr.h"
@@ -23,21 +25,21 @@ BuildDepLibsStringMod (const char *lib, strstype_t kind, void *rest)
 
     switch (kind) {
     case STRS_objfile:
-        result = ILIBstringCopy (lib);
+        result = STRcpy (lib);
         break;
     default:
-        result = ILIBstringCopy ("");
+        result = STRcpy ("");
         break;
     }
 
     if (rest != NULL) {
         char *temp
-          = ILIBmalloc (sizeof (char) * (strlen ((char *)rest) + strlen (result) + 2));
+          = MEMmalloc (sizeof (char) * (strlen ((char *)rest) + strlen (result) + 2));
 
         sprintf (temp, "%s %s", (char *)rest, result);
 
-        result = ILIBfree (result);
-        rest = ILIBfree (rest);
+        result = MEMfree (result);
+        rest = MEMfree (rest);
         result = temp;
     }
 
@@ -61,7 +63,7 @@ LIBBcreateLibrary (node *syntax_tree)
         ILIBsystemCallStartTracking ();
     }
 
-    deplibs = STRSfold (&BuildDepLibsStringMod, deps, ILIBstringCopy (""));
+    deplibs = STRSfold (&BuildDepLibsStringMod, deps, STRcpy (""));
 
     ILIBsystemCall ("%s %slib%s.a %s/fun*.o %s/globals.o %s", global.config.ar_create,
                     global.targetdir, global.modulename, global.tmp_dirname,
@@ -72,7 +74,7 @@ LIBBcreateLibrary (node *syntax_tree)
                         global.modulename);
     }
 
-    deplibs = ILIBfree (deplibs);
+    deplibs = MEMfree (deplibs);
 
     CTInote ("Creating shared SAC library `lib%s.so'", global.modulename);
 

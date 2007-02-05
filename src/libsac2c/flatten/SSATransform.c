@@ -151,6 +151,8 @@
 #include "tree_compound.h"
 #include "node_basic.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "dbug.h"
 #include "globals.h"
 #include "traverse.h"
@@ -255,7 +257,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_SINGLEFUNDEF (result) = 0;
     INFO_ALLOW_GOS (result) = FALSE;
@@ -278,7 +280,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }
@@ -779,8 +781,7 @@ SSATarg (node *arg_node, info *arg_info)
     if (AVIS_SSACOUNT (avis) == NULL) {
         node *topblock = FUNDEF_BODY (INFO_FUNDEF (arg_info));
         BLOCK_SSACOUNTER (topblock)
-          = TBmakeSsacnt (0, ILIBstringCopy (ARG_NAME (arg_node)),
-                          BLOCK_SSACOUNTER (topblock));
+          = TBmakeSsacnt (0, STRcpy (ARG_NAME (arg_node)), BLOCK_SSACOUNTER (topblock));
         AVIS_SSACOUNT (avis) = BLOCK_SSACOUNTER (topblock);
     }
 
@@ -831,9 +832,8 @@ SSATvardec (node *arg_node, info *arg_info)
 
     if (AVIS_SSACOUNT (avis) == NULL) {
         node *topblock = FUNDEF_BODY (INFO_FUNDEF (arg_info));
-        BLOCK_SSACOUNTER (topblock)
-          = TBmakeSsacnt (0, ILIBstringCopy (VARDEC_NAME (arg_node)),
-                          BLOCK_SSACOUNTER (topblock));
+        BLOCK_SSACOUNTER (topblock) = TBmakeSsacnt (0, STRcpy (VARDEC_NAME (arg_node)),
+                                                    BLOCK_SSACOUNTER (topblock));
         AVIS_SSACOUNT (avis) = BLOCK_SSACOUNTER (topblock);
     }
 
@@ -1404,9 +1404,9 @@ SSATids (node *arg_node, info *arg_info)
 
         /* create new unique name */
         sprintf (tmpstring, "__SSA%d_%d", global.ssaform_phase, SSACNT_COUNT (ssacnt));
-        new_name = ILIBstringConcat (SSACNT_BASEID (ssacnt), tmpstring);
+        new_name = STRcat (SSACNT_BASEID (ssacnt), tmpstring);
 
-        AVIS_NAME (new_avis) = ILIBfree (AVIS_NAME (new_avis));
+        AVIS_NAME (new_avis) = MEMfree (AVIS_NAME (new_avis));
         AVIS_NAME (new_avis) = new_name;
 
         if (AVIS_DIM (avis) != NULL) {

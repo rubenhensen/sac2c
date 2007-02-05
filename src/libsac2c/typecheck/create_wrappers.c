@@ -13,6 +13,8 @@
 #include "DupTree.h"
 #include "LookUpTable.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "traverse.h"
 #include "globals.h"
 #include "namespaces.h"
@@ -53,7 +55,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_WRAPPERFUNS (result) = NULL;
     INFO_EXPRETS (result) = 0;
@@ -67,7 +69,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }
@@ -270,7 +272,7 @@ CreateWrapperFor (node *fundef, info *info)
          * to deleting the symbolname!
          */
         DSaddAliasing (FUNDEF_SYMBOLNAME (fundef), wrapper);
-        FUNDEF_SYMBOLNAME (fundef) = ILIBfree (FUNDEF_SYMBOLNAME (fundef));
+        FUNDEF_SYMBOLNAME (fundef) = MEMfree (FUNDEF_SYMBOLNAME (fundef));
 
         /*
          * we set the wrapper to local here. In split_wrappers this

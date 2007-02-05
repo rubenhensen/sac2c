@@ -110,12 +110,14 @@
 #include "print.h"
 #include "free.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 
 #ifdef BEtest
 #define LIBIfree(x)                                                                      \
     x;                                                                                   \
     free (x)
-#define ILIBmalloc(x) malloc (x)
+#define MEMmalloc(x) malloc (x)
 #endif /* BEtest */
 
 /******************************************************************************
@@ -237,7 +239,7 @@ TaskSelector (int sched_id, char *ts_name, int ts_dims, int ts_arg_num, char **t
 
     DBUG_ENTER ("TaskSelector");
 
-    tasks_on_dim = ILIBmalloc (ts_dims * sizeof (int));
+    tasks_on_dim = MEMmalloc (ts_dims * sizeof (int));
 
     pos = 0;
     for (i = 0; i < dim; i++) {
@@ -274,7 +276,7 @@ TaskSelector (int sched_id, char *ts_name, int ts_dims, int ts_arg_num, char **t
 
     fprintf (global.outfile, "%s, %s);\n", taskid, worktodo);
 
-    tasks_on_dim = ILIBfree (tasks_on_dim);
+    tasks_on_dim = MEMfree (tasks_on_dim);
 
     DBUG_VOID_RETURN;
 }

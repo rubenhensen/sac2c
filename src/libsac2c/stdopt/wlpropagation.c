@@ -26,6 +26,8 @@
 #include "new_types.h"
 #include "dbug.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "free.h"
 #include "DupTree.h"
 #include "globals.h"
@@ -65,7 +67,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_FUNDEF (result) = NULL;
     INFO_TRAVSTATE (result) = S_undef;
@@ -81,7 +83,7 @@ FreeInfo (info *arg_info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    arg_info = ILIBfree (arg_info);
+    arg_info = MEMfree (arg_info);
 
     DBUG_RETURN (arg_info);
 }

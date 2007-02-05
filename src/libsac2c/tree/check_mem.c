@@ -21,6 +21,8 @@
 #include "check_mem.h"
 
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "traverse.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -74,7 +76,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_ERROR (result) = NULL;
 
@@ -86,7 +88,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }
@@ -551,7 +553,7 @@ CHKManalyzeMemtab (memobj *arg_memtab, int arg_memindex)
                          */
                         fprintf (stderr, "MEMORY LEAK: %s\n", memtab_info);
 
-                        memtab_info = ILIBfree (memtab_info);
+                        memtab_info = MEMfree (memtab_info);
 
                         MEMOBJ_REPORTED (ORIG2MEMOBJ (MEMOBJ_PTR (ptr_to_memobj))) = TRUE;
                         cnt_node_spaceleaks++;
@@ -572,7 +574,7 @@ CHKManalyzeMemtab (memobj *arg_memtab, int arg_memindex)
 
                             NODE_ERROR (arg_node)
                               = CHKinsertError (NODE_ERROR (arg_node), memtab_info);
-                            memtab_info = ILIBfree (memtab_info);
+                            memtab_info = MEMfree (memtab_info);
 
                             MEMOBJ_REPORTED (ORIG2MEMOBJ (MEMOBJ_PTR (ptr_to_memobj)))
                               = TRUE;
@@ -605,7 +607,7 @@ CHKManalyzeMemtab (memobj *arg_memtab, int arg_memindex)
                          */
                         fprintf (stderr, "MEMORY LEAK: %s\n", memtab_info);
 
-                        memtab_info = ILIBfree (memtab_info);
+                        memtab_info = MEMfree (memtab_info);
 
                         MEMOBJ_REPORTED (ORIG2MEMOBJ (MEMOBJ_PTR (ptr_to_memobj))) = TRUE;
                         cnt_non_node_spaceleaks++;
@@ -746,7 +748,7 @@ MemobjToErrorMessage (char *kind_of_error, memobj *ptr_to_memobj)
 
     DBUG_ENTER ("CHKMtoString");
 
-    str = (char *)ILIBmalloc (sizeof (char) * 1024);
+    str = (char *)MEMmalloc (sizeof (char) * 1024);
 
     test = snprintf (str, 1024,
                      "%s Address: %p, Nodetype: %s,\n"

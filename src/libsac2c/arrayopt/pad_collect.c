@@ -123,6 +123,8 @@
 #include "globals.h"
 #include "DupTree.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "new_types.h"
 #include "new_typecheck.h"
 
@@ -154,7 +156,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_APC_UNSUPPORTED (result) = 0;
     INFO_APC_COUNT_CHANGES (result) = 0;
@@ -168,7 +170,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }
@@ -342,7 +344,7 @@ CollectAccessPatterns (node *arg_node)
             if (pt_ptr == NULL) {
 
                 col_next_ptr = collection;
-                collection = (collection_t *)ILIBmalloc (sizeof (collection_t));
+                collection = (collection_t *)MEMmalloc (sizeof (collection_t));
                 COL_ARRAY (collection) = ACCESS_ARRAY (access_ptr);
                 COL_CLASS (collection) = ACCESS_CLASS (access_ptr);
                 COL_DIR (collection) = ACCESS_DIR (access_ptr);
@@ -383,7 +385,7 @@ CollectAccessPatterns (node *arg_node)
 
     while (collection != NULL) {
         col_ptr = collection->next;
-        collection = ILIBfree (collection);
+        collection = MEMfree (collection);
         collection = col_ptr;
     }
 

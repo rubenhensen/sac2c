@@ -60,6 +60,8 @@
 #include "tree_compound.h"
 #include "node_basic.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "free.h"
 #include "globals.h"
 #include "dbug.h"
@@ -102,7 +104,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_NEXT (result) = NULL;
     INFO_WL (result) = NULL;
@@ -119,7 +121,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }
@@ -258,7 +260,7 @@ Scalar2ArrayIndex (node *arrayn, node *wln)
         arrayn = ARRAY_AELEMS (arrayn);
 
         iinfo = WLFcreateIndex (elts);
-        valid_permutation = ILIBmalloc (sizeof (int) * elts);
+        valid_permutation = MEMmalloc (sizeof (int) * elts);
         for (i = 0; i < elts;) {
             valid_permutation[i++] = 0;
         }
@@ -300,9 +302,9 @@ Scalar2ArrayIndex (node *arrayn, node *wln)
         }
 
         if (!ok) {
-            iinfo = ILIBfree (iinfo);
+            iinfo = MEMfree (iinfo);
         }
-        valid_permutation = ILIBfree (valid_permutation);
+        valid_permutation = MEMfree (valid_permutation);
     } else {
         iinfo = NULL;
     }

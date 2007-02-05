@@ -41,6 +41,8 @@
 #include "DupTree.h"
 #include "free.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "namespaces.h"
 
 #include "create_mtfuns.h"
@@ -78,7 +80,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_MTCONTEXT (result) = FALSE;
     INFO_ISMODULE (result) = FALSE;
@@ -94,7 +96,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }

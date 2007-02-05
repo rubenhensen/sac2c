@@ -6,7 +6,7 @@
 
 #include "print.h"
 #include "free.h"
-#include "internal_lib.h"
+#include "str.h"
 #include "traverse.h"
 #include "tree_basic.h"
 #include "types.h"
@@ -15,6 +15,7 @@
 #include "globals.h"
 #include "ctinfo.h"
 #include "phase.h"
+#include "dbug.h"
 
 /** <!--**********************************************************************-->
  *
@@ -42,10 +43,10 @@ CHKinsertError (node *arg_node, char *string)
             CTIwarn ("%s", string);
         }
 
-        arg_node = TBmakeError (ILIBstringCopy (string), arg_node);
+        arg_node = TBmakeError (STRcpy (string), arg_node);
     } else {
 
-        if (!(ILIBstringCompare (string, ERROR_MESSAGE (arg_node)))) {
+        if (!(STReq (string, ERROR_MESSAGE (arg_node)))) {
 
             ERROR_NEXT (arg_node) = CHKinsertError (ERROR_NEXT (arg_node), string);
         }

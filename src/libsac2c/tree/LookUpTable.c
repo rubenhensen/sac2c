@@ -132,6 +132,8 @@
 #include <math.h>
 
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "free.h"
 #include "dbug.h"
 #include "ctinfo.h"
@@ -595,8 +597,7 @@ InsertIntoLUT_noDBUG (lut_t *lut, void *old_item, void *new_item, hash_key_t has
 
     if (lut[hash_key].size % (LUT_SIZE) == 0) {
         /* the last table entry has been used -> allocate a new one */
-        *lut[hash_key].next
-          = (void **)ILIBmalloc ((2 * (LUT_SIZE) + 1) * sizeof (void *));
+        *lut[hash_key].next = (void **)MEMmalloc ((2 * (LUT_SIZE) + 1) * sizeof (void *));
 
         DBUG_PRINT ("LUT", ("new LUT segment created: " F_PTR, lut[hash_key].next));
 
@@ -680,7 +681,7 @@ UpdateLUT (lut_t *lut, void *old_item, void *new_item, hash_key_t hash_key,
     if (found_item_p == NULL) {
         lut = InsertIntoLUT (lut,
                              (hash_key < (HASH_KEYS_POINTER)) ? old_item
-                                                              : ILIBstringCopy (old_item),
+                                                              : STRcpy (old_item),
                              new_item, hash_key, old_format, new_format);
 
         if (found_item != NULL) {
@@ -818,12 +819,12 @@ LUTgenerateLut (void)
 
     DBUG_ENTER ("LUTgenerateLut");
 
-    lut = (lut_t *)ILIBmalloc ((HASH_KEYS) * sizeof (lut_t));
+    lut = (lut_t *)MEMmalloc ((HASH_KEYS) * sizeof (lut_t));
 
     DBUG_PRINT ("LUT", ("> lut (" F_PTR ")", lut));
 
     for (k = 0; k < (HASH_KEYS); k++) {
-        lut[k].first = (void **)ILIBmalloc ((2 * (LUT_SIZE) + 1) * sizeof (void *));
+        lut[k].first = (void **)MEMmalloc ((2 * (LUT_SIZE) + 1) * sizeof (void *));
         lut[k].next = lut[k].first;
         lut[k].size = 0;
     }
@@ -875,8 +876,7 @@ LUTduplicateLut (lut_t *lut)
             tmp = lut[k].first;
             for (i = 0; i < lut[k].size; i++) {
                 new_lut
-                  = InsertIntoLUT_noDBUG (new_lut, ILIBstringCopy ((char *)(tmp[0])),
-                                          tmp[1], k);
+                  = InsertIntoLUT_noDBUG (new_lut, STRcpy ((char *)(tmp[0])), tmp[1], k);
                 tmp += 2;
                 if ((i + 1) % (LUT_SIZE) == 0) {
                     /* last table entry is reached -> enter next table of the chain */
@@ -924,7 +924,7 @@ LUTremoveContentLut (lut_t *lut)
             for (i = 1; i <= lut[k].size / (LUT_SIZE); i++) {
                 tmp = lut[k].first;
                 lut[k].first = lut[k].first[2 * (LUT_SIZE)];
-                tmp = ILIBfree (tmp);
+                tmp = MEMfree (tmp);
             }
             lut[k].next = lut[k].first;
             lut[k].size = 0;
@@ -936,12 +936,12 @@ LUTremoveContentLut (lut_t *lut)
             first = tmp;
             /* remove all strings and all but the first collision table fragments */
             for (i = 0; i < lut[k].size; i++) {
-                tmp[0] = ILIBfree (tmp[0]);
+                tmp[0] = MEMfree (tmp[0]);
                 tmp += 2;
                 if ((i + 1) % (LUT_SIZE) == 0) {
                     /* last table entry is reached -> enter next table of the chain */
                     tmp = *tmp;
-                    first = ILIBfree (first);
+                    first = MEMfree (first);
                     first = tmp;
                 }
             }
@@ -983,9 +983,9 @@ LUTremoveLut (lut_t *lut)
         /* remove empty LUT */
         for (k = 0; k < (HASH_KEYS); k++) {
             DBUG_ASSERT ((lut[k].size == 0), "LUT not empty!");
-            lut[k].first = ILIBfree (lut[k].first);
+            lut[k].first = MEMfree (lut[k].first);
         }
-        lut = ILIBfree (lut);
+        lut = MEMfree (lut);
 
         DBUG_PRINT ("LUT", ("< finished"));
     } else {
@@ -1363,8 +1363,8 @@ LUTinsertIntoLutS (lut_t *lut, char *old_item, void *new_item)
 {
     DBUG_ENTER ("LUTinsertIntoLutS");
 
-    lut = InsertIntoLUT (lut, ILIBstringCopy (old_item), new_item,
-                         GetHashKey_String (old_item), "\"%s\"", F_PTR);
+    lut = InsertIntoLUT (lut, STRcpy (old_item), new_item, GetHashKey_String (old_item),
+                         "\"%s\"", F_PTR);
 
     DBUG_RETURN (lut);
 }

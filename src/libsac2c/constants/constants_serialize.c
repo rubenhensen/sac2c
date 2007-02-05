@@ -42,6 +42,8 @@
 #include "constants.h"
 #include "constants_internal.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include <stdio.h>
 #include "dbug.h"
 
@@ -66,11 +68,11 @@ COserializeConstant (FILE *file, constant *cnst)
         SHserializeShape (file, CONSTANT_SHAPE (cnst));
 
         max = global.basetype_size[CONSTANT_TYPE (cnst)] * CONSTANT_VLEN (cnst);
-        data = ILIBbyteArrayToHexString (max, CONSTANT_ELEMS (cnst));
+        data = STRbytes2Hex (max, CONSTANT_ELEMS (cnst));
 
         fprintf (file, ", %d, \"%s\")", CONSTANT_VLEN (cnst), data);
 
-        data = ILIBfree (data);
+        data = MEMfree (data);
     }
 
     DBUG_VOID_RETURN;
@@ -85,7 +87,7 @@ COdeserializeConstant (simpletype type, shape *shp, int vlen, char *vec)
     DBUG_ENTER ("COdeserializeConstant");
 
     data = COINTallocCV (type, vlen);
-    data = ILIBhexStringToByteArray ((unsigned char *)data, vec);
+    data = STRhex2Bytes ((unsigned char *)data, vec);
 
     result = COINTmakeConstant (type, shp, data, vlen);
 

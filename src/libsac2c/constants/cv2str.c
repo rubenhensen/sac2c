@@ -17,9 +17,15 @@
 
 #include <strings.h>
 #include <stdlib.h>
+
 #include "cv2str.h"
+#include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "dbug.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 
 /******************************************************************************
  *
@@ -43,7 +49,7 @@
                                                                                          \
         DBUG_ENTER ("COcv2Str##ext");                                                    \
         sprintf (format, ",%s", form);                                                   \
-        buffer = (char *)ILIBmalloc ((100 + max_char) * sizeof (char));                  \
+        buffer = (char *)MEMmalloc ((100 + max_char) * sizeof (char));                   \
         buffer_act = buffer;                                                             \
                                                                                          \
         if (len > 0) {                                                                   \

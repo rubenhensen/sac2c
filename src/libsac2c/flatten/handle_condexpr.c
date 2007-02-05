@@ -15,6 +15,8 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "DupTree.h"
 #include "dbug.h"
 #include "free.h"
@@ -41,7 +43,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_HCE_PREASSIGN (result) = NULL;
 
@@ -53,7 +55,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }
@@ -247,13 +249,13 @@ HCEfuncond (node *arg_node, info *arg_info)
     p = FUNCOND_IF (arg_node);
     FUNCOND_IF (arg_node) = NULL;
 
-    t = TBmakeBlock (TBmakeAssign (TBmakeLet (TBmakeSpids (ILIBstringCopy (n), NULL),
+    t = TBmakeBlock (TBmakeAssign (TBmakeLet (TBmakeSpids (STRcpy (n), NULL),
                                               FUNCOND_THEN (arg_node)),
                                    NULL),
                      NULL);
     FUNCOND_THEN (arg_node) = NULL;
 
-    e = TBmakeBlock (TBmakeAssign (TBmakeLet (TBmakeSpids (ILIBstringCopy (n), NULL),
+    e = TBmakeBlock (TBmakeAssign (TBmakeLet (TBmakeSpids (STRcpy (n), NULL),
                                               FUNCOND_ELSE (arg_node)),
                                    NULL),
                      NULL);

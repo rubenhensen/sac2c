@@ -25,6 +25,8 @@
 #include "tree_compound.h"
 #include "node_basic.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "traverse.h"
 #include "free.h"
 #include "DupTree.h"
@@ -189,7 +191,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_BELOW_COND (result) = FALSE;
     INFO_FUNDEF (result) = NULL;
@@ -210,7 +212,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }

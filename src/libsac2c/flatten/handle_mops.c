@@ -10,6 +10,8 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "ctinfo.h"
 #include "dbug.h"
 #include "free.h"
@@ -50,7 +52,7 @@ MakePrec (assoc_t assoc, int val)
     prec_t *res;
 
     DBUG_ENTER ("MakePrec");
-    res = (prec_t *)ILIBmalloc (sizeof (prec_t));
+    res = (prec_t *)MEMmalloc (sizeof (prec_t));
 
     PREC_ASS (res) = assoc;
     PREC_VAL (res) = val;
@@ -73,7 +75,7 @@ FreePrec (prec_t *prec)
 {
     DBUG_ENTER ("FreePrec");
 
-    prec = ILIBfree (prec);
+    prec = MEMfree (prec);
 
     DBUG_RETURN (prec);
 }

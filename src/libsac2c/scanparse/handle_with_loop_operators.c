@@ -9,6 +9,8 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "DupTree.h"
 #include "free.h"
 #include "namespaces.h"
@@ -216,7 +218,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_HWLO_LASTASSIGN (result) = NULL;
     INFO_HWLO_NUM_STD_OPS (result) = 0;
@@ -234,7 +236,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }
@@ -610,7 +612,7 @@ HWLOpropagate (node *arg_node, info *arg_info)
 
         DBUG_ASSERT (NODE_TYPE (PROPAGATE_DEFAULT (arg_node)) == N_spid,
                      "propgate defaults should be N_spid!");
-        tmp = ILIBstringCopy (SPID_NAME (PROPAGATE_DEFAULT (arg_node)));
+        tmp = STRcpy (SPID_NAME (PROPAGATE_DEFAULT (arg_node)));
 
         new_withop = TBmakePropagate (TBmakeSpid (NULL, tmp));
         PROPAGATE_NEXT (new_withop) = INFO_HWLO_NEW_WITHOPS (arg_info);
@@ -618,7 +620,7 @@ HWLOpropagate (node *arg_node, info *arg_info)
         INFO_HWLO_NEW_WITHOPS (arg_info) = new_withop;
 
         INFO_HWLO_NEW_LHS (arg_info)
-          = TBmakeSpids (ILIBstringCopy (tmp), INFO_HWLO_NEW_LHS (arg_info));
+          = TBmakeSpids (STRcpy (tmp), INFO_HWLO_NEW_LHS (arg_info));
 
         INFO_HWLO_NEW_CEXPRS (arg_info)
           = TBmakeExprs (DUPdoDupTree (EXPRS_EXPR (my_cexprs)),

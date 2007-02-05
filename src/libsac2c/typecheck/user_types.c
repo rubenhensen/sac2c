@@ -8,6 +8,8 @@
 #include "ctinfo.h"
 #include "free.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "namespaces.h"
 #include "new_types.h"
 #include "shape.h"
@@ -104,12 +106,12 @@ InsertIntoRepository (udt_entry *entry)
      * the repository is big enough!!
      */
     if (udt_no % CHUNKSIZE == 0) {
-        new_rep = (udt_entry **)ILIBmalloc ((udt_no + CHUNKSIZE) * sizeof (udt_entry *));
+        new_rep = (udt_entry **)MEMmalloc ((udt_no + CHUNKSIZE) * sizeof (udt_entry *));
         for (i = 0; i < udt_no; i++) {
             new_rep[i] = udt_rep[i];
         }
         if (udt_rep != NULL) { /* to cope with the initial allocation */
-            ILIBfree (udt_rep);
+            MEMfree (udt_rep);
         }
         udt_rep = new_rep;
     }
@@ -142,7 +144,7 @@ UTaddUserType (char *name, namespace_t *ns, ntype *type, ntype *base, int lineno
     /*
      * First, we generate the desired entry:
      */
-    entry = (udt_entry *)ILIBmalloc (sizeof (udt_entry));
+    entry = (udt_entry *)MEMmalloc (sizeof (udt_entry));
     ENTRY_NAME (entry) = name;
     ENTRY_NS (entry) = ns;
     ENTRY_DEF (entry) = type;
@@ -180,7 +182,7 @@ UTaddAlias (char *name, namespace_t *ns, usertype alias, int lineno, node *tdef)
     DBUG_ENTER ("UTaddAlias");
     DBUG_ASSERT ((alias < udt_no), "alias in UTaddAlias out of range");
 
-    entry = (udt_entry *)ILIBmalloc (sizeof (udt_entry));
+    entry = (udt_entry *)MEMmalloc (sizeof (udt_entry));
     ENTRY_NAME (entry) = name;
     ENTRY_NS (entry) = ns;
     ENTRY_DEF (entry) = TYmakeAKS (TYmakeUserType (alias), SHmakeShape (0));
@@ -234,7 +236,7 @@ UTfindUserType (const char *name, const namespace_t *ns)
         }
     } else {
         while ((res >= 0)
-               && ((!ILIBstringCompare (name, ENTRY_NAME (udt_rep[res])))
+               && ((!STReq (name, ENTRY_NAME (udt_rep[res])))
                    || (!NSequals (ns, ENTRY_NS (udt_rep[res]))))) {
             res--;
         }
@@ -410,7 +412,7 @@ UTsetName (usertype udt, const char *name)
     DBUG_ENTER ("UTsetName");
     DBUG_ASSERT ((udt < udt_no), "UTsetName called with illegal udt!");
 
-    ENTRY_NAME (udt_rep[udt]) = ILIBstringCopy (name);
+    ENTRY_NAME (udt_rep[udt]) = STRcpy (name);
     DBUG_VOID_RETURN;
 }
 

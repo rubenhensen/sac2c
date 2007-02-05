@@ -26,6 +26,8 @@
 
 #include "dbug.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 
 #include "ct_prf.h"
 #include "constants.h"
@@ -34,6 +36,9 @@
 #include "cv2cv.h"
 #include "cv2scalar.h"
 #include "cv2str.h"
+#include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "check_mem.h"
 
 #include <limits.h>
@@ -472,10 +477,10 @@ BuildFunApLine (int maxfun, int maxfunap)
 
     DBUG_ENTER ("BuildFunApLine");
 
-    aps = (int **)ILIBmalloc (maxfun * sizeof (int *));
+    aps = (int **)MEMmalloc (maxfun * sizeof (int *));
 
     for (i = 0; i < maxfunap; i++) {
-        aps[i] = (int *)ILIBmalloc (maxfunap * sizeof (int));
+        aps[i] = (int *)MEMmalloc (maxfunap * sizeof (int));
     }
 
     DBUG_RETURN (aps);

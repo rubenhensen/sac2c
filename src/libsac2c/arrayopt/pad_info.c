@@ -77,6 +77,8 @@
 #include "DupTree.h"
 #include "ctinfo.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "convert.h"
 
 #include "pad_info.h"
@@ -310,7 +312,7 @@ RemovePadInfoElement (pad_info_t *element)
     FREEfreeShpseg (PI_OLD_SHAPE (element));
     FREEfreeShpseg (PI_NEW_SHAPE (element));
     pi_next_ptr = PI_NEXT (element);
-    element = ILIBfree (element);
+    element = MEMfree (element);
 
     DBUG_RETURN (pi_next_ptr);
 }
@@ -336,7 +338,7 @@ RemoveUnsupportedShapeElement (unsupported_shape_t *element)
 
     FREEfreeShpseg (US_SHAPE (element));
     us_next_ptr = US_NEXT (element);
-    element = ILIBfree (element);
+    element = MEMfree (element);
 
     DBUG_RETURN (us_next_ptr);
 }
@@ -361,7 +363,7 @@ RemoveArrayTypeElement (array_type_t *element)
 
     FREEfreeShpseg (AT_SHAPE (element));
     at_next_ptr = AT_NEXT (element);
-    element = ILIBfree (element);
+    element = MEMfree (element);
 
     DBUG_RETURN (at_next_ptr);
 }
@@ -386,7 +388,7 @@ RemoveConflictGroupElement (conflict_group_t *element)
 
     FREEfreeShpseg (CG_GROUP (element));
     cg_next_ptr = CG_NEXT (element);
-    element = ILIBfree (element);
+    element = MEMfree (element);
 
     DBUG_RETURN (cg_next_ptr);
 }
@@ -411,7 +413,7 @@ RemovePatternElement (pattern_t *element)
 
     FREEfreeShpseg (PT_PATTERN (element));
     pt_next_ptr = PT_NEXT (element);
-    element = ILIBfree (element);
+    element = MEMfree (element);
 
     DBUG_RETURN (pt_next_ptr);
 }
@@ -938,7 +940,7 @@ PIconcatPatterns (pattern_t *pattern, shpseg *shape)
 
     DBUG_ENTER ("PIconcatPatterns");
 
-    result = (pattern_t *)ILIBmalloc (sizeof (pattern_t));
+    result = (pattern_t *)MEMmalloc (sizeof (pattern_t));
     PT_PATTERN (result) = shape;
     PT_NEXT (result) = pattern;
 
@@ -978,7 +980,7 @@ PIaddAccessPattern (simpletype type, int dim, shpseg *shape, shpseg *group,
     /* add new type */
     if (at_ptr == NULL) {
         at_next_ptr = array_type;
-        array_type = (array_type_t *)ILIBmalloc (sizeof (array_type_t));
+        array_type = (array_type_t *)MEMmalloc (sizeof (array_type_t));
         AT_DIM (array_type) = dim;
         AT_TYPE (array_type) = type;
         AT_SHAPE (array_type) = shape;
@@ -991,7 +993,7 @@ PIaddAccessPattern (simpletype type, int dim, shpseg *shape, shpseg *group,
 
     /* add new conflict group with patterns to type */
     cg_next_ptr = AT_GROUPS (at_ptr);
-    AT_GROUPS (at_ptr) = (conflict_group_t *)ILIBmalloc (sizeof (conflict_group_t));
+    AT_GROUPS (at_ptr) = (conflict_group_t *)MEMmalloc (sizeof (conflict_group_t));
     cg_ptr = AT_GROUPS (at_ptr);
     CG_GROUP (cg_ptr) = group;
     CG_DIR (cg_ptr) = direction;
@@ -1080,7 +1082,7 @@ PIaddUnsupportedShape (types *array_type)
         /* create new entry */
         us_next_ptr = unsupported_shape;
         unsupported_shape
-          = (unsupported_shape_t *)ILIBmalloc (sizeof (unsupported_shape_t));
+          = (unsupported_shape_t *)MEMmalloc (sizeof (unsupported_shape_t));
         US_DIM (unsupported_shape) = TYPES_DIM (array_type);
         US_TYPE (unsupported_shape) = TYPES_BASETYPE (array_type);
         US_SHAPE (unsupported_shape) = TYPES_SHPSEG (array_type);
@@ -1546,7 +1548,7 @@ PIaddInferredShape (simpletype type, int dim, shpseg *old_shape, shpseg *new_sha
 
     DBUG_ENTER ("PIaddInferredShape");
 
-    tmp = (pad_info_t *)ILIBmalloc (sizeof (pad_info_t));
+    tmp = (pad_info_t *)MEMmalloc (sizeof (pad_info_t));
     PI_DIM (tmp) = dim;
     PI_TYPE (tmp) = type;
     PI_OLD_SHAPE (tmp) = old_shape;
@@ -1641,9 +1643,9 @@ PInoteResults ()
         CTInote ("%s%s  by  %s", basetype, old, pad);
         CTInote ("   ->  %s%s    <= %d%% overhead", basetype, new, overhead);
 
-        old = ILIBfree (old);
-        new = ILIBfree (new);
-        pad = ILIBfree (pad);
+        old = MEMfree (old);
+        new = MEMfree (new);
+        pad = MEMfree (pad);
 
         pi_ptr = PI_NEXT (pi_ptr);
     }

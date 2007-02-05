@@ -442,7 +442,7 @@ typedef void (*cv2cvfunptr) (void *, int, int, void *, int);
 typedef node *(*cv2scalarfunptr) (void *, int);
 
 /*
- * moved from cv2str.h
+ * moved from cv2internal_lib.h
  */
 
 typedef char *(*cv2strfunptr) (void *, int, int, int);

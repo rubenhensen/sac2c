@@ -14,6 +14,8 @@
 #include "free.h"
 #include "ctinfo.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "namespaces.h"
 
 /*
@@ -48,7 +50,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_SYMBOLS (result) = STinit ();
     INFO_CURRENT (result) = NULL;
@@ -67,7 +69,7 @@ FreeInfo (info *info)
 
     INFO_SYMBOLS (info) = STdestroy (INFO_SYMBOLS (info));
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }
@@ -163,7 +165,7 @@ ANStypes (types *arg_types, info *arg_info)
          * look up correct namespace
          */
         ns = LookupNamespaceForSymbol (TYPES_NAME (arg_types), arg_info);
-        TYPES_MOD (arg_types) = ILIBstringCopy (NSgetName (ns));
+        TYPES_MOD (arg_types) = STRcpy (NSgetName (ns));
         ns = NSfreeNamespace (ns);
     }
 

@@ -33,7 +33,7 @@
  * Primitive function psi() renamed to sel().
  *
  * Revision 1.5  2001/05/17 14:16:21  nmw
- * MALLOC/FREE replaced by ILIBmalloc/Free, using result of ILIBfree()
+ * MALLOC/FREE replaced by MEMmalloc/Free, using result of MEMfree()
  *
  * Revision 1.4  2001/05/07 07:40:00  nmw
  * dbug output corrected
@@ -51,6 +51,8 @@
 
 #include <stdlib.h>
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "dbug.h"
 
 #include "constants.h"
@@ -722,7 +724,7 @@ COshape (constant *a)
     DBUG_ENTER ("COshape");
 
     if (CONSTANT_DIM (a) > 0) {
-        shape_vec = (int *)ILIBmalloc (CONSTANT_DIM (a) * sizeof (int));
+        shape_vec = (int *)MEMmalloc (CONSTANT_DIM (a) * sizeof (int));
         for (i = 0; i < CONSTANT_DIM (a); i++)
             shape_vec[i] = SHgetExtent (CONSTANT_SHAPE (a), i);
         res = COmakeConstant (T_int, SHcreateShape (1, CONSTANT_DIM (a)), shape_vec);

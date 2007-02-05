@@ -2,6 +2,8 @@
  * $Id$
  */
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 
 #include <math.h>
 #include <string.h>
@@ -61,8 +63,8 @@ ILIBptrBufCreate (int size)
 
     DBUG_ENTER ("ILIBptrBufCreate");
 
-    res = (ptr_buf *)ILIBmalloc (sizeof (ptr_buf));
-    res->buf = (void **)ILIBmalloc (size * sizeof (void *));
+    res = (ptr_buf *)MEMmalloc (sizeof (ptr_buf));
+    res->buf = (void **)MEMmalloc (size * sizeof (void *));
     res->pos = 0;
     res->size = size;
 
@@ -97,11 +99,11 @@ ILIBptrBufAdd (ptr_buf *s, void *ptr)
         DBUG_PRINT ("PTRBUF", ("increasing buffer %p from size %d to size %d", s, s->size,
                                new_size));
 
-        new_buf = (void **)ILIBmalloc (new_size * sizeof (void *));
+        new_buf = (void **)MEMmalloc (new_size * sizeof (void *));
         for (i = 0; i < s->pos; i++) {
             new_buf[i] = s->buf[i];
         }
-        s->buf = ILIBfree (s->buf);
+        s->buf = MEMfree (s->buf);
         s->buf = new_buf;
         s->size = new_size;
     }
@@ -194,8 +196,8 @@ ILIBptrBufFree (ptr_buf *s)
     DBUG_ENTER ("ILIBptrBufFree");
 
     DBUG_PRINT ("PTRBUF", ("freeing buffer %p", s));
-    s->buf = ILIBfree (s->buf);
-    s = ILIBfree (s);
+    s->buf = MEMfree (s->buf);
+    s = MEMfree (s);
 
     DBUG_RETURN (s);
 }
@@ -223,8 +225,8 @@ ILIBstrBufCreate (int size)
 
     DBUG_ENTER ("ILIBstrBufCreate");
 
-    res = (str_buf *)ILIBmalloc (sizeof (str_buf));
-    res->buf = (char *)ILIBmalloc (size * sizeof (char));
+    res = (str_buf *)MEMmalloc (sizeof (str_buf));
+    res->buf = (char *)MEMmalloc (size * sizeof (char));
     res->buf[0] = '\0';
     res->pos = 0;
     res->size = size;
@@ -249,9 +251,9 @@ EnsureStrBufSpace (str_buf *s, int len)
         DBUG_PRINT ("STRBUF", ("increasing buffer %p from size %d to size %d", s, s->size,
                                new_size));
 
-        new_buf = (char *)ILIBmalloc (new_size * sizeof (char));
+        new_buf = (char *)MEMmalloc (new_size * sizeof (char));
         memcpy (new_buf, s->buf, s->pos + 1);
-        s->buf = ILIBfree (s->buf);
+        s->buf = MEMfree (s->buf);
         s->buf = new_buf;
         s->size = new_size;
     }
@@ -344,7 +346,7 @@ ILIBstrBuf2String (str_buf *s)
 {
     DBUG_ENTER ("ILIBstrBuf2String");
 
-    DBUG_RETURN (ILIBstringCopy (s->buf));
+    DBUG_RETURN (STRcpy (s->buf));
 }
 
 /******************************************************************************
@@ -400,300 +402,10 @@ ILIBstrBufFree (str_buf *s)
 {
     DBUG_ENTER ("ILIBstrBufFree");
 
-    s->buf = ILIBfree (s->buf);
-    s = ILIBfree (s);
+    s->buf = MEMfree (s->buf);
+    s = MEMfree (s);
 
     DBUG_RETURN (s);
-}
-
-/******************************************************************************
- *
- * Function:
- *   char *ILIBstringCopy( const char *source)
- *
- * Description:
- *   Allocates memory and returns a pointer to the copy of 'source'.
- *
- ******************************************************************************/
-
-char *
-ILIBstringCopy (const char *source)
-{
-    char *ret;
-
-    DBUG_ENTER ("ILIBstringCopy");
-
-    if (source != NULL) {
-        ret = (char *)ILIBmalloc (sizeof (char) * (strlen (source) + 1));
-        strcpy (ret, source);
-    } else {
-        ret = NULL;
-    }
-
-    DBUG_RETURN (ret);
-}
-
-char *
-ILIBstringLCopy (const char *source, int maxlen)
-{
-    char *ret;
-    int max;
-
-    DBUG_ENTER ("ILIBstringCopy");
-
-    if (source != NULL) {
-        max = strlen (source);
-        if (max > maxlen) {
-            max = maxlen;
-        }
-
-        ret = (char *)ILIBmalloc (sizeof (char) * (max + 1));
-        strncpy (ret, source, max);
-
-        /* make sure string ends with 0 */
-        ret[max] = '\0';
-    } else {
-        ret = NULL;
-    }
-
-    DBUG_RETURN (ret);
-}
-
-/******************************************************************************
- *
- * function:
- *   char *ILIBstringConcat( char *first, char* second)
- *
- * description
- *   Reserves new memory for the concatinated string first + second,
- *   and returns the concatination. Does not free any memory used by
- *   first or second.
- *
- ******************************************************************************/
-
-char *
-ILIBstringConcat (const char *first, const char *second)
-{
-    char *result;
-
-    DBUG_ENTER ("ILIBstringConcat");
-
-    result = (char *)ILIBmalloc (strlen (first) + strlen (second) + 1);
-
-    strcpy (result, first);
-    strcat (result, second);
-
-    DBUG_RETURN (result);
-}
-
-/******************************************************************************
- *
- * function:
- *   char *ILIBstringConcat3( const char *first, const char* second, const char *third)
- *
- * description
- *   Reserves new memory for the concatinated string first + second + third,
- *   and returns the concatination. Does not free any memory used by
- *   first or second.
- *
- ******************************************************************************/
-
-char *
-ILIBstringConcat3 (const char *first, const char *second, const char *third)
-{
-    char *result;
-
-    DBUG_ENTER ("ILIBstringConcat");
-
-    result = (char *)ILIBmalloc (strlen (first) + strlen (second) + strlen (third) + 1);
-
-    strcpy (result, first);
-    strcat (result, second);
-    strcat (result, third);
-
-    DBUG_RETURN (result);
-}
-
-/******************************************************************************
- *
- * function:
- *   char *ILIBstringConcat4( const char *first, const char* second,
- *                            const char *third, const char* fourth)
- *
- * description
- *   Reserves new memory for the concatinated string first + second + third
- *   + fourth, and returns the concatination. Does not free any memory used by
- *   first or second.
- *
- ******************************************************************************/
-
-char *
-ILIBstringConcat4 (const char *first, const char *second, const char *third,
-                   const char *fourth)
-{
-    char *result;
-
-    DBUG_ENTER ("ILIBstringConcat");
-
-    result = (char *)ILIBmalloc (strlen (first) + strlen (second) + strlen (third)
-                                 + strlen (fourth) + 1);
-
-    strcpy (result, first);
-    strcat (result, second);
-    strcat (result, third);
-    strcat (result, fourth);
-
-    DBUG_RETURN (result);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn  bool ILIBstringCompare( const char *first, const char *second)
- *
- *   @brief  compares two strings for equality
- *
- *   @param  first
- *   @param  second
- *
- ******************************************************************************/
-
-bool
-ILIBstringCompare (const char *first, const char *second)
-{
-    bool res;
-
-    DBUG_ENTER ("ILIBstringCompare");
-
-    res = (0 == strcmp (first, second));
-
-    DBUG_RETURN (res);
-}
-
-/*
- *
- *  functionname  : ILIBnumberOfDigits
- *  arguments     : 1) integer
- *  description   : returns the number of digits, e.g 4 for 1000
- *
- */
-
-int
-ILIBnumberOfDigits (int number)
-{
-    int i = 1;
-
-    DBUG_ENTER ("ILIBnumberOfDigits");
-
-    while (number / 10 >= 1) {
-        number = number / 10;
-        i += 1;
-    }
-
-    DBUG_RETURN (i);
-}
-
-/******************************************************************************
- *
- * function:
- *   char *ILIBstrTok( char *first, char *sep)
- *
- * description
- *    Implements a version of the c-strtok, which can operate on static
- *    strings, too. It returns the string always till the next occurence off
- *    the string sep in first. If there are no more tokens in first a NULL
- *    pointer will be returned.
- *    On first call the string first will be copied, and on last call the
- *    allocated memory of the copy will be freeed.
- *    To get more than one token from one string, call ILIBstrTok with NULL as
- *    first parameter, just like c-strtok.
- *
- ******************************************************************************/
-
-char *
-ILIBstrTok (char *first, char *sep)
-{
-    static char *act_string = NULL;
-    char *new_string = NULL;
-    char *ret;
-
-    DBUG_ENTER ("ILIBstrTok");
-
-    if (first != NULL) {
-        if (act_string != NULL) {
-            act_string = ILIBfree (act_string);
-        }
-        new_string = ILIBstringCopy (first);
-        act_string = new_string;
-    }
-
-    ret = strtok (new_string, sep);
-
-    if (ret == NULL) {
-        act_string = ILIBfree (act_string);
-    }
-
-    DBUG_RETURN (ret);
-}
-
-/******************************************************************************
- *
- * Function:
- *   void *ILIBmemCopy( int size, void *mem)
- *
- * Description:
- *   Allocates memory and returns a pointer to the copy of 'mem'.
- *
- ******************************************************************************/
-
-void *
-ILIBmemCopy (int size, void *mem)
-{
-    void *result;
-
-    DBUG_ENTER ("ILIBmemCopy");
-
-    result = ILIBmalloc (sizeof (char) * size);
-
-    result = memcpy (result, mem, size);
-
-    DBUG_RETURN (result);
-}
-
-/******************************************************************************
- *
- * Function:
- *   char *ILIBitoa( long number)
- *
- * Description:
- *   converts long to string
- *
- ******************************************************************************/
-
-char *
-ILIBitoa (long number)
-{
-    char *str;
-    int tmp;
-    int length, i;
-
-    DBUG_ENTER ("ILIBitoa");
-
-    tmp = number;
-    length = 1;
-    while (9 < tmp) {
-        tmp /= 10;
-        length++;
-    }
-
-    str = (char *)ILIBmalloc (sizeof (char) * length + 1);
-    str[length] = atoi ("\0");
-
-    for (i = 0; i < length; i++) {
-        str[i] = ((int)'0') + (number / pow (10, (length - 1)));
-        number = number % ((int)pow (10, (length - 1)));
-    }
-
-    DBUG_RETURN (str);
 }
 
 /******************************************************************************
@@ -726,53 +438,6 @@ ILIBlcm (int x, int y)
     }
 
     DBUG_RETURN (u);
-}
-
-#define HEX2DIG(x) (((x >= '0') && (x <= '9')) ? (x - '0') : (10 + x - 'A'))
-
-unsigned char *
-ILIBhexStringToByteArray (unsigned char *array, const char *string)
-{
-    int pos;
-
-    DBUG_ENTER ("ILIBhexStringToByteArray");
-
-    pos = 0;
-
-    while (string[pos * 2] != 0) {
-        unsigned char low = HEX2DIG (string[pos * 2 + 1]);
-        unsigned char high = HEX2DIG (string[pos * 2]);
-
-        array[pos] = high * 16 + low;
-        pos++;
-    }
-
-    DBUG_RETURN (array);
-}
-
-#define DIG2HEX(x) ((x < 10) ? ('0' + x) : ('A' + x - 10))
-
-char *
-ILIBbyteArrayToHexString (int len, unsigned char *array)
-{
-    int pos;
-    char *result;
-
-    DBUG_ENTER ("ILIBbyteArrayToHexString");
-
-    result = ILIBmalloc ((1 + len * 2) * sizeof (char));
-
-    for (pos = 0; pos < len; pos++) {
-        unsigned char low = array[pos] % 16;
-        unsigned char high = array[pos] / 16;
-
-        result[2 * pos] = (char)DIG2HEX (high);
-        result[2 * pos + 1] = (char)DIG2HEX (low);
-    }
-
-    result[2 * len] = '\0';
-
-    DBUG_RETURN (result);
 }
 
 void
@@ -968,6 +633,21 @@ ILIBsystemTest (char *format, ...)
  *
  ******************************************************************************/
 
+static int
+NumDigits (int number)
+{
+    int i = 1;
+
+    DBUG_ENTER ("NumDigits");
+
+    while (number / 10 >= 1) {
+        number = number / 10;
+        i += 1;
+    }
+
+    DBUG_RETURN (i);
+}
+
 char *
 ILIBtmpVar (void)
 {
@@ -978,8 +658,8 @@ ILIBtmpVar (void)
     DBUG_ENTER ("ILIBtmpVar");
 
     prefix = TRAVgetName ();
-    result = (char *)ILIBmalloc ((strlen (prefix) + ILIBnumberOfDigits (counter) + 3)
-                                 * sizeof (char));
+    result
+      = (char *)MEMmalloc ((strlen (prefix) + NumDigits (counter) + 3) * sizeof (char));
     sprintf (result, "_%s_%d", prefix, counter);
     counter++;
 
@@ -1018,204 +698,9 @@ ILIBtmpVarName (char *postfix)
 
     prefix = ILIBtmpVar ();
 
-    result = ILIBstringConcat3 (prefix, "_", postfix);
+    result = STRcatn (3, prefix, "_", postfix);
 
-    ILIBfree (prefix);
-
-    DBUG_RETURN (result);
-}
-
-/******************************************************************************
- *
- * function:
- *   char *ILIBreplaceSpecialCharacters( const char *name)
- *
- * description:
- *   Replaces special characters such that they can be used as identifiers
- *   in a C program.
- *
- *****************************************************************************/
-char *
-ILIBreplaceSpecialCharacters (const char *name)
-{
-    char *new_name;
-    char *tmp;
-    int i, j;
-
-    DBUG_ENTER ("ILIBreplaceSpecialCharacters");
-
-    new_name = ILIBmalloc ((3 * strlen (name)) * sizeof (char));
-    new_name[0] = '\0';
-
-    for (i = 0, j = 0; (size_t)i < strlen (name); i++, j++) {
-        switch (name[i]) {
-        case '.':
-            tmp = "_DO";
-            strcat (&(new_name[j]), tmp);
-            j += strlen (tmp) - 1;
-            break;
-        case ',':
-            tmp = "_CM";
-            strcat (&(new_name[j]), tmp);
-            j += strlen (tmp) - 1;
-            break;
-        case '+':
-            tmp = "_PL";
-            strcat (&(new_name[j]), tmp);
-            j += strlen (tmp) - 1;
-            break;
-        case '-':
-            tmp = "_MI";
-            strcat (&(new_name[j]), tmp);
-            j += strlen (tmp) - 1;
-            break;
-        case '*':
-            tmp = "_ST";
-            strcat (&(new_name[j]), tmp);
-            j += strlen (tmp) - 1;
-            break;
-        case '/':
-            tmp = "_DI";
-            strcat (&(new_name[j]), tmp);
-            j += strlen (tmp) - 1;
-            break;
-        case '%':
-            tmp = "_PR";
-            strcat (&(new_name[j]), tmp);
-            j += strlen (tmp) - 1;
-            break;
-        case '<':
-            tmp = "_LT";
-            strcat (&(new_name[j]), tmp);
-            j += strlen (tmp) - 1;
-            break;
-        case '>':
-            tmp = "_GT";
-            strcat (&(new_name[j]), tmp);
-            j += strlen (tmp) - 1;
-            break;
-        case '=':
-            tmp = "_EQ";
-            strcat (&(new_name[j]), tmp);
-            j += strlen (tmp) - 1;
-            break;
-        case '&':
-            tmp = "_AM";
-            strcat (&(new_name[j]), tmp);
-            j += strlen (tmp) - 1;
-            break;
-        case '|':
-            tmp = "_VE";
-            strcat (&(new_name[j]), tmp);
-            j += strlen (tmp) - 1;
-            break;
-        case '!':
-            tmp = "_EX";
-            strcat (&(new_name[j]), tmp);
-            j += strlen (tmp) - 1;
-            break;
-        case '[':
-            tmp = "_BL";
-            strcat (&(new_name[j]), tmp);
-            j += strlen (tmp) - 1;
-            break;
-        case ']':
-            tmp = "_BR";
-            strcat (&(new_name[j]), tmp);
-            j += strlen (tmp) - 1;
-            break;
-        case '~':
-            tmp = "_TI";
-            strcat (&(new_name[j]), tmp);
-            j += strlen (tmp) - 1;
-            break;
-        case '@':
-            tmp = "_AT";
-            strcat (&(new_name[j]), tmp);
-            j += strlen (tmp) - 1;
-            break;
-        case '#':
-            tmp = "_HA";
-            strcat (&(new_name[j]), tmp);
-            j += strlen (tmp) - 1;
-            break;
-        case '$':
-            tmp = "_DO";
-            strcat (&(new_name[j]), tmp);
-            j += strlen (tmp) - 1;
-            break;
-        case '^':
-            tmp = "_PO";
-            strcat (&(new_name[j]), tmp);
-            j += strlen (tmp) - 1;
-            break;
-        case '\\':
-            tmp = "_BS";
-            strcat (&(new_name[j]), tmp);
-            j += strlen (tmp) - 1;
-            break;
-        case ':':
-            tmp = "_CL";
-            strcat (&(new_name[j]), tmp);
-            j += strlen (tmp) - 1;
-            break;
-        case ' ':
-            tmp = "_SP";
-            strcat (&(new_name[j]), tmp);
-            j += strlen (tmp) - 1;
-            break;
-        case '{':
-            tmp = "_CO";
-            strcat (&(new_name[j]), tmp);
-            j += strlen (tmp) - 1;
-            break;
-        case '}':
-            tmp = "_CC";
-            strcat (&(new_name[j]), tmp);
-            j += strlen (tmp) - 1;
-            break;
-        default:
-            new_name[j] = name[i];
-            new_name[j + 1] = '\0';
-            break;
-        }
-    }
-
-    DBUG_RETURN (new_name);
-}
-
-/** <!-- ****************************************************************** -->
- * @brief Converts its argument into a string that can be safely used when
- *        printing C code. It does so by replacing all occurences of '"'
- *        by '\"'.
- *
- * @param string a string.
- *
- * @return a safe string
- ******************************************************************************/
-char *
-ILIBstring2SafeCEncoding (const char *string)
-{
-    char *result, *tmp;
-    int i, len;
-
-    DBUG_ENTER ("ILIBstring2SafeCEncoding");
-
-    len = strlen (string);
-
-    result = ILIBmalloc (len * 2 + 1);
-    tmp = result;
-
-    for (i = 0; i < len; i++) {
-        if (string[i] == '"') {
-            tmp += sprintf (tmp, "\\\"");
-        } else {
-            *tmp = string[i];
-            tmp++;
-        }
-    }
-
-    *tmp = '\0';
+    MEMfree (prefix);
 
     DBUG_RETURN (result);
 }

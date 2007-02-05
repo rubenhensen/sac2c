@@ -31,6 +31,8 @@
 #include "tree_compound.h"
 #include "multithread_lib.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 
 /******************************************************************************
  *
@@ -57,11 +59,11 @@ MUTHLIBexpandFundefName (node *fundef, char *prefix)
     DBUG_ENTER ("MUTHLIBexpandFundefName");
 
     old_name = FUNDEF_NAME (fundef);
-    new_name = ILIBmalloc (strlen (old_name) + strlen (prefix) + 1);
+    new_name = MEMmalloc (strlen (old_name) + strlen (prefix) + 1);
     strcpy (new_name, prefix);
     strcat (new_name, old_name);
     FUNDEF_NAME (fundef) = new_name;
-    old_name = ILIBfree (old_name);
+    old_name = MEMfree (old_name);
 
     DBUG_RETURN (fundef);
 }

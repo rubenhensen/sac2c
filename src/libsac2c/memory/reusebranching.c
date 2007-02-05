@@ -21,6 +21,8 @@
 #include "tree_compound.h"
 #include "traverse.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "dbug.h"
 #include "print.h"
 #include "InferDFMs.h"
@@ -69,7 +71,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_FUNDEF (result) = NULL;
     INFO_BRANCHES (result) = NULL;
@@ -87,7 +89,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }
@@ -152,7 +154,7 @@ CreateLacFunName (char *root_funname)
 
     DBUG_ENTER ("CreateLacFunName");
 
-    name = (char *)ILIBmalloc ((strlen (root_funname) + 10 + 20 + 3) * sizeof (char));
+    name = (char *)MEMmalloc ((strlen (root_funname) + 10 + 20 + 3) * sizeof (char));
     sprintf (name, "%s__ReuseCond_%i", root_funname, number);
     number++;
 

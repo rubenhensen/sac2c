@@ -38,6 +38,8 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "free.h"
 #include "check_mem.h"
 
@@ -86,9 +88,9 @@ SHmakeShape (int dim)
     DBUG_ENTER ("SHmakeShape");
     DBUG_ASSERT (dim >= 0, ("SHmakeShape called with negative dimensionality!"));
 
-    res = (shape *)ILIBmalloc (sizeof (shape));
+    res = (shape *)MEMmalloc (sizeof (shape));
     if (dim > 0) {
-        SHAPE_ELEMS (res) = (int *)ILIBmalloc (dim * sizeof (int));
+        SHAPE_ELEMS (res) = (int *)MEMmalloc (dim * sizeof (int));
     } else {
         SHAPE_ELEMS (res) = NULL;
     }
@@ -212,9 +214,9 @@ SHfreeShape (shape *shp)
     DBUG_ASSERT ((shp != NULL), ("SHfreeShape called with NULL shape!"));
 
     if (SHAPE_DIM (shp) > 0) {
-        SHAPE_ELEMS (shp) = ILIBfree (SHAPE_ELEMS (shp));
+        SHAPE_ELEMS (shp) = MEMfree (SHAPE_ELEMS (shp));
     }
-    shp = ILIBfree (shp);
+    shp = MEMfree (shp);
 
     DBUG_RETURN (shp);
 }
@@ -560,7 +562,7 @@ SHshape2String (int dots, shape *shp)
     }
     tmp += sprintf (tmp, "]");
 
-    DBUG_RETURN (ILIBstringCopy (buf));
+    DBUG_RETURN (STRcpy (buf));
 }
 
 /** <!--********************************************************************-->
@@ -765,7 +767,7 @@ SHshape2IntVec (shape *shp)
 
     n = SHAPE_DIM (shp);
     if (n > 0) {
-        int_vec = (int *)ILIBmalloc (n * sizeof (int));
+        int_vec = (int *)MEMmalloc (n * sizeof (int));
         for (i = 0; i < n; i++) {
             int_vec[i] = SHAPE_EXT (shp, i);
         }

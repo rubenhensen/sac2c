@@ -55,6 +55,8 @@
 #include "LookUpTable.h"
 #include "SSAConstantFolding.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "shape.h"
 #include "free.h"
 #include "constants.h"
@@ -102,7 +104,7 @@ MakeInfo (node *fundef)
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_FUNDEF (result) = fundef;
     INFO_INNERTRAV (result) = FALSE;
@@ -127,7 +129,7 @@ FreeInfo (info *info)
     DBUG_ENTER ("FreeInfo");
 
     INFO_CODELUT (info) = LUTremoveLut (INFO_CODELUT (info));
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }

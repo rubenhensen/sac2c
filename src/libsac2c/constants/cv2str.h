@@ -1,26 +1,6 @@
 /*
- * $Log$
- * Revision 1.6  2004/11/23 11:38:17  cg
- * SacDevCamp renaming
  *
- * Revision 1.5  2004/11/22 18:55:29  cg
- * Moved all definitions/declarations of global variables to globals.mac
- *
- * Revision 1.4  2004/11/22 11:27:04  ktr
- * Ismop SacDevCamp 04
- *
- * Revision 1.3  2003/04/07 14:25:44  sbs
- * max_char parameter added for abbreviation.
- *
- * Revision 1.2  2001/04/04 10:00:02  nmw
- *  missing convert functions for basetype char added
- *
- * Revision 1.1  2001/03/02 14:33:06  sbs
- * Initial revision
- *
- * Revision 1.1  2001/02/23 18:07:49  sbs
- * Initial revision
- *
+ * $Id$
  *
  */
 

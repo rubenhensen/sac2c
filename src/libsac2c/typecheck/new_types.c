@@ -72,6 +72,8 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "LookUpTable.h"
 
 #include "ctinfo.h"
@@ -267,11 +269,11 @@ MakeNtype (typeconstr con, int arity)
 
     DBUG_ENTER ("MakeNtype");
 
-    res = (ntype *)ILIBmalloc (sizeof (ntype));
+    res = (ntype *)MEMmalloc (sizeof (ntype));
     NTYPE_CON (res) = con;
     NTYPE_ARITY (res) = arity;
     if (NTYPE_ARITY (res) > 0) {
-        NTYPE_SONS (res) = (ntype **)ILIBmalloc (sizeof (ntype *) * NTYPE_ARITY (res));
+        NTYPE_SONS (res) = (ntype **)MEMmalloc (sizeof (ntype *) * NTYPE_ARITY (res));
         for (i = 0; i < arity; i++) {
             NTYPE_SON (res, i) = NULL;
         }
@@ -303,12 +305,12 @@ MakeNewSon (ntype *father, ntype *son)
 
     arity = NTYPE_ARITY (father);
     NTYPE_ARITY (father) = arity + 1;
-    new_sons = (ntype **)ILIBmalloc (sizeof (ntype *) * NTYPE_ARITY (father));
+    new_sons = (ntype **)MEMmalloc (sizeof (ntype *) * NTYPE_ARITY (father));
     for (i = 0; i < arity; i++) {
         new_sons[i] = NTYPE_SON (father, i);
     }
     new_sons[i] = son;
-    NTYPE_SONS (father) = ILIBfree (NTYPE_SONS (father));
+    NTYPE_SONS (father) = MEMfree (NTYPE_SONS (father));
     NTYPE_SONS (father) = new_sons;
 
     DBUG_RETURN (father);
@@ -335,14 +337,14 @@ DeleteSon (ntype *father, int son)
 
     arity = NTYPE_ARITY (father) - 1;
     NTYPE_ARITY (father) = arity;
-    new_sons = (ntype **)ILIBmalloc (sizeof (ntype *) * arity);
+    new_sons = (ntype **)MEMmalloc (sizeof (ntype *) * arity);
     for (i = 0; i < son; i++) {
         new_sons[i] = NTYPE_SON (father, i);
     }
     for (; i < arity; i++) {
         new_sons[i] = NTYPE_SON (father, i + 1);
     }
-    NTYPE_SONS (father) = ILIBfree (NTYPE_SONS (father));
+    NTYPE_SONS (father) = MEMfree (NTYPE_SONS (father));
     NTYPE_SONS (father) = new_sons;
 
     DBUG_RETURN (father);
@@ -369,14 +371,14 @@ IncreaseArity (ntype *type, int amount)
 
     arity = NTYPE_ARITY (type);
     NTYPE_ARITY (type) = arity + amount;
-    new_sons = (ntype **)ILIBmalloc (sizeof (ntype *) * NTYPE_ARITY (type));
+    new_sons = (ntype **)MEMmalloc (sizeof (ntype *) * NTYPE_ARITY (type));
     for (i = 0; i < arity; i++) {
         new_sons[i] = NTYPE_SON (type, i);
     }
     for (i = arity; i < NTYPE_ARITY (type); i++) {
         new_sons[i] = NULL;
     }
-    NTYPE_SONS (type) = ILIBfree (NTYPE_SONS (type));
+    NTYPE_SONS (type) = MEMfree (NTYPE_SONS (type));
     NTYPE_SONS (type) = new_sons;
 
     DBUG_RETURN (type);
@@ -406,8 +408,8 @@ MakeNewFundefsPoss (ntype *ires, int num, node **fundefs, int *poss)
 
     arity = IRES_NUMFUNS (ires);
     IRES_NUMFUNS (ires) = arity + num;
-    new_fundefs = (node **)ILIBmalloc (sizeof (node *) * IRES_NUMFUNS (ires));
-    new_poss = (int *)ILIBmalloc (sizeof (int) * IRES_NUMFUNS (ires));
+    new_fundefs = (node **)MEMmalloc (sizeof (node *) * IRES_NUMFUNS (ires));
+    new_poss = (int *)MEMmalloc (sizeof (int) * IRES_NUMFUNS (ires));
     for (i = 0; i < arity; i++) {
         new_fundefs[i] = IRES_FUNDEF (ires, i);
         new_poss[i] = IRES_POS (ires, i);
@@ -416,10 +418,10 @@ MakeNewFundefsPoss (ntype *ires, int num, node **fundefs, int *poss)
         new_fundefs[i] = fundefs[i - arity];
         new_poss[i] = poss[i - arity];
     }
-    IRES_FUNDEFS (ires) = ILIBfree (IRES_FUNDEFS (ires));
-    IRES_POSS (ires) = ILIBfree (IRES_POSS (ires));
-    fundefs = ILIBfree (fundefs);
-    poss = ILIBfree (poss);
+    IRES_FUNDEFS (ires) = MEMfree (IRES_FUNDEFS (ires));
+    IRES_POSS (ires) = MEMfree (IRES_POSS (ires));
+    fundefs = MEMfree (fundefs);
+    poss = MEMfree (poss);
     IRES_FUNDEFS (ires) = new_fundefs;
     IRES_POSS (ires) = new_poss;
 
@@ -1053,8 +1055,8 @@ TYextendBottomError (ntype *type, char *err_msg)
 
     DBUG_ENTER ("TYextendBottomError");
 
-    new_msg = ILIBstringConcat3 (BOTTOM_MSG (type), "@", err_msg);
-    BOTTOM_MSG (type) = ILIBfree (BOTTOM_MSG (type));
+    new_msg = STRcatn (3, BOTTOM_MSG (type), "@", err_msg);
+    BOTTOM_MSG (type) = MEMfree (BOTTOM_MSG (type));
     BOTTOM_MSG (type) = new_msg;
 
     DBUG_VOID_RETURN;
@@ -1150,9 +1152,9 @@ TYmakeFunType (ntype *arg, ntype *res_type, node *fundef)
     IRES_TYPE (res) = res_type;
 
     IRES_NUMFUNS (res) = 1;
-    IRES_FUNDEFS (res) = (node **)ILIBmalloc (sizeof (node *));
+    IRES_FUNDEFS (res) = (node **)MEMmalloc (sizeof (node *));
     IRES_FUNDEF (res, 0) = fundef;
-    IRES_POSS (res) = (int *)ILIBmalloc (sizeof (int));
+    IRES_POSS (res) = (int *)MEMmalloc (sizeof (int));
     IRES_POS (res, 0) = 0;
 
     base = MakeNtype (TC_ibase, 3);
@@ -1240,7 +1242,7 @@ TYmakeFunType (ntype *arg, ntype *res_type, node *fundef)
 
     DBUG_EXECUTE ("NTY", tmp = TYtype2DebugString (fun, TRUE, 0););
     DBUG_PRINT ("NTY", ("fun type built: %s\n", tmp));
-    DBUG_EXECUTE ("NTY", tmp = ILIBfree (tmp););
+    DBUG_EXECUTE ("NTY", tmp = MEMfree (tmp););
 
 #ifdef SHOW_MALLOC
     DBUG_PRINT ("NTY_MEM", ("Allocated mem on leaving  TYmakeFunType: %u",
@@ -1348,8 +1350,8 @@ FilterFundefs (ntype *fun, int num_kills, node **kill_list)
             if (new_numfuns == 0) {
                 fun = TYfreeType (fun);
             } else {
-                new_fundefs = (node **)ILIBmalloc (sizeof (node *) * new_numfuns);
-                new_poss = (int *)ILIBmalloc (sizeof (int) * new_numfuns);
+                new_fundefs = (node **)MEMmalloc (sizeof (node *) * new_numfuns);
+                new_poss = (int *)MEMmalloc (sizeof (int) * new_numfuns);
                 j = 0;
                 for (i = 0; i < IRES_NUMFUNS (fun); i++) {
                     if (IRES_FUNDEF (fun, i) != NULL) {
@@ -1358,8 +1360,8 @@ FilterFundefs (ntype *fun, int num_kills, node **kill_list)
                         j++;
                     }
                 }
-                IRES_FUNDEFS (fun) = ILIBfree (IRES_FUNDEFS (fun));
-                IRES_POSS (fun) = ILIBfree (IRES_POSS (fun));
+                IRES_FUNDEFS (fun) = MEMfree (IRES_FUNDEFS (fun));
+                IRES_POSS (fun) = MEMfree (IRES_POSS (fun));
                 IRES_NUMFUNS (fun) = new_numfuns;
                 IRES_FUNDEFS (fun) = new_fundefs;
                 IRES_POSS (fun) = new_poss;
@@ -1404,7 +1406,7 @@ ProjDown (ntype *ires, ntype *template)
 
     DBUG_ENTER ("ProjDown");
 
-    kill_list = (node **)ILIBmalloc (sizeof (node *) * IRES_NUMFUNS (ires));
+    kill_list = (node **)MEMmalloc (sizeof (node *) * IRES_NUMFUNS (ires));
 
     /*
      * First, we count the number of functions that can be projected and
@@ -1430,13 +1432,12 @@ ProjDown (ntype *ires, ntype *template)
             tmp = res;
             res = TYcopyTypeConstructor (template);
             NTYPE_ARITY (res) = 1;
-            NTYPE_SONS (res)
-              = (ntype **)ILIBmalloc (sizeof (ntype *) * NTYPE_ARITY (res));
+            NTYPE_SONS (res) = (ntype **)MEMmalloc (sizeof (ntype *) * NTYPE_ARITY (res));
             NTYPE_SON (res, 0) = tmp;
         }
     }
 
-    kill_list = ILIBfree (kill_list);
+    kill_list = MEMfree (kill_list);
 
     DBUG_RETURN (res);
 }
@@ -1632,7 +1633,7 @@ TYmakeOverloadedFunType (ntype *fun1, ntype *fun2)
                   tmp2 = TYtype2DebugString (fun2, TRUE, 0););
     DBUG_PRINT ("NTY", ("functions:        %s", tmp));
     DBUG_PRINT ("NTY", ("and               %s", tmp2));
-    DBUG_EXECUTE ("NTY", tmp = ILIBfree (tmp); tmp2 = ILIBfree (tmp2););
+    DBUG_EXECUTE ("NTY", tmp = MEMfree (tmp); tmp2 = MEMfree (tmp2););
 
     /*
      * iff this is the very first call, instantiate rel. free vars 8-))
@@ -1645,12 +1646,12 @@ TYmakeOverloadedFunType (ntype *fun1, ntype *fun2)
     if (overload_num_luts == 0) {
         overload_num_luts = 5;
 #ifndef DBUG_OFF
-        overload_fun1_alphas = (tvar **)ILIBmalloc (overload_num_luts * sizeof (tvar *));
+        overload_fun1_alphas = (tvar **)MEMmalloc (overload_num_luts * sizeof (tvar *));
         for (i = 0; i < overload_num_luts; i++) {
             overload_fun1_alphas[i] = NULL;
         }
 #endif
-        overload_luts = (lut_t **)ILIBmalloc (overload_num_luts * sizeof (lut_t *));
+        overload_luts = (lut_t **)MEMmalloc (overload_num_luts * sizeof (lut_t *));
         for (i = 0; i < overload_num_luts; i++) {
             overload_luts[i] = LUTgenerateLut ();
         }
@@ -1672,12 +1673,12 @@ TYmakeOverloadedFunType (ntype *fun1, ntype *fun2)
 #endif
         overload_luts[i] = LUTremoveLut (overload_luts[i]);
     }
-    overload_luts = ILIBfree (overload_luts);
+    overload_luts = MEMfree (overload_luts);
     overload_num_luts = 0;
 
     DBUG_EXECUTE ("NTY", tmp = TYtype2DebugString (res, TRUE, 0););
     DBUG_PRINT ("NTY", ("overloaded into : %s", tmp));
-    DBUG_EXECUTE ("NTY", tmp = ILIBfree (tmp););
+    DBUG_EXECUTE ("NTY", tmp = MEMfree (tmp););
 
     DBUG_RETURN (res);
 }
@@ -1753,24 +1754,24 @@ MakeOverloadedFunType (ntype *fun1, ntype *fun2)
             if (NTYPE_ARITY (fun1) > overload_num_luts) {
                 new_num_luts = overload_num_luts + NTYPE_ARITY (fun1);
 #ifndef DBUG_OFF
-                new_alphas = (tvar **)ILIBmalloc (new_num_luts * sizeof (tvar *));
+                new_alphas = (tvar **)MEMmalloc (new_num_luts * sizeof (tvar *));
                 for (i = 0; i < overload_num_luts; i++) {
                     new_alphas[i] = overload_fun1_alphas[i];
                 }
                 for (; i < new_num_luts; i++) {
                     new_alphas[i] = NULL;
                 }
-                overload_fun1_alphas = ILIBfree (overload_fun1_alphas);
+                overload_fun1_alphas = MEMfree (overload_fun1_alphas);
                 overload_fun1_alphas = new_alphas;
 #endif
-                new_luts = (lut_t **)ILIBmalloc (new_num_luts * sizeof (lut_t *));
+                new_luts = (lut_t **)MEMmalloc (new_num_luts * sizeof (lut_t *));
                 for (i = 0; i < overload_num_luts; i++) {
                     new_luts[i] = overload_luts[i];
                 }
                 for (; i < new_num_luts; i++) {
                     new_luts[i] = LUTgenerateLut ();
                 }
-                overload_luts = ILIBfree (overload_luts);
+                overload_luts = MEMfree (overload_luts);
                 overload_luts = new_luts;
                 overload_num_luts = new_num_luts;
             }
@@ -2070,15 +2071,15 @@ TYmakedft_res (ntype *type, int max_funs)
 
     DBUG_ENTER ("TYmakedft_res");
 
-    res = (dft_res *)ILIBmalloc (sizeof (dft_res));
+    res = (dft_res *)MEMmalloc (sizeof (dft_res));
 
     res->type = type;
     res->def = NULL;
     res->deriveable = NULL;
     res->num_partials = 0;
-    res->partials = (node **)ILIBmalloc (sizeof (node *) * max_funs);
+    res->partials = (node **)MEMmalloc (sizeof (node *) * max_funs);
     res->num_deriveable_partials = 0;
-    res->deriveable_partials = (node **)ILIBmalloc (sizeof (node *) * max_funs);
+    res->deriveable_partials = (node **)MEMmalloc (sizeof (node *) * max_funs);
 
     DBUG_RETURN (res);
 }
@@ -2101,13 +2102,13 @@ TYfreeDft_res (dft_res *res)
     DBUG_ASSERT ((res != NULL), "argument is NULL");
 
     if (res->partials != NULL) {
-        res->partials = ILIBfree (res->partials);
+        res->partials = MEMfree (res->partials);
     }
     if (res->deriveable_partials != NULL) {
-        res->deriveable_partials = ILIBfree (res->partials);
+        res->deriveable_partials = MEMfree (res->partials);
     }
 
-    res = ILIBfree (res);
+    res = MEMfree (res);
 
     DBUG_RETURN (res);
 }
@@ -2129,14 +2130,14 @@ AllocDFT_state (int max_funs)
 
     DBUG_ENTER ("AllocDFT_state");
 
-    state = (dft_state *)ILIBmalloc (sizeof (dft_state));
+    state = (dft_state *)MEMmalloc (sizeof (dft_state));
 
     state->max_funs = max_funs;
     state->cnt_funs = 0;
-    state->fundefs = (node **)ILIBmalloc (max_funs * sizeof (node *));
-    state->legal = (bool *)ILIBmalloc (max_funs * sizeof (bool));
-    state->ups = (int *)ILIBmalloc (max_funs * sizeof (int));
-    state->downs = (int *)ILIBmalloc (max_funs * sizeof (int));
+    state->fundefs = (node **)MEMmalloc (max_funs * sizeof (node *));
+    state->legal = (bool *)MEMmalloc (max_funs * sizeof (bool));
+    state->ups = (int *)MEMmalloc (max_funs * sizeof (int));
+    state->downs = (int *)MEMmalloc (max_funs * sizeof (int));
 
     DBUG_RETURN (state);
 }
@@ -2156,12 +2157,12 @@ freeDFT_state (dft_state *state)
 {
     DBUG_ENTER ("freeDFT_state");
 
-    state->fundefs = ILIBfree (state->fundefs);
-    state->legal = ILIBfree (state->legal);
-    state->ups = ILIBfree (state->ups);
-    state->downs = ILIBfree (state->downs);
+    state->fundefs = MEMfree (state->fundefs);
+    state->legal = MEMfree (state->legal);
+    state->ups = MEMfree (state->ups);
+    state->downs = MEMfree (state->downs);
 
-    state = ILIBfree (state);
+    state = MEMfree (state);
 
     DBUG_RETURN (state);
 }
@@ -2373,8 +2374,8 @@ DFT_state2dft_res (dft_state *state)
     DBUG_ENTER ("DFT_state2dft_res");
 
     res = TYmakedft_res (NULL, state->cnt_funs);
-    dp2ud = (int *)ILIBmalloc (state->cnt_funs * sizeof (int));
-    p2ud = (int *)ILIBmalloc (state->cnt_funs * sizeof (int));
+    dp2ud = (int *)MEMmalloc (state->cnt_funs * sizeof (int));
+    p2ud = (int *)MEMmalloc (state->cnt_funs * sizeof (int));
 
     /*
      * First, we analyze the accumulated ups and downs:
@@ -2730,7 +2731,7 @@ TYdispatchFunType (ntype *fun, ntype *args)
             DBUG_EXECUTE ("NTDIS", tmp_str = TYtype2String (arg, FALSE, 0););
             DBUG_PRINT ("NTDIS",
                         ("arg #%d: %s yields (lifted by %d):", i, tmp_str, lower));
-            DBUG_EXECUTE ("NTDIS", tmp_str = ILIBfree (tmp_str););
+            DBUG_EXECUTE ("NTDIS", tmp_str = MEMfree (tmp_str););
             DBUG_EXECUTE ("NTDIS", DebugPrintDispatchInfo ("NTDIS", ires););
 
             /*
@@ -2800,19 +2801,19 @@ TYdft_res2DebugString (dft_res *dft)
         if (dft->def) {
             tmp_str = TUtypeSignature2String (dft->def);
             buf = ILIBstrBufPrintf (buf, "exact : (%s) ", tmp_str);
-            tmp_str = ILIBfree (tmp_str);
+            tmp_str = MEMfree (tmp_str);
         }
         if (dft->deriveable) {
             tmp_str = TUtypeSignature2String (dft->deriveable);
             buf = ILIBstrBufPrintf (buf, "deriveable : (%s) ", tmp_str);
-            tmp_str = ILIBfree (tmp_str);
+            tmp_str = MEMfree (tmp_str);
         }
         if (dft->num_partials > 0) {
             buf = ILIBstrBufPrintf (buf, "partials : ");
             for (i = 0; i < dft->num_partials; i++) {
                 tmp_str = TUtypeSignature2String (dft->partials[i]);
                 buf = ILIBstrBufPrintf (buf, "%s ", tmp_str);
-                tmp_str = ILIBfree (tmp_str);
+                tmp_str = MEMfree (tmp_str);
             }
         }
         if (dft->num_deriveable_partials > 0) {
@@ -2820,7 +2821,7 @@ TYdft_res2DebugString (dft_res *dft)
             for (i = 0; i < dft->num_deriveable_partials; i++) {
                 tmp_str = TUtypeSignature2String (dft->deriveable_partials[i]);
                 buf = ILIBstrBufPrintf (buf, "%s ", tmp_str);
-                tmp_str = ILIBfree (tmp_str);
+                tmp_str = MEMfree (tmp_str);
             }
         }
 
@@ -3405,8 +3406,7 @@ TYcmpTypes (ntype *t1, ntype *t2)
     DBUG_EXECUTE ("NTY_CMP", tmp_str = TYtype2DebugString (t1, FALSE, 0);
                   tmp_str2 = TYtype2DebugString (t2, FALSE, 0););
     DBUG_PRINT ("NTY_CMP", ("comparing %s and %s", tmp_str, tmp_str2));
-    DBUG_EXECUTE ("NTY_CMP", tmp_str = ILIBfree (tmp_str);
-                  tmp_str2 = ILIBfree (tmp_str2););
+    DBUG_EXECUTE ("NTY_CMP", tmp_str = MEMfree (tmp_str); tmp_str2 = MEMfree (tmp_str2););
 
     switch (NTYPE_CON (t1)) {
     case TC_prod:
@@ -3461,7 +3461,7 @@ TYcmpTypes (ntype *t1, ntype *t2)
         break;
     case TC_symbol:
         if ((NTYPE_CON (t2) == TC_symbol) && (NSequals (SYMBOL_NS (t1), SYMBOL_NS (t2)))
-            && ILIBstringCompare (SYMBOL_NAME (t1), SYMBOL_NAME (t2))) {
+            && STReq (SYMBOL_NAME (t1), SYMBOL_NAME (t2))) {
             res = TY_eq;
         } else if (NTYPE_CON (t2) == TC_bottom) {
             res = TY_gt;
@@ -4022,11 +4022,11 @@ TYfreeTypeConstructor (ntype *type)
 
     switch (NTYPE_CON (type)) {
     case TC_bottom:
-        BOTTOM_MSG (type) = ILIBfree (BOTTOM_MSG (type));
+        BOTTOM_MSG (type) = MEMfree (BOTTOM_MSG (type));
         break;
     case TC_symbol:
         SYMBOL_NS (type) = NSfreeNamespace (SYMBOL_NS (type));
-        SYMBOL_NAME (type) = ILIBfree (SYMBOL_NAME (type));
+        SYMBOL_NAME (type) = MEMfree (SYMBOL_NAME (type));
         break;
     case TC_akv:
         AKV_CONST (type) = COfreeConstant (AKV_CONST (type));
@@ -4059,7 +4059,7 @@ TYfreeTypeConstructor (ntype *type)
     default:
         DBUG_ASSERT ((0), "trying to free illegal type constructor!");
     }
-    type = ILIBfree (type);
+    type = MEMfree (type);
 
     DBUG_RETURN (type);
 }
@@ -4079,7 +4079,7 @@ TYfreeType (ntype *type)
         }
     }
     if (NTYPE_SONS (type) != NULL) {
-        NTYPE_SONS (type) = ILIBfree (NTYPE_SONS (type));
+        NTYPE_SONS (type) = MEMfree (NTYPE_SONS (type));
     }
     type = TYfreeTypeConstructor (type);
 
@@ -4226,7 +4226,7 @@ CopyTypeConstructor (ntype *type, TV_treatment new_tvars)
          */
         switch (NTYPE_CON (type)) {
         case TC_bottom:
-            BOTTOM_MSG (res) = ILIBstringCopy (BOTTOM_MSG (type));
+            BOTTOM_MSG (res) = STRcpy (BOTTOM_MSG (type));
             break;
         case TC_simple:
             SIMPLE_TYPE (res) = SIMPLE_TYPE (type);
@@ -4234,10 +4234,10 @@ CopyTypeConstructor (ntype *type, TV_treatment new_tvars)
             break;
         case TC_symbol:
             SYMBOL_NS (res) = NSdupNamespace (SYMBOL_NS (type));
-            SYMBOL_NAME (res) = ILIBstringCopy (SYMBOL_NAME (type));
+            SYMBOL_NAME (res) = STRcpy (SYMBOL_NAME (type));
             break;
         case TC_poly:
-            POLY_NAME (res) = ILIBstringCopy (POLY_NAME (type));
+            POLY_NAME (res) = STRcpy (POLY_NAME (type));
             break;
         case TC_user:
             USER_TYPE (res) = USER_TYPE (type);
@@ -4265,8 +4265,8 @@ CopyTypeConstructor (ntype *type, TV_treatment new_tvars)
             IRES_NUMFUNS (res) = IRES_NUMFUNS (type);
             if (IRES_NUMFUNS (type) != 0) {
                 IRES_FUNDEFS (res)
-                  = (node **)ILIBmalloc (IRES_NUMFUNS (type) * sizeof (node *));
-                IRES_POSS (res) = (int *)ILIBmalloc (IRES_NUMFUNS (type) * sizeof (int));
+                  = (node **)MEMmalloc (IRES_NUMFUNS (type) * sizeof (node *));
+                IRES_POSS (res) = (int *)MEMmalloc (IRES_NUMFUNS (type) * sizeof (int));
                 for (i = 0; i < IRES_NUMFUNS (type); i++) {
                     IRES_FUNDEF (res, i) = IRES_FUNDEF (type, i);
                     IRES_POS (res, i) = IRES_POS (type, i);
@@ -4289,7 +4289,7 @@ CopyTypeConstructor (ntype *type, TV_treatment new_tvars)
                 DBUG_ASSERT (ok, "SSInewRel did not work in TYDeriveSubtype");
                 break;
             case tv_none:
-                res = ILIBfree (res);
+                res = MEMfree (res);
                 break;
             }
             break;
@@ -4331,7 +4331,7 @@ TYcopyType (ntype *type)
     res = CopyTypeConstructor (type, tv_id);
     if (res != NULL) {
         NTYPE_ARITY (res) = NTYPE_ARITY (type);
-        NTYPE_SONS (res) = (ntype **)ILIBmalloc (sizeof (ntype *) * NTYPE_ARITY (res));
+        NTYPE_SONS (res) = (ntype **)MEMmalloc (sizeof (ntype *) * NTYPE_ARITY (res));
         for (i = 0; i < NTYPE_ARITY (res); i++) {
             NTYPE_SON (res, i) = TYcopyType (NTYPE_SON (type, i));
         }
@@ -4356,7 +4356,7 @@ TYcopyFixedType (ntype *type)
     res = CopyTypeConstructor (type, tv_none);
     if (res != NULL) {
         NTYPE_ARITY (res) = NTYPE_ARITY (type);
-        NTYPE_SONS (res) = (ntype **)ILIBmalloc (sizeof (ntype *) * NTYPE_ARITY (res));
+        NTYPE_SONS (res) = (ntype **)MEMmalloc (sizeof (ntype *) * NTYPE_ARITY (res));
         for (i = 0; i < NTYPE_ARITY (res); i++) {
             NTYPE_SON (res, i) = TYcopyFixedType (NTYPE_SON (type, i));
         }
@@ -4376,7 +4376,7 @@ TYDeriveSubtype (ntype *type)
     res = CopyTypeConstructor (type, tv_sub);
     if (res != NULL) {
         NTYPE_ARITY (res) = NTYPE_ARITY (type);
-        NTYPE_SONS (res) = (ntype **)ILIBmalloc (sizeof (ntype *) * NTYPE_ARITY (res));
+        NTYPE_SONS (res) = (ntype **)MEMmalloc (sizeof (ntype *) * NTYPE_ARITY (res));
         for (i = 0; i < NTYPE_ARITY (res); i++) {
             NTYPE_SON (res, i) = TYDeriveSubtype (NTYPE_SON (type, i));
         }
@@ -4466,30 +4466,30 @@ ArrayType2String (ntype *type)
 
     tmp_str = ScalarType2String (AKS_BASE (type));
     buf = ILIBstrBufPrint (buf, tmp_str);
-    tmp_str = ILIBfree (tmp_str);
+    tmp_str = MEMfree (tmp_str);
 
     switch (NTYPE_CON (type)) {
     case TC_akv:
         if (TYgetDim (type) > 0) {
             tmp_str = SHshape2String (0, COgetShape (AKV_CONST (type)));
             buf = ILIBstrBufPrint (buf, tmp_str);
-            tmp_str = ILIBfree (tmp_str);
+            tmp_str = MEMfree (tmp_str);
         }
         tmp_str = COconstantData2String (3, AKV_CONST (type));
         buf = ILIBstrBufPrintf (buf, "{%s}", tmp_str);
-        tmp_str = ILIBfree (tmp_str);
+        tmp_str = MEMfree (tmp_str);
         break;
     case TC_aks:
         if (TYgetDim (type) > 0) {
             tmp_str = SHshape2String (0, AKS_SHP (type));
             buf = ILIBstrBufPrint (buf, tmp_str);
-            tmp_str = ILIBfree (tmp_str);
+            tmp_str = MEMfree (tmp_str);
         }
         break;
     case TC_akd:
         tmp_str = SHshape2String (AKD_DOTS (type), AKD_SHP (type));
         buf = ILIBstrBufPrint (buf, tmp_str);
-        tmp_str = ILIBfree (tmp_str);
+        tmp_str = MEMfree (tmp_str);
         break;
     case TC_audgz:
         buf = ILIBstrBufPrintf (buf, "[+]");
@@ -4541,7 +4541,7 @@ FunType2String (ntype *type, char *scal_str, bool multiline, int offset)
                 buf = PrintFunSep (buf, multiline, offset);
             }
             buf = ILIBstrBufPrint (buf, tmp_str);
-            tmp_str = ILIBfree (tmp_str);
+            tmp_str = MEMfree (tmp_str);
         }
         buf = ILIBstrBufPrintf (buf, "}");
         break;
@@ -4561,7 +4561,7 @@ FunType2String (ntype *type, char *scal_str, bool multiline, int offset)
         tmp_str
           = FunType2String (IBASE_GEN (type), scal_str, multiline, offset + scal_len + 3);
         buf = ILIBstrBufPrint (buf, tmp_str);
-        tmp_str = ILIBfree (tmp_str);
+        tmp_str = MEMfree (tmp_str);
 
         /*
          * print "<scal_str>[]" instance:
@@ -4572,7 +4572,7 @@ FunType2String (ntype *type, char *scal_str, bool multiline, int offset)
             buf = PrintFunSep (buf, multiline, offset);
             buf = ILIBstrBufPrint (buf, scal_str);
             buf = ILIBstrBufPrint (buf, tmp_str);
-            tmp_str = ILIBfree (tmp_str);
+            tmp_str = MEMfree (tmp_str);
         }
 
         /*
@@ -4581,10 +4581,10 @@ FunType2String (ntype *type, char *scal_str, bool multiline, int offset)
         if (IBASE_IARR (type)) {
             tmp_str = FunType2String (IBASE_IARR (type), scal_str, multiline, offset);
             buf = ILIBstrBufPrint (buf, tmp_str);
-            tmp_str = ILIBfree (tmp_str);
+            tmp_str = MEMfree (tmp_str);
         }
 
-        scal_str = ILIBfree (scal_str);
+        scal_str = MEMfree (scal_str);
         break;
 
     case TC_iarr:
@@ -4598,7 +4598,7 @@ FunType2String (ntype *type, char *scal_str, bool multiline, int offset)
             buf = PrintFunSep (buf, multiline, offset);
             buf = ILIBstrBufPrintf (buf, "%s[+]", scal_str);
             buf = ILIBstrBufPrint (buf, tmp_str);
-            tmp_str = ILIBfree (tmp_str);
+            tmp_str = MEMfree (tmp_str);
         }
 
         /*
@@ -4608,7 +4608,7 @@ FunType2String (ntype *type, char *scal_str, bool multiline, int offset)
         for (i = 0; i < (NTYPE_ARITY (type) - 1); i++) {
             tmp_str = FunType2String (IARR_IDIM (type, i), scal_str, multiline, offset);
             buf = ILIBstrBufPrint (buf, tmp_str);
-            tmp_str = ILIBfree (tmp_str);
+            tmp_str = MEMfree (tmp_str);
         }
 
         break;
@@ -4627,8 +4627,8 @@ FunType2String (ntype *type, char *scal_str, bool multiline, int offset)
             buf = PrintFunSep (buf, multiline, offset);
             buf = ILIBstrBufPrintf (buf, "%s%s", scal_str, shp_str);
             buf = ILIBstrBufPrint (buf, tmp_str);
-            shp_str = ILIBfree (shp_str);
-            tmp_str = ILIBfree (tmp_str);
+            shp_str = MEMfree (shp_str);
+            tmp_str = MEMfree (tmp_str);
         }
 
         /*
@@ -4638,7 +4638,7 @@ FunType2String (ntype *type, char *scal_str, bool multiline, int offset)
         for (i = 0; i < (NTYPE_ARITY (type) - 1); i++) {
             tmp_str = FunType2String (IDIM_ISHAPE (type, i), scal_str, multiline, offset);
             buf = ILIBstrBufPrint (buf, tmp_str);
-            tmp_str = ILIBfree (tmp_str);
+            tmp_str = MEMfree (tmp_str);
         }
 
         break;
@@ -4655,8 +4655,8 @@ FunType2String (ntype *type, char *scal_str, bool multiline, int offset)
             buf = PrintFunSep (buf, multiline, offset);
             buf = ILIBstrBufPrintf (buf, "%s%s", scal_str, shp_str);
             buf = ILIBstrBufPrint (buf, tmp_str);
-            shp_str = ILIBfree (shp_str);
-            tmp_str = ILIBfree (tmp_str);
+            shp_str = MEMfree (shp_str);
+            tmp_str = MEMfree (tmp_str);
         }
 
         break;
@@ -4666,7 +4666,7 @@ FunType2String (ntype *type, char *scal_str, bool multiline, int offset)
         tmp_str = TYtype2String (IRES_TYPE (type), multiline, offset);
         buf = ILIBstrBufPrintf (buf, " -> ");
         buf = ILIBstrBufPrint (buf, tmp_str);
-        tmp_str = ILIBfree (tmp_str);
+        tmp_str = MEMfree (tmp_str);
         break;
     default:
         DBUG_ASSERT (0, "FunType2String called with non-legal type!");
@@ -4689,12 +4689,12 @@ TYtype2String (ntype *type, bool multiline, int offset)
     DBUG_ENTER ("TYtype2String");
 
     if (type == NULL) {
-        res = ILIBstringCopy ("--");
+        res = STRcpy ("--");
     } else {
 
         switch (NTYPE_CON (type)) {
         case TC_bottom:
-            res = ILIBstringCopy ("_|_");
+            res = STRcpy ("_|_");
             break;
         case TC_aud:
         case TC_audgz:
@@ -4712,11 +4712,11 @@ TYtype2String (ntype *type, bool multiline, int offset)
             if (NTYPE_ARITY (type) > 0) {
                 tmp_str = TYtype2String (NTYPE_SON (type, 0), multiline, offset);
                 buf = ILIBstrBufPrintf (buf, " %s", tmp_str);
-                tmp_str = ILIBfree (tmp_str);
+                tmp_str = MEMfree (tmp_str);
                 for (i = 1; i < NTYPE_ARITY (type); i++) {
                     tmp_str = TYtype2String (NTYPE_SON (type, i), multiline, offset);
                     buf = ILIBstrBufPrintf (buf, ", %s", tmp_str);
-                    tmp_str = ILIBfree (tmp_str);
+                    tmp_str = MEMfree (tmp_str);
                 }
             }
             buf = ILIBstrBufPrintf (buf, ")");
@@ -4773,19 +4773,19 @@ TYtype2DebugString (ntype *type, bool multiline, int offset)
             multiline = FALSE;
             tmp_str = COconstant2String (AKV_CONST (type));
             buf = ILIBstrBufPrintf (buf, "%s, ", tmp_str);
-            tmp_str = ILIBfree (tmp_str);
+            tmp_str = MEMfree (tmp_str);
             break;
         case TC_aks:
             multiline = FALSE;
             tmp_str = SHshape2String (0, AKS_SHP (type));
             buf = ILIBstrBufPrintf (buf, "%s, ", tmp_str);
-            tmp_str = ILIBfree (tmp_str);
+            tmp_str = MEMfree (tmp_str);
             break;
         case TC_akd:
             multiline = FALSE;
             tmp_str = SHshape2String (AKD_DOTS (type), AKD_SHP (type));
             buf = ILIBstrBufPrintf (buf, "%s, ", tmp_str);
-            tmp_str = ILIBfree (tmp_str);
+            tmp_str = MEMfree (tmp_str);
             break;
         case TC_aud:
             multiline = FALSE;
@@ -4818,7 +4818,7 @@ TYtype2DebugString (ntype *type, bool multiline, int offset)
             tmp_str = TYtype2DebugString (IBASE_BASE (type), FALSE, offset);
             buf = ILIBstrBufPrint (buf, tmp_str);
             buf = ILIBstrBufPrint (buf, ",");
-            tmp_str = ILIBfree (tmp_str);
+            tmp_str = MEMfree (tmp_str);
             break;
         case TC_idim:
             buf = ILIBstrBufPrintf (buf, "%d,", IDIM_DIM (type));
@@ -4826,7 +4826,7 @@ TYtype2DebugString (ntype *type, bool multiline, int offset)
         case TC_ishape:
             tmp_str = SHshape2String (0, ISHAPE_SHAPE (type));
             buf = ILIBstrBufPrintf (buf, "%s,", tmp_str);
-            tmp_str = ILIBfree (tmp_str);
+            tmp_str = MEMfree (tmp_str);
             break;
         case TC_ires:
             if (IRES_NUMFUNS (type) > 0) {
@@ -4848,7 +4848,7 @@ TYtype2DebugString (ntype *type, bool multiline, int offset)
             multiline = FALSE;
             tmp_str = SSIvariable2DebugString (ALPHA_SSI (type));
             buf = ILIBstrBufPrintf (buf, "%s", tmp_str);
-            tmp_str = ILIBfree (tmp_str);
+            tmp_str = MEMfree (tmp_str);
             break;
         default:
             break;
@@ -4870,7 +4870,7 @@ TYtype2DebugString (ntype *type, bool multiline, int offset)
                 buf = PrintFunSep (buf, multiline, offset);
                 buf = ILIBstrBufPrint (buf, tmp_str);
             }
-            tmp_str = ILIBfree (tmp_str);
+            tmp_str = MEMfree (tmp_str);
         }
         offset -= 3;
         if (variable_arity[NTYPE_CON (type)]) {
@@ -4905,7 +4905,7 @@ TYArgs2FunTypeString (node *args, ntype *rettype)
 
             ILIBstrBufPrintf (buf, "%s -> ", tmp);
 
-            tmp = ILIBfree (tmp);
+            tmp = MEMfree (tmp);
         }
 
         args = ARG_NEXT (args);
@@ -5498,7 +5498,7 @@ TYoldType2ScalarType (types *old)
         } else {
             udt = UTfindUserType (TYPES_NAME (old), NSgetNamespace (TYPES_MOD (old)));
             if (udt == UT_NOT_DEFINED) {
-                res = TYmakeSymbType (ILIBstringCopy (TYPES_NAME (old)),
+                res = TYmakeSymbType (STRcpy (TYPES_NAME (old)),
                                       NSgetNamespace (TYPES_MOD (old)));
             } else {
                 res = TYmakeUserType (udt);
@@ -5537,7 +5537,7 @@ TYoldType2ScalarType (types *old)
     DBUG_EXECUTE ("NTY", tmp = CVtype2String (old, 3, TRUE);
                   tmp2 = TYtype2DebugString (res, TRUE, 0););
     DBUG_PRINT ("NTY", ("base type of %s converted into : %s\n", tmp, tmp2));
-    DBUG_EXECUTE ("NTY", tmp = ILIBfree (tmp); tmp2 = ILIBfree (tmp2););
+    DBUG_EXECUTE ("NTY", tmp = MEMfree (tmp); tmp2 = MEMfree (tmp2););
 
     DBUG_RETURN (res);
 }
@@ -5584,7 +5584,7 @@ TYoldType2Type (types *old)
     DBUG_EXECUTE ("NTY", tmp = CVtype2String (old, 3, TRUE);
                   tmp2 = TYtype2DebugString (res, TRUE, 0););
     DBUG_PRINT ("NTY", ("%s converted into : %s\n", tmp, tmp2));
-    DBUG_EXECUTE ("NTY", tmp = ILIBfree (tmp); tmp2 = ILIBfree (tmp2););
+    DBUG_EXECUTE ("NTY", tmp = MEMfree (tmp); tmp2 = MEMfree (tmp2););
 
     DBUG_RETURN (res);
 }
@@ -5677,24 +5677,22 @@ Type2OldType (ntype *new)
     case TC_simple:
         if ((SIMPLE_TYPE (new) == T_hidden)
             && (SIMPLE_HIDDEN_UDT (new) != UT_NOT_DEFINED)) {
-            res
-              = TBmakeTypes (T_user, 0, NULL,
-                             ILIBstringCopy (UTgetName (SIMPLE_HIDDEN_UDT (new))),
-                             ILIBstringCopy (
-                               (UTgetNamespace (SIMPLE_HIDDEN_UDT (new)) == NULL)
-                                 ? NULL
-                                 : NSgetName (UTgetNamespace (SIMPLE_HIDDEN_UDT (new)))));
+            res = TBmakeTypes (T_user, 0, NULL,
+                               STRcpy (UTgetName (SIMPLE_HIDDEN_UDT (new))),
+                               STRcpy ((UTgetNamespace (SIMPLE_HIDDEN_UDT (new)) == NULL)
+                                         ? NULL
+                                         : NSgetName (
+                                             UTgetNamespace (SIMPLE_HIDDEN_UDT (new)))));
             TYPES_TDEF (res) = UTgetTdef (SIMPLE_HIDDEN_UDT (new));
         } else {
             res = TBmakeTypes (SIMPLE_TYPE (new), 0, NULL, NULL, NULL);
         }
         break;
     case TC_user:
-        res = TBmakeTypes (T_user, 0, NULL, ILIBstringCopy (UTgetName (USER_TYPE (new))),
-                           ILIBstringCopy (
-                             (UTgetNamespace (USER_TYPE (new)) == NULL)
-                               ? NULL
-                               : NSgetName (UTgetNamespace (USER_TYPE (new)))));
+        res = TBmakeTypes (T_user, 0, NULL, STRcpy (UTgetName (USER_TYPE (new))),
+                           STRcpy ((UTgetNamespace (USER_TYPE (new)) == NULL)
+                                     ? NULL
+                                     : NSgetName (UTgetNamespace (USER_TYPE (new)))));
         TYPES_TDEF (res) = UTgetTdef (USER_TYPE (new));
         break;
     default:
@@ -5723,8 +5721,8 @@ TYtype2OldType (ntype *new)
 
     DBUG_EXECUTE ("NTY", tmp_str2 = CVtype2String (res, 0, TRUE););
     DBUG_PRINT ("NTY", ("... result is %s", tmp_str2));
-    DBUG_EXECUTE ("NTY", tmp_str = ILIBfree (tmp_str););
-    DBUG_EXECUTE ("NTY", tmp_str2 = ILIBfree (tmp_str2););
+    DBUG_EXECUTE ("NTY", tmp_str = MEMfree (tmp_str););
+    DBUG_EXECUTE ("NTY", tmp_str2 = MEMfree (tmp_str2););
 
     DBUG_RETURN (res);
 }
@@ -5830,7 +5828,7 @@ SplitWrapperType (ntype *type, int level, ntype **frame, int *pathes_remaining)
             DBUG_EXECUTE ("NTY_SPLIT",
                           tmp_str = TYtype2DebugString (frame[level], FALSE, 0););
             DBUG_PRINT ("NTY_SPLIT", ("--looking for %s", tmp_str));
-            DBUG_EXECUTE ("NTY_SPLIT", tmp_str = ILIBfree (tmp_str););
+            DBUG_EXECUTE ("NTY_SPLIT", tmp_str = MEMfree (tmp_str););
 
             pos = FindBase (frame[level], type);
             if (pos < 0) {
@@ -5906,14 +5904,14 @@ SplitWrapperType (ntype *type, int level, ntype **frame, int *pathes_remaining)
             *pathes_remaining = pathes_found;
             break;
         default:
-            new_type = ILIBfree (new_type);
+            new_type = MEMfree (new_type);
             new_type = TYcopyType (type);
         }
 
         if (*pathes_remaining == 0) {
             DBUG_PRINT ("NTY_SPLIT", ("--killing %s node at" F_PTR,
                                       dbug_str[NTYPE_CON (type)], new_type));
-            new_type = ILIBfree (new_type);
+            new_type = MEMfree (new_type);
         } else if (*pathes_remaining == 1) {
             DBUG_PRINT ("NTY_SPLIT", ("**freeing " F_PTR, type));
             type = TYfreeTypeConstructor (type);
@@ -5940,10 +5938,10 @@ TYsplitWrapperType (ntype *type, int *pathes_remaining)
 
         DBUG_PRINT ("NTY_SPLIT", ("wrapper is: %s", tmp_str));
 
-        DBUG_EXECUTE ("NTY_SPLIT", tmp_str = ILIBfree (tmp_str););
+        DBUG_EXECUTE ("NTY_SPLIT", tmp_str = MEMfree (tmp_str););
 
         n = TYgetArity (type);
-        frame = (ntype **)ILIBmalloc (n * sizeof (ntype *));
+        frame = (ntype **)MEMmalloc (n * sizeof (ntype *));
         ExtractTopBaseSignature (type, frame);
 
         *pathes_remaining = 1;
@@ -5952,15 +5950,15 @@ TYsplitWrapperType (ntype *type, int *pathes_remaining)
 
         while (n > 0) {
             n--;
-            frame[n] = ILIBfree (frame[n]);
+            frame[n] = MEMfree (frame[n]);
         }
-        frame = ILIBfree (frame);
+        frame = MEMfree (frame);
 
         DBUG_EXECUTE ("NTY_SPLIT", tmp_str = TYtype2DebugString (type, TRUE, 20););
 
         DBUG_PRINT ("NTY_SPLIT", ("wrapper split-off: %s", tmp_str));
 
-        DBUG_EXECUTE ("NTY_SPLIT", tmp_str = ILIBfree (tmp_str););
+        DBUG_EXECUTE ("NTY_SPLIT", tmp_str = MEMfree (tmp_str););
     } else {
         /**
          * we are dealing with a parameterless function here!
@@ -6577,7 +6575,7 @@ CreateWrapperCode (ntype *type, dft_state *state, int lower, char *funname, node
 
     DBUG_EXECUTE ("NTY", dbug_str = TYtype2DebugString (type, TRUE, 0););
     DBUG_PRINT ("NTY", ("building wrapper for type: %s\n", dbug_str));
-    DBUG_EXECUTE ("NTY", dbug_str = ILIBfree (dbug_str););
+    DBUG_EXECUTE ("NTY", dbug_str = MEMfree (dbug_str););
 
     switch (TYgetConstr (type)) {
     case TC_fun:
@@ -6756,16 +6754,16 @@ TYcreateWrapperCode (node *fundef, node *vardecs, node **new_vardecs)
                      "wrapper function with ... argument found!");
 
         tmp = TUtypeSignature2String (fundef);
-        funsig = ILIBmalloc (sizeof (char)
-                             * (strlen (CTIitemName (fundef)) + strlen (tmp) + 5));
+        funsig = MEMmalloc (sizeof (char)
+                            * (strlen (CTIitemName (fundef)) + strlen (tmp) + 5));
         sprintf (funsig, "%s :: %s", CTIitemName (fundef), tmp);
 
         assigns = CreateWrapperCode (FUNDEF_WRAPPERTYPE (fundef), NULL, 0, funsig,
                                      FUNDEF_ARGS (fundef), FUNDEF_ARGS (fundef), vardecs,
                                      new_vardecs);
 
-        tmp = ILIBfree (tmp);
-        funsig = ILIBfree (funsig);
+        tmp = MEMfree (tmp);
+        funsig = MEMfree (funsig);
     }
 
     DBUG_RETURN (assigns);
@@ -7125,11 +7123,11 @@ SerializeBottomType (FILE *file, ntype *type)
 
     DBUG_ENTER ("SerializeBottomType");
 
-    tmp = ILIBstring2SafeCEncoding (BOTTOM_MSG (type));
+    tmp = STRstring2SafeCEncoding (BOTTOM_MSG (type));
 
     fprintf (file, "TYdeserializeType( %d, \"%s\")", NTYPE_CON (type), tmp);
 
-    tmp = ILIBfree (tmp);
+    tmp = MEMfree (tmp);
 
     DBUG_VOID_RETURN;
 }
@@ -7283,7 +7281,7 @@ TYdeserializeType (typeconstr con, ...)
         name = va_arg (args, char *);
         ns = va_arg (args, namespace_t *);
 
-        result = TYmakeSymbType (ILIBstringCopy (name), ns);
+        result = TYmakeSymbType (STRcpy (name), ns);
 
         va_end (args);
     } break;
@@ -7449,8 +7447,8 @@ TYdeserializeType (typeconstr con, ...)
             IRES_FUNDEFS (result) = NULL;
             IRES_POSS (result) = NULL;
         } else {
-            IRES_FUNDEFS (result) = ILIBmalloc (sizeof (node *) * IRES_NUMFUNS (result));
-            IRES_POSS (result) = ILIBmalloc (sizeof (int) * IRES_NUMFUNS (result));
+            IRES_FUNDEFS (result) = MEMmalloc (sizeof (node *) * IRES_NUMFUNS (result));
+            IRES_POSS (result) = MEMmalloc (sizeof (int) * IRES_NUMFUNS (result));
 
             for (cnt = 0; cnt < IRES_NUMFUNS (result); cnt++) {
                 IRES_FUNDEF (result, cnt) = va_arg (args, node *);
@@ -7473,14 +7471,14 @@ TYdeserializeType (typeconstr con, ...)
     case TC_poly: {
         va_start (args, con);
 
-        result = TYmakePolyType (ILIBstringCopy (va_arg (args, char *)));
+        result = TYmakePolyType (STRcpy (va_arg (args, char *)));
 
         va_end (args);
     } break;
     case TC_bottom: {
         va_start (args, con);
 
-        result = TYmakeBottomType (ILIBstringCopy (va_arg (args, char *)));
+        result = TYmakeBottomType (STRcpy (va_arg (args, char *)));
 
         va_end (args);
     }

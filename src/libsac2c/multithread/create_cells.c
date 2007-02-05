@@ -86,6 +86,8 @@
 #include "traverse.h"
 #include "create_cells.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "multithread_lib.h"
 
 /*
@@ -114,7 +116,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_CRECE_LASTCELLID (result) = 0;
     INFO_CRECE_LASTEXECMODE (result) = MUTH_ANY;
@@ -127,7 +129,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }

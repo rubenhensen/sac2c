@@ -32,6 +32,8 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "traverse.h"
 #include "free.h"
 #include "dbug.h"
@@ -81,7 +83,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_WL_LHS (result) = NULL;
     INFO_WL_PREASSIGNS (result) = NULL;
@@ -95,7 +97,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }
@@ -4372,7 +4374,7 @@ SetSegs (node *pragma, node *cubes, int iter_dims, bool fold_float)
         while (aps != NULL) {
 
 #define WLP(fun, str, ieee)                                                              \
-    if (ILIBstringCompare (SPAP_NAME (EXPRS_EXPR (aps)), str)) {                         \
+    if (STReq (SPAP_NAME (EXPRS_EXPR (aps)), str)) {                                     \
         if ((!fold_float) || (!global.enforce_ieee) || ieee) {                           \
             segs = fun (segs, SPAP_ARGS (EXPRS_EXPR (aps)), cubes, iter_dims,            \
                         global.linenum);                                                 \
@@ -6045,7 +6047,7 @@ NormWl (int iter_dims, shape *iter_shp, int *idx_max, node *nodes)
 
     nodes = DoNormalize (nodes, width);
 
-    width = ILIBfree (width);
+    width = MEMfree (width);
 
     DBUG_RETURN (nodes);
 }
@@ -6417,7 +6419,7 @@ InferSegsParamsPre (node *segs, shape *iter_shp)
           fprintf (stderr, "SHAPE = "); if (iter_shp != NULL) {
               int *shpseg = SHshape2IntVec (iter_shp);
               PRINT_VECT (stderr, shpseg, WLSEGX_DIMS (segs), "%i");
-              ILIBfree (shpseg);
+              MEMfree (shpseg);
           } else { fprintf (stderr, "NULL"); });
 
         if (NODE_TYPE (segs) == N_wlseg) {
@@ -6742,7 +6744,7 @@ ProcessSegments (node *segs, int iter_dims, shape *iter_shp, bool do_naive_comp)
 
 #if TO_BE_ADAPTED_TO_PHASE_MECHANISM
         if ((global.break_after == PH_wltrans)
-            && (ILIBstringCompare (global.break_specifier, "split"))) {
+            && (STReq (global.break_specifier, "split"))) {
             goto DONE;
         }
 #endif
@@ -6764,7 +6766,7 @@ ProcessSegments (node *segs, int iter_dims, shape *iter_shp, bool do_naive_comp)
 
 #if TO_BE_ADAPTED_TO_PHASE_MECHANISM
         if ((global.break_after == PH_wltrans)
-            && (ILIBstringCompare (global.break_specifier, "block"))) {
+            && (STReq (global.break_specifier, "block"))) {
             goto DONE;
         }
 #endif
@@ -6780,7 +6782,7 @@ ProcessSegments (node *segs, int iter_dims, shape *iter_shp, bool do_naive_comp)
 
 #if TO_BE_ADAPTED_TO_PHASE_MECHANISM
         if ((global.break_after == PH_wltrans)
-            && (ILIBstringCompare (global.break_specifier, "ublock"))) {
+            && (STReq (global.break_specifier, "ublock"))) {
             goto DONE;
         }
 #endif
@@ -6795,7 +6797,7 @@ ProcessSegments (node *segs, int iter_dims, shape *iter_shp, bool do_naive_comp)
 
 #if TO_BE_ADAPTED_TO_PHASE_MECHANISM
         if ((global.break_after == PH_wltrans)
-            && (ILIBstringCompare (global.break_specifier, "merge"))) {
+            && (STReq (global.break_specifier, "merge"))) {
             goto DONE;
         }
 #endif
@@ -6810,7 +6812,7 @@ ProcessSegments (node *segs, int iter_dims, shape *iter_shp, bool do_naive_comp)
 
 #if TO_BE_ADAPTED_TO_PHASE_MECHANISM
         if ((global.break_after == PH_wltrans)
-            && (ILIBstringCompare (global.break_specifier, "opt"))) {
+            && (STReq (global.break_specifier, "opt"))) {
             goto DONE;
         }
 #endif
@@ -6825,7 +6827,7 @@ ProcessSegments (node *segs, int iter_dims, shape *iter_shp, bool do_naive_comp)
 
 #if TO_BE_ADAPTED_TO_PHASE_MECHANISM
         if ((global.break_after == PH_wltrans)
-            && (ILIBstringCompare (global.break_specifier, "fit"))) {
+            && (STReq (global.break_specifier, "fit"))) {
             goto DONE;
         }
 #endif
@@ -6841,7 +6843,7 @@ ProcessSegments (node *segs, int iter_dims, shape *iter_shp, bool do_naive_comp)
 
 #if TO_BE_ADAPTED_TO_PHASE_MECHANISM
         if ((global.break_after == PH_wltrans)
-            && (ILIBstringCompare (global.break_specifier, "norm"))) {
+            && (STReq (global.break_specifier, "norm"))) {
             goto DONE;
         }
 #endif
@@ -6854,7 +6856,7 @@ ProcessSegments (node *segs, int iter_dims, shape *iter_shp, bool do_naive_comp)
 
 #if TO_BE_ADAPTED_TO_PHASE_MECHANISM
         if ((global.break_after == PH_wltrans)
-            && (ILIBstringCompare (global.break_specifier, "fill2"))) {
+            && (STReq (global.break_specifier, "fill2"))) {
             goto DONE;
         }
 
@@ -7229,7 +7231,7 @@ WLTRAwith (node *arg_node, info *arg_info)
 
 #if TO_BE_ADAPTED_TO_PHASE_MECHANISM
             if ((global.break_after == PH_wltrans)
-                && (ILIBstringCompare (global.break_specifier, "conv"))) {
+                && (STReq (global.break_specifier, "conv"))) {
                 goto DONE;
             }
 #endif
@@ -7243,7 +7245,7 @@ WLTRAwith (node *arg_node, info *arg_info)
 
 #if TO_BE_ADAPTED_TO_PHASE_MECHANISM
             if ((global.break_after == PH_wltrans)
-                && (ILIBstringCompare (global.break_specifier, "cubes"))) {
+                && (STReq (global.break_specifier, "cubes"))) {
                 goto DONE;
             }
 #endif
@@ -7261,7 +7263,7 @@ WLTRAwith (node *arg_node, info *arg_info)
 
 #if TO_BE_ADAPTED_TO_PHASE_MECHANISM
             if ((global.break_after == PH_wltrans)
-                && (ILIBstringCompare (global.break_specifier, "fill1"))) {
+                && (STReq (global.break_specifier, "fill1"))) {
                 goto DONE;
             }
 #endif
@@ -7296,7 +7298,7 @@ WLTRAwith (node *arg_node, info *arg_info)
 
 #if TO_BE_ADAPTED_TO_PHASE_MECHANISM
             if ((global.break_after == PH_wltrans)
-                && (ILIBstringCompare (global.break_specifier, "segs"))) {
+                && (STReq (global.break_specifier, "segs"))) {
                 goto DONE;
             }
 #endif

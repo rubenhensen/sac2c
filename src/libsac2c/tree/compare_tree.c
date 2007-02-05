@@ -20,6 +20,8 @@
 #include "traverse_helper.h"
 #include "new_types.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "dbug.h"
 #include "ctinfo.h"
 #include "traverse.h"
@@ -52,7 +54,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_EQFLAG (result) = CMPT_UKNWN;
     INFO_TREE (result) = NULL;
@@ -66,7 +68,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }

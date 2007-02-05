@@ -26,6 +26,8 @@
 #include "tree_compound.h"
 #include "traverse.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "DupTree.h"
 #include "new_types.h"
 #include "type_utils.h"
@@ -94,7 +96,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_ALLOCLIST (result) = NULL;
     INFO_FUNDEF (result) = NULL;
@@ -110,7 +112,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }
@@ -148,7 +150,7 @@ MakeALS (alloclist_struct *als, node *avis, node *dim, node *shape)
 
     DBUG_ENTER ("MakeALS");
 
-    res = ILIBmalloc (sizeof (alloclist_struct));
+    res = MEMmalloc (sizeof (alloclist_struct));
 
     res->avis = avis;
     res->dim = dim;
@@ -189,7 +191,7 @@ FreeALS (alloclist_struct *als)
             als->next = FreeALS (als->next);
         }
 
-        als = ILIBfree (als);
+        als = MEMfree (als);
     }
 
     DBUG_RETURN (als);

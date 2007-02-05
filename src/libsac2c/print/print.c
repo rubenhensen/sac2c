@@ -29,6 +29,8 @@
 #include "multithread_lib.h"
 #include "constants.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "namespaces.h"
 #include "shape.h"
 
@@ -188,7 +190,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     /* initialise own fields. remember to update dependent phases
      * as well!
@@ -225,7 +227,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }
@@ -474,7 +476,7 @@ TSIprintInfo (node *arg_node, info *arg_info)
             tilesize = SHPSEG_SHAPE (CODE_TSI_TILESHP (arg_node), i);
             aelems = TBmakeExprs (MakeNum (tilesize), aelems);
         }
-        ap_name = ILIBmalloc (6 * sizeof (char));
+        ap_name = MEMmalloc (6 * sizeof (char));
         ap_name = strcpy (ap_name, "BvL0");
         PRAGMA_WLCOMP_APS (pragma)
           = TBmakeExprs (MakeAp (ap_name, NULL,
@@ -630,8 +632,8 @@ Argtab2Fundef (node *fundef)
     }
 
     new_fundef
-      = TBmakeFundef (ILIBstringCopy (FUNDEF_NAME (fundef)),
-                      NSdupNamespace (FUNDEF_NS (fundef)), rets, args, NULL, NULL);
+      = TBmakeFundef (STRcpy (FUNDEF_NAME (fundef)), NSdupNamespace (FUNDEF_NS (fundef)),
+                      rets, args, NULL, NULL);
 
     FUNDEF_HASDOTARGS (new_fundef) = FUNDEF_HASDOTARGS (fundef);
     FUNDEF_HASDOTRETS (new_fundef) = FUNDEF_HASDOTRETS (fundef);
@@ -1075,7 +1077,7 @@ PRTtypedef (node *arg_node, info *arg_info)
         if (!ishidden) {
             type_str = TYtype2String (TYPEDEF_NTYPE (arg_node), 0, TRUE);
             fprintf (global.outfile, "%s ", type_str);
-            type_str = ILIBfree (type_str);
+            type_str = MEMfree (type_str);
         }
 
         if (TYPEDEF_NS (arg_node) != NULL) {
@@ -1150,7 +1152,7 @@ PRTobjdef (node *arg_node, info *arg_info)
 
         type_str = TYtype2String (OBJDEF_TYPE (arg_node), FALSE, 0);
         fprintf (global.outfile, "%s ", type_str);
-        type_str = ILIBfree (type_str);
+        type_str = MEMfree (type_str);
 
         if (OBJDEF_NS (arg_node) != NULL) {
             fprintf (global.outfile, "%s::", NSgetName (OBJDEF_NS (arg_node)));
@@ -1208,7 +1210,7 @@ PRTret (node *arg_node, info *arg_info)
     if (RET_TYPE (arg_node) != NULL) {
         type_str = TYtype2String (RET_TYPE (arg_node), FALSE, 0);
         fprintf (global.outfile, "%s", type_str);
-        type_str = ILIBfree (type_str);
+        type_str = MEMfree (type_str);
 
         if (RET_ISUNIQUE (arg_node)) {
             fprintf (global.outfile, " *");
@@ -1310,7 +1312,7 @@ PrintFunctionHeader (node *arg_node, info *arg_info, bool in_comment)
                 while (ret_types != NULL) {
                     type_str = CVtype2String (ret_types, 0, FALSE);
                     fprintf (global.outfile, "%s", type_str);
-                    type_str = ILIBfree (type_str);
+                    type_str = MEMfree (type_str);
 
                     ret_types = TYPES_NEXT (ret_types);
                     if (ret_types != NULL) {
@@ -1676,7 +1678,7 @@ PRTarg (node *arg_node, info *arg_info)
         type_str = CVtype2String (ARG_TYPE (arg_node), 0, TRUE);
     }
     fprintf (global.outfile, " %s ", type_str);
-    type_str = ILIBfree (type_str);
+    type_str = MEMfree (type_str);
 
     if (ARG_ISREFERENCE (arg_node)) {
         if (ARG_ISREADONLY (arg_node)) {
@@ -1743,7 +1745,7 @@ PRTvardec (node *arg_node, info *arg_info)
     if ((VARDEC_ICM (arg_node) == NULL) || (NODE_TYPE (VARDEC_ICM (arg_node)) != N_icm)) {
         type_str = TYtype2String (VARDEC_NTYPE (arg_node), FALSE, 0);
         fprintf (global.outfile, "%s ", type_str);
-        type_str = ILIBfree (type_str);
+        type_str = MEMfree (type_str);
 
         fprintf (global.outfile, "%s", VARDEC_NAME (arg_node));
         if (AVIS_DIM (VARDEC_AVIS (arg_node)) != NULL) {
@@ -1763,13 +1765,13 @@ PRTvardec (node *arg_node, info *arg_info)
         if (VARDEC_TYPE (arg_node) != NULL) {
             type_str = CVtype2String (VARDEC_TYPE (arg_node), 0, TRUE);
             fprintf (global.outfile, "/* %s */", type_str);
-            type_str = ILIBfree (type_str);
+            type_str = MEMfree (type_str);
         }
 
         if (AVIS_DECLTYPE (VARDEC_AVIS (arg_node)) != NULL) {
             type_str = TYtype2String (AVIS_DECLTYPE (VARDEC_AVIS (arg_node)), FALSE, 0);
             fprintf (global.outfile, " /* declared: %s */", type_str);
-            type_str = ILIBfree (type_str);
+            type_str = MEMfree (type_str);
         }
 
         DBUG_EXECUTE ("PRINT_AVIS",
@@ -2111,7 +2113,7 @@ PRTcast (node *arg_node, info *arg_info)
 
     type_str = TYtype2String (CAST_NTYPE (arg_node), FALSE, 0);
     fprintf (global.outfile, "(: %s) ", type_str);
-    type_str = ILIBfree (type_str);
+    type_str = MEMfree (type_str);
 
     TRAVdo (CAST_EXPR (arg_node), arg_info);
 
@@ -2496,7 +2498,7 @@ PRTarray (node *arg_node, info *arg_info)
     } else {
         type_str = TYtype2String (ARRAY_ELEMTYPE (arg_node), FALSE, 0);
         fprintf (global.outfile, "[:%s]", type_str);
-        type_str = ILIBfree (type_str);
+        type_str = MEMfree (type_str);
     }
 
     if (INFO_SHAPE (arg_info) != NULL)
@@ -2722,7 +2724,7 @@ PRTfloat (node *arg_node, info *arg_info)
 
     tmp_string = CVfloat2String (FLOAT_VAL (arg_node));
     fprintf (global.outfile, "%s", tmp_string);
-    tmp_string = ILIBfree (tmp_string);
+    tmp_string = MEMfree (tmp_string);
 
     DBUG_RETURN (arg_node);
 }
@@ -2750,7 +2752,7 @@ PRTdouble (node *arg_node, info *arg_info)
 
     tmp_string = CVdouble2String (DOUBLE_VAL (arg_node));
     fprintf (global.outfile, "%s", tmp_string);
-    tmp_string = ILIBfree (tmp_string);
+    tmp_string = MEMfree (tmp_string);
 
     DBUG_RETURN (arg_node);
 }
@@ -2829,7 +2831,7 @@ PRTtype (node *arg_node, info *arg_info)
     if (TYPE_TYPE (arg_node) != NULL) {
         type_str = TYtype2String (TYPE_TYPE (arg_node), FALSE, 0);
         fprintf (global.outfile, "%s", type_str);
-        type_str = ILIBfree (type_str);
+        type_str = MEMfree (type_str);
 
 #ifndef DBUG_OFF
         if (TYisBottom (TYPE_TYPE (arg_node))) {
@@ -4530,7 +4532,7 @@ PRTcwrapper (node * arg_node, info * arg_info)
                   type_str =
                   Type2String (FUNDEF_WRAPPERTYPES (fundef), 0, TRUE);
                   fprintf (global.outfile, "%s", type_str);
-                  type_str = ILIBfree (type_str);
+                  type_str = MEMfree (type_str);
                   fprintf (global.outfile, ")\n");
                   funlist = NODELIST_NEXT (funlist);}
 

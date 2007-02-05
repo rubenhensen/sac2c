@@ -39,6 +39,8 @@
 #include "free.h"
 #include "ctinfo.h" /* for CTIitemName */
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "type_utils.h"
 #include "prepare_inlining.h"
 
@@ -74,7 +76,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_FUNDEF (result) = NULL;
     INFO_LETIDS (result) = NULL;
@@ -90,7 +92,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }

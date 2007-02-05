@@ -9,6 +9,8 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "DupTree.h"
 #include "free.h"
 #include "namespaces.h"
@@ -149,7 +151,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_HWLG_LASTASSIGN (result) = NULL;
     INFO_HWLG_LHS (result) = NULL;
@@ -164,7 +166,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }
@@ -411,8 +413,7 @@ HWLGgenarray (node *arg_node, info *arg_info)
         MODARRAY_NEXT (new_withop) = INFO_HWLG_NEW_WITHOPS (arg_info);
         INFO_HWLG_NEW_WITHOPS (arg_info) = new_withop;
 
-        INFO_HWLG_LHS (arg_info)
-          = TBmakeSpids (ILIBstringCopy (tmp), INFO_HWLG_LHS (arg_info));
+        INFO_HWLG_LHS (arg_info) = TBmakeSpids (STRcpy (tmp), INFO_HWLG_LHS (arg_info));
     } else {
         arg_node = TRAVcont (arg_node, arg_info);
     }
@@ -452,8 +453,7 @@ HWLGmodarray (node *arg_node, info *arg_info)
         MODARRAY_NEXT (new_withop) = INFO_HWLG_NEW_WITHOPS (arg_info);
         INFO_HWLG_NEW_WITHOPS (arg_info) = new_withop;
 
-        INFO_HWLG_LHS (arg_info)
-          = TBmakeSpids (ILIBstringCopy (tmp), INFO_HWLG_LHS (arg_info));
+        INFO_HWLG_LHS (arg_info) = TBmakeSpids (STRcpy (tmp), INFO_HWLG_LHS (arg_info));
     } else {
         arg_node = TRAVcont (arg_node, arg_info);
     }
@@ -491,14 +491,13 @@ HWLGspfold (node *arg_node, info *arg_info)
 
         new_withop = TBmakeSpfold (TBmakeSpid (NULL, tmp));
         SPFOLD_NS (new_withop) = NSdupNamespace (SPFOLD_NS (arg_node));
-        SPFOLD_FUN (new_withop) = ILIBstringCopy (SPFOLD_FUN (arg_node));
+        SPFOLD_FUN (new_withop) = STRcpy (SPFOLD_FUN (arg_node));
         SPFOLD_GUARD (new_withop) = DUPdoDupTree (SPFOLD_GUARD (arg_node));
 
         SPFOLD_NEXT (new_withop) = INFO_HWLG_NEW_WITHOPS (arg_info);
         INFO_HWLG_NEW_WITHOPS (arg_info) = new_withop;
 
-        INFO_HWLG_LHS (arg_info)
-          = TBmakeSpids (ILIBstringCopy (tmp), INFO_HWLG_LHS (arg_info));
+        INFO_HWLG_LHS (arg_info) = TBmakeSpids (STRcpy (tmp), INFO_HWLG_LHS (arg_info));
     } else {
         arg_node = TRAVcont (arg_node, arg_info);
     }
@@ -534,14 +533,13 @@ HWLGpropagate (node *arg_node, info *arg_info)
 
         DBUG_ASSERT (NODE_TYPE (PROPAGATE_DEFAULT (arg_node)) == N_spid,
                      "propgate defaults should be N_spid!");
-        tmp = ILIBstringCopy (SPID_NAME (PROPAGATE_DEFAULT (arg_node)));
+        tmp = STRcpy (SPID_NAME (PROPAGATE_DEFAULT (arg_node)));
 
         new_withop = TBmakePropagate (TBmakeSpid (NULL, tmp));
         PROPAGATE_NEXT (new_withop) = INFO_HWLG_NEW_WITHOPS (arg_info);
         INFO_HWLG_NEW_WITHOPS (arg_info) = new_withop;
 
-        INFO_HWLG_LHS (arg_info)
-          = TBmakeSpids (ILIBstringCopy (tmp), INFO_HWLG_LHS (arg_info));
+        INFO_HWLG_LHS (arg_info) = TBmakeSpids (STRcpy (tmp), INFO_HWLG_LHS (arg_info));
     } else {
         arg_node = TRAVcont (arg_node, arg_info);
     }

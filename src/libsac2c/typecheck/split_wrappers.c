@@ -8,6 +8,8 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "dbug.h"
 #include "ctinfo.h"
 #include "LookUpTable.h"
@@ -58,7 +60,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_SWR_TRAVNO (result) = 0;
     INFO_SWR_WRAPPERFUNS (result) = NULL;
@@ -73,7 +75,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }
@@ -222,10 +224,10 @@ SplitWrapper (node *fundef, info *arg_info)
         DBUG_EXECUTE ("SWR", tmp_str = TYtype2String (new_type, TRUE, 0););
         DBUG_PRINT ("SWR",
                     ("  new wrapper split off: \n%s : " F_PTR, tmp_str, new_fundef));
-        DBUG_EXECUTE ("SWR", tmp_str = ILIBfree (tmp_str););
+        DBUG_EXECUTE ("SWR", tmp_str = MEMfree (tmp_str););
         DBUG_EXECUTE ("SWR", tmp_str = TYtype2String (tmp_type, TRUE, 0););
         DBUG_PRINT ("SWR", ("  remaining wrapper : \n%s : ", tmp_str));
-        DBUG_EXECUTE ("SWR", tmp_str = ILIBfree (tmp_str););
+        DBUG_EXECUTE ("SWR", tmp_str = MEMfree (tmp_str););
 
         FUNDEF_WRAPPERTYPE (new_fundef) = new_type;
         new_rets = TYgetWrapperRetType (new_type);
@@ -267,7 +269,7 @@ SplitWrapper (node *fundef, info *arg_info)
          */
         if (!FUNDEF_ISLOCAL (new_fundef)) {
             FUNDEF_SYMBOLNAME (new_fundef)
-              = ILIBstringCopy (SERgenerateSerFunName (SET_wrapperhead, new_fundef));
+              = STRcpy (SERgenerateSerFunName (SET_wrapperhead, new_fundef));
 
             DBUG_PRINT ("SWR",
                         ("generated symbolname is %s", FUNDEF_SYMBOLNAME (new_fundef)));
@@ -346,8 +348,7 @@ CorrectFundefPointer (node *fundef, ntype *arg_types)
                 newfundef = FUNDEF_NEXT (newfundef);
                 DBUG_ASSERT (((newfundef != NULL)
                               && NSequals (FUNDEF_NS (newfundef), FUNDEF_NS (fundef))
-                              && ILIBstringCompare (FUNDEF_NAME (newfundef),
-                                                    FUNDEF_NAME (fundef))
+                              && STReq (FUNDEF_NAME (newfundef), FUNDEF_NAME (fundef))
                               && FUNDEF_ISWRAPPERFUN (newfundef)),
                              "no appropriate wrapper function found!");
 
@@ -363,8 +364,7 @@ CorrectFundefPointer (node *fundef, ntype *arg_types)
             newfundef = FUNDEF_NEXT (fundef);
             DBUG_ASSERT (((newfundef != NULL)
                           && NSequals (FUNDEF_NS (newfundef), FUNDEF_NS (fundef))
-                          && ILIBstringCompare (FUNDEF_NAME (newfundef),
-                                                FUNDEF_NAME (fundef))
+                          && STReq (FUNDEF_NAME (newfundef), FUNDEF_NAME (fundef))
                           && FUNDEF_ISWRAPPERFUN (newfundef)),
                          "no appropriate wrapper function found!");
         }
@@ -504,7 +504,7 @@ FundefMoveToFinalNs (node *arg_node, info *arg_info)
         FUNDEF_ISLOCAL (arg_node) = TRUE;
         FUNDEF_WASUSED (arg_node) = FALSE;
         FUNDEF_WASIMPORTED (arg_node) = FALSE;
-        FUNDEF_SYMBOLNAME (arg_node) = ILIBfree (FUNDEF_SYMBOLNAME (arg_node));
+        FUNDEF_SYMBOLNAME (arg_node) = MEMfree (FUNDEF_SYMBOLNAME (arg_node));
     }
 
     DBUG_RETURN (arg_node);

@@ -14,6 +14,8 @@
 #include "tree_basic.h"
 #include "dbug.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "new_types.h"
 #include "traverse.h"
 #include "namespaces.h"
@@ -44,7 +46,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_GDP_DEPS (result) = NULL;
     INFO_GDP_MODULE (result) = NULL;
@@ -60,7 +62,7 @@ FreeInfo (info *info)
     INFO_GDP_DEPS (info) = STRSfree (INFO_GDP_DEPS (info));
     INFO_GDP_MODULE (info) = NULL;
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }
@@ -90,8 +92,7 @@ AddModuleToDependencies (const char *mod, info *info)
     DBUG_ENTER ("AddModuleToDependencies");
 
     if (mod != NULL) {
-        if (!ILIBstringCompare (NSgetName (MODULE_NAMESPACE (INFO_GDP_MODULE (info))),
-                                mod)) {
+        if (!STReq (NSgetName (MODULE_NAMESPACE (INFO_GDP_MODULE (info))), mod)) {
             /*
              * this symbol comes from another module
              *  -> add the module name to the dependency list

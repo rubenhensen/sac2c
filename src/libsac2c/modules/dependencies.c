@@ -13,6 +13,8 @@
 #include "modulemanager.h"
 #include "filemgr.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "namespaces.h"
 #include "ctinfo.h"
 #include "dbug.h"
@@ -79,7 +81,7 @@ GenerateDependencyTableEntries (stringset_t *deps, FILE *file)
 
     fprintf (file, string);
 
-    string = ILIBfree (string);
+    string = MEMfree (string);
     buffer = ILIBstrBufFree (buffer);
 
     DBUG_VOID_RETURN;
@@ -162,11 +164,11 @@ PrintLibDepFoldFun (const char *entry, strstype_t kind, void *modname)
         char *libname;
         char *libfile;
 
-        libname = ILIBmalloc (sizeof (char) * (strlen (entry) + 5));
+        libname = MEMmalloc (sizeof (char) * (strlen (entry) + 5));
         sprintf (libname, "%s.sac", entry);
 
-        libfile = ILIBstringCopy (FMGRfindFile (PK_imp_path, libname));
-        libname = ILIBfree (libname);
+        libfile = STRcpy (FMGRfindFile (PK_imp_path, libname));
+        libname = MEMfree (libname);
 
         if (libfile != NULL) {
             char *libdir = dirname (libfile);
@@ -185,7 +187,7 @@ PrintLibDepFoldFun (const char *entry, strstype_t kind, void *modname)
             printf ("%s :\n\t( cd %s; $(MAKE) lib%s.so)\n\n", entry, libdir, entry);
         }
 
-        libfile = ILIBfree (libfile);
+        libfile = MEMfree (libfile);
     }
 
     DBUG_RETURN (modname);
@@ -226,24 +228,24 @@ PrintSACLib (const char *name)
      * first try to find the .so file
      */
 
-    filename = ILIBmalloc (sizeof (char) * (strlen (name) + 7));
+    filename = MEMmalloc (sizeof (char) * (strlen (name) + 7));
     sprintf (filename, "lib%s.so", name);
 
-    result = ILIBstringCopy (FMGRfindFile (PK_lib_path, filename));
+    result = STRcpy (FMGRfindFile (PK_lib_path, filename));
 
-    filename = ILIBfree (filename);
+    filename = MEMfree (filename);
 
     if (result == NULL) {
         /*
          * now try to find the .sac file
          */
 
-        filename = ILIBmalloc (sizeof (char) * (strlen (name) + 5));
+        filename = MEMmalloc (sizeof (char) * (strlen (name) + 5));
         sprintf (filename, "%s.sac", name);
 
-        result = ILIBstringCopy (FMGRfindFile (PK_imp_path, filename));
+        result = STRcpy (FMGRfindFile (PK_imp_path, filename));
 
-        filename = ILIBfree (filename);
+        filename = MEMfree (filename);
     }
 
     if (result == NULL) {
@@ -251,13 +253,13 @@ PrintSACLib (const char *name)
          * otherwise use the pure filename
          */
 
-        result = ILIBmalloc (sizeof (char) * (strlen (name) + 7));
+        result = MEMmalloc (sizeof (char) * (strlen (name) + 7));
         sprintf (result, "lib%s.so", name);
     }
 
     printf (" \\\n  %s", result);
 
-    result = ILIBfree (result);
+    result = MEMfree (result);
 
     DBUG_VOID_RETURN;
 }

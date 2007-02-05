@@ -7,6 +7,8 @@
 
 #include "resolvepragma.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
@@ -41,7 +43,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_NUMS (result) = NULL;
     INFO_COUNTER (result) = 0;
@@ -55,7 +57,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }
@@ -276,9 +278,9 @@ RSPtypedef (node *arg_node, info *arg_info)
     if (TYPEDEF_PRAGMA (arg_node) != NULL) {
         pragma = TYPEDEF_PRAGMA (arg_node);
 
-        TYPEDEF_FREEFUN (arg_node) = ILIBstringCopy (PRAGMA_FREEFUN (pragma));
-        TYPEDEF_INITFUN (arg_node) = ILIBstringCopy (PRAGMA_INITFUN (pragma));
-        TYPEDEF_COPYFUN (arg_node) = ILIBstringCopy (PRAGMA_COPYFUN (pragma));
+        TYPEDEF_FREEFUN (arg_node) = STRcpy (PRAGMA_FREEFUN (pragma));
+        TYPEDEF_INITFUN (arg_node) = STRcpy (PRAGMA_INITFUN (pragma));
+        TYPEDEF_COPYFUN (arg_node) = STRcpy (PRAGMA_COPYFUN (pragma));
 
         /*
          * if this typedef depends on any external object files,
@@ -322,7 +324,7 @@ RSPobjdef (node *arg_node, info *arg_info)
     if (OBJDEF_PRAGMA (arg_node) != NULL) {
         pragma = OBJDEF_PRAGMA (arg_node);
 
-        OBJDEF_LINKNAME (arg_node) = ILIBstringCopy (PRAGMA_LINKNAME (pragma));
+        OBJDEF_LINKNAME (arg_node) = STRcpy (PRAGMA_LINKNAME (pragma));
 
         OBJDEF_PRAGMA (arg_node) = FREEdoFreeNode (OBJDEF_PRAGMA (arg_node));
     }
@@ -367,19 +369,19 @@ RSPfundef (node *arg_node, info *arg_info)
         if (PRAGMA_COPYFUN (pragma) != NULL) {
             CTIwarnLine (NODE_LINE (arg_node),
                          "Pragma 'copyfun` has no effect on function");
-            PRAGMA_COPYFUN (pragma) = ILIBfree (PRAGMA_COPYFUN (pragma));
+            PRAGMA_COPYFUN (pragma) = MEMfree (PRAGMA_COPYFUN (pragma));
         }
 
         if (PRAGMA_FREEFUN (pragma) != NULL) {
             CTIwarnLine (NODE_LINE (arg_node),
                          "Pragma 'freefun` has no effect on function");
-            PRAGMA_FREEFUN (pragma) = ILIBfree (PRAGMA_FREEFUN (pragma));
+            PRAGMA_FREEFUN (pragma) = MEMfree (PRAGMA_FREEFUN (pragma));
         }
 
         if (PRAGMA_INITFUN (pragma) != NULL) {
             CTIwarnLine (NODE_LINE (arg_node),
                          "Pragma 'initfun` has no effect on function");
-            PRAGMA_INITFUN (pragma) = ILIBfree (PRAGMA_INITFUN (pragma));
+            PRAGMA_INITFUN (pragma) = MEMfree (PRAGMA_INITFUN (pragma));
         }
 
         if (PRAGMA_LINKSIGN (pragma) != NULL) {

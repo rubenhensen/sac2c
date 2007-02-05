@@ -51,6 +51,8 @@
 #include "replicate_functions.h"
 #include "multithread_lib.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 
 /*
  * INFO structure
@@ -78,7 +80,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_REPFUN_ACTASSIGN (result) = NULL;
     INFO_REPFUN_EXECMODE (result) = MUTH_ANY;
@@ -91,7 +93,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }

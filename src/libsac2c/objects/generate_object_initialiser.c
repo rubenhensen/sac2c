@@ -4,6 +4,8 @@
 
 #include "dbug.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "traverse.h"
 #include "namespaces.h"
 #include "tree_basic.h"
@@ -36,7 +38,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_NS (result) = NULL;
     INFO_DEPS (result) = NULL;
@@ -49,7 +51,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }
@@ -205,7 +207,7 @@ GenerateObjectInitFun (node *objlist)
     /*
      * the fundef
      */
-    result = TBmakeFundef (ILIBstringCopy ("init"), NSgetInitNamespace (), NULL, NULL,
+    result = TBmakeFundef (STRcpy ("init"), NSgetInitNamespace (), NULL, NULL,
                            TBmakeBlock (assigns, NULL), NULL);
 
     FUNDEF_OBJECTS (result) = objlist;
@@ -238,7 +240,7 @@ GOIfundef (node *arg_node, info *arg_info)
      */
     if (!FUNDEF_ISWRAPPERFUN (arg_node)
         && (NSequals (FUNDEF_NS (arg_node), INFO_NS (arg_info)))
-        && (ILIBstringCompare (FUNDEF_NAME (arg_node), "main"))) {
+        && (STReq (FUNDEF_NAME (arg_node), "main"))) {
         node *initfun;
 
         /*
@@ -278,7 +280,7 @@ GOIfundef (node *arg_node, info *arg_info)
 
         if (FUNDEF_ISWRAPPERFUN (arg_node)
             && (NSequals (FUNDEF_NS (arg_node), INFO_NS (arg_info)))
-            && (ILIBstringCompare (FUNDEF_NAME (arg_node), "main"))) {
+            && (STReq (FUNDEF_NAME (arg_node), "main"))) {
             /*
              * we need to correct the wrapper object dependencies as well.
              * if INFO_DEPS is NULL, we have not passed the main function

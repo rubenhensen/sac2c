@@ -11,6 +11,8 @@
 #include "free.h"
 #include "DupTree.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "dbug.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -196,7 +198,7 @@ TRAVpush (trav_t traversal)
 
     DBUG_ENTER ("TRAVpush");
 
-    new = ILIBmalloc (sizeof (travstack_t));
+    new = MEMmalloc (sizeof (travstack_t));
 
     new->next = travstack;
     new->traversal = traversal;
@@ -221,7 +223,7 @@ TRAVpop ()
     travstack = tmp->next;
     result = tmp->traversal;
 
-    tmp = ILIBfree (tmp);
+    tmp = MEMfree (tmp);
 
     DBUG_RETURN (result);
 }

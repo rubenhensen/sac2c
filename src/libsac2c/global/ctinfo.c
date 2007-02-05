@@ -44,6 +44,8 @@
 #include "dbug.h"
 #include "filemgr.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "build.h"
 #include "print.h"
 #include "convert.h"
@@ -157,7 +159,7 @@ Format2Buffer (const char *format, va_list arg_p)
 
         len = 120;
 
-        message_buffer = (char *)ILIBmalloc (len + 2);
+        message_buffer = (char *)MEMmalloc (len + 2);
         CHKMdoNotReport (message_buffer);
         message_buffer_size = len + 2;
 
@@ -170,8 +172,8 @@ Format2Buffer (const char *format, va_list arg_p)
     if (len >= message_buffer_size) {
         /* buffer too small  */
 
-        ILIBfree (message_buffer);
-        message_buffer = (char *)ILIBmalloc (len + 2);
+        MEMfree (message_buffer);
+        message_buffer = (char *)MEMmalloc (len + 2);
         CHKMdoNotReport (message_buffer);
         message_buffer_size = len + 2;
 
@@ -210,10 +212,10 @@ CTIgetErrorMessageVA (int line, const char *format, va_list arg_p)
     Format2Buffer (format, arg_p);
     ProcessMessage (message_buffer, message_line_length - strlen (error_message_header));
 
-    first_line = (char *)ILIBmalloc (32 * sizeof (char));
+    first_line = (char *)MEMmalloc (32 * sizeof (char));
     sprintf (first_line, "line %d @", line);
-    res = ILIBstringConcat (first_line, message_buffer);
-    first_line = ILIBfree (first_line);
+    res = STRcat (first_line, message_buffer);
+    first_line = MEMfree (first_line);
 
     DBUG_RETURN (res);
 }

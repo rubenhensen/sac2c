@@ -6,6 +6,8 @@
 #include "tree_compound.h"
 #include "stringset.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "free.h"
 #include "LookUpTable.h"
 #include "DataFlowMask.h"
@@ -35,7 +37,7 @@ FREEattribString (char *attr, node *parent)
 
     if (attr != NULL) {
         DBUG_PRINT ("FREE", ("Freeing string '%s' at " F_PTR, attr, attr));
-        attr = ILIBfree (attr);
+        attr = MEMfree (attr);
     }
 
     DBUG_RETURN (attr);
@@ -386,12 +388,12 @@ FREEattribArgTab (argtab_t *attr, node *parent)
     DBUG_ENTER ("FREEattribArgTab");
 
     if (attr != NULL) {
-        attr->ptr_in = ILIBfree (attr->ptr_in);
-        attr->ptr_out = ILIBfree (attr->ptr_out);
-        attr->tag = ILIBfree (attr->tag);
+        attr->ptr_in = MEMfree (attr->ptr_in);
+        attr->ptr_out = MEMfree (attr->ptr_out);
+        attr->tag = MEMfree (attr->tag);
         attr->size = 0;
 
-        attr = ILIBfree (attr);
+        attr = MEMfree (attr);
     }
 
     DBUG_RETURN (attr);
@@ -463,7 +465,7 @@ FREEattribConstVecPointer (void *attr, node *parent)
     DBUG_ENTER ("FREEattribConstVecPointer");
 
     if (attr != NULL) {
-        attr = ILIBfree (attr);
+        attr = MEMfree (attr);
     }
 
     DBUG_RETURN (attr);
@@ -490,7 +492,7 @@ FREEattribAccess (access_t *attr, node *parent)
         access_t *tmp = attr;
         attr = attr->next;
         tmp->offset = FREEfreeShpseg (tmp->offset);
-        tmp = ILIBfree (tmp);
+        tmp = MEMfree (tmp);
     }
 
     DBUG_RETURN (attr);
@@ -515,7 +517,7 @@ FREEattribAccessInfo (access_info_t *attr, node *parent)
 
     if (attr != NULL) {
         attr->access = FREEattribAccess (attr->access, parent);
-        attr = ILIBfree (attr);
+        attr = MEMfree (attr);
     }
 
     DBUG_RETURN (attr);
@@ -540,7 +542,7 @@ FREEattribShpSeg (shpseg *attr, node *parent)
 
     if (attr != NULL) {
         SHPSEG_NEXT (attr) = FREEattribShpSeg (SHPSEG_NEXT (attr), parent);
-        attr = ILIBfree (attr);
+        attr = MEMfree (attr);
     }
 
     DBUG_RETURN (attr);
@@ -564,7 +566,7 @@ FREEattribIntegerPointer (int *attr, node *parent)
     DBUG_ENTER ("FREEattribIntegerPointer");
 
     if (attr != NULL) {
-        attr = ILIBfree (attr);
+        attr = MEMfree (attr);
     }
 
     DBUG_RETURN (attr);
@@ -588,7 +590,7 @@ FREEattribIntegerPointerArray (int *attr, node *parent)
     DBUG_ENTER ("FREEattribIntegerPointerArray");
 
     if (attr != NULL) {
-        attr = ILIBfree (attr);
+        attr = MEMfree (attr);
     }
 
     DBUG_RETURN (attr);
@@ -727,7 +729,7 @@ FREEattribIndexInfo (index_info *attr, node *parent)
 {
     DBUG_ENTER ("FREEattribIndexInfo");
 
-    attr = ILIBfree (attr);
+    attr = MEMfree (attr);
 
     DBUG_RETURN (attr);
 }

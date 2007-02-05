@@ -13,6 +13,8 @@
 #include "serialize_stack.h"
 #include "dbug.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "tree_basic.h"
 #include "globals.h"
 
@@ -34,7 +36,7 @@ SSinit ()
 
     DBUG_ENTER ("SSinit");
 
-    result = ILIBmalloc (sizeof (serstack_t));
+    result = MEMmalloc (sizeof (serstack_t));
 
     result->head = NULL;
 
@@ -50,10 +52,10 @@ SSdestroy (serstack_t *stack)
         serentry_t *tmp = stack->head;
         stack->head = stack->head->next;
 
-        tmp = ILIBfree (tmp);
+        tmp = MEMfree (tmp);
     }
 
-    stack = ILIBfree (stack);
+    stack = MEMfree (stack);
 
     DBUG_RETURN (stack);
 }
@@ -65,7 +67,7 @@ SSpush (node *val, serstack_t *stack)
 
     DBUG_ENTER ("SSpush");
 
-    tmp = ILIBmalloc (sizeof (serentry_t));
+    tmp = MEMmalloc (sizeof (serentry_t));
 
     tmp->val = val;
     tmp->next = stack->head;
@@ -88,7 +90,7 @@ SSpop (serstack_t *stack)
     stack->head = stack->head->next;
 
     result = tmp->val;
-    tmp = ILIBfree (tmp);
+    tmp = MEMfree (tmp);
 
     DBUG_RETURN (result);
 }

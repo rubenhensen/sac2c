@@ -346,6 +346,8 @@
 #include "traverse.h"
 #include "dbug.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "free.h"
 #include "DupTree.h"
 
@@ -401,7 +403,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_TYPE (result) = NULL;
     INFO_BLOCKNODE (result) = NULL;
@@ -427,7 +429,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }
@@ -2289,7 +2291,7 @@ OptTravElems (node *arg_node, info *arg_info)
             INFO_TMPLIST (arg_info) = NODELIST_NEXT (INFO_TMPLIST (arg_info));
             NODELIST_NODE (list) = NULL;
             NODELIST_NEXT (list) = NULL;
-            ILIBfree (list);
+            MEMfree (list);
         }
     } else {
 

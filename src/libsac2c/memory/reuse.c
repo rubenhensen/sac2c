@@ -28,6 +28,8 @@
 #include "dbug.h"
 #include "print.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 
 #include <string.h>
 
@@ -62,7 +64,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_RHSCAND (result) = NULL;
     INFO_LHS (result) = NULL;
@@ -76,7 +78,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }

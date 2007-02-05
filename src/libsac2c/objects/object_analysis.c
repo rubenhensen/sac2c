@@ -9,6 +9,8 @@
 #include "new_types.h"
 #include "DupTree.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 
 /*
  * INFO structure
@@ -40,7 +42,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_OBJECTS (result) = NULL;
     INFO_OBJDEFS (result) = NULL;
@@ -56,7 +58,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }
@@ -224,8 +226,7 @@ LookupObjdef (namespace_t *ns, const char *name, node *objs)
     if (objs == NULL) {
         result = NULL;
     } else {
-        if (NSequals (OBJDEF_NS (objs), ns)
-            && ILIBstringCompare (OBJDEF_NAME (objs), name)) {
+        if (NSequals (OBJDEF_NS (objs), ns) && STReq (OBJDEF_NAME (objs), name)) {
             result = objs;
         } else {
             result = LookupObjdef (ns, name, OBJDEF_NEXT (objs));

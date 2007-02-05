@@ -86,6 +86,8 @@ version="1.0">
 #include "tree_basic.h"
 #include "traverse.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "dbug.h"
 
 #define FREETRAV( node, info) (node != NULL) ? TRAVdo( node, info) : node
@@ -243,10 +245,10 @@ version="1.0">
   <xsl:value-of select="'DBUG_PRINT( &quot;FREE&quot;, (&quot;Freeing node %s at &quot; F_PTR, NODE_TEXT( arg_node), arg_node));'"/>
   <xsl:choose>
     <xsl:when test="sons/son[@name = &quot;Next&quot;]">
-      <xsl:value-of select="'arg_node = ILIBfree( arg_node);'"/>
+      <xsl:value-of select="'arg_node = MEMfree( arg_node);'"/>
     </xsl:when>
     <xsl:otherwise>
-      <xsl:value-of select="'result = ILIBfree( arg_node);'"/>
+      <xsl:value-of select="'result = MEMfree( arg_node);'"/>
     </xsl:otherwise>
   </xsl:choose>
   <xsl:value-of select="'return( result);'"/>

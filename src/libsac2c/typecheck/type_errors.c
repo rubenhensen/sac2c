@@ -8,7 +8,8 @@
 #include "type_errors.h"
 #include "dbug.h"
 #include "ctinfo.h"
-#include "internal_lib.h"
+#include "str.h"
+#include "globals.h"
 #include "shape.h"
 #include "constants.h"
 #include "tree_basic.h"
@@ -379,8 +380,7 @@ TEhandleError (int line, const char *format, ...)
     if (errors == NULL) {
         errors = CTIgetErrorMessageVA (line, format, arg_p);
     } else {
-        errors
-          = ILIBstringConcat3 (errors, "@", CTIgetErrorMessageVA (line, format, arg_p));
+        errors = STRcatn (3, errors, "@", CTIgetErrorMessageVA (line, format, arg_p));
     }
 
     va_end (arg_p);

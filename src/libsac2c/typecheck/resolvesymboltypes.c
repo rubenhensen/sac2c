@@ -19,6 +19,8 @@
 #include "globals.h"
 #include "namespaces.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 
 static ntype *
 RSTntype (ntype *arg_type, info *arg_info)
@@ -31,7 +33,7 @@ RSTntype (ntype *arg_type, info *arg_info)
 
     DBUG_EXECUTE ("RST", tmp_str = TYtype2DebugString (arg_type, FALSE, 0););
     DBUG_PRINT ("RST", ("starting to process type %s", tmp_str));
-    DBUG_EXECUTE ("RST", tmp_str = ILIBfree (tmp_str););
+    DBUG_EXECUTE ("RST", tmp_str = MEMfree (tmp_str););
 
     /*
      * as the TYget functions do not copy the internal type
@@ -78,7 +80,7 @@ RSTntype (ntype *arg_type, info *arg_info)
 
     DBUG_EXECUTE ("RST", tmp_str = TYtype2DebugString (arg_type, FALSE, 0););
     DBUG_PRINT ("RST", ("resulting type is %s", tmp_str));
-    DBUG_EXECUTE ("RST", tmp_str = ILIBfree (tmp_str););
+    DBUG_EXECUTE ("RST", tmp_str = MEMfree (tmp_str););
 
     DBUG_RETURN (arg_type);
 }
@@ -148,13 +150,13 @@ RSTtypedef (node *arg_node, info *arg_info)
             if (TYPEDEF_ISALIAS (arg_node)) {
                 err_str1 = TYtype2String (TYPEDEF_NTYPE (arg_node), FALSE, 0);
             } else {
-                err_str1 = ILIBstringCopy (CTIitemName (arg_node));
+                err_str1 = STRcpy (CTIitemName (arg_node));
             }
 
             if (UTisAlias (udt)) {
                 err_str2 = TYtype2String (UTgetTypedef (udt), FALSE, 0);
             } else {
-                err_str2 = ILIBstringCopy (CTIitemName (UTgetTdef (udt)));
+                err_str2 = STRcpy (CTIitemName (UTgetTdef (udt)));
             }
 
             CTIerrorLine (global.linenum,
@@ -164,8 +166,8 @@ RSTtypedef (node *arg_node, info *arg_info)
                           err_str1, UTisAlias (udt) ? "imported type" : "defined type",
                           err_str2, UTgetLine (udt));
 
-            err_str1 = ILIBfree (err_str1);
-            err_str2 = ILIBfree (err_str2);
+            err_str1 = MEMfree (err_str1);
+            err_str2 = MEMfree (err_str2);
         }
 
         DBUG_EXECUTE ("UDT",
@@ -183,26 +185,26 @@ RSTtypedef (node *arg_node, info *arg_info)
 
             alias = TYgetUserType (TYgetScalar (TYPEDEF_NTYPE (arg_node)));
 
-            UTaddAlias (ILIBstringCopy (TYPEDEF_NAME (arg_node)),
+            UTaddAlias (STRcpy (TYPEDEF_NAME (arg_node)),
                         NSdupNamespace (TYPEDEF_NS (arg_node)), alias,
                         NODE_LINE (arg_node), arg_node);
         } else {
             DBUG_PRINT ("UDT", ("adding user type %s defined as %s",
                                 CTIitemName (arg_node), tmp_str));
 
-            UTaddUserType (ILIBstringCopy (TYPEDEF_NAME (arg_node)),
+            UTaddUserType (STRcpy (TYPEDEF_NAME (arg_node)),
                            NSdupNamespace (TYPEDEF_NS (arg_node)),
                            TYcopyType (TYPEDEF_NTYPE (arg_node)), NULL,
                            NODE_LINE (arg_node), arg_node);
         }
 
-        DBUG_EXECUTE ("UDT", tmp_str = ILIBfree (tmp_str););
+        DBUG_EXECUTE ("UDT", tmp_str = MEMfree (tmp_str););
     } else {
         DBUG_EXECUTE ("UDT",
                       tmp_str = TYtype2String (TYPEDEF_NTYPE (arg_node), FALSE, 0););
         DBUG_PRINT ("UDT", ("passing user type %s defined as %s", CTIitemName (arg_node),
                             tmp_str));
-        DBUG_EXECUTE ("UDT", tmp_str = ILIBfree (tmp_str););
+        DBUG_EXECUTE ("UDT", tmp_str = MEMfree (tmp_str););
     }
 
     if (TYPEDEF_NEXT (arg_node) != NULL) {

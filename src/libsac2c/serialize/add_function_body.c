@@ -22,6 +22,8 @@
 #include "deserialize.h"
 #include "serialize.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "modulemanager.h"
@@ -54,7 +56,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_AFB_RETURN (result) = NULL;
     INFO_AFB_SSACOUNTER (result) = NULL;
@@ -67,7 +69,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }
@@ -129,7 +131,7 @@ LookUpSSACounter (node *cntchain, node *arg)
     DBUG_ENTER ("LookUpSSACounter");
 
     while ((cntchain != NULL) && (result == NULL)) {
-        if (ILIBstringCompare (SSACNT_BASEID (cntchain), AVIS_NAME (ARG_AVIS (arg)))) {
+        if (STReq (SSACNT_BASEID (cntchain), AVIS_NAME (ARG_AVIS (arg)))) {
             result = cntchain;
         }
 

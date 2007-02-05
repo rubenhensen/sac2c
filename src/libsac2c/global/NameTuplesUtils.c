@@ -51,6 +51,8 @@
 
 #include "dbug.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "new_types.h"
@@ -201,10 +203,10 @@ NTUcreateNtTag (const char *name, types *type)
     hc = NTUgetHiddenClassFromTypes (type);
     uc = NTUgetUniqueClassFromTypes (type);
 
-    res = (char *)ILIBmalloc ((strlen (name) + strlen (global.nt_shape_string[sc])
-                               + strlen (global.nt_hidden_string[hc])
-                               + strlen (global.nt_unique_string[uc]) + 16)
-                              * sizeof (char));
+    res = (char *)MEMmalloc ((strlen (name) + strlen (global.nt_shape_string[sc])
+                              + strlen (global.nt_hidden_string[hc])
+                              + strlen (global.nt_unique_string[uc]) + 16)
+                             * sizeof (char));
 
     sprintf (res, "(%s, (%s, (%s, (%s,))))", name, global.nt_shape_string[sc],
              global.nt_hidden_string[hc], global.nt_unique_string[uc]);
@@ -421,10 +423,10 @@ NTUcreateNtTagFromNType (const char *name, ntype *ntype)
     hc = NTUgetHiddenClassFromNType (ntype);
     uc = NTUgetUniqueClassFromNType (ntype);
 
-    res = (char *)ILIBmalloc ((strlen (name) + strlen (global.nt_shape_string[sc])
-                               + strlen (global.nt_hidden_string[hc])
-                               + strlen (global.nt_unique_string[uc]) + 16)
-                              * sizeof (char));
+    res = (char *)MEMmalloc ((strlen (name) + strlen (global.nt_shape_string[sc])
+                              + strlen (global.nt_hidden_string[hc])
+                              + strlen (global.nt_unique_string[uc]) + 16)
+                             * sizeof (char));
 
     sprintf (res, "(%s, (%s, (%s, (%s,))))", name, global.nt_shape_string[sc],
              global.nt_hidden_string[hc], global.nt_unique_string[uc]);

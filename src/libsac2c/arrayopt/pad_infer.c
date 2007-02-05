@@ -89,6 +89,8 @@
 #include "resource.h"
 #include "convert.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 
 #include "pad_infer.h"
 #include "pad_info.h"
@@ -176,7 +178,7 @@ CreateCacheSpec (int size, int line_size, int assoc, int el_size)
         cache = NULL;
     } else {
 
-        cache = ILIBmalloc (sizeof (cache_t));
+        cache = MEMmalloc (sizeof (cache_t));
 
         cache->assoc = assoc;
         cache->size = size / el_size;
@@ -394,7 +396,7 @@ InitCacheUtil (cache_util_t **cache_util, pattern_t *pattern, array_type_t *arra
         rows++;
         pt_ptr = PIgetNextPattern (pt_ptr);
     }
-    (*cache_util) = (cache_util_t *)ILIBmalloc (rows * sizeof (cache_util_t));
+    (*cache_util) = (cache_util_t *)MEMmalloc (rows * sizeof (cache_util_t));
 
     pt_ptr = pattern;
     for (i = 0; i < rows; i++) {
@@ -1864,9 +1866,9 @@ ComputePadding (cache_t *cache_L1, cache_t *cache_L2, cache_t *cache_L3, int dim
     /*
      * Free local resources.
      */
-    cache_util = ILIBfree (cache_util);
-    padding_keep = ILIBfree (padding_keep);
-    padding_store = ILIBfree (padding_store);
+    cache_util = MEMfree (cache_util);
+    padding_keep = MEMfree (padding_keep);
+    padding_store = MEMfree (padding_store);
 
     DBUG_RETURN (padding);
 }
@@ -2050,15 +2052,15 @@ APinfer ()
          * Remove array type specific internal cache specifications.
          */
         if (cache_L1 != NULL) {
-            cache_L1 = ILIBfree (cache_L1);
+            cache_L1 = MEMfree (cache_L1);
         }
 
         if (cache_L2 != NULL) {
-            cache_L2 = ILIBfree (cache_L2);
+            cache_L2 = MEMfree (cache_L2);
         }
 
         if (cache_L3 != NULL) {
-            cache_L3 = ILIBfree (cache_L3);
+            cache_L3 = MEMfree (cache_L3);
         }
 
         /*

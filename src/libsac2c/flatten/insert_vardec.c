@@ -39,6 +39,8 @@
 #include "node_basic.h"
 #include "new_types.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "traverse.h"
 #include "globals.h"
 #include "free.h"
@@ -77,7 +79,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_INSVD_VARDECS (result) = NULL;
     INFO_INSVD_ARGS (result) = NULL;
@@ -91,7 +93,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }
@@ -153,9 +155,9 @@ SearchForNameInObjs (const namespace_t *ns, const char *name, node *objs)
 {
     DBUG_ENTER ("SearchForNameInObjs");
 
-    while ((objs != NULL)
-           && ((!NSequals (OBJDEF_NS (objs), ns))
-               || (!ILIBstringCompare (OBJDEF_NAME (objs), name)))) {
+    while (
+      (objs != NULL)
+      && ((!NSequals (OBJDEF_NS (objs), ns)) || (!STReq (OBJDEF_NAME (objs), name)))) {
         objs = OBJDEF_NEXT (objs);
     }
 
@@ -370,7 +372,7 @@ INSVDspids (node *arg_node, info *arg_info)
          * vardec yet! So we allocate one and prepand it to vardecs.
          */
 
-        avis = TBmakeAvis (ILIBstringCopy (SPIDS_NAME (arg_node)),
+        avis = TBmakeAvis (STRcpy (SPIDS_NAME (arg_node)),
                            TYmakeAUD (TYmakeSimpleType (T_unknown)));
 
         vardec = TBmakeVardec (avis, INFO_INSVD_VARDECS (arg_info));

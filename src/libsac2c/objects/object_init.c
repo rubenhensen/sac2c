@@ -11,6 +11,8 @@
 #include "tree_compound.h"
 #include "dbug.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "free.h"
 #include "new_types.h"
 #include "shape.h"
@@ -43,20 +45,19 @@ BuildTypeConversion (const char *name, const namespace_t *ns, ntype *from, ntype
 
     DBUG_ENTER ("BuildTypeConversion");
 
-    avisarg = TBmakeAvis (ILIBstringCopy ("from"), TYcopyType (from));
+    avisarg = TBmakeAvis (STRcpy ("from"), TYcopyType (from));
     AVIS_DECLTYPE (avisarg) = TYcopyType (AVIS_TYPE (avisarg));
 
     /*
      * return( res);
      */
-    assign
-      = TBmakeAssign (TBmakeReturn (
-                        TBmakeExprs (TBmakeSpid (NULL, ILIBstringCopy ("result")), NULL)),
-                      NULL);
+    assign = TBmakeAssign (TBmakeReturn (
+                             TBmakeExprs (TBmakeSpid (NULL, STRcpy ("result")), NULL)),
+                           NULL);
     /*
      * res = prf( (:restype) arg);
      */
-    assign = TBmakeAssign (TBmakeLet (TBmakeSpids (ILIBstringCopy ("result"), NULL),
+    assign = TBmakeAssign (TBmakeLet (TBmakeSpids (STRcpy ("result"), NULL),
                                       TBmakeCast (TYcopyType (to), TBmakeId (avisarg))),
                            assign);
 
@@ -68,7 +69,7 @@ BuildTypeConversion (const char *name, const namespace_t *ns, ntype *from, ntype
     /*
      * create the fundef node
      */
-    result = TBmakeFundef (ILIBstringCopy (name), NSdupNamespace (ns),
+    result = TBmakeFundef (STRcpy (name), NSdupNamespace (ns),
                            TBmakeRet (TYcopyType (to), NULL), TBmakeArg (avisarg, NULL),
                            block, NULL);
 
@@ -99,10 +100,10 @@ CreateTypeConversions (node *typedefs, node *funs)
         char *to_name, *from_name;
         ntype *tdef_type;
 
-        to_name = ILIBstringConcat ("to_", TYPEDEF_NAME (typedefs));
-        from_name = ILIBstringConcat ("from_", TYPEDEF_NAME (typedefs));
+        to_name = STRcat ("to_", TYPEDEF_NAME (typedefs));
+        from_name = STRcat ("from_", TYPEDEF_NAME (typedefs));
 
-        tdef_type = TYmakeAKS (TYmakeSymbType (ILIBstringCopy (TYPEDEF_NAME (typedefs)),
+        tdef_type = TYmakeAKS (TYmakeSymbType (STRcpy (TYPEDEF_NAME (typedefs)),
                                                NSdupNamespace (TYPEDEF_NS (typedefs))),
                                SHmakeShape (0));
 
@@ -117,8 +118,8 @@ CreateTypeConversions (node *typedefs, node *funs)
         funs = from_fun;
 
         tdef_type = TYfreeType (tdef_type);
-        to_name = ILIBfree (to_name);
-        from_name = ILIBfree (from_name);
+        to_name = MEMfree (to_name);
+        from_name = MEMfree (from_name);
     }
 
     DBUG_RETURN (funs);
@@ -146,7 +147,7 @@ BuildInitFun (char *name, namespace_t *ns, ntype *objtype, node *expr)
 
     DBUG_ENTER ("BuildInitFun");
 
-    argavis = TBmakeAvis (ILIBstringCopy ("_OI_object"), objtype);
+    argavis = TBmakeAvis (STRcpy ("_OI_object"), objtype);
     AVIS_DECLTYPE (argavis) = TYcopyType (AVIS_TYPE (argavis));
 
     /*
@@ -160,9 +161,8 @@ BuildInitFun (char *name, namespace_t *ns, ntype *objtype, node *expr)
      * we have to use a SPIDS here, as this code is added prior to
      * insert vardec!
      */
-    assign
-      = TBmakeAssign (TBmakeLet (TBmakeSpids (ILIBstringCopy ("_OI_object"), NULL), expr),
-                      assign);
+    assign = TBmakeAssign (TBmakeLet (TBmakeSpids (STRcpy ("_OI_object"), NULL), expr),
+                           assign);
 
     /*
      * void <ns>::<name> (<objtype> &arg)
@@ -187,9 +187,9 @@ CreateInitFuns (node *objdefs, node *funs)
 
     if (OBJDEF_ISLOCAL (objdefs) && !OBJDEF_ISEXTERN (objdefs)
         && !OBJDEF_ISALIAS (objdefs)) {
-        initfun = BuildInitFun (ILIBstringConcat ("init_", OBJDEF_NAME (objdefs)),
-                                NSgetInitNamespace (), TYcopyType (OBJDEF_TYPE (objdefs)),
-                                OBJDEF_EXPR (objdefs));
+        initfun
+          = BuildInitFun (STRcat ("init_", OBJDEF_NAME (objdefs)), NSgetInitNamespace (),
+                          TYcopyType (OBJDEF_TYPE (objdefs)), OBJDEF_EXPR (objdefs));
 
         OBJDEF_EXPR (objdefs) = NULL;
         OBJDEF_INITFUN (objdefs) = initfun;

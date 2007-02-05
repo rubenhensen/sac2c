@@ -7,6 +7,8 @@
 #include "dbug.h"
 #include "build.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "symboltable.h"
 #include "stringset.h"
 #include "traverse.h"
@@ -36,7 +38,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_SER_FILE (result) = NULL;
     INFO_SER_STACK (result) = NULL;
@@ -55,7 +57,7 @@ FreeInfo (info *info)
 
     INFO_SER_TABLE (info) = STdestroy (INFO_SER_TABLE (info));
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }
@@ -183,7 +185,7 @@ AppendSerFunType (char *funname, ntype *type, int size)
         pos += written;
         size -= written;
 
-        shape = ILIBfree (shape);
+        shape = MEMfree (shape);
         scalar = TYgetScalar (type);
     } else if (TYisAKD (type)) {
         int written;
@@ -327,10 +329,10 @@ SERgenerateSerFunName (stentrytype_t type, node *node)
 
     DBUG_PRINT ("SER", ("Generated new function name: %s", result));
 
-    tmp = ILIBreplaceSpecialCharacters (result);
+    tmp = STRreplaceSpecialCharacters (result);
     strcpy (result, tmp);
 
-    tmp = ILIBfree (tmp);
+    tmp = MEMfree (tmp);
 
     DBUG_PRINT ("SER", ("Final function name: %s", result));
 
@@ -419,8 +421,7 @@ SerializeFundefHead (node *fundef, info *info)
 
     INFO_SER_STACK (info) = SERbuildSerStack (fundef);
 
-    FUNDEF_SYMBOLNAME (fundef)
-      = ILIBstringCopy (SERgenerateSerFunName (SET_funhead, fundef));
+    FUNDEF_SYMBOLNAME (fundef) = STRcpy (SERgenerateSerFunName (SET_funhead, fundef));
 
     /*
      * we do not store special funs (cond/loop)
@@ -474,8 +475,7 @@ SerializeTypedef (node *tdef, info *info)
 
     INFO_SER_STACK (info) = SERbuildSerStack (tdef);
 
-    TYPEDEF_SYMBOLNAME (tdef)
-      = ILIBstringCopy (SERgenerateSerFunName (SET_typedef, tdef));
+    TYPEDEF_SYMBOLNAME (tdef) = STRcpy (SERgenerateSerFunName (SET_typedef, tdef));
 
     if (TYPEDEF_ISEXPORTED (tdef)) {
         vis = SVT_exported;
@@ -518,8 +518,7 @@ SerializeObjdef (node *objdef, info *info)
 
     INFO_SER_STACK (info) = SERbuildSerStack (objdef);
 
-    OBJDEF_SYMBOLNAME (objdef)
-      = ILIBstringCopy (SERgenerateSerFunName (SET_objdef, objdef));
+    OBJDEF_SYMBOLNAME (objdef) = STRcpy (SERgenerateSerFunName (SET_objdef, objdef));
 
     if (OBJDEF_ISEXPORTED (objdef)) {
         vis = SVT_exported;

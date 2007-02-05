@@ -27,6 +27,8 @@
 #include "symboltable.h"
 #include "dbug.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "types.h"
 #include <string.h>
 
@@ -68,9 +70,9 @@ STentryInit (const char *name, stentrytype_t type)
 
     DBUG_ENTER ("STentryInit");
 
-    result = (stentry_t *)ILIBmalloc (sizeof (stentry_t));
+    result = (stentry_t *)MEMmalloc (sizeof (stentry_t));
 
-    result->name = ILIBstringCopy (name);
+    result->name = STRcpy (name);
     result->type = type;
     result->next = NULL;
 
@@ -84,11 +86,11 @@ STentryDestroy (stentry_t *entry)
 
     DBUG_ENTER ("STentryDestroy");
 
-    entry->name = ILIBfree (entry->name);
+    entry->name = MEMfree (entry->name);
 
     result = entry->next;
 
-    entry = ILIBfree (entry);
+    entry = MEMfree (entry);
 
     DBUG_RETURN (result);
 }
@@ -101,9 +103,9 @@ STentryCopy (const stentry_t *entry)
     DBUG_ENTER ("STentryCopy");
 
     if (entry != NULL) {
-        result = (stentry_t *)ILIBmalloc (sizeof (stentry_t));
+        result = (stentry_t *)MEMmalloc (sizeof (stentry_t));
 
-        result->name = ILIBstringCopy (entry->name);
+        result->name = STRcpy (entry->name);
         result->type = entry->type;
         result->next = STentryCopy (entry->next);
     }
@@ -134,9 +136,9 @@ STsymbolInit (const char *symbol, stvisibility_t vis)
 
     DBUG_ENTER ("STsymbolInit");
 
-    result = (stsymbol_t *)ILIBmalloc (sizeof (stsymbol_t));
+    result = (stsymbol_t *)MEMmalloc (sizeof (stsymbol_t));
 
-    result->name = ILIBstringCopy (symbol);
+    result->name = STRcpy (symbol);
     result->vis = vis;
     result->head = NULL;
     result->next = NULL;
@@ -154,11 +156,11 @@ STsymbolDestroy (stsymbol_t *symbol)
     while (symbol->head != NULL)
         symbol->head = STentryDestroy (symbol->head);
 
-    symbol->name = ILIBfree (symbol->name);
+    symbol->name = MEMfree (symbol->name);
 
     result = symbol->next;
 
-    symbol = ILIBfree (symbol);
+    symbol = MEMfree (symbol);
 
     DBUG_RETURN (result);
 }
@@ -171,9 +173,9 @@ STsymbolCopy (const stsymbol_t *symbol)
     DBUG_ENTER ("STsymbolCopy");
 
     if (symbol != NULL) {
-        result = (stsymbol_t *)ILIBmalloc (sizeof (stsymbol_t));
+        result = (stsymbol_t *)MEMmalloc (sizeof (stsymbol_t));
 
-        result->name = ILIBstringCopy (symbol->name);
+        result->name = STRcpy (symbol->name);
         result->vis = symbol->vis;
         result->head = STentryCopy (symbol->head);
         result->next = STsymbolCopy (symbol->next);
@@ -245,7 +247,7 @@ STinit ()
 
     DBUG_ENTER ("STinit");
 
-    result = (sttable_t *)ILIBmalloc (sizeof (sttable_t));
+    result = (sttable_t *)MEMmalloc (sizeof (sttable_t));
 
     result->head = NULL;
 
@@ -261,7 +263,7 @@ STdestroy (sttable_t *table)
         table->head = STsymbolDestroy (table->head);
     }
 
-    table = ILIBfree (table);
+    table = MEMfree (table);
 
     DBUG_RETURN (table);
 }
@@ -274,7 +276,7 @@ STcopy (const sttable_t *table)
     DBUG_ENTER ("STcopy");
 
     if (table != NULL) {
-        result = (sttable_t *)ILIBmalloc (sizeof (sttable_t));
+        result = (sttable_t *)MEMmalloc (sizeof (sttable_t));
 
         result->head = STsymbolCopy (table->head);
     }
@@ -415,7 +417,7 @@ STsymbolIteratorGet (const sttable_t *table)
 
     DBUG_ENTER ("STsymbolIteratorGet");
 
-    result = (stsymboliterator_t *)ILIBmalloc (sizeof (stsymboliterator_t));
+    result = (stsymboliterator_t *)MEMmalloc (sizeof (stsymboliterator_t));
 
     result->head = table->head;
     result->pos = table->head;
@@ -428,7 +430,7 @@ STsymbolIteratorRelease (stsymboliterator_t *iterator)
 {
     DBUG_ENTER ("STsymbolIteratorRelease");
 
-    iterator = ILIBfree (iterator);
+    iterator = MEMfree (iterator);
 
     DBUG_RETURN (iterator);
 }
@@ -478,7 +480,7 @@ STentryIteratorInit (stsymbol_t *symbol)
 
     DBUG_ENTER ("STentryIteratorInit");
 
-    result = (stentryiterator_t *)ILIBmalloc (sizeof (stentryiterator_t));
+    result = (stentryiterator_t *)MEMmalloc (sizeof (stentryiterator_t));
 
     if (symbol != NULL) {
         result->head = symbol->head;
@@ -514,7 +516,7 @@ STentryIteratorRelease (stentryiterator_t *iterator)
 {
     DBUG_ENTER ("STentryIteratorRelease");
 
-    iterator = ILIBfree (iterator);
+    iterator = MEMfree (iterator);
 
     DBUG_RETURN (iterator);
 }

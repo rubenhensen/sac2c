@@ -11,6 +11,8 @@
 #include "add_function_body.h"
 #include "deserialize.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "type_utils.h"
 #include "new_types.h"
 #include "namespaces.h"
@@ -41,7 +43,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_PPI_MODULE (result) = NULL;
     INFO_PPI_FETCHED (result) = 0;
@@ -55,7 +57,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }
@@ -179,7 +181,7 @@ PPIfundef (node *arg_node, info *arg_info)
             CTIerror ("Unable to find body of function '%s' with args '%s' in module.",
                       CTIitemName (arg_node), funsig);
 
-            funsig = ILIBfree (funsig);
+            funsig = MEMfree (funsig);
         }
     }
 

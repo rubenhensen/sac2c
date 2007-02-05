@@ -15,6 +15,8 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 
 #include "globals.h"
 #include "dbug.h"
@@ -106,7 +108,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = ILIBmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_MODUL (result) = NULL;
     INFO_FUNDEF (result) = NULL;
@@ -132,7 +134,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = ILIBfree (info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }
@@ -438,7 +440,7 @@ GenericFun (generic_fun_t which, types *type)
         case GF_free:
             DBUG_PRINT ("COMP", ("Looking for generic free function for type %s", tmp));
             break;
-    } tmp = ILIBfree (tmp););
+    } tmp = MEMfree (tmp););
 
     DBUG_ASSERT ((type != NULL), "no type found!");
 
@@ -1372,7 +1374,7 @@ MakeArgNode (int idx, types *type)
 
     DBUG_ENTER ("MakeArgNode");
 
-    name = ILIBmalloc (20 * sizeof (char));
+    name = MEMmalloc (20 * sizeof (char));
     sprintf (name, "SAC_arg_%d", idx);
 
     if (type != NULL) {
@@ -1383,7 +1385,7 @@ MakeArgNode (int idx, types *type)
 #endif
     }
 
-    name = ILIBfree (name);
+    name = MEMfree (name);
 
     DBUG_RETURN (id);
 }
@@ -2156,15 +2158,15 @@ COMPblock (node *arg_node, info *arg_info)
 
     if (BLOCK_CACHESIM (arg_node) != NULL) {
         fun_name = FUNDEF_NAME (INFO_FUNDEF (arg_info));
-        cs_tag = (char *)ILIBmalloc (strlen (BLOCK_CACHESIM (arg_node))
-                                     + strlen (fun_name) + 14);
+        cs_tag = (char *)MEMmalloc (strlen (BLOCK_CACHESIM (arg_node)) + strlen (fun_name)
+                                    + 14);
         if (BLOCK_CACHESIM (arg_node)[0] == '\0') {
             sprintf (cs_tag, "\"%s(...)\"", fun_name);
         } else {
             sprintf (cs_tag, "\"%s in %s(...)\"", BLOCK_CACHESIM (arg_node), fun_name);
         }
 
-        BLOCK_CACHESIM (arg_node) = ILIBfree (BLOCK_CACHESIM (arg_node));
+        BLOCK_CACHESIM (arg_node) = MEMfree (BLOCK_CACHESIM (arg_node));
 
         DBUG_ASSERT ((BLOCK_INSTR (arg_node) != NULL),
                      "first instruction of block is NULL"
@@ -2995,9 +2997,9 @@ COMParray (node *arg_node, info *arg_info)
 
     if (ARRAY_STRING (arg_node) != NULL) {
         /* array is a string */
-        ret_node = TCmakeAssignIcm2 ("ND_CREATE__STRING__DATA", DUPdupIdsIdNt (let_ids),
-                                     TBmakeStr (ILIBstringCopy (ARRAY_STRING (arg_node))),
-                                     ret_node);
+        ret_node
+          = TCmakeAssignIcm2 ("ND_CREATE__STRING__DATA", DUPdupIdsIdNt (let_ids),
+                              TBmakeStr (STRcpy (ARRAY_STRING (arg_node))), ret_node);
     } else {
         node *icm_args;
         char *copyfun;
@@ -4319,8 +4321,7 @@ COMPPrfTypeError (node *arg_node, info *arg_info)
     DBUG_ASSERT ((TYisBottom (TYPE_TYPE (bottom))),
                  "1st argument of F_type_error contains non bottom type!");
 
-    message
-      = TBmakeStr (ILIBstring2SafeCEncoding (TYgetBottomError (TYPE_TYPE (bottom))));
+    message = TBmakeStr (STRstring2SafeCEncoding (TYgetBottomError (TYPE_TYPE (bottom))));
 
     ret_node = TCmakeAssignIcm1 ("TYPE_ERROR", message, NULL);
 

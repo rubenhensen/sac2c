@@ -80,6 +80,8 @@ version="1.0">
 #include "DupTree.h"
 #include "free.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 
 struct INFO
 {
@@ -91,7 +93,7 @@ static info *MakeInfo()
 
   DBUG_ENTER("MakeInfo");
 
-  result = ILIBmalloc(sizeof(info));
+  result = MEMmalloc(sizeof(info));
 
   DBUG_RETURN(result);
 }
@@ -100,7 +102,7 @@ static info *FreeInfo(info *info)
 {
   DBUG_ENTER("FreeInfo");
 
-  info = ILIBfree(info);
+  info = MEMfree(info);
 
   DBUG_RETURN(info);
 }

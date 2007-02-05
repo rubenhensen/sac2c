@@ -8,6 +8,8 @@
 #include "sig_deps.h"
 #include "dbug.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "private_heap.h"
@@ -194,7 +196,7 @@ SDcreateSignatureDependency (ct_funptr CtFun, te_info *info, ntype *args, bool s
 
     DBUG_EXECUTE ("SSI", tmp_str = SDsigDep2DebugString (sig););
     DBUG_PRINT ("SSI", ("sig dep created: handle %p : %s", sig, tmp_str));
-    DBUG_EXECUTE ("SSI", tmp_str = ILIBfree (tmp_str););
+    DBUG_EXECUTE ("SSI", tmp_str = MEMfree (tmp_str););
 
     /*
      * Finally, we try to create a first result type approximation
@@ -272,8 +274,8 @@ SDhandleContradiction (sig_dep *fun_sig)
             DBUG_PRINT ("SSI",
                         ("approximating %s \"%s\" for %s yields %s", TEgetKindStr (info),
                          TEgetNameStr (info), tmp_str, tmp2_str));
-            DBUG_EXECUTE ("SSI", tmp_str = ILIBfree (tmp_str););
-            DBUG_EXECUTE ("SSI", tmp2_str = ILIBfree (tmp_str););
+            DBUG_EXECUTE ("SSI", tmp_str = MEMfree (tmp_str););
+            DBUG_EXECUTE ("SSI", tmp2_str = MEMfree (tmp_str););
 
             /*
              * and insert the findings into the return types:
@@ -338,13 +340,13 @@ SDsigDep2DebugString (sig_dep *fun_sig)
 
     tmp_str = TYtype2String (SD_ARGS (fun_sig), FALSE, 0);
     tmp += sprintf (tmp, "%s -> ", tmp_str);
-    tmp_str = ILIBfree (tmp_str);
+    tmp_str = MEMfree (tmp_str);
 
     tmp_str = TYtype2String (SD_RES (fun_sig), FALSE, 0);
     tmp += sprintf (tmp, "%s rc:%d", tmp_str, SD_RC (fun_sig));
-    tmp_str = ILIBfree (tmp_str);
+    tmp_str = MEMfree (tmp_str);
 
-    DBUG_RETURN (ILIBstringCopy (buf));
+    DBUG_RETURN (STRcpy (buf));
 }
 
 /* @} */ /* addtogroup ntc */

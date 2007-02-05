@@ -10,7 +10,7 @@
  * CONeg added.
  *
  * Revision 1.5  2001/05/17 14:16:21  nmw
- * MALLOC/FREE replaced by ILIBmalloc/Free, using result of ILIBfree()
+ * MALLOC/FREE replaced by MEMmalloc/Free, using result of MEMfree()
  *
  * Revision 1.4  2001/03/22 14:25:08  nmw
  * primitive ari ops implemented
@@ -30,6 +30,8 @@
 
 #include "dbug.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "constants.h"
 #include "constants_internal.h"
 #include "globals.h"
@@ -84,8 +86,8 @@ COzip (const zipcvfunptr *fun_arr, constant *a, constant *b, simpletype target_t
          */
         if (target_type != T_unknown) {
             res = COmakeConstant (target_type, SHcopyShape (COgetShape (b)),
-                                  ILIBmalloc (CONSTANT_VLEN (b)
-                                              * global.basetype_size[target_type]));
+                                  MEMmalloc (CONSTANT_VLEN (b)
+                                             * global.basetype_size[target_type]));
         } else {
             res = COcopyConstant (b);
         }
@@ -102,8 +104,8 @@ COzip (const zipcvfunptr *fun_arr, constant *a, constant *b, simpletype target_t
              */
             if (target_type != T_unknown) {
                 res = COmakeConstant (target_type, SHcopyShape (COgetShape (a)),
-                                      ILIBmalloc (CONSTANT_VLEN (a)
-                                                  * global.basetype_size[target_type]));
+                                      MEMmalloc (CONSTANT_VLEN (a)
+                                                 * global.basetype_size[target_type]));
             } else {
                 res = COcopyConstant (a);
             }
@@ -123,8 +125,8 @@ COzip (const zipcvfunptr *fun_arr, constant *a, constant *b, simpletype target_t
                 if (target_type != T_unknown) {
                     res
                       = COmakeConstant (target_type, SHcopyShape (COgetShape (a)),
-                                        ILIBmalloc (CONSTANT_VLEN (a)
-                                                    * global.basetype_size[target_type]));
+                                        MEMmalloc (CONSTANT_VLEN (a)
+                                                   * global.basetype_size[target_type]));
                 } else {
                     res = COcopyConstant (a);
                 }
@@ -171,8 +173,8 @@ COzipUnary (const zipcvfunptr *fun_arr, constant *a, simpletype target_type)
 
     if (target_type != T_unknown) {
         res = COmakeConstant (target_type, SHcopyShape (COgetShape (a)),
-                              ILIBmalloc (CONSTANT_VLEN (a)
-                                          * global.basetype_size[target_type]));
+                              MEMmalloc (CONSTANT_VLEN (a)
+                                         * global.basetype_size[target_type]));
     } else {
         res = COcopyConstant (a);
     }

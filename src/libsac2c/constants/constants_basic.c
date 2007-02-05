@@ -49,10 +49,15 @@
 #include "cv2scalar.h"
 #include "cv2cv.h"
 #include "cv2str.h"
+#include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "basecv.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "new_types.h"
 #include "new_typecheck.h"
 #include "check_mem.h"
@@ -99,7 +104,7 @@ COINTmakeConstant (simpletype type, shape *shp, void *elems, int vlen)
 
     DBUG_ENTER ("COINTmakeConstant");
 
-    res = (constant *)ILIBmalloc (sizeof (constant));
+    res = (constant *)MEMmalloc (sizeof (constant));
     CONSTANT_TYPE (res) = type;
     CONSTANT_SHAPE (res) = shp;
     CONSTANT_ELEMS (res) = elems;
@@ -125,7 +130,7 @@ COINTallocCV (simpletype type, int length)
 
     DBUG_ENTER ("COINTallocCV");
 
-    res = (void *)ILIBmalloc (global.basetype_size[type] * length);
+    res = (void *)MEMmalloc (global.basetype_size[type] * length);
 
     DBUG_RETURN (res);
 }
@@ -268,7 +273,7 @@ MakeScalarConstantFromCV (simpletype type, void *cv)
 
     DBUG_ENTER ("MakeScalarConstantFromCV");
 
-    res = (constant *)ILIBmalloc (sizeof (constant));
+    res = (constant *)MEMmalloc (sizeof (constant));
     CONSTANT_TYPE (res) = type;
     CONSTANT_SHAPE (res) = SHmakeShape (0);
     CONSTANT_ELEMS (res) = cv;
@@ -304,7 +309,7 @@ COmakeConstant (simpletype type, shape *shp, void *elems)
 
     DBUG_ENTER ("COmakeConstant");
 
-    res = (constant *)ILIBmalloc (sizeof (constant));
+    res = (constant *)MEMmalloc (sizeof (constant));
     CONSTANT_TYPE (res) = type;
     CONSTANT_SHAPE (res) = shp;
     CONSTANT_ELEMS (res) = elems;
@@ -331,10 +336,10 @@ COmakeConstantFromInt (int val)
 
     DBUG_ENTER ("COmakeConstantFromInt");
 
-    res = (constant *)ILIBmalloc (sizeof (constant));
+    res = (constant *)MEMmalloc (sizeof (constant));
     CONSTANT_TYPE (res) = T_int;
     CONSTANT_SHAPE (res) = SHmakeShape (0);
-    intelems = (int *)ILIBmalloc (sizeof (int));
+    intelems = (int *)MEMmalloc (sizeof (int));
     intelems[0] = val;
     CONSTANT_ELEMS (res) = intelems;
     CONSTANT_VLEN (res) = 1;
@@ -363,7 +368,7 @@ COmakeConstantFromShape (shape *shp)
     DBUG_ENTER ("COmakeConstantFromShape");
 
     vlen = SHgetDim (shp);
-    res = (constant *)ILIBmalloc (sizeof (constant));
+    res = (constant *)MEMmalloc (sizeof (constant));
     CONSTANT_TYPE (res) = T_int;
     CONSTANT_SHAPE (res) = SHcreateShape (1, vlen);
     CONSTANT_ELEMS (res) = SHshape2IntVec (shp);
@@ -526,8 +531,8 @@ COconstant2String (constant *a)
     tmp_str = SHshape2String (0, CONSTANT_SHAPE (a));
     tmp2_str = COconstantData2String (10000, a);
     buf = ILIBstrBufPrintf (buf, "reshape( %s, [%s])", tmp_str, tmp2_str);
-    tmp_str = ILIBfree (tmp_str);
-    tmp2_str = ILIBfree (tmp2_str);
+    tmp_str = MEMfree (tmp_str);
+    tmp2_str = MEMfree (tmp2_str);
 
     res = ILIBstrBuf2String (buf);
     ILIBstrBufFlush (buf);
@@ -593,7 +598,7 @@ COprintConstant (FILE *file, constant *a)
     SHprintShape (file, CONSTANT_SHAPE (a));
     tmp_str = COconstantData2String (10000, a);
     fprintf (file, " [%s]\n", tmp_str);
-    tmp_str = ILIBfree (tmp_str);
+    tmp_str = MEMfree (tmp_str);
 
     DBUG_VOID_RETURN;
 }
@@ -614,8 +619,8 @@ COfreeConstant (constant *a)
     DBUG_ENTER ("COfreeConstant");
 
     CONSTANT_SHAPE (a) = SHfreeShape (CONSTANT_SHAPE (a));
-    CONSTANT_ELEMS (a) = ILIBfree (CONSTANT_ELEMS (a));
-    a = ILIBfree (a);
+    CONSTANT_ELEMS (a) = MEMfree (CONSTANT_ELEMS (a));
+    a = MEMfree (a);
 
     DBUG_RETURN (a);
 }
@@ -717,31 +722,31 @@ COaST2Constant (node *n)
 
         switch (NODE_TYPE (n)) {
         case N_num:
-            element = (int *)ILIBmalloc (sizeof (int));
+            element = (int *)MEMmalloc (sizeof (int));
             *((int *)element) = NUM_VAL (n);
             new_co = COmakeConstant (T_int, SHmakeShape (0), element);
             break;
 
         case N_double:
-            element = (double *)ILIBmalloc (sizeof (double));
+            element = (double *)MEMmalloc (sizeof (double));
             *((double *)element) = DOUBLE_VAL (n);
             new_co = COmakeConstant (T_double, SHmakeShape (0), element);
             break;
 
         case N_float:
-            element = (float *)ILIBmalloc (sizeof (float));
+            element = (float *)MEMmalloc (sizeof (float));
             *((float *)element) = FLOAT_VAL (n);
             new_co = COmakeConstant (T_float, SHmakeShape (0), element);
             break;
 
         case N_bool:
-            element = (bool *)ILIBmalloc (sizeof (bool));
+            element = (bool *)MEMmalloc (sizeof (bool));
             *((bool *)element) = BOOL_VAL (n);
             new_co = COmakeConstant (T_bool, SHmakeShape (0), element);
             break;
 
         case N_char:
-            element = (unsigned char *)ILIBmalloc (sizeof (unsigned char));
+            element = (unsigned char *)MEMmalloc (sizeof (unsigned char));
             *((unsigned char *)element) = CHAR_VAL (n);
             new_co = COmakeConstant (T_char, SHmakeShape (0), element);
             break;

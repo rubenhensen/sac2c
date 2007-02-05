@@ -8,6 +8,8 @@
 #include "ct_basic.h"
 #include "dbug.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 
 #include "constants.h"
 #include "new_types.h"
@@ -59,7 +61,7 @@ ComputeType (ct_funptr CtFun, te_info *info, ntype *args, bool strict)
                  ((TEgetKind (info) == TE_udf) || (TEgetKind (info) == TE_foldf) ? "::"
                                                                                  : ""),
                  TEgetNameStr (info), tmp_str));
-    DBUG_EXECUTE ("NTC", ILIBfree (tmp_str););
+    DBUG_EXECUTE ("NTC", MEMfree (tmp_str););
 
     /*
      * as all CtFun s  operate on array types only, we try to fix as many argument
@@ -100,7 +102,7 @@ ComputeType (ct_funptr CtFun, te_info *info, ntype *args, bool strict)
 
     DBUG_EXECUTE ("NTC", tmp_str = TYtype2String (res, FALSE, 0););
     DBUG_PRINT ("NTC", ("yields %s", tmp_str));
-    DBUG_EXECUTE ("NTC", ILIBfree (tmp_str););
+    DBUG_EXECUTE ("NTC", MEMfree (tmp_str););
 
     return (res);
 }

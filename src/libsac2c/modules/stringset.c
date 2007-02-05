@@ -5,6 +5,8 @@
 #include "stringset.h"
 #include "dbug.h"
 #include "internal_lib.h"
+#include "str.h"
+#include "memory.h"
 #include "check_mem.h"
 
 #include <string.h>
@@ -45,11 +47,11 @@ STRSadd (const char *string, strstype_t kind, stringset_t *set)
     DBUG_ENTER ("STRSadd");
 
     if (!STRScontains (string, set)) {
-        stringset_t *new = ILIBmalloc (sizeof (stringset_t));
+        stringset_t *new = MEMmalloc (sizeof (stringset_t));
 
         DBUG_PRINT ("STRS", ("adding %s.", string));
 
-        new->val = ILIBstringCopy (string);
+        new->val = STRcpy (string);
         new->kind = kind;
         new->next = set;
 
@@ -103,9 +105,9 @@ STRSfree (stringset_t *set)
     DBUG_ENTER ("STRSfree");
 
     if (set != NULL) {
-        set->val = ILIBfree (set->val);
+        set->val = MEMfree (set->val);
         set->next = STRSfree (set->next);
-        set = ILIBfree (set);
+        set = MEMfree (set);
     }
 
     DBUG_RETURN (set);
@@ -155,9 +157,9 @@ STRSduplicate (stringset_t *src)
     DBUG_ENTER ("STRSduplicate");
 
     if (src != NULL) {
-        result = ILIBmalloc (sizeof (stringset_t));
+        result = MEMmalloc (sizeof (stringset_t));
 
-        result->val = ILIBstringCopy (src->val);
+        result->val = STRcpy (src->val);
         result->kind = src->kind;
         result->next = STRSduplicate (src->next);
     }
