@@ -135,7 +135,7 @@ PHinterpretBreakOption (char *option)
 
     num = strtol (option, &rest, 10);
 
-    if (rest[0] != '\0') {
+    if ((rest != option) && (rest[0] != '\0')) {
         CTIerror ("Illegal argument for break option: -b %s", option);
     } else {
 
