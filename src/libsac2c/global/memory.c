@@ -263,3 +263,27 @@ MEMfree (void *address)
 }
 
 #endif /* SHOW_MALLOC */
+
+/******************************************************************************
+ *
+ * Function:
+ *   void *MEMcopy( int size, void *mem)
+ *
+ * Description:
+ *   Allocates memory and returns a pointer to the copy of 'mem'.
+ *
+ ******************************************************************************/
+
+void *
+MEMcopy (int size, void *mem)
+{
+    void *result;
+
+    DBUG_ENTER ("MEMcopy");
+
+    result = MEMmalloc (size);
+
+    result = memcpy (result, mem, size);
+
+    DBUG_RETURN (result);
+}
