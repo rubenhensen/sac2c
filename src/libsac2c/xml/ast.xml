@@ -5647,30 +5647,6 @@ identifier (N_id) for AUD arrays.
             </targets>
           </type>
         </attribute>
-        <attribute name="Op1_Orig" default="Op1">
-          <type name="Prf">
-            <targets>
-              <target mandatory="yes">
-                <any />
-                <phases>
-                  <all />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-        <attribute name="Op2_Orig" default="Op2">
-          <type name="Prf">
-            <targets>
-              <target mandatory="yes">
-                <any />
-                <phases>
-                  <all />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
       </attributes>
       <flags></flags>
     </node>

@@ -438,14 +438,6 @@ CMPTgenerator (node *arg_node, info *arg_info)
       = CMPT_TEST (INFO_EQFLAG (arg_info),
                    GENERATOR_OP2 (arg_node) == GENERATOR_OP2 (INFO_TREE (arg_info)));
 
-    INFO_EQFLAG (arg_info) = CMPT_TEST (INFO_EQFLAG (arg_info),
-                                        GENERATOR_OP1_ORIG (arg_node)
-                                          == GENERATOR_OP1_ORIG (INFO_TREE (arg_info)));
-
-    INFO_EQFLAG (arg_info) = CMPT_TEST (INFO_EQFLAG (arg_info),
-                                        GENERATOR_OP2_ORIG (arg_node)
-                                          == GENERATOR_OP2_ORIG (INFO_TREE (arg_info)));
-
     /* traverse all sons */
     arg_node = TravLocal (arg_node, arg_info);
 
