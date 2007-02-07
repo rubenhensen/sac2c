@@ -22,18 +22,19 @@
 #ifndef _SIMD_H_
 #define _SIMD_H_
 
-#include "sac_misc.h"
-#include "sac_icm.h"
+#include "misc.h"
+#include "icm.h"
 
-#include "sac_errors.h"
-#include "sac_runtimecheck.h"
-#include "sac_std.h"
-#include "sac_audwl.h"
-#include "sac_wl.h"
-#include "sac_idx.h"
-#include "sac_prf.h"
-#include "sac_trace.h"
-#include "sac_profile.h"
-#include "sac_cachesim.h"
+#include "errors.h"
+#include "runtimecheck.h"
+#include "std.h"
+#include "std_gen.h"
+#include "audwl.h"
+#include "wl.h"
+#include "idx.h"
+#include "prf.h"
+#include "trace.h"
+#include "profile.h"
+#include "cachesim.h"
 
 #endif /* _SIMD_H_ */

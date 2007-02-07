@@ -861,10 +861,12 @@ ICMCompileWL_SIMD_END (int cnt)
 
     fclose (global.outfile);
 
-    SYScall ("gcc -E -P -I$SACBASE/runtime %s >%s2",
+    SYScall ("gcc -E -P -I$SAC2CBASE/include "
+             "-I$SAC2CBASE/src/runtime/core_h "
+             "-I$SAC2CBASE/src/runtime/extras_h %s >%s2",
              /*     global.config.cpp_file,   */
              simd_filename, simd_filename);
-    SYScall ("$SACBASE/stdlib/Tools/cb -r %s2 >%s", simd_filename, simd_filename);
+    SYScall ("$SAC2CBASE/src/bin/cb -r %s2 >%s", simd_filename, simd_filename);
 
     simd_filename = MEMfree (simd_filename);
     global.outfile = store_global_outfile;
