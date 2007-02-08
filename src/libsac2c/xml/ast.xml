@@ -2367,11 +2367,14 @@
           </targets>
         </son>
         <son name="FunSpecs" default="NULL">
+          <description>
+            contains the signatures of forced specilizations
+          </description>
           <targets>
             <target mandatory="no">
               <node name="Fundef" />
               <phases>
-                <all />
+                <range from="prs" to="esp" />
               </phases>
             </target>
           </targets>
