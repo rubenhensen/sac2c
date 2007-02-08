@@ -73,6 +73,19 @@ EqualsView (view_t *one, view_t *two)
     DBUG_RETURN (result);
 }
 
+static nspool_t *
+CreatePool ()
+{
+    nspool_t *result;
+
+    DBUG_ENTER ("CreatePool");
+
+    result = MEMmalloc (sizeof (nspool_t));
+    result->next = NULL;
+
+    DBUG_RETURN (result);
+}
+
 static void
 PutInPool (namespace_t *ns)
 {
@@ -85,7 +98,7 @@ PutInPool (namespace_t *ns)
      * create initial pool if necessary
      */
     if (pool == NULL) {
-        pool = MEMmalloc (sizeof (nspool_t));
+        pool = CreatePool ();
     }
 
     /*
@@ -95,7 +108,7 @@ PutInPool (namespace_t *ns)
 
     for (cnt = 0; cnt < (ns->id / BLOCKSIZE); cnt++) {
         if (pos->next == NULL) {
-            pos->next = MEMmalloc (sizeof (nspool_t));
+            pos->next = CreatePool ();
         }
 
         pos = pos->next;
