@@ -5407,7 +5407,30 @@ identifier (N_id) for AUD arrays.
             </targets>
           </type>
         </attribute>
-
+        <attribute name="isSWLFFoldable">
+          <type name="Bool">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <phase name="swlf" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="isTrivial">
+          <type name="Bool">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <phase name="swlf" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
       </attributes>
       <flags>
         <flag name="IsFoldable" />
