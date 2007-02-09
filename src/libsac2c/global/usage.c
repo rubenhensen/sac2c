@@ -735,7 +735,8 @@ USGprintUsage ()
             "      Steffen Kuthe\n"
             "      Jan-Henrik Baumgarten\n"
             "      Robert Bernecky\n"
-            "      Theo van Klaveren\n");
+            "      Theo van Klaveren\n"
+            "      Florian Buether\n");
 
     printf ("\n\nCONTACT:\n\n"
 
