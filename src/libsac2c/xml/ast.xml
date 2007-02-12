@@ -1286,9 +1286,9 @@
      </traversal>
      <traversal id="WLCC" name="With-Loop Cost Check" default="sons" include="wl_cost_check.h" >
        <travuser>
-          <node name="Fundef"  />
           <node name="With"    />
-          <node name="Assign"  />
+          <node name="Prf"     />
+          <node name="Ap"      />
        </travuser>
      </traversal>
      <traversal id="WLFS" name="With-Loop-Fusion" default="sons" include="WithloopFusion.h" >

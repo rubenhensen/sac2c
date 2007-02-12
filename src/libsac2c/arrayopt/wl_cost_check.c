@@ -8,8 +8,9 @@
  *
  * @brief With Loop Cost Check
  *
- * TODO: check if a WL is composed of trivial operation. that
- *       means a cheap with loop.
+ * check if a WL is composed of trivial operations, which means
+ * primitive functions but maximal one sel, no user defined
+ * function.
  *
  * @ingroup opt
  *
@@ -59,7 +60,7 @@ struct INFO {
 #define INFO_COST(n) ((n)->cost)
 
 static info *
-MakeInfo ()
+MakeInfo (node *with)
 {
     info *result;
 
@@ -67,7 +68,7 @@ MakeInfo ()
 
     result = MEMmalloc (sizeof (info));
 
-    INFO_WITH (result) = NULL;
+    INFO_WITH (result) = with;
     INFO_COST (result) = 0;
 
     DBUG_RETURN (result);
@@ -96,28 +97,32 @@ FreeInfo (info *info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *WLCCdoWLCostCheck( node *fundef)
+ * @fn node *WLCCdoWLCostCheck( node *with)
  *
  * @brief global entry  point of With-Loop cost check
  *
- * @param fundef Fundef-Node to check cost
+ * @param with With-Node to do cost-check
  *
- * @return checked fundef node
+ * @return checked with node
  *
  *****************************************************************************/
 node *
-WLCCdoWLCostCheck (node *fundef)
+WLCCdoWLCostCheck (node *with)
 {
     DBUG_ENTER ("WLCCdoWLCostCheck");
 
-    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
-                 "WLCCdoWLCostCheck called for non-fundef node");
+    DBUG_ASSERT ((NODE_TYPE (with) == N_with),
+                 "WLCCdoWLCostCheck called for non-with node");
+
+    info *arg_info = MakeInfo (with);
 
     TRAVpush (TR_wlcc);
-    fundef = TRAVdo (fundef, NULL);
+    with = TRAVdo (with, arg_info);
     TRAVpop ();
 
-    DBUG_RETURN (fundef);
+    WITH_ISTRIVIAL (with) = INFO_COST (arg_info) > 1 ? FALSE : TRUE;
+
+    DBUG_RETURN (with);
 }
 
 /** <!--********************************************************************-->
@@ -126,67 +131,10 @@ WLCCdoWLCostCheck (node *fundef)
 
 /** <!--********************************************************************-->
  *
- * @name Static helper funcions
- * @{
- *
- *****************************************************************************/
-
-/** <!--********************************************************************-->
- *
- * @fn int estimate( node *assign)
- *
- * @brief estimate the cost of the assign node
- *
- *****************************************************************************/
-static int
-estimate (node *assign)
-{
-    int cost = 0;
-
-    DBUG_ENTER ("estimate");
-
-    // TODO
-
-    DBUG_RETURN (cost);
-}
-
-/** <!--********************************************************************-->
- * @}  <!-- Static helper functions -->
- *****************************************************************************/
-
-/** <!--********************************************************************-->
- *
  * @name Traversal functions
  * @{
  *
  *****************************************************************************/
-
-/** <!--********************************************************************-->
- *
- * @fn node *WLCCfundef(node *arg_node, info *arg_info)
- *
- * @brief applies WLCC to a given fundef.
- *
- *****************************************************************************/
-node *
-WLCCfundef (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("WLCCfundef");
-
-    if (FUNDEF_BODY (arg_node) != NULL) {
-
-        DBUG_PRINT ("WLCC", ("With Loop Cost Check  %s begins", FUNDEF_NAME (arg_node)));
-
-        arg_info = MakeInfo ();
-        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-        arg_info = FreeInfo (arg_info);
-
-        DBUG_PRINT ("WLCC",
-                    ("With Loop Cost Check %s completes", FUNDEF_NAME (arg_node)));
-    }
-
-    DBUG_RETURN (arg_node);
-}
 
 /** <!--********************************************************************-->
  *
@@ -200,15 +148,11 @@ WLCCwith (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLCCwith");
 
-    INFO_WITH (arg_info) = arg_node;
-    WITH_ISTRIVIAL (arg_node) = FALSE;
-    INFO_COST (arg_info) = 0;
-
-    WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
-
-    if (arg_node == INFO_WITH (arg_info) && INFO_COST (arg_info) <= 1) {
-
-        WITH_ISTRIVIAL (arg_node) = TRUE;
+    if (arg_node != INFO_WITH (arg_info)) {
+        // This with-node is a nested with-node.
+        INFO_COST (arg_info) += 2;
+    } else {
+        WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -216,21 +160,36 @@ WLCCwith (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node WLCCassign( node *arg_node, info *arg_info)
+ * @fn node *WLCCprf( node *arg_node, info *arg_info)
  *
  * @brief
  *
  *****************************************************************************/
 node *
-WLCCassign (node *arg_node, info *arg_info)
+WLCCprf (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLCCassign");
+    DBUG_ENTER ("WLCCprf");
 
-    if (INFO_WITH (arg_info) != NULL) {
-        INFO_COST (arg_info) += estimate (arg_node);
+    if (PRF_PRF (arg_node) == F_sel) {
+        INFO_COST (arg_info) += 1;
     }
 
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *WLCCap( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ *****************************************************************************/
+node *
+WLCCap (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("WLCCap");
+
+    INFO_COST (arg_info) += 2;
 
     DBUG_RETURN (arg_node);
 }
