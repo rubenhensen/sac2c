@@ -28,19 +28,12 @@
 #include "wl_cost_check.h"
 
 #include "tree_basic.h"
-#include "tree_compound.h"
 #include "node_basic.h"
 #include "print.h"
 #include "dbug.h"
 #include "traverse.h"
-#include "str.h"
 #include "memory.h"
-#include "inferneedcounters.h"
-#include "compare_tree.h"
-#include "DupTree.h"
 #include "free.h"
-#include "LookUpTable.h"
-#include "globals.h"
 
 /** <!--********************************************************************-->
  *
@@ -121,6 +114,8 @@ WLCCdoWLCostCheck (node *with)
     TRAVpop ();
 
     WITH_ISTRIVIAL (with) = INFO_COST (arg_info) > 1 ? FALSE : TRUE;
+
+    FreeInfo (arg_info);
 
     DBUG_RETURN (with);
 }
