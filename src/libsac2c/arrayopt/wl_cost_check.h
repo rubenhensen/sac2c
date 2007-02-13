@@ -17,6 +17,7 @@
 extern node *WLCCdoWLCostCheck (node *with);
 
 extern node *WLCCwith (node *arg_node, info *arg_info);
+extern node *WLCCcode (node *arg_node, info *arg_info);
 extern node *WLCCprf (node *arg_node, info *arg_info);
 extern node *WLCCap (node *arg_node, info *arg_info);
 

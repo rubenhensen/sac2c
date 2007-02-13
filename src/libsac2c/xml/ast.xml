@@ -1287,6 +1287,7 @@
      <traversal id="WLCC" name="With-Loop Cost Check" default="sons" include="wl_cost_check.h" >
        <travuser>
           <node name="With"    />
+          <node name="Code"    />
           <node name="Prf"     />
           <node name="Ap"      />
        </travuser>

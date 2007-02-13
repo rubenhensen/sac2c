@@ -102,12 +102,13 @@ FreeInfo (info *info)
 node *
 WLCCdoWLCostCheck (node *with)
 {
+    info *arg_info;
     DBUG_ENTER ("WLCCdoWLCostCheck");
 
     DBUG_ASSERT ((NODE_TYPE (with) == N_with),
                  "WLCCdoWLCostCheck called for non-with node");
 
-    info *arg_info = MakeInfo (with);
+    arg_info = MakeInfo (with);
 
     TRAVpush (TR_wlcc);
     with = TRAVdo (with, arg_info);
@@ -115,7 +116,7 @@ WLCCdoWLCostCheck (node *with)
 
     WITH_ISTRIVIAL (with) = INFO_COST (arg_info) > 1 ? FALSE : TRUE;
 
-    FreeInfo (arg_info);
+    arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (with);
 }
@@ -148,6 +149,31 @@ WLCCwith (node *arg_node, info *arg_info)
         INFO_COST (arg_info) += 2;
     } else {
         WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *WLCCcode( node *arg_node, info *arg_info)
+ *
+ * @brief applies WLCC on a with code
+ *
+ *****************************************************************************/
+node *
+WLCCcode (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("WLCCcode");
+
+    INFO_COST (arg_info) = 0;
+
+    if (CODE_CBLOCK (arg_node) != NULL) {
+        CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
+    }
+
+    if (INFO_COST (arg_info) <= 1 && CODE_NEXT (arg_node) != NULL) {
+        CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
