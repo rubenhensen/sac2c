@@ -28,7 +28,7 @@
   if (commlevel == 0) { return( token); }
 
 #define LINEBUF_SIZE 256
-#define YY_NO_UNPUT
+#define YY_NO_UNPUT 1
 
 int start_token;
 char linebuf[ LINEBUF_SIZE];
@@ -44,7 +44,6 @@ int charpos = 0;
 %p 6000 /* set positions to 6000 */
 %e 2000 /* set nodes to 1100 */
 %option noyywrap
-%option nounput
 
 %%
 %{
