@@ -204,8 +204,9 @@ NTCCTudf (te_info *info, ntype *args)
     node *fundef, *assign;
     dft_res *dft_res;
     te_info *old_info_chn;
-    char *tmp, *tmp2;
+    char *tmp, *tmp2, *err_args, *err_msg;
     int i;
+    bool dispatcherror = FALSE;
 
     DBUG_ENTER ("NTCCTudf");
     DBUG_ASSERT ((TYisProdOfArray (args)), "NTCCTudf called with non-fixed args!");
@@ -256,31 +257,53 @@ NTCCTudf (te_info *info, ntype *args)
             if ((dft_res->def == NULL) && (dft_res->num_partials == 0)) {
                 /*
                  * no match at all!
+                 *
+                 * We set dispatcherror to true here to prevent the code
+                 * further down from adding an extended typeerror information.
+                 * This needs to be done as we do never actually enter the
+                 * function body.
                  */
-                CTIerrorLine (global.linenum,
-                              "No matching definition found for the application "
-                              " of \"%s\" to arguments %s",
-                              CTIitemName (fundef), TYtype2String (args, FALSE, 0));
-                global.act_info_chn = TEgetParent (global.act_info_chn);
-                TEextendedAbort ();
+                dispatcherror = TRUE;
+                res = TYmakeEmptyProductType (TCcountRets (FUNDEF_RETS (fundef)));
+
+                err_args = TYtype2String (args, FALSE, 0);
+                err_msg = STRcatn (4,
+                                   "No matching definition found for the application "
+                                   "of \"",
+                                   CTIitemName (fundef), "\" to arguments ", err_args);
+
+                for (i = 0; i < TYgetProductSize (res); i++) {
+                    res
+                      = TYsetProductMember (res, i, TYmakeBottomType (STRcpy (err_msg)));
+                }
+
+                err_args = MEMfree (err_args);
+                err_msg = MEMfree (err_msg);
+            } else {
+                TriggerTypeChecking (dft_res);
+
+                res = TYcopyType (dft_res->type);
+                DBUG_ASSERT ((res != NULL),
+                             "HandleDownProjections did not return proper return type");
             }
 
-            TriggerTypeChecking (dft_res);
-
-            res = TYcopyType (dft_res->type);
-            DBUG_ASSERT ((res != NULL),
-                         "HandleDownProjections did not return proper return type");
             TYfreeDft_res (dft_res);
         }
     }
 
-    global.act_info_chn = old_info_chn;
-    DBUG_PRINT ("NTC_INFOCHN", ("global.act_info_chn reset to %p", global.act_info_chn));
+    /*
+     * only add the called function if we actually entered it (see remark above).
+     */
+    if (!dispatcherror) {
+        global.act_info_chn = old_info_chn;
+        DBUG_PRINT ("NTC_INFOCHN",
+                    ("global.act_info_chn reset to %p", global.act_info_chn));
 
-    tmp = TYtype2String (args, FALSE, 0);
-    TEhandleError (global.linenum, " -- in %s::%s%s@", NSgetName (FUNDEF_NS (fundef)),
-                   FUNDEF_NAME (fundef), tmp);
-    tmp = MEMfree (tmp);
+        tmp = TYtype2String (args, FALSE, 0);
+        TEhandleError (global.linenum, " -- in %s%s@", CTIitemName (fundef), tmp);
+        tmp = MEMfree (tmp);
+    }
+
     tmp2 = TEfetchErrors ();
 
     for (i = 0; i < TYgetProductSize (res); i++) {
