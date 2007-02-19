@@ -376,7 +376,7 @@ process_file (FILE *infile, int indent, bool remove_newlines, bool use_tabs)
     bool e_flg = FALSE;
     bool q_flg = FALSE;
     int nl_flag = 0;
-    char l_char;
+    char l_char = '\0';
 
     char *w_if_[] = {"if", NULL};
     char *w_else[] = {"else", NULL};
