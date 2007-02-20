@@ -172,7 +172,7 @@ CreateLacFunCallAssignments (node *ap, node *pred_avis, node *result_avis,
 {
     node *assigns = NULL;
     node *exprs, *arg_avis, *new_arg_avis, *new_arg_expr, *loc_args;
-    node *arg, *args = NULL, *act_args;
+    node *arg, *args = NULL, *act_args = NULL;
     node *fundef, *result_expr;
     DBUG_ENTER ("CreateLacFunCallAssignments");
 
