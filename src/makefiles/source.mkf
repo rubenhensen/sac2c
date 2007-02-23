@@ -50,8 +50,7 @@ include $(MAKEFILE_DIR)/targets.mkf
 
 MAKE_DIR       := $(notdir $(CURDIR))
 
-SUBPROJECT     := $(notdir $(realpath $(CURDIR)/..))
-
+SUBPROJECT     := $(notdir $(patsubst %/$(notdir $(CURDIR)),%,$(CURDIR)))
 
 
 ###############################################################################
