@@ -193,11 +193,11 @@ runtime_extraclean_all    :=
 runtime_extraclean_devel  := 
 runtime_extraclean_prod   := 
 
-runtime_sourcedirs        := core_h extras_h mt_h phm_h
+runtime_sourcedirs        := essentials_h extras_h mt_h phm_h
 
 ###############################################################################
 
-runtime_core_h         := audwl commandline icm prf std std_gen message \
+runtime_essentials_h   := audwl commandline icm prf std std_gen message \
                           bool errors idx misc wl
 
 runtime_extras_h       := cachesim profile runtimecheck trace
@@ -246,11 +246,11 @@ libsac_extraclean_all    :=
 libsac_extraclean_devel  := 
 libsac_extraclean_prod   := 
 
-libsac_sourcedirs        := core mt phm cachesim # interface
+libsac_sourcedirs        := essentials mt phm cachesim # interface
 
 ###############################################################################
 
-libsac_core         := commandline message misc profile trace
+libsac_essentials   := commandline message misc profile trace
 
 libsac_interface    := cinterface sac_arg
 
