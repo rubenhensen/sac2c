@@ -214,6 +214,13 @@ RSTtypedef (node *arg_node, info *arg_info)
 
     TUcheckUdtAndSetBaseType (udt, NULL);
 
+    /*
+     * now that all types are in the UDT base, we can process the
+     * declared type and replace it by a udt if it is a symbol
+     * type.
+     */
+    TYPEDEF_NTYPE (arg_node) = RSTntype (TYPEDEF_NTYPE (arg_node), arg_info);
+
     DBUG_RETURN (arg_node);
 }
 

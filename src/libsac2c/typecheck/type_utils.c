@@ -450,7 +450,7 @@ TUisHidden (ntype *ty)
 
     DBUG_ENTER ("TUisHidden");
 
-    if (!TYisBottom (ty)) {
+    if (!TYisBottom (ty) && !TYisSymb (TYgetScalar (ty))) {
         if (TYisUser (TYgetScalar (ty))) {
             ty = UTgetBaseType (TYgetUserType (TYgetScalar (ty)));
         }
