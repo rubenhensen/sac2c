@@ -44,7 +44,7 @@
  * set this to defined in order to create explanatory ids. use this only
  * for debugging as it might create very long identifier names.
  */
-#undef HD_USE_EXPLANATORY_NAMES
+#define HD_USE_EXPLANATORY_NAMES
 
 /**
  * set this to use build in take/drop instead of withloops.
@@ -126,9 +126,6 @@ typedef struct IDTABLE {
  *
  * ASSIGNS:     stores any assigns that have to be inserted prior to
  *              the current one. Used to build shape for WLs.
- * SETASSIGNS:  stores any assigns that haveo to be inserted prior to
- *              the current set notation assign. Used to pre-flatten
- *              selections in setnotation.
  */
 
 /* INFO structure */
@@ -145,8 +142,6 @@ struct INFO {
 #define INFO_HD_DOTSHAPE(n) ((n)->dotshape)
 #define INFO_HD_TRAVSTATE(n) ((n)->state)
 #define INFO_HD_IDTABLE(n) ((n)->idtab)
-#define INFO_HD_ASSIGNS(n) ((n)->assigns)
-#define INFO_HD_SETASSIGNS(n) ((n)->setassigns)
 #define INFO_HD_WLSHAPE(n) ((n)->wlshape)
 
 /**
@@ -166,8 +161,6 @@ MakeInfo ()
     INFO_HD_DOTSHAPE (result) = NULL;
     INFO_HD_TRAVSTATE (result) = HD_sel;
     INFO_HD_IDTABLE (result) = NULL;
-    INFO_HD_ASSIGNS (result) = NULL;
-    INFO_HD_SETASSIGNS (result) = NULL;
     INFO_HD_WLSHAPE (result) = NULL;
 
     DBUG_RETURN (result);
@@ -1154,14 +1147,12 @@ FreeIdTable (idtable *table, idtable *until)
  * @param arg_info info node containing ids to scan
  */
 static void
-ScanVector (node *vector, node **array, info *arg_info)
+ScanVector (node *vector, node *array, info *arg_info)
 {
     int poscnt = 0;
     int tripledotflag = 0;
     int exprslen = TCcountExprs (vector);
     idtable *ids = INFO_HD_IDTABLE (arg_info);
-    node *id = NULL;
-    node *code = NULL;
 
     DBUG_ENTER ("ScanVector");
 
@@ -1176,41 +1167,28 @@ ScanVector (node *vector, node **array, info *arg_info)
                     node *shape = NULL;
                     shpchain *chain = NULL;
 
-                    /* create id for array if not already done */
-                    if (id == NULL) {
-                        id = MakeTmpId ("letassign");
-                    }
-
                     if (tripledotflag) {
                         position
                           = MAKE_BIN_PRF (F_sub_SxS,
                                           TBmakePrf (F_dim,
-                                                     TBmakeExprs (DUPdoDupTree (id),
+                                                     TBmakeExprs (DUPdoDupTree (array),
                                                                   NULL)),
                                           TBmakeNum (exprslen - poscnt));
                     } else {
                         position = TBmakeNum (poscnt);
                     }
 
-                    shape
-                      = MAKE_BIN_PRF (F_sel,
-                                      TCmakeIntVector (TBmakeExprs (position, NULL)),
-                                      TBmakePrf (F_shape,
-                                                 TBmakeExprs (DUPdoDupTree (id), NULL)));
+                    shape = MAKE_BIN_PRF (F_sel,
+                                          TCmakeIntVector (TBmakeExprs (position, NULL)),
+                                          TBmakePrf (F_shape,
+                                                     TBmakeExprs (DUPdoDupTree (array),
+                                                                  NULL)));
                     chain = MEMmalloc (sizeof (shpchain));
 
                     chain->shape = shape;
                     chain->next = handle->shapes;
                     handle->shapes = chain;
 
-                    /* insert assign into chain */
-                    /* if not already done */
-                    if (code == NULL) {
-                        code = MakeAssignLetNV (STRcpy (SPID_NAME (id)), *array);
-                        INFO_HD_SETASSIGNS (arg_info)
-                          = TCappendAssign (INFO_HD_SETASSIGNS (arg_info), code);
-                        *array = id;
-                    }
                     break;
                 }
 
@@ -1242,25 +1220,19 @@ ScanVector (node *vector, node **array, info *arg_info)
  * @param ids idtable structure
  */
 static void
-ScanId (node *id, node **array, info *arg_info)
+ScanId (node *id, node *array, info *arg_info)
 {
     idtable *ids = INFO_HD_IDTABLE (arg_info);
     DBUG_ENTER ("ScanId");
 
     while (ids != NULL) {
         if ((ids->type == ID_vector) && (STReq (ids->id, SPID_NAME (id)))) {
-            node *id = MakeTmpId ("setassign");
-            node *code = MakeAssignLetNV (STRcpy (SPID_NAME (id)), *array);
-            node *shape = TBmakePrf (F_shape, TBmakeExprs (DUPdoDupTree (id), NULL));
+            node *shape = TBmakePrf (F_shape, TBmakeExprs (DUPdoDupTree (array), NULL));
             shpchain *chain = MEMmalloc (sizeof (shpchain));
 
             chain->shape = shape;
             chain->next = ids->shapes;
             ids->shapes = chain;
-
-            INFO_HD_SETASSIGNS (arg_info)
-              = TCappendAssign (INFO_HD_SETASSIGNS (arg_info), code);
-            *array = id;
 
             break;
         }
@@ -1881,12 +1853,12 @@ HDspap (node *arg_node, info *arg_info)
     if ((INFO_HD_TRAVSTATE (arg_info) == HD_scan) && (STReq (SPAP_NAME (arg_node), "sel"))
         && (SPAP_NS (arg_node) == NULL)) {
         if (NODE_TYPE (SPAP_ARG1 (arg_node)) == N_array) {
-            ScanVector (ARRAY_AELEMS (SPAP_ARG1 (arg_node)), &SPAP_ARG2 (arg_node),
+            ScanVector (ARRAY_AELEMS (SPAP_ARG1 (arg_node)), SPAP_ARG2 (arg_node),
                         arg_info);
         }
 #ifdef HD_SETWL_VECTOR
         else if (NODE_TYPE (SPAP_ARG1 (arg_node)) == N_spid) {
-            ScanId (SPAP_ARG1 (arg_node), &SPAP_ARG2 (arg_node), arg_info);
+            ScanId (SPAP_ARG1 (arg_node), SPAP_ARG2 (arg_node), arg_info);
         }
 #endif
     }
@@ -2075,12 +2047,12 @@ HDprf (node *arg_node, info *arg_info)
 
     if ((INFO_HD_TRAVSTATE (arg_info) == HD_scan) && (PRF_PRF (arg_node) == F_sel)) {
         if (NODE_TYPE (PRF_ARG1 (arg_node)) == N_array) {
-            ScanVector (ARRAY_AELEMS (PRF_ARG1 (arg_node)), &PRF_ARG2 (arg_node),
+            ScanVector (ARRAY_AELEMS (PRF_ARG1 (arg_node)), PRF_ARG2 (arg_node),
                         arg_info);
         }
 #ifdef HD_SETWL_VECTOR
         else if (NODE_TYPE (PRF_ARG1 (arg_node)) == N_spid) {
-            ScanId (PRF_ARG1 (arg_node), &PRF_ARG2 (arg_node), arg_info);
+            ScanId (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info);
         }
 #endif
     }
@@ -2102,70 +2074,11 @@ HDprf (node *arg_node, info *arg_info)
 node *
 HDassign (node *arg_node, info *arg_info)
 {
-    node *result = arg_node;
-    node *oldassigns = INFO_HD_ASSIGNS (arg_info);
-    node *oldsetassigns = INFO_HD_SETASSIGNS (arg_info);
     DBUG_ENTER ("HDassign");
 
-    /* first traverse sons with a fresh assigns-chain */
+    arg_node = TRAVcont (arg_node, arg_info);
 
-    INFO_HD_ASSIGNS (arg_info) = NULL;
-    INFO_HD_SETASSIGNS (arg_info) = TBmakeEmpty ();
-    result = TRAVcont (arg_node, arg_info);
-
-    /* check for assigns that are to be inserted */
-
-    if (INFO_HD_ASSIGNS (arg_info) != NULL) {
-        if (NODE_TYPE (INFO_HD_ASSIGNS (arg_info)) == N_empty) {
-            /* there is nothing to insert here */
-            FREEdoFreeTree (INFO_HD_ASSIGNS (arg_info));
-            INFO_HD_ASSIGNS (arg_info) = NULL;
-        } else {
-            /* we need to traverse them once more in order */
-            /* to do dot elemination in wl generators      */
-            /* and simplification of boundaries            */
-            node *assigns = TRAVdo (INFO_HD_ASSIGNS (arg_info), arg_info);
-            result = TCappendAssign (assigns, result);
-        }
-    }
-
-    /* and again for set assigns */
-
-    if (INFO_HD_SETASSIGNS (arg_info) != NULL) {
-        if (NODE_TYPE (INFO_HD_SETASSIGNS (arg_info)) == N_empty) {
-            /* there is nothing to insert here */
-            FREEdoFreeTree (INFO_HD_SETASSIGNS (arg_info));
-            INFO_HD_SETASSIGNS (arg_info) = NULL;
-        } else {
-            node *assigns = NULL;
-
-            /* traverse until no new assigns to process */
-            while ((INFO_HD_SETASSIGNS (arg_info) != NULL)
-                   && (NODE_TYPE (INFO_HD_SETASSIGNS (arg_info)) != N_empty)) {
-                node *temp = INFO_HD_SETASSIGNS (arg_info);
-                INFO_HD_SETASSIGNS (arg_info) = TBmakeEmpty ();
-                ;
-                temp = TRAVdo (temp, arg_info);
-                if (assigns == NULL)
-                    assigns = temp;
-                else
-                    assigns = TCappendAssign (assigns, temp);
-            }
-
-            /* append everything */
-            result = TCappendAssign (assigns, result);
-
-            /* free last N_empty node */
-            FREEdoFreeTree (INFO_HD_SETASSIGNS (arg_info));
-        }
-    }
-
-    /* reinstall old assigns-chain */
-
-    INFO_HD_ASSIGNS (arg_info) = oldassigns;
-    INFO_HD_SETASSIGNS (arg_info) = oldsetassigns;
-
-    DBUG_RETURN (result);
+    DBUG_RETURN (arg_node);
 }
 
 /**
@@ -2251,38 +2164,35 @@ HDsetwl (node *arg_node, info *arg_info)
     /* code to handle the permutation                    */
 
     if (dotcnt != 0) {
-        node *setid = MakeTmpId ("setwithoutdots");
+        node *intermediate = result;
         node *withid = MakeTmpId ("permutationiv");
         node *selvector = BuildPermutatedVector (SETWL_VEC (arg_node), withid);
-        node *shape = TBmakePrf (F_shape, TBmakeExprs (DUPdoDupTree (setid), NULL));
+        node *shape
+          = TBmakePrf (F_shape, TBmakeExprs (DUPdoDupTree (intermediate), NULL));
         node *shapevector = BuildPermutatedVector (SETWL_VEC (arg_node), shape);
         node *defexpr = NULL;
         node *defshape = NULL;
         node *withids = TBmakeSpids (STRcpy (SPID_NAME (withid)), NULL);
-
-        /* put the intermediate result into the assigns chain */
-
-        INFO_HD_ASSIGNS (arg_info)
-          = TCappendAssign (INFO_HD_ASSIGNS (arg_info),
-                            MakeAssignLetNV (STRcpy (SPID_NAME (setid)), result));
 
         /* create permutation code */
 
         /* build the default value */
         defshape
           = MAKE_BIN_PRF (F_drop_SxV, TBmakeNum (TCcountExprs (SETWL_VEC (arg_node))),
-                          TBmakePrf (F_shape, TBmakeExprs (DUPdoDupTree (setid), NULL)));
+                          TBmakePrf (F_shape,
+                                     TBmakeExprs (DUPdoDupTree (intermediate), NULL)));
 
-        defexpr = BuildDefaultWithloop (setid, defshape);
+        defexpr = BuildDefaultWithloop (intermediate, defshape);
 
-        result = TBmakeWith (TBmakePart (NULL, TBmakeWithid (withids, NULL),
-                                         TBmakeGenerator (F_le, F_le, TBmakeDot (1),
-                                                          TBmakeDot (1), NULL, NULL)),
-                             TBmakeCode (MAKE_EMPTY_BLOCK (),
-                                         TBmakeExprs (TCmakeSpap2 (NULL, STRcpy ("sel"),
-                                                                   selvector, setid),
-                                                      NULL)),
-                             TBmakeGenarray (shapevector, NULL));
+        result
+          = TBmakeWith (TBmakePart (NULL, TBmakeWithid (withids, NULL),
+                                    TBmakeGenerator (F_le, F_le, TBmakeDot (1),
+                                                     TBmakeDot (1), NULL, NULL)),
+                        TBmakeCode (MAKE_EMPTY_BLOCK (),
+                                    TBmakeExprs (TCmakeSpap2 (NULL, STRcpy ("sel"),
+                                                              selvector, intermediate),
+                                                 NULL)),
+                        TBmakeGenarray (shapevector, NULL));
 
         GENARRAY_DEFAULT (WITH_WITHOP (result)) = defexpr;
         CODE_USED (WITH_CODE (result))++;
