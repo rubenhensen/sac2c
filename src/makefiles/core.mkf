@@ -183,7 +183,7 @@ $(PROJECT_ROOT)/src/bin/%: $(SUBTARGETS)
 $(PROJECT_ROOT)/bin/sac2c: global/build_$(STYLE).$($(STYLE)_short).o
 	@$(ECHO) ""
 	@$(ECHO) "Linking $(PREFIX_ROOT)bin/sac2c ($($(STYLE)_long) version)"
-	$(HIDE) $(LIBTOOL) $(LD) $(LDFLAGS) $(LD_FLAGS_DYN) -o $@ \
+	$(HIDE) $(LIBTOOL) $(LD) $(LD_FLAGS) $(LD_FLAGS_DYN) -o $@ \
                 $(SUBTARGETS) $< \
                 $(LIBDIRS) $(LIB_MAKETOOLS) $(LIBS)
 	@$(TOUCH) .done
@@ -192,7 +192,7 @@ $(PROJECT_ROOT)/bin/sac2c: global/build_$(STYLE).$($(STYLE)_short).o
 $(PROJECT_ROOT)/bin/sac2c.efence: global/build_devel.d.o
 	@$(ECHO) ""
 	@$(ECHO) "Linking $(PREFIX_ROOT)bin/sac2c.efence (efence version)"
-	$(HIDE) $(LIBTOOL) $(LD) $(LDFLAGS) $(LD_FLAGS_DYN) -o $@ \
+	$(HIDE) $(LIBTOOL) $(LD) $(LD_FLAGS) $(LD_FLAGS_DYN) -o $@ \
                 $(SUBTARGETS) $< \
                 $(LIBDIRS) $(LIB_MAKETOOLS) $(LIBS) $(LIBS_EFENCE)
 	@$(TOUCH) .done
