@@ -85,10 +85,8 @@ struct INFO {
     int dim;
     shpseg *shape;
     shpseg *shapecnt;
+    bool isarray;
     /* writesib */
-    nodelist *etypes;
-    nodelist *efuns;
-    nodelist *eobjs;
     bool firstError;
     int filecounter;
     int funcounter;
@@ -105,6 +103,7 @@ struct INFO {
 #define INFO_SEPARATE(n) ((n)->separate)
 #define INFO_DIM(n) ((n)->dim)
 #define INFO_SHAPE(n) ((n)->shape)
+#define INFO_ISARRAY(n) ((n)->isarray)
 #define INFO_SHAPE_COUNTER(n) ((n)->shapecnt)
 #define INFO_FIRSTERROR(n) ((n)->firstError)
 #define INFO_FILECOUNTER(n) ((n)->filecounter)
@@ -225,6 +224,7 @@ MakeInfo ()
     INFO_DIM (result) = 0;
     INFO_SHAPE (result) = NULL;
     INFO_SHAPE_COUNTER (result) = NULL;
+    INFO_ISARRAY (result) = FALSE;
     INFO_FIRSTERROR (result) = TRUE;
     INFO_FILECOUNTER (result) = 1;
     INFO_FUNCOUNTER (result) = 0;
@@ -2489,6 +2489,7 @@ PRTarray (node *arg_node, info *arg_info)
     int old_print_dim = INFO_DIM (arg_info);
     shpseg *old_print_shape = INFO_SHAPE (arg_info);
     shpseg *old_print_shape_counter = INFO_SHAPE_COUNTER (arg_info);
+    bool old_isarray = INFO_ISARRAY (arg_info);
     node *shpcounter;
 
     DBUG_ENTER ("PRTarray");
@@ -2501,6 +2502,7 @@ PRTarray (node *arg_node, info *arg_info)
 
         INFO_DIM (arg_info) = ARRAY_DIM (arg_node);
         INFO_SHAPE (arg_info) = SHshape2OldShpseg (ARRAY_SHAPE (arg_node));
+        INFO_ISARRAY (arg_info) = TRUE;
 
         shpcounter = TCcreateZeroVector (ARRAY_DIM (arg_node), T_int);
         INFO_SHAPE_COUNTER (arg_info) = TCarray2Shpseg (shpcounter, NULL);
@@ -2514,21 +2516,19 @@ PRTarray (node *arg_node, info *arg_info)
         for (i = 0; i < INFO_DIM (arg_info); i++)
             fprintf (global.outfile, " ]");
 
+        FREEfreeShpseg (INFO_SHAPE (arg_info));
+        FREEfreeShpseg (INFO_SHAPE_COUNTER (arg_info));
+        INFO_ISARRAY (arg_info) = FALSE;
     } else {
         type_str = TYtype2String (ARRAY_ELEMTYPE (arg_node), FALSE, 0);
         fprintf (global.outfile, "[:%s]", type_str);
         type_str = MEMfree (type_str);
     }
 
-    if (INFO_SHAPE (arg_info) != NULL)
-        FREEfreeShpseg (INFO_SHAPE (arg_info));
-
-    if (INFO_SHAPE_COUNTER (arg_info) != NULL)
-        FREEfreeShpseg (INFO_SHAPE_COUNTER (arg_info));
-
     INFO_DIM (arg_info) = old_print_dim;
     INFO_SHAPE (arg_info) = old_print_shape;
     INFO_SHAPE_COUNTER (arg_info) = old_print_shape_counter;
+    INFO_ISARRAY (arg_info) = old_isarray;
 
     DBUG_RETURN (arg_node);
 }
@@ -2548,6 +2548,7 @@ PRTexprs (node *arg_node, info *arg_info)
 {
     int i;
     int j;
+    bool old_isarray;
 
     DBUG_ENTER ("PRTexprs");
 
@@ -2555,10 +2556,16 @@ PRTexprs (node *arg_node, info *arg_info)
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
     }
 
+    /*
+     * do not inherit whether we are inside an array
+     */
+    old_isarray = INFO_ISARRAY (arg_info);
+    INFO_ISARRAY (arg_info) = FALSE;
     TRAVdo (EXPRS_EXPR (arg_node), arg_info);
+    INFO_ISARRAY (arg_info) = old_isarray;
 
     if (EXPRS_NEXT (arg_node) != NULL) {
-        if (arg_info != NULL) {
+        if (INFO_ISARRAY (arg_info)) {
             for (i = INFO_DIM (arg_info) - 1;
                  (i >= 0)
                  && (++SHPSEG_SHAPE (INFO_SHAPE_COUNTER (arg_info), i)
