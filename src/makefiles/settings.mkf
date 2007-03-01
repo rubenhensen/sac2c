@@ -67,7 +67,9 @@ CLOCK_SKEW_ELIMINATION := if [ -x $(PROJECT_ROOT)/src/bin/cse ] ; \
                           then $(PROJECT_ROOT)/src/bin/cse $@ ; \
                           fi
 
-SAC2C                  := $(PROJECT_ROOT)/bin/sac2c -v0 
+SAC2C                  := $(PROJECT_ROOT)/bin/sac2c
+
+SAC2CFLAGS             := -v0 
 
 FINGERPRINTER          := $(PROJECT_ROOT)/src/bin/md5calc
 
@@ -97,3 +99,11 @@ p_long                 := prod
 devel_cap              := DEVEL
 prod_cap               := PROD
 default_cap            := DEFAULT
+
+
+################################################################################
+#
+# optinal private settings
+#
+
+-include mysettings.mkf

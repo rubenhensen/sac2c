@@ -1,4 +1,3 @@
-
 #
 # $Id$
 #
@@ -16,7 +15,7 @@
 # SUBPROJECT      : name of subproject (must be set)
 #
 # MAKE_DIRS       : name of specific source directory of subproject
-#                   set by source.mkf but not by subrpoject.mkf
+#                   set by source.mkf but not by subproject.mkf
 #
 # STYLE           : must be set to either default, devel or prod
 #
@@ -225,7 +224,7 @@ $(PROJECT_ROOT)/include/sac.h: $(SUBTARGETS_HEADER)
 $(PROJECT_ROOT)/lib/libsacprelude.so: $(SUBTARGETS) $(FINGERPRINT_FILE)
 	@$(ECHO) ""
 	@$(ECHO) "Creating $(PREFIX_ROOT)lib/libsacprelude.so"
-	$(HIDE) $(SAC2C) -o $(TARGETDIR) sacprelude.sac
+	$(HIDE) $(SAC2C) $(SAC2CFLAGS) -o $(TARGETDIR) sacprelude.sac
 	@$(TOUCH) .done
 	@$(CLOCK_SKEW_ELIMINATION)  
 
