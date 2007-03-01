@@ -85,7 +85,7 @@ make_%: checks
 	@$(ECHO) ""
 	@$(ECHO) "Making current subdirectory ($($*_long) version)"
 	@$(TOUCH) ../.make_track
-	$(HIDE) $(MAKE) -C .. -f ../makefiles/core.mkf \
+	$(HIDE) $(MAKE) -C .. -f ../makefiles/build.mkf \
                          DEPS="$(DEPS)" HIDE="$(HIDE)" \
                          PREFIX_LOCAL="$(PREFIX_LOCAL)" \
                          PREFIX_ROOT="$(PREFIX_ROOT)" \

@@ -96,7 +96,7 @@ make_%: checks
                fi ; \
           fi
 	@$(ECHO) $($*_long) > .last_style; 
-	$(HIDE) $(MAKE) -f $(MAKEFILE_DIR)/core.mkf \
+	$(HIDE) $(MAKE) -f $(MAKEFILE_DIR)/build.mkf \
                          DEPS="$(DEPS)" HIDE="$(HIDE)" \
                          PREFIX_LOCAL="$(PREFIX_LOCAL)" \
                          PREFIX_ROOT="$(PREFIX_ROOT)" \
