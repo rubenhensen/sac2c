@@ -28,9 +28,7 @@
  *@{
  */
 
-#include "optimize.h"
-
-#include <string.h>
+#include "statistics.h"
 
 #include "memory.h"
 #include "globals.h"

@@ -49,7 +49,6 @@
 #include "ctinfo.h"
 #include "dbug.h"
 #include "traverse.h"
-#include "optimize.h"
 #include "constants.h"
 #include "SSAWithloopFolding.h"
 #include "SSAWLI.h"

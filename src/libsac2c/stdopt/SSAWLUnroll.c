@@ -21,7 +21,6 @@
 #include "shape.h"
 #include "math_utils.h"
 
-#include "optimize.h"
 #include "DupTree.h"
 #include "SSAWithloopFolding.h"
 #include "SSAWLUnroll.h"

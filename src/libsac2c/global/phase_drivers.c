@@ -7,16 +7,16 @@
 #include "dbug.h"
 #include "types.h"
 #include "phase.h"
-#include "globals.h"
+#include "statistics.h"
 #include "ctinfo.h"
 #include "dependencies.h"
-#include "optimize.h"
 #include "annotate_fun_calls.h"
 #include "type_statistics.h"
 #include "tree_basic.h"
 #include "check.h"
 #include "check_mem.h"
 #include "phase_drivers.h"
+#include "globals.h"
 
 /*
  * Generated cycle driver functions

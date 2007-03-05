@@ -1,6 +1,7 @@
 /*
  * $Id$
  */
+
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "globals.h"
@@ -10,7 +11,6 @@
 #include "dbug.h"
 #include "str.h"
 #include "memory.h"
-#include "optimize.h"
 #include "free.h"
 #include "DataFlowMask.h"
 #include "DupTree.h"

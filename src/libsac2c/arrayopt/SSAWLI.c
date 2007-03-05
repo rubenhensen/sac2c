@@ -66,7 +66,6 @@
 #include "dbug.h"
 #include "constants.h"
 #include "traverse.h"
-#include "optimize.h"
 #include "SSAConstantFolding.h"
 #include "SSAWithloopFolding.h"
 #include "SSAWLI.h"

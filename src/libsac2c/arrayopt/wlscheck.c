@@ -87,7 +87,6 @@
 #include "dbug.h"
 #include "new_types.h"
 #include "print.h"
-#include "optimize.h"
 #include "shape.h"
 #include "str.h"
 #include "memory.h"

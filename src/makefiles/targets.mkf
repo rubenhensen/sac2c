@@ -124,8 +124,7 @@ libsac2c_objects     := object_init resolve_reference_args object_analysis \
                         manage_object_initialisers check_uniqueness spmdfun_fix
 
 
-libsac2c_stdopt      := optimize \
-                        DeadFunctionRemoval deadcodeinference \
+libsac2c_stdopt      := DeadFunctionRemoval deadcodeinference \
                         deadcoderemoval SSACSE SSAConstantFolding SSALIR \
                         SSALUR SSAInferLI SSAWLUnroll rmcasts \
                         ElimSubDiv wlpropagation UndoElimSubDiv \
@@ -134,8 +133,9 @@ libsac2c_stdopt      := optimize \
                         associativity elimtypeconv liftoptflags \
                         wlsimplification copywlelim prfunroll wlselcount \
                         insert_symb_arrayattr elim_shapevars makedimexpr \
-                        makeshapeexpr distributivity remove_vardecs
-
+                        makeshapeexpr distributivity remove_vardecs \
+                        statistics
+                        
 libsac2c_arrayopt    := ive_split_selections ive_reusewl_and_scalarize \
                         wl_access_analyze tile_size_inference wls wlscheck \
                         wlsbuild wlswithloopification SSAWithloopFolding \

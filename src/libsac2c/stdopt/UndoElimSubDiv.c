@@ -1,52 +1,5 @@
-/* *
- * $Log$
- * Revision 1.13  2005/09/04 12:52:11  ktr
- * re-engineered the optimization cycle
- *
- * Revision 1.12  2005/07/03 17:11:43  ktr
- * Some codebrushing. IMHO code needs complete rewrite
- *
- * Revision 1.11  2005/02/18 22:19:02  mwe
- * bug fixed
- *
- * Revision 1.10  2005/02/16 14:11:09  mwe
- * some doxygen comments added
- *
- * Revision 1.9  2005/02/15 18:43:40  mwe
- * completely new implementation
- *
- * Revision 1.8  2004/11/24 12:05:40  mwe
- * changed signature of TBmakeLet
- *
- * Revision 1.7  2004/11/23 20:29:02  khf
- * SacDevCamp04: Compiles
- *
- * Revision 1.6  2004/11/10 18:27:29  mwe
- * code for type upgrade added
- * use ntype-structure instead of type-structure
- * new code deactivated by MWE_NTYPE_READY
- *
- * Revision 1.5  2004/07/18 19:54:54  sah
- * switch to new INFO structure
- * PHASE I
- * (as well some code cleanup)
- *
- * Revision 1.4  2004/07/07 15:57:05  mwe
- * former log-messages added
- *
- *
- *
- * revision 1.3    locked by: mwe;
- * date: 2004/07/07 15:43:36;  author: mwe;  state: Exp;  lines: +2 -6
- * last changes undone (all changes connected to new type representation with ntype*)
- * ----------------------------
- * revision 1.2
- * date: 2004/06/10 14:43:06;  author: mwe;  state: Exp;  lines: +6 -2
- * usage of ntype* instead of type added
- * ----------------------------
- * revision 1.1
- * date: 2003/04/26 20:58:44;  author: mwe;  state: Exp;
- * Initial revision
+/*
+ * $Id$
  */
 
 /**
@@ -70,7 +23,6 @@
 #include "dbug.h"
 #include "str.h"
 #include "memory.h"
-#include "optimize.h"
 #include "free.h"
 #include "DataFlowMask.h"
 #include "DupTree.h"
