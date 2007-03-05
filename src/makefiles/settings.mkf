@@ -108,4 +108,4 @@ default_cap            := DEFAULT
 # optinal private settings
 #
 
--include mysettings.mkf
+-include $(MAKEFILE_DIR)/mysettings.mkf
