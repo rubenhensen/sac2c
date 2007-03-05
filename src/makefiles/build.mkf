@@ -179,10 +179,13 @@ $(PROJECT_ROOT)/src/bin/%: $(SUBTARGETS)
 # Building libsac2c
 #
 
+#$(PROJECT_ROOT)/lib/libsac2c.lo: global/build_$(STYLE).$($(STYLE)_short).o
 $(PROJECT_ROOT)/bin/sac2c: global/build_$(STYLE).$($(STYLE)_short).o
 	@$(ECHO) ""
+#	@$(ECHO) "Creating $(PREFIX_ROOT)lib/libsac2c.lo ($($(STYLE)_long) version)"
 	@$(ECHO) "Linking $(PREFIX_ROOT)bin/sac2c ($($(STYLE)_long) version)"
-	$(HIDE) $(LIBTOOL) $(LD) $(LD_FLAGS) $(LD_FLAGS_DYN) -o $@ \
+	$(HIDE) $(LIBTOOL) $(LIBTOOLFLAGS) \
+                $(LD) $(LD_FLAGS) $(LD_FLAGS_DYN) -o $@ \
                 $(SUBTARGETS) $< \
                 $(LIBDIRS) $(LIB_MAKETOOLS) $(LIBS)
 	@$(TOUCH) .done
@@ -191,7 +194,8 @@ $(PROJECT_ROOT)/bin/sac2c: global/build_$(STYLE).$($(STYLE)_short).o
 $(PROJECT_ROOT)/bin/sac2c.efence: global/build_devel.d.o
 	@$(ECHO) ""
 	@$(ECHO) "Linking $(PREFIX_ROOT)bin/sac2c.efence (efence version)"
-	$(HIDE) $(LIBTOOL) $(LD) $(LD_FLAGS) $(LD_FLAGS_DYN) -o $@ \
+	$(HIDE) $(LIBTOOL) $(LIBTOOLFLAGS) \
+                $(LD) $(LD_FLAGS) $(LD_FLAGS_DYN) -o $@ \
                 $(SUBTARGETS) $< \
                 $(LIBDIRS) $(LIB_MAKETOOLS) $(LIBS) $(LIBS_EFENCE)
 	@$(TOUCH) .done
@@ -275,9 +279,9 @@ $(PROJECT_ROOT)/lib/lib%_seq.a: $(SUBTARGETS)
 $(PROJECT_ROOT)/bin/%: $(SUBTARGETS)
 	@$(ECHO) ""
 	@$(ECHO) "Linking $(PREFIX_ROOT)bin/$* ($($(STYLE)_long) version)"
-	$(HIDE) $(LD) $(LD_FLAGS) -o $@ \
+	$(HIDE) $(LD) $(LDFLAGS) -o $@ \
                       $(filter $*/%,$^) \
-                      $(LIBDIRS) $(LIB_TOOLS) $(LIBS)
+                      $(LIBDIRS) $(LIB_TOOLS) $(LIBS) 
 	@$(TOUCH) .done
 	@$(CLOCK_SKEW_ELIMINATION)  
 

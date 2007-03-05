@@ -2,14 +2,21 @@
  * $Id$
  */
 
-#ifndef _SAC_OPTIMIZE_H_
-#define _SAC_OPTIMIZE_H_
+#ifndef _SAC_STATISTICS_H_
+#define _SAC_STATISTICS_H_
 
 #include "types.h"
 
-extern node *OPTdoPrintStatistics (node *syntax_tree);
+extern void STATclearCounters (optimize_counter_t *oc);
 
-extern node *OPTrunStabilizationCycle (node *arg_node);
-extern node *OPTrunOptimizationCycle (node *arg_node);
+extern bool STATdidSomething (optimize_counter_t *oc);
 
-#endif /* _SAC_OPTIMIZE_H_ */
+extern void STATcopyCounters (optimize_counter_t *copy, optimize_counter_t *orig);
+
+extern void STATaddCounters (optimize_counter_t *oc, optimize_counter_t *add);
+
+extern void STATprint (optimize_counter_t *oc);
+
+extern node *STATdoPrintStatistics (node *syntax_tree);
+
+#endif /* _SAC_STATISTICS_H_ */

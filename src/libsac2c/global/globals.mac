@@ -43,6 +43,13 @@ GLOBAL (unsigned int, max_allocated_mem, 0)
 #endif
 
 /*
+ * Tool type
+ */
+
+GLOBAL (tool_t, tool, TOOL_sac2c)
+GLOBAL (char *, toolname, NULL)
+
+/*
  * Syntax tree root
  */
 
@@ -52,7 +59,7 @@ GLOBAL (node *, syntax_tree, NULL)
  * Parsing
  */
 
-GLOBAL (int, start_token, 0);
+GLOBAL (int, start_token, 0)
 
 /*
  *  Version control
@@ -619,9 +626,9 @@ GLOBAL (compiler_allphase_t, compiler_allphase, PHALL_initial)
  * Counter for phase kinds
  */
 
-GLOBAL (bool, run_stabilization_cycle, TRUE)
+GLOBAL (bool, run_stabilization_cycle, FALSE)
 /*
- * Counter for phase kinds
+ * only run stabilization cycle if main cycle pass limit exhausted
  */
 
 GLOBAL (int, linenum, 1)

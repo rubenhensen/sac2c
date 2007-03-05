@@ -5,12 +5,12 @@
  */
 
 /*
- *  this file contains the main function of the SAC->C compiler!
+ *  This file contains the start functions for the various sac tools.
  */
 
-#include "phase.h"
-
+#include "sactools.h"
 #include "types.h"
+#include "phase_drivers.h"
 #include "options.h"
 #include "ctinfo.h"
 #include "globals.h"
@@ -22,8 +22,12 @@
 #include <stdlib.h>
 #include <locale.h>
 
+/*
+ *  First, we need to set up the compile infrastructure.
+ */
+
 static node *
-SetupCompiler (int argc, char *argv[])
+SetupCompiler (int argc, char *argv[], tool_t tool, char *toolname)
 {
     node *syntax_tree = NULL;
 
@@ -33,7 +37,7 @@ SetupCompiler (int argc, char *argv[])
     CTIinstallInterruptHandlers ();
     OPTcheckPreSetupOptions (argc, argv);
 
-    GLOBinitializeGlobal (argc, argv);
+    GLOBinitializeGlobal (argc, argv, tool, toolname);
     OPTanalyseCommandline (argc, argv);
 
     RSCevaluateConfiguration ();
@@ -53,36 +57,45 @@ SetupCompiler (int argc, char *argv[])
  */
 
 int
-main (int argc, char *argv[])
+SACrunSac2c (int argc, char *argv[])
 {
     node *syntax_tree;
 
-    /*
-     * We must set up the compiler infrastructure first.
-     */
+    DBUG_ENTER ("SACrunSac2c");
 
-    syntax_tree = SetupCompiler (argc, argv);
+    syntax_tree = SetupCompiler (argc, argv, TOOL_sac2c, "sac2c");
 
-    /*
-     * The sequence of compiler phases is derived from phase_info.mac.
-     */
-
-#define PHASEelement(it_element)                                                         \
-  syntax_tree = PHrunCompilerPhase( PH_##it_element, syntax_tree,
-
-#define PHASEcond(it_cond)                                                               \
-  it_cond);
-
-#include "phase_info.mac"
-
-#undef SUBPHASEelement
-#undef SUBPHASEcond
-
-    /*
-     * Now, we are done.
-     */
+    syntax_tree = PHDdriveSac2c (syntax_tree);
 
     CTIterminateCompilation (syntax_tree);
 
-    return (0);
+    DBUG_RETURN (0);
+}
+
+/*
+ *  And now, the main function which triggers the whole compilation.
+ */
+
+int
+SACrunSac4c (int argc, char *argv[])
+{
+    node *syntax_tree;
+
+    DBUG_ENTER ("SACrunSac4c");
+
+    DBUG_ASSERT (FALSE, "sac4c not yet implemented");
+
+    syntax_tree = SetupCompiler (argc, argv, TOOL_sac4c, "sac4c");
+
+    syntax_tree = PHDdriveSac4c (syntax_tree);
+
+    CTIterminateCompilation (syntax_tree);
+
+    DBUG_RETURN (0);
+}
+
+int
+main (int argc, char *argv[])
+{
+    return (SACrunSac2c (argc, argv));
 }

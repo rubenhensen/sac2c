@@ -22,7 +22,7 @@
 #define OPTINCYCfun(it_fun) extern node *it_fun (node *syntax_tree);
 #define OPTINCYCFUNfun(it_fun) extern node *it_fun (node *syntax_tree);
 
-#include "phase_info.mac"
+#include "phase_sac2c.mac"
 
 #undef PHASEfun
 #undef SUBPHASEfun
@@ -34,20 +34,20 @@ typedef node *(*phase_fun_p) (node *);
 
 static const char *phase_name[] = {"initial",
 #define PHASEtext(it_text) it_text,
-#include "phase_info.mac"
+#include "phase_sac2c.mac"
 #undef PHASEtext
                                    ""};
 
 static const phase_fun_p phase_fun[] = {PHdummy,
 #define PHASEfun(it_fun) it_fun,
-#include "phase_info.mac"
+#include "phase_sac2c.mac"
 #undef PHASEfun
                                         PHdummy};
 
 static const char *subphase_name[] = {"initial",
 #define SUBPHASEtext(it_text) it_text,
 #define OPTCYCLEtext(it_text) it_text,
-#include "phase_info.mac"
+#include "phase_sac2c.mac"
 #undef SUBPHASEtext
 #undef OPTCYCLEtext
                                       ""};
@@ -55,7 +55,7 @@ static const char *subphase_name[] = {"initial",
 static const phase_fun_p subphase_fun[] = {PHdummy,
 #define SUBPHASEfun(it_fun) it_fun,
 #define OPTCYCLEfun(it_fun) it_fun,
-#include "phase_info.mac"
+#include "phase_sac2c.mac"
 #undef SUBPHASEfun
 #undef OPTCYCLEfun
                                            PHdummy};
@@ -63,7 +63,7 @@ static const phase_fun_p subphase_fun[] = {PHdummy,
 static const char *optincyc_name[] = {"initial",
 #define OPTINCYCtext(it_text) it_text,
 #define OPTINCYCFUNtext(it_text) it_text,
-#include "phase_info.mac"
+#include "phase_sac2c.mac"
 #undef OPTINCYCtext
 #undef OPTINCYCFUNtext
                                       ""};
@@ -71,14 +71,14 @@ static const char *optincyc_name[] = {"initial",
 static const phase_fun_p optincyc_fun[] = {PHdummy,
 #define OPTINCYCfun(it_fun) it_fun,
 #define OPTINCYCFUNfun(it_fun) it_fun,
-#include "phase_info.mac"
+#include "phase_sac2c.mac"
 #undef OPTINCYCfun
 #undef OPTINCYCFUNfun
                                            PHdummy};
 
 static const compiler_allphase_t phase2allphase[] = {PHALL_initial,
 #define PHASEelement(it_element) PHALL_##it_element,
-#include "phase_info.mac"
+#include "phase_sac2c.mac"
                                                      PHALL_final
 #undef PHASEelement
 };
@@ -86,7 +86,7 @@ static const compiler_allphase_t phase2allphase[] = {PHALL_initial,
 static const compiler_allphase_t subphase2allphase[] = {PHALL_initial,
 #define SUBPHASEelement(it_element) PHALL_##it_element,
 #define OPTCYCLEelement(it_element) PHALL_##it_element,
-#include "phase_info.mac"
+#include "phase_sac2c.mac"
                                                         PHALL_final
 #undef SUBPHASEelement
 #undef OPTCYCLEelement
@@ -95,7 +95,7 @@ static const compiler_allphase_t subphase2allphase[] = {PHALL_initial,
 static const compiler_allphase_t optincyc2allphase[] = {PHALL_initial,
 #define OPTINCYCelement(it_element) PHALL_##it_element,
 #define OPTINCYCFUNelement(it_element) PHALL_##it_element,
-#include "phase_info.mac"
+#include "phase_sac2c.mac"
                                                         PHALL_final
 #undef OPTINCYCelement
 #undef OPTINCYCFUNelement
@@ -148,7 +148,7 @@ PHinterpretBreakOption (char *option)
         global.break_after = PH_##it_element;                                            \
     } else
 
-#include "phase_info.mac"
+#include "phase_sac2c.mac"
 
 #undef PHASEelement
 
@@ -166,7 +166,7 @@ PHinterpretBreakOption (char *option)
         global.break_after_subphase = SUBPH_##it_element;                                \
     } else
 
-#include "phase_info.mac"
+#include "phase_sac2c.mac"
 
 #undef SUBPHASEelement
 #undef OPTCYCLEelement
@@ -185,7 +185,7 @@ PHinterpretBreakOption (char *option)
         global.break_after_optincyc = OIC_##it_element;                                  \
     } else
 
-#include "phase_info.mac"
+#include "phase_sac2c.mac"
 
 #undef OPTINCYCelement
 #undef OPTINCYCFUNelement
@@ -310,10 +310,8 @@ PHrunOptimizationInCycleFun (compiler_optincyc_t optincyc, int pass, node *funde
         && ((optincyc <= global.break_after_optincyc)
             || (pass < global.break_cycle_specifier))) {
 
-        DBUG_EXECUTE ("OPT", CTIstate ("****** %s ...", PHoptInCycName (optincyc)););
-
+        CTItell (4, "         %s ...", PHoptInCycName (optincyc));
         fundef = optincyc_fun[optincyc](fundef);
-
         CTIabortOnError ();
 
         fundef = TCappendFundef (fundef, DUPgetCopiedSpecialFundefs ());
@@ -327,11 +325,12 @@ PHrunOptimizationInCycleFun (compiler_optincyc_t optincyc, int pass, node *funde
 }
 
 node *
-PHrunOptimizationInCycle (compiler_optincyc_t optincyc, int pass, node *fundef, bool cond)
+PHrunOptimizationInCycle (compiler_optincyc_t optincyc, int pass, node *syntax_tree,
+                          bool cond)
 {
     DBUG_ENTER ("PHrunOptimizationInCycle");
 
-    DBUG_ASSERT (((fundef != NULL) && (NODE_TYPE (fundef) == N_module)),
+    DBUG_ASSERT (((syntax_tree != NULL) && (NODE_TYPE (syntax_tree) == N_module)),
                  "PHrunOptimizationInCycle called with non N_module node");
 
     global.compiler_optincyc = optincyc;
@@ -341,10 +340,9 @@ PHrunOptimizationInCycle (compiler_optincyc_t optincyc, int pass, node *fundef, 
         && ((optincyc <= global.break_after_optincyc)
             || (pass < global.break_cycle_specifier))) {
 
-        DBUG_EXECUTE ("OPT", CTIstate ("****** %s ...", PHoptInCycName (optincyc)););
-
-        fundef = optincyc_fun[optincyc](fundef);
-
+        /* CTItell( 4, "****** %s ...", PHoptInCycName( optincyc)); */
+        CTInote ("****** %s ...", PHoptInCycName (optincyc));
+        syntax_tree = optincyc_fun[optincyc](syntax_tree);
         CTIabortOnError ();
     }
 
@@ -352,7 +350,7 @@ PHrunOptimizationInCycle (compiler_optincyc_t optincyc, int pass, node *fundef, 
         global.break_after_subphase = global.compiler_subphase;
     }
 
-    DBUG_RETURN (fundef);
+    DBUG_RETURN (syntax_tree);
 }
 
 node *

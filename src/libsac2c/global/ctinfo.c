@@ -9,7 +9,7 @@
  * compilation. It fully replaces the macro based legacy implementation
  * in files Error.[ch]
  *
- * We have 4 levels of verbosity controlled by the command line option -v
+ * We have several levels of verbosity controlled by the command line option -v
  * and the global variable verbose_level.
  *
  * Verbose level 0:
@@ -29,6 +29,10 @@
  *
  * Error messages, warnings and full compile time information are printed.
  *
+ * Verbose level 4+:
+ *
+ * Additional compile time information is provided that typically is only
+ * of interest in certain situation.
  *
  * Default values are 1 for the product version and 3 for the developer version.
  *
@@ -56,6 +60,7 @@
 #include "tree_basic.h"
 #include "check_mem.h"
 #include "stringset.h"
+#include "new_types.h" /* for TYtype2String */
 
 static char *message_buffer = NULL;
 static int message_buffer_size = 0;
@@ -902,6 +907,34 @@ CTInote (const char *format, ...)
 
 /** <!--********************************************************************-->
  *
+ * @fn void CTInote( const char *format, ...)
+ *
+ *   @brief produces compile time information at given verbosity level
+ *
+ *   @param format  format string like in printf
+ *
+ ******************************************************************************/
+
+void
+CTItell (int verbose_level, const char *format, ...)
+{
+    va_list arg_p;
+
+    DBUG_ENTER ("CTInote");
+
+    if (global.verbose_level >= verbose_level) {
+        va_start (arg_p, format);
+
+        PrintMessage (note_message_header, format, arg_p);
+
+        va_end (arg_p);
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn void CTIterminateCompilation()
  *
  *   @brief  terminates successful compilation process
@@ -1027,4 +1060,50 @@ CTIitemName (node *item)
     }
 
     DBUG_RETURN (ret);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn void CTIfunParams( node *fundef)
+ *
+ *****************************************************************************/
+
+const char *
+CTIfunParams (node *fundef)
+{
+    node *arg;
+    char *tmp_str;
+    int tmp_str_size;
+
+    static char argtype_buffer[80];
+    static int buffer_space;
+
+    DBUG_ENTER ("CTIfunParams");
+
+    strcpy (argtype_buffer, "");
+    buffer_space = 77;
+
+    arg = FUNDEF_ARGS (fundef);
+    while ((arg != NULL) && (buffer_space > 5)) {
+
+        tmp_str = TYtype2String (AVIS_TYPE (ARG_AVIS (arg)), TRUE, 0);
+        tmp_str_size = strlen (tmp_str);
+
+        if ((tmp_str_size + 3) <= buffer_space) {
+            strcat (argtype_buffer, tmp_str);
+            buffer_space -= tmp_str_size;
+            if (ARG_NEXT (arg) != NULL) {
+                strcat (argtype_buffer, ", ");
+                buffer_space -= 2;
+            }
+        } else {
+            strcat (argtype_buffer, "...");
+            buffer_space = 0;
+        }
+
+        tmp_str = MEMfree (tmp_str);
+        arg = ARG_NEXT (arg);
+    }
+
+    DBUG_RETURN (argtype_buffer);
 }

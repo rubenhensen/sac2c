@@ -3,32 +3,42 @@
  */
 
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <limits.h>
 
 #include "globals.h"
 #include "build.h"
 #include "dbug.h"
 #include "usage.h"
-#include "phase.h"
-#include "str.h"
 
-void
-USGprintUsage ()
+static void
+PrintToolName (void)
 {
-    char *env;
+    DBUG_ENTER ("PrintToolName");
 
-    DBUG_ENTER ("usage");
+    printf ("\n"
+            "---------------------------------------------------------------------------"
+            "\n"
+            " SAC - Single Assignment C\n"
+            "---------------------------------------------------------------------------"
+            "\n"
+            "\n"
+            "\n"
+            "NAME:          %s\n"
+            "VERSION:       %s\n"
+            "PLATFORM:      %s\n",
+            global.toolname, (global.version_id[0] == '\0') ? "???" : global.version_id,
+            (global.target_platform[0] == '\0') ? "???" : global.target_platform);
+
+    DBUG_VOID_RETURN;
+}
+
+static void
+PrintDescriptionSac2c (void)
+{
+    DBUG_ENTER ("PrintDescriptionSac2c");
 
     printf (
-      "\n\n"
-      "      sac2c  --  The Ultimate SAC Compiler\n"
-      "    ----------------------------------------\n\n\n"
-
-      "NAME:         sac2c\n\n\n"
-
-      "DESCRIPTION:\n\n"
+      "\n\nDESCRIPTION:\n\n"
 
       "    The sac2c compiler transforms SAC source code into executable programs\n"
       "    (SAC programs) or into a SAC specific library format (SAC module and\n"
@@ -54,6 +64,14 @@ USGprintUsage ()
       "    In this case, the -o option may be used to specify a\n"
       "    different directory but not a different file name.\n");
 
+    DBUG_VOID_RETURN;
+}
+
+static void
+PrintSpecialOptions (void)
+{
+    DBUG_ENTER ("PrintSpecialOptions");
+
     printf (
       "\n\nSPECIAL OPTIONS:\n\n"
 
@@ -76,6 +94,14 @@ USGprintUsage ()
       "    NOTE:\n"
       "    When called with one of these options, sac2c does not perform\n"
       "    any compilation steps.\n");
+
+    DBUG_VOID_RETURN;
+}
+
+static void
+PrintGeneralOptions (void)
+{
+    DBUG_ENTER ("PrintGeneralOptions");
 
     printf ("\n\nGENERAL OPTIONS:\n\n"
 
@@ -102,6 +128,14 @@ USGprintUsage ()
             "                    (default: %d)\n",
             global.verbose_level);
 
+    DBUG_VOID_RETURN;
+}
+
+static void
+PrintBreakOptions (void)
+{
+    DBUG_ENTER ("PrintBreakOptions");
+
     printf ("\n\nBREAK OPTIONS:\n\n"
 
             "    Break options allow you to stop the compilation process\n"
@@ -123,6 +157,14 @@ USGprintUsage ()
             "    -bcyc<n>        If a cycle optimization is selected to\n"
             "                    break after, this option allows us to specify\n"
             "                    a concrete cycle other than the first.\n");
+
+    DBUG_VOID_RETURN;
+}
+
+static void
+PrintBreakoptionSpecifierSac2c (void)
+{
+    DBUG_ENTER ("PrintBreakoptionSpecifierSac2c");
 
     printf ("\n\nBREAK OPTION SPECIFIERS:\n");
 
@@ -147,7 +189,7 @@ USGprintUsage ()
 
 #define OPTINCYCFUNtext(it_text) printf (" : " it_text " (fun based)\n");
 
-#include "phase_info.mac"
+#include "phase_sac2c.mac"
 
 #undef PHASEelement
 #undef PHASEtext
@@ -159,6 +201,14 @@ USGprintUsage ()
 #undef OPTINCYCtext
 #undef OPTINCYCFUNelement
 #undef OPTINCYCFUNtext
+
+    DBUG_VOID_RETURN;
+}
+
+static void
+PrintTypeInferenceOptions (void)
+{
+    DBUG_ENTER ("PrintTypeInferenceOptions");
 
     printf ("\n\nTYPE INFERENCE OPTIONS:\n\n");
     printf ("    -specmode <strat>  Specify function specialization strategy:\n"
@@ -173,6 +223,13 @@ USGprintUsage ()
             "                         (default: %d)\n",
             global.maxspec);
 
+    DBUG_VOID_RETURN;
+}
+
+static void
+PrintOptimisationOptions (void)
+{
+    DBUG_ENTER ("PrintOptimisationOptions");
     printf (
       "\n\nOPTIMIZATION OPTIONS:\n\n"
       "    -enforceIEEE    Treat floating point arithmetic as defined in the IEEE-754\n"
@@ -223,7 +280,8 @@ USGprintUsage ()
       "\n"
       "    NOTE:\n"
       "     Command line arguments are evaluated from left to right, i.e.,\n"
-      "    \"-no opt -do inl\" disables all optimizations except for function inlining.\n"
+      "     \"-no opt -do inl\" disables all optimizations except for function "
+      "inlining.\n"
       "\n"
       "    NOTE:\n"
       "     Some of the optimization techniques are parameterized by additional side\n"
@@ -323,6 +381,14 @@ USGprintUsage ()
             "                          (default: %s)\n",
             global.sigspec_mode_str[global.sigspec_mode]);
 
+    DBUG_VOID_RETURN;
+}
+
+static void
+PrintMultithreadOptions (void)
+{
+    DBUG_ENTER ("PrintMultithreadOptions");
+
     printf ("\n\nMULTI-THREAD OPTIONS:\n\n"
 
             "    -mt             Compile program for multi-threaded execution,\n"
@@ -387,6 +453,14 @@ USGprintUsage ()
             (int)MT_startstop, global.max_threads, global.max_sync_fold,
             global.min_parallel_size, global.max_replication_size);
 
+    DBUG_VOID_RETURN;
+}
+
+static void
+PrintBackendOptions (void)
+{
+    DBUG_ENTER ("PrintBackendOptions");
+
     printf ("\n\nBACKEND OPTIONS:\n\n"
 
             "    -minarrayrep <class>\n"
@@ -397,6 +471,14 @@ USGprintUsage ()
             "                      *: use AUD representation only.\n"
             "                    (default: s)\n");
 
+    DBUG_VOID_RETURN;
+}
+
+static void
+PrintGeneralDebugOptions (void)
+{
+    DBUG_ENTER ("PrintGeneralDebugOptions");
+
     printf (
       "\n\nGENERAL DEBUG OPTIONS:\n\n"
 
@@ -405,6 +487,14 @@ USGprintUsage ()
       "    -d cccall       Generate shell script \".sac2c\" that contains C compiler\n"
       "                    invocation.\n"
       "                    This implies option \"-d nocleanup\".\n");
+
+    DBUG_VOID_RETURN;
+}
+
+static void
+PrintInternalDebugOptions (void)
+{
+    DBUG_ENTER ("PrintInternalDebugOptions");
 
     printf (
       "\n\nINTERNAL DEBUG OPTIONS:\n\n"
@@ -429,18 +519,15 @@ USGprintUsage ()
       "    -# <f>/<t>/<o>  Restrict the effect of any Fred Fish DBUG package option <o>\n"
       "                    to the range <f> to <t> of sac2c compiler phases.\n"
       "                      (default: <f> = first compiler phase,\n"
-      "                                <t> = last compiler phase.)\n"
-      "\n"
-      "    -lac2fun <ph>[:<ph>]*\n"
-      "                    Transform loops and conditionals into functions before\n"
-      "                    compiler phases <ph>.\n"
-      "                    NOTE:\n"
-      "                    \"-b <ph>\" stops the compiler *after* the lac2fun\n"
-      "                    transformation of phase <ph+1>!\n"
-      "\n"
-      "    -fun2lac <ph>[:<ph>]*\n"
-      "                    Transform specific functions back into loops and\n"
-      "                    conditionals after compiler phases <ph>.\n");
+      "                                <t> = last compiler phase.)\n");
+
+    DBUG_VOID_RETURN;
+}
+
+static void
+PrintRuntimeCheckOptions (void)
+{
+    DBUG_ENTER ("PrintRuntimeCheckOptions");
 
     printf ("\n\nRUNTIME CHECK OPTIONS:\n\n"
 
@@ -454,6 +541,14 @@ USGprintUsage ()
             "                      e: Check errno variable upon applications of\n"
             "                         external functions.\n"
             "                      h: Use diagnostic heap manager.\n");
+
+    DBUG_VOID_RETURN;
+}
+
+static void
+PrintRuntimeTraceOptions (void)
+{
+    DBUG_ENTER ("PrintRuntimeTraceOptions");
 
     printf (
       "\n\nRUNTIME TRACE OPTIONS:\n\n"
@@ -472,6 +567,14 @@ USGprintUsage ()
       "                      c: Trace runtime enviroment init/exit when\n"
       "                         using SAC libraries in C programs.\n");
 
+    DBUG_VOID_RETURN;
+}
+
+static void
+PrintRuntimeProfilingOptions (void)
+{
+    DBUG_ENTER ("PrintRuntimeProfilingOptions");
+
     printf (
       "\n\nRUNTIME PROFILING OPTIONS:\n\n"
 
@@ -483,149 +586,117 @@ USGprintUsage ()
       "                      l: Analyse time spent in library functions.\n"
       "                      w: Analyse time spent in with-loops.\n");
 
-    env = getenv ("SACBASE");
-    printf ("\n\nCACHE SIMULATION OPTIONS:\n\n"
+    DBUG_VOID_RETURN;
+}
 
-            "    -cs             Enable runtime cache simulation.\n"
-            "\n"
-            "    -csdefaults [sagbifp]+\n"
-            "                    This option sets default parameters for cache "
-            "simulation.\n"
-            "                    These settings may be overridden when starting the "
-            "analysis\n"
-            "                    of an application program:\n"
-            "                      s: simple cache simulation,\n"
-            "                      a: advanced cache simulation,\n"
-            "                      g: global cache simulation,\n"
-            "                      b: cache simulation on selected blocks,\n"
-            "                      i: immediate analysis of memory access data,\n"
-            "                      f: storage of memory access data in file,\n"
-            "                      p: piping of memory access data to concurrently "
-            "running\n"
-            "                         analyser process.\n"
-            "                    The default simulation parameters are \"sgp\".\n"
-            "\n"
-            "    -cshost <name>  This option specifies the host machine to run the "
-            "additional\n"
-            "                    analyser process on when doing piped cache simulation.\n"
-            "                    This is very useful for single processor machines "
-            "because\n"
-            "                    the rather limited buffer size of the pipe determines "
-            "the\n"
-            "                    synchronisation distance of the two processes, i.e. "
-            "the\n"
-            "                    application process and the analysis process. This "
-            "results\n"
-            "                    in very frequent context switches when both processes "
-            "are\n"
-            "                    run on the same processor, and consequently, degrades "
-            "the\n"
-            "                    performance by orders of magnitude. So, when doing "
-            "piped\n"
-            "                    cache simulation always be sure to do so either on a\n"
-            "                    multiprocessor or specify a different machine to run "
-            "the\n"
-            "                    analyser process on. However, this only defines a "
-            "default\n"
-            "                    which may be overridden by using this option when "
-            "starting\n"
-            "                    the compiled application program.\n"
-            "\n"
-            "    -csfile <name>  This option specifies a default file where to write "
-            "the\n"
-            "                    memory access trace when performing cache simulation "
-            "via\n"
-            "                    a file. This default may be overridden by using this "
-            "option\n"
-            "                    when starting the compiled application program.\n"
-            "                    The general default name is \"<executable_name>.cs\".\n"
-            "\n"
-            "    -csdir <name>   This option specifies a default directory where to "
-            "write\n"
-            "                    the memory access trace file when performing cache\n"
-            "                    simulation via a file. This default may be overridden "
-            "by\n"
-            "                    using this option when starting the compiled "
-            "application\n"
-            "                    program.\n"
-            "                    The general default directory is the tmp directory "
-            "specified\n"
-            "                    in your sac2crc file.\n"
-            "\n\n"
-            "CACHE SIMULATION FEATURES:\n"
-            "\n"
-            "    Simple cache simulation only counts cache hits and cache misses while\n"
-            "    advanced cache simulation additionally classifies cache misses into\n"
-            "    cold start, cross interference, self interference, and invalidation\n"
-            "    misses.\n"
-            "\n"
-            "    Simulation results may be presented for the entire program run or more\n"
-            "    specifically for any code block marked by the following pragma:\n"
-            "        #pragma cachesim [tag]\n"
-            "    The optional tag allows to distinguish between the simulation results\n"
-            "    for various code blocks. The tag must be a string.\n"
-            "\n"
-            "    Memory accesses may be evaluated with respect to their cache behaviour\n"
-            "    either immediately within the application process, stored in a file,\n"
-            "    or they may be piped to a concurrently running analyser process.\n"
-            "    Whereas immediate analysis usually is the fastest alternative,\n"
-            "    results, in particular for advanced analysis, are often inaccurate due\n"
-            "    to changes in the memory layout caused by the analyser. If you choose\n"
-            "    to write memory accesses to a file, beware that even for small "
-            "programs\n"
-            "    to be analysed the amount of data may be quite large. However, once a\n"
-            "    memory trace file exists, it can be used to simulate different cache\n"
-            "    configurations without repeatedly running the application program\n"
-            "    itself. The simulation tool for memory access trace files is called\n"
-            "        CacheSimAnalyser\n"
-            "    and may be found in the directory\n"
-            "        %s%sruntime\n"
-            "    as part of your SAC %s installation.\n"
-            "\n"
-            "    These default cache simulation parameters may be overridden when\n"
-            "    invoking the application program to be analysed by using the generic\n"
-            "    command line option\n"
-            "        -cs [sagbifp]+\n"
-            "    where the various flags have the same meaning as described for the\n"
-            "    \"-csdefaults\" compiler option.\n"
-            "\n"
-            "    Cache parameters for up to 3 levels of caches may be provided as "
-            "target\n"
-            "    specification in the sac2crc file. However, these only serve as a\n"
-            "    default cache specification which may well be altered when running the\n"
-            "    compiled SAC program with cache simulation enabled. This can be done\n"
-            "    using the following command line options:\n"
-            "        -cs[123] <size>[/<line size>[/<assoc>[/<write miss policy>]]].\n"
-            "    The cache size must be given in KBytes, the cache line size in\n"
-            "    Bytes. A cache size of 0 KB disables the corresponding cache level\n"
-            "    completely regardless of any other setting.\n"
-            "    Write miss policies are specified by a single letter:\n"
-            "        d: default (fetch on write)\n"
-            "        f: fetch on write\n"
-            "        v: write validate\n"
-            "        a: write around\n",
-            STRonNull ("", env),
-            ((NULL != env) && (env[strlen (env) - 1] != '/')) ? "/" : "",
-            global.version_id);
+static void
+PrintCacheSimulationOptions (void)
+{
+    DBUG_ENTER ("PrintCacheSimulationOptions");
 
-    printf ("\n\nINTRINSIC ARRAY OPERATIONS OPTIONS:\n\n"
+    printf (
+      "\n\nCACHE SIMULATION OPTIONS:\n\n"
 
-            "    For compatibility reasons with older versions of sac2c intrinsic\n"
-            "    implementations still exist for some of the basic array operations\n"
-            "    which today are imported from the array module of the SAC standard\n"
-            "    library. These intrinsic implementations can be activated by the\n"
-            "    following compiler option.\n"
-            "\n"
-            "    -intrinsic [a+-x/so]+\n"
-            "                    Use intrinsic implementations for array operations.\n"
-            "                      a: Use all intrinsic operations  available\n"
-            "                         (same as +-x/so).\n"
-            "                      +: Use intrinsic add.\n"
-            "                      -: Use intrinsic sub.\n"
-            "                      x: Use intrinsic mul.\n"
-            "                      /: Use intrinsic div.\n"
-            "                      s: Use intrinsic sel.\n"
-            "                      o: Use intrinsic type conversion.\n");
+      "    -cs             Enable runtime cache simulation.\n"
+      "\n"
+      "    -csdefaults [sagbifp]+\n"
+      "                    This option sets default parameters for cache simulation.\n"
+      "                    These settings may be overridden when starting the analysis\n"
+      "                    of an application program:\n"
+      "                      s: simple cache simulation,\n"
+      "                      a: advanced cache simulation,\n"
+      "                      g: global cache simulation,\n"
+      "                      b: cache simulation on selected blocks,\n"
+      "                      i: immediate analysis of memory access data,\n"
+      "                      f: storage of memory access data in file,\n"
+      "                      p: piping of memory access data to concurrently running\n"
+      "                         analyser process.\n"
+      "                    The default simulation parameters are \"sgp\".\n"
+      "\n"
+      "    -cshost <name>  This option specifies the host machine to run the additional\n"
+      "                    analyser process on when doing piped cache simulation.\n"
+      "                    This is very useful for single processor machines because\n"
+      "                    the rather limited buffer size of the pipe determines the\n"
+      "                    synchronisation distance of the two processes, i.e. the\n"
+      "                    application process and the analysis process. This results\n"
+      "                    in very frequent context switches when both processes are\n"
+      "                    run on the same processor, and consequently, degrades the\n"
+      "                    performance by orders of magnitude. So, when doing piped\n"
+      "                    cache simulation always be sure to do so either on a\n"
+      "                    multiprocessor or specify a different machine to run the\n"
+      "                    analyser process on. However, this only defines a default\n"
+      "                    which may be overridden by using this option when starting\n"
+      "                    the compiled application program.\n"
+      "\n"
+      "    -csfile <name>  This option specifies a default file where to write the\n"
+      "                    memory access trace when performing cache simulation via\n"
+      "                    a file. This default may be overridden by using this option\n"
+      "                    when starting the compiled application program.\n"
+      "                    The general default name is \"<executable_name>.cs\".\n"
+      "\n"
+      "    -csdir <name>   This option specifies a default directory where to write\n"
+      "                    the memory access trace file when performing cache\n"
+      "                    simulation via a file. This default may be overridden by\n"
+      "                    using this option when starting the compiled application\n"
+      "                    program.\n"
+      "                    The general default directory is the tmp directory specified\n"
+      "                    in your sac2crc file.\n"
+      "\n\n"
+      "CACHE SIMULATION FEATURES:\n"
+      "\n"
+      "    Simple cache simulation only counts cache hits and cache misses while\n"
+      "    advanced cache simulation additionally classifies cache misses into\n"
+      "    cold start, cross interference, self interference, and invalidation\n"
+      "    misses.\n"
+      "\n"
+      "    Simulation results may be presented for the entire program run or more\n"
+      "    specifically for any code block marked by the following pragma:\n"
+      "        #pragma cachesim [tag]\n"
+      "    The optional tag allows to distinguish between the simulation results\n"
+      "    for various code blocks. The tag must be a string.\n"
+      "\n"
+      "    Memory accesses may be evaluated with respect to their cache behaviour\n"
+      "    either immediately within the application process, stored in a file,\n"
+      "    or they may be piped to a concurrently running analyser process.\n"
+      "    Whereas immediate analysis usually is the fastest alternative,\n"
+      "    results, in particular for advanced analysis, are often inaccurate due\n"
+      "    to changes in the memory layout caused by the analyser. If you choose\n"
+      "    to write memory accesses to a file, beware that even for small programs\n"
+      "    to be analysed the amount of data may be quite large. However, once a\n"
+      "    memory trace file exists, it can be used to simulate different cache\n"
+      "    configurations without repeatedly running the application program\n"
+      "    itself. The simulation tool for memory access trace files is called\n"
+      "    'csima' and resides in the bin directory of your SAC installation.\n"
+      "\n"
+      "    These default cache simulation parameters may be overridden when\n"
+      "    invoking the application program to be analysed by using the generic\n"
+      "    command line option\n"
+      "        -cs [sagbifp]+\n"
+      "    where the various flags have the same meaning as described for the\n"
+      "    \"-csdefaults\" compiler option.\n"
+      "\n"
+      "    Cache parameters for up to 3 levels of caches may be provided as target\n"
+      "    specification in the sac2crc file. However, these only serve as a\n"
+      "    default cache specification which may well be altered when running the\n"
+      "    compiled SAC program with cache simulation enabled. This can be done\n"
+      "    using the following command line options:\n"
+      "        -cs[123] <size>[/<line size>[/<assoc>[/<write miss policy>]]].\n"
+      "    The cache size must be given in KBytes, the cache line size in\n"
+      "    Bytes. A cache size of 0 KB disables the corresponding cache level\n"
+      "    completely regardless of any other setting.\n"
+      "    Write miss policies are specified by a single letter:\n"
+      "        d: default (fetch on write)\n"
+      "        f: fetch on write\n"
+      "        v: write validate\n"
+      "        a: write around\n");
+
+    DBUG_VOID_RETURN;
+}
+
+static void
+PrintLibraryOptions (void)
+{
+    DBUG_ENTER ("PrintLibraryOptions");
 
     printf ("\n\nLIBRARY OPTIONS:\n\n"
 
@@ -667,6 +738,14 @@ USGprintUsage ()
             "                     Multithreading is not yet available for C libraries.\n",
             global.linksetsize == INT_MAX ? 0 : global.linksetsize);
 
+    DBUG_VOID_RETURN;
+}
+
+static void
+PrintCCompilerOptions (void)
+{
+    DBUG_ENTER ("PrintCCompilerOptions");
+
     printf ("\n\nC-COMPILER OPTIONS:\n\n"
 
             "    -g              Include debug information into object code.\n"
@@ -690,7 +769,15 @@ USGprintUsage ()
             "                    \"customization\".\n",
             global.cc_optimize);
 
-    printf ("\n\nCUSTOMIZATION:\n\n"
+    DBUG_VOID_RETURN;
+}
+
+static void
+PrintCustomisationOptions (void)
+{
+    DBUG_ENTER ("PrintCustomisationOptions");
+
+    printf ("\n\nCUSTOMIZATION OPTIONS:\n\n"
 
             "    -target <name>  Specify a particular compilation target.\n"
             "                    Compilation targets are used to customize sac2c for\n"
@@ -701,15 +788,29 @@ USGprintUsage ()
             "                    from a file named .sac2crc within the user's home\n"
             "                    directory.\n");
 
+    DBUG_VOID_RETURN;
+}
+
+static void
+PrintEnvironmentVariables (void)
+{
+    DBUG_ENTER ("PrintEnvironmentVariables");
+
     printf ("\n\nENVIRONMENT VARIABLES:\n\n"
 
             "    The following environment variables are used by sac2c:\n"
             "\n"
-            "    SACBASE                  Base directory of SAC installation.\n"
-            "    SAC_PATH                 Search path for SAC source code files.\n"
-            "    SAC_LIBRARY_PATH         Search path for SAC library files.\n"
-            "    SAC_IMPLEMENTATION_PATH  Search path for SAC library source files.\n"
+            "    SACBASE         Base directory of SAC standard lib installation.\n"
+            "    SAC2CBASE       Base directory of SAC installation.\n"
             "\n");
+
+    DBUG_VOID_RETURN;
+}
+
+static void
+PrintAuthors (void)
+{
+    DBUG_ENTER ("PrintAuthors");
 
     printf ("\n\nAUTHORS:\n\n"
 
@@ -738,26 +839,68 @@ USGprintUsage ()
             "      Theo van Klaveren\n"
             "      Florian Buether\n");
 
+    DBUG_VOID_RETURN;
+}
+
+static void
+PrintContact (void)
+{
+    DBUG_ENTER ("PrintContact");
+
     printf ("\n\nCONTACT:\n\n"
 
             "    WWW:    http://www.sac-home.org/\n"
             "    E-Mail: info@sac-home.org\n");
 
-    printf (
-      "\n\nBUGS:\n\n"
+    printf ("\n\nBUGS:\n\n"
 
-      "    Bugs??  We????\n"
-      "\n"
-      "    Sac2c is a research compiler!\n"
-      "\n"
-      "    It is intended as a platform for scientific research rather than a\n"
-      "    \"product\" for end users. Although we try to do our very best,\n"
-      "    you may well run into a compiler bug. So, we are happy to receive\n"
-      "    your bug reports (Well, not really \"happy\", but ...)\n"
-      "\n"
-      "    Unfortunately, two of our optimizations are quite buggy 8-(\n"
-      "    Therefore, we decided to preset \"-noLIR\" (non-ssa version) and \"-noDL\"\n"
-      "    in the current compiler release.\n");
+            "    Bugs??  We????\n"
+            "\n"
+            "    SAC is a research project!\n"
+            "\n"
+            "    SAC tools are platforms for scientific research rather than\n"
+            "    \"products\" for end users. Although we try to do our very best,\n"
+            "    you may well run into a compiler bug. So, we are happy to receive\n"
+            "    your bug reports (Well, not really \"happy\", but ...).\n");
+
+    DBUG_VOID_RETURN;
+}
+
+void
+USGprintUsage ()
+{
+    DBUG_ENTER ("USGprintUsage");
+
+    PrintToolName ();
+
+    switch (global.tool) {
+    case TOOL_sac2c:
+        PrintDescriptionSac2c ();
+        PrintSpecialOptions ();
+        PrintGeneralOptions ();
+        PrintBreakOptions ();
+        PrintBreakoptionSpecifierSac2c ();
+        PrintTypeInferenceOptions ();
+        PrintOptimisationOptions ();
+        PrintMultithreadOptions ();
+        PrintBackendOptions ();
+        PrintGeneralDebugOptions ();
+        PrintInternalDebugOptions ();
+        PrintRuntimeCheckOptions ();
+        PrintRuntimeTraceOptions ();
+        PrintRuntimeProfilingOptions ();
+        PrintCacheSimulationOptions ();
+        PrintLibraryOptions ();
+        PrintCCompilerOptions ();
+        PrintCustomisationOptions ();
+        break;
+    case TOOL_sac4c:
+        break;
+    }
+
+    PrintEnvironmentVariables ();
+    PrintAuthors ();
+    PrintContact ();
 
     printf ("\n\n");
 
@@ -769,7 +912,7 @@ USGprintVersion ()
 {
     DBUG_ENTER ("USGprintVersion");
 
-    printf ("sac2c %s\n %s rev %s %s\n (%s by %s)\n",
+    printf ("%s %s\n %s rev %s %s\n (%s by %s)\n", global.toolname,
             (global.version_id[0] == '\0') ? "???" : global.version_id,
             (build_style[0] == '\0') ? "" : build_style,
             (build_rev[0] == '\0') ? "???" : build_rev,
@@ -785,14 +928,9 @@ USGprintVersionVerbose ()
 {
     DBUG_ENTER ("USGprintVerboseVersion");
 
-    printf ("\n          SAC - Single Assignment C\n"
-            "    ---------------------------------------------\n\n"
+    PrintToolName ();
 
-            "NAME:          sac2c\n"
-            "VERSION:       %s\n"
-            "PLATFORM:      %s\n"
-            "\n"
-
+    printf ("\n"
             "BUILD:         %s (%s)\n"
             "AT DATE:       %s\n"
             "BY USER:       %s\n"
@@ -800,8 +938,6 @@ USGprintVersionVerbose ()
             "\n"
 
             "\n",
-            (global.version_id[0] == '\0') ? "???" : global.version_id,
-            (global.target_platform[0] == '\0') ? "???" : global.target_platform,
             (build_rev[0] == '\0') ? "???" : build_rev,
             (build_style[0] == '\0') ? "" : build_style,
             (build_date[0] == '\0') ? "???" : build_date,
@@ -826,7 +962,7 @@ USGprintCopyright ()
     printf (
       "\n"
       "---------------------------------------------------------------------------\n"
-      "SAC - Single Assignment C\n"
+      " SAC - Single Assignment C\n"
       "---------------------------------------------------------------------------\n"
       "\n"
       "COPYRIGHT NOTICE, LICENSE AND DISCLAIMER\n"

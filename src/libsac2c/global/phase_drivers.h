@@ -9,14 +9,7 @@
 
 #include "types.h"
 
-/*
- * The prototypes of phase driver functions are derived from phase_info.mac.
- */
-
-#define PHASEfun(it_fun) extern node *it_fun (node *syntax_tree);
-
-#include "phase_info.mac"
-
-#undef PHASEfun
+extern node *PHDdriveSac2c (node *syntax_tree);
+extern node *PHDdriveSac4c (node *syntax_tree);
 
 #endif /* _SAC_PHASE_DRIVERS_H_ */

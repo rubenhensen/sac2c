@@ -32,6 +32,23 @@
 #include "libstat.h"
 #include "phase.h"
 
+/******************************************************************************
+ *
+ * function:
+ *   node *OPTcheckPreSetupOptions( int argc, char *argv[])
+ *
+ * description:
+ *   Some options require processing as early as possible in the compilation
+ *   process. For example, memory checks must be initiated BEFORE any
+ *   allocations are done. This requires the corresponding option to be
+ *   processed before global variables are initialised.
+ *
+ *   We deliberately switch off error detection because that would obviously
+ *   complain about illegal options and because the compile time information
+ *   system has not yet been set up properly.
+ *
+ ******************************************************************************/
+
 #undef ARGS_ERROR
 #define ARGS_ERROR(msg)
 
@@ -44,13 +61,6 @@ OPTcheckPreSetupOptions (int argc, char *argv[])
 
     ARGS_OPTION_BEGIN ("d")
     {
-        /*
-         * CAUTION:
-         * Due to -d memcheck the -d options is also identified in
-         * presetup options and is repeated here only for technical
-         * reasons. Any change in this option MUST be reflected in
-         * OPTcheckPreSetupOptions().
-         */
         ARG_CHOICE_BEGIN ();
 #ifdef SHOW_MALLOC
         ARG_CHOICE ("memcheck", global.memcheck = TRUE);
@@ -163,13 +173,13 @@ CheckOptionConsistency ()
                   STRonNull ("", ARG));                                                  \
     }
 
-void
-OPTanalyseCommandline (int argc, char *argv[])
+static void
+AnalyseCommandlineSac2c (int argc, char *argv[])
 {
     int store_num_threads = 0;
     mtmode_t store_mtmode = MT_none;
 
-    DBUG_ENTER ("OPTanalyseCommandline");
+    DBUG_ENTER ("AnalyseCommandlineSac2c");
 
     ARGS_BEGIN (argc, argv);
 
@@ -575,7 +585,7 @@ OPTanalyseCommandline (int argc, char *argv[])
      * Options starting with vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
      */
 
-    ARGS_OPTION ("v", ARG_RANGE (global.verbose_level, 0, 3));
+    ARGS_OPTION ("v", ARG_RANGE (global.verbose_level, 0, 5));
 
     ARGS_FLAG ("V", USGprintVersion (); exit (0));
 
@@ -635,6 +645,31 @@ OPTanalyseCommandline (int argc, char *argv[])
     ARGS_UNKNOWN (ARGS_ERROR ("Invalid command line entry"));
 
     ARGS_END ();
+
+    DBUG_VOID_RETURN;
+}
+
+static void
+AnalyseCommandlineSac4c (int argc, char *argv[])
+{
+    DBUG_ENTER ("AnalyseCommandlineSac4c");
+
+    DBUG_VOID_RETURN;
+}
+
+void
+OPTanalyseCommandline (int argc, char *argv[])
+{
+    DBUG_ENTER ("OPTanalyseCommandline");
+
+    switch (global.tool) {
+    case TOOL_sac2c:
+        AnalyseCommandlineSac2c (argc, argv);
+        break;
+    case TOOL_sac4c:
+        AnalyseCommandlineSac4c (argc, argv);
+        break;
+    }
 
     CheckOptionConsistency ();
 

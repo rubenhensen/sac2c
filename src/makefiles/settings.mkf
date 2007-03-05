@@ -6,9 +6,9 @@
 ################################################################################
 #
 # system setup:
-#
+# 
 
-PROJECT_NAME           := sac2c
+PROJECT_NAME           := SAC
 
 REVISION               := $(shell svn info \
                                   | grep Revision: \
@@ -48,7 +48,7 @@ SETTINGS_DIAG          := -DDIAG
 
 LIBDIRS                := -L../../lib
 LIB_MAKETOOLS          := 
-LIB_TOOLS              := -lsac_seq
+LIB_TOOLS              := -lsac_seq # -lsac2c
 
 XML_DIR                := $(PROJECT_ROOT)/src/libsac2c/xml
 XML_COMMONS            := $(wildcard $(XML_DIR)/common_*.xsl)
@@ -61,7 +61,9 @@ M4_DIR                 := $(PROJECT_ROOT)/src/runtime/m4
 # internal tools:
 #
 
-LIBTOOL                := $(PROJECT_ROOT)/setup/libtool --silent --mode=link 
+LIBTOOL                := $(PROJECT_ROOT)/setup/libtool 
+
+LIBTOOLFLAGS           := --silent --mode=link 
 
 CLOCK_SKEW_ELIMINATION := if [ -x $(PROJECT_ROOT)/src/bin/cse ] ; \
                           then $(PROJECT_ROOT)/src/bin/cse $@ ; \

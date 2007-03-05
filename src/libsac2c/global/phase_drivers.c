@@ -14,437 +14,195 @@
 #include "annotate_fun_calls.h"
 #include "type_statistics.h"
 #include "tree_basic.h"
-
+#include "check.h"
+#include "check_mem.h"
 #include "phase_drivers.h"
 
-node *
-PHDdriveScanParse (node *syntax_tree)
-{
-    DBUG_ENTER ("PHDdriveScanParse");
+/*
+ * Generated cycle driver functions
+ */
 
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_loc, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_cpp, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_prs, syntax_tree, ALWAYS);
+#define OPTCYCLEelement(it_element)                                                      \
+    node *PHDdriveOptCycle_##it_element (node *syntax_tree)                              \
+    {                                                                                    \
+        int cycle_counter = 0;                                                           \
+        optimize_counter_t oc_global;                                                    \
+        optimize_counter_t oc_pass;                                                      \
+        bool go_on;                                                                      \
+        DBUG_ENTER ("PHDdriveOptCycle_" #it_element);                                    \
+        STATcopyCounters (&oc_global, &global.optcounters);                              \
+        STATclearCounters (&global.optcounters);                                         \
+        do {                                                                             \
+            cycle_counter += 1;                                                          \
+            CTInote (" ");                                                               \
+            CTInote ("****** Cycle pass: %i", cycle_counter);                            \
+            STATclearCounters (&oc_pass);
 
-    DBUG_RETURN (syntax_tree);
-}
+#define OPTCYCLEFUN()                                                                    \
+    {                                                                                    \
+        node *fundef;                                                                    \
+        STATaddCounters (&oc_pass, &global.optcounters);                                 \
+        STATclearCounters (&global.optcounters);                                         \
+        fundef = MODULE_FUNS (syntax_tree);                                              \
+        while (fundef != NULL) {                                                         \
+            if ((!FUNDEF_ISZOMBIE (fundef) && !FUNDEF_ISTYPEERROR (fundef)               \
+                 && FUNDEF_WASOPTIMIZED (fundef))) {                                     \
+                CTItell (4, " ");                                                        \
+                CTInote ("****** Optimizing function:");                                 \
+                CTInote ("****** %s( %s): ...", CTIitemName (fundef),                    \
+                         CTIfunParams (fundef));                                         \
+                FUNDEF_ISINLINECOMPLETED (fundef) = FALSE;
 
-node *
-PHDdrivePreprocess (node *syntax_tree)
-{
-    DBUG_ENTER ("PHDdrivePreprocess");
+#define OPTINCYCFUNelement(it_element)                                                   \
+            fundef = PHrunOptimizationInCycleFun( OIC_##it_element, cycle_counter,
 
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_hzgwl, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_hwlg, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_hwlo, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_acn, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_pragma, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_objinit, syntax_tree, ALWAYS);
+#define OPTINCYCFUNcond(it_cond)                                                         \
+  fundef, it_cond);
 
-    DBUG_RETURN (syntax_tree);
-}
-
-node *
-PHDdriveModuleSystem (node *syntax_tree)
-{
-    DBUG_ENTER ("PHDdriveModuleSystem");
-
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_rsa, syntax_tree, !global.makedeps);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_ans, syntax_tree, !global.makedeps);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_gdp, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_pdp, syntax_tree, global.makedeps);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_imp, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_uss, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_asf, syntax_tree, ALWAYS);
-
-    DBUG_RETURN (syntax_tree);
-}
-
-node *
-PHDdriveCodeSimplification (node *syntax_tree)
-{
-    DBUG_ENTER ("PHDdriveCodeSimplification");
-
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_w2d, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_hce, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_hm, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_flt, syntax_tree, ALWAYS);
-
-    DBUG_RETURN (syntax_tree);
-}
-
-node *
-PHDdrivePreTypechecking (node *syntax_tree)
-{
-    DBUG_ENTER ("PHDdrivePreTypechecking");
-
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_rst, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_insvd, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_instc, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_ses, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_crtwrp, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_oan, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_goi, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_rso, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_rra, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_ewt, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_lac2fun, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_elf, syntax_tree, global.elf);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_ssa, syntax_tree, ALWAYS);
-
-    DBUG_RETURN (syntax_tree);
-}
-
-node *
-PHDdriveTypechecking (node *syntax_tree)
-{
-    DBUG_ENTER ("PHDdriveTypechecking");
-
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_esp, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_ti, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_eat, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_ebt, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_swr, syntax_tree, ALWAYS);
-
-    DBUG_RETURN (syntax_tree);
-}
-
-node *
-PHDdriveExport (node *syntax_tree)
-{
-    DBUG_ENTER ("PHDdriveExport");
-
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_exp, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_ppi, syntax_tree, ALWAYS);
-
-    DBUG_RETURN (syntax_tree);
-}
-
-node *
-PHDdriveUniquenessCheck (node *syntax_tree)
-{
-    DBUG_ENTER ("PHDdriveUniquenessCheck");
-
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_cua, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_cu, syntax_tree, ALWAYS);
-
-    DBUG_RETURN (syntax_tree);
-}
-
-node *
-PHDdriveWrapperCreation (node *syntax_tree)
-{
-    DBUG_ENTER ("PHDdriveWrapperCreation");
-
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_cwc, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_lac2funwc, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_ssawc, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_dfc, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_eudt, syntax_tree, ALWAYS);
-
-    DBUG_RETURN (syntax_tree);
-}
-
-node *
-PHDdriveWithLoopEnhancement (node *syntax_tree)
-{
-    DBUG_ENTER ("PHDdriveWithLoopEnhancement");
-
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_accu, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_wldp, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_rtup, syntax_tree, global.optimize.dortup);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_wlpg, syntax_tree, ALWAYS);
-
-    DBUG_RETURN (syntax_tree);
-}
-
-node *
-PHDdriveOptimization (node *syntax_tree)
-{
-    DBUG_ENTER ("PHDdriveOptimization");
-
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_inl, syntax_tree, global.optimize.doinl);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_dfr, syntax_tree, global.optimize.dodfr);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_dcr, syntax_tree, global.optimize.dodcr);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_lir, syntax_tree, global.optimize.dolir);
-    syntax_tree
-      = PHrunCompilerSubPhase (SUBPH_isaa, syntax_tree,
-                               global.optimize.dosaacyc && global.optimize.dodcr);
-
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_cyc, syntax_tree, ALWAYS);
-
-    syntax_tree
-      = PHrunCompilerSubPhase (SUBPH_scyc, syntax_tree, global.run_stabilization_cycle);
-
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_lir2, syntax_tree, global.optimize.dolir);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_uesd, syntax_tree, global.optimize.doesd);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_dfr2, syntax_tree, global.optimize.dodfr);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_dcr2, syntax_tree, global.optimize.dodcr);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_rtc, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_fineat, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_finebt, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_wlfs, syntax_tree, global.optimize.dowlfs);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_cse2, syntax_tree,
-                                         global.optimize.dowlfs && global.optimize.docse);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_dcr3, syntax_tree,
-                                         global.optimize.dowlfs && global.optimize.dodcr);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_wlpg2, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_isaa2, syntax_tree,
-                                         global.optimize.dosaa && global.optimize.dodcr);
-
-    for (int i = 0; i < 3; i++) {
-        syntax_tree
-          = PHrunCompilerSubPhase (SUBPH_svprfunr, syntax_tree,
-                                   global.optimize.dosaa && global.optimize.dodcr
-                                     && global.optimize.doprfunr);
-        syntax_tree
-          = PHrunCompilerSubPhase (SUBPH_svtup, syntax_tree,
-                                   global.optimize.dosaa && global.optimize.dodcr
-                                     && global.optimize.dotup);
-        syntax_tree
-          = PHrunCompilerSubPhase (SUBPH_sveat, syntax_tree,
-                                   global.optimize.dosaa && global.optimize.dodcr
-                                     && global.optimize.dotup);
-        syntax_tree
-          = PHrunCompilerSubPhase (SUBPH_svebt, syntax_tree,
-                                   global.optimize.dosaa && global.optimize.dodcr
-                                     && global.optimize.dotup);
-        syntax_tree
-          = PHrunCompilerSubPhase (SUBPH_svcf, syntax_tree,
-                                   global.optimize.dosaa && global.optimize.dodcr
-                                     && global.optimize.docf);
-        syntax_tree
-          = PHrunCompilerSubPhase (SUBPH_svcse, syntax_tree,
-                                   global.optimize.dosaa && global.optimize.dodcr
-                                     && global.optimize.docse);
-        syntax_tree
-          = PHrunCompilerSubPhase (SUBPH_svcvp, syntax_tree,
-                                   global.optimize.dosaa && global.optimize.dodcr
-                                     && global.optimize.docvp);
-        syntax_tree
-          = PHrunCompilerSubPhase (SUBPH_svwlsimp, syntax_tree,
-                                   global.optimize.dosaa && global.optimize.dodcr
-                                     && global.optimize.dowlsimp);
-        syntax_tree
-          = PHrunCompilerSubPhase (SUBPH_svdcr, syntax_tree,
-                                   global.optimize.dosaa && global.optimize.dodcr
-                                     && global.optimize.dodcr);
+#define ENDOPTCYCLEFUN()                                                                 \
+    FUNDEF_WASOPTIMIZED (fundef) = STATdidSomething (&global.optcounters);               \
+    if (FUNDEF_WASOPTIMIZED (fundef)) {                                                  \
+        STATaddCounters (&oc_pass, &global.optcounters);                                 \
+        STATclearCounters (&global.optcounters);                                         \
+    }                                                                                    \
+    DBUG_EXECUTE ("OPT", STATprint (&global.optcounters););                              \
+    }                                                                                    \
+    fundef = FUNDEF_NEXT (fundef);                                                       \
+    }                                                                                    \
     }
 
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_wrci, syntax_tree, global.optimize.douip);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_wlidx, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_ivesplit, syntax_tree,
-                                         global.optimize.doive && global.optimize.dosaa
-                                           && global.optimize.dodcr);
-    syntax_tree
-      = PHrunCompilerSubPhase (SUBPH_cvpive, syntax_tree,
-                               global.optimize.doive && global.optimize.dosaa
-                                 && global.optimize.dodcr && global.optimize.docvp);
-    syntax_tree
-      = PHrunCompilerSubPhase (SUBPH_cseive, syntax_tree,
-                               global.optimize.doive && global.optimize.dosaa
-                                 && global.optimize.dodcr && global.optimize.docse);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_iveras, syntax_tree,
-                                         global.optimize.doive && global.optimize.dosaa
-                                           && global.optimize.dodcr);
+#define OPTINCYCelement(it_element)                                                      \
+      syntax_tree = PHrunOptimizationInCycle( OIC_##it_element, cycle_counter,
 
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_esv, syntax_tree,
-                                         global.optimize.dosaa && global.optimize.dodcr);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_lirive, syntax_tree,
-                                         ((global.optimize.dosaa && global.optimize.dodcr)
-                                          || global.optimize.doive)
-                                           && global.optimize.dolir);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_dcrive, syntax_tree,
-                                         ((global.optimize.dosaa && global.optimize.dodcr)
-                                          || global.optimize.doive)
-                                           && global.optimize.dodcr);
+#define OPTINCYCcond(it_cond)                                                            \
+  syntax_tree, it_cond);
 
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_fdi, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_optstat, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_typestat, syntax_tree, ALWAYS);
+#ifdef SHOW_MALLOC
 
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_pfap, syntax_tree, global.doprofile);
+#define CHECKS()                                                                         \
+    if (global.treecheck && (syntax_tree != NULL)) {                                     \
+        syntax_tree = CHKdoTreeCheck (syntax_tree);                                      \
+    }                                                                                    \
+    if (global.memcheck && (syntax_tree != NULL)) {                                      \
+        syntax_tree = CHKMdoMemCheck (syntax_tree);                                      \
+    }
+
+#else /* SHOW_MALLOC */
+
+#define CHECKS()
+
+#endif /* SHOW_MALLOC */
+
+#define ENDOPTCYCLE(it_element)                                                          \
+    CHECKS ()                                                                            \
+    STATaddCounters (&oc_pass, &global.optcounters);                                     \
+    STATclearCounters (&global.optcounters);                                             \
+    if (STATdidSomething (&oc_pass)) {                                                   \
+        go_on = TRUE;                                                                    \
+        STATaddCounters (&oc_global, &oc_pass);                                          \
+    } else {                                                                             \
+        go_on = FALSE;                                                                   \
+        CTInote (" ");                                                                   \
+    }                                                                                    \
+    }                                                                                    \
+    while (go_on && (cycle_counter < global.max_optcycles)                               \
+           && ((cycle_counter < global.break_cycle_specifier)                            \
+               || (global.break_after_optincyc > global.compiler_optincyc)))             \
+        ;                                                                                \
+    STATcopyCounters (&global.optcounters, &oc_global);                                  \
+    if (go_on && (cycle_counter == global.max_optcycles)) {                              \
+        CTIwarn ("Maximum number of optimization cycles reached");                       \
+        global.run_stabilization_cycle = TRUE;                                           \
+    }                                                                                    \
+    DBUG_RETURN (syntax_tree);                                                           \
+    }
+
+#include "phase_sac2c.mac"
+
+#undef OPTCYCLEelement
+#undef OPTINCYCelement
+#undef OPTINCYCcond
+#undef OPTINCYCFUNelement
+#undef OPTINCYCFUNcond
+#undef ENDOPTCYCLE
+#undef ENDOPTCYCLEFUN
+
+/*
+ * Generated phase driver functions
+ */
+
+#define PHASEelement(it_element)                                                         \
+    node *PHDdriveCompilerPhase_##it_element (node *syntax_tree)                         \
+    {                                                                                    \
+        DBUG_ENTER ("PHDdriveCompilerPhase_" #it_element);
+
+#define SUBPHASEelement(it_element)                                                      \
+  syntax_tree = PHrunCompilerSubPhase( SUBPH_##it_element, syntax_tree,
+
+#define SUBPHASEcond(it_cond)                                                            \
+  it_cond);
+
+#define OPTCYCLEelement(it_element)                                                      \
+  syntax_tree = PHrunCompilerSubPhase( SUBPH_##it_element, syntax_tree,
+
+#define OPTCYCLEcond(it_cond)                                                            \
+  it_cond);
+
+#define ENDPHASE(it_element)                                                             \
+    DBUG_RETURN (syntax_tree);                                                           \
+    }
+
+#include "phase_sac2c.mac"
+
+#undef PHASEelement
+#undef SUBPHASEelement
+#undef SUBPHASEcond
+#undef OPTCYCLEelement
+#undef OPTCYCLEcond
+#undef ENDPHASE
+
+/*
+ * Generated tool driver functions
+ */
+
+node *
+PHDdriveSac2c (node *syntax_tree)
+{
+    DBUG_ENTER ("PHDdriveSac2c");
+
+#define PHASEelement(it_element)                                                         \
+  syntax_tree = PHrunCompilerPhase( PH_##it_element, syntax_tree,
+
+#define PHASEcond(it_cond)                                                               \
+  it_cond);
+
+#include "phase_sac2c.mac"
+
+#undef SUBPHASEelement
+#undef SUBPHASEcond
 
     DBUG_RETURN (syntax_tree);
 }
 
 node *
-PHDdriveWithLoopTransformation (node *syntax_tree)
+PHDdriveSac4c (node *syntax_tree)
 {
-    DBUG_ENTER ("PHDdriveWithLoopTransformation");
+    DBUG_ENTER ("PHDdriveSac4c");
 
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_wltussa, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_wltfun2lac, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_wltlacinl, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_wltra, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_wltlac2fun, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_wltssa, syntax_tree, ALWAYS);
-    syntax_tree
-      = PHrunCompilerSubPhase (SUBPH_wltcvp, syntax_tree, global.optimize.docvp);
-    syntax_tree
-      = PHrunCompilerSubPhase (SUBPH_wltdcr, syntax_tree, global.optimize.dodcr);
+#if 0
 
-    DBUG_RETURN (syntax_tree);
-}
+#define PHASEelement(it_element)                                                         \
+  syntax_tree = PHrunCompilerPhase( PH_##it_element, syntax_tree,
 
-node *
-PHDdriveMultithreading (node *syntax_tree)
-{
-    DBUG_ENTER ("PHDdriveMultithreading");
+#define PHASEcond(it_cond)                                                               \
+  it_cond);
 
-#ifndef BEMT
+#include "phase_sac4c.mac"
 
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_spmdinit, syntax_tree,
-                                         (global.mtmode == MT_createjoin)
-                                           || (global.mtmode == MT_startstop));
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_createmtfuns, syntax_tree,
-                                         (global.mtmode == MT_createjoin)
-                                           || (global.mtmode == MT_startstop));
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_spmdlift, syntax_tree,
-                                         (global.mtmode == MT_createjoin)
-                                           || (global.mtmode == MT_startstop));
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_sched, syntax_tree,
-                                         (global.mtmode == MT_createjoin)
-                                           || (global.mtmode == MT_startstop));
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_rmspmd, syntax_tree,
-                                         (global.mtmode == MT_createjoin)
-                                           || (global.mtmode == MT_startstop));
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_conclac2fun, syntax_tree,
-                                         (global.mtmode == MT_createjoin)
-                                           || (global.mtmode == MT_startstop));
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_concssa, syntax_tree,
-                                         (global.mtmode == MT_createjoin)
-                                           || (global.mtmode == MT_startstop));
+#undef SUBPHASEelement
+#undef SUBPHASEcond
 
 #endif
-
-#ifndef PRODUCTION
-    syntax_tree
-      = PHrunCompilerSubPhase (SUBPH_tem, syntax_tree, global.mtmode == MT_mtstblock);
-    syntax_tree
-      = PHrunCompilerSubPhase (SUBPH_crwiw, syntax_tree, global.mtmode == MT_mtstblock);
-    syntax_tree
-      = PHrunCompilerSubPhase (SUBPH_pem, syntax_tree, global.mtmode == MT_mtstblock);
-    syntax_tree
-      = PHrunCompilerSubPhase (SUBPH_cdfg, syntax_tree, global.mtmode == MT_mtstblock);
-    syntax_tree
-      = PHrunCompilerSubPhase (SUBPH_asmra, syntax_tree, global.mtmode == MT_mtstblock);
-    syntax_tree
-      = PHrunCompilerSubPhase (SUBPH_crece, syntax_tree, global.mtmode == MT_mtstblock);
-    syntax_tree
-      = PHrunCompilerSubPhase (SUBPH_cegro, syntax_tree, global.mtmode == MT_mtstblock);
-    syntax_tree
-      = PHrunCompilerSubPhase (SUBPH_repfun, syntax_tree, global.mtmode == MT_mtstblock);
-    syntax_tree
-      = PHrunCompilerSubPhase (SUBPH_concel, syntax_tree, global.mtmode == MT_mtstblock);
-    syntax_tree
-      = PHrunCompilerSubPhase (SUBPH_abort, syntax_tree, global.mtmode == MT_mtstblock);
-#endif
-
-    DBUG_RETURN (syntax_tree);
-}
-
-node *
-PHDdriveMemoryManagement (node *syntax_tree)
-{
-    DBUG_ENTER ("PHDdriveMemoryManagement");
-
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_simd, syntax_tree, global.simd);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_asd, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_copy, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_alloc, syntax_tree, ALWAYS);
-    syntax_tree
-      = PHrunCompilerSubPhase (SUBPH_emmdcr, syntax_tree, global.optimize.dodcr);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_rci, syntax_tree, global.optimize.douip);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_shal, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_ia, syntax_tree, global.optimize.dosrf);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_lro, syntax_tree,
-                                         global.optimize.dosrf && global.optimize.dolro);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_aa, syntax_tree, global.optimize.dosrf);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_srce, syntax_tree, global.optimize.douip);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_frc, syntax_tree, global.optimize.douip);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_sr, syntax_tree,
-                                         global.optimize.douip && global.optimize.dosrf);
-    syntax_tree
-      = PHrunCompilerSubPhase (SUBPH_rb, syntax_tree,
-                               global.optimize.doipc
-                                 || (global.optimize.douip && global.optimize.dodr));
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_ipc, syntax_tree, global.optimize.doipc);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_dr, syntax_tree,
-                                         global.optimize.douip && global.optimize.dodr);
-    syntax_tree
-      = PHrunCompilerSubPhase (SUBPH_emmdcr2, syntax_tree, global.optimize.dodcr);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_unshal, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_rc, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_rcm, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_rco, syntax_tree, global.optimize.dorco);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_mvsmi, syntax_tree,
-                                         (global.mtmode == MT_createjoin)
-                                           || (global.mtmode == MT_startstop));
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_re, syntax_tree, ALWAYS);
-
-    DBUG_RETURN (syntax_tree);
-}
-
-node *
-PHDdrivePrecompilation (node *syntax_tree)
-{
-    DBUG_ENTER ("PHDdrivePrecompilation");
-
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_ussa, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_fun2lac, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_lacinl, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_rec, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_spmdfunfix, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_rera, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_reso, syntax_tree, ALWAYS);
-
-#ifdef BEMT
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_spmdinit, syntax_tree,
-                                         (global.mtmode == MT_createjoin)
-                                           || (global.mtmode == MT_startstop));
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_createmtfuns, syntax_tree,
-                                         (global.mtmode == MT_createjoin)
-                                           || (global.mtmode == MT_startstop));
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_spmdlift, syntax_tree,
-                                         (global.mtmode == MT_createjoin)
-                                           || (global.mtmode == MT_startstop));
-#endif
-
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_sls, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_mmv, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_moi, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_rcs, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_fpc, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_tcp, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_mng, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_rid, syntax_tree, ALWAYS);
-
-    DBUG_RETURN (syntax_tree);
-}
-
-node *
-PHDdriveCodeGeneration (node *syntax_tree)
-{
-    DBUG_ENTER ("PHDdriveCodeGeneration");
-
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_tot, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_comp, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_prt, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_frtr, syntax_tree, ALWAYS);
-
-    DBUG_RETURN (syntax_tree);
-}
-
-node *
-PHDdriveBinaryCodeCreation (node *syntax_tree)
-{
-    DBUG_ENTER ("PHDdriveBinaryCodeCreation");
-
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_hdep, syntax_tree, ALWAYS);
-    syntax_tree = PHrunCompilerSubPhase (SUBPH_ivcc, syntax_tree, ALWAYS);
-    syntax_tree
-      = PHrunCompilerSubPhase (SUBPH_crlib, syntax_tree, global.filetype != F_prog);
 
     DBUG_RETURN (syntax_tree);
 }

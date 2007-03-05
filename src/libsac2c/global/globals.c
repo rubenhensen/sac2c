@@ -41,6 +41,16 @@
 
 #include <limits.h>
 
+/*
+ * global variable to hold the global variables
+ */
+
+global_t global;
+
+/*
+ * auxiliary data structures for initialisation
+ */
+
 static bool argtag_has_shp_init[] = {
 #define SELECTshp(it_shp) it_shp
 #include "argtag_info.mac"
@@ -488,19 +498,24 @@ BuildFunApLine (int maxfun, int maxfunap)
  * Initialize global variables from globals.mac
  */
 
-global_t global;
-
 void
-GLOBinitializeGlobal (int argc, char *argv[])
+GLOBinitializeGlobal (int argc, char *argv[], tool_t tool, char *toolname)
 {
     DBUG_ENTER ("GLOBinitializeGlobal");
 
 #define GLOBALname(name) global.name =
 #define GLOBALinit(init) init;
+
 #include "globals.mac"
+
+#undef GLOBALname
+#undef GLOBALinit
 
     global.argc = argc;
     global.argv = argv;
+
+    global.tool = tool;
+    global.toolname = toolname;
 
     DBUG_VOID_RETURN;
 }
