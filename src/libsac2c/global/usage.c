@@ -485,6 +485,8 @@ PrintGeneralDebugOptions (void)
     DBUG_VOID_RETURN;
 }
 
+#ifndef DBUG_OFF
+
 static void
 PrintInternalDebugOptions (void)
 {
@@ -513,10 +515,14 @@ PrintInternalDebugOptions (void)
       "    -# <f>/<t>/<o>  Restrict the effect of any Fred Fish DBUG package option <o>\n"
       "                    to the range <f> to <t> of sac2c compiler phases.\n"
       "                      (default: <f> = first compiler phase,\n"
-      "                                <t> = last compiler phase.)\n");
+      "                                <t> = last compiler phase.)\n"
+      "                    All kinds of phases can be specified using a syntax\n"
+      "                    analogous to that of the -b option.\n");
 
     DBUG_VOID_RETURN;
 }
+
+#endif /* DBUG_OFF */
 
 static void
 PrintRuntimeCheckOptions (void)
@@ -879,7 +885,9 @@ USGprintUsage ()
         PrintMultithreadOptions ();
         PrintBackendOptions ();
         PrintGeneralDebugOptions ();
+#ifndef DBUG_OFF
         PrintInternalDebugOptions ();
+#endif /* DBUG_OFF */
         PrintRuntimeCheckOptions ();
         PrintRuntimeTraceOptions ();
         PrintRuntimeProfilingOptions ();

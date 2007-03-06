@@ -595,34 +595,30 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
 
     ARGS_FLAG ("wls_aggressive", global.wls_aggressive = TRUE);
 
+    /*
+     * Options starting with strange symbols
+     */
+
+#ifndef DBUG_OFF
+
     ARGS_OPTION_BEGIN ("#")
     {
         if (NULL == strchr (ARG, '/')) {
-            global.my_dbug_str = STRcpy (ARG);
-            global.my_dbug = 1;
+            global.my_dbug = TRUE;
             global.my_dbug_from = PH_initial;
             global.my_dbug_to = PH_final;
+            global.my_dbug_str = STRcpy (ARG);
         } else {
-            char *s;
-            global.my_dbug_from = (compiler_phase_t)strtol (ARG, &s, 10);
-            if (*s == '/') {
-                s++;
-            } else {
-                ARGS_ERROR ("Invalid dbug phase specification");
-            }
-
-            global.my_dbug_to = (compiler_phase_t)strtol (s, &s, 10);
-            if (*s == '/') {
-                s++;
-            } else {
-                ARGS_ERROR ("Invalid dbug phase specification");
-            }
-
-            global.my_dbug_str = STRcpy (s);
-            global.my_dbug = 1;
+            PHinterpretDbugOption (ARG);
         }
     }
     ARGS_OPTION_END ("#");
+
+#endif /* DBUG_OFF */
+
+    /*
+     * Arguments
+     */
 
     ARGS_ARGUMENT ({
         if (global.sacfilename == NULL) {

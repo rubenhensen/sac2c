@@ -137,12 +137,49 @@ static compiler_phase_t phase_parent[] = {PH_initial,
 #undef CYCLE
 #undef CYCLEPHASE
 
+/*
+ * Unique phase identifier table
+ */
+
+#define PHASE(name, text, cond) #name,
+
+#define SUBPHASE(name, text, fun, cond, phase) #phase ":" #name,
+
+#define CYCLE(name, text, cond, phase) #phase ":" #name,
+
+#define CYCLEPHASE(name, text, fun, cond, phase, cycle) #phase ":" #cycle ":" #name,
+
+static const char *phase_ident[] = {"",
+#include "phase_sac2c.mac"
+                                    ""};
+
+#undef PHASE
+#undef SUBPHASE
+#undef CYCLE
+#undef CYCLEPHASE
+
 const char *
 PHphaseText (compiler_phase_t phase)
 {
     DBUG_ENTER ("PHphaseText");
 
     DBUG_RETURN (phase_text[phase]);
+}
+
+static compiler_phase_t
+SearchPhaseIdent (char *ident)
+{
+    compiler_phase_t phase;
+
+    DBUG_ENTER ("SearchPhaseIdent");
+
+    phase = PH_initial;
+
+    do {
+        phase++;
+    } while ((phase < PH_final) && !STReq (phase_ident[phase], ident));
+
+    DBUG_RETURN (phase);
 }
 
 static compiler_phase_t
@@ -223,8 +260,6 @@ SearchCyclePhase (compiler_phase_t cycle, char *name)
 
     DBUG_RETURN (cyclephase);
 }
-
-#if 1
 
 void
 PHinterpretBreakOption (char *option)
@@ -333,81 +368,106 @@ PHinterpretBreakOption (char *option)
     DBUG_VOID_RETURN;
 }
 
-#else
+#ifndef DBUG_OFF
 
 void
-PHinterpretBreakOption (char *option)
+PHinterpretDbugOption (char *option)
 {
-    int num;
-    char *rest;
+    char *tok;
+    compiler_phase_t phase;
 
-    DBUG_ENTER ("PHinterpreteBreakOption");
+    DBUG_ENTER ("PHinterpretDbugOption");
 
-    num = strtol (option, &rest, 10);
+    tok = STRtok (option, "/");
 
-    if ((rest != option) && (rest[0] != '\0')) {
-        CTIerror ("Illegal argument for break option: -b %s", option);
+    DBUG_ASSERT (tok != NULL, "Corruption in dbug option");
+
+    if (tok[0] != '\0') {
+        phase = SearchPhaseIdent (tok);
+
+        if (phase == PH_final) {
+            CTIerror ("Illegal start compiler phase specification in dbug option: \n"
+                      "  -# %s\n"
+                      "See sac2c -h for a list of legal break options.",
+                      option);
+        } else {
+            global.my_dbug_from = phase;
+        }
+    }
+
+    tok = MEMfree (tok);
+
+    tok = STRtok (NULL, "/");
+
+    if (tok == NULL) {
+        CTIerror ("Missing stop compiler phase specification in dbug option: \n"
+                  "  -# %s\n"
+                  "See sac2c -h for a list of legal break options.",
+                  option);
     } else {
+        if (tok[0] != '\0') {
+            phase = SearchPhaseIdent (tok);
 
-        /*
-         * First, we check for compiler phase specifications.
-         */
+            if (phase == PH_final) {
+                CTIerror ("Illegal start compiler phase specification in dbug option: \n"
+                          "  -# %s\n"
+                          "See sac2c -h for a list of legal break options.",
+                          option);
+            } else if (phase < global.my_dbug_from) {
+                CTIerror ("Stop phase is before start phase in dbug option: \n"
+                          "  -# %s\n"
+                          "See sac2c -h for sequence of phases.",
+                          option);
+            } else {
+                global.my_dbug_to = phase;
+            }
+        }
 
-#define PHASEelement(it_element)                                                         \
-    if (STReq (option, #it_element) || (num == (int)PH_##it_element)) {                  \
-        global.break_after = PH_##it_element;                                            \
-    } else
+        tok = MEMfree (tok);
 
-#include "phase_sac2c.mac"
+        tok = STRtok (NULL, "/");
 
-#undef PHASEelement
-
-        /*
-         * Next, we check for compiler subphase specifications.
-         */
-
-#define SUBPHASEelement(it_element)                                                      \
-    if (STReq (option, #it_element)) {                                                   \
-        global.break_after_subphase = SUBPH_##it_element;                                \
-    } else
-
-#define CYCLEelement(it_element)                                                         \
-    if (STReq (option, #it_element)) {                                                   \
-        global.break_after_subphase = SUBPH_##it_element;                                \
-    } else
-
-#include "phase_sac2c.mac"
-
-#undef SUBPHASEelement
-#undef CYCLEelement
-
-        /*
-         * At last, we check for cycle optimisation specifications.
-         */
-
-#define CYCLEPHASEelement(it_element)                                                    \
-    if (STReq (option, #it_element)) {                                                   \
-        global.break_after_optincyc = OIC_##it_element;                                  \
-    } else
-
-#define CYCLEPHASEFUNelement(it_element)                                                 \
-    if (STReq (option, #it_element)) {                                                   \
-        global.break_after_optincyc = OIC_##it_element;                                  \
-    } else
-
-#include "phase_sac2c.mac"
-
-#undef CYCLEPHASEelement
-#undef CYCLEPHASEFUNelement
-
-        {
-            CTIerror ("Illegal argument for break option: -b %s", option);
+        if (tok == NULL) {
+            CTIerror ("Missing dbug string in dbug option: \n"
+                      "  -# %s\n"
+                      "See sac2c -h for syntac of dbug option.",
+                      option);
+        } else {
+            global.my_dbug_str = tok;
+            global.my_dbug = 1;
         }
     }
 
     DBUG_VOID_RETURN;
 }
-#endif
+
+static void
+CheckEnableDbug (compiler_phase_t phase)
+{
+    DBUG_ENTER ("CheckEnableDbug");
+
+    if (global.my_dbug && (phase == global.my_dbug_from)) {
+        DBUG_PUSH (global.my_dbug_str);
+        global.my_dbug_active = TRUE;
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+static void
+CheckDisableDbug (compiler_phase_t phase)
+{
+    DBUG_ENTER ("CheckDisableDbug");
+
+    if (global.my_dbug && global.my_dbug_active && (phase == global.my_dbug_to)) {
+        DBUG_POP ();
+        global.my_dbug_active = FALSE;
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+#endif /* DBUG_OFF */
 
 node *
 PHrunCompilerPhase (compiler_phase_t phase, node *syntax_tree, bool cond)
@@ -424,11 +484,7 @@ PHrunCompilerPhase (compiler_phase_t phase, node *syntax_tree, bool cond)
     phase_num += 1;
 
 #ifndef DBUG_OFF
-    if ((global.my_dbug) && !global.my_dbug_active && (phase >= global.my_dbug_from)
-        && (phase <= global.my_dbug_to)) {
-        DBUG_PUSH (global.my_dbug_str);
-        global.my_dbug_active = 1;
-    }
+    CheckEnableDbug (phase);
 #endif
 
     CTInote (" ");
@@ -456,10 +512,9 @@ PHrunCompilerPhase (compiler_phase_t phase, node *syntax_tree, bool cond)
         CTIstate ("** %2d: %s skipped.", phase_num, PHphaseText (phase));
     }
 
-    if ((global.my_dbug) && (global.my_dbug_active) && (phase >= global.my_dbug_to)) {
-        DBUG_POP ();
-        global.my_dbug_active = 0;
-    }
+#ifndef DBUG_OFF
+    CheckDisableDbug (phase);
+#endif
 
     if (global.break_after_phase == phase) {
         CTIterminateCompilation (syntax_tree);
@@ -479,6 +534,10 @@ PHrunCompilerSubPhase (compiler_phase_t subphase, node *syntax_tree, bool cond)
     global.compiler_subphase = subphase;
     global.compiler_anyphase = subphase;
 
+#ifndef DBUG_OFF
+    CheckEnableDbug (subphase);
+#endif
+
     if (cond) {
         if (phase_type[subphase] != PHT_cycle) {
             CTInote ("**** %s ...", PHphaseText (subphase));
@@ -497,6 +556,10 @@ PHrunCompilerSubPhase (compiler_phase_t subphase, node *syntax_tree, bool cond)
 #endif
     }
 
+#ifndef DBUG_OFF
+    CheckDisableDbug (subphase);
+#endif
+
     if (global.break_after_subphase == subphase) {
         CTIterminateCompilation (syntax_tree);
     }
@@ -512,6 +575,10 @@ PHrunCompilerCyclePhase (compiler_phase_t cyclephase, int pass, node *arg_node, 
 
     global.compiler_cyclephase = cyclephase;
     global.compiler_anyphase = cyclephase;
+
+#ifndef DBUG_OFF
+    CheckEnableDbug (cyclephase);
+#endif
 
     DBUG_ASSERT (((arg_node != NULL)
                   && ((funbased && (NODE_TYPE (arg_node) == N_fundef))
@@ -530,6 +597,10 @@ PHrunCompilerCyclePhase (compiler_phase_t cyclephase, int pass, node *arg_node, 
         arg_node = phase_fun[cyclephase](arg_node);
         CTIabortOnError ();
     }
+
+#ifndef DBUG_OFF
+    CheckDisableDbug (cyclephase);
+#endif
 
     DBUG_RETURN (arg_node);
 }

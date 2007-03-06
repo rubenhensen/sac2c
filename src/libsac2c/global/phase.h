@@ -25,4 +25,6 @@ extern node *PHrunCompilerCyclePhase (compiler_phase_t cyclephase, int pass,
 
 extern void PHinterpretBreakOption (char *option);
 
+extern void PHinterpretDbugOption (char *option);
+
 #endif /* _SAC_PHASE_H_ */
