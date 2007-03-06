@@ -80,7 +80,7 @@ OPTcheckPreSetupOptions (int argc, char *argv[])
  *   void CheckOptionConsistency()
  *
  * description:
- *   This function is called from main() right after command line arguments
+ *   This function is called right after command line arguments
  *   have been analysed. Errors and warnings are produced whenever the user
  *   has selected an incompatible combination of options.
  *
@@ -93,9 +93,9 @@ CheckOptionConsistency ()
 
     if (global.runtimecheck.boundary && global.optimize.doap) {
         global.optimize.doap = FALSE;
-        CTIwarn ("Boundary check (-check b) and array padding (AP) may not be used"
-                 " simultaneously.\n"
-                 "Array padding disabled");
+        CTIerror ("Boundary check (-check b) and array padding (AP) may not be used"
+                  " simultaneously.\n"
+                  "Array padding disabled");
     }
 
 #ifdef DISABLE_MT
@@ -110,10 +110,9 @@ CheckOptionConsistency ()
 
 #ifdef DISABLE_PHM
     if (global.optimize.dophm) {
-        CTIwarn ("Private heap management is not yet available for " ARCH " running " OS
-                 ".\n"
-                 "Conventional heap management is used instead");
-        global.optimize.dophm = FALSE;
+        CTIerror ("Private heap management is not yet available for " ARCH " running " OS
+                  ".\n"
+                  "Conventional heap management is used instead");
     }
 #endif
 
@@ -130,10 +129,9 @@ CheckOptionConsistency ()
     }
 
     if (global.runtimecheck.heap && !global.optimize.dophm) {
-        CTIwarn ("Diagnostic heap management is only available in "
-                 "conjunction with private heap management.\n"
-                 "Diagnostic disabled");
-        global.runtimecheck.heap = FALSE;
+        CTIerror ("Diagnostic heap management is only available in "
+                  "conjunction with private heap management.\n"
+                  "Diagnostic disabled");
     }
 
     /*
@@ -145,10 +143,14 @@ CheckOptionConsistency ()
     }
 
     if (global.genlib.c && (global.mtmode != MT_none)) {
-        CTIwarn ("Multithreading is not yet available when compiling for "
-                 "a C-library.\n"
-                 "Generation of C-library disabled");
-        global.genlib.c = FALSE;
+        CTIerror ("Multithreading is not yet available when compiling for "
+                  "a C-library.\n"
+                  "Generation of C-library disabled");
+    }
+
+    if ((global.optimize.dosaa || global.optimize.dosaacyc) && !global.optimize.dodcr) {
+        CTIerror ("Using symbolic array attributes (saa) requires dead code"
+                  "removal (dcr) to be switched on.");
     }
 
     DBUG_VOID_RETURN;

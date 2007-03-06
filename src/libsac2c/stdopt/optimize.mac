@@ -85,7 +85,7 @@ OPTIMIZE ("rtup", rtup, TRUE, FALSE, "reverse type upgrade")
 OPTIMIZE ("esd", esd, FALSE, FALSE, "eliminate substraction and division")
 OPTIMIZE ("wlprop", wlprop, TRUE, FALSE, " withloop propagation")
 OPTIMIZE ("saa", saa, TRUE, FALSE, "insert symbolic array attributes")
-OPTIMIZE ("saacyc", saacyc, FALSE, FALSE, "symbolic array attributes")
+OPTIMIZE ("saacyc", saacyc, FALSE, FALSE, "symbolic array attribute cycle")
 
 OPTCOUNTER (dead_expr, "dead assignment(s) removed")
 OPTCOUNTER (dead_var, "dead variable declaration(s) removed")

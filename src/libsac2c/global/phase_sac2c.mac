@@ -307,7 +307,7 @@ SUBPHASE (lir, "Applying loop invariant removal", LIRdoLoopInvariantRemoval,
           global.optimize.dolir, opt)
 
 SUBPHASE (isaa, "Inserting symbolic array attributes", ISAAdoInsertShapeVariables,
-          global.optimize.dosaacyc &&global.optimize.dodcr, opt)
+          global.optimize.dosaa, opt)
 
 /*************************************************/
 
@@ -319,8 +319,7 @@ CYCLEPHASE (cse, "Applying common subexpression elimination",
             CSEdoCommonSubexpressionElimination, global.optimize.docse, opt, cyc)
 
 CYCLEPHASE (isaa, "Inserting symbolic array attributes",
-            ISAAdoInsertShapeVariablesOneFundef,
-            global.optimize.dosaacyc &&global.optimize.dodcr, opt, cyc)
+            ISAAdoInsertShapeVariablesOneFundef, global.optimize.dosaa, opt, cyc)
 
 CYCLEPHASE (ili, "Infering loop invariant variables", ILIdoInferLoopInvariants, ALWAYS,
             opt, cyc)
@@ -488,12 +487,11 @@ SUBPHASE (wlpg2, "Generating full with-loop partitions", WLPGdoWlPartitionGenera
           ALWAYS, opt)
 
 SUBPHASE (isaa2, "Inserting symbolic array attributes", ISAAdoInsertShapeVariables,
-          global.optimize.dosaa &&global.optimize.dodcr, opt)
+          global.optimize.dosaa, opt)
 
 /*************************************************/
 
-CYCLE (saacyc, "Symbolic array attribute cycle",
-       global.optimize.dosaa &&global.optimize.dodcr, opt)
+CYCLE (saacyc, "Symbolic array attribute cycle", global.optimize.dosaacyc, opt)
 
 CYCLEPHASE (prfunr, "Applying prf unrolling", UPRFdoUnrollPRFsModule,
             global.optimize.doprfunr, opt, saacyc)
@@ -533,36 +531,27 @@ SUBPHASE (wlidx, "Annoting offset variable at with-loops", WLIDXdoAnnotateWithlo
           ALWAYS, opt)
 
 SUBPHASE (ivesplit, "Eliminating index vectors (split selections)",
-          IVESPLITdoSplitSelections,
-          global.optimize.doive &&global.optimize.dosaa &&global.optimize.dodcr, opt)
+          IVESPLITdoSplitSelections, global.optimize.doive &&global.optimize.dosaa, opt)
 
 SUBPHASE (cvp, "Propagating constants and variables", CVPdoConstVarPropagation,
-          global.optimize.doive &&global.optimize.dosaa &&global.optimize.dodcr &&global
-            .optimize.docvp,
-          opt)
+          global.optimize.doive &&global.optimize.dosaa &&global.optimize.docvp, opt)
 
 SUBPHASE (cse, "Eliminating common subexpression",
           CSEdoCommonSubexpressionEliminationModule,
-          global.optimize.doive &&global.optimize.dosaa &&global.optimize.dodcr &&global
-            .optimize.docse,
-          opt)
+          global.optimize.doive &&global.optimize.dosaa &&global.optimize.docse, opt)
 
 SUBPHASE (iveras, "Eliminating index vectors (reuse WL-offsets and scalarize)",
           IVERASdoWithloopReuseAndOptimisation,
-          global.optimize.doive &&global.optimize.dosaa &&global.optimize.dodcr, opt)
+          global.optimize.doive &&global.optimize.dosaa, opt)
 
 SUBPHASE (esv, "Eliminating shape variables", ESVdoEliminateShapeVariables,
-          global.optimize.dosaa &&global.optimize.dodcr, opt)
+          global.optimize.dosaa, opt)
 
 SUBPHASE (lir3, "Applying loop invariant removal", LIRdoLoopInvariantRemoval,
-          ((global.optimize.dosaa && global.optimize.dodcr) || global.optimize.doive)
-            && global.optimize.dolir,
-          opt)
+          (global.optimize.dosaa || global.optimize.doive) && global.optimize.dolir, opt)
 
 SUBPHASE (dcr4, "Removing dead code", DCRdoDeadCodeRemovalModule,
-          ((global.optimize.dosaa && global.optimize.dodcr) || global.optimize.doive)
-            && global.optimize.dodcr,
-          opt)
+          (global.optimize.dosaa || global.optimize.doive) && global.optimize.dodcr, opt)
 
 SUBPHASE (fdi, "Freeing dispatch information", FDIdoFreeDispatchInformation, ALWAYS, opt)
 
