@@ -1499,7 +1499,7 @@ PRTfundef (node *arg_node, info *arg_info)
 
                 fprintf (global.outfile, ";\n");
 
-                if (global.compiler_subphase != SUBPH_prt) {
+                if (global.compiler_subphase != PH_cg_prt) {
                     if (FUNDEF_PRAGMA (arg_node) != NULL) {
                         TRAVdo (FUNDEF_PRAGMA (arg_node), arg_info);
                     }
@@ -1519,7 +1519,7 @@ PRTfundef (node *arg_node, info *arg_info)
          */
 
         if (FUNDEF_ISZOMBIE (arg_node)) {
-            if (global.compiler_subphase != SUBPH_prt) {
+            if (global.compiler_subphase != PH_cg_prt) {
                 fprintf (global.outfile, "/*\n");
                 INDENT;
                 fprintf (global.outfile, " * zombie function:\n");
@@ -1583,7 +1583,7 @@ PRTfundef (node *arg_node, info *arg_info)
                 /* traverse function body */
                 TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 
-                if (global.compiler_subphase != SUBPH_prt) {
+                if (global.compiler_subphase != PH_cg_prt) {
                     if (FUNDEF_PRAGMA (arg_node) != NULL) {
                         TRAVdo (FUNDEF_PRAGMA (arg_node), arg_info);
                     }
@@ -1871,7 +1871,7 @@ PRTblock (node *arg_node, info *arg_info)
 
     if (INFO_FUNDEF (arg_info) != NULL) {
         if (FUNDEF_ISSPMDFUN (INFO_FUNDEF (arg_info)) && (BLOCK_VARDEC (arg_node) != NULL)
-            && (global.compiler_subphase == SUBPH_prt)) {
+            && (global.compiler_subphase == PH_cg_prt)) {
             /*
              * After resolving C-ICMs, there is an intended mismatch in the ordering
              * of explicit and implicit (hidden in h-ICMS) parentheses in SPMD
@@ -1955,7 +1955,7 @@ PRTassign (node *arg_node, info *arg_info)
 
     trav_instr = TRUE;
     if (NODE_TYPE (instr) == N_annotate) {
-        if (global.compiler_phase < PH_cp) {
+        if (global.compiler_phase < PH_cg) {
             trav_instr = FALSE;
             trav_instr = TRUE;
         }
@@ -2608,7 +2608,7 @@ PRTid (node *arg_node, info *arg_info)
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
     }
 
-    if (global.compiler_subphase == SUBPH_prt) {
+    if (global.compiler_subphase == PH_cg_prt) {
         if (ID_NT_TAG (arg_node) != NULL) {
             text = ID_NT_TAG (arg_node);
         } else if (ID_ICMTEXT (arg_node) != NULL) {
@@ -2686,7 +2686,7 @@ PRTglobobj (node *arg_node, info *arg_info)
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
     }
 
-    if (global.compiler_subphase == SUBPH_prt) {
+    if (global.compiler_subphase == PH_cg_prt) {
         DBUG_ASSERT ((OBJDEF_NT_TAG (GLOBOBJ_OBJDEF (arg_node)) != NULL),
                      "found objdef without NT TAG");
 
@@ -3011,7 +3011,7 @@ PRTicm (node *arg_node, info *arg_info)
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
     }
 
-    if (global.compiler_subphase == SUBPH_prt) {
+    if (global.compiler_subphase == PH_cg_prt) {
 #define ICM_ALL
 #define ICM_DEF(prf, trf)                                                                \
     if (strcmp (ICM_NAME (arg_node), #prf) == 0) {                                       \
@@ -4534,7 +4534,7 @@ PRTcwrapper (node * arg_node, info * arg_info)
     NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
   }
 
-  if (global.compiler_subphase != SUBPH_prt) {
+  if (global.compiler_subphase != PH_cg_prt) {
     /* internal debug output of mapping-tree of wrappers */
     DBUG_EXECUTE ("PRINT_CWRAPPER", {
                   nodelist * funlist;
@@ -4690,7 +4690,7 @@ PrintTRAVdo (node *syntax_tree, info *arg_info)
     TRAVpush (TR_prt);
     global.indent = 0;
 
-    if (global.compiler_subphase == SUBPH_prt) {
+    if (global.compiler_subphase == PH_cg_prt) {
         if (global.filetype == F_prog) {
             /*
              * The current file is a SAC program.
@@ -4802,7 +4802,7 @@ PRTdoPrint (node *syntax_tree)
 
 #if 0
   /* if generating c library, invoke the headerfile generator */
-  if (global.genlib.c && (global.compiler_subphase == SUBPH_prt)) {
+  if (global.genlib.c && (global.compiler_subphase == PH_cg_prt)) {
     PrintInterface (syntax_tree);
   }
 #endif
@@ -4909,7 +4909,7 @@ PRTdataflownode (node *arg_node, info *arg_info)
         fprintf (global.outfile, "%s: %s, REFCOUNT: %i", DATAFLOWNODE_NAME (arg_node),
                  MUTHLIBdecodeExecmode (DATAFLOWNODE_EXECMODE (arg_node)),
                  DATAFLOWNODE_REFCOUNT (arg_node));
-        if (global.break_after == PH_mt) {
+        if (global.break_after_phase == PH_mt) {
             fprintf (global.outfile, ", REFLEFT: %i, USED: %i\n",
                      DATAFLOWNODE_REFLEFT (arg_node), DATAFLOWNODE_ISUSED (arg_node));
         } else {

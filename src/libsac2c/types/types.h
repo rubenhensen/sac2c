@@ -70,49 +70,24 @@ typedef enum {
  */
 typedef int usertype;
 
+#define PHASE(name, text, cond) PH_##name,
+
+#define SUBPHASE(name, text, fun, cond, phase) PH_##phase##_##name,
+
+#define CYCLE(name, text, cond, phase) PH_##phase##_##name,
+
+#define CYCLEPHASE(name, text, fun, cond, phase, cycle) PH_##phase##_##cycle##_##name,
+
 typedef enum {
     PH_initial = 0,
-#define PHASEelement(it_element) PH_##it_element,
 #include "phase_sac2c.mac"
-#undef PHASEelement
     PH_final
 } compiler_phase_t;
 
-typedef enum {
-    SUBPH_initial = 0,
-#define SUBPHASEelement(it_element) SUBPH_##it_element,
-#define OPTCYCLEelement(it_element) SUBPH_##it_element,
-#include "phase_sac2c.mac"
-#undef SUBPHASEelement
-#undef OPTCYCLEelement
-    SUBPH_final
-} compiler_subphase_t;
-
-typedef enum {
-    OIC_initial = 0,
-#define OPTINCYCelement(it_element) OIC_##it_element,
-#define OPTINCYCFUNelement(it_element) OIC_##it_element,
-#include "phase_sac2c.mac"
-#undef OPTINCYCelement
-#undef OPTINCYCFUNelement
-    OIC_final
-} compiler_optincyc_t;
-
-typedef enum {
-    PHALL_initial = 0,
-#define PHASEelement(it_element) PHALL_##it_element,
-#define SUBPHASEelement(it_element) PHALL_##it_element,
-#define OPTCYCLEelement(it_element) PHALL_##it_element,
-#define OPTINCYCelement(it_element) PHALL_##it_element,
-#define OPTINCYCFUNelement(it_element) PHALL_##it_element,
-#include "phase_sac2c.mac"
-#undef PHASEelement
-#undef SUBPHASEelement
-#undef OPTCYCLEelement
-#undef OPTINCYCelement
-#undef OPTINCYCFUNelement
-    PHALL_final
-} compiler_allphase_t;
+#undef PHASE
+#undef SUBPHASE
+#undef CYCLE
+#undef CYCLEPHASE
 
 typedef enum { TOOL_sac2c, TOOL_sac4c } tool_t;
 

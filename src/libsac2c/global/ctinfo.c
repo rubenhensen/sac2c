@@ -310,7 +310,7 @@ AbortCompilation ()
 
     fprintf (stderr, "\n*** Compilation failed ***\n");
     fprintf (stderr, "*** Exit code %d (%s)\n", global.compiler_phase,
-             PHphaseName (global.compiler_phase));
+             PHphaseText (global.compiler_phase));
     fprintf (stderr, "*** %d Error(s), %d Warning(s)\n\n", errors, warnings);
 
     exit ((int)global.compiler_phase);
@@ -952,9 +952,10 @@ CTIterminateCompilation (node *syntax_tree)
      */
 
     if (global.print_after_break && (syntax_tree != NULL)
-        && (global.compiler_subphase <= SUBPH_comp)
-        && ((global.break_after < PH_final) || (global.break_after_subphase < SUBPH_final)
-            || (global.break_after_optincyc < OIC_final))) {
+        && (global.compiler_subphase <= PH_cg_cpl)
+        && ((global.break_after_phase < PH_final)
+            || (global.break_after_subphase < PH_final)
+            || (global.break_after_cyclephase < PH_final))) {
         syntax_tree = PRTdoPrint (syntax_tree);
     }
 
@@ -975,16 +976,20 @@ CTIterminateCompilation (node *syntax_tree)
     CTIstate (" ");
     CTIstate ("** Compilation successful");
 
-    if (global.break_after < PH_final) {
-        CTIstate ("** BREAK after: %s\n", PHphaseName (global.compiler_phase));
-    } else if (global.break_after_subphase < SUBPH_final) {
-        CTIstate ("** BREAK during: %s\n", PHphaseName (global.compiler_phase));
-        CTIstate ("** BREAK after:  %s\n", PHsubPhaseName (global.compiler_subphase));
-    } else if (global.break_after_optincyc < OIC_final) {
-        CTIstate ("** BREAK during: %s\n", PHphaseName (global.compiler_phase));
-        CTIstate ("** BREAK during: %s\n", PHsubPhaseName (global.compiler_subphase));
-        CTIstate ("** BREAK in cycle:  %d\n", global.break_cycle_specifier);
-        CTIstate ("** BREAK after:  %s\n", PHoptInCycName (global.break_after_optincyc));
+    if (global.break_after_cyclephase < PH_final) {
+        CTIstate ("** BREAK during:   %s\n", PHphaseText (global.compiler_phase));
+        CTIstate ("** BREAK in cycle: %s\n", PHphaseText (global.compiler_subphase));
+        CTIstate ("** BREAK in pass:  %d\n", global.break_cycle_specifier);
+        CTIstate ("** BREAK after:    %s\n", PHphaseText (global.break_after_cyclephase));
+    } else {
+        if (global.break_after_subphase < PH_final) {
+            CTIstate ("** BREAK during: %s\n", PHphaseText (global.compiler_phase));
+            CTIstate ("** BREAK after:  %s\n", PHphaseText (global.compiler_subphase));
+        } else {
+            if (global.break_after_phase < PH_final) {
+                CTIstate ("** BREAK after: %s\n", PHphaseText (global.compiler_phase));
+            }
+        }
     }
 
 #ifdef SHOW_MALLOC

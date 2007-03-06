@@ -22,25 +22,27 @@
  * Generated cycle driver functions
  */
 
-#define OPTCYCLEelement(it_element)                                                      \
-    node *PHDdriveOptCycle_##it_element (node *syntax_tree)                              \
+#define CYCLEname(name)                                                                  \
+    node *PHDdriveCycle_##name (node *syntax_tree)                                       \
     {                                                                                    \
         int cycle_counter = 0;                                                           \
         optimize_counter_t oc_global;                                                    \
         optimize_counter_t oc_pass;                                                      \
         bool go_on;                                                                      \
-        DBUG_ENTER ("PHDdriveOptCycle_" #it_element);                                    \
+        node *fundef;                                                                    \
+        DBUG_ENTER ("PHDdriveCycle_" #name);                                             \
         STATcopyCounters (&oc_global, &global.optcounters);                              \
         STATclearCounters (&global.optcounters);                                         \
+        fundef = NULL;                                                                   \
         do {                                                                             \
             cycle_counter += 1;                                                          \
             CTInote (" ");                                                               \
-            CTInote ("****** Cycle pass: %i", cycle_counter);                            \
+            CTInote ("**** %s pass: %i", PHphaseText (global.compiler_subphase),         \
+                     cycle_counter);                                                     \
             STATclearCounters (&oc_pass);
 
-#define OPTCYCLEFUN()                                                                    \
+#define FUNBEGIN()                                                                       \
     {                                                                                    \
-        node *fundef;                                                                    \
         STATaddCounters (&oc_pass, &global.optcounters);                                 \
         STATclearCounters (&global.optcounters);                                         \
         fundef = MODULE_FUNS (syntax_tree);                                              \
@@ -49,17 +51,11 @@
                  && FUNDEF_WASOPTIMIZED (fundef))) {                                     \
                 CTItell (4, " ");                                                        \
                 CTInote ("****** Optimizing function:");                                 \
-                CTInote ("****** %s( %s): ...", CTIitemName (fundef),                    \
+                CTInote ("******  %s( %s): ...", CTIitemName (fundef),                   \
                          CTIfunParams (fundef));                                         \
                 FUNDEF_ISINLINECOMPLETED (fundef) = FALSE;
 
-#define OPTINCYCFUNelement(it_element)                                                   \
-            fundef = PHrunOptimizationInCycleFun( OIC_##it_element, cycle_counter,
-
-#define OPTINCYCFUNcond(it_cond)                                                         \
-  fundef, it_cond);
-
-#define ENDOPTCYCLEFUN()                                                                 \
+#define FUNEND()                                                                         \
     FUNDEF_WASOPTIMIZED (fundef) = STATdidSomething (&global.optcounters);               \
     if (FUNDEF_WASOPTIMIZED (fundef)) {                                                  \
         STATaddCounters (&oc_pass, &global.optcounters);                                 \
@@ -71,11 +67,14 @@
     }                                                                                    \
     }
 
-#define OPTINCYCelement(it_element)                                                      \
-      syntax_tree = PHrunOptimizationInCycle( OIC_##it_element, cycle_counter,
-
-#define OPTINCYCcond(it_cond)                                                            \
-  syntax_tree, it_cond);
+#define CYCLEPHASE(name, text, fun, cond, phase, cycle)                                  \
+    if (fundef == NULL) {                                                                \
+        syntax_tree = PHrunCompilerCyclePhase (PH_##phase##_##cycle##_##name,            \
+                                               cycle_counter, syntax_tree, cond, FALSE); \
+    } else {                                                                             \
+        fundef = PHrunCompilerCyclePhase (PH_##phase##_##cycle##_##name, cycle_counter,  \
+                                          fundef, cond, TRUE);                           \
+    }
 
 #ifdef SHOW_MALLOC
 
@@ -93,7 +92,7 @@
 
 #endif /* SHOW_MALLOC */
 
-#define ENDOPTCYCLE(it_element)                                                          \
+#define ENDCYCLE(name)                                                                   \
     CHECKS ()                                                                            \
     STATaddCounters (&oc_pass, &global.optcounters);                                     \
     STATclearCounters (&global.optcounters);                                             \
@@ -107,7 +106,7 @@
     }                                                                                    \
     while (go_on && (cycle_counter < global.max_optcycles)                               \
            && ((cycle_counter < global.break_cycle_specifier)                            \
-               || (global.break_after_optincyc > global.compiler_optincyc)))             \
+               || (global.break_after_cyclephase > global.compiler_cyclephase)))         \
         ;                                                                                \
     STATcopyCounters (&global.optcounters, &oc_global);                                  \
     if (go_on && (cycle_counter == global.max_optcycles)) {                              \
@@ -119,46 +118,37 @@
 
 #include "phase_sac2c.mac"
 
-#undef OPTCYCLEelement
-#undef OPTINCYCelement
-#undef OPTINCYCcond
-#undef OPTINCYCFUNelement
-#undef OPTINCYCFUNcond
-#undef ENDOPTCYCLE
-#undef ENDOPTCYCLEFUN
+#undef CYCLEname
+#undef CYCLEPHASE
+#undef ENDCYCLE
+#undef FUNBEGIN
+#undef FUNEND
+#undef CHECKS
 
 /*
  * Generated phase driver functions
  */
 
-#define PHASEelement(it_element)                                                         \
-    node *PHDdriveCompilerPhase_##it_element (node *syntax_tree)                         \
+#define PHASEname(name)                                                                  \
+    node *PHDdrivePhase_##name (node *syntax_tree)                                       \
     {                                                                                    \
-        DBUG_ENTER ("PHDdriveCompilerPhase_" #it_element);
+        DBUG_ENTER ("PHDdrivePhase_" #name);
 
-#define SUBPHASEelement(it_element)                                                      \
-  syntax_tree = PHrunCompilerSubPhase( SUBPH_##it_element, syntax_tree,
+#define SUBPHASE(name, text, fun, cond, phase)                                           \
+    syntax_tree = PHrunCompilerSubPhase (PH_##phase##_##name, syntax_tree, cond);
 
-#define SUBPHASEcond(it_cond)                                                            \
-  it_cond);
+#define CYCLE(name, text, cond, phase)                                                   \
+    syntax_tree = PHrunCompilerSubPhase (PH_##phase##_##name, syntax_tree, cond);
 
-#define OPTCYCLEelement(it_element)                                                      \
-  syntax_tree = PHrunCompilerSubPhase( SUBPH_##it_element, syntax_tree,
-
-#define OPTCYCLEcond(it_cond)                                                            \
-  it_cond);
-
-#define ENDPHASE(it_element)                                                             \
+#define ENDPHASE(name)                                                                   \
     DBUG_RETURN (syntax_tree);                                                           \
     }
 
 #include "phase_sac2c.mac"
 
-#undef PHASEelement
-#undef SUBPHASEelement
-#undef SUBPHASEcond
-#undef OPTCYCLEelement
-#undef OPTCYCLEcond
+#undef PHASEname
+#undef SUBPHASE
+#undef CYCLE
 #undef ENDPHASE
 
 /*
@@ -170,15 +160,15 @@ PHDdriveSac2c (node *syntax_tree)
 {
     DBUG_ENTER ("PHDdriveSac2c");
 
-#define PHASEelement(it_element)                                                         \
-  syntax_tree = PHrunCompilerPhase( PH_##it_element, syntax_tree,
+#define PHASEname(name)                                                                  \
+  syntax_tree = PHrunCompilerPhase( PH_##name, syntax_tree,
 
-#define PHASEcond(it_cond)                                                               \
-  it_cond);
+#define PHASEcond(cond)                                                                  \
+  cond);
 
 #include "phase_sac2c.mac"
 
-#undef SUBPHASEelement
+#undef SUBPHASEname
 #undef SUBPHASEcond
 
     DBUG_RETURN (syntax_tree);
@@ -191,15 +181,15 @@ PHDdriveSac4c (node *syntax_tree)
 
 #if 0
 
-#define PHASEelement(it_element)                                                         \
-  syntax_tree = PHrunCompilerPhase( PH_##it_element, syntax_tree,
+#define PHASEname(name)                                                                  \
+  syntax_tree = PHrunCompilerPhase( PH_##name, syntax_tree,
 
-#define PHASEcond(it_cond)                                                               \
-  it_cond);
+#define PHASEcond(cond)                                                                  \
+  cond);
 
 #include "phase_sac4c.mac"
 
-#undef SUBPHASEelement
+#undef SUBPHASEname
 #undef SUBPHASEcond
 
 #endif

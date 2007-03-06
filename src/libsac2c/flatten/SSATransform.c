@@ -1571,7 +1571,7 @@ SSATdoTransform (node *syntax_tree)
                  "SSATransform is used for module nodes only");
 
 #ifndef DBUG_OFF
-    if (global.compiler_phase == PH_op) {
+    if (global.compiler_phase == PH_opt) {
         DBUG_PRINT ("OPT", ("starting ssa transformation for ast"));
     }
 #endif
@@ -1614,7 +1614,7 @@ SSATdoTransformAllowGOs (node *syntax_tree)
                  "SSATdoTransformAllowGos is used for module nodes only");
 
 #ifndef DBUG_OFF
-    if (global.compiler_phase == PH_op) {
+    if (global.compiler_phase == PH_opt) {
         DBUG_PRINT ("OPT", ("starting ssa transformation allowing GOs for ast"));
     }
 #endif
@@ -1656,7 +1656,7 @@ SSATdoTransformOneFunction (node *fundef)
 
     if (!(FUNDEF_ISLACFUN (fundef))) {
 #ifndef DBUG_OFF
-        if (global.compiler_phase == PH_op) {
+        if (global.compiler_phase == PH_opt) {
             DBUG_PRINT ("OPT",
                         ("starting ssa transformation for %s", FUNDEF_NAME (fundef)));
         }
@@ -1698,7 +1698,7 @@ SSATdoTransformOneFundef (node *fundef)
                  "SSATdoTransformOneFundef is applicable to fundef nodes only");
 
 #ifndef DBUG_OFF
-    if (global.compiler_phase == PH_op) {
+    if (global.compiler_phase == PH_opt) {
         DBUG_PRINT ("OPT", ("starting ssa transformation for %s", FUNDEF_NAME (fundef)));
     }
 #endif

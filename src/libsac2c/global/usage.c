@@ -147,16 +147,13 @@ PrintBreakOptions (void)
             "    -noPAB          Deactivates printing after break.\n"
             "    -doPAB          Activates printing after break.\n"
             "\n"
-            "    -b<n>           Break after compiler phase <n>,\n"
-            "                    where <n> is a natural number.\n"
-            "    -b<spec>        Break after compiler phase,  compiler\n"
-            "                    subphase or cycle optimization <spec>,\n"
-            "                    where <spec> is one of codes shown below.\n"
-            "                    In case of a cycle optimization, we break\n"
-            "                    in the first cycle by default.\n"
-            "    -bcyc<n>        If a cycle optimization is selected to\n"
-            "                    break after, this option allows us to specify\n"
-            "                    a concrete cycle other than the first.\n");
+            "    -b<spec>        Break after the compilation stage given\n"
+            "                    by <spec>, where <spec> follows the pattern\n"
+            "                    <phase>:<subphase>:<cyclephase>:<pass>.\n"
+            "                    The first three are from the list of\n"
+            "                    encodings below. The last one is a natural\n"
+            "                    number. Alternatively, a number can be used\n"
+            "                    for the phase, as well.\n");
 
     DBUG_VOID_RETURN;
 }
@@ -164,43 +161,40 @@ PrintBreakOptions (void)
 static void
 PrintBreakoptionSpecifierSac2c (void)
 {
+    int cnt = 0;
+
     DBUG_ENTER ("PrintBreakoptionSpecifierSac2c");
 
     printf ("\n\nBREAK OPTION SPECIFIERS:\n");
 
-#define PHASEelement(it_element)                                                         \
-    printf ("\n    " #it_element " | %-2d", (int)PH_##it_element);
+#define PHASEname(name)                                                                  \
+    cnt += 1;                                                                            \
+    printf ("\n    %-3s | %-2d", #name, cnt);
 
-#define PHASEtext(it_text) printf (" : " it_text "\n");
+#define PHASEtext(text) printf (" : " text "\n");
 
-#define SUBPHASEelement(it_element) printf ("      %-10s", #it_element);
+#define SUBPHASEname(name) printf ("      %-8s", #name);
 
-#define SUBPHASEtext(it_text) printf (" : " it_text "\n");
+#define SUBPHASEtext(text) printf (" : " text "\n");
 
-#define OPTCYCLEelement(it_element) printf ("      %-10s", #it_element);
+#define CYCLEname(name) printf ("      %-8s", #name);
 
-#define OPTCYCLEtext(it_text) printf (" : " it_text "\n");
+#define CYCLEtext(text) printf (" : " text "\n");
 
-#define OPTINCYCelement(it_element) printf ("        %-10s", #it_element);
+#define CYCLEPHASEname(name) printf ("        %-8s", #name);
 
-#define OPTINCYCtext(it_text) printf (" : " it_text "\n");
-
-#define OPTINCYCFUNelement(it_element) printf ("        %-10s", #it_element);
-
-#define OPTINCYCFUNtext(it_text) printf (" : " it_text " (fun based)\n");
+#define CYCLEPHASEtext(text) printf (" : " text "\n");
 
 #include "phase_sac2c.mac"
 
-#undef PHASEelement
+#undef PHASEname
 #undef PHASEtext
-#undef SUBPHASEelement
+#undef SUBPHASEname
 #undef SUBPHASEtext
-#undef OPTCYCLEelement
-#undef OPTCYCLEtext
-#undef OPTINCYCelement
-#undef OPTINCYCtext
-#undef OPTINCYCFUNelement
-#undef OPTINCYCFUNtext
+#undef CYCLEname
+#undef CYCLEtext
+#undef CYCLEPHASEname
+#undef CYCLEPHASEtext
 
     DBUG_VOID_RETURN;
 }

@@ -197,8 +197,6 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
      * Options starting with bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
      */
 
-    ARGS_OPTION ("bcyc", ARG_NUM (global.break_cycle_specifier));
-
     ARGS_OPTION ("b", PHinterpretBreakOption (ARG))
 
     /*
@@ -259,7 +257,7 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
 
     ARGS_FLAG ("cs", global.docachesim = FALSE);
 
-    ARGS_FLAG ("c", global.break_after = PH_cp);
+    ARGS_FLAG ("c", global.break_after_phase = PH_cg);
 
     /*
      * Options starting with ddddddddddddddddddddddddddddddddddddddddddd

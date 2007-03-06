@@ -101,7 +101,7 @@ typedef struct MEMOBJ {
     nodetype nodetype;
     char *file;
     int line;
-    compiler_subphase_t subphase;
+    compiler_phase_t anyphase;
     const char *traversal;
     struct {
         unsigned int IsUsed : 1;
@@ -115,7 +115,7 @@ typedef struct MEMOBJ {
 #define MEMOBJ_NODETYPE(n) ((n)->nodetype)
 #define MEMOBJ_FILE(n) ((n)->file)
 #define MEMOBJ_LINE(n) ((n)->line)
-#define MEMOBJ_SUBPHASE(n) ((n)->subphase)
+#define MEMOBJ_ANYPHASE(n) ((n)->anyphase)
 #define MEMOBJ_TRAVERSAL(n) ((n)->traversal)
 #define MEMOBJ_USEDBIT(n) ((n)->flags.IsUsed)
 #define MEMOBJ_SHAREDBIT(n) ((n)->flags.IsShared)
@@ -216,6 +216,7 @@ FreeMemtab (memobj *memtab, int memtabsize)
  * the initial function
  *
  *****************************************************************************/
+
 void
 CHKMdeinitialize ()
 {
@@ -346,12 +347,12 @@ CHKMregisterMem (int size, void *orig_ptr)
         MEMOBJ_PTR (ptr_to_memobj) = orig_ptr;
         MEMOBJ_SIZE (ptr_to_memobj) = size;
         MEMOBJ_NODETYPE (ptr_to_memobj) = N_undefined;
-        MEMOBJ_SUBPHASE (ptr_to_memobj) = global.compiler_subphase;
+        MEMOBJ_ANYPHASE (ptr_to_memobj) = global.compiler_anyphase;
         MEMOBJ_TRAVERSAL (ptr_to_memobj) = TRAVgetName ();
         MEMOBJ_USEDBIT (ptr_to_memobj) = FALSE;
         MEMOBJ_SHAREDBIT (ptr_to_memobj) = FALSE;
 
-        if (global.compiler_subphase == SUBPH_initial) {
+        if (global.compiler_anyphase == PH_initial) {
             MEMOBJ_REPORTED (ptr_to_memobj) = TRUE;
         } else {
             MEMOBJ_REPORTED (ptr_to_memobj) = FALSE;
@@ -755,12 +756,12 @@ MemobjToErrorMessage (char *kind_of_error, memobj *ptr_to_memobj)
     test = snprintf (str, 1024,
                      "%s Address: %p, Nodetype: %s,\n"
                      "             allocated at: %s:%d, \n"
-                     "             Traversal: %s, Subphase: %s",
+                     "             Traversal: %s, Phase: %s",
                      kind_of_error, MEMOBJ_PTR (ptr_to_memobj),
                      global.mdb_nodetype[MEMOBJ_NODETYPE (ptr_to_memobj)],
                      MEMOBJ_FILE (ptr_to_memobj), MEMOBJ_LINE (ptr_to_memobj),
                      MEMOBJ_TRAVERSAL (ptr_to_memobj),
-                     PHsubPhaseName (MEMOBJ_SUBPHASE (ptr_to_memobj)));
+                     PHphaseText (MEMOBJ_ANYPHASE (ptr_to_memobj)));
 
     DBUG_ASSERT (test < 1024, "buffer is too small");
 

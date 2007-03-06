@@ -229,6 +229,9 @@ STRlen (const char *s)
  *              static variable, next calls str should be NULL. With last call the
  *              allocated memory of the copy will be freed.
  *
+ *              In contrast to strtok, STRtok leaves the argument string untouched
+ *              and always allocates the tokens in fresh memory.
+ *
  * Parameters: - str, string to tokenize
  *             - tok, tokenizer
  *
@@ -240,26 +243,19 @@ STRlen (const char *s)
 char *
 STRtok (char *first, char *sep)
 {
-    static char *act_string = NULL;
-    char *new_string = NULL;
+    static char *keep_string = NULL;
     char *ret;
 
     DBUG_ENTER ("STRtok");
 
     if (first != NULL) {
-        if (act_string != NULL) {
-            act_string = MEMfree (act_string);
+        if (keep_string != NULL) {
+            keep_string = MEMfree (keep_string);
         }
-        new_string = STRcpy (first);
-        act_string = new_string;
-
-        ret = strtok (new_string, sep);
-
-        if (ret == NULL) {
-            act_string = MEMfree (act_string);
-        }
+        keep_string = STRcpy (first);
+        ret = STRcpy (strtok (keep_string, sep));
     } else {
-        ret = NULL;
+        ret = STRcpy (strtok (NULL, sep));
     }
 
     DBUG_RETURN (ret);

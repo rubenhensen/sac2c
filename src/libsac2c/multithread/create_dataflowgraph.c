@@ -219,7 +219,7 @@ CDFGblock (node *arg_node, info *arg_info)
 
     /* As a fact of beeing very complex, additional output will only take place
      * if the compilation breaks with the cdfg-specifier */
-    if (global.break_after_subphase == SUBPH_cdfg) {
+    if (global.break_after_subphase == PH_mt_cdfg) {
         fprintf (stdout, "A N_block...\n");
         PRTdoPrintNode (arg_node);
         fprintf (stdout, "...and its dataflowgraph:\n");

@@ -2382,7 +2382,7 @@
             <target mandatory="no">
               <node name="Fundef" />
               <phases>
-                <range from="prs" to="esp" />
+                <range from="scp_prs" to="tc_esp" />
               </phases>
             </target>
           </targets>
@@ -2402,7 +2402,7 @@
             <target mandatory="no">
               <node name="Assign" />
               <phases>
-                <range from="comp" to="final" />
+                <range from="cg_cpl" to="final" />
               </phases>
             </target>
           </targets>
@@ -2439,7 +2439,7 @@
               <target mandatory="yes">
                 <any />
                 <phases>
-                  <range from="crtwrp" to="cwc" />
+                  <range from="ptc_cwf" to="cwc" />
                 </phases>
               </target>
             </targets>
@@ -2510,7 +2510,7 @@
               <target mandatory="no">
                 <node name="Pragma" />
                 <phases>
-                  <range from="sp" to="pragma" />
+                  <range from="scp" to="pre_rpr" />
                 </phases>
               </target>
             </targets>
@@ -2522,7 +2522,7 @@
               <target mandatory="no">
                 <any />
                 <phases>
-                  <range from="pragma" to="final" />
+                  <range from="pre_rpr" to="final" />
                 </phases>
               </target>
             </targets>
@@ -2534,7 +2534,7 @@
               <target mandatory="no">
                 <any />
                 <phases>
-                  <range from="pragma" to="final" />
+                  <range from="pre_rpr" to="final" />
                 </phases>
               </target>
             </targets>
@@ -2546,7 +2546,7 @@
               <target mandatory="no">
                 <any />
                 <phases>
-                  <range from="pragma" to="final" />
+                  <range from="pre_rpr" to="final" />
                 </phases>
               </target>
             </targets>
@@ -2558,7 +2558,7 @@
               <target mandatory="no">
                 <node name="Icm" />
                 <phases>
-                  <range from="comp" to="final" />
+                  <range from="cg_cpl" to="final" />
                 </phases>
               </target>
             </targets>
@@ -2656,7 +2656,7 @@
               <target mandatory="no">
                 <any />
                 <phases>
-                  <range from="pragma" to="final" />
+                  <range from="pre_rpr" to="final" />
                 </phases>
               </target>
             </targets>
@@ -2668,7 +2668,7 @@
               <target mandatory="yes">
                 <node name="Pragma" />
                 <phases>
-                  <range from="sp" to="pragma" />
+                  <range from="scp" to="pre_rpr" />
                 </phases>
               </target>
             </targets>
@@ -2680,7 +2680,7 @@
               <target mandatory="yes">
                 <node name="Id" />
                 <phases>
-                  <phase name="rso" />
+                  <phase name="ptc_rso" />
                 </phases>
               </target>
             </targets>
@@ -2691,7 +2691,7 @@
 	    <targets>
 	      <target mandatory="no">
 	        <phases>
-                  <range from="comp" to="final" />
+                  <range from="cg_cpl" to="final" />
 		</phases>
               </target>
 	    </targets>
@@ -2703,7 +2703,7 @@
               <target mandatory="no">
                 <node name="Icm" />
                 <phases>
-                  <range from="comp" to="final" />
+                  <range from="cg_cpl" to="final" />
                 </phases>
               </target>
             </targets>
@@ -2854,7 +2854,7 @@
               <target mandatory="no">
                 <any />
                 <phases>
-                  <range from="pragma" to="final" />
+                  <range from="pre_rpr" to="final" />
                 </phases>
               </target>
             </targets>
@@ -2902,7 +2902,7 @@
               <target mandatory="no">
                 <any />
                 <phases>
-                  <range from="tot" to="final" />
+                  <range from="cg_tot" to="final" />
                 </phases>
               </target>
             </targets>
@@ -2926,7 +2926,7 @@
               <target mandatory="yes">
                 <node name="Return" />
                 <phases>
-                  <range from="tc" to="comp" />
+                  <range from="tc" to="cg_cpl" />
                 </phases>
               </target>
             </targets>
@@ -2965,7 +2965,7 @@
               <target mandatory="yes">
                 <node name="Icm" />
                 <phases>
-                  <range from="comp" to="final" />
+                  <range from="cg_cpl" to="final" />
                 </phases>
               </target>
             </targets>
@@ -3001,7 +3001,7 @@
               <target mandatory="yes">
                 <any />
                 <phases>
-                  <range from="fpc" to="comp" />
+                  <range from="pc_fpc" to="cg_cpl" />
                 </phases>
               </target>
             </targets>
@@ -3014,7 +3014,7 @@
               <target mandatory="no">
                 <node name="Fundef" />
                 <phases>
-                  <range from="createmtfuns" to="final" /> 
+                  <range from="mt_cmtf" to="final" /> 
                 </phases>
               </target>
             </targets>
@@ -3178,7 +3178,7 @@
               <target mandatory="no">
                 <node name="Objdef" />
                 <phases>
-                  <range from="rso" to="reso" />
+                  <range from="ptc_rso" to="pc_reso" />
                 </phases>
               </target>
             </targets>
@@ -3190,7 +3190,7 @@
               <target mandatory="no" >
                 <any />
                 <phases>
-                  <range from="pragma" to="final" />
+                  <range from="pre_rpr" to="final" />
                 </phases>
               </target>
             </targets>
@@ -3308,7 +3308,7 @@
               <target mandatory="no">
                 <node name="Dataflowgraph" />
                 <phases>
-                  <range from="cdfg" to="concel" />
+                  <range from="mt_cdfg" to="mt_concel" />
                 </phases>
               </target>
             </targets>
@@ -3352,7 +3352,7 @@
               <target mandatory="yes">
                 <any />
                 <phases>
-                  <range from="tot" to="final" />
+                  <range from="cg_tot" to="final" />
                 </phases>
               </target>
             </targets>
@@ -3364,7 +3364,7 @@
               <target mandatory="no">
                 <node name="Icm" />
                 <phases>
-                  <range from="comp" to="final" />
+                  <range from="cg_cpl" to="final" />
                 </phases>
               </target>
             </targets>
@@ -3426,7 +3426,7 @@
               <target mandatory="yes">
                 <any />
                 <phases>
-                  <range from="asmra" to="crece" />
+                  <range from="mt_asmra" to="mt_crece" />
                 </phases>
               </target>
             </targets>
@@ -3462,7 +3462,7 @@
               <target mandatory="no">
                 <node name="Dataflownode" />
                 <phases>
-                  <range from="cdfg" to="concel" />
+                  <range from="mt_cdfg" to="mt_concel" />
                 </phases>
               </target>
             </targets>
@@ -3501,13 +3501,13 @@
             <target mandatory="no">
               <node name="SPIds" />
               <phases>
-                <range from="initial" to="insvd" />
+                <range from="initial" to="ptc_ivd" />
               </phases>
             </target>
             <target mandatory="no">
               <node name="Ids" />
               <phases>
-                <range from="insvd" to="final" />
+                <range from="ptc_ivd" to="final" />
               </phases>
             </target>
           </targets>
@@ -3733,7 +3733,7 @@
               <target mandatory="yes">
                 <any />
                 <phases>
-                  <range from="fun2lac" to="final" />
+                  <range from="pc_f2l" to="final" />
                 </phases>
               </target>
             </targets>
@@ -3745,8 +3745,10 @@
               <target mandatory="yes">
                 <any />
                 <phases>
-                  <phase name="lac2fun" />
-                  <phase name="wltlac2fun" />
+                  <phase name="ptc_l2f" />
+                  <phase name="cwc_l2f" />
+                  <phase name="wlt_l2f" />
+                  <phase name="mt_l2f" />
                 </phases>
               </target>
             </targets>
@@ -3758,8 +3760,10 @@
               <target mandatory="yes">
                 <any />
                 <phases>
-                  <phase name="lac2fun" />
-                  <phase name="wltlac2fun" />
+                  <phase name="ptc_l2f" />
+                  <phase name="cwc_l2f" />
+                  <phase name="wlt_l2f" />
+                  <phase name="mt_l2f" />
                 </phases>
               </target>
             </targets>
@@ -3771,8 +3775,10 @@
               <target mandatory="yes">
                 <any />
                 <phases>
-                  <phase name="lac2fun" />
-                  <phase name="wltlac2fun" />
+                  <phase name="ptc_l2f" />
+                  <phase name="cwc_l2f" />
+                  <phase name="wlt_l2f" />
+                  <phase name="mt_l2f" />
                 </phases>
               </target>
             </targets>
@@ -3896,7 +3902,7 @@
               <target mandatory="yes">
                 <any />
                 <phases>
-                  <range from="fpc" to="final" />
+                  <range from="pc_fpc" to="final" />
                 </phases>
               </target>
             </targets>
@@ -4118,7 +4124,7 @@
               <target mandatory="no">
                 <any />
                 <phases>
-                  <range from="comp" to="final" />
+                  <range from="cg_cpl" to="final" />
                 </phases>
               </target>
             </targets>
@@ -4133,7 +4139,7 @@
               <target mandatory="no">
                 <any />
                 <phases>
-                  <range from="comp" to="final" />
+                  <range from="cg_cpl" to="final" />
                 </phases>
               </target>
             </targets>
@@ -4761,7 +4767,7 @@ identifier (N_id) for AUD arrays.
             <target mandatory="no">
               <set name="Expr" />
               <phases>
-                <range from="isaa" to="esv" />
+                <range from="opt_isaa" to="opt_esv" />
               </phases>
             </target>
           </targets>
@@ -4780,7 +4786,7 @@ identifier (N_id) for AUD arrays.
             <target mandatory="no">
               <set name="Expr" />
               <phases>
-                <range from="isaa" to="esv" />
+                <range from="opt_isaa" to="opt_esv" />
               </phases>
             </target>
           </targets>
@@ -4852,8 +4858,8 @@ identifier (N_id) for AUD arrays.
               <target mandatory="no">
                 <node name="Assign" />
                 <phases>
-                  <range from="ssa" to="wltussa" />
-                  <range from="wltssa" to="ussa" />
+                  <range from="ptc_ssa" to="wlt_ussa" />
+                  <range from="wlt_ssa" to="pc_ussa" />
                 </phases>
               </target>
             </targets>
@@ -4865,9 +4871,9 @@ identifier (N_id) for AUD arrays.
               <target mandatory="no">
                 <node name="SSAcnt" />
                 <phases>
-                  <phase name="ssa" />
-                  <phase name="wltssa" />
-                  <phase name="ssawc" />
+                  <phase name="ptc_ssa" />
+                  <phase name="wlt_ssa" />
+                  <phase name="cwc_ssa" />
                 </phases>
               </target>
             </targets>
@@ -4879,9 +4885,9 @@ identifier (N_id) for AUD arrays.
               <target mandatory="no">
                 <node name="SSAstack" />
                 <phases>
-                  <phase name="ssa" />
-                  <phase name="wltssa" />
-                  <phase name="ssawc" />
+                  <phase name="ptc_ssa" />
+                  <phase name="wlt_ssa" />
+                  <phase name="cwc_ssa" />
                 </phases>
               </target>
             </targets>
@@ -4893,9 +4899,9 @@ identifier (N_id) for AUD arrays.
               <target mandatory="no">
                 <node name="Avis" />
                 <phases>
-                  <phase name="ssa" />
-                  <phase name="wltssa" />
-                  <phase name="ssawc" />
+                  <phase name="ptc_ssa" />
+                  <phase name="wlt_ssa" />
+                  <phase name="cwc_ssa" />
                 </phases>
               </target>
             </targets>
@@ -4907,9 +4913,9 @@ identifier (N_id) for AUD arrays.
               <target mandatory="no">
                 <node name="Avis" />
                 <phases>
-                  <phase name="ssa" />
-                  <phase name="wltssa" />
-                  <phase name="ssawc" />
+                  <phase name="ptc_ssa" />
+                  <phase name="wlt_ssa" />
+                  <phase name="cwc_ssa" />
                 </phases>
               </target>
             </targets>
@@ -4921,8 +4927,8 @@ identifier (N_id) for AUD arrays.
               <target mandatory="no">
                 <any />
                 <phases>
-                  <phase name="lir" />
-                  <phase name="assoc" />
+                  <phase name="opt_lir" />
+                  <phase name="opt_al" />
                 </phases>
               </target>
             </targets>
@@ -4934,8 +4940,8 @@ identifier (N_id) for AUD arrays.
               <target mandatory="no">
                 <any />
                 <phases>
-                  <phase name="rc" />
-                  <phase name="rcm" />
+                  <phase name="mem_rc" />
+                  <phase name="mem_rcm" />
                 </phases>
               </target>
             </targets>
@@ -4947,7 +4953,7 @@ identifier (N_id) for AUD arrays.
               <target mandatory="no">
                 <any />
                 <phases>
-                  <phase name="ebt" />
+                  <phase name="tc_ebt" />
                 </phases>
               </target>
             </targets>
@@ -4962,17 +4968,17 @@ identifier (N_id) for AUD arrays.
               <target mandatory="no">
                 <node name="Avis" />
                 <phases>
-                  <phase name="cse" />
-                  <phase name="lir" />
-                  <phase name="ussa" />
-                  <phase name="wltussa" />
-		  <phase name="rera" />
+                  <phase name="opt_cyc_cse" />
+                  <phase name="opt_lir" />
+                  <phase name="pc_ussa" />
+                  <phase name="wlt_ussa" />
+		  <phase name="pc_rera" />
                 </phases>
               </target>
 	      <target mandatory="no">
 	        <node name="Objdef" />
 		<phases>
-		  <phase name="reso" />
+		  <phase name="pc_reso" />
 		</phases>
               </target>
             </targets>
@@ -5325,7 +5331,7 @@ identifier (N_id) for AUD arrays.
               <target mandatory="yes">
                 <node name="Pragma" />
                 <phases>
-                  <range from="sp" to="wltra" />
+                  <range from="scp" to="wlt_wltr" />
                 </phases>
               </target>
             </targets>
@@ -5337,7 +5343,10 @@ identifier (N_id) for AUD arrays.
               <target mandatory="no">
                 <any />
                 <phases>
-                  <phase name="lac2fun"/>
+                  <phase name="ptc_l2f"/>
+                  <phase name="cwc_l2f"/>
+                  <phase name="wlt_l2f"/>
+                  <phase name="mt_l2f"/>
                 </phases>
               </target>
             </targets>
@@ -5349,7 +5358,10 @@ identifier (N_id) for AUD arrays.
               <target mandatory="no">
                 <any />
                 <phases>
-                  <phase name="lac2fun"/>
+                  <phase name="ptc_l2f"/>
+                  <phase name="cwc_l2f"/>
+                  <phase name="wlt_l2f"/>
+                  <phase name="mt_l2f"/>
                 </phases>
               </target>
             </targets>
@@ -5361,7 +5373,10 @@ identifier (N_id) for AUD arrays.
               <target mandatory="no">
                 <any />
                 <phases>
-                  <phase name="lac2fun"/>
+                  <phase name="ptc_l2f"/>
+                  <phase name="cwc_l2f"/>
+                  <phase name="wlt_l2f"/>
+                  <phase name="mt_l2f"/>
                 </phases>
               </target>
             </targets>
@@ -5373,7 +5388,7 @@ identifier (N_id) for AUD arrays.
               <target mandatory="yes">
                 <any />
                 <phases>
-                  <phase name="wlf" />
+                  <phase name="opt_cyc_wlf" />
                 </phases>
               </target>
             </targets>
@@ -5385,7 +5400,7 @@ identifier (N_id) for AUD arrays.
               <target mandatory="yes">
                 <any />
                 <phases>
-                  <phase name="wlf" />
+                  <phase name="opt_cyc_wlf" />
                 </phases>
               </target>
             </targets>
@@ -5397,7 +5412,7 @@ identifier (N_id) for AUD arrays.
               <target mandatory="yes">
                 <any />
                 <phases>
-                  <phase name="wlf" />
+                  <phase name="opt_cyc_wlf" />
                 </phases>
               </target>
             </targets>
@@ -5409,7 +5424,7 @@ identifier (N_id) for AUD arrays.
               <target mandatory="no">
                 <any />
                 <phases>
-                  <phase name="wlprop" />
+                  <phase name="opt_cyc_wlprop" />
                 </phases>
               </target>
             </targets>
@@ -5421,7 +5436,7 @@ identifier (N_id) for AUD arrays.
               <target mandatory="no">
                 <any />
                 <phases>
-                  <phase name="swlf" />
+                  <phase name="opt_cyc_swlf" />
                 </phases>
               </target>
             </targets>
@@ -5433,7 +5448,7 @@ identifier (N_id) for AUD arrays.
               <target mandatory="no">
                 <any />
                 <phases>
-                  <phase name="swlf" />
+                  <phase name="opt_cyc_swlf" />
                 </phases>
               </target>
             </targets>
@@ -5516,19 +5531,19 @@ identifier (N_id) for AUD arrays.
             <target mandatory="yes">
               <node name="SPIds" />
               <phases>
-                <range from="initial" to="insvd" />
+                <range from="initial" to="ptc_ivd" />
               </phases>
             </target>
             <target mandatory="yes">
               <node name="Ids" />
               <phases>
-                <range from="insvd" to="alloc" />
+                <range from="ptc_ivd" to="mem_alloc" />
               </phases>
             </target>
             <target mandatory="yes">
               <node name="Id" />
               <phases>
-                <range from="alloc" to="final" />
+                <range from="mem_alloc" to="final" />
               </phases>
             </target>
           </targets>
@@ -5540,19 +5555,19 @@ identifier (N_id) for AUD arrays.
             <target mandatory="no">
               <node name="Ids" />
               <phases>
-                <range from="insvd" to="alloc" />
+                <range from="ptc_ivd" to="mem_alloc" />
               </phases>
             </target>
             <target mandatory="no">
               <node name="SPIds" />
               <phases>
-                <range from="initial" to="insvd" />
+                <range from="initial" to="ptc_ivd" />
               </phases>
             </target>
             <target mandatory="no">
               <node name="Exprs" />
               <phases>
-                <range from="alloc" to="final" />
+                <range from="mem_alloc" to="final" />
               </phases>
             </target>
           </targets>
@@ -5564,13 +5579,13 @@ identifier (N_id) for AUD arrays.
             <target mandatory="no">
               <node name="Ids" />
               <phases>
-                <range from="wlidx" to="alloc" />
+                <range from="opt_wlidx" to="mem_alloc" />
               </phases>
             </target>
             <target mandatory="no">
               <node name="Exprs" />
               <phases>
-                <range from="alloc" to="final" />
+                <range from="mem_alloc" to="final" />
               </phases>
             </target>
           </targets>
@@ -5650,7 +5665,7 @@ identifier (N_id) for AUD arrays.
             <target mandatory="no" >
               <set name="Expr" />
               <phases>
-                <range from="cyc" to="wrci" />
+                <range from="opt_cyc" to="opt_wrci" />
               </phases>
             </target>
           </targets>
@@ -5984,7 +5999,7 @@ identifier (N_id) for AUD arrays.
             <target mandatory="yes">
               <node name="Id" />
               <phases>
-                <range from="alloc" to="final" />
+                <range from="mem_alloc" to="final" />
               </phases>
             </target>
           </targets>
@@ -5994,7 +6009,7 @@ identifier (N_id) for AUD arrays.
             <target mandatory="no">
               <node name="Id" />
               <phases>
-                <range from="mmv" to="final" />
+                <range from="pc_mmv" to="final" />
               </phases>
             </target>
           </targets>
@@ -6004,7 +6019,7 @@ identifier (N_id) for AUD arrays.
             <target mandatory="no">
               <node name="Exprs" />
               <phases>
-                <range from="wrci" to="rci" />
+                <range from="opt_wrci" to="mem_rci" />
               </phases>
             </target>
           </targets>
@@ -6039,7 +6054,7 @@ identifier (N_id) for AUD arrays.
               <target mandatory="yes">
                 <node name="Avis" />
                 <phases>
-                  <range from="wlidx" to="final" />
+                  <range from="opt_wlidx" to="final" />
                 </phases>
               </target>
             </targets>
@@ -6071,7 +6086,7 @@ identifier (N_id) for AUD arrays.
             <target mandatory="yes">
               <node name="Id" />
               <phases>
-                <range from="alloc" to="final" />
+                <range from="mem_alloc" to="final" />
               </phases>
             </target>
           </targets>
@@ -6081,7 +6096,7 @@ identifier (N_id) for AUD arrays.
             <target mandatory="no">
               <node name="Id" />
               <phases>
-                <range from="mmv" to="final" />
+                <range from="pc_mmv" to="final" />
               </phases>
             </target>
           </targets>
@@ -6091,7 +6106,7 @@ identifier (N_id) for AUD arrays.
             <target mandatory="no">
               <node name="Exprs" />
               <phases>
-                <range from="wrci" to="rci" />
+                <range from="opt_wrci" to="mem_rci" />
               </phases>
             </target>
           </targets>
@@ -6126,7 +6141,7 @@ identifier (N_id) for AUD arrays.
               <target mandatory="yes">
                 <node name="Avis" />
                 <phases>
-                  <range from="wlidx" to="final" />
+                  <range from="opt_wlidx" to="final" />
                 </phases>
               </target>
             </targets>
@@ -6158,19 +6173,19 @@ identifier (N_id) for AUD arrays.
             <target mandatory="no">
               <set name="Expr" />
               <phases>
-                <range from="sp" to="flt" />
+                <range from="scp" to="sim_flt" />
               </phases>
             </target>
             <target mandatory="no">
               <node name="SPId" />
               <phases>
-                <range from="flt" to="insvd" />
+                <range from="sim_flt" to="ptc_ivd" />
               </phases>
             </target>
             <target mandatory="no">
               <node name="Id" />
               <phases>
-                <range from="insvd" to="crtwrp" />
+                <range from="ptc_ivd" to="ptc_cwf" />
               </phases>
             </target>
           </targets>
@@ -6252,7 +6267,7 @@ identifier (N_id) for AUD arrays.
             <target mandatory="no">
               <node name="Id" />
               <phases>
-                <range from="crtwrp" to="accu" />
+                <range from="ptc_cwf" to="ewl_accu" />
               </phases>
             </target>
           </targets>
@@ -6297,7 +6312,7 @@ identifier (N_id) for AUD arrays.
             <target mandatory="yes">
               <node name="Id" />
               <phases>
-                <range from="alloc" to="final" />
+                <range from="mem_alloc" to="final" />
               </phases>
             </target>
           </targets>
@@ -6473,7 +6488,7 @@ identifier (N_id) for AUD arrays.
               <target mandatory="yes">
                 <any />
                 <phases>
-                  <range from="wltra" to="final" />
+                  <range from="wlt_wltr" to="final" />
                 </phases>
               </target>
             </targets>
@@ -6485,7 +6500,7 @@ identifier (N_id) for AUD arrays.
               <target mandatory="yes">
                 <any />
                 <phases>
-                  <range from="wltra" to="final" />
+                  <range from="wlt_wltr" to="final" />
                 </phases>
               </target>
             </targets>
@@ -6497,7 +6512,7 @@ identifier (N_id) for AUD arrays.
               <target mandatory="yes">
                 <any />
                 <phases>
-                  <range from="wltra" to="final" />
+                  <range from="wlt_wltr" to="final" />
                 </phases>
               </target>
             </targets>
@@ -6509,7 +6524,7 @@ identifier (N_id) for AUD arrays.
               <target mandatory="yes">
                 <any />
                 <phases>
-                  <range from="wltra" to="final" />
+                  <range from="wlt_wltr" to="final" />
                 </phases>
               </target>
             </targets>
@@ -6620,7 +6635,7 @@ identifier (N_id) for AUD arrays.
               <target mandatory="yes">
                 <any />
                 <phases>
-                  <range from="wltra" to="final" />
+                  <range from="wlt_wltr" to="final" />
                 </phases>
               </target>
             </targets>
@@ -6632,7 +6647,7 @@ identifier (N_id) for AUD arrays.
               <target mandatory="yes">
                 <any />
                 <phases>
-                  <range from="wltra" to="final" />
+                  <range from="wlt_wltr" to="final" />
                 </phases>
               </target>
             </targets>
@@ -6974,7 +6989,7 @@ identifier (N_id) for AUD arrays.
               <target mandatory="yes">
                 <node name="Part" />
                 <phases>
-                  <range from="wltra" to="final" />
+                  <range from="wlt_wltr" to="final" />
                 </phases>
               </target>
             </targets>
@@ -7890,7 +7905,7 @@ identifier (N_id) for AUD arrays.
               <target mandatory="no" >
                 <any />
                 <phases>
-                  <range from="pragma" to="final" />
+                  <range from="pre_rpr" to="final" />
                 </phases>
               </target>
             </targets>

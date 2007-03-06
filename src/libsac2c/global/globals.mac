@@ -531,17 +531,17 @@ GLOBAL (bool, lacinline, TRUE)
  * Inline LAC functions
  */
 
-GLOBAL (compiler_phase_t, break_after, PH_final)
+GLOBAL (compiler_phase_t, break_after_phase, PH_final)
 /*
  * Stop compilation process after given phase.
  */
 
-GLOBAL (compiler_subphase_t, break_after_subphase, SUBPH_final)
+GLOBAL (compiler_phase_t, break_after_subphase, PH_final)
 /*
  * Stop compilation process after given subphase.
  */
 
-GLOBAL (compiler_optincyc_t, break_after_optincyc, OIC_final)
+GLOBAL (compiler_phase_t, break_after_cyclephase, PH_final)
 /*
  * Stop compilation process after given cycle optimization.
  */
@@ -611,19 +611,19 @@ GLOBAL (compiler_phase_t, compiler_phase, PH_initial)
  * Counter for compilation phases
  */
 
-GLOBAL (compiler_subphase_t, compiler_subphase, SUBPH_initial)
+GLOBAL (compiler_phase_t, compiler_subphase, PH_initial)
 /*
  * Counter for compilation subphases
  */
 
-GLOBAL (compiler_optincyc_t, compiler_optincyc, OIC_initial)
+GLOBAL (compiler_phase_t, compiler_cyclephase, PH_initial)
 /*
  * Counter for cycle optimizations
  */
 
-GLOBAL (compiler_allphase_t, compiler_allphase, PHALL_initial)
+GLOBAL (compiler_phase_t, compiler_anyphase, PH_initial)
 /*
- * Counter for phase kinds
+ * Counter for any kind of compiler phase/subphase/cyclephase
  */
 
 GLOBAL (bool, run_stabilization_cycle, FALSE)

@@ -247,6 +247,7 @@ CheckSchedulingArgs (sched_t *sched, char *spec, node *exprs, int line)
             DBUG_ASSERT ((arg_spec != NULL), "Illegal scheduling specification");
         }
 
+        arg_spec = MEMfree (arg_spec);
         arg_spec = STRtok (NULL, ",");
         exprs = EXPRS_NEXT (exprs);
     }
@@ -359,6 +360,7 @@ SCHmakeScheduling (char *discipline, ...)
             DBUG_ASSERT ((arg_spec != NULL), "Illegal scheduling specification");
         }
 
+        arg_spec = MEMfree (arg_spec);
         arg_spec = STRtok (NULL, ",");
     }
 
