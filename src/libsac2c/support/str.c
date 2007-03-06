@@ -240,11 +240,34 @@ STRlen (const char *s)
  *
  *******************************************************************************/
 
+static bool
+CharInString (char c, char *str)
+{
+    int i;
+    bool res;
+
+    DBUG_ENTER ("CharInString");
+
+    if ((str == NULL) || (c == '\0')) {
+        res = FALSE;
+    } else {
+        i = 0;
+        while ((str[i] != '\0') && (str[i] != c)) {
+            i += 1;
+        }
+        res = str[i] != '\0';
+    }
+
+    DBUG_RETURN (res);
+}
+
 char *
 STRtok (char *first, char *sep)
 {
     static char *keep_string = NULL;
+    static char *current = NULL;
     char *ret;
+    int i;
 
     DBUG_ENTER ("STRtok");
 
@@ -253,9 +276,25 @@ STRtok (char *first, char *sep)
             keep_string = MEMfree (keep_string);
         }
         keep_string = STRcpy (first);
-        ret = STRcpy (strtok (keep_string, sep));
+        current = keep_string;
+    }
+
+    if (current == NULL) {
+        ret = NULL;
     } else {
-        ret = STRcpy (strtok (NULL, sep));
+        i = 0;
+        while ((current[i] != '\0') && !CharInString (current[i], sep)) {
+            i += 1;
+        }
+
+        if (current[i] == '\0') {
+            ret = STRcpy (current);
+            current = NULL;
+        } else {
+            current[i] = '\0';
+            ret = STRcpy (current);
+            current += i + 1;
+        }
     }
 
     DBUG_RETURN (ret);
