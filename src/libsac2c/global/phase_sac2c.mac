@@ -491,7 +491,8 @@ SUBPHASE (isaa2, "Inserting symbolic array attributes", ISAAdoInsertShapeVariabl
 
 /*************************************************/
 
-CYCLE (saacyc, "Symbolic array attribute cycle", global.optimize.dosaacyc, opt)
+CYCLE (saacyc, "Symbolic array attribute cycle",
+       global.optimize.dosaacyc &&global.optimize.dosaa, opt)
 
 CYCLEPHASE (prfunr, "Applying prf unrolling", UPRFdoUnrollPRFsModule,
             global.optimize.doprfunr, opt, saacyc)
