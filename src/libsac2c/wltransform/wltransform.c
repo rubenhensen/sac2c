@@ -51,14 +51,6 @@
 #include "globals.h"
 
 /*
- * moved from wl_bounds.h
- */
-#define IDX_IS_NUM(idx) ((idx) >= 0)
-
-#define GET_SHAPE_IDX(shape, dim)                                                        \
-    (((shape) != NULL) ? SHgetExtent ((shape), (dim)) : IDX_SHAPE)
-
-/*
  * INFO structure
  */
 struct INFO {
@@ -166,7 +158,7 @@ Example:
      bv = (1, ..., 1), provided that this is compatible to the value of ubv.
      Nevertheless, this simplification is *not* carried out by the compiler yet!
 
-     -> set of segments (segment := a cube without a grid)
+     -> set of segments (segment := a cube without a grid)SHAPE
 
   In the example: We choose the complete shape as a segment and
                   bv0 = (180,158), ubv = (1,6) --- note that sv = (9,3).
@@ -1392,6 +1384,26 @@ Internal representation in the abstract syntax tree:
 static int CompareWlNode (node *node1, node *node2, int outline);
 
 /**
+ ** internal functions
+ **/
+
+static int
+GetShapeIndex (shape *shp, int dim)
+{
+    int res;
+
+    DBUG_ENTER ("GetShapeIndex");
+
+    if (shp == NULL) {
+        res = IDX_SHAPE;
+    } else {
+        res = SHgetExtent (shp, dim);
+    }
+
+    DBUG_RETURN (res);
+}
+
+/**
  ** external functions
  **/
 
@@ -2073,7 +2085,7 @@ GenerateShapeStrides (int dim, int iter_dims, shape *iter_shp)
                           GenerateShapeStrides (dim + 1, iter_dims, iter_shp), NULL);
 
         strides
-          = TBmakeWlstride (0, dim, 0, GET_SHAPE_IDX (iter_shp, dim), 1, new_grid, NULL);
+          = TBmakeWlstride (0, dim, 0, GetShapeIndex (iter_shp, dim), 1, new_grid, NULL);
     }
 
     DBUG_RETURN (strides);
@@ -2660,7 +2672,7 @@ CurrentComponentGetNode (node *aelems)
 
     comp_int = CurrentComponentGetInt (aelems);
 
-    if (IDX_IS_NUM (comp_int)) {
+    if (comp_int >= 0) {
         comp = TBmakeNum (comp_int);
     } else {
         DBUG_ASSERT (NODE_TYPE (aelems) == N_exprs,
@@ -4239,7 +4251,7 @@ node *GenerateCompleteDomainVar( node *stride, int iter_dims, shape *iter_shp)
     /*
      * append lower part of complement
      */
-    shp_idx = GET_SHAPE_IDX( iter_shp, WLSTRIDEX_DIM( stride));
+    shp_idx = GetShapeIndex( iter_shp, WLSTRIDEX_DIM( stride));
     stride = FillGapSucc( &new_node,
                           stride,
                           NODE_TYPE( stride),
@@ -6426,7 +6438,7 @@ ComputeIndexMinMax (node *wlseg, shape *iter_shp, node *wlnode)
         if (dim >= 0) {
             p_idx_min = WLSEGX_IDX_GET_ADDR (wlseg, IDX_MIN, dim);
             p_idx_max = WLSEGX_IDX_GET_ADDR (wlseg, IDX_MAX, dim);
-            shp_idx = GET_SHAPE_IDX (iter_shp, dim);
+            shp_idx = GetShapeIndex (iter_shp, dim);
 
             if (WLBnodeOrIntLe (nt, p_min, NODE_TYPE (wlseg), p_idx_min, shp_idx)) {
                 WLBnodeOrIntSetNodeOrInt (NODE_TYPE (wlseg), p_idx_min, nt, p_min);
