@@ -300,7 +300,7 @@ global/build_$(STYLE).c: $(SUBTARGETS)
 	$(HIDE) $(FINGERPRINTER_CALL) > .fingerprint
 	$(HIDE) if [ -f $(FINGERPRINT_FILE) ] ; \
                 then if [ "`cat $(FINGERPRINT_FILE)`" != "`cat .fingerprint`" ] ; \
-                     then mv .fingerprint $(FINGERPRINT_FILE) ; \
+                     then cp .fingerprint $(FINGERPRINT_FILE) ; \
                      fi ; \
                 else cp .fingerprint $(FINGERPRINT_FILE) ; \
                 fi
