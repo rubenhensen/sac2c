@@ -422,7 +422,9 @@ DFRfundef (node *arg_node, info *arg_info)
             DBUG_PRINT ("DFR", ("Going to delete %s for %s",
                                 (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
                                 CTIitemName (arg_node)));
-            global.optcounters.dead_fun++;
+            if (!FUNDEF_ISWRAPPERFUN (arg_node)) {
+                global.optcounters.dead_fun++;
+            }
             arg_node = FREEdoFreeNode (arg_node);
         } else {
             /*
