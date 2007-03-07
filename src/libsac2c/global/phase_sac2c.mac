@@ -295,10 +295,13 @@ ENDPHASE (ewl)
 
 PHASE (opt, "Running SAC optimizations", ALWAYS)
 
-SUBPHASE (inl, "Applying function inlining", INLdoInlining, global.optimize.doinl, opt)
-
 SUBPHASE (dfr, "Removing dead functions", DFRdoDeadFunctionRemoval, global.optimize.dodfr,
           opt)
+
+SUBPHASE (inl, "Applying function inlining", INLdoInlining, global.optimize.doinl, opt)
+
+SUBPHASE (dfr2, "Removing dead functions", DFRdoDeadFunctionRemoval,
+          global.optimize.dodfr, opt)
 
 SUBPHASE (dcr, "Removing dead code", DCRdoDeadCodeRemovalModule, global.optimize.dodcr,
           opt)
@@ -453,7 +456,7 @@ SUBPHASE (lir2, "Applying loop invariant removal", LIRdoLoopInvariantRemoval,
 SUBPHASE (uesd, "Reintroducing subtraction and division operators", UESDdoUndoElimSubDiv,
           global.optimize.doesd, opt)
 
-SUBPHASE (dfr2, "Removing dead functions", DFRdoDeadFunctionRemoval,
+SUBPHASE (dfr3, "Removing dead functions", DFRdoDeadFunctionRemoval,
           global.optimize.dodfr, opt)
 
 SUBPHASE (dcr2, "Applying dead code removal again", DCRdoDeadCodeRemovalModule,
