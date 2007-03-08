@@ -2,43 +2,13 @@
  * $Id$
  */
 
-#ifndef _SAC_INTERNAL_LIB_H_
-#define _SAC_INTERNAL_LIB_H_
-
-#include <stdio.h>
-
-#include "config.h"
-#include "types.h"
-#include "dbug.h"
-#include "globals.h"
-#include "ctinfo.h"
-#include "memory.h"
-
-/*********************************
- *
- * Internal lib
- *
- * Prefix: ILIB
- *
- *********************************/
-
-extern char *TRAVtmpVar (void);
-extern char *TRAVtmpVarName (char *postfix);
-
-/*********************************
- * macro definitions
- *********************************/
-
-/* min, max */
-#define MAX(a, b) ((a < b) ? b : a)
-#define MIN(a, b) ((a < b) ? a : b)
-
 /*
- * THE FOLLOWING MACROS ARE DEPRECATED!!  DO NOT USE!!!
- */
-
-/*
- * macros for handling vectors
+ * Highly deprecated macros that used to be in internal_lib.
+ * DO NOT USE !!
+ *
+ * We could turn these macros at least into functions. However, the entire
+ * modelling of data for which theyr are used is crap and should be replaced
+ * by a node-based representation straight away.
  */
 
 #define MALLOC_VECT(vect, dims, type)                                                    \
@@ -85,5 +55,3 @@ extern char *TRAVtmpVarName (char *postfix);
             fprintf (handle, "NULL");                                                    \
         }                                                                                \
     }
-
-#endif /* _SAC_INTERNAL_LIB_H_ */

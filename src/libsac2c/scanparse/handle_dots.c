@@ -13,6 +13,8 @@
 #include "tree_basic.h"
 #include "namespaces.h"
 #include "new_types.h"
+#include "globals.h"
+#include "tree_compound.h"
 
 #include <strings.h>
 

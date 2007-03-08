@@ -1,15 +1,6 @@
 /*
  *
- * $Log$
- * Revision 1.10  2004/12/05 16:45:38  sah
- * added SPIds SPId SPAp in frontend
- *
- * Revision 1.9  2004/11/25 22:26:47  sah
- * COMPILES!
- *
- *
- * Revision 1.1  2002/07/09 12:54:26  sbs
- * Initial revision
+ * $Id$
  *
  */
 
@@ -17,9 +8,6 @@
 #define _HANDLE_DOTS_H_
 
 #include "types.h"
-#include "tree_basic.h"
-#include "tree_compound.h"
-#include "internal_lib.h"
 
 extern node *HDdoEliminateSelDots (node *arg_node);
 extern node *HDwith (node *arg_node, info *arg_info);

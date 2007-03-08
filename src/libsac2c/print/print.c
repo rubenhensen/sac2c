@@ -32,26 +32,7 @@
 #include "memory.h"
 #include "namespaces.h"
 #include "shape.h"
-
-/*
- * Ugly macros that used to be in internal_lib.h and are only used here and
- * in DupTree.
- */
-
-#define PRINT_VECT(handle, vect, dims, format)                                           \
-    {                                                                                    \
-        int d;                                                                           \
-        if ((vect) != NULL) {                                                            \
-            fprintf (handle, "[ ");                                                      \
-            for (d = 0; d < (dims); d++) {                                               \
-                fprintf (handle, format, (vect)[d]);                                     \
-                fprintf (handle, " ");                                                   \
-            }                                                                            \
-            fprintf (handle, "]");                                                       \
-        } else {                                                                         \
-            fprintf (handle, "NULL");                                                    \
-        }                                                                                \
-    }
+#include "vector.h"
 
 /*
  * use of arg_info in this file:

@@ -9,6 +9,8 @@
 #include "dbug.h"
 #include "ctinfo.h"
 #include "str.h"
+#include "dbug.h"
+#include "globals.h"
 #include "memory.h"
 #include "filemgr.h"
 #include "handle_dots.h"

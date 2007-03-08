@@ -14,32 +14,9 @@
 #include "globals.h"
 #include "math_utils.h"
 #include "memory.h"
+#include "vector.h"
 
 #include <string.h>
-
-/*
- * Ugly macros that used to be in internal_lib.h and are only used here and
- * in DupTree and wltransform.
- */
-
-#define MALLOC_VECT(vect, dims, type)                                                    \
-    if (vect == NULL) {                                                                  \
-        (vect) = (type *)MEMmalloc ((dims) * sizeof (type));                             \
-    }
-
-/* caution: 'val' should occur in the macro implementation only once! */
-#define MALLOC_INIT_VECT(vect, dims, type, val)                                          \
-    MALLOC_VECT (vect, dims, type);                                                      \
-    INIT_VECT (vect, dims, type, val)
-
-/* caution: 'val' should occur in the macro implementation only once! */
-#define INIT_VECT(vect, dims, type, val)                                                 \
-    {                                                                                    \
-        int d;                                                                           \
-        for (d = 0; d < (dims); d++) {                                                   \
-            (vect)[d] = val;                                                             \
-        }                                                                                \
-    }
 
 /******************************************************************************
  ******************************************************************************

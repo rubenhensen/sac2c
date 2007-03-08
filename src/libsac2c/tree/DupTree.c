@@ -46,27 +46,7 @@
 #include "constants.h"
 #include "stringset.h"
 #include "namespaces.h"
-
-/*
- * Ugly macros that used to be in internal_lib.h and are only used here and
- * in wltransform.
- */
-
-#define MALLOC_VECT(vect, dims, type)                                                    \
-    if (vect == NULL) {                                                                  \
-        (vect) = (type *)MEMmalloc ((dims) * sizeof (type));                             \
-    }
-
-#define DUP_VECT(new_vect, old_vect, dims, type)                                         \
-    {                                                                                    \
-        int d;                                                                           \
-        if ((old_vect) != NULL) {                                                        \
-            MALLOC_VECT (new_vect, dims, type);                                          \
-            for (d = 0; d < (dims); d++) {                                               \
-                (new_vect)[d] = (old_vect)[d];                                           \
-            }                                                                            \
-        }                                                                                \
-    }
+#include "vector.h"
 
 /*
  * INFO structure
