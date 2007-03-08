@@ -595,6 +595,10 @@ PHrunCompilerCyclePhase (compiler_phase_t cyclephase, int pass, node *arg_node, 
         }
 
         arg_node = phase_fun[cyclephase](arg_node);
+
+        if (funbased) {
+            arg_node = TCappendFundef (arg_node, DUPgetCopiedSpecialFundefs ());
+        }
         CTIabortOnError ();
     }
 

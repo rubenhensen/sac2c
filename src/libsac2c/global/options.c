@@ -148,7 +148,7 @@ CheckOptionConsistency ()
                   "Generation of C-library disabled");
     }
 
-    if ((global.optimize.dosaa || global.optimize.dosaacyc) && !global.optimize.dodcr) {
+    if ((global.optimize.dosaa || global.optimize.dosaaopt) && !global.optimize.dodcr) {
         CTIerror ("Using symbolic array attributes (saa) requires dead code"
                   "removal (dcr) to be switched on.");
     }

@@ -84,8 +84,9 @@ OPTIMIZE ("sisi", sisi, FALSE, FALSE, "signature simplification")
 OPTIMIZE ("rtup", rtup, TRUE, FALSE, "reverse type upgrade")
 OPTIMIZE ("esd", esd, FALSE, FALSE, "eliminate substraction and division")
 OPTIMIZE ("wlprop", wlprop, TRUE, FALSE, " withloop propagation")
-OPTIMIZE ("saa", saa, TRUE, FALSE, "insert symbolic array attributes")
-OPTIMIZE ("saacyc", saacyc, FALSE, FALSE, "symbolic array attribute cycle")
+OPTIMIZE ("saa", saa, TRUE, FALSE, "use symbolic array attributes")
+OPTIMIZE ("saaopt", saaopt, FALSE, FALSE,
+          "use symbolic array attributes in optcycle *EXPERIMENTAL*")
 
 OPTCOUNTER (dead_expr, "dead assignment(s) removed")
 OPTCOUNTER (dead_var, "dead variable declaration(s) removed")
