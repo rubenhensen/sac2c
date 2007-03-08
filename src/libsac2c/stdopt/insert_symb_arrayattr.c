@@ -299,8 +299,16 @@ PrependSAAInConcreteArgs (node *arg_node, node *funargs, info *arg_info)
             newshp
               = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (avis)),
                             TYmakeAKD (TYmakeSimpleType (T_int), 1, SHmakeShape (0)));
-            AVIS_SHAPE (newshp) = TCmakeIntVector (
-              TBmakeExprs (TBmakeId (ID_AVIS (AVIS_DIM (avis))), NULL));
+
+            if (NULL != AVIS_DIM (avis)) {
+                if (N_num == NODE_TYPE (AVIS_DIM (avis))) {
+                    AVIS_SHAPE (newshp) = TCmakeIntVector (
+                      TBmakeExprs (TBmakeNum (NUM_VAL (AVIS_DIM (avis))), NULL));
+                } else /* N_id */ {
+                    AVIS_SHAPE (newshp) = TCmakeIntVector (
+                      TBmakeExprs (TBmakeId (ID_AVIS (AVIS_DIM (avis))), NULL));
+                }
+            }
         } else {
             newshp = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (avis)),
                                  TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
