@@ -181,6 +181,7 @@ NTCdoNewTypeCheck (node *arg_node)
     }
 
     ignore = SPECresetSpecChain ();
+    DBUG_ASSERT (ignore == NULL, "Functions discarded, maybe from duptree hook");
 
     /**
      * Before starting the type checking mechanism, we first mark all

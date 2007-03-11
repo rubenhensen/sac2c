@@ -68,6 +68,7 @@ ESPdoEnforceSpecialization (node *syntax_tree)
     DBUG_ASSERT (ok, "Initialisation of Assumption System went wrong!");
 
     ignore = SPECresetSpecChain ();
+    DBUG_ASSERT (ignore == NULL, "Functions discarded, maybe from duptree hook");
 
     /*
      * Now we have to initialize the deserialisation unit, as
