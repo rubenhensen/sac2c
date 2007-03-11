@@ -7,6 +7,7 @@
 #include "dbug.h"
 #include "types.h"
 #include "phase.h"
+#include "phase_info.h"
 #include "statistics.h"
 #include "ctinfo.h"
 #include "dependencies.h"
@@ -37,7 +38,7 @@
         do {                                                                             \
             cycle_counter += 1;                                                          \
             CTInote (" ");                                                               \
-            CTInote ("**** %s pass: %i", PHphaseText (global.compiler_subphase),         \
+            CTInote ("**** %s pass: %i", PHIphaseText (global.compiler_subphase),        \
                      cycle_counter);                                                     \
             STATclearCounters (&oc_pass);
 

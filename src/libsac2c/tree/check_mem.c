@@ -27,7 +27,7 @@
 #include "tree_compound.h"
 #include "check_lib.h"
 #include "types_trav.h"
-#include "phase.h"
+#include "phase_info.h"
 #include "print.h"
 #include "check_node.h"
 #include "check_attribs.h"
@@ -761,7 +761,7 @@ MemobjToErrorMessage (char *kind_of_error, memobj *ptr_to_memobj)
                      global.mdb_nodetype[MEMOBJ_NODETYPE (ptr_to_memobj)],
                      MEMOBJ_FILE (ptr_to_memobj), MEMOBJ_LINE (ptr_to_memobj),
                      MEMOBJ_TRAVERSAL (ptr_to_memobj),
-                     PHphaseText (MEMOBJ_ANYPHASE (ptr_to_memobj)));
+                     PHIphaseText (MEMOBJ_ANYPHASE (ptr_to_memobj)));
 
     DBUG_ASSERT (test < 1024, "buffer is too small");
 

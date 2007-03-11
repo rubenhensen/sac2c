@@ -30,7 +30,7 @@
 #include "memory.h"
 #include "ctinfo.h"
 #include "libstat.h"
-#include "phase.h"
+#include "phase_options.h"
 
 /******************************************************************************
  *
@@ -199,7 +199,7 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
      * Options starting with bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
      */
 
-    ARGS_OPTION ("b", PHinterpretBreakOption (ARG))
+    ARGS_OPTION ("b", PHOinterpretBreakOption (ARG))
 
     /*
      * Options starting with ccccccccccccccccccccccccccccccccccccccccccc
@@ -611,7 +611,7 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
             global.my_dbug_to = PH_final;
             global.my_dbug_str = STRcpy (ARG);
         } else {
-            PHinterpretDbugOption (ARG);
+            PHOinterpretDbugOption (ARG);
         }
     }
     ARGS_OPTION_END ("#");

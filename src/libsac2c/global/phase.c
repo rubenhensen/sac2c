@@ -2,7 +2,8 @@
  * $Id$
  */
 
-#include "types.h"
+#include "phase.h"
+
 #include "dbug.h"
 #include "ctinfo.h"
 #include "globals.h"
@@ -14,432 +15,9 @@
 #include "check.h"
 #include "check_mem.h"
 #include "phase_drivers.h"
-#include "phase.h"
-
-/*
- * Extern declarations of all functions used to implement a phase, subphase,
- * cycle or cyclephase.
- */
-
-#define SUBPHASEfun(fun) extern node *fun (node *syntax_tree);
-#define CYCLEPHASEfun(fun) extern node *fun (node *syntax_tree);
-
-#include "phase_sac2c.mac"
-
-#undef SUBPHASEfun
-#undef CYCLEPHASEfun
-
-/*
- * Function table of phase, subphase, cycle and cyclephase implementing
- * functions
- */
-
-typedef node *(*phase_fun_p) (node *);
-
-#define PHASEname(name) PHDdrivePhase_##name,
-#define SUBPHASEfun(fun) fun,
-#define CYCLEname(name) PHDdriveCycle_##name,
-#define CYCLEPHASEfun(fun) fun,
-
-static const phase_fun_p phase_fun[] = {PHdummy,
-#include "phase_sac2c.mac"
-                                        PHdummy};
-
-#undef PHASEfun
-#undef SUBPHASEfun
-#undef CYCLEfun
-#undef CYCLEPHASEfun
-
-/*
- * Description table of phase, subphase, cycle and cyclephase implementing
- * functions
- */
-
-#define PHASEtext(text) text,
-#define SUBPHASEtext(text) text,
-#define CYCLEtext(text) text,
-#define CYCLEPHASEtext(text) text,
-
-static const char *phase_text[] = {"initial",
-#include "phase_sac2c.mac"
-                                   ""};
-
-#undef PHASEtext
-#undef SUBPHASEtext
-#undef CYCLEtext
-#undef CYCLEPHASEtext
-
-/*
- * Phase type table of phase, subphase, cycle and cyclephase implementing
- * functions
- */
-
-typedef enum {
-    PHT_dummy,
-    PHT_phase,
-    PHT_subphase,
-    PHT_cycle,
-    PHT_cyclephase
-} phase_type_t;
-
-#define PHASEname(name) PHT_phase,
-#define SUBPHASEname(name) PHT_subphase,
-#define CYCLEname(name) PHT_cycle,
-#define CYCLEPHASEname(name) PHT_cyclephase,
-
-static phase_type_t phase_type[] = {PHT_dummy,
-#include "phase_sac2c.mac"
-                                    PHT_dummy};
-
-#undef PHASEname
-#undef SUBPHASEname
-#undef CYCLEname
-#undef CYCLEPHASEname
-
-/*
- * Phase name table of phase, subphase, cycle and cyclephase implementing
- * functions
- */
-
-#define PHASEname(name) #name,
-#define SUBPHASEname(name) #name,
-#define CYCLEname(name) #name,
-#define CYCLEPHASEname(name) #name,
-
-static const char *phase_name[] = {"",
-#include "phase_sac2c.mac"
-                                   ""};
-
-#undef PHASEname
-#undef SUBPHASEname
-#undef CYCLEname
-#undef CYCLEPHASEname
-
-/*
- * Phase parent phase table of phase, subphase, cycle and cyclephase implementing
- * functions
- */
-
-#define PHASE(name, text, cond) PH_initial,
-
-#define SUBPHASE(name, text, fun, cond, phase) PH_##phase,
-
-#define CYCLE(name, text, cond, phase) PH_##phase,
-
-#define CYCLEPHASE(name, text, fun, cond, phase, cycle) PH_##phase##_##cycle,
-
-static compiler_phase_t phase_parent[] = {PH_initial,
-#include "phase_sac2c.mac"
-                                          PH_initial};
-
-#undef PHASE
-#undef SUBPHASE
-#undef CYCLE
-#undef CYCLEPHASE
-
-/*
- * Unique phase identifier table
- */
-
-#define PHASE(name, text, cond) #name,
-
-#define SUBPHASE(name, text, fun, cond, phase) #phase ":" #name,
-
-#define CYCLE(name, text, cond, phase) #phase ":" #name,
-
-#define CYCLEPHASE(name, text, fun, cond, phase, cycle) #phase ":" #cycle ":" #name,
-
-static const char *phase_ident[] = {"",
-#include "phase_sac2c.mac"
-                                    ""};
-
-#undef PHASE
-#undef SUBPHASE
-#undef CYCLE
-#undef CYCLEPHASE
-
-const char *
-PHphaseText (compiler_phase_t phase)
-{
-    DBUG_ENTER ("PHphaseText");
-
-    DBUG_RETURN (phase_text[phase]);
-}
-
-static compiler_phase_t
-SearchPhaseIdent (char *ident)
-{
-    compiler_phase_t phase;
-
-    DBUG_ENTER ("SearchPhaseIdent");
-
-    phase = PH_initial;
-
-    do {
-        phase++;
-    } while ((phase < PH_final) && !STReq (phase_ident[phase], ident));
-
-    DBUG_RETURN (phase);
-}
-
-static compiler_phase_t
-SearchPhaseByName (char *name)
-{
-    compiler_phase_t phase;
-
-    DBUG_ENTER ("SearchPhaseByName");
-
-    phase = PH_initial;
-
-    do {
-        phase++;
-    } while ((phase < PH_final) && !STReq (phase_name[phase], name));
-
-    DBUG_RETURN (phase);
-}
-
-static compiler_phase_t
-SearchPhaseByNumber (int num)
-{
-    compiler_phase_t phase;
-    int cnt;
-
-    DBUG_ENTER ("SearchPhaseByNumber");
-
-    phase = PH_initial;
-    cnt = 0;
-
-    do {
-        phase++;
-        if (phase_type[phase] == PHT_phase)
-            cnt++;
-    } while ((phase < PH_final) && (cnt < num));
-
-    DBUG_RETURN (phase);
-}
-
-static compiler_phase_t
-SearchSubPhase (compiler_phase_t phase, char *name)
-{
-    compiler_phase_t subphase;
-
-    DBUG_ENTER ("SearchSubPhase");
-
-    subphase = phase;
-
-    do {
-        do {
-            subphase++;
-        } while (phase_type[subphase] == PHT_cyclephase);
-    } while ((phase_parent[subphase] == phase) && !STReq (phase_name[subphase], name));
-
-    if (phase_parent[subphase] != phase) {
-        subphase = PH_final;
-    }
-
-    DBUG_RETURN (subphase);
-}
-
-static compiler_phase_t
-SearchCyclePhase (compiler_phase_t cycle, char *name)
-{
-    compiler_phase_t cyclephase;
-
-    DBUG_ENTER ("SearchCyclePhase");
-
-    cyclephase = cycle;
-
-    do {
-        cyclephase++;
-    } while ((phase_parent[cyclephase] == cycle)
-             && !STReq (phase_name[cyclephase], name));
-
-    if (phase_parent[cyclephase] != cycle) {
-        cyclephase = PH_final;
-    }
-
-    DBUG_RETURN (cyclephase);
-}
-
-void
-PHinterpretBreakOption (char *option)
-{
-    compiler_phase_t phase;
-    compiler_phase_t subphase;
-    compiler_phase_t cyclephase;
-    char *break_phase;
-    char *break_subphase;
-    char *break_cyclephase;
-    char *break_cyclepass;
-    char *rest;
-    int num;
-
-    DBUG_ENTER ("PHinterpretBreakOption");
-
-    DBUG_PRINT ("PH", ("Interpreting break option: %s", option));
-
-    break_phase = STRtok (option, ":");
-
-    num = strtol (break_phase, &rest, 10);
-
-    if (rest == break_phase) {
-        /*
-         * The phase spec is not a number.
-         */
-        phase = SearchPhaseByName (break_phase);
-    } else if (rest[0] == '\0') {
-        /*
-         * The phase spec is a number.
-         */
-        phase = SearchPhaseByNumber (num);
-    } else {
-        phase = PH_final;
-    }
-
-    if (phase == PH_final) {
-        CTIerror ("Illegal compiler phase specification in break option: \n"
-                  "  -b %s\n"
-                  "See sac2c -h for a list of legal break options.",
-                  option);
-    } else {
-        global.break_after_phase = phase;
-    }
-
-    break_phase = MEMfree (break_phase);
-
-    break_subphase = STRtok (NULL, ":");
-
-    if (break_subphase != NULL) {
-        subphase = SearchSubPhase (phase, break_subphase);
-
-        if (subphase == PH_final) {
-            CTIerror ("Illegal compiler subphase specification in break option:\n"
-                      "  -b %s\n"
-                      "See sac2c -h for a list of legal break options.",
-                      option);
-        } else {
-            global.break_after_subphase = subphase;
-        }
-
-        break_subphase = MEMfree (break_subphase);
-
-        break_cyclephase = STRtok (NULL, ":");
-
-        if (break_cyclephase != NULL) {
-            cyclephase = SearchCyclePhase (subphase, break_cyclephase);
-
-            if (cyclephase == PH_final) {
-                CTIerror ("Illegal compiler cycle phase specification in break option: \n"
-                          "  -b %s\n"
-                          "See sac2c -h for a list of legal break options.",
-                          option);
-            } else {
-                global.break_after_cyclephase = cyclephase;
-            }
-
-            break_cyclephase = MEMfree (break_cyclephase);
-
-            break_cyclepass = STRtok (NULL, ":");
-
-            if (break_cyclepass != NULL) {
-                num = strtol (break_cyclepass, &rest, 10);
-
-                if ((rest[0] == '\0') && (num >= 1)) {
-                    global.break_cycle_specifier = num;
-                } else {
-                    CTIerror (
-                      "Illegal compiler cycle pass specification in break option: \n"
-                      "  -b %s\n"
-                      "See sac2c -h for a list of legal break options.",
-                      option);
-                }
-
-                break_cyclepass = MEMfree (break_cyclepass);
-            }
-        }
-    }
-
-    DBUG_PRINT ("PH", ("break phase: %s", PHphaseText (global.break_after_phase)));
-    DBUG_PRINT ("PH", ("break subphase: %s", PHphaseText (global.break_after_subphase)));
-    DBUG_PRINT ("PH",
-                ("break cycle phase: %s", PHphaseText (global.break_after_cyclephase)));
-    DBUG_PRINT ("PH", ("break cycle pass: %d", global.break_cycle_specifier));
-
-    DBUG_VOID_RETURN;
-}
+#include "phase_info.h"
 
 #ifndef DBUG_OFF
-
-void
-PHinterpretDbugOption (char *option)
-{
-    char *tok;
-    compiler_phase_t phase;
-
-    DBUG_ENTER ("PHinterpretDbugOption");
-
-    tok = STRtok (option, "/");
-
-    DBUG_ASSERT (tok != NULL, "Corruption in dbug option");
-
-    if (tok[0] != '\0') {
-        phase = SearchPhaseIdent (tok);
-
-        if (phase == PH_final) {
-            CTIerror ("Illegal start compiler phase specification in dbug option: \n"
-                      "  -# %s\n"
-                      "See sac2c -h for a list of legal break options.",
-                      option);
-        } else {
-            global.my_dbug_from = phase;
-        }
-    }
-
-    tok = MEMfree (tok);
-
-    tok = STRtok (NULL, "/");
-
-    if (tok == NULL) {
-        CTIerror ("Missing stop compiler phase specification in dbug option: \n"
-                  "  -# %s\n"
-                  "See sac2c -h for a list of legal break options.",
-                  option);
-    } else {
-        if (tok[0] != '\0') {
-            phase = SearchPhaseIdent (tok);
-
-            if (phase == PH_final) {
-                CTIerror ("Illegal start compiler phase specification in dbug option: \n"
-                          "  -# %s\n"
-                          "See sac2c -h for a list of legal break options.",
-                          option);
-            } else if (phase < global.my_dbug_from) {
-                CTIerror ("Stop phase is before start phase in dbug option: \n"
-                          "  -# %s\n"
-                          "See sac2c -h for sequence of phases.",
-                          option);
-            } else {
-                global.my_dbug_to = phase;
-            }
-        }
-
-        tok = MEMfree (tok);
-
-        tok = STRtok (NULL, "/");
-
-        if (tok == NULL) {
-            CTIerror ("Missing dbug string in dbug option: \n"
-                      "  -# %s\n"
-                      "See sac2c -h for syntac of dbug option.",
-                      option);
-        } else {
-            global.my_dbug_str = tok;
-            global.my_dbug = 1;
-        }
-    }
-
-    DBUG_VOID_RETURN;
-}
 
 static void
 CheckEnableDbug (compiler_phase_t phase)
@@ -490,8 +68,8 @@ PHrunCompilerPhase (compiler_phase_t phase, node *syntax_tree, bool cond)
     CTInote (" ");
 
     if (cond) {
-        CTIstate ("** %2d: %s ...", phase_num, PHphaseText (phase));
-        syntax_tree = phase_fun[phase](syntax_tree);
+        CTIstate ("** %2d: %s ...", phase_num, PHIphaseText (phase));
+        syntax_tree = PHIphaseFun (phase) (syntax_tree);
 
         CTIabortOnError ();
 
@@ -509,7 +87,7 @@ PHrunCompilerPhase (compiler_phase_t phase, node *syntax_tree, bool cond)
         }
 #endif
     } else {
-        CTIstate ("** %2d: %s skipped.", phase_num, PHphaseText (phase));
+        CTIstate ("** %2d: %s skipped.", phase_num, PHIphaseText (phase));
     }
 
 #ifndef DBUG_OFF
@@ -539,10 +117,10 @@ PHrunCompilerSubPhase (compiler_phase_t subphase, node *syntax_tree, bool cond)
 #endif
 
     if (cond) {
-        if (phase_type[subphase] != PHT_cycle) {
-            CTInote ("**** %s ...", PHphaseText (subphase));
+        if (PHIphaseType (subphase) != PHT_cycle) {
+            CTInote ("**** %s ...", PHIphaseText (subphase));
         }
-        syntax_tree = phase_fun[subphase](syntax_tree);
+        syntax_tree = PHIphaseFun (subphase) (syntax_tree);
         CTIabortOnError ();
 
 #ifdef SHOW_MALLOC
@@ -589,12 +167,12 @@ PHrunCompilerCyclePhase (compiler_phase_t cyclephase, int pass, node *arg_node, 
         && ((cyclephase <= global.break_after_cyclephase)
             || (pass < global.break_cycle_specifier))) {
         if (funbased) {
-            CTItell (4, "         %s ...", PHphaseText (cyclephase));
+            CTItell (4, "         %s ...", PHIphaseText (cyclephase));
         } else {
-            CTInote ("****** %s ...", PHphaseText (cyclephase));
+            CTInote ("****** %s ...", PHIphaseText (cyclephase));
         }
 
-        arg_node = phase_fun[cyclephase](arg_node);
+        arg_node = PHIphaseFun (cyclephase) (arg_node);
 
         if (funbased) {
             arg_node = TCappendFundef (arg_node, DUPgetCopiedSpecialFundefs ());
@@ -607,22 +185,4 @@ PHrunCompilerCyclePhase (compiler_phase_t cyclephase, int pass, node *arg_node, 
 #endif
 
     DBUG_RETURN (arg_node);
-}
-
-node *
-PHdummy (node *syntax_tree)
-{
-    DBUG_ENTER ("PHdummy");
-
-    DBUG_ASSERT (FALSE, "This function should never be called.");
-
-    DBUG_RETURN (syntax_tree);
-}
-
-node *
-PHidentity (node *syntax_tree)
-{
-    DBUG_ENTER ("PHidentity");
-
-    DBUG_RETURN (syntax_tree);
 }

@@ -55,7 +55,7 @@
 #include "convert.h"
 #include "globals.h"
 #include "free.h"
-#include "phase.h"
+#include "phase_info.h"
 #include "namespaces.h"
 #include "tree_basic.h"
 #include "check_mem.h"
@@ -310,7 +310,7 @@ AbortCompilation ()
 
     fprintf (stderr, "\n*** Compilation failed ***\n");
     fprintf (stderr, "*** Exit code %d (%s)\n", global.compiler_phase,
-             PHphaseText (global.compiler_phase));
+             PHIphaseText (global.compiler_phase));
     fprintf (stderr, "*** %d Error(s), %d Warning(s)\n\n", errors, warnings);
 
     exit ((int)global.compiler_phase);
@@ -977,17 +977,18 @@ CTIterminateCompilation (node *syntax_tree)
     CTIstate ("** Compilation successful");
 
     if (global.break_after_cyclephase < PH_final) {
-        CTIstate ("** BREAK during:   %s\n", PHphaseText (global.compiler_phase));
-        CTIstate ("** BREAK in cycle: %s\n", PHphaseText (global.compiler_subphase));
+        CTIstate ("** BREAK during:   %s\n", PHIphaseText (global.compiler_phase));
+        CTIstate ("** BREAK in cycle: %s\n", PHIphaseText (global.compiler_subphase));
         CTIstate ("** BREAK in pass:  %d\n", global.break_cycle_specifier);
-        CTIstate ("** BREAK after:    %s\n", PHphaseText (global.break_after_cyclephase));
+        CTIstate ("** BREAK after:    %s\n",
+                  PHIphaseText (global.break_after_cyclephase));
     } else {
         if (global.break_after_subphase < PH_final) {
-            CTIstate ("** BREAK during: %s\n", PHphaseText (global.compiler_phase));
-            CTIstate ("** BREAK after:  %s\n", PHphaseText (global.compiler_subphase));
+            CTIstate ("** BREAK during: %s\n", PHIphaseText (global.compiler_phase));
+            CTIstate ("** BREAK after:  %s\n", PHIphaseText (global.compiler_subphase));
         } else {
             if (global.break_after_phase < PH_final) {
-                CTIstate ("** BREAK after: %s\n", PHphaseText (global.compiler_phase));
+                CTIstate ("** BREAK after: %s\n", PHIphaseText (global.compiler_phase));
             }
         }
     }
