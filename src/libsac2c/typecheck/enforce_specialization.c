@@ -50,16 +50,18 @@
  * @{
  *
  *****************************************************************************/
+
 /** <!--********************************************************************-->
  *
  * @fn node *ESPdoEnforceSpecialization( node *syntax_tree)
  *
  *****************************************************************************/
+
 node *
 ESPdoEnforceSpecialization (node *syntax_tree)
 {
     bool ok;
-    node *ignore;
+
     DBUG_ENTER ("ESPdoEnforceSpecialization");
 
     DBUG_PRINT ("ESP", ("Starting esp traversal."));
@@ -67,8 +69,7 @@ ESPdoEnforceSpecialization (node *syntax_tree)
     ok = SSIinitAssumptionSystem (SDhandleContradiction, SDhandleElimination);
     DBUG_ASSERT (ok, "Initialisation of Assumption System went wrong!");
 
-    ignore = SPECresetSpecChain ();
-    DBUG_ASSERT (ignore == NULL, "Functions discarded, maybe from duptree hook");
+    SPECinitSpecChain ();
 
     /*
      * Now we have to initialize the deserialisation unit, as

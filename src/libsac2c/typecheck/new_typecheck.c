@@ -168,7 +168,6 @@ NTCdoNewTypeCheck (node *arg_node)
     info *arg_info;
     bool ok;
     node *fundef;
-    node *ignore;
 
     DBUG_ENTER ("NTCdoNewTypeCheck");
 
@@ -180,8 +179,7 @@ NTCdoNewTypeCheck (node *arg_node)
         DBUG_ASSERT (ok, "Initialisation of Assumption System went wrong!");
     }
 
-    ignore = SPECresetSpecChain ();
-    DBUG_ASSERT (ignore == NULL, "Functions discarded, maybe from duptree hook");
+    SPECinitSpecChain ();
 
     /**
      * Before starting the type checking mechanism, we first mark all

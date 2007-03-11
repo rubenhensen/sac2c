@@ -623,7 +623,7 @@ SPEChandleLacFun (node *fundef, node *assign, ntype *args)
  ******************************************************************************/
 
 node *
-SPECresetSpecChain ()
+SPECresetSpecChain (void)
 {
     node *res;
 
@@ -635,6 +635,32 @@ SPECresetSpecChain ()
     res = TCappendFundef (res, DUPgetCopiedSpecialFundefs ());
 
     DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    node *SPECinitSpecChain()
+ *
+ * description:
+ *
+ ******************************************************************************/
+
+void
+SPECinitSpecChain (void)
+{
+    node *special_funs;
+
+    DBUG_ENTER ("SPECinitSpecChain");
+
+    DBUG_ASSERT (specialized_fundefs == NULL,
+                 "Non-empty spec chain found on initialisation");
+
+    special_funs = DUPgetCopiedSpecialFundefs ();
+    DBUG_ASSERT (special_funs == NULL,
+                 "Non-handled special funs detected on initialisation of spec chain");
+
+    DBUG_VOID_RETURN;
 }
 
 /* @} */ /* addtogroup ntc */
