@@ -512,6 +512,7 @@ FPCfundef (node *arg_node, info *arg_info)
         if (FUNDEF_NEXT (arg_node) != NULL) {
             FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
         }
+
         /*
          * all FUNDEF_ARGTABs are build now -> traverse body
          */
@@ -706,7 +707,9 @@ FPClet (node *arg_node, info *arg_info)
 
         argtab = FUNDEF_ARGTAB (fundef);
 
-        DBUG_ASSERT ((argtab != NULL), "FUNDEF_ARGTAB not found!");
+        if (argtab == NULL) {
+            DBUG_ASSERT ((argtab != NULL), "FUNDEF_ARGTAB not found!");
+        }
 
         dots_offset = 0;
         idx = ap_argtab->size; /* to avoid a CC warning */
