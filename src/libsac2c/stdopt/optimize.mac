@@ -87,6 +87,8 @@ OPTIMIZE ("wlprop", wlprop, TRUE, FALSE, " withloop propagation")
 OPTIMIZE ("saa", saa, TRUE, FALSE, "use symbolic array attributes")
 OPTIMIZE ("saaopt", saaopt, FALSE, FALSE,
           "use symbolic array attributes in optcycle *EXPERIMENTAL*")
+OPTIMIZE ("cyc", cyc, TRUE, TRUE, "run optimization cycle")
+OPTIMIZE ("scyc", scyc, TRUE, TRUE, "run stabilization cycle")
 
 OPTCOUNTER (dead_expr, "dead assignment(s) removed")
 OPTCOUNTER (dead_var, "dead variable declaration(s) removed")

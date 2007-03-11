@@ -314,7 +314,7 @@ SUBPHASE (isaa, "Inserting symbolic array attributes", ISAAdoInsertShapeVariable
 
 /*************************************************/
 
-CYCLE (cyc, "Optimization cycle", ALWAYS, opt)
+CYCLE (cyc, "Optimization cycle", global.optimize.docyc, opt)
 
 FUNBEGIN ()
 
@@ -427,7 +427,8 @@ ENDCYCLE (cyc)
 
 /*************************************************/
 
-CYCLE (scyc, "Type stabilization cycle", global.run_stabilization_cycle, opt)
+CYCLE (scyc, "Type stabilization cycle",
+       global.run_stabilization_cycle &&global.optimize.doscyc, opt)
 
 FUNBEGIN ()
 
