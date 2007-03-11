@@ -291,3 +291,48 @@ PHOinterpretDbugOption (char *option)
 }
 
 #endif /* DBUG_OFF */
+
+#define PHASEname(name)                                                                  \
+    cnt += 1;                                                                            \
+    printf ("\n    %-3s | %-2d", #name, cnt);
+
+#define PHASEtext(text) printf (" : " text "\n");
+
+#define SUBPHASEname(name) printf ("      %-8s", #name);
+
+#define SUBPHASEtext(text) printf (" : " text "\n");
+
+#define CYCLEname(name) printf ("      %-8s", #name);
+
+#define CYCLEtext(text) printf (" : " text "\n");
+
+#define CYCLEPHASEname(name) printf ("        %-8s", #name);
+
+#define CYCLEPHASEtext(text) printf (" : " text "\n");
+
+#define CYCLEPHASEFUNname(name) printf ("        %-8s", #name);
+
+#define CYCLEPHASEFUNtext(text) printf (" : " text " (fun based)\n");
+
+void
+PHOprintPhases (void)
+{
+    int cnt = 0;
+
+    DBUG_ENTER ("PHOprintPhases");
+
+#include "phase_sac2c.mac"
+
+    DBUG_VOID_RETURN;
+}
+
+#undef PHASEname
+#undef PHASEtext
+#undef SUBPHASEname
+#undef SUBPHASEtext
+#undef CYCLEname
+#undef CYCLEtext
+#undef CYCLEPHASEname
+#undef CYCLEPHASEtext
+#undef CYCLEPHASEFUNname
+#undef CYCLEPHASEFUNtext

@@ -18,6 +18,7 @@
 #include "check_mem.h"
 #include "phase_drivers.h"
 #include "globals.h"
+#include "DupTree.h"
 
 /*
  * Generated cycle driver functions
@@ -42,7 +43,7 @@
                      cycle_counter);                                                     \
             STATclearCounters (&oc_pass);
 
-#define FUNBEGIN()                                                                       \
+#define FUNBEGIN(name)                                                                   \
     {                                                                                    \
         STATaddCounters (&oc_pass, &global.optcounters);                                 \
         STATclearCounters (&global.optcounters);                                         \
@@ -56,7 +57,7 @@
                          CTIfunParams (fundef));                                         \
                 FUNDEF_ISINLINECOMPLETED (fundef) = FALSE;
 
-#define FUNEND()                                                                         \
+#define FUNEND(name)                                                                     \
     FUNDEF_WASOPTIMIZED (fundef) = STATdidSomething (&global.optcounters);               \
     if (FUNDEF_WASOPTIMIZED (fundef)) {                                                  \
         STATaddCounters (&oc_pass, &global.optcounters);                                 \
@@ -64,18 +65,20 @@
     }                                                                                    \
     DBUG_EXECUTE ("OPT", STATprint (&global.optcounters););                              \
     }                                                                                    \
+    if (FUNDEF_NEXT (fundef) == NULL) {                                                  \
+        FUNDEF_NEXT (fundef) = DUPgetCopiedSpecialFundefs ();                            \
+    }                                                                                    \
     fundef = FUNDEF_NEXT (fundef);                                                       \
     }                                                                                    \
     }
 
 #define CYCLEPHASE(name, text, fun, cond, phase, cycle)                                  \
-    if (fundef == NULL) {                                                                \
-        syntax_tree = PHrunCompilerCyclePhase (PH_##phase##_##cycle##_##name,            \
-                                               cycle_counter, syntax_tree, cond, FALSE); \
-    } else {                                                                             \
-        fundef = PHrunCompilerCyclePhase (PH_##phase##_##cycle##_##name, cycle_counter,  \
-                                          fundef, cond, TRUE);                           \
-    }
+    syntax_tree = PHrunCompilerCyclePhase (PH_##phase##_##cycle##_##name, cycle_counter, \
+                                           syntax_tree, cond);
+
+#define CYCLEPHASEFUN(name, text, fun, cond, phase, cycle)                               \
+    fundef = PHrunCompilerCyclePhaseFun (PH_##phase##_##cycle##_##name, cycle_counter,   \
+                                         fundef, cond);
 
 #ifdef SHOW_MALLOC
 

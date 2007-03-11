@@ -9,6 +9,7 @@
 #include "build.h"
 #include "dbug.h"
 #include "usage.h"
+#include "phase_options.h"
 
 static void
 PrintToolName (void)
@@ -161,40 +162,11 @@ PrintBreakOptions (void)
 static void
 PrintBreakoptionSpecifierSac2c (void)
 {
-    int cnt = 0;
-
     DBUG_ENTER ("PrintBreakoptionSpecifierSac2c");
 
     printf ("\n\nBREAK OPTION SPECIFIERS:\n");
 
-#define PHASEname(name)                                                                  \
-    cnt += 1;                                                                            \
-    printf ("\n    %-3s | %-2d", #name, cnt);
-
-#define PHASEtext(text) printf (" : " text "\n");
-
-#define SUBPHASEname(name) printf ("      %-8s", #name);
-
-#define SUBPHASEtext(text) printf (" : " text "\n");
-
-#define CYCLEname(name) printf ("      %-8s", #name);
-
-#define CYCLEtext(text) printf (" : " text "\n");
-
-#define CYCLEPHASEname(name) printf ("        %-8s", #name);
-
-#define CYCLEPHASEtext(text) printf (" : " text "\n");
-
-#include "phase_sac2c.mac"
-
-#undef PHASEname
-#undef PHASEtext
-#undef SUBPHASEname
-#undef SUBPHASEtext
-#undef CYCLEname
-#undef CYCLEtext
-#undef CYCLEPHASEname
-#undef CYCLEPHASEtext
+    PHOprintPhases ();
 
     DBUG_VOID_RETURN;
 }

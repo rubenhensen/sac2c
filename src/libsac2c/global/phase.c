@@ -146,8 +146,8 @@ PHrunCompilerSubPhase (compiler_phase_t subphase, node *syntax_tree, bool cond)
 }
 
 node *
-PHrunCompilerCyclePhase (compiler_phase_t cyclephase, int pass, node *arg_node, bool cond,
-                         bool funbased)
+PHrunCompilerCyclePhase (compiler_phase_t cyclephase, int pass, node *syntax_tree,
+                         bool cond)
 {
     DBUG_ENTER ("PHrunCompilerCyclePhase");
 
@@ -158,25 +158,50 @@ PHrunCompilerCyclePhase (compiler_phase_t cyclephase, int pass, node *arg_node, 
     CheckEnableDbug (cyclephase);
 #endif
 
-    DBUG_ASSERT (((arg_node != NULL)
-                  && ((funbased && (NODE_TYPE (arg_node) == N_fundef))
-                      || (!funbased && (NODE_TYPE (arg_node) == N_module)))),
+    DBUG_ASSERT ((syntax_tree != NULL) && (NODE_TYPE (syntax_tree) == N_module),
                  "PHrunCompilerCyclePhase called with wrong node type.");
 
     if (cond
         && ((cyclephase <= global.break_after_cyclephase)
             || (pass < global.break_cycle_specifier))) {
-        if (funbased) {
-            CTItell (4, "         %s ...", PHIphaseText (cyclephase));
-        } else {
-            CTInote ("****** %s ...", PHIphaseText (cyclephase));
-        }
+        CTInote ("****** %s ...", PHIphaseText (cyclephase));
+
+        syntax_tree = PHIphaseFun (cyclephase) (syntax_tree);
+
+        CTIabortOnError ();
+    }
+
+#ifndef DBUG_OFF
+    CheckDisableDbug (cyclephase);
+#endif
+
+    DBUG_RETURN (syntax_tree);
+}
+
+node *
+PHrunCompilerCyclePhaseFun (compiler_phase_t cyclephase, int pass, node *arg_node,
+                            bool cond)
+{
+    DBUG_ENTER ("PHrunCompilerCyclePhaseFun");
+
+    global.compiler_cyclephase = cyclephase;
+    global.compiler_anyphase = cyclephase;
+
+#ifndef DBUG_OFF
+    CheckEnableDbug (cyclephase);
+#endif
+
+    DBUG_ASSERT ((arg_node != NULL) && (NODE_TYPE (arg_node) == N_fundef),
+                 "PHrunCompilerCyclePhaseFun called with wrong node type.");
+
+    if (cond
+        && ((cyclephase <= global.break_after_cyclephase)
+            || (pass < global.break_cycle_specifier))) {
+
+        CTItell (4, "         %s ...", PHIphaseText (cyclephase));
 
         arg_node = PHIphaseFun (cyclephase) (arg_node);
 
-        if (funbased) {
-            arg_node = TCappendFundef (arg_node, DUPgetCopiedSpecialFundefs ());
-        }
         CTIabortOnError ();
     }
 

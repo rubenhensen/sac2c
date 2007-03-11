@@ -78,11 +78,11 @@
 #endif
 
 #ifndef FUNBEGIN
-#define FUNBEGIN()
+#define FUNBEGIN(name)
 #endif
 
 #ifndef FUNEND
-#define FUNEND()
+#define FUNEND(name)
 #endif
 
 #ifndef CYCLEPHASEname
@@ -113,6 +113,36 @@
 #define CYCLEPHASE(name, text, fun, cond, phase, cycle)                                  \
     CYCLEPHASEname (name) CYCLEPHASEtext (text) CYCLEPHASEfun (fun)                      \
       CYCLEPHASEcond (cond) CYCLEPHASEphase (phase) CYCLEPHASEcycle (cycle)
+#endif
+
+#ifndef CYCLEPHASEFUNname
+#define CYCLEPHASEFUNname(name)
+#endif
+
+#ifndef CYCLEPHASEFUNtext
+#define CYCLEPHASEFUNtext(text)
+#endif
+
+#ifndef CYCLEPHASEFUNfun
+#define CYCLEPHASEFUNfun(fun)
+#endif
+
+#ifndef CYCLEPHASEFUNcond
+#define CYCLEPHASEFUNcond(cond)
+#endif
+
+#ifndef CYCLEPHASEFUNphase
+#define CYCLEPHASEFUNphase(phase)
+#endif
+
+#ifndef CYCLEPHASEFUNcycle
+#define CYCLEPHASEFUNcycle(cycle)
+#endif
+
+#ifndef CYCLEPHASEFUN
+#define CYCLEPHASEFUN(name, text, fun, cond, phase, cycle)                               \
+    CYCLEPHASEFUNname (name) CYCLEPHASEFUNtext (text) CYCLEPHASEFUNfun (fun)             \
+      CYCLEPHASEFUNcond (cond) CYCLEPHASEFUNphase (phase) CYCLEPHASEFUNcycle (cycle)
 #endif
 
 /******************************************************************************/
@@ -316,107 +346,109 @@ SUBPHASE (isaa, "Inserting symbolic array attributes", ISAAdoInsertShapeVariable
 
 CYCLE (cyc, "Optimization cycle", global.optimize.docyc, opt)
 
-FUNBEGIN ()
+FUNBEGIN (cyc)
 
-CYCLEPHASE (cse, "Applying common subexpression elimination",
-            CSEdoCommonSubexpressionElimination, global.optimize.docse, opt, cyc)
+CYCLEPHASEFUN (cse, "Applying common subexpression elimination",
+               CSEdoCommonSubexpressionElimination, global.optimize.docse, opt, cyc)
 
-CYCLEPHASE (isaa, "Inserting symbolic array attributes",
-            ISAAdoInsertShapeVariablesOneFundef,
-            global.optimize.dosaa &&global.optimize.dosaaopt, opt, cyc)
+CYCLEPHASEFUN (isaa, "Inserting symbolic array attributes",
+               ISAAdoInsertShapeVariablesOneFundef,
+               global.optimize.dosaa &&global.optimize.dosaaopt, opt, cyc)
 
-CYCLEPHASE (ili, "Infering loop invariant variables", ILIdoInferLoopInvariants, ALWAYS,
-            opt, cyc)
+CYCLEPHASEFUN (ili, "Infering loop invariant variables", ILIdoInferLoopInvariants, ALWAYS,
+               opt, cyc)
 
-CYCLEPHASE (tup, "Applying type upgrade", NTCdoNewTypeCheckOneFunction,
-            global.optimize.dotup, opt, cyc)
+CYCLEPHASEFUN (tup, "Applying type upgrade", NTCdoNewTypeCheckOneFunction,
+               global.optimize.dotup, opt, cyc)
 
-CYCLEPHASE (etv, "Eliminating Type Variables", EATdoEliminateAlphaTypesOneFunction,
-            global.optimize.dotup, opt, cyc)
+CYCLEPHASEFUN (etv, "Eliminating Type Variables", EATdoEliminateAlphaTypesOneFunction,
+               global.optimize.dotup, opt, cyc)
 
-CYCLEPHASE (ebt, "Eliminating Bottom Types", EBTdoEliminateBottomTypesOneFunction,
-            global.optimize.dotup, opt, cyc)
+CYCLEPHASEFUN (ebt, "Eliminating Bottom Types", EBTdoEliminateBottomTypesOneFunction,
+               global.optimize.dotup, opt, cyc)
 
-CYCLEPHASE (rtup, "Applying reverse type upgrade", RTUPdoReverseTypeUpgradeOneFundef,
-            global.optimize.dortup, opt, cyc)
+CYCLEPHASEFUN (rtup, "Applying reverse type upgrade", RTUPdoReverseTypeUpgradeOneFundef,
+               global.optimize.dortup, opt, cyc)
 
-CYCLEPHASE (dfc, "Applying function call dispatch", DFCdoDispatchFunCallsOneFundef,
-            ALWAYS, opt, cyc)
+CYCLEPHASEFUN (dfc, "Applying function call dispatch", DFCdoDispatchFunCallsOneFundef,
+               ALWAYS, opt, cyc)
 
-CYCLEPHASE (inl, "Applying inlining", INLdoInlining, global.optimize.doinl, opt, cyc)
+CYCLEPHASEFUN (inl, "Applying inlining", INLdoInlining, global.optimize.doinl, opt, cyc)
 
-CYCLEPHASE (wlpr, "Applying with-loop propagation", WLPROPdoWithloopPropagation,
-            global.optimize.dowlprop, opt, cyc)
+CYCLEPHASEFUN (wlpr, "Applying with-loop propagation", WLPROPdoWithloopPropagation,
+               global.optimize.dowlprop, opt, cyc)
 
-CYCLEPHASE (cf, "Applying constant folding", CFdoConstantFolding, global.optimize.docf,
-            opt, cyc)
+CYCLEPHASEFUN (cf, "Applying constant folding", CFdoConstantFolding, global.optimize.docf,
+               opt, cyc)
 
-CYCLEPHASE (cvp, "Propagating constants and variables", CVPdoConstVarPropagationOneFundef,
-            global.optimize.docvp, opt, cyc)
+CYCLEPHASEFUN (cvp, "Propagating constants and variables",
+               CVPdoConstVarPropagationOneFundef, global.optimize.docvp, opt, cyc)
 
-CYCLEPHASE (wlpg, "Generating full with-loop partitions", WLPGdoWlPartitionGenerationOpt,
-            global.optimize.dowlpg, opt, cyc)
+CYCLEPHASEFUN (wlpg, "Generating full with-loop partitions",
+               WLPGdoWlPartitionGenerationOpt, global.optimize.dowlpg, opt, cyc)
 
-CYCLEPHASE (wlsimp, "Simplifying with-loops", WLSIMPdoWithloopSimplification,
-            global.optimize.dowlsimp, opt, cyc)
+CYCLEPHASEFUN (wlsimp, "Simplifying with-loops", WLSIMPdoWithloopSimplification,
+               global.optimize.dowlsimp, opt, cyc)
 
-CYCLEPHASE (cwle, "Eliminate copy with-loops", CWLEdoTemplateTraversal,
-            global.optimize.docwle, opt, cyc)
+CYCLEPHASEFUN (cwle, "Eliminate copy with-loops", CWLEdoTemplateTraversal,
+               global.optimize.docwle, opt, cyc)
 
-CYCLEPHASE (wli, "Infering foldable with-loops", WLIdoWLI, global.optimize.dowlf, opt,
-            cyc)
+CYCLEPHASEFUN (wli, "Infering foldable with-loops", WLIdoWLI, global.optimize.dowlf, opt,
+               cyc)
 
-CYCLEPHASE (wlf, "Applying with-loop folding", WLFdoWLF, global.optimize.dowlf, opt, cyc)
+CYCLEPHASEFUN (wlf, "Applying with-loop folding", WLFdoWLF, global.optimize.dowlf, opt,
+               cyc)
 
-CYCLEPHASE (wlfssa, "Restoring SSA form after with-loop folding",
-            SSATdoTransformOneFundef, global.optimize.dowlf, opt, cyc)
+CYCLEPHASEFUN (wlfssa, "Restoring SSA form after with-loop folding",
+               SSATdoTransformOneFundef, global.optimize.dowlf, opt, cyc)
 
-CYCLEPHASE (swlf, "Applying symbolic with-loop folding", SWLFdoSymbolicWithLoopFolding,
-            global.optimize.doswlf, opt, cyc)
+CYCLEPHASEFUN (swlf, "Applying symbolic with-loop folding", SWLFdoSymbolicWithLoopFolding,
+               global.optimize.doswlf, opt, cyc)
 
-CYCLEPHASE (dcr, "Applying dead code removal", DCRdoDeadCodeRemovalOneFundef,
-            global.optimize.dodcr, opt, cyc)
+CYCLEPHASEFUN (dcr, "Applying dead code removal", DCRdoDeadCodeRemovalOneFundef,
+               global.optimize.dodcr, opt, cyc)
 
-CYCLEPHASE (wls, "Applying with-loop scalarization", WLSdoWithloopScalarization,
-            global.optimize.dowls, opt, cyc)
+CYCLEPHASEFUN (wls, "Applying with-loop scalarization", WLSdoWithloopScalarization,
+               global.optimize.dowls, opt, cyc)
 
-CYCLEPHASE (prfunr, "Applying prf unrolling", UPRFdoUnrollPRFs, global.optimize.doprfunr,
-            opt, cyc)
+CYCLEPHASEFUN (prfunr, "Applying prf unrolling", UPRFdoUnrollPRFs,
+               global.optimize.doprfunr, opt, cyc)
 
-CYCLEPHASE (lur, "Applying loop unrolling", LURdoLoopUnrolling, global.optimize.dolur,
-            opt, cyc)
+CYCLEPHASEFUN (lur, "Applying loop unrolling", LURdoLoopUnrolling, global.optimize.dolur,
+               opt, cyc)
 
-CYCLEPHASE (lurssa, "Restoring SSA form after loop unrolling", SSATdoTransformOneFunction,
-            global.optimize.dolur, opt, cyc)
+CYCLEPHASEFUN (lurssa, "Restoring SSA form after loop unrolling",
+               SSATdoTransformOneFunction, global.optimize.dolur, opt, cyc)
 
-CYCLEPHASE (wlur, "Applying withloop unrolling", WLURdoWithloopUnrolling,
-            global.optimize.dowlur, opt, cyc)
+CYCLEPHASEFUN (wlur, "Applying withloop unrolling", WLURdoWithloopUnrolling,
+               global.optimize.dowlur, opt, cyc)
 
-CYCLEPHASE (wlurssa, "Restoring SSA form after withloop unrolling",
-            SSATdoTransformOneFunction, global.optimize.dowlur, opt, cyc)
+CYCLEPHASEFUN (wlurssa, "Restoring SSA form after withloop unrolling",
+               SSATdoTransformOneFunction, global.optimize.dowlur, opt, cyc)
 
-CYCLEPHASE (linl, "Inlining degenerated LaC functions", LINLdoLACInliningOneFundef,
-            global.lacinline, opt, cyc)
+CYCLEPHASEFUN (linl, "Inlining degenerated LaC functions", LINLdoLACInliningOneFundef,
+               global.lacinline, opt, cyc)
 
-CYCLEPHASE (wlir, "Applying with-loop invariant removal",
-            LIRdoWithLoopInvariantRemovalOneFundef, global.optimize.dolir, opt, cyc)
+CYCLEPHASEFUN (wlir, "Applying with-loop invariant removal",
+               LIRdoWithLoopInvariantRemovalOneFundef, global.optimize.dolir, opt, cyc)
 
-CYCLEPHASE (etc, "Eliminating typeconv primitives", ETCdoEliminateTypeConversions,
-            global.optimize.doetc, opt, cyc)
+CYCLEPHASEFUN (etc, "Eliminating typeconv primitives", ETCdoEliminateTypeConversions,
+               global.optimize.doetc, opt, cyc)
 
-CYCLEPHASE (esd, "Eliminating subtraction and division operators", ESDdoElimSubDiv,
-            global.optimize.doesd, opt, cyc)
+CYCLEPHASEFUN (esd, "Eliminating subtraction and division operators", ESDdoElimSubDiv,
+               global.optimize.doesd, opt, cyc)
 
-CYCLEPHASE (al, "Applying associative law", ASSOCdoAssociativityOptimizationOneFundef,
-            global.optimize.doal, opt, cyc)
+CYCLEPHASEFUN (al, "Applying associative law", ASSOCdoAssociativityOptimizationOneFundef,
+               global.optimize.doal, opt, cyc)
 
-CYCLEPHASE (dl, "Applying distributive law", DISTRIBdoDistributivityOptimizationOneFundef,
-            global.optimize.dodl, opt, cyc)
+CYCLEPHASEFUN (dl, "Applying distributive law",
+               DISTRIBdoDistributivityOptimizationOneFundef, global.optimize.dodl, opt,
+               cyc)
 
-CYCLEPHASE (dcr2, "Applying dead code removal", DCRdoDeadCodeRemovalOneFundef,
-            global.optimize.dodcr, opt, cyc)
+CYCLEPHASEFUN (dcr2, "Applying dead code removal", DCRdoDeadCodeRemovalOneFundef,
+               global.optimize.dodcr, opt, cyc)
 
-FUNEND ()
+FUNEND (cyc)
 
 CYCLEPHASE (sisi, "Simplifying function signatures", SISIdoSignatureSimplification,
             global.optimize.dosisi &&global.optimize.dodcr, opt, cyc)
@@ -430,21 +462,21 @@ ENDCYCLE (cyc)
 CYCLE (scyc, "Type stabilization cycle",
        global.run_stabilization_cycle &&global.optimize.doscyc, opt)
 
-FUNBEGIN ()
+FUNBEGIN (scyc)
 
-CYCLEPHASE (tup, "Applying type upgrade", NTCdoNewTypeCheckOneFunction,
-            global.optimize.dotup, opt, scyc)
+CYCLEPHASEFUN (tup, "Applying type upgrade", NTCdoNewTypeCheckOneFunction,
+               global.optimize.dotup, opt, scyc)
 
-CYCLEPHASE (etv, "Eliminating Type Variables", EATdoEliminateAlphaTypesOneFunction,
-            global.optimize.dotup, opt, scyc)
+CYCLEPHASEFUN (etv, "Eliminating Type Variables", EATdoEliminateAlphaTypesOneFunction,
+               global.optimize.dotup, opt, scyc)
 
-CYCLEPHASE (ebt, "Eliminating Bottom Types", EBTdoEliminateBottomTypesOneFunction,
-            global.optimize.dotup, opt, scyc)
+CYCLEPHASEFUN (ebt, "Eliminating Bottom Types", EBTdoEliminateBottomTypesOneFunction,
+               global.optimize.dotup, opt, scyc)
 
-CYCLEPHASE (dfc, "Applying function call dispatch", DFCdoDispatchFunCallsOneFundef,
-            ALWAYS, opt, scyc)
+CYCLEPHASEFUN (dfc, "Applying function call dispatch", DFCdoDispatchFunCallsOneFundef,
+               ALWAYS, opt, scyc)
 
-FUNEND ()
+FUNEND (scyc)
 
 CYCLEPHASE (lof, "Lifting optimization flags", LOFdoLiftOptFlags, ALWAYS, opt, scyc)
 
@@ -847,6 +879,15 @@ ENDPHASE (icc)
 #undef CYCLEPHASEcond
 #undef CYCLEPHASEphase
 #undef CYCLEPHASEcycle
+
+#undef CYCLEPHASEFUN
+
+#undef CYCLEPHASEFUNname
+#undef CYCLEPHASEFUNtext
+#undef CYCLEPHASEFUNfun
+#undef CYCLEPHASEFUNcond
+#undef CYCLEPHASEFUNphase
+#undef CYCLEPHASEFUNcycle
 
 #undef ENDPHASE
 #undef ENDCYCLE

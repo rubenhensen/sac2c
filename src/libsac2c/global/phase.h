@@ -16,6 +16,9 @@ extern node *PHrunCompilerSubPhase (compiler_phase_t subphase, node *syntax_tree
                                     bool cond);
 
 extern node *PHrunCompilerCyclePhase (compiler_phase_t cyclephase, int pass,
-                                      node *syntax_tree, bool cond, bool funbased);
+                                      node *syntax_tree, bool cond);
+
+extern node *PHrunCompilerCyclePhaseFun (compiler_phase_t cyclephase, int pass,
+                                         node *syntax_tree, bool cond);
 
 #endif /* _SAC_PHASE_H_ */
