@@ -77,8 +77,21 @@
 #define ENDCYCLE(name)
 #endif
 
+#ifndef FUNBEGINname
+#define FUNBEGINname(name)
+#endif
+
+#ifndef FUNBEGINphase
+#define FUNBEGINphase(phase)
+#endif
+
+#ifndef FUNBEGINcycle
+#define FUNBEGINcycle(cycle)
+#endif
+
 #ifndef FUNBEGIN
-#define FUNBEGIN(name)
+#define FUNBEGIN(name, phase, cycle)                                                     \
+    FUNBEGINname (name) FUNBEGINphase (phase) FUNBEGINcycle (cycle)
 #endif
 
 #ifndef FUNEND
@@ -346,7 +359,7 @@ SUBPHASE (isaa, "Inserting symbolic array attributes", ISAAdoInsertShapeVariable
 
 CYCLE (cyc, "Optimization cycle", global.optimize.docyc, opt)
 
-FUNBEGIN (cyc)
+FUNBEGIN (cyc, opt, cyc)
 
 CYCLEPHASEFUN (cse, "Applying common subexpression elimination",
                CSEdoCommonSubexpressionElimination, global.optimize.docse, opt, cyc)
@@ -462,7 +475,7 @@ ENDCYCLE (cyc)
 CYCLE (scyc, "Type stabilization cycle",
        global.run_stabilization_cycle &&global.optimize.doscyc, opt)
 
-FUNBEGIN (scyc)
+FUNBEGIN (scyc, opt, scyc)
 
 CYCLEPHASEFUN (tup, "Applying type upgrade", NTCdoNewTypeCheckOneFunction,
                global.optimize.dotup, opt, scyc)
@@ -869,6 +882,11 @@ ENDPHASE (icc)
 #undef CYCLEphase
 
 #undef FUNBEGIN
+
+#undef FUNBEGINname
+#undef FUNBEGINphase
+#undef FUNBEGINcycle
+
 #undef FUNEND
 
 #undef CYCLEPHASE

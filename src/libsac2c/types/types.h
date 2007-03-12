@@ -78,6 +78,8 @@ typedef int usertype;
 
 #define CYCLEPHASE(name, text, fun, cond, phase, cycle) PH_##phase##_##cycle##_##name,
 
+#define FUNBEGIN(name, phase, cycle) PH_##phase##_##cycle##_##name,
+
 #define CYCLEPHASEFUN(name, text, fun, cond, phase, cycle) PH_##phase##_##cycle##_##name,
 
 typedef enum {
@@ -90,6 +92,7 @@ typedef enum {
 #undef SUBPHASE
 #undef CYCLE
 #undef CYCLEPHASE
+#undef FUNBEGIN
 #undef CYCLEPHASEFUN
 
 typedef enum { TOOL_sac2c, TOOL_sac4c } tool_t;

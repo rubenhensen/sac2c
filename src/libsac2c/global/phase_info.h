@@ -14,7 +14,9 @@ typedef enum {
     PHT_phase,
     PHT_subphase,
     PHT_cycle,
-    PHT_cyclephase
+    PHT_cycle_fun,
+    PHT_cyclephase,
+    PHT_cyclephase_fun
 } phase_type_t;
 
 extern phase_fun_t PHIphaseFun (compiler_phase_t phase);

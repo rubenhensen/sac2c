@@ -47,7 +47,9 @@ SearchPhaseByName (char *name)
 
     do {
         phase++;
-    } while ((phase < PH_final) && !STReq (PHIphaseName (phase), name));
+    } while (
+      (phase < PH_final)
+      && ((PHIphaseType (phase) != PHT_phase) || !STReq (PHIphaseName (phase), name)));
 
     DBUG_RETURN (phase);
 }
@@ -84,7 +86,7 @@ SearchSubPhase (compiler_phase_t phase, char *name)
     do {
         do {
             subphase++;
-        } while (PHIphaseType (subphase) == PHT_cyclephase);
+        } while (PHIphaseType (subphase) > PHT_cycle);
     } while ((PHIphaseParent (subphase) == phase)
              && !STReq (PHIphaseName (subphase), name));
 

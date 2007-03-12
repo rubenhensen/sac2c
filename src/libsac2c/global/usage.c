@@ -122,10 +122,11 @@ PrintGeneralOptions (void)
             "    -c              Generate C-file only; do not invoke C compiler.\n"
             "\n"
             "    -v <n>          Specify verbose level:\n"
-            "                      0: error messages only,\n"
-            "                      1: error messages and warnings,\n"
-            "                      2: basic compile time information,\n"
-            "                      3: full compile time information.\n"
+            "                      0: error messages only\n"
+            "                      1: error messages and warnings\n"
+            "                      2: basic compile time information\n"
+            "                      3: full compile time information\n"
+            "                      4: even more compile time information\n"
             "                    (default: %d)\n",
             global.verbose_level);
 

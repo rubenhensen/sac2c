@@ -51,6 +51,7 @@ DummyPhaseFun (node *syntax_tree)
 #define SUBPHASEfun(fun) fun,
 #define CYCLEname(name) PHDdriveCycle_##name,
 #define CYCLEPHASEfun(fun) fun,
+#define FUNBEGINname(name) PHDdriveCycleFun_##name,
 #define CYCLEPHASEFUNfun(fun) fun,
 
 phase_fun_t
@@ -69,6 +70,7 @@ PHIphaseFun (compiler_phase_t phase)
 #undef SUBPHASEfun
 #undef CYCLEfun
 #undef CYCLEPHASEfun
+#undef FUNBEGINname
 #undef CYCLEPHASEFUNfun
 
 /****************************************************************************/
@@ -77,6 +79,7 @@ PHIphaseFun (compiler_phase_t phase)
 #define SUBPHASEtext(text) text,
 #define CYCLEtext(text) text,
 #define CYCLEPHASEtext(text) text,
+#define FUNBEGINname(name) "",
 #define CYCLEPHASEFUNtext(text) text,
 
 const char *
@@ -95,6 +98,7 @@ PHIphaseText (compiler_phase_t phase)
 #undef SUBPHASEtext
 #undef CYCLEtext
 #undef CYCLEPHASEtext
+#undef FUNBEGINname
 #undef CYCLEPHASEFUNtext
 
 /****************************************************************************/
@@ -103,7 +107,8 @@ PHIphaseText (compiler_phase_t phase)
 #define SUBPHASEname(name) PHT_subphase,
 #define CYCLEname(name) PHT_cycle,
 #define CYCLEPHASEname(name) PHT_cyclephase,
-#define CYCLEPHASEFUNname(name) PHT_cyclephase,
+#define FUNBEGINname(name) PHT_cycle_fun,
+#define CYCLEPHASEFUNname(name) PHT_cyclephase_fun,
 
 phase_type_t
 PHIphaseType (compiler_phase_t phase)
@@ -121,6 +126,7 @@ PHIphaseType (compiler_phase_t phase)
 #undef SUBPHASEname
 #undef CYCLEname
 #undef CYCLEPHASEname
+#undef FUNBEGINname
 #undef CYCLEPHASEFUNname
 
 /****************************************************************************/
@@ -129,6 +135,7 @@ PHIphaseType (compiler_phase_t phase)
 #define SUBPHASEname(name) #name,
 #define CYCLEname(name) #name,
 #define CYCLEPHASEname(name) #name,
+#define FUNBEGINname(name) #name,
 #define CYCLEPHASEFUNname(name) #name,
 
 const char *
@@ -147,6 +154,7 @@ PHIphaseName (compiler_phase_t phase)
 #undef SUBPHASEname
 #undef CYCLEname
 #undef CYCLEPHASEname
+#undef FUNBEGINname
 #undef CYCLEPHASEFUNname
 
 /****************************************************************************/
@@ -158,6 +166,8 @@ PHIphaseName (compiler_phase_t phase)
 #define CYCLE(name, text, cond, phase) PH_##phase,
 
 #define CYCLEPHASE(name, text, fun, cond, phase, cycle) PH_##phase##_##cycle,
+
+#define FUNBEGIN(name, phase, cycle) PH_##phase##_##cycle,
 
 #define CYCLEPHASEFUN(name, text, fun, cond, phase, cycle) PH_##phase##_##cycle,
 
@@ -177,6 +187,7 @@ PHIphaseParent (compiler_phase_t phase)
 #undef SUBPHASE
 #undef CYCLE
 #undef CYCLEPHASE
+#undef FUNBEGIN
 #undef CYCLEPHASEFUN
 
 /****************************************************************************/
@@ -188,6 +199,8 @@ PHIphaseParent (compiler_phase_t phase)
 #define CYCLE(name, text, cond, phase) #phase ":" #name,
 
 #define CYCLEPHASE(name, text, fun, cond, phase, cycle) #phase ":" #cycle ":" #name,
+
+#define FUNBEGIN(name, phase, cycle) #phase ":" #cycle ":" #name,
 
 #define CYCLEPHASEFUN(name, text, fun, cond, phase, cycle) #phase ":" #cycle ":" #name,
 
@@ -207,6 +220,7 @@ PHIphaseIdent (compiler_phase_t phase)
 #undef SUBPHASE
 #undef CYCLE
 #undef CYCLEPHASE
+#undef FUNBEGIN
 #undef CYCLEPHASEFUN
 
 /****************************************************************************/
@@ -215,6 +229,7 @@ PHIphaseIdent (compiler_phase_t phase)
 #define SUBPHASEname(name) FALSE,
 #define CYCLEname(name) FALSE,
 #define CYCLEPHASEname(name) FALSE,
+#define FUNBEGINname(name) FALSE,
 #define CYCLEPHASEFUNname(name) TRUE,
 
 bool
@@ -229,8 +244,9 @@ PHIisFunBased (compiler_phase_t phase)
     DBUG_RETURN (phase_isfunbased[phase]);
 }
 
-#undef PHASE
-#undef SUBPHASE
-#undef CYCLE
-#undef CYCLEPHASE
-#undef CYCLEPHASEFUN
+#undef PHASEname
+#undef SUBPHASEname
+#undef CYCLEname
+#undef CYCLEPHASEname
+#undef FUNBEGINname
+#undef CYCLEPHASEFUNname
