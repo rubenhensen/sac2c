@@ -23,6 +23,7 @@ MAKEFLAGS              += --no-print-directory
 #
 
 SETTINGS_DEVEL         := -DSHOW_MALLOC \
+                          -DSANITYCHECKS \
                           -DWLAA_DEACTIVATED \
                           -DAE_DEACTIVATED \
                           -DTSI_DEACTIVATED \

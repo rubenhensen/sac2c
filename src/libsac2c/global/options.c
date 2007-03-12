@@ -285,15 +285,9 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
 
     ARGS_OPTION_BEGIN ("d")
     {
-        /*
-         * CAUTION:
-         * Due to -d memcheck the -d options is also identified in
-         * presetup options and is repeated here only for technical
-         * reasons. Any change in this option MUST be reflected in
-         * OPTcheckPreSetupOptions().
-         */
         ARG_CHOICE_BEGIN ();
         ARG_CHOICE ("treecheck", global.treecheck = TRUE);
+        ARG_CHOICE ("sancheck", global.sancheck = TRUE);
 #ifdef SHOW_MALLOC
         ARG_CHOICE ("memcheck", global.memcheck = TRUE);
 #endif

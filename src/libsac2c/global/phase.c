@@ -89,11 +89,11 @@ PHrunPhase (compiler_phase_t phase, node *syntax_tree, bool cond)
         DBUG_EXECUTE ("MEM_LEAK", MEMdbugMemoryLeakCheck (););
 #endif
 
-#ifdef SHOW_MALLOC
         if (global.treecheck && (syntax_tree != NULL)) {
             syntax_tree = CHKdoTreeCheck (syntax_tree);
         }
 
+#ifdef SHOW_MALLOC
         if (global.memcheck && (syntax_tree != NULL)) {
             syntax_tree = CHKMdoMemCheck (syntax_tree);
         }
@@ -139,11 +139,11 @@ PHrunSubPhase (compiler_phase_t subphase, node *syntax_tree, bool cond)
         syntax_tree = PHIphaseFun (subphase) (syntax_tree);
         CTIabortOnError ();
 
-#ifdef SHOW_MALLOC
         if (global.treecheck && (syntax_tree != NULL)) {
             syntax_tree = CHKdoTreeCheck (syntax_tree);
         }
 
+#ifdef SHOW_MALLOC
         if (global.memcheck && (syntax_tree != NULL)) {
             syntax_tree = CHKMdoMemCheck (syntax_tree);
         }
@@ -197,11 +197,11 @@ PHrunCycle (compiler_phase_t cycle, node *syntax_tree, bool cond)
 
             CTIabortOnError ();
 
-#ifdef SHOW_MALLOC
             if (global.treecheck && (syntax_tree != NULL)) {
                 syntax_tree = CHKdoTreeCheck (syntax_tree);
             }
 
+#ifdef SHOW_MALLOC
             if (global.memcheck && (syntax_tree != NULL)) {
                 syntax_tree = CHKMdoMemCheck (syntax_tree);
             }
@@ -338,11 +338,11 @@ PHrunCycleFun (compiler_phase_t cycle, node *syntax_tree)
         fundef = FUNDEF_NEXT (fundef);
     }
 
-#ifdef SHOW_MALLOC
     if (global.treecheck && (syntax_tree != NULL)) {
         syntax_tree = CHKdoTreeCheck (syntax_tree);
     }
 
+#ifdef SHOW_MALLOC
     if (global.memcheck && (syntax_tree != NULL)) {
         syntax_tree = CHKMdoMemCheck (syntax_tree);
     }

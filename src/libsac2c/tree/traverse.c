@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include "traverse.h"
+
 #include "traverse_tables.h"
 #include "traverse_helper.h"
 #include "globals.h"
@@ -19,6 +20,7 @@
 #include "tree_compound.h"
 #include "phase.h"
 #include "math_utils.h"
+#include "sanity_checks.h"
 
 struct TRAVSTACK_T {
     struct TRAVSTACK_T *next;
@@ -30,90 +32,6 @@ typedef struct TRAVSTACK_T travstack_t;
 
 static travstack_t *travstack = NULL;
 
-#ifdef SANITYCHECKS
-
-static node *fundef = NULL;
-
-static void
-DoSanityChecksPreTraversal (node *arg_node, info *arg_info)
-{
-    node *ids;
-
-    DBUG_ASSERT ((arg_node != NULL), "Pre Traversal Sanity Check\n"
-                                     "Tried to traverse into subtree NULL !");
-
-    DBUG_ASSERT ((NODE_TYPE (arg_node) <= MAX_NODES),
-                 "Pre Traversal Sanity Check\n"
-                 "Traversed into illegal node type !");
-
-    DBUG_ASSERT ((travstack != NULL), "Pre Traversal Sanity Check\n"
-                                      "No traversal on stack!");
-
-    if ((NODE_TYPE (arg_node) == N_module) && (NULL != DUPgetCopiedSpecialFundefs ())) {
-        DBUG_ASSERT (FALSE, "Pre Traversal Sanity Check\n"
-                            "Unresolved copies of special functions at beginning\n"
-                            "of new traversal. Maybe a previous traversal is not\n"
-                            "organized properly in the sense that it has a traversal\n"
-                            "function for the N_module node.");
-        /*
-         * This assertion is written in this special style to allow for setting
-         * breakpoints in debuggers.
-         */
-    }
-
-    if (global.valid_ssaform && (NODE_TYPE (arg_node) == N_assign)
-        && (NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_let)) {
-        ids = LET_IDS (ASSIGN_INSTR (arg_node));
-
-        while (ids != NULL) {
-            DBUG_ASSERTF (AVIS_SSAASSIGN (IDS_AVIS (ids)) == arg_node,
-                          ("Pre Traversal Sanity Check\n"
-                           "Broken SSAASSIGN link for variable %s in function %s\n"
-                           "Compiler phase:    %s\n"
-                           "Compiler subphase: %s\n"
-                           "Traversal:         %s",
-                           AVIS_NAME (IDS_AVIS (ids)), FUNDEF_NAME (fundef),
-                           PHphaseName (global.compiler_phase),
-                           PHsubPhaseName (global.compiler_subphase), TRAVgetName ()));
-            ids = IDS_NEXT (ids);
-        }
-    }
-
-    if (NODE_TYPE (arg_node) == N_fundef) {
-        fundef = arg_node;
-    }
-}
-
-static void
-DoSanityChecksPostTraversal (node *arg_node, info *arg_info)
-{
-    node *ids;
-
-    if (global.valid_ssaform && (NODE_TYPE (arg_node) == N_assign)
-        && (NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_let)) {
-        ids = LET_IDS (ASSIGN_INSTR (arg_node));
-
-        while (ids != NULL) {
-            DBUG_ASSERTF (AVIS_SSAASSIGN (IDS_AVIS (ids)) == arg_node,
-                          ("Post Traversal Sanity Check\n"
-                           "Broken SSAASSIGN link for variable %s in function %s\n"
-                           "Compiler phase:    %s\n"
-                           "Compiler subphase: %s\n"
-                           "Traversal:         %s",
-                           AVIS_NAME (IDS_AVIS (ids)), FUNDEF_NAME (fundef),
-                           PHphaseName (global.compiler_phase),
-                           PHsubPhaseName (global.compiler_subphase), TRAVgetName ()));
-            ids = IDS_NEXT (ids);
-        }
-    }
-
-    if (NODE_TYPE (arg_node) == N_fundef) {
-        fundef = NULL;
-    }
-}
-
-#endif
-
 node *
 TRAVdo (node *arg_node, info *arg_info)
 {
@@ -121,14 +39,10 @@ TRAVdo (node *arg_node, info *arg_info)
     int old_linenum = global.linenum;
     char *old_filename = global.filename;
 
-    /*
-     * check whether the node is non null as this
-     * is a common reason for segfaults
-     */
-    DBUG_ASSERT ((arg_node != NULL), "tried to traverse a node which is NULL!");
-
 #ifdef SANITYCHECKS
-    DoSanityChecksPreTraversal (arg_node, arg_info);
+    if (global.sancheck) {
+        SANCHKdoSanityChecksPreTraversal (arg_node, arg_info, travstack);
+    }
 #endif
 
     /*
@@ -178,7 +92,9 @@ TRAVdo (node *arg_node, info *arg_info)
 
 #ifdef SANITYCHECKS
     if (arg_node != NULL) {
-        DoSanityChecksPostTraversal (arg_node, arg_info);
+        if (global.sancheck) {
+            SANCHKdoSanityChecksPostTraversal (arg_node, arg_info, travstack);
+        }
     }
 #endif
 

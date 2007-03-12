@@ -564,6 +564,35 @@ CTIerrorContinued (const char *format, ...)
 
 /** <!--********************************************************************-->
  *
+ * @fn void CTIerrorInternal( const char *format, ...)
+ *
+ *   @brief  produces an error message without file name and line number.
+ *
+ *   @param format  format string like in printf
+ *
+ ******************************************************************************/
+
+void
+CTIerrorInternal (const char *format, ...)
+{
+    va_list arg_p;
+
+    DBUG_ENTER ("CTIerrorInternal");
+
+    va_start (arg_p, format);
+
+    fprintf (stderr, "\n%sInternal sac2c failure\n", error_message_header);
+    PrintMessage (error_message_header, format, arg_p);
+
+    va_end (arg_p);
+
+    errors++;
+
+    DBUG_VOID_RETURN;
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn int CTIgetErrorMessageLineLength( )
  *
  *   @brief  yields useful line length for error messages
@@ -1050,19 +1079,23 @@ CTIitemName (node *item)
 
     DBUG_ENTER ("CTIitemName");
 
-    switch (NODE_TYPE (item)) {
-    case N_fundef:
-        ret = formatItemName (FUNDEF_NS (item), FUNDEF_NAME (item));
-        break;
-    case N_typedef:
-        ret = formatItemName (TYPEDEF_NS (item), TYPEDEF_NAME (item));
-        break;
-    case N_objdef:
-        ret = formatItemName (OBJDEF_NS (item), OBJDEF_NAME (item));
-        break;
-    default:
-        DBUG_ASSERT (0, "Wrong item in call of function 'CTIitemName`");
-        ret = NULL;
+    if (item == NULL) {
+        ret = "???";
+    } else {
+        switch (NODE_TYPE (item)) {
+        case N_fundef:
+            ret = formatItemName (FUNDEF_NS (item), FUNDEF_NAME (item));
+            break;
+        case N_typedef:
+            ret = formatItemName (TYPEDEF_NS (item), TYPEDEF_NAME (item));
+            break;
+        case N_objdef:
+            ret = formatItemName (OBJDEF_NS (item), OBJDEF_NAME (item));
+            break;
+        default:
+            DBUG_ASSERT (FALSE, "Wrong item in call of function 'CTIitemName`");
+            ret = NULL;
+        }
     }
 
     DBUG_RETURN (ret);
@@ -1078,7 +1111,7 @@ const char *
 CTIfunParams (node *fundef)
 {
     node *arg;
-    char *tmp_str;
+    char *tmp_str, *ret;
     int tmp_str_size;
 
     static char argtype_buffer[80];
@@ -1086,30 +1119,35 @@ CTIfunParams (node *fundef)
 
     DBUG_ENTER ("CTIfunParams");
 
-    strcpy (argtype_buffer, "");
-    buffer_space = 77;
+    if (fundef == NULL) {
+        ret = "???";
+    } else {
+        strcpy (argtype_buffer, "");
+        buffer_space = 77;
 
-    arg = FUNDEF_ARGS (fundef);
-    while ((arg != NULL) && (buffer_space > 5)) {
+        arg = FUNDEF_ARGS (fundef);
+        while ((arg != NULL) && (buffer_space > 5)) {
 
-        tmp_str = TYtype2String (AVIS_TYPE (ARG_AVIS (arg)), TRUE, 0);
-        tmp_str_size = strlen (tmp_str);
+            tmp_str = TYtype2String (AVIS_TYPE (ARG_AVIS (arg)), TRUE, 0);
+            tmp_str_size = strlen (tmp_str);
 
-        if ((tmp_str_size + 3) <= buffer_space) {
-            strcat (argtype_buffer, tmp_str);
-            buffer_space -= tmp_str_size;
-            if (ARG_NEXT (arg) != NULL) {
-                strcat (argtype_buffer, ", ");
-                buffer_space -= 2;
+            if ((tmp_str_size + 3) <= buffer_space) {
+                strcat (argtype_buffer, tmp_str);
+                buffer_space -= tmp_str_size;
+                if (ARG_NEXT (arg) != NULL) {
+                    strcat (argtype_buffer, ", ");
+                    buffer_space -= 2;
+                }
+            } else {
+                strcat (argtype_buffer, "...");
+                buffer_space = 0;
             }
-        } else {
-            strcat (argtype_buffer, "...");
-            buffer_space = 0;
-        }
 
-        tmp_str = MEMfree (tmp_str);
-        arg = ARG_NEXT (arg);
+            tmp_str = MEMfree (tmp_str);
+            arg = ARG_NEXT (arg);
+        }
+        ret = argtype_buffer;
     }
 
-    DBUG_RETURN (argtype_buffer);
+    DBUG_RETURN (ret);
 }

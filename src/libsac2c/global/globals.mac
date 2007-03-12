@@ -460,7 +460,12 @@ GLOBAL (int, profile_funapmax, 1)
 
 GLOBAL (bool, treecheck, FALSE)
 /*
- * check syntaxtree for consistency with xml specification
+ * check syntax tree for consistency with xml specification
+ */
+
+GLOBAL (bool, sancheck, FALSE)
+/*
+ * check syntax tree for structural consistency
  */
 
 #ifdef SHOW_MALLOC
@@ -580,16 +585,6 @@ GLOBAL (int, apdiag_limit, 20000)
 
 /*
  *  Compile time information system parameters
- */
-
-GLOBAL (int, errors_cnt, 0)
-/*
- * Counter for number of errors
- */
-
-GLOBAL (int, warnings_cnt, 0)
-/*
- * Counter for number of warnings
  */
 
 GLOBAL (te_info *, act_info_chn, NULL)
