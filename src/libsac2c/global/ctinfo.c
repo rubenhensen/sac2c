@@ -55,6 +55,7 @@
 #include "convert.h"
 #include "globals.h"
 #include "free.h"
+#include "traverse.h"
 #include "phase_info.h"
 #include "namespaces.h"
 #include "tree_basic.h"
@@ -579,12 +580,21 @@ CTIerrorInternal (const char *format, ...)
 
     DBUG_ENTER ("CTIerrorInternal");
 
+    fprintf (stderr, "\n%sInternal %s failure\n", error_message_header, global.toolname);
+
     va_start (arg_p, format);
-
-    fprintf (stderr, "\n%sInternal sac2c failure\n", error_message_header);
     PrintMessage (error_message_header, format, arg_p);
-
     va_end (arg_p);
+
+    fprintf (stderr,
+             "%sCompiler phase:    %s\n"
+             "%s                   %s\n"
+             "%sTraversal:         %s\n"
+             "%sFunction:          %s( %s)",
+             error_message_header, PHIphaseName (global.compiler_anyphase),
+             error_message_header, PHIphaseText (global.compiler_anyphase),
+             error_message_header, TRAVgetName (), error_message_header,
+             CTIitemName (global.current_fundef), CTIfunParams (global.current_fundef));
 
     errors++;
 

@@ -24,8 +24,8 @@
 #include "globals.h"
 #include "DupTree.h"
 
-static node *fundef = NULL;
 static bool below_module_node = FALSE;
+static node *module = NULL;
 
 #ifdef SANITYCHECKS
 
@@ -38,40 +38,16 @@ SANCHKdoSanityChecksPreTraversal (node *arg_node, info *arg_info, void *travstac
 
     if (arg_node == NULL) {
         CTIerrorInternal ("Pre Traversal Sanity Check:\n"
-                          "Tried to traverse into subtree NULL !\n"
-                          "Compiler phase:    %s\n"
-                          "                   %s\n"
-                          "Traversal:         %s\n"
-                          "Function:          %s( %s)",
-                          AVIS_NAME (IDS_AVIS (ids)),
-                          PHIphaseName (global.compiler_anyphase),
-                          PHIphaseText (global.compiler_anyphase), TRAVgetName (),
-                          CTIitemName (fundef), CTIfunParams (fundef));
+                          "Tried to traverse into subtree NULL !");
     } else {
         if (NODE_TYPE (arg_node) > MAX_NODES) {
             CTIerrorInternal ("Pre Traversal Sanity Check:\n"
-                              "Traversed into illegal node type !\n"
-                              "Compiler phase:    %s\n"
-                              "                   %s\n"
-                              "Traversal:         %s\n"
-                              "Function:          %s( %s)",
-                              AVIS_NAME (IDS_AVIS (ids)),
-                              PHIphaseName (global.compiler_anyphase),
-                              PHIphaseText (global.compiler_anyphase), TRAVgetName (),
-                              CTIitemName (fundef), CTIfunParams (fundef));
+                              "Traversed into illegal node type !");
         }
 
         if (travstack == NULL) {
             CTIerrorInternal ("Pre Traversal Sanity Check\n"
-                              "No traversal on stack!\n"
-                              "Compiler phase:    %s\n"
-                              "                   %s\n"
-                              "Traversal:         %s\n"
-                              "Function:          %s( %s)",
-                              AVIS_NAME (IDS_AVIS (ids)),
-                              PHIphaseName (global.compiler_anyphase),
-                              PHIphaseText (global.compiler_anyphase), TRAVgetName (),
-                              CTIitemName (fundef), CTIfunParams (fundef));
+                              "No traversal on stack!");
         }
 
         if ((NODE_TYPE (arg_node) == N_module)
@@ -80,15 +56,7 @@ SANCHKdoSanityChecksPreTraversal (node *arg_node, info *arg_info, void *travstac
                               "Unresolved copies of special functions at beginning\n"
                               "of new traversal. Maybe a previous traversal is not\n"
                               "organized properly in the sense that it has a traversal\n"
-                              "function for the N_module node.\n"
-                              "Compiler phase:    %s\n"
-                              "                   %s\n"
-                              "Traversal:         %s\n"
-                              "Function:          %s( %s)",
-                              AVIS_NAME (IDS_AVIS (ids)),
-                              PHIphaseName (global.compiler_anyphase),
-                              PHIphaseText (global.compiler_anyphase), TRAVgetName (),
-                              CTIitemName (fundef), CTIfunParams (fundef));
+                              "function for the N_module node.");
         }
 
         if (global.valid_ssaform && (NODE_TYPE (arg_node) == N_assign)
@@ -98,16 +66,8 @@ SANCHKdoSanityChecksPreTraversal (node *arg_node, info *arg_info, void *travstac
             while (ids != NULL) {
                 if (AVIS_SSAASSIGN (IDS_AVIS (ids)) != arg_node) {
                     CTIerrorInternal ("Pre Traversal Sanity Check:\n"
-                                      "Broken SSAASSIGN link for variable %s!\n"
-                                      "Compiler phase:    %s\n"
-                                      "                   %s\n"
-                                      "Traversal:         %s\n"
-                                      "Function:          %s( %s)",
-                                      AVIS_NAME (IDS_AVIS (ids)),
-                                      PHIphaseName (global.compiler_anyphase),
-                                      PHIphaseText (global.compiler_anyphase),
-                                      TRAVgetName (), CTIitemName (fundef),
-                                      CTIfunParams (fundef));
+                                      "Broken SSAASSIGN link for variable %s!",
+                                      AVIS_NAME (IDS_AVIS (ids)));
                 }
 
                 ids = IDS_NEXT (ids);
@@ -115,23 +75,29 @@ SANCHKdoSanityChecksPreTraversal (node *arg_node, info *arg_info, void *travstac
         }
 
         if (NODE_TYPE (arg_node) == N_fundef) {
-            fundef = arg_node;
+            global.current_fundef = arg_node;
         }
 
         if (NODE_TYPE (arg_node) == N_module) {
             below_module_node = TRUE;
+            if (module == NULL) {
+                module = arg_node;
+            } else {
+                if (arg_node != module) {
+                    CTIerrorInternal ("Pre Traversal Sanity Check:\n"
+                                      "Root node of syntax tree (N_module) has changed!");
+                }
+            }
         } else {
-            if (!below_module_node) {
-                CTIerrorInternal ("Pre Traversal Sanity Check:\n"
-                                  "Reached %s node without having passed N_module node!\n"
-                                  "Compiler phase:    %s\n"
-                                  "                   %s\n"
-                                  "Traversal:         %s\n"
-                                  "Function:          %s( %s)",
-                                  global.mdb_nodetype[NODE_TYPE (arg_node)],
-                                  PHIphaseName (global.compiler_anyphase),
-                                  PHIphaseText (global.compiler_anyphase), TRAVgetName (),
-                                  CTIitemName (fundef), CTIfunParams (fundef));
+            if (!below_module_node && (global.compiler_anyphase > PH_scp_prs)
+                && (global.compiler_anyphase < PH_cg_frtr)) {
+#if 0
+        CTIerrorInternal( "Pre Traversal Sanity Check:\n"
+                          "Reached %s node without having passed N_module node!\n"
+                          "(Only one occurrence reported per phase)",
+                          global.mdb_nodetype[NODE_TYPE( arg_node)]);
+        below_module_node = TRUE;
+#endif
             }
         }
     }
@@ -153,21 +119,16 @@ SANCHKdoSanityChecksPostTraversal (node *arg_node, info *arg_info, void *travsta
         while (ids != NULL) {
             if (AVIS_SSAASSIGN (IDS_AVIS (ids)) != arg_node) {
                 CTIerrorInternal ("Post Traversal Sanity Check:\n"
-                                  "Broken SSAASSIGN link for variable %s!\n"
-                                  "Compiler phase:    %s\n"
-                                  "                   %s\n"
-                                  "Traversal:         %s\n"
-                                  "Function:          %s( %s)",
-                                  AVIS_NAME (IDS_AVIS (ids)),
-                                  PHIphaseName (global.compiler_anyphase),
-                                  PHIphaseText (global.compiler_anyphase), TRAVgetName (),
-                                  CTIitemName (fundef), CTIfunParams (fundef));
+                                  "Broken SSAASSIGN link for variable %s!",
+                                  AVIS_NAME (IDS_AVIS (ids)));
             }
+
+            ids = IDS_NEXT (ids);
         }
     }
 
     if (NODE_TYPE (arg_node) == N_fundef) {
-        fundef = NULL;
+        global.current_fundef = NULL;
     }
 
     if (NODE_TYPE (arg_node) == N_module) {

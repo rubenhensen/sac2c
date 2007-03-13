@@ -621,6 +621,11 @@ GLOBAL (compiler_phase_t, compiler_anyphase, PH_initial)
  * Counter for any kind of compiler phase/subphase/cyclephase
  */
 
+GLOBAL (node *, current_fundef, NULL)
+/*
+ * Counter for any kind of compiler phase/subphase/cyclephase
+ */
+
 GLOBAL (bool, run_stabilization_cycle, FALSE)
 /*
  * only run stabilization cycle if main cycle pass limit exhausted
