@@ -32,7 +32,7 @@ CheckEnableDbug (compiler_phase_t phase)
 {
     DBUG_ENTER ("CheckEnableDbug");
 
-    if (global.my_dbug && (phase == global.my_dbug_from)) {
+    if (global.my_dbug && (phase >= global.my_dbug_from) && !global.my_dbug_active) {
         DBUG_PUSH (global.my_dbug_str);
         global.my_dbug_active = TRUE;
     }
@@ -45,7 +45,7 @@ CheckDisableDbug (compiler_phase_t phase)
 {
     DBUG_ENTER ("CheckDisableDbug");
 
-    if (global.my_dbug && global.my_dbug_active && (phase == global.my_dbug_to)) {
+    if (global.my_dbug && global.my_dbug_active && (phase >= global.my_dbug_to)) {
         DBUG_POP ();
         global.my_dbug_active = FALSE;
     }
