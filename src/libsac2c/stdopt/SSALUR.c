@@ -1279,6 +1279,7 @@ LURap (node *arg_node, info *arg_info)
  *   in special fundefs.
  *
  ******************************************************************************/
+
 node *
 LURdoLoopUnrolling (node *fundef)
 {
@@ -1289,6 +1290,11 @@ LURdoLoopUnrolling (node *fundef)
     DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef), "SSALUR called for non-fundef node");
 
     global.valid_ssaform = FALSE;
+    /*
+     * Wrapper code is created in non-SSA form and later on transformed into
+     * SSA form using the standard transformation modules lac2fun and
+     * ssa_transform. Therefore, we adjust the global control flag.
+     */
 
     /* do not start traversal in special functions */
     if (!(FUNDEF_ISLACFUN (fundef))) {

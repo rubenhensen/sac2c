@@ -1253,17 +1253,22 @@ WLURdoWithloopUnrolling (node *syntax_tree)
 
     DBUG_ENTER ("WLURdoWithloopUnrolling");
 
-    if (global.optimize.dowlur) {
-        TRAVpush (TR_wlur);
+    TRAVpush (TR_wlur);
 
-        info = MakeInfo ();
+    info = MakeInfo ();
 
-        syntax_tree = TRAVdo (syntax_tree, info);
+    global.valid_ssaform = FALSE;
+    /*
+     * New code is created in non-SSA form and later on transformed into
+     * SSA form using the standard transformation module
+     * ssa_transform. Therefore, we adjust the global control flag.
+     */
 
-        FreeInfo (info);
+    syntax_tree = TRAVdo (syntax_tree, info);
 
-        TRAVpop ();
-    }
+    FreeInfo (info);
+
+    TRAVpop ();
 
     DBUG_RETURN (syntax_tree);
 }
