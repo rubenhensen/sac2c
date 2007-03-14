@@ -95,6 +95,7 @@ struct INFO {
     ntype *accu;
     ntype *prop_objs;
     int prop_cnt;
+    bool is_type_upgrade;
 };
 
 /**
@@ -109,6 +110,7 @@ struct INFO {
 #define INFO_EXP_ACCU(n) (n->accu)
 #define INFO_PROP_OBJS(n) (n->prop_objs)
 #define INFO_ACT_PROP_OBJ(n) (n->prop_cnt)
+#define INFO_IS_TYPE_UPGRADE(n) (n->is_type_upgrade)
 
 /**
  * INFO functions
@@ -131,6 +133,7 @@ MakeInfo ()
     INFO_EXP_ACCU (result) = NULL;
     INFO_PROP_OBJS (result) = NULL;
     INFO_ACT_PROP_OBJ (result) = 0;
+    INFO_IS_TYPE_UPGRADE (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -301,7 +304,6 @@ NTCdoNewTypeCheckOneFunction (node *arg_node)
     if (!FUNDEF_ISWRAPPERFUN (arg_node) && !FUNDEF_ISLACFUN (arg_node)
         && (FUNDEF_BODY (arg_node) != NULL)) {
         int oldmaxspec;
-        node *oldfundefnext;
         info *arg_info;
 
         /*
@@ -309,12 +311,6 @@ NTCdoNewTypeCheckOneFunction (node *arg_node)
          */
         oldmaxspec = global.maxspec;
         global.maxspec = 0;
-
-        /*
-         * Rescue FUNDEF_NEXT
-         */
-        oldfundefnext = FUNDEF_NEXT (arg_node);
-        FUNDEF_NEXT (arg_node) = NULL;
 
         /*
          * Apply typechecker
@@ -334,7 +330,10 @@ NTCdoNewTypeCheckOneFunction (node *arg_node)
         TRAVpush (TR_ntc);
 
         arg_info = MakeInfo ();
+        INFO_IS_TYPE_UPGRADE (arg_info) = TRUE;
+
         arg_node = TRAVdo (arg_node, arg_info);
+
         arg_info = FreeInfo (arg_info);
 
         TRAVpop ();
@@ -362,10 +361,9 @@ NTCdoNewTypeCheckOneFunction (node *arg_node)
         }
 
         /*
-         * Restore FUNDEF_NEXT and global.maxspec
+         * Restore global.maxspec
          */
         global.maxspec = oldmaxspec;
-        FUNDEF_NEXT (arg_node) = oldfundefnext;
     }
 
     DBUG_RETURN (arg_node);
@@ -641,13 +639,23 @@ NTCfundef (node *arg_node, info *arg_info)
         arg_node = TypeCheckFunctionBody (arg_node, arg_info);
     }
 
-    if (NULL != FUNDEF_NEXT (arg_node)) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+    if (INFO_IS_TYPE_UPGRADE (arg_info)) {
+        /*
+         * do nothing
+         *
+         * The traversal of functions is performed outside the type checker
+         * in the opt cycle and we definitely have no specialised functions
+         * and we certainly do not want to extract lac funs hooked by DupTree
+         * since they would be lost immediately in outer space.
+         */
     } else {
-        specialized_fundefs = SPECresetSpecChain ();
-        if (specialized_fundefs != NULL) {
-            FUNDEF_NEXT (arg_node) = specialized_fundefs;
+        if (NULL != FUNDEF_NEXT (arg_node)) {
             FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+        } else {
+            specialized_fundefs = SPECresetSpecChain ();
+            if (specialized_fundefs != NULL) {
+                FUNDEF_NEXT (arg_node) = TRAVdo (specialized_fundefs, arg_info);
+            }
         }
     }
 

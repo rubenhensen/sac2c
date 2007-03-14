@@ -47,6 +47,7 @@
 #include "stringset.h"
 #include "namespaces.h"
 #include "vector.h"
+#include "ctinfo.h"
 
 /*
  * INFO structure
@@ -1336,6 +1337,8 @@ DUPap (node *arg_node, info *arg_info)
              */
             FUNDEF_NEXT (new_fundef) = store_copied_special_fundefs;
             store_copied_special_fundefs = new_fundef;
+            DBUG_PRINT ("DUPSF", ("Added to DupTree special function hook:\n %s( %s)",
+                                  CTIitemName (new_fundef), CTIfunParams (new_fundef)));
         } else {
             new_fundef = LUTsearchInLutPp (INFO_LUT (arg_info), old_fundef);
         }
@@ -2996,6 +2999,17 @@ DUPgetCopiedSpecialFundefs ()
     node *store;
 
     DBUG_ENTER ("DUPgetCopiedSpecialFundefs");
+
+    DBUG_EXECUTE ("DUPSF", {
+        node *fundef;
+        fundef = store_copied_special_fundefs;
+        while (fundef != NULL) {
+            DBUG_PRINT ("DUPSF",
+                        ("Released from DupTree special function hook:\n %s( %s)",
+                         CTIitemName (fundef), CTIfunParams (fundef)));
+            fundef = FUNDEF_NEXT (fundef);
+        }
+    });
 
     store = store_copied_special_fundefs;
     store_copied_special_fundefs = NULL;
