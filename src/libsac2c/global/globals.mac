@@ -466,7 +466,7 @@ GLOBAL (bool, treecheck, FALSE)
 #ifdef PRODUCTION
 GLOBAL (bool, sancheck, FALSE)
 #else  /* PRODUCTION */
-GLOBAL (bool, sancheck, TRUE)
+GLOBAL (bool, sancheck, FALSE)
 #endif /* PRODUCTION */
 /*
  * check syntax tree for structural consistency
