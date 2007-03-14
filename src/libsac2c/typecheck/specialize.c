@@ -632,8 +632,6 @@ SPECresetSpecChain (void)
     res = specialized_fundefs;
     specialized_fundefs = NULL;
 
-    res = TCappendFundef (res, DUPgetCopiedSpecialFundefs ());
-
     DBUG_RETURN (res);
 }
 
@@ -644,21 +642,19 @@ SPECresetSpecChain (void)
  *
  * description:
  *
+ *  This function should actually be superfluous because the hook
+ *  specialized_fundefs is emptied each time after specialisation may
+ *  have taken place.
+ *
  ******************************************************************************/
 
 void
 SPECinitSpecChain (void)
 {
-    node *special_funs;
-
     DBUG_ENTER ("SPECinitSpecChain");
 
     DBUG_ASSERT (specialized_fundefs == NULL,
                  "Non-empty spec chain found on initialisation");
-
-    special_funs = DUPgetCopiedSpecialFundefs ();
-    DBUG_ASSERT (special_funs == NULL,
-                 "Non-handled special funs detected on initialisation of spec chain");
 
     DBUG_VOID_RETURN;
 }

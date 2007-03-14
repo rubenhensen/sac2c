@@ -622,6 +622,8 @@ node *
 NTCfundef (node *arg_node, info *arg_info)
 {
     node *specialized_fundefs;
+    node *copied_special_fundefs;
+    node *integrated_fundefs;
 
     DBUG_ENTER ("NTCfundef");
 
@@ -653,8 +655,12 @@ NTCfundef (node *arg_node, info *arg_info)
             FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
         } else {
             specialized_fundefs = SPECresetSpecChain ();
-            if (specialized_fundefs != NULL) {
-                FUNDEF_NEXT (arg_node) = TRAVdo (specialized_fundefs, arg_info);
+            copied_special_fundefs = DUPgetCopiedSpecialFundefs ();
+            integrated_fundefs
+              = TCappendFundef (specialized_fundefs, copied_special_fundefs);
+
+            if (integrated_fundefs != NULL) {
+                FUNDEF_NEXT (arg_node) = TRAVdo (integrated_fundefs, arg_info);
             }
         }
     }

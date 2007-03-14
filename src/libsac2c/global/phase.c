@@ -10,6 +10,8 @@
 #include "str.h"
 #include "memory.h"
 #include "tree_basic.h"
+#include "tree_compound.h"
+#include "specialize.h"
 #include "DupTree.h"
 #include "check.h"
 #include "check_mem.h"
@@ -283,6 +285,8 @@ node *
 PHrunCycleFun (compiler_phase_t cycle, node *syntax_tree)
 {
     node *fundef;
+    node *specialized_fundefs;
+    node *copied_special_fundefs;
 
     DBUG_ENTER ("PHrunCycleFun");
 
@@ -332,7 +336,10 @@ PHrunCycleFun (compiler_phase_t cycle, node *syntax_tree)
         }
 
         if (FUNDEF_NEXT (fundef) == NULL) {
-            FUNDEF_NEXT (fundef) = DUPgetCopiedSpecialFundefs ();
+            specialized_fundefs = SPECresetSpecChain ();
+            copied_special_fundefs = DUPgetCopiedSpecialFundefs ();
+            FUNDEF_NEXT (fundef)
+              = TCappendFundef (specialized_fundefs, copied_special_fundefs);
         }
 
         fundef = FUNDEF_NEXT (fundef);
