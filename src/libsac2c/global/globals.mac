@@ -463,7 +463,11 @@ GLOBAL (bool, treecheck, FALSE)
  * check syntax tree for consistency with xml specification
  */
 
+#ifdef PRODUCTION
 GLOBAL (bool, sancheck, FALSE)
+#else  /* PRODUCTION */
+GLOBAL (bool, sancheck, TRUE)
+#endif /* PRODUCTION */
 /*
  * check syntax tree for structural consistency
  */
