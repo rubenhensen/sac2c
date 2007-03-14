@@ -9,11 +9,36 @@
  * This traversal augments all AVIS nodes with expressions for dim and shape.
  * In contrast to the new_types, these expressions do not need to be constant.
  *
+ * ISAA may be divided up into 3 different levels of annotation:
+ *
+ * 1. classical / minimal style.
+ *    we only generate dim/shape information inside functions; if an array is
+ *    is passed to a build-in function we may determine its new dim/shape, but
+ *    as soon as a user-defined function appears, we may do a saabind( dim(a),
+ *    shape(a), a). This also holds for conditional and loop functions.
+ * 2. cond/loop-augmented style
+ *    this mode extends classic style by passing the dimension and shape of
+ *    arrays as parameters and return values. inside and after the function we
+ *    may saabind() to the supplied parameters.
+ * 3. annotated style
+ *    in order to circumvent certain problems of diverence in the combination
+ *    of augmented style and lir, we do remove the saabind at top of loops and
+ *    annotate the parameters, which form dim and shape of the array, directly
+ *    to the parameter-avis.
+ *    Annotated style requires augmented style and activates it automatically.
+ *
+ * the style to be used may be choosen below by setting the appropriate defines.
+ * by default the classical style is choosen. this ensures maximal compability.
+ *
  * @ingroup opt
  *
  * @{
  *
  *****************************************************************************/
+
+/* FIXME, I AM A DIRTY HACK! */
+#define ISAA_USE_AUGMENTED_STYLE 0
+#define ISAA_USE_EVEN_ANNOTATED_STYLE 0
 
 /** <!--********************************************************************-->
  *
@@ -346,6 +371,7 @@ PrependSAAInConcreteArgs (node *arg_node, node *funargs, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+#if (ISAA_USE_AUGMENTED_STYLE || ISAA_USE_EVEN_ANNOTATED_STYLE)
 static node *
 ISAAretraverse (node *fun, info *arg_info)
 {
@@ -376,6 +402,7 @@ ISAAretraverse (node *fun, info *arg_info)
 
     DBUG_RETURN (fun);
 }
+#endif
 
 /*
  * the following static functions assist in the creation of proxies.
@@ -422,11 +449,13 @@ MakeDTProxy (node *avis, node *postass, info *arg_info)
 
     if (makeproxy) {
         node *dimavis;
-        node *dimnode;
-        node *dim_postass = NULL;
         node *shpavis;
+        node *dimnode;
         node *shpnode;
+#if (ISAA_USE_AUGMENTED_STYLE || ISAA_USE_EVEN_ANNOTATED_STYLE)
+        node *dim_postass = NULL;
         node *shp_postass = NULL;
+#endif
         node *proxyavis;
         node *fundef;
 
@@ -459,6 +488,7 @@ MakeDTProxy (node *avis, node *postass, info *arg_info)
                           postass);
         AVIS_SSAASSIGN (proxyavis) = postass;
 
+#if (ISAA_USE_AUGMENTED_STYLE || ISAA_USE_EVEN_ANNOTATED_STYLE)
         /* if we have passed the shape as a parameter to our function, we may now
          * look up its avis in AVIS_SHAPE. */
         if ((NULL != AVIS_SHAPE (avis)) && (TS_args == INFO_TRAVSCOPE (arg_info))) {
@@ -477,10 +507,14 @@ MakeDTProxy (node *avis, node *postass, info *arg_info)
         } else {
             shpnode = TCmakePrf1 (F_shape, TBmakeId (avis));
         }
+#else
+        shpnode = TCmakePrf1 (F_shape, TBmakeId (avis));
+#endif
 
         postass = TBmakeAssign (TBmakeLet (TBmakeIds (shpavis, NULL), shpnode), postass);
         AVIS_SSAASSIGN (shpavis) = postass;
 
+#if (ISAA_USE_AUGMENTED_STYLE || ISAA_USE_EVEN_ANNOTATED_STYLE)
         /* same for the dimension we may have. */
         if ((NULL != AVIS_DIM (avis)) && (TS_args == INFO_TRAVSCOPE (arg_info))) {
 
@@ -495,18 +529,23 @@ MakeDTProxy (node *avis, node *postass, info *arg_info)
         } else {
             dimnode = TCmakePrf1 (F_dim, TBmakeId (avis));
         }
+#else
+        dimnode = TCmakePrf1 (F_dim, TBmakeId (avis));
+#endif
 
         postass = TBmakeAssign (TBmakeLet (TBmakeIds (dimavis, NULL), dimnode), postass);
         AVIS_SSAASSIGN (dimavis) = postass;
 
         AVIS_SUBST (avis) = proxyavis;
 
+#if (ISAA_USE_AUGMENTED_STYLE || ISAA_USE_EVEN_ANNOTATED_STYLE)
         if (NULL != shp_postass) {
             postass = PrependAssign (shp_postass, postass);
         }
         if (NULL != dim_postass) {
             postass = PrependAssign (dim_postass, postass);
         }
+#endif
 
         switch (INFO_TRAVMODE (arg_info)) {
         case TM_then:
@@ -527,12 +566,14 @@ MakeDTProxy (node *avis, node *postass, info *arg_info)
             break;
         }
 
+#if (ISAA_USE_AUGMENTED_STYLE || ISAA_USE_EVEN_ANNOTATED_STYLE)
         if ((AVIS_HASDTTHENPROXY (avis) == TRUE)
             && (AVIS_HASDTELSEPROXY (avis) == TRUE)) {
             /* clean the avis, as we do not want shape/dim on our parameters */
             AVIS_SHAPE (avis) = NULL;
             AVIS_DIM (avis) = NULL;
         }
+#endif
     }
 
     DBUG_RETURN (postass);
@@ -647,10 +688,13 @@ ISAAfundef (node *arg_node, info *arg_info)
 node *
 ISAAap (node *arg_node, info *arg_info)
 {
+#if (ISAA_USE_AUGMENTED_STYLE || ISAA_USE_EVEN_ANNOTATED_STYLE)
     node *fun;
+#endif
 
     DBUG_ENTER ("ISAAap");
 
+#if (ISAA_USE_AUGMENTED_STYLE || ISAA_USE_EVEN_ANNOTATED_STYLE)
     fun = AP_FUNDEF (arg_node);
 
     if ((NULL != FUNDEF_ARGS (fun)) && (TS_args != INFO_TRAVSCOPE (arg_info))
@@ -710,6 +754,9 @@ ISAAap (node *arg_node, info *arg_info)
     if (NULL != AP_ARGS (arg_node)) {
         AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
     }
+#else
+    TRAVcont (arg_node, arg_info);
+#endif
 
     DBUG_RETURN (arg_node);
 }
@@ -798,8 +845,8 @@ node *
 ISAAlet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ISAAlet");
-    INFO_LHS (arg_info) = LET_IDS (arg_node);
 
+    INFO_LHS (arg_info) = LET_IDS (arg_node);
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
     if (LET_IDS (arg_node) != NULL) {
@@ -826,7 +873,9 @@ ISAAids (node *arg_node, info *arg_info)
 
     avis = IDS_AVIS (arg_node);
 
+#if (ISAA_USE_AUGMENTED_STYLE || ISAA_USE_EVEN_ANNOTATED_STYLE)
     if (TS_args != INFO_TRAVSCOPE (arg_info)) {
+#endif
 
         if ((NODE_TYPE (INFO_RHS (arg_info)) != N_ap)
             && (!((NODE_TYPE (INFO_RHS (arg_info)) == N_prf)
@@ -858,16 +907,17 @@ ISAAids (node *arg_node, info *arg_info)
                 }
             }
         } else {
-            /* if we call a do-loop-fun from inside the function */
             if (!((FUNDEF_ISDOFUN (INFO_FUNDEF (arg_info)))
                   && (NODE_TYPE (INFO_RHS (arg_info)) == N_ap)
                   && (AP_FUNDEF (INFO_RHS (arg_info)) == INFO_FUNDEF (arg_info)))) {
-
                 INFO_POSTASSIGN (arg_info)
                   = MakeDTProxy (avis, INFO_POSTASSIGN (arg_info), arg_info);
             }
         }
+
+#if (ISAA_USE_AUGMENTED_STYLE || ISAA_USE_EVEN_ANNOTATED_STYLE)
     }
+#endif
 
     if (IDS_NEXT (arg_node) != NULL) {
         IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
