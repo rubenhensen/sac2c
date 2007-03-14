@@ -607,6 +607,11 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
         } else {
             PHOinterpretDbugOption (ARG);
         }
+
+        if (global.my_dbug_from == PH_initial) {
+            DBUG_PUSH (global.my_dbug_str);
+            global.my_dbug_active = TRUE;
+        }
     }
     ARGS_OPTION_END ("#");
 
