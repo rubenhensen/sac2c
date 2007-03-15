@@ -24,10 +24,10 @@
 #include "globals.h"
 #include "DupTree.h"
 
+#ifdef SANITYCHECKS
+
 static bool below_module_node = FALSE;
 static node *module = NULL;
-
-#ifdef SANITYCHECKS
 
 void
 SANCHKdoSanityChecksPreTraversal (node *arg_node, info *arg_info, void *travstack)

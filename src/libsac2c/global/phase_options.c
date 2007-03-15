@@ -21,22 +21,6 @@
 #include "phase_info.h"
 
 static compiler_phase_t
-SearchPhaseIdent (char *ident)
-{
-    compiler_phase_t phase;
-
-    DBUG_ENTER ("SearchPhaseIdent");
-
-    phase = PH_initial;
-
-    do {
-        phase++;
-    } while ((phase < PH_final) && !STReq (PHIphaseIdent (phase), ident));
-
-    DBUG_RETURN (phase);
-}
-
-static compiler_phase_t
 SearchPhaseByName (char *name)
 {
     compiler_phase_t phase;
@@ -221,6 +205,22 @@ PHOinterpretBreakOption (char *option)
 
 #ifndef DBUG_OFF
 
+static compiler_phase_t
+SearchPhaseIdent (char *ident)
+{
+    compiler_phase_t phase;
+
+    DBUG_ENTER ("SearchPhaseIdent");
+
+    phase = PH_initial;
+
+    do {
+        phase++;
+    } while ((phase < PH_final) && !STReq (PHIphaseIdent (phase), ident));
+
+    DBUG_RETURN (phase);
+}
+
 void
 PHOinterpretDbugOption (char *option)
 {
@@ -328,7 +328,7 @@ PHOprintPhases (void)
     DBUG_VOID_RETURN;
 }
 
-#undef PHASEname
+#undef PHASname
 #undef PHASEtext
 #undef SUBPHASEname
 #undef SUBPHASEtext

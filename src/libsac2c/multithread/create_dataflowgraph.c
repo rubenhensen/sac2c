@@ -219,12 +219,20 @@ CDFGblock (node *arg_node, info *arg_info)
 
     /* As a fact of beeing very complex, additional output will only take place
      * if the compilation breaks with the cdfg-specifier */
+
+#ifndef PRODUCTION
+    /*
+     * The production version of sac2c does not contain the compiler phase
+     * PH_mt_cdfg. In principle, the whole code in subdirectory multithread
+     * should be put behind an ifndef PRODUCTION.
+     */
     if (global.break_after_subphase == PH_mt_cdfg) {
         fprintf (stdout, "A N_block...\n");
         PRTdoPrintNode (arg_node);
         fprintf (stdout, "...and its dataflowgraph:\n");
         PRTdoPrintNode (INFO_CDFG_CURRENTDFG (arg_info));
     }
+#endif
 
     /* pop info... */
     INFO_CDFG_CURRENTDFG (arg_info) = old_dataflowgraph;
