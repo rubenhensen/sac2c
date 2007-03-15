@@ -84,7 +84,7 @@ OPTIMIZE ("sisi", sisi, FALSE, FALSE, "signature simplification")
 OPTIMIZE ("rtup", rtup, TRUE, FALSE, "reverse type upgrade")
 OPTIMIZE ("esd", esd, FALSE, FALSE, "eliminate substraction and division")
 OPTIMIZE ("wlprop", wlprop, TRUE, FALSE, " withloop propagation")
-OPTIMIZE ("saa", saa, FALSE, FALSE, "use symbolic array attributes")
+OPTIMIZE ("saa", saa, TRUE, FALSE, "use symbolic array attributes")
 OPTIMIZE ("saaopt", saaopt, FALSE, FALSE,
           "use symbolic array attributes in optcycle *EXPERIMENTAL*")
 OPTIMIZE ("cyc", cyc, TRUE, TRUE, "run optimization cycle")
