@@ -1309,7 +1309,7 @@ DUPap (node *arg_node, info *arg_info)
 
             DBUG_PRINT ("DUP", ("LaC function: copying in-place %s() ...",
                                 (AP_FUNDEF (arg_node) != NULL)
-                                  ? FUNDEF_NAME (AP_FUNDEF (arg_node))
+                                  ? CTIitemName (AP_FUNDEF (arg_node))
                                   : "?"));
 
             store_dup_cont = INFO_CONT (arg_info);
@@ -1327,6 +1327,11 @@ DUPap (node *arg_node, info *arg_info)
 
             FUNDEF_NAME (new_fundef) = MEMfree (FUNDEF_NAME (new_fundef));
             FUNDEF_NAME (new_fundef) = TRAVtmpVarName (FUNDEF_NAME (old_fundef));
+
+            DBUG_PRINT ("DUP", ("LaC function: new copy is %s() ...",
+                                (AP_FUNDEF (arg_node) != NULL)
+                                  ? CTIitemName (AP_FUNDEF (arg_node))
+                                  : "?"));
 
             /*
              * Unfortunately, there is no proper way to insert the new fundef
