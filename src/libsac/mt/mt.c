@@ -75,7 +75,7 @@ extern volatile int SAC_MT_Task[];
  *    These variables define the multi-threaded runtime system.
  */
 
-#ifndef TRACE
+#if !TRACE
 
 /*
  * If we compile for mt_trace.o, we don't need the global variables since
@@ -498,7 +498,7 @@ SAC_MT1_Setup (int cache_line_max, int barrier_offset, int num_schedulers)
     }
 }
 
-#ifndef TRACE
+#if !TRACE
 
 static void
 ThreadControl_MT1 (void *arg)
