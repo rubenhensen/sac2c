@@ -108,6 +108,9 @@ MakeAssignForIdShape (node *id, node *fundef, node **preass)
 
     DBUG_ENTER ("MakeAvisForIdShape");
 
+    DBUG_ASSERT ((NULL != AVIS_DIM (ID_AVIS (id))),
+                 "Making assign for Id without Dimension!");
+
     if (NODE_TYPE (AVIS_DIM (ID_AVIS (id))) == N_num) {
         int dim = NUM_VAL (AVIS_DIM (ID_AVIS (id)));
         res = TBmakeAvis (TRAVtmpVarName (ID_NAME (id)),

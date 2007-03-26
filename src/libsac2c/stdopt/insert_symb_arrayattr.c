@@ -21,14 +21,15 @@
  *    arrays as parameters and return values. inside and after the function we
  *    may saabind() to the supplied parameters.
  * 3. annotated style
- *    in order to circumvent certain problems of diverence in the combination
+ *    in order to circumvent certain problems of divergence in the combination
  *    of augmented style and lir, we do remove the saabind at top of loops and
  *    annotate the parameters, which form dim and shape of the array, directly
  *    to the parameter-avis.
- *    Annotated style requires augmented style and activates it automatically.
+ *    Annotated style requires augmented style.
  *
- * the style to be used may be choosen below by setting the appropriate defines.
- * by default the classical style is choosen. this ensures maximal compability.
+ * the style to be used may be choosen below by setting the appropriate
+ * defines. by default the classical style is choosen. this ensures maximal
+ * compability.
  *
  * @ingroup opt
  *
@@ -37,8 +38,8 @@
  *****************************************************************************/
 
 /* FIXME, I AM A DIRTY HACK! */
-#define ISAA_USE_AUGMENTED_STYLE 0
-#define ISAA_USE_EVEN_ANNOTATED_STYLE 0
+#define ISAA_USE_AUGMENTED_STYLE 1
+#define ISAA_USE_EVEN_ANNOTATED_STYLE 1
 
 /** <!--********************************************************************-->
  *
@@ -82,6 +83,7 @@ struct INFO {
     node *withid;
     node *args;
     bool recap;
+    bool funparams;
 };
 
 #define INFO_TRAVSCOPE(n) ((n)->travscope)
@@ -95,6 +97,7 @@ struct INFO {
 #define INFO_WITHID(n) ((n)->withid)
 #define INFO_ARGS(n) ((n)->args)
 #define INFO_RECAP(n) ((n)->recap)
+#define INFO_FUNPARAMS(n) ((n)->funparams)
 
 static info *
 MakeInfo ()
@@ -116,6 +119,7 @@ MakeInfo ()
     INFO_WITHID (result) = NULL;
     INFO_ARGS (result) = NULL;
     INFO_RECAP (result) = FALSE;
+    INFO_FUNPARAMS (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -428,6 +432,7 @@ static node *
 MakeDTProxy (node *avis, node *postass, info *arg_info)
 {
     bool makeproxy = FALSE;
+    bool islacfun = FALSE;
 
     DBUG_ENTER ("MakeDTProxy");
     /*
@@ -446,6 +451,36 @@ MakeDTProxy (node *avis, node *postass, info *arg_info)
         makeproxy = ((!AVIS_HASDTTHENPROXY (avis)) || (!AVIS_HASDTELSEPROXY (avis)));
         break;
     }
+    /*
+  #if ISAA_USE_EVEN_ANNOTATED_STYLE
+    if ( ( (TRUE == FUNDEF_ISDOFUN( INFO_FUNDEF( arg_info ) ))
+         || (TRUE == FUNDEF_ISCONDFUN( INFO_FUNDEF( arg_info ) )) )
+         && (TRUE == INFO_FUNPARAMS( arg_info ))
+         && ) {
+    / * here we want only a proxification if there is no LaC-fun. * /
+
+      DBUG_PRINT( "ISAA", ("handling a LaC-FunParam for %s: %s",
+  FUNDEF_NAME(INFO_FUNDEF(arg_info)), AVIS_NAME(avis) ));
+
+      switch ( INFO_TRAVMODE( arg_info)) {
+      case TM_then:
+        AVIS_HASDTTHENPROXY( avis) = TRUE;
+        break;
+
+      case TM_else:
+        AVIS_HASDTELSEPROXY( avis) = TRUE;
+        break;
+
+      case TM_all:
+        AVIS_HASDTTHENPROXY( avis) = TRUE;
+        AVIS_HASDTELSEPROXY( avis) = TRUE;
+        break;
+      }
+
+      makeproxy = FALSE;
+    }
+  #endif
+    */
 
     if (makeproxy) {
         node *dimavis;
@@ -458,6 +493,16 @@ MakeDTProxy (node *avis, node *postass, info *arg_info)
 #endif
         node *proxyavis;
         node *fundef;
+
+#if ISAA_USE_EVEN_ANNOTATED_STYLE
+        if ((TRUE == FUNDEF_ISDOFUN (INFO_FUNDEF (arg_info)))
+            || (TRUE == FUNDEF_ISCONDFUN (INFO_FUNDEF (arg_info)))) {
+            islacfun = TRUE;
+        }
+#endif
+
+        DBUG_PRINT ("ISAA", ("proxifying in fun %s: %s",
+                             FUNDEF_NAME (INFO_FUNDEF (arg_info)), AVIS_NAME (avis)));
 
         fundef = INFO_FUNDEF (arg_info);
 
@@ -481,11 +526,19 @@ MakeDTProxy (node *avis, node *postass, info *arg_info)
                           TBmakeVardec (shpavis, TBmakeVardec (proxyavis,
                                                                FUNDEF_VARDEC (fundef))));
 
-        postass
-          = TBmakeAssign (TBmakeLet (TBmakeIds (proxyavis, NULL),
-                                     TCmakePrf3 (F_saabind, TBmakeId (dimavis),
-                                                 TBmakeId (shpavis), TBmakeId (avis))),
-                          postass);
+        /* if we do not use annotated_style (see above) this is always false */
+        if (TRUE == islacfun) {
+            postass
+              = TBmakeAssign (TBmakeLet (TBmakeIds (proxyavis, NULL), TBmakeId (avis)),
+                              postass);
+        } else {
+            postass = TBmakeAssign (TBmakeLet (TBmakeIds (proxyavis, NULL),
+                                               TCmakePrf3 (F_saabind, TBmakeId (dimavis),
+                                                           TBmakeId (shpavis),
+                                                           TBmakeId (avis))),
+                                    postass);
+        }
+
         AVIS_SSAASSIGN (proxyavis) = postass;
 
 #if (ISAA_USE_AUGMENTED_STYLE || ISAA_USE_EVEN_ANNOTATED_STYLE)
@@ -514,6 +567,13 @@ MakeDTProxy (node *avis, node *postass, info *arg_info)
         postass = TBmakeAssign (TBmakeLet (TBmakeIds (shpavis, NULL), shpnode), postass);
         AVIS_SSAASSIGN (shpavis) = postass;
 
+        if ((NULL == AVIS_SHAPE (avis)) && (TRUE == islacfun)) {
+            /*
+            AVIS_SHAPE(avis) = TBmakeId( shpavis );
+            DBUG_PRINT( "ISAA", ("setting shape to %s", AVIS_NAME(shpavis)));
+            */
+        }
+
 #if (ISAA_USE_AUGMENTED_STYLE || ISAA_USE_EVEN_ANNOTATED_STYLE)
         /* same for the dimension we may have. */
         if ((NULL != AVIS_DIM (avis)) && (TS_args == INFO_TRAVSCOPE (arg_info))) {
@@ -536,6 +596,13 @@ MakeDTProxy (node *avis, node *postass, info *arg_info)
         postass = TBmakeAssign (TBmakeLet (TBmakeIds (dimavis, NULL), dimnode), postass);
         AVIS_SSAASSIGN (dimavis) = postass;
 
+        if ((NULL == AVIS_DIM (avis)) && (TRUE == islacfun)) {
+            /*
+            AVIS_DIM(avis) = TBmakeId( dimavis );
+            DBUG_PRINT( "ISAA", ("setting dim to %s", AVIS_NAME(dimavis)));
+            */
+        }
+
         AVIS_SUBST (avis) = proxyavis;
 
 #if (ISAA_USE_AUGMENTED_STYLE || ISAA_USE_EVEN_ANNOTATED_STYLE)
@@ -550,23 +617,37 @@ MakeDTProxy (node *avis, node *postass, info *arg_info)
         switch (INFO_TRAVMODE (arg_info)) {
         case TM_then:
             AVIS_HASDTTHENPROXY (avis) = TRUE;
-            AVIS_HASDTTHENPROXY (proxyavis) = TRUE;
             break;
 
         case TM_else:
             AVIS_HASDTELSEPROXY (avis) = TRUE;
-            AVIS_HASDTELSEPROXY (proxyavis) = TRUE;
             break;
 
         case TM_all:
             AVIS_HASDTTHENPROXY (avis) = TRUE;
             AVIS_HASDTELSEPROXY (avis) = TRUE;
-            AVIS_HASDTTHENPROXY (proxyavis) = TRUE;
-            AVIS_HASDTELSEPROXY (proxyavis) = TRUE;
             break;
         }
 
-#if (ISAA_USE_AUGMENTED_STYLE || ISAA_USE_EVEN_ANNOTATED_STYLE)
+        if (FALSE == islacfun) {
+            switch (INFO_TRAVMODE (arg_info)) {
+            case TM_then:
+                AVIS_HASDTTHENPROXY (proxyavis) = TRUE;
+                break;
+
+            case TM_else:
+                AVIS_HASDTELSEPROXY (proxyavis) = TRUE;
+                break;
+
+            case TM_all:
+                AVIS_HASDTTHENPROXY (proxyavis) = TRUE;
+                AVIS_HASDTELSEPROXY (proxyavis) = TRUE;
+                break;
+            }
+        }
+
+        /* do NOT remove dim/shape from avis if in annotated style */
+#if (ISAA_USE_AUGMENTED_STYLE && !ISAA_USE_EVEN_ANNOTATED_STYLE)
         if ((AVIS_HASDTTHENPROXY (avis) == TRUE)
             && (AVIS_HASDTELSEPROXY (avis) == TRUE)) {
             /* clean the avis, as we do not want shape/dim on our parameters */
@@ -643,14 +724,18 @@ ISAAfundef (node *arg_node, info *arg_info)
             INFO_TRAVMODE (arg_info) = TM_then;
             arg_node = RemoveAvisSubst (arg_node);
 
+            INFO_FUNPARAMS (arg_info) = TRUE;
             INFO_PREBLOCK (arg_info) = MakeArgProxies (FUNDEF_ARGS (arg_node), arg_info);
+            INFO_FUNPARAMS (arg_info) = FALSE;
 
             FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 
             INFO_TRAVMODE (arg_info) = TM_else;
             arg_node = RemoveAvisSubst (arg_node);
 
+            INFO_FUNPARAMS (arg_info) = TRUE;
             INFO_PREBLOCK (arg_info) = MakeArgProxies (FUNDEF_ARGS (arg_node), arg_info);
+            INFO_FUNPARAMS (arg_info) = FALSE;
 
             FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
         } else {
@@ -659,7 +744,9 @@ ISAAfundef (node *arg_node, info *arg_info)
             INFO_TRAVMODE (arg_info) = TM_all;
             arg_node = RemoveAvisSubst (arg_node);
 
+            INFO_FUNPARAMS (arg_info) = TRUE;
             preblock = MakeArgProxies (FUNDEF_ARGS (arg_node), arg_info);
+            INFO_FUNPARAMS (arg_info) = FALSE;
 
             FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 
