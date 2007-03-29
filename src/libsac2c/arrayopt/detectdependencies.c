@@ -137,6 +137,8 @@ CheckDependency (node *checkid, nodelist *nl)
     while (nl_tmp != NULL) {
         if (NODELIST_NODE (nl_tmp) == AVIS_SSAASSIGN (ID_AVIS (checkid))) {
             is_dependent = TRUE;
+            DBUG_PRINT ("WLFS",
+                        ("Dependency found for %s\n", AVIS_NAME (ID_AVIS (checkid))));
             break;
         }
         nl_tmp = NODELIST_NEXT (nl_tmp);
@@ -282,7 +284,8 @@ DDEPENDid (node *arg_node, info *arg_info)
     if (INFO_DDEPEND_CHECK_DIRECT_DEPENDENCY (arg_info)) {
         if (AVIS_SSAASSIGN (ID_AVIS (arg_node))
             == INFO_DDEPEND_FUSIONABLE_WL (arg_info)) {
-            DBUG_PRINT ("WLFS", ("found direct dependency"));
+            DBUG_PRINT ("WLFS", ("found direct dependency for %s",
+                                 AVIS_NAME (ID_AVIS (arg_node))));
             is_dependent = TRUE;
         } else
             is_dependent = FALSE;
