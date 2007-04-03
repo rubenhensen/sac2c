@@ -42,6 +42,7 @@ TAR             := tar
 AR              := ar rc
 RM              := rm -f
 MV              := mv -f
+CP              := cp -f
 SED             := sed
 GZIP            := gzip -f
 ECHO            := echo

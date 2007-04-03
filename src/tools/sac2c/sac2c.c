@@ -13,12 +13,7 @@
 
 #define SAC2CBASEENV "SAC2CBASE"
 #define MAINFUN "SACrunSac2c"
-
-#ifdef DBUG_OFF
-#define LIBSAC2C "/lib/libsac2c.p.so"
-#else
-#define LIBSAC2C "/lib/libsac2c.d.so"
-#endif
+#define LIBSAC2C "/lib/libsac2c.so"
 
 typedef int (*sacmain_p) (int, char **);
 
