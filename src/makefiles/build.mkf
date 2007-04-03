@@ -179,25 +179,30 @@ $(PROJECT_ROOT)/src/bin/%: $(SUBTARGETS)
 # Building libsac2c
 #
 
-#$(PROJECT_ROOT)/lib/libsac2c.lo: global/build_$(STYLE).$($(STYLE)_short).o
-$(PROJECT_ROOT)/bin/sac2c: global/build_$(STYLE).$($(STYLE)_short).o
+$(PROJECT_ROOT)/lib/libsac2c.$($(STYLE)_short).so: global/build_$(STYLE).$($(STYLE)_short).o
 	@$(ECHO) ""
-#	@$(ECHO) "Creating $(PREFIX_ROOT)lib/libsac2c.lo ($($(STYLE)_long) version)"
-	@$(ECHO) "Linking $(PREFIX_ROOT)bin/sac2c ($($(STYLE)_long) version)"
-	$(HIDE) $(LIBTOOL) $(LIBTOOLFLAGS) \
-                $(LD) $(LD_FLAGS) $(LD_FLAGS_DYN) -o $@ \
+	@$(ECHO) "Creating $(PREFIX_ROOT)lib/libsac2c.$($(STYLE)_short).so ($($(STYLE)_long) version)"
+#	@$(ECHO) "Linking $(PREFIX_ROOT)bin/sac2c ($($(STYLE)_long) version)"
+	$(HIDE) $(LD) $(LD_FLAGS) $(LD_SHARED) -o $@ \
                 $(SUBTARGETS) $< \
                 $(LIBDIRS) $(LIB_MAKETOOLS) $(LIBS)
+
+$(PROJECT_ROOT)/bin/sac2c: $(PROJECT_ROOT)/src/tools/sac2c/sac2c.$($(STYLE)_short).o $(PROJECT_ROOT)/lib/libsac2c.$($(STYLE)_short).so
+	@$(ECHO) ""
+	@$(ECHO) "Linking $(PREFIX_ROOT)bin/sac2c ($($(STYLE)_long) version)"
+	$(HIDE) $(LD) $(LD_FLAGS) -o $@ \
+          $(PROJECT_ROOT)/src/tools/sac2c/sac2c.$($(STYLE)_short).o \
+          $(LIBDIRS) $(LIB_MAKETOOLS) $(LIBS)
 	@$(TOUCH) .done
 	@$(CLOCK_SKEW_ELIMINATION)  
 
-$(PROJECT_ROOT)/bin/sac2c.efence: global/build_devel.d.o
+$(PROJECT_ROOT)/bin/sac2c.efence: $(PROJECT_ROOT)/lib/libsac2c.d.so \
+                                  $(PROJECT_ROOT)/src/tools/sac2c/sac2c.d.o
 	@$(ECHO) ""
 	@$(ECHO) "Linking $(PREFIX_ROOT)bin/sac2c.efence (efence version)"
-	$(HIDE) $(LIBTOOL) $(LIBTOOLFLAGS) \
-                $(LD) $(LD_FLAGS) $(LD_FLAGS_DYN) -o $@ \
-                $(SUBTARGETS) $< \
-                $(LIBDIRS) $(LIB_MAKETOOLS) $(LIBS) $(LIBS_EFENCE)
+	$(HIDE) $(LD) $(LD_FLAGS) -o $@ \
+          $(PROJECT_ROOT)/src/tools/sac2c/sac2c.$($(STYLE)_short).o \
+          $(LIBDIRS) $(LIB_MAKETOOLS) $(LIBS) $(LIBS_EFENCE)
 	@$(TOUCH) .done
 	@$(CLOCK_SKEW_ELIMINATION)  
 

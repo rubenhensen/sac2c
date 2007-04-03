@@ -44,7 +44,7 @@ maketools_hzip              := hzip
 #
 ###############################################################################
 
-libsac2c_targets           := src/html/ast.html bin/sac2c # lib/libsac2c.so
+libsac2c_targets           := src/html/ast.html bin/sac2c 
 libsac2c_targetdir         := 
 
 libsac2c_subtarget_suffix  := .o
@@ -301,7 +301,7 @@ libsacphm_compat    := malloc calloc realloc memalign
 #
 ###############################################################################
 
-tools_targets           := csimt csima ctest # sac2c sac4c
+tools_targets           := csimt csima ctest sac2c # sac4c
 tools_targetdir         := bin
 
 tools_subtarget_suffix  := .o
@@ -311,7 +311,7 @@ tools_extraclean_all    :=
 tools_extraclean_devel  := 
 tools_extraclean_prod   := 
 
-tools_sourcedirs        := csimt csima ctest # sac2c sac4c
+tools_sourcedirs        := csimt csima ctest sac2c # sac4c
 
 ###############################################################################
 

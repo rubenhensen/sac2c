@@ -30,7 +30,7 @@ CC_FLAGS_YY     := -DYYLMAX=8192
 
 LD              := @CC@
 LD_FLAGS        := 
-LD_FLAGS_DYN    := -export-dynamic
+LD_SHARED       := -shared
 
 
 ################################################################################
