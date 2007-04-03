@@ -229,7 +229,7 @@ OPT_O2           :=  "@OPT_O2@"
 OPT_O3           :=  "@OPT_O3@"
 OPT_g            :=  "@OPT_g@"
  
-CPP_STDIN        :=  "@CPP@"
+CPP_STDIN        :=  "@CPPFILE@ -"
 CPP_FILE         :=  "@CPPFILE@"
 OPT_D            :=  -D
 OPT_I            :=  -I
