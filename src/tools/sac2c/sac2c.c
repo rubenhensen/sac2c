@@ -40,7 +40,8 @@ main (int argc, char *argv[])
     if (sac2cbase != NULL) {
         strcpy (libname, sac2cbase);
     } else {
-        libname = "\0";
+        printf ("WARNING: SAC2CBASE is not set.\n");
+        libname[0] = '\0';
     }
     strcat (libname, LIBSAC2C);
 

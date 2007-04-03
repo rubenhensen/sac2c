@@ -187,17 +187,7 @@ $(PROJECT_ROOT)/lib/libsac2c.$($(STYLE)_short).so: global/build_$(STYLE).$($(STY
                 $(SUBTARGETS) $< \
                 $(LIBDIRS) $(LIB_MAKETOOLS) $(LIBS)
 
-$(PROJECT_ROOT)/bin/sac2c: $(PROJECT_ROOT)/src/tools/sac2c/sac2c.$($(STYLE)_short).o $(PROJECT_ROOT)/lib/libsac2c.$($(STYLE)_short).so
-	@$(ECHO) ""
-	@$(ECHO) "Linking $(PREFIX_ROOT)bin/sac2c ($($(STYLE)_long) version)"
-	$(HIDE) $(LD) $(LD_FLAGS) -o $@ \
-          $(PROJECT_ROOT)/src/tools/sac2c/sac2c.$($(STYLE)_short).o \
-          $(LIBDIRS) $(LIB_MAKETOOLS) $(LIBS)
-	@$(TOUCH) .done
-	@$(CLOCK_SKEW_ELIMINATION)  
-
-$(PROJECT_ROOT)/bin/sac2c.efence: $(PROJECT_ROOT)/lib/libsac2c.d.so \
-                                  $(PROJECT_ROOT)/src/tools/sac2c/sac2c.d.o
+$(PROJECT_ROOT)/bin/sac2c.efence: $(PROJECT_ROOT)/src/tools/sac2c/sac2c.d.o
 	@$(ECHO) ""
 	@$(ECHO) "Linking $(PREFIX_ROOT)bin/sac2c.efence (efence version)"
 	$(HIDE) $(LD) $(LD_FLAGS) -o $@ \
