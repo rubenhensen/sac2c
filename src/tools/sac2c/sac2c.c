@@ -17,6 +17,16 @@
 
 typedef int (*sacmain_p) (int, char **);
 
+static void
+reportederror ()
+{
+    char *error = dlerror ();
+
+    if (error != NULL) {
+        printf ("The system returned the following error message: %s\n", error);
+    }
+}
+
 int
 main (int argc, char *argv[])
 {
@@ -47,22 +57,25 @@ main (int argc, char *argv[])
 #endif
 
     if (libsac2c == NULL) {
-        printf ("Cannot load shared library '%s'... aborting.\n", libname);
+        printf ("ERROR: Cannot load shared library '%s'... aborting.\n", libname);
+        reportederror ();
         exit (10);
     }
 
     mainfun = dlsym (libsac2c, MAINFUN);
 
     if (libsac2c == NULL) {
-        printf ("Cannot find symbol '%s' in shared library '%s'... aborting.\n", MAINFUN,
-                libname);
+        printf ("ERROR: Cannot find symbol '%s' in shared library '%s'... aborting.\n",
+                MAINFUN, libname);
+        reportederror ();
         exit (10);
     }
 
     result = mainfun (argc, argv);
 
     if (dlclose (libsac2c) != 0) {
-        printf ("Cannot unload shared library '%s'... aborting.\n", libname);
+        printf ("ERROR: Cannot unload shared library '%s'... aborting.\n", libname);
+        reportederror ();
         exit (10);
     }
 
