@@ -149,8 +149,13 @@ CheckOptionConsistency ()
     }
 
     if ((global.optimize.dosaa || global.optimize.dosaaopt) && !global.optimize.dodcr) {
-        CTIerror ("Using symbolic array attributes (saa) requires dead code"
-                  "removal (dcr) to be switched on.");
+        CTIerror ("Using symbolic array attributes (SAA) requires dead code"
+                  "removal (DCR) to be switched on.");
+    }
+
+    if (global.optimize.doive && !global.optimize.dosaa) {
+        CTIerror ("Index vector elimination (IVE) requires symbolic array "
+                  "attributes (SAA)");
     }
 
     DBUG_VOID_RETURN;

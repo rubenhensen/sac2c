@@ -4758,16 +4758,17 @@
       <sons>
         <son name="Dim" default="NULL">
           <description>
-An expression (N_exprs) specifying the array's rank
-as a symbolic array attribute. The expression is a numeric
-constant (N_num) for AKS, AKD, and AKV arrays, and an
-identifier (N_id) for AUD arrays.
+          An expression (N_exprs) specifying the array's rank
+          as a symbolic array attribute. The expression is a numeric
+          constant (N_num) for AKS, AKD, and AKV arrays, and an
+          identifier (N_id) for AUD arrays.
           </description>
           <targets>
             <target mandatory="no">
               <set name="Expr" />
               <phases>
-                <range from="opt_isaa" to="opt_esv" />
+                <range from="opt_isaa1" to="opt_esaa1" />
+                <range from="opt_isaa2" to="opt_esaa2" />
               </phases>
             </target>
           </targets>
@@ -4780,13 +4781,13 @@ identifier (N_id) for AUD arrays.
 	  a mixed array of integer constants and identifiers (N_num, N_id)
 	  for AKD arrays with partial shape information, or an
 	  identifier (N_id) for AUD arrays.
-
           </description>
           <targets>
             <target mandatory="no">
               <set name="Expr" />
               <phases>
-                <range from="opt_isaa" to="opt_esv" />
+                <range from="opt_isaa1" to="opt_esaa1" />
+                <range from="opt_isaa2" to="opt_esaa2" />
               </phases>
             </target>
           </targets>
