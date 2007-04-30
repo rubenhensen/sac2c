@@ -1,0 +1,161 @@
+/*
+ * $Id$
+ */
+
+#ifdef PHASE__defined
+#undef PHASE
+#undef PHASE__defined
+#endif
+
+#ifdef PHASEname__defined
+#undef PHASEname
+#undef PHASEname__defined
+#endif
+#ifdef PHASEtext__defined
+#undef PHASEtext
+#undef PHASEtext__defined
+#endif
+#ifdef PHASEcond__defined
+#undef PHASEcond
+#undef PHASEcond__defined
+#endif
+
+#ifdef SUBPHASE__defined
+#undef SUBPHASE
+#undef SUBPHASE__defined
+#endif
+
+#ifdef SUBPHASEname__defined
+#undef SUBPHASEname
+#undef SUBPHASEname__defined
+#endif
+#ifdef SUBPHASEtext__defined
+#undef SUBPHASEtext
+#undef SUBPHASEtext__defined
+#endif
+#ifdef SUBPHASEfun__defined
+#undef SUBPHASEfun
+#undef SUBPHASEfun__defined
+#endif
+#ifdef SUBPHASEcond__defined
+#undef SUBPHASEcond
+#undef SUBPHASEcond__defined
+#endif
+#ifdef SUBPHASEphase__defined
+#undef SUBPHASEphase
+#undef SUBPHASEphase__defined
+#endif
+
+#ifdef CYCLE__defined
+#undef CYCLE
+#undef CYCLE__defined
+#endif
+
+#ifdef CYCLEname__defined
+#undef CYCLEname
+#undef CYCLEname__defined
+#endif
+#ifdef CYCLEtext__defined
+#undef CYCLEtext
+#undef CYCLEtext__defined
+#endif
+#ifdef CYCLEcond__defined
+#undef CYCLEcond
+#undef CYCLEcond__defined
+#endif
+#ifdef CYCLEphase__defined
+#undef CYCLEphase
+#undef CYCLEphase__defined
+#endif
+
+#ifdef FUNBEGIN__defined
+#undef FUNBEGIN
+#undef FUNBEGIN__defined
+#endif
+
+#ifdef FUNBEGINname__defined
+#undef FUNBEGINname
+#undef FUNBEGINname__defined
+#endif
+#ifdef FUNBEGINphase__defined
+#undef FUNBEGINphase
+#undef FUNBEGINphase__defined
+#endif
+#ifdef FUNBEGINcycle__defined
+#undef FUNBEGINcycle
+#undef FUNBEGINcycle__defined
+#endif
+
+#ifdef FUNEND__defined
+#undef FUNEND
+#undef FUNEND__defined
+#endif
+
+#ifdef CYCLEPHASE__defined
+#undef CYCLEPHASE
+#undef CYCLEPHASE__defined
+#endif
+
+#ifdef CYCLEPHASEname__defined
+#undef CYCLEPHASEname
+#undef CYCLEPHASEname__defined
+#endif
+#ifdef CYCLEPHASEtext__defined
+#undef CYCLEPHASEtext
+#undef CYCLEPHASEtext__defined
+#endif
+#ifdef CYCLEPHASEfun__defined
+#undef CYCLEPHASEfun
+#undef CYCLEPHASEfun__defined
+#endif
+#ifdef CYCLEPHASEcond__defined
+#undef CYCLEPHASEcond
+#undef CYCLEPHASEcond__defined
+#endif
+#ifdef CYCLEPHASEphase__defined
+#undef CYCLEPHASEphase
+#undef CYCLEPHASEphase__defined
+#endif
+#ifdef CYCLEPHASEcycle__defined
+#undef CYCLEPHASEcycle
+#undef CYCLEPHASEcycle__defined
+#endif
+
+#ifdef CYCLEPHASEFUN__defined
+#undef CYCLEPHASEFUN
+#undef CYCLEPHASEFUN__defined
+#endif
+
+#ifdef CYCLEPHASEFUNname__defined
+#undef CYCLEPHASEFUNname
+#undef CYCLEPHASEFUNname__defined
+#endif
+#ifdef CYCLEPHASEFUNtext__defined
+#undef CYCLEPHASEFUNtext
+#undef CYCLEPHASEFUNtext__defined
+#endif
+#ifdef CYCLEPHASEFUNfun__defined
+#undef CYCLEPHASEFUNfun
+#undef CYCLEPHASEFUNfun__defined
+#endif
+#ifdef CYCLEPHASEFUNcond__defined
+#undef CYCLEPHASEFUNcond
+#undef CYCLEPHASEFUNcond__defined
+#endif
+#ifdef CYCLEPHASEFUNphase__defined
+#undef CYCLEPHASEFUNphase
+#undef CYCLEPHASEFUNphase__defined
+#endif
+#ifdef CYCLEPHASEFUNcycle__defined
+#undef CYCLEPHASEFUNcycle
+#undef CYCLEPHASEFUNcycle__defined
+#endif
+
+#ifdef ENDPHASE__defined
+#undef ENDPHASE
+#undef ENDPHASE__defined
+#endif
+#ifdef ENDCYCLE__defined
+#undef ENDCYCLE
+#undef ENDCYCLE__defined
+#endif

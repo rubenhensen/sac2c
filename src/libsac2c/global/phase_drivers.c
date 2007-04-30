@@ -112,8 +112,6 @@ PHDdriveSac4c (node *syntax_tree)
 {
     DBUG_ENTER ("PHDdriveSac4c");
 
-#if 0
-
 #define PHASEname(name)                                                                  \
   syntax_tree = PHrunPhase( PH_##name, syntax_tree,
 
@@ -124,8 +122,6 @@ PHDdriveSac4c (node *syntax_tree)
 
 #undef SUBPHASEname
 #undef SUBPHASEcond
-
-#endif
 
     DBUG_RETURN (syntax_tree);
 }

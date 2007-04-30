@@ -85,7 +85,8 @@ typedef int usertype;
 typedef enum {
     PH_initial = 0,
 #include "phase_sac2c.mac"
-    PH_final
+    PH_final,
+#include "phase_sac4c.mac"
 } compiler_phase_t;
 
 #undef PHASE

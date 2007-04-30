@@ -6,8 +6,14 @@
 
 #include "sactools.h"
 
+#define MAINFUN "SACrunSac4c"
+
 int
 main (int argc, char *argv[])
 {
-    return (SACrunSac4c (argc, argv));
+    int result;
+
+    LAUNCHFUNCTION (MAINFUN, argc, argv, result);
+
+    return (result);
 }

@@ -1,0 +1,17 @@
+/*
+ * $Id$
+ */
+
+#include "phase_initialise_defs.mac"
+
+/******************************************************************************/
+
+PHASE (ami, "Analyzing module information", ALWAYS)
+
+SUBPHASE (lm, "Loading module contents", SPdoLocateSource, ALWAYS, lm)
+
+ENDPHASE (ami)
+
+/******************************************************************************/
+
+#include "phase_undefine_defs.mac"

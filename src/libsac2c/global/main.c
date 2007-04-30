@@ -93,10 +93,3 @@ SACrunSac4c (int argc, char *argv[])
 
     DBUG_RETURN (0);
 }
-
-/*
-int main( int argc, char *argv[])
-{
-  return( SACrunSac2c( argc, argv));
-}
-*/
