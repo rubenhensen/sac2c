@@ -357,81 +357,52 @@ SUBPHASE (isaa1, "Inserting symbolic array attributes", ISAAdoInsertShapeVariabl
 
 /*************************************************/
 
-#if 0
+#ifdef BUG_XXX_FIXED
 
-CYCLE( saacyc1,
-       "Symbolic array attribute cycle 1",
-       global.optimize.dosaa,
-       opt)
-          
-CYCLEPHASE( prfunr, 
-            "Applying prf unrolling",
-            UPRFdoUnrollPRFsModule, 
-            global.optimize.doprfunr,
+CYCLE (saacyc1, "Symbolic array attribute cycle 1", global.optimize.dosaa, opt)
+
+CYCLEPHASE (prfunr, "Applying prf unrolling", UPRFdoUnrollPRFsModule,
+            global.optimize.doprfunr, opt, saacyc1)
+
+CYCLEPHASE (tup, "Applying type upgrade", NTCdoNewReTypeCheck, global.optimize.dotup, opt,
+            saacyc1)
+
+CYCLEPHASE (etv, "Eliminating type variables", EATdoEliminateAlphaTypes,
+            global.optimize.dotup, opt, saacyc1)
+
+CYCLEPHASE (ebt, "Eliminating bottom types", EBTdoEliminateBottomTypes,
+            global.optimize.dotup, opt, saacyc1)
+
+CYCLEPHASE (cf, "Applying constant folding", CFdoConstantFoldingModule,
+            global.optimize.docf, opt, saacyc1)
+
+CYCLEPHASE (cse, "Elimininating common subexpressions",
+            CSEdoCommonSubexpressionEliminationModule, global.optimize.docse, opt,
+            saacyc1)
+
+CYCLEPHASE (cvp, "Propagating constants and variables", CVPdoConstVarPropagation,
+            global.optimize.docvp, opt, saacyc1)
+
+CYCLEPHASE (wlpg, "Generating full with-loop partitions", WLPGdoWlPartitionGeneration,
+            global.optimize.dowlpg, opt, saacyc1)
+
+CYCLEPHASE (wlsimp, "Simplifying with-loops", WLSIMPdoWithloopSimplificationModule,
+            global.optimize.dowlsimp, opt, saacyc1)
+
+CYCLEPHASE (dcr, "Removing dead code", DCRdoDeadCodeRemovalModule, global.optimize.dodcr,
             opt, saacyc1)
 
-CYCLEPHASE( tup,
-            "Applying type upgrade",
-            NTCdoNewReTypeCheck, 
-            global.optimize.dotup,
-            opt, saacyc1)
+ENDCYCLE (saacyc1)
 
-CYCLEPHASE( etv, 
-            "Eliminating type variables",
-            EATdoEliminateAlphaTypes, 
-            global.optimize.dotup,
-            opt, saacyc1)
-
-CYCLEPHASE( ebt,
-            "Eliminating bottom types",
-            EBTdoEliminateBottomTypes, 
-            global.optimize.dotup,
-            opt, saacyc1)
-
-CYCLEPHASE( cf, 
-            "Applying constant folding",
-            CFdoConstantFoldingModule,
-            global.optimize.docf,
-            opt, saacyc1)
-
-CYCLEPHASE( cse, 
-            "Elimininating common subexpressions",
-            CSEdoCommonSubexpressionEliminationModule,
-            global.optimize.docse,
-            opt, saacyc1)
-
-CYCLEPHASE( cvp, 
-            "Propagating constants and variables",
-            CVPdoConstVarPropagation, 
-            global.optimize.docvp,
-            opt, saacyc1)
-
-CYCLEPHASE( wlpg, 
-            "Generating full with-loop partitions",
-            WLPGdoWlPartitionGeneration, 
-            global.optimize.dowlpg,
-            opt, saacyc1)
-
-CYCLEPHASE( wlsimp, 
-            "Simplifying with-loops",
-            WLSIMPdoWithloopSimplificationModule, 
-            global.optimize.dowlsimp,
-            opt, saacyc1)
-
-CYCLEPHASE( dcr,
-            "Removing dead code",
-            DCRdoDeadCodeRemovalModule, 
-            global.optimize.dodcr,
-            opt, saacyc1)
-
-ENDCYCLE( saacyc1)
-
-#endif
+#endif /* BUG_XXX_FIXED */
 
 /*************************************************/
 
 SUBPHASE (esaa1, "Eliminating symbolic array attributes", ESVdoEliminateShapeVariables,
           global.optimize.dosaa && !global.optimize.dosaaopt, opt)
+
+SUBPHASE (saadcr, "Removing dead code (after SAA cycle 1)", DCRdoDeadCodeRemovalModule,
+          global.optimize.dodcr &&global.optimize.dosaa, opt)
 
 /*************************************************/
 
