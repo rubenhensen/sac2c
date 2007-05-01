@@ -83,7 +83,7 @@ OPTIMIZE ("lro", lro, TRUE, TRUE, "loop reuse optimization")
 OPTIMIZE ("tup", tup, TRUE, TRUE, "type upgrade")
 OPTIMIZE ("sisi", sisi, FALSE, FALSE, "signature simplification")
 OPTIMIZE ("rtup", rtup, TRUE, FALSE, "reverse type upgrade")
-OPTIMIZE ("esd", esd, FALSE, FALSE, "eliminate substraction and division")
+OPTIMIZE ("esd", esd, TRUE, FALSE, "eliminate substraction and division")
 OPTIMIZE ("wlprop", wlprop, TRUE, FALSE, " withloop propagation")
 OPTIMIZE ("saa", saa, TRUE, FALSE, "use symbolic array attributes")
 OPTIMIZE ("saaopt", saaopt, FALSE, FALSE,
