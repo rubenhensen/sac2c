@@ -15,6 +15,7 @@
  *****************************************************************************/
 extern node *DMLdoDeMorgan (node *arg_node);
 
+extern node *DMLfundef (node *arg_node, info *arg_info);
 extern node *DMLassign (node *arg_node, info *arg_info);
 extern node *DMLprf (node *arg_node, info *arg_info);
 

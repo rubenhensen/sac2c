@@ -349,13 +349,8 @@ CYCLEPHASEFUN (esd, "Eliminating subtraction and division operators", ESDdoElimS
                      || global.optimize.dodl),
                opt, cyc)
 
-#if 0
-CYCLEPHASEFUN( dml,
-             "Applying deMorgan`s law",
-             DMLdoDeMorgan,
-             global.optimize.dodml,
-             opt, cyc)
-#endif
+CYCLEPHASEFUN (as, "Arithmetic Simplification", ASdoArithmeticSimplification,
+               global.optimize.doas, opt, cyc)
 
 CYCLEPHASEFUN (al, "Applying associative law", ASSOCdoAssociativityOptimizationOneFundef,
                global.optimize.doal, opt, cyc)

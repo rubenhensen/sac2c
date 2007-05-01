@@ -873,8 +873,9 @@
 	  <node name="Id" />
 	</travuser>
       </traversal>
-      <traversal id="DML" name="deMorgan law Optimization" default="sons" include="demorgan.h" >
+      <traversal id="AS" name="Arithmetic Simplification" default="sons" include="arithmetic_simplification.h" >
 	<travuser>
+	  <node name="Fundef" />
 	  <node name="Assign" />
 	  <node name="Prf" />
 	</travuser>
