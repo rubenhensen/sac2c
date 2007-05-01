@@ -100,7 +100,7 @@ IsSuitableForPropagation (node *expression)
         result = FALSE;
     }
 
-    return (result);
+    DBUG_RETURN (result);
 }
 
 bool
