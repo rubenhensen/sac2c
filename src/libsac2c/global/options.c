@@ -93,26 +93,23 @@ CheckOptionConsistency ()
 
     if (global.runtimecheck.boundary && global.optimize.doap) {
         global.optimize.doap = FALSE;
-        CTIerror ("Boundary check (-check b) and array padding (AP) may not be used"
-                  " simultaneously.\n"
-                  "Array padding disabled");
+        CTIwarn ("Option -check b requires option -noAP\n"
+                 "Array padding disabled");
     }
 
 #ifdef DISABLE_MT
     if (global.mtmode != MT_none) {
         global.mtmode = MT_none;
         global.num_threads = 1;
-        CTIwarn ("Code generation for multi-threaded program execution not"
-                 " yet available for " ARCH " running " OS ".\n"
-                 "Code for sequential execution generated instead");
+        CTIerror ("Code generation for multi-threaded program execution not"
+                  " yet available for " ARCH " running " OS ".");
     }
 #endif
 
 #ifdef DISABLE_PHM
     if (global.optimize.dophm) {
-        CTIerror ("Private heap management is not yet available for " ARCH " running " OS
-                  ".\n"
-                  "Conventional heap management is used instead");
+        CTIerror ("Private heap management not yet available for " ARCH " running " OS
+                  ".");
     }
 #endif
 
@@ -144,18 +141,28 @@ CheckOptionConsistency ()
 
     if (global.genlib.c && (global.mtmode != MT_none)) {
         CTIerror ("Multithreading is not yet available when compiling for "
-                  "a C-library.\n"
-                  "Generation of C-library disabled");
+                  "a C-library.");
+    }
+
+    if (global.optimize.dosaaopt && !global.optimize.dosaa) {
+        CTIwarn ("Option -dosaaopt requires symbolic array attributes (SAA).\n"
+                 "Symbolic array attributes enabled.");
+        global.optimize.dosaa = TRUE;
     }
 
     if ((global.optimize.dosaa || global.optimize.dosaaopt) && !global.optimize.dodcr) {
-        CTIerror ("Using symbolic array attributes (SAA) requires dead code"
-                  "removal (DCR) to be switched on.");
+        CTIwarn ("Symbolic array attributes (SAA) require dead code"
+                 "removal (DCR).\n"
+                 "Symbolic array attributes disabled.");
+        global.optimize.dosaa = FALSE;
+        global.optimize.dosaaopt = FALSE;
     }
 
     if (global.optimize.doive && !global.optimize.dosaa) {
-        CTIerror ("Index vector elimination (IVE) requires symbolic array "
-                  "attributes (SAA)");
+        CTIwarn ("Index vector elimination (IVE) requires symbolic array "
+                 "attributes (SAA).\n"
+                 "Index vector elimination disabled.");
+        global.optimize.doive = FALSE;
     }
 
     DBUG_VOID_RETURN;
