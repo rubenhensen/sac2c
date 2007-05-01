@@ -345,7 +345,7 @@ CYCLEPHASEFUN (etc, "Eliminating typeconv primitives", ETCdoEliminateTypeConvers
 
 CYCLEPHASEFUN (esd, "Eliminating subtraction and division operators", ESDdoElimSubDiv,
                global.optimize.doesd
-                 && (global.optimize.dodml || global.optimize.doal
+                 && (global.optimize.doas || global.optimize.doal
                      || global.optimize.dodl),
                opt, cyc)
 
@@ -362,7 +362,7 @@ CYCLEPHASEFUN (dl, "Applying distributive law",
 CYCLEPHASEFUN (uesd, "Reintroducing subtraction and division operators",
                UESDdoUndoElimSubDiv,
                global.optimize.doesd
-                 && (global.optimize.dodml || global.optimize.doal
+                 && (global.optimize.doas || global.optimize.doal
                      || global.optimize.dodl),
                opt, cyc)
 

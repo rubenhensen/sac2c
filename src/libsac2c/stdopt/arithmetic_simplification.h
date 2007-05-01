@@ -1,22 +1,22 @@
 /*
  * $Id$
  */
-#ifndef _SAC_DEMORGAN_H_
-#define _SAC_DEMORGAN_H_
+#ifndef _SAC_ARITHMETIC_SIMPLIFICATION_H_
+#define _SAC_ARITHMETIC_SIMPLIFICATION_H_
 
 #include "types.h"
 
 /******************************************************************************
  *
- * deMorgan optimization
+ * arithmetic simplification
  *
- * prefix: DML
+ * prefix: AS
  *
  *****************************************************************************/
-extern node *DMLdoDeMorgan (node *arg_node);
+extern node *ASdoArithmeticSimplification (node *arg_node);
 
-extern node *DMLfundef (node *arg_node, info *arg_info);
-extern node *DMLassign (node *arg_node, info *arg_info);
-extern node *DMLprf (node *arg_node, info *arg_info);
+extern node *ASfundef (node *arg_node, info *arg_info);
+extern node *ASassign (node *arg_node, info *arg_info);
+extern node *ASprf (node *arg_node, info *arg_info);
 
-#endif /* _SAC_DEMORGAN_H_ */
+#endif /* _SAC_ARITHMETIC_SIMPLIFICATION_H_ */

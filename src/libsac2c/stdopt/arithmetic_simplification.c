@@ -13,7 +13,7 @@
 #include "constants.h"
 #include "new_typecheck.h"
 #include "new_types.h"
-#include "demorgan.h"
+#include "arithmetic_simplification.h"
 
 /*
  * INFO structure
@@ -75,11 +75,11 @@ ContainedPrf (node *expression)
 }
 
 bool
-IsSuitable (node *expression)
+IsSuitableForPropagation (node *expression)
 {
     bool result;
 
-    DBUG_ENTER ("IsSuitable");
+    DBUG_ENTER ("IsSuitableForPropagation");
 
     if ((NODE_TYPE (PRF_ARG1 (expression)) == N_id)
         && (AVIS_SSAASSIGN (ID_AVIS (PRF_ARG1 (expression))) != NULL)) {
@@ -101,6 +101,25 @@ IsSuitable (node *expression)
     }
 
     return (result);
+}
+
+bool
+IsNegationOfNegation (node *expression)
+{
+    bool result;
+
+    DBUG_ENTER ("IsNegationOfNegation");
+
+    if ((NODE_TYPE (PRF_ARG1 (expression)) == N_id)
+        && (AVIS_SSAASSIGN (ID_AVIS (PRF_ARG1 (expression))) != NULL)) {
+        expression = ContainedPrf (expression);
+        result
+          = ((NODE_TYPE (expression) == N_prf) && (PRF_PRF (expression) == F_esd_neg));
+    } else {
+        result = FALSE;
+    }
+
+    DBUG_RETURN (result);
 }
 
 node *
@@ -146,9 +165,9 @@ Negate (node *expression, info *info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *DMLdoDeMorgan( node *arg_node)
+ * @fn node *ASdoArithmeticSimplification( node *arg_node)
  *
- * @brief starting point of deMorgan law optimization
+ * @brief starting point of arithmetic simplification.
  *
  * @param arg_node
  *
@@ -156,15 +175,15 @@ Negate (node *expression, info *info)
  *
  *****************************************************************************/
 node *
-DMLdoDeMorgan (node *syntax_tree)
+ASdoArithmeticSimplification (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("DMLdoDeMorgan");
+    DBUG_ENTER ("ASdoArithmeticSimplification");
 
     info = MakeInfo ();
 
-    TRAVpush (TR_dml);
+    TRAVpush (TR_as);
     syntax_tree = TRAVdo (syntax_tree, info);
     TRAVpop ();
 
@@ -174,9 +193,9 @@ DMLdoDeMorgan (node *syntax_tree)
 }
 
 node *
-DMLfundef (node *arg_node, info *arg_info)
+ASfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DMLfundef");
+    DBUG_ENTER ("ASfundef");
 
     INFO_FUNDEF (arg_info) = arg_node;
 
@@ -190,9 +209,9 @@ DMLfundef (node *arg_node, info *arg_info)
 }
 
 node *
-DMLassign (node *arg_node, info *arg_info)
+ASassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DMLassign");
+    DBUG_ENTER ("ASassign");
 
     /*
      * Bottom-up traversal
@@ -215,17 +234,22 @@ DMLassign (node *arg_node, info *arg_info)
 }
 
 node *
-DMLprf (node *arg_node, info *arg_info)
+ASprf (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DMLprf");
+    DBUG_ENTER ("ASprf");
 
-    if ((PRF_PRF (arg_node) == F_esd_neg) && IsSuitable (arg_node)) {
+    if ((PRF_PRF (arg_node) == F_esd_neg) && IsSuitableForPropagation (arg_node)) {
         node *contained = ContainedPrf (arg_node);
         arg_node = FREEdoFreeTree (arg_node);
 
         arg_node
           = TCmakePrf2 (PRF_PRF (contained), Negate (PRF_ARG1 (contained), arg_info),
                         Negate (PRF_ARG2 (contained), arg_info));
+    } else if ((PRF_PRF (arg_node) == F_esd_neg) && IsNegationOfNegation (arg_node)) {
+        node *contained = PRF_ARG1 (ContainedPrf (arg_node));
+        arg_node = FREEdoFreeTree (arg_node);
+
+        arg_node = DUPdoDupTree (contained);
     }
 
     DBUG_RETURN (arg_node);
