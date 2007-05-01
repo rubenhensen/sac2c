@@ -182,7 +182,7 @@ $(PROJECT_ROOT)/src/bin/%: $(SUBTARGETS)
 $(PROJECT_ROOT)/lib/libsac2c.so: $(PROJECT_ROOT)/lib/libsac2c.$($(STYLE)_short).so
 	@$(ECHO) ""
 	@$(ECHO) "Using $(PREFIX_ROOT)lib/libsac2c.$($(STYLE)_short).so ($($(STYLE)_long) version)"
-	$(CP) $< $@
+	${HIDE} $(CP) $< $@
 
 $(PROJECT_ROOT)/lib/libsac2c.$($(STYLE)_short).so: global/build_$(STYLE).$($(STYLE)_short).o
 	@$(ECHO) ""

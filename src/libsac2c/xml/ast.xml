@@ -873,6 +873,12 @@
 	  <node name="Id" />
 	</travuser>
       </traversal>
+      <traversal id="DML" name="deMorgan law Optimization" default="sons" include="demorgan.h" >
+	<travuser>
+	  <node name="Assign" />
+	  <node name="Prf" />
+	</travuser>
+      </traversal>
       <traversal id="ASSOC" name="Associativity Optimization" default="sons" include="associativity.h" >
 	<travuser>
 	  <node name="Fundef" />

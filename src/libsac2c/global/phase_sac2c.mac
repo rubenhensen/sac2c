@@ -346,6 +346,9 @@ CYCLEPHASEFUN (etc, "Eliminating typeconv primitives", ETCdoEliminateTypeConvers
 CYCLEPHASEFUN (esd, "Eliminating subtraction and division operators", ESDdoElimSubDiv,
                global.optimize.doesd, opt, cyc)
 
+CYCLEPHASEFUN (dml, "Applying deMorgan`s law", DMLdoDeMorgan, global.optimize.dodml, opt,
+               cyc)
+
 CYCLEPHASEFUN (al, "Applying associative law", ASSOCdoAssociativityOptimizationOneFundef,
                global.optimize.doal, opt, cyc)
 
