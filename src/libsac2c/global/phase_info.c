@@ -66,9 +66,9 @@ PHIphaseFun (compiler_phase_t phase)
     DBUG_RETURN (phase_fun[phase]);
 }
 
-#undef PHASEfun
+#undef PHASEname
 #undef SUBPHASEfun
-#undef CYCLEfun
+#undef CYCLEname
 #undef CYCLEPHASEfun
 #undef FUNBEGINname
 #undef CYCLEPHASEFUNfun
