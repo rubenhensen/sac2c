@@ -203,7 +203,7 @@ SUBPHASE (isaa1, "Inserting symbolic array attributes", ISAAdoInsertShapeVariabl
 
 /*************************************************/
 
-#ifdef BUG_XXX_FIXED
+#ifdef BUG_356_FIXED
 
 CYCLE (saacyc1, "Symbolic array attribute cycle 1", global.optimize.dosaa, opt)
 
@@ -240,7 +240,7 @@ CYCLEPHASE (dcr, "Removing dead code", DCRdoDeadCodeRemovalModule, global.optimi
 
 ENDCYCLE (saacyc1)
 
-#endif /* BUG_XXX_FIXED */
+#endif /* BUG_356_FIXED */
 
 /*************************************************/
 
