@@ -344,10 +344,18 @@ CYCLEPHASEFUN (etc, "Eliminating typeconv primitives", ETCdoEliminateTypeConvers
                global.optimize.doetc, opt, cyc)
 
 CYCLEPHASEFUN (esd, "Eliminating subtraction and division operators", ESDdoElimSubDiv,
-               global.optimize.doesd, opt, cyc)
+               global.optimize.doesd
+                 && (global.optimize.dodml || global.optimize.doal
+                     || global.optimize.dodl),
+               opt, cyc)
 
-CYCLEPHASEFUN (dml, "Applying deMorgan`s law", DMLdoDeMorgan, global.optimize.dodml, opt,
-               cyc)
+#if 0
+CYCLEPHASEFUN( dml,
+             "Applying deMorgan`s law",
+             DMLdoDeMorgan,
+             global.optimize.dodml,
+             opt, cyc)
+#endif
 
 CYCLEPHASEFUN (al, "Applying associative law", ASSOCdoAssociativityOptimizationOneFundef,
                global.optimize.doal, opt, cyc)
@@ -355,6 +363,13 @@ CYCLEPHASEFUN (al, "Applying associative law", ASSOCdoAssociativityOptimizationO
 CYCLEPHASEFUN (dl, "Applying distributive law",
                DISTRIBdoDistributivityOptimizationOneFundef, global.optimize.dodl, opt,
                cyc)
+
+CYCLEPHASEFUN (uesd, "Reintroducing subtraction and division operators",
+               UESDdoUndoElimSubDiv,
+               global.optimize.doesd
+                 && (global.optimize.dodml || global.optimize.doal
+                     || global.optimize.dodl),
+               opt, cyc)
 
 CYCLEPHASEFUN (dcr2, "Applying dead code removal", DCRdoDeadCodeRemovalOneFundef,
                global.optimize.dodcr, opt, cyc)
@@ -397,9 +412,6 @@ ENDCYCLE (scyc)
 
 SUBPHASE (lir2, "Applying loop invariant removal", LIRdoLoopInvariantRemoval,
           global.optimize.dolir, opt)
-
-SUBPHASE (uesd, "Reintroducing subtraction and division operators", UESDdoUndoElimSubDiv,
-          global.optimize.doesd, opt)
 
 SUBPHASE (dfr3, "Removing dead functions", DFRdoDeadFunctionRemoval,
           global.optimize.dodfr, opt)
