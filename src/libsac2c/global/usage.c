@@ -69,6 +69,30 @@ PrintDescriptionSac2c (void)
 }
 
 static void
+PrintDescriptionSac4c (void)
+{
+    DBUG_ENTER ("PrintDescriptionSac4c");
+
+    printf (
+      "\n\nDESCRIPTION:\n\n"
+
+      "    The sac4c tools generates C headers and a corresponding wrapper library\n"
+      "    for a given set of SAC libraries.\n"
+      "    When generating these headers, sac4c will default to the two files\n"
+      "    a.out.h and a.out.c, where the former contains the C external\n"
+      "    declarations, and the later contains the corresponding wrapper\n"
+      "    code. This default name can be overidden by using the -o option as\n"
+      "    described below.\n\n"
+
+      "    To ease compilation of the wrapper code and linking of the final\n"
+      "    application, sac4c provides the two flags -ldflags and -ccflags, which\n"
+      "    print appropriate linker and compiler flags that need to be used for\n"
+      "    linking and compiling the wrapper.\n\n");
+
+    DBUG_VOID_RETURN;
+}
+
+static void
 PrintSpecialOptions (void)
 {
     DBUG_ENTER ("PrintSpecialOptions");
@@ -95,6 +119,35 @@ PrintSpecialOptions (void)
       "    NOTE:\n"
       "    When called with one of these options, sac2c does not perform\n"
       "    any compilation steps.\n");
+
+    DBUG_VOID_RETURN;
+}
+
+static void
+PrintOptionsSac4c (void)
+{
+    DBUG_ENTER ("PrintOptionsSac4c");
+
+    printf ("\n\nGENERAL OPTIONS:\n\n"
+
+            "    -L <path>       Specify additional SAC library file path.\n"
+            "    -I <path>       Specify additional SAC library source file path.\n"
+            "    -E <path>       Specify additional C library file path.\n"
+            "\n"
+            "    -o <name>       Write external declarations to file <name>.h and\n"
+            "                    wrapper code to file <name>.c.\n"
+            "\n"
+            "    -ldflags        Print linker flags to stdout\n"
+            "    -ccflags        Print C compiler flags to stdout\n"
+            "\n"
+            "    -v <n>          Specify verbose level:\n"
+            "                      0: error messages only\n"
+            "                      1: error messages and warnings\n"
+            "                      2: basic compile time information\n"
+            "                      3: full compile time information\n"
+            "                      4: even more compile time information\n"
+            "                    (default: %d)\n",
+            global.verbose_level);
 
     DBUG_VOID_RETURN;
 }
@@ -167,7 +220,19 @@ PrintBreakoptionSpecifierSac2c (void)
 
     printf ("\n\nBREAK OPTION SPECIFIERS:\n");
 
-    PHOprintPhases ();
+    PHOprintPhasesSac2c ();
+
+    DBUG_VOID_RETURN;
+}
+
+static void
+PrintBreakoptionSpecifierSac4c (void)
+{
+    DBUG_ENTER ("PrintBreakoptionSpecifierSac4c");
+
+    printf ("\n\nBREAK OPTION SPECIFIERS:\n");
+
+    PHOprintPhasesSac4c ();
 
     DBUG_VOID_RETURN;
 }
@@ -770,13 +835,14 @@ PrintEnvironmentVariables (void)
 {
     DBUG_ENTER ("PrintEnvironmentVariables");
 
-    printf ("\n\nENVIRONMENT VARIABLES:\n\n"
+    printf (
+      "\n\nENVIRONMENT VARIABLES:\n\n"
 
-            "    The following environment variables are used by sac2c:\n"
-            "\n"
-            "    SACBASE         Base directory of SAC standard lib installation.\n"
-            "    SAC2CBASE       Base directory of SAC installation.\n"
-            "\n");
+      "    The following environment variables are used by the SAC compiler suite:\n"
+      "\n"
+      "    SACBASE         Base directory of SAC standard lib installation.\n"
+      "    SAC2CBASE       Base directory of SAC installation.\n"
+      "\n");
 
     DBUG_VOID_RETURN;
 }
@@ -788,8 +854,8 @@ PrintAuthors (void)
 
     printf ("\n\nAUTHORS:\n\n"
 
-            "    The following people contributed their time and mind to create sac2c\n"
-            "    (roughly in order of entering the project):\n"
+            "    The following people contributed their time and mind to create the\n"
+            "    SAC compiler suite (roughly in order of entering the project):\n"
             "\n"
             "      Sven-Bodo Scholz\n"
             "      Henning Wolf\n"
@@ -871,6 +937,9 @@ USGprintUsage ()
         PrintCustomisationOptions ();
         break;
     case TOOL_sac4c:
+        PrintDescriptionSac4c ();
+        PrintOptionsSac4c ();
+        PrintBreakoptionSpecifierSac4c ();
         break;
     }
 
@@ -922,7 +991,7 @@ USGprintVersionVerbose ()
 
     printf ("(c) Copyright 1994-2007 by\n\n"
 
-            "  SaC Development Team\n\n"
+            "  SAC Development Team\n\n"
 
             "  http://www.sac-home.org\n"
             "  email:info@sac-home.org\n\n");

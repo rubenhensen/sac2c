@@ -7,6 +7,7 @@
 
 extern void PHOinterpretBreakOption (char *option);
 extern void PHOinterpretDbugOption (char *option);
-extern void PHOprintPhases (void);
+extern void PHOprintPhasesSac2c (void);
+extern void PHOprintPhasesSac4c (void);
 
 #endif

@@ -83,8 +83,6 @@ SACrunSac4c (int argc, char *argv[])
 
     DBUG_ENTER ("SACrunSac4c");
 
-    DBUG_ASSERT (FALSE, "sac4c not yet implemented");
-
     syntax_tree = SetupCompiler (argc, argv, TOOL_sac4c, "sac4c");
 
     syntax_tree = PHDdriveSac4c (syntax_tree);

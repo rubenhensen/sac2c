@@ -317,13 +317,25 @@ PHOinterpretDbugOption (char *option)
 #define CYCLEPHASEFUNtext(text) printf (" : " text " (fun based)\n");
 
 void
-PHOprintPhases (void)
+PHOprintPhasesSac2c (void)
 {
     int cnt = 0;
 
-    DBUG_ENTER ("PHOprintPhases");
+    DBUG_ENTER ("PHOprintPhasesSac2c");
 
 #include "phase_sac2c.mac"
+
+    DBUG_VOID_RETURN;
+}
+
+void
+PHOprintPhasesSac4c (void)
+{
+    int cnt = 0;
+
+    DBUG_ENTER ("PHOprintPhasesSac4c");
+
+#include "phase_sac4c.mac"
 
     DBUG_VOID_RETURN;
 }

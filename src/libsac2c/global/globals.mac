@@ -138,6 +138,11 @@ GLOBAL (char *, tmp_dirname, NULL)
  * directory for storing temporary files
  */
 
+GLOBAL (stringset_t *, exported_modules, NULL)
+/*
+ * list of modules that will be exported by sac4c
+ */
+
 /*
  * Command line arguments
  */

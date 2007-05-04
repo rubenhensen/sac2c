@@ -30,6 +30,7 @@
 #include "memory.h"
 #include "ctinfo.h"
 #include "libstat.h"
+#include "stringset.h"
 #include "phase_options.h"
 
 /******************************************************************************
@@ -660,6 +661,116 @@ static void
 AnalyseCommandlineSac4c (int argc, char *argv[])
 {
     DBUG_ENTER ("AnalyseCommandlineSac4c");
+
+    ARGS_BEGIN (argc, argv);
+
+    /*
+     * Options starting with aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+     */
+
+    /*
+     * Options starting with bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+     */
+
+    ARGS_OPTION ("b", PHOinterpretBreakOption (ARG))
+
+    /*
+     * Options starting with ccccccccccccccccccccccccccccccccccccccccccc
+     */
+
+    ARGS_FLAG ("ccflags", exit (10));
+
+    ARGS_FLAG ("copyright", USGprintCopyright (); exit (0));
+
+    /*
+     * Options starting with ddddddddddddddddddddddddddddddddddddddddddd
+     */
+
+    /*
+     * Options starting with eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+     */
+
+    ARGS_OPTION_BEGIN ("E")
+    {
+        FMGRappendPath (PK_extlib_path, FMGRabsolutePathname (ARG));
+    }
+    ARGS_OPTION_END ("E");
+
+    /*
+     * Options starting with hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh
+     */
+
+    ARGS_FLAG ("h", USGprintUsage (); exit (0));
+    ARGS_FLAG ("help", USGprintUsage (); exit (0));
+
+    /*
+     * Options starting with iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii
+     */
+
+    ARGS_OPTION_BEGIN ("I")
+    {
+        FMGRappendPath (PK_imp_path, FMGRabsolutePathname (ARG));
+    }
+    ARGS_OPTION_END ("I");
+
+    /*
+     * Options starting with kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+     */
+
+    /*
+     * Options starting with lllllllllllllllllllllllllllllllllllllllllll
+     */
+
+    ARGS_FLAG ("ldflags", exit (10));
+
+    ARGS_OPTION_BEGIN ("L")
+    {
+        FMGRappendPath (PK_lib_path, FMGRabsolutePathname (ARG));
+    }
+    ARGS_OPTION_END ("L");
+
+    /*
+     * Options starting with mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
+     */
+
+    /*
+     * Options starting with nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn
+     */
+
+    /*
+     * Options starting with ooooooooooooooooooooooooooooooooooooooooooo
+     */
+
+    ARGS_OPTION ("o", global.outfilename = STRcpy (ARG));
+
+    /*
+     * Options starting with ppppppppppppppppppppppppppppppppppppppppppp
+     */
+
+    /*
+     * Options starting with sssssssssssssssssssssssssssssssssssssssssss
+     */
+
+    /*
+     * Options starting with ttttttttttttttttttttttttttttttttttttttttttt
+     */
+
+    /*
+     * Options starting with vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+     */
+
+    ARGS_OPTION ("v", ARG_RANGE (global.verbose_level, 0, 5));
+
+    ARGS_FLAG ("V", USGprintVersion (); exit (0));
+
+    ARGS_FLAG ("VV", USGprintVersionVerbose (); exit (0));
+
+    ARGS_ARGUMENT (global.exported_modules
+                   = STRSadd (STRcpy (ARG), STRS_saclib, global.exported_modules););
+
+    ARGS_UNKNOWN (ARGS_ERROR ("Invalid command line entry"));
+
+    ARGS_END ();
 
     DBUG_VOID_RETURN;
 }
